@@ -24,16 +24,16 @@ void lvgl_flush_cb_32bit(struct _disp_drv_t *disp_drv,
 		const lv_area_t *area, lv_color_t *color_p);
 
 void lvgl_set_px_cb_mono(struct _disp_drv_t *disp_drv,
-		u8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
+		uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
 		lv_color_t color, lv_opa_t opa);
 void lvgl_set_px_cb_16bit(struct _disp_drv_t *disp_drv,
-		u8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
+		uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
 		lv_color_t color, lv_opa_t opa);
 void lvgl_set_px_cb_24bit(struct _disp_drv_t *disp_drv,
-		u8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
+		uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
 		lv_color_t color, lv_opa_t opa);
 void lvgl_set_px_cb_32bit(struct _disp_drv_t *disp_drv,
-		u8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
+		uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
 		lv_color_t color, lv_opa_t opa);
 
 void lvgl_rounder_cb_mono(struct _disp_drv_t *disp_drv, lv_area_t *area);

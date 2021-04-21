@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(tuning);
 #include "audio_core.h"
 #include "usb_transport.h"
 
-static void tun_drv_process_command(u8_t *data, u32_t len);
+static void tun_drv_process_command(uint8_t *data, uint32_t len);
 
 /* Buffer size in "words" for the tuning commands and replies */
 #define TUN_DRV_CMD_MAX_WORDS	(264)
@@ -31,13 +31,13 @@ static struct {
 	union usb_hid_report_hdr header;
 
 	/* command buffer for the tuning interface */
-	u8_t buffer[TUN_DRV_CMD_MAX_BYTES];
+	uint8_t buffer[TUN_DRV_CMD_MAX_BYTES];
 
 	/* length of valid data in the buffer */
-	u32_t len;
+	uint32_t len;
 
 	/* index into the buffer where incoming data is copied */
-	u32_t index;
+	uint32_t index;
 } __packed command_buffer;
 
 /* Allocate a synchronization semaphore */
@@ -47,14 +47,14 @@ static int tun_drv_io_thread(void);
 
 K_THREAD_DEFINE(tun_drv_io_thread_id, TUN_DRV_IO_THREAD_STACK_SIZE,
 		tun_drv_io_thread, NULL, NULL, NULL, TUN_DRV_IO_THREAD_PRIORITY,
-		0, K_NO_WAIT);
+		0, 0);
 
 static int tun_drv_io_thread(void)
 {
 	LOG_INF("Starting tuning driver I/O thread ...");
 
 	/* initialize the audio core's tuning interface */
-	audio_core_tuning_interface_init((u32_t *)command_buffer.buffer,
+	audio_core_tuning_interface_init((uint32_t *)command_buffer.buffer,
 			TUN_DRV_CMD_MAX_WORDS);
 
 	/* initialize the tuning transport protocol driver */
@@ -73,14 +73,14 @@ static int tun_drv_io_thread(void)
 int tun_drv_packet_handler(void)
 {
 	int ret = 0;
-	u32_t len;
-	u32_t first_word;
+	uint32_t len;
+	uint32_t first_word;
 
 	if (audio_core_is_tuning_reply_ready() == false) {
 		return ret;
 	}
 
-	first_word = *((u32_t *)command_buffer.buffer);
+	first_word = *((uint32_t *)command_buffer.buffer);
 	len = (first_word >> 16) << 2;
 
 	ret = usb_transport_send_reply(command_buffer.buffer, len);
@@ -90,13 +90,13 @@ int tun_drv_packet_handler(void)
 	return ret;
 }
 
-static void tun_drv_process_command(u8_t *data, u32_t len)
+static void tun_drv_process_command(uint8_t *data, uint32_t len)
 {
-	u32_t first_word;
+	uint32_t first_word;
 
 	if (command_buffer.len == 0) {
 		/* extract command length */
-		first_word = *((u32_t *)data);
+		first_word = *((uint32_t *)data);
 		command_buffer.len = (first_word >> 16) << 2;
 
 		/* ensure total length does not exceed max */

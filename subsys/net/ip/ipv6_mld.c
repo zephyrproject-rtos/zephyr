@@ -38,8 +38,8 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 static int mld_create(struct net_pkt *pkt,
 		      const struct in6_addr *addr,
-		      u8_t record_type,
-		      u16_t num_sources)
+		      uint8_t record_type,
+		      uint16_t num_sources)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(mld_access,
 				   struct net_icmpv6_mld_mcast_record);
@@ -73,7 +73,7 @@ static int mld_create(struct net_pkt *pkt,
 	return 0;
 }
 
-static int mld_create_packet(struct net_pkt *pkt, u16_t count)
+static int mld_create_packet(struct net_pkt *pkt, uint16_t count)
 {
 	struct in6_addr dst;
 
@@ -143,7 +143,7 @@ static int mld_send(struct net_pkt *pkt)
 
 static int mld_send_generic(struct net_if *iface,
 			    const struct in6_addr *addr,
-			    u8_t mode)
+			    uint8_t mode)
 {
 	struct net_pkt *pkt;
 	int ret;
@@ -302,9 +302,9 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(mld_access,
 					      struct net_icmpv6_mld_query);
-	u16_t length = net_pkt_get_len(pkt);
+	uint16_t length = net_pkt_get_len(pkt);
 	struct net_icmpv6_mld_query *mld_query;
-	u16_t pkt_len;
+	uint16_t pkt_len;
 
 	mld_query = (struct net_icmpv6_mld_query *)
 				net_pkt_get_data(pkt, &mld_access);

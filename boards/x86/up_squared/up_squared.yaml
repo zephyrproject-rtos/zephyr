@@ -1,5 +1,5 @@
 identifier: up_squared
-name: UP Squared
+name: UP Squared (x86_64)
 type: mcu
 arch: x86
 toolchain:

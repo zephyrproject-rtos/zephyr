@@ -8,22 +8,8 @@ if BOARD_NUCLEO_F334R8
 config BOARD
 	default "nucleo_f334r8"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
-config I2C_1
-	default y
-	depends on I2C
-
-if SPI
-
-config SPI_1
-	default y
-
 config SPI_STM32_INTERRUPT
 	default y
-
-endif # SPI
+	depends on SPI
 
 endif # BOARD_NUCLEO_F334R8

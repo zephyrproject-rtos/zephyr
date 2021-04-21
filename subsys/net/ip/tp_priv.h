@@ -42,9 +42,9 @@ struct tp_mem {
 	int line;
 	const char *func;
 	size_t size;
-	u32_t *footer;
-	u32_t header;
-	u8_t mem[];
+	uint32_t *footer;
+	uint32_t header;
+	uint8_t mem[];
 };
 
 struct tp_nbuf {
@@ -68,8 +68,8 @@ struct tp_seq {
 	const char *func;
 	int kind;
 	int req;
-	u32_t value;
-	u32_t old_value;
+	uint32_t value;
+	uint32_t old_value;
 	int of;
 };
 

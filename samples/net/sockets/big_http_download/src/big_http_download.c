@@ -29,17 +29,24 @@
 #include "ca_certificate.h"
 #endif
 
-#define sleep(x) k_sleep(x * 1000)
+#define sleep(x) k_sleep(K_MSEC((x) * MSEC_PER_SEC))
 
 #endif
 
+#define bytes2KiB(Bytes)	(Bytes / (1024u))
+#define bytes2MiB(Bytes)	(Bytes / (1024u * 1024u))
+
 /* This URL is parsed in-place, so buffer must be non-const. */
 static char download_url[] =
+#if defined(CONFIG_SAMPLE_BIG_HTTP_DL_URL)
+    CONFIG_SAMPLE_BIG_HTTP_DL_URL;
+#else
 #if !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
     "http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz";
 #else
     "https://www.7-zip.org/a/7z1805.exe";
 #endif /* !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+#endif /* defined(CONFIG_SAMPLE_BIG_HTTP_DL_URL) */
 /* Quick testing. */
 /*    "http://google.com/foo";*/
 
@@ -191,7 +198,8 @@ void download(struct addrinfo *ai, bool is_tls)
 		mbedtls_md_update(&hash_ctx, response, len);
 
 		cur_bytes += len;
-		printf("%u bytes\r", cur_bytes);
+		printf("Download progress: %u Bytes; %u KiB; %u MiB\r",
+			cur_bytes, bytes2KiB(cur_bytes), bytes2MiB(cur_bytes));
 
 		response[len] = 0;
 		/*printf("%s\n", response);*/
@@ -223,6 +231,7 @@ void main(void)
 	unsigned int total_bytes = 0U;
 	int resolve_attempts = 10;
 	bool is_tls = false;
+	int num_iterations = CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
@@ -304,14 +313,26 @@ void main(void)
 		fatal("Can't setup mbedTLS hash engine");
 	}
 
-	while (1) {
+	const uint32_t total_iterations = num_iterations;
+	uint32_t current_iteration = 1;
+	do {
+		if (total_iterations == 0) {
+			printf("\nIteration %u of INF\n", current_iteration);
+		} else {
+			printf("\nIteration %u of %u:\n",
+				current_iteration, total_iterations);
+		}
 		download(res, is_tls);
 
 		total_bytes += cur_bytes;
-		printf("Total downloaded so far: %uMB\n", total_bytes / (1024 * 1024));
+		printf("Total downloaded so far: %u MiB\n",
+			bytes2MiB(total_bytes));
 
 		sleep(3);
-	}
+		current_iteration++;
+	} while (--num_iterations != 0);
+
+	printf("Finished downloading.\n");
 
 	mbedtls_md_free(&hash_ctx);
 }

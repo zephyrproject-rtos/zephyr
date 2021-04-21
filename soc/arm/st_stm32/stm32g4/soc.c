@@ -11,8 +11,14 @@
 
 #include <device.h>
 #include <init.h>
+#include <stm32_ll_system.h>
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
+
+#if defined(PWR_CR3_UCPD_DBDIS)
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
+#endif /* PWR_CR3_UCPD_DBDIS */
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -22,9 +28,9 @@
  *
  * @return 0
  */
-static int stm32g4_init(struct device *arg)
+static int stm32g4_init(const struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 
@@ -44,6 +50,11 @@ static int stm32g4_init(struct device *arg)
 	/* allow reflashing board */
 	LL_DBGMCU_EnableDBGSleepMode();
 
+#if defined(PWR_CR3_UCPD_DBDIS)
+	/* Disable USB Type-C dead battery pull-down behavior */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+	LL_PWR_DisableUCPDDeadBattery();
+#endif /* PWR_CR3_UCPD_DBDIS */
 	return 0;
 }
 

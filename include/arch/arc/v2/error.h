@@ -27,13 +27,13 @@ extern "C" {
  */
 #define ARCH_EXCEPT(reason_p)	do { \
 		__asm__ volatile ( \
-		"mov r0, %[reason]\n\t" \
+		"mov %%r0, %[reason]\n\t" \
 		"trap_s %[id]\n\t" \
 		: \
 		: [reason] "i" (reason_p), \
 		[id] "i" (_TRAP_S_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
-		CODE_UNREACHABLE; \
+		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 	} while (false)
 
 #ifdef __cplusplus

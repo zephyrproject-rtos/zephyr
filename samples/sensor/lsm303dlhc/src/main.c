@@ -10,10 +10,11 @@
 #include <stdio.h>
 #include <sys/util.h>
 
-static s32_t read_sensor(struct device *sensor, enum sensor_channel channel)
+static int32_t read_sensor(const struct device *sensor,
+			   enum sensor_channel channel)
 {
 	struct sensor_value val[3];
-	s32_t ret = 0;
+	int32_t ret = 0;
 
 	ret = sensor_sample_fetch(sensor);
 	if (ret < 0 && ret != -EBADMSG) {
@@ -37,20 +38,20 @@ end:
 
 void main(void)
 {
-	struct device *accelerometer = device_get_binding(
-						DT_INST_0_ST_LIS2DH_LABEL);
-	struct device *magnetometer = device_get_binding(
-						DT_INST_0_ST_LSM303DLHC_MAGN_LABEL);
+	const struct device *accelerometer = device_get_binding(
+						DT_LABEL(DT_INST(0, st_lis2dh)));
+	const struct device *magnetometer = device_get_binding(
+						DT_LABEL(DT_INST(0, st_lsm303dlhc_magn)));
 
 	if (accelerometer == NULL) {
 		printf("Could not get %s device\n",
-				DT_INST_0_ST_LIS2DH_LABEL);
+				DT_LABEL(DT_INST(0, st_lis2dh)));
 		return;
 	}
 
 	if (magnetometer == NULL) {
 		printf("Could not get %s device\n",
-				DT_INST_0_ST_LSM303DLHC_MAGN_LABEL);
+				DT_LABEL(DT_INST(0, st_lsm303dlhc_magn)));
 		return;
 	}
 

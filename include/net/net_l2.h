@@ -12,7 +12,9 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_L2_H_
 #define ZEPHYR_INCLUDE_NET_NET_L2_H_
 
+#include <device.h>
 #include <net/buf.h>
+#include <net/capture.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,10 +79,15 @@ struct net_l2 {
 };
 
 /** @cond INTERNAL_HIDDEN */
-#define NET_L2_GET_NAME(_name) (__net_l2_##_name)
+#define NET_L2_GET_NAME(_name) _net_l2_##_name
 #define NET_L2_DECLARE_PUBLIC(_name)					\
 	extern const struct net_l2 NET_L2_GET_NAME(_name)
 #define NET_L2_GET_CTX_TYPE(_name) _name##_CTX_TYPE
+
+#ifdef CONFIG_NET_L2_VIRTUAL
+#define VIRTUAL_L2		VIRTUAL
+NET_L2_DECLARE_PUBLIC(VIRTUAL_L2);
+#endif /* CONFIG_NET_L2_DUMMY */
 
 #ifdef CONFIG_NET_L2_DUMMY
 #define DUMMY_L2		DUMMY
@@ -126,19 +133,30 @@ NET_L2_DECLARE_PUBLIC(CANBUS_L2);
 #endif /* CONFIG_NET_L2_CANBUS */
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn) \
-	const struct net_l2 (NET_L2_GET_NAME(_name)) __used		\
-	__attribute__((__section__(".net_l2.init"))) = {		\
+	const Z_STRUCT_SECTION_ITERABLE(net_l2,				\
+					NET_L2_GET_NAME(_name)) = {	\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
 		.enable = (_enable_fn),					\
 		.get_flags = (_get_flags_fn),				\
 	}
 
-#define NET_L2_GET_DATA(name, sfx) (__net_l2_data_##name##sfx)
+#define NET_L2_GET_DATA(name, sfx) _net_l2_data_##name##sfx
 
 #define NET_L2_DATA_INIT(name, sfx, ctx_type)				\
-	static ctx_type NET_L2_GET_DATA(name, sfx) __used		\
-	__attribute__((__section__(".net_l2.data")));
+	static ctx_type NET_L2_GET_DATA(name, sfx) __used;
+
+typedef int (*net_l2_send_t)(const struct device *dev, struct net_pkt *pkt);
+
+static inline int net_l2_send(net_l2_send_t send_fn,
+			      const struct device *dev,
+			      struct net_if *iface,
+			      struct net_pkt *pkt)
+{
+	net_capture_pkt(iface, pkt);
+
+	return send_fn(dev, pkt);
+}
 
 /** @endcond */
 

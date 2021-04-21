@@ -9,14 +9,13 @@
  * @brief A driver for sending and receiving mcumgr packets over UART.
  */
 
-#include <assert.h>
 #include <string.h>
 #include <kernel.h>
 #include <drivers/uart.h>
-#include <mgmt/serial.h>
+#include <mgmt/mcumgr/serial.h>
 #include <drivers/console/uart_mcumgr.h>
 
-static struct device *uart_mcumgr_dev;
+static const struct device *uart_mcumgr_dev;
 
 /** Callback to execute when a valid fragment has been received. */
 static uart_mcumgr_recv_fn *uart_mgumgr_recv_cb;
@@ -73,7 +72,7 @@ static int uart_mcumgr_read_chunk(void *buf, int capacity)
 /**
  * Processes a single incoming byte.
  */
-static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(u8_t byte)
+static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(uint8_t byte)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
 
@@ -115,14 +114,15 @@ static struct uart_mcumgr_rx_buf *uart_mcumgr_rx_byte(u8_t byte)
 /**
  * ISR that is called when UART bytes are received.
  */
-static void uart_mcumgr_isr(struct device *unused)
+static void uart_mcumgr_isr(const struct device *unused, void *user_data)
 {
 	struct uart_mcumgr_rx_buf *rx_buf;
-	u8_t buf[32];
+	uint8_t buf[32];
 	int chunk_len;
 	int i;
 
 	ARG_UNUSED(unused);
+	ARG_UNUSED(user_data);
 
 	while (uart_irq_update(uart_mcumgr_dev) &&
 	       uart_irq_is_pending(uart_mcumgr_dev)) {
@@ -146,7 +146,7 @@ static void uart_mcumgr_isr(struct device *unused)
  */
 static int uart_mcumgr_send_raw(const void *data, int len, void *arg)
 {
-	const u8_t *u8p;
+	const uint8_t *u8p;
 
 	u8p = data;
 	while (len--) {
@@ -156,14 +156,14 @@ static int uart_mcumgr_send_raw(const void *data, int len, void *arg)
 	return 0;
 }
 
-int uart_mcumgr_send(const u8_t *data, int len)
+int uart_mcumgr_send(const uint8_t *data, int len)
 {
 	return mcumgr_serial_tx_pkt(data, len, uart_mcumgr_send_raw, NULL);
 }
 
-static void uart_mcumgr_setup(struct device *uart)
+static void uart_mcumgr_setup(const struct device *uart)
 {
-	u8_t c;
+	uint8_t c;
 
 	uart_irq_rx_disable(uart);
 	uart_irq_tx_disable(uart);

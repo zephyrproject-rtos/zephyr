@@ -9,6 +9,7 @@ config SOC_SERIES_EFM32WG
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_EXX32
 	select HAS_SILABS_GECKO
 	select SOC_GECKO_CMU

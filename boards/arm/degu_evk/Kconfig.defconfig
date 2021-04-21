@@ -36,35 +36,7 @@ config UART_SHELL_ON_DEV_NAME
 
 endif # USB
 
-config IEEE802154_NRF5
-	default y
-	depends on IEEE802154
-
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-endif # I2C
-
-choice I2C_0_NRF_TYPE
-	default I2C_0_NRF_TWIM
-	depends on I2C_0
-endchoice
-
-choice I2C_1_NRF_TYPE
-	default I2C_1_NRF_TWIM
-	depends on I2C_1
-endchoice
-
-config ADC_0
-	default y
-	depends on ADC
-
-if DISK_ACCESS_FLASH
+if DISK_DRIVER_FLASH
 
 config DISK_FLASH_DEV_NAME
 	default "NRF_FLASH_DRV_NAME"
@@ -84,6 +56,6 @@ config DISK_FLASH_ERASE_ALIGNMENT
 config DISK_VOLUME_SIZE
 	default 0x8000
 
-endif # DISK_ACCESS_FLASH
+endif # DISK_DRIVER_FLASH
 
 endif # BOARD_DEGU_EVK

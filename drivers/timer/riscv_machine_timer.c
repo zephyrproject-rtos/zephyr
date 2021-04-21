@@ -8,24 +8,23 @@
 #include <spinlock.h>
 #include <soc.h>
 
-#define CYC_PER_TICK ((u32_t)((u64_t)sys_clock_hw_cycles_per_sec()	\
-			      / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-#define MAX_CYC 0xffffffffu
+#define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
+			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define MAX_CYC INT_MAX
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
-#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&		\
-		  !IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND))
+#define TICKLESS IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 
 static struct k_spinlock lock;
-static u64_t last_count;
+static uint64_t last_count;
 
-static void set_mtimecmp(u64_t time)
+static void set_mtimecmp(uint64_t time)
 {
 #ifdef CONFIG_64BIT
-	*(volatile u64_t *)RISCV_MTIMECMP_BASE = time;
+	*(volatile uint64_t *)RISCV_MTIMECMP_BASE = time;
 #else
-	volatile u32_t *r = (u32_t *)RISCV_MTIMECMP_BASE;
+	volatile uint32_t *r = (uint32_t *)RISCV_MTIMECMP_BASE;
 
 	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
 	 * but are NOT internally latched for multiword transfers.  So
@@ -34,18 +33,18 @@ static void set_mtimecmp(u64_t time)
 	 * value first.
 	 */
 	r[1] = 0xffffffff;
-	r[0] = (u32_t)time;
-	r[1] = (u32_t)(time >> 32);
+	r[0] = (uint32_t)time;
+	r[1] = (uint32_t)(time >> 32);
 #endif
 }
 
-static u64_t mtime(void)
+static uint64_t mtime(void)
 {
 #ifdef CONFIG_64BIT
-	return *(volatile u64_t *)RISCV_MTIME_BASE;
+	return *(volatile uint64_t *)RISCV_MTIME_BASE;
 #else
-	volatile u32_t *r = (u32_t *)RISCV_MTIME_BASE;
-	u32_t lo, hi;
+	volatile uint32_t *r = (uint32_t *)RISCV_MTIME_BASE;
+	uint32_t lo, hi;
 
 	/* Likewise, must guard against rollover when reading */
 	do {
@@ -53,46 +52,49 @@ static u64_t mtime(void)
 		lo = r[0];
 	} while (r[1] != hi);
 
-	return (((u64_t)hi) << 32) | lo;
+	return (((uint64_t)hi) << 32) | lo;
 #endif
 }
 
-static void timer_isr(void *arg)
+static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u64_t now = mtime();
-	u32_t dticks = (u32_t)((now - last_count) / CYC_PER_TICK);
+	uint64_t now = mtime();
+	uint32_t dticks = (uint32_t)((now - last_count) / CYC_PER_TICK);
 
 	last_count += dticks * CYC_PER_TICK;
 
 	if (!TICKLESS) {
-		u64_t next = last_count + CYC_PER_TICK;
+		uint64_t next = last_count + CYC_PER_TICK;
 
-		if ((s64_t)(next - now) < MIN_DELAY) {
+		if ((int64_t)(next - now) < MIN_DELAY) {
 			next += CYC_PER_TICK;
 		}
 		set_mtimecmp(next);
 	}
 
 	k_spin_unlock(&lock, key);
-	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
-int z_clock_driver_init(struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
-	set_mtimecmp(mtime() + CYC_PER_TICK);
+	last_count = mtime();
+	set_mtimecmp(last_count + CYC_PER_TICK);
 	irq_enable(RISCV_MACHINE_TIMER_IRQ);
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+#if defined(CONFIG_TICKLESS_KERNEL)
 	/* RISCV has no idle handler yet, so if we try to spin on the
 	 * logic below to reset the comparator, we'll always bump it
 	 * forward to the "next tick" due to MIN_DELAY handling and
@@ -103,15 +105,15 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = ticks == K_FOREVER ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
+	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
+	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u64_t now = mtime();
-	u32_t adj, cyc = ticks * CYC_PER_TICK;
+	uint64_t now = mtime();
+	uint32_t adj, cyc = ticks * CYC_PER_TICK;
 
 	/* Round up to next tick boundary. */
-	adj = (u32_t)(now - last_count) + (CYC_PER_TICK - 1);
+	adj = (uint32_t)(now - last_count) + (CYC_PER_TICK - 1);
 	if (cyc <= MAX_CYC - adj) {
 		cyc += adj;
 	} else {
@@ -119,7 +121,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	}
 	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
 
-	if ((s32_t)(cyc + last_count - now) < MIN_DELAY) {
+	if ((int32_t)(cyc + last_count - now) < MIN_DELAY) {
 		cyc += CYC_PER_TICK;
 	}
 
@@ -128,20 +130,20 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t ret = ((u32_t)mtime() - (u32_t)last_count) / CYC_PER_TICK;
+	uint32_t ret = ((uint32_t)mtime() - (uint32_t)last_count) / CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 	return ret;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
-	return (u32_t)mtime();
+	return (uint32_t)mtime();
 }

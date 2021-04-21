@@ -7,6 +7,6 @@
 board_set_debugger_ifnset(pyocd)
 board_set_flasher_ifnset(pyocd)
 
-board_runner_args(pyocd "--target=mimxrt1050_hyperflash")
+board_runner_args(pyocd "--target=mimxrt1050_quadspi")
 
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)

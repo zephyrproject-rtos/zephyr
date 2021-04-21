@@ -98,7 +98,7 @@ static int http_send_data(int sock, char *send_buf,
 		} while (remaining_len > 0);
 
 		data = va_arg(va, const char *);
-	};
+	}
 
 	va_end(va);
 
@@ -164,7 +164,7 @@ static int on_status(struct http_parser *parser, const char *at, size_t length)
 	struct http_request *req = CONTAINER_OF(parser,
 						struct http_request,
 						internal.parser);
-	u16_t len;
+	uint16_t len;
 
 	len = MIN(length, sizeof(req->internal.response.http_status) - 1);
 	memcpy(req->internal.response.http_status, at, len);
@@ -176,6 +176,8 @@ static int on_status(struct http_parser *parser, const char *at, size_t length)
 	if (req->internal.response.http_cb &&
 	    req->internal.response.http_cb->on_status) {
 		req->internal.response.http_cb->on_status(parser, at, length);
+		req->internal.response.http_status_code =
+			(uint16_t)parser->status_code;
 	}
 
 	return 0;
@@ -188,7 +190,7 @@ static int on_header_field(struct http_parser *parser, const char *at,
 						struct http_request,
 						internal.parser);
 	const char *content_len = "Content-Length";
-	u16_t len;
+	uint16_t len;
 
 	len = strlen(content_len);
 	if (length >= len && strncasecmp(at, content_len, len) == 0) {
@@ -263,8 +265,8 @@ static int on_body(struct http_parser *parser, const char *at, size_t length)
 	}
 
 	if (!req->internal.response.body_start &&
-	    (u8_t *)at != (u8_t *)req->internal.response.recv_buf) {
-		req->internal.response.body_start = (u8_t *)at;
+	    (uint8_t *)at != (uint8_t *)req->internal.response.recv_buf) {
+		req->internal.response.body_start = (uint8_t *)at;
 	}
 
 	if (req->internal.response.cb) {
@@ -310,12 +312,6 @@ static int on_headers_complete(struct http_parser *parser)
 
 	if ((req->method == HTTP_HEAD || req->method == HTTP_OPTIONS) &&
 	    req->internal.response.content_length > 0) {
-		NET_DBG("No body expected");
-		return 1;
-	}
-
-	if ((req->method == HTTP_PUT || req->method == HTTP_POST) &&
-	    req->internal.response.content_length == 0) {
 		NET_DBG("No body expected");
 		return 1;
 	}
@@ -468,7 +464,7 @@ static void http_timeout(struct k_work *work)
 }
 
 int http_client_req(int sock, struct http_request *req,
-		    s32_t timeout, void *user_data)
+		    int32_t timeout, void *user_data)
 {
 	/* Utilize the network usage by sending data in bigger blocks */
 	char send_buf[MAX_SEND_BUF_LEN];
@@ -490,8 +486,8 @@ int http_client_req(int sock, struct http_request *req,
 	req->internal.response.recv_buf = req->recv_buf;
 	req->internal.response.recv_buf_len = req->recv_buf_len;
 	req->internal.user_data = user_data;
-	req->internal.timeout = timeout;
 	req->internal.sock = sock;
+	req->internal.timeout = SYS_TIMEOUT_MS(timeout);
 
 	method = http_method_str(req->method);
 
@@ -504,13 +500,27 @@ int http_client_req(int sock, struct http_request *req,
 
 	total_sent += ret;
 
-	ret = http_send_data(sock, send_buf, send_buf_max_len, &send_buf_pos,
-			     "Host", ": ", req->host, HTTP_CRLF, NULL);
-	if (ret < 0) {
-		goto out;
-	}
+	if (req->port) {
+		ret = http_send_data(sock, send_buf, send_buf_max_len,
+				     &send_buf_pos, "Host", ": ", req->host,
+				     ":", req->port, HTTP_CRLF, NULL);
 
-	total_sent += ret;
+		if (ret < 0) {
+			goto out;
+		}
+
+		total_sent += ret;
+	} else {
+		ret = http_send_data(sock, send_buf, send_buf_max_len,
+				     &send_buf_pos, "Host", ": ", req->host,
+				     HTTP_CRLF, NULL);
+
+		if (ret < 0) {
+			goto out;
+		}
+
+		total_sent += ret;
+	}
 
 	if (req->optional_headers_cb) {
 		ret = http_flush_data(sock, send_buf, send_buf_pos);
@@ -563,9 +573,26 @@ int http_client_req(int sock, struct http_request *req,
 		total_sent += ret;
 	}
 
-	if (req->payload_cb) {
-		ret = http_send_data(sock, send_buf, send_buf_max_len,
+	if (req->payload || req->payload_cb) {
+		if (req->payload_len) {
+			char content_len_str[HTTP_CONTENT_LEN_SIZE];
+
+			ret = snprintk(content_len_str, HTTP_CONTENT_LEN_SIZE,
+				       "%zd", req->payload_len);
+			if (ret <= 0 || ret >= HTTP_CONTENT_LEN_SIZE) {
+				ret = -ENOMEM;
+				goto out;
+			}
+
+			ret = http_send_data(sock, send_buf, send_buf_max_len,
+					     &send_buf_pos, "Content-Length", ": ",
+					     content_len_str, HTTP_CRLF,
+					     HTTP_CRLF, NULL);
+		} else {
+			ret = http_send_data(sock, send_buf, send_buf_max_len,
 				     &send_buf_pos, HTTP_CRLF, NULL);
+		}
+
 		if (ret < 0) {
 			goto out;
 		}
@@ -580,39 +607,29 @@ int http_client_req(int sock, struct http_request *req,
 		send_buf_pos = 0;
 		total_sent += ret;
 
-		ret = req->payload_cb(sock, req, user_data);
-		if (ret < 0) {
-			goto out;
+		if (req->payload_cb) {
+			ret = req->payload_cb(sock, req, user_data);
+			if (ret < 0) {
+				goto out;
+			}
+
+			total_sent += ret;
+		} else {
+			uint32_t length;
+
+			if (req->payload_len == 0) {
+				length = strlen(req->payload);
+			} else {
+				length = req->payload_len;
+			}
+
+			ret = sendall(sock, req->payload, length);
+			if (ret < 0) {
+				goto out;
+			}
+
+			total_sent += length;
 		}
-
-		total_sent += ret;
-	} else if (req->payload) {
-		char content_len_str[HTTP_CONTENT_LEN_SIZE];
-
-		ret = snprintk(content_len_str, HTTP_CONTENT_LEN_SIZE,
-			       "%zd", req->payload_len);
-		if (ret <= 0 || ret >= HTTP_CONTENT_LEN_SIZE) {
-			ret = -ENOMEM;
-			goto out;
-		}
-
-		ret = http_send_data(sock, send_buf, send_buf_max_len,
-				     &send_buf_pos, "Content-Length", ": ",
-				     content_len_str, HTTP_CRLF,
-				     HTTP_CRLF, NULL);
-		if (ret < 0) {
-			goto out;
-		}
-
-		total_sent += ret;
-
-		ret = http_send_data(sock, send_buf, send_buf_max_len,
-				     &send_buf_pos, req->payload, NULL);
-		if (ret < 0) {
-			goto out;
-		}
-
-		total_sent += ret;
 	} else {
 		ret = http_send_data(sock, send_buf, send_buf_max_len,
 				     &send_buf_pos, HTTP_CRLF, NULL);
@@ -635,9 +652,11 @@ int http_client_req(int sock, struct http_request *req,
 	http_client_init_parser(&req->internal.parser,
 				&req->internal.parser_settings);
 
-	if (timeout != K_FOREVER && timeout != K_NO_WAIT) {
-		k_delayed_work_init(&req->internal.work, http_timeout);
-		(void)k_delayed_work_submit(&req->internal.work, timeout);
+	if (!K_TIMEOUT_EQ(req->internal.timeout, K_FOREVER) &&
+	    !K_TIMEOUT_EQ(req->internal.timeout, K_NO_WAIT)) {
+		k_work_init_delayable(&req->internal.work, http_timeout);
+		(void)k_work_reschedule(&req->internal.work,
+					req->internal.timeout);
 	}
 
 	/* Request is sent, now wait data to be received */
@@ -648,8 +667,9 @@ int http_client_req(int sock, struct http_request *req,
 		NET_DBG("Received %d bytes", total_recv);
 	}
 
-	if (timeout != K_FOREVER && timeout != K_NO_WAIT) {
-		(void)k_delayed_work_cancel(&req->internal.work);
+	if (!K_TIMEOUT_EQ(req->internal.timeout, K_FOREVER) &&
+	    !K_TIMEOUT_EQ(req->internal.timeout, K_NO_WAIT)) {
+		(void)k_work_cancel_delayable(&req->internal.work);
 	}
 
 	return total_sent;

@@ -72,7 +72,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_device_desc dev_desc = {
 
 static void dev_status_cb(struct usb_cfg_data *cfg,
 			  enum usb_dc_status_code status,
-			  const u8_t *param)
+			  const uint8_t *param)
 {
 	ARG_UNUSED(cfg);
 	ARG_UNUSED(param);
@@ -80,10 +80,10 @@ static void dev_status_cb(struct usb_cfg_data *cfg,
 	usb_device_status = status;
 }
 
-static void tracing_ep_out_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void tracing_ep_out_cb(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	u8_t *cmd = NULL;
-	u32_t bytes_to_read, length;
+	uint8_t *cmd = NULL;
+	uint32_t bytes_to_read, length;
 
 	usb_read(ep, NULL, 0, &bytes_to_read);
 
@@ -104,7 +104,7 @@ static void tracing_ep_out_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	usb_write(TRACING_IF_IN_EP_ADDR, NULL, 0, NULL);
 }
 
-static void tracing_ep_in_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void tracing_ep_in_cb(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	ARG_UNUSED(ep);
 	ARG_UNUSED(ep_status);
@@ -138,10 +138,10 @@ USBD_CFG_DATA_DEFINE(primary, tracing_backend_usb)
 };
 
 static void tracing_backend_usb_output(const struct tracing_backend *backend,
-				       u8_t *data, u32_t length)
+				       uint8_t *data, uint32_t length)
 {
 	int ret = 0;
-	u32_t bytes;
+	uint32_t bytes;
 
 	while (length > 0) {
 		transfer_state = USB_TRANSFER_ONGOING;
@@ -167,16 +167,7 @@ static void tracing_backend_usb_output(const struct tracing_backend *backend,
 	}
 }
 
-static void tracing_backend_usb_init(void)
-{
-	int ret;
-
-	ret = usb_enable(NULL);
-	__ASSERT(ret == 0, "usb backend enable failed");
-}
-
 const struct tracing_backend_api tracing_backend_usb_api = {
-	.init = tracing_backend_usb_init,
 	.output = tracing_backend_usb_output
 };
 

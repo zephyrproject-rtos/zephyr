@@ -28,8 +28,9 @@
  * true if the operation overflowed.
  */
 /**@{*/
-static bool u32_add_overflow(u32_t a, u32_t b, u32_t *result);
-static bool u64_add_overflow(u64_t a, u64_t b, u64_t *result);
+static bool u16_add_overflow(uint16_t a, uint16_t b, uint16_t *result);
+static bool u32_add_overflow(uint32_t a, uint32_t b, uint32_t *result);
+static bool u64_add_overflow(uint64_t a, uint64_t b, uint64_t *result);
 static bool size_add_overflow(size_t a, size_t b, size_t *result);
 /**@}*/
 
@@ -40,8 +41,9 @@ static bool size_add_overflow(size_t a, size_t b, size_t *result);
  * true if the operation overflowed.
  */
 /**@{*/
-static bool u32_mul_overflow(u32_t a, u32_t b, u32_t *result);
-static bool u64_mul_overflow(u64_t a, u64_t b, u64_t *result);
+static bool u16_mul_overflow(uint16_t a, uint16_t b, uint16_t *result);
+static bool u32_mul_overflow(uint32_t a, uint32_t b, uint32_t *result);
+static bool u64_mul_overflow(uint64_t a, uint64_t b, uint64_t *result);
 static bool size_mul_overflow(size_t a, size_t b, size_t *result);
 /**@}*/
 
@@ -52,8 +54,8 @@ static bool size_mul_overflow(size_t a, size_t b, size_t *result);
  * When `x = 0`, this is the size of `x` in bits.
  */
 /**@{*/
-static int u32_count_leading_zeros(u32_t x);
-static int u64_count_leading_zeros(u64_t x);
+static int u32_count_leading_zeros(uint32_t x);
+static int u64_count_leading_zeros(uint64_t x);
 /**@}*/
 
 /**
@@ -63,8 +65,8 @@ static int u64_count_leading_zeros(u64_t x);
  * When `x = 0`, this is the size of `x` in bits.
  */
 /**@{*/
-static int u32_count_trailing_zeros(u32_t x);
-static int u64_count_trailing_zeros(u64_t x);
+static int u32_count_trailing_zeros(uint32_t x);
+static int u64_count_trailing_zeros(uint64_t x);
 /**@}*/
 
 #include <sys/math_extras_impl.h>

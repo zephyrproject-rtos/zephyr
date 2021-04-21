@@ -15,8 +15,8 @@ Zephyr Project Documentation
 
 .. only:: (development or daily)
 
-   Welcome to the Zephyr Project's documentation
-   for the master tree under development (version |version|).
+   **Welcome to the Zephyr Project's documentation
+   for the master tree under development** (version |version|).
 
 Use the version selection menu on the left to view
 documentation for a specific version of Zephyr.
@@ -106,6 +106,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Contents
 
    Documentation Home <self>
    introduction/index.rst

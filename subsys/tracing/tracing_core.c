@@ -22,6 +22,8 @@
 #define TRACING_BACKEND_NAME "tracing_backend_usb"
 #elif defined CONFIG_TRACING_BACKEND_POSIX
 #define TRACING_BACKEND_NAME "tracing_backend_posix"
+#elif defined CONFIG_TRACING_BACKEND_RAM
+#define TRACING_BACKEND_NAME "tracing_backend_ram"
 #else
 #define TRACING_BACKEND_NAME ""
 #endif
@@ -47,8 +49,8 @@ static K_THREAD_STACK_DEFINE(tracing_thread_stack,
 
 static void tracing_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
-	u8_t *transferring_buf;
-	u32_t transferring_length, tracing_buffer_max_length;
+	uint8_t *transferring_buf;
+	uint32_t transferring_length, tracing_buffer_max_length;
 
 	tracing_thread_tid = k_current_get();
 
@@ -80,7 +82,7 @@ static void tracing_set_state(enum tracing_state state)
 	atomic_set(&tracing_state, state);
 }
 
-static int tracing_init(struct device *arg)
+static int tracing_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -118,7 +120,8 @@ void tracing_trigger_output(bool before_put_is_empty)
 {
 	if (before_put_is_empty) {
 		k_timer_start(&tracing_thread_timer,
-			      CONFIG_TRACING_THREAD_WAIT_THRESHOLD, K_NO_WAIT);
+			      K_MSEC(CONFIG_TRACING_THREAD_WAIT_THRESHOLD),
+			      K_NO_WAIT);
 	}
 }
 
@@ -133,7 +136,7 @@ bool is_tracing_enabled(void)
 	return atomic_get(&tracing_state) == TRACING_ENABLE;
 }
 
-void tracing_cmd_handle(u8_t *buf, u32_t length)
+void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 {
 	if (strncmp(buf, TRACING_CMD_ENABLE, length) == 0) {
 		tracing_set_state(TRACING_ENABLE);
@@ -142,7 +145,7 @@ void tracing_cmd_handle(u8_t *buf, u32_t length)
 	}
 }
 
-void tracing_buffer_handle(u8_t *data, u32_t length)
+void tracing_buffer_handle(uint8_t *data, uint32_t length)
 {
 	tracing_backend_output(working_backend, data, length);
 }

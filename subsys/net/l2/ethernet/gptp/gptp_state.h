@@ -159,25 +159,27 @@ struct gptp_priority_vector {
 	/** Identity of the source clock. */
 	struct gptp_root_system_identity root_system_id;
 
-	/** portNumber of the receiving port. */
-	u16_t port_number;
+	/** Steps removed from the announce message transmitter and the
+	 * master clock. Note that this field must be right after
+	 * root_system_id as we are comparing root system id and steps
+	 * removed in one memcmp()
+	 */
+	uint16_t steps_removed;
 
 	/** Port identity of the transmitting time-aware system. */
 	struct gptp_port_identity src_port_id;
 
-	/** Steps removed from the announce message transmitter and the
-	 * master clock.
-	 */
-	u16_t steps_removed;
+	/** Port number of the receiving port. */
+	uint16_t port_number;
 } __packed;
 
 /* Pdelay Request state machine variables. */
 struct gptp_pdelay_req_state {
 	/** Initial Path Delay Response Peer Timestamp. */
-	u64_t ini_resp_evt_tstamp;
+	uint64_t ini_resp_evt_tstamp;
 
 	/** Initial Path Delay Response Ingress Timestamp. */
-	u64_t ini_resp_ingress_tstamp;
+	uint64_t ini_resp_ingress_tstamp;
 
 	/** Timer for the Path Delay Request. */
 	struct k_timer pdelay_timer;
@@ -192,13 +194,13 @@ struct gptp_pdelay_req_state {
 	struct net_pkt *tx_pdelay_req_ptr;
 
 	/** Path Delay Response messages received. */
-	u32_t rcvd_pdelay_resp;
+	uint32_t rcvd_pdelay_resp;
 
 	/** Path Delay Follow Up messages received. */
-	u32_t rcvd_pdelay_follow_up;
+	uint32_t rcvd_pdelay_follow_up;
 
 	/** Number of lost Path Delay Responses. */
-	u16_t lost_responses;
+	uint16_t lost_responses;
 
 	/** Current state of the state machine. */
 	enum gptp_pdelay_req_states state;
@@ -213,7 +215,7 @@ struct gptp_pdelay_req_state {
 	bool init_pdelay_compute;
 
 	/** Count consecutive Pdelay_req with multiple responses. */
-	u8_t multiple_resp_count;
+	uint8_t multiple_resp_count;
 };
 
 /**
@@ -227,7 +229,7 @@ struct gptp_pdelay_resp_state {
 /* SyncReceive state machine variables. */
 struct gptp_sync_rcv_state {
 	/** Time at which a Sync Message without Follow Up will be discarded. */
-	u64_t follow_up_receipt_timeout;
+	uint64_t follow_up_receipt_timeout;
 
 	/** Timer for the Follow Up discard. */
 	struct k_timer follow_up_discard_timer;
@@ -308,10 +310,10 @@ struct gptp_pss_send_state {
 	struct gptp_scaled_ns last_gm_phase_change;
 
 	/** Follow Up Correction Field of the last received PortSyncSync. */
-	s64_t last_follow_up_correction_field;
+	int64_t last_follow_up_correction_field;
 
 	/** Upstream Tx Time of the last received PortSyncSync. */
-	u64_t last_upstream_tx_time;
+	uint64_t last_upstream_tx_time;
 
 	/** PortSyncSync structure received from the SiteSyncSync. */
 	struct gptp_mi_port_sync_sync *pss_sync_ptr;
@@ -326,10 +328,10 @@ struct gptp_pss_send_state {
 	enum gptp_pss_send_states state;
 
 	/** GM Time Base Indicator of the last received PortSyncSync. */
-	u16_t last_gm_time_base_indicator;
+	uint16_t last_gm_time_base_indicator;
 
 	/** Received Port Number of the last received PortSyncSync. */
-	u16_t last_rcvd_port_num;
+	uint16_t last_rcvd_port_num;
 
 	/** Sync send to be transmitted to the MD Sync Send State Machine. */
 	struct gptp_md_sync_info sync_send;
@@ -545,13 +547,13 @@ struct gptp_port_bmca_data {
 	struct gptp_flags ann_flags;
 
 	/** The value of steps removed for the port. */
-	u16_t port_steps_removed;
+	uint16_t port_steps_removed;
 
 	/** The value of steps removed for the port. */
-	u16_t message_steps_removed;
+	uint16_t message_steps_removed;
 
 	/** Last announce message current UTC offset value. */
-	s16_t ann_current_utc_offset;
+	int16_t ann_current_utc_offset;
 
 	/** A qualified announce message has been received. */
 	bool rcvd_msg;

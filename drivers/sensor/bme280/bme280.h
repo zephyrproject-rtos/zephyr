@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016, 2017 Intel Corporation
  * Copyright (c) 2017 IpTronix S.r.l.
+ * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,48 @@
 
 #include <zephyr/types.h>
 #include <device.h>
+#include <devicetree.h>
+#include <drivers/spi.h>
+#include <drivers/i2c.h>
+
+#define DT_DRV_COMPAT bosch_bme280
+
+#define BME280_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BME280_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+
+union bme280_bus_config {
+#if BME280_BUS_SPI
+	struct spi_config spi_cfg;
+#endif
+#if BME280_BUS_I2C
+	uint16_t i2c_addr;
+#endif
+};
+
+typedef int (*bme280_bus_check_fn)(const struct device *bus,
+				   const union bme280_bus_config *bus_config);
+typedef int (*bme280_reg_read_fn)(const struct device *bus,
+				  const union bme280_bus_config *bus_config,
+				  uint8_t start, uint8_t *buf, int size);
+typedef int (*bme280_reg_write_fn)(const struct device *bus,
+				   const union bme280_bus_config *bus_config,
+				   uint8_t reg, uint8_t val);
+
+struct bme280_bus_io {
+	bme280_bus_check_fn check;
+	bme280_reg_read_fn read;
+	bme280_reg_write_fn write;
+};
+
+#if BME280_BUS_SPI
+#define BME280_SPI_OPERATION (SPI_WORD_SET(8) | SPI_TRANSFER_MSB |	\
+			      SPI_MODE_CPOL | SPI_MODE_CPHA)
+extern const struct bme280_bus_io bme280_bus_io_spi;
+#endif
+
+#if BME280_BUS_I2C
+extern const struct bme280_bus_io bme280_bus_io_i2c;
+#endif
 
 #define BME280_REG_PRESS_MSB            0xF7
 #define BME280_REG_COMP_START           0x88
@@ -19,13 +62,22 @@
 #define BME280_REG_CONFIG               0xF5
 #define BME280_REG_CTRL_MEAS            0xF4
 #define BME280_REG_CTRL_HUM             0xF2
+#define BME280_REG_STATUS               0xF3
 
 #define BMP280_CHIP_ID_SAMPLE_1         0x56
 #define BMP280_CHIP_ID_SAMPLE_2         0x57
 #define BMP280_CHIP_ID_MP               0x58
 #define BME280_CHIP_ID                  0x60
+#define BME280_MODE_SLEEP               0x00
+#define BME280_MODE_FORCED              0x01
 #define BME280_MODE_NORMAL              0x03
 #define BME280_SPI_3W_DISABLE           0x00
+
+#if defined CONFIG_BME280_MODE_NORMAL
+#define BME280_MODE BME280_MODE_NORMAL
+#elif defined CONFIG_BME280_MODE_FORCED
+#define BME280_MODE BME280_MODE_FORCED
+#endif
 
 #if defined CONFIG_BME280_TEMP_OVER_1X
 #define BME280_TEMP_OVER                (1 << 5)
@@ -95,53 +147,14 @@
 
 #define BME280_CTRL_MEAS_VAL            (BME280_PRESS_OVER | \
 					 BME280_TEMP_OVER |  \
-					 BME280_MODE_NORMAL)
+					 BME280_MODE)
 #define BME280_CONFIG_VAL               (BME280_STANDBY | \
 					 BME280_FILTER |  \
 					 BME280_SPI_3W_DISABLE)
 
-struct bme280_data {
-#ifdef DT_BOSCH_BME280_BUS_I2C
-	struct device *i2c_master;
-	u16_t i2c_slave_addr;
-#elif defined DT_BOSCH_BME280_BUS_SPI
-	struct device *spi;
-	struct spi_config spi_cfg;
-#if defined(DT_INST_0_BOSCH_BME280_CS_GPIOS_CONTROLLER)
-	struct spi_cs_control spi_cs_control;
-#endif
-#else
-#error "BME280 device type not specified"
-#endif
-	/* Compensation parameters. */
-	u16_t dig_t1;
-	s16_t dig_t2;
-	s16_t dig_t3;
-	u16_t dig_p1;
-	s16_t dig_p2;
-	s16_t dig_p3;
-	s16_t dig_p4;
-	s16_t dig_p5;
-	s16_t dig_p6;
-	s16_t dig_p7;
-	s16_t dig_p8;
-	s16_t dig_p9;
-	u8_t dig_h1;
-	s16_t dig_h2;
-	u8_t dig_h3;
-	s16_t dig_h4;
-	s16_t dig_h5;
-	s8_t dig_h6;
 
-	/* Compensated values. */
-	s32_t comp_temp;
-	u32_t comp_press;
-	u32_t comp_humidity;
-
-	/* Carryover between temperature and pressure/humidity compensation. */
-	s32_t t_fine;
-
-	u8_t chip_id;
-};
+#define BME280_CTRL_MEAS_OFF_VAL		(BME280_PRESS_OVER | \
+					 BME280_TEMP_OVER |  \
+					 BME280_MODE_SLEEP)
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_ */

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_lsm303dlhc_magn
+
 #include <drivers/i2c.h>
 #include <init.h>
 #include <drivers/sensor.h>
@@ -13,13 +15,13 @@ LOG_MODULE_REGISTER(lsm303dlhc_magn, CONFIG_SENSOR_LOG_LEVEL);
 
 #include "lsm303dlhc_magn.h"
 
-static int lsm303dlhc_sample_fetch(struct device *dev,
+static int lsm303dlhc_sample_fetch(const struct device *dev,
 				   enum sensor_channel chan)
 {
-	const struct lsm303dlhc_magn_config *config = dev->config->config_info;
-	struct lsm303dlhc_magn_data *drv_data = dev->driver_data;
-	u8_t magn_buf[6];
-	u8_t status;
+	const struct lsm303dlhc_magn_config *config = dev->config;
+	struct lsm303dlhc_magn_data *drv_data = dev->data;
+	uint8_t magn_buf[6];
+	uint8_t status;
 
 	/* Check data ready flag */
 	if (i2c_reg_read_byte(drv_data->i2c,
@@ -51,17 +53,17 @@ static int lsm303dlhc_sample_fetch(struct device *dev,
 }
 
 static void lsm303dlhc_convert(struct sensor_value *val,
-			       s64_t raw_val)
+			       int64_t raw_val)
 {
 	val->val1 = raw_val / LSM303DLHC_MAGN_LSB_GAUSS;
 	val->val2 = (1000000 * raw_val / LSM303DLHC_MAGN_LSB_GAUSS) % 1000000;
 }
 
-static int lsm303dlhc_channel_get(struct device *dev,
+static int lsm303dlhc_channel_get(const struct device *dev,
 				  enum sensor_channel chan,
 				  struct sensor_value *val)
 {
-	struct lsm303dlhc_magn_data *drv_data = dev->driver_data;
+	struct lsm303dlhc_magn_data *drv_data = dev->data;
 
 	switch (chan) {
 	case  SENSOR_CHAN_MAGN_X:
@@ -89,10 +91,10 @@ static const struct sensor_driver_api lsm303dlhc_magn_driver_api = {
 	.channel_get = lsm303dlhc_channel_get,
 };
 
-static int lsm303dlhc_magn_init(struct device *dev)
+static int lsm303dlhc_magn_init(const struct device *dev)
 {
-	const struct lsm303dlhc_magn_config *config = dev->config->config_info;
-	struct lsm303dlhc_magn_data *drv_data = dev->driver_data;
+	const struct lsm303dlhc_magn_config *config = dev->config;
+	struct lsm303dlhc_magn_data *drv_data = dev->data;
 
 	drv_data->i2c = device_get_binding(config->i2c_name);
 	if (drv_data->i2c == NULL) {
@@ -131,13 +133,13 @@ static int lsm303dlhc_magn_init(struct device *dev)
 }
 
 static const struct lsm303dlhc_magn_config lsm303dlhc_magn_config = {
-	.i2c_name = DT_INST_0_ST_LSM303DLHC_MAGN_BUS_NAME,
-	.i2c_address = DT_INST_0_ST_LSM303DLHC_MAGN_BASE_ADDRESS,
+	.i2c_name = DT_INST_BUS_LABEL(0),
+	.i2c_address = DT_INST_REG_ADDR(0),
 };
 
 static struct lsm303dlhc_magn_data lsm303dlhc_magn_driver;
 
-DEVICE_AND_API_INIT(lsm303dlhc_magn, DT_INST_0_ST_LSM303DLHC_MAGN_LABEL,
-		    lsm303dlhc_magn_init, &lsm303dlhc_magn_driver,
+DEVICE_DT_INST_DEFINE(0, lsm303dlhc_magn_init, device_pm_control_nop,
+		    &lsm303dlhc_magn_driver,
 		    &lsm303dlhc_magn_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm303dlhc_magn_driver_api);

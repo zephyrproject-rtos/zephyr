@@ -17,8 +17,15 @@
 extern "C" {
 #endif
 
+
 /**
- * @defgroup settings Settings subsystem
+ * @defgroup file_system_storage File System Storage
+ * @{
+ * @}
+ */
+
+/**
+ * @defgroup settings Settings
  * @ingroup file_system_storage
  * @{
  */
@@ -56,7 +63,7 @@ typedef ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
  */
 struct settings_handler {
 
-	char *name;
+	const char *name;
 	/**< Name of subtree. */
 
 	int (*h_get)(const char *key, char *val, int val_len_max);
@@ -122,7 +129,7 @@ struct settings_handler {
  */
 struct settings_handler_static {
 
-	char *name;
+	const char *name;
 	/**< Name of subtree. */
 
 	int (*h_get)(const char *key, char *val, int val_len_max);
@@ -349,6 +356,12 @@ int settings_commit_subtree(const char *subtree);
  */
 
 
+/**
+ * @defgroup settings_backend Settings backend interface
+ * @ingroup settings
+ * @{
+ */
+
 /*
  * API for config storage
  */
@@ -488,8 +501,15 @@ int settings_call_set_handler(const char *name,
 			      settings_read_cb read_cb,
 			      void *read_cb_arg,
 			      const struct settings_load_arg *load_arg);
-/*
- * API for const name processing
+/**
+ * @}
+ */
+
+/**
+ * @defgroup settings_name_proc Settings name processing
+ * @brief API for const name processing
+ * @ingroup settings
+ * @{
  */
 
 /**
@@ -525,12 +545,18 @@ int settings_name_steq(const char *name, const char *key, const char **next);
  *
  */
 int settings_name_next(const char *name, const char **next);
-
-/*
- * API for runtime settings
+/**
+ * @}
  */
 
 #ifdef CONFIG_SETTINGS_RUNTIME
+
+/**
+ * @defgroup settings_rt Settings subsystem runtime
+ * @brief API for runtime settings
+ * @ingroup settings
+ * @{
+ */
 
 /**
  * Set a value with a specific key to a module handler.
@@ -541,7 +567,7 @@ int settings_name_next(const char *name, const char **next);
  *
  * @return 0 on success, non-zero on failure.
  */
-int settings_runtime_set(const char *name, void *data, size_t len);
+int settings_runtime_set(const char *name, const void *data, size_t len);
 
 /**
  * Get a value corresponding to a key from a module handler.
@@ -562,6 +588,9 @@ int settings_runtime_get(const char *name, void *data, size_t len);
  * @return 0 on success, non-zero on failure.
  */
 int settings_runtime_commit(const char *name);
+/**
+ * @}
+ */
 
 #endif /* CONFIG_SETTINGS_RUNTIME */
 

@@ -1,0 +1,35 @@
+description: Atmel SAM family AFEC
+
+compatible: "atmel,sam-afec"
+
+include: adc-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      required: true
+
+    "#io-channel-cells":
+      const: 1
+
+    pinctrl-0:
+      type: phandles
+      required: true
+      description: |
+        PIO pin configuration for ADTRG signal.  We expect that
+        the phandles will reference pinctrl nodes.  These nodes will
+        have a nodelabel that matches the Atmel SoC HAL defines and
+        be of the form p<port><pin><periph>_<inst>_<signal>.
+
+        For example the I2C on SAME7x would be
+           pinctrl-0 = <&pa8b_afec0_adtrg>;
+
+io-channel-cells:
+    - input

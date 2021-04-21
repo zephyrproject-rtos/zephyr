@@ -17,58 +17,41 @@
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(main);
 
-#ifdef DT_ALIAS_SW0_GPIOS_CONTROLLER
-#define PORT0 DT_ALIAS_SW0_GPIOS_CONTROLLER
+#define SW0_NODE DT_ALIAS(sw0)
+
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#define PORT0		DT_GPIO_LABEL(SW0_NODE, gpios)
+#define PIN0		DT_GPIO_PIN(SW0_NODE, gpios)
+#define PIN0_FLAGS	DT_GPIO_FLAGS(SW0_NODE, gpios)
 #else
-#error DT_ALIAS_SW0_GPIOS_CONTROLLER needs to be set
+#error "Unsupported board: sw0 devicetree alias is not defined"
+#define PORT0		""
+#define PIN0		0
+#define PIN0_FLAGS	0
 #endif
 
-#ifdef DT_ALIAS_SW0_GPIOS_PIN
-#define PIN0     DT_ALIAS_SW0_GPIOS_PIN
-#else
-#error DT_ALIAS_SW0_GPIOS_PIN needs to be set
+#define SW1_NODE DT_ALIAS(sw1)
+
+#if DT_NODE_HAS_STATUS(SW1_NODE, okay)
+#define PORT1		DT_GPIO_LABEL(SW1_NODE, gpios)
+#define PIN1		DT_GPIO_PIN(SW1_NODE, gpios)
+#define PIN1_FLAGS	DT_GPIO_FLAGS(SW1_NODE, gpios)
 #endif
 
-#ifdef DT_ALIAS_SW0_GPIOS_FLAGS
-#define PIN0_FLAGS DT_ALIAS_SW0_GPIOS_FLAGS
-#else
-#error DT_ALIAS_SW0_GPIOS_FLAGS needs to be set
+#define SW2_NODE DT_ALIAS(sw2)
+
+#if DT_NODE_HAS_STATUS(SW2_NODE, okay)
+#define PORT2		DT_GPIO_LABEL(SW2_NODE, gpios)
+#define PIN2		DT_GPIO_PIN(SW2_NODE, gpios)
+#define PIN2_FLAGS	DT_GPIO_FLAGS(SW2_NODE, gpios)
 #endif
 
-#ifdef DT_ALIAS_SW1_GPIOS_PIN
-#define PIN1	DT_ALIAS_SW1_GPIOS_PIN
-#endif
+#define SW3_NODE DT_ALIAS(sw3)
 
-#ifdef DT_ALIAS_SW1_GPIOS_CONTROLLER
-#define PORT1	DT_ALIAS_SW1_GPIOS_CONTROLLER
-#endif
-
-#ifdef DT_ALIAS_SW1_GPIOS_FLAGS
-#define PIN1_FLAGS DT_ALIAS_SW1_GPIOS_FLAGS
-#endif
-
-#ifdef DT_ALIAS_SW2_GPIOS_PIN
-#define PIN2	DT_ALIAS_SW2_GPIOS_PIN
-#endif
-
-#ifdef DT_ALIAS_SW2_GPIOS_CONTROLLER
-#define PORT2	DT_ALIAS_SW2_GPIOS_CONTROLLER
-#endif
-
-#ifdef DT_ALIAS_SW2_GPIOS_FLAGS
-#define PIN2_FLAGS DT_ALIAS_SW2_GPIOS_FLAGS
-#endif
-
-#ifdef DT_ALIAS_SW3_GPIOS_PIN
-#define PIN3	DT_ALIAS_SW3_GPIOS_PIN
-#endif
-
-#ifdef DT_ALIAS_SW3_GPIOS_CONTROLLER
-#define PORT3	DT_ALIAS_SW3_GPIOS_CONTROLLER
-#endif
-
-#ifdef DT_ALIAS_SW3_GPIOS_FLAGS
-#define PIN3_FLAGS DT_ALIAS_SW3_GPIOS_FLAGS
+#if DT_NODE_HAS_STATUS(SW3_NODE, okay)
+#define PORT3		DT_GPIO_LABEL(SW3_NODE, gpios)
+#define PIN3		DT_GPIO_PIN(SW3_NODE, gpios)
+#define PIN3_FLAGS	DT_GPIO_FLAGS(SW3_NODE, gpios)
 #endif
 
 /* Event FIFO */
@@ -93,7 +76,6 @@ enum evt_t {
 
 struct app_evt_t {
 	sys_snode_t node;
-	struct k_mem_block block;
 	enum evt_t event_type;
 };
 
@@ -102,12 +84,11 @@ struct app_evt_t {
 #define FIFO_ELEM_COUNT         255
 #define FIFO_ELEM_ALIGN         sizeof(unsigned int)
 
-K_MEM_POOL_DEFINE(event_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
-		  FIFO_ELEM_COUNT, FIFO_ELEM_ALIGN);
+K_HEAP_DEFINE(event_elem_pool, FIFO_ELEM_MAX_SZ * FIFO_ELEM_COUNT + 256);
 
 static inline void app_evt_free(struct app_evt_t *ev)
 {
-	k_mem_pool_free(&ev->block);
+	k_heap_free(&event_elem_pool, ev);
 }
 
 static inline void app_evt_put(struct app_evt_t *ev)
@@ -134,21 +115,19 @@ static inline void app_evt_flush(void)
 
 static inline struct app_evt_t *app_evt_alloc(void)
 {
-	int ret;
 	struct app_evt_t *ev;
-	struct k_mem_block block;
 
-	ret = k_mem_pool_alloc(&event_elem_pool, &block,
-			       sizeof(struct app_evt_t),
-			       K_NO_WAIT);
-	if (ret < 0) {
+	ev = k_heap_alloc(&event_elem_pool,
+			  sizeof(struct app_evt_t),
+			  K_NO_WAIT);
+	if (ev == NULL) {
 		LOG_ERR("APP event allocation failed!");
 		app_evt_flush();
 
-		ret = k_mem_pool_alloc(&event_elem_pool, &block,
-				       sizeof(struct app_evt_t),
-				       K_NO_WAIT);
-		if (ret < 0) {
+		ev = k_heap_alloc(&event_elem_pool,
+				  sizeof(struct app_evt_t),
+				  K_NO_WAIT);
+		if (ev == NULL) {
 			LOG_ERR("APP event memory corrupted.");
 			__ASSERT_NO_MSG(0);
 			return NULL;
@@ -156,16 +135,13 @@ static inline struct app_evt_t *app_evt_alloc(void)
 		return NULL;
 	}
 
-	ev = (struct app_evt_t *)block.data;
-	ev->block = block;
-
 	return ev;
 }
 
 /* HID */
 
-static const u8_t hid_mouse_report_desc[] = HID_MOUSE_REPORT_DESC(2);
-static const u8_t hid_kbd_report_desc[] = HID_KEYBOARD_REPORT_DESC();
+static const uint8_t hid_mouse_report_desc[] = HID_MOUSE_REPORT_DESC(2);
+static const uint8_t hid_kbd_report_desc[] = HID_KEYBOARD_REPORT_DESC();
 
 static K_SEM_DEFINE(evt_sem, 0, 1);	/* starts off "not available" */
 static K_SEM_DEFINE(usb_sem, 1, 1);	/* starts off "available" */
@@ -173,7 +149,7 @@ static struct gpio_callback callback[4];
 
 static char data_buf_mouse[64], data_buf_kbd[64];
 static char string[64];
-static u8_t chr_ptr_mouse, chr_ptr_kbd, str_pointer;
+static uint8_t chr_ptr_mouse, chr_ptr_kbd, str_pointer;
 
 #define MOUSE_BTN_REPORT_POS	0
 #define MOUSE_X_REPORT_POS	1
@@ -209,8 +185,10 @@ static const char *evt_fail	=	"Unknown event detected!\r\n";
 static const char *set_str	=	"String set to: ";
 static const char *endl		=	"\r\n";
 
-static void in_ready_cb(void)
+static void in_ready_cb(const struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	k_sem_give(&usb_sem);
 }
 
@@ -236,7 +214,7 @@ static void clear_kbd_report(void)
 	k_sem_give(&evt_sem);
 }
 
-static int ascii_to_hid(u8_t ascii)
+static int ascii_to_hid(uint8_t ascii)
 {
 	if (ascii < 32) {
 		/* Character not supported */
@@ -351,7 +329,7 @@ static int ascii_to_hid(u8_t ascii)
 	return -1;
 }
 
-static bool needs_shift(u8_t ascii)
+static bool needs_shift(uint8_t ascii)
 {
 	if ((ascii < 33) || (ascii == 39U)) {
 		return false;
@@ -393,7 +371,7 @@ static void flush_buffer_kbd(void)
 	memset(data_buf_kbd, 0, sizeof(data_buf_kbd));
 }
 
-static void write_data(struct device *dev, const char *buf, int len)
+static void write_data(const struct device *dev, const char *buf, int len)
 {
 	uart_irq_tx_enable(dev);
 
@@ -401,7 +379,7 @@ static void write_data(struct device *dev, const char *buf, int len)
 		int written;
 
 		data_transmitted = false;
-		written = uart_fifo_fill(dev, (const u8_t *)buf, len);
+		written = uart_fifo_fill(dev, (const uint8_t *)buf, len);
 		while (data_transmitted == false) {
 			k_yield();
 		}
@@ -413,8 +391,10 @@ static void write_data(struct device *dev, const char *buf, int len)
 	uart_irq_tx_disable(dev);
 }
 
-static void cdc_mouse_int_handler(struct device *dev)
+static void cdc_mouse_int_handler(const struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	uart_irq_update(dev);
 
 	if (uart_irq_tx_ready(dev)) {
@@ -424,10 +404,10 @@ static void cdc_mouse_int_handler(struct device *dev)
 	if (!uart_irq_rx_ready(dev)) {
 		return;
 	}
-	u32_t bytes_read;
+	uint32_t bytes_read;
 
 	while ((bytes_read = uart_fifo_read(dev,
-		(u8_t *)data_buf_mouse+chr_ptr_mouse,
+		(uint8_t *)data_buf_mouse+chr_ptr_mouse,
 		sizeof(data_buf_mouse)-chr_ptr_mouse))) {
 		chr_ptr_mouse += bytes_read;
 		if (data_buf_mouse[chr_ptr_mouse - 1] == '\r') {
@@ -459,8 +439,10 @@ static void cdc_mouse_int_handler(struct device *dev)
 	}
 }
 
-static void cdc_kbd_int_handler(struct device *dev)
+static void cdc_kbd_int_handler(const struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	uart_irq_update(dev);
 
 	if (uart_irq_tx_ready(dev)) {
@@ -470,10 +452,10 @@ static void cdc_kbd_int_handler(struct device *dev)
 	if (!uart_irq_rx_ready(dev)) {
 		return;
 	}
-	u32_t bytes_read;
+	uint32_t bytes_read;
 
 	while ((bytes_read = uart_fifo_read(dev,
-		(u8_t *)data_buf_kbd+chr_ptr_kbd,
+		(uint8_t *)data_buf_kbd+chr_ptr_kbd,
 		sizeof(data_buf_kbd)-chr_ptr_kbd))) {
 		chr_ptr_kbd += bytes_read;
 		if (data_buf_kbd[chr_ptr_kbd - 1] == '\r') {
@@ -492,7 +474,8 @@ static void cdc_kbd_int_handler(struct device *dev)
 
 /* Devices */
 
-static void btn0(struct device *gpio, struct gpio_callback *cb, u32_t pins)
+static void btn0(const struct device *gpio, struct gpio_callback *cb,
+		 uint32_t pins)
 {
 	struct app_evt_t *ev = app_evt_alloc();
 
@@ -501,8 +484,9 @@ static void btn0(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 	k_sem_give(&evt_sem);
 }
 
-#ifdef DT_ALIAS_SW1_GPIOS_PIN
-static void btn1(struct device *gpio, struct gpio_callback *cb, u32_t pins)
+#if DT_NODE_HAS_STATUS(SW1_NODE, okay)
+static void btn1(const struct device *gpio, struct gpio_callback *cb,
+		 uint32_t pins)
 {
 	struct app_evt_t *ev = app_evt_alloc();
 
@@ -512,8 +496,9 @@ static void btn1(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 }
 #endif
 
-#ifdef DT_ALIAS_SW2_GPIOS_PIN
-static void btn2(struct device *gpio, struct gpio_callback *cb, u32_t pins)
+#if DT_NODE_HAS_STATUS(SW2_NODE, okay)
+static void btn2(const struct device *gpio, struct gpio_callback *cb,
+		 uint32_t pins)
 {
 	struct app_evt_t *ev = app_evt_alloc();
 
@@ -523,8 +508,9 @@ static void btn2(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 }
 #endif
 
-#ifdef DT_ALIAS_SW3_GPIOS_PIN
-static void btn3(struct device *gpio, struct gpio_callback *cb, u32_t pins)
+#if DT_NODE_HAS_STATUS(SW3_NODE, okay)
+static void btn3(const struct device *gpio, struct gpio_callback *cb,
+		 uint32_t pins)
 {
 	struct app_evt_t *ev = app_evt_alloc();
 
@@ -534,9 +520,10 @@ static void btn3(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 }
 #endif
 
-int callbacks_configure(struct device *gpio, u32_t pin, int flags,
-			void (*handler)(struct device*, struct gpio_callback*,
-			u32_t), struct gpio_callback *callback)
+int callbacks_configure(const struct device *gpio, uint32_t pin, int flags,
+			void (*handler)(const struct device *, struct gpio_callback*,
+					uint32_t),
+			struct gpio_callback *callback)
 {
 	if (!gpio) {
 		LOG_ERR("Could not find PORT");
@@ -553,7 +540,7 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 	return 0;
 }
 
-static void status_cb(enum usb_dc_status_code status, const u8_t *param)
+static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
 	LOG_INF("Status %d", status);
 }
@@ -562,8 +549,8 @@ void main(void)
 {
 	int ret;
 
-	struct device *hid0_dev, *hid1_dev, *cdc0_dev, *cdc1_dev;
-	u32_t dtr = 0U;
+	const struct device *hid0_dev, *hid1_dev, *cdc0_dev, *cdc1_dev;
+	uint32_t dtr = 0U;
 	struct app_evt_t *ev;
 
 	/* Configure devices */
@@ -598,7 +585,7 @@ void main(void)
 		return;
 	}
 
-#ifdef DT_ALIAS_SW1_GPIOS_PIN
+#if DT_NODE_HAS_STATUS(SW1_NODE, okay)
 	if (callbacks_configure(device_get_binding(PORT1), PIN1, PIN1_FLAGS,
 				&btn1, &callback[1])) {
 		LOG_ERR("Failed configuring button 1 callback.");
@@ -606,7 +593,7 @@ void main(void)
 	}
 #endif
 
-#ifdef DT_ALIAS_SW2_GPIOS_PIN
+#if DT_NODE_HAS_STATUS(SW2_NODE, okay)
 	if (callbacks_configure(device_get_binding(PORT2), PIN2, PIN2_FLAGS,
 				&btn2, &callback[2])) {
 		LOG_ERR("Failed configuring button 2 callback.");
@@ -614,7 +601,7 @@ void main(void)
 	}
 #endif
 
-#ifdef DT_ALIAS_SW3_GPIOS_PIN
+#if DT_NODE_HAS_STATUS(SW3_NODE, okay)
 	if (callbacks_configure(device_get_binding(PORT3), PIN3, PIN3_FLAGS,
 				&btn3, &callback[3])) {
 		LOG_ERR("Failed configuring button 3 callback.");
@@ -660,7 +647,7 @@ void main(void)
 	LOG_INF("DTR on CDC ACM 1 set");
 
 	/* Wait 1 sec for the host to do all settings */
-	k_busy_wait(K_SECONDS(1) * USEC_PER_MSEC);
+	k_busy_wait(USEC_PER_SEC);
 
 	uart_irq_callback_set(cdc0_dev, cdc_mouse_int_handler);
 	uart_irq_callback_set(cdc1_dev, cdc_kbd_int_handler);
@@ -679,7 +666,7 @@ void main(void)
 			case GPIO_BUTTON_0:
 			{
 				/* Move the mouse in random direction */
-				u8_t rep[] = {0x00, sys_rand32_get(),
+				uint8_t rep[] = {0x00, sys_rand32_get(),
 					      sys_rand32_get(), 0x00};
 
 				k_sem_take(&usb_sem, K_FOREVER);
@@ -692,7 +679,7 @@ void main(void)
 			case GPIO_BUTTON_1:
 			{
 				/* Press left mouse button */
-				u8_t rep[] = {0x00, 0x00, 0x00, 0x00};
+				uint8_t rep[] = {0x00, 0x00, 0x00, 0x00};
 
 				rep[MOUSE_BTN_REPORT_POS] |= MOUSE_BTN_LEFT;
 				k_sem_take(&usb_sem, K_FOREVER);
@@ -719,7 +706,7 @@ void main(void)
 			case GPIO_BUTTON_3:
 			{
 				/* Toggle CAPS LOCK */
-				u8_t rep[] = {0x00, 0x00, 0x00, 0x00,
+				uint8_t rep[] = {0x00, 0x00, 0x00, 0x00,
 					      0x00, 0x00, 0x00,
 					      HID_KEY_CAPSLOCK};
 
@@ -733,7 +720,7 @@ void main(void)
 			case CDC_UP:
 			{
 				/* Mouse up */
-				u8_t rep[] = {0x00, 0x00, 0xE0, 0x00};
+				uint8_t rep[] = {0x00, 0x00, 0xE0, 0x00};
 
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
@@ -745,7 +732,7 @@ void main(void)
 			case CDC_DOWN:
 			{
 				/* Mouse down */
-				u8_t rep[] = {0x00, 0x00, 0x20, 0x00};
+				uint8_t rep[] = {0x00, 0x00, 0x20, 0x00};
 
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
@@ -757,7 +744,7 @@ void main(void)
 			case CDC_RIGHT:
 			{
 				/* Mouse right */
-				u8_t rep[] = {0x00, 0x20, 0x00, 0x00};
+				uint8_t rep[] = {0x00, 0x20, 0x00, 0x00};
 
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
@@ -769,7 +756,7 @@ void main(void)
 			case CDC_LEFT:
 			{
 				/* Mouse left */
-				u8_t rep[] = {0x00, 0xE0, 0x00, 0x00};
+				uint8_t rep[] = {0x00, 0xE0, 0x00, 0x00};
 
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
@@ -798,7 +785,7 @@ void main(void)
 			case HID_MOUSE_CLEAR:
 			{
 				/* Clear mouse report */
-				u8_t rep[] = {0x00, 0x00, 0x00, 0x00};
+				uint8_t rep[] = {0x00, 0x00, 0x00, 0x00};
 
 				k_sem_take(&usb_sem, K_FOREVER);
 				hid_int_ep_write(hid0_dev, rep,
@@ -808,7 +795,7 @@ void main(void)
 			case HID_KBD_CLEAR:
 			{
 				/* Clear kbd report */
-				u8_t rep[] = {0x00, 0x00, 0x00, 0x00,
+				uint8_t rep[] = {0x00, 0x00, 0x00, 0x00,
 					      0x00, 0x00, 0x00, 0x00};
 
 				k_sem_take(&usb_sem, K_FOREVER);
@@ -824,7 +811,7 @@ void main(void)
 					LOG_WRN("Unsupported character: %d",
 						string[str_pointer]);
 				} else {
-					u8_t rep[] = {0x00, 0x00, 0x00, 0x00,
+					uint8_t rep[] = {0x00, 0x00, 0x00, 0x00,
 						      0x00, 0x00, 0x00, 0x00};
 					if (needs_shift(string[str_pointer])) {
 						rep[0] |=

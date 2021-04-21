@@ -56,7 +56,7 @@ struct adc_context {
 
 	struct adc_sequence sequence;
 	struct adc_sequence_options options;
-	u16_t sampling_index;
+	uint16_t sampling_index;
 };
 
 #ifdef ADC_CONTEXT_USES_KERNEL_TIMER
@@ -92,10 +92,7 @@ static inline void adc_context_request_next_sampling(struct adc_context *ctx)
 #ifdef ADC_CONTEXT_USES_KERNEL_TIMER
 static inline void adc_context_enable_timer(struct adc_context *ctx)
 {
-	u32_t interval_us = ctx->options.interval_us;
-	u32_t interval_ms = ceiling_fraction(interval_us, 1000UL);
-
-	k_timer_start(&ctx->timer, K_NO_WAIT, interval_ms);
+	k_timer_start(&ctx->timer, K_NO_WAIT, K_USEC(ctx->options.interval_us));
 }
 
 static inline void adc_context_disable_timer(struct adc_context *ctx)
@@ -206,7 +203,7 @@ static inline void adc_context_start_read(struct adc_context *ctx,
  * function if required and takes further actions accordingly.
  */
 static inline void adc_context_on_sampling_done(struct adc_context *ctx,
-						struct device *dev)
+						const struct device *dev)
 {
 	if (ctx->sequence.options) {
 		adc_sequence_callback callback = ctx->options.callback;

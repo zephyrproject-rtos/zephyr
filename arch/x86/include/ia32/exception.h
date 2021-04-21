@@ -11,13 +11,13 @@
 
 #include <toolchain/common.h>
 
-#define _EXCEPTION_INTLIST(vector) \
+#define _EXCEPTION_INTLIST(vector, dpl) \
 	".pushsection .gnu.linkonce.intList.exc_" #vector "\n\t" \
 	".long 1f\n\t"				/* ISR_LIST.fnc */ \
 	".long -1\n\t"				/* ISR_LIST.irq */ \
 	".long -1\n\t"				/* ISR_LIST.priority */ \
 	".long " STRINGIFY(vector) "\n\t"	/* ISR_LIST.vec */ \
-	".long 0\n\t"				/* ISR_LIST.dpl */ \
+	".long " STRINGIFY(dpl) "\n\t"		/* ISR_LIST.dpl */ \
 	".long 0\n\t"				/* ISR_LIST.tss */ \
 	".popsection\n\t" \
 
@@ -41,9 +41,9 @@
  * handlers without having to #ifdef out previous instances such as in
  * arch/x86/core/fatal.c
  */
-#define __EXCEPTION_CONNECT(handler, vector, codepush) \
+#define __EXCEPTION_CONNECT(handler, vector, dpl, codepush) \
 	__asm__ ( \
-	_EXCEPTION_INTLIST(vector) \
+	 _EXCEPTION_INTLIST(vector, dpl)		      \
 	".pushsection .gnu.linkonce.t.exc_" STRINGIFY(vector) \
 		  "_stub, \"ax\"\n\t" \
 	".global " STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) "\n\t" \
@@ -65,8 +65,8 @@
  *                void handler(const z_arch_esf_t *esf)
  * @param vector Vector index in the IDT
  */
-#define _EXCEPTION_CONNECT_NOCODE(handler, vector) \
-	__EXCEPTION_CONNECT(handler, vector, "push $0\n\t")
+#define _EXCEPTION_CONNECT_NOCODE(handler, vector, dpl) \
+	__EXCEPTION_CONNECT(handler, vector, dpl, "push $0\n\t")
 
 /**
  * @brief Connect an exception handler that does expect error code
@@ -78,8 +78,8 @@
  *                void handler(const z_arch_esf_t *esf)
  * @param vector Vector index in the IDT
  */
-#define _EXCEPTION_CONNECT_CODE(handler, vector) \
-	__EXCEPTION_CONNECT(handler, vector, "")
+#define _EXCEPTION_CONNECT_CODE(handler, vector, dpl) \
+	__EXCEPTION_CONNECT(handler, vector, dpl, "")
 
 #endif /* _ASMLANGUAGE */
 

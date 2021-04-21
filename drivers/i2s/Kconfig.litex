@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2S_LITEX
+	bool "Litex I2S driver"
+	depends on SOC_RISCV32_LITEX_VEXRISCV
+	help
+		Enable Litex Inter Sound (I2S) bus driver.
+
+if I2S_LITEX
+
+config I2S_LITEX_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 500
+
+config I2S_LITEX_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 500
+
+config I2S_LITEX_CHANNELS_CONCATENATED
+	bool "Channels placed without padding in fifo"
+	default n
+
+config I2S_LITEX_DATA_BIG_ENDIAN
+	bool "Received data will be stored as big endian"
+	default n
+
+endif

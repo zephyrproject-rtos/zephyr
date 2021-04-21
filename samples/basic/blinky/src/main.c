@@ -6,36 +6,46 @@
 
 #include <zephyr.h>
 #include <device.h>
+#include <devicetree.h>
 #include <drivers/gpio.h>
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME_MS   1000
 
-#ifndef DT_ALIAS_LED0_GPIOS_FLAGS
-#define DT_ALIAS_LED0_GPIOS_FLAGS 0
+/* The devicetree node identifier for the "led0" alias. */
+#define LED0_NODE DT_ALIAS(led0)
+
+#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+#define LED0	DT_GPIO_LABEL(LED0_NODE, gpios)
+#define PIN	DT_GPIO_PIN(LED0_NODE, gpios)
+#define FLAGS	DT_GPIO_FLAGS(LED0_NODE, gpios)
+#else
+/* A build error here means your board isn't set up to blink an LED. */
+#error "Unsupported board: led0 devicetree alias is not defined"
+#define LED0	""
+#define PIN	0
+#define FLAGS	0
 #endif
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	bool led_is_on = true;
 	int ret;
 
-	dev = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
+	dev = device_get_binding(LED0);
 	if (dev == NULL) {
 		return;
 	}
 
-	ret = gpio_pin_configure(dev, DT_ALIAS_LED0_GPIOS_PIN,
-				 GPIO_OUTPUT_ACTIVE
-				 | DT_ALIAS_LED0_GPIOS_FLAGS);
+	ret = gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
 	if (ret < 0) {
 		return;
 	}
 
 	while (1) {
-		gpio_pin_set(dev, DT_ALIAS_LED0_GPIOS_PIN, (int)led_is_on);
+		gpio_pin_set(dev, PIN, (int)led_is_on);
 		led_is_on = !led_is_on;
-		k_sleep(SLEEP_TIME_MS);
+		k_msleep(SLEEP_TIME_MS);
 	}
 }

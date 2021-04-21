@@ -1,0 +1,25 @@
+# Copyright (c) 2020 Micro:bit Educational Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on BBC MicroBit headers.
+
+    The edge connector on the micro:bit is used to connect to external
+    circuits and components.
+
+    There are 25 strips/pins including 5 rings for using with 4mm banana
+    plugs or crocodile clips. 3 of these rings are for general purpose
+    input and output (GPIO) and are also capable of analog, PWM and touch
+    sensing, and two are connected to the micro:bit power supply.
+
+    The smaller strips spaced at 1.27mm on the edge connector have additional
+    signals, some of which are used by the micro:bit, and others that are free
+    for you to use. There are a number of external PCB connectors for purchase
+    with an 80w 1.27mm pitch that can be used to easily access these extra pins.
+
+    Only the pins on the front are connected to signals. The back rings are
+    connected to the front rings, but the back small strips are unconnected.
+
+compatible: "microbit,edge-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

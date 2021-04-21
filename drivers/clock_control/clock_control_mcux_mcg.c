@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_mcg
+
 #include <drivers/clock_control.h>
 #include <dt-bindings/clock/kinetis_mcg.h>
 #include <soc.h>
@@ -16,26 +18,31 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(clock_control_mcg);
 
-static int mcux_mcg_on(struct device *dev, clock_control_subsys_t sub_system)
+static int mcux_mcg_on(const struct device *dev,
+		       clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_mcg_off(struct device *dev, clock_control_subsys_t sub_system)
+static int mcux_mcg_off(const struct device *dev,
+			clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_mcg_get_rate(struct device *dev,
+static int mcux_mcg_get_rate(const struct device *dev,
 			     clock_control_subsys_t sub_system,
-			     u32_t *rate)
+			     uint32_t *rate)
 {
 	clock_name_t clock_name;
 
-	switch ((u32_t) sub_system) {
+	switch ((uint32_t) sub_system) {
 	case KINETIS_MCG_FIXED_FREQ_CLK:
 		clock_name = kCLOCK_McgFixedFreqClk;
 		break;
+	case KINETIS_MCG_OUT_CLK:
+		*rate = CLOCK_GetOutClkFreq();
+		return 0;
 	default:
 		LOG_ERR("Unsupported clock name");
 		return -EINVAL;
@@ -46,7 +53,7 @@ static int mcux_mcg_get_rate(struct device *dev,
 	return 0;
 }
 
-static int mcux_mcg_init(struct device *dev)
+static int mcux_mcg_init(const struct device *dev)
 {
 	return 0;
 }
@@ -57,8 +64,9 @@ static const struct clock_control_driver_api mcux_mcg_driver_api = {
 	.get_rate = mcux_mcg_get_rate,
 };
 
-DEVICE_AND_API_INIT(mcux_mcg, DT_MCG_NAME,
+DEVICE_DT_INST_DEFINE(0,
 		    &mcux_mcg_init,
+		    device_pm_control_nop,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_mcg_driver_api);

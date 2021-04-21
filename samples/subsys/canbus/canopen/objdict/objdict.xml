@@ -887,6 +887,46 @@ mapped object  (subindex 1...8)
       </CANopenSubObject>
       <accessFunctionPreCode />
     </CANopenObject>
+    <CANopenObject index="1f50" name="Program data" objectType="ARRAY" memoryType="RAM" dataType="0x0f" accessType="wo" PDOmapping="no" defaultValue="" highValue="" lowValue="" subNumber="2" accessFunctionName="" disabled="false" TPDOdetectCOS="false">
+      <description />
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="VAR" dataType="0x05" accessType="ro" PDOmapping="no" defaultValue="1" highValue="" lowValue="" TPDOdetectCOS="false">
+        <description />
+      </CANopenSubObject>
+      <CANopenSubObject subIndex="01" name="" objectType="VAR" dataType="0x0f" accessType="wo" PDOmapping="no" defaultValue="" highValue="" lowValue="" TPDOdetectCOS="false">
+        <description />
+      </CANopenSubObject>
+      <accessFunctionPreCode />
+    </CANopenObject>
+    <CANopenObject index="1f51" name="Program control" objectType="ARRAY" memoryType="RAM" dataType="0x05" accessType="rw" PDOmapping="no" defaultValue="" highValue="" lowValue="" subNumber="2" accessFunctionName="" disabled="false" TPDOdetectCOS="false">
+      <description />
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="VAR" dataType="0x05" accessType="ro" PDOmapping="no" defaultValue="1" highValue="" lowValue="" TPDOdetectCOS="false">
+        <description />
+      </CANopenSubObject>
+      <CANopenSubObject subIndex="01" name="" objectType="VAR" dataType="0x05" accessType="rw" PDOmapping="no" defaultValue="" highValue="" lowValue="" TPDOdetectCOS="false">
+        <description />
+      </CANopenSubObject>
+      <accessFunctionPreCode />
+    </CANopenObject>
+    <CANopenObject index="1f56" name="Program software identification" objectType="ARRAY" memoryType="RAM" dataType="0x07" accessType="ro" PDOmapping="no" defaultValue="" highValue="" lowValue="" subNumber="2" accessFunctionName="" disabled="false" TPDOdetectCOS="false">
+      <description />
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="VAR" dataType="0x05" accessType="ro" PDOmapping="no" defaultValue="1" highValue="" lowValue="" TPDOdetectCOS="false">
+        <description />
+      </CANopenSubObject>
+      <CANopenSubObject subIndex="01" name="" objectType="VAR" dataType="0x07" accessType="ro" PDOmapping="no" defaultValue="" highValue="" lowValue="" TPDOdetectCOS="false">
+        <description />
+      </CANopenSubObject>
+      <accessFunctionPreCode />
+    </CANopenObject>
+    <CANopenObject index="1f57" name="Flash status identification" objectType="ARRAY" memoryType="RAM" dataType="0x07" accessType="ro" PDOmapping="no" defaultValue="" highValue="" lowValue="" subNumber="2" accessFunctionName="" disabled="false" TPDOdetectCOS="false">
+      <description />
+      <CANopenSubObject subIndex="00" name="max sub-index" objectType="VAR" dataType="0x05" accessType="ro" PDOmapping="no" defaultValue="1" highValue="" lowValue="" TPDOdetectCOS="false">
+        <description />
+      </CANopenSubObject>
+      <CANopenSubObject subIndex="01" name="" objectType="VAR" dataType="0x07" accessType="ro" PDOmapping="no" defaultValue="" highValue="" lowValue="" TPDOdetectCOS="false">
+        <description />
+      </CANopenSubObject>
+      <accessFunctionPreCode />
+    </CANopenObject>
     <CANopenObject index="1f80" name="NMT startup" objectType="VAR" memoryType="ROM" dataType="0x07" accessType="rw" PDOmapping="no" defaultValue="0x00000000" subNumber="0" accessFunctionName="" disabled="false" TPDOdetectCOS="false">
       <description>bit 0: 0(1) - device is not (is) NMT master
 bit 1: 0(1) - if bit3=0, start explicitly assigned (all) nodes
@@ -978,7 +1018,7 @@ The counter can be reset by writing the value 0.</description>
     </CANopenObject>
   </CANopenObjectList>
   <other>
-    <file fileName="objdict.xml" fileCreator="" fileCreationDate="09-18-2019" fileCreationTime="2:52PM" fileModifedBy="" fileMotifcationDate="01-09-2020" fileModificationTime="1:31PM" fileVersion="1" fileRevision="1" exportFolder="/home/hebad/Projects/zephyrproject/zephyr/samples/subsys/canbus/canopen/objdict" EdsFile="/home/hebad/Projects/zephyrproject/zephyr/samples/subsys/canbus/canopen/objdict/objdict.eds" />
+    <file fileName="objdict.xml" fileCreator="" fileCreationDate="09-18-2019" fileCreationTime="2:52PM" fileModifedBy="" fileMotifcationDate="02-20-2020" fileModificationTime="12:28PM" fileVersion="1" fileRevision="1" exportFolder="/home/hebad/Projects/zephyrproject/zephyr/samples/subsys/canbus/canopen/objdict" EdsFile="/home/hebad/Projects/zephyrproject/zephyr/samples/subsys/canbus/canopen/objdict/objdict.eds" />
     <DeviceIdentity>
       <vendorName />
       <vendorNumber>0</vendorNumber>

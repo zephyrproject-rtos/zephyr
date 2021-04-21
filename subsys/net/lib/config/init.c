@@ -32,17 +32,29 @@ extern const struct log_backend *log_backend_net_get(void);
 extern int net_init_clock_via_sntp(void);
 
 static K_SEM_DEFINE(waiter, 0, 1);
-static struct k_sem counter;
+static K_SEM_DEFINE(counter, 0, UINT_MAX);
+static atomic_t services_flags;
 
 #if defined(CONFIG_NET_NATIVE)
 static struct net_mgmt_event_callback mgmt_iface_cb;
 #endif
 
+static inline void services_notify_ready(int flags)
+{
+	atomic_or(&services_flags, flags);
+	k_sem_give(&waiter);
+}
+
+static inline bool services_are_ready(int flags)
+{
+	return (atomic_get(&services_flags) & flags) == flags;
+}
+
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 static struct net_mgmt_event_callback mgmt4_cb;
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
-				  u32_t mgmt_event,
+				  uint32_t mgmt_event,
 				  struct net_if *iface)
 {
 #if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
@@ -81,8 +93,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		break;
 	}
 
-	k_sem_take(&counter, K_NO_WAIT);
-	k_sem_give(&waiter);
+	services_notify_ready(NET_CONFIG_NEED_IPV4);
 }
 
 static void setup_dhcpv4(struct net_if *iface)
@@ -168,8 +179,7 @@ static void setup_ipv4(struct net_if *iface)
 		}
 	}
 
-	k_sem_take(&counter, K_NO_WAIT);
-	k_sem_give(&waiter);
+	services_notify_ready(NET_CONFIG_NEED_IPV4);
 }
 
 #else
@@ -185,7 +195,7 @@ static struct net_mgmt_event_callback mgmt6_cb;
 static struct in6_addr laddr;
 
 static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
-			       u32_t mgmt_event, struct net_if *iface)
+			       uint32_t mgmt_event, struct net_if *iface)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
@@ -201,6 +211,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 				memcpy(&laddr,
 				       &ipv6->unicast[i].address.in6_addr,
 				       sizeof(laddr));
+				break;
 			}
 		}
 	}
@@ -225,24 +236,22 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 						  NET_IPV6_ADDR_LEN)));
 #endif
 
-		k_sem_take(&counter, K_NO_WAIT);
-		k_sem_give(&waiter);
+		services_notify_ready(NET_CONFIG_NEED_IPV6);
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ROUTER_ADD) {
-		k_sem_take(&counter, K_NO_WAIT);
-		k_sem_give(&waiter);
+		services_notify_ready(NET_CONFIG_NEED_ROUTER);
 	}
 }
 
-static void setup_ipv6(struct net_if *iface, u32_t flags)
+static void setup_ipv6(struct net_if *iface, uint32_t flags)
 {
 	struct net_if_addr *ifaddr;
-	u32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
+	uint32_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
-		return;
+		goto exit;
 	}
 
 	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &laddr)) {
@@ -274,9 +283,10 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 		}
 	}
 
+exit:
+
 #if !defined(CONFIG_NET_IPV6_DAD)
-	k_sem_take(&counter, K_NO_WAIT);
-	k_sem_give(&waiter);
+	services_notify_ready(NET_CONFIG_NEED_IPV6);
 #endif
 
 	return;
@@ -288,10 +298,11 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 
 #if defined(CONFIG_NET_NATIVE)
 static void iface_up_handler(struct net_mgmt_event_callback *cb,
-			     u32_t mgmt_event, struct net_if *iface)
+			     uint32_t mgmt_event, struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_IF_UP) {
-		NET_INFO("Interface %p coming up", iface);
+		NET_INFO("Interface %d (%p) coming up",
+			 net_if_get_by_iface(iface), iface);
 
 		k_sem_reset(&counter);
 		k_sem_give(&waiter);
@@ -306,7 +317,8 @@ static bool check_interface(struct net_if *iface)
 		return true;
 	}
 
-	NET_INFO("Waiting interface %p to be up...", iface);
+	NET_INFO("Waiting interface %d (%p) to be up...",
+		 net_if_get_by_iface(iface), iface);
 
 	net_mgmt_init_event_callback(&mgmt_iface_cb, iface_up_handler,
 				     NET_EVENT_IF_UP);
@@ -324,20 +336,19 @@ static bool check_interface(struct net_if *iface)
 }
 #endif
 
-int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
+int net_config_init_by_iface(struct net_if *iface, const char *app_info,
+			     uint32_t flags, int32_t timeout)
 {
 #define LOOP_DIVIDER 10
-	struct net_if *iface = net_if_get_default();
 	int loop = timeout / LOOP_DIVIDER;
-	int count, need = 0;
+	int count;
 
 	if (app_info) {
 		NET_INFO("%s", log_strdup(app_info));
 	}
 
 	if (!iface) {
-		NET_ERR("No network interfaces");
-		return -ENODEV;
+		iface = net_if_get_default();
 	}
 
 	if (timeout < 0) {
@@ -350,41 +361,33 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 
 	/* First make sure that network interface is up */
 	if (check_interface(iface) == false) {
-		k_sem_init(&counter, 1, UINT_MAX);
+		k_sem_init(&counter, 1, K_SEM_MAX_LIMIT);
 
-		while (count--) {
+		while (count-- > 0) {
 			if (!k_sem_count_get(&counter)) {
 				break;
 			}
 
-			if (k_sem_take(&waiter, loop)) {
+			if (k_sem_take(&waiter, K_MSEC(loop))) {
 				if (!k_sem_count_get(&counter)) {
 					break;
 				}
 			}
 		}
 
-		/* If the above while() loop timeouted, reset the count so that
-		 * the while() loop below will not wait more.
-		 */
-		if (timeout > 0 && count < 0) {
-			count = 0;
-		}
-
 #if defined(CONFIG_NET_NATIVE)
 		net_mgmt_del_event_callback(&mgmt_iface_cb);
 #endif
-	}
 
-	if (flags & NET_CONFIG_NEED_IPV6) {
-		need++;
+		/* Network interface did not come up. We will not try
+		 * to setup things in that case.
+		 */
+		if (timeout > 0 && count < 0) {
+			NET_ERR("Timeout while waiting network %s",
+				"interface");
+			return -ENETDOWN;
+		}
 	}
-
-	if (flags & NET_CONFIG_NEED_IPV4) {
-		need++;
-	}
-
-	k_sem_init(&counter, need, UINT_MAX);
 
 	setup_ipv4(iface);
 	setup_dhcpv4(iface);
@@ -393,29 +396,48 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 	/* Loop here until we are ready to continue. As we might need
 	 * to wait multiple events, sleep smaller amounts of data.
 	 */
-	while (count--) {
-		if (k_sem_take(&waiter, loop)) {
-			if (!k_sem_count_get(&counter)) {
-				break;
-			}
-		}
+	while (!services_are_ready(flags) && count-- > 0) {
+		k_sem_take(&waiter, K_MSEC(loop));
 	}
 
-	if (!count && timeout) {
-		NET_ERR("Timeout while waiting setup");
+	if (count == -1 && timeout > 0) {
+		NET_ERR("Timeout while waiting network %s", "setup");
 		return -ETIMEDOUT;
 	}
 
 	return 0;
 }
 
-#if defined(CONFIG_NET_CONFIG_AUTO_INIT)
-static int init_app(struct device *device)
+int net_config_init(const char *app_info, uint32_t flags,
+		    int32_t timeout)
 {
-	u32_t flags = 0U;
+	return net_config_init_by_iface(NULL, app_info, flags, timeout);
+}
+
+static void iface_find_cb(struct net_if *iface, void *user_data)
+{
+	struct net_if **iface_to_use = user_data;
+
+	if (*iface_to_use == NULL &&
+	    !net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
+		*iface_to_use = iface;
+		return;
+	}
+}
+
+int net_config_init_app(const struct device *dev, const char *app_info)
+{
+	struct net_if *iface = NULL;
+	uint32_t flags = 0U;
 	int ret;
 
-	ARG_UNUSED(device);
+	if (dev) {
+		iface = net_if_lookup_by_dev(dev);
+		if (iface == NULL) {
+			NET_WARN("No interface for device %p, using default",
+				 dev);
+		}
+	}
 
 #if defined(CONFIG_NET_IPV6)
 	/* IEEE 802.15.4 is only usable if IPv6 is enabled */
@@ -442,9 +464,14 @@ static int init_app(struct device *device)
 		flags |= NET_CONFIG_NEED_IPV4;
 	}
 
+	/* Only try to use a network interface that is auto started */
+	if (iface == NULL) {
+		net_if_foreach(iface_find_cb, &iface);
+	}
+
 	/* Initialize the application automatically if needed */
-	ret = net_config_init("Initializing network", flags,
-			      K_SECONDS(CONFIG_NET_CONFIG_INIT_TIMEOUT));
+	ret = net_config_init_by_iface(iface, app_info, flags,
+				CONFIG_NET_CONFIG_INIT_TIMEOUT * MSEC_PER_SEC);
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
 	}
@@ -456,15 +483,30 @@ static int init_app(struct device *device)
 	/* This is activated late as it requires the network stack to be up
 	 * and running before syslog messages can be sent to network.
 	 */
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET)) {
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+	    IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART)) {
 		const struct log_backend *backend = log_backend_net_get();
 
 		if (!log_backend_is_active(backend)) {
+			if (backend->api->init != NULL) {
+				backend->api->init(backend);
+			}
+
 			log_backend_activate(backend, NULL);
 		}
 	}
 
 	return ret;
+}
+
+#if defined(CONFIG_NET_CONFIG_AUTO_INIT)
+static int init_app(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	(void)net_config_init_app(NULL, "Initializing network");
+
+	return 0;
 }
 
 SYS_INIT(init_app, APPLICATION, CONFIG_NET_CONFIG_INIT_PRIO);

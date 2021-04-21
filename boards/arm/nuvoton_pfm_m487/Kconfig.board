@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nuvoton PFM M487 board configuration
+#
+# Copyright (c) 2020 Linumiz
+# Author: Saravanan Sekar <saravanan@linumiz.com>
+
+config BOARD_NUVOTON_PFM_M487
+	bool "NUVOTON PFM MP487 Development Board"
+	depends on SOC_M487

@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f7/stm32f723Xe.dtsi>
+#include <st/f7/stm32f723i(c-e)kx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F723E DISCOVERY board";
-	compatible = "st,stm32f723e-disco", "st,stm32f723";
+	compatible = "st,stm32f723e-disco";
 
 	chosen {
 		zephyr,console = &usart6;
@@ -55,31 +56,38 @@ arduino_spi: &spi1 {};
 arduino_serial: &usart2 {};
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
 	status = "okay";
 };
 
 &i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_ph8>;
 	status = "okay";
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pb4 &spi1_mosi_pb5>;
 	status = "okay";
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };

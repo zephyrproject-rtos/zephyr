@@ -8,14 +8,14 @@
 #include <fsl_iomuxc.h>
 #include <fsl_gpio.h>
 
-static int mimxrt1015_evk_init(struct device *dev)
+static int mimxrt1015_evk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	CLOCK_EnableClock(kCLOCK_Iomuxc);
 	CLOCK_EnableClock(kCLOCK_IomuxcSnvs);
 
-#ifdef CONFIG_GPIO_MCUX_IGPIO_2
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
 	IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_09_GPIO2_IO09, 0);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_EMC_09_GPIO2_IO09,
 				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
@@ -25,7 +25,7 @@ static int mimxrt1015_evk_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
 #endif
 
-#ifdef CONFIG_UART_MCUX_LPUART_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay)
 	/* LPUART1 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_06_LPUART1_TX, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_07_LPUART1_RX, 0);
@@ -41,7 +41,7 @@ static int mimxrt1015_evk_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_UART_MCUX_LPUART_4
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart4), okay)
 	/* LPUART4 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_32_LPUART4_TX, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_33_LPUART4_RX, 0);
@@ -57,7 +57,7 @@ static int mimxrt1015_evk_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_I2C_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay)
 	/* LPI2C1 SCL, SDA */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_14_LPI2C1_SCL, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_15_LPI2C1_SDA, 1);

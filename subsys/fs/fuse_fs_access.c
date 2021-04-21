@@ -33,7 +33,7 @@
 #define DIR_END '\0'
 
 static struct fs_file_t files[NUMBER_OF_OPEN_FILES];
-static u8_t file_handles[NUMBER_OF_OPEN_FILES];
+static uint8_t file_handles[NUMBER_OF_OPEN_FILES];
 
 static pthread_t fuse_thread;
 
@@ -169,6 +169,8 @@ static int fuse_fs_access_readdir(const char *path, void *buf,
 		return fuse_fs_access_readmount(buf, filler);
 	}
 
+	fs_dir_t_init(&dir);
+
 	if (is_mount_point(path)) {
 		/* File system API expects trailing slash for a mount point
 		 * directory but FUSE strips the trailing slashes from
@@ -252,7 +254,7 @@ static int fuse_fs_access_create(const char *path, mode_t mode,
 
 	fi->fh = handle;
 
-	err = fs_open(&files[handle], path);
+	err = fs_open(&files[handle], path, FS_O_CREATE | FS_O_WRITE);
 	if (err != 0) {
 		release_file_handle(handle);
 		fi->fh = INVALID_FILE_HANDLE;
@@ -345,7 +347,7 @@ static int fuse_fs_access_truncate(const char *path, off_t size)
 	int err;
 	static struct fs_file_t file;
 
-	err = fs_open(&file, path);
+	err = fs_open(&file, path, FS_O_CREATE | FS_O_WRITE);
 	if (err != 0) {
 		return err;
 	}
@@ -468,6 +470,12 @@ static void fuse_fs_access_init(void)
 {
 	int err;
 	struct stat st;
+	size_t i = 0;
+
+	while (i < ARRAY_SIZE(files)) {
+		fs_file_t_init(&files[i]);
+		++i;
+	}
 
 	if (fuse_mountpoint == NULL) {
 		fuse_mountpoint = default_fuse_mountpoint;

@@ -1,0 +1,12 @@
+# Copyright 2020 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX17055
+	bool "MAX17055 Fuel Gauge"
+	depends on I2C
+	help
+	  Enable I2C-based driver for MAX17055 Fuel Gauge. This driver supports
+	  reading various sensor settings including charge level percentage,
+	  time to full/empty, design voltage, temperature and remaining
+	  capacity in mA.

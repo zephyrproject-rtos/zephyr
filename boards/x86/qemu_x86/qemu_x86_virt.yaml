@@ -1,0 +1,13 @@
+identifier: qemu_x86_virt
+name: QEMU Emulation for X86 (Run in Virtual Address Space)
+type: qemu
+arch: x86
+simulation: qemu
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  default: true
+  only_tags:
+     - kernel
+     - userspace

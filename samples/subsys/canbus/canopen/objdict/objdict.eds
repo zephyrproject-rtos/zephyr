@@ -8,8 +8,8 @@ Description=
 CreationTime=2:52PM
 CreationDate=09-18-2019
 CreatedBy=
-ModificationTime=1:31PM
-ModificationDate=01-09-2020
+ModificationTime=12:28PM
+ModificationDate=02-20-2020
 ModifiedBy=
 
 [DeviceInfo]
@@ -125,7 +125,7 @@ DefaultValue=0x00000000
 PDOMapping=0
 
 [OptionalObjects]
-SupportedObjects=35
+SupportedObjects=39
 1=0x1002
 2=0x1003
 3=0x1005
@@ -160,7 +160,11 @@ SupportedObjects=35
 32=0x1A01
 33=0x1A02
 34=0x1A03
-35=0x1F80
+35=0x1F50
+36=0x1F51
+37=0x1F56
+38=0x1F57
+39=0x1F80
 
 [1002]
 ParameterName=Manufacturer status register
@@ -1660,6 +1664,102 @@ ObjectType=0x7
 DataType=0x0007
 AccessType=rw
 DefaultValue=0x00000000
+PDOMapping=0
+
+[1F50]
+ParameterName=Program data
+ObjectType=0x8
+;StorageLocation=RAM
+SubNumber=0x2
+
+[1F50sub0]
+ParameterName=max sub-index
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0005
+AccessType=ro
+DefaultValue=1
+PDOMapping=0
+
+[1F50sub1]
+ParameterName=
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x000F
+AccessType=wo
+DefaultValue=
+PDOMapping=0
+
+[1F51]
+ParameterName=Program control
+ObjectType=0x8
+;StorageLocation=RAM
+SubNumber=0x2
+
+[1F51sub0]
+ParameterName=max sub-index
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0005
+AccessType=ro
+DefaultValue=1
+PDOMapping=0
+
+[1F51sub1]
+ParameterName=
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0005
+AccessType=rw
+DefaultValue=
+PDOMapping=0
+
+[1F56]
+ParameterName=Program software identification
+ObjectType=0x8
+;StorageLocation=RAM
+SubNumber=0x2
+
+[1F56sub0]
+ParameterName=max sub-index
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0005
+AccessType=ro
+DefaultValue=1
+PDOMapping=0
+
+[1F56sub1]
+ParameterName=
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0007
+AccessType=ro
+DefaultValue=
+PDOMapping=0
+
+[1F57]
+ParameterName=Flash status identification
+ObjectType=0x8
+;StorageLocation=RAM
+SubNumber=0x2
+
+[1F57sub0]
+ParameterName=max sub-index
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0005
+AccessType=ro
+DefaultValue=1
+PDOMapping=0
+
+[1F57sub1]
+ParameterName=
+ObjectType=0x7
+;StorageLocation=RAM
+DataType=0x0007
+AccessType=ro
+DefaultValue=
 PDOMapping=0
 
 [1F80]

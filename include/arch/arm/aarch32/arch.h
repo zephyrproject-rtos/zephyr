@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief ARM specific kernel interface header
+ * @brief ARM AArch32 specific kernel interface header
  *
- * This header contains the ARM specific kernel interface.  It is
+ * This header contains the ARM AArch32 specific kernel interface.  It is
  * included by the kernel interface architecture-abstraction header
  * (include/arm/cpu.h)
  */
@@ -20,7 +20,7 @@
 #include <devicetree.h>
 
 /* ARM GPRs are often designated by two different names */
-#define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
+#define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
 
 #include <arch/arm/aarch32/thread.h>
 #include <arch/arm/aarch32/exc.h>
@@ -31,14 +31,16 @@
 #include <arch/common/ffs.h>
 #include <arch/arm/aarch32/nmi.h>
 #include <arch/arm/aarch32/asm_inline.h>
+#include <arch/common/sys_bitops.h>
 
 #ifdef CONFIG_CPU_CORTEX_M
 #include <arch/arm/aarch32/cortex_m/cpu.h>
 #include <arch/arm/aarch32/cortex_m/memory_map.h>
 #include <arch/common/sys_io.h>
 #elif defined(CONFIG_CPU_CORTEX_R)
-#include <arch/arm/aarch32/cortex_r/cpu.h>
-#include <arch/arm/aarch32/cortex_r/sys_io.h>
+#include <arch/arm/aarch32/cortex_a_r/cpu.h>
+#include <arch/arm/aarch32/cortex_a_r/sys_io.h>
+#include <arch/arm/aarch32/cortex_a_r/timer.h>
 #endif
 
 #ifdef __cplusplus
@@ -46,16 +48,16 @@ extern "C" {
 #endif
 
 /**
- * @brief Declare the STACK_ALIGN_SIZE
+ * @brief Declare the ARCH_STACK_PTR_ALIGN
  *
  * Denotes the required alignment of the stack pointer on public API
  * boundaries
  *
  */
 #ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
-#define STACK_ALIGN_SIZE 8
+#define ARCH_STACK_PTR_ALIGN 8
 #else
-#define STACK_ALIGN_SIZE 4
+#define ARCH_STACK_PTR_ALIGN 4
 #endif
 
 /**
@@ -70,7 +72,7 @@ extern "C" {
 #if defined(CONFIG_USERSPACE)
 #define Z_THREAD_MIN_STACK_ALIGN CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 #else
-#define Z_THREAD_MIN_STACK_ALIGN STACK_ALIGN_SIZE
+#define Z_THREAD_MIN_STACK_ALIGN ARCH_STACK_PTR_ALIGN
 #endif
 
 /**
@@ -97,7 +99,7 @@ extern "C" {
  * |  Some thread data   | <---- Defined when thread is created
  * |        ...          |
  * |---------------------| <---- Actual initial stack ptr
- * |  Initial Stack Ptr  |       aligned to STACK_ALIGN_SIZE
+ * |  Initial Stack Ptr  |       aligned to ARCH_STACK_PTR_ALIGN
  * |        ...          |
  * |        ...          |
  * |        ...          |
@@ -124,12 +126,12 @@ extern "C" {
  *        that is using the Floating Point services.
  *
  * For threads that are using the Floating Point services under Shared
- * Registers (CONFIG_FP_SHARING=y) mode, the exception stack frame may
+ * Registers (CONFIG_FPU_SHARING=y) mode, the exception stack frame may
  * contain both the basic stack frame and the FP caller-saved context,
  * upon exception entry. Therefore, a wide guard region is required to
  * guarantee that stack-overflow detection will always be successful.
  */
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING) \
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
 	&& defined(CONFIG_MPU_STACK_GUARD)
 #define MPU_GUARD_ALIGN_AND_SIZE_FLOAT CONFIG_MPU_STACK_GUARD_MIN_SIZE_FLOAT
 #else
@@ -150,97 +152,34 @@ extern "C" {
 #define Z_MPU_GUARD_ALIGN MPU_GUARD_ALIGN_AND_SIZE
 #endif
 
-/**
- * @brief Define alignment of a stack buffer
- *
- * This is used for two different things:
- *
- * -# Used in checks for stack size to be a multiple of the stack buffer
- *    alignment
- * -# Used to determine the alignment of a stack buffer
- *
- */
-#define STACK_ALIGN MAX(Z_THREAD_MIN_STACK_ALIGN, Z_MPU_GUARD_ALIGN)
-
-/**
- * @brief Define alignment of a privilege stack buffer
- *
- * This is used to determine the required alignment of threads'
- * privilege stacks when building with support for user mode.
- *
- * @note
- * The privilege stacks do not need to respect the minimum MPU
- * region alignment requirement (unless this is enforced via
- * the MPU Stack Guard feature).
- */
-#if defined(CONFIG_USERSPACE)
-#define Z_PRIVILEGE_STACK_ALIGN MAX(STACK_ALIGN_SIZE, Z_MPU_GUARD_ALIGN)
-#endif
-
-/**
- * @brief Calculate power of two ceiling for a buffer size input
- *
- */
-#define POW2_CEIL(x) ((1 << (31 - __builtin_clz(x))) < x ?  \
-		1 << (31 - __builtin_clz(x) + 1) : \
-		1 << (31 - __builtin_clz(x)))
-
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-/* Guard is 'carved-out' of the thread stack region, and the supervisor
- * mode stack is allocated elsewhere by gen_priv_stack.py
+/* This MPU requires regions to be sized to a power of two, and aligned to
+ * their own size. Since an MPU region must be able to cover the entire
+ * user-accessible stack buffer, we size/align to match. The privilege
+ * mode stack is generated elsewhere in memory.
  */
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	Z_POW2_CEIL(size)
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size)	Z_POW2_CEIL(size)
+#else
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)	MAX(Z_THREAD_MIN_STACK_ALIGN, \
+						    Z_MPU_GUARD_ALIGN)
+#ifdef CONFIG_USERSPACE
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+	ROUND_UP(size, CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
+#endif
+#endif
+
+#ifdef CONFIG_MPU_STACK_GUARD
+/* Kernel-only stacks need an MPU guard region programmed at the beginning of
+ * the stack object, so align the object appropriately.
+ */
+#define ARCH_KERNEL_STACK_RESERVED	MPU_GUARD_ALIGN_AND_SIZE
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_MPU_GUARD_ALIGN
+#endif
+
+/* On arm, all MPU guards are carve-outs. */
 #define ARCH_THREAD_STACK_RESERVED 0
-#else
-#define ARCH_THREAD_STACK_RESERVED MPU_GUARD_ALIGN_AND_SIZE
-#endif
-
-#if defined(CONFIG_USERSPACE) && \
-	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit \
-		__aligned(POW2_CEIL(size)) sym[POW2_CEIL(size)]
-#else
-#define ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
-#endif
-
-#if defined(CONFIG_USERSPACE) && \
-	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define ARCH_THREAD_STACK_LEN(size) (POW2_CEIL(size))
-#else
-#define ARCH_THREAD_STACK_LEN(size) ((size)+MPU_GUARD_ALIGN_AND_SIZE)
-#endif
-
-#if defined(CONFIG_USERSPACE) && \
-	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
-		__aligned(POW2_CEIL(size)) \
-		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
-#else
-#define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
-		__aligned(STACK_ALIGN) \
-		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
-#endif
-
-#if defined(CONFIG_USERSPACE) && \
-	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-#define ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(POW2_CEIL(size)) \
-		sym[POW2_CEIL(size)]
-#else
-#define ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
-		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
-#endif
-
-#define ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - MPU_GUARD_ALIGN_AND_SIZE)
-
-#define ARCH_THREAD_STACK_BUFFER(sym) \
-		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
 /* Legacy case: retain containing extern "C" with C++ */
 #ifdef CONFIG_ARM_MPU

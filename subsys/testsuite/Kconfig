@@ -14,12 +14,6 @@ config TEST
 	  Mark a project or an application as a test. This will enable a few
 	  test defaults.
 
-config TEST_SHELL
-	bool "Enable various shells for testing"
-	select GPIO_SHELL if GPIO
-	help
-	  Enable various platform and driver related shells for testing.
-
 config TEST_EXTRA_STACKSIZE
 	int "Test function extra thread stack size"
 	default 2048 if COVERAGE_GCOV
@@ -138,6 +132,7 @@ config TEST_FLASH_DRIVERS
 config TEST_ARM_CORTEX_M
 	bool
 	depends on CPU_CORTEX_M
+	depends on TEST
 	default y
 	select ARM_SECURE_BUSFAULT_HARDFAULT_NMI if ARM_SECURE_FIRMWARE
 	help
@@ -149,5 +144,4 @@ config TEST_ARM_CORTEX_M
 	  the testing suite to utilize these exceptions, in tests.
 	  Note that by default, when building with ARM_SECURE_FIRMWARE
 	  set, these exceptions are set to target the Non-Secure state.
-
 endmenu

@@ -25,6 +25,7 @@ void z_work_q_main(void *work_q_ptr, void *p2, void *p3)
 		}
 
 		handler = work->handler;
+		__ASSERT(handler != NULL, "handler must be provided");
 
 		/* Reset pending state so it can be resubmitted by handler */
 		if (atomic_test_and_clear_bit(work->flags,
@@ -48,7 +49,7 @@ void k_work_q_user_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 	 * domain configuration of the caller
 	 */
 	k_thread_create(&work_q->thread, stack, stack_size, z_work_q_main,
-			work_q, 0, 0, prio, K_USER | K_INHERIT_PERMS,
+			work_q, NULL, NULL, prio, K_USER | K_INHERIT_PERMS,
 			K_FOREVER);
 	k_object_access_grant(&work_q->queue, &work_q->thread);
 	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);

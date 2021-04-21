@@ -27,7 +27,7 @@ extern "C" {
  *
  *  @param addr Public address
  */
-void bt_ctlr_set_public_addr(const u8_t *addr);
+void bt_ctlr_set_public_addr(const uint8_t *addr);
 
 #ifdef __cplusplus
 }

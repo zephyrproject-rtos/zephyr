@@ -1,5 +1,5 @@
 identifier: stm32f469i_disco
-name: STM32F469I-DISCO
+name: ST STM32F469I Discovery
 type: mcu
 arch: arm
 toolchain:

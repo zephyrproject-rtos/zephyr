@@ -8,8 +8,9 @@
 
    <a href="https://bestpractices.coreinfrastructure.org/projects/74"><img
    src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
+   <a href="https://buildkite.com/zephyr/zephyr">
    <img
-   src="https://api.shippable.com/projects/58ffb2b8baa5e307002e1d79/badge?branch=master">
+   src="https://badge.buildkite.com/f5bd0dc88306cee17c9b38e78d11bb74a6291e3f40e7d13f31.svg?branch=master"></a>
 
 
 The Zephyr Project is a scalable real-time operating system (RTOS) supporting
@@ -52,7 +53,7 @@ Here's a quick summary of resources to help you find your way around:
 * **Source Code**: https://github.com/zephyrproject-rtos/zephyr is the main
   repository; https://elixir.bootlin.com/zephyr/latest/source contains a
   searchable index
-* **Releases**: https://zephyrproject.org/developers/#downloads
+* **Releases**: https://github.com/zephyrproject-rtos/zephyr/releases
 * **Samples and example code**: see `Sample and Demo Code Examples`_
 * **Mailing Lists**: users@lists.zephyrproject.org and
   devel@lists.zephyrproject.org are the main user and developer mailing lists,
@@ -61,7 +62,7 @@ Here's a quick summary of resources to help you find your way around:
   subgroups`_ have their own archives and sign-up pages.
 * **Nightly CI Build Status**: https://lists.zephyrproject.org/g/builds
   The builds@lists.zephyrproject.org mailing list archives the CI
-  (shippable) nightly build results.
+  (buildkite) nightly build results.
 * **Chat**: Zephyr's Slack workspace is https://zephyrproject.slack.com.  Use
   this `Slack Invite`_ to register.
 * **Contributing**: see the `Contribution Guide`_

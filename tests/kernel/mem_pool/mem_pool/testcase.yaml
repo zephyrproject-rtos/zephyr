@@ -1,4 +1,0 @@
-tests:
-  kernel.memory_pool:
-    min_ram: 32
-    tags: kernel mem_pool

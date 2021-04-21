@@ -1,0 +1,14 @@
+# nRF9160 innblue V2.2 board configuration
+
+# Copyright (c) 2020 InnBlue
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF9160_SICA
+
+config BOARD_NRF9160_INNBLUE22
+	bool "nRF9160 innblue v2.2"
+
+config BOARD_NRF9160_INNBLUE22NS
+	bool "nRF9160 innblue V2.2 non-secure"
+
+endif # SOC_NRF9160_SICA

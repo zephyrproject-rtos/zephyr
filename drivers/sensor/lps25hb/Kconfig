@@ -3,7 +3,7 @@
 
 menuconfig LPS25HB
 	bool "LPS25HB pressure and temperature"
-	depends on I2C && HAS_DTS_I2C
+	depends on I2C
 	help
 	  Enable driver for LPS25HB I2C-based pressure and temperature
 	  sensor.

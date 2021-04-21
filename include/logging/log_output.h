@@ -53,9 +53,9 @@ extern "C" {
 /**
  * @brief Prototype of the function processing output data.
  *
- * @param data Data.
- * @param length Data length.
- * @param ctx  User context.
+ * @param buf The buffer data.
+ * @param size The buffer size.
+ * @param ctx User context.
  *
  * @return Number of bytes processed, dropped or discarded.
  *
@@ -63,7 +63,7 @@ extern "C" {
  *       its responsibility to mark them as dropped or discarded by returning
  *       the corresponding number of bytes dropped or discarded to the caller.
  */
-typedef int (*log_output_func_t)(u8_t *buf, size_t size, void *ctx);
+typedef int (*log_output_func_t)(uint8_t *buf, size_t size, void *ctx);
 
 /* @brief Control block structure for log_output instance.  */
 struct log_output_control_block {
@@ -76,7 +76,7 @@ struct log_output_control_block {
 struct log_output {
 	log_output_func_t func;
 	struct log_output_control_block *control_block;
-	u8_t *buf;
+	uint8_t *buf;
 	size_t size;
 };
 
@@ -101,20 +101,32 @@ struct log_output {
  * Function is using provided context with the buffer and output function to
  * process formatted string and output the data.
  *
+ * @param output Pointer to the log output instance.
+ * @param msg Log message.
+ * @param flags Optional flags.
+ */
+void log_output_msg_process(const struct log_output *output,
+			    struct log_msg *msg,
+			    uint32_t flags);
+
+/** @brief Process log messages v2 to readable strings.
+ *
+ * Function is using provided context with the buffer and output function to
+ * process formatted string and output the data.
+ *
  * @param log_output Pointer to the log output instance.
  * @param msg Log message.
  * @param flags Optional flags.
  */
-void log_output_msg_process(const struct log_output *log_output,
-			    struct log_msg *msg,
-			    u32_t flags);
+void log_output_msg2_process(const struct log_output *log_output,
+			     struct log_msg2 *msg, uint32_t flags);
 
 /** @brief Process log string
  *
  * Function is formatting provided string adding optional prefixes and
  * postfixes.
  *
- * @param log_output Pointer to log_output instance.
+ * @param output Pointer to log_output instance.
  * @param src_level  Log source and level structure.
  * @param timestamp  Timestamp.
  * @param fmt        String.
@@ -122,16 +134,16 @@ void log_output_msg_process(const struct log_output *log_output,
  * @param flags      Optional flags.
  *
  */
-void log_output_string(const struct log_output *log_output,
-		       struct log_msg_ids src_level, u32_t timestamp,
-		       const char *fmt, va_list ap, u32_t flags);
+void log_output_string(const struct log_output *output,
+		       struct log_msg_ids src_level, uint32_t timestamp,
+		       const char *fmt, va_list ap, uint32_t flags);
 
 /** @brief Process log hexdump
  *
  * Function is formatting provided hexdump adding optional prefixes and
  * postfixes.
  *
- * @param log_output Pointer to log_output instance.
+ * @param output Pointer to log_output instance.
  * @param src_level  Log source and level structure.
  * @param timestamp  Timestamp.
  * @param metadata   String.
@@ -140,53 +152,61 @@ void log_output_string(const struct log_output *log_output,
  * @param flags      Optional flags.
  *
  */
-void log_output_hexdump(const struct log_output *log_output,
-			     struct log_msg_ids src_level, u32_t timestamp,
-			     const char *metadata, const u8_t *data,
-			     u32_t length, u32_t flags);
+void log_output_hexdump(const struct log_output *output,
+			     struct log_msg_ids src_level, uint32_t timestamp,
+			     const char *metadata, const uint8_t *data,
+			     uint32_t length, uint32_t flags);
 
 /** @brief Process dropped messages indication.
  *
  * Function prints error message indicating lost log messages.
  *
- * @param log_output Pointer to the log output instance.
+ * @param output Pointer to the log output instance.
  * @param cnt        Number of dropped messages.
  */
-void log_output_dropped_process(const struct log_output *log_output, u32_t cnt);
+void log_output_dropped_process(const struct log_output *output, uint32_t cnt);
 
 /** @brief Flush output buffer.
  *
- * @param log_output Pointer to the log output instance.
+ * @param output Pointer to the log output instance.
  */
-void log_output_flush(const struct log_output *log_output);
+void log_output_flush(const struct log_output *output);
 
 /** @brief Function for setting user context passed to the output function.
  *
- * @param log_output	Pointer to the log output instance.
+ * @param output	Pointer to the log output instance.
  * @param ctx		User context.
  */
-static inline void log_output_ctx_set(const struct log_output *log_output,
+static inline void log_output_ctx_set(const struct log_output *output,
 				      void *ctx)
 {
-	log_output->control_block->ctx = ctx;
+	output->control_block->ctx = ctx;
 }
 
 /** @brief Function for setting hostname of this device
  *
- * @param log_output	Pointer to the log output instance.
+ * @param output	Pointer to the log output instance.
  * @param hostname	Hostname of this device
  */
-static inline void log_output_hostname_set(const struct log_output *log_output,
+static inline void log_output_hostname_set(const struct log_output *output,
 					   const char *hostname)
 {
-	log_output->control_block->hostname = hostname;
+	output->control_block->hostname = hostname;
 }
 
 /** @brief Set timestamp frequency.
  *
  * @param freq Frequency in Hz.
  */
-void log_output_timestamp_freq_set(u32_t freq);
+void log_output_timestamp_freq_set(uint32_t freq);
+
+/** @brief Convert timestamp of the message to us.
+ *
+ * @param timestamp Message timestamp
+ *
+ * @return Timestamp value in us.
+ */
+uint64_t log_output_timestamp_to_us(uint32_t timestamp);
 
 /**
  * @}

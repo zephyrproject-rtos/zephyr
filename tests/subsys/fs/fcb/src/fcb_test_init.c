@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017 - 2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -7,13 +7,14 @@
 
 #include "fcb_test.h"
 
-void fcb_test_init(void)
+void test_fcb_init(void)
 {
 	int rc;
 	struct fcb *fcb;
 
 	fcb = &test_fcb;
 	(void)memset(fcb, 0, sizeof(*fcb));
+	fcb->f_erase_value = fcb_test_erase_value;
 
 	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
 	zassert_true(rc == -EINVAL, "fcb_init call should fail");

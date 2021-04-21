@@ -1,13 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if (CONFIG_64BIT)
-	# some gcc versions fail to build without -fPIC
-	zephyr_compile_options(-m64 -fPIC)
-	zephyr_link_libraries(-m64)
-else ()
-	zephyr_compile_options(-m32)
-	zephyr_link_libraries(-m32)
-endif ()
+if(EXISTS ${CMAKE_CURRENT_LIST_DIR}/${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
+  # @Intent: Set necessary compiler & linker options for this specific host architecture & OS
+  include(${CMAKE_HOST_SYSTEM_NAME}.${CMAKE_HOST_SYSTEM_PROCESSOR}.cmake)
+else()
+  if (CONFIG_64BIT)
+    # some gcc versions fail to build without -fPIC
+    zephyr_compile_options(-m64 -fPIC)
+    zephyr_link_libraries(-m64)
+  else ()
+    zephyr_compile_options(-m32)
+    zephyr_link_libraries(-m32)
+  endif ()
+endif()
 
 zephyr_compile_options(
   ${ARCH_FLAG}
@@ -15,20 +20,23 @@ zephyr_compile_options(
   )
 
 # @Intent: Obtain compiler specific flags for no freestanding compilation
-toolchain_cc_no_freestanding_options()
+zephyr_compile_options($<TARGET_PROPERTY:compiler,hosted>)
 
 zephyr_include_directories(${BOARD_DIR})
 
 if (CONFIG_COVERAGE)
-  toolchain_cc_coverage()
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,coverage>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,coverage>)
 endif ()
 
 if (CONFIG_ASAN)
-  toolchain_cc_asan()
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,sanitize_address>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitize_address>)
 endif ()
 
 if (CONFIG_UBSAN)
-  toolchain_cc_ubsan()
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,sanitize_undefined>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,sanitize_undefined>)
 endif ()
 
 zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)

@@ -14,31 +14,31 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(SHT3XD, CONFIG_SENSOR_LOG_LEVEL);
 
-static u16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
+static uint16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
 {
-	u64_t uval;
+	uint64_t uval;
 
 	/* ret = (val + 45) * (2^16 - 1) / 175 */
-	uval = (u64_t)(val->val1 + 45) * 1000000U + val->val2;
+	uval = (uint64_t)(val->val1 + 45) * 1000000U + val->val2;
 	return ((uval * 0xFFFF) / 175) / 1000000;
 }
 
 static int sht3xd_rh_processed_to_raw(const struct sensor_value *val)
 {
-	u64_t uval;
+	uint64_t uval;
 
 	/* ret = val * (2^16 -1) / 100 */
-	uval = (u64_t)val->val1 * 1000000U + val->val2;
+	uval = (uint64_t)val->val1 * 1000000U + val->val2;
 	return ((uval * 0xFFFF) / 100) / 1000000;
 }
 
-int sht3xd_attr_set(struct device *dev,
+int sht3xd_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val)
 {
-	struct sht3xd_data *data = dev->driver_data;
-	u16_t set_cmd, clear_cmd, reg_val, temp, rh;
+	struct sht3xd_data *data = dev->data;
+	uint16_t set_cmd, clear_cmd, reg_val, temp, rh;
 
 	if (attr == SENSOR_ATTR_LOWER_THRESH) {
 		if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
@@ -81,12 +81,12 @@ int sht3xd_attr_set(struct device *dev,
 	return 0;
 }
 
-static inline void setup_alert(struct device *dev,
+static inline void setup_alert(const struct device *dev,
 			       bool enable)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 	const struct sht3xd_config *cfg =
-		(const struct sht3xd_config *)dev->config->config_info;
+		(const struct sht3xd_config *)dev->config;
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
@@ -94,28 +94,28 @@ static inline void setup_alert(struct device *dev,
 	gpio_pin_interrupt_configure(data->alert_gpio, cfg->alert_pin, flags);
 }
 
-static inline void handle_alert(struct device *dev)
+static inline void handle_alert(const struct device *dev)
 {
 	setup_alert(dev, false);
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 
 	k_sem_give(&data->gpio_sem);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 
 	k_work_submit(&data->work);
 #endif
 }
 
-int sht3xd_trigger_set(struct device *dev,
+int sht3xd_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 	const struct sht3xd_config *cfg =
-		(const struct sht3xd_config *)dev->config->config_info;
+		(const struct sht3xd_config *)dev->config;
 
 	setup_alert(dev, false);
 
@@ -142,8 +142,8 @@ int sht3xd_trigger_set(struct device *dev,
 	return 0;
 }
 
-static void sht3xd_gpio_callback(struct device *dev,
-				 struct gpio_callback *cb, u32_t pins)
+static void sht3xd_gpio_callback(const struct device *dev,
+				 struct gpio_callback *cb, uint32_t pins)
 {
 	struct sht3xd_data *data =
 		CONTAINER_OF(cb, struct sht3xd_data, alert_cb);
@@ -151,10 +151,9 @@ static void sht3xd_gpio_callback(struct device *dev,
 	handle_alert(data->dev);
 }
 
-static void sht3xd_thread_cb(void *arg)
+static void sht3xd_thread_cb(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
-	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
+	struct sht3xd_data *data = (struct sht3xd_data *)dev->data;
 
 	if (data->handler != NULL) {
 		data->handler(dev, &data->trigger);
@@ -164,16 +163,11 @@ static void sht3xd_thread_cb(void *arg)
 }
 
 #ifdef CONFIG_SHT3XD_TRIGGER_OWN_THREAD
-static void sht3xd_thread(int dev_ptr, int unused)
+static void sht3xd_thread(struct sht3xd_data *data)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct sht3xd_data *data = dev->driver_data;
-
-	ARG_UNUSED(unused);
-
 	while (1) {
 		k_sem_take(&data->gpio_sem, K_FOREVER);
-		sht3xd_thread_cb(dev);
+		sht3xd_thread_cb(data->dev);
 	}
 }
 #endif
@@ -188,11 +182,11 @@ static void sht3xd_work_cb(struct k_work *work)
 }
 #endif
 
-int sht3xd_init_interrupt(struct device *dev)
+int sht3xd_init_interrupt(const struct device *dev)
 {
-	struct sht3xd_data *data = dev->driver_data;
-	const struct sht3xd_config *cfg = dev->config->config_info;
-	struct device *gpio = device_get_binding(cfg->alert_gpio_name);
+	struct sht3xd_data *data = dev->data;
+	const struct sht3xd_config *cfg = dev->config;
+	const struct device *gpio = device_get_binding(cfg->alert_gpio_name);
 	int rc;
 
 	/* setup gpio interrupt */
@@ -246,12 +240,12 @@ int sht3xd_init_interrupt(struct device *dev)
 	}
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
-	k_sem_init(&data->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_SHT3XD_THREAD_STACK_SIZE,
-			(k_thread_entry_t)sht3xd_thread, dev,
-			0, NULL, K_PRIO_COOP(CONFIG_SHT3XD_THREAD_PRIORITY),
+			(k_thread_entry_t)sht3xd_thread, data,
+			NULL, NULL, K_PRIO_COOP(CONFIG_SHT3XD_THREAD_PRIORITY),
 			0, K_NO_WAIT);
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = sht3xd_work_cb;

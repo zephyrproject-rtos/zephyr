@@ -15,13 +15,11 @@
 	compatible = "snps,nsim_sem";
 
 	iccm0: iccm@0 {
-		device_type = "memory";
 		compatible = "arc,iccm";
 		reg = <0x0 0x40000>;
 	};
 
 	dccm0: dccm@80000000 {
-		device_type = "memory";
 		compatible = "arc,dccm";
 		reg = <0x80000000 0x40000>;
 	};

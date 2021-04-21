@@ -1,0 +1,64 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel AT45 (or compatible) SPI flash
+
+compatible: "atmel,at45"
+
+include: [spi-device.yaml]
+
+properties:
+  jedec-id:
+    type: uint8-array
+    required: true
+    description: JEDEC ID as manufacturer ID (1 byte) and device ID (2 bytes).
+
+  size:
+    type: int
+    required: true
+    description: Flash capacity in bits.
+
+  sector-size:
+    type: int
+    required: true
+    description: Flash sector size in bytes.
+
+  block-size:
+    type: int
+    required: true
+    description: Flash block size in bytes.
+
+  page-size:
+    type: int
+    required: true
+    description: Flash page size in bytes.
+
+  use-udpd:
+    type: boolean
+    required: false
+    description: |
+      When set, the driver will use the Ultra-Deep Power-Down command instead
+      of the default Deep Power-Down one to put the chip into low power mode.
+
+      From the driver perspective, as it does not rely on the contents of the
+      SRAM buffers in the chip, the difference between the Deep and Ultra-Deep
+      Power-Down modes is that the chip consumes far less power in the latter
+      but needs some more time to enter this mode and to exit from it.
+
+  enter-dpd-delay:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Time, in nanoseconds, needed by the chip to enter the Deep Power-Down
+      mode (or Ultra-Deep Power-Down mode when the "use-udpd" property is set)
+      after the corresponding command is issued.
+
+  exit-dpd-delay:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Time, in nanoseconds, needed by the chip to exit from the Deep Power-Down
+      mode (or Ultra-Deep Power-Down mode when the "use-udpd" property is set)
+      after the corresponding command is issued.

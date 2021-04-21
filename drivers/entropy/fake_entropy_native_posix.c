@@ -11,6 +11,8 @@
  * This entropy source should only be used for testing.
  */
 
+#define DT_DRV_COMPAT zephyr_native_posix_rng
+
 #include "device.h"
 #include <drivers/entropy.h>
 #include "init.h"
@@ -23,8 +25,9 @@
 
 static unsigned int seed = 0x5678;
 
-static int entropy_native_posix_get_entropy(struct device *dev, u8_t *buffer,
-					    u16_t length)
+static int entropy_native_posix_get_entropy(const struct device *dev,
+					    uint8_t *buffer,
+					    uint16_t length)
 {
 	ARG_UNUSED(dev);
 
@@ -45,8 +48,9 @@ static int entropy_native_posix_get_entropy(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
-static int entropy_native_posix_get_entropy_isr(struct device *dev, u8_t *buf,
-						u16_t len, u32_t flags)
+static int entropy_native_posix_get_entropy_isr(const struct device *dev,
+						uint8_t *buf,
+						uint16_t len, uint32_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -57,7 +61,7 @@ static int entropy_native_posix_get_entropy_isr(struct device *dev, u8_t *buf,
 	return entropy_native_posix_get_entropy(dev, buf, len);
 }
 
-static int entropy_native_posix_init(struct device *dev)
+static int entropy_native_posix_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	srandom(seed);
@@ -71,8 +75,9 @@ static const struct entropy_driver_api entropy_native_posix_api_funcs = {
 	.get_entropy_isr = entropy_native_posix_get_entropy_isr
 };
 
-DEVICE_AND_API_INIT(entropy_native_posix, CONFIG_ENTROPY_NAME,
-		    entropy_native_posix_init, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0,
+		    entropy_native_posix_init, device_pm_control_nop,
+		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_native_posix_api_funcs);
 

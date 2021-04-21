@@ -45,8 +45,8 @@
 	-connect_gfrc=1
 	-connect_icd=2
 	-connect_ici=2
-	-prop=nsim_mem-dev=uart0,base=0xf0000000,irq=0,use_connect=1
+	-prop=nsim_mem-dev=uart0,kind=dwuart,base=0xf0000000,irq=0,use_connect=1
 	-on=nsim_print-sys-arch
 	-noprofile
 	-nogoifmain
-	-instrs_per_pass=10
+	-instrs_per_pass=512

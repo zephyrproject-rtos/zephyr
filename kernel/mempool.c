@@ -5,167 +5,67 @@
  */
 
 #include <kernel.h>
-#include <ksched.h>
-#include <wait_q.h>
-#include <init.h>
 #include <string.h>
-#include <sys/__assert.h>
 #include <sys/math_extras.h>
-#include <stdbool.h>
+#include <sys/util.h>
 
-static struct k_spinlock lock;
-
-static struct k_mem_pool *get_pool(int id)
+static void *z_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t size)
 {
-	extern struct k_mem_pool _k_mem_pool_list_start[];
-	return &_k_mem_pool_list_start[id];
-}
-
-static int pool_id(struct k_mem_pool *pool)
-{
-	extern struct k_mem_pool _k_mem_pool_list_start[];
-	return pool - &_k_mem_pool_list_start[0];
-}
-
-static void k_mem_pool_init(struct k_mem_pool *p)
-{
-	z_waitq_init(&p->wait_q);
-	z_sys_mem_pool_base_init(&p->base);
-}
-
-int init_static_pools(struct device *unused)
-{
-	ARG_UNUSED(unused);
-
-	Z_STRUCT_SECTION_FOREACH(k_mem_pool, p) {
-		k_mem_pool_init(p);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_static_pools, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
-		     size_t size, s32_t timeout)
-{
-	int ret;
-	s64_t end = 0;
-
-	__ASSERT(!(arch_is_in_isr() && timeout != K_NO_WAIT), "");
-
-	if (timeout > 0) {
-		end = k_uptime_get() + timeout;
-	}
-
-	while (true) {
-		u32_t level_num, block_num;
-
-		ret = z_sys_mem_pool_block_alloc(&p->base, size,
-						 &level_num, &block_num,
-						 &block->data);
-		block->id.pool = pool_id(p);
-		block->id.level = level_num;
-		block->id.block = block_num;
-
-		if (ret == 0 || timeout == K_NO_WAIT ||
-		    ret != -ENOMEM) {
-			return ret;
-		}
-
-		z_pend_curr_unlocked(&p->wait_q, timeout);
-
-		if (timeout != K_FOREVER) {
-			timeout = end - k_uptime_get();
-			if (timeout <= 0) {
-				break;
-			}
-		}
-	}
-
-	return -EAGAIN;
-}
-
-void k_mem_pool_free_id(struct k_mem_block_id *id)
-{
-	int need_sched = 0;
-	struct k_mem_pool *p = get_pool(id->pool);
-
-	z_sys_mem_pool_block_free(&p->base, id->level, id->block);
-
-	/* Wake up anyone blocked on this pool and let them repeat
-	 * their allocation attempts
-	 *
-	 * (Note that this spinlock only exists because z_unpend_all()
-	 * is unsynchronized.  Maybe we want to put the lock into the
-	 * wait_q instead and make the API safe?)
-	 */
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	need_sched = z_unpend_all(&p->wait_q);
-
-	if (need_sched != 0) {
-		z_reschedule(&lock, key);
-	} else {
-		k_spin_unlock(&lock, key);
-	}
-}
-
-void k_mem_pool_free(struct k_mem_block *block)
-{
-	k_mem_pool_free_id(&block->id);
-}
-
-void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
-{
-	struct k_mem_block block;
+	void *mem;
+	struct k_heap **heap_ref;
+	size_t __align;
 
 	/*
-	 * get a block large enough to hold an initial (hidden) block
-	 * descriptor, as well as the space the caller requested
+	 * Adjust the size to make room for our heap reference.
+	 * Merge a rewind bit with align value (see sys_heap_aligned_alloc()).
+	 * This allows for storing the heap pointer right below the aligned
+	 * boundary without wasting any memory.
 	 */
-	if (size_add_overflow(size, WB_UP(sizeof(struct k_mem_block_id)),
-			      &size)) {
+	if (size_add_overflow(size, sizeof(heap_ref), &size)) {
 		return NULL;
 	}
-	if (k_mem_pool_alloc(pool, &block, size, K_NO_WAIT) != 0) {
+	__align = align | sizeof(heap_ref);
+
+	mem = k_heap_aligned_alloc(heap, __align, size, K_NO_WAIT);
+	if (mem == NULL) {
 		return NULL;
 	}
 
-	/* save the block descriptor info at the start of the actual block */
-	(void)memcpy(block.data, &block.id, sizeof(struct k_mem_block_id));
+	heap_ref = mem;
+	*heap_ref = heap;
+	mem = ++heap_ref;
+	__ASSERT(align == 0 || ((uintptr_t)mem & (align - 1)) == 0,
+		 "misaligned memory at %p (align = %zu)", mem, align);
 
-	/* return address of the user area part of the block to the caller */
-	return (char *)block.data + WB_UP(sizeof(struct k_mem_block_id));
+	return mem;
 }
 
 void k_free(void *ptr)
 {
-	if (ptr != NULL) {
-		/* point to hidden block descriptor at start of block */
-		ptr = (char *)ptr - WB_UP(sizeof(struct k_mem_block_id));
+	struct k_heap **heap_ref;
 
-		/* return block to the heap memory pool */
-		k_mem_pool_free_id(ptr);
+	if (ptr != NULL) {
+		heap_ref = ptr;
+		ptr = --heap_ref;
+		k_heap_free(*heap_ref, ptr);
 	}
 }
 
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 
-/*
- * Heap is defined using HEAP_MEM_POOL_SIZE configuration option.
- *
- * This module defines the heap memory pool and the _HEAP_MEM_POOL symbol
- * that has the address of the associated memory pool struct.
- */
+K_HEAP_DEFINE(_system_heap, CONFIG_HEAP_MEM_POOL_SIZE);
+#define _SYSTEM_HEAP (&_system_heap)
 
-K_MEM_POOL_DEFINE(_heap_mem_pool, CONFIG_HEAP_MEM_POOL_MIN_SIZE,
-		  CONFIG_HEAP_MEM_POOL_SIZE, 1, 4);
-#define _HEAP_MEM_POOL (&_heap_mem_pool)
-
-void *k_malloc(size_t size)
+void *k_aligned_alloc(size_t align, size_t size)
 {
-	return k_mem_pool_malloc(_HEAP_MEM_POOL, size);
+	__ASSERT(align / sizeof(void *) >= 1
+		&& (align % sizeof(void *)) == 0,
+		"align must be a multiple of sizeof(void *)");
+
+	__ASSERT((align & (align - 1)) == 0,
+		"align must be a power of 2");
+
+	return z_heap_aligned_alloc(_SYSTEM_HEAP, align, size);
 }
 
 void *k_calloc(size_t nmemb, size_t size)
@@ -186,25 +86,25 @@ void *k_calloc(size_t nmemb, size_t size)
 
 void k_thread_system_pool_assign(struct k_thread *thread)
 {
-	thread->resource_pool = _HEAP_MEM_POOL;
+	thread->resource_pool = _SYSTEM_HEAP;
 }
 #else
-#define _HEAP_MEM_POOL	NULL
+#define _SYSTEM_HEAP	NULL
 #endif
 
-void *z_thread_malloc(size_t size)
+void *z_thread_aligned_alloc(size_t align, size_t size)
 {
 	void *ret;
-	struct k_mem_pool *pool;
+	struct k_heap *heap;
 
 	if (k_is_in_isr()) {
-		pool = _HEAP_MEM_POOL;
+		heap = _SYSTEM_HEAP;
 	} else {
-		pool = _current->resource_pool;
+		heap = _current->resource_pool;
 	}
 
-	if (pool) {
-		ret = k_mem_pool_malloc(pool, size);
+	if (heap != NULL) {
+		ret = z_heap_aligned_alloc(heap, align, size);
 	} else {
 		ret = NULL;
 	}

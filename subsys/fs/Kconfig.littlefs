@@ -1,6 +1,17 @@
 # Copyright (c) 2019 Bolt Innovation Management, LLC
 # Copyright (c) 2019 Peter Bigot Consulting, LLC
+# Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
+
+config FILE_SYSTEM_LITTLEFS
+	bool "LittleFS support"
+	depends on FILE_SYSTEM
+	depends on FLASH_MAP
+	depends on FLASH_PAGE_LAYOUT
+	help
+	  Enables LittleFS file system support.
+
+if FILE_SYSTEM_LITTLEFS
 
 menu "LittleFS Settings"
 	visible if FILE_SYSTEM_LITTLEFS
@@ -58,7 +69,7 @@ config FS_LITTLEFS_BLOCK_CYCLES
 	  disable leveling.
 
 menuconfig FS_LITTLEFS_FC_MEM_POOL
-	bool "Enable flexible file cache sizes for littlefs"
+	bool "Enable flexible file cache sizes for littlefs (DEPRECATED)"
 	help
 	  littlefs requires a per-file buffer to cache data.  For
 	  applications that use the default configuration parameters a
@@ -69,23 +80,75 @@ menuconfig FS_LITTLEFS_FC_MEM_POOL
 	  support different cache sizes for different partitions this
 	  preallocation is inadequate.
 
-	  Select this feature to enable a memory pool allocator for
-	  littlefs file caches.
+	  This API is no longer approprate as the underlying storage solution
+	  has been deprecated.  Instead use FS_LITTLEFS_FC_HEAP_SIZE to
+	  configure the size of a heap used to allocate caches for open files.
 
+# This option deprecated in 2.5.0
 if FS_LITTLEFS_FC_MEM_POOL
 
 config FS_LITTLEFS_FC_MEM_POOL_MIN_SIZE
-	int "Minimum block size for littlefs file cache memory pool"
+	int "(DEPRECATED)"
 	default 16
+	help
+	  This API is no longer approprate as the underlying storage
+	  solution has been deprecated.  Instead use
+	  FS_LITTLEFS_FC_HEAP to configure the size of a heap used to
+	  allocate caches for open files.
 
 config FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE
-	int "Maximum block size for littlefs file cache memory pool"
+	int "Block size for littlefs file cache heap (DEPRECATED)"
 	default 1024
+	help
+	  A heap for file cache data is sized so that
+	  FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS allocations of size
+	  FS_LITTLEFS_MEM_POOL_MAX_SIZE can be active simultaneously.
+
+	  This option configures the size.
+
+	  This API is no longer approprate as the underlying storage solution
+	  has been deprecated.  Instead use FS_LITTLEFS_FC_HEAP to configure
+	  the size of a heap used to allocate caches for open files.
 
 config FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS
-	int "Number of maximum sized blocks in littlefs file cache memory pool"
+	int "Number of maximum sized blocks in littlefs file cache heap (DEPRECATED)"
 	default 2
+	help
+	  A heap for file cache data is sized so that
+	  FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS allocations of size
+	  FS_LITTLEFS_MEM_POOL_MAX_SIZE can be active simultaneously.
+
+	  This option configures the total heap size based on the
+	  block size.
+
+	  This API is no longer approprate as the underlying storage solution
+	  has been deprecated.  Instead use FS_LITTLEFS_FC_HEAP to configure
+	  the size of a heap used to allocate caches for open files.
 
 endif # FS_LITTLEFS_FC_MEM_POOL
 
-endmenu
+endmenu # FS_LITTLEFS_FC_MEM_POOL
+
+config FS_LITTLEFS_FC_HEAP_SIZE
+	int "Enable flexible file cache sizes for littlefs"
+	default 0
+	help
+	  littlefs requires a per-file buffer to cache data.
+
+	  When applications customize littlefs configurations and support
+	  different cache sizes for different partitions this preallocation is
+	  inadequate as an application might require a small number of files
+	  using a large cache size and a larger number of files using a
+	  smaller cache size.  In that case application should provide a
+	  positive value for the heap size.  Be aware that there is a
+	  per-allocation overhead that affects how much usable space is
+	  present in the heap.
+
+	  If this option is set to a non-positive value the heap is sized to
+	  support up to FS_LITTLE_FS_NUM_FILES blocks of
+	  FS_LITTLEFS_CACHE_SIZE bytes.  Until FS_LITTLEFS_FC_MEM_POOL is
+	  removed presence of that option changes the default to support
+	  FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS allocations of size
+	  FS_LITTLEFS_MEM_POOL_MAX_SIZE
+
+endif # FILE_SYSTEM_LITTLEFS

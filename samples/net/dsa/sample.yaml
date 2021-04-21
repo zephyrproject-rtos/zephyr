@@ -1,0 +1,12 @@
+common:
+  harness: net
+  tags: net dsa
+sample:
+  description: Test DSA functionality
+  name: DSA sample app
+tests:
+  sample.net.dsa:
+    build_only: true
+    platform_allow: ip_k66f
+    depends_on: netif
+    tags: tests

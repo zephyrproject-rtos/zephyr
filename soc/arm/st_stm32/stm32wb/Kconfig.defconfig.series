@@ -10,21 +10,12 @@ source "soc/arm/st_stm32/stm32wb/Kconfig.defconfig.stm32wb*"
 config SOC_SERIES
 	default "stm32wb"
 
-if GPIO_STM32
-
-config GPIO_STM32_PORTD
+if PM
+config PM_DEVICE
 	default y
 
-config GPIO_STM32_PORTE
+config STM32_LPTIM_TIMER
 	default y
-
-config GPIO_STM32_PORTH
-	default y
-
-endif # GPIO_STM32
-
-config I2C_STM32_V2
-	default y
-	depends on I2C_STM32
+endif # PM
 
 endif # SOC_SERIES_STM32WBX

@@ -77,7 +77,7 @@ struct z_app_region {
  * specific: "aw" indicates section is allocatable and writable,
  * and "@progbits" indicates the section has data.
  */
-#ifdef CONFIG_ARM
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 /* ARM has a quirk in that '@' denotes a comment, so we have to send
  * %progbits to the assembler instead.
  */
@@ -86,13 +86,24 @@ struct z_app_region {
 #define Z_PROGBITS_SYM "@"
 #endif
 
+#if defined(CONFIG_ARC) && defined(__CCAC__)
+/* ARC MWDT assembler has slightly different pushsection/popsection directives
+ * names.
+ */
+#define Z_PUSHSECTION_DIRECTIV		".pushsect"
+#define Z_POPSECTION_DIRECTIVE		".popsect"
+#else
+#define Z_PUSHSECTION_DIRECTIV		".pushsection"
+#define Z_POPSECTION_DIRECTIVE		".popsection"
+#endif
+
 #define Z_APPMEM_PLACEHOLDER(name) \
 	__asm__ ( \
-		".pushsection " STRINGIFY(K_APP_DMEM_SECTION(name)) \
+		Z_PUSHSECTION_DIRECTIV " " STRINGIFY(K_APP_DMEM_SECTION(name)) \
 			",\"aw\"," Z_PROGBITS_SYM "progbits\n\t" \
 		".global " STRINGIFY(name) "_placeholder\n\t" \
 		STRINGIFY(name) "_placeholder:\n\t" \
-		".popsection\n\t")
+		Z_POPSECTION_DIRECTIVE "\n\t")
 
 /**
  * @brief Define an application memory partition with linker support
@@ -117,11 +128,11 @@ struct z_app_region {
 	extern char Z_APP_BSS_START(name)[]; \
 	extern char Z_APP_BSS_SIZE(name)[]; \
 	Z_GENERIC_SECTION(.app_regions.name) \
-	struct z_app_region name##_region = { \
+	const struct z_app_region name##_region = { \
 		.bss_start = &Z_APP_BSS_START(name), \
 		.bss_size = (size_t) &Z_APP_BSS_SIZE(name) \
 	}; \
-	Z_APPMEM_PLACEHOLDER(name);
+	Z_APPMEM_PLACEHOLDER(name)
 #else
 
 #define K_APP_BMEM(ptn)

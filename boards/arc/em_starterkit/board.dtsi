@@ -40,19 +40,19 @@
 		};
 		led5: led_5 {
 			gpios = <&gpio1 5 0>;
-			label = "LED 1";
+			label = "LED 5";
 		};
 		led6: led_6 {
 			gpios = <&gpio1 6 0>;
-			label = "LED 2";
+			label = "LED 6";
 		};
 		led7: led_7 {
 			gpios = <&gpio1 7 0>;
-			label = "LED 3";
+			label = "LED 7";
 		};
 		led8: led_8 {
 			gpios = <&gpio1 8 0>;
-			label = "LED 4";
+			label = "LED 8";
 		};
 
 	};

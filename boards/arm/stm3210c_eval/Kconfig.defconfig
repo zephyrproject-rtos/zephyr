@@ -8,8 +8,4 @@ if BOARD_STM3210C_EVAL
 config BOARD
 	default "stm3210c_eval"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_STM3210C_EVAL

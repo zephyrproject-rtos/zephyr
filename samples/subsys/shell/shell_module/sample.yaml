@@ -1,18 +1,39 @@
 sample:
   name: Shell Sample
+common:
+  integration_platforms:
+    - native_posix
 tests:
   sample.shell.shell_module:
     filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
     tags: shell
     harness: keyboard
     min_ram: 40
+  sample.shell.shell_module.usb:
+    depends_on: usb_device
+    tags: shell usb
+    harness: keyboard
+    min_ram: 40
+    extra_args: OVERLAY_CONFIG="overlay-usb.conf"
   sample.shell.shell_module.minimal:
     filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
     tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal.conf"
+  sample.shell.shell_module.getopt:
+    filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
+    tags: shell
+    harness: keyboard
+    min_ram: 40
+    extra_args: CONF_FILE="prj_getopt.conf"
   sample.shell.shell_module.minimal_rtt:
     filter: CONFIG_HAS_SEGGER_RTT
     tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal_rtt.conf"
+  sample.shell.shell_module.login:
+    filter: ( CONFIG_SERIAL and CONFIG_UART_SHELL_ON_DEV_NAME )
+    tags: shell
+    harness: keyboard
+    min_ram: 40
+    extra_args: CONF_FILE="prj_login.conf"

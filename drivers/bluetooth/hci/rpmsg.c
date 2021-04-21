@@ -19,13 +19,15 @@
 #define RPMSG_ACL 0x02
 #define RPMSG_SCO 0x03
 #define RPMSG_EVT 0x04
+#define RPMSG_ISO 0x05
 
 int bt_rpmsg_platform_init(void);
 int bt_rpmsg_platform_send(struct net_buf *buf);
+int bt_rpmsg_platform_endpoint_is_bound(void);
 
-static bool is_hci_event_discardable(const u8_t *evt_data)
+static bool is_hci_event_discardable(const uint8_t *evt_data)
 {
-	u8_t evt_type = evt_data[0];
+	uint8_t evt_type = evt_data[0];
 
 	switch (evt_type) {
 #if defined(CONFIG_BT_BREDR)
@@ -34,10 +36,12 @@ static bool is_hci_event_discardable(const u8_t *evt_data)
 		return true;
 #endif
 	case BT_HCI_EVT_LE_META_EVENT: {
-		u8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
+		uint8_t subevt_type = evt_data[sizeof(struct bt_hci_evt_hdr)];
 
 		switch (subevt_type) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
+			return true;
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
 			return true;
 		default:
 			return false;
@@ -48,8 +52,7 @@ static bool is_hci_event_discardable(const u8_t *evt_data)
 	}
 }
 
-static struct net_buf *bt_rpmsg_evt_recv(u8_t *data, size_t remaining,
-					 bool *prio)
+static struct net_buf *bt_rpmsg_evt_recv(uint8_t *data, size_t remaining)
 {
 	bool discardable;
 	struct bt_hci_evt_hdr hdr;
@@ -83,14 +86,12 @@ static struct net_buf *bt_rpmsg_evt_recv(u8_t *data, size_t remaining,
 	}
 
 	net_buf_add_mem(buf, &hdr, sizeof(hdr));
-	*prio = bt_hci_evt_is_prio(hdr.evt);
-
 	net_buf_add_mem(buf, data, remaining);
 
 	return buf;
 }
 
-static struct net_buf *bt_rpmsg_acl_recv(u8_t *data, size_t remaining)
+static struct net_buf *bt_rpmsg_acl_recv(uint8_t *data, size_t remaining)
 {
 	struct bt_hci_acl_hdr hdr;
 	struct net_buf *buf;
@@ -124,10 +125,43 @@ static struct net_buf *bt_rpmsg_acl_recv(u8_t *data, size_t remaining)
 	return buf;
 }
 
-void bt_rpmsg_rx(u8_t *data, size_t len)
+static struct net_buf *bt_rpmsg_iso_recv(uint8_t *data, size_t remaining)
 {
-	u8_t pkt_indicator;
-	bool prio = false;
+	struct bt_hci_iso_hdr hdr;
+	struct net_buf *buf;
+
+	if (remaining < sizeof(hdr)) {
+		BT_ERR("Not enough data for ISO header");
+		return NULL;
+	}
+
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+	if (buf) {
+		memcpy((void *)&hdr, data, sizeof(hdr));
+		data += sizeof(hdr);
+		remaining -= sizeof(hdr);
+
+		net_buf_add_mem(buf, &hdr, sizeof(hdr));
+	} else {
+		BT_ERR("No available ISO buffers!");
+		return NULL;
+	}
+
+	if (remaining != sys_le16_to_cpu(hdr.len)) {
+		BT_ERR("ISO payload length is not correct");
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	BT_DBG("len %zu", remaining);
+	net_buf_add_mem(buf, data, remaining);
+
+	return buf;
+}
+
+void bt_rpmsg_rx(uint8_t *data, size_t len)
+{
+	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
 
@@ -138,11 +172,15 @@ void bt_rpmsg_rx(u8_t *data, size_t len)
 
 	switch (pkt_indicator) {
 	case RPMSG_EVT:
-		buf = bt_rpmsg_evt_recv(data, remaining, &prio);
+		buf = bt_rpmsg_evt_recv(data, remaining);
 		break;
 
 	case RPMSG_ACL:
 		buf = bt_rpmsg_acl_recv(data, remaining);
+		break;
+
+	case RPMSG_ISO:
+		buf = bt_rpmsg_iso_recv(data, remaining);
 		break;
 
 	default:
@@ -152,11 +190,8 @@ void bt_rpmsg_rx(u8_t *data, size_t len)
 
 	if (buf) {
 		BT_DBG("Calling bt_recv(%p)", buf);
-		if (prio) {
-			bt_recv_prio(buf);
-		} else {
-			bt_recv(buf);
-		}
+
+		bt_recv(buf);
 
 		BT_HEXDUMP_DBG(buf->data, buf->len, "RX buf payload:");
 	}
@@ -165,7 +200,7 @@ void bt_rpmsg_rx(u8_t *data, size_t len)
 static int bt_rpmsg_send(struct net_buf *buf)
 {
 	int err;
-	u8_t pkt_indicator;
+	uint8_t pkt_indicator;
 
 	BT_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
@@ -175,6 +210,9 @@ static int bt_rpmsg_send(struct net_buf *buf)
 		break;
 	case BT_BUF_CMD:
 		pkt_indicator = RPMSG_CMD;
+		break;
+	case BT_BUF_ISO_OUT:
+		pkt_indicator = RPMSG_ISO;
 		break;
 	default:
 		BT_ERR("Unknown type %u", bt_buf_get_type(buf));
@@ -197,7 +235,10 @@ static int bt_rpmsg_open(void)
 {
 	BT_DBG("");
 
-	return bt_rpmsg_platform_init();
+	while (!bt_rpmsg_platform_endpoint_is_bound()) {
+		k_sleep(K_MSEC(1));
+	}
+	return 0;
 }
 
 static const struct bt_hci_driver drv = {
@@ -205,13 +246,29 @@ static const struct bt_hci_driver drv = {
 	.open		= bt_rpmsg_open,
 	.send		= bt_rpmsg_send,
 	.bus		= BT_HCI_DRIVER_BUS_IPM,
+#if defined(CONFIG_BT_DRIVER_QUIRK_NO_AUTO_DLE)
+	.quirks         = BT_QUIRK_NO_AUTO_DLE,
+#endif
 };
 
-static int bt_rpmsg_init(struct device *unused)
+static int bt_rpmsg_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	return bt_hci_driver_register(&drv);
+	int err;
+
+	err = bt_rpmsg_platform_init();
+	if (err < 0) {
+		BT_ERR("Failed to initialize BT RPMSG (err %d)", err);
+		return err;
+	}
+
+	err = bt_hci_driver_register(&drv);
+	if (err < 0) {
+		BT_ERR("Failed to register BT HIC driver (err %d)", err);
+	}
+
+	return err;
 }
 
-SYS_INIT(bt_rpmsg_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(bt_rpmsg_init, POST_KERNEL, CONFIG_RPMSG_SERVICE_EP_REG_PRIORITY);

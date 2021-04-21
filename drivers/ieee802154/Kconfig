@@ -12,6 +12,19 @@ menuconfig IEEE802154
 
 if IEEE802154
 
+config IEEE802154_NET_IF_NO_AUTO_START
+	bool "Disable 802.15.4 interface auto-start"
+	help
+	  This option allows user to set any configuration and/or filter before
+	  the radio becomes operational. For instance, the EUI-64 value can be
+	  configured using net_if_set_link_addr(iface, mac, 8,
+	  NET_LINK_IEEE802154).
+	  When all configurations are done net_if_up() has to be invoked to
+	  bring the interface up.
+
+	  This option can be useful when using OpenThread or Zigbee. If you
+	  have any doubt about this option leave it as default value.
+
 config IEEE802154_RAW_MODE
 	bool "Use IEEE 802.15.4 driver without the MAC stack"
 	select NET_RAW_MODE
@@ -20,6 +33,29 @@ config IEEE802154_RAW_MODE
 	  i.e. without a MAC stack (the net L2 layer for 802.15.4 will not
 	  be built). Used only for very specific cases, such as wpan_serial
 	  and wpanusb samples.
+
+config IEEE802154_RDEV
+	bool
+	help
+	  PHY is a ranging-capable device (RDEV)
+
+config IEEE802154_VENDOR_OUI_ENABLE
+	bool "Enables setting Vendor Organizationally Unique Identifier"
+	help
+	  This option enables setting custom vendor
+	  OUI using IEEE802154_VENDOR_OUI. After enabling,
+	  user is obliged to set IEEE802154_VENDOR_OUI value,
+	  as this option has no default value.
+
+if IEEE802154_VENDOR_OUI_ENABLE
+
+config IEEE802154_VENDOR_OUI
+	int "Vendor Organizationally Unique Identifier"
+	help
+	  Custom vendor OUI, which makes 24 most-significant
+	  bits of MAC address
+
+endif # IEEE802154_VENDOR_OUI_ENABLE
 
 source "drivers/ieee802154/Kconfig.cc2520"
 
@@ -34,6 +70,8 @@ source "drivers/ieee802154/Kconfig.cc1200"
 source "drivers/ieee802154/Kconfig.cc13xx_cc26xx"
 
 source "drivers/ieee802154/Kconfig.rf2xx"
+
+source "drivers/ieee802154/Kconfig.dw1000"
 
 menuconfig IEEE802154_UPIPE
 	bool "UART PIPE fake radio driver support for QEMU"

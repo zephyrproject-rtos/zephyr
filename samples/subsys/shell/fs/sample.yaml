@@ -3,4 +3,6 @@ sample:
   name: FS shell
 tests:
   sample.filesystem.shell:
-    platform_whitelist: reel_board
+    tags: shell filesystem
+    harness: keyboard
+    platform_allow: reel_board

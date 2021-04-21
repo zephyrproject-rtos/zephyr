@@ -20,13 +20,17 @@ Host qualifications
      - Link
      - Qualifying Company
 
+   * - 2.2.x
+     - `QDID 151074 <https://launchstudio.bluetooth.com/ListingDetails/109287>`_
+     - Demant A/S
+
    * - 1.14.x
      - `QDID 139258 <https://launchstudio.bluetooth.com/ListingDetails/95152>`__
      - The Linux Foundation
 
    * - 1.13
      - `QDID 119517 <https://launchstudio.bluetooth.com/ListingDetails/70189>`__
-     - Nordic
+     - Nordic Semiconductor
 
 Mesh qualifications
 ===================
@@ -53,14 +57,19 @@ Controller qualifications
      - Qualifying Company
      - Compatible Hardware
 
+   * - 2.2.x
+     - `QDID 150092 <https://launchstudio.bluetooth.com/ListingDetails/108089>`__
+     - Nordic Semiconductor
+     - nRF52x
+
    * - 1.14.x
      - `QDID 135679 <https://launchstudio.bluetooth.com/ListingDetails/90777>`__
-     - Nordic
+     - Nordic Semiconductor
      - nRF52x
 
    * - 1.9 to 1.13
      - `QDID 101395 <https://launchstudio.bluetooth.com/ListingDetails/25166>`__
-     - Nordic
+     - Nordic Semiconductor
      - nRF52x
 
 ICS Features

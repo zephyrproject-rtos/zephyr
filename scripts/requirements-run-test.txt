@@ -1,0 +1,18 @@
+# RUN-TEST: required to do run time tests of zephyr
+#
+# things used by twister or related in run time testing
+
+# used to connect to boards for console IO
+pyserial
+
+# used to flash & debug various boards
+pyocd>=0.29.0
+
+# used by twister for board/hardware map
+tabulate
+
+# used by mcuboot
+cbor>=1.0.0
+
+# use for twister
+psutil

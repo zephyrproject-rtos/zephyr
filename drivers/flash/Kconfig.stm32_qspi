@@ -1,0 +1,22 @@
+# STM32 Quad SPI flash driver configuration options
+
+# Copyright (c) 2020 Piotr Mienkowski
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ST_STM32_QSPI_NOR := st,stm32-qspi-nor
+DT_STM32_QUADSPI_HAS_DMA := $(dt_node_has_prop,quadspi,dmas)
+
+config FLASH_STM32_QSPI
+	bool "STM32 Quad SPI Flash driver"
+	depends on SOC_FAMILY_STM32
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_QSPI_NOR))
+	select USE_STM32_HAL_QSPI
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_JESD216
+	select FLASH_PAGE_LAYOUT
+	select FLASH_HAS_PAGE_LAYOUT
+	select DMA if $(DT_STM32_QUADSPI_HAS_DMA)
+	select USE_STM32_HAL_DMA if $(DT_STM32_QUADSPI_HAS_DMA)
+	help
+	  Enable QSPI-NOR support on the STM32 family of processors.

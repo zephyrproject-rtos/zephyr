@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config TMP116
-	bool "TMP116 Temperature Sensor"
-	depends on I2C && HAS_DTS_I2C
+	bool "TMP116 and TMP117 Temperature Sensors"
+	depends on I2C
 	help
-	  Enable driver for TMP116 temperature sensor.
+	  Enable driver for TMP116 and TMP117 temperature sensors.

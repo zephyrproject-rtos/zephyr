@@ -14,11 +14,11 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define LED_DEV_NAME DT_INST_0_TI_LP5562_LABEL
+#define LED_DEV_NAME DT_LABEL(DT_INST(0, ti_lp5562))
 #define NUM_LEDS 4
 #define BLINK_DELAY_ON 500
 #define BLINK_DELAY_OFF 500
-#define DELAY_TIME K_MSEC(2000)
+#define DELAY_TIME 2000
 #define COLORS_TO_SHOW 8
 #define VALUES_PER_COLOR 3
 
@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(main);
 /*
  * The following colors are shown in the given order.
  */
-static u8_t colors[COLORS_TO_SHOW][VALUES_PER_COLOR] = {
+static uint8_t colors[COLORS_TO_SHOW][VALUES_PER_COLOR] = {
 	{ 0xFF, 0x00, 0x00 }, /*< Red    */
 	{ 0x00, 0xFF, 0x00 }, /*< Green  */
 	{ 0x00, 0x00, 0xFF }, /*< Blue   */
@@ -51,7 +51,7 @@ static u8_t colors[COLORS_TO_SHOW][VALUES_PER_COLOR] = {
  *
  * @return Hex value scaled to percent.
  */
-static inline u8_t scale_color_to_percent(u8_t hex)
+static inline uint8_t scale_color_to_percent(uint8_t hex)
 {
 	return (hex * 100U) / 0xFF;
 }
@@ -66,7 +66,8 @@ static inline u8_t scale_color_to_percent(u8_t hex)
  *
  * @return 0 if successful, -ERRNO otherwise.
  */
-static int set_static_color(struct device *dev, u8_t r, u8_t g, u8_t b)
+static int set_static_color(const struct device *dev, uint8_t r, uint8_t g,
+			    uint8_t b)
 {
 	int ret;
 
@@ -110,8 +111,8 @@ static int set_static_color(struct device *dev, u8_t r, u8_t g, u8_t b)
  *
  * @return 0 if successful, -ERRNO otherwise.
  */
-static int blink_color(struct device *dev, bool r, bool g, bool b,
-		u32_t delay_on, u32_t delay_off)
+static int blink_color(const struct device *dev, bool r, bool g, bool b,
+		       uint32_t delay_on, uint32_t delay_off)
 {
 	int ret;
 
@@ -149,7 +150,7 @@ static int blink_color(struct device *dev, bool r, bool g, bool b,
  *
  * @return 0 if successful, -ERRNO otherwise.
  */
-static int turn_off_all_leds(struct device *dev)
+static int turn_off_all_leds(const struct device *dev)
 {
 	for (int i = 0; i < NUM_LEDS; i++) {
 		int ret = led_off(dev, i);
@@ -164,7 +165,7 @@ static int turn_off_all_leds(struct device *dev)
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	int i, ret;
 
 	dev = device_get_binding(LED_DEV_NAME);
@@ -188,7 +189,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME);
+			k_msleep(DELAY_TIME);
 		}
 
 		ret = turn_off_all_leds(dev);
@@ -204,7 +205,7 @@ void main(void)
 		}
 
 		/* Wait a few blinking before turning off the LEDs */
-		k_sleep(DELAY_TIME * 2);
+		k_msleep(DELAY_TIME * 2);
 
 		/* Change the color of the LEDs while keeping blinking. */
 		for (i = 0; i < COLORS_TO_SHOW; i++) {
@@ -216,7 +217,7 @@ void main(void)
 				return;
 			}
 
-			k_sleep(DELAY_TIME * 2);
+			k_msleep(DELAY_TIME * 2);
 		}
 
 		ret = turn_off_all_leds(dev);
@@ -224,6 +225,6 @@ void main(void)
 			return;
 		}
 
-		k_sleep(DELAY_TIME);
+		k_msleep(DELAY_TIME);
 	}
 }

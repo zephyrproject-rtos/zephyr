@@ -8,41 +8,26 @@
 #include <syscall_handler.h>
 
 /* Kernel objects */
-K_THREAD_STACK_DEFINE(kobject_stack_1, KOBJECT_STACK_SIZE);
-K_THREAD_STACK_DEFINE(kobject_stack_2, KOBJECT_STACK_SIZE);
-K_THREAD_STACK_DEFINE(kobject_stack_3, KOBJECT_STACK_SIZE);
-K_THREAD_STACK_DEFINE(kobject_stack_4, KOBJECT_STACK_SIZE);
+
+K_THREAD_STACK_DEFINE(child_stack, KOBJECT_STACK_SIZE);
+K_THREAD_STACK_DEFINE(extra_stack, KOBJECT_STACK_SIZE);
 
 K_SEM_DEFINE(kobject_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_SEM_DEFINE(kobject_public_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_MUTEX_DEFINE(kobject_mutex);
-struct k_thread kobject_test_4_tid;
-struct k_thread kobject_test_6_tid;
-struct k_thread kobject_test_7_tid;
 
-struct k_thread kobject_test_9_tid;
-struct k_thread kobject_test_13_tid;
-struct k_thread kobject_test_14_tid;
-
-struct k_thread kobject_test_reuse_1_tid, kobject_test_reuse_2_tid;
-struct k_thread kobject_test_reuse_3_tid, kobject_test_reuse_4_tid;
-struct k_thread kobject_test_reuse_5_tid, kobject_test_reuse_6_tid;
-struct k_thread kobject_test_reuse_7_tid, kobject_test_reuse_8_tid;
-
-struct k_thread kobject_test_10_tid_uninitialized;
+struct k_thread child_thread;
+struct k_thread extra_thread;
 
 struct k_sem *random_sem_type;
 struct k_sem kobject_sem_not_hash_table;
 struct k_sem kobject_sem_no_init_no_access;
 struct k_sem kobject_sem_no_init_access;
 
-
 /****************************************************************************/
-void kobject_user_tc1(void *p1, void *p2, void *p3)
+static void kobject_access_grant_user_part(void *p1, void *p2, void *p3)
 {
-	valid_fault = true;
-	USERSPACE_BARRIER;
-
+	set_fault_valid(true);
 	k_sem_take(random_sem_type, K_FOREVER);
 }
 
@@ -53,8 +38,9 @@ void kobject_user_tc1(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant(), k_thread_user_mode_enter()
  */
-void test_kobject_access_grant(void *p1, void *p2, void *p3)
+void test_kobject_access_grant(void)
 {
+	set_fault_valid(false);
 
 	z_object_init(random_sem_type);
 	k_thread_access_grant(k_current_get(),
@@ -62,79 +48,156 @@ void test_kobject_access_grant(void *p1, void *p2, void *p3)
 			      &kobject_mutex,
 			      random_sem_type);
 
-	k_thread_user_mode_enter(kobject_user_tc1, NULL, NULL, NULL);
-
-}
-/****************************************************************************/
-void kobject_user_tc2(void *p1, void *p2, void *p3)
-{
-	valid_fault = false;
-	USERSPACE_BARRIER;
-
-	k_sem_give(&kobject_sem);
-
-	/* should cause a fault */
-	valid_fault = true;
-	USERSPACE_BARRIER;
-
-	/* typecasting to override compiler warning */
-	k_sem_take((struct k_sem *)&kobject_mutex, K_FOREVER);
-
+	k_thread_user_mode_enter(kobject_access_grant_user_part,
+				 NULL, NULL, NULL);
 
 }
 
 /**
- * @brief Test if a syscall can take a different type of kobject
+ * @brief Test grant access of given NULL kobject
+ *
+ * @details Call function with a NULL parameter in supervisor mode,
+ * nothing happened.
  *
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant()
  */
-void test_syscall_invalid_kobject(void *p1, void *p2, void *p3)
+void test_kobject_access_grant_error(void)
 {
+	k_object_access_grant(NULL, k_current_get());
+}
+
+/**
+ * @brief Test grant access of given NULL thread in usermode
+ *
+ * @details Call function with NULL parameter, an expected fault
+ * happened.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant()
+ */
+void test_kobject_access_grant_error_user(void)
+{
+	struct k_msgq *m;
+
+	m = k_object_alloc(K_OBJ_MSGQ);
+	k_object_access_grant(m, k_current_get());
+
+	set_fault_valid(true);
+	/* a K_ERR_KERNEL_OOPS expected */
+	k_object_access_grant(m, NULL);
+}
+
+/**
+ * @brief Test grant access of given NULL kobject in usermode
+ *
+ * @details Call function with a NULL parameter, an expected fault
+ * happened.
+ *
+ * @see k_thread_access_grant()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_kobject_access_grant_error_user_null(void)
+{
+	set_fault_valid(true);
+	/* a K_ERR_KERNEL_OOPS expected */
+	k_object_access_grant(NULL, k_current_get());
+}
+
+/**
+ * @brief Test grant access to all the kobject for thread
+ *
+ * @details Call function with a NULL parameter, an expected fault
+ * happened.
+ *
+ * @see k_thread_access_all_grant()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_kobject_access_all_grant_error(void)
+{
+	set_fault_valid(true);
+	/* a K_ERR_KERNEL_OOPS expected */
+	k_object_access_all_grant(NULL);
+}
+
+/****************************************************************************/
+static void syscall_invalid_kobject_user_part(void *p1, void *p2, void *p3)
+{
+	k_sem_give(&kobject_sem);
+
+	/* should causdde a fault */
+	set_fault_valid(true);
+
+	/* should cause fault. typecasting to override compiler warning */
+	k_sem_take((struct k_sem *)&kobject_mutex, K_FOREVER);
+}
+
+/**
+ * @brief Test syscall can take a different type of kobject
+ *
+ * @details Test syscall can take a different type of kobject and syscall will
+ * generate fatal error if check fails.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_thread_access_grant()
+ */
+void test_syscall_invalid_kobject(void)
+{
+	set_fault_valid(false);
+
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem,
 			      &kobject_mutex);
 
-	k_thread_user_mode_enter(kobject_user_tc2, NULL, NULL, NULL);
-
+	k_thread_user_mode_enter(syscall_invalid_kobject_user_part,
+				 NULL, NULL, NULL);
 }
 
 /****************************************************************************/
-void kobject_user_tc3(void *p1, void *p2, void *p3)
+static void thread_without_kobject_permission_user_part(void *p1, void *p2,
+							void *p3)
 {
 	/* should cause a fault */
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	set_fault_valid(true);
 	k_sem_give(&kobject_sem);
 }
 
 /**
- * @brief Test if a user thread can access a k_object without grant
+ * @brief Test user thread can access a k_object without grant
+ *
+ * @details The kernel will fail system call on kernel object that tracks thread
+ * permissions, on thread that don't have permission granted on the object.
  *
  * @ingroup kernel_memprotect_tests
  *
  * @see k_thread_access_grant(), k_thread_user_mode_enter()
  */
-void test_thread_without_kobject_permission(void *p1, void *p2, void *p3)
+void test_thread_without_kobject_permission(void)
 {
+	set_fault_valid(false);
+
 	k_thread_access_grant(k_current_get(),
 			      &kobject_mutex);
 
-	k_thread_user_mode_enter(kobject_user_tc3, NULL, NULL, NULL);
+	k_thread_user_mode_enter(thread_without_kobject_permission_user_part,
+				 NULL, NULL, NULL);
 
 }
 
 /****************************************************************************/
-void kobject_user_test4(void *p1, void *p2, void *p3)
+static void kobject_revoke_access_user_part(void *p1, void *p2, void *p3)
 {
 	/* should cause a fault */
 	if ((uintptr_t)p1 == 1U) {
-		valid_fault = false;
+		set_fault_valid(false);
 	} else {
-		valid_fault = true;
+		set_fault_valid(true);
 	}
-	USERSPACE_BARRIER;
 	k_sem_give(&kobject_sem);
 }
 
@@ -145,101 +208,86 @@ void kobject_user_test4(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant(), k_object_access_revoke()
  */
-void test_kobject_revoke_access(void *p1, void *p2, void *p3)
+void test_kobject_revoke_access(void)
 {
+	set_fault_valid(false);
+
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem);
 
-	k_thread_create(&kobject_test_4_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_user_test4,
+			kobject_revoke_access_user_part,
 			(void *)1, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	k_sem_take(&sync_sem, K_MSEC(100));
+	k_thread_join(&child_thread, K_FOREVER);
 	k_object_access_revoke(&kobject_sem, k_current_get());
 
-	k_thread_create(&kobject_test_4_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_user_test4,
+			kobject_revoke_access_user_part,
 			(void *)2, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
-
-	k_thread_abort(k_current_get());
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
 /* grant access to all user threads that follow */
-void kobject_user_1_test5(void *p1, void *p2, void *p3)
+static void kobject_grant_access_child_entry(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
-
 	k_sem_give(&kobject_sem);
-	k_object_access_grant(&kobject_sem, &kobject_test_reuse_2_tid);
+	k_object_access_grant(&kobject_sem, &extra_thread);
 }
 
-void kobject_user_2_test5(void *p1, void *p2, void *p3)
+static void kobject_grant_access_extra_entry(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
-
 	k_sem_take(&kobject_sem, K_FOREVER);
-	ztest_test_pass();
 }
 
 /**
- * @brief Test grant access.
- *
- * @details Will grant access to another thread for the
- * semaphore it holds.
+ * @brief Test access revoke
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_thread_access_grant()
+ * @see k_thread_access_grant(), k_object_access_revoke()
  */
-void test_kobject_grant_access_kobj(void *p1, void *p2, void *p3)
+void test_kobject_grant_access_kobj(void)
 {
+	set_fault_valid(false);
+
 	k_thread_access_grant(k_current_get(),
-			      &kobject_sem, &kobject_test_reuse_2_tid);
+			      &kobject_sem, &extra_thread);
 
-	k_thread_create(&kobject_test_reuse_1_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_user_1_test5,
+			kobject_grant_access_child_entry,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
+	k_thread_join(&child_thread, K_FOREVER);
 
-	k_sem_take(&sync_sem, K_MSEC(100));
-
-	k_thread_create(&kobject_test_reuse_2_tid,
-			kobject_stack_2,
+	k_thread_create(&extra_thread,
+			extra_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_user_2_test5,
+			kobject_grant_access_extra_entry,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&extra_thread, K_FOREVER);
 }
 
 /****************************************************************************/
-void kobject_user_test6(void *p1, void *p2, void *p3)
+static void grant_access_kobj_invalid_child(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
-
 	k_sem_give(&kobject_sem);
 
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	set_fault_valid(true);
 
-	k_object_access_grant(&kobject_sem, &kobject_test_reuse_2_tid);
+	k_object_access_grant(&kobject_sem, &extra_thread);
 	zassert_unreachable("k_object validation  failure");
 }
 
@@ -253,34 +301,29 @@ void kobject_user_test6(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant()
  */
-void test_kobject_grant_access_kobj_invalid(void *p1, void *p2, void *p3)
+void test_kobject_grant_access_kobj_invalid(void)
 {
-	k_thread_access_grant(k_current_get(),
-			      &kobject_sem);
+	set_fault_valid(false);
 
-	k_thread_create(&kobject_test_6_tid,
-			kobject_stack_3,
+	k_thread_access_grant(&child_thread, &kobject_sem);
+
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_user_test6,
+			grant_access_kobj_invalid_child,
 			NULL, NULL, NULL,
-			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+			0, K_USER, K_NO_WAIT);
 
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
-void kobject_user_test7(void *p1, void *p2, void *p3)
+static void release_from_user_child(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
-
 	k_sem_give(&kobject_sem);
 	k_object_release(&kobject_sem);
 
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	set_fault_valid(true);
 
 	k_sem_give(&kobject_sem);
 }
@@ -292,89 +335,92 @@ void kobject_user_test7(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant(), k_object_release()
  */
-void test_kobject_release_from_user(void *p1, void *p2, void *p3)
+void test_kobject_release_from_user(void)
 {
+	set_fault_valid(false);
+
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem);
 
-	k_thread_create(&kobject_test_7_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_user_test7,
+			release_from_user_child,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
+
+/* @brief Test release kernel a invaild kobject
+ *
+ * @details Validate release kernel objects with NULL parameter.
+ *
+ * @see k_object_release()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_kobject_release_null(void)
+{
+	int dummy;
+
+	k_object_release(&dummy);
+}
+
 /****************************************************************************/
-void kobject_user_1_test8(void *p1, void *p2, void *p3)
+static void access_all_grant_child_give(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
-
 	k_sem_give(&kobject_public_sem);
-
 }
 
-void kobject_user_2_test8(void *p1, void *p2, void *p3)
+static void access_all_grant_child_take(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
-
 	k_sem_take(&kobject_public_sem, K_FOREVER);
-	ztest_test_pass();
 }
 
 /**
- * @brief Test all access grant.
+ * @brief Test supervisor thread grants kernel objects all access public status
  *
- * @details Test the access by creating 2 new user threads.i
+ * @details System makes kernel object kobject_public_sem public to all threads
+ * Test the access to that kernel object by creating two new user threads.
  *
  * @see k_object_access_all_grant()
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_kobject_access_all_grant(void *p1, void *p2, void *p3)
+void test_kobject_access_all_grant(void)
 {
+	set_fault_valid(false);
 
 	k_object_access_all_grant(&kobject_public_sem);
-	k_thread_create(&kobject_test_reuse_1_tid,
-			kobject_stack_3,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_user_1_test8,
+			access_all_grant_child_give,
+			NULL, NULL, NULL,
+			0, K_USER, K_NO_WAIT);
+	k_thread_join(&child_thread, K_FOREVER);
+
+	k_thread_create(&child_thread,
+			child_stack,
+			KOBJECT_STACK_SIZE,
+			access_all_grant_child_take,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_sem_take(&sync_sem, K_MSEC(100));
-
-	k_thread_create(&kobject_test_reuse_2_tid,
-			kobject_stack_4,
-			KOBJECT_STACK_SIZE,
-			kobject_user_2_test8,
-			NULL, NULL, NULL,
-			0, K_USER, K_NO_WAIT);
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
+
 /****************************************************************************/
 
-void kobject_user_1_test9(void *p1, void *p2, void *p3)
+static void residual_permissions_child_success(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
-
 	k_sem_give(&kobject_sem);
-	k_thread_abort(k_current_get());
-
 }
 
-void kobject_user_2_test9(void *p1, void *p2, void *p3)
+static void residual_permissions_child_fail(void *p1, void *p2, void *p3)
 {
-
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	set_fault_valid(true);
 
 	k_sem_take(&kobject_sem, K_FOREVER);
 	zassert_unreachable("Failed to clear permission on a deleted thread");
@@ -391,31 +437,30 @@ void kobject_user_2_test9(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant()
  */
-void test_thread_has_residual_permissions(void *p1, void *p2, void *p3)
+void test_thread_has_residual_permissions(void)
 {
+	set_fault_valid(false);
 
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem);
 
-	k_thread_create(&kobject_test_9_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_user_1_test9,
+			residual_permissions_child_success,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
+	k_thread_join(&child_thread, K_FOREVER);
 
-	k_sem_take(&sync_sem, K_MSEC(100));
-
-	k_thread_create(&kobject_test_9_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_user_2_test9,
+			residual_permissions_child_fail,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -427,21 +472,19 @@ void test_thread_has_residual_permissions(void *p1, void *p2, void *p3)
  * @see k_object_access_grant(), k_object_access_revoke(),
  * z_object_find()
  */
-#define ERROR_STR_TEST_10 "Access granted/revoked to invalid thread k_object"
-void test_kobject_access_grant_to_invalid_thread(void *p1, void *p2, void *p3)
+void test_kobject_access_grant_to_invalid_thread(void)
 {
+	static struct k_thread uninit_thread;
 
-	k_object_access_grant(&kobject_sem, &kobject_test_10_tid_uninitialized);
-	k_object_access_revoke(&kobject_sem,
-			       &kobject_test_10_tid_uninitialized);
+	set_fault_valid(false);
 
-	if (Z_SYSCALL_OBJ(&kobject_test_10_tid_uninitialized, K_OBJ_THREAD)
-	    != 0) {
-		ztest_test_pass();
-	} else {
-		zassert_unreachable(ERROR_STR_TEST_10);
-	}
+	k_object_access_grant(&kobject_sem, &uninit_thread);
+	k_object_access_revoke(&kobject_sem, &uninit_thread);
+
+	zassert_not_equal(Z_SYSCALL_OBJ(&uninit_thread, K_OBJ_THREAD), 0,
+			  "Access granted/revoked to invalid thread k_object");
 }
+
 /****************************************************************************/
 /**
  * @brief Object validation checks
@@ -450,10 +493,9 @@ void test_kobject_access_grant_to_invalid_thread(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_kobject_access_invalid_kobject(void *p1, void *p2, void *p3)
+void test_kobject_access_invalid_kobject(void)
 {
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	set_fault_valid(true);
 
 	k_sem_take(&kobject_sem_not_hash_table, K_SECONDS(1));
 	zassert_unreachable("k_object validation  failure.");
@@ -462,18 +504,16 @@ void test_kobject_access_invalid_kobject(void *p1, void *p2, void *p3)
 
 /****************************************************************************/
 /**
- * @brief object validation checks without init accss
+ * @brief Object validation checks without init access
  *
  * @details Test syscall on a kobject which is not initialized
  * and has no access
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_access_kobject_without_init_access(void *p1,
-					     void *p2, void *p3)
+void test_access_kobject_without_init_access(void)
 {
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	set_fault_valid(true);
 
 	k_sem_take(&kobject_sem_no_init_no_access, K_SECONDS(1));
 	zassert_unreachable("k_object validation  failure");
@@ -481,10 +521,9 @@ void test_access_kobject_without_init_access(void *p1,
 }
 /****************************************************************************/
 /* object validation checks */
-void kobject_test_user_13(void *p1, void *p2, void *p3)
+static void without_init_with_access_child(void *p1, void *p2, void *p3)
 {
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	set_fault_valid(true);
 
 	k_sem_take(&kobject_sem_no_init_access, K_SECONDS(1));
 	zassert_unreachable("_SYSCALL_OBJ implementation failure.");
@@ -497,40 +536,38 @@ void kobject_test_user_13(void *p1, void *p2, void *p3)
  *
  * @see k_thread_access_grant()
  */
-void test_access_kobject_without_init_with_access(void *p1,
-						  void *p2, void *p3)
+void test_access_kobject_without_init_with_access(void)
 {
+	set_fault_valid(false);
+
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem_no_init_access);
 
-	k_thread_create(&kobject_test_13_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_13,
+			without_init_with_access_child,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
 /* object validation checks */
-void kobject_test_user_2_14(void *p1, void *p2, void *p3)
+static void reinitialize_thread_kobj_extra(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("_SYSCALL_OBJ implementation failure.");
 }
 
-void kobject_test_user_1_14(void *p1, void *p2, void *p3)
+static void reinitialize_thread_kobj_child(void *p1, void *p2, void *p3)
 {
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	set_fault_valid(true);
 
-	k_thread_create(&kobject_test_14_tid,
-			kobject_stack_1,
+	k_thread_create(&extra_thread,
+			extra_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_2_14,
+			reinitialize_thread_kobj_extra,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
@@ -542,86 +579,136 @@ void kobject_test_user_1_14(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_kobject_reinitialize_thread_kobj(void *p1, void *p2, void *p3)
+void test_kobject_reinitialize_thread_kobj(void)
 {
-	k_thread_create(&kobject_test_14_tid,
-			kobject_stack_1,
+	set_fault_valid(false);
+
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_1_14,
+			reinitialize_thread_kobj_child,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
 /* object validation checks */
-void kobject_test_user_2_15(void *p1, void *p2, void *p3)
+static void new_thread_from_user_extra(void *p1, void *p2, void *p3)
 {
-	ztest_test_pass();
+	k_thread_abort(&extra_thread);
 }
 
-void kobject_test_user_1_15(void *p1, void *p2, void *p3)
+static void new_thread_from_user_child(void *p1, void *p2, void *p3)
 {
-	valid_fault = false;
-	USERSPACE_BARRIER;
-
-	k_thread_create(&kobject_test_reuse_4_tid,
-			kobject_stack_2,
+	set_fault_valid(false);
+	k_thread_create(&extra_thread,
+			extra_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_2_15,
+			new_thread_from_user_extra,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_abort(k_current_get());
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
+
 /**
- * @brief Test thread create from a user thread
+ * @brief Test thread create from a user thread and check permissions
+ *
+ * @details
+ * - Test user thread can create new thread.
+ * - Verify that given thread and thread stack permissions to the user thread,
+ *   allow to create new user thread.
+ * - Veify that new created user thread have access to its own thread object
+ *   by aborting itself.
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_create_new_thread_from_user(void *p1, void *p2, void *p3)
+void test_create_new_thread_from_user(void)
 {
+	set_fault_valid(false);
 
-	k_thread_access_grant(&kobject_test_reuse_3_tid,
-			      &kobject_test_reuse_4_tid,
-			      &kobject_stack_2);
+	k_thread_access_grant(&child_thread,
+			      &extra_thread,
+			      &extra_stack);
 
-	k_thread_create(&kobject_test_reuse_3_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_1_15,
+			new_thread_from_user_child,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
-/****************************************************************************/
-/* object validation checks */
-void kobject_test_user_2_16(void *p1, void *p2, void *p3)
+/* Additional functions for test below
+ * User thread create with in-use stack objects
+ */
+static void new_thrd_from_user_with_in_use_stack(void *p1, void *p2, void *p3)
+{
+	zassert_unreachable("New user thread init with in-use stack obj");
+}
+
+static void new_user_thrd_child_with_in_use_stack(void *p1, void *p2, void *p3)
+{
+	set_fault_valid(true);
+
+	k_thread_create(&extra_thread,
+			child_stack,
+			KOBJECT_STACK_SIZE,
+			new_thrd_from_user_with_in_use_stack,
+			NULL, NULL, NULL,
+			0, K_USER, K_NO_WAIT);
+
+	k_thread_join(&child_thread, K_FOREVER);
+}
+
+/**
+ * @brief Test create new user thread from a user thread with in-use stack obj
+ *
+ * @details The kernel must prevent new user threads to use initiliazed (in-use)
+ * stack objects. In that case extra_thread is going to be create with in-use
+ * stack object child_stack. That will generate error, showing that kernel
+ * memory protection is working correctly.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_new_user_thread_with_in_use_stack_obj(void)
+{
+	set_fault_valid(false);
+
+	k_thread_access_grant(&child_thread,
+			      &extra_thread,
+			      &extra_stack,
+			      &child_stack);
+
+	k_thread_create(&child_thread,
+			child_stack,
+			KOBJECT_STACK_SIZE,
+			new_user_thrd_child_with_in_use_stack,
+			NULL, NULL, NULL,
+			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+
+	k_thread_join(&child_thread, K_FOREVER);
+}
+
+static void from_user_no_access_stack_extra_entry(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 
-void kobject_test_user_1_16(void *p1, void *p2, void *p3)
+static void from_user_no_access_stack_child_entry(void *p1, void *p2, void *p3)
 {
-	valid_fault = true;
-	USERSPACE_BARRIER;
+	set_fault_valid(true);
 
-	k_thread_create(&kobject_test_reuse_6_tid,
-			kobject_stack_2,
+	k_thread_create(&extra_thread,
+			extra_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_2_16,
+			from_user_no_access_stack_extra_entry,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
-
-	k_thread_abort(k_current_get());
-
 }
 /**
  * @brief Test creates new thread from usermode without stack access
@@ -632,44 +719,40 @@ void kobject_test_user_1_16(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_create_new_thread_from_user_no_access_stack(void *p1,
-						      void *p2, void *p3)
+void test_create_new_thread_from_user_no_access_stack(void)
 {
+	set_fault_valid(false);
 
-	k_thread_access_grant(&kobject_test_reuse_5_tid,
-			      &kobject_test_reuse_6_tid);
+	k_thread_access_grant(&child_thread,
+			      &extra_thread);
 
-	k_thread_create(&kobject_test_reuse_5_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_1_16,
+			from_user_no_access_stack_child_entry,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
-
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
 /* object validation checks */
-void kobject_test_user_2_17(void *p1, void *p2, void *p3)
+#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+static void from_user_invalid_stacksize_extra(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 
-void kobject_test_user_1_17(void *p1, void *p2, void *p3)
+static void from_user_invalid_stacksize_child(void *p1, void *p2, void *p3)
 {
+	set_fault_valid(true);
 
-	valid_fault = true;
-	USERSPACE_BARRIER;
-
-	k_thread_create(&kobject_test_reuse_2_tid,
-			kobject_stack_4,
+	k_thread_create(&extra_thread,
+			extra_stack,
 			-1,
-			kobject_test_user_2_17,
+			from_user_invalid_stacksize_extra,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
-
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 /**
@@ -680,28 +763,24 @@ void kobject_test_user_1_17(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-void test_create_new_thread_from_user_invalid_stacksize(void *p1,
-							void *p2, void *p3)
+void test_create_new_thread_from_user_invalid_stacksize(void)
 {
+	set_fault_valid(false);
 
-	k_thread_access_grant(&kobject_test_reuse_1_tid,
-			      &kobject_test_reuse_2_tid,
-			      &kobject_stack_3);
+	k_thread_access_grant(&child_thread,
+			      &extra_thread,
+			      &child_stack);
 
-	k_thread_create(&kobject_test_reuse_1_tid,
-			kobject_stack_3,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_1_17,
+			from_user_invalid_stacksize_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
 #else
-void test_create_new_thread_from_user_invalid_stacksize(void *p1,
-							void *p2, void *p3)
+void test_create_new_thread_from_user_invalid_stacksize(void)
 {
 	ztest_test_skip();
 }
@@ -709,22 +788,20 @@ void test_create_new_thread_from_user_invalid_stacksize(void *p1,
 
 /****************************************************************************/
 /* object validation checks */
-void kobject_test_user_2_18(void *p1, void *p2, void *p3)
+#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+static void user_huge_stacksize_extra(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 
-void kobject_test_user_1_18(void *p1, void *p2, void *p3)
+static void user_huge_stacksize_child(void *p1, void *p2, void *p3)
 {
+	set_fault_valid(true);
 
-	valid_fault = true;
-	USERSPACE_BARRIER;
-
-
-	k_thread_create(&kobject_test_reuse_4_tid,
-			kobject_stack_2,
-			K_THREAD_STACK_SIZEOF(kobject_stack_2) + 1,
-			kobject_test_user_2_18,
+	k_thread_create(&extra_thread,
+			extra_stack,
+			K_THREAD_STACK_SIZEOF(extra_stack) + 1,
+			user_huge_stacksize_extra,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
@@ -740,28 +817,25 @@ void kobject_test_user_1_18(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  */
 
-#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-void test_create_new_thread_from_user_huge_stacksize(void *p1,
-						     void *p2, void *p3)
+void test_create_new_thread_from_user_huge_stacksize(void)
 {
+	set_fault_valid(false);
 
-	k_thread_access_grant(&kobject_test_reuse_3_tid,
-			      &kobject_test_reuse_4_tid,
-			      &kobject_stack_2);
+	k_thread_access_grant(&child_thread,
+			      &extra_thread,
+			      &extra_stack);
 
-	k_thread_create(&kobject_test_reuse_3_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_1_18,
+			user_huge_stacksize_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
 #else
-void test_create_new_thread_from_user_huge_stacksize(void *p1,
-						     void *p2, void *p3)
+void test_create_new_thread_from_user_huge_stacksize(void)
 {
 	ztest_test_skip();
 }
@@ -770,67 +844,67 @@ void test_create_new_thread_from_user_huge_stacksize(void *p1,
 /****************************************************************************/
 /* object validation checks */
 
-void kobject_test_user_2_19(void *p1, void *p2, void *p3)
+static void supervisor_from_user_extra(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 
-void kobject_test_user_1_19(void *p1, void *p2, void *p3)
+static void supervisor_from_user_child(void *p1, void *p2, void *p3)
 {
+	set_fault_valid(true);
 
-	valid_fault = true;
-	USERSPACE_BARRIER;
-
-	k_thread_create(&kobject_test_reuse_8_tid,
-			kobject_stack_2,
+	k_thread_create(&extra_thread,
+			extra_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_2_19,
+			supervisor_from_user_extra,
 			NULL, NULL, NULL,
 			0, 0, K_NO_WAIT);
 
 	zassert_unreachable("k_object validation failure in k thread create");
 }
+
 /**
- * @brief Test to create a new supervisor thread from user.
+ * @brief Test to create a new supervisor thread from user
+ *
+ * @details The system kernel must prevent user threads from creating supervisor
+ * threads.
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_create_new_supervisor_thread_from_user(void *p1, void *p2, void *p3)
+void test_create_new_supervisor_thread_from_user(void)
 {
-	k_thread_access_grant(&kobject_test_reuse_7_tid,
-			      &kobject_test_reuse_8_tid,
-			      &kobject_stack_2);
+	set_fault_valid(false);
 
-	k_thread_create(&kobject_test_reuse_7_tid,
-			kobject_stack_1,
+	k_thread_access_grant(&child_thread,
+			      &extra_thread,
+			      &extra_stack);
+
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_1_19,
+			supervisor_from_user_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
 /* object validation checks */
 
-void kobject_test_user_2_20(void *p1, void *p2, void *p3)
+static void essential_thread_from_user_extra(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 
-void kobject_test_user_1_20(void *p1, void *p2, void *p3)
+static void essential_thread_from_user_child(void *p1, void *p2, void *p3)
 {
+	set_fault_valid(true);
 
-	valid_fault = true;
-	USERSPACE_BARRIER;
-
-	k_thread_create(&kobject_test_reuse_2_tid,
-			kobject_stack_2,
+	k_thread_create(&extra_thread,
+			extra_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_2_20,
+			essential_thread_from_user_extra,
 			NULL, NULL, NULL,
 			0, K_USER | K_ESSENTIAL, K_NO_WAIT);
 
@@ -841,42 +915,39 @@ void kobject_test_user_1_20(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_memprotect_tests
  */
-void test_create_new_essential_thread_from_user(void *p1, void *p2, void *p3)
+void test_create_new_essential_thread_from_user(void)
 {
-	k_thread_access_grant(&kobject_test_reuse_1_tid,
-			      &kobject_test_reuse_2_tid,
-			      &kobject_stack_2);
+	set_fault_valid(false);
 
-	k_thread_create(&kobject_test_reuse_1_tid,
-			kobject_stack_1,
+	k_thread_access_grant(&child_thread,
+			      &extra_thread,
+			      &extra_stack);
+
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_1_20,
+			essential_thread_from_user_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
-
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
 /* object validation checks */
 
-void kobject_test_user_2_21(void *p1, void *p2, void *p3)
+static void higher_prio_from_user_extra(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 
-void kobject_test_user_1_21(void *p1, void *p2, void *p3)
+static void higher_prio_from_user_child(void *p1, void *p2, void *p3)
 {
+	set_fault_valid(true);
 
-	valid_fault = true;
-	USERSPACE_BARRIER;
-
-	k_thread_create(&kobject_test_reuse_4_tid,
-			kobject_stack_2,
+	k_thread_create(&extra_thread,
+			extra_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_2_21,
+			higher_prio_from_user_extra,
 			NULL, NULL, NULL,
 			-1, K_USER, K_NO_WAIT);
 
@@ -890,42 +961,40 @@ void kobject_test_user_1_21(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  */
 
-void test_create_new_higher_prio_thread_from_user(void *p1, void *p2, void *p3)
+void test_create_new_higher_prio_thread_from_user(void)
 {
-	k_thread_access_grant(&kobject_test_reuse_3_tid,
-			      &kobject_test_reuse_4_tid,
-			      &kobject_stack_2);
+	set_fault_valid(false);
 
-	k_thread_create(&kobject_test_reuse_3_tid,
-			kobject_stack_1,
+	k_thread_access_grant(&child_thread,
+			      &extra_thread,
+			      &extra_stack);
+
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_1_21,
+			higher_prio_from_user_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
-
+	k_thread_join(&child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
 /* object validation checks */
 
-void kobject_test_user_2_22(void *p1, void *p2, void *p3)
+static void invalid_prio_from_user_extra(void *p1, void *p2, void *p3)
 {
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 
-void kobject_test_user_1_22(void *p1, void *p2, void *p3)
+static void invalid_prio_from_user_child(void *p1, void *p2, void *p3)
 {
+	set_fault_valid(true);
 
-	valid_fault = true;
-	USERSPACE_BARRIER;
-
-	k_thread_create(&kobject_test_reuse_6_tid,
-			kobject_stack_2,
+	k_thread_create(&extra_thread,
+			extra_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_2_22,
+			invalid_prio_from_user_extra,
 			NULL, NULL, NULL,
 			6000, K_USER, K_NO_WAIT);
 
@@ -939,20 +1008,361 @@ void kobject_test_user_1_22(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  */
 
-void test_create_new_invalid_prio_thread_from_user(void *p1, void *p2, void *p3)
+void test_create_new_invalid_prio_thread_from_user(void)
 {
-	k_thread_access_grant(&kobject_test_reuse_5_tid,
-			      &kobject_test_reuse_6_tid,
-			      &kobject_stack_2);
+	set_fault_valid(false);
 
+	k_thread_access_grant(&child_thread,
+			      &extra_thread,
+			      &extra_stack);
 
-	k_thread_create(&kobject_test_reuse_5_tid,
-			kobject_stack_1,
+	k_thread_create(&child_thread,
+			child_stack,
 			KOBJECT_STACK_SIZE,
-			kobject_test_user_1_22,
+			invalid_prio_from_user_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
+	k_thread_join(&child_thread, K_FOREVER);
+}
 
+/* Function to init thread's stack objects */
+static void thread_stack_init_objects(void *p1, void *p2, void *p3)
+{
+	int ret;
+	struct z_object *ko;
+
+	/* check that thread is initialized when running */
+	ko = z_object_find(&child_thread);
+	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_TRUE);
+	zassert_equal(ret, _OBJ_INIT_TRUE, NULL);
+
+	/* check that stack is initialized when running */
+	ko = z_object_find(child_stack);
+	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_TRUE);
+	zassert_equal(ret, _OBJ_INIT_TRUE, NULL);
+}
+
+/**
+ * @brief Test when thread exits, kernel marks stack objects uninitialized
+ *
+ * @details When thread exits, the kernel upon thread exit, should mark
+ * the exiting thread and thread stack object as uninitialized
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mark_thread_exit_uninitialized(void)
+{
+	set_fault_valid(false);
+
+	int ret;
+	struct z_object *ko;
+
+	k_thread_access_grant(&child_thread,
+			      &child_stack);
+
+	k_thread_create(&child_thread,
+			child_stack,
+			KOBJECT_STACK_SIZE,
+			thread_stack_init_objects,
+			NULL, NULL, NULL,
+			0, K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_join(&child_thread, K_FOREVER);
+
+	/* check thread is uninitialized after its exit */
+	ko = z_object_find(&child_thread);
+	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_FALSE);
+	zassert_equal(ret, _OBJ_INIT_FALSE, NULL);
+
+	/* check stack is uninitialized after thread exit */
+	ko = z_object_find(child_stack);
+	ret = z_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_FALSE);
+	zassert_equal(ret, _OBJ_INIT_FALSE, NULL);
+}
+
+/****************************************************************************/
+/* object validatoin checks */
+
+static void tThread_object_free_error(void *p1, void *p2, void *p3)
+{
+	/* a K_ERR_CPU_EXCEPTION expected */
+	set_fault_valid(true);
+	k_object_free(NULL);
+}
+
+/**
+ * @brief Test free an invalid kernel object
+ *
+ * @details Spawn a thread free a NULL, an expected fault happened.
+ *
+ * @see k_object_free()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_kobject_free_error(void)
+{
+	uint32_t perm = K_INHERIT_PERMS;
+
+	if (k_is_user_context()) {
+		perm = perm | K_USER;
+	}
+
+	k_tid_t tid = k_thread_create(&child_thread, child_stack,
+			K_THREAD_STACK_SIZEOF(child_stack),
+			(k_thread_entry_t)&tThread_object_free_error,
+			(void *)&tid, NULL, NULL,
+			K_PRIO_PREEMPT(1), perm, K_NO_WAIT);
+
+	k_thread_join(tid, K_FOREVER);
+}
+
+/**
+ * @brief Test alloc an invalid kernel object
+ *
+ * @details Allocate invalid kernel objects, then no alloction
+ * will be returned.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_object_alloc()
+ */
+void test_kobject_init_error(void)
+{
+	/* invalid kernel object alloction */
+	zassert_is_null(k_object_alloc(K_OBJ_ANY-1),
+			"expected got NULL kobject");
+	zassert_is_null(k_object_alloc(K_OBJ_LAST),
+			"expected got NULL kobject");
+
+	/* futex not support */
+	zassert_is_null(k_object_alloc(K_OBJ_FUTEX),
+			"expected got NULL kobject");
+}
+
+/**
+ * @brief Test kernel object until out of memory
+ *
+ * @details Create a dynamic kernel object repeatedly until run out
+ * of all heap memory, an expected out of memory error generated.
+ *
+ * @see k_object_alloc()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_kobj_create_out_of_memory(void)
+{
+	int ttype;
+	int max_obj = 0;
+	void *create_obj[MAX_OBJ] = {0};
+
+	for (ttype = K_OBJ_MEM_SLAB; ttype < K_OBJ_CONDVAR ; ttype++) {
+
+		for (int i = 0; i < MAX_OBJ; i++) {
+			create_obj[i] = k_object_alloc(ttype);
+			max_obj = i;
+			if (create_obj[i] == NULL) {
+				break;
+			}
+		}
+
+		zassert_is_null(create_obj[max_obj],
+				"excepted alloc failure");
+		printk("==max_obj(%d)\n", max_obj);
+
+
+		for (int i = 0; i < max_obj; i++) {
+			k_object_free((void *)create_obj[i]);
+		}
+
+	}
+}
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
+
+#define MAX_THREAD_BITS         (CONFIG_MAX_THREAD_BYTES * 8)
+#endif
+
+/* @brief Test alloc thread object until out of idex
+ *
+ * @details Allocate thread object until it out of index, no more
+ * thread can be allocated and report an error.
+ *
+ * @see k_object_alloc()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_thread_alloc_out_of_idx(void)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	struct k_thread *thread[MAX_THREAD_BITS];
+	struct k_thread *fail_thread;
+	int cur_max = 0;
+
+	for (int i = 0; i < MAX_THREAD_BITS; i++) {
+
+		thread[i] = k_object_alloc(K_OBJ_THREAD);
+
+		if (!thread[i]) {
+			cur_max = i;
+			break;
+		}
+	}
+
+	/** TESTPOINT: all the idx bits set to 1 */
+	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+		int idx = find_lsb_set(_thread_idx_map[i]);
+
+		zassert_true(idx == 0,
+				"idx shall all set to 1 when all used");
+	}
+
+	fail_thread = k_object_alloc(K_OBJ_THREAD);
+	/** TESTPOINT: thread alloc failed due to out of idx */
+	zassert_is_null(thread[cur_max],
+			"mo more kobj[%d](0x%lx) shall be allocated"
+			, cur_max, (uintptr_t)thread[cur_max]);
+
+
+	for (int i = 0; i < cur_max; i++) {
+		if (thread[i]) {
+			k_object_free(thread[i]);
+		}
+	}
+#else
+	ztest_test_skip();
+#endif
+}
+
+/**
+ * @brief Test kernel object allocation
+ *
+ * @details Allocate all kinds of kernel object and do permission
+ * operation functions.
+ *
+ * @see k_object_alloc()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_alloc_kobjects(void)
+{
+	struct k_thread *t;
+	struct k_msgq *m;
+	struct k_stack *s;
+	struct k_pipe *p;
+	struct k_queue *q;
+	struct k_mem_slab *mslab;
+	struct k_poll_signal *polls;
+	struct k_timer *timer;
+	struct k_mutex *mutex;
+	void *ko;
+
+	/* allocate kernel object */
+
+	t = k_object_alloc(K_OBJ_THREAD);
+	zassert_not_null(t, "alloc obj (0x%lx)\n", (uintptr_t)t);
+	p = k_object_alloc(K_OBJ_PIPE);
+	zassert_not_null(p, "alloc obj (0x%lx)\n", (uintptr_t)p);
+	s = k_object_alloc(K_OBJ_STACK);
+	zassert_not_null(s, "alloc obj (0x%lx)\n", (uintptr_t)s);
+	m = k_object_alloc(K_OBJ_MSGQ);
+	zassert_not_null(m, "alloc obj (0x%lx)\n", (uintptr_t)m);
+	q = k_object_alloc(K_OBJ_QUEUE);
+	zassert_not_null(q, "alloc obj (0x%lx)\n", (uintptr_t)q);
+
+	/* release operations */
+	k_object_release((void *)t);
+	k_object_release((void *)p);
+	k_object_release((void *)s);
+	k_object_release((void *)m);
+	k_object_release((void *)q);
+
+	mslab = k_object_alloc(K_OBJ_MEM_SLAB);
+	zassert_not_null(mslab, "alloc obj (0x%lx)\n", (uintptr_t)mslab);
+	polls = k_object_alloc(K_OBJ_POLL_SIGNAL);
+	zassert_not_null(polls, "alloc obj (0x%lx)\n", (uintptr_t)polls);
+	timer = k_object_alloc(K_OBJ_TIMER);
+	zassert_not_null(timer, "alloc obj (0x%lx)\n", (uintptr_t)timer);
+	mutex = k_object_alloc(K_OBJ_MUTEX);
+	zassert_not_null(mutex, "alloc obj (0x%lx)\n", (uintptr_t)mutex);
+
+	k_object_release((void *)mslab);
+	k_object_release((void *)polls);
+	k_object_release((void *)timer);
+	k_object_release((void *)mutex);
+
+	/* no real object will be allocated */
+	ko = k_object_alloc(K_OBJ_ANY);
+	zassert_is_null(ko, "alloc obj (0x%lx)\n", (uintptr_t)ko);
+	ko = k_object_alloc(K_OBJ_LAST);
+	zassert_is_null(ko, "alloc obj (0x%lx)\n", (uintptr_t)ko);
+
+	/* alloc possible device driver */
+	ko = k_object_alloc(K_OBJ_LAST-1);
+	zassert_not_null(ko, "alloc obj (0x%lx)\n", (uintptr_t)ko);
+	k_object_release((void *)ko);
+}
+
+/* static kobject for permission testing */
+struct k_mem_slab ms;
+struct k_msgq mq;
+struct k_mutex mutex;
+struct k_pipe p;
+struct k_queue q;
+struct k_poll_signal ps;
+struct k_sem sem;
+struct k_stack s;
+struct k_thread t;
+struct k_timer timer;
+struct z_thread_stack_element zs;
+struct k_futex f;
+struct k_condvar c;
+
+static void entry_error_perm(void *p1, void *p2, void *p3)
+{
+	set_fault_valid(true);
+	k_object_access_grant(p2, k_current_get());
+
+}
+
+/**
+ * @brief Test grant access failed in user mode
+ *
+ * @details Before grant access of static kobject to user thread, any
+ * grant access to this thread, will trigger an expected thread
+ * permission error.
+ *
+ * @see k_thread_access_grant()
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_kobject_perm_error(void)
+{
+	void *kobj[16];
+
+	kobj[0] = &ms;
+	kobj[1] = &mq;
+	kobj[2] = &mutex;
+	kobj[3] = &p;
+	kobj[4] = &q;
+	kobj[5] = &ps;
+	kobj[6] = &sem;
+	kobj[7] = &s;
+	kobj[8] = &t;
+	kobj[9] = &timer;
+	kobj[10] = &zs;
+	kobj[11] = &f;
+	kobj[12] = &c;
+
+	for (int i = 0; i < 12 ; i++) {
+
+		k_tid_t tid = k_thread_create(&child_thread, child_stack,
+			K_THREAD_STACK_SIZEOF(child_stack),
+			(k_thread_entry_t)entry_error_perm,
+			(void *)&tid, kobj[i], NULL,
+			1, K_USER, K_NO_WAIT);
+
+		k_thread_join(tid, K_FOREVER);
+	}
 }

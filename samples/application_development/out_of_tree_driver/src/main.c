@@ -8,15 +8,23 @@
 #include <stdio.h>
 #include <zephyr.h>
 
+const struct device *dev;
+
+static void user_entry(void *p1, void *p2, void *p3)
+{
+	hello_world_print(dev);
+}
+
 void main(void)
 {
 	printk("Hello World from the app!\n");
 
-	struct device *dev = device_get_binding("CUSTOM_DRIVER");
+	dev = device_get_binding("CUSTOM_DRIVER");
 
 	__ASSERT(dev, "Failed to get device binding");
 
-	printk("device is %p, name is %s\n", dev, dev->config->name);
+	printk("device is %p, name is %s\n", dev, dev->name);
 
-	hello_world_print(dev);
+	k_object_access_grant(dev, k_current_get());
+	k_thread_user_mode_enter(user_entry, NULL, NULL, NULL);
 }

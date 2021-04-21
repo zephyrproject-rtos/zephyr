@@ -36,8 +36,13 @@ but it has only been tested on Linux.
 
 .. note::
 
-   This port will **not** work in Windows Subsystem for Linux (WSL) because WSL
-   does not support native 32-bit binaries.
+   The 32 bit version of this port does not directly work in Windows Subsystem
+   for Linux (WSL) because WSL does not support native 32-bit binaries.
+   You may want to consider WSL2, or you can also just use the native_posix_64
+   target: Check `32 and 64bit versions`_.
+   Otherwise `with some tinkering
+   <https://github.com/microsoft/WSL/issues/2468#issuecomment-374904520>`_ it
+   should be possible to make it work.
 
 .. _native_important_limitations:
 
@@ -214,6 +219,28 @@ Coverage reports
 
 See
 :ref:`coverage reports using the POSIX architecture <coverage_posix>`.
+
+
+32 and 64bit versions
+*********************
+
+native_posix comes with two targets: A 32 bit and 64 bit version.
+The 32 bit version, ``native_posix``, is the default target, which will compile
+your code for the ILP32 ABI (i386 in a x86 or x86_64 system) where pointers
+and longs are 32 bits.
+This mimics the ABI of most embedded systems Zephyr targets,
+and is therefore normally best to test and debug your code, as some bugs are
+dependent on the size of pointers and longs.
+This target requires either a 64 bit system with multilib support installed or
+one with a 32bit userspace.
+
+The 64 bit version, ``native_posix_64``, compiles your code targeting the
+LP64 ABI (x86-64 in x86 systems), where pointers and longs are 64 bits.
+You can use this target if you cannot compile or run 32 bit binaries.
+
+If you are using another 32 bit POSIX arch target you may also override its ABI
+target and pointer bit width by setting :option:`CONFIG_64BIT`.
+
 
 Rationale for this port
 ***********************
@@ -569,7 +596,7 @@ output to the executable's ``stdin`` and ``stdout``.
 This is chosen by selecting either
 :option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
 :option:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
-For interactive use with the :ref:`shell_label`, choose the first (OWN_PTY) option.
+For interactive use with the :ref:`shell_api`, choose the first (OWN_PTY) option.
 The second (STDINOUT) option can be used with the shell for automated
 testing, such as when piping other processes' output to control it.
 This is because the shell subsystem expects access to a raw terminal,

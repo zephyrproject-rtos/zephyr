@@ -5,6 +5,17 @@
 
 if SOC_SERIES_STM32H7X
 
+# Oscillator clocks configuration options
+
+config CLOCK_STM32_HSI_DIVISOR
+	int "HSI Divisor"
+	depends on CLOCK_STM32_PLL_SRC_HSI || CLOCK_STM32_SYSCLK_SRC_HSI
+	default 1
+	range 1 8
+	help
+	  HSI Divisor to divide HSI base frequency value
+	  allowed values: 1, 2, 4, 8
+
 # Bus clocks configuration options
 
 config CLOCK_STM32_D1CPRE
@@ -92,5 +103,69 @@ config CLOCK_STM32_PLL_R_DIVISOR
 	range 1 128
 	help
 	  PLL R Output divisor, allowed values: 1-128.
+
+# PLL3 settings
+
+config CLOCK_STM32_PLL3_ENABLE
+	bool "Enable PLL3"
+	help
+	  Enable PLL3. It is used to generate the kernel clock for some peripherals.
+
+if CLOCK_STM32_PLL3_ENABLE
+
+config CLOCK_STM32_PLL3_M_DIVISOR
+	int "PLL3 divisor"
+	default 32
+	range 1 63
+	help
+	  PLL divisor, allowed values: 1-63.
+
+config CLOCK_STM32_PLL3_N_MULTIPLIER
+	int "PLL3 VCO multiplier"
+	default 129
+	range 4 512
+	help
+	  PLL3 multiplier, allowed values: 4-512.
+
+config CLOCK_STM32_PLL3_P_ENABLE
+	bool "Enable PLL3 P output"
+	help
+	  Enable PLL3 P output.
+
+config CLOCK_STM32_PLL3_P_DIVISOR
+	int "PLL3 P Divisor"
+	depends on CLOCK_STM32_PLL3_P_ENABLE
+	default 2
+	range 1 128
+	help
+	  PLL3 P Output divisor, allowed values: 1-128.
+
+config CLOCK_STM32_PLL3_Q_ENABLE
+	bool "Enable PLL3 Q output"
+	help
+	  Enable PLL3 Q output.
+
+config CLOCK_STM32_PLL3_Q_DIVISOR
+	int "PLL3 Q Divisor"
+	depends on CLOCK_STM32_PLL3_Q_ENABLE
+	default 2
+	range 1 128
+	help
+	  PLL3 Q Output divisor, allowed values: 1-128.
+
+config CLOCK_STM32_PLL3_R_ENABLE
+	bool "Enable PLL3 R output"
+	help
+	  Enable PLL3 R output.
+
+config CLOCK_STM32_PLL3_R_DIVISOR
+	int "PLL3 R Divisor"
+	depends on CLOCK_STM32_PLL3_R_ENABLE
+	default 2
+	range 1 128
+	help
+	  PLL3 R Output divisor, allowed values: 1-128.
+
+endif # CLOCK_STM32_PLL3_ENABLE
 
 endif # SOC_SERIES_STM32H7X

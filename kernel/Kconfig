@@ -10,9 +10,11 @@ module-str = kernel
 source "subsys/logging/Kconfig.template.log_config"
 
 config MULTITHREADING
-	bool "Multi-threading"
+	bool "Multi-threading (DEPRECATED)"
 	default y
 	help
+	  Disabling this option is DEPRECATED.
+
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
 	  probably not behave as expected, especially with regards to pending,
@@ -22,6 +24,11 @@ config MULTITHREADING
 	  Many drivers and subsystems will not work with this option
 	  set to 'n'; disable only when you REALLY know what you are
 	  doing.
+
+if !MULTITHREADING
+comment "*** WARNING ***"
+comment "Single threaded mode (MULTITHREADING option disabled) is deprecated"
+endif
 
 config NUM_COOP_PRIORITIES
 	int "Number of coop priorities" if MULTITHREADING
@@ -143,6 +150,7 @@ config SCHED_CPU_MASK
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
 	default 2048 if COVERAGE_GCOV
+	default 1024 if TEST_ARM_CORTEX_M
 	default 512 if ZTEST && !(RISCV || X86)
 	default 1024
 	help
@@ -157,7 +165,8 @@ config IDLE_STACK_SIZE
 	default 2048 if COVERAGE_GCOV
 	default 1024 if XTENSA
 	default 512 if RISCV
-	default 320 if ARC || (ARM && CPU_HAS_FPU)
+	default 384 if DYNAMIC_OBJECTS
+	default 320 if ARC || (ARM && CPU_HAS_FPU) || (X86 && MMU)
 	default 256
 	help
 	  Depending on the work that the idle task must do, most likely due to
@@ -187,21 +196,24 @@ config THREAD_CUSTOM_DATA
 config THREAD_USERSPACE_LOCAL_DATA
 	bool
 	depends on USERSPACE
-
-config THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
-	bool
-	depends on THREAD_USERSPACE_LOCAL_DATA
-	default y if ARC || ARM
+	default y if ERRNO && !ERRNO_IN_TLS
 
 config ERRNO
 	bool "Enable errno support"
 	default y
-	select THREAD_USERSPACE_LOCAL_DATA if USERSPACE
 	help
 	  Enable per-thread errno in the kernel. Application and library code must
 	  include errno.h provided by the C library (libc) to use the errno
 	  symbol. The C library must access the per-thread errno via the
-	  _get_errno() symbol.
+	  z_errno() symbol.
+
+config ERRNO_IN_TLS
+	bool "Store errno in thread local storage (TLS)"
+	depends on ERRNO && THREAD_LOCAL_STORAGE
+	default y
+	help
+	  Use thread local storage to store errno instead of storing it in
+	  the kernel thread struct. This avoids a syscall if userspace is enabled.
 
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
@@ -297,14 +309,6 @@ config INIT_STACKS
 	  water mark can be easily determined. This applies to the stack areas
 	  for threads, as well as to the interrupt stack.
 
-config KERNEL_DEBUG
-	bool "Kernel debugging"
-	select INIT_STACKS
-	help
-	  Enable kernel debugging.
-
-	  Note that debugging the kernel internals can be very verbose.
-
 config BOOT_BANNER
 	bool "Boot banner"
 	default y
@@ -327,23 +331,15 @@ config BOOT_DELAY
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
 
-config EXECUTION_BENCHMARKING
-	bool "Timing metrics"
-	help
-	  This option enables the tracking of various times inside the kernel
-	  the exact set of metrics being tracked is board-dependent.
-	  All timing measurements are enabled for X86 and ARM based architectures.
-	  In other architectures only a subset is enabled.
-
 config THREAD_MONITOR
-	bool "Thread monitoring [EXPERIMENTAL]"
+	bool "Thread monitoring"
 	help
 	  This option instructs the kernel to maintain a list of all threads
 	  (excluding those that have not yet started or have already
 	  terminated).
 
 config THREAD_NAME
-	bool "Thread name [EXPERIMENTAL]"
+	bool "Thread name"
 	help
 	  This option allows to set a name for a thread.
 
@@ -356,6 +352,32 @@ config THREAD_MAX_NAME_LEN
 	  Thread names get stored in the k_thread struct. Indicate the max
 	  name length, including the terminating NULL byte. Reduce this value
 	  to conserve memory.
+
+config INSTRUMENT_THREAD_SWITCHING
+	bool
+
+menuconfig THREAD_RUNTIME_STATS
+	bool "Thread runtime statistics"
+	select INSTRUMENT_THREAD_SWITCHING
+	help
+	  Gather thread runtime statistics.
+
+	  For example:
+	    - Thread total execution cycles
+
+if THREAD_RUNTIME_STATS
+
+config THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+	bool "Use timing functions to gather statistics"
+	select TIMING_FUNCTIONS_NEED_AT_BOOT
+	help
+	  Use timing functions to gather thread runtime statistics.
+
+	  Note that timing functions may use a different timer than
+	  the default timer for OS timekeeping.
+
+endif # THREAD_RUNTIME_STATS
+
 endmenu
 
 menu "Work Queue Options"
@@ -374,14 +396,14 @@ config SYSTEM_WORKQUEUE_PRIORITY
 	  priority. This means that any work handler, once started, won't
 	  be preempted by any other thread until finished.
 
-config OFFLOAD_WORKQUEUE_STACK_SIZE
-	int "Workqueue stack size for thread offload requests"
-	default 4096 if COVERAGE
-	default 1024
-
-config OFFLOAD_WORKQUEUE_PRIORITY
-	int "Offload requests workqueue priority"
-	default -1
+config SYSTEM_WORKQUEUE_NO_YIELD
+	bool "Select whether system work queue yields"
+	help
+	  By default, the system work queue yields between each work item, to
+	  prevent other threads from being starved.  Selecting this removes
+	  this yield, which may be useful if the work queue thread is
+	  cooperative and a sequence of work items is expected to complete
+	  without yielding.
 
 endmenu
 
@@ -393,7 +415,7 @@ config ATOMIC_OPERATIONS_BUILTIN
 	  the preferred method. However, support for all arches in GCC is
 	  incomplete.
 
-config ATOMIC_OPERATIONS_CUSTOM
+config ATOMIC_OPERATIONS_ARCH
 	bool
 	help
 	  Use when there isn't support for compiler built-ins, but you have
@@ -446,11 +468,17 @@ config POLL
 	  Asynchronous notification framework. Enable the k_poll() and
 	  k_poll_signal_raise() APIs.  The former can wait on multiple events
 	  concurrently, which can be either directly triggered or triggered by
-	  the availability of some kernel objects (semaphores and fifos).
+	  the availability of some kernel objects (semaphores and FIFOs).
 
 endmenu
 
 menu "Other Kernel Object Options"
+
+config MEM_SLAB_TRACE_MAX_UTILIZATION
+	bool "Enable getting maximum slab utilization"
+	help
+	  This adds variable to the k_mem_slab structure to hold
+	  maximum utilization of the slab.
 
 config NUM_MBOX_ASYNC_MSGS
 	int "Maximum number of in-flight asynchronous mailbox messages"
@@ -474,24 +502,28 @@ config NUM_PIPE_ASYNC_MSGS
 	  Setting this option to 0 disables support for asynchronous
 	  pipe messages.
 
+config KERNEL_MEM_POOL
+	bool "Use Kernel Memory Pool"
+	default y
+	help
+	  Enable the use of kernel memory pool.
+
+	  Say y if unsure.
+
+if KERNEL_MEM_POOL
+
 config HEAP_MEM_POOL_SIZE
 	int "Heap memory pool size (in bytes)"
 	default 0 if !POSIX_MQUEUE
 	default 1024 if POSIX_MQUEUE
 	help
 	  This option specifies the size of the heap memory pool used when
-	  dynamically allocating memory using k_malloc(). Supported values
-	  are: 256, 1024, 4096, and 16384. A size of zero means that no
-	  heap memory pool is defined.
+	  dynamically allocating memory using k_malloc(). The maximum size of
+	  the memory pool is only limited to available memory. A size of zero
+	  means that no heap memory pool is defined.
 
-config HEAP_MEM_POOL_MIN_SIZE
-	int "The smallest blocks in the heap memory pool (in bytes)"
-	depends on HEAP_MEM_POOL_SIZE != 0
-	default 64
-	help
-	  This option specifies the size of the smallest block in the pool.
-	  Option must be a power of 2 and lower than or equal to the size
-	  of the entire pool.
+endif # KERNEL_MEM_POOL
+
 endmenu
 
 config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
@@ -523,29 +555,23 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
 	default 100 if QEMU_TARGET || SOC_POSIX
-	default 10000 if TICKLESS_CAPABLE
+	default 10000 if TICKLESS_KERNEL
 	default 100
 	help
 	  This option specifies the nominal frequency of the system clock in Hz.
 
-	  Depending on the choice made, an amount of possibly expensive math must
-	  occur when converting ticks to milliseconds and vice-versa. Some values
-	  are optimized, and yield significantly less math.
+	  For asynchronous timekeeping, the kernel defines a "ticks" concept. A
+	  "tick" is the internal count in which the kernel does all its internal
+	  uptime and timeout bookeeping. Interrupts are expected to be delivered
+	  on tick boundaries to the extent practical, and no fractional ticks
+	  are tracked.
 
-	  The optimal values from a computational point-of-view are 1000, 500,
-	  250 and 125, since in these cases there is either no computation
-	  required, or it is all done via bit-shifting. These also give a
-	  granularity from 1ms to 8ms.
-
-	  Other good values are 100, 50, 25, 20 and 10. In this case, some math
-	  is required but is minimized. These are also values that necessitate a
-	  reduced number of clock interrupts per second, at the cost of
-	  granularity (10ms to 100ms).
-
-	  All other values require some extensive 64-bit math, and in some
-	  configurations even require calls to compiler built-in functions, and
-	  can require a non-trivial extra amount of stack space (e.g. around 80
-	  bytes on x86).
+	  The choice of tick rate is configurable by this option. Also the number
+	  of cycles per tick should be chosen so that 1 millisecond is exactly
+	  represented by an integral number of ticks. Defaults on most hardware
+	  platforms (ones that support setting arbitrary interrupt timeouts) are
+	  expected to be in the range of 10 kHz, with software emulation
+	  platforms and legacy drivers using a more traditional 100 Hz value.
 
 	  Note that when available and enabled, in "tickless" mode
 	  this config variable specifies the minimum available timing
@@ -569,6 +595,17 @@ config SYS_CLOCK_EXISTS
 	  Some device configurations can eliminate significant code if
 	  this is disabled.  Obviously timeout-related APIs will not
 	  work.
+
+config TIMEOUT_64BIT
+	bool "Store kernel timeouts in 64 bit precision"
+	default y
+	help
+	  When this option is true, the k_ticks_t values passed to
+	  kernel APIs will be a 64 bit quantity, allowing the use of
+	  larger values (and higher precision tick rates) without fear
+	  of overflowing the 32 bit word.  This feature also gates the
+	  availability of absolute timeout values (which require the
+	  extra precision).
 
 config XIP
 	bool "Execute in place"
@@ -648,6 +685,7 @@ config EXECUTE_XOR_WRITE
 config STACK_POINTER_RANDOM
 	int "Initial stack pointer randomization bounds"
 	depends on !STACK_GROWS_UP
+	depends on MULTITHREADING
 	depends on TEST_RANDOM_GENERATOR || ENTROPY_HAS_DRIVER
 	default 0
 	help
@@ -685,6 +723,47 @@ config MAX_DOMAIN_PARTITIONS
 	depends on USERSPACE
 	help
 	  Configure the maximum number of partitions per memory domain.
+
+config ARCH_MEM_DOMAIN_DATA
+	bool
+	depends on USERSPACE
+	help
+	  This hidden option is selected by the target architecture if
+	  architecture-specific data is needed on a per memory domain basis.
+	  If so, the architecture defines a 'struct arch_mem_domain' which is
+	  embedded within every struct k_mem_domain. The architecture
+	  must also define the arch_mem_domain_init() function to set this up
+	  when a memory domain is created.
+
+	  Typical uses might be a set of page tables for that memory domain.
+
+config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
+	bool
+	depends on USERSPACE
+	help
+	  This hidden option is selected by the target architecture if
+	  modifying a memory domain's partitions at runtime, or changing
+	  a memory domain's thread membership requires synchronous calls
+	  into the architecture layer.
+
+	  If enabled, the architecture layer must implement the following
+	  APIs:
+
+	  arch_mem_domain_thread_add
+	  arch_mem_domain_thread_remove
+	  arch_mem_domain_partition_remove
+	  arch_mem_domain_partition_add
+
+	  It's important to note that although supervisor threads can be
+	  members of memory domains, they have no implications on supervisor
+	  thread access to memory. Memory domain APIs may only be invoked from
+	  supervisor mode.
+
+	  For these reasons, on uniprocessor systems unless memory access
+	  policy is managed in separate software constructions like page
+	  tables, these APIs don't need to be implemented as the underlying
+	  memory management hardware will be reprogrammed on context switch
+	  anyway.
 
 menu "SMP Options"
 
@@ -732,36 +811,55 @@ config SCHED_IPI_SUPPORTED
 	  take an interrupt, which can be arbitrarily far in the
 	  future).
 
+config TRACE_SCHED_IPI
+	bool "Enable Test IPI"
+	help
+	  When true, it will add a hook into z_sched_ipi(), in order
+	  to check if schedule IPI has called or not, for testing
+	  purpose.
+	depends on SCHED_IPI_SUPPORTED
+	depends on MP_NUM_CPUS>1
+
+config KERNEL_COHERENCE
+	bool "Place all shared data into coherent memory"
+	depends on ARCH_HAS_COHERENCE
+	default y if SMP && MP_NUM_CPUS > 1
+	select THREAD_STACK_INFO
+	help
+	  When available and selected, the kernel will build in a mode
+	  where all shared data is placed in multiprocessor-coherent
+	  (generally "uncached") memory.  Thread stacks will remain
+	  cached, as will application memory declared with
+	  __incoherent.  This is intended for Zephyr SMP kernels
+	  running on cache-incoherent architectures only.  Note that
+	  when this is selected, there is an implicit API change that
+	  assumes cache coherence to any memory passed to the kernel.
+	  Code that creates kernel data structures in uncached regions
+	  may fail strangely.  Some assertions exist to catch these
+	  mistakes, but not all circumstances can be tested.
+
 endmenu
-
-config TICKLESS_IDLE
-	# NB: This option is deprecated, see TICKLESS_KERNEL and
-	# https://github.com/zephyrproject-rtos/zephyr/pull/12234
-	bool "Tickless idle"
-	default y if SYS_POWER_MANAGEMENT || TICKLESS_CAPABLE
-	help
-	  This option suppresses periodic system clock interrupts whenever the
-	  kernel becomes idle. This permits the system to remain in a power
-	  saving state for extended periods without having to wake up to
-	  service each tick as it occurs.
-
-config TICKLESS_IDLE_THRESH
-	int "Tickless idle threshold"
-	default 3
-	depends on TICKLESS_IDLE
-	help
-	  This option enables clock interrupt suppression when the kernel idles
-	  for only a short period of time. It specifies the minimum number of
-	  ticks that must occur before the next kernel timer expires in order
-	  for suppression to happen.
 
 config TICKLESS_KERNEL
 	bool "Tickless kernel"
 	default y if TICKLESS_CAPABLE
+	depends on TICKLESS_CAPABLE
 	help
 	  This option enables a fully event driven kernel. Periodic system
 	  clock interrupt generation would be stopped at all times.
 
-source "kernel/Kconfig.power_mgmt"
+config TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	bool
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
+	help
+	  Hidden option to signal that toolchain supports generating code
+	  with thread local storage.
+
+config THREAD_LOCAL_STORAGE
+	bool "Thread Local Storage (TLS)"
+	depends on ARCH_HAS_THREAD_LOCAL_STORAGE && TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+	select NEED_LIBC_MEM_PARTITION if (CPU_CORTEX_M && USERSPACE)
+	help
+	  This option enables thread local storage (TLS) support in kernel.
 
 endmenu

@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing the devicetree.h API.
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+
+		test_gpio_0: gpio@0 {
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			compatible = "vnd,gpio";
+			status = "okay";
+			reg = <0x0 0x1000>;
+			label = "TEST_GPIO_0";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			status = "okay";
+			reg = <0x11112222 0x1000>;
+			clock-frequency = <100000>;
+			label = "TEST_I2C_CTLR";
+
+			test_dev_a: test-i2c-dev@10 {
+				compatible = "vnd,i2c-device";
+				status = "okay";
+				reg = <0x10>;
+				supply-gpios = <&test_gpio_0 1 0>;
+				label = "TEST_I2C_DEV_10";
+			};
+
+			test_gpiox: test-i2c-dev@11 {
+				gpio-controller;
+				#gpio-cells = <2>;
+				compatible = "vnd,gpio-expander";
+				status = "okay";
+				reg = <0x11>;
+				label = "TEST_I2C_GPIO";
+			};
+
+			test_dev_b: test-i2c-dev@12 {
+				compatible = "vnd,i2c-device";
+				status = "okay";
+				reg = <0x12>;
+				supply-gpios = <&test_gpiox 2 0>;
+				label = "TEST_I2C_DEV_12";
+			};
+		};
+	};
+};

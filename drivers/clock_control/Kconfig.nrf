@@ -13,13 +13,18 @@ config CLOCK_CONTROL_NRF_FORCE_ALT
 menuconfig CLOCK_CONTROL_NRF
 	bool "NRF Clock controller support"
 	depends on SOC_COMPATIBLE_NRF
-	depends on !CLOCK_CONTROL_NRF_FORCE_ALT
+	select NRFX_CLOCK if !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
 	help
 	  Enable support for the Nordic Semiconductor nRFxx series SoC clock
 	  driver.
 
 if CLOCK_CONTROL_NRF
+
+config CLOCK_CONTROL_NRF_SHELL
+	bool "Shell commands"
+	depends on SHELL
+	default y if SHELL
 
 choice CLOCK_CONTROL_NRF_SOURCE
 	prompt "32KHz clock source"
@@ -29,6 +34,8 @@ config CLOCK_CONTROL_NRF_K32SRC_RC
 	bool "RC Oscillator"
 
 config CLOCK_CONTROL_NRF_K32SRC_XTAL
+	select NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED if (!SOC_SERIES_BSIM_NRFXX && \
+						   !CLOCK_CONTROL_NRF_FORCE_ALT)
 	bool "Crystal Oscillator"
 
 config CLOCK_CONTROL_NRF_K32SRC_SYNTH
@@ -37,25 +44,37 @@ config CLOCK_CONTROL_NRF_K32SRC_SYNTH
 
 config CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING
 	depends on SOC_SERIES_NRF52X
+	select NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED if !CLOCK_CONTROL_NRF_FORCE_ALT
 	bool "External low swing"
 
 config CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
 	depends on SOC_SERIES_NRF52X
+	select NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED if !CLOCK_CONTROL_NRF_FORCE_ALT
 	bool "External full swing"
 
 endchoice
 
 config CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
-	bool
-	depends on !SOC_SERIES_NRF91X
-	default y if CLOCK_CONTROL_NRF_K32SRC_RC
+	bool "Enable LF clock calibration"
+	depends on !SOC_SERIES_NRF91X && CLOCK_CONTROL_NRF_K32SRC_RC
+	default y
+	help
+	  If calibration is disabled when RC is used for low frequency clock then
+	  accuracy of the low frequency clock will degrade. Disable on your own
+	  risk.
 
 if CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
+config CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON
+	bool "LF clock is always on"
+	default y if NRF_RTC_TIMER
+	help
+	  If RTC is used as system timer then LF clock is always on and handling
+	  can be simplified.
+
 config CLOCK_CONTROL_NRF_CALIBRATION_PERIOD
-	int "Calibration opportunity period (in 250ms units)"
-	default 16
-	range 1 127
+	int "Calibration opportunity period in milliseconds"
+	default 4000
 	help
 	  Periodically, calibration action is performed. Action includes
 	  temperature measurement followed by clock calibration. Calibration may
@@ -90,6 +109,7 @@ config CLOCK_CONTROL_NRF_CALIBRATION_DEBUG
 
 config CLOCK_CONTROL_NRF_USES_TEMP_SENSOR
 	bool
+	depends on HAS_HW_NRF_TEMP
 	default y if CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP > 0 && \
 		CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF > 0
 	select TEMP_NRF5
@@ -97,7 +117,7 @@ config CLOCK_CONTROL_NRF_USES_TEMP_SENSOR
 
 endif # CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION
 
-choice CLOCK_CONTROL_NRF_ACCURACY
+choice CLOCK_CONTROL_NRF_ACCURACY_PPM
 	prompt "32KHz clock accuracy"
 	default CLOCK_CONTROL_NRF_K32SRC_500PPM if CLOCK_CONTROL_NRF_K32SRC_RC
 	default CLOCK_CONTROL_NRF_K32SRC_20PPM
@@ -127,5 +147,16 @@ config CLOCK_CONTROL_NRF_K32SRC_20PPM
 	bool "0 ppm to 20 ppm"
 
 endchoice
+
+config CLOCK_CONTROL_NRF_ACCURACY
+	int
+	default 500 if CLOCK_CONTROL_NRF_K32SRC_500PPM
+	default 250 if CLOCK_CONTROL_NRF_K32SRC_250PPM
+	default 150 if CLOCK_CONTROL_NRF_K32SRC_150PPM
+	default 100 if CLOCK_CONTROL_NRF_K32SRC_100PPM
+	default 75 if CLOCK_CONTROL_NRF_K32SRC_75PPM
+	default 50 if CLOCK_CONTROL_NRF_K32SRC_50PPM
+	default 30 if CLOCK_CONTROL_NRF_K32SRC_30PPM
+	default 20 if CLOCK_CONTROL_NRF_K32SRC_20PPM
 
 endif # CLOCK_CONTROL_NRF

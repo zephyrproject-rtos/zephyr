@@ -1,0 +1,14 @@
+common:
+  integration_platforms:
+    - native_posix
+
+tests:
+  logging.add.async:
+    tags: logging
+  logging.add.sync:
+    tags: logging
+    extra_args: CONF_FILE=log_sync.conf
+  logging.add.user:
+    tags: logging
+    filter: CONFIG_USERSPACE
+    extra_args: CONF_FILE=log_user.conf

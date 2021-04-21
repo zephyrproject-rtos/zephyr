@@ -27,7 +27,7 @@ static inline float out_ev(struct sensor_value *val)
 
 static int lsm6dsl_trig_cnt;
 #ifdef CONFIG_LSM6DSL_TRIGGER
-static void lsm6dsl_trigger_handler(struct device *dev,
+static void lsm6dsl_trigger_handler(const struct device *dev,
 				    struct sensor_trigger *trig)
 {
 #ifdef ARGONKEY_TEST_LOG
@@ -107,16 +107,16 @@ void main(void)
 {
 	int cnt = 0;
 	char out_str[64];
-	static struct device *led0, *led1;
+	static const struct device *led0, *led1;
 	int i, on = 1;
 
 #ifdef CONFIG_LP3943
-	static struct device *ledc;
+	static const struct device *ledc;
 
-	ledc = device_get_binding(DT_INST_0_TI_LP3943_LABEL);
+	ledc = device_get_binding(DT_LABEL(DT_INST(0, ti_lp3943)));
 	if (!ledc) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_INST_0_TI_LP3943_LABEL);
+			DT_LABEL(DT_INST(0, ti_lp3943)));
 		return;
 	}
 
@@ -133,16 +133,18 @@ void main(void)
 	}
 #endif
 
-	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
-			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
+	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
+	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
+			   GPIO_OUTPUT_ACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
 
-	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
-			   GPIO_OUTPUT_INACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
+	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
+	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
 
 	for (i = 0; i < 5; i++) {
-		gpio_pin_set(led1, DT_ALIAS_LED1_GPIOS_PIN, on);
+		gpio_pin_set(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios), on);
 		k_sleep(K_MSEC(200));
 		on = (on == 1) ? 0 : 1;
 	}
@@ -150,32 +152,32 @@ void main(void)
 	printk("ArgonKey test!!\n");
 
 #ifdef CONFIG_LPS22HB
-	struct device *baro_dev =
-			device_get_binding(DT_INST_0_ST_LPS22HB_PRESS_LABEL);
+	const struct device *baro_dev =
+			device_get_binding(DT_LABEL(DT_INST(0, st_lps22hb_press)));
 
 	if (!baro_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_INST_0_ST_LPS22HB_PRESS_LABEL);
+			DT_LABEL(DT_INST(0, st_lps22hb_press)));
 		return;
 	}
 #endif
 
 #ifdef CONFIG_HTS221
-	struct device *hum_dev = device_get_binding(DT_INST_0_ST_HTS221_LABEL);
+	const struct device *hum_dev = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
 
 	if (!hum_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_INST_0_ST_HTS221_LABEL);
+			DT_LABEL(DT_INST(0, st_hts221)));
 		return;
 	}
 #endif
 
 #ifdef CONFIG_LSM6DSL
-	struct device *accel_dev = device_get_binding(DT_INST_0_ST_LSM6DSL_LABEL);
+	const struct device *accel_dev = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dsl)));
 
 	if (!accel_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_INST_0_ST_LSM6DSL_LABEL);
+			DT_LABEL(DT_INST(0, st_lsm6dsl)));
 		return;
 	}
 
@@ -236,11 +238,11 @@ void main(void)
 #endif
 
 #ifdef CONFIG_VL53L0X
-	struct device *tof_dev = device_get_binding(DT_INST_0_ST_VL53L0X_LABEL);
+	const struct device *tof_dev = device_get_binding(DT_LABEL(DT_INST(0, st_vl53l0x)));
 
 	if (!tof_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_INST_0_ST_VL53L0X_LABEL);
+			DT_LABEL(DT_INST(0, st_vl53l0x)));
 		return;
 	}
 #endif

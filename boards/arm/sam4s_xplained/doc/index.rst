@@ -43,11 +43,15 @@ features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
+| USART     | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
+| SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| Watchdog  | on-chip    | watchdog                            |
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
@@ -58,8 +62,8 @@ The default configuration can be found in the Kconfig
 Connections and IOs
 ===================
 
-The `SAM4S Xplained Online User Guide`_ has detailed information about board
-connections. Download the `SAM4S Xplained Schematic`_ for more detail.
+Download the `SAM4S Xplained Design Files`_ for more information. It has
+full schematic and gerbers files.
 
 System Clock
 ============
@@ -85,10 +89,49 @@ the SAM4S16C.
 Flashing
 ========
 
+For flash the board Zephyr provides two paths.  One uses the default JLink
+tool and the second one uses :ref:`atmel_sam_ba_bootloader`.
+
+Using JLink
+-------------
+
 #. Download JLink from the Segger `JLink Downloads Page`_. Go to the section
-   "J-Link Software and Documentation Pack" and install the "J-Link Software and
-   Documentation pack for Linux". The application JLinkExe needs to be accessible
-   from your path.
+   "J-Link Software and Documentation Pack" and install the "J-Link Software
+   and Documentation pack for Linux". The application JLinkExe needs to be
+   accessible from your path.
+
+#. Connect the SAM4S Xplained board to your host computer using the USB debug
+   port. Then build and flash the :ref:`hello_world` application.
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: sam4s_xplained
+      :goals: build flash
+
+
+Using SAM-BA bootloader
+-----------------------
+
+#. Close the ``J25`` jumper on the SAM4S Xplained board.  Power on the board
+   for 10s.
+
+#. Open the ``J25`` jumper.
+
+#. Connect the SAM4S Xplained board to your host computer using the SoC USB
+   port. Then build and flash the :ref:`hello_world` application.
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: sam4s_xplained
+      :goals: build
+
+   .. code-block:: console
+
+      $ west flash -r bossac
+
+
+Visualizing the message
+-----------------------
 
 #. Run your favorite terminal program to listen for output. Under Linux the
    terminal should be :code:`/dev/ttyACM0`. For example:
@@ -97,24 +140,18 @@ Flashing
 
       $ minicom -D /dev/ttyACM0 -o
 
-   The -o option tells minicom not to send the modem initialization
-   string. Connection should be configured as follows:
+   The -o option tells minicom not to send the modem initialization string.
+   Connection should be configured as follows:
 
    - Speed: 115200
    - Data: 8 bits
    - Parity: None
    - Stop bits: 1
 
-#. Connect the SAM4S Xplained board to your host computer using the
-   USB debug port. Then build and flash the :ref:`hello_world`
-   application.
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: sam4s_xplained
-      :goals: build flash
+#. Press reset button
 
    You should see "Hello World! arm" in your terminal.
+
 
 Debugging
 =========
@@ -134,10 +171,10 @@ References
 .. target-notes::
 
 .. _SAM4S Xplained Online User Guide:
-    http://www.atmel.com/webdoc/sam4s16xplained/index.html
+    http://ww1.microchip.com/downloads/en/devicedoc/atmel-42075-sam4s-xplained-pro_user-guide.pdf
 
 .. _JLink Downloads Page:
     https://www.segger.com/downloads/jlink
 
-.. _SAM4S Xplained Schematic:
-    http://www.atmel.com/tools/sam4s-xpld.aspx?tab=documents
+.. _SAM4S Xplained Design Files:
+    http://ww1.microchip.com/downloads/en/DeviceDoc/SAM4S-XPLD__KitsFiles.zip

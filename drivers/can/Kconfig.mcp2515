@@ -26,7 +26,7 @@ config CAN_MCP2515_INT_THREAD_PRIO
 	  Priority level of the internal thread which is ran for
 	  interrupt handling and incoming packets.
 
-config CAN_MCP2515_MAX_FILTER
+config CAN_MAX_FILTER
 	int "Maximum number of concurrent active filters"
 	default 5
 	range 1 32

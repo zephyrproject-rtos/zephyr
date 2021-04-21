@@ -1,0 +1,9 @@
+# Xilinx AXI Timer
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_XLNX_AXI_TIMER
+	bool "Xilinx AXI Timer driver"
+	help
+	  Enable counter support for the Xilinx AXI Timer v2.0 IP.

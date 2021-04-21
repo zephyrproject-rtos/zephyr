@@ -21,13 +21,15 @@
  * Please note that a call to pinmux_pin_set is only needed when a setting
  * that is not default is required
  */
-static int intel_s1000_pinmux_init(struct device *dev)
+static int intel_s1000_pinmux_init(const struct device *dev)
 {
-	struct device *pinmux;
+	const struct device *pinmux;
 
-	pinmux = device_get_binding(CONFIG_PINMUX_NAME);
+	pinmux = DEVICE_DT_GET(DT_INST(0, intel_s1000_pinmux));
 
-	if (pinmux == NULL) {
+	__ASSERT_NO_MSG(device_is_ready(pinmux));
+
+	if (!device_is_ready(pinmux)) {
 		return -ENXIO;
 	}
 

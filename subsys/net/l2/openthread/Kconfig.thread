@@ -1,0 +1,95 @@
+# Thread network configuration options
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config OPENTHREAD_PANID
+	int "Default PAN ID"
+	default 43981
+
+config OPENTHREAD_CHANNEL
+	int "Default Channel"
+	default 11
+
+config OPENTHREAD_NETWORK_NAME
+	string "Default network name"
+	default "ot_zephyr"
+	help
+	  Network name for OpenThread
+
+config OPENTHREAD_XPANID
+	string "Default Extended PAN ID"
+	default "de:ad:00:be:ef:00:ca:fe"
+	help
+	  Extended PAN ID for OpenThread with
+	  format "de:ad:00:be:ef:00:ca:fe"
+
+config OPENTHREAD_MASTERKEY
+	string "Default Thread Master Key"
+	help
+	  Master Key for OpenThread with format
+	  "00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff"
+
+config OPENTHREAD_JOINER_AUTOSTART
+	bool "Enable automatic joiner start"
+	depends on OPENTHREAD_JOINER
+
+config OPENTHREAD_JOINER_PSKD
+	string "Default pre shared key for the Joiner"
+	depends on OPENTHREAD_JOINER_AUTOSTART
+	default "J01NME"
+
+choice
+	prompt "OpenThread device type"
+	help
+	  This option selects Thread network device type
+
+config OPENTHREAD_FTD
+	bool "FTD - Full Thread Device"
+config OPENTHREAD_MTD
+	bool "MTD - Minimal Thread Device"
+endchoice
+
+config OPENTHREAD_MTD_SED
+	bool "SED - Sleepy End Device"
+	depends on OPENTHREAD_MTD
+
+config OPENTHREAD_POLL_PERIOD
+	int "Poll period for sleepy end devices [ms]"
+	default 236000
+	depends on OPENTHREAD_MTD_SED
+
+config OPENTHREAD_MAX_CHILDREN
+	int "The maximum number of children"
+	range 10 511
+	default 32
+
+config OPENTHREAD_MAX_IP_ADDR_PER_CHILD
+	int "The maximum number of IPv6 address registrations per child"
+	range 4 255
+	default 6
+
+config OPENTHREAD_CONFIG_PLATFORM_INFO
+	string "The platform-specific string to insert into the OpenThread version string"
+	default "Zephyr"
+
+config OPENTHREAD_RADIO_LINK_IEEE_802_15_4_ENABLE
+	bool "Enable support for IEEE802.15.4 radio link"
+	default y
+
+config OPENTHREAD_RADIO_LINK_TREL_ENABLE
+	bool "Thread Radio Encapsulation Link (TREL)"
+
+config OPENTHREAD_CSL_SAMPLE_WINDOW
+	int "CSL sample window in units of 10 symbols"
+	default 30
+
+config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
+	int "CSL receiver wake up margin in units of 10 symbols"
+	default 3
+
+config OPENTHREAD_SRP_CLIENT
+	bool "Enable SRP Client support"
+
+config OPENTHREAD_SRP_SERVER
+	bool "Enable SRP Server support"

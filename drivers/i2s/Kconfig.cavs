@@ -3,72 +3,10 @@
 # Copyright (c) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig I2S_CAVS
+config I2S_CAVS
 	bool "Intel I2S (SSP) Bus Driver"
 	depends on BOARD_INTEL_S1000_CRB
 	select DMA
 	help
 	  Enable Inter Sound (I2S) bus driver for Intel_S1000 based on
 	  Synchronous Serial Port (SSP) module.
-
-if I2S_CAVS
-
-config I2S_CAVS_DMA_NAME
-	string "DMA device name"
-	default "DMA_0"
-	help
-	  Name of the DMA device this device driver can use.
-
-config I2S_CAVS_IRQ_PRI
-	int "Interrupt priority"
-	default 0
-
-config I2S_CAVS_1_NAME
-	string "I2S 1 device name"
-	default "I2S_1"
-
-config I2S_CAVS_1_DMA_TX_CHANNEL
-	int "DMA TX channel"
-	default 2
-	help
-	  DMA channel number to use for I2S1 TX transfer.
-
-config I2S_CAVS_1_DMA_RX_CHANNEL
-	int "DMA RX channel"
-	default 3
-	help
-	  DMA channel number to use for I2S1 RX transfer.
-
-config I2S_CAVS_2_NAME
-	string "I2S 2 device name"
-	default "I2S_2"
-
-config I2S_CAVS_2_DMA_TX_CHANNEL
-	int "DMA TX channel"
-	default 4
-	help
-	  DMA channel number to use for I2S2 TX transfer.
-
-config I2S_CAVS_2_DMA_RX_CHANNEL
-	int "DMA RX channel"
-	default 5
-	help
-	  DMA channel number to use for I2S2 RX transfer.
-
-config I2S_CAVS_3_NAME
-	string "I2S 3 device name"
-	default "I2S_3"
-
-config I2S_CAVS_3_DMA_TX_CHANNEL
-	int "DMA TX channel"
-	default 6
-	help
-	  DMA channel number to use for I2S3 TX transfer.
-
-config I2S_CAVS_3_DMA_RX_CHANNEL
-	int "DMA RX channel"
-	default 7
-	help
-	  DMA channel number to use for I2S3 RX transfer.
-
-endif # I2S_CAVS

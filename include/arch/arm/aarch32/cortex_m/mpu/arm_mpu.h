@@ -12,7 +12,8 @@
 	defined(CONFIG_CPU_CORTEX_M7)
 #include <arch/arm/aarch32/cortex_m/mpu/arm_mpu_v7m.h>
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
-	defined(CONFIG_CPU_CORTEX_M33)
+	defined(CONFIG_CPU_CORTEX_M33) || \
+	defined(CONFIG_CPU_CORTEX_M55)
 #include <arch/arm/aarch32/cortex_m/mpu/arm_mpu_v8m.h>
 #else
 #error "Unsupported ARM CPU"
@@ -23,7 +24,7 @@
 /* Region definition data structure */
 struct arm_mpu_region {
 	/* Region Base Address */
-	u32_t base;
+	uint32_t base;
 	/* Region Name */
 	const char *name;
 	/* Region Attributes */
@@ -33,7 +34,7 @@ struct arm_mpu_region {
 /* MPU configuration data structure */
 struct arm_mpu_config {
 	/* Number of regions */
-	u32_t num_regions;
+	uint32_t num_regions;
 	/* Regions */
 	const struct arm_mpu_region *mpu_regions;
 };

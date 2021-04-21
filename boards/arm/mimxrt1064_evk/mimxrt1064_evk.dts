@@ -16,18 +16,22 @@
 		led0 = &green_led;
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
+		kscan0 = &touch_controller;
 	};
 
 	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sdram0;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,can-primary = &flexcan2;
 	};
 
 	sdram0: memory@80000000 {
 		/* Micron MT48LC16M16A2B4-6AIT:G */
 		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0x80000000 0x2000000>;
+		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	leds {
@@ -93,9 +97,9 @@
 	};
 };
 
-arduino_i2c: &i2c1 {};
+arduino_i2c: &lpi2c1 {};
 
-&lcdif1 {
+&lcdif {
 	status = "okay";
 	port {
 		lcd_panel_out: endpoint {
@@ -104,7 +108,7 @@ arduino_i2c: &i2c1 {};
 	};
 };
 
-&i2c1 {
+&lpi2c1 {
 	status = "okay";
 
 	mt9m114@48 {
@@ -120,27 +124,55 @@ arduino_i2c: &i2c1 {};
 		};
 	};
 
-	ft5336@38 {
+	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		label = "FT5336";
-		int-gpios = <&gpio1 11 0>;
+		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };
 
-&uart1 {
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	is25wp064: is25wp064@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <67108864>;
+		label = "IS25WP064";
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [9d 70 17];
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x00000000 DT_SIZE_M(8)>;
+			};
+		};
+	};
+};
+
+&lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
 };
 
-&eth {
+&enet {
 	status = "okay";
 	ptp {
 		status = "okay";
 	};
 };
 
-&usbd1 {
+&usb1 {
 	status = "okay";
 };
 
@@ -153,4 +185,19 @@ arduino_i2c: &i2c1 {};
 			remote-endpoint = <&mt9m114_ep_out>;
 		};
 	};
+};
+
+&flexpwm2_pwm3 {
+	status = "okay";
+};
+
+&usdhc1 {
+	status = "okay";
+	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+};
+
+&flexcan2 {
+	status = "okay";
+	bus-speed = <125000>;
 };

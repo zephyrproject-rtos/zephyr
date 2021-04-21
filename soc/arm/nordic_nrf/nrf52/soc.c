@@ -26,10 +26,14 @@ extern void z_arm_nmi_init(void);
 #define NMI_INIT()
 #endif
 
-#if defined(CONFIG_SOC_NRF52810)
+#if defined(CONFIG_SOC_NRF52805)
+#include <system_nrf52805.h>
+#elif defined(CONFIG_SOC_NRF52810)
 #include <system_nrf52810.h>
 #elif defined(CONFIG_SOC_NRF52811)
 #include <system_nrf52811.h>
+#elif defined(CONFIG_SOC_NRF52820)
+#include <system_nrf52820.h>
 #elif defined(CONFIG_SOC_NRF52832)
 #include <system_nrf52.h>
 #elif defined(CONFIG_SOC_NRF52833)
@@ -51,9 +55,9 @@ void sys_arch_reboot(int type)
 	NVIC_SystemReset();
 }
 
-static int nordicsemi_nrf52_init(struct device *arg)
+static int nordicsemi_nrf52_init(const struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 
@@ -78,7 +82,7 @@ static int nordicsemi_nrf52_init(struct device *arg)
 	return 0;
 }
 
-void arch_busy_wait(u32_t time_us)
+void arch_busy_wait(uint32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
 }

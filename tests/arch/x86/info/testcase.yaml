@@ -1,7 +1,17 @@
 tests:
   arch.x86.info:
-    arch_whitelist: x86
-    platform_whitelist: up_squared
+    arch_allow: x86
+    platform_allow: qemu_x86 ehl_crb up_squared up_squared_32
+    harness: console
+    harness_config:
+        type: one_line
+        regex:
+          - "info: complete"
+  arch.x86.info.userspace:
+    arch_allow: x86
+    platform_allow: qemu_x86 ehl_crb up_squared up_squared_32
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
     harness: console
     harness_config:
         type: one_line

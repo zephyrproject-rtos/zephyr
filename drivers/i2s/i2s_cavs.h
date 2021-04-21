@@ -20,22 +20,22 @@ extern "C" {
 #endif
 
 struct i2s_cavs_ssp {
-	u32_t ssc0;		/* 0x00 - Control0 */
-	u32_t ssc1;		/* 0x04 - Control1 */
-	u32_t sss;		/* 0x08 - Status */
-	u32_t ssit;		/* 0x0C - Interrupt Test */
-	u32_t ssd;		/* 0x10 - Data */
-	u32_t reserved0[5];
-	u32_t ssto;		/* 0x28 - Time Out */
-	u32_t sspsp;		/* 0x2C - Programmable Serial Protocol */
-	u32_t sstsa;		/* 0x30 - TX Time Slot Active */
-	u32_t ssrsa;		/* 0x34 - RX Time Slot Active */
-	u32_t sstss;		/* 0x38 - Time Slot Status */
-	u32_t reserved1;
-	u32_t ssc2;		/* 0x40 - Command / Status 2 */
-	u32_t sspsp2;		/* 0x44 - Programmable Serial Protocol 2 */
-	u32_t ssc3;		/* 0x48 - Command / Status 3 */
-	u32_t ssioc;		/* 0x4C - IO Control */
+	uint32_t ssc0;		/* 0x00 - Control0 */
+	uint32_t ssc1;		/* 0x04 - Control1 */
+	uint32_t sss;		/* 0x08 - Status */
+	uint32_t ssit;		/* 0x0C - Interrupt Test */
+	uint32_t ssd;		/* 0x10 - Data */
+	uint32_t reserved0[5];
+	uint32_t ssto;		/* 0x28 - Time Out */
+	uint32_t sspsp;		/* 0x2C - Programmable Serial Protocol */
+	uint32_t sstsa;		/* 0x30 - TX Time Slot Active */
+	uint32_t ssrsa;		/* 0x34 - RX Time Slot Active */
+	uint32_t sstss;		/* 0x38 - Time Slot Status */
+	uint32_t reserved1;
+	uint32_t ssc2;		/* 0x40 - Command / Status 2 */
+	uint32_t sspsp2;		/* 0x44 - Programmable Serial Protocol 2 */
+	uint32_t ssc3;		/* 0x48 - Command / Status 3 */
+	uint32_t ssioc;		/* 0x4C - IO Control */
 };
 
 /* SSCR0 bits */
@@ -132,8 +132,8 @@ struct i2s_cavs_ssp {
 #define SSIOC_SCOE		(1 << 5)
 
 struct i2s_cavs_mn_div {
-	u32_t mval;		/* 0x00 - M value */
-	u32_t nval;		/* 0x04 - N value */
+	uint32_t mval;		/* 0x00 - M value */
+	uint32_t nval;		/* 0x04 - N value */
 };
 
 /* MVAL & NVAL bits */

@@ -32,7 +32,9 @@
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-		      0x0d, 0x18, 0x0f, 0x18, 0x05, 0x18),
+		      BT_UUID_16_ENCODE(BT_UUID_HRS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_CTS_VAL)),
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL,
 		      0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 		      0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12),
@@ -44,7 +46,7 @@ static const struct bt_data sd[] = {
 
 static int service_set;
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		printk("Connection failed (err %u)\n", err);
@@ -53,9 +55,9 @@ static void connected(struct bt_conn *conn, u8_t err)
 	}
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	printk("Disconnected (reason %u)\n", reason);
+	printk("Disconnected (reason 0x%02x)\n", reason);
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level,
@@ -261,12 +263,12 @@ static struct bt_conn_auth_cb auth_cb_display = {
 /**
  * @brief Clean out excess bytes from the input buffer
  */
-static void read_excess_bytes(u16_t size)
+static void read_excess_bytes(uint16_t size)
 {
 	if (size > 0) {
-		u8_t buffer[size];
+		uint8_t buffer[size];
 
-		edtt_read((u8_t *)buffer, size, EDTTT_BLOCK);
+		edtt_read((uint8_t *)buffer, size, EDTTT_BLOCK);
 		printk("command size wrong! (%u extra bytes removed)", size);
 	}
 }
@@ -274,58 +276,58 @@ static void read_excess_bytes(u16_t size)
 /**
  * @brief Switch GATT Service Set
  */
-static void switch_service_set(u16_t size)
+static void switch_service_set(uint16_t size)
 {
-	u16_t response = sys_cpu_to_le16(CMD_GATT_SERVICE_SET_RSP);
-	u8_t  set;
+	uint16_t response = sys_cpu_to_le16(CMD_GATT_SERVICE_SET_RSP);
+	uint8_t  set;
 
 	if (size > 0) {
-		edtt_read((u8_t *)&set, sizeof(set), EDTTT_BLOCK);
+		edtt_read((uint8_t *)&set, sizeof(set), EDTTT_BLOCK);
 		service_setup((int)set);
 		size -= sizeof(set);
 	}
 	read_excess_bytes(size);
 	size = 0;
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 }
 
 /**
  * @brief Send Notifications from GATT Service Set
  */
-static void handle_service_notify(u16_t size)
+static void handle_service_notify(uint16_t size)
 {
-	u16_t response = sys_cpu_to_le16(CMD_GATT_SERVICE_NOTIFY_RSP);
+	uint16_t response = sys_cpu_to_le16(CMD_GATT_SERVICE_NOTIFY_RSP);
 
 	service_notify();
 	read_excess_bytes(size);
 	size = 0;
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 }
 
 /**
  * @brief Send Indications from GATT Service Set
  */
-static void handle_service_indicate(u16_t size)
+static void handle_service_indicate(uint16_t size)
 {
-	u16_t response = sys_cpu_to_le16(CMD_GATT_SERVICE_INDICATE_RSP);
+	uint16_t response = sys_cpu_to_le16(CMD_GATT_SERVICE_INDICATE_RSP);
 
 	service_indicate();
 	read_excess_bytes(size);
 	size = 0;
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 }
 
 void main(void)
 {
 	int err;
-	u16_t command;
-	u16_t size;
+	uint16_t command;
+	uint16_t size;
 
 	err = bt_enable(bt_ready);
 	if (err) {
@@ -352,9 +354,9 @@ void main(void)
 		/**
 		 * Wait for a command to arrive - then read and execute command
 		 */
-		edtt_read((u8_t *)&command, sizeof(command), EDTTT_BLOCK);
+		edtt_read((uint8_t *)&command, sizeof(command), EDTTT_BLOCK);
 		command = sys_le16_to_cpu(command);
-		edtt_read((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_read((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 		size = sys_le16_to_cpu(size);
 		bs_trace_raw_time(4, "command 0x%04X received (size %u)\n",
 				command, size);

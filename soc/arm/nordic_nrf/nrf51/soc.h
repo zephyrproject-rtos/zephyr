@@ -11,14 +11,7 @@
 #ifndef _NORDICSEMI_NRF51_SOC_H_
 #define _NORDICSEMI_NRF51_SOC_H_
 
-#ifndef _ASMLANGUAGE
-
-#include <nrfx.h>
-
-/* Add include for DTS generated information */
-#include <devicetree.h>
-
-#endif /* !_ASMLANGUAGE */
+#include "../soc_nrf_common.h"
 
 #define NRF51_POWER_RAMON_ADDRESS              0x40000524
 #define NRF51_POWER_RAMONB_ADDRESS             0x40000554

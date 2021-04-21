@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lps22hh.pdf
  */
 
+#define DT_DRV_COMPAT st_lps22hh
+
 #include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
@@ -20,60 +22,60 @@
 
 LOG_MODULE_REGISTER(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lps22hh_set_odr_raw(struct device *dev, u8_t odr)
+static inline int lps22hh_set_odr_raw(const struct device *dev, uint8_t odr)
 {
-	struct lps22hh_data *data = dev->driver_data;
+	struct lps22hh_data *data = dev->data;
 
 	return lps22hh_data_rate_set(data->ctx, odr);
 }
 
-static int lps22hh_sample_fetch(struct device *dev,
+static int lps22hh_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-	struct lps22hh_data *data = dev->driver_data;
-	union axis1bit32_t raw_press;
-	union axis1bit16_t raw_temp;
+	struct lps22hh_data *data = dev->data;
+	uint32_t raw_press;
+	int16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (lps22hh_pressure_raw_get(data->ctx, raw_press.u8bit) < 0) {
+	if (lps22hh_pressure_raw_get(data->ctx, &raw_press) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
-	if (lps22hh_temperature_raw_get(data->ctx, raw_temp.u8bit) < 0) {
+	if (lps22hh_temperature_raw_get(data->ctx, &raw_temp) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->sample_press = raw_press.i32bit;
-	data->sample_temp = raw_temp.i16bit;
+	data->sample_press = raw_press;
+	data->sample_temp = raw_temp;
 
 	return 0;
 }
 
 static inline void lps22hh_press_convert(struct sensor_value *val,
-					 s32_t raw_val)
+					 int32_t raw_val)
 {
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
 	val->val1 = (raw_val >> 12) / 10;
 	val->val2 = (raw_val >> 12) % 10 * 100000 +
-		(((s32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
+		(((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
 }
 
 static inline void lps22hh_temp_convert(struct sensor_value *val,
-					s16_t raw_val)
+					int16_t raw_val)
 {
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
-	val->val2 = ((s32_t)raw_val % 100) * 10000;
+	val->val2 = ((int32_t)raw_val % 100) * 10000;
 }
 
-static int lps22hh_channel_get(struct device *dev,
+static int lps22hh_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lps22hh_data *data = dev->driver_data;
+	struct lps22hh_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_PRESS) {
 		lps22hh_press_convert(val, data->sample_press);
@@ -86,9 +88,9 @@ static int lps22hh_channel_get(struct device *dev,
 	return 0;
 }
 
-static const u16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
+static const uint16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
 
-static int lps22hh_odr_set(struct device *dev, u16_t freq)
+static int lps22hh_odr_set(const struct device *dev, uint16_t freq)
 {
 	int odr;
 
@@ -111,7 +113,8 @@ static int lps22hh_odr_set(struct device *dev, u16_t freq)
 	return 0;
 }
 
-static int lps22hh_attr_set(struct device *dev, enum sensor_channel chan,
+static int lps22hh_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
@@ -140,10 +143,10 @@ static const struct sensor_driver_api lps22hh_api_funcs = {
 #endif
 };
 
-static int lps22hh_init_chip(struct device *dev)
+static int lps22hh_init_chip(const struct device *dev)
 {
-	struct lps22hh_data *data = dev->driver_data;
-	u8_t chip_id;
+	struct lps22hh_data *data = dev->data;
+	uint8_t chip_id;
 
 	if (lps22hh_device_id_get(data->ctx, &chip_id) < 0) {
 		LOG_DBG("Failed reading chip id");
@@ -168,10 +171,12 @@ static int lps22hh_init_chip(struct device *dev)
 	return 0;
 }
 
-static int lps22hh_init(struct device *dev)
+static int lps22hh_init(const struct device *dev)
 {
-	const struct lps22hh_config * const config = dev->config->config_info;
-	struct lps22hh_data *data = dev->driver_data;
+	const struct lps22hh_config * const config = dev->config;
+	struct lps22hh_data *data = dev->data;
+
+	data->dev = dev;
 
 	data->bus = device_get_binding(config->master_dev_name);
 	if (!data->bus) {
@@ -199,35 +204,36 @@ static int lps22hh_init(struct device *dev)
 static struct lps22hh_data lps22hh_data;
 
 static const struct lps22hh_config lps22hh_config = {
-	.master_dev_name = DT_INST_0_ST_LPS22HH_BUS_NAME,
+	.master_dev_name = DT_INST_BUS_LABEL(0),
 #ifdef CONFIG_LPS22HH_TRIGGER
-	.drdy_port	= DT_INST_0_ST_LPS22HH_DRDY_GPIOS_CONTROLLER,
-	.drdy_pin	= DT_INST_0_ST_LPS22HH_DRDY_GPIOS_PIN,
-	.drdy_flags	= DT_INST_0_ST_LPS22HH_DRDY_GPIOS_FLAGS,
+	.drdy_port	= DT_INST_GPIO_LABEL(0, drdy_gpios),
+	.drdy_pin	= DT_INST_GPIO_PIN(0, drdy_gpios),
+	.drdy_flags	= DT_INST_GPIO_FLAGS(0, drdy_gpios),
 #endif
-#if defined(DT_ST_LPS22HH_BUS_SPI)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = lps22hh_spi_init,
-	.spi_conf.frequency = DT_INST_0_ST_LPS22HH_SPI_MAX_FREQUENCY,
+	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
 			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_0_ST_LPS22HH_BASE_ADDRESS,
-#if defined(DT_INST_0_ST_LPS22HH_CS_GPIOS_CONTROLLER)
-	.gpio_cs_port	    = DT_INST_0_ST_LPS22HH_CS_GPIOS_CONTROLLER,
-	.cs_gpio	    = DT_INST_0_ST_LPS22HH_CS_GPIOS_PIN,
+	.spi_conf.slave     = DT_INST_REG_ADDR(0),
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.cs_gpio_flags	    = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 
 	.spi_conf.cs        =  &lps22hh_data.cs_ctrl,
 #else
 	.spi_conf.cs        = NULL,
 #endif
-#elif defined(DT_ST_LPS22HH_BUS_I2C)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = lps22hh_i2c_init,
-	.i2c_slv_addr = DT_INST_0_ST_LPS22HH_BASE_ADDRESS,
+	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
 };
 
-DEVICE_AND_API_INIT(lps22hh, DT_INST_0_ST_LPS22HH_LABEL, lps22hh_init,
+DEVICE_DT_INST_DEFINE(0, lps22hh_init, device_pm_control_nop,
 		    &lps22hh_data, &lps22hh_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lps22hh_api_funcs);

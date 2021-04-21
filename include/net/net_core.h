@@ -20,6 +20,8 @@
 #include <sys/__assert.h>
 #include <kernel.h>
 
+#include <net/net_timeout.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,13 +43,46 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 /* Network subsystem logging helpers */
-#define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(), \
+#ifdef CONFIG_THREAD_NAME
+#define NET_DBG(fmt, ...) LOG_DBG("(%s): " fmt,				\
+			log_strdup(k_thread_name_get(k_current_get())), \
+			##__VA_ARGS__)
+#else
+#define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(),	\
 				  ##__VA_ARGS__)
+#endif /* CONFIG_THREAD_NAME */
 #define NET_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
 #define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
 
+#define NET_HEXDUMP_DBG(_data, _length, _str) LOG_HEXDUMP_DBG(_data, _length, _str)
+#define NET_HEXDUMP_ERR(_data, _length, _str) LOG_HEXDUMP_ERR(_data, _length, _str)
+#define NET_HEXDUMP_WARN(_data, _length, _str) LOG_HEXDUMP_WRN(_data, _length, _str)
+#define NET_HEXDUMP_INFO(_data, _length, _str) LOG_HEXDUMP_INF(_data, _length, _str)
+
 #define NET_ASSERT(cond, ...) __ASSERT(cond, "" __VA_ARGS__)
+
+/* This needs to be here in order to avoid circular include dependency between
+ * net_pkt.h and net_if.h
+ */
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
+	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+#if !defined(NET_PKT_DETAIL_STATS_COUNT)
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+#define NET_PKT_DETAIL_STATS_COUNT 4
+#else
+#define NET_PKT_DETAIL_STATS_COUNT 3
+#endif /* CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
+
+#else
+#define NET_PKT_DETAIL_STATS_COUNT 4
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL */
+
+#endif /* !NET_PKT_DETAIL_STATS_COUNT */
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
+	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
 /** @endcond */
 
@@ -97,112 +132,6 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
 int net_send_data(struct net_pkt *pkt);
 
 /** @cond INTERNAL_HIDDEN */
-/*
- * The net_stack_info struct needs to be aligned to 32 byte boundary,
- * otherwise the __net_stack_end will point to wrong location and looping
- * through net_stack section will go wrong.
- * So this alignment is a workaround and should eventually be removed.
- */
-struct net_stack_info {
-	k_thread_stack_t *stack;
-	const char *pretty_name;
-	const char *name;
-	size_t orig_size;
-	size_t size;
-	int prio;
-	int idx;
-} __aligned(32);
-
-#if defined(CONFIG_NET_SHELL)
-#define NET_STACK_GET_NAME(pretty, name, sfx) \
-	(__net_stack_##pretty##_##name##_##sfx)
-
-#define NET_STACK_INFO_ADDR(_pretty, _name, _orig, _size, _addr, sfx)	\
-	static struct net_stack_info					\
-	(NET_STACK_GET_NAME(_pretty, _name, sfx)) __used		\
-	__attribute__((__section__(".net_stack.data"))) = {		\
-		.stack = _addr,						\
-		.size = _size,						\
-		.orig_size = _orig,					\
-		.name = #_name,						\
-		.pretty_name = #_pretty,				\
-		.prio = -1,						\
-		.idx = -1,						\
-	}
-
-/* Note that the stack address needs to be fixed at runtime because
- * we cannot do it during static initialization. For name we allocate
- * some space so that the stack index can be printed too.
- */
-#define NET_STACK_INFO_ADDR_ARRAY(_pretty, _name, _orig, _size, _addr,	\
-				  sfx, _nmemb)				\
-	static struct net_stack_info					\
-	(NET_STACK_GET_NAME(_pretty, _name, sfx))[_nmemb] __used	\
-	__attribute__((__section__(".net_stack.data"))) = {		\
-		[0 ... (_nmemb - 1)] = {				\
-			.stack = _addr[0],				\
-			.size = _size,					\
-			.orig_size = _orig,				\
-			.name = #_name,					\
-			.pretty_name = #_pretty,			\
-			.prio = -1,					\
-			.idx = -1,					\
-		}							\
-	}
-
-#define NET_STACK_INFO(_pretty_name, _name, _orig, _size)		\
-	NET_STACK_INFO_ADDR(_pretty_name, _name, _orig, _size, _name, 0)
-
-#define NET_STACK_INFO_ARRAY(_pretty_name, _name, _orig, _size, _nmemb)	 \
-	NET_STACK_INFO_ADDR_ARRAY(_pretty_name, _name, _orig, _size, _name, \
-				  0, _nmemb)
-
-#define NET_STACK_DEFINE(pretty_name, name, orig, size)			\
-	K_THREAD_STACK_DEFINE(name, size);				\
-	NET_STACK_INFO(pretty_name, name, orig, size)
-
-#define NET_STACK_ARRAY_DEFINE(pretty_name, name, orig, size, nmemb)	\
-	K_THREAD_STACK_ARRAY_DEFINE(name, nmemb, size);			\
-	NET_STACK_INFO_ARRAY(pretty_name, name, orig, size, nmemb)
-
-#else /* CONFIG_NET_SHELL */
-
-#define NET_STACK_GET_NAME(pretty, name, sfx) (name)
-
-#define NET_STACK_INFO(...)
-#define NET_STACK_INFO_ADDR(...)
-
-#define NET_STACK_DEFINE(pretty_name, name, orig, size)			\
-	K_THREAD_STACK_DEFINE(name, size)
-
-#define NET_STACK_ARRAY_DEFINE(pretty_name, name, orig, size, nmemb)	\
-	K_THREAD_STACK_ARRAY_DEFINE(name, nmemb, size)
-
-#endif /* CONFIG_NET_SHELL */
-
-#define NET_STACK_DEFINE_EMBEDDED(name, size) char name[size]
-
-#if defined(CONFIG_INIT_STACKS)
-/* Legacy case: retain containing extern "C" with C++ */
-#include <debug/stack.h>
-
-static inline void net_analyze_stack_get_values(const char *stack,
-						size_t size,
-						unsigned *pcnt,
-						unsigned *unused)
-{
-	*unused = stack_unused_space_get(stack, size);
-
-	/* Calculate the real size reserved for the stack */
-	*pcnt = ((size - *unused) * 100) / size;
-}
-
-void net_analyze_stack(const char *name, const char *stack, size_t size);
-
-#else
-#define net_analyze_stack(...)
-#define net_analyze_stack_get_values(...)
-#endif
 
 /* Some helper defines for traffic class support */
 #if defined(CONFIG_NET_TC_TX_COUNT) && defined(CONFIG_NET_TC_RX_COUNT)

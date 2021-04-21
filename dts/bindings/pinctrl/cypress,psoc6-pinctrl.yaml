@@ -1,0 +1,36 @@
+# Copyright (c) 2020, Linaro Limited
+# Copyright (c) 2021, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cypress PSoC-6 Pinctrl container node
+
+  The Cypress PSoC-6 pins implements following pin configuration option:
+
+    * bias-pull-up
+    * bias-pull-down
+    * drive-open-drain
+    * drive-open-source
+    * drive-push-pull   (strong)
+    * input-enable      (input-buffer)
+
+  These options define devicetree flags that are converted to SoC flags at
+  CY_PSOC6_PIN_FLAGS().
+
+compatible: "cypress,psoc6-pinctrl"
+
+include: [base.yaml, pincfg-node.yaml]
+
+properties:
+    "#address-cells":
+      required: true
+      const: 1
+    "#size-cells":
+      required: true
+      const: 1
+
+child-binding:
+    description: cypress pins
+    properties:
+      "cypress,pins":
+        type: phandle-array

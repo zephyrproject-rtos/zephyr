@@ -12,7 +12,7 @@ Zephyr was ported to run on the M4 core. In a later release, it will also
 communicate with the A7 core (running Linux) via RPmsg.
 
 
-.. image:: pico_pi_m4.png
+.. image:: ./pico_pi_m4.png
    :width: 470px
    :align: center
    :alt: Pico-Pi i.MX7D

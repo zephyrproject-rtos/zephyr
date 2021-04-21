@@ -1,5 +1,5 @@
 [SPI]
-SPISizeMegabits = 128
+SPISizeMegabits = 4
 Flashmap = true
 FlshmapAddr = 0
 
@@ -34,6 +34,5 @@ FwEntryAddress = 0
 UseECDSA = false
 ECDSAPrivKeyFile = ecprivkey001.pem
 ECDSAPrivKeyPassword = ECPRIVKEY001
-ECDSAPubKeyFile = ecpubkey001_crt.pem
 FwEncrypt = false
 AesGenECPubKeyFile = ecpubkey002_crt.pem

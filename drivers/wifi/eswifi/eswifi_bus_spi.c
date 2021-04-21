@@ -3,9 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(wifi_eswifi_bus_spi);
+
+#define DT_DRV_COMPAT inventek_eswifi
+#include "eswifi_log.h"
+LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <kernel.h>
@@ -18,12 +19,12 @@ LOG_MODULE_REGISTER(wifi_eswifi_bus_spi);
 #include "eswifi.h"
 
 #define ESWIFI_SPI_THREAD_STACK_SIZE 1024
-K_THREAD_STACK_MEMBER(eswifi_spi_poll_stack, ESWIFI_SPI_THREAD_STACK_SIZE);
+K_KERNEL_STACK_MEMBER(eswifi_spi_poll_stack, ESWIFI_SPI_THREAD_STACK_SIZE);
 
 #define SPI_READ_CHUNK_SIZE 32
 
 struct eswifi_spi_data {
-	struct device *spi_dev;
+	const struct device *spi_dev;
 	struct eswifi_gpio csn;
 	struct eswifi_gpio dr;
 	struct k_thread poll_thread;
@@ -226,7 +227,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	struct eswifi_spi_data *spi = &eswifi_spi0; /* Static instance */
 
 	/* SPI DEV */
-	spi->spi_dev = device_get_binding(DT_INVENTEK_ESWIFI_ESWIFI0_BUS_NAME);
+	spi->spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!spi->spi_dev) {
 		LOG_ERR("Failed to initialize SPI driver");
 		return -ENODEV;
@@ -234,26 +235,27 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 
 	/* SPI DATA READY PIN */
 	spi->dr.dev = device_get_binding(
-			DT_INVENTEK_ESWIFI_ESWIFI0_DATA_GPIOS_CONTROLLER);
+			DT_INST_GPIO_LABEL(0, data_gpios));
 	if (!spi->dr.dev) {
 		LOG_ERR("Failed to initialize GPIO driver: %s",
-			    DT_INVENTEK_ESWIFI_ESWIFI0_DATA_GPIOS_CONTROLLER);
+			    DT_INST_GPIO_LABEL(0, data_gpios));
 		return -ENODEV;
 	}
-	spi->dr.pin = DT_INVENTEK_ESWIFI_ESWIFI0_DATA_GPIOS_PIN;
+	spi->dr.pin = DT_INST_GPIO_PIN(0, data_gpios);
 	gpio_pin_configure(spi->dr.dev, spi->dr.pin,
-			   DT_INVENTEK_ESWIFI_ESWIFI0_DATA_GPIOS_FLAGS |
+			   DT_INST_GPIO_FLAGS(0, data_gpios) |
 			   GPIO_INPUT);
 
 	/* SPI CONFIG/CS */
-	spi->spi_cfg.frequency = DT_INVENTEK_ESWIFI_ESWIFI0_SPI_MAX_FREQUENCY;
+	spi->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	spi->spi_cfg.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |
 				  SPI_WORD_SET(16) | SPI_LINES_SINGLE |
 				  SPI_HOLD_ON_CS | SPI_LOCK_ON);
-	spi->spi_cfg.slave = DT_INVENTEK_ESWIFI_ESWIFI0_BASE_ADDRESS;
+	spi->spi_cfg.slave = DT_INST_REG_ADDR(0);
 	spi->spi_cs.gpio_dev =
-		device_get_binding(DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIOS_CONTROLLER);
-	spi->spi_cs.gpio_pin = DT_INVENTEK_ESWIFI_ESWIFI0_CS_GPIOS_PIN;
+		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+	spi->spi_cs.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	spi->spi_cs.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	spi->spi_cs.delay = 1000U;
 	spi->spi_cfg.cs = &spi->spi_cs;
 
@@ -270,7 +272,12 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	return 0;
 }
 
-struct eswifi_bus_ops eswifi_bus_ops_spi = {
+static struct eswifi_bus_ops eswifi_bus_ops_spi = {
 	.init = eswifi_spi_init,
 	.request = eswifi_spi_request,
 };
+
+struct eswifi_bus_ops *eswifi_get_bus(void)
+{
+	return &eswifi_bus_ops_spi;
+}

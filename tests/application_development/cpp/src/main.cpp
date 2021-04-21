@@ -47,10 +47,10 @@ BUILD_ASSERT(sizeof(foo) == sizeof(int));
 
 static struct foo foos[5];
 /* Check that ARRAY_SIZE compiles. */
-BUILD_ASSERT_MSG(ARRAY_SIZE(foos) == 5, "expected 5 elements");
+BUILD_ASSERT(ARRAY_SIZE(foos) == 5, "expected 5 elements");
 
 /* Check that SYS_INIT() compiles. */
-static int test_init(struct device *dev)
+static int test_init(const struct device *dev)
 {
 	return 0;
 }

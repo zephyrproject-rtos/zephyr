@@ -12,8 +12,42 @@
 
 static struct zcan_work work;
 
-static inline int read_options(const struct shell *shell, int pos, char **argv,
-			       bool *rtr, bool *ext)
+static inline int read_config_options(const struct shell *shell, int pos,
+				      char **argv, bool *silent, bool *loopback)
+{
+	char *arg = argv[pos];
+
+	if (arg[0] != '-') {
+		return pos;
+	}
+
+	for (arg = &arg[1]; *arg; arg++) {
+		switch (*arg) {
+		case 's':
+			if (silent == NULL) {
+				shell_error(shell, "unknown option %c", *arg);
+			} else {
+				*silent = true;
+			}
+			break;
+		case 'l':
+			if (loopback == NULL) {
+				shell_error(shell, "unknown option %c", *arg);
+			} else {
+				*loopback = true;
+			}
+			break;
+		default:
+			shell_error(shell, "unknown option %c", *arg);
+			return -EINVAL;
+		}
+	}
+
+	return ++pos;
+}
+
+static inline int read_frame_options(const struct shell *shell, int pos,
+				     char **argv, bool *rtr, bool *ext)
 {
 	char *arg = argv[pos];
 
@@ -46,8 +80,25 @@ static inline int read_options(const struct shell *shell, int pos, char **argv,
 	return ++pos;
 }
 
+static inline int read_bitrate(const struct shell *shell, int pos, char **argv,
+			       uint32_t *bitrate)
+{
+	char *end_ptr;
+	long val;
+
+	val = strtol(argv[pos], &end_ptr, 0);
+	if (*end_ptr != '\0') {
+		shell_error(shell, "bitrate is not a number");
+		return -EINVAL;
+	}
+
+	*bitrate = (uint32_t)val;
+
+	return ++pos;
+}
+
 static inline int read_id(const struct shell *shell, int pos, char **argv,
-			  bool ext, u32_t *id)
+			  bool ext, uint32_t *id)
 {
 	char *end_ptr;
 	long val;
@@ -67,13 +118,13 @@ static inline int read_id(const struct shell *shell, int pos, char **argv,
 		return -EINVAL;
 	}
 
-	*id = (u32_t)val;
+	*id = (uint32_t)val;
 
 	return ++pos;
 }
 
 static inline int read_mask(const struct shell *shell, int pos, char **argv,
-			  bool ext, u32_t *mask)
+			  bool ext, uint32_t *mask)
 {
 	char *end_ptr;
 	long val;
@@ -93,16 +144,16 @@ static inline int read_mask(const struct shell *shell, int pos, char **argv,
 		return -EINVAL;
 	}
 
-	*mask = (u32_t)val;
+	*mask = (uint32_t)val;
 
 	return ++pos;
 }
 
 static inline int read_data(const struct shell *shell, int pos, char **argv,
-			    size_t argc, u8_t *data, u8_t *dlc)
+			    size_t argc, uint8_t *data, uint8_t *dlc)
 {
 	int i;
-	u8_t *data_ptr = data;
+	uint8_t *data_ptr = data;
 
 	if (argc - pos > CAN_MAX_DLC) {
 		shell_error(shell, "Too many databytes. Max is %d",
@@ -139,8 +190,7 @@ static void print_frame(struct zcan_frame *frame, void *arg)
 	const struct shell *shell = (const struct shell *)arg;
 
 	shell_fprintf(shell, SHELL_NORMAL, "|0x%-8x|%s|%s|%d|",
-		      frame->id_type == CAN_STANDARD_IDENTIFIER ?
-				frame->std_id : frame->ext_id,
+		      frame->id,
 		      frame->id_type == CAN_STANDARD_IDENTIFIER ? "std" : "ext",
 		      frame->rtr ? "RTR" : "   ", frame->dlc);
 
@@ -156,14 +206,14 @@ static void print_frame(struct zcan_frame *frame, void *arg)
 	shell_fprintf(shell, SHELL_NORMAL, "|\n");
 }
 
-static int cmd_send(const struct shell *shell, size_t argc, char **argv)
+static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *can_dev;
+	const struct device *can_dev;
 	int pos = 1;
-	bool rtr = false, ext = false;
-	struct zcan_frame frame;
+	bool silent = false, loopback = false;
+	enum can_mode mode;
+	uint32_t bitrate;
 	int ret;
-	u32_t id;
 
 	can_dev = device_get_binding(argv[pos]);
 	if (!can_dev) {
@@ -174,7 +224,62 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 
 	pos++;
 
-	pos = read_options(shell, pos, argv, &rtr, &ext);
+	pos = read_config_options(shell, pos, argv, &silent, &loopback);
+	if (pos < 0) {
+		return -EINVAL;
+	}
+
+	if (silent && loopback) {
+		mode = CAN_SILENT_LOOPBACK_MODE;
+	} else if (silent) {
+		mode = CAN_SILENT_MODE;
+	} else if (loopback) {
+		mode = CAN_LOOPBACK_MODE;
+	} else {
+		mode = CAN_NORMAL_MODE;
+	}
+
+	ret = can_set_mode(can_dev, mode);
+	if (ret) {
+		shell_error(shell, "Failed to set mode [%d]",
+			    ret);
+		return ret;
+	}
+
+	pos = read_bitrate(shell, pos, argv, &bitrate);
+	if (pos < 0) {
+		return -EINVAL;
+	}
+
+	ret = can_set_bitrate(can_dev, bitrate, 0);
+	if (ret) {
+		shell_error(shell, "Failed to set bitrate [%d]",
+			    ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int cmd_send(const struct shell *shell, size_t argc, char **argv)
+{
+	const struct device *can_dev;
+	int pos = 1;
+	bool rtr = false, ext = false;
+	struct zcan_frame frame;
+	int ret;
+	uint32_t id;
+
+	can_dev = device_get_binding(argv[pos]);
+	if (!can_dev) {
+		shell_error(shell, "Can't get binding to device \"%s\"",
+			    argv[pos]);
+		return -EINVAL;
+	}
+
+	pos++;
+
+	pos = read_frame_options(shell, pos, argv, &rtr, &ext);
 	if (pos < 0) {
 		return -EINVAL;
 	}
@@ -187,7 +292,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	frame.ext_id = id;
+	frame.id = id;
 
 	pos = read_data(shell, pos, argv, argc, frame.data, &frame.dlc);
 	if (pos < 0) {
@@ -195,8 +300,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_print(shell, "Send frame with ID 0x%x (%s id) and %d data bytes",
-		    ext ? frame.ext_id : frame.std_id,
-		    ext ? "extended" : "standard", frame.dlc);
+		    frame.id, ext ? "extended" : "standard", frame.dlc);
 
 	ret = can_send(can_dev, &frame, K_FOREVER, NULL, NULL);
 	if (ret) {
@@ -209,12 +313,12 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *can_dev;
+	const struct device *can_dev;
 	int pos = 1;
 	bool rtr = false, ext = false, rtr_mask = false;
 	struct zcan_filter filter;
 	int ret;
-	u32_t id, mask;
+	uint32_t id, mask;
 
 	can_dev = device_get_binding(argv[pos]);
 	if (!can_dev) {
@@ -225,7 +329,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 
 	pos++;
 
-	pos = read_options(shell, pos, argv, &rtr, &ext);
+	pos = read_frame_options(shell, pos, argv, &rtr, &ext);
 	if (pos < 0) {
 		return -EINVAL;
 	}
@@ -238,20 +342,20 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	filter.ext_id = id;
+	filter.id = id;
 
 	if (pos != argc) {
 		pos = read_mask(shell, pos, argv, ext, &mask);
 		if (pos < 0) {
 			return -EINVAL;
 		}
-		filter.ext_id_mask = mask;
+		filter.id_mask = mask;
 	} else {
-		filter.ext_id_mask = ext ? CAN_EXT_ID_MASK : CAN_STD_ID_MASK;
+		filter.id_mask = ext ? CAN_EXT_ID_MASK : CAN_STD_ID_MASK;
 	}
 
 	if (pos != argc) {
-		pos = read_options(shell, pos, argv, &rtr_mask, NULL);
+		pos = read_frame_options(shell, pos, argv, &rtr_mask, NULL);
 		if (pos < 0) {
 			return -EINVAL;
 		}
@@ -261,9 +365,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 
 	shell_print(shell, "Attach filter with ID 0x%x (%s id) and mask 0x%x "
 			   " RTR: %d",
-		    ext ? filter.ext_id : filter.std_id,
-		    ext ? "extended" : "standard",
-		    ext ? filter.ext_id_mask : filter.std_id_mask,
+		    filter.id, ext ? "extended" : "standard", filter.id_mask,
 		    filter.rtr_mask);
 
 	ret = can_attach_workq(can_dev, &k_sys_work_q, &work, print_frame,
@@ -285,7 +387,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_detach(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *can_dev;
+	const struct device *can_dev;
 	char *end_ptr;
 	long id;
 
@@ -314,6 +416,12 @@ static int cmd_detach(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_can,
+	SHELL_CMD_ARG(config, NULL,
+		      "Configure CAN controller.\n"
+		      " Usage: config device_name [-sl] bitrate\n"
+		      " -s Silent mode\n"
+		      " -l Listen-only mode",
+		      cmd_config, 3, 1),
 	SHELL_CMD_ARG(send, NULL,
 		      "Send a CAN frame.\n"
 		      " Usage: send device_name [-re] id [byte_1 byte_2 ...]\n"

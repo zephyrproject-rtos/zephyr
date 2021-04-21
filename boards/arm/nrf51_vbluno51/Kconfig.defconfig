@@ -8,10 +8,6 @@ if BOARD_NRF51_VBLUNO51
 config BOARD
 	default "nrf51_vbluno51"
 
-config I2C_0
-	default y
-	depends on I2C
-
 config BT_CTLR
 	default BT
 

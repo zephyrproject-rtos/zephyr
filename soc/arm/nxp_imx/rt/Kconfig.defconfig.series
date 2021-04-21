@@ -8,16 +8,17 @@ if SOC_SERIES_IMX_RT
 config SOC_SERIES
 	default "rt"
 
-config TEXT_SECTION_OFFSET
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
+
+config CAN_MCUX_FLEXCAN
+	default y if HAS_MCUX_FLEXCAN
+	depends on CAN
 
 config CLOCK_CONTROL_MCUX_CCM
 	default y if HAS_MCUX_CCM
 	depends on CLOCK_CONTROL
-
-config DISK_ACCESS_USDHC
-	default y if (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
-	depends on DISK_ACCESS_SDHC
 
 config DISPLAY_MCUX_ELCDIF
 	default y if HAS_MCUX_ELCDIF
@@ -52,17 +53,25 @@ if COUNTER
 config COUNTER_MCUX_GPT
 	default y if HAS_MCUX_GPT
 
-config COUNTER_MCUX_GPT1
-	default y if HAS_MCUX_GPT
-
-config COUNTER_MCUX_GPT2
-	default y if HAS_MCUX_GPT
-
 endif # COUNTER
 
 config SPI_MCUX_LPSPI
 	default y if HAS_MCUX_LPSPI
 	depends on SPI
+
+config WDT_MCUX_IMX_WDOG
+	default y
+	depends on WATCHDOG
+
+if CODE_SEMC
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/memory@80000000,0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/memory@80000000)
+
+endif # CODE_SEMC
 
 if CODE_ITCM
 
@@ -94,36 +103,6 @@ config FLASH_BASE_ADDRESS
 
 endif # CODE_FLEXSPI2
 
-if DATA_DTCM
-
-config SRAM_SIZE
-	default $(dt_node_reg_size_int,/soc/flexram@400b0000/dtcm@20000000,0,K)
-
-config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/dtcm@20000000)
-
-endif # DATA_DTCM
-
-if DATA_SEMC
-
-config SRAM_SIZE
-	default $(dt_node_reg_size_int,/memory@80000000,0,K)
-
-config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/memory@80000000)
-
-endif # DATA_SEMC
-
-if DATA_OCRAM
-
-config SRAM_SIZE
-	default $(dt_node_reg_size_int,/memory@20200000,0,K)
-
-config SRAM_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/memory@20200000)
-
-endif # DATA_OCRAM
-
 config USB_DC_NXP_EHCI
 	default y
 	depends on USB
@@ -131,6 +110,20 @@ config USB_DC_NXP_EHCI
 config VIDEO_MCUX_CSI
 	default y if HAS_MCUX_CSI
 	depends on VIDEO
+
+config DMA_MCUX_EDMA
+	default y if HAS_MCUX_EDMA
+	depends on DMA
+
+choice SEGGER_RTT_SECTION
+	default SEGGER_RTT_SECTION_DTCM if HAS_MCUX_SEMC
+	depends on USE_SEGGER_RTT
+endchoice
+
+choice SEGGER_SYSVIEW_SECTION
+	default SEGGER_SYSVIEW_SECTION_DTCM if HAS_MCUX_SEMC
+	depends on SEGGER_SYSTEMVIEW
+endchoice
 
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 

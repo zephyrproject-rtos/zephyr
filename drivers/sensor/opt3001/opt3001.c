@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_opt3001
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
@@ -14,40 +16,40 @@
 
 LOG_MODULE_REGISTER(opt3001, CONFIG_SENSOR_LOG_LEVEL);
 
-static int opt3001_reg_read(struct opt3001_data *drv_data, u8_t reg,
-			    u16_t *val)
+static int opt3001_reg_read(struct opt3001_data *drv_data, uint8_t reg,
+			    uint16_t *val)
 {
-	u8_t value[2];
+	uint8_t value[2];
 
-	if (i2c_burst_read(drv_data->i2c, DT_INST_0_TI_OPT3001_BASE_ADDRESS,
+	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
 		reg, value, 2) != 0) {
 		return -EIO;
 	}
 
-	*val = ((u16_t)value[0] << 8) + value[1];
+	*val = ((uint16_t)value[0] << 8) + value[1];
 
 	return 0;
 }
 
-static int opt3001_reg_write(struct opt3001_data *drv_data, u8_t reg,
-			     u16_t val)
+static int opt3001_reg_write(struct opt3001_data *drv_data, uint8_t reg,
+			     uint16_t val)
 {
-	u8_t new_value[2];
+	uint8_t new_value[2];
 
 	new_value[0] = val >> 8;
 	new_value[1] = val & 0xff;
 
-	u8_t tx_buf[3] = { reg, new_value[0], new_value[1] };
+	uint8_t tx_buf[3] = { reg, new_value[0], new_value[1] };
 
 	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
-			 DT_INST_0_TI_OPT3001_BASE_ADDRESS);
+			 DT_INST_REG_ADDR(0));
 }
 
-static int opt3001_reg_update(struct opt3001_data *drv_data, u8_t reg,
-			      u16_t mask, u16_t val)
+static int opt3001_reg_update(struct opt3001_data *drv_data, uint8_t reg,
+			      uint16_t mask, uint16_t val)
 {
-	u16_t old_val;
-	u16_t new_val;
+	uint16_t old_val;
+	uint16_t new_val;
 
 	if (opt3001_reg_read(drv_data, reg, &old_val) != 0) {
 		return -EIO;
@@ -59,10 +61,11 @@ static int opt3001_reg_update(struct opt3001_data *drv_data, u8_t reg,
 	return opt3001_reg_write(drv_data, reg, new_val);
 }
 
-static int opt3001_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int opt3001_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
-	struct opt3001_data *drv_data = dev->driver_data;
-	u16_t value;
+	struct opt3001_data *drv_data = dev->data;
+	uint16_t value;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_LIGHT);
 
@@ -77,11 +80,12 @@ static int opt3001_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int opt3001_channel_get(struct device *dev, enum sensor_channel chan,
+static int opt3001_channel_get(const struct device *dev,
+			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct opt3001_data *drv_data = dev->driver_data;
-	s32_t uval;
+	struct opt3001_data *drv_data = dev->data;
+	int32_t uval;
 
 	if (chan != SENSOR_CHAN_LIGHT) {
 		return -ENOTSUP;
@@ -108,15 +112,15 @@ static const struct sensor_driver_api opt3001_driver_api = {
 	.channel_get = opt3001_channel_get,
 };
 
-static int opt3001_chip_init(struct device *dev)
+static int opt3001_chip_init(const struct device *dev)
 {
-	struct opt3001_data *drv_data = dev->driver_data;
-	u16_t value;
+	struct opt3001_data *drv_data = dev->data;
+	uint16_t value;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_TI_OPT3001_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			DT_INST_0_TI_OPT3001_BUS_NAME);
+			DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -150,7 +154,7 @@ static int opt3001_chip_init(struct device *dev)
 	return 0;
 }
 
-int opt3001_init(struct device *dev)
+int opt3001_init(const struct device *dev)
 {
 	if (opt3001_chip_init(dev) < 0) {
 		return -EINVAL;
@@ -161,6 +165,6 @@ int opt3001_init(struct device *dev)
 
 static struct opt3001_data opt3001_drv_data;
 
-DEVICE_AND_API_INIT(opt3001, DT_INST_0_TI_OPT3001_LABEL, opt3001_init,
+DEVICE_DT_INST_DEFINE(0, opt3001_init, device_pm_control_nop,
 		    &opt3001_drv_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &opt3001_driver_api);

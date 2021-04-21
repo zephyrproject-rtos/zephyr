@@ -25,7 +25,7 @@
 		};
 
 		dma2: dma@40020400 {
-			compatible = "st,stm32-dma";
+			compatible = "st,stm32-dma-v2";
 			#dma-cells = <4>;
 			reg = <0x40020400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;

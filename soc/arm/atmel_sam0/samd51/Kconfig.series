@@ -5,8 +5,11 @@
 
 config SOC_SERIES_SAMD51
 	bool "Atmel SAMD51 MCU"
+	select ARM
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_SAM0
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
 	select CPU_CORTEX_M_HAS_DWT
 	select ASF
 	help

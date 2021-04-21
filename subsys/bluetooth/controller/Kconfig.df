@@ -1,0 +1,134 @@
+# Zephyr Bluetooth Controller configuration options
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_CTLR_DF_SUPPORT
+	bool
+	select BT_CTLR_DF_CTE_TX_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	select BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SUPPORT
+	select BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+
+config BT_CTLR_DF_CTE_TX_SUPPORT
+	bool
+
+config BT_CTLR_DF_CTE_RX_SUPPORT
+	bool
+
+config BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+	bool
+
+config BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	bool
+
+config BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
+	bool
+
+menuconfig BT_CTLR_DF
+	bool "LE Direction Finding [Experimental]"
+	depends on BT_CTLR_DF_SUPPORT
+	help
+	  Enable support for Bluetooth 5.1 Direction Finding
+
+if BT_CTLR_DF
+
+# Basic controller functionalities required for implementation of
+# Bluetooth v5.1 Direction Finding
+
+config BT_CTLR_DF_CTE_TX
+	bool "Enable transmission of Constant Tone Extension"
+	depends on BT_CTLR_DF_CTE_TX_SUPPORT
+	default y
+	help
+	  Enable support for transmission of Constant Tone Extension in
+	  controller.
+
+config BT_CTLR_DF_CTE_RX_SAMPLE_1US
+	bool "Enable reception of CTE with 1us sampling slots"
+	depends on BT_CTLR_DF_CTE_RX_SAMPLE_1US_SUPPORT
+	default y
+	help
+	  Enable reception of Constant Tone Extension. Process IQ sampling
+	  during CTE reception with 1us sampling slots.
+	  This sampling mode is optional for Direction Finding according to
+	  Bluetooth v5.1.
+
+config BT_CTLR_DF_ANT_SWITCH_1US
+	bool "Enable support for 1us antenna switch slots"
+	depends on BT_CTLR_DF_ANT_SWITCH_1US_SUPPORT
+	default y
+	help
+	  Enable support for 1us antenna switching slots. This antenna switching
+	  mode is optional for Direction Finding according to Bluetooth v5.1.
+
+# Features related with Direction Finding
+# BT Core spec 5.1, Vol 6, Part B, sec. 4.6 Feature Support
+
+config BT_CTLR_DF_ANT_SWITCH_TX
+	bool "Enable antenna switching during CTE transmission (AoD) feature"
+	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	default y
+	help
+	  Enable support for antenna switching during CTE transmission.
+	  Also known as Angle of Departure mode.
+
+config BT_CTLR_DF_ANT_SWITCH_RX
+	bool "Enable antenna switching during CTE reception (AoA) feature"
+	depends on BT_CTLR_DF_CTE_RX && BT_CTLR_DF_ANT_SWITCH_2US_SUPPORT
+	default y
+	help
+	  Enable support for antenna switching during CTE reception.
+	  Also known as Angle of Arrival mode.
+
+config BT_CTLR_DF_CTE_RX
+	bool "Enable reception of Constant Tone Extension feature"
+	depends on BT_CTLR_DF_CTE_RX_SUPPORT
+	default y
+	help
+	  Enable support for reception of Constant Tone Extension in controller.
+
+config BT_CTLR_DF_CONN_CTE_RSP
+	bool "Enable Connection CTE Response feature"
+	depends on BT_CTLR_DF_CTE_TX && BT_CONN
+	help
+	  Enable support for Bluetooth v5.1 Connection CTE Response feature
+	  in controller.
+
+config BT_CTLR_DF_ADV_CTE_TX
+	bool "Enable Connectionless CTE Transmitter feature"
+	depends on BT_CTLR_DF_CTE_TX && BT_CTLR_ADV_PERIODIC
+	select BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
+	default y
+	help
+	  Enable support for Bluetooth v5.1 Connectionless CTE Transmitter
+	  feature in controller.
+
+# Customization setting to manage memory usage footprint
+
+config BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
+	int "Maximum length of antenna switch pattern"
+	range 3 39 if SOC_COMPATIBLE_NRF
+	range 2 75 if !SOC_COMPATIBLE_NRF
+	default 12
+	help
+	  Defines maximum length of antenna switch pattern that controller
+	  is able to store. For nRF5x-based controllers, the hardware imposes
+	  the value is within range 3 to 40, where last value is maximum.
+	  For general use cases Bluetooth Core 5.1 spec. required the value
+	  to be within range 2 up to 75.
+
+config BT_CTLR_DF_INIT_ANT_SEL_GPIOS
+	bool "Enable initialization of GPIOs responsible for antenna switching"
+	depends on BT_CTLR_DF_ANT_SWITCH_TX || BT_CTLR_DF_ANT_SWITCH_RX
+	default y
+	help
+	  Enable implicit initialization of GPIOs responsible for antenna
+	  switching during Radio initialization.
+	  If this feature is not enabled, the Radio initialization procedure will
+	  not initialize GPIOs pins selected to drive antenna switching.
+	  In such case application is responsible for appropriate GPIOs
+	  initialization.
+
+endif # BT_CTLR_DF

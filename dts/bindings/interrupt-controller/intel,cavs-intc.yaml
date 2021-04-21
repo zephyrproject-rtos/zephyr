@@ -11,6 +11,9 @@ properties:
   interrupts:
       required: true
 
+  label:
+      required: true
+
   "#interrupt-cells":
       const: 3
 

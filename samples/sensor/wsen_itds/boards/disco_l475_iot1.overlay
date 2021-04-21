@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2020, Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	itds@18 {
+		compatible = "we,wsen-itds";
+		reg = <0x18>;
+		label = "WSEN-ITDS";
+		int-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+		odr = "800";
+		op-mode = "high-perf";
+	};
+};

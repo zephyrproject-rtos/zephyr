@@ -1,0 +1,7 @@
+sample:
+  description: BSD Sockets API TCP socketpair sample
+  name: socket_socketpair
+tests:
+  sample.net.sockets.socketpair:
+    harness: net
+    tags: net socket

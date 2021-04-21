@@ -1,0 +1,10 @@
+# Copyright 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_EMUL
+	bool "I2C emulator"
+	help
+	  Enable the I2C emulator driver. This is a fake driver in that it
+	  does not talk to real hardware. Instead it talks to emulation
+	  drivers that pretend to be devices on the emulated I2C bus. It is
+	  used for testing drivers for I2C devices.

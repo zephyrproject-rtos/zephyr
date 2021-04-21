@@ -5,17 +5,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT fixed_partitions
+
 #include <zephyr.h>
 #include <storage/flash_map.h>
 
-#define FLASH_AREA_FOO(i, _)				\
-	{.fa_id = i,					\
-	 .fa_off = DT_FLASH_AREA_##i##_OFFSET,		\
-	 .fa_dev_name = DT_FLASH_AREA_##i##_DEV,	\
-	 .fa_size = DT_FLASH_AREA_##i##_SIZE,},
+#define FLASH_AREA_FOO(part)						\
+	{.fa_id = DT_FIXED_PARTITION_ID(part),				\
+	 .fa_off = DT_REG_ADDR(part),					\
+	 .fa_dev_name = DT_LABEL(DT_MTD_FROM_FIXED_PARTITION(part)),	\
+	 .fa_size = DT_REG_SIZE(part),},
 
+#define FOREACH_PARTITION(n) DT_FOREACH_CHILD(DT_DRV_INST(n), FLASH_AREA_FOO)
+
+/* We iterate over all compatible 'fixed-partions' nodes and
+ * use DT_FOREACH_CHILD to iterate over all the partitions for that
+ * 'fixed-partions' node.  This way we build a global partition map
+ */
 const struct flash_area default_flash_map[] = {
-	UTIL_LISTIFY(DT_FLASH_AREA_NUM, FLASH_AREA_FOO, ~)
+	DT_INST_FOREACH_STATUS_OKAY(FOREACH_PARTITION)
 };
 
 const int flash_map_entries = ARRAY_SIZE(default_flash_map);

@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_driver_i2s
- * @{
- * @defgroup t_i2s_basic test_i2s_basic_operations
- * @}
- *
- */
 
 #include <zephyr.h>
 #include <ztest.h>
@@ -19,7 +12,7 @@
 
 void test_main(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 
 	k_thread_access_grant(k_current_get(),
 			      &rx_0_mem_slab, &tx_0_mem_slab,

@@ -13,7 +13,7 @@
 #include <drivers/ipm.h>
 #include <drivers/console/ipm_console.h>
 
-static struct device *ipm_console_device;
+static const struct device *ipm_console_device;
 
 static int consoleOut(int character)
 {
@@ -33,11 +33,11 @@ static int consoleOut(int character)
 extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
 
-int ipm_console_sender_init(struct device *d)
+int ipm_console_sender_init(const struct device *d)
 {
 	const struct ipm_console_sender_config_info *config_info;
 
-	config_info = d->config->config_info;
+	config_info = d->config;
 	ipm_console_device = device_get_binding(config_info->bind_to);
 
 	if (!ipm_console_device) {

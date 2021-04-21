@@ -14,3 +14,6 @@ config I2C_VIRTUAL_NAME
 	string "Virtual Port device name"
 	default "I2C_VIRTUAL"
 	depends on I2C_VIRTUAL
+
+config APP_DUAL_ROLE_I2C
+	bool "Enable test with combined master/slave behavior"

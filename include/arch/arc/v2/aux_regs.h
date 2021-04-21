@@ -110,6 +110,14 @@
 #define _ARC_V2_FPU_DPFP1H 0x303
 #define _ARC_V2_FPU_DPFP2L 0x304
 #define _ARC_V2_FPU_DPFP2H 0x305
+#define _ARC_V2_MPU_EN 0x409
+#define _ARC_V2_MPU_RDB0 0x422
+#define _ARC_V2_MPU_RDP0 0x423
+#define _ARC_V2_MPU_INDEX 0x448
+#define _ARC_V2_MPU_RSTART 0x449
+#define _ARC_V2_MPU_REND 0x44A
+#define _ARC_V2_MPU_RPER 0x44B
+#define _ARC_V2_MPU_PROBE 0x44C
 
 /* STATUS32/STATUS32_P0 bits */
 #define _ARC_V2_STATUS32_H (1 << 0)
@@ -124,7 +132,8 @@
 #define _ARC_V2_STATUS32_N (1 << 10)
 #define _ARC_V2_STATUS32_Z (1 << 11)
 #define _ARC_V2_STATUS32_L (1 << 12)
-#define _ARC_V2_STATUS32_DZ (1 << 13)
+#define _ARC_V2_STATUS32_DZ_BIT 13
+#define _ARC_V2_STATUS32_DZ (1 << _ARC_V2_STATUS32_DZ_BIT)
 #define _ARC_V2_STATUS32_SC_BIT 14
 #define _ARC_V2_STATUS32_SC (1 << _ARC_V2_STATUS32_SC_BIT)
 #define _ARC_V2_STATUS32_ES (1 << 15)
@@ -160,31 +169,21 @@
 #define Z_ARC_V2_ECR_PARAMETER(X) (X & 0xff)
 
 #ifndef _ASMLANGUAGE
-#if defined(__GNUC__)
 
 #include <zephyr/types.h>
-#define z_arc_v2_aux_reg_read(reg) __builtin_arc_lr((volatile u32_t)reg)
-#define z_arc_v2_aux_reg_write(reg, val) __builtin_arc_sr((unsigned int)val, (volatile u32_t)reg)
+#if defined(__CCAC__)
 
-#else /* ! __GNUC__ */
+#define z_arc_v2_aux_reg_read(reg) _lr((volatile uint32_t)reg)
+#define z_arc_v2_aux_reg_write(reg, val) \
+	_sr((unsigned int)val, (volatile uint32_t)reg)
 
-#define z_arc_v2_aux_reg_read(reg)                                \
-	({                                               \
-		unsigned int __ret;                      \
-		__asm__ __volatile__("       lr %0, [%1]" \
-				     : "=r"(__ret)       \
-				     : "i"(reg));        \
-		__ret;                                   \
-	})
+#else /* ! __CCAC__ */
 
-#define z_arc_v2_aux_reg_write(reg, val)                              \
-	({                                                   \
-		__asm__ __volatile__("       sr %0, [%1]"    \
-				     :                       \
-				     : "ir"(val), "i"(reg)); \
-	})
-#endif /* __GNUC__ */
+#define z_arc_v2_aux_reg_read(reg) __builtin_arc_lr((volatile uint32_t)reg)
+#define z_arc_v2_aux_reg_write(reg, val) \
+	__builtin_arc_sr((unsigned int)val, (volatile uint32_t)reg)
 
+#endif /* __CCAC__ */
 #endif /* _ASMLANGUAGE */
 
 #define z_arc_v2_core_id() \

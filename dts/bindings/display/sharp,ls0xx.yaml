@@ -1,0 +1,45 @@
+# Copyright (c) 2020, Rohit Gujarathi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sharp memory display controller
+
+compatible: "sharp,ls0xx"
+
+include: spi-device.yaml
+
+properties:
+    height:
+      type: int
+      required: true
+      description: Height in pixel of the panel driven by the controller
+
+    width:
+      type: int
+      required: true
+      description: Width in pixel of the panel driven by the controller
+
+    extcomin-gpios:
+      type: phandle-array
+      required: false
+      description: EXTCOMIN pin
+
+        The EXTCOMIN pin is where a square pulse for toggling VCOM will
+        be given
+
+    extcomin-frequency:
+      type: int
+      required: false
+      description: EXTCOMIN pin toggle frequency
+
+        The frequency with which the EXTCOMIN pin should be toggled. See
+        datasheet of particular display. Higher frequency gives better
+        contrast while low frequency saves power.
+
+    disp-en-gpios:
+      type: phandle-array
+      required: false
+      description: DISPLAY pin
+
+        The DISPLAY pin controls if the LCD displays memory contents or
+        white screen. If defined, the pin will be set high during driver
+        initialization. display blanking apis can be used to control it.

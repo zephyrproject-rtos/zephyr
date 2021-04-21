@@ -7,7 +7,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
-#include <ptp_clock.h>
+#include <drivers/ptp_clock.h>
 #include <net/gptp.h>
 
 #include "gptp_messages.h"
@@ -35,7 +35,7 @@ void gptp_call_phase_dis_cb(void)
 {
 	struct gptp_global_ds *global_ds;
 	sys_snode_t *sn, *sns;
-	u8_t *gm_id;
+	uint8_t *gm_id;
 
 	global_ds = GPTP_GLOBAL_DS();
 	gm_id = &global_ds->gm_priority.root_system_id.grand_master_id[0];
@@ -54,7 +54,7 @@ void gptp_call_phase_dis_cb(void)
 int gptp_event_capture(struct net_ptp_time *slave_time, bool *gm_present)
 {
 	int port, key;
-	struct device *clk;
+	const struct device *clk;
 
 	key = irq_lock();
 	*gm_present =  GPTP_GLOBAL_DS()->gm_present;
@@ -76,7 +76,7 @@ int gptp_event_capture(struct net_ptp_time *slave_time, bool *gm_present)
 	return -EAGAIN;
 }
 
-char *gptp_sprint_clock_id(const u8_t *clk_id, char *output, size_t output_len)
+char *gptp_sprint_clock_id(const uint8_t *clk_id, char *output, size_t output_len)
 {
 	return net_sprint_ll_addr_buf(clk_id, 8, output, output_len);
 }

@@ -8,7 +8,7 @@
 #include <fsl_iomuxc.h>
 #include <fsl_gpio.h>
 
-#ifdef CONFIG_ETH_MCUX_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 static gpio_pin_config_t enet_gpio_config = {
 	.direction = kGPIO_DigitalOutput,
 	.outputLogic = 0,
@@ -16,7 +16,7 @@ static gpio_pin_config_t enet_gpio_config = {
 };
 #endif
 
-static int mimxrt1020_evk_init(struct device *dev)
+static int mimxrt1020_evk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -34,7 +34,7 @@ static int mimxrt1020_evk_init(struct device *dev)
 	/* SW0 */
 	IOMUXC_SetPinMux(IOMUXC_SNVS_WAKEUP_GPIO5_IO00, 0);
 
-#ifdef CONFIG_UART_MCUX_LPUART_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay) && CONFIG_SERIAL
 	/* LPUART1 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_06_LPUART1_TX, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_07_LPUART1_RX, 0);
@@ -50,7 +50,7 @@ static int mimxrt1020_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_UART_MCUX_LPUART_2
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart2), okay) && CONFIG_SERIAL
 	/* LPUART2 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_08_LPUART2_TX, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_09_LPUART2_RX, 0);
@@ -66,7 +66,7 @@ static int mimxrt1020_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_I2C_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) && CONFIG_I2C
 	/* LPI2C1 SCL, SDA */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_14_LPI2C1_SCL, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_15_LPI2C1_SDA, 1);
@@ -86,7 +86,7 @@ static int mimxrt1020_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_I2C_4
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c4), okay) && CONFIG_I2C
 	/* LPI2C4 SCL, SDA */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_02_LPI2C4_SCL, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_B1_03_LPI2C4_SDA, 1);
@@ -106,7 +106,7 @@ static int mimxrt1020_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_ETH_MCUX_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_04_GPIO1_IO04, 0U);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_06_GPIO1_IO22, 0U);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_10_ENET_RDATA00, 0);
@@ -147,8 +147,8 @@ static int mimxrt1020_evk_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_ETH_MCUX_0
-static int mimxrt1020_evk_phy_reset(struct device *dev)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
+static int mimxrt1020_evk_phy_reset(const struct device *dev)
 {
 	/* RESET PHY chip. */
 	k_busy_wait(USEC_PER_MSEC * 10U);
@@ -159,6 +159,6 @@ static int mimxrt1020_evk_phy_reset(struct device *dev)
 #endif
 
 SYS_INIT(mimxrt1020_evk_init, PRE_KERNEL_1, 0);
-#ifdef CONFIG_ETH_MCUX_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 SYS_INIT(mimxrt1020_evk_phy_reset, PRE_KERNEL_2, 0);
 #endif

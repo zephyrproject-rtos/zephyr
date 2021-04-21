@@ -20,9 +20,8 @@ extern "C" {
 #endif
 
 struct modem_iface_uart_data {
-	/* ISR char buffer */
-	char *isr_buf;
-	size_t isr_buf_len;
+	/* HW flow control */
+	bool hw_flow_control;
 
 	/* ring buffer char buffer */
 	char *rx_rb_buf;
@@ -34,6 +33,19 @@ struct modem_iface_uart_data {
 	/* rx semaphore */
 	struct k_sem rx_sem;
 };
+
+/**
+ * @brief  Init modem interface device for UART
+ *
+ * @details This can be called after the init if the UART is changed.
+ *
+ * @param  *iface: modem interface to initialize.
+ * @param  *dev_name: name of the UART device to use
+ *
+ * @retval 0 if ok, < 0 if error.
+ */
+int modem_iface_uart_init_dev(struct modem_iface *iface,
+			      const char *dev_name);
 
 /**
  * @brief  Init modem interface for UART

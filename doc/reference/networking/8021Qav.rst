@@ -23,7 +23,7 @@ also priority queues ``ETHERNET_PRIORITY_QUEUES`` need to be supported.
 
 .. code-block:: none
 
-	static enum ethernet_hw_caps eth_get_capabilities(struct device *dev)
+	static enum ethernet_hw_caps eth_get_capabilities(const struct device *dev)
 	{
 		ARG_UNUSED(dev);
 

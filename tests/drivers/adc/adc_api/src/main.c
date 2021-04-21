@@ -5,13 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_driver_adc
- * @{
- * @defgroup t_adc_basic test_adc_basic_operations
- * @}
- */
-
 
 #include <zephyr.h>
 #include <ztest.h>
@@ -22,7 +15,7 @@ extern void test_adc_asynchronous_call(void);
 extern void test_adc_sample_with_interval(void);
 extern void test_adc_repeated_samplings(void);
 extern void test_adc_invalid_request(void);
-extern struct device *get_adc_device(void);
+extern const struct device *get_adc_device(void);
 extern struct k_poll_signal async_sig;
 
 void test_main(void)

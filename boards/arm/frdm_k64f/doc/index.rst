@@ -239,13 +239,14 @@ the `OpenSDA J-Link Generic Firmware for V3.2 Bootloader`_. Note that Segger
 does provide an OpenSDA J-Link Board-Specific Firmware for this board, however
 it is not compatible with the DAPLink bootloader.
 
-Add the argument ``-DOPENSDA_FW=jlink`` when you invoke ``west build`` to
-override the default runner from pyOCD to J-Link:
+Add the arguments ``-DBOARD_FLASH_RUNNER=jlink`` and
+``-DBOARD_DEBUG_RUNNER=jlink`` when you invoke ``west build`` to override the
+default runner from pyOCD to J-Link:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: frdm_k64f
-   :gen-args: -DOPENSDA_FW=jlink
+   :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
    :goals: build
 
 Configuring a Console
@@ -299,6 +300,29 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! frdm_k64f
+
+Troubleshooting
+===============
+
+If pyocd raises an uncaught ``DAPAccessIntf.TransferFaultError()`` exception
+when you try to flash or debug, it's possible that the K64F flash may have been
+locked by a corrupt application. You can unlock it with the following sequence
+of pyocd commands:
+
+.. code-block:: console
+
+   $ pyocd cmd
+   0001915:WARNING:target_kinetis:Forcing halt on connect in order to gain control of device
+   Connected to K64F [Halted]: 0240000026334e450028400d5e0e000e4eb1000097969900
+   >>> unlock
+   0016178:WARNING:target_kinetis:K64F secure state: unlocked successfully
+   >>> reinit
+   0034584:WARNING:target_kinetis:Forcing halt on connect in order to gain control of device
+   >>> load build/zephyr/zephyr.bin
+   [====================] 100%
+   >>> reset
+   Resetting target
+   >>> quit
 
 .. _FRDM-K64F Website:
    https://www.nxp.com/support/developer-resources/evaluation-and-development-boards/freedom-development-boards/mcu-boards/freedom-development-platform-for-kinetis-k64-k63-and-k24-mcus:FRDM-K64F

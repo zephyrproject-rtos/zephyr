@@ -9,8 +9,7 @@
 
 / {
 	model = "Papyr";
-	compatible = "nordic,pca10056-dk", "nordic,nrf52840-qiaa",
-		     "nordic,nrf52840";
+	compatible = "nordic,pca10056-dk";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -129,7 +128,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
+	 * https://docs.zephyrproject.org/latest/reference/devicetree/index.html#fixed-flash-partitions
 	 */
 	partitions {
 		compatible = "fixed-partitions";
@@ -142,11 +141,11 @@
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x000067000>;
+			reg = <0x0000C000 0x00067000>;
 		};
 		slot1_partition: partition@73000 {
 			label = "image-1";
-			reg = <0x00073000 0x000067000>;
+			reg = <0x00073000 0x00067000>;
 		};
 		scratch_partition: partition@da000 {
 			label = "image-scratch";

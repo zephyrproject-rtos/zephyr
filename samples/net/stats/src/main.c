@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(net_stats_sample, LOG_LEVEL_DBG);
 #include <net/net_if.h>
 #include <net/net_stats.h>
 
-static struct k_delayed_work stats_timer;
+static struct k_work_delayable stats_timer;
 
 #if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
 #define GET_STAT(iface, s) (iface ? iface->stats.s : data->s)
@@ -177,13 +177,13 @@ static void stats(struct k_work *work)
 	net_if_foreach(eth_iface_cb, &data);
 #endif
 
-	k_delayed_work_submit(&stats_timer, K_SECONDS(CONFIG_SAMPLE_PERIOD));
+	k_work_reschedule(&stats_timer, K_SECONDS(CONFIG_SAMPLE_PERIOD));
 }
 
 static void init_app(void)
 {
-	k_delayed_work_init(&stats_timer, stats);
-	k_delayed_work_submit(&stats_timer, K_SECONDS(CONFIG_SAMPLE_PERIOD));
+	k_work_init_delayable(&stats_timer, stats);
+	k_work_reschedule(&stats_timer, K_SECONDS(CONFIG_SAMPLE_PERIOD));
 }
 
 void main(void)

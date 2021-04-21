@@ -25,7 +25,10 @@
  */
 
 #if defined(CONFIG_NRF_RTC_TIMER) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC > 16384)
-#define MAXIMUM_SHORTEST_TICKS 3
+/* The overhead of k_usleep() adds three ticks per loop iteration on
+ * nRF51, which has a slow CPU clock.
+ */
+#define MAXIMUM_SHORTEST_TICKS (IS_ENABLED(CONFIG_SOC_SERIES_NRF51X) ? 6 : 3)
 /*
  * Similar situation for TI CC13X2/CC26X2 RTC due to the limitation
  * that a value too close to the current time cannot be loaded to
@@ -62,11 +65,11 @@
 void test_usleep(void)
 {
 	int retries = 0;
-	s64_t elapsed_ms;
+	int64_t elapsed_ms;
 
 	while (retries < RETRIES) {
-		s64_t start_ms;
-		s64_t end_ms;
+		int64_t start_ms;
+		int64_t end_ms;
 		int i;
 
 		++retries;
@@ -87,7 +90,7 @@ void test_usleep(void)
 		}
 	}
 
-	printk("elapsed_ms = %lld\n", elapsed_ms);
+	printk("elapsed_ms = %" PRId64 "\n", elapsed_ms);
 	zassert_true(elapsed_ms >= LOWER_BOUND_MS, "short sleep");
 	zassert_true(elapsed_ms <= UPPER_BOUND_MS, "overslept");
 }

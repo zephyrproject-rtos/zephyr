@@ -1,0 +1,18 @@
+# DAC configuration options
+
+# Copyright (c) 2020 Matija Tudan
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_DACX3608
+	bool "TI DACX3608 DAC driver"
+	depends on I2C
+	help
+	  Enable the driver for the TI DACX3608.
+
+config DAC_DACX3608_INIT_PRIORITY
+	int "Init priority"
+	depends on DAC_DACX3608
+	default 80
+	help
+	  DACX3608 DAC device driver initialization priority.

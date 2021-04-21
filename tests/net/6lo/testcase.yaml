@@ -1,5 +1,11 @@
+common:
+  tags: net 6loWPAN
+  min_ram: 32
+  depends_on: netif
 tests:
   net.6lo:
-    tags: net 6loWPAN
-    min_ram: 32
-    depends_on: netif
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.6lo.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y

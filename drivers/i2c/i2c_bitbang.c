@@ -37,9 +37,9 @@
 #define T_BUF		T_LOW
 
 #define NS_TO_SYS_CLOCK_HW_CYCLES(ns) \
-	((u64_t)sys_clock_hw_cycles_per_sec() * (ns) / NSEC_PER_SEC + 1)
+	((uint64_t)sys_clock_hw_cycles_per_sec() * (ns) / NSEC_PER_SEC + 1)
 
-int i2c_bitbang_configure(struct i2c_bitbang *context, u32_t dev_config)
+int i2c_bitbang_configure(struct i2c_bitbang *context, uint32_t dev_config)
 {
 	/* Check for features we don't support */
 	if (I2C_ADDR_10_BITS & dev_config) {
@@ -80,7 +80,7 @@ static int i2c_get_sda(struct i2c_bitbang *context)
 
 static void i2c_delay(unsigned int cycles_to_wait)
 {
-	u32_t start = k_cycle_get_32();
+	uint32_t start = k_cycle_get_32();
 
 	/* Wait until the given number of cycles have passed */
 	while (k_cycle_get_32() - start < cycles_to_wait) {
@@ -108,25 +108,22 @@ static void i2c_start(struct i2c_bitbang *context)
 
 static void i2c_repeated_start(struct i2c_bitbang *context)
 {
+	i2c_set_sda(context, 1);
+	i2c_set_scl(context, 1);
+	i2c_delay(context->delays[T_HIGH]);
+
 	i2c_delay(context->delays[T_SU_STA]);
 	i2c_start(context);
 }
 
 static void i2c_stop(struct i2c_bitbang *context)
 {
+	i2c_set_sda(context, 0);
+	i2c_delay(context->delays[T_LOW]);
+
 	i2c_set_scl(context, 1);
 	i2c_delay(context->delays[T_HIGH]);
 
-	if (i2c_get_sda(context)) {
-		/*
-		 * SDA is already high, so we need to make it low so that
-		 * we can create a rising edge. This means we're effectively
-		 * doing a START.
-		 */
-		i2c_delay(context->delays[T_SU_STA]);
-		i2c_set_sda(context, 0);
-		i2c_delay(context->delays[T_HD_STA]);
-	}
 	i2c_delay(context->delays[T_SU_STP]);
 	i2c_set_sda(context, 1);
 	i2c_delay(context->delays[T_BUF]); /* In case we start again too soon */
@@ -159,9 +156,9 @@ static bool i2c_read_bit(struct i2c_bitbang *context)
 	return bit;
 }
 
-static bool i2c_write_byte(struct i2c_bitbang *context, u8_t byte)
+static bool i2c_write_byte(struct i2c_bitbang *context, uint8_t byte)
 {
-	u8_t mask = 1 << 7;
+	uint8_t mask = 1 << 7;
 
 	do {
 		i2c_write_bit(context, byte & mask);
@@ -171,7 +168,7 @@ static bool i2c_write_byte(struct i2c_bitbang *context, u8_t byte)
 	return !i2c_read_bit(context);
 }
 
-static u8_t i2c_read_byte(struct i2c_bitbang *context)
+static uint8_t i2c_read_byte(struct i2c_bitbang *context)
 {
 	unsigned int byte = 1U;
 
@@ -184,10 +181,10 @@ static u8_t i2c_read_byte(struct i2c_bitbang *context)
 }
 
 int i2c_bitbang_transfer(struct i2c_bitbang *context,
-			   struct i2c_msg *msgs, u8_t num_msgs,
-			   u16_t slave_address)
+			   struct i2c_msg *msgs, uint8_t num_msgs,
+			   uint16_t slave_address)
 {
-	u8_t *buf, *buf_end;
+	uint8_t *buf, *buf_end;
 	unsigned int flags;
 	int result = -EIO;
 
@@ -262,6 +259,46 @@ finish:
 	i2c_stop(context);
 
 	return result;
+}
+
+int i2c_bitbang_recover_bus(struct i2c_bitbang *context)
+{
+	int i;
+
+	/*
+	 * The I2C-bus specification and user manual (NXP UM10204
+	 * rev. 6, section 3.1.16) suggests the master emit 9 SCL
+	 * clock pulses to recover the bus.
+	 *
+	 * The Linux kernel I2C bitbang recovery functionality issues
+	 * a START condition followed by 9 STOP conditions.
+	 *
+	 * Other I2C slave devices (e.g. Microchip ATSHA204a) suggest
+	 * issuing a START condition followed by 9 SCL clock pulses
+	 * with SDA held high/floating, a REPEATED START condition,
+	 * and a STOP condition.
+	 *
+	 * The latter is what is implemented here.
+	 */
+
+	/* Start condition */
+	i2c_start(context);
+
+	/* 9 cycles of SCL with SDA held high */
+	for (i = 0; i < 9; i++) {
+		i2c_write_bit(context, 1);
+	}
+
+	/* Another start condition followed by a stop condition */
+	i2c_repeated_start(context);
+	i2c_stop(context);
+
+	/* Check if bus is clear */
+	if (i2c_get_sda(context)) {
+		return 0;
+	} else {
+		return -EBUSY;
+	}
 }
 
 void i2c_bitbang_init(struct i2c_bitbang *context,

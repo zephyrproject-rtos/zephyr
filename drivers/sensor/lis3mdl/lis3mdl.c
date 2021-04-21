@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_lis3mdl_magn
+
 #include <drivers/i2c.h>
 #include <init.h>
 #include <sys/__assert.h>
@@ -16,19 +18,19 @@
 
 LOG_MODULE_REGISTER(LIS3MDL, CONFIG_SENSOR_LOG_LEVEL);
 
-static void lis3mdl_convert(struct sensor_value *val, s16_t raw_val,
-			    u16_t divider)
+static void lis3mdl_convert(struct sensor_value *val, int16_t raw_val,
+			    uint16_t divider)
 {
 	/* val = raw_val / divider */
 	val->val1 = raw_val / divider;
-	val->val2 = (((s64_t)raw_val % divider) * 1000000L) / divider;
+	val->val2 = (((int64_t)raw_val % divider) * 1000000L) / divider;
 }
 
-static int lis3mdl_channel_get(struct device *dev,
+static int lis3mdl_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lis3mdl_data *drv_data = dev->driver_data;
+	struct lis3mdl_data *drv_data = dev->data;
 
 	if (chan == SENSOR_CHAN_MAGN_XYZ) {
 		/* magn_val = sample / mang_gain */
@@ -56,16 +58,16 @@ static int lis3mdl_channel_get(struct device *dev,
 	return 0;
 }
 
-int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan)
+int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	struct lis3mdl_data *drv_data = dev->driver_data;
-	s16_t buf[4];
+	struct lis3mdl_data *drv_data = dev->data;
+	int16_t buf[4];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	/* fetch magnetometer sample */
-	if (i2c_burst_read(drv_data->i2c, DT_INST_0_ST_LIS3MDL_MAGN_BASE_ADDRESS,
-			   LIS3MDL_REG_SAMPLE_START, (u8_t *)buf, 8) < 0) {
+	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
+			   LIS3MDL_REG_SAMPLE_START, (uint8_t *)buf, 8) < 0) {
 		LOG_DBG("Failed to fetch megnetometer sample.");
 		return -EIO;
 	}
@@ -75,9 +77,9 @@ int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan)
 	 * the same read as magnetometer data, so do another
 	 * burst read to fetch the temperature sample
 	 */
-	if (i2c_burst_read(drv_data->i2c, DT_INST_0_ST_LIS3MDL_MAGN_BASE_ADDRESS,
+	if (i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
 			   LIS3MDL_REG_SAMPLE_START + 6,
-			   (u8_t *)(buf + 3), 2) < 0) {
+			   (uint8_t *)(buf + 3), 2) < 0) {
 		LOG_DBG("Failed to fetch temperature sample.");
 		return -EIO;
 	}
@@ -98,22 +100,22 @@ static const struct sensor_driver_api lis3mdl_driver_api = {
 	.channel_get = lis3mdl_channel_get,
 };
 
-int lis3mdl_init(struct device *dev)
+int lis3mdl_init(const struct device *dev)
 {
-	struct lis3mdl_data *drv_data = dev->driver_data;
-	u8_t chip_cfg[6];
-	u8_t id, idx;
+	struct lis3mdl_data *drv_data = dev->data;
+	uint8_t chip_cfg[6];
+	uint8_t id, idx;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_ST_LIS3MDL_MAGN_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Could not get pointer to %s device.",
-			DT_INST_0_ST_LIS3MDL_MAGN_BUS_NAME);
+			DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
 	/* check chip ID */
-	if (i2c_reg_read_byte(drv_data->i2c, DT_INST_0_ST_LIS3MDL_MAGN_BASE_ADDRESS,
+	if (i2c_reg_read_byte(drv_data->i2c, DT_INST_REG_ADDR(0),
 			      LIS3MDL_REG_WHO_AM_I, &id) < 0) {
 		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
@@ -147,7 +149,7 @@ int lis3mdl_init(struct device *dev)
 	chip_cfg[5] = LIS3MDL_BDU_EN;
 
 	if (i2c_write(drv_data->i2c,
-		      chip_cfg, 6, DT_INST_0_ST_LIS3MDL_MAGN_BASE_ADDRESS) < 0) {
+		      chip_cfg, 6, DT_INST_REG_ADDR(0)) < 0) {
 		LOG_DBG("Failed to configure chip.");
 		return -EIO;
 	}
@@ -164,6 +166,6 @@ int lis3mdl_init(struct device *dev)
 
 struct lis3mdl_data lis3mdl_driver;
 
-DEVICE_AND_API_INIT(lis3mdl, DT_INST_0_ST_LIS3MDL_MAGN_LABEL, lis3mdl_init,
+DEVICE_DT_INST_DEFINE(0, lis3mdl_init, device_pm_control_nop,
 		    &lis3mdl_driver, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lis3mdl_driver_api);

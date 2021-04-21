@@ -1,0 +1,19 @@
+description: Atmel SAM0 DMA controller
+
+compatible: "atmel,sam0-dmac"
+
+include: dma-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    "#dma-cells":
+      const: 2
+
+dma-cells:
+  - channel
+  - trigsrc

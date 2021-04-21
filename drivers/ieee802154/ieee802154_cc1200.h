@@ -30,8 +30,8 @@ enum cc1200_gpio_index {
 };
 
 struct cc1200_gpio_configuration {
-	struct device *dev;
-	u32_t pin;
+	const struct device *dev;
+	uint32_t pin;
 };
 
 /* Runtime context structure
@@ -43,9 +43,9 @@ struct cc1200_context {
 	/**************************/
 	struct cc1200_gpio_configuration gpios[CC1200_GPIO_IDX_MAX];
 	struct gpio_callback rx_tx_cb;
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config spi_cfg;
-	u8_t mac_addr[8];
+	uint8_t mac_addr[8];
 	/************RF************/
 	const struct cc1200_rf_registers_set *rf_settings;
 	/************TX************/
@@ -53,7 +53,7 @@ struct cc1200_context {
 	atomic_t tx;
 	atomic_t tx_start;
 	/************RX************/
-	K_THREAD_STACK_MEMBER(rx_stack,
+	K_KERNEL_STACK_MEMBER(rx_stack,
 			      CONFIG_IEEE802154_CC1200_RX_STACK_SIZE);
 	struct k_thread rx_thread;
 	struct k_sem rx_lock;
@@ -66,13 +66,13 @@ struct cc1200_context {
  ***************************
  */
 
-bool z_cc1200_access_reg(struct cc1200_context *ctx, bool read, u8_t addr,
+bool z_cc1200_access_reg(struct cc1200_context *ctx, bool read, uint8_t addr,
 			void *data, size_t length, bool extended, bool burst);
 
-static inline u8_t cc1200_read_single_reg(struct cc1200_context *ctx,
-					   u8_t addr, bool extended)
+static inline uint8_t cc1200_read_single_reg(struct cc1200_context *ctx,
+					   uint8_t addr, bool extended)
 {
-	u8_t val;
+	uint8_t val;
 
 	if (z_cc1200_access_reg(ctx, true, addr, &val, 1, extended, false)) {
 		return val;
@@ -82,25 +82,25 @@ static inline u8_t cc1200_read_single_reg(struct cc1200_context *ctx,
 }
 
 static inline bool cc1200_write_single_reg(struct cc1200_context *ctx,
-					    u8_t addr, u8_t val, bool extended)
+					    uint8_t addr, uint8_t val, bool extended)
 {
 	return z_cc1200_access_reg(ctx, false, addr, &val, 1, extended, false);
 }
 
-static inline bool cc1200_instruct(struct cc1200_context *ctx, u8_t addr)
+static inline bool cc1200_instruct(struct cc1200_context *ctx, uint8_t addr)
 {
 	return z_cc1200_access_reg(ctx, false, addr, NULL, 0, false, false);
 }
 
 #define DEFINE_REG_READ(__reg_name, __reg_addr, __ext)			\
-	static inline u8_t read_reg_##__reg_name(struct cc1200_context *ctx) \
+	static inline uint8_t read_reg_##__reg_name(struct cc1200_context *ctx) \
 	{								\
 		return cc1200_read_single_reg(ctx, __reg_addr, __ext);	\
 	}
 
 #define DEFINE_REG_WRITE(__reg_name, __reg_addr, __ext)			\
 	static inline bool write_reg_##__reg_name(struct cc1200_context *ctx, \
-						  u8_t val)		\
+						  uint8_t val)		\
 	{								\
 		return cc1200_write_single_reg(ctx, __reg_addr,	\
 						val, __ext);		\

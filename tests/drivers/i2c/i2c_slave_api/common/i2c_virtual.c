@@ -15,19 +15,19 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(main);
 
-#define DEV_DATA(dev) ((struct i2c_virtual_data * const)(dev)->driver_data)
+#define DEV_DATA(dev) ((struct i2c_virtual_data * const)(dev)->data)
 
 struct i2c_virtual_data {
 	sys_slist_t slaves;
 };
 
-int i2c_virtual_runtime_configure(struct device *dev, u32_t config)
+int i2c_virtual_runtime_configure(const struct device *dev, uint32_t config)
 {
 	return 0;
 }
 
 static struct i2c_slave_config *find_address(struct i2c_virtual_data *data,
-					     u16_t address, bool is_10bit)
+					     uint16_t address, bool is_10bit)
 {
 	struct i2c_slave_config *cfg = NULL;
 	sys_snode_t *node;
@@ -36,7 +36,7 @@ static struct i2c_slave_config *find_address(struct i2c_virtual_data *data,
 	SYS_SLIST_FOR_EACH_NODE(&data->slaves, node) {
 		cfg = CONTAINER_OF(node, struct i2c_slave_config, node);
 
-		search_10bit = (cfg->flags & I2C_ADDR_10_BITS);
+		search_10bit = (cfg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS);
 
 		if (cfg->address == address && search_10bit == is_10bit) {
 			return cfg;
@@ -47,7 +47,7 @@ static struct i2c_slave_config *find_address(struct i2c_virtual_data *data,
 }
 
 /* Attach I2C slaves */
-int i2c_virtual_slave_register(struct device *dev,
+int i2c_virtual_slave_register(const struct device *dev,
 			       struct i2c_slave_config *config)
 {
 	struct i2c_virtual_data *data = DEV_DATA(dev);
@@ -58,7 +58,7 @@ int i2c_virtual_slave_register(struct device *dev,
 
 	/* Check the address is unique */
 	if (find_address(data, config->address,
-			 (config->flags & I2C_ADDR_10_BITS))) {
+			 (config->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS))) {
 		return -EINVAL;
 	}
 
@@ -68,7 +68,7 @@ int i2c_virtual_slave_register(struct device *dev,
 }
 
 
-int i2c_virtual_slave_unregister(struct device *dev,
+int i2c_virtual_slave_unregister(const struct device *dev,
 				 struct i2c_slave_config *config)
 {
 	struct i2c_virtual_data *data = DEV_DATA(dev);
@@ -84,12 +84,13 @@ int i2c_virtual_slave_unregister(struct device *dev,
 	return 0;
 }
 
-static int i2c_virtual_msg_write(struct device *dev, struct i2c_msg *msg,
+static int i2c_virtual_msg_write(const struct device *dev,
+				 struct i2c_msg *msg,
 				 struct i2c_slave_config *config,
 				 bool prev_write)
 {
 	unsigned int len = 0U;
-	u8_t *buf = msg->buf;
+	uint8_t *buf = msg->buf;
 	int ret;
 
 	if (!prev_write) {
@@ -118,11 +119,11 @@ error:
 	return -EIO;
 }
 
-static int i2c_virtual_msg_read(struct device *dev, struct i2c_msg *msg,
+static int i2c_virtual_msg_read(const struct device *dev, struct i2c_msg *msg,
 				struct i2c_slave_config *config)
 {
 	unsigned int len = msg->len;
-	u8_t *buf = msg->buf;
+	uint8_t *buf = msg->buf;
 
 	if (!msg->len) {
 		return 0;
@@ -147,8 +148,8 @@ static int i2c_virtual_msg_read(struct device *dev, struct i2c_msg *msg,
 
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
-static int i2c_virtual_transfer(struct device *dev, struct i2c_msg *msg,
-			      u8_t num_msgs, u16_t slave)
+static int i2c_virtual_transfer(const struct device *dev, struct i2c_msg *msg,
+				uint8_t num_msgs, uint16_t slave)
 {
 	struct i2c_virtual_data *data = DEV_DATA(dev);
 	struct i2c_msg *current, *next;
@@ -156,7 +157,7 @@ static int i2c_virtual_transfer(struct device *dev, struct i2c_msg *msg,
 	bool is_write = false;
 	int ret = 0;
 
-	cfg = find_address(data, slave, (msg->flags & I2C_ADDR_10_BITS));
+	cfg = find_address(data, slave, (msg->flags & I2C_SLAVE_FLAGS_ADDR_10_BITS));
 	if (!cfg) {
 		return -EIO;
 	}
@@ -200,7 +201,7 @@ static int i2c_virtual_transfer(struct device *dev, struct i2c_msg *msg,
 
 		current++;
 		num_msgs--;
-	};
+	}
 
 	return ret;
 }
@@ -212,7 +213,7 @@ static const struct i2c_driver_api api_funcs = {
 	.slave_unregister = i2c_virtual_slave_unregister,
 };
 
-static int i2c_virtual_init(struct device *dev)
+static int i2c_virtual_init(const struct device *dev)
 {
 	struct i2c_virtual_data *data = DEV_DATA(dev);
 
@@ -223,7 +224,7 @@ static int i2c_virtual_init(struct device *dev)
 
 static struct i2c_virtual_data i2c_virtual_dev_data_0;
 
-DEVICE_AND_API_INIT(i2c_virtual_0, CONFIG_I2C_VIRTUAL_NAME, &i2c_virtual_init,
-		    &i2c_virtual_dev_data_0, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &api_funcs);
+DEVICE_DEFINE(i2c_virtual_0, CONFIG_I2C_VIRTUAL_NAME, &i2c_virtual_init,
+		device_pm_control_nop, &i2c_virtual_dev_data_0, NULL,
+		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		&api_funcs);

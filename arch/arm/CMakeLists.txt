@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_ARM64)
-  include(aarch64.cmake)
-else()
-  include(aarch32.cmake)
-endif()
+set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-littlearm)
+
+add_subdirectory(core/aarch32)

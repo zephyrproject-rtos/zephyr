@@ -3,16 +3,10 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig UART_MCUX_LPSCI
+config UART_MCUX_LPSCI
 	bool "MCUX LPSCI driver"
 	depends on HAS_MCUX_LPSCI && CLOCK_CONTROL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the MCUX LPSCI driver.
-
-config UART_MCUX_LPSCI_0
-	bool "UART 0"
-	depends on UART_MCUX_LPSCI
-	help
-	  Enable UART 0.

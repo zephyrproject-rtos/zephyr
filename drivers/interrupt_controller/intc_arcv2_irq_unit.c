@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2020 Synopsys.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,20 +23,19 @@
 
 extern void *_VectorTable;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 #include <power/power.h>
 #include <kernel_structs.h>
-#include <v2/irq.h>
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 #undef _ARC_V2_IRQ_VECT_BASE
 #define _ARC_V2_IRQ_VECT_BASE _ARC_V2_IRQ_VECT_BASE_S
 #endif
 
-static u32_t _arc_v2_irq_unit_device_power_state = DEVICE_PM_ACTIVE_STATE;
+static uint32_t _arc_v2_irq_unit_device_power_state = DEVICE_PM_ACTIVE_STATE;
 struct arc_v2_irq_unit_ctx {
-	u32_t irq_ctrl; /* Interrupt Context Saving Control Register. */
-	u32_t irq_vect_base; /* Interrupt Vector Base. */
+	uint32_t irq_ctrl; /* Interrupt Context Saving Control Register. */
+	uint32_t irq_vect_base; /* Interrupt Vector Base. */
 
 	/*
 	 * IRQ configuration:
@@ -43,7 +43,7 @@ struct arc_v2_irq_unit_ctx {
 	 * - IRQ Trigger:BIT(1)
 	 * - IRQ Enable:BIT(0)
 	 */
-	u8_t irq_config[CONFIG_NUM_IRQS - 16];
+	uint8_t irq_config[CONFIG_NUM_IRQS - 16];
 };
 static struct arc_v2_irq_unit_ctx ctx;
 #endif
@@ -58,10 +58,9 @@ static struct arc_v2_irq_unit_ctx ctx;
  * the window between a write to IRQ_SELECT and subsequent writes to the
  * selected IRQ's registers.
  *
- * @return N/A
+ * @return 0 for success
  */
-
-static int arc_v2_irq_unit_init(struct device *unused)
+static int arc_v2_irq_unit_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 	int irq; /* the interrupt index */
@@ -88,29 +87,19 @@ static int arc_v2_irq_unit_init(struct device *unused)
 	return 0;
 }
 
-void z_arc_v2_irq_unit_int_eoi(int irq)
-{
-	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PULSE_CANCEL, 1);
-}
+#ifdef CONFIG_PM_DEVICE
 
-void z_arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)
+/*
+ * @brief Suspend the interrupt unit device driver
+ *
+ * Suspends the interrupt unit device driver and the device
+ * itself.
+ *
+ * @return 0 for success
+ */
+static int arc_v2_irq_unit_suspend(const struct device *dev)
 {
-	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, trigger);
-}
-
-unsigned int z_arc_v2_irq_unit_trigger_get(int irq)
-{
-	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	return z_arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER);
-}
-
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-
-static int arc_v2_irq_unit_suspend(struct device *dev)
-{
-	u8_t irq;
+	uint8_t irq;
 
 	ARG_UNUSED(dev);
 
@@ -136,10 +125,17 @@ static int arc_v2_irq_unit_suspend(struct device *dev)
 	return 0;
 }
 
-static int arc_v2_irq_unit_resume(struct device *dev)
+/*
+ * @brief Resume the interrupt unit device driver
+ *
+ * Resume the interrupt unit device driver and the device
+ * itself.
+ *
+ * @return 0 for success
+ */
+static int arc_v2_irq_unit_resume(const struct device *dev)
 {
-	u8_t irq;
-	u32_t status32;
+	uint8_t irq;
 
 	ARG_UNUSED(dev);
 
@@ -170,17 +166,17 @@ static int arc_v2_irq_unit_resume(struct device *dev)
 #endif
 	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_VECT_BASE, ctx.irq_vect_base);
 
-	status32 = z_arc_v2_aux_reg_read(_ARC_V2_STATUS32);
-	status32 |= Z_ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
-
-	__builtin_arc_kflag(status32);
-
 	_arc_v2_irq_unit_device_power_state = DEVICE_PM_ACTIVE_STATE;
 
 	return 0;
 }
 
-static int arc_v2_irq_unit_get_state(struct device *dev)
+/*
+ * @brief Get the power state of interrupt unit
+ *
+ * @return the power state of interrupt unit
+ */
+static int arc_v2_irq_unit_get_state(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -188,26 +184,34 @@ static int arc_v2_irq_unit_get_state(struct device *dev)
 }
 
 /*
- * Implements the driver control management functionality
- * the *context may include IN data or/and OUT data
+ * @brief  Implement the driver control of interrupt unit
+ *
+ * The operation on interrupt unit requires interrupt lock.
+ * The *context may include IN data or/and OUT data
+ *
+ * @return operation result
  */
-static int arc_v2_irq_unit_device_ctrl(struct device *device,
-		u32_t ctrl_command, void *context, device_pm_cb cb, void *arg)
+static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
+				       uint32_t ctrl_command, void *context,
+				       device_pm_cb cb, void *arg)
 {
 	int ret = 0;
+	unsigned int key = arch_irq_lock();
 
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			ret = arc_v2_irq_unit_suspend(device);
-		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			ret = arc_v2_irq_unit_resume(device);
+		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+			ret = arc_v2_irq_unit_suspend(dev);
+		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			ret = arc_v2_irq_unit_resume(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((u32_t *)context) = arc_v2_irq_unit_get_state(device);
+		*((uint32_t *)context) = arc_v2_irq_unit_get_state(dev);
 	}
 
+	arch_irq_unlock(key);
+
 	if (cb) {
-		cb(device, ret, context, arg);
+		cb(dev, ret, context, arg);
 	}
 
 	return ret;
@@ -219,4 +223,4 @@ SYS_DEVICE_DEFINE("arc_v2_irq_unit", arc_v2_irq_unit_init,
 #else
 SYS_INIT(arc_v2_irq_unit_init, PRE_KERNEL_1,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif   /* CONFIG_PM_DEVICE */

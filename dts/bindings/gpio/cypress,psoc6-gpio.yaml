@@ -1,0 +1,35 @@
+# Copyright (c) 2020-2021 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cypress GPIO PORT node
+
+compatible: "cypress,psoc6-gpio"
+
+include: ["gpio-controller.yaml", "base.yaml"]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+    "#cypress,pin-cells":
+      type: int
+      required: true
+      const: 2
+      description: Number of items to expect in a cypress,pins specifier
+
+gpio-cells:
+  - pin
+  - flags
+
+cypress,pin-cells:
+  - pin
+  - hsiom

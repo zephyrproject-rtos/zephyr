@@ -4,7 +4,7 @@ zephyr_sources(ctf_top.c)
 
 zephyr_include_directories(
   ${ZEPHYR_BASE}/kernel/include
-  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  ${ARCH_DIR}/${ARCH}/include
   )
 
 zephyr_include_directories(.)

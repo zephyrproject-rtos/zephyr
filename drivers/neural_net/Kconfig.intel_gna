@@ -10,12 +10,6 @@ menuconfig INTEL_GNA
 
 if INTEL_GNA
 
-config INTEL_GNA_NAME
-	string "GNA device name"
-	default "GNA0"
-	help
-	  Name of the GNA device this device driver can use.
-
 config INTEL_GNA_INIT_PRIORITY
 	int "Init priority"
 	default 99

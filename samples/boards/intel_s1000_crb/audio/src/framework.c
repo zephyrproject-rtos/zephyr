@@ -17,7 +17,7 @@ static int framework_background_thread(void);
 
 K_THREAD_DEFINE(framework_bg_thread_id, FRAMEWORK_BG_THREAD_STACK_SIZE,
 		framework_background_thread, NULL, NULL, NULL,
-		FRAMEWORK_BG_THREAD_PRIORITY, 0, K_NO_WAIT);
+		FRAMEWORK_BG_THREAD_PRIORITY, 0, 0);
 
 static int framework_background_thread(void)
 {

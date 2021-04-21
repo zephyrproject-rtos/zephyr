@@ -26,20 +26,18 @@
 #define BUFFER_LENGTH 17
 #define BUFFER_CANARY 0xFF
 
-/*
- * Function invokes the get_entropy callback in driver
- * to get the random data and fill to passed buffer
- */
+#ifdef CONFIG_HWINFO_HAS_DRIVER
 static void test_device_id_get(void)
 {
-	u8_t buffer_1[BUFFER_LENGTH];
-	u8_t buffer_2[BUFFER_LENGTH];
+	uint8_t buffer_1[BUFFER_LENGTH];
+	uint8_t buffer_2[BUFFER_LENGTH];
 	ssize_t length_read_1, length_read_2;
 	int i;
 
 	length_read_1 = hwinfo_get_device_id(buffer_1, 1);
 	zassert_not_equal(length_read_1, -ENOTSUP, "Not supported by hardware");
-	zassert_false((length_read_1 < 0), "Error returned: %d", length_read_1);
+	zassert_false((length_read_1 < 0),
+		      "Unexpected negative return value: %d", length_read_1);
 	zassert_not_equal(length_read_1, 0, "Zero bytes read");
 	zassert_equal(length_read_1, 1, "Length not adhered");
 
@@ -66,10 +64,34 @@ static void test_device_id_get(void)
 			      "Two consecutively readings don't match");
 	}
 }
+#else
+static void test_device_id_get(void) {}
+#endif /* CONFIG_HWINFO_HAS_DRIVER */
+
+#ifndef CONFIG_HWINFO_HAS_DRIVER
+static void test_device_id_enotsup(void)
+{
+	ssize_t ret;
+	uint8_t buffer[1];
+
+	ret = hwinfo_get_device_id(buffer, 1);
+	/* There is no hwinfo driver for this platform, hence the return value
+	 * should be -ENOTSUP
+	 */
+	zassert_equal(ret, -ENOTSUP,
+		      "hwinfo_get_device_id returned % instead of %d",
+		      ret, -ENOTSUP);
+}
+#else
+static void test_device_id_enotsup(void) {}
+#endif /* CONFIG_HWINFO_HAS_DRIVER not defined*/
 
 void test_main(void)
 {
 	ztest_test_suite(hwinfo_device_id_api,
-			 ztest_unit_test(test_device_id_get));
+			 ztest_unit_test(test_device_id_get),
+			 ztest_unit_test(test_device_id_enotsup)
+			);
+
 	ztest_run_test_suite(hwinfo_device_id_api);
 }

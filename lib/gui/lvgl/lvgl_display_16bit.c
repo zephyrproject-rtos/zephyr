@@ -11,9 +11,9 @@
 void lvgl_flush_cb_16bit(struct _disp_drv_t *disp_drv,
 		const lv_area_t *area, lv_color_t *color_p)
 {
-	struct device *display_dev = (struct device *)disp_drv->user_data;
-	u16_t w = area->x2 - area->x1 + 1;
-	u16_t h = area->y2 - area->y1 + 1;
+	const struct device *display_dev = (const struct device *)disp_drv->user_data;
+	uint16_t w = area->x2 - area->x1 + 1;
+	uint16_t h = area->y2 - area->y1 + 1;
 	struct display_buffer_descriptor desc;
 
 	desc.buf_size = w * 2U * h;
@@ -27,10 +27,10 @@ void lvgl_flush_cb_16bit(struct _disp_drv_t *disp_drv,
 
 #ifndef CONFIG_LVGL_COLOR_DEPTH_16
 void lvgl_set_px_cb_16bit(struct _disp_drv_t *disp_drv,
-		u8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
+		uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
 		lv_color_t color, lv_opa_t opa)
 {
-	u16_t *buf_xy = (u16_t *)(buf + x * 2U + y * 2U * buf_w);
+	uint16_t *buf_xy = (uint16_t *)(buf + x * 2U + y * 2U * buf_w);
 	*buf_xy = lv_color_to16(color);
 }
 #endif

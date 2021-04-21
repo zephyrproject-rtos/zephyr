@@ -1,0 +1,11 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+&uart4 {
+	dmas = <&dma2 3 2 0x20440 0>,
+		<&dma2 5 2 0x20480 0>;
+	dma-names = "tx", "rx";
+};
+
+&dma2 {
+	status = "okay";
+};

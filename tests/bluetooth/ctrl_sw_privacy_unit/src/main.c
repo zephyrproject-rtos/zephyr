@@ -30,7 +30,7 @@
 void helper_privacy_clear(void)
 {
 	zassert_equal(newest_prpa, 0, "");
-	for (u8_t i = 0; i < CONFIG_BT_CTLR_RPA_CACHE_SIZE; i++) {
+	for (uint8_t i = 0; i < CONFIG_BT_CTLR_RPA_CACHE_SIZE; i++) {
 		zassert_equal(prpa_cache[i].taken, 0U, "");
 	}
 }
@@ -38,7 +38,7 @@ void helper_privacy_clear(void)
 void helper_privacy_add(int skew)
 {
 	bt_addr_t a1, a2, a3, a4, a5;
-	u8_t pos, ex_pos;
+	uint8_t pos, ex_pos;
 
 	bt_addr_copy(&a1, BT_ADDR_INIT(0x12, 0x13, 0x14, 0x15, 0x16, 0x17));
 	bt_addr_copy(&a2, BT_ADDR_INIT(0x22, 0x23, 0x24, 0x25, 0x26, 0x27));
@@ -94,8 +94,8 @@ void test_privacy_add_stress(void)
 {
 	bt_addr_t ar;
 
-	for (u8_t skew = 0; skew < CONFIG_BT_CTLR_RPA_CACHE_SIZE; skew++) {
-		for (u8_t i = 0; i < skew; i++) {
+	for (uint8_t skew = 0; skew < CONFIG_BT_CTLR_RPA_CACHE_SIZE; skew++) {
+		for (uint8_t i = 0; i < skew; i++) {
 			bt_addr_copy(&ar,
 				     BT_ADDR_INIT(0xde, 0xad, 0xbe,
 						  0xef, 0xaa, 0xff));

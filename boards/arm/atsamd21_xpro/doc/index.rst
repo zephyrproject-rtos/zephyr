@@ -47,9 +47,15 @@ features:
 +-----------+------------+------------------------------------------+
 | GPIO      | on-chip    | I/O ports                                |
 +-----------+------------+------------------------------------------+
+| PWM       | on-chip    | Pulse Width Modulation                   |
++-----------+------------+------------------------------------------+
 | USART     | on-chip    | Serial ports                             |
 +-----------+------------+------------------------------------------+
+| I2C       | on-chip    | I2C ports                                |
++-----------+------------+------------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports        |
++-----------+------------+------------------------------------------+
+| USB       | on-chip    | Universal Serial Bus device ports        |
 +-----------+------------+------------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
@@ -77,13 +83,17 @@ Default Zephyr Peripheral Mapping:
 - SERCOM0 USART RX : PA11
 - SERCOM1 USART TX : PA16
 - SERCOM1 USART RX : PA19
+- SERCOM2 I2C SDA  : PA08
+- SERCOM2 I2C SCL  : PA09
 - SERCOM3 USART TX : PA22
 - SERCOM3 USART RX : PA23
 - SERCOM5 SPI MISO : PB16
 - SERCOM5 SPI MOSI : PB22
 - SERCOM5 SPI SCK  : PB23
+- USB DP           : PA25
+- USB DM           : PA24
 - GPIO SPI CS      : PB17
-- GPIO LED0        : PB30
+- GPIO/PWM LED0    : PB30
 
 System Clock
 ============
@@ -100,6 +110,13 @@ this BSP. SERCOM3 is the default Zephyr console.
 - SERCOM0 9600 8n1
 - SERCOM1 115200 8n1
 - SERCOM3 115200 8n1 connected to the onboard Atmel Embedded Debugger (EDBG)
+
+PWM
+===
+
+The SAMD21 MCU has 3 TCC based PWM units with up to 4 outputs each and a period
+of 24 bits or 16 bits.  If :code:`CONFIG_PWM_SAM0_TCC` is enabled then LED0 is
+driven by TCC0 instead of by GPIO.
 
 SPI Port
 ========
@@ -151,7 +168,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! atsamd21_xpro" in your terminal.
 
 References
 **********

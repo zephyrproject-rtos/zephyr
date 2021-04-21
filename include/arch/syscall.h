@@ -15,10 +15,14 @@
 #else
 #include <arch/x86/ia32/syscall.h>
 #endif
+#elif defined(CONFIG_ARM64)
+#include <arch/arm64/syscall.h>
 #elif defined(CONFIG_ARM)
 #include <arch/arm/aarch32/syscall.h>
 #elif defined(CONFIG_ARC)
 #include <arch/arc/syscall.h>
+#elif defined(CONFIG_RISCV)
+#include <arch/riscv/syscall.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_SYSCALL_H_ */

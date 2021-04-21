@@ -1,7 +1,12 @@
+common:
+  min_flash: 65
+  min_ram: 36
+  tags: crypto mbedtls userspace
+  timeout: 400
 tests:
   crypto.mbedtls:
-    filter: not CONFIG_DEBUG
-    min_flash: 65
-    min_ram: 36
-    tags: crypto mbedtls userspace
-    timeout: 200
+    arch_exclude: riscv64
+  crypto.mbedtls.riscv64:
+    arch_allow: riscv64
+    extra_configs:
+      - CONFIG_ZTEST_STACKSIZE=8192

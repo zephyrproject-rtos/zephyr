@@ -1,0 +1,8 @@
+# Waveshare Open103Z board configuration
+
+# Copyright (c) 2020 Stefano Manni
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WAVESHARE_OPEN103Z
+	bool "Waveshare OPEN103Z Development Board"
+	depends on SOC_STM32F103XE

@@ -28,8 +28,8 @@ class Completion(WestCommand):
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description)
 
-        # Remember to update completion/west-completion.bash if you add or
-        # remove flags
+        # Remember to update west-completion.bash if you add or remove
+        # flags
         parser.add_argument('shell', nargs=1, choices=['bash'],
                             help='''Select the shell that which the completion
                             script is intended for.

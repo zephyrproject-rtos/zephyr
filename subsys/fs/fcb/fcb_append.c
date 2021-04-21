@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -57,15 +57,15 @@ fcb_append_to_scratch(struct fcb *fcb)
 }
 
 int
-fcb_append(struct fcb *fcb, u16_t len, struct fcb_entry *append_loc)
+fcb_append(struct fcb *fcb, uint16_t len, struct fcb_entry *append_loc)
 {
 	struct flash_sector *sector;
 	struct fcb_entry *active;
 	int cnt;
 	int rc;
-	u8_t tmp_str[8];
+	uint8_t tmp_str[8];
 
-	cnt = fcb_put_len(tmp_str, len);
+	cnt = fcb_put_len(fcb, tmp_str, len);
 	if (cnt < 0) {
 		return cnt;
 	}
@@ -118,7 +118,7 @@ int
 fcb_append_finish(struct fcb *fcb, struct fcb_entry *loc)
 {
 	int rc;
-	u8_t crc8[fcb->f_align];
+	uint8_t crc8[fcb->f_align];
 	off_t off;
 
 	(void)memset(crc8, 0xFF, sizeof(crc8));

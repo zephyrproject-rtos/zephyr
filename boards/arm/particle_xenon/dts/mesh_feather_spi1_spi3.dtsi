@@ -10,6 +10,7 @@
  * Changes should be made in all instances. */
 
 &spi3 { /* feather SPI */
+	compatible = "nordic,nrf-spim";
 	status = "okay";
 	sck-pin = <33>;
 	mosi-pin = <34>;

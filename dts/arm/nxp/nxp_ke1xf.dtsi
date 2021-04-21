@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Vestas Wind Systems A/S
+ * Copyright (c) 2019-2021 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,32 +12,11 @@
 
 / {
 	aliases {
-		rtc-0 = &rtc0;
-		watchdog0 = &wdog0;
-		uart-0 = &uart0;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pinmux-d = &pinmux_d;
-		pinmux-e = &pinmux_e;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		gpio-d = &gpiod;
-		gpio-e = &gpioe;
-		adc-0 = &adc0;
-		adc-1 = &adc1;
-		adc-2 = &adc2;
-		pwm-0 = &pwm0;
-		pwm-1 = &pwm1;
-		pwm-2 = &pwm2;
-		pwm-3 = &pwm3;
+		watchdog0 = &wdog;
+	};
+
+	chosen {
+		zephyr,flash-controller = &ftfe;
 	};
 
 	cpus {
@@ -88,6 +67,22 @@
 	};
 
 	soc {
+		edma: dma-controller@40008000 {
+			compatible = "nxp,mcux-edma";
+			dma-channels = <16>;
+			dma-requests = <64>;
+			nxp,mem2mem;
+			reg = <0x40008000 0x1000>, <0x40021000 0x1000>;
+			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
+				     <4 0>, <5 0>, <6 0>, <7 0>,
+				     <8 0>, <9 0>, <10 0>, <11 0>,
+				     <12 0>, <13 0>, <14 0>, <15 0>,
+				     <16 0>;
+			status = "disabled";
+			label = "EDMA";
+			#dma-cells = <2>;
+		};
+
 		mpu: mpu@4000d000 {
 			compatible = "nxp,kinetis-mpu";
 			reg = <0x4000d000 0x1000>;
@@ -105,6 +100,123 @@
 			reg = <0x40064000 0x1000>;
 			label = "SCG";
 			#clock-cells = <1>;
+
+			sosc_clk: sosc_clk {
+				compatible = "fixed-clock";
+				status = "disabled";
+				#clock-cells = <0>;
+			};
+
+			sirc_clk: sirc_clk {
+				compatible = "fixed-clock";
+				clock-frequency = <8000000>;
+				#clock-cells = <0>;
+			};
+
+			firc_clk: firc_clk {
+				compatible = "fixed-clock";
+				clock-frequency = <48000000>;
+				#clock-cells = <0>;
+			};
+
+			pll: pll {
+				compatible = "fixed-factor-clock";
+				clocks = <&sosc_clk>;
+				clock-div = <1>;
+				clock-mult = <16>;
+				#clock-cells = <0>;
+			};
+
+			spll_clk: spll_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&pll>;
+				clock-div = <2>;
+				#clock-cells = <0>;
+			};
+
+			core_clk: core_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&firc_clk>;
+				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
+			bus_clk: bus_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&core_clk>;
+				clock-div = <1>;
+				#clock-cells = <0>;
+			};
+
+			slow_clk: slow_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&core_clk>;
+				clock-div = <2>;
+				#clock-cells = <0>;
+			};
+
+			clkout_clk: clkout_clk {
+				compatible = "fixed-factor-clock";
+				status = "disabled";
+				clocks = <&firc_clk>;
+				#clock-cells = <0>;
+			};
+
+			splldiv1_clk: splldiv1_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&spll_clk>;
+				clock-div = <0>;
+				#clock-cells = <0>;
+			};
+
+			splldiv2_clk: splldiv2_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&spll_clk>;
+				clock-div = <0>;
+				#clock-cells = <0>;
+			};
+
+			sircdiv1_clk: sircdiv1_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&sirc_clk>;
+				clock-div = <0>;
+				#clock-cells = <0>;
+			};
+
+			sircdiv2_clk: sircdiv2_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&sirc_clk>;
+				clock-div = <0>;
+				#clock-cells = <0>;
+			};
+
+			fircdiv1_clk: fircdiv1_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&firc_clk>;
+				clock-div = <0>;
+				#clock-cells = <0>;
+			};
+
+			fircdiv2_clk: fircdiv2_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&firc_clk>;
+				clock-div = <0>;
+				#clock-cells = <0>;
+			};
+
+			soscdiv1_clk: soscdiv1_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&sosc_clk>;
+				clock-div = <0>;
+				#clock-cells = <0>;
+			};
+
+			soscdiv2_clk: soscdiv2_clk {
+				compatible = "fixed-factor-clock";
+				clocks = <&sosc_clk>;
+				clock-div = <0>;
+				#clock-cells = <0>;
+			};
 		};
 
 		pmc: pmc@4007d000 {
@@ -126,7 +238,7 @@
 			#clock-cells = <2>;
 		};
 
-		rtc0: rtc@4003d000 {
+		rtc: rtc@4003d000 {
 			compatible = "nxp,kinetis-rtc";
 			reg = <0x4003d000 0x1000>;
 			interrupts = <46 0>, <47 0>;
@@ -136,7 +248,29 @@
 			label = "RTC_0";
 		};
 
-		wdog0: watchdog@40052000 {
+		dac0: dac@4003f000 {
+			compatible = "nxp,kinetis-dac32";
+			reg = <0x4003f000 0x1000>;
+			interrupts = <56 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			voltage-reference = <1>;
+			buffered;
+			label = "DAC_0";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		lptmr0: lptmr@40040000 {
+			compatible = "nxp,kinetis-lptmr";
+			reg = <0x40040000 0x1000>;
+			interrupts = <58 0>;
+			clock-frequency = <128000>;
+			prescaler = <1>;
+			clk-source = <1>;
+			label = "LPTMR_0";
+		};
+
+		wdog: watchdog@40052000 {
 			compatible = "nxp,kinetis-wdog32";
 			reg = <0x40052000 0x1000>;
 			interrupts = <22 0>;
@@ -146,7 +280,19 @@
 			label = "WDT_0";
 		};
 
-		flash_controller: flash-controller@40020000 {
+		pwt: pwt@40056000 {
+			compatible = "nxp,kinetis-pwt";
+			reg = <0x40056000 0x1000>;
+			interrupts = <29 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			prescaler = <1>;
+			label = "PWT_0";
+			status = "disabled";
+
+			#pwm-cells = <3>;
+		};
+
+		ftfe: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfe";
 			label = "FLASH_CTRL";
 			reg = <0x40020000 0x1000>;
@@ -157,7 +303,7 @@
 			#size-cells = <1>;
 		};
 
-		uart0: uart@4006a000 {
+		lpuart0: uart@4006a000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x4006a000 0x1000>;
 			interrupts = <31 0>, <32 0>;
@@ -167,7 +313,7 @@
 			status = "disabled";
 		};
 
-		uart1: uart@4006b000 {
+		lpuart1: uart@4006b000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x4006b000 0x1000>;
 			interrupts = <33 0>, <34 0>;
@@ -177,7 +323,7 @@
 			status = "disabled";
 		};
 
-		uart2: uart@4006c000 {
+		lpuart2: uart@4006c000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x4006c000 0x1000>;
 			interrupts = <35 0>, <36 0>;
@@ -187,7 +333,7 @@
 			status = "disabled";
 		};
 
-		i2c0: i2c@40066000 {
+		lpi2c0: i2c@40066000 {
 			compatible = "nxp,imx-lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -199,7 +345,7 @@
 			status = "disabled";
 		};
 
-		i2c1: i2c@40067000 {
+		lpi2c1: i2c@40067000 {
 			compatible = "nxp,imx-lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -211,7 +357,7 @@
 			status = "disabled";
 		};
 
-		spi0: spi@4002c000 {
+		lpspi0: spi@4002c000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x4002c000 0x1000>;
 			interrupts = <26 0>;
@@ -222,7 +368,7 @@
 			#size-cells = <0>;
 		};
 
-		spi1: spi@4002d000 {
+		lpspi1: spi@4002d000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x4002d000 0x1000>;
 			interrupts = <27 0>;
@@ -233,7 +379,7 @@
 			#size-cells = <0>;
 		};
 
-		can0: can@40024000 {
+		flexcan0: can@40024000 {
 			compatible = "nxp,kinetis-flexcan";
 			reg = <0x40024000 0x1000>;
 			interrupts = <78 0>, <79 0>, <80 0>, <81 0>;
@@ -251,7 +397,7 @@
 			#size-cells = <0>;
 		};
 
-		can1: can@40025000 {
+		flexcan1: can@40025000 {
 			compatible = "nxp,kinetis-flexcan";
 			reg = <0x40025000 0x1000>;
 			interrupts = <85 0>, <86 0>, <87 0>, <88 0>;
@@ -269,31 +415,31 @@
 			#size-cells = <0>;
 		};
 
-		pinmux_a: pinmux@40049000 {
+		porta: pinmux@40049000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0x1000>;
 			clocks = <&pcc 0x124 KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
-		pinmux_b: pinmux@4004a000 {
+		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0x1000>;
 			clocks = <&pcc 0x128 KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
-		pinmux_c: pinmux@4004b000 {
+		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0x1000>;
 			clocks = <&pcc 0x12c KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
-		pinmux_d: pinmux@4004c000 {
+		portd: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0x1000>;
 			clocks = <&pcc 0x130 KINETIS_PCC_SRC_NONE_OR_EXT>;
 		};
 
-		pinmux_e: pinmux@4004d000 {
+		porte: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0x1000>;
 			clocks = <&pcc 0x134 KINETIS_PCC_SRC_NONE_OR_EXT>;
@@ -301,47 +447,57 @@
 
 		gpioa: gpio@400ff000 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff000 0x40>;
 			interrupts = <59 2>;
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porta>;
 		};
 
 		gpiob: gpio@400ff040 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff040 0x40>;
 			interrupts = <60 2>;
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portb>;
 		};
 
 		gpioc: gpio@400ff080 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff080 0x40>;
 			interrupts = <61 2>;
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portc>;
 		};
 
 		gpiod: gpio@400ff0c0 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff0c0 0x40>;
 			interrupts = <62 2>;
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portd>;
 		};
 
 		gpioe: gpio@400ff100 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff100 0x40>;
 			interrupts = <63 2>;
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porte>;
 		};
 
 		adc0: adc@4003b000 {
@@ -380,44 +536,74 @@
 			#io-channel-cells = <1>;
 		};
 
-		pwm0: pwm@40038000 {
+		ftm0: ftm@40038000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x1000>;
 			interrupts = <42 0>;
 			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			label = "PWM_0";
-			#pwm-cells = <3>;
+			prescaler = <16>;
+			label = "FTM_0";
 			status = "disabled";
 		};
 
-		pwm1: pwm@40039000 {
+		ftm1: ftm@40039000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x1000>;
 			interrupts = <43 0>;
 			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			label = "PWM_1";
-			#pwm-cells = <3>;
+			prescaler = <16>;
+			label = "FTM_1";
 			status = "disabled";
 		};
 
-		pwm2: pwm@4003a000 {
+		ftm2: ftm@4003a000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x4003a000 0x1000>;
 			interrupts = <44 0>;
 			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			label = "PWM_2";
-			#pwm-cells = <3>;
+			prescaler = <16>;
+			label = "FTM_2";
 			status = "disabled";
 		};
 
-		pwm3: pwm@40026000 {
+		ftm3: ftm@40026000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40026000 0x1000>;
 			interrupts = <71 0>;
 			clocks = <&pcc 0x98 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			label = "PWM_3";
-			#pwm-cells = <3>;
+			prescaler = <16>;
+			label = "FTM_3";
 			status = "disabled";
+		};
+
+		cmp0: cmp@40073000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x40073000 0x1000>;
+			interrupts = <40 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			label = "CMP_0";
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		cmp1: cmp@40074000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x40074000 0x1000>;
+			interrupts = <41 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			label = "CMP_1";
+			status = "disabled";
+			#io-channel-cells = <2>;
+		};
+
+		cmp2: cmp@40075000 {
+			compatible = "nxp,kinetis-acmp";
+			reg = <0x40075000 0x1000>;
+			interrupts = <70 0>;
+			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			label = "CMP_2";
+			status = "disabled";
+			#io-channel-cells = <2>;
 		};
 	};
 };

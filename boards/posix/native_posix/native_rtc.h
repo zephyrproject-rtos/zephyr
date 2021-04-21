@@ -41,7 +41,7 @@ extern "C" {
  *
  * @return Number of microseconds
  */
-u64_t native_rtc_gettime_us(int clock_type);
+uint64_t native_rtc_gettime_us(int clock_type);
 
 /**
  * @brief Get the value of a clock split in in nsec and seconds
@@ -50,7 +50,7 @@ u64_t native_rtc_gettime_us(int clock_type);
  * @param nsec Pointer to store the nanoseconds
  * @param nsec Pointer to store the seconds
  */
-void native_rtc_gettime(int clock_type, u32_t *nsec, u64_t *sec);
+void native_rtc_gettime(int clock_type, uint32_t *nsec, uint64_t *sec);
 
 /**
  * @brief Offset the real time clock by a number of microseconds.
@@ -60,7 +60,7 @@ void native_rtc_gettime(int clock_type, u32_t *nsec, u64_t *sec);
  * @param delta_us Number of microseconds to offset. The value is added to all
  * offsetable clocks.
  */
-void native_rtc_offset(s64_t delta_us);
+void native_rtc_offset(int64_t delta_us);
 
 /**
  * @brief Adjust the speed of the clock source by a multiplicative factor

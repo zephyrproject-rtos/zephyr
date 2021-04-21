@@ -1,0 +1,55 @@
+# Copyright (c) 2016 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_MASS_STORAGE
+	bool "USB Mass Storage Device Class support"
+	select DISK_ACCESS
+	help
+	  USB Mass Storage device class support
+
+if USB_MASS_STORAGE
+
+config MASS_STORAGE_DISK_NAME
+	string "Mass storage disk or drive name"
+	default "RAM"
+	help
+	  Mass storage device disk or drive name
+
+config MASS_STORAGE_INQ_VENDOR_ID
+	string "T10 assigned vendor ID for inquiry (must be 8 characters)"
+	default "ZEPHYR  "
+	help
+	  Vendor ID used for enquiry requests.
+	  Spaces must be added to bring the string to 8 bytes.
+
+config MASS_STORAGE_INQ_PRODUCT_ID
+	string "Product ID for inquiry (must be 16 characters)"
+	default "ZEPHYR USB DISK "
+	help
+	  Product ID used for enquiry requests.
+	  Spaces must be added to bring the string to 16 bytes.
+
+config MASS_STORAGE_INQ_REVISION
+	string "Revision for inquiry (must be 4 characters)"
+	default "0.01"
+	help
+	  Revision used for enquiry requests.
+	  Spaces must be added to bring the string to 4 bytes.
+
+config MASS_STORAGE_BULK_EP_MPS
+	int
+	default 64
+	range 8 64
+	help
+	  Mass storage device class bulk endpoints size
+
+config MASS_STORAGE_STACK_SIZE
+	int "Set stack size for mass storage thread"
+	default 512
+	help
+	  Stack size for mass storage disk operations thread
+
+module = USB_MASS_STORAGE
+module-str = usb mass storage
+source "subsys/logging/Kconfig.template.log_config"
+endif

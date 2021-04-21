@@ -1,0 +1,11 @@
+# Configuration options for eSPI emulators
+
+# Copyright 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config EMUL_ESPI_HOST
+	bool "Emulate an eSPI host"
+	help
+	  This is an emulator of the generic eSPI host. The emulator supports
+	  basic host operations - virtual wires and writing to port 80. It can be
+	  extended.

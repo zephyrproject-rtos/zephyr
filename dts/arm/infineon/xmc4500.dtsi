@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2020 Linumiz
+ * Author: Parthiban Nallathambi <parthiban@linumiz.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <infineon/xmc4xxx.dtsi>
+
+&psram1 {
+	reg = <0x10000000 DT_SIZE_K(64)>;
+};
+
+&dsram1 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
+&dsram2 {
+	reg = <0x30000000 DT_SIZE_K(32)>;
+};
+
+&flash0 {
+	reg = <0xc000000 DT_SIZE_M(1)>;
+};

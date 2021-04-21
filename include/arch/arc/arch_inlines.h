@@ -12,14 +12,14 @@
 
 #include <kernel_structs.h>
 
-#ifdef CONFIG_CPU_ARCV2
+#ifdef CONFIG_ISA_ARCV2
 #include <arch/arc/v2/aux_regs.h>
 #endif
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 #ifdef CONFIG_SMP
-	u32_t core;
+	uint32_t core;
 
 	core = z_arc_v2_core_id();
 

@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_kw41z.dtsi>
+#include <nxp/MKW41Z512VHT4.dtsi>
 
 / {
 	model = "NXP Freedom KW41Z board";
@@ -14,6 +14,12 @@
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_4;
+		pwm-led0 = &blue_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &red_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		red-pwm-led = &red_pwm_led;
 	};
 
 	chosen {
@@ -36,6 +42,22 @@
 		blue_led: led_2 {
 			gpios = <&gpioa 18 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		blue_pwm_led: pwm_led_0 {
+			pwms = <&tpm2 0 0 0>;
+			label = "User PWM LD1";
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tpm2 1 0 0>;
+			label = "User PWM LD2";
+		};
+		red_pwm_led: pwm_led_2 {
+			pwms = <&tpm0 2 0 0>;
+			label = "User PWM LD3";
 		};
 	};
 
@@ -80,12 +102,19 @@
 	};
 };
 
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
+};
+
 &adc0 {
 	status = "okay";
+	pinctrl-0 = <&ADC0_SE3_PTB2>;
 };
 
 &i2c1 {
 	status = "okay";
+	pinctrl-0 = <&I2C1_SCL_PTC2 &I2C1_SDA_PTC3>;
 
 	fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -95,7 +124,43 @@
 	};
 };
 
+&I2C1_SCL_PTC2 {
+	bias-pull-up;
+};
+
+&I2C1_SDA_PTC3 {
+	bias-pull-up;
+};
+
 &lpuart0 {
 	status = "okay";
+	pinctrl-0 = <&UART0_RX_PTC6 &UART0_TX_PTC7>;
 	current-speed = <115200>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&SPI0_SCK_PTC16 &SPI0_SOUT_PTC17
+		     &SPI0_SIN_PTC18 &SPI0_PCS0_PTC19>;
+};
+
+&tpm0 {
+	status = "okay";
+	pinctrl-0 = <&TPM0_CH2_PTC1>;
+};
+
+&tpm1 {
+	status = "disabled";
+};
+
+&tpm2 {
+	status = "okay";
+	pinctrl-0 = <&TPM2_CH1_PTA19 &TPM2_CH0_PTA18>;
 };

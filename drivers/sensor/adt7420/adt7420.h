@@ -59,19 +59,19 @@
 #define ADT7420_TEMP_SCALE		15625
 
 struct adt7420_data {
-	struct device *i2c;
-	s16_t sample;
+	const struct device *i2c;
+	int16_t sample;
 #ifdef CONFIG_ADT7420_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t th_handler;
 	struct sensor_trigger th_trigger;
 
-	struct device *dev;
+	const struct device *dev;
 
 #if defined(CONFIG_ADT7420_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_ADT7420_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADT7420_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif defined(CONFIG_ADT7420_TRIGGER_GLOBAL_THREAD)
@@ -83,7 +83,7 @@ struct adt7420_data {
 
 struct adt7420_dev_config {
 	const char *i2c_port;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 #ifdef CONFIG_ADT7420_TRIGGER
 	gpio_pin_t int_pin;
 	gpio_flags_t int_flags;
@@ -92,11 +92,11 @@ struct adt7420_dev_config {
 };
 
 #ifdef CONFIG_ADT7420_TRIGGER
-int adt7420_trigger_set(struct device *dev,
+int adt7420_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int adt7420_init_interrupt(struct device *dev);
+int adt7420_init_interrupt(const struct device *dev);
 #endif /* CONFIG_ADT7420_TRIGGER */
 
 

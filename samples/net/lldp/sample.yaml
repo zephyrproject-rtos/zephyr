@@ -6,5 +6,5 @@ sample:
   name: LLDP sample app
 tests:
   sample.net.lldp:
-    platform_whitelist: native_posix native_posix_64
+    platform_allow: native_posix native_posix_64
     depends_on: netif

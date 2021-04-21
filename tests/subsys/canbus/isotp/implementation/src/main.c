@@ -15,7 +15,7 @@
 #if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
 #define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
 #else
-#define CAN_DEVICE_NAME DT_ALIAS_CAN_PRIMARY_LABEL
+#define CAN_DEVICE_NAME DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
 #endif
 
 /*
@@ -31,7 +31,7 @@
  * @}
  */
 
-struct device *can_dev;
+const struct device *can_dev;
 
 const struct isotp_fc_opts fc_opts = {
 	.bs = 8,
@@ -54,14 +54,14 @@ const struct isotp_msg_id tx_addr = {
 
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
-u8_t data_buf[128];
+uint8_t data_buf[128];
 
 void send_complette_cb(int error_nr, void *arg)
 {
 	zassert_equal(error_nr, ISOTP_N_OK, "Sending failed (%d)", error_nr);
 }
 
-static void send_sf(struct device *can_dev)
+static void send_sf(const struct device *can_dev)
 {
 	int ret;
 
@@ -90,7 +90,7 @@ static void get_sf_net(struct isotp_recv_ctx *recv_ctx)
 static void get_sf(struct isotp_recv_ctx *recv_ctx)
 {
 	int ret;
-	u8_t *data_buf_ptr = data_buf;
+	uint8_t *data_buf_ptr = data_buf;
 
 	memset(data_buf, 0, sizeof(data_buf));
 	ret = isotp_recv(recv_ctx, data_buf_ptr++, 1, K_MSEC(1000));
@@ -103,14 +103,15 @@ static void get_sf(struct isotp_recv_ctx *recv_ctx)
 	zassert_equal(ret, 0, "received data differ");
 }
 
-void print_hex(const u8_t *ptr, size_t len)
+void print_hex(const uint8_t *ptr, size_t len)
 {
 	while (len--) {
 		printk("%02x", *ptr++);
 	}
 }
 
-static void send_test_data(struct device *can_dev, const u8_t *data, size_t len)
+static void send_test_data(const struct device *can_dev, const uint8_t *data,
+			   size_t len)
 {
 	int ret;
 
@@ -119,7 +120,7 @@ static void send_test_data(struct device *can_dev, const u8_t *data, size_t len)
 	zassert_equal(ret, 0, "Send returned %d", ret);
 }
 
-static const u8_t *check_frag(struct net_buf *frag, const u8_t *data)
+static const uint8_t *check_frag(struct net_buf *frag, const uint8_t *data)
 {
 	int ret;
 
@@ -136,11 +137,11 @@ static const u8_t *check_frag(struct net_buf *frag, const u8_t *data)
 }
 
 static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
-				 const u8_t *data, size_t len, s32_t delay)
+				 const uint8_t *data, size_t len, int32_t delay)
 {
 	int remaining_len;
 	size_t received_len = 0;
-	const u8_t *data_ptr = data;
+	const uint8_t *data_ptr = data;
 	struct net_buf *buf;
 
 	do {
@@ -154,7 +155,7 @@ static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
 		data_ptr = check_frag(buf, data_ptr);
 
 		if (delay) {
-			k_sleep(delay);
+			k_msleep(delay);
 		}
 		memset(buf->data, 0, buf->len);
 		net_buf_unref(buf);
@@ -165,7 +166,7 @@ static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
 		      "Expected timeout but got %d", remaining_len);
 }
 
-static void check_data(const u8_t *recv_data, const u8_t *send_data, size_t len)
+static void check_data(const uint8_t *recv_data, const uint8_t *send_data, size_t len)
 {
 	int ret;
 
@@ -181,11 +182,11 @@ static void check_data(const u8_t *recv_data, const u8_t *send_data, size_t len)
 }
 
 static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
-			      const u8_t *data, size_t len, s32_t delay)
+			      const uint8_t *data, size_t len, int32_t delay)
 {
 	size_t remaining_len = len;
 	int ret;
-	const u8_t *data_ptr = data;
+	const uint8_t *data_ptr = data;
 
 	do {
 		memset(data_buf, 0, sizeof(data_buf));
@@ -199,7 +200,7 @@ static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
 		remaining_len -= ret;
 
 		if (delay) {
-			k_sleep(delay);
+			k_msleep(delay);
 		}
 	} while (remaining_len);
 
@@ -281,7 +282,7 @@ static void test_send_receive_net_single_blocks(void)
 	int ret, i;
 	size_t buf_len;
 	struct net_buf *buf, *frag;
-	const u8_t *data_ptr;
+	const uint8_t *data_ptr;
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 			 &fc_opts_single, K_NO_WAIT);
@@ -392,7 +393,7 @@ static void test_buffer_allocation(void)
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
 	send_test_data(can_dev, random_data, send_data_length);
-	k_sleep(K_MSEC(100));
+	k_msleep(100);
 	receive_test_data_net(&recv_ctx, random_data, send_data_length, 200);
 	isotp_unbind(&recv_ctx);
 }
@@ -422,7 +423,7 @@ void test_main(void)
 
 	can_dev = device_get_binding(CAN_DEVICE_NAME);
 	zassert_not_null(can_dev, "CAN device not not found");
-	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
+	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 	zassert_equal(ret, 0, "Configuring loopback mode failed (%d)", ret);
 
 	ztest_test_suite(isotp,

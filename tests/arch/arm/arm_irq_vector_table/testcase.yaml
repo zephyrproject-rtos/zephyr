@@ -1,5 +1,7 @@
+common:
+  filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+  tags: arm interrupt vector_table
+  arch_allow: arm
 tests:
   arch.interrupt.arm.irq_vector_table:
-    filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
-    tags: arm interrupt vector_table
-    arch_whitelist: arm
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE

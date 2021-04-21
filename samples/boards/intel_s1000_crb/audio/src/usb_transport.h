@@ -15,16 +15,16 @@
 /* 4 byte header in every HID report */
 union usb_hid_report_hdr {
 	struct {
-		u8_t	report_id;
-		u8_t	unused[2];
-		u8_t	byte_count;
+		uint8_t	report_id;
+		uint8_t	unused[2];
+		uint8_t	byte_count;
 	} __packed byte;
-	u32_t	word;
+	uint32_t	word;
 };
 
-typedef void (*usb_transport_receive_callback_t)(u8_t *data, u32_t len);
+typedef void (*usb_transport_receive_callback_t)(uint8_t *data, uint32_t len);
 
 int usb_transport_init(usb_transport_receive_callback_t callback);
-int usb_transport_send_reply(u8_t *data, u32_t len);
+int usb_transport_send_reply(uint8_t *data, uint32_t len);
 
 #endif /* TUNING_USB_TRANSPORT_H */

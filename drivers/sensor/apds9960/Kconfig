@@ -4,7 +4,7 @@
 
 menuconfig APDS9960
 	bool "APDS9960 Sensor"
-	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
+	depends on I2C && HAS_DTS_GPIO
 	help
 	  Enable driver for APDS9960 sensors.
 

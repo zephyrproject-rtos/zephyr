@@ -33,24 +33,22 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_64BIT
-#define STACK_ALIGN 8
-#define STACK_ALIGN_SIZE 8
+#define ARCH_STACK_PTR_ALIGN 8
 #else
-#define STACK_ALIGN 4
-#define STACK_ALIGN_SIZE 4
+#define ARCH_STACK_PTR_ALIGN 4
 #endif
 
 struct __esf {
-	u32_t dummy; /*maybe we will want to add something someday*/
+	uint32_t dummy; /*maybe we will want to add something someday*/
 };
 
 typedef struct __esf z_arch_esf_t;
 
-extern u32_t z_timer_cycle_get_32(void);
+extern uint32_t sys_clock_cycle_get_32(void);
 
-static inline u32_t arch_k_cycle_get_32(void)
+static inline uint32_t arch_k_cycle_get_32(void)
 {
-	return z_timer_cycle_get_32();
+	return sys_clock_cycle_get_32();
 }
 
 static ALWAYS_INLINE void arch_nop(void)

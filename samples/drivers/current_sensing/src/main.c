@@ -32,10 +32,10 @@
 #define CUR_LSB		100
 #define PWR_LSB		2000
 
-int read_reg16(struct device *i2c_dev, u8_t reg_addr,
-	       u8_t *data)
+int read_reg16(const struct device *i2c_dev, uint8_t reg_addr,
+	       uint8_t *data)
 {
-	u8_t wr_addr;
+	uint8_t wr_addr;
 	struct i2c_msg msgs[2];
 
 	/* Register address */
@@ -56,10 +56,10 @@ int read_reg16(struct device *i2c_dev, u8_t reg_addr,
 	return i2c_transfer(i2c_dev, &msgs[0], 2, I2C_SLV_ADDR);
 }
 
-int write_reg16(struct device *i2c_dev, u8_t reg_addr,
-		u8_t *data)
+int write_reg16(const struct device *i2c_dev, uint8_t reg_addr,
+		uint8_t *data)
 {
-	u8_t wr_addr;
+	uint8_t wr_addr;
 	struct i2c_msg msgs[2];
 
 	/* Register address */
@@ -82,9 +82,9 @@ int write_reg16(struct device *i2c_dev, u8_t reg_addr,
 
 void main(void)
 {
-	struct device *i2c_dev;
-	u8_t data[2];
-	u32_t shunt_volt, bus_volt, current, power;
+	const struct device *i2c_dev;
+	uint8_t data[2];
+	uint32_t shunt_volt, bus_volt, current, power;
 
 	i2c_dev = device_get_binding("I2C_0");
 	if (!i2c_dev) {

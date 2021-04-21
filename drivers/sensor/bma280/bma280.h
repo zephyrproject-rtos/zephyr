@@ -12,10 +12,10 @@
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
 
-#define BMA280_I2C_ADDRESS		DT_INST_0_BOSCH_BMA280_BASE_ADDRESS
+#define BMA280_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
 #define BMA280_REG_CHIP_ID		0x00
-#if DT_INST_0_BOSCH_BMA280_IS_BMC150
+#if DT_INST_PROP(0, is_bmc150)
 	#define BMA280_CHIP_ID		0xFA
 #else
 	#define BMA280_CHIP_ID		0xFB
@@ -96,7 +96,7 @@
 #define BMA280_REG_ACCEL_Y_LSB		0x4
 #define BMA280_REG_ACCEL_Z_LSB		0x6
 
-#if DT_INST_0_BOSCH_BMA280_IS_BMC150
+#if DT_INST_PROP(0, is_bmc150)
 	#define BMA280_ACCEL_LSB_BITS	4
 	#define BMA280_ACCEL_LSB_SHIFT	4
 #else
@@ -114,15 +114,15 @@
 #define BMA280_THREAD_STACKSIZE_UNIT	1024
 
 struct bma280_data {
-	struct device *i2c;
-	s16_t x_sample;
-	s16_t y_sample;
-	s16_t z_sample;
-	s8_t temp_sample;
+	const struct device *i2c;
+	int16_t x_sample;
+	int16_t y_sample;
+	int16_t z_sample;
+	int8_t temp_sample;
 
 #ifdef CONFIG_BMA280_TRIGGER
-	struct device *dev;
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -132,7 +132,7 @@ struct bma280_data {
 	sensor_trigger_handler_t any_motion_handler;
 
 #if defined(CONFIG_BMA280_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_BMA280_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_BMA280_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_BMA280_TRIGGER_GLOBAL_THREAD)
@@ -143,16 +143,16 @@ struct bma280_data {
 };
 
 #ifdef CONFIG_BMA280_TRIGGER
-int bma280_trigger_set(struct device *dev,
+int bma280_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
-int bma280_attr_set(struct device *dev,
+int bma280_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val);
 
-int bma280_init_interrupt(struct device *dev);
+int bma280_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMA280_BMA280_H_ */

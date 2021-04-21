@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <errno.h>
 #include <sys/printk.h>
 #include <linker/sections.h>
+#include <random/rand32.h>
 
 #include <ztest.h>
 
@@ -44,7 +45,7 @@ static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
 				       0x04 } } };
 
-static u8_t mac2_addr[] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x02 };
+static uint8_t mac2_addr[] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x02 };
 static struct net_linkaddr ll_addr2 = {
 	.addr = mac2_addr,
 	.len = 6,
@@ -903,16 +904,16 @@ static bool test_failed;
 static bool test_started;
 static struct k_sem wait_data;
 
-static u16_t pkt_data_len;
-static u16_t pkt_recv_data_len;
+static uint16_t pkt_data_len;
+static uint16_t pkt_recv_data_len;
 
 #define WAIT_TIME K_SECONDS(1)
 
-#define ALLOC_TIMEOUT 500
+#define ALLOC_TIMEOUT K_MSEC(500)
 
 struct net_if_test {
-	u8_t idx;
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t idx;
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
@@ -925,14 +926,14 @@ enum net_test_type {
 
 static enum net_test_type test_type = NO_TEST_TYPE;
 
-static int net_iface_dev_init(struct device *dev)
+static int net_iface_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static u8_t *net_iface_get_mac(struct device *dev)
+static uint8_t *net_iface_get_mac(const struct device *dev)
 {
-	struct net_if_test *data = dev->driver_data;
+	struct net_if_test *data = dev->data;
 
 	if (data->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -952,7 +953,7 @@ static u8_t *net_iface_get_mac(struct device *dev)
 
 static void net_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_iface_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_iface_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
@@ -967,7 +968,7 @@ static int verify_fragment(struct net_pkt *pkt)
 	 *  4) UDP/ICMPv6/TCP header
 	 *  5) data
 	 */
-	u16_t offset;
+	uint16_t offset;
 
 	frag_count++;
 
@@ -1108,11 +1109,11 @@ large:
 	net_pkt_cursor_init(pkt);
 
 	if (frag_count == 1) {
-		u16_t exp_ext_len = 1040U; /* 1032 (HBHO) + 8 (FRAG)*/
-		u16_t recv_ext_len;
-		u16_t exp_payload_len = 200U;
-		u16_t recv_payload_len;
-		u16_t frag_offset;
+		uint16_t exp_ext_len = 1040U; /* 1032 (HBHO) + 8 (FRAG)*/
+		uint16_t recv_ext_len;
+		uint16_t exp_payload_len = 200U;
+		uint16_t recv_payload_len;
+		uint16_t frag_offset;
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
@@ -1148,11 +1149,11 @@ large:
 	}
 
 	if (frag_count == 2) {
-		u16_t exp_ext_len = 1040U; /* 1032 (HBHO) + 8 (FRAG)*/
-		u16_t recv_ext_len;
-		u16_t exp_payload_len = 200U;
-		u16_t recv_payload_len;
-		u16_t frag_offset;
+		uint16_t exp_ext_len = 1040U; /* 1032 (HBHO) + 8 (FRAG)*/
+		uint16_t recv_ext_len;
+		uint16_t exp_payload_len = 200U;
+		uint16_t recv_payload_len;
+		uint16_t frag_offset;
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
@@ -1188,11 +1189,11 @@ large:
 	}
 
 	if (frag_count == 3) {
-		u16_t exp_ext_len = 1040U; /* 1032 (HBHO) + 8 (FRAG)*/
-		u16_t recv_ext_len;
-		u16_t exp_payload_len = 16U;
-		u16_t recv_payload_len;
-		u16_t frag_offset;
+		uint16_t exp_ext_len = 1040U; /* 1032 (HBHO) + 8 (FRAG)*/
+		uint16_t recv_ext_len;
+		uint16_t exp_payload_len = 16U;
+		uint16_t recv_payload_len;
+		uint16_t frag_offset;
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
@@ -1233,11 +1234,11 @@ without:
 	net_pkt_cursor_init(pkt);
 
 	if (frag_count == 1) {
-		u16_t exp_ext_len = 8U; /* 0 (HBHO) + 8 (FRAG)*/
-		u16_t recv_ext_len;
-		u16_t exp_payload_len = 1232U;
-		u16_t recv_payload_len;
-		u16_t frag_offset;
+		uint16_t exp_ext_len = 8U; /* 0 (HBHO) + 8 (FRAG)*/
+		uint16_t recv_ext_len;
+		uint16_t exp_payload_len = 1232U;
+		uint16_t recv_payload_len;
+		uint16_t frag_offset;
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
@@ -1279,11 +1280,11 @@ without:
 	}
 
 	if (frag_count == 2) {
-		u16_t exp_ext_len = 8U; /* 0 (HBHO) + 8 (FRAG)*/
-		u16_t recv_ext_len;
-		u16_t exp_payload_len = 76U;
-		u16_t recv_payload_len;
-		u16_t frag_offset;
+		uint16_t exp_ext_len = 8U; /* 0 (HBHO) + 8 (FRAG)*/
+		uint16_t recv_ext_len;
+		uint16_t exp_payload_len = 76U;
+		uint16_t recv_payload_len;
+		uint16_t frag_offset;
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
@@ -1327,7 +1328,7 @@ without:
 	return 0;
 }
 
-static int sender_iface(struct device *dev, struct net_pkt *pkt)
+static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->buffer) {
 		NET_DBG("No data to send!");
@@ -1365,6 +1366,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
 			 net_iface_dev_init,
+			 device_pm_control_nop,
 			 &net_iface1_data,
 			 NULL,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -1377,6 +1379,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface2_test,
 			 "iface2",
 			 iface2,
 			 net_iface_dev_init,
+			 device_pm_control_nop,
 			 &net_iface2_data,
 			 NULL,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -1411,8 +1414,8 @@ static enum net_verdict udp_data_received(struct net_conn *conn,
 
 static void setup_udp_handler(const struct in6_addr *raddr,
 			      const struct in6_addr *laddr,
-			      u16_t remote_port,
-			      u16_t local_port)
+			      uint16_t remote_port,
+			      uint16_t local_port)
 {
 	static struct net_conn_handle *handle;
 	struct sockaddr remote_addr = { 0 };
@@ -1426,7 +1429,7 @@ static void setup_udp_handler(const struct in6_addr *raddr,
 	remote_addr.sa_family = AF_INET6;
 
 	ret = net_udp_register(AF_INET6, &remote_addr, &local_addr,
-			       remote_port, local_port, udp_data_received,
+			       remote_port, local_port, NULL, udp_data_received,
 			       NULL, &handle);
 	zassert_equal(ret, 0, "Cannot register UDP handler");
 }
@@ -1442,9 +1445,9 @@ static void test_setup(void)
 	iface1 = net_if_get_by_index(1);
 	iface2 = net_if_get_by_index(2);
 
-	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx =
+	((struct net_if_test *) net_if_get_device(iface1)->data)->idx =
 		net_if_get_by_iface(iface1);
-	((struct net_if_test *)net_if_get_device(iface2)->driver_data)->idx =
+	((struct net_if_test *) net_if_get_device(iface2)->data)->idx =
 		net_if_get_by_iface(iface2);
 
 	idx = net_if_get_by_iface(iface1);
@@ -1496,8 +1499,8 @@ static void test_setup(void)
 
 static void test_find_last_ipv6_fragment_udp(void)
 {
-	u16_t next_hdr_pos = 0U;
-	u16_t last_hdr_pos = 0U;
+	uint16_t next_hdr_pos = 0U;
+	uint16_t last_hdr_pos = 0U;
 	struct net_pkt *pkt;
 	int ret;
 
@@ -1530,8 +1533,8 @@ static void test_find_last_ipv6_fragment_udp(void)
 
 static void test_find_last_ipv6_fragment_hbho_udp(void)
 {
-	u16_t next_hdr_pos = 0U;
-	u16_t last_hdr_pos = 0U;
+	uint16_t next_hdr_pos = 0U;
+	uint16_t last_hdr_pos = 0U;
 	struct net_pkt *pkt;
 	int ret;
 
@@ -1565,11 +1568,11 @@ static void test_find_last_ipv6_fragment_hbho_udp(void)
 
 static void test_find_last_ipv6_fragment_hbho_1(void)
 {
-	u16_t next_hdr_pos = 0U;
-	u16_t last_hdr_pos = 0U;
+	uint16_t next_hdr_pos = 0U;
+	uint16_t last_hdr_pos = 0U;
 	struct net_pkt *pkt;
-	u8_t next_hdr;
-	u8_t last_hdr;
+	uint8_t next_hdr;
+	uint8_t last_hdr;
 	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv6_hbho_1),
@@ -1608,11 +1611,11 @@ static void test_find_last_ipv6_fragment_hbho_1(void)
 
 static void test_find_last_ipv6_fragment_hbho_2(void)
 {
-	u16_t next_hdr_pos = 0U;
-	u16_t last_hdr_pos = 0U;
+	uint16_t next_hdr_pos = 0U;
+	uint16_t last_hdr_pos = 0U;
 	struct net_pkt *pkt;
-	u8_t next_hdr;
-	u8_t last_hdr;
+	uint8_t next_hdr;
+	uint8_t last_hdr;
 	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv6_hbho_2),
@@ -1651,11 +1654,11 @@ static void test_find_last_ipv6_fragment_hbho_2(void)
 
 static void test_find_last_ipv6_fragment_hbho_3(void)
 {
-	u16_t next_hdr_pos = 0U;
-	u16_t last_hdr_pos = 0U;
+	uint16_t next_hdr_pos = 0U;
+	uint16_t last_hdr_pos = 0U;
 	struct net_pkt *pkt;
-	u8_t next_hdr;
-	u8_t last_hdr;
+	uint8_t next_hdr;
+	uint8_t last_hdr;
 	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv6_hbho_3),
@@ -1694,8 +1697,8 @@ static void test_find_last_ipv6_fragment_hbho_3(void)
 
 static void test_find_last_ipv6_fragment_hbho_frag(void)
 {
-	u16_t next_hdr_pos = 0U;
-	u16_t last_hdr_pos = 0U;
+	uint16_t next_hdr_pos = 0U;
+	uint16_t last_hdr_pos = 0U;
 	struct net_pkt *pkt;
 	int ret;
 
@@ -1729,11 +1732,11 @@ static void test_find_last_ipv6_fragment_hbho_frag(void)
 
 static void test_find_last_ipv6_fragment_hbho_frag_1(void)
 {
-	u16_t next_hdr_pos = 0U;
-	u16_t last_hdr_pos = 0U;
+	uint16_t next_hdr_pos = 0U;
+	uint16_t last_hdr_pos = 0U;
 	struct net_pkt *pkt;
-	u8_t next_hdr;
-	u8_t last_hdr;
+	uint8_t next_hdr;
+	uint8_t last_hdr;
 	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv6_hbho_frag_1),
@@ -1927,7 +1930,7 @@ static void test_send_ipv6_fragment_without_hbho(void)
 	}
 }
 
-static u8_t ipv6_reass_frag1[] = {
+static uint8_t ipv6_reass_frag1[] = {
 0x60, 0x00, 0x00, 0x00, 0x04, 0xd8, 0x2c, 0x40,
 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
@@ -1937,7 +1940,7 @@ static u8_t ipv6_reass_frag1[] = {
 0x81, 0x00, 0xb1, 0xb2, 0x28, 0x5b, 0x00, 0x01
 };
 
-static u8_t ipv6_reass_frag2[] = {
+static uint8_t ipv6_reass_frag2[] = {
 0x60, 0x00, 0x00, 0x00, 0x00, 0x54, 0x2c, 0x40,
 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
@@ -1952,10 +1955,10 @@ static void test_recv_ipv6_fragment(void)
 	struct net_pkt_cursor backup;
 	struct net_pkt *pkt1;
 	struct net_pkt *pkt2;
-	u16_t total_payload_len;
-	u16_t payload1_len;
-	u16_t payload2_len;
-	u8_t data;
+	uint16_t total_payload_len;
+	uint16_t payload1_len;
+	uint16_t payload2_len;
+	uint8_t data;
 	int ret;
 
 	/* Fragment 1 */

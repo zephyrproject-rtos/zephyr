@@ -5,11 +5,4 @@ description: NXP LPC SPI controller
 
 compatible: "nxp,lpc-spi"
 
-include: spi-controller.yaml
-
-properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: true
+include: [spi-controller.yaml, "nxp,lpc-flexcomm.yaml"]

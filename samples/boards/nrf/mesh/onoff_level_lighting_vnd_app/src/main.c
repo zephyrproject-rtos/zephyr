@@ -16,7 +16,7 @@
 #include "transition.h"
 
 #if defined(CONFIG_MCUMGR)
-#include <mgmt/smp_bt.h>
+#include <mgmt/mcumgr/smp_bt.h>
 #include "smp_svr.h"
 #endif
 
@@ -48,14 +48,14 @@ static void light_default_status_init(void)
 {
 	/* Retrieve Range of Lightness */
 	if (ctl->light->range) {
-		ctl->light->range_max = (u16_t) (ctl->light->range >> 16);
-		ctl->light->range_min = (u16_t) ctl->light->range;
+		ctl->light->range_max = (uint16_t) (ctl->light->range >> 16);
+		ctl->light->range_min = (uint16_t) ctl->light->range;
 	}
 
 	/* Retrieve Range of Temperature */
 	if (ctl->temp->range) {
-		ctl->temp->range_max = (u16_t) (ctl->temp->range >> 16);
-		ctl->temp->range_min = (u16_t) ctl->temp->range;
+		ctl->temp->range_max = (uint16_t) (ctl->temp->range >> 16);
+		ctl->temp->range_min = (uint16_t) ctl->temp->range;
 	}
 
 	ctl->light->last = constrain_lightness(ctl->light->last);
@@ -94,14 +94,14 @@ static void light_default_status_init(void)
 void update_vnd_led_gpio(void)
 {
 #ifndef ONE_LED_ONE_BUTTON_BOARD
-	gpio_pin_set(led_device[1], DT_ALIAS_LED1_GPIOS_PIN,
+	gpio_pin_set(led_device[1], DT_GPIO_PIN(DT_ALIAS(led1), gpios),
 		     vnd_user_data.current == STATE_ON);
 #endif
 }
 
 void update_led_gpio(void)
 {
-	u8_t power, color;
+	uint8_t power, color;
 
 	power = 100 * ((float) ctl->light->current / 65535);
 	color = 100 * ((float) (ctl->temp->current - ctl->temp->range_min) /
@@ -109,12 +109,13 @@ void update_led_gpio(void)
 
 	printk("power-> %d, color-> %d\n", power, color);
 
-	gpio_pin_set(led_device[0], DT_ALIAS_LED0_GPIOS_PIN,
+	gpio_pin_set(led_device[0], DT_GPIO_PIN(DT_ALIAS(led0), gpios),
 		     ctl->light->current);
 #ifndef ONE_LED_ONE_BUTTON_BOARD
-	gpio_pin_set(led_device[2], DT_ALIAS_LED2_GPIOS_PIN, power < 50);
-
-	gpio_pin_set(led_device[3], DT_ALIAS_LED3_GPIOS_PIN, color < 50);
+	gpio_pin_set(led_device[2], DT_GPIO_PIN(DT_ALIAS(led2), gpios),
+		     power < 50);
+	gpio_pin_set(led_device[3], DT_GPIO_PIN(DT_ALIAS(led3), gpios),
+		     color < 50);
 #endif
 }
 

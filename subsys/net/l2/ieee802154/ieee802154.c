@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <net/net_core.h>
 #include <net/net_l2.h>
 #include <net/net_if.h>
+#include <net/capture.h>
 
 #include "ipv6.h"
 
@@ -29,7 +30,7 @@ LOG_MODULE_REGISTER(net_ieee802154, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #define BUF_TIMEOUT K_MSEC(50)
 
 /* No need to hold space for the FCS */
-static u8_t frame_buffer_data[IEEE802154_MTU - 2];
+static uint8_t frame_buffer_data[IEEE802154_MTU - 2];
 
 static struct net_buf frame_buf = {
 	.data = frame_buffer_data,
@@ -81,7 +82,8 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 	}
 
 	if (ieee802154_create_ack_frame(iface, pkt, mpdu->mhr.fs->sequence)) {
-		ieee802154_tx(iface, pkt, pkt->buffer);
+		ieee802154_tx(iface, IEEE802154_TX_MODE_DIRECT,
+			      pkt, pkt->buffer);
 	}
 
 	net_pkt_unref(pkt);
@@ -124,8 +126,8 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 					       size_t hdr_len)
 {
 	enum net_verdict verdict = NET_CONTINUE;
-	u32_t src;
-	u32_t dst;
+	uint32_t src;
+	uint32_t dst;
 
 	/* Upper IP stack expects the link layer address to be in
 	 * big endian format so we must swap it here.
@@ -188,6 +190,10 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 		return NET_DROP;
 	}
 
+	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_ACK) {
+		return NET_DROP;
+	}
+
 	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
 		return ieee802154_handle_beacon(iface, &mpdu,
 						net_pkt_ieee802154_lqi(pkt));
@@ -217,7 +223,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	pkt_hexdump(RX_PKT_TITLE " (with ll)", pkt, true);
 
-	hdr_len = (u8_t *)mpdu.payload - net_pkt_data(pkt);
+	hdr_len = (uint8_t *)mpdu.payload - net_pkt_data(pkt);
 	net_buf_pull(pkt->buffer, hdr_len);
 
 	return ieee802154_manage_recv_packet(iface, pkt, hdr_len);
@@ -229,7 +235,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_fragment_ctx f_ctx;
 	struct net_buf *buf;
-	u8_t ll_hdr_size;
+	uint8_t ll_hdr_size;
 	bool fragment;
 	int len;
 
@@ -245,6 +251,8 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	if (len < 0) {
 		return len;
 	}
+
+	net_capture_pkt(iface, pkt);
 
 	fragment = ieee802154_fragment_is_needed(pkt, ll_hdr_size);
 	ieee802154_fragment_ctx_init(&f_ctx, pkt, len, true);
@@ -276,7 +284,8 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
 		    ieee802154_get_hw_capabilities(iface) &
 		    IEEE802154_HW_CSMA) {
-			ret = ieee802154_tx(iface, pkt, &frame_buf);
+			ret = ieee802154_tx(iface, IEEE802154_TX_MODE_CSMA_CA,
+					    pkt, &frame_buf);
 		} else {
 			ret = ieee802154_radio_send(iface, pkt, &frame_buf);
 		}
@@ -327,14 +336,19 @@ NET_L2_INIT(IEEE802154_L2,
 void ieee802154_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const u8_t *mac = net_if_get_link_addr(iface)->addr;
-	s16_t tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
-	u8_t long_addr[8];
+	const uint8_t *mac = net_if_get_link_addr(iface)->addr;
+	int16_t tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
+	uint8_t long_addr[8];
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 
 	ctx->channel = IEEE802154_NO_CHANNEL;
 	ctx->flags = NET_L2_MULTICAST;
+
+	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START)) {
+		LOG_DBG("Interface auto start disabled.");
+		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	}
 
 	ieee802154_mgmt_init(iface);
 

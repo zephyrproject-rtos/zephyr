@@ -8,22 +8,6 @@ if BOARD_NUCLEO_F412ZG
 config BOARD
 	default "nucleo_f412zg"
 
-config UART_3
-	default y
-	depends on UART_CONSOLE
-
-config UART_6
-	default y
-	depends on SERIAL
-
-config I2C_1
-	default y
-	depends on I2C
-
-config SPI_1
-	default y
-	depends on SPI
-
 if NETWORKING
 
 config USB
@@ -36,9 +20,5 @@ config USB_DEVICE_NETWORK_ECM
 	default y
 
 endif # NETWORKING
-
-config PWM_STM32_2
-	default y
-	depends on PWM
 
 endif # BOARD_NUCLEO_F412ZG

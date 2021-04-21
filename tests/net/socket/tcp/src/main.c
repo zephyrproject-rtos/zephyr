@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define MAX_CONNS 5
 
 #define TCP_TEARDOWN_TIMEOUT K_SECONDS(1)
+#define THREAD_SLEEP 50 /* ms */
 
 static void test_bind(int sock, struct sockaddr *addr, socklen_t addrlen)
 {
@@ -41,6 +42,11 @@ static void test_connect(int sock, struct sockaddr *addr, socklen_t addrlen)
 	zassert_equal(connect(sock, addr, addrlen),
 		      0,
 		      "connect failed");
+
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		/* Let the connection proceed */
+		k_msleep(THREAD_SLEEP);
+	}
 }
 
 static void test_send(int sock, const void *buf, size_t len, int flags)
@@ -368,6 +374,67 @@ void test_v6_sendto_recvfrom_null_dest(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+void _test_recv_enotconn(int c_sock, int s_sock)
+{
+	char rx_buf[1] = {0};
+	int res;
+
+	test_listen(s_sock);
+
+	/* Check "client" socket, just created. */
+	res = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(res, -1, "recv() on not connected sock didn't fail");
+	zassert_equal(errno, ENOTCONN, "recv() on not connected sock didn't "
+				       "lead to ENOTCONN");
+
+	/* Check "server" socket, bound and listen()ed . */
+	res = recv(s_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(res, -1, "recv() on not connected sock didn't fail");
+	zassert_equal(errno, ENOTCONN, "recv() on not connected sock didn't "
+				       "lead to ENOTCONN");
+
+	test_close(s_sock);
+	test_close(c_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+void test_v4_recv_enotconn(void)
+{
+	/* For a stream socket, recv() without connect() or accept()
+	 * should lead to ENOTCONN.
+	 */
+	int c_sock, s_sock;
+	struct sockaddr_in c_saddr, s_saddr;
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	_test_recv_enotconn(c_sock, s_sock);
+}
+
+void test_v6_recv_enotconn(void)
+{
+	/* For a stream socket, recv() without connect() or accept()
+	 * should lead to ENOTCONN.
+	 */
+	int c_sock, s_sock;
+	struct sockaddr_in6 c_saddr, s_saddr;
+
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	_test_recv_enotconn(c_sock, s_sock);
+}
+
 static void calc_net_context(struct net_context *context, void *user_data)
 {
 	int *count = user_data;
@@ -424,7 +491,7 @@ void test_v4_accept_timeout(void)
 	/* Test if accept() will timeout properly */
 	int s_sock;
 	int new_sock;
-	u32_t tstamp;
+	uint32_t tstamp;
 	struct sockaddr_in s_saddr;
 	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
@@ -446,8 +513,444 @@ void test_v4_accept_timeout(void)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
+void test_so_type(void)
+{
+	struct sockaddr_in bind_addr4;
+	struct sockaddr_in6 bind_addr6;
+	int sock1, sock2, rv;
+	int optval;
+	socklen_t optlen = sizeof(optval);
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &sock1, &bind_addr4);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &sock2, &bind_addr6);
+
+	rv = getsockopt(sock1, SOL_SOCKET, SO_TYPE, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, SOCK_STREAM, "getsockopt got invalid type");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	rv = getsockopt(sock2, SOL_SOCKET, SO_TYPE, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, SOCK_STREAM, "getsockopt got invalid type");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	test_close(sock1);
+	test_close(sock2);
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+void test_so_protocol(void)
+{
+	struct sockaddr_in bind_addr4;
+	struct sockaddr_in6 bind_addr6;
+	int sock1, sock2, rv;
+	int optval;
+	socklen_t optlen = sizeof(optval);
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &sock1, &bind_addr4);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &sock2, &bind_addr6);
+
+	rv = getsockopt(sock1, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, IPPROTO_TCP, "getsockopt got invalid protocol");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	rv = getsockopt(sock2, SOL_SOCKET, SO_PROTOCOL, &optval, &optlen);
+	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
+	zassert_equal(optval, IPPROTO_TCP, "getsockopt got invalid protocol");
+	zassert_equal(optlen, sizeof(optval), "getsockopt got invalid size");
+
+	test_close(sock1);
+	test_close(sock2);
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+void test_v4_so_rcvtimeo(void)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+
+	int rv;
+	uint32_t start_time, time_diff;
+	ssize_t recved = 0;
+	char rx_buf[30] = {0};
+
+	struct timeval optval = {
+		.tv_sec = 2,
+		.tv_usec = 500000,
+	};
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+
+	rv = setsockopt(c_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	optval.tv_usec = 0;
+	rv = setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	start_time = k_uptime_get_32();
+	recved = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2500, "Expected timeout after 2500ms but "
+			"was %dms", time_diff);
+
+	start_time = k_uptime_get_32();
+	recved = recv(new_sock, rx_buf, sizeof(rx_buf), 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2000, "Expected timeout after 2000ms but "
+			"was %dms", time_diff);
+
+	test_close(c_sock);
+	test_eof(new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+void test_v6_so_rcvtimeo(void)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 c_saddr;
+	struct sockaddr_in6 s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+
+	int rv;
+	uint32_t start_time, time_diff;
+	ssize_t recved = 0;
+	char rx_buf[30] = {0};
+
+	struct timeval optval = {
+		.tv_sec = 2,
+		.tv_usec = 500000,
+	};
+
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+
+	rv = setsockopt(c_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	optval.tv_usec = 0;
+	rv = setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &optval,
+			sizeof(optval));
+	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+
+	start_time = k_uptime_get_32();
+	recved = recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2500, "Expected timeout after 2500ms but "
+			"was %dms", time_diff);
+
+	start_time = k_uptime_get_32();
+	recved = recv(new_sock, rx_buf, sizeof(rx_buf), 0);
+	time_diff = k_uptime_get_32() - start_time;
+
+	zassert_equal(recved, -1, "Unexpected return code");
+	zassert_equal(errno, EAGAIN, "Unexpected errno value: %d", errno);
+	zassert_true(time_diff >= 2000, "Expected timeout after 2000ms but "
+			"was %dms", time_diff);
+
+	test_close(c_sock);
+	test_eof(new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+struct test_msg_waitall_data {
+	struct k_work_delayable tx_work;
+	int sock;
+	const uint8_t *data;
+	size_t offset;
+	int retries;
+};
+
+static void test_msg_waitall_tx_work_handler(struct k_work *work)
+{
+	struct test_msg_waitall_data *test_data =
+		CONTAINER_OF(work, struct test_msg_waitall_data, tx_work);
+
+	if (test_data->retries > 0) {
+		test_send(test_data->sock, test_data->data + test_data->offset, 1, 0);
+		test_data->offset++;
+		test_data->retries--;
+		k_work_reschedule(&test_data->tx_work, K_MSEC(10));
+	}
+}
+
+void test_v4_msg_waitall(void)
+{
+	struct test_msg_waitall_data test_data = {
+		.data = TEST_STR_SMALL,
+	};
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	int ret;
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+	struct timeval timeo_optval = {
+		.tv_sec = 0,
+		.tv_usec = 100000,
+	};
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "Wrong addrlen");
+
+
+	/* Regular MSG_WAITALL - make sure recv returns only after
+	 * requested amount is received.
+	 */
+	test_data.offset = 0;
+	test_data.retries = sizeof(rx_buf);
+	test_data.sock = c_sock;
+	k_work_init_delayable(&test_data.tx_work,
+			      test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf), MSG_WAITALL);
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf),
+			  "Invalid data received");
+	k_work_cancel_delayable(&test_data.tx_work);
+
+	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
+	 * received so far
+	 */
+	ret = setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval,
+			 sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	test_data.offset = 0;
+	test_data.retries = sizeof(rx_buf) - 1;
+	test_data.sock = c_sock;
+	k_work_init_delayable(&test_data.tx_work,
+			      test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf) - 1, MSG_WAITALL);
+	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
+			  "Invalid data received");
+	k_work_cancel_delayable(&test_data.tx_work);
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+}
+
+void test_v6_msg_waitall(void)
+{
+	struct test_msg_waitall_data test_data = {
+		.data = TEST_STR_SMALL,
+	};
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in6 c_saddr;
+	struct sockaddr_in6 s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+	int ret;
+	uint8_t rx_buf[sizeof(TEST_STR_SMALL) - 1] = { 0 };
+	struct timeval timeo_optval = {
+		.tv_sec = 0,
+		.tv_usec = 100000,
+	};
+
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(CONFIG_NET_CONFIG_MY_IPV6_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "Wrong addrlen");
+
+	/* Regular MSG_WAITALL - make sure recv returns only after
+	 * requested amount is received.
+	 */
+	test_data.offset = 0;
+	test_data.retries = sizeof(rx_buf);
+	test_data.sock = c_sock;
+	k_work_init_delayable(&test_data.tx_work,
+			      test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf), MSG_WAITALL);
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf),
+			  "Invalid data received");
+	k_work_cancel_delayable(&test_data.tx_work);
+
+	/* MSG_WAITALL + SO_RCVTIMEO - make sure recv returns the amount of data
+	 * received so far
+	 */
+	ret = setsockopt(new_sock, SOL_SOCKET, SO_RCVTIMEO, &timeo_optval,
+			 sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	test_data.offset = 0;
+	test_data.retries = sizeof(rx_buf) - 1;
+	test_data.sock = c_sock;
+	k_work_init_delayable(&test_data.tx_work,
+			      test_msg_waitall_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	ret = recv(new_sock, rx_buf, sizeof(rx_buf) - 1, MSG_WAITALL);
+	zassert_equal(ret, sizeof(rx_buf) - 1, "Invalid length received");
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, sizeof(rx_buf) - 1,
+			  "Invalid data received");
+	k_work_cancel_delayable(&test_data.tx_work);
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+}
+
+#ifdef CONFIG_USERSPACE
+#define CHILD_STACK_SZ		(2048 + CONFIG_TEST_EXTRA_STACKSIZE)
+struct k_thread child_thread;
+K_THREAD_STACK_DEFINE(child_stack, CHILD_STACK_SZ);
+ZTEST_BMEM volatile int result;
+
+static void child_entry(void *p1, void *p2, void *p3)
+{
+	int sock = POINTER_TO_INT(p1);
+
+	result = close(sock);
+}
+
+static void spawn_child(int sock)
+{
+	k_thread_create(&child_thread, child_stack,
+			K_THREAD_STACK_SIZEOF(child_stack), child_entry,
+			INT_TO_POINTER(sock), NULL, NULL, 0, K_USER,
+			K_FOREVER);
+}
+#endif
+
+void test_socket_permission(void)
+{
+#ifdef CONFIG_USERSPACE
+	int sock;
+	struct sockaddr_in saddr;
+	struct net_context *ctx;
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &sock, &saddr);
+
+	ctx = zsock_get_context_object(sock);
+	zassert_not_null(ctx, "zsock_get_context_object() failed");
+
+	/* Spawn a child thread which doesn't inherit our permissions,
+	 * it will try to perform a socket operation and fail due to lack
+	 * of permissions on it.
+	 */
+	spawn_child(sock);
+	k_thread_start(&child_thread);
+	k_thread_join(&child_thread, K_FOREVER);
+
+	zassert_not_equal(result, 0, "child succeeded with no permission");
+
+	/* Now spawn the same child thread again, but this time we grant
+	 * permission on the net_context before we start it, and the
+	 * child should now succeed.
+	 */
+	spawn_child(sock);
+	k_object_access_grant(ctx, &child_thread);
+	k_thread_start(&child_thread);
+	k_thread_join(&child_thread, K_FOREVER);
+
+	zassert_equal(result, 0, "child failed with permissions");
+#else
+	ztest_test_skip();
+#endif /* CONFIG_USERSPACE */
+}
+
 void test_main(void)
 {
+#ifdef CONFIG_USERSPACE
+	/* ztest thread inherit permissions from main */
+	k_thread_access_grant(k_current_get(), &child_thread, child_stack);
+#endif
+
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)) {
+		k_thread_priority_set(k_current_get(),
+				K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1));
+	} else {
+		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(8));
+	}
+
 	ztest_test_suite(
 		socket_tcp,
 		ztest_user_unit_test(test_v4_send_recv),
@@ -456,8 +959,18 @@ void test_main(void)
 		ztest_user_unit_test(test_v6_sendto_recvfrom),
 		ztest_user_unit_test(test_v4_sendto_recvfrom_null_dest),
 		ztest_user_unit_test(test_v6_sendto_recvfrom_null_dest),
+		ztest_user_unit_test(test_v4_recv_enotconn),
+		ztest_user_unit_test(test_v6_recv_enotconn),
 		ztest_unit_test(test_open_close_immediately),
-		ztest_user_unit_test(test_v4_accept_timeout));
+		ztest_user_unit_test(test_v4_accept_timeout),
+		ztest_unit_test(test_so_type),
+		ztest_unit_test(test_so_protocol),
+		ztest_unit_test(test_v4_so_rcvtimeo),
+		ztest_unit_test(test_v6_so_rcvtimeo),
+		ztest_unit_test(test_v4_msg_waitall),
+		ztest_unit_test(test_v6_msg_waitall),
+		ztest_user_unit_test(test_socket_permission)
+		);
 
 	ztest_run_test_suite(socket_tcp);
 }

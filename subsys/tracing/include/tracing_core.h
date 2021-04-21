@@ -31,7 +31,7 @@ bool is_tracing_enabled(void);
  * @param data Tracing buffer address.
  * @param length Tracing buffer length.
  */
-void tracing_buffer_handle(u8_t *data, u32_t length);
+void tracing_buffer_handle(uint8_t *data, uint32_t length);
 
 /**
  * @brief Handle tracing packet drop.
@@ -44,7 +44,7 @@ void tracing_packet_drop_handle(void);
  * @param buf Tracing command buffer address.
  * @param length Tracing command buffer length.
  */
-void tracing_cmd_handle(u8_t *buf, u32_t length);
+void tracing_cmd_handle(uint8_t *buf, uint32_t length);
 
 /**
  * @brief Trigger tracing thread to run after every first put.

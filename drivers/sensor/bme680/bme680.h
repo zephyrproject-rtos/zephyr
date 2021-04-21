@@ -117,54 +117,54 @@
 #define BME680_CONFIG_VAL               BME680_FILTER
 #define BME680_CTRL_GAS_1_VAL   0x10
 
-#define BME680_CONCAT_BYTES(msb, lsb) (((u16_t)msb << 8) | (u16_t)lsb)
+#define BME680_CONCAT_BYTES(msb, lsb) (((uint16_t)msb << 8) | (uint16_t)lsb)
 
 struct bme680_data {
-	struct device *i2c_master;
-	u16_t i2c_slave_addr;
+	const struct device *i2c_master;
+	uint16_t i2c_slave_addr;
 
 	/* Compensation parameters. */
-	u16_t par_h1;
-	u16_t par_h2;
-	s8_t par_h3;
-	s8_t par_h4;
-	s8_t par_h5;
-	u8_t par_h6;
-	s8_t par_h7;
-	s8_t par_gh1;
-	s16_t par_gh2;
-	s8_t par_gh3;
-	u16_t par_t1;
-	s16_t par_t2;
-	s8_t par_t3;
-	u16_t par_p1;
-	s16_t par_p2;
-	s8_t par_p3;
-	s16_t par_p4;
-	s16_t par_p5;
-	s8_t par_p6;
-	s8_t par_p7;
-	s16_t par_p8;
-	s16_t par_p9;
-	u8_t par_p10;
-	u8_t res_heat_range;
-	s8_t res_heat_val;
-	s8_t range_sw_err;
+	uint16_t par_h1;
+	uint16_t par_h2;
+	int8_t par_h3;
+	int8_t par_h4;
+	int8_t par_h5;
+	uint8_t par_h6;
+	int8_t par_h7;
+	int8_t par_gh1;
+	int16_t par_gh2;
+	int8_t par_gh3;
+	uint16_t par_t1;
+	int16_t par_t2;
+	int8_t par_t3;
+	uint16_t par_p1;
+	int16_t par_p2;
+	int8_t par_p3;
+	int16_t par_p4;
+	int16_t par_p5;
+	int8_t par_p6;
+	int8_t par_p7;
+	int16_t par_p8;
+	int16_t par_p9;
+	uint8_t par_p10;
+	uint8_t res_heat_range;
+	int8_t res_heat_val;
+	int8_t range_sw_err;
 
 	/* Calculated sensor values. */
-	s32_t calc_temp;
-	u32_t calc_press;
-	u32_t calc_humidity;
-	u32_t calc_gas_resistance;
+	int32_t calc_temp;
+	uint32_t calc_press;
+	uint32_t calc_humidity;
+	uint32_t calc_gas_resistance;
 
 	/* Additional information */
-	u8_t new_data;
-	u8_t heatr_stab;
+	uint8_t new_data;
+	uint8_t heatr_stab;
 
 	/* Carryover between temperature and pressure/humidity compensation. */
-	s32_t t_fine;
+	int32_t t_fine;
 
-	u8_t chip_id;
+	uint8_t chip_id;
 };
 
 #endif /* __SENSOR_BME680_H__ */

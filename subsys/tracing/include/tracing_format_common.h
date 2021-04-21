@@ -20,16 +20,8 @@ extern "C" {
  */
 typedef struct {
 	int status;
-	u32_t length;
+	uint32_t length;
 } tracing_ctx_t;
-
-#ifdef CONFIG_NEWLIB_LIBC
-typedef int (*str_put_func_t)(int c, void *ctx);
-extern void z_vprintk(str_put_func_t out, void *ctx,
-		      const char *fmt, va_list ap);
-#else
-extern int z_prf(int (*func)(), void *dest, char *format, va_list vargs);
-#endif
 
 /**
  * @brief Put string format tracing message to tracing buffer.
@@ -49,7 +41,7 @@ bool tracing_format_string_put(const char *str, va_list args);
  *
  * @return true if put tracing message to tracing buffer successfully.
  */
-bool tracing_format_raw_data_put(u8_t *data, u32_t size);
+bool tracing_format_raw_data_put(uint8_t *data, uint32_t size);
 
 /**
  * @brief Put tracing_data format message to tracing buffer.
@@ -59,7 +51,7 @@ bool tracing_format_raw_data_put(u8_t *data, u32_t size);
  *
  * @return true if put tracing message to tracing buffer successfully.
  */
-bool tracing_format_data_put(tracing_data_t *tracing_data_array, u32_t count);
+bool tracing_format_data_put(tracing_data_t *tracing_data_array, uint32_t count);
 
 #ifdef __cplusplus
 }

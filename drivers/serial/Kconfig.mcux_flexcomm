@@ -3,16 +3,10 @@
 # Copyright 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig UART_MCUX_FLEXCOMM
+config UART_MCUX_FLEXCOMM
 	bool "MCUX FLEXCOMM UART driver"
 	depends on HAS_MCUX_FLEXCOMM
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the MCUX USART driver.
-
-config UART_MCUX_FLEXCOMM_0
-	bool "USART 0"
-	depends on UART_MCUX_FLEXCOMM
-	help
-	  Enable USART 0.

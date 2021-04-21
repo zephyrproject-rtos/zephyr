@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+config HAS_XMCLIB
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_XMC
+
+if HAS_XMCLIB
+
+config HAS_XMCLIB_UART
+	bool
+	help
+	  Enable XMCLIB Universal asynchronous receiver transmitter (UART)
+
+endif # HAS_XMCLIB

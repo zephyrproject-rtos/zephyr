@@ -32,7 +32,7 @@ config DW_ISR_TBL_OFFSET
 
 config DW_ICTL_INIT_PRIORITY
 	int "Init priority for DW interrupt controller"
-	default 60
+	default 48
 	help
 	  DesignWare Interrupt Controller initialization priority.
 

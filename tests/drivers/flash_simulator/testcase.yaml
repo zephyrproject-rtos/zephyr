@@ -1,4 +1,16 @@
 tests:
   drivers.flash.flash_simulator:
-    platform_whitelist: qemu_x86
+    platform_allow: qemu_x86 native_posix native_posix_64
+    tags: driver
+  drivers.flash.flash_simulator.qemu_erase_value_0x00:
+    extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
+    platform_allow: qemu_x86
+    tags: driver
+  drivers.flash.flash_simulator.posix_erase_value_0x00:
+    extra_args: DTC_OVERLAY_FILE=boards/native_posix_ev_0x00.overlay
+    platform_allow: native_posix
+    tags: driver
+  drivers.flash.flash_simulator.posix_64_erase_value_0x00:
+    extra_args: DTC_OVERLAY_FILE=boards/native_posix_64_ev_0x00.overlay
+    platform_allow: native_posix_64
     tags: driver

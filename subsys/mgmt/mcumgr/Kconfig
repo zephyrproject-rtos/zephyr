@@ -1,0 +1,375 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCUMGR
+	bool "mcumgr Support"
+	select NET_BUF
+	select TINYCBOR
+	help
+	  This option enables the mcumgr management library.
+
+if MCUMGR
+
+module = MCUMGR
+module-str = mcumgr
+source "subsys/logging/Kconfig.template.log_config"
+
+
+config APP_LINK_WITH_MCUMGR
+	bool "Link 'app' with MCUMGR"
+	default y
+	help
+	  Add MCUMGR header files to the 'app' include path. It may be
+	  disabled if the include paths for MCUMGR are causing aliasing
+	  issues for 'app'.
+
+config MGMT_CBORATTR_MAX_SIZE
+	int "The maximum size of a CBOR attribute during decoding"
+        default 512
+        help
+          The maximum size of a CBOR attribute during decoding
+
+menu "Command Handlers"
+menuconfig MCUMGR_CMD_FS_MGMT
+	bool "Enable mcumgr handlers for file management (insecure)"
+	depends on FILE_SYSTEM
+	help
+	  Enables mcumgr handlers for file management
+
+	  This option allows mcumgr clients to access anything in the
+	  file system, including application-stored secrets like
+	  private keys. Use of this feature in production is strongly
+	  discouraged.
+
+if MCUMGR_CMD_FS_MGMT
+
+choice FS_MGMT_MAX_FILE_SIZE
+	prompt "Maximum file size that could be uploaded/downloaded"
+	default FS_MGMT_MAX_FILE_SIZE_64KB
+	help
+	  Maximum file size that will be allowed to be downloaded from
+	  device.
+	  This option decides on number of bytes that are reserved in
+	  CBOR frame for storage of offset/size of file downloaded.
+
+config FS_MGMT_MAX_FILE_SIZE_64KB
+	bool "<= 64KB"
+	help
+	  Files that have size up to 64KB require 1 to 3 bytes to encode
+	  size/offset within CBOR frame with file chunk.
+
+config FS_MGMT_MAX_FILE_SIZE_4GB
+	bool "<= 4GB"
+	help
+	  Files that have size up to 4GB require 1 to 5 bytes to encode
+	  size/offset within CBOR frame with file chunk.
+
+endchoice
+
+config FS_MGMT_MAX_OFFSET_LEN
+	int
+	default	3 if FS_MGMT_MAX_FILE_SIZE_64KB
+	default 5 if FS_MGMT_MAX_FILE_SIZE_4GB
+	help
+	  Maximal byte length of encoded offset/size, within transferred
+	  CBOR frame containing chunk of downloaded file.
+	  This value affects how much of data will fit into download buffer,
+	  as it selects sizes of fields within headers.
+	  NOTE: This option is hidden intentionally as it is intended
+	  to be assigned from limited set of allowed values, depending on
+	  the selection made in FS_MGMT_MAX_FILE_SIZE menu.
+
+config FS_MGMT_UL_CHUNK_SIZE
+	int "Maximum chunk size for file uploads"
+	default 512
+	help
+	  Limits the maximum chunk size for file uploads, in bytes.  A buffer of
+	  this size gets allocated on the stack during handling of a file upload command.
+
+config FS_MGMT_DL_CHUNK_SIZE_LIMIT
+	bool "Enable setting custom size of download file chunk"
+	help
+	  By default file chunk, that will be read off storage and fit into
+	  mcumgr frame, is automatically calculated to fit into buffer
+	  of size MCUGMR_BUF_SIZE with all headers.
+	  Enabling this option allows to set MAXIMUM value that will be
+	  allowed for such chunk.
+	  Look inside fs_mgmt_config.h for details.
+
+if FS_MGMT_DL_CHUNK_SIZE_LIMIT
+
+config FS_MGMT_DL_CHUNK_SIZE
+	int "Maximum chunk size for file downloads"
+	range 65 MCUMGR_BUF_SIZE
+	default MCUMGR_BUF_SIZE
+	help
+	  Sets the MAXIMUM size of chunk which will be rounded down to
+	  number of bytes that, with all the required headers, will fit
+	  into MCUMGR_BUF_SIZE. This means that actual value might be lower
+	  then selected, in which case compiler warning will be issued.
+	  Look inside fs_mgmt_config.h for details.
+	  Note that header sizes are affected by FS_MGMT_MAX_OFFSET_LEN.
+
+endif
+
+
+config FS_MGMT_PATH_SIZE
+	int "Maximum file path length"
+	default 64
+	help
+	  Limits the maximum path length for file operations, in bytes.  A buffer
+	  of this size gets allocated on the stack during handling of file upload
+	  and download commands.
+endif
+
+config MCUMGR_CMD_SHELL_MGMT
+	bool "Enable mcumgr handlers for shell management"
+	depends on SHELL
+	select SHELL_BACKEND_DUMMY
+	help
+	  Enables mcumgr handlers for shell management. The handler will utilize
+	  the dummy backend to execute shell commands and capture the output to
+	  an internal memory buffer. This way, there is no interaction with
+	  physical interfaces outside of the scope of the user.
+	  It is possible to use additional shell backends in coordination
+	  with this handler and they will not interfere.
+
+menuconfig MCUMGR_CMD_IMG_MGMT
+	bool "Enable mcumgr handlers for image management"
+	select FLASH
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	select IMG_MANAGER
+	help
+	  Enables mcumgr handlers for image management
+
+if MCUMGR_CMD_IMG_MGMT
+config IMG_MGMT_UL_CHUNK_SIZE
+	int "Maximum chunk size for image uploads"
+	default 512
+	depends on MCUMGR_CMD_IMG_MGMT
+	help
+	  Limits the maximum chunk size for image uploads, in bytes.  A buffer of
+	  this size gets allocated on the stack during handling of a image upload
+	  command.
+
+
+config IMG_MGMT_VERBOSE_ERR
+	bool "Verbose logging when uploading a new image"
+	help
+	  Enable verbose logging during a firmware upgrade.
+
+config IMG_MGMT_DUMMY_HDR
+	bool "Return dummy image header data for imgr functions"
+	help
+	  Returns dummy image header data for imgr functions,
+	  useful when there are no images present, Eg: unit tests.
+
+config IMG_MGMT_REJECT_DIRECT_XIP_MISMATCHED_SLOT
+	bool "Reject Direct-XIP applications with mismatched address"
+	help
+	  When enabled, the mcumgr will compare base address of application,
+	  encoded into .bin file header with use of imgtool, on upload and will
+	  reject binaries that would not be able to start from available
+	  Direct-XIP address.
+	  The base address can be set, to an image binary header, with imgtool,
+	  using the --rom-fixed command line option.
+
+endif
+
+
+menuconfig MCUMGR_CMD_OS_MGMT
+	bool "Enable mcumgr handlers for OS management"
+	select REBOOT
+	help
+	  Enables mcumgr handlers for OS management
+
+if MCUMGR_CMD_OS_MGMT
+config OS_MGMT_RESET_MS
+	int "Delay before executing reset command (ms)"
+	default 250
+	help
+	  When a reset command is received, the system waits this many milliseconds
+	  before performing the reset.  This delay allows time for the mcumgr
+	  response to be delivered.
+
+config OS_MGMT_TASKSTAT
+	bool "Support for taskstat command"
+	default y
+
+config OS_MGMT_ECHO
+	bool "Support for echo command"
+	default y
+endif
+
+
+menuconfig MCUMGR_CMD_STAT_MGMT
+	bool "Enable mcumgr handlers for statistics management"
+	depends on STATS
+	help
+	  Enables mcumgr handlers for statistics management.
+
+config STAT_MGMT_MAX_NAME_LEN
+	int "Maximum stat group name length"
+	default 32
+	depends on MCUMGR_CMD_STAT_MGMT
+	help
+	  Limits the maximum stat group name length in mcumgr requests, in bytes.
+	  A buffer of this size gets allocated on the stack during handling of all
+	  stat read commands.  If a stat group's name exceeds this limit, it will
+	  be impossible to retrieve its values with a stat show command.
+
+endmenu
+
+config MCUMGR_SMP_BT
+	bool "Bluetooth mcumgr SMP transport"
+	select BT
+	select BT_PERIPHERAL
+	select BT_GATT_DYNAMIC_DB
+	help
+	  Enables handling of SMP commands received over Bluetooth.
+
+config MCUMGR_SMP_BT_AUTHEN
+	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
+	depends on MCUMGR_SMP_BT
+	select BT_SMP
+	default y
+	help
+	  Enables encrypted and authenticated connection requirement to
+	  Bluetooth SMP transport.
+
+
+config MCUMGR_SMP_SHELL
+	bool "Shell mcumgr SMP transport"
+	select SHELL
+	select SHELL_BACKEND_SERIAL
+	select BASE64
+	help
+	  Enables handling of SMP commands received over shell.  This allows
+	  the shell to be use for both mcumgr commands and shell commands.
+
+if MCUMGR_SMP_SHELL
+
+config MCUMGR_SMP_SHELL_MTU
+	int "Shell SMP MTU"
+	default 256
+	help
+	  Maximum size of SMP frames sent and received over shell.  This value
+	  must satisfy the following relation:
+	  MCUMGR_SMP_SHELL_MTU <= MCUMGR_BUF_SIZE + 2
+
+config MCUMGR_SMP_SHELL_RX_BUF_COUNT
+	int "Shell SMP RX buffer count"
+	default 2
+	help
+	  Number of buffers used for receiving SMP fragments over shell.
+
+endif # MCUMGR_SMP_SHELL
+
+config MCUMGR_SMP_UART
+	bool "UART mcumgr SMP transport"
+	select UART_MCUMGR
+	select BASE64
+	help
+	  Enables handling of SMP commands received over UART.  This is a
+	  lightweight alternative to MCUMGR_SMP_SHELL.  It allows mcumgr
+	  commands to be received over UART without requiring an additional
+	  thread.
+
+config MCUMGR_SMP_UART_MTU
+	int "UART SMP MTU"
+	default 256
+	depends on MCUMGR_SMP_UART
+	help
+	  Maximum size of SMP frames sent and received over UART, in bytes.
+	  This value must satisfy the following relation:
+	  MCUMGR_SMP_UART_MTU <= MCUMGR_BUF_SIZE + 2
+
+
+config MCUMGR_SMP_UDP
+	bool "UDP mcumgr SMP transport"
+	select NETWORKING
+	select NET_UDP
+	select NET_SOCKETS
+	select NET_SOCKETS_POSIX_NAMES
+	help
+	  Enables handling of SMP commands received over UDP.
+	  Will start a thread for listening on the configured UDP port.
+
+if MCUMGR_SMP_UDP
+config MCUMGR_SMP_UDP_IPV4
+	bool "UDP SMP using IPv4"
+	depends on NET_IPV4
+	default y
+	help
+	  Enable SMP UDP using IPv4 addressing.
+	  Can be enabled alongside IPv6 addressing.
+
+config MCUMGR_SMP_UDP_IPV6
+	bool "UDP SMP using IPv6"
+	depends on NET_IPV6
+	help
+	  Enable SMP UDP using IPv6 addressing.
+	  Can be enabled alongside IPv4 addressing.
+
+config MCUMGR_SMP_UDP_PORT
+	int "UDP SMP port"
+	default 1337
+	help
+	  UDP port that SMP server will listen for SMP commands on.
+
+config MCUMGR_SMP_UDP_STACK_SIZE
+	int "UDP SMP stack size"
+	default 512
+	help
+	  Stack size of the SMP UDP listening thread
+
+config MCUMGR_SMP_UDP_THREAD_PRIO
+	int "UDP SMP thread priority"
+	default 0
+	help
+	  Scheduling priority of the SMP UDP listening thread.
+
+config MCUMGR_SMP_UDP_MTU
+	int "UDP SMP MTU"
+	default 1500
+	help
+	  Maximum size of SMP frames sent and received over UDP, in bytes.
+	  This value must satisfy the following relation:
+	  MCUMGR_SMP_UDP_MTU <= MCUMGR_BUF_SIZE + SMP msg overhead - address size
+	  where address size is determined by IPv4/IPv6 selection.
+
+endif # MCUMGR_SMP_UDP
+
+config MCUMGR_BUF_COUNT
+	int "Number of mcumgr buffers"
+	default 2 if MCUMGR_SMP_UDP
+	default 4
+	help
+	  The number of net_bufs to allocate for mcumgr.  These buffers are
+	  used for both requests and responses.
+
+config MCUMGR_BUF_SIZE
+	int "Size of each mcumgr buffer"
+	default 2048 if MCUMGR_SMP_UDP
+	default 384
+	help
+	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
+	  the following relation:
+	  MCUMGR_BUF_SIZE >= transport-specific-MTU + transport-overhead
+
+config MCUMGR_BUF_USER_DATA_SIZE
+	int "Size of mcumgr buffer user data"
+	default 24 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV6
+	default 8 if MCUMGR_SMP_UDP && MCUMGR_SMP_UDP_IPV4
+	default 4
+	help
+	  The size, in bytes, of user data to allocate for each mcumgr buffer.
+
+	  Different mcumgr transports impose different requirements for this
+	  setting. A value of 4 is sufficient for UART, shell, and bluetooth.
+	  For UDP, the userdata must be large enough to hold a IPv4/IPv6 address.
+
+	  Note that CONFIG_NET_BUF_USER_DATA_SIZE must be at least as big as
+	  MCUMGR_BUF_USER_DATA_SIZE.
+endif # MCUMGR

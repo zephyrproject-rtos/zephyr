@@ -1,4 +1,4 @@
-.. _entropy_interface:
+.. _entropy_api:
 
 Entropy
 #######

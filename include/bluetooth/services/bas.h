@@ -10,7 +10,7 @@
 
 /**
  * @brief Battery Service (BAS)
- * @defgroup bt_gatt_bas Battery Service (BAS)
+ * @defgroup bt_bas Battery Service (BAS)
  * @ingroup bluetooth
  * @{
  *
@@ -30,7 +30,7 @@ extern "C" {
  *
  *  @return The battery level in percent.
  */
-u8_t bt_gatt_bas_get_battery_level(void);
+uint8_t bt_bas_get_battery_level(void);
 
 /** @brief Update battery level value.
  *
@@ -41,7 +41,7 @@ u8_t bt_gatt_bas_get_battery_level(void);
  *
  *  @return Zero in case of success and error code in case of error.
  */
-int bt_gatt_bas_set_battery_level(u8_t level);
+int bt_bas_set_battery_level(uint8_t level);
 
 
 #ifdef __cplusplus

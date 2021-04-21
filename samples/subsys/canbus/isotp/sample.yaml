@@ -9,3 +9,4 @@ tests:
       type: one_line
       regex:
         - "(.*)Got 248 bytes in total"
+      fixture: fixture_can_two_boards

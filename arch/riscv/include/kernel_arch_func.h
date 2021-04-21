@@ -24,8 +24,6 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-	_kernel.irq_stack =
-		Z_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
 }
 
 static ALWAYS_INLINE void
@@ -39,8 +37,13 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 
 static inline bool arch_is_in_isr(void)
 {
-	return _kernel.nested != 0U;
+	return _kernel.cpus[0].nested != 0U;
 }
+
+extern FUNC_NORETURN void z_riscv_userspace_enter(k_thread_entry_t user_entry,
+						 void *p1, void *p2, void *p3,
+						 uint32_t stack_end,
+						 uint32_t stack_start);
 
 #ifdef CONFIG_IRQ_OFFLOAD
 int z_irq_do_offload(void);

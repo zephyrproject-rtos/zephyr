@@ -21,7 +21,9 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		pwm-led0 = &pwm_led0;
 		sw0 = &user_button;
+		i2c-0 = &sercom2;
 	};
 
 	leds {
@@ -29,6 +31,13 @@
 		led0: led_0 {
 			gpios = <&portb 30 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 0>;
 		};
 	};
 
@@ -45,6 +54,14 @@
 	clock-frequency = <48000000>;
 };
 
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	/* Gives a maximum period of 1.4s */
+	prescaler = <4>;
+	#pwm-cells = <1>;
+};
+
 &sercom0 {
 	status = "okay";
 	compatible = "atmel,sam0-uart";
@@ -59,6 +76,14 @@
 	current-speed = <115200>;
 	rxpo = <3>;
 	txpo = <0>;
+};
+
+&sercom2 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &sercom3 {

@@ -39,11 +39,20 @@ config VEXRISCV_LITEX_IRQ
 	help
 	  IRQ implementation for LiteX VexRiscv
 
+config LEON_IRQMP
+	bool "GRLIB IRQMP interrupt controller"
+	default y
+	depends on SOC_SPARC_LEON
+	help
+	  GRLIB IRQMP and IRQAMP
+
 source "drivers/interrupt_controller/Kconfig.multilevel"
 
 source "drivers/interrupt_controller/Kconfig.loapic"
 
 source "drivers/interrupt_controller/Kconfig.dw"
+
+source "drivers/interrupt_controller/Kconfig.it8xxx2"
 
 source "drivers/interrupt_controller/Kconfig.stm32"
 
@@ -54,5 +63,9 @@ source "drivers/interrupt_controller/Kconfig.rv32m1"
 source "drivers/interrupt_controller/Kconfig.sam0"
 
 source "drivers/interrupt_controller/Kconfig.gic"
+
+source "drivers/interrupt_controller/Kconfig.npcx"
+
+source "drivers/interrupt_controller/Kconfig.intel_vtd"
 
 endmenu

@@ -22,7 +22,7 @@
 
 #define ONE_SECOND		(MSEC_PER_SEC)
 #define ONE_SECOND_ALIGNED	\
-	(u32_t)(k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(ONE_SECOND) + _TICK_ALIGN))
+	(uint32_t)(k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(ONE_SECOND) + _TICK_ALIGN))
 
 #if defined(CONFIG_SOC_XILINX_ZYNQMP)
 /*
@@ -78,7 +78,7 @@ static void test_objects_init(void)
 
 static void align_to_tick_boundary(void)
 {
-	u32_t tick;
+	uint32_t tick;
 
 	tick = k_uptime_get_32();
 	while (k_uptime_get_32() == tick) {
@@ -95,17 +95,17 @@ static void align_to_tick_boundary(void)
  * measurement. Qemu at least will leak the external world's clock
  * rate into the simulator when the host is under load.
  */
-static int sleep_time_valid(u32_t start, u32_t end, u32_t dur)
+static int sleep_time_valid(uint32_t start, uint32_t end, uint32_t dur)
 {
-	u32_t dt = end - start;
+	uint32_t dt = end - start;
 
 	return dt >= dur && dt <= (dur + TICK_MARGIN);
 }
 
 static void test_thread(int arg1, int arg2)
 {
-	u32_t start_tick;
-	u32_t end_tick;
+	uint32_t start_tick;
+	uint32_t end_tick;
 
 	k_sem_take(&test_thread_sem, K_FOREVER);
 
@@ -113,7 +113,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_sleep(K_SECONDS(1));
 	end_tick = k_uptime_get_32();
 
 	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED)) {
@@ -128,7 +128,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_sleep(K_SECONDS(1));
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > TICK_MARGIN) {
@@ -142,7 +142,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_sleep(K_SECONDS(1));
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > TICK_MARGIN) {
@@ -156,7 +156,7 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);	/* Task will execute */
+	k_sleep(K_SECONDS(1));	/* Task will execute */
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > TICK_MARGIN) {
@@ -167,7 +167,7 @@ static void test_thread(int arg1, int arg2)
 	test_failure = false;
 }
 
-static void irq_offload_isr(void *arg)
+static void irq_offload_isr(const void *arg)
 {
 
 	k_wakeup((k_tid_t) arg);
@@ -181,7 +181,7 @@ static void helper_thread(int arg1, int arg2)
 	k_wakeup(test_thread_id);
 	k_sem_take(&helper_thread_sem, K_FOREVER);
 	/* Wake the test thread from an ISR */
-	irq_offload(irq_offload_isr, (void *)test_thread_id);
+	irq_offload(irq_offload_isr, (const void *)test_thread_id);
 }
 
 /**
@@ -194,8 +194,8 @@ static void helper_thread(int arg1, int arg2)
 void test_sleep(void)
 {
 	int status = TC_FAIL;
-	u32_t start_tick;
-	u32_t end_tick;
+	uint32_t start_tick;
+	uint32_t end_tick;
 
 	/*
 	 * Main thread(test_main) priority is 0 but ztest thread runs at
@@ -235,7 +235,7 @@ void test_sleep(void)
 	TC_PRINT("Testing kernel k_sleep()\n");
 	align_to_tick_boundary();
 	start_tick = k_uptime_get_32();
-	k_sleep(ONE_SECOND);
+	k_sleep(K_SECONDS(1));
 	end_tick = k_uptime_get_32();
 	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED),
 		     "k_sleep() slept for %d ticks, not %d\n",
@@ -248,10 +248,10 @@ extern void test_usleep(void);
 
 static void forever_thread_entry(void *p1, void *p2, void *p3)
 {
-	s32_t ret;
+	int32_t ret;
 
 	ret = k_sleep(K_FOREVER);
-	zassert_equal(ret, K_FOREVER, "unexpected return value");
+	zassert_equal(ret, K_TICKS_FOREVER, "unexpected return value");
 	k_sem_give(&test_thread_sem);
 }
 

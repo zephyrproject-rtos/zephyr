@@ -10,8 +10,4 @@ source "soc/arm/st_stm32/stm32l1/Kconfig.defconfig.stm32l1*"
 config SOC_SERIES
 	default "stm32l1"
 
-config I2C_STM32_V1
-	default y
-	depends on I2C_STM32
-
 endif # SOC_SERIES_STM32L1X

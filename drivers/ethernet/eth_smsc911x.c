@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT smsc_lan9220
+
 /* SMSC911x/SMSC9220 driver. Partly based on mbedOS driver. */
 
 #define LOG_MODULE_NAME eth_smsc911x
@@ -34,16 +36,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth_smsc911x_priv.h"
 
-#define RESET_TIMEOUT     K_MSEC(10)
+#define RESET_TIMEOUT     10
 #define PHY_RESET_TIMEOUT K_MSEC(100)
-#define REG_WRITE_TIMEOUT K_MSEC(50)
+#define REG_WRITE_TIMEOUT 50
 
 /* Controller has only one PHY with address 1 */
 #define PHY_ADDR 1
 
 struct eth_context {
 	struct net_if *iface;
-	u8_t mac[6];
+	uint8_t mac[6];
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
 #endif
@@ -51,9 +53,9 @@ struct eth_context {
 
 /* SMSC911x helper functions */
 
-static int smsc_mac_regread(u8_t reg, u32_t *val)
+static int smsc_mac_regread(uint8_t reg, uint32_t *val)
 {
-	u32_t cmd = MAC_CSR_CMD_BUSY | MAC_CSR_CMD_READ | reg;
+	uint32_t cmd = MAC_CSR_CMD_BUSY | MAC_CSR_CMD_READ | reg;
 
 	SMSC9220->MAC_CSR_CMD = cmd;
 
@@ -65,9 +67,9 @@ static int smsc_mac_regread(u8_t reg, u32_t *val)
 	return 0;
 }
 
-static int smsc_mac_regwrite(u8_t reg, u32_t val)
+static int smsc_mac_regwrite(uint8_t reg, uint32_t val)
 {
-	u32_t cmd = MAC_CSR_CMD_BUSY | MAC_CSR_CMD_WRITE | reg;
+	uint32_t cmd = MAC_CSR_CMD_BUSY | MAC_CSR_CMD_WRITE | reg;
 
 	SMSC9220->MAC_CSR_DATA = val;
 
@@ -79,10 +81,10 @@ static int smsc_mac_regwrite(u8_t reg, u32_t val)
 	return 0;
 }
 
-int smsc_phy_regread(u8_t regoffset, u32_t *data)
+int smsc_phy_regread(uint8_t regoffset, uint32_t *data)
 {
-	u32_t val = 0U;
-	u32_t phycmd = 0U;
+	uint32_t val = 0U;
+	uint32_t phycmd = 0U;
 	unsigned int time_out = REG_WRITE_TIMEOUT;
 
 	if (smsc_mac_regread(SMSC9220_MAC_MII_ACC, &val) < 0) {
@@ -124,10 +126,10 @@ int smsc_phy_regread(u8_t regoffset, u32_t *data)
 	return 0;
 }
 
-int smsc_phy_regwrite(u8_t regoffset, u32_t data)
+int smsc_phy_regwrite(uint8_t regoffset, uint32_t data)
 {
-	u32_t val = 0U;
-	u32_t phycmd = 0U;
+	uint32_t val = 0U;
+	uint32_t phycmd = 0U;
 	unsigned int time_out = REG_WRITE_TIMEOUT;
 
 	if (smsc_mac_regread(SMSC9220_MAC_MII_ACC, &val) < 0) {
@@ -166,9 +168,9 @@ int smsc_phy_regwrite(u8_t regoffset, u32_t data)
 	return 0;
 }
 
-static int smsc_read_mac_address(u8_t *mac)
+static int smsc_read_mac_address(uint8_t *mac)
 {
-	u32_t tmp;
+	uint32_t tmp;
 	int res;
 
 	res = smsc_mac_regread(SMSC9220_MAC_ADDRL, &tmp);
@@ -176,25 +178,25 @@ static int smsc_read_mac_address(u8_t *mac)
 		return res;
 	}
 
-	mac[0] = (u8_t)(tmp >> 0);
-	mac[1] = (u8_t)(tmp >> 8);
-	mac[2] = (u8_t)(tmp >> 16);
-	mac[3] = (u8_t)(tmp >> 24);
+	mac[0] = (uint8_t)(tmp >> 0);
+	mac[1] = (uint8_t)(tmp >> 8);
+	mac[2] = (uint8_t)(tmp >> 16);
+	mac[3] = (uint8_t)(tmp >> 24);
 
 	res = smsc_mac_regread(SMSC9220_MAC_ADDRH, &tmp);
 	if (res < 0) {
 		return res;
 	}
 
-	mac[4] = (u8_t)(tmp >> 0);
-	mac[5] = (u8_t)(tmp >> 8);
+	mac[4] = (uint8_t)(tmp >> 0);
+	mac[5] = (uint8_t)(tmp >> 8);
 
 	return 0;
 }
 
 static int smsc_check_id(void)
 {
-	u32_t id = SMSC9220->ID_REV;
+	uint32_t id = SMSC9220->ID_REV;
 
 	/* If bottom and top halves of the word are the same,
 	 * the hardware is (likely) not present.
@@ -253,7 +255,7 @@ void smsc_init_irqs(void)
 
 static int smsc_check_phy(void)
 {
-	u32_t phyid1, phyid2;
+	uint32_t phyid1, phyid2;
 
 	if (smsc_phy_regread(SMSC9220_PHY_ID1, &phyid1)) {
 		return -1;
@@ -269,7 +271,7 @@ static int smsc_check_phy(void)
 
 int smsc_reset_phy(void)
 {
-	u32_t val;
+	uint32_t val;
 
 	if (smsc_phy_regread(SMSC9220_PHY_BCONTROL, &val)) {
 		return -1;
@@ -289,7 +291,7 @@ int smsc_reset_phy(void)
  */
 void smsc_advertise_caps(void)
 {
-	u32_t aneg_adv = 0U;
+	uint32_t aneg_adv = 0U;
 
 	smsc_phy_regread(SMSC9220_PHY_ANEG_ADV, &aneg_adv);
 	aneg_adv |= 0xDE0;
@@ -300,8 +302,8 @@ void smsc_advertise_caps(void)
 
 void smsc_establish_link(void)
 {
-	u32_t bcr = 0U;
-	u32_t hw_cfg = 0U;
+	uint32_t bcr = 0U;
+	uint32_t hw_cfg = 0U;
 
 	smsc_phy_regread(SMSC9220_PHY_BCONTROL, &bcr);
 	bcr |= (1 << 12) | (1 << 9);
@@ -321,7 +323,7 @@ static inline void smsc_enable_xmit(void)
 
 void smsc_enable_mac_xmit(void)
 {
-	u32_t mac_cr = 0U;
+	uint32_t mac_cr = 0U;
 
 	smsc_mac_regread(SMSC9220_MAC_CR, &mac_cr);
 
@@ -333,7 +335,7 @@ void smsc_enable_mac_xmit(void)
 
 void smsc_enable_mac_recv(void)
 {
-	u32_t mac_cr = 0U;
+	uint32_t mac_cr = 0U;
 
 	smsc_mac_regread(SMSC9220_MAC_CR, &mac_cr);
 	mac_cr |= (1 << 2);     /* Recv enable */
@@ -409,7 +411,7 @@ int smsc_init(void)
 
 /* Driver functions */
 
-static enum ethernet_hw_caps eth_smsc911x_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_smsc911x_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -417,9 +419,9 @@ static enum ethernet_hw_caps eth_smsc911x_get_capabilities(struct device *dev)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *get_stats(struct device *dev)
+static struct net_stats_eth *get_stats(const struct device *dev)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->data;
 
 	return &context->stats;
 }
@@ -427,8 +429,8 @@ static struct net_stats_eth *get_stats(struct device *dev)
 
 static void eth_initialize(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct eth_context *context = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_context *context = dev->data;
 
 	LOG_DBG("eth_initialize");
 
@@ -444,9 +446,9 @@ static void eth_initialize(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int smsc_write_tx_fifo(const u8_t *buf, u32_t len, bool is_last)
+static int smsc_write_tx_fifo(const uint8_t *buf, uint32_t len, bool is_last)
 {
-	u32_t *buf32;
+	uint32_t *buf32;
 
 	__ASSERT_NO_MSG(((uintptr_t)buf & 3) == 0);
 
@@ -460,7 +462,7 @@ static int smsc_write_tx_fifo(const u8_t *buf, u32_t len, bool is_last)
 		return -1;
 	}
 
-	buf32 = (u32_t *)buf;
+	buf32 = (uint32_t *)buf;
 	len /= 4U;
 	do {
 		SMSC9220->TX_DATA_PORT = *buf32++;
@@ -469,12 +471,12 @@ static int smsc_write_tx_fifo(const u8_t *buf, u32_t len, bool is_last)
 	return 0;
 }
 
-static int eth_tx(struct device *dev, struct net_pkt *pkt)
+static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
-	u16_t total_len = net_pkt_get_len(pkt);
-	static u8_t tx_buf[NET_ETH_MAX_FRAME_SIZE] __aligned(4);
-	u32_t txcmd_a, txcmd_b;
-	u32_t tx_stat;
+	uint16_t total_len = net_pkt_get_len(pkt);
+	static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE] __aligned(4);
+	uint32_t txcmd_a, txcmd_b;
+	uint32_t tx_stat;
 	int res;
 
 	txcmd_a = (1/*is_first_segment*/ << 13) | (1/*is_last_segment*/ << 12)
@@ -532,9 +534,9 @@ static inline void smsc_wait_discard_pkt(void)
 	}
 }
 
-static int smsc_read_rx_fifo(struct net_pkt *pkt, u32_t len)
+static int smsc_read_rx_fifo(struct net_pkt *pkt, uint32_t len)
 {
-	u32_t buf32;
+	uint32_t buf32;
 
 	__ASSERT_NO_MSG((len & 3) == 0U && len >= 4U);
 
@@ -543,7 +545,7 @@ static int smsc_read_rx_fifo(struct net_pkt *pkt, u32_t len)
 	do {
 		buf32 = SMSC9220->RX_DATA_PORT;
 
-		if (net_pkt_write(pkt, &buf32, sizeof(u32_t))) {
+		if (net_pkt_write(pkt, &buf32, sizeof(uint32_t))) {
 			return -1;
 		}
 	} while (--len);
@@ -551,11 +553,12 @@ static int smsc_read_rx_fifo(struct net_pkt *pkt, u32_t len)
 	return 0;
 }
 
-static struct net_pkt *smsc_recv_pkt(struct device *dev, u32_t pkt_size)
+static struct net_pkt *smsc_recv_pkt(const struct device *dev,
+				     uint32_t pkt_size)
 {
-	struct eth_context *context = dev->driver_data;
+	struct eth_context *context = dev->data;
 	struct net_pkt *pkt;
-	u32_t rem_size;
+	uint32_t rem_size;
 
 	/* Round up to next DWORD size */
 	rem_size = (pkt_size + 3) & ~3;
@@ -578,7 +581,7 @@ static struct net_pkt *smsc_recv_pkt(struct device *dev, u32_t pkt_size)
 
 	/* Discard FCS */
 	{
-		u32_t __unused dummy = SMSC9220->RX_DATA_PORT;
+		uint32_t __unused dummy = SMSC9220->RX_DATA_PORT;
 	}
 
 	/* Adjust len of the last buf down for DWORD alignment */
@@ -590,21 +593,21 @@ static struct net_pkt *smsc_recv_pkt(struct device *dev, u32_t pkt_size)
 	return pkt;
 }
 
-static void eth_smsc911x_isr(struct device *dev)
+static void eth_smsc911x_isr(const struct device *dev)
 {
-	u32_t int_status = SMSC9220->INT_STS;
-	struct eth_context *context = dev->driver_data;
+	uint32_t int_status = SMSC9220->INT_STS;
+	struct eth_context *context = dev->data;
 
 	LOG_DBG("%s: INT_STS=%x INT_EN=%x", __func__,
 		int_status, SMSC9220->INT_EN);
 
 	if (int_status & BIT(SMSC9220_INTERRUPT_RXSTATUS_FIFO_LEVEL)) {
 		struct net_pkt *pkt;
-		u32_t pkt_size, val;
-		u32_t rx_stat;
+		uint32_t pkt_size, val;
+		uint32_t rx_stat;
 
 		val = SMSC9220->RX_FIFO_INF;
-		u32_t pkt_pending = BFIELD(val, RX_FIFO_INF_RXSUSED);
+		uint32_t pkt_pending = BFIELD(val, RX_FIFO_INF_RXSUSED);
 
 		LOG_DBG("in RX FIFO: pkts: %u, bytes: %u",
 			pkt_pending,
@@ -655,13 +658,11 @@ done:
 
 /* Bindings to the platform */
 
-static struct device DEVICE_NAME_GET(eth_smsc911x_0);
-
-int eth_init(struct device *dev)
+int eth_init(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_SMSC_LAN9220_IRQ_0,
-		    DT_INST_0_SMSC_LAN9220_IRQ_0_PRIORITY,
-		    eth_smsc911x_isr, DEVICE_GET(eth_smsc911x_0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
+		    eth_smsc911x_isr, DEVICE_DT_INST_GET(0), 0);
 
 	int ret = smsc_init();
 
@@ -670,14 +671,14 @@ int eth_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	irq_enable(DT_INST_0_SMSC_LAN9220_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return ret;
 }
 
 static struct eth_context eth_0_context;
 
-ETH_NET_DEVICE_INIT(eth_smsc911x_0, "smsc911x_0",
-		eth_init, &eth_0_context,
+ETH_NET_DEVICE_DT_INST_DEFINE(0,
+		eth_init, device_pm_control_nop, &eth_0_context,
 		NULL /*&eth_config_0*/, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		NET_ETH_MTU /*MTU*/);

@@ -1,7 +1,7 @@
 .. _steval_fcu001v1:
 
-STM32 Flight Controller Unit
-############################
+ST STM32 Flight Controller Unit
+###############################
 
 Overview
 ********

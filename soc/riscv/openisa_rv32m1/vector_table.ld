@@ -6,7 +6,7 @@
  */
 
 /*
- * Respect for CONFIG_TEXT_SECTION_OFFSET is mandatory
+ * Respect for CONFIG_ROM_START_OFFSET is mandatory
  * for MCUboot support, so .reset.* and .exception.*
  * must come after that offset from ROM_BASE.
  */

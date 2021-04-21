@@ -159,14 +159,11 @@ arduino_spi: &spi3 {
 	sck-pin = <47>;
 	miso-pin = <46>;
 	mosi-pin = <45>;
-	cs-gpios = <&arduino_header 16 0>; /* D10 */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 };
 
 &flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -178,11 +175,11 @@ arduino_spi: &spi3 {
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x000067000>;
+			reg = <0x0000C000 0x00067000>;
 		};
 		slot1_partition: partition@73000 {
 			label = "image-1";
-			reg = <0x00073000 0x000067000>;
+			reg = <0x00073000 0x00067000>;
 		};
 		scratch_partition: partition@da000 {
 			label = "image-scratch";

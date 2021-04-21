@@ -1,4 +1,4 @@
 tests:
   boards.altera_max10.qspi:
-    platform_whitelist: altera_max10
+    platform_allow: altera_max10
     tags: qspi flash

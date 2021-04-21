@@ -1,0 +1,219 @@
+/*
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "sam4l-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,flash-controller = &flashcalw;
+		zephyr,entropy = &trng;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <8>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	/**
+	 * HRAM1 are 4k SRAM that can be used by PicoCache or just extra
+	 * memory available.  The PicoCache will be keep disable to ensures
+	 * deterministic behaviour.  That way the extra memory can be
+	 * exclusive for USB descriptors
+	 */
+	sram1: memory@21000000 {
+		compatible = "mmio-sram";
+		reg = <0x21000000 DT_SIZE_K(4)>;
+	};
+
+	soc {
+		flashcalw: flash-controller@400a0000 {
+			compatible = "atmel,sam-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x400a0000 0x400>;
+			interrupts = <0 0>;
+			peripheral-id = <32>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_0";
+			};
+		};
+
+		twim0: twim@40018000 {
+			compatible = "atmel,sam-i2c-twim";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40018000 0x4000>;
+			interrupts = <61 0>;
+			peripheral-id = <4>;
+			label = "TWIM_0";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pa23b_twi0_twd0 &pa24b_twi0_twck0>;
+		};
+		twim1: twim@4001c000 {
+			compatible = "atmel,sam-i2c-twim";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x4001c000 0x4000>;
+			interrupts = <63 0>;
+			peripheral-id = <6>;
+			label = "TWIM_1";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pb0a_twi1_twd1 &pb1a_twi1_twck1>;
+		};
+		twim2: twim@40078000 {
+			compatible = "atmel,sam-i2c-twim";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40078000 0x4000>;
+			interrupts = <77 0>;
+			peripheral-id = <21>;
+			label = "TWIM_2";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pa21e_twi2_twd2 &pa22e_twi2_twck2>;
+		};
+		twim3: twim@4007c000 {
+			compatible = "atmel,sam-i2c-twim";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x4007c000 0x4000>;
+			interrupts = <78 0>;
+			peripheral-id = <22>;
+			label = "TWIM_3";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&pb14c_twi3_twd3 &pb15c_twi3_twck3>;
+		};
+
+		spi0: spi@40008000 {
+			compatible = "atmel,sam-spi";
+			reg = <0x40008000 0x4000>;
+			interrupts = <54 0>;
+			peripheral-id = <1>;
+			label = "SPI_0";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		usart0: usart@40024000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40024000 0x4000>;
+			interrupts = <65 1>;
+			peripheral-id = <8>;
+			status = "disabled";
+			label = "USART_0";
+		};
+		usart1: usart@40028000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40028000 0x4000>;
+			interrupts = <66 1>;
+			peripheral-id = <9>;
+			status = "disabled";
+			label = "USART_1";
+		};
+		usart2: usart@4002c000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x4002c000 0x4000>;
+			interrupts = <67 1>;
+			peripheral-id = <10>;
+			status = "disabled";
+			label = "USART_2";
+		};
+		usart3: usart@40030000 {
+			compatible = "atmel,sam-usart";
+			reg = <0x40030000 0x4000>;
+			interrupts = <68 1>;
+			peripheral-id = <11>;
+			status = "disabled";
+			label = "USART_3";
+		};
+
+		pinctrl@400e1000 {
+			compatible = "atmel,sam-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x400e1000 0x400e1000 0x800>;
+
+			gpioa: gpio@400e1000 {
+				compatible = "atmel,sam4l-gpio";
+				reg = <0x400e1000 0x200>;
+				interrupts = <25 1>, <26 1>, <27 1>, <28 1>;
+				peripheral-id = <68>;
+				label = "GPIO_A";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+			gpiob: gpio@400e1200 {
+				compatible = "atmel,sam4l-gpio";
+				reg = <0x400e1200 0x200>;
+				interrupts = <29 1>, <30 1>, <31 1>, <32 1>;
+				peripheral-id = <68>;
+				label = "GPIO_B";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+			gpioc: gpio@400e1400 {
+				compatible = "atmel,sam4l-gpio";
+				reg = <0x400e1400 0x200>;
+				interrupts = <33 1>, <34 1>, <35 1>, <36 1>;
+				peripheral-id = <68>;
+				label = "GPIO_C";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
+		};
+
+		trng: random@40068000 {
+			compatible = "atmel,sam-trng";
+			reg = <0x40068000 0x4000>;
+			interrupts = <73 0>;
+			peripheral-id = <17>;
+			status = "okay";
+			label = "TRNG";
+		};
+
+		uid: device_uid@80020c {
+			compatible = "atmel,sam4l-uid";
+			reg = <0x80020c 0xf>;
+			status = "okay";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

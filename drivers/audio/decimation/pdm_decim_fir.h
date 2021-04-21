@@ -23,7 +23,7 @@ struct pdm_decim {
 	int relative_stopband;
 	int passband_ripple;
 	int stopband_ripple;
-	const s32_t *coef;
+	const int32_t *coef;
 };
 
 struct pdm_decim **pdm_decim_get_fir_list(void);

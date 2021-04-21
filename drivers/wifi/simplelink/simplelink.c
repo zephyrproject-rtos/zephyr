@@ -24,23 +24,27 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define SCAN_RETRY_DELAY 2000  /* ms */
 #define FC_TIMEOUT K_SECONDS(CONFIG_WIFI_SIMPLELINK_FAST_CONNECT_TIMEOUT)
 
+#define SIMPLELINK_IPV4 0x1
+#define SIMPLELINK_IPV6 0x2
+
 struct simplelink_data {
 	struct net_if *iface;
 	unsigned char mac[6];
 
 	/* Fields for scan API to emulate an asynchronous scan: */
-	struct k_delayed_work work;
+	struct k_work_delayable work;
 	scan_result_cb_t cb;
 	int num_results_or_err;
 	int scan_retries;
 	bool initialized;
+	uint8_t mask;
 };
 
 static struct simplelink_data simplelink_data;
 static K_SEM_DEFINE(ip_acquired, 0, 1);
 
 /* Handle connection events from the SimpleLink Event Handlers: */
-static void simplelink_wifi_cb(u32_t event, struct sl_connect_state *conn)
+static void simplelink_wifi_cb(uint32_t event, struct sl_connect_state *conn)
 {
 	int status;
 
@@ -64,7 +68,18 @@ static void simplelink_wifi_cb(u32_t event, struct sl_connect_state *conn)
 		break;
 
 	case SIMPLELINK_WIFI_CB_IPACQUIRED:
-		if (!simplelink_data.initialized) {
+		simplelink_data.mask &= ~SIMPLELINK_IPV4;
+		if ((simplelink_data.mask == 0) &&
+			(!simplelink_data.initialized)) {
+			simplelink_data.initialized = true;
+			k_sem_give(&ip_acquired);
+		}
+		break;
+
+	case SIMPLELINK_WIFI_CB_IPV6ACQUIRED:
+		simplelink_data.mask &= ~SIMPLELINK_IPV6;
+		if ((simplelink_data.mask == 0) &&
+			(!simplelink_data.initialized)) {
 			simplelink_data.initialized = true;
 			k_sem_give(&ip_acquired);
 		}
@@ -101,7 +116,7 @@ static void simplelink_scan_work_handler(struct k_work *work)
 		    SL_ERROR_WLAN_GET_NETWORK_LIST_EAGAIN) &&
 		   (simplelink_data.scan_retries++ <
 		    CONFIG_WIFI_SIMPLELINK_MAX_SCAN_RETRIES)) {
-		s32_t delay;
+		int32_t delay;
 
 		/* Try again: */
 		simplelink_data.num_results_or_err = z_simplelink_start_scan();
@@ -111,7 +126,7 @@ static void simplelink_scan_work_handler(struct k_work *work)
 		if (delay > 0) {
 			LOG_DBG("Retrying scan...");
 		}
-		k_delayed_work_submit(&simplelink_data.work, delay);
+		k_work_reschedule(&simplelink_data.work, K_MSEC(delay));
 
 	} else {
 		/* Encountered an error, or max retries exceeded: */
@@ -122,13 +137,13 @@ static void simplelink_scan_work_handler(struct k_work *work)
 	}
 }
 
-static int simplelink_mgmt_scan(struct device *dev, scan_result_cb_t cb)
+static int simplelink_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
 {
 	int err;
 	int status;
 
 	/* Cancel any previous scan processing in progress: */
-	k_delayed_work_cancel(&simplelink_data.work);
+	k_work_cancel_delayable(&simplelink_data.work);
 
 	/* "Request" the scan: */
 	err = z_simplelink_start_scan();
@@ -138,14 +153,14 @@ static int simplelink_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	 * already returned, or indicate a retry is required:
 	 */
 	if ((err > 0) || (err == SL_ERROR_WLAN_GET_NETWORK_LIST_EAGAIN)) {
-		s32_t delay = (err > 0 ? 0 : SCAN_RETRY_DELAY);
+		int32_t delay = (err > 0 ? 0 : SCAN_RETRY_DELAY);
 
 		/* Store for later reference by delayed work handler: */
 		simplelink_data.cb = cb;
 		simplelink_data.num_results_or_err = err;
 		simplelink_data.scan_retries = 0;
 
-		k_delayed_work_submit(&simplelink_data.work, delay);
+		k_work_reschedule(&simplelink_data.work, K_MSEC(delay));
 		status = 0;
 	} else {
 		status = -EIO;
@@ -154,7 +169,7 @@ static int simplelink_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	return status;
 }
 
-static int simplelink_mgmt_connect(struct device *dev,
+static int simplelink_mgmt_connect(const struct device *dev,
 				   struct wifi_connect_req_params *params)
 {
 	int ret;
@@ -164,7 +179,7 @@ static int simplelink_mgmt_connect(struct device *dev,
 	return ret ? -EIO : ret;
 }
 
-static int simplelink_mgmt_disconnect(struct device *dev)
+static int simplelink_mgmt_disconnect(const struct device *dev)
 {
 	int ret;
 
@@ -179,7 +194,7 @@ static int simplelink_dummy_get(sa_family_t family,
 				struct net_context **context)
 {
 
-	LOG_ERR("NET_SOCKET_OFFLOAD must be configured for this driver");
+	LOG_ERR("NET_SOCKETS_OFFLOAD must be configured for this driver");
 
 	return -1;
 }
@@ -202,6 +217,12 @@ static void simplelink_iface_init(struct net_if *iface)
 	int ret;
 
 	simplelink_data.iface = iface;
+	simplelink_data.mask = 0;
+
+	simplelink_data.mask |= IS_ENABLED(CONFIG_NET_IPV4) ?
+		SIMPLELINK_IPV4 : 0;
+	simplelink_data.mask |= IS_ENABLED(CONFIG_NET_IPV6) ?
+		SIMPLELINK_IPV6 : 0;
 
 	/* Direct socket offload used instead of net offload: */
 	iface->if_dev->offload = &simplelink_offload;
@@ -248,13 +269,13 @@ static const struct net_wifi_mgmt_offload simplelink_api = {
 	.disconnect	= simplelink_mgmt_disconnect,
 };
 
-static int simplelink_init(struct device *dev)
+static int simplelink_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	/* We use system workqueue to deal with scan retries: */
-	k_delayed_work_init(&simplelink_data.work,
-			    simplelink_scan_work_handler);
+	k_work_init_delayable(&simplelink_data.work,
+			      simplelink_scan_work_handler);
 
 	LOG_DBG("SimpleLink driver Initialized");
 
@@ -262,6 +283,7 @@ static int simplelink_init(struct device *dev)
 }
 
 NET_DEVICE_OFFLOAD_INIT(simplelink, CONFIG_WIFI_SIMPLELINK_NAME,
-			simplelink_init, &simplelink_data, NULL,
+			simplelink_init, device_pm_control_nop,
+			&simplelink_data, NULL,
 			CONFIG_WIFI_INIT_PRIORITY, &simplelink_api,
 			CONFIG_WIFI_SIMPLELINK_MAX_PACKET_SIZE);

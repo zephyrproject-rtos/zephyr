@@ -33,24 +33,24 @@ struct k_thread multiple_tid[TOTAL_THREADS_WAITING];
 
 /******************************************************************************/
 /* Helper functions */
-void isr_sem_give(void *semaphore)
+void isr_sem_give(const void *semaphore)
 {
 	sys_sem_give((struct sys_sem *)semaphore);
 }
 
-void isr_sem_take(void *semaphore)
+void isr_sem_take(const void *semaphore)
 {
 	sys_sem_take((struct sys_sem *)semaphore, K_NO_WAIT);
 }
 
 void sem_give_from_isr(void *semaphore)
 {
-	irq_offload(isr_sem_give, semaphore);
+	irq_offload(isr_sem_give, (const void *)semaphore);
 }
 
 void sem_take_from_isr(void *semaphore)
 {
-	irq_offload(isr_sem_take, semaphore);
+	irq_offload(isr_sem_take, (const void *)semaphore);
 }
 
 void sem_give_task(void *p1, void *p2, void *p3)
@@ -71,7 +71,7 @@ void sem_take_timeout_isr_helper(void *p1, void *p2, void *p3)
 
 void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	ret_value = sys_sem_take(&low_prio_sem, K_FOREVER);
 	zassert_true(ret_value == 0, "sys_sem_take failed");
@@ -84,7 +84,7 @@ void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
 
 void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	ret_value = sys_sem_take(&mid_prio_sem, K_FOREVER);
 	zassert_true(ret_value == 0, "sys_sem_take failed");
@@ -97,7 +97,7 @@ void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
 
 void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	ret_value = sys_sem_take(&high_prio_sem, K_FOREVER);
 	zassert_true(ret_value == 0, "sys_sem_take failed");
@@ -128,7 +128,7 @@ void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 #ifdef CONFIG_USERSPACE
 void test_basic_sem_test(void)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	ret_value = sys_sem_init(NULL, SEM_INIT_VAL, SEM_MAX_VAL);
 	zassert_true(ret_value == -EINVAL,
@@ -157,7 +157,7 @@ void test_basic_sem_test(void)
  */
 void test_simple_sem_from_isr(void)
 {
-	u32_t signal_count;
+	uint32_t signal_count;
 
 	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 
@@ -177,7 +177,7 @@ void test_simple_sem_from_isr(void)
  */
 void test_simple_sem_from_task(void)
 {
-	u32_t signal_count;
+	uint32_t signal_count;
 
 	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 
@@ -197,8 +197,8 @@ void test_simple_sem_from_task(void)
  */
 void test_sem_take_no_wait(void)
 {
-	u32_t signal_count;
-	s32_t ret_value;
+	uint32_t signal_count;
+	int32_t ret_value;
 
 	for (int i = 4; i >= 0; i--) {
 		ret_value = sys_sem_take(&simple_sem, K_NO_WAIT);
@@ -219,8 +219,8 @@ void test_sem_take_no_wait(void)
  */
 void test_sem_take_no_wait_fails(void)
 {
-	u32_t signal_count;
-	s32_t ret_value;
+	uint32_t signal_count;
+	int32_t ret_value;
 
 	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 
@@ -242,7 +242,7 @@ void test_sem_take_no_wait_fails(void)
  */
 void test_sem_take_timeout_fails(void)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 
@@ -259,7 +259,7 @@ void test_sem_take_timeout_fails(void)
  */
 void test_sem_take_timeout(void)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 #ifdef CONFIG_USERSPACE
 	int thread_flags = K_USER | K_INHERIT_PERMS;
 #else
@@ -276,6 +276,8 @@ void test_sem_take_timeout(void)
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
+
+	k_thread_join(&sem_tid, K_FOREVER);
 }
 
 /**
@@ -283,7 +285,7 @@ void test_sem_take_timeout(void)
  */
 void test_sem_take_timeout_forever(void)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 #ifdef CONFIG_USERSPACE
 	int thread_flags = K_USER | K_INHERIT_PERMS;
 #else
@@ -300,6 +302,8 @@ void test_sem_take_timeout_forever(void)
 	ret_value = sys_sem_take(&simple_sem, K_FOREVER);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
+
+	k_thread_join(&sem_tid, K_FOREVER);
 }
 
 /**
@@ -307,7 +311,7 @@ void test_sem_take_timeout_forever(void)
  */
 void test_sem_take_timeout_isr(void)
 {
-	s32_t ret_value;
+	int32_t ret_value;
 
 	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 
@@ -318,6 +322,8 @@ void test_sem_take_timeout_isr(void)
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
 	zassert_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
+
+	k_thread_join(&sem_tid, K_FOREVER);
 }
 
 /**
@@ -325,7 +331,7 @@ void test_sem_take_timeout_isr(void)
  */
 void test_sem_take_multiple(void)
 {
-	u32_t signal_count;
+	uint32_t signal_count;
 #ifdef CONFIG_USERSPACE
 	int thread_flags = K_USER | K_INHERIT_PERMS;
 #else
@@ -418,6 +424,9 @@ void test_sem_take_multiple(void)
 	zassert_true(signal_count == 1U,
 		     "low priority thread didn't get executed");
 
+	k_thread_join(&sem_tid, K_FOREVER);
+	k_thread_join(&sem_tid_1, K_FOREVER);
+	k_thread_join(&sem_tid_2, K_FOREVER);
 }
 
 /**
@@ -425,7 +434,7 @@ void test_sem_take_multiple(void)
  */
 void test_sem_give_take_from_isr(void)
 {
-	u32_t signal_count;
+	uint32_t signal_count;
 
 	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 
@@ -455,8 +464,8 @@ void test_sem_give_take_from_isr(void)
  */
 void test_sem_give_limit(void)
 {
-	s32_t ret_value;
-	u32_t signal_count;
+	int32_t ret_value;
+	uint32_t signal_count;
 
 	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
 
@@ -495,9 +504,9 @@ void test_sem_give_limit(void)
  */
 void test_sem_multiple_threads_wait(void)
 {
-	u32_t signal_count;
-	s32_t ret_value;
-	u32_t repeat_count = 0U;
+	uint32_t signal_count;
+	int32_t ret_value;
+	uint32_t repeat_count = 0U;
 #ifdef CONFIG_USERSPACE
 	int thread_flags = K_USER | K_INHERIT_PERMS;
 #else
@@ -546,6 +555,10 @@ void test_sem_multiple_threads_wait(void)
 			     signal_count);
 
 		repeat_count++;
+
+		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
+			k_thread_join(&multiple_tid[i], K_FOREVER);
+		}
 	} while (repeat_count < 2);
 }
 

@@ -41,27 +41,27 @@ static const char lorem_ipsum[] =
 	"\n";
 
 #define MAX_RECV_BUF_LEN 256
-static u8_t recv_buf[MAX(sizeof(lorem_ipsum), MAX_RECV_BUF_LEN)];
+static uint8_t recv_buf[MAX(sizeof(lorem_ipsum), MAX_RECV_BUF_LEN)];
 
 /* We need to allocate bigger buffer for the websocket data we receive so that
  * the websocket header fits into it.
  */
 #define EXTRA_BUF_SPACE 30
 
-static u8_t temp_recv_buf[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
-static u8_t feed_buf[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
+static uint8_t temp_recv_buf[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
+static uint8_t feed_buf[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
 static size_t test_msg_len;
 
 struct test_data {
-	u8_t *input_buf;
+	uint8_t *input_buf;
 	size_t input_len;
 	struct websocket_context *ctx;
 };
 
-static int test_recv_buf(u8_t *feed_buf, size_t feed_len,
+static int test_recv_buf(uint8_t *feed_buf, size_t feed_len,
 			 struct websocket_context *ctx,
-			 u32_t *msg_type, u64_t *remaining,
-			 u8_t *recv_buf, size_t recv_len)
+			 uint32_t *msg_type, uint64_t *remaining,
+			 uint8_t *recv_buf, size_t recv_len)
 {
 	static struct test_data test_data;
 	int ctx_ptr;
@@ -73,7 +73,7 @@ static int test_recv_buf(u8_t *feed_buf, size_t feed_len,
 	ctx_ptr = POINTER_TO_INT(&test_data);
 
 	return websocket_recv_msg(ctx_ptr, recv_buf, recv_len,
-				  msg_type, remaining, K_NO_WAIT);
+				  msg_type, remaining, 0);
 }
 
 /* Websocket frame, header is 6 bytes, FIN bit is set, opcode is text (1),
@@ -108,8 +108,8 @@ static const unsigned char frame2[] = {
 static void test_recv(int count)
 {
 	struct websocket_context ctx;
-	u32_t msg_type = -1;
-	u64_t remaining = -1;
+	uint32_t msg_type = -1;
+	uint64_t remaining = -1;
 	int total_read = 0;
 	int ret, i, left;
 
@@ -228,8 +228,8 @@ static void test_recv_whole_msg(void)
 static void test_recv_2(int count)
 {
 	struct websocket_context ctx;
-	u32_t msg_type = -1;
-	u64_t remaining = -1;
+	uint32_t msg_type = -1;
+	uint64_t remaining = -1;
 	int total_read = 0;
 	int ret;
 
@@ -272,8 +272,8 @@ static void test_recv_two_msg(void)
 int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg)
 {
 	static struct websocket_context ctx;
-	u32_t msg_type = -1;
-	u64_t remaining = -1;
+	uint32_t msg_type = -1;
+	uint64_t remaining = -1;
 	size_t split_len = 0, total_read = 0;
 	int ret;
 
@@ -304,7 +304,7 @@ int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg)
 
 	/* Then the data */
 	while (remaining > 0) {
-		ret = test_recv_buf((u8_t *)msg->msg_iov[1].iov_base +
+		ret = test_recv_buf((uint8_t *)msg->msg_iov[1].iov_base +
 								total_read,
 				    msg->msg_iov[1].iov_len - total_read,
 				    &ctx, &msg_type, &remaining,
@@ -347,7 +347,7 @@ static void test_send_and_recv_lorem_ipsum(void)
 	ret = websocket_send_msg(POINTER_TO_INT(&ctx),
 				 lorem_ipsum, test_msg_len,
 				 WEBSOCKET_OPCODE_DATA_TEXT, true, true,
-				 K_FOREVER);
+				 SYS_FOREVER_MS);
 	zassert_equal(ret, test_msg_len,
 		      "Should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
@@ -367,7 +367,7 @@ static void test_recv_two_large_split_msg(void)
 
 	ret = websocket_send_msg(POINTER_TO_INT(&ctx), lorem_ipsum,
 				 test_msg_len, WEBSOCKET_OPCODE_DATA_TEXT,
-				 false, true, K_FOREVER);
+				 false, true, SYS_FOREVER_MS);
 	zassert_equal(ret, test_msg_len,
 		      "1st should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);

@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * @brief NMI routines for ARM Cortex M series
+ * @brief ARM AArch32 NMI routines
  */
 
 /*

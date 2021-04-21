@@ -1,7 +1,7 @@
 .. _stm32vl_disco_board:
 
-ST STM32VLDISCOVERY
-###################
+ST STM32VL Discovery
+####################
 
 Overview
 ********

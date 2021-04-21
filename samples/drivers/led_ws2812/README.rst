@@ -48,14 +48,14 @@ To make sure the sample is set up properly for building, you must:
   which case it will be :option:`CONFIG_WS2812_STRIP_GPIO`.
 
 - create a ``led-strip`` :ref:`devicetree alias <dt-alias-chosen>`, which
-  refers to a node in your :ref:`devicetree <device-tree>` with a
+  refers to a node in your :ref:`devicetree <dt-guide>` with a
   ``worldsemi,ws2812-spi`` or ``worldsemi,ws2812-gpio`` compatible. The node
   must be properly configured for the driver backend (SPI or GPIO) and daisy
   chain length (number of WS2812 chips).
 
 For example devicetree configurations for each compatible, see
-:zephyr_file:`samples/drivers/led_ws2812/boards/nrf52_pca10040.overlay` and
-:zephyr_file:`samples/drivers/led_ws2812/boards/nrf51_pca10028.overlay`.
+:zephyr_file:`samples/drivers/led_ws2812/boards/nrf52dk_nrf52832.overlay` and
+:zephyr_file:`samples/drivers/led_ws2812/boards/nrf51dk_nrf51422.overlay`.
 
 Some boards are already supported out of the box; see the :file:`boards`
 directory for this sample for details.

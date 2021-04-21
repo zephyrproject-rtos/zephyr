@@ -16,22 +16,22 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(DT_ALIAS_I2C_0_LABEL)
-#define I2C_DEV_NAME	DT_ALIAS_I2C_0_LABEL
-#elif defined(DT_ALIAS_I2C_1_LABEL)
-#define I2C_DEV_NAME	DT_ALIAS_I2C_1_LABEL
-#elif defined(DT_ALIAS_I2C_2_LABEL)
-#define I2C_DEV_NAME	DT_ALIAS_I2C_2_LABEL
+#if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_0), okay)
+#define I2C_DEV_NAME	DT_LABEL(DT_ALIAS(i2c_0))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(i2c_1), okay)
+#define I2C_DEV_NAME	DT_LABEL(DT_ALIAS(i2c_1))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(i2c_2), okay)
+#define I2C_DEV_NAME	DT_LABEL(DT_ALIAS(i2c_2))
 #else
 #error "Please set the correct I2C device"
 #endif
 
-u32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
+uint32_t i2c_cfg = I2C_SPEED_SET(I2C_SPEED_STANDARD) | I2C_MODE_MASTER;
 
 static int test_gy271(void)
 {
 	unsigned char datas[6];
-	struct device *i2c_dev = device_get_binding(I2C_DEV_NAME);
+	const struct device *i2c_dev = device_get_binding(I2C_DEV_NAME);
 
 	if (!i2c_dev) {
 		TC_PRINT("Cannot get I2C device\n");
@@ -86,7 +86,7 @@ static int test_gy271(void)
 static int test_burst_gy271(void)
 {
 	unsigned char datas[6];
-	struct device *i2c_dev = device_get_binding(I2C_DEV_NAME);
+	const struct device *i2c_dev = device_get_binding(I2C_DEV_NAME);
 
 	if (!i2c_dev) {
 		TC_PRINT("Cannot get I2C device\n");

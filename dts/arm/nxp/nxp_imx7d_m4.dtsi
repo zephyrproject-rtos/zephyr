@@ -4,38 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <mem.h>
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/rdc/imx_rdc.h>
 
 / {
-	aliases {
-		gpio-1 = &gpio1;
-		gpio-2 = &gpio2;
-		gpio-3 = &gpio3;
-		gpio-4 = &gpio4;
-		gpio-5 = &gpio5;
-		gpio-6 = &gpio6;
-		gpio-7 = &gpio7;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
-		i2c-3 = &i2c3;
-		i2c-4 = &i2c4;
-		mu-b   = &mub;
-		pwm-1 = &pwm1;
-		pwm-2 = &pwm2;
-		pwm-3 = &pwm3;
-		pwm-4 = &pwm4;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		uart-3 = &uart3;
-		uart-4 = &uart4;
-		uart-5 = &uart5;
-		uart-6 = &uart6;
-		uart-7 = &uart7;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -64,39 +39,39 @@
 
 		tcml_code: code@1fff8000 {
 			compatible = "nxp,imx-itcm";
-			reg = <0x1fff8000 0x8000>;
+			reg = <0x1fff8000 DT_SIZE_K(32)>;
 			label = "TCML CODE";
 		};
 
 		tcmu_sys: memory@20000000 {
 			compatible = "nxp,imx-dtcm";
-			reg = <0x20000000 0x8000>;
+			reg = <0x20000000 DT_SIZE_K(32)>;
 			label = "TCMU SYSTEM";
 		};
 
 		ocram_code: code@900000 {
 			compatible = "nxp,imx-code-bus";
-			reg = <0x00900000 0x20000>;
+			reg = <0x00900000 DT_SIZE_K(128)>;
 			label = "OCRAM CODE";
 		};
 
 		ocram_sys: memory@20200000 {
 			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
-			reg = <0x20200000 0x20000>;
+			reg = <0x20200000 DT_SIZE_K(128)>;
 			label = "OCRAM SYSTEM";
 		};
 
 		ocram_s_code: code@20180000 {
 			compatible = "nxp,imx-code-bus";
-			reg = <0x20180000 0x8000>;
+			reg = <0x20180000 DT_SIZE_K(32)>;
 			label = "OCRAM_S CODE";
 		};
 
 		ocram_s_sys: memory@180000 {
 			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
-			reg = <0x00180000 0x8000>;
+			reg = <0x00180000 DT_SIZE_K(32)>;
 			label = "OCRAM_S SYSTEM";
 		};
 
@@ -296,7 +271,7 @@
 		};
 
 		i2c1: i2c@30a20000 {
-			compatible = "fsl,imx7d-i2c";
+			compatible = "fsl,imx7d-i2c", "fsl,imx21-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -311,7 +286,7 @@
 		};
 
 		i2c2: i2c@30a30000 {
-			compatible = "fsl,imx7d-i2c";
+			compatible = "fsl,imx7d-i2c", "fsl,imx21-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -326,7 +301,7 @@
 		};
 
 		i2c3: i2c@30a40000 {
-			compatible = "fsl,imx7d-i2c";
+			compatible = "fsl,imx7d-i2c", "fsl,imx21-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -341,7 +316,7 @@
 		};
 
 		i2c4: i2c@30a50000 {
-			compatible = "fsl,imx7d-i2c";
+			compatible = "fsl,imx7d-i2c", "fsl,imx21-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;

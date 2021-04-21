@@ -14,15 +14,16 @@ LOG_MODULE_REGISTER(net_mgmt, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #include <sys/util.h>
 #include <sys/slist.h>
 #include <net/net_mgmt.h>
+#include <debug/stack.h>
 
 #include "net_private.h"
 
 struct mgmt_event_entry {
-	u32_t event;
+	uint32_t event;
 	struct net_if *iface;
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
-	u8_t info[NET_EVENT_INFO_MAX_SIZE];
+	uint8_t info[NET_EVENT_INFO_MAX_SIZE];
 	size_t info_length;
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 };
@@ -32,22 +33,21 @@ struct mgmt_event_wait {
 	struct net_if *iface;
 };
 
-static K_SEM_DEFINE(network_event, 0, UINT_MAX);
+static K_SEM_DEFINE(network_event, 0, K_SEM_MAX_LIMIT);
 static K_SEM_DEFINE(net_mgmt_lock, 1, 1);
 
-NET_STACK_DEFINE(MGMT, mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE,
-		 CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct k_thread mgmt_thread_data;
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
-static u32_t global_event_mask;
+static uint32_t global_event_mask;
 static sys_slist_t event_callbacks;
-static s16_t in_event;
-static s16_t out_event;
+static int16_t in_event;
+static int16_t out_event;
 
-static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
-				   void *info, size_t length)
+static inline void mgmt_push_event(uint32_t mgmt_event, struct net_if *iface,
+				   const void *info, size_t length)
 {
-	s16_t i_idx;
+	int16_t i_idx;
 
 #ifndef CONFIG_NET_MGMT_EVENT_INFO
 	ARG_UNUSED(info);
@@ -82,7 +82,7 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 	events[i_idx].iface = iface;
 
 	if (i_idx == out_event) {
-		u16_t o_idx = out_event + 1;
+		uint16_t o_idx = out_event + 1;
 
 		if (o_idx == CONFIG_NET_MGMT_EVENT_QUEUE_SIZE) {
 			o_idx = 0U;
@@ -102,7 +102,7 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 
 static inline struct mgmt_event_entry *mgmt_pop_event(void)
 {
-	s16_t o_idx;
+	int16_t o_idx;
 
 	if (out_event < 0 || !events[out_event].event) {
 		return NULL;
@@ -127,7 +127,7 @@ static inline void mgmt_clean_event(struct mgmt_event_entry *mgmt_event)
 	mgmt_event->iface = NULL;
 }
 
-static inline void mgmt_add_event_mask(u32_t event_mask)
+static inline void mgmt_add_event_mask(uint32_t event_mask)
 {
 	global_event_mask |= event_mask;
 }
@@ -143,7 +143,7 @@ static inline void mgmt_rebuild_global_event_mask(void)
 	}
 }
 
-static inline bool mgmt_is_event_handled(u32_t mgmt_event)
+static inline bool mgmt_is_event_handled(uint32_t mgmt_event)
 {
 	return (((NET_MGMT_GET_LAYER(mgmt_event) &
 		  NET_MGMT_GET_LAYER(global_event_mask)) ==
@@ -216,9 +216,7 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 	}
 
 #ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
-	net_analyze_stack("Net MGMT event stack",
-			  Z_THREAD_STACK_BUFFER(mgmt_stack),
-			  K_THREAD_STACK_SIZEOF(mgmt_stack));
+	log_stack_usage(&mgmt_thread_data);
 #endif
 }
 
@@ -241,7 +239,7 @@ static void mgmt_thread(void)
 			NET_DBG("Some event got probably lost (%u)",
 				k_sem_count_get(&network_event));
 
-			k_sem_init(&network_event, 0, UINT_MAX);
+			k_sem_init(&network_event, 0, K_SEM_MAX_LIMIT);
 			k_sem_give(&net_mgmt_lock);
 
 			continue;
@@ -258,12 +256,12 @@ static void mgmt_thread(void)
 }
 
 static int mgmt_event_wait_call(struct net_if *iface,
-				u32_t mgmt_event_mask,
-				u32_t *raised_event,
+				uint32_t mgmt_event_mask,
+				uint32_t *raised_event,
 				struct net_if **event_iface,
 				const void **info,
 				size_t *info_length,
-				int timeout)
+				k_timeout_t timeout)
 {
 	struct mgmt_event_wait sync_data = {
 		.sync_call = Z_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
@@ -336,8 +334,8 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 	k_sem_give(&net_mgmt_lock);
 }
 
-void net_mgmt_event_notify_with_info(u32_t mgmt_event, struct net_if *iface,
-				     void *info, size_t length)
+void net_mgmt_event_notify_with_info(uint32_t mgmt_event, struct net_if *iface,
+				     const void *info, size_t length)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
 		NET_DBG("Notifying Event layer %u code %u type %u",
@@ -350,12 +348,12 @@ void net_mgmt_event_notify_with_info(u32_t mgmt_event, struct net_if *iface,
 	}
 }
 
-int net_mgmt_event_wait(u32_t mgmt_event_mask,
-			u32_t *raised_event,
+int net_mgmt_event_wait(uint32_t mgmt_event_mask,
+			uint32_t *raised_event,
 			struct net_if **iface,
 			const void **info,
 			size_t *info_length,
-			int timeout)
+			k_timeout_t timeout)
 {
 	return mgmt_event_wait_call(NULL, mgmt_event_mask,
 				    raised_event, iface, info, info_length,
@@ -363,11 +361,11 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
 }
 
 int net_mgmt_event_wait_on_iface(struct net_if *iface,
-				 u32_t mgmt_event_mask,
-				 u32_t *raised_event,
+				 uint32_t mgmt_event_mask,
+				 uint32_t *raised_event,
 				 const void **info,
 				 size_t *info_length,
-				 int timeout)
+				 k_timeout_t timeout)
 {
 	NET_ASSERT(NET_MGMT_ON_IFACE(mgmt_event_mask));
 	NET_ASSERT(iface);
@@ -388,11 +386,17 @@ void net_mgmt_event_init(void)
 	(void)memset(events, 0, CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
 			sizeof(struct mgmt_event_entry));
 
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+/* Lowest priority cooperative thread */
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1)
+#endif
+
 	k_thread_create(&mgmt_thread_data, mgmt_stack,
-			K_THREAD_STACK_SIZEOF(mgmt_stack),
+			K_KERNEL_STACK_SIZEOF(mgmt_stack),
 			(k_thread_entry_t)mgmt_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_NET_MGMT_EVENT_THREAD_PRIO), 0,
-			K_NO_WAIT);
+			THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&mgmt_thread_data, "net_mgmt");
 
 	NET_DBG("Net MGMT initialized: queue of %u entries, stack size of %u",

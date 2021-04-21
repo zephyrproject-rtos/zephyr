@@ -23,9 +23,6 @@ them for your application:
 :option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`
   Set to 1024 by default
 
-:option:`CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE`
-  Set to 1024 by default
-
 :option:`CONFIG_PRIVILEGED_STACK_SIZE`
   Set to 1024 by default, depends on userspace feature.
 

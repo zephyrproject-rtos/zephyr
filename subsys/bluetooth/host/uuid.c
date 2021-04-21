@@ -76,7 +76,7 @@ int bt_uuid_cmp(const struct bt_uuid *u1, const struct bt_uuid *u2)
 	return -EINVAL;
 }
 
-bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len)
+bool bt_uuid_create(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len)
 {
 	/* Copy UUID from packet data/internal variable to internal bt_uuid */
 	switch (data_len) {
@@ -100,8 +100,8 @@ bool bt_uuid_create(struct bt_uuid *uuid, const u8_t *data, u8_t data_len)
 
 void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 {
-	u32_t tmp1, tmp5;
-	u16_t tmp0, tmp2, tmp3, tmp4;
+	uint32_t tmp1, tmp5;
+	uint16_t tmp0, tmp2, tmp3, tmp4;
 
 	switch (uuid->type) {
 	case BT_UUID_TYPE_16:
@@ -119,7 +119,9 @@ void bt_uuid_to_str(const struct bt_uuid *uuid, char *str, size_t len)
 		memcpy(&tmp5, &BT_UUID_128(uuid)->val[12], sizeof(tmp5));
 
 		snprintk(str, len, "%08x-%04x-%04x-%04x-%08x%04x",
-			 tmp5, tmp4, tmp3, tmp2, tmp1, tmp0);
+			 sys_le32_to_cpu(tmp5), sys_le16_to_cpu(tmp4),
+			 sys_le16_to_cpu(tmp3), sys_le16_to_cpu(tmp2),
+			 sys_le32_to_cpu(tmp1), sys_le16_to_cpu(tmp0));
 		break;
 	default:
 		(void)memset(str, 0, len);

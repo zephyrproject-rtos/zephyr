@@ -8,13 +8,25 @@
 #include <device.h>
 #include <drivers/adc.h>
 #include <stdio.h>
+#include <math.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
+/* Nominal RTD (PT100) resistance in ohms */
 #define RTD_NOMINAL_RESISTANCE 100
 
+/* ADC resolution in bits */
+#define ADC_RESOLUTION 24U
+
+/* ADC maximum value (taking sign bit into consideration) */
+#define ADC_MAX BIT_MASK(ADC_RESOLUTION - 1)
+
+/* Bottom resistor value in ohms */
+#define BOTTOM_RESISTANCE 2000
+
+#ifndef CONFIG_NEWLIB_LIBC
 static double sqrt(double value)
 {
 	double sqrt = value / 3;
@@ -30,11 +42,12 @@ static double sqrt(double value)
 
 	return sqrt;
 }
+#endif /* CONFIG_NEWLIB_LIBC */
 
 static double rtd_temperature(int nom, double resistance)
 {
-	double a0 =  3.90802E-3;
-	double b0 = -0.58020E-6;
+	const double a0 =  3.90802E-3;
+	const double b0 = -0.58020E-6;
 	double temp;
 
 	temp = -nom * a0;
@@ -47,9 +60,9 @@ static double rtd_temperature(int nom, double resistance)
 
 void main(void)
 {
-	struct device *lmp90100;
+	const struct device *lmp90100;
 	double resistance;
-	s32_t buffer;
+	int32_t buffer;
 	int err;
 	const struct adc_channel_cfg ch_cfg = {
 		.channel_id = 0,
@@ -65,12 +78,12 @@ void main(void)
 		.channels = BIT(0),
 		.buffer = &buffer,
 		.buffer_size = sizeof(buffer),
-		.resolution = 24,
+		.resolution = ADC_RESOLUTION,
 		.oversampling = 0,
 		.calibrate = 0
 	};
 
-	lmp90100 = device_get_binding(DT_INST_0_TI_LMP90100_LABEL);
+	lmp90100 = device_get_binding(DT_LABEL(DT_INST(0, ti_lmp90100)));
 	if (!lmp90100) {
 		LOG_ERR("LMP90100 device not found");
 		return;
@@ -86,14 +99,14 @@ void main(void)
 		err = adc_read(lmp90100, &seq);
 		if (err) {
 			LOG_ERR("failed to read ADC (err %d)", err);
-			return;
+		} else {
+			resistance = (buffer / (double)ADC_MAX) * BOTTOM_RESISTANCE;
+			printf("R: %.02f ohm\n", resistance);
+			printf("T: %.02f degC\n",
+				rtd_temperature(RTD_NOMINAL_RESISTANCE,
+						resistance));
 		}
 
-		resistance = (buffer / 8388608.0) * 2000;
-		printf("R: %.02f ohm\n", resistance);
-		printf("T: %.02f degC\n",
-		       rtd_temperature(RTD_NOMINAL_RESISTANCE, resistance));
-
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }

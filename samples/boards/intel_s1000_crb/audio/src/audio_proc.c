@@ -20,11 +20,11 @@ static void audio_proc_large_block_thread(void);
 
 K_THREAD_DEFINE(audio_proc_sm_blk_tid, AUDIO_SM_BLOCK_PROC_THREAD_STACK_SIZE,
 		audio_proc_small_block_thread, NULL, NULL, NULL,
-		AUDIO_SM_BLOCK_PROC_THREAD_PRIORITY, 0, K_NO_WAIT);
+		AUDIO_SM_BLOCK_PROC_THREAD_PRIORITY, 0, 0);
 
 K_THREAD_DEFINE(audio_proc_lg_blk_tid, AUDIO_LG_BLOCK_PROC_THREAD_STACK_SIZE,
 		audio_proc_large_block_thread, NULL, NULL, NULL,
-		AUDIO_LG_BLOCK_PROC_THREAD_PRIORITY, 0, K_NO_WAIT);
+		AUDIO_LG_BLOCK_PROC_THREAD_PRIORITY, 0, 0);
 
 static void audio_proc_small_block_thread(void)
 {

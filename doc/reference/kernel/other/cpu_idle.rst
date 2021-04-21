@@ -25,8 +25,9 @@ Making the CPU idle
 ===================
 
 Making the CPU idle is simple: call the k_cpu_idle() API. The CPU will stop
-executing instructions until an event occurs. Make sure interrupts are not
-locked before invoking it. Most likely, it will be called within a loop.
+executing instructions until an event occurs. Most likely, the function will
+be called within a loop. Note that in certain architectures, upon return,
+k_cpu_idle() unconditionally unmasks interrupts.
 
 .. code-block:: c
 

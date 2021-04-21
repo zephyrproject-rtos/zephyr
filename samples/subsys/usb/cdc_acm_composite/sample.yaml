@@ -2,8 +2,9 @@ sample:
   name: CDC ACM Composite USB
 tests:
   sample.usb.cdc-acm-composite:
-    depends_on: usb_device gpio
+    depends_on: usb_device
     tags: usb
+    platform_exclude: native_posix native_posix_64
     harness: console
     harness_config:
       type: one_line

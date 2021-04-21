@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
 /* mbed Microcontroller Library
  * Copyright (c) 2017 ARM Limited
  * Copyright (c) 2018-2019 Linaro Limited
@@ -39,9 +40,9 @@
 #define __IO
 #endif
 
-#define uint32_t u32_t
-#define uint16_t u16_t
-#define uint8_t u8_t
+#define uint32_t uint32_t
+#define uint16_t uint16_t
+#define uint8_t uint8_t
 
 #define GET_BITFIELD(val, lsb, msb) \
 	(((val) >> (lsb)) & ((1 << ((msb) - (lsb) + 1)) - 1))
@@ -176,7 +177,7 @@ __IO	uint32_t  E2P_DATA;
 #define SMSC9220_PHY_CS         31
 
 #ifndef SMSC9220_BASE
-#define SMSC9220_BASE           DT_INST_0_SMSC_LAN9220_BASE_ADDRESS
+#define SMSC9220_BASE           DT_INST_REG_ADDR(0)
 #endif
 
 #define SMSC9220                ((volatile SMSC9220_TypeDef *)SMSC9220_BASE)

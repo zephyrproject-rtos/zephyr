@@ -14,7 +14,7 @@
 
 struct sample_instance {
 	LOG_INSTANCE_PTR_DECLARE(log);
-	u32_t cnt;
+	uint32_t cnt;
 };
 
 #define SAMPLE_INSTANCE_DEFINE(_part, _name)				   \

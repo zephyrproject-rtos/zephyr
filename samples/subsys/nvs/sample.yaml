@@ -2,7 +2,7 @@ sample:
   name: NVS Sample
 
 tests:
-  sample.nvs:
+  sample.nvs.basic:
     tags: settings
     depends_on: nvs
     platform_exclude: qemu_x86

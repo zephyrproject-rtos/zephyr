@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2020 Nordic Semicondutor ASA
+
+mainmenu "littlefs core functionality test"
+
+source "Kconfig.zephyr"
+
+config APP_TEST_CUSTOM
+	bool "Select to test additional custom filesystem configurations"

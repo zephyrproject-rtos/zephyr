@@ -17,8 +17,8 @@
  * @}
  */
 
-#ifndef __ZTEST_H__
-#define __ZTEST_H__
+#ifndef ZEPHYR_TESTSUITE_INCLUDE_ZTEST_H_
+#define ZEPHYR_TESTSUITE_INCLUDE_ZTEST_H_
 
 /**
  * @defgroup ztest Zephyr testing suite
@@ -38,6 +38,7 @@
 #define CONFIG_MP_NUM_CPUS 1
 #define CONFIG_SYS_CLOCK_TICKS_PER_SEC 100
 #define CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC 10000000
+#define ARCH_STACK_PTR_ALIGN 8
 /* FIXME: Properly integrate with Zephyr's arch specific code */
 #define CONFIG_X86 1
 #define CONFIG_PRINTK 1
@@ -71,4 +72,4 @@ void test_main(void);
 }
 #endif
 
-#endif /* __ZTEST_H__ */
+#endif /* ZEPHYR_TESTSUITE_INCLUDE_ZTEST_H_ */

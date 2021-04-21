@@ -8,26 +8,11 @@ if BOARD_NUCLEO_F207ZG
 config BOARD
 	default "nucleo_f207zg"
 
-config UART_3
-	default y
-	depends on UART_CONSOLE
-
 if NETWORKING
 
 config NET_L2_ETHERNET
 	default y
 
-config ETH_STM32_HAL
-	default y
-
 endif # NETWORKING
-
-config UART_6
-	default y
-	depends on SERIAL
-
-config ADC_1
-	default y
-	depends on ADC
 
 endif # BOARD_NUCLEO_F207ZG

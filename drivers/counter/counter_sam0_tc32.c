@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam0_tc32
+
 #include <drivers/counter.h>
 #include <device.h>
 #include <soc.h>
@@ -27,22 +29,22 @@ struct counter_sam0_tc32_config {
 	struct counter_config_info info;
 	TcCount32 *regs;
 #ifdef MCLK
-	volatile u32_t *mclk;
-	u32_t mclk_mask;
-	u16_t gclk_id;
+	volatile uint32_t *mclk;
+	uint32_t mclk_mask;
+	uint16_t gclk_id;
 #else
-	u32_t pm_apbcmask;
-	u16_t gclk_clkctrl_id;
+	uint32_t pm_apbcmask;
+	uint16_t gclk_clkctrl_id;
 #endif
-	u16_t prescaler;
+	uint16_t prescaler;
 
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 #define DEV_CFG(dev) ((const struct counter_sam0_tc32_config *const) \
-		      (dev)->config->config_info)
+		      (dev)->config)
 #define DEV_DATA(dev) ((struct counter_sam0_tc32_data *const) \
-		       (dev)->driver_data)
+		       (dev)->data)
 
 
 static void wait_synchronization(TcCount32 *regs)
@@ -74,7 +76,7 @@ static void read_synchronize_count(TcCount32 *regs)
 #endif
 }
 
-static int counter_sam0_tc32_start(struct device *dev)
+static int counter_sam0_tc32_start(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -88,7 +90,7 @@ static int counter_sam0_tc32_start(struct device *dev)
 	return 0;
 }
 
-static int counter_sam0_tc32_stop(struct device *dev)
+static int counter_sam0_tc32_stop(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -104,7 +106,7 @@ static int counter_sam0_tc32_stop(struct device *dev)
 	return 0;
 }
 
-static u32_t counter_sam0_tc32_read(struct device *dev)
+static uint32_t counter_sam0_tc32_read(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -113,21 +115,23 @@ static u32_t counter_sam0_tc32_read(struct device *dev)
 	return tc->COUNT.reg;
 }
 
-static int counter_sam0_tc32_get_value(struct device *dev, u32_t *ticks)
+static int counter_sam0_tc32_get_value(const struct device *dev,
+				       uint32_t *ticks)
 {
 	*ticks = counter_sam0_tc32_read(dev);
 	return 0;
 }
 
-static void counter_sam0_tc32_relative_alarm(struct device *dev, u32_t ticks)
+static void counter_sam0_tc32_relative_alarm(const struct device *dev,
+					     uint32_t ticks)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
-	u32_t before;
-	u32_t target;
-	u32_t after;
-	u32_t max;
+	uint32_t before;
+	uint32_t target;
+	uint32_t after;
+	uint32_t max;
 
 	read_synchronize_count(tc);
 	before = tc->COUNT.reg;
@@ -177,7 +181,8 @@ out_future:
 	tc->INTENSET.reg = TC_INTFLAG_MC1;
 }
 
-static int counter_sam0_tc32_set_alarm(struct device *dev, u8_t chan_id,
+static int counter_sam0_tc32_set_alarm(const struct device *dev,
+				       uint8_t chan_id,
 				       const struct counter_alarm_cfg *alarm_cfg)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
@@ -214,7 +219,8 @@ static int counter_sam0_tc32_set_alarm(struct device *dev, u8_t chan_id,
 	return 0;
 }
 
-static int counter_sam0_tc32_cancel_alarm(struct device *dev, u8_t chan_id)
+static int counter_sam0_tc32_cancel_alarm(const struct device *dev,
+					  uint8_t chan_id)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
@@ -232,8 +238,8 @@ static int counter_sam0_tc32_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static int counter_sam0_tc32_set_top_value(struct device *dev,
-					 const struct counter_top_cfg *top_cfg)
+static int counter_sam0_tc32_set_top_value(const struct device *dev,
+					   const struct counter_top_cfg *top_cfg)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
@@ -278,7 +284,7 @@ static int counter_sam0_tc32_set_top_value(struct device *dev,
 	return err;
 }
 
-static u32_t counter_sam0_tc32_get_pending_int(struct device *dev)
+static uint32_t counter_sam0_tc32_get_pending_int(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -286,7 +292,7 @@ static u32_t counter_sam0_tc32_get_pending_int(struct device *dev)
 	return tc->INTFLAG.reg & (TC_INTFLAG_MC0 | TC_INTFLAG_MC1);
 }
 
-static u32_t counter_sam0_tc32_get_top_value(struct device *dev)
+static uint32_t counter_sam0_tc32_get_top_value(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -299,18 +305,12 @@ static u32_t counter_sam0_tc32_get_top_value(struct device *dev)
 	return tc->CC[0].reg;
 }
 
-static u32_t counter_sam0_tc32_get_max_relative_alarm(struct device *dev)
+static void counter_sam0_tc32_isr(const struct device *dev)
 {
-	return counter_sam0_tc32_get_top_value(dev) - 1;
-}
-
-static void counter_sam0_tc32_isr(void *arg)
-{
-	struct device *dev = (struct device *)arg;
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
-	u8_t status = tc->INTFLAG.reg;
+	uint8_t status = tc->INTFLAG.reg;
 
 	/* Acknowledge all interrupts */
 	tc->INTFLAG.reg = status;
@@ -333,7 +333,7 @@ static void counter_sam0_tc32_isr(void *arg)
 	}
 }
 
-static int counter_sam0_tc32_initialize(struct device *dev)
+static int counter_sam0_tc32_initialize(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -397,69 +397,61 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 	.set_top_value = counter_sam0_tc32_set_top_value,
 	.get_pending_int = counter_sam0_tc32_get_pending_int,
 	.get_top_value = counter_sam0_tc32_get_top_value,
-	.get_max_relative_alarm = counter_sam0_tc32_get_max_relative_alarm,
 };
 
 
 #ifdef MCLK
-#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n) \
-	.mclk = MCLK_TC##n,		   \
-	.mclk_mask = MCLK_TC##n##_MASK,	   \
-	.gclk_id = TC##n##_GCLK_ID,
+#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)				\
+	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
+	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
+	.gclk_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),
 #else
-#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)			    \
-	.pm_apbcmask = PM_APBCMASK_TC##n,			    \
-	.gclk_clkctrl_id = UTIL_CAT(GCLK_CLKCTRL_ID_TC ## n ## _TC, \
-				    UTIL_INC(n)),
+#define COUNTER_SAM0_TC32_CLOCK_CONTROL(n)				\
+	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
+	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),
 #endif
 
-#define COUNTER_SAM0_TC32_DEVICE(n)					      \
-	static void counter_sam0_tc32_config_##n(struct device *dev);	      \
-	static const struct counter_sam0_tc32_config			      \
-	counter_sam0_tc32_dev_config_##n = {				      \
-		.info = {						      \
-			.max_top_value = UINT32_MAX,			      \
-			.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ /		      \
-				CONFIG_COUNTER_SAM0_TC32_##n##_DIVISOR,	      \
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		      \
-			.channels = 1					      \
-		},							      \
-		.regs = (TcCount32 *)DT_ATMEL_SAM0_TC32_TC_##n##_BASE_ADDRESS,\
-		COUNTER_SAM0_TC32_CLOCK_CONTROL(n)			      \
-		.prescaler = UTIL_CAT(TC_CTRLA_PRESCALER_DIV,		      \
-				CONFIG_COUNTER_SAM0_TC32_##n##_DIVISOR),      \
-		.irq_config_func = &counter_sam0_tc32_config_##n,	      \
-	};								      \
-	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;  \
-	DEVICE_AND_API_INIT(counter_sam0_tc32_##n,			      \
-			    DT_ATMEL_SAM0_TC32_TC_##n##_LABEL,		      \
-			    &counter_sam0_tc32_initialize,		      \
-			    &counter_sam0_tc32_dev_data_##n,		      \
-			    &counter_sam0_tc32_dev_config_##n, PRE_KERNEL_1,  \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		      \
-			    &counter_sam0_tc32_driver_api);		      \
-	static void counter_sam0_tc32_config_##n(struct device *dev)	      \
-	{								      \
-		IRQ_CONNECT(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_0,		      \
-			    DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_0_PRIORITY,	      \
-			    counter_sam0_tc32_isr,			      \
-			    DEVICE_GET(counter_sam0_tc32_##n),		      \
-			    0);						      \
-		irq_enable(DT_ATMEL_SAM0_TC32_TC_##n##_IRQ_0);		      \
+#define SAM0_TC32_PRESCALER(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, prescaler),		\
+		    (DT_INST_PROP(n, prescaler)), (1))
+
+#define COUNTER_SAM0_TC32_DEVICE(n)					\
+	static void counter_sam0_tc32_config_##n(const struct device *dev); \
+	static const struct counter_sam0_tc32_config			\
+									\
+	counter_sam0_tc32_dev_config_##n = {				\
+		.info = {						\
+			.max_top_value = UINT32_MAX,			\
+			.freq = SOC_ATMEL_SAM0_GCLK0_FREQ_HZ /		\
+				SAM0_TC32_PRESCALER(n),			\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
+			.channels = 1					\
+		},							\
+		.regs = (TcCount32 *)DT_INST_REG_ADDR(n),		\
+		COUNTER_SAM0_TC32_CLOCK_CONTROL(n)			\
+		.prescaler = UTIL_CAT(TC_CTRLA_PRESCALER_DIV,		\
+				      SAM0_TC32_PRESCALER(n)),		\
+		.irq_config_func = &counter_sam0_tc32_config_##n,	\
+	};								\
+									\
+	static struct counter_sam0_tc32_data counter_sam0_tc32_dev_data_##n;\
+									\
+	DEVICE_DT_INST_DEFINE(n,					\
+			    &counter_sam0_tc32_initialize,		\
+			    device_pm_control_nop,			\
+			    &counter_sam0_tc32_dev_data_##n,		\
+			    &counter_sam0_tc32_dev_config_##n,		\
+			    PRE_KERNEL_1,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &counter_sam0_tc32_driver_api);		\
+									\
+	static void counter_sam0_tc32_config_##n(const struct device *dev) \
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority),			\
+			    counter_sam0_tc32_isr,			\
+			    DEVICE_DT_INST_GET(n), 0);			\
+		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-#if DT_ATMEL_SAM0_TC32_TC_0_BASE_ADDRESS
-COUNTER_SAM0_TC32_DEVICE(0);
-#endif
-
-#if DT_ATMEL_SAM0_TC32_TC_2_BASE_ADDRESS
-COUNTER_SAM0_TC32_DEVICE(2);
-#endif
-
-#if DT_ATMEL_SAM0_TC32_TC_4_BASE_ADDRESS
-COUNTER_SAM0_TC32_DEVICE(4);
-#endif
-
-#if DT_ATMEL_SAM0_TC32_TC_6_BASE_ADDRESS
-COUNTER_SAM0_TC32_DEVICE(6);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_SAM0_TC32_DEVICE)

@@ -7,6 +7,7 @@
 
 /*
  * Copyright (c) 2017-2018 Linaro Limited
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,8 +55,14 @@ struct zsock_pollfd {
 
 /** zsock_recv: Read data without removing it from socket input queue */
 #define ZSOCK_MSG_PEEK 0x02
+/** zsock_recv: return the real length of the datagram, even when it was longer
+ *  than the passed buffer
+ */
+#define ZSOCK_MSG_TRUNC 0x20
 /** zsock_recv/zsock_send: Override operation to non-blocking */
 #define ZSOCK_MSG_DONTWAIT 0x40
+/** zsock_recv: block until the full amount of data can be returned */
+#define ZSOCK_MSG_WAITALL 0x100
 
 /* Well-known values, e.g. from Linux man 2 shutdown:
  * "The constants SHUT_RD, SHUT_WR, SHUT_RDWR have the value 0, 1, 2,
@@ -119,11 +126,23 @@ struct zsock_pollfd {
  *    - 1 - server
  */
 #define TLS_DTLS_ROLE 6
+/** Socket option for setting the supported Application Layer Protocols.
+ *  It accepts and returns a const char array of NULL terminated strings
+ *  representing the supported application layer protocols listed during
+ *  the TLS handshake.
+ */
+#define TLS_ALPN_LIST 7
+/** Socket option to set DTLS handshake timeout. The timeout starts at min,
+ *  and upon retransmission the timeout is doubled util max is reached.
+ *  Min and max arguments are separate options. The time unit is ms.
+ */
+#define TLS_DTLS_HANDSHAKE_TIMEOUT_MIN 8
+#define TLS_DTLS_HANDSHAKE_TIMEOUT_MAX 9
 
 /** @} */
 
 /* Valid values for TLS_PEER_VERIFY option */
-#define TLS_PEER_VERIFY_NONE 0 /**< Peer verification disabled. */
+#define TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
 #define TLS_PEER_VERIFY_OPTIONAL 1 /**< Peer verification optional. */
 #define TLS_PEER_VERIFY_REQUIRED 2 /**< Peer verification required. */
 
@@ -146,6 +165,44 @@ struct zsock_addrinfo {
 };
 
 /**
+ * @brief Obtain a file descriptor's associated net context
+ *
+ * With CONFIG_USERSPACE enabled, the kernel's object permission system
+ * must apply to socket file descriptors. When a socket is opened, by default
+ * only the caller has permission, access by other threads will fail unless
+ * they have been specifically granted permission.
+ *
+ * This is achieved by tagging data structure definitions that implement the
+ * underlying object associated with a network socket file descriptor with
+ * '__net_socket`. All pointers to instances of these will be known to the
+ * kernel as kernel objects with type K_OBJ_NET_SOCKET.
+ *
+ * This API is intended for threads that need to grant access to the object
+ * associated with a particular file descriptor to another thread. The
+ * returned pointer represents the underlying K_OBJ_NET_SOCKET  and
+ * may be passed to APIs like k_object_access_grant().
+ *
+ * In a system like Linux which has the notion of threads running in processes
+ * in a shared virtual address space, this sort of management is unnecessary as
+ * the scope of file descriptors is implemented at the process level.
+ *
+ * However in Zephyr the file descriptor scope is global, and MPU-based systems
+ * are not able to implement a process-like model due to the lack of memory
+ * virtualization hardware. They use discrete object permissions and memory
+ * domains instead to define thread access scope.
+ *
+ * User threads will have no direct access to the returned object
+ * and will fault if they try to access its memory; the pointer can only be
+ * used to make permission assignment calls, which follow exactly the rules
+ * for other kernel objects like device drivers and IPC.
+ *
+ * @param sock file descriptor
+ * @return pointer to associated network socket object, or NULL if the
+ *         file descriptor wasn't valid or the caller had no access permission
+ */
+__syscall void *zsock_get_context_object(int sock);
+
+/**
  * @brief Create a network socket
  *
  * @details
@@ -156,8 +213,27 @@ struct zsock_addrinfo {
  * This function is also exposed as ``socket()``
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
  * @endrst
+ *
+ * If CONFIG_USERSPACE is enabled, the caller will be granted access to the
+ * context object associated with the returned file descriptor.
+ * @see zsock_get_context_object()
+ *
  */
 __syscall int zsock_socket(int family, int type, int proto);
+
+/**
+ * @brief Create an unnamed pair of connected sockets
+ *
+ * @details
+ * @rst
+ * See `POSIX.1-2017 article
+ * <https://pubs.opengroup.org/onlinepubs/009695399/functions/socketpair.html>`__
+ * for normative description.
+ * This function is also exposed as ``socketpair()``
+ * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * @endrst
+ */
+__syscall int zsock_socketpair(int family, int type, int proto, int *sv);
 
 /**
  * @brief Close a network socket
@@ -566,6 +642,11 @@ static inline int socket(int family, int type, int proto)
 	return zsock_socket(family, type, proto);
 }
 
+static inline int socketpair(int family, int type, int proto, int sv[2])
+{
+	return zsock_socketpair(family, type, proto, sv);
+}
+
 static inline int close(int sock)
 {
 	return zsock_close(sock);
@@ -607,8 +688,22 @@ static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
 	return zsock_recv(sock, buf, max_len, flags);
 }
 
-/* This conflicts with fcntl.h, so code must include fcntl.h before socket.h: */
-#define fcntl zsock_fcntl
+/*
+ * Need this wrapper because newer GCC versions got too smart and "typecheck"
+ * even macros, so '#define fcntl zsock_fcntl' leads to error.
+ */
+static inline int zsock_fcntl_wrapper(int sock, int cmd, ...)
+{
+	va_list args;
+	int flags;
+
+	va_start(args, cmd);
+	flags = va_arg(args, int);
+	va_end(args);
+	return zsock_fcntl(sock, cmd, flags);
+}
+
+#define fcntl zsock_fcntl_wrapper
 
 static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
 			     const struct sockaddr *dest_addr,
@@ -702,7 +797,9 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define POLLNVAL ZSOCK_POLLNVAL
 
 #define MSG_PEEK ZSOCK_MSG_PEEK
+#define MSG_TRUNC ZSOCK_MSG_TRUNC
 #define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
+#define MSG_WAITALL ZSOCK_MSG_WAITALL
 
 #define SHUT_RD ZSOCK_SHUT_RD
 #define SHUT_WR ZSOCK_SHUT_WR
@@ -716,7 +813,16 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define EAI_MEMORY DNS_EAI_MEMORY
 #define EAI_SYSTEM DNS_EAI_SYSTEM
 #define EAI_SERVICE DNS_EAI_SERVICE
+#define EAI_SOCKTYPE DNS_EAI_SOCKTYPE
+#define EAI_FAMILY DNS_EAI_FAMILY
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
+
+#define IFNAMSIZ Z_DEVICE_MAX_NAME_LEN
+
+/** Interface description structure */
+struct ifreq {
+	char ifr_name[IFNAMSIZ]; /* Interface name */
+};
 
 /** sockopt: Socket-level option */
 #define SOL_SOCKET 1
@@ -724,11 +830,26 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 /* Socket options for SOL_SOCKET level */
 /** sockopt: Enable server address reuse (ignored, for compatibility) */
 #define SO_REUSEADDR 2
+/** sockopt: Type of the socket */
+#define SO_TYPE 3
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
 
+/**
+ * sockopt: Receive timeout
+ * Applies to receive functions like recv(), but not to connect()
+ */
+#define SO_RCVTIMEO 20
+/** sockopt: Send timeout */
+#define SO_SNDTIMEO 21
+
+/** sockopt: Bind a socket to an interface */
+#define SO_BINDTODEVICE	25
+
 /** sockopt: Timestamp TX packets */
 #define SO_TIMESTAMPING 37
+/** sockopt: Protocol used with the socket */
+#define SO_PROTOCOL 38
 
 /* Socket options for IPPROTO_TCP level */
 /** sockopt: Disable TCP buffering (ignored, for compatibility) */

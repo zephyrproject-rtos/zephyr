@@ -8,146 +8,83 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include <sys/ring_buffer.h>
+#include <logging/log_backend_std.h>
 
-#define BUF_SIZE 64
+void intel_adsp_trace_out(int8_t *str, size_t len);
 
-BUILD_ASSERT(CONFIG_LOG_BACKEND_ADSP_RINGBUF_SIZE % BUF_SIZE == 0);
-
-static struct ring_buf ringbuf;
-
-/*
- * Log message format:
- * Logging started with magic number 0x55aa followed by log message id.
- * Log message ended with null terminator and takes BUF_SIZE slot. The
- * long log message can occupy several logging slots.
- */
-
-static void init(void)
+static int char_out(uint8_t *data, size_t length, void *ctx)
 {
-	ring_buf_init(&ringbuf, CONFIG_LOG_BACKEND_ADSP_RINGBUF_SIZE,
-		      (void *)CONFIG_LOG_BACKEND_ADSP_RINGBUF_BASE);
-}
-
-static void trace(const u8_t *data, size_t length)
-{
-	const u16_t magic = 0x55aa;
-	static u16_t log_id;
-	volatile u8_t *t, *region;
-	int space;
-	int i;
-
-	space = ring_buf_space_get(&ringbuf);
-	if (space < BUF_SIZE) {
-		u8_t *dummy;
-
-		/* Remove oldest entry */
-		ring_buf_get_claim(&ringbuf, &dummy, BUF_SIZE);
-		ring_buf_get_finish(&ringbuf, BUF_SIZE);
-	}
-
-	ring_buf_put_claim(&ringbuf, (u8_t **)&t, BUF_SIZE);
-	region = t;
-
-	/* Add magic number at the beginning of the slot */
-	*(u16_t *)t = magic;
-	t += 2;
-
-	/* Add log id */
-	*(u16_t *)t = log_id++;
-	t += 2;
-
-	for (i = 0; i < MIN(length, BUF_SIZE - 4); i++) {
-		*t++ = data[i];
-	}
-
-	SOC_DCACHE_FLUSH((void *)region, BUF_SIZE);
-
-	ring_buf_put_finish(&ringbuf, BUF_SIZE);
-}
-
-static int char_out(u8_t *data, size_t length, void *ctx)
-{
-	trace(data, length);
+	intel_adsp_trace_out(data, length);
 
 	return length;
 }
 
-/* magic and log id takes space */
-static u8_t buf[BUF_SIZE - 4];
+/* Trace output goes in 64 byte chunks with a 4-byte header, no point
+ * in buffering more than 60 bytes at a time
+ */
+static uint8_t log_buf[60];
 
-LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
+LOG_OUTPUT_DEFINE(log_output_adsp, char_out, log_buf, 1);
 
-static void put(const struct log_backend *const backend,
-		struct log_msg *msg)
+static uint32_t format_flags(void)
 {
-	log_msg_get(msg);
-
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
-
-	log_output_msg_process(&log_output, msg, flags);
-
-	log_msg_put(msg);
+	return flags;
 }
 
+static inline void put(const struct log_backend *const backend,
+		       struct log_msg *msg)
+{
+	log_backend_std_put(&log_output_adsp, format_flags(), msg);
+}
 static void panic(struct log_backend const *const backend)
 {
-	log_output_flush(&log_output);
+	log_backend_std_panic(&log_output_adsp);
 }
 
-static void dropped(const struct log_backend *const backend, u32_t cnt)
+static inline void dropped(const struct log_backend *const backend,
+			   uint32_t cnt)
 {
-	ARG_UNUSED(backend);
-
-	log_output_dropped_process(&log_output, cnt);
+	log_output_dropped_process(&log_output_adsp, cnt);
 }
 
-static void sync_string(const struct log_backend *const backend,
-			struct log_msg_ids src_level, u32_t timestamp,
-			const char *fmt, va_list ap)
+static inline void put_sync_string(const struct log_backend *const backend,
+				   struct log_msg_ids src_level,
+				   uint32_t timestamp, const char *fmt,
+				   va_list ap)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL;
-	u32_t key;
-
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	key = irq_lock();
-	log_output_string(&log_output, src_level, timestamp, fmt, ap, flags);
-	irq_unlock(key);
+	log_output_string(&log_output_adsp, src_level,
+			  timestamp, fmt, ap, format_flags());
 }
 
-static void sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, u32_t timestamp,
-			 const char *metadata, const u8_t *data, u32_t length)
+static inline void put_sync_hexdump(const struct log_backend *const backend,
+				    struct log_msg_ids src_level,
+				    uint32_t timestamp, const char *metadata,
+				    const uint8_t *data, uint32_t length)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
+	log_output_hexdump(&log_output_adsp, src_level, timestamp,
+			   metadata, data, length, format_flags());
+}
 
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP)) {
-		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
-	}
-
-	key = irq_lock();
-	log_output_hexdump(&log_output, src_level, timestamp,
-			   metadata, data, length, flags);
-	irq_unlock(key);
+static void process(const struct log_backend *const backend,
+		union log_msg2_generic *msg)
+{
+	log_output_msg2_process(&log_output_adsp, &msg->log, format_flags());
 }
 
 const struct log_backend_api log_backend_adsp_api = {
-	.put = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : put,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
-			sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
-			sync_hexdump : NULL,
-	.panic = panic,
-	.init = init,
+	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+		put_sync_string : NULL,
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
+		put_sync_hexdump : NULL,
+	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? put : NULL,
 	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,
+	.panic = panic,
 };
 
 LOG_BACKEND_DEFINE(log_backend_adsp, log_backend_adsp_api, true);

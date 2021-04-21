@@ -5,6 +5,7 @@
 
 menuconfig GPIO
 	bool "GPIO Drivers"
+	select HAS_DTS_GPIO
 	help
 	  Include GPIO drivers in system config
 
@@ -16,12 +17,15 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config GPIO_SHELL
 	bool "Enable GPIO Shell"
+	depends on SHELL
 	help
 	  Enable GPIO Shell for testing.
 
 source "drivers/gpio/Kconfig.dw"
 
 source "drivers/gpio/Kconfig.pca95xx"
+
+source "drivers/gpio/Kconfig.mcp23s17"
 
 source "drivers/gpio/Kconfig.mcux"
 
@@ -55,6 +59,8 @@ source "drivers/gpio/Kconfig.sx1509b"
 
 source "drivers/gpio/Kconfig.imx"
 
+source "drivers/gpio/Kconfig.it8xxx2"
+
 source "drivers/gpio/Kconfig.intel"
 
 source "drivers/gpio/Kconfig.xec"
@@ -68,5 +74,19 @@ source "drivers/gpio/Kconfig.ht16k33"
 source "drivers/gpio/Kconfig.lmp90xxx"
 
 source "drivers/gpio/Kconfig.litex"
+
+source "drivers/gpio/Kconfig.lpc11u6x"
+
+source "drivers/gpio/Kconfig.xlnx"
+
+source "drivers/gpio/Kconfig.npcx"
+
+source "drivers/gpio/Kconfig.emul"
+
+source "drivers/gpio/Kconfig.psoc6"
+
+source "drivers/gpio/Kconfig.pcal6408a"
+
+source "drivers/gpio/Kconfig.eos_s3"
 
 endif # GPIO

@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic x86 qemu CPU
+
+compatible: "intel,x86"
+
+include: cpu.yaml

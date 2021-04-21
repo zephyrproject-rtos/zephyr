@@ -1,15 +1,16 @@
 .. _sam_v71_xplained_ultra:
 
-SAM V71 Xplained Ultra
-######################
+SAM V71(B) Xplained Ultra
+#########################
 
 Overview
 ********
 
 The SAM V71 Xplained Ultra evaluation kit is a development platform to
-evaluate the Atmel SAM V71 series microcontrollers.
+evaluate the Atmel SAM V71 series microcontrollers. The current version
+allows to use both IC variations ATSAMV71Q21A(B).
 
-.. image:: img/atsamv71-xult.jpg
+.. image:: img/sam_v71_xult.jpg
      :width: 500px
      :align: center
      :alt: SAM V71 Xplained Ultra
@@ -17,7 +18,7 @@ evaluate the Atmel SAM V71 series microcontrollers.
 Hardware
 ********
 
-- ATSAMV71Q21 ARM Cortex-M7 Processor
+- ATSAMV71Q21A(B) ARM Cortex-M7 Processor
 - 12 MHz crystal oscillator
 - 32.768 kHz crystal oscillator
 - Supercap backup
@@ -98,9 +99,6 @@ Programming and Debugging
 *************************
 
 Flashing the Zephyr project onto SAM V71 MCU requires the `OpenOCD tool`_.
-Support for Atmel SAM E microcontroller series was added in OpenOCD release
-0.10.0, which was added in Zephyr SDK 0.9.2.
-
 By default a factory new SAM V71 chip will boot the `SAM-BA`_ boot loader
 located in the ROM, not the flashed image. This is determined by the value
 of GPNVM1 (General-Purpose NVM bit 1). The flash procedure will ensure that
@@ -145,6 +143,15 @@ Flashing
 
    You should see "Hello World! arm" in your terminal.
 
+#. To use the SoC variation B IC, you need type "sam_v71b_xult".
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: sam_v71b_xult
+      :goals: build flash
+
+   You should see "Hello World! arm" in your terminal.
+
 You can flash the image using an external debug adapter such as J-Link
 or ULINK, connected to the 20-pin JTAG header. Supply the name of the
 debug adapter (e.g., ``jlink``) via an OPENOCD_INTERFACE environment
@@ -177,4 +184,4 @@ SAM V71 Product Page:
     http://openocd.org/
 
 .. _SAM-BA:
-    http://www.atmel.com/tools/ATMELSAM-BAIN-SYSTEMPROGRAMMER.aspx
+    https://www.microchip.com/developmenttools/ProductDetails/PartNO/SAM-BA%20In-system%20Programmer

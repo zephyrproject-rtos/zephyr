@@ -9,6 +9,19 @@ properties:
     local-mac-address:
       type: uint8-array
       required: false
-      description: mac address
+      description: Specifies the MAC address that was assigned to the network device
     label:
       required: true
+    zephyr,random-mac-address:
+      type: boolean
+      required: false
+      description: |
+        Use a random MAC address generated when the driver is initialized.
+        Note that using this choice and rebooting a board may leave stale
+        MAC address in peers' ARP caches and lead to issues and delays in
+        communication.  (Use "ip neigh flush all" on Linux peers to clear
+        ARP cache.)
+
+        It is driver specific how the OUI octets are handled.
+
+        If set we ignore any setting of the local-mac-address property.

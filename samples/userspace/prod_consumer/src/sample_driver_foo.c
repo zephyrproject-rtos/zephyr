@@ -21,25 +21,26 @@ LOG_MODULE_REGISTER(sample_driver);
  */
 
 #define DEV_DATA(dev) \
-	((struct sample_driver_foo_dev_data *const)(dev)->driver_data)
+	((struct sample_driver_foo_dev_data *const)(dev)->data)
 
 struct sample_driver_foo_dev_data {
+	const struct device *dev;
 	sample_driver_callback_t cb;
 	void *cb_context;
 	struct k_timer timer; /* to fake 'interrupts' */
-	u32_t count;
+	uint32_t count;
 };
 
-static int sample_driver_foo_write(struct device *dev, void *buf)
+static int sample_driver_foo_write(const struct device *dev, void *buf)
 {
 	LOG_DBG("%s(%p, %p)", __func__, dev, buf);
 
 	return 0;
 }
 
-static int sample_driver_foo_set_callback(struct device *dev,
-				       sample_driver_callback_t cb,
-				       void *context)
+static int sample_driver_foo_set_callback(const struct device *dev,
+					  sample_driver_callback_t cb,
+					  void *context)
 {
 	struct sample_driver_foo_dev_data *data = DEV_DATA(dev);
 	int key = irq_lock();
@@ -51,15 +52,15 @@ static int sample_driver_foo_set_callback(struct device *dev,
 	return 0;
 }
 
-static int sample_driver_foo_state_set(struct device *dev, bool active)
+static int sample_driver_foo_state_set(const struct device *dev, bool active)
 {
 	struct sample_driver_foo_dev_data *data = DEV_DATA(dev);
 
 	LOG_DBG("%s(%p, %d)", __func__, dev, active);
 
-	data->timer.user_data = dev;
+	data->timer.user_data = data;
 	if (active) {
-		k_timer_start(&data->timer, K_MSEC(1000), K_MSEC(1000));
+		k_timer_start(&data->timer, K_MSEC(100), K_MSEC(100));
 	} else {
 		k_timer_stop(&data->timer);
 	}
@@ -75,8 +76,7 @@ static struct sample_driver_api sample_driver_foo_api = {
 
 static void sample_driver_foo_isr(void *param)
 {
-	struct device *dev = param;
-	struct sample_driver_foo_dev_data *data = DEV_DATA(dev);
+	struct sample_driver_foo_dev_data *data = param;
 
 	char data_payload[SAMPLE_DRIVER_MSG_SIZE];
 
@@ -85,7 +85,7 @@ static void sample_driver_foo_isr(void *param)
 
 	/* Just for demonstration purposes; the data payload is full of junk */
 	if (data->cb) {
-		data->cb(dev, data->cb_context, data_payload);
+		data->cb(data->dev, data->cb_context, data_payload);
 	}
 
 	data->count++;
@@ -96,7 +96,7 @@ static void sample_driver_timer_cb(struct k_timer *timer)
 	sample_driver_foo_isr(timer->user_data);
 }
 
-static int sample_driver_foo_init(struct device *dev)
+static int sample_driver_foo_init(const struct device *dev)
 {
 	struct sample_driver_foo_dev_data *data = DEV_DATA(dev);
 
@@ -104,13 +104,16 @@ static int sample_driver_foo_init(struct device *dev)
 
 	LOG_DBG("initialized foo sample driver %p", dev);
 
+	data->dev = dev;
+
 	return 0;
 }
 
 static struct sample_driver_foo_dev_data sample_driver_foo_dev_data_0;
 
-DEVICE_AND_API_INIT(sample_driver_foo_0, SAMPLE_DRIVER_NAME_0,
+DEVICE_DEFINE(sample_driver_foo_0, SAMPLE_DRIVER_NAME_0,
 		    &sample_driver_foo_init,
+		    device_pm_control_nop,
 		    &sample_driver_foo_dev_data_0, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &sample_driver_foo_api);

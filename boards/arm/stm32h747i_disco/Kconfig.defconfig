@@ -38,23 +38,11 @@ config CLOCK_STM32_D3PPRE
 config STM32H7_DUAL_CORE
 	default y
 
-# Dual core boot configuration. Boot method is selected in common file to avoid
-# desync issues.
-choice STM32H7_DUAL_CORE_BOOT
-	# Use out of the box config by default
-	# default STM32H7_BOOT_CM4_CM7
-	default STM32H7_BOOT_CM7_CM4GATED
-	depends on STM32H7_DUAL_CORE
-endchoice
+if NETWORKING
 
-# Change this to assign UART_1 (console) to M4 core
-config UART_1
-	default y if BOARD_STM32H747I_DISCO_M7
-	depends on UART_CONSOLE
+config NET_L2_ETHERNET
+	default y
 
-# Change this to assign UART_8 to M4 core
-config UART_8
-	default y if BOARD_STM32H747I_DISCO_M7
-	depends on SERIAL
+endif # NETWORKING
 
 endif # BOARD_STM32H747I_DISCO_M7

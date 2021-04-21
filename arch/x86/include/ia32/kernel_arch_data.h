@@ -44,9 +44,9 @@
 #define _THREAD_WRAPPER_REQUIRED
 #endif
 
-#if defined(CONFIG_LAZY_FP_SHARING) && defined(CONFIG_SSE)
+#if defined(CONFIG_LAZY_FPU_SHARING) && defined(CONFIG_X86_SSE)
 #define _FP_USER_MASK (K_FP_REGS | K_SSE_REGS)
-#elif defined(CONFIG_LAZY_FP_SHARING)
+#elif defined(CONFIG_LAZY_FPU_SHARING)
 #define _FP_USER_MASK (K_FP_REGS)
 #endif
 
@@ -62,6 +62,10 @@ extern "C" {
 extern void z_x86_thread_entry_wrapper(k_thread_entry_t entry,
 				      void *p1, void *p2, void *p3);
 #endif /* _THREAD_WRAPPER_REQUIRED */
+
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+extern void z_x86_tls_update_gdt(struct k_thread *thread);
+#endif
 
 #ifdef __cplusplus
 }

@@ -4,11 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @filesystem
- * @brief test_filesystem
- * Demonstrates the ZEPHYR File System APIs
- */
 
 #include "test_fat.h"
 #include <string.h>
@@ -26,13 +21,17 @@ static int test_file_open(void)
 	}
 
 	/* Verify fs_open() */
-	res = fs_open(&filep, TEST_FILE);
+	res = fs_open(&filep, TEST_FILE, FS_O_CREATE | FS_O_RDWR);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;
 	}
 
 	TC_PRINT("Opened file %s\n", TEST_FILE);
+
+	if (check_file_dir_exists(TEST_FILE)) {
+		TC_PRINT("File now exists %s\n", TEST_FILE);
+	}
 
 	return res;
 }
@@ -166,7 +165,7 @@ static int test_file_truncate(void)
 	fs_seek(&filep, 0, FS_SEEK_END);
 
 	orig_pos = fs_tell(&filep);
-	TC_PRINT("Original size of file = %ld\n", orig_pos);
+	TC_PRINT("Original size of file = %ld\n", (long) orig_pos);
 
 	/* Test shrinking file */
 	TC_PRINT("\nTesting shrinking\n");
@@ -179,7 +178,7 @@ static int test_file_truncate(void)
 
 	fs_seek(&filep, 0, FS_SEEK_END);
 	TC_PRINT("File size after shrinking by 5 bytes = %ld\n",
-						fs_tell(&filep));
+						(long) fs_tell(&filep));
 	if (fs_tell(&filep) != (orig_pos - 5)) {
 		TC_PRINT("File size after fs_truncate not as expected\n");
 		fs_close(&filep);
@@ -199,7 +198,7 @@ static int test_file_truncate(void)
 
 	fs_seek(&filep, 0, FS_SEEK_END);
 	TC_PRINT("File size after expanding by 10 bytes = %ld\n",
-						fs_tell(&filep));
+						(long) fs_tell(&filep));
 	if (fs_tell(&filep) != (orig_pos + 10)) {
 		TC_PRINT("File size after fs_truncate not as expected\n");
 		fs_close(&filep);
@@ -226,7 +225,7 @@ static int test_file_truncate(void)
 		}
 	}
 
-	return TC_PASS;
+	return res;
 }
 
 int test_file_close(void)

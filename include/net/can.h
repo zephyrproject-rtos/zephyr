@@ -99,15 +99,15 @@ struct net_can_api {
 	struct net_if_api iface_api;
 
 	/** Send a single CAN frame */
-	int (*send)(struct device *dev, const struct zcan_frame *frame,
-		    can_tx_callback_t cb, void *cb_arg, s32_t timeout);
+	int (*send)(const struct device *dev, const struct zcan_frame *frame,
+		    can_tx_callback_t cb, void *cb_arg, k_timeout_t timeout);
 	/** Attach a filter with it's callback */
-	int (*attach_filter)(struct device *dev, can_rx_callback_t cb,
+	int (*attach_filter)(const struct device *dev, can_rx_callback_t cb,
 			     void *cb_arg, const struct zcan_filter *filter);
 	/** Detach a filter */
-	void (*detach_filter)(struct device *dev, int filter_id);
+	void (*detach_filter)(const struct device *dev, int filter_id);
 	/** Enable or disable the reception of frames for net CAN */
-	int (*enable)(struct device *dev, bool enable);
+	int (*enable)(const struct device *dev, bool enable);
 };
 
 /* Make sure that the network interface API is properly setup inside
@@ -130,7 +130,7 @@ struct canbus_net_ctx {
 	/** The interface associated with this device */
 	struct net_if *iface;
 	/** The link layer address chosen for this interface */
-	u16_t ll_addr;
+	uint16_t ll_addr;
 };
 
 /**
@@ -138,7 +138,7 @@ struct canbus_net_ctx {
  * Both together are 28 bit to fit a CAN extended identifier with 29 bit length.
  */
 struct net_canbus_lladdr {
-	u16_t addr : 14;
+	uint16_t addr : 14;
 };
 
 /**
@@ -150,9 +150,9 @@ struct net_canbus_lladdr {
  */
 struct canbus_fc_opts {
 	/** Block size. Number of CF PDUs before next CF is sent */
-	u8_t bs;
+	uint8_t bs;
 	/**< Minimum separation time. Min time between frames */
-	u8_t stmin;
+	uint8_t stmin;
 };
 
 /**
@@ -171,19 +171,19 @@ struct canbus_isotp_tx_ctx {
 	/** CAN destination address */
 	struct net_canbus_lladdr dest_addr;
 	/** Remaining data to transmit in bytes */
-	u16_t rem_len;
+	uint16_t rem_len;
 	/** Number of bytes in the tx queue */
-	s8_t tx_backlog;
+	int8_t tx_backlog;
 	/** State of the transmission */
-	u8_t state;
+	uint8_t state;
 	/** Actual block number that is transmitted. Counts from BS to 0 */
-	u8_t act_block_nr;
+	uint8_t act_block_nr;
 	/** Number of WAIT frames received */
-	u8_t wft;
+	uint8_t wft;
 	/** Sequence number that is added to CF */
-	u8_t sn : 4;
+	uint8_t sn : 4;
 	/** Transmission is multicast */
-	u8_t is_mcast : 1;
+	uint8_t is_mcast : 1;
 };
 
 /**
@@ -196,15 +196,15 @@ struct canbus_isotp_rx_ctx {
 	/** Timeout for RX timeout*/
 	struct _timeout timeout;
 	/** Remaining data to receive. Goes from message length to zero */
-	u16_t rem_len;
+	uint16_t rem_len;
 	/** State of the reception */
-	u8_t state;
+	uint8_t state;
 	/** Number of frames received in this block. Counts from BS to 0 */
-	u8_t act_block_nr;
+	uint8_t act_block_nr;
 	/** Number of WAIT frames transmitted */
-	u8_t wft;
+	uint8_t wft;
 	/** Expected sequence number in CF */
-	u8_t sn : 4;
+	uint8_t sn : 4;
 };
 
 /**

@@ -6,6 +6,10 @@
 
 /* This file exists as a hack around Zephyr's dependencies */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Architecture thread structure */
 struct _callee_saved {
 };
@@ -18,7 +22,7 @@ struct _thread_arch {
 typedef struct _thread_arch _thread_arch_t;
 
 /* Architecture functions */
-static inline u32_t arch_k_cycle_get_32(void)
+static inline uint32_t arch_k_cycle_get_32(void)
 {
 	return 0;
 }
@@ -37,6 +41,10 @@ static inline bool arch_irq_unlocked(unsigned int key)
 {
 	return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #include <sys/arch_interface.h>
 

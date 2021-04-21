@@ -27,15 +27,9 @@ config NET_MGMT_EVENT_STACK_SIZE
 	  Set the internal stack size for NM to run registered callbacks
 	  on events.
 
-config NET_MGMT_EVENT_THREAD_PRIO
-	int "Inner thread priority (use with care)"
-	default 7
-	help
-	  Set the network management event core's inner thread priority.
-	  Do not change this unless you know what you are doing.
-
 config NET_MGMT_EVENT_QUEUE_SIZE
 	int "Size of event queue"
+	default 16 if NET_MGMT_EVENT_MONITOR
 	default 2
 	range 1 1024
 	help
@@ -50,6 +44,24 @@ config NET_MGMT_EVENT_INFO
 	  Event notifier will be able to provide information to an event,
 	  and listeners will then be able to get it. Such information depends
 	  on the type of event.
+
+config NET_MGMT_EVENT_MONITOR
+	bool "Monitor network events from net shell"
+	depends on NET_SHELL && NET_MGMT_EVENT_INFO
+	help
+	  Allow user to monitor network events from net shell using
+	  "net events [on|off]" command. The monitoring is disabled by
+	  default. Note that you should probably increase the value of
+	  NET_MGMT_EVENT_QUEUE_SIZE from the default in order not to miss
+	  any events.
+
+config NET_MGMT_EVENT_MONITOR_AUTO_START
+	bool "Start the event monitor automatically at boot"
+	depends on NET_MGMT_EVENT_MONITOR && SHELL_BACKEND_SERIAL
+	help
+	  Allow user to start monitoring network events automatically
+	  when the system starts. The auto start is disabled by default.
+	  The default UART based shell is used to print data.
 
 module = NET_MGMT_EVENT
 module-dep = NET_LOG

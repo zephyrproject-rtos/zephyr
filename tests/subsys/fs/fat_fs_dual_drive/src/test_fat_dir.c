@@ -40,7 +40,7 @@ static int test_mkdir(const char *dir, const char *file)
 		return res;
 	}
 
-	res = fs_open(&filep, file);
+	res = fs_open(&filep, file, FS_O_CREATE | FS_O_RDWR);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;
@@ -69,6 +69,8 @@ static int test_lsdir(const char *path)
 	struct fs_dirent entry;
 
 	TC_PRINT("lsdir tests:\n");
+
+	fs_dir_t_init(&dirp);
 
 	/* Verify fs_opendir() */
 	res = fs_opendir(&dirp, path);
@@ -109,6 +111,8 @@ static int test_rmdir(const char *dir)
 	char file_path[80];
 
 	TC_PRINT("rmdir tests:\n");
+
+	fs_dir_t_init(&dirp);
 
 	if (!check_file_dir_exists(dir)) {
 		TC_PRINT("%s doesn't exist\n", dir);

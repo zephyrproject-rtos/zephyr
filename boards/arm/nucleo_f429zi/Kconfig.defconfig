@@ -8,34 +8,11 @@ if BOARD_NUCLEO_F429ZI
 config BOARD
 	default "nucleo_f429zi"
 
-config UART_3
-	default y
-	depends on UART_CONSOLE
-
 if NETWORKING
 
 config NET_L2_ETHERNET
 	default y
 
-config ETH_STM32_HAL
-	default y
-
 endif # NETWORKING
-
-config UART_6
-	default y
-	depends on SERIAL
-
-config I2C_1
-	default y
-	depends on I2C
-
-config SPI_1
-	default y
-	depends on SPI
-
-config PWM_STM32_1
-	default y
-	depends on PWM
 
 endif # BOARD_NUCLEO_F429ZI

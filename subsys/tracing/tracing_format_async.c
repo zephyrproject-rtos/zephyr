@@ -33,7 +33,7 @@ void tracing_format_string(const char *str, ...)
 	}
 }
 
-void tracing_format_raw_data(u8_t *data, u32_t length)
+void tracing_format_raw_data(uint8_t *data, uint32_t length)
 {
 	bool put_success, before_put_is_empty;
 
@@ -53,7 +53,7 @@ void tracing_format_raw_data(u8_t *data, u32_t length)
 	}
 }
 
-void tracing_format_data(tracing_data_t *tracing_data_array, u32_t count)
+void tracing_format_data(tracing_data_t *tracing_data_array, uint32_t count)
 {
 	bool put_success, before_put_is_empty;
 

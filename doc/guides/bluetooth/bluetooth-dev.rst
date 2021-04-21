@@ -71,8 +71,8 @@ to use the btmon tool from :ref:`BlueZ <bluetooth_bluez>`:
 
    $ btmon --tty <console TTY> --tty-speed 115200
 
-QEMU with an external Controller
-================================
+Host on Linux with an external Controller
+=========================================
 
 .. note::
    This is currently only available on GNU/Linux
@@ -81,17 +81,37 @@ This setup relies on a "dual-chip" :ref:`configuration <bluetooth-configs>`
 which is comprised of the following devices:
 
 #. A :ref:`Host-only <bluetooth-build-types>` application running in the
-   :ref:`QEMU <application_run_qemu>` emulator
+   :ref:`QEMU <application_run_qemu>` emulator or the ``native_posix`` native
+   port of Zephyr
 #. A Controller, which can be one of two types:
 
    * A commercially available Controller
    * A :ref:`Controller-only <bluetooth-build-types>` build of Zephyr
 
+.. warning::
+   Certain external Controllers are either unable to accept the Host to
+   Controller flow control parameters that Zephyr sets by default (Qualcomm), or
+   do not transmit any data from the Controller to the Host (Realtek). If you
+   see a message similar to::
+
+     <wrn> bt_hci_core: opcode 0x0c33 status 0x12
+
+   when booting your sample of choice (make sure you have enabled
+   :option:`CONFIG_BT_DEBUG_LOG` in your :file:`prj.conf` before running the
+   sample), or if there is no data flowing from the Controller to the Host, then
+   you need to disable Host to Controller flow control. To do so, set
+   ``CONFIG_BT_HCI_ACL_FLOW_CONTROL=n`` in your :file:`prj.conf`.
+
+QEMU
+----
+
+You can run the Zephyr Host on the :ref:`QEMU emulator<application_run_qemu>`
+and have it interact with a physical external Bluetooth Controller.
 Refer to :ref:`bluetooth_qemu_posix` for full instructions on how to build and
 run an application in this setup.
 
-Native POSIX with an external Controller
-========================================
+Native POSIX
+------------
 
 .. note::
    This is currently only available on GNU/Linux
@@ -100,16 +120,8 @@ The :ref:`Native POSIX <native_posix>` target builds your Zephyr application
 with the Zephyr kernel, and some minimal HW emulation as a native Linux
 executable.
 This executable is a normal Linux program, which can be debugged and
-instrumented like any other.
-
-Just like with QEMU, you also need to use a combination of two devices:
-
-#. A :ref:`Host-only <bluetooth-build-types>` application running in
-   native_posix as a Linux application
-#. A Controller, which can be one of two types:
-
-   * A commercially available Controller
-   * A :ref:`Controller-only <bluetooth-build-types>` build of Zephyr
+instrumented like any other, and it communicates with a physical external
+Controller.
 
 Refer to :ref:`bluetooth_qemu_posix` for full instructions on how to build and
 run an application in this setup.
@@ -144,10 +156,10 @@ another real or simulated device.
 Initialization
 **************
 
-The Bluetooth subsystem is initialized using the :cpp:func:`bt_enable`
+The Bluetooth subsystem is initialized using the :c:func:`bt_enable`
 function. The caller should ensure that function succeeds by checking
 the return code for errors. If a function pointer is passed to
-:cpp:func:`bt_enable`, the initialization happens asynchronously, and the
+:c:func:`bt_enable`, the initialization happens asynchronously, and the
 completion is notified through the given function.
 
 Bluetooth Application Example
@@ -162,8 +174,8 @@ advertising, effectively acting as a Bluetooth Low Energy broadcaster.
    :lines: 19-
    :linenos:
 
-The key APIs employed by the beacon sample are :cpp:func:`bt_enable`
-that's used to initialize Bluetooth and then :cpp:func:`bt_le_adv_start`
+The key APIs employed by the beacon sample are :c:func:`bt_enable`
+that's used to initialize Bluetooth and then :c:func:`bt_le_adv_start`
 that's used to start advertising a specific combination of advertising
 and scan response data.
 

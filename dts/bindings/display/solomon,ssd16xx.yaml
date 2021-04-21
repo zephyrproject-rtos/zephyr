@@ -1,0 +1,103 @@
+# Copyright (c) 2018, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD16XX 250x150 EPD display controller
+
+compatible: "solomon,ssd16xxfb"
+
+include: spi-device.yaml
+
+properties:
+    height:
+      type: int
+      required: true
+      description: Height in pixel of the panel driven by the controller
+
+    width:
+      type: int
+      required: true
+      description: Width in pixel of the panel driven by the controller
+
+    pp-height-bits:
+      type: int
+      required: true
+      description: Number of bits used for the height parameters
+
+    pp-width-bits:
+      type: int
+      required: true
+      description: Number of bits used for the width parameters
+
+    gdv:
+      type: uint8-array
+      required: true
+      description: Gate driving voltage values
+
+    sdv:
+      type: uint8-array
+      required: true
+      description: Source driving voltage values
+
+    vcom:
+      type: int
+      required: true
+      description: VCOM voltage
+
+    border-waveform:
+      type: int
+      required: true
+      description: Border waveform
+
+    softstart:
+      type: uint8-array
+      required: false
+      description: Booster soft start values
+
+    orientation-flipped:
+      type: boolean
+      required: false
+      description: Last column address is mapped to first segment
+
+    reset-gpios:
+      type: phandle-array
+      required: true
+      description: RESET pin.
+
+        The RESET pin of SSD16XX is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    dc-gpios:
+      type: phandle-array
+      required: true
+      description: DC pin.
+
+        The DC pin of SSD16XX is active low (transmission command byte).
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    busy-gpios:
+      type: phandle-array
+      required: true
+      description: BUSY pin.
+
+        The BUSY pin of SSD16XX is active high.
+        If connected directly the MCU pin should be configured
+        as active high.
+
+    lut-initial:
+      type: uint8-array
+      required: false
+
+    lut-default:
+      type: uint8-array
+      required: false
+
+    tssv:
+      type: int
+      required: false
+      description: Temperature Sensor Selection Value
+
+        Display controller can have integrated temperature sensor or
+        an external temperature sensor is connected to the controller.
+        The value selects which sensor should be used.

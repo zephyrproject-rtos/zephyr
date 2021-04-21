@@ -1,0 +1,12 @@
+identifier: nrf52dk_nrf52810
+name: nRF52-DK-NRF52810
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+ram: 24
+flash: 192

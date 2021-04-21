@@ -8,26 +8,9 @@ if BOARD_STM32F469I_DISCO
 config BOARD
 	default "stm32f469i_disco"
 
-config UART_3
-	default y
-	depends on UART_CONSOLE
-
-config UART_6
-	default y
-	depends on SERIAL
-
-if SPI
-
 config SPI_STM32_INTERRUPT
 	default y
+	depends on SPI
 
-config SPI_2
-	default y
-
-endif # SPI
-
-config I2C_1
-	default y
-	depends on I2C
 
 endif # BOARD_STM32F469I_DISCO

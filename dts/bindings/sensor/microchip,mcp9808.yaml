@@ -18,3 +18,15 @@ properties:
         sensor, and is open-drain.  A pull-up may be appropriate.  The
         property value should ensure the flags properly describe the
         signal that is presented to the driver.
+
+    resolution:
+      type: int
+      required: false
+      default: 3
+      description: Sensor resolution. Default is 0.0625C (0b11),
+        which is the power-up default.
+      enum:
+        - 0 # 0.5C
+        - 1 # 0.25C
+        - 2 # 0.125C
+        - 3 # 0.0625C

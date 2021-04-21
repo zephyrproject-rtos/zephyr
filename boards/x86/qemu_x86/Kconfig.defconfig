@@ -12,8 +12,47 @@ config FLASH_SIMULATOR
 	default y
 	depends on FLASH
 
+config KERNEL_VM_SIZE
+	default 0x10000000 if ACPI
+
+config MULTIBOOT
+	default y
+
+config MULTIBOOT_INFO
+	default y if MULTIBOOT
+
+config MULTIBOOT_MEMMAP
+	default y if MULTIBOOT
+
 endif # BOARD_QEMU_X86
+
+if BOARD_QEMU_X86_64
 
 config BOARD
 	default "qemu_x86_64"
-	depends on BOARD_QEMU_X86_64
+
+config KERNEL_VM_SIZE
+	default 0x10000000 if ACPI
+
+endif # BOARD_QEMU_X86_64
+
+if BOARD_QEMU_X86_LAKEMONT
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BOARD
+	default "qemu_x86_lakemont"
+
+config KERNEL_VM_SIZE
+	default 0x400000
+
+config MULTIBOOT
+	# This is needed for QEMU to load the ELF image
+	default y
+
+config X86_PC_COMPATIBLE
+	# QEMU presents a PC-compatible machine
+	default y
+
+endif # BOARD_QEMU_X86_LAKEMONT

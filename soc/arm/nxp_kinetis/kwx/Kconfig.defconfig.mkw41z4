@@ -51,6 +51,10 @@ config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
 
+config PWM_MCUX_TPM
+	default y
+	depends on PWM
+
 if NETWORKING
 
 config NET_L2_IEEE802154

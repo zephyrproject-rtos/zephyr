@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2020 Trifork
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f407Xg.dtsi>
+#include <st/f4/stm32f407v(e-g)tx-pinctrl.dtsi>
+
+/ {
+	model = "MikroE clicker 2 for STM32";
+	compatible = "mikroe,stm32-e407", "st,stm32f407";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ccm = &ccm0;
+	};
+
+
+	leds {
+		compatible = "gpio-leds";
+		ld1: led_1 {
+			gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		ld2: led_2 {
+			gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: key_0 {
+			label = "Key PE0";
+			gpios = <&gpioe 0 GPIO_ACTIVE_LOW>;
+		};
+		user_button_1: key_1 {
+			label = "Key K1";
+			gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &ld1;
+		led1 = &ld2;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+	};
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	current-speed = <9600>;
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	current-speed = <9600>;
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pa0 &uart4_rx_pa1>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	status = "okay";
+};
+
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
+	cs-gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	status = "okay";
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
+	status = "okay";
+};
+
+&adc1 {
+	status ="okay";
+	pinctrl-0 = <&adc1_in2_pa2 &adc1_in3_pa3>;
+};
+
+
+mikrobus_1_i2c: &i2c3 {};
+
+mikrobus_1_spi: &spi3 {};
+
+mikrobus_1_uart: &usart2 {};
+
+mikrobus_2_i2c: &i2c2 {};
+
+mikrobus_2_spi: &spi2 {};
+
+mikrobus_2_uart: &usart3 {};

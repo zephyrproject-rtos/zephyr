@@ -8,7 +8,7 @@
 #include "test_gpio.h"
 
 /* Grotesque hack for pinmux boards */
-#if defined(CONFIG_BOARD_FRDM_K64F) || defined(CONFIG_BOARD_RV32M1_VEGA)
+#if defined(CONFIG_BOARD_RV32M1_VEGA)
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
 #elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
@@ -22,25 +22,18 @@
 
 static void board_setup(void)
 {
-#ifdef DT_INST_0_TEST_GPIO_BASIC_API
+#if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
 	/* PIN_IN and PIN_OUT must be on same controller. */
-	if (strcmp(DT_INST_0_TEST_GPIO_BASIC_API_OUT_GPIOS_CONTROLLER,
-		   DT_INST_0_TEST_GPIO_BASIC_API_IN_GPIOS_CONTROLLER) != 0) {
+	if (strcmp(DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), out_gpios),
+		   DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), in_gpios)) != 0) {
 		printk("FATAL: output controller %s != input controller %s\n",
-		       DT_INST_0_TEST_GPIO_BASIC_API_OUT_GPIOS_CONTROLLER,
-		       DT_INST_0_TEST_GPIO_BASIC_API_IN_GPIOS_CONTROLLER);
+		       DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), out_gpios),
+		       DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), in_gpios));
 		k_panic();
 	}
 #endif
 
-#if defined(CONFIG_BOARD_FRDM_K64F)
-	/* TODO figure out how to get this from "GPIO_2" */
-	const char *pmx_name = "portc";
-	struct device *pmx = device_get_binding(pmx_name);
-
-	pinmux_pin_set(pmx, PIN_OUT, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(pmx, PIN_IN, PORT_PCR_MUX(kPORT_MuxAsGpio));
-#elif defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
+#if defined(CONFIG_BOARD_UDOO_NEO_FULL_M4)
 	/*
 	 * Configure pin mux.
 	 * The following code needs to configure the same GPIOs which were
@@ -98,9 +91,8 @@ static void board_setup(void)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #elif defined(CONFIG_SOC_FAMILY_LPC)
 	/* Assumes ARDUINO pins are mapped on PORT0 on all boards*/
-	struct device *port0 =
-		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT0_NAME);
-	const u32_t pin_config = (
+	const struct device *port0 = DEVICE_DT_GET(DT_NODELABEL(pio0));
+	const uint32_t pin_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_INV_DI |
 			IOCON_PIO_DIGITAL_EN |
@@ -110,11 +102,18 @@ static void board_setup(void)
 	pinmux_pin_set(port0, PIN_IN,  pin_config);
 	pinmux_pin_set(port0, PIN_OUT, pin_config);
 #elif defined(CONFIG_BOARD_RV32M1_VEGA)
-	const char *pmx_name = CONFIG_PINMUX_RV32M1_PORTA_NAME;
-	struct device *pmx = device_get_binding(pmx_name);
+	const char *pmx_name = DT_LABEL(DT_NODELABEL(porta));
+	const struct device *pmx = device_get_binding(pmx_name);
 
 	pinmux_pin_set(pmx, PIN_OUT, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(pmx, PIN_IN, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#elif defined(CONFIG_GPIO_EMUL)
+	extern struct gpio_callback gpio_emul_callback;
+	const struct device *dev = device_get_binding(DEV_NAME);
+	zassert_not_equal(dev, NULL,
+			  "Device not found");
+	int rc = gpio_add_callback(dev, &gpio_emul_callback);
+	__ASSERT(rc == 0, "gpio_add_callback() failed: %d", rc);
 #endif
 }
 
@@ -126,7 +125,6 @@ void test_main(void)
 			 ztest_unit_test(test_gpio_callback_add_remove),
 			 ztest_unit_test(test_gpio_callback_self_remove),
 			 ztest_unit_test(test_gpio_callback_enable_disable),
-			 ztest_unit_test(test_gpio_callback_variants),
-			 ztest_unit_test(test_gpio_deprecated));
+			 ztest_unit_test(test_gpio_callback_variants));
 	ztest_run_test_suite(gpio_basic_test);
 }

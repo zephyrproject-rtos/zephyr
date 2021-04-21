@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 
 /* callback for EIC interrupt */
-typedef void (*sam0_eic_callback_t)(u32_t pins, void *data);
+typedef void (*sam0_eic_callback_t)(uint32_t pins, void *data);
 
 /**
  * @brief EIC trigger condition
@@ -80,6 +80,6 @@ int sam0_eic_disable_interrupt(int port, int pin);
  *
  * @param port port index (A=0, etc)
  */
-u32_t sam0_eic_interrupt_pending(int port);
+uint32_t sam0_eic_interrupt_pending(int port);
 
 #endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_SAM0_EIC_H_ */

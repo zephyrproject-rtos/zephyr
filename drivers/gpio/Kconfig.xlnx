@@ -1,0 +1,9 @@
+# Xilinx GPIO configuration options
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_XLNX_AXI
+	bool "Xilinx AXI GPIO driver"
+	help
+	  Enable Xilinx AXI GPIO v2 driver.

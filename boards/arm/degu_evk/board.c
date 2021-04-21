@@ -7,12 +7,14 @@
 #include <init.h>
 #include <drivers/gpio.h>
 
-static int board_degu_evk_init(struct device *dev)
+static int board_degu_evk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct device *gpio0 = device_get_binding(DT_GPIO_P0_DEV_NAME);
-	struct device *gpio1 = device_get_binding(DT_GPIO_P1_DEV_NAME);
+	const struct device *gpio0 =
+		device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
+	const struct device *gpio1 =
+		device_get_binding(DT_LABEL(DT_NODELABEL(gpio1)));
 
 	/*
 	 * Degu Evaluation Kit has a TPS22916C power switch.

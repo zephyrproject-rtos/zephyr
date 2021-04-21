@@ -8,40 +8,7 @@ if BOARD_96B_ARGONKEY
 config BOARD
 	default "96b_argonkey"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-config I2C_3
-	default y
-
-endif # I2C
-
-if SPI
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
-config SPI_STM32_INTERRUPT
-	default y
-
-endif # SPI
-
 if I2S
-
-config I2S_STM32
-	default y
 
 # configure PLLI2S to generate a I2SxCLK=128MHz
 config I2S_STM32_USE_PLLI2S_ENABLE
@@ -55,9 +22,6 @@ config I2S_STM32_PLLI2S_PLLN
 
 config I2S_STM32_PLLI2S_PLLR
 	default 3
-
-config I2S_5
-	default y
 
 endif # I2S
 

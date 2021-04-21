@@ -9,7 +9,7 @@
 
 / {
 	model = "Waveshare BLE400";
-	compatible = "waveshare,BLE400", "nordic,nrf51822-qfaa", "nordic,nrf51822";
+	compatible = "waveshare,BLE400";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -92,7 +92,7 @@
 	sck-pin = <25>;
 	mosi-pin = <24>;
 	miso-pin = <23>;
-	cs-gpios = <&gpio0 30 0>;
+	cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
 };
 
 &uart0 {

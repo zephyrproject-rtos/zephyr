@@ -22,11 +22,11 @@ player mode.
 If the board has a piezo buzzer connected to pin 0, this will be used to
 generate beeps whenever the ball hits a wall or the paddle.
 
-Building
-********
+Building and running
+********************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/bbc_microbit/pong
    :board: bbc_microbit
-   :goals: build
+   :goals: build flash
    :compact:

@@ -1,0 +1,4 @@
+tests:
+  openthread.radio:
+    platform_allow: native_posix native_posix_64
+    tags: ot_radio

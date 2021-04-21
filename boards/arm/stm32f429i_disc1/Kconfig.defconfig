@@ -8,16 +8,5 @@ if BOARD_STM32F429I_DISC1
 config BOARD
 	default "stm32f429i_disc1"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-config I2C_3
-	default y
-	depends on I2C
-
-config SPI_5
-	default y
-	depends on SPI
 
 endif # BOARD_STM32F429I_DISC1

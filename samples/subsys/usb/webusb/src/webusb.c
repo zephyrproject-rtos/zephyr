@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(webusb);
 
 static struct webusb_req_handlers *req_handlers;
 
-u8_t rx_buf[64];
+uint8_t rx_buf[64];
 
 #define INITIALIZER_IF(num_ep, iface_class)				\
 	{								\
@@ -84,17 +84,16 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct {
  * @return  0 on success, negative errno code on fail.
  */
 int webusb_custom_handle_req(struct usb_setup_packet *pSetup,
-			     s32_t *len, u8_t **data)
+			     int32_t *len, uint8_t **data)
 {
 	LOG_DBG("");
 
 	/* Call the callback */
-	if ((req_handlers && req_handlers->custom_handler) &&
-		(!req_handlers->custom_handler(pSetup, len, data))) {
-		return 0;
+	if (req_handlers && req_handlers->custom_handler) {
+		return req_handlers->custom_handler(pSetup, len, data);
 	}
 
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 /**
@@ -107,15 +106,14 @@ int webusb_custom_handle_req(struct usb_setup_packet *pSetup,
  * @return  0 on success, negative errno code on fail.
  */
 int webusb_vendor_handle_req(struct usb_setup_packet *pSetup,
-			     s32_t *len, u8_t **data)
+			     int32_t *len, uint8_t **data)
 {
 	/* Call the callback */
-	if ((req_handlers && req_handlers->vendor_handler) &&
-		(!req_handlers->vendor_handler(pSetup, len, data))) {
-		return 0;
+	if (req_handlers && req_handlers->vendor_handler) {
+		return req_handlers->vendor_handler(pSetup, len, data);
 	}
 
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 /**
@@ -133,12 +131,12 @@ void webusb_register_request_handlers(struct webusb_req_handlers *handlers)
 	req_handlers = handlers;
 }
 
-static void webusb_write_cb(u8_t ep, int size, void *priv)
+static void webusb_write_cb(uint8_t ep, int size, void *priv)
 {
 	LOG_DBG("ep %x size %u", ep, size);
 }
 
-static void webusb_read_cb(u8_t ep, int size, void *priv)
+static void webusb_read_cb(uint8_t ep, int size, void *priv)
 {
 	struct usb_cfg_data *cfg = priv;
 
@@ -164,7 +162,7 @@ done:
  */
 static void webusb_dev_status_cb(struct usb_cfg_data *cfg,
 				 enum usb_dc_status_code status,
-				 const u8_t *param)
+				 const uint8_t *param)
 {
 	ARG_UNUSED(param);
 	ARG_UNUSED(cfg);

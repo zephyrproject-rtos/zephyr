@@ -158,31 +158,17 @@ Default Zephyr Peripheral Mapping:
 
 .. rst-class:: rst-columns
 
-- UART_1_TX : PA9
-- UART_1_RX : PA10
-- UART_2_TX : PA2
-- UART_2_RX : PA3
-- UART_3_TX : PB10
-- UART_3_RX : PB11
-- I2C_1_SCL : PB8
-- I2C_1_SDA : PB9
-- I2C_3_SCL : PC0
-- I2C_3_SDA : PC1
-- SPI_1_NSS : PA4
-- SPI_1_SCK : PB3
-- SPI_1_MISO : PA6
-- SPI_1_MOSI : PA7
-- SPI_2_NSS : PB12
-- SPI_2_SCK : PB13
-- SPI_2_MISO : PB14
-- SPI_2_MOSI : PB15
-- SPI_3_NSS : PB12
-- SPI_3_SCK : PC10
-- SPI_3_MISO : PC11
-- SPI_3_MOSI : PC12
+- UART_1 TX/RX  : PA9/PA10
+- UART_2 TX/RX  : PA2/PA3 (ST-Link Virtual Port Com)
+- UART_3 TX/RX  : PB10/PB11
+- I2C_1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- I2C_3 SCL/SDA : PC0/PC1
+- SPI_1 CS/SCK/MISO/MOSI : PA4/PB3/PA6/PA7 (Arduino SPI)
+- SPI_2 CS/SCK/MISO/MOSI : PB12/PB13/PB14/PB15
+- SPI_3 CS/SCK/MISO/MOSI : PA15/PC10/PC11/PC12
 - PWM_2_CH1 : PA0
-- USER_PB : PC13
-- LD2 : PA5
+- USER_PB   : PC13
+- LD2       : PA5
 
 System Clock
 ------------

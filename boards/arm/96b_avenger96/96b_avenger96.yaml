@@ -1,10 +1,10 @@
 identifier: 96b_avenger96
-name: 96B_AVENGER96
+name: 96Boards Avenger96
 type: mcu
 arch: arm
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
   - xtools
 supported:
   - gpio

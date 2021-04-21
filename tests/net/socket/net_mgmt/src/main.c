@@ -30,12 +30,12 @@ static ZTEST_DMEM struct in_addr addr_v4 = { { { 192, 0, 2, 3 } } };
 #define DBG(fmt, ...)
 #endif
 
-static const u8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
+static const uint8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
 				       0x04,  0x05,  0x06 };
 
 struct eth_fake_context {
 	struct net_if *iface;
-	u8_t mac_address[6];
+	uint8_t mac_address[6];
 
 	bool auto_negotiation;
 	bool full_duplex;
@@ -53,8 +53,8 @@ static struct eth_fake_context eth_fake_data;
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct eth_fake_context *ctx = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_fake_context *ctx = dev->data;
 
 	ctx->iface = iface;
 
@@ -65,7 +65,7 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_fake_send(struct device *dev,
+static int eth_fake_send(const struct device *dev,
 			 struct net_pkt *pkt)
 {
 	ARG_UNUSED(dev);
@@ -120,11 +120,11 @@ static void eth_fake_recalc_qav_idle_slopes(struct eth_fake_context *ctx)
 	}
 }
 
-static int eth_fake_set_config(struct device *dev,
+static int eth_fake_set_config(const struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
 	enum ethernet_qav_param_type qav_param_type;
 	int queue_id;
@@ -167,11 +167,11 @@ static int eth_fake_set_config(struct device *dev,
 	return 0;
 }
 
-static int eth_fake_get_config(struct device *dev,
+static int eth_fake_get_config(const struct device *dev,
 			       enum ethernet_config_type type,
 			       struct ethernet_config *config)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 	int priority_queues_num = ARRAY_SIZE(ctx->priority_queues);
 	enum ethernet_qav_param_type qav_param_type;
 	int queue_id;
@@ -217,7 +217,7 @@ static int eth_fake_get_config(struct device *dev,
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_fake_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
 {
 	return ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
 		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET | ETHERNET_QAV |
@@ -233,9 +233,9 @@ static struct ethernet_api eth_fake_api_funcs = {
 	.send = eth_fake_send,
 };
 
-static int eth_fake_init(struct device *dev)
+static int eth_fake_init(const struct device *dev)
 {
-	struct eth_fake_context *ctx = dev->driver_data;
+	struct eth_fake_context *ctx = dev->data;
 	int i;
 
 	ctx->auto_negotiation = true;
@@ -262,9 +262,9 @@ static int eth_fake_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
-		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, device_pm_control_nop,
+		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &eth_fake_api_funcs, NET_ETH_MTU);
 
 /* A test thread that spits out events that we can catch and show to user */
 static void trigger_events(void)
@@ -327,7 +327,7 @@ static void trigger_events(void)
 
 K_THREAD_DEFINE(trigger_events_thread_id, STACK_SIZE,
 		trigger_events, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, K_FOREVER);
+		THREAD_PRIORITY, 0, -1);
 
 static char *get_ip_addr(char *ipaddr, size_t len, sa_family_t family,
 			 struct net_mgmt_msghdr *hdr)
@@ -350,6 +350,16 @@ static void test_net_mgmt_setup(void)
 	fd = socket(AF_NET_MGMT, SOCK_DGRAM, NET_MGMT_EVENT_PROTO);
 	zassert_false(fd < 0, "Cannot create net_mgmt socket (%d)", errno);
 
+#ifdef CONFIG_USERSPACE
+	/* Set the underlying net_context to global access scope so that
+	 * other scenario threads may use it
+	 */
+	void *ctx = zsock_get_context_object(fd);
+
+	zassert_not_null(ctx, "null net_context");
+	k_object_access_all_grant(ctx);
+#endif /* CONFIG_USERSPACE */
+
 	memset(&sockaddr, 0, sizeof(sockaddr));
 
 	sockaddr.nm_family = AF_NET_MGMT;
@@ -370,7 +380,7 @@ static void test_net_mgmt_catch_events(void)
 	struct sockaddr_nm event_addr;
 	socklen_t event_addr_len;
 	char ipaddr[INET6_ADDRSTRLEN];
-	u8_t buf[MAX_BUF_LEN];
+	uint8_t buf[MAX_BUF_LEN];
 	int event_count = 2;
 	int ret;
 

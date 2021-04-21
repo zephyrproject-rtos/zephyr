@@ -15,7 +15,8 @@
 #ifdef CONFIG_SHT3XD_TRIGGER
 static volatile bool alerted;
 
-static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *trig)
 {
 	alerted = !alerted;
 }
@@ -24,7 +25,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 
 void main(void)
 {
-	struct device *dev = device_get_binding("SHT3XD");
+	const struct device *dev = device_get_binding("SHT3XD");
 	int rc;
 
 	if (dev == NULL) {
@@ -49,6 +50,10 @@ void main(void)
 	}
 	if (rc == 0) {
 		rc = sensor_trigger_set(dev, &trig, trigger_handler);
+	}
+	if (rc != 0) {
+		printf("SHT3XD: trigger config failed: %d\n", rc);
+		return;
 	}
 	printf("Alert outside %d..%d %%RH got %d\n", lo_thr.val1,
 	       hi_thr.val1, rc);

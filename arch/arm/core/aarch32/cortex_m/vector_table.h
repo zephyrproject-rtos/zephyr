@@ -28,7 +28,7 @@
 #include <sys/util.h>
 
 GTEXT(__start)
-GTEXT(_vector_table)
+GDATA(_vector_table)
 
 GTEXT(z_arm_reset)
 GTEXT(z_arm_nmi)
@@ -48,7 +48,7 @@ GTEXT(z_arm_debug_monitor)
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 GTEXT(z_arm_pendsv)
-GTEXT(z_arm_reserved)
+GTEXT(z_arm_exc_spurious)
 
 GTEXT(z_arm_prep_c)
 GTEXT(_isr_wrapper)

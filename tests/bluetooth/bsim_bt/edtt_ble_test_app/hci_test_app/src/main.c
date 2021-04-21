@@ -26,20 +26,29 @@
 #include "bs_tracing.h"
 #include "commands.h"
 
-static u16_t waiting_opcode;
+#if IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
+#define LOG_LEVEL CONFIG_BT_LOG_LEVEL
+#endif
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(hci_test_app);
+
+static uint16_t waiting_opcode;
 static enum commands_t waiting_response;
-static u8_t m_events;
+static uint8_t m_events;
 
 /**
  * @brief Clean out excess bytes from the input buffer
  */
-static void read_excess_bytes(u16_t size)
+static void read_excess_bytes(uint16_t size)
 {
 	if (size > 0) {
-		u8_t buffer[size];
+		uint8_t buffer[size];
 
-		edtt_read((u8_t *)buffer, size, EDTTT_BLOCK);
-		printk("command size wrong! (%u extra bytes removed)", size);
+		edtt_read((uint8_t *)buffer, size, EDTTT_BLOCK);
+		LOG_ERR("command size wrong! (%u extra bytes removed)", size);
 	}
 }
 
@@ -48,40 +57,27 @@ static void read_excess_bytes(u16_t size)
  */
 static void error_response(int error)
 {
-	u16_t response = sys_cpu_to_le16(waiting_response);
+	uint16_t response = sys_cpu_to_le16(waiting_response);
 	int   le_error = sys_cpu_to_le32(error);
-	u16_t size = sys_cpu_to_le16(sizeof(le_error));
+	uint16_t size = sys_cpu_to_le16(sizeof(le_error));
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
-	edtt_write((u8_t *)&le_error, sizeof(le_error), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&le_error, sizeof(le_error), EDTTT_BLOCK);
 	waiting_response = CMD_NOTHING;
 	waiting_opcode = 0;
 }
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX)
-#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(CONFIG_BT_CTLR_DATA_LENGTH_MAX)
-#else
-#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(60)
-#endif
-NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
-		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
-NET_BUF_POOL_DEFINE(hci_data_pool, CONFIG_BT_CTLR_TX_BUFFERS+4,
-		    BT_BUF_ACL_SIZE, BT_BUF_USER_DATA_MIN, NULL);
-
 /**
  * @brief Allocate buffer for HCI command and fill in opCode for the command
  */
-static struct net_buf *hci_cmd_create(u16_t opcode, u8_t param_len)
+static struct net_buf *hci_cmd_create(uint16_t opcode, uint8_t param_len)
 {
 	struct bt_hci_cmd_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
+	buf = bt_buf_get_tx(BT_BUF_CMD, K_FOREVER, NULL, 0);
 	__ASSERT_NO_MSG(buf);
-
-	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
-	bt_buf_set_type(buf, BT_BUF_CMD);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
@@ -98,11 +94,8 @@ static struct net_buf *acl_data_create(struct bt_hci_acl_hdr *le_hdr)
 	struct net_buf *buf;
 	struct bt_hci_acl_hdr *hdr;
 
-	buf = net_buf_alloc(&hci_data_pool, K_FOREVER);
+	buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER, NULL, 0);
 	__ASSERT_NO_MSG(buf);
-
-	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	*hdr = *le_hdr;
@@ -114,7 +107,7 @@ static struct net_buf *acl_data_create(struct bt_hci_acl_hdr *le_hdr)
  * @brief Allocate buffer for HCI command, fill in parameters and send the
  * command...
  */
-static int send_hci_command(u16_t opcode, u8_t param_len, u16_t response)
+static int send_hci_command(uint16_t opcode, uint8_t param_len, uint16_t response)
 {
 	struct net_buf *buf;
 	void *cp;
@@ -125,16 +118,17 @@ static int send_hci_command(u16_t opcode, u8_t param_len, u16_t response)
 	if (buf) {
 		if (param_len) {
 			cp = net_buf_add(buf, param_len);
-			edtt_read((u8_t *)cp, param_len, EDTTT_BLOCK);
+			edtt_read((uint8_t *)cp, param_len, EDTTT_BLOCK);
 		}
 		err = bt_send(buf);
 		if (err) {
-			printk("Failed to send HCI command %d (err %d)\n",
+			LOG_ERR("Failed to send HCI command %d (err %d)",
 				opcode, err);
 			error_response(err);
 		}
 	} else {
-		printk("Failed to create buffer for HCI command %u\n", opcode);
+		LOG_ERR("Failed to create buffer for HCI command 0x%04x",
+			opcode);
 		error_response(-1);
 	}
 	return err;
@@ -143,28 +137,27 @@ static int send_hci_command(u16_t opcode, u8_t param_len, u16_t response)
 /**
  * @brief Echo function - echo input received...
  */
-static void echo(u16_t size)
+static void echo(uint16_t size)
 {
-	u16_t response = sys_cpu_to_le16(CMD_ECHO_RSP);
-	u16_t le_size = sys_cpu_to_le16(size);
+	uint16_t response = sys_cpu_to_le16(CMD_ECHO_RSP);
+	uint16_t le_size = sys_cpu_to_le16(size);
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	edtt_write((u8_t *)&le_size, sizeof(le_size), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&le_size, sizeof(le_size), EDTTT_BLOCK);
 
 	if (size > 0) {
-		u8_t buff[size];
+		uint8_t buff[size];
 
 		edtt_read(buff, size, EDTTT_BLOCK);
 		edtt_write(buff, size, EDTTT_BLOCK);
 	}
 }
 
-NET_BUF_POOL_DEFINE(event_pool, 32, BT_BUF_RX_SIZE + 4,
-		    BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(event_pool, 32, BT_BUF_RX_SIZE + 4, NULL);
 static K_FIFO_DEFINE(event_queue);
 static K_FIFO_DEFINE(rx_queue);
-NET_BUF_POOL_DEFINE(data_pool, CONFIG_BT_CTLR_RX_BUFFERS + 14,
-		    BT_BUF_ACL_SIZE + 4, BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_pool, CONFIG_BT_CTLR_RX_BUFFERS + 14,
+			  BT_BUF_ACL_SIZE + 4, NULL);
 static K_FIFO_DEFINE(data_queue);
 
 /**
@@ -173,18 +166,29 @@ static K_FIFO_DEFINE(data_queue);
 static void command_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_complete *evt = (void *)buf->data;
-	u16_t opcode = sys_le16_to_cpu(evt->opcode);
-	u16_t response = sys_cpu_to_le16(waiting_response);
+	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
+	uint16_t response = sys_cpu_to_le16(waiting_response);
+	struct net_buf_simple_state state;
+	uint16_t size;
+
+	net_buf_simple_save(&buf->b, &state);
 
 	net_buf_pull(buf, sizeof(*evt));
-	u16_t size = sys_cpu_to_le16(buf->len);
+	size = sys_cpu_to_le16(buf->len);
 
 	if (opcode == waiting_opcode) {
-		edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-		edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
-		edtt_write((u8_t *)buf->data, buf->len, EDTTT_BLOCK);
+		LOG_DBG("Command complete for 0x%04x", waiting_opcode);
+
+		edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_write((uint8_t *)buf->data, buf->len, EDTTT_BLOCK);
 		waiting_opcode = 0;
+	} else {
+		LOG_WRN("Not waiting for 0x(%04x) command status,"
+			" expected 0x(%04x)", opcode, waiting_opcode);
 	}
+
+	net_buf_simple_restore(&buf->b, &state);
 }
 
 /**
@@ -193,16 +197,31 @@ static void command_complete(struct net_buf *buf)
 static void command_status(struct net_buf *buf)
 {
 	struct bt_hci_evt_cmd_status *evt = (void *)buf->data;
-	u16_t opcode = sys_le16_to_cpu(evt->opcode);
-	u16_t response = sys_cpu_to_le16(waiting_response);
-	u16_t size = sys_cpu_to_le16(buf->len);
+	uint16_t opcode = sys_le16_to_cpu(evt->opcode);
+	uint16_t response = sys_cpu_to_le16(waiting_response);
+	struct net_buf_simple_state state;
+	uint8_t status = evt->status;
+	uint16_t size;
+
+	net_buf_simple_save(&buf->b, &state);
+
+	net_buf_pull(buf, sizeof(*evt));
+	size = sys_cpu_to_le16(buf->len) + 1;
 
 	if (opcode == waiting_opcode) {
-		edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-		edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
-		edtt_write((u8_t *)buf->data, buf->len, EDTTT_BLOCK);
+		LOG_DBG("Command status for 0x%04x", waiting_opcode);
+
+		edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_write((uint8_t *)&status, sizeof(status), EDTTT_BLOCK);
+		edtt_write((uint8_t *)buf->data, buf->len, EDTTT_BLOCK);
 		waiting_opcode = 0;
+	} else {
+		LOG_WRN("Not waiting for 0x(%04x) command status,"
+			" expected 0x(%04x)", opcode, waiting_opcode);
 	}
+
+	net_buf_simple_restore(&buf->b, &state);
 }
 
 /**
@@ -250,6 +269,7 @@ static void service_events(void *p1, void *p2, void *p3)
 				bs_trace_raw_time(4,
 						  "Failed to allocated buffer "
 						  "for event!\n");
+				LOG_WRN("No event in queue");
 			}
 
 			struct bt_hci_evt_hdr *hdr = (void *)buf->data;
@@ -295,9 +315,9 @@ static void service_events(void *p1, void *p2, void *p3)
 /**
  * @brief Flush all HCI events from the input-copy queue
  */
-static void flush_events(u16_t size)
+static void flush_events(uint16_t size)
 {
-	u16_t  response = sys_cpu_to_le16(CMD_FLUSH_EVENTS_RSP);
+	uint16_t  response = sys_cpu_to_le16(CMD_FLUSH_EVENTS_RSP);
 	struct net_buf *buf;
 
 	while ((buf = net_buf_get(&event_queue, K_NO_WAIT))) {
@@ -307,53 +327,53 @@ static void flush_events(u16_t size)
 	read_excess_bytes(size);
 	size = 0;
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 }
 
 /**
  * @brief Get next available HCI event from the input-copy queue
  */
-static void get_event(u16_t size)
+static void get_event(uint16_t size)
 {
-	u16_t  response = sys_cpu_to_le16(CMD_GET_EVENT_RSP);
+	uint16_t  response = sys_cpu_to_le16(CMD_GET_EVENT_RSP);
 	struct net_buf *buf;
 
 	read_excess_bytes(size);
 	size = 0;
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
 	buf = net_buf_get(&event_queue, K_FOREVER);
 	if (buf) {
 		size = sys_cpu_to_le16(buf->len);
-		edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
-		edtt_write((u8_t *)buf->data, buf->len, EDTTT_BLOCK);
+		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_write((uint8_t *)buf->data, buf->len, EDTTT_BLOCK);
 		net_buf_unref(buf);
 		m_events--;
 	} else {
-		edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 	}
 }
 
 /**
  * @brief Get next available HCI events from the input-copy queue
  */
-static void get_events(u16_t size)
+static void get_events(uint16_t size)
 {
-	u16_t response = sys_cpu_to_le16(CMD_GET_EVENT_RSP);
+	uint16_t response = sys_cpu_to_le16(CMD_GET_EVENT_RSP);
 	struct net_buf *buf;
-	u8_t count = m_events;
+	uint8_t count = m_events;
 
 	read_excess_bytes(size);
 	size = 0;
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	edtt_write((u8_t *)&count, sizeof(count), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&count, sizeof(count), EDTTT_BLOCK);
 	while (count--) {
 		buf = net_buf_get(&event_queue, K_FOREVER);
 		size = sys_cpu_to_le16(buf->len);
-		edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
-		edtt_write((u8_t *)buf->data, buf->len, EDTTT_BLOCK);
+		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_write((uint8_t *)buf->data, buf->len, EDTTT_BLOCK);
 		net_buf_unref(buf);
 		m_events--;
 	}
@@ -362,12 +382,12 @@ static void get_events(u16_t size)
 /**
  * @brief Check whether an HCI event is available in the input-copy queue
  */
-static void has_event(u16_t size)
+static void has_event(uint16_t size)
 {
 	struct has_event_resp {
-		u16_t response;
-		u16_t size;
-		u8_t  count;
+		uint16_t response;
+		uint16_t size;
+		uint8_t  count;
 	} __packed;
 	struct has_event_resp le_response = {
 		.response = sys_cpu_to_le16(CMD_HAS_EVENT_RSP),
@@ -378,15 +398,15 @@ static void has_event(u16_t size)
 	if (size > 0) {
 		read_excess_bytes(size);
 	}
-	edtt_write((u8_t *)&le_response, sizeof(le_response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&le_response, sizeof(le_response), EDTTT_BLOCK);
 }
 
 /**
  * @brief Flush all ACL Data Packages from the input-copy queue
  */
-static void le_flush_data(u16_t size)
+static void le_flush_data(uint16_t size)
 {
-	u16_t  response = sys_cpu_to_le16(CMD_LE_FLUSH_DATA_RSP);
+	uint16_t  response = sys_cpu_to_le16(CMD_LE_FLUSH_DATA_RSP);
 	struct net_buf *buf;
 
 	while ((buf = net_buf_get(&data_queue, K_NO_WAIT))) {
@@ -395,19 +415,19 @@ static void le_flush_data(u16_t size)
 	read_excess_bytes(size);
 	size = 0;
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
-	edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 }
 
 /**
  * @brief Check whether an ACL Data Package is available in the input-copy queue
  */
-static void le_data_ready(u16_t size)
+static void le_data_ready(uint16_t size)
 {
 	struct has_data_resp {
-		u16_t response;
-		u16_t size;
-		u8_t  empty;
+		uint16_t response;
+		uint16_t size;
+		uint8_t  empty;
 	} __packed;
 	struct has_data_resp le_response = {
 		.response = sys_cpu_to_le16(CMD_LE_DATA_READY_RSP),
@@ -421,41 +441,41 @@ static void le_data_ready(u16_t size)
 	if (k_fifo_is_empty(&data_queue)) {
 		le_response.empty = 1;
 	}
-	edtt_write((u8_t *)&le_response, sizeof(le_response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&le_response, sizeof(le_response), EDTTT_BLOCK);
 }
 
 /**
  * @brief Get next available HCI Data Package from the input-copy queue
  */
-static void le_data_read(u16_t size)
+static void le_data_read(uint16_t size)
 {
-	u16_t  response = sys_cpu_to_le16(CMD_LE_DATA_READ_RSP);
+	uint16_t  response = sys_cpu_to_le16(CMD_LE_DATA_READ_RSP);
 	struct net_buf *buf;
 
 	read_excess_bytes(size);
 	size = 0;
 
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
 	buf = net_buf_get(&data_queue, K_FOREVER);
 	if (buf) {
 		size = sys_cpu_to_le16(buf->len);
-		edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
-		edtt_write((u8_t *)buf->data, buf->len, EDTTT_BLOCK);
+		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_write((uint8_t *)buf->data, buf->len, EDTTT_BLOCK);
 		net_buf_unref(buf);
 	} else {
-		edtt_write((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_write((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 	}
 }
 
 /**
  * @brief Write ACL Data Package to the Controller...
  */
-static void le_data_write(u16_t size)
+static void le_data_write(uint16_t size)
 {
 	struct data_write_resp {
-		u16_t code;
-		u16_t size;
-		u8_t  status;
+		uint16_t code;
+		uint16_t size;
+		uint8_t  status;
 	} __packed;
 	struct data_write_resp response = {
 		.code = sys_cpu_to_le16(CMD_LE_DATA_WRITE_RSP),
@@ -467,12 +487,12 @@ static void le_data_write(u16_t size)
 	int err;
 
 	if (size >= sizeof(hdr)) {
-		edtt_read((u8_t *)&hdr, sizeof(hdr), EDTTT_BLOCK);
+		edtt_read((uint8_t *)&hdr, sizeof(hdr), EDTTT_BLOCK);
 		size -= sizeof(hdr);
 		buf = acl_data_create(&hdr);
 		if (buf) {
-			u16_t hdr_length = sys_le16_to_cpu(hdr.len);
-			u8_t *pdata = net_buf_add(buf, hdr_length);
+			uint16_t hdr_length = sys_le16_to_cpu(hdr.len);
+			uint8_t *pdata = net_buf_add(buf, hdr_length);
 
 			if (size >= hdr_length) {
 				edtt_read(pdata, hdr_length, EDTTT_BLOCK);
@@ -480,12 +500,12 @@ static void le_data_write(u16_t size)
 			}
 			err = bt_send(buf);
 			if (err) {
-				printk("Failed to send ACL Data (err %d)\n",
+				LOG_ERR("Failed to send ACL Data (err %d)",
 					err);
 			}
 		} else {
 			err = -2; /* Failed to allocate data buffer */
-			printk("Failed to create buffer for ACL Data.\n");
+			LOG_ERR("Failed to create buffer for ACL Data.");
 		}
 	} else {
 		/* Size too small for header (handle and data length) */
@@ -494,7 +514,7 @@ static void le_data_write(u16_t size)
 	read_excess_bytes(size);
 
 	response.status = sys_cpu_to_le32(err);
-	edtt_write((u8_t *)&response, sizeof(response), EDTTT_BLOCK);
+	edtt_write((uint8_t *)&response, sizeof(response), EDTTT_BLOCK);
 }
 
 static K_THREAD_STACK_DEFINE(service_events_stack,
@@ -507,9 +527,9 @@ static struct k_thread service_events_data;
 void main(void)
 {
 	int err;
-	u16_t command;
-	u16_t size;
-	u16_t opcode;
+	uint16_t command;
+	uint16_t size;
+	uint16_t opcode;
 	/**
 	 * Initialize HCI command opcode and response variables...
 	 */
@@ -521,7 +541,7 @@ void main(void)
 	 */
 	err = bt_enable_raw(&rx_queue);
 	if (err) {
-		printk("Bluetooth initialization failed (err %d)\n", err);
+		LOG_ERR("Bluetooth initialization failed (err %d)", err);
 		return;
 	}
 	/**
@@ -544,9 +564,9 @@ void main(void)
 		/**
 		 * Wait for a command to arrive - then read and execute command
 		 */
-		edtt_read((u8_t *)&command, sizeof(command), EDTTT_BLOCK);
+		edtt_read((uint8_t *)&command, sizeof(command), EDTTT_BLOCK);
 		command = sys_le16_to_cpu(command);
-		edtt_read((u8_t *)&size, sizeof(size), EDTTT_BLOCK);
+		edtt_read((uint8_t *)&size, sizeof(size), EDTTT_BLOCK);
 		size = sys_le16_to_cpu(size);
 		bs_trace_raw_time(4, "command 0x%04X received (size %u) "
 				  "events=%u\n",
@@ -564,9 +584,9 @@ void main(void)
 			break;
 		case CMD_GET_EVENT_REQ:
 		{
-			u8_t multiple;
+			uint8_t multiple;
 
-			edtt_read((u8_t *)&multiple, sizeof(multiple),
+			edtt_read((uint8_t *)&multiple, sizeof(multiple),
 				  EDTTT_BLOCK);
 			if (multiple)
 				get_events(--size);
@@ -588,10 +608,10 @@ void main(void)
 			break;
 		default:
 			if (size >= 2) {
-				edtt_read((u8_t *)&opcode, sizeof(opcode),
+				edtt_read((uint8_t *)&opcode, sizeof(opcode),
 					  EDTTT_BLOCK);
 				send_hci_command(sys_le16_to_cpu(opcode),
-						 size-2, command+1);
+						 size - 2, command + 1);
 			}
 		}
 	}

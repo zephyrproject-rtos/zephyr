@@ -76,7 +76,8 @@ any time).
 As fixes make their way into the mainline, the patch rate will slow over time.
 The mainline release owner releases new -rc drops once or twice a week; a normal
 series will get up to somewhere between -rc4 and -rc6 before the code base is
-considered to be sufficiently stable and the final 0.4.x release is made.
+considered to be sufficiently stable and the quality metrics have been achieved
+at which point the final 0.4.x release is made.
 
 At that point, the whole process starts over again.
 
@@ -97,6 +98,27 @@ Here is the description of the various moderation levels:
 
   - Bug Fixes: P1 and P2
   - Documentation + Test Coverage
+
+.. _release_quality_criteria:
+
+Release Quality Criteria
+************************
+
+The current backlog of prioritized bugs shall be used as a quality metric to
+gate the final release. The following counts shall be used:
+
+.. csv-table:: Bug Count Release Thresholds
+   :header: "High", "Medium", "Low"
+   :widths: auto
+
+
+   "0","<20","<50"
+
+.. note::
+
+   The "low" bug count target of <50 will be a phased appoach starting with 150
+   for release 2.4.0, 100 for release 2.5.0, and 50 for release 2.6.0
+
 
 Releases
 *********
@@ -125,7 +147,6 @@ The following syntax should be used for releases and tags in Git:
     :width: 80%
 
     Zephyr Code and Releases
-
 
 Long Term Support (LTS)
 =======================
@@ -239,7 +260,10 @@ steps:
 
     Tagging needs to be done via explicit git commands and not via GitHub's release
     interface.  The GitHub release interface does not generate annotated tags (it
-    generates 'lightweight' tags regardless of release or pre-release).
+    generates 'lightweight' tags regardless of release or pre-release). You should
+    also upload your gpg public key to your GitHub account, since the instructions
+    below involve creating signed tags. However, if you do not have a gpg public
+    key you can opt to remove the ``-s`` option from the commands below.
 
 .. tabs::
 
@@ -263,22 +287,30 @@ steps:
         #. Tag and push the version, using an annotated tag::
 
             $ git pull
-            $ git tag -a v1.11.0-rc1
-            <Use "Zephyr 1.11.0-rc1" as the tag annotation>
+            $ git tag -s -m "Zephyr 1.11.0-rc1" v1.11.0-rc1
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0-rc1
 
-        #. Create a shortlog of changes between the previous release (use
-           rc1..rc2 between release candidates)::
+        #. Once the tag is pushed, a github action will create a draft release
+           in Github with a shortlog since the last tag. The action will also
+           create a SPDX manifest of the Zephyr tree and will add the file as an
+           asset in the release.
 
-            $ git shortlog v1.10.0..v1.11.0-rc1
+           Go to the draft release that was created and edit as needed. If this
+           step fails for a reason, it can be done manually following the steps
+           below:
 
-        #. Find the new tag at the top of the releases page and edit the release
-           with the ``Edit`` button with the following:
+                #. Create a shortlog of changes between the previous release (use
+                   rc1..rc2 between release candidates)::
 
-            * Name it ``Zephyr 1.11.0-rc1``
-            * Copy the shortlog into the release notes textbox (*don't forget
-              to quote it properly so it shows as unformatted text in Markdown*)
-            * Check the "This is a pre-release" checkbox
+                    $ git shortlog v1.10.0..v1.11.0-rc1
+
+                #. Find the new tag at the top of the releases page and edit the release
+                   with the ``Edit tag`` button with the following:
+
+                    * Name it ``Zephyr 1.11.0-rc1``
+                    * Copy the shortlog into the release notes textbox (*don't forget
+                      to quote it properly so it shows as unformatted text in Markdown*)
+                    * Check the "This is a pre-release" checkbox
 
         #. Send an email to the mailing lists (``announce`` and ``devel``)
            with a link to the release
@@ -296,9 +328,9 @@ steps:
 
         #. Update the version variables in the :zephyr_file:`VERSION` file
            located in the root of the Git repository. Set ``EXTRAVERSION``
-           variable to zero to indicate final release::
+           variable to an empty string to indicate final release::
 
-            EXTRAVERSION = 0
+            EXTRAVERSION =
 
         #. Post a PR with the updated :zephyr_file:`VERSION` file using
            ``release: Zephyr 1.11.0`` as the commit subject. Merge
@@ -306,16 +338,17 @@ steps:
         #. Tag and push the version, using two annotated tags::
 
             $ git pull
-            $ git tag -a v1.11.0
-            <Use "Zephyr 1.11.0" as the tag annotation>
+            $ git tag -s -m "Zephyr 1.11.0" v1.11.0
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0
 
-            $ git tag -a zephyr-v1.11.0
-            <Use "Zephyr 1.11.0" as the tag annotation>
+            # This is the tag that will represent the release on GitHub, so that
+            # the file you can download is named ``zephyr-v1.11.0.zip`` and not
+            # just ``v1.11.0.zip``
+            $ git tag -s -m "Zephyr 1.11.0" zephyr-v1.11.0
             $ git push git@github.com:zephyrproject-rtos/zephyr.git zephyr-v1.11.0
 
-        #. Find the new tag at the top of the releases page and edit the release
-           with the ``Edit`` button with the following:
+        #. Find the new ``zephyr-v1.11.0`` tag at the top of the releases page
+           and edit the release with the ``Edit tag`` button with the following:
 
             * Name it ``Zephyr 1.11.0``
             * Copy the full content of ``docs/releases/release-notes-1.11.rst``

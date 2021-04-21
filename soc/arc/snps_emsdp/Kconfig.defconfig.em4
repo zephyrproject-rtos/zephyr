@@ -21,7 +21,7 @@ config HARVARD
 config ARC_FIRQ
 	default y
 
-config CACHE_FLUSHING
+config CACHE_MANAGEMENT
 	default n
 
 config FP_FPU_DA
@@ -36,5 +36,8 @@ config IDLE_STACK_SIZE
 config ZTEST_STACKSIZE
 	default 2048
 	depends on ZTEST
+
+config NUM_IRQS
+	default 113
 
 endif # SOC_EMSDP_EM4

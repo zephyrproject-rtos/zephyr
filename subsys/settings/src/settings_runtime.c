@@ -11,7 +11,7 @@
 #include "settings_priv.h"
 
 struct read_cb_arg {
-	void *data;
+	const void *data;
 	size_t len;
 };
 
@@ -23,7 +23,7 @@ static ssize_t settings_runtime_read_cb(void *cb_arg, void *data, size_t len)
 	return MIN(arg->len, len);
 }
 
-int settings_runtime_set(const char *name, void *data, size_t len)
+int settings_runtime_set(const char *name, const void *data, size_t len)
 {
 	struct settings_handler_static *ch;
 	const char *name_key;
@@ -47,6 +47,10 @@ int settings_runtime_get(const char *name, void *data, size_t len)
 	ch = settings_parse_and_lookup(name, &name_key);
 	if (!ch) {
 		return -EINVAL;
+	}
+
+	if (!ch->h_get) {
+		return -ENOTSUP;
 	}
 
 	return ch->h_get(name_key, data, len);

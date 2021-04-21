@@ -115,6 +115,10 @@ The Zephyr nucleo_g431rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -156,8 +160,7 @@ Default Zephyr Peripheral Mapping:
 - PWM_3_CH1 : PB4
 - USER_PB : PC13
 - LD2 : PA5
-- USB DM : PA11
-- USB DP : PA12
+- DAC1_OUT1 : PA4
 
 System Clock
 ------------
@@ -186,14 +189,27 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-Nucleo G431RB board includes an ST-LINK/V3E embedded debug tool
-interface. This interface is not yet supported by the openocd version.
+Nucleo G431RB board includes an ST-LINK/V3E embedded debug tool interface.
+
+This interface is not yet supported by the openocd version included in the Zephyr SDK.
+
 Instead, support can be enabled on pyocd by adding "pack" support with
 the following pyocd command:
 
 .. code-block:: console
 
+   $ pyocd pack --update
    $ pyocd pack --install stm32g431rb
+
+Note:
+To manually enable the openocd interface, You can still update, compile and install
+a 'local' openocd from the official openocd repo http://openocd.zylin.com .
+Then run the following openocd command where the '/usr/local/bin/openocd'is your path
+for the freshly installed openocd, given by "$ which openocd" :
+
+.. code-block:: console
+
+   $ west flash --openocd /usr/local/bin/openocd
 
 Flashing an application to Nucleo G431RB
 ----------------------------------------

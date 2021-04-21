@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/mp1/stm32mp157.dtsi>
+#include <st/mp1/stm32mp157aacx-pinctrl.dtsi>
 
 / {
 	model = "Arrow Electronics STM32MP157A Avenger96 board";
-	compatible = "arrow,stm32mp157a-avenger96", "st,stm32mp15";
+	compatible = "arrow,stm32mp157a-avenger96";
 
 	chosen {
 		/*
@@ -53,11 +54,13 @@
 };
 
 &uart4 {
+	pinctrl-0 = <&uart4_tx_pd1 &uart4_rx_pb2>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
 	current-speed = <115200>;
 	status = "okay";
 };

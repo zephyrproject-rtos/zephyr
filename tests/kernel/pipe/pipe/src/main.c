@@ -14,6 +14,9 @@ extern void test_pipe_get_on_empty_pipe(void);
 extern void test_pipe_forever_timeout(void);
 extern void test_pipe_get_timeout(void);
 extern void test_pipe_get_invalid_size(void);
+extern void test_pipe_get_min_xfer(void);
+extern void test_pipe_put_min_xfer(void);
+extern void test_pipe_define_at_runtime(void);
 
 extern struct k_pipe test_pipe;
 extern struct k_sem put_sem, get_sem, sync_sem, multiple_send_sem;
@@ -36,7 +39,10 @@ void test_main(void)
 			 ztest_user_unit_test(test_pipe_get_on_empty_pipe),
 			 ztest_user_unit_test(test_pipe_forever_timeout),
 			 ztest_user_unit_test(test_pipe_get_timeout),
-			 ztest_user_unit_test(test_pipe_get_invalid_size)
+			 ztest_user_unit_test(test_pipe_get_invalid_size),
+			 ztest_user_unit_test(test_pipe_get_min_xfer),
+			 ztest_user_unit_test(test_pipe_put_min_xfer),
+			 ztest_unit_test(test_pipe_define_at_runtime)
 			 );
 
 	ztest_run_test_suite(test_pipe);

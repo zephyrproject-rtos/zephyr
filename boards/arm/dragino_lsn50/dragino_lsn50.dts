@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/l0/stm32l072Xz.dtsi>
+#include <st/l0/stm32l072c(b-z)tx-pinctrl.dtsi>
 
 / {
 	model = "Dragino LSN50 LoRA Sensor Node";
-	compatible = "vendor,dragino", "st,stm32l072";
+	compatible = "vendor,dragino";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -20,7 +21,13 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	current-speed = <115200>;
+	status = "okay";
+};

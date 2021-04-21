@@ -14,10 +14,10 @@
 /*
  * SRAM base address and size
  */
-#if defined(CONFIG_SRAM_BASE_ADDRESS) && (CONFIG_SRAM_SIZE > 0)
-#define SRAM_START		CONFIG_SRAM_BASE_ADDRESS
-#define SRAM_SIZE		CONFIG_SRAM_SIZE
+#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_sram), reg) && \
+    (DT_REG_SIZE(DT_CHOSEN(zephyr_sram)) > 0)
+#define SRAM_START		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define SRAM_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
 #endif
-
 
 #include <arch/arc/v2/linker.ld>

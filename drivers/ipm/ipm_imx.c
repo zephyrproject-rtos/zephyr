@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_imx_mu
+
 #include <errno.h>
 #include <string.h>
 #include <device.h>
@@ -21,24 +23,23 @@
 
 struct imx_mu_config {
 	MU_Type *base;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 struct imx_mu_data {
 	ipm_callback_t callback;
-	void *callback_ctx;
+	void *user_data;
 };
 
-static void imx_mu_isr(void *arg)
+static void imx_mu_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
-	const struct imx_mu_config *config = dev->config->config_info;
+	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
-	struct imx_mu_data *data = dev->driver_data;
-	u32_t data32[IMX_IPM_DATA_REGS];
-	u32_t status_reg;
-	s32_t id;
-	s32_t i;
+	struct imx_mu_data *data = dev->data;
+	uint32_t data32[IMX_IPM_DATA_REGS];
+	uint32_t status_reg;
+	int32_t id;
+	int32_t i;
 	bool all_registers_full;
 
 	status_reg = base->SR >>= MU_SR_RFn_SHIFT;
@@ -67,8 +68,8 @@ static void imx_mu_isr(void *arg)
 				}
 
 				if (data->callback) {
-					data->callback(data->callback_ctx,
-						       (u32_t)id,
+					data->callback(dev, data->user_data,
+						       (uint32_t)id,
 						       &data32[0]);
 				}
 			}
@@ -85,12 +86,12 @@ static void imx_mu_isr(void *arg)
 #endif
 }
 
-static int imx_mu_ipm_send(struct device *dev, int wait, u32_t id,
+static int imx_mu_ipm_send(const struct device *dev, int wait, uint32_t id,
 			   const void *data, int size)
 {
-	const struct imx_mu_config *config = dev->config->config_info;
+	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
-	u32_t data32[IMX_IPM_DATA_REGS];
+	uint32_t data32[IMX_IPM_DATA_REGS];
 	mu_status_t status;
 	int i;
 
@@ -122,33 +123,33 @@ static int imx_mu_ipm_send(struct device *dev, int wait, u32_t id,
 	return 0;
 }
 
-static int imx_mu_ipm_max_data_size_get(struct device *dev)
+static int imx_mu_ipm_max_data_size_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return CONFIG_IPM_IMX_MAX_DATA_SIZE;
 }
 
-static u32_t imx_mu_ipm_max_id_val_get(struct device *dev)
+static uint32_t imx_mu_ipm_max_id_val_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return CONFIG_IPM_IMX_MAX_ID_VAL;
 }
 
-static void imx_mu_ipm_register_callback(struct device *dev,
+static void imx_mu_ipm_register_callback(const struct device *dev,
 					 ipm_callback_t cb,
-					 void *context)
+					 void *user_data)
 {
-	struct imx_mu_data *driver_data = dev->driver_data;
+	struct imx_mu_data *driver_data = dev->data;
 
 	driver_data->callback = cb;
-	driver_data->callback_ctx = context;
+	driver_data->user_data = user_data;
 }
 
-static int imx_mu_ipm_set_enabled(struct device *dev, int enable)
+static int imx_mu_ipm_set_enabled(const struct device *dev, int enable)
 {
-	const struct imx_mu_config *config = dev->config->config_info;
+	const struct imx_mu_config *config = dev->config;
 	MU_Type *base = MU(config);
 
 #if CONFIG_IPM_IMX_MAX_DATA_SIZE_4
@@ -184,9 +185,9 @@ static int imx_mu_ipm_set_enabled(struct device *dev, int enable)
 	return 0;
 }
 
-static int imx_mu_init(struct device *dev)
+static int imx_mu_init(const struct device *dev)
 {
-	const struct imx_mu_config *config = dev->config->config_info;
+	const struct imx_mu_config *config = dev->config;
 
 	MU_Init(MU(config));
 	config->irq_config_func(dev);
@@ -204,26 +205,27 @@ static const struct ipm_driver_api imx_mu_driver_api = {
 
 /* Config MU */
 
-static void imx_mu_config_func_b(struct device *dev);
+static void imx_mu_config_func_b(const struct device *dev);
 
 static const struct imx_mu_config imx_mu_b_config = {
-	.base = (MU_Type *)DT_IPM_IMX_MU_B_BASE_ADDRESS,
+	.base = (MU_Type *)DT_INST_REG_ADDR(0),
 	.irq_config_func = imx_mu_config_func_b,
 };
 
 static struct imx_mu_data imx_mu_b_data;
 
-DEVICE_AND_API_INIT(mu_b, DT_IPM_IMX_MU_B_NAME,
+DEVICE_DT_INST_DEFINE(0,
 		    &imx_mu_init,
+		    device_pm_control_nop,
 		    &imx_mu_b_data, &imx_mu_b_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &imx_mu_driver_api);
 
-static void imx_mu_config_func_b(struct device *dev)
+static void imx_mu_config_func_b(const struct device *dev)
 {
-	IRQ_CONNECT(DT_IPM_IMX_MU_B_IRQ,
-		    DT_IPM_IMX_MU_B_IRQ_PRI,
-		    imx_mu_isr, DEVICE_GET(mu_b), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
+		    imx_mu_isr, DEVICE_DT_INST_GET(0), 0);
 
-	irq_enable(DT_IPM_IMX_MU_B_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 }

@@ -9,7 +9,6 @@
 #include <sys/printk.h>
 #include <app_memory/app_memdomain.h>
 #include <sys/libc-hooks.h>
-#include <sys/mempool.h>
 #include <logging/log.h>
 
 #include "main.h"
@@ -27,14 +26,13 @@ LOG_MODULE_REGISTER(app_main);
 K_APPMEM_PARTITION_DEFINE(shared_partition);
 
 /* Define a memory pool to place in the shared area.
- *
- * SYS_MEM_POOL_DEFINE() is special in that we don't use K_APP_DMEM()
- * to route it to the shared partition, instead it takes a section parameter.
  */
-#define BLK_SIZE (SAMPLE_DRIVER_MSG_SIZE + \
-		  WB_UP(sizeof(struct sys_mem_pool_block)))
-SYS_MEM_POOL_DEFINE(shared_pool, NULL, BLK_SIZE, BLK_SIZE, 8, 8,
-		    K_APP_DMEM_SECTION(shared_partition));
+#define BLK_SIZE (SAMPLE_DRIVER_MSG_SIZE + sizeof(void *))
+
+#define HEAP_BYTES (BLK_SIZE * 16)
+
+K_APP_DMEM(shared_partition) struct sys_heap shared_pool;
+K_APP_DMEM(shared_partition) uint8_t shared_pool_mem[HEAP_BYTES];
 
 /* queues for exchanging data between App A and App B */
 K_QUEUE_DEFINE(shared_queue_incoming);
@@ -57,7 +55,7 @@ void main(void)
 	LOG_INF("libc partition: %p %zu", (void *)z_libc_partition.start,
 		(size_t)z_libc_partition.size);
 #endif
-	sys_mem_pool_init(&shared_pool);
+	sys_heap_init(&shared_pool, shared_pool_mem, HEAP_BYTES);
 
 	/* Spawn supervisor entry for application A */
 	k_thread_create(&app_a_thread, app_a_stack, APP_A_STACKSIZE,

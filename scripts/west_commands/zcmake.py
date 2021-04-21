@@ -45,6 +45,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False):
     _ensure_min_version(cmake, dry_run)
 
     cmd = [cmake] + args
+
     kwargs = dict()
     if capture_output:
         kwargs['stdout'] = subprocess.PIPE
@@ -122,6 +123,7 @@ class CMakeCacheEntry:
     STRING        str OR list of str (if ';' is in the value)
     BOOL          bool
     INTERNAL      str OR list of str (if ';' is in the value)
+    STATIC        str OR list of str (if ';' is in the value)
     ----------    -------------------------------------------
     '''
 
@@ -133,9 +135,9 @@ class CMakeCacheEntry:
     # the first colon (':'). This breaks if the variable name has a
     # colon inside, but it's good enough.
     CACHE_ENTRY = re.compile(
-        r'''(?P<name>.*?)                               # name
-         :(?P<type>FILEPATH|PATH|STRING|BOOL|INTERNAL)  # type
-         =(?P<value>.*)                                 # value
+        r'''(?P<name>.*?)                                      # name
+         :(?P<type>FILEPATH|PATH|STRING|BOOL|INTERNAL|STATIC)  # type
+         =(?P<value>.*)                                        # value
         ''', re.X)
 
     @classmethod
@@ -186,7 +188,7 @@ class CMakeCacheEntry:
             except ValueError as exc:
                 args = exc.args + ('on line {}: {}'.format(line_no, line),)
                 raise ValueError(args) from exc
-        elif type_ in {'STRING', 'INTERNAL'}:
+        elif type_ in {'STRING', 'INTERNAL', 'STATIC'}:
             # If the value is a CMake list (i.e. is a string which
             # contains a ';'), convert to a Python list.
             if ';' in value:
@@ -283,6 +285,10 @@ def _ensure_min_version(cmake, dry_run):
                 'Please install CMake ' + _MIN_CMAKE_VERSION_STR +
                 ' or higher (https://cmake.org/download/).')
     version = lines[0].split()[2]
+    if '-' in version:
+        # Handle semver cases like "3.19.20210206-g1e50ab6"
+        # which Kitware uses for prerelease versions.
+        version = version.split('-', 1)[0]
     if packaging.version.parse(version) < _MIN_CMAKE_VERSION:
         log.die('cmake version', version,
                 'is less than minimum version {};'.

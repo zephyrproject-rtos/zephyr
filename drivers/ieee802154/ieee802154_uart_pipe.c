@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <init.h>
 #include <net/net_if.h>
 #include <net/net_pkt.h>
+#include <random/rand32.h>
 
 #include <drivers/console/uart_pipe.h>
 #include <net/ieee802154_radio.h>
@@ -41,18 +42,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Broadcast Short Address */
 #define BROADCAST_ADDRESS    ((uint8_t [SHORT_ADDRESS_SIZE]) {0xff, 0xff})
 
-static u8_t dev_pan_id[PAN_ID_SIZE];             /* Device Pan Id */
-static u8_t dev_short_addr[SHORT_ADDRESS_SIZE];  /* Device Short Address */
-static u8_t dev_ext_addr[EXTENDED_ADDRESS_SIZE]; /* Device Extended Address */
+static uint8_t dev_pan_id[PAN_ID_SIZE];             /* Device Pan Id */
+static uint8_t dev_short_addr[SHORT_ADDRESS_SIZE];  /* Device Short Address */
+static uint8_t dev_ext_addr[EXTENDED_ADDRESS_SIZE]; /* Device Extended Address */
 
 /** Singleton device used in uart pipe callback */
-static struct device *upipe_dev;
+static const struct device *upipe_dev;
 
 #if defined(CONFIG_IEEE802154_UPIPE_HW_FILTER)
 
-static bool received_dest_addr_matched(u8_t *rx_buffer)
+static bool received_dest_addr_matched(uint8_t *rx_buffer)
 {
-	struct upipe_context *upipe = upipe_dev->driver_data;
+	struct upipe_context *upipe = upipe_dev->data;
 
 	/* Check destination PAN Id */
 	if (memcmp(&rx_buffer[PAN_ID_OFFSET],
@@ -98,7 +99,7 @@ static bool received_dest_addr_matched(u8_t *rx_buffer)
 
 #endif
 
-static u8_t *upipe_rx(u8_t *buf, size_t *off)
+static uint8_t *upipe_rx(uint8_t *buf, size_t *off)
 {
 	struct net_pkt *pkt = NULL;
 	struct upipe_context *upipe;
@@ -107,7 +108,7 @@ static u8_t *upipe_rx(u8_t *buf, size_t *off)
 		goto done;
 	}
 
-	upipe = upipe_dev->driver_data;
+	upipe = upipe_dev->data;
 	if (!upipe->rx && *buf == UART_PIPE_RADIO_15_4_FRAME_TYPE) {
 		upipe->rx = true;
 		goto done;
@@ -176,16 +177,16 @@ done:
 	return buf;
 }
 
-static enum ieee802154_hw_caps upipe_get_capabilities(struct device *dev)
+static enum ieee802154_hw_caps upipe_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS |
 		IEEE802154_HW_2_4_GHZ |
 		IEEE802154_HW_FILTER;
 }
 
-static int upipe_cca(struct device *dev)
+static int upipe_cca(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	if (upipe->stopped) {
 		return -EIO;
@@ -194,7 +195,7 @@ static int upipe_cca(struct device *dev)
 	return 0;
 }
 
-static int upipe_set_channel(struct device *dev, u16_t channel)
+static int upipe_set_channel(const struct device *dev, uint16_t channel)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(channel);
@@ -202,9 +203,9 @@ static int upipe_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-static int upipe_set_pan_id(struct device *dev, u16_t pan_id)
+static int upipe_set_pan_id(const struct device *dev, uint16_t pan_id)
 {
-	u8_t pan_id_le[2];
+	uint8_t pan_id_le[2];
 
 	ARG_UNUSED(dev);
 
@@ -214,9 +215,9 @@ static int upipe_set_pan_id(struct device *dev, u16_t pan_id)
 	return 0;
 }
 
-static int upipe_set_short_addr(struct device *dev, u16_t short_addr)
+static int upipe_set_short_addr(const struct device *dev, uint16_t short_addr)
 {
-	u8_t short_addr_le[2];
+	uint8_t short_addr_le[2];
 
 	ARG_UNUSED(dev);
 
@@ -226,7 +227,8 @@ static int upipe_set_short_addr(struct device *dev, u16_t short_addr)
 	return 0;
 }
 
-static int upipe_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
+static int upipe_set_ieee_addr(const struct device *dev,
+			       const uint8_t *ieee_addr)
 {
 	ARG_UNUSED(dev);
 
@@ -235,7 +237,7 @@ static int upipe_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	return 0;
 }
 
-static int upipe_filter(struct device *dev,
+static int upipe_filter(const struct device *dev,
 			bool set,
 			enum ieee802154_filter_type type,
 			const struct ieee802154_filter *filter)
@@ -257,7 +259,7 @@ static int upipe_filter(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int upipe_set_txpower(struct device *dev, s16_t dbm)
+static int upipe_set_txpower(const struct device *dev, int16_t dbm)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(dbm);
@@ -265,14 +267,20 @@ static int upipe_set_txpower(struct device *dev, s16_t dbm)
 	return 0;
 }
 
-static int upipe_tx(struct device *dev,
+static int upipe_tx(const struct device *dev,
+		    enum ieee802154_tx_mode mode,
 		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
-	struct upipe_context *upipe = dev->driver_data;
-	u8_t *pkt_buf = frag->data;
-	u8_t len = frag->len;
-	u8_t i, data;
+	struct upipe_context *upipe = dev->data;
+	uint8_t *pkt_buf = frag->data;
+	uint8_t len = frag->len;
+	uint8_t i, data;
+
+	if (mode != IEEE802154_TX_MODE_DIRECT) {
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
 
 	LOG_DBG("%p (%u)", frag, len);
 
@@ -293,9 +301,9 @@ static int upipe_tx(struct device *dev,
 	return 0;
 }
 
-static int upipe_start(struct device *dev)
+static int upipe_start(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	if (!upipe->stopped) {
 		return -EALREADY;
@@ -306,9 +314,9 @@ static int upipe_start(struct device *dev)
 	return 0;
 }
 
-static int upipe_stop(struct device *dev)
+static int upipe_stop(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	if (upipe->stopped) {
 		return -EALREADY;
@@ -319,9 +327,9 @@ static int upipe_stop(struct device *dev)
 	return 0;
 }
 
-static int upipe_init(struct device *dev)
+static int upipe_init(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	(void)memset(upipe, 0, sizeof(struct upipe_context));
 
@@ -332,9 +340,9 @@ static int upipe_init(struct device *dev)
 	return 0;
 }
 
-static inline u8_t *get_mac(struct device *dev)
+static inline uint8_t *get_mac(const struct device *dev)
 {
-	struct upipe_context *upipe = dev->driver_data;
+	struct upipe_context *upipe = dev->data;
 
 	upipe->mac_addr[0] = 0x00;
 	upipe->mac_addr[1] = 0x10;
@@ -343,7 +351,7 @@ static inline u8_t *get_mac(struct device *dev)
 
 #if defined(CONFIG_IEEE802154_UPIPE_RANDOM_MAC)
 	UNALIGNED_PUT(sys_cpu_to_be32(sys_rand32_get()),
-		      (u32_t *) ((u8_t *)upipe->mac_addr+4));
+		      (uint32_t *) ((uint8_t *)upipe->mac_addr+4));
 #else
 	upipe->mac_addr[4] = CONFIG_IEEE802154_UPIPE_MAC4;
 	upipe->mac_addr[5] = CONFIG_IEEE802154_UPIPE_MAC5;
@@ -356,9 +364,9 @@ static inline u8_t *get_mac(struct device *dev)
 
 static void upipe_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct upipe_context *upipe = dev->driver_data;
-	u8_t *mac = get_mac(dev);
+	const struct device *dev = net_if_get_device(iface);
+	struct upipe_context *upipe = dev->data;
+	uint8_t *mac = get_mac(dev);
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 
@@ -384,7 +392,8 @@ static struct ieee802154_radio_api upipe_radio_api = {
 };
 
 NET_DEVICE_INIT(upipe_15_4, CONFIG_IEEE802154_UPIPE_DRV_NAME,
-		upipe_init, &upipe_context_data, NULL,
+		upipe_init, device_pm_control_nop,
+		&upipe_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&upipe_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);

@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT silabs_gecko_wdog
+
 #include <soc.h>
 #include <drivers/watchdog.h>
 #include <em_wdog.h>
@@ -12,6 +14,13 @@
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(wdt_gecko, CONFIG_WDT_LOG_LEVEL);
+
+#ifdef cmuClock_CORELE
+#define CLOCK_DEF(id) cmuClock_CORELE
+#else
+#define CLOCK_DEF(id) cmuClock_WDOG##id
+#endif /* cmuClock_CORELE */
+#define CLOCK_ID(id) CLOCK_DEF(id)
 
 /* Defines maximum WDOG_CTRL.PERSEL value which is used by the watchdog module
  * to select its timeout period.
@@ -21,6 +30,7 @@ LOG_MODULE_REGISTER(wdt_gecko, CONFIG_WDT_LOG_LEVEL);
 /* Device constant configuration parameters */
 struct wdt_gecko_cfg {
 	WDOG_TypeDef *base;
+	CMU_Clock_TypeDef clock;
 	void (*irq_cfg_func)(void);
 };
 
@@ -30,13 +40,13 @@ struct wdt_gecko_data {
 	bool timeout_installed;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_DATA(dev) \
-	((struct wdt_gecko_data *)(dev)->driver_data)
+	((struct wdt_gecko_data *)(dev)->data)
 #define DEV_CFG(dev) \
-	((struct wdt_gecko_cfg *)(dev)->config->config_info)
+	((const struct wdt_gecko_cfg *)(dev)->config)
 
-static u32_t wdt_gecko_get_timeout_from_persel(int perSel)
+static uint32_t wdt_gecko_get_timeout_from_persel(int perSel)
 {
 	return (8 << perSel) + 1;
 }
@@ -44,7 +54,7 @@ static u32_t wdt_gecko_get_timeout_from_persel(int perSel)
 /* Find the rounded up value of cycles for supplied timeout. When using ULFRCO
  * (default), 1 cycle is 1 ms +/- 12%.
  */
-static int wdt_gecko_get_persel_from_timeout(u32_t timeout)
+static int wdt_gecko_get_persel_from_timeout(uint32_t timeout)
 {
 	int idx;
 
@@ -57,10 +67,10 @@ static int wdt_gecko_get_persel_from_timeout(u32_t timeout)
 	return idx;
 }
 
-static int wdt_gecko_convert_window(u32_t window, u32_t period)
+static int wdt_gecko_convert_window(uint32_t window, uint32_t period)
 {
 	int idx = 0;
-	u32_t incr_val, comp_val;
+	uint32_t incr_val, comp_val;
 
 	incr_val = period / 8;
 	comp_val = 0; /* Initially 0, disable */
@@ -81,7 +91,7 @@ static int wdt_gecko_convert_window(u32_t window, u32_t period)
 	return idx;
 }
 
-static int wdt_gecko_setup(struct device *dev, u8_t options)
+static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 {
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	struct wdt_gecko_data *data = DEV_DATA(dev);
@@ -118,7 +128,7 @@ static int wdt_gecko_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wdt_gecko_disable(struct device *dev)
+static int wdt_gecko_disable(const struct device *dev)
 {
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	struct wdt_gecko_data *data = DEV_DATA(dev);
@@ -131,12 +141,12 @@ static int wdt_gecko_disable(struct device *dev)
 	return 0;
 }
 
-static int wdt_gecko_install_timeout(struct device *dev,
+static int wdt_gecko_install_timeout(const struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_gecko_data *data = DEV_DATA(dev);
-	WDOG_Init_TypeDef init_defaults = WDOG_INIT_DEFAULT;
-	u32_t installed_timeout;
+	data->wdog_config = (WDOG_Init_TypeDef)WDOG_INIT_DEFAULT;
+	uint32_t installed_timeout;
 
 	if (data->timeout_installed) {
 		LOG_ERR("No more timeouts can be installed");
@@ -150,7 +160,9 @@ static int wdt_gecko_install_timeout(struct device *dev,
 		return -EINVAL;
 	}
 
-	data->wdog_config = init_defaults;
+#if defined(_WDOG_CTRL_CLKSEL_MASK)
+	data->wdog_config.clkSel = wdogClkSelULFRCO;
+#endif
 
 	data->wdog_config.perSel = (WDOG_PeriodSel_TypeDef)
 		wdt_gecko_get_persel_from_timeout(cfg->window.max);
@@ -202,7 +214,7 @@ static int wdt_gecko_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int wdt_gecko_feed(struct device *dev, int channel_id)
+static int wdt_gecko_feed(const struct device *dev, int channel_id)
 {
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	WDOG_TypeDef *wdog = config->base;
@@ -218,13 +230,12 @@ static int wdt_gecko_feed(struct device *dev, int channel_id)
 	return 0;
 }
 
-static void wdt_gecko_isr(void *arg)
+static void wdt_gecko_isr(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 	struct wdt_gecko_data *data = DEV_DATA(dev);
 	WDOG_TypeDef *wdog = config->base;
-	u32_t flags;
+	uint32_t flags;
 
 	/* Clear IRQ flags */
 	flags = WDOGn_IntGet(wdog);
@@ -235,7 +246,7 @@ static void wdt_gecko_isr(void *arg)
 	}
 }
 
-static int wdt_gecko_init(struct device *dev)
+static int wdt_gecko_init(const struct device *dev)
 {
 	const struct wdt_gecko_cfg *config = DEV_CFG(dev);
 
@@ -247,8 +258,12 @@ static int wdt_gecko_init(struct device *dev)
 	/* Enable ULFRCO (1KHz) oscillator */
 	CMU_OscillatorEnable(cmuOsc_ULFRCO, true, false);
 
+#if !defined(_SILICON_LABS_32B_SERIES_2)
 	/* Ensure LE modules are clocked */
-	CMU_ClockEnable(cmuClock_CORELE, true);
+	CMU_ClockEnable(config->clock, true);
+#else
+	CMU_ClockSelectSet(config->clock, cmuSelect_ULFRCO);
+#endif
 
 	/* Enable IRQs */
 	config->irq_cfg_func();
@@ -271,30 +286,25 @@ static const struct wdt_driver_api wdt_gecko_driver_api = {
 									\
 	static const struct wdt_gecko_cfg wdt_gecko_cfg_##index = {	\
 		.base = (WDOG_TypeDef *)				\
-			DT_INST_##index##_SILABS_GECKO_WDOG_BASE_ADDRESS,\
+			DT_INST_REG_ADDR(index),\
+		.clock = CLOCK_ID(DT_INST_PROP(index, peripheral_id)),  \
 		.irq_cfg_func = wdt_gecko_cfg_func_##index,		\
 	};								\
 	static struct wdt_gecko_data wdt_gecko_data_##index;		\
 									\
-	DEVICE_AND_API_INIT(wdt_##index,				\
-				DT_INST_##index##_SILABS_GECKO_WDOG_LABEL,\
-				&wdt_gecko_init, &wdt_gecko_data_##index,\
+	DEVICE_DT_INST_DEFINE(index,					\
+				&wdt_gecko_init, device_pm_control_nop,	\
+				&wdt_gecko_data_##index,		\
 				&wdt_gecko_cfg_##index, POST_KERNEL,	\
 				CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 				&wdt_gecko_driver_api);			\
 									\
 	static void wdt_gecko_cfg_func_##index(void)			\
 	{								\
-		IRQ_CONNECT(DT_INST_##index##_SILABS_GECKO_WDOG_IRQ_0,	\
-			DT_INST_##index##_SILABS_GECKO_WDOG_IRQ_0_PRIORITY,\
-			wdt_gecko_isr, DEVICE_GET(wdt_##index), 0);	\
-		irq_enable(DT_INST_##index##_SILABS_GECKO_WDOG_IRQ_0);	\
+		IRQ_CONNECT(DT_INST_IRQN(index),	\
+			DT_INST_IRQ(index, priority),\
+			wdt_gecko_isr, DEVICE_DT_INST_GET(index), 0);	\
+		irq_enable(DT_INST_IRQN(index));	\
 	}
 
-#ifdef DT_INST_0_SILABS_GECKO_WDOG
-GECKO_WDT_INIT(0)
-#endif /* DT_INST_0_SILABS_GECKO_WDOG */
-
-#ifdef DT_INST_1_SILABS_GECKO_WDOG
-GECKO_WDT_INIT(1)
-#endif /* DT_INST_1_SILABS_GECKO_WDOG */
+DT_INST_FOREACH_STATUS_OKAY(GECKO_WDT_INIT)

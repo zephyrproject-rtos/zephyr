@@ -15,7 +15,9 @@
 
 LOG_MODULE_REGISTER(main);
 
-struct device *kscan_dev;
+#define KSCAN_LABEL DT_LABEL(DT_ALIAS(kscan0))
+
+const struct device *kscan_dev;
 static struct k_timer typematic_timer;
 static struct k_timer block_matrix_timer;
 
@@ -79,7 +81,7 @@ static struct k_timer block_matrix_timer;
 /*                                                                          */
 /****************************************************************************/
 
-static const u8_t keymap[MAX_MATRIX_KEY_COLS][MAX_MATRIX_KEY_ROWS] = {
+static const uint8_t keymap[MAX_MATRIX_KEY_COLS][MAX_MATRIX_KEY_ROWS] = {
 	{KEY_RSVD, 1, 112, 16, 2, KEY_RSVD, 30, KEY_RSVD},
 	{116, 117, 110, KEY_RSVD, 118, 17, 18, KEY_RSVD},
 	{113, KEY_RSVD, 114, 115, 3, KEY_RSVD, 119, KEY_RSVD},
@@ -99,19 +101,19 @@ static const u8_t keymap[MAX_MATRIX_KEY_COLS][MAX_MATRIX_KEY_ROWS] = {
 };
 
 /* Key used for typematic */
-static u8_t last_key;
+static uint8_t last_key;
 
 /* Typematic rate and delay values correspond to the data passed after
  * the F3 command (See the 8042 spec online)
  */
-static const u16_t period[] = {
+static const uint16_t period[] = {
 	33U,  37U,  42U,  46U,  50U,  54U,  58U,  63U,
 	67U,  75U,  83U,  92U, 100U, 109U, 116U, 125U,
 	133U, 149U, 167U, 182U, 200U, 217U, 232U, 250U,
 	270U, 303U, 333U, 370U, 400U, 435U, 470U, 500U
 };
 
-static const u16_t delay[] = { 250U, 500U, 750U, 1000U };
+static const uint16_t delay[] = { 250U, 500U, 750U, 1000U };
 
 static bool block_kb_matrix;
 
@@ -120,7 +122,8 @@ static void typematic_callback(struct k_timer *timer)
 	LOG_INF("Typematic : %u\n", last_key);
 }
 
-static void kb_callback(struct device *dev, u32_t row, u32_t col, bool pressed)
+static void kb_callback(const struct device *dev, uint32_t row, uint32_t col,
+			bool pressed)
 {
 	ARG_UNUSED(dev);
 	last_key = keymap[col][row];
@@ -152,9 +155,9 @@ void main(void)
 {
 	printk("Kscan matrix sample application\n");
 
-	kscan_dev = device_get_binding(DT_KSCAN_0_NAME);
+	kscan_dev = device_get_binding(KSCAN_LABEL);
 	if (!kscan_dev) {
-		LOG_ERR("kscan device %s not found", DT_KSCAN_0_NAME);
+		LOG_ERR("kscan device %s not found", KSCAN_LABEL);
 		return;
 	}
 

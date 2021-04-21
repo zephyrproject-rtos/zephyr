@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2020 Alexander Falb <fal3xx@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <atmel/samd21.dtsi>
+
+/ {
+	model = "Serpente";
+	compatible = "arturo182,serpente";
+
+	chosen {
+		zephyr,console = &sercom2;
+		zephyr,shell-uart = &sercom2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		red-led = &red_led;
+		green-led = &green_led;
+		blue-led = &blue_led;
+
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&porta 22 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+		green_led: led_1 {
+			gpios = <&porta 19 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+		blue_led: led_2 {
+			gpios = <&porta 23 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		red_pwm_led: pwm_led_0 {
+			pwms = <&tcc0 0>;
+			label = "Red PWM LED";
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tcc0 3>;
+			label = "Green PWM LED";
+		};
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&tcc0 1>;
+			label = "Blue PWM LED";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+};
+
+&sercom0 {
+	status = "okay";
+};
+
+&sercom2 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+};
+
+&sercom3 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	dipo = <1>;
+	dopo = <1>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	prescaler = <4>;
+	#pwm-cells = <1>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "uf2";
+			reg = <0x00000000 DT_SIZE_K(8)>;
+			read-only;
+		};
+
+		code_partition: partition@2000 {
+			label = "code";
+			reg = <0x2000 DT_SIZE_K(256-8)>;
+			read-only;
+		};
+	};
+};

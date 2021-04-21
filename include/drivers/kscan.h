@@ -35,13 +35,13 @@ extern "C" {
  * @brief Keyboard scan callback called when user press/release
  * a key on a matrix keyboard.
  *
- * @param dev   Pointer to the device structure for the driver instance.
- * @param data  Data byte passed pack to the user.
- * @param col	Describes column change.
- * @param row	Describes row change.
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param row Describes row change.
+ * @param column Describes column change.
  * @param pressed Describes the kind of key event.
  */
-typedef void (*kscan_callback_t)(struct device *dev, u32_t row, u32_t column,
+typedef void (*kscan_callback_t)(const struct device *dev, uint32_t row,
+				 uint32_t column,
 				 bool pressed);
 
 /**
@@ -51,12 +51,12 @@ typedef void (*kscan_callback_t)(struct device *dev, u32_t row, u32_t column,
  *
  * (Internal use only.)
  */
-typedef int (*kscan_config_t)(struct device *dev,
-			    kscan_callback_t callback);
-typedef int (*kscan_disable_callback_t)(struct device *dev);
-typedef int (*kscan_enable_callback_t)(struct device *dev);
+typedef int (*kscan_config_t)(const struct device *dev,
+			      kscan_callback_t callback);
+typedef int (*kscan_disable_callback_t)(const struct device *dev);
+typedef int (*kscan_enable_callback_t)(const struct device *dev);
 
-struct kscan_driver_api {
+__subsystem struct kscan_driver_api {
 	kscan_config_t config;
 	kscan_disable_callback_t disable_callback;
 	kscan_enable_callback_t enable_callback;
@@ -75,14 +75,14 @@ struct kscan_driver_api {
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int kscan_config(struct device *dev,
+__syscall int kscan_config(const struct device *dev,
 			     kscan_callback_t callback);
 
-static inline int z_impl_kscan_config(struct device *dev,
+static inline int z_impl_kscan_config(const struct device *dev,
 					kscan_callback_t callback)
 {
 	const struct kscan_driver_api *api =
-				(struct kscan_driver_api *)dev->driver_api;
+				(struct kscan_driver_api *)dev->api;
 
 	return api->config(dev, callback);
 }
@@ -93,15 +93,15 @@ static inline int z_impl_kscan_config(struct device *dev,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int kscan_enable_callback(struct device *dev);
+__syscall int kscan_enable_callback(const struct device *dev);
 
-static inline int z_impl_kscan_enable_callback(struct device *dev)
+static inline int z_impl_kscan_enable_callback(const struct device *dev)
 {
 	const struct kscan_driver_api *api =
-			(const struct kscan_driver_api *)dev->driver_api;
+			(const struct kscan_driver_api *)dev->api;
 
 	if (api->enable_callback == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->enable_callback(dev);
@@ -114,15 +114,15 @@ static inline int z_impl_kscan_enable_callback(struct device *dev)
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-__syscall int kscan_disable_callback(struct device *dev);
+__syscall int kscan_disable_callback(const struct device *dev);
 
-static inline int z_impl_kscan_disable_callback(struct device *dev)
+static inline int z_impl_kscan_disable_callback(const struct device *dev)
 {
 	const struct kscan_driver_api *api =
-			(const struct kscan_driver_api *)dev->driver_api;
+			(const struct kscan_driver_api *)dev->api;
 
 	if (api->disable_callback == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->disable_callback(dev);

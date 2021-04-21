@@ -41,11 +41,11 @@
 NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1, DATA_MTU, NULL);
 NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_MTU, NULL);
 
-static u8_t l2cap_policy;
+static uint8_t l2cap_policy;
 static struct bt_conn *l2cap_whitelist[CONFIG_BT_MAX_CONN];
 
-static u32_t l2cap_rate;
-static u32_t l2cap_recv_delay;
+static uint32_t l2cap_rate;
+static uint32_t l2cap_recv_delay_ms;
 static K_FIFO_DEFINE(l2cap_recv_fifo);
 struct l2ch {
 	struct k_delayed_work recv_work;
@@ -59,12 +59,12 @@ static bool metrics;
 
 static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
-	static u32_t len;
-	static u32_t cycle_stamp;
-	u32_t delta;
+	static uint32_t len;
+	static uint32_t cycle_stamp;
+	uint32_t delta;
 
 	delta = k_cycle_get_32() - cycle_stamp;
-	delta = (u32_t)k_cyc_to_ns_floor64(delta);
+	delta = (uint32_t)k_cyc_to_ns_floor64(delta);
 
 	/* if last data rx-ed was greater than 1 second in the past,
 	 * reset the metrics.
@@ -75,7 +75,7 @@ static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		cycle_stamp = k_cycle_get_32();
 	} else {
 		len += buf->len;
-		l2cap_rate = ((u64_t)len << 3) * 1000000000U / delta;
+		l2cap_rate = ((uint64_t)len << 3) * 1000000000U / delta;
 	}
 
 	return 0;
@@ -107,13 +107,13 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		shell_hexdump(ctx_shell, buf->data, buf->len);
 	}
 
-	if (l2cap_recv_delay) {
+	if (l2cap_recv_delay_ms > 0) {
 		/* Submit work only if queue is empty */
 		if (k_fifo_is_empty(&l2cap_recv_fifo)) {
 			shell_print(ctx_shell, "Delaying response in %u ms...",
-				    l2cap_recv_delay);
+				    l2cap_recv_delay_ms);
 			k_delayed_work_submit(&l2ch->recv_work,
-					      l2cap_recv_delay);
+					      K_MSEC(l2cap_recv_delay_ms));
 		}
 		net_buf_put(&l2cap_recv_fifo, buf);
 		return -EINPROGRESS;
@@ -170,7 +170,7 @@ static struct l2ch l2ch_chan = {
 	.ch.rx.mtu	= DATA_MTU,
 };
 
-static void l2cap_whitelist_remove(struct bt_conn *conn, u8_t reason)
+static void l2cap_whitelist_remove(struct bt_conn *conn, uint8_t reason)
 {
 	int i;
 
@@ -191,7 +191,7 @@ static int l2cap_accept_policy(struct bt_conn *conn)
 	int i;
 
 	if (l2cap_policy == L2CAP_POLICY_16BYTE_KEY) {
-		u8_t enc_key_size = bt_conn_enc_key_size(conn);
+		uint8_t enc_key_size = bt_conn_enc_key_size(conn);
 
 		if (enc_key_size && enc_key_size < BT_ENC_KEY_SIZE_MAX) {
 			return -EPERM;
@@ -277,7 +277,7 @@ static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 {
-	u16_t psm;
+	uint16_t psm;
 	int err;
 
 	if (!default_conn) {
@@ -292,9 +292,17 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 
 	psm = strtoul(argv[1], NULL, 16);
 
+	if (argc > 2) {
+		int sec;
+
+		sec = *argv[2] - '0';
+
+		l2ch_chan.ch.chan.required_sec_level = sec;
+	}
+
 	err = bt_l2cap_chan_connect(default_conn, &l2ch_chan.ch.chan, psm);
 	if (err < 0) {
-		shell_error(shell, "Unable to connect to psm %u (err %u)", psm,
+		shell_error(shell, "Unable to connect to psm %u (err %d)", psm,
 			    err);
 	} else {
 		shell_print(shell, "L2CAP connection pending");
@@ -317,7 +325,7 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 {
-	static u8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
+	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
 	int ret, len, count = 1;
 	struct net_buf *buf;
 
@@ -346,10 +354,10 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_recv(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc > 1) {
-		l2cap_recv_delay = strtoul(argv[1], NULL, 10);
+		l2cap_recv_delay_ms = strtoul(argv[1], NULL, 10);
 	} else {
 		shell_print(shell, "l2cap receive delay: %u ms",
-			    l2cap_recv_delay);
+			    l2cap_recv_delay_ms);
 	}
 
 	return 0;
@@ -420,7 +428,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(whitelist_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
-	SHELL_CMD_ARG(connect, NULL, "<psm>", cmd_connect, 2, 0),
+	SHELL_CMD_ARG(connect, NULL, "<psm> [sec_level]", cmd_connect, 2, 1),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(metrics, NULL, "<value on, off>", cmd_metrics, 2, 0),
 	SHELL_CMD_ARG(recv, NULL, "[delay (in miliseconds)", cmd_recv, 1, 1),

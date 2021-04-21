@@ -45,6 +45,8 @@ features:
 +-----------+------------+------------------------------------------+
 | GPIO      | on-chip    | I/O ports                                |
 +-----------+------------+------------------------------------------+
+| PWM       | on-chip    | Pulse Width Modulation                   |
++-----------+------------+------------------------------------------+
 | USART     | on-chip    | Serial ports                             |
 +-----------+------------+------------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports        |
@@ -78,6 +80,13 @@ The SAMD21 MCU has 6 SERCOM based USARTs.  On the Trinket, SERCOM0 is
 the Zephyr console and is available on pins 3 (RX) and 4 (TX).
 SERCOM2 is available on pins 2 (RX) and 0 (TX).
 
+PWM
+===
+
+The SAMD21 MCU has 3 TCC based PWM units with up to 4 outputs each and a period
+of 24 bits or 16 bits.  If :code:`CONFIG_PWM_SAM0_TCC` is enabled then LED0 is
+driven by TCC0 instead of by GPIO.
+
 SPI Port
 ========
 
@@ -99,6 +108,9 @@ Programming and Debugging
 
 The Trinket M0 ships the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
+
+Additionally, if :code:`CONFIG_USB_CDC_ACM` is enabled then the bootloader
+will be entered automatically when you run :code:`west flash`.
 
 Flashing
 ========

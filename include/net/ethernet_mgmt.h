@@ -167,10 +167,10 @@ static inline void ethernet_mgmt_raise_carrier_off_event(struct net_if *iface)
  * @param tag VLAN tag which is enabled.
  */
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-void ethernet_mgmt_raise_vlan_enabled_event(struct net_if *iface, u16_t tag);
+void ethernet_mgmt_raise_vlan_enabled_event(struct net_if *iface, uint16_t tag);
 #else
 static inline void ethernet_mgmt_raise_vlan_enabled_event(struct net_if *iface,
-							  u16_t tag)
+							  uint16_t tag)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(tag);
@@ -184,10 +184,11 @@ static inline void ethernet_mgmt_raise_vlan_enabled_event(struct net_if *iface,
  * @param tag VLAN tag which is disabled.
  */
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
-void ethernet_mgmt_raise_vlan_disabled_event(struct net_if *iface, u16_t tag);
+void ethernet_mgmt_raise_vlan_disabled_event(struct net_if *iface,
+					     uint16_t tag);
 #else
 static inline void ethernet_mgmt_raise_vlan_disabled_event(struct net_if *iface,
-							   u16_t tag)
+							   uint16_t tag)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(tag);

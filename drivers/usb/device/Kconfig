@@ -53,7 +53,7 @@ menuconfig USB_NRFX
 	depends on HAS_HW_NRF_USBD
 	select USB_DEVICE_DRIVER
 	select NRFX_USBD
-	select USB_DEVICE_DISABLE_ZLP_EPIN_HANDLING
+	select NRFX_POWER
 	help
 	  nRF USB Device Controller Driver
 

@@ -26,12 +26,56 @@
 			label = "UART_4";
 		};
 
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			interrupts = <53 0>;
+			status = "disabled";
+			label = "UART_5";
+		};
+
+		can1: can@40006400 {
+			compatible = "st,stm32-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006400 0x400>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			status = "disabled";
+			label = "CAN_1";
+			bus-speed = <125000>;
+			sjw = <1>;
+			prop-seg = <0>;
+			phase-seg1 = <5>;
+			phase-seg2 = <6>;
+		};
+
+		can2: can@40006800 {
+			compatible = "st,stm32-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006800 0x400>;
+			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			master-can-reg = <0x40006400>;
+			status = "disabled";
+			label = "CAN_2";
+			bus-speed = <125000>;
+			sjw = <1>;
+			prop-seg = <0>;
+			phase-seg1 = <5>;
+			phase-seg2 = <6>;
+		};
+
 		usbotg_fs: usb@50000000 {
 			num-bidir-endpoints = <6>;
 		};
 
 		usbotg_hs: usb@40040000 {
-			compatible = "st,stm32-otghs", "st,stm32-otgfs";
+			compatible = "st,stm32-otghs";
 			reg = <0x40040000 0x40000>;
 			interrupts = <77 0>, <74 0>, <75 0>;
 			interrupt-names = "otghs", "ep1_out", "ep1_in";
@@ -42,6 +86,23 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x20000000>;
 			status = "disabled";
 			label= "OTGHS";
+		};
+
+		backup_sram: memory@40024000 {
+			compatible = "st,stm32-backup-sram";
+			reg = <0x40024000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
+			label = "BACKUP_SRAM";
+			status = "disabled";
+		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			status = "disabled";
+			label = "DAC_1";
+			#io-channel-cells = <1>;
 		};
 	};
 

@@ -10,6 +10,9 @@ choice
 config SOC_STM32F723XX
 	bool "STM32F723XX"
 
+config SOC_STM32F745XX
+	bool "STM32F745XX"
+
 config SOC_STM32F746XX
 	bool "STM32F746XX"
 

@@ -18,8 +18,8 @@ LOG_MODULE_REGISTER(net_lldp_sample, LOG_LEVEL_DBG);
 #include <net/ethernet.h>
 
 static struct lldp_system_name_tlv {
-	u16_t type_length;
-	u8_t name[4];
+	uint16_t type_length;
+	uint8_t name[4];
 } __packed tlv = {
 	.name = { 't', 'e', 's', 't' },
 };
@@ -29,9 +29,9 @@ static void set_optional_tlv(struct net_if *iface)
 	NET_DBG("");
 
 	tlv.type_length = htons((LLDP_TLV_SYSTEM_NAME << 9) |
-				((sizeof(tlv) - sizeof(u16_t)) & 0x01ff));
+				((sizeof(tlv) - sizeof(uint16_t)) & 0x01ff));
 
-	net_lldp_config_optional(iface, (u8_t *)&tlv, sizeof(tlv));
+	net_lldp_config_optional(iface, (uint8_t *)&tlv, sizeof(tlv));
 }
 
 /* User data for the interface callback */
@@ -66,7 +66,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 }
 
 static int setup_iface(struct net_if *iface, const char *ipv6_addr,
-		       const char *ipv4_addr, u16_t vlan_tag)
+		       const char *ipv4_addr, uint16_t vlan_tag)
 {
 	struct net_if_addr *ifaddr;
 	struct in_addr addr4;
@@ -90,7 +90,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 	}
 
 	if (net_addr_pton(AF_INET, ipv4_addr, &addr4)) {
-		LOG_ERR("Invalid address: %s", ipv6_addr);
+		LOG_ERR("Invalid address: %s", ipv4_addr);
 		return -EINVAL;
 	}
 
@@ -109,11 +109,18 @@ static struct ud ud;
 
 static int init_vlan(void)
 {
+	enum ethernet_hw_caps caps;
 	int ret;
 
 	(void)memset(&ud, 0, sizeof(ud));
 
 	net_if_foreach(iface_cb, &ud);
+
+	caps = net_eth_get_hw_capabilities(ud.first);
+	if (!(caps & ETHERNET_HW_VLAN)) {
+		LOG_DBG("Interface %p does not support %s", ud.first, "VLAN");
+		return -ENOENT;
+	}
 
 	/* This sample has two VLANs. For the second one we need to manually
 	 * create IP address for this test. But first the VLAN needs to be
@@ -145,9 +152,9 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 
 	while (1) {
-		u16_t type_length;
-		u16_t length;
-		u8_t type;
+		uint16_t type_length;
+		uint16_t length;
+		uint8_t type;
 
 		if (net_pkt_read_be16(pkt, &type_length)) {
 			LOG_DBG("End LLDP DU TLV");
@@ -155,7 +162,7 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 		}
 
 		length = type_length & 0x1FF;
-		type = (u8_t)(type_length >> 9);
+		type = (uint8_t)(type_length >> 9);
 
 		/* Skip for now data */
 		if (net_pkt_skip(pkt, length)) {
@@ -188,8 +195,19 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 
 static int init_app(void)
 {
-	if (init_vlan() < 0) {
-		LOG_ERR("Cannot setup VLAN");
+	enum ethernet_hw_caps caps;
+	int ret;
+
+	ret = init_vlan();
+	if (ret < 0) {
+		LOG_WRN("Cannot setup VLAN (%d)", ret);
+	}
+
+	caps = net_eth_get_hw_capabilities(ud.first);
+	if (!(caps & ETHERNET_LLDP)) {
+		LOG_ERR("Interface %p does not support %s", ud.first, "LLDP");
+		LOG_ERR("Cannot continue!");
+		return -ENOENT;
 	}
 
 	set_optional_tlv(ud.first);

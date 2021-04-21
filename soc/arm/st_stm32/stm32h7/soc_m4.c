@@ -13,10 +13,15 @@
 #include <device.h>
 #include <init.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_system.h>
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include "stm32_hsem.h"
 
-#if defined(CONFIG_STM32H7_BOOT_CM4_CM7)
 void stm32h7_m4_boot_stop(void)
 {
 	/*
@@ -49,7 +54,6 @@ void stm32h7_m4_boot_stop(void)
 	  */
 	LL_LPM_EnableSleep();
 }
-#endif /* CONFIG_STM32H7_BOOT_CM4_CM7 */
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -59,9 +63,9 @@ void stm32h7_m4_boot_stop(void)
  *
  * @return 0
  */
-static int stm32h7_m4_init(struct device *arg)
+static int stm32h7_m4_init(const struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	key = irq_lock();
 
@@ -75,16 +79,19 @@ static int stm32h7_m4_init(struct device *arg)
 	/*HW semaphore Clock enable*/
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_HSEM);
 
-#if defined(CONFIG_STM32H7_BOOT_CM4_CM7)
-	/* Activate HSEM notification for Cortex-M4*/
-	LL_HSEM_EnableIT_C2IER(HSEM, LL_HSEM_MASK_0);
+	/* In case CM4 has not been forced boot by CM7,
+	 * CM4 needs to be stopped until CM7 has setup clock configuration
+	 */
+	if (!LL_RCC_IsCM4BootForced()) {
+		/* Activate HSEM notification for Cortex-M4 */
+		LL_HSEM_EnableIT_C2IER(HSEM, CFG_HW_ENTRY_STOP_MODE_MASK_SEMID);
 
-	/* Boot and enter stop mode */
-	stm32h7_m4_boot_stop();
+		/* Boot and enter stop mode */
+		stm32h7_m4_boot_stop();
 
-	/* Clear HSEM flag */
-	LL_HSEM_ClearFlag_C2ICR(HSEM, LL_HSEM_MASK_0);
-#endif /* CONFIG_STM32H7_BOOT_CM4_CM7 */
+		/* Clear HSEM flag */
+		LL_HSEM_ClearFlag_C2ICR(HSEM, CFG_HW_ENTRY_STOP_MODE_MASK_SEMID);
+	}
 
 	return 0;
 }

@@ -40,8 +40,8 @@ static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BT_MAX_CONN];
 /* The order should follow the enum hfp_hf_ag_indicators */
 static const struct {
 	char *name;
-	u32_t min;
-	u32_t max;
+	uint32_t min;
+	uint32_t max;
 } ag_ind[] = {
 	{"service", 0, 1}, /* HF_SERVICE_IND */
 	{"call", 0, 1}, /* HF_CALL_IND */
@@ -103,7 +103,7 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 int brsf_handle(struct at_client *hf_at)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	u32_t val;
+	uint32_t val;
 	int ret;
 
 	ret = at_get_number(hf_at, &val);
@@ -136,8 +136,8 @@ int brsf_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
-static void cind_handle_values(struct at_client *hf_at, u32_t index,
-			       char *name, u32_t min, u32_t max)
+static void cind_handle_values(struct at_client *hf_at, uint32_t index,
+			       char *name, uint32_t min, uint32_t max)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	int i;
@@ -159,12 +159,12 @@ static void cind_handle_values(struct at_client *hf_at, u32_t index,
 
 int cind_handle(struct at_client *hf_at)
 {
-	u32_t index = 0U;
+	uint32_t index = 0U;
 
 	/* Parsing Example: CIND: ("call",(0,1)) etc.. */
 	while (at_has_next_list(hf_at)) {
 		char name[MAX_IND_STR_LEN];
-		u32_t min, max;
+		uint32_t min, max;
 
 		if (at_open_list(hf_at) < 0) {
 			BT_ERR("Could not get open list");
@@ -221,8 +221,8 @@ int cind_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
-void ag_indicator_handle_values(struct at_client *hf_at, u32_t index,
-				u32_t value)
+void ag_indicator_handle_values(struct at_client *hf_at, uint32_t index,
+				uint32_t value)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
 	struct bt_conn *conn = hf->rfcomm_dlc.session->br_chan.chan.conn;
@@ -285,10 +285,10 @@ void ag_indicator_handle_values(struct at_client *hf_at, u32_t index,
 
 int cind_status_handle(struct at_client *hf_at)
 {
-	u32_t index = 0U;
+	uint32_t index = 0U;
 
 	while (at_has_next_list(hf_at)) {
-		u32_t value;
+		uint32_t value;
 		int ret;
 
 		ret = at_get_number(hf_at, &value);
@@ -321,7 +321,7 @@ int cind_status_resp(struct at_client *hf_at, struct net_buf *buf)
 
 int ciev_handle(struct at_client *hf_at)
 {
-	u32_t index, value;
+	uint32_t index, value;
 	int ret;
 
 	ret = at_get_number(hf_at, &index);

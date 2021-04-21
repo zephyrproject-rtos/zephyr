@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT swerv_pic
+
 /**
  * @brief SweRV EH1 PIC driver
  */
@@ -40,19 +42,19 @@
 
 static int save_irq;
 
-static u32_t swerv_pic_read(u32_t reg)
+static uint32_t swerv_pic_read(uint32_t reg)
 {
-	return *(volatile u32_t *)(DT_INST_0_SWERV_PIC_BASE_ADDRESS + reg);
+	return *(volatile uint32_t *)(DT_INST_REG_ADDR(0) + reg);
 }
 
-static void swerv_pic_write(u32_t reg, u32_t val)
+static void swerv_pic_write(uint32_t reg, uint32_t val)
 {
-	*(volatile u32_t *)(DT_INST_0_SWERV_PIC_BASE_ADDRESS + reg) = val;
+	*(volatile uint32_t *)(DT_INST_REG_ADDR(0) + reg) = val;
 }
 
-void swerv_pic_irq_enable(u32_t irq)
+void swerv_pic_irq_enable(uint32_t irq)
 {
-	u32_t key;
+	uint32_t key;
 
 	if ((irq >= SWERV_PIC_MAX_ID) || (irq < RISCV_MAX_GENERIC_IRQ)) {
 		return;
@@ -63,9 +65,9 @@ void swerv_pic_irq_enable(u32_t irq)
 	irq_unlock(key);
 }
 
-void swerv_pic_irq_disable(u32_t irq)
+void swerv_pic_irq_disable(uint32_t irq)
 {
-	u32_t key;
+	uint32_t key;
 
 	if ((irq >= SWERV_PIC_MAX_ID) || (irq < RISCV_MAX_GENERIC_IRQ)) {
 		return;
@@ -76,7 +78,7 @@ void swerv_pic_irq_disable(u32_t irq)
 	irq_unlock(key);
 }
 
-int swerv_pic_irq_is_enabled(u32_t irq)
+int swerv_pic_irq_is_enabled(uint32_t irq)
 {
 	if ((irq >= SWERV_PIC_MAX_ID) || (irq < RISCV_MAX_GENERIC_IRQ)) {
 		return -1;
@@ -86,9 +88,9 @@ int swerv_pic_irq_is_enabled(u32_t irq)
 	  & 0x1;
 }
 
-void swerv_pic_set_priority(u32_t irq, u32_t priority)
+void swerv_pic_set_priority(uint32_t irq, uint32_t priority)
 {
-	u32_t key;
+	uint32_t key;
 
 	if (irq <= RISCV_MAX_GENERIC_IRQ) {
 		return;
@@ -112,10 +114,10 @@ int swerv_pic_get_irq(void)
 	return save_irq;
 }
 
-static void swerv_pic_irq_handler(void *arg)
+static void swerv_pic_irq_handler(const void *arg)
 {
-	u32_t tmp;
-	u32_t irq;
+	uint32_t tmp;
+	uint32_t irq;
 	struct _isr_table_entry *ite;
 
 	/* trigger the capture of the interrupt source ID */
@@ -139,7 +141,7 @@ static void swerv_pic_irq_handler(void *arg)
 	swerv_pic_write(SWERV_PIC_meigwclr(irq), 0);
 }
 
-static int swerv_pic_init(struct device *dev)
+static int swerv_pic_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	int i;
@@ -187,7 +189,7 @@ static int swerv_pic_init(struct device *dev)
 
 void arch_irq_enable(unsigned int irq)
 {
-	u32_t mie;
+	uint32_t mie;
 
 	if (irq > RISCV_MAX_GENERIC_IRQ) {
 		swerv_pic_irq_enable(irq);
@@ -205,7 +207,7 @@ void arch_irq_enable(unsigned int irq)
 
 void arch_irq_disable(unsigned int irq)
 {
-	u32_t mie;
+	uint32_t mie;
 
 	if (irq > RISCV_MAX_GENERIC_IRQ) {
 		swerv_pic_irq_disable(irq);
@@ -223,7 +225,7 @@ void arch_irq_disable(unsigned int irq)
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	u32_t mie;
+	uint32_t mie;
 
 	if (irq > RISCV_MAX_GENERIC_IRQ)
 		return swerv_pic_irq_is_enabled(irq);

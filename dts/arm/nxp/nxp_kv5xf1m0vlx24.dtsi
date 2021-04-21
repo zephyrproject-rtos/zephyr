@@ -16,7 +16,7 @@
 	};
 };
 
-&flash_controller {
+&ftfe {
 	flash0: flash@10000000 {
 		compatible = "soc-nv-flash";
 		label = "MCUX_FLASH";

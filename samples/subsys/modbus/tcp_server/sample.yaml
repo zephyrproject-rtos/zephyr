@@ -1,0 +1,9 @@
+sample:
+  name: Modbus TCP Server Sample
+tests:
+  sample.modbus.tcp_server:
+    tags: modbus
+    filter: dt_compat_enabled_with_alias("gpio-leds", "led0") and
+            dt_compat_enabled_with_alias("gpio-leds", "led1") and
+            dt_compat_enabled_with_alias("gpio-leds", "led2")
+    depends_on: gpio, netif

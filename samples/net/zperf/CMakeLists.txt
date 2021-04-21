@@ -2,10 +2,11 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(zperf)
 
 target_sources(app PRIVATE
+  src/main.c
   src/shell_utils.c
   src/zperf_session.c
   src/zperf_shell.c
@@ -16,5 +17,5 @@ target_sources(app PRIVATE
   )
 
 target_include_directories(app PRIVATE
-  $ENV{ZEPHYR_BASE}/subsys/net/ip
+  ${ZEPHYR_BASE}/subsys/net/ip
   )

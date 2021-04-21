@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: QEMU NIOS2 Zephyr CPU
+
+compatible: "qemu,nios2-zephyr"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+      const: 1
+
+interrupt-cells:
+  - irq

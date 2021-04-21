@@ -23,15 +23,15 @@ struct crypto_stm32_data {
 
 struct crypto_stm32_session {
 	CRYP_ConfigTypeDef config;
-	u32_t key[CRYPTO_STM32_AES_MAX_KEY_LEN / sizeof(u32_t)];
+	uint32_t key[CRYPTO_STM32_AES_MAX_KEY_LEN / sizeof(uint32_t)];
 	bool in_use;
 };
 
 #define CRYPTO_STM32_CFG(dev) \
-	((const struct crypto_stm32_config *const)(dev)->config->config_info)
+	((const struct crypto_stm32_config *const)(dev)->config)
 
 #define CRYPTO_STM32_DATA(dev) \
-	((struct crypto_stm32_data *const)(dev)->driver_data)
+	((struct crypto_stm32_data *const)(dev)->data)
 
 #define CRYPTO_STM32_SESSN(ctx) \
 	((struct crypto_stm32_session *const)(ctx)->drv_sessn_state)

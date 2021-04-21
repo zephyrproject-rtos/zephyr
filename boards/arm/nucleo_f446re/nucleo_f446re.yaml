@@ -1,5 +1,5 @@
 identifier: nucleo_f446re
-name: NUCLEO-F446RE
+name: ST Nucleo F446RE
 type: mcu
 arch: arm
 toolchain:
@@ -14,5 +14,7 @@ supported:
   - gpio
   - spi
   - i2c
+  - can
+  - backup_sram
 ram: 96
 flash: 512

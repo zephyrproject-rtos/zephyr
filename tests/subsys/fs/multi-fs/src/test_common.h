@@ -8,7 +8,7 @@
 #include <fs/fs.h>
 #include <limits.h>
 
-void clear_flash(void);
+void test_clear_flash(void);
 int check_file_dir_exists(const char *fpath);
 
 int test_file_open(struct fs_file_t *filep, const char *fpath);

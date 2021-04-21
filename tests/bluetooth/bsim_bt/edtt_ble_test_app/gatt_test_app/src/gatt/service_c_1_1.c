@@ -46,10 +46,10 @@ extern struct bt_gatt_attr service_d_1_attrs[];
 		0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01, \
 		0x00, 0x00, 0x00, 0x00, 0xd3, 0xd9, 0x00, 0x00)
 
-static u8_t   value_v9__128_bit_uuid_value = 0x09;
+static uint8_t   value_v9__128_bit_uuid_value = 0x09;
 static struct bt_gatt_cep cha_ext_pro_value = { 0x0001 };
-static u8_t   des_v9d2__128_bit_uuid_value = 0x22;
-static u8_t   des_v9d3__128_bit_uuid_value = 0x33;
+static uint8_t   des_v9d2__128_bit_uuid_value = 0x22;
+static uint8_t   des_v9d3__128_bit_uuid_value = 0x33;
 
 /**
  * @brief Attribute read call back for the Value V9 (128-bit UUID) attribute
@@ -65,9 +65,9 @@ static u8_t   des_v9d3__128_bit_uuid_value = 0x33;
  */
 static ssize_t read_value_v9__128_bit_uuid(struct bt_conn *conn,
 					   const struct bt_gatt_attr *attr,
-					   void *buf, u16_t len, u16_t offset)
+					   void *buf, uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v9__128_bit_uuid_value));
@@ -88,10 +88,10 @@ static ssize_t read_value_v9__128_bit_uuid(struct bt_conn *conn,
  */
 static ssize_t write_value_v9__128_bit_uuid(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
-					    const void *buf, u16_t len,
-					    u16_t offset, u8_t flags)
+					    const void *buf, uint16_t len,
+					    uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v9__128_bit_uuid_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -118,9 +118,9 @@ static ssize_t write_value_v9__128_bit_uuid(struct bt_conn *conn,
  */
 static ssize_t read_des_v9d2__128_bit_uuid(struct bt_conn *conn,
 					   const struct bt_gatt_attr *attr,
-					   void *buf, u16_t len, u16_t offset)
+					   void *buf, uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(des_v9d2__128_bit_uuid_value));
@@ -142,10 +142,10 @@ static ssize_t read_des_v9d2__128_bit_uuid(struct bt_conn *conn,
  */
 static ssize_t write_des_v9d2__128_bit_uuid(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
-					    const void *buf, u16_t len,
-					    u16_t offset, u8_t flags)
+					    const void *buf, uint16_t len,
+					    uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(des_v9d2__128_bit_uuid_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -173,10 +173,10 @@ static ssize_t write_des_v9d2__128_bit_uuid(struct bt_conn *conn,
  */
 static ssize_t write_des_v9d3__128_bit_uuid(struct bt_conn *conn,
 					    const struct bt_gatt_attr *attr,
-					    const void *buf, u16_t len,
-					    u16_t offset, u8_t flags)
+					    const void *buf, uint16_t len,
+					    uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(des_v9d3__128_bit_uuid_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);

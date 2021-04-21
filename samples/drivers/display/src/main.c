@@ -14,6 +14,37 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #include <device.h>
 #include <drivers/display.h>
 
+#if DT_NODE_HAS_STATUS(DT_INST(0, ilitek_ili9340), okay)
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, ilitek_ili9340))
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_INST(0, solomon_ssd1306fb), okay)
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, solomon_ssd1306fb))
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_INST(0, solomon_ssd16xxfb), okay)
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, solomon_ssd16xxfb))
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_INST(0, sitronix_st7789v), okay)
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7789v))
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_INST(0, sitronix_st7735r), okay)
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7735r))
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_INST(0, fsl_imx6sx_lcdif), okay)
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, fsl_imx6sx_lcdif))
+#endif
+
+#ifdef CONFIG_SDL_DISPLAY_DEV_NAME
+#define DISPLAY_DEV_NAME CONFIG_SDL_DISPLAY_DEV_NAME
+#endif
+
+#ifdef CONFIG_DUMMY_DISPLAY_DEV_NAME
+#define DISPLAY_DEV_NAME CONFIG_DUMMY_DISPLAY_DEV_NAME
+#endif
 #ifdef CONFIG_ARCH_POSIX
 #include "posix_board_if.h"
 #endif
@@ -31,7 +62,7 @@ enum corner {
 	BOTTOM_LEFT
 };
 
-typedef void (*fill_buffer)(enum corner corner, u8_t grey, u8_t *buf,
+typedef void (*fill_buffer)(enum corner corner, uint8_t grey, uint8_t *buf,
 			    size_t buf_size);
 
 
@@ -49,10 +80,10 @@ static void posix_exit_main(int exit_code)
 }
 #endif
 
-static void fill_buffer_argb8888(enum corner corner, u8_t grey, u8_t *buf,
-			       size_t buf_size)
+static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
+				 size_t buf_size)
 {
-	u32_t color = 0;
+	uint32_t color = 0;
 
 	switch (corner) {
 	case TOP_LEFT:
@@ -70,14 +101,14 @@ static void fill_buffer_argb8888(enum corner corner, u8_t grey, u8_t *buf,
 	}
 
 	for (size_t idx = 0; idx < buf_size; idx += 4) {
-		*((u32_t *)(buf + idx)) = color;
+		*((uint32_t *)(buf + idx)) = color;
 	}
 }
 
-static void fill_buffer_rgb888(enum corner corner, u8_t grey, u8_t *buf,
+static void fill_buffer_rgb888(enum corner corner, uint8_t grey, uint8_t *buf,
 			       size_t buf_size)
 {
-	u32_t color = 0;
+	uint32_t color = 0;
 
 	switch (corner) {
 	case TOP_LEFT:
@@ -101,10 +132,10 @@ static void fill_buffer_rgb888(enum corner corner, u8_t grey, u8_t *buf,
 	}
 }
 
-static u16_t get_rgb565_color(enum corner corner, u8_t grey)
+static uint16_t get_rgb565_color(enum corner corner, uint8_t grey)
 {
-	u16_t color = 0;
-	u16_t grey_5bit;
+	uint16_t color = 0;
+	uint16_t grey_5bit;
 
 	switch (corner) {
 	case TOP_LEFT:
@@ -125,10 +156,10 @@ static u16_t get_rgb565_color(enum corner corner, u8_t grey)
 	return color;
 }
 
-static void fill_buffer_rgb565(enum corner corner, u8_t grey, u8_t *buf,
+static void fill_buffer_rgb565(enum corner corner, uint8_t grey, uint8_t *buf,
 			       size_t buf_size)
 {
-	u16_t color = get_rgb565_color(corner, grey);
+	uint16_t color = get_rgb565_color(corner, grey);
 
 	for (size_t idx = 0; idx < buf_size; idx += 2) {
 		*(buf + idx + 0) = (color >> 8) & 0xFFu;
@@ -136,20 +167,20 @@ static void fill_buffer_rgb565(enum corner corner, u8_t grey, u8_t *buf,
 	}
 }
 
-static void fill_buffer_bgr565(enum corner corner, u8_t grey, u8_t *buf,
+static void fill_buffer_bgr565(enum corner corner, uint8_t grey, uint8_t *buf,
 			       size_t buf_size)
 {
-	u16_t color = get_rgb565_color(corner, grey);
+	uint16_t color = get_rgb565_color(corner, grey);
 
 	for (size_t idx = 0; idx < buf_size; idx += 2) {
-		*(u16_t *)(buf + idx) = color;
+		*(uint16_t *)(buf + idx) = color;
 	}
 }
 
-static void fill_buffer_mono(enum corner corner, u8_t grey, u8_t *buf,
+static void fill_buffer_mono(enum corner corner, uint8_t grey, uint8_t *buf,
 			     size_t buf_size)
 {
-	u16_t color;
+	uint16_t color;
 
 	switch (corner) {
 	case BOTTOM_LEFT:
@@ -172,9 +203,9 @@ void main(void)
 	size_t h_step;
 	size_t scale;
 	size_t grey_count;
-	u8_t *buf;
-	s32_t grey_scale_sleep;
-	struct device *display_dev;
+	uint8_t *buf;
+	int32_t grey_scale_sleep;
+	const struct device *display_dev;
 	struct display_capabilities capabilities;
 	struct display_buffer_descriptor buf_desc;
 	size_t buf_size = 0;
@@ -192,7 +223,7 @@ void main(void)
 
 	display_get_capabilities(display_dev, &capabilities);
 
-	if (capabilities.screen_info & SCREEN_INFO_MONO_VTILED)  {
+	if (capabilities.screen_info & SCREEN_INFO_MONO_VTILED) {
 		rect_w = 16;
 		rect_h = 8;
 	} else {
@@ -207,9 +238,9 @@ void main(void)
 	rect_h *= scale;
 
 	if (capabilities.screen_info & SCREEN_INFO_EPD) {
-		grey_scale_sleep = K_MSEC(10000);
+		grey_scale_sleep = 10000;
 	} else {
-		grey_scale_sleep = K_MSEC(100);
+		grey_scale_sleep = 100;
 	}
 
 	buf_size = rect_w * rect_h;
@@ -292,7 +323,7 @@ void main(void)
 		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size);
 		display_write(display_dev, x, y, &buf_desc, buf);
 		++grey_count;
-		k_sleep(grey_scale_sleep);
+		k_msleep(grey_scale_sleep);
 #if CONFIG_TEST
 		if (grey_count >= 1024) {
 			break;

@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test enum property container
+
+compatible: "vnd,enum-required-false-holder"
+
+include: [base.yaml]
+
+properties:
+  val:
+    type: string
+    required: false
+    enum:
+      - "zero"
+      - "one"
+      - "two"

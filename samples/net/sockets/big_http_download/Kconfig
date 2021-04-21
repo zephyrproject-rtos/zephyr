@@ -1,0 +1,20 @@
+# Private config options for big_http_download sample
+
+# Copyright (c) 2020 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "big_http_download sample application"
+
+config SAMPLE_BIG_HTTP_DL_URL
+	string "Download URL"
+	default "http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz"
+	help
+	  URL to download.
+
+config SAMPLE_BIG_HTTP_DL_NUM_ITER
+	int "Limit number of iterations"
+	default 0
+	help
+	  Number of download iterations (0 - unlimited).
+
+source "Kconfig.zephyr"

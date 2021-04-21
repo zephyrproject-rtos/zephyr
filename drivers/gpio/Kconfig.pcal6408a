@@ -1,0 +1,21 @@
+# PCAL6408a GPIO configuration options
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_NXP_PCAL6408A := nxp,pcal6408a
+
+menuconfig GPIO_PCAL6408A
+	bool "PCAL6408A I2C GPIO chip"
+	default $(dt_compat_enabled,$(DT_COMPAT_NXP_PCAL6408A))
+	depends on I2C
+	help
+	  Enable driver for PCAL6408A I2C GPIO chip.
+
+config GPIO_PCAL6408A_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on GPIO_PCAL6408A
+	help
+	  Device driver initialization priority.

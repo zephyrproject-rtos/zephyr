@@ -44,15 +44,16 @@ enum cfb_display_param {
 enum cfb_font_caps {
 	CFB_FONT_MONO_VPACKED		= BIT(0),
 	CFB_FONT_MONO_HPACKED		= BIT(1),
+	CFB_FONT_MSB_FIRST		= BIT(2),
 };
 
 struct cfb_font {
 	const void *data;
 	enum cfb_font_caps caps;
-	u8_t width;
-	u8_t height;
-	u8_t first_char;
-	u8_t last_char;
+	uint8_t width;
+	uint8_t height;
+	uint8_t first_char;
+	uint8_t last_char;
 };
 
 /**
@@ -87,7 +88,7 @@ struct cfb_font {
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_print(struct device *dev, char *str, u16_t x, u16_t y);
+int cfb_print(const struct device *dev, char *str, uint16_t x, uint16_t y);
 
 /**
  * @brief Clear framebuffer.
@@ -97,7 +98,7 @@ int cfb_print(struct device *dev, char *str, u16_t x, u16_t y);
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_framebuffer_clear(struct device *dev, bool clear_display);
+int cfb_framebuffer_clear(const struct device *dev, bool clear_display);
 
 /**
  * @brief Invert Pixels.
@@ -106,7 +107,7 @@ int cfb_framebuffer_clear(struct device *dev, bool clear_display);
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_framebuffer_invert(struct device *dev);
+int cfb_framebuffer_invert(const struct device *dev);
 
 /**
  * @brief Finalize framebuffer and write it to display RAM,
@@ -116,7 +117,7 @@ int cfb_framebuffer_invert(struct device *dev);
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_framebuffer_finalize(struct device *dev);
+int cfb_framebuffer_finalize(const struct device *dev);
 
 /**
  * @brief Get display parameter.
@@ -126,7 +127,8 @@ int cfb_framebuffer_finalize(struct device *dev);
  *
  * @return Display parameter value
  */
-int cfb_get_display_parameter(struct device *dev, enum cfb_display_param);
+int cfb_get_display_parameter(const struct device *dev,
+			      enum cfb_display_param);
 
 /**
  * @brief Set font.
@@ -136,7 +138,7 @@ int cfb_get_display_parameter(struct device *dev, enum cfb_display_param);
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_framebuffer_set_font(struct device *dev, u8_t idx);
+int cfb_framebuffer_set_font(const struct device *dev, uint8_t idx);
 
 /**
  * @brief Get font size.
@@ -148,7 +150,8 @@ int cfb_framebuffer_set_font(struct device *dev, u8_t idx);
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_get_font_size(struct device *dev, u8_t idx, u8_t *width, u8_t *height);
+int cfb_get_font_size(const struct device *dev, uint8_t idx, uint8_t *width,
+		      uint8_t *height);
 
 /**
  * @brief Get number of fonts.
@@ -157,7 +160,7 @@ int cfb_get_font_size(struct device *dev, u8_t idx, u8_t *width, u8_t *height);
  *
  * @return number of fonts
  */
-int cfb_get_numof_fonts(struct device *dev);
+int cfb_get_numof_fonts(const struct device *dev);
 
 /**
  * @brief Initialize Character Framebuffer.
@@ -166,7 +169,7 @@ int cfb_get_numof_fonts(struct device *dev);
  *
  * @return 0 on success, negative value otherwise
  */
-int cfb_framebuffer_init(struct device *dev);
+int cfb_framebuffer_init(const struct device *dev);
 
 #ifdef __cplusplus
 }

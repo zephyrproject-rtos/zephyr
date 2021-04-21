@@ -14,26 +14,42 @@ struct dummy_display_data {
 
 static struct dummy_display_data dummy_display_data;
 
-static int dummy_display_init(struct device *dev)
+static int dummy_display_init(const struct device *dev)
 {
 	struct dummy_display_data *disp_data =
-	    (struct dummy_display_data *)dev->driver_data;
+	    (struct dummy_display_data *)dev->data;
 
 	disp_data->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 
 	return 0;
 }
 
-static int dummy_display_write(const struct device *dev, const u16_t x,
-			       const u16_t y,
+static int dummy_display_write(const struct device *dev, const uint16_t x,
+			       const uint16_t y,
 			       const struct display_buffer_descriptor *desc,
 			       const void *buf)
 {
+	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
+	__ASSERT(desc->pitch <= CONFIG_DUMMY_DISPLAY_X_RES,
+		"Pitch in descriptor is larger than screen size");
+	__ASSERT(desc->height <= CONFIG_DUMMY_DISPLAY_Y_RES,
+		"Height in descriptor is larger than screen size");
+	__ASSERT(x + desc->pitch <= CONFIG_DUMMY_DISPLAY_X_RES,
+		 "Writing outside screen boundaries in horizontal direction");
+	__ASSERT(y + desc->height <= CONFIG_DUMMY_DISPLAY_Y_RES,
+		 "Writing outside screen boundaries in vertical direction");
+
+	if (desc->width > desc->pitch ||
+	    x + desc->pitch > CONFIG_DUMMY_DISPLAY_X_RES ||
+	    y + desc->height > CONFIG_DUMMY_DISPLAY_Y_RES) {
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
-static int dummy_display_read(const struct device *dev, const u16_t x,
-			      const u16_t y,
+static int dummy_display_read(const struct device *dev, const uint16_t x,
+			      const uint16_t y,
 			      const struct display_buffer_descriptor *desc,
 			      void *buf)
 {
@@ -56,13 +72,13 @@ static int dummy_display_blanking_on(const struct device *dev)
 }
 
 static int dummy_display_set_brightness(const struct device *dev,
-					const u8_t brightness)
+					const uint8_t brightness)
 {
 	return 0;
 }
 
 static int dummy_display_set_contrast(const struct device *dev,
-				      const u8_t contrast)
+				      const uint8_t contrast)
 {
 	return 0;
 }
@@ -71,7 +87,7 @@ static void dummy_display_get_capabilities(const struct device *dev,
 		struct display_capabilities *capabilities)
 {
 	struct dummy_display_data *disp_data =
-		(struct dummy_display_data *)dev->driver_data;
+		(struct dummy_display_data *)dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = CONFIG_DUMMY_DISPLAY_X_RES;
@@ -89,7 +105,7 @@ static int dummy_display_set_pixel_format(const struct device *dev,
 		const enum display_pixel_format pixel_format)
 {
 	struct dummy_display_data *disp_data =
-		(struct dummy_display_data *)dev->driver_data;
+		(struct dummy_display_data *)dev->data;
 
 	disp_data->current_pixel_format = pixel_format;
 	return 0;
@@ -107,7 +123,8 @@ static const struct display_driver_api dummy_display_api = {
 	.set_pixel_format = dummy_display_set_pixel_format,
 };
 
-DEVICE_AND_API_INIT(dummy_display, CONFIG_DUMMY_DISPLAY_DEV_NAME,
-		    &dummy_display_init, &dummy_display_data, NULL,
+DEVICE_DEFINE(dummy_display, CONFIG_DUMMY_DISPLAY_DEV_NAME,
+		    &dummy_display_init, device_pm_control_nop,
+		    &dummy_display_data, NULL,
 		    APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &dummy_display_api);

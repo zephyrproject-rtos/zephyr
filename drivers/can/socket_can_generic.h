@@ -13,7 +13,9 @@
 #ifndef ZEPHYR_DRIVERS_CAN_SOCKET_CAN_GENERIC_H_
 #define ZEPHYR_DRIVERS_CAN_SOCKET_CAN_GENERIC_H_
 
+#define SOCKET_CAN_NAME_0 "SOCKET_CAN_0"
 #define SOCKET_CAN_NAME_1 "SOCKET_CAN_1"
+#define SOCKET_CAN_NAME_2 "SOCKET_CAN_2"
 #define SEND_TIMEOUT K_MSEC(100)
 #define RX_THREAD_STACK_SIZE 512
 #define RX_THREAD_PRIORITY 2
@@ -21,10 +23,10 @@
 
 /* TODO: make msgq size configurable */
 CAN_DEFINE_MSGQ(socket_can_msgq, 5);
-K_THREAD_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
 
 struct socket_can_context {
-	struct device *can_dev;
+	const struct device *can_dev;
 	struct net_if *iface;
 	struct k_msgq *msgq;
 
@@ -35,15 +37,15 @@ struct socket_can_context {
 
 static inline void socket_can_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct socket_can_context *socket_context = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct socket_can_context *socket_context = dev->data;
 
 	socket_context->iface = iface;
 
 	LOG_DBG("Init CAN interface %p dev %p", iface, dev);
 }
 
-static inline void tx_irq_callback(u32_t error_flags, void *arg)
+static inline void tx_irq_callback(uint32_t error_flags, void *arg)
 {
 	char *caller_str = (char *)arg;
 	if (error_flags) {
@@ -53,9 +55,10 @@ static inline void tx_irq_callback(u32_t error_flags, void *arg)
 }
 
 /* This is called by net_if.c when packet is about to be sent */
-static inline int socket_can_send(struct device *dev, struct net_pkt *pkt)
+static inline int socket_can_send(const struct device *dev,
+				  struct net_pkt *pkt)
 {
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 	int ret;
 
 	if (net_pkt_family(pkt) != AF_CAN) {
@@ -75,11 +78,11 @@ static inline int socket_can_send(struct device *dev, struct net_pkt *pkt)
 	return -ret;
 }
 
-static inline int socket_can_setsockopt(struct device *dev, void *obj,
+static inline int socket_can_setsockopt(const struct device *dev, void *obj,
 					int level, int optname,
 					const void *optval, socklen_t optlen)
 {
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 	struct net_context *ctx = obj;
 	int ret;
 
@@ -102,9 +105,9 @@ static inline int socket_can_setsockopt(struct device *dev, void *obj,
 	return 0;
 }
 
-static inline void socket_can_close(struct device *dev, int filter_id)
+static inline void socket_can_close(const struct device *dev, int filter_id)
 {
-	struct socket_can_context *socket_context = dev->driver_data;
+	struct socket_can_context *socket_context = dev->data;
 
 	can_detach(socket_context->can_dev, filter_id);
 }
@@ -115,8 +118,6 @@ static struct canbus_api socket_can_api = {
 	.close = socket_can_close,
 	.setsockopt = socket_can_setsockopt,
 };
-
-static struct socket_can_context socket_can_context_1;
 
 static inline void rx_thread(void *ctx, void *unused1, void *unused2)
 {

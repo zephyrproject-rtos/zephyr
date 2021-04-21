@@ -1,0 +1,9 @@
+tests:
+  kernel.threads.tls:
+    tags: kernel threads
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+  kernel.threads.tls.userspace:
+    tags: kernel threads userspace
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_ARCH_HAS_USERSPACE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y

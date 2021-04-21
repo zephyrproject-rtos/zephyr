@@ -12,35 +12,27 @@
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Invoke Low Power/System Off specific Tasks */
-void sys_set_power_state(enum power_states state)
+void pm_power_state_set(struct pm_state_info info)
 {
-	switch (state) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
- #ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_1
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	switch (info.state) {
+	case PM_STATE_SOFT_OFF:
 		nrf_regulators_system_off(NRF_REGULATORS);
 		break;
- #endif
-#endif
 	default:
-		LOG_DBG("Unsupported power state %u", state);
+		LOG_DBG("Unsupported power state %u", info.state);
 		break;
 	}
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void _sys_pm_power_state_exit_post_ops(enum power_states state)
+void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
-	switch (state) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
- #ifdef CONFIG_HAS_SYS_POWER_STATE_DEEP_SLEEP_1
-	case SYS_POWER_STATE_DEEP_SLEEP_1:
+	switch (info.state) {
+	case PM_STATE_SOFT_OFF:
 		/* Nothing to do. */
 		break;
- #endif
-#endif
 	default:
-		LOG_DBG("Unsupported power state %u", state);
+		LOG_DBG("Unsupported power state %u", info.state);
 		break;
 	}
 

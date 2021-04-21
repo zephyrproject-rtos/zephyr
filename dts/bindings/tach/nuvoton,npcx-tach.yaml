@@ -1,0 +1,32 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-Tachometer node
+
+compatible: "nuvoton,npcx-tach"
+
+include: tach.yaml
+
+properties:
+    reg:
+        required: true
+    clocks:
+        required: true
+    pinctrl-0:
+        type: phandles
+        required: false
+        description: configurations of pinmux controllers in tachometers
+    sample-clk:
+        type: int
+        required: false
+        description: |
+          sampling clock frequency of tachometer. Please notice that it must be
+          fixed to 32768 if bus in clocks property is NPCX_CLOCK_BUS_LFCLK.
+    port:
+        type: int
+        required: false
+        description: selected port of tachometer (port-A is 0 and port-B is 1)
+    pulses-per-round:
+        type: int
+        required: false
+        description: number of pulses (holes) per round of tachometer's input (encoder)

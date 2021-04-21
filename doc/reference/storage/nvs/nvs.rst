@@ -1,4 +1,4 @@
-.. _nvs:
+.. _nvs_api:
 
 Non-Volatile Storage (NVS)
 ##########################

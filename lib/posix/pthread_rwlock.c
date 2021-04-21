@@ -13,9 +13,9 @@
 
 #define CONCURRENT_READER_LIMIT  (CONFIG_MAX_PTHREAD_COUNT + 1)
 
-s64_t timespec_to_timeoutms(const struct timespec *abstime);
-static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout);
-static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout);
+int64_t timespec_to_timeoutms(const struct timespec *abstime);
+static uint32_t read_lock_acquire(pthread_rwlock_t *rwlock, int32_t timeout);
+static uint32_t write_lock_acquire(pthread_rwlock_t *rwlock, int32_t timeout);
 
 /**
  * @brief Initialize read-write lock object.
@@ -71,7 +71,7 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
 		return EINVAL;
 	}
 
-	return read_lock_acquire(rwlock, K_FOREVER);
+	return read_lock_acquire(rwlock, SYS_FOREVER_MS);
 }
 
 /**
@@ -85,15 +85,15 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock)
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime)
 {
-	s32_t timeout;
-	u32_t ret = 0U;
+	int32_t timeout;
+	uint32_t ret = 0U;
 
 	if (rwlock->status == NOT_INITIALIZED || abstime->tv_nsec < 0 ||
 	    abstime->tv_nsec > NSEC_PER_SEC) {
 		return EINVAL;
 	}
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
+	timeout = (int32_t) timespec_to_timeoutms(abstime);
 
 	if (read_lock_acquire(rwlock, timeout) != 0U) {
 		ret = ETIMEDOUT;
@@ -116,7 +116,7 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock)
 		return EINVAL;
 	}
 
-	return read_lock_acquire(rwlock, K_NO_WAIT);
+	return read_lock_acquire(rwlock, 0);
 }
 
 /**
@@ -133,7 +133,7 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
 		return EINVAL;
 	}
 
-	return write_lock_acquire(rwlock, K_FOREVER);
+	return write_lock_acquire(rwlock, SYS_FOREVER_MS);
 }
 
 /**
@@ -147,15 +147,15 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock)
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime)
 {
-	s32_t timeout;
-	u32_t ret = 0U;
+	int32_t timeout;
+	uint32_t ret = 0U;
 
 	if (rwlock->status == NOT_INITIALIZED || abstime->tv_nsec < 0 ||
 	    abstime->tv_nsec > NSEC_PER_SEC) {
 		return EINVAL;
 	}
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
+	timeout = (int32_t) timespec_to_timeoutms(abstime);
 
 	if (write_lock_acquire(rwlock, timeout) != 0U) {
 		ret = ETIMEDOUT;
@@ -178,7 +178,7 @@ int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock)
 		return EINVAL;
 	}
 
-	return write_lock_acquire(rwlock, K_NO_WAIT);
+	return write_lock_acquire(rwlock, 0);
 }
 
 /**
@@ -212,11 +212,11 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 }
 
 
-static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
+static uint32_t read_lock_acquire(pthread_rwlock_t *rwlock, int32_t timeout)
 {
-	u32_t ret = 0U;
+	uint32_t ret = 0U;
 
-	if (k_sem_take(&rwlock->wr_sem, timeout) == 0) {
+	if (k_sem_take(&rwlock->wr_sem, SYS_TIMEOUT_MS(timeout)) == 0) {
 		k_sem_take(&rwlock->reader_active, K_NO_WAIT);
 		k_sem_take(&rwlock->rd_sem, K_NO_WAIT);
 		k_sem_give(&rwlock->wr_sem);
@@ -227,21 +227,27 @@ static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
 	return ret;
 }
 
-static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
+static uint32_t write_lock_acquire(pthread_rwlock_t *rwlock, int32_t timeout)
 {
-	u32_t ret = 0U;
-	s64_t elapsed_time, st_time = k_uptime_get();
+	uint32_t ret = 0U;
+	int64_t elapsed_time, st_time = k_uptime_get();
+	k_timeout_t k_timeout;
+
+	k_timeout = SYS_TIMEOUT_MS(timeout);
 
 	/* waiting for release of write lock */
-	if (k_sem_take(&rwlock->wr_sem, timeout) == 0) {
-		if (timeout > K_NO_WAIT) {
+	if (k_sem_take(&rwlock->wr_sem, k_timeout) == 0) {
+		/* update remaining timeout time for 2nd sem */
+		if (timeout != SYS_FOREVER_MS) {
 			elapsed_time = k_uptime_get() - st_time;
-			timeout = timeout <= elapsed_time ? K_NO_WAIT :
+			timeout = timeout <= elapsed_time ? 0 :
 				  timeout - elapsed_time;
 		}
 
+		k_timeout = SYS_TIMEOUT_MS(timeout);
+
 		/* waiting for reader to complete operation */
-		if (k_sem_take(&rwlock->reader_active, timeout) == 0) {
+		if (k_sem_take(&rwlock->reader_active, k_timeout) == 0) {
 			rwlock->wr_owner = k_current_get();
 		} else {
 			k_sem_give(&rwlock->wr_sem);

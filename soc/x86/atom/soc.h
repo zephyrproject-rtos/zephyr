@@ -22,12 +22,10 @@
 #include <random/rand32.h>
 #endif
 
-#define INT_VEC_IRQ0 0x20 /* vector number for IRQ0 */
-
 /*
  * UART
  */
-#define UART_NS16550_ACCESS_IOPORT
+#define UART_NS16550_ACCESS_IOPORT 0x3f8
 
 
 /* PCI definitions */

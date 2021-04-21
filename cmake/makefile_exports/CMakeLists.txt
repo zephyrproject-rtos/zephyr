@@ -1,6 +1,11 @@
 # Copyright (c) 2020 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+
+zephyr_get_compile_options_for_lang_as_string(ASM ASM_compile_options)
+zephyr_get_compile_options_for_lang_as_string(C C_compile_options)
+zephyr_get_compile_options_for_lang_as_string(CXX CXX_compile_options)
+
 set(exports
   "
 CC = ${CMAKE_C_COMPILER}
@@ -11,7 +16,7 @@ AS = ${CMAKE_AS}
 AR = ${CMAKE_AR}
 NM = ${CMAKE_NM}
 GDB = ${CMAKE_GDB}
-Z_CFLAGS = -I$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>, -I> -isystem $<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>, -isystem > -D$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>, -D> $<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>, >
+Z_CFLAGS = -I$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>, -I> -isystem $<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>, -isystem > -D$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>, -D> $<$<COMPILE_LANGUAGE:ASM>:${ASM_compile_options}> $<$<COMPILE_LANGUAGE:C>:${C_compile_options}> $<$<COMPILE_LANGUAGE:CXX>:${CXX_compile_options}>
 "
   )
 

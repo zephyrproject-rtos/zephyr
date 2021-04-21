@@ -10,7 +10,7 @@
 #include <device.h>
 #include <drivers/i2c.h>
 
-#define I2C_DEV DT_ALIAS_I2C_0_LABEL
+#define I2C_DEV DT_LABEL(DT_ALIAS(i2c_0))
 
 /**
  * @file Sample app using the Fujitsu MB85RC256V FRAM through ARC I2C.
@@ -18,10 +18,10 @@
 
 #define FRAM_I2C_ADDR	0x50
 
-static int write_bytes(struct device *i2c_dev, u16_t addr,
-		       u8_t *data, u32_t num_bytes)
+static int write_bytes(const struct device *i2c_dev, uint16_t addr,
+		       uint8_t *data, uint32_t num_bytes)
 {
-	u8_t wr_addr[2];
+	uint8_t wr_addr[2];
 	struct i2c_msg msgs[2];
 
 	/* FRAM address */
@@ -43,10 +43,10 @@ static int write_bytes(struct device *i2c_dev, u16_t addr,
 	return i2c_transfer(i2c_dev, &msgs[0], 2, FRAM_I2C_ADDR);
 }
 
-static int read_bytes(struct device *i2c_dev, u16_t addr,
-		      u8_t *data, u32_t num_bytes)
+static int read_bytes(const struct device *i2c_dev, uint16_t addr,
+		      uint8_t *data, uint32_t num_bytes)
 {
-	u8_t wr_addr[2];
+	uint8_t wr_addr[2];
 	struct i2c_msg msgs[2];
 
 	/* Now try to read back from FRAM */
@@ -72,9 +72,9 @@ static int read_bytes(struct device *i2c_dev, u16_t addr,
 
 void main(void)
 {
-	struct device *i2c_dev;
-	u8_t cmp_data[16];
-	u8_t data[16];
+	const struct device *i2c_dev;
+	uint8_t cmp_data[16];
+	uint8_t data[16];
 	int i, ret;
 
 	i2c_dev = device_get_binding(I2C_DEV);

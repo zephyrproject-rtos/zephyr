@@ -10,9 +10,9 @@
 #include "settings_priv.h"
 
 
-u8_t val8;
-u16_t val16;
-u64_t val64;
+uint8_t val8;
+uint16_t val16;
+uint64_t val64;
 
 int test_get_called;
 int test_set_called;
@@ -151,7 +151,9 @@ int fsutil_read_file(const char *path, off_t offset, size_t len, void *dst,
 	int rc;
 	ssize_t r_len = 0;
 
-	rc = fs_open(&file, path);
+	fs_file_t_init(&file);
+
+	rc = fs_open(&file, path, FS_O_CREATE | FS_O_RDWR);
 	if (rc != 0) {
 		return rc;
 	}
@@ -172,7 +174,9 @@ int fsutil_write_file(const char *path, const void *data, size_t len)
 	struct fs_file_t file;
 	int rc;
 
-	rc = fs_open(&file, path);
+	fs_file_t_init(&file);
+
+	rc = fs_open(&file, path, FS_O_CREATE | FS_O_RDWR);
 	if (rc != 0) {
 		return rc;
 	}
@@ -205,7 +209,7 @@ int settings_test_file_strstr(const char *fname, char const *string,
 			      size_t str_len)
 {
 	int rc;
-	u32_t len;
+	uint32_t len;
 	size_t rlen;
 	char *buf;
 	struct fs_dirent entry;

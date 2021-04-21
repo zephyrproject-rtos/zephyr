@@ -17,7 +17,7 @@ pthread_rwlock_t rwlock;
 static void *thread_top(void *p1)
 {
 	pthread_t pthread;
-	u32_t policy, ret = 0U;
+	uint32_t policy, ret = 0U;
 	struct sched_param param;
 	int id = POINTER_TO_INT(p1);
 
@@ -55,7 +55,7 @@ static void *thread_top(void *p1)
 
 void test_posix_rw_lock(void)
 {
-	s32_t i, ret;
+	int32_t i, ret;
 	pthread_attr_t attr[N_THR];
 	struct sched_param schedparam;
 	pthread_t newthread[N_THR];

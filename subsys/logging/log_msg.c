@@ -8,24 +8,24 @@
 #include <logging/log_msg.h>
 #include <logging/log_ctrl.h>
 #include <logging/log_core.h>
+#include <sys/__assert.h>
 #include <string.h>
-#include <assert.h>
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_ids) == sizeof(u16_t)),
-		  "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_ids) == sizeof(uint16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_generic_hdr) == sizeof(uint16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_std_hdr) == sizeof(uint16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_hexdump_hdr) == sizeof(uint16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) ==
-		  sizeof(struct log_msg_ext_head_data)),
-		  "Structure must be same size");
+BUILD_ASSERT((sizeof(union log_msg_head_data) ==
+	      sizeof(struct log_msg_ext_head_data)),
+	     "Structure must be same size");
 
 #ifndef CONFIG_LOG_BUFFER_SIZE
 #define CONFIG_LOG_BUFFER_SIZE 0
@@ -41,7 +41,7 @@ BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) ==
 #define NUM_OF_MSGS (CONFIG_LOG_BUFFER_SIZE / MSG_SIZE)
 
 struct k_mem_slab log_msg_pool;
-static u8_t __noinit __aligned(sizeof(void *))
+static uint8_t __noinit __aligned(sizeof(void *))
 		log_msg_pool_buf[CONFIG_LOG_BUFFER_SIZE];
 
 void log_msg_pool_init(void)
@@ -75,8 +75,9 @@ union log_msg_chunk *log_msg_chunk_alloc(void)
 {
 	union log_msg_chunk *msg = NULL;
 	int err = k_mem_slab_alloc(&log_msg_pool, (void **)&msg,
-			block_on_alloc() ?
-			CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS : K_NO_WAIT);
+		   block_on_alloc()
+		   ? K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS)
+		   : K_NO_WAIT);
 
 	if (err != 0) {
 		msg = log_msg_no_space_handle();
@@ -103,18 +104,18 @@ static void cont_free(struct log_msg_cont *cont)
 
 static void msg_free(struct log_msg *msg)
 {
-	u32_t nargs = log_msg_nargs_get(msg);
+	uint32_t nargs = log_msg_nargs_get(msg);
 
 	/* Free any transient string found in arguments. */
 	if (log_msg_is_std(msg) && nargs) {
-		int i;
-		u32_t smask = 0;
+		uint32_t i;
+		uint32_t smask = 0U;
 
-		for (i = 0; i < nargs; i++) {
+		for (i = 0U; i < nargs; i++) {
 			void *buf = (void *)log_msg_arg_get(msg, i);
 
 			if (log_is_strdup(buf)) {
-				if (smask == 0) {
+				if (smask == 0U) {
 					/* Do string arguments scan only when
 					 * string duplication candidate detected
 					 * since it is time consuming and free
@@ -124,7 +125,7 @@ static void msg_free(struct log_msg *msg)
 					smask = z_log_get_s_mask(
 							log_msg_str_get(msg),
 							nargs);
-					if (smask == 0) {
+					if (smask == 0U) {
 						/* if no string argument is
 						 * detected then stop searching
 						 * for candidates.
@@ -148,6 +149,7 @@ static void msg_free(struct log_msg *msg)
 		if (log_is_strdup(str)) {
 			log_free((void *)(str));
 		}
+	} else {
 	}
 
 	if (msg->hdr.params.generic.ext == 1) {
@@ -166,13 +168,13 @@ union log_msg_chunk *log_msg_no_space_handle(void)
 	if (IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW)) {
 		do {
 			more = log_process(true);
-			log_dropped();
+			z_log_dropped();
 			err = k_mem_slab_alloc(&log_msg_pool,
 					       (void **)&msg,
 					       K_NO_WAIT);
 		} while ((err != 0) && more);
 	} else {
-		log_dropped();
+		z_log_dropped();
 	}
 	return msg;
 
@@ -186,12 +188,12 @@ void log_msg_put(struct log_msg *msg)
 	}
 }
 
-u32_t log_msg_nargs_get(struct log_msg *msg)
+uint32_t log_msg_nargs_get(struct log_msg *msg)
 {
 	return msg->hdr.params.std.nargs;
 }
 
-static log_arg_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
+static log_arg_t cont_arg_get(struct log_msg *msg, uint32_t arg_idx)
 {
 	struct log_msg_cont *cont;
 
@@ -211,7 +213,7 @@ static log_arg_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
 	return cont->payload.args[arg_idx];
 }
 
-log_arg_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx)
+log_arg_t log_msg_arg_get(struct log_msg *msg, uint32_t arg_idx)
 {
 	log_arg_t arg;
 
@@ -244,7 +246,7 @@ const char *log_msg_str_get(struct log_msg *msg)
  *
  *  @return Allocated chunk of NULL.
  */
-static struct log_msg *msg_alloc(u32_t nargs)
+static struct log_msg *msg_alloc(uint32_t nargs)
 {
 	struct log_msg_cont *cont;
 	struct log_msg_cont **next;
@@ -278,7 +280,7 @@ static struct log_msg *msg_alloc(u32_t nargs)
 	return msg;
 }
 
-static void copy_args_to_msg(struct  log_msg *msg, log_arg_t *args, u32_t nargs)
+static void copy_args_to_msg(struct  log_msg *msg, log_arg_t *args, uint32_t nargs)
 {
 	struct log_msg_cont *cont = msg->payload.ext.next;
 
@@ -294,7 +296,7 @@ static void copy_args_to_msg(struct  log_msg *msg, log_arg_t *args, u32_t nargs)
 	}
 
 	while (nargs != 0U) {
-		u32_t cpy_args = MIN(nargs, ARGS_CONT_MSG);
+		uint32_t cpy_args = MIN(nargs, ARGS_CONT_MSG);
 
 		(void)memcpy(cont->payload.args, args,
 			     cpy_args * sizeof(log_arg_t));
@@ -304,7 +306,7 @@ static void copy_args_to_msg(struct  log_msg *msg, log_arg_t *args, u32_t nargs)
 	}
 }
 
-struct log_msg *log_msg_create_n(const char *str, log_arg_t *args, u32_t nargs)
+struct log_msg *log_msg_create_n(const char *str, log_arg_t *args, uint32_t nargs)
 {
 	__ASSERT_NO_MSG(nargs < LOG_MAX_NARGS);
 
@@ -322,13 +324,13 @@ struct log_msg *log_msg_create_n(const char *str, log_arg_t *args, u32_t nargs)
 }
 
 struct log_msg *log_msg_hexdump_create(const char *str,
-				       const u8_t *data,
-				       u32_t length)
+				       const uint8_t *data,
+				       uint32_t length)
 {
 	struct log_msg_cont **prev_cont;
 	struct log_msg_cont *cont;
 	struct log_msg *msg;
-	u32_t chunk_length;
+	uint32_t chunk_length;
 
 	/* Saturate length. */
 	length = (length > LOG_MSG_HEXDUMP_MAX_LENGTH) ?
@@ -386,17 +388,17 @@ struct log_msg *log_msg_hexdump_create(const char *str,
 }
 
 static void log_msg_hexdump_data_op(struct log_msg *msg,
-				    u8_t *data,
+				    uint8_t *data,
 				    size_t *length,
 				    size_t offset,
 				    bool put_op)
 {
-	u32_t available_len = msg->hdr.params.hexdump.length;
+	uint32_t available_len = msg->hdr.params.hexdump.length;
 	struct log_msg_cont *cont = NULL;
-	u8_t *head_data;
-	u32_t chunk_len;
-	u32_t req_len;
-	u32_t cpy_len;
+	uint8_t *head_data;
+	uint32_t chunk_len;
+	uint32_t req_len;
+	uint32_t cpy_len;
 
 	if (offset >= available_len) {
 		*length = 0;
@@ -443,7 +445,7 @@ static void log_msg_hexdump_data_op(struct log_msg *msg,
 		}
 	}
 
-	while (req_len > 0) {
+	while ((req_len > 0) && (cont != NULL)) {
 		chunk_len = HEXDUMP_BYTES_CONT_MSG - offset;
 		cpy_len = req_len > chunk_len ? chunk_len : req_len;
 
@@ -463,7 +465,7 @@ static void log_msg_hexdump_data_op(struct log_msg *msg,
 }
 
 void log_msg_hexdump_data_put(struct log_msg *msg,
-			      u8_t *data,
+			      uint8_t *data,
 			      size_t *length,
 			      size_t offset)
 {
@@ -471,7 +473,7 @@ void log_msg_hexdump_data_put(struct log_msg *msg,
 }
 
 void log_msg_hexdump_data_get(struct log_msg *msg,
-			      u8_t *data,
+			      uint8_t *data,
 			      size_t *length,
 			      size_t offset)
 {

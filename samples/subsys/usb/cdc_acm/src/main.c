@@ -24,16 +24,18 @@
 LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_INF);
 
 #define RING_BUF_SIZE 1024
-u8_t ring_buffer[RING_BUF_SIZE];
+uint8_t ring_buffer[RING_BUF_SIZE];
 
 struct ring_buf ringbuf;
 
-static void interrupt_handler(struct device *dev)
+static void interrupt_handler(const struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 		if (uart_irq_rx_ready(dev)) {
 			int recv_len, rb_len;
-			u8_t buffer[64];
+			uint8_t buffer[64];
 			size_t len = MIN(ring_buf_space_get(&ringbuf),
 					 sizeof(buffer));
 
@@ -50,7 +52,7 @@ static void interrupt_handler(struct device *dev)
 		}
 
 		if (uart_irq_tx_ready(dev)) {
-			u8_t buffer[64];
+			uint8_t buffer[64];
 			int rb_len, send_len;
 
 			rb_len = ring_buf_get(&ringbuf, buffer, sizeof(buffer));
@@ -72,8 +74,8 @@ static void interrupt_handler(struct device *dev)
 
 void main(void)
 {
-	struct device *dev;
-	u32_t baudrate, dtr = 0U;
+	const struct device *dev;
+	uint32_t baudrate, dtr = 0U;
 	int ret;
 
 	dev = device_get_binding("CDC_ACM_0");

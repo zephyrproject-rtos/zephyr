@@ -6,8 +6,4 @@ if BOARD_MEC2016EVB_ASSY6797
 config BOARD
 	default "mec2016evb_assy6797"
 
-config UART_NS16550_PORT_0
-	default y if UART_CONSOLE
-	depends on UART_NS16550
-
 endif # BOARD_MEC2016EVB_ASSY6797

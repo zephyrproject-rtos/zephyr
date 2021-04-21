@@ -25,7 +25,7 @@
 			reg = <0x00200000 0x00004000>;
 		};
 		/* A bigger partition for something else. */
-		partition@220000 {
+		partition@204000 {
 			label = "scratch";
 			reg = <0x00204000 0x001fc000>;
 		};

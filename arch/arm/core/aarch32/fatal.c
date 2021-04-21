@@ -14,7 +14,7 @@
 
 #include <kernel.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static void esf_dump(const z_arch_esf_t *esf)
 {
@@ -23,17 +23,32 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
 	LOG_ERR(" xpsr:  0x%08x", esf->basic.xpsr);
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-	for (int i = 0; i < 16; i += 4) {
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	for (int i = 0; i < ARRAY_SIZE(esf->s); i += 4) {
 		LOG_ERR("s[%2d]:  0x%08x  s[%2d]:  0x%08x"
 			"  s[%2d]:  0x%08x  s[%2d]:  0x%08x",
-			i, (u32_t)esf->s[i],
-			i + 1, (u32_t)esf->s[i + 1],
-			i + 2, (u32_t)esf->s[i + 2],
-			i + 3, (u32_t)esf->s[i + 3]);
+			i, (uint32_t)esf->s[i],
+			i + 1, (uint32_t)esf->s[i + 1],
+			i + 2, (uint32_t)esf->s[i + 2],
+			i + 3, (uint32_t)esf->s[i + 3]);
 	}
 	LOG_ERR("fpscr:  0x%08x", esf->fpscr);
 #endif
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+	const struct _callee_saved *callee = esf->extra_info.callee;
+
+	if (callee != NULL) {
+		LOG_ERR("r4/v1:  0x%08x  r5/v2:  0x%08x  r6/v3:  0x%08x",
+			callee->v1, callee->v2, callee->v3);
+		LOG_ERR("r7/v4:  0x%08x  r8/v5:  0x%08x  r9/v6:  0x%08x",
+			callee->v4, callee->v5, callee->v6);
+		LOG_ERR("r10/v7: 0x%08x  r11/v8: 0x%08x    psp:  0x%08x",
+			callee->v7, callee->v8, callee->psp);
+	}
+
+	LOG_ERR("EXC_RETURN: 0x%0x", esf->extra_info.exc_return);
+
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 	LOG_ERR("Faulting instruction address (r15/pc): 0x%08x",
 		esf->basic.pc);
 }
@@ -83,12 +98,25 @@ void z_do_kernel_oops(const z_arch_esf_t *esf)
 	}
 
 #endif /* CONFIG_USERSPACE */
+
+#if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	z_arm_fatal_error(reason, esf);
+#else
+	/* extra exception info is not collected for kernel oops
+	 * path today so we make a copy of the ESF and zero out
+	 * that information
+	 */
+	z_arch_esf_t esf_copy;
+
+	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
+	esf_copy.extra_info = (struct __extra_esf_info) { 0 };
+	z_arm_fatal_error(reason, &esf_copy);
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 }
 
 FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 {
-	u32_t *ssf_contents = ssf_ptr;
+	uint32_t *ssf_contents = ssf_ptr;
 	z_arch_esf_t oops_esf = { 0 };
 
 	/* TODO: Copy the rest of the register set out of ssf_ptr */

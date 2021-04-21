@@ -47,26 +47,26 @@ extern "C" {
 /** @brief Information collected from the sensor on each fetch. */
 struct ccs811_result_type {
 	/** Equivalent carbon dioxide in parts-per-million volume (ppmv). */
-	u16_t co2;
+	uint16_t co2;
 
 	/**
 	 * Equivalent total volatile organic compounts in
 	 * parts-per-billion volume.
 	 */
-	u16_t voc;
+	uint16_t voc;
 
 	/** Raw voltage and current measured by sensor. */
-	u16_t raw;
+	uint16_t raw;
 
 	/** Sensor status at completion of most recent fetch. */
-	u8_t status;
+	uint8_t status;
 
 	/**
 	 * Sensor error flags at completion of most recent fetch.
 	 *
 	 * Note that errors are cleared when read.
 	 */
-	u8_t error;
+	uint8_t error;
 };
 
 /**
@@ -80,7 +80,7 @@ struct ccs811_result_type {
  *
  * @return a pointer to the result information.
  */
-const struct ccs811_result_type *ccs811_result(struct device *dev);
+const struct ccs811_result_type *ccs811_result(const struct device *dev);
 
 /**
  * @brief Get information about static CCS811 state.
@@ -89,10 +89,10 @@ const struct ccs811_result_type *ccs811_result(struct device *dev);
  * firmware versions.
  */
 struct ccs811_configver_type {
-	u16_t fw_boot_version;
-	u16_t fw_app_version;
-	u8_t hw_version;
-	u8_t mode;
+	uint16_t fw_boot_version;
+	uint16_t fw_app_version;
+	uint8_t hw_version;
+	uint8_t mode;
 };
 
 /**
@@ -104,7 +104,7 @@ struct ccs811_configver_type {
  *
  * @return 0 on success, or a negative errno code on failure.
  */
-int ccs811_configver_fetch(struct device *dev,
+int ccs811_configver_fetch(const struct device *dev,
 			   struct ccs811_configver_type *ptr);
 
 /**
@@ -121,7 +121,7 @@ int ccs811_configver_fetch(struct device *dev,
  * @return a non-negative 16-bit register value, or a negative errno
  * code on failure.
  */
-int ccs811_baseline_fetch(struct device *dev);
+int ccs811_baseline_fetch(const struct device *dev);
 
 /**
  * @brief Update the BASELINE register.
@@ -135,7 +135,7 @@ int ccs811_baseline_fetch(struct device *dev);
  *
  * @return 0 if successful, negative errno code if failure.
  */
-int ccs811_baseline_update(struct device *dev, u16_t baseline);
+int ccs811_baseline_update(const struct device *dev, uint16_t baseline);
 
 /**
  * @brief Update the ENV_DATA register.
@@ -151,7 +151,7 @@ int ccs811_baseline_update(struct device *dev, u16_t baseline);
  *
  * @return 0 if successful, negative errno code if failure.
  */
-int ccs811_envdata_update(struct device *dev,
+int ccs811_envdata_update(const struct device *dev,
 			  const struct sensor_value *temperature,
 			  const struct sensor_value *humidity);
 

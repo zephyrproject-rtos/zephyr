@@ -1,0 +1,11 @@
+identifier: up_squared_32
+name: UP Squared (x86)
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+testing:
+  ignore_tags:
+     - net
+     - bluetooth

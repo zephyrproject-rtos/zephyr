@@ -31,24 +31,24 @@ extern "C" {
 #define IEEE802154_NO_CHANNEL		USHRT_MAX
 
 struct ieee802154_security_ctx {
-	u32_t frame_counter;
+	uint32_t frame_counter;
 	struct cipher_ctx enc;
 	struct cipher_ctx dec;
-	u8_t key[16];
-	u8_t key_len;
-	u8_t level	: 3;
-	u8_t key_mode	: 2;
-	u8_t _unused	: 3;
+	uint8_t key[16];
+	uint8_t key_len;
+	uint8_t level	: 3;
+	uint8_t key_mode	: 2;
+	uint8_t _unused	: 3;
 };
 
 /* This not meant to be used by any code but 802.15.4 L2 stack */
 struct ieee802154_context {
 	enum net_l2_flags flags;
-	u16_t pan_id;
-	u16_t channel;
+	uint16_t pan_id;
+	uint16_t channel;
 	struct k_sem ack_lock;
-	u16_t short_addr;
-	u8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH];
+	uint16_t short_addr;
+	uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH];
 #ifdef CONFIG_NET_L2_IEEE802154_MGMT
 	struct ieee802154_req_params *scan_ctx;
 	union {
@@ -56,21 +56,21 @@ struct ieee802154_context {
 		struct k_sem req_lock;
 	};
 	union {
-		u8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH];
-		u16_t short_addr;
+		uint8_t ext_addr[IEEE802154_MAX_ADDR_LENGTH];
+		uint16_t short_addr;
 	} coord;
-	u8_t coord_addr_len;
+	uint8_t coord_addr_len;
 #endif
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_security_ctx sec_ctx;
 #endif
-	s16_t tx_power;
-	u8_t sequence;
-	u8_t ack_seq;
-	u8_t ack_received	: 1;
-	u8_t ack_requested	: 1;
-	u8_t associated		: 1;
-	u8_t _unused		: 5;
+	int16_t tx_power;
+	uint8_t sequence;
+	uint8_t ack_seq;
+	uint8_t ack_received	: 1;
+	uint8_t ack_requested	: 1;
+	uint8_t associated		: 1;
+	uint8_t _unused		: 5;
 };
 
 #define IEEE802154_L2_CTX_TYPE	struct ieee802154_context

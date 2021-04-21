@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/wl/stm32wl55Xc.dtsi>
+#include <st/wl/stm32wl55jcix-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32WL55JC-NUCLEO board";
+	compatible = "st,stm32wl55-nucleo";
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led_1: led_0 {
+			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
+			label = "User LED1";
+		};
+		green_led_2: led_1 {
+			gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+			label = "User LED2";
+		};
+		green_led_3: led_2 {
+			gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+			label = "User LED3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_1: button_0 {
+			label = "SW1";
+			gpios = <&gpioa 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+		user_button_2: button_1 {
+			label = "SW2";
+			gpios = <&gpioa 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+		user_button_3: button_2 {
+			label = "SW3";
+			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_2;
+		sw0 = &user_button_1;
+		sw1 = &user_button_2;
+		sw2 = &user_button_3;
+	};
+};
+
+&lpuart1 {
+	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa12 &i2c2_sda_pa11>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	status = "okay";
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 2Kb of storage at the end of the 256Kb of flash */
+		storage_partition: partition@3f800 {
+			label = "storage";
+			reg = <0x0003f800 0x00000800>;
+		};
+	};
+};

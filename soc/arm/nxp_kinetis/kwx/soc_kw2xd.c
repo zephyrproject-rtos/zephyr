@@ -26,6 +26,12 @@
 
 #define TIMESRC_OSCERCLK        (2)
 
+#define CLOCK_NODEID(clk) \
+	DT_CHILD(DT_INST(0, nxp_kinetis_sim), clk)
+
+#define CLOCK_DIVIDER(clk) \
+	DT_PROP_OR(CLOCK_NODEID(clk), clock_div, 1) - 1
+
 static const osc_config_t oscConfig = {
 	.freq = CONFIG_OSC_XTAL0_FREQ,
 	.capLoad = 0,
@@ -58,9 +64,9 @@ static const mcg_pll_config_t pll0Config = {
 static const sim_clock_config_t simConfig = {
 	.pllFllSel = PLLFLLSEL_MCGPLLCLK, /* PLLFLLSEL select PLL. */
 	.er32kSrc = ER32KSEL_RTC,         /* ERCLK32K selection, use RTC. */
-	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CONFIG_KW2XD_CORE_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV2(CONFIG_KW2XD_BUS_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV4(CONFIG_KW2XD_FLASH_CLOCK_DIVIDER - 1),
+	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CLOCK_DIVIDER(core_clk)) |
+		   SIM_CLKDIV1_OUTDIV2(CLOCK_DIVIDER(bus_clk)) |
+		   SIM_CLKDIV1_OUTDIV4(CLOCK_DIVIDER(flash_clk)),
 };
 
 /**
@@ -132,7 +138,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetSimConfig(&simConfig);
 #if CONFIG_USB_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
-				DT_ARM_CORTEX_M4_0_CLOCK_FREQUENCY);
+				DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency));
 #endif
 }
 
@@ -145,7 +151,7 @@ static ALWAYS_INLINE void clock_init(void)
  *
  * @return 0
  */
-static int kw2xd_init(struct device *arg)
+static int kw2xd_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

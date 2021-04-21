@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_ppp_stats, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 
-static int ppp_stats_get(u32_t mgmt_request, struct net_if *iface,
+static int ppp_stats_get(uint32_t mgmt_request, struct net_if *iface,
 			 void *data, size_t len)
 {
 	size_t len_chk = 0;
@@ -30,7 +30,7 @@ static int ppp_stats_get(u32_t mgmt_request, struct net_if *iface,
 			return -ENOENT;
 		}
 
-		ppp = net_if_get_device(iface)->driver_api;
+		ppp = net_if_get_device(iface)->api;
 		if (ppp->get_stats == NULL) {
 			return -ENOENT;
 		}

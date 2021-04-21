@@ -16,9 +16,12 @@
 
 #include <soc.h>
 
+#include <arch/arm/aarch32/cortex_m/nvic.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 /* CP10 Access Bits */
 #define CPACR_CP10_Pos          20U
@@ -36,9 +39,9 @@ extern "C" {
 #define CPACR_CP11_RESERVED     (2UL << CPACR_CP11_Pos)
 #define CPACR_CP11_FULL_ACCESS  (3UL << CPACR_CP11_Pos)
 
-#define SCB_UFSR  (*((__IOM u16_t *) &SCB->CFSR + 1))
-#define SCB_BFSR  (*((__IOM u8_t *) &SCB->CFSR + 1))
-#define SCB_MMFSR (*((__IOM u8_t *) &SCB->CFSR))
+#define SCB_UFSR  (*((__IOM uint16_t *) &SCB->CFSR + 1))
+#define SCB_BFSR  (*((__IOM uint8_t *) &SCB->CFSR + 1))
+#define SCB_MMFSR (*((__IOM uint8_t *) &SCB->CFSR))
 
 /* Fill in CMSIS required values for non-CMSIS compliant SoCs.
  * Use __NVIC_PRIO_BITS as it is required and simple to check, but
@@ -67,6 +70,8 @@ typedef enum {
 #define __CM0_REV        0
 #elif defined(CONFIG_CPU_CORTEX_M0PLUS)
 #define __CM0PLUS_REV    0
+#elif defined(CONFIG_CPU_CORTEX_M1)
+#define __CM1_REV        0
 #elif defined(CONFIG_CPU_CORTEX_M3)
 #define __CM3_REV        0
 #elif defined(CONFIG_CPU_CORTEX_M4)
@@ -77,6 +82,8 @@ typedef enum {
 #define __CM23_REV       0
 #elif defined(CONFIG_CPU_CORTEX_M33)
 #define __CM33_REV       0
+#elif defined(CONFIG_CPU_CORTEX_M55)
+#define __CM55_REV       0
 #else
 #error "Unknown Cortex-M device"
 #endif
@@ -84,12 +91,12 @@ typedef enum {
 #ifndef __MPU_PRESENT
 #define __MPU_PRESENT             0U
 #endif
-#define __NVIC_PRIO_BITS               DT_NUM_IRQ_PRIO_BITS
+#define __NVIC_PRIO_BITS               NUM_IRQ_PRIO_BITS
 #define __Vendor_SysTickConfig         0 /* Default to standard SysTick */
 #endif /* __NVIC_PRIO_BITS */
 
-#if __NVIC_PRIO_BITS != DT_NUM_IRQ_PRIO_BITS
-#error "DT_NUM_IRQ_PRIO_BITS and __NVIC_PRIO_BITS are not set to the same value"
+#if __NVIC_PRIO_BITS != NUM_IRQ_PRIO_BITS
+#error "NUM_IRQ_PRIO_BITS and __NVIC_PRIO_BITS are not set to the same value"
 #endif
 
 #ifdef __cplusplus
@@ -100,6 +107,8 @@ typedef enum {
 #include <core_cm0.h>
 #elif defined(CONFIG_CPU_CORTEX_M0PLUS)
 #include <core_cm0plus.h>
+#elif defined(CONFIG_CPU_CORTEX_M1)
+#include <core_cm1.h>
 #elif defined(CONFIG_CPU_CORTEX_M3)
 #include <core_cm3.h>
 #elif defined(CONFIG_CPU_CORTEX_M4)
@@ -110,6 +119,8 @@ typedef enum {
 #include <core_cm23.h>
 #elif defined(CONFIG_CPU_CORTEX_M33)
 #include <core_cm33.h>
+#elif defined(CONFIG_CPU_CORTEX_M55)
+#include <core_cm55.h>
 #else
 #error "Unknown Cortex-M device"
 #endif

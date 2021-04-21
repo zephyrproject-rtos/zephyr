@@ -8,9 +8,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-
-extern int z_prf(int (*func)(), void *dest,
-				const char *format, va_list vargs);
+#include <sys/cbprintf.h>
 
 struct emitter {
 	char *ptr;
@@ -27,7 +25,7 @@ static int sprintf_out(int c, struct emitter *p)
 	return 0; /* indicate keep going so we get the total count */
 }
 
-int snprintf(char *_MLIBC_RESTRICT s, size_t len,
+int snprintf(char *_MLIBC_RESTRICT str, size_t len,
 	     const char *_MLIBC_RESTRICT format, ...)
 {
 	va_list vargs;
@@ -37,39 +35,39 @@ int snprintf(char *_MLIBC_RESTRICT s, size_t len,
 	char    dummy;
 
 	if (len == 0) {
-		s = &dummy; /* write final NUL to dummy, can't change *s */
+		str = &dummy; /* write final NUL to dummy, can't change *s */
 	}
 
-	p.ptr = s;
+	p.ptr = str;
 	p.len = (int) len;
 
 	va_start(vargs, format);
-	r = z_prf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 	va_end(vargs);
 
 	*(p.ptr) = 0;
 	return r;
 }
 
-int sprintf(char *_MLIBC_RESTRICT s, const char *_MLIBC_RESTRICT format, ...)
+int sprintf(char *_MLIBC_RESTRICT str, const char *_MLIBC_RESTRICT format, ...)
 {
 	va_list vargs;
 
 	struct emitter p;
 	int     r;
 
-	p.ptr = s;
+	p.ptr = str;
 	p.len = (int) 0x7fffffff; /* allow up to "maxint" characters */
 
 	va_start(vargs, format);
-	r = z_prf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 	va_end(vargs);
 
 	*(p.ptr) = 0;
 	return r;
 }
 
-int vsnprintf(char *_MLIBC_RESTRICT s, size_t len,
+int vsnprintf(char *_MLIBC_RESTRICT str, size_t len,
 	      const char *_MLIBC_RESTRICT format, va_list vargs)
 {
 	struct emitter p;
@@ -77,28 +75,28 @@ int vsnprintf(char *_MLIBC_RESTRICT s, size_t len,
 	char    dummy;
 
 	if (len == 0) {
-		s = &dummy; /* write final NUL to dummy, can't change * *s */
+		str = &dummy; /* write final NUL to dummy, can't change * *s */
 	}
 
-	p.ptr = s;
+	p.ptr = str;
 	p.len = (int) len;
 
-	r = z_prf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 
 	*(p.ptr) = 0;
 	return r;
 }
 
-int vsprintf(char *_MLIBC_RESTRICT s, const char *_MLIBC_RESTRICT format,
+int vsprintf(char *_MLIBC_RESTRICT str, const char *_MLIBC_RESTRICT format,
 	     va_list vargs)
 {
 	struct emitter p;
 	int     r;
 
-	p.ptr = s;
+	p.ptr = str;
 	p.len = (int) 0x7fffffff; /* allow up to "maxint" characters */
 
-	r = z_prf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
 
 	*(p.ptr) = 0;
 	return r;

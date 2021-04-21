@@ -45,11 +45,7 @@ config CAVS_ISR_TBL_OFFSET
 config DW_ISR_TBL_OFFSET
 	default 3RD_LVL_ISR_TBL_OFFSET
 
-config HEAP_MEM_POOL_SIZE
-	default 1024
-	depends on DMA_DW
-
-config TEXT_SECTION_OFFSET
+config ROM_START_OFFSET
 	default 0x100
 	depends on BOOTLOADER_MCUBOOT
 
@@ -85,27 +81,16 @@ config USB_DEVICE_PRODUCT
 
 endif # USB
 
-if UART_NS16550
+if SERIAL
 
-config UART_NS16550_PORT_0
-	default y
-
-if UART_NS16550_PORT_0
-
-config UART_NS16550_PORT_0_OPTIONS
-	default 0
 config UART_INTERRUPT_DRIVEN
 	default y
 
-endif # UART_NS16550_PORT_0
-
-endif # UART_NS16550
+endif # SERIAL
 
 if I2C
 
 config I2C_DW
-	default y
-config I2C_0
 	default y
 
 endif
@@ -166,9 +151,6 @@ endif
 if SPI
 
 config SPI_DW
-	default y
-
-config SPI_0
 	default y
 
 endif

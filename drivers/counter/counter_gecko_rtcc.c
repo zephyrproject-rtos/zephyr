@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT silabs_gecko_rtcc
+
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
@@ -23,7 +25,7 @@ LOG_MODULE_REGISTER(counter_gecko, CONFIG_COUNTER_LOG_LEVEL);
 struct counter_gecko_config {
 	struct counter_config_info info;
 	void (*irq_config)(void);
-	u32_t prescaler;
+	uint32_t prescaler;
 };
 
 struct counter_gecko_alarm_data {
@@ -37,11 +39,11 @@ struct counter_gecko_data {
 	void *top_user_data;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((struct counter_gecko_config * const)(dev)->config->config_info)
+	((const struct counter_gecko_config * const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct counter_gecko_data *const)(dev)->driver_data)
+	((struct counter_gecko_data *const)(dev)->data)
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
 #define ERRATA_RTCC_E201_MESSAGE \
@@ -50,9 +52,9 @@ struct counter_gecko_data {
 #endif
 
 /* Map channel id to CC channel provided by the RTCC module */
-static u8_t chan_id2cc_idx(u8_t chan_id)
+static uint8_t chan_id2cc_idx(uint8_t chan_id)
 {
-	u8_t cc_idx;
+	uint8_t cc_idx;
 
 	switch (chan_id) {
 	case 0:
@@ -65,7 +67,7 @@ static u8_t chan_id2cc_idx(u8_t chan_id)
 	return cc_idx;
 }
 
-static int counter_gecko_start(struct device *dev)
+static int counter_gecko_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -74,7 +76,7 @@ static int counter_gecko_start(struct device *dev)
 	return 0;
 }
 
-static int counter_gecko_stop(struct device *dev)
+static int counter_gecko_stop(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -83,7 +85,7 @@ static int counter_gecko_stop(struct device *dev)
 	return 0;
 }
 
-static int counter_gecko_get_value(struct device *dev, u32_t *ticks)
+static int counter_gecko_get_value(const struct device *dev, uint32_t *ticks)
 {
 	ARG_UNUSED(dev);
 
@@ -91,12 +93,12 @@ static int counter_gecko_get_value(struct device *dev, u32_t *ticks)
 	return 0;
 }
 
-static int counter_gecko_set_top_value(struct device *dev,
+static int counter_gecko_set_top_value(const struct device *dev,
 				       const struct counter_top_cfg *cfg)
 {
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
-	u32_t ticks;
-	u32_t flags;
+	uint32_t ticks;
+	uint32_t flags;
 	int err = 0;
 
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
@@ -144,27 +146,20 @@ static int counter_gecko_set_top_value(struct device *dev,
 	return err;
 }
 
-static u32_t counter_gecko_get_top_value(struct device *dev)
+static uint32_t counter_gecko_get_top_value(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return RTCC_ChannelCCVGet(1);
 }
 
-static u32_t counter_gecko_get_max_relative_alarm(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return RTCC_ChannelCCVGet(1);
-}
-
-static int counter_gecko_set_alarm(struct device *dev, u8_t chan_id,
+static int counter_gecko_set_alarm(const struct device *dev, uint8_t chan_id,
 				   const struct counter_alarm_cfg *alarm_cfg)
 {
-	u32_t count = RTCC_CounterGet();
+	uint32_t count = RTCC_CounterGet();
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
-	u32_t top_value = counter_gecko_get_top_value(dev);
-	u32_t ccv;
+	uint32_t top_value = counter_gecko_get_top_value(dev);
+	uint32_t ccv;
 
 	if ((top_value != 0) && (alarm_cfg->ticks > top_value)) {
 		return -EINVAL;
@@ -179,13 +174,13 @@ static int counter_gecko_set_alarm(struct device *dev, u8_t chan_id,
 		if (top_value == 0) {
 			ccv = count + alarm_cfg->ticks;
 		} else {
-			u64_t ccv64 = count + alarm_cfg->ticks;
+			uint64_t ccv64 = count + alarm_cfg->ticks;
 
-			ccv = (u32_t)(ccv64 % top_value);
+			ccv = (uint32_t)(ccv64 % top_value);
 		}
 	}
 
-	u8_t cc_idx = chan_id2cc_idx(chan_id);
+	uint8_t cc_idx = chan_id2cc_idx(chan_id);
 
 	RTCC_IntClear(RTCC_IF_CC0 << cc_idx);
 
@@ -202,11 +197,12 @@ static int counter_gecko_set_alarm(struct device *dev, u8_t chan_id,
 	return 0;
 }
 
-static int counter_gecko_cancel_alarm(struct device *dev, u8_t chan_id)
+static int counter_gecko_cancel_alarm(const struct device *dev,
+				      uint8_t chan_id)
 {
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
 
-	u8_t cc_idx = chan_id2cc_idx(chan_id);
+	uint8_t cc_idx = chan_id2cc_idx(chan_id);
 
 	/* Disable the compare interrupt */
 	RTCC_IntDisable(RTCC_IF_CC0 << cc_idx);
@@ -222,14 +218,14 @@ static int counter_gecko_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static u32_t counter_gecko_get_pending_int(struct device *dev)
+static uint32_t counter_gecko_get_pending_int(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return 0;
 }
 
-static int counter_gecko_init(struct device *dev)
+static int counter_gecko_init(const struct device *dev)
 {
 	const struct counter_gecko_config *const dev_cfg = DEV_CFG(dev);
 
@@ -238,7 +234,11 @@ static int counter_gecko_init(struct device *dev)
 		false,                /* Disable RTC during debug halt. */
 		false,                /* Don't wrap prescaler on CCV0 */
 		true,                 /* Counter wrap on CCV1 */
+#if defined(_SILICON_LABS_32B_SERIES_2)
+		(RTCC_CntPresc_TypeDef)(31UL - __CLZ(dev_cfg->prescaler)),
+#else
 		(RTCC_CntPresc_TypeDef)CMU_DivToLog2(dev_cfg->prescaler),
+#endif
 		rtccCntTickPresc,     /* Count according to prescaler value */
 #if defined(_RTCC_CTRL_BUMODETSEN_MASK)
 		false,                /* Don't store RTCC counter value in
@@ -270,14 +270,18 @@ static int counter_gecko_init(struct device *dev)
 #endif
 	};
 
-	/* Ensure LE modules are clocked */
+#if defined(cmuClock_CORELE)
+	/* Ensure LE modules are clocked. */
 	CMU_ClockEnable(cmuClock_CORELE, true);
+#endif
 
 #if defined(CMU_LFECLKEN0_RTCC)
-	/* Enable LFECLK in CMU (will also enable oscillator if not enabled) */
+	/* Enable LFECLK in CMU (will also enable oscillator if not enabled). */
 	CMU_ClockSelectSet(cmuClock_LFE, cmuSelect_LFXO);
+#elif defined(_SILICON_LABS_32B_SERIES_2)
+	CMU_ClockSelectSet(cmuClock_RTCC, cmuSelect_LFXO);
 #else
-	/* Enable LFACLK in CMU (will also enable oscillator if not enabled) */
+	/* Enable LFACLK in CMU (will also enable oscillator if not enabled). */
 	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
 #endif
 
@@ -316,20 +320,17 @@ static const struct counter_driver_api counter_gecko_driver_api = {
 	.set_top_value = counter_gecko_set_top_value,
 	.get_pending_int = counter_gecko_get_pending_int,
 	.get_top_value = counter_gecko_get_top_value,
-	.get_max_relative_alarm = counter_gecko_get_max_relative_alarm,
 };
 
 /* RTCC0 */
 
-static struct device DEVICE_NAME_GET(counter_gecko_0);
-
 ISR_DIRECT_DECLARE(counter_gecko_isr_0)
 {
-	struct device *const dev = DEVICE_GET(counter_gecko_0);
+	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct counter_gecko_data *const dev_data = DEV_DATA(dev);
 	counter_alarm_callback_t alarm_callback;
-	u32_t count = RTCC_CounterGet();
-	u32_t flags = RTCC_IntGetEnabled();
+	uint32_t count = RTCC_CounterGet();
+	uint32_t flags = RTCC_IntGetEnabled();
 
 	RTCC_IntClear(flags);
 
@@ -339,7 +340,7 @@ ISR_DIRECT_DECLARE(counter_gecko_isr_0)
 		}
 	}
 	for (int i = 0; i < RTCC_ALARM_NUM; i++) {
-		u8_t cc_idx = chan_id2cc_idx(i);
+		uint8_t cc_idx = chan_id2cc_idx(i);
 
 		if (flags & (RTCC_IF_CC0 << cc_idx)) {
 			if (dev_data->alarm[i].callback) {
@@ -356,32 +357,32 @@ ISR_DIRECT_DECLARE(counter_gecko_isr_0)
 	return 1;
 }
 
-BUILD_ASSERT((DT_INST_0_SILABS_GECKO_RTCC_PRESCALER > 0U) &&
-	     (DT_INST_0_SILABS_GECKO_RTCC_PRESCALER <= 32768U));
+BUILD_ASSERT((DT_INST_PROP(0, prescaler) > 0U) &&
+	     (DT_INST_PROP(0, prescaler) <= 32768U));
 
 static void counter_gecko_0_irq_config(void)
 {
-	IRQ_DIRECT_CONNECT(DT_INST_0_SILABS_GECKO_RTCC_IRQ_0,
-			   DT_INST_0_SILABS_GECKO_RTCC_IRQ_0_PRIORITY,
+	IRQ_DIRECT_CONNECT(DT_INST_IRQN(0),
+			   DT_INST_IRQ(0, priority),
 			   counter_gecko_isr_0, 0);
-	irq_enable(DT_INST_0_SILABS_GECKO_RTCC_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
 
 static const struct counter_gecko_config counter_gecko_0_config = {
 	.info = {
 		.max_top_value = RTCC_MAX_VALUE,
-		.freq = DT_INST_0_SILABS_GECKO_RTCC_CLOCK_FREQUENCY /
-			DT_INST_0_SILABS_GECKO_RTCC_PRESCALER,
+		.freq = DT_INST_PROP(0, clock_frequency) /
+			DT_INST_PROP(0, prescaler),
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = RTCC_ALARM_NUM,
 	},
 	.irq_config = counter_gecko_0_irq_config,
-	.prescaler = DT_INST_0_SILABS_GECKO_RTCC_PRESCALER,
+	.prescaler = DT_INST_PROP(0, prescaler),
 };
 
 static struct counter_gecko_data counter_gecko_0_data;
 
-DEVICE_AND_API_INIT(counter_gecko_0, DT_INST_0_SILABS_GECKO_RTCC_LABEL,
-	counter_gecko_init, &counter_gecko_0_data, &counter_gecko_0_config,
+DEVICE_DT_INST_DEFINE(0, counter_gecko_init, device_pm_control_nop,
+	&counter_gecko_0_data, &counter_gecko_0_config,
 	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	&counter_gecko_driver_api);

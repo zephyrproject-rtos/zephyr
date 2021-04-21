@@ -129,22 +129,29 @@ You may postprocess these with your preferred tools. For example:
 
    Alternatively, you can use gcovr (at least version 4.2).
 
-Sanitycheck coverage reports
-****************************
+Coverage reports using Twister
+******************************
 
-Zephyr's :ref:`sanitycheck script <sanitycheck_script>` can automatically
+Zephyr's :ref:`twister script <twister_script>` can automatically
 generate a coverage report from the tests which were executed.
 You just need to invoke it with the ``--coverage`` command line option.
 
 For example, you may invoke::
 
-    $ sanitycheck --coverage -p qemu_x86 -T tests/kernel
+    $ twister --coverage -p qemu_x86 -T tests/kernel
 
 or::
 
-    $ sanitycheck --coverage -p native_posix -T tests/bluetooth
+    $ twister --coverage -p native_posix -T tests/bluetooth
 
-which will produce ``sanity-out/coverage/index.html`` with the report.
+which will produce ``twister-out/coverage/index.html`` with the report.
+
+The process differs for unit tests, which are built with the host
+toolchain and require a different board::
+
+    $ twister --coverage -p unit_testing -T tests/unit
+
+which produces a report in the same location as non-unit testing.
 
 .. _gcov:
    https://gcc.gnu.org/onlinedocs/gcc/Gcov.html

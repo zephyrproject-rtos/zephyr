@@ -1,0 +1,21 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test GPIO node with one cell
+
+compatible: "vnd,gpio-one-cell"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 1
+
+gpio-cells:
+  - pin

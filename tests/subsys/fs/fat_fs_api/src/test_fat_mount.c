@@ -1,14 +1,10 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @filesystem
- * @brief test_filesystem
- * Demonstrates the ZEPHYR File System APIs
- */
 
 #include "test_fat.h"
 #include <ff.h>
@@ -23,6 +19,38 @@ static struct fs_mount_t fatfs_mnt = {
 	.fs_data = &fat_fs,
 };
 
+static int test_mount_no_format(void)
+{
+	int ret = 0;
+
+	fatfs_mnt.flags = FS_MOUNT_FLAG_NO_FORMAT;
+	ret = fs_mount(&fatfs_mnt);
+
+	if (ret >= 0) {
+		TC_PRINT("Expected failure\n");
+		return TC_FAIL;
+	}
+	fatfs_mnt.flags = 0;
+
+	return TC_PASS;
+}
+
+static int test_mount_rd_only_no_sys(void)
+{
+	int ret = 0;
+
+	fatfs_mnt.flags = FS_MOUNT_FLAG_READ_ONLY;
+	ret = fs_mount(&fatfs_mnt);
+
+	if (ret >= 0) {
+		TC_PRINT("Expected failure\n");
+		return TC_FAIL;
+	}
+	fatfs_mnt.flags = 0;
+
+	return TC_PASS;
+}
+
 static int test_mount(void)
 {
 	int res;
@@ -36,7 +64,21 @@ static int test_mount(void)
 	return TC_PASS;
 }
 
+static int test_unmount(void)
+{
+	return (fs_unmount(&fatfs_mnt) >= 0 ? TC_PASS : TC_FAIL);
+}
+
+void test_fat_unmount(void)
+{
+	zassert_true(test_unmount() == TC_PASS, NULL);
+}
+
 void test_fat_mount(void)
 {
+	zassert_false(test_unmount() == TC_PASS, NULL);
+	zassert_true(test_mount_no_format() == TC_PASS, NULL);
+	zassert_true(test_mount_rd_only_no_sys() == TC_PASS, NULL);
 	zassert_true(test_mount() == TC_PASS, NULL);
+	zassert_false(test_mount() == TC_PASS, NULL);
 }

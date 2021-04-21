@@ -89,19 +89,19 @@ struct bt_rfcomm_dlc {
 	bt_security_t              required_sec_level;
 	bt_rfcomm_role_t           role;
 
-	u16_t                      mtu;
-	u8_t                       dlci;
-	u8_t                       state;
-	u8_t                       rx_credit;
+	uint16_t                      mtu;
+	uint8_t                       dlci;
+	uint8_t                       state;
+	uint8_t                       rx_credit;
 
 	/* Stack & kernel data for TX thread */
 	struct k_thread            tx_thread;
-	K_THREAD_STACK_MEMBER(stack, 256);
+	K_KERNEL_STACK_MEMBER(stack, 256);
 };
 
 struct bt_rfcomm_server {
 	/** Server Channel */
-	u8_t channel;
+	uint8_t channel;
 
 	/** Server accept callback
 	 *
@@ -143,7 +143,7 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
-			  u8_t channel);
+			  uint8_t channel);
 
 /** @brief Send data to RFCOMM
  *

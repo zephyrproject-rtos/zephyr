@@ -1,0 +1,27 @@
+# Copyright (c) 2020 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Modbus over serial line device
+
+compatible: "zephyr,modbus-serial"
+
+include: uart-device.yaml
+
+properties:
+    de-gpios:
+      type: phandle-array
+      required: false
+      description: Driver enable pin.
+
+        Driver enable pin (DE) of the RS-485 transceiver.
+        If connected directly the MCU pin should be configured
+        as active high.
+
+    re-gpios:
+      type: phandle-array
+      required: false
+      description: Receiver enable pin.
+
+        Receiver enable pin (nRE) of the RS-485 transceiver.
+        If connected directly the MCU pin should be configured
+        as active low.

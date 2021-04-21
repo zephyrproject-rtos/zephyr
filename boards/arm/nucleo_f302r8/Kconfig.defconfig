@@ -8,28 +8,4 @@ if BOARD_NUCLEO_F302R8
 config BOARD
 	default "nucleo_f302r8"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
-config UART_3
-	default y
-	depends on SERIAL
-
-config I2C_1
-	default y
-	depends on I2C
-
-config SPI_2
-	default y
-	depends on SPI
-
-config PWM_STM32_2
-	default y
-	depends on PWM
-
-config ADC_1
-	default y
-	depends on ADC
-
 endif # BOARD_NUCLEO_F302R8

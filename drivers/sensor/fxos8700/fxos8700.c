@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_fxos8700
+
 #include "fxos8700.h"
 #include <sys/util.h>
 #include <sys/__assert.h>
@@ -13,11 +15,14 @@
 
 LOG_MODULE_REGISTER(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
-int fxos8700_set_odr(struct device *dev, const struct sensor_value *val)
+/* Convert the range (8g, 4g, 2g) to the encoded FS register field value */
+#define RANGE2FS(x) (__builtin_ctz(x) - 1)
+
+int fxos8700_set_odr(const struct device *dev, const struct sensor_value *val)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
-	struct fxos8700_data *data = dev->driver_data;
-	s32_t dr = val->val1;
+	const struct fxos8700_config *config = dev->config;
+	struct fxos8700_data *data = dev->data;
+	int32_t dr = val->val1;
 
 #ifdef CONFIG_FXOS8700_MODE_HYBRID
 	/* ODR is halved in hybrid mode */
@@ -62,38 +67,38 @@ int fxos8700_set_odr(struct device *dev, const struct sensor_value *val)
 	}
 #endif
 
-	LOG_DBG("Set ODR to 0x%x", (u8_t)dr);
+	LOG_DBG("Set ODR to 0x%x", (uint8_t)dr);
 
 	return i2c_reg_update_byte(data->i2c, config->i2c_address,
 				   FXOS8700_REG_CTRLREG1,
-				   FXOS8700_CTRLREG1_DR_MASK, (u8_t)dr);
+				   FXOS8700_CTRLREG1_DR_MASK, (uint8_t)dr);
 }
 
-static int fxos8700_set_mt_ths(struct device *dev,
+static int fxos8700_set_mt_ths(const struct device *dev,
 			       const struct sensor_value *val)
 {
 #ifdef CONFIG_FXOS8700_MOTION
-	const struct fxos8700_config *config = dev->config->config_info;
-	struct fxos8700_data *data = dev->driver_data;
-	u64_t micro_ms2 = abs(val->val1 * 1000000LL + val->val2);
-	u64_t ths = micro_ms2 / FXOS8700_FF_MT_THS_SCALE;
+	const struct fxos8700_config *config = dev->config;
+	struct fxos8700_data *data = dev->data;
+	uint64_t micro_ms2 = abs(val->val1 * 1000000LL + val->val2);
+	uint64_t ths = micro_ms2 / FXOS8700_FF_MT_THS_SCALE;
 
 	if (ths > FXOS8700_FF_MT_THS_MASK) {
 		LOG_ERR("Threshold value is out of range");
 		return -EINVAL;
 	}
 
-	LOG_DBG("Set FF_MT_THS to %d", (u8_t)ths);
+	LOG_DBG("Set FF_MT_THS to %d", (uint8_t)ths);
 
 	return i2c_reg_update_byte(data->i2c, config->i2c_address,
 				   FXOS8700_REG_FF_MT_THS,
-				   FXOS8700_FF_MT_THS_MASK, (u8_t)ths);
+				   FXOS8700_FF_MT_THS_MASK, (uint8_t)ths);
 #else
 	return -ENOTSUP;
 #endif
 }
 
-static int fxos8700_attr_set(struct device *dev,
+static int fxos8700_attr_set(const struct device *dev,
 			     enum sensor_channel chan,
 			     enum sensor_attribute attr,
 			     const struct sensor_value *val)
@@ -113,13 +118,14 @@ static int fxos8700_attr_set(struct device *dev,
 	return 0;
 }
 
-static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int fxos8700_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
-	struct fxos8700_data *data = dev->driver_data;
-	u8_t buffer[FXOS8700_MAX_NUM_BYTES];
-	u8_t num_bytes;
-	s16_t *raw;
+	const struct fxos8700_config *config = dev->config;
+	struct fxos8700_data *data = dev->data;
+	uint8_t buffer[FXOS8700_MAX_NUM_BYTES];
+	uint8_t num_bytes;
+	int16_t *raw;
 	int ret = 0;
 	int i;
 
@@ -174,19 +180,19 @@ exit:
 	return ret;
 }
 
-static void fxos8700_accel_convert(struct sensor_value *val, s16_t raw,
-				   enum fxos8700_range range)
+static void fxos8700_accel_convert(struct sensor_value *val, int16_t raw,
+				   uint8_t range)
 {
-	u8_t frac_bits;
-	s64_t micro_ms2;
+	uint8_t frac_bits;
+	int64_t micro_ms2;
 
 	/* The range encoding is convenient to compute the number of fractional
 	 * bits:
-	 * - 2g mode (range = 0) has 14 fractional bits
-	 * - 4g mode (range = 1) has 13 fractional bits
-	 * - 8g mode (range = 2) has 12 fractional bits
+	 * - 2g mode (fs = 0) has 14 fractional bits
+	 * - 4g mode (fs = 1) has 13 fractional bits
+	 * - 8g mode (fs = 2) has 12 fractional bits
 	 */
-	frac_bits = 14 - range;
+	frac_bits = 14 - RANGE2FS(range);
 
 	/* Convert units to micro m/s^2. Intermediate results before the shift
 	 * are 40 bits wide.
@@ -194,16 +200,16 @@ static void fxos8700_accel_convert(struct sensor_value *val, s16_t raw,
 	micro_ms2 = (raw * SENSOR_G) >> frac_bits;
 
 	/* The maximum possible value is 8g, which in units of micro m/s^2
-	 * always fits into 32-bits. Cast down to s32_t so we can use a
+	 * always fits into 32-bits. Cast down to int32_t so we can use a
 	 * faster divide.
 	 */
-	val->val1 = (s32_t) micro_ms2 / 1000000;
-	val->val2 = (s32_t) micro_ms2 % 1000000;
+	val->val1 = (int32_t) micro_ms2 / 1000000;
+	val->val2 = (int32_t) micro_ms2 % 1000000;
 }
 
-static void fxos8700_magn_convert(struct sensor_value *val, s16_t raw)
+static void fxos8700_magn_convert(struct sensor_value *val, int16_t raw)
 {
-	s32_t micro_g;
+	int32_t micro_g;
 
 	/* Convert units to micro Gauss. Raw magnetic data always has a
 	 * resolution of 0.1 uT/LSB, which is equivalent to 0.001 G/LSB.
@@ -215,9 +221,9 @@ static void fxos8700_magn_convert(struct sensor_value *val, s16_t raw)
 }
 
 #ifdef CONFIG_FXOS8700_TEMP
-static void fxos8700_temp_convert(struct sensor_value *val, s8_t raw)
+static void fxos8700_temp_convert(struct sensor_value *val, int8_t raw)
 {
-	s32_t micro_c;
+	int32_t micro_c;
 
 	/* Convert units to micro Celsius. Raw temperature data always has a
 	 * resolution of 0.96 deg C/LSB.
@@ -229,14 +235,15 @@ static void fxos8700_temp_convert(struct sensor_value *val, s8_t raw)
 }
 #endif
 
-static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
+static int fxos8700_channel_get(const struct device *dev,
+				enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
-	struct fxos8700_data *data = dev->driver_data;
+	const struct fxos8700_config *config = dev->config;
+	struct fxos8700_data *data = dev->data;
 	int start_channel;
 	int num_channels;
-	s16_t *raw;
+	int16_t *raw;
 	int ret;
 	int i;
 
@@ -337,11 +344,11 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
-int fxos8700_get_power(struct device *dev, enum fxos8700_power *power)
+int fxos8700_get_power(const struct device *dev, enum fxos8700_power *power)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
-	struct fxos8700_data *data = dev->driver_data;
-	u8_t val = *power;
+	const struct fxos8700_config *config = dev->config;
+	struct fxos8700_data *data = dev->data;
+	uint8_t val = *power;
 
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
 			      FXOS8700_REG_CTRLREG1,
@@ -355,10 +362,10 @@ int fxos8700_get_power(struct device *dev, enum fxos8700_power *power)
 	return 0;
 }
 
-int fxos8700_set_power(struct device *dev, enum fxos8700_power power)
+int fxos8700_set_power(const struct device *dev, enum fxos8700_power power)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
-	struct fxos8700_data *data = dev->driver_data;
+	const struct fxos8700_config *config = dev->config;
+	struct fxos8700_data *data = dev->data;
 
 	return i2c_reg_update_byte(data->i2c, config->i2c_address,
 				   FXOS8700_REG_CTRLREG1,
@@ -366,12 +373,12 @@ int fxos8700_set_power(struct device *dev, enum fxos8700_power power)
 				   power);
 }
 
-static int fxos8700_init(struct device *dev)
+static int fxos8700_init(const struct device *dev)
 {
-	const struct fxos8700_config *config = dev->config->config_info;
-	struct fxos8700_data *data = dev->driver_data;
+	const struct fxos8700_config *config = dev->config;
+	struct fxos8700_data *data = dev->data;
 	struct sensor_value odr = {.val1 = 6, .val2 = 250000};
-	struct device *rst;
+	const struct device *rst;
 
 	/* Get the I2C device */
 	data->i2c = device_get_binding(config->i2c_name);
@@ -485,12 +492,12 @@ static int fxos8700_init(struct device *dev)
 	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 				FXOS8700_REG_XYZ_DATA_CFG,
 				FXOS8700_XYZ_DATA_CFG_FS_MASK,
-				config->range)) {
+				RANGE2FS(config->range))) {
 		LOG_ERR("Could not set range");
 		return -EIO;
 	}
 
-	k_sem_init(&data->sem, 0, UINT_MAX);
+	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
 #if CONFIG_FXOS8700_TRIGGER
 	if (fxos8700_trigger_init(dev)) {
@@ -520,75 +527,102 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 #endif
 };
 
-static const struct fxos8700_config fxos8700_config = {
-	.i2c_name = DT_INST_0_NXP_FXOS8700_BUS_NAME,
-	.i2c_address = DT_INST_0_NXP_FXOS8700_BASE_ADDRESS,
-#ifdef DT_INST_0_NXP_FXOS8700_RESET_GPIOS_CONTROLLER
-	.reset_name = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_CONTROLLER,
-	.reset_pin = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_PIN,
-	.reset_flags = DT_INST_0_NXP_FXOS8700_RESET_GPIOS_FLAGS,
-#else
-	.reset_name = NULL,
-	.reset_pin = 0,
-	.reset_flags = 0,
-#endif
-#ifdef CONFIG_FXOS8700_MODE_ACCEL
-	.mode = FXOS8700_MODE_ACCEL,
-	.start_addr = FXOS8700_REG_OUTXMSB,
-	.start_channel = FXOS8700_CHANNEL_ACCEL_X,
+#define FXOS8700_MODE_PROPS_ACCEL					\
+	.mode = FXOS8700_MODE_ACCEL,					\
+	.start_addr = FXOS8700_REG_OUTXMSB,				\
+	.start_channel = FXOS8700_CHANNEL_ACCEL_X,			\
 	.num_channels = FXOS8700_NUM_ACCEL_CHANNELS,
-#elif CONFIG_FXOS8700_MODE_MAGN
-	.mode = FXOS8700_MODE_MAGN,
-	.start_addr = FXOS8700_REG_M_OUTXMSB,
-	.start_channel = FXOS8700_CHANNEL_MAGN_X,
+
+#define FXOS8700_MODE_PROPS_MAGN					\
+	.mode = FXOS8700_MODE_MAGN,					\
+	.start_addr = FXOS8700_REG_M_OUTXMSB,				\
+	.start_channel = FXOS8700_CHANNEL_MAGN_X,			\
 	.num_channels = FXOS8700_NUM_MAG_CHANNELS,
-#else
-	.mode = FXOS8700_MODE_HYBRID,
-	.start_addr = FXOS8700_REG_OUTXMSB,
-	.start_channel = FXOS8700_CHANNEL_ACCEL_X,
-	.num_channels = FXOS8700_NUM_HYBRID_CHANNELS,
-#endif
-#if CONFIG_FXOS8700_PM_NORMAL
-	.power_mode = FXOS8700_PM_NORMAL,
-#elif CONFIG_FXOS8700_PM_LOW_NOISE_LOW_POWER
-	.power_mode = FXOS8700_PM_LOW_NOISE_LOW_POWER,
-#elif CONFIG_FXOS8700_PM_HIGH_RESOLUTION
-	.power_mode = FXOS8700_PM_HIGH_RESOLUTION,
-#else
-	.power_mode = FXOS8700_PM_LOW_POWER,
-#endif
-#if CONFIG_FXOS8700_RANGE_8G
-	.range = FXOS8700_RANGE_8G,
-#elif CONFIG_FXOS8700_RANGE_4G
-	.range = FXOS8700_RANGE_4G,
-#else
-	.range = FXOS8700_RANGE_2G,
-#endif
-#ifdef CONFIG_FXOS8700_TRIGGER
-#ifdef CONFIG_FXOS8700_DRDY_INT1
-	.gpio_name = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_PIN,
-	.gpio_flags = DT_INST_0_NXP_FXOS8700_INT1_GPIOS_FLAGS,
-#else
-	.gpio_name = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_PIN,
-	.gpio_flags = DT_INST_0_NXP_FXOS8700_INT2_GPIOS_FLAGS,
-#endif
-#endif
-#ifdef CONFIG_FXOS8700_PULSE
-	.pulse_cfg = CONFIG_FXOS8700_PULSE_CFG,
-	.pulse_ths[0] = CONFIG_FXOS8700_PULSE_THSX,
-	.pulse_ths[1] = CONFIG_FXOS8700_PULSE_THSY,
-	.pulse_ths[2] = CONFIG_FXOS8700_PULSE_THSZ,
-	.pulse_tmlt = CONFIG_FXOS8700_PULSE_TMLT,
-	.pulse_ltcy = CONFIG_FXOS8700_PULSE_LTCY,
-	.pulse_wind = CONFIG_FXOS8700_PULSE_WIND,
-#endif
-};
 
-static struct fxos8700_data fxos8700_data;
+#define FXOS8700_MODE_PROPS_HYBRID					\
+	.mode = FXOS8700_MODE_HYBRID,					\
+	.start_addr = FXOS8700_REG_OUTXMSB,				\
+	.start_channel = FXOS8700_CHANNEL_ACCEL_X,			\
+	.num_channels = FXOS8700_NUM_HYBRID_CHANNELS,			\
 
-DEVICE_AND_API_INIT(fxos8700, DT_INST_0_NXP_FXOS8700_LABEL, fxos8700_init,
-		    &fxos8700_data, &fxos8700_config,
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &fxos8700_driver_api);
+#define FXOS8700_MODE(n)						\
+	COND_CODE_1(CONFIG_FXOS8700_MODE_ACCEL,				\
+		    (FXOS8700_MODE_PROPS_ACCEL),			\
+		    (COND_CODE_1(CONFIG_FXOS8700_MODE_MAGN,		\
+		    (FXOS8700_MODE_PROPS_MAGN),				\
+		    (FXOS8700_MODE_PROPS_HYBRID))))
+
+#define FXOS8700_RESET_PROPS(n)						\
+	.reset_name = DT_INST_GPIO_LABEL(n, reset_gpios),		\
+	.reset_pin = DT_INST_GPIO_PIN(n, reset_gpios),			\
+	.reset_flags = DT_INST_GPIO_FLAGS(n, reset_gpios),
+
+#define FXOS8700_RESET(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, reset_gpios),		\
+		    (FXOS8700_RESET_PROPS(n)),				\
+		    ())
+
+#define FXOS8700_INTM_PROPS(n, m)					\
+	.gpio_name = DT_INST_GPIO_LABEL(n, int##m##_gpios),		\
+	.gpio_pin = DT_INST_GPIO_PIN(n, int##m##_gpios),		\
+	.gpio_flags = DT_INST_GPIO_FLAGS(n, int##m##_gpios),
+
+#define FXOS8700_INT_PROPS(n)						\
+	COND_CODE_1(CONFIG_FXOS8700_DRDY_INT1,				\
+		    (FXOS8700_INTM_PROPS(n, 1)),			\
+		    (FXOS8700_INTM_PROPS(n, 2)))
+
+#define FXOS8700_INT(n)							\
+	COND_CODE_1(CONFIG_FXOS8700_TRIGGER,				\
+		    (FXOS8700_INT_PROPS(n)),				\
+		    ())
+
+#define FXOS8700_PULSE_PROPS(n)						\
+	.pulse_cfg = DT_INST_PROP(n, pulse_cfg),			\
+	.pulse_ths[0] = DT_INST_PROP(n, pulse_thsx),			\
+	.pulse_ths[1] = DT_INST_PROP(n, pulse_thsy),			\
+	.pulse_ths[2] = DT_INST_PROP(n, pulse_thsz),			\
+	.pulse_tmlt = DT_INST_PROP(n, pulse_tmlt),			\
+	.pulse_ltcy = DT_INST_PROP(n, pulse_ltcy),			\
+	.pulse_wind = DT_INST_PROP(n, pulse_wind),
+
+#define FXOS8700_PULSE(n)						\
+	COND_CODE_1(CONFIG_FXOS8700_PULSE,				\
+		    (FXOS8700_PULSE_PROPS(n)),				\
+		    ())
+
+#define FXOS8700_MAG_VECM_PROPS(n)					\
+	.mag_vecm_cfg = DT_INST_PROP(n, mag_vecm_cfg),			\
+	.mag_vecm_ths[0] = DT_INST_PROP(n, mag_vecm_ths_msb),		\
+	.mag_vecm_ths[1] = DT_INST_PROP(n, mag_vecm_ths_lsb),
+
+#define FXOS8700_MAG_VECM(n)						\
+	COND_CODE_1(CONFIG_FXOS8700_MAG_VECM,				\
+		    (FXOS8700_MAG_VECM_PROPS(n)),			\
+		    ())
+
+#define FXOS8700_INIT(n)						\
+	static const struct fxos8700_config fxos8700_config_##n = {	\
+		.i2c_name = DT_INST_BUS_LABEL(n),			\
+		.i2c_address = DT_INST_REG_ADDR(n),			\
+		.power_mode = DT_INST_PROP(n, power_mode),		\
+		.range = DT_INST_PROP(n, range),			\
+		FXOS8700_RESET(n)					\
+		FXOS8700_MODE(n)					\
+		FXOS8700_INT(n)						\
+		FXOS8700_PULSE(n)					\
+		FXOS8700_MAG_VECM(n)					\
+	};								\
+									\
+	static struct fxos8700_data fxos8700_data_##n;			\
+									\
+	DEVICE_DT_INST_DEFINE(n,					\
+			    fxos8700_init,				\
+			    device_pm_control_nop,			\
+			    &fxos8700_data_##n,				\
+			    &fxos8700_config_##n,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &fxos8700_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(FXOS8700_INIT)

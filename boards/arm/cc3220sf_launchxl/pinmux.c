@@ -91,7 +91,7 @@
 #define I2C_CC32XX_PIN_16_I2C_SCL  0x90F  /*!< PIN 16 is used for I2C_SCL */
 #define I2C_CC32XX_PIN_17_I2C_SDA  0x910  /*!< PIN 17 is used for I2C_SDA */
 
-int pinmux_initialize(struct device *port)
+int pinmux_initialize(const struct device *port)
 {
 	ARG_UNUSED(port);
 
@@ -103,7 +103,6 @@ int pinmux_initialize(struct device *port)
 	MAP_PinTypeUART(PIN_57, PIN_MODE_3);
 #endif
 
-#ifdef CONFIG_GPIO_CC32XX_A1
 	/* Enable Peripheral Clocks */
 	MAP_PRCMPeripheralClkEnable(PRCM_GPIOA1, PRCM_RUN_MODE_CLK);
 
@@ -124,20 +123,14 @@ int pinmux_initialize(struct device *port)
 	/* SW3: Configure PIN_04 (GPIO13) for GPIOInput */
 	MAP_PinTypeGPIO(PIN_04, PIN_MODE_0, false);
 	MAP_GPIODirModeSet(GPIOA1_BASE, 0x20, GPIO_DIR_MODE_IN);
-#endif
 
-#ifdef CONFIG_GPIO_CC32XX_A2
 	MAP_PRCMPeripheralClkEnable(PRCM_GPIOA2, PRCM_RUN_MODE_CLK);
 
 	/* SW2: Configure PIN_15 (GPIO22) for GPIOInput */
 	MAP_PinTypeGPIO(PIN_15, PIN_MODE_0, false);
 	MAP_GPIODirModeSet(GPIOA2_BASE, 0x40, GPIO_DIR_MODE_IN);
-#endif
 
-#ifdef CONFIG_GPIO_CC32XX_A3
 	MAP_PRCMPeripheralClkEnable(PRCM_GPIOA3, PRCM_RUN_MODE_CLK);
-
-#endif
 
 #ifdef CONFIG_I2C_CC32XX
 	{

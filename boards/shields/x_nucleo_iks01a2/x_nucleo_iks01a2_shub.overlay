@@ -1,0 +1,15 @@
+/*
+ *
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_i2c {
+	lsm6dsl@6b {
+		compatible = "st,lsm6dsl";
+		reg = <0x6b>;
+		label = "LSM6DSL";
+		irq-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>;	/* D4 */
+	};
+};

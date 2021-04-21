@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <net/buf.h>
 #include <bluetooth/buf.h>
+#include <bluetooth/hci_vs.h>
 #include <device.h>
 
 #ifdef __cplusplus
@@ -29,35 +30,49 @@ extern "C" {
 enum {
 	/* The host should never send HCI_Reset */
 	BT_QUIRK_NO_RESET = BIT(0),
+	/* The controller does not auto-initiate a DLE procedure when the
+	 * initial connection data length parameters are not equal to the
+	 * default data length parameters. Therefore the host should initiate
+	 * the DLE procedure after connection establishment. */
+	BT_QUIRK_NO_AUTO_DLE = BIT(1),
 };
 
-/**
- * @brief Check if an HCI event is high priority or not.
+#define IS_BT_QUIRK_NO_AUTO_DLE(bt_dev) ((bt_dev)->drv->quirks & BT_QUIRK_NO_AUTO_DLE)
+
+/* @brief The HCI event shall be given to bt_recv_prio */
+#define BT_HCI_EVT_FLAG_RECV_PRIO BIT(0)
+/* @brief  The HCI event shall be given to bt_recv. */
+#define BT_HCI_EVT_FLAG_RECV      BIT(1)
+
+/** @brief Get HCI event flags.
  *
- * Helper for the HCI driver to know which events are ok to be passed
- * through the RX thread and which must be given to bt_recv_prio() from
- * another context (e.g. ISR). If this function returns true it's safe
- * to pass the event through the RX thread, however if it returns false
- * then this risks a deadlock.
+ * Helper for the HCI driver to get HCI event flags that describes rules that.
+ * must be followed.
+ *
+ * When CONFIG_BT_RECV_IS_RX_THREAD is enabled the flags
+ * BT_HCI_EVT_FLAG_RECV and BT_HCI_EVT_FLAG_RECV_PRIO indicates if the event
+ * should be given to bt_recv or bt_recv_prio.
  *
  * @param evt HCI event code.
  *
- * @return true if the event can be processed in the RX thread, false
- *         if it cannot.
+ * @return HCI event flags for the specified event.
  */
-static inline bool bt_hci_evt_is_prio(u8_t evt)
+static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
 {
 	switch (evt) {
-	case BT_HCI_EVT_CMD_COMPLETE:
-	case BT_HCI_EVT_CMD_STATUS:
+	case BT_HCI_EVT_DISCONN_COMPLETE:
+		return BT_HCI_EVT_FLAG_RECV | BT_HCI_EVT_FLAG_RECV_PRIO;
 		/* fallthrough */
 #if defined(CONFIG_BT_CONN)
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 	case BT_HCI_EVT_DATA_BUF_OVERFLOW:
-#endif
-		return true;
+		__fallthrough;
+#endif /* defined(CONFIG_BT_CONN) */
+	case BT_HCI_EVT_CMD_COMPLETE:
+	case BT_HCI_EVT_CMD_STATUS:
+		return BT_HCI_EVT_FLAG_RECV_PRIO;
 	default:
-		return false;
+		return BT_HCI_EVT_FLAG_RECV;
 	}
 }
 
@@ -66,9 +81,11 @@ static inline bool bt_hci_evt_is_prio(u8_t evt)
  *
  * This is the main function through which the HCI driver provides the
  * host with data from the controller. The buffer needs to have its type
- * set with the help of bt_buf_set_type() before calling this API. This API
- * should not be used for so-called high priority HCI events, which should
- * instead be delivered to the host stack through bt_recv_prio().
+ * set with the help of bt_buf_set_type() before calling this API.
+ *
+ * When CONFIG_BT_RECV_IS_RX_THREAD is defined then this API should not be used
+ * for so-called high priority HCI events, which should instead be delivered to
+ * the host stack through bt_recv_prio().
  *
  * @param buf Network buffer containing data from the controller.
  *
@@ -81,8 +98,8 @@ int bt_recv(struct net_buf *buf);
  *
  * This is the same as bt_recv(), except that it should be used for
  * so-called high priority HCI events. There's a separate
- * bt_hci_evt_is_prio() helper that can be used to identify which events
- * are high priority.
+ * bt_hci_evt_get_flags() helper that can be used to identify which events
+ * have the BT_HCI_EVT_FLAG_RECV_PRIO flag set.
  *
  * As with bt_recv(), the buffer needs to have its type set with the help of
  * bt_buf_set_type() before calling this API. The only exception is so called
@@ -94,6 +111,15 @@ int bt_recv(struct net_buf *buf);
  * @return 0 on success or negative error number on failure.
  */
 int bt_recv_prio(struct net_buf *buf);
+
+/** @brief Read static addresses from the controller.
+ *
+ *  @param addrs  Random static address and Identity Root (IR) array.
+ *  @param size   Size of array.
+ *
+ *  @return Number of addresses read.
+ */
+uint8_t bt_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t size);
 
 /** Possible values for the 'bus' member of the bt_hci_driver struct */
 enum bt_hci_driver_bus {
@@ -127,7 +153,7 @@ struct bt_hci_driver {
 	 *  set at buildtime, or set at runtime before the HCI driver's
 	 *  open() callback returns.
 	 */
-	u32_t quirks;
+	uint32_t quirks;
 
 	/**
 	 * @brief Open the HCI transport.
@@ -182,7 +208,48 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv);
  *
  * @return 0 on success, negative error value on failure
  */
-int bt_hci_transport_setup(struct device *dev);
+int bt_hci_transport_setup(const struct device *dev);
+
+/** Allocate an HCI event buffer.
+ *
+ * This function allocates a new buffer for an HCI event. It is given the
+ * avent code and the total length of the parameters. Upon successful return
+ * the buffer is ready to have the parameters encoded into it.
+ *
+ * @param evt        Event OpCode.
+ * @param len        Length of event parameters.
+ *
+ * @return Newly allocated buffer.
+ */
+struct net_buf *bt_hci_evt_create(uint8_t evt, uint8_t len);
+
+/** Allocate an HCI Command Complete event buffer.
+ *
+ * This function allocates a new buffer for HCI Command Complete event.
+ * It is given the OpCode (encoded e.g. using the BT_OP macro) and the total
+ * length of the parameters. Upon successful return the buffer is ready to have
+ * the parameters encoded into it.
+ *
+ * @param op         Command OpCode.
+ * @param plen       Length of command parameters.
+ *
+ * @return Newly allocated buffer.
+ */
+struct net_buf *bt_hci_cmd_complete_create(uint16_t op, uint8_t plen);
+
+/** Allocate an HCI Command Status event buffer.
+ *
+ * This function allocates a new buffer for HCI Command Status event.
+ * It is given the OpCode (encoded e.g. using the BT_OP macro) and the status
+ * code. Upon successful return the buffer is ready to have the parameters
+ * encoded into it.
+ *
+ * @param op         Command OpCode.
+ * @param status     Status code.
+ *
+ * @return Newly allocated buffer.
+ */
+struct net_buf *bt_hci_cmd_status_create(uint16_t op, uint8_t status);
 
 #ifdef __cplusplus
 }

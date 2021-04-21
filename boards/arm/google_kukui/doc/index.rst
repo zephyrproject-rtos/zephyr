@@ -7,8 +7,10 @@ Overview
 ********
 
 Kukui is a reference board for Chromium OS-based devices Krane and
-Kodama. Zephyr has support for the STM32-based embedded controller
-(EC) on-board.
+Kodama. These are known as the Lenovo Chromebook Duet and 10e Chromebook
+Tablet, respectively.
+
+Zephyr has support for the STM32-based embedded controller (EC) on-board.
 
 Hardware
 ********
@@ -59,6 +61,11 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - UART_1 TX/RX : PA10/PA9
+- I2C_1 SCL/SDA : PB8/PB9
+- I2C_2 SCL/SDA : PA11/PA12
+- Volume down : GPIOB pin 11
+- Volume up : GPIOB pin 10
+- Power : GPIOA pin 0
 
 Programming and Debugging
 *************************

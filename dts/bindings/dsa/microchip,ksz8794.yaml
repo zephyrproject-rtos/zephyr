@@ -1,0 +1,72 @@
+# Copyright (c) 2020 DENX Software Engineering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    KSZ8794 ethernet switch with SPI interface
+
+compatible: "microchip,ksz8794"
+
+include: [spi-device.yaml]
+properties:
+    dsa-master-port:
+       type: phandle
+       required: false
+       description: Phandle to master port.
+    dsa-slave-ports:
+       type: int
+       required: false
+       description: Number of slave ports on the switch
+    spi-cpha:
+       type: boolean
+       required: false
+       description: |
+          Set to indicate phase starts with asserted half-phase (CPHA=1).
+          For this driver using this property requires also using cpol.
+    spi-cpol:
+        type: boolean
+        required: false
+        description: |
+          Set to indicate clock leading edge is falling (CPOL=1).
+          For this driver using this property requires also using cpha.
+    reset-gpios:
+        type: phandle-array
+        required: false
+        description: |
+          The pin is asserted for 10ms during boot to reset the KSZ8794.
+    workaround:
+        type: int
+        required: false
+        description: |
+          Define the applied workaround for the switch used for
+          short connections. Use bitmask to select the workaround or more
+          0x01: Short Cable Problems with the KSZ8795 Family
+          0x02: 1) CAT-5E/6 Short Cable with a Link Issue for the KSZ8795 Family
+          0x04: 2) CAT-5E/6 Short Cable with a Link Issue for the KSZ8795 Family
+    mii-lowspeed-drivestrength:
+        type: int
+        required: false
+        description: |
+          Define the Low-Speed Interface Drive Strength for MII and RMMI
+          Supported values 2,4,8,12,16,20,24,28mA
+          see Register 163 (0xA3): Global Control 20 for more details
+        enum:
+          - 2
+          - 4
+          - 8
+          - 12
+          - 16
+          - 20
+          - 24
+          - 28
+
+child-binding:
+    description: Properties of slave port
+    properties:
+        label:
+            type: string
+            required: true
+        local-mac-address:
+            type: uint8-array
+            required: false
+            description: |
+              Specifies the MAC address that was assigned to the port

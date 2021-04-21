@@ -14,11 +14,12 @@
 #include <string.h>
 #include <device.h>
 #include <drivers/timer/system_timer.h>
+#include <kernel.h>
 
 static int cmd_kernel_version(const struct shell *shell,
 			      size_t argc, char **argv)
 {
-	u32_t version = sys_kernel_version_get();
+	uint32_t version = sys_kernel_version_get();
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -62,6 +63,11 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 	const char *tname;
 	int ret;
 
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	k_thread_runtime_stats_t rt_stats_thread;
+	k_thread_runtime_stats_t rt_stats_all;
+#endif
+
 	tname = k_thread_name_get(thread);
 
 	shell_print(shell, "%s%p %-10s",
@@ -72,7 +78,44 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		      thread->base.user_options,
 		      thread->base.prio,
 		      thread->base.timeout.dticks);
-	shell_print(shell, "\tstate: %s", k_thread_state_str(thread));
+	shell_print(shell, "\tstate: %s, entry: %p", k_thread_state_str(thread),
+		    thread->entry);
+
+#ifdef CONFIG_THREAD_RUNTIME_STATS
+	ret = 0;
+
+	if (k_thread_runtime_stats_get(thread, &rt_stats_thread) != 0) {
+		ret++;
+	}
+
+	if (k_thread_runtime_stats_all_get(&rt_stats_all) != 0) {
+		ret++;
+	}
+
+	if (ret == 0) {
+		pcnt = (rt_stats_thread.execution_cycles * 100U) /
+		       rt_stats_all.execution_cycles;
+
+		/*
+		 * z_prf() does not support %llu by default unless
+		 * CONFIG_MINIMAL_LIBC_LL_PRINTF=y. So do conditional
+		 * compilation to avoid blindly enabling this kconfig
+		 * so it won't increase RAM/ROM usage too much on 32-bit
+		 * targets.
+		 */
+#ifdef CONFIG_64BIT
+		shell_print(shell, "\tTotal execution cycles: %llu (%u %%)",
+			    rt_stats_thread.execution_cycles,
+			    pcnt);
+#else
+		shell_print(shell, "\tTotal execution cycles: %lu (%u %%)",
+			    (uint32_t)rt_stats_thread.execution_cycles,
+			    pcnt);
+#endif
+	} else {
+		shell_print(shell, "\tTotal execution cycles: ? (? %%)");
+	}
+#endif
 
 	ret = k_thread_stack_space_get(thread, &unused);
 	if (ret) {
@@ -96,7 +139,7 @@ static int cmd_kernel_threads(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(shell, "Scheduler: %u since last call", z_clock_elapsed());
+	shell_print(shell, "Scheduler: %u since last call", sys_clock_elapsed());
 	shell_print(shell, "Threads:");
 	k_thread_foreach(shell_tdata_dump, (void *)shell);
 	return 0;
@@ -131,12 +174,43 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 		      size, unused, size - unused, size, pcnt);
 }
 
+extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
+
 static int cmd_kernel_stacks(const struct shell *shell,
 			     size_t argc, char **argv)
 {
+	uint8_t *buf;
+	size_t size, unused;
+
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	k_thread_foreach(shell_stack_dump, (void *)shell);
+
+	/* Placeholder logic for interrupt stack until we have better
+	 * kernel support, including dumping arch-specific exception-related
+	 * stack buffers.
+	 */
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
+		size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
+
+		unused = 0;
+		for (size_t i = 0; i < size; i++) {
+			if (buf[i] == 0xAAU) {
+				unused++;
+			} else {
+				break;
+			}
+		}
+
+		shell_print(shell,
+			"%p IRQ %02d     (real size %zu):\tunused %zu\tusage %zu / %zu (%zu %%)",
+			      &z_interrupt_stacks[i], i, size, unused,
+			      size - unused, size,
+			      ((size - unused) * 100U) / size);
+	}
+
 	return 0;
 }
 #endif

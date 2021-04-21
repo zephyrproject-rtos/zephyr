@@ -15,8 +15,8 @@ synchronously or asynchronously.
 Concepts
 ********
 
-Any number of mailboxes can be defined. Each mailbox is referenced
-by its memory address.
+Any number of mailboxes can be defined (limited only by available RAM). Each
+mailbox is referenced by its memory address.
 
 A mailbox has the following key properties:
 
@@ -118,8 +118,8 @@ Implementation
 Defining a Mailbox
 ==================
 
-A mailbox is defined using a variable of type :c:type:`struct k_mbox`.
-It must then be initialized by calling :cpp:func:`k_mbox_init()`.
+A mailbox is defined using a variable of type :c:struct:`k_mbox`.
+It must then be initialized by calling :c:func:`k_mbox_init`.
 
 The following code defines and initializes an empty mailbox.
 
@@ -141,7 +141,7 @@ The following code has the same effect as the code segment above.
 Message Descriptors
 ===================
 
-A message descriptor is a structure of type :c:type:`struct k_mbox_msg`.
+A message descriptor is a structure of type :c:struct:`k_mbox_msg`.
 Only the fields listed below should be used; any other fields are for
 internal mailbox use only.
 
@@ -161,13 +161,13 @@ internal mailbox use only.
     exchanged once the message is received.
 
 *tx_data*
-    A pointer to the sending thread's message buffer. Set it to :c:macro:`NULL`
+    A pointer to the sending thread's message buffer. Set it to ``NULL``
     when sending a memory block, or when sending an empty message.
     Leave this field uninitialized when receiving a message.
 
 *tx_block*
     The descriptor for the sending thread's memory block. Set tx_block.data
-    to :c:macro:`NULL` when sending an empty message. Leave this field
+    to ``NULL`` when sending an empty message. Leave this field
     uninitialized when sending a message buffer, or when receiving a message.
 
 *tx_target_thread*
@@ -254,7 +254,7 @@ portion of the message isn't used.
         while (1) {
 
             /* generate random value to send */
-            u32_t random_value = sys_rand32_get();
+            uint32_t random_value = sys_rand32_get();
 
             /* prepare to send empty message */
             send_msg.info = random_value;
@@ -403,7 +403,7 @@ Retrieving Data at Receive Time
 
 The most straightforward way for a thread to retrieve message data is to
 specify a message buffer when the message is received. The thread indicates
-both the location of the message buffer (which must not be :c:macro:`NULL`)
+both the location of the message buffer (which must not be ``NULL``)
 and its size.
 
 The mailbox copies the message's data to the message buffer as part of the
@@ -470,7 +470,7 @@ Retrieving Data Later Using a Message Buffer
 A receiving thread may choose to defer message data retrieval at the time
 the message is received, so that it can retrieve the data into a message buffer
 at a later time.
-The thread does this by specifying a message buffer location of :c:macro:`NULL`
+The thread does this by specifying a message buffer location of ``NULL``
 and a size indicating the maximum amount of data it is willing to retrieve
 later.
 
@@ -486,13 +486,13 @@ The receiving thread must then respond as follows:
   the mailbox has already completed data retrieval and deleted the message.
 
 * If the message descriptor size is non-zero and the receiving thread still
-  wants to retrieve the data, the thread must call :cpp:func:`k_mbox_data_get()`
+  wants to retrieve the data, the thread must call :c:func:`k_mbox_data_get`
   and supply a message buffer large enough to hold the data. The mailbox copies
   the data into the message buffer and deletes the message.
 
 * If the message descriptor size is non-zero and the receiving thread does *not*
-  want to retrieve the data, the thread must call :cpp:func:`k_mbox_data_get()`.
-  and specify a message buffer of :c:macro:`NULL`. The mailbox deletes
+  want to retrieve the data, the thread must call :c:func:`k_mbox_data_get`.
+  and specify a message buffer of ``NULL``. The mailbox deletes
   the message without copying the data.
 
 The subsequent data retrieval technique is suitable for applications where
@@ -550,7 +550,7 @@ A receiving thread may choose to retrieve message data into a memory block,
 rather than a message buffer. This is done in much the same way as retrieving
 data subsequently into a message buffer --- the receiving thread first
 receives the message without its data, then retrieves the data by calling
-:cpp:func:`k_mbox_data_block_get()`. The mailbox fills in the block descriptor
+:c:func:`k_mbox_data_block_get`. The mailbox fills in the block descriptor
 supplied by the receiving thread, allowing the thread to access the data.
 The mailbox also deletes the received message, since data retrieval
 has been completed. The receiving thread is then responsible for freeing

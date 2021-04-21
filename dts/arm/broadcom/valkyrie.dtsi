@@ -29,7 +29,6 @@
 	soc {
 		sram0: memory@400000 {
 			device_type = "memory";
-			compatible = "mmio-sram";
 			reg = <0x00400000 0x30000>;
 		};
 

@@ -14,6 +14,13 @@ properties:
     "#gpio-cells":
       const: 2
 
+    nxp,kinetis-port:
+      required: true
+      type: phandle
+      description: |
+        A phandle reference to the device tree node that contains the pinmux
+        port associated with this GPIO controller.
+
 gpio-cells:
   - pin
   - flags

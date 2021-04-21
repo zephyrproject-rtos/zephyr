@@ -79,6 +79,8 @@ The efr32mg_sltb004a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | true random number generator        |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/efr32mg_sltb004a/efr32mg_sltb004a_defconfig``.
@@ -118,9 +120,9 @@ in the board's and microcontroller's datasheets and manuals.
 +------+-------------+-----------------------------------+
 | PC11 | I2C_SCL     | EXP15_I2C_SCL I2C0_SCL #15        |
 +------+-------------+-----------------------------------+
-| PC4  | I2C_SDA     | ENV_I2C_SDA I2C1_SDA #17          |
+| PB6  | I2C_SDA     | CCS811_I2C_SDA I2C1_SDA #6        |
 +------+-------------+-----------------------------------+
-| PC5  | I2C_SCL     | ENV_I2C_SCL I2C1_SCL #17          |
+| PB7  | I2C_SCL     | CCS811_I2C_SCL I2C1_SCL #6        |
 +------+-------------+-----------------------------------+
 | PK0  | SPI_MOSI    | Flash MOSI US2_TX #29             |
 +------+-------------+-----------------------------------+

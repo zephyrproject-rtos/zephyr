@@ -1,8 +1,0 @@
-# PSoC6 WiFi-BT Pioneer Kit configuration
-
-# Copyright (c) 2018 Cypress
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_CY8CKIT_062_WIFI_BT_M4
-	bool "PSoC6 WiFi-BT Pioneer Kit M4"
-	depends on SOC_PART_NUMBER_CY8C6247BZI_D54

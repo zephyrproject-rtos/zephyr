@@ -1,0 +1,687 @@
+# Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+comment "Components"
+
+config CMSIS_DSP_BASICMATH
+	bool "Basic Math Functions"
+	default y
+	help
+	  This option enables the Basic Math Functions, which support the
+	  following operations:
+
+	  * Vector Addition
+	  * Vector Subtraction
+	  * Vector Multiplication
+	  * Vector Dot Product
+	  * Vector Absolute Value
+	  * Vector Negate
+	  * Vector Offset
+	  * Vector Scale
+	  * Vector Shift
+	  * Vector Bitwise AND
+	  * Vector Bitwise OR
+	  * Vector Bitwise Exclusive OR
+	  * Vector Bitwise NOT
+
+config CMSIS_DSP_COMPLEXMATH
+	bool "Complex Math Functions"
+	imply CMSIS_DSP_FASTMATH
+	help
+	  This option enables the Complex Math Functions, which support the
+	  following operations:
+
+	  * Complex-by-Complex Multiplication
+	  * Complex-by-Real Multiplication
+	  * Complex Dot Product
+	  * Complex Magnitude
+	  * Complex Magnitude Squared
+	  * Complex Conjugate
+
+config CMSIS_DSP_CONTROLLER
+	bool "Controller Functions"
+	help
+	  This option enables the Controller Functions, which support the
+	  following operations:
+
+	  * PID Control
+	  * Vector Clarke Transform
+	  * Vector Inverse Clarke Transform
+	  * Vector Park Transform
+	  * Vector Inverse Park Transform
+	  * Sine-Cosine
+
+	  These functions can be used to implement a generic PID controller, as
+	  well as field oriented motor control using Space Vector Modulation
+	  algorithm.
+
+config CMSIS_DSP_FASTMATH
+	bool "Fast Math Functions"
+	select CMSIS_DSP_TABLES
+	imply CMSIS_DSP_TABLES_ALL_FAST
+	help
+	  This option enables the Fast Math Functions, which support the
+	  following operations:
+
+	  * Sine
+	  * Cosine
+	  * Square Root
+
+config CMSIS_DSP_FILTERING
+	bool "Filtering Functions"
+	help
+	  This option enables the Filtering Functions, which support the
+	  following operations:
+
+	  * Convolution
+	  * Partial Convolution
+	  * Correlation
+
+	  The following filter types are supported:
+
+	  * FIR (finite impulse response) Filter
+	  * FIR Lattice Filter
+	  * FIR Sparse Filter
+	  * FIR Filter with Decimator
+	  * FIR Filter with Interpolator
+	  * IIR (infinite impulse response) Lattice Filter
+	  * Biquad Cascade IIR Filter, Direct Form I Structure
+	  * Biquad Cascade IIR Filter, Direct Form II Transposed Structure
+	  * High Precision Q31 Biquad Cascade Filter
+	  * LMS (least mean square) Filter
+	  * Normalized LMS Filter
+
+config CMSIS_DSP_MATRIX
+	bool "Matrix Functions"
+	help
+	  This option enables the Matrix Functions, which support the following
+	  operations:
+
+	  * Matrix Initialization
+	  * Matrix Addition
+	  * Matrix Subtraction
+	  * Matrix Multiplication
+	  * Complex Matrix Multiplication
+	  * Matrix Inverse
+	  * Matrix Scale
+	  * Matrix Transpose
+
+config CMSIS_DSP_STATISTICS
+	bool "Statistics Functions"
+	imply CMSIS_DSP_BASICMATH
+	imply CMSIS_DSP_FASTMATH
+	help
+	  This option enables the Statistics Functions, which support the
+	  following operations:
+
+	  * Minimum
+	  * Maximum
+	  * Mean
+	  * Root Mean Square (RMS)
+	  * Variance
+	  * Standard Deviation
+	  * Power
+
+config CMSIS_DSP_SUPPORT
+	bool "Support Functions"
+	help
+	  This option enables the Support Functions, which support the
+	  following operations:
+
+	  * Vector 8-bit Integer Value Conversion
+	  * Vector 16-bit Integer Value Conversion
+	  * Vector 32-bit Integer Value Conversion
+	  * Vector 32-bit Floating-Point Value Conversion
+	  * Vector Copy
+	  * Vector Fill
+	  * Vector Sorting
+	  * Cubic Spline Interpolation
+
+config CMSIS_DSP_TRANSFORM
+	bool "Transform Functions"
+	select CMSIS_DSP_TABLES
+	imply CMSIS_DSP_TABLES_ALL_FFT
+	help
+	  This option enables the Transform Functions, which support the
+	  following transformations:
+
+	  * Real Fast Fourier Transform (RFFT)
+	  * Complex Fast Fourier Transform (CFFT)
+	  * Type IV Discrete Cosine Transform (DCT4)
+
+config CMSIS_DSP_SVM
+	bool "Support Vector Machine Functions"
+	help
+	  This option enables the Support Vector Machine Functions, which
+	  support the following algorithms:
+
+	  * Linear
+	  * Polynomial
+	  * Sigmoid
+	  * Radial Basis Function (RBF)
+
+config CMSIS_DSP_BAYES
+	bool "Bayesian Estimators"
+	imply CMSIS_DSP_STATISTICS
+	help
+	  This option enables the Bayesian Estimator Functions, which
+	  implements the naive gaussian Bayes estimator.
+
+config CMSIS_DSP_DISTANCE
+	bool "Distance Functions"
+	imply CMSIS_DSP_STATISTICS
+	help
+	  This option enables the Distance Functions, which support the
+	  following distance computation algorithms:
+
+	  * Boolean Vectors
+	    * Hamming
+	    * Jaccard
+	    * Kulsinski
+	    * Rogers-Tanimoto
+	    * Russell-Rao
+	    * Sokal-Michener
+	    * Sokal-Sneath
+	    * Yule
+	    * Dice
+
+	  * Floating-Point Vectors
+	    * Canberra
+	    * Chebyshev
+	    * Cityblock
+	    * Correlation
+	    * Cosine
+	    * Euclidean
+	    * Jensen-Shannon
+	    * Minkowski
+	    * Bray-Curtis
+
+menuconfig CMSIS_DSP_TABLES
+	bool "Look-up Tables"
+	help
+	  This option enables the static look-up tables used by the DSP
+	  functions to compute results.
+
+if CMSIS_DSP_TABLES
+
+config CMSIS_DSP_TABLES_ALL_FAST
+	bool "Include all fast interpolation tables"
+	select CMSIS_DSP_TABLES_ARM_COS_F32
+	select CMSIS_DSP_TABLES_ARM_COS_Q31
+	select CMSIS_DSP_TABLES_ARM_COS_Q15
+	select CMSIS_DSP_TABLES_ARM_SIN_F32
+	select CMSIS_DSP_TABLES_ARM_SIN_Q31
+	select CMSIS_DSP_TABLES_ARM_SIN_Q15
+	select CMSIS_DSP_TABLES_ARM_SIN_COS_F32
+	select CMSIS_DSP_TABLES_ARM_SIN_COS_Q31
+	select CMSIS_DSP_TABLES_ARM_LMS_NORM_Q31
+	select CMSIS_DSP_TABLES_ARM_LMS_NORM_Q15
+	select CMSIS_DSP_TABLES_ARM_CMPLX_MAG_Q31
+	select CMSIS_DSP_TABLES_ARM_CMPLX_MAG_Q15
+
+config CMSIS_DSP_TABLES_ALL_FFT
+	bool "Include all FFT tables"
+	select CMSIS_DSP_TABLES_CFFT_F64_16
+	select CMSIS_DSP_TABLES_CFFT_F64_32
+	select CMSIS_DSP_TABLES_CFFT_F64_64
+	select CMSIS_DSP_TABLES_CFFT_F64_128
+	select CMSIS_DSP_TABLES_CFFT_F64_256
+	select CMSIS_DSP_TABLES_CFFT_F64_512
+	select CMSIS_DSP_TABLES_CFFT_F64_1024
+	select CMSIS_DSP_TABLES_CFFT_F64_2048
+	select CMSIS_DSP_TABLES_CFFT_F64_4096
+	select CMSIS_DSP_TABLES_CFFT_F32_16
+	select CMSIS_DSP_TABLES_CFFT_F32_32
+	select CMSIS_DSP_TABLES_CFFT_F32_64
+	select CMSIS_DSP_TABLES_CFFT_F32_128
+	select CMSIS_DSP_TABLES_CFFT_F32_256
+	select CMSIS_DSP_TABLES_CFFT_F32_512
+	select CMSIS_DSP_TABLES_CFFT_F32_1024
+	select CMSIS_DSP_TABLES_CFFT_F32_2048
+	select CMSIS_DSP_TABLES_CFFT_F32_4096
+	select CMSIS_DSP_TABLES_CFFT_Q31_16
+	select CMSIS_DSP_TABLES_CFFT_Q31_32
+	select CMSIS_DSP_TABLES_CFFT_Q31_64
+	select CMSIS_DSP_TABLES_CFFT_Q31_128
+	select CMSIS_DSP_TABLES_CFFT_Q31_256
+	select CMSIS_DSP_TABLES_CFFT_Q31_512
+	select CMSIS_DSP_TABLES_CFFT_Q31_1024
+	select CMSIS_DSP_TABLES_CFFT_Q31_2048
+	select CMSIS_DSP_TABLES_CFFT_Q31_4096
+	select CMSIS_DSP_TABLES_CFFT_Q15_16
+	select CMSIS_DSP_TABLES_CFFT_Q15_32
+	select CMSIS_DSP_TABLES_CFFT_Q15_64
+	select CMSIS_DSP_TABLES_CFFT_Q15_128
+	select CMSIS_DSP_TABLES_CFFT_Q15_256
+	select CMSIS_DSP_TABLES_CFFT_Q15_512
+	select CMSIS_DSP_TABLES_CFFT_Q15_1024
+	select CMSIS_DSP_TABLES_CFFT_Q15_2048
+	select CMSIS_DSP_TABLES_CFFT_Q15_4096
+	select CMSIS_DSP_TABLES_RFFT_FAST_F64_32
+	select CMSIS_DSP_TABLES_RFFT_FAST_F64_64
+	select CMSIS_DSP_TABLES_RFFT_FAST_F64_128
+	select CMSIS_DSP_TABLES_RFFT_FAST_F64_256
+	select CMSIS_DSP_TABLES_RFFT_FAST_F64_512
+	select CMSIS_DSP_TABLES_RFFT_FAST_F64_1024
+	select CMSIS_DSP_TABLES_RFFT_FAST_F64_2048
+	select CMSIS_DSP_TABLES_RFFT_FAST_F64_4096
+	select CMSIS_DSP_TABLES_RFFT_FAST_F32_32
+	select CMSIS_DSP_TABLES_RFFT_FAST_F32_64
+	select CMSIS_DSP_TABLES_RFFT_FAST_F32_128
+	select CMSIS_DSP_TABLES_RFFT_FAST_F32_256
+	select CMSIS_DSP_TABLES_RFFT_FAST_F32_512
+	select CMSIS_DSP_TABLES_RFFT_FAST_F32_1024
+	select CMSIS_DSP_TABLES_RFFT_FAST_F32_2048
+	select CMSIS_DSP_TABLES_RFFT_FAST_F32_4096
+	select CMSIS_DSP_TABLES_RFFT_F64_128
+	select CMSIS_DSP_TABLES_RFFT_F64_512
+	select CMSIS_DSP_TABLES_RFFT_F64_2048
+	select CMSIS_DSP_TABLES_RFFT_F64_8192
+	select CMSIS_DSP_TABLES_RFFT_F32_128
+	select CMSIS_DSP_TABLES_RFFT_F32_512
+	select CMSIS_DSP_TABLES_RFFT_F32_2048
+	select CMSIS_DSP_TABLES_RFFT_F32_8192
+	select CMSIS_DSP_TABLES_RFFT_Q31_32
+	select CMSIS_DSP_TABLES_RFFT_Q31_64
+	select CMSIS_DSP_TABLES_RFFT_Q31_128
+	select CMSIS_DSP_TABLES_RFFT_Q31_256
+	select CMSIS_DSP_TABLES_RFFT_Q31_512
+	select CMSIS_DSP_TABLES_RFFT_Q31_1024
+	select CMSIS_DSP_TABLES_RFFT_Q31_2048
+	select CMSIS_DSP_TABLES_RFFT_Q31_4096
+	select CMSIS_DSP_TABLES_RFFT_Q31_8192
+	select CMSIS_DSP_TABLES_RFFT_Q15_32
+	select CMSIS_DSP_TABLES_RFFT_Q15_64
+	select CMSIS_DSP_TABLES_RFFT_Q15_128
+	select CMSIS_DSP_TABLES_RFFT_Q15_256
+	select CMSIS_DSP_TABLES_RFFT_Q15_512
+	select CMSIS_DSP_TABLES_RFFT_Q15_1024
+	select CMSIS_DSP_TABLES_RFFT_Q15_2048
+	select CMSIS_DSP_TABLES_RFFT_Q15_4096
+	select CMSIS_DSP_TABLES_RFFT_Q15_8192
+	select CMSIS_DSP_TABLES_DCT4_F32_128
+	select CMSIS_DSP_TABLES_DCT4_F32_512
+	select CMSIS_DSP_TABLES_DCT4_F32_2048
+	select CMSIS_DSP_TABLES_DCT4_F32_8192
+	select CMSIS_DSP_TABLES_DCT4_Q31_128
+	select CMSIS_DSP_TABLES_DCT4_Q31_512
+	select CMSIS_DSP_TABLES_DCT4_Q31_2048
+	select CMSIS_DSP_TABLES_DCT4_Q31_8192
+	select CMSIS_DSP_TABLES_DCT4_Q15_128
+	select CMSIS_DSP_TABLES_DCT4_Q15_512
+	select CMSIS_DSP_TABLES_DCT4_Q15_2048
+	select CMSIS_DSP_TABLES_DCT4_Q15_8192
+
+comment "Interpolation Tables"
+
+config CMSIS_DSP_TABLES_ARM_COS_F32
+	bool "cos f32"
+
+config CMSIS_DSP_TABLES_ARM_COS_Q31
+	bool "cos q31"
+
+config CMSIS_DSP_TABLES_ARM_COS_Q15
+	bool "cos q15"
+
+config CMSIS_DSP_TABLES_ARM_SIN_F32
+	bool "sin f32"
+
+config CMSIS_DSP_TABLES_ARM_SIN_Q31
+	bool "sin q31"
+
+config CMSIS_DSP_TABLES_ARM_SIN_Q15
+	bool "sin q15"
+
+config CMSIS_DSP_TABLES_ARM_SIN_COS_F32
+	bool "sin cos f32"
+
+config CMSIS_DSP_TABLES_ARM_SIN_COS_Q31
+	bool "sin cos q31"
+
+config CMSIS_DSP_TABLES_ARM_LMS_NORM_Q31
+	bool "lms norm q31"
+
+config CMSIS_DSP_TABLES_ARM_LMS_NORM_Q15
+	bool "lms norm q15"
+
+config CMSIS_DSP_TABLES_ARM_CMPLX_MAG_Q31
+	bool "cmplx mag q31"
+
+config CMSIS_DSP_TABLES_ARM_CMPLX_MAG_Q15
+	bool "cmplx mag q15"
+
+comment "Transformation Tables"
+
+config CMSIS_DSP_TABLES_CFFT_F64_16
+	bool "cfft f64 16"
+
+config CMSIS_DSP_TABLES_CFFT_F64_32
+	bool "cfft f64 32"
+
+config CMSIS_DSP_TABLES_CFFT_F64_64
+	bool "cfft f64 64"
+
+config CMSIS_DSP_TABLES_CFFT_F64_128
+	bool "cfft f64 128"
+
+config CMSIS_DSP_TABLES_CFFT_F64_256
+	bool "cfft f64 256"
+
+config CMSIS_DSP_TABLES_CFFT_F64_512
+	bool "cfft f64 512"
+
+config CMSIS_DSP_TABLES_CFFT_F64_1024
+	bool "cfft f64 1024"
+
+config CMSIS_DSP_TABLES_CFFT_F64_2048
+	bool "cfft f64 2048"
+
+config CMSIS_DSP_TABLES_CFFT_F64_4096
+	bool "cfft f64 4096"
+
+config CMSIS_DSP_TABLES_CFFT_F32_16
+	bool "cfft f32 16"
+
+config CMSIS_DSP_TABLES_CFFT_F32_32
+	bool "cfft f32 32"
+
+config CMSIS_DSP_TABLES_CFFT_F32_64
+	bool "cfft f32 64"
+
+config CMSIS_DSP_TABLES_CFFT_F32_128
+	bool "cfft f32 128"
+
+config CMSIS_DSP_TABLES_CFFT_F32_256
+	bool "cfft f32 256"
+
+config CMSIS_DSP_TABLES_CFFT_F32_512
+	bool "cfft f32 512"
+
+config CMSIS_DSP_TABLES_CFFT_F32_1024
+	bool "cfft f32 1024"
+
+config CMSIS_DSP_TABLES_CFFT_F32_2048
+	bool "cfft f32 2048"
+
+config CMSIS_DSP_TABLES_CFFT_F32_4096
+	bool "cfft f32 4096"
+
+config CMSIS_DSP_TABLES_CFFT_Q31_16
+	bool "cfft q31 16"
+
+config CMSIS_DSP_TABLES_CFFT_Q31_32
+	bool "cfft q31 32"
+
+config CMSIS_DSP_TABLES_CFFT_Q31_64
+	bool "cfft q31 64"
+
+config CMSIS_DSP_TABLES_CFFT_Q31_128
+	bool "cfft q31 128"
+
+config CMSIS_DSP_TABLES_CFFT_Q31_256
+	bool "cfft q31 256"
+
+config CMSIS_DSP_TABLES_CFFT_Q31_512
+	bool "cfft q31 512"
+
+config CMSIS_DSP_TABLES_CFFT_Q31_1024
+	bool "cfft q31 1024"
+
+config CMSIS_DSP_TABLES_CFFT_Q31_2048
+	bool "cfft q31 2048"
+
+config CMSIS_DSP_TABLES_CFFT_Q31_4096
+	bool "cfft q31 4096"
+
+config CMSIS_DSP_TABLES_CFFT_Q15_16
+	bool "cfft q15 16"
+
+config CMSIS_DSP_TABLES_CFFT_Q15_32
+	bool "cfft q15 32"
+
+config CMSIS_DSP_TABLES_CFFT_Q15_64
+	bool "cfft q15 64"
+
+config CMSIS_DSP_TABLES_CFFT_Q15_128
+	bool "cfft q15 128"
+
+config CMSIS_DSP_TABLES_CFFT_Q15_256
+	bool "cfft q15 256"
+
+config CMSIS_DSP_TABLES_CFFT_Q15_512
+	bool "cfft q15 512"
+
+config CMSIS_DSP_TABLES_CFFT_Q15_1024
+	bool "cfft q15 1024"
+
+config CMSIS_DSP_TABLES_CFFT_Q15_2048
+	bool "cfft q15 2048"
+
+config CMSIS_DSP_TABLES_CFFT_Q15_4096
+	bool "cfft q15 4096"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F64_32
+	bool "rfft fast f64 32"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F64_64
+	bool "rfft fast f64 64"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F64_128
+	bool "rfft fast f64 128"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F64_256
+	bool "rfft fast f64 256"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F64_512
+	bool "rfft fast f64 512"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F64_1024
+	bool "rfft fast f64 1024"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F64_2048
+	bool "rfft fast f64 2048"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F64_4096
+	bool "rfft fast f64 4096"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F32_32
+	bool "rfft fast f32 32"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F32_64
+	bool "rfft fast f32 64"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F32_128
+	bool "rfft fast f32 128"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F32_256
+	bool "rfft fast f32 256"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F32_512
+	bool "rfft fast f32 512"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F32_1024
+	bool "rfft fast f32 1024"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F32_2048
+	bool "rfft fast f32 2048"
+
+config CMSIS_DSP_TABLES_RFFT_FAST_F32_4096
+	bool "rfft fast f32 4096"
+
+config CMSIS_DSP_TABLES_RFFT_F64_128
+	bool "rfft f64 128"
+
+config CMSIS_DSP_TABLES_RFFT_F64_512
+	bool "rfft f64 512"
+
+config CMSIS_DSP_TABLES_RFFT_F64_2048
+	bool "rfft f64 2048"
+
+config CMSIS_DSP_TABLES_RFFT_F64_8192
+	bool "rfft f64 8192"
+
+config CMSIS_DSP_TABLES_RFFT_F32_128
+	bool "rfft f32 128"
+
+config CMSIS_DSP_TABLES_RFFT_F32_512
+	bool "rfft f32 512"
+
+config CMSIS_DSP_TABLES_RFFT_F32_2048
+	bool "rfft f32 2048"
+
+config CMSIS_DSP_TABLES_RFFT_F32_8192
+	bool "rfft f32 8192"
+
+config CMSIS_DSP_TABLES_RFFT_Q31_32
+	bool "rfft q31 32"
+
+config CMSIS_DSP_TABLES_RFFT_Q31_64
+	bool "rfft q31 64"
+
+config CMSIS_DSP_TABLES_RFFT_Q31_128
+	bool "rfft q31 128"
+
+config CMSIS_DSP_TABLES_RFFT_Q31_256
+	bool "rfft q31 256"
+
+config CMSIS_DSP_TABLES_RFFT_Q31_512
+	bool "rfft q31 512"
+
+config CMSIS_DSP_TABLES_RFFT_Q31_1024
+	bool "rfft q31 1024"
+
+config CMSIS_DSP_TABLES_RFFT_Q31_2048
+	bool "rfft q31 2048"
+
+config CMSIS_DSP_TABLES_RFFT_Q31_4096
+	bool "rfft q31 4096"
+
+config CMSIS_DSP_TABLES_RFFT_Q31_8192
+	bool "rfft q31 8192"
+
+config CMSIS_DSP_TABLES_RFFT_Q15_32
+	bool "rfft q15 32"
+
+config CMSIS_DSP_TABLES_RFFT_Q15_64
+	bool "rfft q15 64"
+
+config CMSIS_DSP_TABLES_RFFT_Q15_128
+	bool "rfft q15 128"
+
+config CMSIS_DSP_TABLES_RFFT_Q15_256
+	bool "rfft q15 256"
+
+config CMSIS_DSP_TABLES_RFFT_Q15_512
+	bool "rfft q15 512"
+
+config CMSIS_DSP_TABLES_RFFT_Q15_1024
+	bool "rfft q15 1024"
+
+config CMSIS_DSP_TABLES_RFFT_Q15_2048
+	bool "rfft q15 2048"
+
+config CMSIS_DSP_TABLES_RFFT_Q15_4096
+	bool "rfft q15 4096"
+
+config CMSIS_DSP_TABLES_RFFT_Q15_8192
+	bool "rfft q15 8192"
+
+config CMSIS_DSP_TABLES_DCT4_F32_128
+	bool "dct4 f32 128"
+
+config CMSIS_DSP_TABLES_DCT4_F32_512
+	bool "dct4 f32 512"
+
+config CMSIS_DSP_TABLES_DCT4_F32_2048
+	bool "dct4 f32 2048"
+
+config CMSIS_DSP_TABLES_DCT4_F32_8192
+	bool "dct4 f32 8192"
+
+config CMSIS_DSP_TABLES_DCT4_Q31_128
+	bool "dct4 q31 128"
+
+config CMSIS_DSP_TABLES_DCT4_Q31_512
+	bool "dct4 q31 512"
+
+config CMSIS_DSP_TABLES_DCT4_Q31_2048
+	bool "dct4 q31 2048"
+
+config CMSIS_DSP_TABLES_DCT4_Q31_8192
+	bool "dct4 q31 8192"
+
+config CMSIS_DSP_TABLES_DCT4_Q15_128
+	bool "dct4 q15 128"
+
+config CMSIS_DSP_TABLES_DCT4_Q15_512
+	bool "dct4 q15 512"
+
+config CMSIS_DSP_TABLES_DCT4_Q15_2048
+	bool "dct4 q15 2048"
+
+config CMSIS_DSP_TABLES_DCT4_Q15_8192
+	bool "dct4 q15 8192"
+
+endif # CMSIS_DSP_TABLES
+
+comment "Instruction Set"
+# NOTE: These configurations should eventually be derived from the arch ISA and
+#       FP support configurations.
+
+config CMSIS_DSP_NEON
+	bool "Neon Instruction Set"
+	default y
+	depends on CPU_CORTEX_A
+	help
+	  This option enables the NEON Advanced SIMD instruction set, which is
+	  available on most Cortex-A and some Cortex-R processors.
+
+# TODO: Activate Helium instruction set once Cortex-M55 support is in place.
+# config CMSIS_DSP_HELIUM
+#	bool "Helium Instruction Set"
+#	depends on CPU_CORTEX_M
+#	select CMSIS_DSP_MVEF
+#	select CMSIS_DSP_MVEI
+#	help
+#	  This option enables the Helium M-Profile Vector Extension (MVE).
+#
+#	  Note that selecting this option implies the support for both MVE
+#	  floating-point and integer instruction sets.
+
+# config CMSIS_DSP_MVEF
+#	bool "MVE-F Instructions"
+#	depends on CPU_CORTEX_M
+#	help
+#	  This option enables the ARMv8.1-M M-Profile Vector Extension (MVE)
+#	  floating-point instruction set.
+
+# config CMSIS_DSP_MVEI
+#	bool "MVE-I Instructions"
+#	depends on CPU_CORTEX_M
+#	help
+#	  This option enables the ARMv8.1-M M-Profile Vector Extension (MVE)
+#	  integer instruction set.
+
+comment "Features"
+
+config CMSIS_DSP_LOOPUNROLL
+	bool "Loop Unrolling"
+	help
+	  This option enables manual loop unrolling in the DSP functions.
+
+config CMSIS_DSP_ROUNDING
+	bool "Rounding"
+	help
+	  This option enables rounding on the support functions.
+
+config CMSIS_DSP_MATRIXCHECK
+	bool "Matrix Check"
+	help
+	  This option enables validation of the input and output sizes of
+	  matrices.
+
+config CMSIS_DSP_AUTOVECTORIZE
+	bool "Auto Vectorize"
+	help
+	  This option prefers autovectorizable code to one using C intrinsics
+	  in the DSP functions.

@@ -1,4 +1,4 @@
-.. _file_system:
+.. _file_system_api:
 
 File Systems
 ############
@@ -12,13 +12,15 @@ specific API or internal functions by introducing file system registration
 mechanisms.
 
 In Zephyr, any file system implementation or library can be plugged into or
-pulled out through a file system registration API.
+pulled out through a file system registration API.  Each file system
+implementation must have a globally unique integer identifier; use
+:c:macro:`FS_TYPE_EXTERNAL_BASE` to avoid clashes with in-tree identifiers.
 
 .. code-block:: c
 
-        int fs_register(enum fs_type type, struct fs_file_system_t *fs);
+        int fs_register(int type, const struct fs_file_system_t *fs);
 
-        int fs_unregister(enum fs_type type, struct fs_file_system_t *fs);
+        int fs_unregister(int type, const struct fs_file_system_t *fs);
 
 Zephyr RTOS supports multiple instances of a file system by making use of
 the mount point as the disk volume name, which is used by the file system library
@@ -42,10 +44,18 @@ where
 
 
 
-Sample
-******
+Samples
+*******
 
-A sample of how the file system can be used is supplied in ``samples/subsys/fs``.
+Samples for the VFS are mainly supplied in ``samples/subsys/fs``, although various examples of the
+VFS usage are provided as important functionalities in samples for different subsystems.
+Here is the list of samples worth looking at:
+
+- ``samples/subsys/fs/fat_fs`` is an example of FAT file system usage with SDHC media;
+- ``samples/subsys/shell/fs`` is an example of Shell fs subsystem, using internal flash partition
+	formatted to LittleFS;
+- ``samples/subsys/usb/mass/`` example of USB Mass Storage device that uses FAT FS driver with RAM
+	or SPI connected FLASH, or LittleFS in flash, depending on the sample configuration.
 
 API Reference
 *************

@@ -1,5 +1,5 @@
 identifier: stm32f769i_disco
-name: STM32F769IDISCOVERY
+name: ST STM32F769I Discovery
 type: mcu
 arch: arm
 toolchain:

@@ -9,15 +9,13 @@
 #include <init.h>
 #include <sys/util.h>
 
-#include <CO_driver.h>
-#include <CO_Emergency.h>
-#include <CO_SDO.h>
+#include <canbus/canopen.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(canopen_driver);
 
-K_THREAD_STACK_DEFINE(canopen_tx_workq_stack,
+K_KERNEL_STACK_DEFINE(canopen_tx_workq_stack,
 		      CONFIG_CANOPEN_TX_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q canopen_tx_workq;
@@ -65,7 +63,7 @@ inline void canopen_od_unlock(void)
 
 static void canopen_detach_all_rx_filters(CO_CANmodule_t *CANmodule)
 {
-	u16_t i;
+	uint16_t i;
 
 	if (!CANmodule || !CANmodule->rx_array || !CANmodule->configured) {
 		return;
@@ -90,13 +88,13 @@ static void canopen_rx_isr_callback(struct zcan_frame *msg, void *arg)
 		return;
 	}
 
-	rxMsg.ident = msg->std_id;
+	rxMsg.ident = msg->id;
 	rxMsg.DLC = msg->dlc;
 	memcpy(rxMsg.data, msg->data, msg->dlc);
 	buffer->pFunct(buffer->object, &rxMsg);
 }
 
-static void canopen_tx_isr_callback(u32_t error_flags, void *arg)
+static void canopen_tx_isr_callback(uint32_t error_flags, void *arg)
 {
 	CO_CANmodule_t *CANmodule = arg;
 
@@ -120,7 +118,7 @@ static void canopen_tx_retry(struct k_work *item)
 	struct zcan_frame msg;
 	CO_CANtx_t *buffer;
 	int err;
-	u16_t i;
+	uint16_t i;
 
 	CO_LOCK_CAN_SEND();
 
@@ -128,7 +126,7 @@ static void canopen_tx_retry(struct k_work *item)
 		buffer = &CANmodule->tx_array[i];
 		if (buffer->bufferFull) {
 			msg.id_type = CAN_STANDARD_IDENTIFIER;
-			msg.std_id = buffer->ident;
+			msg.id = buffer->ident;
 			msg.dlc = buffer->DLC;
 			msg.rtr = (buffer->rtr ? 1 : 0);
 			memcpy(msg.data, buffer->data, buffer->DLC);
@@ -165,11 +163,12 @@ void CO_CANsetNormalMode(CO_CANmodule_t *CANmodule)
 
 CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 				   void *CANdriverState,
-				   CO_CANrx_t rxArray[], u16_t rxSize,
-				   CO_CANtx_t txArray[], u16_t txSize,
-				   u16_t CANbitRate)
+				   CO_CANrx_t rxArray[], uint16_t rxSize,
+				   CO_CANtx_t txArray[], uint16_t txSize,
+				   uint16_t CANbitRate)
 {
-	u16_t i;
+	struct canopen_context *ctx = (struct canopen_context *)CANdriverState;
+	uint16_t i;
 	int err;
 
 	LOG_DBG("rxSize = %d, txSize = %d", rxSize, txSize);
@@ -193,7 +192,7 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 	canopen_detach_all_rx_filters(CANmodule);
 	canopen_tx_queue.CANmodule = CANmodule;
 
-	CANmodule->dev = CANdriverState;
+	CANmodule->dev = ctx->dev;
 	CANmodule->rx_array = rxArray;
 	CANmodule->rx_size = rxSize;
 	CANmodule->tx_array = txArray;
@@ -213,7 +212,13 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 		txArray[i].bufferFull = false;
 	}
 
-	err = can_configure(CANmodule->dev, CAN_NORMAL_MODE, KHZ(CANbitRate));
+	err = can_set_bitrate(CANmodule->dev, KHZ(CANbitRate), 0);
+	if (err) {
+		LOG_ERR("failed to configure CAN bitrate (err %d)", err);
+		return CO_ERROR_ILLEGAL_ARGUMENT;
+	}
+
+	err = can_set_mode(CANmodule->dev, CAN_NORMAL_MODE);
 	if (err) {
 		LOG_ERR("failed to configure CAN interface (err %d)", err);
 		return CO_ERROR_ILLEGAL_ARGUMENT;
@@ -240,13 +245,13 @@ void CO_CANmodule_disable(CO_CANmodule_t *CANmodule)
 	}
 }
 
-u16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg)
+uint16_t CO_CANrxMsg_readIdent(const CO_CANrxMsg_t *rxMsg)
 {
 	return rxMsg->ident;
 }
 
-CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, u16_t index,
-				u16_t ident, u16_t mask, bool_t rtr,
+CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
+				uint16_t ident, uint16_t mask, bool_t rtr,
 				void *object,
 				CO_CANrxBufferCallback_t pFunct)
 {
@@ -269,8 +274,8 @@ CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, u16_t index,
 	buffer->pFunct = pFunct;
 
 	filter.id_type = CAN_STANDARD_IDENTIFIER;
-	filter.std_id = ident;
-	filter.std_id_mask = mask;
+	filter.id = ident;
+	filter.id_mask = mask;
 	filter.rtr = (rtr ? 1 : 0);
 	filter.rtr_mask = 1;
 
@@ -291,8 +296,8 @@ CO_ReturnError_t CO_CANrxBufferInit(CO_CANmodule_t *CANmodule, u16_t index,
 	return CO_ERROR_NO;
 }
 
-CO_CANtx_t *CO_CANtxBufferInit(CO_CANmodule_t *CANmodule, u16_t index,
-			       u16_t ident, bool_t rtr, u8_t noOfBytes,
+CO_CANtx_t *CO_CANtxBufferInit(CO_CANmodule_t *CANmodule, uint16_t index,
+			       uint16_t ident, bool_t rtr, uint8_t noOfBytes,
 			       bool_t syncFlag)
 {
 	CO_CANtx_t *buffer;
@@ -340,7 +345,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
 	}
 
 	msg.id_type = CAN_STANDARD_IDENTIFIER;
-	msg.std_id = buffer->ident;
+	msg.id = buffer->ident;
 	msg.dlc = buffer->DLC;
 	msg.rtr = (buffer->rtr ? 1 : 0);
 	memcpy(msg.data, buffer->data, buffer->DLC);
@@ -365,7 +370,7 @@ void CO_CANclearPendingSyncPDOs(CO_CANmodule_t *CANmodule)
 {
 	bool_t tpdoDeleted = false;
 	CO_CANtx_t *buffer;
-	u16_t i;
+	uint16_t i;
 
 	if (!CANmodule) {
 		return;
@@ -394,8 +399,8 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 	CO_EM_t *em = (CO_EM_t *)CANmodule->em;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state state;
-	u8_t rx_overflows;
-	u32_t errors;
+	uint8_t rx_overflows;
+	uint32_t errors;
 
 	/*
 	 * TODO: Zephyr lacks an API for reading the rx mailbox
@@ -405,8 +410,8 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 
 	state = can_get_state(CANmodule->dev, &err_cnt);
 
-	errors = ((u32_t)err_cnt.tx_err_cnt << 16) |
-		 ((u32_t)err_cnt.rx_err_cnt << 8) |
+	errors = ((uint32_t)err_cnt.tx_err_cnt << 16) |
+		 ((uint32_t)err_cnt.rx_err_cnt << 8) |
 		 rx_overflows;
 
 	if (errors != CANmodule->errors) {
@@ -463,12 +468,12 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 	}
 }
 
-static int canopen_init(struct device *dev)
+static int canopen_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	k_work_q_start(&canopen_tx_workq, canopen_tx_workq_stack,
-		       K_THREAD_STACK_SIZEOF(canopen_tx_workq_stack),
+		       K_KERNEL_STACK_SIZEOF(canopen_tx_workq_stack),
 		       CONFIG_CANOPEN_TX_WORKQUEUE_PRIORITY);
 
 	k_work_init(&canopen_tx_queue.work, canopen_tx_retry);

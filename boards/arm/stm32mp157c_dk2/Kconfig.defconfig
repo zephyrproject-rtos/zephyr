@@ -8,26 +8,8 @@ if BOARD_STM32MP157C_DK2
 config BOARD
 	default "stm32mp157c_dk2"
 
-config UART_3
-	default y
-	depends on UART_CONSOLE
-
-config UART_7
-	default y
-	depends on SERIAL
-
-config I2C_5
-	default y
-	depends on I2C
-
-if SPI
-
 config SPI_STM32_INTERRUPT
 	default y
-
-config SPI_4
-	default y
-
-endif # SPI
+	depends on SPI
 
 endif # BOARD_STM32MP157_Dk2

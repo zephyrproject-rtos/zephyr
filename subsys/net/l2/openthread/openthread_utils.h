@@ -29,8 +29,9 @@ void rm_ipv6_maddr_from_zephyr(struct openthread_context *context);
 int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt);
 struct net_pkt *pkt_list_peek(struct openthread_context *context);
 void pkt_list_remove_last(struct openthread_context *context);
+void pkt_list_remove_first(struct openthread_context *context);
 
-inline int pkt_list_is_full(struct openthread_context *context)
+static inline int pkt_list_is_full(struct openthread_context *context)
 {
 	return context->pkt_list_full;
 }

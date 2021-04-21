@@ -17,17 +17,29 @@
 /* Matches LFS_NAME_MAX */
 #define MAX_PATH_LEN 255
 
+#define PARTITION_NODE DT_NODELABEL(lfs1)
+
+#if DT_NODE_EXISTS(PARTITION_NODE)
+FS_FSTAB_DECLARE_ENTRY(PARTITION_NODE);
+#else /* PARTITION_NODE */
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 static struct fs_mount_t lfs_storage_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &storage,
-	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
+	.storage_dev = (void *)FLASH_AREA_ID(storage),
 	.mnt_point = "/lfs",
 };
+#endif /* PARTITION_NODE */
 
 void main(void)
 {
-	struct fs_mount_t *mp = &lfs_storage_mnt;
+	struct fs_mount_t *mp =
+#if DT_NODE_EXISTS(PARTITION_NODE)
+		&FS_FSTAB_ENTRY(PARTITION_NODE)
+#else
+		&lfs_storage_mnt
+#endif
+		;
 	unsigned int id = (uintptr_t)mp->storage_dev;
 	char fname[MAX_PATH_LEN];
 	struct fs_statvfs sbuf;
@@ -52,8 +64,9 @@ void main(void)
 		printk("Erasing flash area ... ");
 		rc = flash_area_erase(pfa, 0, pfa->fa_size);
 		printk("%d\n", rc);
-		flash_area_close(pfa);
 	}
+
+	flash_area_close(pfa);
 
 	rc = fs_mount(mp);
 	if (rc < 0) {
@@ -86,13 +99,15 @@ void main(void)
 
 	struct fs_file_t file;
 
-	rc = fs_open(&file, fname);
+	fs_file_t_init(&file);
+
+	rc = fs_open(&file, fname, FS_O_CREATE | FS_O_RDWR);
 	if (rc < 0) {
 		printk("FAIL: open %s: %d\n", fname, rc);
 		goto out;
 	}
 
-	u32_t boot_count = 0;
+	uint32_t boot_count = 0;
 
 	if (rc >= 0) {
 		rc = fs_read(&file, &boot_count, sizeof(boot_count));
@@ -110,7 +125,9 @@ void main(void)
 	rc = fs_close(&file);
 	printk("%s close: %d\n", fname, rc);
 
-	struct fs_dir_t dir = { 0 };
+	struct fs_dir_t dir;
+
+	fs_dir_t_init(&dir);
 
 	rc = fs_opendir(&dir, mp->mnt_point);
 	printk("%s opendir: %d\n", mp->mnt_point, rc);

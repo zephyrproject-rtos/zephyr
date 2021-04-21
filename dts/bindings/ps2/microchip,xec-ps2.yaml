@@ -13,3 +13,13 @@ properties:
 
     interrupts:
       required: true
+
+    girq:
+      type: int
+      required: true
+      description: GIRQ for this device
+
+    girq-bit:
+      type: int
+      required: true
+      description: Bit position in GIRQ for this device

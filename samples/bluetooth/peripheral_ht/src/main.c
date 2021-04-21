@@ -23,34 +23,26 @@
 
 #include "hts.h"
 
-struct bt_conn *default_conn;
-
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-		      0x09, 0x18, /* Health Thermometer Service */
-		      0x0a, 0x18, /* Device Information Service */
-		      0x0f, 0x18), /* Battery Service */
+		      BT_UUID_16_ENCODE(BT_UUID_HTS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_DIS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL)),
 };
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
-		default_conn = bt_conn_ref(conn);
 		printk("Connected\n");
 	}
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason 0x%02x)\n", reason);
-
-	if (default_conn) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
-	}
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -90,7 +82,7 @@ static struct bt_conn_auth_cb auth_cb_display = {
 
 static void bas_notify(void)
 {
-	u8_t battery_level = bt_gatt_bas_get_battery_level();
+	uint8_t battery_level = bt_bas_get_battery_level();
 
 	battery_level--;
 
@@ -98,7 +90,7 @@ static void bas_notify(void)
 		battery_level = 100U;
 	}
 
-	bt_gatt_bas_set_battery_level(battery_level);
+	bt_bas_set_battery_level(battery_level);
 }
 
 void main(void)
@@ -120,7 +112,7 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(MSEC_PER_SEC);
+		k_sleep(K_SECONDS(1));
 
 		/* Temperature measurements simulation */
 		hts_indicate();

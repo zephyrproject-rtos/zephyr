@@ -31,7 +31,7 @@
  */
 static ALWAYS_INLINE void clock_init(void)
 {
-	u32_t reg_val;
+	uint32_t reg_val;
 
 #ifdef CONFIG_SOC_ATMEL_SAM4E_EXT_SLCK
 	/* Switch slow clock to the external 32 KHz crystal oscillator. */
@@ -189,9 +189,9 @@ static ALWAYS_INLINE void clock_init(void)
  *
  * @return 0
  */
-static int atmel_sam4e_init(struct device *arg)
+static int atmel_sam4e_init(const struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 

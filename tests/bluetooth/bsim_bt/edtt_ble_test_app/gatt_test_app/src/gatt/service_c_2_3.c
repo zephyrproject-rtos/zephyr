@@ -33,32 +33,32 @@
  */
 #define BT_UUID_VALUE_V2                BT_UUID_DECLARE_16(0xb002)
 
-static u8_t   value_v10_value = 0x0A;
-static u8_t   value_v2_value[] = {
+static uint8_t   value_v10_value = 0x0A;
+static uint8_t   value_v2_value[] = {
 	      '1', '1', '1', '1', '1', '2', '2', '2', '2', '2', '3', '3', '3',
 	      '3', '3', '4', '4', '4', '4', '4', '5', '\0'
 };
-static u8_t   value_v2_1_value[] = {
+static uint8_t   value_v2_1_value[] = {
 	      '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '4', '4', '4',
 	      '4', '4', '5', '5', '5', '5', '5', '6', '6', '\0'
 };
-static u8_t   value_v2_2_value[] = {
+static uint8_t   value_v2_2_value[] = {
 	      '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '5', '5', '5',
 	      '5', '5', '6', '6', '6', '6', '6', '7', '7', '7', '\0'
 };
-static u8_t   value_v2_3_value[] = {
+static uint8_t   value_v2_3_value[] = {
 	      '1', '1', '1', '1', '1', '2', '2', '2', '2', '2', '3', '3', '3',
 	      '3', '3', '4', '4', '4', '4', '4', '5', '5', '5', '5', '5', '6',
 	      '6', '6', '6', '6', '7', '7', '7', '7', '7', '8', '8', '8', '8',
 	      '8', '9', '9', '9', '\0'
 };
-static u8_t   value_v2_4_value[] = {
+static uint8_t   value_v2_4_value[] = {
 	      '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '4', '4', '4',
 	      '4', '4', '5', '5', '5', '5', '5', '6', '6', '6', '6', '6', '7',
 	      '7', '7', '7', '7', '8', '8', '8', '8', '8', '9', '9', '9', '9',
 	      '9', '0', '0', '0', '0', '\0'
 };
-static u8_t   value_v2_5_value[] = {
+static uint8_t   value_v2_5_value[] = {
 	      '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '5', '5', '5',
 	      '5', '5', '6', '6', '6', '6', '6', '7', '7', '7', '7', '7', '8',
 	      '8', '8', '8', '8', '9', '9', '9', '9', '9', '0', '0', '0', '0',
@@ -79,9 +79,9 @@ static u8_t   value_v2_5_value[] = {
  */
 static ssize_t read_value_v10(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
-			      u16_t len, u16_t offset)
+			      uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v10_value));
@@ -101,7 +101,7 @@ static ssize_t read_value_v10(struct bt_conn *conn,
  */
 static ssize_t read_str_value(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, void *buf,
-			      u16_t len, u16_t offset)
+			      uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -124,7 +124,7 @@ static ssize_t read_str_value(struct bt_conn *conn,
  */
 static ssize_t write_value_v2(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
 	char *value = attr->user_data;
 
@@ -153,8 +153,8 @@ static ssize_t write_value_v2(struct bt_conn *conn,
  */
 static ssize_t write_value_v2_1(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				const void *buf, u16_t len, u16_t offset,
-				u8_t flags)
+				const void *buf, uint16_t len, uint16_t offset,
+				uint8_t flags)
 {
 	char *value = attr->user_data;
 
@@ -183,8 +183,8 @@ static ssize_t write_value_v2_1(struct bt_conn *conn,
  */
 static ssize_t write_value_v2_2(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				const void *buf, u16_t len, u16_t offset,
-				u8_t flags)
+				const void *buf, uint16_t len, uint16_t offset,
+				uint8_t flags)
 {
 	char *value = attr->user_data;
 
@@ -213,8 +213,8 @@ static ssize_t write_value_v2_2(struct bt_conn *conn,
  */
 static ssize_t write_value_v2_3(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				const void *buf, u16_t len, u16_t offset,
-				u8_t flags)
+				const void *buf, uint16_t len, uint16_t offset,
+				uint8_t flags)
 {
 	char *value = attr->user_data;
 
@@ -243,8 +243,8 @@ static ssize_t write_value_v2_3(struct bt_conn *conn,
  */
 static ssize_t write_value_v2_4(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				const void *buf, u16_t len, u16_t offset,
-				u8_t flags)
+				const void *buf, uint16_t len, uint16_t offset,
+				uint8_t flags)
 {
 	char *value = attr->user_data;
 
@@ -273,8 +273,8 @@ static ssize_t write_value_v2_4(struct bt_conn *conn,
  */
 static ssize_t write_value_v2_5(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				const void *buf, u16_t len, u16_t offset,
-				u8_t flags)
+				const void *buf, uint16_t len, uint16_t offset,
+				uint8_t flags)
 {
 	char *value = attr->user_data;
 

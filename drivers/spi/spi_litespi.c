@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT litex_spi
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_litespi);
@@ -11,16 +13,16 @@ LOG_MODULE_REGISTER(spi_litespi);
 #include <stdbool.h>
 
 /* Helper Functions */
-static int spi_config(const struct spi_config *config, u16_t *control)
+static int spi_config(const struct spi_config *config, uint16_t *control)
 {
-	u8_t cs = 0x00;
+	uint8_t cs = 0x00;
 
 	if (config->slave != 0) {
 		if (config->slave >= SPI_MAX_CS_SIZE) {
 			LOG_ERR("More slaves than supported");
 			return -ENOTSUP;
 		}
-		cs = (u8_t)(config->slave);
+		cs = (uint8_t)(config->slave);
 	}
 
 	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
@@ -63,7 +65,7 @@ static int spi_config(const struct spi_config *config, u16_t *control)
 		litex_write8(SPI_ENABLE, SPI_LOOPBACK_REG);
 	}
 	/* Set word size */
-	*control = (u16_t) (SPI_WORD_SIZE_GET(config->operation)
+	*control = (uint16_t) (SPI_WORD_SIZE_GET(config->operation)
 			<< POSITION_WORD_SIZE);
 	/* Write configurations */
 	litex_write8(cs, SPI_CS_REG);
@@ -72,7 +74,8 @@ static int spi_config(const struct spi_config *config, u16_t *control)
 	return 0;
 }
 
-static void spi_litespi_send(struct device *dev, u8_t frame, u16_t control)
+static void spi_litespi_send(const struct device *dev, uint8_t frame,
+		             uint16_t control)
 {
 	/* Write frame to register */
 	litex_write8(frame, SPI_MOSI_DATA_REG);
@@ -83,23 +86,24 @@ static void spi_litespi_send(struct device *dev, u8_t frame, u16_t control)
 		;
 }
 
-static u8_t spi_litespi_recv(void)
+static uint8_t spi_litespi_recv(void)
 {
     /* Return data inside MISO register */
 	return litex_read8(SPI_MISO_DATA_REG);
 }
 
-static void spi_litespi_xfer(struct device *dev,
-		const struct spi_config *config, u16_t control)
+static void spi_litespi_xfer(const struct device *dev,
+			     const struct spi_config *config,
+			     uint16_t control)
 {
 	struct spi_context *ctx = &SPI_DATA(dev)->ctx;
-	u32_t send_len = spi_context_longest_current_buf(ctx);
-	u8_t read_data;
+	uint32_t send_len = spi_context_longest_current_buf(ctx);
+	uint8_t read_data;
 
-	for (u32_t i = 0; i < send_len; i++) {
+	for (uint32_t i = 0; i < send_len; i++) {
 		/* Send a frame */
 		if (i < ctx->tx_len) {
-			spi_litespi_send(dev, (u8_t) (ctx->tx_buf)[i],
+			spi_litespi_send(dev, (uint8_t) (ctx->tx_buf)[i],
 					control);
 		} else {
 			/* Send dummy bytes */
@@ -116,17 +120,17 @@ static void spi_litespi_xfer(struct device *dev,
 
 /* API Functions */
 
-static int spi_litespi_init(struct device *dev)
+static int spi_litespi_init(const struct device *dev)
 {
 	return 0;
 }
 
-static int spi_litespi_transceive(struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs)
+static int spi_litespi_transceive(const struct device *dev,
+				  const struct spi_config *config,
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs)
 {
-	u16_t control = 0;
+	uint16_t control = 0;
 
 	spi_config(config, &control);
 	spi_context_buffers_setup(&SPI_DATA(dev)->ctx, tx_bufs, rx_bufs, 1);
@@ -135,18 +139,18 @@ static int spi_litespi_transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_litespi_transceive_async(struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs,
-			  struct k_poll_signal *async)
+static int spi_litespi_transceive_async(const struct device *dev,
+					const struct spi_config *config,
+					const struct spi_buf_set *tx_bufs,
+					const struct spi_buf_set *rx_bufs,
+					struct k_poll_signal *async)
 {
 	return -ENOTSUP;
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_litespi_release(struct device *dev,
-		const struct spi_config *config)
+static int spi_litespi_release(const struct device *dev,
+			       const struct spi_config *config)
 {
 	if (!(litex_read8(SPI_STATUS_REG))) {
 		return -EBUSY;
@@ -169,19 +173,15 @@ static struct spi_driver_api spi_litespi_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_litespi_data_##n, ctx), \
 	}; \
 	static struct spi_litespi_cfg spi_litespi_cfg_##n = { \
-		.base = DT_INST_##n##_LITEX_SPI_CONTROL_BASE_ADDRESS, \
+		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \
 	}; \
-	DEVICE_AND_API_INIT(spi_##n, \
-			DT_INST_##n##_LITEX_SPI_LABEL, \
+	DEVICE_DT_INST_DEFINE(n, \
 			spi_litespi_init, \
+			device_pm_control_nop, \
 			&spi_litespi_data_##n, \
 			&spi_litespi_cfg_##n, \
 			POST_KERNEL, \
 			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_litespi_api)
+			&spi_litespi_api);
 
-#ifdef DT_INST_0_LITEX_SPI_LABEL
-
-SPI_INIT(0);
-
-#endif /* DT_INST_0_LITEX_SPI_LABEL */
+DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

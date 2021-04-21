@@ -1,0 +1,9 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_NRF_USES_TEMP_SENSOR
+	bool "Internal"
+	help
+	  Used internally to enable mocking of temperature sensor
+
+source "Kconfig.zephyr"

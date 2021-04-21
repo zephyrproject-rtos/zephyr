@@ -1,0 +1,25 @@
+description: LPC11U6X UART
+
+compatible: "nxp,lpc11u6x-uart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    clocks:
+      required: true
+
+    pinmuxs:
+      type: phandle-array
+      required: true
+      description: RX and TX pinmux
+
+    pinmux-names:
+      type: string-array
+      required: true
+      description: UART pins names

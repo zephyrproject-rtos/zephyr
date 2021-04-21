@@ -14,51 +14,49 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(BMI160, CONFIG_SENSOR_LOG_LEVEL);
 
-static void bmi160_handle_anymotion(struct device *dev)
+static void bmi160_handle_anymotion(const struct device *dev)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_data *data = to_data(dev);
 	struct sensor_trigger anym_trigger = {
 		.type = SENSOR_TRIG_DELTA,
 		.chan = SENSOR_CHAN_ACCEL_XYZ,
 	};
 
-	if (bmi160->handler_anymotion) {
-		bmi160->handler_anymotion(dev, &anym_trigger);
+	if (data->handler_anymotion) {
+		data->handler_anymotion(dev, &anym_trigger);
 	}
 }
 
-static void bmi160_handle_drdy(struct device *dev, u8_t status)
+static void bmi160_handle_drdy(const struct device *dev, uint8_t status)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_data *data = to_data(dev);
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-	if (bmi160->handler_drdy_acc && (status & BMI160_STATUS_ACC_DRDY)) {
+	if (data->handler_drdy_acc && (status & BMI160_STATUS_ACC_DRDY)) {
 		drdy_trigger.chan = SENSOR_CHAN_ACCEL_XYZ;
-		bmi160->handler_drdy_acc(dev, &drdy_trigger);
+		data->handler_drdy_acc(dev, &drdy_trigger);
 	}
 #endif
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-	if (bmi160->handler_drdy_gyr && (status & BMI160_STATUS_GYR_DRDY)) {
+	if (data->handler_drdy_gyr && (status & BMI160_STATUS_GYR_DRDY)) {
 		drdy_trigger.chan = SENSOR_CHAN_GYRO_XYZ;
-		bmi160->handler_drdy_gyr(dev, &drdy_trigger);
+		data->handler_drdy_gyr(dev, &drdy_trigger);
 	}
 #endif
 }
 
-static void bmi160_handle_interrupts(void *arg)
+static void bmi160_handle_interrupts(const struct device *dev)
 {
-	struct device *dev = (struct device *)arg;
-
 	union {
-		u8_t raw[6];
+		uint8_t raw[6];
 		struct {
-			u8_t dummy; /* spi related dummy byte */
-			u8_t status;
-			u8_t int_status[4];
+			uint8_t dummy; /* spi related dummy byte */
+			uint8_t status;
+			uint8_t int_status[4];
 		};
 	} buf;
 
@@ -80,19 +78,14 @@ static void bmi160_handle_interrupts(void *arg)
 }
 
 #ifdef CONFIG_BMI160_TRIGGER_OWN_THREAD
-static K_THREAD_STACK_DEFINE(bmi160_thread_stack, CONFIG_BMI160_THREAD_STACK_SIZE);
+static K_KERNEL_STACK_DEFINE(bmi160_thread_stack, CONFIG_BMI160_THREAD_STACK_SIZE);
 static struct k_thread bmi160_thread;
 
-static void bmi160_thread_main(void *arg1, void *unused1, void *unused2)
+static void bmi160_thread_main(struct bmi160_data *data)
 {
-	ARG_UNUSED(unused1);
-	ARG_UNUSED(unused2);
-	struct device *dev = (struct device *)arg1;
-	struct bmi160_device_data *bmi160 = dev->driver_data;
-
 	while (1) {
-		k_sem_take(&bmi160->sem, K_FOREVER);
-		bmi160_handle_interrupts(dev);
+		k_sem_take(&data->sem, K_FOREVER);
+		bmi160_handle_interrupts(data->dev);
 	}
 }
 #endif
@@ -100,54 +93,53 @@ static void bmi160_thread_main(void *arg1, void *unused1, void *unused2)
 #ifdef CONFIG_BMI160_TRIGGER_GLOBAL_THREAD
 static void bmi160_work_handler(struct k_work *work)
 {
-	struct bmi160_device_data *bmi160 =
-		CONTAINER_OF(work, struct bmi160_device_data, work);
+	struct bmi160_data *data = CONTAINER_OF(work, struct bmi160_data, work);
 
-	bmi160_handle_interrupts(bmi160->dev);
+	bmi160_handle_interrupts(data->dev);
 }
 #endif
 
-extern struct bmi160_device_data bmi160_data;
+extern struct bmi160_data bmi160_data;
 
-static void bmi160_gpio_callback(struct device *port,
-				 struct gpio_callback *cb, u32_t pin)
+static void bmi160_gpio_callback(const struct device *port,
+				 struct gpio_callback *cb, uint32_t pin)
 {
-	struct bmi160_device_data *bmi160 =
-		CONTAINER_OF(cb, struct bmi160_device_data, gpio_cb);
+	struct bmi160_data *data =
+		CONTAINER_OF(cb, struct bmi160_data, gpio_cb);
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pin);
 
 #if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
-	k_sem_give(&bmi160->sem);
+	k_sem_give(&data->sem);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
-	k_work_submit(&bmi160->work);
+	k_work_submit(&data->work);
 #endif
 }
 
-static int bmi160_trigger_drdy_set(struct device *dev,
+static int bmi160_trigger_drdy_set(const struct device *dev,
 				   enum sensor_channel chan,
 				   sensor_trigger_handler_t handler)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
-	u8_t drdy_en = 0U;
+	struct bmi160_data *data = to_data(dev);
+	uint8_t drdy_en = 0U;
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 	if (chan == SENSOR_CHAN_ACCEL_XYZ) {
-		bmi160->handler_drdy_acc = handler;
+		data->handler_drdy_acc = handler;
 	}
 
-	if (bmi160->handler_drdy_acc) {
+	if (data->handler_drdy_acc) {
 		drdy_en = BMI160_INT_DRDY_EN;
 	}
 #endif
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 	if (chan == SENSOR_CHAN_GYRO_XYZ) {
-		bmi160->handler_drdy_gyr = handler;
+		data->handler_drdy_gyr = handler;
 	}
 
-	if (bmi160->handler_drdy_gyr) {
+	if (data->handler_drdy_gyr) {
 		drdy_en = BMI160_INT_DRDY_EN;
 	}
 #endif
@@ -161,13 +153,13 @@ static int bmi160_trigger_drdy_set(struct device *dev,
 }
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
-static int bmi160_trigger_anym_set(struct device *dev,
+static int bmi160_trigger_anym_set(const struct device *dev,
 				   sensor_trigger_handler_t handler)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
-	u8_t anym_en = 0U;
+	struct bmi160_data *data = to_data(dev);
+	uint8_t anym_en = 0U;
 
-	bmi160->handler_anymotion = handler;
+	data->handler_anymotion = handler;
 
 	if (handler) {
 		anym_en = BMI160_INT_ANYM_X_EN |
@@ -183,7 +175,7 @@ static int bmi160_trigger_anym_set(struct device *dev,
 	return 0;
 }
 
-static int bmi160_trigger_set_acc(struct device *dev,
+static int bmi160_trigger_set_acc(const struct device *dev,
 				  const struct sensor_trigger *trig,
 				  sensor_trigger_handler_t handler)
 {
@@ -196,11 +188,12 @@ static int bmi160_trigger_set_acc(struct device *dev,
 	return -ENOTSUP;
 }
 
-int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
+int bmi160_acc_slope_config(const struct device *dev,
+			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
-	u8_t acc_range_g, reg_val;
-	u32_t slope_th_ums2;
+	uint8_t acc_range_g, reg_val;
+	uint32_t slope_th_ums2;
 
 	if (attr == SENSOR_ATTR_SLOPE_TH) {
 		if (bmi160_byte_read(dev, BMI160_REG_ACC_RANGE, &reg_val) < 0) {
@@ -241,7 +234,7 @@ int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 #endif
 
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
-static int bmi160_trigger_set_gyr(struct device *dev,
+static int bmi160_trigger_set_gyr(const struct device *dev,
 				  const struct sensor_trigger *trig,
 				  sensor_trigger_handler_t handler)
 {
@@ -253,7 +246,7 @@ static int bmi160_trigger_set_gyr(struct device *dev,
 }
 #endif
 
-int bmi160_trigger_set(struct device *dev,
+int bmi160_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
@@ -270,28 +263,30 @@ int bmi160_trigger_set(struct device *dev,
 	return -ENOTSUP;
 }
 
-int bmi160_trigger_mode_init(struct device *dev)
+int bmi160_trigger_mode_init(const struct device *dev)
 {
-	struct bmi160_device_data *bmi160 = dev->driver_data;
+	struct bmi160_data *data = to_data(dev);
+	const struct bmi160_cfg *cfg = to_config(dev);
 
-	const struct bmi160_device_config *cfg = dev->config->config_info;
-
-	bmi160->gpio = device_get_binding((char *)cfg->gpio_port);
-	if (!bmi160->gpio) {
+	data->gpio = device_get_binding((char *)cfg->gpio_port);
+	if (!data->gpio) {
 		LOG_DBG("Gpio controller %s not found.", cfg->gpio_port);
 		return -EINVAL;
 	}
 
+	data->dev = dev;
+
 #if defined(CONFIG_BMI160_TRIGGER_OWN_THREAD)
-	k_sem_init(&bmi160->sem, 0, UINT_MAX);
+	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&bmi160_thread, bmi160_thread_stack,
 			CONFIG_BMI160_THREAD_STACK_SIZE,
-			bmi160_thread_main, dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY), 0, K_NO_WAIT);
+			(k_thread_entry_t)bmi160_thread_main,
+			data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BMI160_THREAD_PRIORITY),
+			 0, K_NO_WAIT);
 #elif defined(CONFIG_BMI160_TRIGGER_GLOBAL_THREAD)
-	bmi160->work.handler = bmi160_work_handler;
-	bmi160->dev = dev;
+	data->work.handler = bmi160_work_handler;
 #endif
 
 	/* map all interrupts to INT1 pin */
@@ -300,15 +295,15 @@ int bmi160_trigger_mode_init(struct device *dev)
 		return -EIO;
 	}
 
-	gpio_pin_configure(bmi160->gpio, cfg->int_pin,
+	gpio_pin_configure(data->gpio, cfg->int_pin,
 			   GPIO_INPUT | cfg->int_flags);
 
-	gpio_init_callback(&bmi160->gpio_cb,
+	gpio_init_callback(&data->gpio_cb,
 			   bmi160_gpio_callback,
 			   BIT(cfg->int_pin));
 
-	gpio_add_callback(bmi160->gpio, &bmi160->gpio_cb);
-	gpio_pin_interrupt_configure(bmi160->gpio, cfg->int_pin,
+	gpio_add_callback(data->gpio, &data->gpio_cb);
+	gpio_pin_interrupt_configure(data->gpio, cfg->int_pin,
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return bmi160_byte_write(dev, BMI160_REG_INT_OUT_CTRL,

@@ -27,7 +27,7 @@ int usleep(useconds_t useconds)
 	if (useconds < USEC_PER_MSEC) {
 		k_busy_wait(useconds);
 	} else {
-		k_sleep(useconds / USEC_PER_MSEC);
+		k_msleep(useconds / USEC_PER_MSEC);
 	}
 
 	return 0;

@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2019, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arc_hsdk.dtsi>
+
+/ {
+
+	aliases {
+		uart-0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &ddr0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&gpio0 {
+	status = "okay";
+	interrupts = <56 1>;
+};
+
+&spi0 {
+	status = "okay";
+	clock-frequency = <33333333>;
+};
+
+&spi1 {
+	status = "okay";
+	clock-frequency = <33333333>;
+};
+
+&spi2 {
+	status = "okay";
+	clock-frequency = <33333333>;
+
+	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+	ili9340@0 {
+		compatible = "ilitek,ili9340";
+		cmd-data-gpios = <&gpio0 21 0>;
+		reg = <0>;
+		spi-max-frequency = <12000000>;
+		label = "DISPLAY";
+		pwctrl1 = [1b 00];
+		vmctrl1 = [3f 3c];
+		vmctrl2 = [b7];
+		pgamctrl = [0f 2a 28 08 0e 08 54 a9 43 0a 0f 00 00 00 00];
+		ngamctrl = [00 15 17 07 11 06 2b 56 3c 05 10 0f 3f 3f 0f];
+	};
+};

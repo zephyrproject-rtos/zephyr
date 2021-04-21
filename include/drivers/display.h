@@ -63,6 +63,10 @@ enum display_screen_info {
 	 * Screen has two alternating ram buffers
 	 */
 	SCREEN_INFO_DOUBLE_BUFFER	= BIT(3),
+	/**
+	 * Screen has x alignment constrained to width.
+	 */
+	SCREEN_INFO_X_ALIGNMENT_WIDTH	= BIT(4),
 };
 
 /**
@@ -81,16 +85,16 @@ enum display_orientation {
  * @struct display_capabilities
  * @brief Structure holding display capabilities
  *
- * @var u16_t display_capabilities::x_resolution
+ * @var uint16_t display_capabilities::x_resolution
  * Display resolution in the X direction
  *
- * @var u16_t display_capabilities::y_resolution
+ * @var uint16_t display_capabilities::y_resolution
  * Display resolution in the Y direction
  *
- * @var u32_t display_capabilities::supported_pixel_formats
+ * @var uint32_t display_capabilities::supported_pixel_formats
  * Bitwise or of pixel formats supported by the display
  *
- * @var u32_t display_capabilities::screen_info
+ * @var uint32_t display_capabilities::screen_info
  * Information about display panel
  *
  * @var enum display_pixel_format display_capabilities::current_pixel_format
@@ -98,13 +102,12 @@ enum display_orientation {
  *
  * @var enum display_orientation display_capabilities::current_orientation
  * Current display orientation
- *
  */
 struct display_capabilities {
-	u16_t x_resolution;
-	u16_t y_resolution;
-	u32_t supported_pixel_formats;
-	u32_t screen_info;
+	uint16_t x_resolution;
+	uint16_t y_resolution;
+	uint32_t supported_pixel_formats;
+	uint32_t screen_info;
 	enum display_pixel_format current_pixel_format;
 	enum display_orientation current_orientation;
 };
@@ -113,24 +116,24 @@ struct display_capabilities {
  * @struct display_buffer_descriptor
  * @brief Structure to describe display data buffer layout
  *
- * @var u32_t display_buffer_descriptor::buf_size
+ * @var uint32_t display_buffer_descriptor::buf_size
  * Data buffer size in bytes
  *
- * @var u16_t display_buffer_descriptor::width
+ * @var uint16_t display_buffer_descriptor::width
  * Data buffer row width in pixels
  *
- * @var u16_t display_buffer_descriptor::height
+ * @var uint16_t display_buffer_descriptor::height
  * Data buffer column height in pixels
  *
- * @var u16_t display_buffer_descriptor::pitch
+ * @var uint16_t display_buffer_descriptor::pitch
  * Number of pixels between consecutive rows in the data buffer
  *
  */
 struct display_buffer_descriptor {
-	u32_t buf_size;
-	u16_t width;
-	u16_t height;
-	u16_t pitch;
+	uint32_t buf_size;
+	uint16_t width;
+	uint16_t height;
+	uint16_t pitch;
 };
 
 /**
@@ -152,8 +155,8 @@ typedef int (*display_blanking_off_api)(const struct device *dev);
  * @brief Callback API for writing data to the display
  * See display_write() for argument description
  */
-typedef int (*display_write_api)(const struct device *dev, const u16_t x,
-				 const u16_t y,
+typedef int (*display_write_api)(const struct device *dev, const uint16_t x,
+				 const uint16_t y,
 				 const struct display_buffer_descriptor *desc,
 				 const void *buf);
 
@@ -162,8 +165,8 @@ typedef int (*display_write_api)(const struct device *dev, const u16_t x,
  * @brief Callback API for reading data from the display
  * See display_read() for argument description
  */
-typedef int (*display_read_api)(const struct device *dev, const u16_t x,
-				const u16_t y,
+typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
+				const uint16_t y,
 				const struct display_buffer_descriptor *desc,
 				void *buf);
 
@@ -180,7 +183,7 @@ typedef void *(*display_get_framebuffer_api)(const struct device *dev);
  * See display_set_brightness() for argument description
  */
 typedef int (*display_set_brightness_api)(const struct device *dev,
-					  const u8_t brightness);
+					  const uint8_t brightness);
 
 /**
  * @typedef display_set_contrast_api
@@ -188,7 +191,7 @@ typedef int (*display_set_brightness_api)(const struct device *dev,
  * See display_set_contrast() for argument description
  */
 typedef int (*display_set_contrast_api)(const struct device *dev,
-					const u8_t contrast);
+					const uint8_t contrast);
 
 /**
  * @typedef display_get_capabilities_api
@@ -245,13 +248,13 @@ struct display_driver_api {
  *
  * @retval 0 on success else negative errno code.
  */
-static inline int display_write(const struct device *dev, const u16_t x,
-				const u16_t y,
+static inline int display_write(const struct device *dev, const uint16_t x,
+				const uint16_t y,
 				const struct display_buffer_descriptor *desc,
 				const void *buf)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	return api->write(dev, x, y, desc, buf);
 }
@@ -267,13 +270,13 @@ static inline int display_write(const struct device *dev, const u16_t x,
  *
  * @retval 0 on success else negative errno code.
  */
-static inline int display_read(const struct device *dev, const u16_t x,
-			       const u16_t y,
+static inline int display_read(const struct device *dev, const uint16_t x,
+			       const uint16_t y,
 			       const struct display_buffer_descriptor *desc,
 			       void *buf)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	return api->read(dev, x, y, desc, buf);
 }
@@ -290,7 +293,7 @@ static inline int display_read(const struct device *dev, const u16_t x,
 static inline void *display_get_framebuffer(const struct device *dev)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	return api->get_framebuffer(dev);
 }
@@ -316,7 +319,7 @@ static inline void *display_get_framebuffer(const struct device *dev)
 static inline int display_blanking_on(const struct device *dev)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	return api->blanking_on(dev);
 }
@@ -335,7 +338,7 @@ static inline int display_blanking_on(const struct device *dev)
 static inline int display_blanking_off(const struct device *dev)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	return api->blanking_off(dev);
 }
@@ -352,10 +355,10 @@ static inline int display_blanking_off(const struct device *dev)
  * @retval 0 on success else negative errno code.
  */
 static inline int display_set_brightness(const struct device *dev,
-					 u8_t brightness)
+					 uint8_t brightness)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	return api->set_brightness(dev, brightness);
 }
@@ -371,10 +374,10 @@ static inline int display_set_brightness(const struct device *dev,
  *
  * @retval 0 on success else negative errno code.
  */
-static inline int display_set_contrast(const struct device *dev, u8_t contrast)
+static inline int display_set_contrast(const struct device *dev, uint8_t contrast)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	return api->set_contrast(dev, contrast);
 }
@@ -390,7 +393,7 @@ static inline void display_get_capabilities(const struct device *dev,
 					    capabilities)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	api->get_capabilities(dev, capabilities);
 }
@@ -408,7 +411,7 @@ display_set_pixel_format(const struct device *dev,
 			 const enum display_pixel_format pixel_format)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	return api->set_pixel_format(dev, pixel_format);
 }
@@ -426,7 +429,7 @@ static inline int display_set_orientation(const struct device *dev,
 					  orientation)
 {
 	struct display_driver_api *api =
-		(struct display_driver_api *)dev->driver_api;
+		(struct display_driver_api *)dev->api;
 
 	return api->set_orientation(dev, orientation);
 }

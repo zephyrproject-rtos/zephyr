@@ -14,15 +14,18 @@ function(gen_kobj gen_dir_out)
   file(MAKE_DIRECTORY ${gen_dir})
 
   add_custom_command(
-    OUTPUT ${KOBJ_TYPES} ${KOBJ_OTYPE}
+    OUTPUT ${KOBJ_TYPES} ${KOBJ_OTYPE} ${KOBJ_SIZE}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    $ENV{ZEPHYR_BASE}/scripts/gen_kobject_list.py
+    ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
     --kobj-types-output ${KOBJ_TYPES}
     --kobj-otype-output ${KOBJ_OTYPE}
     --kobj-size-output ${KOBJ_SIZE}
+    ${gen_kobject_list_include_args}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS $ENV{ZEPHYR_BASE}/scripts/gen_kobject_list.py
+    DEPENDS
+    ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+    ${PARSE_SYSCALLS_TARGET}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(${KOBJ_TYPES_H_TARGET} DEPENDS ${KOBJ_TYPES} ${KOBJ_OTYPE})

@@ -1,4 +1,4 @@
-.. _spi_interface:
+.. _spi_api:
 
 SPI
 ###

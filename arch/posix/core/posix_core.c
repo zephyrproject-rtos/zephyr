@@ -477,9 +477,6 @@ void posix_abort_thread(int thread_idx)
 
 
 #if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
-
-extern void z_thread_single_abort(struct k_thread *thread);
-
 void z_impl_k_thread_abort(k_tid_t thread)
 {
 	unsigned int key;
@@ -492,12 +489,6 @@ void z_impl_k_thread_abort(k_tid_t thread)
 	thread_idx = tstatus->thread_idx;
 
 	key = irq_lock();
-
-	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
-		 "essential thread aborted");
-
-	z_thread_single_abort(thread);
-	z_thread_monitor_exit(thread);
 
 	if (_current == thread) {
 		if (tstatus->aborted == 0) { /* LCOV_EXCL_BR_LINE */
@@ -515,10 +506,9 @@ void z_impl_k_thread_abort(k_tid_t thread)
 			threads_table[thread_idx].thead_cnt,
 			thread_idx,
 			__func__);
-
-		(void)z_swap_irqlock(key);
-		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 	}
+
+	z_thread_abort(thread);
 
 	if (tstatus->aborted == 0) {
 		PC_DEBUG("%s aborting now [%i] %i\n",

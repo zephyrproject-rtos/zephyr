@@ -4,15 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @addtogroup t_i2s_api
- * @{
- * @defgroup t_i2s_states test_i2s_states
- * @brief TestPurpose: verify handling of API calls in all defined interface
- *        states.
- * @}
- */
-
 #include <zephyr.h>
 #include <ztest.h>
 #include <drivers/i2s.h>
@@ -24,11 +15,11 @@
 K_MEM_SLAB_DEFINE(rx_1_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, 32);
 K_MEM_SLAB_DEFINE(tx_1_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, 32);
 
-static int tx_block_write(struct device *dev_i2s, int att, int err)
+static int tx_block_write(const struct device *dev_i2s, int att, int err)
 {
 	return tx_block_write_slab(dev_i2s, att, err, &tx_1_mem_slab);
 }
-static int rx_block_read(struct device *dev_i2s, int att)
+static int rx_block_read(const struct device *dev_i2s, int att)
 {
 	return rx_block_read_slab(dev_i2s, att, &rx_1_mem_slab);
 }
@@ -36,7 +27,7 @@ static int rx_block_read(struct device *dev_i2s, int att)
 /** Configure I2S TX transfer. */
 void test_i2s_tx_transfer_configure_1(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	int ret;
 
@@ -62,7 +53,7 @@ void test_i2s_tx_transfer_configure_1(void)
 /** Configure I2S RX transfer. */
 void test_i2s_rx_transfer_configure_1(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	int ret;
 
@@ -94,7 +85,7 @@ void test_i2s_rx_transfer_configure_1(void)
  */
 void test_i2s_state_not_ready_neg(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	size_t rx_size;
 	int ret;
@@ -158,7 +149,7 @@ void test_i2s_state_not_ready_neg(void)
  */
 void test_i2s_state_ready_neg(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	int ret;
 
@@ -218,7 +209,7 @@ void test_i2s_state_ready_neg(void)
  */
 void test_i2s_state_running_neg(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	int ret;
 
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
@@ -273,7 +264,7 @@ void test_i2s_state_running_neg(void)
  */
 void test_i2s_state_stopping_neg(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	int ret;
 
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
@@ -329,15 +320,13 @@ void test_i2s_state_stopping_neg(void)
 	zassert_equal(ret, TC_PASS, NULL);
 }
 
-#define TEST_I2S_STATE_ERROR_NEG_PAUSE_LENGTH_US  200
-
 /** @brief Verify all failure cases in ERROR state.
  *
  * - Sending START, STOP, DRAIN trigger in ERROR state returns failure.
  */
 void test_i2s_state_error_neg(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	size_t rx_size;
 	int ret;
 	char rx_buf[BLOCK_SIZE];
@@ -363,7 +352,7 @@ void test_i2s_state_error_neg(void)
 	}
 
 	/* Wait for transmission to finish */
-	k_sleep(TEST_I2S_STATE_ERROR_NEG_PAUSE_LENGTH_US);
+	k_sleep(K_MSEC(200));
 
 	/* Read all available data blocks in RX queue */
 	for (int i = 0; i < NUM_RX_BLOCKS; i++) {

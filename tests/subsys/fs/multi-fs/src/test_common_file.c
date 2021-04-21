@@ -22,7 +22,7 @@ int test_file_open(struct fs_file_t *filep, const char *file_path)
 	}
 
 	/* Verify fs_open() */
-	res = fs_open(filep, file_path);
+	res = fs_open(filep, file_path, FS_O_CREATE | FS_O_RDWR);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;

@@ -29,8 +29,6 @@
 extern "C" {
 #endif
 
-extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
-
 #ifdef __cplusplus
 }
 #endif

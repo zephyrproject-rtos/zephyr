@@ -16,7 +16,7 @@ Requirements
 ************
 
 - a Zephyr board with supported 802.15.4 radio and supported USB driver
-  (such as the :ref:`nrf52840_pca10056` or :ref:`atsamr21_xpro`)
+  (such as the :ref:`nrf52840dk_nrf52840` or :ref:`atsamr21_xpro`)
   connected via USB to a Linux host
 - wpanusb Linux kernel driver (in the process of being open sourced)
 - wpan-tools (available for all Linux distributions)
@@ -47,7 +47,7 @@ Example building for the Nordic nRF52840 Development Kit:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wpanusb
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build
    :compact:
 
@@ -58,7 +58,7 @@ When connected to Linux with wpanusb kernel driver, it is recognized as:
    ...
    T:  Bus=01 Lev=02 Prnt=02 Port=00 Cnt=01 Dev#=  3 Spd=12  MxCh= 0
    D:  Ver= 1.10 Cls=ff(vend.) Sub=00 Prot=00 MxPS=64 #Cfgs=  1
-   P:  Vendor=2fe3 ProdID=0101 Rev=01.00
+   P:  Vendor=2fe3 ProdID=000d Rev=01.00
    C:  #Ifs= 1 Cfg#= 1 Atr=c0 MxPwr=100mA
    I:  If#= 0 Alt= 0 #EPs= 1 Cls=ff(vend.) Sub=00 Prot=00 Driver=wpanusb
    ...

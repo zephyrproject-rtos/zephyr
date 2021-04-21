@@ -17,7 +17,7 @@
 #define MAX_TEST_TIME	15000
 #define SLEEPTIME	300
 
-static void print_gyro_data(struct device *bmg160)
+static void print_gyro_data(const struct device *bmg160)
 {
 	struct sensor_value val[3];
 
@@ -32,7 +32,7 @@ static void print_gyro_data(struct device *bmg160)
 	       val[2].val1 + val[2].val2 / 1000000.0);
 }
 
-static void print_temp_data(struct device *bmg160)
+static void print_temp_data(const struct device *bmg160)
 {
 	struct sensor_value val;
 
@@ -45,9 +45,9 @@ static void print_temp_data(struct device *bmg160)
 	       val.val1 + val.val2 / 1000000.0);
 }
 
-static void test_polling_mode(struct device *bmg160)
+static void test_polling_mode(const struct device *bmg160)
 {
-	s32_t remaining_test_time = MAX_TEST_TIME;
+	int32_t remaining_test_time = MAX_TEST_TIME;
 
 	do {
 		if (sensor_sample_fetch(bmg160) < 0) {
@@ -59,13 +59,14 @@ static void test_polling_mode(struct device *bmg160)
 		print_temp_data(bmg160);
 
 		/* wait a while */
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 
 		remaining_test_time -= SLEEPTIME;
 	} while (remaining_test_time > 0);
 }
 
-static void trigger_handler(struct device *bmg160, struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *bmg160,
+			    struct sensor_trigger *trigger)
 {
 	if (trigger->type != SENSOR_TRIG_DATA_READY &&
 	    trigger->type != SENSOR_TRIG_DELTA) {
@@ -80,9 +81,9 @@ static void trigger_handler(struct device *bmg160, struct sensor_trigger *trigge
 	print_gyro_data(bmg160);
 }
 
-static void test_trigger_mode(struct device *bmg160)
+static void test_trigger_mode(const struct device *bmg160)
 {
-	s32_t remaining_test_time = MAX_TEST_TIME;
+	int32_t remaining_test_time = MAX_TEST_TIME;
 	struct sensor_trigger trig;
 	struct sensor_value attr;
 
@@ -120,7 +121,7 @@ static void test_trigger_mode(struct device *bmg160)
 
 	printf("Gyro: rotate the device and wait for events.\n");
 	do {
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 		remaining_test_time -= SLEEPTIME;
 	} while (remaining_test_time > 0);
 
@@ -153,7 +154,7 @@ static void test_trigger_mode(struct device *bmg160)
 	remaining_test_time = MAX_TEST_TIME;
 
 	do {
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 		remaining_test_time -= SLEEPTIME;
 	} while (remaining_test_time > 0);
 
@@ -167,7 +168,7 @@ static void test_trigger_mode(struct device *bmg160)
 
 void main(void)
 {
-	struct device *bmg160;
+	const struct device *bmg160;
 #if defined(CONFIG_BMG160_RANGE_RUNTIME)
 	struct sensor_value attr;
 #endif

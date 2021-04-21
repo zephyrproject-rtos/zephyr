@@ -14,7 +14,8 @@
 
 		cpu@0 {
 			device_type = "cpu";
-			compatible = "qemu32";
+			compatible = "intel,x86";
+			d-cache-line-size = <64>;
 			reg = <0>;
 		};
 
@@ -27,10 +28,9 @@
 		#interrupt-cells = <3>;
 	};
 
-	sram0: memory@100000 {
+	dram0: memory@0 {
 		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0x00100000 DT_SRAM_SIZE>;
+		reg = <DT_DRAM_BASE DT_DRAM_SIZE>;
 	};
 
 	soc {
@@ -44,7 +44,7 @@
 			reg = <0x000003f8 0x100>;
 			label = "UART_0";
 			clock-frequency = <1843200>;
-			interrupts = <4 IRQ_TYPE_EDGE_RISING 3>;
+			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 
 			status = "disabled";
@@ -55,7 +55,7 @@
 			reg = <0x000002f8 0x100>;
 			label = "UART_1";
 			clock-frequency = <1843200>;
-			interrupts = <3 IRQ_TYPE_EDGE_RISING 3>;
+			interrupts = <3 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 
 			status = "disabled";
@@ -65,7 +65,7 @@
 			label = "HPET";
 			compatible = "intel,hpet";
 			reg = <0xfed00000 0x400>;
-			interrupts = <2 IRQ_TYPE_EDGE_RISING 4>;
+			interrupts = <2 IRQ_TYPE_FIXED_EDGE_RISING 4>;
 			interrupt-parent = <&intc>;
 
 			status = "disabled";

@@ -14,6 +14,12 @@
 
 #define LPSCI0SRC_MCGFLLCLK	(1)
 
+#define CLOCK_NODEID(clk) \
+	DT_CHILD(DT_INST(0, nxp_kinetis_sim), clk)
+
+#define CLOCK_DIVIDER(clk) \
+	DT_PROP_OR(CLOCK_NODEID(clk), clock_div, 1) - 1
+
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -28,9 +34,10 @@ static ALWAYS_INLINE void clock_init(void)
 	.enableMode = 0U, .prdiv = CONFIG_MCG_PRDIV0, .vdiv = CONFIG_MCG_VDIV0,
 	};
 	const sim_clock_config_t simConfig = {
-		.pllFllSel = 1U,        /* PLLFLLSEL select PLL. */
-		.er32kSrc = 3U,         /* ERCLK32K selection, use LPO. */
-		.clkdiv1 = 0x10010000U, /* SIM_CLKDIV1. */
+		.pllFllSel = DT_PROP(DT_INST(0, nxp_kinetis_sim), pllfll_select),
+		.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
+		.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CLOCK_DIVIDER(core_clk)) |
+			   SIM_CLKDIV1_OUTDIV4(CLOCK_DIVIDER(flash_clk)),
 	};
 
 	const osc_config_t oscConfig = {.freq = CONFIG_OSC_XTAL0_FREQ,
@@ -63,16 +70,16 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetInternalRefClkConfig(kMCG_IrclkEnable, kMCG_IrcSlow, 0);
 	CLOCK_SetSimConfig(&simConfig);
 
-#ifdef CONFIG_UART_MCUX_LPSCI_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 	CLOCK_SetLpsci0Clock(LPSCI0SRC_MCGFLLCLK);
 #endif
 #if CONFIG_USB_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
-				DT_ARM_CORTEX_M0PLUS_0_CLOCK_FREQUENCY);
+				DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency));
 #endif
 }
 
-static int kl2x_init(struct device *arg)
+static int kl2x_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX Internal Timer (ITIM) node
+
+compatible: "nuvoton,npcx-itim-timer"
+
+include: base.yaml
+
+properties:
+    reg:
+        required: true
+
+    interrupts:
+        required: true
+
+    label:
+        required: true

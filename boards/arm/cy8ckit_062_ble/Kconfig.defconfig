@@ -1,0 +1,23 @@
+# PSoC6 BLE Pioneer Kit configuration
+
+# Copyright (c) 2018 Cypress
+# Copyright (c) 2020 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CY8CKIT_062_BLE_M0 || \
+	BOARD_CY8CKIT_062_BLE_M4
+
+config BOARD
+	default "cy8ckit_062_ble_m0" if BOARD_CY8CKIT_062_BLE_M0
+	default "cy8ckit_062_ble_m4" if BOARD_CY8CKIT_062_BLE_M4
+
+config UART_PSOC6_UART_5
+	default y
+	depends on UART_PSOC6
+
+config UART_PSOC6_UART_6
+	default y
+	depends on UART_PSOC6
+
+endif   # BOARD_CY8CKIT_062_BLE_M0 || \
+	# BOARD_CY8CKIT_062_BLE_M4

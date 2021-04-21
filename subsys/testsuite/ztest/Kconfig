@@ -54,6 +54,24 @@ config ZTEST_RETEST_IF_PASSED
 	  may be used as an alternative to manual resets when
 	  attempting to reproduce an intermittent failure.
 
+config ZTEST_FATAL_HOOK
+	bool "Using a pre-defined fatal handler and hook function"
+	default n
+	help
+	  Use the pre-defined common fatal error handler and a post hook to
+	  do actions in your test case, this option often enabled when doing
+	  error test case. Remember to add ignore_fault tag in yaml file when
+	  using twister to run testing.
+
+config ZTEST_ASSERT_HOOK
+	bool "Using a pre-defined assert handler and hook function"
+	default n
+	help
+	  Use the pre-defined common assert fail handler and a post hook to
+	  do actions in your test case, this option often enabled when doing
+	  error test case. Remember to add ignore_fault tag in yaml file when
+	  using twister to run testing.
+
 endif # ZTEST
 
 config ZTEST_MOCKING
@@ -64,7 +82,7 @@ config ZTEST_MOCKING
 
 config ZTEST_PARAMETER_COUNT
 	int "Count of parameters or return values reserved"
-	default 1
+	default 10
 	depends on ZTEST_MOCKING
 	help
 	  Maximum amount of concurrent return values / expected parameters.

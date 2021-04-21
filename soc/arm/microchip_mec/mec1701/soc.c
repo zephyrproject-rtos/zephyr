@@ -10,7 +10,7 @@
 #include <kernel.h>
 
 
-static int soc_init(struct device *dev)
+static int soc_init(const struct device *dev)
 {
 	__IO uint32_t *girc_enable_set;
 

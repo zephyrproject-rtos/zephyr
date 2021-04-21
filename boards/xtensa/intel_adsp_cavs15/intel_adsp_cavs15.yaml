@@ -1,0 +1,6 @@
+identifier: intel_adsp_cavs15
+name: CAVS 1.5 Audio DSP (Connected Audio Voice and Speech)
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr

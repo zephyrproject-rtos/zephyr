@@ -1,0 +1,14 @@
+# i.MX RT6XX Series
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMX_RT6XX
+	bool "i.MX RT6XX Series Family MCU"
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_DWT
+	select SOC_FAMILY_IMX
+	select CLOCK_CONTROL
+	help
+	  Enable support for i.MX RT6XX Series MCU series

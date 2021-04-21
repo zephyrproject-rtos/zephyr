@@ -5,4 +5,4 @@ description: Atmel AT25 (or compatible) SPI EEPROM
 
 compatible: "atmel,at25"
 
-include: [eeprom-spi-i2c.yaml, spi-device.yaml]
+include: ["atmel,at2x-base.yaml", spi-device.yaml]

@@ -22,47 +22,30 @@
 
 #define OP_VENDOR_BUTTON BT_MESH_MODEL_OP_3(0x00, BT_COMP_ID_LF)
 
-static const u8_t net_key[16] = {
+static const uint8_t net_key[16] = {
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 };
-static const u8_t dev_key[16] = {
+static const uint8_t dev_key[16] = {
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 };
-static const u8_t app_key[16] = {
+static const uint8_t app_key[16] = {
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
 };
-static const u16_t net_idx;
-static const u16_t app_idx;
-static const u32_t iv_index;
-static u8_t flags;
-static u16_t addr = NODE_ADDR;
+static const uint16_t net_idx;
+static const uint16_t app_idx;
+static const uint32_t iv_index;
+static uint8_t flags;
+static uint16_t addr = NODE_ADDR;
 
-static void heartbeat(u8_t hops, u16_t feat)
+static void heartbeat(const struct bt_mesh_hb_sub *sub, uint8_t hops,
+		      uint16_t feat)
 {
 	board_heartbeat(hops, feat);
 	board_play("100H");
 }
-
-static struct bt_mesh_cfg_srv cfg_srv = {
-#if defined(CONFIG_BOARD_BBC_MICROBIT)
-	.relay = BT_MESH_RELAY_ENABLED,
-	.beacon = BT_MESH_BEACON_DISABLED,
-#else
-	.relay = BT_MESH_RELAY_ENABLED,
-	.beacon = BT_MESH_BEACON_ENABLED,
-#endif
-	.frnd = BT_MESH_FRIEND_NOT_SUPPORTED,
-	.default_ttl = 7,
-
-	/* 3 transmissions with 20ms interval */
-	.net_transmit = BT_MESH_TRANSMIT(2, 20),
-	.relay_retransmit = BT_MESH_TRANSMIT(3, 20),
-
-	.hb_sub.func = heartbeat,
-};
 
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
@@ -92,7 +75,7 @@ static struct bt_mesh_health_srv health_srv = {
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 static struct bt_mesh_model root_models[] = {
-	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
+	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
@@ -169,10 +152,14 @@ static void configure(void)
 	board_play("100C100D100E100F100G100A100H");
 }
 
-static const u8_t dev_uuid[16] = { 0xdd, 0xdd };
+static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
 
 static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
+};
+
+BT_MESH_HB_CB_DEFINE(hb_cb) = {
+	.recv = heartbeat,
 };
 
 static void bt_ready(int err)
@@ -228,13 +215,12 @@ static void bt_ready(int err)
 #endif
 }
 
-static u16_t target = GROUP_ADDR;
+static uint16_t target = GROUP_ADDR;
 
 void board_button_1_pressed(void)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 3 + 4);
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = net_idx,
 		.app_idx = app_idx,
 		.addr = target,
 		.send_ttl = BT_MESH_TTL_DEFAULT,
@@ -250,7 +236,7 @@ void board_button_1_pressed(void)
 	printk("Button message sent with OpCode 0x%08x\n", OP_VENDOR_BUTTON);
 }
 
-u16_t board_set_target(void)
+uint16_t board_set_target(void)
 {
 	switch (target) {
 	case GROUP_ADDR:
@@ -282,7 +268,11 @@ void main(void)
 
 	printk("Initializing...\n");
 
-	board_init(&addr);
+	err = board_init(&addr);
+	if (err) {
+		printk("Board initialization failed\n");
+		return;
+	}
 
 	printk("Unicast address: 0x%04x\n", addr);
 
@@ -290,6 +280,7 @@ void main(void)
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
+		return;
 	}
 
 	while (1) {

@@ -24,38 +24,18 @@ static enum net_verdict ipv6cp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->ipv6cp.fsm, PPP_IPV6CP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, u8_t *data, u8_t data_len)
-{
-	if (data_len > net_buf_tailroom(buf)) {
-		return false;
-	}
-
-	/* FIXME: use net_pkt api so that we can handle a case where data might
-	 * split to two net_buf's
-	 */
-	net_buf_add_mem(buf, data, data_len);
-
-	return true;
-}
-
 /* Length is (10): code + id + interface identifier length */
 #define INTERFACE_IDENTIFIER_OPTION_LEN (1 + 1 + 8)
 
-static struct net_buf *ipv6cp_config_info_add(struct ppp_fsm *fsm)
+static int ipv6cp_add_iid(struct ppp_context *ctx, struct net_pkt *pkt)
 {
-	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
-					       ipv6cp.fsm);
-
-	/* Currently we support only one option (IP address) */
-	u8_t option[INTERFACE_IDENTIFIER_OPTION_LEN];
-	u8_t iid[PPP_INTERFACE_IDENTIFIER_LEN];
+	uint8_t *iid = ctx->ipv6cp.my_options.iid;
+	size_t iid_len = sizeof(ctx->ipv6cp.my_options.iid);
 	struct net_linkaddr *linkaddr;
-	struct net_buf *buf;
-	bool added;
 
 	linkaddr = net_if_get_link_addr(ctx->iface);
 	if (linkaddr->len == 8) {
-		memcpy(iid, linkaddr->addr, sizeof(iid));
+		memcpy(iid, linkaddr->addr, iid_len);
 	} else {
 		memcpy(iid, linkaddr->addr, 3);
 		iid[3] = 0xff;
@@ -63,265 +43,139 @@ static struct net_buf *ipv6cp_config_info_add(struct ppp_fsm *fsm)
 		memcpy(iid + 5, linkaddr->addr + 3, 3);
 	}
 
-	option[0] = IPV6CP_OPTION_INTERFACE_IDENTIFIER;
-	option[1] = INTERFACE_IDENTIFIER_OPTION_LEN;
-	memcpy(&option[2], iid, sizeof(iid));
-
-	buf = ppp_get_net_buf(NULL, sizeof(option));
-	if (!buf) {
-		goto out_of_mem;
-	}
-
-	added = append_to_buf(buf, option, sizeof(option));
-	if (!added) {
-		goto out_of_mem;
-	}
-
-	return buf;
-
-out_of_mem:
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	return NULL;
+	net_pkt_write_u8(pkt, INTERFACE_IDENTIFIER_OPTION_LEN);
+	return net_pkt_write(pkt, iid, iid_len);
 }
 
-static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
-				struct net_pkt *pkt,
-				u16_t length,
-				struct net_buf **ret_buf)
+static int ipv6cp_ack_iid(struct ppp_context *ctx, struct net_pkt *pkt,
+			  uint8_t oplen)
 {
-	int nack_idx = 0, iface_id_option_idx = -1;
-	struct net_buf *buf = NULL;
-	struct ppp_option_pkt options[MAX_IPV6CP_OPTIONS];
-	struct ppp_option_pkt nack_options[MAX_IPV6CP_OPTIONS];
-	enum ppp_packet_type code;
-	enum net_verdict verdict;
-	int i;
+	uint8_t *req_iid = ctx->ipv6cp.my_options.iid;
+	uint8_t ack_iid[PPP_INTERFACE_IDENTIFIER_LEN];
+	int ret;
 
-	memset(options, 0, sizeof(options));
-	memset(nack_options, 0, sizeof(nack_options));
-
-	verdict = ppp_parse_options(fsm, pkt, length, options,
-				    ARRAY_SIZE(options));
-	if (verdict != NET_OK) {
+	if (oplen != sizeof(ack_iid)) {
 		return -EINVAL;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(options); i++) {
-		if (options[i].type.ipv6cp != IPV6CP_OPTION_RESERVED) {
-			NET_DBG("[%s/%p] %s option %s (%d) len %d",
-				fsm->name, fsm, "Check",
-				ppp_option2str(PPP_IPV6CP,
-					       options[i].type.ipv6cp),
-				options[i].type.ipv6cp, options[i].len);
-		}
-
-		switch (options[i].type.ipv6cp) {
-		case IPV6CP_OPTION_RESERVED:
-			continue;
-
-		case IPV6CP_OPTION_INTERFACE_IDENTIFIER:
-			/* Currently we only accept one option (iface id) */
-			iface_id_option_idx = i;
-			break;
-
-		default:
-			nack_options[nack_idx].type.ipv6cp =
-				options[i].type.ipv6cp;
-			nack_options[nack_idx].len = options[i].len;
-
-			if (options[i].len > 2) {
-				memcpy(&nack_options[nack_idx].value,
-				       &options[i].value,
-				       sizeof(nack_options[nack_idx].value));
-			}
-
-			nack_idx++;
-			break;
-		}
+	ret = net_pkt_read(pkt, ack_iid, sizeof(ack_iid));
+	if (ret) {
+		return ret;
 	}
 
-	if (nack_idx > 0) {
-		struct net_buf *nack_buf;
-
-		/* Once rejected count logic is in, it will be possible
-		 * to set this code to PPP_CONFIGURE_REJ. */
-		code = PPP_CONFIGURE_NACK;
-
-		/* Create net_buf containing options that are not accepted */
-		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
-			bool added;
-
-			nack_buf = ppp_get_net_buf(buf, nack_options[i].len);
-			if (!nack_buf) {
-				goto bail_out;
-			}
-
-			if (!buf) {
-				buf = nack_buf;
-			}
-
-			added = append_to_buf(nack_buf,
-					      &nack_options[i].type.ipv6cp, 1);
-			if (!added) {
-				goto bail_out;
-			}
-
-			added = append_to_buf(nack_buf, &nack_options[i].len,
-					      1);
-			if (!added) {
-				goto bail_out;
-			}
-
-			/* If there is some data, copy it to result buf */
-			if (nack_options[i].value.pos) {
-				added = append_to_buf(nack_buf,
-						nack_options[i].value.pos,
-						nack_options[i].len - 1 - 1);
-				if (!added) {
-					goto bail_out;
-				}
-			}
-		}
-	} else {
-		u8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
-		struct ppp_context *ctx;
-		bool added;
-		u8_t val;
-		int ret;
-
-		ctx = CONTAINER_OF(fsm, struct ppp_context, ipv6cp.fsm);
-
-		if (iface_id_option_idx < 0) {
-			/* Interface id option was not present */
-			return -EINVAL;
-		}
-
-		code = PPP_CONFIGURE_ACK;
-
-		net_pkt_cursor_restore(pkt,
-				       &options[iface_id_option_idx].value);
-
-		ret = net_pkt_read(pkt, iface_id, sizeof(iface_id));
-		if (ret < 0) {
-			/* Should not happen, is the pkt corrupt? */
-			return -EMSGSIZE;
-		}
-
-		memcpy(ctx->ipv6cp.peer_options.iid, iface_id,
-		       sizeof(iface_id));
-
-		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
-
-			net_sprint_ll_addr_buf(iface_id, sizeof(iface_id),
-					       iid_str, sizeof(iid_str));
-
-			NET_DBG("[%s/%p] Received %siid %s",
-				fsm->name, fsm, "peer ", log_strdup(iid_str));
-		}
-
-		/* TODO: check whether iid is empty and create one if so */
-
-		buf = ppp_get_net_buf(NULL, INTERFACE_IDENTIFIER_OPTION_LEN);
-		if (!buf) {
-			goto bail_out;
-		}
-
-		val = IPV6CP_OPTION_INTERFACE_IDENTIFIER;
-		added = append_to_buf(buf, &val, sizeof(val));
-		if (!added) {
-			goto bail_out;
-		}
-
-		val = INTERFACE_IDENTIFIER_OPTION_LEN;
-		added = append_to_buf(buf, &val, sizeof(val));
-		if (!added) {
-			goto bail_out;
-		}
-
-		added = append_to_buf(buf, iface_id, sizeof(iface_id));
-		if (!added) {
-			goto bail_out;
-		}
+	if (memcmp(ack_iid, req_iid, sizeof(ack_iid)) != 0) {
+		return -EINVAL;
 	}
 
-	if (buf) {
-		*ret_buf = buf;
-	}
-
-	return code;
-
-bail_out:
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	return -ENOMEM;
+	return 0;
 }
 
-static int config_info_ack_rej(struct ppp_context *ctx,
-			       struct ppp_fsm *fsm,
-			       struct net_pkt *pkt,
-			       u16_t length,
-			       u8_t code)
+static const struct ppp_my_option_info ipv6cp_my_options[] = {
+	PPP_MY_OPTION(IPV6CP_OPTION_INTERFACE_IDENTIFIER,
+		      ipv6cp_add_iid, ipv6cp_ack_iid, NULL),
+};
+
+BUILD_ASSERT(ARRAY_SIZE(ipv6cp_my_options) == IPV6CP_NUM_MY_OPTIONS);
+
+static struct net_pkt *ipv6cp_config_info_add(struct ppp_fsm *fsm)
 {
-	struct ppp_option_pkt nack_options[MAX_IPV6CP_OPTIONS];
-	u8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
-	int i, ret, iface_id_option_idx = -1;
-	enum net_verdict verdict;
+	return ppp_my_options_add(fsm, INTERFACE_IDENTIFIER_OPTION_LEN);
+}
 
-	memset(nack_options, 0, sizeof(nack_options));
+struct ipv6cp_peer_option_data {
+	bool iface_id_present;
+	uint8_t iface_id[PPP_INTERFACE_IDENTIFIER_LEN];
+};
 
-	verdict = ppp_parse_options(fsm, pkt, length, nack_options,
-				    ARRAY_SIZE(nack_options));
-	if (verdict != NET_OK) {
-		return -EINVAL;
-	}
+static int ipv6cp_interface_identifier_parse(struct ppp_fsm *fsm,
+					     struct net_pkt *pkt,
+					     void *user_data)
+{
+	struct ipv6cp_peer_option_data *data = user_data;
+	int ret;
 
-	for (i = 0; i < ARRAY_SIZE(nack_options); i++) {
-		if (nack_options[i].type.ipv6cp != IPV6CP_OPTION_RESERVED) {
-			NET_DBG("[%s/%p] %s option %s (%d) len %d",
-				fsm->name, fsm, "Check",
-				ppp_option2str(PPP_IPV6CP,
-					       nack_options[i].type.ipv6cp),
-				nack_options[i].type.ipv6cp,
-				nack_options[i].len);
-		}
-
-		switch (nack_options[i].type.ipv6cp) {
-		case IPV6CP_OPTION_RESERVED:
-			continue;
-
-		case IPV6CP_OPTION_INTERFACE_IDENTIFIER:
-			iface_id_option_idx = i;
-			break;
-
-		default:
-			continue;
-		}
-	}
-
-	if (iface_id_option_idx < 0) {
-		return -EINVAL;
-	}
-
-	net_pkt_cursor_restore(pkt, &nack_options[iface_id_option_idx].value);
-
-	ret = net_pkt_read(pkt, iface_id, sizeof(iface_id));
+	ret = net_pkt_read(pkt, data->iface_id, sizeof(data->iface_id));
 	if (ret < 0) {
 		/* Should not happen, is the pkt corrupt? */
 		return -EMSGSIZE;
 	}
 
-	memcpy(ctx->ipv6cp.peer_accepted.iid, iface_id, sizeof(iface_id));
+	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
+
+		net_sprint_ll_addr_buf(data->iface_id, sizeof(data->iface_id),
+				       iid_str, sizeof(iid_str));
+
+		NET_DBG("[%s/%p] Received %siid %s",
+			fsm->name, fsm, "peer ", log_strdup(iid_str));
+	}
+
+	data->iface_id_present = true;
+
+	return 0;
+}
+
+static const struct ppp_peer_option_info ipv6cp_peer_options[] = {
+	PPP_PEER_OPTION(IPV6CP_OPTION_INTERFACE_IDENTIFIER,
+			ipv6cp_interface_identifier_parse, NULL),
+};
+
+static int ipv6cp_config_info_req(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length,
+				  struct net_pkt *ret_pkt)
+{
+	struct ppp_context *ctx =
+		CONTAINER_OF(fsm, struct ppp_context, ipv6cp.fsm);
+	struct ipv6cp_peer_option_data data = {
+		.iface_id_present = false,
+	};
+	int ret;
+
+	ret = ppp_config_info_req(fsm, pkt, length, ret_pkt, PPP_IPV6CP,
+				  ipv6cp_peer_options,
+				  ARRAY_SIZE(ipv6cp_peer_options),
+				  &data);
+	if (ret != PPP_CONFIGURE_ACK) {
+		/* There are some issues with configuration still */
+		return ret;
+	}
+
+	if (!data.iface_id_present) {
+		/* Interface id option was not present */
+		return -EINVAL;
+	}
+
+	memcpy(ctx->ipv6cp.peer_options.iid, data.iface_id,
+	       sizeof(data.iface_id));
+
+	return PPP_CONFIGURE_ACK;
+}
+
+static int ipv6cp_config_info_ack(struct ppp_fsm *fsm,
+				  struct net_pkt *pkt,
+				  uint16_t length)
+{
+	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
+					       ipv6cp.fsm);
+	uint8_t *iid = ctx->ipv6cp.my_options.iid;
+	size_t iid_len = sizeof(ctx->ipv6cp.my_options.iid);
+	int ret;
+
+	ret = ppp_my_options_parse_conf_ack(fsm, pkt, length);
+	if (ret) {
+		return -EINVAL;
+	}
+
+	if (!ppp_my_option_is_acked(fsm, IPV6CP_OPTION_INTERFACE_IDENTIFIER)) {
+		NET_ERR("IID was not acked");
+		return -EINVAL;
+	}
 
 	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-		u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
+		uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 
-		net_sprint_ll_addr_buf(iface_id, sizeof(iface_id),
+		net_sprint_ll_addr_buf(iid, iid_len,
 				       iid_str, sizeof(iid_str));
 
 		NET_DBG("[%s/%p] Received %siid %s",
@@ -330,27 +184,6 @@ static int config_info_ack_rej(struct ppp_context *ctx,
 
 	return 0;
 }
-
-static int ipv6cp_config_info_rej(struct ppp_fsm *fsm,
-				struct net_pkt *pkt,
-				u16_t length)
-{
-	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
-					       ipv6cp.fsm);
-
-	return config_info_ack_rej(ctx, fsm, pkt, length, PPP_CONFIGURE_REJ);
-}
-
-static int ipv6cp_config_info_ack(struct ppp_fsm *fsm,
-				  struct net_pkt *pkt,
-				  u16_t length)
-{
-	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
-					       ipv6cp.fsm);
-
-	return config_info_ack_rej(ctx, fsm, pkt, length, PPP_CONFIGURE_ACK);
-}
-
 
 static void ipv6cp_lower_down(struct ppp_context *ctx)
 {
@@ -367,12 +200,12 @@ static void ipv6cp_open(struct ppp_context *ctx)
 	ppp_fsm_open(&ctx->ipv6cp.fsm);
 }
 
-static void ipv6cp_close(struct ppp_context *ctx, const u8_t *reason)
+static void ipv6cp_close(struct ppp_context *ctx, const uint8_t *reason)
 {
 	ppp_fsm_close(&ctx->ipv6cp.fsm, reason);
 }
 
-static void setup_iid_address(u8_t *iid, struct in6_addr *addr)
+static void setup_iid_address(uint8_t *iid, struct in6_addr *addr)
 {
 	addr->s6_addr[0] = 0xfe;
 	addr->s6_addr[1] = 0x80;
@@ -384,7 +217,7 @@ static void setup_iid_address(u8_t *iid, struct in6_addr *addr)
 	/* addr->s6_addr[8] ^= 0x02; */
 }
 
-static void add_iid_address(struct net_if *iface, u8_t *iid)
+static void add_iid_address(struct net_if *iface, uint8_t *iid)
 {
 	struct net_if_addr *ifaddr;
 	struct in6_addr addr;
@@ -417,13 +250,12 @@ static void ipv6cp_up(struct ppp_fsm *fsm)
 
 	ppp_network_up(ctx, PPP_IPV6);
 
-	ctx->is_network_up = true;
 	ctx->is_ipv6cp_up = true;
 
 	NET_DBG("[%s/%p] Current state %s (%d)", fsm->name, fsm,
 		ppp_state_str(fsm->state), fsm->state);
 
-	add_iid_address(ctx->iface, ctx->ipv6cp.peer_accepted.iid);
+	add_iid_address(ctx->iface, ctx->ipv6cp.my_options.iid);
 
 	/* Add peer to neighbor table */
 	setup_iid_address(ctx->ipv6cp.peer_options.iid, &peer_addr);
@@ -443,7 +275,7 @@ static void ipv6cp_up(struct ppp_fsm *fsm)
 						   (const void *)&peer_addr)));
 	} else {
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
+			uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 			char dst[INET6_ADDRSTRLEN];
 			char *addr_str;
 
@@ -466,17 +298,21 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipv6cp.fsm);
 	struct net_linkaddr peer_lladdr;
+	struct in6_addr my_addr;
 	struct in6_addr peer_addr;
 	int ret;
 
-	if (!ctx->is_network_up) {
+	if (!ctx->is_ipv6cp_up) {
 		return;
 	}
 
-	ctx->is_network_up = false;
 	ctx->is_ipv6cp_up = false;
 
 	ppp_network_down(ctx, PPP_IPV6);
+
+	/* Remove my address */
+	setup_iid_address(ctx->ipv6cp.my_options.iid, &my_addr);
+	net_if_ipv6_addr_rm(ctx->iface, &my_addr);
 
 	/* Remove peer from neighbor table */
 	setup_iid_address(ctx->ipv6cp.peer_options.iid, &peer_addr);
@@ -495,7 +331,7 @@ static void ipv6cp_down(struct ppp_fsm *fsm)
 						   (const void *)&peer_addr)));
 	} else {
 		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			u8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
+			uint8_t iid_str[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 			char dst[INET6_ADDRSTRLEN];
 			char *addr_str;
 
@@ -543,14 +379,18 @@ static void ipv6cp_init(struct ppp_context *ctx)
 
 	ppp_fsm_name_set(&ctx->ipv6cp.fsm, ppp_proto2str(PPP_IPV6CP));
 
+	ctx->ipv6cp.fsm.my_options.info = ipv6cp_my_options;
+	ctx->ipv6cp.fsm.my_options.data = ctx->ipv6cp.my_options_data;
+	ctx->ipv6cp.fsm.my_options.count = ARRAY_SIZE(ipv6cp_my_options);
+
 	ctx->ipv6cp.fsm.cb.up = ipv6cp_up;
 	ctx->ipv6cp.fsm.cb.down = ipv6cp_down;
 	ctx->ipv6cp.fsm.cb.finished = ipv6cp_finished;
 	ctx->ipv6cp.fsm.cb.proto_reject = ipv6cp_proto_reject;
 	ctx->ipv6cp.fsm.cb.config_info_ack = ipv6cp_config_info_ack;
+	ctx->ipv6cp.fsm.cb.config_info_rej = ppp_my_options_parse_conf_rej;
 	ctx->ipv6cp.fsm.cb.config_info_add = ipv6cp_config_info_add;
 	ctx->ipv6cp.fsm.cb.config_info_req = ipv6cp_config_info_req;
-	ctx->ipv6cp.fsm.cb.config_info_rej = ipv6cp_config_info_rej;
 }
 
 PPP_PROTOCOL_REGISTER(IPV6CP, PPP_IPV6CP,

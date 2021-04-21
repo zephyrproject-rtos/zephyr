@@ -29,29 +29,22 @@ struct init_stack_frame {
 
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t thread_func,
-		     void *arg1, void *arg2, void *arg3,
-		     int priority, unsigned int options)
+		     char *stack_ptr, k_thread_entry_t entry,
+		     void *arg1, void *arg2, void *arg3)
 {
-	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
-	Z_ASSERT_VALID_PRIO(priority, thread_func);
-
 	struct init_stack_frame *iframe;
 
-	z_new_thread_init(thread, stack_memory, stack_size, priority, options);
-
 	/* Initial stack frame data, stored at the base of the stack */
-	iframe = (struct init_stack_frame *)
-		STACK_ROUND_DOWN(stack_memory + stack_size - sizeof(*iframe));
+	iframe = Z_STACK_PTR_TO_FRAME(struct init_stack_frame, stack_ptr);
 
 	/* Setup the initial stack frame */
-	iframe->entry_point = thread_func;
+	iframe->entry_point = entry;
 	iframe->arg1 = arg1;
 	iframe->arg2 = arg2;
 	iframe->arg3 = arg3;
 
-	thread->callee_saved.sp = (u32_t)iframe;
-	thread->callee_saved.ra = (u32_t)z_thread_entry_wrapper;
+	thread->callee_saved.sp = (uint32_t)iframe;
+	thread->callee_saved.ra = (uint32_t)z_thread_entry_wrapper;
 	thread->callee_saved.key = NIOS2_STATUS_PIE_MSK;
 	/* Leave the rest of thread->callee_saved junk */
 }

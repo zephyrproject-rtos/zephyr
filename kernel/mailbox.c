@@ -54,7 +54,7 @@ struct k_mbox *_trace_list_k_mbox;
 /*
  * Do run-time initialization of mailbox object subsystem.
  */
-static int init_mbox_module(struct device *dev)
+static int init_mbox_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -97,12 +97,12 @@ SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
 
-void k_mbox_init(struct k_mbox *mbox_ptr)
+void k_mbox_init(struct k_mbox *mbox)
 {
-	z_waitq_init(&mbox_ptr->tx_msg_queue);
-	z_waitq_init(&mbox_ptr->rx_msg_queue);
-	mbox_ptr->lock = (struct k_spinlock) {};
-	SYS_TRACING_OBJ_INIT(k_mbox, mbox_ptr);
+	z_waitq_init(&mbox->tx_msg_queue);
+	z_waitq_init(&mbox->rx_msg_queue);
+	mbox->lock = (struct k_spinlock) {};
+	SYS_TRACING_OBJ_INIT(k_mbox, mbox);
 }
 
 /**
@@ -120,7 +120,7 @@ void k_mbox_init(struct k_mbox *mbox_ptr)
 static int mbox_message_match(struct k_mbox_msg *tx_msg,
 			       struct k_mbox_msg *rx_msg)
 {
-	u32_t temp_info;
+	uint32_t temp_info;
 
 	if (((tx_msg->tx_target_thread == (k_tid_t)K_ANY) ||
 	     (tx_msg->tx_target_thread == rx_msg->tx_target_thread)) &&
@@ -181,9 +181,7 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 		return;
 	}
 
-	/* release sender's memory pool block */
 	if (rx_msg->tx_block.data != NULL) {
-		k_mem_pool_free(&rx_msg->tx_block);
 		rx_msg->tx_block.data = NULL;
 	}
 
@@ -233,7 +231,7 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
  * @return 0 if successful, -ENOMSG if failed immediately, -EAGAIN if timed out
  */
 static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
-			     s32_t timeout)
+			     k_timeout_t timeout)
 {
 	struct k_thread *sending_thread;
 	struct k_thread *receiving_thread;
@@ -286,7 +284,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	}
 
 	/* didn't find a matching receiver: don't wait for one */
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&mbox->lock, key);
 		return -ENOMSG;
 	}
@@ -304,7 +302,8 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	return z_pend_curr(&mbox->lock, key, &mbox->tx_msg_queue, timeout);
 }
 
-int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, s32_t timeout)
+int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
+	       k_timeout_t timeout)
 {
 	/* configure things for a synchronous send, then send the message */
 	tx_msg->_syncing_thread = _current;
@@ -344,44 +343,10 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 	}
 
 	/* copy message data to buffer, then dispose of message */
-	if ((rx_msg->tx_data != NULL) && (rx_msg->size > 0)) {
+	if ((rx_msg->tx_data != NULL) && (rx_msg->size > 0U)) {
 		(void)memcpy(buffer, rx_msg->tx_data, rx_msg->size);
 	}
 	mbox_message_dispose(rx_msg);
-}
-
-int k_mbox_data_block_get(struct k_mbox_msg *rx_msg, struct k_mem_pool *pool,
-			  struct k_mem_block *block, s32_t timeout)
-{
-	int result;
-
-	/* handle case where data is to be discarded */
-	if (pool == NULL) {
-		rx_msg->size = 0;
-		mbox_message_dispose(rx_msg);
-		return 0;
-	}
-
-	/* handle case where data is already in a memory pool block */
-	if (rx_msg->tx_block.data != NULL) {
-		/* give ownership of the block to receiver */
-		*block = rx_msg->tx_block;
-		rx_msg->tx_block.data = NULL;
-
-		/* now dispose of message */
-		mbox_message_dispose(rx_msg);
-		return 0;
-	}
-
-	/* allocate memory pool block (even when message size is 0!) */
-	result = k_mem_pool_alloc(pool, block, rx_msg->size, timeout);
-	if (result != 0) {
-		return result;
-	}
-
-	/* retrieve non-block data into new block, then dispose of message */
-	k_mbox_data_get(rx_msg, block->data);
-	return 0;
 }
 
 /**
@@ -405,7 +370,7 @@ static int mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 	if (buffer != NULL) {
 		/* retrieve data now, then dispose of message */
 		k_mbox_data_get(rx_msg, buffer);
-	} else if (rx_msg->size == 0) {
+	} else if (rx_msg->size == 0U) {
 		/* there is no data to get, so just dispose of message */
 		mbox_message_dispose(rx_msg);
 	} else {
@@ -416,7 +381,7 @@ static int mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 }
 
 int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
-	       s32_t timeout)
+	       k_timeout_t timeout)
 {
 	struct k_thread *sending_thread;
 	struct k_mbox_msg *tx_msg;
@@ -445,7 +410,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 
 	/* didn't find a matching sender */
 
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		/* don't wait for a matching sender to appear */
 		k_spin_unlock(&mbox->lock, key);
 		return -ENOMSG;

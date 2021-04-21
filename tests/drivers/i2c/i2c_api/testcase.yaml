@@ -3,6 +3,4 @@ tests:
     depends_on: i2c
     tags: drivers i2c
     harness: sensor
-    filter: dt_alias_exists("i2c-0") or
-            dt_alias_exists("i2c-1") or
-            dt_alias_exists("i2c-2")
+    filter: dt_alias_exists("accel-0")

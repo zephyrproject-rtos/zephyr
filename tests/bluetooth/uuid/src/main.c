@@ -47,8 +47,8 @@ static void test_uuid_cmp(void)
 
 static void test_uuid_create(void)
 {
-	u8_t le16[] = { 0x01, 0x00 };
-	u8_t be16[] = { 0x00, 0x01 };
+	uint8_t le16[] = { 0x01, 0x00 };
+	uint8_t be16[] = { 0x00, 0x01 };
 	union {
 		struct bt_uuid uuid;
 		struct bt_uuid_16 u16;

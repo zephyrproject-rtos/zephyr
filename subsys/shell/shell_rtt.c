@@ -9,9 +9,9 @@
 #include <SEGGER_RTT.h>
 #include <logging/log.h>
 
-BUILD_ASSERT_MSG(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
-		 COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (1), (0))),
-		 "Conflicting log RTT backend enabled on the same channel");
+BUILD_ASSERT(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
+	       COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (1), (0))),
+	     "Conflicting log RTT backend enabled on the same channel");
 
 SHELL_RTT_DEFINE(shell_transport_rtt);
 SHELL_DEFINE(shell_rtt, CONFIG_SHELL_PROMPT_RTT, &shell_transport_rtt,
@@ -44,14 +44,18 @@ static int init(const struct shell_transport *transport,
 
 	k_timer_init(&sh_rtt->timer, timer_handler, NULL);
 	k_timer_user_data_set(&sh_rtt->timer, (void *)sh_rtt);
-	k_timer_start(&sh_rtt->timer, CONFIG_SHELL_RTT_RX_POLL_PERIOD,
-			CONFIG_SHELL_RTT_RX_POLL_PERIOD);
+	k_timer_start(&sh_rtt->timer, K_MSEC(CONFIG_SHELL_RTT_RX_POLL_PERIOD),
+		      K_MSEC(CONFIG_SHELL_RTT_RX_POLL_PERIOD));
 
 	return 0;
 }
 
 static int uninit(const struct shell_transport *transport)
 {
+	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
+
+	k_timer_stop(&sh_rtt->timer);
+
 	return 0;
 }
 
@@ -71,7 +75,7 @@ static int write(const struct shell_transport *transport,
 		 const void *data, size_t length, size_t *cnt)
 {
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
-	const u8_t *data8 = (const u8_t *)data;
+	const uint8_t *data8 = (const uint8_t *)data;
 
 	if (rtt_blocking) {
 		*cnt = SEGGER_RTT_WriteNoLock(0, data8, length);
@@ -103,11 +107,11 @@ const struct shell_transport_api shell_rtt_transport_api = {
 	.read = read
 };
 
-static int enable_shell_rtt(struct device *arg)
+static int enable_shell_rtt(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 	bool log_backend = CONFIG_SHELL_RTT_INIT_LOG_LEVEL > 0;
-	u32_t level = (CONFIG_SHELL_RTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
+	uint32_t level = (CONFIG_SHELL_RTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_RTT_INIT_LOG_LEVEL;
 
 	shell_init(&shell_rtt, NULL, true, log_backend, level);

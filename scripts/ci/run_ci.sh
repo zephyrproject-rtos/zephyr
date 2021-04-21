@@ -20,7 +20,7 @@
 
 set -xe
 
-sanitycheck_options=" --inline-logs -N -v"
+twister_options=" --inline-logs -N -v --integration"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
@@ -35,20 +35,15 @@ matrix_builds=1
 matrix=1
 
 function handle_coverage() {
-	# this is for shippable coverage reports
-	echo "Calling gcovr"
-	gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
-
-
 	# Upload to codecov.io only on merged builds or if CODECOV_IO variable
 	# is set.
 	if [ -n "${CODECOV_IO}" -o -z "${pull_request_nr}" ]; then
 		# Capture data
 		echo "Running lcov --capture ..."
 		lcov --capture \
-			--directory sanity-out/native_posix/ \
-			--directory sanity-out/nrf52_bsim/ \
-			--directory sanity-out/unit_testing/ \
+			--directory twister-out/native_posix/ \
+			--directory twister-out/nrf52_bsim/ \
+			--directory twister-out/unit_testing/ \
 			--directory bsim_bt_out/ \
 			--output-file lcov.pre.info -q --rc lcov_branch_coverage=1
 
@@ -64,7 +59,7 @@ function handle_coverage() {
 
 		# Cleanup
 		rm lcov.pre.info
-		rm -rf sanity-out out-2nd-pass
+		rm -rf twister-out out-2nd-pass
 
 		# Upload to codecov.io
 		echo "Upload coverage reports to codecov.io"
@@ -72,7 +67,7 @@ function handle_coverage() {
 		rm -f lcov.info
 	fi
 
-	rm -rf sanity-out out-2nd-pass
+	rm -rf twister-out out-2nd-pass
 
 }
 
@@ -91,30 +86,12 @@ function on_complete() {
 	fi
 
 	rm -rf ccache $HOME/.cache/zephyr
-	mkdir -p shippable/testresults
-	mkdir -p shippable/codecoverage
-
-	if [ -e ./sanity-out/sanitycheck.xml ]; then
-		echo "Copy ./sanity-out/sanitycheck.xml"
-		cp ./sanity-out/sanitycheck.xml shippable/testresults/
-	fi
-
-	if [ -e ./module_tests/sanitycheck.xml ]; then
-		echo "Copy ./module_tests/sanitycheck.xml"
-		cp ./module_tests/sanitycheck.xml \
-			shippable/testresults/module_tests.xml
-	fi
-
-	if [ -e ${bsim_bt_test_results_file} ]; then
-		echo "Copy ${bsim_bt_test_results_file}"
-		cp ${bsim_bt_test_results_file} shippable/testresults/
-	fi
 
 	if [ "$matrix" = "1" ]; then
 		echo "Skip handling coverage data..."
 		#handle_coverage
 	else
-		rm -rf sanity-out out-2nd-pass
+		rm -rf twister-out out-2nd-pass
 	fi
 }
 
@@ -126,17 +103,22 @@ function run_bsim_bt_tests() {
 }
 
 function get_tests_to_run() {
-	./scripts/zephyr_module.py --sanitycheck-out module_tests.args
-	./scripts/ci/get_modified_tests.py --commits ${commit_range} > modified_tests.args
-	./scripts/ci/get_modified_boards.py --commits ${commit_range} > modified_boards.args
+	./scripts/zephyr_module.py --twister-out module_tests.args
+	./scripts/ci/get_twister_opt.py --commits ${commit_range}
 
 	if [ -s modified_boards.args ]; then
-		${sanitycheck} ${sanitycheck_options} +modified_boards.args --save-tests test_file_1.txt || exit 1
+		${twister} ${twister_options} +modified_boards.args \
+			--save-tests test_file_boards.txt || exit 1
 	fi
 	if [ -s modified_tests.args ]; then
-		${sanitycheck} ${sanitycheck_options} +modified_tests.args --save-tests test_file_2.txt || exit 1
+		${twister} ${twister_options} +modified_tests.args \
+			--save-tests test_file_tests.txt || exit 1
 	fi
-	rm -f modified_tests.args modified_boards.args
+	if [ -s modified_archs.args ]; then
+		${twister} ${twister_options} +modified_archs.args \
+			--save-tests test_file_archs.txt || exit 1
+	fi
+	rm -f modified_tests.args modified_boards.args modified_archs.args
 }
 
 
@@ -146,7 +128,8 @@ function west_setup() {
 	pushd ..
 	if [ ! -d .west ]; then
 		west init -l ${git_dir}
-		west update
+		west update 1> west.update.log || west update 1> west.update-2.log
+		west forall -c 'git reset --hard HEAD'
 	fi
 	popd
 }
@@ -216,10 +199,13 @@ if [ -n "$main_ci" ]; then
 		commit_range=$range
 	fi
 	source zephyr-env.sh
-	sanitycheck="${ZEPHYR_BASE}/scripts/sanitycheck"
+	twister="${ZEPHYR_BASE}/scripts/twister"
 
 	# Possibly the only record of what exact version is being tested:
 	short_git_log='git log -n 5 --oneline --decorate --abbrev=12 '
+
+	# check what files have changed.
+	SC=`./scripts/ci/what_changed.py --commits ${commit_range}`
 
 	if [ -n "$pull_request_nr" ]; then
 		$short_git_log $remote/${branch}
@@ -227,8 +213,12 @@ if [ -n "$main_ci" ]; then
 		# different location
 # https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
 		git rebase $remote/${branch}
+	else
+		echo "Full Run"
+		SC="full"
 	fi
 	$short_git_log
+
 
 	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
 		echo "Build and run BT simulator tests"
@@ -242,25 +232,39 @@ if [ -n "$main_ci" ]; then
 
 	# cleanup
 	rm -f test_file.txt
-	touch test_file_1.txt test_file_2.txt
+	touch test_file_boards.txt test_file_tests.txt test_file_archs.txt
 
 	# In a pull-request see if we have changed any tests or board definitions
 	if [ -n "${pull_request_nr}" -o -n "${local_run}"  ]; then
 		get_tests_to_run
 	fi
 
-	# Save list of tests to be run
-	${sanitycheck} ${sanitycheck_options} --save-tests test_file_3.txt || exit 1
-	cat test_file_1.txt test_file_2.txt test_file_3.txt > test_file.txt
+	if [ "$SC" == "full" ]; then
+		# Save list of tests to be run
+		${twister} ${twister_options} --save-tests test_file_main.txt || exit 1
+	else
+		echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" \
+			> test_file_main.txt
+	fi
+
+	# Remove headers from all files but the first one to generate one
+	# single file with only one header row
+	tail -n +2 test_file_archs.txt > test_file_archs_in.txt
+	tail -n +2 test_file_tests.txt > test_file_tests_in.txt
+	tail -n +2 test_file_boards.txt > test_file_boards_in.txt
+	cat test_file_main.txt test_file_archs_in.txt test_file_tests_in.txt \
+		test_file_boards_in.txt > test_file.txt
+
+	echo "+++ run twister"
 
 	# Run a subset of tests based on matrix size
-	${sanitycheck} ${sanitycheck_options} --load-tests test_file.txt \
+	${twister} ${twister_options} --load-tests test_file.txt \
 		--subset ${matrix}/${matrix_builds} --retry-failed 3
 
 	# Run module tests on matrix #1
-	if [ "$matrix" = "1" ]; then
+	if [ "$matrix" = "1" -a  "$SC" == "full" ]; then
 		if [ -s module_tests.args ]; then
-			${sanitycheck} ${sanitycheck_options} \
+			${twister} ${twister_options} \
 				+module_tests.args --outdir module_tests
 		fi
 	fi

@@ -30,19 +30,17 @@
 	};
 
 	iccm0: iccm@60000000 {
-		device_type = "memory";
 		compatible = "arc,iccm";
 		reg = <0x60000000 0x20000>;
 	};
 
 	dccm0: dccm@80000000 {
-		device_type = "memory";
 		compatible = "arc,dccm";
 		reg = <0x80000000 0x20000>;
 	};
 
+	/* this is (Psuedo SRAM), so treat it like mmio-sram */
 	sram0: memory@10000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x10000000 0x1000000>;
 	};

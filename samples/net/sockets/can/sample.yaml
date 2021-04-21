@@ -2,7 +2,6 @@ common:
   tags: net socket can CAN
   depends_on: can
   harness: can
-  platform_whitelist: stm32f072b_disco nucleo_l432kc
 sample:
   description: Test BSD sockets CAN support
   name: Socket CAN example

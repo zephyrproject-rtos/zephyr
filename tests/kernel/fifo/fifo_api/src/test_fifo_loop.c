@@ -37,7 +37,7 @@ static void tfifo_get(struct k_fifo *pfifo)
 }
 
 /*entry of contexts*/
-static void tIsr_entry(void *p)
+static void tIsr_entry(const void *p)
 {
 	TC_PRINT("isr fifo get\n");
 	tfifo_get((struct k_fifo *)p);

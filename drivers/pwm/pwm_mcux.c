@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_imx_pwm
+
 #include <errno.h>
 #include <drivers/pwm.h>
 #include <soc.h>
@@ -29,13 +31,13 @@ struct pwm_mcux_data {
 	pwm_signal_param_t channel[CHANNEL_COUNT];
 };
 
-static int mcux_pwm_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles,
+static int mcux_pwm_pin_set(const struct device *dev, uint32_t pwm,
+			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
-	const struct pwm_mcux_config *config = dev->config->config_info;
-	struct pwm_mcux_data *data = dev->driver_data;
-	u8_t duty_cycle;
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
+	uint8_t duty_cycle;
 
 	if (pwm >= CHANNEL_COUNT) {
 		LOG_ERR("Invalid channel");
@@ -106,20 +108,20 @@ static int mcux_pwm_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int mcux_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-				       u64_t *cycles)
+static int mcux_pwm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
+				       uint64_t *cycles)
 {
-	const struct pwm_mcux_config *config = dev->config->config_info;
+	const struct pwm_mcux_config *config = dev->config;
 
 	*cycles = CLOCK_GetFreq(config->clock_source) >> config->prescale;
 
 	return 0;
 }
 
-static int pwm_mcux_init(struct device *dev)
+static int pwm_mcux_init(const struct device *dev)
 {
-	const struct pwm_mcux_config *config = dev->config->config_info;
-	struct pwm_mcux_data *data = dev->driver_data;
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
 	pwm_config_t pwm_config;
 	status_t status;
 
@@ -154,81 +156,19 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 	static struct pwm_mcux_data pwm_mcux_data_ ## n;		  \
 									  \
 	static const struct pwm_mcux_config pwm_mcux_config_ ## n = {     \
-		.base = (void *)DT_PWM_MCUX_ ## n ## _BASE_ADDRESS,	  \
-		.index = DT_PWM_MCUX_ ## n ## _INDEX,			  \
+		.base = (void *)DT_REG_ADDR(DT_PARENT(DT_DRV_INST(n))),   \
+		.index = DT_INST_PROP(n, index),			  \
 		.mode = kPWM_EdgeAligned,				  \
 		.prescale = kPWM_Prescale_Divide_128,			  \
 		.clock_source = kCLOCK_IpgClk,				  \
 	};								  \
 									  \
-	DEVICE_AND_API_INIT(pwm_mcux_ ## n,				  \
-			    DT_PWM_MCUX_ ## n ## _NAME,			  \
+	DEVICE_DT_INST_DEFINE(n,					  \
 			    pwm_mcux_init,				  \
+			    device_pm_control_nop,			  \
 			    &pwm_mcux_data_ ## n,			  \
 			    &pwm_mcux_config_ ## n,			  \
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
 			    &pwm_mcux_driver_api);
 
-#ifdef CONFIG_FLEXPWM1_PWM0
-PWM_DEVICE_INIT_MCUX(0)
-#endif
-
-#ifdef CONFIG_FLEXPWM1_PWM1
-PWM_DEVICE_INIT_MCUX(1)
-#endif
-
-#ifdef CONFIG_FLEXPWM1_PWM2
-PWM_DEVICE_INIT_MCUX(2)
-#endif
-
-#ifdef CONFIG_FLEXPWM1_PWM3
-PWM_DEVICE_INIT_MCUX(3)
-#endif
-
-#ifdef CONFIG_FLEXPWM2_PWM0
-PWM_DEVICE_INIT_MCUX(4)
-#endif
-
-#ifdef CONFIG_FLEXPWM2_PWM1
-PWM_DEVICE_INIT_MCUX(5)
-#endif
-
-#ifdef CONFIG_FLEXPWM2_PWM2
-PWM_DEVICE_INIT_MCUX(6)
-#endif
-
-#ifdef CONFIG_FLEXPWM2_PWM3
-PWM_DEVICE_INIT_MCUX(7)
-#endif
-
-#ifdef CONFIG_FLEXPWM3_PWM0
-PWM_DEVICE_INIT_MCUX(8)
-#endif
-
-#ifdef CONFIG_FLEXPWM3_PWM1
-PWM_DEVICE_INIT_MCUX(9)
-#endif
-
-#ifdef CONFIG_FLEXPWM3_PWM2
-PWM_DEVICE_INIT_MCUX(10)
-#endif
-
-#ifdef CONFIG_FLEXPWM3_PWM3
-PWM_DEVICE_INIT_MCUX(11)
-#endif
-
-#ifdef CONFIG_FLEXPWM4_PWM0
-PWM_DEVICE_INIT_MCUX(12)
-#endif
-
-#ifdef CONFIG_FLEXPWM4_PWM1
-PWM_DEVICE_INIT_MCUX(13)
-#endif
-
-#ifdef CONFIG_FLEXPWM4_PWM2
-PWM_DEVICE_INIT_MCUX(14)
-#endif
-
-#ifdef CONFIG_FLEXPWM4_PWM3
-PWM_DEVICE_INIT_MCUX(15)
-#endif
+DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MCUX)

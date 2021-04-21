@@ -14,8 +14,8 @@ Building and Running
 ********************
 
 This project outputs sensor data to the console. FXOS8700
-sensor is present on the :ref:`frdm_k64f`, :ref:`frdm_kw41z`,
-:ref:`hexiwear_k64`, and :ref:`twr_ke18f` boards.
+sensor is present on the :ref:`frdm_k64f`, :ref:`frdm_k22f`,
+:ref:`frdm_kw41z`, :ref:`hexiwear_k64`, and :ref:`twr_ke18f` boards.
 Accelerometer only devices are present on the :ref:`frdm_kl25z`,
 :ref:`bbc_microbit`, and :ref:`reel_board` boards. It does not work on
 QEMU.
@@ -36,6 +36,26 @@ Example building for the FRDM-K64F with motion detection support:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxos8700
    :board: frdm_k64f
+   :conf: "prj.conf overlay-motion.conf"
+   :goals: build flash
+   :compact:
+
+Building and Running for FRDM-K22F
+==================================
+FRDM-K22F is equipped with FXOS8700CQ accelerometer and magnetometer.
+Sample can be built and executed for the FRDM-K22F as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: frdm_k22f
+   :goals: build flash
+   :compact:
+
+Example building for the FRDM-K22F with motion detection support:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: frdm_k22f
    :conf: "prj.conf overlay-motion.conf"
    :goals: build flash
    :compact:
@@ -87,6 +107,17 @@ Sample can be built and executed for the reel board as follows:
    :zephyr-app: samples/sensor/fxos8700
    :board: reel_board
    :conf: "prj_accel.conf"
+   :goals: build flash
+   :compact:
+
+Building and Running for MIMXRT685-EVK
+======================================
+MIMXRT685-EVK is equipped with FXOS8700CQ accelerometer and magnetometer.
+Sample can be built and executed for the MIMXRT685-EVK as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/fxos8700
+   :board: mimxrt685_evk_cm33
    :goals: build flash
    :compact:
 

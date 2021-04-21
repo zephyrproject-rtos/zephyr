@@ -29,7 +29,7 @@ static struct channel_info info[] = {
 
 void main(void)
 {
-	struct device *dev[ARRAY_SIZE(info)];
+	const struct device *dev[ARRAY_SIZE(info)];
 	struct sensor_value val[ARRAY_SIZE(info)];
 	unsigned int i;
 	int rc;
@@ -44,7 +44,7 @@ void main(void)
 	}
 
 #ifdef CONFIG_GROVE_LCD_RGB
-	struct device *glcd;
+	const struct device *glcd;
 
 	glcd = device_get_binding(GROVE_LCD_NAME);
 	if (glcd == NULL) {

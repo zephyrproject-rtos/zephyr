@@ -8,7 +8,7 @@
 #include <syscall_handler.h>
 #include "sample_driver.h"
 
-int z_vrfy_sample_driver_state_set(struct device *dev, bool active)
+int z_vrfy_sample_driver_state_set(const struct device *dev, bool active)
 {
 	if (Z_SYSCALL_DRIVER_SAMPLE(dev, state_set)) {
 		return -EINVAL;
@@ -19,7 +19,7 @@ int z_vrfy_sample_driver_state_set(struct device *dev, bool active)
 
 #include <syscalls/sample_driver_state_set_mrsh.c>
 
-int z_vrfy_sample_driver_write(struct device *dev, void *buf)
+int z_vrfy_sample_driver_write(const struct device *dev, void *buf)
 {
 	if (Z_SYSCALL_DRIVER_SAMPLE(dev, write)) {
 		return -EINVAL;

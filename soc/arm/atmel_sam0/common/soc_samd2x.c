@@ -56,11 +56,11 @@ static void xosc32k_init(void)
 static void osc32k_init(void)
 {
 #ifdef FUSES_OSC32K_CAL_ADDR
-	u32_t fuse = *(u32_t *)FUSES_OSC32K_CAL_ADDR;
-	u32_t calib = (fuse & FUSES_OSC32K_CAL_Msk) >> FUSES_OSC32K_CAL_Pos;
+	uint32_t fuse = *(uint32_t *)FUSES_OSC32K_CAL_ADDR;
+	uint32_t calib = (fuse & FUSES_OSC32K_CAL_Msk) >> FUSES_OSC32K_CAL_Pos;
 #else
-	u32_t fuse = *(u32_t *)FUSES_OSC32KCAL_ADDR;
-	u32_t calib = (fuse & FUSES_OSC32KCAL_Msk) >> FUSES_OSC32KCAL_Pos;
+	uint32_t fuse = *(uint32_t *)FUSES_OSC32KCAL_ADDR;
+	uint32_t calib = (fuse & FUSES_OSC32KCAL_Msk) >> FUSES_OSC32KCAL_Pos;
 #endif
 
 	SYSCTRL->OSC32K.reg = SYSCTRL_OSC32K_CALIB(calib) |
@@ -102,7 +102,7 @@ static void dfll_init(void)
 	while (!SYSCTRL->PCLKSR.bit.DFLLRDY) {
 	}
 
-	u32_t mul = (SOC_ATMEL_SAM0_MCK_FREQ_HZ +
+	uint32_t mul = (SOC_ATMEL_SAM0_MCK_FREQ_HZ +
 		     SOC_ATMEL_SAM0_GCLK1_FREQ_HZ / 2) /
 		    SOC_ATMEL_SAM0_GCLK1_FREQ_HZ;
 
@@ -172,9 +172,9 @@ static void dividers_init(void)
 	/* TODO(mlhx): enable clock failure detection? */
 }
 
-static int atmel_samd_init(struct device *arg)
+static int atmel_samd_init(const struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 

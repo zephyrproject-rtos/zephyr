@@ -7,9 +7,9 @@
 #include <kernel.h>
 #include <kernel_internal.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-FUNC_NORETURN void z_irq_spurious(void *unused)
+FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
 	ulong_t mcause;
 
@@ -31,14 +31,19 @@ FUNC_NORETURN void z_irq_spurious(void *unused)
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     u32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	ARG_UNUSED(flags);
 
 	z_isr_install(irq, routine, parameter);
+
 #if defined(CONFIG_RISCV_HAS_PLIC)
-	riscv_plic_set_priority(irq, priority);
+	if (irq_get_level(irq) == 2) {
+		irq = irq_from_level_2(irq);
+
+		riscv_plic_set_priority(irq, priority);
+	}
 #else
 	ARG_UNUSED(priority);
 #endif

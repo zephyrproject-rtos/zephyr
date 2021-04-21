@@ -5,7 +5,7 @@
 
 menuconfig LSM6DSO
 	bool "LSM6DSO I2C/SPI accelerometer and gyroscope Chip"
-	depends on (I2C && HAS_DTS_I2C) || SPI
+	depends on I2C || SPI
 	select HAS_STMEMSC
 	select USE_STDC_LSM6DSO
 	help
@@ -52,20 +52,6 @@ config LSM6DSO_THREAD_STACK_SIZE
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
-
-choice LSM6DSO_INT_PIN
-	prompt "Sensor INT pin number"
-	default LSM6DSO_INT_PIN_1
-	help
-	  The number of LSM6DSO int pin used to generate interrupt to cpu.
-	  Supported values are int1 or int2
-
-config LSM6DSO_INT_PIN_1
-	bool "int1"
-
-config LSM6DSO_INT_PIN_2
-	bool "int2"
-endchoice
 
 endif # LSM6DSO_TRIGGER
 

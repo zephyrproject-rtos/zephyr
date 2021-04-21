@@ -134,6 +134,31 @@ Before flashing or debugging ensure the RESET, TMS, TCK, TDO, and TDI jumpers
 are in place. Also place jumpers on the the TXD and RXD signals for a serial
 console using the XDS110 application serial port.
 
+Prerequisites:
+==============
+
+#. Ensure the XDS-110 emulation firmware on the board is updated.
+
+   Download and install the latest `XDS-110 emulation package`_.
+
+   Follow these `xds110 firmware update directions
+   <http://software-dl.ti.com/ccs/esd/documents/xdsdebugprobes/emu_xds110.html#updating-the-xds110-firmware>`_
+
+   Note that the emulation package install may place the xdsdfu utility
+   in ``<install_dir>/ccs_base/common/uscif/xds110/``.
+
+#. Install OpenOCD
+
+   You can obtain OpenOCD by following these
+   :ref:`installing the latest Zephyr SDK instructions <zephyr_sdk>`.
+
+   After the installation, add the directory containing the OpenOCD executable
+   to your environment's PATH variable. For example, use this command in Linux:
+
+   .. code-block:: console
+
+      export PATH=$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/openocd:$PATH
+
 Flashing
 ========
 
@@ -181,6 +206,27 @@ so-called backdoor is enabled (via option
 down during reset. See the bootloader documentation in chapter 10 of the `TI
 CC13x2 / CC26x2 Technical Reference Manual`_ for additional information.
 
+Power Management and UART
+=========================
+
+System and device power management are supported on this platform, and
+can be enabled via the standard Kconfig options in Zephyr, such as
+:option:`CONFIG_PM`, :option:`CONFIG_PM_DEVICE`.
+
+When system power management is turned on (CONFIG_PM=y),
+sleep state 2 (standby mode) is allowed, and polling is used to retrieve input
+by calling uart_poll_in(), it is possible for characters to be missed if the
+system enters standby mode between calls to uart_poll_in(). This is because
+the UART is inactive while the system is in standby mode. The workaround is to
+disable sleep state 2 while polling:
+
+.. code-block:: c
+
+    pm_constraint_set(PM_STATE_STANDBY);
+    <code that calls uart_poll_in() and expects input at any point in time>
+    pm_constraint_release(PM_STATE_STANDBY);
+
+
 References
 **********
 
@@ -201,3 +247,6 @@ CC26X2R1 LaunchPad Quick Start Guide:
 
 .. _TI CC13x2 / CC26x2 Technical Reference Manual:
    http://www.ti.com/lit/pdf/swcu185
+
+..  _XDS-110 emulation package:
+   http://processors.wiki.ti.com/index.php/XDS_Emulation_Software_Package#XDS_Emulation_Software_.28emupack.29_Download

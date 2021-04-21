@@ -1,92 +1,17 @@
-# mcumgr configuration options
+# Management configuration options
 
-# Copyright Runtime.io 2018. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Management"
+menu "Device Management"
 
-config MCUMGR_SMP_BT
-	bool "Bluetooth mcumgr SMP transport"
-	select MCUMGR
-	select BT
-	select BT_PERIPHERAL
-	select BT_GATT_DYNAMIC_DB
-	help
-	  Enables handling of SMP commands received over Bluetooth.
+source "subsys/mgmt/ec_host_cmd/Kconfig"
 
-config MCUMGR_SMP_BT_AUTHEN
-	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
-	depends on MCUMGR_SMP_BT
-	select BT_SMP
-	default y
-	help
-	  Enables encrypted and authenticated connection requirement to
-	  Bluetooth SMP transport.
+source "subsys/mgmt/mcumgr/Kconfig"
 
-config MCUMGR_SMP_SHELL
-	bool "Shell mcumgr SMP transport"
-	select MCUMGR
-	select SHELL
-	select SHELL_BACKEND_SERIAL
-	select BASE64
-	help
-	  Enables handling of SMP commands received over shell.  This allows
-	  the shell to be use for both mcumgr commands and shell commands.
+source "subsys/mgmt/hawkbit/Kconfig"
 
-config MCUMGR_SMP_SHELL_MTU
-	int "Shell SMP MTU"
-	default 256
-	depends on MCUMGR_SMP_SHELL
-	help
-	  Maximum size of SMP frames sent and received over shell.  This value
-	  must satisfy the following relation:
-	  MCUMGR_SMP_SHELL_MTU <= MCUMGR_BUF_SIZE + 2
+source "subsys/mgmt/updatehub/Kconfig"
 
-config MCUMGR_SMP_UART
-	bool "UART mcumgr SMP transport"
-	select MCUMGR
-	select UART_MCUMGR
-	select BASE64
-	help
-	  Enables handling of SMP commands received over UART.  This is a
-	  lightweight alternative to MCUMGR_SMP_SHELL.  It allows mcumgr
-	  commands to be received over UART without requiring an additional
-	  thread.
+source "subsys/mgmt/osdp/Kconfig"
 
-config MCUMGR_SMP_UART_MTU
-	int "UART SMP MTU"
-	default 256
-	depends on MCUMGR_SMP_UART
-	help
-	  Maximum size of SMP frames sent and received over UART, in bytes.
-	  This value must satisfy the following relation:
-	  MCUMGR_SMP_UART_MTU <= MCUMGR_BUF_SIZE + 2
-
-source "subsys/mgmt/Kconfig.mcumgr"
-
-if MCUMGR
-config MCUMGR_BUF_COUNT
-	int "Number of mcumgr buffers"
-	default 4
-	help
-	  The number of net_bufs to allocate for mcumgr.  These buffers are
-	  used for both requests and responses.
-
-config MCUMGR_BUF_SIZE
-	int "Size of each mcumgr buffer"
-	default 384
-	help
-	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
-	  the following relation:
-	  MCUMGR_BUF_SIZE >= transport-specific-MTU + transport-overhead
-
-config MCUMGR_BUF_USER_DATA_SIZE
-	int "Size of mcumgr buffer user data"
-	default 4
-	help
-	  The size, in bytes, of user data to allocate for each mcumgr buffer.
-	  Different mcumgr transports impose different requirements for this
-	  setting.  A value of 4 is sufficient for UART, shell, and bluetooth.
-
-endif # MCUMGR
 endmenu

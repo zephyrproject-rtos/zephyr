@@ -16,7 +16,7 @@ config NUM_IRQS
 	default 30
 
 config ARC_MPU_VER
-	default 3
+	default 4
 
 config RGF_NUM_BANKS
 	default 1
@@ -30,7 +30,7 @@ config HARVARD
 config ARC_FIRQ
 	default n
 
-config CACHE_FLUSHING
+config CACHE_MANAGEMENT
 	default y
 
 endif # SOC_NSIM_SEM

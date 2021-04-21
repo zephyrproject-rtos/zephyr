@@ -14,7 +14,7 @@
 #if defined(CONFIG_X86)
 #include <arch/x86/arch.h>
 #elif defined(CONFIG_ARM64)
-#include <arch/arm/aarch64/arch.h>
+#include <arch/arm64/arch.h>
 #elif defined(CONFIG_ARM)
 #include <arch/arm/aarch32/arch.h>
 #elif defined(CONFIG_ARC)
@@ -27,6 +27,8 @@
 #include <arch/xtensa/arch.h>
 #elif defined(CONFIG_ARCH_POSIX)
 #include <arch/posix/arch.h>
+#elif defined(CONFIG_SPARC)
+#include <arch/sparc/arch.h>
 #else
 #error "Unknown Architecture"
 #endif

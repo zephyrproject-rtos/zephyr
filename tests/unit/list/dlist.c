@@ -327,6 +327,90 @@ void test_dlist(void)
 	zassert_equal(ii, 2, "");
 }
 
+int cond(sys_dnode_t *node, void *data)
+{
+	return (node == data) ? 1 : 0;
+}
+/**
+ * @brief Verify doubly linked list funtionalities
+ *
+ * @see sys_dlist_is_head(),sys_dlist_is_tail(),
+ * sys_dlist_has_multiple_nodes(),sys_dlist_get()
+ * sys_dlist_peek_head_not_empty(),sys_dlist_insert_at(),
+ * sys_dlist_peek_prev(),
+ */
+void test_dlist2(void)
+{
+	struct container_node test_node[6];
+	struct container_node insert_node;
+	struct container_node insert_node2;
+
+	/* Initialize */
+	memset(test_node, 0, sizeof(test_node));
+	memset(&insert_node, 0, sizeof(insert_node));
+	memset(&insert_node2, 0, sizeof(insert_node2));
+	sys_dlist_init(&test_list);
+
+	/* Check if the dlist is empty */
+	zassert_true(sys_dlist_get(&test_list) == NULL,
+			"Get a empty dilst, NULL will be returned");
+
+	/* Check if a node can append as head if dlist is empty */
+	sys_dlist_insert_at(&test_list, &insert_node.node,
+				cond, &test_node[2].node);
+	zassert_true(test_list.head == &insert_node.node, "");
+	zassert_true(test_list.tail == &insert_node.node, "");
+
+	/* Re-initialize and insert nodes */
+	sys_dlist_init(&test_list);
+
+	for (int i = 0; i < 5; i++) {
+		sys_dlist_append(&test_list, &test_node[i].node);
+	}
+
+	zassert_true(sys_dlist_peek_head_not_empty(&test_list) != NULL,
+				"dlist appended incorrectly");
+
+	zassert_true(sys_dlist_is_head(&test_list,
+						&test_node[0].node),
+				"dlist appended incorrectly");
+
+	zassert_true(sys_dlist_is_tail(&test_list,
+					&test_node[4].node),
+				"dlist appended incorrectly");
+
+	zassert_true(sys_dlist_has_multiple_nodes(&test_list),
+				"dlist appended incorrectly");
+
+	zassert_true(sys_dlist_peek_prev(&test_list,
+				&test_node[2].node) == &test_node[1].node,
+				"dlist appended incorrectly");
+
+	zassert_true(sys_dlist_peek_prev(&test_list,
+				&test_node[0].node) == NULL,
+				"dlist appended incorrectly");
+
+	zassert_true(sys_dlist_peek_prev(&test_list,
+				NULL) == NULL,
+				"dlist appended incorrectly");
+
+	zassert_true(sys_dlist_get(&test_list) ==
+				&test_node[0].node,
+				"Get a dilst, head will be returned");
+
+	/* Check if a node can insert in front of known nodes */
+	sys_dlist_insert_at(&test_list, &insert_node.node,
+				cond, &test_node[2].node);
+	zassert_true(sys_dlist_peek_next(&test_list,
+				&test_node[1].node) == &insert_node.node, " ");
+
+	/* Check if a node can append if the node is unknown */
+	sys_dlist_insert_at(&test_list, &insert_node2.node,
+				cond, &test_node[5].node);
+	zassert_true(sys_dlist_peek_next(&test_list,
+				&test_node[4].node) == &insert_node2.node, " ");
+}
+
 /**
  * @}
  */

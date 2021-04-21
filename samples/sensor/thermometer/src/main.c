@@ -10,7 +10,7 @@
 
 void main(void)
 {
-	struct device *temp_dev;
+	const struct device *temp_dev;
 
 	printf("Thermometer Example! %s\n", CONFIG_ARCH);
 
@@ -21,7 +21,7 @@ void main(void)
 	}
 
 	printf("temp device is %p, name is %s\n",
-	       temp_dev, temp_dev->config->name);
+	       temp_dev, temp_dev->name);
 
 	while (1) {
 		int r;

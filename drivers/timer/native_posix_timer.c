@@ -19,15 +19,15 @@
 #include "soc.h"
 #include <arch/posix/posix_trace.h>
 
-static u64_t tick_period; /* System tick period in microseconds */
+static uint64_t tick_period; /* System tick period in microseconds */
 /* Time (microseconds since boot) of the last timer tick interrupt */
-static u64_t last_tick_time;
+static uint64_t last_tick_time;
 
 /**
  * Return the current HW cycle counter
  * (number of microseconds since boot in 32bits)
  */
-u32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	return hwm_get_time();
 }
@@ -36,15 +36,23 @@ u32_t z_timer_cycle_get_32(void)
  * Interrupt handler for the timer interrupt
  * Announce to the kernel that a number of ticks have passed
  */
-static void np_timer_isr(void *arg)
+static void np_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	u64_t now = hwm_get_time();
-	s32_t elapsed_ticks = (now - last_tick_time)/tick_period;
+	uint64_t now = hwm_get_time();
+	int32_t elapsed_ticks = (now - last_tick_time)/tick_period;
 
 	last_tick_time += elapsed_ticks*tick_period;
-	z_clock_announce(elapsed_ticks);
+	sys_clock_announce(elapsed_ticks);
+}
+
+/**
+ * This function exists only to enable tests to call into the timer ISR
+ */
+void np_timer_isr_test_hook(const void *arg)
+{
+	np_timer_isr(NULL);
 }
 
 /*
@@ -52,9 +60,9 @@ static void np_timer_isr(void *arg)
  *
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
-int z_clock_driver_init(struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	tick_period = 1000000ul / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
@@ -71,7 +79,7 @@ int z_clock_driver_init(struct device *device)
  * @brief Set system clock timeout
  *
  * Informs the system clock driver that the next needed call to
- * z_clock_announce() will not be until the specified number of ticks
+ * sys_clock_announce() will not be until the specified number of ticks
  * from the the current time have elapsed.
  *
  * See system_timer.h for more information
@@ -80,17 +88,17 @@ int z_clock_driver_init(struct device *device)
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #if defined(CONFIG_TICKLESS_KERNEL)
-	u64_t silent_ticks;
+	uint64_t silent_ticks;
 
 	/* Note that we treat INT_MAX literally as anyhow the maximum amount of
-	 * ticks we can report with z_clock_announce() is INT_MAX
+	 * ticks we can report with sys_clock_announce() is INT_MAX
 	 */
-	if (ticks == K_FOREVER) {
+	if (ticks == K_TICKS_FOREVER) {
 		silent_ticks = INT64_MAX;
 	} else if (ticks > 0) {
 		silent_ticks = ticks - 1;
@@ -102,52 +110,18 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 }
 
 /**
- * @brief Ticks elapsed since last z_clock_announce() call
+ * @brief Ticks elapsed since last sys_clock_announce() call
  *
  * Queries the clock driver for the current time elapsed since the
- * last call to z_clock_announce() was made.  The kernel will call
+ * last call to sys_clock_announce() was made.  The kernel will call
  * this with appropriate locking, the driver needs only provide an
  * instantaneous answer.
  */
-u32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	return (hwm_get_time() - last_tick_time)/tick_period;
 }
 
-
-#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
-/**
- * Replacement to the kernel k_busy_wait()
- * Will block this thread (and therefore the whole zephyr) during usec_to_wait
- *
- * Note that interrupts may be received in the meanwhile and that therefore this
- * thread may loose context
- *
- * This special arch_busy_wait() is necessary due to how the POSIX arch/SOC INF
- * models a CPU. Conceptually it could be thought as if the MCU was running
- * at an infinitely high clock, and therefore no simulated time passes while
- * executing instructions(*1).
- * Therefore to be able to busy wait this function does the equivalent of
- * programming a dedicated timer which will raise a non-maskable interrupt,
- * and halting the CPU.
- *
- * (*1) In reality simulated time is simply not advanced just due to the "MCU"
- * running. Meaning, the SW running on the MCU is assumed to take 0 time.
- */
-void arch_busy_wait(u32_t usec_to_wait)
-{
-	u64_t time_end = hwm_get_time() + usec_to_wait;
-
-	while (hwm_get_time() < time_end) {
-		/*
-		 * There may be wakes due to other interrupts including
-		 * other threads calling arch_busy_wait
-		 */
-		hwtimer_wake_in_time(time_end);
-		posix_halt_cpu();
-	}
-}
-#endif
 
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**

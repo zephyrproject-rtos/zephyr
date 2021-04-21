@@ -45,7 +45,7 @@ static const struct bt_data ad[] = {
 static struct bt_conn *default_conn;
 
 static const struct bt_gatt_attr *local_attr;
-static u16_t remote_handle;
+static uint16_t remote_handle;
 static bool remote_ready;
 static bool initiator;
 
@@ -70,14 +70,14 @@ enum {
 };
 
 struct ble_ball_info {
-	s8_t x_pos;
-	s8_t y_pos;
-	s8_t x_vel;
-	s8_t y_vel;
+	int8_t x_pos;
+	int8_t y_pos;
+	int8_t x_vel;
+	int8_t y_vel;
 } __packed;
 
 struct ble_data {
-	u8_t op;
+	uint8_t op;
 	union {
 		struct ble_ball_info ball;
 	};
@@ -85,7 +85,7 @@ struct ble_data {
 
 #define BALL_INFO_LEN (1 + sizeof(struct ble_ball_info))
 
-void ble_send_ball(s8_t x_pos, s8_t y_pos, s8_t x_vel, s8_t y_vel)
+void ble_send_ball(int8_t x_pos, int8_t y_pos, int8_t x_vel, int8_t y_vel)
 {
 	struct ble_data data = {
 		.op           = BLE_BALL_INFO,
@@ -111,7 +111,7 @@ void ble_send_ball(s8_t x_pos, s8_t y_pos, s8_t x_vel, s8_t y_vel)
 
 void ble_send_lost(void)
 {
-	u8_t lost = BLE_LOST;
+	uint8_t lost = BLE_LOST;
 	int err;
 
 	if (!default_conn || !remote_ready) {
@@ -125,9 +125,9 @@ void ble_send_lost(void)
 	}
 }
 
-static u8_t notify_func(struct bt_conn *conn,
+static uint8_t notify_func(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *param,
-			const void *buf, u16_t len)
+			const void *buf, uint16_t len)
 {
 	const struct ble_data *data = buf;
 
@@ -163,7 +163,7 @@ static u8_t notify_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static u8_t discover_func(struct bt_conn *conn,
+static uint8_t discover_func(struct bt_conn *conn,
 			  const struct bt_gatt_attr *attr,
 			  struct bt_gatt_discover_params *param)
 {
@@ -226,7 +226,7 @@ static u8_t discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_STOP;
 }
 
-static void connected(struct bt_conn *conn, u8_t err)
+static void connected(struct bt_conn *conn, uint8_t err)
 {
 	struct bt_conn_info info;
 
@@ -254,7 +254,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 	k_delayed_work_submit(&ble_work, K_NO_WAIT);
 }
 
-static void disconnected(struct bt_conn *conn, u8_t reason)
+static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason 0x%02x)\n", reason);
 
@@ -312,7 +312,7 @@ void ble_cancel_connect(void)
 		break;
 	case BLE_CONNECT_CREATE:
 		ble_state = BLE_CONNECT_CANCEL;
-		/* Intentional fall-through */
+		__fallthrough;
 	case BLE_CONNECTED:
 		connect_canceled = true;
 		k_delayed_work_submit(&ble_work, K_NO_WAIT);
@@ -322,7 +322,7 @@ void ble_cancel_connect(void)
 	}
 }
 
-static bool pong_uuid_match(const u8_t *data, u8_t len)
+static bool pong_uuid_match(const uint8_t *data, uint8_t len)
 {
 	while (len >= 16U) {
 		if (!memcmp(data, pong_svc_uuid.val, 16)) {
@@ -338,14 +338,17 @@ static bool pong_uuid_match(const u8_t *data, u8_t len)
 
 static void create_conn(const bt_addr_le_t *addr)
 {
+	int err;
+
 	if (default_conn) {
 		return;
 	}
 
 	printk("Found matching device, initiating connection...\n");
 
-	default_conn = bt_conn_create_le(addr, BT_LE_CONN_PARAM_DEFAULT);
-	if (!default_conn) {
+	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+				BT_LE_CONN_PARAM_DEFAULT, &default_conn);
+	if (err) {
 		printk("Failed to initiate connection");
 		return;
 	}
@@ -354,16 +357,16 @@ static void create_conn(const bt_addr_le_t *addr)
 	k_delayed_work_submit(&ble_work, SCAN_TIMEOUT);
 }
 
-static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
+static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	if (type != BT_LE_ADV_IND) {
+	if (type != BT_GAP_ADV_TYPE_ADV_IND) {
 		return;
 	}
 
 	while (ad->len > 1) {
-		u8_t len = net_buf_simple_pull_u8(ad);
-		u8_t type;
+		uint8_t len = net_buf_simple_pull_u8(ad);
+		uint8_t type;
 
 		/* Check for early termination */
 		if (len == 0U) {
@@ -387,17 +390,17 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 	}
 }
 
-static u32_t adv_timeout(void)
+static uint32_t adv_timeout(void)
 {
-	u32_t timeout;
+	uint32_t timeout;
 
 	if (bt_rand(&timeout, sizeof(timeout)) < 0) {
-		return K_SECONDS(10);
+		return 10 * MSEC_PER_SEC;
 	}
 
-	timeout %= K_SECONDS(10);
+	timeout %= (10 * MSEC_PER_SEC);
 
-	return timeout + K_SECONDS(1);
+	return timeout + (1 * MSEC_PER_SEC);
 }
 
 static void cancel_connect(void)
@@ -471,7 +474,7 @@ static void ble_timeout(struct k_work *work)
 
 		printk("Advertising successfully started\n");
 		ble_state = BLE_ADVERTISING;
-		k_delayed_work_submit(&ble_work, adv_timeout());
+		k_delayed_work_submit(&ble_work, K_MSEC(adv_timeout()));
 		break;
 	case BLE_ADVERTISING:
 		printk("Timed out advertising\n");
@@ -482,8 +485,8 @@ static void ble_timeout(struct k_work *work)
 	case BLE_CONNECTED:
 		discov_param.uuid = &pong_svc_uuid.uuid;
 		discov_param.func = discover_func;
-		discov_param.start_handle = 0x0001;
-		discov_param.end_handle = 0xffff;
+		discov_param.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
+		discov_param.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
 		discov_param.type = BT_GATT_DISCOVER_PRIMARY;
 
 		err = bt_gatt_discover(default_conn, &discov_param);
@@ -497,7 +500,7 @@ static void ble_timeout(struct k_work *work)
 	}
 }
 
-static void pong_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t val)
+static void pong_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val)
 {
 	printk("val %u\n", val);
 

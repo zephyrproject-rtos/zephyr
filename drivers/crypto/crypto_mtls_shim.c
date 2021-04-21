@@ -21,7 +21,7 @@
 #endif /* CONFIG_MBEDTLS_CFG_FILE */
 
 #include <mbedtls/ccm.h>
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 #include <mbedtls/gcm.h>
 #endif
 #include <mbedtls/aes.h>
@@ -36,7 +36,7 @@ LOG_MODULE_REGISTER(mbedtls);
 struct mtls_shim_session {
 	union {
 		mbedtls_ccm_context mtls_ccm;
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 		mbedtls_gcm_context mtls_gcm;
 #endif
 		mbedtls_aes_context mtls_aes;
@@ -108,10 +108,10 @@ int mtls_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	return 0;
 }
 
-int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
+int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret, iv_bytes;
-	u8_t *p_iv, iv_loc[16];
+	uint8_t *p_iv, iv_loc[16];
 	mbedtls_aes_context *cbc_ctx = MTLS_GET_CTX(ctx, aes);
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
@@ -139,10 +139,10 @@ int mtls_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 	return 0;
 }
 
-int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
+int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret, iv_bytes;
-	u8_t *p_iv, iv_loc[16];
+	uint8_t *p_iv, iv_loc[16];
 	mbedtls_aes_context *cbc_ctx = MTLS_GET_CTX(ctx, aes);
 
 	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
@@ -168,7 +168,7 @@ int mtls_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt, u8_t *iv)
 
 static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
-				 u8_t *nonce)
+				 uint8_t *nonce)
 {
 	mbedtls_ccm_context *mtls_ctx = MTLS_GET_CTX(ctx, ccm);
 	int ret;
@@ -197,7 +197,7 @@ static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 
 static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
-				 u8_t *nonce)
+				 uint8_t *nonce)
 {
 	mbedtls_ccm_context *mtls_ctx = MTLS_GET_CTX(ctx, ccm);
 	int ret;
@@ -226,10 +226,10 @@ static int mtls_ccm_decrypt_auth(struct cipher_ctx *ctx,
 	return 0;
 }
 
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 static int mtls_gcm_encrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
-				 u8_t *nonce)
+				 uint8_t *nonce)
 {
 	mbedtls_gcm_context *mtls_ctx = MTLS_GET_CTX(ctx, gcm);
 	int ret;
@@ -257,7 +257,7 @@ static int mtls_gcm_encrypt_auth(struct cipher_ctx *ctx,
 
 static int mtls_gcm_decrypt_auth(struct cipher_ctx *ctx,
 				 struct cipher_aead_pkt *apkt,
-				 u8_t *nonce)
+				 uint8_t *nonce)
 {
 	mbedtls_gcm_context *mtls_ctx = MTLS_GET_CTX(ctx, gcm);
 	int ret;
@@ -284,7 +284,7 @@ static int mtls_gcm_decrypt_auth(struct cipher_ctx *ctx,
 
 	return 0;
 }
-#endif /* CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED */
+#endif /* CONFIG_MBEDTLS_CIPHER_GCM_ENABLED */
 
 static int mtls_get_unused_session_index(void)
 {
@@ -300,13 +300,14 @@ static int mtls_get_unused_session_index(void)
 	return -1;
 }
 
-static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
-		       enum cipher_algo algo, enum cipher_mode mode,
-		       enum cipher_op op_type)
+static int mtls_session_setup(const struct device *dev,
+			      struct cipher_ctx *ctx,
+			      enum cipher_algo algo, enum cipher_mode mode,
+			      enum cipher_op op_type)
 {
 	mbedtls_aes_context *aes_ctx;
 	mbedtls_ccm_context *ccm_ctx;
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 	mbedtls_gcm_context *gcm_ctx;
 #endif
 	int ctx_idx;
@@ -324,7 +325,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	if (mode != CRYPTO_CIPHER_MODE_CCM &&
 	    mode != CRYPTO_CIPHER_MODE_CBC &&
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 	    mode != CRYPTO_CIPHER_MODE_GCM &&
 #endif
 	    mode != CRYPTO_CIPHER_MODE_ECB) {
@@ -364,8 +365,6 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			return -EINVAL;
 		}
 		break;
-	case CRYPTO_CIPHER_MODE_CTR:
-		break;
 	case CRYPTO_CIPHER_MODE_CBC:
 		aes_ctx = &mtls_sessions[ctx_idx].mtls_aes;
 		mbedtls_aes_init(aes_ctx);
@@ -402,7 +401,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			ctx->ops.ccm_crypt_hndlr = mtls_ccm_decrypt_auth;
 		}
 		break;
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 	case CRYPTO_CIPHER_MODE_GCM:
 		gcm_ctx = &mtls_sessions[ctx_idx].mtls_gcm;
 		mbedtls_gcm_init(gcm_ctx);
@@ -420,7 +419,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			ctx->ops.gcm_crypt_hndlr = mtls_gcm_decrypt_auth;
 		}
 		break;
-#endif /* CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED */
+#endif /* CONFIG_MBEDTLS_CIPHER_GCM_ENABLED */
 	default:
 		LOG_ERR("Unhandled mode");
 		mtls_sessions[ctx_idx].in_use = false;
@@ -433,14 +432,14 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 	return ret;
 }
 
-static int mtls_session_free(struct device *dev, struct cipher_ctx *ctx)
+static int mtls_session_free(const struct device *dev, struct cipher_ctx *ctx)
 {
 	struct mtls_shim_session *mtls_session =
 		(struct mtls_shim_session *)ctx->drv_sessn_state;
 
 	if (mtls_session->mode == CRYPTO_CIPHER_MODE_CCM) {
 		mbedtls_ccm_free(&mtls_session->mtls_ccm);
-#ifdef CONFIG_MBEDTLS_CIPHER_MODE_GCM_ENABLED
+#ifdef CONFIG_MBEDTLS_CIPHER_GCM_ENABLED
 	} else if (mtls_session->mode == CRYPTO_CIPHER_MODE_GCM) {
 		mbedtls_gcm_free(&mtls_session->mtls_gcm);
 #endif
@@ -452,12 +451,12 @@ static int mtls_session_free(struct device *dev, struct cipher_ctx *ctx)
 	return 0;
 }
 
-static int mtls_query_caps(struct device *dev)
+static int mtls_query_caps(const struct device *dev)
 {
 	return MTLS_SUPPORT;
 }
 
-static int mtls_shim_init(struct device *dev)
+static int mtls_shim_init(const struct device *dev)
 {
 	return 0;
 }
@@ -469,7 +468,7 @@ static struct crypto_driver_api mtls_crypto_funcs = {
 	.query_hw_caps = mtls_query_caps,
 };
 
-DEVICE_AND_API_INIT(crypto_mtls, CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME,
-		    &mtls_shim_init, NULL, NULL,
+DEVICE_DEFINE(crypto_mtls, CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME,
+		    &mtls_shim_init, device_pm_control_nop, NULL, NULL,
 		    POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		    (void *)&mtls_crypto_funcs);

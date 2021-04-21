@@ -12,9 +12,9 @@
 #define SHIFT_RIGHT(v, o, m) (((v) >> (o)) & (m))
 
 /* convert from float32 to binary32 */
-int lwm2m_f32_to_b32(float32_value_t *f32, u8_t *b32, size_t len)
+int lwm2m_f32_to_b32(float32_value_t *f32, uint8_t *b32, size_t len)
 {
-	s32_t e = -1, v, f = 0;
+	int32_t e = -1, v, f = 0;
 	int i;
 
 	if (len != 4) {
@@ -91,10 +91,10 @@ int lwm2m_f32_to_b32(float32_value_t *f32, u8_t *b32, size_t len)
 }
 
 /* convert from float64 to binary64 */
-int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
+int lwm2m_f64_to_b64(float64_value_t *f64, uint8_t *b64, size_t len)
 {
-	s64_t v, f = 0;
-	s32_t e = -1;
+	int64_t v, f = 0;
+	int32_t e = -1;
 	int i;
 
 	if (len != 8) {
@@ -115,7 +115,7 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 		f >>= 1;
 
 		if (v & 1) {
-			f |= ((s64_t)1 << 52);
+			f |= ((int64_t)1 << 52);
 		}
 
 		v >>= 1;
@@ -135,7 +135,7 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 			continue;
 		} else if (v >= LWM2M_FLOAT64_DEC_MAX) {
 			v -= LWM2M_FLOAT64_DEC_MAX;
-			f |= (s64_t)1 << (51 - i);
+			f |= (int64_t)1 << (51 - i);
 		}
 
 		if (v == 0) {
@@ -175,9 +175,9 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 }
 
 /* convert from binary32 to float32 */
-int lwm2m_b32_to_f32(u8_t *b32, size_t len, float32_value_t *f32)
+int lwm2m_b32_to_f32(uint8_t *b32, size_t len, float32_value_t *f32)
 {
-	s32_t f, k, i, e;
+	int32_t f, k, i, e;
 	bool sign = false;
 
 	if (len != 4) {
@@ -197,10 +197,10 @@ int lwm2m_b32_to_f32(u8_t *b32, size_t len, float32_value_t *f32)
 	e -= 127;
 
 	/* enable "hidden" fraction bit 23 which is always 1 */
-	f  = ((s32_t)1 << 22);
+	f  = ((int32_t)1 << 22);
 	/* calc fraction: bits 22-0 */
-	f += ((s32_t)(b32[1] & 0x7F) << 16);
-	f += ((s32_t)b32[2] << 8);
+	f += ((int32_t)(b32[1] & 0x7F) << 16);
+	f += ((int32_t)b32[2] << 8);
 	f += b32[3];
 
 	/* handle whole number */
@@ -234,9 +234,9 @@ int lwm2m_b32_to_f32(u8_t *b32, size_t len, float32_value_t *f32)
 }
 
 /* convert from binary64 to float64 */
-int lwm2m_b64_to_f64(u8_t *b64, size_t len, float64_value_t *f64)
+int lwm2m_b64_to_f64(uint8_t *b64, size_t len, float64_value_t *f64)
 {
-	s64_t f, k;
+	int64_t f, k;
 	int i, e;
 	bool sign = false;
 
@@ -251,20 +251,20 @@ int lwm2m_b64_to_f64(u8_t *b64, size_t len, float64_value_t *f64)
 	sign = SHIFT_RIGHT(b64[0], 7, 0x1);
 
 	/* get exponent: bits 62-52 */
-	e  = SHIFT_LEFT((u16_t)b64[0], 4, 0x7F0);
+	e  = SHIFT_LEFT((uint16_t)b64[0], 4, 0x7F0);
 	e += SHIFT_RIGHT(b64[1], 4, 0xF);
 	/* remove bias */
 	e -= 1023;
 
 	/* enable "hidden" fraction bit 53 which is always 1 */
-	f  = ((s64_t)1 << 52);
+	f  = ((int64_t)1 << 52);
 	/* get fraction: bits 51-0 */
-	f += ((s64_t)(b64[1] & 0xF) << 48);
-	f += ((s64_t)b64[2] << 40);
-	f += ((s64_t)b64[3] << 32);
-	f += ((s64_t)b64[4] << 24);
-	f += ((s64_t)b64[5] << 16);
-	f += ((s64_t)b64[6] << 8);
+	f += ((int64_t)(b64[1] & 0xF) << 48);
+	f += ((int64_t)b64[2] << 40);
+	f += ((int64_t)b64[3] << 32);
+	f += ((int64_t)b64[4] << 24);
+	f += ((int64_t)b64[5] << 16);
+	f += ((int64_t)b64[6] << 8);
 	f += b64[7];
 
 	/* handle whole number */
@@ -288,7 +288,7 @@ int lwm2m_b64_to_f64(u8_t *b64, size_t len, float64_value_t *f64)
 
 	for (i = 51 - e; i >= 0; i--) {
 		k /= 2;
-		if (f & ((s64_t)1 << i)) {
+		if (f & ((int64_t)1 << i)) {
 			f64->val2 += k;
 
 		}

@@ -1,0 +1,73 @@
+# FSL SEGGER K66F platform configuration options
+
+# Copyright (c) 2020 DENX Software Engineering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MK66F18
+
+config SOC
+	default "mk66f18"
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_SIM
+	default y
+
+config CLOCK_CONTROL_MCUX_MCG
+	default y
+
+endif # CLOCK_CONTROL
+
+if PINMUX
+
+config PINMUX_MCUX
+	default y
+
+endif # PINMUX
+
+config GPIO
+	default y
+
+if GPIO
+
+config GPIO_MCUX
+	default y
+
+endif # GPIO
+
+if SPI
+
+config SPI_MCUX_DSPI
+	default y
+
+endif # SPI
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_MCUX_RNGA
+	default y
+
+endif # ENTROPY_GENERATOR
+
+if FLASH
+
+config SOC_FLASH_MCUX
+	default y
+
+endif # FLASH
+
+if WATCHDOG
+
+config WDT_MCUX_WDOG
+	default y
+
+endif # WATCHDOG
+
+if COUNTER
+
+config COUNTER_MCUX_RTC
+	default y
+
+endif # COUNTER
+
+endif # SOC_MK66F18

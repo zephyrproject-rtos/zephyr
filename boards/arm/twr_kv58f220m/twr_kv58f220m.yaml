@@ -9,5 +9,4 @@ toolchain:
 ram: 256
 flash: 1024
 supported:
-  - hwinfo
   - i2c

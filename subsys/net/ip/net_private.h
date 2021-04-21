@@ -31,7 +31,11 @@
 
 #else
 
+#if defined(CONFIG_NET_DHCPV4)
+#define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_if_dhcpv4)
+#else
 #define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_event_ipv6_route)
+#endif
 
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
@@ -46,6 +50,7 @@ extern void net_if_stats_reset_all(void);
 
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
+extern const char *net_context_state(struct net_context *context);
 extern void net_pkt_init(void);
 extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
@@ -54,6 +59,11 @@ static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
 static inline void net_tc_tx_init(void) { }
 static inline void net_tc_rx_init(void) { }
+static inline const char *net_context_state(struct net_context *context)
+{
+	ARG_UNUSED(context);
+	return NULL;
+}
 #endif
 
 #if defined(CONFIG_NET_NATIVE)
@@ -76,8 +86,8 @@ static inline enum net_verdict net_ipv6_input(struct net_pkt *pkt,
 	return NET_CONTINUE;
 }
 #endif
-extern void net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt);
-extern void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt);
+extern bool net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt);
+extern void net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt);
 extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
 
 char *net_sprint_addr(sa_family_t af, const void *addr);
@@ -140,14 +150,14 @@ enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
-				 u16_t pkt_len);
+				 uint16_t pkt_len);
 #endif
 
 extern const char *net_proto2str(int family, int proto);
-extern char *net_byte_to_hex(char *ptr, u8_t byte, char base, bool pad);
-extern char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
+extern char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad);
+extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 				    char *buf, int buflen);
-extern u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto);
+extern uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto);
 
 /**
  * @brief Deliver the incoming packet through the recv_cb of the net_context
@@ -169,37 +179,37 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     void *user_data);
 
 #if defined(CONFIG_NET_IPV4)
-extern u16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
+extern uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
 #endif /* CONFIG_NET_IPV4 */
 
-static inline u16_t net_calc_chksum_icmpv6(struct net_pkt *pkt)
+static inline uint16_t net_calc_chksum_icmpv6(struct net_pkt *pkt)
 {
 	return net_calc_chksum(pkt, IPPROTO_ICMPV6);
 }
 
-static inline u16_t net_calc_chksum_icmpv4(struct net_pkt *pkt)
+static inline uint16_t net_calc_chksum_icmpv4(struct net_pkt *pkt)
 {
 	return net_calc_chksum(pkt, IPPROTO_ICMP);
 }
 
-static inline u16_t net_calc_chksum_udp(struct net_pkt *pkt)
+static inline uint16_t net_calc_chksum_udp(struct net_pkt *pkt)
 {
-	u16_t chksum = net_calc_chksum(pkt, IPPROTO_UDP);
+	uint16_t chksum = net_calc_chksum(pkt, IPPROTO_UDP);
 
 	return chksum == 0U ? 0xffff : chksum;
 }
 
-static inline u16_t net_calc_verify_chksum_udp(struct net_pkt *pkt)
+static inline uint16_t net_calc_verify_chksum_udp(struct net_pkt *pkt)
 {
 	return net_calc_chksum(pkt, IPPROTO_UDP);
 }
 
-static inline u16_t net_calc_chksum_tcp(struct net_pkt *pkt)
+static inline uint16_t net_calc_chksum_tcp(struct net_pkt *pkt)
 {
 	return net_calc_chksum(pkt, IPPROTO_TCP);
 }
 
-static inline char *net_sprint_ll_addr(const u8_t *ll, u8_t ll_len)
+static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
 {
 	static char buf[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 
@@ -207,7 +217,7 @@ static inline char *net_sprint_ll_addr(const u8_t *ll, u8_t ll_len)
 }
 
 static inline void net_hexdump(const char *str,
-			       const u8_t *packet, size_t length)
+			       const uint8_t *packet, size_t length)
 {
 	if (!length) {
 		LOG_DBG("%s zero-length packet", str);
@@ -225,7 +235,7 @@ static inline void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
 	char pkt_str[sizeof("0x") + sizeof(intptr_t) * 2];
 
 	if (str && str[0]) {
-		LOG_DBG("%s", str);
+		LOG_DBG("%s", log_strdup(str));
 	}
 
 	snprintk(pkt_str, sizeof(pkt_str), "%p", pkt);
@@ -251,8 +261,8 @@ static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *st
 	}
 
 	while (buf) {
-		printk("%p[%d/%u (%u)]",
-		       buf, atomic_get(&pkt->atomic_ref), buf->len, buf->size);
+		printk("%p[%d/%u (%u/%u)]", buf, atomic_get(&pkt->atomic_ref),
+		       buf->len, net_buf_max_len(buf), buf->size);
 
 		buf = buf->frags;
 		if (buf) {

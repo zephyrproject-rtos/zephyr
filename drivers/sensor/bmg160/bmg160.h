@@ -179,8 +179,8 @@
 
 struct bmg160_device_config {
 	const char *i2c_port;
-	u16_t i2c_addr;
-	u8_t i2c_speed;
+	uint16_t i2c_addr;
+	uint8_t i2c_speed;
 #ifdef CONFIG_BMG160_TRIGGER
 	gpio_pin_t int_pin;
 	gpio_dt_flags_t int_flags;
@@ -189,9 +189,10 @@ struct bmg160_device_config {
 };
 
 struct bmg160_device_data {
-	struct device *i2c;
+	const struct device *i2c;
 #ifdef CONFIG_BMG160_TRIGGER
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 #endif
 #ifdef CONFIG_BMG160_TRIGGER_OWN_THREAD
@@ -200,30 +201,32 @@ struct bmg160_device_data {
 	struct k_sem sem;
 #ifdef CONFIG_BMG160_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	struct device *dev;
 #endif
 #ifdef CONFIG_BMG160_TRIGGER
 	sensor_trigger_handler_t anymotion_handler;
 	sensor_trigger_handler_t drdy_handler;
 #endif
-	s16_t raw_gyro_xyz[3];
-	u16_t scale;
-	u8_t range_idx;
+	int16_t raw_gyro_xyz[3];
+	uint16_t scale;
+	uint8_t range_idx;
 
-	s8_t raw_temp;
+	int8_t raw_temp;
 };
 
-int bmg160_trigger_init(struct device *dev);
-int bmg160_trigger_set(struct device *dev,
+int bmg160_trigger_init(const struct device *dev);
+int bmg160_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
-int bmg160_read(struct device *dev, u8_t reg_addr, u8_t *data,
-		u8_t len);
-int bmg160_read_byte(struct device *dev, u8_t reg_addr, u8_t *byte);
-int bmg160_update_byte(struct device *dev, u8_t reg_addr, u8_t mask,
-		       u8_t value);
-int bmg160_write_byte(struct device *dev, u8_t reg_addr, u8_t data);
-int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
+int bmg160_read(const struct device *dev, uint8_t reg_addr, uint8_t *data,
+		uint8_t len);
+int bmg160_read_byte(const struct device *dev, uint8_t reg_addr,
+		     uint8_t *byte);
+int bmg160_update_byte(const struct device *dev, uint8_t reg_addr,
+		       uint8_t mask,
+		       uint8_t value);
+int bmg160_write_byte(const struct device *dev, uint8_t reg_addr,
+		      uint8_t data);
+int bmg160_slope_config(const struct device *dev, enum sensor_attribute attr,
 			const struct sensor_value *val);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMG160_BMG160_H_ */

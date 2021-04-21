@@ -8,6 +8,6 @@ endif()
 
 zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 
-zephyr_library_sources_if_kconfig(http_parser.c)
-zephyr_library_sources_if_kconfig(http_parser_url.c)
-zephyr_library_sources_if_kconfig(http_client.c)
+zephyr_library_sources_ifdef(CONFIG_HTTP_PARSER http_parser.c)
+zephyr_library_sources_ifdef(CONFIG_HTTP_PARSER_URL http_parser_url.c)
+zephyr_library_sources_ifdef(CONFIG_HTTP_CLIENT http_client.c)

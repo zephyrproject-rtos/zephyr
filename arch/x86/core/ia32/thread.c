@@ -15,6 +15,8 @@
 #include <kernel.h>
 #include <ksched.h>
 #include <arch/x86/mmustructs.h>
+#include <kswap.h>
+#include <x86_mmu.h>
 
 /* forward declaration */
 
@@ -22,13 +24,13 @@
  * for when z_swap() switches to it for the first time.
  */
 struct _x86_initial_frame {
-	u32_t swap_retval;
-	u32_t ebp;
-	u32_t ebx;
-	u32_t esi;
-	u32_t edi;
+	uint32_t swap_retval;
+	uint32_t ebp;
+	uint32_t ebx;
+	uint32_t esi;
+	uint32_t edi;
 	void *thread_entry;
-	u32_t eflags;
+	uint32_t eflags;
 	k_thread_entry_t entry;
 	void *p1;
 	void *p2;
@@ -45,42 +47,40 @@ extern void z_x86_syscall_entry_stub(void);
 NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
 #endif /* CONFIG_X86_USERSPACE */
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 
 extern int z_float_disable(struct k_thread *thread);
 
 int arch_float_disable(struct k_thread *thread)
 {
-#if defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_LAZY_FPU_SHARING)
 	return z_float_disable(thread);
 #else
-	return -ENOSYS;
-#endif /* CONFIG_LAZY_FP_SHARING */
+	return -ENOTSUP;
+#endif /* CONFIG_LAZY_FPU_SHARING */
 }
-#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+
+extern int z_float_enable(struct k_thread *thread, unsigned int options);
+
+int arch_float_enable(struct k_thread *thread, unsigned int options)
+{
+#if defined(CONFIG_LAZY_FPU_SHARING)
+	return z_float_enable(thread, options);
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_LAZY_FPU_SHARING */
+}
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t entry,
-		     void *parameter1, void *parameter2, void *parameter3,
-		     int priority, unsigned int options)
+		     char *stack_ptr, k_thread_entry_t entry,
+		     void *p1, void *p2, void *p3)
 {
-	char *stack_buf;
-	char *stack_high;
 	void *swap_entry;
 	struct _x86_initial_frame *initial_frame;
 
-	Z_ASSERT_VALID_PRIO(priority, entry);
-	stack_buf = Z_THREAD_STACK_BUFFER(stack);
-	z_new_thread_init(thread, stack_buf, stack_size, priority, options);
-
 #if CONFIG_X86_STACK_PROTECTION
-	struct z_x86_thread_stack_header *header =
-		(struct z_x86_thread_stack_header *)stack;
-
-	/* Set guard area to read-only to catch stack overflows */
-	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->guard_page,
-			    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
-			    true);
+	z_x86_set_stack_guard(stack);
 #endif
 
 #ifdef CONFIG_USERSPACE
@@ -89,19 +89,18 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	swap_entry = z_thread_entry;
 #endif
 
-	stack_high = (char *)STACK_ROUND_DOWN(stack_buf + stack_size);
-
 	/* Create an initial context on the stack expected by z_swap() */
-	initial_frame = (struct _x86_initial_frame *)
-		(stack_high - sizeof(struct _x86_initial_frame));
+	initial_frame = Z_STACK_PTR_TO_FRAME(struct _x86_initial_frame,
+					     stack_ptr);
+
 	/* z_thread_entry() arguments */
 	initial_frame->entry = entry;
-	initial_frame->p1 = parameter1;
-	initial_frame->p2 = parameter2;
-	initial_frame->p3 = parameter3;
+	initial_frame->p1 = p1;
+	initial_frame->p2 = p2;
+	initial_frame->p3 = p3;
 	initial_frame->eflags = EFLAGS_INITIAL;
 #ifdef _THREAD_WRAPPER_REQUIRED
-	initial_frame->edi = (u32_t)swap_entry;
+	initial_frame->edi = (uint32_t)swap_entry;
 	initial_frame->thread_entry = z_x86_thread_entry_wrapper;
 #else
 	initial_frame->thread_entry = swap_entry;
@@ -111,8 +110,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * doesn't care about their state when execution begins
 	 */
 	thread->callee_saved.esp = (unsigned long)initial_frame;
-#if defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_LAZY_FPU_SHARING)
 	thread->arch.excNestCount = 0;
-#endif /* CONFIG_LAZY_FP_SHARING */
+#endif /* CONFIG_LAZY_FPU_SHARING */
 	thread->arch.flags = 0;
 }

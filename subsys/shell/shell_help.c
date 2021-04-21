@@ -27,7 +27,7 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 	}
 
 	if (offset_first_line) {
-		shell_op_cursor_horiz_move(shell, terminal_offset);
+		z_shell_op_cursor_horiz_move(shell, terminal_offset);
 	}
 
 
@@ -39,24 +39,24 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 	while (true) {
 		size_t idx = 0;
 
-		length = shell_strlen(str) - offset;
+		length = z_shell_strlen(str) - offset;
 
 		if (length <=
 		    shell->ctx->vt100_ctx.cons.terminal_wid - terminal_offset) {
 			for (idx = 0; idx < length; idx++) {
 				if (*(str + offset + idx) == '\n') {
-					transport_buffer_flush(shell);
-					shell_write(shell, str + offset, idx);
+					z_transport_buffer_flush(shell);
+					z_shell_write(shell, str + offset, idx);
 					offset += idx + 1;
-					cursor_next_line_move(shell);
-					shell_op_cursor_horiz_move(shell,
+					z_cursor_next_line_move(shell);
+					z_shell_op_cursor_horiz_move(shell,
 							terminal_offset);
 					break;
 				}
 			}
 
 			/* String will fit in one line. */
-			shell_raw_fprintf(shell->fprintf_ctx, str + offset);
+			z_shell_raw_fprintf(shell->fprintf_ctx, str + offset);
 
 			break;
 		}
@@ -88,8 +88,8 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 		/* Writing one line, fprintf IO buffer must be flushed
 		 * before calling shell_write.
 		 */
-		transport_buffer_flush(shell);
-		shell_write(shell, str + offset, length);
+		z_transport_buffer_flush(shell);
+		z_shell_write(shell, str + offset, length);
 		offset += length;
 
 		/* Calculating text offset to ensure that next line will
@@ -99,112 +99,104 @@ static void formatted_text_print(const struct shell *shell, const char *str,
 			++offset;
 		}
 
-		cursor_next_line_move(shell);
-		shell_op_cursor_horiz_move(shell, terminal_offset);
+		z_cursor_next_line_move(shell);
+		z_shell_op_cursor_horiz_move(shell, terminal_offset);
 
 	}
-	cursor_next_line_move(shell);
+	z_cursor_next_line_move(shell);
 }
 
 static void help_item_print(const struct shell *shell, const char *item_name,
-			    u16_t item_name_width, const char *item_help)
+			    uint16_t item_name_width, const char *item_help)
 {
-	static const u8_t tabulator[] = "  ";
-	const u16_t offset = 2 * strlen(tabulator) + item_name_width + 1;
+	static const uint8_t tabulator[] = "  ";
+	const uint16_t offset = 2 * strlen(tabulator) + item_name_width + 1;
 
-	if (item_name == NULL) {
+	if ((item_name == NULL) || (item_name[0] == '\0')) {
 		return;
 	}
 
-	if (!IS_ENABLED(CONFIG_NEWLIB_LIBC) && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
+	if (!IS_ENABLED(CONFIG_NEWLIB_LIBC) &&
+	    !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 		/* print option name */
-		shell_internal_fprintf(shell, SHELL_NORMAL, "%s%-*s%s:",
-				       tabulator,
-				       item_name_width, item_name,
-				       tabulator);
+		z_shell_fprintf(shell, SHELL_NORMAL, "%s%-*s%s:", tabulator,
+				item_name_width, item_name, tabulator);
 	} else {
-		u16_t tmp = item_name_width - strlen(item_name);
+		uint16_t tmp = item_name_width - strlen(item_name);
 		char space = ' ';
 
-		shell_internal_fprintf(shell, SHELL_NORMAL, "%s%s", tabulator,
-				       item_name);
-		for (u16_t i = 0; i < tmp; i++) {
-			shell_write(shell, &space, 1);
+		z_shell_fprintf(shell, SHELL_NORMAL, "%s%s", tabulator,
+				item_name);
+		for (uint16_t i = 0; i < tmp; i++) {
+			z_shell_write(shell, &space, 1);
 		}
-		shell_internal_fprintf(shell, SHELL_NORMAL, "%s:", tabulator);
+		z_shell_fprintf(shell, SHELL_NORMAL, "%s:", tabulator);
 	}
 
 	if (item_help == NULL) {
-		cursor_next_line_move(shell);
+		z_cursor_next_line_move(shell);
 		return;
 	}
 	/* print option help */
 	formatted_text_print(shell, item_help, offset, false);
 }
 
-/* Function is printing command help, its subcommands name and subcommands
- * help string.
+/* Function prints all subcommands of the parent command together with their
+ * help string
  */
-void shell_help_subcmd_print(const struct shell *shell)
+void z_shell_help_subcmd_print(const struct shell *shell,
+			       const struct shell_static_entry *parent,
+			       const char *description)
 {
 	const struct shell_static_entry *entry = NULL;
-	struct shell_static_entry static_entry;
-	u16_t longest_syntax = 0U;
-	size_t cmd_idx = 0;
-
-	/* Checking if there are any subcommands available. */
-	if (!shell->ctx->active_cmd.subcmd) {
-		return;
-	}
+	struct shell_static_entry dloc;
+	uint16_t longest = 0U;
+	size_t idx = 0;
 
 	/* Searching for the longest subcommand to print. */
-	do {
-		shell_cmd_get(shell, shell->ctx->active_cmd.subcmd,
-			      !SHELL_CMD_ROOT_LVL,
-			      cmd_idx++, &entry, &static_entry);
+	while ((entry = z_shell_cmd_get(parent, idx++, &dloc)) != NULL) {
+		longest = Z_MAX(longest, z_shell_strlen(entry->syntax));
+	}
 
-		if (!entry) {
-			break;
-		}
-
-		u16_t len = shell_strlen(entry->syntax);
-
-		longest_syntax = longest_syntax > len ? longest_syntax : len;
-	} while (cmd_idx != 0); /* too many commands */
-
-	if (cmd_idx == 1) {
+	/* No help to print */
+	if (longest == 0) {
 		return;
 	}
 
-	shell_internal_fprintf(shell, SHELL_NORMAL, "Subcommands:\n");
+	if (description != NULL) {
+		z_shell_fprintf(shell, SHELL_NORMAL, description);
+	}
 
 	/* Printing subcommands and help string (if exists). */
-	cmd_idx = 0;
+	idx = 0;
 
-	while (true) {
-		shell_cmd_get(shell, shell->ctx->active_cmd.subcmd,
-			      !SHELL_CMD_ROOT_LVL,
-			      cmd_idx++, &entry, &static_entry);
-
-		if (entry == NULL) {
-			break;
-		}
-
-		help_item_print(shell, entry->syntax, longest_syntax,
-				entry->help);
+	while ((entry = z_shell_cmd_get(parent, idx++, &dloc)) != NULL) {
+		help_item_print(shell, entry->syntax, longest, entry->help);
 	}
 }
 
-void shell_help_cmd_print(const struct shell *shell)
+void z_shell_help_cmd_print(const struct shell *shell,
+			    const struct shell_static_entry *cmd)
 {
-	static const char cmd_sep[] = " - ";	/* commands separator */
+	static const char cmd_sep[] = " - "; /* commands separator */
+	uint16_t field_width;
 
-	u16_t field_width = shell_strlen(shell->ctx->active_cmd.syntax) +
-							  shell_strlen(cmd_sep);
+	field_width = z_shell_strlen(cmd->syntax) + z_shell_strlen(cmd_sep);
 
-	shell_internal_fprintf(shell, SHELL_NORMAL, "%s%s",
-			       shell->ctx->active_cmd.syntax, cmd_sep);
+	z_shell_fprintf(shell, SHELL_NORMAL, "%s%s", cmd->syntax, cmd_sep);
 
-	formatted_text_print(shell, shell->ctx->active_cmd.help,
-			     field_width, false);
+	formatted_text_print(shell, cmd->help, field_width, false);
+}
+
+bool z_shell_help_request(const char *str)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_HELP_OPT_PARSE)) {
+		return false;
+	}
+
+	if (!strcmp(str, "-h") || !strcmp(str, "--help")) {
+		return true;
+	}
+
+	return false;
 }

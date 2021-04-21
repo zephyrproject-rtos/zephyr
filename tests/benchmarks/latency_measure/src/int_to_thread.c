@@ -14,15 +14,15 @@
  * handler back to the interrupted thread.
  */
 
-#include "timestamp.h"
+#include <kernel.h>
 #include "utils.h"
 
-#include <arch/cpu.h>
 #include <irq_offload.h>
 
 static volatile int flag_var;
 
-static u32_t timestamp;
+static timing_t timestamp_start;
+static timing_t timestamp_end;
 
 /**
  *
@@ -32,12 +32,12 @@ static u32_t timestamp;
  *
  * @return N/A
  */
-static void latency_test_isr(void *unused)
+static void latency_test_isr(const void *unused)
 {
 	ARG_UNUSED(unused);
-
 	flag_var = 1;
-	timestamp = TIME_STAMP_DELTA_GET(0);
+
+	timestamp_start = timing_counter_get();
 }
 
 /**
@@ -54,9 +54,9 @@ static void make_int(void)
 	flag_var = 0;
 	irq_offload(latency_test_isr, NULL);
 	if (flag_var != 1) {
-		PRINT_FORMAT(" Flag variable has not changed. FAILED\n");
+		printk(" Flag variable has not changed. FAILED\n");
 	} else {
-		timestamp = TIME_STAMP_DELTA_GET(timestamp);
+		timestamp_end = timing_counter_get();
 	}
 }
 
@@ -68,13 +68,15 @@ static void make_int(void)
  */
 int int_to_thread(void)
 {
-	PRINT_FORMAT(" 1 - Measure time to switch from ISR back to"
-		     " interrupted thread");
+	uint32_t diff;
+
+	timing_start();
 	TICK_SYNCH();
 	make_int();
 	if (flag_var == 1) {
-		PRINT_FORMAT(" switching time is %u tcs = %u nsec",
-			     timestamp, (u32_t)k_cyc_to_ns_floor64(timestamp));
+		diff = timing_cycles_get(&timestamp_start, &timestamp_end);
+		PRINT_STATS("Switch from ISR back to interrupted thread", diff);
 	}
+	timing_stop();
 	return 0;
 }

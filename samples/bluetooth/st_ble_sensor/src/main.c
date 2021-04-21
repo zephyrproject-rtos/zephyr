@@ -27,14 +27,13 @@
 
 LOG_MODULE_REGISTER(main);
 
-extern u16_t but_val;
-extern struct device *led_dev;
-extern bool led_state;
+/* Button value. */
+static uint16_t but_val;
 
 /* Prototype */
 static ssize_t recv(struct bt_conn *conn,
 		    const struct bt_gatt_attr *attr, const void *buf,
-		    u16_t len, u16_t offset, u8_t flags);
+		    uint16_t len, uint16_t offset, uint8_t flags);
 
 /* ST Custom Service  */
 static struct bt_uuid_128 st_service_uuid = BT_UUID_INIT_128(
@@ -56,7 +55,7 @@ static struct bt_uuid_128 but_notif_uuid = BT_UUID_INIT_128(
 #define ADV_LEN 12
 
 /* Advertising data */
-static u8_t manuf_data[ADV_LEN] = {
+static uint8_t manuf_data[ADV_LEN] = {
 	0x01 /*SKD version */,
 	0x83 /* STM32WB - P2P Server 1 */,
 	0x00 /* GROUP A Feature  */,
@@ -82,7 +81,7 @@ struct bt_conn *conn;
 /* Notification state */
 volatile bool notify_enable;
 
-static void mpu_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
+static void mpu_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	ARG_UNUSED(attr);
 	notify_enable = (value == BT_GATT_CCC_NOTIFY);
@@ -107,19 +106,35 @@ BT_GATT_CCC(mpu_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 
 static ssize_t recv(struct bt_conn *conn,
 		    const struct bt_gatt_attr *attr, const void *buf,
-		    u16_t len, u16_t offset, u8_t flags)
+		    uint16_t len, uint16_t offset, uint8_t flags)
 {
-	if (led_dev) {
-		if (led_state) {
-			LOG_INF("Turn off LED");
-		} else {
-			LOG_INF("Turn on LED");
-		}
-		led_state = !led_state;
-		led_on_off(led_state);
-	}
+	led_update();
 
 	return 0;
+}
+
+static void button_callback(const struct device *gpiob, struct gpio_callback *cb,
+		     uint32_t pins)
+{
+	int err;
+
+	LOG_INF("Button pressed");
+	if (conn) {
+		if (notify_enable) {
+			err = bt_gatt_notify(NULL, &stsensor_svc.attrs[2],
+					     &but_val, sizeof(but_val));
+			if (err) {
+				LOG_ERR("Notify error: %d", err);
+			} else {
+				LOG_INF("Send notify ok");
+				but_val = (but_val == 0) ? 0x100 : 0;
+			}
+		} else {
+			LOG_INF("Notify not enabled");
+		}
+	} else {
+		LOG_INF("BLE not connected");
+	}
 }
 
 static void bt_ready(int err)
@@ -139,7 +154,7 @@ static void bt_ready(int err)
 	LOG_INF("Configuration mode: waiting connections...");
 }
 
-static void connected(struct bt_conn *connected, u8_t err)
+static void connected(struct bt_conn *connected, uint8_t err)
 {
 	if (err) {
 		LOG_ERR("Connection failed (err %u)", err);
@@ -151,7 +166,7 @@ static void connected(struct bt_conn *connected, u8_t err)
 	}
 }
 
-static void disconnected(struct bt_conn *disconn, u8_t reason)
+static void disconnected(struct bt_conn *disconn, uint8_t reason)
 {
 	if (conn) {
 		bt_conn_unref(conn);
@@ -170,7 +185,7 @@ void main(void)
 {
 	int err;
 
-	err = button_init();
+	err = button_init(button_callback);
 	if (err) {
 		return;
 	}

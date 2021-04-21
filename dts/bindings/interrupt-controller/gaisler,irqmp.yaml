@@ -1,0 +1,22 @@
+# Copyright (c) 2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+description: GRLIB Multiprocessor Interrupt Controller
+
+compatible: "gaisler,irqmp"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    eirq:
+      type: int
+      description: Extended interrupt number (or 0 for none)
+
+    "#interrupt-cells":
+      const: 1
+
+interrupt-cells:
+  - irq

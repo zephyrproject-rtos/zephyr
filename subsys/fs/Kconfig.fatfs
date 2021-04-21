@@ -1,0 +1,136 @@
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config FAT_FILESYSTEM_ELM
+	bool "ELM FAT file system support"
+	depends on FILE_SYSTEM
+	select DISK_ACCESS
+	help
+	  Use the ELM FAT File system implementation.
+
+if FAT_FILESYSTEM_ELM
+
+menu "ELM FAT file system settings"
+	visible if FAT_FILESYSTEM_ELM
+
+config FS_FATFS_READ_ONLY
+	bool "Read-only support for all volumes"
+	help
+	  The option excludes write code from ELM FAT file system driver;
+	  when selected, it no longer will be possible to write data on
+	  the FAT FS.
+	  If write support is not needed, enabling this flag will slightly
+	  reduce application size.
+	  This option translates to _FS_READONLY within ELM FAT file system
+	  driver; it enables exclusion, from compilation, of write supporting
+	  code.
+
+config FS_FATFS_MKFS
+	bool
+	help
+	  This option translates to _USE_MKFS within ELM FAT file system
+	  driver; it enables additional code that is required for formatting
+	  volumes to ELM FAT.
+
+config FS_FATFS_MOUNT_MKFS
+	bool "Allow formatting volume when mounting fails"
+	default y
+	select FS_FATFS_MKFS
+	help
+	  This option adds code that allows fs_mount to attempt to format
+	  a volume if no file system is found.
+	  If formatting is not needed, disabling this flag will slightly
+	  reduce application size.
+
+config FS_FATFS_EXFAT
+	bool "Enable exFAT support"
+	select FS_FATFS_LFN
+	help
+	  Enable the exFAT format support for FatFs.
+
+config FS_FATFS_NUM_FILES
+	int "Maximum number of opened files"
+	default 4
+
+config FS_FATFS_NUM_DIRS
+	int "Maximum number of opened directories"
+	default 4
+
+config FS_FATFS_LFN
+	bool "Enable long filenames (LFN)"
+	help
+	  Without long filenames enabled, file names are limited to 8.3 format.
+	  This option increases working buffer size.
+
+if FS_FATFS_LFN
+
+choice
+	prompt "LFN memory mode"
+	default FS_FATFS_LFN_MODE_BSS
+
+config FS_FATFS_LFN_MODE_BSS
+	bool "Static buffer"
+	help
+	  Enable LFN with static working buffer on the BSS. Always NOT thread-safe.
+
+config FS_FATFS_LFN_MODE_STACK
+	bool "Stack buffer"
+	help
+	  Enable LFN with dynamic working buffer on the STACK.
+
+config FS_FATFS_LFN_MODE_HEAP
+	bool "Heap buffer"
+	help
+	  Enable LFN with dynamic working buffer on the HEAP.
+
+endchoice
+
+config FS_FATFS_MAX_LFN
+	int "Max filename length"
+	range 12 255
+	default 255
+	help
+	  The working buffer occupies (FS_FATFS_MAX_LFN + 1) * 2 bytes and
+	  additional 608 bytes at exFAT enabled.
+	  It should be set 255 to support full featured LFN operations.
+
+endif # FS_FATFS_LFN
+
+config FS_FATFS_CODEPAGE
+	int "FatFS code page (character set)"
+	default 437 if FS_FATFS_LFN
+	default 1
+	help
+	  Valid code page values:
+	  1   - ASCII (No extended character. Non-LFN cfg. only)
+	  437 - U.S.
+	  720 - Arabic
+	  737 - Greek
+	  771 - KBL
+	  775 - Baltic
+	  850 - Latin 1
+	  852 - Latin 2
+	  855 - Cyrillic
+	  857 - Turkish
+	  860 - Portuguese
+	  861 - Icelandic
+	  862 - Hebrew
+	  863 - Canadian French
+	  864 - Arabic
+	  865 - Nordic
+	  866 - Russian
+	  869 - Greek 2
+	  932 - Japanese (DBCS)
+	  936 - Simplified Chinese (DBCS)
+	  949 - Korean (DBCS)
+	  950 - Traditional Chinese (DBCS)
+
+config FS_FATFS_MAX_SS
+	int "Maximum supported sector size"
+	range 512 4096
+	default 512
+
+endmenu
+
+endif # FAT_FILESYSTEM_ELM

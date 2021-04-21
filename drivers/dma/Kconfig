@@ -10,29 +10,11 @@ menuconfig DMA
 	bool "DMA driver Configuration"
 
 if DMA
-config DMA_0_NAME
-	string "Device name for DMA Controller 0"
-	default "DMA_0"
+config DMA_64BIT
+	bool "DMA 64 bit address support"
 	help
-	  Device name for DMA Controller 0.
-
-config DMA_0_IRQ_PRI
-	int "IRQ Priority for DMA Controller 0"
-	default 3
-	help
-	  IRQ Priority for the DMA Controller.
-
-config DMA_1_NAME
-	string "Device name for DMA Controller 1"
-	default "DMA_1"
-	help
-	  Device name for DMA Controller 1.
-
-config DMA_2_NAME
-	string "Device name for DMA Controller 2"
-	default "DMA_2"
-	help
-	  Device name for DMA Controller 2.
+	  When this option is true, 64 bit source and dest
+	  DMA addresses are supported.
 
 module = DMA
 module-str = dma
@@ -47,5 +29,13 @@ source "drivers/dma/Kconfig.dw"
 source "drivers/dma/Kconfig.nios2_msgdma"
 
 source "drivers/dma/Kconfig.sam0"
+
+source "drivers/dma/Kconfig.mcux_edma"
+
+source "drivers/dma/Kconfig.mcux_lpc"
+
+source "drivers/dma/Kconfig.dma_pl330"
+
+source "drivers/dma/Kconfig.iproc_pax"
 
 endif # DMA

@@ -7,6 +7,9 @@
 
 
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_utils.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <drivers/clock_control/stm32_clock_control.h>
@@ -38,7 +41,9 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
-#if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32)
+#if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32) || \
+	(defined(CONFIG_SOC_SERIES_STM32L0X) &&			  \
+	 defined(CONFIG_ENTROPY_STM32_RNG))
 	/* Enable System Configuration Controller clock. */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
 #endif

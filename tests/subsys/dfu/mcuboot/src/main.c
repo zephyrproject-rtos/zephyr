@@ -18,12 +18,12 @@
 void test_bank_erase(void)
 {
 	const struct flash_area *fa;
-	u32_t temp;
-	u32_t temp2 = 0x5a5a5a5a;
+	uint32_t temp;
+	uint32_t temp2 = 0x5a5a5a5a;
 	off_t offs;
 	int ret;
 
-	ret = flash_area_open(DT_FLASH_AREA_IMAGE_1_ID, &fa);
+	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
@@ -38,7 +38,7 @@ void test_bank_erase(void)
 		}
 	}
 
-	zassert(boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID) == 0,
+	zassert(boot_erase_img_bank(FLASH_AREA_ID(image_1)) == 0,
 		"pass", "fail");
 
 	for (offs = 0; offs < fa->fa_size; offs += sizeof(temp)) {
@@ -51,7 +51,7 @@ void test_bank_erase(void)
 void test_request_upgrade(void)
 {
 	const struct flash_area *fa;
-	const u32_t expectation[6] = {
+	const uint32_t expectation[6] = {
 		0xffffffff,
 		0xffffffff,
 		BOOT_MAGIC_VAL_W0,
@@ -59,10 +59,10 @@ void test_request_upgrade(void)
 		BOOT_MAGIC_VAL_W2,
 		BOOT_MAGIC_VAL_W3
 	};
-	u32_t readout[ARRAY_SIZE(expectation)];
+	uint32_t readout[ARRAY_SIZE(expectation)];
 	int ret;
 
-	ret = flash_area_open(DT_FLASH_AREA_IMAGE_1_ID, &fa);
+	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
@@ -77,7 +77,7 @@ void test_request_upgrade(void)
 	zassert(memcmp(expectation, readout, sizeof(expectation)) == 0,
 		"pass", "fail");
 
-	boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID);
+	zassert(boot_erase_img_bank(FLASH_AREA_ID(image_1)) == 0, "pass", "fail");
 
 	zassert(boot_request_upgrade(true) == 0, "pass", "fail");
 
@@ -93,18 +93,22 @@ void test_request_upgrade(void)
 
 void test_write_confirm(void)
 {
-	const u32_t img_magic[4] = BOOT_MAGIC_VALUES;
-	u32_t readout[ARRAY_SIZE(img_magic)];
+	const uint32_t img_magic[4] = BOOT_MAGIC_VALUES;
+	uint32_t readout[ARRAY_SIZE(img_magic)];
+	uint8_t flag[BOOT_MAX_ALIGN];
 	const struct flash_area *fa;
 	int ret;
 
-	ret = flash_area_open(DT_FLASH_AREA_IMAGE_0_ID, &fa);
+	flag[0] = 0x01;
+	memset(&flag[1], 0xff, sizeof(flag) - 1);
+
+	ret = flash_area_open(FLASH_AREA_ID(image_0), &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
 	}
 
-	zassert(boot_erase_img_bank(DT_FLASH_AREA_IMAGE_0_ID) == 0,
+	zassert(boot_erase_img_bank(FLASH_AREA_ID(image_0)) == 0,
 		"pass", "fail");
 
 	ret = flash_area_read(fa, fa->fa_size - sizeof(img_magic),
@@ -117,7 +121,12 @@ void test_write_confirm(void)
 		zassert_true(ret == 0, "Write to flash");
 	}
 
-	zassert(boot_write_img_confirmed() == 0, "pass", "fail");
+	/* set copy-done flag */
+	ret = flash_area_write(fa, fa->fa_size - 32, &flag, sizeof(flag));
+	zassert_true(ret == 0, "Write to flash");
+
+	ret = boot_write_img_confirmed();
+	zassert(ret == 0, "pass", "fail (%d)", ret);
 
 	ret = flash_area_read(fa, fa->fa_size - 24, readout,
 			      sizeof(readout[0]));

@@ -1,0 +1,13 @@
+description: Test serial port
+
+compatible: "vnd,serial"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    baud-rate:
+      type: int
+      required: false

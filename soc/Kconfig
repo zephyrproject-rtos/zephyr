@@ -3,13 +3,12 @@
 choice
 	prompt "SoC/CPU/Configuration Selection"
 
-source "$(SOC_DIR)/$(ARCH)/*/Kconfig.soc"
+source "$(KCONFIG_BINARY_DIR)/Kconfig.soc"
 
 endchoice
 
 menu "Hardware Configuration"
-osource "$(SOC_DIR)/$(ARCH)/Kconfig"
-osource "$(SOC_DIR)/$(ARCH)/*/Kconfig"
+source "$(KCONFIG_BINARY_DIR)/Kconfig.soc.arch"
 
 
 module = SOC
@@ -35,43 +34,6 @@ config SOC_COMPATIBLE_NRF52832
 # SOC_*_LD: SoC specific Linker script additions
 #
 
-if ARC || ARM || X86 || NIOS2 || RISCV
-
-config SOC_NOINIT_LD
-	bool
-	help
-	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
-	  Include an SoC specific linker script fragment named soc-noinit.ld
-	  for inserting additional data and linker directives into
-	  the noinit section.
-
-	  This only has effect if the SoC uses the common linker script
-	  under include/arch/.
-
-config SOC_RODATA_LD
-	bool
-	help
-	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
-	  Include an SoC specific linker script fragment named soc-rodata.ld
-	  for inserting additional data and linker directives into
-	  the rodata section.
-
-	  This only has effect if the SoC uses the common linker script
-	  under include/arch/.
-
-config SOC_RWDATA_LD
-	bool
-	help
-	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
-	  Include an SoC specific linker script fragment named soc-rwdata.ld
-	  for inserting additional data and linker directives into
-	  the data section.
-
-	  This only has effect if the SoC uses the common linker script
-	  under include/arch/.
-
-endif # ARC || ARM || X86 || NIOS2 || RISCV
-
 config SOC_DEPRECATED_RELEASE
 	string
 	help
@@ -79,3 +41,9 @@ config SOC_DEPRECATED_RELEASE
 	  the Zephyr release that the SoC configuration will be removed.
 	  When set, any build for that SoC will generate a clearly visible
 	  deprecation warning.
+
+config SOC_HAS_TIMING_FUNCTIONS
+	bool
+	help
+	  Should be selected if SoC provides custom method for retrieving
+	  timestamps and cycle count.

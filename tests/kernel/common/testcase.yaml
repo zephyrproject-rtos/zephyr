@@ -3,12 +3,30 @@ tests:
     tags: kernel userspace
     build_on_all: true
     min_flash: 33
-    min_ram: 32
+  kernel.common.tls:
+    tags: kernel userspace
+    min_flash: 33
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    extra_configs:
+      - CONFIG_THREAD_LOCAL_STORAGE=y
   kernel.common.misra:
     tags: kernel userspace
     min_flash: 33
-    min_ram: 32
     # Some configurations are known-incompliant and won't build
     filter: not ((CONFIG_I2C or CONFIG_SPI) and CONFIG_USERSPACE)
     extra_configs:
       - CONFIG_MISRA_SANE=y
+  kernel.common.nano32:
+    tags: kernel userspace
+    min_flash: 33
+    filter: not CONFIG_KERNEL_COHERENCE
+    extra_configs:
+      - CONFIG_CBPRINTF_NANO=y
+      - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
+  kernel.common.nano64:
+    tags: kernel userspace
+    min_flash: 33
+    filter: not CONFIG_KERNEL_COHERENCE
+    extra_configs:
+      - CONFIG_CBPRINTF_NANO=y
+      - CONFIG_CBPRINTF_FULL_INTEGRAL=y

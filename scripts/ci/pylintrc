@@ -1,0 +1,263 @@
+# Copyright (c) 2019, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# pylint configuration for the PyLint check in check_compliance.py.
+#
+# To run pylint manually with this configuration from the Zephyr repo, do
+#
+#     pylint3 --rcfile=ci-tools/scripts/pylintrc <Python file>
+#
+# This command will check all scripts:
+#
+#     pylint3 --rcfile=ci-tools/scripts/pylintrc $(git ls-files '*.py')
+
+[MASTER]
+
+# Use multiple processes
+jobs=0
+
+# Do not pickle collected data for comparisons
+persistent=no
+
+
+[REPORTS]
+
+# Only show messages, not full report
+reports=no
+
+# Disable score
+score=no
+
+
+[MESSAGES CONTROL]
+
+# Only enable specific (hopefully) uncontroversial warnings. Use
+# 'pylint3 --list-msgs' to list messages and their IDs.
+#
+# These might be nice to check too, but currently trigger false positives:
+#
+#   no-member
+#   arguments-differ
+#   redefine-in-handler
+#   abstract-method
+#
+# These might be too controversial:
+#
+#   no-else-return
+#   consider-using-get
+#   redefined-builtin
+#
+# These tell you to use logger.warning("foo %d bar", 3) instead of e.g.
+# logger.warning("foo {} bar".format(3)), but it's not a clear win in all
+# cases. f-strings would be nicer too, and it's easier to convert from format()
+# to those.
+#
+#   logging-not-lazy
+#   logging-format-interpolation
+#   logging-fstring-interpolation
+
+disable=all
+# Identifiers are in the same order as in 'pylint3 --list-msgs'. Entire
+# message "types" (~= severities) like F(atal), E(error),... are listed
+# first.
+enable=
+    F, # atal
+    empty-docstring,
+    unneeded-not,
+    singleton-comparison,
+    misplaced-comparison-constant,
+    unidiomatic-typecheck,
+    consider-using-enumerate,
+    consider-iterating-dictionary,
+    bad-classmethod-argument,
+    bad-mcs-method-argument,
+    bad-mcs-classmethod-argument,
+    single-string-used-for-slots,
+    trailing-newlines,
+    trailing-whitespace,
+    missing-final-newline,
+    superfluous-parens,
+    mixed-line-endings,
+    unexpected-line-ending-format,
+    invalid-characters-in-docstring,
+    useless-import-alias,
+    len-as-condition,
+    syntax-error,
+    init-is-generator,
+    return-in-init,
+    function-redefined,
+    not-in-loop,
+    return-outside-function,
+    yield-outside-function,
+    nonexistent-operator,
+    duplicate-argument-name,
+    abstract-class-instantiated,
+    bad-reversed-sequence,
+    too-many-star-expressions,
+    invalid-star-assignment-target,
+    star-needs-assignment-target,
+    nonlocal-and-global,
+    continue-in-finally,
+    nonlocal-without-binding,
+    misplaced-format-function,
+    method-hidden,
+    access-member-before-definition,
+    no-method-argument,
+    no-self-argument,
+    invalid-slots-object,
+    assigning-non-slot,
+    invalid-slots,
+    inherit-non-class,
+    inconsistent-mro,
+    duplicate-bases,
+    non-iterator-returned,
+    unexpected-special-method-signature,
+    invalid-length-returned,
+    relative-beyond-top-level,
+    used-before-assignment,
+    undefined-variable,
+    undefined-all-variable,
+    invalid-all-object,
+    no-name-in-module,
+    unpacking-non-sequence,
+    bad-except-order,
+    raising-bad-type,
+    bad-exception-context,
+    misplaced-bare-raise,
+    raising-non-exception,
+    notimplemented-raised,
+    catching-non-exception,
+    bad-super-call,
+    not-callable,
+    assignment-from-no-return,
+    no-value-for-parameter,
+    too-many-function-args,
+    unexpected-keyword-arg,
+    redundant-keyword-arg,
+    missing-kwoa,
+    invalid-sequence-index,
+    invalid-slice-index,
+    assignment-from-none,
+    not-context-manager,
+    invalid-unary-operand-type,
+    unsupported-binary-operation,
+    repeated-keyword,
+    not-an-iterable,
+    not-a-mapping,
+    unsupported-membership-test,
+    unsubscriptable-object,
+    unsupported-assignment-operation,
+    unsupported-delete-operation,
+    invalid-metaclass,
+    unhashable-dict-key,
+    logging-unsupported-format,
+    logging-format-truncated,
+    logging-too-many-args,
+    logging-too-few-args,
+    bad-format-character,
+    truncated-format-string,
+    mixed-format-string,
+    format-needs-mapping,
+    missing-format-string-key,
+    too-many-format-args,
+    too-few-format-args,
+    bad-string-format-type,
+    bad-str-strip-call,
+    invalid-envvar-value,
+    yield-inside-async-function,
+    not-async-context-manager,
+    useless-suppression,
+    deprecated-pragma,
+    use-symbolic-message-instead,
+    literal-comparison,
+    comparison-with-itself,
+    no-self-use,
+    no-classmethod-decorator,
+    no-staticmethod-decorator,
+    cyclic-import,
+    duplicate-code,
+    consider-merging-isinstance,
+    simplifiable-if-statement,
+    redefined-argument-from-local,
+    trailing-comma-tuple,
+    stop-iteration-return,
+    useless-return,
+    consider-swap-variables,
+    consider-using-join,
+    consider-using-in,
+    chained-comparison,
+    consider-using-dict-comprehension,
+    consider-using-set-comprehension,
+    simplifiable-if-expression,
+    unreachable,
+    pointless-statement,
+    pointless-string-statement,
+    expression-not-assigned,
+    unnecessary-pass,
+    unnecessary-lambda,
+    duplicate-key,
+    assign-to-new-keyword,
+    useless-else-on-loop,
+    confusing-with-statement,
+    using-constant-test,
+    comparison-with-callable,
+    lost-exception,
+    assert-on-tuple,
+    bad-staticmethod-argument,
+    super-init-not-called,
+    non-parent-init-called,
+    useless-super-delegation,
+    unnecessary-semicolon,
+    bad-indentation,
+    mixed-indentation,
+    deprecated-module,
+    reimported,
+    import-self,
+    misplaced-future,
+    global-variable-not-assigned,
+    unused-import,
+    unused-variable,
+    undefined-loop-variable,
+    unbalanced-tuple-unpacking,
+    possibly-unused-variable,
+    self-cls-assignment,
+    bare-except,
+    duplicate-except,
+    try-except-raise,
+    binary-op-exception,
+    raising-format-tuple,
+    wrong-exception-operation,
+    keyword-arg-before-vararg,
+    bad-format-string-key,
+    unused-format-string-key,
+    bad-format-string,
+    unused-format-string-argument,
+    format-combined-specification,
+    missing-format-attribute,
+    invalid-format-index,
+    anomalous-backslash-in-string,
+    anomalous-unicode-escape-in-string,
+    bad-open-mode,
+    redundant-unittest-assert,
+    deprecated-method,
+    bad-thread-instantiation,
+    shallow-copy-environ,
+    invalid-envvar-default,
+    deprecated-string-function,
+    deprecated-str-translate-call,
+    deprecated-itertools-function,
+    deprecated-types-field,
+
+[SIMILARITIES]
+
+# Minimum lines number of a similarity.
+min-similarity-lines=10
+
+# Ignore comments when computing similarities.
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities.
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities.
+ignore-imports=yes

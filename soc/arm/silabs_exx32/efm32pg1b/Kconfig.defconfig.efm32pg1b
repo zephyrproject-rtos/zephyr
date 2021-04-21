@@ -1,0 +1,30 @@
+# Silicon Labs EFM32PG-STK3401A platform configuration options
+
+# Copyright (c) 2020 Rafael Dias Menezes
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_GECKO
+	default y
+	depends on GPIO
+
+if SERIAL
+
+config UART_GECKO
+	default y
+
+config LEUART_GECKO
+	default y
+
+endif # SERIAL
+
+config I2C_GECKO
+	default y
+	depends on I2C
+
+config SOC_FLASH_GECKO
+	default y
+	depends on FLASH
+
+config SPI_GECKO
+	default y
+	depends on SPI

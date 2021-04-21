@@ -8,11 +8,9 @@
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
-#if defined(CONFIG_ZERO_LATENCY_IRQS)
-
 static volatile int test_flag;
 
-void arm_zero_latency_isr_handler(void *args)
+void arm_zero_latency_isr_handler(const void *args)
 {
 	ARG_UNUSED(args);
 
@@ -21,6 +19,13 @@ void arm_zero_latency_isr_handler(void *args)
 
 void test_arm_zero_latency_irqs(void)
 {
+
+	if (!IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS)) {
+		TC_PRINT("Skipped (Cortex-M Mainline only)\n");
+
+		return;
+	}
+
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i, key;
 	int init_flag, post_flag;
@@ -43,10 +48,23 @@ void test_arm_zero_latency_irqs(void)
 			NVIC_SetPendingIRQ(i);
 
 			if (NVIC_GetPendingIRQ(i)) {
-				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented.
+				/*
+				 * If the NVIC line is pending, it is
+				 * guaranteed that it is implemented; clear the
+				 * line.
 				 */
-				break;
+				NVIC_ClearPendingIRQ(i);
+
+				if (!NVIC_GetPendingIRQ(i)) {
+					/*
+					 * If the NVIC line can be successfully
+					 * un-pended, it is guaranteed that it
+					 * can be used for software interrupt
+					 * triggering. Return the NVIC line
+					 * number.
+					 */
+					break;
+				}
 			}
 		}
 	}
@@ -85,12 +103,7 @@ void test_arm_zero_latency_irqs(void)
 
 	irq_unlock(key);
 }
-#else
-void test_arm_zero_latency_irqs(void)
-{
-	TC_PRINT("Skipped (Cortex-M Mainline only)\n");
-}
-#endif /* CONFIG_ZERO_LATENCY_IRQS */
+
 /**
  * @}
  */

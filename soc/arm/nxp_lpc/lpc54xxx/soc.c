@@ -33,6 +33,7 @@
  * @return N/A
  *
  */
+#define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
 static ALWAYS_INLINE void clock_init(void)
 {
@@ -50,10 +51,10 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
 
 	/* Set FLASH wait states for core */
-	CLOCK_SetFLASHAccessCyclesForFreq(DT_ARM_CORTEX_M4F_0_CLOCK_FREQUENCY);
+	CLOCK_SetFLASHAccessCyclesForFreq(CPU_FREQ);
 
 	/* Set up high frequency FRO output to selected frequency */
-	CLOCK_SetupFROClocking(DT_ARM_CORTEX_M4F_0_CLOCK_FREQUENCY);
+	CLOCK_SetupFROClocking(CPU_FREQ);
 
 	/* Set up dividers */
 	/* Set AHBCLKDIV divider to value 1 */
@@ -66,13 +67,21 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Attach 12 MHz clock to FLEXCOMM0 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM0);
 
-#ifdef CONFIG_SPI_5
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
+	/* attach 12 MHz clock to FLEXCOMM4 */
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
+
+	/* reset FLEXCOMM for I2C */
+	RESET_PeripheralReset(kFC4_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay)
 	/* Attach 12 MHz clock to FLEXCOMM5 */
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM5);
+	CLOCK_AttachClk(kFRO_HF_to_FLEXCOMM5);
 
 	/* reset FLEXCOMM for SPI */
 	RESET_PeripheralReset(kFC5_RST_SHIFT_RSTn);
-#endif /* CONFIG_SPI_5 */
+#endif
 
 #endif /* CONFIG_SOC_LPC54114_M4 */
 }
@@ -87,7 +96,7 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int nxp_lpc54114_init(struct device *arg)
+static int nxp_lpc54114_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -120,9 +129,9 @@ static int nxp_lpc54114_init(struct device *arg)
 SYS_INIT(nxp_lpc54114_init, PRE_KERNEL_1, 0);
 
 
-#ifdef CONFIG_SLAVE_CORE_MCUX
+#ifdef CONFIG_SECOND_CORE_MCUX
 
-#define CORE_M0_BOOT_ADDRESS (void *)CONFIG_SLAVE_BOOT_ADDRESS_MCUX
+#define CORE_M0_BOOT_ADDRESS ((void *)CONFIG_SECOND_CORE_BOOT_ADDRESS_MCUX)
 
 static const char core_m0[] = {
 #include "core-m0.inc"
@@ -136,9 +145,9 @@ static const char core_m0[] = {
  * @return N/A
  */
 /* This function is also called at deep sleep resume. */
-int _slave_init(struct device *arg)
+int _slave_init(const struct device *arg)
 {
-	s32_t temp;
+	int32_t temp;
 
 	ARG_UNUSED(arg);
 
@@ -175,4 +184,4 @@ int _slave_init(struct device *arg)
 
 SYS_INIT(_slave_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-#endif /*CONFIG_SLAVE_CORE_MCUX*/
+#endif /*CONFIG_SECOND_CORE_MCUX*/

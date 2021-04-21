@@ -61,9 +61,66 @@
 			label = "Reset Button";
 		};
 	};
+
+	mesh_header: connector {
+		compatible = "particle-gen3-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 26 0>,   /* SDA */
+			   <1 0 &gpio0 27 0>,   /* SCL */
+			   <2 0 &gpio1 1 0>,    /* PWM3 */
+			   <3 0 &gpio1 2 0>,    /* PWM3 */
+			   <4 0 &gpio1 8 0>,    /* PWM1 */
+			   <5 0 &gpio1 10 0>,   /* PWM1 */
+			   <6 0 &gpio1 11 0>,   /* PWM1 */
+			   <7 0 &gpio1 12 0>,   /* PWM0 */
+			   <8 0 &gpio1 3 0>,    /* PWM1 */
+			   <9 0 &gpio0 6 0>,    /* TX */
+			   <10 0 &gpio0 8 0>,   /* RX */
+			   <11 0 &gpio1 14 0>,  /* MISO */
+			   <12 0 &gpio1 13 0>,  /* MOSI */
+			   <13 0 &gpio1 15 0>,  /* SCK */
+			   <14 0 &gpio0 31 0>,  /* SS */
+			   <15 0 &gpio0 30 0>,  /* ADC4 = AIN6 */
+			   <16 0 &gpio0 29 0>,  /* ADC3 = AIN5 */
+			   <17 0 &gpio0 28 0>,  /* ADC2 = AIN4 */
+			   <18 0 &gpio0 4 0>,   /* ADC1 = AIN2 */
+			   <19 0 &gpio0 3 0>,   /* ADC0 = AIN1 */
+			   <20 0 &gpio0 11 0>,  /* MODEn */
+			   <21 0 &gpio0 18 0>;  /* RESETn */
+	};
+
+	feather_header: feather_connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <12 0 &gpio0 26 0>,  /* SDA */
+			   <13 0 &gpio0 27 0>,  /* SCL */
+			   <14 0 &gpio1 1 0>,   /* PWM3 */
+			   <15 0 &gpio1 2 0>,   /* PWM3 */
+			   <16 0 &gpio1 8 0>,   /* PWM1 */
+			   <17 0 &gpio1 10 0>,  /* PWM1 */
+			   <18 0 &gpio1 11 0>,  /* PWM1 */
+			   <19 0 &gpio1 12 0>,  /* PWM0 */
+			   <20 0 &gpio1 3 0>,   /* PWM1 */
+			   /* 11 not connected */
+			   <10 0 &gpio0 6 0>,   /* TX */
+			   <9 0 &gpio0 8 0>,    /* RX */
+			   <8 0 &gpio1 14 0>,   /* MISO */
+			   <7 0 &gpio1 13 0>,   /* MOSI */
+			   <6 0 &gpio1 15 0>,   /* SCK */
+			   <5 0 &gpio0 31 0>,   /* SS */
+			   <4 0 &gpio0 30 0>,   /* ADC4 = AIN6 */
+			   <3 0 &gpio0 29 0>,   /* ADC3 = AIN5 */
+			   <2 0 &gpio0 28 0>,   /* ADC2 = AIN4 */
+			   <1 0 &gpio0 4 0>,    /* ADC1 = AIN2 */
+			   <0 0 &gpio0 3 0>;    /* ADC0 = AIN1 */
+	};
 };
 
-&adc { /* feather ADC */
+feather_adc: &adc { /* feather ADC */
 	status = "okay";
 };
 
@@ -79,11 +136,11 @@
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x000067000>;
+			reg = <0x0000C000 0x00067000>;
 		};
 		slot1_partition: partition@73000 {
 			label = "image-1";
-			reg = <0x00073000 0x000067000>;
+			reg = <0x00073000 0x00067000>;
 		};
 		scratch_partition: partition@da000 {
 			label = "image-scratch";
@@ -118,7 +175,7 @@
 	status = "okay";
 };
 
-&i2c0 { /* feather I2C */
+arduino_i2c: &i2c0 { /* feather I2C */
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
@@ -126,7 +183,9 @@
 	scl-pin = <27>;
 };
 
-/* TWI1 used on Boron; also see mesh_feather_spi1_spi1.dtsi */
+feather_i2c: &i2c0 { };
+
+/* TWI1 used on Boron; also see mesh_feather_spi_spi1.dtsi */
 
 &spi2 { /* dedicated MX25L */
 	compatible = "nordic,nrf-spi";
@@ -134,7 +193,7 @@
 	sck-pin = <19>;
 	mosi-pin = <20>;
 	miso-pin = <21>;
-	cs-gpios = <&gpio0 17 0>;
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 	mx25l32: mx25l3233f@0 {
 		compatible = "jedec,spi-nor";
 		label = "MX25L3233F";
@@ -143,17 +202,21 @@
 		wp-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		hold-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 		size = <0x2000000>;
-		has-be32k;
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <100000>;
 		jedec-id = [c2 20 16];
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 01  44 eb 08 6b  08 3b 04 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff
+		];
 	};
 };
 
 /* see mesh_feather_spi1_spi3.dtsi */
 
-&uart0 { /* feather UART1 */
+feather_serial: &uart0 { /* feather UART1 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
 	status = "okay";

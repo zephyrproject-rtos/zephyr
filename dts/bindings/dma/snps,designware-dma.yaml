@@ -13,3 +13,9 @@ properties:
 
     interrupts:
       required: true
+
+    "#dma-cells":
+      const: 1
+
+dma-cells:
+  - channel

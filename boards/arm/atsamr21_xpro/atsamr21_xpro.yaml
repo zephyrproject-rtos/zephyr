@@ -1,4 +1,4 @@
-# Copyright (c) 2019 Gerson Fernando Budke
+# Copyright (c) 2019-2020 Gerson Fernando Budke
 # Copyright (c) 2019 Benjamin Valentin
 # SPDX-License-Identifier: Apache-2.0
 identifier: atsamr21_xpro
@@ -13,8 +13,13 @@ toolchain:
   - xtools
 supported:
   - gpio
-  - spi
   - i2c
   - ieee802154
+  - netif
+  - pwm
+  - spi
   - usb_device
-  - hwinfo
+  - xpro_gpio
+  - xpro_i2c
+  - xpro_serial
+  - xpro_spi

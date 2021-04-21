@@ -1,0 +1,77 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_BUYDISPLAY_2_8_TFT_TOUCH_ARDUINO
+
+if DISPLAY
+
+config SPI
+	default y
+
+config ILI9340
+	default y
+
+if KSCAN
+
+config I2C
+	default y
+
+config KSCAN_FT5336
+	default y
+
+# NOTE: Enable if IRQ line is available (requires to solder jumper)
+config KSCAN_FT5336_INTERRUPT
+	default n
+
+config KSCAN_INIT_PRIORITY
+	default 60
+
+endif # KSCAN
+
+if LVGL
+
+config LVGL_DISPLAY_DEV_NAME
+	default "DISPLAY"
+
+config LVGL_HOR_RES_MAX
+	default 240
+
+config LVGL_VER_RES_MAX
+	default 320
+
+config LVGL_VDB_SIZE
+	default 64
+
+config LVGL_BITS_PER_PIXEL
+	default 16
+
+choice LVGL_COLOR_DEPTH
+	default LVGL_COLOR_DEPTH_16
+endchoice
+
+config LVGL_COLOR_16_SWAP
+	default y
+
+config KSCAN
+	default y
+
+config LVGL_POINTER_KSCAN
+	default y
+
+config LVGL_POINTER_KSCAN_DEV_NAME
+	default "TOUCH"
+
+config LVGL_POINTER_KSCAN_SWAP_XY
+	default y
+
+config LVGL_POINTER_KSCAN_INVERT_X
+	default y
+
+config LVGL_POINTER_KSCAN_INVERT_Y
+	default y
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # SHIELD_BUYDISPLAY_2_8_TFT_TOUCH_ARDUINO

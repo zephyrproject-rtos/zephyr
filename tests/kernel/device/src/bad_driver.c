@@ -10,15 +10,15 @@
 
 #define BAD_DRIVER_NAME	"bad_driver"
 
-typedef int (*bad_api_configure_t)(struct device *dev,
-				     u32_t dev_config);
+typedef int (*bad_api_configure_t)(const struct device *dev,
+				     uint32_t dev_config);
 
 
 struct bad_driver_api {
 	bad_api_configure_t configure;
 };
 
-static int bad_configure(struct device *dev, u32_t config)
+static int bad_configure(const struct device *dev, uint32_t config)
 {
 	return 0;
 }
@@ -27,7 +27,7 @@ static const struct bad_driver_api funcs = {
 	.configure = bad_configure,
 };
 
-int bad_driver_init(struct device *dev)
+int bad_driver_init(const struct device *dev)
 {
 	return -EINVAL;
 }
@@ -35,9 +35,9 @@ int bad_driver_init(struct device *dev)
 /**
  * @cond INTERNAL_HIDDEN
  */
-DEVICE_AND_API_INIT(bad_driver, BAD_DRIVER_NAME, &bad_driver_init,
-		    NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &funcs);
+DEVICE_DEFINE(bad_driver, BAD_DRIVER_NAME, &bad_driver_init,
+		device_pm_control_nop, NULL, NULL, POST_KERNEL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
 
 /**
  * @endcond

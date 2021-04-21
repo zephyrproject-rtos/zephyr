@@ -9,5 +9,4 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   -vga none
   )
-
 board_set_debugger_ifnset(qemu)

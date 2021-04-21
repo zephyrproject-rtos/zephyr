@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: child-binding with separate compatible than the parent
+
+compatible: "top-binding-with-compat"
+
+child-binding:
+    compatible: child-compat
+    description: child node
+    properties:
+        child-prop:
+            type: int
+            required: true
+
+    child-binding:
+        description: grandchild node
+        properties:
+            grandchild-prop:
+                type: int
+                required: true

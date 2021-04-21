@@ -1,0 +1,60 @@
+# Elkhart Lake SoC configuration options
+
+# Copyright (c) 2018-2020 Intel Corporation
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ELKHART_LAKE
+
+config SOC
+	default "elkhart_lake"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 19200000
+
+config HPET_TIMER
+	default y
+
+config APIC_TIMER
+	default y if !HPET_TIMER
+
+config PCIE_MMIO_CFG
+	default y
+
+if APIC_TIMER
+
+config APIC_TIMER_IRQ
+	default 24
+
+config APIC_TIMER_TSC
+	default y
+
+if APIC_TIMER_TSC
+
+config APIC_TIMER_TSC_M
+	default 3
+
+config APIC_TIMER_TSC_N
+	default 249
+
+endif # APIC_TIMER_TSC
+
+endif # APIC_TIMER
+
+config X86_DYNAMIC_IRQ_STUBS
+	default 16
+	depends on DYNAMIC_INTERRUPTS
+
+config I2C_DW
+	default y
+	depends on I2C
+
+config I2C_DW_MAX_INSTANCES
+	default 15
+	depends on I2C_DW
+
+config UART_NS16550_MAX_INSTANCES
+	default 11
+	depends on UART_NS16550
+
+endif # SOC_ELKHART_LAKE

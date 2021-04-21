@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&nrf_interface_pins_0_2_routing {
+	status = "okay";
+};
+
+&nrf_interface_pins_3_5_routing {
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	tx-pin = <17>; /* <&interface_to_nrf9160 0 0>; */
+	rx-pin = <20>; /* <&interface_to_nrf9160 1 0>; */
+	rts-pin = <15>; /* <&interface_to_nrf9160 2 0>; */
+	cts-pin = <22>; /* <&interface_to_nrf9160 3 0>; */
+};

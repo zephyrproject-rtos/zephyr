@@ -1,4 +1,4 @@
-.. _kscan:
+.. _kscan_api:
 
 
 KSCAN

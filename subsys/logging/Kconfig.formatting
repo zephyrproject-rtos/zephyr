@@ -1,0 +1,56 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Output Formatting"
+
+menu "Prepend non-hexdump log message with function name"
+	depends on !LOG_FRONTEND
+
+config LOG_FUNC_NAME_PREFIX_ERR
+	bool "Error messages prepended"
+
+config LOG_FUNC_NAME_PREFIX_WRN
+	bool "Warning messages prepended"
+
+config LOG_FUNC_NAME_PREFIX_INF
+	bool "Info messages prepended"
+
+config LOG_FUNC_NAME_PREFIX_DBG
+	bool "Debug messages prepended"
+	default y
+
+endmenu
+
+config LOG_MIPI_SYST_ENABLE
+	bool "Enable MIPI SyS-T format output"
+	select MIPI_SYST_LIB
+	help
+	  Enable MIPI SyS-T format output for the logger system.
+
+config LOG_IMMEDIATE_CLEAN_OUTPUT
+	bool "Clean log output"
+	depends on LOG_IMMEDIATE
+	help
+	  If enabled, interrupts are locked during whole log message processing.
+	  As a result, processing on one log message cannot be interrupted by
+	  another one and output is clean, not interleaved. However, enabling
+	  this option is causing interrupts locking for significant amount of
+	  time (up to multiple milliseconds).
+
+config LOG_BACKEND_SHOW_COLOR
+	bool "Enable colors in the backend"
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
+	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM
+	default y
+	help
+	  When enabled selected backend prints errors in red and warning in yellow.
+
+config LOG_BACKEND_FORMAT_TIMESTAMP
+	bool "Enable timestamp formatting in the backend"
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
+	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM
+	default y
+	help
+	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
+
+endmenu

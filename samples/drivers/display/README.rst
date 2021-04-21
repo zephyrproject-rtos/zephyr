@@ -19,12 +19,12 @@ Building and Running
 
 As this is a generic sample it should work with any display supported by Zephyr.
 
-Below is an example on how to build for a :ref:`nrf52840_pca10056` board with a
+Below is an example on how to build for a :ref:`nrf52840dk_nrf52840` board with a
 :ref:`adafruit_2_8_tft_touch_v2`.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/display_shield
-   :board: nrf52840_pca10056
+   :zephyr-app: samples/drivers/display
+   :board: nrf52840dk_nrf52840
    :goals: build
    :shield: adafruit_2_8_tft_touch_v2
    :compact:
@@ -33,7 +33,7 @@ For testing purpose without the need of any hardware, the :ref:`native_posix`
 board is also supported and can be built as follows;
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/display_shield
+   :zephyr-app: samples/drivers/display
    :board: native_posix
    :goals: build
    :compact:

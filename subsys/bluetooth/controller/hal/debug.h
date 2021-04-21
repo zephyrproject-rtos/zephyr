@@ -6,7 +6,7 @@
  */
 
 #ifdef CONFIG_BT_CTLR_ASSERT_HANDLER
-void bt_ctlr_assert_handle(char *file, u32_t line);
+void bt_ctlr_assert_handle(char *file, uint32_t line);
 #define LL_ASSERT(cond) if (!(cond)) { \
 				bt_ctlr_assert_handle(__FILE__, \
 						      __LINE__); \

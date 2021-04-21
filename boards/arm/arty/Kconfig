@@ -1,0 +1,13 @@
+# Digilent Arty board configuration
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_INIT_PRIORITY
+	int "Board initialization priority"
+	default 50
+	depends on BOARD_ARTY_A7_ARM_DESIGNSTART_M1 || BOARD_ARTY_A7_ARM_DESIGNSTART_M3
+	depends on "$(dt_nodelabel_enabled,daplink_qspi_mux)"
+	help
+	  Board initialization priority. The board initialization must take
+	  place after the GPIO driver is initialized.

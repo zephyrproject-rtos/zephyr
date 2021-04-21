@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2019-2020 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/armv8-m.dtsi>
+
+/ {
+	compatible = "arm,v2m-musca";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &mram0;
+		zephyr,shell-uart = &uart1;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <8>;
+			};
+		};
+	};
+
+	mram0: mram@a080400 {
+		/* Internal code eMRAM */
+		reg = <0x0a080000 0x80000>;
+	};
+
+	sram0: memory@20040000 {
+		compatible = "mmio-sram";
+		reg = <0x20040000 0x40000>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <50000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+
+			#include "v2m_musca_s1-common.dtsi"
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

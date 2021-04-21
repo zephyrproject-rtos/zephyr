@@ -1,5 +1,0 @@
-description: Native POSIX flash controller
-
-compatible: "zephyr,native-posix-flash-controller"
-
-include: flash-controller.yaml

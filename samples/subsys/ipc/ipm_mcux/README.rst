@@ -6,23 +6,39 @@ Sample mailbox application
 Overview
 ********
 
-The :ref:`lpcxpresso54114` board has two core processors (Cortex-M4F
-and Cortex-M0+). This sample application uses a mailbox to send messages
-from one processor core to the other.
+Some NXP microcontrollers from LPC family are dual-core, this
+sample application uses a mailbox to send messages from one
+processor core to the other.
+
+This sample applies to the following boards:
+ -  :ref:`lpcxpresso54114`, two core processors (Cortex-M4F and Cortex-M0+)
+ -  :ref:`lpcxpresso55s69`, two core processors (dual Cortex-M33)
 
 Requirements
 ************
 
 - :ref:`lpcxpresso54114` board
+- :ref:`lpcxpresso55s69` board
 
-Building and Running
-********************
+Building the application for lpcxpresso54114_m4
+***********************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/ipm_mcux
    :board: lpcxpresso54114_m4
    :goals: debug
 
+
+Building the application for lpcxpresso55s69_cpu0
+*************************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/ipm_mcux
+   :board: lpcxpresso55s69_cpu0
+   :goals: debug
+
+Running
+*******
 Open a serial terminal (minicom, putty, etc.) and connect the board with the
 following settings:
 

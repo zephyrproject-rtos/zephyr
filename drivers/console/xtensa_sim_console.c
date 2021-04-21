@@ -49,25 +49,21 @@ extern void __printk_hook_install(int (*fn)(int));
 	} while ((0))
 #endif
 
-
 /**
- *
  * @brief Install printk/stdout hook for Xtensa Simulator console output
  * @return N/A
  */
-
-void xt_sim_console_hook_install(void)
+static void xt_sim_console_hook_install(void)
 {
 	__stdout_hook_install(console_out);
 	__printk_hook_install(console_out);
 }
 
 /**
- *
  * @brief Initialize the console/debug port
  * @return 0 if successful, otherwise failed.
  */
-static int xt_sim_console_init(struct device *arg)
+static int xt_sim_console_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 	xt_sim_console_hook_install();
@@ -77,8 +73,8 @@ static int xt_sim_console_init(struct device *arg)
 /* UART consloe initializes after the UART device itself */
 SYS_INIT(xt_sim_console_init,
 #if defined(CONFIG_EARLY_CONSOLE)
-			PRE_KERNEL_1,
+	 PRE_KERNEL_1,
 #else
-			POST_KERNEL,
+	 POST_KERNEL,
 #endif
-			CONFIG_XTENSA_CONSOLE_INIT_PRIORITY);
+	 CONFIG_XTENSA_CONSOLE_INIT_PRIORITY);

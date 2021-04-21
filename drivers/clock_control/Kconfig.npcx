@@ -1,0 +1,43 @@
+# NPCX Clock controller driver configuration options
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_NPCX
+	bool "NPCX clock controller driver"
+	depends on SOC_FAMILY_NPCX
+	help
+	  Enable support for NPCX clock controller driver.
+
+config CLOCK_NPCX_OSC_CYCLES_PER_SEC
+	int "CDCG PLL frequency"
+	default 48000000
+	range 10000000 100000000
+	depends on SOC_FAMILY_NPCX
+	help
+	  Core Domain Clock Generator PLL frequency,
+	  allowed values: From 10Mhz to 100Mhz.
+
+config CLOCK_NPCX_APB1_PRESCALER
+	int "APB1 prescaler"
+	default 4
+	range 1 10
+	depends on SOC_FAMILY_NPCX
+	help
+	  APB1 prescaler, allowed values: From 1 to 10.
+
+config CLOCK_NPCX_APB2_PRESCALER
+	int "APB1 prescaler"
+	default 8
+	range 1 10
+	depends on SOC_FAMILY_NPCX
+	help
+	  APB2 prescaler, allowed values: From 1 to 10.
+
+config CLOCK_NPCX_APB3_PRESCALER
+	int "APB3 prescaler"
+	default 2
+	range 1 10
+	depends on SOC_FAMILY_NPCX
+	help
+	  APB3 prescaler, allowed values: From 1 to 10.

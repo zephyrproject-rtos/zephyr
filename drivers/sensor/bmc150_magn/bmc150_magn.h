@@ -73,7 +73,7 @@
 #define BMC150_MAGN_MASK_DRDY_LATCHING          BIT(1)
 #define BMC150_MAGN_MASK_DRDY_INT3_POLARITY     BIT(0)
 
-#define BMC150_MAGN_I2C_ADDR			DT_INST_0_BOSCH_BMC150_MAGN_BASE_ADDRESS
+#define BMC150_MAGN_I2C_ADDR			DT_INST_REG_ADDR(0)
 
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_XY) || \
 	defined(CONFIG_BMC150_MAGN_SAMPLING_REP_Z)
@@ -91,40 +91,40 @@ struct bmc150_magn_config {
 	gpio_pin_t gpio_drdy_int_pin;
 	gpio_dt_flags_t gpio_drdy_int_flags;
 #endif
-	u16_t i2c_slave_addr;
+	uint16_t i2c_slave_addr;
 	char *i2c_master_dev_name;
 };
 
 struct bmc150_magn_trim_regs {
-	s8_t x1;
-	s8_t y1;
-	u16_t reserved1;
-	u8_t reserved2;
-	s16_t z4;
-	s8_t x2;
-	s8_t y2;
-	u16_t reserved3;
-	s16_t z2;
-	u16_t z1;
-	u16_t xyz1;
-	s16_t z3;
-	s8_t xy2;
-	u8_t xy1;
+	int8_t x1;
+	int8_t y1;
+	uint16_t reserved1;
+	uint8_t reserved2;
+	int16_t z4;
+	int8_t x2;
+	int8_t y2;
+	uint16_t reserved3;
+	int16_t z2;
+	uint16_t z1;
+	uint16_t xyz1;
+	int16_t z3;
+	int8_t xy2;
+	uint8_t xy1;
 } __packed;
 
 struct bmc150_magn_data {
-	struct device *i2c_master;
+	const struct device *i2c_master;
 	struct k_sem sem;
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER)
-	K_THREAD_STACK_MEMBER(thread_stack,
+	K_KERNEL_STACK_MEMBER(thread_stack,
 			      CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK);
 	struct k_thread thread;
 #endif
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
-	struct device *gpio_drdy;
-	struct device *dev;
+	const struct device *gpio_drdy;
+	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	struct sensor_trigger trigger_drdy;
 	sensor_trigger_handler_t handler_drdy;
@@ -168,11 +168,11 @@ enum bmc150_magn_axis {
 };
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER)
-int bmc150_magn_trigger_set(struct device *dev,
+int bmc150_magn_trigger_set(const struct device *dev,
 			    const struct sensor_trigger *trig,
 			    sensor_trigger_handler_t handler);
 
-int bmc150_magn_init_interrupt(struct device *dev);
+int bmc150_magn_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMC150_MAGN_BMC150_MAGN_H_ */

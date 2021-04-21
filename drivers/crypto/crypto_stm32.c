@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_cryp
+
 #include <init.h>
 #include <kernel.h>
 #include <device.h>
-#include <assert.h>
+#include <sys/__assert.h>
 #include <crypto/cipher.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
@@ -19,15 +21,16 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(crypto_stm32);
 
-#define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+#define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
+		      CAP_NO_IV_PREFIX)
 #define BLOCK_LEN_BYTES 16
-#define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(u32_t))
+#define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(uint32_t))
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_STM32_MAX_SESSION
 
 struct crypto_stm32_session crypto_stm32_sessions[CRYPTO_MAX_SESSION];
 
-static void copy_reverse_words(u8_t *dst_buf, int dst_len,
-			       u8_t *src_buf, int src_len)
+static void copy_reverse_words(uint8_t *dst_buf, int dst_len,
+			       uint8_t *src_buf, int src_len)
 {
 	int i;
 
@@ -35,13 +38,13 @@ static void copy_reverse_words(u8_t *dst_buf, int dst_len,
 	__ASSERT_NO_MSG((dst_len % 4) == 0);
 
 	memcpy(dst_buf, src_buf, src_len);
-	for (i = 0; i < dst_len; i += sizeof(u32_t)) {
-		sys_mem_swap(&dst_buf[i], sizeof(u32_t));
+	for (i = 0; i < dst_len; i += sizeof(uint32_t)) {
+		sys_mem_swap(&dst_buf[i], sizeof(uint32_t));
 	}
 }
 
-static int do_encrypt(struct cipher_ctx *ctx, u8_t *in_buf, int in_len,
-		      u8_t *out_buf)
+static int do_encrypt(struct cipher_ctx *ctx, uint8_t *in_buf, int in_len,
+		      uint8_t *out_buf)
 {
 	HAL_StatusTypeDef status;
 
@@ -70,8 +73,8 @@ static int do_encrypt(struct cipher_ctx *ctx, u8_t *in_buf, int in_len,
 	return 0;
 }
 
-static int do_decrypt(struct cipher_ctx *ctx, u8_t *in_buf, int in_len,
-		      u8_t *out_buf)
+static int do_decrypt(struct cipher_ctx *ctx, uint8_t *in_buf, int in_len,
+		      uint8_t *out_buf)
 {
 	HAL_StatusTypeDef status;
 
@@ -143,56 +146,67 @@ static int crypto_stm32_ecb_decrypt(struct cipher_ctx *ctx,
 }
 
 static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, u8_t *iv)
+				    struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
-	u32_t vec[BLOCK_LEN_WORDS];
+	uint32_t vec[BLOCK_LEN_WORDS];
+	int out_offset = 0;
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	copy_reverse_words((u8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
+	copy_reverse_words((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 	session->config.pInitVect = vec;
 
-	/* Prefix IV to ciphertext */
-	memcpy(pkt->out_buf, iv, 16);
+	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
+		/* Prefix IV to ciphertext unless CAP_NO_IV_PREFIX is set. */
+		memcpy(pkt->out_buf, iv, 16);
+		out_offset = 16;
+	}
 
-	ret = do_encrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf + 16);
+	ret = do_encrypt(ctx, pkt->in_buf, pkt->in_len,
+			 pkt->out_buf + out_offset);
 	if (ret == 0) {
-		pkt->out_len = pkt->in_len + 16;
+		pkt->out_len = pkt->in_len + out_offset;
 	}
 
 	return ret;
 }
 
 static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, u8_t *iv)
+				    struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
-	u32_t vec[BLOCK_LEN_WORDS];
+	uint32_t vec[BLOCK_LEN_WORDS];
+	int in_offset = 0;
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	copy_reverse_words((u8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
+	copy_reverse_words((uint8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 	session->config.pInitVect = vec;
 
-	ret = do_decrypt(ctx, pkt->in_buf + 16, pkt->in_len, pkt->out_buf);
+	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
+		in_offset = 16;
+	}
+
+	ret = do_decrypt(ctx, pkt->in_buf + in_offset, pkt->in_len,
+			 pkt->out_buf);
 	if (ret == 0) {
-		pkt->out_len = pkt->in_len - 16;
+		pkt->out_len = pkt->in_len - in_offset;
 	}
 
 	return ret;
 }
 
 static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, u8_t *iv)
+				    struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
-	u32_t ctr[BLOCK_LEN_WORDS] = {0};
+	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
 	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	copy_reverse_words((u8_t *)ctr, sizeof(ctr), iv, ivlen);
+	copy_reverse_words((uint8_t *)ctr, sizeof(ctr), iv, ivlen);
 	session->config.pInitVect = ctr;
 
 	ret = do_encrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf);
@@ -204,15 +218,15 @@ static int crypto_stm32_ctr_encrypt(struct cipher_ctx *ctx,
 }
 
 static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
-				    struct cipher_pkt *pkt, u8_t *iv)
+				    struct cipher_pkt *pkt, uint8_t *iv)
 {
 	int ret;
-	u32_t ctr[BLOCK_LEN_WORDS] = {0};
+	uint32_t ctr[BLOCK_LEN_WORDS] = {0};
 	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
-	copy_reverse_words((u8_t *)ctr, sizeof(ctr), iv, ivlen);
+	copy_reverse_words((uint8_t *)ctr, sizeof(ctr), iv, ivlen);
 	session->config.pInitVect = ctr;
 
 	ret = do_decrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf);
@@ -223,7 +237,7 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
-static int crypto_stm32_get_unused_session_index(struct device *dev)
+static int crypto_stm32_get_unused_session_index(const struct device *dev)
 {
 	int i;
 
@@ -244,7 +258,7 @@ static int crypto_stm32_get_unused_session_index(struct device *dev)
 	return -1;
 }
 
-static int crypto_stm32_session_setup(struct device *dev,
+static int crypto_stm32_session_setup(const struct device *dev,
 				      struct cipher_ctx *ctx,
 				      enum cipher_algo algo,
 				      enum cipher_mode mode,
@@ -355,7 +369,7 @@ static int crypto_stm32_session_setup(struct device *dev,
 		}
 	}
 
-	copy_reverse_words((u8_t *)session->key, CRYPTO_STM32_AES_MAX_KEY_LEN,
+	copy_reverse_words((uint8_t *)session->key, CRYPTO_STM32_AES_MAX_KEY_LEN,
 			   ctx->key.bit_stream, ctx->keylen);
 
 	session->config.pKey = session->key;
@@ -368,7 +382,7 @@ static int crypto_stm32_session_setup(struct device *dev,
 	return 0;
 }
 
-static int crypto_stm32_session_free(struct device *dev,
+static int crypto_stm32_session_free(const struct device *dev,
 				     struct cipher_ctx *ctx)
 {
 	int i;
@@ -402,20 +416,21 @@ static int crypto_stm32_session_free(struct device *dev,
 	return 0;
 }
 
-static int crypto_stm32_query_caps(struct device *dev)
+static int crypto_stm32_query_caps(const struct device *dev)
 {
 	return CRYP_SUPPORT;
 }
 
-static int crypto_stm32_init(struct device *dev)
+static int crypto_stm32_init(const struct device *dev)
 {
-	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
 	const struct crypto_stm32_config *cfg = CRYPTO_STM32_CFG(dev);
 
-	__ASSERT_NO_MSG(clk);
-
-	clock_control_on(clk, (clock_control_subsys_t *)&cfg->pclken);
+	if (clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken) != 0) {
+		LOG_ERR("clock op failed\n");
+		return -EIO;
+	}
 
 	k_sem_init(&data->device_sem, 1, 1);
 	k_sem_init(&data->session_sem, 1, 1);
@@ -443,12 +458,12 @@ static struct crypto_stm32_data crypto_stm32_dev_data = {
 
 static struct crypto_stm32_config crypto_stm32_dev_config = {
 	.pclken = {
-		.enr = DT_INST_0_ST_STM32_CRYP_CLOCK_BITS,
-		.bus = DT_INST_0_ST_STM32_CRYP_CLOCK_BUS
+		.enr = DT_INST_CLOCKS_CELL(0, bits),
+		.bus = DT_INST_CLOCKS_CELL(0, bus)
 	}
 };
 
-DEVICE_AND_API_INIT(crypto_stm32, DT_INST_0_ST_STM32_CRYP_LABEL,
-		    crypto_stm32_init, &crypto_stm32_dev_data,
+DEVICE_DT_INST_DEFINE(0, crypto_stm32_init, device_pm_control_nop,
+		    &crypto_stm32_dev_data,
 		    &crypto_stm32_dev_config, POST_KERNEL,
 		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);

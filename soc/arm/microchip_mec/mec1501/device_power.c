@@ -47,9 +47,6 @@ void soc_lite_sleep_enable(void)
  * a minimum of 3ms to lock. During this time the main clock
  * will be ramping up from ~16 to 24 MHz.
  */
-
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
-
 void soc_deep_sleep_enable(void)
 {
 	SCB->SCR = (1ul << 2); /* Cortex-M4 SLEEPDEEP */
@@ -65,7 +62,7 @@ void soc_deep_sleep_disable(void)
 void soc_deep_sleep_wait_clk_idle(void)
 {
 #ifdef DEEP_SLEEP_WAIT_ON_CLK_REQ_ENABLE
-	u32_t clkreq, cnt;
+	uint32_t clkreq, cnt;
 
 	cnt = DEEP_SLEEP_WAIT_CLK_REQ;
 	do {
@@ -105,7 +102,7 @@ void soc_deep_sleep_non_wake_dis(void)
 /* Variables used to save various HW state */
 #ifdef DEEP_SLEEP_PERIPH_SAVE_RESTORE
 
-static u32_t ecs[1];
+static uint32_t ecs[1];
 
 static void deep_sleep_save_ecs(void)
 {
@@ -115,7 +112,7 @@ static void deep_sleep_save_ecs(void)
 
 struct ds_timer_info {
 	uintptr_t addr;
-	u32_t restore_mask;
+	uint32_t restore_mask;
 };
 
 const struct ds_timer_info ds_timer_tbl[] = {
@@ -140,23 +137,35 @@ const struct ds_timer_info ds_timer_tbl[] = {
 	(sizeof(ds_timer_tbl) / sizeof(struct ds_timer_info))
 
 
-static u32_t timers[NUM_DS_TIMER_ENTRIES];
-static u8_t uart_activate[3];
+static uint32_t timers[NUM_DS_TIMER_ENTRIES];
+static uint8_t uart_activate[3];
 
 static void deep_sleep_save_uarts(void)
 {
 	uart_activate[0] = UART0_REGS->ACTV;
+	if (uart_activate[0]) {
+		while ((UART0_REGS->LSR & MCHP_UART_LSR_TEMT) == 0) {
+		}
+	}
 	UART0_REGS->ACTV = 0;
 	uart_activate[1] = UART1_REGS->ACTV;
+	if (uart_activate[1]) {
+		while ((UART1_REGS->LSR & MCHP_UART_LSR_TEMT) == 0) {
+		}
+	}
 	UART1_REGS->ACTV = 0;
 	uart_activate[2] = UART2_REGS->ACTV;
+	if (uart_activate[2]) {
+		while ((UART2_REGS->LSR & MCHP_UART_LSR_TEMT) == 0) {
+		}
+	}
 	UART2_REGS->ACTV = 0;
 }
 
 static void deep_sleep_save_timers(void)
 {
 	const struct ds_timer_info *p;
-	u32_t i;
+	uint32_t i;
 
 	p = &ds_timer_tbl[0];
 	for (i = 0; i < NUM_DS_TIMER_ENTRIES; i++) {
@@ -181,7 +190,7 @@ static void deep_sleep_restore_uarts(void)
 static void deep_sleep_restore_timers(void)
 {
 	const struct ds_timer_info *p;
-	u32_t i;
+	uint32_t i;
 
 	p = &ds_timer_tbl[0];
 	for (i = 0; i < NUM_DS_TIMER_ENTRIES; i++) {
@@ -215,5 +224,3 @@ void soc_deep_sleep_periph_restore(void)
 }
 
 #endif /* DEEP_SLEEP_PERIPH_SAVE_RESTORE */
-
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */

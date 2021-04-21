@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT litex_pwm
+
 #include <device.h>
 #include <drivers/pwm.h>
 #include <zephyr/types.h>
@@ -15,30 +17,30 @@
 #define NUMBER_OF_CHANNELS        1
 
 struct pwm_litex_cfg {
-	u32_t reg_en_size;
-	u32_t reg_width_size;
-	u32_t reg_period_size;
-	volatile u32_t *reg_en;
-	volatile u32_t *reg_width;
-	volatile u32_t *reg_period;
+	uint32_t reg_en_size;
+	uint32_t reg_width_size;
+	uint32_t reg_period_size;
+	volatile uint32_t *reg_en;
+	volatile uint32_t *reg_width;
+	volatile uint32_t *reg_period;
 };
 
 #define GET_PWM_CFG(dev)				       \
-	((const struct pwm_litex_cfg *) dev->config->config_info)
+	((const struct pwm_litex_cfg *) dev->config)
 
-static void litex_set_reg(volatile u32_t *reg, u32_t reg_size, u32_t val)
+static void litex_set_reg(volatile uint32_t *reg, uint32_t reg_size, uint32_t val)
 {
-	u32_t shifted_data;
-	volatile u32_t *reg_addr;
+	uint32_t shifted_data;
+	volatile uint32_t *reg_addr;
 
 	for (int i = 0; i < reg_size; ++i) {
 		shifted_data = val >> ((reg_size - i - 1) * 8);
-		reg_addr = ((volatile u32_t *) reg) + i;
+		reg_addr = ((volatile uint32_t *) reg) + i;
 		*(reg_addr) = shifted_data;
 	}
 }
 
-int pwm_litex_init(struct device *dev)
+int pwm_litex_init(const struct device *dev)
 {
 	const struct pwm_litex_cfg *cfg = GET_PWM_CFG(dev);
 
@@ -46,8 +48,9 @@ int pwm_litex_init(struct device *dev)
 	return 0;
 }
 
-int pwm_litex_pin_set(struct device *dev, u32_t pwm, u32_t period_cycles,
-		      u32_t pulse_cycles, pwm_flags_t flags)
+int pwm_litex_pin_set(const struct device *dev, uint32_t pwm,
+		      uint32_t period_cycles,
+		      uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_litex_cfg *cfg = GET_PWM_CFG(dev);
 
@@ -63,7 +66,8 @@ int pwm_litex_pin_set(struct device *dev, u32_t pwm, u32_t period_cycles,
 	return 0;
 }
 
-int pwm_litex_get_cycles_per_sec(struct device *dev, u32_t pwm, u64_t *cycles)
+int pwm_litex_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
+				 uint64_t *cycles)
 {
 	if (pwm >= NUMBER_OF_CHANNELS) {
 		return -EINVAL;
@@ -88,61 +92,27 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 #define PWM_LITEX_INIT(n)						       \
 	static const struct pwm_litex_cfg pwm_litex_cfg_##n = {		       \
 		.reg_en =						       \
-		  (volatile u32_t *)                                           \
-			DT_INST_##n##_LITEX_PWM_ENABLE_BASE_ADDRESS,           \
-		.reg_en_size = DT_INST_##n##_LITEX_PWM_ENABLE_SIZE / 4,        \
+		  (volatile uint32_t *)                                           \
+			DT_INST_REG_ADDR_BY_NAME(n, enable),           \
+		.reg_en_size = DT_INST_REG_SIZE_BY_NAME(n, enable) / 4,        \
 		.reg_width =						       \
-		  (volatile u32_t *)                                           \
-			DT_INST_##n##_LITEX_PWM_WIDTH_BASE_ADDRESS,            \
-		.reg_width_size = DT_INST_##n##_LITEX_PWM_WIDTH_SIZE / 4,      \
+		  (volatile uint32_t *)                                           \
+			DT_INST_REG_ADDR_BY_NAME(n, width),            \
+		.reg_width_size = DT_INST_REG_SIZE_BY_NAME(n, width) / 4,      \
 		.reg_period  =						       \
-		  (volatile u32_t *)                                           \
-			DT_INST_##n##_LITEX_PWM_PERIOD_BASE_ADDRESS,           \
-		.reg_period_size = DT_INST_##n##_LITEX_PWM_PERIOD_SIZE / 4,    \
+		  (volatile uint32_t *)                                           \
+			DT_INST_REG_ADDR_BY_NAME(n, period),           \
+		.reg_period_size = DT_INST_REG_SIZE_BY_NAME(n, period) / 4,    \
 	};								       \
 									       \
-	DEVICE_AND_API_INIT(pwm_##n,					       \
-			    DT_INST_##n##_LITEX_PWM_LABEL,		       \
+	DEVICE_DT_INST_DEFINE(n,					       \
 			    pwm_litex_init,				       \
+			    device_pm_control_nop,			       \
 			    NULL,					       \
 			    &pwm_litex_cfg_##n,				       \
 			    POST_KERNEL,				       \
 			    CONFIG_PWM_LITEX_INIT_PRIORITY,		       \
 			    &pwm_litex_driver_api			       \
-			   )
+			   );
 
-#ifdef DT_INST_0_LITEX_PWM_LABEL
-PWM_LITEX_INIT(0);
-#endif
-
-#ifdef DT_INST_1_LITEX_PWM_LABEL
-PWM_LITEX_INIT(1);
-#endif
-
-#ifdef DT_INST_2_LITEX_PWM_LABEL
-PWM_LITEX_INIT(2);
-#endif
-
-#ifdef DT_INST_3_LITEX_PWM_LABEL
-PWM_LITEX_INIT(3);
-#endif
-
-#ifdef DT_INST_4_LITEX_PWM_LABEL
-PWM_LITEX_INIT(4);
-#endif
-
-#ifdef DT_INST_5_LITEX_PWM_LABEL
-PWM_LITEX_INIT(5);
-#endif
-
-#ifdef DT_INST_6_LITEX_PWM_LABEL
-PWM_LITEX_INIT(6);
-#endif
-
-#ifdef DT_INST_7_LITEX_PWM_LABEL
-PWM_LITEX_INIT(7);
-#endif
-
-#ifdef DT_INST_8_LITEX_PWM_LABEL
-PWM_LITEX_INIT(8);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(PWM_LITEX_INIT)

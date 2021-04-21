@@ -1,0 +1,14 @@
+sample:
+  name: ADC driver sample
+tests:
+  sample.drivers.adc:
+    tags: ADC
+    depends_on: adc
+    platform_allow: nucleo_l073rz disco_l475_iot1 cc3220sf_launchxl
+        cc3235sf_launchxl
+    harness: console
+    timeout: 10
+    harness_config:
+      type: one_line
+      regex:
+        - "ADC reading: (.*)"

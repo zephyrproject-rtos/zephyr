@@ -14,6 +14,7 @@
 LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #include <zephyr/types.h>
+#include <random/rand32.h>
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -24,6 +25,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <net/net_mgmt.h>
 #include <net/dns_resolve.h>
 #include "dns_pack.h"
+#include "dns_internal.h"
 
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
@@ -34,7 +36,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define LLMNR_IPV4_ADDR "224.0.0.252:5355"
 #define LLMNR_IPV6_ADDR "[ff02::1:3]:5355"
 
-#define DNS_BUF_TIMEOUT 500 /* ms */
+#define DNS_BUF_TIMEOUT K_MSEC(500) /* ms */
 
 /* RFC 1035, 3.1. Name space definitions
  * To simplify implementations, the total length of a domain name (i.e.,
@@ -74,6 +76,7 @@ NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, DNS_MAX_NAME_LEN,
 
 static struct dns_resolve_context dns_default_ctx;
 
+/* Must be invoked with context lock held */
 static int dns_write(struct dns_resolve_context *ctx,
 		     int server_idx,
 		     int query_idx,
@@ -206,10 +209,13 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 	}
 
 	if (ctx->is_used) {
-		return -ENOTEMPTY;
+		ret = -ENOTEMPTY;
+		goto fail;
 	}
 
 	(void)memset(ctx, 0, sizeof(*ctx));
+
+	(void)k_mutex_init(&ctx->lock);
 
 	if (servers) {
 		for (i = 0; idx < SERVER_COUNT && servers[i]; i++) {
@@ -277,7 +283,8 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 
 		if (!local_addr) {
 			NET_DBG("Local address not set");
-			return -EAFNOSUPPORT;
+			ret = -EAFNOSUPPORT;
+			goto fail;
 		}
 
 		ret = net_context_get(ctx->servers[i].dns_server.sa_family,
@@ -285,14 +292,14 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 				      &ctx->servers[i].net_ctx);
 		if (ret < 0) {
 			NET_DBG("Cannot get net_context (%d)", ret);
-			return ret;
+			goto fail;
 		}
 
 		ret = net_context_bind(ctx->servers[i].net_ctx,
 				       local_addr, addr_len);
 		if (ret < 0) {
 			NET_DBG("Cannot bind DNS context (%d)", ret);
-			return ret;
+			goto fail;
 		}
 
 		iface = net_context_get_iface(ctx->servers[i].net_ctx);
@@ -320,21 +327,54 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 	if (count == 0) {
 		/* No servers defined */
 		NET_DBG("No DNS servers defined.");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto fail;
 	}
 
 	ctx->is_used = true;
 	ctx->buf_timeout = DNS_BUF_TIMEOUT;
+	ret = 0;
 
-	return 0;
+fail:
+	return ret;
 }
 
+/* Check whether a slot is available for use, or optionally whether it can be
+ * reclaimed.
+ *
+ * @param pending_query the query slot in question
+ *
+ * @param reclaim_if_available if the slot is marked in use, but the query has
+ * been completed and the work item is no longer pending, complete the release
+ * of the slot.
+ *
+ * @return true if and only if the slot can be used for a new query.
+ */
+static inline bool check_query_active(struct dns_pending_query *pending_query,
+				      bool reclaim_if_available)
+{
+	int ret = false;
+
+	if (pending_query->cb != NULL) {
+		ret = true;
+		if (reclaim_if_available
+		    && pending_query->query == NULL
+		    && k_work_delayable_busy_get(&pending_query->timer) == 0) {
+			pending_query->cb = NULL;
+			ret = false;
+		}
+	}
+
+	return ret;
+}
+
+/* Must be invoked with context lock held */
 static inline int get_cb_slot(struct dns_resolve_context *ctx)
 {
 	int i;
 
 	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
-		if (!ctx->queries[i].cb) {
+		if (!check_query_active(&ctx->queries[i], true)) {
 			return i;
 		}
 	}
@@ -342,14 +382,59 @@ static inline int get_cb_slot(struct dns_resolve_context *ctx)
 	return -ENOENT;
 }
 
+/* Invoke the callback associated with a query slot, if still relevant.
+ *
+ * Must be invoked with context lock held.
+ *
+ * @param status the query status value
+ * @param info the query result structure
+ * @param pending_query the query slot that will provide the callback
+ **/
+static inline void invoke_query_callback(int status,
+					 struct dns_addrinfo *info,
+					 struct dns_pending_query *pending_query)
+{
+	/* Only notify if the slot is neither released nor in the process of
+	 * being released.
+	 */
+	if (pending_query->query != NULL)  {
+		pending_query->cb(status, info, pending_query->user_data);
+	}
+}
+
+/* Release a query slot reserved by get_cb_slot().
+ *
+ * Must be invoked with context lock held.
+ *
+ * @param pending_query the query slot to be released
+ */
+static void release_query(struct dns_pending_query *pending_query)
+{
+	int busy = k_work_cancel_delayable(&pending_query->timer);
+
+	/* If the work item is no longer pending we're done. */
+	if (busy == 0) {
+		/* All done. */
+		pending_query->cb = NULL;
+	} else {
+		/* Work item is still pending.  Set a secondary condition that
+		 * can be checked by get_cb_slot() to complete release of the
+		 * slot once the work item has been confirmed to be completed.
+		 */
+		pending_query->query = NULL;
+	}
+}
+
+/* Must be invoked with context lock held */
 static inline int get_slot_by_id(struct dns_resolve_context *ctx,
-				 u16_t dns_id,
-				 u16_t query_hash)
+				 uint16_t dns_id,
+				 uint16_t query_hash)
 {
 	int i;
 
 	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
-		if (ctx->queries[i].cb && ctx->queries[i].id == dns_id &&
+		if (check_query_active(&ctx->queries[i], false) &&
+		    ctx->queries[i].id == dns_id &&
 		    (query_hash == 0 ||
 		     ctx->queries[i].query_hash == query_hash)) {
 			return i;
@@ -359,39 +444,33 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 	return -ENOENT;
 }
 
-static int dns_read(struct dns_resolve_context *ctx,
-		    struct net_pkt *pkt,
-		    struct net_buf *dns_data,
-		    u16_t *dns_id,
-		    struct net_buf *dns_cname,
-		    u16_t *query_hash)
+/* Unit test needs to be able to call this function */
+#if !defined(CONFIG_NET_TEST)
+static
+#endif
+int dns_validate_msg(struct dns_resolve_context *ctx,
+		     struct dns_msg_t *dns_msg,
+		     uint16_t *dns_id,
+		     int *query_idx,
+		     struct net_buf *dns_cname,
+		     uint16_t *query_hash)
 {
 	struct dns_addrinfo info = { 0 };
-	/* Helper struct to track the dns msg received from the server */
-	struct dns_msg_t dns_msg;
-	u32_t ttl; /* RR ttl, so far it is not passed to caller */
-	u8_t *src, *addr;
+	uint32_t ttl; /* RR ttl, so far it is not passed to caller */
+	uint8_t *src, *addr;
 	const char *query_name;
 	int address_size;
 	/* index that points to the current answer being analyzed */
 	int answer_ptr;
-	int data_len;
 	int items;
-	int ret;
-	int server_idx, query_idx = -1;
+	int server_idx;
+	int ret = 0;
 
-	data_len = MIN(net_pkt_remaining_data(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
-
-	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
-	 */
-	ret = net_pkt_read(pkt, dns_data->data, data_len);
-	if (ret < 0) {
-		ret = DNS_EAI_MEMORY;
+	/* Make sure that we can read DNS id, flags and rcode */
+	if (dns_msg->msg_size < (sizeof(*dns_id) + sizeof(uint16_t))) {
+		ret = DNS_EAI_FAIL;
 		goto quit;
 	}
-
-	dns_msg.msg = dns_data->data;
-	dns_msg.msg_size = data_len;
 
 	/* The dns_unpack_response_header() has design flaw as it expects
 	 * dns id to be given instead of returning the id to the caller.
@@ -399,20 +478,28 @@ static int dns_read(struct dns_resolve_context *ctx,
 	 * can match the DNS query that we sent. When dns_read() is called,
 	 * we do not know what the DNS id is yet.
 	 */
-	*dns_id = dns_unpack_header_id(dns_msg.msg);
+	*dns_id = dns_unpack_header_id(dns_msg->msg);
 
-	if (dns_header_rcode(dns_msg.msg) == DNS_HEADER_REFUSED) {
+	if (dns_header_rcode(dns_msg->msg) == DNS_HEADER_REFUSED) {
 		ret = DNS_EAI_FAIL;
 		goto quit;
 	}
 
-	ret = dns_unpack_response_header(&dns_msg, *dns_id);
+	/* We might receive a query while we are waiting for a response, in that
+	 * case we just ignore the query instead of making the resolving fail.
+	 */
+	if (dns_header_qr(dns_msg->msg) == DNS_QUERY) {
+		ret = 0;
+		goto quit;
+	}
+
+	ret = dns_unpack_response_header(dns_msg, *dns_id);
 	if (ret < 0) {
 		ret = DNS_EAI_FAIL;
 		goto quit;
 	}
 
-	if (dns_header_qdcount(dns_msg.msg) != 1) {
+	if (dns_header_qdcount(dns_msg->msg) != 1) {
 		/* For mDNS (when dns_id == 0) the query count is 0 */
 		if (*dns_id > 0) {
 			ret = DNS_EAI_FAIL;
@@ -420,7 +507,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 		}
 	}
 
-	ret = dns_unpack_response_query(&dns_msg);
+	ret = dns_unpack_response_query(dns_msg);
 	if (ret < 0) {
 		/* Check mDNS like above */
 		if (*dns_id > 0) {
@@ -431,7 +518,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 		/* mDNS responses to do not have the query part so the
 		 * answer starts immediately after the header.
 		 */
-		dns_msg.answer_offset = dns_msg.query_offset;
+		dns_msg->answer_offset = dns_msg->query_offset;
 	}
 
 	/* Because in mDNS the DNS id is set to 0 and must be ignored
@@ -443,32 +530,32 @@ static int dns_read(struct dns_resolve_context *ctx,
 	answer_ptr = DNS_QUERY_POS;
 	items = 0;
 	server_idx = 0;
-	while (server_idx < dns_header_ancount(dns_msg.msg)) {
-		ret = dns_unpack_answer(&dns_msg, answer_ptr, &ttl);
+	while (server_idx < dns_header_ancount(dns_msg->msg)) {
+		ret = dns_unpack_answer(dns_msg, answer_ptr, &ttl);
 		if (ret < 0) {
 			ret = DNS_EAI_FAIL;
 			goto quit;
 		}
 
-		switch (dns_msg.response_type) {
+		switch (dns_msg->response_type) {
 		case DNS_RESPONSE_IP:
-			if (query_idx >= 0) {
+			if (*query_idx >= 0) {
 				goto query_known;
 			}
 
-			query_name = dns_msg.msg + dns_msg.query_offset;
+			query_name = dns_msg->msg + dns_msg->query_offset;
 
 			/* Add \0 and query type (A or AAAA) to the hash */
 			*query_hash = crc16_ansi(query_name,
 						 strlen(query_name) + 1 + 2);
 
-			query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
-			if (query_idx < 0) {
+			*query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
+			if (*query_idx < 0) {
 				ret = DNS_EAI_SYSTEM;
 				goto quit;
 			}
 
-			if (ctx->queries[query_idx].query_type ==
+			if (ctx->queries[*query_idx].query_type ==
 							DNS_QUERY_TYPE_A) {
 				if (net_sin(&info.ai_addr)->sin_family ==
 							AF_INET6) {
@@ -477,13 +564,13 @@ static int dns_read(struct dns_resolve_context *ctx,
 				}
 
 				address_size = DNS_IPV4_LEN;
-				addr = (u8_t *)&net_sin(&info.ai_addr)->
+				addr = (uint8_t *)&net_sin(&info.ai_addr)->
 								sin_addr;
 				info.ai_family = AF_INET;
 				info.ai_addr.sa_family = AF_INET;
 				info.ai_addrlen = sizeof(struct sockaddr_in);
 
-			} else if (ctx->queries[query_idx].query_type ==
+			} else if (ctx->queries[*query_idx].query_type ==
 							DNS_QUERY_TYPE_AAAA) {
 				if (net_sin6(&info.ai_addr)->sin6_family ==
 							AF_INET) {
@@ -498,7 +585,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 				 */
 #if defined(CONFIG_NET_IPV6)
 				address_size = DNS_IPV6_LEN;
-				addr = (u8_t *)&net_sin6(&info.ai_addr)->
+				addr = (uint8_t *)&net_sin6(&info.ai_addr)->
 								sin6_addr;
 				info.ai_family = AF_INET6;
 				info.ai_addr.sa_family = AF_INET6;
@@ -512,18 +599,25 @@ static int dns_read(struct dns_resolve_context *ctx,
 				goto quit;
 			}
 
-			if (dns_msg.response_length < address_size) {
+			if (dns_msg->response_length < address_size) {
 				/* it seems this is a malformed message */
 				ret = DNS_EAI_FAIL;
 				goto quit;
 			}
 
-			src = dns_msg.msg + dns_msg.response_position;
+			if ((dns_msg->response_position + address_size) >
+			    dns_msg->msg_size) {
+				/* Too short message */
+				ret = DNS_EAI_FAIL;
+				goto quit;
+			}
+
+			src = dns_msg->msg + dns_msg->response_position;
 			memcpy(addr, src, address_size);
 
 		query_known:
-			ctx->queries[query_idx].cb(DNS_EAI_INPROGRESS, &info,
-					ctx->queries[query_idx].user_data);
+			invoke_query_callback(DNS_EAI_INPROGRESS, &info,
+					      &ctx->queries[*query_idx]);
 			items++;
 			break;
 
@@ -531,7 +625,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 			/* Instead of using the QNAME at DNS_QUERY_POS,
 			 * we will use this CNAME
 			 */
-			answer_ptr = dns_msg.response_position;
+			answer_ptr = dns_msg->response_position;
 			break;
 
 		default:
@@ -540,22 +634,23 @@ static int dns_read(struct dns_resolve_context *ctx,
 		}
 
 		/* Update the answer offset to point to the next RR (answer) */
-		dns_msg.answer_offset += DNS_ANSWER_PTR_LEN;
-		dns_msg.answer_offset += dns_msg.response_length;
+		dns_msg->answer_offset += dns_msg->response_position -
+							dns_msg->answer_offset;
+		dns_msg->answer_offset += dns_msg->response_length;
 
 		server_idx++;
 	}
 
-	if (query_idx < 0) {
+	if (*query_idx < 0) {
 		/* If the query_idx is still unknown, try to get it here
 		 * and hope it is found.
 		 */
-		query_name = dns_msg.msg + dns_msg.query_offset;
+		query_name = dns_msg->msg + dns_msg->query_offset;
 		*query_hash = crc16_ansi(query_name,
 					 strlen(query_name) + 1 + 2);
 
-		query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
-		if (query_idx < 0) {
+		*query_idx = get_slot_by_id(ctx, *dns_id, *query_hash);
+		if (*query_idx < 0) {
 			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
@@ -565,18 +660,26 @@ static int dns_read(struct dns_resolve_context *ctx,
 	 * another query. Number of additional queries is controlled via Kconfig
 	 */
 	if (items == 0) {
-		if (dns_msg.response_type == DNS_RESPONSE_CNAME_NO_IP) {
-			u16_t pos = dns_msg.response_position;
+		if (dns_msg->response_type == DNS_RESPONSE_CNAME_NO_IP) {
+			uint16_t pos = dns_msg->response_position;
 
-			ret = dns_copy_qname(dns_cname->data, &dns_cname->len,
-					     dns_cname->size, &dns_msg, pos);
-			if (ret < 0) {
-				ret = DNS_EAI_SYSTEM;
-				goto quit;
+			/* The dns_cname should always be set. As a special
+			 * case, it might not be set for unit tests that call
+			 * this function directly.
+			 */
+			if (dns_cname) {
+				ret = dns_copy_qname(dns_cname->data,
+						     &dns_cname->len,
+						     dns_cname->size,
+						     dns_msg, pos);
+				if (ret < 0) {
+					ret = DNS_EAI_SYSTEM;
+					goto quit;
+				}
 			}
 
 			ret = DNS_EAI_AGAIN;
-			goto finished;
+			goto quit;
 		}
 	}
 
@@ -586,14 +689,51 @@ static int dns_read(struct dns_resolve_context *ctx,
 		ret = DNS_EAI_ALLDONE;
 	}
 
-	if (k_delayed_work_remaining_get(&ctx->queries[query_idx].timer) > 0) {
-		k_delayed_work_cancel(&ctx->queries[query_idx].timer);
+quit:
+	return ret;
+}
+
+/* Must be invoked with context lock held */
+static int dns_read(struct dns_resolve_context *ctx,
+		    struct net_pkt *pkt,
+		    struct net_buf *dns_data,
+		    uint16_t *dns_id,
+		    struct net_buf *dns_cname,
+		    uint16_t *query_hash)
+{
+	/* Helper struct to track the dns msg received from the server */
+	struct dns_msg_t dns_msg;
+	int data_len;
+	int ret;
+	int query_idx = -1;
+
+	data_len = MIN(net_pkt_remaining_data(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
+
+	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
+	 */
+	ret = net_pkt_read(pkt, dns_data->data, data_len);
+	if (ret < 0) {
+		ret = DNS_EAI_MEMORY;
+		goto quit;
 	}
 
+	dns_msg.msg = dns_data->data;
+	dns_msg.msg_size = data_len;
+
+	ret = dns_validate_msg(ctx, &dns_msg, dns_id, &query_idx,
+			       dns_cname, query_hash);
+	if (ret == DNS_EAI_AGAIN) {
+		goto finished;
+	}
+
+	if (ret < 0) {
+		goto quit;
+	}
+
+	invoke_query_callback(ret, NULL, &ctx->queries[query_idx]);
+
 	/* Marks the end of the results */
-	ctx->queries[query_idx].cb(ret, NULL,
-				   ctx->queries[query_idx].user_data);
-	ctx->queries[query_idx].cb = NULL;
+	release_query(&ctx->queries[query_idx]);
 
 	net_pkt_unref(pkt);
 
@@ -619,11 +759,13 @@ static void cb_recv(struct net_context *net_ctx,
 	struct dns_resolve_context *ctx = user_data;
 	struct net_buf *dns_cname = NULL;
 	struct net_buf *dns_data = NULL;
-	u16_t query_hash = 0U;
-	u16_t dns_id = 0U;
+	uint16_t query_hash = 0U;
+	uint16_t dns_id = 0U;
 	int ret, i;
 
 	ARG_UNUSED(net_ctx);
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
 
 	if (status) {
 		ret = DNS_EAI_SYSTEM;
@@ -689,13 +831,10 @@ quit:
 		goto free_buf;
 	}
 
-	if (k_delayed_work_remaining_get(&ctx->queries[i].timer) > 0) {
-		k_delayed_work_cancel(&ctx->queries[i].timer);
-	}
+	invoke_query_callback(ret, NULL, &ctx->queries[i]);
 
 	/* Marks the end of the results */
-	ctx->queries[i].cb(ret, NULL, ctx->queries[i].user_data);
-	ctx->queries[i].cb = NULL;
+	release_query(&ctx->queries[i]);
 
 free_buf:
 	if (dns_data) {
@@ -705,8 +844,11 @@ free_buf:
 	if (dns_cname) {
 		net_buf_unref(dns_cname);
 	}
+
+	k_mutex_unlock(&ctx->lock);
 }
 
+/* Must be invoked with context lock held */
 static int dns_write(struct dns_resolve_context *ctx,
 		     int server_idx,
 		     int query_idx,
@@ -718,7 +860,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	struct net_context *net_ctx;
 	struct sockaddr *server;
 	int server_addr_len;
-	u16_t dns_id;
+	uint16_t dns_id;
 	int ret;
 
 	net_ctx = ctx->servers[server_idx].net_ctx;
@@ -760,21 +902,17 @@ static int dns_write(struct dns_resolve_context *ctx,
 		server_addr_len = sizeof(struct sockaddr_in6);
 	}
 
-	ret = k_delayed_work_submit(&ctx->queries[query_idx].timer,
-				    ctx->queries[query_idx].timeout);
+	ret = k_work_reschedule(&ctx->queries[query_idx].timer,
+				ctx->queries[query_idx].timeout);
 	if (ret < 0) {
 		NET_DBG("[%u] cannot submit work to server idx %d for id %u "
-			"timeout %u ret %d",
-			query_idx, server_idx, dns_id,
-			ctx->queries[query_idx].timeout, ret);
+			"ret %d", query_idx, server_idx, dns_id, ret);
 		return ret;
 	}
 
 	NET_DBG("[%u] submitting work to server idx %d for id %u "
-		"hash %u timeout %u",
-		query_idx, server_idx, dns_id,
-		ctx->queries[query_idx].query_hash,
-		ctx->queries[query_idx].timeout);
+		"hash %u", query_idx, server_idx, dns_id,
+		ctx->queries[query_idx].query_hash);
 
 	ret = net_context_sendto(net_ctx, dns_data->data, dns_data->len,
 				 server, server_addr_len, NULL,
@@ -788,41 +926,45 @@ static int dns_write(struct dns_resolve_context *ctx,
 }
 
 static int dns_resolve_cancel_with_hash(struct dns_resolve_context *ctx,
-					u16_t dns_id,
-					u16_t query_hash,
+					uint16_t dns_id,
+					uint16_t query_hash,
 					const char *query_name)
 {
+	int ret;
 	int i;
 
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
 	i = get_slot_by_id(ctx, dns_id, query_hash);
-	if (i < 0 || !ctx->queries[i].cb) {
-		return -ENOENT;
+	if (i < 0) {
+		ret = -ENOENT;
+		goto fail;
 	}
 
 	NET_DBG("Cancelling DNS req %u (name %s type %d hash %u)", dns_id,
 		log_strdup(query_name), ctx->queries[i].query_type,
 		query_hash);
 
-	if (k_delayed_work_remaining_get(&ctx->queries[i].timer) > 0) {
-		k_delayed_work_cancel(&ctx->queries[i].timer);
-	}
+	invoke_query_callback(DNS_EAI_CANCELED, NULL, &ctx->queries[i]);
 
-	ctx->queries[i].cb(DNS_EAI_CANCELED, NULL, ctx->queries[i].user_data);
-	ctx->queries[i].cb = NULL;
+	release_query(&ctx->queries[i]);
+
+fail:
+	k_mutex_unlock(&ctx->lock);
 
 	return 0;
 }
 
 int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
-				 u16_t dns_id,
+				 uint16_t dns_id,
 				 const char *query_name,
 				 enum dns_query_type query_type)
 {
-	u16_t query_hash = 0;
+	uint16_t query_hash = 0;
 
 	if (query_name) {
 		struct net_buf *buf;
-		u16_t len;
+		uint16_t len;
 		int ret;
 
 		/* Use net_buf as a temporary buffer to store the packed
@@ -861,7 +1003,7 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 					    query_name);
 }
 
-int dns_resolve_cancel(struct dns_resolve_context *ctx, u16_t dns_id)
+int dns_resolve_cancel(struct dns_resolve_context *ctx, uint16_t dns_id)
 {
 	return dns_resolve_cancel_with_name(ctx, dns_id, NULL, 0);
 }
@@ -870,39 +1012,67 @@ static void query_timeout(struct k_work *work)
 {
 	struct dns_pending_query *pending_query =
 		CONTAINER_OF(work, struct dns_pending_query, timer);
+	int ret;
+
+	/* We have to take the lock as we're inspecting protected content
+	 * associated with the query.  But don't block the system work queue:
+	 * if the lock can't be taken immediately, reschedule the work item to
+	 * be run again after everything else has had a chance.
+	 *
+	 * Note that it's OK to use the k_work API on the delayable work
+	 * without holding the lock: it's only the associated state in the
+	 * containing structure that must be protected.
+	 */
+	ret = k_mutex_lock(&pending_query->ctx->lock, K_NO_WAIT);
+	if (ret != 0) {
+		struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+
+		k_work_reschedule(dwork, K_NO_WAIT);
+		return;
+	}
 
 	NET_DBG("Query timeout DNS req %u type %d hash %u", pending_query->id,
 		pending_query->query_type, pending_query->query_hash);
 
+	/* The resolve cancel will invoke release_query(), but release will
+	 * not be completed because the work item is still pending.  Instead
+	 * the release will be completed when check_query_active() confirms
+	 * the work item is no longer active.
+	 */
 	(void)dns_resolve_cancel_with_hash(pending_query->ctx,
 					   pending_query->id,
 					   pending_query->query_hash,
 					   pending_query->query);
+
+	k_mutex_unlock(&pending_query->ctx->lock);
 }
 
 int dns_resolve_name(struct dns_resolve_context *ctx,
 		     const char *query,
 		     enum dns_query_type type,
-		     u16_t *dns_id,
+		     uint16_t *dns_id,
 		     dns_resolve_cb_t cb,
 		     void *user_data,
-		     s32_t timeout)
+		     int32_t timeout)
 {
+	k_timeout_t tout;
 	struct net_buf *dns_data = NULL;
 	struct net_buf *dns_qname = NULL;
 	struct sockaddr addr;
 	int ret, i = -1, j = 0;
 	int failure = 0;
 	bool mdns_query = false;
-	u8_t hop_limit;
+	uint8_t hop_limit;
 
 	if (!ctx || !ctx->is_used || !query || !cb) {
 		return -EINVAL;
 	}
 
+	tout = SYS_TIMEOUT_MS(timeout);
+
 	/* Timeout cannot be 0 as we cannot resolve name that fast.
 	 */
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(tout, K_NO_WAIT)) {
 		return -EINVAL;
 	}
 
@@ -915,8 +1085,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 
 		if (type == DNS_QUERY_TYPE_A) {
 			if (net_sin(&addr)->sin_family == AF_INET6) {
-				ret = -EPFNOSUPPORT;
-				goto quit;
+				return -EPFNOSUPPORT;
 			}
 
 			memcpy(net_sin(&info.ai_addr), net_sin(&addr),
@@ -932,8 +1101,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 			 * here so that we can find it easily.
 			 */
 			if (net_sin(&addr)->sin_family == AF_INET) {
-				ret = -EPFNOSUPPORT;
-				goto quit;
+				return -EPFNOSUPPORT;
 			}
 
 #if defined(CONFIG_NET_IPV6)
@@ -943,8 +1111,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 			info.ai_addr.sa_family = AF_INET6;
 			info.ai_addrlen = sizeof(struct sockaddr_in6);
 #else
-			ret = -EAFNOSUPPORT;
-			goto quit;
+			return -EAFNOSUPPORT;
 #endif
 		} else {
 			goto try_resolve;
@@ -957,20 +1124,23 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 	}
 
 try_resolve:
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+
 	i = get_cb_slot(ctx);
 	if (i < 0) {
-		return -EAGAIN;
+		ret = -EAGAIN;
+		goto fail;
 	}
 
 	ctx->queries[i].cb = cb;
-	ctx->queries[i].timeout = timeout;
+	ctx->queries[i].timeout = tout;
 	ctx->queries[i].query = query;
 	ctx->queries[i].query_type = type;
 	ctx->queries[i].user_data = user_data;
 	ctx->queries[i].ctx = ctx;
 	ctx->queries[i].query_hash = 0;
 
-	k_delayed_work_init(&ctx->queries[i].timer, query_timeout);
+	k_work_init_delayable(&ctx->queries[i].timer, query_timeout);
 
 	dns_data = net_buf_alloc(&dns_msg_pool, ctx->buf_timeout);
 	if (!dns_data) {
@@ -1069,12 +1239,7 @@ try_resolve:
 quit:
 	if (ret < 0) {
 		if (i >= 0) {
-			if (k_delayed_work_remaining_get(
-				    &ctx->queries[i].timer) > 0) {
-				k_delayed_work_cancel(&ctx->queries[i].timer);
-			}
-
-			ctx->queries[i].cb = NULL;
+			release_query(&ctx->queries[i]);
 		}
 
 		if (dns_id) {
@@ -1090,6 +1255,9 @@ quit:
 		net_buf_unref(dns_qname);
 	}
 
+fail:
+	k_mutex_unlock(&ctx->lock);
+
 	return ret;
 }
 
@@ -1100,6 +1268,8 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 	if (!ctx->is_used) {
 		return -ENOENT;
 	}
+
+	k_mutex_lock(&ctx->lock, K_FOREVER);
 
 	for (i = 0; i < SERVER_COUNT; i++) {
 		if (ctx->servers[i].net_ctx) {
@@ -1124,6 +1294,8 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 
 	ctx->is_used = false;
 
+	k_mutex_unlock(&ctx->lock);
+
 	return 0;
 }
 
@@ -1147,27 +1319,27 @@ void dns_init_resolver(void)
 #if DNS_SERVER_COUNT > 4
 	case 5:
 		dns_servers[4] = CONFIG_DNS_SERVER5;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 3
 	case 4:
 		dns_servers[3] = CONFIG_DNS_SERVER4;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 2
 	case 3:
 		dns_servers[2] = CONFIG_DNS_SERVER3;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 1
 	case 2:
 		dns_servers[1] = CONFIG_DNS_SERVER2;
-		/* fallthrough */
+		__fallthrough;
 #endif
 #if DNS_SERVER_COUNT > 0
 	case 1:
 		dns_servers[0] = CONFIG_DNS_SERVER1;
-		/* fallthrough */
+		__fallthrough;
 #endif
 	case 0:
 		break;

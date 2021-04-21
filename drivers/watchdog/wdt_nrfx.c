@@ -13,8 +13,8 @@ LOG_MODULE_REGISTER(wdt_nrfx);
 
 struct wdt_nrfx_data {
 	wdt_callback_t m_callbacks[NRF_WDT_CHANNEL_NUMBER];
-	u32_t m_timeout;
-	u8_t m_allocated_channels;
+	uint32_t m_timeout;
+	uint8_t m_allocated_channels;
 };
 
 struct wdt_nrfx_config {
@@ -22,18 +22,18 @@ struct wdt_nrfx_config {
 	nrfx_wdt_config_t config;
 };
 
-static inline struct wdt_nrfx_data *get_dev_data(struct device *dev)
+static inline struct wdt_nrfx_data *get_dev_data(const struct device *dev)
 {
-	return dev->driver_data;
+	return dev->data;
 }
 
-static inline const struct wdt_nrfx_config *get_dev_config(struct device *dev)
+static inline const struct wdt_nrfx_config *get_dev_config(const struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config;
 }
 
 
-static int wdt_nrf_setup(struct device *dev, u8_t options)
+static int wdt_nrf_setup(const struct device *dev, uint8_t options)
 {
 	nrf_wdt_behaviour_t behaviour;
 
@@ -64,14 +64,14 @@ static int wdt_nrf_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wdt_nrf_disable(struct device *dev)
+static int wdt_nrf_disable(const struct device *dev)
 {
 	/* Started watchdog cannot be stopped on nRF devices. */
 	ARG_UNUSED(dev);
 	return -EPERM;
 }
 
-static int wdt_nrf_install_timeout(struct device *dev,
+static int wdt_nrf_install_timeout(const struct device *dev,
 				   const struct wdt_timeout_cfg *cfg)
 {
 	nrfx_err_t err_code;
@@ -117,7 +117,7 @@ static int wdt_nrf_install_timeout(struct device *dev,
 	return channel_id;
 }
 
-static int wdt_nrf_feed(struct device *dev, int channel_id)
+static int wdt_nrf_feed(const struct device *dev, int channel_id)
 {
 	if (channel_id > get_dev_data(dev)->m_allocated_channels) {
 		return -EINVAL;
@@ -136,7 +136,7 @@ static const struct wdt_driver_api wdt_nrfx_driver_api = {
 	.feed = wdt_nrf_feed,
 };
 
-static void wdt_event_handler(struct device *dev)
+static void wdt_event_handler(const struct device *dev)
 {
 	int i;
 
@@ -150,17 +150,17 @@ static void wdt_event_handler(struct device *dev)
 	}
 }
 
+#define WDT(idx) DT_NODELABEL(wdt##idx)
+
 #define WDT_NRFX_WDT_DEVICE(idx)					       \
-	DEVICE_DECLARE(wdt_##idx);					       \
 	static void wdt_##idx##_event_handler(void)			       \
 	{								       \
-		wdt_event_handler(DEVICE_GET(wdt_##idx));		       \
+		wdt_event_handler(DEVICE_DT_GET(WDT(idx)));		       \
 	}								       \
-	static int wdt_##idx##_init(struct device *dev)			       \
+	static int wdt_##idx##_init(const struct device *dev)		       \
 	{								       \
 		nrfx_err_t err_code;					       \
-		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_WDT##idx),		       \
-			    DT_NORDIC_NRF_WATCHDOG_WDT_##idx##_IRQ_0_PRIORITY, \
+		IRQ_CONNECT(DT_IRQN(WDT(idx)), DT_IRQ(WDT(idx), priority),     \
 			    nrfx_isr, nrfx_wdt_##idx##_irq_handler, 0);	       \
 		err_code = nrfx_wdt_init(&get_dev_config(dev)->wdt,	       \
 				 &get_dev_config(dev)->config,		       \
@@ -181,9 +181,9 @@ static void wdt_event_handler(struct device *dev)
 			.reload_value  = 2000,				       \
 		}							       \
 	};								       \
-	DEVICE_AND_API_INIT(wdt_##idx,					       \
-			    DT_NORDIC_NRF_WATCHDOG_WDT_##idx##_LABEL,	       \
+	DEVICE_DT_DEFINE(WDT(idx),					       \
 			    wdt_##idx##_init,				       \
+			    device_pm_control_nop,			       \
 			    &wdt_##idx##_data,				       \
 			    &wdt_##idx##z_config,			       \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \

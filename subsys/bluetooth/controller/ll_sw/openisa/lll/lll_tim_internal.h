@@ -12,15 +12,15 @@
 #define RANGE_DISTANCE 1000 /* meters */
 #define RANGE_DELAY_US (2 * RANGE_DISTANCE * 4 / 1000)
 
-static inline u32_t addr_us_get(u8_t phy)
+static inline uint32_t addr_us_get(uint8_t phy)
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		return 40;
-	case BIT(1):
+	case PHY_2M:
 		return 24;
-	case BIT(2):
+	case PHY_CODED:
 		return 376;
 	}
 }

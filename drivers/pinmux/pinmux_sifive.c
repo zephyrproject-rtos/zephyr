@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT sifive_iof
+
 /**
  * @brief PINMUX driver for the SiFive Freedom Processor
  */
@@ -18,18 +20,19 @@ struct pinmux_sifive_config {
 };
 
 struct pinmux_sifive_regs_t {
-	u32_t iof_en;
-	u32_t iof_sel;
+	uint32_t iof_en;
+	uint32_t iof_sel;
 };
 
 #define DEV_CFG(dev)					\
 	((const struct pinmux_sifive_config * const)	\
-	 (dev)->config->config_info)
+	 (dev)->config)
 
 #define DEV_PINMUX(dev)						\
 	((struct pinmux_sifive_regs_t *)(DEV_CFG(dev))->base)
 
-static int pinmux_sifive_set(struct device *dev, u32_t pin, u32_t func)
+static int pinmux_sifive_set(const struct device *dev, uint32_t pin,
+			     uint32_t func)
 {
 	volatile struct pinmux_sifive_regs_t *pinmux = DEV_PINMUX(dev);
 
@@ -48,7 +51,8 @@ static int pinmux_sifive_set(struct device *dev, u32_t pin, u32_t func)
 	return 0;
 }
 
-static int pinmux_sifive_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_sifive_get(const struct device *dev, uint32_t pin,
+			     uint32_t *func)
 {
 	volatile struct pinmux_sifive_regs_t *pinmux = DEV_PINMUX(dev);
 
@@ -62,17 +66,19 @@ static int pinmux_sifive_get(struct device *dev, u32_t pin, u32_t *func)
 	return 0;
 }
 
-static int pinmux_sifive_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_sifive_pullup(const struct device *dev, uint32_t pin,
+				uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_sifive_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_sifive_input(const struct device *dev, uint32_t pin,
+			       uint8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_sifive_init(struct device *dev)
+static int pinmux_sifive_init(const struct device *dev)
 {
 	volatile struct pinmux_sifive_regs_t *pinmux = DEV_PINMUX(dev);
 
@@ -90,11 +96,11 @@ static const struct pinmux_driver_api pinmux_sifive_driver_api = {
 };
 
 static const struct pinmux_sifive_config pinmux_sifive_0_config = {
-	.base = SIFIVE_PINMUX_0_BASE_ADDR,
+	.base = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(pinmux_sifive_0, CONFIG_PINMUX_SIFIVE_0_NAME,
-		    &pinmux_sifive_init, NULL,
+DEVICE_DT_INST_DEFINE(0,
+		    &pinmux_sifive_init, device_pm_control_nop, NULL,
 		    &pinmux_sifive_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_sifive_driver_api);

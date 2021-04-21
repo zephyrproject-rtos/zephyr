@@ -1,7 +1,7 @@
 .. _usb_hid-cdc:
 
 USB HID CDC ACM Application
-################################
+###########################
 
 Overview
 ********
@@ -16,16 +16,33 @@ Requirements
 
 This project requires an USB device driver and multiple endpoints.
 
+The board hardware must have a push button connected via a GPIO pin. These are
+called "User buttons" on many of Zephyr's :ref:`boards`.
+
+The button must be configured using the ``sw0`` :ref:`devicetree <dt-guide>`
+alias, usually in the :ref:`BOARD.dts file <devicetree-in-out-files>`. You will
+see this error if you try to build this sample for an unsupported board:
+
+.. code-block:: none
+
+   Unsupported board: sw0 devicetree alias is not defined
+
+You may see additional build errors if the ``sw0`` alias exists, but is not
+properly defined.
+
+If the devicetree aliases ``sw1``, ``sw2``, and ``sw3`` are defined, they will
+also be used as additional buttons as described below.
+
 Building and Running
 ********************
 
-This sample can be built for multiple boards, in this example we will build it
-for the nrf52840_pca10056 board:
+This sample can be built for multiple boards. To build and flash it
+for the :ref:`nrf52840dk_nrf52840` board:
 
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/usb/hid-cdc
-	:board: nrf52840_pca10056
-	:goals: build
+	:board: nrf52840dk_nrf52840
+	:goals: build flash
 	:compact:
 
 After you have built and flashed the sample app image to your board, plug the
@@ -36,11 +53,11 @@ and two HID devices will be detected:
 .. code-block:: console
 
 	usb 2-2: new full-speed USB device number 3 using ohci-pci
-	usb 2-2: New USB device found, idVendor=2fe3, idProduct=0100
+	usb 2-2: New USB device found, idVendor=2fe3, idProduct=0003, bcdDevice= 2.03
 	usb 2-2: New USB device strings: Mfr=1, Product=2, SerialNumber=3
 	usb 2-2: Product: Zephyr HID and CDC ACM sample
 	usb 2-2: Manufacturer: ZEPHYR
-	usb 2-2: SerialNumber: 0.01
+	usb 2-2: SerialNumber: 86FE679A598AC47A
 	cdc_acm 2-2:1.0: ttyACM1: USB ACM device
 	input: ZEPHYR Zephyr HID and CDC ACM sample as /devices/pci0000:00/0000:00:06.0/usb2/2-2/2-2:1.2/0003:2FE3:0100.0002/input/input8
 	hid-generic 0003:2FE3:0100.0002: input,hidraw1: USB HID v1.10 Mouse [ZEPHYR Zephyr HID and CDC ACM sample] on usb-0000:00:06.0-2/input2

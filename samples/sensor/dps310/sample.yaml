@@ -1,0 +1,12 @@
+sample:
+  name: DP310 Sensor sample
+tests:
+  sample.sensor.dps310:
+    harness: console
+    tags: sensors
+    depends_on: i2c arduino_i2c
+    harness_config:
+        type: one_line
+        regex:
+            - "temp: (.*); press: (.*);"
+        fixture: fixture_i2c_dps310

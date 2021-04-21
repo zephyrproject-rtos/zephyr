@@ -14,5 +14,25 @@ properties:
   interrupts:
     required: true
 
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
   label:
     required: true
+
+  prescaler:
+    type: int
+    required: false
+    description: Timer prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 256
+      - 1024

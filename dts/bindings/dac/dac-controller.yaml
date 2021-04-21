@@ -1,0 +1,14 @@
+# Copyright (c) 2020 Libre Solar Technologies GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for DAC controllers
+
+include: base.yaml
+
+properties:
+    label:
+      required: true
+
+    "#io-channel-cells":
+      type: int
+      required: true

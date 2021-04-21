@@ -31,7 +31,7 @@ struct net_stats net_stats = { 0 };
 
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
 
-#define PRINT_STATISTICS_INTERVAL K_SECONDS(30)
+#define PRINT_STATISTICS_INTERVAL (30 * MSEC_PER_SEC)
 
 #if NET_TC_COUNT > 1
 static const char *priority2str(enum net_priority priority)
@@ -59,16 +59,16 @@ static const char *priority2str(enum net_priority priority)
 }
 #endif
 
-static inline s64_t cmp_val(u64_t val1, u64_t val2)
+static inline int64_t cmp_val(uint64_t val1, uint64_t val2)
 {
-	return (s64_t)(val1 - val2);
+	return (int64_t)(val1 - val2);
 }
 
 static inline void stats(struct net_if *iface)
 {
-	static u64_t next_print;
-	u64_t curr = k_uptime_get();
-	s64_t cmp = cmp_val(curr, next_print);
+	static uint64_t next_print;
+	uint64_t curr = k_uptime_get();
+	int64_t cmp = cmp_val(curr, next_print);
 	int i;
 
 	if (!next_print || (abs(cmp) > PRINT_STATISTICS_INTERVAL)) {
@@ -191,6 +191,18 @@ static inline void stats(struct net_if *iface)
 		ARG_UNUSED(i);
 #endif /* NET_TC_COUNT > 1 */
 
+#if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
+		NET_INFO("Power management statistics:");
+		NET_INFO("Last suspend time: %u ms",
+			 GET_STAT(iface, pm.last_suspend_time));
+		NET_INFO("Got suspended %d times",
+			 GET_STAT(iface, pm.suspend_count));
+		NET_INFO("Average suspend time: %u ms",
+			 (uint32_t)(GET_STAT(iface, pm.overall_suspend_time) /
+				 GET_STAT(iface, pm.suspend_count)));
+		NET_INFO("Total suspended time: %llu ms",
+			 GET_STAT(iface, pm.overall_suspend_time));
+#endif
 		next_print = curr + PRINT_STATISTICS_INTERVAL;
 	}
 }
@@ -222,7 +234,7 @@ void net_print_statistics(void)
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 
-static int net_stats_get(u32_t mgmt_request, struct net_if *iface,
+static int net_stats_get(uint32_t mgmt_request, struct net_if *iface,
 			 void *data, size_t len)
 {
 	size_t len_chk = 0;
@@ -285,6 +297,12 @@ static int net_stats_get(u32_t mgmt_request, struct net_if *iface,
 		src = GET_STAT_ADDR(iface, tcp);
 		break;
 #endif
+#if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
+	case NET_REQUEST_STATS_GET_PM:
+		len_chk = sizeof(struct net_stats_pm);
+		src = GET_STAT_ADDR(iface, pm);
+		break;
+#endif
 	}
 
 	if (len != len_chk || !src) {
@@ -335,6 +353,11 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP,
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PM,
 				  net_stats_get);
 #endif
 

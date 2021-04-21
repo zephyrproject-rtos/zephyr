@@ -5,6 +5,7 @@
 '''Runner for pyOCD .'''
 
 import os
+from os import path
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
@@ -18,15 +19,24 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, target,
                  pyocd='pyocd',
-                 flash_addr=0x0, flash_opts=None,
+                 flash_addr=0x0, erase=False, flash_opts=None,
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
+                 pyocd_config=None,
                  board_id=None, daparg=None, frequency=None, tool_opt=None):
-        super(PyOcdBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
+
+        default = path.join(cfg.board_dir, 'support', 'pyocd.yaml')
+        if path.exists(default):
+            self.pyocd_config = default
+        else:
+            self.pyocd_config = None
+
 
         self.target_args = ['-t', target]
         self.pyocd = pyocd
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
+        self.erase = erase
         self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
         self.gdb_port = gdb_port
         self.telnet_port = telnet_port
@@ -34,6 +44,13 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.hex_name = cfg.hex_file
         self.bin_name = cfg.bin_file
         self.elf_name = cfg.elf_file
+
+        pyocd_config_args = []
+
+        if self.pyocd_config is not None:
+            pyocd_config_args = ['--config', self.pyocd_config]
+
+        self.pyocd_config_args = pyocd_config_args
 
         board_args = []
         if board_id is not None:
@@ -64,7 +81,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
-                          flash_addr=True)
+                          flash_addr=True, erase=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -95,14 +112,14 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                             e.g. \'--script=user.py\' ''')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         build_conf = BuildConfiguration(cfg.build_dir)
         flash_addr = cls.get_flash_address(args, build_conf)
 
         ret = PyOcdBinaryRunner(
             cfg, args.target,
             pyocd=args.pyocd,
-            flash_addr=flash_addr, flash_opts=args.flash_opt,
+            flash_addr=flash_addr, erase=args.erase, flash_opts=args.flash_opt,
             gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
             board_id=args.board_id, daparg=args.daparg,
             frequency=args.frequency,
@@ -127,9 +144,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             self.debug_debugserver(command, **kwargs)
 
     def flash(self, **kwargs):
-        if os.path.isfile(self.hex_name):
+        if self.hex_name is not None and os.path.isfile(self.hex_name):
             fname = self.hex_name
-        elif os.path.isfile(self.bin_name):
+        elif self.bin_name is not None and os.path.isfile(self.bin_name):
             self.logger.warning(
                 'hex file ({}) does not exist; falling back on .bin ({}). '.
                 format(self.hex_name, self.bin_name) +
@@ -140,9 +157,12 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                 'Cannot flash; no hex ({}) or bin ({}) files found. '.format(
                     self.hex_name, self.bin_name))
 
+        erase_method = 'chip' if self.erase else 'sector'
+
         cmd = ([self.pyocd] +
                ['flash'] +
-               ['-e', 'sector'] +
+               self.pyocd_config_args +
+               ['-e', erase_method] +
                self.flash_addr_args +
                self.daparg_args +
                self.target_args +

@@ -20,10 +20,83 @@ config IEEE802154_CC13XX_CC26XX_INIT_PRIO
 	help
 	  Set the initialization priority number.
 
-config IEEE802154_CC13XX_CC26XX_RX_STACK_SIZE
-	int "TI CC13xx / CC26xx IEEE 802.15.4 driver's RX thread stack size"
-	default 800
+config IEEE802154_CC13XX_CC26XX_RADIO_TX_RETRIES
+	int "Radio Transmission attempts"
+	default NET_L2_IEEE802154_RADIO_TX_RETRIES if NET_L2_IEEE802154
+	default 3
+	range 1 7
 	help
-	  This option sets the driver's stack size for its internal RX thread.
+	  Number of transmission attempts radio driver should do, before
+	  replying it could not send the packet.
+
+config IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BO
+	int "CSMA maximum backoffs"
+	default NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO if NET_L2_IEEE802154_RADIO_CSMA_CA
+	default 4
+	range 1 5
+	help
+	  The maximum number of backoffs the CSMA-CA algorithm will attempt
+	  before declaring a channel access failure.
+
+config IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MIN_BE
+	int "CSMA MAC minimum backoff exponent"
+	default NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE if NET_L2_IEEE802154_RADIO_CSMA_CA
+	default 3
+	range 1 8
+	help
+	  The minimum value of the backoff exponent (BE) in the CSMA-CA
+	  algorithm.
+
+config IEEE802154_CC13XX_CC26XX_RADIO_CSMA_CA_MAX_BE
+	int "CSMA MAC maximum backoff exponent"
+	default NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE if NET_L2_IEEE802154_RADIO_CSMA_CA
+	default 5
+	range 1 8
+	help
+	  The maximum value of the backoff exponent (BE) in the CSMA-CA
+	  algorithm.
 
 endif # IEEE802154_CC13XX_CC26XX
+
+menuconfig IEEE802154_CC13XX_CC26XX_SUB_GHZ
+	bool "TI CC13xx / CC26xx IEEE 802.15.4g driver support"
+	select NET_L2_IEEE802154_SUB_GHZ if NET_L2_IEEE802154
+
+if IEEE802154_CC13XX_CC26XX_SUB_GHZ
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_DRV_NAME
+	string "TI CC13xx / CC26xx IEEE 802.15.4g driver's name"
+	default "IEEE802154_1"
+	help
+	  This option sets the driver name.
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_NUM_RX_BUF
+	int "TI CC13xx / CC26xx IEEE 802.15.4g receive buffer count"
+	default 2
+	help
+	  This option allows the user to configure the number of
+	  receive buffers.
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_CS_THRESHOLD
+	int "TI CC13xx / CC26xx IEEE 802.15.4g Carrier Sense Threshold in dBm"
+	default -70
+	help
+	  This option sets RSSI threshold for carrier sense in the CSMA/CA
+	  algorithm.
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO
+	int "TI CC13xx / CC26xx IEEE 802.15.4g initialization priority"
+	default 80
+	help
+	  Set the initialization priority number.
+
+config IEEE802154_CC13XX_CC26XX_SUB_GHZ_RADIO_TX_RETRIES
+	int "Radio Transmission attempts"
+	default NET_L2_IEEE802154_RADIO_TX_RETRIES if NET_L2_IEEE802154
+	default 3
+	range 1 7
+	help
+	  Number of transmission attempts radio driver should do, before
+	  replying it could not send the packet.
+
+endif # IEEE802154_CC13XX_CC26XX_SUB_GHZ

@@ -10,4 +10,7 @@ choice
 config SOC_STM32F207XX
 	bool "STM32F207XX"
 
+config SOC_STM32F205XX
+	bool "STM32F205XX"
+
 endchoice

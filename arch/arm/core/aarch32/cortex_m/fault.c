@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2020 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,11 +17,11 @@
 #include <inttypes.h>
 #include <exc_handle.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_PRINTK) || defined(CONFIG_LOG)
 #define PR_EXC(...) LOG_ERR(__VA_ARGS__)
-#define STORE_xFAR(reg_var, reg) u32_t reg_var = (u32_t)reg
+#define STORE_xFAR(reg_var, reg) uint32_t reg_var = (uint32_t)reg
 #else
 #define PR_EXC(...)
 #define STORE_xFAR(reg_var, reg)
@@ -169,16 +170,24 @@ static const struct z_exc_handle exceptions[] = {
  *
  * @return true if error is recoverable, otherwise return false.
  */
-static bool memory_fault_recoverable(z_arch_esf_t *esf)
+static bool memory_fault_recoverable(z_arch_esf_t *esf, bool synchronous)
 {
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
 		/* Mask out instruction mode */
-		u32_t start = (u32_t)exceptions[i].start & ~0x1;
-		u32_t end = (u32_t)exceptions[i].end & ~0x1;
+		uint32_t start = (uint32_t)exceptions[i].start & ~0x1U;
+		uint32_t end = (uint32_t)exceptions[i].end & ~0x1U;
 
+#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+	/* Non-synchronous exceptions (e.g. DebugMonitor) may have
+	 * allowed PC to continue to the next instruction.
+	 */
+	end += (synchronous) ? 0x0 : 0x4;
+#else
+	ARG_UNUSED(synchronous);
+#endif
 		if (esf->basic.pc >= start && esf->basic.pc < end) {
-			esf->basic.pc = (u32_t)(exceptions[i].fixup);
+			esf->basic.pc = (uint32_t)(exceptions[i].fixup);
 			return true;
 		}
 	}
@@ -192,8 +201,8 @@ static bool memory_fault_recoverable(z_arch_esf_t *esf)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
-u32_t z_check_thread_stack_fail(const u32_t fault_addr,
-	const u32_t psp);
+uint32_t z_check_thread_stack_fail(const uint32_t fault_addr,
+	const uint32_t psp);
 #endif /* CONFIG_MPU_STACK_GUARD || defined(CONFIG_USERSPACE) */
 
 /**
@@ -204,11 +213,11 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr,
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
+static uint32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 			      bool *recoverable)
 {
-	u32_t reason = K_ERR_CPU_EXCEPTION;
-	u32_t mmfar = -EINVAL;
+	uint32_t reason = K_ERR_CPU_EXCEPTION;
+	uint32_t mmfar = -EINVAL;
 
 	PR_FAULT_INFO("***** MPU FAULT *****");
 
@@ -229,11 +238,12 @@ static u32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		 * Software must follow this sequence because another higher
 		 * priority exception might change the MMFAR value.
 		 */
-		mmfar = SCB->MMFAR;
+		uint32_t temp = SCB->MMFAR;
 
 		if ((SCB->CFSR & SCB_CFSR_MMARVALID_Msk) != 0) {
+			mmfar = temp;
 			PR_EXC("  MMFAR Address: 0x%x", mmfar);
-			if (from_hard_fault) {
+			if (from_hard_fault != 0) {
 				/* clear SCB_MMAR[VALID] to reset */
 				SCB->CFSR &= ~SCB_CFSR_MMARVALID_Msk;
 			}
@@ -247,15 +257,23 @@ static u32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		PR_FAULT_INFO(
 			"  Floating-point lazy state preservation error");
 	}
-#endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
 
 	/* When stack protection is enabled, we need to assess
 	 * if the memory violation error is a stack corruption.
 	 *
 	 * By design, being a Stacking MemManage fault is a necessary
 	 * and sufficient condition for a thread stack corruption.
+	 * [Cortex-M process stack pointer is always descending and
+	 * is never modified by code (except for the context-switch
+	 * routine), therefore, a stacking error implies the PSP has
+	 * crossed into an area beyond the thread stack.]
+	 *
+	 * Data Access Violation errors may or may not be caused by
+	 * thread stack overflows.
 	 */
-	if (SCB->CFSR & SCB_CFSR_MSTKERR_Msk) {
+	if ((SCB->CFSR & SCB_CFSR_MSTKERR_Msk) ||
+		(SCB->CFSR & SCB_CFSR_DACCVIOL_Msk)) {
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 		/* MemManage Faults are always banked between security
 		 * states. Therefore, we can safely assume the fault
@@ -265,10 +283,18 @@ static u32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		 * process the error further if the stack frame is on
 		 * PSP. For always-banked MemManage Fault, this is
 		 * equivalent to inspecting the RETTOBASE flag.
+		 *
+		 * Note:
+		 * It is possible that MMFAR address is not written by the
+		 * Cortex-M core; this occurs when the stacking error is
+		 * not accompanied by a data access violation error (i.e.
+		 * when stack overflows due to the exception entry frame
+		 * stacking): z_check_thread_stack_fail() shall be able to
+		 * handle the case of 'mmfar' holding the -EINVAL value.
 		 */
 		if (SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) {
-			u32_t min_stack_ptr = z_check_thread_stack_fail(mmfar,
-				((u32_t) &esf[0]));
+			uint32_t min_stack_ptr = z_check_thread_stack_fail(mmfar,
+				((uint32_t) &esf[0]));
 
 			if (min_stack_ptr) {
 				/* When MemManage Stacking Error has occurred,
@@ -300,14 +326,15 @@ static u32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 
 				reason = K_ERR_STACK_CHK_FAIL;
 			} else {
-				__ASSERT(0,
+				__ASSERT(!(SCB->CFSR & SCB_CFSR_MSTKERR_Msk),
 					"Stacking error not a stack fail\n");
 			}
 		}
 #else
 	(void)mmfar;
-	__ASSERT(0,
-		"Stacking error without stack guard / User-mode support\n");
+	__ASSERT(!(SCB->CFSR & SCB_CFSR_MSTKERR_Msk),
+		"Stacking or Data Access Violation error "
+		"without stack guard, user-mode or null-pointer detection\n");
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 	}
 
@@ -315,7 +342,7 @@ static u32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 	SCB->CFSR |= SCB_CFSR_MEMFAULTSR_Msk;
 
 	/* Assess whether system shall ignore/recover from this MPU fault. */
-	*recoverable = memory_fault_recoverable(esf);
+	*recoverable = memory_fault_recoverable(esf, true);
 
 	return reason;
 }
@@ -330,7 +357,7 @@ static u32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
  */
 static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 {
-	u32_t reason = K_ERR_CPU_EXCEPTION;
+	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
 	PR_FAULT_INFO("***** BUS FAULT *****");
 
@@ -354,7 +381,7 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 
 		if ((SCB->CFSR & SCB_CFSR_BFARVALID_Msk) != 0) {
 			PR_EXC("  BFAR Address: 0x%x", bfar);
-			if (from_hard_fault) {
+			if (from_hard_fault != 0) {
 				/* clear SCB_CFSR_BFAR[VALID] to reset */
 				SCB->CFSR &= ~SCB_CFSR_BFARVALID_Msk;
 			}
@@ -374,10 +401,10 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
 
 #if defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_MPU)
-	u32_t sperr = SYSMPU->CESR & SYSMPU_CESR_SPERR_MASK;
-	u32_t mask = BIT(31);
+	uint32_t sperr = SYSMPU->CESR & SYSMPU_CESR_SPERR_MASK;
+	uint32_t mask = BIT(31);
 	int i;
-	u32_t ear = -EINVAL;
+	uint32_t ear = -EINVAL;
 
 	if (sperr) {
 		for (i = 0; i < SYSMPU_EAR_COUNT; i++, mask >>= 1) {
@@ -417,9 +444,9 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 				 * inspecting the RETTOBASE flag.
 				 */
 				if (SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) {
-					u32_t min_stack_ptr =
+					uint32_t min_stack_ptr =
 						z_check_thread_stack_fail(ear,
-							((u32_t) &esf[0]));
+							((uint32_t) &esf[0]));
 
 					if (min_stack_ptr) {
 						/* When BusFault Stacking Error
@@ -469,7 +496,7 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 	/* clear BFSR sticky bits */
 	SCB->CFSR |= SCB_CFSR_BUSFAULTSR_Msk;
 
-	*recoverable = memory_fault_recoverable(esf);
+	*recoverable = memory_fault_recoverable(esf, true);
 
 	return reason;
 }
@@ -482,9 +509,9 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t usage_fault(const z_arch_esf_t *esf)
+static uint32_t usage_fault(const z_arch_esf_t *esf)
 {
-	u32_t reason = K_ERR_CPU_EXCEPTION;
+	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
 	PR_FAULT_INFO("***** USAGE FAULT *****");
 
@@ -577,12 +604,26 @@ static void secure_fault(const z_arch_esf_t *esf)
  *
  * @return N/A
  */
-static void debug_monitor(const z_arch_esf_t *esf)
+static void debug_monitor(z_arch_esf_t *esf, bool *recoverable)
 {
-	ARG_UNUSED(esf);
+	*recoverable = false;
 
 	PR_FAULT_INFO(
-		"***** Debug monitor exception (not implemented) *****");
+		"***** Debug monitor exception *****");
+
+#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+	if (!z_arm_debug_monitor_event_error_check()) {
+		/* By default, all debug monitor exceptions that are not
+		 * treated as errors by z_arm_debug_event_error_check(),
+		 * they are considered as recoverable errors.
+		 */
+		*recoverable = true;
+	} else {
+
+		*recoverable = memory_fault_recoverable(esf, false);
+	}
+
+#endif
 }
 
 #else
@@ -597,9 +638,9 @@ static void debug_monitor(const z_arch_esf_t *esf)
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
+static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 {
-	u32_t reason = K_ERR_CPU_EXCEPTION;
+	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
 	PR_FAULT_INFO("***** HARD FAULT *****");
 
@@ -612,14 +653,14 @@ static u32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 	 * priority. We handle the case of Kernel OOPS and Stack
 	 * Fail here.
 	 */
-	u16_t *ret_addr = (u16_t *)esf->basic.pc;
+	uint16_t *ret_addr = (uint16_t *)esf->basic.pc;
 	/* SVC is a 16-bit instruction. On a synchronous SVC
 	 * escalated to Hard Fault, the return address is the
 	 * next instruction, i.e. after the SVC.
 	 */
 #define _SVC_OPCODE 0xDF00
 
-	u16_t fault_insn = *(ret_addr - 1);
+	uint16_t fault_insn = *(ret_addr - 1);
 	if (((fault_insn & 0xff00) == _SVC_OPCODE) &&
 		((fault_insn & 0x00ff) == _SVC_CALL_RUNTIME_EXCEPT)) {
 
@@ -628,7 +669,7 @@ static u32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 	}
 #undef _SVC_OPCODE
 
-	*recoverable = memory_fault_recoverable(esf);
+	*recoverable = memory_fault_recoverable(esf, true);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	*recoverable = false;
 
@@ -673,9 +714,9 @@ static void reserved_exception(const z_arch_esf_t *esf, int fault)
 }
 
 /* Handler function for ARM fault conditions. */
-static u32_t fault_handle(z_arch_esf_t *esf, int fault, bool *recoverable)
+static uint32_t fault_handle(z_arch_esf_t *esf, int fault, bool *recoverable)
 {
-	u32_t reason = K_ERR_CPU_EXCEPTION;
+	uint32_t reason = K_ERR_CPU_EXCEPTION;
 
 	*recoverable = false;
 
@@ -701,7 +742,7 @@ static u32_t fault_handle(z_arch_esf_t *esf, int fault, bool *recoverable)
 		break;
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 	case 12:
-		debug_monitor(esf);
+		debug_monitor(esf, recoverable);
 		break;
 #else
 #error Unknown ARM architecture
@@ -738,8 +779,8 @@ static void secure_stack_dump(const z_arch_esf_t *secure_esf)
 	 * In case of a Non-Secure function call the top of the
 	 * stack contains the return address to Secure state.
 	 */
-	u32_t *top_of_sec_stack = (u32_t *)secure_esf;
-	u32_t sec_ret_addr;
+	uint32_t *top_of_sec_stack = (uint32_t *)secure_esf;
+	uint32_t sec_ret_addr;
 #if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 	if ((*top_of_sec_stack == INTEGRITY_SIGNATURE_STD) ||
 		(*top_of_sec_stack == INTEGRITY_SIGNATURE_EXT)) {
@@ -781,7 +822,7 @@ static void secure_stack_dump(const z_arch_esf_t *secure_esf)
  *
  * @return ESF pointer on success, otherwise return NULL
  */
-static inline z_arch_esf_t *get_esf(u32_t msp, u32_t psp, u32_t exc_return,
+static inline z_arch_esf_t *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_return,
 	bool *nested_exc)
 {
 	bool alternative_state_exc = false;
@@ -920,11 +961,13 @@ static inline z_arch_esf_t *get_esf(u32_t msp, u32_t psp, u32_t exc_return,
  * @param msp MSP value immediately after the exception occurred
  * @param psp PSP value immediately after the exception occurred
  * @param exc_return EXC_RETURN value present in LR after exception entry.
+ * @param callee_regs Callee-saved registers (R4-R11, PSP)
  *
  */
-void z_arm_fault(u32_t msp, u32_t psp, u32_t exc_return)
+void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return,
+	_callee_saved_t *callee_regs)
 {
-	u32_t reason = K_ERR_CPU_EXCEPTION;
+	uint32_t reason = K_ERR_CPU_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 	bool recoverable, nested_exc;
 	z_arch_esf_t *esf;
@@ -944,13 +987,30 @@ void z_arm_fault(u32_t msp, u32_t psp, u32_t exc_return)
 	__ASSERT(esf != NULL,
 		"ESF could not be retrieved successfully. Shall never occur.");
 
+#ifdef CONFIG_DEBUG_COREDUMP
+	z_arm_coredump_fault_sp = POINTER_TO_UINT(esf);
+#endif
+
 	reason = fault_handle(esf, fault, &recoverable);
 	if (recoverable) {
 		return;
 	}
 
 	/* Copy ESF */
+#if !defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	memcpy(&esf_copy, esf, sizeof(z_arch_esf_t));
+	ARG_UNUSED(callee_regs);
+#else
+	/* the extra exception info is not present in the original esf
+	 * so we only copy the fields before those.
+	 */
+	memcpy(&esf_copy, esf, offsetof(z_arch_esf_t, extra_info));
+	esf_copy.extra_info = (struct __extra_esf_info) {
+		.callee = callee_regs,
+		.exc_return = exc_return,
+		.msp = msp
+	};
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 
 	/* Overwrite stacked IPSR to mark a nested exception,
 	 * or a return to Thread mode. Note that this may be

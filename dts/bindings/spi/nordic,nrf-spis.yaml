@@ -11,7 +11,9 @@ properties:
     csn-pin:
       type: int
       required: true
-      description: CSN pin
+      description:  |
+          The CSN pin to use. The pin numbering scheme is the same as
+          the sck-pin property's.
 
     def-char:
       type: int

@@ -4,9 +4,9 @@
 zephyr_library_named(settings_nvs_test)
 
 zephyr_include_directories(
-	$ENV{ZEPHYR_BASE}/subsys/settings/include
-	$ENV{ZEPHYR_BASE}/subsys/settings/src
-	$ENV{ZEPHYR_BASE}/tests/subsys/settings/nvs/src
+	${ZEPHYR_BASE}/subsys/settings/include
+	${ZEPHYR_BASE}/subsys/settings/src
+	${ZEPHYR_BASE}/tests/subsys/settings/nvs/src
 	)
 
 zephyr_library_sources(settings_test_nvs.c)

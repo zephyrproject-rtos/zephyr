@@ -15,9 +15,9 @@
 	chosen {
 		zephyr,sram = &m4_dtcm;
 		zephyr,flash = &m4_flash;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,uart-pipe = &uart0;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+		zephyr,uart-pipe = &lpuart0;
 		zephyr,code-partition = &slot0_partition;
 	};
 };

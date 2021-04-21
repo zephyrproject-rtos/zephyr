@@ -46,8 +46,9 @@ struct sockaddr_hci {
 #define H4_ACL           0x02
 #define H4_SCO           0x03
 #define H4_EVT           0x04
+#define H4_ISO           0x05
 
-static K_THREAD_STACK_DEFINE(rx_thread_stack,
+static K_KERNEL_STACK_DEFINE(rx_thread_stack,
 			     CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
 static struct k_thread rx_thread_data;
 
@@ -55,13 +56,33 @@ static int uc_fd = -1;
 
 static int bt_dev_index = -1;
 
-static struct net_buf *get_rx(const u8_t *buf)
+static struct net_buf *get_rx(const uint8_t *buf)
 {
-	if (buf[0] == H4_EVT) {
-		return bt_buf_get_evt(buf[1], false, K_FOREVER);
+	bool discardable = false;
+	k_timeout_t timeout = K_FOREVER;
+
+	switch (buf[0]) {
+	case H4_EVT:
+		if (buf[1] == BT_HCI_EVT_LE_META_EVENT &&
+		    (buf[3] == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
+		     buf[3] == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+			discardable = true;
+			timeout = K_NO_WAIT;
+		}
+
+		return bt_buf_get_evt(buf[1], discardable, timeout);
+	case H4_ACL:
+		return bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	case H4_ISO:
+		if (IS_ENABLED(CONFIG_BT_ISO)) {
+			return bt_buf_get_rx(BT_BUF_ISO_IN, K_FOREVER);
+		}
+		__fallthrough;
+	default:
+		BT_ERR("Unknown packet type: %u", buf[0]);
 	}
 
-	return bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	return NULL;
 }
 
 static bool uc_ready(void)
@@ -80,7 +101,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	BT_DBG("started");
 
 	while (1) {
-		static u8_t frame[512];
+		static uint8_t frame[512];
 		struct net_buf *buf;
 		ssize_t len;
 
@@ -105,15 +126,16 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		}
 
 		buf = get_rx(frame);
+		if (!buf) {
+			BT_DBG("Discard adv report due to insufficient buf");
+			continue;
+		}
+
 		net_buf_add_mem(buf, &frame[1], len - 1);
 
 		BT_DBG("Calling bt_recv(%p)", buf);
 
-		if (frame[0] == H4_EVT && bt_hci_evt_is_prio(frame[1])) {
-			bt_recv_prio(buf);
-		} else {
-			bt_recv(buf);
-		}
+		bt_recv(buf);
 
 		k_yield();
 	}
@@ -135,6 +157,12 @@ static int uc_send(struct net_buf *buf)
 	case BT_BUF_CMD:
 		net_buf_push_u8(buf, H4_CMD);
 		break;
+	case BT_BUF_ISO_OUT:
+		if (IS_ENABLED(CONFIG_BT_ISO)) {
+			net_buf_push_u8(buf, H4_ISO);
+			break;
+		}
+		__fallthrough;
 	default:
 		BT_ERR("Unknown buffer type");
 		return -EINVAL;
@@ -148,7 +176,7 @@ static int uc_send(struct net_buf *buf)
 	return 0;
 }
 
-static int user_chan_open(u16_t index)
+static int user_chan_open(uint16_t index)
 {
 	struct sockaddr_hci addr;
 	int fd;
@@ -191,9 +219,9 @@ static int uc_open(void)
 	BT_DBG("User Channel opened as fd %d", uc_fd);
 
 	k_thread_create(&rx_thread_data, rx_thread_stack,
-			K_THREAD_STACK_SIZEOF(rx_thread_stack),
+			K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 			rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_RX_PRIO - 1),
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
 
 	BT_DBG("returning");
@@ -208,7 +236,7 @@ static const struct bt_hci_driver drv = {
 	.send		= uc_send,
 };
 
-static int bt_uc_init(struct device *unused)
+static int bt_uc_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

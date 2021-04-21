@@ -1,0 +1,10 @@
+# Copyright 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# MCUX TPM PWM
+
+config PWM_MCUX_TPM
+	bool "MCUX TPM PWM driver"
+	depends on HAS_MCUX_TPM && CLOCK_CONTROL
+	help
+	  Enable the MCUX TPM PWM driver.

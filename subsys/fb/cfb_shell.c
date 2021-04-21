@@ -22,7 +22,7 @@
 #define DISPLAY_DRIVER	CONFIG_CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
 
 
-static struct device *dev;
+static const struct device *dev;
 static const char * const param_name[] = {
 	"height", "width", "ppt", "rows", "cols"};
 
@@ -58,7 +58,7 @@ static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_cfb_print(const struct shell *shell, int col, int row, char *str)
 {
 	int err;
-	u8_t ppt;
+	uint8_t ppt;
 
 	if (!dev) {
 		shell_error(shell, HELP_INIT);
@@ -208,8 +208,8 @@ static int cmd_set_font(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 	int idx;
-	u8_t height;
-	u8_t width;
+	uint8_t height;
+	uint8_t width;
 
 	if (!dev) {
 		shell_error(shell, HELP_INIT);
@@ -265,8 +265,8 @@ static int cmd_invert(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_get_fonts(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err = 0;
-	u8_t font_height;
-	u8_t font_width;
+	uint8_t font_height;
+	uint8_t font_width;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);

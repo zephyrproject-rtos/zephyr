@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <logging/log_backend.h>
+#include <logging/log_backend_std.h>
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
@@ -44,9 +45,9 @@ static void preprint_char(int c)
 	}
 }
 
-static u8_t buf[_STDOUT_BUF_SIZE];
+static uint8_t buf[_STDOUT_BUF_SIZE];
 
-static int char_out(u8_t *data, size_t length, void *ctx)
+static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	for (size_t i = 0; i < length; i++) {
 		preprint_char(data[i]);
@@ -55,14 +56,14 @@ static int char_out(u8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
+LOG_OUTPUT_DEFINE(log_output_posix, char_out, buf, sizeof(buf));
 
 static void put(const struct log_backend *const backend,
 		struct log_msg *msg)
 {
 	log_msg_get(msg);
 
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		if (posix_trace_over_tty(0)) {
@@ -74,7 +75,7 @@ static void put(const struct log_backend *const backend,
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
-	log_output_msg_process(&log_output, msg, flags);
+	log_output_msg_process(&log_output_posix, msg, flags);
 
 	log_msg_put(msg);
 
@@ -82,22 +83,22 @@ static void put(const struct log_backend *const backend,
 
 static void panic(struct log_backend const *const backend)
 {
-	log_output_flush(&log_output);
+	log_output_flush(&log_output_posix);
 }
 
-static void dropped(const struct log_backend *const backend, u32_t cnt)
+static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
-	log_output_dropped_process(&log_output, cnt);
+	log_output_dropped_process(&log_output_posix, cnt);
 }
 
 static void sync_string(const struct log_backend *const backend,
-		     struct log_msg_ids src_level, u32_t timestamp,
+		     struct log_msg_ids src_level, uint32_t timestamp,
 		     const char *fmt, va_list ap)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t key;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;
@@ -108,16 +109,17 @@ static void sync_string(const struct log_backend *const backend,
 	}
 
 	key = irq_lock();
-	log_output_string(&log_output, src_level, timestamp, fmt, ap, flags);
+	log_output_string(&log_output_posix, src_level,
+			  timestamp, fmt, ap, flags);
 	irq_unlock(key);
 }
 
 static void sync_hexdump(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, u32_t timestamp,
-			 const char *metadata, const u8_t *data, u32_t length)
+			 struct log_msg_ids src_level, uint32_t timestamp,
+			 const char *metadata, const uint8_t *data, uint32_t length)
 {
-	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
-	u32_t key;
+	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_TIMESTAMP;
+	uint32_t key;
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_SHOW_COLOR)) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;
@@ -128,16 +130,25 @@ static void sync_hexdump(const struct log_backend *const backend,
 	}
 
 	key = irq_lock();
-	log_output_hexdump(&log_output, src_level, timestamp,
+	log_output_hexdump(&log_output_posix, src_level, timestamp,
 			metadata, data, length, flags);
 	irq_unlock(key);
 }
 
+static void process(const struct log_backend *const backend,
+		union log_msg2_generic *msg)
+{
+	uint32_t flags = log_backend_std_get_flags();
+
+	log_output_msg2_process(&log_output_posix, &msg->log, flags);
+}
+
 const struct log_backend_api log_backend_native_posix_api = {
-	.put = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : put,
-	.put_sync_string = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+	.process = IS_ENABLED(CONFIG_LOG2) ? process : NULL,
+	.put = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? put : NULL,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
 			sync_string : NULL,
-	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ?
 			sync_hexdump : NULL,
 	.panic = panic,
 	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,

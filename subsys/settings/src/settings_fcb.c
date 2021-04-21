@@ -9,7 +9,6 @@
 #include <stdbool.h>
 #include <fs/fcb.h>
 #include <string.h>
-#include <assert.h>
 
 #include "settings/settings.h"
 #include "settings/settings_fcb.h"
@@ -41,7 +40,7 @@ int settings_fcb_src(struct settings_fcb *cf)
 	cf->cf_fcb.f_scratch_cnt = 1;
 
 	while (1) {
-		rc = fcb_init(DT_FLASH_AREA_STORAGE_ID, &cf->cf_fcb);
+		rc = fcb_init(FLASH_AREA_ID(storage), &cf->cf_fcb);
 		if (rc) {
 			return -EINVAL;
 		}
@@ -201,7 +200,7 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 	char name1[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
 	char name2[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
 	int copy;
-	u8_t rbs;
+	uint8_t rbs;
 
 	rc = fcb_append_to_scratch(&cf->cf_fcb);
 	if (rc) {
@@ -306,9 +305,9 @@ static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
 	struct settings_fcb *cf = (struct settings_fcb *)cs;
 	struct fcb_entry_ctx loc;
 	int len;
-	int rc;
+	int rc = -EINVAL;
 	int i;
-	u8_t wbs;
+	uint8_t wbs;
 
 	if (!name) {
 		return -EINVAL;
@@ -317,12 +316,16 @@ static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
 	wbs = cf->cf_fcb.f_align;
 	len = settings_line_len_calc(name, val_len);
 
-	for (i = 0; i < cf->cf_fcb.f_sector_cnt - 1; i++) {
+	for (i = 0; i < cf->cf_fcb.f_sector_cnt; i++) {
 		rc = fcb_append(&cf->cf_fcb, len, &loc.loc);
 		if (rc != -ENOSPC) {
 			break;
 		}
-		settings_fcb_compress(cf);
+
+		/* FCB can compress up to cf->cf_fcb.f_sector_cnt - 1 times. */
+		if (i < (cf->cf_fcb.f_sector_cnt - 1)) {
+			settings_fcb_compress(cf);
+		}
 	}
 	if (rc) {
 		return -EINVAL;
@@ -366,7 +369,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 
 void settings_mount_fcb_backend(struct settings_fcb *cf)
 {
-	u8_t rbs;
+	uint8_t rbs;
 
 	rbs = cf->cf_fcb.f_align;
 
@@ -381,12 +384,12 @@ int settings_backend_init(void)
 		.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC,
 		.cf_fcb.f_sectors = settings_fcb_area,
 	};
-	u32_t cnt = sizeof(settings_fcb_area) /
+	uint32_t cnt = sizeof(settings_fcb_area) /
 		    sizeof(settings_fcb_area[0]);
 	int rc;
 	const struct flash_area *fap;
 
-	rc = flash_area_get_sectors(DT_FLASH_AREA_STORAGE_ID, &cnt,
+	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &cnt,
 				    settings_fcb_area);
 	if (rc == -ENODEV) {
 		return rc;
@@ -399,7 +402,7 @@ int settings_backend_init(void)
 	rc = settings_fcb_src(&config_init_settings_fcb);
 
 	if (rc != 0) {
-		rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
+		rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
 
 		if (rc == 0) {
 			rc = flash_area_erase(fap, 0, fap->fa_size);

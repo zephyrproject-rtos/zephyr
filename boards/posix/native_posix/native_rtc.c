@@ -17,15 +17,15 @@
  * Return the (simulation) time in microseconds
  * where clock_type is one of RTC_CLOCK_*
  */
-u64_t native_rtc_gettime_us(int clock_type)
+uint64_t native_rtc_gettime_us(int clock_type)
 {
 	if (clock_type == RTC_CLOCK_BOOT) {
 		return hwm_get_time();
 	} else if (clock_type == RTC_CLOCK_REALTIME) { /* RTC_CLOCK_REALTIME */
 		return hwtimer_get_simu_rtc_time();
 	} else if (clock_type == RTC_CLOCK_PSEUDOHOSTREALTIME) {
-		u32_t nsec;
-		u64_t sec;
+		uint32_t nsec;
+		uint64_t sec;
 
 		hwtimer_get_pseudohost_rtc_time(&nsec, &sec);
 		return sec * 1000000UL + nsec / 1000U;
@@ -41,10 +41,10 @@ u64_t native_rtc_gettime_us(int clock_type)
  * get the simulation time split in nsec and seconds
  * where clock_type is one of RTC_CLOCK_*
  */
-void native_rtc_gettime(int clock_type, u32_t *nsec, u64_t *sec)
+void native_rtc_gettime(int clock_type, uint32_t *nsec, uint64_t *sec)
 {
 	if (clock_type == RTC_CLOCK_BOOT || clock_type == RTC_CLOCK_REALTIME) {
-		u64_t us = native_rtc_gettime_us(clock_type);
+		uint64_t us = native_rtc_gettime_us(clock_type);
 		*nsec = (us % 1000000UL) * 1000U;
 		*sec  = us / 1000000UL;
 	} else { /* RTC_CLOCK_PSEUDOHOSTREALTIME */
@@ -57,7 +57,7 @@ void native_rtc_gettime(int clock_type, u32_t *nsec, u64_t *sec)
  * Note that this only affects the RTC_CLOCK_REALTIME and
  * RTC_CLOCK_PSEUDOHOSTREALTIME clocks.
  */
-void native_rtc_offset(s64_t delta_us)
+void native_rtc_offset(int64_t delta_us)
 {
 	hwtimer_adjust_rtc_offset(delta_us);
 }

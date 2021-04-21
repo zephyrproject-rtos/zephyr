@@ -1,5 +1,5 @@
 identifier: stm32l496g_disco
-name: STM32L496G-DISCO
+name: ST STM32L496G Discovery
 type: mcu
 arch: arm
 toolchain:
@@ -15,3 +15,4 @@ supported:
   - spi
   - gpio
   - counter
+  - sdhc

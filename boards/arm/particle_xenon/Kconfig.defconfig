@@ -9,18 +9,6 @@ if BOARD_PARTICLE_XENON
 config BOARD
 	default "particle_xenon"
 
-config ADC_0
-	default y
-	depends on ADC
-
-config I2C_0
-	default y
-	depends on I2C
-
-config SPI_2
-	default y
-	depends on SPI
-
 if USB
 
 config USB_NRFX
@@ -30,10 +18,6 @@ config USB_DEVICE_STACK
 	default y
 
 endif # USB
-
-config IEEE802154_NRF5
-	default y
-	depends on IEEE802154
 
 config BT_CTLR
 	default BT

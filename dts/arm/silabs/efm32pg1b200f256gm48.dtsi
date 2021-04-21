@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/efm32pg1b.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(32)>;
+	};
+
+	soc {
+		compatible = "silabs,efm32pg1b200f256gm48", "silabs,efm32pg1b", "silabs,efm32", "simple-bus";
+
+		flash-controller@400e0000 {
+			flash0: flash@0 {
+				reg = <0 DT_SIZE_K(256)>;
+			};
+		};
+	};
+
+};

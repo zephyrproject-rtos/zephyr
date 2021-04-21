@@ -1,0 +1,10 @@
+identifier: xmc45_relax_kit
+name: XMC45-RELAX-KIT
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 160
+flash: 1024

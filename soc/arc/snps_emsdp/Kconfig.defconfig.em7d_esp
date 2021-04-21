@@ -10,7 +10,7 @@ config CPU_EM4_FPUDA
 	default y
 
 config ARC_MPU_VER
-	default 3
+	default 4
 
 config RGF_NUM_BANKS
 	default 1
@@ -21,10 +21,13 @@ config HARVARD
 config ARC_FIRQ
 	default n
 
-config CACHE_FLUSHING
+config CACHE_MANAGEMENT
 	default y
 
 config FP_FPU_DA
 	default y
+
+config NUM_IRQS
+	default 112
 
 endif # SOC_EMSDP_EM7D_ESP

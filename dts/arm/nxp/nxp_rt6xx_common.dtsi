@@ -1,0 +1,198 @@
+/*
+ * Copyright (c) 2020, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <8>;
+			};
+		};
+	};
+};
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	sram0: memory@20180000 {
+		compatible = "mmio-sram";
+		reg = <0x20180000 DT_SIZE_K(3072)>;
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	clkctl0: clkctl@1000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x1000 0x4000>;
+		label = "CLKCTL_0";
+		#clock-cells = <1>;
+	};
+
+	clkctl1: clkctl@21000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x21000 0x4000>;
+		label = "CLKCTL_1";
+		#clock-cells = <1>;
+	};
+
+	gpio0: gpio@0 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x4000>;
+		interrupts = <4 2>,<5 2>,<6 2>,<7 2>;
+		label = "GPIO_0";
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	gpio1: gpio@1 {
+		compatible = "nxp,lpc-gpio";
+		reg = <0x100000 0x4000>;
+		interrupts = <35 2>,<36 2>,<37 2>,<38 2>;
+		label = "GPIO_1";
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	flexspi: spi@134000 {
+		compatible = "nxp,imx-flexspi";
+		reg = <0x134000 0x1000>;
+		interrupts = <42 0>;
+		label = "FLEXSPI";
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	flexcomm0: flexcomm@106000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x106000 0x1000>;
+		interrupts = <14 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>;
+		label = "FLEXCOMM_0";
+		status = "disabled";
+	};
+
+	flexcomm1: flexcomm@107000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x107000 0x1000>;
+		interrupts = <15 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK>;
+		label = "FLEXCOMM_1";
+		status = "disabled";
+	};
+
+	flexcomm2: flexcomm@108000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x108000 0x1000>;
+		interrupts = <16 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK>;
+		label = "FLEXCOMM_2";
+		status = "disabled";
+	};
+
+	flexcomm3: flexcomm@109000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x109000 0x1000>;
+		interrupts = <17 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK>;
+		label = "FLEXCOMM_3";
+		status = "disabled";
+	};
+
+	flexcomm4: flexcomm@122000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x122000 0x1000>;
+		interrupts = <18 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM4_CLK>;
+		label = "FLEXCOMM_4";
+		status = "disabled";
+	};
+
+	flexcomm5: flexcomm@123000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x123000 0x1000>;
+		interrupts = <19 0>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM5_CLK>;
+		label = "FLEXCOMM_5";
+		status = "disabled";
+	};
+
+	flexcomm6: flexcomm@124000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x124000 0x1000>;
+		interrupts = <43 0>;
+		label = "FLEXCOMM_6";
+		clocks = <&clkctl1 MCUX_FLEXCOMM6_CLK>;
+		status = "disabled";
+	};
+
+	flexcomm7: flexcomm@125000 {
+		compatible = "nxp,lpc-flexcomm";
+		reg = <0x125000 0x1000>;
+		interrupts = <44 0>;
+		label = "FLEXCOMM_7";
+		clocks = <&clkctl1 MCUX_FLEXCOMM7_CLK>;
+		status = "disabled";
+	};
+
+	hs_lspi: spi@126000 {
+		compatible = "nxp,lpc-spi";
+		/* Enabling cs-gpios below will allow using GPIO CS,
+		 rather than Flexcomm SS */
+		/* cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>,
+			<&gpio1 15 GPIO_ACTIVE_LOW>,
+			<&gpio1 16 GPIO_ACTIVE_LOW>,
+			<&gpio1 17 GPIO_ACTIVE_LOW>; */
+		reg = <0x126000 0x1000>;
+		interrupts = <20 0>;
+		clocks = <&clkctl1 MCUX_HS_SPI_CLK>;
+		label = "HS_LSPI";
+		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	dma0: dma-controller@104000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0x104000 0x1000>;
+		interrupts = <1 0>;
+		label = "DMA_0";
+		status = "disabled";
+		#dma-cells = <1>;
+	};
+
+	dma1: dma-controller@105000 {
+		compatible = "nxp,lpc-dma";
+		reg = <0x105000 0x1000>;
+		interrupts = <54 0>;
+		label = "DMA_1";
+		status = "disabled";
+		#dma-cells = <1>;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

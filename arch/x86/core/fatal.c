@@ -9,7 +9,9 @@
 #include <kernel_internal.h>
 #include <exc_handle.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+#include <x86_mmu.h>
+#include <mmu.h>
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
 FUNC_NORETURN void arch_system_halt(unsigned int reason)
@@ -18,8 +20,15 @@ FUNC_NORETURN void arch_system_halt(unsigned int reason)
 
 	/* Causes QEMU to exit. We passed the following on the command line:
 	 * -device isa-debug-exit,iobase=0xf4,iosize=0x04
+	 *
+	 * For any value of the first argument X, the return value of the
+	 * QEMU process is (X * 2) + 1.
+	 *
+	 * It has been observed that if the emulator exits for a triple-fault
+	 * (often due to bad page tables or other CPU structures) it will
+	 * terminate with 0 error code.
 	 */
-	sys_out32(0, 0xf4);
+	sys_out32(reason, 0xf4);
 	CODE_UNREACHABLE;
 }
 #endif
@@ -43,26 +52,41 @@ static inline uintptr_t esf_get_code(const z_arch_esf_t *esf)
 }
 
 #ifdef CONFIG_THREAD_STACK_INFO
-bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, u16_t cs)
+bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 {
 	uintptr_t start, end;
 
-	if (arch_is_in_isr()) {
-		/* We were servicing an interrupt */
-		start = (uintptr_t)ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
+	if (_current == NULL || arch_is_in_isr()) {
+		/* We were servicing an interrupt or in early boot environment
+		 * and are supposed to be on the interrupt stack */
+		int cpu_id;
+
+#ifdef CONFIG_SMP
+		cpu_id = arch_curr_cpu()->id;
+#else
+		cpu_id = 0;
+#endif
+		start = (uintptr_t)Z_KERNEL_STACK_BUFFER(
+		    z_interrupt_stacks[cpu_id]);
 		end = start + CONFIG_ISR_STACK_SIZE;
-	} else if ((cs & 0x3U) != 0U ||
-		   (_current->base.user_options & K_USER) == 0) {
-		/* Thread was in user mode, or is not a user mode thread.
-		 * The normal stack buffer is what we will check.
+#ifdef CONFIG_USERSPACE
+	} else if ((cs & 0x3U) == 0U &&
+		   (_current->base.user_options & K_USER) != 0) {
+		/* The low two bits of the CS register is the privilege
+		 * level. It will be 0 in supervisor mode and 3 in user mode
+		 * corresponding to ring 0 / ring 3.
+		 *
+		 * If we get here, we must have been doing a syscall, check
+		 * privilege elevation stack bounds
 		 */
-		start = _current->stack_info.start;
-		end = STACK_ROUND_DOWN(_current->stack_info.start +
-				       _current->stack_info.size);
-	} else {
-		/* User thread was doing a syscall, check kernel stack bounds */
-		start = _current->stack_info.start - MMU_PAGE_SIZE;
+		start = _current->stack_info.start - CONFIG_MMU_PAGE_SIZE;
 		end = _current->stack_info.start;
+#endif /* CONFIG_USERSPACE */
+	} else {
+		/* Normal thread operation, check its stack buffer */
+		start = _current->stack_info.start;
+		end = Z_STACK_PTR_ALIGN(_current->stack_info.start +
+					_current->stack_info.size);
 	}
 
 	return (addr <= start) || (addr + size > end);
@@ -81,7 +105,7 @@ struct stack_frame {
 
 #define MAX_STACK_FRAMES 8
 
-static void unwind_stack(uintptr_t base_ptr, u16_t cs)
+static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
 {
 	struct stack_frame *frame;
 	int i;
@@ -126,6 +150,29 @@ static void unwind_stack(uintptr_t base_ptr, u16_t cs)
 }
 #endif /* CONFIG_X86_EXCEPTION_STACK_TRACE */
 
+static inline uintptr_t get_cr3(const z_arch_esf_t *esf)
+{
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_X86_KPTI)
+	/* If the interrupted thread was in user mode, we did a page table
+	 * switch when we took the exception via z_x86_trampoline_to_kernel
+	 */
+	if ((esf->cs & 0x3) != 0) {
+		return _current->arch.ptables;
+	}
+#else
+	ARG_UNUSED(esf);
+#endif
+	/* Return the current CR3 value, it didn't change when we took
+	 * the exception
+	 */
+	return z_x86_cr3_get();
+}
+
+static inline pentry_t *get_ptables(const z_arch_esf_t *esf)
+{
+	return z_mem_virt_addr(get_cr3(esf));
+}
+
 #ifdef CONFIG_X86_64
 static void dump_regs(const z_arch_esf_t *esf)
 {
@@ -137,8 +184,8 @@ static void dump_regs(const z_arch_esf_t *esf)
 		esf->r8, esf->r9, esf->r10, esf->r11);
 	LOG_ERR("R12: 0x%016lx R13: 0x%016lx R14: 0x%016lx R15: 0x%016lx",
 		esf->r12, esf->r13, esf->r14, esf->r15);
-	LOG_ERR("RSP: 0x%016lx RFLAGS: 0x%016lx CS: 0x%04lx CR3: %p", esf->rsp,
-		esf->rflags, esf->cs & 0xFFFFU, z_x86_page_tables_get());
+	LOG_ERR("RSP: 0x%016lx RFLAGS: 0x%016lx CS: 0x%04lx CR3: 0x%016lx",
+		esf->rsp, esf->rflags, esf->cs & 0xFFFFU, get_cr3(esf));
 
 #ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
@@ -155,8 +202,8 @@ static void dump_regs(const z_arch_esf_t *esf)
 		esf->eax, esf->ebx, esf->ecx, esf->edx);
 	LOG_ERR("ESI: 0x%08x, EDI: 0x%08x, EBP: 0x%08x, ESP: 0x%08x",
 		esf->esi, esf->edi, esf->ebp, esf->esp);
-	LOG_ERR("EFLAGS: 0x%08x CS: 0x%04x CR3: %p", esf->eflags,
-		esf->cs & 0xFFFFU, z_x86_page_tables_get());
+	LOG_ERR("EFLAGS: 0x%08x CS: 0x%04x CR3: 0x%08lx", esf->eflags,
+		esf->cs & 0xFFFFU, get_cr3(esf));
 
 #ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
@@ -237,44 +284,35 @@ static void log_exception(uintptr_t vector, uintptr_t code)
 	}
 }
 
-/* Page fault error code flags */
-#define PRESENT	BIT(0)
-#define WR	BIT(1)
-#define US	BIT(2)
-#define RSVD	BIT(3)
-#define ID	BIT(4)
-#define PK	BIT(5)
-#define SGX	BIT(15)
-
 static void dump_page_fault(z_arch_esf_t *esf)
 {
-	uintptr_t err, cr2;
+	uintptr_t err;
+	void *cr2;
 
-	/* See Section 6.15 of the IA32 Software Developer's Manual vol 3 */
-	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
-
+	cr2 = z_x86_cr2_get();
 	err = esf_get_code(esf);
-	LOG_ERR("Page fault at address 0x%lx (error code 0x%lx)", cr2, err);
+	LOG_ERR("Page fault at address %p (error code 0x%lx)", cr2, err);
 
-	if ((err & RSVD) != 0) {
+	if ((err & PF_RSVD) != 0) {
 		LOG_ERR("Reserved bits set in page tables");
-	} else if ((err & PRESENT) == 0) {
-		LOG_ERR("Linear address not present in page tables");
 	} else {
+		if ((err & PF_P) == 0) {
+			LOG_ERR("Linear address not present in page tables");
+		}
 		LOG_ERR("Access violation: %s thread not allowed to %s",
-			(err & US) != 0U ? "user" : "supervisor",
-			(err & ID) != 0U ? "execute" : ((err & WR) != 0U ?
-							"write" :
-							"read"));
-		if ((err & PK) != 0) {
+			(err & PF_US) != 0U ? "user" : "supervisor",
+			(err & PF_ID) != 0U ? "execute" : ((err & PF_WR) != 0U ?
+							   "write" :
+							   "read"));
+		if ((err & PF_PK) != 0) {
 			LOG_ERR("Protection key disallowed");
-		} else if ((err & SGX) != 0) {
+		} else if ((err & PF_SGX) != 0) {
 			LOG_ERR("SGX access control violation");
 		}
 	}
 
 #ifdef CONFIG_X86_MMU
-	z_x86_dump_mmu_flags(z_x86_thread_page_tables_get(_current), cr2);
+	z_x86_dump_mmu_flags(get_ptables(esf), cr2);
 #endif /* CONFIG_X86_MMU */
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
@@ -282,11 +320,21 @@ static void dump_page_fault(z_arch_esf_t *esf)
 FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 				     const z_arch_esf_t *esf)
 {
-#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
+#ifdef CONFIG_EXCEPTION_DEBUG
 		dump_regs(esf);
-	}
 #endif
+#if defined(CONFIG_ASSERT) && defined(CONFIG_X86_64)
+		if (esf->rip == 0xb9) {
+			/* See implementation of __resume in locore.S. This is
+			 * never a valid RIP value. Treat this as a kernel
+			 * panic.
+			 */
+			LOG_ERR("Attempt to resume un-suspended thread object");
+			reason = K_ERR_KERNEL_PANIC;
+		}
+#endif
+	}
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }
@@ -312,6 +360,48 @@ static const struct z_exc_handle exceptions[] = {
 
 void z_x86_page_fault_handler(z_arch_esf_t *esf)
 {
+#ifdef CONFIG_DEMAND_PAGING
+	if ((esf->errorCode & PF_P) == 0) {
+		/* Page was non-present at time exception happened.
+		 * Get faulting virtual address from CR2 register
+		 */
+		void *virt = z_x86_cr2_get();
+		bool was_valid_access;
+
+#ifdef CONFIG_X86_KPTI
+		/* Protection ring is lowest 2 bits in interrupted CS */
+		bool was_user = ((esf->cs & 0x3) != 0U);
+
+		/* Need to check if the interrupted context was a user thread
+		 * that hit a non-present page that was flipped due to KPTI in
+		 * the thread's page tables, in which case this is an access
+		 * violation and we should treat this as an error.
+		 *
+		 * We're probably not locked, but if there is a race, we will
+		 * be fine, the kernel page fault code will later detect that
+		 * the page is present in the kernel's page tables and the
+		 * instruction will just be re-tried, producing another fault.
+		 */
+		if (was_user &&
+		    !z_x86_kpti_is_access_ok(virt, get_ptables(esf))) {
+			was_valid_access = false;
+		} else
+#else
+		{
+			was_valid_access = z_page_fault(virt);
+		}
+#endif /* CONFIG_X86_KPTI */
+		if (was_valid_access) {
+			/* Page fault handled, re-try */
+			return;
+		}
+	}
+#endif /* CONFIG_DEMAND_PAGING */
+
+#if !defined(CONFIG_X86_64) && defined(CONFIG_DEBUG_COREDUMP)
+	z_x86_exception_vector = IV_PAGE_FAULT;
+#endif
+
 #ifdef CONFIG_USERSPACE
 	int i;
 
@@ -319,7 +409,7 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 #ifdef CONFIG_X86_64
 		if ((void *)esf->rip >= exceptions[i].start &&
 		    (void *)esf->rip < exceptions[i].end) {
-			esf->rip = (u64_t)(exceptions[i].fixup);
+			esf->rip = (uint64_t)(exceptions[i].fixup);
 			return;
 		}
 #else

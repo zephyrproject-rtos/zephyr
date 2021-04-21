@@ -35,7 +35,7 @@ extern "C" {
  *
  * @param offset File system offset in flash
  * @param ate_wra: Allocation table entry write address. Addresses are stored
- * as u32_t: high 2 bytes are sector, low 2 bytes are offset in sector,
+ * as uint32_t: high 2 bytes are sector, low 2 bytes are offset in sector,
  * @param data_wra: Data write address.
  * @param sector_size File system is divided into sectors each sector should be
  * multiple of pagesize
@@ -46,17 +46,17 @@ extern "C" {
  */
 struct nvs_fs {
 	off_t offset;		/* filesystem offset in flash */
-	u32_t ate_wra;		/* next alloc table entry write address */
-	u32_t data_wra;		/* next data write address */
-	u16_t sector_size;	/* filesystem is divided into sectors,
+	uint32_t ate_wra;		/* next alloc table entry write address */
+	uint32_t data_wra;		/* next data write address */
+	uint16_t sector_size;	/* filesystem is divided into sectors,
 				 * sector size should be multiple of pagesize
 				 */
-	u16_t sector_count;	/* amount of sectors in the filesystem */
-	u8_t write_block_size;  /* write block size for alignment */
+	uint16_t sector_count;	/* amount of sectors in the filesystem */
 	bool ready;		/* is the filesystem initialized ? */
 
 	struct k_mutex nvs_lock;
-	struct device *flash_device;
+	const struct device *flash_device;
+	const struct flash_parameters *flash_parameters;
 };
 
 /**
@@ -106,7 +106,7 @@ int nvs_clear(struct nvs_fs *fs);
  * of bytes requested to be written. On error returns -ERRNO code.
  */
 
-ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len);
+ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len);
 
 /**
  * @brief nvs_delete
@@ -118,7 +118,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int nvs_delete(struct nvs_fs *fs, u16_t id);
+int nvs_delete(struct nvs_fs *fs, uint16_t id);
 
 /**
  * @brief nvs_read
@@ -135,7 +135,7 @@ int nvs_delete(struct nvs_fs *fs, u16_t id);
  * number of bytes requested to read this indicates not all bytes were read,
  * and more data is available. On error returns -ERRNO code.
  */
-ssize_t nvs_read(struct nvs_fs *fs, u16_t id, void *data, size_t len);
+ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len);
 
 /**
  * @brief nvs_read_hist
@@ -153,8 +153,8 @@ ssize_t nvs_read(struct nvs_fs *fs, u16_t id, void *data, size_t len);
  * number of bytes requested to read this indicates not all bytes were read,
  * and more data is available. On error returns -ERRNO code.
  */
-ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
-		  u16_t cnt);
+ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
+		  uint16_t cnt);
 
 /**
  * @brief nvs_calc_free_space

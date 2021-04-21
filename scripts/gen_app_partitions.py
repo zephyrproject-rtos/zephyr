@@ -52,7 +52,7 @@ data_template = """
 		/* Auto generated code do not modify */
 		SMEM_PARTITION_ALIGN(z_data_smem_{0}_bss_end - z_data_smem_{0}_part_start);
 		z_data_smem_{0}_part_start = .;
-		KEEP(*(data_smem_{0}_data))
+		KEEP(*(data_smem_{0}_data*))
 """
 
 library_data_template = """
@@ -61,7 +61,7 @@ library_data_template = """
 
 bss_template = """
 		z_data_smem_{0}_bss_start = .;
-		KEEP(*(data_smem_{0}_bss))
+		KEEP(*(data_smem_{0}_bss*))
 """
 
 library_bss_template = """
@@ -92,7 +92,7 @@ size_cal_string = """
 	z_data_smem_{0}_bss_size = z_data_smem_{0}_bss_end - z_data_smem_{0}_bss_start;
 """
 
-section_regex = re.compile(r'data_smem_([A-Za-z0-9_]*)_(data|bss)')
+section_regex = re.compile(r'data_smem_([A-Za-z0-9_]*)_(data|bss)*')
 
 elf_part_size_regex = re.compile(r'z_data_smem_(.*)_part_size')
 

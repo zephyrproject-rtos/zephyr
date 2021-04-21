@@ -101,12 +101,26 @@ config ADXL362_ACTIVITY_THRESHOLD
 	  Unsigned value that the adxl362 samples are
 	  compared to in activity trigger mode.
 
+config ADXL362_ACTIVITY_TIME
+       int "Upper threshold time"
+       default 1
+       help
+         8 bit value written to the activity timer register
+         0 to 254, seconds is this value div by ODR
+
 config ADXL362_INACTIVITY_THRESHOLD
 	int "Lower threshold value"
 	default 100
 	help
 	  Unsigned value that the adxl362 samples are
 	  compared to in inactivity trigger mode.
+
+config ADXL362_INACTIVITY_TIME
+  int "Lower threshold time"
+  default 1
+  help
+    16 bit value written to the activity timer register
+    0 to 65535, seconds is this value div by ODR
 
 config ADXL362_INTERRUPT_MODE
 	int "Activity and inactivity interrupt mode"

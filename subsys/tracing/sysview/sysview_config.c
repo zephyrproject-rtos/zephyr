@@ -21,11 +21,8 @@ void SEGGER_SYSVIEW_Conf(void)
 	SEGGER_SYSVIEW_Init(sys_clock_hw_cycles_per_sec(),
 			    sys_clock_hw_cycles_per_sec(),
 			    &SYSVIEW_X_OS_TraceAPI, cbSendSystemDesc);
-
-#if defined(DT_PHYS_RAM_ADDR)       /* x86 */
-	SEGGER_SYSVIEW_SetRAMBase(DT_PHYS_RAM_ADDR);
-#elif defined(CONFIG_SRAM_BASE_ADDRESS) /* arm, default */
-	SEGGER_SYSVIEW_SetRAMBase(CONFIG_SRAM_BASE_ADDRESS);
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_sram), okay)
+	SEGGER_SYSVIEW_SetRAMBase(DT_REG_ADDR(DT_CHOSEN(zephyr_sram)));
 #else
 	/* Setting RAMBase is just an optimization: this value is subtracted
 	 * from all pointers in order to save bandwidth.  It's not an error

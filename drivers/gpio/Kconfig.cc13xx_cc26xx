@@ -6,6 +6,5 @@
 config GPIO_CC13XX_CC26XX
 	bool "TI SimpleLink CC13xx / CC26xx GPIO driver"
 	depends on SOC_SERIES_CC13X2_CC26X2
-	select HAS_DTS_GPIO
 	help
 	  Enable the TI SimpleLink CC13xx / CC26xx GPIO driver.

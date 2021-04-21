@@ -2,7 +2,6 @@
 
 config BOARD_NATIVE_POSIX
 	bool
-	select HAS_DTS
 	select NATIVE_POSIX_TIMER
 	select NATIVE_POSIX_CONSOLE
 

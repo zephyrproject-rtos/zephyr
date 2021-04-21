@@ -155,13 +155,13 @@
 
 struct lps22hb_config {
 	char *i2c_master_dev_name;
-	u16_t i2c_slave_addr;
+	uint16_t i2c_slave_addr;
 };
 
 struct lps22hb_data {
-	struct device *i2c_master;
-	s32_t sample_press;
-	s16_t sample_temp;
+	const struct device *i2c_master;
+	int32_t sample_press;
+	int16_t sample_temp;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LPS22HB_LPS22HB_H_ */

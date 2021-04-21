@@ -7,7 +7,8 @@ if CPU_HAS_MPU
 
 config ARM_MPU
 	bool "ARM MPU Support"
-	select MEMORY_PROTECTION
+	select MPU
+	select SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
 	select ARCH_HAS_EXECUTABLE_PAGE_BIT
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if !(CPU_HAS_NXP_MPU || ARMV8_M_BASELINE || ARMV8_M_MAINLINE)
@@ -16,7 +17,7 @@ config ARM_MPU
 	  MCU implements Memory Protection Unit.
 
 	  Notes:
-	  The ARMv6-M and ARMv8-M MPU architecture requires a power-of-two
+	  The ARMv6-M and ARMv7-M MPU architecture requires a power-of-two
 	  alignment of MPU region base address and size.
 
 	  The NXP MPU as well as the ARMv8-M MPU do not require MPU regions
@@ -63,7 +64,7 @@ config MPU_STACK_GUARD
 config MPU_STACK_GUARD_MIN_SIZE_FLOAT
 	int
 	depends on MPU_STACK_GUARD
-	depends on FP_SHARING
+	depends on FPU_SHARING
 	default 128
 	help
 	  Minimum size (and alignment when applicable) of an ARM MPU
@@ -72,7 +73,7 @@ config MPU_STACK_GUARD_MIN_SIZE_FLOAT
 	  128, to accommodate the length of a Cortex-M exception stack
 	  frame when the floating point context is active. The FP context
 	  is only stacked in sharing FP registers mode, therefore, the
-	  option is applicable only when FP_SHARING is selected.
+	  option is applicable only when FPU_SHARING is selected.
 
 config MPU_ALLOW_FLASH_WRITE
 	bool "Add MPU access to write to flash"

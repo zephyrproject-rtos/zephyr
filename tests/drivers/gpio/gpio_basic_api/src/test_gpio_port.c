@@ -4,19 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_gpio_basic_api
- * @{
- * @defgroup t_gpio_basic_read_write test_gpio_basic_read_write
- * @brief TestPurpose: verify zephyr gpio read and write correctly
- * @}
- */
 
 #include "test_gpio.h"
 
 #define ALL_BITS ((gpio_port_value_t)-1)
 
-static struct device *dev;
+static const struct device *dev;
 
 /* Short-hand for a checked read of PIN_IN raw state */
 static bool raw_in(void)
@@ -83,13 +76,15 @@ static int setup(void)
 
 	TC_PRINT("Check %s output %d connected to input %d\n", DEV_NAME,
 		 PIN_OUT, PIN_IN);
-	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_OUTPUT_LOW);
-	zassert_equal(rc, 0,
-		      "pin config output low failed");
 
 	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT);
 	zassert_equal(rc, 0,
 		      "pin config input failed");
+
+	/* Test output low */
+	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_OUTPUT_LOW);
+	zassert_equal(rc, 0,
+		      "pin config output low failed");
 
 	rc = gpio_port_get_raw(dev, &v1);
 	zassert_equal(rc, 0,
@@ -104,6 +99,16 @@ static int setup(void)
 	zassert_equal(v1 & BIT(PIN_IN), 0,
 		      "out low does not read low");
 
+	/* Disconnect output */
+	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_DISCONNECTED);
+	if (rc == -ENOTSUP) {
+		TC_PRINT("NOTE: cannot configure pin as disconnected; trying as input\n");
+		rc = gpio_pin_configure(dev, PIN_OUT, GPIO_INPUT);
+	}
+	zassert_equal(rc, 0,
+		      "output disconnect failed");
+
+	/* Test output high */
 	rc = gpio_pin_configure(dev, PIN_OUT, GPIO_OUTPUT_HIGH);
 	zassert_equal(rc, 0,
 		      "pin config output high failed");
@@ -177,6 +182,12 @@ static int bits_physical(void)
 		      "set_masked_raw high failed");
 	zassert_equal(raw_in(), true,
 		      "set_masked_raw high mismatch");
+
+	rc = gpio_port_set_masked_raw(dev, BIT(PIN_IN), 0);
+	zassert_equal(rc, 0,
+		      "set_masked_raw low failed");
+	zassert_equal(raw_in(), true,
+		      "set_masked_raw low affected other pins");
 
 	rc = gpio_port_set_clr_bits_raw(dev, BIT(PIN_IN), BIT(PIN_OUT));
 	zassert_equal(rc, 0,

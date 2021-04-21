@@ -1,106 +1,1163 @@
 /*
- * Copyright (c) 2017-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-
 #include <zephyr.h>
+#include <soc.h>
 #include <bluetooth/hci.h>
+#include <sys/byteorder.h>
 
-#include "hal/ccm.h"
+#include "hal/cpu.h"
+#include "hal/ticker.h"
 
 #include "util/util.h"
+#include "util/mem.h"
 #include "util/memq.h"
+#include "util/mayfly.h"
+
+#include "ticker/ticker.h"
 
 #include "pdu.h"
+
 #include "lll.h"
+#include "lll_clock.h"
+#include "lll/lll_vendor.h"
+#include "lll/lll_adv_types.h"
 #include "lll_adv.h"
-#include "lll_conn.h"
-#include "ull_internal.h"
+#include "lll/lll_adv_pdu.h"
+#include "lll_adv_aux.h"
+#include "lll/lll_df_types.h"
+
 #include "ull_adv_types.h"
+
+#include "ull_internal.h"
 #include "ull_adv_internal.h"
 
-u8_t ll_adv_aux_random_addr_set(u8_t handle, u8_t *addr)
-{
-	/* TODO: store in adv set instance */
-	return 0;
-}
+#include "ll.h"
 
-u8_t *ll_adv_aux_random_addr_get(u8_t handle, u8_t *addr)
-{
-	/* TODO: copy adv set instance addr into addr and/or return reference */
-	return NULL;
-}
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_ull_adv_aux
+#include "common/log.h"
+#include "hal/debug.h"
 
-u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
-			    u8_t *data)
+static int init_reset(void);
+
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+static inline struct ll_adv_aux_set *aux_acquire(void);
+static inline void aux_release(struct ll_adv_aux_set *aux);
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
+				  uint8_t **dptr);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+static void mfy_aux_offset_get(void *param);
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
+		      uint16_t lazy, uint8_t force, void *param);
+static void ticker_op_cb(uint32_t status, void *param);
+
+static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
+static void *adv_aux_free;
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
+uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t const *const addr)
 {
-	struct pdu_adv_com_ext_adv *p;
 	struct ll_adv_set *adv;
-	struct ext_adv_hdr *h;
-	struct pdu_adv *prev;
-	struct pdu_adv *pdu;
-	u8_t idx;
 
-	/* TODO: */
-
-	adv = ull_adv_set_get(handle);
+	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	/* TODO: Fail if connectable advertising is enabled */
+	if (0) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* Dont update data if not extended advertising. */
-	prev = lll_adv_data_peek(&adv->lll);
-	if (prev->type != PDU_ADV_TYPE_EXT_IND) {
+	memcpy(adv->rnd_addr, addr, BDADDR_SIZE);
+
+	return 0;
+}
+
+uint8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
+				       uint8_t *const addr)
+{
+	if (addr) {
+		memcpy(addr, adv->rnd_addr, BDADDR_SIZE);
+	}
+
+	return adv->rnd_addr;
+}
+
+uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
+			    uint8_t const *const data)
+{
+	struct ll_adv_set *adv;
+	uint8_t value[5];
+	uint8_t *val_ptr;
+	uint8_t pri_idx;
+	uint8_t err;
+
+	/* op param definitions:
+	 * 0x00 - Intermediate fragment of fragmented extended advertising data
+	 * 0x01 - First fragment of fragmented extended advertising data
+	 * 0x02 - Last fragemnt of fragemented extended advertising data
+	 * 0x03 - Complete extended advertising data
+	 * 0x04 - Unchanged data (just update the advertising data)
+	 * All other values, Reserved for future use
+	 */
+
+	/* TODO: handle other op values */
+	if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) &&
+	    (op != BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA)) {
+		/* FIXME: error code */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Get the advertising set instance */
+	adv = ull_adv_is_created_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	val_ptr = value;
+	*val_ptr++ = len;
+	sys_put_le32((uint32_t)data, val_ptr);
+	err = ull_adv_aux_hdr_set_clear(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA,
+					0, value, NULL, &pri_idx);
+	if (err) {
+		return err;
+	}
+
+	if (!adv->lll.aux) {
 		return 0;
 	}
 
-	pdu = lll_adv_data_alloc(&adv->lll, &idx);
-	p = (void *)&pdu->adv_ext_ind;
-	h = (void *)p->ext_hdr_adi_adv_data;
+	if (adv->is_enabled) {
+		struct ll_adv_aux_set *aux;
 
-	if (!h->aux_ptr) {
-		if (!len) {
-			return 0;
+		aux = HDR_LLL2ULL(adv->lll.aux);
+		if (!aux->is_started) {
+			uint32_t ticks_slot_overhead;
+			uint32_t ticks_anchor;
+			uint32_t ret;
+
+			aux->interval =	adv->interval +
+					(HAL_TICKER_TICKS_TO_US(
+						ULL_ADV_RANDOM_DELAY) /
+						ADV_INT_UNIT_US);
+
+			/* FIXME: Find absolute ticks until after primary PDU
+			 *        on air to place the auxiliary advertising PDU.
+			 */
+			ticks_anchor = ticker_ticks_now_get();
+
+			ticks_slot_overhead = ull_adv_aux_evt_init(aux);
+
+			ret = ull_adv_aux_start(aux, ticks_anchor,
+						ticks_slot_overhead);
+			if (ret) {
+				/* NOTE: This failure, to start an auxiliary
+				 * channel radio event shall not occur unless
+				 * a defect in the controller design.
+				 */
+				return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+			}
+
+			aux->is_started = 1;
 		}
 	}
 
-	lll_adv_data_enqueue(&adv->lll, idx);
+	lll_adv_data_enqueue(&adv->lll, pri_idx);
 
 	return 0;
 }
 
-u8_t ll_adv_aux_sr_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
-			    u8_t *data)
+uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
+			    uint8_t const *const data)
 {
-	/* TODO: */
-	return 0;
-}
+	struct pdu_adv_com_ext_adv *sr_com_hdr;
+	struct pdu_adv *pri_pdu_prev;
+	struct pdu_adv_ext_hdr *sr_hdr;
+	struct pdu_adv_adi *sr_adi;
+	struct pdu_adv *sr_prev;
+	struct pdu_adv *aux_pdu;
+	struct ll_adv_set *adv;
+	struct pdu_adv *sr_pdu;
+	struct lll_adv *lll;
+	uint8_t ext_hdr_len;
+	uint8_t *sr_dptr;
+	uint8_t pri_idx;
+	uint8_t idx;
+	uint8_t err;
 
-u16_t ll_adv_aux_max_data_length_get(void)
-{
-	/* TODO: return a Kconfig value */
-	return 0;
-}
+	/* TODO: handle other op values */
+	if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) &&
+	    (op != BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA)) {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
 
-u8_t ll_adv_aux_set_count_get(void)
-{
-	/*  TODO: return a Kconfig value */
-	return 0;
-}
+	/* Get the advertising set instance */
+	adv = ull_adv_is_created_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
 
-u8_t ll_adv_aux_set_remove(u8_t handle)
-{
-	/* TODO: reset/release primary channel and Aux channel PDUs */
-	return 0;
-}
+	lll = &adv->lll;
 
-u8_t ll_adv_aux_set_clear(void)
-{
-	/* TODO: reset/release all adv set primary channel and  Aux channel
-	 * PDUs
+	/* Do not use Common Extended Advertising Header Format if not extended
+	 * advertising.
 	 */
+	pri_pdu_prev = lll_adv_data_peek(lll);
+	if (pri_pdu_prev->type != PDU_ADV_TYPE_EXT_IND) {
+		if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) ||
+		    (len > PDU_AC_DATA_SIZE_MAX)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+		return ull_scan_rsp_set(adv, len, data);
+	}
+
+	LL_ASSERT(lll->aux);
+
+	aux_pdu = lll_adv_aux_data_peek(lll->aux);
+
+	/* Can only discard data on non-scannable instances */
+	if (!(aux_pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) && len) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/* Data can be discarded only using 0x03 op */
+	if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) && !len) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/* Can only set complete data if advertising is enabled */
+	if (adv->is_enabled && (op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Cannot discard scan response if scannable advertising is enabled */
+	if (adv->is_enabled &&
+	    (aux_pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) && !len) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* If no length is provided, discard data */
+	if (!len) {
+		sr_pdu = lll_adv_scan_rsp_alloc(lll, &idx);
+		sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
+		sr_pdu->len = 0;
+
+		lll_adv_scan_rsp_enqueue(&adv->lll, idx);
+
+		return 0;
+	}
+
+	/* Update scan response PDU fields. */
+	sr_pdu = lll_adv_scan_rsp_alloc(lll, &idx);
+	sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
+	sr_pdu->rfu = 0;
+	sr_pdu->chan_sel = 0;
+	sr_pdu->tx_addr = aux_pdu->tx_addr;
+	sr_pdu->rx_addr = 0;
+	sr_pdu->len = 0;
+
+	sr_com_hdr = &sr_pdu->adv_ext_ind;
+	sr_hdr = (void *)&sr_com_hdr->ext_hdr_adv_data[0];
+	sr_dptr = (void *)sr_hdr;
+
+	/* Flags */
+	*sr_dptr = 0;
+	sr_hdr->adv_addr = 1;
+#if defined(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)
+	sr_hdr->adi = 1;
+#endif
+	sr_dptr++;
+
+	sr_prev = lll_adv_scan_rsp_peek(lll);
+
+	/* AdvA */
+	memcpy(sr_dptr, &sr_prev->adv_ext_ind.ext_hdr.data[ADVA_OFFSET],
+	       BDADDR_SIZE);
+	sr_dptr += BDADDR_SIZE;
+
+#if defined(CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP)
+	/* ADI */
+	sr_adi = (void *)sr_dptr;
+	sr_dptr += sizeof(struct pdu_adv_adi);
+#else
+	sr_adi = NULL;
+#endif
+
+	/* Check if data will fit in remaining space */
+	/* TODO: need aux_chain_ind support */
+	ext_hdr_len = sr_dptr - &sr_com_hdr->ext_hdr_adv_data[0];
+	if (sizeof(sr_com_hdr->ext_hdr_adv_data) -
+	    sr_com_hdr->ext_hdr_len < len) {
+		return BT_HCI_ERR_PACKET_TOO_LONG;
+	}
+
+	/* Copy data */
+	memcpy(sr_dptr, data, len);
+	sr_dptr += len;
+
+	/* Finish Common ExtAdv Payload header */
+	sr_com_hdr->adv_mode = 0;
+	sr_com_hdr->ext_hdr_len = ext_hdr_len;
+
+	/* Finish PDU */
+	sr_pdu->len = sr_dptr - &sr_pdu->payload[0];
+
+	/* Trigger DID update */
+	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, sr_adi, &pri_idx);
+	if (err) {
+		return err;
+	}
+
+	lll_adv_data_enqueue(&adv->lll, pri_idx);
+	lll_adv_scan_rsp_enqueue(&adv->lll, idx);
+
 	return 0;
 }
+
+uint16_t ll_adv_aux_max_data_length_get(void)
+{
+	return CONFIG_BT_CTLR_ADV_DATA_LEN_MAX;
+}
+
+uint8_t ll_adv_aux_set_count_get(void)
+{
+	return BT_CTLR_ADV_SET;
+}
+
+uint8_t ll_adv_aux_set_remove(uint8_t handle)
+{
+	struct ll_adv_set *adv;
+	struct lll_adv *lll;
+
+	/* Get the advertising set instance */
+	adv = ull_adv_is_created_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	if (adv->is_enabled) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lll = &adv->lll;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	if (lll->sync) {
+		struct ll_adv_sync_set *sync;
+
+		sync = HDR_LLL2ULL(lll->sync);
+
+		if (sync->is_enabled) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+		lll->sync = NULL;
+
+		ull_adv_sync_release(sync);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (adv->df_cfg) {
+		if (adv->df_cfg->is_enabled) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		ull_df_adv_cfg_release(adv->df_cfg);
+		adv->df_cfg = NULL;
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+	/* Release auxiliary channel set */
+	if (lll->aux) {
+		struct ll_adv_aux_set *aux;
+
+		aux = HDR_LLL2ULL(lll->aux);
+		lll->aux = NULL;
+
+		ull_adv_aux_release(aux);
+	}
+
+	adv->is_created = 0;
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+uint8_t ll_adv_aux_set_clear(void)
+{
+	uint8_t retval = BT_HCI_ERR_SUCCESS;
+	uint8_t handle;
+	uint8_t err;
+
+	for (handle = 0; handle < BT_CTLR_ADV_SET; ++handle) {
+		err = ll_adv_aux_set_remove(handle);
+		if (err == BT_HCI_ERR_CMD_DISALLOWED) {
+			retval = err;
+		}
+	}
+
+	return retval;
+}
+
+int ull_adv_aux_init(void)
+{
+	int err;
+
+	err = init_reset();
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+int ull_adv_aux_reset(void)
+{
+	int err;
+
+	err = init_reset();
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
+				  uint16_t sec_hdr_add_fields,
+				  uint16_t sec_hdr_rem_fields,
+				  void *value,
+				  struct pdu_adv_adi *adi,
+				  uint8_t *pri_idx)
+{
+	struct pdu_adv_com_ext_adv *pri_com_hdr, *pri_com_hdr_prev;
+	struct pdu_adv_com_ext_adv *sec_com_hdr, *sec_com_hdr_prev;
+	struct pdu_adv_ext_hdr *pri_hdr, pri_hdr_prev;
+	struct pdu_adv_ext_hdr *sec_hdr, sec_hdr_prev;
+	struct pdu_adv *pri_pdu, *pri_pdu_prev;
+	struct pdu_adv *sec_pdu_prev, *sec_pdu;
+	uint8_t *pri_dptr, *pri_dptr_prev;
+	uint8_t *sec_dptr, *sec_dptr_prev;
+	uint8_t pri_len, sec_len_prev;
+	struct lll_adv_aux *lll_aux;
+	struct lll_adv *lll;
+	uint8_t is_aux_new;
+	uint8_t *ad_data;
+	uint16_t sec_len;
+	uint8_t sec_idx;
+	uint8_t ad_len;
+
+	lll = &adv->lll;
+
+	/* Can't have both flags set here since both use 'value' extra param */
+	LL_ASSERT(!(sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADVA) ||
+		  !(sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA));
+
+	/* Get reference to previous primary PDU data */
+	pri_pdu_prev = lll_adv_data_peek(lll);
+	if (pri_pdu_prev->type != PDU_ADV_TYPE_EXT_IND) {
+		if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
+			uint8_t *val_ptr = value;
+
+			ad_len = *val_ptr;
+			val_ptr++;
+
+			ad_data = (void *)sys_get_le32(val_ptr);
+
+			return ull_adv_data_set(adv, ad_len, ad_data);
+		}
+
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	pri_com_hdr_prev = (void *)&pri_pdu_prev->adv_ext_ind;
+	pri_hdr = (void *)pri_com_hdr_prev->ext_hdr_adv_data;
+	pri_hdr_prev = *pri_hdr;
+	pri_dptr_prev = pri_hdr->data;
+
+	/* Advertising data are not supported by scannable instances */
+	if ((sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) &&
+	    (pri_com_hdr_prev->adv_mode & BT_HCI_LE_ADV_PROP_SCAN)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/* Get reference to new primary PDU data buffer */
+	pri_pdu = lll_adv_data_alloc(lll, pri_idx);
+	pri_pdu->type = pri_pdu_prev->type;
+	pri_pdu->rfu = 0U;
+	pri_pdu->chan_sel = 0U;
+	pri_com_hdr = (void *)&pri_pdu->adv_ext_ind;
+	pri_com_hdr->adv_mode = pri_com_hdr_prev->adv_mode;
+	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
+	pri_dptr = pri_hdr->data;
+	*(uint8_t *)pri_hdr = 0U;
+
+	/* Get the reference to aux instance */
+	lll_aux = lll->aux;
+	if (!lll_aux) {
+		struct ll_adv_aux_set *aux;
+
+		aux = ull_adv_aux_acquire(lll);
+		if (!aux) {
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+
+		lll_aux = &aux->lll;
+
+		is_aux_new = 1U;
+	} else {
+		is_aux_new = 0U;
+	}
+
+	/* Get reference to previous secondary PDU data */
+	sec_pdu_prev = lll_adv_aux_data_peek(lll_aux);
+	sec_com_hdr_prev = (void *)&sec_pdu_prev->adv_ext_ind;
+	sec_hdr = (void *)sec_com_hdr_prev->ext_hdr_adv_data;
+	if (!is_aux_new) {
+		sec_hdr_prev = *sec_hdr;
+	} else {
+		/* Initialize only those fields used to copy into new PDU
+		 * buffer.
+		 */
+		sec_pdu_prev->tx_addr = 0U;
+		sec_pdu_prev->rx_addr = 0U;
+		sec_pdu_prev->len = PDU_AC_EXT_HEADER_SIZE_MIN;
+		*(uint8_t *)&sec_hdr_prev = 0U;
+	}
+	sec_dptr_prev = sec_hdr->data;
+
+	/* Get reference to new secondary PDU data buffer */
+	sec_pdu = lll_adv_aux_data_alloc(lll_aux, &sec_idx);
+	sec_pdu->type = pri_pdu->type;
+	sec_pdu->rfu = 0U;
+	sec_pdu->chan_sel = 0U;
+
+	sec_pdu->tx_addr = sec_pdu_prev->tx_addr;
+	sec_pdu->rx_addr = sec_pdu_prev->rx_addr;
+
+	sec_com_hdr = (void *)&sec_pdu->adv_ext_ind;
+	sec_com_hdr->adv_mode = pri_com_hdr->adv_mode;
+	sec_hdr = (void *)sec_com_hdr->ext_hdr_adv_data;
+	sec_dptr = sec_hdr->data;
+	*(uint8_t *)sec_hdr = 0U;
+
+	/* AdvA flag */
+	/* NOTE: as we will use auxiliary packet, we remove AdvA in primary
+	 * channel, i.e. do nothing to not add AdvA in the primary PDU.
+	 * AdvA can be either set explicitly (i.e. needs own_addr_type to be
+	 * set), can be copied from primary PDU (i.e. adding AD to existing set)
+	 * or can be copied from previous secondary PDU.
+	 */
+	sec_hdr->adv_addr = 1;
+	if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADVA) {
+		uint8_t own_addr_type = *(uint8_t *)value;
+
+		sec_pdu->tx_addr = own_addr_type & 0x1;
+	} else if (pri_hdr_prev.adv_addr) {
+		sec_pdu->tx_addr = pri_pdu_prev->tx_addr;
+	} else if (sec_hdr_prev.adv_addr) {
+		sec_pdu->tx_addr = sec_pdu_prev->tx_addr;
+	} else {
+		/* We do not have valid address info, this should not happen */
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+	pri_pdu->tx_addr = 0U;
+	pri_pdu->rx_addr = 0U;
+
+	if (pri_hdr_prev.adv_addr) {
+		pri_dptr_prev += BDADDR_SIZE;
+	}
+	if (sec_hdr_prev.adv_addr) {
+		sec_dptr_prev += BDADDR_SIZE;
+	}
+	sec_dptr += BDADDR_SIZE;
+
+	/* No TargetA in primary and secondary channel for undirected */
+	/* No CTEInfo flag in primary and secondary channel PDU */
+
+	/* ADI flag */
+	if (pri_hdr_prev.adi) {
+		pri_dptr_prev += sizeof(struct pdu_adv_adi);
+	}
+	pri_hdr->adi = 1;
+	pri_dptr += sizeof(struct pdu_adv_adi);
+	if (sec_hdr_prev.adi) {
+		sec_dptr_prev += sizeof(struct pdu_adv_adi);
+	}
+	sec_hdr->adi = 1;
+	sec_dptr += sizeof(struct pdu_adv_adi);
+
+	/* AuxPtr flag */
+	if (pri_hdr_prev.aux_ptr) {
+		pri_dptr_prev += sizeof(struct pdu_adv_aux_ptr);
+	}
+	pri_hdr->aux_ptr = 1;
+	pri_dptr += sizeof(struct pdu_adv_aux_ptr);
+	if (sec_hdr_prev.aux_ptr) {
+		sec_dptr_prev += sizeof(struct pdu_adv_aux_ptr);
+
+		sec_hdr->aux_ptr = 1;
+		sec_dptr += sizeof(struct pdu_adv_aux_ptr);
+	}
+
+	/* No SyncInfo flag in primary channel PDU */
+	/* Add/Remove SyncInfo flag in secondary channel PDU */
+	if ((sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_SYNC_INFO) ||
+	    (!(sec_hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_SYNC_INFO) &&
+	     sec_hdr_prev.sync_info)) {
+		sec_hdr->sync_info = 1;
+	}
+	if (sec_hdr_prev.sync_info) {
+		sec_dptr_prev += sizeof(struct pdu_adv_sync_info);
+	}
+	if (sec_hdr->sync_info) {
+		sec_dptr += sizeof(struct pdu_adv_sync_info);
+	}
+
+	/* Tx Power flag */
+	if (pri_hdr_prev.tx_pwr) {
+		pri_dptr_prev++;
+
+		/* C1, Tx Power is optional on the LE 1M PHY, and
+		 * reserved for future use on the LE Coded PHY.
+		 */
+		if (lll->phy_p != PHY_CODED) {
+			pri_hdr->tx_pwr = 1;
+			pri_dptr++;
+		} else {
+			sec_hdr->tx_pwr = 1;
+		}
+	}
+	if (sec_hdr_prev.tx_pwr) {
+		sec_dptr_prev++;
+
+		sec_hdr->tx_pwr = 1;
+	}
+	if (sec_hdr->tx_pwr) {
+		sec_dptr++;
+	}
+
+	/* No ACAD in primary channel PDU */
+	/* TODO: ACAD in secondary channel PDU */
+
+	/* Calc primary PDU len */
+	pri_len = ull_adv_aux_hdr_len_calc(pri_com_hdr, &pri_dptr);
+	ull_adv_aux_hdr_len_fill(pri_com_hdr, pri_len);
+
+	/* set the primary PDU len */
+	pri_pdu->len = pri_len;
+
+	/* Calc previous secondary PDU len */
+	sec_len_prev = ull_adv_aux_hdr_len_calc(sec_com_hdr_prev,
+					       &sec_dptr_prev);
+
+	/* Did we parse beyond PDU length? */
+	if (sec_len_prev > sec_pdu_prev->len) {
+		/* we should not encounter invalid length */
+		/* FIXME: release allocations */
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	/* Calc current secondary PDU len */
+	sec_len = ull_adv_aux_hdr_len_calc(sec_com_hdr, &sec_dptr);
+	ull_adv_aux_hdr_len_fill(sec_com_hdr, sec_len);
+
+	/* AD Data, add or remove */
+	if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_AD_DATA) {
+		uint8_t *val_ptr = value;
+
+		ad_len = *val_ptr;
+		val_ptr++;
+
+		ad_data = (void *)sys_get_le32(val_ptr);
+	} else {
+		/* Calc the previous AD data length in auxiliary PDU */
+		ad_len = sec_pdu_prev->len - sec_len_prev;
+		ad_data = sec_dptr_prev;
+	}
+
+	/* Add AD len to secondary PDU length */
+	sec_len += ad_len;
+
+	/* Check AdvData overflow */
+	if (sec_len > PDU_AC_PAYLOAD_SIZE_MAX) {
+		/* FIXME: release allocations */
+		return BT_HCI_ERR_PACKET_TOO_LONG;
+	}
+
+	/* set the secondary PDU len */
+	sec_pdu->len = sec_len;
+
+	/* Start filling pri and sec PDU payload based on flags from here
+	 * ==============================================================
+	 */
+
+	/* No AdvData in primary channel PDU */
+	/* Fill AdvData in secondary PDU */
+	memmove(sec_dptr, ad_data, ad_len);
+
+	/* No ACAD in primary channel PDU */
+	/* TODO: Fill ACAD in secondary channel PDU */
+
+	/* Tx Power */
+	if (pri_hdr->tx_pwr) {
+		*--pri_dptr = *--pri_dptr_prev;
+	} else if (sec_hdr->tx_pwr) {
+		*--sec_dptr = *--sec_dptr_prev;
+	}
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	/* No SyncInfo in primary channel PDU */
+	/* Fill SyncInfo in secondary channel PDU */
+	if (sec_hdr_prev.sync_info) {
+		sec_dptr_prev -= sizeof(struct pdu_adv_sync_info);
+	}
+	if (sec_hdr->sync_info) {
+		sync_info_fill(lll->sync, &sec_dptr);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+	/* AuxPtr */
+	if (pri_hdr_prev.aux_ptr) {
+		pri_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
+	}
+	ull_adv_aux_ptr_fill(&pri_dptr, lll->phy_s);
+
+	if (sec_hdr_prev.aux_ptr) {
+		sec_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
+
+		ull_adv_aux_ptr_fill(&sec_dptr, lll->phy_s);
+	}
+
+	/* ADI */
+	{
+		struct pdu_adv_adi *pri_adi, *sec_adi;
+		uint16_t did = UINT16_MAX;
+
+		pri_dptr -= sizeof(struct pdu_adv_adi);
+		sec_dptr -= sizeof(struct pdu_adv_adi);
+
+		pri_adi = (void *)pri_dptr;
+		sec_adi = (void *)sec_dptr;
+
+		if (pri_hdr_prev.adi) {
+			struct pdu_adv_adi *pri_adi_prev;
+
+			pri_dptr_prev -= sizeof(struct pdu_adv_adi);
+			sec_dptr_prev -= sizeof(struct pdu_adv_adi);
+
+			memcpy(pri_dptr, pri_dptr_prev,
+			       sizeof(struct pdu_adv_adi));
+			memcpy(sec_dptr, sec_dptr_prev,
+			       sizeof(struct pdu_adv_adi));
+
+			pri_adi_prev = (void *)pri_dptr_prev;
+			did = sys_le16_to_cpu(pri_adi_prev->did);
+		} else {
+			pri_adi->sid = adv->sid;
+			sec_adi->sid = adv->sid;
+		}
+
+		did++;
+
+		pri_adi->did = sys_cpu_to_le16(did);
+		sec_adi->did = sys_cpu_to_le16(did);
+
+		if (adi) {
+			*adi = *pri_adi;
+		}
+	}
+
+	/* No CTEInfo field in primary channel PDU */
+
+	/* No TargetA non-conn non-scan advertising  */
+
+	/* No AdvA in primary channel due to AuxPtr being added */
+
+	/* NOTE: AdvA in aux channel is also filled at enable and RPA
+	 * timeout
+	 */
+	if (sec_hdr->adv_addr) {
+		void *bdaddr;
+
+		if (sec_hdr_prev.adv_addr) {
+			sec_dptr_prev -= BDADDR_SIZE;
+			bdaddr = sec_dptr_prev;
+		} else {
+			pri_dptr_prev -= BDADDR_SIZE;
+			bdaddr = pri_dptr_prev;
+		}
+
+		sec_dptr -= BDADDR_SIZE;
+
+		memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
+	}
+
+	lll_adv_aux_data_enqueue(lll_aux, sec_idx);
+
+	return 0;
+}
+
+void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s)
+{
+	struct pdu_adv_aux_ptr *aux_ptr;
+
+	*dptr -= sizeof(struct pdu_adv_aux_ptr);
+	aux_ptr = (void *)*dptr;
+
+	/* FIXME: implementation defined */
+	aux_ptr->chan_idx = 0U;
+	aux_ptr->ca = 0U;
+
+	/* NOTE: Aux Offset will be set in advertiser LLL event
+	 */
+	aux_ptr->offs_units = 0U;
+	aux_ptr->offs = 0U;
+
+	aux_ptr->phy = find_lsb_set(phy_s) - 1;
+}
+
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
+{
+	return ull_adv_aux_handle_get((void *)lll->hdr.parent);
+}
+
+uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
+{
+	uint32_t slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	uint32_t ticks_slot_overhead;
+
+	/* TODO: Calc AUX_ADV_IND slot_us */
+	slot_us += 1000;
+
+	/* TODO: active_to_start feature port */
+	aux->ull.ticks_active_to_start = 0;
+	aux->ull.ticks_prepare_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	aux->ull.ticks_preempt_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = MAX(aux->ull.ticks_active_to_start,
+					  aux->ull.ticks_prepare_to_start);
+	} else {
+		ticks_slot_overhead = 0;
+	}
+
+	return ticks_slot_overhead;
+}
+
+uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
+			   uint32_t ticks_slot_overhead)
+{
+	uint32_t volatile ret_cb;
+	uint8_t aux_handle;
+	uint32_t ret;
+
+	ull_hdr_init(&aux->ull);
+	aux_handle = ull_adv_aux_handle_get(aux);
+
+	ret_cb = TICKER_STATUS_BUSY;
+	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			   (TICKER_ID_ADV_AUX_BASE + aux_handle),
+			   ticks_anchor, 0,
+			   HAL_TICKER_US_TO_TICKS((uint64_t)aux->interval *
+						  ADV_INT_UNIT_US),
+			   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+			   (aux->ull.ticks_slot + ticks_slot_overhead),
+			   ticker_cb, aux,
+			   ull_ticker_status_give, (void *)&ret_cb);
+	ret = ull_ticker_status_take(ret, &ret_cb);
+
+	return ret;
+}
+
+uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
+{
+	uint8_t aux_handle;
+	int err;
+
+	aux_handle = ull_adv_aux_handle_get(aux);
+
+	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_AUX_BASE + aux_handle,
+					aux, &aux->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+	if (err) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	aux->is_started = 0U;
+
+	return 0;
+}
+
+struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll)
+{
+	struct lll_adv_aux *lll_aux;
+	struct ll_adv_aux_set *aux;
+	int err;
+
+	aux = aux_acquire();
+	if (!aux) {
+		return aux;
+	}
+
+	lll_aux = &aux->lll;
+	lll->aux = lll_aux;
+	lll_aux->adv = lll;
+
+	lll_adv_data_reset(&lll_aux->data);
+	err = lll_adv_data_init(&lll_aux->data);
+	if (err) {
+		return NULL;
+	}
+
+	/* NOTE: ull_hdr_init(&aux->ull); is done on start */
+	lll_hdr_init(lll_aux, aux);
+
+	aux->is_started = 0U;
+
+	return aux;
+}
+
+void ull_adv_aux_release(struct ll_adv_aux_set *aux)
+{
+	lll_adv_data_release(&aux->lll.data);
+	aux_release(aux);
+}
+
+void ull_adv_aux_offset_get(struct ll_adv_set *adv)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_aux_offset_get};
+	uint32_t ret;
+
+	mfy.param = adv;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
+			     &mfy);
+	LL_ASSERT(!ret);
+}
+
+struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(uint32_t ticks_offset,
+						    uint32_t start_us,
+						    struct pdu_adv *pdu)
+{
+	struct pdu_adv_com_ext_adv *pri_com_hdr;
+	struct pdu_adv_aux_ptr *aux;
+	struct pdu_adv_ext_hdr *h;
+	uint32_t offs;
+	uint8_t *ptr;
+
+	pri_com_hdr = (void *)&pdu->adv_ext_ind;
+	h = (void *)pri_com_hdr->ext_hdr_adv_data;
+	ptr = h->data;
+
+	if (h->adv_addr) {
+		ptr += BDADDR_SIZE;
+	}
+
+	if (h->adi) {
+		ptr += sizeof(struct pdu_adv_adi);
+	}
+
+	aux = (void *)ptr;
+	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us;
+	offs = offs / OFFS_UNIT_30_US;
+	if (!!(offs >> 13)) {
+		aux->offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
+		aux->offs_units = 1U;
+	} else {
+		aux->offs = offs;
+		aux->offs_units = 0U;
+	}
+
+	return aux;
+}
+
+static int init_reset(void)
+{
+	/* Initialize adv aux pool. */
+	mem_init(ll_adv_aux_pool, sizeof(struct ll_adv_aux_set),
+		 sizeof(ll_adv_aux_pool) / sizeof(struct ll_adv_aux_set),
+		 &adv_aux_free);
+
+	return 0;
+}
+
+static inline struct ll_adv_aux_set *aux_acquire(void)
+{
+	return mem_acquire(&adv_aux_free);
+}
+
+static inline void aux_release(struct ll_adv_aux_set *aux)
+{
+	mem_release(aux, &adv_aux_free);
+}
+
+inline uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux)
+{
+	return mem_index_get(aux, ll_adv_aux_pool,
+			     sizeof(struct ll_adv_aux_set));
+}
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
+				  uint8_t **dptr)
+{
+	struct ll_adv_sync_set *sync;
+	struct pdu_adv_sync_info *si;
+
+	*dptr -= sizeof(*si);
+	si = (void *)*dptr;
+
+	/* NOTE: sync offset and offset unit filled by secondary prepare */
+	si->offs_units = 0U;
+	/* If sync_info is part of ADV PDU the offs_adjust field
+	 * is always set to 0.
+	 */
+	si->offs_adjust = 0U;
+	si->offs = 0U;
+
+	sync = HDR_LLL2ULL(lll_sync);
+	si->interval = sys_cpu_to_le16(sync->interval);
+	memcpy(si->sca_chm, lll_sync->data_chan_map,
+	       sizeof(si->sca_chm));
+	si->sca_chm[4] &= 0x1f;
+	si->sca_chm[4] |= lll_clock_sca_local_get() << 5;
+	memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
+	memcpy(si->crc_init, lll_sync->crc_init, sizeof(si->crc_init));
+
+	si->evt_cntr = 0U; /* NOTE: Filled by secondary prepare */
+}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+static void mfy_aux_offset_get(void *param)
+{
+	struct ll_adv_set *adv = param;
+	struct ll_adv_aux_set *aux;
+	uint32_t ticks_to_expire;
+	uint32_t ticks_current;
+	struct pdu_adv *pdu;
+	uint8_t ticker_id;
+	uint8_t retry;
+	uint8_t id;
+
+	aux = HDR_LLL2ULL(adv->lll.aux);
+	ticker_id = TICKER_ID_ADV_AUX_BASE + ull_adv_aux_handle_get(aux);
+
+	id = TICKER_NULL;
+	ticks_to_expire = 0U;
+	ticks_current = 0U;
+	retry = 4U;
+	do {
+		uint32_t volatile ret_cb;
+		uint32_t ticks_previous;
+		uint32_t ret;
+
+		ticks_previous = ticks_current;
+
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR,
+					   TICKER_USER_ID_ULL_LOW,
+					   &id,
+					   &ticks_current, &ticks_to_expire,
+					   ticker_op_cb, (void *)&ret_cb);
+		if (ret == TICKER_STATUS_BUSY) {
+			while (ret_cb == TICKER_STATUS_BUSY) {
+				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
+						 TICKER_USER_ID_ULL_LOW);
+			}
+		}
+
+		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+
+		LL_ASSERT((ticks_current == ticks_previous) || retry--);
+
+		LL_ASSERT(id != TICKER_NULL);
+	} while (id != ticker_id);
+
+	/* Store the ticks offset for population in other advertising primary
+	 * channel PDUs.
+	 */
+	aux->lll.ticks_offset = ticks_to_expire;
+
+	/* NOTE: as remainder used in scheduling primary PDU not available,
+	 * compensate with a probable jitter of one ticker resolution unit that
+	 * would be included in the packet timer capture when scheduling next
+	 * advertising primary channel PDU.
+	 */
+	aux->lll.ticks_offset +=
+		HAL_TICKER_US_TO_TICKS(EVENT_TICKER_RES_MARGIN_US);
+
+	/* FIXME: we are in ULL_LOW context, fill offset in LLL context */
+	pdu = lll_adv_data_curr_get(&adv->lll);
+	ull_adv_aux_lll_offset_fill(ticks_to_expire, 0, pdu);
+}
+
+static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
+		      uint16_t lazy, uint8_t force, void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_aux_prepare};
+	static struct lll_prepare_param p;
+	struct ll_adv_aux_set *aux = param;
+	struct lll_adv_aux *lll;
+	uint32_t ret;
+	uint8_t ref;
+
+	DEBUG_RADIO_PREPARE_A(1);
+
+	lll = &aux->lll;
+
+	/* Increment prepare reference count */
+	ref = ull_ref_inc(&aux->ull);
+	LL_ASSERT(ref);
+
+	/* Append timing parameters */
+	p.ticks_at_expire = ticks_at_expire;
+	p.remainder = remainder;
+	p.lazy = lazy;
+	p.force = force;
+	p.param = lll;
+	mfy.param = &p;
+
+	/* Kick LLL prepare */
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+			     TICKER_USER_ID_LLL, 0, &mfy);
+	LL_ASSERT(!ret);
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	struct ll_adv_set *adv;
+
+	adv = HDR_LLL2ULL(lll->adv);
+	if (adv->lll.sync) {
+		struct ll_adv_sync_set *sync;
+
+		sync  = HDR_LLL2ULL(adv->lll.sync);
+		if (sync->is_started) {
+			ull_adv_sync_offset_get(adv);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+	DEBUG_RADIO_PREPARE_A(1);
+}
+
+static void ticker_op_cb(uint32_t status, void *param)
+{
+	*((uint32_t volatile *)param) = status;
+}
+#else /* !(CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
+static int init_reset(void)
+{
+	return 0;
+}
+#endif /* !(CONFIG_BT_CTLR_ADV_AUX_SET > 0) */

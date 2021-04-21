@@ -55,33 +55,37 @@ enum e1000_reg_t {
 
 /* Legacy TX Descriptor */
 struct e1000_tx {
-	u64_t addr;
-	u16_t len;
-	u8_t  cso;
-	u8_t  cmd;
-	u8_t  sta;
-	u8_t  css;
-	u16_t special;
+	uint64_t addr;
+	uint16_t len;
+	uint8_t  cso;
+	uint8_t  cmd;
+	uint8_t  sta;
+	uint8_t  css;
+	uint16_t special;
 };
 
 /* Legacy RX Descriptor */
 struct e1000_rx {
-	u64_t addr;
-	u16_t len;
-	u16_t csum;
-	u8_t  sta;
-	u8_t  err;
-	u16_t special;
+	uint64_t addr;
+	uint16_t len;
+	uint16_t csum;
+	uint8_t  sta;
+	uint8_t  err;
+	uint16_t special;
 };
 
 struct e1000_dev {
 	volatile struct e1000_tx tx __aligned(16);
 	volatile struct e1000_rx rx __aligned(16);
-	u32_t address;
+	mm_reg_t address;
+	/* If VLAN is enabled, there can be multiple VLAN interfaces related to
+	 * this physical device. In that case, this iface pointer value is not
+	 * really used for anything.
+	 */
 	struct net_if *iface;
-	u8_t mac[ETH_ALEN];
-	u8_t txb[NET_ETH_MTU];
-	u8_t rxb[NET_ETH_MTU];
+	uint8_t mac[ETH_ALEN];
+	uint8_t txb[NET_ETH_MTU];
+	uint8_t rxb[NET_ETH_MTU];
 };
 
 static const char *e1000_reg_to_string(enum e1000_reg_t r)
@@ -94,7 +98,7 @@ static const char *e1000_reg_to_string(enum e1000_reg_t r)
 
 #define ior32(_dev, _reg)						\
 ({									\
-	u32_t val = sys_read32((_dev)->address + (_reg));		\
+	uint32_t val = sys_read32((_dev)->address + (_reg));		\
 	LOG_DBG("ior32 %s 0x%08x", e1000_reg_to_string(_reg), val); 	\
 	val;								\
 })

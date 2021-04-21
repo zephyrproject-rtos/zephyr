@@ -44,6 +44,8 @@ The efm32pg_stk3402a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| MPU       | on-chip    | memory protection unit              |
++-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
@@ -60,6 +62,8 @@ The efm32pg_stk3402a board configuration supports the following hardware feature
 | I2C       | on-chip    | i2c port-polling                    |
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | true random number generator        |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:

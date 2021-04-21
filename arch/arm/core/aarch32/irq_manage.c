@@ -18,9 +18,8 @@
 #include <arch/cpu.h>
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
-#elif defined(CONFIG_CPU_CORTEX_R)
-#include <device.h>
-#include <irq_nextlevel.h>
+#elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_CORTEX_R)
+#include <drivers/interrupt_controller/gic.h>
 #endif
 #include <sys/__assert.h>
 #include <toolchain.h>
@@ -28,6 +27,7 @@
 #include <sw_isr_table.h>
 #include <irq.h>
 #include <tracing/tracing.h>
+#include <power/power.h>
 
 extern void z_arm_reserved(void);
 
@@ -62,60 +62,62 @@ int arch_irq_is_enabled(unsigned int irq)
  *
  * @return N/A
  */
-void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	/* The kernel may reserve some of the highest priority levels.
 	 * So we offset the requested priority level with the number
 	 * of priority levels reserved by the kernel.
 	 */
 
-#if defined(CONFIG_ZERO_LATENCY_IRQS)
 	/* If we have zero latency interrupts, those interrupts will
 	 * run at a priority level which is not masked by irq_lock().
 	 * Our policy is to express priority levels with special properties
 	 * via flags
 	 */
-	if (flags & IRQ_ZERO_LATENCY) {
+	if (IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) && (flags & IRQ_ZERO_LATENCY)) {
 		prio = _EXC_ZERO_LATENCY_IRQS_PRIO;
 	} else {
 		prio += _IRQ_PRIO_OFFSET;
 	}
-#else
-	ARG_UNUSED(flags);
-	prio += _IRQ_PRIO_OFFSET;
-#endif
+
 	/* The last priority level is also used by PendSV exception, but
 	 * allow other interrupts to use the same level, even if it ends up
 	 * affecting performance (can still be useful on systems with a
 	 * reduced set of priorities, like Cortex-M0/M0+).
 	 */
-	__ASSERT(prio <= (BIT(DT_NUM_IRQ_PRIO_BITS) - 1),
-		 "invalid priority %d! values must be less than %lu\n",
-		 prio - _IRQ_PRIO_OFFSET,
-		 BIT(DT_NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
+	__ASSERT(prio <= (BIT(NUM_IRQ_PRIO_BITS) - 1),
+		 "invalid priority %d for %d irq! values must be less than %lu\n",
+		 prio - _IRQ_PRIO_OFFSET, irq,
+		 BIT(NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
-#elif defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_CPU_CORTEX_A) || defined(CONFIG_CPU_CORTEX_R)
+/*
+ * For Cortex-A and Cortex-R cores, the default interrupt controller is the ARM
+ * Generic Interrupt Controller (GIC) and therefore the architecture interrupt
+ * control functions are mapped to the GIC driver interface.
+ *
+ * When a custom interrupt controller is used (i.e.
+ * CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER is enabled), the architecture
+ * interrupt control functions are mapped to the SoC layer in
+ * `include/arch/arm/aarch32/irq.h`.
+ */
+
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 void arch_irq_enable(unsigned int irq)
 {
-	struct device *dev = _sw_isr_table[0].arg;
-
-	irq_enable_next_level(dev, (irq >> 8) - 1);
+	arm_gic_irq_enable(irq);
 }
 
 void arch_irq_disable(unsigned int irq)
 {
-	struct device *dev = _sw_isr_table[0].arg;
-
-	irq_disable_next_level(dev, (irq >> 8) - 1);
+	arm_gic_irq_disable(irq);
 }
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	struct device *dev = _sw_isr_table[0].arg;
-
-	return irq_is_enabled_next_level(dev);
+	return arm_gic_irq_is_enabled(irq);
 }
 
 /**
@@ -130,36 +132,33 @@ int arch_irq_is_enabled(unsigned int irq)
  *
  * @return N/A
  */
-void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
-	struct device *dev = _sw_isr_table[0].arg;
-
-	if (irq == 0)
-		return;
-
-	irq_set_priority_next_level(dev, (irq >> 8) - 1, prio, flags);
+	arm_gic_irq_set_priority(irq, prio, flags);
 }
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
-#endif
+#endif /* CONFIG_CPU_CORTEX_M */
+
+void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
 /**
  *
  * @brief Spurious interrupt handler
  *
- * Installed in all dynamic interrupt slots at boot time. Throws an error if
+ * Installed in all _sw_isr_table slots at boot time. Throws an error if
  * called.
- *
- * See z_arm_reserved().
  *
  * @return N/A
  */
-void z_irq_spurious(void *unused)
+void z_irq_spurious(const void *unused)
 {
 	ARG_UNUSED(unused);
-	z_arm_reserved();
+
+	z_arm_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 void _arch_isr_direct_pm(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
@@ -179,10 +178,10 @@ void _arch_isr_direct_pm(void)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 	if (_kernel.idle) {
-		s32_t idle_val = _kernel.idle;
+		int32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
+		z_pm_save_idle_exit(idle_val);
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
@@ -209,25 +208,31 @@ void _arch_isr_direct_pm(void)
  * to NVIC.ITNS register is write-ignored(WI), as the ITNS register is not
  * banked between security states and, therefore, has no Non-Secure instance.
  *
- * It shall assert if the operation is not performed successfully.
+ * It shall return the resulting target state of the given IRQ, indicating
+ * whether the operation has been performed successfully.
  *
  * @param irq IRQ line
- * @param secure_state 1 if target state is Secure, 0 otherwise.
+ * @param irq_target_state the desired IRQ target state
  *
- * @return N/A
+ * @return The resulting target state of the given IRQ
  */
-void irq_target_state_set(unsigned int irq, int secure_state)
+irq_target_state_t irq_target_state_set(unsigned int irq,
+	irq_target_state_t irq_target_state)
 {
-	if (secure_state) {
+	uint32_t result;
+
+	if (irq_target_state == IRQ_TARGET_STATE_SECURE) {
 		/* Set target to Secure */
-		if (NVIC_ClearTargetState(irq) != 0) {
-			__ASSERT(0, "NVIC SetTargetState error");
-		}
+		result = NVIC_ClearTargetState(irq);
 	} else {
-		/* Set target state to Non-Secure */
-		if (NVIC_SetTargetState(irq) != 1) {
-			__ASSERT(0, "NVIC SetTargetState error");
-		}
+		/* Set target to Non-Secure */
+		result = NVIC_SetTargetState(irq);
+	}
+
+	if (result) {
+		return IRQ_TARGET_STATE_NON_SECURE;
+	} else {
+		return IRQ_TARGET_STATE_SECURE;
 	}
 }
 
@@ -251,12 +256,44 @@ int irq_target_state_is_secure(unsigned int irq)
 	return NVIC_GetTargetState(irq) == 0;
 }
 
+/**
+ *
+ * @brief Disable and set all interrupt lines to target Non-Secure state.
+ *
+ * The function is used to set all HW NVIC interrupt lines to target the
+ * Non-Secure state. The function shall only be called fron Secure state.
+ *
+ * Notes:
+ * - All NVIC interrupts are disabled before being routed to Non-Secure.
+ * - Bits corresponding to un-implemented interrupts are RES0, so writes
+ *   will be ignored.
+ *
+ * @return N/A
+*/
+void irq_target_state_set_all_non_secure(void)
+{
+	int i;
+
+	/* Disable (Clear) all NVIC interrupt lines. */
+	for (i = 0; i < sizeof(NVIC->ICER) / sizeof(NVIC->ICER[0]); i++) {
+		NVIC->ICER[i] = 0xFFFFFFFF;
+	}
+
+	__DSB();
+	__ISB();
+
+	/* Set all NVIC interrupt lines to target Non-Secure */
+	for (i = 0; i < sizeof(NVIC->ITNS) / sizeof(NVIC->ITNS[0]); i++) {
+		NVIC->ITNS[i] = 0xFFFFFFFF;
+	}
+}
+
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-			     void (*routine)(void *parameter), void *parameter,
-			     u32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
 	z_arm_irq_priority_set(irq, priority, flags);
@@ -266,7 +303,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #ifdef CONFIG_DYNAMIC_DIRECT_INTERRUPTS
 static inline void z_arm_irq_dynamic_direct_isr_dispatch(void)
 {
-	u32_t irq = __get_IPSR() - 16;
+	uint32_t irq = __get_IPSR() - 16;
 
 	if (irq < IRQ_TABLE_SIZE) {
 		struct _isr_table_entry *isr_entry = &_sw_isr_table[irq];

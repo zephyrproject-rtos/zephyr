@@ -1,4 +1,6 @@
 tests:
   crypto.tinycrypt.hmac_prng:
     tags: tinycrypt crypto sha256 hmac prng
-    platform_whitelist: native_posix
+    platform_exclude: mec15xxevb_assy6853 mec1501modular_assy6885
+    integration_platforms:
+      - native_posix

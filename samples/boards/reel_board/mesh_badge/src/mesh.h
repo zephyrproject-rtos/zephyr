@@ -24,19 +24,19 @@
 #define BT_MESH_MODEL_OP_SENS_STATUS		BT_MESH_MODEL_OP_1(0x52)
 
 struct led_onoff_state {
-	u8_t current;
-	u8_t previous;
-	u8_t dev_id;
+	uint8_t current;
+	uint8_t previous;
+	uint8_t dev_id;
 
-	u8_t last_tid;
-	u16_t last_tx_addr;
-	s64_t last_msg_timestamp;
+	uint8_t last_tid;
+	uint16_t last_tx_addr;
+	int64_t last_msg_timestamp;
 };
 
 void mesh_send_hello(void);
 void mesh_send_baduser(void);
 
-u16_t mesh_get_addr(void);
+uint16_t mesh_get_addr(void);
 bool mesh_is_initialized(void);
 void mesh_start(void);
 int mesh_init(void);

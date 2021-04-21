@@ -17,42 +17,4 @@ config MCG_FRDIV
 config MCG_FCRDIV
 	default 0
 
-if PINMUX_MCUX
-
-config PINMUX_MCUX_PORTA
-	default y
-
-config PINMUX_MCUX_PORTB
-	default y if ADC_0
-
-config PINMUX_MCUX_PORTC
-	default y if UART_MCUX_LPUART_0 || I2C_1
-
-endif # PINMUX_MCUX
-
-if GPIO_MCUX
-
-config GPIO_MCUX_PORTA
-	default y
-
-config GPIO_MCUX_PORTB
-	default n
-
-config GPIO_MCUX_PORTC
-	default y if UART_MCUX_LPUART_0 || I2C_1
-
-endif # GPIO_MCUX
-
-config UART_MCUX_LPUART_0
-	default y
-	depends on UART_MCUX_LPUART
-
-config I2C_1
-	default y
-	depends on I2C
-
-config ADC_0
-	default y
-	depends on ADC
-
 endif # BOARD_HEXIWEAR_KW40Z

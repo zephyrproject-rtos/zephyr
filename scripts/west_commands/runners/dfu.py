@@ -20,7 +20,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, pid, alt, img, exe='dfu-util',
                  dfuse_config=None):
-        super(DfuUtilBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
         self.alt = alt
         self.img = img
         self.cmd = [exe, '-d,{}'.format(pid)]
@@ -56,18 +56,25 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument("--img",
                             help="binary to flash, default is --bin-file")
         parser.add_argument("--dfuse", default=False, action='store_true',
-                            help='''set if target is a DfuSe device;
-                            implies --dt-flash.''')
+                            help='''use the DfuSe protocol extensions
+                                 supported by STMicroelectronics
+                                 devices (if given, the image flash
+                                 address respects
+                                 CONFIG_FLASH_BASE_ADDRESS and
+                                 CONFIG_FLASH_LOAD_OFFSET)''')
         parser.add_argument("--dfuse-modifiers", default='leave',
-                            help='''colon-separated list of DfuSe modifiers
-                            (default is "leave", which starts execution
-                            immediately); --dfuse must also be given for this
-                            option to take effect.''')
+                            help='''colon-separated list of additional
+                                 DfuSe modifiers for dfu-util's -s
+                                 option (default is
+                                 "-s <flash-address>:leave", which starts
+                                 execution immediately); requires
+                                 --dfuse
+                                 ''')
         parser.add_argument('--dfu-util', default='dfu-util',
                             help='dfu-util executable; defaults to "dfu-util"')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         if args.img is None:
             args.img = cfg.bin_file
 
@@ -99,6 +106,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require(self.cmd[0])
+        self.ensure_output('bin')
 
         if not self.find_device():
             raise RuntimeError('device not found')

@@ -1,8 +1,8 @@
 tests:
   filesystem.multifs:
-    platform_whitelist: native_posix qemu_x86
+    platform_allow: native_posix qemu_x86
     tags: littlefs fatfs filesystem qemu_x86
   filesystem.fs_shell:
     extra_args: CONF_FILE="prj_fs_shell.conf"
-    platform_whitelist: native_posix qemu_x86
+    platform_allow: native_posix qemu_x86
     tags: littlefs fatfs filesystem

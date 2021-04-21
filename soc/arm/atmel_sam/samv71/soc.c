@@ -58,7 +58,7 @@ LOG_MODULE_REGISTER(soc);
  */
 static ALWAYS_INLINE void clock_init(void)
 {
-	u32_t reg_val;
+	uint32_t reg_val;
 
 #ifdef CONFIG_SOC_ATMEL_SAMV71_EXT_SLCK
 	/* Switch slow clock to the external 32 kHz crystal oscillator */
@@ -224,9 +224,9 @@ static ALWAYS_INLINE void clock_init(void)
  *
  * @return 0
  */
-static int atmel_samv71_init(struct device *arg)
+static int atmel_samv71_init(const struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 
@@ -259,7 +259,7 @@ static int atmel_samv71_init(struct device *arg)
 	/* Check that the CHIP CIDR matches the HAL one */
 	if (CHIPID->CHIPID_CIDR != CHIP_CIDR) {
 		LOG_WRN("CIDR mismatch: chip = 0x%08x vs HAL = 0x%08x",
-			(u32_t)CHIPID->CHIPID_CIDR, (u32_t)CHIP_CIDR);
+			(uint32_t)CHIPID->CHIPID_CIDR, (uint32_t)CHIP_CIDR);
 	}
 
 	return 0;

@@ -36,7 +36,7 @@ extern "C" {
 #define WEBSOCKET_FLAG_BINARY 0x00000004 /**< Binary data        */
 #define WEBSOCKET_FLAG_CLOSE  0x00000008 /**< Closing connection */
 #define WEBSOCKET_FLAG_PING   0x00000010 /**< Ping message       */
-#define WEBSOCKET_FLAG_PONG   0x00000011 /**< Pong message       */
+#define WEBSOCKET_FLAG_PONG   0x00000020 /**< Pong message       */
 
 enum websocket_opcode  {
 	WEBSOCKET_OPCODE_CONTINUE     = 0x00,
@@ -51,7 +51,7 @@ enum websocket_opcode  {
  * @typedef websocket_connect_cb_t
  * @brief Callback called after Websocket connection is established.
  *
- * @param sock Websocket id
+ * @param ws_sock Websocket id
  * @param req HTTP handshake request
  * @param user_data A valid pointer on some user data or NULL
  *
@@ -99,7 +99,7 @@ struct websocket_request {
 	const struct http_parser_settings *http_cb;
 
 	/** User supplied buffer where HTTP connection data is stored */
-	u8_t *tmp_buf;
+	uint8_t *tmp_buf;
 
 	/** Length of the user supplied temp buffer */
 	size_t tmp_buf_len;
@@ -117,14 +117,14 @@ struct websocket_request {
  *        packets to the Websocket server.
  * @param req Websocket request. User should allocate and fill the request
  *        data.
- * @param timeout Max timeout to wait for the connection. The timeout value
- *        cannot be 0 as there would be no time to receive the data.
+ * @param timeout Max timeout to wait for the connection. The timeout value is
+ *        in milliseconds. Value SYS_FOREVER_MS means to wait forever.
  * @param user_data User specified data that is passed to the callback.
  *
  * @return Websocket id to be used when sending/receiving Websocket data.
  */
 int websocket_connect(int http_sock, struct websocket_request *req,
-		      s32_t timeout, void *user_data);
+		      int32_t timeout, void *user_data);
 
 /**
  * @brief Send websocket msg to peer.
@@ -142,13 +142,14 @@ int websocket_connect(int http_sock, struct websocket_request *req,
  *        must have opcode WEBSOCKET_OPCODE_CONTINUE. If final == true and this
  *        is the only message, then opcode should have proper opcode (text or
  *        binary) set.
- * @param timeout How long to try to send the message.
+ * @param timeout How long to try to send the message. The value is in
+ *        milliseconds. Value SYS_FOREVER_MS means to wait forever.
  *
  * @return <0 if error, >=0 amount of bytes sent
  */
-int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
+int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 		       enum websocket_opcode opcode, bool mask, bool final,
-		       s32_t timeout);
+		       int32_t timeout);
 
 /**
  * @brief Receive websocket msg from peer.
@@ -162,11 +163,14 @@ int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
  * @param message_type Type of the message.
  * @param remaining How much there is data left in the message after this read.
  * @param timeout How long to try to receive the message.
+ *        The value is in milliseconds. Value SYS_FOREVER_MS means to wait
+ *        forever.
  *
  * @return <0 if error, >=0 amount of bytes received
  */
-int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
-		       u32_t *message_type, u64_t *remaining, s32_t timeout);
+int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
+		       uint32_t *message_type, uint64_t *remaining,
+		       int32_t timeout);
 
 /**
  * @brief Close websocket.

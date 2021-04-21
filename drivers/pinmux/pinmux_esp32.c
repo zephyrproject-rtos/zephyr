@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT espressif_esp32_pinmux
+
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc/gpio_reg.h>
 #include <soc/io_mux_reg.h>
@@ -26,7 +28,7 @@
  *       is "internally" depends on it.
  */
 #define PIN(id)   ((PERIPHS_IO_MUX_ ## id ## _U) - (DR_REG_IO_MUX_BASE))
-static const u8_t pin_mux_off[] = {
+static const uint8_t pin_mux_off[] = {
 	PIN(GPIO0),    PIN(U0TXD),    PIN(GPIO2),    PIN(U0RXD),
 	PIN(GPIO4),    PIN(GPIO5),    PIN(SD_CLK),   PIN(SD_DATA0),
 	PIN(SD_DATA1), PIN(SD_DATA2), PIN(SD_DATA3), PIN(SD_CMD),
@@ -40,9 +42,9 @@ static const u8_t pin_mux_off[] = {
 };
 #undef PIN
 
-static u32_t *reg_for_pin(u32_t pin)
+static uint32_t *reg_for_pin(uint32_t pin)
 {
-	u8_t off;
+	uint8_t off;
 
 	if (pin >= ARRAY_SIZE(pin_mux_off)) {
 		return NULL;
@@ -53,13 +55,13 @@ static u32_t *reg_for_pin(u32_t pin)
 		return NULL;
 	}
 
-	return (u32_t *)(DT_INST_0_ESPRESSIF_ESP32_PINMUX_BASE_ADDRESS + off);
+	return (uint32_t *)(DT_INST_REG_ADDR(0) + off);
 }
 
-static int set_reg(u32_t pin, u32_t clr_mask, u32_t set_mask)
+static int set_reg(uint32_t pin, uint32_t clr_mask, uint32_t set_mask)
 {
-	volatile u32_t *reg = reg_for_pin(pin);
-	u32_t v;
+	volatile uint32_t *reg = reg_for_pin(pin);
+	uint32_t v;
 
 	if (!reg) {
 		return -EINVAL;
@@ -73,7 +75,7 @@ static int set_reg(u32_t pin, u32_t clr_mask, u32_t set_mask)
 	return 0;
 }
 
-static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
+static int pinmux_set(const struct device *dev, uint32_t pin, uint32_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -89,9 +91,10 @@ static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
 	return set_reg(pin, MCU_SEL_M, func<<MCU_SEL_S | 2<<FUN_DRV_S);
 }
 
-static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_get(const struct device *dev, uint32_t pin, uint32_t *func)
 {
-	volatile u32_t *reg = reg_for_pin(pin);
+	ARG_UNUSED(dev);
+	volatile uint32_t *reg = reg_for_pin(pin);
 
 	if (!reg) {
 		return -EINVAL;
@@ -99,12 +102,13 @@ static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
 
 	*func = (*reg & MCU_SEL_M) >> MCU_SEL_S;
 
-	ARG_UNUSED(dev);
 	return 0;
 }
 
-static int pinmux_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 {
+	ARG_UNUSED(dev);
+
 	switch (func) {
 	case PINMUX_PULLUP_DISABLE:
 		return set_reg(pin, FUN_PU, FUN_PD);
@@ -112,19 +116,20 @@ static int pinmux_pullup(struct device *dev, u32_t pin, u8_t func)
 		return set_reg(pin, FUN_PD, FUN_PU);
 	}
 
-	ARG_UNUSED(dev);
 	return -EINVAL;
 }
 
 #define CFG(id)   ((GPIO_ ## id ## _REG) & 0xff)
-static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_input(const struct device *dev, uint32_t pin, uint8_t func)
 {
-	static const u8_t offs[2][3] = {
+	ARG_UNUSED(dev);
+
+	static const uint8_t offs[2][3] = {
 		{ CFG(ENABLE1_W1TC), CFG(ENABLE1_W1TS), 32 },
 		{ CFG(ENABLE_W1TC), CFG(ENABLE_W1TS), 0 },
 	};
-	const u8_t *line = offs[pin < 32];
-	volatile u32_t *reg;
+	const uint8_t *line = offs[pin < 32];
+	volatile uint32_t *reg;
 	int r;
 
 	/* Since PINMUX_INPUT_ENABLED == 1 and PINMUX_OUTPUT_ENABLED == 0,
@@ -134,13 +139,13 @@ static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
 	 */
 	r = set_reg(pin, 0, FUN_IE);
 	if (func == PINMUX_INPUT_ENABLED) {
-		reg = (u32_t *)(DR_REG_GPIO_BASE + line[0]);
+		reg = (uint32_t *)(DR_REG_GPIO_BASE + line[0]);
 	} else if (func == PINMUX_OUTPUT_ENABLED) {
 		if (pin >= 34U && pin <= 39U) {
 			/* These pins are input only */
 			return -EINVAL;
 		}
-		reg = (u32_t *)(DR_REG_GPIO_BASE + line[1]);
+		reg = (uint32_t *)(DR_REG_GPIO_BASE + line[1]);
 	} else {
 		return -EINVAL;
 	}
@@ -151,7 +156,6 @@ static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
 
 	*reg = BIT(pin - line[2]);
 
-	ARG_UNUSED(dev);
 	return 0;
 }
 #undef CFG
@@ -163,22 +167,26 @@ static struct pinmux_driver_api api_funcs = {
 	.input = pinmux_input
 };
 
-static int pinmux_initialize(struct device *device)
+static int pinmux_initialize(const struct device *dev)
 {
-	u32_t pin;
+	ARG_UNUSED(dev);
+
+#if !CONFIG_BOOTLOADER_ESP_IDF
+	uint32_t pin;
 
 	for (pin = 0U; pin < ARRAY_SIZE(pin_mux_off); pin++) {
 		pinmux_set(NULL, pin, 0);
 	}
 
-	ARG_UNUSED(device);
+#endif
+
 	return 0;
 }
 
 /* Initialize using PRE_KERNEL_1 priority so that GPIO can use the pin
  * mux driver.
  */
-DEVICE_AND_API_INIT(pmux_dev, CONFIG_PINMUX_NAME,
-		    &pinmux_initialize, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0, &pinmux_initialize,
+		    device_pm_control_nop, NULL, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);

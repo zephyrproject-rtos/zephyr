@@ -1,0 +1,54 @@
+# Add one pattern per line.
+#
+# The patterns listed in this file will be compared with the list of files
+# changed in a patch series (Pull Request) and if all files in the pull request
+# are matched, then twister will not do a full run and optionally will only
+# run on changed tests or boards.
+#
+.buildkite/daily.yml
+.gitlint
+.checkpatch.conf
+.clang-format
+.codecov.yml
+.editorconfig
+.gitattributes
+.gitignore
+.mailmap
+.uncrustify.cfg
+CODEOWNERS
+MAINTAINERS.yml
+LICENSE
+Makefile
+tests/*
+samples/*
+boards/*/*/*
+arch/xtensa/*
+arch/x86/*
+arch/posix/*
+arch/arc/*
+arch/sparc/*
+arch/arm/*
+arch/nios2/*
+arch/riscv/*
+include/arch/xtensa/*
+include/arch/x86/*
+include/arch/posix/*
+include/arch/arc/*
+include/arch/sparc/*
+include/arch/arm/*
+include/arch/nios2/*
+include/arch/riscv/*
+doc/*
+# GH action have no impact on code
+.github/*
+*.rst
+*.md
+# if we change this file or associated script, it should not trigger a full
+# twister.
+scripts/ci/twister_ignore.txt
+scripts/ci/what_changed.py
+scripts/ci/version_mgr.py
+scripts/requirements*
+scripts/checkpatch/*
+scripts/checkpatch.pl
+scripts/ci/pylintrc

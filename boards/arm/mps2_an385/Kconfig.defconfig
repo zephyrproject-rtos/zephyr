@@ -11,18 +11,6 @@ if GPIO
 config GPIO_CMSDK_AHB
 	default y
 
-config GPIO_CMSDK_AHB_PORT0
-	default y
-
-config GPIO_CMSDK_AHB_PORT1
-	default y
-
-config GPIO_CMSDK_AHB_PORT2
-	default y
-
-config GPIO_CMSDK_AHB_PORT3
-	default y
-
 endif # GPIO
 
 if SERIAL
@@ -52,5 +40,27 @@ endif # COUNTER
 config I2C_SBCON
 	default y
 	depends on I2C
+
+config ZTEST_STACKSIZE
+	default 4096 if ZTEST
+
+if COVERAGE
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config IDLE_STACK_SIZE
+	default 4096
+
+config PRIVILEGED_STACK_SIZE
+	default 4096
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACKSIZE
+	default 4096
+
+endif # COVERAGE
 
 endif

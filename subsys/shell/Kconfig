@@ -17,8 +17,17 @@ module-str = Shell
 source "subsys/logging/Kconfig.template.log_config"
 source "subsys/shell/Kconfig.backends"
 
+config SHELL_MINIMAL
+	bool "Default config to reduce flash and memory requirements"
+	help
+	  This is a meta-configuration option to significantly reduce the flash
+	  and memory requirements of the shell.  Enabling it will choose Kconfig
+	  defaults which favor reduced flash or memory requirements over extra
+	  features.
+
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
+	default 2520 if OPENTHREAD_SHELL
 	default 2048 if MULTITHREADING
 	default 0 if !MULTITHREADING
 	help
@@ -34,6 +43,7 @@ config SHELL_BACKSPACE_MODE_DELETE
 
 config SHELL_CMD_BUFF_SIZE
 	int "Shell command buffer size"
+	default 128 if SHELL_MINIMAL
 	default 256
 	help
 	  Maximum command size in bytes. One byte is reserved for the string
@@ -47,18 +57,43 @@ config SHELL_PRINTF_BUFF_SIZE
 	  It is working like stdio buffering in Linux systems
 	  to limit number of peripheral access calls.
 
+config SHELL_DEFAULT_TERMINAL_WIDTH
+	int "Default terminal width"
+	default 80
+	help
+	  Default terminal width is used to break lines.
+
+config SHELL_DEFAULT_TERMINAL_HEIGHT
+	int "Default terminal height"
+	default 24
+
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
+	range 3 255
 	default 12
 	help
 	  Maximum number of arguments that can build a command.
-	  If command is composed of more than defined, argument SHELL_ARGC_MAX
-	  and following are passed as one argument in the string.
+
+config SHELL_TAB
+	bool "Enable the Tab button support in shell"
+	default y if !SHELL_MINIMAL
+	help
+	  Enable using the Tab button in the shell. The button
+	  can be used for prompting commands, or for autocompletion.
+	  This feature has high impact on flash usage.
+
+config SHELL_TAB_AUTOCOMPLETION
+	bool "Enable commands autocompletion with the Tab button"
+	depends on SHELL_TAB
+	default y if !SHELL_MINIMAL
+	help
+	  Enable commands and subcommands autocompletion with the Tab
+	  key. This function can be deactivated to save some flash.
 
 config SHELL_WILDCARD
 	bool "Enable wildcard support in shell"
 	select FNMATCH
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  Enables using wildcards: * and ? in the shell.
 
@@ -68,15 +103,28 @@ config SHELL_ECHO_STATUS
 	help
 	  If enabled shell prints back every input byte.
 
+config SHELL_START_OBSCURED
+	bool "Display asterisk when echoing"
+	default n
+	help
+	  If enabled, don't echo actual character, but echo * instead.
+	  This is used for login prompts.
+
 config SHELL_VT100_COLORS
 	bool "Enable colors in shell"
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  If enabled VT100 colors are used in shell (e.g. print errors in red).
 
+config SHELL_GETOPT
+	bool "Enable getopt support"
+	select GETOPT
+	help
+	  Enables getopt support in the shell.
+
 config SHELL_METAKEYS
 	bool "Enable metakeys"
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  Enables shell meta keys: Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e,
 	  Ctrl+f, Ctrl+k, Ctrl+l, Ctrl+u, Ctrl+w, Alt+b, Alt+f
@@ -84,25 +132,36 @@ config SHELL_METAKEYS
 
 config SHELL_HELP
 	bool "Enable help message"
+	default y if !SHELL_MINIMAL
+	help
+	  Enables shell functions for printing formatted help message.
+
+config SHELL_HELP_OPT_PARSE
+	bool "Parse -h and --help options"
+	depends on SHELL_HELP
+	depends on !SHELL_GETOPT
 	default y
 	help
-	  Enables formatting help message when requested with '-h' or '--help'.
+	  Shell parses command to find '-h' or '--help' string. If the shell
+	  finds the string, it will automatically print a help message
+	  for a command.
 
 config SHELL_HELP_ON_WRONG_ARGUMENT_COUNT
 	bool "Enable printing help on wrong argument count"
 	depends on SHELL_HELP
-	default y
+	default y if !SHELL_MINIMAL
 
 config SHELL_HISTORY
 	bool "Enable history in shell"
-	default y
+	default y if !SHELL_MINIMAL
 	select RING_BUFFER
 	help
 	  Enable commands history. History can be accessed using up and down
-	  arrows.
+	  arrows or Ctrl+n and Ctrl+p meta keys.
 
 config SHELL_HISTORY_BUFFER
 	int "History buffer in bytes"
+	default 128 if SHELL_MINIMAL
 	default 512
 	depends on SHELL_HISTORY
 	help
@@ -110,18 +169,18 @@ config SHELL_HISTORY_BUFFER
 
 config SHELL_STATS
 	bool "Enable shell statistics"
-	default y
+	default y if !SHELL_MINIMAL
 
 config SHELL_CMDS
 	bool "Enable built-in commands"
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  Enable built-in commands like 'clear', 'history', etc.
 
 config SHELL_CMDS_RESIZE
 	bool "Enable resize command"
 	depends on SHELL_CMDS
-	default y
+	default y if !SHELL_MINIMAL
 	help
 	  By default shell assumes width of a terminal screen set to 80
 	  characters. Each time terminal screen width is changed resize command
@@ -136,9 +195,16 @@ config SHELL_CMDS_SELECT
 	  command. Exit to main command tree is with alt+r.
 
 config SHELL_LOG_BACKEND
-	bool
+	bool "Enable shell log backend"
 	depends on !LOG_MINIMAL
 	default y if LOG
+	help
+	  When enabled, backend will use the shell for logging.
+	  This option is enabled by default.
+	  Disabling this option disables log output to all shell backends.
+	  Disabling log output to a specific shell backend can be achieved
+	  using the shell backend's LOG_LEVEL option
+	  (e.g. CONFIG_SHELL_TELNET_INIT_LOG_LEVEL_NONE=y).
 
 source "subsys/shell/modules/Kconfig"
 

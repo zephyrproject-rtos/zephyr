@@ -13,11 +13,33 @@
 #error "Check ISR stack configuration (CONFIG_ISR_*)"
 #endif
 
-#if CONFIG_ISR_SUBSTACK_SIZE % STACK_ALIGN
+#if CONFIG_ISR_SUBSTACK_SIZE % ARCH_STACK_PTR_ALIGN
 #error "CONFIG_ISR_SUBSTACK_SIZE must be a multiple of 16"
 #endif
 
 #ifndef _ASMLANGUAGE
+
+static ALWAYS_INLINE void sys_write64(uint64_t data, mm_reg_t addr)
+{
+	__asm__ volatile("movq %0, %1"
+			 :
+			 : "r"(data), "m" (*(volatile uint64_t *)
+					   (uintptr_t) addr)
+			 : "memory");
+}
+
+static ALWAYS_INLINE uint64_t sys_read64(mm_reg_t addr)
+{
+	uint64_t ret;
+
+	__asm__ volatile("movq %1, %0"
+			 : "=r"(ret)
+			 : "m" (*(volatile uint64_t *)(uintptr_t) addr)
+			 : "memory");
+
+	return ret;
+}
+
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned long key;
@@ -35,12 +57,12 @@ struct x86_esf {
 #ifdef CONFIG_EXCEPTION_DEBUG
 	/* callee-saved */
 	unsigned long rbx;
-	unsigned long rbp;
 	unsigned long r12;
 	unsigned long r13;
 	unsigned long r14;
 	unsigned long r15;
 #endif /* CONFIG_EXCEPTION_DEBUG */
+	unsigned long rbp;
 
 	/* Caller-saved regs */
 	unsigned long rax;
@@ -88,15 +110,32 @@ struct x86_ssf {
 		"int $32\n\t" \
 		: \
 		: [reason] "i" (reason_p)); \
-	CODE_UNREACHABLE; \
+	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 } while (false)
 
 #endif /* _ASMLANGUAGE */
+
+#ifdef CONFIG_PCIE
+#define X86_RESERVE_IRQ(irq_p, name) \
+	static Z_DECL_ALIGN(uint8_t) name \
+	__in_section(_irq_alloc, static, name) __used = irq_p
+#else
+#define X86_RESERVE_IRQ(irq_p, name)
+#endif
 
 /*
  * All Intel64 interrupts are dynamically connected.
  */
 
-#define ARCH_IRQ_CONNECT arch_irq_connect_dynamic
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+	X86_RESERVE_IRQ(irq_p, _CONCAT(_irq_alloc_fixed, __COUNTER__)); \
+	arch_irq_connect_dynamic(irq_p, priority_p,			\
+				 (void (*)(const void *))isr_p,		\
+				 isr_param_p, flags_p)
+
+/*
+ * Thread object needs to be 16-byte aligned.
+ */
+#define ARCH_DYMANIC_OBJ_K_THREAD_ALIGNMENT	16
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */

@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f4/stm32f411Xe.dtsi>
+#include <st/f4/stm32f411c(c-e)ux-pinctrl.dtsi>
 
 / {
 	model = "Tocoding Neonkey 96boards";
-	compatible = "tocoding,neonkey", "st,stm32f411";
+	compatible = "tocoding,neonkey";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -56,21 +57,25 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb3>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c3 {
+	pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pb4>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 
@@ -82,6 +87,8 @@
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 

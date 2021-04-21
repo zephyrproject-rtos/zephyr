@@ -1,0 +1,214 @@
+/*
+ * Copyright (c) 2020, Seagate Technology LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <arm/armv6-m.dtsi>
+#include <dt-bindings/clock/lpc11u6x_clock.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+	};
+
+	sram0:memory@10000000 {
+		compatible = "mmio-sram";
+	};
+
+	sram1:memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0x800>;
+	};
+
+	sram2:memory@20004000 {
+		compatible = "mmio-sram";
+		reg = <0x20004000 0x800>;
+	};
+
+	soc {
+		flash0:flash@0 {
+			compatible = "soc-nv-flash";
+		};
+
+		/* On-chip EEPROM. */
+		eeprom0: eeprom_0 {
+			compatible = "nxp,lpc11u6x-eeprom";
+			label = "EEPROM_0";
+			/*
+			 * For some reasons, the IAP commands don't allow to
+			 * reach the last 64 bytes of the EEPROM.
+			 */
+			size = <(DT_SIZE_K(4) - 64)>;
+			status = "okay";
+		};
+
+		/* PIO0_0 to PIO0_23. */
+		pinmux0: pinmux@40044000 {
+			compatible = "nxp,lpc11u6x-pinmux";
+			#pinmux-cells = <2>;
+			reg = <0x40044000 0x60>;
+			label = "PINMUX_0";
+			status = "okay";
+		};
+
+		/* PIO1_0 to PIO1_31. */
+		pinmux1: pinmux@40044060 {
+			compatible = "nxp,lpc11u6x-pinmux";
+			#pinmux-cells = <2>;
+			reg = <0x40044060 0x80>;
+			label = "PINMUX_1";
+			status = "okay";
+		};
+
+		/* PIO2_0 to PIO2_23. */
+		pinmux2: pinmux@400440f0 {
+			compatible = "nxp,lpc11u6x-pinmux";
+			#pinmux-cells = <2>;
+			reg = <0x400440f0 0x64>;
+			label = "PINMUX_2";
+			status = "okay";
+		};
+
+		/* GPIO0_0 to GPIO0_23 */
+		gpio0: gpio@0 {
+			compatible = "nxp,lpc11u6x-gpio";
+			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+				     <4 2>, <5 2>, <6 2>, <7 2>;
+
+			label = "GPIO_0";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+
+			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
+			pinmux-port = <&pinmux0>;
+
+			status = "disabled";
+		};
+
+		/* GPIO1_0 to GPIO1_31 */
+		gpio1: gpio@1 {
+			compatible = "nxp,lpc11u6x-gpio";
+			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+				     <4 2>, <5 2>, <6 2>, <7 2>;
+
+			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
+			pinmux-port = <&pinmux1>;
+
+			status = "disabled";
+		};
+
+		/* GPIO2_2 to GPIO2_23 */
+		gpio2: gpio@2 {
+			compatible = "nxp,lpc11u6x-gpio";
+			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+				     <4 2>, <5 2>, <6 2>, <7 2>;
+
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+			base = <2>;
+			ngpios = <22>;
+
+			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
+			pinmux-port = <&pinmux2>;
+
+			status = "disabled";
+		};
+
+		syscon: clock-controller@40048000 {
+			compatible = "nxp,lpc11u6x-syscon";
+			#clock-cells = <1>;
+			reg = <0x40048000 0x400>;
+			label = "SYSCON";
+			pinmuxs = <&pinmux2 0 1>, <&pinmux2 1 1>;
+			pinmux-names = "XTALIN", "XTALOUT";
+		};
+
+		uart0: serial@40008000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART0>;
+			interrupts = <21 0>;
+			reg = <0x40008000 0x60>;
+			label = "UART_0";
+			status = "disabled";
+		};
+
+		uart1: serial@4006c000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART1>;
+			interrupts = <11 0>;
+			reg = <0x4006C000 0x30>;
+			label = "UART_1";
+			status = "disabled";
+		};
+
+		uart2: serial@40070000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART2>;
+			interrupts = <12 0>;
+			reg = <0x40070000 0x30>;
+			label = "UART_2";
+			status = "disabled";
+		};
+
+		uart3: serial@40074000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART3>;
+			interrupts = <12 0>;
+			reg = <0x40074000 0x30>;
+			label = "UART_3";
+			status = "disabled";
+		};
+
+		uart4: serial@4004c000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART4>;
+			interrupts = <11 0>;
+			reg = <0x4004C000 0x30>;
+			label = "UART_4";
+			status = "disabled";
+		};
+
+		i2c0: i2c@40000000 {
+			compatible = "nxp,lpc11u6x-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40000000 0x40>;
+			clocks = <&syscon LPC11U6X_CLOCK_I2C0>;
+			interrupts = <15 0>;
+			status = "disabled";
+			label = "I2C_0";
+		};
+
+		i2c1: i2c@40020000 {
+			compatible = "nxp,lpc11u6x-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40020000 0x40>;
+			clocks = <&syscon LPC11U6X_CLOCK_I2C1>;
+			interrupts = <10 0>;
+			status = "disabled";
+			label = "I2C_1";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

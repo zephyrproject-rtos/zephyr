@@ -1,0 +1,89 @@
+# ST Microelectronics IIS2ICLX 2-axis accelerometer sensor driver
+
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IIS2ICLX
+	bool "IIS2ICLX I2C/SPI accelerometer Chip"
+	depends on I2C || SPI
+	select HAS_STMEMSC
+	select USE_STDC_IIS2ICLX
+	help
+	  Enable driver for IIS2ICLX accelerometer
+	  sensor.
+
+if IIS2ICLX
+
+choice IIS2ICLX_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config IIS2ICLX_TRIGGER_NONE
+	bool "No trigger"
+
+config IIS2ICLX_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select IIS2ICLX_TRIGGER
+
+config IIS2ICLX_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select IIS2ICLX_TRIGGER
+
+endchoice
+
+config IIS2ICLX_TRIGGER
+	bool
+
+if IIS2ICLX_TRIGGER
+
+config IIS2ICLX_THREAD_PRIORITY
+	int "Thread priority"
+	depends on IIS2ICLX_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config IIS2ICLX_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on IIS2ICLX_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # IIS2ICLX_TRIGGER
+
+config IIS2ICLX_ENABLE_TEMP
+	bool "Enable temperature"
+	help
+	  Enable/disable temperature
+
+config IIS2ICLX_SENSORHUB
+	bool "Enable I2C sensorhub feature"
+	help
+	  Enable/disable internal sensorhub. You can enable
+	  a maximum of two external sensors (if more than two are enabled
+	  the system would enumerate only the first two found)
+
+if IIS2ICLX_SENSORHUB
+
+config IIS2ICLX_EXT_LIS2MDL
+	bool "Enable LIS2MDL as external sensor"
+
+config IIS2ICLX_EXT_IIS2MDC
+	bool "Enable IIS2MDC as external sensor"
+
+config IIS2ICLX_EXT_LPS22HH
+	bool "Enable LPS22HH as external sensor"
+
+config IIS2ICLX_EXT_HTS221
+	bool "Enable HTS221 as external sensor"
+
+config IIS2ICLX_EXT_LPS22HB
+	bool "Enable LPS22HB as external sensor"
+
+endif # IIS2ICLX_SENSORHUB
+
+endif # IIS2ICLX

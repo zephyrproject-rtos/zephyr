@@ -1,13 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library()
-zephyr_library_sources(buf.c)
-zephyr_library_sources(smp.c)
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_BT smp_bt.c)
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_SHELL smp_shell.c)
-zephyr_library_sources_ifdef(CONFIG_MCUMGR_SMP_UART smp_uart.c)
-zephyr_library_link_libraries(MCUMGR)
-
-if (CONFIG_MCUMGR_SMP_SHELL OR CONFIG_MCUMGR_SMP_UART)
-    zephyr_library_sources(serial_util.c)
-endif ()
+add_subdirectory_ifdef(CONFIG_EC_HOST_CMD          ec_host_cmd)
+add_subdirectory_ifdef(CONFIG_MCUMGR               mcumgr)
+add_subdirectory_ifdef(CONFIG_HAWKBIT              hawkbit)
+add_subdirectory_ifdef(CONFIG_UPDATEHUB            updatehub)
+add_subdirectory_ifdef(CONFIG_OSDP                 osdp)

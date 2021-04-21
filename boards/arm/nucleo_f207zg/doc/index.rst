@@ -72,26 +72,36 @@ Supported Features
 
 The Zephyr nucleo_207zg board configuration supports the following hardware features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| ETHERNET  | on-chip    | Ethernet                            |
-+-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device                          |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | independent watchdog                |
-+-----------+------------+-------------------------------------+
-| ADC       | on-chip    | ADC Controller                      |
-+-----------+------------+-------------------------------------+
++-------------+------------+-------------------------------------+
+| Interface   | Controller | Driver/Component                    |
++=============+============+=====================================+
+| NVIC        | on-chip    | nested vector interrupt controller  |
++-------------+------------+-------------------------------------+
+| UART        | on-chip    | serial port-polling;                |
+|             |            | serial port-interrupt               |
++-------------+------------+-------------------------------------+
+| PINMUX      | on-chip    | pinmux                              |
++-------------+------------+-------------------------------------+
+| GPIO        | on-chip    | gpio                                |
++-------------+------------+-------------------------------------+
+| ETHERNET    | on-chip    | Ethernet                            |
++-------------+------------+-------------------------------------+
+| I2C         | on-chip    | i2c                                 |
++-------------+------------+-------------------------------------+
+| USB         | on-chip    | USB device                          |
++-------------+------------+-------------------------------------+
+| SPI         | on-chip    | spi                                 |
++-------------+------------+-------------------------------------+
+| WATCHDOG    | on-chip    | independent watchdog                |
++-------------+------------+-------------------------------------+
+| ADC         | on-chip    | ADC Controller                      |
++-------------+------------+-------------------------------------+
+| DAC         | on-chip    | DAC Controller                      |
++-------------+------------+-------------------------------------+
+| Backup SRAM | on-chip    | Backup SRAM                         |
++-------------+------------+-------------------------------------+
+| PWM         | on-chip    | PWM                                 |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -135,6 +145,8 @@ Default Zephyr Peripheral Mapping:
 
 - UART_3 TX/RX : PD8/PD9 (ST-Link Virtual Port Com)
 - UART_6 TX/RX : PG14/PG9 (Arduino Serial)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI1 NSS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
 - USB_DM : PA11
 - USB_DP : PA12
@@ -142,6 +154,9 @@ Default Zephyr Peripheral Mapping:
 - LD1 : PB0
 - LD2 : PB7
 - LD3 : PB14
+- DAC: PA4
+- ADC: PA0
+- PWM_1_CH1 : PE9
 
 System Clock
 ------------
@@ -166,6 +181,12 @@ USB
 Nucleo F207ZG board has a USB OTG dual-role device (DRD) controller that
 supports both device and host functions through its micro USB connector
 (USB USER). Only USB device function is supported in Zephyr at the moment.
+
+Backup SRAM
+-----------
+
+In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
+do it by removing ``SB156`` jumper on the back side of the board.
 
 Programming and Debugging
 *************************

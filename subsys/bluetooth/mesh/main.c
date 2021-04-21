@@ -23,20 +23,26 @@
 #include "test.h"
 #include "adv.h"
 #include "prov.h"
+#include "provisioner.h"
 #include "net.h"
+#include "subnet.h"
+#include "app_keys.h"
+#include "rpl.h"
+#include "cfg.h"
 #include "beacon.h"
 #include "lpn.h"
 #include "friend.h"
 #include "transport.h"
+#include "heartbeat.h"
 #include "access.h"
 #include "foundation.h"
 #include "proxy.h"
 #include "settings.h"
 #include "mesh.h"
 
-int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
-		      u8_t flags, u32_t iv_index, u16_t addr,
-		      const u8_t dev_key[16])
+int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
+		      uint8_t flags, uint32_t iv_index, uint16_t addr,
+		      const uint8_t dev_key[16])
 {
 	bool pb_gatt_enabled;
 	int err;
@@ -102,7 +108,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		memcpy(node->dev_key, dev_key, 16);
 
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			bt_mesh_store_cdb_node(node);
+			bt_mesh_cdb_node_store(node);
 		}
 	}
 
@@ -111,7 +117,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		atomic_clear_bit(bt_mesh.flags, BT_MESH_VALID);
 
 		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) && pb_gatt_enabled) {
-			bt_mesh_proxy_prov_enable();
+			(void)bt_mesh_proxy_prov_enable();
 		}
 
 		return err;
@@ -123,11 +129,13 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 
 	memcpy(bt_mesh.dev_key, dev_key, 16);
 
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
+	    IS_ENABLED(CONFIG_BT_MESH_LPN_SUB_ALL_NODES_ADDR)) {
+		bt_mesh_lpn_group_add(BT_MESH_ADDR_ALL_NODES);
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		BT_DBG("Storing network information persistently");
-		bt_mesh_store_net();
-		bt_mesh_store_subnet(&bt_mesh.sub[0]);
-		bt_mesh_store_iv(false);
+		bt_mesh_net_pending_net_store();
 	}
 
 	bt_mesh_start();
@@ -135,8 +143,8 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 	return 0;
 }
 
-int bt_mesh_provision_adv(const u8_t uuid[16], u16_t net_idx, u16_t addr,
-			  u8_t attention_duration)
+int bt_mesh_provision_adv(const uint8_t uuid[16], uint16_t net_idx, uint16_t addr,
+			  uint8_t attention_duration)
 {
 	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
 		return -EINVAL;
@@ -169,16 +177,24 @@ void bt_mesh_reset(void)
 	k_delayed_work_cancel(&bt_mesh.ivu_timer);
 
 	bt_mesh_cfg_reset();
+	bt_mesh_trans_reset();
+	bt_mesh_app_keys_reset();
+	bt_mesh_net_keys_reset();
 
-	bt_mesh_rx_reset();
-	bt_mesh_tx_reset();
+	bt_mesh_net_loopback_clear(BT_MESH_KEY_ANY);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_LPN_SUB_ALL_NODES_ADDR)) {
+			uint16_t group = BT_MESH_ADDR_ALL_NODES;
+
+			bt_mesh_lpn_group_del(&group, 1);
+		}
+
 		bt_mesh_lpn_disable(true);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-		bt_mesh_friend_clear_net_idx(BT_MESH_KEY_ANY);
+		bt_mesh_friends_clear();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
@@ -186,7 +202,7 @@ void bt_mesh_reset(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_mesh_clear_net();
+		bt_mesh_net_clear();
 	}
 
 	(void)memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
@@ -206,63 +222,15 @@ bool bt_mesh_is_provisioned(void)
 	return atomic_test_bit(bt_mesh.flags, BT_MESH_VALID);
 }
 
-int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
-{
-	if (bt_mesh_is_provisioned()) {
-		return -EALREADY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_DEBUG)) {
-		const struct bt_mesh_prov *prov = bt_mesh_prov_get();
-		struct bt_uuid_128 uuid = { .uuid = { BT_UUID_TYPE_128 } };
-
-		memcpy(uuid.val, prov->uuid, 16);
-		BT_INFO("Device UUID: %s", bt_uuid_str(&uuid.uuid));
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
-	    (bearers & BT_MESH_PROV_ADV)) {
-		/* Make sure we're scanning for provisioning inviations */
-		bt_mesh_scan_enable();
-		/* Enable unprovisioned beacon sending */
-		bt_mesh_beacon_enable();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
-	    (bearers & BT_MESH_PROV_GATT)) {
-		bt_mesh_proxy_prov_enable();
-		bt_mesh_adv_update();
-	}
-
-	return 0;
-}
-
-int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
-{
-	if (bt_mesh_is_provisioned()) {
-		return -EALREADY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
-	    (bearers & BT_MESH_PROV_ADV)) {
-		bt_mesh_beacon_disable();
-		bt_mesh_scan_disable();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
-	    (bearers & BT_MESH_PROV_GATT)) {
-		bt_mesh_proxy_prov_disable(true);
-	}
-
-	return 0;
-}
-
 static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
 	if (mod->pub && mod->pub->update) {
 		mod->pub->count = 0U;
-		k_delayed_work_cancel(&mod->pub->timer);
+		/* If this fails, the work handler will check the suspend call
+		 * and exit without transmitting.
+		 */
+		(void)k_work_cancel_delayable(&mod->pub->timer);
 	}
 }
 
@@ -285,9 +253,9 @@ int bt_mesh_suspend(void)
 		return err;
 	}
 
-	bt_mesh_hb_pub_disable();
+	bt_mesh_hb_suspend();
 
-	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED) {
+	if (bt_mesh_beacon_enabled()) {
 		bt_mesh_beacon_disable();
 	}
 
@@ -300,10 +268,11 @@ static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
 	if (mod->pub && mod->pub->update) {
-		s32_t period_ms = bt_mesh_model_pub_period_get(mod);
+		int32_t period_ms = bt_mesh_model_pub_period_get(mod);
 
 		if (period_ms) {
-			k_delayed_work_submit(&mod->pub->timer, period_ms);
+			k_work_reschedule(&mod->pub->timer,
+					  K_MSEC(period_ms));
 		}
 	}
 }
@@ -327,7 +296,9 @@ int bt_mesh_resume(void)
 		return err;
 	}
 
-	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED) {
+	bt_mesh_hb_resume();
+
+	if (bt_mesh_beacon_enabled()) {
 		bt_mesh_beacon_enable();
 	}
 
@@ -362,8 +333,10 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 		}
 	}
 
+	bt_mesh_cfg_init();
 	bt_mesh_net_init();
 	bt_mesh_trans_init();
+	bt_mesh_hb_init();
 	bt_mesh_beacon_init();
 	bt_mesh_adv_init();
 
@@ -384,7 +357,45 @@ static void model_start(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 int bt_mesh_start(void)
 {
-	bt_mesh_net_start();
+	int err;
+
+	err = bt_mesh_adv_enable();
+	if (err) {
+		BT_ERR("Failed enabling advertiser");
+		return err;
+	}
+
+	if (bt_mesh_beacon_enabled()) {
+		bt_mesh_beacon_enable();
+	} else {
+		bt_mesh_beacon_disable();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
+	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_NOT_SUPPORTED) {
+		bt_mesh_proxy_gatt_enable();
+		bt_mesh_adv_update();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		bt_mesh_lpn_init();
+	} else {
+		bt_mesh_scan_enable();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
+		bt_mesh_friend_init();
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
+		struct bt_mesh_subnet *sub = bt_mesh_subnet_next(NULL);
+		uint16_t addr = bt_mesh_primary_addr();
+
+		bt_mesh_prov_complete(sub->net_idx, addr);
+	}
+
+	bt_mesh_hb_start();
+
 	bt_mesh_model_foreach(model_start, NULL);
 
 	return 0;

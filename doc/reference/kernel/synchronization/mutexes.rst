@@ -15,8 +15,8 @@ access to the resource.
 Concepts
 ********
 
-Any number of mutexes can be defined. Each mutex is referenced by its memory
-address.
+Any number of mutexes can be defined (limited only by available RAM). Each mutex
+is referenced by its memory address.
 
 A mutex has the following key properties:
 
@@ -93,8 +93,8 @@ Implementation
 Defining a Mutex
 ================
 
-A mutex is defined using a variable of type :c:type:`struct k_mutex`.
-It must then be initialized by calling :cpp:func:`k_mutex_init()`.
+A mutex is defined using a variable of type :c:struct:`k_mutex`.
+It must then be initialized by calling :c:func:`k_mutex_init`.
 
 The following code defines and initializes a mutex.
 
@@ -116,7 +116,7 @@ The following code has the same effect as the code segment above.
 Locking a Mutex
 ===============
 
-A mutex is locked by calling :cpp:func:`k_mutex_lock()`.
+A mutex is locked by calling :c:func:`k_mutex_lock`.
 
 The following code builds on the example above, and waits indefinitely
 for the mutex to become available if it is already locked by another thread.
@@ -139,7 +139,7 @@ available, and gives a warning if the mutex does not become available.
 Unlocking a Mutex
 =================
 
-A mutex is unlocked by calling :cpp:func:`k_mutex_unlock()`.
+A mutex is unlocked by calling :c:func:`k_mutex_unlock`.
 
 The following code builds on the example above,
 and unlocks the mutex that was previously locked by the thread.
@@ -165,4 +165,26 @@ API Reference
 *************
 
 .. doxygengroup:: mutex_apis
+   :project: Zephyr
+
+Futex API Reference
+*******************
+
+k_futex is a lightweight mutual exclusion primitive designed to minimize
+kernel involvement. Uncontended operation relies only on atomic access
+to shared memory. k_futex are tracked as kernel objects and can live in
+user memory so that any access bypasses the kernel object permission
+management mechanism.
+
+.. doxygengroup:: futex_apis
+   :project: Zephyr
+
+User Mode Mutex API Reference
+*****************************
+
+sys_mutex behaves almost exactly like k_mutex, with the added advantage
+that a sys_mutex instance can reside in user memory. When user mode isn't
+enabled, sys_mutex behaves like k_mutex.
+
+.. doxygengroup:: user_mutex_apis
    :project: Zephyr

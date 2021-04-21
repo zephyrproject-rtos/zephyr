@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-typedef u32_t pthread_once_t;
+typedef uint32_t pthread_once_t;
 
 /* pthread_key */
 typedef void *pthread_key_t;
@@ -43,10 +43,10 @@ typedef struct pthread_key_data {
 	pthread_thread_data thread_data;
 } pthread_key_data;
 
-#endif /* CONFIG_PTHREAD_IPC */
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* CONFIG_PTHREAD_IPC */
 
 #endif /* ZEPHYR_INCLUDE_POSIX_PTHREAD_KEY_H_*/

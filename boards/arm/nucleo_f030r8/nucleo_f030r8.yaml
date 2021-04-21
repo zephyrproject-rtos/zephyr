@@ -1,5 +1,5 @@
 identifier: nucleo_f030r8
-name: NUCLEO-F030R8
+name: ST Nucleo F030R8
 type: mcu
 arch: arm
 toolchain:

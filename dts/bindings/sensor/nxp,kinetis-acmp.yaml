@@ -1,0 +1,68 @@
+# Copyright (c) 2020 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Kinetis Analog Comparator (ACMP)
+
+compatible: "nxp,kinetis-acmp"
+
+include: base.yaml
+
+properties:
+    interrupts:
+      required: true
+
+    label:
+      required: true
+
+    reg:
+      required: true
+
+    nxp,enable-output-pin:
+      type: boolean
+      required: false
+      description: |
+        Make the comparator output (CMP0) available on a packaged pin.
+
+    nxp,use-unfiltered-output:
+      type: boolean
+      required: false
+      description: |
+        Use the unfiltered comparator output for CMP0.
+
+    nxp,high-speed-mode:
+      type: boolean
+      required: false
+      description: |
+        Enable high speed comparison mode.
+
+    nxp,enable-sample:
+      type: boolean
+      required: false
+      description: |
+        Enable external sample signal as clock input.
+
+    nxp,filter-count:
+      type: int
+      required: false
+      description: |
+        Filter sample count (0 to 7).
+
+    nxp,filter-period:
+      type: int
+      required: false
+      description: |
+        Filter sample period in bus clock cycles (0 to 255).
+
+    nxp,window-mode:
+      type: boolean
+      required: false
+      description: |
+        Enable windowing mode.
+
+    "#io-channel-cells":
+      type: int
+      const: 2
+
+io-channel-cells:
+    - positive
+    - negative

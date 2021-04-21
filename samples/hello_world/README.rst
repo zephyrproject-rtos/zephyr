@@ -5,17 +5,14 @@ Hello World
 
 Overview
 ********
-A simple Hello World example that can be used with any supported board and
-prints 'Hello World' to the console. This application can be built into modes:
 
-* single thread
-* multi threading
+A simple sample that can be used with any :ref:`supported board <boards>` and
+prints "Hello World" to the console.
 
 Building and Running
 ********************
 
-This project outputs 'Hello World' to the console.  It can be built and executed
-on QEMU as follows:
+This application can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -23,6 +20,8 @@ on QEMU as follows:
    :board: qemu_x86
    :goals: run
    :compact:
+
+To build for another board, change "qemu_x86" above to that board's name.
 
 Sample Output
 =============

@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_lsm9ds0_gyro
+
 #include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
@@ -20,12 +22,12 @@
 
 LOG_MODULE_REGISTER(LSM9DS0_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
+static inline int lsm9ds0_gyro_power_ctrl(const struct device *dev, int power,
 					  int x_en, int y_en, int z_en)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config->config_info;
-	u8_t state = (power << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_PD) |
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
+	uint8_t state = (power << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_PD) |
 			(x_en << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_XEN) |
 			(y_en << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_YEN) |
 			(z_en << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_ZEN);
@@ -39,10 +41,10 @@ static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
 				   state);
 }
 
-static int lsm9ds0_gyro_set_fs_raw(struct device *dev, u8_t fs)
+static int lsm9ds0_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config->config_info;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
 
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				LSM9DS0_GYRO_REG_CTRL_REG4_G,
@@ -61,12 +63,12 @@ static int lsm9ds0_gyro_set_fs_raw(struct device *dev, u8_t fs)
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 static const struct {
 	int fs;
-	u8_t reg_val;
+	uint8_t reg_val;
 } lsm9ds0_gyro_fs_table[] = { {245, 0},
 			      {500, 1},
 			      {2000, 2} };
 
-static int lsm9ds0_gyro_set_fs(struct device *dev, int fs)
+static int lsm9ds0_gyro_set_fs(const struct device *dev, int fs)
 {
 	int i;
 
@@ -80,10 +82,11 @@ static int lsm9ds0_gyro_set_fs(struct device *dev, int fs)
 }
 #endif
 
-static inline int lsm9ds0_gyro_set_odr_raw(struct device *dev, u8_t odr)
+static inline int lsm9ds0_gyro_set_odr_raw(const struct device *dev,
+					   uint8_t odr)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config->config_info;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				   LSM9DS0_GYRO_REG_CTRL_REG1_G,
@@ -94,13 +97,13 @@ static inline int lsm9ds0_gyro_set_odr_raw(struct device *dev, u8_t odr)
 #if defined(CONFIG_LSM9DS0_GYRO_SAMPLING_RATE_RUNTIME)
 static const struct {
 	int freq;
-	u8_t reg_val;
+	uint8_t reg_val;
 } lsm9ds0_gyro_samp_freq_table[] = { {95, 0},
 				     {190, 1},
 				     {380, 2},
 				     {760, 3} };
 
-static int lsm9ds0_gyro_set_odr(struct device *dev, int odr)
+static int lsm9ds0_gyro_set_odr(const struct device *dev, int odr)
 {
 	int i;
 
@@ -116,12 +119,12 @@ static int lsm9ds0_gyro_set_odr(struct device *dev, int odr)
 }
 #endif
 
-static int lsm9ds0_gyro_sample_fetch(struct device *dev,
+static int lsm9ds0_gyro_sample_fetch(const struct device *dev,
 				     enum sensor_channel chan)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config->config_info;
-	u8_t x_l, x_h, y_l, y_h, z_l, z_h;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
+	uint8_t x_l, x_h, y_l, y_h, z_l, z_h;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
 			chan == SENSOR_CHAN_GYRO_XYZ);
@@ -142,9 +145,9 @@ static int lsm9ds0_gyro_sample_fetch(struct device *dev,
 		return -EIO;
 	}
 
-	data->sample_x = (s16_t)((u16_t)(x_l) | ((u16_t)(x_h) << 8));
-	data->sample_y = (s16_t)((u16_t)(y_l) | ((u16_t)(y_h) << 8));
-	data->sample_z = (s16_t)((u16_t)(z_l) | ((u16_t)(z_h) << 8));
+	data->sample_x = (int16_t)((uint16_t)(x_l) | ((uint16_t)(x_h) << 8));
+	data->sample_y = (int16_t)((uint16_t)(y_l) | ((uint16_t)(y_h) << 8));
+	data->sample_z = (int16_t)((uint16_t)(z_l) | ((uint16_t)(z_h) << 8));
 
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	data->sample_fs = data->fs;
@@ -159,8 +162,8 @@ static inline void lsm9ds0_gyro_convert(struct sensor_value *val, int raw_val,
 	double dval;
 
 	dval = (double)(raw_val) * numerator / 1000.0 * DEG2RAD;
-	val->val1 = (s32_t)dval;
-	val->val2 = ((s32_t)(dval * 1000000)) % 1000000;
+	val->val1 = (int32_t)dval;
+	val->val2 = ((int32_t)(dval * 1000000)) % 1000000;
 }
 
 static inline int lsm9ds0_gyro_get_channel(enum sensor_channel chan,
@@ -190,11 +193,11 @@ static inline int lsm9ds0_gyro_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static int lsm9ds0_gyro_channel_get(struct device *dev,
+static int lsm9ds0_gyro_channel_get(const struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
+	struct lsm9ds0_gyro_data *data = dev->data;
 
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	switch (data->sample_fs) {
@@ -216,7 +219,7 @@ static int lsm9ds0_gyro_channel_get(struct device *dev,
 }
 
 #if defined(LSM9DS0_GYRO_SET_ATTR)
-static int lsm9ds0_gyro_attr_set(struct device *dev,
+static int lsm9ds0_gyro_attr_set(const struct device *dev,
 				 enum sensor_channel chan,
 				 enum sensor_attribute attr,
 				 const struct sensor_value *val)
@@ -257,11 +260,11 @@ static const struct sensor_driver_api lsm9ds0_gyro_api_funcs = {
 #endif
 };
 
-static int lsm9ds0_gyro_init_chip(struct device *dev)
+static int lsm9ds0_gyro_init_chip(const struct device *dev)
 {
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
-	const struct lsm9ds0_gyro_config *config = dev->config->config_info;
-	u8_t chip_id;
+	struct lsm9ds0_gyro_data *data = dev->data;
+	const struct lsm9ds0_gyro_config *config = dev->config;
+	uint8_t chip_id;
 
 	if (lsm9ds0_gyro_power_ctrl(dev, 0, 0, 0, 0) < 0) {
 		LOG_DBG("failed to power off device");
@@ -313,11 +316,10 @@ err_poweroff:
 	return -EIO;
 }
 
-static int lsm9ds0_gyro_init(struct device *dev)
+static int lsm9ds0_gyro_init(const struct device *dev)
 {
-	const struct lsm9ds0_gyro_config * const config =
-					   dev->config->config_info;
-	struct lsm9ds0_gyro_data *data = dev->driver_data;
+	const struct lsm9ds0_gyro_config * const config = dev->config;
+	struct lsm9ds0_gyro_data *data = dev->data;
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {
@@ -336,26 +338,24 @@ static int lsm9ds0_gyro_init(struct device *dev)
 		LOG_DBG("failed to initialize interrupts");
 		return -EIO;
 	}
-
-	data->dev = dev;
 #endif
 
 	return 0;
 }
 
 static const struct lsm9ds0_gyro_config lsm9ds0_gyro_config = {
-	.i2c_master_dev_name = DT_INST_0_ST_LSM9DS0_GYRO_BUS_NAME,
-	.i2c_slave_addr = DT_INST_0_ST_LSM9DS0_GYRO_BASE_ADDRESS,
+	.i2c_master_dev_name = DT_INST_BUS_LABEL(0),
+	.i2c_slave_addr = DT_INST_REG_ADDR(0),
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
-	.gpio_drdy_dev_name = DT_INST_0_ST_LSM9DS0_GYRO_IRQ_GPIOS_CONTROLLER,
-	.gpio_drdy_int_pin = DT_INST_0_ST_LSM9DS0_GYRO_IRQ_GPIOS_PIN,
-	.gpio_drdy_int_flags = DT_INST_0_ST_LSM9DS0_GYRO_IRQ_GPIOS_FLAGS,
+	.gpio_drdy_dev_name = DT_INST_GPIO_LABEL(0, irq_gpios),
+	.gpio_drdy_int_pin = DT_INST_GPIO_PIN(0, irq_gpios),
+	.gpio_drdy_int_flags = DT_INST_GPIO_FLAGS(0, irq_gpios),
 #endif
 };
 
 static struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 
-DEVICE_AND_API_INIT(lsm9ds0_gyro, DT_INST_0_ST_LSM9DS0_GYRO_LABEL,
-		    lsm9ds0_gyro_init, &lsm9ds0_gyro_data, &lsm9ds0_gyro_config,
+DEVICE_DT_INST_DEFINE(0, lsm9ds0_gyro_init, device_pm_control_nop,
+		    &lsm9ds0_gyro_data, &lsm9ds0_gyro_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &lsm9ds0_gyro_api_funcs);

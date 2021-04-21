@@ -8,32 +8,8 @@ if BOARD_STM32F072B_DISCO
 config BOARD
 	default "stm32f072b_disco"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-endif # I2C
-
-if SPI
-
-config SPI_1
-	default y
-
 config SPI_STM32_INTERRUPT
 	default y
-
-endif # SPI
-
-config CAN_1
-	default y
-	depends on CAN
+	depends on SPI
 
 endif # BOARD_STM32F072B_DISCO

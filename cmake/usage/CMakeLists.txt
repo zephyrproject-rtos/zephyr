@@ -1,13 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0
 
-string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
-string(REPLACE ";" " " SHIELD_LIST_SPACE_SEPARATED "${SHIELD_LIST}")
+include (${ZEPHYR_BASE}/cmake/shields.cmake)
+include (${ZEPHYR_BASE}/cmake/boards.cmake)
+
+# shields.cmake and boards.cmake can be run with cmake -P for printing
+# help output on user error when settings BOARD or SHIELD, and
+# add_custom_target() is not available in script mode, so we place
+# them in here.
+add_custom_target(shields ${sorted_shield_cmds} USES_TERMINAL)
+add_custom_target(boards ${list_boards_commands} USES_TERMINAL)
 
 add_custom_target(
   usage
   ${CMAKE_COMMAND}
-  -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
-  -DSHIELD_LIST_SPACE_SEPARATED=${SHIELD_LIST_SPACE_SEPARATED}
+  -DZEPHYR_BASE=${ZEPHYR_BASE}
+  -DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
   -P ${CMAKE_CURRENT_SOURCE_DIR}/usage.cmake
   )
 

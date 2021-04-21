@@ -29,7 +29,7 @@ struct tracing_backend;
 struct tracing_backend_api {
 	void (*init)(void);
 	void (*output)(const struct tracing_backend *backend,
-		       u8_t *data, u32_t length);
+		       uint8_t *data, uint32_t length);
 };
 
 /**
@@ -61,7 +61,7 @@ struct tracing_backend {
 static inline void tracing_backend_init(
 		const struct tracing_backend *backend)
 {
-	if (backend && backend->api) {
+	if (backend && backend->api && backend->api->init) {
 		backend->api->init();
 	}
 }
@@ -75,7 +75,7 @@ static inline void tracing_backend_init(
  */
 static inline void tracing_backend_output(
 		const struct tracing_backend *backend,
-		u8_t *data, u32_t length)
+		uint8_t *data, uint32_t length)
 {
 	if (backend && backend->api) {
 		backend->api->output(backend, data, length);

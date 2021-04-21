@@ -22,7 +22,7 @@ static struct bt_uuid_128 test_chrc_uuid = BT_UUID_INIT_128(
 	0xf2, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static u8_t test_value[] = { 'T', 'e', 's', 't', '\0' };
+static uint8_t test_value[] = { 'T', 'e', 's', 't', '\0' };
 
 static struct bt_uuid_128 test1_uuid = BT_UUID_INIT_128(
 	0xf4, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
@@ -32,15 +32,15 @@ static const struct bt_uuid_128 test1_nfy_uuid = BT_UUID_INIT_128(
 	0xf5, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static u8_t nfy_enabled;
+static uint8_t nfy_enabled;
 
-static void test1_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
+static void test1_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	nfy_enabled = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
 }
 
 static ssize_t read_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, u16_t len, u16_t offset)
+			void *buf, uint16_t len, uint16_t offset)
 {
 	const char *value = attr->user_data;
 
@@ -49,10 +49,10 @@ static ssize_t read_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static ssize_t write_test(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			 const void *buf, u16_t len, u16_t offset,
-			 u8_t flags)
+			 const void *buf, uint16_t len, uint16_t offset,
+			 uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset + len > sizeof(test_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -136,16 +136,18 @@ void test_gatt_unregister(void)
 		     "Test service unregister failed");
 }
 
-static u8_t count_attr(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t count_attr(const struct bt_gatt_attr *attr, uint16_t handle,
+			  void *user_data)
 {
-	u16_t *count = user_data;
+	uint16_t *count = user_data;
 
 	(*count)++;
 
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static u8_t find_attr(const struct bt_gatt_attr *attr, void *user_data)
+static uint8_t find_attr(const struct bt_gatt_attr *attr, uint16_t handle,
+			 void *user_data)
 {
 	const struct bt_gatt_attr **tmp = user_data;
 
@@ -157,7 +159,7 @@ static u8_t find_attr(const struct bt_gatt_attr *attr, void *user_data)
 void test_gatt_foreach(void)
 {
 	const struct bt_gatt_attr *attr;
-	u16_t num = 0;
+	uint16_t num = 0;
 
 	/* Attempt to register services */
 	zassert_false(bt_gatt_service_register(&test_svc),
@@ -225,7 +227,7 @@ void test_gatt_foreach(void)
 void test_gatt_read(void)
 {
 	const struct bt_gatt_attr *attr;
-	u8_t buf[256];
+	uint8_t buf[256];
 	ssize_t ret;
 
 	/* Find attribute by UUID */

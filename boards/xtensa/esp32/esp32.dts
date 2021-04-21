@@ -20,15 +20,16 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
 	};
 };
 
 &cpu0 {
-	clock-frequency = <40000000>;
+	clock-frequency = <ESP32_CLK_CPU_240M>;
 };
 
 &cpu1 {
-	clock-frequency = <40000000>;
+	clock-frequency = <ESP32_CLK_CPU_240M>;
 };
 
 &uart0 {
@@ -71,6 +72,56 @@
 	scl-pin = <5>;
 };
 
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	miso-pin = <12>;
+	mosi-pin = <13>;
+	sclk-pin = <14>;
+	csel-pin = <15>;
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	miso-pin = <19>;
+	mosi-pin = <23>;
+	sclk-pin = <18>;
+	csel-pin = <5>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
 &trng0 {
 	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@9000 {
+			label = "storage";
+			reg = <0x00009000 0x00006000>;
+		};
+	};
 };

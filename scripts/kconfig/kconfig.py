@@ -23,6 +23,9 @@ from kconfiglib import Kconfig, split_expr, expr_value, expr_str, BOOL, \
 def main():
     args = parse_args()
 
+    if args.zephyr_base:
+        os.environ['ZEPHYR_BASE'] = args.zephyr_base
+
     print("Parsing " + args.kconfig_file)
     kconf = Kconfig(args.kconfig_file, warn_to_stderr=False,
                     suppress_traceback=True)
@@ -118,8 +121,8 @@ def check_assigned_sym_values(kconf):
             user_value = TRI_TO_STR[user_value]
 
         if user_value != sym.str_value:
-            msg = f"{sym.name_and_loc} was assigned the value '{user_value}' " \
-                  f"but got the value '{sym.str_value}'. "
+            msg = f"{sym.name_and_loc} was assigned the value '{user_value}'" \
+                  f" but got the value '{sym.str_value}'. "
 
             # List any unsatisfied 'depends on' dependencies in the warning
             mdeps = missing_deps(sym)
@@ -132,7 +135,8 @@ def check_assigned_sym_values(kconf):
                         # Gives '(FOO || BAR) (=n)' instead of
                         # 'FOO || BAR (=n)', which might be clearer.
                         estr = f"({estr})"
-                    expr_strs.append(f"{estr} (={TRI_TO_STR[expr_value(expr)]})")
+                    expr_strs.append(f"{estr} "
+                                     f"(={TRI_TO_STR[expr_value(expr)]})")
 
                 msg += "Check these unsatisfied dependencies: " + \
                     ", ".join(expr_strs) + ". "
@@ -171,9 +175,9 @@ def check_assigned_choice_values(kconf):
     #
     # We check choice symbols separately to avoid warnings when two different
     # choice symbols within the same choice are set to y. This might happen if
-    # a choice selection from a board defconfig is overridden in a prj.conf, for
-    # example. The last choice symbol set to y becomes the selection (and all
-    # other choice symbols get the value n).
+    # a choice selection from a board defconfig is overridden in a prj.conf,
+    # for example. The last choice symbol set to y becomes the selection (and
+    # all other choice symbols get the value n).
     #
     # Without special-casing choices, we'd detect that the first symbol set to
     # y ended up as n, and print a spurious warning.
@@ -226,6 +230,8 @@ def parse_args():
                              "handwritten fragments and do additional checks "
                              "on them, like no promptless symbols being "
                              "assigned")
+    parser.add_argument("--zephyr-base",
+                        help="Path to current Zephyr installation")
     parser.add_argument("kconfig_file",
                         help="Top-level Kconfig file")
     parser.add_argument("config_out",

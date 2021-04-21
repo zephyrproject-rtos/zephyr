@@ -1,0 +1,23 @@
+# DAC configuration options
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_MCUX_DAC
+	bool "NXP Kinetis MCUX DAC driver"
+	depends on HAS_MCUX_DAC
+	help
+	  Enable the driver for the NXP Kinetis MCUX DAC.
+
+config DAC_MCUX_DAC32
+	bool "NXP Kinetis MCUX DAC32 driver"
+	depends on HAS_MCUX_DAC32
+	help
+	  Enable the driver for the NXP Kinetis MCUX DAC32.
+
+config DAC_MCUX_DAC32_TESTOUT
+	bool "Enable DAC test output"
+	depends on DAC_MCUX_DAC32
+	help
+	  Enable the DAC test output.

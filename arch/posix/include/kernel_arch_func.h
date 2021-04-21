@@ -18,12 +18,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN)
-void arch_switch_to_main_thread(struct k_thread *main_thread,
-				k_thread_stack_t *main_stack,
-				size_t main_stack_size, k_thread_entry_t _main);
-#endif
-
 static inline void arch_kernel_init(void)
 {
 	/* Nothing to be done */
@@ -41,7 +35,7 @@ arch_thread_return_value_set(struct k_thread *thread, unsigned int value)
 
 static inline bool arch_is_in_isr(void)
 {
-	return _kernel.nested != 0U;
+	return _kernel.cpus[0].nested != 0U;
 }
 
 #endif /* _ASMLANGUAGE */

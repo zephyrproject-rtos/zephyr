@@ -26,7 +26,7 @@ static int test_file_open(const char *path)
 	}
 
 	/* Verify fs_open() */
-	res = fs_open(&filep, path);
+	res = fs_open(&filep, path, FS_O_CREATE | FS_O_RDWR);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;
@@ -177,7 +177,7 @@ static int test_file_truncate(void)
 	}
 
 	orig_pos = fs_tell(&filep);
-	TC_PRINT("Original size of file = %ld\n", orig_pos);
+	TC_PRINT("Original size of file = %ld\n", (long) orig_pos);
 
 	/* Test shrinking file */
 	TC_PRINT("\nTesting shrinking\n");
@@ -196,7 +196,7 @@ static int test_file_truncate(void)
 	}
 
 	TC_PRINT("File size after shrinking by 5 bytes = %ld\n",
-						fs_tell(&filep));
+						(long) fs_tell(&filep));
 	if (fs_tell(&filep) != (orig_pos - 5)) {
 		TC_PRINT("File size after fs_truncate not as expected\n");
 		fs_close(&filep);
@@ -228,7 +228,7 @@ static int test_file_truncate(void)
 	}
 
 	TC_PRINT("File size after expanding by 10 bytes = %ld\n",
-						fs_tell(&filep));
+						(long) fs_tell(&filep));
 	if (fs_tell(&filep) != (orig_pos + 10)) {
 		TC_PRINT("File size after fs_truncate not as expected\n");
 		fs_close(&filep);

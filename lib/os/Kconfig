@@ -21,4 +21,60 @@ config BASE64
 	help
 	  Enable base64 encoding and decoding functionality
 
+config SYS_HEAP_VALIDATE
+	bool "Enable internal heap validity checking"
+	help
+	  The sys_heap implementation is instrumented for extensive
+	  internal validation.  Leave this off by default, unless
+	  modifying the heap code or (maybe) when running in
+	  environments that require sensitive detection of memory
+	  corruption.
+
+config SYS_HEAP_ALLOC_LOOPS
+	int "Number of tries in the inner heap allocation loop"
+	default 3
+	help
+	  The sys_heap allocator bounds the number of tries from the
+	  smallest chunk level (the one that might not fit the
+	  requested allocation) to maintain constant time performance.
+	  Setting this to a high level will cause the heap to return
+	  more successful allocations in situations of high
+	  fragmentation, at the cost of potentially significant
+	  (linear time) searching of the free list.  The default is
+	  three, which results in an allocator with good statistical
+	  properties ("most" allocations that fit will succeed) but
+	  keeps the maximum runtime at a tight bound so that the heap
+	  is useful in locked or ISR contexts.
+
+config PRINTK64
+	bool "Enable 64 bit printk conversions (DEPRECATED)"
+	help
+	  Replace with CBPRINTF_FULL_INTEGRAL.
+
+config PRINTK_SYNC
+	bool "Serialize printk() calls"
+	default y if SMP && MP_NUM_CPUS > 1
+	help
+	  When true, a spinlock will be taken around the output from a
+	  single printk() call, preventing the output data from
+	  interleaving with concurrent usage from another CPU or an
+	  preempting interrupt.
+
+config MPSC_PBUF
+	bool "Multi producer, single consumer packet buffer"
+	select TIMEOUT_64BIT
+	help
+	  Enable usage of mpsc packet buffer. Packet buffer is capable of
+	  storing variable length packets in a circular way and operate directly
+	  on the buffer memory.
+
+if MPSC_PBUF
+config MPSC_CLEAR_ALLOCATED
+	bool "Clear allocated packet"
+	help
+	  When enabled packet space is zeroed before returning from allocation.
+endif
+
+rsource "Kconfig.cbprintf"
+
 endmenu

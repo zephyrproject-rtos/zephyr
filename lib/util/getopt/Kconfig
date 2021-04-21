@@ -1,0 +1,7 @@
+# Copyright (c) 2021 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config GETOPT
+	bool "GetOpt Support"
+	help
+	  This option enables the getopt library

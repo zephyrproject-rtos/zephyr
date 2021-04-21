@@ -49,7 +49,7 @@ these references:
 - `i.MX RT1010 Datasheet`_
 - `i.MX RT1010 Reference Manual`_
 - `MIMXRT1010-EVK Website`_
-- `MIMXRT1010-EVK Quick Reference Guide`_
+- `MIMXRT1010-EVK User Guide`_
 - `MIMXRT1010-EVK Design Files`_
 
 Supported Features
@@ -177,8 +177,8 @@ see the following message in the terminal:
 .. _MIMXRT1010-EVK Website:
    https://www.nxp.com/MIMXRT1010-EVK
 
-.. _MIMXRT1010-EVK Quick Reference Guide:
-   https://www.nxp.com/docs/en/quick-reference-guide/iMX-RT1010-EVK-QSG.pdf
+.. _MIMXRT1010-EVK User Guide:
+   https://www.nxp.com/webapp/Download?colCode=MIMXRT1010EVKHUG
 
 .. _MIMXRT1010-EVK Design Files:
    https://www.nxp.com/downloads/en/printed-circuit-boards/IMXRT1010-EVK-DESIGN-FILES.7z
@@ -190,4 +190,4 @@ see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/IMXRT1010CEC.pdf
 
 .. _i.MX RT1010 Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/IMXRT1010RM.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1010RM

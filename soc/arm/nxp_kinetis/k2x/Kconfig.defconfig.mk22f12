@@ -12,9 +12,19 @@ config ADC_MCUX_ADC16
 	default y
 	depends on ADC
 
+config DAC_MCUX_DAC
+	default y
+	depends on DAC
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_MCG
+	default y
+
 config CLOCK_CONTROL_MCUX_SIM
 	default y
-	depends on CLOCK_CONTROL
+
+endif # CLOCK_CONTROL
 
 config PINMUX_MCUX
 	default y

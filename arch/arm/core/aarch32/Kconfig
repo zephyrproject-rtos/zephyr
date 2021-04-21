@@ -3,13 +3,6 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if !ARM64
-
-config CPU_CORTEX
-	bool
-	help
-	  This option signifies the use of a CPU of the Cortex family.
-
 config CPU_CORTEX_M
 	bool
 	select CPU_CORTEX
@@ -24,6 +17,10 @@ config CPU_CORTEX_M
 	select ARCH_HAS_RAMFUNC_SUPPORT
 	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	select SWAP_NONATOMIC
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	select ARCH_HAS_TIMING_FUNCTIONS if CPU_CORTEX_M_HAS_DWT
+	select ARCH_SUPPORTS_ARCH_HW_INIT
+	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
 
@@ -32,6 +29,7 @@ config CPU_CORTEX_R
 	select CPU_CORTEX
 	select HAS_CMSIS_CORE
 	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 
@@ -75,6 +73,38 @@ config ISA_ARM
 	  performance, or for handling hardware exceptions such as interrupts and
 	  processor start-up. Much of its functionality was subsumed into T32 with
 	  the introduction of Thumb-2 technology.
+
+config ASSEMBLER_ISA_THUMB2
+	bool
+	default y if ISA_THUMB2 && !ISA_ARM
+	depends on !ISA_ARM
+	help
+	  This helper symbol specifies the default target instruction set for
+	  the assembler.
+
+	  When only the Thumb-2 ISA is supported (i.e. on Cortex-M cores), the
+	  assembler must use the Thumb-2 instruction set.
+
+	  When both the Thumb-2 and ARM ISAs are supported (i.e. on Cortex-A
+	  and Cortex-R cores), the assembler must use the ARM instruction set
+	  because the architecture assembly code makes use of the ARM
+	  instructions.
+
+config COMPILER_ISA_THUMB2
+	bool "Compile C/C++ functions using Thumb-2 instruction set"
+	depends on ISA_THUMB2
+	default y
+	help
+	  This option configures the compiler to compile all C/C++ functions
+	  using the Thumb-2 instruction set.
+
+	  N.B. The scope of this symbol is not necessarily limited to the C and
+	       C++ languages; in fact, this symbol refers to all forms of
+	       "compiled" code.
+
+	       When an additional natively-compiled language support is added
+	       in the future, this symbol shall also specify the Thumb-2
+	       instruction set for that language.
 
 config NUM_IRQS
 	int
@@ -185,81 +215,21 @@ config ARM_NONSECURE_FIRMWARE
 	  resources of the Cortex-M MCU, and, therefore, it shall avoid
 	  accessing them.
 
-
-menu "ARM TrustZone Options"
-depends on ARM_SECURE_FIRMWARE || ARM_NONSECURE_FIRMWARE
-
-comment "Secure firmware"
-	depends on ARM_SECURE_FIRMWARE
-
-comment "Non-secure firmware"
-	depends on !ARM_SECURE_FIRMWARE
-
-config ARM_SECURE_BUSFAULT_HARDFAULT_NMI
-	bool "BusFault, HardFault, and NMI target Secure state"
-	depends on ARM_SECURE_FIRMWARE
-	help
-	  Force NMI, HardFault, and BusFault (in Mainline ARMv8-M)
-	  exceptions as Secure exceptions.
-
-config ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
-	bool "Secure Firmware has Secure Entry functions"
-	depends on ARM_SECURE_FIRMWARE
-	help
-	  Option indicates that ARM Secure Firmware contains
-	  Secure Entry functions that may be called from
-	  Non-Secure state. Secure Entry functions must be
-	  located in Non-Secure Callable memory regions.
-
-config ARM_NSC_REGION_BASE_ADDRESS
-	hex "ARM Non-Secure Callable Region base address"
-	depends on ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
-	default 0
-	help
-	  Start address of Non-Secure Callable section.
-
-	  Notes:
-	  - The default value (i.e. when the user does not configure
-	  the option explicitly) instructs the linker script to
-	  place the Non-Secure Callable section, automatically,
-	  inside the .text area.
-	  - Certain requirements/restrictions may apply regarding
-	  the size and the alignment of the starting address for
-	  a Non-Secure Callable section, depending on the available
-	  security attribution unit (SAU or IDAU) for a given SOC.
-
-config ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
-	bool "Non-Secure Firmware uses Secure Entry functions"
-	depends on ARM_NONSECURE_FIRMWARE
-	help
-	  Option indicates that ARM Non-Secure Firmware uses Secure
-	  Entry functions provided by the Secure Firmware. The Secure
-	  Firmware must be configured to provide these functions.
-
-config ARM_ENTRY_VENEERS_LIB_NAME
-	string "Entry Veneers symbol file"
-	depends on ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS \
-	        || ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
-	default "libentryveneers.a"
-	help
-	  Library file to find the symbol table for the entry veneers.
-	  The library will typically come from building the Secure
-	  Firmware that contains secure entry functions, and allows
-	  the Non-Secure Firmware to call into the Secure Firmware.
-
-endmenu
-
 choice
 	prompt "Floating point ABI"
 	default FP_HARDABI
-	depends on FLOAT
+	depends on FPU
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"
+	depends on !BUILD_WITH_TFM
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling
-	  conventions
+	  conventions.
+	  Note: the option is disabled for Zephyr builds with TF-M, as TF-M
+	  does not currently support building with Hard ABI, hence linking
+	  Zephyr with TF-M libraries would not be possible.
 
 config FP_SOFTABI
 	bool "Floating point Soft ABI"
@@ -270,10 +240,4 @@ config FP_SOFTABI
 endchoice
 
 rsource "cortex_m/Kconfig"
-rsource "cortex_r/Kconfig"
-
-rsource "cortex_m/mpu/Kconfig"
-
-rsource "cortex_m/tz/Kconfig"
-
-endif # !ARM64
+rsource "cortex_a_r/Kconfig"

@@ -9,3 +9,4 @@ Guides on how to optimize Zephyr for performance, power and footprint.
    :maxdepth: 1
 
    footprint.rst
+   tools.rst

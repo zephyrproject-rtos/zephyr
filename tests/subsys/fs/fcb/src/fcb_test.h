@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -20,17 +20,19 @@
 extern "C" {
 #endif
 
-#define TEST_FCB_FLASH_AREA_ID DT_FLASH_AREA_IMAGE_1_ID
+#define TEST_FCB_FLASH_AREA_ID FLASH_AREA_ID(image_1)
 
 extern struct fcb test_fcb;
 
 extern struct flash_sector test_fcb_sector[];
 
+extern uint8_t fcb_test_erase_value;
+
 struct append_arg {
 	int *elem_cnts;
 };
 
-void fcb_test_wipe(void);
+void test_fcb_wipe(void);
 int fcb_test_empty_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg);
 uint8_t fcb_test_append_data(int msg_len, int off);
 int fcb_test_data_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg);

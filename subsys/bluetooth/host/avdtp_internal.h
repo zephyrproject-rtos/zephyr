@@ -82,7 +82,7 @@
 #define BT_AVDTP_ERR_UNSUPPORTED_CONFIGURAION   0x29
 #define BT_AVDTP_ERR_BAD_STATE                  0x31
 
-#define BT_AVDTP_MAX_MTU BT_L2CAP_RX_MTU
+#define BT_AVDTP_MAX_MTU CONFIG_BT_L2CAP_RX_MTU
 
 #define BT_AVDTP_MIN_SEID 0x01
 #define BT_AVDTP_MAX_SEID 0x3E
@@ -94,15 +94,15 @@ typedef int (*bt_avdtp_func_t)(struct bt_avdtp *session,
 			       struct bt_avdtp_req *req);
 
 struct bt_avdtp_req {
-	u8_t sig;
-	u8_t tid;
+	uint8_t sig;
+	uint8_t tid;
 	bt_avdtp_func_t func;
 	struct k_delayed_work timeout_work;
 };
 
 struct bt_avdtp_single_sig_hdr {
-	u8_t hdr;
-	u8_t signal_id;
+	uint8_t hdr;
+	uint8_t signal_id;
 } __packed;
 
 #define BT_AVDTP_SIG_HDR_LEN sizeof(struct bt_avdtp_single_sig_hdr)
@@ -120,20 +120,20 @@ struct bt_avdtp_ind_cb {
 };
 
 struct bt_avdtp_cap {
-	u8_t cat;
-	u8_t len;
-	u8_t data[0];
+	uint8_t cat;
+	uint8_t len;
+	uint8_t data[0];
 };
 
 struct bt_avdtp_sep {
-	u8_t seid;
-	u8_t len;
+	uint8_t seid;
+	uint8_t len;
 	struct bt_avdtp_cap caps[0];
 };
 
 struct bt_avdtp_discover_params {
 	struct bt_avdtp_req req;
-	u8_t status;
+	uint8_t status;
 	struct bt_avdtp_sep *caps;
 };
 
@@ -162,7 +162,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session);
 int bt_avdtp_disconnect(struct bt_avdtp *session);
 
 /* AVDTP SEP register function */
-int bt_avdtp_register_sep(u8_t media_type, u8_t role,
+int bt_avdtp_register_sep(uint8_t media_type, uint8_t role,
 				struct bt_avdtp_seid_lsep *sep);
 
 /* AVDTP Discover Request */

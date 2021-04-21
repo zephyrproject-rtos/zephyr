@@ -36,13 +36,23 @@ config WDT_MCUX_WDOG32
 	default y
 	depends on WATCHDOG
 
+if COUNTER
+
 config COUNTER_MCUX_RTC
 	default y
-	depends on COUNTER
+
+config COUNTER_MCUX_LPTMR
+	default y
+
+endif # COUNTER
 
 config PWM_MCUX_FTM
 	default y
 	depends on PWM
+
+config PWM_MCUX_PWT
+	default y
+	depends on PWM_CAPTURE
 
 config PINMUX_MCUX
 	default y
@@ -74,6 +84,14 @@ config SPI_MCUX_LPSPI
 config ADC_MCUX_ADC12
 	default y
 	depends on ADC
+
+config DAC_MCUX_DAC32
+	default y
+	depends on DAC
+
+config DMA_MCUX_EDMA
+	default y
+	depends on DMA
 
 source "soc/arm/nxp_kinetis/ke1xf/Kconfig.defconfig.mke*"
 

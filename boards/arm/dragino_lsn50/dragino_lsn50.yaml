@@ -1,5 +1,5 @@
 identifier: dragino_lsn50
-name: DRAGINO_LSN50
+name: Dragino LSN50 LoRA Sensor Node
 type: mcu
 arch: arm
 toolchain:

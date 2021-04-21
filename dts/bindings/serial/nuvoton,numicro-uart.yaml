@@ -1,0 +1,9 @@
+description: NUVOTON NUMICRO FAMILY UART
+
+compatible: "nuvoton,numicro-uart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true

@@ -10,6 +10,7 @@
 #include <zephyr.h>
 #include <logging/log_backend.h>
 #include <logging/log_output.h>
+#include <sys/mpsc_pbuf.h>
 #include <sys/atomic.h>
 #ifdef __cplusplus
 extern "C" {
@@ -37,19 +38,21 @@ struct shell_log_backend {
 	struct k_msgq *msgq;
 	const struct log_output *log_output;
 	struct shell_log_backend_control_block *control_block;
-	u32_t timeout;
+	uint32_t timeout;
+	const struct mpsc_pbuf_buffer_config *mpsc_buffer_config;
+	struct mpsc_pbuf_buffer *mpsc_buffer;
 };
 
 /** @brief Shell log backend message structure. */
 struct shell_log_backend_msg {
 	struct log_msg *msg;
-	u32_t timestamp;
+	uint32_t timestamp;
 };
 
 /** @brief Prototype of function outputing processed data. */
-int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
+int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx);
 
-/** @def SHELL_LOG_BACKEND_DEFINE
+/** @def Z_SHELL_LOG_BACKEND_DEFINE
  *  @brief Macro for creating instance of shell log backend.
  *
  *  @param _name	Shell name.
@@ -59,31 +62,45 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
  *  @param _timeout	Timeout in milliseconds for pending on queue full.
  *			Message is dropped on timeout.
  */
-/** @def SHELL_LOG_BACKEND_PTR
+/** @def Z_SHELL_LOG_BACKEND_PTR
  *  @brief Macro for retrieving pointer to the instance of shell log backend.
  *
  *  @param _name Shell name.
  */
 #ifdef CONFIG_SHELL_LOG_BACKEND
-#define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout)  \
-	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api, false);   \
-	K_MSGQ_DEFINE(_name##_msgq, sizeof(struct shell_log_backend_msg),    \
-			_queue_size, sizeof(void *));			     \
-	LOG_OUTPUT_DEFINE(_name##_log_output, shell_log_backend_output_func, \
-			  _buf, _size);					     \
+#define Z_SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout) \
+	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api, false); \
+	K_MSGQ_DEFINE(_name##_msgq, sizeof(struct shell_log_backend_msg), \
+			_queue_size, sizeof(void *)); \
+	LOG_OUTPUT_DEFINE(_name##_log_output, z_shell_log_backend_output_func,\
+			  _buf, _size); \
 	static struct shell_log_backend_control_block _name##_control_block; \
-	static const struct shell_log_backend _name##_log_backend = {	     \
-		.backend = &_name##_backend,				     \
-		.msgq = &_name##_msgq,					     \
-		.log_output = &_name##_log_output,			     \
-		.control_block = &_name##_control_block,		     \
-		.timeout = _timeout					     \
+	static uint32_t _name##_buf[128]; \
+	const struct mpsc_pbuf_buffer_config _name##_mpsc_buffer_config = { \
+		.buf = _name##_buf, \
+		.size = ARRAY_SIZE(_name##_buf), \
+		.notify_drop = NULL, \
+		.get_wlen = log_msg2_generic_get_wlen, \
+		.flags = MPSC_PBUF_MODE_OVERWRITE, \
+	}; \
+	struct mpsc_pbuf_buffer _name##_mpsc_buffer; \
+	static const struct shell_log_backend _name##_log_backend = { \
+		.backend = &_name##_backend, \
+		.msgq = IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) ? \
+			&_name##_msgq : NULL, \
+		.log_output = &_name##_log_output, \
+		.control_block = &_name##_control_block, \
+		.timeout = _timeout, \
+		.mpsc_buffer_config = IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED) ? \
+			&_name##_mpsc_buffer_config : NULL, \
+		.mpsc_buffer = IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED) ? \
+			&_name##_mpsc_buffer : NULL, \
 	}
 
-#define SHELL_LOG_BACKEND_PTR(_name) (&_name##_log_backend)
+#define Z_SHELL_LOG_BACKEND_PTR(_name) (&_name##_log_backend)
 #else /* CONFIG_LOG */
-#define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout)
-#define SHELL_LOG_BACKEND_PTR(_name) NULL
+#define Z_SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout)
+#define Z_SHELL_LOG_BACKEND_PTR(_name) NULL
 #endif /* CONFIG_LOG */
 
 /** @brief Enable shell log backend.
@@ -92,14 +109,14 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
  * @param ctx			Pointer to shell instance.
  * @param init_log_level	Initial log level set to all logging sources.
  */
-void shell_log_backend_enable(const struct shell_log_backend *backend,
-			      void *ctx, u32_t init_log_level);
+void z_shell_log_backend_enable(const struct shell_log_backend *backend,
+				void *ctx, uint32_t init_log_level);
 
 /** @brief Disable shell log backend.
  *
  * @param backend Shell log backend instance.
  */
-void shell_log_backend_disable(const struct shell_log_backend *backend);
+void z_shell_log_backend_disable(const struct shell_log_backend *backend);
 
 /** @brief Trigger processing of one log entry.
  *
@@ -107,7 +124,7 @@ void shell_log_backend_disable(const struct shell_log_backend *backend);
  *
  * @return True if message was processed, false if FIFO was empty
  */
-bool shell_log_backend_process(const struct shell_log_backend *backend);
+bool z_shell_log_backend_process(const struct shell_log_backend *backend);
 
 #ifdef __cplusplus
 }

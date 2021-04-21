@@ -14,18 +14,55 @@ menuconfig SOC_FLASH_NRF
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select NRFX_NVMC
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	default y
 	help
 	  Enables Nordic Semiconductor nRF flash driver.
 
 if SOC_FLASH_NRF
 
-config SOC_FLASH_NRF_RADIO_SYNC
-	bool "Nordic nRFx flash driver synchronized with radio"
-	default y
-	depends on BT_CTLR
+choice SOC_FLASH_NRF_RADIO_SYNC_CHOICE
+	prompt "Nordic nRFx flash driver synchronization"
+	default SOC_FLASH_NRF_RADIO_SYNC_TICKER if BT_LL_SW_SPLIT
+	default SOC_FLASH_NRF_RADIO_SYNC_NONE
 	help
-	  Enable synchronization between flash memory driver and radio.
+	  synchronization between flash memory driver and radio.
+
+config SOC_FLASH_NRF_RADIO_SYNC_TICKER
+	bool "Nordic nRFx flash driver synchronized with radio"
+	depends on BT_LL_SW_SPLIT
+	help
+	  Enable synchronization between flash memory driver and radio using
+	  BLE LL controller ticker API.
+
+config SOC_FLASH_NRF_RADIO_SYNC_NONE
+	bool "none"
+	help
+	  disable synchronization between flash memory driver and radio.
+endchoice
+
+config SOC_FLASH_NRF_PARTIAL_ERASE
+	bool "Nordic nRFx flash driver partial erase"
+	depends on HAS_HW_NRF_NVMC_PE
+	help
+	  Enable partial erase feature. Partial erase is performed in time
+	  slices instead of blocking MCU, for the time it is needed to
+	  complete operation over given area.
+	  This allows interrupting flash erase between operations
+	  to perform other task by MCU.
+	  This feature may also be used for better syncing flash erase
+	  operations, when compiled with SOC_FLASH_NRF_RADIO_SYNC_TICKER,
+	  with Bluetooth.
+
+config SOC_FLASH_NRF_PARTIAL_ERASE_MS
+	int "Partial erase timeout in MS"
+	depends on SOC_FLASH_NRF_PARTIAL_ERASE
+	default 3
+	help
+	  This is maximum time, in ms, that NVMC will use to erase part
+	  of Flash, before stopping to let CPU resume operation.
+	  Minimal timeout is 2ms maximum should not exceed half of
+	  FLASH_PAGE_ERASE_MAX_TIME_US im ms.
 
 config SOC_FLASH_NRF_UICR
 	bool "Access to UICR"

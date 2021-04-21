@@ -11,17 +11,6 @@
 
 #define SPI_NOR_MAX_ID_LEN	3
 
-struct spi_nor_config {
-	/* JEDEC id from devicetree */
-	u8_t id[SPI_NOR_MAX_ID_LEN];
-
-	/* Indicates support for BE32K */
-	bool has_be32k;
-
-	/* Size from devicetree, in bytes */
-	u32_t size;
-};
-
 /* Status register bits */
 #define SPI_NOR_WIP_BIT         BIT(0)  /* Write in progress */
 #define SPI_NOR_WEL_BIT         BIT(1)  /* Write enable latch */
@@ -47,15 +36,8 @@ struct spi_nor_config {
 #define SPI_NOR_SECTOR_SIZE  0x1000U
 #define SPI_NOR_BLOCK_SIZE   0x10000U
 
-/* Some devices support erase operations on 32 KiBy blocks.
- * Support is indicated by the has-be32k property.
- */
-#define SPI_NOR_BLOCK32_SIZE 0x8000
-
-/* Test whether offset is aligned. */
-#define SPI_NOR_IS_PAGE_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_PAGE_SIZE - 1U)) == 0)
-#define SPI_NOR_IS_SECTOR_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_SECTOR_SIZE - 1U)) == 0)
-#define SPI_NOR_IS_BLOCK_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_BLOCK_SIZE - 1U)) == 0)
-#define SPI_NOR_IS_BLOCK32_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_BLOCK32_SIZE - 1U)) == 0)
+/* Test whether offset is aligned to a given number of bits. */
+#define SPI_NOR_IS_ALIGNED(_ofs, _bits) (((_ofs) & BIT_MASK(_bits)) == 0)
+#define SPI_NOR_IS_SECTOR_ALIGNED(_ofs) SPI_NOR_IS_ALIGNED(_ofs, 12)
 
 #endif /*__SPI_NOR_H__*/

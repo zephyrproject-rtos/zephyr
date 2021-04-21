@@ -24,9 +24,9 @@
  *
  * @return 0
  */
-static int stm32l1_init(struct device *arg)
+static int stm32l1_init(const struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 

@@ -98,7 +98,7 @@ void exc_divide_error_handler(z_arch_esf_t *p_esf)
 	/* provide evidence that the handler executed */
 	exc_handler_executed = 1;
 }
-_EXCEPTION_CONNECT_NOCODE(exc_divide_error_handler, IV_DIVIDE_ERROR);
+_EXCEPTION_CONNECT_NOCODE(exc_divide_error_handler, IV_DIVIDE_ERROR, 0);
 extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
 
 /**
@@ -112,13 +112,13 @@ extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
 void test_idt_stub(void)
 {
 	struct segment_descriptor *p_idt_entry;
-	u32_t offset;
+	uint32_t offset;
 
 	TC_PRINT("Testing to see if IDT has address of test stubs()\n");
 	/* Check for the interrupt stub */
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (TEST_SOFT_INT << 3));
-	offset = (u32_t)(&int_stub);
+	offset = (uint32_t)(&int_stub);
 	zassert_equal(DTE_OFFSET(p_idt_entry), offset,
 		      "Failed to find offset of int_stub (0x%x)"
 		      " at vector %d\n", offset, TEST_SOFT_INT);
@@ -126,7 +126,7 @@ void test_idt_stub(void)
 	/* Check for the exception stub */
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (IV_DIVIDE_ERROR << 3));
-	offset = (u32_t)(&_EXCEPTION_STUB_NAME(exc_divide_error_handler, 0));
+	offset = (uint32_t)(&_EXCEPTION_STUB_NAME(exc_divide_error_handler, 0));
 	zassert_equal(DTE_OFFSET(p_idt_entry), offset,
 		      "Failed to find offset of exc stub (0x%x)"
 		      " at vector %d\n", offset, IV_DIVIDE_ERROR);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -10,8 +10,11 @@
 
 #include "fcb_test.h"
 #include <storage/flash_map.h>
+#include <drivers/flash.h>
+#include <device.h>
 
 struct fcb test_fcb;
+uint8_t fcb_test_erase_value;
 
 /* Sectors for FCB are defined far from application code
  * area. This test suite is the non bootable application so 1. image slot is
@@ -37,7 +40,7 @@ struct flash_sector test_fcb_sector[] = {
 };
 
 
-void fcb_test_wipe(void)
+void test_fcb_wipe(void)
 {
 	int i;
 	int rc;
@@ -59,15 +62,15 @@ int fcb_test_empty_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 	return 0;
 }
 
-u8_t fcb_test_append_data(int msg_len, int off)
+uint8_t fcb_test_append_data(int msg_len, int off)
 {
 	return (msg_len ^ off);
 }
 
 int fcb_test_data_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 {
-	u16_t len;
-	u8_t test_data[128];
+	uint16_t len;
+	uint8_t test_data[128];
 	int rc;
 	int i;
 	int *var_cnt = (int *)arg;
@@ -104,9 +107,10 @@ void fcb_tc_pretest(int sectors)
 	struct fcb *fcb;
 	int rc = 0;
 
-	fcb_test_wipe();
+	test_fcb_wipe();
 	fcb = &test_fcb;
 	(void)memset(fcb, 0, sizeof(*fcb));
+	fcb->f_erase_value = fcb_test_erase_value;
 	fcb->f_sector_cnt = sectors;
 	fcb->f_sectors = test_fcb_sector; /* XXX */
 
@@ -132,48 +136,75 @@ void teardown_nothing(void)
 {
 }
 
-void fcb_test_len(void);
-void fcb_test_init(void);
-void fcb_test_empty_walk(void);
-void fcb_test_append(void);
-void fcb_test_append_too_big(void);
-void fcb_test_append_fill(void);
-void fcb_test_reset(void);
-void fcb_test_rotate(void);
-void fcb_test_multi_scratch(void);
-void fcb_test_last_of_n(void);
+/*
+ * This actually is not a test; the function gets erase value from flash
+ * parameters, of the flash device that is used by tests, and stores it in
+ * global fcb_test_erase_value.
+ */
+void test_get_flash_erase_value(void)
+{
+	const struct flash_area *fa;
+	const struct flash_parameters *fp;
+	const struct device *dev;
+	int rc = 0;
+
+	rc = flash_area_open(TEST_FCB_FLASH_AREA_ID, &fa);
+	zassert_equal(rc, 0, "Failed top open flash area");
+
+	dev = device_get_binding(fa->fa_dev_name);
+	flash_area_close(fa);
+
+	zassert_true(dev != NULL, "Failed to obtain device");
+
+	fp = flash_get_parameters(dev);
+	zassert_true(fp != NULL, "Failed to get flash device parameters");
+
+	fcb_test_erase_value = fp->erase_value;
+}
+
+void test_fcb_len(void);
+void test_fcb_init(void);
+void test_fcb_empty_walk(void);
+void test_fcb_append(void);
+void test_fcb_append_too_big(void);
+void test_fcb_append_fill(void);
+void test_fcb_reset(void);
+void test_fcb_rotate(void);
+void test_fcb_multi_scratch(void);
+void test_fcb_last_of_n(void);
 
 void test_main(void)
 {
 	ztest_test_suite(test_fcb,
-			 ztest_unit_test_setup_teardown(fcb_test_len,
+			 ztest_unit_test(test_get_flash_erase_value),
+			 ztest_unit_test_setup_teardown(test_fcb_len,
 							fcb_pretest_2_sectors,
 							teardown_nothing),
-			 ztest_unit_test(fcb_test_init),
-			 ztest_unit_test_setup_teardown(fcb_test_empty_walk,
+			 ztest_unit_test(test_fcb_init),
+			 ztest_unit_test_setup_teardown(test_fcb_empty_walk,
 							fcb_pretest_2_sectors,
 							teardown_nothing),
-			 ztest_unit_test_setup_teardown(fcb_test_append,
+			 ztest_unit_test_setup_teardown(test_fcb_append,
 							fcb_pretest_2_sectors,
 							teardown_nothing),
-			 ztest_unit_test_setup_teardown(fcb_test_append_too_big,
+			 ztest_unit_test_setup_teardown(test_fcb_append_too_big,
 							fcb_pretest_2_sectors,
 							teardown_nothing),
-			 ztest_unit_test_setup_teardown(fcb_test_append_fill,
+			 ztest_unit_test_setup_teardown(test_fcb_append_fill,
 							fcb_pretest_2_sectors,
 							teardown_nothing),
-			 ztest_unit_test_setup_teardown(fcb_test_rotate,
+			 ztest_unit_test_setup_teardown(test_fcb_rotate,
 							fcb_pretest_2_sectors,
 							teardown_nothing),
-			 ztest_unit_test_setup_teardown(fcb_test_multi_scratch,
+			 ztest_unit_test_setup_teardown(test_fcb_multi_scratch,
 							fcb_pretest_4_sectors,
 							teardown_nothing),
-			 ztest_unit_test_setup_teardown(fcb_test_last_of_n,
+			 ztest_unit_test_setup_teardown(test_fcb_last_of_n,
 							fcb_pretest_4_sectors,
 							teardown_nothing),
 			 /* Finally, run one that leaves behind a
 			  * flash.bin file without any random content */
-			 ztest_unit_test_setup_teardown(fcb_test_reset,
+			 ztest_unit_test_setup_teardown(test_fcb_reset,
 							fcb_pretest_2_sectors,
 							teardown_nothing)
 			 );

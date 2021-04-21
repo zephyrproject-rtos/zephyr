@@ -3,44 +3,10 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig UART_MCUX
+config UART_MCUX
 	bool "MCUX uart driver"
 	depends on HAS_MCUX && CLOCK_CONTROL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the MCUX uart driver.
-
-if UART_MCUX
-
-config UART_MCUX_0
-	bool "UART 0"
-	help
-	  Enable UART 0.
-
-config UART_MCUX_1
-	bool "UART 1"
-	help
-	  Enable UART 1.
-
-config UART_MCUX_2
-	bool "UART 2"
-	help
-	  Enable UART 2.
-
-config UART_MCUX_3
-	bool "UART 3"
-	help
-	  Enable UART 3.
-
-config UART_MCUX_4
-	bool "UART 4"
-	help
-	  Enable UART 4.
-
-config UART_MCUX_5
-	bool "UART 5"
-	help
-	  Enable UART 5.
-
-endif # UART_MCUX

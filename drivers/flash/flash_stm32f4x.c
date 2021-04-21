@@ -13,9 +13,10 @@
 
 #include "flash_stm32.h"
 
-#define STM32F4X_SECTOR_MASK		((u32_t) 0xFFFFFF07)
+#define STM32F4X_SECTOR_MASK		((uint32_t) 0xFFFFFF07)
 
-bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
+bool flash_stm32_valid_range(const struct device *dev, off_t offset,
+			     uint32_t len,
 			     bool write)
 {
 	ARG_UNUSED(write);
@@ -34,10 +35,10 @@ bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 	return flash_stm32_range_exists(dev, offset, len);
 }
 
-static int write_byte(struct device *dev, off_t offset, u8_t val)
+static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	u32_t tmp;
+	uint32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
@@ -50,14 +51,14 @@ static int write_byte(struct device *dev, off_t offset, u8_t val)
 		return rc;
 	}
 
-	regs->CR &= ~CR_PSIZE_MASK;
+	regs->CR &= CR_PSIZE_MASK;
 	regs->CR |= FLASH_PSIZE_BYTE;
 	regs->CR |= FLASH_CR_PG;
 
 	/* flush the register write */
 	tmp = regs->CR;
 
-	*((u8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
+	*((uint8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	regs->CR &= (~FLASH_CR_PG);
@@ -65,10 +66,10 @@ static int write_byte(struct device *dev, off_t offset, u8_t val)
 	return rc;
 }
 
-static int erase_sector(struct device *dev, u32_t sector)
+static int erase_sector(const struct device *dev, uint32_t sector)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	u32_t tmp;
+	uint32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
@@ -105,12 +106,13 @@ static int erase_sector(struct device *dev, u32_t sector)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
+int flash_stm32_block_erase_loop(const struct device *dev,
+				 unsigned int offset,
 				 unsigned int len)
 {
 	struct flash_pages_info info;
-	u32_t start_sector, end_sector;
-	u32_t i;
+	uint32_t start_sector, end_sector;
+	uint32_t i;
 	int rc = 0;
 
 	rc = flash_get_page_info_by_offs(dev, offset, &info);
@@ -134,13 +136,13 @@ int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
 	return rc;
 }
 
-int flash_stm32_write_range(struct device *dev, unsigned int offset,
+int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 			    const void *data, unsigned int len)
 {
 	int i, rc = 0;
 
 	for (i = 0; i < len; i++, offset++) {
-		rc = write_byte(dev, offset, ((const u8_t *) data)[i]);
+		rc = write_byte(dev, offset, ((const uint8_t *) data)[i]);
 		if (rc < 0) {
 			return rc;
 		}
@@ -223,7 +225,7 @@ static const struct flash_pages_layout stm32f4_flash_layout[] = {
 #endif /* FLASH_SECTOR_TOTAL == 5 */
 #endif/* !defined(FLASH_SECTOR_TOTAL) */
 
-void flash_stm32_page_layout(struct device *dev,
+void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {

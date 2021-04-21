@@ -12,7 +12,7 @@
 #include <irq_offload.h>
 
 volatile irq_offload_routine_t offload_routine;
-static void *offload_param;
+static const void *offload_param;
 
 /* Called by z_arm_svc */
 void z_irq_do_offload(void)
@@ -20,7 +20,7 @@ void z_irq_do_offload(void)
 	offload_routine(offload_param);
 }
 
-void arch_irq_offload(irq_offload_routine_t routine, void *parameter)
+void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && defined(CONFIG_ASSERT)
 	/* ARMv6-M/ARMv8-M Baseline HardFault if you make a SVC call with

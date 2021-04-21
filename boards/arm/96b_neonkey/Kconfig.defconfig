@@ -8,31 +8,8 @@ if BOARD_96B_NEONKEY
 config BOARD
 	default "96b_neonkey"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-config I2C_3
-	default y
-
-endif # I2C
-
-if SPI
-
-config SPI_1
-	default y
-
 config SPI_STM32_INTERRUPT
 	default y
-
-endif # SPI
+	depends on SPI
 
 endif # BOARD_96B_NEONKEY

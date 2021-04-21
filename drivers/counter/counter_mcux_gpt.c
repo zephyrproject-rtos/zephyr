@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_imx_gpt
+
 #include <drivers/counter.h>
+#include <drivers/clock_control.h>
 #include <fsl_gpt.h>
 #include <logging/log.h>
 
@@ -13,6 +16,8 @@ LOG_MODULE_REGISTER(mcux_gpt, CONFIG_COUNTER_LOG_LEVEL);
 struct mcux_gpt_config {
 	/* info must be first element */
 	struct counter_config_info info;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	GPT_Type *base;
 	clock_name_t clock_source;
 };
@@ -24,40 +29,40 @@ struct mcux_gpt_data {
 	void *top_user_data;
 };
 
-static int mcux_gpt_start(struct device *dev)
+static int mcux_gpt_start(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	GPT_StartTimer(config->base);
 
 	return 0;
 }
 
-static int mcux_gpt_stop(struct device *dev)
+static int mcux_gpt_stop(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	GPT_StopTimer(config->base);
 
 	return 0;
 }
 
-static int mcux_gpt_get_value(struct device *dev, u32_t *ticks)
+static int mcux_gpt_get_value(const struct device *dev, uint32_t *ticks)
 {
-	const struct mcux_gpt_config *config = dev->config->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	*ticks = GPT_GetCurrentTimerCount(config->base);
 	return 0;
 }
 
-static int mcux_gpt_set_alarm(struct device *dev, u8_t chan_id,
+static int mcux_gpt_set_alarm(const struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
-	const struct mcux_gpt_config *config = dev->config->config_info;
-	struct mcux_gpt_data *data = dev->driver_data;
+	const struct mcux_gpt_config *config = dev->config;
+	struct mcux_gpt_data *data = dev->data;
 
-	u32_t current = GPT_GetCurrentTimerCount(config->base);
-	u32_t ticks = alarm_cfg->ticks;
+	uint32_t current = GPT_GetCurrentTimerCount(config->base);
+	uint32_t ticks = alarm_cfg->ticks;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id");
@@ -82,10 +87,10 @@ static int mcux_gpt_set_alarm(struct device *dev, u8_t chan_id,
 	return 0;
 }
 
-static int mcux_gpt_cancel_alarm(struct device *dev, u8_t chan_id)
+static int mcux_gpt_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
-	const struct mcux_gpt_config *config = dev->config->config_info;
-	struct mcux_gpt_data *data = dev->driver_data;
+	const struct mcux_gpt_config *config = dev->config;
+	struct mcux_gpt_data *data = dev->data;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id");
@@ -98,13 +103,12 @@ static int mcux_gpt_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-void mcux_gpt_isr(void *p)
+void mcux_gpt_isr(const struct device *dev)
 {
-	struct device *dev = p;
-	const struct mcux_gpt_config *config = dev->config->config_info;
-	struct mcux_gpt_data *data = dev->driver_data;
-	u32_t current = GPT_GetCurrentTimerCount(config->base);
-	u32_t status;
+	const struct mcux_gpt_config *config = dev->config;
+	struct mcux_gpt_data *data = dev->data;
+	uint32_t current = GPT_GetCurrentTimerCount(config->base);
+	uint32_t status;
 
 	status =  GPT_GetStatusFlags(config->base, kGPT_OutputCompare1Flag |
 				     kGPT_RollOverFlag);
@@ -124,18 +128,18 @@ void mcux_gpt_isr(void *p)
 	}
 }
 
-static u32_t mcux_gpt_get_pending_int(struct device *dev)
+static uint32_t mcux_gpt_get_pending_int(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	return GPT_GetStatusFlags(config->base, kGPT_OutputCompare1Flag);
 }
 
-static int mcux_gpt_set_top_value(struct device *dev,
+static int mcux_gpt_set_top_value(const struct device *dev,
 				  const struct counter_top_cfg *cfg)
 {
-	const struct mcux_gpt_config *config = dev->config->config_info;
-	struct mcux_gpt_data *data = dev->driver_data;
+	const struct mcux_gpt_config *config = dev->config;
+	struct mcux_gpt_data *data = dev->data;
 
 	if (cfg->ticks != config->info.max_top_value) {
 		LOG_ERR("Wrap can only be set to 0x%x",
@@ -151,30 +155,28 @@ static int mcux_gpt_set_top_value(struct device *dev,
 	return 0;
 }
 
-static u32_t mcux_gpt_get_top_value(struct device *dev)
+static uint32_t mcux_gpt_get_top_value(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 
 	return config->info.max_top_value;
 }
 
-static u32_t mcux_gpt_get_max_relative_alarm(struct device *dev)
+static int mcux_gpt_init(const struct device *dev)
 {
-	const struct mcux_gpt_config *config = dev->config->config_info;
-
-	return config->info.max_top_value;
-}
-
-static int mcux_gpt_init(struct device *dev)
-{
-	const struct mcux_gpt_config *config = dev->config->config_info;
+	const struct mcux_gpt_config *config = dev->config;
 	gpt_config_t gptConfig;
-	u32_t clock_freq;
+	uint32_t clock_freq;
+
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+				   &clock_freq)) {
+		return -EINVAL;
+	}
 
 	/* Adjust divider to match expected freq */
-	clock_freq = CLOCK_GetFreq(config->clock_source);
 	if (clock_freq % config->info.freq) {
 		LOG_ERR("Cannot Adjust GPT freq to %u\n", config->info.freq);
+		LOG_ERR("clock src is %u\n", clock_freq);
 		return -EINVAL;
 	}
 
@@ -196,45 +198,41 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	.set_top_value = mcux_gpt_set_top_value,
 	.get_pending_int = mcux_gpt_get_pending_int,
 	.get_top_value = mcux_gpt_get_top_value,
-	.get_max_relative_alarm = mcux_gpt_get_max_relative_alarm,
 };
 
-#define GPT_DEVICE_INIT_MCUX(n)			  \
-	static struct mcux_gpt_data mcux_gpt_data_ ## n;			\
-										\
-	static const struct mcux_gpt_config mcux_gpt_config_ ## n = {    	\
-		.base = (void *)DT_NXP_IMX_GPT_COUNTER_ ## n ## _BASE_ADDRESS,	\
-		.clock_source = kCLOCK_PerClk,					\
-		.info = {							\
-			.max_top_value = UINT32_MAX,				\
-			.freq = 25000000,					\
-			.channels = 1,						\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-		},								\
-	};									\
-										\
-	static int mcux_gpt_## n ##_init(struct device *dev);			\
-	DEVICE_AND_API_INIT(mcux_gpt ## n,					\
-			    DT_NXP_IMX_GPT_COUNTER_ ## n ## _LABEL,		\
-			    mcux_gpt_## n ##_init,				\
-			    &mcux_gpt_data_ ## n,				\
-			    &mcux_gpt_config_ ## n,				\
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			    &mcux_gpt_driver_api);				\
-										\
-	static int mcux_gpt_## n ##_init(struct device *dev)			\
-	{	 								\
-		IRQ_CONNECT(DT_NXP_IMX_GPT_COUNTER_## n ##_IRQ_0,		\
-			    DT_NXP_IMX_GPT_COUNTER_## n ##_IRQ_0_PRIORITY,	\
-			    mcux_gpt_isr, DEVICE_GET(mcux_gpt ## n), 0);	\
-		irq_enable(DT_NXP_IMX_GPT_COUNTER_## n ##_IRQ_0);		\
-		return mcux_gpt_init(dev);					\
-	}									\
+#define GPT_DEVICE_INIT_MCUX(n)						\
+	static struct mcux_gpt_data mcux_gpt_data_ ## n;		\
+									\
+	static const struct mcux_gpt_config mcux_gpt_config_ ## n = {	\
+		.base = (void *)DT_INST_REG_ADDR(n),			\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
+		.clock_subsys =						\
+			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.info = {						\
+			.max_top_value = UINT32_MAX,			\
+			.freq = DT_INST_PROP(n, gptfreq),           \
+			.channels = 1,					\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
+		},							\
+	};								\
+									\
+	static int mcux_gpt_## n ##_init(const struct device *dev);	\
+	DEVICE_DT_INST_DEFINE(n,					\
+			    mcux_gpt_## n ##_init,			\
+			    device_pm_control_nop,			\
+			    &mcux_gpt_data_ ## n,			\
+			    &mcux_gpt_config_ ## n,			\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &mcux_gpt_driver_api);			\
+									\
+	static int mcux_gpt_## n ##_init(const struct device *dev)	\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority),			\
+			    mcux_gpt_isr, DEVICE_DT_INST_GET(n), 0);	\
+		irq_enable(DT_INST_IRQN(n));				\
+		return mcux_gpt_init(dev);				\
+	}								\
 
-#ifdef CONFIG_COUNTER_MCUX_GPT1
-GPT_DEVICE_INIT_MCUX(1)
-#endif
-
-#ifdef CONFIG_COUNTER_MCUX_GPT2
-GPT_DEVICE_INIT_MCUX(2)
-#endif
+DT_INST_FOREACH_STATUS_OKAY(GPT_DEVICE_INIT_MCUX)

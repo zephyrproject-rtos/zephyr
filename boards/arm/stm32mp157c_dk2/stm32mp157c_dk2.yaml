@@ -1,10 +1,10 @@
 identifier: stm32mp157c_dk2
-name: STM32MP157C_DK2
+name: ST STM32MP157C-DK2 Discovery
 type: mcu
 arch: arm
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
   - xtools
 supported:
   - arduino_i2c

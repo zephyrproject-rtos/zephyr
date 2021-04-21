@@ -1,0 +1,14 @@
+# Copyright (c) 2020, Marco Peter
+# SPDX-License-Identifier: Apache-2.0
+
+description: SSD1306 128x64 dot-matrix display controller on SPI bus
+
+compatible: "solomon,ssd1306fb"
+
+include: ["solomon,ssd1306fb-common.yaml", "spi-device.yaml"]
+
+properties:
+    data_cmd-gpios:
+      type: phandle-array
+      required: true
+      description: D/C# pin.

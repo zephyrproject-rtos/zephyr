@@ -8,6 +8,6 @@ tests:
       type: one_line
       regex:
       - "Hello World! (.*)"
-    platform_whitelist: qemu_cortex_m3 mps2_an385 sam_e70_xplained
+    platform_allow: qemu_cortex_m3 mps2_an385 sam_e70_xplained
     tags: linker
     extra_sections: _SRAM2_RODATA_SECTION_NAME _SRAM_TEXT_SECTION_NAME _SRAM_RODATA_SECTION_NAME _SRAM_DATA_SECTION_NAME _CUSTOM_SECTION_NAME2

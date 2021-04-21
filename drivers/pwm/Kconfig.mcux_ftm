@@ -8,3 +8,11 @@ config PWM_MCUX_FTM
 	depends on HAS_MCUX_FTM
 	help
 	  Enable support for mcux ftm pwm driver.
+
+config PWM_CAPTURE_MCUX_FTM_FILTER_VALUE
+	int "MCUX FTM PWM capture filter value"
+	depends on PWM_MCUX_FTM && PWM_CAPTURE
+	range 0 15
+	default 0
+	help
+	  PWM capture filter value for channels 0 and 2.

@@ -33,26 +33,26 @@ struct backend_cb {
 	bool panic;
 	bool keep_msgs;
 	bool check_id;
-	u32_t exp_id[100];
+	uint32_t exp_id[100];
 	bool check_timestamp;
-	u32_t exp_timestamps[100];
+	uint32_t exp_timestamps[100];
 	bool check_args;
-	u32_t exp_nargs[100];
+	uint32_t exp_nargs[100];
 	bool check_strdup;
 	bool exp_strdup[100];
 	custom_put_callback_t callback;
-	u32_t total_drops;
+	uint32_t total_drops;
 };
 
 static void put(struct log_backend const *const backend,
 		struct log_msg *msg)
 {
 	log_msg_get(msg);
-	u32_t nargs = log_msg_nargs_get(msg);
+	uint32_t nargs = log_msg_nargs_get(msg);
 	struct backend_cb *cb = (struct backend_cb *)backend->cb->ctx;
 
 	if (cb->check_id) {
-		u32_t exp_id = cb->exp_id[cb->counter];
+		uint32_t exp_id = cb->exp_id[cb->counter];
 
 		zassert_equal(log_msg_source_id_get(msg),
 			      exp_id,
@@ -60,7 +60,7 @@ static void put(struct log_backend const *const backend,
 	}
 
 	if (cb->check_timestamp) {
-		u32_t exp_timestamp = cb->exp_timestamps[cb->counter];
+		uint32_t exp_timestamp = cb->exp_timestamps[cb->counter];
 
 		zassert_equal(log_msg_timestamp_get(msg),
 			      exp_timestamp,
@@ -70,7 +70,7 @@ static void put(struct log_backend const *const backend,
 	/* Arguments in the test are fixed, 1,2,3,4,5,... */
 	if (cb->check_args && log_msg_is_std(msg) && nargs > 0) {
 		for (int i = 0; i < nargs; i++) {
-			u32_t arg = log_msg_arg_get(msg, i);
+			uint32_t arg = log_msg_arg_get(msg, i);
 
 			zassert_equal(i+1, arg,
 				      "Unexpected argument in the message");
@@ -101,7 +101,7 @@ static void panic(struct log_backend const *const backend)
 	cb->panic = true;
 }
 
-static void dropped(struct log_backend const *const backend, u32_t cnt)
+static void dropped(struct log_backend const *const backend, uint32_t cnt)
 {
 	struct backend_cb *cb = (struct backend_cb *)backend->cb->ctx;
 
@@ -120,11 +120,11 @@ struct backend_cb backend1_cb;
 LOG_BACKEND_DEFINE(backend2, log_backend_test_api, false);
 struct backend_cb backend2_cb;
 
-static u32_t stamp;
+static uint32_t stamp;
 
-static u32_t test_source_id;
+static uint32_t test_source_id;
 
-static u32_t timestamp_get(void)
+static uint32_t timestamp_get(void)
 {
 	return stamp++;
 }
@@ -136,10 +136,10 @@ static u32_t timestamp_get(void)
  *
  * @return Source ID.
  */
-static int log_source_id_get(const char *name)
+static int16_t log_source_id_get(const char *name)
 {
 
-	for (int i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
+	for (int16_t i = 0; i < log_src_cnt_get(CONFIG_LOG_DOMAIN_ID); i++) {
 		if (strcmp(log_source_name_get(CONFIG_LOG_DOMAIN_ID, i), name)
 		    == 0) {
 			return i;
@@ -218,17 +218,17 @@ static void test_log_backend_runtime_filtering(void)
 }
 
 /*
- * When LOG_MOVE_OVERFLOW is enabled, logger should discard oldest messages when
+ * When LOG_MODE_OVERFLOW is enabled, logger should discard oldest messages when
  * there is no room. However, if after discarding all messages there is still no
  * room then current log is discarded.
  */
-u8_t data[CONFIG_LOG_BUFFER_SIZE];
+uint8_t data[CONFIG_LOG_BUFFER_SIZE];
 static void test_log_overflow(void)
 {
-	u32_t msgs_in_buf = CONFIG_LOG_BUFFER_SIZE/sizeof(union log_msg_chunk);
-	u32_t max_hexdump_len = LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK +
+	uint32_t msgs_in_buf = CONFIG_LOG_BUFFER_SIZE/sizeof(union log_msg_chunk);
+	uint32_t max_hexdump_len = LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK +
 			    HEXDUMP_BYTES_CONT_MSG * (msgs_in_buf - 1);
-	u32_t hexdump_len = max_hexdump_len - HEXDUMP_BYTES_CONT_MSG;
+	uint32_t hexdump_len = max_hexdump_len - HEXDUMP_BYTES_CONT_MSG;
 
 
 	zassert_true(IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW),
@@ -283,22 +283,44 @@ static void test_log_arguments(void)
 	backend1_cb.exp_nargs[4] = 4U;
 	backend1_cb.exp_nargs[5] = 5U;
 	backend1_cb.exp_nargs[6] = 6U;
-	backend1_cb.exp_nargs[7] = 10U;
+	backend1_cb.exp_nargs[7] = 7U;
+	backend1_cb.exp_nargs[8] = 8U;
+	backend1_cb.exp_nargs[9] = 9U;
+	backend1_cb.exp_nargs[10] = 10U;
+	backend1_cb.exp_nargs[11] = 11U;
+	backend1_cb.exp_nargs[12] = 12U;
+	backend1_cb.exp_nargs[13] = 13U;
+	backend1_cb.exp_nargs[14] = 14U;
 
 	LOG_INF("test");
 	LOG_INF("test %d", 1);
 	LOG_INF("test %d %d", 1, 2);
 	LOG_INF("test %d %d %d", 1, 2, 3);
 	LOG_INF("test %d %d %d %d", 1, 2, 3, 4);
+	/* to avoid messges drop */
+	while (log_process(false)) {
+	}
 	LOG_INF("test %d %d %d %d %d", 1, 2, 3, 4, 5);
 	LOG_INF("test %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6);
+	LOG_INF("test %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7);
+	LOG_INF("test %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7, 8);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6, 7, 8, 9);
 	LOG_INF("test %d %d %d %d %d %d %d %d %d %d",
 			1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-
+	while (log_process(false)) {
+	}
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d",
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d",
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d",
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
 	while (log_process(false)) {
 	}
 
-	zassert_equal(8,
+	zassert_equal(15,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
@@ -330,14 +352,18 @@ static void test_log_strdup_gc(void)
 {
 	char test_str[] = "test string";
 	char *dstr;
+	uint32_t size_u0, size_u1, size_l0, size_l1;
 
 	log_setup(false);
 
-	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_BUF_COUNT == 1,
-			"Test assumes certain configuration");
+	BUILD_ASSERT(CONFIG_LOG_STRDUP_BUF_COUNT == 1,
+		     "Test assumes certain configuration");
 	backend1_cb.check_strdup = true;
 	backend1_cb.exp_strdup[0] = true;
 	backend1_cb.exp_strdup[1] = false;
+
+	size_l0 = log_get_strdup_longest_string();
+	size_u0 = log_get_strdup_pool_utilization();
 
 	dstr = log_strdup(test_str);
 	/* test if message freeing is not fooled by using value within strdup
@@ -361,13 +387,16 @@ static void test_log_strdup_gc(void)
 
 	zassert_equal(3, backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
-
+	size_l1 = log_get_strdup_longest_string();
+	size_u1 = log_get_strdup_pool_utilization();
+	zassert_true(size_l1 > size_l0, "longest string size never changed");
+	zassert_true(size_u1 > size_u0, "strdup pool utilization never changed");
 }
 
 #define DETECT_STRDUP_MISSED(str, do_strdup, ...) \
 	{\
 		char tmp[] = "tmp";\
-		u32_t exp_cnt = backend1_cb.counter + 1 + (do_strdup ? 0 : 1); \
+		uint32_t exp_cnt = backend1_cb.counter + 1 + (do_strdup ? 0 : 1); \
 		LOG_ERR(str, ##__VA_ARGS__, do_strdup ? log_strdup(tmp) : tmp); \
 		\
 		while (log_process(false)) { \
@@ -419,8 +448,8 @@ static void test_strdup_trimming(void)
 {
 	char test_str[] = "123456789";
 
-	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_MAX_STRING == 8,
-			"Test assumes certain configuration");
+	BUILD_ASSERT(CONFIG_LOG_STRDUP_MAX_STRING == 8,
+		     "Test assumes certain configuration");
 
 	log_setup(false);
 
@@ -435,7 +464,7 @@ static void test_strdup_trimming(void)
 		      "Unexpected amount of messages received by the backend.");
 }
 
-static void log_n_messages(u32_t n_msg, u32_t exp_dropped)
+static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
 {
 	int i;
 
@@ -461,7 +490,7 @@ static void test_log_msg_dropped_notification(void)
 {
 	__ASSERT_NO_MSG(CONFIG_LOG_MODE_OVERFLOW);
 
-	u32_t capacity = CONFIG_LOG_BUFFER_SIZE/sizeof(struct log_msg);
+	uint32_t capacity = CONFIG_LOG_BUFFER_SIZE/sizeof(struct log_msg);
 
 	log_setup(false);
 
@@ -477,10 +506,10 @@ static void test_log_msg_dropped_notification(void)
 	k_sched_unlock();
 }
 
-static void test_single_z_log_get_s_mask(const char *str, u32_t nargs,
-					 u32_t exp_mask)
+static void test_single_z_log_get_s_mask(const char *str, uint32_t nargs,
+					 uint32_t exp_mask)
 {
-	u32_t mask = z_log_get_s_mask(str, nargs);
+	uint32_t mask = z_log_get_s_mask(str, nargs);
 
 	zassert_equal(mask, exp_mask, "Unexpected mask %x (expected %x)",
 								mask, exp_mask);

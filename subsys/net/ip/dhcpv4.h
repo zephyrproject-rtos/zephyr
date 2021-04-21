@@ -16,24 +16,24 @@
 #define __INTERNAL_DHCPV4_H
 
 struct dhcp_msg {
-	u8_t op;		/* Message type, 1:BOOTREQUEST, 2:BOOTREPLY */
-	u8_t htype;		/* Hardware Address Type */
-	u8_t hlen;		/* Hardware Address length */
-	u8_t hops;		/* used by relay agents when booting via relay
+	uint8_t op;		/* Message type, 1:BOOTREQUEST, 2:BOOTREPLY */
+	uint8_t htype;		/* Hardware Address Type */
+	uint8_t hlen;		/* Hardware Address length */
+	uint8_t hops;		/* used by relay agents when booting via relay
 				 * agent, client sets zero
 				 */
-	u32_t xid;		/* Transaction ID, random number */
-	u16_t secs;		/* Seconds elapsed since client began address
+	uint32_t xid;		/* Transaction ID, random number */
+	uint16_t secs;		/* Seconds elapsed since client began address
 				 * acquisition or renewal process
 				 */
-	u16_t flags;		/* Broadcast or Unicast */
-	u8_t ciaddr[4];		/* Client IP Address */
-	u8_t yiaddr[4];		/* your (client) IP address */
-	u8_t siaddr[4];		/* IP address of next server to use in bootstrap
+	uint16_t flags;		/* Broadcast or Unicast */
+	uint8_t ciaddr[4];		/* Client IP Address */
+	uint8_t yiaddr[4];		/* your (client) IP address */
+	uint8_t siaddr[4];		/* IP address of next server to use in bootstrap
 				 * returned in DHCPOFFER, DHCPACK by server
 				 */
-	u8_t giaddr[4];		/* Relat agent IP address */
-	u8_t chaddr[16];	/* Client hardware address */
+	uint8_t giaddr[4];		/* Relat agent IP address */
+	uint8_t chaddr[16];	/* Client hardware address */
 } __packed;
 
 #define SIZE_OF_SNAME		64
@@ -47,7 +47,6 @@ struct dhcp_msg {
 #define DHCPV4_MSG_BOOT_REPLY	2
 
 #define HARDWARE_ETHERNET_TYPE	1
-#define HARDWARE_ETHERNET_LEN	6
 
 #define DHCPV4_SERVER_PORT	67
 #define DHCPV4_CLIENT_PORT	68
@@ -69,6 +68,7 @@ enum dhcpv4_msg_type {
 #define DHCPV4_OPTIONS_SUBNET_MASK	1
 #define DHCPV4_OPTIONS_ROUTER		3
 #define DHCPV4_OPTIONS_DNS_SERVER	6
+#define DHCPV4_OPTIONS_HOST_NAME	12
 #define DHCPV4_OPTIONS_REQ_IPADDR	50
 #define DHCPV4_OPTIONS_LEASE_TIME	51
 #define DHCPV4_OPTIONS_MSG_TYPE		53
@@ -79,6 +79,7 @@ enum dhcpv4_msg_type {
 #define DHCPV4_OPTIONS_END		255
 
 /* Useful size macros */
+#define DHCPV4_OLV_MSG_HOST_NAME	2
 #define DHCPV4_OLV_MSG_REQ_IPADDR	6
 #define DHCPV4_OLV_MSG_TYPE_SIZE	3
 #define DHCPV4_OLV_MSG_SERVER_ID	6

@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2019 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 { /* SDA CN5.9=PB9, SCL CN5.10=PB8, ISW CN5.1=D8=PA9 */
+	status = "okay";
+	ds3231: ds3231@68 {
+		compatible = "maxim,ds3231";
+		reg = <0x68>;
+		label = "DS3231";
+		isw-gpios = <&gpioa 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+};

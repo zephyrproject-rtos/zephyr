@@ -1,0 +1,12 @@
+# Copyright (c) 2018-2020 Intel Corporation Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ELKHART_LAKE
+	bool "Intel Elkhart Lake Soc"
+	select X86
+	select CPU_ATOM
+	select HAS_I2C_DW if I2C
+	select PCIE
+	select PCIE_MSI
+	select DYNAMIC_INTERRUPTS
+	select X86_MMU

@@ -1,0 +1,235 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include "nrf_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash_controller;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+		};
+	};
+
+	soc {
+
+		flash_controller: flash-controller@4001e000 {
+			compatible = "nordic,nrf52-flash-controller";
+			reg = <0x4001e000 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			label = "NRF_FLASH_DRV_NAME";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "NRF_FLASH";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		adc: adc@40007000 {
+			compatible = "nordic,nrf-saadc";
+			reg = <0x40007000 0x1000>;
+			interrupts = <7 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+			label = "ADC_0";
+			#io-channel-cells = <1>;
+		};
+
+		clock: clock@40000000 {
+			compatible = "nordic,nrf-clock";
+			reg = <0x40000000 0x1000>;
+			interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "CLOCK";
+		};
+
+		ecb: ecb@4000e000 {
+			compatible = "nordic,nrf-ecb";
+			reg = <0x4000e000 0x1000>;
+			interrupts = <14 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "ECB";
+		};
+
+		gpio0: gpio@50000000 {
+			compatible = "nordic,nrf-gpio";
+			gpio-controller;
+			reg = <0x50000000 0x1000>;
+			#gpio-cells = <2>;
+			label = "GPIO_0";
+			status = "disabled";
+			port = <0>;
+		};
+
+		gpiote: gpiote@40006000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x40006000 0x1000>;
+			interrupts = <6 5>;
+			status = "disabled";
+			label = "GPIOTE_0";
+		};
+
+		i2c0: i2c@40003000 {
+			/*
+			 * This i2c node can be TWI, TWIM, or TWIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-twi" or
+			 *              "nordic,nrf-twim" or
+			 *              "nordic,nrf-twis".
+			 */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003000 0x1000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+			label = "I2C_0";
+		};
+
+		qdec: qdec@40012000 {
+			compatible = "nordic,nrf-qdec";
+			reg = <0x40012000 0x1000>;
+			interrupts = <18 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+			label = "QDEC";
+		};
+
+		rng: random@4000d000 {
+			compatible = "nordic,nrf-rng";
+			reg = <0x4000d000 0x1000>;
+			interrupts = <13 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "RNG";
+		};
+
+		rtc0: rtc@4000b000 {
+			compatible = "nordic,nrf-rtc";
+			reg = <0x4000b000 0x1000>;
+			cc-num = <3>;
+			interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			clock-frequency = <32768>;
+			prescaler = <1>;
+			label = "RTC_0";
+		};
+
+		rtc1: rtc@40011000 {
+			compatible = "nordic,nrf-rtc";
+			reg = <0x40011000 0x1000>;
+			cc-num = <4>;
+			interrupts = <17 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			clock-frequency = <32768>;
+			prescaler = <1>;
+			label = "RTC_1";
+		};
+
+		spi0: spi@40004000 {
+			/*
+			 * This spi node can be SPI, SPIM, or SPIS,
+			 * for the user to pick:
+			 * compatible = "nordic,nrf-spi" or
+			 *              "nordic,nrf-spim" or
+			 *              "nordic,nrf-spis".
+			 */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40004000 0x1000>;
+			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+			label = "SPI_0";
+		};
+
+		timer0: timer@40008000 {
+			compatible = "nordic,nrf-timer";
+			status = "okay";
+			reg = <0x40008000 0x1000>;
+			cc-num = <4>;
+			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
+			prescaler = <0>;
+			label = "TIMER_0";
+		};
+
+		timer1: timer@40009000 {
+			compatible = "nordic,nrf-timer";
+			status = "okay";
+			reg = <0x40009000 0x1000>;
+			cc-num = <4>;
+			interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
+			prescaler = <0>;
+			label = "TIMER_1";
+		};
+
+		timer2: timer@4000a000 {
+			compatible = "nordic,nrf-timer";
+			status = "okay";
+			reg = <0x4000a000 0x1000>;
+			cc-num = <4>;
+			interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
+			prescaler = <0>;
+			label = "TIMER_2";
+		};
+
+		temp: temp@4000c000 {
+			compatible = "nordic,nrf-temp";
+			reg = <0x4000c000 0x1000>;
+			interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "TEMP_0";
+		};
+
+		uart0: uart@40002000 {
+			/* uart can be either UART or UARTE, for the user to pick */
+			/* compatible = "nordic,nrf-uarte" or "nordic,nrf-uart"; */
+			reg = <0x40002000 0x1000>;
+			interrupts = <2 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		wdt: wdt0: watchdog@40010000 {
+			compatible = "nordic,nrf-watchdog";
+			reg = <0x40010000 0x1000>;
+			interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>;
+			status = "okay";
+			label = "WDT";
+		};
+	};
+
+	sw_pwm: sw-pwm {
+		compatible = "nordic,nrf-sw-pwm";
+		status = "disabled";
+		label = "SW_PWM";
+		generator = <&timer2>;
+		channel-count = <3>;
+		clock-prescaler = <0>;
+		ppi-base = <0>;
+		gpiote-base = <0>;
+		#pwm-cells = <1>;
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

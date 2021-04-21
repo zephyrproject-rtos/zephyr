@@ -2,6 +2,8 @@ tests:
   drivers.gpio.2pin:
     tags: drivers gpio
     depends_on: gpio
-    harness: console
     min_flash: 34
     filter: dt_compat_enabled("test,gpio_basic_api")
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback

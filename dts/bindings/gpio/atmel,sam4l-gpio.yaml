@@ -1,0 +1,5 @@
+description: SAM4L GPIO PORT node
+
+compatible: "atmel,sam4l-gpio"
+
+include: ["atmel,sam-gpio.yaml"]

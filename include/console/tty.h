@@ -16,19 +16,19 @@ extern "C" {
 #endif
 
 struct tty_serial {
-	struct device *uart_dev;
+	const struct device *uart_dev;
 
 	struct k_sem rx_sem;
-	u8_t *rx_ringbuf;
-	u32_t rx_ringbuf_sz;
-	u16_t rx_get, rx_put;
-	s32_t rx_timeout;
+	uint8_t *rx_ringbuf;
+	uint32_t rx_ringbuf_sz;
+	uint16_t rx_get, rx_put;
+	int32_t rx_timeout;
 
 	struct k_sem tx_sem;
-	u8_t *tx_ringbuf;
-	u32_t tx_ringbuf_sz;
-	u16_t tx_get, tx_put;
-	s32_t tx_timeout;
+	uint8_t *tx_ringbuf;
+	uint32_t tx_ringbuf_sz;
+	uint16_t tx_get, tx_put;
+	int32_t tx_timeout;
 };
 
 /**
@@ -49,18 +49,18 @@ struct tty_serial {
  *
  * @return 0 on success, error code (<0) otherwise
  */
-int tty_init(struct tty_serial *tty, struct device *uart_dev);
+int tty_init(struct tty_serial *tty, const struct device *uart_dev);
 
 /**
  * @brief Set receive timeout for tty device.
  *
  * Set timeout for getchar() operation. Default timeout after
- * device initialization is K_FOREVER.
+ * device initialization is SYS_FOREVER_MS.
  *
  * @param tty tty device structure
- * @param timeout timeout in milliseconds, or K_FOREVER, or K_NO_WAIT
+ * @param timeout timeout in milliseconds, or 0, or SYS_FOREVER_MS.
  */
-static inline void tty_set_rx_timeout(struct tty_serial *tty, s32_t timeout)
+static inline void tty_set_rx_timeout(struct tty_serial *tty, int32_t timeout)
 {
 	tty->rx_timeout = timeout;
 }
@@ -69,12 +69,12 @@ static inline void tty_set_rx_timeout(struct tty_serial *tty, s32_t timeout)
  * @brief Set transmit timeout for tty device.
  *
  * Set timeout for putchar() operation, for a case when output buffer is full.
- * Default timeout after device initialization is K_FOREVER.
+ * Default timeout after device initialization is SYS_FOREVER_MS.
  *
  * @param tty tty device structure
- * @param timeout timeout in milliseconds, or K_FOREVER, or K_NO_WAIT
+ * @param timeout timeout in milliseconds, or 0, or SYS_FOREVER_MS.
  */
-static inline void tty_set_tx_timeout(struct tty_serial *tty, s32_t timeout)
+static inline void tty_set_tx_timeout(struct tty_serial *tty, int32_t timeout)
 {
 	tty->tx_timeout = timeout;
 }
@@ -97,7 +97,7 @@ int tty_set_rx_buf(struct tty_serial *tty, void *buf, size_t size);
  *
  * Set transmit buffer or switch to unbuffered operation for transmit.
  * Note that unbuffered mode is implicitly blocking, i.e. behaves as
- * if tty_set_tx_timeout(K_FOREVER) was set.
+ * if tty_set_tx_timeout(SYS_FOREVER_MS) was set.
  *
  * @param tty tty device structure
  * @param buf buffer, or NULL for unbuffered operation

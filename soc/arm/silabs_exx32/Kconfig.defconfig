@@ -1,7 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_FAMILY_EXX32
+
 source "soc/arm/silabs_exx32/*/Kconfig.defconfig.series"
 
 config SOC_GECKO_EMU
 	default y
-	depends on SYS_POWER_MANAGEMENT
+	select SOC_GECKO_CORE
+	depends on PM
+
+endif

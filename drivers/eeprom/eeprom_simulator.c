@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT zephyr_sim_eeprom
+
 #include <device.h>
 #include <drivers/eeprom.h>
 
@@ -33,8 +35,8 @@ struct eeprom_sim_config {
 	bool readonly;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
-#define DEV_CONFIG(dev) ((dev)->config->config_info)
+#define DEV_NAME(dev) ((dev)->name)
+#define DEV_CONFIG(dev) ((dev)->config)
 
 #define EEPROM(addr) (mock_eeprom + (addr))
 
@@ -83,26 +85,27 @@ STATS_NAME(eeprom_sim_thresholds, max_len)
 STATS_NAME_END(eeprom_sim_thresholds);
 
 #ifdef CONFIG_ARCH_POSIX
-static u8_t *mock_eeprom;
+static uint8_t *mock_eeprom;
 static int eeprom_fd = -1;
 static const char *eeprom_file_path;
 static const char default_eeprom_file_path[] = "eeprom.bin";
 #else
-static u8_t mock_eeprom[DT_INST_0_ZEPHYR_SIM_EEPROM_SIZE];
+static uint8_t mock_eeprom[DT_INST_PROP(0, size)];
 #endif /* CONFIG_ARCH_POSIX */
 
-static int eeprom_range_is_valid(struct device *dev, off_t offset, size_t len)
+static int eeprom_range_is_valid(const struct device *dev, off_t offset,
+				 size_t len)
 {
 	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
 
-	if ((offset + len) < config->size) {
+	if ((offset + len) <= config->size) {
 		return 1;
 	}
 
 	return 0;
 }
 
-static int eeprom_sim_read(struct device *dev, off_t offset, void *data,
+static int eeprom_sim_read(const struct device *dev, off_t offset, void *data,
 			   size_t len)
 {
 	if (!len) {
@@ -131,7 +134,8 @@ static int eeprom_sim_read(struct device *dev, off_t offset, void *data,
 	return 0;
 }
 
-static int eeprom_sim_write(struct device *dev, off_t offset, const void *data,
+static int eeprom_sim_write(const struct device *dev, off_t offset,
+			    const void *data,
 			    size_t len)
 {
 	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
@@ -190,7 +194,7 @@ end:
 	return 0;
 }
 
-static size_t eeprom_sim_size(struct device *dev)
+static size_t eeprom_sim_size(const struct device *dev)
 {
 	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
 
@@ -204,13 +208,13 @@ static const struct eeprom_driver_api eeprom_sim_api = {
 };
 
 static const struct eeprom_sim_config eeprom_sim_config_0 = {
-	.size = DT_INST_0_ZEPHYR_SIM_EEPROM_SIZE,
-	.readonly = DT_INST_0_ZEPHYR_SIM_EEPROM_READ_ONLY,
+	.size = DT_INST_PROP(0, size),
+	.readonly = DT_INST_PROP(0, read_only),
 };
 
 #ifdef CONFIG_ARCH_POSIX
 
-static int eeprom_mock_init(struct device *dev)
+static int eeprom_mock_init(const struct device *dev)
 {
 	if (eeprom_file_path == NULL) {
 		eeprom_file_path = default_eeprom_file_path;
@@ -224,14 +228,14 @@ static int eeprom_mock_init(struct device *dev)
 		return -EIO;
 	}
 
-	if (ftruncate(eeprom_fd, DT_INST_0_ZEPHYR_SIM_EEPROM_SIZE) == -1) {
+	if (ftruncate(eeprom_fd, DT_INST_PROP(0, size)) == -1) {
 		posix_print_warning("Failed to resize eeprom device file ",
 				    "%s: %s\n",
 				    eeprom_file_path, strerror(errno));
 		return -EIO;
 	}
 
-	mock_eeprom = mmap(NULL, DT_INST_0_ZEPHYR_SIM_EEPROM_SIZE,
+	mock_eeprom = mmap(NULL, DT_INST_PROP(0, size),
 			  PROT_WRITE | PROT_READ, MAP_SHARED, eeprom_fd, 0);
 	if (mock_eeprom == MAP_FAILED) {
 		posix_print_warning("Failed to mmap eeprom device file "
@@ -245,7 +249,7 @@ static int eeprom_mock_init(struct device *dev)
 
 #else
 
-static int eeprom_mock_init(struct device *dev)
+static int eeprom_mock_init(const struct device *dev)
 {
 	memset(mock_eeprom, 0xFF, ARRAY_SIZE(mock_eeprom));
 	return 0;
@@ -253,7 +257,7 @@ static int eeprom_mock_init(struct device *dev)
 
 #endif /* CONFIG_ARCH_POSIX */
 
-static int eeprom_sim_init(struct device *dev)
+static int eeprom_sim_init(const struct device *dev)
 {
 	SYNC_INIT();
 	STATS_INIT_AND_REG(eeprom_sim_stats, STATS_SIZE_32, "eeprom_sim_stats");
@@ -263,8 +267,8 @@ static int eeprom_sim_init(struct device *dev)
 	return eeprom_mock_init(dev);
 }
 
-DEVICE_AND_API_INIT(eeprom_sim_0, DT_INST_0_ZEPHYR_SIM_EEPROM_LABEL,
-		    &eeprom_sim_init, NULL, &eeprom_sim_config_0, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, &eeprom_sim_init, device_pm_control_nop,
+		    NULL, &eeprom_sim_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &eeprom_sim_api);
 
 #ifdef CONFIG_ARCH_POSIX
@@ -272,7 +276,7 @@ DEVICE_AND_API_INIT(eeprom_sim_0, DT_INST_0_ZEPHYR_SIM_EEPROM_LABEL,
 static void eeprom_native_posix_cleanup(void)
 {
 	if ((mock_eeprom != MAP_FAILED) && (mock_eeprom != NULL)) {
-		munmap(mock_eeprom, DT_INST_0_ZEPHYR_SIM_EEPROM_SIZE);
+		munmap(mock_eeprom, DT_INST_PROP(0, size));
 	}
 
 	if (eeprom_fd != -1) {

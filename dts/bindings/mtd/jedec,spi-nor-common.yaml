@@ -3,19 +3,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Common properties used by nodes describing M25P80-compatible SPI NOR
-# serial flash devices.
+# serial flash devices, regardless of which Zephyr driver is being used.
+#
+# This extends JESD216-defined features with additional functionality
+# that may be specific to the vendor of a M25P80-compatible device and
+# only supported in certain drivers.  Any information that can be
+# obtained from standardized SFDP parameter blocks should be in
+# jedec,jesd216.yaml instead.
+
+include: "jedec,jesd216.yaml"
 
 properties:
-  jedec-id:
-    type: uint8-array
-    required: true
-    description: JEDEC ID as manufacturer ID, memory type, memory density
-
-  has-be32k:
-    type: boolean
-    required: false
-    description: Indicates the device supports the BE32K (0xD8) command
-
   requires-ulbpr:
     type: boolean
     required: false
@@ -81,7 +79,19 @@ properties:
 
       If not provided the driver does not enforce a delay.
 
-  size:
+  has-lock:
     type: int
-    required: true
-    description: flash capacity in bits
+    required: false
+    description: |
+      Bit mask of bits of the status register that should be cleared on
+      startup.
+
+      Some devices from certain vendors power-up with block protect bits
+      set in the status register, which prevent any erase or program
+      operation from working.  Devices that have this behavior need to
+      clear those bits on startup.  However, other devices have
+      non-volatile bits in the status register that should not be
+      cleared.
+
+      This value, when present, identifies bits in the status register
+      that should be cleared when the device is initialized.

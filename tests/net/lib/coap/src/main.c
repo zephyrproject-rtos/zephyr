@@ -34,7 +34,7 @@ static struct coap_reply replies[NUM_REPLIES];
 
 /* This is exposed for this test in subsys/net/lib/coap/coap_link_format.c */
 bool _coap_match_path_uri(const char * const *path,
-			  const char *uri, u16_t len);
+			  const char *uri, uint16_t len);
 
 /* Some forward declarations */
 static void server_notify_callback(struct coap_resource *resource,
@@ -61,19 +61,19 @@ static struct sockaddr_in6 dummy_addr = {
 
 static int test_build_empty_pdu(void)
 {
-	u8_t result_pdu[] = { 0x40, 0x01, 0x0, 0x0 };
+	uint8_t result_pdu[] = { 0x40, 0x01, 0x0, 0x0 };
 	struct coap_packet cpkt;
-	u8_t *data;
+	uint8_t *data;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
 
 	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_CON, 0, NULL,
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
 			     COAP_METHOD_GET, 0);
 	if (r < 0) {
 		TC_PRINT("Could not initialize packet\n");
@@ -102,24 +102,23 @@ done:
 
 static int test_build_simple_pdu(void)
 {
-	u8_t result_pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
-				 'n', 0xC1, 0x00, 0xFF, 'p', 'a', 'y', 'l',
+	uint8_t result_pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e',
+				 'n', 0xC0, 0xFF, 'p', 'a', 'y', 'l',
 				 'o', 'a', 'd', 0x00 };
 	struct coap_packet cpkt;
 	const char token[] = "token";
-	u8_t *data;
-	u8_t format = 0U;
+	uint8_t *data;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
 
 	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_NON_CON,
-			     strlen(token), (u8_t *)token,
+			     COAP_VERSION_1, COAP_TYPE_NON_CON,
+			     strlen(token), token,
 			     COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED,
 			     0x1234);
 	if (r < 0) {
@@ -127,8 +126,8 @@ static int test_build_simple_pdu(void)
 		goto done;
 	}
 
-	r = coap_packet_append_option(&cpkt, COAP_OPTION_CONTENT_FORMAT,
-				      &format, sizeof(format));
+	r = coap_append_option_int(&cpkt, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
 	if (r < 0) {
 		TC_PRINT("Could not append option\n");
 		goto done;
@@ -158,17 +157,17 @@ done:
 /* No options, No payload */
 static int test_parse_empty_pdu(void)
 {
-	u8_t pdu[] = { 0x40, 0x01, 0, 0 };
+	uint8_t pdu[] = { 0x40, 0x01, 0, 0 };
 	struct coap_packet cpkt;
-	u8_t *data;
-	u8_t ver;
-	u8_t type;
-	u8_t code;
-	u16_t id;
+	uint8_t *data;
+	uint8_t ver;
+	uint8_t type;
+	uint8_t code;
+	uint16_t id;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
@@ -219,17 +218,17 @@ done:
 /* 1 option, No payload (No payload marker) */
 static int test_parse_empty_pdu_1(void)
 {
-	u8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40};
+	uint8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40};
 	struct coap_packet cpkt;
-	u8_t *data;
-	u8_t ver;
-	u8_t type;
-	u8_t code;
-	u16_t id;
+	uint8_t *data;
+	uint8_t ver;
+	uint8_t type;
+	uint8_t code;
+	uint16_t id;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
@@ -279,22 +278,22 @@ done:
 
 static int test_parse_simple_pdu(void)
 {
-	u8_t pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
+	uint8_t pdu[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
 		       'a', 'd', 0x00 };
 	struct coap_packet cpkt;
 	struct coap_option options[16] = {};
-	const u8_t token[8];
-	u8_t *data;
-	u8_t ver;
-	u8_t type;
-	u8_t code;
-	u8_t tkl;
-	u16_t id;
+	const uint8_t token[8];
+	uint8_t *data;
+	uint8_t ver;
+	uint8_t type;
+	uint8_t code;
+	uint8_t tkl;
+	uint16_t id;
 	int result = TC_FAIL;
 	int r, count = ARRAY_SIZE(options) - 1;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
@@ -332,7 +331,7 @@ static int test_parse_simple_pdu(void)
 		goto done;
 	}
 
-	tkl = coap_header_get_token(&cpkt, (u8_t *)token);
+	tkl = coap_header_get_token(&cpkt, (uint8_t *)token);
 
 	if (tkl != 5U) {
 		TC_PRINT("Token length doesn't match reference\n");
@@ -356,7 +355,8 @@ static int test_parse_simple_pdu(void)
 		goto done;
 	}
 
-	if (((u8_t *)options[0].value)[0] != 0U) {
+	if (((uint8_t *)options[0].value)[0] !=
+			COAP_CONTENT_FORMAT_TEXT_PLAIN) {
 		TC_PRINT("Option value doesn't match the reference\n");
 		goto done;
 	}
@@ -380,14 +380,14 @@ done:
 
 static int test_parse_malformed_opt(void)
 {
-	u8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
+	uint8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xD0 };
 	struct coap_packet cpkt;
-	u8_t *data;
+	uint8_t *data;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
@@ -409,14 +409,14 @@ done:
 
 static int test_parse_malformed_opt_len(void)
 {
-	u8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
+	uint8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xC1 };
 	struct coap_packet cpkt;
-	u8_t *data;
+	uint8_t *data;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
@@ -438,14 +438,14 @@ done:
 
 static int test_parse_malformed_opt_ext(void)
 {
-	u8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
+	uint8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xE0, 0x01 };
 	struct coap_packet cpkt;
-	u8_t *data;
+	uint8_t *data;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
@@ -467,14 +467,14 @@ done:
 
 static int test_parse_malformed_opt_len_ext(void)
 {
-	u8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
+	uint8_t opt[] = { 0x55, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
 		       0xEE, 0x01, 0x02, 0x01};
 	struct coap_packet cpkt;
-	u8_t *data;
+	uint8_t *data;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
@@ -497,13 +497,13 @@ done:
 /* 1 option, No payload (with payload marker) */
 static int test_parse_malformed_marker(void)
 {
-	u8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40, 0xFF};
+	uint8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40, 0xFF};
 	struct coap_packet cpkt;
-	u8_t *data;
+	uint8_t *data;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		goto done;
 	}
@@ -517,6 +517,124 @@ static int test_parse_malformed_marker(void)
 
 done:
 	k_free(data);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
+static int test_parse_req_build_ack(void)
+{
+	uint8_t pdu[] = { 0x45, 0xA5, 0x12, 0x34, 't', 'o', 'k', 'e', 'n',
+		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
+		       'a', 'd', 0x00 };
+	uint8_t ack_pdu[] = { 0x65, 0x80, 0x12, 0x34, 't', 'o', 'k', 'e', 'n' };
+	struct coap_packet cpkt;
+	struct coap_packet ack_cpkt;
+	uint8_t *data = NULL;
+	uint8_t *ack_data = NULL;
+	int result = TC_FAIL;
+	int r;
+
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!data) {
+		goto done;
+	}
+
+	memcpy(data, pdu, sizeof(pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(pdu), NULL, 0);
+	if (r) {
+		TC_PRINT("Could not parse packet\n");
+		goto done;
+	}
+
+	ack_data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!ack_data) {
+		goto done;
+	}
+
+	r = coap_ack_init(&ack_cpkt, &cpkt, ack_data, COAP_BUF_SIZE,
+			  COAP_RESPONSE_CODE_BAD_REQUEST);
+	if (r < 0) {
+		TC_PRINT("Could not initialize ACK packet\n");
+		goto done;
+	}
+
+	if (ack_cpkt.offset != sizeof(ack_pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (memcmp(ack_pdu, ack_cpkt.data, ack_cpkt.offset)) {
+		TC_PRINT("Built packet doesn't match reference packet\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	k_free(data);
+	k_free(ack_data);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
+static int test_parse_req_build_empty_ack(void)
+{
+	uint8_t pdu[] = { 0x45, 0xA5, 0xDE, 0xAD, 't', 'o', 'k', 'e', 'n',
+		       0x00, 0xc1, 0x00, 0xff, 'p', 'a', 'y', 'l', 'o',
+		       'a', 'd', 0x00 };
+	uint8_t ack_pdu[] = { 0x60, 0x00, 0xDE, 0xAD };
+	struct coap_packet cpkt;
+	struct coap_packet ack_cpkt;
+	uint8_t *data = NULL;
+	uint8_t *ack_data = NULL;
+	int result = TC_FAIL;
+	int r;
+
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!data) {
+		goto done;
+	}
+
+	memcpy(data, pdu, sizeof(pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(pdu), NULL, 0);
+	if (r) {
+		TC_PRINT("Could not parse packet\n");
+		goto done;
+	}
+
+	ack_data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
+	if (!ack_data) {
+		goto done;
+	}
+
+	r = coap_ack_init(&ack_cpkt, &cpkt, ack_data, COAP_BUF_SIZE,
+			  COAP_CODE_EMPTY);
+	if (r < 0) {
+		TC_PRINT("Could not initialize ACK packet\n");
+		goto done;
+	}
+
+	if (ack_cpkt.offset != sizeof(ack_pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (memcmp(ack_pdu, ack_cpkt.data, ack_cpkt.offset)) {
+		TC_PRINT("Built packet doesn't match reference packet\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	k_free(data);
+	k_free(ack_data);
 
 	TC_END_RESULT(result);
 
@@ -595,8 +713,8 @@ static int prepare_block1_request(struct coap_packet *req,
 				  int *more)
 {
 	const char token[] = "token";
-	u8_t payload[32] = { 0 };
-	u8_t *data;
+	uint8_t payload[32] = { 0 };
+	uint8_t *data;
 	bool first;
 	int r;
 
@@ -609,15 +727,15 @@ static int prepare_block1_request(struct coap_packet *req,
 		first = false;
 	}
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		TC_PRINT("Unable to allocate memory for req");
 		goto done;
 	}
 
-	r = coap_packet_init(req, data, COAP_BUF_SIZE, 1,
+	r = coap_packet_init(req, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_CON, strlen(token),
-			     (u8_t *) token, COAP_METHOD_POST,
+			     token, COAP_METHOD_POST,
 			     coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
@@ -662,10 +780,10 @@ static int prepare_block1_response(struct coap_packet *rsp,
 				   struct coap_block_context *rsp_ctx,
 				   struct coap_packet *req)
 {
-	u8_t token[8];
-	u8_t *data;
-	u16_t id;
-	u8_t tkl;
+	uint8_t token[8];
+	uint8_t *data;
+	uint16_t id;
+	uint8_t tkl;
 	int r;
 
 	if (rsp_ctx->total_size == 0) {
@@ -678,7 +796,7 @@ static int prepare_block1_response(struct coap_packet *rsp,
 		return -EINVAL;
 	}
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		TC_PRINT("Unable to allocate memory for req");
 		goto done;
@@ -687,7 +805,7 @@ static int prepare_block1_response(struct coap_packet *rsp,
 	id = coap_header_get_id(req);
 	tkl = coap_header_get_token(req, token);
 
-	r = coap_packet_init(rsp, data, COAP_BUF_SIZE, 1,
+	r = coap_packet_init(rsp, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_ACK, tkl, token,
 			     COAP_RESPONSE_CODE_CREATED, id);
 	if (r < 0) {
@@ -707,7 +825,7 @@ done:
 	return -EINVAL;
 }
 
-static int test_block1_request(struct coap_block_context *req_ctx, u8_t iter)
+static int test_block1_request(struct coap_block_context *req_ctx, uint8_t iter)
 {
 	int result = TC_FAIL;
 
@@ -744,7 +862,7 @@ done:
 	return result;
 }
 
-static int test_block1_response(struct coap_block_context *rsp_ctx, u8_t iter)
+static int test_block1_response(struct coap_block_context *rsp_ctx, uint8_t iter)
 {
 	int result = TC_FAIL;
 
@@ -780,7 +898,7 @@ static int test_block1_size(void)
 	int result;
 	int more;
 	int r;
-	u8_t i;
+	uint8_t i;
 
 	i = 0U;
 	result = TC_FAIL;
@@ -833,7 +951,7 @@ static int prepare_block2_request(struct coap_packet *req,
 				  struct coap_packet *rsp)
 {
 	const char token[] = "token";
-	u8_t *data;
+	uint8_t *data;
 	int r;
 
 	/* Request Context */
@@ -844,15 +962,15 @@ static int prepare_block2_request(struct coap_packet *req,
 		coap_next_block(rsp, req_ctx);
 	}
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		TC_PRINT("Unable to allocate memory for req");
 		goto done;
 	}
 
-	r = coap_packet_init(req, data, COAP_BUF_SIZE, 1,
+	r = coap_packet_init(req, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_CON, strlen(token),
-			     (u8_t *) token, COAP_METHOD_GET,
+			     token, COAP_METHOD_GET,
 			     coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
@@ -875,11 +993,11 @@ static int prepare_block2_response(struct coap_packet *rsp,
 				   struct coap_packet *req,
 				   int *more)
 {
-	u8_t payload[64];
-	u8_t token[8];
-	u8_t *data;
-	u16_t id;
-	u8_t tkl;
+	uint8_t payload[64];
+	uint8_t token[8];
+	uint8_t *data;
+	uint16_t id;
+	uint8_t tkl;
 	bool first;
 	int r;
 
@@ -891,7 +1009,7 @@ static int prepare_block2_response(struct coap_packet *rsp,
 		first = false;
 	}
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		TC_PRINT("Unable to allocate memory for req");
 		goto done;
@@ -900,7 +1018,7 @@ static int prepare_block2_response(struct coap_packet *rsp,
 	id = coap_header_get_id(req);
 	tkl = coap_header_get_token(req, token);
 
-	r = coap_packet_init(rsp, data, COAP_BUF_SIZE, 1,
+	r = coap_packet_init(rsp, data, COAP_BUF_SIZE, COAP_VERSION_1,
 			     COAP_TYPE_ACK, tkl, token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
@@ -943,7 +1061,7 @@ done:
 	return -EINVAL;
 }
 
-static int test_block2_request(struct coap_block_context *req_ctx, u8_t iter)
+static int test_block2_request(struct coap_block_context *req_ctx, uint8_t iter)
 {
 	int result = TC_FAIL;
 
@@ -970,7 +1088,7 @@ done:
 	return result;
 }
 
-static int test_block2_response(struct coap_block_context *rsp_ctx, u8_t iter)
+static int test_block2_response(struct coap_block_context *rsp_ctx, uint8_t iter)
 {
 	int result = TC_FAIL;
 
@@ -1016,7 +1134,7 @@ static int test_block2_size(void)
 	int result;
 	int more;
 	int r;
-	u8_t i;
+	uint8_t i;
 
 	i = 0U;
 	result = TC_FAIL;
@@ -1071,13 +1189,13 @@ static int test_retransmit_second_round(void)
 	struct coap_packet rsp;
 	struct coap_pending *pending;
 	struct coap_pending *rsp_pending;
-	u8_t *data = NULL;
-	u8_t *rsp_data = NULL;
+	uint8_t *data = NULL;
+	uint8_t *rsp_data = NULL;
 	int result = TC_FAIL;
 	int r;
-	u16_t id;
+	uint16_t id;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		TC_PRINT("Unable to allocate memory for req");
 		goto done;
@@ -1085,8 +1203,8 @@ static int test_retransmit_second_round(void)
 
 	id = coap_next_id();
 
-	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_CON, 0, coap_next_token(),
+	r = coap_packet_init(&cpkt, data, COAP_BUF_SIZE, COAP_VERSION_1,
+			     COAP_TYPE_CON, 0, coap_next_token(),
 			     COAP_METHOD_GET, id);
 	if (r < 0) {
 		TC_PRINT("Could not initialize packet\n");
@@ -1099,7 +1217,8 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr);
+	r = coap_pending_init(pending, &cpkt, (struct sockaddr *) &dummy_addr,
+			      COAP_DEFAULT_MAX_RETRANSMIT);
 	if (r < 0) {
 		TC_PRINT("Could not initialize packet\n");
 		goto done;
@@ -1117,14 +1236,14 @@ static int test_retransmit_second_round(void)
 		goto done;
 	}
 
-	rsp_data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	rsp_data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!rsp_data) {
 		TC_PRINT("Unable to allocate memory for req");
 		goto done;
 	}
 
 	r = coap_packet_init(&rsp, rsp_data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_ACK, 0, NULL,
+			     COAP_VERSION_1, COAP_TYPE_ACK, 0, NULL,
 			     COAP_METHOD_GET, id);
 	if (r < 0) {
 		TC_PRINT("Could not initialize packet\n");
@@ -1195,11 +1314,11 @@ static int server_resource_1_get(struct coap_resource *resource,
 {
 	struct coap_packet response;
 	struct coap_observer *observer;
-	u8_t *data;
+	uint8_t *data;
 	char payload[] = "This is the payload";
-	u8_t token[8];
-	u8_t tkl;
-	u16_t id;
+	uint8_t token[8];
+	uint8_t tkl;
+	uint16_t id;
 	int r;
 
 	if (!coap_request_is_observe(request)) {
@@ -1213,21 +1332,21 @@ static int server_resource_1_get(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	tkl = coap_header_get_token(request, (u8_t *) token);
+	tkl = coap_header_get_token(request, (uint8_t *) token);
 	id = coap_header_get_id(request);
 
 	coap_observer_init(observer, request, addr);
 
 	coap_register_observer(resource, observer);
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		TC_PRINT("Unable to allocate memory for req");
 		return -EINVAL;
 	}
 
 	r = coap_packet_init(&response, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_ACK, tkl, token,
+			     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
 			     COAP_RESPONSE_CODE_OK, id);
 	if (r < 0) {
 		TC_PRINT("Unable to initialize packet.\n");
@@ -1242,7 +1361,7 @@ static int server_resource_1_get(struct coap_resource *resource,
 		goto done;
 	}
 
-	r = coap_packet_append_payload(&response, (u8_t *)payload,
+	r = coap_packet_append_payload(&response, (uint8_t *)payload,
 				       strlen(payload));
 	if (r < 0) {
 		TC_PRINT("Unable to append payload\n");
@@ -1261,13 +1380,13 @@ done:
 
 static int test_observer_server(void)
 {
-	u8_t valid_request_pdu[] = {
+	uint8_t valid_request_pdu[] = {
 		0x45, 0x01, 0x12, 0x34,
 		't', 'o', 'k', 'e', 'n',
 		0x60, /* enable observe option */
 		0x51, 's', 0x01, '1', /* path */
 	};
-	u8_t not_found_request_pdu[] = {
+	uint8_t not_found_request_pdu[] = {
 		0x45, 0x01, 0x12, 0x34,
 		't', 'o', 'k', 'e', 'n',
 		0x60, /* enable observe option */
@@ -1275,12 +1394,12 @@ static int test_observer_server(void)
 	};
 	struct coap_packet req;
 	struct coap_option options[4] = {};
-	u8_t *data;
-	u8_t opt_num = ARRAY_SIZE(options) - 1;
+	uint8_t *data;
+	uint8_t opt_num = ARRAY_SIZE(options) - 1;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		TC_PRINT("Unable to allocate memory for req");
 		goto done;
@@ -1312,7 +1431,7 @@ static int test_observer_server(void)
 
 	k_free(data);
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		TC_PRINT("Unable to allocate memory for req");
 		goto done;
@@ -1362,22 +1481,22 @@ static int test_observer_client(void)
 	struct coap_option options[4] = {};
 	const char token[] = "token";
 	const char * const *p;
-	u8_t *data = NULL;
-	u8_t *rsp_data = NULL;
-	u8_t opt_num = ARRAY_SIZE(options) - 1;
+	uint8_t *data = NULL;
+	uint8_t *rsp_data = NULL;
+	uint8_t opt_num = ARRAY_SIZE(options) - 1;
 	int observe = 0;
 	int result = TC_FAIL;
 	int r;
 
-	data = (u8_t *)k_malloc(COAP_BUF_SIZE);
+	data = (uint8_t *)k_malloc(COAP_BUF_SIZE);
 	if (!data) {
 		TC_PRINT("Unable to allocate memory for req");
 		goto done;
 	}
 
 	r = coap_packet_init(&req, data, COAP_BUF_SIZE,
-			     1, COAP_TYPE_CON,
-			     strlen(token), (u8_t *)token,
+			     COAP_VERSION_1, COAP_TYPE_CON,
+			     strlen(token), token,
 			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
 		TC_PRINT("Unable to initialize request\n");
@@ -1470,6 +1589,9 @@ static const struct {
 		test_parse_malformed_opt_len_ext },
 	{ "Parse malformed empty payload with marker",
 		test_parse_malformed_marker, },
+	{ "Parse request and build ack ", test_parse_req_build_ack, },
+	{ "Parse request and build empty ack ",
+		test_parse_req_build_empty_ack, },
 	{ "Test match path uri", test_match_path_uri, },
 	{ "Test block sized 1 transfer", test_block1_size, },
 	{ "Test block sized 2 transfer", test_block2_size, },

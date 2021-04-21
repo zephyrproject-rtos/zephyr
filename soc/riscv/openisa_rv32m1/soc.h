@@ -45,7 +45,7 @@ static inline unsigned int rv32m1_irq_level(unsigned int irq)
  * @param The IRQ number in the Zephyr <irq.h> numbering system
  * @return Level 1 (i.e. event unit) IRQ number associated with irq
  */
-static inline u32_t rv32m1_level1_irq(unsigned int irq)
+static inline uint32_t rv32m1_level1_irq(unsigned int irq)
 {
 	/*
 	 * There's no need to do any math; the precondition is that
@@ -63,7 +63,7 @@ static inline u32_t rv32m1_level1_irq(unsigned int irq)
  *            to get, in the Zephyr <irq.h> numbering system
  * @return INTMUX channel number associated with the IRQ
  */
-static inline u32_t rv32m1_intmux_channel(unsigned int irq)
+static inline uint32_t rv32m1_intmux_channel(unsigned int irq)
 {
 	/*
 	 * Here we make use of these facts:
@@ -89,7 +89,7 @@ static inline u32_t rv32m1_intmux_channel(unsigned int irq)
  *        <irq.h> numbering system
  * @return The INTMUX interrupt ID, in the inclusive range 0 to 31
  */
-static inline u32_t rv32m1_intmux_line(unsigned int irq)
+static inline uint32_t rv32m1_intmux_line(unsigned int irq)
 {
 	return ((irq >> 8) & 0xff) - 1;
 }
@@ -107,5 +107,10 @@ void soc_interrupt_init(void);
 /* Newlib hooks (and potentially other things) use these defines. */
 #define RISCV_RAM_SIZE KB(CONFIG_SRAM_SIZE)
 #define RISCV_RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+
+/* helper macro to convert from a DT_INST to HAL clock_ip_name */
+#define INST_DT_CLOCK_IP_NAME(n) \
+	MAKE_PCC_REGADDR(DT_REG_ADDR(DT_INST_PHANDLE(n, clocks)), \
+			DT_INST_CLOCKS_CELL(n, name))
 
 #endif /* SOC_RISCV32_OPENISA_RV32M1_SOC_H_ */

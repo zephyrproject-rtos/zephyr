@@ -1,5 +1,5 @@
 identifier: nucleo_f070rb
-name: NUCLEO_F070RB
+name: ST Nucleo F070RB
 type: mcu
 arch: arm
 ram: 16

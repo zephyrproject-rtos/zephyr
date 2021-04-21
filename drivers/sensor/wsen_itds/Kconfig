@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+
+config ITDS
+	bool "WSEN-ITDS 3-axis accel sensor"
+	depends on I2C
+	help
+	  Enable Wurth Elektronik WSEN-ITDS 3-axis acceleration sensor
+	  provides acceleration and die temperature measurement.
+
+if ITDS
+
+config ITDS_TRIGGER
+	bool "Trigger mode"
+	help
+	  Set to enable trigger mode using gpio interrupt, interrupts are
+	  configured to line INT0.
+
+endif # ITDS

@@ -1,0 +1,10 @@
+# BMD-380-EVAL board configuration
+
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ENABLE_DCDC
+bool "Enable DCDC mode"
+select SOC_DCDC_NRF52X
+default y
+depends on BOARD_UBX_BMD380EVAL_NRF52840

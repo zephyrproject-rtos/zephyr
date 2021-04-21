@@ -39,15 +39,15 @@
 #define AUDIO_SAMPLES_PER_FRAME			192
 
 int audio_core_initialize(void);
-int audio_core_process_mic_source(s32_t *buffer, int channels);
-int audio_core_process_host_source(s32_t *buffer, int channels);
-int audio_core_process_speaker_sink(s32_t *buffer, int channels);
-int audio_core_process_host_sink(s32_t *buffer, int channels);
+int audio_core_process_mic_source(int32_t *buffer, int channels);
+int audio_core_process_host_source(int32_t *buffer, int channels);
+int audio_core_process_speaker_sink(int32_t *buffer, int channels);
+int audio_core_process_host_sink(int32_t *buffer, int channels);
 int audio_core_notify_frame_tick(void);
 
 /* tuning interface prototypes */
-int audio_core_tuning_interface_init(u32_t *command_buffer,
-		u32_t size_in_words);
+int audio_core_tuning_interface_init(uint32_t *command_buffer,
+		uint32_t size_in_words);
 int audio_core_notify_tuning_cmd(void);
 bool audio_core_is_tuning_reply_ready(void);
 

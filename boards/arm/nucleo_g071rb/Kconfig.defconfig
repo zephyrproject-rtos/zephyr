@@ -9,8 +9,4 @@ if BOARD_NUCLEO_G071RB
 config BOARD
 	default "nucleo_g071rb"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_NUCLEO_G071RB

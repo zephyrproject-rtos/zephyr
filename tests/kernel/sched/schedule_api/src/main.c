@@ -15,7 +15,7 @@ K_THREAD_STACK_EXTERN(ustack);
 
 void spin_for_ms(int ms)
 {
-	u32_t t32 = k_uptime_get_32();
+	uint32_t t32 = k_uptime_get_32();
 
 	while (k_uptime_get_32() - t32 < ms) {
 		/* In the posix arch, a busy loop takes no time, so
@@ -37,7 +37,7 @@ void spin_for_ms(int ms)
  * @{
  * @}
  */
-/*test case main entry*/
+/* test case main entry */
 void test_main(void)
 {
 #ifdef CONFIG_USERSPACE
@@ -49,8 +49,10 @@ void test_main(void)
 			 ztest_unit_test(test_bad_priorities),
 			 ztest_unit_test(test_priority_cooperative),
 			 ztest_unit_test(test_priority_preemptible),
+			 ztest_1cpu_unit_test(test_priority_preemptible_wait_prio),
 			 ztest_unit_test(test_yield_cooperative),
 			 ztest_unit_test(test_sleep_cooperative),
+			 ztest_unit_test(test_busy_wait_cooperative),
 			 ztest_unit_test(test_sleep_wakeup_preemptible),
 			 ztest_unit_test(test_pending_thread_wakeup),
 			 ztest_unit_test(test_time_slicing_preemptible),
@@ -64,7 +66,14 @@ void test_main(void)
 			 ztest_unit_test(test_priority_scheduling),
 			 ztest_unit_test(test_wakeup_expired_timer_thread),
 			 ztest_user_unit_test(test_user_k_wakeup),
-			 ztest_user_unit_test(test_user_k_is_preempt)
+			 ztest_user_unit_test(test_user_k_is_preempt),
+			 ztest_user_unit_test(test_k_thread_suspend_init_null),
+			 ztest_user_unit_test(test_k_thread_resume_init_null),
+			 ztest_user_unit_test(test_k_thread_priority_get_init_null),
+			 ztest_user_unit_test(test_k_thread_priority_set_init_null),
+			 ztest_user_unit_test(test_k_thread_priority_set_overmax),
+			 ztest_user_unit_test(test_k_thread_priority_set_upgrade),
+			 ztest_user_unit_test(test_k_wakeup_init_null)
 			 );
 	ztest_run_test_suite(threads_scheduling);
 }

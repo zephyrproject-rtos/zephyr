@@ -14,15 +14,13 @@ config CPU_NIOS2_GEN2
 	bool
 	default y
 	select BUILD_OUTPUT_HEX
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	help
 	  This option signifies the use of a Nios II Gen 2 CPU
 
 endmenu
 
 menu "Nios II Family Options"
-
-config XIP
-	default y
 
 config GEN_ISR_TABLES
 	default y

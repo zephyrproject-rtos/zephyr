@@ -5,7 +5,9 @@ simulation: nsim
 arch: arc
 toolchain:
   - zephyr
+  - arcmwdt
 testing:
+  default: true
   ignore_tags:
     - net
     - bluetooth

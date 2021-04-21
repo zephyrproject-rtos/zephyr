@@ -1,0 +1,24 @@
+# Config options for mqtt_publisher sample application
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Networking mqtt_publisher sample application"
+
+config NET_SAMPLE_APP_MAX_ITERATIONS
+	int "Number of times to Publish sample MQTT messages"
+	default 500
+	help
+	  Send sample MQTT messages this many times in a MQTT connection
+	  before exiting. A value of zero means that the messages are sent
+	  forever.
+
+config NET_SAMPLE_APP_MAX_CONNECTIONS
+	int "Number of times to connect to the MQTT server"
+	default 0
+	help
+	  Number of times to connect to the MQTT server. With each connection
+	  send NET_SAMPLE_APP_MAX_ITERATIONS amount of MQTT sample messages.
+	  A value of zero means to continue forever.
+
+source "Kconfig.zephyr"

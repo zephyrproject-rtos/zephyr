@@ -88,18 +88,19 @@ The Zephyr nucleo_l152re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash memory                        |
++-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC Controller                      |
++-----------+------------+-------------------------------------+
+| DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/nucleo_l152re/nucleo_l152re_defconfig``
-
-System Clock
-============
-
-Nucleo L152RE System Clock could be driven by internal or external oscillator,
-as well as main PLL clock. It should theoretically support running at 32MHz,
-but a bug (under investigation) limits operations to 16MHz.
 
 Connections and IOs
 ===================
@@ -124,6 +125,7 @@ Default Zephyr Peripheral Mapping:
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
 - B1 (USER/blue) : PC13
 - LD1 : PA5
+- DAC : PA4
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 

@@ -419,8 +419,6 @@ Build and Infrastructure
 * Various parts of the binding format have been simplified. The format is
   better documented now too.
 
-  See :ref:`legacy_binding_syntax` for more information.
-
 Libraries / Subsystems
 ***********************
 
@@ -945,4 +943,3 @@ release:
 * :github:`2686` - Add qemu\_cortex\_m0/m0+ board.
 * :github:`2490` - Provide sanity test cases for NANO\_ESF/NANO\_ISF structures
 * :github:`2144` - clearly document internal kernel interfaces
-

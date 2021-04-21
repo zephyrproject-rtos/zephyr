@@ -4,34 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_gpio_basic_api
- * @{
- * @defgroup t_gpio_callback_manage test_gpio_callback_manage
- * @brief TestPurpose: verify zephyr gpio callback add/remove and enable/disable
- * @}
- */
 
 #include "test_gpio.h"
 
 static struct drv_data cb_data[2];
 static int cb_cnt[2];
 
-static void callback_1(struct device *dev,
-		       struct gpio_callback *gpio_cb, u32_t pins)
+static void callback_1(const struct device *dev,
+		       struct gpio_callback *gpio_cb, uint32_t pins)
 {
 	TC_PRINT("%s triggered: %d\n", __func__, ++cb_cnt[0]);
 
 }
 
-static void callback_2(struct device *dev,
-		       struct gpio_callback *gpio_cb, u32_t pins)
+static void callback_2(const struct device *dev,
+		       struct gpio_callback *gpio_cb, uint32_t pins)
 {
 	TC_PRINT("%s triggered: %d\n", __func__, ++cb_cnt[1]);
 }
 
-static void callback_remove_self(struct device *dev,
-		       struct gpio_callback *gpio_cb, u32_t pins)
+static void callback_remove_self(const struct device *dev,
+				 struct gpio_callback *gpio_cb, uint32_t pins)
 {
 	struct drv_data *dd = CONTAINER_OF(gpio_cb, struct drv_data, gpio_cb);
 
@@ -39,7 +32,7 @@ static void callback_remove_self(struct device *dev,
 	dd->aux = gpio_remove_callback(dev, gpio_cb);
 }
 
-static int init_callback(struct device *dev,
+static int init_callback(const struct device *dev,
 			 gpio_callback_handler_t handler_1,
 			 gpio_callback_handler_t handler_2)
 {
@@ -72,7 +65,7 @@ static int init_callback(struct device *dev,
 	return rc;
 }
 
-static void trigger_callback(struct device *dev, int enable_cb)
+static void trigger_callback(const struct device *dev, int enable_cb)
 {
 	gpio_pin_set(dev, PIN_OUT, 0);
 	k_sleep(K_MSEC(100));
@@ -91,7 +84,7 @@ static void trigger_callback(struct device *dev, int enable_cb)
 
 static int test_callback_add_remove(void)
 {
-	struct device *dev = device_get_binding(DEV_NAME);
+	const struct device *dev = device_get_binding(DEV_NAME);
 
 	/* SetUp: initialize environment */
 	int rc = init_callback(dev, callback_1, callback_2);
@@ -140,7 +133,7 @@ err_exit:
 static int test_callback_self_remove(void)
 {
 	int res = TC_FAIL;
-	struct device *dev = device_get_binding(DEV_NAME);
+	const struct device *dev = device_get_binding(DEV_NAME);
 
 	/* SetUp: initialize environment */
 	int rc = init_callback(dev, callback_1, callback_remove_self);
@@ -192,7 +185,7 @@ err_exit:
 
 static int test_callback_enable_disable(void)
 {
-	struct device *dev = device_get_binding(DEV_NAME);
+	const struct device *dev = device_get_binding(DEV_NAME);
 
 	/* SetUp: initialize environment */
 	int rc = init_callback(dev, callback_1, callback_2);

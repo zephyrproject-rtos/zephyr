@@ -5,7 +5,7 @@
 
 menuconfig SSD1306
 	bool "SSD1306 display driver"
-	depends on I2C
+	depends on I2C || SPI
 	help
 	  Enable driver for SSD1306 display driver.
 

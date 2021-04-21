@@ -12,8 +12,8 @@
 
 static struct tty_serial console_serial;
 
-static u8_t console_rxbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
-static u8_t console_txbuf[CONFIG_CONSOLE_PUTCHAR_BUFSIZE];
+static uint8_t console_rxbuf[CONFIG_CONSOLE_GETCHAR_BUFSIZE];
+static uint8_t console_txbuf[CONFIG_CONSOLE_PUTCHAR_BUFSIZE];
 
 ssize_t console_write(void *dummy, const void *buf, size_t size)
 {
@@ -36,7 +36,7 @@ int console_putchar(char c)
 
 int console_getchar(void)
 {
-	u8_t c;
+	uint8_t c;
 	int res;
 
 	res = tty_read(&console_serial, &c, 1);
@@ -49,7 +49,7 @@ int console_getchar(void)
 
 int console_init(void)
 {
-	struct device *uart_dev;
+	const struct device *uart_dev;
 	int ret;
 
 	uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
@@ -62,7 +62,7 @@ int console_init(void)
 	/* Checks device driver supports for interrupt driven data transfers. */
 	if (CONFIG_CONSOLE_GETCHAR_BUFSIZE + CONFIG_CONSOLE_PUTCHAR_BUFSIZE) {
 		const struct uart_driver_api *api =
-			(const struct uart_driver_api *)uart_dev->driver_api;
+			(const struct uart_driver_api *)uart_dev->api;
 		if (!api->irq_callback_set) {
 			return -ENOTSUP;
 		}

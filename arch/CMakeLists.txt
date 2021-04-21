@@ -4,7 +4,7 @@ add_definitions(-D__ZEPHYR_SUPERVISOR__)
 
 include_directories(
   ${ZEPHYR_BASE}/kernel/include
-  ${ZEPHYR_BASE}/arch/${ARCH}/include
+  ${ARCH_DIR}/${ARCH}/include
   )
 
 add_subdirectory(common)

@@ -15,33 +15,44 @@ void __printk_hook_install(int (*fn)(int));
 void *__printk_get_hook(void);
 int (*_old_char_out)(int);
 
-#ifndef CONFIG_64BIT
-
+#if defined(CONFIG_CBPRINTF_FULL_INTEGRAL)
 char *expected = "22 113 10000 32768 40000 22\n"
 		 "p 112 -10000 -32768 -40000 -22\n"
-		 "0xcafebabe 0x0000beef\n"
 		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
 		 "0x1 0x 1 0x   1 0x       1\n"
 		 "42 42 0042 00000042\n"
 		 "-42 -42 -042 -0000042\n"
 		 "42 42   42       42\n"
 		 "42 42 0042 00000042\n"
-		 "255     42    abcdef  0x0000002a      42\n"
-		 "ERR -1 ERR ffffffffffffffff\n"
-;
-#else
-
-char *expected = "22 113 10000 32768 40000 22\n"
-		 "p 112 -10000 -32768 -40000 -22\n"
-		 "0xcafebabe 0x000000000000beef\n"
-		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
-		 "0x1 0x 1 0x   1 0x       1\n"
-		 "42 42 0042 00000042\n"
-		 "-42 -42 -042 -0000042\n"
-		 "42 42   42       42\n"
-		 "42 42 0042 00000042\n"
-		 "255     42    abcdef  0x000000000000002a      42\n"
+		 "255     42    abcdef        42\n"
 		 "68719476735 -1 18446744073709551615 ffffffffffffffff\n"
+		 "0xcafebabe 0xbeef 0x2a\n"
+;
+#elif defined(CONFIG_CBPRINTF_COMPLETE)
+char *expected = "22 113 10000 32768 40000 %llu\n"
+		 "p 112 -10000 -32768 -40000 %lld\n"
+		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
+		 "0x1 0x 1 0x   1 0x       1\n"
+		 "42 42 0042 00000042\n"
+		 "-42 -42 -042 -0000042\n"
+		 "42 42   42       42\n"
+		 "42 42 0042 00000042\n"
+		 "255     42    abcdef        42\n"
+		 "%lld %lld %llu %llx\n"
+		 "0xcafebabe 0xbeef 0x2a\n"
+;
+#elif defined(CONFIG_CBPRINTF_NANO)
+char *expected = "22 113 10000 32768 40000 22\n"
+		 "p 112 -10000 -32768 -40000 -22\n"
+		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
+		 "0x1 0x 1 0x   1 0x       1\n"
+		 "42 42 0042 00000042\n"
+		 "-42 -42 -042 -0000042\n"
+		 "42 42   42       42\n"
+		 "42 42 0042 00000042\n"
+		 "255     42    abcdef        42\n"
+		 "ERR -1 4294967295 ffffffff\n"
+		 "0xcafebabe 0xbeef 0x2a\n"
 ;
 #endif
 
@@ -53,7 +64,7 @@ unsigned long ul = 40000;
 
 /* FIXME
  * we know printk doesn't have full support for 64-bit values.
- * at least show it can print u64_t values less than 32-bits wide
+ * at least show it can print uint64_t values less than 32-bits wide
  */
 unsigned long long ull = 22;
 
@@ -63,7 +74,7 @@ signed int si = -32768;
 signed long sl = -40000;
 signed long long sll = -22;
 
-u32_t hex = 0xCAFEBABE;
+uint32_t hex = 0xCAFEBABE;
 
 void *ptr = (void *)0xBEEF;
 
@@ -89,20 +100,24 @@ void test_printk(void)
 {
 	int count;
 
+	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
+		ztest_test_skip();
+	}
+
 	_old_char_out = __printk_get_hook();
 	__printk_hook_install(ram_console_out);
 
 	printk("%zu %hhu %hu %u %lu %llu\n", stv, uc, usi, ui, ul, ull);
 	printk("%c %hhd %hd %d %ld %lld\n", c, c, ssi, si, sl, sll);
-	printk("0x%x %p\n", hex, ptr);
 	printk("0x%x 0x%02x 0x%04x 0x%08x 0x%016x\n", 1, 1, 1, 1, 1);
 	printk("0x%x 0x%2x 0x%4x 0x%8x\n", 1, 1, 1, 1);
 	printk("%d %02d %04d %08d\n", 42, 42, 42, 42);
 	printk("%d %02d %04d %08d\n", -42, -42, -42, -42);
 	printk("%u %2u %4u %8u\n", 42, 42, 42, 42);
 	printk("%u %02u %04u %08u\n", 42, 42, 42, 42);
-	printk("%-8u%-6d%-4x%-2p%8d\n", 0xFF, 42, 0xABCDEF, (char *)42, 42);
+	printk("%-8u%-6d%-4x  %8d\n", 0xFF, 42, 0xABCDEF, 42);
 	printk("%lld %lld %llu %llx\n", 0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
+	printk("0x%x %p %-2p\n", hex, ptr, (char *)42);
 
 	pk_console[pos] = '\0';
 	zassert_true((strcmp(pk_console, expected) == 0), "printk failed");
@@ -116,8 +131,6 @@ void test_printk(void)
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%c %hhd %hd %d %ld %lld\n", c, c, ssi, si, sl, sll);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
-			  "0x%x %p\n", hex, ptr);
-	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "0x%x 0x%02x 0x%04x 0x%08x 0x%016x\n", 1, 1, 1, 1, 1);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "0x%x 0x%2x 0x%4x 0x%8x\n", 1, 1, 1, 1);
@@ -130,11 +143,13 @@ void test_printk(void)
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%u %02u %04u %08u\n", 42, 42, 42, 42);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
-			  "%-8u%-6d%-4x%-2p%8d\n",
-			  0xFF, 42, 0xABCDEF, (char *)42, 42);
+			  "%-8u%-6d%-4x  %8d\n",
+			  0xFF, 42, 0xABCDEF, 42);
 	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%lld %lld %llu %llx\n",
 			  0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
+			  "0x%x %p %-2p\n", hex, ptr, (char *)42);
 	pk_console[count] = '\0';
 	zassert_true((strcmp(pk_console, expected) == 0), "snprintk failed");
 }

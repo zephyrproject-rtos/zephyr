@@ -26,8 +26,12 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &usart0;
-		zephyr,shell-uart = &usart0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,code-cpu1-partition = &slot1_partition;
+		zephyr,sram-cpu1-partition = &sram3;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+		zephyr,entropy = &rng;
 	};
 
 	gpio_keys {
@@ -47,11 +51,6 @@
 	};
 };
 
-&usart0 {
-	status = "okay";
-	current-speed = <115200>;
-};
-
 &gpio0 {
 	status = "okay";
 };
@@ -64,14 +63,45 @@
 	status = "okay";
 };
 
-&blue_led {
-	status = "okay";
-};
-
 &red_led {
 	status = "okay";
 };
 
-&spi8 {
+&flexcomm0 {
+	status = "okay";
+};
+
+&flexcomm4 {
+	status = "okay";
+};
+
+&hs_lspi {
+	status = "okay";
+	dmas = <&dma0 2>, <&dma0 3>;
+	dma-names = "rx", "tx";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&dma0 {
+	/*
+	 * The total number of dma channels available is defined by
+	 * FSL_FEATURE_DMA_NUMBER_OF_CHANNELS in the SoC features file.
+	 * Since memory from the heap pool is allocated based on the number
+	 * of DMA channels, set this property to as many channels is needed
+	 * for the platform. Adjust HEAP_MEM_POOL_SIZE in case you need more
+	 * memory.
+	 */
+	dma-channels = <20>;
+	status = "okay";
+};
+
+&mailbox0 {
 	status = "okay";
 };

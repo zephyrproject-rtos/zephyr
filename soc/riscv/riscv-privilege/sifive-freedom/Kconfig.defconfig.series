@@ -29,7 +29,4 @@ config MAX_IRQ_PER_AGGREGATOR
 config NUM_IRQS
 	default 64
 
-config XIP
-	default y
-
 endif # SOC_SERIES_RISCV_SIFIVE_FREEDOM

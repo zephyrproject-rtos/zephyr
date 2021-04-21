@@ -13,8 +13,26 @@
 #else
 #define STACK_SIZE 1024
 #endif
-#define THREAD_PRIORITY K_PRIO_COOP(8)
+
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(8)
+#endif
+
 #define RECV_BUFFER_SIZE 1280
+#define STATS_TIMER 60 /* How often to print statistics (in seconds) */
+
+#if defined(CONFIG_USERSPACE)
+#include <app_memory/app_memdomain.h>
+extern struct k_mem_partition app_partition;
+extern struct k_mem_domain app_domain;
+#define APP_BMEM K_APP_BMEM(app_partition)
+#define APP_DMEM K_APP_DMEM(app_partition)
+#else
+#define APP_BMEM
+#define APP_DMEM
+#endif
 
 struct data {
 	const char *proto;
@@ -22,16 +40,20 @@ struct data {
 	struct {
 		int sock;
 		char recv_buffer[RECV_BUFFER_SIZE];
-		u32_t counter;
+		uint32_t counter;
+		atomic_t bytes_received;
+		struct k_work_delayable stats_print;
 	} udp;
 
 	struct {
 		int sock;
+		atomic_t bytes_received;
+		struct k_work_delayable stats_print;
 
 		struct {
 			int sock;
 			char recv_buffer[RECV_BUFFER_SIZE];
-			u32_t counter;
+			uint32_t counter;
 		} accepted[CONFIG_NET_SAMPLE_NUM_HANDLERS];
 	} tcp;
 };
@@ -59,3 +81,19 @@ static inline int init_vlan(void)
 	return 0;
 }
 #endif /* CONFIG_NET_VLAN */
+
+#if defined(CONFIG_NET_L2_IPIP)
+int init_tunnel(void);
+bool is_tunnel(struct net_if *iface);
+#else
+static inline int init_tunnel(void)
+{
+	return 0;
+}
+
+static inline bool is_tunnel(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+	return false;
+}
+#endif /* CONFIG_NET_L2_IPIP */

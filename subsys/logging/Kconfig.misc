@@ -1,0 +1,56 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Misc"
+
+config LOG_DOMAIN_ID
+	int "Domain ID"
+	depends on !LOG_MINIMAL
+	default 0
+	range 0 7
+	help
+	  In multicore system each application/core must have unique domain ID.
+
+config LOG_CMDS
+	bool "Enable shell commands"
+	depends on SHELL
+	depends on !LOG_FRONTEND && !LOG_MINIMAL
+	default y if SHELL
+
+config LOG_TEST_CLEAR_MESSAGE_SPACE
+	bool "Clear message after allocation"
+	default y
+	depends on ZTEST
+	depends on LOG2
+	help
+	  Used in testing to simplify message comparision if message contains
+	  paddings.
+
+config LOG2_USE_VLA
+	bool "Using variable length arrays"
+	default y if !MISRA_SANE
+	help
+	  Using VLA slightly decreases stack usage in some cases it may not be
+	  supported. Note that VLA are used for arrays which size is resolved at
+	  compile time so at runtime arrays have fixed size.
+
+config LOG2_ALWAYS_RUNTIME
+	bool "Always use runtime message creation (v2)"
+	default y if NO_OPTIMIZATIONS
+	help
+	  If enabled, runtime method is always used for message creation. Static
+	  creation relies on compiler being able to optimize and remove code
+	  based on information known at compile time. It is recommended to
+	  enable this option when optimization is disabled because some compilers
+	  (seen on arm_cortex_m and x86) were using unrealistic amount of stack
+	  for dead code. Option applies to v1 as well because distinction
+	  between versions is done by the compiler.
+
+config LOG2_FMT_SECTION
+	bool "Keep log strings in dedicated section"
+	help
+	  When enabled, logs are kept in dedicated memory section. It allows
+	  removing strings from final binary and should be used for dictionary
+	  logging.
+
+endmenu

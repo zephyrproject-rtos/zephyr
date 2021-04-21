@@ -1,0 +1,18 @@
+identifier: nucleo_h745zi_q_m4
+name: ST Nucleo H745ZI-Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 288
+flash: 1024
+supported:
+  - arduino_gpio
+  - gpio
+  - netif:eth
+testing:
+  ignore_tags:
+    - mpu
+    - nfc

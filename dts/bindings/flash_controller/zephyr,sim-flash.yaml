@@ -9,3 +9,8 @@ include: base.yaml
 properties:
     label:
       required: true
+
+    erase-value:
+      type: int
+      description: Value of erased flash cell
+      required: false

@@ -25,8 +25,8 @@ struct bt_rfcomm_session {
 	/* Binary sem for aggregate fc */
 	struct k_sem fc;
 	struct bt_rfcomm_dlc *dlcs;
-	u16_t mtu;
-	u8_t state;
+	uint16_t mtu;
+	uint8_t state;
 	bt_rfcomm_role_t role;
 	bt_rfcomm_cfc_t cfc;
 };
@@ -44,9 +44,9 @@ enum {
 };
 
 struct bt_rfcomm_hdr {
-	u8_t address;
-	u8_t control;
-	u8_t length;
+	uint8_t address;
+	uint8_t control;
+	uint8_t length;
 } __packed;
 
 #define BT_RFCOMM_SABM  0x2f
@@ -54,25 +54,25 @@ struct bt_rfcomm_hdr {
 #define BT_RFCOMM_UIH   0xef
 
 struct bt_rfcomm_msg_hdr {
-	u8_t type;
-	u8_t len;
+	uint8_t type;
+	uint8_t len;
 } __packed;
 
 #define BT_RFCOMM_PN    0x20
 struct bt_rfcomm_pn {
-	u8_t  dlci;
-	u8_t  flow_ctrl;
-	u8_t  priority;
-	u8_t  ack_timer;
-	u16_t mtu;
-	u8_t  max_retrans;
-	u8_t  credits;
+	uint8_t  dlci;
+	uint8_t  flow_ctrl;
+	uint8_t  priority;
+	uint8_t  ack_timer;
+	uint16_t mtu;
+	uint8_t  max_retrans;
+	uint8_t  credits;
 } __packed;
 
 #define BT_RFCOMM_MSC    0x38
 struct bt_rfcomm_msc {
-	u8_t  dlci;
-	u8_t  v24_signal;
+	uint8_t  dlci;
+	uint8_t  v24_signal;
 } __packed;
 
 #define BT_RFCOMM_DISC  0x43
@@ -80,19 +80,19 @@ struct bt_rfcomm_msc {
 
 #define BT_RFCOMM_RLS   0x14
 struct bt_rfcomm_rls {
-	u8_t  dlci;
-	u8_t  line_status;
+	uint8_t  dlci;
+	uint8_t  line_status;
 } __packed;
 
 #define BT_RFCOMM_RPN   0x24
 struct bt_rfcomm_rpn {
-	u8_t  dlci;
-	u8_t  baud_rate;
-	u8_t  line_settings;
-	u8_t  flow_control;
-	u8_t  xon_char;
-	u8_t  xoff_char;
-	u16_t param_mask;
+	uint8_t  dlci;
+	uint8_t  baud_rate;
+	uint8_t  line_settings;
+	uint8_t  flow_control;
+	uint8_t  xon_char;
+	uint8_t  xoff_char;
+	uint16_t param_mask;
 } __packed;
 
 #define BT_RFCOMM_TEST  0x08

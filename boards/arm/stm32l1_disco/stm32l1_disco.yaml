@@ -1,5 +1,5 @@
 identifier: stm32l1_disco
-name: STM32L1DISCOVERY
+name: ST STM32L1 Discovery
 type: mcu
 arch: arm
 toolchain:

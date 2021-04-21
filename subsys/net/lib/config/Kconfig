@@ -5,6 +5,7 @@
 
 config NET_CONFIG_AUTO_INIT
 	bool "Init networking support automatically during device startup"
+	default n if USB_DEVICE_NETWORK
 	default y
 	help
 	  If this option is set, then the networking system is automatically
@@ -19,7 +20,6 @@ config NET_CONFIG_INIT_PRIO
 config NET_CONFIG_INIT_TIMEOUT
 	int "How long to wait for networking to be ready and available"
 	default 30
-	depends on NET_CONFIG_AUTO_INIT
 	help
 	  The value is in seconds. If for example IPv4 address from DHCPv4 is not
 	  received within this limit, then the net_config_init() call will fail

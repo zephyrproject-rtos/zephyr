@@ -3,4 +3,6 @@
 
 config BOARD
 	default "xt-sim"
-	depends on BOARD_XT_SIM
+
+config IPM_CONSOLE_STACK_SIZE
+	default 2048 if IPM_CONSOLE_RECEIVER

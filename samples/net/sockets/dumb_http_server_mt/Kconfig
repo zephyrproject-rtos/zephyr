@@ -12,4 +12,10 @@ config NET_SAMPLE_NUM_HANDLERS
 	  Each connection is served by a thread which needs
 	  memory. Only increase the value here if really needed.
 
+config NET_SAMPLE_SERVE_LARGE_FILE
+	bool "Send large file to peer when queried"
+	help
+	  If set, then send 100KB file to peer. Default is to send
+	  a 2KB file to peer.
+
 source "Kconfig.zephyr"

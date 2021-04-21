@@ -1,0 +1,52 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM SSC (Synchronous Serial Controller) controller
+
+compatible: "atmel,sam-ssc"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      required: true
+
+    pinctrl-0:
+      type: phandles
+      description: |
+        PIO pin configuration for RF, RK, RD, TF, TK, & TD signals.
+        We expect that the phandles will reference pinctrl nodes.
+        These nodes will have a nodelabel that matches the Atmel SoC HAL
+        defines and be of the form p<port><pin><periph>_<inst>_<signal>.
+
+        For example the SSC on SAME7x would be
+           pinctrl-0 = <&pd24b_ssc_rf &pa22a_ssc_rk &pa10c_ssc_rd
+                        &pb0d_ssc_tf &pb1d_ssc_tk &pb5d_ssc_td>;
+
+      required: true
+
+    dmas:
+      required: true
+      description: |
+        TX & RX dma specifiers.  Each specifier will have a phandle
+        reference to the dma controller, the channel number, and peripheral
+        trigger source.
+
+        For example dmas for TX, RX would look like
+           dmas = <&xdmac 22 DMA_PERID_SSC_TX>, <&xdmac 23 DMA_PERID_SSC_RX>;
+
+    dma-names:
+      required: true
+      description: |
+        This should be "tx" and "rx" to match the dmas property.
+
+        For example
+           dma-names = "tx", "rx";

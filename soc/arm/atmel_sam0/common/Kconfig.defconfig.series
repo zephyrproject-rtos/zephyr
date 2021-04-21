@@ -1,0 +1,54 @@
+# Atmel SAM0 MCU family configuration options
+
+# Copyright (c) 2020 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_SAM0
+
+config ADC_SAM0
+	default ADC
+
+config COUNTER_SAM0_TC32
+	default COUNTER
+
+config DAC_SAM0
+	default DAC
+
+config DMA_SAM0
+	default DMA
+
+config GPIO_SAM0
+	default GPIO
+
+config HWINFO_SAM0
+	default HWINFO
+
+config I2C_SAM0
+	default I2C
+
+config PINMUX_SAM0
+	default PINMUX
+
+config PWM_SAM0_TCC
+	default PWM
+
+config SPI_SAM0
+	default SPI
+
+config UART_SAM0
+	default SERIAL
+
+config USB_DC_SAM0
+	default USB
+
+config WDT_SAM0
+	default WATCHDOG
+
+if USB
+
+config HEAP_MEM_POOL_SIZE
+	default 1024
+
+endif # USB
+
+endif # SOC_FAMILY_SAM0

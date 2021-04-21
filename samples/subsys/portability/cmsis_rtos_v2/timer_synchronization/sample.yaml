@@ -1,0 +1,17 @@
+sample:
+  name: CMSIS_RTOS_V2 Synchronization
+tests:
+  sample.portability.cmsis_rtos_v2.timer_synchronization:
+    integration_platforms:
+      - native_posix
+    tags: cmsis_rtos
+    min_ram: 32
+    min_flash: 34
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Wrote to message queue: (.*)"
+        - "Read from message queue: (.*)"
+        - "Sample execution successful"

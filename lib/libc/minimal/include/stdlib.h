@@ -14,8 +14,8 @@
 extern "C" {
 #endif
 
-unsigned long int strtoul(const char *str, char **endptr, int base);
-long int strtol(const char *str, char **endptr, int base);
+unsigned long strtoul(const char *nptr, char **endptr, int base);
+long strtol(const char *nptr, char **endptr, int base);
 int atoi(const char *s);
 
 void *malloc(size_t size);
@@ -35,10 +35,24 @@ static inline void exit(int status)
 {
 	_exit(status);
 }
+void abort(void);
 
 int rand(void);
 
-#define abs(x) ((x) < 0 ? -(x) : (x))
+static inline int abs(int __n)
+{
+	return (__n < 0) ? -__n : __n;
+}
+
+static inline long labs(long __n)
+{
+	return (__n < 0L) ? -__n : __n;
+}
+
+static inline long long llabs(long long __n)
+{
+	return (__n < 0LL) ? -__n : __n;
+}
 
 #ifdef __cplusplus
 }

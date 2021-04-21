@@ -23,26 +23,20 @@
 #include <zephyr/types.h>
 
 struct _callee_saved {
-	u32_t v1;  /* r4 */
-	u32_t v2;  /* r5 */
-	u32_t v3;  /* r6 */
-	u32_t v4;  /* r7 */
-	u32_t v5;  /* r8 */
-	u32_t v6;  /* r9 */
-	u32_t v7;  /* r10 */
-	u32_t v8;  /* r11 */
-#if defined(CONFIG_CPU_CORTEX_R)
-	u32_t spsr;/* r12 */
-	u32_t psp; /* r13 */
-	u32_t lr;  /* r14 */
-#else
-	u32_t psp; /* r13 */
-#endif
+	uint32_t v1;  /* r4 */
+	uint32_t v2;  /* r5 */
+	uint32_t v3;  /* r6 */
+	uint32_t v4;  /* r7 */
+	uint32_t v5;  /* r8 */
+	uint32_t v6;  /* r9 */
+	uint32_t v7;  /* r10 */
+	uint32_t v8;  /* r11 */
+	uint32_t psp; /* r13 */
 };
 
 typedef struct _callee_saved _callee_saved_t;
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 struct _preempt_float {
 	float  s16;
 	float  s17;
@@ -66,12 +60,12 @@ struct _preempt_float {
 struct _thread_arch {
 
 	/* interrupt locking key */
-	u32_t basepri;
+	uint32_t basepri;
 
 	/* r0 in stack frame cannot be written to reliably */
-	u32_t swap_return_value;
+	uint32_t swap_return_value;
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/*
 	 * No cooperative floating point register set structure exists for
 	 * the Cortex-M as it automatically saves the necessary registers
@@ -80,14 +74,34 @@ struct _thread_arch {
 	struct _preempt_float  preempt_float;
 #endif
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)
-	u32_t mode;
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
+	/*
+	 * Status variable holding several thread status flags
+	 * as follows:
+	 *
+	 * +--------------bit-3----------bit-2--------bit-1---+----bit-0------+
+	 * :          |             |              |          |               |
+	 * : reserved |<Guard FLOAT>| <FP context> | reserved |  <priv mode>  |
+	 * :   bits   |             | CONTROL.FPCA |          | CONTROL.nPRIV |
+	 * +------------------------------------------------------------------+
+	 *
+	 * Bit 0: thread's current privileged mode (Supervisor or User mode)
+	 *        Mirrors CONTROL.nPRIV flag.
+	 * Bit 2: indicating whether the thread has an active FP context.
+	 *        Mirrors CONTROL.FPCA flag.
+	 * Bit 3: indicating whether the thread is applying the long (FLOAT)
+	 *        or the default MPU stack guard size.
+	 */
+	uint32_t mode;
 #if defined(CONFIG_USERSPACE)
-	u32_t priv_stack_start;
+	uint32_t priv_stack_start;
 #endif
 #endif
 };
 
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_MPU_STACK_GUARD)
+#define Z_ARM_MODE_MPU_GUARD_FLOAT_Msk (1 << 3)
+#endif
 typedef struct _thread_arch _thread_arch_t;
 
 #endif /* _ASMLANGUAGE */

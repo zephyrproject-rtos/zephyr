@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 
 #include <logging/log_msg.h>
+#include <logging/log_msg2.h>
 #include <stdarg.h>
 #include <sys/__assert.h>
 #include <sys/util.h>
@@ -29,18 +30,21 @@ struct log_backend;
  * @brief Logger backend API.
  */
 struct log_backend_api {
+	void (*process)(const struct log_backend *const backend,
+			union log_msg2_generic *msg);
+
 	void (*put)(const struct log_backend *const backend,
 		    struct log_msg *msg);
 	void (*put_sync_string)(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, u32_t timestamp,
+			 struct log_msg_ids src_level, uint32_t timestamp,
 			 const char *fmt, va_list ap);
 	void (*put_sync_hexdump)(const struct log_backend *const backend,
-			 struct log_msg_ids src_level, u32_t timestamp,
-			 const char *metadata, const u8_t *data, u32_t len);
+			 struct log_msg_ids src_level, uint32_t timestamp,
+			 const char *metadata, const uint8_t *data, uint32_t len);
 
-	void (*dropped)(const struct log_backend *const backend, u32_t cnt);
+	void (*dropped)(const struct log_backend *const backend, uint32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
-	void (*init)(void);
+	void (*init)(const struct log_backend *const backend);
 };
 
 /**
@@ -48,7 +52,7 @@ struct log_backend_api {
  */
 struct log_backend_control_block {
 	void *ctx;
-	u8_t id;
+	uint8_t id;
 	bool active;
 };
 
@@ -62,8 +66,8 @@ struct log_backend {
 	bool autostart;
 };
 
-extern const struct log_backend __log_backends_start[0];
-extern const struct log_backend __log_backends_end[0];
+extern const struct log_backend __log_backends_start[];
+extern const struct log_backend __log_backends_end[];
 
 /**
  * @brief Macro for creating a logger backend instance.
@@ -102,6 +106,16 @@ static inline void log_backend_put(const struct log_backend *const backend,
 	backend->api->put(backend, msg);
 }
 
+static inline void log_backend_msg2_process(
+					const struct log_backend *const backend,
+					union log_msg2_generic *msg)
+{
+	__ASSERT_NO_MSG(backend != NULL);
+	__ASSERT_NO_MSG(msg != NULL);
+	backend->api->process(backend, msg);
+}
+
+
 /**
  * @brief Synchronously process log message.
  *
@@ -114,7 +128,7 @@ static inline void log_backend_put(const struct log_backend *const backend,
 static inline void log_backend_put_sync_string(
 					const struct log_backend *const backend,
 					struct log_msg_ids src_level,
-					u32_t timestamp, const char *fmt,
+					uint32_t timestamp, const char *fmt,
 					va_list ap)
 {
 	__ASSERT_NO_MSG(backend != NULL);
@@ -138,8 +152,8 @@ static inline void log_backend_put_sync_string(
 static inline void log_backend_put_sync_hexdump(
 					const struct log_backend *const backend,
 					struct log_msg_ids src_level,
-					u32_t timestamp, const char *metadata,
-					const u8_t *data, u32_t len)
+					uint32_t timestamp, const char *metadata,
+					const uint8_t *data, uint32_t len)
 {
 	__ASSERT_NO_MSG(backend != NULL);
 
@@ -158,7 +172,7 @@ static inline void log_backend_put_sync_hexdump(
  * @param[in] cnt      Number of dropped logs since last notification.
  */
 static inline void log_backend_dropped(const struct log_backend *const backend,
-				       u32_t cnt)
+				       uint32_t cnt)
 {
 	__ASSERT_NO_MSG(backend != NULL);
 
@@ -187,7 +201,7 @@ static inline void log_backend_panic(const struct log_backend *const backend)
  * @param id       ID.
  */
 static inline void log_backend_id_set(const struct log_backend *const backend,
-				      u8_t id)
+				      uint8_t id)
 {
 	__ASSERT_NO_MSG(backend != NULL);
 	backend->cb->id = id;
@@ -201,7 +215,7 @@ static inline void log_backend_id_set(const struct log_backend *const backend,
  * @param[in] backend  Pointer to the backend instance.
  * @return    Id.
  */
-static inline u8_t log_backend_id_get(const struct log_backend *const backend)
+static inline uint8_t log_backend_id_get(const struct log_backend *const backend)
 {
 	__ASSERT_NO_MSG(backend != NULL);
 	return backend->cb->id;
@@ -214,7 +228,7 @@ static inline u8_t log_backend_id_get(const struct log_backend *const backend)
  *
  * @return    Pointer to the backend instance.
  */
-static inline const struct log_backend *log_backend_get(u32_t idx)
+static inline const struct log_backend *log_backend_get(uint32_t idx)
 {
 	return &__log_backends_start[idx];
 }

@@ -56,9 +56,9 @@ extern unsigned int z_interrupt_vectors_allocated[];
 
 struct dyn_irq_info {
 	/** IRQ handler */
-	void (*handler)(void *param);
+	void (*handler)(const void *param);
 	/** Parameter to pass to the handler */
-	void *param;
+	const void *param;
 };
 
 /*
@@ -169,7 +169,7 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
  */
 static void *get_dynamic_stub(int stub_idx)
 {
-	u32_t offset;
+	uint32_t offset;
 
 	/*
 	 * Because we want the sizes of the stubs to be consistent and minimized,
@@ -181,7 +181,7 @@ static void *get_dynamic_stub(int stub_idx)
 		((stub_idx / Z_DYN_STUB_PER_BLOCK) *
 		 Z_DYN_STUB_LONG_JMP_EXTRA_SIZE);
 
-	return (void *)((u32_t)&z_dynamic_stubs_begin + offset);
+	return (void *)((uint32_t)&z_dynamic_stubs_begin + offset);
 }
 
 extern const struct pseudo_descriptor z_x86_idt;
@@ -192,13 +192,13 @@ static void idt_vector_install(int vector, void *irq_handler)
 
 	key = irq_lock();
 	z_init_irq_gate(&z_x86_idt.entries[vector], CODE_SEG,
-		       (u32_t)irq_handler, 0);
+		       (uint32_t)irq_handler, 0);
 	irq_unlock(key);
 }
 
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-		void (*routine)(void *parameter), void *parameter,
-		u32_t flags)
+			     void (*routine)(const void *parameter),
+			     const void *parameter, uint32_t flags)
 {
 	int vector, stub_idx, key;
 
@@ -233,7 +233,7 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
  *
  * @param stub_idx Index into the dyn_irq_list array
  */
-void z_x86_dynamic_irq_handler(u8_t stub_idx)
+void z_x86_dynamic_irq_handler(uint8_t stub_idx)
 {
 	dyn_irq_list[stub_idx].handler(dyn_irq_list[stub_idx].param);
 }

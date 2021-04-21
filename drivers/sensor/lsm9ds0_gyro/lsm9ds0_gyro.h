@@ -211,7 +211,7 @@
 
 struct lsm9ds0_gyro_config {
 	char *i2c_master_dev_name;
-	u16_t i2c_slave_addr;
+	uint16_t i2c_slave_addr;
 
 #if CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY
 	char *gpio_drdy_dev_name;
@@ -221,19 +221,19 @@ struct lsm9ds0_gyro_config {
 };
 
 struct lsm9ds0_gyro_data {
-	struct device *i2c_master;
+	const struct device *i2c_master;
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGERS)
 	struct k_sem sem;
 #endif
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
-	K_THREAD_STACK_MEMBER(thread_stack,
+	K_KERNEL_STACK_MEMBER(thread_stack,
 			      CONFIG_LSM9DS0_GYRO_THREAD_STACK_SIZE);
 	struct k_thread thread;
-	struct device *dev;
+	const struct device *dev;
 
-	struct device *gpio_drdy;
+	const struct device *gpio_drdy;
 	struct gpio_callback gpio_cb;
 	struct sensor_trigger trigger_drdy;
 	sensor_trigger_handler_t handler_drdy;
@@ -241,17 +241,17 @@ struct lsm9ds0_gyro_data {
 
 	int sample_x, sample_y, sample_z;
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
-	u8_t sample_fs;
-	u8_t fs;
+	uint8_t sample_fs;
+	uint8_t fs;
 #endif
 };
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
-int lsm9ds0_gyro_trigger_set(struct device *dev,
+int lsm9ds0_gyro_trigger_set(const struct device *dev,
 			     const struct sensor_trigger *trig,
 			     sensor_trigger_handler_t handler);
 
-int lsm9ds0_gyro_init_interrupt(struct device *dev);
+int lsm9ds0_gyro_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LSM9DS0_GYRO_LSM9DS0_GYRO_H_ */

@@ -35,6 +35,57 @@
 
 #define NET_IPV4_HDR_OPTNS_MAX_LEN 40
 
+/* Fragment bits */
+#define NET_IPV4_MF BIT(0) /* More fragments  */
+#define NET_IPV4_DF BIT(1) /* Do not fragment */
+
+/**
+ * @brief Create IPv4 packet in provided net_pkt with option to set all the
+ *        caller settable values.
+ *
+ * @param pkt Network packet
+ * @param src Source IPv4 address
+ * @param dst Destination IPv4 address
+ * @param tos Type of service
+ * @param id Fragment id
+ * @param flags Fragmentation flags
+ * @param offset Fragment offset
+ * @param ttl Time-to-live value
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+#if defined(CONFIG_NET_NATIVE_IPV4)
+int net_ipv4_create_full(struct net_pkt *pkt,
+			 const struct in_addr *src,
+			 const struct in_addr *dst,
+			 uint8_t tos,
+			 uint16_t id,
+			 uint8_t flags,
+			 uint16_t offset,
+			 uint8_t ttl);
+#else
+static inline int net_ipv4_create_full(struct net_pkt *pkt,
+				       const struct in_addr *src,
+				       const struct in_addr *dst,
+				       uint8_t tos,
+				       uint16_t id,
+				       uint8_t flags,
+				       uint16_t offset,
+				       uint8_t ttl)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(src);
+	ARG_UNUSED(dst);
+	ARG_UNUSED(tos);
+	ARG_UNUSED(id);
+	ARG_UNUSED(flags);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(ttl);
+
+	return -ENOTSUP;
+}
+#endif
+
 /**
  * @brief Create IPv4 packet in provided net_pkt.
  *
@@ -73,10 +124,10 @@ static inline int net_ipv4_create(struct net_pkt *pkt,
  * @return 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_NET_NATIVE_IPV4)
-int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto);
+int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto);
 #else
 static inline int net_ipv4_finalize(struct net_pkt *pkt,
-				    u8_t next_header_proto)
+				    uint8_t next_header_proto)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(next_header_proto);
@@ -99,9 +150,9 @@ static inline int net_ipv4_finalize(struct net_pkt *pkt,
  *
  * @return 0 on success, negative otherwise.
  */
-typedef int (*net_ipv4_parse_hdr_options_cb_t)(u8_t opt_type,
-					       u8_t *opt_data,
-					       u8_t opt_len,
+typedef int (*net_ipv4_parse_hdr_options_cb_t)(uint8_t opt_type,
+					       uint8_t *opt_data,
+					       uint8_t opt_len,
 					       void *user_data);
 
 /**

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
+
+#include <arm/nordic/override.dtsi>
+/*
+ * This value can be overridden at the board level or in an application specific
+ * dts/arm/nordic/override.dtsi file.
+ */
+#ifndef NRF_DEFAULT_IRQ_PRIORITY
+#define NRF_DEFAULT_IRQ_PRIORITY 1
+#endif
+
+&systick {
+	/*
+	 * Nordic SoCs rely by default on the RTC for system clock
+	 * implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
+};

@@ -1,0 +1,7 @@
+sample:
+  name: BMI270 Sensor sample
+tests:
+  sample.sensor.bmi270:
+    harness: sensor
+    tags: samples sensor
+    depends_on: arduino_i2c

@@ -6,6 +6,7 @@
 
 #include "hello_world_driver.h"
 #include <zephyr/types.h>
+#include <syscall_handler.h>
 
 /**
  * This is a minimal example of an out-of-tree driver
@@ -13,24 +14,35 @@
  */
 
 static struct hello_world_dev_data {
-	u32_t foo;
+	uint32_t foo;
 } data;
 
-static int init(struct device *dev)
+static int init(const struct device *dev)
 {
 	data.foo = 5;
 
 	return 0;
 }
 
-static void print_impl(struct device *dev)
+static void print_impl(const struct device *dev)
 {
 	printk("Hello World from the kernel: %d\n", data.foo);
 
 	__ASSERT(data.foo == 5, "Device was not initialized!");
 }
 
-DEVICE_AND_API_INIT(hello_world, "CUSTOM_DRIVER",
-		    init, &data, NULL,
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_hello_world_print(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_HELLO_WORLD(dev, print));
+
+	z_impl_hello_world_print(dev);
+}
+#include <syscalls/hello_world_print_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+
+DEVICE_DEFINE(hello_world, "CUSTOM_DRIVER",
+		    init, device_pm_control_nop, &data, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &((struct hello_world_driver_api){ .print = print_impl }));

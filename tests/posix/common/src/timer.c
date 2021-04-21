@@ -29,7 +29,7 @@ void test_posix_timer(void)
 	timer_t timerid;
 	struct itimerspec value, ovalue;
 	struct timespec ts, te;
-	s64_t nsecs_elapsed, secs_elapsed, total_secs_timer;
+	int64_t nsecs_elapsed, secs_elapsed, total_secs_timer;
 
 	sig.sigev_notify = SIGEV_SIGNAL;
 	sig.sigev_notify_function = handler;
@@ -78,7 +78,7 @@ void test_posix_timer(void)
 	}
 
 	total_secs_timer = (value.it_value.tv_sec * NSEC_PER_SEC +
-			    value.it_value.tv_nsec + (u64_t) exp_count *
+			    value.it_value.tv_nsec + (uint64_t) exp_count *
 			    (value.it_interval.tv_sec * NSEC_PER_SEC +
 			     value.it_interval.tv_nsec)) / NSEC_PER_SEC;
 

@@ -1,0 +1,29 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_CMSIS_CORE
+	bool
+	select HAS_CMSIS_CORE_A if CPU_CORTEX_A
+	select HAS_CMSIS_CORE_R if CPU_CORTEX_R
+	select HAS_CMSIS_CORE_M if CPU_CORTEX_M
+
+if HAS_CMSIS_CORE
+
+config HAS_CMSIS_CORE_A
+	bool
+
+config HAS_CMSIS_CORE_R
+	bool
+
+config HAS_CMSIS_CORE_M
+	bool
+
+endif
+
+menuconfig CMSIS_DSP
+	bool "CMSIS-DSP Library Support"
+	depends on (CPU_CORTEX && NEWLIB_LIBC) || ARCH_POSIX
+
+if CMSIS_DSP
+source "modules/Kconfig.cmsis_dsp"
+endif

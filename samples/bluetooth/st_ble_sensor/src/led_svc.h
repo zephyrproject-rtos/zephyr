@@ -8,13 +8,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ST_BLE_SENSOR_LED_SVC_H_
+#define ST_BLE_SENSOR_LED_SVC_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void led_on_off(bool led_state);
+void led_update(void);
 int led_init(void);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

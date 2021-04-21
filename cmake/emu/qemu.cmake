@@ -50,8 +50,21 @@ endif()
 # Connect main serial port to the console chardev.
 list(APPEND QEMU_FLAGS -serial chardev:con)
 
+# Connect semihosting console to the console chardev if configured.
+if(CONFIG_SEMIHOST_CONSOLE)
+  list(APPEND QEMU_FLAGS
+    -semihosting-config enable=on,target=auto,chardev=con
+    )
+endif()
+
 # Connect monitor to the console chardev.
 list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
+
+if(CONFIG_QEMU_ICOUNT)
+  list(APPEND QEMU_FLAGS
+	  -icount shift=${CONFIG_QEMU_ICOUNT_SHIFT},align=off,sleep=off
+	  -rtc clock=vm)
+endif()
 
 # Add a BT serial device when building for bluetooth, unless the
 # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
@@ -213,11 +226,17 @@ elseif(QEMU_NET_STACK)
     set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../net-tools) # Default if not set
 
     list(APPEND PRE_QEMU_COMMANDS_FOR_server
-      COMMAND ${NET_TOOLS}/monitor_15_4
-  ${PCAP}
-  /tmp/ip-stack-server
+      COMMAND
+      #This command is run in the background using '&'. This prevents
+      #chaining other commands with '&&'. The command is enclosed in '{}'
+      #to fix this.
+      {
+      ${NET_TOOLS}/monitor_15_4
+      ${PCAP}
+      /tmp/ip-stack-server
       /tmp/ip-stack-client
       > /dev/null &
+      }
       # TODO: Support cleanup of the monitor_15_4 process
       )
   endif()
@@ -231,7 +250,7 @@ if(CONFIG_X86_64)
     ${CMAKE_OBJCOPY}
     -O elf32-i386
     $<TARGET_FILE:${logical_target_for_zephyr_elf}>
-    ${CMAKE_BINARY_DIR}/zephyr-qemu.elf
+    ${ZEPHYR_BINARY_DIR}/zephyr-qemu.elf
     DEPENDS ${logical_target_for_zephyr_elf}
     )
 
@@ -244,8 +263,8 @@ if(CONFIG_X86_64)
     COMMAND
     ${CMAKE_OBJCOPY}
     -j .locore
-    ${CMAKE_BINARY_DIR}/zephyr-qemu.elf
-    ${CMAKE_BINARY_DIR}/zephyr-qemu-locore.elf
+    ${ZEPHYR_BINARY_DIR}/zephyr-qemu.elf
+    ${ZEPHYR_BINARY_DIR}/zephyr-qemu-locore.elf
     2>&1 | grep -iv \"empty loadable segment detected\" || true
     DEPENDS qemu_image_target
     )
@@ -254,8 +273,8 @@ if(CONFIG_X86_64)
     COMMAND
     ${CMAKE_OBJCOPY}
     -R .locore
-    ${CMAKE_BINARY_DIR}/zephyr-qemu.elf
-    ${CMAKE_BINARY_DIR}/zephyr-qemu-main.elf
+    ${ZEPHYR_BINARY_DIR}/zephyr-qemu.elf
+    ${ZEPHYR_BINARY_DIR}/zephyr-qemu-main.elf
     2>&1 | grep -iv \"empty loadable segment detected\" || true
     DEPENDS qemu_image_target
     )
@@ -265,11 +284,25 @@ if(CONFIG_X86_64)
     DEPENDS qemu_locore_image_target qemu_main_image_target
     )
 
-  set(QEMU_KERNEL_FILE "${CMAKE_BINARY_DIR}/zephyr-qemu-locore.elf")
+  set(QEMU_KERNEL_FILE "${ZEPHYR_BINARY_DIR}/zephyr-qemu-locore.elf")
 
   list(APPEND QEMU_EXTRA_FLAGS
-    "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr-qemu-main.elf"
+    "-device;loader,file=${ZEPHYR_BINARY_DIR}/zephyr-qemu-main.elf"
     )
+endif()
+
+if(CONFIG_IVSHMEM)
+  if(CONFIG_IVSHMEM_DOORBELL)
+    list(APPEND QEMU_FLAGS
+      -device ivshmem-doorbell,vectors=${CONFIG_IVSHMEM_MSI_X_VECTORS},chardev=ivshmem
+      -chardev socket,path=/tmp/ivshmem_socket,id=ivshmem
+    )
+  else()
+    list(APPEND QEMU_FLAGS
+      -device ivshmem-plain,memdev=hostmem
+      -object memory-backend-file,size=${CONFIG_QEMU_IVSHMEM_PLAIN_MEM_SIZE}M,share,mem-path=/dev/shm/ivshmem,id=hostmem
+    )
+  endif()
 endif()
 
 if(NOT QEMU_PIPE)
@@ -298,6 +331,8 @@ if(DEFINED QEMU_KERNEL_FILE)
   set(QEMU_KERNEL_OPTION "-kernel;${QEMU_KERNEL_FILE}")
 elseif(NOT DEFINED QEMU_KERNEL_OPTION)
   set(QEMU_KERNEL_OPTION "-kernel;$<TARGET_FILE:${logical_target_for_zephyr_elf}>")
+elseif(DEFINED QEMU_KERNEL_OPTION)
+  string(CONFIGURE "${QEMU_KERNEL_OPTION}" QEMU_KERNEL_OPTION)
 endif()
 
 foreach(target ${qemu_targets})

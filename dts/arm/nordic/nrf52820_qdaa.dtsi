@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <nordic/nrf52820.dtsi>
+
+&flash0 {
+	reg = <0x00000000 DT_SIZE_K(256)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(32)>;
+};
+
+/ {
+	soc {
+		compatible = "nordic,nRF52820-QDAA", "nordic,nRF52820", "nordic,nRF52", "simple-bus";
+	};
+};

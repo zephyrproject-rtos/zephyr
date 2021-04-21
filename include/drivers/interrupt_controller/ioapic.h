@@ -35,10 +35,11 @@ extern "C" {
 #define IOAPIC_EXTINT 0x00000700
 
 #ifndef _ASMLANGUAGE
+uint32_t z_ioapic_num_rtes(void);
 void z_ioapic_irq_enable(unsigned int irq);
 void z_ioapic_irq_disable(unsigned int irq);
 void z_ioapic_int_vec_set(unsigned int irq, unsigned int vector);
-void z_ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags);
+void z_ioapic_irq_set(unsigned int irq, unsigned int vector, uint32_t flags);
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

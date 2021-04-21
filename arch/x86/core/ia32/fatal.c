@@ -18,7 +18,14 @@
 #include <inttypes.h>
 #include <exc_handle.h>
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+#include <x86_mmu.h>
+#include <sys/mem_manage.h>
+
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#ifdef CONFIG_DEBUG_COREDUMP
+unsigned int z_x86_exception_vector;
+#endif
 
 __weak void z_debug_fatal_hook(const z_arch_esf_t *esf) { ARG_UNUSED(esf); }
 
@@ -33,18 +40,18 @@ void z_x86_spurious_irq(const z_arch_esf_t *esf)
 	z_x86_fatal_error(K_ERR_SPURIOUS_IRQ, esf);
 }
 
-void arch_syscall_oops(void *ssf_ptr)
+void arch_syscall_oops(void *ssf)
 {
-	struct _x86_syscall_stack_frame *ssf =
-		(struct _x86_syscall_stack_frame *)ssf_ptr;
+	struct _x86_syscall_stack_frame *ssf_ptr =
+		(struct _x86_syscall_stack_frame *)ssf;
 	z_arch_esf_t oops = {
-		.eip = ssf->eip,
-		.cs = ssf->cs,
-		.eflags = ssf->eflags
+		.eip = ssf_ptr->eip,
+		.cs = ssf_ptr->cs,
+		.eflags = ssf_ptr->eflags
 	};
 
 	if (oops.cs == USER_CODE_SEG) {
-		oops.esp = ssf->esp;
+		oops.esp = ssf_ptr->esp;
 	}
 
 	z_x86_fatal_error(K_ERR_KERNEL_OOPS, &oops);
@@ -58,51 +65,55 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 					     const z_arch_esf_t *pEsf)
 {
+#ifdef CONFIG_DEBUG_COREDUMP
+	z_x86_exception_vector = vector;
+#endif
+
 	z_x86_unhandled_cpu_exception(vector, pEsf);
 }
 
 #define _EXC_FUNC(vector) \
-FUNC_NORETURN void handle_exc_##vector(const z_arch_esf_t *pEsf) \
+FUNC_NORETURN __used static void handle_exc_##vector(const z_arch_esf_t *pEsf) \
 { \
 	generic_exc_handle(vector, pEsf); \
 }
 
-#define Z_EXC_FUNC_CODE(vector) \
+#define Z_EXC_FUNC_CODE(vector, dpl) \
 	_EXC_FUNC(vector) \
-	_EXCEPTION_CONNECT_CODE(handle_exc_##vector, vector)
+	_EXCEPTION_CONNECT_CODE(handle_exc_##vector, vector, dpl)
 
-#define Z_EXC_FUNC_NOCODE(vector) \
+#define Z_EXC_FUNC_NOCODE(vector, dpl)	\
 	_EXC_FUNC(vector) \
-	_EXCEPTION_CONNECT_NOCODE(handle_exc_##vector, vector)
+	_EXCEPTION_CONNECT_NOCODE(handle_exc_##vector, vector, dpl)
 
 /* Necessary indirection to ensure 'vector' is expanded before we expand
  * the handle_exc_##vector
  */
-#define EXC_FUNC_NOCODE(vector) \
-	Z_EXC_FUNC_NOCODE(vector)
+#define EXC_FUNC_NOCODE(vector, dpl)		\
+	Z_EXC_FUNC_NOCODE(vector, dpl)
 
-#define EXC_FUNC_CODE(vector) \
-	Z_EXC_FUNC_CODE(vector)
+#define EXC_FUNC_CODE(vector, dpl)		\
+	Z_EXC_FUNC_CODE(vector, dpl)
 
-EXC_FUNC_NOCODE(IV_DIVIDE_ERROR);
-EXC_FUNC_NOCODE(IV_NON_MASKABLE_INTERRUPT);
-EXC_FUNC_NOCODE(IV_OVERFLOW);
-EXC_FUNC_NOCODE(IV_BOUND_RANGE);
-EXC_FUNC_NOCODE(IV_INVALID_OPCODE);
-EXC_FUNC_NOCODE(IV_DEVICE_NOT_AVAILABLE);
+EXC_FUNC_NOCODE(IV_DIVIDE_ERROR, 0);
+EXC_FUNC_NOCODE(IV_NON_MASKABLE_INTERRUPT, 0);
+EXC_FUNC_NOCODE(IV_OVERFLOW, 0);
+EXC_FUNC_NOCODE(IV_BOUND_RANGE, 0);
+EXC_FUNC_NOCODE(IV_INVALID_OPCODE, 0);
+EXC_FUNC_NOCODE(IV_DEVICE_NOT_AVAILABLE, 0);
 #ifndef CONFIG_X86_ENABLE_TSS
-EXC_FUNC_NOCODE(IV_DOUBLE_FAULT);
+EXC_FUNC_NOCODE(IV_DOUBLE_FAULT, 0);
 #endif
-EXC_FUNC_CODE(IV_INVALID_TSS);
-EXC_FUNC_CODE(IV_SEGMENT_NOT_PRESENT);
-EXC_FUNC_CODE(IV_STACK_FAULT);
-EXC_FUNC_CODE(IV_GENERAL_PROTECTION);
-EXC_FUNC_NOCODE(IV_X87_FPU_FP_ERROR);
-EXC_FUNC_CODE(IV_ALIGNMENT_CHECK);
-EXC_FUNC_NOCODE(IV_MACHINE_CHECK);
+EXC_FUNC_CODE(IV_INVALID_TSS, 0);
+EXC_FUNC_CODE(IV_SEGMENT_NOT_PRESENT, 0);
+EXC_FUNC_CODE(IV_STACK_FAULT, 0);
+EXC_FUNC_CODE(IV_GENERAL_PROTECTION, 0);
+EXC_FUNC_NOCODE(IV_X87_FPU_FP_ERROR, 0);
+EXC_FUNC_CODE(IV_ALIGNMENT_CHECK, 0);
+EXC_FUNC_NOCODE(IV_MACHINE_CHECK, 0);
 #endif
 
-_EXCEPTION_CONNECT_CODE(z_x86_page_fault_handler, IV_PAGE_FAULT);
+_EXCEPTION_CONNECT_CODE(z_x86_page_fault_handler, IV_PAGE_FAULT, 0);
 
 #ifdef CONFIG_X86_ENABLE_TSS
 static __noinit volatile z_arch_esf_t _df_esf;
@@ -127,20 +138,21 @@ struct task_state_segment _main_tss = {
 	 * In a special kernel page that, unlike all other kernel pages,
 	 * is marked present in the user page table.
 	 */
-	.esp0 = (u32_t)&z_trampoline_stack_end
+	.esp0 = (uint32_t)&z_trampoline_stack_end
 #endif
 };
 
 /* Special TSS for handling double-faults with a known good stack */
 Z_GENERIC_SECTION(.tss)
 struct task_state_segment _df_tss = {
-	.esp = (u32_t)(_df_stack + sizeof(_df_stack)),
+	.esp = (uint32_t)(_df_stack + sizeof(_df_stack)),
 	.cs = CODE_SEG,
 	.ds = DATA_SEG,
 	.es = DATA_SEG,
 	.ss = DATA_SEG,
-	.eip = (u32_t)df_handler_top,
-	.cr3 = (u32_t)&z_x86_kernel_ptables
+	.eip = (uint32_t)df_handler_top,
+	.cr3 = (uint32_t)
+		Z_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_x86_kernel_ptables[0]))
 };
 
 static __used void df_handler_bottom(void)
@@ -149,8 +161,8 @@ static __used void df_handler_bottom(void)
 	int reason = K_ERR_CPU_EXCEPTION;
 
 	/* Restore the top half so it is runnable again */
-	_df_tss.esp = (u32_t)(_df_stack + sizeof(_df_stack));
-	_df_tss.eip = (u32_t)df_handler_top;
+	_df_tss.esp = (uint32_t)(_df_stack + sizeof(_df_stack));
+	_df_tss.eip = (uint32_t)df_handler_top;
 
 	LOG_ERR("Double Fault");
 #ifdef CONFIG_THREAD_STACK_INFO
@@ -181,14 +193,14 @@ static FUNC_NORETURN __used void df_handler_top(void)
 	_df_esf.eflags = _main_tss.eflags;
 
 	/* Restore the main IA task to a runnable state */
-	_main_tss.esp = (u32_t)(ARCH_THREAD_STACK_BUFFER(_interrupt_stack) +
-				CONFIG_ISR_STACK_SIZE);
+	_main_tss.esp = (uint32_t)(Z_KERNEL_STACK_BUFFER(
+		z_interrupt_stacks[0]) + CONFIG_ISR_STACK_SIZE);
 	_main_tss.cs = CODE_SEG;
 	_main_tss.ds = DATA_SEG;
 	_main_tss.es = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
-	_main_tss.eip = (u32_t)df_handler_bottom;
-	_main_tss.cr3 = (u32_t)&z_x86_kernel_ptables;
+	_main_tss.eip = (uint32_t)df_handler_bottom;
+	_main_tss.cr3 = z_mem_phys_addr(z_x86_kernel_ptables);
 	_main_tss.eflags = 0U;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss

@@ -1,6 +1,3 @@
 tests:
   kernel.queue:
-    tags: kernel userspace
-  kernel.queue.poll:
-    extra_args: CONF_FILE="prj_poll.conf"
-    tags: kernel userspace
+    tags: kernel userspace ignore_faults

@@ -18,6 +18,8 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_raw.h>
 #include <bluetooth/l2cap.h>
+#include <bluetooth/hci_vs.h>
+#include <drivers/bluetooth/hci_driver.h>
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
@@ -26,38 +28,21 @@ LOG_MODULE_REGISTER(usb_bluetooth);
 static K_FIFO_DEFINE(rx_queue);
 static K_FIFO_DEFINE(tx_queue);
 
-/* HCI command buffers */
-#define CMD_BUF_SIZE BT_BUF_RX_SIZE
-NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
-		    sizeof(u8_t), NULL);
-
-/* ACL data TX buffers */
-#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
-#define ACL_BUF_COUNT CONFIG_BT_CTLR_TX_BUFFERS
-#else
-#define ACL_BUF_COUNT 4
-#endif
-
-#if defined(CONFIG_BT_CTLR_TX_BUFFER_SIZE)
-#define BT_L2CAP_MTU (CONFIG_BT_CTLR_TX_BUFFER_SIZE - BT_L2CAP_HDR_SIZE)
-#else
-#define BT_L2CAP_MTU 64
-#endif
-
-/* Data size needed for ACL buffers */
-#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
-NET_BUF_POOL_DEFINE(acl_tx_pool, ACL_BUF_COUNT, BT_BUF_ACL_SIZE,
-		    sizeof(u8_t), NULL);
-
 #define BLUETOOTH_INT_EP_ADDR		0x81
 #define BLUETOOTH_OUT_EP_ADDR		0x02
 #define BLUETOOTH_IN_EP_ADDR		0x82
 
 /* HCI RX/TX threads */
-static K_THREAD_STACK_DEFINE(rx_thread_stack, 512);
+static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread rx_thread_data;
-static K_THREAD_STACK_DEFINE(tx_thread_stack, 512);
+static K_KERNEL_STACK_DEFINE(tx_thread_stack, 512);
 static struct k_thread tx_thread_data;
+
+/* HCI USB state flags */
+static bool configured;
+static bool suspended;
+
+static uint8_t ep_out_buf[USB_MAX_FS_BULK_MPS];
 
 struct usb_bluetooth_config {
 	struct usb_if_descriptor if0;
@@ -87,9 +72,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0)
 		.bDescriptorType = USB_ENDPOINT_DESC,
 		.bEndpointAddress = BLUETOOTH_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_BLUETOOTH_INT_EP_MPS),
+		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_INT_MPS),
 		.bInterval = 0x01,
 	},
 
@@ -99,9 +82,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0)
 		.bDescriptorType = USB_ENDPOINT_DESC,
 		.bEndpointAddress = BLUETOOTH_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_BLUETOOTH_BULK_EP_MPS),
+		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_BULK_MPS),
 		.bInterval = 0x01,
 	},
 
@@ -111,9 +92,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0)
 		.bDescriptorType = USB_ENDPOINT_DESC,
 		.bEndpointAddress = BLUETOOTH_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_BLUETOOTH_BULK_EP_MPS),
+		.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_FS_BULK_MPS),
 		.bInterval = 0x01,
 	},
 };
@@ -137,14 +116,20 @@ static struct usb_ep_cfg_data bluetooth_ep_data[] = {
 	},
 };
 
-static void hci_rx_thread(void)
+static void hci_tx_thread(void)
 {
 	LOG_DBG("Start USB Bluetooth thread");
 
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = net_buf_get(&tx_queue, K_FOREVER);
+
+		if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4) &&
+		    bt_hci_raw_get_mode() == BT_HCI_RAW_MODE_H4) {
+			/* Force to sent over bulk if H4 is selected */
+			bt_buf_set_type(buf, BT_BUF_ACL_IN);
+		}
 
 		switch (bt_buf_get_type(buf)) {
 		case BT_BUF_EVT:
@@ -168,119 +153,244 @@ static void hci_rx_thread(void)
 	}
 }
 
-static void hci_tx_thread(void)
+static void hci_rx_thread(void)
 {
 	while (true) {
 		struct net_buf *buf;
+		int err;
 
-		buf = net_buf_get(&tx_queue, K_FOREVER);
+		buf = net_buf_get(&rx_queue, K_FOREVER);
 
-		if (bt_send(buf)) {
+		err = bt_send(buf);
+		if (err) {
 			LOG_ERR("Error sending to driver");
 			net_buf_unref(buf);
 		}
 	}
 }
 
-static void acl_read_cb(u8_t ep, int size, void *priv)
+static uint16_t hci_pkt_get_len(struct net_buf *buf,
+				const uint8_t *data, size_t size)
 {
-	struct net_buf *buf = priv;
+	uint16_t len = 0;
+	size_t hdr_len = 0;
 
-	if (size > 0) {
-		buf->len += size;
-		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
-		net_buf_put(&tx_queue, buf);
+	switch (bt_buf_get_type(buf)) {
+	case BT_BUF_CMD: {
+		struct bt_hci_cmd_hdr *cmd_hdr;
+
+		hdr_len = sizeof(*cmd_hdr);
+		cmd_hdr = (struct bt_hci_cmd_hdr *)data;
+		len = cmd_hdr->param_len + hdr_len;
+		break;
+	}
+	case BT_BUF_ACL_OUT: {
+		struct bt_hci_acl_hdr *acl_hdr;
+
+		hdr_len = sizeof(*acl_hdr);
+		acl_hdr = (struct bt_hci_acl_hdr *)data;
+		len = sys_le16_to_cpu(acl_hdr->len) + hdr_len;
+		break;
+	}
+	case BT_BUF_ISO_OUT: {
+		struct bt_hci_iso_data_hdr *iso_hdr;
+
+		hdr_len = sizeof(*iso_hdr);
+		iso_hdr = (struct bt_hci_iso_data_hdr *)data;
+		len = sys_le16_to_cpu(iso_hdr->slen) + hdr_len;
+		break;
+	}
+	default:
+		LOG_ERR("Unknown bt buffer type");
+		return 0;
+	}
+
+	return (size < hdr_len) ? 0 : len;
+}
+
+static void acl_read_cb(uint8_t ep, int size, void *priv)
+{
+	static struct net_buf *buf;
+	static uint16_t pkt_len;
+	uint8_t *data = ep_out_buf;
+
+	if (size == 0) {
+		goto restart_out_transfer;
+	}
+
+	if (buf == NULL) {
+		/*
+		 * Obtain the first chunk and determine the length
+		 * of the HCI packet.
+		 */
+		if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4) &&
+		    bt_hci_raw_get_mode() == BT_HCI_RAW_MODE_H4) {
+			buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, data, size);
+			pkt_len = hci_pkt_get_len(buf, &data[1], size - 1);
+			LOG_DBG("pkt_len %u, chunk %u", pkt_len, size);
+		} else {
+			buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
+					    data, size);
+			pkt_len = hci_pkt_get_len(buf, data, size);
+			LOG_DBG("pkt_len %u, chunk %u", pkt_len, size);
+		}
+
+		if (pkt_len == 0) {
+			LOG_ERR("Failed to get packet length");
+			net_buf_unref(buf);
+			buf = NULL;
+		}
+	} else {
+		/*
+		 * Take over the next chunk if HCI packet is
+		 * larger than USB_MAX_FS_BULK_MPS.
+		 */
+		net_buf_add_mem(buf, data, size);
+		LOG_DBG("len %u, chunk %u", buf->len, size);
+	}
+
+	if (buf != NULL && pkt_len == buf->len) {
+		net_buf_put(&rx_queue, buf);
+		LOG_DBG("put");
 		buf = NULL;
+		pkt_len = 0;
 	}
 
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	buf = net_buf_alloc(&acl_tx_pool, K_FOREVER);
-	__ASSERT_NO_MSG(buf);
-
-	net_buf_reserve(buf, BT_BUF_RESERVE);
-
-	/* Start a new read transfer */
-	usb_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, buf->data,
-		     BT_BUF_ACL_SIZE, USB_TRANS_READ, acl_read_cb, buf);
+restart_out_transfer:
+	usb_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, ep_out_buf,
+		     sizeof(ep_out_buf), USB_TRANS_READ | USB_TRANS_NO_ZLP,
+		     acl_read_cb, NULL);
 }
 
 static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 				enum usb_dc_status_code status,
-				const u8_t *param)
+				const uint8_t *param)
 {
 	ARG_UNUSED(cfg);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
-	case USB_DC_ERROR:
-		LOG_DBG("USB device error");
-		break;
 	case USB_DC_RESET:
-		LOG_DBG("USB device reset detected");
-		break;
-	case USB_DC_CONNECTED:
-		LOG_DBG("USB device connected");
+		LOG_DBG("Device reset detected");
+		configured = false;
+		suspended = false;
 		break;
 	case USB_DC_CONFIGURED:
-		LOG_DBG("USB device configured");
-		/* Start reading */
-		acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, 0, NULL);
+		LOG_DBG("Device configured");
+		if (!configured) {
+			configured = true;
+			/* Start reading */
+			acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr,
+				    0, NULL);
+		}
 		break;
 	case USB_DC_DISCONNECTED:
-		LOG_DBG("USB device disconnected");
+		LOG_DBG("Device disconnected");
 		/* Cancel any transfer */
 		usb_cancel_transfer(bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr);
+		configured = false;
+		suspended = false;
 		break;
 	case USB_DC_SUSPEND:
-		LOG_DBG("USB device suspended");
+		LOG_DBG("Device suspended");
+		suspended = true;
 		break;
 	case USB_DC_RESUME:
-		LOG_DBG("USB device resumed");
-		break;
-	case USB_DC_SOF:
+		LOG_DBG("Device resumed");
+		if (suspended) {
+			LOG_DBG("from suspend");
+			suspended = false;
+			if (configured) {
+				/* Start reading */
+				acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr,
+					    0, NULL);
+			}
+		} else {
+			LOG_DBG("Spurious resume event");
+		}
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		LOG_DBG("USB unknown state");
+		LOG_DBG("Unknown state");
 		break;
 	}
 }
 
+static uint8_t vs_read_usb_transport_mode(struct net_buf *buf)
+{
+	struct net_buf *rsp;
+	struct bt_hci_rp_vs_read_usb_transport_mode *rp;
+
+	rsp = bt_hci_cmd_complete_create(BT_HCI_OP_VS_READ_USB_TRANSPORT_MODE,
+					 sizeof(*rp) + 2);
+	rp = net_buf_add(rsp, sizeof(*rp));
+	rp->status = BT_HCI_ERR_SUCCESS;
+	rp->num_supported_modes = 2;
+
+	net_buf_add_u8(rsp, BT_HCI_VS_USB_H2_MODE);
+	net_buf_add_u8(rsp, BT_HCI_VS_USB_H4_MODE);
+
+	net_buf_put(&tx_queue, rsp);
+
+	return BT_HCI_ERR_EXT_HANDLED;
+}
+
+static uint8_t vs_set_usb_transport_mode(struct net_buf *buf)
+{
+	struct bt_hci_cp_vs_set_usb_transport_mode *cp;
+	uint8_t mode;
+
+	cp = net_buf_pull_mem(buf, sizeof(*cp));
+
+	switch (cp->mode) {
+	case BT_HCI_VS_USB_H2_MODE:
+		mode = BT_HCI_RAW_MODE_PASSTHROUGH;
+		break;
+	case BT_HCI_VS_USB_H4_MODE:
+		mode = BT_HCI_RAW_MODE_H4;
+		break;
+	default:
+		LOG_DBG("Invalid mode: %u", cp->mode);
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	LOG_DBG("mode %u", mode);
+
+	bt_hci_raw_set_mode(mode);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+static struct bt_hci_raw_cmd_ext cmd_ext[] = {
+	BT_HCI_RAW_CMD_EXT(BT_OCF(BT_HCI_OP_VS_READ_USB_TRANSPORT_MODE), 0,
+			   vs_read_usb_transport_mode),
+	BT_HCI_RAW_CMD_EXT(BT_OCF(BT_HCI_OP_VS_SET_USB_TRANSPORT_MODE),
+			   sizeof(struct bt_hci_cp_vs_set_usb_transport_mode),
+			   vs_set_usb_transport_mode),
+};
+
 static int bluetooth_class_handler(struct usb_setup_packet *setup,
-				   s32_t *len, u8_t **data)
+				   int32_t *len, uint8_t **data)
 {
 	struct net_buf *buf;
 
 	LOG_DBG("len %u", *len);
 
-	if (!*len || *len > CMD_BUF_SIZE) {
-		LOG_ERR("Incorrect length: %d\n", *len);
-		return -EINVAL;
-	}
-
-	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, *data, *len);
 	if (!buf) {
 		LOG_ERR("Cannot get free buffer\n");
 		return -ENOMEM;
 	}
 
-	net_buf_reserve(buf, BT_BUF_RESERVE);
-	bt_buf_set_type(buf, BT_BUF_CMD);
-
-	net_buf_add_mem(buf, *data, *len);
-
-	net_buf_put(&tx_queue, buf);
+	net_buf_put(&rx_queue, buf);
 
 	return 0;
 }
 
 static void bluetooth_interface_config(struct usb_desc_header *head,
-				       u8_t bInterfaceNumber)
+				       uint8_t bInterfaceNumber)
 {
 	ARG_UNUSED(head);
 
@@ -301,27 +411,35 @@ USBD_CFG_DATA_DEFINE(primary, hci) struct usb_cfg_data bluetooth_config = {
 	.endpoint = bluetooth_ep_data,
 };
 
-static int bluetooth_init(struct device *dev)
+static int bluetooth_init(const struct device *dev)
 {
 	int ret;
 
 	LOG_DBG("Initialization");
 
-	ret = bt_enable_raw(&rx_queue);
+	ret = bt_enable_raw(&tx_queue);
 	if (ret) {
 		LOG_ERR("Failed to open Bluetooth raw channel: %d", ret);
 		return ret;
 	}
 
+	if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4)) {
+		bt_hci_raw_cmd_ext_register(cmd_ext, ARRAY_SIZE(cmd_ext));
+	}
+
 	k_thread_create(&rx_thread_data, rx_thread_stack,
-			K_THREAD_STACK_SIZEOF(rx_thread_stack),
+			K_KERNEL_STACK_SIZEOF(rx_thread_stack),
 			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(8), 0, K_NO_WAIT);
 
+	k_thread_name_set(&rx_thread_data, "usb_bt_rx");
+
 	k_thread_create(&tx_thread_data, tx_thread_stack,
-			K_THREAD_STACK_SIZEOF(tx_thread_stack),
+			K_KERNEL_STACK_SIZEOF(tx_thread_stack),
 			(k_thread_entry_t)hci_tx_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(8), 0, K_NO_WAIT);
+
+	k_thread_name_set(&tx_thread_data, "usb_bt_tx");
 
 	return 0;
 }

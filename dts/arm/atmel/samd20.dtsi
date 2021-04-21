@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <atmel/samd.dtsi>
+#include <atmel/samd2x.dtsi>
 
 / {
 	aliases {
@@ -19,6 +19,8 @@
 			reg = <0x42002000 0x20>;
 			interrupts = <13 0>;
 			label = "TIMER_0";
+			clocks = <&gclk 0x13>, <&pm 0x20 8>;
+			clock-names = "GCLK", "PM";
 		};
 
 		tc2: tc@42002800 {
@@ -26,6 +28,8 @@
 			reg = <0x42002800 0x20>;
 			interrupts = <15 0>;
 			label = "TIMER_2";
+			clocks = <&gclk 0x14>, <&pm 0x20 10>;
+			clock-names = "GCLK", "PM";
 		};
 
 		tc6: tc@42003800 {
@@ -33,38 +37,62 @@
 			reg = <0x42003800 0x20>;
 			interrupts = <19 0>;
 			label = "TIMER_6";
+			clocks = <&gclk 0x16>, <&pm 0x20 14>;
+			clock-names = "GCLK", "PM";
 		};
 	};
 };
 
+&dac0 {
+	interrupts = <23 0>;
+	clocks = <&gclk 26>, <&pm 0x20 18>;
+	clock-names = "GCLK", "PM";
+};
+
 &sercom0 {
 	interrupts = <7 0>;
+	clocks = <&gclk 0xd>, <&pm 0x20 2>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom1 {
 	interrupts = <8 0>;
+	clocks = <&gclk 0xe>, <&pm 0x20 3>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom2 {
 	interrupts = <9 0>;
+	clocks = <&gclk 0xf>, <&pm 0x20 4>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom3 {
 	interrupts = <10 0>;
+	clocks = <&gclk 0x10>, <&pm 0x20 5>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom4 {
 	interrupts = <11 0>;
+	clocks = <&gclk 0x11>, <&pm 0x20 6>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom5 {
 	interrupts = <12 0>;
+	clocks = <&gclk 0x12>, <&pm 0x20 7>;
+	clock-names = "GCLK", "PM";
 };
 
 &tc4 {
 	interrupts = <17 0>;
+	clocks = <&gclk 0x15>, <&pm 0x20 12>;
+	clock-names = "GCLK", "PM";
 };
 
 &adc {
 	interrupts = <21 0>;
+	clocks = <&gclk 0x17>, <&pm 0x20 16>;
+	clock-names = "GCLK", "PM";
 };

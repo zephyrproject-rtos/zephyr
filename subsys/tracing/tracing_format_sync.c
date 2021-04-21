@@ -10,10 +10,10 @@
 
 void tracing_format_string(const char *str, ...)
 {
-	u8_t *data;
+	uint8_t *data;
 	va_list args;
 	bool put_success;
-	u32_t length, tracing_buffer_size;
+	uint32_t length, tracing_buffer_size;
 
 	if (!is_tracing_enabled()) {
 		return;
@@ -38,7 +38,7 @@ void tracing_format_string(const char *str, ...)
 	va_end(args);
 }
 
-void tracing_format_raw_data(u8_t *data, u32_t length)
+void tracing_format_raw_data(uint8_t *data, uint32_t length)
 {
 	if (!is_tracing_enabled()) {
 		return;
@@ -49,11 +49,11 @@ void tracing_format_raw_data(u8_t *data, u32_t length)
 	TRACING_UNLOCK();
 }
 
-void tracing_format_data(tracing_data_t *tracing_data_array, u32_t count)
+void tracing_format_data(tracing_data_t *tracing_data_array, uint32_t count)
 {
-	u8_t *data;
+	uint8_t *data;
 	bool put_success;
-	u32_t length, tracing_buffer_size;
+	uint32_t length, tracing_buffer_size;
 
 	if (!is_tracing_enabled()) {
 		return;

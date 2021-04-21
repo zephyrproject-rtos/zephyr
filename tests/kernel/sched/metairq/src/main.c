@@ -54,12 +54,12 @@ void metairq_thread(void)
 	printk("give sem2\n");
 	k_sem_give(&coop_sem2);
 
-	k_sleep(WAIT_MS);
+	k_msleep(WAIT_MS);
 
 	printk("give sem1\n");
 	k_sem_give(&coop_sem1);
 
-	printk("metairq end\n");
+	printk("metairq end, should switch back to co-op thread2\n");
 
 	k_sem_give(&metairq_sem);
 }
@@ -69,7 +69,9 @@ void coop_thread1(void)
 {
 	int cnt1, cnt2;
 
+	printk("thread1 take sem\n");
 	k_sem_take(&coop_sem1, K_FOREVER);
+	printk("thread1 got sem\n");
 
 	/* Expect that low-priority thread has run to completion */
 	cnt1 = coop_cnt1;
@@ -77,7 +79,7 @@ void coop_thread1(void)
 	cnt2 = coop_cnt2;
 	zassert_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at start: %d", cnt2);
 
-	printk("thread1\n");
+	printk("thread1 increments coop_cnt1\n");
 	coop_cnt1++;
 
 	/* Expect that both threads have run to completion */
@@ -94,7 +96,9 @@ void coop_thread2(void)
 {
 	int cnt1, cnt2;
 
+	printk("thread2 take sem\n");
 	k_sem_take(&coop_sem2, K_FOREVER);
+	printk("thread2 got sem\n");
 
 	/* Expect that this is run first */
 	cnt1 = coop_cnt1;
@@ -102,8 +106,14 @@ void coop_thread2(void)
 	cnt2 = coop_cnt2;
 	zassert_equal(cnt2, 0, "Unexpected cnt2 at start: %d", cnt2);
 
+	/* At some point before this loop has finished, the meta-irq thread
+	 * will have woken up and given the semaphore which thread1 was
+	 * waiting on. It then exits. We need to ensure that this thread
+	 * continues to run after that instead of scheduling thread 1
+	 * when the meta-irq exits.
+	 */
 	for (int i = 0; i < LOOP_CNT; i++) {
-		printk("thread2\n");
+		printk("thread2 loop iteration %d\n", i);
 		coop_cnt2++;
 		k_busy_wait(WAIT_MS * 1000);
 	}
@@ -121,13 +131,13 @@ void coop_thread2(void)
 
 K_THREAD_DEFINE(metairq_thread_id, 1024,
 		metairq_thread, 0, 0, 0,
-		K_PRIO_COOP(0), 0, K_NO_WAIT);
+		K_PRIO_COOP(0), 0, 0);
 K_THREAD_DEFINE(coop_thread1_id, 1024,
 		coop_thread1, 0, 0, 0,
-		K_PRIO_COOP(1), 0, K_NO_WAIT);
+		K_PRIO_COOP(1), 0, 0);
 K_THREAD_DEFINE(coop_thread2_id, 1024,
 		coop_thread2, 0, 0, 0,
-		K_PRIO_COOP(2), 0, K_NO_WAIT);
+		K_PRIO_COOP(2), 0, 0);
 
 void test_preempt(void)
 {

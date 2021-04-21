@@ -22,6 +22,11 @@ config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
 	help
 	  The value depends on your network setup.
 
+config NET_SAMPLE_IFACE2_MY_IPV4_NETMASK
+	string "My IPv4 netmask for second interface"
+	help
+	  The value depends on your network setup.
+
 config NET_SAMPLE_IFACE2_VLAN_TAG
 	int "VLAN tag for second interface"
 	default 100
@@ -41,6 +46,11 @@ config NET_SAMPLE_IFACE3_MY_IPV4_ADDR
 	help
 	  The value depends on your network setup.
 
+config NET_SAMPLE_IFACE3_MY_IPV4_NETMASK
+	string "My IPv4 netmask for third interface"
+	help
+	  The value depends on your network setup.
+
 config NET_SAMPLE_IFACE3_VLAN_TAG
 	int "VLAN tag for third interface"
 	default 200
@@ -49,6 +59,18 @@ config NET_SAMPLE_IFACE3_VLAN_TAG
 	help
 	  Set VLAN (virtual LAN) tag (id) that is used in the sample
 	  application.
+
+config NET_SAMPLE_TUNNEL_PEER_ADDR
+	string "Remote IP address of the tunnel interface"
+	depends on NET_L2_IPIP
+	help
+	  Use overlay-tunnel.conf to setup the tunnel support.
+
+config NET_SAMPLE_TUNNEL_MY_ADDR
+	string "My address for tunnel interface"
+	depends on NET_L2_IPIP
+	help
+	  The value depends on your network setup.
 
 config NET_SAMPLE_PSK_HEADER_FILE
 	string "Header file containing PSK"

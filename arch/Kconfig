@@ -20,21 +20,64 @@ config ARC
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	imply XIP
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	help
 	  ARC architecture
 
 config ARM
 	bool
 	select ARCH_IS_SET
+	select ARCH_SUPPORTS_COREDUMP if CPU_CORTEX_M
 	select HAS_DTS
+	# FIXME: current state of the code for all ARM requires this, but
+	# is really only necessary for Cortex-M with ARM MPU!
+	select GEN_PRIV_STACKS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_CORTEX_R || CPU_CORTEX_M
 	help
 	  ARM architecture
+
+config ARM64
+	bool
+	select ARCH_IS_SET
+	select 64BIT
+	select HAS_DTS
+	select HAS_ARM_SMCCC
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  ARM64 (AArch64) architecture
+
+config SPARC
+	bool
+	select ARCH_IS_SET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select BIG_ENDIAN
+	select ATOMIC_OPERATIONS_BUILTIN if SPARC_CASA
+	select ATOMIC_OPERATIONS_C if !SPARC_CASA
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	help
+	  SPARC architecture
 
 config X86
 	bool
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
+	select ARCH_SUPPORTS_COREDUMP
+	select CPU_HAS_MMU
+	select ARCH_MEM_DOMAIN_DATA if USERSPACE && !X86_COMMON_PAGE_TABLE
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_HAS_GDBSTUB if !X86_64
+	select ARCH_HAS_TIMING_FUNCTIONS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_DEMAND_PAGING
+	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
+					  && !BOARD_HAS_TIMING_FUNCTIONS \
+					  && !SOC_HAS_TIMING_FUNCTIONS
 	help
 	  x86 architecture
 
@@ -43,6 +86,8 @@ config NIOS2
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
+	imply XIP
+	select ARCH_HAS_TIMING_FUNCTIONS
 	help
 	  Nios II Gen 2 architecture
 
@@ -50,6 +95,8 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	imply XIP
 	help
 	  RISCV architecture
 
@@ -59,13 +106,14 @@ config XTENSA
 	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
-	select XTENSA_HAL if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
+	imply ATOMIC_OPERATIONS_ARCH
 	help
 	  Xtensa architecture
 
 config ARCH_POSIX
 	bool
 	select ARCH_IS_SET
+	select HAS_DTS
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
@@ -129,14 +177,14 @@ config SRAM_BASE_ADDRESS
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
-if ARC || ARM || NIOS2 || X86
+if ARC || ARM || ARM64 || NIOS2 || X86
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config FLASH_SIZE
 	int "Flash Size in kB"
-	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K) if (XIP && (ARM ||ARM64)) || !ARM
 	help
 	  This option specifies the size of the flash in kB.  It is normally set by
 	  the board's defconfig file and the user should generally avoid modifying
@@ -144,13 +192,13 @@ config FLASH_SIZE
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && ARM) || !ARM
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if (XIP && (ARM || ARM64)) || !ARM
 	help
 	  This option specifies the base address of the flash on the board. It is
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARC || NIOS2 || X86
+endif # ARM || ARM64 || ARC || NIOS2 || X86
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
@@ -198,6 +246,8 @@ config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
 	depends on RUNTIME_ERROR_CHECKS
+	depends on SRAM_REGION_PERMISSIONS
+	select THREAD_STACK_INFO
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
@@ -218,24 +268,29 @@ config PRIVILEGED_STACK_SIZE
 	  This option sets the privileged stack region size that will be used
 	  in addition to the user mode thread stack.  During normal execution,
 	  this region will be inaccessible from user mode.  During system calls,
-	  this region will be utilized by the system call.
-
-config PRIVILEGED_STACK_TEXT_AREA
-	int "Privileged stacks text area"
-	default 512 if COVERAGE_GCOV
-	default 256
-	depends on ARCH_HAS_USERSPACE
-	help
-	  Stack text area size for privileged stacks.
+	  this region will be utilized by the system call. This value must be
+	  a multiple of the minimum stack alignment.
 
 config KOBJECT_TEXT_AREA
 	int "Size if kobject text area"
 	default 512 if COVERAGE_GCOV
 	default 512 if NO_OPTIMIZATIONS
+	default 512 if STACK_CANARIES && RISCV
 	default 256
 	depends on ARCH_HAS_USERSPACE
 	help
 	  Size of kernel object text area. Used in linker script.
+
+config GEN_PRIV_STACKS
+	bool
+	help
+	  Selected if the architecture requires that privilege elevation stacks
+	  be allocated in a separate memory area. This is typical of arches
+	  whose MPUs require regions to be power-of-two aligned/sized.
+
+	  FIXME: This should be removed and replaced with checks against
+	  CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT, but both ARM and ARC
+	  changes will be necessary for this.
 
 config STACK_GROWS_UP
 	bool "Stack grows towards higher memory addresses"
@@ -351,13 +406,43 @@ config IRQ_OFFLOAD
 	  run in interrupt context. Only useful for test cases that need
 	  to validate the correctness of kernel objects in IRQ context.
 
+
+config EXTRA_EXCEPTION_INFO
+	bool "Collect extra exception info"
+	depends on ARCH_HAS_EXTRA_EXCEPTION_INFO
+	help
+	  This option enables the collection of extra information, such as
+	  register state, when a fault occurs. This information can be useful
+	  to collect for post-mortem analysis and debug of issues.
+
 endmenu # Interrupt configuration
+
+config INIT_ARCH_HW_AT_BOOT
+	bool "Initialize internal architecture state at boot"
+	depends on ARCH_SUPPORTS_ARCH_HW_INIT
+	help
+	  This option instructs Zephyr to force the initialization
+	  of the internal architectural state (for example ARCH-level
+	  HW registers and system control blocks) during boot to
+	  the reset values as specified by the corresponding
+	  architecture manual. The option is useful when the Zephyr
+	  firmware image is chain-loaded, for example, by a debugger
+	  or a bootloader, and we need to guarantee that the internal
+	  states of the architecture core blocks are restored to the
+	  reset values (as specified by the architecture).
+
+	  Note: the functionality is architecture-specific. For the
+	  implementation details refer to each architecture where
+	  this feature is supported.
 
 endmenu
 
 #
 # Architecture Capabilities
 #
+
+config ARCH_HAS_TIMING_FUNCTIONS
+	bool
 
 config ARCH_HAS_TRUSTED_EXECUTION
 	bool
@@ -380,59 +465,34 @@ config ARCH_HAS_RAMFUNC_SUPPORT
 config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
 
+config ARCH_SUPPORTS_COREDUMP
+	bool
+
+config ARCH_SUPPORTS_ARCH_HW_INIT
+	bool
+
+config ARCH_HAS_EXTRA_EXCEPTION_INFO
+	bool
+
+config ARCH_HAS_GDBSTUB
+	bool
+
+config ARCH_HAS_COHERENCE
+	bool
+	help
+	  When selected, the architecture supports the
+	  arch_mem_coherent() API and can link into incoherent/cached
+	  memory using the ".cached" linker section.
+
+config ARCH_HAS_THREAD_LOCAL_STORAGE
+	bool
+
 #
 # Other architecture related options
 #
 
 config ARCH_HAS_THREAD_ABORT
 	bool
-
-#
-# Hidden PM feature configs which are to be selected by
-# individual SoC.
-#
-
-config HAS_SYS_POWER_STATE_SLEEP_1
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_1
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_SLEEP_2
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_2
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_SLEEP_3
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_3
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_DEEP_SLEEP_1
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_DEEP_SLEEP_2
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
-	  configuration option.
-
-config HAS_SYS_POWER_STATE_DEEP_SLEEP_3
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_3
-	  configuration option.
-
-config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
-	bool
-	help
-	  This option signifies that the target has options of bootloaders
-	  that support context restore upon resume from deep sleep
 
 #
 # Hidden CPU family configs
@@ -457,18 +517,220 @@ config CPU_HAS_FPU
 	  This option is enabled when the CPU has hardware floating point
 	  unit.
 
+config CPU_HAS_FPU_DOUBLE_PRECISION
+	bool
+	select CPU_HAS_FPU
+	help
+	  When enabled, this indicates that the CPU has a double floating point
+	  precision unit.
+
 config CPU_HAS_MPU
 	bool
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
 
-config MEMORY_PROTECTION
+config CPU_HAS_MMU
 	bool
 	help
-	  This option is enabled when Memory Protection features are supported.
-	  Memory protection support is currently available on ARC, ARM, and x86
-	  architectures.
+	  This hidden option is selected when the CPU has a Memory Management Unit
+	  (MMU).
 
+config ARCH_HAS_DEMAND_PAGING
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  demand paging is supported.
+
+config ARCH_HAS_RESERVED_PAGE_FRAMES
+	bool
+	help
+	  This hidden configuration should be selected by the architecture if
+	  certain RAM page frames need to be marked as reserved and never used for
+	  memory mappings. The architecture will need to implement
+	  arch_reserved_pages_update().
+
+config ARCH_MAPS_ALL_RAM
+	bool
+	help
+	  This hidden option is selected by the architecture to inform the kernel
+	  that all RAM is mapped at boot, and not just the bounds of the Zephyr image.
+	  If RAM starts at 0x0, the first page must remain un-mapped to catch NULL
+	  pointer dereferences. With this enabled, the kernel will not assume that
+	  virtual memory addresses past the kernel image are available for mappings,
+	  but instead takes into account an entire RAM mapping instead.
+
+	  This is typically set by architectures which need direct access to all memory.
+	  It is the architecture's responsibility to mark reserved memory regions
+	  as such in arch_reserved_pages_update().
+
+	  Although the kernel will not disturb this RAM mapping by re-mapping the associated
+	  virtual addresses elsewhere, this is limited to only management of the
+	  virtual address space. The kernel's page frame ontology will not consider
+	  this mapping at all; non-kernel pages will be considered free (unless marked
+	  as reserved) and Z_PAGE_FRAME_MAPPED will not be set.
+
+menuconfig MMU
+	bool "Enable MMU features"
+	depends on CPU_HAS_MMU
+	help
+	  This option is enabled when the CPU's memory management unit is active
+	  and the arch_mem_map() API is available.
+
+if MMU
+config MMU_PAGE_SIZE
+	hex "Size of smallest granularity MMU page"
+	default 0x1000
+	help
+	  Size of memory pages. Varies per MMU but 4K is common. For MMUs that
+	  support multiple page sizes, put the smallest one here.
+
+config KERNEL_VM_BASE
+	hex "Virtual address space base address"
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+	help
+	  Define the base of the kernel's address space.
+
+	  By default, this is the same as the DT_CHOSEN_Z_SRAM physical base SRAM
+	  address from DTS, in which case RAM will be identity-mapped. Some
+	  architectures may require RAM to be mapped in this way; they may have
+	  just one RAM region and doing this makes linking much simpler, as
+	  at least when the kernel boots all virtual RAM addresses are the same
+	  as their physical address (demand paging at runtime may later modify
+	  this for non-pinned page frames).
+
+	  Otherwise, if RAM isn't identity-mapped:
+	  1. It is the architecture's responsibility to transition the
+	  instruction pointer to virtual addresses at early boot before
+	  entering the kernel at z_cstart().
+	  2. The underlying architecture may impose constraints on the bounds of
+	  the kernel's address space, such as not overlapping physical RAM
+	  regions if RAM is not identity-mapped, or the virtual and physical
+	  base addresses being aligned to some common value (which allows
+	  double-linking of paging structures to make the instruction pointer
+	  transition simpler).
+
+	  Zephyr does not implement a split address space and if multiple
+	  page tables are in use, they all have the same virtual-to-physical
+	  mappings (with potentially different permissions).
+
+config KERNEL_VM_OFFSET
+	hex "Kernel offset within address space"
+	default 0
+	help
+	  Offset that the kernel image begins within its address space,
+	  if this is not the same offset from the beginning of RAM.
+
+	  Some care may need to be taken in selecting this value. In certain
+	  build-time cases, or when a physical address cannot be looked up
+	  in page tables, the equation:
+
+	      virt = phys + ((KERNEL_VM_BASE + KERNEL_VM_OFFSET) -
+	                     (SRAM_BASE_ADDRESS + SRAM_OFFSET))
+
+	  Will be used to convert between physical and virtual addresses for
+	  memory that is mapped at boot.
+
+	  This uncommon and is only necessary if the beginning of VM and
+	  physical memory have dissimilar alignment.
+
+config KERNEL_VM_SIZE
+	hex "Size of kernel address space in bytes"
+	default 0x800000
+	help
+	  Size of the kernel's address space. Constraining this helps control
+	  how much total memory can be used for page tables.
+
+	  The difference between KERNEL_VM_BASE and KERNEL_VM_SIZE indicates the
+	  size of the virtual region for runtime memory mappings. This is needed
+	  for mapping driver MMIO regions, as well as special RAM mapping use-cases
+	  such as VSDO pages, memory mapped thread stacks, and anonymous memory
+	  mappings. The kernel itself will be mapped in here as well at boot.
+
+	  Systems with very large amounts of memory (such as 512M or more)
+	  will want to use a 64-bit build of Zephyr, there are no plans to
+	  implement a notion of "high" memory in Zephyr to work around physical
+	  RAM size larger than the defined bounds of the virtual address space.
+
+menuconfig DEMAND_PAGING
+	bool "Enable demand paging [EXPERIMENTAL]"
+	depends on ARCH_HAS_DEMAND_PAGING
+	help
+	  Enable demand paging. Requires architecture support in how the kernel
+	  is linked and the implementation of an eviction algorithm and a
+	  backing store for evicted pages.
+
+if DEMAND_PAGING
+config DEMAND_PAGING_ALLOW_IRQ
+	bool "Allow interrupts during page-ins/outs"
+	help
+	  Allow interrupts to be serviced while pages are being evicted or
+	  retrieved from the backing store. This is much better for system
+	  latency, but any code running in interrupt context that page faults
+	  will cause a kernel panic. Such code must work with exclusively pinned
+	  code and data pages.
+
+	  The scheduler is still disabled during this operation.
+
+	  If this option is disabled, the page fault servicing logic
+	  runs with interrupts disabled for the entire operation. However,
+	  ISRs may also page fault.
+
+config DEMAND_PAGING_STATS
+	bool "Gather Demand Paging Statistics"
+	help
+	  This enables gathering various statistics related to demand paging,
+	  e.g. number of pagefaults. This is useful for tuning eviction
+	  algorithms and optimizing backing store.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
+	bool "Use Timing Functions to Gather Demand Paging Statistics"
+	select TIMING_FUNCTIONS_NEED_AT_BOOT
+	help
+	  Use timing functions to gather various demand paging statistics.
+
+config DEMAND_PAGING_THREAD_STATS
+	bool "Gather per Thread Demand Paging Statistics"
+	depends on DEMAND_PAGING_STATS
+	help
+	  This enables gathering per thread statistics related to demand
+	  paging.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_TIMING_HISTOGRAM
+	bool "Gather Demand Paging Execution Timing Histogram"
+	depends on DEMAND_PAGING_STATS
+	help
+	  This gathers the histogram of execution time on page eviction
+	  selection, and backing store page in and page out.
+
+	  Should say N in production system as this is not without cost.
+
+config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
+	int "Number of bins (buckets) in Demand Paging Timing Histogrm"
+	depends on DEMAND_PAGING_TIMING_HISTOGRAM
+	default 10
+	help
+	  Defines the number of bins (buckets) in the histogram used for
+	  gathering execution timing information for demand paging.
+
+	  This requires z_eviction_histogram_bounds[] and
+	  z_backing_store_histogram_bounds[] to define the upper bounds
+	  for each bin. See kernel/statistics.c for information.
+
+endif	# DEMAND_PAGING
+endif   # MMU
+
+menuconfig MPU
+	bool "Enable MPU features"
+	depends on CPU_HAS_MPU
+	help
+	  This option, when enabled, indicates to the core kernel that an MPU
+	  is enabled.
+
+if MPU
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	help
@@ -506,23 +768,137 @@ config MPU_GAP_FILLING
 	  documentation for more information on how this option is
 	  used.
 
-menuconfig FLOAT
-	bool "Floating point"
+endif # MPU
+
+config SRAM_REGION_PERMISSIONS
+	bool "Assign appropriate permissions to kernel areas in SRAM"
+	depends on MMU || MPU
+	default y
+	help
+	  This option indicates that memory protection hardware
+	  is present, enabled, and regions have been configured at boot for memory
+	  ranges within the kernel image.
+
+	  If this option is turned on, certain areas of the kernel image will
+	  have the following access policies applied for all threads, including
+	  supervisor threads:
+
+	  1) All program text will be have read-only, execute memory permission
+	  2) All read-only data will have read-only permission, and execution
+	     disabled if the hardware supports it.
+	  3) All other RAM addresses will have read-write permission, and
+	     execution disabled if the hardware supports it.
+
+	  Options such as USERSPACE or HW_STACK_PROTECTION may additionally
+	  impose additional policies on the memory map, which may be global
+	  or local to the current running thread.
+
+	  This option may consume additional memory to satisfy memory protection
+	  hardware alignment constraints.
+
+	  If this option is disabled, the entire kernel will have default memory
+	  access permissions set, typically read/write/execute. It may be desirable
+	  to turn this off on MMU systems which are using the MMU for demand
+	  paging, do not need memory protection, and would rather not use up
+	  RAM for the alignment between regions.
+
+menu "Floating Point Options"
+
+config FPU
+	bool "Enable floating point unit (FPU)"
 	depends on CPU_HAS_FPU
-	depends on ARM || X86 || ARC
+	depends on ARC || ARM || RISCV || SPARC || X86
 	help
-	  This option allows threads to use the floating point registers.
-	  By default, only a single thread may use the registers.
+	  This option enables the hardware Floating Point Unit (FPU), in order to
+	  support using the floating point registers and instructions.
 
-	  Disabling this option means that any thread that uses a
-	  floating point register will get a fatal exception.
+	  When this option is enabled, by default, threads may use the floating
+	  point registers only in an exclusive manner, and this usually means that
+	  only one thread may perform floating point operations.
 
-config FP_SHARING
-	bool "Floating point register sharing"
-	depends on FLOAT
+	  If it is necessary for multiple threads to perform concurrent floating
+	  point operations, the "FPU register sharing" option must be enabled to
+	  preserve the floating point registers across context switches.
+
+	  Note that this option cannot be selected for the platforms that do not
+	  include a hardware floating point unit; the floating point support for
+	  those platforms is dependent on the availability of the toolchain-
+	  provided software floating point library.
+
+config FPU_SHARING
+	bool "FPU register sharing"
+	depends on FPU && MULTITHREADING
+	default y if ARM && ARMV7_M_ARMV8_M_FP
 	help
-	  This option allows multiple threads to use the floating point
-	  registers.
+	  This option enables preservation of the hardware floating point registers
+	  across context switches to allow multiple threads to perform concurrent
+	  floating point operations.
+
+	  Note that on Cortex-M processors with the floating point extension we
+	  enable by default the FPU register sharing mode, as some GCC compilers
+	  may activate a floating point context by generating FP instructions for
+	  any thread, and that context must be preserved when switching such
+	  threads in and out. The developers can still disable the FP sharing
+	  mode in their application projects, and switch to Unshared FP registers
+	  mode, if it is guaranteed that the image code does not generate FP
+	  instructions outside the single thread context that is allowed to do so.
+
+endmenu
+
+menu "Cache Options"
+
+config CACHE_MANAGEMENT
+	bool "Enable cache management features"
+	help
+	  This links in the cache management functions (for d-cache and i-cache
+	  where possible).
+
+config DCACHE_LINE_SIZE_DETECT
+	bool "Detect d-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
+	help
+	  This option enables querying some architecture-specific hardware for
+	  finding the d-cache line size at the expense of taking more memory and
+	  code and a slightly increased boot time.
+
+	  If the CPU's d-cache line size is known in advance, disable this option and
+	  manually enter the value for DCACHE_LINE_SIZE or set it in the DT
+	  using the 'd-cache-line-size' property.
+
+config DCACHE_LINE_SIZE
+	int "d-cache line size" if !DCACHE_LINE_SIZE_DETECT
+	depends on CACHE_MANAGEMENT
+	default 0
+	help
+	  Size in bytes of a CPU d-cache line. If this is set to 0 the value is
+	  obtained from the 'd-cache-line-size' DT property instead if present.
+
+
+	  Detect automatically at runtime by selecting DCACHE_LINE_SIZE_DETECT.
+
+config ICACHE_LINE_SIZE_DETECT
+	bool "Detect i-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
+	help
+	  This option enables querying some architecture-specific hardware for
+	  finding the i-cache line size at the expense of taking more memory and
+	  code and a slightly increased boot time.
+
+	  If the CPU's i-cache line size is known in advance, disable this option and
+	  manually enter the value for ICACHE_LINE_SIZE or set it in the DT
+	  using the 'i-cache-line-size' property.
+
+config ICACHE_LINE_SIZE
+	int "i-cache line size" if !ICACHE_LINE_SIZE_DETECT
+	depends on CACHE_MANAGEMENT
+	default 0
+	help
+	  Size in bytes of a CPU i-cache line. If this is set to 0 the value is
+	  obtained from the 'i-cache-line-size' DT property instead if present.
+
+	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
+
+endmenu
 
 config ARCH
 	string

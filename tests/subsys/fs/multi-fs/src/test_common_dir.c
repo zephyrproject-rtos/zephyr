@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <stdio.h>
 #include <limits.h>
-#include <assert.h>
+#include <sys/__assert.h>
 #include <fs/fs.h>
 #include "test_common.h"
 
@@ -19,8 +19,9 @@ int test_mkdir(const char *dir_path, const char *file)
 	struct fs_file_t filep;
 	char file_path[PATH_MAX] = { 0 };
 
+	fs_file_t_init(&filep);
 	res = sprintf(file_path, "%s/%s", dir_path, file);
-	assert(res < sizeof(file_path));
+	__ASSERT_NO_MSG(res < sizeof(file_path));
 
 	if (check_file_dir_exists(dir_path)) {
 		TC_PRINT("[%s] exists, delete it\n", dir_path);
@@ -39,7 +40,7 @@ int test_mkdir(const char *dir_path, const char *file)
 		return res;
 	}
 
-	res = fs_open(&filep, file_path);
+	res = fs_open(&filep, file_path, FS_O_CREATE | FS_O_RDWR);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;
@@ -48,6 +49,7 @@ int test_mkdir(const char *dir_path, const char *file)
 	TC_PRINT("Testing write to file %s\n", file_path);
 	res = test_file_write(&filep, "NOTHING");
 	if (res) {
+		fs_close(&filep);
 		return res;
 	}
 
@@ -69,6 +71,8 @@ int test_lsdir(const char *path)
 	struct fs_dirent entry;
 
 	TC_PRINT("\nlsdir tests:\n");
+
+	fs_dir_t_init(&dirp);
 
 	/* Verify fs_opendir() */
 	res = fs_opendir(&dirp, path);
@@ -107,6 +111,8 @@ int test_rmdir(const char *dir_path)
 	struct fs_dir_t dirp;
 	static struct fs_dirent entry;
 
+	fs_dir_t_init(&dirp);
+
 	if (!check_file_dir_exists(dir_path)) {
 		TC_PRINT("%s doesn't exist\n", dir_path);
 		return TC_FAIL;
@@ -131,7 +137,7 @@ int test_rmdir(const char *dir_path)
 
 		/* Delete file or sub directory */
 		sprintf(file_path, "%s/%s", dir_path, entry.name);
-		assert(res < sizeof(file_path));
+		__ASSERT_NO_MSG(res < sizeof(file_path));
 		TC_PRINT("Removing %s\n", file_path);
 
 		res = fs_unlink(file_path);

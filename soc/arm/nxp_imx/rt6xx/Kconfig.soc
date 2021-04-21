@@ -1,0 +1,104 @@
+# i.MX RT6XX Series
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "i.MX RT6XX Series MCU Selection"
+	depends on SOC_SERIES_IMX_RT6XX
+
+config SOC_MIMXRT685S_CM33
+	bool "SOC_MIMXRT685S M33"
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select HAS_MCUX
+	select HAS_MCUX_SYSCON
+	select HAS_MCUX_FLEXCOMM
+	select HAS_MCUX_FLEXSPI
+	select HAS_MCUX_CACHE
+	select HAS_MCUX_LPC_DMA
+	select INIT_SYS_PLL
+
+endchoice
+
+if SOC_SERIES_IMX_RT6XX
+
+config SOC_PART_NUMBER_MIMXRT685SFVKB
+	bool
+
+config SOC_PART_NUMBER_MIMXRT685SFFOB
+	bool
+
+config SOC_PART_NUMBER_MIMXRT685SFAWBR
+	bool
+
+config SOC_PART_NUMBER_IMX_RT6XX
+	string
+	default "MIMXRT685SFVKB" if SOC_PART_NUMBER_MIMXRT685SFVKB
+	default "MIMXRT685SFFOB" if SOC_PART_NUMBER_MIMXRT685SFFOB
+	default "MIMXRT685SFAWBR" if SOC_PART_NUMBER_MIMXRT685SFAWBR
+
+	help
+	  This string holds the full part number of the SoC. It is a hidden
+	  option that you should not set directly. The part number selection
+	  choice defines the default value for this string.
+
+config INIT_SYS_PLL
+	bool "Initialize SYS PLL"
+
+config INIT_AUDIO_PLL
+	bool "Initialize Audio PLL"
+
+config XTAL_SYS_CLK_HZ
+	int "External oscillator frequency"
+	help
+	  Set the external oscillator frequency in Hz. This should be set by the
+	  board's defconfig.
+
+config SYSOSC_SETTLING_US
+	int "System oscillator settling time"
+	help
+	  Set the board system oscillator settling time in us. This should be set by the
+	  board's defconfig.
+
+menuconfig NXP_IMX_RT6XX_BOOT_HEADER
+	bool "Enable the boot header"
+	help
+	  Enable data structures required by the boot ROM to boot the
+	  application from an external flash device.
+
+if NXP_IMX_RT6XX_BOOT_HEADER
+
+choice BOOT_DEVICE
+	prompt "Boot device selection"
+	default BOOT_FLEXSPI_NOR
+
+config BOOT_FLEXSPI_NOR
+	bool "FlexSPI serial NOR"
+
+endchoice
+
+config FLASH_CONFIG_OFFSET
+	hex "Flash config data offset"
+	default 0x400
+	help
+	  The flash config offset provides the boot ROM with the on-board
+	  flash type and parameters. The boot ROM requires a fixed flash conifg
+	  offset for FlexSPI device.
+
+config IMAGE_VECTOR_TABLE_OFFSET
+	hex "Image vector table offset"
+	default 0x1000
+	help
+	  The Image Vector Table (IVT) provides the boot ROM with pointers to
+	  the application entry point and device configuration data. The boot
+	  ROM requires a fixed IVT offset for each type of boot device.
+
+endif # NXP_IMX_RT6XX_BOOT_HEADER
+
+
+endif # SOC_SERIES_IMX_RT6XX

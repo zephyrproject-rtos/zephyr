@@ -15,13 +15,27 @@
 
 struct counter_alarm_cfg alarm_cfg;
 
-static void test_counter_interrupt_fn(struct device *counter_dev,
-				      u8_t chan_id, u32_t ticks,
+#if defined(CONFIG_BOARD_ATSAMD20_XPRO)
+#define TIMER DT_LABEL(DT_NODELABEL(tc4))
+#elif defined(CONFIG_COUNTER_RTC0)
+#define TIMER DT_LABEL(DT_NODELABEL(rtc0))
+#elif defined(CONFIG_COUNTER_RTC_STM32)
+#define TIMER DT_LABEL(DT_INST(0, st_stm32_rtc))
+#elif defined(CONFIG_COUNTER_NATIVE_POSIX)
+#define TIMER DT_LABEL(DT_NODELABEL(counter0))
+#elif defined(CONFIG_COUNTER_XLNX_AXI_TIMER)
+#define TIMER DT_LABEL(DT_INST(0, xlnx_xps_timer_1_00_a))
+#elif defined(CONFIG_COUNTER_ESP32)
+#define TIMER DT_LABEL(DT_NODELABEL(timer0))
+#endif
+
+static void test_counter_interrupt_fn(const struct device *counter_dev,
+				      uint8_t chan_id, uint32_t ticks,
 				      void *user_data)
 {
 	struct counter_alarm_cfg *config = user_data;
-	u32_t now_ticks;
-	u64_t now_usec;
+	uint32_t now_ticks;
+	uint64_t now_usec;
 	int now_sec;
 	int err;
 
@@ -41,7 +55,7 @@ static void test_counter_interrupt_fn(struct device *counter_dev,
 	config->ticks = config->ticks * 2U;
 
 	printk("Set alarm in %u sec (%u ticks)\n",
-	       (u32_t)(counter_ticks_to_us(counter_dev,
+	       (uint32_t)(counter_ticks_to_us(counter_dev,
 					   config->ticks) / USEC_PER_SEC),
 	       config->ticks);
 
@@ -54,11 +68,11 @@ static void test_counter_interrupt_fn(struct device *counter_dev,
 
 void main(void)
 {
-	struct device *counter_dev;
+	const struct device *counter_dev;
 	int err;
 
 	printk("Counter alarm sample\n\n");
-	counter_dev = device_get_binding(DT_RTC_0_NAME);
+	counter_dev = device_get_binding(TIMER);
 	if (counter_dev == NULL) {
 		printk("Device not found\n");
 		return;
@@ -74,7 +88,7 @@ void main(void)
 	err = counter_set_channel_alarm(counter_dev, ALARM_CHANNEL_ID,
 					&alarm_cfg);
 	printk("Set alarm in %u sec (%u ticks)\n",
-	       (u32_t)(counter_ticks_to_us(counter_dev,
+	       (uint32_t)(counter_ticks_to_us(counter_dev,
 					   alarm_cfg.ticks) / USEC_PER_SEC),
 	       alarm_cfg.ticks);
 

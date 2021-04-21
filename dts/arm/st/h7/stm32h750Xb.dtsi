@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2020 Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/h7/stm32h750.dtsi>
+
+/ {
+	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+				reg = <0x08000000 DT_SIZE_K(128)>;
+			};
+		};
+	};
+};

@@ -4,14 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_gpio_api
- * @{
- * @defgroup t_gpio_api_port test_gpio_api_port
- * @brief TestPurpose: verify all gpio port functions using single pin
- *        configured as input/output.
- * @}
- */
 
 #include <limits.h>
 #include <sys/util.h>
@@ -19,7 +11,8 @@
 
 #define TEST_GPIO_PORT_VALUE_MAX         ((1LLU << GPIO_MAX_PINS_PER_PORT) - 1)
 
-static void port_get_raw_and_verify(struct device *port, gpio_port_pins_t mask,
+static void port_get_raw_and_verify(const struct device *port,
+				    gpio_port_pins_t mask,
 				    gpio_port_value_t val_expected, int idx)
 {
 	gpio_port_value_t val_actual;
@@ -30,7 +23,8 @@ static void port_get_raw_and_verify(struct device *port, gpio_port_pins_t mask,
 		      "Test point %d: invalid physical port get value", idx);
 }
 
-static void port_get_and_verify(struct device *port, gpio_port_pins_t mask,
+static void port_get_and_verify(const struct device *port,
+				gpio_port_pins_t mask,
 				gpio_port_value_t val_expected, int idx)
 {
 	gpio_port_value_t val_actual;
@@ -41,64 +35,68 @@ static void port_get_and_verify(struct device *port, gpio_port_pins_t mask,
 		      "Test point %d: invalid logical port get value", idx);
 }
 
-static void port_set_masked_raw_and_verify(struct device *port,
-		gpio_port_pins_t mask, gpio_port_value_t value, int idx)
+static void port_set_masked_raw_and_verify(const struct device *port,
+					   gpio_port_pins_t mask,
+					   gpio_port_value_t value, int idx)
 {
 	zassert_equal(gpio_port_set_masked_raw(port, mask, value), 0,
 		      "Test point %d: failed to set physical port value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
 
-static void port_set_masked_and_verify(struct device *port,
-		gpio_port_pins_t mask, gpio_port_value_t value, int idx)
+static void port_set_masked_and_verify(const struct device *port,
+				       gpio_port_pins_t mask,
+				       gpio_port_value_t value, int idx)
 {
 	zassert_equal(gpio_port_set_masked(port, mask, value), 0,
 		      "Test point %d: failed to set logical port value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
 
-static void port_set_bits_raw_and_verify(struct device *port,
-		gpio_port_pins_t pins, int idx)
+static void port_set_bits_raw_and_verify(const struct device *port,
+					 gpio_port_pins_t pins, int idx)
 {
 	zassert_equal(gpio_port_set_bits_raw(port, pins), 0,
 		      "Test point %d: failed to set physical port value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
 
-static void port_set_bits_and_verify(struct device *port,
-		gpio_port_pins_t pins, int idx)
+static void port_set_bits_and_verify(const struct device *port,
+				     gpio_port_pins_t pins, int idx)
 {
 	zassert_equal(gpio_port_set_bits(port, pins), 0,
 		      "Test point %d: failed to set logical port value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
 
-static void port_clear_bits_raw_and_verify(struct device *port,
-		gpio_port_pins_t pins, int idx)
+static void port_clear_bits_raw_and_verify(const struct device *port,
+					   gpio_port_pins_t pins, int idx)
 {
 	zassert_equal(gpio_port_clear_bits_raw(port, pins), 0,
 		      "Test point %d: failed to set physical port value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
 
-static void port_clear_bits_and_verify(struct device *port,
-		gpio_port_pins_t pins, int idx)
+static void port_clear_bits_and_verify(const struct device *port,
+				       gpio_port_pins_t pins, int idx)
 {
 	zassert_equal(gpio_port_clear_bits(port, pins), 0,
 		      "Test point %d: failed to set logical port value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
 
-static void port_set_clr_bits_raw(struct device *port,
-		gpio_port_pins_t set_pins, gpio_port_pins_t clear_pins, int idx)
+static void port_set_clr_bits_raw(const struct device *port,
+				  gpio_port_pins_t set_pins,
+				  gpio_port_pins_t clear_pins, int idx)
 {
 	zassert_equal(gpio_port_set_clr_bits_raw(port, set_pins, clear_pins), 0,
 		      "Test point %d: failed to set physical port value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
 
-static void port_set_clr_bits(struct device *port,
-		gpio_port_pins_t set_pins, gpio_port_pins_t clear_pins, int idx)
+static void port_set_clr_bits(const struct device *port,
+			      gpio_port_pins_t set_pins,
+			      gpio_port_pins_t clear_pins, int idx)
 {
 	zassert_equal(gpio_port_set_clr_bits(port, set_pins, clear_pins), 0,
 		      "Test point %d: failed to set logical port value", idx);
@@ -112,7 +110,7 @@ static void port_set_clr_bits(struct device *port,
  */
 void test_gpio_port_toggle(void)
 {
-	struct device *port;
+	const struct device *port;
 	gpio_port_value_t val_expected;
 	int ret;
 
@@ -146,7 +144,7 @@ void test_gpio_port_toggle(void)
 
 void test_gpio_port_set_masked_get_raw(void)
 {
-	struct device *port;
+	const struct device *port;
 	int ret;
 
 	const gpio_port_value_t test_vector[] = {
@@ -186,7 +184,7 @@ void test_gpio_port_set_masked_get_raw(void)
 
 void test_gpio_port_set_masked_get(void)
 {
-	struct device *port;
+	const struct device *port;
 	int ret;
 
 	const gpio_port_value_t test_vector[] = {
@@ -226,7 +224,7 @@ void test_gpio_port_set_masked_get(void)
 
 void test_gpio_port_set_masked_get_active_high(void)
 {
-	struct device *port;
+	const struct device *port;
 	int ret;
 
 	const gpio_port_value_t test_vector[] = {
@@ -277,7 +275,7 @@ void test_gpio_port_set_masked_get_active_high(void)
 
 void test_gpio_port_set_masked_get_active_low(void)
 {
-	struct device *port;
+	const struct device *port;
 	int ret;
 
 	const gpio_port_value_t test_vector[] = {
@@ -328,7 +326,7 @@ void test_gpio_port_set_masked_get_active_low(void)
 
 void test_gpio_port_set_bits_clear_bits_raw(void)
 {
-	struct device *port;
+	const struct device *port;
 	gpio_port_value_t val_expected = 0;
 	int ret;
 
@@ -367,7 +365,7 @@ void test_gpio_port_set_bits_clear_bits_raw(void)
 
 void test_gpio_port_set_bits_clear_bits(void)
 {
-	struct device *port;
+	const struct device *port;
 	gpio_port_value_t val_expected = 0;
 	int ret;
 
@@ -406,7 +404,7 @@ void test_gpio_port_set_bits_clear_bits(void)
 
 void test_gpio_port_set_clr_bits_raw(void)
 {
-	struct device *port;
+	const struct device *port;
 	gpio_port_value_t val_expected = 0;
 	int ret;
 
@@ -444,7 +442,7 @@ void test_gpio_port_set_clr_bits_raw(void)
 
 void test_gpio_port_set_clr_bits(void)
 {
-	struct device *port;
+	const struct device *port;
 	gpio_port_value_t val_expected = 0;
 	int ret;
 

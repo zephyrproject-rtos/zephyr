@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(mqtt_azure, LOG_LEVEL_DBG);
 #include <net/mqtt.h>
 
 #include <sys/printk.h>
+#include <random/rand32.h>
 #include <string.h>
 #include <errno.h>
 
@@ -19,8 +20,8 @@ LOG_MODULE_REGISTER(mqtt_azure, LOG_LEVEL_DBG);
 #include "test_certs.h"
 
 /* Buffers for MQTT client. */
-static u8_t rx_buffer[APP_MQTT_BUFFER_SIZE];
-static u8_t tx_buffer[APP_MQTT_BUFFER_SIZE];
+static uint8_t rx_buffer[APP_MQTT_BUFFER_SIZE];
+static uint8_t tx_buffer[APP_MQTT_BUFFER_SIZE];
 
 /* The mqtt client struct */
 static struct mqtt_client client_ctx;
@@ -33,14 +34,14 @@ static struct sockaddr socks5_proxy;
 #endif
 
 /* Socket Poll */
-static struct pollfd fds[1];
+static struct zsock_pollfd fds[1];
 static int nfds;
 
 static bool mqtt_connected;
 
-static struct k_delayed_work pub_message;
+static struct k_work_delayable pub_message;
 #if defined(CONFIG_NET_DHCPV4)
-static struct k_delayed_work check_network_conn;
+static struct k_work_delayable check_network_conn;
 
 /* Network Management events */
 #define L4_EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
@@ -49,12 +50,11 @@ static struct net_mgmt_event_callback l4_mgmt_cb;
 #endif
 
 #if defined(CONFIG_DNS_RESOLVER)
-static struct addrinfo hints;
-static struct addrinfo *haddr;
+static struct zsock_addrinfo hints;
+static struct zsock_addrinfo *haddr;
 #endif
 
 static K_SEM_DEFINE(mqtt_start, 0, 1);
-static K_SEM_DEFINE(publish_msg, 0, 1);
 
 /* Application TLS configuration details */
 #define TLS_SNI_HOSTNAME CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME
@@ -63,6 +63,10 @@ static K_SEM_DEFINE(publish_msg, 0, 1);
 static sec_tag_t m_sec_tags[] = {
 	APP_CA_CERT_TAG,
 };
+
+static uint8_t topic[] = "devices/" MQTT_CLIENTID "/messages/devicebound/#";
+static struct mqtt_topic subs_topic;
+static struct mqtt_subscription_list subs_list;
 
 static void mqtt_event_handler(struct mqtt_client *const client,
 			       const struct mqtt_evt *evt);
@@ -104,7 +108,7 @@ static int wait(int timeout)
 		return rc;
 	}
 
-	rc = poll(fds, nfds, timeout);
+	rc = zsock_poll(fds, nfds, timeout);
 	if (rc < 0) {
 		LOG_ERR("poll error: %d", errno);
 		return -errno;
@@ -124,7 +128,7 @@ static void broker_init(void)
 	net_ipaddr_copy(&broker4->sin_addr,
 			&net_sin(haddr->ai_addr)->sin_addr);
 #else
-	inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
+	zsock_inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
 #endif
 
 #if defined(CONFIG_SOCKS)
@@ -132,7 +136,7 @@ static void broker_init(void)
 
 	proxy4->sin_family = AF_INET;
 	proxy4->sin_port = htons(SOCKS5_PROXY_PORT);
-	inet_pton(AF_INET, SOCKS5_PROXY_ADDR, &proxy4->sin_addr);
+	zsock_inet_pton(AF_INET, SOCKS5_PROXY_ADDR, &proxy4->sin_addr);
 #endif
 }
 
@@ -150,15 +154,15 @@ static void client_init(struct mqtt_client *client)
 	client->broker = &broker;
 	client->evt_cb = mqtt_event_handler;
 
-	client->client_id.utf8 = (u8_t *)MQTT_CLIENTID;
+	client->client_id.utf8 = (uint8_t *)MQTT_CLIENTID;
 	client->client_id.size = strlen(MQTT_CLIENTID);
 
-	password.utf8 = (u8_t *)CONFIG_SAMPLE_CLOUD_AZURE_PASSWORD;
+	password.utf8 = (uint8_t *)CONFIG_SAMPLE_CLOUD_AZURE_PASSWORD;
 	password.size = strlen(CONFIG_SAMPLE_CLOUD_AZURE_PASSWORD);
 
 	client->password = &password;
 
-	username.utf8 = (u8_t *)CONFIG_SAMPLE_CLOUD_AZURE_USERNAME;
+	username.utf8 = (uint8_t *)CONFIG_SAMPLE_CLOUD_AZURE_USERNAME;
 	username.size = strlen(CONFIG_SAMPLE_CLOUD_AZURE_USERNAME);
 
 	client->user_name = &username;
@@ -193,7 +197,20 @@ static void client_init(struct mqtt_client *client)
 static void mqtt_event_handler(struct mqtt_client *const client,
 			       const struct mqtt_evt *evt)
 {
+	struct mqtt_puback_param puback;
+	uint8_t data[33];
+	int len;
+	int bytes_read;
+
 	switch (evt->type) {
+	case MQTT_EVT_SUBACK:
+		LOG_INF("SUBACK packet id: %u", evt->param.suback.message_id);
+		break;
+
+	case MQTT_EVT_UNSUBACK:
+		LOG_INF("UNSUBACK packet id: %u", evt->param.suback.message_id);
+		break;
+
 	case MQTT_EVT_CONNACK:
 		if (evt->result) {
 			LOG_ERR("MQTT connect failed %d", evt->result);
@@ -220,9 +237,52 @@ static void mqtt_event_handler(struct mqtt_client *const client,
 		LOG_DBG("PUBACK packet id: %u\n", evt->param.puback.message_id);
 		break;
 
+	case MQTT_EVT_PUBLISH:
+		len = evt->param.publish.message.payload.len;
+
+		LOG_INF("MQTT publish received %d, %d bytes", evt->result, len);
+		LOG_INF(" id: %d, qos: %d", evt->param.publish.message_id,
+			evt->param.publish.message.topic.qos);
+
+		while (len) {
+			bytes_read = mqtt_read_publish_payload(&client_ctx,
+					data,
+					len >= sizeof(data) - 1 ?
+					sizeof(data) - 1 : len);
+			if (bytes_read < 0 && bytes_read != -EAGAIN) {
+				LOG_ERR("failure to read payload");
+				break;
+			}
+
+			data[bytes_read] = '\0';
+			LOG_INF("   payload: %s", log_strdup(data));
+			len -= bytes_read;
+		}
+
+		puback.message_id = evt->param.publish.message_id;
+		mqtt_publish_qos1_ack(&client_ctx, &puback);
+		break;
+
 	default:
 		LOG_DBG("Unhandled MQTT event %d", evt->type);
 		break;
+	}
+}
+
+static void subscribe(struct mqtt_client *client)
+{
+	int err;
+
+	/* subscribe */
+	subs_topic.topic.utf8 = topic;
+	subs_topic.topic.size = strlen(topic);
+	subs_list.list = &subs_topic;
+	subs_list.list_count = 1U;
+	subs_list.message_id = 1U;
+
+	err = mqtt_subscribe(client, &subs_list);
+	if (err) {
+		LOG_ERR("Failed on topic %s", topic);
 	}
 }
 
@@ -230,11 +290,11 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 {
 	char payload[] = "{id=123}";
 	char topic[] = "devices/" MQTT_CLIENTID "/messages/events/";
-	u8_t len = strlen(topic);
+	uint8_t len = strlen(topic);
 	struct mqtt_publish_param param;
 
 	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = (u8_t *)topic;
+	param.message.topic.topic.utf8 = (uint8_t *)topic;
 	param.message.topic.topic.size = len;
 	param.message.payload.data = payload;
 	param.message.payload.len = strlen(payload);
@@ -245,51 +305,50 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 	return mqtt_publish(client, &param);
 }
 
+static void poll_mqtt(void)
+{
+	int rc;
+
+	while (mqtt_connected) {
+		rc = wait(SYS_FOREVER_MS);
+		if (rc > 0) {
+			mqtt_input(&client_ctx);
+		}
+	}
+}
+
 /* Random time between 10 - 15 seconds
  * If you prefer to have this value more than CONFIG_MQTT_KEEPALIVE,
  * then keep the application connection live by calling mqtt_live()
  * in regular intervals.
  */
-static u8_t timeout_for_publish(void)
+static uint8_t timeout_for_publish(void)
 {
 	return (10 + sys_rand32_get() % 5);
 }
 
 static void publish_timeout(struct k_work *work)
 {
-	k_sem_give(&publish_msg);
-}
+	int rc;
 
-static void publish_message(void)
-{
-	while (mqtt_connected) {
-		int rc;
-
-		rc = publish(&client_ctx, MQTT_QOS_1_AT_LEAST_ONCE);
-		if (rc) {
-			LOG_ERR("mqtt_publish ERROR");
-			goto end;
-		}
-
-		LOG_DBG("mqtt_publish OK");
-
-		rc = wait(APP_SLEEP_MSECS);
-		if (rc <= 0) {
-			goto end;
-		}
-
-		mqtt_input(&client_ctx);
-
-end:
-		k_delayed_work_submit(&pub_message,
-				      MSEC_PER_SEC * timeout_for_publish());
-		k_sem_take(&publish_msg, K_FOREVER);
+	if (!mqtt_connected) {
+		return;
 	}
+
+	rc = publish(&client_ctx, MQTT_QOS_1_AT_LEAST_ONCE);
+	if (rc) {
+		LOG_ERR("mqtt_publish ERROR");
+		goto end;
+	}
+
+	LOG_DBG("mqtt_publish OK");
+end:
+	k_work_reschedule(&pub_message, K_SECONDS(timeout_for_publish()));
 }
 
 static int try_to_connect(struct mqtt_client *client)
 {
-	u8_t retries = 3U;
+	uint8_t retries = 3U;
 	int rc;
 
 	LOG_DBG("attempting to connect...");
@@ -314,6 +373,9 @@ static int try_to_connect(struct mqtt_client *client)
 		mqtt_input(client);
 
 		if (mqtt_connected) {
+			subscribe(client);
+			k_work_reschedule(&pub_message,
+					  K_SECONDS(timeout_for_publish()));
 			return 0;
 		}
 
@@ -336,8 +398,8 @@ static int get_mqtt_broker_addrinfo(void)
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_protocol = 0;
 
-		rc = getaddrinfo(CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME, "8883",
-				 &hints, &haddr);
+		rc = zsock_getaddrinfo(CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME, "8883",
+				       &hints, &haddr);
 		if (rc == 0) {
 			LOG_INF("DNS resolved for %s:%d",
 			CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME,
@@ -374,7 +436,7 @@ static void connect_to_cloud_and_publish(void)
 			return;
 		}
 
-		publish_message();
+		poll_mqtt();
 #if defined(CONFIG_NET_DHCPV4)
 	}
 #endif
@@ -409,7 +471,7 @@ static void check_network_connection(struct k_work *work)
 	LOG_INF("waiting for DHCP to acquire addr");
 
 end:
-	k_delayed_work_submit(&check_network_conn, 3 * MSEC_PER_SEC);
+	k_work_reschedule(&check_network_conn, K_SECONDS(3));
 }
 #endif
 
@@ -419,12 +481,12 @@ static void abort_mqtt_connection(void)
 	if (mqtt_connected) {
 		mqtt_connected = false;
 		mqtt_abort(&client_ctx);
-		k_delayed_work_cancel(&pub_message);
+		k_work_cancel_delayable(&pub_message);
 	}
 }
 
 static void l4_event_handler(struct net_mgmt_event_callback *cb,
-			     u32_t mgmt_event, struct net_if *iface)
+			     uint32_t mgmt_event, struct net_if *iface)
 {
 	if ((mgmt_event & L4_EVENT_MASK) != mgmt_event) {
 		return;
@@ -432,15 +494,14 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb,
 
 	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
 		/* Wait for DHCP to be back in BOUND state */
-		k_delayed_work_submit(&check_network_conn, 3 * MSEC_PER_SEC);
+		k_work_reschedule(&check_network_conn, K_SECONDS(3));
 
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
-		k_sem_give(&publish_msg);
 		abort_mqtt_connection();
-		k_delayed_work_cancel(&check_network_conn);
+		k_work_cancel_delayable(&check_network_conn);
 
 		return;
 	}
@@ -458,10 +519,10 @@ void main(void)
 		return;
 	}
 
-	k_delayed_work_init(&pub_message, publish_timeout);
+	k_work_init_delayable(&pub_message, publish_timeout);
 
 #if defined(CONFIG_NET_DHCPV4)
-	k_delayed_work_init(&check_network_conn, check_network_connection);
+	k_work_init_delayable(&check_network_conn, check_network_connection);
 
 	net_mgmt_init_event_callback(&l4_mgmt_cb, l4_event_handler,
 				     L4_EVENT_MASK);

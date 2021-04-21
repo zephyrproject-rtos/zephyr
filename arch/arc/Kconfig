@@ -9,67 +9,84 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-choice
-	prompt "ARC core family"
-	default CPU_ARCEM
 
 config CPU_ARCEM
-	bool "ARC EM cores"
-	select CPU_ARCV2
+	bool
 	select ATOMIC_OPERATIONS_C
 	help
 	  This option signifies the use of an ARC EM CPU
 
 config CPU_ARCHS
-	bool "ARC HS cores"
-	select CPU_ARCV2
-	select ATOMIC_OPERATIONS_BUILTIN
+	bool
+	# FIXME: ATOMIC_OPERATIONS_BUILTIN still has some problem in arcmwdt
+	# toolchain, so choosing ATOMIC_OPERATIONS_C instead.
+	select ATOMIC_OPERATIONS_C if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	select ATOMIC_OPERATIONS_BUILTIN if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
 	help
 	  This option signifies the use of an ARC HS CPU
 
+
+choice
+	prompt "ARC Instruction Set"
+	default ISA_ARCV2
+
+config ISA_ARCV2
+	bool "ARC ISA v2"
+	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || (ARC_MPU && ARC_MPU_VER !=2)
+	select ARCH_HAS_USERSPACE if ARC_MPU
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  v2 ISA for the ARC-HS & ARC-EM cores
+
 endchoice
+
+if ISA_ARCV2
 
 config CPU_EM4
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 CPU
 
 config CPU_EM4_DMIPS
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 DMIPS CPU
 
 config CPU_EM4_FPUS
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 DMIPS CPU with the single-precision
 	  floating-point extension
 
 config CPU_EM4_FPUDA
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 DMIPS CPU with single-precision
 	  floating-point and double assist instructions
 
 config CPU_EM6
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM6 CPU
+
+config CPU_HS3X
+	bool
+	select CPU_ARCHS
+	help
+	  If y, the SoC uses an ARC HS3x or HS4x CPU
+
+endif #ISA_ARCV2
 
 config FP_FPU_DA
 	bool
 
-menu "ARCv2 Family Options"
-
-config CPU_ARCV2
-	bool
-	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || ARC_MPU
-	select ARCH_HAS_USERSPACE if ARC_MPU
-	select USE_SWITCH
-	select USE_SWITCH_SUPPORTED
-	default y
-	help
-	  This option signifies the use of a CPU of the ARCv2 family.
+menu "ARC CPU Options"
 
 config NUM_IRQ_PRIO_LEVELS
 	int "Number of supported interrupt priority levels"
@@ -93,7 +110,7 @@ config NUM_IRQS
 
 config RGF_NUM_BANKS
 	int "Number of General Purpose Register Banks"
-	depends on CPU_ARCV2
+	depends on ARC_FIRQ
 	range 1 2
 	default 2
 	help
@@ -153,7 +170,7 @@ config ARC_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
 	select ARC_STACK_CHECKING if ARC_HAS_STACK_CHECKING
-	select MPU_STACK_GUARD if (!ARC_STACK_CHECKING && ARC_MPU)
+	select MPU_STACK_GUARD if (!ARC_STACK_CHECKING && ARC_MPU && ARC_MPU_VER !=2)
 	select THREAD_STACK_INFO
 	help
 	  This option enables either:
@@ -189,9 +206,6 @@ config FAULT_DUMP
 
 	  0: Off.
 
-config XIP
-	default y if !UART_NSIM
-
 config GEN_ISR_TABLES
 	default y
 
@@ -211,7 +225,7 @@ config CODE_DENSITY
 
 config ARC_HAS_ACCL_REGS
 	bool "Reg Pair ACCL:ACCH (FPU and/or MPY > 6)"
-	default y if FLOAT
+	default y if FPU
 	help
 	  Depending on the configuration, CPU can contain accumulator reg-pair
 	  (also referred to as r58:r59). These can also be used by gcc as GPR so
@@ -282,34 +296,8 @@ source "arch/arc/core/mpu/Kconfig"
 
 endmenu
 
-config CACHE_LINE_SIZE_DETECT
-	bool "Detect d-cache line size at runtime"
-	help
-	  This option enables querying the d-cache build register for finding
-	  the d-cache line size at the expense of taking more memory and code
-	  and a slightly increased boot time.
-
-	  If the CPU's d-cache line size is known in advance, disable this
-	  option and manually enter the value for CACHE_LINE_SIZE.
-
-config CACHE_LINE_SIZE
-	int "Cache line size" if !CACHE_LINE_SIZE_DETECT
+config DCACHE_LINE_SIZE
 	default 32
-	help
-	  Size in bytes of a CPU d-cache line.
-
-	  Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
-
-config ARCH_CACHE_FLUSH_DETECT
-	bool
-
-config CACHE_FLUSHING
-	bool "Enable d-cache flushing mechanism"
-	help
-	  This links in the sys_cache_flush() function, which provides a
-	  way to flush multiple lines of the d-cache.
-	  If the d-cache is present, set this to y.
-	  If the d-cache is NOT present, set this to n.
 
 config ARC_EXCEPTION_STACK_SIZE
 	int "ARC exception handling stack size"

@@ -1,0 +1,7 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_DEVICE_PID
+	default USB_PID_BLE_HCI_H4_SAMPLE
+
+source "Kconfig.zephyr"

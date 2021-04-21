@@ -461,11 +461,11 @@
 
 struct lsm6ds0_config {
 	char *i2c_master_dev_name;
-	u16_t i2c_slave_addr;
+	uint16_t i2c_slave_addr;
 };
 
 struct lsm6ds0_data {
-	struct device *i2c_master;
+	const struct device *i2c_master;
 
 #if defined(CONFIG_LSM6DS0_ACCEL_ENABLE_X_AXIS)
 	int accel_sample_x;

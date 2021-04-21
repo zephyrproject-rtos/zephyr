@@ -33,7 +33,7 @@ static struct mdm_receiver_context *contexts[MAX_MDM_CTX];
  *
  * @retval Receiver context or NULL.
  */
-static struct mdm_receiver_context *context_from_dev(struct device *dev)
+static struct mdm_receiver_context *context_from_dev(const struct device *dev)
 {
 	int i;
 
@@ -81,7 +81,7 @@ static int mdm_receiver_get(struct mdm_receiver_context *ctx)
  */
 static void mdm_receiver_flush(struct mdm_receiver_context *ctx)
 {
-	u8_t c;
+	uint8_t c;
 
 	__ASSERT(ctx, "invalid ctx");
 	__ASSERT(ctx->uart_dev, "invalid ctx device");
@@ -101,11 +101,13 @@ static void mdm_receiver_flush(struct mdm_receiver_context *ctx)
  *
  * @retval None.
  */
-static void mdm_receiver_isr(struct device *uart_dev)
+static void mdm_receiver_isr(const struct device *uart_dev, void *user_data)
 {
 	struct mdm_receiver_context *ctx;
 	int rx, ret;
-	static u8_t read_buf[MAX_READ_SIZE];
+	static uint8_t read_buf[MAX_READ_SIZE];
+
+	ARG_UNUSED(user_data);
 
 	/* lookup the device */
 	ctx = context_from_dev(uart_dev);
@@ -160,7 +162,7 @@ struct mdm_receiver_context *mdm_receiver_context_from_id(int id)
 }
 
 int mdm_receiver_recv(struct mdm_receiver_context *ctx,
-		      u8_t *buf, size_t size, size_t *bytes_read)
+		      uint8_t *buf, size_t size, size_t *bytes_read)
 {
 	if (!ctx) {
 		return -EINVAL;
@@ -176,7 +178,7 @@ int mdm_receiver_recv(struct mdm_receiver_context *ctx,
 }
 
 int mdm_receiver_send(struct mdm_receiver_context *ctx,
-		      const u8_t *buf, size_t size)
+		      const uint8_t *buf, size_t size)
 {
 	if (!ctx) {
 		return -EINVAL;
@@ -214,7 +216,7 @@ int mdm_receiver_wake(struct mdm_receiver_context *ctx)
 
 int mdm_receiver_register(struct mdm_receiver_context *ctx,
 			  const char *uart_dev_name,
-			  u8_t *buf, size_t size)
+			  uint8_t *buf, size_t size)
 {
 	int ret;
 

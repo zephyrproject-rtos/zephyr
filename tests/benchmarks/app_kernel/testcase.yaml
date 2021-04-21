@@ -1,12 +1,38 @@
+common:
+  tags: benchmark
+  timeout: 420
 tests:
   benchmark.kernel.application:
-    arch_whitelist: x86 arm
+    arch_allow: x86 arm riscv32 riscv64
     min_flash: 34
     min_ram: 32
-    tags: benchmark
-    slow: true
-    timeout: 300
-  benchmark.kernel.application.posix:
-    arch_whitelist: posix
+  benchmark.kernel.application.fp.arm:
+    extra_args: CONF_FILE=prj_fp.conf
+    arch_allow: arm
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    min_flash: 34
     min_ram: 32
-    tags: benchmark
+    slow: true
+  benchmark.kernel.application.fp.x86.fpu:
+    extra_args: CONF_FILE=prj_fp.conf
+    extra_configs:
+      - CONFIG_X86_SSE=y
+      - CONFIG_X86_SSE_FP_MATH=n
+    arch_allow: x86
+    filter: CONFIG_CPU_HAS_FPU
+    min_flash: 34
+    min_ram: 32
+    slow: true
+  benchmark.kernel.application.fp.x86.sse:
+    extra_args: CONF_FILE=prj_fp.conf
+    extra_configs:
+      - CONFIG_X86_SSE=y
+      - CONFIG_X86_SSE_FP_MATH=y
+    arch_allow: x86
+    filter: CONFIG_CPU_HAS_FPU
+    min_flash: 34
+    min_ram: 32
+    slow: true
+  benchmark.kernel.application.posix:
+    arch_allow: posix
+    min_ram: 32

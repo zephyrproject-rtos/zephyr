@@ -11,6 +11,12 @@ properties:
     interrupts:
       required: true
 
+    clocks:
+      required: true
+
+    clock-names:
+      required: true
+
     rxpo:
       type: int
       required: true
@@ -21,12 +27,19 @@ properties:
       required: true
       description: Transmit Data Pinout
 
-    rxdma:
-      type: int
-      required: false
-      description: Receive DMA channel
+    dmas:
+      description: |
+        Optional TX & RX dma specifiers.  Each specifier will have a phandle
+        reference to the dmac controller, the channel number, and peripheral
+        trigger source.
 
-    txdma:
-      type: int
-      required: false
-      description: Transmit DMA channel
+        For example dmas for TX, RX on SERCOM3
+           dmas = <&dmac 0 0xb>, <&dmac 0 0xa>;
+
+    dma-names:
+      description: |
+        Required if the dmas property exists.  This should be "tx" and "rx"
+        to match the dmas property.
+
+        For example
+           dma-names = "tx", "rx";

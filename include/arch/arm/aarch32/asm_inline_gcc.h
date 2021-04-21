@@ -1,4 +1,4 @@
-/* ARM Cortex-M GCC specific public inline assembler functions and macros */
+/* ARM AArch32 GCC specific public inline assembler functions and macros */
 
 /*
  * Copyright (c) 2015, Wind River Systems, Inc.
@@ -23,7 +23,7 @@
 #include <irq.h>
 
 #if defined(CONFIG_CPU_CORTEX_R)
-#include <arch/arm/cortex_r/cpu.h>
+#include <arch/arm/aarch32/cortex_a_r/cpu.h>
 #endif
 
 #ifdef __cplusplus
@@ -84,7 +84,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	if (key) {
+	if (key != 0U) {
 		return;
 	}
 	__asm__ volatile(
@@ -97,7 +97,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		"isb;"
 		:  : "r"(key) : "memory");
 #elif defined(CONFIG_ARMV7_R)
-	if (key) {
+	if (key != 0U) {
 		return;
 	}
 	__asm__ volatile(
@@ -111,7 +111,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	/* This convention works for both PRIMASK and BASEPRI */
-	return key == 0;
+	return key == 0U;
 }
 
 #ifdef __cplusplus

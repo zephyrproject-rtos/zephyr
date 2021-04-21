@@ -8,34 +8,24 @@ if BOARD_STM32F746G_DISCO
 config BOARD
 	default "stm32f746g_disco"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
 if NETWORKING
 
 config NET_L2_ETHERNET
 	default y
 
-config ETH_STM32_HAL
-	default y
-
 endif # NETWORKING
 
-config UART_6
-	default y
-	depends on SERIAL
+config I2C
+	default y if KSCAN
 
-config I2C_1
-	default y
-	depends on I2C
+if KSCAN
 
-config SPI_2
+config KSCAN_FT5336
 	default y
-	depends on SPI
 
-config PWM_STM32_1
-	default y
-	depends on PWM
+config KSCAN_INIT_PRIORITY
+	default 65
+
+endif # KSCAN
 
 endif # BOARD_STM32F746G_DISCO

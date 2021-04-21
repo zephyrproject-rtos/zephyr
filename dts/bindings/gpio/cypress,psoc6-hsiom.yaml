@@ -1,0 +1,18 @@
+# Copyright (c) 2020 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cypress High Speed I/O Matrix
+
+compatible: "cypress,psoc6-hsiom"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    label:
+      required: true

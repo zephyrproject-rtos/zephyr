@@ -65,15 +65,15 @@
 #define LSM303DLHC_SR_REG_M		0x09
 
 struct lsm303dlhc_magn_data {
-	struct device *i2c;
+	const struct device *i2c;
 
-	s16_t magn_x;
-	s16_t magn_y;
-	s16_t magn_z;
+	int16_t magn_x;
+	int16_t magn_y;
+	int16_t magn_z;
 };
 
 struct lsm303dlhc_magn_config {
 	char *i2c_name;
-	u8_t i2c_address;
+	uint8_t i2c_address;
 };
 #endif /* _SENSOR_LSM303DLHC_MAGN_ */

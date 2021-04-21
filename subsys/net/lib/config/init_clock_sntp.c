@@ -24,7 +24,7 @@ int net_init_clock_via_sntp(void)
 	}
 
 	tspec.tv_sec = ts.seconds;
-	tspec.tv_nsec = ((u64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
+	tspec.tv_nsec = ((uint64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
 	res = clock_settime(CLOCK_REALTIME, &tspec);
 
 	return 0;

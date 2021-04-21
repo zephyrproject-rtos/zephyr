@@ -1,0 +1,17 @@
+common:
+    tags: drivers console
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World from Console"
+
+tests:
+  drivers.console.uart:
+    tags: drivers console
+    filter: CONFIG_UART_CONSOLE
+  drivers.console.semihost:
+    tags: drivers console
+    arch_allow: arm
+    filter: CONFIG_CPU_CORTEX_M and CONFIG_QEMU_TARGET
+    extra_args: CONF_FILE=prj_semihost.conf

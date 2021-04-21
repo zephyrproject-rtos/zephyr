@@ -40,23 +40,23 @@
 #define BT_SDP_MAX_SERVICES   10
 
 struct bt_sdp_data_elem_seq {
-	u8_t  type; /* Type: Will be data element sequence */
-	u16_t size; /* We only support 2 byte sizes for now */
+	uint8_t  type; /* Type: Will be data element sequence */
+	uint16_t size; /* We only support 2 byte sizes for now */
 } __packed;
 
 struct bt_sdp_hdr {
-	u8_t  op_code;
-	u16_t tid;
-	u16_t param_len;
+	uint8_t  op_code;
+	uint16_t tid;
+	uint16_t param_len;
 } __packed;
 
 struct bt_sdp_svc_rsp {
-	u16_t  total_recs;
-	u16_t  current_recs;
+	uint16_t  total_recs;
+	uint16_t  current_recs;
 } __packed;
 
 struct bt_sdp_att_rsp {
-	u16_t att_list_len;
+	uint16_t att_list_len;
 } __packed;
 
 /* Allowed attributes length in SSA Request PDU to be taken from server */
@@ -67,8 +67,8 @@ struct bt_sdp_att_rsp {
 
 /* Type mapping SDP PDU Continuation State */
 struct bt_sdp_pdu_cstate {
-	u8_t length;
-	u8_t data[BT_SDP_MAX_PDU_CSTATE_LEN];
+	uint8_t length;
+	uint8_t data[BT_SDP_MAX_PDU_CSTATE_LEN];
 } __packed;
 
 void bt_sdp_init(void);

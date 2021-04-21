@@ -1,5 +1,5 @@
 identifier: olimex_stm32_e407
-name: STM32-E407
+name: OLIMEX-STM32-E407
 type: mcu
 arch: arm
 toolchain:

@@ -98,7 +98,7 @@ by Zephyr are found in the parent `GitHub Zephyr project
 <https://github.com/zephyrproject-rtos/>`_.  Because of these
 dependencies, it's convenient to use the Zephyr-created :ref:`west
 <west>` tool to fetch and manage the Zephyr and external module source
-code.  See :ref:`west-multi-repo` for more details.
+code.  See :ref:`west-basics` for more details.
 
 Once your development tools are installed, use :ref:`west` to create,
 initialize, and download sources from the zephyr and external module
@@ -121,6 +121,46 @@ repo.
    changes, caused, for example, when you pull the :file:`zephyr`
    repository, switch branches in it, or perform a ``git bisect`` inside of
    it.
+
+Keeping Zephyr updated
+======================
+
+To update the Zephyr project source code, you need to get the latest
+changes via ``git``. Afterwards, run ``west update`` as mentioned in
+the previous paragraph.
+
+.. code-block:: console
+
+   # replace zephyrproject with the path you gave west init
+   cd zephyrproject/zephyr
+   git pull
+   west update
+
+Export Zephyr CMake package
+***************************
+
+The :ref:`cmake_pkg` can be exported to CMake's user package registry if it has
+not already been done as part of :ref:`getting_started`.
+
+Board Aliases
+*************
+
+Developers who work with multiple boards may find explicit board names
+cumbersome and want to use aliases for common targets.  This is
+supported by a CMake file with content like this:
+
+.. code-block:: cmake
+
+   # Variable foo_BOARD_ALIAS=bar replaces BOARD=foo with BOARD=bar and
+   # sets BOARD_ALIAS=foo in the CMake cache.
+   set(pca10028_BOARD_ALIAS nrf51dk_nrf51422)
+   set(pca10056_BOARD_ALIAS nrf52840dk_nrf52840)
+   set(k64f_BOARD_ALIAS frdm_k64f)
+   set(sltb004a_BOARD_ALIAS efr32mg_sltb004a)
+
+and specifying its location in :envvar:`ZEPHYR_BOARD_ALIASES`.  This
+enables use of aliases ``pca10028`` in contexts like
+``cmake -DBOARD=pca10028`` and ``west -b pca10028``.
 
 Build and Run an Application
 ****************************
@@ -148,16 +188,6 @@ a list of supported boards.
    .. code-block:: console
 
       cd zephyrproject/zephyr
-
-#. Set up your build environment variables:
-
-   .. code-block:: console
-
-      # Linux and macOS
-      source zephyr-env.sh
-
-      # Windows
-      zephyr-env.cmd
 
 #. Build the blinky sample for the ``reel_board``:
 

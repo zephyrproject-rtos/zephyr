@@ -27,7 +27,7 @@ Building and Running
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/isl29035
-   :board: nrf52_pca10040
+   :board: nrf52dk_nrf52832
    :goals: build
    :compact:
 

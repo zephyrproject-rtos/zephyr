@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam0_nvmctrl
+
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(flash_sam0);
@@ -30,7 +32,7 @@ LOG_MODULE_REGISTER(flash_sam0);
  * Number of lock regions.  The number is fixed and the region size
  * grows with the flash size.
  */
-#define LOCK_REGIONS DT_INST_0_ATMEL_SAM0_NVMCTRL_LOCK_REGIONS
+#define LOCK_REGIONS DT_INST_PROP(0, lock_regions)
 #define LOCK_REGION_SIZE (FLASH_SIZE / LOCK_REGIONS)
 
 #if defined(NVMCTRL_BLOCK_SIZE)
@@ -41,11 +43,11 @@ LOG_MODULE_REGISTER(flash_sam0);
 
 #define PAGES_PER_ROW (ROW_SIZE / FLASH_PAGE_SIZE)
 
-#define FLASH_MEM(_a) ((u32_t *)((u8_t *)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
+#define FLASH_MEM(_a) ((uint32_t *)((uint8_t *)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
 
 struct flash_sam0_data {
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
-	u8_t buf[ROW_SIZE];
+	uint8_t buf[ROW_SIZE];
 	off_t offset;
 #endif
 
@@ -59,16 +61,27 @@ static const struct flash_pages_layout flash_sam0_pages_layout = {
 };
 #endif
 
-static inline void flash_sam0_sem_take(struct device *dev)
+static const struct flash_parameters flash_sam0_parameters = {
+#if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
+	.write_block_size = 1,
+#else
+	.write_block_size = FLASH_PAGE_SIZE,
+#endif
+	.erase_value = 0xff,
+};
+
+static int flash_sam0_write_protection(const struct device *dev, bool enable);
+
+static inline void flash_sam0_sem_take(const struct device *dev)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
+	struct flash_sam0_data *ctx = dev->data;
 
 	k_sem_take(&ctx->sem, K_FOREVER);
 }
 
-static inline void flash_sam0_sem_give(struct device *dev)
+static inline void flash_sam0_sem_give(const struct device *dev)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
+	struct flash_sam0_data *ctx = dev->data;
 
 	k_sem_give(&ctx->sem);
 }
@@ -128,12 +141,12 @@ static int flash_sam0_check_status(off_t offset)
 	return 0;
 }
 
-static int flash_sam0_write_page(struct device *dev, off_t offset,
+static int flash_sam0_write_page(const struct device *dev, off_t offset,
 				 const void *data)
 {
-	const u32_t *src = data;
-	const u32_t *end = src + FLASH_PAGE_SIZE / sizeof(*src);
-	u32_t *dst = FLASH_MEM(offset);
+	const uint32_t *src = data;
+	const uint32_t *end = src + FLASH_PAGE_SIZE / sizeof(*src);
+	uint32_t *dst = FLASH_MEM(offset);
 	int err;
 
 #ifdef NVMCTRL_CTRLA_CMD_PBC
@@ -145,7 +158,7 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 
 	/* Ensure writes happen 32 bits at a time. */
 	for (; src != end; src++, dst++) {
-		*dst = *src;
+		*dst = UNALIGNED_GET((uint32_t *)src);
 	}
 
 #ifdef NVMCTRL_CTRLA_CMD_WP
@@ -167,7 +180,7 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_sam0_erase_row(struct device *dev, off_t offset)
+static int flash_sam0_erase_row(const struct device *dev, off_t offset)
 {
 	*FLASH_MEM(offset) = 0U;
 #ifdef NVMCTRL_CTRLA_CMD_ER
@@ -180,9 +193,9 @@ static int flash_sam0_erase_row(struct device *dev, off_t offset)
 
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
 
-static int flash_sam0_commit(struct device *dev)
+static int flash_sam0_commit(const struct device *dev)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
+	struct flash_sam0_data *ctx = dev->data;
 	int err;
 	int page;
 	off_t offset = ctx->offset;
@@ -210,11 +223,11 @@ static int flash_sam0_commit(struct device *dev)
 	return 0;
 }
 
-static int flash_sam0_write(struct device *dev, off_t offset,
+static int flash_sam0_write(const struct device *dev, off_t offset,
 			    const void *data, size_t len)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
-	const u8_t *pdata = data;
+	struct flash_sam0_data *ctx = dev->data;
+	const uint8_t *pdata = data;
 	off_t addr;
 	int err;
 
@@ -227,31 +240,42 @@ static int flash_sam0_write(struct device *dev, off_t offset,
 
 	flash_sam0_sem_take(dev);
 
-	for (addr = offset; addr < offset + len; addr++) {
-		off_t base = addr & ~(ROW_SIZE - 1);
+	err = flash_sam0_write_protection(dev, false);
+	if (err == 0) {
+		for (addr = offset; addr < offset + len; addr++) {
+			off_t base = addr & ~(ROW_SIZE - 1);
 
-		if (base != ctx->offset) {
-			/* Started a new row.  Flush any pending ones. */
-			flash_sam0_commit(dev);
-			memcpy(ctx->buf, (void *)base, sizeof(ctx->buf));
-			ctx->offset = base;
+			if (base != ctx->offset) {
+				/* Started a new row. Flush any pending ones. */
+				flash_sam0_commit(dev);
+				memcpy(ctx->buf, (void *)base,
+				       sizeof(ctx->buf));
+				ctx->offset = base;
+			}
+
+			ctx->buf[addr % ROW_SIZE] = *pdata++;
 		}
 
-		ctx->buf[addr % ROW_SIZE] = *pdata++;
+		flash_sam0_commit(dev);
 	}
 
-	flash_sam0_commit(dev);
+	int err2 = flash_sam0_write_protection(dev, true);
+
+	if (!err) {
+		err = err2;
+	}
+
 	flash_sam0_sem_give(dev);
 
-	return 0;
+	return err;
 }
 
 #else /* CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES */
 
-static int flash_sam0_write(struct device *dev, off_t offset,
+static int flash_sam0_write(const struct device *dev, off_t offset,
 			    const void *data, size_t len)
 {
-	const u8_t *pdata = data;
+	const uint8_t *pdata = data;
 	int err;
 	size_t idx;
 
@@ -272,14 +296,23 @@ static int flash_sam0_write(struct device *dev, off_t offset,
 
 	flash_sam0_sem_take(dev);
 
-	for (idx = 0; idx < len; idx += FLASH_PAGE_SIZE) {
-		err = flash_sam0_write_page(dev, offset + idx, &pdata[idx]);
-		if (err != 0) {
-			goto done;
+	err = flash_sam0_write_protection(dev, false);
+	if (err == 0) {
+		for (idx = 0; idx < len; idx += FLASH_PAGE_SIZE) {
+			err = flash_sam0_write_page(dev, offset + idx,
+						    &pdata[idx]);
+			if (err != 0) {
+				break;
+			}
 		}
 	}
 
-done:
+	int err2 = flash_sam0_write_protection(dev, true);
+
+	if (!err) {
+		err = err2;
+	}
+
 	flash_sam0_sem_give(dev);
 
 	return err;
@@ -287,7 +320,7 @@ done:
 
 #endif
 
-static int flash_sam0_read(struct device *dev, off_t offset, void *data,
+static int flash_sam0_read(const struct device *dev, off_t offset, void *data,
 			   size_t len)
 {
 	int err;
@@ -297,12 +330,13 @@ static int flash_sam0_read(struct device *dev, off_t offset, void *data,
 		return err;
 	}
 
-	memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
 	return 0;
 }
 
-static int flash_sam0_erase(struct device *dev, off_t offset, size_t size)
+static int flash_sam0_erase(const struct device *dev, off_t offset,
+			    size_t size)
 {
 	int err;
 
@@ -323,25 +357,32 @@ static int flash_sam0_erase(struct device *dev, off_t offset, size_t size)
 
 	flash_sam0_sem_take(dev);
 
-	for (size_t addr = offset; addr < offset + size; addr += ROW_SIZE) {
-		err = flash_sam0_erase_row(dev, addr);
-		if (err != 0) {
-			goto done;
+	err = flash_sam0_write_protection(dev, false);
+	if (err == 0) {
+		for (size_t addr = offset; addr < offset + size;
+		     addr += ROW_SIZE) {
+			err = flash_sam0_erase_row(dev, addr);
+			if (err != 0) {
+				break;
+			}
 		}
 	}
 
-done:
+	int err2 = flash_sam0_write_protection(dev, true);
+
+	if (!err) {
+		err = err2;
+	}
+
 	flash_sam0_sem_give(dev);
 
 	return err;
 }
 
-static int flash_sam0_write_protection(struct device *dev, bool enable)
+static int flash_sam0_write_protection(const struct device *dev, bool enable)
 {
 	off_t offset;
 	int err;
-
-	flash_sam0_sem_take(dev);
 
 	for (offset = 0; offset < CONFIG_FLASH_SIZE * 1024;
 	     offset += LOCK_REGION_SIZE) {
@@ -371,13 +412,11 @@ static int flash_sam0_write_protection(struct device *dev, bool enable)
 	}
 
 done:
-	flash_sam0_sem_give(dev);
-
 	return err;
 }
 
 #if CONFIG_FLASH_PAGE_LAYOUT
-void flash_sam0_page_layout(struct device *dev,
+void flash_sam0_page_layout(const struct device *dev,
 			    const struct flash_pages_layout **layout,
 			    size_t *layout_size)
 {
@@ -386,9 +425,17 @@ void flash_sam0_page_layout(struct device *dev,
 }
 #endif
 
-static int flash_sam0_init(struct device *dev)
+static const struct flash_parameters *
+flash_sam0_get_parameters(const struct device *dev)
 {
-	struct flash_sam0_data *ctx = dev->driver_data;
+	ARG_UNUSED(dev);
+
+	return &flash_sam0_parameters;
+}
+
+static int flash_sam0_init(const struct device *dev)
+{
+	struct flash_sam0_data *ctx = dev->data;
 
 	k_sem_init(&ctx->sem, 1, 1);
 
@@ -408,18 +455,17 @@ static int flash_sam0_init(struct device *dev)
 }
 
 static const struct flash_driver_api flash_sam0_api = {
-	.write_protection = flash_sam0_write_protection,
 	.erase = flash_sam0_erase,
 	.write = flash_sam0_write,
 	.read = flash_sam0_read,
+	.get_parameters = flash_sam0_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam0_page_layout,
 #endif
-	.write_block_size = FLASH_PAGE_SIZE,
 };
 
 static struct flash_sam0_data flash_sam0_data_0;
 
-DEVICE_AND_API_INIT(flash_sam0, DT_INST_0_ATMEL_SAM0_NVMCTRL_LABEL,
-		    flash_sam0_init, &flash_sam0_data_0, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, flash_sam0_init, device_pm_control_nop,
+		    &flash_sam0_data_0, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_sam0_api);

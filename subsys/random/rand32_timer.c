@@ -28,7 +28,7 @@
  */
 static atomic_val_t _rand32_counter;
 
-#define _RAND32_INC 1000000013
+#define _RAND32_INC 1000000013U
 
 /**
  *
@@ -41,7 +41,7 @@ static atomic_val_t _rand32_counter;
  * @return a 32-bit number
  */
 
-u32_t sys_rand32_get(void)
+uint32_t z_impl_sys_rand32_get(void)
 {
 	return k_cycle_get_32() + atomic_add(&_rand32_counter, _RAND32_INC);
 }
@@ -60,22 +60,18 @@ u32_t sys_rand32_get(void)
  * @return N/A
  */
 
-void sys_rand_get(void *dst, size_t outlen)
+void z_impl_sys_rand_get(void *dst, size_t outlen)
 {
-	u32_t len = 0;
-	u32_t blocksize = 4;
-	u32_t ret;
-	u32_t *udst = (u32_t *)dst;
+	uint8_t *udst = dst;
+	uint32_t blocksize;
+	uint32_t ret;
 
-	while (len < outlen) {
+	while (outlen) {
 		ret = sys_rand32_get();
-		if ((outlen-len) < sizeof(ret)) {
-			blocksize = len;
-			(void)memcpy(udst, &ret, blocksize);
-		} else {
-			(*udst++) = ret;
-		}
-		len += blocksize;
+		blocksize = MIN(outlen, sizeof(ret));
+		(void)memcpy((void *)udst, &ret, blocksize);
+		udst += blocksize;
+		outlen -= blocksize;
 	}
 }
 #endif /* __GNUC__ */

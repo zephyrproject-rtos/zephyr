@@ -19,6 +19,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <sys/__assert.h>
 #include "list_gen.h"
 
 #ifdef __cplusplus
@@ -26,9 +27,9 @@ extern "C" {
 #endif
 
 #ifdef __LP64__
-typedef u64_t unative_t;
+typedef uint64_t unative_t;
 #else
-typedef u32_t unative_t;
+typedef uint32_t unative_t;
 #endif
 
 struct _sfnode {
@@ -44,6 +45,11 @@ struct _sflist {
 
 typedef struct _sflist sys_sflist_t;
 
+ /**
+  * @defgroup flagged-single-linked-list_apis Flagged Single-linked list
+  * @ingroup datastructure_apis
+  * @{
+  */
 
 /**
  * @brief Provide the primitive to iterate on a list
@@ -207,12 +213,12 @@ static inline sys_sfnode_t *z_sfnode_next_peek(sys_sfnode_t *node)
 	return (sys_sfnode_t *)(node->next_and_flags & ~SYS_SFLIST_FLAGS_MASK);
 }
 
-static inline u8_t sys_sfnode_flags_get(sys_sfnode_t *node);
+static inline uint8_t sys_sfnode_flags_get(sys_sfnode_t *node);
 
 static inline void z_sfnode_next_set(sys_sfnode_t *parent,
 				       sys_sfnode_t *child)
 {
-	u8_t cur_flags = sys_sfnode_flags_get(parent);
+	uint8_t cur_flags = sys_sfnode_flags_get(parent);
 
 	parent->next_and_flags = cur_flags | (unative_t)child;
 }
@@ -261,7 +267,7 @@ static inline sys_sfnode_t *sys_sflist_peek_tail(sys_sflist_t *list)
  * @param node A pointer to the node to fetch flags from
  * @return The value of flags, which will be between 0 and 3
  */
-static inline u8_t sys_sfnode_flags_get(sys_sfnode_t *node)
+static inline uint8_t sys_sfnode_flags_get(sys_sfnode_t *node)
 {
 	return node->next_and_flags & SYS_SFLIST_FLAGS_MASK;
 }
@@ -279,7 +285,7 @@ static inline u8_t sys_sfnode_flags_get(sys_sfnode_t *node)
  * @param node A pointer to the node to set the flags on
  * @param flags A value between 0 and 3 to set the flags value
  */
-static inline void sys_sfnode_init(sys_sfnode_t *node, u8_t flags)
+static inline void sys_sfnode_init(sys_sfnode_t *node, uint8_t flags)
 {
 	__ASSERT((flags & ~SYS_SFLIST_FLAGS_MASK) == 0UL, "flags too large");
 	node->next_and_flags = flags;
@@ -295,7 +301,7 @@ static inline void sys_sfnode_init(sys_sfnode_t *node, u8_t flags)
  * @param node A pointer to the node to set the flags on
  * @param flags A value between 0 and 3 to set the flags value
  */
-static inline void sys_sfnode_flags_set(sys_sfnode_t *node, u8_t flags)
+static inline void sys_sfnode_flags_set(sys_sfnode_t *node, uint8_t flags)
 {
 	__ASSERT((flags & ~SYS_SFLIST_FLAGS_MASK) == 0UL, "flags too large");
 	node->next_and_flags = (unative_t)(z_sfnode_next_peek(node)) | flags;
@@ -470,6 +476,8 @@ static inline bool sys_sflist_find_and_remove(sys_sflist_t *list,
 					      sys_sfnode_t *node);
 
 Z_GENLIST_FIND_AND_REMOVE(sflist, sfnode)
+
+/** @} */
 
 #ifdef __cplusplus
 }

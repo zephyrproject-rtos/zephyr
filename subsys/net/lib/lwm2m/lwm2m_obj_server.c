@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rd_client.h"
 #endif
 
+#define SERVER_VERSION_MAJOR 1
+#define SERVER_VERSION_MINOR 0
+
 /* Server resource IDs */
 #define SERVER_SHORT_SERVER_ID		0
 #define SERVER_LIFETIME_ID		1
@@ -49,13 +52,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define RESOURCE_INSTANCE_COUNT	(SERVER_MAX_ID - 2)
 
 /* resource state variables */
-static u16_t server_id[MAX_INSTANCE_COUNT];
-static u32_t lifetime[MAX_INSTANCE_COUNT];
-static u32_t default_min_period[MAX_INSTANCE_COUNT];
-static u32_t default_max_period[MAX_INSTANCE_COUNT];
-static u8_t  server_flag_disabled[MAX_INSTANCE_COUNT];
-static u32_t disabled_timeout[MAX_INSTANCE_COUNT];
-static u8_t  server_flag_store_notify[MAX_INSTANCE_COUNT];
+static uint16_t server_id[MAX_INSTANCE_COUNT];
+static uint32_t lifetime[MAX_INSTANCE_COUNT];
+static uint32_t default_min_period[MAX_INSTANCE_COUNT];
+static uint32_t default_max_period[MAX_INSTANCE_COUNT];
+static uint8_t  server_flag_disabled[MAX_INSTANCE_COUNT];
+static uint32_t disabled_timeout[MAX_INSTANCE_COUNT];
+static uint8_t  server_flag_store_notify[MAX_INSTANCE_COUNT];
 static char  transport_binding[MAX_INSTANCE_COUNT][TRANSPORT_BINDING_LEN];
 
 static struct lwm2m_engine_obj server;
@@ -71,7 +74,7 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(SERVER_DEFAULT_MAX_PERIOD_ID, RW_OPT, U32),
 	OBJ_FIELD_EXECUTE_OPT(SERVER_DISABLE_ID),
 	OBJ_FIELD_DATA(SERVER_DISABLE_TIMEOUT_ID, RW_OPT, U32),
-	OBJ_FIELD_DATA(SERVER_STORE_NOTIFY_ID, RW, U8),
+	OBJ_FIELD_DATA(SERVER_STORE_NOTIFY_ID, RW, BOOL),
 	/* Mark Transport Binding is RO but BOOTSTRAP needs to write it */
 	OBJ_FIELD_DATA(SERVER_TRANSPORT_BINDING_ID, RW, STRING),
 	OBJ_FIELD_EXECUTE(SERVER_REG_UPDATE_TRIGGER_ID),
@@ -82,7 +85,7 @@ static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][SERVER_MAX_ID];
 static struct lwm2m_engine_res_inst
 			res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
 
-static int disable_cb(u16_t obj_inst_id)
+static int disable_cb(uint16_t obj_inst_id, uint8_t *args, uint16_t args_len)
 {
 	int i;
 
@@ -97,18 +100,40 @@ static int disable_cb(u16_t obj_inst_id)
 	return -ENOENT;
 }
 
-static int update_trigger_cb(u16_t obj_inst_id)
+static int update_trigger_cb(uint16_t obj_inst_id,
+			     uint8_t *args, uint16_t args_len)
 {
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-	engine_trigger_update();
+	engine_trigger_update(false);
 	return 0;
 #else
 	return -EPERM;
 #endif
 }
 
-static s32_t server_get_instance_s32(u16_t obj_inst_id, s32_t *data,
-				     s32_t default_value)
+static int lifetime_write_cb(uint16_t obj_inst_id, uint16_t res_id,
+			     uint16_t res_inst_id, uint8_t *data,
+			     uint16_t data_len, bool last_block,
+			     size_t total_size)
+{
+	ARG_UNUSED(obj_inst_id);
+	ARG_UNUSED(res_id);
+	ARG_UNUSED(res_inst_id);
+	ARG_UNUSED(data);
+	ARG_UNUSED(data_len);
+	ARG_UNUSED(last_block);
+	ARG_UNUSED(total_size);
+
+#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
+	engine_trigger_update(false);
+	return 0;
+#else
+	return -EPERM;
+#endif
+}
+
+static int32_t server_get_instance_s32(uint16_t obj_inst_id, int32_t *data,
+				     int32_t default_value)
 {
 	int i;
 
@@ -121,19 +146,32 @@ static s32_t server_get_instance_s32(u16_t obj_inst_id, s32_t *data,
 	return default_value;
 }
 
-s32_t lwm2m_server_get_pmin(u16_t obj_inst_id)
+int32_t lwm2m_server_get_pmin(uint16_t obj_inst_id)
 {
 	return server_get_instance_s32(obj_inst_id, default_min_period,
 				       CONFIG_LWM2M_SERVER_DEFAULT_PMIN);
 }
 
-s32_t lwm2m_server_get_pmax(u16_t obj_inst_id)
+int32_t lwm2m_server_get_pmax(uint16_t obj_inst_id)
 {
 	return server_get_instance_s32(obj_inst_id, default_max_period,
 				       CONFIG_LWM2M_SERVER_DEFAULT_PMAX);
 }
 
-static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
+int lwm2m_server_short_id_to_inst(uint16_t short_id)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(inst); i++) {
+		if (inst[i].obj && server_id[i] == short_id) {
+			return inst[i].obj_inst_id;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static struct lwm2m_engine_obj_inst *server_create(uint16_t obj_inst_id)
 {
 	int index, i = 0, j = 0;
 
@@ -166,7 +204,7 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	default_min_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMIN;
 	default_max_period[index] = CONFIG_LWM2M_SERVER_DEFAULT_PMAX;
 	disabled_timeout[index] = 86400U;
-	strcpy(transport_binding[index], "U");
+	lwm2m_engine_get_binding(transport_binding[index]);
 
 	(void)memset(res[index], 0,
 		     sizeof(res[index][0]) * ARRAY_SIZE(res[index]));
@@ -176,9 +214,9 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	INIT_OBJ_RES_DATA(SERVER_SHORT_SERVER_ID, res[index], i,
 			  res_inst[index], j,
 			  &server_id[index], sizeof(*server_id));
-	INIT_OBJ_RES_DATA(SERVER_LIFETIME_ID, res[index], i,
-			  res_inst[index], j,
-			  &lifetime[index], sizeof(*lifetime));
+	INIT_OBJ_RES(SERVER_LIFETIME_ID, res[index], i, res_inst[index], j,
+		     1U, false, true, &lifetime[index], sizeof(*lifetime),
+		     NULL, NULL, NULL, lifetime_write_cb, NULL);
 	INIT_OBJ_RES_DATA(SERVER_DEFAULT_MIN_PERIOD_ID, res[index], i,
 			  res_inst[index], j,
 			  &default_min_period[index],
@@ -209,12 +247,15 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	return &inst[index];
 }
 
-static int lwm2m_server_init(struct device *dev)
+static int lwm2m_server_init(const struct device *dev)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;
 
 	server.obj_id = LWM2M_OBJECT_SERVER_ID;
+	server.version_major = SERVER_VERSION_MAJOR;
+	server.version_minor = SERVER_VERSION_MINOR;
+	server.is_core = true;
 	server.fields = fields;
 	server.field_count = ARRAY_SIZE(fields);
 	server.max_instance_count = MAX_INSTANCE_COUNT;

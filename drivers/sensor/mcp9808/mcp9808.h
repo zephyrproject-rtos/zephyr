@@ -50,21 +50,23 @@
  */
 #define MCP9808_TEMP_SCALE_CEL		16 /* signed */
 #define MCP9808_TEMP_SIGN_BIT		BIT(12)
-#define MCP9808_TEMP_ABS_MASK		((u16_t)(MCP9808_TEMP_SIGN_BIT - 1U))
+#define MCP9808_TEMP_ABS_MASK		((uint16_t)(MCP9808_TEMP_SIGN_BIT - 1U))
 #define MCP9808_TEMP_LWR_BIT		BIT(13)
 #define MCP9808_TEMP_UPR_BIT		BIT(14)
 #define MCP9808_TEMP_CRT_BIT		BIT(15)
 
-struct mcp9808_data {
-	struct device *i2c_master;
+#define MCP9808_REG_RESOLUTION          0x08
 
-	u16_t reg_val;
+struct mcp9808_data {
+	const struct device *i2c_master;
+
+	uint16_t reg_val;
 
 #ifdef CONFIG_MCP9808_TRIGGER
-	struct device *alert_gpio;
+	const struct device *alert_gpio;
 	struct gpio_callback alert_cb;
 
-	struct device *dev;
+	const struct device *dev;
 
 	struct sensor_trigger trig;
 	sensor_trigger_handler_t trigger_handler;
@@ -81,33 +83,38 @@ struct mcp9808_data {
 
 struct mcp9808_config {
 	const char *i2c_bus;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
+	uint8_t resolution;
 #ifdef CONFIG_MCP9808_TRIGGER
-	u8_t alert_pin;
-	u8_t alert_flags;
+	uint8_t alert_pin;
+	uint8_t alert_flags;
 	const char *alert_controller;
 #endif /* CONFIG_MCP9808_TRIGGER */
 };
 
-int mcp9808_reg_read(struct device *dev, u8_t reg, u16_t *val);
+int mcp9808_reg_read(const struct device *dev, uint8_t reg, uint16_t *val);
+int mcp9808_reg_write_16bit(const struct device *dev, uint8_t reg,
+			    uint16_t val);
+int mcp9808_reg_write_8bit(const struct device *dev, uint8_t reg,
+			   uint8_t val);
 
 #ifdef CONFIG_MCP9808_TRIGGER
-int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
+int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val);
-int mcp9808_trigger_set(struct device *dev,
+int mcp9808_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
-int mcp9808_setup_interrupt(struct device *dev);
+int mcp9808_setup_interrupt(const struct device *dev);
 #endif /* CONFIG_MCP9808_TRIGGER */
 
 /* Encode a signed temperature in scaled Celsius to the format used in
  * register values.
  */
-static inline u16_t mcp9808_temp_reg_from_signed(int temp)
+static inline uint16_t mcp9808_temp_reg_from_signed(int temp)
 {
 	/* Get the 12-bit 2s complement value */
-	u16_t rv = temp & MCP9808_TEMP_ABS_MASK;
+	uint16_t rv = temp & MCP9808_TEMP_ABS_MASK;
 
 	if (temp < 0) {
 		rv |= MCP9808_TEMP_SIGN_BIT;
@@ -118,7 +125,7 @@ static inline u16_t mcp9808_temp_reg_from_signed(int temp)
 /* Decode a register temperature value to a signed temperature in
  * scaled Celsius.
  */
-static inline int mcp9808_temp_signed_from_reg(u16_t reg)
+static inline int mcp9808_temp_signed_from_reg(uint16_t reg)
 {
 	int rv = reg & MCP9808_TEMP_ABS_MASK;
 

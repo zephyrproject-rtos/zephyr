@@ -1,0 +1,51 @@
+.. _bcm958402m2_a72:
+
+Broadcom BCM958402M2 (Cortex-A72)
+#################################
+
+Overview
+********
+The Broadcom bcm958402m2_a72 board utilizes the Viper BCM58402_A72 SoC
+to provide support for PCIe offload engine functionality.
+
+Hardware
+********
+The bcm958402m2_a72 is a PCIe card with the following physical features:
+
+* PCIe Gen4 interface
+* RS232 UART (optionally populated)
+* JTAG (optionally populated)
+
+Supported Features
+==================
+The Broadcom bcm958402m2_a72 board configuration supports the following
+hardware features:
+
++-----------+------------+--------------------------------------+
+| Interface | Controller | Driver/Component                     |
++===========+============+======================================+
+| GIC-500   | on-chip    | GICv3 interrupt controller           |
++-----------+------------+--------------------------------------+
+| UART      | on-chip    | NS16550 compatible serial port       |
++-----------+------------+--------------------------------------+
+
+Other hardware features are not supported by the Zephyr kernel.
+
+The default configuration can be found in the defconfig file:
+
+        ``boards/arm/bcm958402m2_a72/bcm958402m2_a72_defconfig``
+
+Programming and Debugging
+*************************
+
+Flashing
+========
+
+The flash on board is not supported by Zephyr at this time.
+Board is booted over PCIe interface.
+
+Debugging
+=========
+The bcm958402m2_a72 board includes pads for soldering a JTAG connector.
+Zephyr applications running on the Cortex-A72 core can also be tested
+by observing UART console output.

@@ -94,7 +94,23 @@ The Zephyr nucleo_g071rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
++-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash memory                        |
++-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
@@ -115,8 +131,16 @@ Default Zephyr Peripheral Mapping:
 
 - UART_1 TX/RX : PC4/PC5
 - UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- I2C2 SCL/SDA : PA11/PA12
+- SPI1 NSS/SCK/MISO/MOSI : PB0/PA5/PA6/PA7 (Arduino SPI)
+- SPI2 NSS/SCK/MISO/MOSI : PB12/PB13/PB14/PB15
 - USER_PB   : PC13
 - LD4       : PA5
+- PWM       : PA6
+- ADC1 IN0  : PA0
+- ADC1 IN1  : PA1
+- DAC1_OUT1 : PA4
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 
@@ -131,13 +155,26 @@ Flashing
 ========
 
 Nucleo G071RB board includes an ST-LINK/V2-1 embedded debug tool interface.
+
 This interface is not yet supported by the openocd version included in the Zephyr SDK.
+
 Instead, support can be enabled on pyocd by adding "pack" support with
 the following pyocd command:
 
 .. code-block:: console
 
+   $ pyocd pack --update
    $ pyocd pack --install stm32g071rb
+
+Note:
+To manually enable the openocd interface, You can still update, compile and install
+a 'local' openocd from the official openocd repo http://openocd.zylin.com .
+Then run the following openocd command where the '/usr/local/bin/openocd'is your path
+for the freshly installed openocd, given by "$ which openocd" :
+
+.. code-block:: console
+
+   $ west flash --openocd /usr/local/bin/openocd
 
 Flashing an application to Nucleo G071RB
 ----------------------------------------

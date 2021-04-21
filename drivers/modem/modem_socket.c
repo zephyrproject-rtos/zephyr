@@ -19,10 +19,10 @@
  * Packet Size Support Functions
  */
 
-u16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
+uint16_t modem_socket_next_packet_size(struct modem_socket_config *cfg,
 				    struct modem_socket *sock)
 {
-	u16_t total = 0U;
+	uint16_t total = 0U;
 
 	k_sem_take(&cfg->sem_lock, K_FOREVER);
 
@@ -37,10 +37,10 @@ exit:
 	return total;
 }
 
-static u16_t modem_socket_packet_get_total(struct modem_socket *sock)
+static uint16_t modem_socket_packet_get_total(struct modem_socket *sock)
 {
 	int i;
-	u16_t total = 0U;
+	uint16_t total = 0U;
 
 	if (!sock || !sock->packet_count) {
 		return 0U;
@@ -74,7 +74,7 @@ static int modem_socket_packet_drop_first(struct modem_socket *sock)
 int modem_socket_packet_size_update(struct modem_socket_config *cfg,
 				    struct modem_socket *sock, int new_total)
 {
-	u16_t old_total = 0U;
+	uint16_t old_total = 0U;
 
 	if (!sock) {
 		return -EINVAL;
@@ -233,7 +233,6 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 
 	k_sem_take(&cfg->sem_lock, K_FOREVER);
 
-	z_free_fd(sock->sock_fd);
 	sock->id = cfg->base_socket_num - 1;
 	sock->sock_fd = -1;
 	sock->is_waiting = false;
@@ -241,6 +240,9 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
 	sock->is_connected = false;
 	(void)memset(&sock->src, 0, sizeof(struct sockaddr));
 	(void)memset(&sock->dst, 0, sizeof(struct sockaddr));
+	memset(&sock->packet_sizes, 0, sizeof(sock->packet_sizes));
+	sock->packet_count = 0;
+	k_sem_reset(&sock->sem_data_ready);
 
 	k_sem_give(&cfg->sem_lock);
 }
@@ -257,47 +259,72 @@ void modem_socket_put(struct modem_socket_config *cfg, int sock_fd)
  * initial implementation, but this should be improved in the future.
  */
 int modem_socket_poll(struct modem_socket_config *cfg,
-		      struct pollfd *fds, int nfds, int msecs)
+		      struct zsock_pollfd *fds, int nfds, int msecs)
 {
 	struct modem_socket *sock;
 	int ret, i;
-	u8_t found_count = 0;
+	uint8_t found_count = 0;
 
 	if (!cfg) {
 		return -EINVAL;
 	}
+
+	k_sem_reset(&cfg->sem_poll);
 
 	for (i = 0; i < nfds; i++) {
 		sock = modem_socket_from_fd(cfg, fds[i].fd);
 		if (sock) {
 			/*
 			 * Handle user check for POLLOUT events:
-			 * we consider the socket to always be writeable.
+			 * we consider the socket to always be writable.
 			 */
-			if (fds[i].events & POLLOUT) {
-				fds[i].revents |= POLLOUT;
+			if (fds[i].events & ZSOCK_POLLOUT) {
 				found_count++;
-			} else if (fds[i].events & POLLIN) {
+				break;
+			} else if (fds[i].events & ZSOCK_POLLIN) {
 				sock->is_polled = true;
+
+				/*
+				 * Handle check done after data reception on
+				 * the socket. In this case that was received
+				 * but as the socket wasn't polled, no sem_poll
+				 * semaphore was given at that time. Therefore
+				 * if there is a polled socket with data,
+				 * increment found_count to escape the
+				 * k_sem_take().
+				 */
+				if (sock->packet_sizes[0] > 0U) {
+					found_count++;
+					break;
+				}
 			}
 		}
 	}
 
-	/* exit early if we've found rdy sockets */
-	if (found_count) {
-		errno = 0;
-		return found_count;
+	/* Avoid waiting on semaphore if we have already found an event */
+	ret = 0;
+	if (!found_count) {
+		ret = k_sem_take(&cfg->sem_poll, K_MSEC(msecs));
 	}
+	/* Reset counter as we reiterate on all polled sockets */
+	found_count = 0;
 
-	ret = k_sem_take(&cfg->sem_poll, msecs);
 	for (i = 0; i < nfds; i++) {
 		sock = modem_socket_from_fd(cfg, fds[i].fd);
 		if (!sock) {
 			continue;
 		}
 
-		if (fds[i].events & POLLIN && sock->packet_sizes[0] > 0U) {
-			fds[i].revents |= POLLIN;
+		/*
+		 * Handle user check for ZSOCK_POLLOUT events:
+		 * we consider the socket to always be writable.
+		 */
+		if (fds[i].events & ZSOCK_POLLOUT) {
+			fds[i].revents |= ZSOCK_POLLOUT;
+			found_count++;
+		} else if ((fds[i].events & ZSOCK_POLLIN) &&
+			   (sock->packet_sizes[0] > 0U)) {
+			fds[i].revents |= ZSOCK_POLLIN;
 			found_count++;
 		}
 

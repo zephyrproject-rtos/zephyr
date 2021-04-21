@@ -1,0 +1,11 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Intel CAVS SoC Selection"
+
+	config SOC_INTEL_CAVS_V18
+		bool "CAVS v1.8 SoC"
+		depends on SOC_SERIES_INTEL_CAVS_V18
+
+endchoice

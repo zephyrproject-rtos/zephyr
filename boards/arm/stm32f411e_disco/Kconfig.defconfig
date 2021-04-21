@@ -8,12 +8,4 @@ if BOARD_STM32F411E_DISCO
 config BOARD
 	default "stm32f411e_disco"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
-config PWM_STM32_4
-	default y
-	depends on PWM
-
 endif # BOARD_STM32F411E_DISCO

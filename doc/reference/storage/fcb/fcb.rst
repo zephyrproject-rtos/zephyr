@@ -1,4 +1,4 @@
-.. _fcb-manual:
+.. _fcb_api:
 
 Flash Circular Buffer (FCB)
 ###########################
@@ -6,6 +6,12 @@ Flash Circular Buffer (FCB)
 Flash circular buffer provides an abstraction through which you can treat
 flash like a FIFO. You append entries to the end, and read data from the
 beginning.
+
+.. note::
+
+   As of Zephyr release 2.1 the :ref:`NVS <nvs_api>` storage API is
+   recommended over FCB for use as a back-end for the :ref:`settings API
+   <settings_api>`.
 
 Description
 ***********

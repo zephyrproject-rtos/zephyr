@@ -13,13 +13,14 @@
 #include <fsl_clock.h>
 #include <arch/cpu.h>
 
-#define ER32KSEL_OSC32KCLK	(0)
-#define ER32KSEL_RTC		(2)
-#define ER32KSEL_LPO1KHZ	(3)
-
 #define LPUART0SRC_OSCERCLK	(1)
+#define TPMSRC_MCGPLLCLK	(1)
 
-#define CLKDIV1_DIVBY2		(1)
+#define CLOCK_NODEID(clk) \
+	DT_CHILD(DT_INST(0, nxp_kinetis_sim), clk)
+
+#define CLOCK_DIVIDER(clk) \
+	DT_PROP_OR(CLOCK_NODEID(clk), clock_div, 1) - 1
 
 static const osc_config_t oscConfig = {
 	.freq = CONFIG_OSC_XTAL0_FREQ,
@@ -36,8 +37,9 @@ static const osc_config_t oscConfig = {
 };
 
 static const sim_clock_config_t simConfig = {
-	.er32kSrc = ER32KSEL_OSC32KCLK,
-	.clkdiv1 = SIM_CLKDIV1_OUTDIV4(CLKDIV1_DIVBY2),
+	.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
+	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CLOCK_DIVIDER(core_clk)) |
+		   SIM_CLKDIV1_OUTDIV4(CLOCK_DIVIDER(flash_clk)),
 };
 
 /* This function comes from the MCUX SDK:
@@ -45,7 +47,7 @@ static const sim_clock_config_t simConfig = {
  */
 static void CLOCK_SYS_FllStableDelay(void)
 {
-	u32_t i = 30000U;
+	uint32_t i = 30000U;
 	while (i--) {
 		__NOP();
 	}
@@ -66,12 +68,19 @@ static ALWAYS_INLINE void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if CONFIG_UART_MCUX_LPUART_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
 	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
+#endif
+
+#if defined(CONFIG_PWM) && \
+	(DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay) || \
+	 DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay) || \
+	 DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay))
+	CLOCK_SetTpmClock(TPMSRC_MCGPLLCLK);
 #endif
 }
 
-static int kwx_init(struct device *arg)
+static int kwx_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

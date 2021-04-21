@@ -30,18 +30,25 @@
 
 #define NON_NULL_PTR          ((void *)0x12345678)
 
+#ifdef CONFIG_COVERAGE
+#define OFFLOAD_WORKQUEUE_STACK_SIZE 4096
+#else
+#define OFFLOAD_WORKQUEUE_STACK_SIZE 1024
+#endif
+
+#define OFFLOAD_WORKQUEUE_PRIORITY	(-1)
 static struct k_work_q offload_work_q;
 static K_THREAD_STACK_DEFINE(offload_work_q_stack,
-			     CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE);
+			     OFFLOAD_WORKQUEUE_STACK_SIZE);
 
 struct fifo_data {
 	intptr_t reserved;
-	u32_t data;
+	uint32_t data;
 };
 
 struct lifo_data {
 	intptr_t reserved;
-	u32_t data;
+	uint32_t data;
 };
 
 struct offload_work {
@@ -70,8 +77,8 @@ struct lifo_data lifo_test_data[4] = {
 	{ 0, LIFO_TEST_END + 3 }, { 0, LIFO_TEST_END + 4 }
 };
 
-static u32_t timer_start_tick;
-static u32_t timer_end_tick;
+static uint32_t timer_start_tick;
+static uint32_t timer_end_tick;
 static void *timer_data;
 
 static int __noinit coop_high_state;
@@ -81,14 +88,14 @@ static int __noinit task_low_state;
 
 static int __noinit counter;
 
-static inline void *my_fifo_get(struct k_fifo *fifo, s32_t timeout)
+static inline void *my_fifo_get(struct k_fifo *fifo, int32_t timeout)
 {
-	return k_fifo_get(fifo, timeout);
+	return k_fifo_get(fifo, K_MSEC(timeout));
 }
 
-static inline void *my_lifo_get(struct k_lifo *lifo, s32_t timeout)
+static inline void *my_lifo_get(struct k_lifo *lifo, int32_t timeout)
 {
-	return k_lifo_get(lifo, timeout);
+	return k_lifo_get(lifo, K_MSEC(timeout));
 }
 
 static int increment_counter(void)
@@ -114,9 +121,9 @@ static void sync_threads(struct k_work *work)
 
 }
 
-static void fifo_tests(s32_t timeout, volatile int *state,
-		       void *(*get)(struct k_fifo *, s32_t),
-		       int (*sem_take)(struct k_sem *, s32_t))
+static void fifo_tests(int32_t timeout, volatile int *state,
+		       void *(*get)(struct k_fifo *, int32_t),
+		       int (*sem_take)(struct k_sem *, k_timeout_t))
 {
 	struct fifo_data *data;
 
@@ -152,9 +159,9 @@ static void fifo_tests(s32_t timeout, volatile int *state,
 	sem_take(&end_test_sem, K_FOREVER);
 }
 
-static void lifo_tests(s32_t timeout, volatile int *state,
-		       void *(*get)(struct k_lifo *, s32_t),
-		       int (*sem_take)(struct k_sem *, s32_t))
+static void lifo_tests(int32_t timeout, volatile int *state,
+		       void *(*get)(struct k_lifo *, int32_t),
+		       int (*sem_take)(struct k_sem *, k_timeout_t))
 {
 	struct lifo_data *data;
 
@@ -196,7 +203,7 @@ static void timer_tests(void)
 
 	timer_start_tick = k_uptime_get_32();
 
-	k_timer_start(&timer, NUM_SECONDS(1), K_NO_WAIT);
+	k_timer_start(&timer, K_SECONDS(1), K_NO_WAIT);
 
 	if (k_timer_status_sync(&timer)) {
 		timer_data = timer.user_data;
@@ -244,7 +251,7 @@ void task_high(void)
 	k_work_q_start(&offload_work_q,
 		       offload_work_q_stack,
 		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
-		       CONFIG_OFFLOAD_WORKQUEUE_PRIORITY);
+		       OFFLOAD_WORKQUEUE_PRIORITY);
 
 	counter = SEM_TEST_START;
 
@@ -314,7 +321,7 @@ void test_pending_fifo(void)
 		      (task_low_state != FIFO_TEST_START), NULL);
 
 	/* Give waiting threads time to time-out */
-	k_sleep(NUM_SECONDS(2));
+	k_sleep(K_SECONDS(2));
 
 	/*
 	 * Verify that the cooperative and preemptible threads timed-out in
@@ -386,7 +393,7 @@ void test_pending_lifo(void)
 		      (task_low_state != LIFO_TEST_START), NULL);
 
 	/* Give waiting threads time to time-out */
-	k_sleep(NUM_SECONDS(2));
+	k_sleep(K_SECONDS(2));
 
 	TC_PRINT("Testing lifos time-out in correct order ...\n");
 	zassert_false((task_low_state != LIFO_TEST_START + 1) ||
@@ -449,7 +456,7 @@ void test_pending_timer(void)
 	zassert_equal(timer_end_tick, 0, "Task did not pend on timer");
 
 	/* Let the timer expire */
-	k_sleep(NUM_SECONDS(2));
+	k_sleep(K_SECONDS(2));
 
 	zassert_false((timer_end_tick < timer_start_tick + NUM_SECONDS(1)),
 			"Task waiting on timer error");
@@ -474,7 +481,7 @@ void test_main(void)
 }
 
 K_THREAD_DEFINE(TASK_LOW, PREEM_STACKSIZE, task_low, NULL, NULL, NULL,
-		7, 0, K_NO_WAIT);
+		7, 0, 0);
 
 K_THREAD_DEFINE(TASK_HIGH, PREEM_STACKSIZE, task_high, NULL, NULL, NULL,
-		5, 0, K_NO_WAIT);
+		5, 0, 0);

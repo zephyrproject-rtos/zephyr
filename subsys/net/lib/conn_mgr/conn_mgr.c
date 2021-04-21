@@ -16,9 +16,15 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <conn_mgr.h>
 
-u16_t iface_states[CONN_MGR_IFACE_MAX];
+#if IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define THREAD_PRIORITY K_PRIO_PREEMPT(7)
+#endif
 
-K_SEM_DEFINE(conn_mgr_lock, 1, UINT_MAX);
+uint16_t iface_states[CONN_MGR_IFACE_MAX];
+
+K_SEM_DEFINE(conn_mgr_lock, 1, K_SEM_MAX_LIMIT);
 
 static enum net_conn_mgr_state conn_mgr_iface_status(int index)
 {
@@ -63,11 +69,17 @@ static void conn_mgr_notify_status(int index)
 {
 	struct net_if *iface = net_if_get_by_index(index + 1);
 
+	if (iface == NULL) {
+		return;
+	}
+
 	if (iface_states[index] & NET_STATE_CONNECTED) {
-		NET_DBG("Iface %p connected", iface);
+		NET_DBG("Iface %d (%p) connected",
+			net_if_get_by_iface(iface), iface);
 		net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, iface);
 	} else {
-		NET_DBG("Iface %p disconnected", iface);
+		NET_DBG("Iface %d (%p) disconnected",
+			net_if_get_by_iface(iface), iface);
 		net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, iface);
 	}
 }
@@ -78,6 +90,11 @@ static void conn_mgr_act_on_changes(void)
 
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
 		enum net_conn_mgr_state state;
+
+		if (iface_states[idx] == 0) {
+			/* This interface is not used */
+			continue;
+		}
 
 		if (!(iface_states[idx] & NET_STATE_CHANGED)) {
 			continue;
@@ -155,7 +172,7 @@ static void conn_mgr_init_cb(struct net_if *iface, void *user_data)
 	conn_mgr_initial_state(iface);
 }
 
-static void conn_mgr(void)
+static void conn_mgr_handler(void)
 {
 	conn_mgr_init_events_handler();
 
@@ -170,9 +187,9 @@ static void conn_mgr(void)
 	}
 }
 
-K_THREAD_DEFINE(conn_mgr_thread, CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
-		(k_thread_entry_t)conn_mgr, NULL, NULL, NULL,
-		K_PRIO_COOP(2), 0, K_NO_WAIT);
+K_THREAD_DEFINE(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
+		(k_thread_entry_t)conn_mgr_handler, NULL, NULL, NULL,
+		THREAD_PRIORITY, 0, 0);
 
 void net_conn_mgr_resend_status(void)
 {
@@ -183,11 +200,17 @@ void net_conn_mgr_resend_status(void)
 	}
 }
 
-static int conn_mgr_init(struct device *dev)
+static int conn_mgr_init(const struct device *dev)
 {
+	int i;
+
 	ARG_UNUSED(dev);
 
-	k_thread_start(conn_mgr_thread);
+	for (i = 0; i < ARRAY_SIZE(iface_states); i++) {
+		iface_states[i] = 0;
+	}
+
+	k_thread_start(conn_mgr);
 
 	return 0;
 }

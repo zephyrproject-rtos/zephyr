@@ -5,7 +5,10 @@ set_ifndef(C++ g++)
 # Configures CMake for using GCC, this script is re-used by several
 # GCC-based toolchains
 
-find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+if(${CMAKE_C_COMPILER} STREQUAL CMAKE_C_COMPILER-NOTFOUND)
+  message(FATAL_ERROR "C compiler ${CROSS_COMPILE}${CC} not found - Please check your toolchain installation")
+endif()
 
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler ${CROSS_COMPILE}${C++})
@@ -19,7 +22,7 @@ else()
     set(cplusplus_compiler ${CMAKE_C_COMPILER})
   endif()
 endif()
-find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 set(NOSTDINC "")
 
@@ -44,18 +47,18 @@ include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
 if("${ARCH}" STREQUAL "arm")
   include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
+elseif("${ARCH}" STREQUAL "arm64")
+  include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm64.cmake)
 elseif("${ARCH}" STREQUAL "arc")
   list(APPEND TOOLCHAIN_C_FLAGS
     -mcpu=${GCC_M_CPU}
     )
 elseif("${ARCH}" STREQUAL "riscv")
-  if(CONFIG_64BIT)
-    list(APPEND TOOLCHAIN_C_FLAGS -mabi=lp64 -march=rv64imac -mcmodel=medany)
-  else()
-    list(APPEND TOOLCHAIN_C_FLAGS -mabi=ilp32 -march=rv32ima)
-  endif()
+  include(${CMAKE_CURRENT_LIST_DIR}/target_riscv.cmake)
 elseif("${ARCH}" STREQUAL "x86")
   include(${CMAKE_CURRENT_LIST_DIR}/target_x86.cmake)
+elseif("${ARCH}" STREQUAL "sparc")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_sparc.cmake)
 endif()
 
 if(NOT no_libgcc)
@@ -86,7 +89,6 @@ if(SYSROOT_DIR)
     )
 
   set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
-  set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/include)
 endif()
 
 # For CMake to be able to test if a compiler flag is supported by the
@@ -115,17 +117,3 @@ list(APPEND CMAKE_REQUIRED_FLAGS
   -Wl,--entry=0 # Set an entry point to avoid a warning
   )
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
-
-# Load toolchain_cc-family macros
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_freestanding.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_fortify.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_canaries.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_optimizations.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_cpp.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_asm.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_baremetal.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_warnings.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_imacros.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_base.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_coverage.cmake)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_sanitizers.cmake)

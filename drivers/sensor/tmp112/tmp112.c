@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_tmp112
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <sys/byteorder.h>
@@ -15,7 +17,7 @@
 
 LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 
-#define TMP112_I2C_ADDRESS		DT_INST_0_TI_TMP112_BASE_ADDRESS
+#define TMP112_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
 #define TMP112_REG_TEMPERATURE		0x00
 #define TMP112_D0_BIT			BIT(0)
@@ -29,15 +31,15 @@ LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 #define TMP112_TEMP_SCALE		62500
 
 struct tmp112_data {
-	struct device *i2c;
-	s16_t sample;
+	const struct device *i2c;
+	int16_t sample;
 };
 
 static int tmp112_reg_read(struct tmp112_data *drv_data,
-			   u8_t reg, u16_t *val)
+			   uint8_t reg, uint16_t *val)
 {
 	if (i2c_burst_read(drv_data->i2c, TMP112_I2C_ADDRESS,
-			   reg, (u8_t *) val, 2) < 0) {
+			   reg, (uint8_t *) val, 2) < 0) {
 		return -EIO;
 	}
 
@@ -47,19 +49,19 @@ static int tmp112_reg_read(struct tmp112_data *drv_data,
 }
 
 static int tmp112_reg_write(struct tmp112_data *drv_data,
-			    u8_t reg, u16_t val)
+			    uint8_t reg, uint16_t val)
 {
-	u16_t val_be = sys_cpu_to_be16(val);
+	uint16_t val_be = sys_cpu_to_be16(val);
 
 	return i2c_burst_write(drv_data->i2c, TMP112_I2C_ADDRESS,
-			       reg, (u8_t *)&val_be, 2);
+			       reg, (uint8_t *)&val_be, 2);
 }
 
-static int tmp112_reg_update(struct tmp112_data *drv_data, u8_t reg,
-			     u16_t mask, u16_t val)
+static int tmp112_reg_update(struct tmp112_data *drv_data, uint8_t reg,
+			     uint16_t mask, uint16_t val)
 {
-	u16_t old_val = 0U;
-	u16_t new_val;
+	uint16_t old_val = 0U;
+	uint16_t new_val;
 
 	if (tmp112_reg_read(drv_data, reg, &old_val) < 0) {
 		return -EIO;
@@ -71,14 +73,14 @@ static int tmp112_reg_update(struct tmp112_data *drv_data, u8_t reg,
 	return tmp112_reg_write(drv_data, reg, new_val);
 }
 
-static int tmp112_attr_set(struct device *dev,
+static int tmp112_attr_set(const struct device *dev,
 			   enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	struct tmp112_data *drv_data = dev->driver_data;
-	s64_t value;
-	u16_t cr;
+	struct tmp112_data *drv_data = dev->data;
+	int64_t value;
+	uint16_t cr;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
@@ -147,10 +149,11 @@ static int tmp112_attr_set(struct device *dev,
 	return 0;
 }
 
-static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int tmp112_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
-	struct tmp112_data *drv_data = dev->driver_data;
-	u16_t val;
+	struct tmp112_data *drv_data = dev->data;
+	uint16_t val;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
@@ -159,26 +162,26 @@ static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	if (val & TMP112_D0_BIT) {
-		drv_data->sample = arithmetic_shift_right((s16_t)val, 3);
+		drv_data->sample = arithmetic_shift_right((int16_t)val, 3);
 	} else {
-		drv_data->sample = arithmetic_shift_right((s16_t)val, 4);
+		drv_data->sample = arithmetic_shift_right((int16_t)val, 4);
 	}
 
 	return 0;
 }
 
-static int tmp112_channel_get(struct device *dev,
-		enum sensor_channel chan,
-		struct sensor_value *val)
+static int tmp112_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
+			      struct sensor_value *val)
 {
-	struct tmp112_data *drv_data = dev->driver_data;
-	s32_t uval;
+	struct tmp112_data *drv_data = dev->data;
+	int32_t uval;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 
-	uval = (s32_t)drv_data->sample * TMP112_TEMP_SCALE;
+	uval = (int32_t)drv_data->sample * TMP112_TEMP_SCALE;
 	val->val1 = uval / 1000000;
 	val->val2 = uval % 1000000;
 
@@ -191,14 +194,14 @@ static const struct sensor_driver_api tmp112_driver_api = {
 	.channel_get = tmp112_channel_get,
 };
 
-int tmp112_init(struct device *dev)
+int tmp112_init(const struct device *dev)
 {
-	struct tmp112_data *drv_data = dev->driver_data;
+	struct tmp112_data *drv_data = dev->data;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_TI_TMP112_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-			    DT_INST_0_TI_TMP112_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -207,5 +210,5 @@ int tmp112_init(struct device *dev)
 
 static struct tmp112_data tmp112_driver;
 
-DEVICE_AND_API_INIT(tmp112, DT_INST_0_TI_TMP112_LABEL, tmp112_init, &tmp112_driver,
+DEVICE_DT_INST_DEFINE(0, tmp112_init, device_pm_control_nop, &tmp112_driver,
 	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tmp112_driver_api);

@@ -18,6 +18,8 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include <errno.h>
 #include <ti/drivers/net/wifi/simplelink.h>
 #include <ti/drivers/net/wifi/source/driver.h>
+#include <ti/net/slnetutils.h>
+#include <ti/net/slnetif.h>
 #include "simplelink_support.h"
 
 #include "sockets_internal.h"
@@ -30,9 +32,6 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
  */
 #define SD_TO_OBJ(sd) ((void *)(sd + 1))
 #define OBJ_TO_SD(obj) (((int)obj) - 1)
-
-/* Mutex for getaddrinfo() calls: */
-K_MUTEX_DEFINE(ga_mutex);
 
 static int simplelink_socket_accept(void *obj, struct sockaddr *addr,
 			     socklen_t *addrlen);
@@ -275,8 +274,9 @@ exit:
 	return retval;
 }
 
-static int simplelink_close(int sd)
+static int simplelink_close(void *obj)
 {
+	int sd = OBJ_TO_SD(obj);
 	int retval;
 
 	retval = sl_Close(sd);
@@ -372,7 +372,7 @@ static void translate_sl_to_z_addr(SlSockAddr_t *sl_addr,
 			z_sockaddr_in6->sin6_family = AF_INET6;
 			z_sockaddr_in6->sin6_port = sl_addr_in6->sin6_port;
 			z_sockaddr_in6->sin6_scope_id =
-				(u8_t)sl_addr_in6->sin6_scope_id;
+				(uint8_t)sl_addr_in6->sin6_scope_id;
 			memcpy(z_sockaddr_in6->sin6_addr.s6_addr,
 			       sl_addr_in6->sin6_addr._S6_un._S6_u32,
 			       sizeof(z_sockaddr_in6->sin6_addr.s6_addr));
@@ -526,7 +526,7 @@ exit:
 
 static const struct socket_op_vtable simplelink_socket_fd_op_vtable;
 
-static int simplelink_poll(struct pollfd *fds, int nfds, int msecs)
+static int simplelink_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 {
 	int max_sd = 0;
 	struct SlTimeval_t tv, *ptv;
@@ -541,7 +541,7 @@ static int simplelink_poll(struct pollfd *fds, int nfds, int msecs)
 	}
 
 	/* Convert time to SlTimeval struct values: */
-	if (msecs == K_FOREVER) {
+	if (msecs == SYS_FOREVER_MS) {
 		ptv = NULL;
 	} else {
 		tv.tv_sec = msecs / ONE_THOUSAND;
@@ -571,10 +571,10 @@ static int simplelink_poll(struct pollfd *fds, int nfds, int msecs)
 				goto exit;
 			}
 		}
-		if (fds[i].events & POLLIN) {
+		if (fds[i].events & ZSOCK_POLLIN) {
 			SL_SOCKET_FD_SET(sd, &rfds);
 		}
-		if (fds[i].events & POLLOUT) {
+		if (fds[i].events & ZSOCK_POLLOUT) {
 			SL_SOCKET_FD_SET(sd, &wfds);
 		}
 		if (sd > max_sd) {
@@ -594,10 +594,10 @@ static int simplelink_poll(struct pollfd *fds, int nfds, int msecs)
 					ENOTSUP);
 				sd = OBJ_TO_SD(obj);
 				if (SL_SOCKET_FD_ISSET(sd, &rfds)) {
-					fds[i].revents |= POLLIN;
+					fds[i].revents |= ZSOCK_POLLIN;
 				}
 				if (SL_SOCKET_FD_ISSET(sd, &wfds)) {
-					fds[i].revents |= POLLOUT;
+					fds[i].revents |= ZSOCK_POLLOUT;
 				}
 			}
 		}
@@ -723,7 +723,7 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 				 * verification and it is indeed
 				 * performed when the cert is set.
 				 */
-				if (*(u32_t *)optval != 2U) {
+				if (*(uint32_t *)optval != 2U) {
 					retval = slcb_SetErrno(ENOTSUP);
 					goto exit;
 				} else {
@@ -753,7 +753,7 @@ static int simplelink_setsockopt(void *obj, int level, int optname,
 				/* if user wishes to have TCP_NODELAY = FALSE,
 				 * we return EINVAL and fail in the cases below.
 				 */
-				if (*(u32_t *)optval) {
+				if (*(uint32_t *)optval) {
 					retval = 0;
 					goto exit;
 				}
@@ -850,9 +850,9 @@ static int handle_recv_flags(int sd, int flags, bool set, int *nb_enabled)
 	SlSocklen_t optlen = sizeof(SlSockNonblocking_t);
 	SlSockNonblocking_t enableOption;
 
-	if (flags & MSG_PEEK) {
+	if (flags & ZSOCK_MSG_PEEK) {
 		retval = ENOTSUP;
-	} else if (flags & MSG_DONTWAIT) {
+	} else if (flags & ZSOCK_MSG_DONTWAIT) {
 		if (set) {
 			/* Get previous state, to restore later: */
 			sl_GetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
@@ -946,7 +946,7 @@ static ssize_t simplelink_sendto(void *obj, const void *buf, size_t len,
 			goto exit;
 		}
 
-		retval = sl_SendTo(sd, buf, (u16_t)len, flags,
+		retval = sl_SendTo(sd, buf, (uint16_t)len, flags,
 				   sl_addr, sl_addrlen);
 	} else {
 		retval = (ssize_t)sl_Send(sd, buf, len, flags);
@@ -967,106 +967,140 @@ static ssize_t simplelink_sendmsg(void *obj, const struct msghdr *msg,
 	return -1;
 }
 
-/*
- * Later SimpleLink SDK versions implement the full getaddrinfo semantics,
- * returning potentially multiple IP addresses.
- * This version implements a simple gethostbyname() API for client only.
- */
-static int simplelink_getaddrinfo(const char *node, const char *service,
-				  const struct zsock_addrinfo *hints,
-				  struct zsock_addrinfo **res)
+/* Adds address info entry to a list */
+static int set_addr_info(const struct SlNetUtil_addrInfo_t *sl_ai,
+			 struct zsock_addrinfo **res)
 {
-	_u8 sl_family = SL_AF_INET;
-	unsigned long port = 0;
-	int socktype = SOCK_STREAM;
-	int proto = IPPROTO_TCP;
 	struct zsock_addrinfo *ai;
 	struct sockaddr *ai_addr;
-	_i16 retval;
-	_u32 ipaddr[4];
+	int retval = 0;
 
-	/* Check args: */
-	if (!node) {
-		retval = EAI_NONAME;
-		goto exit;
-	}
-	if (service) {
-		port = strtol(service, NULL, 10);
-		if (port < 1 || port > USHRT_MAX) {
-			retval = EAI_SERVICE;
-			goto exit;
-		}
-	}
-	if (!res) {
-		retval = EAI_NONAME;
-		goto exit;
-	}
-
-	/* See if any hints for family; otherwise, default to AF_INET. */
-	if (hints) {
-		/* Note: SimpleLink SDK doesn't support AF_UNSPEC: */
-		sl_family = (hints->ai_family == AF_INET6 ?
-			     SL_AF_INET6 : SL_AF_INET);
-	}
-
-	/* Now, try to resolve host name: */
-	k_mutex_lock(&ga_mutex, K_FOREVER);
-	retval = sl_NetAppDnsGetHostByName((signed char *)node, strlen(node),
-					   ipaddr, sl_family);
-	k_mutex_unlock(&ga_mutex);
-
-	if (retval < 0) {
-		LOG_ERR("Could not resolve name: %s, retval: %d",
-			    node, retval);
-		retval = EAI_NONAME;
-		goto exit;
-	}
-
-	/* Allocate out res (addrinfo) struct.	Just one. */
-	*res = calloc(1, sizeof(struct zsock_addrinfo));
-	ai = *res;
+	ai = calloc(1, sizeof(struct zsock_addrinfo));
 	if (!ai) {
-		retval = EAI_MEMORY;
+		retval = DNS_EAI_MEMORY;
 		goto exit;
 	} else {
 		/* Now, alloc the embedded sockaddr struct: */
 		ai_addr = calloc(1, sizeof(struct sockaddr));
 		if (!ai_addr) {
-			retval = EAI_MEMORY;
-			free(*res);
+			retval = DNS_EAI_MEMORY;
+			free(ai);
 			goto exit;
 		}
 	}
 
 	/* Now, fill in the fields of res (addrinfo struct): */
-	ai->ai_family = (sl_family == SL_AF_INET6 ? AF_INET6 : AF_INET);
-	if (hints) {
-		socktype = hints->ai_socktype;
-	}
-	ai->ai_socktype = socktype;
-
-	if (socktype == SOCK_DGRAM) {
-		proto = IPPROTO_UDP;
-	}
-	ai->ai_protocol = proto;
+	ai->ai_family = (sl_ai->ai_family == SL_AF_INET6 ? AF_INET6 : AF_INET);
+	ai->ai_socktype = (sl_ai->ai_socktype == SLNETSOCK_SOCK_DGRAM ?
+		SOCK_DGRAM : SOCK_STREAM);
+	ai->ai_protocol = (sl_ai->ai_protocol == SLNETSOCK_PROTO_UDP ?
+		IPPROTO_UDP : IPPROTO_TCP);
 
 	/* Fill sockaddr struct fields based on family: */
 	if (ai->ai_family == AF_INET) {
+		SlNetSock_AddrIn_t *sl_addr =
+			(SlNetSock_AddrIn_t *)sl_ai->ai_addr;
+
 		net_sin(ai_addr)->sin_family = ai->ai_family;
-		net_sin(ai_addr)->sin_addr.s_addr = htonl(ipaddr[0]);
-		net_sin(ai_addr)->sin_port = htons(port);
+		net_sin(ai_addr)->sin_addr.s_addr = sl_addr->sin_addr.s_addr;
+		net_sin(ai_addr)->sin_port = sl_addr->sin_port;
 		ai->ai_addrlen = sizeof(struct sockaddr_in);
 	} else {
+		SlNetSock_AddrIn6_t *sl_addr =
+			(SlNetSock_AddrIn6_t *)sl_ai->ai_addr;
+
 		net_sin6(ai_addr)->sin6_family = ai->ai_family;
-		net_sin6(ai_addr)->sin6_addr.s6_addr32[0] = htonl(ipaddr[0]);
-		net_sin6(ai_addr)->sin6_addr.s6_addr32[1] = htonl(ipaddr[1]);
-		net_sin6(ai_addr)->sin6_addr.s6_addr32[2] = htonl(ipaddr[2]);
-		net_sin6(ai_addr)->sin6_addr.s6_addr32[3] = htonl(ipaddr[3]);
-		net_sin6(ai_addr)->sin6_port = htons(port);
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[0] =
+			sl_addr->sin6_addr._S6_un._S6_u32[0];
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[1] =
+			sl_addr->sin6_addr._S6_un._S6_u32[1];
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[2] =
+			sl_addr->sin6_addr._S6_un._S6_u32[2];
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[3] =
+			sl_addr->sin6_addr._S6_un._S6_u32[3];
+		net_sin6(ai_addr)->sin6_port = sl_addr->sin6_port;
 		ai->ai_addrlen = sizeof(struct sockaddr_in6);
 	}
 	ai->ai_addr = ai_addr;
+	ai->ai_next = *res;
+	*res = ai;
 
+exit:
+	return retval;
+}
+
+static int simplelink_getaddrinfo(const char *node, const char *service,
+				  const struct zsock_addrinfo *hints,
+				  struct zsock_addrinfo **res)
+{
+	int32_t retval;
+	struct SlNetUtil_addrInfo_t sl_hints;
+	struct SlNetUtil_addrInfo_t *sl_res, *sl_ai;
+
+	/* Initialize sl_hints to the defaults */
+	memset(&sl_hints, 0, sizeof(sl_hints));
+
+	/* Check args: */
+	if (!res) {
+		retval = DNS_EAI_NONAME;
+		goto exit;
+	}
+
+	if (hints) {
+		/*
+		 * SlNetUtil only supports AI_NUMERICHOST and AI_PASSIVE, so
+		 * the rest are ignored.
+		 */
+		sl_hints.ai_flags |= ((hints->ai_flags & AI_PASSIVE) ?
+			SLNETUTIL_AI_PASSIVE : 0);
+		sl_hints.ai_flags |= ((hints->ai_flags & AI_NUMERICHOST) ?
+			SLNETUTIL_AI_NUMERICHOST : 0);
+		if (hints->ai_family == AF_UNSPEC) {
+			sl_hints.ai_family = SLNETSOCK_AF_UNSPEC;
+		} else {
+			sl_hints.ai_family = (hints->ai_family == AF_INET6 ?
+				SLNETSOCK_AF_INET6 : SLNETSOCK_AF_INET);
+		}
+		if (hints->ai_socktype == 0) {
+			sl_hints.ai_socktype = 0;
+		} else {
+			sl_hints.ai_socktype =
+				(hints->ai_socktype == SOCK_DGRAM ?
+				SLNETSOCK_SOCK_DGRAM : SLNETSOCK_SOCK_STREAM);
+		}
+		if (hints->ai_protocol == 0) {
+			sl_hints.ai_protocol = 0;
+		} else {
+			sl_hints.ai_protocol =
+				(hints->ai_protocol == IPPROTO_UDP ?
+				SLNETSOCK_PROTO_UDP : SLNETSOCK_PROTO_TCP);
+		}
+
+	}
+
+	/* Now, try to resolve host name: */
+	retval = SlNetUtil_getAddrInfo(SLNETIF_ID_1, node,
+		service, &sl_hints, &sl_res);
+
+	if (retval < 0) {
+		LOG_ERR("Could not resolve name: %s, retval: %d",
+			    node, retval);
+		retval = DNS_EAI_NONAME;
+		goto exit;
+	}
+
+	sl_ai = sl_res;
+	*res = NULL;
+	while (sl_ai != NULL) {
+		retval = set_addr_info(sl_ai, res);
+		if (retval < 0) {
+			LOG_ERR("Unable to set address info, retval: %d",
+				retval);
+			goto exit;
+		}
+		sl_ai = sl_ai->ai_next;
+	}
+	SlNetUtil_freeAddrInfo(sl_res);
 exit:
 	return retval;
 }
@@ -1123,10 +1157,6 @@ static int simplelink_ioctl(void *obj, unsigned int request, va_list args)
 	int sd = OBJ_TO_SD(obj);
 
 	switch (request) {
-	/* Handle close specifically. */
-	case ZFD_IOCTL_CLOSE:
-		return simplelink_close(sd);
-
 	case ZFD_IOCTL_POLL_PREPARE:
 		return -EXDEV;
 
@@ -1168,6 +1198,7 @@ static const struct socket_op_vtable simplelink_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = simplelink_read,
 		.write = simplelink_write,
+		.close = simplelink_close,
 		.ioctl = simplelink_ioctl,
 	},
 	.bind = simplelink_bind,
@@ -1239,7 +1270,6 @@ NET_SOCKET_REGISTER(simplelink, AF_UNSPEC, simplelink_is_supported,
 
 void simplelink_sockets_init(void)
 {
-	k_mutex_init(&ga_mutex);
 }
 
 const struct socket_dns_offload simplelink_dns_ops = {

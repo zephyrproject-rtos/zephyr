@@ -22,7 +22,7 @@
 
 #endif
 
-#define PORT 4242
+#define BIND_PORT 4242
 
 void main(void)
 {
@@ -39,7 +39,7 @@ void main(void)
 
 	bind_addr.sin_family = AF_INET;
 	bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	bind_addr.sin_port = htons(PORT);
+	bind_addr.sin_port = htons(BIND_PORT);
 
 	if (bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) < 0) {
 		printf("error: bind: %d\n", errno);
@@ -51,7 +51,8 @@ void main(void)
 		exit(1);
 	}
 
-	printf("Single-threaded TCP echo server waits for a connection on port %d...\n", PORT);
+	printf("Single-threaded TCP echo server waits for a connection on "
+	       "port %d...\n", BIND_PORT);
 
 	while (1) {
 		struct sockaddr_in client_addr;

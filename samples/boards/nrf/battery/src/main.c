@@ -12,18 +12,15 @@
 #include <zephyr.h>
 #include "battery.h"
 
-/** A discharge curve calibrated from LiPo batteries.
- *
- * Specifically ones like [Adafruit 3.7v 2000
- * mAh](https://www.adafruit.com/product/2011)
- */
-static const struct battery_level_point lipo[] = {
-
-	/* "Curve" here eyeballed from captured data for a full load
-	 * that started with a charge of 3.96 V and dropped about
-	 * linearly to 3.58 V over 15 hours.  It then dropped rapidly
-	 * to 3.10 V over one hour, at which point it stopped
-	 * transmitting.
+/** A discharge curve specific to the power source. */
+static const struct battery_level_point levels[] = {
+#if DT_NODE_HAS_PROP(DT_INST(0, voltage_divider), io_channels)
+	/* "Curve" here eyeballed from captured data for the [Adafruit
+	 * 3.7v 2000 mAh](https://www.adafruit.com/product/2011) LIPO
+	 * under full load that started with a charge of 3.96 V and
+	 * dropped about linearly to 3.58 V over 15 hours.  It then
+	 * dropped rapidly to 3.10 V over one hour, at which point it
+	 * stopped transmitting.
 	 *
 	 * Based on eyeball comparisons we'll say that 15/16 of life
 	 * goes between 3.95 and 3.55 V, and 1/16 goes between 3.55 V
@@ -33,12 +30,17 @@ static const struct battery_level_point lipo[] = {
 	{ 10000, 3950 },
 	{ 625, 3550 },
 	{ 0, 3100 },
+#else
+	/* Linear from maximum voltage to minimum voltage. */
+	{ 10000, 3600 },
+	{ 0, 1700 },
+#endif
 };
 
 static const char *now_str(void)
 {
 	static char buf[16]; /* ...HH:MM:SS.MMM */
-	u32_t now = k_uptime_get_32();
+	uint32_t now = k_uptime_get_32();
 	unsigned int ms = now % MSEC_PER_SEC;
 	unsigned int s;
 	unsigned int min;
@@ -74,7 +76,7 @@ void main(void)
 			break;
 		}
 
-		unsigned int batt_pptt = battery_level_pptt(batt_mV, lipo);
+		unsigned int batt_pptt = battery_level_pptt(batt_mV, levels);
 
 		printk("[%s]: %d mV; %u pptt\n", now_str(),
 		       batt_mV, batt_pptt);

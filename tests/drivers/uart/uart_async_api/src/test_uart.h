@@ -19,13 +19,25 @@
 
 /* RX and TX pins have to be connected together*/
 
-#if defined(CONFIG_BOARD_NRF52840_PCA10056)
-#define UART_DEVICE_NAME DT_UART_0_NAME
-#elif defined(CONFIG_BOARD_NRF9160_PCA10090)
-#define UART_DEVICE_NAME DT_UART_1_NAME
+#if defined(CONFIG_BOARD_NRF52840DK_NRF52840)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(uart0))
+#elif defined(CONFIG_BOARD_NRF9160DK_NRF9160)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(uart1))
+#elif defined(CONFIG_BOARD_ATSAMD21_XPRO)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(sercom1))
+#elif defined(CONFIG_BOARD_ATSAMR21_XPRO)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(sercom3))
+#elif defined(CONFIG_BOARD_ATSAME54_XPRO)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(sercom1))
+#elif defined(CONFIG_BOARD_NUCLEO_L4R5ZI)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(usart3))
+#elif defined(CONFIG_BOARD_DISCO_L475_IOT1)
+#define UART_DEVICE_NAME DT_LABEL(DT_NODELABEL(uart4))
 #else
 #define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
 #endif
+
+void init_test(void);
 
 void test_single_read(void);
 void test_chained_read(void);

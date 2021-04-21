@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT opencores_spi_simple
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_oc_simple);
@@ -15,7 +17,7 @@ LOG_MODULE_REGISTER(spi_oc_simple);
 #include "spi_oc_simple.h"
 
 /* Bit 5:4 == ESPR, Bit 1:0 == SPR */
-u8_t DIVIDERS[] = { 0x00,       /*   2  */
+uint8_t DIVIDERS[] = { 0x00,       /*   2  */
 		    0x01,       /*   4  */
 		    0x10,       /*   8  */
 		    0x02,       /*  16  */
@@ -32,7 +34,7 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 				struct spi_oc_simple_data *spi,
 				const struct spi_config *config)
 {
-	u8_t spcr = 0U;
+	uint8_t spcr = 0U;
 	int i;
 
 	if (spi_context_configured(&spi->ctx, config)) {
@@ -83,22 +85,22 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 	return 0;
 }
 
-int spi_oc_simple_transceive(struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs)
+int spi_oc_simple_transceive(const struct device *dev,
+			     const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs,
+			     const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_oc_simple_cfg *info = dev->config->config_info;
+	const struct spi_oc_simple_cfg *info = dev->config;
 	struct spi_oc_simple_data *spi = SPI_OC_SIMPLE_DATA(dev);
 	struct spi_context *ctx = &spi->ctx;
 
-	u8_t rx_byte;
+	uint8_t rx_byte;
 	size_t i;
 	size_t cur_xfer_len;
 	int rc;
 
 	/* Lock the SPI Context */
-	spi_context_lock(ctx, false, NULL);
+	spi_context_lock(ctx, false, NULL, config);
 
 	spi_oc_simple_configure(info, spi, config);
 
@@ -156,17 +158,18 @@ int spi_oc_simple_transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_oc_simple_transceive_async(struct device *dev,
-				       const struct spi_config *config,
-				       const struct spi_buf_set *tx_bufs,
-				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *async)
+static int spi_oc_simple_transceive_async(const struct device *dev,
+					  const struct spi_config *config,
+					  const struct spi_buf_set *tx_bufs,
+					  const struct spi_buf_set *rx_bufs,
+					  struct k_poll_signal *async)
 {
 	return -ENOTSUP;
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-int spi_oc_simple_release(struct device *dev, const struct spi_config *config)
+int spi_oc_simple_release(const struct device *dev,
+			  const struct spi_config *config)
 {
 	spi_context_unlock_unconditionally(&SPI_OC_SIMPLE_DATA(dev)->ctx);
 	return 0;
@@ -180,9 +183,9 @@ static struct spi_driver_api spi_oc_simple_api = {
 #endif /* CONFIG_SPI_ASYNC */
 };
 
-int spi_oc_simple_init(struct device *dev)
+int spi_oc_simple_init(const struct device *dev)
 {
-	const struct spi_oc_simple_cfg *info = dev->config->config_info;
+	const struct spi_oc_simple_cfg *info = dev->config;
 
 	/* Clear chip selects */
 	sys_write8(0, SPI_OC_SIMPLE_SPSS(info));
@@ -201,42 +204,23 @@ int spi_oc_simple_init(struct device *dev)
 	return 0;
 }
 
-#ifdef DT_INST_0_OPENCORES_SPI_SIMPLE
-static struct spi_oc_simple_cfg spi_oc_simple_cfg_0 = {
-	.base = DT_INST_0_OPENCORES_SPI_SIMPLE_CONTROL_BASE_ADDRESS,
-};
+#define SPI_OC_INIT(inst)						\
+	static struct spi_oc_simple_cfg spi_oc_simple_cfg_##inst = {	\
+		.base = DT_INST_REG_ADDR_BY_NAME(inst, control),	\
+	};								\
+									\
+	static struct spi_oc_simple_data spi_oc_simple_data_##inst = {	\
+		SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_##inst, ctx),	\
+		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),	\
+	};								\
+									\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    spi_oc_simple_init,				\
+			    device_pm_control_nop,			\
+			    &spi_oc_simple_data_##inst,			\
+			    &spi_oc_simple_cfg_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SPI_INIT_PRIORITY,			\
+			    &spi_oc_simple_api);
 
-static struct spi_oc_simple_data spi_oc_simple_data_0 = {
-	SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_0, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_0, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_oc_simple_0,
-		    DT_INST_0_OPENCORES_SPI_SIMPLE_LABEL,
-		    spi_oc_simple_init,
-		    &spi_oc_simple_data_0,
-		    &spi_oc_simple_cfg_0,
-		    POST_KERNEL,
-		    CONFIG_SPI_INIT_PRIORITY,
-		    &spi_oc_simple_api);
-#endif
-
-#ifdef DT_INST_1_OPENCORES_SPI_SIMPLE
-static struct spi_oc_simple_cfg spi_oc_simple_cfg_1 = {
-	.base = DT_INST_1_OPENCORES_SPI_SIMPLE_CONTROL_BASE_ADDRESS,
-};
-
-static struct spi_oc_simple_data spi_oc_simple_data_1 = {
-	SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_1, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_1, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_oc_simple_1,
-		    DT_INST_1_OPENCORES_SPI_SIMPLE_LABEL,
-		    spi_oc_simple_init,
-		    &spi_oc_simple_data_1,
-		    &spi_oc_simple_cfg_1,
-		    POST_KERNEL,
-		    CONFIG_SPI_INIT_PRIORITY,
-		    &spi_oc_simple_api);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(SPI_OC_INIT)

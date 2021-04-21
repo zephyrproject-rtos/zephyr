@@ -12,6 +12,8 @@
 #include <offsets_short.h>
 #include <syscall.h>
 
+#include <arch/arm/aarch32/exc.h>
+
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_userspace_enter)
@@ -41,12 +43,6 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* move user_entry to lr */
     mov lr, r0
 
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* clear stack pointer limit before setting the PSP */
-    mov r0, #0
-    msr PSPLIM, r0
-#endif
-
     /* prepare to set stack to privileged stack */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
@@ -71,10 +67,23 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
      */
     mov ip, sp
 
-    /* set stack to privileged stack */
+    /* set stack to privileged stack
+     *
+     * Note [applies only when CONFIG_BUILTIN_STACK_GUARD is enabled]:
+     * modifying PSP via MSR instruction is not subject to stack limit
+     * checking, so we do not need to clear PSPLIM before setting PSP.
+     * The operation is safe since, by design, the privileged stack is
+     * located in memory higher than the default (user) thread stack.
+     */
     msr PSP, r0
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* At this point the privileged stack is not yet protected by PSPLIM.
+     * Since we have just switched to the top of the privileged stack, we
+     * are safe, as long as the stack can accommodate the maximum exception
+     * stack frame.
+     */
+
     /* set stack pointer limit to the start of the priv stack */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
@@ -148,12 +157,6 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     /* r0 contains user stack start, ip contains user stack size */
     add r0, r0, ip   /* calculate top of stack */
 
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* clear stack limit (stack protection not required in user mode) */
-    mov r3, #0
-    msr PSPLIM, r3
-#endif
-
     /* pop remaining arguments from stack before switching stacks */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* Use r4 to pop lr, then restore r4 */
@@ -165,25 +168,53 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     pop {r1,r2,r3,lr}
 #endif
 
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /*
+     * Guard the default (user) stack until thread drops privileges.
+     *
+     * Notes:
+     * PSPLIM is configured *before* PSP switches to the default (user) stack.
+     * This is safe, since the user stack is located, by design, in a lower
+     * memory area compared to the privileged stack.
+     *
+     * However, we need to prevent a context-switch to occur, because that
+     * would re-configure PSPLIM to guard the privileged stack; we enforce
+     * a PendSV locking for this purporse.
+     *
+     * Between PSPLIM update and PSP switch, the privileged stack will be
+     * left un-guarded; this is safe, as long as the privileged stack is
+     * large enough to accommodate a maximum exception stack frame.
+     */
+
+    /* Temporarily store current IRQ locking status in ip */
+    mrs ip, BASEPRI
+    push {r0, ip}
+
+    /* Lock PendSV while reprogramming PSP and PSPLIM */
+    mov r0, #_EXC_PENDSV_PRIO_MASK
+    msr BASEPRI, r0
+    isb
+
+    /* Set PSPLIM to guard the thread's user stack. */
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r0, [r0, #_thread_offset_to_stack_info_start]
+    msr PSPLIM, r0
+
+    pop {r0, ip}
+#endif
+
     /* set stack to user stack */
     msr PSP, r0
 
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* Restore interrupt lock status */
+    msr BASEPRI, ip
+    isb
+#endif
+
     /* restore r0 */
     mov r0, lr
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-    stm sp!,{r0-r3} /* Save regs r0 to r4 on stack */
-    push {r0, lr}
-    bl read_timer_end_of_userspace_enter
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    pop {r0, r3}
-    mov lr,r3
-#else
-    pop {r0, lr}
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-    ldm sp!,{r0-r3} /* Restore r0 to r3 regs */
-
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
 
     /* change processor mode to unprivileged */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -250,21 +281,19 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
  */
 SECTION_FUNC(TEXT, z_arm_do_syscall)
 
-    /* The function is executing in privileged mode. This implies that we
+    /* Note [when using MPU-based stack guarding]:
+     * The function is executing in privileged mode. This implies that we
      * shall not be allowed to use the thread's default unprivileged stack,
      * (i.e push to or pop from it), to avoid a possible stack corruption.
      *
-     * Rationale: since we execute in PRIV mode and no MPU guard or PSPLIM
-     * register is guarding the end of the default stack, we won't be able
+     * Rationale: since we execute in PRIV mode and no MPU guard
+     * is guarding the end of the default stack, we won't be able
      * to detect any stack overflows.
+     *
+     * Note [when using built-in stack limit checking on ARMv8-M]:
+     * At this point PSPLIM is already configured to guard the default (user)
+     * stack, so pushing to the default thread's stack is safe.
      */
-
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* clear stack pointer limit before setting the PSP */
-    mov ip, #0
-    msr PSPLIM, ip
-#endif
-
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* save current stack pointer (user stack) */
     mov ip, sp
@@ -289,6 +318,7 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     pop {r0, r1}
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+
     /* setup privileged stack */
     ldr ip, =_kernel
     ldr ip, [ip, #_kernel_offset_to_current]
@@ -303,6 +333,14 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
 
     /* switch to privileged stack */
     msr PSP, ip
+
+    /* Note (applies when using stack limit checking):
+     * We do not need to lock IRQs after switching PSP to the privileged stack;
+     * PSPLIM is guarding the default (user) stack, which, by design, is
+     * located at *lower* memory area. Since we switch to the top of the
+     * privileged stack we are safe, as long as the stack can accommodate
+     * the maximum exception stack frame.
+     */
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /* Set stack pointer limit (needed in privileged mode) */
@@ -336,6 +374,9 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     mov r1, lr
     b dispatch_syscall
 valid_syscall:
+    /* push ssf to privileged stack */
+    mov r1, sp
+    push {r1}
     /* push args to complete stack frame */
     push {r4,r5}
 
@@ -358,8 +399,7 @@ dispatch_syscall:
      */
     mov ip, r0
     mov r0, sp
-    adds r0, #12
-    ldr r0, [r0]
+    ldr r0, [r0,#16]
     mov lr, r0
     /* Restore r0 */
     mov r0, ip
@@ -377,7 +417,8 @@ dispatch_syscall:
 
 valid_syscall:
     /* push args to complete stack frame */
-    push {r4,r5}
+    mov ip, sp
+    push {r4,r5,ip}
 
 dispatch_syscall:
     ldr ip, =_k_syscall_table
@@ -388,12 +429,40 @@ dispatch_syscall:
     blx ip
 
     /* restore LR */
-    ldr lr, [sp,#12]
+    ldr lr, [sp,#16]
 #endif
 
+
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* clear stack limit (stack protection not required in user mode) */
-    mov r3, #0
+    /*
+     * Guard the default (user) stack until thread drops privileges.
+     *
+     * Notes:
+     * PSPLIM is configured *before* PSP switches to the default (user) stack.
+     * This is safe, since the user stack is located, by design, in a lower
+     * memory area compared to the privileged stack.
+     *
+     * However, we need to prevent a context-switch to occur, because that
+     * would re-configure PSPLIM to guard the privileged stack; we enforce
+     * a PendSV locking for this purporse.
+     *
+     * Between PSPLIM update and PSP switch, the privileged stack will be
+     * left un-guarded; this is safe, as long as the privileged stack is
+     * large enough to accommodate a maximum exception stack frame.
+     */
+
+    /* Temporarily store current IRQ locking status in r2 */
+    mrs r2, BASEPRI
+
+    /* Lock PendSV while reprogramming PSP and PSPLIM */
+    mov r3, #_EXC_PENDSV_PRIO_MASK
+    msr BASEPRI, r3
+    isb
+
+    /* Set PSPLIM to guard the thread's user stack. */
+    ldr r3, =_kernel
+    ldr r3, [r3, #_kernel_offset_to_current]
+    ldr r3, [r3, #_thread_offset_to_stack_info_start]    /* stack_info.start */
     msr PSPLIM, r3
 #endif
 
@@ -401,15 +470,21 @@ dispatch_syscall:
     /* set stack back to unprivileged stack */
     mov ip, r0
     mov r0, sp
-    ldr r0, [r0,#8]
+    ldr r0, [r0,#12]
     msr PSP, r0
     /* Restore r0 */
     mov r0, ip
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* set stack back to unprivileged stack */
-    ldr ip, [sp,#8]
+    ldr ip, [sp,#12]
     msr PSP, ip
+#endif
+
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* Restore interrupt lock status */
+    msr BASEPRI, r2
+    isb
 #endif
 
     push {r0, r1}
@@ -546,4 +621,3 @@ z_arm_user_string_nlen_fixup:
 
     add	sp, #12
     pop	{r4, r5, pc}
-

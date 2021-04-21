@@ -26,7 +26,7 @@
  */
 #define BT_UUID_VALUE_V6                BT_UUID_DECLARE_16(0xb006)
 
-static u8_t   value_v6_value = 0x06;
+static uint8_t   value_v6_value = 0x06;
 static bool   value_v6_ntf_active;
 
 /**
@@ -43,9 +43,9 @@ static bool   value_v6_ntf_active;
  */
 static ssize_t read_value_v6(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v6_value));
@@ -66,9 +66,9 @@ static ssize_t read_value_v6(struct bt_conn *conn,
  */
 static ssize_t write_value_v6(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v6_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -87,7 +87,7 @@ static ssize_t write_value_v6(struct bt_conn *conn,
  * @param value The new value of the descriptor configuration
  */
 static void value_v6_ccc_cfg_changed(const struct bt_gatt_attr *attr,
-				     u16_t value)
+				     uint16_t value)
 {
 	value_v6_ntf_active = value == BT_GATT_CCC_NOTIFY;
 }

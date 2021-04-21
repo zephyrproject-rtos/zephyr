@@ -30,20 +30,22 @@
 #ifndef _COVERAGE_H_
 #define _COVERAGE_H_
 
-#if (__GNUC__ >= 8)
+#if (__GNUC__ >= 10)
+#define GCOV_COUNTERS 8U
+#elif (__GNUC__ >= 8)
 #define GCOV_COUNTERS 9U
 #else
 #define GCOV_COUNTERS 10U
 #endif
 
-typedef u64_t gcov_type;
+typedef uint64_t gcov_type;
 
 #define GCOV_TAG_FUNCTION_LENGTH  3
 #define GCOV_DATA_MAGIC   (0x67636461)
 #define GCOV_TAG_FUNCTION (0x01000000)
 #define GCOV_TAG_COUNTER_BASE (0x01a10000)
 #define GCOV_TAG_FOR_COUNTER(count)         \
-(GCOV_TAG_COUNTER_BASE + ((u32_t) (count) << 17))
+(GCOV_TAG_COUNTER_BASE + ((uint32_t) (count) << 17))
 
 #define FILE_START_INDICATOR	'*'
 #define GCOV_DUMP_SEPARATOR	'<'

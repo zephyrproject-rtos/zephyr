@@ -1,0 +1,21 @@
+# Copyright (c) 2021 Pavlo Hamov <pasha.gamov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_TI_CC32XX_WDG := ti,cc32xx-watchdog
+
+config WDT_CC32XX
+	bool "Watchdog Driver for cc32xx family of MCUs"
+	default $(dt_compat_enabled,$(DT_COMPAT_TI_CC32XX_WDG))
+	depends on SOC_SERIES_CC32XX
+	depends on SOC_FAMILY_TISIMPLELINK
+	help
+	  Watchdog for cc32xx family of MCUs
+
+config WDT_CC32XX_INITIAL_TIMEOUT
+	int "Value for WDT timeout in ms"
+	depends on WDT_CC32XX
+	default 2000
+	range 1 53687
+	help
+	  Max value depend on system frequency.
+	  80 Mhz: 0xFFFFFFFF / (80e9 / 1000)

@@ -1,0 +1,15 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: CAVS Intra-DSP Communication (IDC) on Intel SoC
+
+compatible: "intel,cavs-idc"
+
+include: base.yaml
+
+properties:
+    interrupts:
+      required: true
+
+    interrupt-parent:
+      required: true

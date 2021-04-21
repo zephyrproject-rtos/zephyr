@@ -31,19 +31,19 @@ struct shell_vt100_colors {
 };
 
 struct shell_multiline_cons {
-	u16_t cur_x;     /* horizontal cursor position in edited command line.*/
-	u16_t cur_x_end; /* horizontal cursor position at the end of command.*/
-	u16_t cur_y;     /* vertical cursor position in edited command.*/
-	u16_t cur_y_end; /* vertical cursor position at the end of command.*/
-	u16_t terminal_hei; /* terminal screen height.*/
-	u16_t terminal_wid; /* terminal screen width.*/
-	u8_t name_len;   /*!<console name length.*/
+	uint16_t cur_x;     /* horizontal cursor position in edited command line.*/
+	uint16_t cur_x_end; /* horizontal cursor position at the end of command.*/
+	uint16_t cur_y;     /* vertical cursor position in edited command.*/
+	uint16_t cur_y_end; /* vertical cursor position at the end of command.*/
+	uint16_t terminal_hei; /* terminal screen height.*/
+	uint16_t terminal_wid; /* terminal screen width.*/
+	uint8_t name_len;   /*!<console name length.*/
 };
 
 struct shell_vt100_ctx {
 	struct shell_multiline_cons cons;
 	struct shell_vt100_colors col;
-	u16_t printed_cmd;  /* printed commands counter */
+	uint16_t printed_cmd;  /* printed commands counter */
 };
 
 #ifdef __cplusplus

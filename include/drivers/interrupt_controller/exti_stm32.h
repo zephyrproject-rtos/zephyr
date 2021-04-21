@@ -23,9 +23,6 @@
 
 #include <zephyr/types.h>
 
-/* device name */
-#define STM32_EXTI_NAME "stm32-exti"
-
 /**
  * @brief enable EXTI interrupt for specific line
  *

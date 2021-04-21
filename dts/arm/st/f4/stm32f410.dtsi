@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2020 Hans Unzner
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f4.dtsi>
+
+/ {
+	soc {
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <36 5>;
+			status = "disabled";
+			label = "SPI_2";
+		};
+
+		spi5: spi@40015000 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015000 0x400>;
+			interrupts = <85 5>;
+			status = "disabled";
+			label = "SPI_5";
+		};
+
+		i2s2: i2s@40003800 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <36 5>;
+			dmas = <&dma1 4 0 0x400 0x3
+				&dma1 3 0 0x400 0x3>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+			label = "I2S_2";
+		};
+
+		i2s5: i2s@40015000 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
+			interrupts = <85 5>;
+			dmas = <&dma2 6 7 0x400 0x3
+				&dma2 5 7 0x400 0x3>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+			label = "I2S_5";
+		};
+
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			interrupts = <54 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_6";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_6";
+				#pwm-cells = <3>;
+			};
+		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			status = "disabled";
+			label = "DAC_1";
+			#io-channel-cells = <1>;
+		};
+
+	};
+
+};

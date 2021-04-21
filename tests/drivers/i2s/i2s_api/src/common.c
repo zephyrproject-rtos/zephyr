@@ -10,7 +10,7 @@
 #include "i2s_api_test.h"
 
 /* The data_l represent a sine wave */
-s16_t data_l[SAMPLE_NO] = {
+int16_t data_l[SAMPLE_NO] = {
 	  6392,  12539,  18204,  23169,  27244,  30272,  32137,  32767,  32137,
 	 30272,  27244,  23169,  18204,  12539,   6392,      0,  -6393, -12540,
 	-18205, -23170, -27245, -30273, -32138, -32767, -32138, -30273, -27245,
@@ -18,14 +18,14 @@ s16_t data_l[SAMPLE_NO] = {
 };
 
 /* The data_r represent a sine wave with double the frequency of data_l */
-s16_t data_r[SAMPLE_NO] = {
+int16_t data_r[SAMPLE_NO] = {
 	 12539,  23169,  30272,  32767,  30272,  23169,  12539,      0, -12540,
 	-23170, -30273, -32767, -30273, -23170, -12540,     -1,  12539,  23169,
 	 30272,  32767,  30272,  23169,  12539,      0, -12540, -23170, -30273,
 	-32767, -30273, -23170, -12540,     -1,
 };
 
-static void fill_buf(s16_t *tx_block, int att)
+static void fill_buf(int16_t *tx_block, int att)
 {
 	for (int i = 0; i < SAMPLE_NO; i++) {
 		tx_block[2 * i] = data_l[i] >> att;
@@ -33,7 +33,7 @@ static void fill_buf(s16_t *tx_block, int att)
 	}
 }
 
-static int verify_buf(s16_t *rx_block, int att)
+static int verify_buf(int16_t *rx_block, int att)
 {
 	for (int i = 0; i < SAMPLE_NO; i++) {
 		if (rx_block[2 * i] != data_l[i] >> att) {
@@ -53,7 +53,7 @@ static int verify_buf(s16_t *rx_block, int att)
 	return TC_PASS;
 }
 
-void fill_buf_const(s16_t *tx_block, s16_t val_l, s16_t val_r)
+void fill_buf_const(int16_t *tx_block, int16_t val_l, int16_t val_r)
 {
 	for (int i = 0; i < SAMPLE_NO; i++) {
 		tx_block[2 * i] = val_l;
@@ -61,7 +61,7 @@ void fill_buf_const(s16_t *tx_block, s16_t val_l, s16_t val_r)
 	}
 }
 
-int verify_buf_const(s16_t *rx_block, s16_t val_l, s16_t val_r)
+int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r)
 {
 	for (int i = 0; i < SAMPLE_NO; i++) {
 		if (rx_block[2 * i] != val_l) {
@@ -81,13 +81,13 @@ int verify_buf_const(s16_t *rx_block, s16_t val_l, s16_t val_r)
 	return TC_PASS;
 }
 
-int tx_block_write_slab(struct device *dev_i2s, int att, int err,
+int tx_block_write_slab(const struct device *dev_i2s, int att, int err,
 			struct k_mem_slab *slab)
 {
 	char tx_block[BLOCK_SIZE];
 	int ret;
 
-	fill_buf((u16_t *)tx_block, att);
+	fill_buf((uint16_t *)tx_block, att);
 	ret = i2s_buf_write(dev_i2s, tx_block, BLOCK_SIZE);
 	if (ret != err) {
 		TC_PRINT("Error: i2s_write failed expected %d, actual %d\n",
@@ -98,7 +98,7 @@ int tx_block_write_slab(struct device *dev_i2s, int att, int err,
 	return TC_PASS;
 }
 
-int rx_block_read_slab(struct device *dev_i2s, int att,
+int rx_block_read_slab(const struct device *dev_i2s, int att,
 		       struct k_mem_slab *slab)
 {
 	char rx_block[BLOCK_SIZE];
@@ -110,7 +110,7 @@ int rx_block_read_slab(struct device *dev_i2s, int att,
 		TC_PRINT("Error: Read failed\n");
 		return -TC_FAIL;
 	}
-	ret = verify_buf((u16_t *)rx_block, att);
+	ret = verify_buf((uint16_t *)rx_block, att);
 	if (ret < 0) {
 		TC_PRINT("Error: Verify failed\n");
 		return -TC_FAIL;

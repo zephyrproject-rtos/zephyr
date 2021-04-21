@@ -11,8 +11,7 @@
 
 / {
 	model = "reel board v2";
-	compatible = "phytec,reel_board_v2", "nordic,nrf52840-qiaa",
-		     "nordic,nrf52840";
+	compatible = "phytec,reel_board_v2";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -32,7 +31,7 @@
 	sck-pin = <19>;
 	mosi-pin = <20>;
 	miso-pin = <21>;
-	cs-gpios = <&gpio0 17 0>;
+	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 
 	ssd16xxfb@0 {
 		compatible = "solomon,ssd16xxfb", "gooddisplay,gdeh0213b72";
@@ -40,7 +39,7 @@
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <250>;
-		height = <120>;
+		height = <122>;
 		pp-width-bits = <8>;
 		pp-height-bits = <16>;
 		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;

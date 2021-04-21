@@ -21,15 +21,17 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_RFCOMM
   rfcomm.c
   )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_ISO
+  iso.c
+  )
 
-if(CONFIG_BT_CTLR)
-  if(CONFIG_BT_LL_SW_LEGACY OR CONFIG_BT_LL_SW_SPLIT)
-    zephyr_library_sources(
-      ll.c
-      ticker.c
-      )
-    zephyr_include_directories(
-      ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
-      )
-  endif()
+if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
+  zephyr_library_sources(
+    ll.c
+    ticker.c
+    )
+  zephyr_include_directories(
+    ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
+    )
 endif()

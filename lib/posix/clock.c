@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <posix/time.h>
 #include <posix/sys/time.h>
+#include <syscall_handler.h>
 
 /*
  * `k_uptime_get` returns a timestamp based on an always increasing
@@ -22,9 +23,9 @@ static struct timespec rt_clock_base;
  *
  * See IEEE 1003.1
  */
-int clock_gettime(clockid_t clock_id, struct timespec *ts)
+int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
-	u64_t elapsed_msecs;
+	uint64_t elapsed_nsecs;
 	struct timespec base;
 
 	switch (clock_id) {
@@ -42,20 +43,28 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 		return -1;
 	}
 
-	elapsed_msecs = k_uptime_get();
-	ts->tv_sec = (s32_t) (elapsed_msecs / MSEC_PER_SEC);
-	ts->tv_nsec = (s32_t) ((elapsed_msecs % MSEC_PER_SEC) *
-					USEC_PER_MSEC * NSEC_PER_USEC);
+	elapsed_nsecs = k_ticks_to_ns_floor64(k_uptime_ticks());
+	ts->tv_sec = (int32_t) (elapsed_nsecs / NSEC_PER_SEC);
+	ts->tv_nsec = (int32_t) (elapsed_nsecs % NSEC_PER_SEC);
 
 	ts->tv_sec += base.tv_sec;
 	ts->tv_nsec += base.tv_nsec;
-	if (ts->tv_nsec > NSEC_PER_SEC) {
+	if (ts->tv_nsec >= NSEC_PER_SEC) {
 		ts->tv_sec++;
 		ts->tv_nsec -= NSEC_PER_SEC;
 	}
 
 	return 0;
 }
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_clock_gettime(clockid_t clock_id, struct timespec *ts)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ts, sizeof(*ts)));
+	return z_impl_clock_gettime(clock_id, ts);
+}
+#include <syscalls/clock_gettime_mrsh.c>
+#endif
 
 /**
  * @brief Set the time of the specified clock.
@@ -74,9 +83,9 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 		return -1;
 	}
 
-	u64_t elapsed_msecs = k_uptime_get();
-	s64_t delta = (s64_t)NSEC_PER_SEC * tp->tv_sec + tp->tv_nsec
-		- elapsed_msecs * USEC_PER_MSEC * NSEC_PER_USEC;
+	uint64_t elapsed_nsecs = k_ticks_to_ns_floor64(k_uptime_ticks());
+	int64_t delta = (int64_t)NSEC_PER_SEC * tp->tv_sec + tp->tv_nsec
+		- elapsed_nsecs;
 
 	base.tv_sec = delta / NSEC_PER_SEC;
 	base.tv_nsec = delta % NSEC_PER_SEC;
@@ -98,7 +107,7 @@ int gettimeofday(struct timeval *tv, const void *tz)
 
 	/* As per POSIX, "if tzp is not a null pointer, the behavior
 	 * is unspecified."  "tzp" is the "tz" parameter above. */
-	ARG_UNUSED(tv);
+	ARG_UNUSED(tz);
 
 	res = clock_gettime(CLOCK_REALTIME, &ts);
 	tv->tv_sec = ts.tv_sec;

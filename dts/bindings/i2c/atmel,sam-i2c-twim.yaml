@@ -1,0 +1,215 @@
+# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Atmel SAM4L Family I2C (TWIM) node
+
+  The Atmel Two-wire Master Interface (TWIM) interconnects components on a
+  unique two-wire bus, made up of one clock line and one data line with speeds
+  of up to 3.4 Mbit/s, based on a byte-oriented transfer format.  The TWIM is
+  always a bus master and can transfer sequential or single bytes.  Multiple
+  master capability is supported.  Arbitration of the bus is performed
+  internally and relinquishes the bus automatically if the bus arbitration is
+  lost.
+
+  When using speeds above standard mode, user may need adjust clock and data
+  lines slew and strength parameters.  In general, slew 0 and minimal strength
+  is enougth for short buses and light loads.  As reference, the below
+  is the lowest power configuration:
+
+    std-clk-slew-lim = <0>;
+    std-clk-strength-low = "0.5";
+    std-data-slew-lim = <0>;
+    std-data-strength-low = "0.5";
+
+    hs-clk-slew-lim = <0>;
+    hs-clk-strength-high = "0.5";
+    hs-clk-strength-low = "0.5";
+    hs-data-slew-lim = <0>;
+    hs-data-strength-low = "0.5";
+
+  For best performances, user can tune the slope curves using an osciloscope.
+  The tuning should be performed by groups defined <mode>-<line>.  The prefix
+  std-<line> configures fast/fast-plus mode speeds and hs-<line> selects the
+  high speed mode.  The tune should be performed for both clock and data lines
+  on both speed modes.
+
+
+compatible: "atmel,sam-i2c-twim"
+
+include: i2c-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    peripheral-id:
+      type: int
+      required: true
+      description: peripheral ID
+
+    std-clk-slew-lim:
+      type: int
+      required: true
+      description: |
+        Slew limit of the TWCK output buffer.  This should be adjusted with
+        std-clk-strength-low to fine tune the TWCK slope.
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+
+    std-clk-strength-low:
+      type: string
+      required: true
+      description: |
+        Pull-down drive strength of the TWCK output buffer in fast/fast plus
+        mode.  This should be adjusted to provide proper TWCK line fall time.
+        The value represents the port output current in mA when signal on
+        low level.
+      enum:
+        - "0.5"
+        - "1.0"
+        - "1.6"
+        - "3.1"
+        - "6.2"
+        - "9.3"
+        - "15.5"
+        - "21.8"
+
+    std-data-slew-lim:
+      type: int
+      required: true
+      description: |
+        Slew limit of the TWD output buffer.  This should be adjusted with
+        std-data-strength-low to fine tune the TWD slope.
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+
+    std-data-strength-low:
+      type: string
+      required: true
+      description: |
+        Pull-down drive strength of the TWD output buffer in fast/fast plus
+        mode.  This should be adjusted to provide proper TWD line fall time.
+        The value represents the port output current in mA when signal on
+        low level.
+      enum:
+        - "0.5"
+        - "1.0"
+        - "1.6"
+        - "3.1"
+        - "6.2"
+        - "9.3"
+        - "15.5"
+        - "21.8"
+
+    hs-clk-slew-lim:
+      type: int
+      required: true
+      description: |
+        Slew limit of the TWCK output buffer in high speed mode.  This
+        should be adjusted with both hs-clk-strength-high and
+        hs-clk-strength-low to fine tune the TWCK slope.
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+
+    hs-clk-strength-high:
+      type: string
+      required: true
+      description: |
+        Pull-up drive strength of the TWCK output buffer in high speed
+        mode.  This should be adjusted to provide proper TWCK line rise time.
+        The value represents the port output current in mA when signal on
+        high level.
+      enum:
+        - "0.5"
+        - "1.0"
+        - "1.5"
+        - "3.0"
+
+    hs-clk-strength-low:
+      type: string
+      required: true
+      description: |
+        Pull-down drive strength of the TWCK output buffer in high speed
+        mode.  This should be adjusted to provide proper TWCK line fall time.
+        The value represents the port output current in mA when signal on
+        low level.
+      enum:
+        - "0.5"
+        - "1.0"
+        - "1.6"
+        - "3.1"
+        - "6.2"
+        - "9.3"
+        - "15.5"
+        - "21.8"
+
+    hs-data-slew-lim:
+      type: int
+      required: true
+      description: |
+        Slew limit of the TWD output buffer in high speed mode.  This
+        should be adjusted with hs-data-strength-low to fine tune the TWD
+        slope.
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+
+    hs-data-strength-low:
+      type: string
+      description: |
+        Pull-down drive strength of the TWD output buffer in high speed
+        mode.  This should be adjusted to provide proper TWD line fall time.
+        The value represents the port output current in mA when signal on
+        low level.
+      enum:
+        - "0.5"
+        - "1.0"
+        - "1.6"
+        - "3.1"
+        - "6.2"
+        - "9.3"
+        - "15.5"
+        - "21.8"
+
+    hs-master-code:
+      type: int
+      required: true
+      description: |
+        3-bit code to be prefixed with 0b00001 to form a unique
+        8-bit HS-mode master code (0000 1XXX)
+      enum:
+        - 0   # 000
+        - 1   # 001
+        - 2   # 010
+        - 3   # 011
+        - 4   # 100
+        - 5   # 101
+        - 6   # 110
+        - 7   # 111
+
+    pinctrl-0:
+      type: phandles
+      required: true
+      description: |
+        GPIO pin configuration for TWCK & TWD signals. We expect that
+        the phandles will reference pinctrl nodes. These nodes will
+        have a nodelabel that matches the Atmel SoC HAL defines and
+        be of the form p<port><pin><periph>_<inst>_<signal>.
+
+        For example the I2C on SAM4L would be
+           pinctrl-0 = <&pb0a_twi1_twd1 &pb1a_twi1_twck1>;

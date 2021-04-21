@@ -39,7 +39,7 @@ char *modem_context_sprint_ip_addr(const struct sockaddr *addr)
 	return buf;
 }
 
-int modem_context_get_addr_port(const struct sockaddr *addr, u16_t *port)
+int modem_context_get_addr_port(const struct sockaddr *addr, uint16_t *port)
 {
 	if (!addr || !port) {
 		return -EINVAL;
@@ -63,7 +63,7 @@ int modem_context_get_addr_port(const struct sockaddr *addr, u16_t *port)
  *
  * @retval Modem context or NULL.
  */
-struct modem_context *modem_context_from_iface_dev(struct device *dev)
+struct modem_context *modem_context_from_iface_dev(const struct device *dev)
 {
 	int i;
 

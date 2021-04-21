@@ -13,8 +13,8 @@ to be fulfilled.
 Concepts
 ********
 
-The polling API's main function is :cpp:func:`k_poll()`, which is very similar
-in concept to the POSIX :cpp:func:`poll()` function, except that it operates on
+The polling API's main function is :c:func:`k_poll`, which is very similar
+in concept to the POSIX :c:func:`poll` function, except that it operates on
 kernel objects rather than on file descriptors.
 
 The polling API allows a single thread to wait concurrently for one or more
@@ -46,19 +46,19 @@ to the user's discretion.
 Apart from the kernel objects, there is also a **poll signal** pseudo-object
 type that be directly signaled.
 
-The :cpp:func:`k_poll()` function returns as soon as one of the conditions it
+The :c:func:`k_poll` function returns as soon as one of the conditions it
 is waiting for is fulfilled. It is possible for more than one to be fulfilled
-when :cpp:func:`k_poll()` returns, if they were fulfilled before
-:cpp:func:`k_poll()` was called, or due to the preemptive multi-threading
+when :c:func:`k_poll` returns, if they were fulfilled before
+:c:func:`k_poll` was called, or due to the preemptive multi-threading
 nature of the kernel. The caller must look at the state of all the poll events
 in the array to figured out which ones were fulfilled and what actions to take.
 
 Currently, there is only one mode of operation available: the object is not
-acquired. As an example, this means that when :cpp:func:`k_poll()` returns and
+acquired. As an example, this means that when :c:func:`k_poll` returns and
 the poll event states that the semaphore is available, the caller of
-:cpp:func:`k_poll()` must then invoke :cpp:func:`k_sem_take()` to take
+:c:func:`k_poll()` must then invoke :c:func:`k_sem_take` to take
 ownership of the semaphore. If the semaphore is contested, there is no
-guarantee that it will be still available when :cpp:func:`k_sem_give()` is
+guarantee that it will be still available when :c:func:`k_sem_give` is
 called.
 
 Implementation
@@ -67,13 +67,13 @@ Implementation
 Using k_poll()
 ==============
 
-The main API is :cpp:func:`k_poll()`, which operates on an array of poll events
-of type :c:type:`struct k_poll_event`. Each entry in the array represents one
-event a call to :cpp:func:`k_poll()` will wait for its condition to be
+The main API is :c:func:`k_poll`, which operates on an array of poll events
+of type :c:struct:`k_poll_event`. Each entry in the array represents one
+event a call to :c:func:`k_poll` will wait for its condition to be
 fulfilled.
 
 They can be initialized using either the runtime initializers
-:c:macro:`K_POLL_EVENT_INITIALIZER()` or :cpp:func:`k_poll_event_init()`, or
+:c:macro:`K_POLL_EVENT_INITIALIZER()` or :c:func:`k_poll_event_init`, or
 the static initializer :c:macro:`K_POLL_EVENT_STATIC_INITIALIZER()`. An object
 that matches the **type** specified must be passed to the initializers. The
 **mode** *must* be set to :c:macro:`K_POLL_MODE_NOTIFY_ONLY`. The state *must*
@@ -82,7 +82,7 @@ this). The user **tag** is optional and completely opaque to the API: it is
 there to help a user to group similar events together. Being optional, it is
 passed to the static initializer, but not the runtime ones for performance
 reasons. If using runtime initializers, the user must set it separately in the
-:c:type:`struct k_poll_event` data structure. If an event in the array is to be
+:c:struct:`k_poll_event` data structure. If an event in the array is to be
 ignored, most likely temporarily, its type can be set to K_POLL_TYPE_IGNORE.
 
 .. code-block:: c
@@ -118,19 +118,19 @@ or at runtime
 
 
 After the events are initialized, the array can be passed to
-:cpp:func:`k_poll()`. A timeout can be specified to wait only for a specified
+:c:func:`k_poll`. A timeout can be specified to wait only for a specified
 amount of time, or the special values :c:macro:`K_NO_WAIT` and
 :c:macro:`K_FOREVER` to either not wait or wait until an event condition is
 satisfied and not sooner.
 
 Only one thread can poll on a semaphore or a FIFO at a time. If a second thread
-tries to poll on the same semaphore or FIFO, :cpp:func:`k_poll()` immediately
-returns with the return value :c:macro:`-EADDRINUSE`. In that case, if other
-conditions passed to :cpp:func:`k_poll` were met, their state will be set in
+tries to poll on the same semaphore or FIFO, :c:func:`k_poll` immediately
+returns with the return value -:c:macro:`EADDRINUSE`. In that case, if other
+conditions passed to :c:func:`k_poll` were met, their state will be set in
 the corresponding poll event.
 
-In case of success, :cpp:func:`k_poll()` returns 0. If it times out, it returns
-:c:macro:`-EAGAIN`.
+In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
+-:c:macro:`EAGAIN`.
 
 .. code-block:: c
 
@@ -152,7 +152,7 @@ In case of success, :cpp:func:`k_poll()` returns 0. If it times out, it returns
         }
     }
 
-When :cpp:func:`k_poll()` is called in a loop, the events state must be reset
+When :c:func:`k_poll` is called in a loop, the events state must be reset
 to :c:macro:`K_POLL_STATE_NOT_READY` by the user.
 
 .. code-block:: c
@@ -179,10 +179,10 @@ One of the types of events is :c:macro:`K_POLL_TYPE_SIGNAL`: this is a "direct"
 signal to a poll event. This can be seen as a lightweight binary semaphore only
 one thread can wait for.
 
-A poll signal is a separate object of type :c:type:`struct k_poll_signal` that
+A poll signal is a separate object of type :c:struct:`k_poll_signal` that
 must be attached to a k_poll_event, similar to a semaphore or FIFO. It must
 first be initialized either via :c:macro:`K_POLL_SIGNAL_INITIALIZER()` or
-:cpp:func:`k_poll_signal_init()`.
+:c:func:`k_poll_signal_init`.
 
 .. code-block:: c
 
@@ -192,7 +192,7 @@ first be initialized either via :c:macro:`K_POLL_SIGNAL_INITIALIZER()` or
         k_poll_signal_init(&signal);
     }
 
-It is signaled via the :cpp:func:`k_poll_signal_raise()` function. This function
+It is signaled via the :c:func:`k_poll_signal_raise` function. This function
 takes a user **result** parameter that is opaque to the API and can be used to
 pass extra information to the thread waiting on the event.
 
@@ -259,7 +259,7 @@ If the signal is to be polled in a loop, *both* its event state and its
 Suggested Uses
 **************
 
-Use :cpp:func:`k_poll()` to consolidate multiple threads that would be pending
+Use :c:func:`k_poll` to consolidate multiple threads that would be pending
 on one object each, saving possibly large amounts of stack space.
 
 Use a poll signal as a lightweight binary semaphore if only one thread pends on

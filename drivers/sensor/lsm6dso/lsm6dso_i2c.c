@@ -8,46 +8,31 @@
  * https://www.st.com/resource/en/datasheet/lsm6dso.pdf
  */
 
-#include <string.h>
-#include <drivers/i2c.h>
-#include <logging/log.h>
+#define DT_DRV_COMPAT st_lsm6dso
 
+#include <logging/log.h>
 #include "lsm6dso.h"
 
-#ifdef DT_ST_LSM6DSO_BUS_I2C
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lsm6dso_i2c_read(struct device *dev, u8_t reg_addr,
-			    u8_t *value, u8_t len)
+int lsm6dso_i2c_init(const struct device *dev)
 {
-	struct lsm6dso_data *data = dev->driver_data;
-	const struct lsm6dso_config *cfg = dev->config->config_info;
+	struct lsm6dso_data *data = dev->data;
+	const struct lsm6dso_config *cfg = dev->config;
 
-	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
-			      reg_addr, value, len);
-}
+	if (!device_is_ready(cfg->stmemsc_cfg.i2c.bus)) {
+		LOG_ERR("Cannot get pointer to bus device");
+		return -ENODEV;
+	}
 
-static int lsm6dso_i2c_write(struct device *dev, u8_t reg_addr,
-			     u8_t *value, u8_t len)
-{
-	struct lsm6dso_data *data = dev->driver_data;
-	const struct lsm6dso_config *cfg = dev->config->config_info;
+	/* Use generic stmemsc routine for read/write I2C bus */
+	data->ctx.read_reg = (stmdev_read_ptr) stmemsc_i2c_read,
+	data->ctx.write_reg = (stmdev_write_ptr) stmemsc_i2c_write,
 
-	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
-			       reg_addr, value, len);
-}
-
-int lsm6dso_i2c_init(struct device *dev)
-{
-	struct lsm6dso_data *data = dev->driver_data;
-
-	data->ctx_i2c.read_reg = (stmdev_read_ptr) lsm6dso_i2c_read,
-	data->ctx_i2c.write_reg = (stmdev_write_ptr) lsm6dso_i2c_write,
-
-	data->ctx = &data->ctx_i2c;
-	data->ctx->handle = dev;
+	data->ctx.handle = (void *)&cfg->stmemsc_cfg.i2c;
 
 	return 0;
 }
-#endif /* DT_ST_LSM6DSO_BUS_I2C */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */

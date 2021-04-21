@@ -52,13 +52,17 @@ static lv_fs_res_t lvgl_fs_open(struct _lv_fs_drv_t *drv, void *file,
 		const char *path, lv_fs_mode_t mode)
 {
 	int err;
+	int zmode = FS_O_CREATE;
 
 	/* LVGL is passing absolute paths without the root slash add it back
 	 * by decrementing the path pointer.
 	 */
 	path--;
 
-	err = fs_open((struct fs_file_t *)file, path);
+	zmode |= (mode & LV_FS_MODE_WR) ? FS_O_WRITE : 0;
+	zmode |= (mode & LV_FS_MODE_RD) ? FS_O_READ : 0;
+
+	err = fs_open((struct fs_file_t *)file, path, zmode);
 	return errno_to_lv_fs_res(err);
 }
 
@@ -84,7 +88,7 @@ static lv_fs_res_t lvgl_fs_remove(struct _lv_fs_drv_t *drv, const char *path)
 }
 
 static lv_fs_res_t lvgl_fs_read(struct _lv_fs_drv_t *drv, void *file,
-		void *buf, u32_t btr, u32_t *br)
+		void *buf, uint32_t btr, uint32_t *br)
 {
 	int err;
 
@@ -101,7 +105,7 @@ static lv_fs_res_t lvgl_fs_read(struct _lv_fs_drv_t *drv, void *file,
 }
 
 static lv_fs_res_t lvgl_fs_write(struct _lv_fs_drv_t *drv, void *file,
-		const void *buf, u32_t btw, u32_t *bw)
+		const void *buf, uint32_t btw, uint32_t *bw)
 {
 	int err;
 
@@ -124,7 +128,7 @@ static lv_fs_res_t lvgl_fs_write(struct _lv_fs_drv_t *drv, void *file,
 	return errno_to_lv_fs_res(err);
 }
 
-static lv_fs_res_t lvgl_fs_seek(struct _lv_fs_drv_t *drv, void *file, u32_t pos)
+static lv_fs_res_t lvgl_fs_seek(struct _lv_fs_drv_t *drv, void *file, uint32_t pos)
 {
 	int err;
 
@@ -133,7 +137,7 @@ static lv_fs_res_t lvgl_fs_seek(struct _lv_fs_drv_t *drv, void *file, u32_t pos)
 }
 
 static lv_fs_res_t lvgl_fs_tell(struct _lv_fs_drv_t *drv, void *file,
-		u32_t *pos_p)
+		uint32_t *pos_p)
 {
 	*pos_p = fs_tell((struct fs_file_t *)file);
 	return LV_FS_RES_OK;
@@ -151,7 +155,7 @@ static lv_fs_res_t lvgl_fs_trunc(struct _lv_fs_drv_t *drv, void *file)
 }
 
 static lv_fs_res_t lvgl_fs_size(struct _lv_fs_drv_t *drv, void *file,
-		u32_t *fsize)
+		uint32_t *fsize)
 {
 	int err;
 	off_t org_pos;
@@ -191,8 +195,8 @@ static lv_fs_res_t lvgl_fs_rename(struct _lv_fs_drv_t *drv, const char *from,
 	return errno_to_lv_fs_res(err);
 }
 
-static lv_fs_res_t lvgl_fs_free(struct _lv_fs_drv_t *drv, u32_t *total_p,
-		u32_t *free_p)
+static lv_fs_res_t lvgl_fs_free(struct _lv_fs_drv_t *drv, uint32_t *total_p,
+		uint32_t *free_p)
 {
 	/* We have no easy way of telling the total file system size.
 	 * Zephyr can only return this information per mount point.
@@ -210,6 +214,7 @@ static lv_fs_res_t lvgl_fs_dir_open(struct _lv_fs_drv_t *drv, void *dir,
 	 */
 	path--;
 
+	fs_dir_t_init((struct fs_dir_t *)dir);
 	err = fs_opendir((struct fs_dir_t *)dir, path);
 	return errno_to_lv_fs_res(err);
 }

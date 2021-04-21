@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT silabs_si7060
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
@@ -16,31 +18,32 @@
 LOG_MODULE_REGISTER(si7060, CONFIG_SENSOR_LOG_LEVEL);
 
 struct si7060_data {
-	struct device *i2c_dev;
-	u16_t temperature;
+	const struct device *i2c_dev;
+	uint16_t temperature;
 };
 
-static int si7060_reg_read(struct si7060_data *drv_data, u8_t reg,
-			     u8_t *val)
+static int si7060_reg_read(struct si7060_data *drv_data, uint8_t reg,
+			     uint8_t *val)
 {
 	if (i2c_reg_read_byte(drv_data->i2c_dev,
-		DT_INST_0_SILABS_SI7060_BASE_ADDRESS, reg, val)) {
+		DT_INST_REG_ADDR(0), reg, val)) {
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int si7060_reg_write(struct si7060_data *drv_data, u8_t reg,
-			      u8_t val)
+static int si7060_reg_write(struct si7060_data *drv_data, uint8_t reg,
+			      uint8_t val)
 {
 	return i2c_reg_write_byte(drv_data->i2c_dev,
-		DT_INST_0_SILABS_SI7060_BASE_ADDRESS, reg, val);
+		DT_INST_REG_ADDR(0), reg, val);
 }
 
-static int si7060_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int si7060_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
-	struct si7060_data *drv_data = dev->driver_data;
+	struct si7060_data *drv_data = dev->data;
 
 	if (si7060_reg_write(drv_data, SI7060_REG_CONFIG,
 		SI7060_ONE_BURST_VALUE) != 0) {
@@ -48,8 +51,8 @@ static int si7060_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	int retval;
-	u8_t dspsigm;
-	u8_t dspsigl;
+	uint8_t dspsigm;
+	uint8_t dspsigl;
 
 	retval = si7060_reg_read(drv_data, SI7060_REG_TEMP_HIGH,
 		&dspsigm);
@@ -68,11 +71,12 @@ static int si7060_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return retval;
 }
 
-static int si7060_channel_get(struct device *dev, enum sensor_channel chan,
+static int si7060_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
-	struct si7060_data *drv_data = dev->driver_data;
-	s32_t uval;
+	struct si7060_data *drv_data = dev->data;
+	int32_t uval;
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		uval = ((55 * 160) + (drv_data->temperature - 16384)) >> 4;
@@ -92,17 +96,17 @@ static const struct sensor_driver_api si7060_api = {
 	.channel_get = &si7060_channel_get,
 };
 
-static int si7060_chip_init(struct device *dev)
+static int si7060_chip_init(const struct device *dev)
 {
-	struct si7060_data *drv_data = dev->driver_data;
-	u8_t value;
+	struct si7060_data *drv_data = dev->data;
+	uint8_t value;
 
 	drv_data->i2c_dev = device_get_binding(
-		DT_INST_0_SILABS_SI7060_BUS_NAME);
+		DT_INST_BUS_LABEL(0));
 
 	if (!drv_data->i2c_dev) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			DT_INST_0_SILABS_SI7060_BUS_NAME);
+			DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -119,7 +123,7 @@ static int si7060_chip_init(struct device *dev)
 	return 0;
 }
 
-static int si7060_init(struct device *dev)
+static int si7060_init(const struct device *dev)
 {
 	if (si7060_chip_init(dev) < 0) {
 		return -EINVAL;
@@ -130,5 +134,5 @@ static int si7060_init(struct device *dev)
 
 static struct si7060_data si_data;
 
-DEVICE_AND_API_INIT(si7060, DT_INST_0_SILABS_SI7060_LABEL, si7060_init,
+DEVICE_DT_INST_DEFINE(0, si7060_init, device_pm_control_nop,
 	&si_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &si7060_api);

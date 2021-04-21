@@ -7,12 +7,12 @@
 
 #include "fcb_test.h"
 
-void fcb_test_append(void)
+void test_fcb_append(void)
 {
 	int rc;
 	struct fcb *fcb;
 	struct fcb_entry loc;
-	u8_t test_data[128];
+	uint8_t test_data[128];
 	int i;
 	int j;
 	int var_cnt;

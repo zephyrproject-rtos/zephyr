@@ -30,7 +30,9 @@ k_is_in_isr
   - Called from a thread
 
 k_cpu_idle
-  - CPU to be woken up by tick timer.  Thus, after each call, the tick count
+  - Tickless Kernel: CPU to be woken up by a kernel timer (k_timer)
+  - Non-tickless kernel:
+    CPU to be woken up by tick timer.  Thus, after each call, the tick count
     should have advanced by one tick.
 
 irq_lock

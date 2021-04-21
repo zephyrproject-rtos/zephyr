@@ -42,7 +42,9 @@ command is supported.
 	|       | 4    | Set Scan Request Reports                   |
 	|       | 5    | Write Tx Power Level (per Role/Connection) |
 	|       | 6    | Read Tx Power Level (per Role/Connection)  |
-	|       | 7    | Reserved                                   |
+	|       | 7    | Read USB Supported Transport Modes         |
+	+-------+------+--------------------------------------------+
+	| 2     | 0    | Set USB Transport Mode                     |
 	+-------+------+--------------------------------------------+
 
 Only Read_Version_Information and Read_Supported_Commands commands are
@@ -1014,6 +1016,52 @@ by the controller for the requested Handle_Type and Handle.
 When the Read_Tx_Power_Level command has completed, a Command Complete
 event shall be generated.
 
+Zephyr Read Supported USB Transport Modes Command
+=================================================
+
+This command read the supported USB transport modes.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Read_USB_Transport_Modes | 0x010 |                    | Status             |
+|                          |       |                    | Num_Supported_Modes|
+|                          |       |                    | Supported_Mode[i]  |
++--------------------------+-------+--------------------+--------------------+
+
+	Supported_Mode:                                 Size: 1 Octet
+	+--------------------+--------------------------------------+
+	| Value              | Parameter Description                |
+	+--------------------+--------------------------------------+
+	| 0x00               | USB standard (H:2) transport mode.   |
+	|                    | Standard mode which use dedicated    |
+	|                    | endpoints for commands, events and   |
+	|                    | data.                                |
+	| 0x01               | Serial (H:4) transport mode.         |
+	|                    | Serialize all traffic into bulk      |
+	|                    | endpoints.                           |
+	| All other values   | Reserved for future use              |
+	+--------------------+--------------------------------------+
+
+When the Read_USB_Transport_Mode command has completed, a Command Complete
+event shall be generated.
+
+Zephyr Set USB Transport Mode Command
+=====================================
+
+This command set the host transport mode and reset the controller states like
+an HCI Reset command.
+
++--------------------------+-------+--------------------+--------------------+
+| Command                  | OCF   | Command            | Return             |
+|                          |       | Parameters         | Parameters         |
++--------------------------+-------+--------------------+--------------------+
+| Set_USB_Transport_Mode   | 0x011 | Mode               | Status             |
++--------------------------+-------+--------------------+--------------------+
+
+When the Set_USB_Transport_Mode command has completed, a Command Complete
+event shall be generated.
 
 Zephyr Vendor Events
 ====================

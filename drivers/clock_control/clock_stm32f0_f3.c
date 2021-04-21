@@ -7,6 +7,9 @@
 
 
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_utils.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <drivers/clock_control/stm32_clock_control.h>
@@ -30,37 +33,24 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 */
 	pllinit->PLLMul = ((CONFIG_CLOCK_STM32_PLL_MULTIPLIER - 2)
 					<< RCC_CFGR_PLLMUL_Pos);
-#if defined(RCC_PLLSRC_PREDIV1_SUPPORT)
-	/* PREDIV support is a specific RCC configuration present on */
-	/* following SoCs: STM32F070x6, STM32F070xB and STM32F030xC */
-	/* cf Reference manual for more details */
-#if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI)
-	pllinit->PLLDiv = LL_RCC_PLLSOURCE_HSI;
-#else
 
-#if defined(CONFIG_CLOCK_STM32_PLL_PREDIV1)
 	/*
-	 * PLL DIV
-	 * 1  -> LL_RCC_PLLSOURCE_HSE_DIV_1  -> 0x00010000
-	 * 2  -> LL_RCC_PLLSOURCE_HSE_DIV_2  -> 0x00010001
-	 * 3  -> LL_RCC_PLLSOURCE_HSE_DIV_3  -> 0x00010002
-	 * ...
-	 * 16 -> LL_RCC_PLLSOURCE_HSE_DIV_16 -> 0x0001000F
-	 */
-	pllinit->PLLDiv = (RCC_CFGR_PLLSRC_HSE_PREDIV |
-					(CONFIG_CLOCK_STM32_PLL_PREDIV1 - 1));
-#endif /* CONFIG_CLOCK_STM32_PLL_PREDIV1 */
-
-#endif /* CONFIG_CLOCK_STM32_PLL_SRC_HSI */
-#else
-	/*
-	 * PLL Prediv
+	 * PLL PREDIV
 	 * 1  -> LL_RCC_PREDIV_DIV_1  -> 0x00000000
 	 * 2  -> LL_RCC_PREDIV_DIV_2  -> 0x00000001
 	 * 3  -> LL_RCC_PREDIV_DIV_3  -> 0x00000002
 	 * ...
 	 * 16 -> LL_RCC_PREDIV_DIV_16 -> 0x0000000F
 	 */
+#if defined(RCC_PLLSRC_PREDIV1_SUPPORT)
+	/*
+	 * PREDIV1 support is a specific RCC configuration present on
+	 * following SoCs: STM32F04xx, STM32F07xx, STM32F09xx,
+	 * STM32F030xC, STM32F302xE, STM32F303xE and STM32F39xx
+	 * cf Reference manual for more details
+	 */
+	pllinit->PLLDiv = CONFIG_CLOCK_STM32_PLL_PREDIV1 - 1;
+#else
 	pllinit->Prediv = CONFIG_CLOCK_STM32_PLL_PREDIV - 1;
 #endif /* RCC_PLLSRC_PREDIV1_SUPPORT */
 }
@@ -76,6 +66,13 @@ void config_enable_default_clocks(void)
 #if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32)
 	/* Enable System Configuration Controller clock. */
 	LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_SYSCFG);
+#endif
+#else
+#if defined(CONFIG_USB_DC_STM32) && defined(SYSCFG_CFGR1_USB_IT_RMP)
+	/* Enable System Configuration Controller clock. */
+	/* SYSCFG is required to remap IRQ to avoid conflicts with CAN */
+	/* cf §14.1.3, RM0316 */
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
 #endif
 #endif /* !CONFIG_SOC_SERIES_STM32F3X */
 }

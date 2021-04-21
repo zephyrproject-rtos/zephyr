@@ -77,8 +77,8 @@ void test_intmath(void)
 	 * Declaring volatile so the compiler doesn't try to optimize any
 	 * of the math away at build time
 	 */
-	volatile u64_t bignum, ba, bb;
-	volatile u32_t num, a, b;
+	volatile uint64_t bignum, ba, bb;
+	volatile uint32_t num, a, b;
 
 	ba = 0x00000012ABCDEF12ULL;
 	bb = 0x0000001000000111ULL;

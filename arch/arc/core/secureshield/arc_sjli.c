@@ -19,9 +19,9 @@ static void _default_sjli_entry(void);
  * \todo: how to let user to install customized sjli entry easily, e.g.
  *  through macros or with the help of compiler?
  */
-const static u32_t _sjli_vector_table[CONFIG_SJLI_TABLE_SIZE] = {
-	[0] = (u32_t)_arc_do_secure_call,
-	[1 ... (CONFIG_SJLI_TABLE_SIZE - 1)] = (u32_t)_default_sjli_entry,
+const static uint32_t _sjli_vector_table[CONFIG_SJLI_TABLE_SIZE] = {
+	[0] = (uint32_t)_arc_do_secure_call,
+	[1 ... (CONFIG_SJLI_TABLE_SIZE - 1)] = (uint32_t)_default_sjli_entry,
 };
 
 /*
@@ -48,7 +48,7 @@ static void sjli_table_init(void)
 /*
  * @brief initializaiton of secureshield related functions.
  */
-static int arc_secureshield_init(struct device *arg)
+static int arc_secureshield_init(const struct device *arg)
 {
 	sjli_table_init();
 

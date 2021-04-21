@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <mem.h>
-#include <nxp/nxp_k82fn256vxx15.dtsi>
+#include <nxp/MK82FN256VLL15.dtsi>
 #include <dt-bindings/pwm/pwm.h>
 
 / {
@@ -54,13 +54,13 @@
 		compatible = "pwm-leds";
 
 		red_pwm_led: red_pwm_led {
-			pwms = <&pwm3 4 15625000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 4 15625000 PWM_POLARITY_INVERTED>;
 		};
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm3 5 15625000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm3 6 15625000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 6 15625000 PWM_POLARITY_INVERTED>;
 		};
 	};
 
@@ -106,11 +106,38 @@
 	};
 };
 
+&sim {
+	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
+	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&ADC0_SE15_PTC1>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
 &flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -141,6 +168,7 @@
 
 &i2c3 {
 	status = "okay";
+	pinctrl-0 = <&I2C3_SDA_PTA1 &I2C3_SCL_PTA2>;
 
 	fxos8700@1c {
 		compatible = "nxp,fxos8700";
@@ -150,17 +178,32 @@
 	};
 };
 
+&I2C3_SDA_PTA1 {
+	drive-open-drain;
+};
+
+&I2C3_SCL_PTA2 {
+	drive-open-drain;
+};
+
 &lpuart4 {
 	status = "okay";
+	pinctrl-0 = <&LPUART4_RX_PTC14 &LPUART4_TX_PTC15>;
 	current-speed = <115200>;
 };
 
-&pwm3 {
+&ftm3 {
 	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&FTM3_CH4_PTC8 &FTM3_CH5_PTC9 &FTM3_CH6_PTC10>;
 };
 
 &spi1 {
 	status = "okay";
+
+	pinctrl-0 = <&SPI1_SCK_PTE1 &SPI1_SOUT_PTE2
+		     &SPI1_SIN_PTE4 &SPI1_PCS0_PTE5>;
 
 	mx25u32: mx25u3235f@0 {
 		compatible = "jedec,spi-nor";
@@ -170,11 +213,14 @@
 		wp-gpios = <&gpioe 3 0>;
 		reset-gpios = <&gpioe 0 0>;
 		size = <0x2000000>;
-		has-be32k;
 		jedec-id = [c2 25 36];
 	};
 };
 
-&usbd {
+&usbotg {
+	status = "okay";
+};
+
+&pit0 {
 	status = "okay";
 };

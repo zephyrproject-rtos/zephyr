@@ -12,6 +12,6 @@ extern void test_mslab_threadsafe(void);
 void test_main(void)
 {
 	ztest_test_suite(mslab_threadsafe,
-			 ztest_1cpu_unit_test(test_mslab_threadsafe));
+			 ztest_unit_test(test_mslab_threadsafe));
 	ztest_run_test_suite(mslab_threadsafe);
 }

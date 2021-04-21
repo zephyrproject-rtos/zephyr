@@ -1,0 +1,15 @@
+# LPC LPC11U6X MCU line
+
+# Copyright (c) 2020, Seagate
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_LPC11U6X
+	bool "LPC LPC11U6X Series MCU"
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select SOC_FAMILY_LPC
+	select PINMUX
+	select CLOCK_CONTROL
+	help
+	  Enable support for LPC LPC11U6X MCU series

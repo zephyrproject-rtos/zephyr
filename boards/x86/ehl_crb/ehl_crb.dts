@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+
+#define DT_DRAM_SIZE		DT_SIZE_M(2048)
+
+#include <elkhart_lake.dtsi>
+
+/ {
+	model = "ehl_crb";
+	compatible = "intel,elkhart_lake_crb";
+
+	chosen {
+		zephyr,sram = &dram0;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};

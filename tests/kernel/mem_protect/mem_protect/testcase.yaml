@@ -1,12 +1,16 @@
 tests:
   kernel.memory_protection:
-    min_ram: 32
     filter: CONFIG_ARCH_HAS_USERSPACE
     platform_exclude: twr_ke18f
     tags: kernel security userspace ignore_faults
-  kernel.memory_protection.armv8m_gap_filling:
-    arch_whitelist: arm
+  kernel.memory_protection.gap_filling.arc:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+    arch_allow: arc
     extra_args: CONFIG_MPU_GAP_FILLING=y
-    min_ram: 32
+    tags: kernel security userspace ignore_faults
+  kernel.memory_protection.gap_filling.arm:
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
+    arch_allow: arm
+    platform_allow: efr32_radio_brd4180a mps2_an521 nrf9160dk_nrf9160
+    extra_args: CONFIG_MPU_GAP_FILLING=y
     tags: kernel security userspace ignore_faults

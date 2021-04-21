@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX6675
+	bool "MAX6675 K-thermocouple to digital converter"
+	depends on SPI
+	help
+	  Enable MAX6675 cold-junction-compensated K-thermocouple to digital
+	  converter.

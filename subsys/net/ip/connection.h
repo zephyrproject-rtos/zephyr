@@ -17,6 +17,7 @@
 
 #include <sys/util.h>
 
+#include <net/net_context.h>
 #include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
@@ -59,17 +60,22 @@ struct net_conn {
 	/** Callback to be called when matching UDP packet is received */
 	net_conn_cb_t cb;
 
+	/** A pointer to the net_context corresponding to the connection.
+	 *  Can be NULL if no net_context is associated.
+	 */
+	struct net_context *context;
+
 	/** Possible user to pass to the callback */
 	void *user_data;
 
 	/** Connection protocol */
-	u16_t proto;
+	uint16_t proto;
 
 	/** Protocol family */
-	u8_t family;
+	uint8_t family;
 
 	/** Flags for the connection */
-	u8_t flags;
+	uint8_t flags;
 };
 
 /**
@@ -83,26 +89,29 @@ struct net_conn {
  * @param remote_port Remote port of the connection end point.
  * @param local_port Local port of the connection end point.
  * @param cb Callback to be called
+ * @param context net_context structure related to the connection.
  * @param user_data User data supplied by caller.
  * @param handle Connection handle that can be used when unregistering
  *
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
 #if defined(CONFIG_NET_NATIVE)
-int net_conn_register(u16_t proto, u8_t family,
+int net_conn_register(uint16_t proto, uint8_t family,
 		      const struct sockaddr *remote_addr,
 		      const struct sockaddr *local_addr,
-		      u16_t remote_port,
-		      u16_t local_port,
+		      uint16_t remote_port,
+		      uint16_t local_port,
+		      struct net_context *context,
 		      net_conn_cb_t cb,
 		      void *user_data,
 		      struct net_conn_handle **handle);
 #else
-static inline int net_conn_register(u16_t proto, u8_t family,
+static inline int net_conn_register(uint16_t proto, uint8_t family,
 				    const struct sockaddr *remote_addr,
 				    const struct sockaddr *local_addr,
-				    u16_t remote_port,
-				    u16_t local_port,
+				    uint16_t remote_port,
+				    uint16_t local_port,
+				    struct net_context *context,
 				    net_conn_cb_t cb,
 				    void *user_data,
 				    struct net_conn_handle **handle)
@@ -114,6 +123,7 @@ static inline int net_conn_register(u16_t proto, u8_t family,
 	ARG_UNUSED(remote_port);
 	ARG_UNUSED(local_port);
 	ARG_UNUSED(cb);
+	ARG_UNUSED(context);
 	ARG_UNUSED(user_data);
 	ARG_UNUSED(handle);
 
@@ -167,12 +177,12 @@ int net_conn_change_callback(struct net_conn_handle *handle,
 	defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_CAN)
 enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
-				u8_t proto,
+				uint8_t proto,
 				union net_proto_header *proto_hdr);
 #else
 static inline enum net_verdict net_conn_input(struct net_pkt *pkt,
 					      union net_ip_header *ip_hdr,
-					      u8_t proto,
+					      uint8_t proto,
 					      union net_proto_header *proto_hdr)
 {
 	return NET_DROP;

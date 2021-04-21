@@ -1,0 +1,56 @@
+# Bluetooth Audio configuration options
+
+#
+# Copyright (c) 2020 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig BT_AUDIO
+	bool "Bluetooth Audio support [Experimental]"
+	help
+	  This option enables Bluetooth Audio support. The specific
+	  features that are available may depend on other features
+	  that have been enabled in the stack, such as Periodic
+	  Advertisement for Broadcast and L2CAP Dynamic Channel
+	  for Unicast.
+
+if BT_AUDIO
+
+if BT_CONN
+
+config BT_AUDIO_UNICAST
+	bool "Bluetooth Unicast Audio Support"
+	select BT_SMP
+	select BT_L2CAP_DYNAMIC_CHANNEL
+	select BT_ISO
+	select BT_GATT_DYNAMIC_DB
+	select BT_GATT_CACHING
+	select BT_L2CAP_ECRED
+	select BT_EATT
+	help
+	  This option enables support for Bluetooth Unicast Audio using
+	  Isochronous channels.
+
+# TODO: Make BT_AUDIO_BROADCAST not depend on BT_CONN
+config BT_AUDIO_BROADCAST
+	bool "Bluetooth Broadcast Audio Support"
+	select BT_ISO
+	select BT_ISO_BROADCAST
+	help
+	  This option enables support for Bluetooth Broadcast Audio using
+	  Isochronous channels.
+
+endif # BT_CONN
+
+config BT_AUDIO_DEBUG
+	bool "Enable debug logs"
+	depends on BT_DEBUG
+	help
+	  Use this option to enable debug logs for the Bluetooth
+	  Audio functionality.
+
+source "subsys/bluetooth/audio/Kconfig.vocs"
+source "subsys/bluetooth/audio/Kconfig.aics"
+
+endif # BT_AUDIO

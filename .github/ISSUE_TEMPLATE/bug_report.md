@@ -24,10 +24,11 @@ A clear and concise description of what you expected to happen.
 **Impact**
 What impact does this issue have on your progress (e.g., annoyance, showstopper)
 
-**Screenshots or console output**
-If applicable, add a screenshot (drag-and-drop an image), or console logs
-(cut-and-paste text and put a code fence (\`\`\`) before and after, to help
-explain the issue.
+**Logs and console output**
+If applicable, add console logs or other types of debug information
+e.g Wireshark capture or Logic analyzer capture (upload in zip archive).
+copy-and-paste text and put a code fence (\`\`\`) before and after, to help
+explain the issue. (if unable to obtain text log, add a screenshot)
 
 **Environment (please complete the following information):**
  - OS: (e.g. Linux, MacOS, Windows)

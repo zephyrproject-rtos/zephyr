@@ -1,57 +1,55 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Lots of duplications here.
-# FIXME: maintain this only in one place.
+# This is the minimum required version for Zephyr to work (Old style)
+set(REQUIRED_SDK_VER 0.11.1)
+cmake_host_system_information(RESULT TOOLCHAIN_ARCH QUERY OS_PLATFORM)
 
-# We need to separate actual toolchain from the host-tools required by Zephyr
-# and currently provided by the Zephyr SDK. Those tools will need to be
-# provided for different OSes and sepearately from the toolchain.
-
-set_ifndef(ZEPHYR_SDK_INSTALL_DIR "$ENV{ZEPHYR_SDK_INSTALL_DIR}")
-set(ZEPHYR_SDK_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH "Zephyr SDK install directory")
-
-if(NOT ZEPHYR_SDK_INSTALL_DIR)
+if(NOT DEFINED ZEPHYR_SDK_INSTALL_DIR)
   # Until https://github.com/zephyrproject-rtos/zephyr/issues/4912 is
   # resolved we use ZEPHYR_SDK_INSTALL_DIR to determine whether the user
   # wants to use the Zephyr SDK or not.
   return()
 endif()
 
-set(REQUIRED_SDK_VER 0.11.1)
-set(TOOLCHAIN_VENDOR zephyr)
-set(TOOLCHAIN_ARCH x86_64)
+# Cache the Zephyr SDK install dir.
+set(ZEPHYR_SDK_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH "Zephyr SDK install directory")
 
-set(sdk_version_path ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
-if(NOT (EXISTS ${sdk_version_path}))
-  message(FATAL_ERROR
-    "The file '${ZEPHYR_SDK_INSTALL_DIR}/sdk_version' was not found. \
-Is ZEPHYR_SDK_INSTALL_DIR=${ZEPHYR_SDK_INSTALL_DIR} misconfigured?")
+if(NOT DEFINED SDK_VERSION)
+  if(ZEPHYR_TOOLCHAIN_VARIANT AND ZEPHYR_SDK_INSTALL_DIR)
+    # Manual detection for Zephyr SDK 0.11.1 and 0.11.2 for backward compatibility.
+    set(sdk_version_path ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
+    if(NOT (EXISTS ${sdk_version_path}))
+      message(FATAL_ERROR
+              "The file '${ZEPHYR_SDK_INSTALL_DIR}/sdk_version' was not found. \
+               Is ZEPHYR_SDK_INSTALL_DIR=${ZEPHYR_SDK_INSTALL_DIR} misconfigured?")
+    endif()
+
+    # Read version as published by the SDK
+    file(READ ${sdk_version_path} SDK_VERSION_PRE1)
+    # Remove any pre-release data, for example 0.10.0-beta4 -> 0.10.0
+    string(REGEX REPLACE "-.*" "" SDK_VERSION_PRE2 ${SDK_VERSION_PRE1})
+    # Strip any trailing spaces/newlines from the version string
+    string(STRIP ${SDK_VERSION_PRE2} SDK_VERSION)
+    string(REGEX MATCH "([0-9]*).([0-9]*)" SDK_MAJOR_MINOR ${SDK_VERSION})
+
+    string(REGEX MATCH "([0-9]+)\.([0-9]+)\.([0-9]+)" SDK_MAJOR_MINOR_MICRO ${SDK_VERSION})
+
+    #at least 0.0.0
+    if(NOT SDK_MAJOR_MINOR_MICRO)
+      message(FATAL_ERROR "sdk version: ${SDK_MAJOR_MINOR_MICRO} improper format.
+      Expected format: x.y.z
+      Check whether the Zephyr SDK was installed correctly.
+    ")
+    endif()
+  endif()
 endif()
 
-# Read version as published by the SDK
-file(READ ${sdk_version_path} SDK_VERSION_PRE1)
-# Remove any pre-release data, for example 0.10.0-beta4 -> 0.10.0
-string(REGEX REPLACE "-.*" "" SDK_VERSION_PRE2 ${SDK_VERSION_PRE1})
-# Strip any trailing spaces/newlines from the version string
-string(STRIP ${SDK_VERSION_PRE2} SDK_VERSION)
-string(REGEX MATCH "([0-9]*).([0-9]*)" SDK_MAJOR_MINOR ${SDK_VERSION})
+message(STATUS "Using toolchain: zephyr ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR})")
 
-string(REGEX MATCH "([0-9]+)\.([0-9]+)\.([0-9]+)" SDK_MAJOR_MINOR_MICRO ${SDK_VERSION})
-
-#at least 0.0.0
-if(NOT SDK_MAJOR_MINOR_MICRO)
-  message(FATAL_ERROR "sdk version: ${SDK_MAJOR_MINOR_MICRO} improper format.
-  Expected format: x.y.z
-  Check whether the Zephyr SDK was installed correctly.
-")
-
-elseif(${REQUIRED_SDK_VER} VERSION_GREATER ${SDK_VERSION})
-  message(FATAL_ERROR "The SDK version you are using is too old, please update your SDK.
-You need at least SDK version ${REQUIRED_SDK_VER}.
-You have version ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR}).
-The new version of the SDK can be downloaded from:
-https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${REQUIRED_SDK_VER}/zephyr-sdk-${REQUIRED_SDK_VER}-setup.run
-")
+if(${SDK_VERSION} VERSION_LESS_EQUAL 0.11.2)
+  # For backward compatibility with 0.11.1 and 0.11.2
+  # we need to source files from Zephyr repo
+  include(${CMAKE_CURRENT_LIST_DIR}/${SDK_MAJOR_MINOR}/host-tools.cmake)
+else()
+  include(${ZEPHYR_SDK_INSTALL_DIR}/cmake/zephyr/host-tools.cmake)
 endif()
-
-include(${ZEPHYR_BASE}/cmake/toolchain/zephyr/${SDK_MAJOR_MINOR}/host-tools.cmake)

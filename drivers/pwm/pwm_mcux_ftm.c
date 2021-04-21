@@ -1,8 +1,11 @@
 /*
  * Copyright (c) 2017, NXP
+ * Copyright (c) 2020-2021 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT nxp_kinetis_ftm_pwm
 
 #include <drivers/clock_control.h>
 #include <errno.h>
@@ -17,29 +20,53 @@ LOG_MODULE_REGISTER(pwm_mcux_ftm);
 
 #define MAX_CHANNELS ARRAY_SIZE(FTM0->CONTROLS)
 
+/* PWM capture operates on channel pairs */
+#define MAX_CAPTURE_PAIRS (MAX_CHANNELS / 2U)
+#define PAIR_1ST_CH(pair) (pair * 2U)
+#define PAIR_2ND_CH(pair) (PAIR_1ST_CH(pair) + 1)
+
 struct mcux_ftm_config {
 	FTM_Type *base;
-	char *clock_name;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	ftm_clock_source_t ftm_clock_source;
 	ftm_clock_prescale_t prescale;
-	u8_t channel_count;
+	uint8_t channel_count;
 	ftm_pwm_mode_t mode;
+#ifdef CONFIG_PWM_CAPTURE
+	void (*irq_config_func)(const struct device *dev);
+#endif /* CONFIG_PWM_CAPTURE */
+};
+
+struct mcux_ftm_capture_data {
+	ftm_dual_edge_capture_param_t param;
+	pwm_capture_callback_handler_t callback;
+	void *user_data;
+	uint32_t first_edge_overflows;
+	bool pulse_capture;
 };
 
 struct mcux_ftm_data {
-	u32_t clock_freq;
-	u32_t period_cycles;
-	ftm_chnl_pwm_signal_param_t channel[MAX_CHANNELS];
+	uint32_t clock_freq;
+	uint32_t period_cycles;
+	ftm_chnl_pwm_config_param_t channel[MAX_CHANNELS];
+#ifdef CONFIG_PWM_CAPTURE
+	uint32_t overflows;
+	struct mcux_ftm_capture_data capture[MAX_CAPTURE_PAIRS];
+#endif /* CONFIG_PWM_CAPTURE */
 };
 
-static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles,
+static int mcux_ftm_pin_set(const struct device *dev, uint32_t pwm,
+			    uint32_t period_cycles, uint32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
-	const struct mcux_ftm_config *config = dev->config->config_info;
-	struct mcux_ftm_data *data = dev->driver_data;
-	u8_t duty_cycle;
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	status_t status;
+#ifdef CONFIG_PWM_CAPTURE
+	uint32_t pair = pwm / 2U;
+	uint32_t irqs;
+#endif /* CONFIG_PWM_CAPTURE */
 
 	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
 		LOG_ERR("Invalid combination: period_cycles=%d, "
@@ -52,8 +79,15 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 		return -ENOTSUP;
 	}
 
-	duty_cycle = pulse_cycles * 100U / period_cycles;
-	data->channel[pwm].dutyCyclePercent = duty_cycle;
+#ifdef CONFIG_PWM_CAPTURE
+	irqs = FTM_GetEnabledInterrupts(config->base);
+	if (irqs & BIT(PAIR_2ND_CH(pair))) {
+		LOG_ERR("Cannot set PWM, capture in progress on pair %d", pair);
+		return -EBUSY;
+	}
+#endif /* CONFIG_PWM_CAPTURE */
+
+	data->channel[pwm].dutyValue = pulse_cycles;
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0) {
 		data->channel[pwm].level = kFTM_HighTrue;
@@ -61,75 +95,299 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 		data->channel[pwm].level = kFTM_LowTrue;
 	}
 
-	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d, flags=%d",
-		pulse_cycles, period_cycles, duty_cycle, flags);
+	LOG_DBG("pulse_cycles=%d, period_cycles=%d, flags=%d",
+		pulse_cycles, period_cycles, flags);
 
 	if (period_cycles != data->period_cycles) {
-		u32_t pwm_freq;
-		status_t status;
+#ifdef CONFIG_PWM_CAPTURE
+		if (irqs & BIT_MASK(ARRAY_SIZE(data->channel))) {
+			LOG_ERR("Cannot change period, capture in progress");
+			return -EBUSY;
+		}
+#endif /* CONFIG_PWM_CAPTURE */
 
 		if (data->period_cycles != 0) {
 			/* Only warn when not changing from zero */
 			LOG_WRN("Changing period cycles from %d to %d"
 				" affects all %d channels in %s",
 				data->period_cycles, period_cycles,
-				config->channel_count, dev->config->name);
+				config->channel_count, dev->name);
 		}
 
 		data->period_cycles = period_cycles;
 
-		pwm_freq = (data->clock_freq >> config->prescale) /
-			   period_cycles;
-
-		LOG_DBG("pwm_freq=%d, clock_freq=%d", pwm_freq,
-			data->clock_freq);
-
-		if (pwm_freq == 0U) {
-			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
-			return -EINVAL;
-		}
-
 		FTM_StopTimer(config->base);
+		FTM_SetTimerPeriod(config->base, period_cycles);
 
-		status = FTM_SetupPwm(config->base, data->channel,
-				      config->channel_count, config->mode,
-				      pwm_freq, data->clock_freq);
-
-		if (status != kStatus_Success) {
-			LOG_ERR("Could not set up pwm");
-			return -ENOTSUP;
-		}
 		FTM_SetSoftwareTrigger(config->base, true);
 		FTM_StartTimer(config->base, config->ftm_clock_source);
+	}
 
+	status = FTM_SetupPwmMode(config->base, data->channel,
+				  config->channel_count, config->mode);
+	if (status != kStatus_Success) {
+		LOG_ERR("Could not set up pwm");
+		return -ENOTSUP;
+	}
+	FTM_SetSoftwareTrigger(config->base, true);
+
+	return 0;
+}
+
+#ifdef CONFIG_PWM_CAPTURE
+static int mcux_ftm_pin_configure_capture(const struct device *dev,
+					  uint32_t pwm,
+					  pwm_flags_t flags,
+					  pwm_capture_callback_handler_t cb,
+					  void *user_data)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	ftm_dual_edge_capture_param_t *param;
+	uint32_t pair = pwm / 2U;
+
+	if (pwm & 0x1U) {
+		LOG_ERR("PWM capture only supported on even channels");
+		return -ENOTSUP;
+	}
+
+	if (pair >= ARRAY_SIZE(data->capture)) {
+		LOG_ERR("Invalid channel pair %d", pair);
+		return -EINVAL;
+	}
+
+	if (FTM_GetEnabledInterrupts(config->base) & BIT(PAIR_2ND_CH(pair))) {
+		LOG_ERR("Capture already active on channel pair %d", pair);
+		return -EBUSY;
+	}
+
+	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
+		LOG_ERR("No capture type specified");
+		return -EINVAL;
+	}
+
+	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
+		LOG_ERR("Cannot capture both period and pulse width");
+		return -ENOTSUP;
+	}
+
+	data->capture[pair].callback = cb;
+	data->capture[pair].user_data = user_data;
+	param = &data->capture[pair].param;
+
+	if ((flags & PWM_CAPTURE_MODE_MASK) == PWM_CAPTURE_MODE_CONTINUOUS) {
+		param->mode = kFTM_Continuous;
 	} else {
-		FTM_UpdatePwmDutycycle(config->base, pwm, config->mode,
-				       duty_cycle);
-		FTM_UpdateChnlEdgeLevelSelect(config->base, pwm,
-					      data->channel[pwm].level);
-		FTM_SetSoftwareTrigger(config->base, true);
+		param->mode = kFTM_OneShot;
+	}
+
+	if (flags & PWM_CAPTURE_TYPE_PERIOD) {
+		data->capture[pair].pulse_capture = false;
+
+		if (flags & PWM_POLARITY_INVERTED) {
+			param->currChanEdgeMode = kFTM_FallingEdge;
+			param->nextChanEdgeMode = kFTM_FallingEdge;
+		} else {
+			param->currChanEdgeMode = kFTM_RisingEdge;
+			param->nextChanEdgeMode = kFTM_RisingEdge;
+		}
+	} else {
+		data->capture[pair].pulse_capture = true;
+
+		if (flags & PWM_POLARITY_INVERTED) {
+			param->currChanEdgeMode = kFTM_FallingEdge;
+			param->nextChanEdgeMode = kFTM_RisingEdge;
+		} else {
+			param->currChanEdgeMode = kFTM_RisingEdge;
+			param->nextChanEdgeMode = kFTM_FallingEdge;
+		}
 	}
 
 	return 0;
 }
 
-static int mcux_ftm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-				       u64_t *cycles)
+static int mcux_ftm_pin_enable_capture(const struct device *dev, uint32_t pwm)
 {
-	const struct mcux_ftm_config *config = dev->config->config_info;
-	struct mcux_ftm_data *data = dev->driver_data;
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	uint32_t pair = pwm / 2U;
+
+	if (pwm & 0x1U) {
+		LOG_ERR("PWM capture only supported on even channels");
+		return -ENOTSUP;
+	}
+
+	if (pair >= ARRAY_SIZE(data->capture)) {
+		LOG_ERR("Invalid channel pair %d", pair);
+		return -EINVAL;
+	}
+
+	if (!data->capture[pair].callback) {
+		LOG_ERR("PWM capture not configured");
+		return -EINVAL;
+	}
+
+	if (FTM_GetEnabledInterrupts(config->base) & BIT(PAIR_2ND_CH(pair))) {
+		LOG_WRN("Capture already active on channel pair %d", pair);
+		return 0;
+	}
+
+	FTM_ClearStatusFlags(config->base, BIT(PAIR_1ST_CH(pair)) |
+			     BIT(PAIR_2ND_CH(pair)));
+
+	FTM_SetupDualEdgeCapture(config->base, pair, &data->capture[pair].param,
+				 CONFIG_PWM_CAPTURE_MCUX_FTM_FILTER_VALUE);
+
+	FTM_EnableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)) |
+			     BIT(PAIR_2ND_CH(pair)));
+
+	return 0;
+}
+
+static int mcux_ftm_pin_disable_capture(const struct device *dev, uint32_t pwm)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	uint32_t pair = pwm / 2U;
+
+	if (pwm & 0x1U) {
+		LOG_ERR("PWM capture only supported on even channels");
+		return -ENOTSUP;
+	}
+
+	if (pair >= ARRAY_SIZE(data->capture)) {
+		LOG_ERR("Invalid channel pair %d", pair);
+		return -EINVAL;
+	}
+
+	FTM_DisableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)) |
+			      BIT(PAIR_2ND_CH(pair)));
+
+	/* Clear Dual Edge Capture Enable bit */
+	config->base->COMBINE &= ~(1UL << (FTM_COMBINE_DECAP0_SHIFT +
+		(FTM_COMBINE_COMBINE1_SHIFT * pair)));
+
+	return 0;
+}
+
+static void mcux_ftm_capture_first_edge(const struct device *dev, uint32_t pwm)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	struct mcux_ftm_capture_data *capture;
+	uint32_t pair = pwm / 2U;
+
+	__ASSERT_NO_MSG(pair < ARRAY_SIZE(data->capture));
+	capture = &data->capture[pair];
+
+	FTM_DisableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)));
+	capture->first_edge_overflows = data->overflows;
+}
+
+static void mcux_ftm_capture_second_edge(const struct device *dev, uint32_t pwm)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	uint32_t second_edge_overflows = data->overflows;
+	struct mcux_ftm_capture_data *capture;
+	uint32_t pair = pwm / 2U;
+	uint32_t overflows;
+	uint32_t first_cnv;
+	uint32_t second_cnv;
+	uint32_t cycles = 0;
+	int status = 0;
+
+	__ASSERT_NO_MSG(pair < ARRAY_SIZE(data->capture));
+	capture = &data->capture[pair];
+
+	first_cnv = config->base->CONTROLS[PAIR_1ST_CH(pair)].CnV;
+	second_cnv = config->base->CONTROLS[PAIR_2ND_CH(pair)].CnV;
+
+	/* Prepare for next capture */
+	if (capture->param.mode == kFTM_Continuous) {
+		FTM_ClearStatusFlags(config->base, BIT(PAIR_2ND_CH(pair)));
+	}
+
+	/* Calculate cycles, check for overflows */
+	overflows = second_edge_overflows - capture->first_edge_overflows;
+	if (overflows > 0) {
+		if (u32_mul_overflow(overflows, config->base->MOD, &cycles)) {
+			LOG_ERR("overflow while calculating cycles");
+			status = -ERANGE;
+		} else {
+			cycles -= first_cnv;
+			if (u32_add_overflow(cycles, second_cnv, &cycles)) {
+				LOG_ERR("overflow while calculating cycles");
+				cycles = 0;
+				status = -ERANGE;
+			}
+		}
+	} else {
+		cycles = second_cnv - first_cnv;
+	}
+
+	LOG_DBG("pair = %d, overflows = %u, cycles = %u", pair, overflows,
+		cycles);
+
+	if (capture->pulse_capture) {
+		capture->callback(dev, pair, 0, cycles, status,
+				  capture->user_data);
+	} else {
+		capture->callback(dev, pair, cycles, 0, status,
+				  capture->user_data);
+	}
+
+	if (capture->param.mode == kFTM_OneShot) {
+		FTM_DisableInterrupts(config->base, BIT(PAIR_2ND_CH(pair)));
+	} else {
+		FTM_EnableInterrupts(config->base, BIT(PAIR_1ST_CH(pair)));
+	}
+}
+
+static void mcux_ftm_isr(const struct device *dev)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	uint32_t flags;
+	uint32_t irqs;
+	uint32_t ch;
+
+	flags = FTM_GetStatusFlags(config->base);
+	irqs = FTM_GetEnabledInterrupts(config->base);
+
+	if (flags & kFTM_TimeOverflowFlag) {
+		data->overflows++;
+		FTM_ClearStatusFlags(config->base, kFTM_TimeOverflowFlag);
+	}
+
+	for (ch = 0; ch < MAX_CHANNELS; ch++) {
+		if ((flags & BIT(ch)) && (irqs & BIT(ch))) {
+			if (ch & 1) {
+				mcux_ftm_capture_second_edge(dev, ch);
+			} else {
+				mcux_ftm_capture_first_edge(dev, ch);
+			}
+		}
+	}
+}
+#endif /* CONFIG_PWM_CAPTURE */
+
+static int mcux_ftm_get_cycles_per_sec(const struct device *dev, uint32_t pwm,
+				       uint64_t *cycles)
+{
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
 
 	*cycles = data->clock_freq >> config->prescale;
 
 	return 0;
 }
 
-static int mcux_ftm_init(struct device *dev)
+static int mcux_ftm_init(const struct device *dev)
 {
-	const struct mcux_ftm_config *config = dev->config->config_info;
-	struct mcux_ftm_data *data = dev->driver_data;
-	ftm_chnl_pwm_signal_param_t *channel = data->channel;
-	struct device *clock_dev;
+	const struct mcux_ftm_config *config = dev->config;
+	struct mcux_ftm_data *data = dev->data;
+	ftm_chnl_pwm_config_param_t *channel = data->channel;
 	ftm_config_t ftm_config;
 	int i;
 
@@ -138,13 +396,7 @@ static int mcux_ftm_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	clock_dev = device_get_binding(config->clock_name);
-	if (clock_dev == NULL) {
-		LOG_ERR("Could not get clock device");
-		return -EINVAL;
-	}
-
-	if (clock_control_get_rate(clock_dev, config->clock_subsys,
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &data->clock_freq)) {
 		LOG_ERR("Could not get clock frequency");
 		return -EINVAL;
@@ -153,8 +405,8 @@ static int mcux_ftm_init(struct device *dev)
 	for (i = 0; i < config->channel_count; i++) {
 		channel->chnlNumber = i;
 		channel->level = kFTM_NoPwmSignal;
-		channel->dutyCyclePercent = 0;
-		channel->firstEdgeDelayPercent = 0;
+		channel->dutyValue = 0;
+		channel->firstEdgeValue = 0;
 		channel++;
 	}
 
@@ -163,45 +415,72 @@ static int mcux_ftm_init(struct device *dev)
 
 	FTM_Init(config->base, &ftm_config);
 
+#ifdef CONFIG_PWM_CAPTURE
+	config->irq_config_func(dev);
+	FTM_EnableInterrupts(config->base,
+			     kFTM_TimeOverflowInterruptEnable);
+
+	data->period_cycles = 0xFFFFU;
+	FTM_SetTimerPeriod(config->base, data->period_cycles);
+	FTM_SetSoftwareTrigger(config->base, true);
+	FTM_StartTimer(config->base, config->ftm_clock_source);
+#endif /* CONFIG_PWM_CAPTURE */
+
 	return 0;
 }
 
 static const struct pwm_driver_api mcux_ftm_driver_api = {
 	.pin_set = mcux_ftm_pin_set,
 	.get_cycles_per_sec = mcux_ftm_get_cycles_per_sec,
+#ifdef CONFIG_PWM_CAPTURE
+	.pin_configure_capture = mcux_ftm_pin_configure_capture,
+	.pin_enable_capture = mcux_ftm_pin_enable_capture,
+	.pin_disable_capture = mcux_ftm_pin_disable_capture,
+#endif /* CONFIG_PWM_CAPTURE */
 };
 
+#define TO_FTM_PRESCALE_DIVIDE(val) _DO_CONCAT(kFTM_Prescale_Divide_, val)
+
+#ifdef CONFIG_PWM_CAPTURE
+#define FTM_CONFIG_FUNC(n) \
+static void mcux_ftm_config_func_##n(const struct device *dev) \
+{ \
+	IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), \
+		    mcux_ftm_isr, DEVICE_DT_INST_GET(n), 0); \
+	irq_enable(DT_INST_IRQN(n)); \
+}
+#define FTM_CFG_CAPTURE_INIT(n) \
+	.irq_config_func = mcux_ftm_config_func_##n
+#define FTM_INIT_CFG(n)	FTM_DECLARE_CFG(n, FTM_CFG_CAPTURE_INIT(n))
+#else /* !CONFIG_PWM_CAPTURE */
+#define FTM_CONFIG_FUNC(n)
+#define FTM_CFG_CAPTURE_INIT
+#define FTM_INIT_CFG(n)	FTM_DECLARE_CFG(n, FTM_CFG_CAPTURE_INIT)
+#endif /* !CONFIG_PWM_CAPTURE */
+
+#define FTM_DECLARE_CFG(n, CAPTURE_INIT) \
+static const struct mcux_ftm_config mcux_ftm_config_##n = { \
+	.base = (FTM_Type *)DT_INST_REG_ADDR(n),\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)), \
+	.clock_subsys = (clock_control_subsys_t) \
+		DT_INST_CLOCKS_CELL(n, name), \
+	.ftm_clock_source = kFTM_FixedClock, \
+	.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),\
+	.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \
+		DT_INST_REG_ADDR(n)), \
+	.mode = kFTM_EdgeAlignedPwm, \
+	CAPTURE_INIT \
+}
+
 #define FTM_DEVICE(n) \
-	static const struct mcux_ftm_config mcux_ftm_config_##n = { \
-		.base = (FTM_Type *)DT_INST_##n##_NXP_KINETIS_FTM_BASE_ADDRESS,\
-		.clock_name = DT_INST_##n##_NXP_KINETIS_FTM_CLOCK_CONTROLLER, \
-		.clock_subsys = (clock_control_subsys_t) \
-			DT_INST_##n##_NXP_KINETIS_FTM_CLOCK_NAME, \
-		.ftm_clock_source = kFTM_FixedClock, \
-		.prescale = kFTM_Prescale_Divide_16, \
-		.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \
-			DT_INST_##n##_NXP_KINETIS_FTM_BASE_ADDRESS), \
-		.mode = kFTM_EdgeAlignedPwm, \
-	}; \
 	static struct mcux_ftm_data mcux_ftm_data_##n; \
-	DEVICE_AND_API_INIT(mcux_ftm_##n, DT_INST_##n##_NXP_KINETIS_FTM_LABEL, \
-			    &mcux_ftm_init, &mcux_ftm_data_##n, \
+	static const struct mcux_ftm_config mcux_ftm_config_##n; \
+	DEVICE_DT_INST_DEFINE(n, &mcux_ftm_init,		       \
+			    device_pm_control_nop, &mcux_ftm_data_##n, \
 			    &mcux_ftm_config_##n, \
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			    &mcux_ftm_driver_api)
+			    &mcux_ftm_driver_api); \
+	FTM_CONFIG_FUNC(n) \
+	FTM_INIT_CFG(n);
 
-#if DT_INST_0_NXP_KINETIS_FTM
-FTM_DEVICE(0);
-#endif /* DT_INST_0_NXP_KINETIS_FTM */
-
-#if DT_INST_1_NXP_KINETIS_FTM
-FTM_DEVICE(1);
-#endif /* DT_INST_1_NXP_KINETIS_FTM */
-
-#if DT_INST_2_NXP_KINETIS_FTM
-FTM_DEVICE(2);
-#endif /* DT_INST_2_NXP_KINETIS_FTM */
-
-#if DT_INST_3_NXP_KINETIS_FTM
-FTM_DEVICE(3);
-#endif /* DT_INST_3_NXP_KINETIS_FTM */
+DT_INST_FOREACH_STATUS_OKAY(FTM_DEVICE)

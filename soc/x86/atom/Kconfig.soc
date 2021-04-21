@@ -6,3 +6,4 @@ config SOC_ATOM
 	select CPU_ATOM
 	select X86_MMU
 	select ARCH_HAS_USERSPACE
+	select ARCH_HAS_RESERVED_PAGE_FRAMES

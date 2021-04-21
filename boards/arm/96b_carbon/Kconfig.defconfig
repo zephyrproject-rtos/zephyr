@@ -8,42 +8,9 @@ if BOARD_96B_CARBON
 config BOARD
 	default "96b_carbon"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-if SERIAL
-
-config UART_2
-	default y
-
-config UART_6
-	default y
-
-endif # SERIAL
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-endif # I2C
-
-if SPI
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
 config SPI_STM32_INTERRUPT
 	default y
-
-endif # SPI
+	depends on SPI
 
 if BT
 

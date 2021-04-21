@@ -1,4 +1,5 @@
 tests:
   arch.interrupt.arm.nmi:
-    arch_whitelist: arm
+    filter: CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    arch_allow: arm
     tags: nmi interrupt arm

@@ -2,6 +2,11 @@
 
 zephyr_library()
 
+if(CONFIG_COVERAGE)
+  zephyr_compile_options($<TARGET_PROPERTY:compiler,coverage>)
+  zephyr_link_libraries($<TARGET_PROPERTY:linker,coverage>)
+endif()
+
 zephyr_library_sources(
   thread.c
   thread_entry_wrapper.S
@@ -19,14 +24,16 @@ zephyr_library_sources(
   vector_table.c
   )
 
-zephyr_library_sources_ifdef(CONFIG_CACHE_FLUSHING cache.c)
+zephyr_library_sources_ifdef(CONFIG_CACHE_MANAGEMENT cache.c)
 zephyr_library_sources_ifdef(CONFIG_ARC_FIRQ fast_irq.S)
 
-zephyr_library_sources_if_kconfig(irq_offload.c)
+zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_ARC_CONNECT arc_connect.c)
 zephyr_library_sources_ifdef(CONFIG_ARC_CONNECT arc_smp.c)
+
+zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 
 add_subdirectory_ifdef(CONFIG_ARC_CORE_MPU mpu)
 add_subdirectory_ifdef(CONFIG_ARC_SECURE_FIRMWARE secureshield)

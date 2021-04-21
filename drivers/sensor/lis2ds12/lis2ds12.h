@@ -83,7 +83,7 @@
 
 struct lis2ds12_config {
 	char *comm_master_dev_name;
-	int (*bus_init)(struct device *dev);
+	int (*bus_init)(const struct device *dev);
 #ifdef CONFIG_LIS2DS12_TRIGGER
 	const char *irq_port;
 	gpio_pin_t irq_pin;
@@ -94,20 +94,20 @@ struct lis2ds12_config {
 struct lis2ds12_data;
 
 struct lis2ds12_transfer_function {
-	int (*read_data)(struct lis2ds12_data *data, u8_t reg_addr,
-			 u8_t *value, u8_t len);
-	int (*write_data)(struct lis2ds12_data *data, u8_t reg_addr,
-			  u8_t *value, u8_t len);
-	int (*read_reg)(struct lis2ds12_data *data, u8_t reg_addr,
-			u8_t *value);
-	int (*write_reg)(struct lis2ds12_data *data, u8_t reg_addr,
-			u8_t value);
-	int (*update_reg)(struct lis2ds12_data *data, u8_t reg_addr,
-			  u8_t mask, u8_t value);
+	int (*read_data)(struct lis2ds12_data *data, uint8_t reg_addr,
+			 uint8_t *value, uint8_t len);
+	int (*write_data)(struct lis2ds12_data *data, uint8_t reg_addr,
+			  uint8_t *value, uint8_t len);
+	int (*read_reg)(struct lis2ds12_data *data, uint8_t reg_addr,
+			uint8_t *value);
+	int (*write_reg)(struct lis2ds12_data *data, uint8_t reg_addr,
+			uint8_t value);
+	int (*update_reg)(struct lis2ds12_data *data, uint8_t reg_addr,
+			  uint8_t mask, uint8_t value);
 };
 
 struct lis2ds12_data {
-	struct device *comm_master;
+	const struct device *comm_master;
 	int sample_x;
 	int sample_y;
 	int sample_z;
@@ -115,33 +115,33 @@ struct lis2ds12_data {
 	const struct lis2ds12_transfer_function *hw_tf;
 
 #ifdef CONFIG_LIS2DS12_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
+	const struct device *dev;
 
 #if defined(CONFIG_LIS2DS12_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LIS2DS12_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS2DS12_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem trig_sem;
 #elif defined(CONFIG_LIS2DS12_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_LIS2DS12_TRIGGER */
 };
 
-int lis2ds12_spi_init(struct device *dev);
-int lis2ds12_i2c_init(struct device *dev);
+int lis2ds12_spi_init(const struct device *dev);
+int lis2ds12_i2c_init(const struct device *dev);
 
 #ifdef CONFIG_LIS2DS12_TRIGGER
-int lis2ds12_trigger_set(struct device *dev,
+int lis2ds12_trigger_set(const struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler);
 
-int lis2ds12_trigger_init(struct device *dev);
+int lis2ds12_trigger_init(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LIS2DS12_LIS2DS12_H_ */

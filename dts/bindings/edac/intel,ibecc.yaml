@@ -1,0 +1,12 @@
+# Copyright (c) 2021, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: EDAC In-Band Error Correcting Code (IBECC)
+
+compatible: "intel,ibecc"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: false

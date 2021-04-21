@@ -17,7 +17,7 @@ static bool app_fw_2;
 static const char *now_str(void)
 {
 	static char buf[16]; /* ...HH:MM:SS.MMM */
-	u32_t now = k_uptime_get_32();
+	uint32_t now = k_uptime_get_32();
 	unsigned int ms = now % MSEC_PER_SEC;
 	unsigned int s;
 	unsigned int min;
@@ -35,7 +35,7 @@ static const char *now_str(void)
 	return buf;
 }
 
-static int do_fetch(struct device *dev)
+static int do_fetch(const struct device *dev)
 {
 	struct sensor_value co2, tvoc, voltage, current;
 	int rc = 0;
@@ -78,7 +78,8 @@ static int do_fetch(struct device *dev)
 
 #ifndef CONFIG_CCS811_TRIGGER_NONE
 
-static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *trig)
 {
 	int rc = do_fetch(dev);
 
@@ -93,7 +94,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 
 #endif /* !CONFIG_CCS811_TRIGGER_NONE */
 
-static void do_main(struct device *dev)
+static void do_main(const struct device *dev)
 {
 	while (true) {
 		int rc = do_fetch(dev);
@@ -106,13 +107,13 @@ static void do_main(struct device *dev)
 			printk("Timed fetch failed: %d\n", rc);
 			break;
 		}
-		k_sleep(1000);
+		k_msleep(1000);
 	}
 }
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_INST_0_AMS_CCS811_LABEL);
+	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, ams_ccs811)));
 	struct ccs811_configver_type cfgver;
 	int rc;
 
@@ -121,7 +122,7 @@ void main(void)
 		return;
 	}
 
-	printk("device is %p, name is %s\n", dev, dev->config->name);
+	printk("device is %p, name is %s\n", dev, dev->name);
 
 	rc = ccs811_configver_fetch(dev, &cfgver);
 	if (rc == 0) {

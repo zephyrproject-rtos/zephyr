@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT silabs_gecko_flash_controller
+#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
@@ -21,15 +24,23 @@ struct flash_gecko_data {
 	struct k_sem mutex;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+
+static const struct flash_parameters flash_gecko_parameters = {
+	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
+	.erase_value = 0xff,
+};
+
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_DATA(dev) \
-	((struct flash_gecko_data *const)(dev)->driver_data)
+	((struct flash_gecko_data *const)(dev)->data)
 
-static bool write_range_is_valid(off_t offset, u32_t size);
-static bool read_range_is_valid(off_t offset, u32_t size);
+static bool write_range_is_valid(off_t offset, uint32_t size);
+static bool read_range_is_valid(off_t offset, uint32_t size);
 static int erase_flash_block(off_t offset, size_t size);
+static void flash_gecko_write_protection(bool enable);
 
-static int flash_gecko_read(struct device *dev, off_t offset, void *data,
+static int flash_gecko_read(const struct device *dev, off_t offset,
+			    void *data,
 			    size_t size)
 {
 	if (!read_range_is_valid(offset, size)) {
@@ -40,12 +51,12 @@ static int flash_gecko_read(struct device *dev, off_t offset, void *data,
 		return 0;
 	}
 
-	memcpy(data, (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, size);
+	memcpy(data, (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset, size);
 
 	return 0;
 }
 
-static int flash_gecko_write(struct device *dev, off_t offset,
+static int flash_gecko_write(const struct device *dev, off_t offset,
 			     const void *data, size_t size)
 {
 	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
@@ -62,19 +73,22 @@ static int flash_gecko_write(struct device *dev, off_t offset,
 	}
 
 	k_sem_take(&dev_data->mutex, K_FOREVER);
+	flash_gecko_write_protection(false);
 
-	address = (u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset;
+	address = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset;
 	msc_ret = MSC_WriteWord(address, data, size);
 	if (msc_ret < 0) {
 		ret = -EIO;
 	}
 
+	flash_gecko_write_protection(true);
 	k_sem_give(&dev_data->mutex);
 
 	return ret;
 }
 
-static int flash_gecko_erase(struct device *dev, off_t offset, size_t size)
+static int flash_gecko_erase(const struct device *dev, off_t offset,
+			     size_t size)
 {
 	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
 	int ret;
@@ -98,45 +112,43 @@ static int flash_gecko_erase(struct device *dev, off_t offset, size_t size)
 	}
 
 	k_sem_take(&dev_data->mutex, K_FOREVER);
+	flash_gecko_write_protection(false);
 
 	ret = erase_flash_block(offset, size);
 
+	flash_gecko_write_protection(true);
 	k_sem_give(&dev_data->mutex);
 
 	return ret;
 }
 
-static int flash_gecko_write_protection(struct device *dev, bool enable)
+static void flash_gecko_write_protection(bool enable)
 {
-	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
-
-	k_sem_take(&dev_data->mutex, K_FOREVER);
-
 	if (enable) {
 		/* Lock the MSC module. */
 		MSC->LOCK = 0;
 	} else {
 		/* Unlock the MSC module. */
+	#if defined(MSC_LOCK_LOCKKEY_UNLOCK)
+		MSC->LOCK = MSC_LOCK_LOCKKEY_UNLOCK;
+	#else
 		MSC->LOCK = MSC_UNLOCK_CODE;
+	#endif
 	}
-
-	k_sem_give(&dev_data->mutex);
-
-	return 0;
 }
 
 /* Note:
  * - A flash address to write to must be aligned to words.
  * - Number of bytes to write must be divisible by 4.
  */
-static bool write_range_is_valid(off_t offset, u32_t size)
+static bool write_range_is_valid(off_t offset, uint32_t size)
 {
 	return read_range_is_valid(offset, size)
-		&& (offset % sizeof(u32_t) == 0)
+		&& (offset % sizeof(uint32_t) == 0)
 		&& (size % 4 == 0U);
 }
 
-static bool read_range_is_valid(off_t offset, u32_t size)
+static bool read_range_is_valid(off_t offset, uint32_t size)
 {
 	return (offset + size) <= (CONFIG_FLASH_SIZE * 1024);
 }
@@ -148,7 +160,7 @@ static int erase_flash_block(off_t offset, size_t size)
 	int ret = 0;
 
 	for (off_t tmp = offset; tmp < offset + size; tmp += FLASH_PAGE_SIZE) {
-		address = (u8_t *)CONFIG_FLASH_BASE_ADDRESS + tmp;
+		address = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + tmp;
 		msc_ret = MSC_ErasePage(address);
 		if (msc_ret < 0) {
 			ret = -EIO;
@@ -161,12 +173,12 @@ static int erase_flash_block(off_t offset, size_t size)
 
 #if CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout flash_gecko_0_pages_layout = {
-	.pages_count = (CONFIG_FLASH_SIZE * 1024) /
-			DT_INST_0_SOC_NV_FLASH_ERASE_BLOCK_SIZE,
-	.pages_size = DT_INST_0_SOC_NV_FLASH_ERASE_BLOCK_SIZE,
+	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) /
+				DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 
-void flash_gecko_page_layout(struct device *dev,
+void flash_gecko_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
@@ -175,7 +187,15 @@ void flash_gecko_page_layout(struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static int flash_gecko_init(struct device *dev)
+static const struct flash_parameters *
+flash_gecko_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &flash_gecko_parameters;
+}
+
+static int flash_gecko_init(const struct device *dev)
 {
 	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
 
@@ -195,15 +215,14 @@ static const struct flash_driver_api flash_gecko_driver_api = {
 	.read = flash_gecko_read,
 	.write = flash_gecko_write,
 	.erase = flash_gecko_erase,
-	.write_protection = flash_gecko_write_protection,
+	.get_parameters = flash_gecko_get_parameters,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_gecko_page_layout,
 #endif
-	.write_block_size = DT_INST_0_SOC_NV_FLASH_WRITE_BLOCK_SIZE,
 };
 
 static struct flash_gecko_data flash_gecko_0_data;
 
-DEVICE_AND_API_INIT(flash_gecko_0, DT_FLASH_DEV_NAME,
-		    flash_gecko_init, &flash_gecko_0_data, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, flash_gecko_init, device_pm_control_nop,
+		    &flash_gecko_0_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_gecko_driver_api);

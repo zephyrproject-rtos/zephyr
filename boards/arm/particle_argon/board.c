@@ -11,7 +11,7 @@
 
 static inline void external_antenna(bool on)
 {
-	struct device *ufl_gpio_dev, *pcb_gpio_dev;
+	const struct device *ufl_gpio_dev, *pcb_gpio_dev;
 
 	ufl_gpio_dev = device_get_binding(SKY_UFLn_GPIO_NAME);
 	if (!ufl_gpio_dev) {
@@ -35,7 +35,7 @@ static inline void external_antenna(bool on)
 			      : GPIO_OUTPUT_ACTIVE));
 }
 
-static int board_particle_argon_init(struct device *dev)
+static int board_particle_argon_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -49,6 +49,7 @@ static int board_particle_argon_init(struct device *dev)
 	return 0;
 }
 
-/* needs to be done after GPIO driver init */
-SYS_INIT(board_particle_argon_init, POST_KERNEL,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/* needs to be done after GPIO driver init, which is at
+ * POST_KERNEL:KERNEL_INIT_PRIORITY_DEFAULT.
+ */
+SYS_INIT(board_particle_argon_init, POST_KERNEL, 99);

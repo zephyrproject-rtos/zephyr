@@ -13,7 +13,7 @@ extern void test_mbedtls(void);
 void test_main(void)
 {
 #ifdef CONFIG_USERSPACE
-	k_mem_domain_add_partition(&ztest_mem_domain, &k_mbedtls_partition);
+	k_mem_domain_add_partition(&k_mem_domain_default, &k_mbedtls_partition);
 #endif
 	ztest_test_suite(test_mbedtls_fn,
 		ztest_user_unit_test(test_mbedtls));

@@ -76,12 +76,12 @@ extern "C" {
  *	 rounded up.
  */
 struct wdt_window {
-	u32_t min;
-	u32_t max;
+	uint32_t min;
+	uint32_t max;
 };
 
 /** Watchdog callback. */
-typedef void (*wdt_callback_t)(struct device *dev, int channel_id);
+typedef void (*wdt_callback_t)(const struct device *dev, int channel_id);
 
 /**
  * @brief Watchdog timeout configuration struct.
@@ -102,7 +102,7 @@ struct wdt_timeout_cfg {
 #ifdef CONFIG_WDT_MULTISTAGE
 	struct wdt_timeout_cfg *next;
 #endif
-	u8_t flags;
+	uint8_t flags;
 };
 
 /**
@@ -110,21 +110,21 @@ struct wdt_timeout_cfg {
  * @brief Callback API for setting up watchdog instance.
  * See wdt_setup() for argument descriptions
  */
-typedef int (*wdt_api_setup)(struct device *dev, u8_t options);
+typedef int (*wdt_api_setup)(const struct device *dev, uint8_t options);
 
 /**
  * @typedef wdt_api_disable
  * @brief Callback API for disabling watchdog instance.
  * See wdt_disable() for argument descriptions
  */
-typedef int (*wdt_api_disable)(struct device *dev);
+typedef int (*wdt_api_disable)(const struct device *dev);
 
 /**
  * @typedef wdt_api_install_timeout
  * @brief Callback API for installing new timeout.
  * See wdt_install_timeout() for argument descriptions
  */
-typedef int (*wdt_api_install_timeout)(struct device *dev,
+typedef int (*wdt_api_install_timeout)(const struct device *dev,
 				       const struct wdt_timeout_cfg *cfg);
 
 /**
@@ -132,10 +132,10 @@ typedef int (*wdt_api_install_timeout)(struct device *dev,
  * @brief Callback API for feeding specified watchdog timeout.
  * See (wdt_feed) for argument descriptions
  */
-typedef int (*wdt_api_feed)(struct device *dev, int channel_id);
+typedef int (*wdt_api_feed)(const struct device *dev, int channel_id);
 
 /** @cond INTERNAL_HIDDEN */
-struct wdt_driver_api {
+__subsystem struct wdt_driver_api {
 	wdt_api_setup setup;
 	wdt_api_disable disable;
 	wdt_api_install_timeout install_timeout;
@@ -160,12 +160,12 @@ struct wdt_driver_api {
  * @retval -ENOTSUP If any of the set options is not supported.
  * @retval -EBUSY If watchdog instance has been already setup.
  */
-__syscall int wdt_setup(struct device *dev, u8_t options);
+__syscall int wdt_setup(const struct device *dev, uint8_t options);
 
-static inline int z_impl_wdt_setup(struct device *dev, u8_t options)
+static inline int z_impl_wdt_setup(const struct device *dev, uint8_t options)
 {
 	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
+		(const struct wdt_driver_api *)dev->api;
 
 	return api->setup(dev, options);
 }
@@ -183,12 +183,12 @@ static inline int z_impl_wdt_setup(struct device *dev, u8_t options)
  * @retval -EFAULT If watchdog instance is not enabled.
  * @retval -EPERM If watchdog can not be disabled directly by application code.
  */
-__syscall int wdt_disable(struct device *dev);
+__syscall int wdt_disable(const struct device *dev);
 
-static inline int z_impl_wdt_disable(struct device *dev)
+static inline int z_impl_wdt_disable(const struct device *dev)
 {
 	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
+		(const struct wdt_driver_api *)dev->api;
 
 	return api->disable(dev);
 }
@@ -215,11 +215,11 @@ static inline int z_impl_wdt_disable(struct device *dev)
  *		   timeout value for all timeouts and the supplied timeout
  *		   window differs from windows for alarms installed so far.
  */
-static inline int wdt_install_timeout(struct device *dev,
+static inline int wdt_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *cfg)
 {
 	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *) dev->driver_api;
+		(const struct wdt_driver_api *) dev->api;
 
 	return api->install_timeout(dev, cfg);
 }
@@ -231,14 +231,17 @@ static inline int wdt_install_timeout(struct device *dev,
  * @param channel_id Index of the fed channel.
  *
  * @retval 0 If successful.
+ * @retval -EAGAIN If completing the feed operation would stall the
+ *                 caller, for example due to an in-progress watchdog
+ *                 operation such as a previous @c wdt_feed().
  * @retval -EINVAL If there is no installed timeout for supplied channel.
  */
-__syscall int wdt_feed(struct device *dev, int channel_id);
+__syscall int wdt_feed(const struct device *dev, int channel_id);
 
-static inline int z_impl_wdt_feed(struct device *dev, int channel_id)
+static inline int z_impl_wdt_feed(const struct device *dev, int channel_id)
 {
 	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
+		(const struct wdt_driver_api *)dev->api;
 
 	return api->feed(dev, channel_id);
 }

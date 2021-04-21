@@ -23,15 +23,15 @@ struct fs_littlefs {
 	struct lfs_config cfg;
 
 	/* Must be cfg.cache_size */
-	u8_t *read_buffer;
+	uint8_t *read_buffer;
 
 	/* Must be cfg.cache_size */
-	u8_t *prog_buffer;
+	uint8_t *prog_buffer;
 
 	/* Mustbe cfg.lookahead_size/4 elements, and
 	 * cfg.lookahead_size must be a multiple of 8.
 	 */
-	u32_t *lookahead_buffer[CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE / sizeof(u32_t)];
+	uint32_t *lookahead_buffer[CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE / sizeof(uint32_t)];
 
 	/* These structures are filled automatically at mount. */
 	struct lfs lfs;
@@ -49,7 +49,7 @@ struct fs_littlefs {
  * object.
  *
  * To define an instance for the Kconfig defaults, use
- * :cpp:func:`FS_LITTLEFS_DECLARE_DEFAULT_CONFIG`.
+ * :c:macro:`FS_LITTLEFS_DECLARE_DEFAULT_CONFIG`.
  *
  * To completely control file system configuration the application can
  * directly define and initialize a :c:type:`struct fs_littlefs`
@@ -57,20 +57,20 @@ struct fs_littlefs {
  * values are consistent with littlefs requirements.
  *
  * @note If you use a non-default configuration for cache size, you
- * must also select :option:`CONFIG_FS_LITTLEFS_FC_MEM_POOL` to relax
+ * must also select @option{CONFIG_FS_LITTLEFS_FC_HEAP_SIZE} to relax
  * the size constraints on per-file cache allocations.
  *
  * @param name the name for the structure.  The defined object has
  * file scope.
- * @param read_sz see :option:`CONFIG_FS_LITTLEFS_READ_SIZE`
- * @param prog_sz see :option:`CONFIG_FS_LITTLEFS_PROG_SIZE`
- * @param cache_sz see :option:`CONFIG_FS_LITTLEFS_CACHE_SIZE`
- * @param lookahead_sz see :option:`CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE`
+ * @param read_sz see @option{CONFIG_FS_LITTLEFS_READ_SIZE}
+ * @param prog_sz see @option{CONFIG_FS_LITTLEFS_PROG_SIZE}
+ * @param cache_sz see @option{CONFIG_FS_LITTLEFS_CACHE_SIZE}
+ * @param lookahead_sz see @option{CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE}
  */
 #define FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(name, read_sz, prog_sz, cache_sz, lookahead_sz) \
-	static u8_t name ## _read_buffer[cache_sz];					  \
-	static u8_t name ## _prog_buffer[cache_sz];					  \
-	static u32_t name ## _lookahead_buffer[(lookahead_sz) / sizeof(u32_t)];		  \
+	static uint8_t __aligned(4) name ## _read_buffer[cache_sz];			  \
+	static uint8_t __aligned(4) name ## _prog_buffer[cache_sz];			  \
+	static uint32_t name ## _lookahead_buffer[(lookahead_sz) / sizeof(uint32_t)];		  \
 	static struct fs_littlefs name = {						  \
 		.cfg = {								  \
 			.read_size = (read_sz),						  \

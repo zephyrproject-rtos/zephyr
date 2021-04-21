@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, NXP
  * Copyright (c) 2018, Nordic Semiconductor ASA
- * Copyright (c) 2018, Linaro Limited
+ * Copyright (c) 2018-2019, Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,7 @@
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
 static struct k_thread thread_data;
 
-static struct device *ipm_handle;
+static const struct device *ipm_handle;
 
 static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDR };
 static struct metal_device shm_device = {
@@ -66,16 +66,23 @@ static unsigned char virtio_get_status(struct virtio_device *vdev)
 	return sys_read8(VDEV_STATUS_ADDR);
 }
 
-static u32_t virtio_get_features(struct virtio_device *vdev)
+static uint32_t virtio_get_features(struct virtio_device *vdev)
 {
 	return 1 << VIRTIO_RPMSG_F_NS;
 }
 
 static void virtio_notify(struct virtqueue *vq)
 {
-	u32_t dummy_data = 0x00110011; /* Some data must be provided */
+#if defined(CONFIG_SOC_MPS2_AN521) || \
+	defined(CONFIG_SOC_V2M_MUSCA_B1)
+	uint32_t current_core = sse_200_platform_get_cpu_id();
+
+	ipm_send(ipm_handle, 0, current_core ? 0 : 1, 0, 1);
+#else
+	uint32_t dummy_data = 0x00110011; /* Some data must be provided */
 
 	ipm_send(ipm_handle, 0, 0, &dummy_data, sizeof(dummy_data));
+#endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
 }
 
 struct virtio_dispatch dispatch = {
@@ -87,13 +94,14 @@ struct virtio_dispatch dispatch = {
 static K_SEM_DEFINE(data_sem, 0, 1);
 static K_SEM_DEFINE(data_rx_sem, 0, 1);
 
-static void platform_ipm_callback(void *context, u32_t id, volatile void *data)
+static void platform_ipm_callback(const struct device *dev, void *context,
+				  uint32_t id, volatile void *data)
 {
 	k_sem_give(&data_sem);
 }
 
 int endpoint_cb(struct rpmsg_endpoint *ept, void *data,
-		size_t len, u32_t src, void *priv)
+		size_t len, uint32_t src, void *priv)
 {
 	received_data = *((unsigned int *) data);
 
@@ -168,7 +176,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	}
 
 	/* setup IPM */
-	ipm_handle = device_get_binding("MAILBOX_0");
+	ipm_handle = device_get_binding(CONFIG_OPENAMP_IPC_DEV_NAME);
 	if (ipm_handle == NULL) {
 		printk("device_get_binding failed to find device\n");
 		return;

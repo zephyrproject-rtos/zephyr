@@ -5,7 +5,7 @@
 This script help you to compare footprint results with previous commits in git.
 If you don't have a git repository, it will compare your current tree
 against the last release results.
-To run it you need to set up the same environment as sanity check.
+To run it you need to set up the same environment as twister.
 The scripts take 2 optional args COMMIT and BASE_COMMIT, which tell the scripts
 which commit to use as current commit and as base for comparing, respectively.
 The script can take any SHA commit recognized for git.
@@ -16,7 +16,7 @@ COMMIT is the commit to compare against BASE_COMMIT.
  HEAD in any other case.
 BASE_COMMIT is the commit used as base to compare results.
  Default:
-  sanity_last_release.csv if we don't have git tree.
+  twister_last_release.csv if we don't have git tree.
   HEAD is we have changes in the working tree.
   HEAD~1 if we don't have changes and we have default COMMIT.
   COMMIT~1 if we have a valid COMMIT.
@@ -37,7 +37,7 @@ if "ZEPHYR_BASE" not in os.environ:
 
 logger = None
 GIT_ENABLED = False
-RELEASE_DATA = 'sanity_last_release.csv'
+RELEASE_DATA = 'twister_last_release.csv'
 
 def is_git_enabled():
     global GIT_ENABLED
@@ -70,11 +70,11 @@ def init_logs():
 def parse_args():
     parser = argparse.ArgumentParser(
                 description="Compare footprint apps RAM and ROM sizes. Note: "
-                "To run it you need to set up the same environment as sanitycheck.")
+                "To run it you need to set up the same environment as twister.")
     parser.add_argument('-b', '--base-commit', default=None,
                         help="Commit ID to use as base for footprint "
                                     "compare. Default is parent current commit."
-                                    " or sanity_last_release.csv if we don't have git.")
+                                    " or twister_last_release.csv if we don't have git.")
     parser.add_argument('-c', '--commit', default=None,
                         help="Commit ID to use compare footprint against base. "
                                     "Default is HEAD or working tree.")
@@ -119,13 +119,13 @@ def run_sanity_footprint(commit=None, cwd=os.environ.get('ZEPHYR_BASE'),
                          output_file=None):
     if not output_file:
         output_file = sanity_results_filename(commit)
-    cmd = '/bin/bash -c "source ./zephyr-env.sh && sanitycheck'
+    cmd = '/bin/bash -c "source ./zephyr-env.sh && twister'
     cmd += ' +scripts/sanity_chk/sanity_compare.args -o %s"' % output_file
     logger.debug('Sanity (%s)   %s' %(commit, cmd))
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             cwd=cwd, shell=True)
-    output,error=proc.communicate()
+    output,_ = proc.communicate()
     if proc.wait() == 0:
         logger.debug(output)
         return True

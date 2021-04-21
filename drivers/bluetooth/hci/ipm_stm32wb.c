@@ -23,13 +23,13 @@
 
 /* Private variables ---------------------------------------------------------*/
 PLACE_IN_SECTION("MB_MEM1") ALIGN(4) static TL_CmdPacket_t BleCmdBuffer;
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static u8_t EvtPool[POOL_SIZE];
+PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t EvtPool[POOL_SIZE];
 PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static TL_CmdPacket_t SystemCmdBuffer;
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static u8_t
+PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
 	SystemSpareEvtBuffer[sizeof(TL_PacketHeader_t) + TL_EVT_HDR_SIZE + 255];
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static u8_t
+PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
 	BleSpareEvtBuffer[sizeof(TL_PacketHeader_t) + TL_EVT_HDR_SIZE + 255];
-PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static u8_t
+PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
 	HciAclDataBuffer[sizeof(TL_PacketHeader_t) + 5 + 251];
 
 static void syscmd_status_not(SHCI_TL_CmdStatus_t status);
@@ -44,20 +44,22 @@ static void sysevt_received(void *pdata);
 #define HCI_SCO                 0x03
 #define HCI_EVT                 0x04
 
+#define STM32WB_C2_LOCK_TIMEOUT K_MSEC(500)
+
 static K_SEM_DEFINE(c2_started, 0, 1);
 static K_SEM_DEFINE(ble_sys_wait_cmd_rsp, 0, 1);
 static K_SEM_DEFINE(acl_data_ack, 1, 1);
 static K_SEM_DEFINE(ipm_busy, 1, 1);
 
 struct aci_set_tx_power {
-	u8_t cmd;
-	u8_t value[2];
+	uint8_t cmd;
+	uint8_t value[2];
 };
 
 struct aci_set_ble_addr {
-	u8_t config_offset;
-	u8_t length;
-	u8_t value[6];
+	uint8_t config_offset;
+	uint8_t length;
+	uint8_t value[6];
 } __packed;
 
 #define ACI_WRITE_SET_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0xFC0F)
@@ -67,6 +69,11 @@ struct aci_set_ble_addr {
 #define HCI_CONFIG_DATA_RANDOM_ADDRESS_OFFSET	0x2E
 
 static bt_addr_t bd_addr_udn;
+
+/* Rx thread definitions */
+K_FIFO_DEFINE(ipm_rx_events_fifo);
+static K_KERNEL_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_STM32_IPM_RX_STACK_SIZE);
+static struct k_thread ipm_rx_thread_data;
 
 static void stm32wb_start_ble(void)
 {
@@ -128,7 +135,7 @@ static void tryfix_event(TL_Evt_t *tev)
 	}
 
 	struct bt_hci_evt_le_enh_conn_complete *evt =
-			(void *)((u8_t *)mev + (sizeof(*mev)));
+			(void *)((uint8_t *)mev + (sizeof(*mev)));
 
 	if (!bt_addr_cmp(&evt->peer_addr.a, BT_ADDR_NONE)) {
 		BT_WARN("Invalid peer addr %s", bt_addr_le_str(&evt->peer_addr));
@@ -139,57 +146,82 @@ static void tryfix_event(TL_Evt_t *tev)
 
 void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 {
-	struct net_buf *buf;
-	struct bt_hci_acl_hdr acl_hdr;
-	TL_AclDataSerial_t *acl;
+	k_fifo_put(&ipm_rx_events_fifo, hcievt);
+}
 
-	k_sem_take(&ipm_busy, K_NO_WAIT);
+static void bt_ipm_rx_thread(void)
+{
+	while (true) {
+		bool discardable = false;
+		k_timeout_t timeout = K_FOREVER;
+		static TL_EvtPacket_t *hcievt;
+		struct net_buf *buf = NULL;
+		struct bt_hci_acl_hdr acl_hdr;
+		TL_AclDataSerial_t *acl;
+		struct bt_hci_evt_le_meta_event *mev;
 
-	switch (hcievt->evtserial.type) {
-	case HCI_EVT:
-		BT_DBG("EVT: hcievt->evtserial.evt.evtcode: 0x%02x",
-		       hcievt->evtserial.evt.evtcode);
-		switch (hcievt->evtserial.evt.evtcode) {
-		case BT_HCI_EVT_VENDOR:
-			/* Vendor events are currently unsupported */
-			BT_ERR("Unknown evtcode type 0x%02x",
+		hcievt = k_fifo_get(&ipm_rx_events_fifo, K_FOREVER);
+
+		k_sem_take(&ipm_busy, K_FOREVER);
+
+		switch (hcievt->evtserial.type) {
+		case HCI_EVT:
+			BT_DBG("EVT: hcievt->evtserial.evt.evtcode: 0x%02x",
 			       hcievt->evtserial.evt.evtcode);
-			goto out;
-		default:
-			buf = bt_buf_get_evt(hcievt->evtserial.evt.evtcode, false,
-					     K_FOREVER);
+			switch (hcievt->evtserial.evt.evtcode) {
+			case BT_HCI_EVT_VENDOR:
+				/* Vendor events are currently unsupported */
+				BT_ERR("Unknown evtcode type 0x%02x",
+				       hcievt->evtserial.evt.evtcode);
+				TL_MM_EvtDone(hcievt);
+				goto end_loop;
+			default:
+				mev = (void *)&hcievt->evtserial.evt.payload;
+				if (hcievt->evtserial.evt.evtcode == BT_HCI_EVT_LE_META_EVENT &&
+				    (mev->subevent == BT_HCI_EVT_LE_ADVERTISING_REPORT ||
+				     mev->subevent == BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT)) {
+					discardable = true;
+					timeout = K_NO_WAIT;
+				}
+
+				buf = bt_buf_get_evt(
+					hcievt->evtserial.evt.evtcode,
+					discardable, timeout);
+				if (!buf) {
+					BT_DBG("Discard adv report due to insufficient buf");
+					goto end_loop;
+				}
+			}
+
+			tryfix_event(&hcievt->evtserial.evt);
+			net_buf_add_mem(buf, &hcievt->evtserial.evt,
+					hcievt->evtserial.evt.plen + 2);
 			break;
+		case HCI_ACL:
+			acl = &(((TL_AclDataPacket_t *)hcievt)->AclDataSerial);
+			buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+			acl_hdr.handle = acl->handle;
+			acl_hdr.len = acl->length;
+			BT_DBG("ACL: handle %x, len %x",
+			       acl_hdr.handle, acl_hdr.len);
+			net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
+			net_buf_add_mem(buf, (uint8_t *)&acl->acl_data,
+					acl_hdr.len);
+			break;
+		default:
+			BT_ERR("Unknown BT buf type %d",
+			       hcievt->evtserial.type);
+			TL_MM_EvtDone(hcievt);
+			goto end_loop;
 		}
-		tryfix_event(&hcievt->evtserial.evt);
-		net_buf_add_mem(buf, &hcievt->evtserial.evt,
-				hcievt->evtserial.evt.plen + 2);
-		break;
-	case HCI_ACL:
-		acl = &(((TL_AclDataPacket_t *)hcievt)->AclDataSerial);
-		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
-		acl_hdr.handle = acl->handle;
-		acl_hdr.len = acl->length;
-		BT_DBG("ACL: handle %x, len %x", acl_hdr.handle, acl_hdr.len);
-		net_buf_add_mem(buf, &acl_hdr, sizeof(acl_hdr));
-		net_buf_add_mem(buf, (u8_t *)&acl->acl_data, acl_hdr.len);
-		break;
-	default:
-		BT_ERR("Unknown BT buf type %d", hcievt->evtserial.type);
+
 		TL_MM_EvtDone(hcievt);
-		goto out;
-	}
 
-	TL_MM_EvtDone(hcievt);
-
-	if (hcievt->evtserial.type == HCI_EVT &&
-	    bt_hci_evt_is_prio(hcievt->evtserial.evt.evtcode)) {
-		bt_recv_prio(buf);
-	} else {
 		bt_recv(buf);
+end_loop:
+		k_sem_give(&ipm_busy);
 	}
 
-out:
-	k_sem_give(&ipm_busy);
 }
 
 static void TM_AclDataAck(void)
@@ -209,7 +241,7 @@ void shci_cmd_resp_release(uint32_t flag)
 
 void shci_cmd_resp_wait(uint32_t timeout)
 {
-	k_sem_take(&ble_sys_wait_cmd_rsp, timeout);
+	k_sem_take(&ble_sys_wait_cmd_rsp, K_MSEC(timeout));
 }
 
 void ipcc_reset(void)
@@ -269,7 +301,7 @@ void transport_init(void)
 	TL_Init();
 
 	/**< System channel initialization */
-	shci_init_config.p_cmdbuffer = (u8_t *)&SystemCmdBuffer;
+	shci_init_config.p_cmdbuffer = (uint8_t *)&SystemCmdBuffer;
 	shci_init_config.StatusNotCallBack = syscmd_status_not;
 	shci_init(sysevt_received, (void *) &shci_init_config);
 
@@ -281,7 +313,7 @@ void transport_init(void)
 	TL_MM_Init(&tl_mm_config);
 
 	/**< BLE channel initialization */
-	tl_ble_config.p_cmdbuffer = (u8_t *)&BleCmdBuffer;
+	tl_ble_config.p_cmdbuffer = (uint8_t *)&BleCmdBuffer;
 	tl_ble_config.p_AclDataBuffer = HciAclDataBuffer;
 	tl_ble_config.IoBusEvtCallBack = TM_EvtReceivedCb;
 	tl_ble_config.IoBusAclDataTxAck = TM_AclDataAck;
@@ -372,9 +404,9 @@ static void start_ble_rf(void)
 bt_addr_t *bt_get_ble_addr(void)
 {
 	bt_addr_t *bd_addr;
-	u32_t udn;
-	u32_t company_id;
-	u32_t device_id;
+	uint32_t udn;
+	uint32_t company_id;
+	uint32_t device_id;
 
 	/* Get the 64 bit Unique Device Number UID */
 	/* The UID is used by firmware to derive   */
@@ -476,23 +508,12 @@ static int bt_ipm_open(void)
 {
 	int err;
 
-	/* Take BLE out of reset */
-	ipcc_reset();
-
-	transport_init();
-
-	/* Device will let us know when it's ready */
-	k_sem_take(&c2_started, K_FOREVER);
-	BT_DBG("C2 unlocked");
-
-	stm32wb_start_ble();
-
-	BT_DBG("IPM Channel Open Completed");
-
 	err = bt_ipm_ble_init();
 	if (err) {
 		return err;
 	}
+
+	BT_DBG("IPM Channel Open Completed");
 
 	return 0;
 }
@@ -505,13 +526,34 @@ static const struct bt_hci_driver drv = {
 	.send           = bt_ipm_send,
 };
 
-static int _bt_ipm_init(struct device *unused)
+static int _bt_ipm_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
 	bt_hci_driver_register(&drv);
 
 	start_ble_rf();
+
+	/* Start RX thread */
+	k_thread_create(&ipm_rx_thread_data, ipm_rx_stack,
+			K_KERNEL_STACK_SIZEOF(ipm_rx_stack),
+			(k_thread_entry_t)bt_ipm_rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
+			0, K_NO_WAIT);
+
+	/* Take BLE out of reset */
+	ipcc_reset();
+
+	transport_init();
+
+	/* Device will let us know when it's ready */
+	if (k_sem_take(&c2_started, STM32WB_C2_LOCK_TIMEOUT)) {
+		return -ETIMEDOUT;
+	}
+	BT_DBG("C2 unlocked");
+
+	stm32wb_start_ble();
+
 	return 0;
 }
 

@@ -45,19 +45,19 @@ There are three types of configuration file:
      combination of :envvar:`%HOMEDRIVE%` and :envvar:`%HOMEPATH%`.
 
 3. **Local**: Settings in this file affect west's behavior for the
-   current :term:`west installation`. The file is :file:`.west/config`, relative
-   to the installation's root directory.
+   current :term:`west workspace`. The file is :file:`.west/config`, relative
+   to the workspace's root directory.
 
 A setting in a file which appears lower down on this list overrides an earlier
 setting. For example, if ``color.ui`` is ``true`` in the system's configuration
-file, but ``false`` in the installation's, then the final value is
+file, but ``false`` in the workspace's, then the final value is
 ``false``. Similarly, settings in the user configuration file override system
 settings, and so on.
 
 .. _west-config-cmd:
 
-West ``config`` Command
------------------------
+west config
+-----------
 
 The built-in ``config`` command can be used to get and set configuration
 values. You can pass ``west config`` the options ``--system``, ``--global``, or
@@ -76,11 +76,11 @@ To set ``manifest.path`` to :file:`some-other-manifest`:
 
 Doing the above means that commands like ``west update`` will look for the
 :term:`west manifest` inside the :file:`some-other-manifest` directory
-(relative to the installation root directory) instead of the directory given to
+(relative to the workspace root directory) instead of the directory given to
 ``west init``, so be careful!
 
 To read ``zephyr.base``, the value which will be used as ``ZEPHYR_BASE`` if it
-is unset in the calling environment (also relative to the installation root):
+is unset in the calling environment (also relative to the workspace root):
 
 .. code-block:: console
 
@@ -101,7 +101,7 @@ zephyr``.)
 
 To set ``color.ui`` to ``false`` in the global (user-wide) configuration file,
 so that west will no longer print colored output for that user when run in any
-installation:
+workspace:
 
 .. code-block:: console
 
@@ -135,14 +135,24 @@ commands are documented in the pages for those commands.
        stdout is a terminal.
    * - ``commands.allow_extensions``
      - Boolean, default ``true``, disables :ref:`west-extensions` if ``false``
+   * - ``manifest.file``
+     - String, default ``west.yml``. Relative path from the manifest repository
+       root directory to the manifest file used by ``west init`` and other
+       commands which parse the manifest.
+   * - ``manifest.group-filter``
+     - String, default empty. A comma-separated list of project groups to
+       enable and disable within the workspace. Prefix enabled groups with
+       ``+`` and disabled groups with ``-``. For example, the value
+       ``"+foo,-bar"`` enables group ``foo`` and disables ``bar``. See
+       :ref:`west-manifest-groups`.
    * - ``manifest.path``
-     - String, relative path from the :term:`west installation` root directory
+     - String, relative path from the :term:`west workspace` root directory
        to the manifest repository used by ``west update`` and other commands
        which parse the manifest. Set locally by ``west init``.
    * - ``update.fetch``
      - String, one of ``"smart"`` (the default behavior starting in v0.6.1) or
        ``"always"`` (the previous behavior). If set to ``"smart"``, the
-       :ref:`west update <west-multi-repo-cmds>` command will skip fetching
+       :ref:`west-update` command will skip fetching
        from project remotes when those projects' revisions in the manifest file
        are SHAs or tags which are already available locally. The ``"always"``
        behavior is to unconditionally fetch from the remote.

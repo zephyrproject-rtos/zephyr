@@ -31,4 +31,16 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 120000000
 
+config GPIO_SAM
+	default y
+	depends on GPIO
+
+config I2C_SAM_TWI
+	default y
+	depends on I2C
+
+config SPI_SAM
+	default y
+	depends on SPI
+
 endif # SOC_SERIES_SAM4S

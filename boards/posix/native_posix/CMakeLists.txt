@@ -14,6 +14,8 @@ zephyr_library_sources(
 	tracing.c
 	cmdline_common.c
 	cmdline.c
+	cpu_wait.c
+	hw_counter.c
 	)
 
 zephyr_library_include_directories(

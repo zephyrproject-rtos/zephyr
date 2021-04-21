@@ -1,0 +1,10 @@
+tests:
+  drivers.counter.maxim_ds3231:
+    tags: drivers
+    depends_on: counter i2c
+    min_ram: 16
+    timeout: 400
+    filter: dt_compat_enabled("maxim,ds3231")
+    harness: ztest
+    harness_config:
+      fixture: maxim_ds3231

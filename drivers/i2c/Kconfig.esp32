@@ -12,6 +12,12 @@ menuconfig I2C_ESP32
 
 if I2C_ESP32
 
+config I2C_0
+	bool "Enable I2C Port 0"
+
+config I2C_1
+	bool "Enable I2C Port 1"
+
 config I2C_ESP32_TIMEOUT
 	int "I2C timeout to receive a data bit in APB clock cycles"
 	default 200000

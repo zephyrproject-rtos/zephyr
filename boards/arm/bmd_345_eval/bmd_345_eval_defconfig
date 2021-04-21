@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_NRF52X=y
+CONFIG_SOC_NRF52840_QIAA=y
+CONFIG_BOARD_BMD_345_EVAL=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable RTT
+CONFIG_USE_SEGGER_RTT=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# additional board options
+CONFIG_GPIO_AS_PINRESET=y
+
+# PA GPIO Pin
+CONFIG_BT_CTLR_GPIO_PA=y
+CONFIG_BT_CTLR_GPIO_PA_PIN=37
+
+# LNA GPIO Pin
+CONFIG_BT_CTLR_GPIO_LNA=y
+CONFIG_BT_CTLR_GPIO_LNA_PIN=38

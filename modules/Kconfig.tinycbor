@@ -8,16 +8,6 @@ config TINYCBOR
 
 if TINYCBOR
 
-config CBOR_NO_DFLT_WRITER
-	bool "No default writer support"
-	help
-	  This option specifies whether a default writer exists.
-
-config CBOR_NO_DFLT_READER
-	bool "No default reader support"
-	help
-	  This option specifies whether a default reader exists.
-
 config CBOR_ENCODER_NO_CHECK_USER
 	bool "No encoder checks for user args for validity"
 	help

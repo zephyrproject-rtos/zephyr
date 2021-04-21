@@ -32,8 +32,7 @@ And Secondary element has following models
 
 Prior to provisioning, an unprovisioned beacon is broadcast that contains
 a unique UUID. It is obtained from the device address set by Nordic in the
-Factory information configuration register (FICR). Each button controls the state of its
-corresponding LED and does not initiate any mesh activity
+Factory information configuration register (FICR).
 
 Associations of Models with hardware
 ************************************
@@ -56,7 +55,7 @@ also publish its relevant status.
 Requirements
 ************
 This sample has been tested on the Nordic nRF52840-PDK board, but would
-likely also run on the nrf52_pca10040 board.
+likely also run on the nrf52dk_nrf52832 board.
 
 Building and Running
 ********************
@@ -67,7 +66,7 @@ The following commands build the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/mesh/onoff_level_lighting_vnd_app
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build flash
    :compact:
 

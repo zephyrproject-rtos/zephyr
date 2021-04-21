@@ -8,34 +8,13 @@ if BOARD_STM32F769I_DISCO
 config BOARD
 	default "stm32f769i_disco"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-config UART_6
-	default y
-	depends on SERIAL
-
-config I2C_1
-	default y
-	depends on I2C
-
-if SPI
-
 config SPI_STM32_INTERRUPT
 	default y
-
-config SPI_2
-	default y
-
-endif # SPI
+	depends on SPI
 
 if NETWORKING
 
 config NET_L2_ETHERNET
-	default y
-
-config ETH_STM32_HAL
 	default y
 
 endif # NETWORKING

@@ -8,15 +8,14 @@
 #include <init.h>
 #include <drivers/pinmux.h>
 
-static int board_pinmux_init(struct device *device)
+static int board_pinmux_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
-	struct device *pinmux = device_get_binding(CONFIG_PINMUX_NAME);
+	const struct device *pinmux = DEVICE_DT_GET(DT_NODELABEL(pinctrl));
 
-	if (pinmux == NULL) {
-		return -ENXIO;
-	}
+	__ASSERT_NO_MSG(device_is_ready(pinmux));
+
 	/*
 	 * to do configuration for each sel,
 	 * please refer the doc for hsdk board.

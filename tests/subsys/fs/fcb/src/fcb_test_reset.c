@@ -7,13 +7,13 @@
 
 #include "fcb_test.h"
 
-void fcb_test_reset(void)
+void test_fcb_reset(void)
 {
 	struct fcb *fcb;
 	int rc;
 	int i;
 	struct fcb_entry loc;
-	u8_t test_data[128];
+	uint8_t test_data[128];
 	int var_cnt;
 
 	fcb = &test_fcb;

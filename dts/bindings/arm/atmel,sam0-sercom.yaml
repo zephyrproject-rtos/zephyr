@@ -10,3 +10,6 @@ properties:
 
     interrupts:
       required: true
+
+    clocks:
+      required: true

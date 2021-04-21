@@ -14,26 +14,4 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
-if GPIO_GECKO
-
-config GPIO_GECKO_PORTA
-	default y
-
-config GPIO_GECKO_PORTB
-	default n
-
-config GPIO_GECKO_PORTC
-	default y
-
-config GPIO_GECKO_PORTD
-	default n
-
-config GPIO_GECKO_PORTE
-	default n
-
-config GPIO_GECKO_PORTF
-	default y
-
-endif # GPIO_GECKO
-
 endif # BOARD_EFM32HG_SLSTK3400A

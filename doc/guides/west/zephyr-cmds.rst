@@ -3,17 +3,7 @@
 Additional Zephyr extension commands
 ####################################
 
-Aside from the :ref:`build, flash, and debug commands <west-build-flash-debug>`,
-the zephyr tree extends the west command set with additional zephyr-specific
-commands.
-
-.. Add a per-page contents at the top of the page. This page is nested
-   deeply enough that it doesn't have any subheadings in the main nav.
-
-.. only:: html
-
-   .. contents::
-      :local:
+This page documents miscellaneous :ref:`west-zephyr-extensions`.
 
 .. _west-boards:
 
@@ -36,3 +26,27 @@ flag::
 Additional help about the formatting options can be found by running::
 
   west boards -h
+
+.. _west-zephyr-export:
+
+Installing CMake packages: ``west zephyr-export``
+*************************************************
+
+This command registers the current Zephyr installation as a CMake
+config package in the CMake user package registry.
+
+In Windows, the CMake user package registry is found in
+``HKEY_CURRENT_USER\Software\Kitware\CMake\Packages``.
+
+In Linux and MacOS, the CMake user package registry is found in.
+:file:`~/.cmake/packages`.
+
+You may run this command when setting up a Zephyr workspace. If you do,
+application CMakeLists.txt files that are outside of your workspace will be
+able to find the Zephyr repository with the following:
+
+.. code-block:: cmake
+
+   find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+See :zephyr_file:`share/zephyr-package/cmake` for details.

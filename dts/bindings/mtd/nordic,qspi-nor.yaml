@@ -17,11 +17,21 @@ properties:
   label:
     required: true
 
+  jedec-id:
+    required: true
+
+  size:
+    required: true
+
+  # Match original driver NORDIC_QSPI_NOR_QE_BIT Kconfig default.
+  quad-enable-requirements:
+    default: "S1B6"
+
   readoc:
     type: string
     required: false
     enum:
-      - "fastread"        # Single data line SPI, FAST_READ (0x08)
+      - "fastread"        # Single data line SPI, FAST_READ (0x0B)
       - "read2o"          # Dual data line SPI, READ2O (0x3B)
       - "read2io"         # Dual data line SPI, READ2IO (0xBB)
       - "read4o"          # Quad data line SPI, READ4O (0x6B)
@@ -39,7 +49,7 @@ properties:
       - "pp4o"          # Dual data line SPI, PP4O (0x32)
       - "pp4io"         # Quad data line SPI, PP4IO (0x38)
     description: |
-      Specify the number of data lines and opcode used for reading.
+      Specify the number of data lines and opcode used for writing.
       If not provided pp will be selected.
 
   address-size-32:

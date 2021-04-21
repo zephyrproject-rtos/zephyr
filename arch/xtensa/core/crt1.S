@@ -7,7 +7,7 @@
  * Control arrives here at _start from the reset vector or from crt0-app.S.
  */
 
-#include <arch/xtensa/xtensa_rtos.h>
+#include <xtensa/coreasm.h>
 
 /* Exports */
 .global _start
@@ -23,6 +23,7 @@
 
 .global __start
 .type	z_cstart, @function
+.type	z_mp_entry, @function
 
 
 /* Macros to abstract away ABI differences */
@@ -92,11 +93,21 @@ _start:
 	 */
 #if XCHAL_HAVE_EXCEPTIONS
 # ifdef __XTENSA_CALL0_ABI__
-	/* PS.WOE = 0, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 15 */
-	movi	a3, PS_UM|PS_INTLEVEL(15)
+	/*
+	 * PS.WOE = 0
+	 * PS.UM = 1
+	 * PS.EXCM = 0
+	 * PS.INTLEVEL = XCHAL_EXCM_LEVEL
+	 */
+	movi	a3, PS_UM|PS_INTLEVEL(XCHAL_EXCM_LEVEL)
 # else
-	/* PS.WOE = 1, PS.UM = 1, PS.EXCM = 0, PS.INTLEVEL = 15 */
-	movi	a3, PS_UM|PS_WOE|PS_INTLEVEL(15)
+	/*
+	 * PS.WOE = 1
+	 * PS.UM = 1
+	 * PS.EXCM = 0
+	 * PS.INTLEVEL = XCHAL_EXCM_LEVEL
+	 */
+	movi	a3, PS_UM|PS_WOE|PS_INTLEVEL(XCHAL_EXCM_LEVEL)
 # endif
 	wsr	a3, PS
 	rsync
@@ -136,6 +147,7 @@ _start:
 	/* Clear a0 again as possible CALLX to __memmap_init changed it. */
 	movi	a0, 0
 # endif
+
 	/*
 	 *  Clear the BSS (uninitialized data) segments.
 	 *  This code supports multiple zeroed sections (*.bss).
@@ -181,4 +193,3 @@ _start:
 	CALL	z_cstart
 
 	.size	_start, . - _start
-

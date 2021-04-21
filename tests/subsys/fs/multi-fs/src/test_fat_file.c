@@ -14,6 +14,7 @@ static const char *test_str = "Hello world FAT";
 
 void test_fat_open(void)
 {
+	fs_file_t_init(&test_file);
 	zassert_true(test_file_open(&test_file, TEST_FILE_PATH) == TC_PASS,
 		NULL);
 }

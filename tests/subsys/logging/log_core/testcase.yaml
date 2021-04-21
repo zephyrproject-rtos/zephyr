@@ -1,5 +1,6 @@
 tests:
   logging.log_core:
+    integration_platforms:
+      - native_posix
     tags: log_core logging
-    platform_exclude: qemu_riscv64
     filter: not CONFIG_LOG_IMMEDIATE

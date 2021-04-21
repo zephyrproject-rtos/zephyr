@@ -222,16 +222,12 @@
 /* max number of streams supported by hardware 2 = Stream A & B */
 #define DMIC_MAX_STREAMS			2
 
-#define DMIC_DMA_DEV_NAME			CONFIG_DMA_0_NAME
-#define DMA_CHANNEL_DMIC_RXA			0
-#define DMA_CHANNEL_DMIC_RXB			1
-
 #define DMA_HANDSHAKE_DMIC_RXA			0
 #define DMA_HANDSHAKE_DMIC_RXB			1
 
-int dmic_configure_dma(struct pcm_stream_cfg *config, u8_t num_streams);
-int dmic_reload_dma(u32_t channel, void *buffer, size_t size);
-int dmic_start_dma(u32_t channel);
-int dmic_stop_dma(u32_t channel);
+int dmic_configure_dma(struct pcm_stream_cfg *config, uint8_t num_streams);
+int dmic_reload_dma(uint32_t channel, void *buffer, size_t size);
+int dmic_start_dma(uint32_t channel);
+int dmic_stop_dma(uint32_t channel);
 
 #endif /* __INTEL_DMIC_H__ */

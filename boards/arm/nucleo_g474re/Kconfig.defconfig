@@ -8,26 +8,8 @@ if BOARD_NUCLEO_G474RE
 config BOARD
 	default "nucleo_g474re"
 
-config LPUART_1
-	default y
-	depends on UART_CONSOLE
-
-config I2C_1
-	default y
-	depends on I2C
-
-config PWM_STM32_2
-	default y
-	depends on PWM
-
-if SPI
-
-config SPI_1
-	default y
-
 config SPI_STM32_INTERRUPT
 	default y
-
-endif # SPI
+	depends on SPI
 
 endif # BOARD_NUCLEO_G431RB

@@ -19,7 +19,6 @@
 
 	ram0: memory@40000000 {
 		device_type = "memory";
-		compatible = "mmio-sram";
 		reg = <0x40000000 0x10000000>;
 	};
 };
@@ -63,5 +62,25 @@
 };
 
 &gpio_in {
+	status = "okay";
+};
+
+&i2s_rx {
+	status = "okay";
+};
+
+&i2s_tx {
+	status = "okay";
+};
+
+&clk0 {
+	status = "okay";
+};
+
+&clk1 {
+	status = "okay";
+};
+
+&clock0 {
 	status = "okay";
 };

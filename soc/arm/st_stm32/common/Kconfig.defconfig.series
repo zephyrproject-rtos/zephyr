@@ -8,9 +8,12 @@
 if SOC_FAMILY_STM32
 
 config CORTEX_M_SYSTICK
-	bool
 	default n if STM32_LPTIM_TIMER
-	default y if !STM32_LPTIM_TIMER
+
+# set the tick per sec as a divider of the LPTIM clock source
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSE
+	default 4000 if STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSI
 
 config CLOCK_CONTROL_STM32_CUBE
 	default y
@@ -25,30 +28,11 @@ if GPIO
 config GPIO_STM32
 	default y
 
-config GPIO_STM32_PORTA
-	default y
-
-config GPIO_STM32_PORTB
-	default y
-
-config GPIO_STM32_PORTC
-	default y
-
 endif # GPIO
 
 config PINMUX_STM32
 	default y
 	depends on PINMUX
-
-if WATCHDOG
-
-config IWDG_STM32
-	default y
-
-config WWDG_STM32
-	default n
-
-endif # WATCHDOG
 
 config PWM_STM32
 	default y
@@ -58,9 +42,9 @@ config SPI_STM32
 	default y
 	depends on SPI
 
-config I2C_STM32
+config I2S_STM32
 	default y
-	depends on I2C
+	depends on I2S
 
 config USB_DC_STM32
 	default y
@@ -69,10 +53,6 @@ config USB_DC_STM32
 config COUNTER_RTC_STM32
 	default y
 	depends on COUNTER
-
-config CAN_STM32
-	default y
-	depends on CAN
 
 config ADC_STM32
 	default y
@@ -83,9 +63,10 @@ if DMA
 config DMA_STM32
 	default y
 
-config HEAP_MEM_POOL_SIZE
-	default 1024
-
 endif # DMA
+
+config MEMC_STM32
+	default y
+	depends on MEMC
 
 endif # SOC_FAMILY_STM32

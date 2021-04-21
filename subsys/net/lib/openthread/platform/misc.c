@@ -25,3 +25,8 @@ otPlatResetReason otPlatGetResetReason(otInstance *aInstance)
 
 	return OT_PLAT_RESET_REASON_POWER_ON;
 }
+
+void otPlatWakeHost(void)
+{
+	/* TODO */
+}

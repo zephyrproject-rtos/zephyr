@@ -14,13 +14,13 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
-static u8_t mfg_data[] = { 0xff, 0xff, 0x00 };
+static uint8_t mfg_data[] = { 0xff, 0xff, 0x00 };
 
 static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, 3),
 };
 
-static void scan_cb(const bt_addr_le_t *addr, s8_t rssi, u8_t adv_type,
+static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		    struct net_buf_simple *buf)
 {
 	mfg_data[2]++;
@@ -30,7 +30,7 @@ void main(void)
 {
 	struct bt_le_scan_param scan_param = {
 		.type       = BT_HCI_LE_SCAN_PASSIVE,
-		.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
+		.options    = BT_LE_SCAN_OPT_NONE,
 		.interval   = 0x0010,
 		.window     = 0x0010,
 	};

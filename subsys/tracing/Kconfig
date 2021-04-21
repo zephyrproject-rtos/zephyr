@@ -6,10 +6,11 @@
 DT_CHOSEN_Z_CONSOLE := zephyr,console
 
 config TRACING
-	bool "Enabling Tracing"
+	bool "Tracing Support"
 	imply THREAD_NAME
 	imply THREAD_STACK_INFO
 	imply THREAD_MONITOR
+	select INSTRUMENT_THREAD_SWITCHING
 	help
 	  Enable system tracing. This requires a backend such as SEGGER
 	  Systemview to be enabled as well.
@@ -36,22 +37,13 @@ config SEGGER_SYSTEMVIEW
 	select CONSOLE
 	select RTT_CONSOLE
 	select USE_SEGGER_RTT
+	select THREAD_MONITOR
 
 config TRACING_CTF
 	bool "Tracing via Common Trace Format support"
 	select TRACING_CORE
 	help
 	  Enable tracing to a Common Trace Format stream.
-
-config TRACING_CPU_STATS
-	bool "Enable CPU usage tracing"
-	select TRACING_CORE
-	help
-	  Module provides information about percent of CPU usage based on
-	  tracing hooks for threads switching in and out, interrupts enters
-	  and exits (only distinguishes between idle thread, non idle thread
-	  and scheduler). Use provided API or enable automatic logging to
-	  get values.
 
 config TRACING_TEST
 	bool "Tracing for test usage"
@@ -70,20 +62,6 @@ config TRACING_CTF_TIMESTAMP
 	help
 	  Timestamp prefix will be added to the beginning of CTF
 	  event internally.
-
-config TRACING_CPU_STATS_LOG
-	bool "Enable current CPU usage logging"
-	depends on TRACING_CPU_STATS
-	help
-	  Periodically displays information about CPU usage.
-
-config TRACING_CPU_STATS_INTERVAL
-	int "Logging interval for CPU measurements [ms]"
-	default 2000
-	depends on TRACING_CPU_STATS_LOG
-	help
-	  Time period of displaying information about CPU usage.
-
 
 choice
 	prompt "Tracing Method"
@@ -145,7 +123,7 @@ choice
 config TRACING_BACKEND_UART
 	bool "Enable UART backend"
 	depends on UART_CONSOLE
-	depends on TRACING_ASYNC
+
 	help
 	  Use UART to output tracing data.
 
@@ -162,6 +140,21 @@ config TRACING_BACKEND_POSIX
 	depends on ARCH_POSIX
 	help
 	  Use posix architecture to output tracing data to file system.
+
+config TRACING_BACKEND_RAM
+	bool "Enable RAM backend"
+	help
+	  Use a ram buffer to output tracing data which can
+	  be dumped to a file at runtime with a debugger.
+	  See gdb dump binary memory documentation for example.
+
+config RAM_TRACING_BUFFER_SIZE
+	int "Ram Tracing buffer size"
+	default 4096
+	depends on TRACING_BACKEND_RAM
+	help
+	  Size of the RAM trace buffer. Trace will be discarded if the
+	  length is exceeded.
 
 endchoice
 

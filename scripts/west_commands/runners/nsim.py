@@ -27,8 +27,11 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
                  tui=False,
                  gdb_port=DEFAULT_ARC_GDB_PORT,
                  props=DEFAULT_PROPS_FILE):
-        super(NsimBinaryRunner, self).__init__(cfg)
-        self.gdb_cmd = [cfg.gdb] + (['-tui'] if tui else [])
+        super().__init__(cfg)
+        if cfg.gdb is None:
+            self.gdb_cmd = None
+        else:
+            self.gdb_cmd = [cfg.gdb] + (['-tui'] if tui else [])
         self.nsim_cmd = ['nsimdrv']
         self.gdb_port = gdb_port
         self.props = props
@@ -45,10 +48,7 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
                             help='nsim props file, defaults to nsim.props')
 
     @classmethod
-    def create(cls, cfg, args):
-        if cfg.gdb is None:
-            raise ValueError('--gdb not provided at command line')
-
+    def do_create(cls, cfg, args):
         return NsimBinaryRunner(
             cfg,
             gdb_port=args.gdb_port,
@@ -73,6 +73,9 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
         self.check_call(cmd)
 
     def do_debug(self, **kwargs):
+        if self.gdb_cmd is None:
+            raise ValueError('Cannot debug; gdb is missing')
+
         config = kwargs['nsim-cfg']
 
         server_cmd = (self.nsim_cmd + ['-gdb',

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT litex_i2c
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include "i2c_bitbang.h"
@@ -19,19 +21,19 @@
 #define HIGH_STATE_ON_I2C_LINES    0x7
 
 struct i2c_litex_cfg {
-	volatile u32_t *w_reg;
-	volatile const u32_t *r_reg;
+	volatile uint32_t *w_reg;
+	volatile const uint32_t *r_reg;
 };
 
 #define GET_I2C_CFG(dev)						     \
-	((const struct i2c_litex_cfg *) dev->config->config_info)
+	((const struct i2c_litex_cfg *) dev->config)
 
 #define GET_I2C_BITBANG(dev)						     \
-	((struct i2c_bitbang *) dev->driver_data)
+	((struct i2c_bitbang *) dev->data)
 
-static inline void set_bit(volatile u32_t *reg, u32_t bit, u32_t val)
+static inline void set_bit(volatile uint32_t *reg, uint32_t bit, uint32_t val)
 {
-	u32_t mask = BIT(bit);
+	uint32_t mask = BIT(bit);
 
 	if (val) {
 		*reg |= mask;
@@ -40,9 +42,9 @@ static inline void set_bit(volatile u32_t *reg, u32_t bit, u32_t val)
 	}
 }
 
-static inline int get_bit(volatile const u32_t *reg, u32_t bit)
+static inline int get_bit(volatile const uint32_t *reg, uint32_t bit)
 {
-	u32_t mask = BIT(bit);
+	uint32_t mask = BIT(bit);
 
 	return !!((*reg) & mask);
 }
@@ -79,7 +81,7 @@ static const struct i2c_bitbang_io i2c_litex_bitbang_io = {
 	.get_sda = i2c_litex_bitbang_get_sda,
 };
 
-static int i2c_litex_init(struct device *dev)
+static int i2c_litex_init(const struct device *dev)
 {
 	const struct i2c_litex_cfg *config = GET_I2C_CFG(dev);
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
@@ -90,15 +92,15 @@ static int i2c_litex_init(struct device *dev)
 	return 0;
 }
 
-static int i2c_litex_configure(struct device *dev, u32_t dev_config)
+static int i2c_litex_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
 
 	return i2c_bitbang_configure(bitbang, dev_config);
 }
 
-static int i2c_litex_transfer(struct device *dev,  struct i2c_msg *msgs,
-		       u8_t num_msgs, u16_t addr)
+static int i2c_litex_transfer(const struct device *dev,  struct i2c_msg *msgs,
+			      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
 
@@ -108,8 +110,6 @@ static int i2c_litex_transfer(struct device *dev,  struct i2c_msg *msgs,
 static const struct i2c_driver_api i2c_litex_driver_api = {
 	.configure         = i2c_litex_configure,
 	.transfer          = i2c_litex_transfer,
-	.slave_register    = NULL,
-	.slave_unregister  = NULL,
 };
 
 /* Device Instantiation */
@@ -117,55 +117,21 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 #define I2C_LITEX_INIT(n)						       \
 	static const struct i2c_litex_cfg i2c_litex_cfg_##n = {		       \
 		.w_reg =						       \
-		 (volatile u32_t *) DT_INST_##n##_LITEX_I2C_WRITE_BASE_ADDRESS,\
+		 (volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, write),\
 		.r_reg =						       \
-		 (volatile u32_t *) DT_INST_##n##_LITEX_I2C_READ_BASE_ADDRESS, \
+		 (volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, read), \
 	};								       \
 									       \
 	static struct i2c_bitbang i2c_bitbang_##n;			       \
 									       \
-	DEVICE_AND_API_INIT(litex_i2c_##n,				       \
-			   DT_INST_##n##_LITEX_I2C_LABEL,		       \
+	DEVICE_DT_INST_DEFINE(n,					       \
 			   i2c_litex_init,				       \
+			   device_pm_control_nop,			       \
 			   &i2c_bitbang_##n,	                               \
 			   &i2c_litex_cfg_##n,				       \
 			   POST_KERNEL,					       \
 			   CONFIG_I2C_INIT_PRIORITY,			       \
 			   &i2c_litex_driver_api			       \
-			   )
+			   );
 
-#ifdef DT_INST_0_LITEX_I2C_LABEL
-I2C_LITEX_INIT(0);
-#endif
-
-#ifdef DT_INST_1_LITEX_I2C_LABEL
-I2C_LITEX_INIT(1);
-#endif
-
-#ifdef DT_INST_2_LITEX_I2C_LABEL
-I2C_LITEX_INIT(2);
-#endif
-
-#ifdef DT_INST_3_LITEX_I2C_LABEL
-I2C_LITEX_INIT(3);
-#endif
-
-#ifdef DT_INST_4_LITEX_I2C_LABEL
-I2C_LITEX_INIT(4);
-#endif
-
-#ifdef DT_INST_5_LITEX_I2C_LABEL
-I2C_LITEX_INIT(5);
-#endif
-
-#ifdef DT_INST_6_LITEX_I2C_LABEL
-I2C_LITEX_INIT(6);
-#endif
-
-#ifdef DT_INST_7_LITEX_I2C_LABEL
-I2C_LITEX_INIT(7);
-#endif
-
-#ifdef DT_INST_8_LITEX_I2C_LABEL
-I2C_LITEX_INIT(8);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(I2C_LITEX_INIT)

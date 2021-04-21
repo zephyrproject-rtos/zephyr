@@ -1,0 +1,41 @@
+# MIMXRT685-EVK board
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT685_EVK
+
+config BOARD
+	default "mimxrt685_evk_cm33"
+
+config XTAL_SYS_CLK_HZ
+	default 24000000
+
+config SYSOSC_SETTLING_US
+	default 260
+
+if GPIO_MCUX_LPC
+
+config GPIO_MCUX_LPC_PORT0
+	default y
+
+config GPIO_MCUX_LPC_PORT1
+	default y
+
+endif # GPIO_MCUX_LPC
+
+config FXOS8700_DRDY_INT1
+	default y
+	depends on FXOS8700_TRIGGER
+
+if DMA_MCUX_LPC
+
+# Memory from the heap pool is used to allocate DMA descriptors for
+# channels that use multiple blocks for a DMA transfer.
+# Adjust HEAP_MEM_POOL_SIZE in case you need more memory.
+config HEAP_MEM_POOL_SIZE
+	default 4096
+
+endif # DMA_MCUX_LPC
+
+endif # BOARD_MIMXRT685_EVK

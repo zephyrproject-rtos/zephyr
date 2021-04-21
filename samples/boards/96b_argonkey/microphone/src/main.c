@@ -18,7 +18,7 @@
 
 #define AUDIO_FREQ		16000
 #define CHAN_SIZE		16
-#define PCM_BLK_SIZE_MS		((AUDIO_FREQ/1000) * sizeof(s16_t))
+#define PCM_BLK_SIZE_MS		((AUDIO_FREQ/1000) * sizeof(int16_t))
 
 #define NUM_MS		5000
 
@@ -48,41 +48,47 @@ struct dmic_cfg cfg = {
 
 void signal_sampling_started(void)
 {
-	static struct device *led0, *led1;
+	static const struct device *led0, *led1;
 
-	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
-			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
+	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
+	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
+			   GPIO_OUTPUT_ACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
 
-	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
-			   GPIO_OUTPUT_INACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
+	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
+	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
 }
 
 void signal_sampling_stopped(void)
 {
-	static struct device *led0, *led1;
+	static const struct device *led0, *led1;
 
-	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
-			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
+	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
+	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
+			   GPIO_OUTPUT_ACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
 
-	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
-			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
+	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
+	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
+			   GPIO_OUTPUT_ACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
 }
 
 void signal_print_stopped(void)
 {
-	static struct device *led0, *led1;
+	static const struct device *led0, *led1;
 
-	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
-			   GPIO_OUTPUT_INACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
+	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
+	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
 
-	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
-			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
+	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
+	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
+			   GPIO_OUTPUT_ACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
 }
 
 void *rx_block[NUM_MS];
@@ -91,15 +97,15 @@ size_t rx_size = PCM_BLK_SIZE_MS;
 void main(void)
 {
 	int i;
-	u32_t ms;
+	uint32_t ms;
 
 #ifdef CONFIG_LP3943
-	static struct device *ledc;
+	static const struct device *ledc;
 
-	ledc = device_get_binding(DT_INST_0_TI_LP3943_LABEL);
+	ledc = device_get_binding(DT_LABEL(DT_INST(0, ti_lp3943)));
 	if (!ledc) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_INST_0_TI_LP3943_LABEL);
+			DT_LABEL(DT_INST(0, ti_lp3943)));
 		return;
 	}
 
@@ -121,11 +127,11 @@ void main(void)
 
 	int ret;
 
-	struct device *mic_dev = device_get_binding(DT_INST_0_ST_MPXXDTYY_LABEL);
+	const struct device *mic_dev = device_get_binding(DT_LABEL(DT_INST(0, st_mpxxdtyy)));
 
 	if (!mic_dev) {
 		printk("Could not get pointer to %s device\n",
-			DT_INST_0_ST_MPXXDTYY_LABEL);
+			DT_LABEL(DT_INST(0, st_mpxxdtyy)));
 		return;
 	}
 
@@ -166,7 +172,7 @@ void main(void)
 	int j;
 
 	for (i = 0; i < NUM_MS; i++) {
-		u16_t *pcm_out = rx_block[i];
+		uint16_t *pcm_out = rx_block[i];
 
 		for (j = 0; j < rx_size/2; j++) {
 			printk("0x%04x,\n", pcm_out[j]);
@@ -178,7 +184,7 @@ void main(void)
 	int j;
 
 	for (i = 0; i < NUM_MS; i++) {
-		u16_t *pcm_out = rx_block[i];
+		uint16_t *pcm_out = rx_block[i];
 
 		for (j = 0; j < rx_size/2; j++) {
 			pcm_l = (char)(pcm_out[j] & 0xFF);

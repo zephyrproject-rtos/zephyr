@@ -82,7 +82,7 @@
 #define BMM150_MASK_DRDY_LATCHING          BIT(1)
 #define BMM150_MASK_DRDY_INT3_POLARITY     BIT(0)
 
-#define BMM150_I2C_ADDR                    DT_INST_0_BOSCH_BMM150_BASE_ADDRESS
+#define BMM150_I2C_ADDR                    DT_INST_REG_ADDR(0)
 
 #if defined(CONFIG_BMM150_SAMPLING_REP_XY) || \
 	defined(CONFIG_BMM150_SAMPLING_REP_Z)
@@ -97,28 +97,28 @@
 
 struct bmm150_config {
 	char *i2c_master_dev_name;
-	u16_t i2c_slave_addr;
+	uint16_t i2c_slave_addr;
 };
 
 struct bmm150_trim_regs {
-	s8_t x1;
-	s8_t y1;
-	u16_t reserved1;
-	u8_t reserved2;
-	s16_t z4;
-	s8_t x2;
-	s8_t y2;
-	u16_t reserved3;
-	s16_t z2;
-	u16_t z1;
-	u16_t xyz1;
-	s16_t z3;
-	s8_t xy2;
-	u8_t xy1;
+	int8_t x1;
+	int8_t y1;
+	uint16_t reserved1;
+	uint8_t reserved2;
+	int16_t z4;
+	int8_t x2;
+	int8_t y2;
+	uint16_t reserved3;
+	int16_t z2;
+	uint16_t z1;
+	uint16_t xyz1;
+	int16_t z3;
+	int8_t xy2;
+	uint8_t xy1;
 } __packed;
 
 struct bmm150_data {
-	struct device *i2c;
+	const struct device *i2c;
 	struct k_sem sem;
 	struct bmm150_trim_regs tregs;
 	int rep_xy, rep_z, odr, max_odr;

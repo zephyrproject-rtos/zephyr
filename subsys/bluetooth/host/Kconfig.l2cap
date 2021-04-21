@@ -8,11 +8,12 @@ menu "L2CAP Options"
 config BT_L2CAP_RX_MTU
 	int "Maximum supported L2CAP MTU for incoming data"
 	default 200 if BT_BREDR
+	default BT_EATT_RX_MTU if BT_EATT
 	default 65 if BT_SMP
 	default 23
+	range 70 1300 if BT_EATT
 	range 65 1300 if BT_SMP
 	range 23 1300
-	depends on BT_HCI_ACL_FLOW_CONTROL
 	help
 	  Maximum size of each incoming L2CAP PDU.
 
@@ -54,6 +55,13 @@ config BT_L2CAP_DYNAMIC_CHANNEL
 	help
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
+
+config BT_L2CAP_ECRED
+	bool "L2CAP Enhanced Credit Based Flow Control support"
+	depends on BT_L2CAP_DYNAMIC_CHANNEL
+	help
+	  This option enables support for LE Connection oriented Channels with
+	  Enhanced Credit Based Flow Control support on dynamic L2CAP Channels.
 
 config BT_DEBUG_L2CAP
 	bool "Bluetooth L2CAP debug"

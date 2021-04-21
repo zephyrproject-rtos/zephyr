@@ -45,38 +45,141 @@
 #include "ll_sw/lll.h"
 #include "ll.h"
 
-#if (!defined(CONFIG_BT_LL_SW_SPLIT))
-#include "ll_sw/ctrl.h"
-#endif /* CONFIG_BT_LL_SW_SPLIT */
+#include "isoal.h"
+#include "lll_conn_iso.h"
+#include "ull_conn_iso_internal.h"
+#include "ull_conn_iso_types.h"
+#include "ull_iso_types.h"
 
 #include "hci_internal.h"
 
 #include "hal/debug.h"
 
-static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
+static K_SEM_DEFINE(sem_prio_recv, 0, K_SEM_MAX_LIMIT);
 static K_FIFO_DEFINE(recv_fifo);
 
 struct k_thread prio_recv_thread_data;
-static K_THREAD_STACK_DEFINE(prio_recv_thread_stack,
+static K_KERNEL_STACK_DEFINE(prio_recv_thread_stack,
 			     CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
 struct k_thread recv_thread_data;
-static K_THREAD_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
-
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
-static u32_t prio_ts;
-static u32_t rx_ts;
-#endif
+static K_KERNEL_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static struct k_poll_signal hbuf_signal =
 		K_POLL_SIGNAL_INITIALIZER(hbuf_signal);
 static sys_slist_t hbuf_pend;
-static s32_t hbuf_count;
+static int32_t hbuf_count;
 #endif
 
-static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx)
+#if defined(CONFIG_BT_CTLR_ISO)
+
+#define SDU_HCI_HDR_SIZE (BT_HCI_ISO_HDR_SIZE + BT_HCI_ISO_TS_DATA_HDR_SIZE)
+
+isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
+				  const struct isoal_pdu_rx  *valid_pdu,
+				  struct isoal_sdu_buffer    *sdu_buffer)
 {
-	/* Currently there are no events processed */
+	ARG_UNUSED(sink_ctx);
+	ARG_UNUSED(valid_pdu); /* TODO copy valid pdu into netbuf ? */
+
+	struct net_buf *buf  = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+
+	if (buf) {
+		/* Reserve space for headers */
+		net_buf_reserve(buf, SDU_HCI_HDR_SIZE);
+
+		sdu_buffer->dbuf = buf;
+		sdu_buffer->size = net_buf_tailroom(buf);
+	} else {
+		LL_ASSERT(0);
+	}
+
+	return ISOAL_STATUS_OK;
+}
+
+
+isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
+				 const struct isoal_sdu_produced *valid_sdu)
+{
+	struct ll_conn_iso_stream *cis;
+	uint16_t handle;
+	uint16_t handle_packed;
+	uint8_t  ts, pb;
+	uint16_t len;
+	uint16_t packet_status_flag;
+	uint16_t slen, slen_packed;
+	struct bt_hci_iso_hdr *hdr;
+	struct bt_hci_iso_ts_data_hdr *data_hdr;
+
+	struct net_buf *buf = (struct net_buf *) valid_sdu->contents.dbuf;
+
+	if (buf) {
+		data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
+		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
+
+		cis = sink_ctx->session.cis;
+		handle = ll_conn_iso_stream_handle_get(cis);
+
+		pb = sink_ctx->sdu_production.sdu_state;
+
+		ts = 1;   /*TODO: Always assume timestamp? */
+		handle_packed = bt_iso_handle_pack(handle, pb, ts);
+		len = sink_ctx->sdu_production.sdu_written + BT_HCI_ISO_TS_DATA_HDR_SIZE;
+
+		hdr->handle = sys_cpu_to_le16(handle_packed);
+		hdr->len = sys_cpu_to_le16(len);
+
+		packet_status_flag = 0x0000; /* TODO: For now always assume "valid data" */
+		slen = sink_ctx->sdu_production.sdu_written;
+		slen_packed = bt_iso_pkt_len_pack(slen, packet_status_flag);
+
+		data_hdr->ts = sys_cpu_to_le32((uint32_t) valid_sdu->timestamp);
+		data_hdr->data.sn   = sys_cpu_to_le16((uint16_t) valid_sdu->seqn);
+		data_hdr->data.slen = sys_cpu_to_le16(slen_packed);
+
+		/* send fragment up the chain */
+		bt_recv(buf);
+	}
+
+	return ISOAL_STATUS_OK;
+}
+
+isoal_status_t sink_sdu_write_hci(void *dbuf,
+				  const uint8_t *pdu_payload,
+				  const size_t consume_len)
+{
+	struct net_buf *buf = (struct net_buf *) dbuf;
+
+	LL_ASSERT(buf);
+	net_buf_add_mem(buf, pdu_payload, consume_len);
+
+	return ISOAL_STATUS_OK;
+}
+#endif
+
+static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
+					uint8_t *evt_flags)
+{
+#if defined(CONFIG_BT_CONN)
+	if (node_rx->hdr.user_meta == HCI_CLASS_EVT_CONNECTION) {
+		uint16_t handle;
+		struct pdu_data *pdu_data = (void *)node_rx->pdu;
+
+		handle = node_rx->hdr.handle;
+		if (node_rx->hdr.type == NODE_RX_TYPE_TERMINATE) {
+			struct net_buf *buf;
+
+			buf = bt_buf_get_evt(BT_HCI_EVT_DISCONN_COMPLETE, false,
+					     K_FOREVER);
+			hci_disconn_complete_encode(pdu_data, handle, buf);
+			hci_disconn_complete_process(handle);
+			*evt_flags = BT_HCI_EVT_FLAG_RECV_PRIO | BT_HCI_EVT_FLAG_RECV;
+			return buf;
+		}
+	}
+#endif /* CONFIG_BT_CONN */
+
+	*evt_flags = BT_HCI_EVT_FLAG_RECV;
 	return NULL;
 }
 
@@ -93,8 +196,8 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		struct node_rx_pdu *node_rx;
 		struct net_buf *buf;
-		u8_t num_cmplt;
-		u16_t handle;
+		uint8_t num_cmplt;
+		uint16_t handle;
 
 		/* While there are completed rx nodes */
 		while ((num_cmplt = ll_rx_get((void *)&node_rx, &handle))) {
@@ -110,6 +213,8 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		}
 
 		if (node_rx) {
+			uint8_t evt_flags;
+
 			/* Until now we've only peeked, now we really do
 			 * the handover
 			 */
@@ -118,18 +223,24 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 			/* Find out and store the class for this node */
 			node_rx->hdr.user_meta = hci_get_class(node_rx);
 
-			buf = process_prio_evt(node_rx);
+			buf = process_prio_evt(node_rx, &evt_flags);
 			if (buf) {
-#if defined(CONFIG_BT_LL_SW_LEGACY)
-				radio_rx_fc_set(node_rx->hdr.handle, 0);
-#endif /* CONFIG_BT_LL_SW_LEGACY */
-
-				node_rx->hdr.next = NULL;
-				ll_rx_mem_release((void **)&node_rx);
-
 				BT_DBG("Priority event");
+				if (!(evt_flags & BT_HCI_EVT_FLAG_RECV)) {
+					node_rx->hdr.next = NULL;
+					ll_rx_mem_release((void **)&node_rx);
+				}
+
 				bt_recv_prio(buf);
-			} else {
+				/* bt_recv_prio would not release normal evt
+				 * buf.
+				 */
+				if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
+					net_buf_unref(buf);
+				}
+			}
+
+			if (evt_flags & BT_HCI_EVT_FLAG_RECV) {
 				/* Send the rx node up to Host thread,
 				 * recv_thread()
 				 */
@@ -153,18 +264,11 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		k_sem_take(&sem_prio_recv, K_FOREVER);
 		/* Now, ULL mayfly has something to give to us */
 		BT_DBG("sem taken");
-
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
-		if (k_uptime_get_32() - prio_ts > K_SECONDS(5)) {
-			log_stack_usage(&prio_recv_thread_data);
-			prio_ts = k_uptime_get_32();
-		}
-#endif
 	}
 }
 
 static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
-					  s8_t class)
+					  int8_t class)
 {
 	struct net_buf *buf = NULL;
 
@@ -191,14 +295,36 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		hci_acl_encode(node_rx, buf);
 		break;
 #endif
+#if defined(CONFIG_BT_CTLR_ISO)
+	case HCI_CLASS_ISO_DATA: {
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+		struct ll_conn_iso_stream *cis =
+			ll_conn_iso_stream_get(node_rx->hdr.handle);
+		struct ll_iso_datapath *dp = cis->datapath_out;
+		isoal_sink_handle_t sink = dp->sink_hdl;
+
+		if (dp->path_id == BT_HCI_DATAPATH_ID_HCI) {
+			/* If HCI datapath pass to ISO AL here */
+			struct isoal_pdu_rx pckt_meta = {
+				.meta = &node_rx->hdr.rx_iso_meta,
+				.pdu  = (union isoal_pdu *) &node_rx->pdu[0]
+			};
+
+			/* Pass the ISO PDU through ISO-AL */
+			isoal_status_t err =
+				isoal_rx_pdu_recombine(sink, &pckt_meta);
+
+			LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
+		}
+#endif
+		break;
+	}
+#endif
+
 	default:
 		LL_ASSERT(0);
 		break;
 	}
-
-#if defined(CONFIG_BT_LL_SW_LEGACY)
-	radio_rx_fc_set(node_rx->hdr.handle, 0);
-#endif /* CONFIG_BT_LL_SW_LEGACY */
 
 	node_rx->hdr.next = NULL;
 	ll_rx_mem_release((void **)&node_rx);
@@ -208,7 +334,7 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 
 static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 {
-	u8_t class = node_rx->hdr.user_meta;
+	uint8_t class = node_rx->hdr.user_meta;
 	struct net_buf *buf = NULL;
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -217,6 +343,7 @@ static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 
 		/* controller to host flow control enabled */
 		switch (class) {
+		case HCI_CLASS_ISO_DATA:
 		case HCI_CLASS_EVT_DISCARDABLE:
 		case HCI_CLASS_EVT_REQUIRED:
 			break;
@@ -224,7 +351,7 @@ static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 		case HCI_CLASS_EVT_LLCP:
 			/* for conn-related events, only pend is relevant */
 			hbuf_count = 1;
-			/* fallthrough */
+			__fallthrough;
 		case HCI_CLASS_ACL_DATA:
 			if (pend || !hbuf_count) {
 				sys_slist_append(&hbuf_pend, (void *)node_rx);
@@ -250,9 +377,9 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 {
 	/* shadow total count in case of preemption */
 	struct node_rx_pdu *node_rx = NULL;
-	s32_t hbuf_total = hci_hbuf_total;
+	int32_t hbuf_total = hci_hbuf_total;
 	struct net_buf *buf = NULL;
-	u8_t class;
+	uint8_t class;
 	int reset;
 
 	reset = atomic_test_and_clear_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
@@ -367,7 +494,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			events[0].signal->signaled = 0U;
 		} else if (events[1].state ==
 			   K_POLL_STATE_FIFO_DATA_AVAILABLE) {
-			node_rx = k_fifo_get(events[1].fifo, 0);
+			node_rx = k_fifo_get(events[1].fifo, K_NO_WAIT);
 		}
 
 		events[0].state = K_POLL_STATE_NOT_READY;
@@ -395,15 +522,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 				net_buf_unref(buf);
 			}
 		}
-
 		k_yield();
-
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
-		if (k_uptime_get_32() - rx_ts > K_SECONDS(5)) {
-			log_stack_usage(&recv_thread_data);
-			rx_ts = k_uptime_get_32();
-		}
-#endif
 	}
 }
 
@@ -445,7 +564,7 @@ static int acl_handle(struct net_buf *buf)
 
 static int hci_driver_send(struct net_buf *buf)
 {
-	u8_t type;
+	uint8_t type;
 	int err;
 
 	BT_DBG("enter");
@@ -481,13 +600,13 @@ static int hci_driver_send(struct net_buf *buf)
 
 static int hci_driver_open(void)
 {
-	u32_t err;
+	uint32_t err;
 
 	DEBUG_INIT();
 
 	err = ll_init(&sem_prio_recv);
 	if (err) {
-		BT_ERR("LL initialization failed: %u", err);
+		BT_ERR("LL initialization failed: %d", err);
 		return err;
 	}
 
@@ -498,13 +617,13 @@ static int hci_driver_open(void)
 #endif
 
 	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
-			K_THREAD_STACK_SIZEOF(prio_recv_thread_stack),
+			K_KERNEL_STACK_SIZEOF(prio_recv_thread_stack),
 			prio_recv_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_CTLR_RX_PRIO), 0, K_NO_WAIT);
+			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&prio_recv_thread_data, "BT RX pri");
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
-			K_THREAD_STACK_SIZEOF(recv_thread_stack),
+			K_KERNEL_STACK_SIZEOF(recv_thread_stack),
 			recv_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&recv_thread_data, "BT RX");
@@ -517,11 +636,12 @@ static int hci_driver_open(void)
 static const struct bt_hci_driver drv = {
 	.name	= "Controller",
 	.bus	= BT_HCI_DRIVER_BUS_VIRTUAL,
+	.quirks = BT_QUIRK_NO_AUTO_DLE,
 	.open	= hci_driver_open,
 	.send	= hci_driver_send,
 };
 
-static int hci_driver_init(struct device *unused)
+static int hci_driver_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

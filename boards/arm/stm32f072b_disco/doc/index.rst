@@ -1,7 +1,7 @@
 .. _stm32f072b_disco_board:
 
-ST STM32F072B-DISCO
-###################
+ST STM32F072B Discovery
+#######################
 
 Overview
 ********

@@ -55,24 +55,24 @@ extern "C" {
  * due to ABI differences with long return values, z_x86_msr_read() is not.
  */
 
-static inline void z_x86_msr_write(unsigned int msr, u64_t data)
+static inline void z_x86_msr_write(unsigned int msr, uint64_t data)
 {
-	u32_t high = data >> 32;
-	u32_t low = data & 0xFFFFFFFF;
+	uint32_t high = data >> 32;
+	uint32_t low = data & 0xFFFFFFFF;
 
 	__asm__ volatile ("wrmsr" : : "c"(msr), "a"(low), "d"(high));
 }
 
 #ifdef CONFIG_X86_64
 
-static inline u64_t z_x86_msr_read(unsigned int msr)
+static inline uint64_t z_x86_msr_read(unsigned int msr)
 {
 	union {
 		struct {
-			u32_t lo;
-			u32_t hi;
+			uint32_t lo;
+			uint32_t hi;
 		};
-		u64_t value;
+		uint64_t value;
 	} rv;
 
 	__asm__ volatile ("rdmsr" : "=a" (rv.lo), "=d" (rv.hi) : "c" (msr));
@@ -82,9 +82,9 @@ static inline u64_t z_x86_msr_read(unsigned int msr)
 
 #else
 
-static inline u64_t z_x86_msr_read(unsigned int msr)
+static inline uint64_t z_x86_msr_read(unsigned int msr)
 {
-	u64_t ret;
+	uint64_t ret;
 
 	__asm__ volatile("rdmsr" : "=A" (ret) : "c" (msr));
 

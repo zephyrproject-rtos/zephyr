@@ -43,28 +43,28 @@
 #include <kernel.h>
 #include <string.h>
 
-static u64_t state[2];
+static uint64_t state[2];
 
-static inline u64_t rotl(const u64_t x, int k)
+static inline uint64_t rotl(const uint64_t x, int k)
 {
 	return (x << k) | (x >> (64 - k));
 }
 
-static int xoroshiro128_initialize(struct device *dev)
+static int xoroshiro128_initialize(const struct device *dev)
 {
-	dev = device_get_binding(CONFIG_ENTROPY_NAME);
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	if (!dev) {
 		return -EINVAL;
 	}
 
-	s32_t rc = entropy_get_entropy_isr(dev, (uint8_t *)&state,
+	int32_t rc = entropy_get_entropy_isr(dev, (uint8_t *)&state,
 					   sizeof(state), ENTROPY_BUSYWAIT);
 
 	if (rc == -ENOTSUP) {
 		/* Driver does not provide an ISR-specific API, assume it can
 		 * be called from ISR context
 		 */
-		rc = entropy_get_entropy(dev, (u8_t *)&state, sizeof(state));
+		rc = entropy_get_entropy(dev, (uint8_t *)&state, sizeof(state));
 	}
 
 	if (rc < 0) {
@@ -74,39 +74,39 @@ static int xoroshiro128_initialize(struct device *dev)
 	return 0;
 }
 
-static u32_t xoroshiro128_next(void)
+static uint32_t xoroshiro128_next(void)
 {
-	const u64_t s0 = state[0];
-	u64_t s1 = state[1];
-	const u64_t result = s0 + s1;
+	const uint64_t s0 = state[0];
+	uint64_t s1 = state[1];
+	const uint64_t result = s0 + s1;
 
 	s1 ^= s0;
 	state[0] = rotl(s0, 55) ^ s1 ^ (s1 << 14);
 	state[1] = rotl(s1, 36);
 
-	return (u32_t)result;
+	return (uint32_t)result;
 }
 
-u32_t sys_rand32_get(void)
+uint32_t z_impl_sys_rand32_get(void)
 {
-	u32_t ret;
+	uint32_t ret;
 
 	ret = xoroshiro128_next();
 
 	return ret;
 }
 
-void sys_rand_get(void *dst, size_t outlen)
+void z_impl_sys_rand_get(void *dst, size_t outlen)
 {
-	u32_t ret;
-	u32_t blocksize = 4;
-	u32_t len = 0;
-	u32_t *udst = (u32_t *)dst;
+	uint32_t ret;
+	uint32_t blocksize = 4;
+	uint32_t len = 0;
+	uint32_t *udst = (uint32_t *)dst;
 
 	while (len < outlen) {
 		ret = xoroshiro128_next();
 		if ((outlen-len) < sizeof(ret)) {
-			blocksize = len;
+			blocksize = outlen - len;
 			(void)memcpy(udst, &ret, blocksize);
 		} else {
 			(*udst++) = ret;

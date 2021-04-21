@@ -28,12 +28,6 @@ config FLASH_SIMULATOR_DOUBLE_WRITES
 	 If selected, writing to a non-erased program unit will succeed, otherwise, it will return an error.
 	 Keep in mind that write operations can only pull bits to zero, regardless.
 
-config FLASH_SIMULATOR_ERASE_PROTECT
-	bool "Enable erase protection on write protection"
-	default y
-	help
-	 If selected, turning on write protection will also prevent erasing.
-
 config FLASH_SIMULATOR_SIMULATE_TIMING
 	bool "Enable hardware timing simulation"
 

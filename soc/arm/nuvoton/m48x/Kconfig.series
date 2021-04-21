@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Saravanan Sekar <saravanan@linumiz.com>
+
+config SOC_SERIES_M48X
+	bool "Nuvoton M48X Series MCU"
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CORTEX_M_SYSTICK
+	select SOC_FAMILY_NUMICRO
+	help
+	  Enable support for NUVOTON M48X MCU series

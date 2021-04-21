@@ -25,13 +25,6 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 
-/* stacks */
-
-#define STACK_ALIGN_SIZE 4
-
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
-
 #ifndef _ASMLANGUAGE
 
 #include <kernel.h>
@@ -42,8 +35,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
 #ifdef __cplusplus
 }

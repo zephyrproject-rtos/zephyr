@@ -104,4 +104,13 @@ config CANOPEN_SYNC_THREAD_PRIORITY
 	  Priority level of the internal thread which processes
 	  CANopen SYNC RPDOs and TPDOs.
 
+config CANOPEN_PROGRAM_DOWNLOAD
+	bool "CANopen program download"
+	depends on BOOTLOADER_MCUBOOT
+	select IMG_MANAGER
+	default y
+	help
+	  Enable support for program download over CANopen according
+	  to the CiA 302-3 (draft) specification.
+
 endif # CANOPEN

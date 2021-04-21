@@ -16,12 +16,13 @@ static int test_file_open(void)
 {
 	int res;
 
-	res = open(TEST_FILE, O_RDWR);
+	res = open(TEST_FILE, O_CREAT | O_RDWR);
+
 	zassert_true(res >= 0, "Failed opening file: %d, errno=%d\n", res, errno);
 
 	file = res;
 
-	return 0;
+	return TC_PASS;
 }
 
 int test_file_write(void)
@@ -85,7 +86,7 @@ static int test_file_read(void)
 	/* Now test after non-zero lseek. */
 
 	res = lseek(file, 2, SEEK_SET);
-	if (res != 0) {
+	if (res != 2) {
 		TC_PRINT("lseek failed [%d]\n", (int)res);
 		close(file);
 		return TC_FAIL;
@@ -109,7 +110,7 @@ static int test_file_read(void)
 		return TC_FAIL;
 	}
 
-	return res;
+	return TC_PASS;
 }
 
 static int test_file_close(void)

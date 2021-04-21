@@ -11,8 +11,7 @@
 # 1.4. board_*
 # 1.5. Misc.
 # 2. Kconfig-aware extensions
-# 2.1 *_if_kconfig
-# 2.2 Misc
+# 2.1 Misc
 # 3. CMake-generic extensions
 # 3.1. *_ifdef
 # 3.2. *_ifndef
@@ -164,7 +163,7 @@ endfunction()
 # writes "-Isome_dir;-Isome/other/dir" to x
 
 function(zephyr_get_include_directories_for_lang_as_string lang i)
-  zephyr_get_include_directories_for_lang(${lang} list_of_flags ${ARGN})
+  zephyr_get_include_directories_for_lang(${lang} list_of_flags DELIMITER " " ${ARGN})
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -172,7 +171,7 @@ function(zephyr_get_include_directories_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_system_include_directories_for_lang_as_string lang i)
-  zephyr_get_system_include_directories_for_lang(${lang} list_of_flags ${ARGN})
+  zephyr_get_system_include_directories_for_lang(${lang} list_of_flags DELIMITER " " ${ARGN})
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -180,7 +179,7 @@ function(zephyr_get_system_include_directories_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_compile_definitions_for_lang_as_string lang i)
-  zephyr_get_compile_definitions_for_lang(${lang} list_of_flags ${ARGN})
+  zephyr_get_compile_definitions_for_lang(${lang} list_of_flags DELIMITER " " ${ARGN})
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -188,7 +187,7 @@ function(zephyr_get_compile_definitions_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_compile_options_for_lang_as_string lang i)
-  zephyr_get_compile_options_for_lang(${lang} list_of_flags)
+  zephyr_get_compile_options_for_lang(${lang} list_of_flags DELIMITER " ")
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -196,44 +195,60 @@ function(zephyr_get_compile_options_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_INCLUDE_DIRECTORIES
-    "-I"
-    ${ARGN}
-    )
+  zephyr_get_parse_args(args ${ARGN})
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  if(NOT ARGN)
+    set(result_output_list "-I$<JOIN:${genexp_output_list},$<SEMICOLON>-I>")
+  elseif(args_STRIP_PREFIX)
+    # The list has no prefix, so don't add it.
+    set(result_output_list ${output_list})
+  elseif(args_DELIMITER)
+    set(result_output_list "-I$<JOIN:${genexp_output_list},${args_DELIMITER}-I>")
+  endif()
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_system_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-    "-isystem"
-    ${ARGN}
-    )
+  zephyr_get_parse_args(args ${ARGN})
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  set_ifndef(args_DELIMITER "$<SEMICOLON>")
+  set(result_output_list "$<$<BOOL:${genexp_output_list}>:-isystem$<JOIN:${genexp_output_list},${args_DELIMITER}-isystem>>")
+
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_compile_definitions_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_COMPILE_DEFINITIONS
-    "-D"
-    ${ARGN}
-    )
+  zephyr_get_parse_args(args ${ARGN})
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_DEFINITIONS)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  set_ifndef(args_DELIMITER "$<SEMICOLON>")
+  set(result_output_list "-D$<JOIN:${genexp_output_list},${args_DELIMITER}-D>")
+
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 function(zephyr_get_compile_options_for_lang lang i)
+  zephyr_get_parse_args(args ${ARGN})
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
 
   process_flags(${lang} flags output_list)
+  string(REPLACE ";" "$<SEMICOLON>" genexp_output_list "${output_list}")
 
-  set(${i} ${output_list} PARENT_SCOPE)
+  set_ifndef(args_DELIMITER "$<SEMICOLON>")
+  set(result_output_list "$<JOIN:${genexp_output_list},${args_DELIMITER}>")
+
+  set(${i} ${result_output_list} PARENT_SCOPE)
 endfunction()
 
 # This function writes a dict to it's output parameter
@@ -244,8 +259,17 @@ endfunction()
 #   print(foo_STRIP_PREFIX) # foo_STRIP_PREFIX might be set to 1
 function(zephyr_get_parse_args return_dict)
   foreach(x ${ARGN})
-    if(x STREQUAL STRIP_PREFIX)
-      set(${return_dict}_STRIP_PREFIX 1 PARENT_SCOPE)
+    if(DEFINED single_argument)
+      set(${single_argument} ${x} PARENT_SCOPE)
+      unset(single_argument)
+    else()
+      if(x STREQUAL STRIP_PREFIX)
+        set(${return_dict}_STRIP_PREFIX 1 PARENT_SCOPE)
+      elseif(x STREQUAL NO_SPLIT)
+        set(${return_dict}_NO_SPLIT 1 PARENT_SCOPE)
+      elseif(x STREQUAL DELIMITER)
+        set(single_argument ${return_dict}_DELIMITER)
+      endif()
     endif()
   endforeach()
 endfunction()
@@ -254,6 +278,7 @@ function(process_flags lang input output)
   # The flags might contains compile language generator expressions that
   # look like this:
   # $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+  # $<$<COMPILE_LANGUAGE:CXX>:$<OTHER_EXPRESSION>>
   #
   # Flags that don't specify a language like this apply to all
   # languages.
@@ -275,15 +300,34 @@ function(process_flags lang input output)
     set(is_compile_lang_generator_expression 0)
     foreach(l ${languages})
       if(flag MATCHES "<COMPILE_LANGUAGE:${l}>:([^>]+)>")
+        set(updated_flag ${CMAKE_MATCH_1})
         set(is_compile_lang_generator_expression 1)
         if(${l} STREQUAL ${lang})
-          list(APPEND tmp_list ${CMAKE_MATCH_1})
+          # This test will match in case there are more generator expressions in the flag.
+          # As example: $<$<COMPILE_LANGUAGE:C>:$<OTHER_EXPRESSION>>
+          #             $<$<OTHER_EXPRESSION:$<COMPILE_LANGUAGE:C>:something>>
+          string(REGEX MATCH "(\\\$<)[^\\\$]*(\\\$<)[^\\\$]*(\\\$<)" IGNORE_RESULT ${flag})
+          if(CMAKE_MATCH_2)
+            # Nested generator expressions are used, just substitue `$<COMPILE_LANGUAGE:${l}>` to `1`
+            string(REGEX REPLACE "\\\$<COMPILE_LANGUAGE:${l}>" "1" updated_flag ${flag})
+          endif()
+          list(APPEND tmp_list ${updated_flag})
           break()
         endif()
       endif()
     endforeach()
 
     if(NOT is_compile_lang_generator_expression)
+      # SHELL is used to avoid de-deplucation, but when process flags
+      # then this tag must be removed to return real compile/linker flags.
+      if(flag MATCHES "SHELL:[ ]*(.*)")
+        separate_arguments(flag UNIX_COMMAND ${CMAKE_MATCH_1})
+      endif()
+      # Flags may be placed inside generator expression, therefore any flag
+      # which is not already a generator expression must have commas converted.
+      if(NOT flag MATCHES "\\\$<.*>")
+        string(REPLACE "," "$<COMMA>" flag "${flag}")
+      endif()
       list(APPEND tmp_list ${flag})
     endif()
   endforeach()
@@ -586,10 +630,17 @@ endfunction()
 
 # 1.4. board_*
 #
-# This section is for extensions which control Zephyr's board runners
-# from the build system. The Zephyr build system has targets for
-# flashing and debugging supported boards. These are wrappers around a
-# "runner" Python subpackage that is part of Zephyr's "west" tool.
+# This section is for extensions related to Zephyr board handling.
+#
+# Zephyr board extensions current contains:
+# - Board runners
+# - Board revision
+
+# Zephyr board runners:
+#   Zephyr board runner extension functions control Zephyr's board runners
+#   from the build system. The Zephyr build system has targets for
+#   flashing and debugging supported boards. These are wrappers around a
+#   "runner" Python subpackage that is part of Zephyr's "west" tool.
 #
 # This section provides glue between CMake and the Python code that
 # manages the runners.
@@ -723,6 +774,159 @@ function(board_finalize_runner_args runner)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_RUNNERS ${runner})
 endfunction()
 
+# Zephyr board revision:
+#
+# This section provides a function for revision checking.
+
+# Usage:
+#   board_check_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>
+#                        [EXACT]
+#                        [DEFAULT_REVISION <revision>]
+#                        [HIGHEST_REVISION <revision>]
+#   )
+#
+# Zephyr board extension function.
+#
+# This function can be used in `boards/<board>/revision.cmake` to check a user
+# requested revision against available board revisions.
+#
+# The function will check the revision from `-DBOARD=<board>@<revision>` that
+# is provided by the user according to the arguments.
+# When `EXACT` is not specified, this function will set the Zephyr build system
+# variable `ACTIVE_BOARD_REVISION` with the selected revision.
+#
+# FORMAT <LETTER | MAJOR.MINOR.PATCH>: Specify the revision format.
+#         LETTER:             Revision format is a single letter from A - Z.
+#         MAJOR.MINOR.PATCH:  Revision format is three numbers, separated by `.`,
+#                             `x.y.z`. Trailing zeroes may be omitted on the
+#                             command line, which means:
+#                             1.0.0 == 1.0 == 1
+#
+# EXACT: Revision is required to be an exact match. As example, available revisions are:
+#        0.1.0 and 0.3.0, and user provides 0.2.0, then an error is reported
+#        when `EXACT` is given.
+#        If `EXACT` is not provided, then closest lower revision will be selected
+#        as the active revision, which in the example will be `0.1.0`.
+#
+# DEFAULT_REVISION: Provides a default revision to use when user has not selected
+#                   a revision number. If no default revision is provided then
+#                   user will be printed with an error if no revision is given
+#                   on the command line.
+#
+# HIGHEST_REVISION: Allows to specify highest valid revision for a board.
+#                   This can be used to ensure that a newer board cannot be used
+#                   with an older Zephyr. As example, if current board supports
+#                   revisions 0.x.0-0.99.99 and 1.0.0-1.99.99, and it is expected
+#                   that current board implementation will not work with board
+#                   revision 2.0.0, then HIGHEST_REVISION can be set to 1.99.99,
+#                   and user will be printed with an error if using
+#                   `<board>@2.0.0` or higher.
+#                   This field is not needed when `EXACT` is used.
+#
+# VALID_REVISIONS:  A list of valid revisions for this board.
+#                   If this argument is not provided, then each Kconfig fragment
+#                   of the form ``<board>_<revision>.conf`` in the board folder
+#                   will be used as a valid revision for the board.
+#
+function(board_check_revision)
+  set(options EXACT)
+  set(single_args FORMAT DEFAULT_REVISION HIGHEST_REVISION)
+  set(multi_args  VALID_REVISIONS)
+  cmake_parse_arguments(BOARD_REV "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  string(TOUPPER ${BOARD_REV_FORMAT} BOARD_REV_FORMAT)
+
+  if(NOT DEFINED BOARD_REVISION)
+    if(DEFINED BOARD_REV_DEFAULT_REVISION)
+      set(BOARD_REVISION ${BOARD_REV_DEFAULT_REVISION})
+      set(BOARD_REVISION ${BOARD_REVISION} PARENT_SCOPE)
+    else()
+      message(FATAL_ERROR "No board revision specified, Board: `${BOARD}` \
+              requires a revision. Please use: `-DBOARD=${BOARD}@<revision>`")
+    endif()
+  endif()
+
+  if(DEFINED BOARD_REV_HIGHEST_REVISION)
+    if(((BOARD_REV_FORMAT STREQUAL LETTER) AND
+        (BOARD_REVISION STRGREATER BOARD_REV_HIGHEST_REVISION)) OR
+       ((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
+        (BOARD_REVISION VERSION_GREATER BOARD_REV_HIGHEST_REVISION))
+    )
+      message(FATAL_ERROR "Board revision `${BOARD_REVISION}` greater than \
+              highest supported revision `${BOARD_REV_HIGHEST_REVISION}`. \
+              Please specify a valid board revision.")
+    endif()
+  endif()
+
+  if(BOARD_REV_FORMAT STREQUAL LETTER)
+    set(revision_regex "([A-Z])")
+  elseif(BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$")
+    set(revision_regex "((0|[1-9][0-9]*)(\.[0-9]+)(\.[0-9]+))")
+    # We allow loose <board>@<revision> typing on command line.
+    # so append missing zeroes.
+    if(BOARD_REVISION MATCHES "((0|[1-9][0-9]*)(\.[0-9]+)?(\.[0-9]+)?)")
+      if(NOT CMAKE_MATCH_3)
+        set(BOARD_REVISION ${BOARD_REVISION}.0)
+        set(BOARD_REVISION ${BOARD_REVISION} PARENT_SCOPE)
+      endif()
+      if(NOT CMAKE_MATCH_4)
+        set(BOARD_REVISION ${BOARD_REVISION}.0)
+        set(BOARD_REVISION ${BOARD_REVISION} PARENT_SCOPE)
+      endif()
+    endif()
+  else()
+    message(FATAL_ERROR "Invalid format specified for \
+    `board_check_revision(FORMAT <LETTER | MAJOR.MINOR.PATCH>)`")
+  endif()
+
+  if(NOT (BOARD_REVISION MATCHES "^${revision_regex}$"))
+    message(FATAL_ERROR "Invalid revision format used for `${BOARD_REVISION}`. \
+            Board `${BOARD}` uses revision format: ${BOARD_REV_FORMAT}.")
+  endif()
+
+  if(NOT DEFINED BOARD_REV_VALID_REVISIONS)
+    file(GLOB revision_candidates LIST_DIRECTORIES false RELATIVE ${BOARD_DIR}
+         ${BOARD_DIR}/${BOARD}_*.conf
+    )
+    string(REPLACE "." "_" underscore_revision_regex ${revision_regex})
+    set(file_revision_regex "${BOARD}_${underscore_revision_regex}.conf")
+    foreach(candidate ${revision_candidates})
+      if(${candidate} MATCHES "${file_revision_regex}")
+        string(REPLACE "_" "." FOUND_BOARD_REVISION ${CMAKE_MATCH_1})
+        list(APPEND BOARD_REV_VALID_REVISIONS ${FOUND_BOARD_REVISION})
+      endif()
+    endforeach()
+  endif()
+
+  if(${BOARD_REVISION} IN_LIST BOARD_REV_VALID_REVISIONS)
+    # Found exact match.
+    return()
+  endif()
+
+  if(NOT BOARD_REV_EXACT)
+    foreach(TEST_REVISION ${BOARD_REV_VALID_REVISIONS})
+      if((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
+         (${BOARD_REVISION} VERSION_GREATER_EQUAL ${TEST_REVISION}) AND
+         (${TEST_REVISION} VERSION_GREATER_EQUAL "${ACTIVE_BOARD_REVISION}")
+      )
+        set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
+      elseif((BOARD_REV_FORMAT STREQUAL LETTER) AND
+             (${BOARD_REVISION} STRGREATER ${TEST_REVISION}) AND
+             (${TEST_REVISION} STRGREATER "${ACTIVE_BOARD_REVISION}")
+      )
+        set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
+      endif()
+    endforeach()
+  endif()
+
+  if(BOARD_REV_EXACT OR NOT DEFINED ACTIVE_BOARD_REVISION)
+    message(FATAL_ERROR "Board revision `${BOARD_REVISION}` for board \
+            `${BOARD}` not found. Please specify a valid board revision.")
+  endif()
+
+  set(ACTIVE_BOARD_REVISION ${ACTIVE_BOARD_REVISION} PARENT_SCOPE)
+endfunction()
+
 # 1.5. Misc.
 
 # zephyr_check_compiler_flag is a part of Zephyr's toolchain
@@ -817,7 +1021,7 @@ function(zephyr_check_compiler_flag lang option check)
     # This is racy. As often with race conditions, this one can easily be
     # made worse and demonstrated with a simple delay:
     #    execute_process(COMMAND "sleep" "5")
-    # Delete the cache, add the sleep above and run sanitycheck with a
+    # Delete the cache, add the sleep above and run twister with a
     # large number of JOBS. Once it's done look at the log.txt file
     # below and you will see that concurrent cmake processes created the
     # same files multiple times.
@@ -986,9 +1190,12 @@ endfunction(zephyr_linker_sources)
 # Helper function for CONFIG_CODE_DATA_RELOCATION
 # Call this function with 2 arguments file and then memory location
 function(zephyr_code_relocate file location)
+  if(NOT IS_ABSOLUTE ${file})
+    set(file ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+  endif()
   set_property(TARGET code_data_relocation_target
     APPEND PROPERTY COMPILE_DEFINITIONS
-    "${location}:${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+    "${location}:${file}")
 endfunction()
 
 # Usage:
@@ -1020,42 +1227,8 @@ endfunction()
 # Kconfig is a configuration language developed for the Linux
 # kernel. The below functions integrate CMake with Kconfig.
 #
-# 2.1 *_if_kconfig
-#
-# Functions for conditionally including directories and source files
-# that have matching KConfig values.
-#
-# zephyr_library_sources_if_kconfig(fft.c)
-# is the same as
-# zephyr_library_sources_ifdef(CONFIG_FFT fft.c)
-#
-# add_subdirectory_if_kconfig(serial)
-# is the same as
-# add_subdirectory_ifdef(CONFIG_SERIAL serial)
-function(add_subdirectory_if_kconfig dir)
-  string(TOUPPER config_${dir} UPPER_CASE_CONFIG)
-  add_subdirectory_ifdef(${UPPER_CASE_CONFIG} ${dir})
-endfunction()
 
-function(target_sources_if_kconfig target scope item)
-  get_filename_component(item_basename ${item} NAME_WE)
-  string(TOUPPER CONFIG_${item_basename} UPPER_CASE_CONFIG)
-  target_sources_ifdef(${UPPER_CASE_CONFIG} ${target} ${scope} ${item})
-endfunction()
-
-function(zephyr_library_sources_if_kconfig item)
-  get_filename_component(item_basename ${item} NAME_WE)
-  string(TOUPPER CONFIG_${item_basename} UPPER_CASE_CONFIG)
-  zephyr_library_sources_ifdef(${UPPER_CASE_CONFIG} ${item})
-endfunction()
-
-function(zephyr_sources_if_kconfig item)
-  get_filename_component(item_basename ${item} NAME_WE)
-  string(TOUPPER CONFIG_${item_basename} UPPER_CASE_CONFIG)
-  zephyr_sources_ifdef(${UPPER_CASE_CONFIG} ${item})
-endfunction()
-
-# 2.2 Misc
+# 2.1 Misc
 #
 # import_kconfig(<prefix> <kconfig_fragment> [<keys>])
 #
@@ -1138,9 +1311,9 @@ endfunction()
 # ifdef functions are added on an as-need basis. See
 # https://cmake.org/cmake/help/latest/manual/cmake-commands.7.html for
 # a list of available functions.
-function(add_subdirectory_ifdef feature_toggle dir)
+function(add_subdirectory_ifdef feature_toggle source_dir)
   if(${${feature_toggle}})
-    add_subdirectory(${dir})
+    add_subdirectory(${source_dir} ${ARGN})
   endif()
 endfunction()
 
@@ -1386,15 +1559,26 @@ function(target_cc_option_fallback target scope option1 option2)
 endfunction()
 
 function(target_ld_options target scope)
+  zephyr_get_parse_args(args ${ARGN})
+  list(REMOVE_ITEM ARGN NO_SPLIT)
+
   foreach(option ${ARGN})
-    string(MAKE_C_IDENTIFIER check${option} check)
+    if(args_NO_SPLIT)
+      set(option ${ARGN})
+    endif()
+    string(JOIN "" check_identifier "check" ${option})
+    string(MAKE_C_IDENTIFIER ${check_identifier} check)
 
     set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+    string(JOIN " " CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS} ${option})
     zephyr_check_compiler_flag(C "" ${check})
     set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
     target_link_libraries_ifdef(${check} ${target} ${scope} ${option})
+
+    if(args_NO_SPLIT)
+      break()
+    endif()
   endforeach()
 endfunction()
 
@@ -1413,7 +1597,7 @@ function(toolchain_parse_make_rule input_file include_files)
 
   # The file is formatted like this:
   # empty_file.o: misc/empty_file.c \
-  # nrf52840_pca10056/nrf52840_pca10056.dts \
+  # nrf52840dk_nrf52840/nrf52840dk_nrf52840.dts \
   # nrf52840_qiaa.dtsi
 
   # Get rid of the backslashes
@@ -1437,12 +1621,117 @@ function(toolchain_parse_make_rule input_file include_files)
   set(${include_files} ${result} PARENT_SCOPE)
 endfunction()
 
+# 'check_set_linker_property' is a function that check the provided linker
+# flag and only set the linker property if the check succeeds
+#
+# This function is similar in nature to the CMake set_property function, but
+# with the extension that it will check that the linker supports the flag before
+# setting the property.
+#
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# TARGET: Name of target on which to add the property (commonly: linker)
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(check_set_linker_property)
+  set(options APPEND)
+  set(single_args TARGET)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(LINKER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(LINKER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+  endif()
+
+  list(GET LINKER_PROPERTY_PROPERTY 0 property)
+  list(REMOVE_AT LINKER_PROPERTY_PROPERTY 0)
+  set(option ${LINKER_PROPERTY_PROPERTY})
+
+  string(MAKE_C_IDENTIFIER check${option} check)
+
+  set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+  zephyr_check_compiler_flag(C "" ${check})
+  set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
+
+  if(${check})
+    set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
+  endif()
+endfunction()
+
+# 'set_compiler_property' is a function that sets the property for the C and
+# C++ property targets used for toolchain abstraction.
+#
+# This function is similar in nature to the CMake set_property function, but
+# with the extension that it will set the property on both the compile and
+# compiler-cpp targets.
+#
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(set_compiler_property)
+  set(options APPEND)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(COMPILER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+  if(COMPILER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+   set(APPEND-CPP "APPEND")
+  endif()
+
+  set_property(TARGET compiler ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+  set_property(TARGET compiler-cpp ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+endfunction()
+
+# 'check_set_compiler_property' is a function that check the provided compiler
+# flag and only set the compiler or compiler-cpp property if the check succeeds
+#
+# This function is similar in nature to the CMake set_property function, but
+# with the extension that it will check that the compiler supports the flag
+# before setting the property on compiler or compiler-cpp targets.
+#
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(check_set_compiler_property)
+  set(options APPEND)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(COMPILER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+  if(COMPILER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+   set(APPEND-CPP "APPEND")
+  endif()
+
+  list(GET COMPILER_PROPERTY_PROPERTY 0 property)
+  list(REMOVE_AT COMPILER_PROPERTY_PROPERTY 0)
+
+  foreach(option ${COMPILER_PROPERTY_PROPERTY})
+    if(CONFIG_CPLUSPLUS)
+      zephyr_check_compiler_flag(CXX ${option} check)
+
+      if(${check})
+        set_property(TARGET compiler-cpp ${APPEND-CPP} PROPERTY ${property} ${option})
+        set(APPEND-CPP "APPEND")
+      endif()
+    endif()
+
+    zephyr_check_compiler_flag(C ${option} check)
+
+    if(${check})
+      set_property(TARGET compiler ${APPEND} PROPERTY ${property} ${option})
+      set(APPEND "APPEND")
+    endif()
+  endforeach()
+endfunction()
+
+
 # 3.4. Debugging CMake
 
 # Usage:
 #   print(BOARD)
 #
-# will print: "BOARD: nrf52_pca10040"
+# will print: "BOARD: nrf52dk_nrf52832"
 function(print arg)
   message(STATUS "${arg}: ${${arg}}")
 endfunction()
@@ -1479,19 +1768,6 @@ macro(assert_exists var)
     message(FATAL_ERROR "No such file or directory: ${var}: '${${var}}'")
   endif()
 endmacro()
-
-function(print_usage)
-  message("see usage:")
-  string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
-  string(REPLACE ";" " " SHIELD_LIST_SPACE_SEPARATED "${SHIELD_LIST}")
-  execute_process(
-    COMMAND
-    ${CMAKE_COMMAND}
-    -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
-    -DSHIELD_LIST_SPACE_SEPARATED=${SHIELD_LIST_SPACE_SEPARATED}
-    -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
-    )
-endfunction()
 
 # 3.5. File system management
 function(check_if_directory_is_writeable dir ok)
@@ -1577,4 +1853,385 @@ function(generate_unique_target_name_from_filename filename target_name)
   string(MD5 unique_chars ${filename})
 
   set(${target_name} gen_${x}_${unique_chars} PARENT_SCOPE)
+endfunction()
+
+# Usage:
+#   zephyr_file(<mode> <arg> ...)
+#
+# Zephyr file function extension.
+# This function currently support the following <modes>
+#
+# APPLICATION_ROOT <path>: Check all paths in provided variable, and convert
+#                          those paths that are defined with `-D<path>=<val>`
+#                          to absolute path, relative from `APPLICATION_SOURCE_DIR`
+#                          Issue an error for any relative path not specified
+#                          by user with `-D<path>`
+#
+# CONF_FILES <path>: Find all configuration files in path and return them in a
+#                    list. Configuration files will be:
+#                    - DTS:       Overlay files (.overlay)
+#                    - Kconfig:   Config fragments (.conf)
+#                    The conf file search will return existing configuration
+#                    files for the current board.
+#                    CONF_FILES takes the following additional arguments:
+#                    BOARD <board>:             Find configuration files for specified board.
+#                    BOARD_REVISION <revision>: Find configuration files for specified board
+#                                               revision. Requires BOARD to be specified.
+#
+#                                               If no board is given the current BOARD and
+#                                               BOARD_REVISION will be used.
+#
+#                    DTS <list>:   List to populate with DTS overlay files
+#                    KCONF <list>: List to populate with Kconfig fragment files
+#                    BUILD <type>: Build type to include for search.
+#                                  For example:
+#                                  BUILD debug, will look for <board>_debug.conf
+#                                  and <board>_debug.overlay, instead of <board>.conf
+#
+# returns an updated list of absolute paths
+function(zephyr_file)
+  set(file_options APPLICATION_ROOT CONF_FILES)
+  if((ARGC EQUAL 0) OR (NOT (ARGV0 IN_LIST file_options)))
+    message(FATAL_ERROR "No <mode> given to `zephyr_file(<mode> <args>...)` function,\n \
+Please provide one of following: APPLICATION_ROOT, CONF_FILES")
+  endif()
+
+  if(${ARGV0} STREQUAL APPLICATION_ROOT)
+    set(single_args APPLICATION_ROOT)
+  elseif(${ARGV0} STREQUAL CONF_FILES)
+    set(single_args CONF_FILES BOARD BOARD_REVISION DTS KCONF BUILD)
+  endif()
+
+  cmake_parse_arguments(FILE "" "${single_args}" "" ${ARGN})
+  if(FILE_UNPARSED_ARGUMENTS)
+      message(FATAL_ERROR "zephyr_file(${ARGV0} <path> ...) given unknown arguments: ${FILE_UNPARSED_ARGUMENTS}")
+  endif()
+
+
+  if(FILE_APPLICATION_ROOT)
+    # Note: user can do: `-D<var>=<relative-path>` and app can at same
+    # time specify `list(APPEND <var> <abs-path>)`
+    # Thus need to check and update only CACHED variables (-D<var>).
+    set(CACHED_PATH $CACHE{${FILE_APPLICATION_ROOT}})
+    foreach(path ${CACHED_PATH})
+      # The cached variable is relative path, i.e. provided by `-D<var>` or
+      # `set(<var> CACHE)`, so let's update current scope variable to absolute
+      # path from  `APPLICATION_SOURCE_DIR`.
+      if(NOT IS_ABSOLUTE ${path})
+        set(abs_path ${APPLICATION_SOURCE_DIR}/${path})
+        list(FIND ${FILE_APPLICATION_ROOT} ${path} index)
+        if(NOT ${index} LESS 0)
+          list(REMOVE_AT ${FILE_APPLICATION_ROOT} ${index})
+          list(INSERT ${FILE_APPLICATION_ROOT} ${index} ${abs_path})
+        endif()
+      endif()
+    endforeach()
+
+    # Now all cached relative paths has been updated.
+    # Let's check if anyone uses relative path as scoped variable, and fail
+    foreach(path ${${FILE_APPLICATION_ROOT}})
+      if(NOT IS_ABSOLUTE ${path})
+        message(FATAL_ERROR
+"Relative path encountered in scoped variable: ${FILE_APPLICATION_ROOT}, value=${path}\n \
+Please adjust any `set(${FILE_APPLICATION_ROOT} ${path})` or `list(APPEND ${FILE_APPLICATION_ROOT} ${path})`\n \
+to absolute path using `\${CMAKE_CURRENT_SOURCE_DIR}/${path}` or similar. \n \
+Relative paths are only allowed with `-D${ARGV1}=<path>`")
+      endif()
+    endforeach()
+
+    # This updates the provided argument in parent scope (callers scope)
+    set(${FILE_APPLICATION_ROOT} ${${FILE_APPLICATION_ROOT}} PARENT_SCOPE)
+  endif()
+
+  if(FILE_CONF_FILES)
+    if(DEFINED FILE_BOARD_REVISION AND NOT FILE_BOARD)
+        message(FATAL_ERROR
+          "zephyr_file(${ARGV0} <path> BOARD_REVISION ${FILE_BOARD_REVISION} ...)"
+          " given without BOARD argument, please specify BOARD"
+        )
+    endif()
+
+    if(NOT DEFINED FILE_BOARD)
+      # Defaulting to system wide settings when BOARD is not given as argument
+      set(FILE_BOARD ${BOARD})
+      if(DEFINED BOARD_REVISION)
+        set(FILE_BOARD_REVISION ${BOARD_REVISION})
+      endif()
+    endif()
+
+    set(FILENAMES ${FILE_BOARD})
+
+    if(DEFINED FILE_BOARD_REVISION)
+      string(REPLACE "." "_" revision_string ${FILE_BOARD_REVISION})
+      list(APPEND FILENAMES "${FILE_BOARD}_${revision_string}")
+    endif()
+
+    if(FILE_DTS)
+      foreach(filename ${FILENAMES})
+        if(EXISTS ${FILE_CONF_FILES}/${filename}.overlay)
+          list(APPEND ${FILE_DTS} ${FILE_CONF_FILES}/${filename}.overlay)
+        endif()
+      endforeach()
+
+      # This updates the provided list in parent scope (callers scope)
+      set(${FILE_DTS} ${${FILE_DTS}} PARENT_SCOPE)
+    endif()
+
+    if(FILE_KCONF)
+      foreach(filename ${FILENAMES})
+        if(FILE_BUILD)
+          set(filename "${filename}_${FILE_BUILD}")
+        endif()
+
+        if(EXISTS ${FILE_CONF_FILES}/${filename}.conf)
+          list(APPEND ${FILE_KCONF} ${FILE_CONF_FILES}/${filename}.conf)
+        endif()
+      endforeach()
+
+      # This updates the provided list in parent scope (callers scope)
+      set(${FILE_KCONF} ${${FILE_KCONF}} PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
+
+# Usage:
+#   zephyr_string(<mode> <out-var> <input> ...)
+#
+# Zephyr string function extension.
+# This function extends the CMake string function by providing additional
+# manipulation arguments to CMake string.
+#
+# SANITIZE: Ensure that the output string does not contain any special
+#           characters. Special characters, such as -, +, =, $, etc. are
+#           converted to underscores '_'.
+#
+# SANITIZE TOUPPER: Ensure that the output string does not contain any special
+#                   characters. Special characters, such as -, +, =, $, etc. are
+#                   converted to underscores '_'.
+#                   The sanitized string will be returned in UPPER case.
+#
+# returns the updated string
+function(zephyr_string)
+  set(options SANITIZE TOUPPER)
+  cmake_parse_arguments(ZEPHYR_STRING "${options}" "" "" ${ARGN})
+
+  if (NOT ZEPHYR_STRING_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "Function zephyr_string() called without a return variable")
+  endif()
+
+  list(GET ZEPHYR_STRING_UNPARSED_ARGUMENTS 0 return_arg)
+  list(REMOVE_AT ZEPHYR_STRING_UNPARSED_ARGUMENTS 0)
+
+  list(JOIN ZEPHYR_STRING_UNPARSED_ARGUMENTS "" work_string)
+
+  if(ZEPHYR_STRING_SANITIZE)
+    string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" work_string ${work_string})
+  endif()
+
+  if(ZEPHYR_STRING_TOUPPER)
+    string(TOUPPER ${work_string} work_string)
+  endif()
+
+  set(${return_arg} ${work_string} PARENT_SCOPE)
+endfunction()
+
+# Usage:
+#   zephyr_check_cache(<variable> [REQUIRED])
+#
+# Check the current CMake cache for <variable> and warn the user if the value
+# is being modified.
+#
+# This can be used to ensure the user does not accidentally try to change
+# Zephyr build variables, such as:
+# - BOARD
+# - SHIELD
+#
+# variable: Name of <variable> to check and set, for example BOARD.
+# REQUIRED: Optional flag. If specified, then an unset <variable> will be
+#           treated as an error.
+# WATCH: Optional flag. If specified, watch the variable and print a warning if
+#        the variable is later being changed.
+#
+# Details:
+#   <variable> can be set by 3 sources.
+#   - Using CMake argument, -D<variable>
+#   - Using an environment variable
+#   - In the project CMakeLists.txt before `find_package(Zephyr)`.
+#
+#   CLI has the highest precedence, then comes environment variables,
+#   and then finally CMakeLists.txt.
+#
+#   The value defined on the first CMake invocation will be stored in the CMake
+#   cache as CACHED_<variable>. This allows the Zephyr build system to detect
+#   when a user reconfigures a sticky variable.
+#
+#   A user can ignore all the precedence rules if the same source is always used
+#   E.g. always specifies -D<variable>= on the command line,
+#   always has an environment <variable> set, or always has a set(<variable> foo)
+#   line in his CMakeLists.txt and avoids mixing sources.
+#
+#   The selected <variable> can be accessed through the variable '<variable>' in
+#   following Zephyr CMake code.
+#
+#   If the user tries to change <variable> to a new value, then a warning will
+#   be printed, and the previously cached value (CACHED_<variable>) will be
+#   used, as it has precedence.
+#
+#   Together with the warning, user is informed that in order to change
+#   <variable> the build directory must be cleaned.
+#
+function(zephyr_check_cache variable)
+  cmake_parse_arguments(CACHE_VAR "REQUIRED;WATCH" "" "" ${ARGN})
+  string(TOLOWER ${variable} variable_text)
+  string(REPLACE "_" " " variable_text ${variable_text})
+
+  get_property(cached_value CACHE ${variable} PROPERTY VALUE)
+
+  # If the build has already been configured in an earlier CMake invocation,
+  # then CACHED_${variable} is set. The CACHED_${variable} setting takes
+  # precedence over any user or CMakeLists.txt input.
+  # If we detect that user tries to change the setting, then print a warning
+  # that a pristine build is needed.
+
+  # If user uses -D<variable>=<new_value>, then cli_argument will hold the new
+  # value, otherwise cli_argument will hold the existing (old) value.
+  set(cli_argument ${cached_value})
+  if(cli_argument STREQUAL CACHED_${variable})
+    # The is no changes to the <variable> value.
+    unset(cli_argument)
+  endif()
+
+  set(app_cmake_lists ${${variable}})
+  if(cached_value STREQUAL ${variable})
+    # The app build scripts did not set a default, The BOARD we are
+    # reading is the cached value from the CLI
+    unset(app_cmake_lists)
+  endif()
+
+  if(DEFINED CACHED_${variable})
+    # Warn the user if it looks like he is trying to change the board
+    # without cleaning first
+    if(cli_argument)
+      if(NOT ((CACHED_${variable} STREQUAL cli_argument) OR (${variable}_DEPRECATED STREQUAL cli_argument)))
+        message(WARNING "The build directory must be cleaned pristinely when "
+                        "changing ${variable_text},\n"
+                        "Current value=\"${CACHED_${variable}}\", "
+                        "Ignored value=\"${cli_argument}\"")
+      endif()
+    endif()
+
+    if(CACHED_${variable})
+      set(${variable} ${CACHED_${variable}} PARENT_SCOPE)
+      # This resets the user provided value with previous (working) value.
+      set(${variable} ${CACHED_${variable}} CACHE STRING "Selected ${variable_text}" FORCE)
+    else()
+      unset(${variable} PARENT_SCOPE)
+      unset(${variable} CACHE)
+    endif()
+  elseif(cli_argument)
+    set(${variable} ${cli_argument})
+
+  elseif(DEFINED ENV{${variable}})
+    set(${variable} $ENV{${variable}})
+
+  elseif(app_cmake_lists)
+    set(${variable} ${app_cmake_lists})
+
+  elseif(${CACHE_VAR_REQUIRED})
+    message(FATAL_ERROR "${variable} is not being defined on the CMake command-line in the environment or by the app.")
+  endif()
+
+  # Store the specified variable in parent scope and the cache
+  set(${variable} ${${variable}} PARENT_SCOPE)
+  set(CACHED_${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
+
+  if(CACHE_VAR_WATCH)
+    # The variable is now set to its final value.
+    zephyr_boilerplate_watch(${variable})
+  endif()
+endfunction(zephyr_check_cache variable)
+
+
+# Usage:
+#   zephyr_boilerplate_watch(SOME_BOILERPLATE_VAR)
+#
+# Inform the build system that SOME_BOILERPLATE_VAR, a variable
+# handled in cmake/app/boilerplate.cmake, is now fixed and should no
+# longer be changed.
+#
+# This function uses variable_watch() to print a noisy warning
+# if the variable is set after it returns.
+function(zephyr_boilerplate_watch variable)
+  variable_watch(${variable} zephyr_variable_set_too_late)
+endfunction()
+
+function(zephyr_variable_set_too_late variable access value current_list_file)
+  if (access STREQUAL "MODIFIED_ACCESS")
+    message(WARNING
+"
+   **********************************************************************
+   *
+   *                    WARNING
+   *
+   * CMake variable ${variable} set to \"${value}\" in:
+   *     ${current_list_file}
+   *
+   * This is too late to make changes! The change was ignored.
+   *
+   * Hint: ${variable} must be set before calling find_package(Zephyr ...).
+   *
+   **********************************************************************
+")
+  endif()
+endfunction()
+
+# Usage:
+#   zephyr_get_targets(<directory> <types> <targets>)
+#
+# Get build targets for a given directory and sub-directories.
+#
+# This functions will traverse the build tree, starting from <directory>.
+# It will read the `BUILDSYSTEM_TARGETS` for each directory in the build tree
+# and return the build types matching the <types> list.
+# Example of types: OBJECT_LIBRARY, STATIC_LIBRARY, INTERFACE_LIBRARY, UTILITY.
+#
+# returns a list of targets in <targets> matching the required <types>.
+function(zephyr_get_targets directory types targets)
+    get_property(sub_directories DIRECTORY ${directory} PROPERTY SUBDIRECTORIES)
+    get_property(dir_targets DIRECTORY ${directory} PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(dir_target ${dir_targets})
+      get_property(target_type TARGET ${dir_target} PROPERTY TYPE)
+      if(${target_type} IN_LIST types)
+        list(APPEND ${targets} ${dir_target})
+      endif()
+    endforeach()
+
+    foreach(directory ${sub_directories})
+        zephyr_get_targets(${directory} "${types}" ${targets})
+    endforeach()
+    set(${targets} ${${targets}} PARENT_SCOPE)
+endfunction()
+
+# Usage:
+#   target_byproducts(TARGET <target> BYPRODUCTS <file> [<file>...])
+#
+# Specify additional BYPRODUCTS that this target produces.
+#
+# This function allows the build system to specify additional byproducts to
+# target created with `add_executable()`. When linking an executable the linker
+# may produce additional files, like map files. Those files are not known to the
+# build system. This function makes it possible to describe such additional
+# byproducts in an easy manner.
+function(target_byproducts)
+  cmake_parse_arguments(TB "" "TARGET" "BYPRODUCTS" ${ARGN})
+
+  if(NOT DEFINED TB_TARGET)
+    message(FATAL_ERROR "target_byproducts() missing parameter: TARGET <target>")
+  endif()
+
+  add_custom_command(TARGET ${TB_TARGET}
+                     POST_BUILD COMMAND ${CMAKE_COMMAND} -E echo ""
+                     BYPRODUCTS ${TB_BYPRODUCTS}
+                     COMMENT "Logical command for additional byproducts on target: ${TB_TARGET}"
+  )
 endfunction()

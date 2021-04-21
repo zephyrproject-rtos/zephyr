@@ -19,7 +19,7 @@ MCUs.
   running an open source bootloader, offers options for serial communication,
   flash programming, and run-control debugging
 
-.. image:: frdm_k22f.jpg
+.. image:: ./frdm_k22f.jpg
    :width: 720px
    :align: center
    :alt: FRDM-K22F
@@ -128,7 +128,7 @@ The K22F SoC has five pairs of pinmux/gpio controllers.
 +-------+-----------------+---------------------------+
 | PTD3  | UART2_TX        | UART BT HCI               |
 +-------+-----------------+---------------------------+
-| PTD4  | SPI0_PCS1       | SPI                       |
+| PTC4  | SPI0_PCS0       | SPI                       |
 +-------+-----------------+---------------------------+
 | PTD1  | SPI0_SCK        | SPI                       |
 +-------+-----------------+---------------------------+
@@ -199,8 +199,15 @@ the `Segger J-Link OpenSDA V2.1 Firmware`_. Note that Segger
 does provide an OpenSDA J-Link Board-Specific Firmware for this board, however
 it is not compatible with the DAPLink bootloader.
 
-Add the argument ``-DOPENSDA_FW=jlink`` when you invoke ``west build`` to
-override the default runner from pyOCD to J-Link:
+Add the arguments ``-DBOARD_FLASH_RUNNER=jlink`` and
+``-DBOARD_DEBUG_RUNNER=jlink`` when you invoke ``west build`` to override the
+default runner from pyOCD to J-Link:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: frdm_k22f
+   :gen-args: -DBOARD_FLASH_RUNNER=jlink -DBOARD_DEBUG_RUNNER=jlink
+   :goals: build
 
 Configuring a Console
 =====================

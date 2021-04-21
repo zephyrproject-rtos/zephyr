@@ -7,13 +7,13 @@
 
 #include "fcb_test.h"
 
-void fcb_test_rotate(void)
+void test_fcb_rotate(void)
 {
 	struct fcb *fcb;
 	int rc;
 	int old_id;
 	struct fcb_entry loc;
-	u8_t test_data[128] = {0};
+	uint8_t test_data[128] = {0};
 	int elem_cnts[2] = {0, 0};
 	int cnts[2];
 	struct append_arg aa_arg = {

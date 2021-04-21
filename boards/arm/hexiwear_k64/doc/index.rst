@@ -189,13 +189,14 @@ program the `OpenSDA DAPLink Hexiwear Firmware`_. Check that switches SW1 and
 SW2 are **on**, and SW3 and SW4 are **off**  to ensure K64F SWD signals are
 connected to the OpenSDA microcontroller.
 
-Add the argument ``-DOPENSDA_FW=daplink`` when you invoke ``west build`` to
-override the default runner from J-Link to pyOCD:
+Add the arguments ``-DBOARD_FLASH_RUNNER=pyocd`` and
+``-DBOARD_DEBUG_RUNNER=pyocd`` when you invoke ``west build`` to override the
+default runner from J-Link to pyOCD:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: hexiwear_k64
-   :gen-args: -DOPENSDA_FW=daplink
+   :gen-args: -DBOARD_FLASH_RUNNER=pyocd -DBOARD_DEBUG_RUNNER=pyocd
    :goals: build
 
 Configuring a Console

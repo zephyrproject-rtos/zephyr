@@ -13,8 +13,8 @@ counting semaphore.
 Concepts
 ********
 
-Any number of semaphores can be defined. Each semaphore is referenced
-by its memory address.
+Any number of semaphores can be defined (limited only by available RAM). Each
+semaphore is referenced by its memory address.
 
 A semaphore has the following key properties:
 
@@ -47,8 +47,8 @@ Implementation
 Defining a Semaphore
 ====================
 
-A semaphore is defined using a variable of type :c:type:`struct k_sem`.
-It must then be initialized by calling :cpp:func:`k_sem_init()`.
+A semaphore is defined using a variable of type :c:struct:`k_sem`.
+It must then be initialized by calling :c:func:`k_sem_init`.
 
 The following code defines a semaphore, then configures it as a binary
 semaphore by setting its count to 0 and its limit to 1.
@@ -71,7 +71,7 @@ The following code has the same effect as the code segment above.
 Giving a Semaphore
 ==================
 
-A semaphore is given by calling :cpp:func:`k_sem_give()`.
+A semaphore is given by calling :c:func:`k_sem_give`.
 
 The following code builds on the example above, and gives the semaphore to
 indicate that a unit of data is available for processing by a consumer thread.
@@ -89,7 +89,7 @@ indicate that a unit of data is available for processing by a consumer thread.
 Taking a Semaphore
 ==================
 
-A semaphore is taken by calling :cpp:func:`k_sem_take()`.
+A semaphore is taken by calling :c:func:`k_sem_take`.
 
 The following code builds on the example above, and waits up to 50 milliseconds
 for the semaphore to be given.
@@ -129,4 +129,14 @@ API Reference
 **************
 
 .. doxygengroup:: semaphore_apis
+   :project: Zephyr
+
+User Mode Semaphore API Reference
+*********************************
+
+The sys_sem exists in user memory working as counter semaphore for user mode
+thread when user mode enabled. When user mode isn't enabled, sys_sem behaves
+like k_sem.
+
+.. doxygengroup:: user_semaphore_apis
    :project: Zephyr

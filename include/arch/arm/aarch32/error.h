@@ -6,9 +6,10 @@
 
 /**
  * @file
- * @brief Cortex-M public error handling
+ * @brief ARM AArch32 public error handling
  *
- * ARM-specific kernel error handling interface. Included by arm/arch.h.
+ * ARM AArch32-specific kernel error handling interface. Included by
+ * arm/arch.h.
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ERROR_H_
@@ -32,7 +33,7 @@ extern "C" {
  * Force them unlocked as well.
  */
 #define ARCH_EXCEPT(reason_p) \
-register u32_t r0 __asm__("r0") = reason_p; \
+register uint32_t r0 __asm__("r0") = reason_p; \
 do { \
 	__asm__ volatile ( \
 		"cpsie i\n\t" \

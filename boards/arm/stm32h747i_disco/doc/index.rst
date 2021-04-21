@@ -63,6 +63,17 @@ The current Zephyr stm32h747i_disco board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| ETHERNET  | on-chip    | ethernet  (*)                       |
++-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random number generator        |
++-----------+------------+-------------------------------------+
+| FMC       | on-chip    | memc (SDRAM)                        |
++-----------+------------+-------------------------------------+
+
+(*) From UM2411 Rev 4:
+   With the default setting, the Ethernet feature is not working because of
+   a conflict between ETH_MDC and SAI4_D1 of the MEMs digital microphone.
+   Make sure you have SB8 closed and SB21 open to get Ethernet working.
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -110,6 +121,33 @@ Default configuration assigns USART1 and UART8 to the CPU1. The Zephyr console
 output is assigned to UART1 which connected to the onboard ST-LINK/V3.0. Virtual
 COM port interface. Default communication settings are 115200 8N1.
 
+Ethernet
+========
+
+**Disclaimer:** This section is mostly copy-paste of corresponding
+`DISCO_H747I modifications for Ethernet`_ mbed blog post. The author of this
+article sincerely allowed to use the images and his knowledge about necessary
+HW modifications to get Ethernet working with this board.
+
+To get Ethernet working following HW modifications are required:
+
+- **SB21**, **SB45** and **R87** should be opened
+- **SB22**, **SB44**, **SB17** and **SB8** should be closed
+
+Following two images shows necessary changes on the board marked:
+
+.. image:: img/disco_h747i_ethernet_modification_1.jpg
+     :width: 271px
+     :align: center
+     :height: 596px
+     :alt: STM32H747I-DISCO - Ethernet modification 1 (**SB44**, **SB45**)
+
+.. image:: img/disco_h747i_ethernet_modification_2.jpg
+     :width: 344px
+     :align: center
+     :height: 520px
+     :alt: STM32H747I-DISCO - Ethernet modification 2 (**SB21**, **R87**, **SB22**, **SB17** and **SB8**)
+
 Resources sharing
 =================
 
@@ -132,6 +170,16 @@ Applications for the ``stm32h747i_disco`` board should be built per core target,
 using either ``stm32h747i_disco_m7`` or ```stm32h747i_disco_m4`` as the target.
 See :ref:`build_an_application` for more information about application builds.
 
+.. note::
+
+   If using OpenOCD you will need a recent development version as the last
+   official release does not support H7 dualcore yet.
+   Also, with OpenOCD, sometimes, flashing is not working. It is necessary to
+   erase the flash (with STM32CubeProgrammer for example) to make it work again.
+   Debugging with OpenOCD is currently working for this board only with Cortex M7,
+   not Cortex M4.
+
+
 Flashing
 ========
 
@@ -147,7 +195,11 @@ By default:
 
 Also, default out of the box board configuration enables CM7 and CM4 boot when
 board is powered (Option bytes BCM7 and BCM4 are checked).
-In that configuration, Kconfig boot option ``STM32H7_BOOT_CM4_CM7`` should be selected.
+It is possible to change Option Bytes so that CM7 boots first in stand alone,
+and CM7 will wakeup CM4 after clock initialization.
+Drivers are able to take into account both Option Bytes configurations
+automatically.
+
 Zephyr flash configuration has been set to meet these default settings.
 
 Flashing an application to STM32H747I M7 Core
@@ -170,6 +222,17 @@ Use the following commands to flash either m7 or m4 target:
    $ ./STM32_Programmer_CLI -c port=SWD mode=UR -w <path_to_m7_binary>  0x8000000
    $ ./STM32_Programmer_CLI -c port=SWD mode=UR -w <path_to_m4_binary>  0x8100000
 
+Alternatively it is possible to flash with OpenOcd but with some restrictions:
+Sometimes, flashing is not working. It is necessary to erase the flash
+(with STM32CubeProgrammer for example) to make it work again.
+Debugging with OpenOCD is currently working for this board only with Cortex M7,
+not Cortex M4.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32h747i_disco_m7
+   :goals: build flash
+
 Run a serial host program to connect with your board:
 
 .. code-block:: console
@@ -180,7 +243,7 @@ You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! arm
+   Hello World! stm32h747i_disco_m7
 
 Debugging
 =========
@@ -208,3 +271,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _DISCO_H747I modifications for Ethernet:
+   https://os.mbed.com/teams/ST/wiki/DISCO_H747I-modifications-for-Ethernet

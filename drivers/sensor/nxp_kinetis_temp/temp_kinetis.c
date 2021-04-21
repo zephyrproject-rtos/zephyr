@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_temperature
+
 #include <device.h>
 #include <drivers/sensor.h>
 #include <drivers/adc.h>
@@ -13,7 +15,7 @@ LOG_MODULE_REGISTER(temp_kinetis, CONFIG_SENSOR_LOG_LEVEL);
 
 /*
  * Driver assumptions:
- * - ADC samples are in u16_t format
+ * - ADC samples are in uint16_t format
  * - Both ADC channels (sensor and bandgap) are on the same ADC instance
  *
  * See NXP Application Note AN3031 for details on calculations.
@@ -23,9 +25,9 @@ LOG_MODULE_REGISTER(temp_kinetis, CONFIG_SENSOR_LOG_LEVEL);
 #define TEMP_KINETIS_ADC_SAMPLES 2
 
 struct temp_kinetis_config {
-	const char *adc_dev_name;
-	u8_t sensor_adc_ch;
-	u8_t bandgap_adc_ch;
+	const struct device *adc;
+	uint8_t sensor_adc_ch;
+	uint8_t bandgap_adc_ch;
 	int bandgap_mv;
 	int vtemp25_mv;
 	int slope_cold_uv;
@@ -34,15 +36,18 @@ struct temp_kinetis_config {
 };
 
 struct temp_kinetis_data {
-	struct device *adc;
-	u16_t buffer[TEMP_KINETIS_ADC_SAMPLES];
+	uint16_t buffer[TEMP_KINETIS_ADC_SAMPLES];
 };
 
-static int temp_kinetis_sample_fetch(struct device *dev,
+static int temp_kinetis_sample_fetch(const struct device *dev,
 				     enum sensor_channel chan)
 {
-	const struct temp_kinetis_config *config = dev->config->config_info;
-	struct temp_kinetis_data *data = dev->driver_data;
+	const struct temp_kinetis_config *config = dev->config;
+	struct temp_kinetis_data *data = dev->data;
+#ifdef CONFIG_TEMP_KINETIS_FILTER
+	uint16_t previous[TEMP_KINETIS_ADC_SAMPLES];
+	int i;
+#endif /* CONFIG_TEMP_KINETIS_FILTER */
 	int err;
 
 	/* Always read both sensor and bandgap voltage in one go */
@@ -51,7 +56,11 @@ static int temp_kinetis_sample_fetch(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	err = adc_read(data->adc, &config->adc_seq);
+#ifdef CONFIG_TEMP_KINETIS_FILTER
+	memcpy(previous, data->buffer, sizeof(previous));
+#endif /* CONFIG_TEMP_KINETIS_FILTER */
+
+	err = adc_read(config->adc, &config->adc_seq);
 	if (err) {
 		LOG_ERR("failed to read ADC channels (err %d)", err);
 		return err;
@@ -59,21 +68,33 @@ static int temp_kinetis_sample_fetch(struct device *dev,
 
 	LOG_DBG("sensor = %d, bandgap = %d", data->buffer[0], data->buffer[1]);
 
+#ifdef CONFIG_TEMP_KINETIS_FILTER
+	if (previous[0] != 0 && previous[1] != 0) {
+		for (i = 0; i < ARRAY_SIZE(previous); i++) {
+			data->buffer[i] = (data->buffer[i] >> 1) +
+				(previous[i] >> 1);
+		}
+
+		LOG_DBG("sensor = %d, bandgap = %d (filtered)", data->buffer[0],
+			data->buffer[1]);
+	}
+#endif /* CONFIG_TEMP_KINETIS_FILTER */
+
 	return 0;
 }
 
-static int temp_kinetis_channel_get(struct device *dev,
+static int temp_kinetis_channel_get(const struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val)
 {
-	const struct temp_kinetis_config *config = dev->config->config_info;
-	struct temp_kinetis_data *data = dev->driver_data;
-	u16_t adcr_vdd = BIT_MASK(config->adc_seq.resolution);
-	u16_t adcr_temp25;
-	s32_t temp_mc;
-	s32_t vdd_mv;
+	const struct temp_kinetis_config *config = dev->config;
+	struct temp_kinetis_data *data = dev->data;
+	uint16_t adcr_vdd = BIT_MASK(config->adc_seq.resolution);
+	uint16_t adcr_temp25;
+	int32_t temp_cc;
+	int32_t vdd_mv;
 	int slope_uv;
-	u16_t m;
+	uint16_t adcr_100m;
 
 	if (chan != SENSOR_CHAN_VOLTAGE && chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
@@ -98,14 +119,14 @@ static int temp_kinetis_channel_get(struct device *dev,
 		slope_uv = config->slope_hot_uv;
 	}
 
-	/* m x 1000 */
-	m = (adcr_vdd * slope_uv) / vdd_mv;
+	adcr_100m = (adcr_vdd * slope_uv) / (vdd_mv * 10);
 
-	/* Temperature in milli degrees Celsius */
-	temp_mc = 25000 - ((data->buffer[0] - adcr_temp25) * 1000000) / m;
+	/* Temperature in centi degrees Celsius */
+	temp_cc = 2500 -
+		(((data->buffer[0] - adcr_temp25) * 10000) / adcr_100m);
 
-	val->val1 = temp_mc / 1000;
-	val->val2 = (temp_mc % 1000) * 1000;
+	val->val1 = temp_cc / 100;
+	val->val2 = (temp_cc % 100) * 10000;
 
 	return 0;
 }
@@ -115,10 +136,10 @@ static const struct sensor_driver_api temp_kinetis_driver_api = {
 	.channel_get = temp_kinetis_channel_get,
 };
 
-static int temp_kinetis_init(struct device *dev)
+static int temp_kinetis_init(const struct device *dev)
 {
-	const struct temp_kinetis_config *config = dev->config->config_info;
-	struct temp_kinetis_data *data = dev->driver_data;
+	const struct temp_kinetis_config *config = dev->config;
+	struct temp_kinetis_data *data = dev->data;
 	int err;
 	int i;
 	const struct adc_channel_cfg ch_cfg[] = {
@@ -140,14 +161,13 @@ static int temp_kinetis_init(struct device *dev)
 
 	memset(&data->buffer, 0, ARRAY_SIZE(data->buffer));
 
-	data->adc = device_get_binding(config->adc_dev_name);
-	if (!data->adc) {
-		LOG_ERR("could not get ADC device");
+	if (!device_is_ready(config->adc)) {
+		LOG_ERR("ADC device is not ready");
 		return -EINVAL;
 	}
 
 	for (i = 0; i < ARRAY_SIZE(ch_cfg); i++) {
-		err = adc_channel_setup(data->adc, &ch_cfg[i]);
+		err = adc_channel_setup(config->adc, &ch_cfg[i]);
 		if (err) {
 			LOG_ERR("failed to configure ADC channel (err %d)",
 				err);
@@ -158,42 +178,45 @@ static int temp_kinetis_init(struct device *dev)
 	return 0;
 }
 
-#ifdef DT_INST_0_NXP_KINETIS_TEMPERATURE
-BUILD_ASSERT_MSG(DT_INST_0_NXP_KINETIS_TEMPERATURE_SENSOR_IO_CHANNELS_INPUT <
-		 DT_INST_0_NXP_KINETIS_TEMPERATURE_BANDGAP_IO_CHANNELS_INPUT,
-		 "This driver assumes sensor ADC channel to come before "
-		 "bandgap ADC channel");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
+	     "unsupported temp instance");
 
-static struct temp_kinetis_data temp_kinetis_data_0;
+#define TEMP_KINETIS_INIT(inst)						\
+	BUILD_ASSERT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, sensor) <	\
+		     DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, bandgap),	\
+		     "This driver assumes sensor ADC channel to come before "\
+		     "bandgap ADC channel");				\
+									\
+	static struct temp_kinetis_data temp_kinetis_data_0;		\
+									\
+	static const struct temp_kinetis_config temp_kinetis_config_0 = {\
+		.adc = DEVICE_DT_GET(DT_INST_IO_CHANNELS_CTLR(inst)),\
+		.sensor_adc_ch =					\
+			DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, sensor),\
+		.bandgap_adc_ch =					\
+			DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, bandgap),\
+		.bandgap_mv = DT_INST_PROP(0, bandgap_voltage) / 1000,	\
+		.vtemp25_mv = DT_INST_PROP(0, vtemp25) / 1000,		\
+		.slope_cold_uv = DT_INST_PROP(0, sensor_slope_cold),	\
+		.slope_hot_uv = DT_INST_PROP(0, sensor_slope_hot),	\
+		.adc_seq = {						\
+			.options = NULL,				\
+			.channels =					\
+		BIT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, sensor)) |	\
+		BIT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, bandgap)),	\
+			.buffer = &temp_kinetis_data_0.buffer,		\
+			.buffer_size = sizeof(temp_kinetis_data_0.buffer),\
+			.resolution = CONFIG_TEMP_KINETIS_RESOLUTION,	\
+			.oversampling = CONFIG_TEMP_KINETIS_OVERSAMPLING,\
+			.calibrate = false,				\
+		},							\
+	};								\
+									\
+	DEVICE_DT_INST_DEFINE(inst, temp_kinetis_init,			\
+			    device_pm_control_nop,			\
+			    &temp_kinetis_data_0,			\
+			    &temp_kinetis_config_0, POST_KERNEL,	\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &temp_kinetis_driver_api);
 
-static const struct temp_kinetis_config temp_kinetis_config_0 = {
-	.adc_dev_name =
-		DT_INST_0_NXP_KINETIS_TEMPERATURE_IO_CHANNELS_CONTROLLER_0,
-	.sensor_adc_ch =
-		DT_INST_0_NXP_KINETIS_TEMPERATURE_SENSOR_IO_CHANNELS_INPUT,
-	.bandgap_adc_ch =
-		DT_INST_0_NXP_KINETIS_TEMPERATURE_BANDGAP_IO_CHANNELS_INPUT,
-	.bandgap_mv = DT_INST_0_NXP_KINETIS_TEMPERATURE_BANDGAP_VOLTAGE / 1000,
-	.vtemp25_mv = DT_INST_0_NXP_KINETIS_TEMPERATURE_VTEMP25 / 1000,
-	.slope_cold_uv = DT_INST_0_NXP_KINETIS_TEMPERATURE_SENSOR_SLOPE_COLD,
-	.slope_hot_uv = DT_INST_0_NXP_KINETIS_TEMPERATURE_SENSOR_SLOPE_HOT,
-	.adc_seq = {
-		.options = NULL,
-		.channels =
-	BIT(DT_INST_0_NXP_KINETIS_TEMPERATURE_SENSOR_IO_CHANNELS_INPUT) |
-	BIT(DT_INST_0_NXP_KINETIS_TEMPERATURE_BANDGAP_IO_CHANNELS_INPUT),
-		.buffer = &temp_kinetis_data_0.buffer,
-		.buffer_size = sizeof(temp_kinetis_data_0.buffer),
-		.resolution = CONFIG_TEMP_KINETIS_RESOLUTION,
-		.oversampling = CONFIG_TEMP_KINETIS_OVERSAMPLING,
-		.calibrate = false,
-	},
-};
-
-DEVICE_AND_API_INIT(temp_kinetis, DT_INST_0_NXP_KINETIS_TEMPERATURE_LABEL,
-		    temp_kinetis_init, &temp_kinetis_data_0,
-		    &temp_kinetis_config_0, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY,
-		    &temp_kinetis_driver_api);
-
-#endif /* DT_INST_0_NXP_KINETIS_TEMPERATURE */
+DT_INST_FOREACH_STATUS_OKAY(TEMP_KINETIS_INIT)

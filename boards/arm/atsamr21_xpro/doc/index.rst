@@ -45,6 +45,8 @@ features:
 +-----------+------------+--------------------------------------+
 | GPIO      | on-chip    | I/O ports                            |
 +-----------+------------+--------------------------------------+
+| PWM       | on-chip    | Pulse Width Modulation               |
++-----------+------------+--------------------------------------+
 | USART     | on-chip    | Serial ports                         |
 +-----------+------------+--------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports    |
@@ -81,7 +83,7 @@ Default Zephyr Peripheral Mapping:
 - SERCOM5 SPI MOSI : PB22
 - SERCOM5 SPI SCK  : PB23
 - GPIO SPI CS      : PB03
-- GPIO LED0        : PB17
+- GPIO/PWM LED0    : PA19
 
 System Clock
 ============
@@ -96,6 +98,13 @@ The SAMR21 MCU has six SERCOM based USARTs with two configured as USARTs in
 this BSP. SERCOM0 is the default Zephyr console.
 
 - SERCOM0 115200 8n1 connected to the onboard Atmel Embedded Debugger (EDBG)
+
+PWM
+===
+
+The SAMR21 MCU has 3 TCC based PWM units with up to 4 outputs each and a
+period of 24 bits or 16 bits.  If :code:`CONFIG_PWM_SAM0_TCC` is enabled then
+LED0 is driven by TCC0 instead of by GPIO.
 
 SPI Port
 ========

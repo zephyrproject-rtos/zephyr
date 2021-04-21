@@ -17,8 +17,8 @@
 
 void test_cmos_rate(void)
 {
-	struct device *cmos;
-	u32_t start, elapsed;
+	const struct device *cmos;
+	uint32_t start, elapsed;
 	int err;
 
 	cmos = device_get_binding("CMOS");
@@ -27,7 +27,7 @@ void test_cmos_rate(void)
 	err = counter_get_value(cmos, &start);
 	zassert_true(err == 0, "failed to read CMOS counter device");
 
-	k_sleep(DELAY_MS);
+	k_msleep(DELAY_MS);
 
 	err = counter_get_value(cmos, &elapsed);
 	zassert_true(err == 0, "failed to read CMOS counter device");

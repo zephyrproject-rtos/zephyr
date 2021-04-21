@@ -12,18 +12,18 @@
 static struct arc_mpu_region mpu_regions[] = {
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
-			 DT_ICCM_BASE_ADDRESS,
-			 DT_ICCM_SIZE * 1024,
+			 DT_REG_ADDR(DT_INST(0, arc_iccm)),
+			 DT_REG_SIZE(DT_INST(0, arc_iccm)),
 			 REGION_ROM_ATTR),
 	/* Region DCCM */
 	MPU_REGION_ENTRY("DCCM",
-			 DT_DCCM_BASE_ADDRESS,
-			 DT_DCCM_SIZE * 1024,
+			 DT_REG_ADDR(DT_INST(0, arc_dccm)),
+			 DT_REG_SIZE(DT_INST(0, arc_dccm)),
 			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
 	/* Region DDR RAM */
 	MPU_REGION_ENTRY("SRAM",
-			DT_INST_0_MMIO_SRAM_BASE_ADDRESS,
-			DT_INST_0_MMIO_SRAM_SIZE,
+			DT_REG_ADDR(DT_INST(0, mmio_sram)),
+			DT_REG_SIZE(DT_INST(0, mmio_sram)),
 			REGION_KERNEL_RAM_ATTR |
 			AUX_MPU_ATTR_KW | AUX_MPU_ATTR_KR | AUX_MPU_ATTR_UR |
 			AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE | REGION_DYNAMIC),

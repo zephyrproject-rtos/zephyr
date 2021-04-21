@@ -16,8 +16,8 @@ LOG_MODULE_REGISTER(cache_test);
 #define CACHE_TEST_BUFFER_SIZE	256
 
 struct test_buffer {
-	u8_t	flush[CACHE_TEST_BUFFER_SIZE];
-	u8_t	invalidate[CACHE_TEST_BUFFER_SIZE];
+	uint8_t	flush[CACHE_TEST_BUFFER_SIZE];
+	uint8_t	invalidate[CACHE_TEST_BUFFER_SIZE];
 };
 
 static struct test_buffer *cached_buffer = (struct test_buffer *)LP_SRAM_BASE;
@@ -25,7 +25,7 @@ static struct test_buffer *cached_buffer = (struct test_buffer *)LP_SRAM_BASE;
 static struct test_buffer *mem_buffer =
 	(struct test_buffer *)LP_SRAM_BASE_UNCACHED;
 
-static void buffer_fill_sequence(u8_t *buffer, bool inv_seq)
+static void buffer_fill_sequence(uint8_t *buffer, bool inv_seq)
 {
 	int byte;
 
@@ -51,7 +51,7 @@ static void cache_flush_test(void)
 	}
 
 	LOG_INF("Flushing cache to commit contents to main memory ...");
-	xthal_dcache_region_writeback(cached_buffer->flush,
+	z_xtensa_cache_flush(cached_buffer->flush,
 			CACHE_TEST_BUFFER_SIZE);
 
 	LOG_INF("Comparing contents of cached memory vs main memory ...");
@@ -80,7 +80,7 @@ static void cache_invalidation_test(void)
 	}
 
 	LOG_INF("Invalidating cache to read contents from main memory ...");
-	xthal_dcache_region_invalidate(cached_buffer->invalidate,
+	z_xtensa_cache_inv(cached_buffer->invalidate,
 			CACHE_TEST_BUFFER_SIZE);
 
 	LOG_INF("Comparing contents of cached memory vs main memory ...");

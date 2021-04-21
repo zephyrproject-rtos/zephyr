@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <net/dummy.h>
 
-int loopback_dev_init(struct device *dev)
+int loopback_dev_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -38,7 +38,7 @@ static void loopback_init(struct net_if *iface)
 			     NET_LINK_DUMMY);
 }
 
-static int loopback_send(struct device *dev, struct net_pkt *pkt)
+static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_pkt *cloned;
 	int res;
@@ -100,7 +100,7 @@ static struct dummy_api loopback_api = {
 };
 
 NET_DEVICE_INIT(loopback, "lo",
-		loopback_dev_init, NULL, NULL,
+		loopback_dev_init, device_pm_control_nop, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&loopback_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 536);

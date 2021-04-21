@@ -10,7 +10,12 @@
 
 #include "lwm2m_object.h"
 
-#define LWM2M_PROTOCOL_VERSION "1.0"
+#define LWM2M_PROTOCOL_VERSION_MAJOR 1
+#define LWM2M_PROTOCOL_VERSION_MINOR 0
+
+#define LWM2M_PROTOCOL_VERSION_STRING STRINGIFY(LWM2M_PROTOCOL_VERSION_MAJOR) \
+				      "." \
+				      STRINGIFY(LWM2M_PROTOCOL_VERSION_MINOR)
 
 /* LWM2M / CoAP Content-Formats */
 #define LWM2M_FORMAT_PLAIN_TEXT		0
@@ -35,8 +40,8 @@
 #define NOTIFY_OBSERVER(o, i, r)	lwm2m_notify_observer(o, i, r)
 #define NOTIFY_OBSERVER_PATH(path)	lwm2m_notify_observer_path(path)
 
-/* Use this value to skip token generation */
-#define LWM2M_MSG_TOKEN_LEN_SKIP	0xFF
+/* Use this value to generate new token */
+#define LWM2M_MSG_TOKEN_GENERATE_NEW 0xFFU
 
 /* length of time in milliseconds to wait for buffer allocations */
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
@@ -51,37 +56,47 @@ typedef int (*udp_request_handler_cb_t)(struct coap_packet *request,
 
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
 
-int lwm2m_notify_observer(u16_t obj_id, u16_t obj_inst_id, u16_t res_id);
+int lwm2m_notify_observer(uint16_t obj_id, uint16_t obj_inst_id, uint16_t res_id);
 int lwm2m_notify_observer_path(struct lwm2m_obj_path *path);
 
 void lwm2m_register_obj(struct lwm2m_engine_obj *obj);
 void lwm2m_unregister_obj(struct lwm2m_engine_obj *obj);
 struct lwm2m_engine_obj_field *
 lwm2m_get_engine_obj_field(struct lwm2m_engine_obj *obj, int res_id);
-int  lwm2m_create_obj_inst(u16_t obj_id, u16_t obj_inst_id,
+int  lwm2m_create_obj_inst(uint16_t obj_id, uint16_t obj_inst_id,
 			   struct lwm2m_engine_obj_inst **obj_inst);
-int  lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id);
+int  lwm2m_delete_obj_inst(uint16_t obj_id, uint16_t obj_inst_id);
 int  lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 				    struct lwm2m_engine_obj_inst **obj_inst,
-				    u8_t *created);
+				    uint8_t *created);
+
+struct lwm2m_engine_obj *lwm2m_engine_get_obj(
+					const struct lwm2m_obj_path *path);
+struct lwm2m_engine_obj_inst *lwm2m_engine_get_obj_inst(
+					const struct lwm2m_obj_path *path);
+struct lwm2m_engine_res *lwm2m_engine_get_res(
+					const struct lwm2m_obj_path *path);
+
+bool lwm2m_engine_shall_report_obj_version(const struct lwm2m_engine_obj *obj);
 
 /* LwM2M context functions */
 int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx);
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx);
 
 /* Message buffer functions */
-u8_t *lwm2m_get_message_buf(void);
-int lwm2m_put_message_buf(u8_t *buf);
+uint8_t *lwm2m_get_message_buf(void);
+int lwm2m_put_message_buf(uint8_t *buf);
 
 /* LwM2M message functions */
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_reset_message(struct lwm2m_message *msg, bool release);
 int lwm2m_init_message(struct lwm2m_message *msg);
 int lwm2m_send_message(struct lwm2m_message *msg);
+int lwm2m_send_empty_ack(struct lwm2m_ctx *client_ctx, uint16_t mid);
 
-u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size);
+int lwm2m_register_payload_handler(struct lwm2m_message *msg);
 
-int lwm2m_perform_read_op(struct lwm2m_message *msg, u16_t content_format);
+int lwm2m_perform_read_op(struct lwm2m_message *msg, uint16_t content_format);
 
 int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_res *res,
@@ -89,28 +104,41 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_message *msg);
 
+int lwm2m_discover_handler(struct lwm2m_message *msg, bool is_bootstrap);
+
 enum coap_block_size lwm2m_default_block_size(void);
 
-int lwm2m_engine_add_service(k_work_handler_t service, u32_t period_ms);
+int lwm2m_engine_add_service(k_work_handler_t service, uint32_t period_ms);
 
 int lwm2m_engine_get_resource(char *pathstr,
 			      struct lwm2m_engine_res **res);
 
-size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
-				    u8_t *buf, size_t buflen, bool *last_block);
+void lwm2m_engine_get_binding(char *binding);
 
-int lwm2m_security_inst_id_to_index(u16_t obj_inst_id);
+size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
+				    uint8_t *buf, size_t buflen,
+				    struct lwm2m_opaque_context *opaque,
+				    bool *last_block);
+
+int lwm2m_security_inst_id_to_index(uint16_t obj_inst_id);
 int lwm2m_security_index_to_inst_id(int index);
 
-s32_t lwm2m_server_get_pmin(u16_t obj_inst_id);
-s32_t lwm2m_server_get_pmax(u16_t obj_inst_id);
+int32_t lwm2m_server_get_pmin(uint16_t obj_inst_id);
+int32_t lwm2m_server_get_pmax(uint16_t obj_inst_id);
+int lwm2m_server_short_id_to_inst(uint16_t short_id);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
-u8_t lwm2m_firmware_get_update_state(void);
-void lwm2m_firmware_set_update_state(u8_t state);
-void lwm2m_firmware_set_update_result(u8_t result);
-u8_t lwm2m_firmware_get_update_result(void);
+uint8_t lwm2m_firmware_get_update_state(void);
+void lwm2m_firmware_set_update_state(uint8_t state);
+void lwm2m_firmware_set_update_result(uint8_t result);
+uint8_t lwm2m_firmware_get_update_result(void);
 #endif
+
+/* Attribute handling. */
+
+struct lwm2m_attr *lwm2m_engine_get_next_attr(const void *ref,
+					      struct lwm2m_attr *prev);
+const char *lwm2m_engine_get_attr_name(const struct lwm2m_attr *attr);
 
 /* Network Layer */
 int  lwm2m_socket_add(struct lwm2m_ctx *ctx);

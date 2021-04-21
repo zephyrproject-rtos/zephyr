@@ -81,6 +81,27 @@ config UART_CONSOLE_MCUMGR
 	  process mcumgr frames, but it hands them up to a higher level module
 	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
 
+config UART_CONSOLE_INPUT_EXPIRED
+	bool "Enable support for UART console input expired mechanism"
+	default y
+	depends on UART_CONSOLE && PM
+	help
+	  This option allows a notification to the power management module that
+	  the module for UART console is in use now. If the interval of console
+	  module doesn't receive any input message exceeds expired timeout, such
+	  as UART_CONSOLE_INPUT_EXPIRED_TIMEOUT, the power management module is
+	  allowed to enter sleep/deep sleep state and turn off the clock of UART
+	  console module. This mechanism gives a window in which the users can
+	  organize input message if CONFIG_PM is enabled.
+
+config UART_CONSOLE_INPUT_EXPIRED_TIMEOUT
+	int "Fixed amount of time to keep the UART console in use flag true"
+	default 15000
+	depends on UART_CONSOLE_INPUT_EXPIRED
+	help
+	  Fixed amount of time which unit is milliseconds to keep the UART
+	  console in use flag true.
+
 config USB_UART_CONSOLE
 	bool "Use USB port for console outputs"
 	select UART_CONSOLE
@@ -91,14 +112,6 @@ config USB_UART_CONSOLE
 	  inputs from the USB UART are not functional yet. Also since the USB
 	  layer currently doesn't support multiple interfaces, this shouldn't be
 	  selected in conjunction with, say, USB Mass Storage.
-
-config USB_UART_DTR_WAIT
-	bool "Wait on DTR control signal"
-	depends on USB_UART_CONSOLE
-	help
-	  Enable this option to use flow control on the console. The uart console
-	  waits until the DTR is asserted by the host.
-	  Note: Disabling this might lead to missing console prints.
 
 config RAM_CONSOLE
 	bool "Use RAM console"
@@ -176,6 +189,32 @@ config IPM_CONSOLE_STACK_SIZE
 	  thread to print out incoming messages from the remote CPU. Specify the
 	  stack size for these threads here.
 
+config IPM_CONSOLE
+	bool "Inter-processor Mailbox console"
+	depends on IPM
+	select CONSOLE_HAS_DRIVER
+	help
+	  Enable console over Inter-processor Mailbox.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_IPM_CONSOLE := zephyr,console
+
+config IPM_CONSOLE_ON_DEV_NAME
+	string "IPM device name used by console"
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_IPM_CONSOLE))" if HAS_DTS
+	default "IPM_0"
+	depends on IPM_CONSOLE
+	help
+	  IPM device name used by IPM console driver.
+
+config IPM_CONSOLE_LINE_BUF_LEN
+	int "IPM console line buffer length"
+	default 128
+	depends on IPM_CONSOLE
+	help
+	  IPM console line buffer length specify amount of the buffer
+	  where characters are stored before sending the whole line.
+
 config UART_PIPE
 	bool "Enable pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
@@ -210,11 +249,11 @@ config UART_MCUMGR
 if UART_MCUMGR
 
 # Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_UART_PIPE := zephyr,uart-mcumgr
+DT_CHOSEN_Z_UART_MCUMGR := zephyr,uart-mcumgr
 
 config UART_MCUMGR_ON_DEV_NAME
 	string "Device Name of UART Device for mcumgr UART"
-	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_PIPE))" if HAS_DTS
+	default "$(dt_chosen_label,$(DT_CHOSEN_Z_UART_MCUMGR))" if HAS_DTS
 	default "UART_0"
 	help
 	  This option specifies the name of UART device to be used
@@ -291,8 +330,106 @@ config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
+config SEMIHOST_CONSOLE
+	bool "Use semihosting for console"
+	select CONSOLE_HAS_DRIVER
+	depends on CPU_CORTEX_M || ARM64
+	help
+	  Enable this option to use semihosting for console.
+	  Semihosting is a mechanism that enables code running on an ARM target
+	  to communicate and use the Input/Output facilities on a host computer
+	  that is running a debugger.
+	  Additional information can be found in:
+	  https://developer.arm.com/docs/dui0471/k/what-is-semihosting/what-is-semihosting
+	  This option is compatible with hardware and with QEMU, through the
+	  (automatic) use of the -semihosting-config switch when invoking it.
+
 module = UART_CONSOLE
 module-str = UART console
 source "subsys/logging/Kconfig.template.log_config"
 
-endif
+source "drivers/console/Kconfig.gsm_mux"
+
+config UART_MUX
+	bool "Enable UART muxing (GSM 07.10) support [EXPERIMENTAL]"
+	depends on SERIAL_SUPPORT_INTERRUPT && GSM_MUX
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable this option to create UART muxer that run over a physical
+	  UART. The GSM 07.10 muxing protocol is used to separate the data
+	  between these muxed UARTs.
+
+if UART_MUX
+
+config UART_MUX_INIT_PRIORITY
+	int "Init priority"
+	default 95
+	help
+	  Device driver initialization priority. UART mux has to be
+	  initialized after the UART driver it uses.
+
+config UART_MUX_DEVICE_NAME
+	string "UART mux device name template"
+	default "GSM"
+	help
+	  Device name template for the UART mux Devices. First device would
+	  have name $(UART_MUX_DEVICE_NAME)_0, etc. User will access muxed
+	  UART using this name.
+
+config UART_MUX_RINGBUF_SIZE
+	int "UART mux ring buffer size"
+	default 256
+	help
+	  UART mux ring buffer size when passing data from RX ISR to worker
+	  thread that will do the unmuxing.
+
+config UART_MUX_TEMP_BUF_SIZE
+	int "Size of the temp buffer when reading data from real UART"
+	default 32
+	help
+	  Size of the temporary RX buffer in receiving ISR.
+
+config UART_MUX_DEVICE_COUNT
+	int "Number of UART mux devices (DLCIs)"
+	default GSM_MUX_DLCI_MAX
+	range 1 64
+	help
+	  Number of instances of UART muxes. Default value is set by
+	  maximum number of DLCIs (Data Link Connection Identifiers)
+	  configured in the system.
+
+config UART_MUX_REAL_DEVICE_COUNT
+	int "Number of real UART devices"
+	default 1
+	help
+	  Tells how many real UART devices there are. Typically there is
+	  only one UART and the muxed UARTs are run on top of that. If you have
+	  two modems for example, then you would need to increase this to two.
+
+config UART_MUX_RX_STACK_SIZE
+	int "Size of the stack allocated for receiving data from UART"
+	default 512
+	help
+	  Sets the stack size which will be used by the PPP RX workqueue.
+
+config UART_MUX_RX_PRIORITY
+	int "RX workqueue thread priority"
+	default 7
+	help
+	  Sets the priority of the RX workqueue thread.
+
+module = UART_MUX
+module-str = UART mux
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # UART_MUX
+
+config UART_MUX_VERBOSE_DEBUG
+	bool "Print hexdump of sent and received packets"
+	depends on UART_MUX_LOG_LEVEL_DBG
+	help
+	  As there might be lot of debug output printed, only enable
+	  this if really needed.
+
+
+endif # CONSOLE

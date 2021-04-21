@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI
-	bool "add support for Wi-Fi Drivers"
+	bool "Wi-Fi Drivers"
 
 if WIFI
 
@@ -32,5 +32,7 @@ config WIFI_OFFLOAD
 source "drivers/wifi/winc1500/Kconfig.winc1500"
 source "drivers/wifi/simplelink/Kconfig.simplelink"
 source "drivers/wifi/eswifi/Kconfig.eswifi"
+source "drivers/wifi/esp/Kconfig.esp"
+source "drivers/wifi/esp32/Kconfig.esp32"
 
 endif # WIFI

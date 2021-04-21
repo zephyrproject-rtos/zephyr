@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_timer
+
 /**
  * @file
  * @brief Microchip XEC Counter driver
@@ -31,10 +33,10 @@ LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 struct counter_xec_config {
 	struct counter_config_info info;
 	void (*config_func)(void);
-	u32_t base_address;
-	u16_t prescaler;
-	u8_t girq_id;
-	u8_t girq_bit;
+	uint32_t base_address;
+	uint16_t prescaler;
+	uint8_t girq_id;
+	uint8_t girq_bit;
 };
 
 struct counter_xec_data {
@@ -46,16 +48,16 @@ struct counter_xec_data {
 #define COUNTER_XEC_REG_BASE(_dev)			\
 	((BTMR_Type *)					\
 	 ((const struct counter_xec_config * const)	\
-	  _dev->config->config_info)->base_address)
+	  _dev->config)->base_address)
 
 #define COUNTER_XEC_CONFIG(_dev)			\
 	(((const struct counter_xec_config * const)	\
-	  _dev->config->config_info))
+	  _dev->config))
 
 #define COUNTER_XEC_DATA(_dev)				\
-	((struct counter_xec_data *)dev->driver_data)
+	((struct counter_xec_data *)dev->data)
 
-static int counter_xec_start(struct device *dev)
+static int counter_xec_start(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
@@ -70,7 +72,7 @@ static int counter_xec_start(struct device *dev)
 	return 0;
 }
 
-static int counter_xec_stop(struct device *dev)
+static int counter_xec_stop(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	uint32_t reg;
@@ -96,7 +98,7 @@ static int counter_xec_stop(struct device *dev)
 	return 0;
 }
 
-static int counter_xec_get_value(struct device *dev, u32_t *ticks)
+static int counter_xec_get_value(const struct device *dev, uint32_t *ticks)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
@@ -104,7 +106,7 @@ static int counter_xec_get_value(struct device *dev, u32_t *ticks)
 	return 0;
 }
 
-static int counter_xec_set_alarm(struct device *dev, u8_t chan_id,
+static int counter_xec_set_alarm(const struct device *dev, uint8_t chan_id,
 				 const struct counter_alarm_cfg *alarm_cfg)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
@@ -149,7 +151,7 @@ static int counter_xec_set_alarm(struct device *dev, u8_t chan_id,
 }
 
 
-static int counter_xec_cancel_alarm(struct device *dev, u8_t chan_id)
+static int counter_xec_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
@@ -170,21 +172,21 @@ static int counter_xec_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static u32_t counter_xec_get_pending_int(struct device *dev)
+static uint32_t counter_xec_get_pending_int(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
 	return counter->STS;
 }
 
-static u32_t counter_xec_get_top_value(struct device *dev)
+static uint32_t counter_xec_get_top_value(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
 	return counter->PRLD;
 }
 
-static int counter_xec_set_top_value(struct device *dev,
+static int counter_xec_set_top_value(const struct device *dev,
 				     const struct counter_top_cfg *cfg)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
@@ -239,14 +241,7 @@ static int counter_xec_set_top_value(struct device *dev,
 	return ret;
 }
 
-static u32_t counter_xec_get_max_relative_alarm(struct device *dev)
-{
-	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
-
-	return counter_cfg->info.max_top_value;
-}
-
-static void counter_xec_isr(struct device *dev)
+static void counter_xec_isr(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
@@ -282,10 +277,9 @@ static const struct counter_driver_api counter_xec_api = {
 		.set_top_value = counter_xec_set_top_value,
 		.get_pending_int = counter_xec_get_pending_int,
 		.get_top_value = counter_xec_get_top_value,
-		.get_max_relative_alarm = counter_xec_get_max_relative_alarm,
 };
 
-static int counter_xec_init(struct device *dev)
+static int counter_xec_init(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
@@ -307,116 +301,43 @@ static int counter_xec_init(struct device *dev)
 	return 0;
 }
 
-#if defined(DT_COUNTER_MCHP_XEC_0)
+#define COUNTER_XEC_INIT(inst)						\
+	static void counter_xec_irq_config_##inst(void);		\
+									\
+	static struct counter_xec_data counter_xec_dev_data_##inst;	\
+									\
+	static struct counter_xec_config counter_xec_dev_config_##inst = { \
+		.info = {						\
+			.max_top_value = DT_INST_PROP(inst, max_value),	\
+			.freq = DT_INST_PROP(inst, clock_frequency) /	\
+			(1 << DT_INST_PROP(inst, prescaler)),		\
+			.flags = 0,					\
+			.channels = 1,					\
+		},							\
+									\
+		.config_func = counter_xec_irq_config_##inst,		\
+		.base_address = DT_INST_REG_ADDR(inst),			\
+		.prescaler = DT_INST_PROP(inst, prescaler),		\
+		.girq_id = DT_INST_PROP(inst, girq),			\
+		.girq_bit = DT_INST_PROP(inst, girq_bit),		\
+	};								\
+									\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    counter_xec_init,				\
+			    device_pm_control_nop,			\
+			    &counter_xec_dev_data_##inst,		\
+			    &counter_xec_dev_config_##inst,		\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &counter_xec_api);				\
+									\
+	static void counter_xec_irq_config_##inst(void)			\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(inst),				\
+			    DT_INST_IRQ(inst, priority),		\
+			    counter_xec_isr,				\
+			    DEVICE_DT_INST_GET(inst), 0);		\
+		irq_enable(DT_INST_IRQN(inst));				\
+	}
 
-static void counder_xec_irq_config_0(void);
-
-static struct counter_xec_data counter_xec_dev_data_0;
-
-static struct counter_xec_config counter_xec_dev_config_0 = {
-	.info = {
-		.max_top_value = DT_COUNTEX_MCHP_XEC_0_MAX_VALUE,
-		.freq = DT_COUNTER_MCHP_XEC_0_CLOCK_FREQUENCY /
-			(1 << DT_COUNTER_MCHP_XEC_0_PRESCALER),
-		.flags = 0,
-		.channels = 1,
-	},
-
-	.config_func = counder_xec_irq_config_0,
-	.base_address = DT_COUNTER_MCHP_XEC_0_BASE_ADDR,
-	.prescaler = DT_COUNTER_MCHP_XEC_0_PRESCALER,
-	.girq_id = MCHP_B16TMR0_GIRQ,
-	.girq_bit = MCHP_B16TMR0_GIRQ_POS,
-};
-
-DEVICE_AND_API_INIT(counter_xec_0, DT_COUNTER_MCHP_XEC_0_LABEL,
-		    counter_xec_init, &counter_xec_dev_data_0,
-		    &counter_xec_dev_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &counter_xec_api);
-
-static void counder_xec_irq_config_0(void)
-{
-	IRQ_CONNECT(DT_COUNTER_MCHP_XEC_0_IRQ,
-		    DT_COUNTER_MCHP_XEC_0_IRQ_PRIORITY,
-		    counter_xec_isr, DEVICE_GET(counter_xec_0), 0);
-	irq_enable(DT_COUNTER_MCHP_XEC_0_IRQ);
-}
-
-#endif /* DT_COUNTER_MCHP_XEC_0 */
-
-#if defined(DT_COUNTER_MCHP_XEC_1)
-
-static void counder_xec_irq_config_1(void);
-
-static struct counter_xec_data counter_xec_dev_data_1;
-
-static struct counter_xec_config counter_xec_dev_config_1 = {
-	.info = {
-		.max_top_value = DT_COUNTEX_MCHP_XEC_1_MAX_VALUE,
-		.freq = DT_COUNTER_MCHP_XEC_1_CLOCK_FREQUENCY /
-			(1 << DT_COUNTER_MCHP_XEC_1_PRESCALER),
-		.flags = 0,
-		.channels = 1,
-	},
-
-	.config_func = counder_xec_irq_config_1,
-	.base_address = DT_COUNTER_MCHP_XEC_1_BASE_ADDR,
-	.prescaler = DT_COUNTER_MCHP_XEC_1_PRESCALER,
-	.girq_id = MCHP_B16TMR1_GIRQ,
-	.girq_bit = MCHP_B16TMR1_GIRQ_POS,
-};
-
-DEVICE_AND_API_INIT(counter_xec_1, DT_COUNTER_MCHP_XEC_1_LABEL,
-		    counter_xec_init, &counter_xec_dev_data_1,
-		    &counter_xec_dev_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &counter_xec_api);
-
-static void counder_xec_irq_config_1(void)
-{
-	IRQ_CONNECT(DT_COUNTER_MCHP_XEC_1_IRQ,
-		    DT_COUNTER_MCHP_XEC_1_IRQ_PRIORITY,
-		    counter_xec_isr, DEVICE_GET(counter_xec_1), 0);
-	irq_enable(DT_COUNTER_MCHP_XEC_1_IRQ);
-}
-
-#endif /* DT_COUNTER_MCHP_XEC_1 */
-
-#if defined(DT_COUNTER_MCHP_XEC_3)
-
-static void counder_xec_irq_config_3(void);
-
-static struct counter_xec_data counter_xec_dev_data_3;
-
-static struct counter_xec_config counter_xec_dev_config_3 = {
-	.info = {
-		.max_top_value = DT_COUNTEX_MCHP_XEC_3_MAX_VALUE,
-		.freq = DT_COUNTER_MCHP_XEC_3_CLOCK_FREQUENCY /
-			(1 << DT_COUNTER_MCHP_XEC_3_PRESCALER),
-		.flags = 0,
-		.channels = 1,
-	},
-
-	.config_func = counder_xec_irq_config_3,
-	.base_address = DT_COUNTER_MCHP_XEC_3_BASE_ADDR,
-	.prescaler = DT_COUNTER_MCHP_XEC_3_PRESCALER,
-	.girq_id = MCHP_B32TMR1_GIRQ,
-	.girq_bit = MCHP_B32TMR1_GIRQ_POS,
-};
-
-DEVICE_AND_API_INIT(counter_xec_3, DT_COUNTER_MCHP_XEC_3_LABEL,
-		    counter_xec_init, &counter_xec_dev_data_3,
-		    &counter_xec_dev_config_3,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &counter_xec_api);
-
-static void counder_xec_irq_config_3(void)
-{
-	IRQ_CONNECT(DT_COUNTER_MCHP_XEC_3_IRQ,
-		    DT_COUNTER_MCHP_XEC_3_IRQ_PRIORITY,
-		    counter_xec_isr, DEVICE_GET(counter_xec_3), 0);
-	irq_enable(DT_COUNTER_MCHP_XEC_3_IRQ);
-}
-
-#endif /* DT_COUNTER_MCHP_XEC_3 */
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_XEC_INIT)

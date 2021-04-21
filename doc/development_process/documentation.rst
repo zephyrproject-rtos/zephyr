@@ -38,14 +38,14 @@ Documentation Guidelines
 *************************
 
 Test Code
-**********
+=========
 
 The Zephyr project uses several test methodologies, the most common being the
 :ref:`Ztest framework <test-framework>`. Test documentation should only be done
 on the entry test functions (usually prefixed with test\_) and those that are
 called directly by the Ztest framework. Those tests are going to appear in test
-reports and using their name and identifier is the best way to identify them and
-trace back to them to requirements.
+reports and using their name and identifier is the best way to identify them
+and trace back to them from requirements.
 
 Test documentation should not interfere with the actual API documentation and
 needs to follow a new structure to avoid confusion. Using a consistent naming
@@ -58,9 +58,8 @@ for traceability reports. Here are a few guidelines to be followed:
 - All test documentation should be under doxygen groups that are prefixed
   with tests\_
 
-The doxygen ``@see`` directive is used to link features and APIs under test,
-like so::
-
+The custom doxygen ``@verify`` directive signifies that a test verifies a
+requirement::
 
     /**
     * @brief Tests for the Semaphore kernel object
@@ -75,7 +74,7 @@ like so::
     * Some details about the test
     * more details
     *
-    * @see k_sem_init(), #K_SEM_DEFINE(x)
+    * @verify{@req{1111}}
     */
     void test_sema_thread2thread(void)
     {
@@ -86,3 +85,30 @@ like so::
     /**
     * @}
     */
+
+To get coverage of how an implementation or a piece of code satisfies a
+requirements, we use the ``satisfy`` alias in doxygen::
+
+    /**
+    * @brief Give a semaphore.
+    *
+    * This routine gives @a sem, unless the semaphore is already at its maximum
+    * permitted count.
+    *
+    * @note Can be called by ISRs.
+    *
+    * @param sem Address of the semaphore.
+    *
+    * @return N/A
+    * @satisfy{@req{015}}
+    */
+    __syscall void k_sem_give(struct k_sem *sem);
+
+
+
+To generate the matrix, you will first need to build the documentation,
+specifically you will need to build the doxygen XML output::
+
+   $ make doxygen
+
+Parse the generated XML data from doxygen to generate the traceability matrix.

@@ -1,6 +1,23 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-#if defined(CONFIG_GEN_ISR_TABLES) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
+	SECTION_PROLOGUE(initlevel,,)
+	{
+		/*
+		 * link in initialization objects for all objects that are
+		 * automatically initialized by the kernel; the objects are
+		 * sorted in the order they will be initialized (i.e. ordered
+		 * by level, sorted by priority within a level)
+		 */
+		__init_start = .;
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)
+		CREATE_OBJ_LEVEL(init, POST_KERNEL)
+		CREATE_OBJ_LEVEL(init, APPLICATION)
+		CREATE_OBJ_LEVEL(init, SMP)
+		__init_end = .;
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)
 	{
 		/*
@@ -9,9 +26,17 @@
 		 * instruction.  See include/sw_isr_table.h.
 		 */
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
-		*(SW_ISR_TABLE)
-	} GROUP_LINK_IN(ROMABLE_REGION)
+		*(_SW_ISR_TABLE_SECTION_SYMS)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
+
+	/* verify we don't have rogue .init_<something> initlevel sections */
+	SECTION_PROLOGUE(initlevel_error,,)
+	{
+		KEEP(*(SORT(.init_[_A-Z0-9]*)))
+	}
+	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
+
 #ifdef CONFIG_CPLUSPLUS
 	SECTION_PROLOGUE(_CTOR_SECTION_NAME,,)
 	{
@@ -37,7 +62,7 @@
 		LONG(0)
 		__CTOR_END__ = .;
 #endif
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_PROLOGUE(init_array,,)
 	{
@@ -45,125 +70,140 @@
 		__init_array_start = .;
 		KEEP(*(SORT_BY_NAME(".init_array*")))
 		__init_array_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 #ifdef CONFIG_USERSPACE
 	/* Build-time assignment of permissions to kernel objects to
 	 * threads declared with K_THREAD_DEFINE()
 	 */
-	SECTION_PROLOGUE(object_access,,)
-	{
-		__k_object_assignment_list_start = .;
-		KEEP(*(".__k_object_assignment.*"))
-		__k_object_assignment_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(z_object_assignment, 4)
 #endif
 
-	SECTION_PROLOGUE(app_shmem_regions,,)
+	SECTION_DATA_PROLOGUE(app_shmem_regions,,)
 	{
 		__app_shmem_regions_start = .;
-		KEEP(*(SORT(".app_regions.*")));
+		KEEP(*(SORT(.app_regions.*)));
 		__app_shmem_regions_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
-	SECTION_PROLOGUE (devconfig,,)
-	{
-		__devconfig_start = .;
-		*(".devconfig.*")
-		KEEP(*(SORT_BY_NAME(".devconfig*")))
-		__devconfig_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
-	SECTION_PROLOGUE(net_l2,,)
-	{
-		__net_l2_start = .;
-		*(".net_l2.init")
-		KEEP(*(SORT_BY_NAME(".net_l2.init*")))
-		__net_l2_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if defined(CONFIG_NET_SOCKETS)
-	SECTION_PROLOGUE(net_socket_register,,)
-	{
-		_net_socket_register_list_start = .;
-		KEEP(*(SORT_BY_NAME("._net_socket_register.*")))
-		_net_socket_register_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(net_socket_register, 4)
 #endif
 
 #if defined(CONFIG_NET_L2_PPP)
-	SECTION_PROLOGUE(net_ppp_proto,,)
-	{
-		__net_ppp_proto_start = .;
-		*(".net_ppp_proto.*")
-		KEEP(*(SORT_BY_NAME(".net_ppp_proto.*")))
-		__net_ppp_proto_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(ppp_protocol_handler, 4)
 #endif
 
-	SECTION_DATA_PROLOGUE(_bt_channels_area,,SUBALIGN(4))
-	{
-		_bt_l2cap_fixed_chan_list_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_l2cap_fixed_chan.static.*")))
-		_bt_l2cap_fixed_chan_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, 4)
 
 #if defined(CONFIG_BT_BREDR)
-	SECTION_DATA_PROLOGUE(_bt_br_channels_area,,SUBALIGN(4))
-	{
-		_bt_l2cap_br_fixed_chan_list_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_l2cap_br_fixed_chan.static.*")))
-		_bt_l2cap_br_fixed_chan_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(bt_l2cap_br_fixed_chan, 4)
 #endif
 
-	SECTION_DATA_PROLOGUE(_bt_services_area,,SUBALIGN(4))
-	{
-		_bt_gatt_service_static_list_start = .;
-		KEEP(*(SORT_BY_NAME("._bt_gatt_service_static.static.*")))
-		_bt_gatt_service_static_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(bt_gatt_service_static, 4)
+
+#if defined(CONFIG_BT_MESH)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_subnet_cb, 4)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_app_key_cb, 4)
+
+	Z_ITERABLE_SECTION_ROM(bt_mesh_hb_cb, 4)
+#endif
+
+#if defined(CONFIG_BT_MESH_FRIEND)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_friend_cb, 4)
+#endif
+
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_lpn_cb, 4)
+#endif
+
+#if defined(CONFIG_BT_MESH_PROXY)
+	Z_ITERABLE_SECTION_ROM(bt_mesh_proxy_cb, 4)
+#endif
+
+#if defined(CONFIG_EC_HOST_CMD)
+	Z_ITERABLE_SECTION_ROM(ec_host_cmd_handler, 4)
+#endif
 
 #if defined(CONFIG_SETTINGS)
-	SECTION_DATA_PROLOGUE(_settings_handlers_area,,SUBALIGN(4))
-	{
-		_settings_handler_static_list_start = .;
-		KEEP(*(SORT_BY_NAME("._settings_handler_static.static.*")))
-		_settings_handler_static_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	Z_ITERABLE_SECTION_ROM(settings_handler_static, 4)
 #endif
+
+	Z_ITERABLE_SECTION_ROM(k_p4wq_initparam, 4)
+
+#if defined(CONFIG_EMUL)
+	SECTION_DATA_PROLOGUE(emulators_section,,)
+	{
+		__emul_list_start = .;
+		KEEP(*(SORT_BY_NAME(".emulators")));
+		__emul_list_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_EMUL */
+
+#if defined(CONFIG_DNS_SD)
+	Z_ITERABLE_SECTION_ROM(dns_sd_rec, 4)
+#endif
+
+#if defined(CONFIG_PCIE)
+	SECTION_DATA_PROLOGUE(irq_alloc,,)
+	{
+		__irq_alloc_start = .;
+		KEEP(*(SORT_BY_NAME("._irq_alloc*")));
+		__irq_alloc_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_PCIE */
+
+	SECTION_DATA_PROLOGUE(log_strings_sections,,)
+	{
+		__log_strings_start = .;
+		KEEP(*(SORT(.log_strings*)));
+		__log_strings_end = .;
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(log_const_sections,,)
 	{
 		__log_const_start = .;
 		KEEP(*(SORT(.log_const_*)));
 		__log_const_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(log_backends_sections,,)
 	{
 		__log_backends_start = .;
 		KEEP(*("._log_backend.*"));
 		__log_backends_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	Z_ITERABLE_SECTION_ROM(shell, 4)
 
 	SECTION_DATA_PROLOGUE(shell_root_cmds_sections,,)
 	{
 		__shell_root_cmds_start = .;
 		KEEP(*(SORT(.shell_root_cmd_*)));
 		__shell_root_cmds_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(font_entry_sections,,)
 	{
 		__font_entry_start = .;
 		KEEP(*(SORT_BY_NAME("._cfb_font.*")))
 		__font_entry_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(tracing_backends_sections,,)
+	Z_ITERABLE_SECTION_ROM(tracing_backend, 4)
+
+	SECTION_DATA_PROLOGUE(zephyr_dbg_info,,)
 	{
-		_tracing_backend_list_start = .;
-		KEEP(*("._tracing_backend.*"));
-		_tracing_backend_list_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
+		KEEP(*(".dbg_thread_info"));
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	SECTION_DATA_PROLOGUE(device_handles,,)
+	{
+		__device_handles_start = .;
+#ifdef LINKER_ZEPHYR_FINAL
+		KEEP(*(SORT(.__device_handles_pass2*)));
+#else /* LINKER_ZEPHYR_FINAL */
+		KEEP(*(SORT(.__device_handles_pass1*)));
+#endif /* LINKER_ZEPHYR_FINAL */
+		__device_handles_end = .;
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

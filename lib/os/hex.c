@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <sys/util.h>
 
-int char2hex(char c, u8_t *x)
+int char2hex(char c, uint8_t *x)
 {
 	if (c >= '0' && c <= '9') {
 		*x = c - '0';
@@ -24,11 +24,11 @@ int char2hex(char c, u8_t *x)
 	return 0;
 }
 
-int hex2char(u8_t x, char *c)
+int hex2char(uint8_t x, char *c)
 {
 	if (x <= 9) {
 		*c = x + '0';
-	} else  if (x >= 10 && x <= 15) {
+	} else  if (x <= 15) {
 		*c = x - 10 + 'a';
 	} else {
 		return -EINVAL;
@@ -37,7 +37,7 @@ int hex2char(u8_t x, char *c)
 	return 0;
 }
 
-size_t bin2hex(const u8_t *buf, size_t buflen, char *hex, size_t hexlen)
+size_t bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 {
 	if ((hexlen + 1) < buflen * 2) {
 		return 0;
@@ -56,9 +56,9 @@ size_t bin2hex(const u8_t *buf, size_t buflen, char *hex, size_t hexlen)
 	return 2 * buflen;
 }
 
-size_t hex2bin(const char *hex, size_t hexlen, u8_t *buf, size_t buflen)
+size_t hex2bin(const char *hex, size_t hexlen, uint8_t *buf, size_t buflen)
 {
-	u8_t dec;
+	uint8_t dec;
 
 	if (buflen < hexlen / 2 + hexlen % 2) {
 		return 0;

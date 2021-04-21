@@ -11,9 +11,9 @@
 void lvgl_flush_cb_mono(struct _disp_drv_t *disp_drv,
 		const lv_area_t *area, lv_color_t *color_p)
 {
-	u16_t w = area->x2 - area->x1 + 1;
-	u16_t h = area->y2 - area->y1 + 1;
-	struct device *display_dev = (struct device *)disp_drv->user_data;
+	uint16_t w = area->x2 - area->x1 + 1;
+	uint16_t h = area->y2 - area->y1 + 1;
+	const struct device *display_dev = (const struct device *)disp_drv->user_data;
 	struct display_capabilities cap;
 	struct display_buffer_descriptor desc;
 
@@ -34,12 +34,12 @@ void lvgl_flush_cb_mono(struct _disp_drv_t *disp_drv,
 
 
 void lvgl_set_px_cb_mono(struct _disp_drv_t *disp_drv,
-		u8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
+		uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y,
 		lv_color_t color, lv_opa_t opa)
 {
-	struct device *display_dev = (struct device *)disp_drv->user_data;
-	u8_t *buf_xy;
-	u8_t bit;
+	const struct device *display_dev = (const struct device *)disp_drv->user_data;
+	uint8_t *buf_xy;
+	uint8_t bit;
 	struct display_capabilities cap;
 
 	display_get_capabilities(display_dev, &cap);
@@ -80,16 +80,21 @@ void lvgl_set_px_cb_mono(struct _disp_drv_t *disp_drv,
 void lvgl_rounder_cb_mono(struct _disp_drv_t *disp_drv,
 		lv_area_t *area)
 {
-	struct device *display_dev = (struct device *)disp_drv->user_data;
+	const struct device *display_dev = (const struct device *)disp_drv->user_data;
 	struct display_capabilities cap;
 
 	display_get_capabilities(display_dev, &cap);
 
-	if (cap.screen_info & SCREEN_INFO_MONO_VTILED) {
-		area->y1 &= ~0x7;
-		area->y2 |= 0x7;
+	if (cap.screen_info & SCREEN_INFO_X_ALIGNMENT_WIDTH) {
+		area->x1 = 0;
+		area->x2 = cap.x_resolution - 1;
 	} else {
-		area->x1 &= ~0x7;
-		area->x2 |= 0x7;
+		if (cap.screen_info & SCREEN_INFO_MONO_VTILED) {
+			area->y1 &= ~0x7;
+			area->y2 |= 0x7;
+		} else {
+			area->x1 &= ~0x7;
+			area->x2 |= 0x7;
+		}
 	}
 }

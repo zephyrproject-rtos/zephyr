@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&daplink_single_spi0 {
+	status = "okay";
+};

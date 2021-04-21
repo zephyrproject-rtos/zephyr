@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_adc
+
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_mchp_xec);
@@ -11,7 +13,6 @@ LOG_MODULE_REGISTER(adc_mchp_xec);
 #include <drivers/adc.h>
 #include <soc.h>
 #include <errno.h>
-#include <assert.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -29,29 +30,26 @@ LOG_MODULE_REGISTER(adc_mchp_xec);
 
 struct adc_xec_data {
 	struct adc_context ctx;
-	u16_t *buffer;
-	u16_t *repeat_buffer;
+	uint16_t *buffer;
+	uint16_t *repeat_buffer;
 };
 
 struct adc_xec_regs {
-	u32_t control_reg;
-	u32_t delay_reg;
-	u32_t status_reg;
-	u32_t single_reg;
-	u32_t repeat_reg;
-	u32_t channel_read_reg[8];
-	u32_t unused[18];
-	u32_t config_reg;
-	u32_t vref_channel_reg;
-	u32_t vref_control_reg;
-	u32_t sar_control_reg;
+	uint32_t control_reg;
+	uint32_t delay_reg;
+	uint32_t status_reg;
+	uint32_t single_reg;
+	uint32_t repeat_reg;
+	uint32_t channel_read_reg[8];
+	uint32_t unused[18];
+	uint32_t config_reg;
+	uint32_t vref_channel_reg;
+	uint32_t vref_control_reg;
+	uint32_t sar_control_reg;
 };
 
 #define ADC_XEC_REG_BASE						\
-	((struct adc_xec_regs *)(DT_INST_0_MICROCHIP_XEC_ADC_BASE_ADDRESS))
-
-
-DEVICE_DECLARE(adc_xec);
+	((struct adc_xec_regs *)(DT_INST_REG_ADDR(0)))
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
@@ -74,11 +72,11 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-static int adc_xec_channel_setup(struct device *dev,
+static int adc_xec_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	u32_t reg;
+	uint32_t reg;
 
 	ARG_UNUSED(dev);
 
@@ -123,7 +121,7 @@ static bool adc_xec_validate_buffer_size(const struct adc_sequence *sequence)
 {
 	int chan_count = 0;
 	size_t buff_need;
-	u32_t chan_mask;
+	uint32_t chan_mask;
 
 	for (chan_mask = 0x80; chan_mask != 0; chan_mask >>= 1) {
 		if (chan_mask & sequence->channels) {
@@ -131,7 +129,7 @@ static bool adc_xec_validate_buffer_size(const struct adc_sequence *sequence)
 		}
 	}
 
-	buff_need = chan_count * sizeof(u16_t);
+	buff_need = chan_count * sizeof(uint16_t);
 
 	if (sequence->options) {
 		buff_need *= 1 + sequence->options->extra_samplings;
@@ -144,12 +142,12 @@ static bool adc_xec_validate_buffer_size(const struct adc_sequence *sequence)
 	return true;
 }
 
-static int adc_xec_start_read(struct device *dev,
+static int adc_xec_start_read(const struct device *dev,
 			      const struct adc_sequence *sequence)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	struct adc_xec_data *data = dev->driver_data;
-	u32_t reg;
+	struct adc_xec_data *data = dev->data;
+	uint32_t reg;
 
 	if (sequence->channels & ~BIT_MASK(MCHP_ADC_MAX_CHAN)) {
 		LOG_ERR("Incorrect channels, bitmask 0x%x", sequence->channels);
@@ -168,12 +166,14 @@ static int adc_xec_start_read(struct device *dev,
 
 	/* Setup ADC resolution */
 	reg = adc_regs->sar_control_reg;
-	reg &= ~MCHP_ADC_SAR_CTRL_RES_MASK;
+	reg &= ~(MCHP_ADC_SAR_CTRL_RES_MASK |
+		 (1 << MCHP_ADC_SAR_CTRL_SHIFTD_POS));
 
 	if (sequence->resolution == 12) {
 		reg |= MCHP_ADC_SAR_CTRL_RES_12_BITS;
 	} else if (sequence->resolution == 10) {
 		reg |= MCHP_ADC_SAR_CTRL_RES_10_BITS;
+		reg |= MCHP_ADC_SAR_CTRL_SHIFTD_EN;
 	} else {
 		return -EINVAL;
 	}
@@ -187,10 +187,10 @@ static int adc_xec_start_read(struct device *dev,
 	return adc_context_wait_for_completion(&data->ctx);
 }
 
-static int adc_xec_read(struct device *dev,
+static int adc_xec_read(const struct device *dev,
 			const struct adc_sequence *sequence)
 {
-	struct adc_xec_data *data = dev->driver_data;
+	struct adc_xec_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
@@ -201,11 +201,11 @@ static int adc_xec_read(struct device *dev,
 }
 
 #if defined(CONFIG_ADC_ASYNC)
-static int adc_xec_read_async(struct device *dev,
+static int adc_xec_read_async(const struct device *dev,
 			      const struct adc_sequence *sequence,
 			      struct k_poll_signal *async)
 {
-	struct adc_xec_data *data = dev->driver_data;
+	struct adc_xec_data *data = dev->data;
 	int error;
 
 	adc_context_lock(&data->ctx, true, async);
@@ -216,14 +216,14 @@ static int adc_xec_read_async(struct device *dev,
 }
 #endif /* CONFIG_ADC_ASYNC */
 
-static void xec_adc_get_sample(struct device *dev)
+static void xec_adc_get_sample(const struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	struct adc_xec_data *data = dev->driver_data;
-	u32_t idx;
-	u32_t channels = adc_regs->status_reg;
-	u32_t ch_status = channels;
-	u32_t bit;
+	struct adc_xec_data *data = dev->data;
+	uint32_t idx;
+	uint32_t channels = adc_regs->status_reg;
+	uint32_t ch_status = channels;
+	uint32_t bit;
 
 	/*
 	 * Using the enabled channel bit set, from
@@ -236,7 +236,7 @@ static void xec_adc_get_sample(struct device *dev)
 	while (bit != 0) {
 		idx = bit - 1;
 
-		*data->buffer = (u16_t)adc_regs->channel_read_reg[idx];
+		*data->buffer = (uint16_t)adc_regs->channel_read_reg[idx];
 		data->buffer++;
 
 		channels &= ~BIT(idx);
@@ -247,11 +247,11 @@ static void xec_adc_get_sample(struct device *dev)
 	adc_regs->status_reg = ch_status;
 }
 
-static void adc_xec_isr(struct device *dev)
+static void adc_xec_isr(const struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	struct adc_xec_data *data = dev->driver_data;
-	u32_t reg;
+	struct adc_xec_data *data = dev->data;
+	uint32_t reg;
 
 	/* Clear START_SINGLE bit and clear SINGLE_DONE_STATUS */
 	reg = adc_regs->control_reg;
@@ -278,10 +278,10 @@ struct adc_driver_api adc_xec_api = {
 	.ref_internal = XEC_ADC_VREF_ANALOG,
 };
 
-static int adc_xec_init(struct device *dev)
+static int adc_xec_init(const struct device *dev)
 {
 	struct adc_xec_regs *adc_regs = ADC_XEC_REG_BASE;
-	struct adc_xec_data *data = dev->driver_data;
+	struct adc_xec_data *data = dev->data;
 
 	adc_regs->control_reg =  XEC_ADC_CTRL_ACTIVATE
 		| XEC_ADC_CTRL_POWER_SAVER_DIS
@@ -291,10 +291,10 @@ static int adc_xec_init(struct device *dev)
 	MCHP_GIRQ_SRC(MCHP_ADC_GIRQ) = MCHP_ADC_SNG_DONE_GIRQ_VAL;
 	MCHP_GIRQ_ENSET(MCHP_ADC_GIRQ) = MCHP_ADC_SNG_DONE_GIRQ_VAL;
 
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ADC_IRQ_0,
-		    DT_INST_0_MICROCHIP_XEC_ADC_IRQ_0_PRIORITY,
-		    adc_xec_isr, DEVICE_GET(adc_xec), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_ADC_IRQ_0);
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
+		    adc_xec_isr, DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQN(0));
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
@@ -307,7 +307,7 @@ static struct adc_xec_data adc_xec_dev_data_0 = {
 	ADC_CONTEXT_INIT_SYNC(adc_xec_dev_data_0, ctx),
 };
 
-DEVICE_AND_API_INIT(adc_xec, DT_INST_0_MICROCHIP_XEC_ADC_LABEL,
-		    adc_xec_init, &adc_xec_dev_data_0, NULL,
+DEVICE_DT_INST_DEFINE(0, adc_xec_init, device_pm_control_nop,
+		    &adc_xec_dev_data_0, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &adc_xec_api);

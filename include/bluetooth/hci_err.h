@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-/* HCI Error Codes, BT Core Spec v5.2 [Vol 1, Part F]. */
+/** HCI Error Codes, BT Core Spec v5.2 [Vol 1, Part F]. */
 #define BT_HCI_ERR_SUCCESS                      0x00
 #define BT_HCI_ERR_UNKNOWN_CMD                  0x01
 #define BT_HCI_ERR_UNKNOWN_CONN_ID              0x02
@@ -44,7 +44,7 @@ extern "C" {
 #define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE        0x1a
 #define BT_HCI_ERR_SCO_OFFSET_REJECTED          0x1b
 #define BT_HCI_ERR_SCO_INTERVAL_REJECTED        0x1c
-#define BT_HIC_ERR_SCO_AIR_MODE_REJECTED        0x1d
+#define BT_HCI_ERR_SCO_AIR_MODE_REJECTED        0x1d
 #define BT_HCI_ERR_INVALID_LL_PARAM             0x1e
 #define BT_HCI_ERR_UNSPECIFIED                  0x1f
 #define BT_HCI_ERR_UNSUPP_LL_PARAM_VAL          0x20
@@ -82,8 +82,6 @@ extern "C" {
 #define BT_HCI_ERR_LIMIT_REACHED                0x43
 #define BT_HCI_ERR_OP_CANCELLED_BY_HOST         0x44
 #define BT_HCI_ERR_PACKET_TOO_LONG              0x45
-
-#define BT_HCI_ERR_AUTHENTICATION_FAIL __DEPRECATED_MACRO BT_HCI_ERR_AUTH_FAIL
 
 #ifdef __cplusplus
 }

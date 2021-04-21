@@ -14,7 +14,8 @@ static struct sensor_value temp_value[64];
 #ifdef CONFIG_AMG88XX_TRIGGER
 K_SEM_DEFINE(sem, 0, 1);
 
-static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(trigger);
@@ -50,15 +51,15 @@ void print_buffer(void *ptr, size_t l)
 void main(void)
 {
 	int ret;
-	struct device *dev = device_get_binding(
-				DT_INST_0_PANASONIC_AMG88XX_LABEL);
+	const struct device *dev = device_get_binding(
+				DT_LABEL(DT_INST(0, panasonic_amg88xx)));
 
 	if (dev == NULL) {
 		printk("Could not get AMG88XX device\n");
 		return;
 	}
 
-	printk("device: %p, name: %s\n", dev, dev->config->name);
+	printk("device: %p, name: %s\n", dev, dev->name);
 
 #ifdef CONFIG_AMG88XX_TRIGGER
 	struct sensor_value attr = {

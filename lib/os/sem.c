@@ -40,7 +40,7 @@ static inline atomic_t bounded_inc(atomic_t *val, atomic_t minimum,
 
 		new_value = old_value < minimum ?
 			    minimum + 1 : old_value + 1;
-	} while (atomic_cas(val, old_value, new_value) == 0);
+	} while (atomic_cas(val, old_value, new_value) == 0U);
 
 	return old_value;
 }
@@ -79,7 +79,7 @@ int sys_sem_give(struct sys_sem *sem)
 	return ret;
 }
 
-int sys_sem_take(struct sys_sem *sem, s32_t timeout)
+int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 {
 	int ret = 0;
 	atomic_t old_value;
@@ -120,7 +120,7 @@ int sys_sem_give(struct sys_sem *sem)
 	return 0;
 }
 
-int sys_sem_take(struct sys_sem *sem, s32_t timeout)
+int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 {
 	int ret_value = 0;
 

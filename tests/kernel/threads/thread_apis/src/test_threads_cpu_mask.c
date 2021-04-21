@@ -85,5 +85,7 @@ void test_threads_cpu_mask(void)
 
 		k_thread_abort(thread);
 	}
+#else
+	ztest_test_skip();
 #endif
 }

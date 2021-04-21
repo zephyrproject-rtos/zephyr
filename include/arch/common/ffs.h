@@ -28,7 +28,7 @@ extern "C" {
  * @return most significant bit set, 0 if @a op is 0
  */
 
-static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
+static ALWAYS_INLINE unsigned int find_msb_set(uint32_t op)
 {
 	if (op == 0) {
 		return 0;
@@ -50,7 +50,7 @@ static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
  * @return least significant bit set, 0 if @a op is 0
  */
 
-static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
+static ALWAYS_INLINE unsigned int find_lsb_set(uint32_t op)
 {
 	return __builtin_ffs(op);
 }

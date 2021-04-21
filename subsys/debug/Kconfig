@@ -8,25 +8,87 @@ menu "System Monitoring Options"
 
 config BOOT_TIME_MEASUREMENT
 	bool "Boot time measurements"
-	depends on ARCH_POSIX || ARM || (X86 && APIC_TIMER && APIC_TIMER_TSC)
+	depends on ARCH_POSIX || ARM || X86
 	help
 	  This option enables the recording of timestamps during system boot.
 
-config STATS
-	bool "Statistics support"
+menuconfig THREAD_ANALYZER
+	bool "Enable Thread analyzer"
+	select INIT_STACKS
+	select THREAD_MONITOR
+	select THREAD_STACK_INFO
+	select THREAD_RUNTIME_STATS
 	help
-	  Enable per-module event counters for troubleshooting, maintenance,
-	  and usage monitoring.  Statistics can be retrieved with the mcumgr
-	  management subsystem.
+	  Enable thread analyzer functionality and all the required modules.
+	  This module may be used to debug thread configuration issues, e.g.
+	  stack size configuration to find stack overflow or to find stacks
+	  which may be optimized.
 
-config STATS_NAMES
-	bool "Statistic names"
-	depends on STATS
+if THREAD_ANALYZER
+module = THREAD_ANALYZER
+module-str = thread analyzer
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+choice
+	prompt "Thread analysis print mode"
+
+config THREAD_ANALYZER_USE_LOG
+	bool "Use logger output"
+	select LOG
 	help
-	  Include a full name string for each statistic in the build.  If this
-	  setting is disabled, statistics are assigned generic names of the
-	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
-	  but results in a larger code size.
+	  Use logger output to print thread information.
+
+config THREAD_ANALYZER_USE_PRINTK
+	bool "Use printk function"
+	help
+	  Use kernel printk function to print thread information.
+
+endchoice
+
+config THREAD_ANALYZER_RUN_UNLOCKED
+	bool "Run analysis with interrupts unlocked"
+	default y
+	help
+	  The thread analysis takes quite a long time.
+	  Every thread it finds is analyzed word by word to find any that
+	  does not match the magic number.
+	  Normally while thread are analyzed the k_thread_foreach function
+	  is used.
+	  While this is a safe run from the thread list perspective it may lock
+	  the interrupts for a long time - long enough to disconnect when
+	  Bluetooth communication is used.
+	  Setting this flag will force thread analyzer to use
+	  the k_thread_foreach_unlocked function.
+	  This will allow the interrupts to be processed while the thread is
+	  analyzed.
+	  For the limitation of such configuration see the k_thread_foreach
+	  documentation.
+
+config THREAD_ANALYZER_AUTO
+	bool "Run periodic thread analysis in a thread"
+	help
+	  Run the thread analyzer automatically, without the need to add
+	  any code to the application.
+	  Thread analysis would be called periodically.
+
+if THREAD_ANALYZER_AUTO
+
+config THREAD_ANALYZER_AUTO_INTERVAL
+	int "Thread analysis interval"
+	default 60
+	range 5 3600
+	help
+	  The time in seconds to call thread analyzer periodic printing function.
+
+config THREAD_ANALYZER_AUTO_STACK_SIZE
+	int "Stack size for the periodic thread analysis thread"
+	default 512
+
+endif # THREAD_ANALYZER_AUTO
+
+endif # THREAD_ANALYZER
+
+
 endmenu
 
 menu "Debugging Options"
@@ -160,7 +222,7 @@ config ASSERT_LEVEL
 config SPIN_VALIDATE
 	bool "Enable spinlock validation"
 	depends on ASSERT
-	depends on MP_NUM_CPUS < 4
+	depends on MP_NUM_CPUS <= 4
 	default y if !FLASH || FLASH_SIZE > 32
 	help
 	  There's a spinlock validation framework available when asserts are
@@ -171,7 +233,7 @@ config FORCE_NO_ASSERT
 	bool "Force-disable no assertions"
 	help
 	  This boolean option disables Zephyr assertion testing even
-	  in circumstances (sanitycheck) where it is enabled via
+	  in circumstances (twister) where it is enabled via
 	  CFLAGS and not Kconfig.  Added solely to be able to work
 	  around compiler bugs for specific tests.
 
@@ -270,14 +332,50 @@ config EXCEPTION_STACK_TRACE
 #
 # Miscellaneous debugging options
 #
-
 config OPENOCD_SUPPORT
-	bool "OpenOCD support [EXPERIMENTAL]"
+	bool "OpenOCD support (DEPRECATED)"
+	select DEBUG_THREAD_INFO
+	help
+	  This is deprecated, please use DEBUG_THREAD_INFO instead.
+
+config DEBUG_THREAD_INFO
+	bool "Thread awareness support"
+	depends on !SMP
 	select THREAD_MONITOR
 	select THREAD_NAME
 	help
-	  This option exports an array of offsets to kernel structs, used by
-	  OpenOCD to determine the state of running threads.  (This option
-	  selects CONFIG_THREAD_MONITOR, so all of its caveats are implied.)
+	  This option exports an array of offsets to kernel structs to allow
+	  for debugger RTOS plugins to determine the state of running threads.
 
+rsource "coredump/Kconfig"
 endmenu
+
+config GDBSTUB
+	bool "GDB remote serial protocol support [EXPERIMENTAL]"
+	depends on ARCH_HAS_GDBSTUB
+	help
+	  This option enable support the target using GDB, or any other
+	  application that supports GDB protocol.
+
+if GDBSTUB
+
+choice
+	prompt "GDB backend"
+
+config GDBSTUB_SERIAL_BACKEND
+	bool "Use serial backend"
+	depends on SERIAL
+	help
+	  Use serial as backenf for GDB
+
+endchoice
+
+config GDBSTUB_SERIAL_BACKEND_NAME
+	string "Serial Name"
+	depends on GDBSTUB_SERIAL_BACKEND
+	default "UART_0"
+	help
+	  Use serial as backenf for GDB
+
+
+endif

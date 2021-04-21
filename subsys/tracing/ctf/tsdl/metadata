@@ -11,7 +11,8 @@ typealias enum : uint32_t {
 	MUTEX_LOCK = 35,
 	SEMA_INIT = 36,
 	SEMA_GIVE = 37,
-	SEMA_TAKE = 38
+	SEMA_TAKE = 38,
+	SLEEP = 39
 } := call_id;
 
 struct event_header {
@@ -34,6 +35,7 @@ event {
 	id = 0x10;
 	fields := struct {
 		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
 	};
 };
 
@@ -42,6 +44,7 @@ event {
 	id = 0x11;
 	fields := struct {
 		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
 	};
 };
 
@@ -51,6 +54,7 @@ event {
 	fields := struct {
 		uint32_t thread_id;
 		int8_t prio;
+		ctf_bounded_string_t name[20];
 	};
 
 };
@@ -69,6 +73,7 @@ event {
 	id = 0x14;
 	fields := struct {
 		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
 	};
 };
 
@@ -77,6 +82,7 @@ event {
 	id = 0x15;
 	fields := struct {
 		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
 	};
 };
 
@@ -85,6 +91,7 @@ event {
 	id = 0x16;
 	fields := struct {
 		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
 	};
 };
 event {
@@ -92,6 +99,7 @@ event {
         id = 0x17;
         fields := struct {
                 uint32_t thread_id;
+				ctf_bounded_string_t name[20];
         };
 };
 
@@ -100,6 +108,7 @@ event {
 	id = 0x18;
 	fields := struct {
 		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
 	};
 };
 
@@ -108,6 +117,7 @@ event {
 	id = 0x19;
 	fields := struct {
 		uint32_t thread_id;
+		ctf_bounded_string_t name[20];
 		uint32_t stack_base;
 		uint32_t stack_size;
 	};
@@ -155,5 +165,53 @@ event {
 	id = 0x42;
 	fields := struct {
 		call_id id;
+	};
+};
+
+event {
+	name = semaphore_init;
+	id = 0x43;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = semaphore_take;
+	id = 0x45;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = semaphore_give;
+	id = 0x44;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_init;
+	id = 0x46;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_lock;
+	id = 0x47;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = mutex_unlock;
+	id = 0x48;
+	fields := struct {
+		uint32_t id;
 	};
 };

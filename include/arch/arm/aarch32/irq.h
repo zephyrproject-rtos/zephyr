@@ -7,9 +7,10 @@
 
 /**
  * @file
- * @brief Cortex-M public interrupt handling
+ * @brief ARM AArch32 public interrupt handling
  *
- * ARM-specific kernel interrupt handling interface. Included by arm/arch.h.
+ * ARM AArch32-specific kernel interrupt handling interface. Included by
+ * arm/arch.h.
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_IRQ_H_
@@ -28,20 +29,52 @@ GTEXT(z_arm_int_exit);
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+GTEXT(z_soc_irq_get_active)
+GTEXT(z_soc_irq_eoi)
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #else
+
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
 
+/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
+extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
+				   uint32_t flags);
+
+#else
+
+/*
+ * When a custom interrupt controller is specified, map the architecture
+ * interrupt control functions to the SoC layer interrupt control functions.
+ */
+
+void z_soc_irq_init(void);
+void z_soc_irq_enable(unsigned int irq);
+void z_soc_irq_disable(unsigned int irq);
+int z_soc_irq_is_enabled(unsigned int irq);
+
+void z_soc_irq_priority_set(
+	unsigned int irq, unsigned int prio, unsigned int flags);
+
+unsigned int z_soc_irq_get_active(void);
+void z_soc_irq_eoi(unsigned int irq);
+
+#define arch_irq_enable(irq)		z_soc_irq_enable(irq)
+#define arch_irq_disable(irq)		z_soc_irq_disable(irq)
+#define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+
+#define z_arm_irq_priority_set(irq, prio, flags)	\
+	z_soc_irq_priority_set(irq, prio, flags)
+
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+
 extern void z_arm_int_exit(void);
 
-#if defined(CONFIG_ARMV7_R)
-static ALWAYS_INLINE void z_arm_int_lib_init(void)
-{
-}
-#else
-extern void z_arm_int_lib_init(void);
-#endif
+extern void z_arm_interrupt_init(void);
 
 /* macros convert value of it's argument to a string */
 #define DO_TOSTR(s) #s
@@ -51,20 +84,13 @@ extern void z_arm_int_lib_init(void);
 #define DO_CONCAT(x, y) x ## y
 #define CONCAT(x, y) DO_CONCAT(x, y)
 
-/* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
-				   u32_t flags);
-
-
 /* Flags for use with IRQ_CONNECT() */
-#ifdef CONFIG_ZERO_LATENCY_IRQS
 /**
  * Set this interrupt up as a zero-latency IRQ. It has a fixed hardware
  * priority level (discarding what was supplied in the interrupt's priority
  * argument), and will run even if irq_lock() is active. Be careful!
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
-#endif
 
 
 /* All arguments must be computable by the compiler at build time.
@@ -78,20 +104,22 @@ extern void z_arm_irq_priority_set(unsigned int irq, unsigned int prio,
  * runtime.
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-({ \
+{ \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
+			"ZLI interrupt registered but feature is disabled"); \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
-	irq_p; \
-})
+}
 
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
-({ \
+{ \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_ZERO_LATENCY_IRQS) || !(flags_p & IRQ_ZERO_LATENCY), \
+			"ZLI interrupt registered but feature is disabled"); \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
 	z_arm_irq_priority_set(irq_p, priority_p, flags_p); \
-	irq_p; \
-})
+}
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 extern void _arch_isr_direct_pm(void);
 #define ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
 #else
@@ -121,7 +149,7 @@ static inline void arch_isr_direct_footer(int maybe_swap)
 #ifdef CONFIG_TRACING
 	sys_trace_isr_exit();
 #endif
-	if (maybe_swap) {
+	if (maybe_swap != 0) {
 		z_arm_int_exit();
 	}
 }
@@ -195,7 +223,7 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 
 /* Spurious interrupt handler. Throws an error if called */
-extern void z_irq_spurious(void *unused);
+extern void z_irq_spurious(const void *unused);
 
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 /* Architecture-specific common entry point for interrupts from the vector
@@ -204,6 +232,17 @@ extern void z_irq_spurious(void *unused);
  */
 extern void _isr_wrapper(void);
 #endif
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+/* Architecture-specific definition for the target security
+ * state of an NVIC IRQ line.
+ */
+typedef enum {
+	IRQ_TARGET_STATE_SECURE = 0,
+	IRQ_TARGET_STATE_NON_SECURE
+} irq_target_state_t;
+
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #endif /* _ASMLANGUAGE */
 

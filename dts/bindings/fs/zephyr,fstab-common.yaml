@@ -1,0 +1,43 @@
+# Copyright (C) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties for Zephyr filesystem compatibles
+
+include: base.yaml
+
+properties:
+  mount-point:
+    type: string
+    required: true
+    description: |
+      The absolute path used as the file system mount point.
+
+  partition:
+    type: phandle
+    required: true
+    description: |
+      A reference to the file system's partition.
+
+  automount:
+    type: boolean
+    description: |
+      Mount file system on boot if present.
+
+      During initialization the file system driver will attempt to mount
+      this partition.
+
+  read-only:
+    type: boolean
+    description: |
+      Mount file system read-only if present.
+
+      This adds the FS_MOUNT_FLAG_READ_ONLY option to be set in the
+      mount descriptor generated for the file system.
+
+  no-format:
+    type: boolean
+    description: |
+      Do not format file system if mount fails.
+
+      This causes the FS_MOUNT_FLAG_NO_FORMAT option to be set in the
+      mount descriptor generated for the file system.

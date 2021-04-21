@@ -1,0 +1,10 @@
+# MCUXpresso SDK SYSCON
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MCUX_SYSCON
+	bool "MCUX LPC clock driver"
+	depends on HAS_MCUX_SYSCON
+	help
+	  Enable support for mcux clock driver.

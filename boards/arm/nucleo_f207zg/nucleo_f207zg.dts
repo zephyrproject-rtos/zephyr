@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/f2/stm32f207Xg.dtsi>
+#include <st/f2/stm32f207z(c-e-f-g)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F207ZG-NUCLEO board";
-	compatible = "st,stm32f207zg-nucleo", "st,stm32f207";
+	compatible = "st,stm32f207zg-nucleo";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -51,17 +52,32 @@
 	};
 };
 
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
 &usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pg14 &usart6_rx_pg9>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
 	status = "okay";
 };
 
@@ -69,6 +85,42 @@
 	status = "okay";
 };
 
-&adc1 {
+&rtc {
 	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0>;
+	status = "okay";
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pb13>;
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac_out1_pa4>;
+};
+
+&backup_sram {
+	status = "okay";
+};
+
+&timers1 {
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pe9>;
+	};
 };

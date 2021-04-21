@@ -20,7 +20,7 @@
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 void disable_mpu_rasr_xn(void)
 {
-	u32_t index;
+	uint32_t index;
 	/* Kept the max index as 8(irrespective of soc) because the sram
 	 * would most likely be set at index 2.
 	 */

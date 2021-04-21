@@ -11,11 +11,12 @@ LOG_MODULE_REGISTER(net_websocket_client_sample, LOG_LEVEL_DBG);
 #include <net/socket.h>
 #include <net/tls_credentials.h>
 #include <net/websocket.h>
+#include <random/rand32.h>
 #include <shell/shell.h>
 
 #include "ca_certificate.h"
 
-#define PORT 9001
+#define SERVER_PORT 9001
 
 #if defined(CONFIG_NET_CONFIG_PEER_IPV6_ADDR)
 #define SERVER_ADDR6  CONFIG_NET_CONFIG_PEER_IPV6_ADDR
@@ -58,16 +59,16 @@ static const char lorem_ipsum[] =
 
 const int ipsum_len = MAX_RECV_BUF_LEN;
 
-static u8_t recv_buf_ipv4[MAX_RECV_BUF_LEN];
-static u8_t recv_buf_ipv6[MAX_RECV_BUF_LEN];
+static uint8_t recv_buf_ipv4[MAX_RECV_BUF_LEN];
+static uint8_t recv_buf_ipv6[MAX_RECV_BUF_LEN];
 
 /* We need to allocate bigger buffer for the websocket data we receive so that
  * the websocket header fits into it.
  */
 #define EXTRA_BUF_SPACE 30
 
-static u8_t temp_recv_buf_ipv4[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
-static u8_t temp_recv_buf_ipv6[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
+static uint8_t temp_recv_buf_ipv4[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
+static uint8_t temp_recv_buf_ipv6[MAX_RECV_BUF_LEN + EXTRA_BUF_SPACE];
 
 static int setup_socket(sa_family_t family, const char *server, int port,
 			int *sock, struct sockaddr *addr, socklen_t addr_len)
@@ -175,7 +176,7 @@ static size_t how_much_to_send(size_t max_len)
 static ssize_t sendall_with_ws_api(int sock, const void *buf, size_t len)
 {
 	return websocket_send_msg(sock, buf, len, WEBSOCKET_OPCODE_DATA_TEXT,
-				  true, true, K_FOREVER);
+				  true, true, SYS_FOREVER_MS);
 }
 
 static ssize_t sendall_with_bsd_api(int sock, const void *buf, size_t len)
@@ -183,12 +184,12 @@ static ssize_t sendall_with_bsd_api(int sock, const void *buf, size_t len)
 	return send(sock, buf, len, 0);
 }
 
-static void recv_data_wso_api(int sock, size_t amount, u8_t *buf,
+static void recv_data_wso_api(int sock, size_t amount, uint8_t *buf,
 			      size_t buf_len, const char *proto)
 {
-	u64_t remaining = ULLONG_MAX;
+	uint64_t remaining = ULLONG_MAX;
 	int total_read;
-	u32_t message_type;
+	uint32_t message_type;
 	int ret, read_pos;
 
 	read_pos = 0;
@@ -199,7 +200,7 @@ static void recv_data_wso_api(int sock, size_t amount, u8_t *buf,
 					 buf_len - read_pos,
 					 &message_type,
 					 &remaining,
-					 K_NO_WAIT);
+					 0);
 		if (ret <= 0) {
 			if (ret == -EAGAIN) {
 				k_sleep(K_MSEC(50));
@@ -213,12 +214,12 @@ static void recv_data_wso_api(int sock, size_t amount, u8_t *buf,
 
 		read_pos += ret;
 		total_read += ret;
-	};
+	}
 
 	if (remaining != 0 || total_read != amount ||
 	    /* Do not check the final \n at the end of the msg */
 	    memcmp(lorem_ipsum, buf, amount - 1) != 0) {
-		LOG_ERR("%s data recv failure %zd/%d bytes (remaining %lld)",
+		LOG_ERR("%s data recv failure %zd/%d bytes (remaining %" PRId64 ")",
 			proto, amount, total_read, remaining);
 		LOG_HEXDUMP_DBG(buf, total_read, "received ws buf");
 		LOG_HEXDUMP_DBG(lorem_ipsum, total_read, "sent ws buf");
@@ -227,7 +228,7 @@ static void recv_data_wso_api(int sock, size_t amount, u8_t *buf,
 	}
 }
 
-static void recv_data_bsd_api(int sock, size_t amount, u8_t *buf,
+static void recv_data_bsd_api(int sock, size_t amount, uint8_t *buf,
 			      size_t buf_len, const char *proto)
 {
 	int remaining;
@@ -266,7 +267,7 @@ static void recv_data_bsd_api(int sock, size_t amount, u8_t *buf,
 }
 
 static bool send_and_wait_msg(int sock, size_t amount, const char *proto,
-			      u8_t *buf, size_t buf_len)
+			      uint8_t *buf, size_t buf_len)
 {
 	static int count;
 	int ret;
@@ -326,7 +327,7 @@ void main(void)
 	};
 	int sock4 = -1, sock6 = -1;
 	int websock4 = -1, websock6 = -1;
-	s32_t timeout = K_SECONDS(3);
+	int32_t timeout = 3 * MSEC_PER_SEC;
 	struct sockaddr_in6 addr6;
 	struct sockaddr_in addr4;
 	size_t amount;
@@ -345,13 +346,13 @@ void main(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		(void)connect_socket(AF_INET, SERVER_ADDR4, PORT,
+		(void)connect_socket(AF_INET, SERVER_ADDR4, SERVER_PORT,
 				     &sock4, (struct sockaddr *)&addr4,
 				     sizeof(addr4));
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		(void)connect_socket(AF_INET6, SERVER_ADDR6, PORT,
+		(void)connect_socket(AF_INET6, SERVER_ADDR6, SERVER_PORT,
 				     &sock6, (struct sockaddr *)&addr6,
 				     sizeof(addr6));
 	}
@@ -375,7 +376,8 @@ void main(void)
 
 		websock4 = websocket_connect(sock4, &req, timeout, "IPv4");
 		if (websock4 < 0) {
-			LOG_ERR("Cannot connect to %s:%d", SERVER_ADDR4, PORT);
+			LOG_ERR("Cannot connect to %s:%d", SERVER_ADDR4,
+				SERVER_PORT);
 			close(sock4);
 		}
 	}
@@ -395,7 +397,7 @@ void main(void)
 		websock6 = websocket_connect(sock6, &req, timeout, "IPv6");
 		if (websock6 < 0) {
 			LOG_ERR("Cannot connect to [%s]:%d", SERVER_ADDR6,
-				PORT);
+				SERVER_PORT);
 			close(sock6);
 		}
 	}

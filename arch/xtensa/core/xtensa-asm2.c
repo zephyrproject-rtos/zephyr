@@ -11,11 +11,12 @@
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <_soc_inthandlers.h>
+#include <toolchain.h>
 #include <logging/log.h>
 
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
-void *xtensa_init_stack(int *stack_top,
+void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 			void (*entry)(void *, void *, void *),
 			void *arg1, void *arg2, void *arg3)
 {
@@ -27,12 +28,16 @@ void *xtensa_init_stack(int *stack_top,
 	 * start will decrement the stack pointer by 16.
 	 */
 	const int bsasz = BASE_SAVE_AREA_SIZE - 16;
-	void **bsa = (void **) (((char *) stack_top) - bsasz);
+	void *ret, **bsa = (void **) (((char *) stack_top) - bsasz);
 
 	(void)memset(bsa, 0, bsasz);
 
 	bsa[BSA_PC_OFF/4] = z_thread_entry;
 	bsa[BSA_PS_OFF/4] = (void *)(PS_WOE | PS_UM | PS_CALLINC(1));
+
+#if XCHAL_HAVE_THREADPTR && defined(CONFIG_THREAD_LOCAL_STORAGE)
+	bsa[BSA_THREADPTR_OFF/4] = UINT_TO_POINTER(thread->tls);
+#endif
 
 	/* Arguments to z_thread_entry().  Remember these start at A6,
 	 * which will be rotated into A2 by the ENTRY instruction that
@@ -53,27 +58,26 @@ void *xtensa_init_stack(int *stack_top,
 	 * as the handle
 	 */
 	bsa[-9] = bsa;
-	return &bsa[-9];
+	ret = &bsa[-9];
+
+	return ret;
 }
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t sz, k_thread_entry_t entry,
-		     void *p1, void *p2, void *p3,
-		     int prio, unsigned int opts)
+		     char *stack_ptr, k_thread_entry_t entry,
+		     void *p1, void *p2, void *p3)
 {
-	char *base = Z_THREAD_STACK_BUFFER(stack);
-	char *top = base + sz;
-
-	/* Align downward.  The API as specified requires a runtime check. */
-	top = (char *)(((unsigned int)top) & ~3);
-
-	z_new_thread_init(thread, base, sz, prio, opts);
-
-	thread->switch_handle = xtensa_init_stack((void *)top, entry,
+	thread->switch_handle = xtensa_init_stack(thread,
+						  (int *)stack_ptr, entry,
 						  p1, p2, p3);
+#ifdef CONFIG_KERNEL_COHERENCE
+	__ASSERT((((size_t)stack) % XCHAL_DCACHE_LINESIZE) == 0, "");
+	__ASSERT((((size_t)stack_ptr) % XCHAL_DCACHE_LINESIZE) == 0, "");
+	z_xtensa_cache_flush_inv(stack, (char *)stack_ptr - (char *)stack);
+#endif
 }
 
-void z_irq_spurious(void *arg)
+void z_irq_spurious(const void *arg)
 {
 	int irqs, ie;
 
@@ -135,11 +139,14 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 /* The wrapper code lives here instead of in the python script that
  * generates _xtensa_handle_one_int*().  Seems cleaner, still kind of
  * ugly.
+ *
+ * This may be unused depending on number of interrupt levels
+ * supported by the SoC.
  */
 #define DEF_INT_C_HANDLER(l)				\
-void *xtensa_int##l##_c(void *interrupted_stack)	\
+__unused void *xtensa_int##l##_c(void *interrupted_stack)	\
 {							   \
-	u32_t irqs, intenable, m;			   \
+	uint32_t irqs, intenable, m;			   \
 	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs)); \
 	__asm__ volatile("rsr.intenable %0" : "=r"(intenable)); \
 	irqs &= intenable;					\
@@ -188,7 +195,7 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		bsa[BSA_PC_OFF/4] += 3;
 
 	} else {
-		u32_t ps = bsa[BSA_PS_OFF/4];
+		uint32_t ps = bsa[BSA_PS_OFF/4];
 
 		__asm__ volatile("rsr.excvaddr %0" : "=r"(vaddr));
 
@@ -219,9 +226,9 @@ void *xtensa_excint1_c(int *interrupted_stack)
 
 int z_xtensa_irq_is_enabled(unsigned int irq)
 {
-	u32_t ie;
+	uint32_t ie;
 
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
 
-	return (ie & (1 << irq)) != 0;
+	return (ie & (1 << irq)) != 0U;
 }

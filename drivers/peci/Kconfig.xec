@@ -1,0 +1,10 @@
+# Microchip XEC PECI configuration options
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PECI_XEC
+	bool "XEC Microchip PECI driver"
+	depends on SOC_FAMILY_MEC
+	help
+	  Enable the Microchip XEC PECI IO driver.

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
+#include <sys/__assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
@@ -259,7 +259,7 @@ static void *lexer_json(struct lexer *lexer)
 				return lexer_number;
 			}
 
-			/* fallthrough */
+			__fallthrough;
 		default:
 			if (isspace(chr)) {
 				ignore(lexer);
@@ -343,7 +343,7 @@ static int obj_next(struct json_obj *json,
 			return -EINVAL;
 		}
 
-		/* fallthrough */
+		__fallthrough;
 	case JSON_TOK_STRING:
 		kv->key = token.start;
 		kv->key_len = (size_t)(token.end - token.start);
@@ -388,7 +388,7 @@ static int arr_next(struct json_obj *json, struct token *value)
 	return element_token(value->type);
 }
 
-static int decode_num(const struct token *token, s32_t *num)
+static int decode_num(const struct token *token, int32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
 	 * so using strtol() here.
@@ -457,7 +457,7 @@ static int decode_value(struct json_obj *obj,
 		return 0;
 	}
 	case JSON_TOK_NUMBER: {
-		s32_t *num = field;
+		int32_t *num = field;
 
 		return decode_num(value, num);
 	}
@@ -478,7 +478,7 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 {
 	switch (descr->type) {
 	case JSON_TOK_NUMBER:
-		return sizeof(s32_t);
+		return sizeof(int32_t);
 	case JSON_TOK_STRING:
 		return sizeof(char *);
 	case JSON_TOK_TRUE:
@@ -512,7 +512,7 @@ static int arr_parse(struct json_obj *obj,
 	size_t *elements = (size_t *)((char *)val + elem_descr->offset);
 	struct token value;
 
-	assert(elem_size > 0);
+	__ASSERT_NO_MSG(elem_size > 0);
 
 	*elements = 0;
 
@@ -540,7 +540,7 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 		     size_t descr_len, void *val)
 {
 	struct json_obj_key_value kv;
-	s32_t decoded_fields = 0;
+	int32_t decoded_fields = 0;
 	size_t i;
 	int ret;
 
@@ -589,7 +589,7 @@ int json_obj_parse(char *payload, size_t len,
 	struct json_obj obj;
 	int ret;
 
-	assert(descr_len < (sizeof(ret) * CHAR_BIT - 1));
+	__ASSERT_NO_MSG(descr_len < (sizeof(ret) * CHAR_BIT - 1));
 
 	ret = obj_init(&obj, payload, len);
 	if (ret < 0) {
@@ -773,10 +773,10 @@ static int str_encode(const char **str, json_append_bytes_t append_bytes,
 	return ret;
 }
 
-static int num_encode(const s32_t *num, json_append_bytes_t append_bytes,
+static int num_encode(const int32_t *num, json_append_bytes_t append_bytes,
 		      void *data)
 {
-	char buf[3 * sizeof(s32_t)];
+	char buf[3 * sizeof(int32_t)];
 	int ret;
 
 	ret = snprintk(buf, sizeof(buf), "%d", *num);
@@ -865,6 +865,15 @@ int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 	return append_bytes("}", 1, data);
 }
 
+int json_arr_encode(const struct json_obj_descr *descr, const void *val,
+		    json_append_bytes_t append_bytes, void *data)
+{
+	void *ptr = (char *)val + descr->offset;
+
+	return arr_encode(descr->array.element_descr, ptr, val, append_bytes,
+			  data);
+}
+
 struct appender {
 	char *buffer;
 	size_t used;
@@ -875,7 +884,7 @@ static int append_bytes_to_buf(const char *bytes, size_t len, void *data)
 {
 	struct appender *appender = data;
 
-	if (len > appender->size - appender->used) {
+	if (len >= appender->size - appender->used) {
 		return -ENOMEM;
 	}
 
@@ -893,6 +902,14 @@ int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
 
 	return json_obj_encode(descr, descr_len, val, append_bytes_to_buf,
 			       &appender);
+}
+
+int json_arr_encode_buf(const struct json_obj_descr *descr, const void *val,
+			char *buffer, size_t buf_size)
+{
+	struct appender appender = { .buffer = buffer, .size = buf_size };
+
+	return json_arr_encode(descr, val, append_bytes_to_buf, &appender);
 }
 
 static int measure_bytes(const char *bytes, size_t len, void *data)

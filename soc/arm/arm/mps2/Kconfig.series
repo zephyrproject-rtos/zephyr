@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MPS2
-	bool "ARM MPS2 MCU Series"
+	bool "Arm MPS2 MCU Series"
 	select ARM
 	select SOC_FAMILY_ARM
 	select GPIO_MMIO32 if GPIO

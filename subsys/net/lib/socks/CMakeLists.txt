@@ -2,4 +2,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_if_kconfig(socks.c)
+zephyr_library_sources_ifdef(CONFIG_SOCKS socks.c)

@@ -51,7 +51,9 @@ The Intel S1000 contains the following:
   - GPIO: 8 GPIOs with PWM output capability
 
 
-For more information refer to the `Intel Speech Enabling Developer Kit`_ page.
+.. note::
+
+   This board is not available for purchase anymore.
 
 System requirements
 *******************
@@ -289,5 +291,3 @@ Those 2 pins are Pin5 HOST_RST_N_LT_R) and Pin21 (+V_HOST_3P3_1P8).
 .. _Tensilica Tools for Sue Creek: https://tensilicatools.com/platform/intel-sue-creek
 
 .. _SDK portal: https://tensilicatools.com
-
-.. _Intel Speech Enabling Developer Kit: https://software.intel.com/en-us/iot/speech-enabling-dev-kit

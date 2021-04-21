@@ -1,0 +1,45 @@
+sample:
+  name: SPI Flash AT45 Sample
+tests:
+  sample.drivers.spi.flash.at45.build:
+    tags: spi flash
+    depends_on: spi
+    filter: dt_compat_enabled("atmel,at45")
+    build_only: true
+  sample.drivers.spi.flash.at45.build.page_layout:
+    extra_args: OVERLAY_CONFIG="overlay-page_layout.conf"
+    tags: spi flash
+    depends_on: spi
+    filter: dt_compat_enabled("atmel,at45")
+    build_only: true
+  sample.drivers.spi.flash.at45.build.pm:
+    extra_args: OVERLAY_CONFIG="overlay-pm.conf"
+    tags: spi flash
+    depends_on: spi
+    filter: dt_compat_enabled("atmel,at45")
+    build_only: true
+  sample.drivers.spi.flash.at45.build.page_layout_pm:
+    extra_args: OVERLAY_CONFIG="overlay-page_layout.conf;overlay-pm.conf"
+    tags: spi flash
+    depends_on: spi
+    filter: dt_compat_enabled("atmel,at45")
+    build_only: true
+  sample.drivers.spi.flash.at45:
+    extra_args: OVERLAY_CONFIG="overlay-page_layout.conf;overlay-pm.conf"
+    tags: spi flash
+    depends_on: spi
+    filter: dt_compat_enabled("atmel,at45")
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Using \\w+, chip size: \\d+ bytes \\(page: \\d+\\)"
+        - "Reading the first byte of the test region ... OK"
+        - "Preparing test content starting with 0x[0-9a-f]{2}."
+        - "Writing the first half of the test region... OK"
+        - "Writing the second half of the test region... OK"
+        - "Reading the whole test region... OK"
+        - "Checking the read content... OK"
+        - "Putting the flash device into low power state... OK"
+      fixture: atmel_at45

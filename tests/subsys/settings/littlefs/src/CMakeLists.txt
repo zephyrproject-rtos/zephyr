@@ -11,10 +11,10 @@ target_link_libraries(settings_littlefs_test PRIVATE settings_test)
 target_link_libraries(settings_littlefs_test PRIVATE settings_test_fs)
 
 zephyr_include_directories(
-	$ENV{ZEPHYR_BASE}/subsys/settings/include
-	$ENV{ZEPHYR_BASE}/subsys/settings/src
-	$ENV{ZEPHYR_BASE}/tests/subsys/settings/fs/include
-	$ENV{ZEPHYR_BASE}/tests/subsys/settings/littlefs/src
+	${ZEPHYR_BASE}/subsys/settings/include
+	${ZEPHYR_BASE}/subsys/settings/src
+	${ZEPHYR_BASE}/tests/subsys/settings/fs/include
+	${ZEPHYR_BASE}/tests/subsys/settings/littlefs/src
 	)
 
 

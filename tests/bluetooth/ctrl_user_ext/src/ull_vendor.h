@@ -30,4 +30,11 @@ static inline void ull_proprietary_done(struct node_rx_event_done *evdone)
 	/* Nothing to do */
 }
 
+
+static inline uint16_t ull_conn_interval_min_get(struct ll_conn *conn)
+{
+	/* Just return a value */
+	return 6;
+}
+
 #endif /* CONFIG_BT_CTLR_USER_EXT */

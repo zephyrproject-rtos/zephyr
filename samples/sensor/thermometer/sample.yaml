@@ -4,3 +4,5 @@ tests:
   sample.sensor.thermometer:
     tags: sensors
     harness: sensor
+    integration_platforms:
+      - frdm_k64f

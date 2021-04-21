@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2020 Teslabs Engineering S.L.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h7.dtsi>
+
+/ {
+	soc {
+		flash-controller@52002000 {
+			flash0: flash@8000000 {
+				write-block-size = <32>;
+				erase-block-size = <DT_SIZE_K(128)>;
+			};
+		};
+
+		dmamux1: dmamux@40020800 {
+			dma-requests= <107>;
+		};
+
+		usbotg_fs: usb@40080000 {
+			compatible = "st,stm32-otgfs";
+			reg = <0x40080000 0x40000>;
+			interrupts = <101 0>, <98 0>, <99 0>;
+			interrupt-names = "otgfs", "ep1_out", "ep1_in";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x080000000>;
+			phys = <&otghs_fs_phy>;
+			status = "disabled";
+			label= "OTG_FS";
+		};
+	};
+
+	/* system data RAM accessible over over AXI bus */
+	sram0: memory@24000000 {
+		compatible = "mmio-sram";
+		reg = <0x24000000 DT_SIZE_K(512)>;
+	};
+
+	dtcm: memory@20000000 {
+		compatible = "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(128)>;
+	};
+
+	otghs_fs_phy: otghs_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "OTGHS_FS_PHY";
+	};
+};

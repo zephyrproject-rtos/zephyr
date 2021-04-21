@@ -54,18 +54,18 @@ static void helper_thread(void *p1, void *p2, void *p3)
 
 static int ticks_to_sleep(int ticks)
 {
-	u32_t start_time;
-	u32_t stop_time;
+	uint32_t start_time;
+	uint32_t stop_time;
 
 	start_time = k_cycle_get_32();
-	k_sleep(k_ticks_to_ms_floor64(ticks));
+	k_sleep(K_MSEC(k_ticks_to_ms_floor64(ticks)));
 	stop_time = k_cycle_get_32();
 
 	return (stop_time - start_time) / k_ticks_to_cyc_floor32(1);
 }
 
 
-static int test_early_sleep_post_kernel(struct device *unused)
+static int test_early_sleep_post_kernel(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 	actual_post_kernel_sleep_ticks = ticks_to_sleep(TEST_TICKS_TO_SLEEP);
@@ -75,7 +75,7 @@ static int test_early_sleep_post_kernel(struct device *unused)
 SYS_INIT(test_early_sleep_post_kernel,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-static int test_early_sleep_app(struct device *unused)
+static int test_early_sleep_app(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 	actual_app_sleep_ticks = ticks_to_sleep(TEST_TICKS_TO_SLEEP);
@@ -102,7 +102,7 @@ static void test_early_sleep(void)
 	 */
 	k_thread_priority_set(k_current_get(), 0);
 
-	TC_PRINT("msec per tick: %lld.%03lld, ticks to sleep: %d\n",
+	TC_PRINT("msec per tick: %" PRId64 ".%03" PRId64 ", ticks to sleep: %d\n",
 			k_ticks_to_ms_floor64(1000) / 1000U,
 			k_ticks_to_ms_floor64(1000) % 1000,
 			TEST_TICKS_TO_SLEEP);

@@ -7,7 +7,6 @@ config ENTROPY_CC13XX_CC26XX_RNG
 	bool "TI SimpleLink CC13xx / CC26xx True Random Number Generator (TRNG)"
 	depends on SOC_SERIES_CC13X2_CC26X2
 	select ENTROPY_HAS_DRIVER
-	select HAS_DTS_ENTROPY
 	select RING_BUFFER
 	help
 	  This option enables the driver for the True Random Number Generator (TRNG)

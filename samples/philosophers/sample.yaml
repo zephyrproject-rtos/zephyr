@@ -1,9 +1,11 @@
 sample:
   name: Dining Philosophers
 common:
-  extra_args: "-DDEBUG_PRINTF=1"
+  extra_args: DEBUG_PRINTF=1
   tags: introduction
   harness: console
+  integration_platforms:
+    - native_posix
   harness_config:
     type: multi_line
     ordered: false
@@ -15,10 +17,6 @@ common:
 tests:
   sample.kernel.philosopher:
     tags: introduction
-  sample.kernel.philosopher.tracing:
-    min_ram: 32
-    extra_configs:
-      - CONFIG_SEGGER_SYSTEMVIEW=y
   sample.kernel.philosopher.same_prio:
     extra_args: "-DSAME_PRIO=1"
   sample.kernel.philosopher.static:

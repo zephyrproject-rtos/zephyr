@@ -39,20 +39,22 @@ config NATIVE_UART_0_ON_STDINOUT
 
 endchoice
 
+config UART_NATIVE_WAIT_PTS_READY_ENABLE
+	bool "Support waiting for pseudo terminal client readiness"
+	depends on NATIVE_UART_0_ON_OWN_PTY || UART_NATIVE_POSIX_PORT_1_ENABLE
+	help
+	  When this option is selected a new command line switch is provided:
+	  ``--wait_uart``
+	  When ``--wait_uart`` is used, writes to the UART will be held until a
+	  client has connected to the slave side of the pseudoterminal.
+	  Otherwise writes are sent irrespectively.
+
 config UART_NATIVE_POSIX_PORT_1_ENABLE
 	bool "Enable second UART port"
 	help
 	  Useful if you need to have another serial connection to host.
 	  This is used for example in PPP (Point-to-Point Protocol)
 	  implementation.
-
-config UART_NATIVE_POSIX_PORT_1_NAME
-	string "Port 1 Device Name"
-	default "UART_1"
-	depends on UART_NATIVE_POSIX_PORT_1_ENABLE
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
 
 config NATIVE_UART_AUTOATTACH_DEFAULT_CMD
 	string "Default command to attach the UART to a new terminal"
@@ -66,5 +68,7 @@ config NATIVE_UART_AUTOATTACH_DEFAULT_CMD
 	  This is only applicable if the UART_0 is configured to use its own
 	  PTY with NATIVE_UART_0_ON_OWN_PTY.
 	  The 2nd UART will not be affected by this option.
+	  If you are using GNOME, then you can use this command string
+	  'gnome-terminal -- screen %s'
 
 endif # UART_NATIVE_POSIX

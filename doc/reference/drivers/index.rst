@@ -1,7 +1,7 @@
-.. _device_drivers:
+.. _device_model_api:
 
 Device Driver Model
-###############################
+###################
 
 Introduction
 ************
@@ -44,7 +44,7 @@ are listed below.
   .. important::
 
     Use the :ref:`random API functions <random_api>` for random
-    values. :ref:`Entropy functions <entropy_interface>` should not be
+    values. :ref:`Entropy functions <entropy_api>` should not be
     directly used as a random number generator source as some hardware
     implementations are designed to be an entropy seed source for random
     number generators and will not provide cryptographically secure
@@ -68,22 +68,20 @@ The following APIs for device drivers are provided by :file:`device.h`. The APIs
 are intended for use in device drivers only and should not be used in
 applications.
 
-:c:func:`DEVICE_INIT()`
-   create device object and set it up for boot time initialization.
-
-:c:func:`DEVICE_AND_API_INIT()`
-   Create device object and set it up for boot time initialization.
-   This also takes a pointer to driver API struct for link time
-   pointer assignment.
+:c:func:`DEVICE_DEFINE()`
+   Create device object and related data structures including setting it
+   up for boot-time initialization.
 
 :c:func:`DEVICE_NAME_GET()`
-   Expands to the full name of a global device object.
+   Converts a device identifier to the global identifier for a device
+   object.
 
 :c:func:`DEVICE_GET()`
    Obtain a pointer to a device object by name.
 
 :c:func:`DEVICE_DECLARE()`
-   Declare a device object.
+   Declare a device object.  Use this when you need a forward reference
+   to a device that has not yet been defined.
 
 .. _device_struct:
 
@@ -97,28 +95,22 @@ split into read-only and runtime-mutable parts. At a high level we have:
 .. code-block:: C
 
   struct device {
-        struct device_config *config;
-        void *driver_api;
-        void *driver_data;
-  };
-
-  struct device_config {
-	char    *name;
-	int (*init)(struct device *device);
-	const void *config_info;
-    [...]
+	const char *name;
+	const void *config;
+        const void *api;
+        void * const data;
   };
 
 The ``config`` member is for read-only configuration data set at build time. For
 example, base memory mapped IO addresses, IRQ line numbers, or other fixed
-physical characteristics of the device. This is the ``config_info`` structure
-passed to the ``DEVICE_*INIT()`` macros.
+physical characteristics of the device. This is the ``config`` pointer
+passed to ``DEVICE_DEFINE()`` and related macros.
 
-The ``driver_data`` struct is kept in RAM, and is used by the driver for
+The ``data`` struct is kept in RAM, and is used by the driver for
 per-instance runtime housekeeping. For example, it may contain reference counts,
 semaphores, scratch buffers, etc.
 
-The ``driver_api`` struct maps generic subsystem APIs to the device-specific
+The ``api`` struct maps generic subsystem APIs to the device-specific
 implementations in the driver. It is typically read-only and populated at
 build time. The next section describes this in more detail.
 
@@ -134,28 +126,28 @@ A subsystem API definition typically looks like this:
 
 .. code-block:: C
 
-  typedef int (*subsystem_do_this_t)(struct device *device, int foo, int bar);
-  typedef void (*subsystem_do_that_t)(struct device *device, void *baz);
+  typedef int (*subsystem_do_this_t)(const struct device *dev, int foo, int bar);
+  typedef void (*subsystem_do_that_t)(const struct device *dev, void *baz);
 
   struct subsystem_api {
         subsystem_do_this_t do_this;
         subsystem_do_that_t do_that;
   };
 
-  static inline int subsystem_do_this(struct device *device, int foo, int bar)
+  static inline int subsystem_do_this(const struct device *dev, int foo, int bar)
   {
         struct subsystem_api *api;
 
-        api = (struct subsystem_api *)device->driver_api;
-        return api->do_this(device, foo, bar);
+        api = (struct subsystem_api *)dev->api;
+        return api->do_this(dev, foo, bar);
   }
 
-  static inline void subsystem_do_that(struct device *device, void *baz)
+  static inline void subsystem_do_that(const struct device *dev, void *baz)
   {
         struct subsystem_api *api;
 
-        api = (struct subsystem_api *)device->driver_api;
-        api->do_that(device, foo, bar);
+        api = (struct subsystem_api *)dev->api;
+        api->do_that(dev, foo, bar);
   }
 
 A driver implementing a particular subsystem will define the real implementation
@@ -163,12 +155,12 @@ of these APIs, and populate an instance of subsystem_api structure:
 
 .. code-block:: C
 
-  static int my_driver_do_this(struct device *device, int foo, int bar)
+  static int my_driver_do_this(const struct device *dev, int foo, int bar)
   {
         ...
   }
 
-  static void my_driver_do_that(struct device *device, void *baz)
+  static void my_driver_do_that(const struct device *dev, void *baz)
   {
         ...
   }
@@ -179,12 +171,11 @@ of these APIs, and populate an instance of subsystem_api structure:
   };
 
 The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
-``DEVICE_AND_API_INIT()``, or manually assign it to ``device->driver_api``
-in the driver init function.
+``DEVICE_DEFINE()``.
 
 .. note::
 
-        Since pointers to the API functions are referenced in the ``driver_api``
+        Since pointers to the API functions are referenced in the ``api``
         struct, they will always be included in the binary even if unused;
         ``gc-sections`` linker option will always see at least one reference to
         them. Providing for link-time size optimizations with driver APIs in
@@ -205,52 +196,72 @@ A device-specific API definition typically looks like this:
 
    #include <drivers/subsystem.h>
 
-   typedef int (*specific_do_this_t)(struct device *device, int foo);
+   /* When extensions need not be invoked from user mode threads */
+   int specific_do_that(const struct device *dev, int foo);
 
-   struct specific_api {
-     subsystem_driver_api subsystem_api;    /* this must be first */
-     specific_do_this_t do_this;
-   };
+   /* When extensions must be invokable from user mode threads */
+   __syscall int specific_from_user(const struct device *dev, int bar);
 
-   static inline int specific_do_this(struct device *device, int foo)
-   {
-     struct specific_api *api = (struct specific_api*)device->driver_api;
-
-     return api->do_this(device, foo);
-   }
+   /* Only needed when extensions include syscalls */
+   #include <syscalls/specific.h>
 
 A driver implementing extensions to the subsystem will define the real
 implementation of both the subsystem API and the specific APIs:
 
 .. code-block:: C
 
-   static int generic_do_whatever(struct device *device, void *arg)
+   static int generic_do_this(const struct device *dev, void *arg)
    {
       ...
    }
 
-   static int specific_do_this(struct device *device, int foo)
-   {
+   static struct generic_api api {
       ...
-   }
-
-   static const struct specific_api driver_api = {
-     .subsystem_api = {
-       .do_whatever = generic_do_whatever,
-     },
-     .do_this = specific_do_this,
+      .do_this = generic_do_this,
+      ...
    };
 
+   /* supervisor-only API is globally visible */
+   int specific_do_that(const struct device *dev, int foo)
+   {
+      ...
+   }
+
+   /* syscall API passes through a translation */
+   int z_impl_specific_from_user(const struct device *dev, int bar)
+   {
+      ...
+   }
+
+   #ifdef CONFIG_USERSPACE
+
+   #include <syscall_handler.h>
+
+   int z_vrfy_specific_from_user(const struct device *dev, int bar)
+   {
+       Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_GENERIC, &api));
+       return z_impl_specific_do_that(dev, bar)
+   }
+
+   #include <syscalls/specific_from_user_mrsh.c>
+
+   #endif /* CONFIG_USERSPACE */
+
 Applications use the device through both the subsystem and specific
-APIs.  The subsystem APIs will directly access the subsystem part of the
-specific API structure.
+APIs.
+
+.. note::
+   Public API for device-specific extensions should be prefixed with the
+   compatible for the device to which it applies.  For example, if
+   adding special functions to support the Maxim DS3231 the identifier
+   fragment ``specific`` in the examples above would be ``maxim_ds3231``.
 
 Single Driver, Multiple Instances
 *********************************
 
 Some drivers may be instantiated multiple times in a given system. For example
 there can be multiple GPIO banks, or multiple UARTS. Each instance of the driver
-will have a different ``config_info`` struct and ``driver_data`` struct.
+will have a different ``config`` struct and ``data`` struct.
 
 Configuring interrupts for multiple drivers instances is a special case. If each
 instance needs to configure a different interrupt line, this can be accomplished
@@ -262,10 +273,10 @@ with a different interrupt line. In ``drivers/subsystem/subsystem_my_driver.h``:
 
 .. code-block:: C
 
-  typedef void (*my_driver_config_irq_t)(struct device *device);
+  typedef void (*my_driver_config_irq_t)(const struct device *dev);
 
   struct my_driver_config {
-        u32_t base_addr;
+        DEVICE_MMIO_ROM;
         my_driver_config_irq_t config_func;
   };
 
@@ -273,20 +284,22 @@ In the implementation of the common init function:
 
 .. code-block:: C
 
-  void my_driver_isr(struct device *device)
+  void my_driver_isr(const struct device *dev)
   {
         /* Handle interrupt */
         ...
   }
 
-  int my_driver_init(struct device *device)
+  int my_driver_init(const struct device *dev)
   {
-        const struct my_driver_config *config = device->config->config_info;
+        const struct my_driver_config *config = dev->config;
+
+        DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
         /* Do other initialization stuff */
         ...
 
-        config->config_func(device);
+        config->config_func(dev);
 
         return 0;
   }
@@ -306,15 +319,15 @@ Then when the particular instance is declared:
   }
 
   const static struct my_driver_config my_driver_config_0 = {
-        .base_addr = MY_DRIVER_0_BASE_ADDR,
+        DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
         .config_func = my_driver_config_irq_0
   }
 
-  static struct my_driver_data_0;
+  static struct my_data_0;
 
-  DEVICE_AND_API_INIT(my_driver_0, MY_DRIVER_0_NAME, my_driver_init,
-                      &my_driver_data_0, &my_driver_config_0, POST_KERNEL,
-                      MY_DRIVER_0_PRIORITY, &my_driver_api_funcs);
+  DEVICE_DEFINE(my_driver_0, MY_DRIVER_0_NAME, my_driver_init,
+                device_pm_control_nop, &my_data_0, &my_driver_config_0,
+                POST_KERNEL, MY_DRIVER_0_PRIORITY, &my_api_funcs);
 
   #endif /* CONFIG_MY_DRIVER_0 */
 
@@ -324,10 +337,11 @@ the IRQ handler argument and the definition of the device itself.
 Initialization Levels
 *********************
 
-Drivers may depend on other drivers being initialized first, or
-require the use of kernel services. The DEVICE_INIT() APIs allow the user to
-specify at what time during the boot sequence the init function will be
-executed. Any driver will specify one of four initialization levels:
+Drivers may depend on other drivers being initialized first, or require
+the use of kernel services. :c:func:`DEVICE_DEFINE()` and related APIs
+allow the user to specify at what time during the boot sequence the init
+function will be executed. Any driver will specify one of four
+initialization levels:
 
 ``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
@@ -362,25 +376,28 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5``).
 
 Drivers and other system utilities can determine whether startup is
-still in pre-kernel states by using the :cpp:func:`k_is_pre_kernel()`
+still in pre-kernel states by using the :c:func:`k_is_pre_kernel`
 function.
 
 System Drivers
 **************
 
 In some cases you may just need to run a function at boot. Special ``SYS_*``
-macros exist that map to ``DEVICE_*INIT()`` calls.
+macros exist that map to ``DEVICE_DEFINE()`` calls.
 For ``SYS_INIT()`` there are no config or runtime data structures and there
 isn't a way
 to later get a device pointer by name. The same policies for initialization
 level and priority apply.
 
 For ``SYS_DEVICE_DEFINE()`` you can obtain pointers by name, see
-:ref:`power management <power_management>` section.
+:ref:`power management <power_management_api>` section.
 
 :c:func:`SYS_INIT()`
+   Run an initialization function at boot at specified priority.
 
 :c:func:`SYS_DEVICE_DEFINE()`
+   Like :c:func:`DEVICE_DEFINE` without an API table and constructing
+   the device name from the init function name.
 
 Error handling
 **************
@@ -397,6 +414,180 @@ check, 0 should be returned on success and a POSIX :file:`errno.h` code
 returned on failure.  See
 https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions#return-codes
 for details about this.
+
+Memory Mapping
+**************
+
+On some systems, the linear address of peripheral memory-mapped I/O (MMIO)
+regions cannot be known at build time:
+
+- The I/O ranges must be probed at runtime from the bus, such as with
+  PCI express
+- A memory management unit (MMU) is active, and the physical address of
+  the MMIO range must be mapped into the page tables at some virtual
+  memory location determined by the kernel.
+
+These systems must maintain storage for the MMIO range within RAM and
+establish the mapping within the driver's init function. Other systems
+do not care about this and can use MMIO physical addresses directly from
+DTS and do not need any RAM-based storage for it.
+
+For drivers that may need to deal with this situation, a set of
+APIs under the DEVICE_MMIO scope are defined, along with a mapping function
+:c:func:`device_map`.
+
+Device Model Drivers with one MMIO region
+=========================================
+
+The simplest case is for drivers which need to maintain one MMIO region.
+These drivers will need to use the ``DEVICE_MMIO_ROM`` and
+``DEVICE_MMIO_RAM`` macros in the definitions for their ``config_info``
+and ``driver_data`` structures, with initialization of the ``config_info``
+from DTS using ``DEVICE_MMIO_ROM_INIT``. A call to ``DEVICE_MMIO_MAP()``
+is made within the init function:
+
+.. code-block:: C
+
+   struct my_driver_config {
+      DEVICE_MMIO_ROM; /* Must be first */
+      ...
+   }
+
+   struct my_driver_dev_data {
+      DEVICE_MMIO_RAM; /* Must be first */
+      ...
+   }
+
+   const static struct my_driver_config my_driver_config_0 = {
+      DEVICE_MMIO_ROM_INIT(DT_DRV_INST(...)),
+      ...
+   }
+
+   int my_driver_init(const struct device *dev)
+   {
+      ...
+      DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+      ...
+   }
+
+   int my_driver_some_function(const struct device *dev)
+   {
+      ...
+      /* Write some data to the MMIO region */
+      sys_write32(DEVICE_MMIO_GET(dev), 0xDEADBEEF);
+      ...
+   }
+
+The particular expansion of these macros depends on configuration. On
+a device with no MMU or PCI-e, ``DEVICE_MMIO_MAP`` and
+``DEVICE_MMIO_RAM`` expand to nothing.
+
+Device Model Drivers with multiple MMIO regions
+===============================================
+
+Some drivers may have multiple MMIO regions. In addition, some drivers
+may already be implementing a form of inheritance whice requires some other
+data to be placed first in the  ``config_info`` and ``driver_data``
+structures.
+
+This can be managed with the ``DEVICE_MMIO_NAMED`` variant macros. These
+require that ``DEV_CFG()`` and ``DEV_DATA()`` macros be defined to obtain
+a properly typed pointer to the driver's config_info or dev_data structs.
+For example:
+
+.. code-block:: C
+
+   struct my_driver_config {
+      ...
+    	DEVICE_MMIO_NAMED_ROM(courge);
+   	DEVICE_MMIO_NAMED_ROM(grault);
+      ...
+   }
+
+   struct my_driver_dev_data {
+  	   ...
+   	DEVICE_MMIO_NAMED_RAM(courge);
+   	DEVICE_MMIO_NAMED_RAM(grault);
+   	...
+   }
+
+   #define DEV_CFG(_dev) \
+      ((const struct my_driver_config *)((_dev)->config))
+
+   #define DEV_DATA(_dev) \
+      ((struct my_driver_dev_data *)((_dev)->data))
+
+   const static struct my_driver_config my_driver_config_0 = {
+      ...
+      DEVICE_MMIO_NAMED_ROM_INIT(courge, DT_DRV_INST(...)),
+      DEVICE_MMIO_NAMED_ROM_INIT(grault, DT_DRV_INST(...)),
+      ...
+   }
+
+   int my_driver_init(const struct device *dev)
+   {
+      ...
+      DEVICE_MMIO_NAMED_MAP(dev, courge, K_MEM_CACHE_NONE);
+      DEVICE_MMIO_NAMED_MAP(dev, grault, K_MEM_CACHE_NONE);
+      ...
+   }
+
+   int my_driver_some_function(const struct device *dev)
+   {
+      ...
+      /* Write some data to the MMIO regions */
+      sys_write32(DEVICE_MMIO_GET(dev, grault), 0xDEADBEEF);
+      sys_write32(DEVICE_MMIO_GET(dev, courge), 0xF0CCAC1A);
+      ...
+   }
+
+Drivers that do not use Zephyr Device Model
+===========================================
+
+Some drivers or driver-like code may not user Zephyr's device model,
+and alternative storage must be arranged for the MMIO data. An
+example of this are timer drivers, or interrupt controller code.
+
+This can be managed with the ``DEVICE_MMIO_TOPLEVEL`` set of macros,
+for example:
+
+.. code-block:: C
+
+   DEVICE_MMIO_TOPLEVEL_STATIC(my_regs, DT_DRV_INST(..));
+
+   void some_init_code(...)
+   {
+      ...
+      DEVICE_MMIO_TOPLEVEL_MAP(my_regs, K_MEM_CACHE_NONE);
+      ...
+   }
+
+   void some_function(...)
+      ...
+      sys_write32(DEVICE_MMIO_TOPLEVEL_GET(my_regs), 0xDEADBEEF);
+      ...
+   }
+
+Drivers that do not use DTS
+===========================
+
+Some drivers may not obtain the MMIO physical address from DTS, such as
+is the case with PCI-E. In this case the :c:func:`device_map` function
+may be used directly:
+
+.. code-block:: C
+
+   void some_init_code(...)
+   {
+      ...
+      struct pcie_mbar mbar;
+      bool bar_found = pcie_get_mbar(bdf, index, &mbar);
+
+      device_map(DEVICE_MMIO_RAM_PTR(dev), mbar.phys_addr, mbar.size, K_MEM_CACHE_NONE);
+      ...
+   }
+
+For these cases, DEVICE_MMIO_ROM directives may be omitted.
 
 API Reference
 **************

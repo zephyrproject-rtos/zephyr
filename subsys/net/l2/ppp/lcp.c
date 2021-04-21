@@ -21,7 +21,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include "ppp_internal.h"
 
 static enum net_verdict lcp_handle_ext(struct ppp_fsm *fsm,
-				       enum ppp_packet_type code, u8_t id,
+				       enum ppp_packet_type code, uint8_t id,
 				       struct net_pkt *pkt)
 {
 	enum net_verdict verdict = NET_DROP;
@@ -57,146 +57,87 @@ static enum net_verdict lcp_handle(struct ppp_context *ctx,
 	return ppp_fsm_input(&ctx->lcp.fsm, PPP_LCP, pkt);
 }
 
-static bool append_to_buf(struct net_buf *buf, u8_t *data, u8_t data_len)
+struct lcp_option_data {
+	bool auth_proto_present;
+	uint16_t auth_proto;
+};
+
+static const enum ppp_protocol_type lcp_supported_auth_protos[] = {
+#if defined(CONFIG_NET_L2_PPP_PAP)
+	PPP_PAP,
+#endif
+};
+
+static int lcp_auth_proto_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
+				void *user_data)
 {
-	if (data_len > net_buf_tailroom(buf)) {
-		return false;
+	struct lcp_option_data *data = user_data;
+	int ret;
+	int i;
+
+	ret = net_pkt_read_be16(pkt, &data->auth_proto);
+	if (ret < 0) {
+		/* Should not happen, is the pkt corrupt? */
+		return -EMSGSIZE;
 	}
 
-	/* FIXME: use net_pkt api so that we can handle a case where data
-	 * might split to two net_buf's
-	 */
-	net_buf_add_mem(buf, data, data_len);
+	NET_DBG("[LCP] Received auth protocol %x (%s)",
+		(unsigned int) data->auth_proto,
+		ppp_proto2str(data->auth_proto));
 
-	return true;
+	for (i = 0; i < ARRAY_SIZE(lcp_supported_auth_protos); i++) {
+		if (data->auth_proto == lcp_supported_auth_protos[i]) {
+			data->auth_proto_present = true;
+			return 0;
+		}
+	}
+
+	return -EINVAL;
 }
+
+static int lcp_auth_proto_nack(struct ppp_fsm *fsm, struct net_pkt *ret_pkt,
+			       void *user_data)
+{
+	(void)net_pkt_write_u8(ret_pkt, LCP_OPTION_AUTH_PROTO);
+	(void)net_pkt_write_u8(ret_pkt, 4);
+	return net_pkt_write_be16(ret_pkt, PPP_PAP);
+}
+
+static const struct ppp_peer_option_info lcp_peer_options[] = {
+	PPP_PEER_OPTION(LCP_OPTION_AUTH_PROTO, lcp_auth_proto_parse,
+			lcp_auth_proto_nack),
+};
 
 static int lcp_config_info_req(struct ppp_fsm *fsm,
 			       struct net_pkt *pkt,
-			       u16_t length,
-			       struct net_buf **buf)
+			       uint16_t length,
+			       struct net_pkt *ret_pkt)
 {
-	struct ppp_option_pkt options[MAX_LCP_OPTIONS];
-	struct ppp_option_pkt nack_options[MAX_LCP_OPTIONS];
-	struct net_buf *nack = NULL;
-	enum ppp_packet_type code;
-	enum net_verdict verdict;
-	int i, nack_idx = 0;
-	int count_rej = 0, count_nack = 0;
+	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
+					       lcp.fsm);
+	struct lcp_option_data data = {
+		.auth_proto_present = false,
+	};
+	int ret;
 
-	memset(options, 0, sizeof(options));
-	memset(nack_options, 0, sizeof(nack_options));
-
-	verdict = ppp_parse_options(fsm, pkt, length, options,
-				    ARRAY_SIZE(options));
-	if (verdict != NET_OK) {
-		return -EINVAL;
+	ret = ppp_config_info_req(fsm, pkt, length, ret_pkt, PPP_LCP,
+				  lcp_peer_options,
+				  ARRAY_SIZE(lcp_peer_options),
+				  &data);
+	if (ret != PPP_CONFIGURE_ACK) {
+		/* There are some issues with configuration still */
+		return ret;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(options); i++) {
-		if (options[i].type.lcp != LCP_OPTION_RESERVED) {
-			NET_DBG("[%s/%p] %s option %s (%d) len %d",
-				fsm->name, fsm, "Check",
-				ppp_option2str(PPP_LCP, options[i].type.lcp),
-				options[i].type.lcp, options[i].len);
-		}
+	ctx->lcp.peer_options.auth_proto = data.auth_proto;
 
-		switch (options[i].type.lcp) {
-		case LCP_OPTION_RESERVED:
-			continue;
-
-		case LCP_OPTION_MRU:
-			break;
-
-		/* TODO: Check from ctx->lcp.my_options what options to accept
-		 */
-		case LCP_OPTION_ASYNC_CTRL_CHAR_MAP:
-			count_nack++;
-			goto ignore_option;
-
-		case LCP_OPTION_MAGIC_NUMBER:
-			count_nack++;
-			goto ignore_option;
-
-		default:
-			count_rej++;
-		ignore_option:
-			nack_options[nack_idx].type.lcp = options[i].type.lcp;
-			nack_options[nack_idx].len = options[i].len;
-
-			if (options[i].len > 2) {
-				memcpy(&nack_options[nack_idx].value,
-				       &options[i].value,
-				       sizeof(nack_options[nack_idx].value));
-			}
-
-			nack_idx++;
-			break;
-		}
+	if (data.auth_proto_present) {
+		NET_DBG("Authentication protocol negotiated: %x (%s)",
+			(unsigned int) data.auth_proto,
+			ppp_proto2str(data.auth_proto));
 	}
 
-	if (nack_idx > 0) {
-		struct net_buf *nack_buf;
-
-		if (count_rej > 0) {
-			code = PPP_CONFIGURE_REJ;
-		} else {
-			code = PPP_CONFIGURE_NACK;
-		}
-
-		/* Create net_buf containing options that are not accepted */
-		for (i = 0; i < MIN(nack_idx, ARRAY_SIZE(nack_options)); i++) {
-			bool added;
-
-			nack_buf = ppp_get_net_buf(nack, nack_options[i].len);
-			if (!nack_buf) {
-				goto out_of_mem;
-			}
-
-			if (!nack) {
-				nack = nack_buf;
-			}
-
-			added = append_to_buf(nack_buf,
-					      &nack_options[i].type.lcp, 1);
-			if (!added) {
-				goto out_of_mem;
-			}
-
-			added = append_to_buf(nack_buf, &nack_options[i].len,
-					      1);
-			if (!added) {
-				goto out_of_mem;
-			}
-
-			/* If there is some data, copy it to result buf */
-			if (nack_options[i].value.pos) {
-				added = append_to_buf(nack_buf,
-						nack_options[i].value.pos,
-						nack_options[i].len - 1 - 1);
-				if (!added) {
-					goto out_of_mem;
-				}
-			}
-
-			continue;
-
-		out_of_mem:
-			if (nack) {
-				net_buf_unref(nack);
-			}
-
-			return -ENOMEM;
-		}
-	} else {
-		code = PPP_CONFIGURE_ACK;
-	}
-
-	if (nack) {
-		*buf = nack;
-	}
-
-	return code;
+	return PPP_CONFIGURE_ACK;
 }
 
 static void lcp_lower_down(struct ppp_context *ctx)
@@ -214,13 +155,11 @@ static void lcp_open(struct ppp_context *ctx)
 	ppp_fsm_open(&ctx->lcp.fsm);
 }
 
-static void lcp_close(struct ppp_context *ctx, const u8_t *reason)
+static void lcp_close(struct ppp_context *ctx, const uint8_t *reason)
 {
 	if (ctx->phase != PPP_DEAD) {
 		ppp_change_phase(ctx, PPP_TERMINATE);
 	}
-
-	ppp_change_state(&ctx->lcp.fsm, PPP_STOPPED);
 
 	ppp_fsm_close(&ctx->lcp.fsm, reason);
 }
@@ -229,6 +168,9 @@ static void lcp_down(struct ppp_fsm *fsm)
 {
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       lcp.fsm);
+
+	memset(&ctx->lcp.peer_options.auth_proto, 0,
+	       sizeof(ctx->lcp.peer_options.auth_proto));
 
 	ppp_link_down(ctx);
 
@@ -261,6 +203,95 @@ static void lcp_finished(struct ppp_fsm *fsm)
 	ppp_link_terminated(ctx);
 }
 
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+
+#define MRU_OPTION_LEN 4
+
+static int lcp_add_mru(struct ppp_context *ctx, struct net_pkt *pkt)
+{
+	net_pkt_write_u8(pkt, MRU_OPTION_LEN);
+	return net_pkt_write_be16(pkt, ctx->lcp.my_options.mru);
+}
+
+static int lcp_ack_mru(struct ppp_context *ctx, struct net_pkt *pkt,
+		       uint8_t oplen)
+{
+	int ret;
+	uint16_t mru;
+
+	/* Handle ACK : */
+	if (oplen != sizeof(mru)) {
+		return -EINVAL;
+	}
+
+	ret = net_pkt_read(pkt, &mru, sizeof(mru));
+	if (ret) {
+		return ret;
+	}
+	if (mru != ctx->lcp.my_options.mru) {
+		/* Didn't acked our MRU: */
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int lcp_nak_mru(struct ppp_context *ctx, struct net_pkt *pkt,
+		       uint8_t oplen)
+{
+	int ret;
+	uint16_t mru;
+
+	/* Handle NAK: accept only smaller/equal than ours */
+	if (oplen != sizeof(mru)) {
+		return -EINVAL;
+	}
+
+	ret = net_pkt_read(pkt, &mru, sizeof(mru));
+	if (ret) {
+		return ret;
+	}
+
+	if (mru <= ctx->lcp.my_options.mru) {
+		/* OK, reset the MRU also in our side: */
+		ctx->lcp.my_options.mru = mru;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static const struct ppp_my_option_info lcp_my_options[] = {
+	PPP_MY_OPTION(LCP_OPTION_MRU, lcp_add_mru, lcp_ack_mru, lcp_nak_mru),
+};
+BUILD_ASSERT(ARRAY_SIZE(lcp_my_options) == LCP_NUM_MY_OPTIONS);
+
+static struct net_pkt *lcp_config_info_add(struct ppp_fsm *fsm)
+{
+	return ppp_my_options_add(fsm, MRU_OPTION_LEN);
+}
+
+static int lcp_config_info_nack(struct ppp_fsm *fsm, struct net_pkt *pkt,
+				uint16_t length, bool rejected)
+{
+	struct ppp_context *ctx =
+		CONTAINER_OF(fsm, struct ppp_context, lcp.fsm);
+	int ret;
+
+	ret = ppp_my_options_parse_conf_nak(fsm, pkt, length);
+	if (ret) {
+		return ret;
+	}
+
+	if (!ctx->lcp.my_options.mru) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif
+
 static void lcp_init(struct ppp_context *ctx)
 {
 	NET_DBG("proto %s (0x%04x) fsm %p", ppp_proto2str(PPP_LCP), PPP_LCP,
@@ -272,19 +303,26 @@ static void lcp_init(struct ppp_context *ctx)
 
 	ppp_fsm_name_set(&ctx->lcp.fsm, ppp_proto2str(PPP_LCP));
 
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+	ctx->lcp.my_options.mru = PPP_MRU;
+	ctx->lcp.fsm.my_options.info = lcp_my_options;
+	ctx->lcp.fsm.my_options.data = ctx->lcp.my_options_data;
+	ctx->lcp.fsm.my_options.count = ARRAY_SIZE(lcp_my_options);
+
+	ctx->lcp.fsm.cb.config_info_add = lcp_config_info_add;
+	ctx->lcp.fsm.cb.config_info_req = lcp_config_info_req;
+	ctx->lcp.fsm.cb.config_info_nack = lcp_config_info_nack;
+	ctx->lcp.fsm.cb.config_info_rej = ppp_my_options_parse_conf_rej;
+#endif
+
 	ctx->lcp.fsm.cb.up = lcp_up;
 	ctx->lcp.fsm.cb.down = lcp_down;
 	ctx->lcp.fsm.cb.starting = lcp_starting;
 	ctx->lcp.fsm.cb.finished = lcp_finished;
+	if (IS_ENABLED(CONFIG_NET_L2_PPP_AUTH_SUPPORT)) {
+		ctx->lcp.fsm.cb.config_info_req = lcp_config_info_req;
+	}
 	ctx->lcp.fsm.cb.proto_extension = lcp_handle_ext;
-	ctx->lcp.fsm.cb.config_info_req = lcp_config_info_req;
-
-	ctx->lcp.my_options.negotiate_proto_compression = false;
-	ctx->lcp.my_options.negotiate_addr_compression = false;
-	ctx->lcp.my_options.negotiate_async_map = false;
-	ctx->lcp.my_options.negotiate_magic = false;
-	ctx->lcp.my_options.negotiate_mru =
-		IS_ENABLED(CONFIG_NET_L2_PPP_OPTION_MRU_NEG) ? true : false;
 }
 
 PPP_PROTOCOL_REGISTER(LCP, PPP_LCP,

@@ -4,18 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_s1000_pinmux
+
 #include <kernel.h>
 #include <drivers/pinmux.h>
 #include <iomux.h>
 
-static volatile u32_t *iomux_ctrl_regs = (volatile u32_t *)DT_PINMUX_BASE_ADDR;
+static volatile uint32_t *iomux_ctrl_regs = (volatile uint32_t *)DT_INST_REG_ADDR(0);
 
-static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
+#define PINMUX_CTRL_REG_COUNT (DT_INST_REG_SIZE(0) / 4)
+
+static int pinmux_set(const struct device *dev, uint32_t pin, uint32_t func)
 {
-	u32_t lsb, msb;
-	u32_t index;
-	u32_t value;
-	u32_t mask;
+	uint32_t lsb, msb;
+	uint32_t index;
+	uint32_t value;
+	uint32_t mask;
 
 	/* retrieve control register index */
 	index = IOMUX_INDEX(pin);
@@ -27,7 +31,7 @@ static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
 	lsb = IOMUX_LSB(pin);
 	msb = IOMUX_MSB(pin);
 
-	if ((index >= DT_PINMUX_CTRL_REG_COUNT) || (msb > 31) || (lsb > msb)) {
+	if ((index >= PINMUX_CTRL_REG_COUNT) || (msb > 31) || (lsb > msb)) {
 		return -EINVAL;
 	}
 
@@ -39,11 +43,11 @@ static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
 	return 0;
 }
 
-static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_get(const struct device *dev, uint32_t pin, uint32_t *func)
 {
-	u32_t lsb, msb;
-	u32_t index;
-	u32_t mask;
+	uint32_t lsb, msb;
+	uint32_t index;
+	uint32_t mask;
 
 	/* retrieve control register index */
 	index = IOMUX_INDEX(pin);
@@ -55,7 +59,7 @@ static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
 	lsb = IOMUX_LSB(pin);
 	msb = IOMUX_MSB(pin);
 
-	if ((index >= DT_PINMUX_CTRL_REG_COUNT) || (msb > 31) || (lsb > msb) ||
+	if ((index >= PINMUX_CTRL_REG_COUNT) || (msb > 31) || (lsb > msb) ||
 			(func == NULL)) {
 		return -EINVAL;
 	}
@@ -67,14 +71,14 @@ static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
 	return 0;
 }
 
-static int pinmux_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_pullup(const struct device *dev, uint32_t pin, uint8_t func)
 {
-	return -ENOSYS;
+	return -ENOTSUP;
 }
 
-static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_input(const struct device *dev, uint32_t pin, uint8_t func)
 {
-	return -ENOSYS;
+	return -ENOTSUP;
 }
 
 static struct pinmux_driver_api apis = {
@@ -84,11 +88,11 @@ static struct pinmux_driver_api apis = {
 	.input = pinmux_input
 };
 
-static int pinmux_init(struct device *device)
+static int pinmux_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 	return 0;
 }
 
-DEVICE_AND_API_INIT(pinmux, CONFIG_PINMUX_NAME, &pinmux_init, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0, &pinmux_init, device_pm_control_nop, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY, &apis);

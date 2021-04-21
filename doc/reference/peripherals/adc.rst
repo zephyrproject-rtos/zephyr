@@ -1,4 +1,4 @@
-.. _adc_interface:
+.. _adc_api:
 
 ADC
 ###

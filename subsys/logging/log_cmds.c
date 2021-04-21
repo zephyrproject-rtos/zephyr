@@ -92,11 +92,9 @@ static int log_status(const struct shell *shell,
 		      const struct log_backend *backend,
 		      size_t argc, char **argv)
 {
-	u32_t modules_cnt = log_sources_count();
-	u32_t dynamic_lvl;
-	u32_t compiled_lvl;
-	u32_t i;
-
+	uint32_t modules_cnt = log_sources_count();
+	uint32_t dynamic_lvl;
+	uint32_t compiled_lvl;
 
 	if (!log_backend_is_active(backend)) {
 		shell_warn(shell, "Logs are halted!");
@@ -107,7 +105,7 @@ static int log_status(const struct shell *shell,
 	shell_fprintf(shell, SHELL_NORMAL,
 	      "----------------------------------------------------------\r\n");
 
-	for (i = 0U; i < modules_cnt; i++) {
+	for (int16_t i = 0U; i < modules_cnt; i++) {
 		dynamic_lvl = log_filter_get(backend, CONFIG_LOG_DOMAIN_ID,
 					     i, true);
 		compiled_lvl = log_filter_get(backend, CONFIG_LOG_DOMAIN_ID,
@@ -142,9 +140,9 @@ static int cmd_log_backend_status(const struct shell *shell,
 
 static int module_id_get(const char *name)
 {
-	u32_t modules_cnt = log_sources_count();
+	uint32_t modules_cnt = log_sources_count();
 	const char *tmp_name;
-	u32_t i;
+	uint32_t i;
 
 	for (i = 0U; i < modules_cnt; i++) {
 		tmp_name = log_source_name_get(CONFIG_LOG_DOMAIN_ID, i);
@@ -158,7 +156,7 @@ static int module_id_get(const char *name)
 
 static void filters_set(const struct shell *shell,
 			const struct log_backend *backend,
-			size_t argc, char **argv, u32_t level)
+			size_t argc, char **argv, uint32_t level)
 {
 	int i;
 	int id;
@@ -172,7 +170,7 @@ static void filters_set(const struct shell *shell,
 	for (i = 0; i < cnt; i++) {
 		id = all ? i : module_id_get(argv[i]);
 		if (id >= 0) {
-			u32_t set_lvl = log_filter_set(backend,
+			uint32_t set_lvl = log_filter_set(backend,
 						       CONFIG_LOG_DOMAIN_ID,
 						       id, level);
 
@@ -378,10 +376,10 @@ static int cmd_log_strdup_utilization(const struct shell *shell,
 	#define CONFIG_LOG_STRDUP_MAX_STRING 0
 	#endif
 
-	u32_t buf_cnt = log_get_strdup_pool_utilization();
-	u32_t buf_size = log_get_strdup_longest_string();
-	u32_t percent = CONFIG_LOG_STRDUP_BUF_COUNT ?
-			100 * buf_cnt / CONFIG_LOG_STRDUP_BUF_COUNT : 0;
+	uint32_t buf_cnt = log_get_strdup_pool_utilization();
+	uint32_t buf_size = log_get_strdup_longest_string();
+	uint32_t percent = CONFIG_LOG_STRDUP_BUF_COUNT ?
+			buf_cnt * 100U / CONFIG_LOG_STRDUP_BUF_COUNT : 0U;
 
 	shell_print(shell,
 		"Maximal utilization of the buffer pool: %d / %d (%d %%).",
@@ -441,7 +439,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_stat,
 	SHELL_CMD_ARG(disable, &dsub_module_name,
 	"'log disable <module_0> .. <module_n>' disables logs in specified "
 	"modules (all if no modules specified).",
-	cmd_log_self_disable, 2, 255),
+	cmd_log_self_disable, 1, 255),
 	SHELL_CMD_ARG(enable, &dsub_severity_lvl,
 	"'log enable <level> <module_0> ...  <module_n>' enables logs up to"
 	" given level in specified modules (all if no modules specified).",

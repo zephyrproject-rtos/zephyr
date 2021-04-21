@@ -17,6 +17,7 @@ void test_main(void)
 		ztest_unit_test(test_fs_fd_leak),
 		ztest_unit_test(test_fs_unlink),
 		ztest_unit_test(test_fs_mkdir),
-		ztest_unit_test(test_fs_readdir));
+		ztest_unit_test(test_fs_readdir),
+		ztest_unit_test(test_fs_open_flags));
 	ztest_run_test_suite(posix_fs_test);
 }

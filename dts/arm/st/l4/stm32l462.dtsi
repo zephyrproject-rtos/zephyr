@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2020 Giancarlo Stasi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l4/stm32l452.dtsi>

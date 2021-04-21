@@ -7,8 +7,8 @@
 #include <zephyr.h>
 #include <sys/printk.h>
 
-u32_t var_file3_sram_data = 10U;
-u32_t var_file3_sram2_bss;
+uint32_t var_file3_sram_data = 10U;
+uint32_t var_file3_sram2_bss;
 
 void function_in_split_multiple(void)
 {

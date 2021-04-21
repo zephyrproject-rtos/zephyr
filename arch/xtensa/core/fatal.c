@@ -7,11 +7,15 @@
 #include <arch/cpu.h>
 #include <kernel_structs.h>
 #include <inttypes.h>
-#include <kernel_arch_data.h>
 #include <xtensa/config/specreg.h>
 #include <xtensa-asm2-context.h>
+#if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
+#if XCHAL_HAVE_WINDOWED
+#include <xtensa_backtrace.h>
+#endif
+#endif
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef XT_SIMULATOR
 #include <xtensa/simcall.h>
@@ -92,20 +96,12 @@ void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	if (esf) {
 		z_xtensa_dump_stack(esf);
 	}
-
+#if defined(CONFIG_XTENSA_ENABLE_BACKTRACE)
+#if XCHAL_HAVE_WINDOWED
+	z_xtensa_backtrace_print(100, (int *)esf);
+#endif
+#endif
 	z_fatal_error(reason, esf);
-}
-
-XTENSA_ERR_NORET void FatalErrorHandler(void)
-{
-	z_xtensa_fatal_error(K_ERR_CPU_EXCEPTION, NULL);
-}
-
-XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
-{
-	LOG_ERR("INTENABLE = 0x%x INTERRUPT = 0x%x (%x)",
-		get_sreg(INTENABLE), (1 << intNo), intNo);
-	z_xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 void exit(int return_code)

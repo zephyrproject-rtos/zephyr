@@ -114,9 +114,9 @@ enum { kSerialFlash_1Pad = 1,
 
 
 struct flexspi_lut_seq_t {
-	u8_t seqNum;
-	u8_t seqId;
-	u16_t reserved;
+	uint8_t seqNum;
+	uint8_t seqId;
+	uint16_t reserved;
 };
 
 
@@ -129,54 +129,54 @@ enum { kDeviceConfigCmdType_Generic,
 
 
 struct flexspi_mem_config_t {
-	u32_t tag;
-	u32_t version;
-	u32_t reserved0;
-	u8_t readSampleClkSrc;
-	u8_t csHoldTime;
-	u8_t csSetupTime;
-	u8_t columnAddressWidth;
+	uint32_t tag;
+	uint32_t version;
+	uint32_t reserved0;
+	uint8_t readSampleClkSrc;
+	uint8_t csHoldTime;
+	uint8_t csSetupTime;
+	uint8_t columnAddressWidth;
 
-	u8_t deviceModeCfgEnable;
-	u8_t deviceModeType;
+	uint8_t deviceModeCfgEnable;
+	uint8_t deviceModeType;
 
-	u16_t waitTimeCfgCommands;
+	uint16_t waitTimeCfgCommands;
 
 	struct flexspi_lut_seq_t deviceModeSeq;
 
-	u32_t deviceModeArg;
-	u8_t configCmdEnable;
-	u8_t configModeType[3];
+	uint32_t deviceModeArg;
+	uint8_t configCmdEnable;
+	uint8_t configModeType[3];
 	struct flexspi_lut_seq_t configCmdSeqs[3];
-	u32_t reserved1;
-	u32_t configCmdArgs[3];
-	u32_t reserved2;
-	u32_t controllerMiscOption;
+	uint32_t reserved1;
+	uint32_t configCmdArgs[3];
+	uint32_t reserved2;
+	uint32_t controllerMiscOption;
 
-	u8_t deviceType;
-	u8_t sflashPadType;
-	u8_t serialClkFreq;
+	uint8_t deviceType;
+	uint8_t sflashPadType;
+	uint8_t serialClkFreq;
 
-	u8_t lutCustomSeqEnable;
+	uint8_t lutCustomSeqEnable;
 
-	u32_t reserved3[2];
-	u32_t sflashA1Size;
-	u32_t sflashA2Size;
-	u32_t sflashB1Size;
-	u32_t sflashB2Size;
-	u32_t csPadSettingOverride;
-	u32_t sclkPadSettingOverride;
-	u32_t dataPadSettingOverride;
-	u32_t dqsPadSettingOverride;
-	u32_t timeoutInMs;
-	u32_t commandInterval;
-	u16_t dataValidTime[2];
-	u16_t busyOffset;
-	u16_t busyBitPolarity;
+	uint32_t reserved3[2];
+	uint32_t sflashA1Size;
+	uint32_t sflashA2Size;
+	uint32_t sflashB1Size;
+	uint32_t sflashB2Size;
+	uint32_t csPadSettingOverride;
+	uint32_t sclkPadSettingOverride;
+	uint32_t dataPadSettingOverride;
+	uint32_t dqsPadSettingOverride;
+	uint32_t timeoutInMs;
+	uint32_t commandInterval;
+	uint16_t dataValidTime[2];
+	uint16_t busyOffset;
+	uint16_t busyBitPolarity;
 
-	u32_t lookupTable[64];
+	uint32_t lookupTable[64];
 	struct flexspi_lut_seq_t lutCustomSeq[12];
-	u32_t reserved4[4];
+	uint32_t reserved4[4];
 };
 
 
@@ -217,17 +217,17 @@ struct flexspi_mem_config_t {
 
 struct flexspi_nor_config_t {
 	struct flexspi_mem_config_t memConfig;
-	u32_t pageSize;
-	u32_t sectorSize;
-	u8_t ipcmdSerialClkFreq;
-	u8_t isUniformBlockSize;
-	u8_t reserved0[2];
-	u8_t serialNorType;
-	u8_t needExitNoCmdMode;
-	u8_t halfClkForNonReadCmd;
-	u8_t needRestoreNoCmdMode;
-	u32_t blockSize;
-	u32_t reserve2[11];
+	uint32_t pageSize;
+	uint32_t sectorSize;
+	uint8_t ipcmdSerialClkFreq;
+	uint8_t isUniformBlockSize;
+	uint8_t reserved0[2];
+	uint8_t serialNorType;
+	uint8_t needExitNoCmdMode;
+	uint8_t halfClkForNonReadCmd;
+	uint8_t needRestoreNoCmdMode;
+	uint32_t blockSize;
+	uint32_t reserve2[11];
 };
 
 #ifdef __cplusplus

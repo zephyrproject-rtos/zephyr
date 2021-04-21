@@ -6,13 +6,13 @@ Kernel Objects
 A kernel object can be one of three classes of data:
 
 * A core kernel object, such as a semaphore, thread, pipe, etc.
-* A thread stack, which is an array of :c:type:`struct _k_thread_stack_element`
+* A thread stack, which is an array of :c:struct:`z_thread_stack_element`
   and declared with :c:macro:`K_THREAD_STACK_DEFINE()`
-* A device driver instance (struct device) that belongs to one of a defined
+* A device driver instance (const struct device) that belongs to one of a defined
   set of subsystems
 
 The set of known kernel objects and driver subsystems is defined in
-include/kernel.h as :cpp:enum:`k_objects`.
+include/kernel.h as :c:enum:`k_objects`.
 
 Kernel objects are completely opaque to user threads. User threads work
 with addresses to kernel objects when making API calls, but may never
@@ -76,20 +76,20 @@ Dynamic Objects
 
 Kernel objects may also be allocated at runtime if
 :option:`CONFIG_DYNAMIC_OBJECTS` is enabled. In this case, the
-:cpp:func:`k_object_alloc()` API may be used to instantiate an object from
+:c:func:`k_object_alloc` API may be used to instantiate an object from
 the calling thread's resource pool. Such allocations may be freed in two
 ways:
 
-* Supervisor threads may call :cpp:func:`k_object_free()` to force a dynamic
+* Supervisor threads may call :c:func:`k_object_free` to force a dynamic
   object to be released.
 
 * If an object's references drop to zero (which happens when no threads have
   permissions on it) the object will be automatically freed. User threads
   may drop their own permission on an object with
-  :cpp:func:`k_object_release()`, and their permissions are automatically
+  :c:func:`k_object_release`, and their permissions are automatically
   cleared when a thread terminates. Supervisor threads may additionally
   revoke references for another thread using
-  :cpp:func:`k_object_access_revoke()`.
+  :c:func:`k_object_access_revoke`.
 
 Because permissions are also used for reference counting, it is important for
 supervisor threads to acquire permissions on objects they are using even though
@@ -109,14 +109,14 @@ When a system call is made and the kernel is presented with a memory address
 of what may or may not be a valid kernel object, the address can be validated
 with a constant-time lookup in this table.
 
-Drivers are a special case. All drivers are instances of :c:type:`struct
-device`, but it is important to know what subsystem a driver belongs to so that
+Drivers are a special case. All drivers are instances of :c:struct:`device`, but
+it is important to know what subsystem a driver belongs to so that
 incorrect operations, such as calling a UART API on a sensor driver object, can
 be prevented. When a device struct is found, its API pointer is examined to
 determine what subsystem the driver belongs to.
 
 The table itself maps kernel object memory addresses to instances of
-:c:type:`struct _k_object`, which has all the metadata for that object. This
+:c:struct:`z_object`, which has all the metadata for that object. This
 includes:
 
 * A bitfield indicating permissions on that object. All threads have a
@@ -125,12 +125,11 @@ includes:
   of this bitfield is controlled by the :option:`CONFIG_MAX_THREAD_BYTES`
   option and the build system will generate an error if this value is too low.
 * A type field indicating what kind of object this is, which is some
-  instance of :cpp:enum:`k_objects`.
+  instance of :c:enum:`k_objects`.
 * A set of flags for that object. This is currently used to track
   initialization state and whether an object is public or not.
-* An extra data field. This is currently used for thread stack objects
-  to denote how large the stack is, and for thread objects to indicate
-  the thread's index in kernel object permission bitfields.
+* An extra data field. The semantics of this field vary by object type, see
+  the definition of :c:union:`z_object_data`.
 
 Dynamic objects allocated at runtime are tracked in a runtime red/black tree
 which is used in parallel to the gperf table when validating object pointers.
@@ -141,7 +140,7 @@ Supervisor Thread Access Permission
 Supervisor threads can access any kernel object. However, permissions for
 supervisor threads are still tracked for two reasons:
 
-* If a supervisor thread calls :cpp:func:`k_thread_user_mode_enter()`, the
+* If a supervisor thread calls :c:func:`k_thread_user_mode_enter`, the
   thread will then run in user mode with any permissions it had been granted
   (in many cases, by itself) when it was a supervisor thread.
 
@@ -163,17 +162,17 @@ ways to do this.
 
 * A thread that has permission on an object, or is running in supervisor mode,
   may grant permission on that object to another thread via the
-  :c:func:`k_object_access_grant()` API. The convenience function
-  :c:func:`k_thread_access_grant()` may also be used, which accepts a
-  NULL-terminated list of kernel objects and calls
-  :c:func:`k_object_access_grant()` on each of them. The thread being granted
-  permission, or the object whose access is being granted, do not need to be in
-  an initialized state. If the caller is from user mode, the caller must have
-  permissions on both the kernel object and the target thread object.
+  :c:func:`k_object_access_grant` API. The convenience pseudo-function
+  :c:func:`k_thread_access_grant` may also be used, which accepts an arbitrary
+  number of pointers to kernel objects and calls
+  :c:func:`k_object_access_grant` on each of them. The thread being granted
+  permission, or the object whose access is being granted, do not need to be
+  in an initialized state. If the caller is from user mode, the caller must
+  have permissions on both the kernel object and the target thread object.
 
 * Supervisor threads may declare a particular kernel object to be a public
   object, usable by all current and future threads with the
-  :c:func:`k_object_access_all_grant()` API. You must assume that any
+  :c:func:`k_object_access_all_grant` API. You must assume that any
   untrusted or exploited code will then be able to access the object. Use
   this API with caution!
 
@@ -182,16 +181,16 @@ ways to do this.
   access to a set of kernel objects at boot time.
 
 Once a thread has been granted access to an object, such access may be
-removed with the :c:func:`k_object_access_revoke()` API. This API is not
+removed with the :c:func:`k_object_access_revoke` API. This API is not
 available to user threads, however user threads may use
-:c:func:`k_object_release()` to relinquish their own permissions on an
+:c:func:`k_object_release` to relinquish their own permissions on an
 object.
 
 API calls from supervisor mode to set permissions on kernel objects that are
 not being tracked by the kernel will be no-ops. Doing the same from user mode
 will result in a fatal error for the calling thread.
 
-Objects allocated with :cpp:func:`k_object_alloc()` implicitly grant
+Objects allocated with :c:func:`k_object_alloc` implicitly grant
 permission on the allocated object to the calling thread.
 
 Initialization State
@@ -210,8 +209,8 @@ Some objects will be implicitly initialized at boot:
 * Device driver objects are considered initialized after their init function
   is run by the kernel early in the boot process.
 
-If a kernel object is initialized with a private static initializer, the
-object must have :c:func:`_k_object_init()` called on it at some point by a supervisor
+If a kernel object is initialized with a private static initializer, the object
+must have :c:func:`z_object_init` called on it at some point by a supervisor
 thread, otherwise the kernel will consider the object uninitialized if accessed
 by a user thread. This is very uncommon, typically only for kernel objects that
 are embedded within some larger struct and initialized statically.
@@ -224,12 +223,12 @@ are embedded within some larger struct and initialized statically.
     };
 
     struct foo my_foo = {
-        .sem = _K_SEM_INITIALIZER(my_foo.sem, 0, 1),
+        .sem = Z_SEM_INITIALIZER(my_foo.sem, 0, 1),
         ...
     };
 
     ...
-    _k_object_init(&my_foo.sem);
+    z_object_init(&my_foo.sem);
     ...
 
 
@@ -251,7 +250,7 @@ Instances of the new struct should now be tracked.
 Creating New Driver Subsystem Kernel Objects
 ============================================
 
-All driver instances are :c:type:`struct device`. They are differentiated by
+All driver instances are :c:struct:`device`. They are differentiated by
 what API struct they are set to.
 
 * In ``scripts/gen_kobject_list.py``, add the name of the API struct for the

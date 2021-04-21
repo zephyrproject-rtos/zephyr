@@ -1,0 +1,24 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX Pulse Width Modulator (PWM) node
+
+compatible: "nuvoton,npcx-pwm"
+
+include: [pwm-controller.yaml, base.yaml]
+
+properties:
+    reg:
+        required: true
+    clocks:
+        required: true
+    label:
+        required: true
+    pinctrl-0:
+        type: phandles
+        required: true
+        description: configurations of pinmux controllers
+
+pwm-cells:
+    - channel
+    - flags

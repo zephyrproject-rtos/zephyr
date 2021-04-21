@@ -5,47 +5,10 @@
 
 mainmenu "Enhanced Serial Peripheral Interface application"
 
-config ESPI_DEV
-	string "Name of the eSPI device"
-	default "ESPI_0"
-	help
-	  Name of the eSPI device used for send an receive.
-
 config ESPI_VIRTUAL_WIRE_TIMEOUT
 	int "Timeout for virtual wires"
 	default 5000
 	help
 	  Timeout for virtual wires
-
-config ESPI_GPIO_DEV_NEEDED
-	bool "GPIO required for minimum eSPI handshake"
-
-if ESPI_GPIO_DEV_NEEDED
-
-config ESPI_GPIO_DEV0
-	string "Name of the GPIO port 0"
-	default "GPIO_0"
-	help
-	  Name of the port used in minimal handshake
-
-config ESPI_GPIO_DEV1
-	string "Name of the GPIO port 1"
-	default "GPIO_1"
-	help
-	  Name of the port used in minimal handshake
-
-config ESPI_INIT_PIN
-	int "eSPI master enable pin"
-	default 0
-	help
-	  Pin number of eSPI master init pin
-
-config PWRGD_PIN
-	int "Indication espi master power is up"
-	default 0
-	help
-	  Pin number of eSPI master power indication
-
-endif # ESPI_GPIO_DEV_NEEDED
 
 source "Kconfig.zephyr"

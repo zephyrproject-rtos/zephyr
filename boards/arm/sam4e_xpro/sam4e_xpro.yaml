@@ -7,6 +7,11 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - netif:eth
   - gpio
   - spi
   - watchdog
+  - xpro_gpio
+  - xpro_i2c
+  - xpro_serial
+  - xpro_spi

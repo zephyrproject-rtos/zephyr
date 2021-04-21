@@ -45,6 +45,8 @@ extern "C" {
 #define PF_PACKET       3          /**< Packet family.                */
 #define PF_CAN          4          /**< Controller Area Network.      */
 #define PF_NET_MGMT     5          /**< Network management info.      */
+#define PF_LOCAL        6          /**< Inter-process communication   */
+#define PF_UNIX         PF_LOCAL   /**< Inter-process communication   */
 
 /* Address families. */
 #define AF_UNSPEC      PF_UNSPEC   /**< Unspecified address family.   */
@@ -53,11 +55,14 @@ extern "C" {
 #define AF_PACKET      PF_PACKET   /**< Packet family.                */
 #define AF_CAN         PF_CAN      /**< Controller Area Network.      */
 #define AF_NET_MGMT    PF_NET_MGMT /**< Network management info.      */
+#define AF_LOCAL       PF_LOCAL    /**< Inter-process communication   */
+#define AF_UNIX        PF_UNIX     /**< Inter-process communication   */
 
 /** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
 	IPPROTO_IP = 0,            /**< IP protocol (pseudo-val for setsockopt() */
 	IPPROTO_ICMP = 1,          /**< ICMP protocol   */
+	IPPROTO_IPIP = 4,          /**< IPIP tunnels    */
 	IPPROTO_TCP = 6,           /**< TCP protocol    */
 	IPPROTO_UDP = 17,          /**< UDP protocol    */
 	IPPROTO_IPV6 = 41,         /**< IPv6 protocol   */
@@ -132,19 +137,19 @@ enum net_sock_type {
 /** IPv6 address struct */
 struct in6_addr {
 	union {
-		u8_t s6_addr[16];
-		u16_t s6_addr16[8]; /* In big endian */
-		u32_t s6_addr32[4]; /* In big endian */
+		uint8_t s6_addr[16];
+		uint16_t s6_addr16[8]; /* In big endian */
+		uint32_t s6_addr32[4]; /* In big endian */
 	};
 };
 
 /** IPv4 address struct */
 struct in_addr {
 	union {
-		u8_t s4_addr[4];
-		u16_t s4_addr16[2]; /* In big endian */
-		u32_t s4_addr32[1]; /* In big endian */
-		u32_t s_addr; /* In big endian, for POSIX compatibility. */
+		uint8_t s4_addr[4];
+		uint16_t s4_addr16[2]; /* In big endian */
+		uint32_t s4_addr32[1]; /* In big endian */
+		uint32_t s_addr; /* In big endian, for POSIX compatibility. */
 	};
 };
 
@@ -162,50 +167,50 @@ typedef size_t socklen_t;
 /** Socket address struct for IPv6. */
 struct sockaddr_in6 {
 	sa_family_t		sin6_family;   /* AF_INET6               */
-	u16_t			sin6_port;     /* Port number            */
+	uint16_t		sin6_port;     /* Port number            */
 	struct in6_addr		sin6_addr;     /* IPv6 address           */
-	u8_t			sin6_scope_id; /* interfaces for a scope */
+	uint8_t			sin6_scope_id; /* interfaces for a scope */
 };
 
 struct sockaddr_in6_ptr {
 	sa_family_t		sin6_family;   /* AF_INET6               */
-	u16_t			sin6_port;     /* Port number            */
+	uint16_t		sin6_port;     /* Port number            */
 	struct in6_addr		*sin6_addr;    /* IPv6 address           */
-	u8_t			sin6_scope_id; /* interfaces for a scope */
+	uint8_t			sin6_scope_id; /* interfaces for a scope */
 };
 
 /** Socket address struct for IPv4. */
 struct sockaddr_in {
 	sa_family_t		sin_family;    /* AF_INET      */
-	u16_t			sin_port;      /* Port number  */
+	uint16_t		sin_port;      /* Port number  */
 	struct in_addr		sin_addr;      /* IPv4 address */
 };
 
 struct sockaddr_in_ptr {
 	sa_family_t		sin_family;    /* AF_INET      */
-	u16_t			sin_port;      /* Port number  */
+	uint16_t		sin_port;      /* Port number  */
 	struct in_addr		*sin_addr;     /* IPv4 address */
 };
 
 /** Socket address struct for packet socket. */
 struct sockaddr_ll {
 	sa_family_t sll_family;   /* Always AF_PACKET        */
-	u16_t       sll_protocol; /* Physical-layer protocol */
+	uint16_t    sll_protocol; /* Physical-layer protocol */
 	int         sll_ifindex;  /* Interface number        */
-	u16_t       sll_hatype;   /* ARP hardware type       */
-	u8_t        sll_pkttype;  /* Packet type             */
-	u8_t        sll_halen;    /* Length of address       */
-	u8_t        sll_addr[8];  /* Physical-layer address  */
+	uint16_t    sll_hatype;   /* ARP hardware type       */
+	uint8_t     sll_pkttype;  /* Packet type             */
+	uint8_t     sll_halen;    /* Length of address       */
+	uint8_t     sll_addr[8];  /* Physical-layer address  */
 };
 
 struct sockaddr_ll_ptr {
 	sa_family_t sll_family;   /* Always AF_PACKET        */
-	u16_t       sll_protocol; /* Physical-layer protocol */
+	uint16_t    sll_protocol; /* Physical-layer protocol */
 	int         sll_ifindex;  /* Interface number        */
-	u16_t       sll_hatype;   /* ARP hardware type       */
-	u8_t        sll_pkttype;  /* Packet type             */
-	u8_t        sll_halen;    /* Length of address       */
-	u8_t        *sll_addr;    /* Physical-layer address  */
+	uint16_t    sll_hatype;   /* ARP hardware type       */
+	uint8_t     sll_pkttype;  /* Packet type             */
+	uint8_t     sll_halen;    /* Length of address       */
+	uint8_t     *sll_addr;    /* Physical-layer address  */
 };
 
 struct sockaddr_can_ptr {
@@ -234,17 +239,18 @@ struct cmsghdr {
 	socklen_t cmsg_len;    /* Number of bytes, including header */
 	int       cmsg_level;  /* Originating protocol */
 	int       cmsg_type;   /* Protocol-specific type */
-	/* Followed by unsigned char cmsg_data[]; */
+	/* Flexible array member to force alignment of cmsghdr */
+	z_max_align_t cmsg_data[];
 };
 
 /* Alignment for headers and data. These are arch specific but define
  * them here atm if not found alredy.
  */
 #if !defined(ALIGN_H)
-#define ALIGN_H(x) WB_UP(x)
+#define ALIGN_H(x) ROUND_UP(x, __alignof__(struct cmsghdr))
 #endif
 #if !defined(ALIGN_D)
-#define ALIGN_D(x) WB_UP(x)
+#define ALIGN_D(x) ROUND_UP(x, __alignof__(z_max_align_t))
 #endif
 
 #if !defined(CMSG_FIRSTHDR)
@@ -256,16 +262,16 @@ struct cmsghdr {
 #if !defined(CMSG_NXTHDR)
 #define CMSG_NXTHDR(msghdr, cmsg)					 \
 	(((cmsg) == NULL) ? CMSG_FIRSTHDR(msghdr) :			 \
-	 (((u8_t *)(cmsg) + ALIGN_H((cmsg)->cmsg_len)	+		 \
+	 (((uint8_t *)(cmsg) + ALIGN_H((cmsg)->cmsg_len) +		 \
 	   ALIGN_D(sizeof(struct cmsghdr)) >				 \
-	   (u8_t *)((msghdr)->msg_control) + (msghdr)->msg_controllen) ? \
+	   (uint8_t *)((msghdr)->msg_control) + (msghdr)->msg_controllen) ? \
 	  NULL :							 \
-	  (struct cmsghdr *)((u8_t *)(cmsg) +				 \
+	  (struct cmsghdr *)((uint8_t *)(cmsg) +			 \
 			     ALIGN_H((cmsg)->cmsg_len))))
 #endif
 
 #if !defined(CMSG_DATA)
-#define CMSG_DATA(cmsg) ((u8_t *)(cmsg) + ALIGN_D(sizeof(struct cmsghdr)))
+#define CMSG_DATA(cmsg) ((uint8_t *)(cmsg) + ALIGN_D(sizeof(struct cmsghdr)))
 #endif
 
 #if !defined(CMSG_SPACE)
@@ -306,9 +312,11 @@ struct cmsghdr {
 
 #if defined(CONFIG_NET_IPV6)
 #undef NET_SOCKADDR_MAX_SIZE
-#undef NET_SOCKADDR_PTR_MAX_SIZE
 #define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in6))
+#if !defined(CONFIG_NET_SOCKETS_PACKET)
+#undef NET_SOCKADDR_PTR_MAX_SIZE
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_in6_ptr))
+#endif
 #endif
 
 #if !defined(CONFIG_NET_IPV4)
@@ -339,6 +347,12 @@ struct sockaddr_ptr {
 struct sockaddr_storage {
 	sa_family_t ss_family;
 	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
+};
+
+/* Socket address struct for UNIX domain sockets */
+struct sockaddr_un {
+	sa_family_t sun_family;    /* AF_UNIX */
+	char        sun_path[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
 struct net_addr {
@@ -405,8 +419,8 @@ enum net_priority {
 struct net_tuple {
 	struct net_addr *remote_addr;  /**< IPv6/IPv4 remote address */
 	struct net_addr *local_addr;   /**< IPv6/IPv4 local address  */
-	u16_t remote_port;             /**< UDP/TCP remote port      */
-	u16_t local_port;              /**< UDP/TCP local port       */
+	uint16_t remote_port;          /**< UDP/TCP remote port      */
+	uint16_t local_port;           /**< UDP/TCP local port       */
 	enum net_ip_protocol ip_proto; /**< IP protocol              */
 };
 
@@ -435,60 +449,60 @@ enum net_addr_type {
 /** @cond INTERNAL_HIDDEN */
 
 struct net_ipv6_hdr {
-	u8_t vtc;
-	u8_t tcflow;
-	u16_t flow;
-	u16_t len;
-	u8_t nexthdr;
-	u8_t hop_limit;
+	uint8_t vtc;
+	uint8_t tcflow;
+	uint16_t flow;
+	uint16_t len;
+	uint8_t nexthdr;
+	uint8_t hop_limit;
 	struct in6_addr src;
 	struct in6_addr dst;
 } __packed;
 
 struct net_ipv6_frag_hdr {
-	u8_t nexthdr;
-	u8_t reserved;
-	u16_t offset;
-	u32_t id;
+	uint8_t nexthdr;
+	uint8_t reserved;
+	uint16_t offset;
+	uint32_t id;
 } __packed;
 
 struct net_ipv4_hdr {
-	u8_t vhl;
-	u8_t tos;
-	u16_t len;
-	u8_t id[2];
-	u8_t offset[2];
-	u8_t ttl;
-	u8_t proto;
-	u16_t chksum;
+	uint8_t vhl;
+	uint8_t tos;
+	uint16_t len;
+	uint8_t id[2];
+	uint8_t offset[2];
+	uint8_t ttl;
+	uint8_t proto;
+	uint16_t chksum;
 	struct in_addr src;
 	struct in_addr dst;
 } __packed;
 
 struct net_icmp_hdr {
-	u8_t type;
-	u8_t code;
-	u16_t chksum;
+	uint8_t type;
+	uint8_t code;
+	uint16_t chksum;
 } __packed;
 
 struct net_udp_hdr {
-	u16_t src_port;
-	u16_t dst_port;
-	u16_t len;
-	u16_t chksum;
+	uint16_t src_port;
+	uint16_t dst_port;
+	uint16_t len;
+	uint16_t chksum;
 } __packed;
 
 struct net_tcp_hdr {
-	u16_t src_port;
-	u16_t dst_port;
-	u8_t seq[4];
-	u8_t ack[4];
-	u8_t offset;
-	u8_t flags;
-	u8_t wnd[2];
-	u16_t chksum;
-	u8_t urg[2];
-	u8_t optdata[0];
+	uint16_t src_port;
+	uint16_t dst_port;
+	uint8_t seq[4];
+	uint8_t ack[4];
+	uint8_t offset;
+	uint8_t flags;
+	uint8_t wnd[2];
+	uint16_t chksum;
+	uint8_t urg[2];
+	uint8_t optdata[0];
 } __packed;
 
 static inline const char *net_addr_type2str(enum net_addr_type type)
@@ -620,14 +634,14 @@ static inline bool net_ipv6_is_my_maddr(struct in6_addr *maddr)
  *
  * @return True if IPv6 prefixes are the same, False otherwise.
  */
-static inline bool net_ipv6_is_prefix(const u8_t *addr1,
-				      const u8_t *addr2,
-				      u8_t length)
+static inline bool net_ipv6_is_prefix(const uint8_t *addr1,
+				      const uint8_t *addr2,
+				      uint8_t length)
 {
-	u8_t bits = 128 - length;
-	u8_t bytes = length / 8U;
-	u8_t remain = bits % 8;
-	u8_t mask;
+	uint8_t bits = 128 - length;
+	uint8_t bytes = length / 8U;
+	uint8_t remain = bits % 8;
+	uint8_t mask;
 
 	if (length > 128) {
 		return false;
@@ -683,7 +697,7 @@ static inline bool net_ipv4_is_addr_unspecified(const struct in_addr *addr)
  */
 static inline bool net_ipv4_is_addr_mcast(const struct in_addr *addr)
 {
-	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xE0000000) == 0xE0000000;
+	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xF0000000) == 0xE0000000;
 }
 
 /**
@@ -748,6 +762,18 @@ static inline bool net_ipv6_addr_cmp(const struct in6_addr *addr1,
 static inline bool net_ipv6_is_ll_addr(const struct in6_addr *addr)
 {
 	return UNALIGNED_GET(&addr->s6_addr16[0]) == htons(0xFE80);
+}
+
+/**
+ * @brief Check if the given IPv6 address is a unique local address.
+ *
+ * @param addr A valid pointer on an IPv6 address
+ *
+ * @return True if it is, false otherwise.
+ */
+static inline bool net_ipv6_is_ula_addr(const struct in6_addr *addr)
+{
+	return addr->s6_addr[0] == 0xFD;
 }
 
 /**
@@ -895,12 +921,28 @@ static inline bool net_ipv6_is_addr_mcast_scope(const struct in6_addr *addr,
 }
 
 /**
+ * @brief Check if the IPv6 addresses have the same multicast scope (FFyx::).
+ *
+ * @param addr_1 IPv6 address 1
+ * @param addr_2 IPv6 address 2
+ *
+ * @return True if both addresses have same multicast scope,
+ * false otherwise.
+ */
+static inline bool net_ipv6_is_same_mcast_scope(const struct in6_addr *addr_1,
+						const struct in6_addr *addr_2)
+{
+	return (addr_1->s6_addr[0] == 0xff) && (addr_2->s6_addr[0] == 0xff) &&
+			(addr_1->s6_addr[1] == addr_2->s6_addr[1]);
+}
+
+/**
  * @brief Check if the IPv6 address is a global multicast address (FFxE::/16).
  *
  * @param addr IPv6 address.
  *
  * @return True if the address is global multicast address, false otherwise.
-*/
+ */
 static inline bool net_ipv6_is_addr_mcast_global(const struct in6_addr *addr)
 {
 	return net_ipv6_is_addr_mcast_scope(addr, 0x0e);
@@ -918,6 +960,34 @@ static inline bool net_ipv6_is_addr_mcast_global(const struct in6_addr *addr)
 static inline bool net_ipv6_is_addr_mcast_iface(const struct in6_addr *addr)
 {
 	return net_ipv6_is_addr_mcast_scope(addr, 0x01);
+}
+
+/**
+ * @brief Check if the IPv6 address is a link local scope multicast
+ * address (FFx2::).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a link local scope multicast address,
+ * false otherwise.
+ */
+static inline bool net_ipv6_is_addr_mcast_link(const struct in6_addr *addr)
+{
+	return net_ipv6_is_addr_mcast_scope(addr, 0x02);
+}
+
+/**
+ * @brief Check if the IPv6 address is a mesh-local scope multicast
+ * address (FFx3::).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a mesh-local scope multicast address,
+ * false otherwise.
+ */
+static inline bool net_ipv6_is_addr_mcast_mesh(const struct in6_addr *addr)
+{
+	return net_ipv6_is_addr_mcast_scope(addr, 0x03);
 }
 
 /**
@@ -970,6 +1040,57 @@ static inline bool net_ipv6_is_addr_mcast_group(const struct in6_addr *addr,
 }
 
 /**
+ * @brief Check if the IPv6 address belongs to the all nodes multicast group
+ *
+ * @param addr IPv6 address
+ *
+ * @return True if the IPv6 multicast address belongs to the all nodes multicast
+ * group, false otherwise
+ */
+static inline bool
+net_ipv6_is_addr_mcast_all_nodes_group(const struct in6_addr *addr)
+{
+	static const struct in6_addr all_nodes_mcast_group = {
+		{ { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		    0x00, 0x00, 0x00, 0x00, 0x00, 0x01 } }
+	};
+
+	return net_ipv6_is_addr_mcast_group(addr, &all_nodes_mcast_group);
+}
+
+/**
+ * @brief Check if the IPv6 address is a interface scope all nodes multicast
+ * address (FF01::1).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a interface scope all nodes multicast address,
+ * false otherwise.
+ */
+static inline bool
+net_ipv6_is_addr_mcast_iface_all_nodes(const struct in6_addr *addr)
+{
+	return net_ipv6_is_addr_mcast_iface(addr) &&
+	       net_ipv6_is_addr_mcast_all_nodes_group(addr);
+}
+
+/**
+ * @brief Check if the IPv6 address is a link local scope all nodes multicast
+ * address (FF02::1).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a link local scope all nodes multicast
+ * address, false otherwise.
+ */
+static inline bool
+net_ipv6_is_addr_mcast_link_all_nodes(const struct in6_addr *addr)
+{
+	return net_ipv6_is_addr_mcast_link(addr) &&
+	       net_ipv6_is_addr_mcast_all_nodes_group(addr);
+}
+
+/**
  *  @brief Create solicited node IPv6 multicast address
  *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
  *
@@ -1006,10 +1127,10 @@ void net_ipv6_addr_create_solicited_node(const struct in6_addr *src,
  *  @param addr7 16-bit word which is part of the address
  */
 static inline void net_ipv6_addr_create(struct in6_addr *addr,
-					u16_t addr0, u16_t addr1,
-					u16_t addr2, u16_t addr3,
-					u16_t addr4, u16_t addr5,
-					u16_t addr6, u16_t addr7)
+					uint16_t addr0, uint16_t addr1,
+					uint16_t addr2, uint16_t addr3,
+					uint16_t addr4, uint16_t addr5,
+					uint16_t addr6, uint16_t addr7)
 {
 	UNALIGNED_PUT(htons(addr0), &addr->s6_addr16[0]);
 	UNALIGNED_PUT(htons(addr1), &addr->s6_addr16[1]);
@@ -1032,6 +1153,16 @@ static inline void net_ipv6_addr_create_ll_allnodes_mcast(struct in6_addr *addr)
 }
 
 /**
+ *  @brief Create link local allrouters multicast IPv6 address
+ *
+ *  @param addr IPv6 address
+ */
+static inline void net_ipv6_addr_create_ll_allrouters_mcast(struct in6_addr *addr)
+{
+	net_ipv6_addr_create(addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0002);
+}
+
+/**
  *  @brief Create IPv6 address interface identifier
  *
  *  @param addr IPv6 address
@@ -1040,9 +1171,7 @@ static inline void net_ipv6_addr_create_ll_allnodes_mcast(struct in6_addr *addr)
 static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 					    struct net_linkaddr *lladdr)
 {
-	addr->s6_addr[0] = 0xfe;
-	addr->s6_addr[1] = 0x80;
-	UNALIGNED_PUT(0, &addr->s6_addr16[1]);
+	UNALIGNED_PUT(htonl(0xfe800000), &addr->s6_addr32[0]);
 	UNALIGNED_PUT(0, &addr->s6_addr32[1]);
 
 	switch (lladdr->len) {
@@ -1300,9 +1429,9 @@ bool net_ipaddr_parse(const char *str, size_t str_len,
  *
  * @return < 0 if seq1 < seq2, 0 if seq1 == seq2, > 0 if seq > seq2
  */
-static inline s32_t net_tcp_seq_cmp(u32_t seq1, u32_t seq2)
+static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2)
 {
-	return (s32_t)(seq1 - seq2);
+	return (int32_t)(seq1 - seq2);
 }
 
 /**
@@ -1315,7 +1444,7 @@ static inline s32_t net_tcp_seq_cmp(u32_t seq1, u32_t seq2)
  *
  * @return True if seq > seq2
  */
-static inline bool net_tcp_seq_greater(u32_t seq1, u32_t seq2)
+static inline bool net_tcp_seq_greater(uint32_t seq1, uint32_t seq2)
 {
 	return net_tcp_seq_cmp(seq1, seq2) > 0;
 }
@@ -1331,7 +1460,7 @@ static inline bool net_tcp_seq_greater(u32_t seq1, u32_t seq2)
  *
  * @return 0 if ok, <0 if error
  */
-int net_bytes_from_str(u8_t *buf, int buf_len, const char *src);
+int net_bytes_from_str(uint8_t *buf, int buf_len, const char *src);
 
 /**
  * @brief Convert Tx network packet priority to traffic class so we can place
@@ -1361,10 +1490,10 @@ int net_rx_priority2tc(enum net_priority prio);
  *
  * @return Network priority
  */
-static inline enum net_priority net_vlan2priority(u8_t priority)
+static inline enum net_priority net_vlan2priority(uint8_t priority)
 {
 	/* Map according to IEEE 802.1Q */
-	static const u8_t vlan2priority[] = {
+	static const uint8_t vlan2priority[] = {
 		NET_PRIORITY_BE,
 		NET_PRIORITY_BK,
 		NET_PRIORITY_EE,
@@ -1390,10 +1519,10 @@ static inline enum net_priority net_vlan2priority(u8_t priority)
  *
  * @return VLAN priority (PCP)
  */
-static inline u8_t net_priority2vlan(enum net_priority priority)
+static inline uint8_t net_priority2vlan(enum net_priority priority)
 {
 	/* The conversion works both ways */
-	return (u8_t)net_vlan2priority(priority);
+	return (uint8_t)net_vlan2priority(priority);
 }
 
 /**

@@ -22,7 +22,7 @@ typedef struct mqueue_object {
 typedef struct mqueue_desc {
 	char *mem_desc;
 	mqueue_object *mqueue;
-	u32_t  flags;
+	uint32_t  flags;
 } mqueue_desc;
 
 K_SEM_DEFINE(mq_sem, 1, 1);
@@ -30,13 +30,24 @@ K_SEM_DEFINE(mq_sem, 1, 1);
 /* Initialize the list */
 sys_slist_t mq_list = SYS_SLIST_STATIC_INIT(&mq_list);
 
-s64_t timespec_to_timeoutms(const struct timespec *abstime);
+int64_t timespec_to_timeoutms(const struct timespec *abstime);
 static mqueue_object *find_in_list(const char *name);
-static s32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
-			  s32_t timeout);
+static int32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
+			  k_timeout_t timeout);
 static int receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
-			   s32_t timeout);
+			   k_timeout_t timeout);
 static void remove_mq(mqueue_object *msg_queue);
+
+#if defined(__sparc__)
+/*
+ * mode_t is defined as "unsigned short" on SPARC newlib. This type is promoted
+ * to "int" when passed through '...' so we should pass the promoted type to
+ * va_arg().
+ */
+#define PROMOTED_MODE_T int
+#else
+#define PROMOTED_MODE_T mode_t
+#endif
 
 /**
  * @brief Open a message queue.
@@ -58,7 +69,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
 	va_start(va, oflags);
 	if ((oflags & O_CREAT) != 0) {
-		mode = va_arg(va, mode_t);
+		mode = va_arg(va, PROMOTED_MODE_T);
 		attrs = va_arg(va, mq_attr*);
 	}
 	va_end(va);
@@ -136,10 +147,10 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
 		strcpy(msg_queue->name, name);
 
-		mq_buf_ptr = k_malloc(msg_size * max_msgs * sizeof(u8_t));
+		mq_buf_ptr = k_malloc(msg_size * max_msgs * sizeof(uint8_t));
 		if (mq_buf_ptr != NULL) {
 			(void)memset(mq_buf_ptr, 0,
-				     msg_size * max_msgs * sizeof(u8_t));
+				     msg_size * max_msgs * sizeof(uint8_t));
 			msg_queue->mem_buffer = mq_buf_ptr;
 		} else {
 			goto free_mq_buffer;
@@ -233,9 +244,8 @@ int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 	    unsigned int msg_prio)
 {
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
-	s32_t  timeout = K_FOREVER;
 
-	return send_message(mqd, msg_ptr, msg_len, timeout);
+	return send_message(mqd, msg_ptr, msg_len, K_FOREVER);
 }
 
 /**
@@ -249,10 +259,9 @@ int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 		 unsigned int msg_prio, const struct timespec *abstime)
 {
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
-	s32_t  timeout;
+	int32_t timeout = (int32_t) timespec_to_timeoutms(abstime);
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
-	return send_message(mqd, msg_ptr, msg_len, timeout);
+	return send_message(mqd, msg_ptr, msg_len, K_MSEC(timeout));
 }
 
 /**
@@ -266,10 +275,8 @@ int mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 		   unsigned int *msg_prio)
 {
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
-	s32_t  timeout = K_FOREVER;
 
-	return receive_message(mqd, msg_ptr, msg_len, timeout);
-
+	return receive_message(mqd, msg_ptr, msg_len, K_FOREVER);
 }
 
 /**
@@ -283,10 +290,9 @@ int mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 			unsigned int *msg_prio, const struct timespec *abstime)
 {
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
-	s32_t  timeout = K_NO_WAIT;
+	int32_t timeout = (int32_t) timespec_to_timeoutms(abstime);
 
-	timeout = (s32_t) timespec_to_timeoutms(abstime);
-	return receive_message(mqd, msg_ptr, msg_len, timeout);
+	return receive_message(mqd, msg_ptr, msg_len, K_MSEC(timeout));
 }
 
 /**
@@ -365,10 +371,10 @@ static mqueue_object *find_in_list(const char *name)
 	return NULL;
 }
 
-static s32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
-			  s32_t timeout)
+static int32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
+			  k_timeout_t timeout)
 {
-	s32_t ret = -1;
+	int32_t ret = -1;
 
 	if (mqd == NULL) {
 		errno = EBADF;
@@ -385,15 +391,15 @@ static s32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
 	}
 
 	if (k_msgq_put(&mqd->mqueue->queue, (void *)msg_ptr, timeout) != 0) {
-		errno = (timeout == K_NO_WAIT) ?   EAGAIN : ETIMEDOUT;
+		errno = K_TIMEOUT_EQ(timeout, K_NO_WAIT) ? EAGAIN : ETIMEDOUT;
 		return ret;
 	}
 
 	return 0;
 }
 
-static s32_t receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
-			     s32_t timeout)
+static int32_t receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
+			     k_timeout_t timeout)
 {
 	int ret = -1;
 
@@ -412,7 +418,7 @@ static s32_t receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
 	}
 
 	if (k_msgq_get(&mqd->mqueue->queue, (void *)msg_ptr, timeout) != 0) {
-		errno = (timeout != K_NO_WAIT) ? ETIMEDOUT : EAGAIN;
+		errno = K_TIMEOUT_EQ(timeout, K_NO_WAIT) ? EAGAIN : ETIMEDOUT;
 	} else {
 		ret = mqd->mqueue->queue.msg_size;
 	}

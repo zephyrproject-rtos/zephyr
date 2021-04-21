@@ -7,12 +7,12 @@
 
 #include "fcb_test.h"
 
-void fcb_test_multi_scratch(void)
+void test_fcb_multi_scratch(void)
 {
 	struct fcb *fcb;
 	int rc;
 	struct fcb_entry loc;
-	u8_t test_data[128] = {0};
+	uint8_t test_data[128] = {0};
 	int elem_cnts[4];
 	int idx;
 	int cnts[4];

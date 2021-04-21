@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&pa21a_usart1_rxd1 &pa22a_usart1_txd1>;
+
+	esp8266 {
+		compatible = "espressif,esp";
+		label = "esp8266";
+		status = "okay";
+	};
+};

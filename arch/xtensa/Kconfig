@@ -48,6 +48,15 @@ config XTENSA_RESET_VECTOR
 	  This is always needed for the simulator. Real boards may already
 	  implement this in boot ROM.
 
+if XTENSA_RESET_VECTOR
+config RESET_VECTOR_IN_BOOTLOADER
+	bool "Link reset vector into bootloader"
+	default n
+	help
+	  Reset vector code can be either linked in the bootloader or the
+	  application binary. Select "y" to link it into the bootloader.
+endif
+
 config XTENSA_USE_CORE_CRT1
 	bool "Use crt1.S from core"
 	default y
@@ -61,5 +70,12 @@ config XTENSA_KERNEL_CPU_PTR_SR
 	help
 	  Specify which special register to store the pointer to
 	  _kernel.cpus[] for the current CPU.
+
+config XTENSA_ENABLE_BACKTRACE
+	bool "Enable backtrace on panic exception"
+	default y
+	depends on SOC_ESP32
+	help
+	  Enable this config option to print backtrace on panic exception
 
 endmenu

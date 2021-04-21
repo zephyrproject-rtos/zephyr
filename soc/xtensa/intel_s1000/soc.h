@@ -6,6 +6,8 @@
 #ifndef __INC_SOC_H
 #define __INC_SOC_H
 
+#include <arch/xtensa/cache.h>
+
 /* macros related to interrupt handling */
 #define XTENSA_IRQ_NUM_SHIFT			0
 #define CAVS_IRQ_NUM_SHIFT			8
@@ -34,16 +36,18 @@
 	(((cavs_irq) & CAVS_IRQ_NUM_MASK) << CAVS_IRQ_NUM_SHIFT) |	\
 	(((ictl_irq) & INTR_CNTL_IRQ_NUM_MASK) << INTR_CNTL_IRQ_NUM_SHIFT))
 
-#define CAVS_L2_AGG_INT_LEVEL2			DT_CAVS_ICTL_0_IRQ
-#define CAVS_L2_AGG_INT_LEVEL3			DT_CAVS_ICTL_1_IRQ
-#define CAVS_L2_AGG_INT_LEVEL4			DT_CAVS_ICTL_2_IRQ
-#define CAVS_L2_AGG_INT_LEVEL5			DT_CAVS_ICTL_3_IRQ
+#define CAVS_L2_AGG_INT_LEVEL2			DT_IRQN(DT_INST(0, intel_cavs_intc))
+#define CAVS_L2_AGG_INT_LEVEL3			DT_IRQN(DT_INST(1, intel_cavs_intc))
+#define CAVS_L2_AGG_INT_LEVEL4			DT_IRQN(DT_INST(2, intel_cavs_intc))
+#define CAVS_L2_AGG_INT_LEVEL5			DT_IRQN(DT_INST(3, intel_cavs_intc))
+
+#define CAVS_ICTL_INT_CPU_OFFSET(x)		(0x40 * x)
 
 #define IOAPIC_EDGE				0
 #define IOAPIC_HIGH				0
 
 /* DW interrupt controller */
-#define DW_ICTL_IRQ_CAVS_OFFSET			CAVS_IRQ_NUMBER(DT_INTC_DW_0_IRQ)
+#define DW_ICTL_IRQ_CAVS_OFFSET			CAVS_IRQ_NUMBER(DT_IRQN(DT_INST(0, snps_designware_intc)))
 #define DW_ICTL_NUM_IRQS			9
 
 /* GPIO */
@@ -59,14 +63,6 @@
 #define DMA_HANDSHAKE_SSP2_RX			7
 #define DMA_HANDSHAKE_SSP3_TX			8
 #define DMA_HANDSHAKE_SSP3_RX			9
-
-/* DMA Channel Allocation
- * FIXME: I2S Driver assigns channel in Kconfig.
- * Perhaps DTS is a better option
- */
-#define DMIC_DMA_DEV_NAME			CONFIG_DMA_0_NAME
-#define DMA_CHANNEL_DMIC_RXA			0
-#define DMA_CHANNEL_DMIC_RXB			1
 
 /* I2S */
 #define I2S_CAVS_IRQ(i2s_num)			\
@@ -90,15 +86,22 @@
 #define SOC_MDIVXR_SET_DIVIDER_BYPASS		BIT_MASK(12)
 
 struct soc_mclk_control_regs {
-	u32_t	mdivctrl;
-	u32_t	reserved[31];
-	u32_t	mdivxr[SOC_NUM_MCLK_OUTPUTS];
+	uint32_t	mdivctrl;
+	uint32_t	reserved[31];
+	uint32_t	mdivxr[SOC_NUM_MCLK_OUTPUTS];
 };
 
 #define PDM_BASE				0x00010000
 
 #define SOC_NUM_LPGPDMAC			3
 #define SOC_NUM_CHANNELS_IN_DMAC		8
+
+/* DSP Wall Clock Timers (0 and 1) */
+#define DSP_WCT_IRQ(x)	\
+	SOC_AGGREGATE_IRQ(0, (23 + x), CAVS_L2_AGG_INT_LEVEL2)
+
+#define DSP_WCT_CS_TA(x)			BIT(x)
+#define DSP_WCT_CS_TT(x)			BIT(4 + x)
 
 /* SOC Resource Allocation Registers */
 #define SOC_RESOURCE_ALLOC_REG_BASE		0x00071A60
@@ -118,12 +121,17 @@ struct soc_mclk_control_regs {
 
 struct soc_resource_alloc_regs {
 	union {
-		u16_t	lpgpdmacxo[SOC_NUM_LPGPDMAC];
-		u16_t	reserved[4];
+		uint16_t	lpgpdmacxo[SOC_NUM_LPGPDMAC];
+		uint16_t	reserved[4];
 	};
-	u32_t	dspiopo;
-	u32_t	geno;
+	uint32_t	dspiopo;
+	uint32_t	geno;
 };
+
+/* L2 Local Memory Registers */
+#define SOC_L2RAM_LOCAL_MEM_REG_BASE		0x00071D00
+#define SOC_L2RAM_LOCAL_MEM_REG_LSPGCTL		\
+	(SOC_L2RAM_LOCAL_MEM_REG_BASE + 0x50)
 
 /* DMIC SHIM Registers */
 #define SOC_DMIC_SHIM_REG_BASE			0x00071E80
@@ -131,8 +139,8 @@ struct soc_resource_alloc_regs {
 #define SOC_DMIC_SHIM_DMICLCTL_CPA		BIT(8)
 
 struct soc_dmic_shim_regs {
-	u32_t	dmiclcap;
-	u32_t	dmiclctl;
+	uint32_t	dmiclcap;
+	uint32_t	dmiclctl;
 };
 
 /* SOC DSP SHIM Registers */
@@ -146,21 +154,40 @@ struct soc_dmic_shim_regs {
 #define SOC_PWRCTL_DISABLE_PWR_GATING_DSP1	BIT(1)
 
 struct soc_dsp_shim_regs {
-	u32_t	reserved[8];
-	u64_t	walclk;
-	u64_t	dspwctcs;
-	u64_t	dspwct0c;
-	u64_t	dspwct1c;
-	u32_t	reserved1[14];
-	u32_t	clkctl;
-	u32_t	clksts;
-	u32_t	reserved2[4];
-	u16_t	pwrctl;
-	u16_t	pwrsts;
-	u32_t	lpsctl;
-	u32_t	lpsdmas0;
-	u32_t	lpsdmas1;
-	u32_t	reserved3[22];
+	uint32_t	reserved[8];
+	union {
+		struct {
+			uint32_t walclk32_lo;
+			uint32_t walclk32_hi;
+		};
+		uint64_t	walclk;
+	};
+	uint32_t	dspwctcs;
+	uint32_t	reserved1[1];
+	union {
+		struct {
+			uint32_t dspwct0c32_lo;
+			uint32_t dspwct0c32_hi;
+		};
+		uint64_t	dspwct0c;
+	};
+	union {
+		struct {
+			uint32_t dspwct1c32_lo;
+			uint32_t dspwct1c32_hi;
+		};
+		uint64_t	dspwct1c;
+	};
+	uint32_t	reserved2[14];
+	uint32_t	clkctl;
+	uint32_t	clksts;
+	uint32_t	reserved3[4];
+	uint16_t	pwrctl;
+	uint16_t	pwrsts;
+	uint32_t	lpsctl;
+	uint32_t	lpsdmas0;
+	uint32_t	lpsdmas1;
+	uint32_t	reserved4[22];
 };
 
 /* Global Control registers */
@@ -170,28 +197,35 @@ struct soc_dsp_shim_regs {
 #define SOC_GNA_POWER_CONTROL_CPA		(BIT(8))
 #define SOC_GNA_POWER_CONTROL_CLK_EN		(BIT(16))
 
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CRST	BIT(1)
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CSTALL	BIT(9)
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_SPA	BIT(17)
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CPA	BIT(25)
+
 #define SOC_S1000_STRAP_REF_CLK			(BIT_MASK(2) << 3)
 #define SOC_S1000_STRAP_REF_CLK_38P4		(0 << 3)
 #define SOC_S1000_STRAP_REF_CLK_19P2		(1 << 3)
 #define SOC_S1000_STRAP_REF_CLK_24P576		(2 << 3)
 
 struct soc_global_regs {
-	u32_t	reserved1[8];
-	u32_t	gna_power_control;
-	u32_t	reserved2[7];
-	u32_t	straps;
+	uint32_t	reserved1[5];
+	uint32_t	cavs_dsp1power_control;
+	uint32_t	reserved2[2];
+	uint32_t	gna_power_control;
+	uint32_t	reserved3[7];
+	uint32_t	straps;
 };
 
 /* macros for data cache operations */
 #define SOC_DCACHE_FLUSH(addr, size)		\
-	xthal_dcache_region_writeback((addr), (size))
+	z_xtensa_cache_flush((addr), (size))
 #define SOC_DCACHE_INVALIDATE(addr, size)	\
-	xthal_dcache_region_invalidate((addr), (size))
+	z_xtensa_cache_inv((addr), (size))
 
-extern void z_soc_irq_enable(u32_t irq);
-extern void z_soc_irq_disable(u32_t irq);
+extern void z_soc_irq_enable(uint32_t irq);
+extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
 
-extern u32_t soc_get_ref_clk_freq(void);
+extern uint32_t soc_get_ref_clk_freq(void);
 
 #endif /* __INC_SOC_H */

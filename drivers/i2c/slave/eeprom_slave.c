@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_at24
+
 #include <sys/util.h>
 #include <kernel.h>
 #include <errno.h>
@@ -16,32 +18,32 @@
 LOG_MODULE_REGISTER(i2c_slave);
 
 struct i2c_eeprom_slave_data {
-	struct device *i2c_controller;
+	const struct device *i2c_controller;
 	struct i2c_slave_config config;
-	u32_t buffer_size;
-	u8_t *buffer;
-	u32_t buffer_idx;
+	uint32_t buffer_size;
+	uint8_t *buffer;
+	uint32_t buffer_idx;
 	bool first_write;
 };
 
 struct i2c_eeprom_slave_config {
 	char *controller_dev_name;
-	u8_t address;
-	u32_t buffer_size;
-	u8_t *buffer;
+	uint8_t address;
+	uint32_t buffer_size;
+	uint8_t *buffer;
 };
 
 /* convenience defines */
 #define DEV_CFG(dev)							\
 	((const struct i2c_eeprom_slave_config * const)			\
-		(dev)->config->config_info)
+		(dev)->config)
 #define DEV_DATA(dev)							\
-	((struct i2c_eeprom_slave_data * const)(dev)->driver_data)
+	((struct i2c_eeprom_slave_data * const)(dev)->data)
 
-int eeprom_slave_program(struct device *dev, u8_t *eeprom_data,
+int eeprom_slave_program(const struct device *dev, const uint8_t *eeprom_data,
 			 unsigned int length)
 {
-	struct i2c_eeprom_slave_data *data = dev->driver_data;
+	struct i2c_eeprom_slave_data *data = dev->data;
 
 	if (length > data->buffer_size) {
 		return -EINVAL;
@@ -52,10 +54,10 @@ int eeprom_slave_program(struct device *dev, u8_t *eeprom_data,
 	return 0;
 }
 
-int eeprom_slave_read(struct device *dev, u8_t *eeprom_data,
+int eeprom_slave_read(const struct device *dev, uint8_t *eeprom_data,
 		      unsigned int offset)
 {
-	struct i2c_eeprom_slave_data *data = dev->driver_data;
+	struct i2c_eeprom_slave_data *data = dev->data;
 
 	if (!data || offset >= data->buffer_size) {
 		return -EINVAL;
@@ -80,7 +82,7 @@ static int eeprom_slave_write_requested(struct i2c_slave_config *config)
 }
 
 static int eeprom_slave_read_requested(struct i2c_slave_config *config,
-				       u8_t *val)
+				       uint8_t *val)
 {
 	struct i2c_eeprom_slave_data *data = CONTAINER_OF(config,
 						struct i2c_eeprom_slave_data,
@@ -96,7 +98,7 @@ static int eeprom_slave_read_requested(struct i2c_slave_config *config,
 }
 
 static int eeprom_slave_write_received(struct i2c_slave_config *config,
-				       u8_t val)
+				       uint8_t val)
 {
 	struct i2c_eeprom_slave_data *data = CONTAINER_OF(config,
 						struct i2c_eeprom_slave_data,
@@ -122,7 +124,7 @@ static int eeprom_slave_write_received(struct i2c_slave_config *config,
 }
 
 static int eeprom_slave_read_processed(struct i2c_slave_config *config,
-				       u8_t *val)
+				       uint8_t *val)
 {
 	struct i2c_eeprom_slave_data *data = CONTAINER_OF(config,
 						struct i2c_eeprom_slave_data,
@@ -155,16 +157,16 @@ static int eeprom_slave_stop(struct i2c_slave_config *config)
 	return 0;
 }
 
-static int eeprom_slave_register(struct device *dev)
+static int eeprom_slave_register(const struct device *dev)
 {
-	struct i2c_eeprom_slave_data *data = dev->driver_data;
+	struct i2c_eeprom_slave_data *data = dev->data;
 
 	return i2c_slave_register(data->i2c_controller, &data->config);
 }
 
-static int eeprom_slave_unregister(struct device *dev)
+static int eeprom_slave_unregister(const struct device *dev)
 {
-	struct i2c_eeprom_slave_data *data = dev->driver_data;
+	struct i2c_eeprom_slave_data *data = dev->data;
 
 	return i2c_slave_unregister(data->i2c_controller, &data->config);
 }
@@ -182,7 +184,7 @@ static const struct i2c_slave_callbacks eeprom_callbacks = {
 	.stop = eeprom_slave_stop,
 };
 
-static int i2c_eeprom_slave_init(struct device *dev)
+static int i2c_eeprom_slave_init(const struct device *dev)
 {
 	struct i2c_eeprom_slave_data *data = DEV_DATA(dev);
 	const struct i2c_eeprom_slave_config *cfg = DEV_CFG(dev);
@@ -203,44 +205,28 @@ static int i2c_eeprom_slave_init(struct device *dev)
 	return 0;
 }
 
-#ifdef DT_INST_0_ATMEL_AT24
+#define I2C_EEPROM_INIT(inst)						\
+	static struct i2c_eeprom_slave_data				\
+		i2c_eeprom_slave_##inst##_dev_data;			\
+									\
+	static uint8_t							\
+	i2c_eeprom_slave_##inst##_buffer[(DT_INST_PROP(inst, size))];	\
+									\
+	static const struct i2c_eeprom_slave_config			\
+		i2c_eeprom_slave_##inst##_cfg = {			\
+		.controller_dev_name = DT_INST_BUS_LABEL(inst),		\
+		.address = DT_INST_REG_ADDR(inst),			\
+		.buffer_size = DT_INST_PROP(inst, size),		\
+		.buffer = i2c_eeprom_slave_##inst##_buffer		\
+	};								\
+									\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    &i2c_eeprom_slave_init,			\
+			    device_pm_control_nop,			\
+			    &i2c_eeprom_slave_##inst##_dev_data,	\
+			    &i2c_eeprom_slave_##inst##_cfg,		\
+			    POST_KERNEL,				\
+			    CONFIG_I2C_SLAVE_INIT_PRIORITY,		\
+			    &api_funcs);
 
-static struct i2c_eeprom_slave_data i2c_eeprom_slave_0_dev_data;
-
-static u8_t i2c_eeprom_slave_0_buffer[(DT_INST_0_ATMEL_AT24_SIZE)];
-
-static const struct i2c_eeprom_slave_config i2c_eeprom_slave_0_cfg = {
-	.controller_dev_name = DT_INST_0_ATMEL_AT24_BUS_NAME,
-	.address = DT_INST_0_ATMEL_AT24_BASE_ADDRESS,
-	.buffer_size = DT_INST_0_ATMEL_AT24_SIZE,
-	.buffer = i2c_eeprom_slave_0_buffer
-};
-
-DEVICE_AND_API_INIT(i2c_eeprom_slave_0, DT_INST_0_ATMEL_AT24_LABEL,
-		    &i2c_eeprom_slave_init,
-		    &i2c_eeprom_slave_0_dev_data, &i2c_eeprom_slave_0_cfg,
-		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
-		    &api_funcs);
-
-#endif /* DT_INST_0_ATMEL_AT24 */
-
-#ifdef DT_INST_1_ATMEL_AT24
-
-static struct i2c_eeprom_slave_data i2c_eeprom_slave_1_dev_data;
-
-static u8_t i2c_eeprom_slave_1_buffer[(DT_INST_1_ATMEL_AT24_SIZE)];
-
-static const struct i2c_eeprom_slave_config i2c_eeprom_slave_1_cfg = {
-	.controller_dev_name = DT_INST_1_ATMEL_AT24_BUS_NAME,
-	.address = DT_INST_1_ATMEL_AT24_BASE_ADDRESS,
-	.buffer_size = DT_INST_1_ATMEL_AT24_SIZE,
-	.buffer = i2c_eeprom_slave_1_buffer
-};
-
-DEVICE_AND_API_INIT(i2c_eeprom_slave_1, DT_INST_1_ATMEL_AT24_LABEL,
-		    &i2c_eeprom_slave_init,
-		    &i2c_eeprom_slave_1_dev_data, &i2c_eeprom_slave_1_cfg,
-		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
-		    &api_funcs);
-
-#endif /* DT_INST_1_ATMEL_AT24 */
+DT_INST_FOREACH_STATUS_OKAY(I2C_EEPROM_INIT)

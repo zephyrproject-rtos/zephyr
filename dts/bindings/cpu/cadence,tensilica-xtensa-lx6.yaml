@@ -6,3 +6,9 @@ description: Cadence Tensilica Xtensa LX6 CPU
 compatible: "cadence,tensilica-xtensa-lx6"
 
 include: cpu.yaml
+
+properties:
+    clock-source:
+      type: int
+      description: cpu clock source
+      required: false

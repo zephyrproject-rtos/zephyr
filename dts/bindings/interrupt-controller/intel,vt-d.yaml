@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel VT-D Interrupt Remapping Controller
+
+compatible: "intel,vt-d"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true

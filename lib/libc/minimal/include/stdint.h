@@ -17,6 +17,7 @@ extern "C" {
 #define INT16_MAX   __INT16_MAX__
 #define INT32_MAX   __INT32_MAX__
 #define INT64_MAX   __INT64_MAX__
+#define INTMAX_MAX  __INT64_MAX__
 
 #define INT8_MIN    (-INT8_MAX - 1)
 #define INT16_MIN   (-INT16_MAX - 1)
@@ -27,6 +28,7 @@ extern "C" {
 #define UINT16_MAX  __UINT16_MAX__
 #define UINT32_MAX  __UINT32_MAX__
 #define UINT64_MAX  __UINT64_MAX__
+#define UINTMAX_MAX __UINT64_MAX__
 
 #define INTPTR_MAX  __INTPTR_MAX__
 #define INTPTR_MIN  (-INTPTR_MAX - 1)
@@ -41,6 +43,7 @@ typedef __INT8_TYPE__		int8_t;
 typedef __INT16_TYPE__		int16_t;
 typedef __INT32_TYPE__		int32_t;
 typedef __INT64_TYPE__		int64_t;
+typedef __INT64_TYPE__		intmax_t;
 
 typedef __INT_FAST8_TYPE__	int_fast8_t;
 typedef __INT_FAST16_TYPE__	int_fast16_t;
@@ -56,6 +59,7 @@ typedef __UINT8_TYPE__		uint8_t;
 typedef __UINT16_TYPE__		uint16_t;
 typedef __UINT32_TYPE__		uint32_t;
 typedef __UINT64_TYPE__		uint64_t;
+typedef __UINT64_TYPE__		uintmax_t;
 
 typedef __UINT_FAST8_TYPE__	uint_fast8_t;
 typedef __UINT_FAST16_TYPE__	uint_fast16_t;
@@ -69,6 +73,24 @@ typedef __UINT_LEAST64_TYPE__	uint_least64_t;
 
 typedef __INTPTR_TYPE__		intptr_t;
 typedef __UINTPTR_TYPE__	uintptr_t;
+
+#ifdef __GNUC__
+/* These macros must produce constant integer expressions, which can't
+ * be done in the preprocessor (casts aren't allowed).  Defer to the
+ * GCC internal functions where they're available.
+ */
+#define INT8_C(_v) __INT8_C(_v)
+#define INT16_C(_v) __INT16_C(_v)
+#define INT32_C(_v) __INT32_C(_v)
+#define INT64_C(_v) __INT64_C(_v)
+#define INTMAX_C(_v) __INTMAX_C(_v)
+
+#define UINT8_C(_v) __UINT8_C(_v)
+#define UINT16_C(_v) __UINT16_C(_v)
+#define UINT32_C(_v) __UINT32_C(_v)
+#define UINT64_C(_v) __UINT64_C(_v)
+#define UINTMAX_C(_v) __UINTMAX_C(_v)
+#endif /* __GNUC__ */
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth Central HT
+tests:
+  sample.bluetooth.central_ht:
+    arch_allow: x86
+    harness: bluetooth
+    tags: bluetooth

@@ -26,12 +26,10 @@
 
 _ASM_FILE_PROLOGUE
 
-#if defined(CONFIG_SW_VECTOR_RELAY)
-
 GDATA(_vector_table_pointer)
 GDATA(z_main_stack)
 
-SECTION_FUNC(vector_relay_handler, __vector_relay_handler)
+SECTION_FUNC(TEXT, __vector_relay_handler)
 	mrs	r0, ipsr;
 	lsls	r0, r0, $0x02;
 
@@ -72,37 +70,8 @@ SECTION_FUNC(vector_relay_table, __vector_relay_table)
 	.word __vector_relay_handler
 	/* End of system exception */
 
+	.rept CONFIG_NUM_IRQS
 	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
+	.endr
 
-#endif
+GDATA(__vector_relay_table)

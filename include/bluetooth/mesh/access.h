@@ -11,6 +11,18 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
 #include <settings/settings.h>
+#include <sys/util.h>
+#include <bluetooth/mesh/msg.h>
+
+/* Internal macros used to initialize array members */
+#define BT_MESH_KEY_UNUSED_ELT_(IDX, _) BT_MESH_KEY_UNUSED,
+#define BT_MESH_ADDR_UNASSIGNED_ELT_(IDX, _) BT_MESH_ADDR_UNASSIGNED,
+#define BT_MESH_MODEL_KEYS_UNUSED			\
+	{ UTIL_LISTIFY(CONFIG_BT_MESH_MODEL_KEY_COUNT,	\
+		       BT_MESH_KEY_UNUSED_ELT_) }
+#define BT_MESH_MODEL_GROUPS_UNASSIGNED				\
+	{ UTIL_LISTIFY(CONFIG_BT_MESH_MODEL_GROUP_COUNT,	\
+		       BT_MESH_ADDR_UNASSIGNED_ELT_) }
 
 /**
  * @brief Bluetooth Mesh Access Layer
@@ -30,13 +42,28 @@ extern "C" {
 #define BT_MESH_ADDR_RELAYS       0xfffe
 
 #define BT_MESH_KEY_UNUSED        0xffff
+#define BT_MESH_KEY_ANY           0xffff
 #define BT_MESH_KEY_DEV           0xfffe
 #define BT_MESH_KEY_DEV_LOCAL     BT_MESH_KEY_DEV
 #define BT_MESH_KEY_DEV_REMOTE    0xfffd
 #define BT_MESH_KEY_DEV_ANY       0xfffc
 
+#define BT_MESH_ADDR_IS_UNICAST(addr) ((addr) && (addr) < 0x8000)
+#define BT_MESH_ADDR_IS_GROUP(addr) ((addr) >= 0xc000 && (addr) <= 0xff00)
+#define BT_MESH_ADDR_IS_VIRTUAL(addr) ((addr) >= 0x8000 && (addr) < 0xc000)
+#define BT_MESH_ADDR_IS_RFU(addr) ((addr) >= 0xff00 && (addr) <= 0xfffb)
+
 #define BT_MESH_IS_DEV_KEY(key) (key == BT_MESH_KEY_DEV_LOCAL || \
 				 key == BT_MESH_KEY_DEV_REMOTE)
+
+/** Maximum payload size of an access message (in octets). */
+#define BT_MESH_APP_SEG_SDU_MAX   12
+/** Maximum possible payload size of an outgoing access message (in octets). */
+#define BT_MESH_TX_SDU_MAX        (CONFIG_BT_MESH_TX_SEG_MAX * \
+				  BT_MESH_APP_SEG_SDU_MAX)
+/** Maximum possible payload size of an incoming access message (in octets). */
+#define BT_MESH_RX_SDU_MAX        (CONFIG_BT_MESH_RX_SEG_MAX * \
+				  BT_MESH_APP_SEG_SDU_MAX)
 
 /** Helper to define a mesh element within an array.
  *
@@ -51,22 +78,22 @@ extern "C" {
 {                                                   \
 	.loc              = (_loc),                 \
 	.model_count      = ARRAY_SIZE(_mods),      \
-	.models           = (_mods),                \
 	.vnd_model_count  = ARRAY_SIZE(_vnd_mods),  \
+	.models           = (_mods),                \
 	.vnd_models       = (_vnd_mods),            \
 }
 
 /** Abstraction that describes a Mesh Element */
 struct bt_mesh_elem {
 	/** Unicast Address. Set at runtime during provisioning. */
-	u16_t addr;
+	uint16_t addr;
 
 	/** Location Descriptor (GATT Bluetooth Namespace Descriptors) */
-	const u16_t loc;
+	const uint16_t loc;
 	/** The number of SIG models in this element */
-	const u8_t model_count;
+	const uint8_t model_count;
 	/** The number of vendor models in this element */
-	const u8_t vnd_model_count;
+	const uint8_t vnd_model_count;
 
 	/** The list of SIG models in this element */
 	struct bt_mesh_model * const models;
@@ -134,37 +161,10 @@ struct bt_mesh_elem {
 #define BT_MESH_MODEL_ID_LIGHT_LC_SETUPSRV         0x1310
 #define BT_MESH_MODEL_ID_LIGHT_LC_CLI              0x1311
 
-/** Message sending context. */
-struct bt_mesh_msg_ctx {
-	/** NetKey Index of the subnet to send the message on. */
-	u16_t net_idx;
-
-	/** AppKey Index to encrypt the message with. */
-	u16_t app_idx;
-
-	/** Remote address. */
-	u16_t addr;
-
-	/** Destination address of a received message. Not used for sending. */
-	u16_t recv_dst;
-
-	/** RSSI of received packet. Not used for sending. */
-	s8_t  recv_rssi;
-
-	/** Received TTL value. Not used for sending. */
-	u8_t  recv_ttl;
-
-	/** Force sending reliably by using segment acknowledgement */
-	bool  send_rel;
-
-	/** TTL, or BT_MESH_TTL_DEFAULT for default TTL. */
-	u8_t  send_ttl;
-};
-
 /** Model opcode handler. */
 struct bt_mesh_model_op {
 	/** OpCode encoded using the BT_MESH_MODEL_OP_* macros */
-	const u32_t  opcode;
+	const uint32_t  opcode;
 
 	/** Minimum required message length */
 	const size_t min_len;
@@ -194,56 +194,6 @@ struct bt_mesh_model_op {
 /** Helper to define an empty model array */
 #define BT_MESH_MODEL_NONE ((struct bt_mesh_model []){})
 
-/** Length of a short Mesh MIC. */
-#define BT_MESH_MIC_SHORT 4
-/** Length of a long Mesh MIC. */
-#define BT_MESH_MIC_LONG 8
-
-/** @def BT_MESH_MODEL_OP_LEN
- *
- *  @brief Helper to determine the length of an opcode.
- *
- *  @param _op Opcode.
- */
-#define BT_MESH_MODEL_OP_LEN(_op) ((_op) <= 0xff ? 1 : (_op) <= 0xffff ? 2 : 3)
-
-/** @def BT_MESH_MODEL_BUF_LEN
- *
- *  @brief Helper for model message buffer length.
- *
- *  Returns the length of a Mesh model message buffer, including the opcode
- *  length and a short MIC.
- *
- *  @param _op          Opcode of the message.
- *  @param _payload_len Length of the model payload.
- */
-#define BT_MESH_MODEL_BUF_LEN(_op, _payload_len)                               \
-	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_SHORT)
-
-/** @def BT_MESH_MODEL_BUF_LEN_LONG_MIC
- *
- *  @brief Helper for model message buffer length.
- *
- *  Returns the length of a Mesh model message buffer, including the opcode
- *  length and a long MIC.
- *
- *  @param _op          Opcode of the message.
- *  @param _payload_len Length of the model payload.
- */
-#define BT_MESH_MODEL_BUF_LEN_LONG_MIC(_op, _payload_len)                      \
-	(BT_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BT_MESH_MIC_LONG)
-
-/** @def BT_MESH_MODEL_BUF_DEFINE
- *
- *  @brief Define a Mesh model message buffer using @ref NET_BUF_SIMPLE_DEFINE.
- *
- *  @param _buf         Buffer name.
- *  @param _op          Opcode of the message.
- *  @param _payload_len Length of the model message payload.
- */
-#define BT_MESH_MODEL_BUF_DEFINE(_buf, _op, _payload_len)                      \
-	NET_BUF_SIMPLE_DEFINE(_buf, BT_MESH_MODEL_BUF_LEN(_op, (_payload_len)))
-
 /** @def BT_MESH_MODEL_CB
  *
  *  @brief Composition data SIG model entry with callback functions.
@@ -257,14 +207,12 @@ struct bt_mesh_model_op {
 #define BT_MESH_MODEL_CB(_id, _op, _pub, _user_data, _cb)                    \
 {                                                                            \
 	.id = (_id),                                                         \
-	.op = _op,                                                           \
-	.keys = { [0 ... (CONFIG_BT_MESH_MODEL_KEY_COUNT - 1)] =             \
-			BT_MESH_KEY_UNUSED },                                \
 	.pub = _pub,                                                         \
-	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
-			BT_MESH_ADDR_UNASSIGNED },                           \
-	.user_data = _user_data,                                             \
+	.keys = BT_MESH_MODEL_KEYS_UNUSED,                                   \
+	.groups = BT_MESH_MODEL_GROUPS_UNASSIGNED,                           \
+	.op = _op,                                                           \
 	.cb = _cb,                                                           \
+	.user_data = _user_data,                                             \
 }
 
 /** @def BT_MESH_MODEL_VND_CB
@@ -284,10 +232,8 @@ struct bt_mesh_model_op {
 	.vnd.id = (_id),                                                     \
 	.op = _op,                                                           \
 	.pub = _pub,                                                         \
-	.keys = { [0 ... (CONFIG_BT_MESH_MODEL_KEY_COUNT - 1)] =             \
-			BT_MESH_KEY_UNUSED },                                \
-	.groups = { [0 ... (CONFIG_BT_MESH_MODEL_GROUP_COUNT - 1)] =         \
-			BT_MESH_ADDR_UNASSIGNED },                           \
+	.keys = BT_MESH_MODEL_KEYS_UNUSED,                                   \
+	.groups = BT_MESH_MODEL_GROUPS_UNASSIGNED,                           \
 	.user_data = _user_data,                                             \
 	.cb = _cb,                                                           \
 }
@@ -339,7 +285,7 @@ struct bt_mesh_model_op {
  *
  *  @return Transmission count (actual transmissions is N + 1).
  */
-#define BT_MESH_TRANSMIT_COUNT(transmit) (((transmit) & (u8_t)BIT_MASK(3)))
+#define BT_MESH_TRANSMIT_COUNT(transmit) (((transmit) & (uint8_t)BIT_MASK(3)))
 
 /** @def BT_MESH_TRANSMIT_INT
  *
@@ -394,19 +340,19 @@ struct bt_mesh_model_pub {
 	/** The model the context belongs to. Initialized by the stack. */
 	struct bt_mesh_model *mod;
 
-	u16_t addr;         /**< Publish Address. */
-	u16_t key:12,       /**< Publish AppKey Index. */
-	      cred:1,       /**< Friendship Credentials Flag. */
-	      send_rel:1;   /**< Force reliable sending (segment acks) */
+	uint16_t addr;          /**< Publish Address. */
+	uint16_t key:12,        /**< Publish AppKey Index. */
+		 cred:1,        /**< Friendship Credentials Flag. */
+		 send_rel:1,    /**< Force reliable sending (segment acks) */
+		 fast_period:1; /**< Use FastPeriodDivisor */
 
-	u8_t  ttl;          /**< Publish Time to Live. */
-	u8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
-	u8_t  period;       /**< Publish Period. */
-	u8_t  period_div:4, /**< Divisor for the Period. */
-	      fast_period:1,/**< Use FastPeriodDivisor */
-	      count:3;      /**< Retransmissions left. */
+	uint8_t  ttl;          /**< Publish Time to Live. */
+	uint8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
+	uint8_t  period;       /**< Publish Period. */
+	uint8_t  period_div:4, /**< Divisor for the Period. */
+		 count:4;      /**< Transmissions left. */
 
-	u32_t period_start; /**< Start of the current period. */
+	uint32_t period_start; /**< Start of the current period. */
 
 	/** @brief Publication buffer, containing the publication message.
 	 *
@@ -435,7 +381,7 @@ struct bt_mesh_model_pub {
 	int (*update)(struct bt_mesh_model *mod);
 
 	/** Publish Period Timer. Only for stack-internal use. */
-	struct k_delayed_work timer;
+	struct k_work_delayable timer;
 };
 
 /** @def BT_MESH_MODEL_PUB_DEFINE
@@ -449,8 +395,8 @@ struct bt_mesh_model_pub {
 #define BT_MESH_MODEL_PUB_DEFINE(_name, _update, _msg_len) \
 	NET_BUF_SIMPLE_DEFINE_STATIC(bt_mesh_pub_msg_##_name, _msg_len); \
 	static struct bt_mesh_model_pub _name = { \
-		.update = _update, \
 		.msg = &bt_mesh_pub_msg_##_name, \
+		.update = _update, \
 	}
 
 /** Model callback functions. */
@@ -460,6 +406,7 @@ struct bt_mesh_model_cb {
 	 *  @sa settings_handler::h_set
 	 *
 	 *  @param model   Model to set the persistent data of.
+	 *  @param name    Name/key of the settings item.
 	 *  @param len_rd  The size of the data found in the backend.
 	 *  @param read_cb Function provided to read the data from the backend.
 	 *  @param cb_arg  Arguments for the read function provided by the
@@ -468,8 +415,8 @@ struct bt_mesh_model_cb {
 	 *  @return 0 on success, error otherwise.
 	 */
 	int (*const settings_set)(struct bt_mesh_model *model,
-				  size_t len_rd, settings_read_cb read_cb,
-				  void *cb_arg);
+				  const char *name, size_t len_rd,
+				  settings_read_cb read_cb, void *cb_arg);
 
 	/** @brief Callback called when the mesh is started.
 	 *
@@ -489,6 +436,10 @@ struct bt_mesh_model_cb {
 	 *
 	 *  Called on every model instance during mesh initialization.
 	 *
+	 *  If any of the model init callbacks return an error, the Mesh
+	 *  subsystem initialization will be aborted, and the error will be
+	 *  returned to the caller of @ref bt_mesh_init.
+	 *
 	 *  @param model Model to be initialized.
 	 *
 	 *  @return 0 on success, error otherwise.
@@ -500,36 +451,44 @@ struct bt_mesh_model_cb {
 	 *  Called when the mesh node is reset. All model data is deleted on
 	 *  reset, and the model should clear its state.
 	 *
+	 *  @note If the model stores any persistent data, this needs to be
+	 *  erased manually.
+	 *
 	 *  @param model Model this callback belongs to.
 	 */
 	void (*const reset)(struct bt_mesh_model *model);
+};
+
+/** Vendor model ID */
+struct bt_mesh_mod_id_vnd {
+	/** Vendor's company ID */
+	uint16_t company;
+	/** Model ID */
+	uint16_t id;
 };
 
 /** Abstraction that describes a Mesh Model instance */
 struct bt_mesh_model {
 	union {
 		/** SIG model ID */
-		const u16_t id;
+		const uint16_t id;
 		/** Vendor model ID */
-		struct {
-			u16_t company; /**< Vendor's company ID */
-			u16_t id;      /**< Model ID */
-		} vnd;
+		const struct bt_mesh_mod_id_vnd vnd;
 	};
 
 	/* Internal information, mainly for persistent storage */
-	u8_t  elem_idx;   /* Belongs to Nth element */
-	u8_t  mod_idx;    /* Is the Nth model in the element */
-	u16_t flags;      /* Model flags for internal bookkeeping */
+	uint8_t  elem_idx;   /* Belongs to Nth element */
+	uint8_t  mod_idx;    /* Is the Nth model in the element */
+	uint16_t flags;      /* Model flags for internal bookkeeping */
 
 	/** Model Publication */
 	struct bt_mesh_model_pub * const pub;
 
 	/** AppKey List */
-	u16_t keys[CONFIG_BT_MESH_MODEL_KEY_COUNT];
+	uint16_t keys[CONFIG_BT_MESH_MODEL_KEY_COUNT];
 
 	/** Subscription List (group or virtual addresses) */
-	u16_t groups[CONFIG_BT_MESH_MODEL_GROUP_COUNT];
+	uint16_t groups[CONFIG_BT_MESH_MODEL_GROUP_COUNT];
 
 	/** Opcode handler list */
 	const struct bt_mesh_model_op * const op;
@@ -555,7 +514,7 @@ struct bt_mesh_send_cb {
 	 *  @param err      Error occurring during sending.
 	 *  @param cb_data  Callback data, as passed to the send API.
 	 */
-	void (*start)(u16_t duration, int err, void *cb_data);
+	void (*start)(uint16_t duration, int err, void *cb_data);
 	/** @brief Handler called at the end of the transmission.
 	 *
 	 *  @param err     Error occurring during sending.
@@ -564,16 +523,6 @@ struct bt_mesh_send_cb {
 	void (*end)(int err, void *cb_data);
 };
 
-
-/** @brief Initialize a model message.
- *
- *  Clears the message buffer contents, and encodes the given opcode.
- *  The message buffer will be ready for filling in payload data.
- *
- *  @param msg    Message buffer.
- *  @param opcode Opcode to encode.
- */
-void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode);
 
 /** Special TTL value to request using configured default TTL */
 #define BT_MESH_TTL_DEFAULT 0xff
@@ -629,7 +578,7 @@ struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
  *          if no SIG model with the given ID exists in the given element.
  */
 struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
-					 u16_t id);
+					 uint16_t id);
 
 /** @brief Find a vendor model.
  *
@@ -641,7 +590,7 @@ struct bt_mesh_model *bt_mesh_model_find(const struct bt_mesh_elem *elem,
  *          if no vendor model with the given ID exists in the given element.
  */
 struct bt_mesh_model *bt_mesh_model_find_vnd(const struct bt_mesh_elem *elem,
-					     u16_t company, u16_t id);
+					     uint16_t company, uint16_t id);
 
 /** @brief Get whether the model is in the primary element of the device.
  *
@@ -658,13 +607,15 @@ static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
  *
  *  @param mod      Mesh model.
  *  @param vnd      This is a vendor model.
+ *  @param name     Name/key of the settings item.
  *  @param data     Model data to store, or NULL to delete any model data.
  *  @param data_len Length of the model data.
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
-			     const void *data, size_t data_len);
+			 const char *name, const void *data,
+			 size_t data_len);
 
 /** @brief Let a model extend another.
  *
@@ -692,9 +643,9 @@ int bt_mesh_model_extend(struct bt_mesh_model *mod,
 
 /** Node Composition */
 struct bt_mesh_comp {
-	u16_t cid; /**< Company ID */
-	u16_t pid; /**< Product ID */
-	u16_t vid; /**< Version ID */
+	uint16_t cid; /**< Company ID */
+	uint16_t pid; /**< Product ID */
+	uint16_t vid; /**< Version ID */
 
 	size_t elem_count; /**< The number of elements in this device. */
 	struct bt_mesh_elem *elem; /**< List of elements. */

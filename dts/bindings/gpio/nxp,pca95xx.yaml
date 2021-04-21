@@ -16,6 +16,11 @@ properties:
       required: false
       description: Supports pull-up/pull-down
 
+    interrupt-gpios:
+      type: phandle-array
+      required: false
+      description: Interrupt GPIO pin (active-low open-drain)
+
     "#gpio-cells":
       const: 2
 

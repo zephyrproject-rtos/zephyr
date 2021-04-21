@@ -17,3 +17,8 @@ properties:
 
     interrupts:
       required: true
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      required: true

@@ -263,26 +263,26 @@ enum adxl372_fifo_mode {
 struct adxl372_fifo_config {
 	enum adxl372_fifo_mode fifo_mode;
 	enum adxl372_fifo_format fifo_format;
-	u16_t fifo_samples;
+	uint16_t fifo_samples;
 };
 
 struct adxl372_activity_threshold {
-	u16_t thresh;
+	uint16_t thresh;
 	bool referenced;
 	bool enable;
 };
 
 struct adxl372_xyz_accel_data {
-	s16_t x;
-	s16_t y;
-	s16_t z;
+	int16_t x;
+	int16_t y;
+	int16_t z;
 };
 
 struct adxl372_data {
-	struct device *bus;
+	const struct device *bus;
 #ifdef CONFIG_ADXL372_SPI
 	struct spi_config spi_cfg;
-#if defined(DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control adxl372_cs_ctrl;
 #endif
 #endif
@@ -290,21 +290,21 @@ struct adxl372_data {
 	struct adxl372_fifo_config fifo_config;
 
 #ifdef CONFIG_ADXL372_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	sensor_trigger_handler_t th_handler;
 	struct sensor_trigger th_trigger;
 	sensor_trigger_handler_t drdy_handler;
 	struct sensor_trigger drdy_trigger;
+	const struct device *dev;
 
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_ADXL372_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL372_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif defined(CONFIG_ADXL372_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 #endif /* CONFIG_ADXL372_TRIGGER */
 };
@@ -312,15 +312,16 @@ struct adxl372_data {
 struct adxl372_dev_config {
 #ifdef CONFIG_ADXL372_I2C
 	const char *i2c_port;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 #endif
 #ifdef CONFIG_ADXL372_SPI
 	const char *spi_port;
-	u16_t spi_slave;
-	u32_t spi_max_frequency;
-#if defined(DT_INST_0_ADI_ADXL372_CS_GPIOS_CONTROLLER)
+	uint16_t spi_slave;
+	uint32_t spi_max_frequency;
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
 	gpio_pin_t cs_gpio;
+	gpio_dt_flags_t cs_flags;
 #endif
 #endif /* CONFIG_ADXL372_SPI */
 #ifdef CONFIG_ADXL372_TRIGGER
@@ -347,24 +348,24 @@ struct adxl372_dev_config {
 	enum adxl372_filter_settle filter_settle;
 	enum adxl372_op_mode op_mode;
 
-	u16_t inactivity_time;
-	u8_t activity_time;
-	u8_t int1_config;
-	u8_t int2_config;
+	uint16_t inactivity_time;
+	uint8_t activity_time;
+	uint8_t int1_config;
+	uint8_t int2_config;
 };
 
 #ifdef CONFIG_ADXL372_TRIGGER
-int adxl372_get_status(struct device *dev,
-		       u8_t *status1, u8_t *status2, u16_t *fifo_entries);
+int adxl372_get_status(const struct device *dev,
+		       uint8_t *status1, uint8_t *status2, uint16_t *fifo_entries);
 
-int adxl372_reg_write_mask(struct device *dev,
-			   u8_t reg_addr, u32_t mask, u8_t data);
+int adxl372_reg_write_mask(const struct device *dev,
+			   uint8_t reg_addr, uint32_t mask, uint8_t data);
 
-int adxl372_trigger_set(struct device *dev,
+int adxl372_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int adxl372_init_interrupt(struct device *dev);
+int adxl372_init_interrupt(const struct device *dev);
 #endif /* CONFIG_ADT7420_TRIGGER */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_ */

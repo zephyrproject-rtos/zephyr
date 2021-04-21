@@ -20,7 +20,7 @@
 #define INIT_PREEMPT_P2 ((void *)6)
 #define INIT_PREEMPT_P3 ((void *)7)
 #define INIT_PREEMPT_OPTION (K_USER | K_INHERIT_PERMS)
-#define INIT_PREEMPT_DELAY K_NO_WAIT
+#define INIT_PREEMPT_DELAY 0
 
 static void thread_entry(void *p1, void *p2, void *p3);
 
@@ -44,10 +44,10 @@ static K_THREAD_STACK_DEFINE(stack_coop, INIT_COOP_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(stack_preempt, INIT_PREEMPT_STACK_SIZE);
 static struct k_thread thread_coop;
 static struct k_thread thread_preempt;
-static ZTEST_BMEM u64_t t_create;
+static ZTEST_BMEM uint64_t t_create;
 static ZTEST_BMEM struct thread_data {
 	int init_prio;
-	s32_t init_delay;
+	int32_t init_delay;
 	void *init_p1;
 	void *init_p2;
 	void *init_p3;
@@ -57,7 +57,7 @@ static ZTEST_BMEM struct thread_data {
 static void thread_entry(void *p1, void *p2, void *p3)
 {
 	if (t_create) {
-		u64_t t_delay = k_uptime_get() - t_create;
+		uint64_t t_delay = k_uptime_get() - t_create;
 		/**TESTPOINT: check delay start*/
 		zassert_true(t_delay >= expected.init_delay,
 			     "k_thread_create delay start failed");
@@ -144,7 +144,8 @@ void test_kinit_preempt_thread(void)
 	k_tid_t pthread = k_thread_create(&thread_preempt, stack_preempt,
 					  INIT_PREEMPT_STACK_SIZE, thread_entry, INIT_PREEMPT_P1,
 					  INIT_PREEMPT_P2, INIT_PREEMPT_P3, INIT_PREEMPT_PRIO,
-					  INIT_PREEMPT_OPTION, INIT_PREEMPT_DELAY);
+					  INIT_PREEMPT_OPTION,
+					  K_MSEC(INIT_PREEMPT_DELAY));
 
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();
@@ -175,9 +176,9 @@ void test_kinit_coop_thread(void)
 {
 	/*create coop thread*/
 	k_tid_t pthread = k_thread_create(&thread_coop, stack_coop,
-					  INIT_COOP_STACK_SIZE, thread_entry, INIT_COOP_P1,
-					  INIT_COOP_P2, INIT_COOP_P3, INIT_COOP_PRIO,
-					  INIT_COOP_OPTION, INIT_COOP_DELAY);
+			  INIT_COOP_STACK_SIZE, thread_entry, INIT_COOP_P1,
+			  INIT_COOP_P2, INIT_COOP_P3, INIT_COOP_PRIO,
+			  INIT_COOP_OPTION, K_MSEC(INIT_COOP_DELAY));
 
 	/*record time stamp of thread creation*/
 	t_create = k_uptime_get();
@@ -208,8 +209,8 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &thread_preempt, &stack_preempt,
 			      &start_sema, &end_sema);
 #ifdef CONFIG_USERSPACE
-	k_mem_domain_add_thread(&ztest_mem_domain, T_KDEFINE_COOP_THREAD);
-	k_mem_domain_add_thread(&ztest_mem_domain, T_KDEFINE_PREEMPT_THREAD);
+	k_mem_domain_add_thread(&k_mem_domain_default, T_KDEFINE_COOP_THREAD);
+	k_mem_domain_add_thread(&k_mem_domain_default, T_KDEFINE_PREEMPT_THREAD);
 #endif
 
 	ztest_test_suite(thread_init,

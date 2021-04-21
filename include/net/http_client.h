@@ -20,6 +20,7 @@
  * @{
  */
 
+#include <kernel.h>
 #include <net/net_ip.h>
 #include <net/http_parser.h>
 
@@ -106,12 +107,12 @@ struct http_response {
 	http_response_cb_t cb;
 
 	/** Where the body starts */
-	u8_t *body_start;
+	uint8_t *body_start;
 
 	/** Where the response is stored, this is to be
 	 * provided by the user.
 	 */
-	u8_t *recv_buf;
+	uint8_t *recv_buf;
 
 	/** Response buffer maximum length */
 	size_t recv_buf_len;
@@ -145,16 +146,21 @@ struct http_response {
 	 */
 	char http_status[HTTP_STATUS_STR_SIZE];
 
-	u8_t cl_present : 1;
-	u8_t body_found : 1;
-	u8_t message_complete : 1;
+	/** Numeric HTTP status code which corresponds to the
+	 * textual description.
+	 */
+	uint16_t http_status_code;
+
+	uint8_t cl_present : 1;
+	uint8_t body_found : 1;
+	uint8_t message_complete : 1;
 };
 
 /** HTTP client internal data that the application should not touch
  */
 struct http_client_internal_data {
 	/** Work for handling timeout */
-	struct k_delayed_work work;
+	struct k_work_delayable work;
 
 	/** HTTP parser context */
 	struct http_parser parser;
@@ -174,7 +180,7 @@ struct http_client_internal_data {
 	int sock;
 
 	/** Request timeout */
-	s32_t timeout;
+	k_timeout_t timeout;
 };
 
 /**
@@ -202,7 +208,7 @@ struct http_request {
 	const struct http_parser_settings *http_cb;
 
 	/** User supplied buffer where received data is stored */
-	u8_t *recv_buf;
+	uint8_t *recv_buf;
 
 	/** Length of the user supplied receive buffer */
 	size_t recv_buf_len;
@@ -227,6 +233,9 @@ struct http_request {
 	/** Hostname to be used in the request */
 	const char *host;
 
+	/** Port number to be used in the request */
+	const char *port;
+
 	/** User supplied callback function to call when payload
 	 * needs to be sent. This can be NULL in which case the payload field
 	 * in http_request is used. The idea of this payload callback is to
@@ -238,7 +247,9 @@ struct http_request {
 	/** Payload, may be NULL */
 	const char *payload;
 
-	/** Payload length, may be 0. Only used if payload field is not NULL */
+	/** Payload length is used to calculate Content-Length. Set to 0
+	 * for chunked transfers.
+	 */
 	size_t payload_len;
 
 	/** User supplied callback function to call when optional headers need
@@ -271,12 +282,13 @@ struct http_request {
  * @param req HTTP request information
  * @param timeout Max timeout to wait for the data. The timeout value cannot be
  *        0 as there would be no time to receive the data.
+ *        The timeout value is in milliseconds.
  * @param user_data User specified data that is passed to the callback.
  *
  * @return <0 if error, >=0 amount of data sent to the server
  */
 int http_client_req(int sock, struct http_request *req,
-		    s32_t timeout, void *user_data);
+		    int32_t timeout, void *user_data);
 
 #ifdef __cplusplus
 }

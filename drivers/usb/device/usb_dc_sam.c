@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_usbhs
+
 #include <usb/usb_device.h>
 #include <soc.h>
 #include <string.h>
@@ -20,21 +22,47 @@ LOG_MODULE_REGISTER(usb_dc_sam);
 #define USBHS_RAM_ADDR		(0xA0100000)
 #endif
 
-/* Helper macros to make it easier to work with endpoint numbers */
-#define EP_ADDR2IDX(ep)		((ep) & ~USB_EP_DIR_MASK)
-#define EP_ADDR2DIR(ep)		((ep) & USB_EP_DIR_MASK)
+/*
+ * The new Atmel DFP headers provide mode-specific interrupt register field
+ * definitions.  Map the existing generic definitions to these.
+ */
+#ifndef USBHS_DEVEPTISR_CTRL_RXSTPI
+#define USBHS_DEVEPTISR_CTRL_RXSTPI	USBHS_DEVEPTISR_RXSTPI
+#endif
+#ifndef USBHS_DEVEPTICR_CTRL_RXSTPIC
+#define USBHS_DEVEPTICR_CTRL_RXSTPIC	USBHS_DEVEPTICR_RXSTPIC
+#endif
+#ifndef USBHS_DEVEPTIMR_CTRL_STALLRQ
+#define USBHS_DEVEPTIMR_CTRL_STALLRQ	USBHS_DEVEPTIMR_STALLRQ
+#endif
+#ifndef USBHS_DEVEPTIER_CTRL_RXSTPES
+#define USBHS_DEVEPTIER_CTRL_RXSTPES	USBHS_DEVEPTIER_RXSTPES
+#endif
+#ifndef USBHS_DEVEPTIER_CTRL_STALLRQS
+#define USBHS_DEVEPTIER_CTRL_STALLRQS	USBHS_DEVEPTIER_STALLRQS
+#endif
+#ifndef USBHS_DEVEPTIDR_CTRL_STALLRQC
+#define USBHS_DEVEPTIDR_CTRL_STALLRQC	USBHS_DEVEPTIDR_STALLRQC
+#endif
+
+#define NUM_OF_EP_MAX		DT_INST_PROP(0, num_bidir_endpoints)
+#if DT_INST_NODE_HAS_PROP(0, maximum_speed)
+#define USB_MAXIMUM_SPEED	DT_ENUM_IDX(DT_DRV_INST(0), maximum_speed)
+#else
+#define USB_MAXIMUM_SPEED	2 /* Default to high-speed */
+#endif
 
 struct usb_device_ep_data {
-	u16_t mps;
+	uint16_t mps;
 	usb_dc_ep_callback cb_in;
 	usb_dc_ep_callback cb_out;
-	u8_t *fifo;
+	uint8_t *fifo;
 };
 
 struct usb_device_data {
 	bool addr_enabled;
 	usb_dc_status_callback status_cb;
-	struct usb_device_ep_data ep_data[DT_USBHS_NUM_BIDIR_EP];
+	struct usb_device_ep_data ep_data[NUM_OF_EP_MAX];
 };
 
 static struct usb_device_data dev_data;
@@ -79,19 +107,19 @@ static bool usb_dc_is_attached(void)
 }
 
 /* Check if an endpoint is configured */
-static bool usb_dc_ep_is_configured(u8_t ep_idx)
+static bool usb_dc_ep_is_configured(uint8_t ep_idx)
 {
 	return USBHS->USBHS_DEVEPTISR[ep_idx] & USBHS_DEVEPTISR_CFGOK;
 }
 
 /* Check if an endpoint is enabled */
-static bool usb_dc_ep_is_enabled(u8_t ep_idx)
+static bool usb_dc_ep_is_enabled(uint8_t ep_idx)
 {
 	return USBHS->USBHS_DEVEPT & BIT(USBHS_DEVEPT_EPEN0_Pos + ep_idx);
 }
 
 /* Reset and endpoint */
-static void usb_dc_ep_reset(u8_t ep_idx)
+static void usb_dc_ep_reset(uint8_t ep_idx)
 {
 	USBHS->USBHS_DEVEPT |= BIT(USBHS_DEVEPT_EPRST0_Pos + ep_idx);
 	USBHS->USBHS_DEVEPT &= ~BIT(USBHS_DEVEPT_EPRST0_Pos + ep_idx);
@@ -99,11 +127,11 @@ static void usb_dc_ep_reset(u8_t ep_idx)
 }
 
 /* Enable endpoint interrupts, depending of the type and direction */
-static void usb_dc_ep_enable_interrupts(u8_t ep_idx)
+static void usb_dc_ep_enable_interrupts(uint8_t ep_idx)
 {
 	if (ep_idx == 0U) {
 		/* Control endpoint: enable SETUP and OUT */
-		USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_RXSTPES;
+		USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_CTRL_RXSTPES;
 		USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_RXOUTES;
 	} else if ((USBHS->USBHS_DEVEPTCFG[ep_idx] & USBHS_DEVEPTCFG_EPDIR_Msk)
 		   == USBHS_DEVEPTCFG_EPDIR_IN) {
@@ -117,22 +145,22 @@ static void usb_dc_ep_enable_interrupts(u8_t ep_idx)
 }
 
 /* Reset the endpoint FIFO pointer to the beginning of the endpoint memory */
-static void usb_dc_ep_fifo_reset(u8_t ep_idx)
+static void usb_dc_ep_fifo_reset(uint8_t ep_idx)
 {
-	u8_t *p;
+	uint8_t *p;
 
-	p = (u8_t *)(USBHS_RAM_ADDR + 0x8000 * ep_idx);
+	p = (uint8_t *)(USBHS_RAM_ADDR + 0x8000 * ep_idx);
 	dev_data.ep_data[ep_idx].fifo = p;
 }
 
 /* Fetch a byte from the endpoint FIFO */
-static u8_t usb_dc_ep_fifo_get(u8_t ep_idx)
+static uint8_t usb_dc_ep_fifo_get(uint8_t ep_idx)
 {
 	return *(dev_data.ep_data[ep_idx].fifo++);
 }
 
 /* Put a byte from the endpoint FIFO */
-static void usb_dc_ep_fifo_put(u8_t ep_idx, u8_t data)
+static void usb_dc_ep_fifo_put(uint8_t ep_idx, uint8_t data)
 {
 	*(dev_data.ep_data[ep_idx].fifo++) = data;
 }
@@ -140,10 +168,10 @@ static void usb_dc_ep_fifo_put(u8_t ep_idx, u8_t data)
 /* Handle interrupts on a control endpoint */
 static void usb_dc_ep0_isr(void)
 {
-	u32_t sr = USBHS->USBHS_DEVEPTISR[0] & USBHS->USBHS_DEVEPTIMR[0];
-	u32_t dev_ctrl = USBHS->USBHS_DEVCTRL;
+	uint32_t sr = USBHS->USBHS_DEVEPTISR[0] & USBHS->USBHS_DEVEPTIMR[0];
+	uint32_t dev_ctrl = USBHS->USBHS_DEVCTRL;
 
-	if (sr & USBHS_DEVEPTISR_RXSTPI) {
+	if (sr & USBHS_DEVEPTISR_CTRL_RXSTPI) {
 		/* SETUP data received */
 		usb_dc_ep_fifo_reset(0);
 		dev_data.ep_data[0].cb_out(USB_EP_DIR_OUT, USB_DC_EP_SETUP);
@@ -173,13 +201,13 @@ static void usb_dc_ep0_isr(void)
 }
 
 /* Handle interrupts on a non-control endpoint */
-static void usb_dc_ep_isr(u8_t ep_idx)
+static void usb_dc_ep_isr(uint8_t ep_idx)
 {
-	u32_t sr = USBHS->USBHS_DEVEPTISR[ep_idx] &
+	uint32_t sr = USBHS->USBHS_DEVEPTISR[ep_idx] &
 		   USBHS->USBHS_DEVEPTIMR[ep_idx];
 
 	if (sr & USBHS_DEVEPTISR_RXOUTI) {
-		u8_t ep = ep_idx | USB_EP_DIR_OUT;
+		uint8_t ep = ep_idx | USB_EP_DIR_OUT;
 
 		/* Acknowledge the interrupt */
 		USBHS->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_RXOUTIC;
@@ -189,7 +217,7 @@ static void usb_dc_ep_isr(u8_t ep_idx)
 		dev_data.ep_data[ep_idx].cb_out(ep, USB_DC_EP_DATA_OUT);
 	}
 	if (sr & USBHS_DEVEPTISR_TXINI) {
-		u8_t ep = ep_idx | USB_EP_DIR_IN;
+		uint8_t ep = ep_idx | USB_EP_DIR_IN;
 
 		/* Acknowledge the interrupt */
 		USBHS->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_TXINIC;
@@ -203,7 +231,7 @@ static void usb_dc_ep_isr(u8_t ep_idx)
 /* Top level interrupt handler */
 static void usb_dc_isr(void)
 {
-	u32_t sr = USBHS->USBHS_DEVISR & USBHS->USBHS_DEVIMR;
+	uint32_t sr = USBHS->USBHS_DEVISR & USBHS->USBHS_DEVIMR;
 
 	/* End of resume interrupt */
 	if (sr & USBHS_DEVISR_EORSM) {
@@ -224,6 +252,12 @@ static void usb_dc_isr(void)
 			 * when it receives the EORST.  Re-enable interrupts.
 			 */
 			usb_dc_ep_enable_interrupts(0);
+		}
+
+		/* Free all endpoint memory */
+		for (int idx = 1; idx < NUM_OF_EP_MAX; idx++) {
+			usb_dc_ep_disable(idx);
+			USBHS->USBHS_DEVEPTCFG[idx] &= ~USBHS_DEVEPTCFG_ALLOC;
 		}
 
 		/* Callback function */
@@ -256,7 +290,7 @@ static void usb_dc_isr(void)
 	}
 
 	/* Other endpoints interrupt */
-	for (int ep_idx = 1; ep_idx < DT_USBHS_NUM_BIDIR_EP; ep_idx++) {
+	for (int ep_idx = 1; ep_idx < NUM_OF_EP_MAX; ep_idx++) {
 		if (sr & BIT(USBHS_DEVISR_PEP_0_Pos + ep_idx)) {
 			usb_dc_ep_isr(ep_idx);
 		}
@@ -266,10 +300,10 @@ static void usb_dc_isr(void)
 /* Attach USB for device connection */
 int usb_dc_attach(void)
 {
-	u32_t regval;
+	uint32_t regval;
 
 	/* Start the peripheral clock */
-	soc_pmc_peripheral_enable(DT_USBHS_PERIPHERAL_ID);
+	soc_pmc_peripheral_enable(DT_INST_PROP(0, peripheral_id));
 
 	/* Enable the USB controller in device mode with the clock frozen */
 	USBHS->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_USBE |
@@ -278,23 +312,19 @@ int usb_dc_attach(void)
 
 	/* Select the speed */
 	regval = USBHS_DEVCTRL_DETACH;
-#ifdef DT_USBHS_MAXIMUM_SPEED
-	if (!strncmp(DT_USBHS_MAXIMUM_SPEED, "high-speed", 10)) {
-		regval |= USBHS_DEVCTRL_SPDCONF_NORMAL;
-	} else if (!strncmp(DT_USBHS_MAXIMUM_SPEED, "full-speed", 10)) {
-		regval |= USBHS_DEVCTRL_SPDCONF_LOW_POWER;
-	} else if (!strncmp(DT_USBHS_MAXIMUM_SPEED, "low-speed", 9)) {
-		regval |= USBHS_DEVCTRL_LS;
-		regval |= USBHS_DEVCTRL_SPDCONF_LOW_POWER;
-	} else {
-		regval |= USBHS_DEVCTRL_SPDCONF_NORMAL;
-		LOG_WRN("Unsupported maximum speed defined in device tree. "
-			"USB controller will default to its maximum HW "
-			"capability");
-	}
-#else
+#if USB_MAXIMUM_SPEED == 0
+	/* low-speed */
+	regval |= USBHS_DEVCTRL_LS;
+	regval |= USBHS_DEVCTRL_SPDCONF_LOW_POWER;
+#elif USB_MAXIMUM_SPEED == 1
+	/* full-speed */
+	regval |= USBHS_DEVCTRL_SPDCONF_LOW_POWER;
+#elif USB_MAXIMUM_SPEED == 2
+	/* high-speed */
 	regval |= USBHS_DEVCTRL_SPDCONF_NORMAL;
-#endif /* DT_USBHS_MAXIMUM_SPEED */
+#else
+#error "Unsupported maximum speed defined in device tree."
+#endif
 	USBHS->USBHS_DEVCTRL = regval;
 
 	/* Enable the USB clock */
@@ -312,8 +342,9 @@ int usb_dc_attach(void)
 #endif
 
 	/* Connect and enable the interrupt */
-	IRQ_CONNECT(DT_USBHS_IRQ, DT_USBHS_IRQ_PRI, usb_dc_isr, 0, 0);
-	irq_enable(DT_USBHS_IRQ);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
+		    usb_dc_isr, 0, 0);
+	irq_enable(DT_INST_IRQN(0));
 
 	/* Attach the device */
 	USBHS->USBHS_DEVCTRL &= ~USBHS_DEVCTRL_DETACH;
@@ -335,10 +366,10 @@ int usb_dc_detach(void)
 	USBHS->USBHS_CTRL = USBHS_CTRL_UIMOD | USBHS_CTRL_FRZCLK;
 
 	/* Disable the peripheral clock */
-	soc_pmc_peripheral_enable(DT_USBHS_PERIPHERAL_ID);
+	soc_pmc_peripheral_enable(DT_INST_PROP(0, peripheral_id));
 
 	/* Disable interrupt */
-	irq_disable(DT_USBHS_IRQ);
+	irq_disable(DT_INST_IRQN(0));
 
 	LOG_DBG("");
 	return 0;
@@ -358,7 +389,7 @@ int usb_dc_reset(void)
 }
 
 /* Set USB device address */
-int usb_dc_set_address(u8_t addr)
+int usb_dc_set_address(uint8_t addr)
 {
 	/*
 	 * Set the address but keep it disabled for now. It should be enabled
@@ -382,9 +413,9 @@ void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 /* Check endpoint capabilities */
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	u8_t ep_idx = EP_ADDR2IDX(cfg->ep_addr);
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("endpoint index/address out of range");
 		return -1;
 	}
@@ -395,12 +426,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 			return -1;
 		}
 	} else if (ep_idx & BIT(0)) {
-		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
+		if (USB_EP_GET_DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
 			LOG_INF("pre-selected as IN endpoint");
 			return -1;
 		}
 	} else {
-		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
+		if (USB_EP_GET_DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
 			LOG_INF("pre-selected as OUT endpoint");
 			return -1;
 		}
@@ -418,10 +449,10 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 /* Configure endpoint */
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 {
-	u8_t ep_idx = EP_ADDR2IDX(cfg->ep_addr);
-	bool ep_configured[DT_USBHS_NUM_BIDIR_EP];
-	bool ep_enabled[DT_USBHS_NUM_BIDIR_EP];
-	u32_t regval = 0U;
+	uint8_t ep_idx = USB_EP_GET_IDX(cfg->ep_addr);
+	bool ep_configured[NUM_OF_EP_MAX];
+	bool ep_enabled[NUM_OF_EP_MAX];
+	uint32_t regval = 0U;
 	int log2ceil_mps;
 
 	if (usb_dc_ep_check_cap(cfg) != 0) {
@@ -438,7 +469,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		return -EBUSY;
 	}
 
-	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
+	LOG_INF("Configure ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		cfg->ep_type);
 
 	/* Reset the endpoint */
@@ -463,7 +494,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	}
 
 	/* Map the endpoint direction */
-	if (EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT ||
+	if (USB_EP_DIR_IS_OUT(cfg->ep_addr) ||
 	    cfg->ep_type == USB_DC_EP_CONTROL) {
 		regval |= USBHS_DEVEPTCFG_EPDIR_OUT;
 	} else {
@@ -495,11 +526,12 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	 * enabled, deallocate their memory if needed. Then loop again through
 	 * all the above endpoints to allocate and enabled them.
 	 */
-	for (int i = DT_USBHS_NUM_BIDIR_EP - 1; i > ep_idx; i--) {
+	for (int i = NUM_OF_EP_MAX - 1; i > ep_idx; i--) {
 		ep_configured[i] = usb_dc_ep_is_configured(i);
 		ep_enabled[i] = usb_dc_ep_is_enabled(i);
 
 		if (ep_enabled[i]) {
+			LOG_INF("Temporary disable ep idx %x", i);
 			usb_dc_ep_disable(i);
 		}
 		if (ep_configured[i]) {
@@ -508,7 +540,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	}
 	ep_configured[ep_idx] = true;
 	ep_enabled[ep_idx] = false;
-	for (int i = ep_idx; i < DT_USBHS_NUM_BIDIR_EP; i++) {
+	for (int i = ep_idx; i < NUM_OF_EP_MAX; i++) {
 		if (ep_configured[i]) {
 			USBHS->USBHS_DEVEPTCFG[i] |= USBHS_DEVEPTCFG_ALLOC;
 		}
@@ -527,43 +559,43 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 }
 
 /* Set stall condition for the selected endpoint */
-int usb_dc_ep_set_stall(u8_t ep)
+int usb_dc_ep_set_stall(uint8_t ep)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
-	USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_STALLRQS;
+	USBHS->USBHS_DEVEPTIER[ep_idx] = USBHS_DEVEPTIER_CTRL_STALLRQS;
 
 	LOG_DBG("ep 0x%x", ep);
 	return 0;
 }
 
 /* Clear stall condition for the selected endpoint */
-int usb_dc_ep_clear_stall(u8_t ep)
+int usb_dc_ep_clear_stall(uint8_t ep)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
-	USBHS->USBHS_DEVEPTIDR[ep_idx] = USBHS_DEVEPTIDR_STALLRQC;
+	USBHS->USBHS_DEVEPTIDR[ep_idx] = USBHS_DEVEPTIDR_CTRL_STALLRQC;
 
 	LOG_DBG("ep 0x%x", ep);
 	return 0;
 }
 
 /* Check if the selected endpoint is stalled */
-int usb_dc_ep_is_stalled(u8_t ep, u8_t *stalled)
+int usb_dc_ep_is_stalled(uint8_t ep, uint8_t *stalled)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -573,24 +605,24 @@ int usb_dc_ep_is_stalled(u8_t ep, u8_t *stalled)
 	}
 
 	*stalled = (USBHS->USBHS_DEVEPTIMR[ep_idx] &
-		    USBHS_DEVEPTIMR_STALLRQ) != 0;
+		    USBHS_DEVEPTIMR_CTRL_STALLRQ) != 0;
 
 	LOG_DBG("ep 0x%x", ep);
 	return 0;
 }
 
 /* Halt the selected endpoint */
-int usb_dc_ep_halt(u8_t ep)
+int usb_dc_ep_halt(uint8_t ep)
 {
 	return usb_dc_ep_set_stall(ep);
 }
 
 /* Enable the selected endpoint */
-int usb_dc_ep_enable(u8_t ep)
+int usb_dc_ep_enable(uint8_t ep)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -609,16 +641,17 @@ int usb_dc_ep_enable(u8_t ep)
 	/* Enable SETUP, IN or OUT endpoint interrupts */
 	usb_dc_ep_enable_interrupts(ep_idx);
 
-	LOG_DBG("ep 0x%x", ep);
+	LOG_INF("Enable ep 0x%x", ep);
+
 	return 0;
 }
 
 /* Disable the selected endpoint */
-int usb_dc_ep_disable(u8_t ep)
+int usb_dc_ep_disable(uint8_t ep)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -629,16 +662,17 @@ int usb_dc_ep_disable(u8_t ep)
 	/* Disable endpoint and SETUP, IN or OUT interrupts */
 	USBHS->USBHS_DEVEPT &= ~BIT(USBHS_DEVEPT_EPEN0_Pos + ep_idx);
 
-	LOG_DBG("ep 0x%x", ep);
+	LOG_INF("Disable ep 0x%x", ep);
+
 	return 0;
 }
 
 /* Flush the selected endpoint */
-int usb_dc_ep_flush(u8_t ep)
+int usb_dc_ep_flush(uint8_t ep)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -672,12 +706,12 @@ int usb_dc_ep_flush(u8_t ep)
 }
 
 /* Write data to the specified endpoint */
-int usb_dc_ep_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *ret_bytes)
+int usb_dc_ep_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *ret_bytes)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
-	u32_t packet_len;
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	uint32_t packet_len;
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -687,12 +721,13 @@ int usb_dc_ep_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *ret_bytes)
 		return -ENODEV;
 	}
 
-	if (EP_ADDR2DIR(ep) != USB_EP_DIR_IN) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_IN) {
 		LOG_ERR("wrong endpoint direction");
 		return -EINVAL;
 	}
 
-	if ((USBHS->USBHS_DEVEPTIMR[ep_idx] & USBHS_DEVEPTIMR_STALLRQ) != 0) {
+	if ((USBHS->USBHS_DEVEPTIMR[ep_idx] & USBHS_DEVEPTIMR_CTRL_STALLRQ)
+		!= 0) {
 		LOG_WRN("endpoint is stalled");
 		return -EBUSY;
 	}
@@ -729,9 +764,9 @@ int usb_dc_ep_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *ret_bytes)
 }
 
 /* Read data from the specified endpoint */
-int usb_dc_ep_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *read_bytes)
+int usb_dc_ep_read(uint8_t ep, uint8_t *data, uint32_t max_data_len, uint32_t *read_bytes)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	int rc;
 
 	rc = usb_dc_ep_read_wait(ep, data, max_data_len, read_bytes);
@@ -757,16 +792,16 @@ int usb_dc_ep_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *read_bytes)
 }
 
 /* Set callback function for the specified endpoint */
-int usb_dc_ep_set_callback(u8_t ep, const usb_dc_ep_callback cb)
+int usb_dc_ep_set_callback(uint8_t ep, const usb_dc_ep_callback cb)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
-	if (EP_ADDR2DIR(ep) == USB_EP_DIR_IN) {
+	if (USB_EP_DIR_IS_IN(ep)) {
 		dev_data.ep_data[ep_idx].cb_in = cb;
 	} else {
 		dev_data.ep_data[ep_idx].cb_out = cb;
@@ -777,14 +812,14 @@ int usb_dc_ep_set_callback(u8_t ep, const usb_dc_ep_callback cb)
 }
 
 /* Read data from the specified endpoint */
-int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
-			u32_t *read_bytes)
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+			uint32_t *read_bytes)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
-	u32_t data_len = (USBHS->USBHS_DEVEPTISR[ep_idx] &
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
+	uint32_t data_len = (USBHS->USBHS_DEVEPTISR[ep_idx] &
 			  USBHS_DEVEPTISR_BYCT_Msk) >> USBHS_DEVEPTISR_BYCT_Pos;
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -794,12 +829,13 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		return -ENODEV;
 	}
 
-	if (EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("wrong endpoint direction");
 		return -EINVAL;
 	}
 
-	if ((USBHS->USBHS_DEVEPTIMR[ep_idx] & USBHS_DEVEPTIMR_STALLRQ) != 0) {
+	if ((USBHS->USBHS_DEVEPTIMR[ep_idx] & USBHS_DEVEPTIMR_CTRL_STALLRQ)
+		!= 0) {
 		LOG_WRN("endpoint is stalled");
 		return -EBUSY;
 	}
@@ -835,11 +871,11 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 }
 
 /* Continue reading data from the endpoint */
-int usb_dc_ep_read_continue(u8_t ep)
+int usb_dc_ep_read_continue(uint8_t ep)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -849,7 +885,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 		return -ENODEV;
 	}
 
-	if (EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
+	if (USB_EP_GET_DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("wrong endpoint direction");
 		return -EINVAL;
 	}
@@ -861,7 +897,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 		 * the stage of the transfer.
 		 */
 		USBHS->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_RXOUTIC;
-		USBHS->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_RXSTPIC;
+		USBHS->USBHS_DEVEPTICR[ep_idx] = USBHS_DEVEPTICR_CTRL_RXSTPIC;
 	} else {
 		/*
 		 * Other endpoint types: clear the FIFO control flag to
@@ -875,11 +911,11 @@ int usb_dc_ep_read_continue(u8_t ep)
 }
 
 /* Endpoint max packet size (mps) */
-int usb_dc_ep_mps(u8_t ep)
+int usb_dc_ep_mps(uint8_t ep)
 {
-	u8_t ep_idx = EP_ADDR2IDX(ep);
+	uint8_t ep_idx = USB_EP_GET_IDX(ep);
 
-	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
+	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}

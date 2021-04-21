@@ -9,9 +9,9 @@
 #define ETH_STELLARIS_PRIV_H_
 
 #define DEV_DATA(dev) \
-	((struct eth_stellaris_runtime *)(dev)->driver_data)
+	((struct eth_stellaris_runtime *)(dev)->data)
 #define DEV_CFG(dev) \
-	((struct eth_stellaris_config *const)(dev)->config->config_info)
+	((const struct eth_stellaris_config *const)(dev)->config)
 /*
  *  Register mapping
  */
@@ -50,22 +50,22 @@
 
 struct eth_stellaris_runtime {
 	struct net_if *iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 	struct k_sem tx_sem;
 	bool tx_err;
-	u32_t tx_word;
+	uint32_t tx_word;
 	int tx_pos;
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
 #endif
 };
 
-typedef void (*eth_stellaris_config_irq_t)(struct device *dev);
+typedef void (*eth_stellaris_config_irq_t)(const struct device *dev);
 
 struct eth_stellaris_config {
-	u32_t mac_base;
-	u32_t sys_ctrl_base;
-	u32_t irq_num;
+	uint32_t mac_base;
+	uint32_t sys_ctrl_base;
+	uint32_t irq_num;
 	eth_stellaris_config_irq_t config_func;
 };
 

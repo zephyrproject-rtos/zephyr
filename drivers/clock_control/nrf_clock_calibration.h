@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CALIBRATION_H_
 #define ZEPHYR_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CALIBRATION_H_
 
-#include <device.h>
+#include <sys/onoff.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,50 +15,26 @@ extern "C" {
 /**
  * @brief Initialize LFCLK RC calibration.
  *
- * @param hfclk_dev HFCLK device.
+ * @param mgrs Pointer to array of onoff managers for HF and LF clocks.
  */
-void z_nrf_clock_calibration_init(struct device *hfclk_dev);
+void z_nrf_clock_calibration_init(struct onoff_manager *mgrs);
 
 /**
- * @brief Calibration interrupts handler
+ * @brief Calibration done handler
  *
- * Must be called from clock interrupt context.
+ * Must be called from clock event handler.
  */
-void z_nrf_clock_calibration_isr(void);
-
-/**
- * @brief Start calibration.
- *
- * Function called when LFCLK RC clock is being started.
- *
- * @param dev LFCLK device.
- *
- * @retval true if clock can be started.
- * @retval false if clock was not stopped due to ongoing calibration and don't
- *	   need to be started again because it is still on.
- */
-bool z_nrf_clock_calibration_start(struct device *dev);
+void z_nrf_clock_calibration_done_handler(void);
 
 /**
  * @brief Notify calibration module about LF clock start
- *
- * @param dev LFCLK device.
  */
-void z_nrf_clock_calibration_lfclk_started(struct device *dev);
+void z_nrf_clock_calibration_lfclk_started(void);
 
 /**
- * @brief Stop calibration.
- *
- * Function called when LFCLK RC clock is being stopped.
- *
- * @param dev LFCLK device.
- *
- * @retval true if clock can be stopped.
- * @retval false if due to ongoing calibration clock cannot be stopped. In that
- *	   case calibration module will stop clock when calibration is
- *	   completed.
+ * @brief Notify calibration module about LF clock stop
  */
-bool z_nrf_clock_calibration_stop(struct device *dev);
+void z_nrf_clock_calibration_lfclk_stopped(void);
 
 
 #ifdef __cplusplus

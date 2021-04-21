@@ -27,8 +27,12 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <net/net_mgmt.h>
 #include <net/net_event.h>
 
+#include <random/rand32.h>
+
 #include "icmpv6.h"
 #include "ipv6.h"
+
+#define THREAD_SLEEP 50 /* ms */
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -62,18 +66,18 @@ K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 #define PEER_PORT 13856
 
 struct net_test_mld {
-	u8_t mac_addr[sizeof(struct net_eth_addr)];
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
 };
 
-int net_test_dev_init(struct device *dev)
+int net_test_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static u8_t *net_test_get_mac(struct device *dev)
+static uint8_t *net_test_get_mac(const struct device *dev)
 {
-	struct net_test_mld *context = dev->driver_data;
+	struct net_test_mld *context = dev->data;
 
 	if (context->mac_addr[2] == 0x00) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -90,7 +94,7 @@ static u8_t *net_test_get_mac(struct device *dev)
 
 static void net_test_iface_init(struct net_if *iface)
 {
-	u8_t *mac = net_test_get_mac(net_if_get_device(iface));
+	uint8_t *mac = net_test_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
@@ -106,7 +110,7 @@ static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
 	return (struct net_icmp_hdr *)net_pkt_cursor_get_pos(pkt);
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_icmp_hdr *icmp;
 
@@ -142,13 +146,13 @@ static struct dummy_api net_test_if_api = {
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
 NET_DEVICE_INIT(net_test_mld, "net_test_mld",
-		net_test_dev_init, &net_test_data, NULL,
+		net_test_dev_init, device_pm_control_nop, &net_test_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
 		127);
 
 static void group_joined(struct net_mgmt_event_callback *cb,
-			 u32_t nm_event, struct net_if *iface)
+			 uint32_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV6_MCAST_JOIN) {
 		/* Spurious callback. */
@@ -161,7 +165,7 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 }
 
 static void group_left(struct net_mgmt_event_callback *cb,
-			 u32_t nm_event, struct net_if *iface)
+			 uint32_t nm_event, struct net_if *iface)
 {
 	if (nm_event != NET_EVENT_IPV6_MCAST_LEAVE) {
 		/* Spurious callback. */
@@ -174,7 +178,7 @@ static void group_left(struct net_mgmt_event_callback *cb,
 }
 
 static struct mgmt_events {
-	u32_t event;
+	uint32_t event;
 	net_mgmt_event_handler_t handler;
 	struct net_mgmt_event_callback cb;
 } mgmt_events[] = {
@@ -196,7 +200,7 @@ static void setup_mgmt_events(void)
 	}
 }
 
-static void mld_setup(void)
+static void test_mld_setup(void)
 {
 	struct net_if_addr *ifaddr;
 
@@ -212,7 +216,7 @@ static void mld_setup(void)
 	zassert_not_null(ifaddr, "Cannot add IPv6 address");
 }
 
-static void join_group(void)
+static void test_join_group(void)
 {
 	int ret;
 
@@ -228,10 +232,11 @@ static void join_group(void)
 		zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
 	}
 
-	k_yield();
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
 }
 
-static void leave_group(void)
+static void test_leave_group(void)
 {
 	int ret;
 
@@ -241,18 +246,23 @@ static void leave_group(void)
 
 	zassert_equal(ret, 0, "Cannot leave IPv6 multicast group");
 
-	k_yield();
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		/* Let the network stack to proceed */
+		k_msleep(THREAD_SLEEP);
+	} else {
+		k_yield();
+	}
 }
 
-static void catch_join_group(void)
+static void test_catch_join_group(void)
 {
 	is_group_joined = false;
 
 	ignore_already = false;
 
-	join_group();
+	test_join_group();
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting join event");
 	}
 
@@ -263,13 +273,13 @@ static void catch_join_group(void)
 	is_group_joined = false;
 }
 
-static void catch_leave_group(void)
+static void test_catch_leave_group(void)
 {
 	is_group_joined = false;
 
-	leave_group();
+	test_leave_group();
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting leave event");
 	}
 
@@ -280,15 +290,15 @@ static void catch_leave_group(void)
 	is_group_left = false;
 }
 
-static void verify_join_group(void)
+static void test_verify_join_group(void)
 {
 	is_join_msg_ok = false;
 
 	ignore_already = false;
 
-	join_group();
+	test_join_group();
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting join event");
 	}
 
@@ -299,13 +309,13 @@ static void verify_join_group(void)
 	is_join_msg_ok = false;
 }
 
-static void verify_leave_group(void)
+static void test_verify_leave_group(void)
 {
 	is_leave_msg_ok = false;
 
-	leave_group();
+	test_leave_group();
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting leave event");
 	}
 
@@ -385,6 +395,47 @@ static void send_query(struct net_if *iface)
 	zassert_false(ret, "Failed to receive data");
 }
 
+/* interface needs to join the MLDv2-capable routers multicast group before it
+ * can receive MLD queries
+ */
+static void join_mldv2_capable_routers_group(void)
+{
+	struct net_if *iface = net_if_get_default();
+	int ret;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+	ret = net_ipv6_mld_join(iface, &mcast_addr);
+
+	zassert_true(ret == 0 || ret == -EALREADY,
+		     "Cannot join MLDv2-capable routers multicast group");
+
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		/* Let the network stack to proceed */
+		k_msleep(THREAD_SLEEP);
+	} else {
+		k_yield();
+	}
+}
+
+static void leave_mldv2_capable_routers_group(void)
+{
+	struct net_if *iface = net_if_get_default();
+	int ret;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
+	ret = net_ipv6_mld_leave(iface, &mcast_addr);
+
+	zassert_equal(ret, 0,
+		      "Cannot leave MLDv2-capable routers multicast group");
+
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		/* Let the network stack to proceed */
+		k_msleep(THREAD_SLEEP);
+	} else {
+		k_yield();
+	}
+}
+
 /* We are not really interested to parse the query at this point */
 static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 					 struct net_ipv6_hdr *ip_hdr,
@@ -403,17 +454,24 @@ static struct net_icmpv6_handler mld_query_input_handler = {
 	.handler = handle_mld_query,
 };
 
-static void catch_query(void)
+static void test_catch_query(void)
 {
+	join_mldv2_capable_routers_group();
+
 	is_query_received = false;
 
 	net_icmpv6_register_handler(&mld_query_input_handler);
 
 	send_query(net_if_get_default());
 
-	k_yield();
+	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
+		/* Let the network stack to proceed */
+		k_msleep(THREAD_SLEEP);
+	} else {
+		k_yield();
+	}
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting query event");
 	}
 
@@ -424,23 +482,25 @@ static void catch_query(void)
 	is_query_received = false;
 
 	net_icmpv6_unregister_handler(&mld_query_input_handler);
+
+	leave_mldv2_capable_routers_group();
 }
 
-static void verify_send_report(void)
+static void test_verify_send_report(void)
 {
 	is_query_received = false;
 	is_report_sent = false;
 
 	ignore_already = true;
 
-	join_group();
+	test_join_group();
 
 	send_query(net_if_get_default());
 
 	k_yield();
 
 	/* Did we send a report? */
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting report");
 	}
 
@@ -461,7 +521,7 @@ static void test_allnodes(void)
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
 
 	/* Let the DAD succeed so that the multicast address will be there */
-	k_sleep(DAD_TIMEOUT);
+	k_sleep(K_MSEC(DAD_TIMEOUT));
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 
@@ -486,15 +546,15 @@ static void test_solicit_node(void)
 void test_main(void)
 {
 	ztest_test_suite(net_mld_test,
-			 ztest_unit_test(mld_setup),
-			 ztest_unit_test(join_group),
-			 ztest_unit_test(leave_group),
-			 ztest_unit_test(catch_join_group),
-			 ztest_unit_test(catch_leave_group),
-			 ztest_unit_test(verify_join_group),
-			 ztest_unit_test(verify_leave_group),
-			 ztest_unit_test(catch_query),
-			 ztest_unit_test(verify_send_report),
+			 ztest_unit_test(test_mld_setup),
+			 ztest_unit_test(test_join_group),
+			 ztest_unit_test(test_leave_group),
+			 ztest_unit_test(test_catch_join_group),
+			 ztest_unit_test(test_catch_leave_group),
+			 ztest_unit_test(test_verify_join_group),
+			 ztest_unit_test(test_verify_leave_group),
+			 ztest_unit_test(test_catch_query),
+			 ztest_unit_test(test_verify_send_report),
 			 ztest_unit_test(test_allnodes),
 			 ztest_unit_test(test_solicit_node)
 			 );

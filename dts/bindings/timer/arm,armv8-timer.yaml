@@ -1,7 +1,7 @@
 description: >
     per-core ARM architected timer
 
-compatible: "arm,arm-timer"
+compatible: "arm,armv8-timer"
 
 include: base.yaml
 

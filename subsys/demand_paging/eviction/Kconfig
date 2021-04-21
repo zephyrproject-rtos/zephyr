@@ -1,0 +1,40 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Demand paging sample eviction algorithms
+
+choice EVICTION_CHOICE
+	prompt "Page frame eviction algorithms"
+	default EVICTION_NRU
+	depends on DEMAND_PAGING
+
+config EVICTION_CUSTOM
+	bool "Custom eviction algorithm"
+	help
+	  This option is chosen when the eviction algorithm will be implemented
+	  by the application, instead of using one included in Zephyr.
+
+config EVICTION_NRU
+	bool "Not Recently Used (NRU) page eviction algorithm"
+	help
+	  This implements a Not Recently Used page eviction algorithm.
+	  A periodic timer will clear the accessed state of all virtual pages.
+	  When a page frame needs to be evicted, the algorithm will prefer to
+	  evict page frames using an ascending order of priority:
+
+	   - recently accessed, dirty
+	   - recently accessed, clean
+	   - not recently accessed, dirty
+	   - not recently accessed, clean
+
+endchoice
+
+if EVICTION_NRU
+config EVICTION_NRU_PERIOD
+	int "Recently accessed period, in milliseconds"
+	default 100
+	help
+	  A periodic timer will fire that clears the accessed state of all virtual
+	  pages that are capable of being paged out. At eviction time, if a page
+	  still has the accessed property, it will be considered as recently used.
+endif # EVICTION_NRU

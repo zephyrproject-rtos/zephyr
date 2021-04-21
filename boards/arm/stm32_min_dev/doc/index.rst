@@ -116,6 +116,8 @@ The stm32_min_dev board configuration supports the following hardware features:
 +-----------+------------+----------------------+
 | USB       | on-chip    | USB device           |
 +-----------+------------+----------------------+
+| ADC       | on-chip    | adc                  |
++-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
@@ -134,6 +136,7 @@ Default Zephyr Peripheral Mapping:
 - SPI_1 NSS_OE/SCK/MISO/MOSI: PA4/PA5/PA6/PA7
 - SPI_2 NSS_OE/SCK/MISO/MOSI: PB12/PB13/PB14/PB15
 - USB_DC DM/DP: PA11/PA12
+- ADC_1: PA0
 
 System Clock
 ------------

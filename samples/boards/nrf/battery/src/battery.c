@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2019 Peter Bigot Consulting, LLC
- * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2019-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,9 @@
 
 LOG_MODULE_REGISTER(BATTERY, CONFIG_ADC_LOG_LEVEL);
 
-#ifdef CONFIG_BOARD_NRF52_PCA20020
+#define VBATT DT_PATH(vbatt)
+
+#ifdef CONFIG_BOARD_THINGY52_NRF52832
 /* This board uses a divider that reduces max voltage to
  * reference voltage (600 mV).
  */
@@ -33,40 +35,57 @@ LOG_MODULE_REGISTER(BATTERY, CONFIG_ADC_LOG_LEVEL);
 #endif
 
 struct io_channel_config {
-	const char *label;
-	u8_t channel;
+	uint8_t channel;
 };
 
 struct gpio_channel_config {
 	const char *label;
-	u8_t pin;
-	u8_t flags;
+	uint8_t pin;
+	uint8_t flags;
 };
 
 struct divider_config {
-	const struct io_channel_config io_channel;
-	const struct gpio_channel_config power_gpios;
-	const u32_t output_ohm;
-	const u32_t full_ohm;
+	struct io_channel_config io_channel;
+	struct gpio_channel_config power_gpios;
+	/* output_ohm is used as a flag value: if it is nonzero then
+	 * the battery is measured through a voltage divider;
+	 * otherwise it is assumed to be directly connected to Vdd.
+	 */
+	uint32_t output_ohm;
+	uint32_t full_ohm;
 };
 
 static const struct divider_config divider_config = {
-	.io_channel = DT_VOLTAGE_DIVIDER_VBATT_IO_CHANNELS,
-#ifdef DT_VOLTAGE_DIVIDER_VBATT_POWER_GPIOS
-	.power_gpios = DT_VOLTAGE_DIVIDER_VBATT_POWER_GPIOS,
+#if DT_NODE_HAS_STATUS(VBATT, okay)
+	.io_channel = {
+		DT_IO_CHANNELS_INPUT(VBATT),
+	},
+#if DT_NODE_HAS_PROP(VBATT, power_gpios)
+	.power_gpios = {
+		DT_GPIO_LABEL(VBATT, power_gpios),
+		DT_GPIO_PIN(VBATT, power_gpios),
+		DT_GPIO_FLAGS(VBATT, power_gpios),
+	},
 #endif
-	.output_ohm = DT_VOLTAGE_DIVIDER_VBATT_OUTPUT_OHMS,
-	.full_ohm = DT_VOLTAGE_DIVIDER_VBATT_FULL_OHMS,
+	.output_ohm = DT_PROP(VBATT, output_ohms),
+	.full_ohm = DT_PROP(VBATT, full_ohms),
+#else /* /vbatt exists */
+	.io_channel = {
+		DT_LABEL(DT_NODELABEL(adc)),
+	},
+#endif /* /vbatt exists */
 };
 
 struct divider_data {
-	struct device *adc;
-	struct device *gpio;
+	const struct device *adc;
+	const struct device *gpio;
 	struct adc_channel_cfg adc_cfg;
 	struct adc_sequence adc_seq;
-	s16_t raw;
+	int16_t raw;
 };
-static struct divider_data divider_data;
+static struct divider_data divider_data = {
+	.adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(VBATT)),
+};
 
 static int divider_setup(void)
 {
@@ -78,9 +97,8 @@ static int divider_setup(void)
 	struct adc_channel_cfg *accp = &ddp->adc_cfg;
 	int rc;
 
-	ddp->adc = device_get_binding(iocp->label);
-	if (ddp->adc == NULL) {
-		LOG_ERR("Failed to get ADC %s", iocp->label);
+	if (!device_is_ready(ddp->adc)) {
+		LOG_ERR("ADC device is not ready %s", ddp->adc->name);
 		return -ENOENT;
 	}
 
@@ -112,8 +130,14 @@ static int divider_setup(void)
 		.gain = BATTERY_ADC_GAIN,
 		.reference = ADC_REF_INTERNAL,
 		.acquisition_time = ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40),
-		.input_positive = SAADC_CH_PSELP_PSELP_AnalogInput0 + iocp->channel,
 	};
+
+	if (cfg->output_ohm != 0) {
+		accp->input_positive = SAADC_CH_PSELP_PSELP_AnalogInput0
+			+ iocp->channel;
+	} else {
+		accp->input_positive = SAADC_CH_PSELP_PSELP_VDD;
+	}
 
 	asp->resolution = 14;
 #else /* CONFIG_ADC_var */
@@ -128,7 +152,7 @@ static int divider_setup(void)
 
 static bool battery_ok;
 
-static int battery_setup(struct device *arg)
+static int battery_setup(const struct device *arg)
 {
 	int rc = divider_setup();
 
@@ -167,15 +191,22 @@ int battery_sample(void)
 		rc = adc_read(ddp->adc, sp);
 		sp->calibrate = false;
 		if (rc == 0) {
-			s32_t val = ddp->raw;
+			int32_t val = ddp->raw;
 
 			adc_raw_to_millivolts(adc_ref_internal(ddp->adc),
 					      ddp->adc_cfg.gain,
 					      sp->resolution,
 					      &val);
-			rc = val * (u64_t)dcp->full_ohm / dcp->output_ohm;
-			LOG_INF("raw %u ~ %u mV => %d mV\n",
-				ddp->raw, val, rc);
+
+			if (dcp->output_ohm != 0) {
+				rc = val * (uint64_t)dcp->full_ohm
+					/ dcp->output_ohm;
+				LOG_INF("raw %u ~ %u mV => %d mV\n",
+					ddp->raw, val, rc);
+			} else {
+				rc = val;
+				LOG_INF("raw %u ~ %u mV\n", ddp->raw, val);
+			}
 		}
 	}
 

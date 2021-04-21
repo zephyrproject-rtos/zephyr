@@ -13,7 +13,6 @@ GTEXT(arch_swap)
 GTEXT(z_thread_entry_wrapper)
 
 /* imports */
-GTEXT(sys_trace_thread_switched_in)
 GTEXT(_k_neg_eagain)
 
 /* unsigned int arch_swap(unsigned int key)
@@ -22,33 +21,21 @@ GTEXT(_k_neg_eagain)
  */
 SECTION_FUNC(exception.other, arch_swap)
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Get a reference to _kernel in r10 */
-	movhi r10, %hi(_kernel)
-	ori   r10, r10, %lo(_kernel)
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
+	/* Need to preserve r4 as it has the function argument. */
+	addi sp, sp, -12
+	stw ra, 8(sp)
+	stw fp, 4(sp)
+	stw r4, 0(sp)
 
-	/* Get the pointer to kernel->current */
-	ldw  r11, _kernel_offset_to_current(r10)
-	stw r2, _thread_offset_to_r16(r11)
-	stw r3, _thread_offset_to_r17(r11)
-	stw r4, _thread_offset_to_r18(r11)
-	stw ra,  _thread_offset_to_ra(r11)
-	stw sp,  _thread_offset_to_sp(r11)
+	call z_thread_mark_switched_out
 
-	call read_timer_start_of_swap
-	/* Get a reference to _kernel in r10 */
-	movhi r10, %hi(_kernel)
-	ori   r10, r10, %lo(_kernel)
-
-	/* Get the pointer to kernel->current */
-	ldw  r11, _kernel_offset_to_current(r10)
-	ldw r2, _thread_offset_to_r16(r11)
-	ldw r3, _thread_offset_to_r17(r11)
-	ldw r4, _thread_offset_to_r18(r11)
-	ldw ra,  _thread_offset_to_ra(r11)
-	ldw sp,  _thread_offset_to_sp(r11)
-
+	ldw r4, 0(sp)
+	ldw fp, 4(sp)
+	ldw ra, 8(sp)
+	addi sp, sp, 12
 #endif
+
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -83,13 +70,6 @@ SECTION_FUNC(exception.other, arch_swap)
 	ori   r5, r5, %lo(_k_neg_eagain)
 	ldw   r4, (r5)
 	stw   r4, _thread_offset_to_retval(r11)
-
-#if CONFIG_TRACING
-	call sys_trace_thread_switched_in
-	/* restore caller-saved r10 */
-	movhi r10, %hi(_kernel)
-	ori   r10, r10, %lo(_kernel)
-#endif
 
 	/* get cached thread to run */
 	ldw   r2, _kernel_offset_to_ready_q_cache(r10)
@@ -142,31 +122,23 @@ no_unlock:
 	wrctl status, r3
 #endif
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Get a reference to _kernel in r10 */
-	movhi r10, %hi(_kernel)
-	ori   r10, r10, %lo(_kernel)
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
+	/* Also need to preserve r2, r3 as return values */
+	addi sp, sp, -20
+	stw ra, 16(sp)
+	stw fp, 12(sp)
+	stw r4, 8(sp)
+	stw r3, 4(sp)
+	stw r2, 0(sp)
 
-	ldw  r11, _kernel_offset_to_current(r10)
-	stw r2, _thread_offset_to_r16(r11)
-	stw r3, _thread_offset_to_r17(r11)
-	stw r4, _thread_offset_to_r18(r11)
-	stw ra,  _thread_offset_to_ra(r11)
-	stw sp,  _thread_offset_to_sp(r11)
+	call z_thread_mark_switched_in
 
-	call read_timer_end_of_swap
-
-	/* Get a reference to _kernel in r10 */
-	movhi r10, %hi(_kernel)
-	ori   r10, r10, %lo(_kernel)
-
-	/* Get the pointer to kernel->current */
-	ldw  r11, _kernel_offset_to_current(r10)
-	ldw r2, _thread_offset_to_r16(r11)
-	ldw r3, _thread_offset_to_r17(r11)
-	ldw r4, _thread_offset_to_r18(r11)
-	ldw ra,  _thread_offset_to_ra(r11)
-	ldw sp,  _thread_offset_to_sp(r11)
+	ldw r2, 0(sp)
+	ldw r3, 4(sp)
+	ldw r4, 8(sp)
+	ldw fp, 12(sp)
+	ldw ra, 16(sp)
+	addi sp, sp, 20
 #endif
 	ret
 

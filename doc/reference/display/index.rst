@@ -1,8 +1,8 @@
-.. _display_api:
-
 .. comment
    not documenting
    .. doxygengroup:: display_interfaces
+
+.. _display_api:
 
 Display Interface
 #################

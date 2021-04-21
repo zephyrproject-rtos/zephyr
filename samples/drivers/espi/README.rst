@@ -1,4 +1,4 @@
-.. espi-sample:
+.. _espi-sample:
 
 Enhanced Serial Peripheral Interface
 ####################################
@@ -20,6 +20,12 @@ Building and Running
 
 The sample can be built and executed on boards supporting eSPI.
 Any pins required for minimum eSPI handshake should be configured.
+Sample requires a correct harness and fixture setup.
+Please connect an eSPI device to the testing board.
+After that for the correct execution of that sample in twister, add into
+boards's map-file next fixture settings::
+
+      - fixture: espi_device_connect
 
 Sample output
 =============

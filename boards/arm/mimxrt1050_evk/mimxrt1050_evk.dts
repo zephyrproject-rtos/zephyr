@@ -15,18 +15,22 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		kscan0 = &touch_controller;
+		watchdog0 = &wdog0;
 	};
 
 	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sdram0;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
 	};
 
 	sdram0: memory@80000000 {
 		/* Micron MT48LC16M16A2B4-6AIT:G */
 		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0x80000000 0x2000000>;
+		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	leds {
@@ -84,18 +88,21 @@
 	};
 };
 
-arduino_serial: &uart3 {};
+arduino_serial: &lpuart3 {};
 
-&flexspi0 {
-	reg = <0x402a8000 0x4000>, <0x60000000 0x4000000>;
-	hyperflash0: hyperflash@0 {
-		compatible = "cypress,s26ks512s";
+&flexspi {
+	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
+	s26ks512s0: s26ks512s@0 {
+		compatible = "nxp,imx-flexspi-hyperflash";
+		size = <DT_SIZE_M(64*8)>;
+		label = "S26KS512S";
 		reg = <0>;
+		spi-max-frequency = <166000000>;
 		status = "okay";
 	};
 };
 
-&lcdif1 {
+&lcdif {
 	status = "okay";
 	port {
 		lcd_panel_out: endpoint {
@@ -104,7 +111,7 @@ arduino_serial: &uart3 {};
 	};
 };
 
-&i2c1 {
+&lpi2c1 {
 	status = "okay";
 
 	fxos8700@1f {
@@ -121,31 +128,31 @@ arduino_serial: &uart3 {};
 		int2-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 
-	ft5336@38 {
+	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		label = "FT5336";
-		int-gpios = <&gpio1 11 0>;
+		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };
 
-&uart1 {
+&lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
 };
 
-&spi3 {
+&lpspi3 {
 	status = "okay";
 };
 
-&eth {
+&enet {
 	status = "okay";
 	ptp {
 		status = "okay";
 	};
 };
 
-&usbd1 {
+&usb1 {
 	status = "okay";
 };
 
@@ -153,4 +160,8 @@ arduino_serial: &uart3 {};
 	status = "okay";
 	pwr-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
 	cd-gpios = <&gpio2 28 GPIO_ACTIVE_LOW>;
+};
+
+&wdog0 {
+	status = "okay";
 };

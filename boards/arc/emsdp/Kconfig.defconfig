@@ -30,8 +30,4 @@ config UART_NS16550
 	default y
 	depends on SERIAL
 
-config UART_NS16550_PORT_0
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_EMSDP

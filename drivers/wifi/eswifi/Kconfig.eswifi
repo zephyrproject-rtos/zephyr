@@ -8,12 +8,25 @@ menuconfig WIFI_ESWIFI
 	select NET_L2_WIFI_MGMT
 	select WIFI_OFFLOAD
 	select NET_OFFLOAD
+	select NET_SOCKETS
+	select NET_SOCKETS_OFFLOAD
+	select GPIO
 
 if WIFI_ESWIFI
 
-config WIFI_ESWIFI_NAME
-	string "Driver name"
-	default "ESWIFI"
+choice WIFI_ESWIFI_BUS
+	bool "Select BUS interface"
+	default WIFI_ESWIFI_BUS_SPI
+
+config WIFI_ESWIFI_BUS_SPI
+	bool "SPI Bus interface"
+	select SPI
+
+config WIFI_ESWIFI_BUS_UART
+	bool "UART Bus interface"
+	select SERIAL
+
+endchoice
 
 config WIFI_ESWIFI_THREAD_PRIO
 	int "esWiFi threads priority"
@@ -21,5 +34,11 @@ config WIFI_ESWIFI_THREAD_PRIO
 	help
 	  This option sets the priority of the esWiFi threads.
 	  Do not touch it unless you know what you are doing.
+
+config WIFI_ESWIFI_SHELL
+	bool "esWiFi shell"
+	depends on SHELL
+	help
+	  Enable esWiFi shell
 
 endif

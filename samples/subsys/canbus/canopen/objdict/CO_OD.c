@@ -74,6 +74,10 @@ struct sCO_OD_RAM CO_OD_RAM = {
 /*1003*/ { 0, 0, 0, 0, 0, 0, 0, 0 },
 /*1010*/ { 0x00000003 },
 /*1011*/ { 0x00000001 },
+/*1f50*/ { 0 },
+/*1f51*/ { 0x0L },
+/*1f56*/ { 0x0000L },
+/*1f57*/ { 0x0000L },
 /*2100*/ { 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L },
 /*2102*/ 0x0000L,
 
@@ -275,7 +279,7 @@ struct sCO_OD_EEPROM CO_OD_EEPROM = {
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-const CO_OD_entry_t CO_OD[41] = {
+const CO_OD_entry_t CO_OD[45] = {
 
 	{ 0x1000, 0x00, 0x85, 4, (void *)&CO_OD_ROM.deviceType },
 	{ 0x1001, 0x00, 0x26, 1, (void *)&CO_OD_RAM.errorRegister },
@@ -314,6 +318,10 @@ const CO_OD_entry_t CO_OD[41] = {
 	{ 0x1a01, 0x08, 0x00, 4, (void *)&OD_record1a01 },
 	{ 0x1a02, 0x08, 0x00, 0, (void *)&OD_record1a02 },
 	{ 0x1a03, 0x08, 0x00, 0, (void *)&OD_record1a03 },
+	{ 0x1f50, 0x01, 0x0a, 0, (void *)0 },
+	{ 0x1f51, 0x01, 0x0e, 1, (void *)&CO_OD_RAM.programControl[0] },
+	{ 0x1f56, 0x01, 0x86, 4, (void *)&CO_OD_RAM.programSoftwareIdentification[0] },
+	{ 0x1f57, 0x01, 0x86, 4, (void *)&CO_OD_RAM.flashStatusIdentification[0] },
 	{ 0x1f80, 0x00, 0x8d, 4, (void *)&CO_OD_ROM.NMTStartup },
 	{ 0x2100, 0x00, 0x26, 10, (void *)&CO_OD_RAM.errorStatusBits },
 	{ 0x2101, 0x00, 0xa7, 4, (void *)&CO_OD_EEPROM.powerOnCounter },

@@ -1,0 +1,8 @@
+# Arduino Nano 33 IOT board configuration
+
+# Copyright (c) 2020 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "arduino_nano_33_iot"
+	depends on BOARD_ARDUINO_NANO_33_IOT

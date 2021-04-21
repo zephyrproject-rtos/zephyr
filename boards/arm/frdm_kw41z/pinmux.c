@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2020 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,31 +8,39 @@
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
 
-static int frdm_kw41z_pinmux_init(struct device *dev)
+static int frdm_kw41z_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_PINMUX_MCUX_PORTA
-	struct device *porta =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(porta), okay)
+	__unused const struct device *porta =
+		DEVICE_DT_GET(DT_NODELABEL(porta));
+	__ASSERT_NO_MSG(device_is_ready(porta));
 #endif
-#ifdef CONFIG_PINMUX_MCUX_PORTB
-	struct device *portb =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTB_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
+	__unused const struct device *portb =
+		DEVICE_DT_GET(DT_NODELABEL(portb));
+	__ASSERT_NO_MSG(device_is_ready(portb));
 #endif
-#ifdef CONFIG_PINMUX_MCUX_PORTC
-	struct device *portc =
-		device_get_binding(CONFIG_PINMUX_MCUX_PORTC_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portc), okay)
+	__unused const struct device *portc =
+		DEVICE_DT_GET(DT_NODELABEL(portc));
+	__ASSERT_NO_MSG(device_is_ready(portc));
 #endif
 
 	/* Red, green, blue LEDs. Note the red LED and accel INT1 are both
 	 * wired to PTC1.
 	 */
-	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm0), okay)
+	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAlt5));
+#endif
 
-#if CONFIG_I2C_1
+#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
+	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAlt5));
+	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAlt5));
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay) && CONFIG_I2C
 	/* I2C1 SCL, SDA */
 	pinmux_pin_set(portc,  2, PORT_PCR_MUX(kPORT_MuxAlt3)
 					| PORT_PCR_PS_MASK);
@@ -40,22 +48,18 @@ static int frdm_kw41z_pinmux_init(struct device *dev)
 					| PORT_PCR_PS_MASK);
 #endif
 
-#if CONFIG_ADC_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay) && CONFIG_ADC
 	/* ADC0_SE3 */
 	pinmux_pin_set(portb,  2, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
-	/* SW3, SW4 */
-	pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portc,  5, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
-#ifdef CONFIG_UART_MCUX_LPUART_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay) && CONFIG_SERIAL
 	/* UART0 RX, TX */
 	pinmux_pin_set(portc,  6, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(portc,  7, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
-#ifdef CONFIG_SPI_0
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) && CONFIG_SPI
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt2));

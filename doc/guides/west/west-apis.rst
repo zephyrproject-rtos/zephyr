@@ -93,6 +93,8 @@ WestCommand
 
    .. automethod:: __init__
 
+   .. versionchanged:: 0.8.0
+      The *topdir* parameter can now be any ``os.PathLike``.
    .. versionadded:: 0.6.0
       The *requires_installation* parameter.
    .. versionadded:: 0.7.0
@@ -140,6 +142,9 @@ Reading and writing options
 ===========================
 
 .. autofunction:: west.configuration.read_config
+
+.. versionchanged:: 0.8.0
+   The deprecated *read_config* parameter was removed.
 
 .. versionchanged:: 0.6.0
    Errors due to an inability to find a local configuration file are ignored.
@@ -231,19 +236,24 @@ Manifest and sub-objects
 
    .. automethod:: __init__
    .. versionchanged:: 0.7.0
-      The ``importer`` and ``import_flags`` keyword arguments.
+      The *importer* and *import_flags* keyword arguments.
 
    .. automethod:: from_file
+   .. versionchanged:: 0.8.0
+      The *source_file*, *manifest_path*, and *topdir* arguments
+      can now be any ``os.PathLike``.
    .. versionchanged:: 0.7.0
       ``**kwargs`` added.
 
    .. automethod:: from_data
    .. versionchanged:: 0.7.0
-      ``**kwargs`` added, and ``source_data`` may be a ``str``.
+      ``**kwargs`` added, and *source_data* may be a ``str``.
 
    Conveniences for accessing sub-objects by name or other identifier:
 
    .. automethod:: get_projects
+   .. versionchanged:: 0.8.0
+      The *project_ids* sequence can now contain any ``os.PathLike``.
    .. versionadded:: 0.6.1
 
    Additional methods:
@@ -255,23 +265,37 @@ Manifest and sub-objects
    .. versionadded:: 0.7.0
    .. automethod:: as_frozen_yaml
    .. versionadded:: 0.7.0
+   .. automethod:: is_active
+   .. versionadded:: 0.9.0
 
 .. autoclass:: west.manifest.ImportFlag
+   :members:
+   :member-order: bysource
 
 .. autoclass:: west.manifest.Project
 
    .. (note: attributes are part of the class docstring)
 
+   .. versionchanged:: 0.8.0
+      The *west_commands* attribute is now always a list. In previous
+      releases, it could be a string or ``None``.
+
    .. versionchanged:: 0.7.0
-      The ``remote`` attribute was removed. Its semantics could no longer
+      The *remote* attribute was removed. Its semantics could no longer
       be preserved when support for manifest ``import`` keys was added.
 
    .. versionadded:: 0.7.0
-      The ``remote_name`` and ``name_and_path`` attributes.
+      The *remote_name* and *name_and_path* attributes.
+
+   .. versionadded:: 0.9.0
+      The *group_filter* and *submodules* attributes.
 
    Constructor:
 
    .. automethod:: __init__
+
+   .. versionchanged:: 0.8.0
+      The *path* and *topdir* parameters can now be any ``os.PathLike``.
 
    .. versionchanged:: 0.7.0
       The parameters were incompatibly changed from previous versions.
@@ -283,7 +307,7 @@ Manifest and sub-objects
 
    .. automethod:: git
    .. versionchanged:: 0.6.1
-      The ``capture_stderr`` kwarg.
+      The *capture_stderr* kwarg.
    .. versionchanged:: 0.7.0
       The (now removed) ``Project.format`` method is no longer called on
       arguments.
@@ -293,18 +317,30 @@ Manifest and sub-objects
       Standard error is now captured.
 
    .. automethod:: is_ancestor_of
+   .. versionchanged:: 0.8.0
+      The *cwd* parameter can now be any ``os.PathLike``.
 
    .. automethod:: is_cloned
+   .. versionchanged:: 0.8.0
+      The *cwd* parameter can now be any ``os.PathLike``.
    .. versionadded:: 0.6.1
 
    .. automethod:: is_up_to_date_with
+   .. versionchanged:: 0.8.0
+      The *cwd* parameter can now be any ``os.PathLike``.
 
    .. automethod:: is_up_to_date
+   .. versionchanged:: 0.8.0
+      The *cwd* parameter can now be any ``os.PathLike``.
 
    .. automethod:: read_at
+   .. versionchanged:: 0.8.0
+      The *cwd* parameter can now be any ``os.PathLike``.
    .. versionadded:: 0.7.0
 
    .. automethod:: listdir_at
+   .. versionchanged:: 0.8.0
+      The *cwd* parameter can now be any ``os.PathLike``.
    .. versionadded:: 0.7.0
 
 .. autoclass:: west.manifest.ManifestProject
@@ -312,9 +348,18 @@ Manifest and sub-objects
    A limited subset of Project methods is supported.
    Results for calling others are not specified.
 
+   .. versionchanged:: 0.8.0
+      The *url* attribute is now the empty string instead of ``None``.
+      The *abspath* attribute is created using ``os.path.abspath()``
+      instead of ``os.path.realpath()``, improving support for symbolic links.
+
    .. automethod:: as_dict
 
 .. versionadded:: 0.6.0
+
+.. autoclass:: west.manifest.Submodule
+
+.. versionadded:: 0.9.0
 
 Exceptions
 ==========
@@ -328,8 +373,14 @@ Exceptions
 .. autoclass:: west.manifest.ManifestVersionError
    :show-inheritance:
 
+   .. versionchanged:: 0.8.0
+      The *file* argument can now be any ``os.PathLike``.
+
 .. autoclass:: west.manifest.ManifestImportFailed
    :show-inheritance:
+
+   .. versionchanged:: 0.8.0
+      The *filename* argument can now be any ``os.PathLike``.
 
 .. _west-apis-util:
 
@@ -345,7 +396,13 @@ Functions
 
 .. autofunction:: west.util.west_dir
 
+   .. versionchanged:: 0.8.0
+      The *start* parameter can be any ``os.PathLike``.
+
 .. autofunction:: west.util.west_topdir
+
+   .. versionchanged:: 0.8.0
+      The *start* parameter can be any ``os.PathLike``.
 
 Exceptions
 ==========

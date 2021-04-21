@@ -120,6 +120,14 @@ void test_stackprot(void)
 	print_loop(__func__);
 }
 
+/**
+ * @brief Test optional mechanism to detect stack overflow
+ *
+ * @details Test that the system provides an optional mechanism to detect
+ * when supervisor threads overflow stack memory buffer.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_create_alt_thread(void)
 {
 	/* Start thread */

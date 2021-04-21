@@ -38,15 +38,15 @@ enum bt_a2dp_codec_id {
 /** @brief Preset for the endpoint */
 struct bt_a2dp_preset {
 	/** Length of preset */
-	u8_t len;
+	uint8_t len;
 	/** Preset */
-	u8_t preset[0];
+	uint8_t preset[0];
 };
 
 /** @brief Stream End Point */
 struct bt_a2dp_endpoint {
 	/** Code ID */
-	u8_t codec_id;
+	uint8_t codec_id;
 	/** Stream End Point Information */
 	struct bt_avdtp_seid_lsep info;
 	/** Pointer to preset codec chosen */
@@ -102,7 +102,7 @@ struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn);
  *  @return 0 in case of success and error code in case of error.
  */
 int bt_a2dp_register_endpoint(struct bt_a2dp_endpoint *endpoint,
-			      u8_t media_type, u8_t role);
+			      uint8_t media_type, uint8_t role);
 
 #ifdef __cplusplus
 }

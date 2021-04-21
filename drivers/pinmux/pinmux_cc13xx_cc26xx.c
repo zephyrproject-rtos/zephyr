@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_pinmux
+
 #include <device.h>
 #include <errno.h>
 #include <sys/__assert.h>
@@ -11,7 +13,8 @@
 
 #include <driverlib/ioc.h>
 
-static int pinmux_cc13xx_cc26xx_set(struct device *dev, u32_t pin, u32_t func)
+static int pinmux_cc13xx_cc26xx_set(const struct device *dev, uint32_t pin,
+				    uint32_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -23,7 +26,8 @@ static int pinmux_cc13xx_cc26xx_set(struct device *dev, u32_t pin, u32_t func)
 	return 0;
 }
 
-static int pinmux_cc13xx_cc26xx_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_cc13xx_cc26xx_get(const struct device *dev, uint32_t pin,
+				    uint32_t *func)
 {
 	ARG_UNUSED(dev);
 
@@ -34,7 +38,8 @@ static int pinmux_cc13xx_cc26xx_get(struct device *dev, u32_t pin, u32_t *func)
 	return 0;
 }
 
-static int pinmux_cc13xx_cc26xx_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_cc13xx_cc26xx_pullup(const struct device *dev, uint32_t pin,
+				       uint8_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -47,12 +52,13 @@ static int pinmux_cc13xx_cc26xx_pullup(struct device *dev, u32_t pin, u8_t func)
 	case PINMUX_PULLUP_DISABLE:
 		IOCIOPortPullSet(pin, IOC_NO_IOPULL);
 		return 0;
-	};
+	}
 
 	return -EINVAL;
 }
 
-static int pinmux_cc13xx_cc26xx_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_cc13xx_cc26xx_input(const struct device *dev, uint32_t pin,
+				      uint8_t func)
 {
 	ARG_UNUSED(dev);
 
@@ -65,12 +71,12 @@ static int pinmux_cc13xx_cc26xx_input(struct device *dev, u32_t pin, u8_t func)
 	case PINMUX_OUTPUT_ENABLED:
 		IOCIOInputSet(pin, IOC_INPUT_DISABLE);
 		return 0;
-	};
+	}
 
 	return -EINVAL;
 }
 
-static int pinmux_cc13xx_cc26xx_init(struct device *dev)
+static int pinmux_cc13xx_cc26xx_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;
@@ -83,7 +89,7 @@ static const struct pinmux_driver_api pinmux_cc13xx_cc26xx_driver_api = {
 	.input = pinmux_cc13xx_cc26xx_input,
 };
 
-DEVICE_AND_API_INIT(pinmux_cc13xx_cc26xx, CONFIG_PINMUX_NAME,
-		    &pinmux_cc13xx_cc26xx_init, NULL, NULL, PRE_KERNEL_1,
+DEVICE_DT_INST_DEFINE(0, &pinmux_cc13xx_cc26xx_init, device_pm_control_nop,
+		    NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_cc13xx_cc26xx_driver_api);

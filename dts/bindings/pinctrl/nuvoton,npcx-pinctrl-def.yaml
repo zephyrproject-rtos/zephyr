@@ -1,0 +1,14 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX Default Pins Configurations
+
+compatible: "nuvoton,npcx-pinctrl-def"
+
+include: [base.yaml]
+
+properties:
+    pinctrl-0:
+        type: phandles
+        required: true
+        description: list of configurations of pinmux controllers need to set

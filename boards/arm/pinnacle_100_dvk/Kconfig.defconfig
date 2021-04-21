@@ -1,0 +1,31 @@
+# Pinnacle(TM) 100 DVK board configuration
+
+# Copyright (c) 2019 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PINNACLE_100_DVK
+
+config BOARD
+	default "pinnacle_100_dvk"
+
+config MODEM_HL7800
+	default NETWORKING
+
+if USB
+
+config USB_NRFX
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+endif # USB
+
+config IEEE802154_NRF5
+	default y
+	depends on IEEE802154
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_PINNACLE_100_DVK

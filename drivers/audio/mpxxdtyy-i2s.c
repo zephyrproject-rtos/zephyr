@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_mpxxdtyy
+
 #include "mpxxdtyy.h"
 #include <drivers/i2s.h>
 
@@ -11,15 +13,15 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(mpxxdtyy);
 
-#ifdef DT_ST_MPXXDTYY_BUS_I2S
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2s)
 
 #define NUM_RX_BLOCKS			4
 #define PDM_BLOCK_MAX_SIZE_BYTES	512
 
 K_MEM_SLAB_DEFINE(rx_pdm_i2s_mslab, PDM_BLOCK_MAX_SIZE_BYTES, NUM_RX_BLOCKS, 1);
 
-int mpxxdtyy_i2s_read(struct device *dev, u8_t stream, void **buffer,
-		      size_t *size, s32_t timeout)
+int mpxxdtyy_i2s_read(const struct device *dev, uint8_t stream, void **buffer,
+		      size_t *size, int32_t timeout)
 {
 	int ret;
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);
@@ -49,7 +51,7 @@ int mpxxdtyy_i2s_read(struct device *dev, u8_t stream, void **buffer,
 	return 0;
 }
 
-int mpxxdtyy_i2s_trigger(struct device *dev, enum dmic_trigger cmd)
+int mpxxdtyy_i2s_trigger(const struct device *dev, enum dmic_trigger cmd)
 {
 	int ret;
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);
@@ -87,13 +89,13 @@ int mpxxdtyy_i2s_trigger(struct device *dev, enum dmic_trigger cmd)
 	return 0;
 }
 
-int mpxxdtyy_i2s_configure(struct device *dev, struct dmic_cfg *cfg)
+int mpxxdtyy_i2s_configure(const struct device *dev, struct dmic_cfg *cfg)
 {
 	int ret;
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);
-	u8_t chan_size = cfg->streams->pcm_width;
-	u32_t audio_freq = cfg->streams->pcm_rate;
-	u16_t factor;
+	uint8_t chan_size = cfg->streams->pcm_width;
+	uint32_t audio_freq = cfg->streams->pcm_rate;
+	uint16_t factor;
 
 	/* PCM buffer size */
 	data->pcm_mem_slab = cfg->streams->mem_slab;
@@ -138,4 +140,4 @@ int mpxxdtyy_i2s_configure(struct device *dev, struct dmic_cfg *cfg)
 	data->state = DMIC_STATE_CONFIGURED;
 	return 0;
 }
-#endif /* DT_ST_MPXXDTYY_BUS_I2S */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2s) */

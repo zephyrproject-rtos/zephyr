@@ -1,4 +1,4 @@
-.. _usb_device_stack:
+.. _usb_api:
 
 USB device stack
 ################
@@ -38,6 +38,7 @@ The following Product IDs are currently used:
 * :option:`CONFIG_USB_PID_MASS_SAMPLE`
 * :option:`CONFIG_USB_PID_TESTUSB_SAMPLE`
 * :option:`CONFIG_USB_PID_WEBUSB_SAMPLE`
+* :option:`CONFIG_USB_PID_BLE_HCI_H4_SAMPLE`
 
 USB device controller drivers
 *****************************
@@ -46,6 +47,12 @@ The Device Controller Driver Layer implements the low level control routines
 to deal directly with the hardware. All device controller drivers should
 implement the APIs described in file usb_dc.h. This allows the integration of
 new USB device controllers to be done without changing the upper layers.
+
+USB Device Controller API
+=========================
+
+.. doxygengroup:: _usb_device_controller_api
+   :project: Zephyr
 
 USB device core layer
 *********************
@@ -63,6 +70,32 @@ functionalities:
   customer applications. The APIs are described in the usb_device.h file.
 * Uses the APIs provided by the device controller drivers to interact with
   the USB device controller.
+
+
+USB Device Core Layer API
+=========================
+
+There are two ways to transmit data, using the 'low' level read/write API or
+the 'high' level transfer API.
+
+Low level API
+  To transmit data to the host, the class driver should call usb_write().
+  Upon completion the registered endpoint callback will be called. Before
+  sending another packet the class driver should wait for the completion of
+  the previous write. When data is received, the registered endpoint callback
+  is called. usb_read() should be used for retrieving the received data.
+  For CDC ACM sample driver this happens via the OUT bulk endpoint handler
+  (cdc_acm_bulk_out) mentioned in the endpoint array (cdc_acm_ep_data).
+
+High level API
+  The usb_transfer method can be used to transfer data to/from the host. The
+  transfer API will automatically split the data transmission into one or more
+  USB transaction(s), depending endpoint max packet size. The class driver does
+  not have to implement endpoint callback and should set this callback to the
+  generic usb_transfer_ep_callback.
+
+.. doxygengroup:: _usb_device_core_api
+   :project: Zephyr
 
 USB device class drivers
 ************************
@@ -171,36 +204,55 @@ The USB device should be connected to your Linux host, and verified with the fol
    $ lsusb -d 2fe3:0100
    Bus 007 Device 004: ID 2fe3:0100
 
-API Reference
-*************
+USB Human Interface Devices (HID) support
+*****************************************
 
-There are two ways to transmit data, using the 'low' level read/write API or
-the 'high' level transfer API.
+HID Item helpers
+================
 
-Low level API
-  To transmit data to the host, the class driver should call usb_write().
-  Upon completion the registered endpoint callback will be called. Before
-  sending another packet the class driver should wait for the completion of
-  the previous write. When data is received, the registered endpoint callback
-  is called. usb_read() should be used for retrieving the received data.
-  For CDC ACM sample driver this happens via the OUT bulk endpoint handler
-  (cdc_acm_bulk_out) mentioned in the endpoint array (cdc_acm_ep_data).
+HID item helper macros can be used to compose a HID Report Descriptor.
+The names correspond to those used in the USB HID Specification.
 
-High level API
-  The usb_transfer method can be used to transfer data to/from the host. The
-  transfer API will automatically split the data transmission into one or more
-  USB transaction(s), depending endpoint max packet size. The class driver does
-  not have to implement endpoint callback and should set this callback to the
-  generic usb_transfer_ep_callback.
+Example of a HID Report Descriptor:
 
-USB Device Controller
-=====================
+.. code-block:: c
 
-.. doxygengroup:: _usb_device_controller_api
+    static const uint8_t hid_report_desc[] = {
+        HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),
+        HID_USAGE(HID_USAGE_GEN_DESKTOP_UNDEFINED),
+        HID_COLLECTION(HID_COLLECTION_APPLICATION),
+        HID_LOGICAL_MIN8(0),
+        /* logical maximum 255 */
+        HID_LOGICAL_MAX16(0xFF, 0x00),
+        HID_REPORT_ID(1),
+        HID_REPORT_SIZE(8),
+        HID_REPORT_COUNT(1),
+        HID_USAGE(HID_USAGE_GEN_DESKTOP_UNDEFINED),
+        /* HID_INPUT (Data, Variable, Absolute)	*/
+        HID_INPUT(0x02),
+        HID_END_COLLECTION,
+    };
+
+
+.. doxygengroup:: usb_hid_items
    :project: Zephyr
 
-USB Device Core Layer
-=====================
+.. doxygengroup:: usb_hid_types
+   :project: Zephyr
 
-.. doxygengroup:: _usb_device_core_api
+HID Mouse and Keyboard report descriptors
+=========================================
+
+The pre-defined Mouse and Keyboard report descriptors can be used by
+a HID device implementation or simply as examples.
+
+.. doxygengroup:: usb_hid_mk_report_desc
+   :project: Zephyr
+
+HID Class Device API
+********************
+
+USB HID devices like mouse, keyboard, or any other specific device use this API.
+
+.. doxygengroup:: usb_hid_device_api
    :project: Zephyr

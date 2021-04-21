@@ -1,0 +1,122 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Nordic nRF family RADIO
+
+    dfegpio[n]-gpios properties provide GPIO pins to the radio peripheral. These
+    GPIO pins are used to drive antennas switching by Radio Direction Finding
+    Extension. E.g. to use 12 antennas 4 GPIO pins must be provided;
+    4 GPIO pins support switching up to 16 antennas.
+
+    The dfegpio[n] properties are used to initialize the PSEL.DFEGPIO[n]
+    registers. None of the dfegpio[n]-gpios properties are marked required,
+    since which Radio PSEL.DFEGPIO[n] registers will be used to drive antenna
+    switches depends on the use case.
+
+    Nevertheless, at least two antennas must be available. That means at
+    least one dfegpio[n]-gpios property must be provided, to give the radio
+    the possibility to switch between two antennas.
+
+compatible: "nordic,nrf-radio"
+
+include: [base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    dfe-antenna-num:
+      type: int
+      required: true
+      description: |
+        Number of available antennas.
+
+        Value zero means no antenna available. If provided value different than
+        zero, it must be greater or equal to two.
+
+    dfe-pdu-antenna:
+      type: int
+      required: true
+      description: |
+        Antenna switch pattern to be used for transmission of PDU before start
+        of transmission of Constant Tone Extension.
+
+        This pattern is stored in SWITCHPATTERN[0] before store actual antenna
+        switching patterns. This pattern will be also used to drive GPIOs
+        when Radio releases control of GPIOs used to switch antenna.
+
+    dfegpio0-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Pin select for DFE pin 0
+
+        Flags cell in the property is not used for GPIO pin initialization
+        and should be set to zero.
+
+    dfegpio1-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Pin select for DFE pin 1
+
+        Flags cell in the property is not used for GPIO pin initialization
+        and should be set to zero.
+
+    dfegpio2-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Pin select for DFE pin 2
+
+        Flags cell in the property is not used for GPIO pin initialization
+        and should be set to zero.
+
+    dfegpio3-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Pin select for DFE pin 3
+
+        Flags cell in the property is not used for GPIO pin initialization
+        and should be set to zero.
+
+    dfegpio4-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Pin select for DFE pin 4
+
+        Flags cell in the property is not used for GPIO pin initialization
+        and should be set to zero.
+
+    dfegpio5-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Pin select for DFE pin 5
+
+        Flags cell in the property is not used for GPIO pin initialization
+        and should be set to zero.
+
+    dfegpio6-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Pin select for DFE pin 6
+
+        Flags cell in the property is not used for GPIO pin initialization
+        and should be set to zero.
+
+    dfegpio7-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Pin select for DFE pin 7
+
+        Flags cell in the property is not used for GPIO pin initialization
+        and should be set to zero.

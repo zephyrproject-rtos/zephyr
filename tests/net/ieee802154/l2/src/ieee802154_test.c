@@ -23,8 +23,8 @@ struct ieee802154_pkt_test {
 	char *name;
 	struct in6_addr src;
 	struct in6_addr dst;
-	u8_t *pkt;
-	u8_t length;
+	uint8_t *pkt;
+	uint8_t length;
 	struct {
 		struct ieee802154_fcf_seq *fc_seq;
 		struct ieee802154_address_field *dst_addr;
@@ -32,7 +32,7 @@ struct ieee802154_pkt_test {
 	} mhr_check;
 };
 
-u8_t ns_pkt[] = {
+uint8_t ns_pkt[] = {
 	0x41, 0xd8, 0x3e, 0xcd, 0xab, 0xff, 0xff, 0xc2, 0xa3, 0x9e, 0x00,
 	0x00, 0x4b, 0x12, 0x00, 0x7b, 0x09, 0x3a, 0x20, 0x01, 0x0d, 0xb8,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -56,7 +56,7 @@ struct ieee802154_pkt_test test_ns_pkt = {
 	.mhr_check.src_addr = (struct ieee802154_address_field *)(ns_pkt + 7),
 };
 
-u8_t ack_pkt[] = { 0x02, 0x10, 0x16 };
+uint8_t ack_pkt[] = { 0x02, 0x10, 0x16 };
 
 struct ieee802154_pkt_test test_ack_pkt = {
 	.name = "ACK frame",
@@ -67,7 +67,7 @@ struct ieee802154_pkt_test test_ack_pkt = {
 	.mhr_check.src_addr = NULL,
 };
 
-u8_t beacon_pkt[] = {
+uint8_t beacon_pkt[] = {
 	0x00, 0xd0, 0x11, 0xcd, 0xab, 0xc2, 0xa3, 0x9e, 0x00, 0x00, 0x4b,
 	0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
@@ -82,7 +82,7 @@ struct ieee802154_pkt_test test_beacon_pkt = {
 	(struct ieee802154_address_field *) (beacon_pkt + 3),
 };
 
-u8_t sec_data_pkt[] = {
+uint8_t sec_data_pkt[] = {
 	0x49, 0xd8, 0x03, 0xcd, 0xab, 0xff, 0xff, 0x02, 0x6d, 0xbb, 0xa7,
 	0x00, 0x4b, 0x12, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0xd3, 0x8e,
 	0x49, 0xa7, 0xe2, 0x00, 0x67, 0xd4, 0x00, 0x42, 0x52, 0x6f, 0x01,
@@ -105,7 +105,7 @@ struct net_pkt *current_pkt;
 struct net_if *iface;
 K_SEM_DEFINE(driver_lock, 0, UINT_MAX);
 
-static void pkt_hexdump(u8_t *pkt, u8_t length)
+static void pkt_hexdump(uint8_t *pkt, uint8_t length)
 {
 	int i;
 
@@ -125,7 +125,7 @@ static void pkt_hexdump(u8_t *pkt, u8_t length)
 	}
 }
 
-static void ieee_addr_hexdump(u8_t *addr, u8_t length)
+static void ieee_addr_hexdump(uint8_t *addr, uint8_t length)
 {
 	int i;
 
@@ -202,7 +202,7 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t)
 
 static bool test_ack_reply(struct ieee802154_pkt_test *t)
 {
-	static u8_t data_pkt[] = {
+	static uint8_t data_pkt[] = {
 		0x61, 0xdc, 0x16, 0xcd, 0xab, 0x26, 0x11, 0x32, 0x00, 0x00, 0x4b,
 		0x12, 0x00, 0x26, 0x18, 0x32, 0x00, 0x00, 0x4b, 0x12, 0x00, 0x7b,
 		0x00, 0x3a, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -263,7 +263,7 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 
 static bool initialize_test_environment(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	k_sem_reset(&driver_lock);
 

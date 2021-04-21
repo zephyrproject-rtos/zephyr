@@ -1,0 +1,71 @@
+description: ESP32 SPI
+
+compatible: "espressif,esp32-spi"
+
+include: spi-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: false
+
+    miso-pin:
+      type: int
+      description: MISO pin
+      required: true
+
+    mosi-pin:
+      type: int
+      description: MOSI pin
+      required: true
+
+    sclk-pin:
+      type: int
+      description: SPI generated clock pin
+      required: true
+
+    csel-pin:
+      type: int
+      description: chip select pin
+      required: true
+
+    half-duplex:
+      type: boolean
+      required: false
+      description: |
+        Enable half-duplex communication mode.
+
+        Transmit data before receiving it, instead of simultaneously
+
+    dummy-comp:
+      type: boolean
+      required: false
+      description: Enable dummy SPI compensation cycles
+
+    sio:
+      type: boolean
+      required: false
+      description: |
+        Enable 3-wire mode
+
+        Use MOSI for both sending and receiving data
+
+    dma:
+      type: boolean
+      required: false
+      description: Enable SPI DMA support
+
+    clk-as-cs:
+      type: boolean
+      required: false
+      description: |
+        Support to toggle the CS while the clock toggles
+
+        Output clock on CS line if CS is active
+
+    positive-cs:
+      type: boolean
+      required: false
+      description: Make CS positive during a transaction instead of negative

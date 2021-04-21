@@ -1,4 +1,4 @@
-identifier: esp32
+identifier: odroid-go
 name: ODROID-GO
 type: mcu
 arch: xtensa

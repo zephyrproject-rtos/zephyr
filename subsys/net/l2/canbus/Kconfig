@@ -58,7 +58,7 @@ config NET_L2_CANBUS_ETH_TRANSLATOR
 	help
 	  Enable a 6LoCAN Ethernet translator. With this translator it is
 	  possible to connect a 6LoCAN network to a Ethernet network directly,
-	  via a Switch or trough a router. Messages that goes through the
+	  via a Switch or through a router. Messages that goes through the
 	  translator have a special address and the MAC address is carried inline.
 	  The packet is forwarded with uncompressed IPv6 header.
 

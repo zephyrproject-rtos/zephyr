@@ -34,7 +34,7 @@ semaphores used to implement blocking mutual exclusion continue to be
 a proper application choice.
 
 At the lowest level, however, Zephyr code has often used the
-``irq_lock()``/``irq_unlock()`` primitives to implement fine grained
+:c:func:`irq_lock`/:c:func:`irq_unlock` primitives to implement fine grained
 critical sections using interrupt masking.  These APIs continue to
 work via an emulation layer (see below), but the masking technique
 does not: the fact that your CPU will not be interrupted while you are
@@ -45,13 +45,13 @@ data!
 Spinlocks
 =========
 
-SMP systems provide a more constrained ``k_spin_lock()`` primitive
-that not only masks interrupts locally, as done by ``irq_lock()``, but
+SMP systems provide a more constrained :c:func:`k_spin_lock` primitive
+that not only masks interrupts locally, as done by :c:func:`irq_lock`, but
 also atomically validates that a shared lock variable has been
 modified before returning to the caller, "spinning" on the check if
 needed to wait for the other CPU to exit the lock.  The default Zephyr
-implementation of ``k_spin_lock()`` and ``k_spin_unlock()`` is built
-on top of the pre-existing ``atomic_t`` layer (itself usually
+implementation of :c:func:`k_spin_lock` and :c:func:`k_spin_unlock` is built
+on top of the pre-existing :c:struct:`atomic_` layer (itself usually
 implemented using compiler intrinsics), though facilities exist for
 architectures to define their own for performance reasons.
 
@@ -76,7 +76,7 @@ Legacy irq_lock() emulation
 ===========================
 
 For the benefit of applications written to the uniprocessor locking
-API, ``irq_lock()`` and ``irq_unlock()`` continue to work compatibly on
+API, :c:func:`irq_lock` and :c:func:`irq_unlock` continue to work compatibly on
 SMP systems with identical semantics to their legacy versions.  They
 are implemented as a single global spinlock, with a nesting count and
 the ability to be atomically reacquired on context switch into locked
@@ -88,7 +88,7 @@ release to happen.
 
 The overhead involved in this process has measurable performance
 impact, however.  Unlike uniprocessor apps, SMP apps using
-``irq_lock()`` are not simply invoking a very short (often ~1
+:c:func:`irq_lock` are not simply invoking a very short (often ~1
 instruction) interrupt masking operation.  That, and the fact that the
 IRQ lock is global, means that code expecting to be run in an SMP
 context should be using the spinlock API wherever possible.
@@ -104,10 +104,10 @@ kconfig variable, which can associate a specific set of CPUs with each
 thread, indicating on which CPUs it can run.
 
 By default, new threads can run on any CPU.  Calling
-``k_thread_cpu_mask_disable()`` with a particular CPU ID will prevent
+:c:func:`k_thread_cpu_mask_disable` with a particular CPU ID will prevent
 that thread from running on that CPU in the future.  Likewise
-``k_thread_cpu_mask_enable()`` will re-enable execution.  There are also
-``k_thread_cpu_mask_clear()`` and ``k_thread_cpu_mask_enable_all()`` APIs
+:c:func:`k_thread_cpu_mask_enable` will re-enable execution.  There are also
+:c:func:`k_thread_cpu_mask_clear` and :c:func:`k_thread_cpu_mask_enable_all` APIs
 available for convenience.  For obvious reasons, these APIs are
 illegal if called on a runnable thread.  The thread must be blocked or
 suspended, otherwise an ``-EINVAL`` will be returned.
@@ -129,25 +129,25 @@ Auxiliary CPUs begin in a disabled state in the architecture layer.
 All standard kernel initialization, including device initialization,
 happens on a single CPU before other CPUs are brought online.
 
-Just before entering the application ``main()`` function, the kernel
-calls ``z_smp_init()`` to launch the SMP initialization process.  This
+Just before entering the application :c:func:`main` function, the kernel
+calls :c:func:`z_smp_init` to launch the SMP initialization process.  This
 enumerates over the configured CPUs, calling into the architecture
-layer using ``arch_start_cpu()`` for each one.  This function is
+layer using :c:func:`arch_start_cpu` for each one.  This function is
 passed a memory region to use as a stack on the foreign CPU (in
 practice it uses the area that will become that CPU's interrupt
-stack), the address of a local ``smp_init_top()`` callback function to
+stack), the address of a local :c:func:`smp_init_top` callback function to
 run on that CPU, and a pointer to a "start flag" address which will be
 used as an atomic signal.
 
-The local SMP initialization (``smp_init_top()``) on each CPU is then
+The local SMP initialization (:c:func:`smp_init_top`) on each CPU is then
 invoked by the architecture layer.  Note that interrupts are still
 masked at this point.  This routine is responsible for calling
-``smp_timer_init()`` to set up any needed stat in the timer driver.  On
+:c:func:`smp_timer_init` to set up any needed stat in the timer driver.  On
 many architectures the timer is a per-CPU device and needs to be
 configured specially on auxiliary CPUs.  Then it waits (spinning) for
 the atomic "start flag" to be released in the main thread, to
 guarantee that all SMP initialization is complete before any Zephyr
-application code runs, and finally calls ``z_swap()`` to transfer
+application code runs, and finally calls :c:func:`z_swap` to transfer
 control to the appropriate runnable thread via the standard scheduler
 API.
 
@@ -166,7 +166,7 @@ When running in multiprocessor environments, it is occasionally the
 case that state modified on the local CPU needs to be synchronously
 handled on a different processor.
 
-One example is the Zephyr ``k_thread_abort()`` API, which cannot return
+One example is the Zephyr :c:func:`k_thread_abort` API, which cannot return
 until the thread that had been aborted is no longer runnable.  If it
 is currently running on another CPU, that becomes difficult to
 implement.
@@ -180,9 +180,9 @@ handle the newly-runnable load.
 
 So where possible, Zephyr SMP architectures should implement an
 interprocessor interrupt.  The current framework is very simple: the
-architecture provides a ``arch_sched_ipi()`` call, which when invoked
+architecture provides a :c:func:`arch_sched_ipi` call, which when invoked
 will flag an interrupt on all CPUs (except the current one, though
-that is allowed behavior) which will then invoke the ``z_sched_ipi()``
+that is allowed behavior) which will then invoke the :c:func:`z_sched_ipi`
 function implemented in the scheduler.  The expectation is that these
 APIs will evolve over time to encompass more functionality
 (e.g. cross-CPU calls), and that the scheduler-specific calls here
@@ -193,7 +193,7 @@ Note that not all SMP architectures will have a usable IPI mechanism
 Zephyr provides fallback behavior that is correct, but perhaps
 suboptimal.
 
-Using this, ``k_thread_abort()`` becomes only slightly more
+Using this, :c:func:`k_thread_abort` becomes only slightly more
 complicated in SMP: for the case where a thread is actually running on
 another CPU (we can detect this atomically inside the scheduler), we
 broadcast an IPI and spin, waiting for the thread to either become
@@ -239,15 +239,15 @@ running concurrently.  Likewise a kernel-provided interrupt stack
 needs to be created and assigned for each physical CPU, as does the
 interrupt nesting count used to detect ISR state.
 
-These fields are now moved into a separate ``struct _cpu`` instance
-within the ``_kernel`` struct, which has a ``cpus[]`` array indexed by ID.
+These fields are now moved into a separate struct :c:struct:`_cpu` instance
+within the :c:struct:`_kernel` struct, which has a ``cpus[]`` array indexed by ID.
 Compatibility fields are provided for legacy uniprocessor code trying
 to access the fields of ``cpus[0]`` using the older syntax and assembly
 offsets.
 
 Note that an important requirement on the architecture layer is that
 the pointer to this CPU struct be available rapidly when in kernel
-context.  The expectation is that ``arch_curr_cpu()`` will be
+context.  The expectation is that :c:func:`arch_curr_cpu` will be
 implemented using a CPU-provided register or addressing mode that can
 store this value across arbitrary context switches or interrupts and
 make it available to any kernel-mode code.
@@ -263,7 +263,7 @@ a separate field in the thread struct.
 Switch-based context switching
 ==============================
 
-The traditional Zephyr context switch primitive has been ``z_swap()``.
+The traditional Zephyr context switch primitive has been :c:func:`z_swap`.
 Unfortunately, this function takes no argument specifying a thread to
 switch to.  The expectation has always been that the scheduler has
 already made its preemption decision when its state was last modified
@@ -278,22 +278,22 @@ Instead, the SMP "switch to" decision needs to be made synchronously
 with the swap call, and as we don't want per-architecture assembly
 code to be handling scheduler internal state, Zephyr requires a
 somewhat lower-level context switch primitives for SMP systems:
-``arch_switch()`` is always called with interrupts masked, and takes
+:c:func:`arch_switch` is always called with interrupts masked, and takes
 exactly two arguments.  The first is an opaque (architecture defined)
 handle to the context to which it should switch, and the second is a
 pointer to such a handle into which it should store the handle
 resulting from the thread that is being switched out.
 
-The kernel then implements a portable ``z_swap()`` implementation on top
+The kernel then implements a portable :c:func:`z_swap` implementation on top
 of this primitive which includes the relevant scheduler logic in a
 location where the architecture doesn't need to understand it.
 Similarly, on interrupt exit, switch-based architectures are expected
-to call ``z_get_next_switch_handle()`` to retrieve the next thread to
+to call :c:func:`z_get_next_switch_handle` to retrieve the next thread to
 run from the scheduler, passing in an "interrupted" handle reflecting
 the same opaque type used by switch, which the kernel will then save
 in the interrupted thread struct.
 
 Note that while SMP requires :option:`CONFIG_USE_SWITCH`, the reverse is not
-true.  A uniprocessor architecture built with :option:`CONFIG_SMP` = n might
+true.  A uniprocessor architecture built with :option:`CONFIG_SMP` set to No might
 still decide to implement its context switching using
-``arch_switch()``.
+:c:func:`arch_switch`.

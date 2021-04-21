@@ -19,27 +19,27 @@
 #include <sys/byteorder.h>
 
 /* HCI Proprietary vendor event */
-const u8_t hci_prop_evt_prefix[2] = { 0xAB, 0xBA };
+const uint8_t hci_prop_evt_prefix[2] = { 0xAB, 0xBA };
 
 struct hci_evt_prop {
-	u8_t  prefix[2];
+	uint8_t  prefix[2];
 } __packed;
 
 struct hci_evt_prop_report {
-	u8_t  data_len;
-	u8_t  data[0];
+	uint8_t  data_len;
+	uint8_t  data[0];
 } __packed;
 
 /* Command handler structure for cmd_handle(). */
 struct cmd_handler {
-	u16_t opcode; /* HCI command opcode */
-	u8_t len;     /* HCI command response length */
+	uint16_t opcode; /* HCI command opcode */
+	uint8_t len;     /* HCI command response length */
 	void (*handler)(struct net_buf *buf, struct net_buf **evt,
-			u8_t len, u16_t opcode);
+			uint8_t len, uint16_t opcode);
 };
 
 /* Add event to net_buf. */
-static void evt_create(struct net_buf *buf, u8_t evt, u8_t len)
+static void evt_create(struct net_buf *buf, uint8_t evt, uint8_t len)
 {
 	struct bt_hci_evt_hdr *hdr;
 
@@ -49,7 +49,7 @@ static void evt_create(struct net_buf *buf, u8_t evt, u8_t len)
 }
 
 /* Create a command complete event. */
-static void *cmd_complete(struct net_buf **buf, u8_t plen, u16_t opcode)
+static void *cmd_complete(struct net_buf **buf, uint8_t plen, uint16_t opcode)
 {
 	struct bt_hci_evt_cmd_complete *cc;
 
@@ -62,7 +62,7 @@ static void *cmd_complete(struct net_buf **buf, u8_t plen, u16_t opcode)
 }
 
 /* Loop over handlers to try to handle the command given by opcode. */
-static int cmd_handle_helper(u16_t opcode, struct net_buf *cmd,
+static int cmd_handle_helper(uint16_t opcode, struct net_buf *cmd,
 			     struct net_buf **evt,
 			     const struct cmd_handler *handlers,
 			     size_t num_handlers)
@@ -91,7 +91,7 @@ static int cmd_handle(struct net_buf *cmd,
 	struct net_buf *evt = NULL;
 	struct bt_hci_evt_cc_status *ccst;
 	struct bt_hci_cmd_hdr *chdr;
-	u16_t opcode;
+	uint16_t opcode;
 	int err;
 
 	chdr = net_buf_pull_mem(cmd, sizeof(*chdr));
@@ -113,7 +113,7 @@ static int cmd_handle(struct net_buf *cmd,
 
 /* Generic command complete with success status. */
 static void generic_success(struct net_buf *buf, struct net_buf **evt,
-			    u8_t len, u16_t opcode)
+			    uint8_t len, uint16_t opcode)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
@@ -127,7 +127,7 @@ static void generic_success(struct net_buf *buf, struct net_buf **evt,
 
 /* Bogus handler for BT_HCI_OP_READ_LOCAL_FEATURES. */
 static void read_local_features(struct net_buf *buf, struct net_buf **evt,
-				u8_t len, u16_t opcode)
+				uint8_t len, uint16_t opcode)
 {
 	struct bt_hci_rp_read_local_features *rp;
 
@@ -138,7 +138,7 @@ static void read_local_features(struct net_buf *buf, struct net_buf **evt,
 
 /* Bogus handler for BT_HCI_OP_READ_SUPPORTED_COMMANDS. */
 static void read_supported_commands(struct net_buf *buf, struct net_buf **evt,
-				    u8_t len, u16_t opcode)
+				    uint8_t len, uint16_t opcode)
 {
 	struct bt_hci_rp_read_supported_commands *rp;
 
@@ -149,7 +149,7 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt,
 
 /* Bogus handler for BT_HCI_OP_LE_READ_LOCAL_FEATURES. */
 static void le_read_local_features(struct net_buf *buf, struct net_buf **evt,
-				   u8_t len, u16_t opcode)
+				   uint8_t len, uint16_t opcode)
 {
 	struct bt_hci_rp_le_read_local_features *rp;
 
@@ -160,7 +160,7 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt,
 
 /* Bogus handler for BT_HCI_OP_LE_READ_SUPP_STATES. */
 static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt,
-				u8_t len, u16_t opcode)
+				uint8_t len, uint16_t opcode)
 {
 	struct bt_hci_rp_le_read_supp_states *rp;
 
@@ -279,8 +279,8 @@ static void bt_recv_job_submit(struct net_buf *buf)
 static K_SEM_DEFINE(prop_cb_sem, 0, 1);
 
 /* Used to verify prop event data. */
-static u8_t *prop_cb_data;
-static u8_t prop_cb_data_len;
+static uint8_t *prop_cb_data;
+static uint8_t prop_cb_data_len;
 
 /* Prop callback. */
 static bool prop_cb(struct net_buf_simple *buf)
@@ -295,8 +295,8 @@ static bool prop_cb(struct net_buf_simple *buf)
 
 		per = net_buf_simple_pull_mem(buf, sizeof(*per));
 
-		u8_t data_len = per->data_len;
-		u8_t *data = &per->data[0];
+		uint8_t data_len = per->data_len;
+		uint8_t *data = &per->data[0];
 
 		/* Allocate memory for storing the data */
 		prop_cb_data = k_malloc(data_len);
@@ -316,7 +316,7 @@ static bool prop_cb(struct net_buf_simple *buf)
 }
 
 /* Create a HCI Vendor Specific event to carry the prop event report. */
-static void *prop_evt(struct net_buf *buf, u8_t pelen)
+static void *prop_evt(struct net_buf *buf, uint8_t pelen)
 {
 	struct hci_evt_prop *pe;
 
@@ -329,7 +329,7 @@ static void *prop_evt(struct net_buf *buf, u8_t pelen)
 }
 
 /* Send a prop event report wit the given data. */
-static void send_prop_report(u8_t *data, u8_t data_len)
+static void send_prop_report(uint8_t *data, uint8_t data_len)
 {
 	struct net_buf *buf;
 	struct hci_evt_prop_report *per;
@@ -357,8 +357,8 @@ static void test_hci_prop_evt_entry(void)
 	bt_hci_register_vnd_evt_cb(prop_cb);
 
 	/* Generate some data */
-	u8_t data_len = 10;
-	u8_t data[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+	uint8_t data_len = 10;
+	uint8_t data[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
 	/* Send the prop event report */
 	send_prop_report(&data[0], data_len);

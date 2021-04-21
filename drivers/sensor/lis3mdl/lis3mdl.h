@@ -91,7 +91,7 @@ static const char * const lis3mdl_odr_strings[] = {
 	"40", "80", "155", "300", "560", "1000"
 };
 
-static const u8_t lis3mdl_odr_bits[] = {
+static const uint8_t lis3mdl_odr_bits[] = {
 	LIS3MDL_ODR_BITS(0, 0, 0), /* 0.625 Hz */
 	LIS3MDL_ODR_BITS(0, 1, 0), /* 1.25 Hz */
 	LIS3MDL_ODR_BITS(0, 2, 0), /* 2.5 Hz */
@@ -106,44 +106,44 @@ static const u8_t lis3mdl_odr_bits[] = {
 	LIS3MDL_ODR_BITS(0, 0, 1)  /* 1000 Hz */
 };
 
-static const u16_t lis3mdl_magn_gain[] = {
+static const uint16_t lis3mdl_magn_gain[] = {
 	6842, 3421, 2281, 1711
 };
 
 struct lis3mdl_data {
-	struct device *i2c;
-	s16_t x_sample;
-	s16_t y_sample;
-	s16_t z_sample;
-	s16_t temp_sample;
+	const struct device *i2c;
+	int16_t x_sample;
+	int16_t y_sample;
+	int16_t z_sample;
+	int16_t temp_sample;
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
 	sensor_trigger_handler_t data_ready_handler;
 
 #if defined(CONFIG_LIS3MDL_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LIS3MDL_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_LIS3MDL_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_LIS3MDL_TRIGGER */
 };
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
-int lis3mdl_trigger_set(struct device *dev,
+int lis3mdl_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan);
+int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan);
 
-int lis3mdl_init_interrupt(struct device *dev);
+int lis3mdl_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* __SENSOR_LIS3MDL__ */

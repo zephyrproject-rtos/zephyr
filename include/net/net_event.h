@@ -132,6 +132,9 @@ enum net_event_ipv4_cmd {
 	NET_EVENT_IPV4_CMD_ADDR_DEL,
 	NET_EVENT_IPV4_CMD_ROUTER_ADD,
 	NET_EVENT_IPV4_CMD_ROUTER_DEL,
+	NET_EVENT_IPV4_CMD_DHCP_START,
+	NET_EVENT_IPV4_CMD_DHCP_BOUND,
+	NET_EVENT_IPV4_CMD_DHCP_STOP,
 };
 
 #define NET_EVENT_IPV4_ADDR_ADD					\
@@ -145,6 +148,16 @@ enum net_event_ipv4_cmd {
 
 #define NET_EVENT_IPV4_ROUTER_DEL				\
 	(_NET_EVENT_IPV4_BASE |	NET_EVENT_IPV4_CMD_ROUTER_DEL)
+
+#define NET_EVENT_IPV4_DHCP_START				\
+	(_NET_EVENT_IPV4_BASE |	NET_EVENT_IPV4_CMD_DHCP_START)
+
+#define NET_EVENT_IPV4_DHCP_BOUND				\
+	(_NET_EVENT_IPV4_BASE |	NET_EVENT_IPV4_CMD_DHCP_BOUND)
+
+#define NET_EVENT_IPV4_DHCP_STOP				\
+	(_NET_EVENT_IPV4_BASE |	NET_EVENT_IPV4_CMD_DHCP_STOP)
+
 
 /* L4 network events */
 #define _NET_L4_LAYER		NET_MGMT_LAYER_L4
@@ -215,7 +228,7 @@ struct net_event_ipv6_nbr {
 struct net_event_ipv6_route {
 	struct in6_addr nexthop;
 	struct in6_addr addr; /* addr/prefix */
-	u8_t prefix_len;
+	uint8_t prefix_len;
 };
 
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */

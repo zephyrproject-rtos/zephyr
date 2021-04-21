@@ -18,7 +18,7 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 struct settings_nvs_read_fn_arg {
 	struct nvs_fs *fs;
-	u16_t id;
+	uint16_t id;
 };
 
 static int settings_nvs_load(struct settings_store *cs,
@@ -73,7 +73,7 @@ static int settings_nvs_load(struct settings_store *cs,
 	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
 	char buf;
 	ssize_t rc1, rc2;
-	u16_t name_id = NVS_NAMECNT_ID;
+	uint16_t name_id = NVS_NAMECNT_ID;
 
 	name_id = cf->last_name_id + 1;
 
@@ -105,7 +105,7 @@ static int settings_nvs_load(struct settings_store *cs,
 			if (name_id == cf->last_name_id) {
 				cf->last_name_id--;
 				nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID,
-					  &cf->last_name_id, sizeof(u16_t));
+					  &cf->last_name_id, sizeof(uint16_t));
 			}
 			nvs_delete(&cf->cf_nvs, name_id);
 			nvs_delete(&cf->cf_nvs, name_id + NVS_NAME_ID_OFFSET);
@@ -133,7 +133,7 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 {
 	struct settings_nvs *cf = (struct settings_nvs *)cs;
 	char rdname[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
-	u16_t name_id, write_name_id;
+	uint16_t name_id, write_name_id;
 	bool delete, write_name;
 	int rc = 0;
 
@@ -173,7 +173,7 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 		if ((delete) && (name_id == cf->last_name_id)) {
 			cf->last_name_id--;
 			rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID,
-				       &cf->last_name_id, sizeof(u16_t));
+				       &cf->last_name_id, sizeof(uint16_t));
 			if (rc < 0) {
 				/* Error: can't to store
 				 * the largest name ID in use.
@@ -213,6 +213,9 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 	/* write the value */
 	rc = nvs_write(&cf->cf_nvs, write_name_id + NVS_NAME_ID_OFFSET,
 		       value, val_len);
+	if (rc < 0) {
+		return rc;
+	}
 
 	/* write the name if required */
 	if (write_name) {
@@ -226,7 +229,7 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 	if (write_name_id > cf->last_name_id) {
 		cf->last_name_id = write_name_id;
 		rc = nvs_write(&cf->cf_nvs, NVS_NAMECNT_ID, &cf->last_name_id,
-			       sizeof(u16_t));
+			       sizeof(uint16_t));
 	}
 
 	if (rc < 0) {
@@ -240,7 +243,7 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 int settings_nvs_backend_init(struct settings_nvs *cf)
 {
 	int rc;
-	u16_t last_name_id;
+	uint16_t last_name_id;
 
 	rc = nvs_init(&cf->cf_nvs, cf->flash_dev_name);
 	if (rc) {
@@ -263,18 +266,18 @@ int settings_backend_init(void)
 {
 	static struct settings_nvs default_settings_nvs;
 	int rc;
-	u16_t cnt = 0;
+	uint16_t cnt = 0;
 	size_t nvs_sector_size, nvs_size = 0;
 	const struct flash_area *fa;
 	struct flash_sector hw_flash_sector;
-	u32_t sector_cnt = 1;
+	uint32_t sector_cnt = 1;
 
-	rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fa);
+	rc = flash_area_open(FLASH_AREA_ID(storage), &fa);
 	if (rc) {
 		return rc;
 	}
 
-	rc = flash_area_get_sectors(DT_FLASH_AREA_STORAGE_ID, &sector_cnt,
+	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &sector_cnt,
 				    &hw_flash_sector);
 	if (rc == -ENODEV) {
 		return rc;

@@ -216,7 +216,7 @@ Example LwM2M object and resources: Device
      - R
      - Multiple
      - Optional
-     - ObjLink
+     - ObjLnk
 
 The server could query the ``Manufacturer`` resource for ``Device`` object
 instance 0 (the default and only instance) by sending a ``READ 3/0/0``
@@ -247,19 +247,19 @@ Sample usage
 ************
 
 To use the LwM2M library, start by creating an LwM2M client context
-:c:type:`struct lwm2m_ctx` structure:
+:c:struct:`lwm2m_ctx` structure:
 
 .. code-block:: c
 
 	/* LwM2M client context */
 	static struct lwm2m_ctx client;
 
-Create callback functions for LwM2M resources that you wish to have actions
-for:
+Create callback functions for LwM2M resource exuctions:
 
 .. code-block:: c
 
-	static int device_reboot_cb(u16_t obj_inst_id)
+	static int device_reboot_cb(uint16_t obj_inst_id, uint8_t *args,
+				    uint16_t args_len)
 	{
 		LOG_INF("Device rebooting.");
 		LOG_PANIC();
@@ -355,13 +355,13 @@ to connect as well as set the ``Manufacturer`` and ``Reboot`` resources in the
 	lwm2m_engine_register_exec_callback("3/0/4", device_reboot_cb);
 
 Lastly, we start the LwM2M RD client (which in turn starts the LwM2M engine).
-The second parameter of :c:func:`lwm2m_rd_client_start()` is the client
+The second parameter of :c:func:`lwm2m_rd_client_start` is the client
 endpoint name.  This is important as it needs to be unique per LwM2M server:
 
 .. code-block:: c
 
 	(void)memset(&client, 0x0, sizeof(client));
-	lwm2m_rd_client_start(&client, "unique-endpoint-name", rd_client_event);
+	lwm2m_rd_client_start(&client, "unique-endpoint-name", 0, rd_client_event);
 
 Using LwM2M library with DTLS
 *****************************
@@ -398,7 +398,7 @@ resource.  Lastly, set the client identity and PSK resources.
 	/* Set the client pre-shared key (PSK) */
 	lwm2m_engine_set_opaque("0/0/5", (void *)client_psk, sizeof(client_psk));
 
-Before calling :c:func:`lwm2m_rd_client_start()` assign the tls_tag # where the
+Before calling :c:func:`lwm2m_rd_client_start` assign the tls_tag # where the
 LwM2M library should store the DTLS information prior to connection (normally a
 value of 1 is ok here).
 
@@ -406,7 +406,7 @@ value of 1 is ok here).
 
 	(void)memset(&client, 0x0, sizeof(client));
 	client.tls_tag = 1; /* <---- */
-	lwm2m_rd_client_start(&client, "endpoint-name", rd_client_event);
+	lwm2m_rd_client_start(&client, "endpoint-name", 0, rd_client_event);
 
 For a more detailed LwM2M client sample see: :ref:`lwm2m-client-sample`.
 

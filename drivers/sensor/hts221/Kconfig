@@ -3,7 +3,7 @@
 
 menuconfig HTS221
 	bool "HTS221 temperature and humidity sensor"
-	depends on I2C && HAS_DTS_I2C
+	depends on I2C
 	help
 	  Enable driver for HTS221 I2C-based temperature and humidity sensor.
 

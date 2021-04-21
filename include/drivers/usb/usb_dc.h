@@ -22,10 +22,32 @@
 /**
  * USB endpoint direction and number.
  */
+#define USB_EP_DIR_MASK		0x80U
+#define USB_EP_DIR_IN		0x80U
+#define USB_EP_DIR_OUT		0x00U
 
-#define USB_EP_DIR_MASK		0x80
-#define USB_EP_DIR_IN		0x80
-#define USB_EP_DIR_OUT		0x00
+/** Get endpoint index (number) from endpoint address */
+#define USB_EP_GET_IDX(ep) ((ep) & ~USB_EP_DIR_MASK)
+/** Get direction from endpoint address */
+#define USB_EP_GET_DIR(ep) ((ep) & USB_EP_DIR_MASK)
+/** Get endpoint address from endpoint index and direction */
+#define USB_EP_GET_ADDR(idx, dir) ((idx) | ((dir) & USB_EP_DIR_MASK))
+/** True if the endpoint is an IN endpoint */
+#define USB_EP_DIR_IS_IN(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_IN)
+/** True if the endpoint is an OUT endpoint */
+#define USB_EP_DIR_IS_OUT(ep) (USB_EP_GET_DIR(ep) == USB_EP_DIR_OUT)
+
+/**
+ * USB endpoint Transfer Type mask.
+ */
+#define USB_EP_TRANSFER_TYPE_MASK 0x3U
+
+/**
+ * USB endpoint Synchronization Type mask.
+ *
+ * @note Valid only for Isochronous Endpoints
+ */
+#define USB_EP_SYNCHRONIZATION_TYPE_MASK (0x3 << 2U)
 
 /**
  * @brief USB Device Controller API
@@ -80,9 +102,9 @@ enum usb_dc_ep_cb_status_code {
 };
 
 /**
- * @brief USB Endpoint type
+ * @brief USB Endpoint Transfer Type
  */
-enum usb_dc_ep_type {
+enum usb_dc_ep_transfer_type {
 	/** Control type endpoint */
 	USB_DC_EP_CONTROL = 0,
 	/** Isochronous type endpoint */
@@ -91,6 +113,22 @@ enum usb_dc_ep_type {
 	USB_DC_EP_BULK,
 	/** Interrupt type endpoint  */
 	USB_DC_EP_INTERRUPT
+};
+
+/**
+ * @brief USB Endpoint Synchronization Type
+ *
+ * @note Valid only for Isochronous Endpoints
+ */
+enum usb_dc_ep_synchronozation_type {
+	/** No Synchronization */
+	USB_DC_EP_NO_SYNCHRONIZATION = (0U << 2U),
+	/** Asynchronous */
+	USB_DC_EP_ASYNCHRONOUS = (1U << 2U),
+	/** Adaptive */
+	USB_DC_EP_ADAPTIVE = (2U << 2U),
+	/** Synchronous*/
+	USB_DC_EP_SYNCHRONOUS = (3U << 2U)
 };
 
 /**
@@ -104,26 +142,26 @@ struct usb_dc_ep_cfg_data {
 	 *       IN  EP = 0x80 | \<endpoint number\>
 	 *       OUT EP = 0x00 | \<endpoint number\>
 	 */
-	u8_t ep_addr;
+	uint8_t ep_addr;
 	/** Endpoint max packet size */
-	u16_t ep_mps;
-	/** Endpoint type. May be Bulk, Interrupt or Control. Isochronous
-	 *  endpoints are not supported for now.
+	uint16_t ep_mps;
+	/** Endpoint Transfer Type.
+	 * May be Bulk, Interrupt, Control or Isochronous
 	 */
-	enum usb_dc_ep_type ep_type;
+	enum usb_dc_ep_transfer_type ep_type;
 };
 
 /**
  * Callback function signature for the USB Endpoint status
  */
-typedef void (*usb_dc_ep_callback)(u8_t ep,
+typedef void (*usb_dc_ep_callback)(uint8_t ep,
 				   enum usb_dc_ep_cb_status_code cb_status);
 
 /**
  * Callback function signature for the device
  */
 typedef void (*usb_dc_status_callback)(enum usb_dc_status_code cb_status,
-				       const u8_t *param);
+				       const uint8_t *param);
 
 /**
  * @brief Attach USB for device connection
@@ -163,7 +201,7 @@ int usb_dc_reset(void);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_set_address(const u8_t addr);
+int usb_dc_set_address(const uint8_t addr);
 
 /**
  * @brief Set USB device controller status callback
@@ -212,7 +250,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_set_stall(const u8_t ep);
+int usb_dc_ep_set_stall(const uint8_t ep);
 
 /**
  * @brief Clear stall condition for the selected endpoint
@@ -222,7 +260,7 @@ int usb_dc_ep_set_stall(const u8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_clear_stall(const u8_t ep);
+int usb_dc_ep_clear_stall(const uint8_t ep);
 
 /**
  * @brief Check if the selected endpoint is stalled
@@ -233,7 +271,7 @@ int usb_dc_ep_clear_stall(const u8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled);
+int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled);
 
 /**
  * @brief Halt the selected endpoint
@@ -243,7 +281,7 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_halt(const u8_t ep);
+int usb_dc_ep_halt(const uint8_t ep);
 
 /**
  * @brief Enable the selected endpoint
@@ -257,7 +295,7 @@ int usb_dc_ep_halt(const u8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_enable(const u8_t ep);
+int usb_dc_ep_enable(const uint8_t ep);
 
 /**
  * @brief Disable the selected endpoint
@@ -271,7 +309,7 @@ int usb_dc_ep_enable(const u8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_disable(const u8_t ep);
+int usb_dc_ep_disable(const uint8_t ep);
 
 /**
  * @brief Flush the selected endpoint
@@ -283,7 +321,7 @@ int usb_dc_ep_disable(const u8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_flush(const u8_t ep);
+int usb_dc_ep_flush(const uint8_t ep);
 
 /**
  * @brief Write data to the specified endpoint
@@ -303,8 +341,8 @@ int usb_dc_ep_flush(const u8_t ep);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
-		    const u32_t data_len, u32_t * const ret_bytes);
+int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
+		    const uint32_t data_len, uint32_t * const ret_bytes);
 
 /**
  * @brief Read data from the specified endpoint
@@ -325,8 +363,8 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_read(const u8_t ep, u8_t *const data,
-		   const u32_t max_data_len, u32_t *const read_bytes);
+int usb_dc_ep_read(const uint8_t ep, uint8_t *const data,
+		   const uint32_t max_data_len, uint32_t *const read_bytes);
 
 /**
  * @brief Set callback function for the specified endpoint
@@ -342,7 +380,7 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb);
+int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb);
 
 /**
  * @brief Read data from the specified endpoint
@@ -362,8 +400,8 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb);
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
-			u32_t *read_bytes);
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+			uint32_t *read_bytes);
 
 /**
  * @brief Continue reading data from the endpoint
@@ -378,7 +416,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
  *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_ep_read_continue(u8_t ep);
+int usb_dc_ep_read_continue(uint8_t ep);
 
 /**
  * @brief Get endpoint max packet size
@@ -388,7 +426,7 @@ int usb_dc_ep_read_continue(u8_t ep);
  *
  * @return Enpoint max packet size (mps)
  */
-int usb_dc_ep_mps(u8_t ep);
+int usb_dc_ep_mps(uint8_t ep);
 
 /**
  * @brief Start the host wake up procedure.

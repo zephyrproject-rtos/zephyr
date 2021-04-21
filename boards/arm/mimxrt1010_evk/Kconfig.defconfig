@@ -12,22 +12,4 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
-if GPIO_MCUX_IGPIO
-
-config GPIO_MCUX_IGPIO_1
-	default y
-
-config GPIO_MCUX_IGPIO_2
-	default y
-
-endif # GPIO_MCUX_IGPIO
-
-config I2C_1
-	default y
-	depends on I2C_MCUX_LPI2C
-
-config UART_MCUX_LPUART_1
-	default y
-	depends on UART_MCUX_LPUART
-
 endif # BOARD_MIMXRT1010_EVK

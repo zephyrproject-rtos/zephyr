@@ -129,10 +129,65 @@ void test_spinlock_bounce(void)
 	bounce_done = 1;
 }
 
+/**
+ * @brief Test basic mutual exclusion using interrupt masking
+ *
+ * @details
+ * - Spinlocks can be initialized at run-time.
+ * - Spinlocks in uniprocessor context should achieve mutual exclusion using
+ *   interrupt masking.
+ *
+ * @ingroup kernel_spinlock_tests
+ *
+ * @see k_spin_lock(), k_spin_unlock()
+ */
+void test_spinlock_mutual_exclusion(void)
+{
+	k_spinlock_key_t key;
+	static struct k_spinlock lock_runtime;
+	unsigned int irq_key;
+
+	(void)memset(&lock_runtime, 0, sizeof(lock_runtime));
+
+	key = k_spin_lock(&lock_runtime);
+
+	zassert_true(lock_runtime.locked, "Spinlock failed to lock");
+
+	/* check irq has not locked */
+	zassert_true(arch_irq_unlocked(key.key),
+			"irq should be first locked!");
+
+	/*
+	 * We make irq locked nested to check if interrupt
+	 * disable happened or not.
+	 */
+	irq_key = arch_irq_lock();
+
+	/* check irq has already locked */
+	zassert_false(arch_irq_unlocked(irq_key),
+			"irq should be already locked!");
+
+	arch_irq_unlock(irq_key);
+
+	k_spin_unlock(&lock_runtime, key);
+
+	zassert_true(!lock_runtime.locked, "Spinlock failed to unlock");
+}
+
+
+extern void test_spinlock_no_recursive(void);
+extern void test_spinlock_unlock_error(void);
+extern void test_spinlock_release_error(void);
+
+
 void test_main(void)
 {
 	ztest_test_suite(spinlock,
 			 ztest_unit_test(test_spinlock_basic),
-			 ztest_unit_test(test_spinlock_bounce));
+			 ztest_unit_test(test_spinlock_bounce),
+			 ztest_unit_test(test_spinlock_mutual_exclusion),
+			 ztest_unit_test(test_spinlock_no_recursive),
+			 ztest_unit_test(test_spinlock_unlock_error),
+			 ztest_unit_test(test_spinlock_release_error));
 	ztest_run_test_suite(spinlock);
 }

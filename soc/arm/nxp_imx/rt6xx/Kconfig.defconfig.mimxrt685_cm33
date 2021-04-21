@@ -1,0 +1,39 @@
+# NXP MIMXRT6XX platform configuration options
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT685S_CM33
+
+config SOC
+	default "mimxrt685s_cm33"
+
+config PINMUX_MCUX_LPC
+	default y
+	depends on PINMUX
+
+config GPIO_MCUX_LPC
+	default y
+	depends on GPIO
+
+config UART_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on SERIAL
+
+config I2C_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on I2C
+
+config SPI_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on SPI
+
+config DMA_MCUX_LPC
+	default y
+	depends on DMA
+
+config CLOCK_CONTROL_MCUX_SYSCON
+	default y if HAS_MCUX_SYSCON
+	depends on CLOCK_CONTROL
+
+endif # SOC_MIMXRT685S_CM33

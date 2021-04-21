@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sercom5 {
+	/* Internally connect MOSI to MISO for loop-back operation */
+	dipo = <0>;
+	dopo = <0>;
+};

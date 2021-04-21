@@ -1,0 +1,3 @@
+tests:
+  filesystem.api:
+    tags: filesystem

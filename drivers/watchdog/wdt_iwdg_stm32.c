@@ -2,33 +2,48 @@
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2017 RnDity Sp. z o.o.
  * Copyright (c) 2018 qianfan Zhao
+ * Copyright (c) 2020 Libre Solar Technologies GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_watchdog
+
 #include <drivers/watchdog.h>
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_iwdg.h>
+#include <stm32_ll_system.h>
 #include <errno.h>
-#include <assert.h>
 
 #include "wdt_iwdg_stm32.h"
 
-/* Minimal timeout in microseconds. */
-#define IWDG_TIMEOUT_MIN	100
-/* Maximal timeout in microseconds. */
-#define IWDG_TIMEOUT_MAX	26214400
+#define IWDG_PRESCALER_MIN	(4U)
+#define IWDG_PRESCALER_MAX	(256U)
+
+#define IWDG_RELOAD_MIN		(0x0000U)
+#define IWDG_RELOAD_MAX		(0x0FFFU)
+
+/* Minimum timeout in microseconds. */
+#define IWDG_TIMEOUT_MIN	(IWDG_PRESCALER_MIN * (IWDG_RELOAD_MIN + 1U) \
+				 * USEC_PER_SEC / LSI_VALUE)
+
+/* Maximum timeout in microseconds. */
+#define IWDG_TIMEOUT_MAX	((uint64_t)IWDG_PRESCALER_MAX * \
+				 (IWDG_RELOAD_MAX + 1U) * \
+				 USEC_PER_SEC / LSI_VALUE)
 
 #define IS_IWDG_TIMEOUT(__TIMEOUT__)		\
 	(((__TIMEOUT__) >= IWDG_TIMEOUT_MIN) &&	\
 	 ((__TIMEOUT__) <= IWDG_TIMEOUT_MAX))
 
 /*
- * Status register need 5 RC LSI divided by prescaler clock to be updated.
- * With higher prescaler (256U), and according to HSI variation,
- * we need to wait at least 6 cycles so 48 ms.
+ * Status register needs 5 LSI clock cycles divided by prescaler to be updated.
+ * With highest prescaler (256) and considering clock variation, we will wait
+ * maximum 6 cycles (48 ms at 32 kHz) for register update.
  */
-
-#define IWDG_DEFAULT_TIMEOUT	48u
+#define IWDG_SR_UPDATE_TIMEOUT	(6U * IWDG_PRESCALER_MAX * \
+				 MSEC_PER_SEC / LSI_VALUE)
 
 /**
  * @brief Calculates prescaler & reload values.
@@ -37,31 +52,30 @@
  * @param prescaler Pointer to prescaler value.
  * @param reload Pointer to reload value.
  */
-static void iwdg_stm32_convert_timeout(u32_t timeout,
-				       u32_t *prescaler,
-				       u32_t *reload)
+static void iwdg_stm32_convert_timeout(uint32_t timeout,
+				       uint32_t *prescaler,
+				       uint32_t *reload)
 {
+	uint16_t divider = 4U;
+	uint8_t shift = 0U;
 
-	u16_t divider = 0U;
-	u8_t shift = 0U;
+	/* Convert timeout to LSI clock ticks. */
+	uint32_t ticks = (uint64_t)timeout * LSI_VALUE / USEC_PER_SEC;
 
-	/* Convert timeout to seconds. */
-	u32_t m_timeout = (u64_t)timeout * LSI_VALUE / 1000000;
-
-	do {
-		divider = 4 << shift;
+	while ((ticks / divider) > IWDG_RELOAD_MAX) {
 		shift++;
-	} while ((m_timeout / divider) > 0xFFF);
+		divider = 4U << shift;
+	}
 
 	/*
 	 * Value of the 'shift' variable corresponds to the
 	 * defines of LL_IWDG_PRESCALER_XX type.
 	 */
-	*prescaler = --shift;
-	*reload = (u32_t)(m_timeout / divider) - 1;
+	*prescaler = shift;
+	*reload = (uint32_t)(ticks / divider) - 1U;
 }
 
-static int iwdg_stm32_setup(struct device *dev, u8_t options)
+static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
@@ -72,7 +86,11 @@ static int iwdg_stm32_setup(struct device *dev, u8_t options)
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 #endif
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+		LL_DBGMCU_APB4_GRP1_FreezePeriph(LL_DBGMCU_APB4_GRP1_IWDG1_STOP);
+#else
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_IWDG_STOP);
+#endif
 	}
 
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
@@ -83,7 +101,7 @@ static int iwdg_stm32_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int iwdg_stm32_disable(struct device *dev)
+static int iwdg_stm32_disable(const struct device *dev)
 {
 	/* watchdog cannot be stopped once started */
 	ARG_UNUSED(dev);
@@ -91,14 +109,14 @@ static int iwdg_stm32_disable(struct device *dev)
 	return -EPERM;
 }
 
-static int iwdg_stm32_install_timeout(struct device *dev,
+static int iwdg_stm32_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *config)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
-	u32_t timeout = config->window.max * USEC_PER_MSEC;
-	u32_t prescaler = 0U;
-	u32_t reload = 0U;
-	u32_t tickstart;
+	uint32_t timeout = config->window.max * USEC_PER_MSEC;
+	uint32_t prescaler = 0U;
+	uint32_t reload = 0U;
+	uint32_t tickstart;
 
 	if (config->callback != NULL) {
 		return -ENOTSUP;
@@ -114,22 +132,25 @@ static int iwdg_stm32_install_timeout(struct device *dev,
 
 	tickstart = k_uptime_get_32();
 
-	while (LL_IWDG_IsReady(iwdg) == 0) {
-		/* Wait until WVU, RVU, PVU are reset before updating  */
-		if ((k_uptime_get_32() - tickstart) > IWDG_DEFAULT_TIMEOUT) {
-			return -ENODEV;
-		}
-	}
-
 	LL_IWDG_EnableWriteAccess(iwdg);
 
 	LL_IWDG_SetPrescaler(iwdg, prescaler);
 	LL_IWDG_SetReloadCounter(iwdg, reload);
 
+	/* Wait for the update operation completed */
+	while (LL_IWDG_IsReady(iwdg) != 0) {
+		if ((k_uptime_get_32() - tickstart) > IWDG_SR_UPDATE_TIMEOUT) {
+			return -ENODEV;
+		}
+	}
+
+	/* Reload counter just before leaving */
+	LL_IWDG_ReloadCounter(iwdg);
+
 	return 0;
 }
 
-static int iwdg_stm32_feed(struct device *dev, int channel_id)
+static int iwdg_stm32_feed(const struct device *dev, int channel_id)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
@@ -146,12 +167,12 @@ static const struct wdt_driver_api iwdg_stm32_api = {
 	.feed = iwdg_stm32_feed,
 };
 
-static int iwdg_stm32_init(struct device *dev)
+static int iwdg_stm32_init(const struct device *dev)
 {
-#ifdef CONFIG_IWDG_STM32_START_AT_BOOT
+#ifndef CONFIG_WDT_DISABLE_AT_BOOT
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 	struct wdt_timeout_cfg config = {
-		.window.max = CONFIG_IWDG_STM32_TIMEOUT / USEC_PER_MSEC,
+		.window.max = CONFIG_IWDG_STM32_INITIAL_TIMEOUT
 	};
 
 	LL_IWDG_Enable(iwdg);
@@ -172,10 +193,10 @@ static int iwdg_stm32_init(struct device *dev)
 }
 
 static struct iwdg_stm32_data iwdg_stm32_dev_data = {
-	.Instance = (IWDG_TypeDef *)DT_INST_0_ST_STM32_WATCHDOG_BASE_ADDRESS
+	.Instance = (IWDG_TypeDef *)DT_INST_REG_ADDR(0)
 };
 
-DEVICE_AND_API_INIT(iwdg_stm32, DT_INST_0_ST_STM32_WATCHDOG_LABEL,
-		    iwdg_stm32_init, &iwdg_stm32_dev_data, NULL,
+DEVICE_DT_INST_DEFINE(0, iwdg_stm32_init, device_pm_control_nop,
+		    &iwdg_stm32_dev_data, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &iwdg_stm32_api);

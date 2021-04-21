@@ -65,27 +65,11 @@
  * unsigned int arch_swap (unsigned int eflags);
  */
 
-.macro read_tsc var_name
-	push %eax
-	push %edx
-	rdtsc
-	mov %eax,\var_name
-	mov %edx,\var_name+4
-	pop %edx
-	pop %eax
-.endm
 SECTION_FUNC(TEXT, arch_swap)
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	/* Save the eax and edx registers before reading the time stamp
-	* once done pop the values.
-	*/
-	push %eax
-	push %edx
-	rdtsc
-	mov %eax,arch_timing_swap_start
-	mov %edx,arch_timing_swap_start+4
-	pop %edx
-	pop %eax
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
+	pushl	%eax
+	call	z_thread_mark_switched_out
+	popl	%eax
 #endif
 	/*
 	 * Push all non-volatile registers onto the stack; do not copy
@@ -116,13 +100,6 @@ SECTION_FUNC(TEXT, arch_swap)
 
 	movl	_kernel_offset_to_current(%edi), %edx
 	movl	%esp, _thread_offset_to_esp(%edx)
-
-#ifdef CONFIG_TRACING
-	/* Register the context switch */
-	push %edx
-	call	sys_trace_thread_switched_in
-	pop %edx
-#endif
 	movl	_kernel_offset_to_ready_q_cache(%edi), %eax
 
 	/*
@@ -142,11 +119,11 @@ SECTION_FUNC(TEXT, arch_swap)
 	 */
 #endif
 
-#ifdef CONFIG_EAGER_FP_SHARING
+#ifdef CONFIG_EAGER_FPU_SHARING
 	/* Eager floating point state restore logic
 	 *
 	 * Addresses CVE-2018-3665
-	 * Used as an alternate to CONFIG_LAZY_FP_SHARING if there is any
+	 * Used as an alternate to CONFIG_LAZY_FPU_SHARING if there is any
 	 * sensitive data in the floating point/SIMD registers in a system
 	 * with untrusted threads.
 	 *
@@ -154,19 +131,19 @@ SECTION_FUNC(TEXT, arch_swap)
 	 * switch.
 	 */
 	/* Save outgpoing thread context */
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	fxsave	_thread_offset_to_preempFloatReg(%edx)
 	fninit
 #else
 	fnsave	 _thread_offset_to_preempFloatReg(%edx)
 #endif
 	/* Restore incoming thread context */
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	fxrstor _thread_offset_to_preempFloatReg(%eax)
 #else
 	frstor _thread_offset_to_preempFloatReg(%eax)
-#endif /* CONFIG_SSE */
-#elif defined(CONFIG_LAZY_FP_SHARING)
+#endif /* CONFIG_X86_SSE */
+#elif defined(CONFIG_LAZY_FPU_SHARING)
 	/*
 	 * Clear the CR0[TS] bit (in the event the current thread
 	 * doesn't have floating point enabled) to prevent the "device not
@@ -229,7 +206,7 @@ SECTION_FUNC(TEXT, arch_swap)
 	je	restoreContext_NoFloatSave
 
 
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	testb	$K_SSE_REGS, _thread_offset_to_user_options(%ebx)
 	je	x87FloatSave
 
@@ -244,7 +221,7 @@ SECTION_FUNC(TEXT, arch_swap)
 	jmp	floatSaveDone
 
 x87FloatSave:
-#endif /* CONFIG_SSE */
+#endif /* CONFIG_X86_SSE */
 
 	/* 'fnsave' performs an implicit 'fninit' after saving state! */
 
@@ -268,7 +245,7 @@ restoreContext_NoFloatSave:
 	testb   $X86_THREAD_FLAG_ALL, _thread_offset_to_flags(%eax)
 	je 	restoreContext_NoFloatRestore
 
-#ifdef CONFIG_SSE
+#ifdef CONFIG_X86_SSE
 	testb	$K_SSE_REGS, _thread_offset_to_user_options(%eax)
 	je	x87FloatRestore
 
@@ -277,7 +254,7 @@ restoreContext_NoFloatSave:
 
 x87FloatRestore:
 
-#endif /* CONFIG_SSE */
+#endif /* CONFIG_X86_SSE */
 
 	frstor	_thread_offset_to_preempFloatReg(%eax)
 
@@ -320,11 +297,23 @@ restoreContext_NoFloatSwap:
 
 CROHandlingDone:
 
-#endif /* CONFIG_LAZY_FP_SHARING */
+#endif /* CONFIG_LAZY_FPU_SHARING */
 
 	/* update _kernel.current to reflect incoming thread */
 
 	movl    %eax, _kernel_offset_to_current(%edi)
+
+#if defined(CONFIG_X86_USE_THREAD_LOCAL_STORAGE)
+	pushl	%eax
+
+	call	z_x86_tls_update_gdt
+
+	/* Since segment descriptor has changed, need to reload */
+	movw	$GS_TLS_SEG, %ax
+	movw	%ax, %gs
+
+	popl	%eax
+#endif
 
 	/* recover thread stack pointer from k_thread */
 
@@ -355,14 +344,10 @@ CROHandlingDone:
 	pushl	4(%esp)
 	popfl
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	cmp $0x1,arch_timing_value_swap_end
-	jne time_read_not_needed
-	movw $0x2,arch_timing_value_swap_end
-	read_tsc arch_timing_value_swap_common
-	pushl arch_timing_swap_start
-	popl arch_timing_value_swap_temp
-time_read_not_needed:
+#if defined(CONFIG_INSTRUMENT_THREAD_SWITCHING)
+	pushl	%eax
+	call	z_thread_mark_switched_in
+	popl	%eax
 #endif
 	ret
 

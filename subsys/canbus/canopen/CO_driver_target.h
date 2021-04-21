@@ -55,9 +55,9 @@ typedef unsigned char oChar_t;
 typedef unsigned char domain_t;
 
 typedef struct canopen_rx_msg {
-	u8_t data[8];
-	u16_t ident;
-	u8_t DLC;
+	uint8_t data[8];
+	uint16_t ident;
+	uint8_t DLC;
 } CO_CANrxMsg_t;
 
 typedef void (*CO_CANrxBufferCallback_t)(void *object,
@@ -67,25 +67,25 @@ typedef struct canopen_rx {
 	int filter_id;
 	void *object;
 	CO_CANrxBufferCallback_t pFunct;
-	u16_t ident;
+	uint16_t ident;
 } CO_CANrx_t;
 
 typedef struct canopen_tx {
-	u8_t data[8];
-	u16_t ident;
-	u8_t DLC;
+	uint8_t data[8];
+	uint16_t ident;
+	uint8_t DLC;
 	bool_t rtr : 1;
 	bool_t bufferFull : 1;
 	bool_t syncFlag : 1;
 } CO_CANtx_t;
 
 typedef struct canopen_module {
-	struct device *dev;
+	const struct device *dev;
 	CO_CANrx_t *rx_array;
 	CO_CANtx_t *tx_array;
-	u16_t rx_size;
-	u16_t tx_size;
-	u32_t errors;
+	uint16_t rx_size;
+	uint16_t tx_size;
+	uint32_t errors;
 	void *em;
 	bool_t configured : 1;
 	bool_t CANnormal : 1;

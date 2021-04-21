@@ -1,0 +1,12 @@
+identifier: nrf52dk_nrf52805
+name: nRF52-DK-NRF52805
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - counter
+ram: 24
+flash: 192

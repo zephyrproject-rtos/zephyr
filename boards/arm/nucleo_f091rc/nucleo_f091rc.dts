@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/f0/stm32f091Xc.dtsi>
+#include <st/f0/stm32f091r(b-c)tx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 
 / {
 	model = "STMicroelectronics STM32F091RC-NUCLEO board";
-	compatible = "st,stm32f091rc-nucleo", "st,stm32f091";
+	compatible = "st,stm32f091rc-nucleo";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -42,29 +43,35 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	current-speed = <115200>;
 };
 
 &usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa11 &i2c2_sda_pa12>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 
@@ -72,11 +79,12 @@
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+};
+
 &flash0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -91,5 +99,11 @@
 };
 
 &adc1 {
+	pinctrl-0 = <&adc_in0_pa0>;
 	status = "okay";
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac_out1_pa4>;
 };

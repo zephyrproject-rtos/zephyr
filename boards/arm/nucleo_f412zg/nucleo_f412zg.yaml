@@ -1,5 +1,5 @@
 identifier: nucleo_f412zg
-name: NUCLEO-F412ZG
+name: ST Nucleo F412ZG
 type: mcu
 arch: arm
 toolchain:

@@ -17,10 +17,9 @@ board, `Decawave DWM1001 website`_ about the board itself, and `nRF52832 website
 Programming and Debugging
 *************************
 
-Applications for the ``decawave_dwm1001_dev`` board configuration can be
-built and flashed in the usual way (see :ref:`build_an_application`
-and :ref:`application_run` for more details); however, the standard
-debugging targets are not currently available.
+Applications for the ``decawave_dwm1001_dev`` board configuration can be built,
+flashed, and debugged in the usual way. See :ref:`build_an_application` and
+:ref:`application_run` for more details on building and running.
 
 Flashing
 ========

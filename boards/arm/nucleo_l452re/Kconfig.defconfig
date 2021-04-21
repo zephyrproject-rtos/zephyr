@@ -4,31 +4,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NUCLEO_L452RE
+if BOARD_NUCLEO_L452RE || BOARD_NUCLEO_L452RE_P
 
 config BOARD
-	default "nucleo_l452re"
-
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
-config PWM_STM32_2
-	default y
-	depends on PWM
-
-if SPI
-
-config SPI_1
-	default y
+	default "nucleo_l452re" if BOARD_NUCLEO_L452RE
+	default "nucleo_l452re_p" if BOARD_NUCLEO_L452RE_P
 
 config SPI_STM32_INTERRUPT
 	default y
+	depends on SPI
 
-endif # SPI
-
-config CAN_1
-	default y
-	depends on CAN
-
-endif # BOARD_NUCLEO_L452RE
+endif # BOARD_NUCLEO_L452RE || BOARD_NUCLEO_L452RE_P

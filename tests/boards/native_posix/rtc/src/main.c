@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 
-static char *us_time_to_str(char *dest, u64_t time)
+static char *us_time_to_str(char *dest, uint64_t time)
 {
 	if (time != NEVER) {
 		unsigned int hour;
@@ -47,12 +47,12 @@ static char *us_time_to_str(char *dest, u64_t time)
  */
 static void test_realtime(void)
 {
-	extern u64_t get_host_us_time(void);
-	u64_t time;
+	extern uint64_t get_host_us_time(void);
+	uint64_t time;
 	char time_s[60];
-	u64_t end_time, start_time;
-	s64_t diff, error;
-	u64_t start_rtc_time[3];
+	uint64_t end_time, start_time;
+	int64_t diff, error;
+	uint64_t start_rtc_time[3];
 	double acc_ratio = 1;
 	double time_ratios[5] = {0.25, 2, 2, 2, 2};
 	/* This ratio adjustments lead to test speeds 0.25x, 0.5x, 1x, 2x & 4x*/
@@ -69,7 +69,7 @@ static void test_realtime(void)
 	hwtimer_set_rt_ratio(1.0);
 
 	/*Let's wait >=1 tick to ensure everything is settled*/
-	k_sleep(TICK_MS);
+	k_msleep(TICK_MS);
 
 	start_time = get_host_us_time();
 	start_rtc_time[2] = native_rtc_gettime_us(RTC_CLOCK_PSEUDOHOSTREALTIME);
@@ -81,7 +81,7 @@ static void test_realtime(void)
 		acc_ratio *= time_ratios[i];
 
 		/* k_sleep waits 1 tick more than asked */
-		k_sleep(WAIT_TIME - TICK_MS);
+		k_msleep(WAIT_TIME - TICK_MS);
 
 		/*
 		 * Check that during the sleep, the correct amount of real time
@@ -99,7 +99,7 @@ static void test_realtime(void)
 				WAIT_TIME / acc_ratio,
 				TOLERANCE);
 
-		zassert_true(abs(error) < TOLERANCE,
+		zassert_true(llabs(error) < TOLERANCE,
 			     "Real time error over TOLERANCE");
 
 		/*
@@ -117,7 +117,7 @@ static void test_realtime(void)
 				error / 1000.0);
 
 		error /= 1000;
-		zassert_true(abs(error) < TOLERANCE,
+		zassert_true(llabs(error) < TOLERANCE,
 			     "PSEUDOHOSTREALTIME time error over TOLERANCE");
 
 		diff = native_rtc_gettime_us(RTC_CLOCK_BOOT) -
@@ -146,8 +146,8 @@ static void test_realtime(void)
 static void test_rtc_offset(void)
 {
 	int offset = 567;
-	u64_t start_rtc_time[2];
-	s64_t diff, error;
+	uint64_t start_rtc_time[2];
+	int64_t diff, error;
 
 	start_rtc_time[0] = native_rtc_gettime_us(RTC_CLOCK_REALTIME);
 	start_rtc_time[1] = native_rtc_gettime_us(RTC_CLOCK_PSEUDOHOSTREALTIME);
@@ -156,7 +156,7 @@ static void test_rtc_offset(void)
 		- start_rtc_time[1];
 
 	error = diff - offset;
-	zassert_true(abs(error) < TOLERANCE,
+	zassert_true(llabs(error) < TOLERANCE,
 		     "PSEUDOHOSTREALTIME offset error over TOLERANCE");
 
 	diff = native_rtc_gettime_us(RTC_CLOCK_REALTIME) - start_rtc_time[0];

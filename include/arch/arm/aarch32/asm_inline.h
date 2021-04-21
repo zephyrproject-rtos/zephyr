@@ -1,4 +1,4 @@
-/* Intel ARM inline assembler functions and macros for public functions */
+/* ARM AArch32 inline assembler functions and macros for public functions */
 
 /*
  * Copyright (c) 2015, Wind River Systems, Inc.

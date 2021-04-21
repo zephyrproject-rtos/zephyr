@@ -8,8 +8,4 @@ if BOARD_GOOGLE_KUKUI
 config BOARD
 	default "google_kukui"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_GOOGLE_KUKUI

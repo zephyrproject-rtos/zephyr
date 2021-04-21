@@ -8,38 +8,4 @@ if BOARD_STM32VL_DISCO
 config BOARD
 	default "stm32vl_disco"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-endif # I2C
-
-if SPI
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
-endif # SPI
-
-if SERIAL
-
-config UART_2
-	default y
-
-config UART_3
-	default y
-
-endif # SERIAL
-
 endif # BOARD_STM32VL_DISCO

@@ -29,14 +29,14 @@ static inline enum net_verdict dummy_recv(struct net_if *iface,
 
 static inline int dummy_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct dummy_api *api = net_if_get_device(iface)->driver_api;
+	const struct dummy_api *api = net_if_get_device(iface)->api;
 	int ret;
 
 	if (!api) {
 		return -ENOENT;
 	}
 
-	ret = api->send(net_if_get_device(iface), pkt);
+	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
 	if (!ret) {
 		ret = net_pkt_get_len(pkt);
 		net_pkt_unref(pkt);

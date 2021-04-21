@@ -1,0 +1,136 @@
+# Copyright (c) 2021 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+    drdy-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        DRDY gpio pin
+
+        This pin defaults to active high when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.
+
+    int-pin:
+      type: int
+      required: false
+      default: 1
+      description: |
+        Select DRDY pin number (1 or 2).
+
+          Selection
+            1  drdy is generated from INT1
+            2  drdy is generated from INT2
+
+        This number represents which of the two interrupt pins
+        (INT1 or INT2) the drdy line is attached to. This property is not
+        mandatory and if not present it defaults to 1 which is the
+        configuration at power-up.
+      enum:
+        - 1
+        - 2
+
+    accel-odr:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the default accelerometer output data rate expressed in samples per second (Hz).
+        Default is power-up configuration.
+
+          Selection
+            0   Power-Down
+            1   12.5Hz
+            2   26Hz
+            3   52Hz
+            4   104Hz
+            5   208Hz
+            6   416Hz
+            7   833Hz
+            8   1660Hz
+            9   3330Hz
+            10  6660Hz
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+
+    accel-range:
+      type: int
+      required: false
+      default: 2
+      description: |
+        Range in g. Default is power-up configuration.
+
+          Selection
+            16  16g (0.488 mg/LSB)
+             8   8g (0.244 mg/LSB)
+             4   4g (0.122 mg/LSB)
+             2   2g (0.061 mg/LSB)
+      enum:
+        - 16
+        -  8
+        -  4
+        -  2
+
+    gyro-odr:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the default gyro output data rate expressed in samples per second (Hz).
+        Default is power-up configuration.
+
+          Selection
+            0   Power-Down
+            1   12.5Hz
+            2   26Hz
+            3   52Hz
+            4   104Hz
+            5   208Hz
+            6   416Hz
+            7   833Hz
+            8   1660Hz
+            9   3330Hz
+            10  6660Hz
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+
+    gyro-range:
+      type: int
+      required: false
+      default: 125
+      description: |
+        Range in dps. Default is power-up configuration.
+
+          Selection
+            125    +/- 125dps
+            250    +/- 250dps
+            500    +/- 500dps
+            1000   +/- 1000dps
+            2000   +/- 2000dps
+      enum:
+        - 125
+        - 250
+        - 500
+        - 1000
+        - 2000

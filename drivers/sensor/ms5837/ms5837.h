@@ -46,33 +46,33 @@
 
 struct ms5837_data {
 
-	struct device *i2c_master;
+	const struct device *i2c_master;
 
 	/* Calibration values */
-	u16_t sens_t1;
-	u16_t off_t1;
-	u16_t tcs;
-	u16_t tco;
-	u16_t t_ref;
-	u16_t tempsens;
+	uint16_t sens_t1;
+	uint16_t off_t1;
+	uint16_t tcs;
+	uint16_t tco;
+	uint16_t t_ref;
+	uint16_t tempsens;
 
 	/* Measured values */
-	s32_t pressure;
-	s32_t temperature;
+	int32_t pressure;
+	int32_t temperature;
 
 	/* Conversion commands */
-	u8_t presure_conv_cmd;
-	u8_t temperature_conv_cmd;
+	uint8_t presure_conv_cmd;
+	uint8_t temperature_conv_cmd;
 
 	/* Conversion delay in ms*/
-	u8_t presure_conv_delay;
-	u8_t temperature_conv_delay;
+	uint8_t presure_conv_delay;
+	uint8_t temperature_conv_delay;
 
 };
 
 struct ms5837_config {
 	const char *i2c_name;
-	u8_t i2c_address;
+	uint8_t i2c_address;
 };
 
 #endif /* __SENSOR_MS5837_H__ */

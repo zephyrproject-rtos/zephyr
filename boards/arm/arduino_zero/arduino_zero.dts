@@ -23,6 +23,7 @@
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
+		pwm-led0 = &pwm_led0;
 	};
 
 	leds {
@@ -41,6 +42,13 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc2 1>;
+		};
+	};
 };
 
 &cpu0 {
@@ -70,6 +78,19 @@
 	dopo = <1>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+};
+
+&tcc2 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	/* Gives a maximum period of 1.4 s */
+	prescaler = <1024>;
+
+	#pwm-cells = <1>;
+};
+
+&dac0 {
+	status = "okay";
 };
 
 &flash0 {

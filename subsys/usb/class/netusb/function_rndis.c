@@ -41,7 +41,7 @@ static struct k_fifo rndis_cmd_queue;
 /*
  * Stack for cmd thread
  */
-static K_THREAD_STACK_DEFINE(cmd_stack, 2048);
+static K_KERNEL_STACK_DEFINE(cmd_stack, 2048);
 static struct k_thread cmd_thread_data;
 
 struct usb_rndis_config {
@@ -172,13 +172,13 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
  * TLV structure is used for data encapsulation parsing
  */
 struct tlv {
-	u32_t type;
-	u32_t len;
-	u8_t data[];
+	uint32_t type;
+	uint32_t len;
+	uint8_t data[];
 } __packed;
 
 static struct __rndis {
-	u32_t net_filter;
+	uint32_t net_filter;
 
 	enum {
 		UNINITIALIZED,
@@ -189,18 +189,18 @@ static struct __rndis {
 	int in_pkt_len;		/* Packet length to be assembled */
 	int skip_bytes;		/* In case of low memory, skip bytes */
 
-	u16_t mtu;
-	u16_t speed;		/* TODO: Calculate right speed */
+	uint16_t mtu;
+	uint16_t speed;		/* TODO: Calculate right speed */
 
 	/* Statistics */
-	u32_t rx_err;
-	u32_t tx_err;
-	u32_t rx_no_buf;
+	uint32_t rx_err;
+	uint32_t tx_err;
+	uint32_t rx_no_buf;
 
 	atomic_t notify_count;
 
-	u8_t mac[6];
-	u8_t media_status;
+	uint8_t mac[6];
+	uint8_t media_status;
 } rndis = {
 	.mac =  { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x01 },
 	.mtu = 1500, /* Ethernet frame */
@@ -210,13 +210,13 @@ static struct __rndis {
 	.speed = 0,
 };
 
-static u8_t manufacturer[] = CONFIG_USB_DEVICE_MANUFACTURER;
-static u32_t drv_version = 1U;
+static uint8_t manufacturer[] = CONFIG_USB_DEVICE_MANUFACTURER;
+static uint32_t drv_version = 1U;
 
-static u8_t tx_buf[NET_ETH_MAX_FRAME_SIZE +
+static uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE +
 				sizeof(struct rndis_payload_packet)];
 
-static u32_t object_id_supported[] = {
+static uint32_t object_id_supported[] = {
 	RNDIS_OBJECT_ID_GEN_SUPP_LIST,
 	RNDIS_OBJECT_ID_GEN_HW_STATUS,
 	RNDIS_OBJECT_ID_GEN_SUPP_MEDIA,
@@ -256,7 +256,7 @@ static u32_t object_id_supported[] = {
 #define RNDIS_OUT_EP_IDX		1
 #define RNDIS_IN_EP_IDX			2
 
-static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status);
+static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status);
 
 static struct usb_ep_cfg_data rndis_ep_data[] = {
 	{
@@ -273,10 +273,10 @@ static struct usb_ep_cfg_data rndis_ep_data[] = {
 	},
 };
 
-static int parse_rndis_header(const u8_t *buffer, u32_t buf_len)
+static int parse_rndis_header(const uint8_t *buffer, uint32_t buf_len)
 {
 	struct rndis_payload_packet *hdr = (void *)buffer;
-	u32_t len;
+	uint32_t len;
 
 	if (buf_len < sizeof(*hdr)) {
 		LOG_ERR("Too small packet len %u", buf_len);
@@ -322,11 +322,11 @@ void rndis_clean(void)
 	rndis.skip_bytes = 0;
 }
 
-static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	u8_t buffer[CONFIG_RNDIS_BULK_EP_MPS];
-	u32_t hdr_offset = 0U;
-	u32_t len, read;
+	uint8_t buffer[CONFIG_RNDIS_BULK_EP_MPS];
+	uint32_t hdr_offset = 0U;
+	uint32_t len, read;
 
 	usb_read(ep, NULL, 0, &len);
 
@@ -434,7 +434,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	}
 }
 
-static void rndis_notify_cb(u8_t ep, int size, void *priv)
+static void rndis_notify_cb(uint8_t ep, int size, void *priv)
 {
 	LOG_DBG("ep %x size %u", ep, size);
 
@@ -456,7 +456,7 @@ static void rndis_queue_rsp(struct net_buf *rsp)
 /* Notify host about available data */
 static void rndis_notify_rsp(void)
 {
-	static u32_t buf[2] = {
+	static uint32_t buf[2] = {
 		sys_cpu_to_le32(0x01),
 		sys_cpu_to_le32(0x00)
 	};
@@ -472,7 +472,7 @@ static void rndis_notify_rsp(void)
 	atomic_inc(&rndis.notify_count);
 
 	ret = usb_transfer(rndis_ep_data[RNDIS_INT_EP_IDX].ep_addr,
-			   (u8_t *)buf, sizeof(buf),
+			   (uint8_t *)buf, sizeof(buf),
 			   USB_TRANS_WRITE | USB_TRANS_NO_ZLP,
 			   rndis_notify_cb, NULL);
 	if (ret < 0) {
@@ -480,7 +480,7 @@ static void rndis_notify_rsp(void)
 	}
 }
 
-static int rndis_init_handle(u8_t *data, u32_t len)
+static int rndis_init_handle(uint8_t *data, uint32_t len)
 {
 	struct rndis_init_cmd *cmd = (void *)data;
 	struct rndis_init_cmd_complete *rsp;
@@ -544,12 +544,12 @@ static uint32_t rndis_query_add_supp_list(struct net_buf *buf)
 	return sizeof(object_id_supported);
 }
 
-static int rndis_query_handle(u8_t *data, u32_t len)
+static int rndis_query_handle(uint8_t *data, uint32_t len)
 {
 	struct rndis_query_cmd *cmd = (void *)data;
 	struct rndis_query_cmd_complete *rsp;
 	struct net_buf *buf;
-	u32_t object_id, buf_len = 0U;
+	uint32_t object_id, buf_len = 0U;
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
@@ -680,13 +680,13 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 	return 0;
 }
 
-static int rndis_set_handle(u8_t *data, u32_t len)
+static int rndis_set_handle(uint8_t *data, uint32_t len)
 {
 	struct rndis_set_cmd *cmd = (void *)data;
 	struct rndis_set_cmd_complete *rsp;
 	struct net_buf *buf;
-	u32_t object_id;
-	u8_t *param;
+	uint32_t object_id;
+	uint8_t *param;
 
 	if (len < sizeof(*cmd)) {
 		LOG_ERR("Packet is shorter then header");
@@ -694,9 +694,9 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 	}
 
 	/* Parameter starts at offset buf_offset of the req_id field ;) */
-	param = (u8_t *)&cmd->req_id + sys_le32_to_cpu(cmd->buf_offset);
+	param = (uint8_t *)&cmd->req_id + sys_le32_to_cpu(cmd->buf_offset);
 
-	if (len - ((u32_t)param - (u32_t)cmd) !=
+	if (len - ((uint32_t)param - (uint32_t)cmd) !=
 	    sys_le32_to_cpu(cmd->buf_len)) {
 		LOG_ERR("Packet parsing error");
 		return -EINVAL;
@@ -753,7 +753,7 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 	return 0;
 }
 
-static int rndis_reset_handle(u8_t *data, u32_t len)
+static int rndis_reset_handle(uint8_t *data, uint32_t len)
 {
 	struct rndis_reset_cmd_complete *rsp;
 	struct net_buf *buf;
@@ -780,7 +780,7 @@ static int rndis_reset_handle(u8_t *data, u32_t len)
 	return 0;
 }
 
-static int rndis_keepalive_handle(u8_t *data, u32_t len)
+static int rndis_keepalive_handle(uint8_t *data, uint32_t len)
 {
 	struct rndis_keepalive_cmd *cmd = (void *)data;
 	struct rndis_keepalive_cmd_complete *rsp;
@@ -808,7 +808,7 @@ static int rndis_keepalive_handle(u8_t *data, u32_t len)
 	return 0;
 }
 
-static int queue_encapsulated_cmd(u8_t *data, u32_t len)
+static int queue_encapsulated_cmd(uint8_t *data, uint32_t len)
 {
 	struct net_buf *buf;
 
@@ -827,7 +827,7 @@ static int queue_encapsulated_cmd(u8_t *data, u32_t len)
 	return 0;
 }
 
-static int handle_encapsulated_cmd(u8_t *data, u32_t len)
+static int handle_encapsulated_cmd(uint8_t *data, uint32_t len)
 {
 	struct tlv *msg = (void *)data;
 
@@ -865,7 +865,7 @@ static int handle_encapsulated_cmd(u8_t *data, u32_t len)
 	return 0;
 }
 
-static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
+static int handle_encapsulated_rsp(uint8_t **data, uint32_t *len)
 {
 	struct net_buf *buf;
 
@@ -890,8 +890,8 @@ static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
 	return 0;
 }
 
-static int rndis_class_handler(struct usb_setup_packet *setup, s32_t *len,
-			       u8_t **data)
+static int rndis_class_handler(struct usb_setup_packet *setup, int32_t *len,
+			       uint8_t **data)
 {
 	LOG_DBG("len %d req_type 0x%x req 0x%x enabled %u",
 		*len, setup->bmRequestType, setup->bRequest,
@@ -945,10 +945,10 @@ static void cmd_thread(void)
  * RNDIS Send functions
  */
 
-static void rndis_hdr_add(u8_t *buf, u32_t len)
+static void rndis_hdr_add(uint8_t *buf, uint32_t len)
 {
 	struct rndis_payload_packet *hdr = (void *)buf;
-	u32_t offset = offsetof(struct rndis_payload_packet, payload_offset);
+	uint32_t offset = offsetof(struct rndis_payload_packet, payload_offset);
 
 	(void)memset(hdr, 0, sizeof(*hdr));
 
@@ -1008,11 +1008,11 @@ static int rndis_send(struct net_pkt *pkt)
  */
 #define MSOS_STRING_LENGTH	18
 static struct string_desc {
-	u8_t bLength;
-	u8_t bDescriptorType;
-	u8_t bString[MSOS_STRING_LENGTH - 4];
-	u8_t bMS_VendorCode;
-	u8_t bPad;
+	uint8_t bLength;
+	uint8_t bDescriptorType;
+	uint8_t bString[MSOS_STRING_LENGTH - 4];
+	uint8_t bMS_VendorCode;
+	uint8_t bPad;
 } __packed msosv1_string_descriptor = {
 	.bLength = MSOS_STRING_LENGTH,
 	.bDescriptorType = USB_STRING_DESC,
@@ -1027,18 +1027,18 @@ static struct string_desc {
 
 static struct compat_id_desc {
 	/* MS OS 1.0 Header Section */
-	u32_t dwLength;
-	u16_t bcdVersion;
-	u16_t wIndex;
-	u8_t bCount;
-	u8_t Reserved[7];
+	uint32_t dwLength;
+	uint16_t bcdVersion;
+	uint16_t wIndex;
+	uint8_t bCount;
+	uint8_t Reserved[7];
 	/* MS OS 1.0 Function Section */
 	struct compat_id_func {
-		u8_t bFirstInterfaceNumber;
-		u8_t Reserved1;
-		u8_t compatibleID[8];
-		u8_t subCompatibleID[8];
-		u8_t Reserved2[6];
+		uint8_t bFirstInterfaceNumber;
+		uint8_t Reserved1;
+		uint8_t compatibleID[8];
+		uint8_t subCompatibleID[8];
+		uint8_t Reserved2[6];
 	} __packed func[1];
 } __packed msosv1_compatid_descriptor = {
 	.dwLength = sys_cpu_to_le32(40),
@@ -1067,15 +1067,15 @@ static struct compat_id_desc {
 };
 
 static struct usb_os_descriptor os_desc = {
-	.string = (u8_t *)&msosv1_string_descriptor,
+	.string = (uint8_t *)&msosv1_string_descriptor,
 	.string_len = sizeof(msosv1_string_descriptor),
 	.vendor_code = 0x03,
-	.compat_id = (u8_t *)&msosv1_compatid_descriptor,
+	.compat_id = (uint8_t *)&msosv1_compatid_descriptor,
 	.compat_id_len = sizeof(msosv1_compatid_descriptor),
 };
 #endif /* CONFIG_USB_DEVICE_OS_DESC */
 
-static int rndis_init(struct device *arg)
+static int rndis_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -1090,9 +1090,11 @@ static int rndis_init(struct device *arg)
 	usb_register_os_desc(&os_desc);
 
 	k_thread_create(&cmd_thread_data, cmd_stack,
-			K_THREAD_STACK_SIZEOF(cmd_stack),
+			K_KERNEL_STACK_SIZEOF(cmd_stack),
 			(k_thread_entry_t)cmd_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
+
+	k_thread_name_set(&cmd_thread_data, "usb_rndis");
 
 	return 0;
 }
@@ -1115,7 +1117,7 @@ static struct netusb_function rndis_function = {
 
 static void rndis_status_cb(struct usb_cfg_data *cfg,
 			    enum usb_dc_status_code status,
-			    const u8_t *param)
+			    const uint8_t *param)
 {
 	ARG_UNUSED(cfg);
 
@@ -1151,7 +1153,7 @@ static void rndis_status_cb(struct usb_cfg_data *cfg,
 }
 
 static void netusb_interface_config(struct usb_desc_header *head,
-				    u8_t bInterfaceNumber)
+				    uint8_t bInterfaceNumber)
 {
 	ARG_UNUSED(head);
 

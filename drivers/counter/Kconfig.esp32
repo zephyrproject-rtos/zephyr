@@ -1,0 +1,47 @@
+# ESP32 Timer configuration
+
+# Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_ESP32
+	bool "ESP32 Counter Driver"
+	depends on SOC_ESP32
+	default y
+	help
+	  Enable Counter driver for ESP32.
+
+config COUNTER_ESP32_IRQ_0
+	int "IRQ line for TG0_T0 interrupt"
+	depends on COUNTER_ESP32
+	default 13
+	help
+	  Set the IRQ line used by the TG0_T0 device.
+
+config COUNTER_ESP32_IRQ_1
+	int "IRQ line for TG0_T1 interrupt"
+	depends on COUNTER_ESP32
+	default 17
+	help
+	  Set the IRQ line used by the TG0_T1 device.
+
+config COUNTER_ESP32_IRQ_2
+	int "IRQ line for TG1_T0 interrupt"
+	depends on COUNTER_ESP32
+	default 18
+	help
+	  Set the IRQ line used by the TG1_T0 device.
+
+config COUNTER_ESP32_IRQ_3
+	int "IRQ line for TG1_T1 interrupt"
+	depends on COUNTER_ESP32
+	default 20
+	help
+	  Set the IRQ line used by the TG1_T1 device.
+
+config COUNTER_ESP32_PRESCALER
+	int "Prescaling value for counter device"
+	depends on COUNTER_ESP32
+	range 2 65336
+	default 2
+	help
+	  Sets prescaler value for Timer clock.

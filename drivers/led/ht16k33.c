@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT holtek_ht16k33
+
 /**
  * @file
  * @brief LED driver for the HT16K33 I2C LED driver with keyscan
@@ -64,45 +66,46 @@ LOG_MODULE_REGISTER(ht16k33);
 
 struct ht16k33_cfg {
 	char *i2c_dev_name;
-	u16_t i2c_addr;
+	uint16_t i2c_addr;
 	bool irq_enabled;
 #ifdef CONFIG_HT16K33_KEYSCAN
 	char *irq_dev_name;
-	u32_t irq_pin;
+	uint32_t irq_pin;
 	int irq_flags;
 #endif /* CONFIG_HT16K33_KEYSCAN */
 };
 
 struct ht16k33_data {
-	struct device *i2c;
+	const struct device *i2c;
+	const struct device *dev;
 	struct led_data dev_data;
 	 /* Shadow buffer for the display data RAM */
-	u8_t buffer[HT16K33_DISP_DATA_SIZE];
+	uint8_t buffer[HT16K33_DISP_DATA_SIZE];
 #ifdef CONFIG_HT16K33_KEYSCAN
 	struct k_mutex lock;
-	struct device *children[HT16K33_KEYSCAN_ROWS];
+	const struct device *children[HT16K33_KEYSCAN_ROWS];
 	struct gpio_callback irq_cb;
 	struct k_thread irq_thread;
 	struct k_sem irq_sem;
 	struct k_timer timer;
-	u16_t key_state[HT16K33_KEYSCAN_ROWS];
+	uint16_t key_state[HT16K33_KEYSCAN_ROWS];
 
-	K_THREAD_STACK_MEMBER(irq_thread_stack,
+	K_KERNEL_STACK_MEMBER(irq_thread_stack,
 			      CONFIG_HT16K33_KEYSCAN_IRQ_THREAD_STACK_SIZE);
 #endif /* CONFIG_HT16K33_KEYSCAN */
 };
 
-static int ht16k33_led_blink(struct device *dev, u32_t led,
-			     u32_t delay_on, u32_t delay_off)
+static int ht16k33_led_blink(const struct device *dev, uint32_t led,
+			     uint32_t delay_on, uint32_t delay_off)
 {
 	/* The HT16K33 blinks all LEDs at the same frequency */
 	ARG_UNUSED(led);
 
-	const struct ht16k33_cfg *config = dev->config->config_info;
-	struct ht16k33_data *data = dev->driver_data;
+	const struct ht16k33_cfg *config = dev->config;
+	struct ht16k33_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
-	u32_t period;
-	u8_t cmd;
+	uint32_t period;
+	uint8_t cmd;
 
 	period = delay_on + delay_off;
 	if (period < dev_data->min_period || period > dev_data->max_period) {
@@ -128,16 +131,16 @@ static int ht16k33_led_blink(struct device *dev, u32_t led,
 	return 0;
 }
 
-static int ht16k33_led_set_brightness(struct device *dev, u32_t led,
-				      u8_t value)
+static int ht16k33_led_set_brightness(const struct device *dev, uint32_t led,
+				      uint8_t value)
 {
 	ARG_UNUSED(led);
 
-	const struct ht16k33_cfg *config = dev->config->config_info;
-	struct ht16k33_data *data = dev->driver_data;
+	const struct ht16k33_cfg *config = dev->config;
+	struct ht16k33_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
-	u8_t dim;
-	u8_t cmd;
+	uint8_t dim;
+	uint8_t cmd;
 
 	if (value < dev_data->min_brightness ||
 	    value > dev_data->max_brightness) {
@@ -155,13 +158,14 @@ static int ht16k33_led_set_brightness(struct device *dev, u32_t led,
 	return 0;
 }
 
-static int ht16k33_led_set_state(struct device *dev, u32_t led, bool on)
+static int ht16k33_led_set_state(const struct device *dev, uint32_t led,
+				 bool on)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
-	struct ht16k33_data *data = dev->driver_data;
-	u8_t cmd[2];
-	u8_t addr;
-	u8_t bit;
+	const struct ht16k33_cfg *config = dev->config;
+	struct ht16k33_data *data = dev->data;
+	uint8_t cmd[2];
+	uint8_t addr;
+	uint8_t bit;
 
 	if (led >= HT16K33_DISP_SEGMENTS) {
 		return -EINVAL;
@@ -191,44 +195,44 @@ static int ht16k33_led_set_state(struct device *dev, u32_t led, bool on)
 	return 0;
 }
 
-static int ht16k33_led_on(struct device *dev, u32_t led)
+static int ht16k33_led_on(const struct device *dev, uint32_t led)
 {
 	return ht16k33_led_set_state(dev, led, true);
 }
 
-static int ht16k33_led_off(struct device *dev, u32_t led)
+static int ht16k33_led_off(const struct device *dev, uint32_t led)
 {
 	return ht16k33_led_set_state(dev, led, false);
 }
 
 #ifdef CONFIG_HT16K33_KEYSCAN
-u32_t ht16k33_get_pending_int(struct device *dev)
+uint32_t ht16k33_get_pending_int(const struct device *dev)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
-	struct ht16k33_data *data = dev->driver_data;
-	u8_t cmd;
-	u8_t flag;
+	const struct ht16k33_cfg *config = dev->config;
+	struct ht16k33_data *data = dev->data;
+	uint8_t cmd;
+	uint8_t flag;
 	int err;
 
 	cmd = HT16K33_CMD_INT_FLAG_ADDR;
 	err = i2c_write_read(data->i2c, config->i2c_addr, &cmd, sizeof(cmd),
 			     &flag, sizeof(flag));
 	if (err) {
-		LOG_ERR("Failed to to read HT16K33 IRQ flag");
+		LOG_ERR("Failed to read HT16K33 IRQ flag");
 		return 0;
 	}
 
 	return (flag ? 1 : 0);
 }
 
-static bool ht16k33_process_keyscan_data(struct device *dev)
+static bool ht16k33_process_keyscan_data(const struct device *dev)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
-	struct ht16k33_data *data = dev->driver_data;
-	u8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
+	const struct ht16k33_cfg *config = dev->config;
+	struct ht16k33_data *data = dev->data;
+	uint8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
 	bool pressed = false;
-	u16_t row;
-	u16_t new;
+	uint16_t row;
+	uint16_t new;
 	int err;
 	int i;
 
@@ -259,9 +263,8 @@ static bool ht16k33_process_keyscan_data(struct device *dev)
 	return pressed;
 }
 
-static void ht16k33_irq_thread(struct device *dev)
+static void ht16k33_irq_thread(struct ht16k33_data *data)
 {
-	struct ht16k33_data *data = dev->driver_data;
 	bool pressed;
 
 	while (true) {
@@ -269,14 +272,14 @@ static void ht16k33_irq_thread(struct device *dev)
 
 		do {
 			k_sem_reset(&data->irq_sem);
-			pressed = ht16k33_process_keyscan_data(dev);
-			k_sleep(CONFIG_HT16K33_KEYSCAN_DEBOUNCE_MSEC);
+			pressed = ht16k33_process_keyscan_data(data->dev);
+			k_msleep(CONFIG_HT16K33_KEYSCAN_DEBOUNCE_MSEC);
 		} while (pressed);
 	}
 }
 
-static void ht16k33_irq_callback(struct device *gpiob,
-				 struct gpio_callback *cb, u32_t pins)
+static void ht16k33_irq_callback(const struct device *gpiob,
+				 struct gpio_callback *cb, uint32_t pins)
 {
 	struct ht16k33_data *data;
 
@@ -295,11 +298,11 @@ static void ht16k33_timer_callback(struct k_timer *timer)
 	k_sem_give(&data->irq_sem);
 }
 
-int ht16k33_register_keyscan_device(struct device *parent,
-					   struct device *child,
-					   u8_t keyscan_idx)
+int ht16k33_register_keyscan_device(const struct device *parent,
+					   const struct device *child,
+					   uint8_t keyscan_idx)
 {
-	struct ht16k33_data *data = parent->driver_data;
+	struct ht16k33_data *data = parent->data;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -317,13 +320,15 @@ int ht16k33_register_keyscan_device(struct device *parent,
 }
 #endif /* CONFIG_HT16K33_KEYSCAN */
 
-static int ht16k33_init(struct device *dev)
+static int ht16k33_init(const struct device *dev)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
-	struct ht16k33_data *data = dev->driver_data;
+	const struct ht16k33_cfg *config = dev->config;
+	struct ht16k33_data *data = dev->data;
 	struct led_data *dev_data = &data->dev_data;
-	u8_t cmd[1 + HT16K33_DISP_DATA_SIZE]; /* 1 byte command + data */
+	uint8_t cmd[1 + HT16K33_DISP_DATA_SIZE]; /* 1 byte command + data */
 	int err;
+
+	data->dev = dev;
 
 	data->i2c = device_get_binding(config->i2c_dev_name);
 	if (data->i2c == NULL) {
@@ -380,8 +385,8 @@ static int ht16k33_init(struct device *dev)
 
 	/* Configure interrupt */
 	if (config->irq_enabled) {
-		struct device *irq_dev;
-		u8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
+		const struct device *irq_dev;
+		uint8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
 
 		irq_dev = device_get_binding(config->irq_dev_name);
 		if (!irq_dev) {
@@ -439,12 +444,12 @@ static int ht16k33_init(struct device *dev)
 		/* Setup timer for polling key data */
 		k_timer_init(&data->timer, ht16k33_timer_callback, NULL);
 		k_timer_start(&data->timer, K_NO_WAIT,
-			      CONFIG_HT16K33_KEYSCAN_POLL_MSEC);
+			      K_MSEC(CONFIG_HT16K33_KEYSCAN_POLL_MSEC));
 	}
 
 	k_thread_create(&data->irq_thread, data->irq_thread_stack,
 			CONFIG_HT16K33_KEYSCAN_IRQ_THREAD_STACK_SIZE,
-			(k_thread_entry_t)ht16k33_irq_thread, dev, NULL, NULL,
+			(k_thread_entry_t)ht16k33_irq_thread, data, NULL, NULL,
 			K_PRIO_COOP(CONFIG_HT16K33_KEYSCAN_IRQ_THREAD_PRIO),
 			0, K_NO_WAIT);
 #endif /* CONFIG_HT16K33_KEYSCAN */
@@ -461,103 +466,44 @@ static const struct led_driver_api ht16k33_leds_api = {
 
 #define HT16K33_DEVICE(id)						\
 	static const struct ht16k33_cfg ht16k33_##id##_cfg = {		\
-		.i2c_dev_name = DT_INST_##id##_HOLTEK_HT16K33_BUS_NAME,	\
-		.i2c_addr     = DT_INST_##id##_HOLTEK_HT16K33_BASE_ADDRESS,	\
+		.i2c_dev_name = DT_INST_BUS_LABEL(id),			\
+		.i2c_addr     = DT_INST_REG_ADDR(id),			\
 		.irq_enabled  = false,					\
 	};								\
 									\
-static struct ht16k33_data ht16k33_##id##_data;				\
+	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_##id##_HOLTEK_HT16K33_LABEL,	\
-		    &ht16k33_init, &ht16k33_##id##_data,		\
-		    &ht16k33_##id##_cfg, POST_KERNEL,			\
-		    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
+	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, device_pm_control_nop,	\
+			    &ht16k33_##id##_data,			\
+			    &ht16k33_##id##_cfg, POST_KERNEL,		\
+			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
 
 #ifdef CONFIG_HT16K33_KEYSCAN
 #define HT16K33_DEVICE_WITH_IRQ(id)					\
 	static const struct ht16k33_cfg ht16k33_##id##_cfg = {		\
-		.i2c_dev_name = DT_INST_##id##_HOLTEK_HT16K33_BUS_NAME,	\
-		.i2c_addr     = DT_INST_##id##_HOLTEK_HT16K33_BASE_ADDRESS,	\
+		.i2c_dev_name = DT_INST_BUS_LABEL(id),			\
+		.i2c_addr     = DT_INST_REG_ADDR(id),			\
 		.irq_enabled  = true,					\
 		.irq_dev_name =						\
-			DT_INST_##id##_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER,	\
-		.irq_pin      = DT_INST_##id##_HOLTEK_HT16K33_IRQ_GPIOS_PIN,	\
+		DT_INST_GPIO_LABEL(id, irq_gpios),			\
+		.irq_pin      = DT_INST_GPIO_PIN(id, irq_gpios),	\
 		.irq_flags    =						\
-			DT_INST_##id##_HOLTEK_HT16K33_IRQ_GPIOS_FLAGS,	\
+		DT_INST_GPIO_FLAGS(id, irq_gpios),			\
 	};								\
 									\
-static struct ht16k33_data ht16k33_##id##_data;				\
+	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_##id##_HOLTEK_HT16K33_LABEL,	\
-		    &ht16k33_init, &ht16k33_##id##_data,		\
-		    &ht16k33_##id##_cfg, POST_KERNEL,			\
-		    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
+	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, device_pm_control_nop,	\
+			    &ht16k33_##id##_data,			\
+			    &ht16k33_##id##_cfg, POST_KERNEL,		\
+			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
 #else /* ! CONFIG_HT16K33_KEYSCAN */
 #define HT16K33_DEVICE_WITH_IRQ(id) HT16K33_DEVICE(id)
 #endif /* ! CONFIG_HT16K33_KEYSCAN */
 
-/* Support up to eight HT16K33 devices */
+#define HT16K33_INSTANTIATE(id)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, irq_gpios),	\
+		    (HT16K33_DEVICE_WITH_IRQ(id)),		\
+		    (HT16K33_DEVICE(id)));
 
-#ifdef DT_INST_0_HOLTEK_HT16K33
-#ifdef DT_INST_0_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
-HT16K33_DEVICE_WITH_IRQ(0);
-#else
-HT16K33_DEVICE(0);
-#endif
-#endif
-
-#ifdef DT_INST_1_HOLTEK_HT16K33
-#ifdef DT_INST_1_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
-HT16K33_DEVICE_WITH_IRQ(1);
-#else
-HT16K33_DEVICE(1);
-#endif
-#endif
-
-#ifdef DT_INST_2_HOLTEK_HT16K33
-#ifdef DT_INST_2_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
-HT16K33_DEVICE_WITH_IRQ(2);
-#else
-HT16K33_DEVICE(2);
-#endif
-#endif
-
-#ifdef DT_INST_3_HOLTEK_HT16K33
-#ifdef DT_INST_3_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
-HT16K33_DEVICE_WITH_IRQ(3);
-#else
-HT16K33_DEVICE(3);
-#endif
-#endif
-
-#ifdef DT_INST_4_HOLTEK_HT16K33
-#ifdef DT_INST_4_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
-HT16K33_DEVICE_WITH_IRQ(4);
-#else
-HT16K33_DEVICE(4);
-#endif
-#endif
-
-#ifdef DT_INST_5_HOLTEK_HT16K33
-#ifdef DT_INST_5_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
-HT16K33_DEVICE_WITH_IRQ(5);
-#else
-HT16K33_DEVICE(5);
-#endif
-#endif
-
-#ifdef DT_INST_6_HOLTEK_HT16K33
-#ifdef DT_INST_6_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
-HT16K33_DEVICE_WITH_IRQ(6);
-#else
-HT16K33_DEVICE(6);
-#endif
-#endif
-
-#ifdef DT_INST_7_HOLTEK_HT16K33
-#ifdef DT_INST_7_HOLTEK_HT16K33_IRQ_GPIOS_CONTROLLER
-HT16K33_DEVICE_WITH_IRQ(7);
-#else
-HT16K33_DEVICE(7);
-#endif
-#endif
+DT_INST_FOREACH_STATUS_OKAY(HT16K33_INSTANTIATE)

@@ -13,22 +13,23 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(small);
 struct fs_mount_t testfs_small_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &small,
-	.storage_dev = (void *)DT_FLASH_AREA_SMALL_ID,
+	.storage_dev = (void *)FLASH_AREA_ID(small),
 	.mnt_point = TESTFS_MNT_POINT_SMALL,
 };
 
+#if CONFIG_APP_TEST_CUSTOM
 FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(medium, MEDIUM_IO_SIZE, MEDIUM_IO_SIZE,
 				  MEDIUM_CACHE_SIZE, MEDIUM_LOOKAHEAD_SIZE);
 struct fs_mount_t testfs_medium_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &medium,
-	.storage_dev = (void *)DT_FLASH_AREA_MEDIUM_ID,
+	.storage_dev = (void *)FLASH_AREA_ID(medium),
 	.mnt_point = TESTFS_MNT_POINT_MEDIUM,
 };
 
-static u8_t large_read_buffer[LARGE_CACHE_SIZE];
-static u8_t large_prog_buffer[LARGE_CACHE_SIZE];
-static u32_t large_lookahead_buffer[LARGE_LOOKAHEAD_SIZE / 4U];
+static uint8_t large_read_buffer[LARGE_CACHE_SIZE];
+static uint8_t large_prog_buffer[LARGE_CACHE_SIZE];
+static uint32_t large_lookahead_buffer[LARGE_LOOKAHEAD_SIZE / 4U];
 static struct fs_littlefs large = {
 	.cfg = {
 		.read_size = LARGE_IO_SIZE,
@@ -44,9 +45,11 @@ static struct fs_littlefs large = {
 struct fs_mount_t testfs_large_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &large,
-	.storage_dev = (void *)DT_FLASH_AREA_LARGE_ID,
+	.storage_dev = (void *)FLASH_AREA_ID(large),
 	.mnt_point = TESTFS_MNT_POINT_LARGE,
 };
+
+#endif /* CONFIG_APP_TEST_CUSTOM */
 
 int testfs_lfs_wipe_partition(const struct fs_mount_t *mp)
 {

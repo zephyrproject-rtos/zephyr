@@ -54,6 +54,9 @@ echo-server directory:
 - :file:`overlay-tls.conf`
   This overlay config enables support for TLS.
 
+- :file:`overlay-tunnel.conf`
+  This overlay config enables support for IP tunneling.
+
 Build echo-server sample application like this:
 
 .. zephyr-app-commands::
@@ -63,12 +66,12 @@ Build echo-server sample application like this:
    :goals: build
    :compact:
 
-Example building for the nRF52840_pca10056 with OpenThread support:
+Example building for the nrf52840dk_nrf52840 with OpenThread support:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :conf: "prj.conf overlay-ot.conf"
    :goals: run
    :compact:

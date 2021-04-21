@@ -15,12 +15,22 @@ LOG_MODULE_REGISTER(net_sockets_raw, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_context.h>
 #include <net/ethernet.h>
+#include <net/dsa.h>
 
 #include "connection.h"
 #include "packet_socket.h"
 
-enum net_verdict net_packet_socket_input(struct net_pkt *pkt)
+enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 {
+#if IS_ENABLED(CONFIG_NET_DSA)
+	/*
+	 * For DSA the master port is not supporting raw packets. Only the
+	 * lan1..3 are working with them.
+	 */
+	if (dsa_is_port_master(net_pkt_iface(pkt))) {
+		return NET_CONTINUE;
+	}
+#endif
 	/* Currently we are skipping L2 layer verification and not
 	 * removing L2 header from packet.
 	 * TODO :
@@ -38,5 +48,5 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt)
 
 	net_pkt_set_family(pkt, AF_PACKET);
 
-	return net_conn_input(pkt, NULL, ETH_P_ALL, NULL);
+	return net_conn_input(pkt, NULL, proto, NULL);
 }

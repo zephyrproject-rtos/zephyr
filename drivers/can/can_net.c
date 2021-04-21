@@ -16,7 +16,7 @@ struct mcast_filter_mapping {
 };
 
 struct net_can_context {
-	struct device *can_dev;
+	const struct device *can_dev;
 	struct net_if *iface;
 	int recv_filter_id;
 	struct mcast_filter_mapping mcast_mapping[NET_IF_MAX_IPV6_MADDR];
@@ -42,24 +42,24 @@ struct mcast_filter_mapping *can_get_mcast_filter(struct net_can_context *ctx,
 	return NULL;
 }
 
-static inline u8_t can_get_frame_datalength(struct zcan_frame *frame)
+static inline uint8_t can_get_frame_datalength(struct zcan_frame *frame)
 {
 	/* TODO: Needs update when CAN FD support is added */
 	return frame->dlc;
 }
 
-static inline u16_t can_get_lladdr_src(struct zcan_frame *frame)
+static inline uint16_t can_get_lladdr_src(struct zcan_frame *frame)
 {
-	return (frame->ext_id >> CAN_NET_IF_ADDR_SRC_POS) &
+	return (frame->id >> CAN_NET_IF_ADDR_SRC_POS) &
 	       CAN_NET_IF_ADDR_MASK;
 }
 
-static inline u16_t can_get_lladdr_dest(struct zcan_frame *frame)
+static inline uint16_t can_get_lladdr_dest(struct zcan_frame *frame)
 {
-	u16_t addr = (frame->ext_id >> CAN_NET_IF_ADDR_DEST_POS) &
+	uint16_t addr = (frame->id >> CAN_NET_IF_ADDR_DEST_POS) &
 		     CAN_NET_IF_ADDR_MASK;
 
-	if (frame->ext_id & CAN_NET_IF_ADDR_MCAST_MASK) {
+	if (frame->id & CAN_NET_IF_ADDR_MCAST_MASK) {
 		addr |= CAN_NET_IF_IS_MCAST_BIT;
 	}
 
@@ -78,20 +78,21 @@ static inline void can_set_lladdr(struct net_pkt *pkt, struct zcan_frame *frame)
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_canbus_lladdr);
 	net_pkt_lladdr_dst(pkt)->type = NET_LINK_CANBUS;
 	net_buf_add_be16(buf, can_get_lladdr_dest(frame));
-	net_buf_pull(buf, sizeof(u16_t));
+	net_buf_pull(buf, sizeof(uint16_t));
 
 	/* Do the same as above for the source address */
 	net_pkt_lladdr_src(pkt)->addr = buf->data;
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_canbus_lladdr);
 	net_pkt_lladdr_src(pkt)->type = NET_LINK_CANBUS;
 	net_buf_add_be16(buf, can_get_lladdr_src(frame));
-	net_buf_pull(buf, sizeof(u16_t));
+	net_buf_pull(buf, sizeof(uint16_t));
 }
 
-static int net_can_send(struct device *dev, const struct zcan_frame *frame,
-			can_tx_callback_t cb, void *cb_arg, s32_t timeout)
+static int net_can_send(const struct device *dev,
+			const struct zcan_frame *frame,
+			can_tx_callback_t cb, void *cb_arg, k_timeout_t timeout)
 {
-	struct net_can_context *ctx = dev->driver_data;
+	struct net_can_context *ctx = dev->data;
 
 	NET_ASSERT(frame->id_type == CAN_EXTENDED_IDENTIFIER);
 	return can_send(ctx->can_dev, frame, timeout, cb, cb_arg);
@@ -105,7 +106,7 @@ static void net_can_recv(struct zcan_frame *frame, void *arg)
 	struct net_pkt *pkt;
 	int ret;
 
-	NET_DBG("Frame with ID 0x%x received", frame->ext_id);
+	NET_DBG("Frame with ID 0x%x received", frame->id);
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, pkt_size, AF_UNSPEC, 0,
 					   K_NO_WAIT);
 	if (!pkt) {
@@ -146,14 +147,14 @@ static inline int attach_mcast_filter(struct net_can_context *ctx,
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_NET_IF_ADDR_MCAST_MASK |
+		.id_mask = CAN_NET_IF_ADDR_MCAST_MASK |
 			       CAN_NET_IF_ADDR_DEST_MASK
 	};
-	const u16_t group =
+	const uint16_t group =
 		sys_be16_to_cpu(UNALIGNED_GET((&addr->s6_addr16[7])));
 	int filter_id;
 
-	filter.ext_id = CAN_NET_IF_ADDR_MCAST_MASK |
+	filter.id = CAN_NET_IF_ADDR_MCAST_MASK |
 			((group & CAN_NET_IF_ADDR_MASK) <<
 			 CAN_NET_IF_ADDR_DEST_POS);
 
@@ -172,8 +173,8 @@ static inline int attach_mcast_filter(struct net_can_context *ctx,
 static void mcast_cb(struct net_if *iface, const struct in6_addr *addr,
 		     bool is_joined)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct net_can_context *ctx = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct net_can_context *ctx = dev->data;
 	struct mcast_filter_mapping *filter_mapping;
 	int filter_id;
 
@@ -205,8 +206,8 @@ static void mcast_cb(struct net_if *iface, const struct in6_addr *addr,
 
 static void net_can_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
-	struct net_can_context *ctx = dev->driver_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct net_can_context *ctx = dev->data;
 
 	ctx->iface = iface;
 
@@ -217,18 +218,18 @@ static void net_can_iface_init(struct net_if *iface)
 	net_if_mcast_mon_register(&mcast_monitor, iface, mcast_cb);
 }
 
-static int can_attach_filter(struct device *dev, can_rx_callback_t cb,
+static int can_attach_filter(const struct device *dev, can_rx_callback_t cb,
 			     void *cb_arg,
 			     const struct zcan_filter *filter)
 {
-	struct net_can_context *ctx = dev->driver_data;
+	struct net_can_context *ctx = dev->data;
 
 	return can_attach_isr(ctx->can_dev, cb, cb_arg, filter);
 }
 
-static void can_detach_filter(struct device *dev, int filter_id)
+static void can_detach_filter(const struct device *dev, int filter_id)
 {
-	struct net_can_context *ctx = dev->driver_data;
+	struct net_can_context *ctx = dev->data;
 
 	if (filter_id >= 0) {
 		can_detach(ctx->can_dev, filter_id);
@@ -241,13 +242,13 @@ static inline int can_attach_unicast_filter(struct net_can_context *ctx)
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_NET_IF_ADDR_DEST_MASK
+		.id_mask = CAN_NET_IF_ADDR_DEST_MASK
 	};
-	const u8_t *link_addr = net_if_get_link_addr(ctx->iface)->addr;
-	const u16_t dest = sys_be16_to_cpu(UNALIGNED_GET((u16_t *) link_addr));
+	const uint8_t *link_addr = net_if_get_link_addr(ctx->iface)->addr;
+	const uint16_t dest = sys_be16_to_cpu(UNALIGNED_GET((uint16_t *) link_addr));
 	int filter_id;
 
-	filter.ext_id = (dest << CAN_NET_IF_ADDR_DEST_POS);
+	filter.id = (dest << CAN_NET_IF_ADDR_DEST_POS);
 
 	filter_id = can_attach_isr(ctx->can_dev, net_can_recv,
 				   ctx, &filter);
@@ -268,8 +269,8 @@ static inline int can_attach_eth_bridge_filter(struct net_can_context *ctx)
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_NET_IF_ADDR_DEST_MASK,
-		.ext_id = (NET_CAN_ETH_TRANSLATOR_ADDR <<
+		.id_mask = CAN_NET_IF_ADDR_DEST_MASK,
+		.id = (NET_CAN_ETH_TRANSLATOR_ADDR <<
 			   CAN_NET_IF_ADDR_DEST_POS)
 	};
 
@@ -293,8 +294,8 @@ static inline int can_attach_all_mcast_filter(struct net_can_context *ctx)
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.rtr_mask = 1,
-		.ext_id_mask = CAN_NET_IF_ADDR_MCAST_MASK,
-		.ext_id = CAN_NET_IF_ADDR_MCAST_MASK
+		.id_mask = CAN_NET_IF_ADDR_MCAST_MASK,
+		.id = CAN_NET_IF_ADDR_MCAST_MASK
 	};
 
 	int filter_id;
@@ -312,9 +313,9 @@ static inline int can_attach_all_mcast_filter(struct net_can_context *ctx)
 }
 #endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 
-static int can_enable(struct device *dev, bool enable)
+static int can_enable(const struct device *dev, bool enable)
 {
-	struct net_can_context *ctx = dev->driver_data;
+	struct net_can_context *ctx = dev->data;
 
 	if (enable) {
 		if (ctx->recv_filter_id == CAN_NET_FILTER_NOT_SET) {
@@ -370,10 +371,12 @@ static struct net_can_api net_can_api_inst = {
 	.enable = can_enable,
 };
 
-static int net_can_init(struct device *dev)
+static int net_can_init(const struct device *dev)
 {
-	struct device *can_dev = device_get_binding(DT_ALIAS_CAN_PRIMARY_LABEL);
-	struct net_can_context *ctx = dev->driver_data;
+	const struct device *can_dev;
+	struct net_can_context *ctx = dev->data;
+
+	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
 
 	ctx->recv_filter_id = CAN_NET_FILTER_NOT_SET;
 #ifdef CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR
@@ -383,12 +386,12 @@ static int net_can_init(struct device *dev)
 
 	if (!can_dev) {
 		NET_ERR("Can't get binding to CAN device %s",
-			DT_ALIAS_CAN_PRIMARY_LABEL);
+			DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
 		return -EIO;
 	}
 
 	NET_DBG("Init net CAN device %p (%s) for dev %p (%s)",
-		dev, dev->config->name, can_dev, can_dev->config->name);
+		dev, dev->name, can_dev, can_dev->name);
 
 	ctx->can_dev = can_dev;
 
@@ -398,7 +401,7 @@ static int net_can_init(struct device *dev)
 static struct net_can_context net_can_context_1;
 
 NET_DEVICE_INIT(net_can_1, CONFIG_CAN_NET_NAME, net_can_init,
-		&net_can_context_1, NULL,
+		device_pm_control_nop, &net_can_context_1, NULL,
 		CONFIG_CAN_NET_INIT_PRIORITY,
 		&net_can_api_inst,
 		CANBUS_L2, NET_L2_GET_CTX_TYPE(CANBUS_L2), NET_CAN_MTU);

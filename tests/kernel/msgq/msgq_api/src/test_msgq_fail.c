@@ -6,7 +6,7 @@
 #include "test_msgq.h"
 
 static ZTEST_BMEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
-static ZTEST_DMEM u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
+static ZTEST_DMEM uint32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 extern struct k_msgq msgq;
 
 static void put_fail(struct k_msgq *q)
@@ -28,7 +28,7 @@ static void put_fail(struct k_msgq *q)
 
 static void get_fail(struct k_msgq *q)
 {
-	u32_t rx_data;
+	uint32_t rx_data;
 
 	/**TESTPOINT: msgq get returns -ENOMSG*/
 	int ret = k_msgq_get(q, &rx_data, K_NO_WAIT);

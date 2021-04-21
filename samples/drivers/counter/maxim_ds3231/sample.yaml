@@ -1,0 +1,8 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+sample:
+  name: Maxim DS3231 RTC
+tests:
+  sample.basic.maxim_ds3231:
+    build_only: true
+    platform_allow: efr32mg_sltb004a frdm_k64f nrf51_pca10028 nucleo_l476rg particle_xenon

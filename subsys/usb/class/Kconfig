@@ -3,151 +3,18 @@
 # Copyright (c) 2016 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config USB_CDC_ACM
-	bool "USB CDC ACM Device Class Driver"
-	select SERIAL_HAS_DRIVER
-	select SERIAL_SUPPORT_INTERRUPT
-	select RING_BUFFER
-	help
-	  USB CDC ACM device class driver. Default device name is
-	  "CDC_ACM_0".
+source "subsys/usb/class/Kconfig.cdc"
 
-if USB_CDC_ACM
+source "subsys/usb/class/Kconfig.msc"
 
-config USB_CDC_ACM_RINGBUF_SIZE
-	int "USB CDC ACM ring buffer size"
-	default 1024
-	help
-	  USB CDC ACM ring buffer size
+source "subsys/usb/class/Kconfig.bt"
 
-config USB_CDC_ACM_DEVICE_NAME
-	string "USB CDC ACM device name template"
-	default "CDC_ACM"
-	help
-	  Device name template for the CDC ACM Devices. First device would
-	  have name $(USB_CDC_ACM_DEVICE_NAME)_0, etc.
-
-module = USB_CDC_ACM
-default-count = 1
-source "subsys/usb/class/Kconfig.template.composite_device_number"
-
-config CDC_ACM_INTERRUPT_EP_MPS
-	int
-	default 16
-	help
-	  CDC ACM class interrupt IN endpoint size
-
-config CDC_ACM_BULK_EP_MPS
-	int
-	default 64
-	help
-	  CDC ACM class bulk endpoints size
-
-config CDC_ACM_IAD
-	bool "Force using Interface Association Descriptor"
-	default y
-	help
-	  IAD should not be required for non-composite CDC ACM device,
-	  but Windows 7 fails to properly enumerate without it.
-	  Enable if you want CDC ACM to work with Windows 7.
-
-module = USB_CDC_ACM
-module-str = usb cdc acm
-source "subsys/logging/Kconfig.template.log_config"
-
-endif # USB_CDC_ACM
-
-config USB_MASS_STORAGE
-	bool "USB Mass Storage Device Class Driver"
-	select DISK_ACCESS
-	help
-	  USB Mass Storage device class driver
-
-config MASS_STORAGE_DISK_NAME
-	string "Mass storage disk or drive name"
-	depends on USB_MASS_STORAGE
-	default "RAM"
-	help
-	  Mass storage device disk or drive name
-
-config MASS_STORAGE_BULK_EP_MPS
-	int
-	depends on USB_MASS_STORAGE
-	default 64
-	range 8 64
-	help
-	  Mass storage device class bulk endpoints size
-
-if USB_MASS_STORAGE
-module = USB_MASS_STORAGE
-module-str = usb mass storage
-source "subsys/logging/Kconfig.template.log_config"
-endif
-
-config USB_DEVICE_BLUETOOTH
-	bool "USB Bluetooth Device Class Driver"
-	select BT
-	select BT_HCI_RAW
-	help
-	  USB Bluetooth device class driver
-
-config BLUETOOTH_INT_EP_MPS
-	int "Bluetooth device class interrupt endpoint size"
-	depends on USB_DEVICE_BLUETOOTH
-	default 16
-	range 8 64
-	help
-	  Bluetooth device class interrupt endpoint size
-
-config BLUETOOTH_BULK_EP_MPS
-	int
-	depends on USB_DEVICE_BLUETOOTH
-	default 64
-	range 8 64
-	help
-	  Bluetooth device class bulk endpoint size
-
-config USB_DEVICE_LOOPBACK
-	bool "USB Loopback Function Driver"
-	help
-	  USB Loopback Function Driver
-
-config LOOPBACK_BULK_EP_MPS
-	int
-	depends on USB_DEVICE_LOOPBACK
-	default 64
-	help
-	  Loopback Function bulk endpoint size
+source "subsys/usb/class/Kconfig.test"
 
 source "subsys/usb/class/netusb/Kconfig"
 
 source "subsys/usb/class/hid/Kconfig"
 
-config USB_DFU_CLASS
-	bool "USB DFU Class Driver"
-	select MPU_ALLOW_FLASH_WRITE
-	select POLL
-	depends on IMG_MANAGER
-	select IMG_ERASE_PROGRESSIVELY if SOC_FLASH_NRF
-	help
-	  USB DFU class driver
+source "subsys/usb/class/audio/Kconfig"
 
-config USB_DFU_WAIT_DELAY_MS
-	int
-	depends on USB_DFU_CLASS
-	default 12000
-	help
-	  A thread can wait for a prescribed time (in ms) for DFU to begin
-
-config USB_DFU_DETACH_TIMEOUT
-	int
-	depends on USB_DFU_CLASS
-	default 1000
-
-config USB_DFU_DEFAULT_POLLTIMEOUT
-	int "Default value for bwPollTimeout"
-	depends on USB_DFU_CLASS
-	default 256
-	range 0 1000
-	help
-	  Default value for bwPollTimeout (in ms)
+source "subsys/usb/class/dfu/Kconfig"

@@ -29,20 +29,20 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 
 	printk("Go to normal application\n");
 
-	arc_go_to_normal(*((u32_t *)(NORMAL_FIRMWARE_ENTRY)));
+	arc_go_to_normal(*((uint32_t *)(NORMAL_FIRMWARE_ENTRY)));
 
 	printk("should not come here\n");
 
 }
 
 K_THREAD_DEFINE(thread_a, STACKSIZE, threadA, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);
 
 
 void main(void)
 {
 	/* necessary configuration before go to normal */
-	s32_t i = 0;
+	int32_t i = 0;
 
 	/* allocate timer 0 and timer1 to normal mode */
 	z_arc_v2_irq_uinit_secure_set(IRQ_TIMER0, 0);
@@ -54,6 +54,6 @@ void main(void)
 	while (1) {
 		printk("I am the %s thread in secure world: %d\n",
 				 __func__, i++);
-		k_sleep(SLEEPTIME);
+		k_msleep(SLEEPTIME);
 	}
 }

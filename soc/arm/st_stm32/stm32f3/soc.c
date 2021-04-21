@@ -22,9 +22,9 @@
  *
  * @return 0
  */
-static int stm32f3_init(struct device *arg)
+static int stm32f3_init(const struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 

@@ -203,7 +203,8 @@ static void gptp_md_pdelay_check_multiple_resp(int port)
 		duration = GPTP_MULTIPLE_PDELAY_RESP_WAIT -
 			gptp_uscaled_ns_to_timer_ms(&port_ds->pdelay_req_itv);
 
-		k_timer_start(&state->pdelay_timer, duration, K_NO_WAIT);
+		k_timer_start(&state->pdelay_timer, K_MSEC(duration),
+			      K_NO_WAIT);
 	} else {
 		state->state = GPTP_PDELAY_REQ_SEND_REQ;
 	}
@@ -211,8 +212,8 @@ static void gptp_md_pdelay_check_multiple_resp(int port)
 
 static void gptp_md_compute_pdelay_rate_ratio(int port)
 {
-	u64_t ingress_tstamp = 0U;
-	u64_t resp_evt_tstamp = 0U;
+	uint64_t ingress_tstamp = 0U;
+	uint64_t resp_evt_tstamp = 0U;
 	struct gptp_pdelay_resp_follow_up *fup;
 	struct gptp_pdelay_req_state *state;
 	struct gptp_port_ds *port_ds;
@@ -278,7 +279,7 @@ static void gptp_md_compute_pdelay_rate_ratio(int port)
 
 static void gptp_md_compute_prop_time(int port)
 {
-	u64_t t1_ns = 0U, t2_ns = 0U, t3_ns = 0U, t4_ns = 0U;
+	uint64_t t1_ns = 0U, t2_ns = 0U, t3_ns = 0U, t4_ns = 0U;
 	struct gptp_pdelay_resp_follow_up *fup;
 	struct gptp_pdelay_req_state *state;
 	struct gptp_pdelay_resp *resp;
@@ -308,7 +309,7 @@ static void gptp_md_compute_prop_time(int port)
 		hdr = GPTP_HDR(pkt);
 		resp = GPTP_PDELAY_RESP(pkt);
 
-		t2_ns = ((u64_t)ntohs(resp->req_receipt_ts_secs_high)) << 32;
+		t2_ns = ((uint64_t)ntohs(resp->req_receipt_ts_secs_high)) << 32;
 		t2_ns |= ntohl(resp->req_receipt_ts_secs_low);
 		t2_ns *= NSEC_PER_SEC;
 		t2_ns += ntohl(resp->req_receipt_ts_nsecs);
@@ -320,7 +321,7 @@ static void gptp_md_compute_prop_time(int port)
 		hdr = GPTP_HDR(pkt);
 		fup = GPTP_PDELAY_RESP_FOLLOWUP(pkt);
 
-		t3_ns = ((u64_t)ntohs(fup->resp_orig_ts_secs_high)) << 32;
+		t3_ns = ((uint64_t)ntohs(fup->resp_orig_ts_secs_high)) << 32;
 		t3_ns |= ntohl(fup->resp_orig_ts_secs_low);
 		t3_ns *= NSEC_PER_SEC;
 		t3_ns += ntohl(fup->resp_orig_ts_nsecs);
@@ -374,7 +375,7 @@ static void gptp_md_pdelay_compute(int port)
 		gptp_md_compute_prop_time(port);
 
 		NET_DBG("Neighbor prop delay %d",
-			(s32_t)port_ds->neighbor_prop_delay);
+			(int32_t)port_ds->neighbor_prop_delay);
 	}
 
 	state->lost_responses = 0U;
@@ -406,8 +407,8 @@ static void gptp_md_pdelay_compute(int port)
 		port_ds->as_capable = false;
 
 		NET_WARN("Not AS capable: %u ns > %u ns",
-			 (u32_t)port_ds->neighbor_prop_delay,
-			 (u32_t)port_ds->neighbor_prop_delay_thresh);
+			 (uint32_t)port_ds->neighbor_prop_delay,
+			 (uint32_t)port_ds->neighbor_prop_delay_thresh);
 
 		GPTP_STATS_INC(port, neighbor_prop_delay_exceeded);
 	}
@@ -611,7 +612,7 @@ static void gptp_md_pdelay_req_state_machine(int port)
 
 	case GPTP_PDELAY_REQ_INITIAL_SEND_REQ:
 		gptp_md_start_pdelay_req(port);
-		/* Fallthrough. */
+		__fallthrough;
 
 	case GPTP_PDELAY_REQ_SEND_REQ:
 		if (state->tx_pdelay_req_ptr) {
@@ -634,8 +635,8 @@ static void gptp_md_pdelay_req_state_machine(int port)
 		k_timer_stop(&state->pdelay_timer);
 		state->pdelay_timer_expired = false;
 		k_timer_start(&state->pdelay_timer,
-			      gptp_uscaled_ns_to_timer_ms(
-				      &port_ds->pdelay_req_itv),
+			      K_MSEC(gptp_uscaled_ns_to_timer_ms(
+					     &port_ds->pdelay_req_itv)),
 			      K_NO_WAIT);
 		/*
 		 * Transition directly to GPTP_PDELAY_REQ_WAIT_RESP.

@@ -31,23 +31,23 @@
  */
 #define BT_UUID_LONG_DES_V2D1           BT_UUID_DECLARE_16(0xb012)
 
-static u8_t   value_v4_value = 0x04;
-static u8_t   value_v4_1_value = 0x04;
-static u16_t  server_cha_con_value;
-static u8_t   value_v4_2_value = 0x04;
-static u8_t   long_des_v2d1_value[] = {
+static uint8_t   value_v4_value = 0x04;
+static uint8_t   value_v4_1_value = 0x04;
+static uint16_t  server_cha_con_value;
+static uint8_t   value_v4_2_value = 0x04;
+static uint8_t   long_des_v2d1_value[] = {
 	      0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x12,
 	      0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34,
 	      0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x11, 0x22, 0x33,
 	      0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33
 };
-static u8_t   value_v4_3_value[] = {
+static uint8_t   value_v4_3_value[] = {
 	      0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x12,
 	      0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34,
 	      0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x11, 0x22, 0x33,
 	      0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x11, 0x22, 0x33
 };
-static u8_t   long_des_v2d1_1_value[] = {
+static uint8_t   long_des_v2d1_1_value[] = {
 	      0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0x00, 0x12,
 	      0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34,
 	      0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x11, 0x22, 0x33,
@@ -68,9 +68,9 @@ static u8_t   long_des_v2d1_1_value[] = {
  */
 static ssize_t read_value_v4(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v4_value));
@@ -91,9 +91,9 @@ static ssize_t read_value_v4(struct bt_conn *conn,
  */
 static ssize_t write_value_v4(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v4_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -119,9 +119,9 @@ static ssize_t write_value_v4(struct bt_conn *conn,
  */
 static ssize_t read_value_v4_1(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
-			       u16_t len, u16_t offset)
+			       uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v4_1_value));
@@ -142,10 +142,10 @@ static ssize_t read_value_v4_1(struct bt_conn *conn,
  */
 static ssize_t write_value_v4_1(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
-				const void *buf, u16_t len, u16_t offset,
-				u8_t flags)
+				const void *buf, uint16_t len, uint16_t offset,
+				uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v4_1_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -172,10 +172,10 @@ static ssize_t write_value_v4_1(struct bt_conn *conn,
  */
 static ssize_t read_server_cha_con(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
-				   u16_t len, u16_t offset)
+				   uint16_t len, uint16_t offset)
 {
-	const u16_t *value = attr->user_data;
-	u16_t server_cha_con_conv = sys_cpu_to_le16(*value);
+	const uint16_t *value = attr->user_data;
+	uint16_t server_cha_con_conv = sys_cpu_to_le16(*value);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &server_cha_con_conv,
@@ -198,18 +198,18 @@ static ssize_t read_server_cha_con(struct bt_conn *conn,
  */
 static ssize_t write_server_cha_con(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr,
-				    const void *buf, u16_t len, u16_t offset,
-				    u8_t flags)
+				    const void *buf, uint16_t len, uint16_t offset,
+				    uint8_t flags)
 {
-	u16_t *value = attr->user_data;
-	u16_t server_cha_con_conv = sys_cpu_to_le16(*value);
+	uint16_t *value = attr->user_data;
+	uint16_t server_cha_con_conv = sys_cpu_to_le16(*value);
 
 	if (offset >= sizeof(server_cha_con_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	if (offset + len > sizeof(server_cha_con_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 
-	memcpy((u8_t *)&server_cha_con_conv + offset, buf, len);
+	memcpy((uint8_t *)&server_cha_con_conv + offset, buf, len);
 
 	*value = sys_le16_to_cpu(server_cha_con_conv);
 
@@ -230,9 +230,9 @@ static ssize_t write_server_cha_con(struct bt_conn *conn,
  */
 static ssize_t read_value_v4_3(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, void *buf,
-			       u16_t len, u16_t offset)
+			       uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v4_3_value));
@@ -252,9 +252,9 @@ static ssize_t read_value_v4_3(struct bt_conn *conn,
  */
 static ssize_t read_long_des_v2d1_1(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
-				    u16_t len, u16_t offset)
+				    uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(long_des_v2d1_1_value));

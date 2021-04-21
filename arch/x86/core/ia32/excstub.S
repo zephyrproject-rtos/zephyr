@@ -49,7 +49,7 @@
  *
  * C function prototype:
  *
- * void _exception_enter(u32_t error_code, void *handler)
+ * void _exception_enter(uint32_t error_code, void *handler)
  *
  */
 
@@ -122,9 +122,17 @@ SECTION_FUNC(TEXT, _exception_enter)
 #ifdef CONFIG_USERSPACE
 2:
 #endif
+
+#ifdef CONFIG_GDBSTUB
+	pushl %ds
+	pushl %es
+	pushl %fs
+	pushl %gs
+	pushl %ss
+#endif
 	/* ESP is pointing to the ESF at this point */
 
-#if defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_LAZY_FPU_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %edx
 
@@ -141,7 +149,7 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 	orb	$X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%edx)
 
-#endif /* CONFIG_LAZY_FP_SHARING */
+#endif /* CONFIG_LAZY_FPU_SHARING */
 
 	/*
 	 * restore interrupt enable state, then call the handler
@@ -164,7 +172,7 @@ allDone:
 	call	*%ecx			/* call exception handler */
 	addl	$0x4, %esp
 
-#if defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_LAZY_FPU_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %ecx
 
@@ -194,8 +202,15 @@ allDone:
 	andb	$~X86_THREAD_FLAG_EXC, _thread_offset_to_flags(%ecx)
 
 nestedException:
-#endif /* CONFIG_LAZY_FP_SHARING */
+#endif /* CONFIG_LAZY_FPU_SHARING */
 
+#ifdef CONFIG_GDBSTUB
+	popl %ss
+	popl %gs
+	popl %fs
+	popl %es
+	popl %ds
+#endif
 	/*
 	 * Pop the non-volatile registers from the stack.
 	 * Note that debug tools may have altered the saved register values while

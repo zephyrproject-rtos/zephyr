@@ -52,6 +52,16 @@ config NEWLIB_LIBC_NANO
 	  The newlib-nano library for ARM embedded processors is a part of the
 	  GNU Tools for ARM Embedded Processors.
 
+config NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE
+	int "Maximum memory mapped for newlib heap"
+	depends on MMU
+	default 1048576
+	help
+	  On MMU-based systems, indicates the maximum amount of memory which
+	  will be used for the newlib malloc() heap. The actual amount of
+	  memory used will be the minimum of this value and the amount of
+	  free physical memory at kernel boot.
+
 config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	int "Newlib aligned heap size"
 	depends on MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
@@ -94,9 +104,8 @@ config MINIMAL_LIBC_MALLOC_ARENA_SIZE
 	default 0
 	depends on MINIMAL_LIBC_MALLOC
 	help
-	  Indicate the size of the memory arena used for minimal libc's
-	  malloc() implementation. This size value must be compatible with
-	  a sys_mem_pool definition with nmax of 1 and minsz of 16.
+	  Indicate the size in bytes of the memory arena used for
+	  minimal libc's malloc() implementation.
 
 config MINIMAL_LIBC_CALLOC
 	bool "Enable minimal libc trivial calloc implementation"
@@ -130,5 +139,12 @@ config STDOUT_CONSOLE
 	  This option directs standard output (e.g. printf) to the console
 	  device, rather than suppressing it entirely. See also EARLY_CONSOLE
 	  option.
+
+config NEED_LIBC_MEM_PARTITION
+	bool
+	help
+	  Hidden option to signal that a memory partition is needed for
+	  the C libraray even though it would not have been enabled
+	  otherwise.
 
 endmenu

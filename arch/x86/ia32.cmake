@@ -21,7 +21,60 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
     )
 endif()
 
-zephyr_cc_option_ifndef(CONFIG_SSE_FP_MATH -mno-sse)
+if(CONFIG_X86_MMX)
+  zephyr_cc_option(-mmmx)
+else()
+  zephyr_cc_option(-mno-mmx)
+endif()
+
+if(CONFIG_X86_SSE)
+  zephyr_cc_option(-msse)
+
+  if(CONFIG_X86_SSE_FP_MATH)
+      zephyr_cc_option(-mfpmath=sse)
+  else()
+      zephyr_cc_option(-mfpmath=387)
+  endif()
+
+  if(CONFIG_X86_SSE2)
+    zephyr_cc_option(-msse2)
+  else()
+    zephyr_cc_option(-mno-sse2)
+  endif()
+
+  if(CONFIG_X86_SSE3)
+    zephyr_cc_option(-msse3)
+  else()
+    zephyr_cc_option(-mno-sse3)
+  endif()
+
+  if(CONFIG_X86_SSSE3)
+    zephyr_cc_option(-mssse3)
+  else()
+    zephyr_cc_option(-mno-ssse3)
+  endif()
+
+  if(CONFIG_X86_SSE41)
+    zephyr_cc_option(-msse4.1)
+  else()
+    zephyr_cc_option(-mno-sse4.1)
+  endif()
+
+  if(CONFIG_X86_SSE42)
+    zephyr_cc_option(-msse4.2)
+  else()
+    zephyr_cc_option(-mno-sse4.2)
+  endif()
+
+  if(CONFIG_X86_SSE4A)
+    zephyr_cc_option(-msse4a)
+  else()
+    zephyr_cc_option(-mno-sse4a)
+  endif()
+
+else()
+  zephyr_cc_option(-mno-sse)
+endif()
 
 if(CMAKE_VERBOSE_MAKEFILE)
   set(GENIDT_EXTRA_ARGS --verbose)
@@ -65,29 +118,7 @@ add_subdirectory(core)
 get_property(OUTPUT_ARCH   GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH)
 get_property(OUTPUT_FORMAT GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
-# Convert the .bin file argument to a .o file, create a wrapper
-# library for the .o file, and register the library as a generated
-# file that is to be linked in after the first link.
-function(add_bin_file_to_the_next_link target_dependency bin)
-  add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${bin}.o
-    COMMAND
-    ${CMAKE_OBJCOPY}
-    -I binary
-    -B ${OUTPUT_ARCH}
-    -O ${OUTPUT_FORMAT}
-    --rename-section .data=${bin},CONTENTS,ALLOC,LOAD,READONLY,DATA
-    ${bin}.bin
-    ${bin}.o
-    DEPENDS ${target_dependency} ${bin}.bin
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-  add_custom_target(${bin}_o DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${bin}.o)
-  add_library(${bin} STATIC IMPORTED GLOBAL)
-  set_property(TARGET ${bin} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${bin}.o)
-  add_dependencies(${bin} ${bin}_o)
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES ${bin})
-endfunction()
+
 
 add_bin_file_to_the_next_link(gen_idt_output staticIdt)
 add_bin_file_to_the_next_link(gen_idt_output irq_int_vector_map)

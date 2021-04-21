@@ -8,7 +8,6 @@
 #
 menuconfig I2C
 	bool "I2C Drivers"
-	select HAS_DTS_I2C
 	help
 	  Enable I2C Driver Configuration
 
@@ -21,7 +20,7 @@ config I2C_SHELL
 	help
 	  Enable I2C Shell.
 
-	  The I2C shell currently support scanning.
+	  The I2C shell currently support scanning and bus recovery.
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
@@ -32,11 +31,16 @@ source "drivers/i2c/slave/Kconfig"
 source "drivers/i2c/Kconfig.gpio"
 source "drivers/i2c/Kconfig.xec"
 source "drivers/i2c/Kconfig.nrfx"
+source "drivers/i2c/Kconfig.i2c_emul"
+source "drivers/i2c/Kconfig.it8xxx2"
 source "drivers/i2c/Kconfig.sbcon"
 source "drivers/i2c/Kconfig.sifive"
 source "drivers/i2c/Kconfig.stm32"
 source "drivers/i2c/Kconfig.sam0"
 source "drivers/i2c/Kconfig.litex"
+source "drivers/i2c/Kconfig.lpc11u6x"
+source "drivers/i2c/Kconfig.npcx"
+source "drivers/i2c/Kconfig.test"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
@@ -48,30 +52,6 @@ config I2C_INIT_PRIORITY
 module = I2C
 module-str = i2c
 source "subsys/logging/Kconfig.template.log_config"
-
-config I2C_0
-	bool "Enable I2C Port 0"
-
-config I2C_1
-	bool "Enable I2C Port 1"
-
-config I2C_2
-	bool "Enable I2C Port 2"
-
-config I2C_3
-	bool "Enable I2C Port 3"
-
-config I2C_4
-	bool "Enable I2C Port 4"
-
-config I2C_5
-	bool "Enable I2C Port 5"
-
-config I2C_6
-	bool "Enable I2C Port 6"
-
-config I2C_7
-	bool "Enable I2C Port 7"
 
 config I2C_GECKO
 	bool "Gecko I2C driver"
@@ -86,6 +66,12 @@ config I2C_SAM_TWIHS
 	help
 	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
 
+config I2C_SAM_TWIM
+	bool "Atmel SAM (TWIM) I2C driver"
+	depends on SOC_SERIES_SAM4L
+	help
+	  Enable Atmel SAM MCU Family (TWIM) I2C bus driver.
+
 config I2C_SAM_TWI
 	bool "Atmel SAM (TWI) I2C driver"
 	depends on SOC_FAMILY_SAM
@@ -97,6 +83,12 @@ config I2C_MCUX
 	depends on HAS_MCUX
 	help
 	  Enable the mcux I2C driver.
+
+config I2C_MCUX_FLEXCOMM
+	bool "MCUX FLEXCOMM I2C driver"
+	depends on HAS_MCUX_FLEXCOMM
+	help
+	  Enable the mcux flexcomm i2c driver.
 
 config I2C_MCUX_LPI2C
 	bool "MCUX LPI2C driver"
@@ -126,12 +118,6 @@ config I2C_NIOS2
 	depends on HAS_ALTERA_HAL
 	help
 	  Enable the Nios-II I2C driver.
-
-config I2C_0_IRQ_PRI
-	int "Port 0 interrupt priority"
-	depends on I2C_NIOS2
-	help
-	  IRQ priority.
 
 config I2C_RV32M1_LPI2C
 	bool "RV32M1 LPI2C driver"

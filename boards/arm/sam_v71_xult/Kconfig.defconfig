@@ -9,22 +9,12 @@ if BOARD_SAM_V71_XULT
 config BOARD
 	default "sam_v71_xult"
 
-if I2S
-
-config I2S_SAM_SSC_0_DMA_RX_CHANNEL
-	default 22
-
-config I2S_SAM_SSC_0_DMA_TX_CHANNEL
-	default 23
-endif # I2S
-
 if ETH_SAM_GMAC
 
 # Read MAC address from AT24MAC402 EEPROM
 
-choice ETH_SAM_GMAC_MAC_SELECT
-	default ETH_SAM_GMAC_MAC_I2C_EEPROM
-endchoice
+config ETH_SAM_GMAC_MAC_I2C_EEPROM
+	default y
 
 config ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS
 	default 0x5F
@@ -43,14 +33,6 @@ config ETH_SAM_GMAC_MAC_I2C_EEPROM
 
 endif # ETH_SAM_GMAC
 
-config ADC_0
-	default y
-	depends on ADC
-
-config I2C_0
-	default y
-	depends on I2C
-
 if NETWORKING
 
 config NET_L2_ETHERNET
@@ -60,11 +42,5 @@ config ETH_SAM_GMAC
 	default y if NET_L2_ETHERNET
 
 endif # NETWORKING
-
-config SPI_SAMV71_PORT_0_PIN_CS1
-	bool
-	default y
-	depends on SPI
-	depends on SPI_SAM_PORT_0
 
 endif # BOARD_SAM_V71_XULT

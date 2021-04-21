@@ -24,15 +24,11 @@ if LOG
 config LOG_BACKEND_NATIVE_POSIX
 	default y if !SERIAL
 
-# For this board we can log immediately without any problem
+# For this board we can log synchronously without any problem
 # Doing so will be nicer for debugging
-config LOG_IMMEDIATE
-	default y
-
-# If we set LOG_IMMEDIATE, there is no need to have the logging thread
-# running
-config LOG_PROCESS_THREAD
-	default n
+choice LOG_MODE
+	default LOG_MODE_IMMEDIATE
+endchoice
 
 endif # LOG
 

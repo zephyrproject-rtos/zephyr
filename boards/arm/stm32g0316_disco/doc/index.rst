@@ -1,7 +1,7 @@
 .. _stm32g0316_disco_board:
 
-STM32G0316-DISCO
-################
+ST STM32G0316 Discovery
+#######################
 
 Overview
 ********
@@ -11,7 +11,7 @@ This discovery kit offers an SO8 to DIL8 module designed with the STM32G031J6 mi
 and allows the user to develop applications. It includes an on-board ST-LINK/V2-1 to debug
 and program the embedded STM32 microcontroller.
 
-.. image:: img/stm32g0316-disco.jpg
+.. image:: img/stm32g0316_disco.jpg
    :width: 670px
    :align: center
    :alt: STM32G0316-DISCO
@@ -54,6 +54,8 @@ The Zephyr stm32g0316_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -93,6 +95,7 @@ the following pyocd command:
 
 .. code-block:: console
 
+   $ pyocd pack --update
    $ pyocd pack --install stm32g031j6
 
 Flashing an application to the STM32G0316-DISCO

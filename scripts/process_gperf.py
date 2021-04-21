@@ -8,7 +8,7 @@
 gperf C file post-processor
 
 We use gperf to build up a perfect hashtable of pointer values. The way gperf
-does this is to create a table 'wordlist' indexed by a string repreesentation
+does this is to create a table 'wordlist' indexed by a string representation
 of a pointer address, and then doing memcmp() on a string passed in for
 comparison
 
@@ -83,7 +83,7 @@ def process_line(line, fp):
         return
 
     # Set the lookup function to static inline so it gets rolled into
-    # _k_object_find(), nothing else will use it
+    # z_object_find(), nothing else will use it
     if re.search(args.pattern + " [*]$", line):
         fp.write("static inline " + line)
         return

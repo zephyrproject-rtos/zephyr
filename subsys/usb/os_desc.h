@@ -15,18 +15,18 @@
 #define USB_OSDESC_STRING_DESC_INDEX	0xEE
 
 struct usb_os_descriptor {
-	u8_t *string;
+	uint8_t *string;
 	size_t string_len;
-	u8_t vendor_code;
+	uint8_t vendor_code;
 
-	u8_t *compat_id;
+	uint8_t *compat_id;
 	size_t compat_id_len;
 };
 
 int usb_handle_os_desc(struct usb_setup_packet *setup,
-		       s32_t *len, u8_t **data_buf);
+		       int32_t *len, uint8_t **data_buf);
 int usb_handle_os_desc_feature(struct usb_setup_packet *setup,
-			       s32_t *len, u8_t **data_buf);
+			       int32_t *len, uint8_t **data_buf);
 void usb_register_os_desc(struct usb_os_descriptor *desc);
 bool usb_os_desc_enabled(void);
 #else

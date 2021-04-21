@@ -9,10 +9,10 @@
 #include "dummy_driver.h"
 
 static struct k_poll_event async_evt;
-u32_t device_power_state;
-static struct device *parent;
+uint32_t device_power_state;
+static const struct device *parent;
 
-static int dummy_open(struct device *dev)
+static int dummy_open(const struct device *dev)
 {
 	int ret;
 	int signaled = 0, result;
@@ -34,12 +34,12 @@ static int dummy_open(struct device *dev)
 
 	do {
 		(void)k_poll(&async_evt, 1, K_FOREVER);
-		k_poll_signal_check(&dev->config->pm->signal,
+		k_poll_signal_check(&dev->pm->signal,
 						&signaled, &result);
 	} while (!signaled);
 
 	async_evt.state = K_POLL_STATE_NOT_READY;
-	k_poll_signal_reset(&dev->config->pm->signal);
+	k_poll_signal_reset(&dev->pm->signal);
 
 	if (result == DEVICE_PM_ACTIVE_STATE) {
 		printk("Dummy device resumed\n");
@@ -52,30 +52,30 @@ static int dummy_open(struct device *dev)
 	return ret;
 }
 
-static int dummy_read(struct device *dev, u32_t *val)
+static int dummy_read(const struct device *dev, uint32_t *val)
 {
 	struct dummy_parent_api *api;
 	int ret;
 
 	printk("read()\n");
 
-	api = (struct dummy_parent_api *)parent->driver_api;
+	api = (struct dummy_parent_api *)parent->api;
 	ret = api->transfer(parent, DUMMY_PARENT_RD, val);
 	return ret;
 }
 
-static int dummy_write(struct device *dev, u32_t val)
+static int dummy_write(const struct device *dev, uint32_t val)
 {
 	struct dummy_parent_api *api;
 	int ret;
 
 	printk("write()\n");
-	api = (struct dummy_parent_api *)parent->driver_api;
+	api = (struct dummy_parent_api *)parent->api;
 	ret = api->transfer(parent, DUMMY_PARENT_WR, &val);
 	return ret;
 }
 
-static int dummy_close(struct device *dev)
+static int dummy_close(const struct device *dev)
 {
 	int ret;
 
@@ -93,12 +93,12 @@ static int dummy_close(struct device *dev)
 	return ret;
 }
 
-static u32_t dummy_get_power_state(struct device *dev)
+static uint32_t dummy_get_power_state(const struct device *dev)
 {
 	return device_power_state;
 }
 
-static int dummy_suspend(struct device *dev)
+static int dummy_suspend(const struct device *dev)
 {
 	printk("child suspending..\n");
 	device_power_state = DEVICE_PM_SUSPEND_STATE;
@@ -106,7 +106,7 @@ static int dummy_suspend(struct device *dev)
 	return 0;
 }
 
-static int dummy_resume_from_suspend(struct device *dev)
+static int dummy_resume_from_suspend(const struct device *dev)
 {
 	printk("child resuming..\n");
 	device_power_state = DEVICE_PM_ACTIVE_STATE;
@@ -114,21 +114,22 @@ static int dummy_resume_from_suspend(struct device *dev)
 	return 0;
 }
 
-static int dummy_device_pm_ctrl(struct device *dev, u32_t ctrl_command,
+static int dummy_device_pm_ctrl(const struct device *dev,
+				uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
 
 	switch (ctrl_command) {
 	case DEVICE_PM_SET_POWER_STATE:
-		if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+		if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			ret = dummy_resume_from_suspend(dev);
 		} else {
 			ret = dummy_suspend(dev);
 		}
 		break;
 	case DEVICE_PM_GET_POWER_STATE:
-		*((u32_t *)context) = dummy_get_power_state(dev);
+		*((uint32_t *)context) = dummy_get_power_state(dev);
 		break;
 	default:
 		ret = -EINVAL;
@@ -147,7 +148,7 @@ static const struct dummy_driver_api funcs = {
 	.close = dummy_close,
 };
 
-int dummy_init(struct device *dev)
+int dummy_init(const struct device *dev)
 {
 	parent = device_get_binding(DUMMY_PARENT_NAME);
 	if (!parent) {
@@ -158,7 +159,7 @@ int dummy_init(struct device *dev)
 	device_power_state = DEVICE_PM_ACTIVE_STATE;
 
 	k_poll_event_init(&async_evt, K_POLL_TYPE_SIGNAL,
-			K_POLL_MODE_NOTIFY_ONLY, &dev->config->pm->signal);
+			K_POLL_MODE_NOTIFY_ONLY, &dev->pm->signal);
 	return 0;
 }
 

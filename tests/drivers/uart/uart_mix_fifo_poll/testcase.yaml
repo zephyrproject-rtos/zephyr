@@ -1,0 +1,87 @@
+common:
+  harness: ztest
+  harness_config:
+    fixture: gpio_loopback
+tests:
+  drivers.uart.uart_mix_poll:
+    tags: drivers
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.uart_mix_poll_fifo:
+    tags: drivers
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.uart_mix_poll_async_api:
+    tags: drivers
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+  drivers.uart.uart_mix_poll_async_api_low_power:
+    tags: drivers
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_ASYNC_LOW_POWER=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=n
+
+
+  drivers.uart.uart_mix_poll_with_ppi:
+    tags: drivers
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+
+  drivers.uart.uart_mix_poll_fifo_with_ppi:
+    tags: drivers
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+
+  drivers.uart.uart_mix_poll_async_api_with_ppi:
+    tags: drivers
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y
+
+  drivers.uart.uart_mix_poll_async_api_with_ppi_low_power:
+    tags: drivers
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_0_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_0_ASYNC=y
+      - CONFIG_UART_0_NRF_HW_ASYNC=y
+      - CONFIG_UART_0_NRF_ASYNC_LOW_POWER=y
+      - CONFIG_UART_0_NRF_HW_ASYNC_TIMER=2
+      - CONFIG_NRFX_TIMER2=y
+      - CONFIG_UART_0_ENHANCED_POLL_OUT=y

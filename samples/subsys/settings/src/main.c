@@ -24,11 +24,11 @@
 /* Default valuse are assigned to settings valuses consuments
  * All of them will be overwritten if storage contain proper key-values
  */
-u8_t angle_val;
-u64_t length_val = 100;
-u16_t length_1_val = 40;
-u32_t length_2_val = 60;
-s32_t voltage_val = -3000;
+uint8_t angle_val;
+uint64_t length_val = 100;
+uint16_t length_1_val = 40;
+uint32_t length_2_val = 60;
+int32_t voltage_val = -3000;
 char source_name_val[6] = "";
 
 int alpha_handle_set(const char *name, size_t len, settings_read_cb read_cb,
@@ -85,7 +85,7 @@ int alpha_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 
 		if (!next) {
 			rc = read_cb(cb_arg, &length_val, sizeof(length_val));
-			printk("<alpha/length> = %lld\n", length_val);
+			printk("<alpha/length> = %" PRId64 "\n", length_val);
 			return 0;
 		}
 
@@ -197,7 +197,7 @@ int beta_handle_get(const char *name, char *val, int val_len_max)
 static void example_save_and_load_basic(void)
 {
 	int i, rc;
-	s32_t val_s32;
+	int32_t val_s32;
 
 	printk(SECTION_BEGIN_LINE);
 	printk("basic load and save using registered handlers\n");
@@ -259,9 +259,9 @@ static void example_save_and_load_basic(void)
 }
 
 struct direct_length_data {
-	u64_t length;
-	u16_t length_1;
-	u32_t length_2;
+	uint64_t length;
+	uint16_t length_1;
+	uint32_t length_2;
 };
 
 static int direct_loader(const char *name, size_t len, settings_read_cb read_cb,
@@ -318,7 +318,7 @@ static void example_direct_load_subtree(void)
 	rc = settings_load_subtree_direct("alpha/length", direct_loader,
 					  (void *)&dld);
 	if (rc == 0) {
-		printk("  direct.length = %lld\n", dld.length);
+		printk("  direct.length = %" PRId64 "\n", dld.length);
 		printk("  direct.length_1 = %d\n", dld.length_1);
 		printk("  direct.length_2 = %d\n", dld.length_2);
 	} else {
@@ -329,7 +329,7 @@ static void example_direct_load_subtree(void)
 struct direct_immediate_value {
 	size_t len;
 	void *dest;
-	u8_t fetched;
+	uint8_t fetched;
 };
 
 static int direct_loader_immediate_value(const char *name, size_t len,
@@ -388,7 +388,7 @@ int load_immediate_value(const char *name, void *dest, size_t len)
 
 static void example_without_handler(void)
 {
-	u8_t val_u8;
+	uint8_t val_u8;
 	int rc;
 
 	printk(SECTION_BEGIN_LINE);
@@ -426,7 +426,7 @@ static void example_initialization(void)
 	static struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &cstorage,
-	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
+	.storage_dev = (void *)FLASH_AREA_ID(storage),
 	.mnt_point = "/ff"
 	};
 
@@ -464,7 +464,7 @@ static void example_initialization(void)
 
 static void example_delete(void)
 {
-	u64_t val_u64;
+	uint64_t val_u64;
 	int rc;
 
 	printk(SECTION_BEGIN_LINE);
@@ -493,7 +493,7 @@ static void example_delete(void)
 void example_runtime_usage(void)
 {
 	int rc;
-	u8_t injected_str[sizeof(source_name_val)] = "RT";
+	uint8_t injected_str[sizeof(source_name_val)] = "RT";
 
 	printk(SECTION_BEGIN_LINE);
 	printk("Inject the value to the setting destination in runtime\n\n");

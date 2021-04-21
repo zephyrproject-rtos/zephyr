@@ -54,12 +54,17 @@ properties:
     label:
         type: string
         required: false
-        description: Human readable string describing the device (used by Zephyr for API name)
+        description: Human readable string describing the device (used as device_get_binding() argument)
 
     clocks:
         type: phandle-array
         required: false
         description: Clock gate information
+
+    clock-names:
+        type: string-array
+        required: false
+        description: name of each clock
 
     "#address-cells":
         type: int
@@ -70,3 +75,23 @@ properties:
         type: int
         required: false
         description: number of size cells in reg property
+
+    dmas:
+      required: false
+      type: phandle-array
+      description: DMA channels specifiers
+
+    dma-names:
+      required: false
+      type: string-array
+      description: Provided names of DMA channel specifiers
+
+    io-channels:
+      required: false
+      type: phandle-array
+      description: IO channels specifiers
+
+    io-channel-names:
+      required: false
+      type: string-array
+      description: Provided names of IO channel specifiers

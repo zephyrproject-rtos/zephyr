@@ -8,7 +8,7 @@ if SOC_MCIMX6X_M4
 config SOC
 	default "mcimx6x"
 
-config FLOAT
+config FPU
 	default y
 
 config GPIO_IMX
@@ -18,6 +18,10 @@ config GPIO_IMX
 config UART_IMX
 	default y
 	depends on SERIAL
+
+config I2C_IMX
+	default y
+	depends on I2C
 
 config IPM_IMX
 	default y

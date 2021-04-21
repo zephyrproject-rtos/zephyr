@@ -1,0 +1,20 @@
+# DMA configuration options
+
+# Copyright (c) 2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_MCUX_LPC
+	bool "Enable MCUX LPC DMAC driver"
+	depends on HAS_MCUX_LPC_DMA
+	help
+	  DMA driver for MCUX LPC MCUs.
+
+if DMA_MCUX_LPC
+
+config DMA_LINK_QUEUE_SIZE
+	int "number of transfer descriptors in a queue for SG mode"
+	default 4
+	help
+	  number of transfer descriptors in a queue for SG mode
+
+endif # DMA_MCUX_LPC

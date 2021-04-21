@@ -35,6 +35,8 @@
 
 #define PCIE_ID_NONE PCIE_ID(0xFFFF, 0xFFFF)
 
+#define PCIE_BDF_NONE 0xFFFFFFFFU
+
 /*
  * Since our internal representation of bus/device/function is arbitrary,
  * we choose the same format employed in the x86 Configuration Address Port:

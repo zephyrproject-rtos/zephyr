@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(main);
 #define CS_CTRL_GPIO_DRV_NAME CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_DRV_NAME
 struct spi_cs_control spi_cs = {
 	.gpio_pin = CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_PIN,
+	.gpio_dt_flags = GPIO_ACTIVE_LOW,
 	.delay = 0,
 };
 #define SPI_CS (&spi_cs)
@@ -33,19 +34,28 @@ struct spi_cs_control spi_cs = {
 #define CS_CTRL_GPIO_DRV_NAME ""
 #endif
 
+/* to run this test, connect MOSI pin to the MISO of the SPI */
+
 #define STACK_SIZE 512
 #define BUF_SIZE 17
-u8_t buffer_tx[] = "0123456789abcdef\0";
-u8_t buffer_rx[BUF_SIZE] = {};
+uint8_t buffer_tx[] = "0123456789abcdef\0";
+uint8_t buffer_rx[BUF_SIZE] = {};
+
+#define BUF2_SIZE 36
+uint8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+uint8_t buffer2_rx[BUF2_SIZE] = {};
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
  * byte in hex, plus a null.
  */
-u8_t buffer_print_tx[BUF_SIZE * 5 + 1];
-u8_t buffer_print_rx[BUF_SIZE * 5 + 1];
+uint8_t buffer_print_tx[BUF_SIZE * 5 + 1];
+uint8_t buffer_print_rx[BUF_SIZE * 5 + 1];
 
-static void to_display_format(const u8_t *src, size_t size, char *dst)
+uint8_t buffer_print_tx2[BUF2_SIZE * 5 + 1];
+uint8_t buffer_print_rx2[BUF2_SIZE * 5 + 1];
+
+static void to_display_format(const uint8_t *src, size_t size, char *dst)
 {
 	size_t i;
 
@@ -92,7 +102,74 @@ static int cs_ctrl_gpio_config(void)
 }
 #endif /* CONFIG_SPI_LOOPBACK_CS_GPIO */
 
-static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
+/* test transferring different buffers on the same dma channels */
+static int spi_complete_multiple(const struct device *dev,
+				 struct spi_config *spi_conf)
+{
+	struct spi_buf tx_bufs[2];
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	tx_bufs[0].buf = buffer_tx;
+	tx_bufs[0].len = BUF_SIZE;
+
+	tx_bufs[1].buf = buffer2_tx;
+	tx_bufs[1].len = BUF2_SIZE;
+
+
+	struct spi_buf rx_bufs[2];
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
+
+	rx_bufs[0].buf = buffer_rx;
+	rx_bufs[0].len = BUF_SIZE;
+
+	rx_bufs[1].buf = buffer2_rx;
+	rx_bufs[1].len = BUF2_SIZE;
+
+	int ret;
+
+	LOG_INF("Start complete multiple");
+
+	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	if (ret) {
+		LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
+		return ret;
+	}
+
+	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
+		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
+		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
+		LOG_ERR("Buffer contents are different: %s",
+			    buffer_print_tx);
+		LOG_ERR("                           vs: %s",
+			    buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	if (memcmp(buffer2_tx, buffer2_rx, BUF2_SIZE)) {
+		to_display_format(buffer2_tx, BUF2_SIZE, buffer_print_tx2);
+		to_display_format(buffer2_rx, BUF2_SIZE, buffer_print_rx2);
+		LOG_ERR("Buffer 2 contents are different: %s",
+			    buffer_print_tx2);
+		LOG_ERR("                           vs: %s",
+			    buffer_print_rx2);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	LOG_INF("Passed");
+
+	return 0;
+}
+
+static int spi_complete_loop(const struct device *dev,
+			     struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -117,7 +194,7 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start complete loop");
 
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
@@ -142,10 +219,10 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 	return 0;
 }
 
-
-static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
+static int spi_null_tx_buf(const struct device *dev,
+			   struct spi_config *spi_conf)
 {
-	static const u8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
+	static const uint8_t EXPECTED_NOP_RETURN_BUF[BUF_SIZE] = { 0 };
 	(void)memset(buffer_rx, 0x77, BUF_SIZE);
 
 	const struct spi_buf tx_bufs[] = {
@@ -175,7 +252,7 @@ static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
 
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start null tx");
 
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
@@ -198,7 +275,8 @@ static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
 	return 0;
 }
 
-static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
+static int spi_rx_half_start(const struct device *dev,
+			     struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -222,7 +300,7 @@ static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start half start");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -249,7 +327,8 @@ static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 	return 0;
 }
 
-static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
+static int spi_rx_half_end(const struct device *dev,
+			   struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -277,7 +356,12 @@ static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+		LOG_INF("Skip half end");
+		return 0;
+	}
+
+	LOG_INF("Start half end");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -304,7 +388,8 @@ static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 	return 0;
 }
 
-static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
+static int spi_rx_every_4(const struct device *dev,
+			  struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -340,7 +425,12 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+		LOG_INF("Skip every 4");
+		return 0;
+	}
+
+	LOG_INF("Start every 4");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -407,7 +497,8 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 	}
 }
 
-static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
+static int spi_async_call(const struct device *dev,
+			  struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -431,7 +522,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start async call");
 
 	ret = spi_transceive_async(dev, spi_conf, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
@@ -459,9 +550,9 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 }
 #endif
 
-static int spi_resource_lock_test(struct device *lock_dev,
+static int spi_resource_lock_test(const struct device *lock_dev,
 				  struct spi_config *spi_conf_lock,
-				  struct device *try_dev,
+				  const struct device *try_dev,
 				  struct spi_config *spi_conf_try)
 {
 	spi_conf_lock->operation |= SPI_LOCK_ON;
@@ -489,8 +580,8 @@ void test_spi_loopback(void)
 	struct k_thread async_thread;
 	k_tid_t async_thread_id;
 #endif
-	struct device *spi_slow;
-	struct device *spi_fast;
+	const struct device *spi_slow;
+	const struct device *spi_fast;
 
 	LOG_INF("SPI test on buffers TX/RX %p/%p", buffer_tx, buffer_rx);
 
@@ -517,7 +608,10 @@ void test_spi_loopback(void)
 					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
 
-	if (spi_complete_loop(spi_slow, &spi_cfg_slow) ||
+	LOG_INF("SPI test slow config");
+
+	if (spi_complete_multiple(spi_slow, &spi_cfg_slow) ||
+	    spi_complete_loop(spi_slow, &spi_cfg_slow) ||
 	    spi_null_tx_buf(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_start(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_end(spi_slow, &spi_cfg_slow) ||
@@ -529,7 +623,10 @@ void test_spi_loopback(void)
 		goto end;
 	}
 
-	if (spi_complete_loop(spi_fast, &spi_cfg_fast) ||
+	LOG_INF("SPI test fast config");
+
+	if (spi_complete_multiple(spi_fast, &spi_cfg_fast) ||
+	    spi_complete_loop(spi_fast, &spi_cfg_fast) ||
 	    spi_null_tx_buf(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_half_start(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_half_end(spi_fast, &spi_cfg_fast) ||

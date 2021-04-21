@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2016, 2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,8 +7,15 @@
 #include <ztest.h>
 #include "test_mheap.h"
 
-/* request 0 bytes*/
-#define TEST_SIZE_0 0
+#define THREAD_NUM 3
+#define BLOCK_SIZE 16
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+
+struct k_sem sync_sema;
+static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_NUM, STACK_SIZE);
+static struct k_thread tdata[THREAD_NUM];
+static int thread_id;
+static void *block[BLK_NUM_MAX];
 
 /*test cases*/
 
@@ -17,13 +24,13 @@
  *
  * @ingroup kernel_heap_tests
  *
- * @see k_malloc(), k_free()
- *
  * @details The 8 blocks of memory of size 16 bytes are allocated
  * by k_calloc() API. When allocated using k_calloc() the memory buffers
  * have to be zeroed. Check is done, if the blocks are memset to 0 and
  * read/write is allowed. The test is then teared up by freeing all the
  * blocks allocated.
+ *
+ * @see k_malloc(), k_free()
  */
 void test_mheap_malloc_align4(void)
 {
@@ -45,82 +52,47 @@ void test_mheap_malloc_align4(void)
 	}
 }
 
-/**
- * @brief The test case to ensure heap minimum block size is 64 bytes.
- *
- * @ingroup kernel_heap_tests
- *
- * @see k_malloc(), k_free()
- *
- * @details Heap pool's minimum block size is 64 bytes. The test case tries
- * to ensure it by allocating blocks lesser than minimum block size.
- * The test allocates 8 blocks of size 0. The algorithm has to allocate 64
- * bytes of blocks, this is ensured by allocating one more block of max size
- * which results in failure. Finally all the blocks are freed and added back
- * to heap memory pool.
- */
-void test_mheap_min_block_size(void)
+static void tmheap_handler(void *p1, void *p2, void *p3)
 {
-	void *block[BLK_NUM_MAX], *block_fail;
+	thread_id = POINTER_TO_INT(p1);
 
-	/**
-	 * TESTPOINT: The heap memory pool also defines a minimum block
-	 * size of 64 bytes.
-	 * Test steps:
-	 * initial memory heap status (F for free, U for used):
-	 *    64F, 64F, 64F, 64F
-	 * 1. request 4 blocks: each 0-byte plus 16-byte block desc,
-	 *    indeed 64-byte allocated
-	 * 2. verify no more free blocks, any further allocation failed
-	 */
-	for (int i = 0; i < BLK_NUM_MAX; i++) {
-		block[i] = k_malloc(TEST_SIZE_0);
-		zassert_not_null(block[i], NULL);
-	}
-	/* verify no more free blocks available*/
-	block_fail = k_malloc(BLK_SIZE_MIN);
-	zassert_is_null(block_fail, NULL);
+	block[thread_id] = k_malloc(BLOCK_SIZE);
 
-	/* test case tear down*/
-	for (int i = 0; i < BLK_NUM_MAX; i++) {
-		k_free(block[i]);
-	}
+	zassert_not_null(block[thread_id], "memory is not allocated");
+
+	k_sem_give(&sync_sema);
 }
 
 /**
- * @brief Verify if the block descriptor is included
- * in every block which is allocated
+ * @brief Verify alloc from multiple equal priority threads
  *
- * @ingroup kernel_heap_tests
+ * @details Test creates three preemptive threads of equal priority.
+ * In each child thread , call k_malloc() to alloc a block of memory.
+ * Check These four threads can share the same heap space without
+ * interfering with each other.
  *
- * @see k_malloc(), k_free()
+ * @ingroup kernel_memory_slab_tests
  */
-void test_mheap_block_desc(void)
+void test_mheap_threadsafe(void)
 {
-	void *block[BLK_NUM_MAX], *block_fail;
+	k_tid_t tid[THREAD_NUM];
 
-	/**
-	 * TESTPOINT: The kernel uses the first 16 bytes of any memory block
-	 * allocated from the heap memory pool to save the block descriptor
-	 * information it needs to later free the block. Consequently, an
-	 * application's request for an N byte chunk of heap memory requires a
-	 * block that is at least (N+16) bytes long.
-	 * Test steps:
-	 * initial memory heap status (F for free, U for used):
-	 *    64F, 64F, 64F, 64F
-	 * 1. request 4 blocks: each (64-16) bytes, indeed 64-byte allocated
-	 * 2. verify no more free blocks, any further allocation failed
-	 */
-	for (int i = 0; i < BLK_NUM_MAX; i++) {
-		block[i] = k_malloc(BLK_SIZE_EXCLUDE_DESC);
-		zassert_not_null(block[i], NULL);
+	k_sem_init(&sync_sema, 0, THREAD_NUM);
+
+	/* create multiple threads to invoke same memory heap APIs*/
+	for (int i = 0; i < THREAD_NUM; i++) {
+		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
+					 tmheap_handler, INT_TO_POINTER(i), NULL, NULL,
+					 K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
-	/* verify no more free blocks available*/
-	block_fail = k_malloc(BLK_SIZE_MIN);
-	zassert_is_null(block_fail, NULL);
 
-	/* test case tear down*/
-	for (int i = 0; i < BLK_NUM_MAX; i++) {
+	for (int i = 0; i < THREAD_NUM; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+
+	for (int i = 0; i < THREAD_NUM; i++) {
+		/* verify free mheap in main thread */
 		k_free(block[i]);
+		k_thread_abort(tid[i]);
 	}
 }

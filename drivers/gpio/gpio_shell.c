@@ -19,17 +19,17 @@
 LOG_MODULE_REGISTER(gpio_shell);
 
 struct args_index {
-	u8_t port;
-	u8_t index;
-	u8_t mode;
-	u8_t value;
+	uint8_t port;
+	uint8_t index;
+	uint8_t mode;
+	uint8_t value;
 };
 
 struct args_number {
-	u8_t conf;
-	u8_t set;
-	u8_t get;
-	u8_t listen;
+	uint8_t conf;
+	uint8_t set;
+	uint8_t get;
+	uint8_t listen;
 };
 
 static const struct args_index args_indx = {
@@ -48,14 +48,14 @@ static const struct args_number args_no = {
 
 static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 {
-	u8_t index = 0U;
+	uint8_t index = 0U;
 	int type = GPIO_OUTPUT;
-	struct device *dev;
+	const struct device *dev;
 
 	if (argc == args_no.conf &&
 	    isdigit((unsigned char)argv[args_indx.index][0]) &&
 	    isalpha((unsigned char)argv[args_indx.mode][0])) {
-		index = (u8_t)atoi(argv[args_indx.index]);
+		index = (uint8_t)atoi(argv[args_indx.index]);
 		if (!strcmp(argv[args_indx.mode], "in")) {
 			type = GPIO_INPUT;
 		} else if (!strcmp(argv[args_indx.mode], "out")) {
@@ -83,8 +83,8 @@ static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 static int cmd_gpio_get(const struct shell *shell,
 			size_t argc, char **argv)
 {
-	struct device *dev;
-	u8_t index = 0U;
+	const struct device *dev;
+	uint8_t index = 0U;
 	int rc;
 
 	if (argc == args_no.get && isdigit((unsigned char)argv[args_indx.index][0])) {
@@ -97,7 +97,7 @@ static int cmd_gpio_get(const struct shell *shell,
 	dev = device_get_binding(argv[args_indx.port]);
 
 	if (dev != NULL) {
-		index = (u8_t)atoi(argv[2]);
+		index = (uint8_t)atoi(argv[2]);
 		shell_print(shell, "Reading %s pin %d",
 			     argv[args_indx.port], index);
 		rc = gpio_pin_get(dev, index);
@@ -115,9 +115,9 @@ static int cmd_gpio_get(const struct shell *shell,
 static int cmd_gpio_set(const struct shell *shell,
 			size_t argc, char **argv)
 {
-	struct device *dev;
-	u8_t index = 0U;
-	u8_t value = 0U;
+	const struct device *dev;
+	uint8_t index = 0U;
+	uint8_t value = 0U;
 
 	if (argc == args_no.set &&
 	    isdigit((unsigned char)argv[args_indx.index][0]) &&
@@ -131,7 +131,7 @@ static int cmd_gpio_set(const struct shell *shell,
 	dev = device_get_binding(argv[args_indx.port]);
 
 	if (dev != NULL) {
-		index = (u8_t)atoi(argv[2]);
+		index = (uint8_t)atoi(argv[2]);
 		shell_print(shell, "Writing to %s pin %d",
 			    argv[args_indx.port], index);
 		gpio_pin_set(dev, index, value);

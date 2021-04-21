@@ -1,12 +1,15 @@
 sample:
-  description: TBD
-  name: TBD
+  description: MQTT publisher sample application
+  name: MQTT publisher
+common:
+  harness: net
+  tags: net mqtt
 tests:
   sample.net.mqtt_publisher:
-    harness: net
-    platform_whitelist: frdm_k64f qemu_x86
-    tags: net mqtt
+    platform_allow: frdm_k64f qemu_x86 pinnacle_100_dvk
+  sample.net.mqtt_publisher.userspace:
+    platform_allow: frdm_k64f qemu_x86
+    extra_args: CONFIG_USERSPACE=y
   sample.net.mqtt_publisher.bt:
-    harness: net
-    platform_whitelist: 96b_nitrogen
+    platform_allow: 96b_nitrogen
     tags: net mqtt bluetooth

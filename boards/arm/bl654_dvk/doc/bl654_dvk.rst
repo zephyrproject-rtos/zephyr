@@ -1,13 +1,13 @@
 .. _bl654_dvk:
 
-BL654 DVK
-#################
+Laird Connectivity BL654 DVK
+############################
 
 Overview
 ********
 
 The BL654 Development Kit hardware provides
-support for the Laird BL654 module powered by a Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU.
+support for the Laird Connectivity BL654 module powered by a Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU.
 
 This development kit has the following features:
 
@@ -115,10 +115,9 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``bl654_dvk`` board configuration can be
-built and flashed in the usual way (see :ref:`build_an_application`
-and :ref:`application_run` for more details); however, the standard
-debugging targets are not currently available.
+Applications for the ``bl654_dvk`` board configuration can be built, flashed,
+and debugged in the usual way. See :ref:`build_an_application` and
+:ref:`application_run` for more details on building and running.
 
 Flashing
 ========

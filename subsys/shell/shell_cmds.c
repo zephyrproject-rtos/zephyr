@@ -5,6 +5,7 @@
  */
 #include <shell/shell.h>
 #include "shell_utils.h"
+#include "shell_help.h"
 #include "shell_ops.h"
 #include "shell_vt100.h"
 
@@ -28,7 +29,7 @@
 #define SHELL_HELP_STATISTICS_RESET	\
 	"Reset shell statistics for the Logger module."
 #define SHELL_HELP_RESIZE						\
-	"Console gets terminal screen size or assumes 80 in case"	\
+	"Console gets terminal screen size or assumes default in case"	\
 	" the readout fails. It must be executed after each terminal"	\
 	" width change to ensure correct text display."
 #define SHELL_HELP_RESIZE_DEFAULT				\
@@ -44,6 +45,7 @@
 	"command to be selected, it must meet the criteria:\n"		      \
 	" - it is a static command\n"					      \
 	" - it is not preceded by a dynamic command\n"			      \
+	" - it accepts arguments\n"					      \
 	"Return to the main command tree is done by pressing alt+r."
 
 #define SHELL_HELP_SHELL		"Useful, not Unix-like shell commands."
@@ -56,10 +58,13 @@
 /* 10 == {esc, [, 2, 5, 0, ;, 2, 5, 0, '\0'} */
 #define SHELL_CURSOR_POSITION_BUFFER	(10u)
 
+#define SHELL_DEFAULT_TERMINAL_WIDTH 80
+#define SHELL_DEFAULT_TERMINAL_HEIGHT 24
+
 /* Function reads cursor position from terminal. */
-static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
+static int cursor_position_get(const struct shell *shell, uint16_t *x, uint16_t *y)
 {
-	u16_t buff_idx = 0U;
+	uint16_t buff_idx = 0U;
 	size_t cnt;
 	char c = 0;
 
@@ -71,15 +76,15 @@ static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
 	/* escape code asking terminal about its size */
 	static char const cmd_get_terminal_size[] = "\033[6n";
 
-	shell_raw_fprintf(shell->fprintf_ctx, cmd_get_terminal_size);
+	z_shell_raw_fprintf(shell->fprintf_ctx, cmd_get_terminal_size);
 
 	/* fprintf buffer needs to be flushed to start sending prepared
 	 * escape code to the terminal.
 	 */
-	transport_buffer_flush(shell);
+	z_transport_buffer_flush(shell);
 
 	/* timeout for terminal response = ~1s */
-	for (u16_t i = 0; i < 1000; i++) {
+	for (uint16_t i = 0; i < 1000; i++) {
 		do {
 			(void)shell->iface->api->read(shell->iface, &c,
 						      sizeof(c), &cnt);
@@ -164,17 +169,17 @@ static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
 /* Function gets terminal width and height. */
 static int terminal_size_get(const struct shell *shell)
 {
-	u16_t x; /* horizontal position */
-	u16_t y; /* vertical position */
+	uint16_t x; /* horizontal position */
+	uint16_t y; /* vertical position */
 	int ret_val = 0;
 
-	cursor_save(shell);
+	z_cursor_save(shell);
 
 	/* Assumption: terminal width and height < 999. */
 	/* Move to last column. */
-	shell_op_cursor_vert_move(shell, -SHELL_MAX_TERMINAL_SIZE);
+	z_shell_op_cursor_vert_move(shell, -SHELL_MAX_TERMINAL_SIZE);
 	/* Move to last row. */
-	shell_op_cursor_horiz_move(shell, SHELL_MAX_TERMINAL_SIZE);
+	z_shell_op_cursor_horiz_move(shell, SHELL_MAX_TERMINAL_SIZE);
 
 	if (cursor_position_get(shell, &x, &y) == 0) {
 		shell->ctx->vt100_ctx.cons.terminal_wid = x;
@@ -183,7 +188,7 @@ static int terminal_size_get(const struct shell *shell)
 		ret_val = -ENOTSUP;
 	}
 
-	cursor_restore(shell);
+	z_cursor_restore(shell);
 	return ret_val;
 }
 
@@ -191,8 +196,8 @@ static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
-	SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
+	Z_SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
+	Z_SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
 
 	return 0;
 }
@@ -203,7 +208,7 @@ static int cmd_bacskpace_mode_backspace(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_mode_delete_set(shell, false);
+	z_flag_mode_delete_set(shell, false);
 
 	return 0;
 }
@@ -214,7 +219,7 @@ static int cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_mode_delete_set(shell, true);
+	z_flag_mode_delete_set(shell, true);
 
 	return 0;
 }
@@ -224,7 +229,7 @@ static int cmd_colors_off(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_use_colors_set(shell, false);
+	z_flag_use_colors_set(shell, false);
 
 	return 0;
 }
@@ -234,7 +239,7 @@ static int cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argv);
 
-	flag_use_colors_set(shell, true);
+	z_flag_use_colors_set(shell, true);
 
 	return 0;
 }
@@ -244,7 +249,7 @@ static int cmd_echo_off(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_echo_set(shell, false);
+	z_flag_echo_set(shell, false);
 
 	return 0;
 }
@@ -254,7 +259,7 @@ static int cmd_echo_on(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	flag_echo_set(shell, true);
+	z_flag_echo_set(shell, true);
 
 	return 0;
 }
@@ -268,29 +273,7 @@ static int cmd_echo(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_print(shell, "Echo status: %s",
-		    flag_echo_get(shell) ? "on" : "off");
-
-	return 0;
-}
-
-static int cmd_help(const struct shell *shell, size_t argc, char **argv)
-{
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	shell_print(shell,
-		"Please press the <Tab> button to see all available commands.\n"
-		"You can also use the <Tab> button to prompt or auto-complete"
-		" all commands or its subcommands.\n"
-		"You can try to call commands with <-h> or <--help> parameter"
-		" for more information.");
-#if defined(CONFIG_SHELL_METAKEYS)
-	shell_print(shell,
-		"Shell supports following meta-keys:\n"
-		"Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e, Ctrl+f, Ctrl+k,"
-		" Ctrl+l, Ctrl+n, Ctrl+p, Ctrl+u, Ctrl+w\nAlt+b, Alt+f.\n"
-		"Please refer to shell documentation for more details.");
-#endif
+		    z_flag_echo_get(shell) ? "on" : "off");
 
 	return 0;
 }
@@ -301,11 +284,11 @@ static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 
 	size_t i = 0;
-	u16_t len;
+	uint16_t len;
 
 	while (1) {
-		shell_history_get(shell->history, true,
-				  shell->ctx->temp_buff, &len);
+		z_shell_history_get(shell->history, true,
+				    shell->ctx->temp_buff, &len);
 
 		if (len) {
 			shell_print(shell, "[%3d] %s",
@@ -349,8 +332,8 @@ static int cmd_resize_default(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	SHELL_VT100_CMD(shell, SHELL_VT100_SETCOL_80);
-	shell->ctx->vt100_ctx.cons.terminal_wid =  SHELL_DEFAULT_TERMINAL_WIDTH;
+	Z_SHELL_VT100_CMD(shell, SHELL_VT100_SETCOL_80);
+	shell->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
 
 	return 0;
@@ -369,15 +352,20 @@ static int cmd_resize(const struct shell *shell, size_t argc, char **argv)
 	err = terminal_size_get(shell);
 	if (err != 0) {
 		shell->ctx->vt100_ctx.cons.terminal_wid =
-				SHELL_DEFAULT_TERMINAL_WIDTH;
+				CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
 		shell->ctx->vt100_ctx.cons.terminal_hei =
-				SHELL_DEFAULT_TERMINAL_HEIGHT;
+				CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
 		shell_warn(shell, "No response from the terminal, assumed 80x24"
 			   " screen size");
 		return -ENOEXEC;
 	}
 
 	return 0;
+}
+
+static bool no_args(const struct shell_static_entry *entry)
+{
+	return (entry->args.mandatory == 1) && (entry->args.optional == 0);
 }
 
 static int cmd_select(const struct shell *shell, size_t argc, char **argv)
@@ -388,10 +376,12 @@ static int cmd_select(const struct shell *shell, size_t argc, char **argv)
 
 	argc--;
 	argv = argv + 1;
-	candidate = shell_get_last_command(shell, argc, argv, &matching_argc,
-					   &entry, true);
+	candidate = z_shell_get_last_command(shell->ctx->selected_cmd,
+					     argc, (const char **)argv,
+					     &matching_argc, &entry, true);
 
-	if ((candidate != NULL) && (argc == matching_argc)) {
+	if ((candidate != NULL) && !no_args(candidate)
+	    && (argc == matching_argc)) {
 		shell->ctx->selected_cmd = candidate;
 		return 0;
 	}
@@ -447,10 +437,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_resize,
 
 SHELL_CMD_ARG_REGISTER(clear, NULL, SHELL_HELP_CLEAR, cmd_clear, 1, 0);
 SHELL_CMD_REGISTER(shell, &m_sub_shell, SHELL_HELP_SHELL, NULL);
-SHELL_CMD_ARG_REGISTER(help, NULL, SHELL_HELP_HELP, cmd_help, 1, 255);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_HISTORY, history, NULL,
 			SHELL_HELP_HISTORY, cmd_history, 1, 0);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_RESIZE, resize, &m_sub_resize,
 			SHELL_HELP_RESIZE, cmd_resize, 1, 1);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_SELECT, select, NULL,
-			    SHELL_HELP_SELECT, cmd_select, 2, 255);
+			    SHELL_HELP_SELECT, cmd_select, 2,
+			    SHELL_OPT_ARG_CHECK_SKIP);

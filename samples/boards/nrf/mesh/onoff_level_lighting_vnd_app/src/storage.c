@@ -9,8 +9,8 @@
 #include "device_composition.h"
 #include "storage.h"
 
-static u8_t storage_id;
-u8_t reset_counter;
+static uint8_t storage_id;
+uint8_t reset_counter;
 
 static void save_reset_counter(void)
 {
@@ -59,7 +59,7 @@ static void save_last_target_states(void)
 
 static void save_lightness_range(void)
 {
-	ctl->light->range = (u32_t) ((ctl->light->range_max << 16) |
+	ctl->light->range = (uint32_t) ((ctl->light->range_max << 16) |
 				     ctl->light->range_min);
 
 	settings_save_one("ps/lr", &ctl->light->range,
@@ -68,7 +68,7 @@ static void save_lightness_range(void)
 
 static void save_temperature_range(void)
 {
-	ctl->temp->range = (u32_t) ((ctl->temp->range_max << 16) |
+	ctl->temp->range = (uint32_t) ((ctl->temp->range_max << 16) |
 				    ctl->temp->range_min);
 
 	settings_save_one("ps/tr", &ctl->temp->range, sizeof(ctl->temp->range));
@@ -106,7 +106,7 @@ static void storage_work_handler(struct k_work *work)
 
 K_WORK_DEFINE(storage_work, storage_work_handler);
 
-void save_on_flash(u8_t id)
+void save_on_flash(uint8_t id)
 {
 	storage_id = id;
 	k_work_submit(&storage_work);

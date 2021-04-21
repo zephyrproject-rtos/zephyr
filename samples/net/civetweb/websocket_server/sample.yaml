@@ -1,0 +1,6 @@
+sample:
+  description: Civetweb WebSocket Server sample
+  name: websocket_server
+tests:
+  sample.net.civetweb.websocket_server:
+    platform_allow: nucleo_h745zi_q_m7

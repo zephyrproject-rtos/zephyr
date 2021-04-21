@@ -1,5 +1,5 @@
 identifier: stm32f072_eval
-name: STM32F072-EVAL
+name: ST STM32F072 Evaluation
 type: mcu
 arch: arm
 toolchain:

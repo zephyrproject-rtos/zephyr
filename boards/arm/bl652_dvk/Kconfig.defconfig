@@ -8,28 +8,6 @@ if BOARD_BL652_DVK
 config BOARD
 	default "bl652_dvk"
 
-config ADC_0
-	default y
-	depends on ADC
-
-config I2C_0
-	default y
-	depends on I2C
-
-config PWM_0
-	default y
-	depends on PWM
-
-if SPI
-
-config SPI_0
-	default y
-
-config SPI_1
-	default y
-
-endif # SPI
-
 config BT_CTLR
 	default BT
 

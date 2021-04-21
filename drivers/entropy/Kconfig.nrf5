@@ -67,13 +67,4 @@ config ENTROPY_NRF5_ISR_THRESHOLD
 	  buffer goes below this number hardware entropy generation will be
 	  started.
 
-config ENTROPY_NRF5_PRI
-	int "RNG interrupt priority"
-	range 0 2 if SOC_SERIES_NRF51X
-	range 0 5 if SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
-	default 2 if SOC_SERIES_NRF51X
-	default 5 if SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
-	help
-	  nRF5X RNG IRQ priority.
-
 endif # ENTROPY_NRF5_RNG

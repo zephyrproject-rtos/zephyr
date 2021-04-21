@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(net_gptp_sample, LOG_LEVEL_DBG);
 #include <net/ethernet.h>
 #include <net/gptp.h>
 
+extern void init_testing(void);
+
 static struct gptp_phase_dis_cb phase_dis;
 
 #if defined(CONFIG_NET_GPTP_VLAN)
@@ -51,7 +53,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 }
 
 static int setup_iface(struct net_if *iface, const char *ipv6_addr,
-		       const char *ipv4_addr, u16_t vlan_tag)
+		       const char *ipv4_addr, uint16_t vlan_tag)
 {
 	struct net_if_addr *ifaddr;
 	struct in_addr addr4;
@@ -75,7 +77,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 	}
 
 	if (net_addr_pton(AF_INET, ipv4_addr, &addr4)) {
-		LOG_ERR("Invalid address: %s", ipv6_addr);
+		LOG_ERR("Invalid address: %s", ipv4_addr);
 		return -EINVAL;
 	}
 
@@ -123,18 +125,18 @@ static int init_vlan(void)
 }
 #endif /* CONFIG_NET_GPTP_VLAN */
 
-static void gptp_phase_dis_cb(u8_t *gm_identity,
-			      u16_t *time_base,
+static void gptp_phase_dis_cb(uint8_t *gm_identity,
+			      uint16_t *time_base,
 			      struct gptp_scaled_ns *last_gm_ph_change,
 			      double *last_gm_freq_change)
 {
 	char output[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
-	static u8_t id[8];
+	static uint8_t id[8];
 
 	if (memcmp(id, gm_identity, sizeof(id))) {
 		memcpy(id, gm_identity, sizeof(id));
 
-		LOG_DBG("GM %s last phase %d.%lld",
+		LOG_DBG("GM %s last phase %d.%" PRId64 "",
 			log_strdup(gptp_sprint_clock_id(gm_identity, output,
 							sizeof(output))),
 			last_gm_ph_change->high,
@@ -158,4 +160,6 @@ static int init_app(void)
 void main(void)
 {
 	init_app();
+
+	init_testing();
 }

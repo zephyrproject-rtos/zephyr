@@ -22,18 +22,12 @@
 /* ARC EM Core IRQs */
 #define IRQ_TIMER0				16
 
-#ifndef _ASMLANGUAGE
+#define IRQ_SEC_TIMER0			20
 
+#ifndef _ASMLANGUAGE
 
 #include <sys/util.h>
 #include <random/rand32.h>
-
-/*
- * UARTs: UART0 & UART1 & UART2
- */
-#define DT_UART_NS16550_PORT_0_IRQ_FLAGS	0 /* Default */
-
-
 
 #endif /* !_ASMLANGUAGE */
 

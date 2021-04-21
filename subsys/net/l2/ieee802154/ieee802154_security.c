@@ -14,13 +14,13 @@ LOG_MODULE_REGISTER(net_ieee802154_security,
 #include "ieee802154_frame.h"
 #include "ieee802154_security.h"
 
-extern const u8_t level_2_tag_size[4];
+extern const uint8_t level_2_tag_size[4];
 
 int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
-				      u8_t level, u8_t key_mode,
-				      u8_t *key, u8_t key_len)
+				      uint8_t level, uint8_t key_mode,
+				      uint8_t *key, uint8_t key_len)
 {
-	u8_t tag_size;
+	uint8_t tag_size;
 	int ret;
 
 	if (level > IEEE802154_SECURITY_LEVEL_ENC_MIC_128 ||
@@ -83,15 +83,15 @@ int ieee802154_security_setup_session(struct ieee802154_security_ctx *sec_ctx,
 }
 
 bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx,
-			     u8_t *frame,
-			     u8_t auth_payload_len,
-			     u8_t decrypt_payload_len,
-			     u8_t *src_ext_addr,
-			     u32_t frame_counter)
+			     uint8_t *frame,
+			     uint8_t auth_payload_len,
+			     uint8_t decrypt_payload_len,
+			     uint8_t *src_ext_addr,
+			     uint32_t frame_counter)
 {
 	struct cipher_aead_pkt apkt;
 	struct cipher_pkt pkt;
-	u8_t nonce[13];
+	uint8_t nonce[13];
 	int ret;
 
 	if (!sec_ctx || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
@@ -100,10 +100,10 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 
 	/* See Section 7.3.2 */
 	memcpy(nonce, src_ext_addr, IEEE802154_EXT_ADDR_LENGTH);
-	nonce[8] = (u8_t)(frame_counter >> 24);
-	nonce[9] = (u8_t)(frame_counter >> 16);
-	nonce[10] = (u8_t)(frame_counter >> 8);
-	nonce[11] = (u8_t)frame_counter;
+	nonce[8] = (uint8_t)(frame_counter >> 24);
+	nonce[9] = (uint8_t)(frame_counter >> 16);
+	nonce[10] = (uint8_t)(frame_counter >> 8);
+	nonce[11] = (uint8_t)frame_counter;
 	nonce[12] = sec_ctx->level;
 
 	pkt.in_buf = decrypt_payload_len ? frame + auth_payload_len : NULL;
@@ -129,14 +129,14 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 }
 
 bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
-			     u8_t *frame,
-			     u8_t auth_payload_len,
-			     u8_t encrypt_payload_len,
-			     u8_t *src_ext_addr)
+			     uint8_t *frame,
+			     uint8_t auth_payload_len,
+			     uint8_t encrypt_payload_len,
+			     uint8_t *src_ext_addr)
 {
 	struct cipher_aead_pkt apkt;
 	struct cipher_pkt pkt;
-	u8_t nonce[13];
+	uint8_t nonce[13];
 	int ret;
 
 	if (!sec_ctx || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
@@ -173,7 +173,7 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 
 int ieee802154_security_init(struct ieee802154_security_ctx *sec_ctx)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	(void)memset(&sec_ctx->enc, 0, sizeof(struct cipher_ctx));
 	(void)memset(&sec_ctx->dec, 0, sizeof(struct cipher_ctx));

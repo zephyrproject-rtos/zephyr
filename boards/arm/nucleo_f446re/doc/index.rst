@@ -73,21 +73,25 @@ Supported Features
 
 The Zephyr nucleo_f446re board configuration supports the following hardware features:
 
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| PWM       | on-chip    | pwm                                 |
-+-----------+------------+-------------------------------------+
-| I2C       | on-chip    | i2c                                 |
-+-----------+------------+-------------------------------------+
++-------------+------------+-------------------------------------+
+| Interface   | Controller | Driver/Component                    |
++=============+============+=====================================+
+| NVIC        | on-chip    | nested vector interrupt controller  |
++-------------+------------+-------------------------------------+
+| UART        | on-chip    | serial port                         |
++-------------+------------+-------------------------------------+
+| PINMUX      | on-chip    | pinmux                              |
++-------------+------------+-------------------------------------+
+| GPIO        | on-chip    | gpio                                |
++-------------+------------+-------------------------------------+
+| PWM         | on-chip    | pwm                                 |
++-------------+------------+-------------------------------------+
+| I2C         | on-chip    | i2c                                 |
++-------------+------------+-------------------------------------+
+| Backup SRAM | on-chip    | Backup SRAM                         |
++-------------+------------+-------------------------------------+
+| CAN 1/2     | on-chip    | Controller Area Network             |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -133,14 +137,14 @@ Default Zephyr Peripheral Mapping:
 - UART_1_RX : PB7
 - UART_2_TX : PA2
 - UART_2_RX : PA3
-- USER_PB : PC13
-- LD2 : PA5
-- I2C1_SDA : PB9
-- I2C1_SCL : PB8
-- I2C2_SDA : PB3
-- I2C2_SCL : PB10
-- I2C3_SDA : PB4
-- I2C3_SCL : PA8
+- USER_PB   : PC13
+- LD2       : PA5
+- I2C1_SDA  : PB9
+- I2C1_SCL  : PB8
+- I2C2_SDA  : PB3
+- I2C2_SCL  : PB10
+- I2C3_SDA  : PB4
+- I2C3_SCL  : PA8
 
 System Clock
 ------------
@@ -155,6 +159,17 @@ Serial Port
 Nucleo F446RE board has 2 UARTs and 4 USARTs. The Zephyr console output is assigned to UART2.
 Default settings are 115200 8N1.
 
+Backup SRAM
+-----------
+
+In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
+do it by removing ``SB45`` jumper on the back side of the board.
+
+Controller Area Network
+-----------------------
+
+The TX/RX wires connected with D14/D15 of CN5 connector. Thus the board can be
+used with `RS485 CAN Shield`_.
 
 Programming and Debugging
 *************************
@@ -216,3 +231,6 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F446 reference manual:
    http://www.st.com/resource/en/reference_manual/dm00135183.pdf
+
+.. _RS485 CAN Shield:
+   https://www.waveshare.com/wiki/RS485_CAN_Shield

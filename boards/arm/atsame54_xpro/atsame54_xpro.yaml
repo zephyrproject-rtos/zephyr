@@ -12,6 +12,8 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - pwm
   - spi
   - i2c
   - usb_device
+  - netif:eth

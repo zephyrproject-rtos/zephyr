@@ -12,7 +12,17 @@ menuconfig I2C_DW
 	help
 	  Enable the Design Ware I2C driver
 
+if I2C_DW
+
 config I2C_DW_CLOCK_SPEED
 	int "Set the clock speed for I2C"
 	default 32
-	depends on I2C_DW
+
+config I2C_DW_MAX_INSTANCES
+	int "Maximum number of supported driver instances"
+	range 1 32
+	default 12
+	help
+	  The maximum number of supported driver instances in device tree.
+
+endif # I2C_DW

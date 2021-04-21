@@ -3,4 +3,4 @@ common:
   tags: bluetooth
 tests:
   bluetooth.ctrl_user_ext.test:
-    platform_whitelist: nrf52_bsim
+    platform_allow: nrf52_bsim

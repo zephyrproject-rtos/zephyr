@@ -6,10 +6,11 @@
 
 /dts-v1/;
 #include <st/f7/stm32f769Xi.dtsi>
+#include <st/f7/stm32f769nihx-pinctrl.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F769I DISCOVERY board";
-	compatible = "st,stm32f769I-disco", "st,stm32f769";
+	compatible = "st,stm32f769I-disco";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -17,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
+		zephyr,flash-controller = &mx25l51245g;
 	};
 
 	leds {
@@ -61,20 +63,77 @@ arduino_spi: &spi2 {};
 arduino_serial: &usart6 {};
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &usart6 {
+	pinctrl-0 = <&usart6_tx_pc6 &usart6_rx_pc7>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi2 {
+	pinctrl-0 = <&spi2_sck_pa12 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pg14>;
+};
+
+&sdmmc2 {
+	status = "okay";
+	pinctrl-0 = <&sdmmc2_d0_pg9 &sdmmc2_d1_pg10
+		     &sdmmc2_d2_pb3 &sdmmc2_d3_pb4
+		     &sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
+	cd-gpios = <&gpioi 15 GPIO_ACTIVE_LOW>;
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
+		     &quadspi_bk1_io0_pc9 &quadspi_bk1_io1_pc10
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	status = "okay";
+
+	mx25l51245g: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		label = "MX25L51245G";
+		reg = <0>;
+		qspi-max-frequency = <72000000>;
+		size = <DT_SIZE_M(64*8)>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot1_partition: partition@0 {
+				label = "image-1";
+				reg = <0x00000000 0x001a0000>;
+				};
+
+			storage_partition: partition@1a0000 {
+				label = "storage";
+				reg = <0x001a0000 DT_SIZE_M(62)>;
+			};
+		};
+	};
 };

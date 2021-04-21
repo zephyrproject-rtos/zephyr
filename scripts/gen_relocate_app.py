@@ -60,7 +60,7 @@ LOAD_ADDRESS_LOCATION_BSS = "GROUP_LINK_IN({0})"
 
 MPU_RO_REGION_START = """
 
-     _{0}_mpu_ro_region_start = {1}_ADDR;
+     _{0}_mpu_ro_region_start = ORIGIN({1});
 
 """
 
@@ -135,13 +135,13 @@ void bss_zeroing_relocation(void)
 
 MEMCPY_TEMPLATE = """
 	(void)memcpy(&__{0}_{1}_start, &__{0}_{1}_rom_start,
-		     (u32_t) &__{0}_{1}_size);
+		     (uint32_t) &__{0}_{1}_size);
 
 """
 
 MEMSET_TEMPLATE = """
  	(void)memset(&__{0}_bss_start, 0,
-		     (u32_t) &__{0}_bss_size);
+		     (uint32_t) &__{0}_bss_size);
 """
 
 
@@ -395,7 +395,7 @@ def create_dict_wrt_mem():
     if args.input_rel_dict == '':
         sys.exit("Disable CONFIG_CODE_DATA_RELOCATION if no file needs relocation")
     for line in args.input_rel_dict.split(';'):
-        mem_region, file_name = line.split(':')
+        mem_region, file_name = line.split(':', 1)
 
         file_name_list = glob.glob(file_name)
         if not file_name_list:

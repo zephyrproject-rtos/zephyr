@@ -36,8 +36,8 @@ defined:
 .. code-block:: c
 
    /* Buffers for MQTT client. */
-   static u8_t rx_buffer[256];
-   static u8_t tx_buffer[256];
+   static uint8_t rx_buffer[256];
+   static uint8_t tx_buffer[256];
 
    /* MQTT client context */
    static struct mqtt_client client_ctx;
@@ -77,7 +77,7 @@ used. An example configuration for TCP transport is shown below:
    /* MQTT client configuration */
    client_ctx.broker = &broker;
    client_ctx.evt_cb = mqtt_evt_handler;
-   client_ctx.client_id.utf8 = (u8_t *)"zephyr_mqtt_client";
+   client_ctx.client_id.utf8 = (uint8_t *)"zephyr_mqtt_client";
    client_ctx.client_id.size = sizeof("zephyr_mqtt_client") - 1;
    client_ctx.password = NULL;
    client_ctx.user_name = NULL;

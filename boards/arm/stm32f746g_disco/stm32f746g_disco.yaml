@@ -1,5 +1,5 @@
 identifier: stm32f746g_disco
-name: STM32F746GDISCOVERY
+name: ST STM32F746G Discovery
 type: mcu
 arch: arm
 toolchain:
@@ -16,4 +16,6 @@ supported:
   - gpio
   - pwm
   - counter
+  - sdhc
   - usb_device
+  - kscan:touch

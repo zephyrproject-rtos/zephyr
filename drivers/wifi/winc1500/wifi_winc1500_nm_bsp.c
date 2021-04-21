@@ -15,7 +15,7 @@ struct winc1500_device winc1500;
 
 void (*isr_function)(void);
 
-static inline void chip_isr(struct device *port,
+static inline void chip_isr(const struct device *port,
 			    struct gpio_callback *cb,
 			    gpio_port_pins_t pins)
 {
@@ -24,7 +24,7 @@ static inline void chip_isr(struct device *port,
 	}
 }
 
-s8_t nm_bsp_init(void)
+int8_t nm_bsp_init(void)
 {
 	isr_function = NULL;
 
@@ -34,7 +34,7 @@ s8_t nm_bsp_init(void)
 	return 0;
 }
 
-s8_t nm_bsp_deinit(void)
+int8_t nm_bsp_deinit(void)
 {
 	/* TODO */
 	return 0;
@@ -74,7 +74,7 @@ void nm_bsp_register_isr(void (*isr_fun)(void))
 			  &winc1500.gpio_cb);
 }
 
-void nm_bsp_interrupt_ctrl(u8_t enable)
+void nm_bsp_interrupt_ctrl(uint8_t enable)
 {
 	gpio_pin_interrupt_configure(
 		winc1500.gpios[WINC1500_GPIO_IDX_IRQN].dev,

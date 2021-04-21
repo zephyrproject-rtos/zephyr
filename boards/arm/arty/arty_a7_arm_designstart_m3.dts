@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/armv7-m.dtsi>
+#include "arty_a7_arm_designstart.dtsi"
+
+/ {
+	model = "Digilent Arty A7 ARM DesignStart Cortex-M3";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m3";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+				arm,num-mpu-regions = <8>;
+			};
+		};
+	};
+
+	soc {
+		itcm: memory@0 {
+			compatible = "arm,itcm";
+			reg = <0x00000000 DT_SIZE_K(32)>;
+		};
+
+		dtcm: memory@20000000 {
+			compatible = "arm,dtcm";
+			reg = <0x20000000 DT_SIZE_K(32)>;
+		};
+
+		bram0: memory@60000000 {
+			compatible = "mmio-sram";
+			reg = <0x60000000 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

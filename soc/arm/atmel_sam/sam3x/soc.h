@@ -17,6 +17,9 @@
 
 #ifndef _ASMLANGUAGE
 
+/* Add include for DTS generated information */
+#include <devicetree.h>
+
 #define DONT_USE_CMSIS_INIT
 #define DONT_USE_PREDEFINED_CORE_HANDLERS
 #define DONT_USE_PREDEFINED_PERIPHERALS_HANDLERS
@@ -35,22 +38,16 @@
 #error Library does not support the specified device.
 #endif
 
-/* Add include for DTS generated information */
-#include <devicetree.h>
-
-#define ID_UART0   ID_UART
-#define UART0      UART
-
-#include "soc_pinmap.h"
-
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
-
-#endif /* _ASMLANGUAGE */
+#include "../common/atmel_sam_dt.h"
 
 /** Processor Clock (HCLK) Frequency */
-#define SOC_ATMEL_SAM_HCLK_FREQ_HZ DT_ARM_CORTEX_M4_0_CLOCK_FREQUENCY
+#define SOC_ATMEL_SAM_HCLK_FREQ_HZ ATMEL_SAM_DT_CPU_CLK_FREQ_HZ
+
 /** Master Clock (MCK) Frequency */
 #define SOC_ATMEL_SAM_MCK_FREQ_HZ SOC_ATMEL_SAM_HCLK_FREQ_HZ
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* _ATMEL_SAM3X_SOC_H_ */

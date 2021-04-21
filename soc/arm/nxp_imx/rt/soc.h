@@ -20,14 +20,15 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_DISK_ACCESS_USDHC1) ||	\
-	defined(CONFIG_DISK_ACCESS_USDHC2)
+#if CONFIG_DISK_DRIVER_SDMMC &&					\
+	(DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) ||	\
+	 DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay))
 
-typedef void (*usdhc_pin_cfg_cb)(u16_t nusdhc, bool init,
-	u32_t speed, u32_t strength);
+typedef void (*usdhc_pin_cfg_cb)(uint16_t nusdhc, bool init,
+	uint32_t speed, uint32_t strength);
 
-void imxrt_usdhc_pinmux(u16_t nusdhc,
-	bool init, u32_t speed, u32_t strength);
+void imxrt_usdhc_pinmux(uint16_t nusdhc,
+	bool init, uint32_t speed, uint32_t strength);
 
 void imxrt_usdhc_pinmux_cb_register(usdhc_pin_cfg_cb cb);
 

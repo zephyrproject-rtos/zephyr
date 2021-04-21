@@ -18,23 +18,41 @@ config CPU_ATOM
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_CPU_HAS_SSE3
 	help
 	  This option signifies the use of a CPU from the Atom family.
-
-config CPU_MINUTEIA
-	bool
-	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU
-	help
-	  This option signifies the use of a CPU from the Minute IA family.
 
 config CPU_APOLLO_LAKE
 	bool
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU
+	select X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_CPU_HAS_SSE3
+	select X86_CPU_HAS_SSSE3
+	select X86_CPU_HAS_SSE41
+	select X86_CPU_HAS_SSE42
 	help
 	  This option signifies the use of a CPU from the Apollo Lake family.
+
+config CPU_LAKEMONT
+	bool
+	select CPU_HAS_FPU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_CPU_HAS_SSE3
+	select X86_CPU_HAS_SSSE3
+	help
+	  This option signifies the use of a CPU from the Lakemont family.
 
 #
 # Configuration common to both IA32 and Intel64 sub-architectures.
@@ -46,6 +64,131 @@ config X86_64
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select SCHED_IPI_SUPPORTED
+	select X86_MMU
+	select X86_CPU_HAS_MMX
+	select X86_CPU_HAS_SSE
+	select X86_CPU_HAS_SSE2
+	select X86_MMX
+	select X86_SSE
+	select X86_SSE2
+
+menu "x86 Features"
+
+config X86_CPU_HAS_MMX
+	bool
+
+config X86_CPU_HAS_SSE
+	bool
+
+config X86_CPU_HAS_SSE2
+	bool
+
+config X86_CPU_HAS_SSE3
+	bool
+
+config X86_CPU_HAS_SSSE3
+	bool
+
+config X86_CPU_HAS_SSE41
+	bool
+
+config X86_CPU_HAS_SSE42
+	bool
+
+config X86_CPU_HAS_SSE4A
+	bool
+
+if FPU || X86_64
+
+config X86_MMX
+	bool "Enable MMX Support"
+	depends on X86_CPU_HAS_MMX
+	help
+	  This option enables MMX support, and the use of MMX registers
+	  by threads.
+
+config X86_SSE
+	bool "Enable SSE Support"
+	depends on X86_CPU_HAS_SSE
+	help
+	  This option enables SSE support, and the use of SSE registers
+	  by threads.
+
+config X86_SSE2
+	bool "Enable SSE2 Support"
+	depends on X86_CPU_HAS_SSE2
+	select X86_SSE
+	help
+	  This option enables SSE2 support.
+
+config X86_SSE3
+	bool "Enable SSE3 Support"
+	depends on X86_CPU_HAS_SSE3
+	select X86_SSE
+	help
+	  This option enables SSE3 support.
+
+config X86_SSSE3
+	bool "Enable SSSE3 (Supplemental SSE3) Support"
+	depends on X86_CPU_HAS_SSSE3
+	select X86_SSE
+	help
+	  This option enables Supplemental SSE3 support.
+
+config X86_SSE41
+	bool "Enable SSE4.1 Support"
+	depends on X86_CPU_HAS_SSE41
+	select X86_SSE
+	help
+	  This option enables SSE4.1 support.
+
+config X86_SSE42
+	bool "Enable SSE4.2 Support"
+	depends on X86_CPU_HAS_SSE42
+	select X86_SSE
+	help
+	  This option enables SSE4.2 support.
+
+config X86_SSE4A
+	bool "Enable SSE4A Support"
+	depends on X86_CPU_HAS_SSE4A
+	select X86_SSE
+	help
+	  This option enables SSE4A support.
+
+config X86_SSE_FP_MATH
+	bool "Compiler-generated SSEx instructions for floating point math"
+	depends on X86_SSE
+	help
+	  This option allows the compiler to generate SSEx instructions for
+	  performing floating point math. This can greatly improve performance
+	  when exactly the same operations are to be performed on multiple
+	  data objects; however, it can also significantly reduce performance
+	  when preemptive task switches occur because of the larger register
+	  set that must be saved and restored.
+
+	  Disabling this option means that the compiler utilizes only the
+	  x87 instruction set for floating point operations.
+
+endif # FPU || X86_64
+
+endmenu
+
+config SRAM_OFFSET
+	default 0x100000 if X86_PC_COMPATIBLE
+	help
+	  A lot of x86 that resemble PCs have many reserved physical memory
+	  regions within the first megabyte. Specify an offset from the
+	  beginning of RAM to load the kernel in physical memory, avoiding these
+	  regions.
+
+	  Note that this does not include the "locore" which contains real mode
+	  bootstrap code within the first 64K of physical memory.
+
+	  This value normally need to be page-aligned.
+
+config KERNEL_VM_OFFSET
+	default 0x100000 if MMU
 
 config MAX_IRQ_LINES
 	int "Number of IRQ lines"
@@ -61,9 +204,6 @@ config IRQ_OFFLOAD_VECTOR
 	default 33
 	range 32 255
 	depends on IRQ_OFFLOAD
-
-config XIP
-	default n
 
 config PIC_DISABLE
 	bool "Disable PIC"
@@ -83,11 +223,44 @@ endchoice
 
 config ACPI
 	bool "ACPI (Advanced Configuration and Power Interface) support"
+	depends on X86_PC_COMPATIBLE
+	select ARCH_MAPS_ALL_RAM
 	help
 	  Allow retrieval of platform configuration at runtime.
 
+config PCIE_MMIO_CFG
+	bool "Use MMIO PCI configuration space access"
+	select ACPI
+	help
+	  Selects the use of the memory-mapped PCI Express Extended
+	  Configuration Space instead of the traditional 0xCF8/0xCFC
+	  IO Port registers.
+
+config KERNEL_VM_SIZE
+	default 0xC0000000 if ACPI
+
+config X86_PC_COMPATIBLE
+	bool
+	default y
+	select ARCH_HAS_RESERVED_PAGE_FRAMES
+	select HAS_SRAM_OFFSET
+	help
+	  Hidden option to signal building for PC-compatible platforms
+	  with BIOS, ACPI, etc.
+
+config X86_MEMMAP
+	bool "Use memory map"
+	select ARCH_HAS_RESERVED_PAGE_FRAMES
+	help
+	  Enable the use of memory map to identify regions of memory.
+
+	  The memory map can be populated via Multiboot
+	  (CONFIG_MULTIBOOT=y and CONFIG_MULTIBOOT_MEMMAP=y) or
+	  can be manually defined via x86_memmap[].
+
 config X86_MEMMAP_ENTRIES
 	int "Number of memory map entries"
+	depends on X86_MEMMAP
 	range 1 256
 	default 1 if !MULTIBOOT_MEMMAP
 	default 64 if MULTIBOOT_MEMMAP
@@ -96,6 +269,7 @@ config X86_MEMMAP_ENTRIES
 
 config MULTIBOOT
 	bool "Generate multiboot header"
+	depends on X86_PC_COMPATIBLE
 	default y
 	help
 	  Embed a multiboot header in the output executable. This is used
@@ -116,6 +290,7 @@ config MULTIBOOT_INFO
 config MULTIBOOT_MEMMAP
 	bool "Use multiboot memory map if provided"
 	select MULTIBOOT_INFO
+	select X86_MEMMAP
 	help
 	  Use the multiboot memory map if the loader provides one.
 
@@ -152,6 +327,7 @@ config EXCEPTION_DEBUG
 config X86_VERY_EARLY_CONSOLE
 	bool "Support very early boot printk"
 	depends on PRINTK
+	default y
 	help
 	  Non-emulated X86 devices often require special hardware to attach
 	  a debugger, which may not be easily available. This option adds a
@@ -162,20 +338,47 @@ config X86_VERY_EARLY_CONSOLE
 
 config X86_MMU
 	bool "Enable Memory Management Unit"
-	select MEMORY_PROTECTION
+	select MMU
 	help
 	  This options enables the memory management unit present in x86
 	  and creates a set of page tables at boot time that is runtime-
 	  mutable.
 
-config X86_MMU_PAGE_POOL_PAGES
-	int "Number of pages to reserve for building page tables"
-	default 16
+config X86_COMMON_PAGE_TABLE
+	bool "Use a single page table for all threads"
+	default n
+	depends on USERSPACE
+	depends on !SMP
+	depends on !X86_KPTI
+	help
+	  If this option is enabled, userspace memory domains will not have their
+	  own page tables. Instead, context switching operations will modify
+	  page tables in place. This is much slower, but uses much less RAM
+	  for page tables.
+
+config X86_MAX_ADDITIONAL_MEM_DOMAINS
+	int "Maximum number of memory domains"
+	default 3
+	depends on X86_MMU && USERSPACE && !X86_COMMON_PAGE_TABLE
+	help
+	  The initial page tables at boot are pre-allocated, and used for the
+	  default memory domain. Instantiation of additional memory domains
+	  if common page tables are in use requires a pool of free pinned
+	  memory pages for constructing page tables.
+
+	  Zephyr test cases assume 3 additional domains can be instantiated.
+
+config X86_EXTRA_PAGE_TABLE_PAGES
+	int "Reserve extra pages in page table"
+	default 0
 	depends on X86_MMU
 	help
-	  Building page tables at boot requires a pool of free memory pages
-	  to construct it. This can't be derived at build time, tune this
-	  to your SoC's specific memory map.
+	  The whole page table is pre-allocated at build time and is
+	  dependent on the range of address space. This allows reserving
+	  extra pages (of size CONFIG_MMU_PAGE_SIZE) to the page table
+	  so that gen_mmu.py can make use of these extra pages.
+
+	  Says 0 unless absolutely sure that this is necessary.
 
 config X86_NO_MELTDOWN
 	bool

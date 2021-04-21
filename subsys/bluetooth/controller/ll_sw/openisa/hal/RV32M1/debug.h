@@ -31,9 +31,9 @@
 
 #include <drivers/gpio.h>
 
-extern struct device *vega_debug_portb;
-extern struct device *vega_debug_portc;
-extern struct device *vega_debug_portd;
+extern const struct device *vega_debug_portb;
+extern const struct device *vega_debug_portc;
+extern const struct device *vega_debug_portd;
 
 #define DEBUG0_PIN       5
 #define DEBUG0_PORT		 vega_debug_portd
@@ -81,9 +81,9 @@ extern struct device *vega_debug_portd;
  */
 #define DEBUG_INIT() \
 	do { \
-		vega_debug_portb = device_get_binding(DT_ALIAS_GPIO_B_LABEL); \
-		vega_debug_portc = device_get_binding(DT_ALIAS_GPIO_C_LABEL); \
-		vega_debug_portd = device_get_binding(DT_ALIAS_GPIO_D_LABEL); \
+		vega_debug_portb = device_get_binding(DT_LABEL(DT_NODELABEL(gpiob))); \
+		vega_debug_portc = device_get_binding(DT_LABEL(DT_NODELABEL(gpioc))); \
+		vega_debug_portd = device_get_binding(DT_LABEL(DT_NODELABEL(gpiod))); \
 		\
 		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 1); \
 		gpio_pin_set(DEBUG0_PORT, DEBUG0_PIN, 0); \

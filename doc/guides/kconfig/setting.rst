@@ -30,7 +30,7 @@ between *visible* and *invisible* symbols.
 
   .. code-block:: none
 
-     config FLOAT
+     config FPU
      	bool "Support floating point operations"
      	depends on HAS_FPU
 
@@ -75,12 +75,12 @@ Assignments in configuration files use this syntax:
 There should be no spaces around the equals sign.
 
 ``bool`` symbols can be enabled or disabled by setting them to ``y`` or ``n``,
-respectively. The ``FLOAT`` symbol from the example above could be enabled like
+respectively. The ``FPU`` symbol from the example above could be enabled like
 this:
 
 .. code-block:: none
 
-   CONFIG_FLOAT=y
+   CONFIG_FPU=y
 
 .. note::
 
@@ -141,19 +141,30 @@ The application configuration can come from the sources below. By default,
    merged and used as the application configuration. ``CONF_FILE`` can be set
    in various ways:
 
-   1. In :file:`CMakeLists.txt`, before including :file:`boilerplate.cmake`
+   1. In :file:`CMakeLists.txt`, before calling ``find_package(Zephyr)``
 
    2. By passing ``-DCONF_FILE=<conf file(s)>``, either directly or via ``west``
 
    3. From the CMake variable cache
 
-2. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
+2. Otherwise if ``CONF_FILE`` is set, and a single configuration file of the
+   form :file:`prj_<build>.conf` is used, then if file
+   :file:`boards/<BOARD>_<build>.conf` exists in same folder as file
+   :file:`prj_<build>.conf`, the result of merging :file:`prj_<build>.conf` and
+   :file:`boards/<BOARD>_<build>.conf` is used.
+
+3. Otherwise, :file:`prj_<BOARD>.conf` is used if it exists in the application
    directory.
 
-3. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
+4. Otherwise, if :file:`boards/<BOARD>.conf` exists in the application
    directory, the result of merging it with :file:`prj.conf` is used.
 
-4. Otherwise, :file:`prj.conf` is used if it exists in the application
+5. Otherwise, if board revisions are used and
+   :file:`boards/<BOARD>_<revision>.conf` exists in the application
+   directory, the result of merging it with :file:`prj.conf` and
+   :file:`boards/<BOARD>.conf` is used.
+
+6. Otherwise, :file:`prj.conf` is used if it exists in the application
    directory
 
 If a symbol is assigned both in :file:`<BOARD>_defconfig` and in the
@@ -261,7 +272,7 @@ interfaces and make them harder to understand, and would make it easier to
 accidentally create broken configurations.
 
 When dealing with fixed board-specific settings, also consider whether they
-could be handled via :ref:`devicetree <device-tree>` instead.
+should be handled via :ref:`devicetree <dt-guide>` instead.
 
 
 Configuring choices

@@ -1,0 +1,22 @@
+# Copyright 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCUX Periodic Interrupt Timer (PIT)
+
+compatible: "nxp,kinetis-pit"
+
+include: [rtc.yaml]
+
+properties:
+    reg:
+      required: true
+
+    pit-channel:
+      type: int
+      required: true
+      description: pit channel to active
+
+    pit-period:
+      type: int
+      required: true
+      description: pit default period in us

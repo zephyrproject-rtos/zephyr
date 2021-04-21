@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 typedef enum net_verdict (*ppp_l2_callback_t)(struct net_if *iface,
 					      struct net_pkt *pkt);
 void ppp_l2_register_pkt_cb(ppp_l2_callback_t cb); /* found in ppp_l2.c */
-void ppp_driver_feed_data(u8_t *data, int data_len);
+void ppp_driver_feed_data(uint8_t *data, int data_len);
 
 static struct net_if *iface;
 
@@ -45,7 +45,7 @@ static struct k_sem wait_data;
 #define WAIT_TIME_LONG K_SECONDS(1)
 
 /* If we receive this wire format PPP data, */
-static u8_t ppp_recv_data1[] = {
+static uint8_t ppp_recv_data1[] = {
 	0x7e, 0xff, 0x7d, 0x23, 0xc0, 0x21, 0x7d, 0x21,
 	0x7d, 0x21, 0x7d, 0x20, 0x7d, 0x34, 0x7d, 0x22,
 	0x7d, 0x26, 0x7d, 0x20, 0x7d, 0x20, 0x7d, 0x20,
@@ -55,13 +55,13 @@ static u8_t ppp_recv_data1[] = {
 };
 
 /* then we should see this FCS checked PPP data */
-static u8_t ppp_expect_data1[] = {
+static uint8_t ppp_expect_data1[] = {
 	0xc0, 0x21, 0x01, 0x01, 0x00, 0x14, 0x02, 0x06,
 	0x00, 0x00, 0x00, 0x00, 0x05, 0x06, 0x5d, 0x58,
 	0xcf, 0x41, 0x07, 0x02, 0x08, 0x02,
 };
 
-static u8_t ppp_recv_data2[] = {
+static uint8_t ppp_recv_data2[] = {
 	0x7e, 0xff, 0x7d, 0x23, 0xc0, 0x21, 0x7d, 0x21,
 	0x7d, 0x21, 0x7d, 0x20, 0x7d, 0x34, 0x7d, 0x22,
 	0x7d, 0x26, 0x7d, 0x20, 0x7d, 0x20, 0x7d, 0x20,
@@ -74,28 +74,28 @@ static u8_t ppp_recv_data2[] = {
 };
 
 /* This is HDLC encoded PPP message */
-static u8_t ppp_recv_data3[] = {
+static uint8_t ppp_recv_data3[] = {
 	0x7e, 0xff, 0x7d, 0x23, 0xc0, 0x21, 0x7d, 0x22,
 	0x7d, 0x21, 0x7d, 0x20, 0x7d, 0x24, 0x1c, 0x90, 0x7e
 };
 
-static u8_t ppp_expect_data3[] = {
+static uint8_t ppp_expect_data3[] = {
 	0xc0, 0x21, 0x02, 0x01, 0x00, 0x04,
 };
 
-static u8_t ppp_recv_data4[] = {
+static uint8_t ppp_recv_data4[] = {
 	/* There is FCS error in this packet */
 	0x7e, 0xff, 0x7d, 0x5d, 0xe4, 0x7d, 0x23, 0xc0,
 	0x21, 0x7d, 0x22, 0x7d, 0x21, 0x7d, 0x20, 0x7d,
 	0x24, 0x7d, 0x3c, 0x90, 0x7e,
 };
 
-static u8_t ppp_expect_data4[] = {
+static uint8_t ppp_expect_data4[] = {
 	0xff, 0x7d, 0xe4, 0x03, 0xc0, 0x21, 0x02, 0x01,
 	0x00, 0x04, 0x1c, 0x90,
 };
 
-static u8_t ppp_recv_data5[] = {
+static uint8_t ppp_recv_data5[] = {
 	/* Multiple valid packets here */
 	/* 1st */
 	0x7e, 0xff, 0x7d, 0x23, 0xc0, 0x21, 0x7d, 0x21,
@@ -116,35 +116,35 @@ static u8_t ppp_recv_data5[] = {
 	0x8f, 0x4e, 0x7e,
 };
 
-static u8_t ppp_expect_data5[] = {
+static uint8_t ppp_expect_data5[] = {
 	0xc0, 0x21, 0x01, 0x03, 0x00, 0x14, 0x02, 0x06,
 	0x00, 0x00, 0x00, 0x00, 0x05, 0x06, 0x66, 0x06,
 	0xbe, 0x70, 0x07, 0x02, 0x08, 0x02,
 };
 
-static u8_t ppp_recv_data6[] = {
+static uint8_t ppp_recv_data6[] = {
 	0x7e, 0xff, 0x7d, 0x23, 0xc0, 0x21, 0x7d, 0x22,
 	0x7d, 0x21, 0x7d, 0x20, 0x7d, 0x24, 0x7d, 0x3c,
 	0x90, 0x7e,
 };
 
-static u8_t ppp_expect_data6[] = {
+static uint8_t ppp_expect_data6[] = {
 	0xc0, 0x21, 0x02, 0x01, 0x00, 0x04,
 };
 
-static u8_t ppp_recv_data7[] = {
+static uint8_t ppp_recv_data7[] = {
 	0x7e, 0xff, 0x7d, 0x23, 0x80, 0x21, 0x7d, 0x22,
 	0x7d, 0x22, 0x7d, 0x20, 0x7d, 0x2a, 0x7d, 0x23,
 	0x7d, 0x26, 0xc0, 0x7d, 0x20, 0x7d, 0x22, 0x7d,
 	0x22, 0x06, 0xa1, 0x7e,
 };
 
-static u8_t ppp_expect_data7[] = {
+static uint8_t ppp_expect_data7[] = {
 	0x80, 0x21, 0x02, 0x02, 0x00, 0x0a, 0x03, 0x06,
 	0xc0, 0x00, 0x02, 0x02,
 };
 
-static u8_t ppp_recv_data8[] = {
+static uint8_t ppp_recv_data8[] = {
 	0x7e, 0xff, 0x7d, 0x23, 0x00, 0x57, 0x60, 0x7d,
 	0x20, 0x7d, 0x20, 0x7d, 0x20, 0x7d, 0x20, 0x7d,
 	0x2c, 0x3a, 0x40, 0xfe, 0x80, 0x7d, 0x20, 0x7d,
@@ -158,7 +158,7 @@ static u8_t ppp_recv_data8[] = {
 	0x5b, 0x2c, 0x7d, 0x3d, 0x25, 0x20, 0x11, 0x7e,
 };
 
-static u8_t ppp_expect_data8[] = {
+static uint8_t ppp_expect_data8[] = {
 	0x60, 0x00, 0x00, 0x00, 0x00, 0x0c, 0x3a, 0x40,
 	0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x00, 0x5e, 0xff, 0xfe, 0x00, 0x53, 0x44,
@@ -168,7 +168,7 @@ static u8_t ppp_expect_data8[] = {
 	0x5b, 0x2c, 0x1d, 0x25,
 };
 
-static u8_t *receiving, *expecting;
+static uint8_t *receiving, *expecting;
 
 static enum net_verdict ppp_l2_recv(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -206,7 +206,7 @@ static enum net_verdict ppp_l2_recv(struct net_if *iface, struct net_pkt *pkt)
 	return NET_DROP;
 }
 
-static void iface_setup(void)
+static void test_iface_setup(void)
 {
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
 	zassert_not_null(iface, "PPP interface not found!");
@@ -223,8 +223,8 @@ static void iface_setup(void)
 }
 
 static bool send_iface(struct net_if *iface,
-		       u8_t *recv, size_t recv_len,
-		       u8_t *expect, size_t expect_len)
+		       uint8_t *recv, size_t recv_len,
+		       uint8_t *expect, size_t expect_len)
 {
 	receiving = recv;
 	expecting = expect;
@@ -241,7 +241,7 @@ static bool send_iface(struct net_if *iface,
 	return true;
 }
 
-static void send_ppp_pkt_with_escapes(void)
+static void test_send_ppp_pkt_with_escapes(void)
 {
 	bool ret;
 
@@ -253,7 +253,7 @@ static void send_ppp_pkt_with_escapes(void)
 	zassert_true(ret, "iface");
 }
 
-static void send_ppp_pkt_with_full_and_partial(void)
+static void test_send_ppp_pkt_with_full_and_partial(void)
 {
 	bool ret;
 
@@ -265,10 +265,10 @@ static void send_ppp_pkt_with_full_and_partial(void)
 	zassert_true(ret, "iface");
 }
 
-static bool check_fcs(struct net_pkt *pkt, u16_t *fcs)
+static bool check_fcs(struct net_pkt *pkt, uint16_t *fcs)
 {
 	struct net_buf *buf;
-	u16_t crc;
+	uint16_t crc;
 
 	buf = pkt->buffer;
 	if (!buf) {
@@ -293,10 +293,10 @@ static bool check_fcs(struct net_pkt *pkt, u16_t *fcs)
 	return true;
 }
 
-static u8_t unescape(u8_t **ptr)
+static uint8_t unescape(uint8_t **ptr)
 {
-	u8_t *pos = *ptr;
-	u8_t val;
+	uint8_t *pos = *ptr;
+	uint8_t val;
 
 	if (*pos == 0x7d) {
 		pos++;
@@ -312,12 +312,12 @@ static u8_t unescape(u8_t **ptr)
 	return *pos;
 }
 
-static void ppp_verify_fcs(u8_t *buf, int len)
+static void ppp_verify_fcs(uint8_t *buf, int len)
 {
 	struct net_pkt *pkt;
-	u16_t addr_and_ctrl;
-	u16_t fcs = 0;
-	u8_t *ptr;
+	uint16_t addr_and_ctrl;
+	uint16_t fcs = 0;
+	uint8_t *ptr;
 	bool ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_NO_WAIT);
@@ -352,15 +352,15 @@ static void ppp_verify_fcs(u8_t *buf, int len)
 	net_pkt_unref(pkt);
 }
 
-static void ppp_verify_fcs_1(void)
+static void test_ppp_verify_fcs_1(void)
 {
 	ppp_verify_fcs(ppp_recv_data1, sizeof(ppp_recv_data1));
 }
 
-static bool calc_fcs(struct net_pkt *pkt, u16_t *fcs)
+static bool calc_fcs(struct net_pkt *pkt, uint16_t *fcs)
 {
 	struct net_buf *buf;
-	u16_t crc;
+	uint16_t crc;
 
 	buf = pkt->buffer;
 	if (!buf) {
@@ -383,12 +383,12 @@ static bool calc_fcs(struct net_pkt *pkt, u16_t *fcs)
 	return true;
 }
 
-static void ppp_calc_fcs(u8_t *buf, int len)
+static void ppp_calc_fcs(uint8_t *buf, int len)
 {
 	struct net_pkt *pkt;
-	u16_t addr_and_ctrl;
-	u16_t pkt_fcs, fcs = 0;
-	u8_t *ptr;
+	uint16_t addr_and_ctrl;
+	uint16_t pkt_fcs, fcs = 0;
+	uint8_t *ptr;
 	bool ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_NO_WAIT);
@@ -416,7 +416,7 @@ static void ppp_calc_fcs(u8_t *buf, int len)
 	len = net_pkt_get_len(pkt);
 
 	net_pkt_set_overwrite(pkt, true);
-	net_pkt_skip(pkt, len - sizeof(u16_t) - (2 + 1));
+	net_pkt_skip(pkt, len - sizeof(uint16_t) - (2 + 1));
 	net_pkt_read_le16(pkt, &pkt_fcs);
 
 	/* Skip FCS and sync bytes (2 + 1) */
@@ -431,17 +431,17 @@ static void ppp_calc_fcs(u8_t *buf, int len)
 	net_pkt_unref(pkt);
 }
 
-static void ppp_calc_fcs_1(void)
+static void test_ppp_calc_fcs_1(void)
 {
 	ppp_calc_fcs(ppp_recv_data1, sizeof(ppp_recv_data1));
 }
 
-static void ppp_verify_fcs_3(void)
+static void test_ppp_verify_fcs_3(void)
 {
 	ppp_verify_fcs(ppp_recv_data3, sizeof(ppp_recv_data3));
 }
 
-static void send_ppp_3(void)
+static void test_send_ppp_3(void)
 {
 	bool ret;
 
@@ -457,7 +457,7 @@ static void send_ppp_3(void)
 	}
 }
 
-static void send_ppp_4(void)
+static void test_send_ppp_4(void)
 {
 	bool ret;
 
@@ -473,7 +473,7 @@ static void send_ppp_4(void)
 	}
 }
 
-static void send_ppp_5(void)
+static void test_send_ppp_5(void)
 {
 	bool ret;
 
@@ -489,7 +489,7 @@ static void send_ppp_5(void)
 	}
 }
 
-static void send_ppp_6(void)
+static void test_send_ppp_6(void)
 {
 	bool ret;
 
@@ -505,7 +505,7 @@ static void send_ppp_6(void)
 	}
 }
 
-static void send_ppp_7(void)
+static void test_send_ppp_7(void)
 {
 	bool ret;
 
@@ -521,7 +521,7 @@ static void send_ppp_7(void)
 	}
 }
 
-static void send_ppp_8(void)
+static void test_send_ppp_8(void)
 {
 	bool ret;
 
@@ -540,18 +540,18 @@ static void send_ppp_8(void)
 void test_main(void)
 {
 	ztest_test_suite(net_ppp_test,
-			 ztest_unit_test(iface_setup),
-			 ztest_unit_test(send_ppp_pkt_with_escapes),
-			 ztest_unit_test(send_ppp_pkt_with_full_and_partial),
-			 ztest_unit_test(ppp_verify_fcs_1),
-			 ztest_unit_test(ppp_calc_fcs_1),
-			 ztest_unit_test(ppp_verify_fcs_3),
-			 ztest_unit_test(send_ppp_3),
-			 ztest_unit_test(send_ppp_4),
-			 ztest_unit_test(send_ppp_5),
-			 ztest_unit_test(send_ppp_6),
-			 ztest_unit_test(send_ppp_7),
-			 ztest_unit_test(send_ppp_8)
+			 ztest_unit_test(test_iface_setup),
+			 ztest_unit_test(test_send_ppp_pkt_with_escapes),
+			 ztest_unit_test(test_send_ppp_pkt_with_full_and_partial),
+			 ztest_unit_test(test_ppp_verify_fcs_1),
+			 ztest_unit_test(test_ppp_calc_fcs_1),
+			 ztest_unit_test(test_ppp_verify_fcs_3),
+			 ztest_unit_test(test_send_ppp_3),
+			 ztest_unit_test(test_send_ppp_4),
+			 ztest_unit_test(test_send_ppp_5),
+			 ztest_unit_test(test_send_ppp_6),
+			 ztest_unit_test(test_send_ppp_7),
+			 ztest_unit_test(test_send_ppp_8)
 		);
 
 	ztest_run_test_suite(net_ppp_test);

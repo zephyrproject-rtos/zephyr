@@ -1,0 +1,3 @@
+&rtc1 {
+	interrupts = <17 0>;
+};

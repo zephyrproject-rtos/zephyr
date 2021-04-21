@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,9 +8,8 @@
 #include <string.h>
 
 #include <toolchain.h>
-#include <zephyr/types.h>
+
 #include <soc.h>
-#include <drivers/clock_control.h>
 
 #include "hal/cpu.h"
 #include "hal/cntr.h"
@@ -20,6 +19,7 @@
 #include "util/memq.h"
 
 #include "lll.h"
+#include "lll_clock.h"
 #include "lll_internal.h"
 
 #include "ll_test.h"
@@ -31,10 +31,10 @@
 
 #define CNTR_MIN_DELTA 3
 
-static const u32_t test_sync_word = 0x71764129;
-static u8_t        test_phy;
-static u8_t        test_phy_flags;
-static u16_t       test_num_rx;
+static const uint32_t test_sync_word = 0x71764129;
+static uint8_t        test_phy;
+static uint8_t        test_phy_flags;
+static uint16_t       test_num_rx;
 static bool        started;
 
 /* NOTE: The PRBS9 sequence used as packet payload.
@@ -43,7 +43,7 @@ static bool        started;
  * is done to transmit MSbit first on air.
  */
 
-static const u8_t prbs9[] = {
+static const uint8_t prbs9[] = {
 	0xFF, 0xC1, 0xFB, 0xE8, 0x4C, 0x90, 0x72, 0x8B,
 	0xE7, 0xB3, 0x51, 0x89, 0x63, 0xAB, 0x23, 0x23,
 	0x02, 0x84, 0x18, 0x72, 0xAA, 0x61, 0x2F, 0x3B,
@@ -78,14 +78,14 @@ static const u8_t prbs9[] = {
 	0x8A, 0x84, 0x39, 0xF4, 0x36, 0x0B, 0xF7};
 
 /* TODO: fill correct prbs15 */
-static const u8_t prbs15[255] = { 0x00, };
+static const uint8_t prbs15[255] = { 0x00, };
 
-static u8_t tx_req;
-static u8_t volatile tx_ack;
+static uint8_t tx_req;
+static uint8_t volatile tx_ack;
 
 static void isr_tx(void *param)
 {
-	u32_t l, i, s, t;
+	uint32_t l, i, s, t;
 
 	/* Clear radio status and events */
 	radio_status_reset();
@@ -104,7 +104,8 @@ static void isr_tx(void *param)
 
 	/* LE Test Packet Interval */
 	l = radio_tmr_end_get() - radio_tmr_ready_get();
-	i = ((l + 249 + 624) / 625) * 625U;
+	i = ((l + 249 + (SCAN_INT_UNIT_US - 1)) / SCAN_INT_UNIT_US) *
+		SCAN_INT_UNIT_US;
 	t = radio_tmr_end_get() - l + i;
 	t -= radio_tx_ready_delay_get(test_phy, test_phy_flags);
 
@@ -112,7 +113,7 @@ static void isr_tx(void *param)
 	radio_tmr_sample();
 	s = radio_tmr_sample_get();
 	while (t < s) {
-		t += 625U;
+		t += SCAN_INT_UNIT_US;
 	}
 
 	/* Setup next Tx */
@@ -133,8 +134,8 @@ static void isr_tx(void *param)
 
 static void isr_rx(void *param)
 {
-	u8_t crc_ok = 0U;
-	u8_t trx_done;
+	uint8_t crc_ok = 0U;
+	uint8_t trx_done;
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
@@ -160,7 +161,7 @@ static void isr_rx(void *param)
 	}
 }
 
-static u32_t init(u8_t chan, u8_t phy, void (*isr)(void *))
+static uint32_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
 {
 	int err;
 
@@ -172,7 +173,7 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void *))
 	cntr_start();
 
 	/* Setup resources required by Radio */
-	err = lll_clk_on_wait();
+	err = lll_hfclock_on_wait();
 
 	/* Reset Radio h/w */
 	radio_reset();
@@ -193,19 +194,19 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void *))
 	radio_tmr_tifs_set(150);
 	radio_tx_power_max_set();
 	radio_freq_chan_set((chan << 1) + 2);
-	radio_aa_set((u8_t *)&test_sync_word);
+	radio_aa_set((uint8_t *)&test_sync_word);
 	radio_crc_configure(0x65b, 0x555555);
 	radio_pkt_configure(8, 255, (test_phy << 1));
 
 	return 0;
 }
 
-u32_t ll_test_tx(u8_t chan, u8_t len, u8_t type, u8_t phy)
+uint32_t ll_test_tx(uint8_t chan, uint8_t len, uint8_t type, uint8_t phy)
 {
-	u32_t start_us;
-	u8_t *payload;
-	u8_t *pdu;
-	u32_t err;
+	uint32_t start_us;
+	uint8_t *payload;
+	uint8_t *pdu;
+	uint32_t err;
 
 	if ((type > 0x07) || !phy || (phy > 0x04)) {
 		return 1;
@@ -279,9 +280,9 @@ u32_t ll_test_tx(u8_t chan, u8_t len, u8_t type, u8_t phy)
 	return 0;
 }
 
-u32_t ll_test_rx(u8_t chan, u8_t phy, u8_t mod_idx)
+uint32_t ll_test_rx(uint8_t chan, uint8_t phy, uint8_t mod_idx)
 {
-	u32_t err;
+	uint32_t err;
 
 	if (!phy || (phy > 0x03)) {
 		return 1;
@@ -305,10 +306,10 @@ u32_t ll_test_rx(u8_t chan, u8_t phy, u8_t mod_idx)
 	return 0;
 }
 
-u32_t ll_test_end(u16_t *num_rx)
+uint32_t ll_test_end(uint16_t *num_rx)
 {
 	int err;
-	u8_t ack;
+	uint8_t ack;
 
 	if (!started) {
 		return 1;
@@ -334,8 +335,8 @@ u32_t ll_test_end(u16_t *num_rx)
 	radio_tmr_stop();
 
 	/* Release resources acquired for Radio */
-	err = lll_clk_off();
-	LL_ASSERT(!err || err == -EBUSY);
+	err = lll_hfclock_off();
+	LL_ASSERT(err >= 0);
 
 	/* Stop coarse timer */
 	cntr_stop();

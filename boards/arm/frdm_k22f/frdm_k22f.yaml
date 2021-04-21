@@ -9,9 +9,12 @@ toolchain:
 supported:
   - adc
   - arduino_gpio
+  - arduino_i2c
+  - dac
   - gpio
   - i2c
   - nvs
+  - pwm
   - spi
   - usb_device
   - watchdog

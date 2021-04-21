@@ -18,15 +18,15 @@
  * this frequency should much the one set by the SWO viewer program.
  *
  * The initialization code assumes that SWO core frequency is equal to HCLK
- * as defined by DT_CPU_CLOCK_FREQUENCY. This may require additional,
- * vendor specific configuration.
+ * as defined by the clock-frequency property in the CPU node. This may require
+ * additional, vendor specific configuration.
  */
 
 #include <logging/log_backend.h>
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include "log_backend_std.h"
+#include <logging/log_backend_std.h>
 #include <soc.h>
 
 /** The stimulus port from which SWO data is received and displayed */
@@ -36,18 +36,31 @@
 #if CONFIG_LOG_BACKEND_SWO_FREQ_HZ == 0
 #define SWO_FREQ_DIV  1
 #else
-#define SWO_FREQ (DT_CPU_CLOCK_FREQUENCY + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2))
-#define SWO_FREQ_DIV  (SWO_FREQ / CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
+
+/* Set reference frequency which can be custom or cpu frequency. */
+#if DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), swo_ref_frequency)
+#define SWO_REF_FREQ DT_PROP(DT_PATH(cpus, cpu_0), swo_ref_frequency)
+#elif DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+#define SWO_REF_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+#else
+#error "Missing DT 'clock-frequency' property on cpu@0 node"
+#endif
+
+#define SWO_FREQ_DIV \
+	((SWO_REF_FREQ + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2)) / \
+		CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
+
 #if SWO_FREQ_DIV > 0xFFFF
 #error CONFIG_LOG_BACKEND_SWO_FREQ_HZ is too low. SWO clock divider is 16-bit. \
 	Minimum supported SWO clock frequency is \
-	[CPU Clock Frequency]/2^16.
-#endif
+	[Reference Clock Frequency]/2^16.
 #endif
 
-static u8_t buf[1];
+#endif
 
-static int char_out(u8_t *data, size_t length, void *ctx)
+static uint8_t buf[1];
+
+static int char_out(uint8_t *data, size_t length, void *ctx)
 {
 	ARG_UNUSED(ctx);
 
@@ -58,18 +71,18 @@ static int char_out(u8_t *data, size_t length, void *ctx)
 	return length;
 }
 
-LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
+LOG_OUTPUT_DEFINE(log_output_swo, char_out, buf, sizeof(buf));
 
 static void log_backend_swo_put(const struct log_backend *const backend,
 		struct log_msg *msg)
 {
-	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
+	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
-	log_backend_std_put(&log_output, flag, msg);
+	log_backend_std_put(&log_output_swo, flag, msg);
 }
 
-static void log_backend_swo_init(void)
+static void log_backend_swo_init(struct log_backend const *const backend)
 {
 	/* Enable DWT and ITM units */
 	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
@@ -99,33 +112,33 @@ static void log_backend_swo_panic(struct log_backend const *const backend)
 {
 }
 
-static void dropped(const struct log_backend *const backend, u32_t cnt)
+static void dropped(const struct log_backend *const backend, uint32_t cnt)
 {
 	ARG_UNUSED(backend);
 
-	log_backend_std_dropped(&log_output, cnt);
+	log_backend_std_dropped(&log_output_swo, cnt);
 }
 
 static void log_backend_swo_sync_string(const struct log_backend *const backend,
-		struct log_msg_ids src_level, u32_t timestamp,
+		struct log_msg_ids src_level, uint32_t timestamp,
 		const char *fmt, va_list ap)
 {
-	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
+	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
-	log_backend_std_sync_string(&log_output, flag, src_level,
+	log_backend_std_sync_string(&log_output_swo, flag, src_level,
 				    timestamp, fmt, ap);
 }
 
 static void log_backend_swo_sync_hexdump(
 		const struct log_backend *const backend,
-		struct log_msg_ids src_level, u32_t timestamp,
-		const char *metadata, const u8_t *data, u32_t length)
+		struct log_msg_ids src_level, uint32_t timestamp,
+		const char *metadata, const uint8_t *data, uint32_t length)
 {
-	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
+	uint32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
 		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
 
-	log_backend_std_sync_hexdump(&log_output, flag, src_level,
+	log_backend_std_sync_hexdump(&log_output_swo, flag, src_level,
 				     timestamp, metadata, data, length);
 }
 

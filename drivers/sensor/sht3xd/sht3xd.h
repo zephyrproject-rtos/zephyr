@@ -49,34 +49,34 @@ struct sht3xd_config {
 	char *alert_gpio_name;
 #endif /* CONFIG_SHT3XD_TRIGGER */
 
-	u8_t base_address;
+	uint8_t base_address;
 #ifdef CONFIG_SHT3XD_TRIGGER
-	u8_t alert_pin;
-	u8_t alert_flags;
+	uint8_t alert_pin;
+	uint8_t alert_flags;
 #endif /* CONFIG_SHT3XD_TRIGGER */
 };
 
 struct sht3xd_data {
-	struct device *dev;
-	struct device *bus;
+	const struct device *dev;
+	const struct device *bus;
 
-	u16_t t_sample;
-	u16_t rh_sample;
+	uint16_t t_sample;
+	uint16_t rh_sample;
 
 #ifdef CONFIG_SHT3XD_TRIGGER
-	struct device *alert_gpio;
+	const struct device *alert_gpio;
 	struct gpio_callback alert_cb;
 
-	u16_t t_low;
-	u16_t t_high;
-	u16_t rh_low;
-	u16_t rh_high;
+	uint16_t t_low;
+	uint16_t t_high;
+	uint16_t rh_low;
+	uint16_t rh_high;
 
 	sensor_trigger_handler_t handler;
 	struct sensor_trigger trigger;
 
 #if defined(CONFIG_SHT3XD_TRIGGER_OWN_THREAD)
-	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_SHT3XD_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_SHT3XD_THREAD_STACK_SIZE);
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
@@ -86,35 +86,35 @@ struct sht3xd_data {
 #endif /* CONFIG_SHT3XD_TRIGGER */
 };
 
-static inline u8_t sht3xd_i2c_address(struct device *dev)
+static inline uint8_t sht3xd_i2c_address(const struct device *dev)
 {
-	const struct sht3xd_config *dcp = dev->config->config_info;
+	const struct sht3xd_config *dcp = dev->config;
 
 	return dcp->base_address;
 }
 
-static inline struct device *sht3xd_i2c_device(struct device *dev)
+static inline const struct device *sht3xd_i2c_device(const struct device *dev)
 {
-	const struct sht3xd_data *ddp = dev->driver_data;
+	const struct sht3xd_data *ddp = dev->data;
 
 	return ddp->bus;
 }
 
 #ifdef CONFIG_SHT3XD_TRIGGER
-int sht3xd_write_command(struct device *dev, u16_t cmd);
+int sht3xd_write_command(const struct device *dev, uint16_t cmd);
 
-int sht3xd_write_reg(struct device *dev, u16_t cmd, u16_t val);
+int sht3xd_write_reg(const struct device *dev, uint16_t cmd, uint16_t val);
 
-int sht3xd_attr_set(struct device *dev,
+int sht3xd_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val);
 
-int sht3xd_trigger_set(struct device *dev,
+int sht3xd_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
-int sht3xd_init_interrupt(struct device *dev);
+int sht3xd_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_SHT3XD_SHT3XD_H_ */

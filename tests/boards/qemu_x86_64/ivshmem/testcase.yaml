@@ -1,0 +1,4 @@
+tests:
+  boards.qemu_x86_64.ivshmem:
+    arch_allow: x86
+    platform_allow: qemu_x86_64

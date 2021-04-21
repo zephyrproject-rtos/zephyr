@@ -41,7 +41,7 @@ extern "C" {
 /**
  * Type of the link address. This indicates the network technology that this
  * address is used in. Note that in order to save space we store the value
- * into a u8_t variable, so please do not introduce any values > 255 in
+ * into a uint8_t variable, so please do not introduce any values > 255 in
  * this enum.
  */
 enum net_link_type {
@@ -68,13 +68,13 @@ enum net_link_type {
  */
 struct net_linkaddr {
 	/** The array of byte representing the address */
-	u8_t *addr;
+	uint8_t *addr;
 
 	/** Length of that address array */
-	u8_t len;
+	uint8_t len;
 
 	/** What kind of address is this for */
-	u8_t type;
+	uint8_t type;
 };
 
 /**
@@ -83,19 +83,19 @@ struct net_linkaddr {
  *  Used to hold the link address information. This variant is needed
  *  when we have to store the link layer address.
  *
- *  Note that you cannot cast this to net_linkaddr as u8_t * is
- *  handled differently than u8_t addr[] and the fields are purposely
+ *  Note that you cannot cast this to net_linkaddr as uint8_t * is
+ *  handled differently than uint8_t addr[] and the fields are purposely
  *  in different order.
  */
 struct net_linkaddr_storage {
 	/** What kind of address is this for */
-	u8_t type;
+	uint8_t type;
 
 	/** The real length of the ll address. */
-	u8_t len;
+	uint8_t len;
 
 	/** The array of bytes representing the address */
-	u8_t addr[NET_LINK_ADDR_MAX_LENGTH];
+	uint8_t addr[NET_LINK_ADDR_MAX_LENGTH];
 };
 
 /**
@@ -130,7 +130,7 @@ static inline bool net_linkaddr_cmp(struct net_linkaddr *lladdr1,
  * This value should always be <= NET_LINK_ADDR_MAX_LENGTH.
  */
 static inline int net_linkaddr_set(struct net_linkaddr_storage *lladdr_store,
-				   u8_t *new_addr, u8_t new_len)
+				   uint8_t *new_addr, uint8_t new_len)
 {
 	if (!lladdr_store || !new_addr) {
 		return -EINVAL;

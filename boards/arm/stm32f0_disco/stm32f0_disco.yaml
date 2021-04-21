@@ -1,5 +1,5 @@
 identifier: stm32f0_disco
-name: STM32F0DISCOVERY
+name: ST STM32F0 Discovery
 type: mcu
 arch: arm
 toolchain:

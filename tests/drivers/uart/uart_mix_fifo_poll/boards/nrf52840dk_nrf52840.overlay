@@ -1,0 +1,29 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		zephyr,console = &uart1;
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <6>;
+	rx-pin = <8>;
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <44>;
+	rx-pin = <45>;
+	rts-pin = <46>;
+	cts-pin = <47>;
+	hw-flow-control;
+};
+
+&rtc1 {
+	interrupts = <17 2>;
+};

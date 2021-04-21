@@ -16,8 +16,8 @@ and avoiding memory fragmentation concerns.
 Concepts
 ********
 
-Any number of memory slabs can be defined. Each memory slab is referenced
-by its memory address.
+Any number of memory slabs can be defined (limited only by available RAM). Each
+memory slab is referenced by its memory address.
 
 A memory slab has the following key properties:
 
@@ -67,8 +67,8 @@ Implementation
 Defining a Memory Slab
 ======================
 
-A memory slab is defined using a variable of type :c:type:`struct k_mem_slab`.
-It must then be initialized by calling :cpp:func:`k_mem_slab_init()`.
+A memory slab is defined using a variable of type :c:type:`k_mem_slab`.
+It must then be initialized by calling :c:func:`k_mem_slab_init`.
 
 The following code defines and initializes a memory slab that has 6 blocks
 that are 400 bytes long, each of which is aligned to a 4-byte boundary..
@@ -93,7 +93,7 @@ that the macro defines both the memory slab and its buffer.
 Allocating a Memory Block
 =========================
 
-A memory block is allocated by calling :cpp:func:`k_mem_slab_alloc()`.
+A memory block is allocated by calling :c:func:`k_mem_slab_alloc`.
 
 The following code builds on the example above, and waits up to 100 milliseconds
 for a memory block to become available, then fills it with zeroes.
@@ -113,7 +113,7 @@ A warning is printed if a suitable block is not obtained.
 Releasing a Memory Block
 ========================
 
-A memory block is released by calling :cpp:func:`k_mem_slab_free()`.
+A memory block is released by calling :c:func:`k_mem_slab_free`.
 
 The following code builds on the example above, and allocates a memory block,
 then releases it once it is no longer needed.
@@ -139,7 +139,7 @@ Configuration Options
 
 Related configuration options:
 
-* None
+* :option:`CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION`
 
 API Reference
 *************

@@ -1,0 +1,14 @@
+sample:
+  name: MEC150x board sample power management tests
+tests:
+  sample.board.mec15xxevb_assy6853.pm:
+    platform_allow: mec15xxevb_assy6853
+    tags: board pm
+    harness: console
+    harness_config:
+        type: multi_line
+        ordered: False
+        regex:
+            - "Wake from Light Sleep"
+            - "Wake from Deep Sleep"
+        repeat: 3

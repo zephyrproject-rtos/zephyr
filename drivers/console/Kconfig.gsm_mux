@@ -1,0 +1,115 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GSM_MUX
+	bool "Enable GSM 07.10 muxing protocol"
+	help
+	  Enable GSM 07.10 muxing protocol defined in
+	  https://www.etsi.org/deliver/etsi_ts/101300_101399/101369/07.01.00_60/ts_101369v070100p.pdf
+	  The muxing protocol allows GSM modem to share the same UART for both
+	  the PPP data and AT commands.
+
+config GSM_MUX_MAX
+	int "Max number of GSM mux instances"
+	default 1
+	depends on GSM_MUX
+	help
+	  Usually we only need one GSM mux instance. You need to increase
+	  this if you have more than one GSM modems.
+
+config GSM_MUX_DLCI_MAX
+	int "Max number of GSM data link connection (DLC) instances"
+	default 3
+	range 1 64
+	depends on GSM_MUX
+	help
+	  For our purposes we will manage with 3 DLCI (control, ppp, and AT
+	  commands) so making it the default value. If GSM modem also provides
+	  GNSS (location) services and you want to create a DLCI for it, then
+	  you need to increase this to 4.
+
+config GSM_MUX_DLCI_AT
+	int "DLCI id of the AT commands channel"
+	default 2 if MODEM_GSM_SIMCOM
+	default 1
+	range 1 63
+	depends on GSM_MUX
+	help
+	  Channel number for the AT commands to the modem.
+
+config GSM_MUX_DLCI_PPP
+	int "DLCI id of the PPP connection channel"
+	default 1 if MODEM_GSM_SIMCOM
+	default 2
+	range 1 63
+	depends on GSM_MUX
+	help
+	  Channel number for the PPP connection to the modem.
+	  SIMCOM modem has 16kb buffer for DLCI 1 so the manual recommends
+	  it for PPP traffic. For other DLCIs in that modem, the buffer size
+	  is only 1kb.
+
+config GSM_MUX_PENDING_CMD_MAX
+	int "Max number of pending GSM mux commands"
+	default 2
+	range 1 8
+	depends on GSM_MUX
+	help
+	  How many pending GSM mux commands can exists.
+
+config GSM_MUX_MRU_DEFAULT_LEN
+	int "Default size of received user data (MRU)"
+	default 127 if MODEM_GSM_SIMCOM
+	default 31
+	range 1 1509
+	depends on GSM_MUX
+	help
+	  Default MRU (Maximum Receive Unit) data size. The default
+	  value for Basic mode is 31 bytes. The 1509 limit comes from
+	  ublox-sara modem and it means we can transfer full Ethernet sized
+	  frame and muxing headers.
+
+config GSM_MUX_MRU_MAX_LEN
+	int "Max size of received user data (MRU)"
+	default 255 if MODEM_GSM_SIMCOM
+	default 128
+	range 1 1509
+	depends on GSM_MUX
+	help
+	  Max MRU (Maximum Receive Unit) data size. The default max
+	  value for Basic mode is 128 bytes.
+
+config GSM_MUX_INITIATOR
+	bool "Are we the initiator of the connection"
+	default y
+	depends on GSM_MUX
+	help
+	  Default value when deciding whether we are the initiator of the
+	  connection attempt. Normally this should be enabled.
+
+config GSM_MUX_T1_TIMEOUT
+	int "T1 timeout in ms"
+	default 0
+	range 0 5000
+	depends on GSM_MUX
+	help
+	  T1 timeout is initial command timeout when establishing
+	  the connection. The value is in milliseconds. Zero value
+	  means that default (100 ms) specified in the code is used.
+
+if GSM_MUX
+
+module = GSM_MUX
+module-dep = LOG
+module-str = Log level for GSM 07.10 Mux driver
+module-help = Sets log level for GSM 07.10 Mux Device Driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config GSM_MUX_VERBOSE_DEBUG
+	bool "Print hexdump of sent and received packets"
+	depends on GSM_MUX_LOG_LEVEL_DBG
+	help
+	  As there might be lot of debug output printed, only enable
+	  this if really needed.
+
+endif

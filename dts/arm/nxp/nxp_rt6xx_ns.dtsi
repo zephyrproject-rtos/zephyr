@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2019, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		sram: sram@20180000 {
+			ranges = <0x20180000 0x20180000 0x300000>;
+		};
+
+		peripheral: peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
+		};
+	};
+};
+
+#include "nxp_rt6xx_common.dtsi"

@@ -1,5 +1,5 @@
 identifier: mikroe_mini_m4_for_stm32
-name: MIKROE_MINI_M4_FOR_STM32
+name: Mikroe MINI-M4 for STM32
 type: mcu
 arch: arm
 toolchain:

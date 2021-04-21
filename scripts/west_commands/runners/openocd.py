@@ -5,7 +5,12 @@
 '''Runner for openocd.'''
 
 from os import path
-from elftools.elf.elffile import ELFFile
+from pathlib import Path
+
+try:
+    from elftools.elf.elffile import ELFFile
+except ImportError:
+    ELFFile = None
 
 from runners.core import ZephyrBinaryRunner
 
@@ -23,7 +28,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT):
-        super(OpenOcdBinaryRunner, self).__init__(cfg)
+        super().__init__(cfg)
 
         if not config:
             default = path.join(cfg.board_dir, 'support', 'openocd.cfg')
@@ -39,8 +44,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if cfg.openocd_search is not None:
             search_args.extend(['-s', cfg.openocd_search])
         self.openocd_cmd = [cfg.openocd] + search_args
-        self.hex_name = cfg.hex_file
-        self.elf_name = cfg.elf_file
+        # openocd doesn't cope with Windows path names, so convert
+        # them to POSIX style just to be sure.
+        self.elf_name = Path(cfg.elf_file).as_posix()
         self.pre_init = pre_init or []
         self.pre_load = pre_load or []
         self.load_cmd = load_cmd
@@ -94,7 +100,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='openocd gdb port, defaults to 3333')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         return OpenOcdBinaryRunner(
             cfg,
             pre_init=args.cmd_pre_init,
@@ -106,6 +112,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
+        if ELFFile is None:
+            raise RuntimeError(
+                'elftools missing; please "pip3 install elftools"')
 
         self.cfg_cmd = []
         if self.openocd_config is not None:
@@ -123,16 +132,17 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             self.do_debugserver(**kwargs)
 
     def do_flash(self, **kwargs):
-        if not path.isfile(self.hex_name):
-            raise ValueError('Cannot flash; hex file ({}) does not exist. '.
-                             format(self.hex_name) +
-                             'Try enabling CONFIG_BUILD_OUTPUT_HEX.')
+        self.ensure_output('hex')
         if self.load_cmd is None:
             raise ValueError('Cannot flash; load command is missing')
         if self.verify_cmd is None:
             raise ValueError('Cannot flash; verify command is missing')
 
-        self.logger.info('Flashing file: {}'.format(self.hex_name))
+        # openocd doesn't cope with Windows path names, so convert
+        # them to POSIX style just to be sure.
+        hex_name = Path(self.cfg.hex_file).as_posix()
+
+        self.logger.info('Flashing file: {}'.format(hex_name))
 
         pre_init_cmd = []
         pre_load_cmd = []
@@ -153,9 +163,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                pre_init_cmd + ['-c', 'init',
                                 '-c', 'targets'] +
                pre_load_cmd + ['-c', 'reset halt',
-                                '-c', self.load_cmd + ' ' + self.hex_name,
+                                '-c', self.load_cmd + ' ' + hex_name,
                                 '-c', 'reset halt'] +
-               ['-c', self.verify_cmd + ' ' + self.hex_name] +
+               ['-c', self.verify_cmd + ' ' + hex_name] +
                post_verify_cmd +
                ['-c', 'reset run',
                 '-c', 'shutdown'])
@@ -178,7 +188,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                       pre_init_cmd + ['-c', 'init',
                                        '-c', 'targets',
-                                       '-c', 'halt',
+                                       '-c', 'reset halt',
                                        '-c', 'load_image ' + self.elf_name,
                                        '-c', 'resume ' + ep_addr,
                                        '-c', 'shutdown'])

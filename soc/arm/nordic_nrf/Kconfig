@@ -16,4 +16,26 @@ config SOC_FAMILY
 source "soc/arm/nordic_nrf/Kconfig.peripherals"
 source "soc/arm/nordic_nrf/*/Kconfig.soc"
 
+
+config NRF_MPU_FLASH_REGION_SIZE
+	hex
+	default 0x1000
+	depends on HAS_HW_NRF_MPU
+	help
+	  FLASH region size for the NRF_MPU peripheral.
+
+config NRF_BPROT_FLASH_REGION_SIZE
+	hex
+	default $(dt_node_int_prop_hex,$(DT_CHOSEN_ZEPHYR_FLASH),erase-block-size)
+	depends on HAS_HW_NRF_BPROT
+	help
+	  FLASH region size for the NRF_BPROT peripheral (nRF52).
+
+config NRF_ACL_FLASH_REGION_SIZE
+	hex
+	default $(dt_node_int_prop_hex,$(DT_CHOSEN_ZEPHYR_FLASH),erase-block-size)
+	depends on HAS_HW_NRF_ACL
+	help
+	  FLASH region size for the NRF_ACL peripheral.
+
 endif # SOC_FAMILY_NRF

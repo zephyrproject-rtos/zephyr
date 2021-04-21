@@ -41,7 +41,7 @@ struct ipm_console_receiver_config_info {
 	 * Ring buffer data area for stashing characters from the interrupt
 	 * callback
 	 */
-	u32_t *ring_buf_data;
+	uint32_t *ring_buf_data;
 
 	/** Size of ring_buf_data in 32-bit chunks */
 	unsigned int rb_size32;
@@ -71,7 +71,7 @@ struct ipm_console_receiver_runtime_data {
 	struct k_sem sem;
 
 	/** pointer to the bound low-level IPM device */
-	struct device *ipm_device;
+	const struct device *ipm_device;
 
 	/** Indicator that the channel is temporarily disabled due to
 	 * full buffer
@@ -94,11 +94,11 @@ struct ipm_console_sender_config_info {
 };
 
 #if CONFIG_IPM_CONSOLE_RECEIVER
-int ipm_console_receiver_init(struct device *d);
+int ipm_console_receiver_init(const struct device *d);
 #endif
 
 #if CONFIG_IPM_CONSOLE_SENDER
-int ipm_console_sender_init(struct device *d);
+int ipm_console_sender_init(const struct device *d);
 #endif
 
 #ifdef __cplusplus

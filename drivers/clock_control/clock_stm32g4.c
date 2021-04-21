@@ -6,6 +6,10 @@
 
 
 #include <soc.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_utils.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <drivers/clock_control/stm32_clock_control.h>
@@ -29,6 +33,11 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	pllinit->PLLM = pllm(CONFIG_CLOCK_STM32_PLL_M_DIVISOR);
 	pllinit->PLLN = CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER;
 	pllinit->PLLR = pllr(CONFIG_CLOCK_STM32_PLL_R_DIVISOR);
+
+	/* set power boost mode for sys clock greater than 150MHz */
+	if (sys_clock_hw_cycles_per_sec() >= MHZ(150)) {
+		LL_PWR_EnableRange1BoostMode();
+	}
 }
 #endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
 
@@ -37,11 +46,11 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
-#ifdef CONFIG_CLOCK_STM32_LSE
-	/* LSE belongs to the back-up domain, enable access.*/
-
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+
+#ifdef CONFIG_CLOCK_STM32_LSE
+	/* LSE belongs to the back-up domain, enable access.*/
 
 	/* Set the DBP bit in the Power control register 1 (PWR_CR1) */
 	LL_PWR_EnableBkUpAccess();

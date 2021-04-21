@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_lps22hb_press
+
 #include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
@@ -18,10 +20,10 @@
 
 LOG_MODULE_REGISTER(LPS22HB, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lps22hb_set_odr_raw(struct device *dev, u8_t odr)
+static inline int lps22hb_set_odr_raw(const struct device *dev, uint8_t odr)
 {
-	struct lps22hb_data *data = dev->driver_data;
-	const struct lps22hb_config *config = dev->config->config_info;
+	struct lps22hb_data *data = dev->data;
+	const struct lps22hb_config *config = dev->config;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				   LPS22HB_REG_CTRL_REG1,
@@ -29,12 +31,12 @@ static inline int lps22hb_set_odr_raw(struct device *dev, u8_t odr)
 				   odr << LPS22HB_SHIFT_CTRL_REG1_ODR);
 }
 
-static int lps22hb_sample_fetch(struct device *dev,
+static int lps22hb_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
-	struct lps22hb_data *data = dev->driver_data;
-	const struct lps22hb_config *config = dev->config->config_info;
-	u8_t out[5];
+	struct lps22hb_data *data = dev->data;
+	const struct lps22hb_config *config = dev->config;
+	uint8_t out[5];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -44,38 +46,38 @@ static int lps22hb_sample_fetch(struct device *dev,
 		return -EIO;
 	}
 
-	data->sample_press = (s32_t)((u32_t)(out[0]) |
-				     ((u32_t)(out[1]) << 8) |
-				     ((u32_t)(out[2]) << 16));
-	data->sample_temp = (s16_t)((u16_t)(out[3]) |
-				    ((u16_t)(out[4]) << 8));
+	data->sample_press = (int32_t)((uint32_t)(out[0]) |
+				     ((uint32_t)(out[1]) << 8) |
+				     ((uint32_t)(out[2]) << 16));
+	data->sample_temp = (int16_t)((uint16_t)(out[3]) |
+				    ((uint16_t)(out[4]) << 8));
 
 	return 0;
 }
 
 static inline void lps22hb_press_convert(struct sensor_value *val,
-					 s32_t raw_val)
+					 int32_t raw_val)
 {
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
 	val->val1 = (raw_val >> 12) / 10;
 	val->val2 = (raw_val >> 12) % 10 * 100000 +
-		(((s32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
+		(((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
 }
 
 static inline void lps22hb_temp_convert(struct sensor_value *val,
-					s16_t raw_val)
+					int16_t raw_val)
 {
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
-	val->val2 = ((s32_t)raw_val % 100) * 10000;
+	val->val2 = ((int32_t)raw_val % 100) * 10000;
 }
 
-static int lps22hb_channel_get(struct device *dev,
+static int lps22hb_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct lps22hb_data *data = dev->driver_data;
+	struct lps22hb_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_PRESS) {
 		lps22hb_press_convert(val, data->sample_press);
@@ -93,11 +95,11 @@ static const struct sensor_driver_api lps22hb_api_funcs = {
 	.channel_get = lps22hb_channel_get,
 };
 
-static int lps22hb_init_chip(struct device *dev)
+static int lps22hb_init_chip(const struct device *dev)
 {
-	struct lps22hb_data *data = dev->driver_data;
-	const struct lps22hb_config *config = dev->config->config_info;
-	u8_t chip_id;
+	struct lps22hb_data *data = dev->data;
+	const struct lps22hb_config *config = dev->config;
+	uint8_t chip_id;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LPS22HB_REG_WHO_AM_I, &chip_id) < 0) {
@@ -129,10 +131,10 @@ err_poweroff:
 	return -EIO;
 }
 
-static int lps22hb_init(struct device *dev)
+static int lps22hb_init(const struct device *dev)
 {
-	const struct lps22hb_config * const config = dev->config->config_info;
-	struct lps22hb_data *data = dev->driver_data;
+	const struct lps22hb_config * const config = dev->config;
+	struct lps22hb_data *data = dev->data;
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 
@@ -151,12 +153,12 @@ static int lps22hb_init(struct device *dev)
 }
 
 static const struct lps22hb_config lps22hb_config = {
-	.i2c_master_dev_name = DT_INST_0_ST_LPS22HB_PRESS_BUS_NAME,
-	.i2c_slave_addr = DT_INST_0_ST_LPS22HB_PRESS_BASE_ADDRESS,
+	.i2c_master_dev_name = DT_INST_BUS_LABEL(0),
+	.i2c_slave_addr = DT_INST_REG_ADDR(0),
 };
 
 static struct lps22hb_data lps22hb_data;
 
-DEVICE_AND_API_INIT(lps22hb, DT_INST_0_ST_LPS22HB_PRESS_LABEL, lps22hb_init,
+DEVICE_DT_INST_DEFINE(0, lps22hb_init, device_pm_control_nop,
 		    &lps22hb_data, &lps22hb_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lps22hb_api_funcs);

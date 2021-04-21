@@ -12,7 +12,7 @@
 static const char *now_str(void)
 {
 	static char buf[16]; /* ...HH:MM:SS.MMM */
-	u32_t now = k_uptime_get_32();
+	uint32_t now = k_uptime_get_32();
 	unsigned int ms = now % MSEC_PER_SEC;
 	unsigned int s;
 	unsigned int min;
@@ -30,7 +30,7 @@ static const char *now_str(void)
 	return buf;
 }
 
-static int process_mpu6050(struct device *dev)
+static int process_mpu6050(const struct device *dev)
 {
 	struct sensor_value temperature;
 	struct sensor_value accel[3];
@@ -51,8 +51,8 @@ static int process_mpu6050(struct device *dev)
 	}
 	if (rc == 0) {
 		printf("[%s]:%g Cel\n"
-		       "  accel % f % f % f m/s/s\n"
-		       "  gyro  % f % f % f rad/s\n",
+		       "  accel %f %f %f m/s/s\n"
+		       "  gyro  %f %f %f rad/s\n",
 		       now_str(),
 		       sensor_value_to_double(&temperature),
 		       sensor_value_to_double(&accel[0]),
@@ -71,7 +71,7 @@ static int process_mpu6050(struct device *dev)
 #ifdef CONFIG_MPU6050_TRIGGER
 static struct sensor_trigger trigger;
 
-static void handle_mpu6050_drdy(struct device *dev,
+static void handle_mpu6050_drdy(const struct device *dev,
 				struct sensor_trigger *trig)
 {
 	int rc = process_mpu6050(dev);
@@ -86,8 +86,8 @@ static void handle_mpu6050_drdy(struct device *dev,
 
 void main(void)
 {
-	const char *const label = DT_INST_0_INVENSENSE_MPU6050_LABEL;
-	struct device *mpu6050 = device_get_binding(label);
+	const char *const label = DT_LABEL(DT_INST(0, invensense_mpu6050));
+	const struct device *mpu6050 = device_get_binding(label);
 
 	if (!mpu6050) {
 		printf("Failed to find sensor %s\n", label);
@@ -103,7 +103,7 @@ void main(void)
 			       handle_mpu6050_drdy) < 0) {
 		printf("Cannot configure trigger\n");
 		return;
-	};
+	}
 	printk("Configured for triggered sampling.\n");
 #endif
 

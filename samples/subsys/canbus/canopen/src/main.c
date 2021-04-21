@@ -15,39 +15,39 @@
 LOG_MODULE_REGISTER(app);
 
 
-#define CAN_INTERFACE DT_ALIAS_CAN_PRIMARY_LABEL
-#define CAN_BITRATE (DT_ALIAS_CAN_PRIMARY_BUS_SPEED / 1000)
-#if !defined(DT_ALIAS_CAN_PRIMARY_LABEL)
+#define CAN_INTERFACE DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
+#define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_can_primary), bus_speed) / 1000)
+#if !defined(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL)
 #error CANopen CAN interface not set
 #endif
 
-#ifdef DT_ALIAS_GREEN_LED_GPIOS_CONTROLLER
-#define LED_GREEN_PORT  DT_ALIAS_GREEN_LED_GPIOS_CONTROLLER
-#define LED_GREEN_PIN   DT_ALIAS_GREEN_LED_GPIOS_PIN
-#define LED_GREEN_FLAGS DT_ALIAS_GREEN_LED_GPIOS_FLAGS
+#if DT_NODE_HAS_PROP(DT_ALIAS(green_led), gpios)
+#define LED_GREEN_PORT  DT_GPIO_LABEL(DT_ALIAS(green_led), gpios)
+#define LED_GREEN_PIN   DT_GPIO_PIN(DT_ALIAS(green_led), gpios)
+#define LED_GREEN_FLAGS DT_GPIO_FLAGS(DT_ALIAS(green_led), gpios)
 #endif
 
-#ifdef DT_ALIAS_RED_LED_GPIOS_CONTROLLER
-#define LED_RED_PORT  DT_ALIAS_RED_LED_GPIOS_CONTROLLER
-#define LED_RED_PIN   DT_ALIAS_RED_LED_GPIOS_PIN
-#define LED_RED_FLAGS DT_ALIAS_RED_LED_GPIOS_FLAGS
+#if DT_NODE_HAS_PROP(DT_ALIAS(red_led), gpios)
+#define LED_RED_PORT  DT_GPIO_LABEL(DT_ALIAS(red_led), gpios)
+#define LED_RED_PIN   DT_GPIO_PIN(DT_ALIAS(red_led), gpios)
+#define LED_RED_FLAGS DT_GPIO_FLAGS(DT_ALIAS(red_led), gpios)
 #endif
 
-#ifdef DT_ALIAS_SW0_GPIOS_CONTROLLER
-#define BUTTON_PORT  DT_ALIAS_SW0_GPIOS_CONTROLLER
-#define BUTTON_PIN   DT_ALIAS_SW0_GPIOS_PIN
-#define BUTTON_FLAGS DT_ALIAS_SW0_GPIOS_FLAGS
+#if DT_NODE_HAS_PROP(DT_ALIAS(sw0), gpios)
+#define BUTTON_PORT  DT_GPIO_LABEL(DT_ALIAS(sw0), gpios)
+#define BUTTON_PIN   DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
+#define BUTTON_FLAGS DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios)
 static struct gpio_callback button_callback;
 #endif
 
 struct led_indicator {
-	struct device *dev;
+	const struct device *dev;
 	gpio_pin_t pin;
 };
 
 static struct led_indicator led_green;
 static struct led_indicator led_red;
-static u32_t counter;
+static uint32_t counter;
 
 /**
  * @brief Callback for setting LED indicator state.
@@ -113,7 +113,7 @@ static void config_leds(CO_NMT_t *nmt)
  */
 static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
 {
-	u32_t value;
+	uint32_t value;
 
 	value = CO_getUint32(odf_arg->data);
 
@@ -127,7 +127,7 @@ static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
 
 	if (value != 0) {
 		/* Preserve old value */
-		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(u32_t));
+		memcpy(odf_arg->data, odf_arg->ODdataStorage, sizeof(uint32_t));
 		return CO_SDO_AB_DATA_TRANSF;
 	}
 
@@ -145,8 +145,9 @@ static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
  * @param pins GPIO pin mask that triggered the interrupt.
  */
 #ifdef BUTTON_PORT
-static void button_isr_callback(struct device *port, struct gpio_callback *cb,
-				u32_t pins)
+static void button_isr_callback(const struct device *port,
+				struct gpio_callback *cb,
+				uint32_t pins)
 {
 	counter++;
 }
@@ -160,7 +161,7 @@ static void button_isr_callback(struct device *port, struct gpio_callback *cb,
 static void config_button(void)
 {
 #ifdef BUTTON_PORT
-	struct device *dev;
+	const struct device *dev;
 	int err;
 
 	dev = device_get_binding(BUTTON_PORT);
@@ -201,18 +202,21 @@ void main(void)
 {
 	CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 	CO_ReturnError_t err;
-	struct device *can;
-	u16_t timeout;
-	u32_t elapsed;
-	s64_t timestamp;
+	struct canopen_context can;
+	uint16_t timeout;
+	uint32_t elapsed;
+	int64_t timestamp;
+#ifdef CONFIG_CANOPEN_STORAGE
 	int ret;
+#endif /* CONFIG_CANOPEN_STORAGE */
 
-	can = device_get_binding(CAN_INTERFACE);
-	if (!can) {
+	can.dev = device_get_binding(CAN_INTERFACE);
+	if (!can.dev) {
 		LOG_ERR("CAN interface not found");
 		return;
 	}
 
+#ifdef CONFIG_CANOPEN_STORAGE
 	ret = settings_subsys_init();
 	if (ret) {
 		LOG_ERR("failed to initialize settings subsystem (err = %d)",
@@ -225,6 +229,7 @@ void main(void)
 		LOG_ERR("failed to load settings (err = %d)", ret);
 		return;
 	}
+#endif /* CONFIG_CANOPEN_STORAGE */
 
 	OD_powerOnCounter++;
 
@@ -233,7 +238,7 @@ void main(void)
 	while (reset != CO_RESET_APP) {
 		elapsed =  0U; /* milliseconds */
 
-		err = CO_init(can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
+		err = CO_init(&can, CONFIG_CANOPEN_NODE_ID, CAN_BITRATE);
 		if (err != CO_ERROR_NO) {
 			LOG_ERR("CO_init failed (err = %d)", err);
 			return;
@@ -241,10 +246,18 @@ void main(void)
 
 		LOG_INF("CANopen stack initialized");
 
+#ifdef CONFIG_CANOPEN_STORAGE
 		canopen_storage_attach(CO->SDO[0], CO->em);
+#endif /* CONFIG_CANOPEN_STORAGE */
+
 		config_leds(CO->NMT);
 		CO_OD_configure(CO->SDO[0], OD_2102_buttonPressCounter,
 				odf_2102, NULL, 0U, 0U);
+
+		if (IS_ENABLED(CONFIG_CANOPEN_PROGRAM_DOWNLOAD)) {
+			canopen_program_download_attach(CO->NMT, CO->SDO[0],
+							CO->em);
+		}
 
 		CO_CANsetNormalMode(CO->CANmodule[0]);
 
@@ -262,18 +275,20 @@ void main(void)
 				OD_buttonPressCounter = counter;
 				CO_UNLOCK_OD();
 
+#ifdef CONFIG_CANOPEN_STORAGE
 				ret = canopen_storage_save(
 					CANOPEN_STORAGE_EEPROM);
 				if (ret) {
 					LOG_ERR("failed to save EEPROM");
 				}
+#endif /* CONFIG_CANOPEN_STORAGE */
 				/*
 				 * Try to sleep for as long as the
 				 * stack requested and calculate the
 				 * exact time elapsed.
 				 */
 				k_sleep(K_MSEC(timeout));
-				elapsed = k_uptime_delta_32(&timestamp);
+				elapsed = (uint32_t)k_uptime_delta(&timestamp);
 			} else {
 				/*
 				 * Do not sleep, more processing to be
@@ -290,6 +305,6 @@ void main(void)
 
 	LOG_INF("Resetting device");
 
-	CO_delete(CAN_INTERFACE);
+	CO_delete(&can);
 	sys_reboot(SYS_REBOOT_COLD);
 }

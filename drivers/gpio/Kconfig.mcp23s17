@@ -1,0 +1,21 @@
+# MCP23S17 GPIO configuration options
+
+# Copyright (c) 2020 Geanix ApS
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_MCP23S17
+	bool "MCP23S17 SPI-based GPIO chip"
+	depends on SPI
+	select HAS_DTS_GPIO
+	help
+	  Enable driver for MCP23S17 SPI-based GPIO chip.
+
+if GPIO_MCP23S17
+
+config GPIO_MCP23S17_INIT_PRIORITY
+	int "Init priority"
+	default 75
+	help
+	  Device driver initialization priority.
+
+endif #GPIO_MCP23S17

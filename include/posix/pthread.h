@@ -522,6 +522,41 @@ int pthread_key_delete(pthread_key_t key);
 int pthread_setspecific(pthread_key_t key, const void *value);
 void *pthread_getspecific(pthread_key_t key);
 
+/* Glibc / Oracle Extension Functions */
+
+/**
+ * @brief Set name of POSIX thread.
+ *
+ * Non-portable, extension function that conforms with most
+ * other definitions of this function.
+ *
+ * @param thread POSIX thread to set name
+ * @param name Name string
+ * @retval 0 Success
+ * @retval ESRCH Thread does not exist
+ * @retval EINVAL Name buffer is NULL
+ * @retval Negative value if kernel function error
+ *
+ */
+int pthread_setname_np(pthread_t thread, const char *name);
+
+/**
+ * @brief Get name of POSIX thread and store in name buffer
+ *  	  that is of size len.
+ *
+ * Non-portable, extension function that conforms with most
+ * other definitions of this function.
+ *
+ * @param thread POSIX thread to obtain name information
+ * @param name Destination buffer
+ * @param len Destination buffer size
+ * @retval 0 Success
+ * @retval ESRCH Thread does not exist
+ * @retval EINVAL Name buffer is NULL
+ * @retval Negative value if kernel function error
+ */
+int pthread_getname_np(pthread_t thread, char *name, size_t len);
+
 #ifdef __cplusplus
 }
 #endif

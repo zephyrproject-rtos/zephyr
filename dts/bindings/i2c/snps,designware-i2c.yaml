@@ -13,8 +13,3 @@ properties:
 
     interrupts:
       required: true
-
-    pcie:
-      type: boolean
-      required: false
-      description: attached via PCI(e) bus

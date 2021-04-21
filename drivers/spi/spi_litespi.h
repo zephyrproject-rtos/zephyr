@@ -13,7 +13,7 @@
 #include <device.h>
 #include <drivers/spi.h>
 
-#define SPI_BASE_ADDR DT_INST_0_LITEX_SPI_BASE_ADDRESS
+#define SPI_BASE_ADDR DT_INST_REG_ADDR(0)
 #define SPI_CONTROL_REG SPI_BASE_ADDR
 #define SPI_STATUS_REG (SPI_BASE_ADDR + 0x08)
 #define SPI_MOSI_DATA_REG (SPI_BASE_ADDR + 0x0c)
@@ -27,7 +27,7 @@
 
 #define SPI_ENABLE 0x1
 
-#define SPI_DATA(dev) ((struct spi_litespi_data *) ((dev)->driver_data))
+#define SPI_DATA(dev) ((struct spi_litespi_data *) ((dev)->data))
 
 /* Structure Declarations */
 
@@ -36,8 +36,8 @@ struct spi_litespi_data {
 };
 
 struct spi_litespi_cfg {
-	u32_t base;
-	u32_t f_sys;
+	uint32_t base;
+	uint32_t f_sys;
 };
 
 #endif /* _SPI_LITESPI__H */

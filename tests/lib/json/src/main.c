@@ -519,6 +519,26 @@ static void test_json_escape_bounds_check(void)
 	zassert_equal(ret, -ENOMEM, "Bounds check OK");
 }
 
+static void test_json_encode_bounds_check(void)
+{
+	struct number {
+		uint32_t val;
+	} str = { 0 };
+	const struct json_obj_descr descr[] = {
+		JSON_OBJ_DESCR_PRIM(struct number, val, JSON_TOK_NUMBER),
+	};
+	/* Encodes to {"val":0}\0 for a total of 10 bytes */
+	uint8_t buf[10];
+	ssize_t ret = json_obj_encode_buf(descr, ARRAY_SIZE(descr),
+					  &str, buf, 10);
+	zassert_equal(ret, 0, "Bounds check passed");
+	zassert_equal(strlen(buf), 9, "encoded value length");
+
+	ret = json_obj_encode_buf(descr, ARRAY_SIZE(descr),
+				     &str, buf, 9);
+	zassert_equal(ret, -ENOMEM, "Bounds check rejected");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(lib_json_test,
@@ -539,7 +559,8 @@ void test_main(void)
 			 ztest_unit_test(test_json_escape_one),
 			 ztest_unit_test(test_json_escape_empty),
 			 ztest_unit_test(test_json_escape_no_op),
-			 ztest_unit_test(test_json_escape_bounds_check)
+			 ztest_unit_test(test_json_escape_bounds_check),
+			 ztest_unit_test(test_json_encode_bounds_check)
 			 );
 
 	ztest_run_test_suite(lib_json_test);

@@ -21,7 +21,9 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &led0;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
+		i2c-0 = &sercom7;
 	};
 
 	leds {
@@ -32,6 +34,13 @@
 		};
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 2>;
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -39,6 +48,14 @@
 			label = "SW0";
 		};
 	};
+};
+
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	/* Gives a maximum period of 1.1s for 120MHz main clock */
+	prescaler = <8>;
+	#pwm-cells = <1>;
 };
 
 &sercom2 {
@@ -80,4 +97,9 @@
 
 &usb0 {
 	status = "okay";
+};
+
+&gmac {
+	status = "okay";
+	zephyr,random-mac-address;
 };

@@ -9,14 +9,37 @@ if (WIN32)
   set(ENV{PYTHONIOENCODING} "utf-8")
 endif()
 
-# The 'FindPythonInterp' that is distributed with CMake 3.8 has a bug
-# that we need to work around until we upgrade to 3.13. Until then we
-# maintain a patched copy in our repo. Bug:
-# https://github.com/zephyrproject-rtos/zephyr/issues/11103
-set(PythonInterp_FIND_VERSION 3.6)
-set(PythonInterp_FIND_VERSION_COUNT 2)
-set(PythonInterp_FIND_VERSION_MAJOR 3)
-set(PythonInterp_FIND_VERSION_MINOR 6)
-set(PythonInterp_FIND_VERSION_EXACT 0)
-set(PythonInterp_FIND_REQUIRED 1)
-include(${ZEPHYR_BASE}/cmake/backports/FindPythonInterp.cmake)
+set(PYTHON_MINIMUM_REQUIRED 3.6)
+
+# We are using foreach here, instead of find_program(PYTHON_EXECUTABLE_SYSTEM_DEFAULT "python" "python3")
+# cause just using find_program directly could result in a python2.7 as python, and not finding a valid python3.
+foreach(PYTHON_PREFER ${PYTHON_PREFER} "python" "python3")
+  find_program(PYTHON_PREFER_EXECUTABLE ${PYTHON_PREFER})
+  if(PYTHON_PREFER_EXECUTABLE)
+      execute_process (COMMAND "${PYTHON_PREFER_EXECUTABLE}" -c
+                               "import sys; sys.stdout.write('.'.join([str(x) for x in sys.version_info[:2]]))"
+                       RESULT_VARIABLE result
+                       OUTPUT_VARIABLE version
+                       ERROR_QUIET
+                       OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+     if(version VERSION_LESS PYTHON_MINIMUM_REQUIRED)
+       set(PYTHON_PREFER_EXECUTABLE "PYTHON_PREFER_EXECUTABLE-NOTFOUND")
+     else()
+       set(PYTHON_MINIMUM_REQUIRED ${version})
+       set(PYTHON_EXACT EXACT)
+       # Python3_ROOT_DIR ensures that location will be preferred by FindPython3.
+       # On Linux, this has no impact as it will usually be /usr/bin
+       # but on Windows it solve issues when both 32 and 64 bit versions are
+       # installed, as version is not enough and FindPython3 might pick the
+       # version not on %PATH%. Setting Python3_ROOT_DIR ensures we are using
+       # the version we just tested.
+       get_filename_component(PYTHON_PATH ${PYTHON_PREFER_EXECUTABLE} DIRECTORY)
+       set(Python3_ROOT_DIR ${PYTHON_PATH})
+       break()
+     endif()
+  endif()
+endforeach()
+
+find_package(Python3 ${PYTHON_MINIMUM_REQUIRED} REQUIRED ${PYTHON_EXACT})
+set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})

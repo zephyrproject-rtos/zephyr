@@ -17,6 +17,8 @@ if ADC
 
 config ADC_SHELL
 	bool "Enable ADC Shell"
+	default y
+	depends on SHELL
 	help
 	  Enable ADC Shell for testing.
 
@@ -36,14 +38,7 @@ module = ADC
 module-str = ADC
 source "subsys/logging/Kconfig.template.log_config"
 
-config ADC_0
-	bool "Enable ADC 0"
-
-config ADC_1
-	bool "Enable ADC 1"
-
-config ADC_2
-	bool "Enable ADC 2"
+source "drivers/adc/Kconfig.it8xxx2"
 
 source "drivers/adc/Kconfig.mcux"
 
@@ -58,5 +53,11 @@ source "drivers/adc/Kconfig.stm32"
 source "drivers/adc/Kconfig.xec"
 
 source "drivers/adc/Kconfig.lmp90xxx"
+
+source "drivers/adc/Kconfig.mcp320x"
+
+source "drivers/adc/Kconfig.npcx"
+
+source "drivers/adc/Kconfig.cc32xx"
 
 endif # ADC

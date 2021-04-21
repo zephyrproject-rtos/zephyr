@@ -8,14 +8,14 @@
 #include <fsl_iomuxc.h>
 #include <fsl_gpio.h>
 
-static int mimxrt1010_evk_init(struct device *dev)
+static int mimxrt1010_evk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	CLOCK_EnableClock(kCLOCK_Iomuxc);
 	CLOCK_EnableClock(kCLOCK_IomuxcSnvs);
 
-#ifdef CONFIG_GPIO_MCUX_IGPIO_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
 	IOMUXC_SetPinMux(IOMUXC_GPIO_11_GPIOMUX_IO11, 0);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_11_GPIOMUX_IO11,
 				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
@@ -26,7 +26,7 @@ static int mimxrt1010_evk_init(struct device *dev)
 	IOMUXC_GPR->GPR26 &= ~(IOMUXC_GPR_GPR26_GPIO_SEL(1 << 11));
 #endif
 
-#ifdef CONFIG_GPIO_MCUX_IGPIO_2
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
 	IOMUXC_SetPinMux(IOMUXC_GPIO_SD_05_GPIO2_IO05, 0);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_05_GPIO2_IO05,
 				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
@@ -36,7 +36,7 @@ static int mimxrt1010_evk_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(4));
 #endif
 
-#ifdef CONFIG_UART_MCUX_LPUART_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay) && CONFIG_SERIAL
 	/* LPUART1 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_09_LPUART1_RXD, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_10_LPUART1_TXD, 0);
@@ -52,7 +52,7 @@ static int mimxrt1010_evk_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_I2C_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) && CONFIG_I2C
 	/* LPI2C1 SCL, SDA */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_01_LPI2C1_SDA, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_02_LPI2C1_SCL, 1);

@@ -9,8 +9,12 @@
 	resources {
 		compatible = "test,gpio_basic_api";
 
-		/* Remove jumper on JP15 to disconnect pull-up resistor */
-		out-gpios = <&gpiob 8 0>; /* GPIO_050, JP27 Pin 11 */
-		in-gpios = <&gpiob 9 0>;  /* GPIO_051, JP27 Pin 13 */
+		/*
+		 * Remove jumpers on JP31 to disconnect pull-up resistor.
+		 * Also remove jumpers on JP41 (1-2, 3-4) as the LEDs
+		 * are connected to pull-up resistors also.
+		 */
+		in-gpios  = <&gpio_140_176 14 0>; /* GPIO_156, JP31 Pin 13 */
+		out-gpios = <&gpio_140_176 15 0>; /* GPIO_157, JP31 Pin 15 */
 	};
 };

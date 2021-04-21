@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2021 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +38,8 @@ extern const struct socket_op_vtable sock_fd_op_vtable;
 
 static const struct socket_op_vtable can_sock_fd_op_vtable;
 
-static inline int k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
+static inline int k_fifo_wait_non_empty(struct k_fifo *fifo,
+					k_timeout_t timeout)
 {
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -69,13 +71,6 @@ int zcan_socket(int family, int type, int proto)
 	ctx->user_data = NULL;
 
 	k_fifo_init(&ctx->recv_q);
-
-#ifdef CONFIG_USERSPACE
-	/* Set net context object as initialized and grant access to the
-	 * calling thread (and only the calling thread)
-	 */
-	z_object_recycle(ctx);
-#endif
 
 	z_finalize_fd(fd, ctx,
 		      (const struct fd_op_vtable *)&can_sock_fd_op_vtable);
@@ -214,7 +209,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 {
 	struct sockaddr_can can_addr;
 	struct zcan_frame zframe;
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	int ret;
 
 	/* Setting destination address does not probably make sense here so
@@ -226,6 +221,8 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+	} else {
+		net_context_get_option(ctx, NET_OPT_SNDTIMEO, &timeout, NULL);
 	}
 
 	if (addrlen == 0) {
@@ -263,11 +260,13 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 {
 	struct zcan_frame zframe;
 	size_t recv_len = 0;
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	struct net_pkt *pkt;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
+	} else {
+		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
 	}
 
 	if (flags & ZSOCK_MSG_PEEK) {
@@ -366,11 +365,11 @@ static int close_socket(struct net_context *ctx)
 {
 	const struct canbus_api *api;
 	struct net_if *iface;
-	struct device *dev;
+	const struct device *dev;
 
 	iface = net_context_get_iface(ctx);
 	dev = net_if_get_device(iface);
-	api = dev->driver_api;
+	api = dev->api;
 
 	if (!api || !api->close) {
 		return -ENOTSUP;
@@ -413,17 +412,23 @@ static int can_close_socket(struct net_context *ctx)
 	return 0;
 }
 
-static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int can_sock_close_vmeth(void *obj)
 {
-	if (request == ZFD_IOCTL_CLOSE) {
-		int ret;
+	int ret;
 
-		ret = can_close_socket(obj);
-		if (ret < 0) {
-			NET_DBG("Cannot detach net_context %p (%d)", obj, ret);
-		}
+	ret = can_close_socket(obj);
+	if (ret < 0) {
+		NET_DBG("Cannot detach net_context %p (%d)", obj, ret);
+
+		errno = -ret;
+		ret = -1;
 	}
 
+	return ret;
+}
+
+static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+{
 	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 }
 
@@ -481,7 +486,7 @@ static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
 	if (level == SOL_CAN_RAW) {
 		const struct canbus_api *api;
 		struct net_if *iface;
-		struct device *dev;
+		const struct device *dev;
 
 		if (optval == NULL) {
 			errno = EINVAL;
@@ -490,7 +495,7 @@ static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
 
 		iface = net_context_get_iface(obj);
 		dev = net_if_get_device(iface);
-		api = dev->driver_api;
+		api = dev->api;
 
 		if (!api || !api->getsockopt) {
 			errno = ENOTSUP;
@@ -590,7 +595,7 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 {
 	const struct canbus_api *api;
 	struct net_if *iface;
-	struct device *dev;
+	const struct device *dev;
 	int ret;
 
 	if (level != SOL_CAN_RAW) {
@@ -612,7 +617,7 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 
 	iface = net_context_get_iface(obj);
 	dev = net_if_get_device(iface);
-	api = dev->driver_api;
+	api = dev->api;
 
 	if (!api || !api->setsockopt) {
 		errno = ENOTSUP;
@@ -676,6 +681,7 @@ static const struct socket_op_vtable can_sock_fd_op_vtable = {
 	.fd_vtable = {
 		.read = can_sock_read_vmeth,
 		.write = can_sock_write_vmeth,
+		.close = can_sock_close_vmeth,
 		.ioctl = can_sock_ioctl_vmeth,
 	},
 	.bind = can_sock_bind_vmeth,

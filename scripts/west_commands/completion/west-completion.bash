@@ -590,8 +590,24 @@ __comp_west_completion()
 __comp_west_boards()
 {
 	local boards_args_opts="
-		--format -f
+		--format -f --name -n
+		--arch-root --board-root
 	"
+
+	case "$prev" in
+		--format|-f|--name|-n)
+			# We don't know how to autocomplete these.
+			return
+			;;
+		--arch-root)
+			__set_comp_dirs
+			return
+			;;
+		--board-root)
+			__set_comp_dirs
+			return
+			;;
+	esac
 
 	case "$cur" in
 		-*)
@@ -770,6 +786,7 @@ __comp_west()
 		debug
 		debugserver
 		attach
+		zephyr-export
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})

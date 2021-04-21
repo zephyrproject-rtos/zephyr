@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(wifi_eswifi, CONFIG_WIFI_LOG_LEVEL);
+#include "eswifi_log.h"
+LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <kernel.h>
@@ -41,7 +41,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len, char **data)
 	int ret;
 
 	/* Set max read size */
-	snprintf(size, sizeof(size), "R1=%u\r", len);
+	snprintk(size, sizeof(size), "R1=%u\r", len);
 	ret = eswifi_at_cmd(eswifi, size);
 	if (ret < 0) {
 		LOG_ERR("Unable to set read size");
@@ -49,7 +49,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len, char **data)
 	}
 
 	/* Set timeout */
-	snprintf(timeout, sizeof(timeout), "R2=%u\r", 30); /* 30 ms */
+	snprintk(timeout, sizeof(timeout), "R2=%u\r", 30); /* 30 ms */
 	ret = eswifi_at_cmd(eswifi, timeout);
 	if (ret < 0) {
 		LOG_ERR("Unable to set timeout");
@@ -73,7 +73,7 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 	socket->port = sys_be16_to_cpu(net_sin(addr)->sin_port);
 
 	/* Set Local Port */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P2=%d\r", socket->port);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P2=%d\r", socket->port);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to set local port");
@@ -87,7 +87,8 @@ static void eswifi_off_read_work(struct k_work *work)
 {
 	struct eswifi_off_socket *socket;
 	struct eswifi_dev *eswifi;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt = NULL;
+	int next_timeout_ms = 100;
 	int err, len;
 	char *data;
 
@@ -109,8 +110,14 @@ static void eswifi_off_read_work(struct k_work *work)
 	len = __read_data(eswifi, 1460, &data); /* 1460 is max size */
 	if (len < 0) {
 		__stop_socket(eswifi, socket);
-		goto done;
-	} else if (!len || !socket->recv_cb) {
+
+		if (socket->recv_cb) {
+			/* send EOF (null pkt) */
+			goto do_recv_cb;
+		}
+	}
+
+	if (!len || !socket->recv_cb) {
 		goto done;
 	}
 
@@ -127,21 +134,24 @@ static void eswifi_off_read_work(struct k_work *work)
 		LOG_WRN("Incomplete buffer copy");
 	}
 
-	eswifi_unlock(eswifi);
-
 	net_pkt_cursor_init(pkt);
+
+do_recv_cb:
 	socket->recv_cb(socket->context, pkt,
 			NULL, NULL, 0, socket->recv_data);
 
-	eswifi_lock(eswifi);
+	if (!socket->context) {
+		/* something destroyed the socket in the recv path */
+		eswifi_unlock(eswifi);
+		return;
+	}
 
 	k_sem_give(&socket->read_sem);
-	k_yield();
+	next_timeout_ms = 0;
 
 done:
-	err = k_delayed_work_submit_to_queue(&eswifi->work_q,
-					     &socket->read_work,
-					     K_MSEC(500));
+	err = k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work,
+					  K_MSEC(next_timeout_ms));
 	if (err) {
 		LOG_ERR("Rescheduling socket read error");
 	}
@@ -160,8 +170,16 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 
 	__select_socket(eswifi, socket->index);
 
+	/* Stop any running client */
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P6=0\r");
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to stop running client");
+		return -EIO;
+	}
+
 	/* Set Remote IP */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r",
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r",
 		 sin_addr->s4_addr[0], sin_addr->s4_addr[1],
 		 sin_addr->s4_addr[2], sin_addr->s4_addr[3]);
 
@@ -172,8 +190,8 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	}
 
 	/* Set Remote Port */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P4=%d\r",
-		(u16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P4=%d\r",
+		(uint16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to set remote port");
@@ -181,7 +199,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	}
 
 	/* Start TCP/UDP client */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P6=1\r");
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P6=1\r");
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to start TCP/UDP client");
@@ -217,13 +235,8 @@ int __eswifi_accept(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket)
 int __eswifi_socket_free(struct eswifi_dev *eswifi,
 			 struct eswifi_off_socket *socket)
 {
-	if ((socket->type == ESWIFI_TRANSPORT_TCP ||
-	     socket->type == ESWIFI_TRANSPORT_TCP_SSL) &&
-	     socket->state != ESWIFI_SOCKET_STATE_CONNECTED)
-		return -ENOTCONN;
-
 	__select_socket(eswifi, socket->index);
-	k_delayed_work_cancel(&socket->read_work);
+	k_work_cancel_delayable(&socket->read_work);
 
 	__select_socket(eswifi, socket->index);
 	__stop_socket(eswifi, socket);
@@ -277,14 +290,14 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
 		return -EIO;
 	}
 
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P1=%d\r", socket->type);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P1=%d\r", socket->type);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to set transport protocol");
 		return -EIO;
 	}
 
-	k_delayed_work_init(&socket->read_work, eswifi_off_read_work);
+	k_work_init_delayable(&socket->read_work, eswifi_off_read_work);
 	socket->usage = 1;
 	LOG_DBG("Socket index %d", socket->index);
 

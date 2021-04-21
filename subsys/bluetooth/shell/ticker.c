@@ -29,23 +29,23 @@
 
 #include "bt.h"
 
-static void ticker_op_done(u32_t err, void *context)
+static void ticker_op_done(uint32_t err, void *context)
 {
-	*((u32_t volatile *)context) = err;
+	*((uint32_t volatile *)context) = err;
 }
 
 int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct {
-		u8_t id;
-		u32_t ticks_to_expire;
+		uint8_t id;
+		uint32_t ticks_to_expire;
 	} tickers[TICKERS_MAX];
-	u32_t ticks_to_expire;
-	u32_t ticks_current;
-	u8_t tickers_count;
-	u8_t ticker_id;
-	u8_t retry;
-	u8_t i;
+	uint32_t ticks_to_expire;
+	uint32_t ticks_current;
+	uint8_t tickers_count;
+	uint8_t ticker_id;
+	uint8_t retry;
+	uint8_t i;
 
 	ticker_id = TICKER_NULL;
 	ticks_to_expire = 0U;
@@ -53,9 +53,9 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 	tickers_count = 0U;
 	retry = 4U;
 	do {
-		u32_t volatile err_cb = TICKER_STATUS_BUSY;
-		u32_t ticks_previous;
-		u32_t err;
+		uint32_t volatile err_cb = TICKER_STATUS_BUSY;
+		uint32_t ticks_previous;
+		uint32_t err;
 
 		ticks_previous = ticks_current;
 

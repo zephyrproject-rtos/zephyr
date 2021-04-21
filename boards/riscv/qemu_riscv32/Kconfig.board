@@ -2,5 +2,12 @@
 
 config BOARD_QEMU_RISCV32
 	bool "QEMU RISCV32 target"
+	depends on SOC_RISCV_VIRT
+	select QEMU_TARGET
+	select CPU_HAS_FPU
+
+config BOARD_QEMU_RISCV32_XIP
+	bool "QEMU RISCV32 XIP target"
 	depends on SOC_RISCV_SIFIVE_FREEDOM
 	select QEMU_TARGET
+	select CPU_HAS_FPU

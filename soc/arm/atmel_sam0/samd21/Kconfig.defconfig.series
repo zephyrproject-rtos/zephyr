@@ -25,7 +25,7 @@ config SOC_PART_NUMBER
 	default "samd21j18a" if SOC_PART_NUMBER_SAMD21J18A
 
 config NUM_IRQS
-	default 29
+	default 28
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 48000000

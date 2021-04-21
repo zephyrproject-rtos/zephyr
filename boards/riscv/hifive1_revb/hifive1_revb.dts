@@ -9,10 +9,12 @@
 / {
 	model = "SiFive HiFive 1 Rev B";
 	compatible = "sifive,hifive1-revb";
+
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
+		watchdog0 = &wdog0;
 	};
 
 	chosen {

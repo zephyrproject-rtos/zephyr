@@ -1,0 +1,20 @@
+# Copyright (c) 2020 Jefferson Lee.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_NANO_33_BLE
+	bool "Arduino Nano 33 BLE board"
+	depends on SOC_NRF52840_QIAA
+
+config BOARD_ARDUINO_NANO_33_BLE_EN_USB_CONSOLE
+	bool "Sends the console output over the USB port"
+	depends on BOARD_ARDUINO_NANO_33_BLE
+	select SERIAL
+	select USB
+	select CONSOLE
+	select PRINTK
+	select UART_INTERRUPT_DRIVEN
+	select USB_UART_CONSOLE
+
+config BOARD_ARDUINO_NANO_33_BLE_INIT_SENSORS
+	bool "Initializes the internal I2C sensors on the board"
+	depends on BOARD_ARDUINO_NANO_33_BLE

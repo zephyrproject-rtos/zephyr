@@ -61,29 +61,4 @@ config I2S_STM32_PLLI2S_PLLR
 	  frequency is less than or equal to 192MHz.
 	  Allowed values: 2-7
 
-config I2S_1
-	bool "I2S port 1"
-	help
-	  Enable I2S controller port 1.
-
-config I2S_2
-	bool "I2S port 2"
-	help
-	  Enable I2S controller port 2.
-
-config I2S_3
-	bool "I2S port 3"
-	help
-	  Enable I2S controller port 3.
-
-config I2S_4
-	bool "I2S port 4"
-	help
-	  Enable I2S controller port 4.
-
-config I2S_5
-	bool "I2S port 5"
-	help
-	  Enable I2S controller port 5.
-
 endif # I2S_STM32

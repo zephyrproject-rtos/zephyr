@@ -8,21 +8,40 @@
 #ifndef ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 #define ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 
-#include <storage/flash_map.h>
+#include <storage/stream_flash.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct flash_img_context {
-	u8_t buf[CONFIG_IMG_BLOCK_BUF_SIZE];
+	uint8_t buf[CONFIG_IMG_BLOCK_BUF_SIZE];
 	const struct flash_area *flash_area;
-	size_t bytes_written;
-	u16_t buf_bytes;
-#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
-	off_t off_last;
-#endif
+	struct stream_flash_ctx stream;
 };
+
+#if defined(CONFIG_IMG_ENABLE_IMAGE_CHECK)
+/**
+ * @brief Structure for verify flash region integrity
+ *
+ * Match vector length is fixed and depends on size from hash algorithm used
+ * to verify flash integrity.  The current available algorithm is SHA-256.
+ */
+struct flash_img_check {
+	const uint8_t *match;		/** Match vector data */
+	size_t clen;			/** Content to be compared */
+};
+#endif
+
+/**
+ * @brief Initialize context needed for writing the image to the flash.
+ *
+ * @param ctx     context to be initialized
+ * @param area_id flash area id of partition where the image should be written
+ *
+ * @return  0 on success, negative errno code on fail
+ */
+int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id);
 
 /**
  * @brief Initialize context needed for writing the image to the flash.
@@ -59,8 +78,25 @@ size_t flash_img_bytes_written(struct flash_img_context *ctx);
  *
  * @return  0 on success, negative errno code on fail
  */
-int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
+int flash_img_buffered_write(struct flash_img_context *ctx, const uint8_t *data,
 		    size_t len, bool flush);
+
+#if defined(CONFIG_IMG_ENABLE_IMAGE_CHECK)
+/**
+ * @brief  Verify flash memory length bytes integrity from a flash area. The
+ * start point is indicated by an offset value.
+ *
+ * @param[in] ctx context.
+ * @param[in] fic flash img check data.
+ * @param[in] area_id flash area id of partition where the image should be
+ * verified.
+ *
+ * @return  0 on success, negative errno code on fail
+ */
+int flash_img_check(struct flash_img_context *ctx,
+		    const struct flash_img_check *fic,
+		    uint8_t area_id);
+#endif
 
 #ifdef __cplusplus
 }

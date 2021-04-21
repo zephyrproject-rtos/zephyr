@@ -17,8 +17,8 @@ extern "C" {
  * @brief A structure to represent tracing data format.
  */
 typedef struct tracing_data {
-	u8_t *data;
-	u32_t length;
+	uint8_t *data;
+	uint32_t length;
 } __packed tracing_data_t;
 
 /**
@@ -33,7 +33,7 @@ typedef struct tracing_data {
  * @brief Macro to format data to tracing data format.
  */
 #define TRACING_FORMAT_DATA(x)						       \
-	((struct tracing_data){.data = (u8_t *)&(x), .length = sizeof((x))})
+	((struct tracing_data){.data = (uint8_t *)&(x), .length = sizeof((x))})
 
 /**
  * @brief Macro to trace a message in tracing data format.
@@ -62,7 +62,7 @@ void tracing_format_string(const char *str, ...);
  * @param data   Raw data to be traced.
  * @param length Raw data length.
  */
-void tracing_format_raw_data(u8_t *data, u32_t length);
+void tracing_format_raw_data(uint8_t *data, uint32_t length);
 
 /**
  * @brief Tracing a message in tracing data format.
@@ -70,7 +70,7 @@ void tracing_format_raw_data(u8_t *data, u32_t length);
  * @param tracing_data_array Tracing_data format data array to be traced.
  * @param count Tracing_data array data count.
  */
-void tracing_format_data(tracing_data_t *tracing_data_array, u32_t count);
+void tracing_format_data(tracing_data_t *tracing_data_array, uint32_t count);
 
 #ifdef __cplusplus
 }

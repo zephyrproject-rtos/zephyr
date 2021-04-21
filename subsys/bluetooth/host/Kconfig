@@ -34,6 +34,7 @@ config BT_RX_BUF_COUNT
 config BT_RX_BUF_LEN
 	int "Maximum supported HCI RX buffer length"
 	default 264 if BT_BREDR
+	default 258 if BT_EXT_ADV
 	default 77 if BT_MESH_PROXY
 	default 76
 	range 73 2000
@@ -63,7 +64,7 @@ config BT_DISCARDABLE_BUF_COUNT
 config BT_DISCARDABLE_BUF_SIZE
 	int "Size of discardable event buffers"
 	range 45 257
-	default 257 if BT_BREDR
+	default 257 if BT_BREDR || BT_EXT_ADV
 	default 45
 	help
 	  Size of buffers in the separate discardable event buffer pool.
@@ -78,9 +79,9 @@ config BT_HCI_TX_STACK_SIZE
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
-	default 940 if BT_CTLR && (BT_LL_SW_LEGACY || BT_LL_SW_SPLIT) && NO_OPTIMIZATIONS
-	default 1024 if BT_CTLR && (BT_LL_SW_LEGACY || BT_LL_SW_SPLIT) && BT_CENTRAL
-	default 640 if BT_CTLR && (BT_LL_SW_LEGACY || BT_LL_SW_SPLIT)
+	default 940 if BT_CTLR && BT_LL_SW_SPLIT && NO_OPTIMIZATIONS
+	default 1024 if BT_CTLR && BT_LL_SW_SPLIT && BT_CENTRAL
+	default 640 if BT_CTLR && BT_LL_SW_SPLIT
 	default 512 if BT_USERCHAN
 	default 640 if BT_STM32_IPM
 	# Even if no driver is selected the following default is still
@@ -90,7 +91,8 @@ config BT_HCI_TX_STACK_SIZE
 	help
 	  Stack size needed for executing bt_send with specified driver.
 	  NOTE: This is an advanced setting and should not be changed unless
-	  absolutely necessary
+	  absolutely necessary.  To change this you must first select
+	  BT_HCI_TX_STACK_SIZE_WITH_PROMPT.
 
 config BT_HCI_TX_STACK_SIZE_WITH_PROMPT
 	bool "Override HCI Tx thread stack size"
@@ -124,14 +126,25 @@ config BT_HCI_RESERVE
 	  Headroom that the driver needs for sending and receiving buffers. Add a
 	  new 'default' entry for each new driver.
 
+config BT_HCI_ACL_DATA_SIZE
+	int
+	prompt "ACL data buffer size" if !BT_CTLR
+	depends on BT_HCI_RAW
+	range 27 251
+	default BT_CTLR_DATA_LENGTH_MAX if BT_CTLR_DATA_LENGTH
+	default 27
+	help
+	  Maximum ACL data payload in HCI packets, excluding HCI header.
+
 config BT_RECV_IS_RX_THREAD
 	# Hidden option set by the HCI driver to indicate that there's
 	# no need for the host to have its own RX thread.
-	# It is then the responsibility of the HCI driver to call bt_recv_prio
-	# from a higher priority context than bt_recv in order to avoid deadlock.
-	# If the host has its own RX thread it is safe to call bt_recv and
-	# bt_recv_prio from the same priority context.
+	# If this option has been enabled it is then the responsibility of the
+	# HCI driver to call bt_recv_prio from a higher priority context than
+	# bt_recv in order to avoid deadlocks.
+	# If this option is disabled then only bt_recv should be called.
 	bool
+	prompt "bt_recv is called from RX thread" if BT_NO_DRIVER
 
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
@@ -140,9 +153,6 @@ config BT_RX_STACK_SIZE
 	default 2048 if BT_MESH
 	default 2200 if BT_SETTINGS
 	default 1024
-	range 512 65536 if BT_HCI_RAW
-	range 1100 65536 if BT_MESH
-	range 1024 65536
 	help
 	  Size of the receiving thread stack. This is the context from
 	  which all event callbacks to the application occur. The
@@ -156,6 +166,11 @@ config BT_RX_PRIO
 	int
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 8
+
+config BT_DRIVER_RX_HIGH_PRIO
+	# Hidden option for Co-Operative HCI driver RX thread priority
+	int
+	default 6
 
 if BT_HCI_HOST
 
@@ -191,6 +206,7 @@ config BT_SETTINGS
 if BT_SETTINGS
 config BT_SETTINGS_CCC_LAZY_LOADING
 	bool "Load CCC values from settings when peer connects"
+	depends on BT_CONN
 	default y
 	help
 	  Load Client Configuration Characteristic setting right after a bonded
@@ -200,6 +216,7 @@ config BT_SETTINGS_CCC_LAZY_LOADING
 
 config BT_SETTINGS_CCC_STORE_ON_WRITE
 	bool "Store CCC value immediately after it has been written"
+	depends on BT_CONN
 	help
 	  Store Client Configuration Characteristic value right after it has
 	  been updated.
@@ -260,16 +277,45 @@ config BT_CONN_TX_MAX
 	  callback. Normally this can be left to the default value, which
 	  is equal to the number of TX buffers in the stack-internal pool.
 
+config BT_USER_PHY_UPDATE
+	bool "User control of PHY Update Procedure"
+	depends on BT_PHY_UPDATE
+	help
+	  Enable application access to initiate the PHY Update Procedure.
+	  The application can also register a callback to be notified about PHY
+	  changes on the connection. The current PHY info is available in the
+	  connection info.
+
 config BT_AUTO_PHY_UPDATE
 	bool "Auto-initiate PHY Update Procedure"
 	depends on BT_PHY_UPDATE
-	default y
+	default y if !BT_USER_PHY_UPDATE
 	help
 	  Initiate PHY Update Procedure on connection establishment.
 
-	  Disable this if you want PHY Update Procedure feature supported but
-	  want to rely on remote device to initiate the procedure at its
-	  discretion.
+	  Disable this if you want the PHY Update Procedure feature supported
+	  but want to rely on the remote device to initiate the procedure at its
+	  discretion or want to initiate manually.
+
+config BT_USER_DATA_LEN_UPDATE
+	bool "User control of Data Length Update Procedure"
+	depends on BT_DATA_LEN_UPDATE
+	help
+	  Enable application access to initiate the Data Length Update
+	  Procedure. The application can also a register callback to be notified
+	  about Data Length changes on the connection. The current Data Length
+	  info is available in the connection info.
+
+config BT_AUTO_DATA_LEN_UPDATE
+	bool "Auto-initiate Data Length Update procedure"
+	depends on BT_DATA_LEN_UPDATE
+	default y if !BT_USER_DATA_LEN_UPDATE
+	help
+	  Initiate Data Length Update Procedure on connection establishment.
+
+	  Disable this if you want the Data Length Update Procedure feature
+	  supported but want to rely on the remote device to initiate the
+	  procedure at its discretion or want to initiate manually.
 
 config BT_REMOTE_INFO
 	bool "Enable application access to remote information"
@@ -349,6 +395,20 @@ config BT_SMP_SC_ONLY
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
 
+config BT_SMP_OOB_LEGACY_PAIR_ONLY
+	bool "Force Out Of Band Legacy pairing"
+	depends on !(BT_SMP_SC_PAIR_ONLY || BT_SMP_SC_ONLY)
+	help
+	  This option disables Legacy and LE SC pairing and forces legacy OOB.
+
+config BT_SMP_DISABLE_LEGACY_JW_PASSKEY
+	bool "Forbid usage of insecure legacy pairing methods"
+	depends on !(BT_SMP_SC_PAIR_ONLY || BT_SMP_SC_ONLY || \
+		     BT_SMP_OOB_LEGACY_PAIR_ONLY)
+	help
+	  This option disables Just Works and Passkey legacy pairing methods to
+	  increase security.
+
 config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	bool "Allow unauthenticated pairing for paired device"
 	help
@@ -382,14 +442,13 @@ config BT_FIXED_PASSKEY
 
 config BT_USE_DEBUG_KEYS
 	bool "Enable Security Manager Debug Mode"
-	depends on BT_TINYCRYPT_ECC
 	help
 	  This option places Security Manager in a Debug Mode. In this mode
 	  predefined Diffie-Hellman private/public key pair is used as described
-	  in Core Specification Vol. 3, Part H, 2.3.5.6.1. This option should
-	  only be enabled for debugging and should never be used in production.
-	  If this option is enabled anyone is able to decipher encrypted air
-	  traffic.
+	  in Core Specification Vol. 3, Part H, 2.3.5.6.1.
+
+	  WARNING: This option enables anyone to decrypt on-air traffic.
+	  Use of this feature in production is strongly discouraged.
 
 config BT_BONDABLE
 	bool "Bondable Mode"
@@ -411,8 +470,12 @@ config BT_STORE_DEBUG_KEYS
 	bool "Store Debug Mode bonds"
 	help
 	  This option enables support for storing bonds where either of devices
-	  has the Security Manager in Debug mode. This option should
-	  only be enabled for debugging and should never be used in production.
+	  is using the predefined Diffie-Hellman private/public key pair as
+	  described in the Core Specification Vol 3, Part H, 2.3.5.6.1.
+
+	  WARNING: This option potentially enables anyone to decrypt on-air
+	  traffic.
+	  Use of this feature in production is strongly discouraged.
 
 config BT_SMP_ENFORCE_MITM
 	bool "Enforce MITM protection"
@@ -428,8 +491,10 @@ config BT_OOB_DATA_FIXED
 	help
 	  With this option enabled, the application will be able to perform LESC
 	  pairing with OOB data that consists of fixed random number and confirm
-	  value. This option should only be enabled for debugging and should
-	  never be used in production.
+	  value.
+
+	  WARNING: This option stores a hardcoded Out-of-Band value in the image.
+	  Use of this feature in production is strongly discouraged.
 
 config BT_KEYS_OVERWRITE_OLDEST
 	bool "Overwrite oldest keys with new ones if key storage is full"
@@ -445,6 +510,15 @@ config BT_KEYS_SAVE_AGING_COUNTER_ON_PAIRING
 	  With this option enabled, aging counter will be stored in settings every
 	  time a successful pairing occurs. This increases flash wear out but offers
 	  a more correct finding of the oldest unused pairing info.
+
+config BT_SMP_MIN_ENC_KEY_SIZE
+	int
+	prompt "Minimum encryption key size accepted in octets" if !BT_SMP_SC_ONLY
+	range 7 16
+	default 7
+	default 16 if BT_SMP_SC_ONLY
+	help
+	  This option sets the minimum encryption key size accepted during pairing.
 
 endif # BT_SMP
 
@@ -463,19 +537,25 @@ config BT_MAX_PAIRED
 config BT_CREATE_CONN_TIMEOUT
 	int "Timeout for pending LE Create Connection command in seconds"
 	default 3
-	range 1 BT_RPA_TIMEOUT if BT_PRIVACY
-	range 1 65535
+	range 1 BT_RPA_TIMEOUT if BT_PRIVACY && (BT_RPA_TIMEOUT < 655)
+	range 1 655
 
 config BT_CONN_PARAM_UPDATE_TIMEOUT
 	int "Peripheral connection parameter update timeout in milliseconds"
 	default 5000
-	range 1 65535
+	range 0 65535
 
 	help
 	  The value is a timeout used by peripheral device to wait until it
-	  starts the connection parameters update procedure to change default
-	  connection parameters. The default value is set to 5s, to comply
-	  with BT protocol specification: Core 4.2 Vol 3, Part C, 9.3.12.2
+	  starts the first connection parameters update procedure after a
+	  connection has been established.
+	  The connection parameters requested will be the parameters set by the
+	  application, or the peripheral preferred connection parameters if
+	  configured.
+	  The default value is set to 5 seconds, to comply with the Bluetooth
+	  Core specification: Core 4.2 Vol 3, Part C, 9.3.12.2:
+	  "The Peripheral device should not perform a Connection Parameter
+	  Update procedure within 5 seconds after establishing a connection."
 
 endif # BT_CONN
 
@@ -541,19 +621,33 @@ config BT_ID_MAX
 	  Maximum number of supported local identity addresses. For most
 	  products this is safe to leave as the default value (1).
 
+config BT_DF
+	bool "Enable Direction Finding support [EXPERIMENTAL]"
+	help
+	  Enable support for Bluetooth 5.1 Direction Finding.
+	  It will allow to: get information about antennae, configure
+	  Constant Tone Extension, transmit CTE and sample incoming CTE.
+
+config BT_DEBUG_DF
+	bool "Bluetooth Direction Finding debug"
+	depends on BT_DF
+	help
+	  This option enables debug support for Bluetooth Direction Finding
+
 endif # BT_HCI_HOST
 
 config BT_ECC
 	bool "Enable ECDH key generation support"
+	default y if BT_MESH_PROV || (BT_SMP && !BT_SMP_OOB_LEGACY_PAIR_ONLY)
 	help
 	  This option adds support for ECDH HCI commands.
 
 config BT_TINYCRYPT_ECC
-	bool "Use TinyCrypt library for ECDH"
+	bool "Emulate ECDH in the Host using TinyCrypt library"
 	select TINYCRYPT
 	select TINYCRYPT_ECC_DH
 	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
-	default y if BT_CTLR
+	default y if BT_CTLR && !BT_CTLR_ECDH
 	help
 	  If this option is set TinyCrypt library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.
@@ -593,6 +687,12 @@ config BT_DEBUG_CONN
 	  This option enables debug support for Bluetooth
 	  connection handling.
 
+config BT_DEBUG_ISO
+	bool "ISO channel debug"
+	help
+	  Use this option to enable ISO channels debug logs for the
+	  Bluetooth Audio functionality.
+
 config BT_DEBUG_KEYS
 	bool "Bluetooth security keys debug"
 	depends on BT_HCI_HOST
@@ -601,6 +701,10 @@ config BT_DEBUG_KEYS
 	  This option enables debug support for the handling of
 	  Bluetooth security keys.
 
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged.
+
 config BT_DEBUG_SMP
 	bool "Bluetooth Security Manager Protocol (SMP) debug"
 	depends on BT_HCI_HOST
@@ -608,6 +712,10 @@ config BT_DEBUG_SMP
 	help
 	  This option enables debug support for the Bluetooth
 	  Security Manager Protocol (SMP).
+
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged.
 
 config BT_SMP_SELFTEST
 	bool "Bluetooth SMP self tests executed on init"
@@ -667,11 +775,33 @@ config BT_DEBUG_SERVICE
 
 endif # BT_DEBUG
 
+config BT_LOG_SNIFFER_INFO
+	bool "Bluetooth log information for sniffer"
+	help
+	  This option enables the Bluetooth stack to log information such as
+	  DH private key and LTK keys, which can be used by sniffers to decrypt
+	  the connection without the use of Debug keys.
+
+	  WARNING: This option prints out private security keys such as
+	  the Long Term Key.
+	  Use of this feature in production is strongly discouraged
+
 config BT_TESTING
 	bool "Bluetooth Testing"
 	help
 	  This option enables custom Bluetooth testing interface.
 	  Shall only be used for testing purposes.
+
+config BT_CONN_DISABLE_SECURITY
+	bool "Disable security"
+	depends on BT_TESTING
+	help
+	  This option disables security checks for incoming requests enabling
+	  to test accessing GATT attributes and L2CAP channels that would
+	  otherwise require encryption/authentication in order to be accessed.
+
+	  WARNING: This option enables anyone to snoop on-air traffic.
+	  Use of this feature in production is strongly discouraged.
 
 config BT_BREDR
 	bool "Bluetooth BR/EDR support [EXPERIMENTAL]"

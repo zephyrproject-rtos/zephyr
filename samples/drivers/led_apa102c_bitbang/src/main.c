@@ -23,13 +23,13 @@
 #include <device.h>
 #include <drivers/gpio.h>
 /* in millisecond */
-#define SLEEPTIME	250
+#define SLEEPTIME	K_MSEC(250)
 
 #define GPIO_DATA_PIN	16
 #define GPIO_CLK_PIN	19
 #define GPIO_NAME	"GPIO_"
 
-#define GPIO_DRV_NAME	DT_ALIAS_GPIO_0_LABEL
+#define GPIO_DRV_NAME	DT_LABEL(DT_ALIAS(gpio_0))
 
 #define APA102C_START_FRAME	0x00000000
 #define APA102C_END_FRAME	0xFFFFFFFF
@@ -38,7 +38,7 @@
  * brightness is set very low, and RGB values are
  * set low too.
  */
-u32_t rgb[] = {
+uint32_t rgb[] = {
 	0xE1000010,
 	0xE1001000,
 	0xE1100000,
@@ -49,7 +49,7 @@ u32_t rgb[] = {
 /* Number of LEDS linked together */
 #define NUM_LEDS	1
 
-void send_rgb(struct device *gpio_dev, u32_t rgb)
+void send_rgb(const struct device *gpio_dev, uint32_t rgb)
 {
 	int i;
 
@@ -67,7 +67,7 @@ void send_rgb(struct device *gpio_dev, u32_t rgb)
 
 void main(void)
 {
-	struct device *gpio_dev;
+	const struct device *gpio_dev;
 	int ret;
 	int idx = 0;
 	int leds = 0;

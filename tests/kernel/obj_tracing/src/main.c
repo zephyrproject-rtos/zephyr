@@ -15,7 +15,7 @@ extern void test_obj_tracing(void);
 
 #define TOTAL_TEST_NUMBER 2
 #define ZTEST_THREADS_CREATED 1
-#define TOTAL_THREADS (N_PHILOSOPHERS + 3 + IPM_THREAD + ZTEST_THREADS_CREATED)
+#define TOTAL_THREADS (N_PHILOSOPHERS + ZTEST_THREADS_CREATED)
 #define TOTAL_OBJECTS (N_PHILOSOPHERS)
 
 #define OBJ_LIST_NAME k_sem
@@ -25,21 +25,15 @@ extern void test_obj_tracing(void);
 #define TAKE(x) k_sem_take(x, K_FOREVER)
 #define GIVE(x) k_sem_give(x)
 
-#define RANDDELAY(x) k_sleep(10 * (x) + 1)
+#define RANDDELAY(x) k_msleep(10 * (x) + 1)
 
-/* 1 IPM console thread if enabled */
-#if defined(CONFIG_IPM_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
-#define IPM_THREAD 1
-#else
-#define IPM_THREAD 0
-#endif /* CONFIG_IPM_CONSOLE_RECEIVER && CONFIG_PRINTK*/
+static int initial_count;
 
 /* Must account for:
  *	N Philosopher threads
  *	1 Object monitor thread
  *	1 System idle thread
  *	1 System workqueue thread
- *	1 IPM console thread
  */
 
 void *force_sys_work_q_in = (void *)&k_sys_work_q;
@@ -59,32 +53,31 @@ K_SEM_DEFINE(f3, -5, 1);
  * @{
  * @}
  */
+static inline void thread_list_cb(const struct k_thread *thread, void *data)
+{
+	int *ctr = data;
 
-static inline int test_thread_monitor(void)
+	if (thread->base.prio == -1) {
+		TC_PRINT("PREMPT: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
+			 thread,
+			 thread->base.user_options,
+			 thread->base.thread_state);
+	} else {
+		TC_PRINT("COOP: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
+			 thread,
+			 thread->base.user_options,
+			 thread->base.thread_state);
+	}
+	(*ctr)++;
+}
+
+static inline int thread_monitor(void)
 {
 	int obj_counter = 0;
-	struct k_thread *thread_list = NULL;
 
-	/* wait a bit to allow any initialization-only threads to terminate */
-
-	thread_list   = (struct k_thread *)SYS_THREAD_MONITOR_HEAD;
-	while (thread_list != NULL) {
-		if (thread_list->base.prio == -1) {
-			TC_PRINT("PREMPT: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
-				 thread_list,
-				 thread_list->base.user_options,
-				 thread_list->base.thread_state);
-		} else {
-			TC_PRINT("COOP: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
-				 thread_list,
-				 thread_list->base.user_options,
-				 thread_list->base.thread_state);
-		}
-		thread_list =
-			(struct k_thread *)SYS_THREAD_MONITOR_NEXT(thread_list);
-		obj_counter++;
-	}
+	k_thread_foreach(thread_list_cb, &obj_counter);
 	TC_PRINT("THREAD QUANTITY: %d\n", obj_counter);
+
 	return obj_counter;
 }
 
@@ -114,9 +107,9 @@ static void object_monitor(void)
 	}
 	TC_PRINT("SEMAPHORE QUANTITY: %d\n", obj_counter);
 
-	thread_counter += test_thread_monitor();
+	thread_counter += thread_monitor();
 
-	zassert_true(((thread_counter == TOTAL_THREADS) &&
+	zassert_true(((thread_counter == (TOTAL_THREADS + initial_count)) &&
 		      (obj_counter == TOTAL_OBJECTS)), "test failed");
 }
 
@@ -186,6 +179,9 @@ void test_philosophers_tracing(void)
 
 void test_main(void)
 {
+
+	initial_count = thread_monitor();
+
 	ztest_test_suite(obj_tracing,
 			 ztest_unit_test(test_philosophers_tracing),
 			 ztest_unit_test(test_obj_tracing));

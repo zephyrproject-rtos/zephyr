@@ -15,6 +15,7 @@
 #include <linker/sections.h>
 #include <devicetree.h>
 
+#include <linker/devicetree_regions.h>
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
@@ -39,17 +40,10 @@
 #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-#ifdef CONFIG_HAS_TI_CCFG
-#define CCFG_SIZE 88
-#define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET - \
-	CCFG_SIZE)
-#define CCFG_ADDR (ROM_ADDR + ROM_SIZE)
-#else
 #if CONFIG_FLASH_LOAD_SIZE > 0
 #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
 #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
-#endif
 #endif
 
 #if defined(CONFIG_XIP)
@@ -92,20 +86,21 @@ _region_min_align = 4;
 MEMORY
     {
     FLASH                 (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
-#ifdef CONFIG_HAS_TI_CCFG
-    FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
-#endif
-#ifdef DT_CCM_BASE_ADDRESS
-    CCM                   (rw) : ORIGIN = DT_CCM_BASE_ADDRESS, LENGTH = DT_CCM_SIZE * 1K
-#endif
-#ifdef DT_DTCM_BASE_ADDRESS
-    DTCM                  (rw) : ORIGIN = DT_DTCM_BASE_ADDRESS, LENGTH = DT_DTCM_SIZE * 1K
-#endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
-#ifdef CONFIG_BT_STM32_IPM
-    SRAM1                 (rw) : ORIGIN = RAM1_ADDR, LENGTH = RAM1_SIZE
-    SRAM2                 (rw) : ORIGIN = RAM2_ADDR, LENGTH = RAM2_SIZE
-#endif
+    /* TI CCFG Registers */
+    DT_REGION_FROM_NODE_STATUS_OKAY(FLASH_CCFG, rwx, DT_NODELABEL(ti_ccfg_partition))
+    /* Data & Instruction Tightly Coupled Memory */
+    DT_REGION_FROM_NODE_STATUS_OKAY(ITCM, rw, DT_CHOSEN(zephyr_itcm))
+    DT_REGION_FROM_NODE_STATUS_OKAY(DTCM, rw, DT_CHOSEN(zephyr_dtcm))
+    /* STM32 Core Coupled Memory */
+    DT_REGION_FROM_NODE_STATUS_OKAY(CCM, rw, DT_CHOSEN(zephyr_ccm))
+    /* STM32WB IPC RAM */
+    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM1, rw, DT_NODELABEL(sram1))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM2, rw, DT_NODELABEL(sram2))
+    /* STM32 alternate RAM configurations */
+    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM1, rw, DT_NODELABEL(sdram1))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM2, rw, DT_NODELABEL(sdram2))
+    DT_REGION_FROM_NODE_STATUS_OKAY(BACKUP_SRAM, rw, DT_NODELABEL(backup_sram))
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
@@ -156,11 +151,11 @@ SECTIONS
 	{
 	_image_text_start = .;
 
-#include <linker/priv_stacks-text.ld>
 #include <linker/kobject-text.ld>
 
 	*(.text)
 	*(".text.*")
+	*(".TEXT.*")
 	*(.gnu.linkonce.t.*)
 
 	/*
@@ -201,6 +196,7 @@ SECTIONS
 	_image_rodata_start = .;
 
 #include <linker/common-rom.ld>
+#include <linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -212,16 +208,7 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rodata.ld>
-#ifdef CONFIG_SOC_RODATA_LD
-#include <soc-rodata.ld>
-#endif
 
-#ifdef CONFIG_CUSTOM_RODATA_LD
-/* Located in project source directory */
-#include <custom-rodata.ld>
-#endif
-
-#include <linker/priv_stacks-rom.ld>
 #include <linker/kobject-rom.ld>
 
 	/*
@@ -244,14 +231,6 @@ SECTIONS
 	_image_rom_end = .;
 
     GROUP_END(ROMABLE_REGION)
-
-/* Some TI SoCs have a special configuration footer, at the end of flash. */
-#ifdef CONFIG_HAS_TI_CCFG
-    SECTION_PROLOGUE(.ti_ccfg,,)
-    {
-    KEEP(*(TI_CCFG))
-    } > FLASH_CCFG
-#endif
 
     /*
      * These are here according to 'arm-zephyr-elf-ld --verbose',
@@ -296,9 +275,66 @@ SECTIONS
 
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
-#endif  /* CONFIG_USERSPACE */
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
+	{
+        /*
+         * For performance, BSS section is assumed to be 4 byte aligned and
+         * a multiple of 4 bytes
+         */
+        . = ALIGN(4);
+	__bss_start = .;
+	__kernel_ram_start = .;
+
+	*(.bss)
+	*(".bss.*")
+	*(COMMON)
+	*(".kernel_bss.*")
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_bss_relocate.ld>
+#endif
+
+        /*
+         * As memory is cleared in words only, it is simpler to ensure the BSS
+         * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
+		 */
+	__bss_end = ALIGN(4);
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+#include <linker/common-noinit.ld>
+
+#endif  /* CONFIG_USERSPACE */
+
+    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+	{
+	__data_ram_start = .;
+	*(.data)
+	*(".data.*")
+	*(".kernel.*")
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rwdata.ld>
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_sram_data_relocate.ld>
+#endif
+
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+    __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+
+#include <linker/common-ram.ld>
+#include <linker/kobject.ld>
+
+#include <linker/cplusplus-ram.ld>
+
+    __data_ram_end = .;
+
+#ifndef CONFIG_USERSPACE
+   SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
         /*
          * For performance, BSS section is assumed to be 4 byte aligned and
@@ -338,49 +374,9 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-noinit.ld>
-#ifdef CONFIG_SOC_NOINIT_LD
-#include <soc-noinit.ld>
-#endif
 
         } GROUP_LINK_IN(RAMABLE_REGION)
-
-    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
-	{
-	__data_ram_start = .;
-	*(.data)
-	*(".data.*")
-	*(".kernel.*")
-
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
- */
-#include <snippets-rwdata.ld>
-#ifdef CONFIG_SOC_RWDATA_LD
-#include <soc-rwdata.ld>
-#endif
-
-#ifdef CONFIG_CUSTOM_RWDATA_LD
-/* Located in project source directory */
-#include <custom-rwdata.ld>
-#endif
-
-#ifdef CONFIG_CODE_DATA_RELOCATION
-#include <linker_sram_data_relocate.ld>
-#endif
-
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-    __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
-
-#include <linker/common-ram.ld>
-#include <linker/priv_stacks.ld>
-#include <linker/kobject.ld>
-
-#include <linker/priv_stacks-noinit.ld>
-#include <linker/cplusplus-ram.ld>
-
-    __data_ram_end = .;
-
+#endif /* CONFIG_USERSPACE */
 
     /* Define linker symbols */
 
@@ -392,7 +388,24 @@ SECTIONS
 
     GROUP_END(RAMABLE_REGION)
 
-#ifdef DT_DTCM_BASE_ADDRESS
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+GROUP_START(ITCM)
+
+	SECTION_PROLOGUE(_ITCM_SECTION_NAME,,SUBALIGN(4))
+	{
+		__itcm_start = .;
+		*(.itcm)
+		*(".itcm.*")
+		__itcm_end = .;
+	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
+
+	__itcm_size = __itcm_end - __itcm_start;
+	__itcm_rom_start = LOADADDR(_ITCM_SECTION_NAME);
+
+GROUP_END(ITCM)
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 GROUP_START(DTCM)
 
 	SECTION_PROLOGUE(_DTCM_BSS_SECTION_NAME, (NOLOAD),SUBALIGN(4))
@@ -401,36 +414,30 @@ GROUP_START(DTCM)
 		__dtcm_bss_start = .;
 		*(.dtcm_bss)
 		*(".dtcm_bss.*")
+		__dtcm_bss_end = .;
 	} GROUP_LINK_IN(DTCM)
-
-	__dtcm_bss_end = .;
 
 	SECTION_PROLOGUE(_DTCM_NOINIT_SECTION_NAME, (NOLOAD),SUBALIGN(4))
 	{
 		__dtcm_noinit_start = .;
 		*(.dtcm_noinit)
 		*(".dtcm_noinit.*")
+		__dtcm_noinit_end = .;
 	} GROUP_LINK_IN(DTCM)
-
-	__dtcm_noinit_end = .;
 
 	SECTION_PROLOGUE(_DTCM_DATA_SECTION_NAME,,SUBALIGN(4))
 	{
 		__dtcm_data_start = .;
 		*(.dtcm_data)
 		*(".dtcm_data.*")
+		__dtcm_data_end = .;
 	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
 
-	__dtcm_data_end = .;
 	__dtcm_end = .;
 
 	__dtcm_data_rom_start = LOADADDR(_DTCM_DATA_SECTION_NAME);
 
 GROUP_END(DTCM)
-#endif /* DT_DTCM_BASE_ADDRESS */
-#ifdef CONFIG_CUSTOM_SECTIONS_LD
-/* Located in project source directory */
-#include <custom-sections.ld>
 #endif
 
 /* Located in generated directory. This file is populated by the

@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(tinycrypt);
 static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
 
 static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
-			  u8_t *iv)
+			  uint8_t *iv)
 {
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
 
@@ -46,7 +46,7 @@ static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 }
 
 static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
-			  u8_t *iv)
+			  uint8_t *iv)
 {
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
 
@@ -74,10 +74,10 @@ static int do_cbc_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 }
 
 static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
-		     u8_t *iv)
+		     uint8_t *iv)
 {
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
-	u8_t ctr[16] = {0};	/* CTR mode Counter =  iv:ctr */
+	uint8_t ctr[16] = {0};	/* CTR mode Counter =  iv:ctr */
 	int ivlen = ctx->keylen - (ctx->mode_params.ctr_info.ctr_len >> 3);
 
 	/* Tinycrypt takes the last 4 bytes of the counter parameter as the
@@ -99,7 +99,7 @@ static int do_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *op,
 }
 
 static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
-			     struct cipher_aead_pkt *aead_op, u8_t *nonce)
+			     struct cipher_aead_pkt *aead_op, uint8_t *nonce)
 {
 	struct tc_ccm_mode_struct ccm;
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
@@ -139,7 +139,7 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 }
 
 static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
-			       struct cipher_aead_pkt *aead_op, u8_t *nonce)
+			       struct cipher_aead_pkt *aead_op, uint8_t *nonce)
 {
 	struct tc_ccm_mode_struct ccm;
 	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
@@ -190,9 +190,9 @@ static int get_unused_session(void)
 	return i;
 }
 
-static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
-		     enum cipher_algo algo, enum cipher_mode mode,
-		     enum cipher_op op_type)
+static int tc_session_setup(const struct device *dev, struct cipher_ctx *ctx,
+			    enum cipher_algo algo, enum cipher_mode mode,
+			    enum cipher_op op_type)
 {
 	struct tc_shim_drv_state *data;
 	int idx;
@@ -286,12 +286,12 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 	return 0;
 }
 
-static int tc_query_caps(struct device *dev)
+static int tc_query_caps(const struct device *dev)
 {
 	return (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS);
 }
 
-static int tc_session_free(struct device *dev, struct cipher_ctx *sessn)
+static int tc_session_free(const struct device *dev, struct cipher_ctx *sessn)
 {
 	struct tc_shim_drv_state *data =  sessn->drv_sessn_state;
 
@@ -302,7 +302,7 @@ static int tc_session_free(struct device *dev, struct cipher_ctx *sessn)
 	return 0;
 }
 
-static int tc_shim_init(struct device *dev)
+static int tc_shim_init(const struct device *dev)
 {
 	int i;
 
@@ -321,7 +321,7 @@ static struct crypto_driver_api crypto_enc_funcs = {
 	.query_hw_caps = tc_query_caps,
 };
 
-DEVICE_AND_API_INIT(crypto_tinycrypt, CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME,
-		    &tc_shim_init, NULL, NULL,
+DEVICE_DEFINE(crypto_tinycrypt, CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME,
+		    &tc_shim_init, device_pm_control_nop, NULL, NULL,
 		    POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		    (void *)&crypto_enc_funcs);

@@ -1,26 +1,21 @@
 # STM32 HAL Ethernet driver configuration options
 
 # Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
+# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
 # SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_ST_STM32_ETHERNET := st,stm32-ethernet
 
 menuconfig ETH_STM32_HAL
 	bool "STM32 HAL Ethernet driver"
+	default y if $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_ETHERNET))
 	select USE_STM32_HAL_ETH
+	select NOCACHE_MEMORY if SOC_SERIES_STM32H7X && CPU_CORTEX_M7
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
-	  all Ethernet enabled variants of the F2, F4 and F7 series.
+	  all Ethernet enabled variants of the F2, F4, F7 and H7 series.
 
 if ETH_STM32_HAL
-
-config ETH_STM32_HAL_NAME
-	string "Device name"
-	default "ETH_0"
-
-config ETH_STM32_HAL_IRQ_PRI
-	int "Controller interrupt priority"
-	default 0
-	help
-	  IRQ priority
 
 config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
 	int "RX thread stack size"

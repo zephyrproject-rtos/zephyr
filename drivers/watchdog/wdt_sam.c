@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_watchdog
+
 /**
  * @brief Watchdog (WDT) Driver for Atmel SAM MCUs
  *
@@ -32,11 +34,9 @@ struct wdt_sam_dev_cfg {
 	Wdt *regs;
 };
 
-static struct device DEVICE_NAME_GET(wdt_sam);
-
 struct wdt_sam_dev_data {
 	wdt_callback_t cb;
-	u32_t mode;
+	uint32_t mode;
 	bool timeout_valid;
 	bool mode_set;
 };
@@ -44,13 +44,13 @@ struct wdt_sam_dev_data {
 static struct wdt_sam_dev_data wdt_sam_data = { 0 };
 
 #define DEV_CFG(dev) \
-	((const struct wdt_sam_dev_cfg *const)(dev)->config->config_info)
+	((const struct wdt_sam_dev_cfg *const)(dev)->config)
 
-static void wdt_sam_isr(struct device *dev)
+static void wdt_sam_isr(const struct device *dev)
 {
-	u32_t wdt_sr;
+	uint32_t wdt_sr;
 	Wdt *const wdt = DEV_CFG(dev)->regs;
-	struct wdt_sam_dev_data *data = dev->driver_data;
+	struct wdt_sam_dev_data *data = dev->data;
 
 	/* Clear status bit to acknowledge interrupt by dummy read. */
 	wdt_sr = wdt->WDT_SR;
@@ -65,9 +65,9 @@ static void wdt_sam_isr(struct device *dev)
  * @param timeout Timeout value in milliseconds.
  * @param slow clock on board in Hz.
  */
-int wdt_sam_convert_timeout(u32_t timeout, u32_t sclk)
+int wdt_sam_convert_timeout(uint32_t timeout, uint32_t sclk)
 {
-	u32_t max, min;
+	uint32_t max, min;
 
 	timeout = timeout * 1000U;
 	min =  (SAM_PRESCALAR * 1000000) / sclk;
@@ -81,10 +81,10 @@ int wdt_sam_convert_timeout(u32_t timeout, u32_t sclk)
 	return WDT_MR_WDV(timeout / min);
 }
 
-static int wdt_sam_disable(struct device *dev)
+static int wdt_sam_disable(const struct device *dev)
 {
 	Wdt *const wdt = DEV_CFG(dev)->regs;
-	struct wdt_sam_dev_data *data = dev->driver_data;
+	struct wdt_sam_dev_data *data = dev->data;
 
 	/* since Watchdog mode register is 'write-once', we can't disable if
 	 * someone has already set the mode register
@@ -104,11 +104,11 @@ static int wdt_sam_disable(struct device *dev)
 	return 0;
 }
 
-static int wdt_sam_setup(struct device *dev, u8_t options)
+static int wdt_sam_setup(const struct device *dev, uint8_t options)
 {
 
 	Wdt *const wdt = DEV_CFG(dev)->regs;
-	struct wdt_sam_dev_data *data = dev->driver_data;
+	struct wdt_sam_dev_data *data = dev->data;
 
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeouts installed");
@@ -137,13 +137,13 @@ static int wdt_sam_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wdt_sam_install_timeout(struct device *dev,
+static int wdt_sam_install_timeout(const struct device *dev,
 				   const struct wdt_timeout_cfg *cfg)
 {
-	u32_t wdt_mode = 0U;
+	uint32_t wdt_mode = 0U;
 	int timeout_value;
 
-	struct wdt_sam_dev_data *data = dev->driver_data;
+	struct wdt_sam_dev_data *data = dev->data;
 
 	if (data->timeout_valid) {
 		LOG_ERR("No more timeouts can be installed");
@@ -160,7 +160,7 @@ static int wdt_sam_install_timeout(struct device *dev,
 	 * in the max field of the timeout config.
 	 */
 	timeout_value = wdt_sam_convert_timeout(cfg->window.max,
-						(u32_t) CHIP_FREQ_XTAL_32K);
+						(uint32_t) CHIP_FREQ_XTAL_32K);
 
 	if (timeout_value < 0) {
 		return -EINVAL;
@@ -206,7 +206,7 @@ static int wdt_sam_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int wdt_sam_feed(struct device *dev, int channel_id)
+static int wdt_sam_feed(const struct device *dev, int channel_id)
 {
 	/*
 	 * On watchdog restart the Watchdog counter is immediately
@@ -228,18 +228,18 @@ static const struct wdt_driver_api wdt_sam_api = {
 };
 
 static const struct wdt_sam_dev_cfg wdt_sam_cfg = {
-	.regs = (Wdt *)DT_WDT_SAM_BASE_ADDRESS,
+	.regs = (Wdt *)DT_INST_REG_ADDR(0),
 };
 
 static void wdt_sam_irq_config(void)
 {
-	IRQ_CONNECT(DT_WDT_SAM_IRQ,
-		    DT_WDT_SAM_IRQ_PRIORITY, wdt_sam_isr,
-		    DEVICE_GET(wdt_sam), 0);
-	irq_enable(DT_WDT_SAM_IRQ);
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority), wdt_sam_isr,
+		    DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQN(0));
 }
 
-static int wdt_sam_init(struct device *dev)
+static int wdt_sam_init(const struct device *dev)
 {
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_sam_disable(dev);
@@ -249,6 +249,6 @@ static int wdt_sam_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt_sam, DT_WDT_SAM_LABEL, wdt_sam_init,
+DEVICE_DT_INST_DEFINE(0, wdt_sam_init, device_pm_control_nop,
 		    &wdt_sam_data, &wdt_sam_cfg, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam_api);

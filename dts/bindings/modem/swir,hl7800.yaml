@@ -1,0 +1,55 @@
+#
+# Copyright (c) 2020, Laird Connectivity
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Sierra Wireless HL7800 Modem
+
+compatible: "swir,hl7800"
+
+include: uart-device.yaml
+
+properties:
+    label:
+      required: true
+
+    mdm-wake-gpios:
+        type: phandle-array
+        required: true
+
+    mdm-reset-gpios:
+        type: phandle-array
+        required: true
+
+    mdm-pwr-on-gpios:
+        type: phandle-array
+        required: true
+
+    mdm-fast-shutd-gpios:
+        type: phandle-array
+        required: true
+
+    mdm-uart-dtr-gpios:
+        type: phandle-array
+        required: true
+
+    mdm-vgpio-gpios:
+        type: phandle-array
+        required: true
+
+    mdm-uart-dsr-gpios:
+        type: phandle-array
+        required: true
+
+    mdm-uart-cts-gpios:
+        type: phandle-array
+        required: true
+
+    mdm-gpio2-gpios:
+        type: phandle-array
+        required: false
+
+    mdm-gpio6-gpios:
+        type: phandle-array
+        required: true

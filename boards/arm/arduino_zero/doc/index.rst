@@ -45,11 +45,15 @@ features:
 +-----------+------------+------------------------------------------+
 | GPIO      | on-chip    | I/O ports                                |
 +-----------+------------+------------------------------------------+
+| PWM       | on-chip    | Pulse Width Modulation                   |
++-----------+------------+------------------------------------------+
 | USART     | on-chip    | Serial ports                             |
 +-----------+------------+------------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports        |
 +-----------+------------+------------------------------------------+
 | USB       | on-chip    | USB device                               |
++-----------+------------+------------------------------------------+
+| DAC       | on-chip    | Digital to analogue converter            |
 +-----------+------------+------------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
@@ -78,6 +82,13 @@ The SAMD21 MCU has 6 SERCOM based USARTs. One of the USARTs
 (SERCOM5) is connected to the onboard Atmel Embedded Debugger (EDBG).
 SERCOM0 is available on the D0/D1 pins.
 
+PWM
+===
+
+The SAMD21 MCU has 3 TCC based PWM units with up to 4 outputs each and a period
+of 24 bits or 16 bits.  If :code:`CONFIG_PWM_SAM0_TCC` is enabled then LED0 is
+driven by TCC2 instead of by GPIO.
+
 SPI Port
 ========
 
@@ -91,6 +102,12 @@ The SAMD21 MCU has a USB device port that can be used to communicate
 with a host PC.  See the :ref:`usb-samples` sample applications for
 more, such as the :ref:`usb_cdc-acm` sample which sets up a virtual
 serial port that echos characters back to the host PC.
+
+DAC
+===
+
+The SAMD21 MCU has a single channel DAC with 10 bits of resolution. On the
+Arduino Zero, the DAC is available on pin A0.
 
 Programming and Debugging
 *************************

@@ -31,3 +31,6 @@ CONFIG_UART_CONSOLE=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y

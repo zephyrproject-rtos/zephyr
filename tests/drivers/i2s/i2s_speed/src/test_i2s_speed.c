@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @addtogroup t_i2s_speed
- * @{
- * @defgroup t_i2s_speed test_i2s_speed
- * @brief TestPurpose: verify maximum speed the I2S driver can support
- * @}
- */
 
 #include <zephyr.h>
 #include <ztest.h>
@@ -21,7 +14,7 @@
 #define SAMPLE_NO 64
 
 /* The data_l represent a sine wave */
-static s16_t data_l[SAMPLE_NO] = {
+static int16_t data_l[SAMPLE_NO] = {
 	  3211,   6392,   9511,  12539,  15446,  18204,  20787,  23169,
 	 25329,  27244,  28897,  30272,  31356,  32137,  32609,  32767,
 	 32609,  32137,  31356,  30272,  28897,  27244,  25329,  23169,
@@ -33,7 +26,7 @@ static s16_t data_l[SAMPLE_NO] = {
 };
 
 /* The data_r represent a sine wave shifted by 90 deg to data_l sine wave */
-static s16_t data_r[SAMPLE_NO] = {
+static int16_t data_r[SAMPLE_NO] = {
 	 32609,  32137,  31356,  30272,  28897,  27244,  25329,  23169,
 	 20787,  18204,  15446,  12539,   9511,   6392,   3211,      0,
 	 -3212,  -6393,  -9512, -12540, -15447, -18205, -20788, -23170,
@@ -49,7 +42,7 @@ static s16_t data_r[SAMPLE_NO] = {
 K_MEM_SLAB_DEFINE(rx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS, 32);
 K_MEM_SLAB_DEFINE(tx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS, 32);
 
-static void fill_buf(s16_t *tx_block, int att)
+static void fill_buf(int16_t *tx_block, int att)
 {
 	for (int i = 0; i < SAMPLE_NO; i++) {
 		tx_block[2 * i] = data_l[i] >> att;
@@ -57,7 +50,7 @@ static void fill_buf(s16_t *tx_block, int att)
 	}
 }
 
-static int verify_buf(s16_t *rx_block, int att)
+static int verify_buf(int16_t *rx_block, int att)
 {
 	for (int i = 0; i < SAMPLE_NO; i++) {
 		if (rx_block[2 * i] != data_l[i] >> att) {
@@ -83,7 +76,7 @@ static int verify_buf(s16_t *rx_block, int att)
 /** Configure I2S TX transfer. */
 void test_i2s_tx_transfer_configure(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	int ret;
 
@@ -109,7 +102,7 @@ void test_i2s_tx_transfer_configure(void)
 /** Configure I2S RX transfer. */
 void test_i2s_rx_transfer_configure(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	int ret;
 
@@ -142,7 +135,7 @@ void test_i2s_rx_transfer_configure(void)
  */
 void test_i2s_transfer_short(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	void *rx_block[3];
 	void *tx_block;
 	size_t rx_size;
@@ -155,7 +148,7 @@ void test_i2s_transfer_short(void)
 	for (int i = 0; i < 3; i++) {
 		ret = k_mem_slab_alloc(&tx_0_mem_slab, &tx_block, K_FOREVER);
 		zassert_equal(ret, 0, NULL);
-		fill_buf((u16_t *)tx_block, i);
+		fill_buf((uint16_t *)tx_block, i);
 
 		ret = i2s_write(dev_i2s, tx_block, BLOCK_SIZE);
 		zassert_equal(ret, 0, NULL);
@@ -192,17 +185,17 @@ void test_i2s_transfer_short(void)
 	zassert_equal(rx_size, BLOCK_SIZE, NULL);
 
 	/* Verify received data */
-	ret = verify_buf((u16_t *)rx_block[0], 0);
+	ret = verify_buf((uint16_t *)rx_block[0], 0);
 	zassert_equal(ret, 0, NULL);
 	k_mem_slab_free(&rx_0_mem_slab, &rx_block[0]);
 	TC_PRINT("%d<-OK\n", 1);
 
-	ret = verify_buf((u16_t *)rx_block[1], 1);
+	ret = verify_buf((uint16_t *)rx_block[1], 1);
 	zassert_equal(ret, 0, NULL);
 	k_mem_slab_free(&rx_0_mem_slab, &rx_block[1]);
 	TC_PRINT("%d<-OK\n", 2);
 
-	ret = verify_buf((u16_t *)rx_block[2], 2);
+	ret = verify_buf((uint16_t *)rx_block[2], 2);
 	zassert_equal(ret, 0, NULL);
 	k_mem_slab_free(&rx_0_mem_slab, &rx_block[2]);
 	TC_PRINT("%d<-OK\n", 3);
@@ -218,7 +211,7 @@ void test_i2s_transfer_short(void)
  */
 void test_i2s_transfer_long(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	void *rx_block[NUM_BLOCKS];
 	void *tx_block[NUM_BLOCKS];
 	size_t rx_size;
@@ -235,7 +228,7 @@ void test_i2s_transfer_long(void)
 		ret = k_mem_slab_alloc(&tx_0_mem_slab, &tx_block[tx_idx],
 				       K_FOREVER);
 		zassert_equal(ret, 0, NULL);
-		fill_buf((u16_t *)tx_block[tx_idx], tx_idx % 3);
+		fill_buf((uint16_t *)tx_block[tx_idx], tx_idx % 3);
 	}
 
 	tx_idx = 0;
@@ -286,7 +279,7 @@ void test_i2s_transfer_long(void)
 	/* Verify received data */
 	num_verified = 0;
 	for (rx_idx = 0; rx_idx < NUM_BLOCKS; rx_idx++) {
-		ret = verify_buf((u16_t *)rx_block[rx_idx], rx_idx % 3);
+		ret = verify_buf((uint16_t *)rx_block[rx_idx], rx_idx % 3);
 		if (ret != 0) {
 			TC_PRINT("%d RX block invalid\n", rx_idx);
 		} else {

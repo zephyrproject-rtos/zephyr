@@ -396,12 +396,12 @@ For example::
 
    .. code-block:: c
 
-      struct _k_object {
+      struct z_object {
          char *name;
-         u8_t perms[CONFIG_MAX_THREAD_BYTES];
-         u8_t type;
-         u8_t flags;
-         u32_t data;
+         uint8_t perms[CONFIG_MAX_THREAD_BYTES];
+         uint8_t type;
+         uint8_t flags;
+         uint32_t data;
       } __packed;
 
 Note the blank line between the ``code-block`` directive and the first
@@ -412,12 +412,12 @@ This would be rendered as:
 
    .. code-block:: c
 
-      struct _k_object {
+      struct z_object {
          char *name;
-         u8_t perms[CONFIG_MAX_THREAD_BYTES];
-         u8_t type;
-         u8_t flags;
-         u32_t data;
+         uint8_t perms[CONFIG_MAX_THREAD_BYTES];
+         uint8_t type;
+         uint8_t flags;
+         uint32_t data;
       } __packed;
 
 
@@ -494,7 +494,7 @@ are an allowed exception.
 zephyr-app-commands Directive
 *****************************
 
-.. include:: ../../extensions/zephyr/application.py
+.. include:: ../../_extensions/zephyr/application.py
    :start-line: 10
    :start-after: '''
    :end-before: '''

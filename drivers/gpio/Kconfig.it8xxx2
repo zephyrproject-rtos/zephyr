@@ -1,0 +1,8 @@
+# Copyright (c) 2020 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_ITE_IT8XXX2
+	bool "ITE IT8XXX2 GPIO driver"
+	select HAS_DTS_GPIO
+	help
+	  Enable driver for the ite GPIO controller.

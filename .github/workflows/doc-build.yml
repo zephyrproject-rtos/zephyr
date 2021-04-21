@@ -3,16 +3,31 @@
 
 name: Documentation GitHub Workflow
 
-on: [pull_request]
+on:
+  pull_request:
+    paths:
+    - 'doc/**'
+    - '**.rst'
+    - 'include/**'
+    - 'kernel/include/kernel_arch_interface.h'
+    - 'lib/libc/**'
+    - 'subsys/testsuite/ztest/include/**'
+    - 'tests/**'
+    - '**/Kconfig*'
+    - 'west.yml'
+    - '.github/workflows/doc-build.yml'
+    - 'scripts/dts/**'
+    - 'scripts/requirements-doc.txt'
 
 jobs:
-  build:
+  doc-build:
+    name: "Documentation Build"
     runs-on: ubuntu-latest
 
     steps:
     - name: Update PATH for west
       run: |
-        echo "::add-path::$HOME/.local/bin"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: checkout
       uses: actions/checkout@v2
@@ -29,11 +44,10 @@ jobs:
 
     - name: install-pip
       run: |
-        pip3 install setuptools
-        pip3 install 'breathe>=4.9.1' 'docutils>=0.14' \
-                     'sphinx>=1.7.5' sphinx_rtd_theme sphinx-tabs \
-                     sphinxcontrib-svg2pdfconverter 'west>=0.6.2'
-        pip3 install pyelftools
+        sudo pip3 install -U setuptools wheel pip
+        pip3 install -r scripts/requirements-base.txt
+        pip3 install -r scripts/requirements-doc.txt
+        pip3 install west==0.10.1
 
     - name: west setup
       run: |
@@ -42,7 +56,7 @@ jobs:
     - name: build-docs
       run: |
         source zephyr-env.sh
-        make htmldocs
+        make -C doc htmldocs
         tar cvf htmldocs.tar --directory=./doc/_build html
 
     - name: upload-build

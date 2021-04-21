@@ -26,7 +26,7 @@ class XtensaBinaryRunner(ZephyrBinaryRunner):
                             help='path to XTensa tools')
 
     @classmethod
-    def create(cls, cfg, args):
+    def do_create(cls, cfg, args):
         # Override any GDB with the one provided by the XTensa tools.
         cfg.gdb = path.join(args.xcc_tools, 'bin', 'xt-gdb')
         return XtensaBinaryRunner(cfg)

@@ -24,7 +24,7 @@
 #define AT_RSP_DELIMITER_LEN 2
 
 struct eswifi_gpio {
-	struct device *dev;
+	const struct device *dev;
 	unsigned int pin;
 };
 
@@ -70,7 +70,7 @@ struct eswifi_dev {
 	struct eswifi_sta sta;
 	enum eswifi_request req;
 	enum eswifi_role role;
-	u8_t mac[6];
+	uint8_t mac[6];
 	char buf[MAX_DATA_SIZE];
 	struct k_mutex mutex;
 	atomic_val_t mutex_owner;
@@ -112,9 +112,9 @@ static inline void eswifi_unlock(struct eswifi_dev *eswifi)
 }
 
 int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd);
-static inline int __select_socket(struct eswifi_dev *eswifi, u8_t idx)
+static inline int __select_socket(struct eswifi_dev *eswifi, uint8_t idx)
 {
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P0=%d\r", idx);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P0=%d\r", idx);
 	return eswifi_at_cmd(eswifi, eswifi->buf);
 }
 
@@ -124,9 +124,9 @@ struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
 	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket);
 }
 
-extern struct eswifi_bus_ops eswifi_bus_ops_spi;
+struct eswifi_bus_ops *eswifi_get_bus(void);
 int eswifi_offload_init(struct eswifi_dev *eswifi);
-struct eswifi_dev *eswifi_by_iface_idx(u8_t iface);
+struct eswifi_dev *eswifi_by_iface_idx(uint8_t iface);
 int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp);
 void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len);
 void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len);
@@ -142,6 +142,12 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 		  const struct sockaddr *addr, socklen_t addrlen);
 #if defined(CONFIG_NET_SOCKETS_OFFLOAD)
 int eswifi_socket_offload_init(struct eswifi_dev *leswifi);
+#endif
+
+#if defined(CONFIG_WIFI_ESWIFI_SHELL)
+void eswifi_shell_register(struct eswifi_dev *dev);
+#else
+#define eswifi_shell_register(dev)
 #endif
 
 #endif

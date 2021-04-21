@@ -93,7 +93,7 @@ typedef timeOfDay_t TIME_DIFFERENCE;
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             41
+   #define CO_OD_NoOfElements             45
 
 
 /*******************************************************************************
@@ -439,6 +439,30 @@ typedef timeOfDay_t TIME_DIFFERENCE;
 	#define OD_1a03_7_TPDOMappingParameter_mappedObject7        7
 	#define OD_1a03_8_TPDOMappingParameter_mappedObject8        8
 
+/*1f50 */
+	#define OD_1f50_programData                                 0x1f50
+
+	#define OD_1f50_0_programData_maxSubIndex                   0
+	#define OD_1f50_1_programData_                              1
+
+/*1f51 */
+	#define OD_1f51_programControl                              0x1f51
+
+	#define OD_1f51_0_programControl_maxSubIndex                0
+	#define OD_1f51_1_programControl_                           1
+
+/*1f56 */
+	#define OD_1f56_programSoftwareIdentification               0x1f56
+
+	#define OD_1f56_0_programSoftwareIdentification_maxSubIndex 0
+	#define OD_1f56_1_programSoftwareIdentification_            1
+
+/*1f57 */
+	#define OD_1f57_flashStatusIdentification                   0x1f57
+
+	#define OD_1f57_0_flashStatusIdentification_maxSubIndex     0
+	#define OD_1f57_1_flashStatusIdentification_                1
+
 /*1f80 */
 	#define OD_1f80_NMTStartup                                  0x1f80
 
@@ -494,6 +518,10 @@ struct sCO_OD_RAM {
 /*1003      */ UNSIGNED32 preDefinedErrorField[8];
 /*1010      */ UNSIGNED32 storeParameters[1];
 /*1011      */ UNSIGNED32 restoreDefaultParameters[1];
+/*1f50      */ DOMAIN programData[1];
+/*1f51      */ UNSIGNED8 programControl[1];
+/*1f56      */ UNSIGNED32 programSoftwareIdentification[1];
+/*1f57      */ UNSIGNED32 flashStatusIdentification[1];
 /*2100      */ OCTET_STRING errorStatusBits[10];
 /*2102      */ UNSIGNED32 buttonPressCounter;
 
@@ -611,6 +639,26 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
 
 /*1a00, Data Type: TPDOMappingParameter_t */
 	#define OD_TPDOMappingParameter                             CO_OD_ROM.TPDOMappingParameter
+
+/*1f50, Data Type: DOMAIN, Array[1] */
+	#define OD_programData                                      CO_OD_RAM.programData
+	#define ODL_programData_arrayLength                         1
+	#define ODA_programData_                                    0
+
+/*1f51, Data Type: UNSIGNED8, Array[1] */
+	#define OD_programControl                                   CO_OD_RAM.programControl
+	#define ODL_programControl_arrayLength                      1
+	#define ODA_programControl_                                 0
+
+/*1f56, Data Type: UNSIGNED32, Array[1] */
+	#define OD_programSoftwareIdentification                    CO_OD_RAM.programSoftwareIdentification
+	#define ODL_programSoftwareIdentification_arrayLength       1
+	#define ODA_programSoftwareIdentification_                  0
+
+/*1f57, Data Type: UNSIGNED32, Array[1] */
+	#define OD_flashStatusIdentification                        CO_OD_RAM.flashStatusIdentification
+	#define ODL_flashStatusIdentification_arrayLength           1
+	#define ODA_flashStatusIdentification_                      0
 
 /*1f80, Data Type: UNSIGNED32 */
 	#define OD_NMTStartup                                       CO_OD_ROM.NMTStartup

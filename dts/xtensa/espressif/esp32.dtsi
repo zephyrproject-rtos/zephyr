@@ -3,11 +3,18 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <mem.h>
 #include <xtensa/xtensa.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/clock/esp32_clock.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng0;
+		zephyr,flash-controller = &flash;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -16,28 +23,63 @@
 			device_type = "cpu";
 			compatible = "cadence,tensilica-xtensa-lx6";
 			reg = <0>;
+			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "cadence,tensilica-xtensa-lx6";
 			reg = <1>;
+			clock-source = <ESP32_CLK_SRC_PLL>;
 		};
 
 	};
 
-	sram0: memory@3ffb0000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0x3FFB0000 0x50000>;
+	wifi: wifi {
+		compatible = "espressif,esp32-wifi";
+		status = "disabled";
 	};
 
 	soc {
+		sram0: memory@3ffb0000 {
+			compatible = "mmio-sram";
+			reg = <0x3FFB0000 0x50000>;
+		};
+
+		rtc: rtc@3ff48000 {
+			compatible = "espressif,esp32-rtc";
+			reg = <0x3ff48000 0x0D8>;
+			label = "RTC";
+			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			xtal-div = <0>;
+			#clock-cells = <1>;
+			status = "ok";
+		};
+
+		flash: flash-controller@3ff42000 {
+			compatible = "espressif,esp32-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x3ff42000 0x1000>;
+			/* interrupts = <3 0>; */
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_ESP32";
+				reg = <0 0x400000>;
+				erase-block-size = <4096>;
+				write-block-size = <1>;
+			};
+		};
+
 		uart0: uart@3ff40000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff40000 0x400>;
 			/* interrupts = <12>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "UART_0";
+			clocks = <&rtc ESP32_UART0_MODULE>;
 			status = "disabled";
 		};
 
@@ -46,6 +88,7 @@
 			reg = <0x3ff50000 0x400>;
 			/* interrupts = <17>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "UART_1";
+			clocks = <&rtc ESP32_UART1_MODULE>;
 			status = "disabled";
 		};
 
@@ -54,6 +97,7 @@
 			reg = <0x3ff6E000 0x400>;
 			/* interrupts = <18>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "UART_2";
+			clocks = <&rtc ESP32_UART2_MODULE>;
 			status = "disabled";
 		};
 
@@ -87,6 +131,7 @@
 			reg = <0x3ff53000 0x1000>;
 			/* interrupts = <8>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "I2C_0";
+			clocks = <&rtc ESP32_I2C_EXT0_MODULE>;
 			status = "disabled";
 		};
 
@@ -97,6 +142,7 @@
 			reg = <0x3ff67000 0x1000>;
 			/* interrupts = <9>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
 			label = "I2C_1";
+			clocks = <&rtc ESP32_I2C_EXT1_MODULE>;
 			status = "disabled";
 		};
 
@@ -123,5 +169,54 @@
 			label = "WDT_1";
 			status = "disabled";
 		};
+
+		spi2: spi@3ff64000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x3ff64000 DT_SIZE_K(4)>;
+			label = "SPI_2";
+			clocks = <&rtc ESP32_SPI2_MODULE>;
+			status = "disabled";
+		};
+
+		spi3: spi@3ff65000 {
+			compatible = "espressif,esp32-spi";
+			reg = <0x3ff65000 DT_SIZE_K(4)>;
+			label = "SPI_3";
+			clocks = <&rtc ESP32_SPI3_MODULE>;
+			status = "disabled";
+		};
+
+		timer0: counter@3ff5f000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3ff5f000 DT_SIZE_K(4)>;
+			/* interrupts = <13>; - FIXME: Enable when irq controller is supported */
+			label = "TIMG0_T0";
+			status = "disabled";
+		};
+
+		timer1: counter@3ff5f024 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3ff5f024 DT_SIZE_K(4)>;
+			/* interrupts = <17>; - FIXME: Enable when irq controller is supported */
+			label = "TIMG0_T1";
+			status = "disabled";
+		};
+
+		timer2: counter@3ff60000 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3ff60000 DT_SIZE_K(4)>;
+			/* interrupts = <18>; - FIXME: Enable when irq controller is supported */
+			label = "TIMG1_T0";
+			status = "disabled";
+		};
+
+		timer3: counter@3ff60024 {
+			compatible = "espressif,esp32-timer";
+			reg = <0x3ff60024 DT_SIZE_K(4)>;
+			/* interrupts = <20>; - FIXME: Enable when irq controller is supported */
+			label = "TIMG1_T1";
+			status = "disabled";
+		};
 	};
+
 };

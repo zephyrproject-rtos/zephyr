@@ -15,6 +15,8 @@
 
 void test_main(void)
 {
+	init_test();
+
 #ifdef CONFIG_USERSPACE
 	set_permissions();
 #endif

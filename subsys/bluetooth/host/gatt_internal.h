@@ -29,16 +29,24 @@ void bt_gatt_disconnected(struct bt_conn *conn);
 
 bool bt_gatt_change_aware(struct bt_conn *conn, bool req);
 
-int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr);
+int bt_gatt_store_ccc(uint8_t id, const bt_addr_le_t *addr);
 
-int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr);
+int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr);
 
 #if defined(CONFIG_BT_GATT_CLIENT)
-void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
-			  const void *data, u16_t length);
+void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
+			  const void *data, uint16_t length);
+
+void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
+			       uint16_t length);
 #else
-static inline void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
-					const void *data, u16_t length)
+static inline void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
+					const void *data, uint16_t length)
+{
+}
+
+static inline void bt_gatt_mult_notification(struct bt_conn *conn,
+					     const void *data, uint16_t length)
 {
 }
 #endif /* CONFIG_BT_GATT_CLIENT */
@@ -46,5 +54,5 @@ static inline void bt_gatt_notification(struct bt_conn *conn, u16_t handle,
 struct bt_gatt_attr;
 
 /* Check attribute permission */
-u8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			u8_t mask);
+uint8_t bt_gatt_check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			uint8_t mask);

@@ -1,6 +1,0 @@
-# Copyright (c) 2019 Linaro Limited
-# SPDX-License-Identifier: Apache-2.0
-
-config ETH_ENC424J600_0_GPIO_SPI_CS
-	default y
-	depends on BOARD_REEL_BOARD

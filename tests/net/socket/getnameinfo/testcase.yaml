@@ -1,5 +1,6 @@
 common:
   depends_on: netif
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
 tests:
   net.socket.get_name_info:
     min_ram: 21

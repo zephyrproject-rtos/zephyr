@@ -56,6 +56,17 @@ config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
 	help
 	  Extra room allocated to handle CoAP header data
 
+config LWM2M_ENGINE_VALIDATION_BUFFER_SIZE
+	int "Size of the validation buffer for the incoming data"
+	default 64
+	help
+	  LwM2M will use the validation buffer during the write operation, to
+	  decode the resource value before validating it (applies for resources
+	  for which validation callback has been registered). Set this value to
+	  the maximum expected size of the resources that need to be validated
+	  (and thus have validation callback registered).
+	  Setting the validation buffer size to 0 disables validation support.
+
 config LWM2M_ENGINE_MAX_PENDING
 	int "LWM2M engine max. pending objects"
 	default 5
@@ -76,12 +87,46 @@ config LWM2M_ENGINE_MAX_OBSERVER
 	  This value sets the maximum number of resources which can be
 	  added to the observe notification list.
 
+config LWM2M_CANCEL_OBSERVE_BY_PATH
+	bool "Use path matching as fallback for cancel-observe"
+	help
+	  Some ambiguous language in the LwM2M spec causes some LwM2M server
+	  implementations to implement cancel-observe by specifying the resource
+	  path rather than the token of the original observe request. Without
+	  this option, cancel-observe may not work properly when connecting to
+	  those servers.
+
 config LWM2M_ENGINE_DEFAULT_LIFETIME
 	int "LWM2M engine default server connection lifetime"
 	default 30
 	range 15 65535
 	help
 	  Set the default lifetime (in seconds) for the LWM2M library engine
+
+config LWM2M_SECONDS_TO_UPDATE_EARLY
+	int "LWM2M Registration Update transmission time before timeout"
+	default 6
+	range 1 65535
+	help
+	  Time in seconds before the registration timeout, when the LWM2M
+	  Registration Update is sent by the engine. In networks with large
+	  round trip times (like NB-IoT), it might be needed to set this value
+	  higher, in order to allow the response to arrive before timeout.
+
+config LWM2M_QUEUE_MODE_ENABLED
+	bool "Enable Queue Mode UDP binding"
+	help
+	  Set the transport binding to UDP with Queue Mode (UQ).
+
+config LWM2M_QUEUE_MODE_UPTIME
+	int "Specify time the LWM2M client should stay online in queue mode."
+	default 93
+	help
+	  This config specifies time (in seconds) the device should stay online
+	  after sending a message to the server. Note, that LWM2M specification
+	  recommends this to be CoAP MAX_TRANSMIT_WAIT parameter (which
+	  defaults to 93 seconds, see RFC 7252), it does not forbid other
+	  values though.
 
 config LWM2M_RD_CLIENT_SUPPORT
 	bool "support for LWM2M client bootstrap/registration state machine"
@@ -94,6 +139,23 @@ config LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP
 	bool "Enable bootstrap support"
 	help
 	  Enabling this setting allows the RD client to support bootstrap mode.
+
+config LWM2M_RD_CLIENT_ENDPOINT_NAME_MAX_LENGTH
+	int "Maximum length of client endpoint name"
+	depends on LWM2M_RD_CLIENT_SUPPORT
+	default 33
+	help
+	  Default: room for 32 hexadeciaml digits (UUID) + NULL
+
+config LWM2M_RD_CLIENT_MAX_RETRIES
+	int "Specify maximum number of registration retries"
+	default 5
+	help
+	  Specify maximum number of registration retries, before the application
+	  is notified about the network failure. Once application is notified,
+	  it's up to the application to handle this situation in a way
+	  appropriate for the specific use-case (for instance by waiting for
+	  LTE link to be re-established).
 
 config LWM2M_PEER_PORT
 	int "LWM2M server port"
@@ -121,7 +183,7 @@ config LWM2M_SECURITY_KEY_SIZE
 
 config LWM2M_SERVER_DEFAULT_PMIN
 	int "Default server record PMIN"
-	default 10
+	default 0
 	help
 	  Default minimum amount of time in seconds the client must wait
 	  between notifications.  If a resource has to be notified during this
@@ -130,7 +192,7 @@ config LWM2M_SERVER_DEFAULT_PMIN
 
 config LWM2M_SERVER_DEFAULT_PMAX
 	int "Default server record PMAX"
-	default 60
+	default 0
 	help
 	  Default maximum amount of time in seconds the client may wait
 	  between notifications.  When this time period expires a notification
@@ -224,6 +286,14 @@ config LWM2M_DEVICE_ERROR_CODE_MAX
 	help
 	  This value sets the maximum number of error codes that the device
 	  object will store before ignoring new values.
+
+config LWM2M_DEVICE_EXT_DEV_INFO_MAX
+	int "Maximum # of device obj external device info to store"
+	default 5
+	range 1 20
+	help
+	  This value sets the maximum number of external device info that the
+	  device object will store before ignoring new values.
 
 config LWM2M_NUM_ATTR
 	int "Maximum # of LWM2M attributes"

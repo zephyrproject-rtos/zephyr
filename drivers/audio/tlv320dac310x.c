@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_tlv320dac
+
 #include <errno.h>
 
 #include <sys/util.h>
@@ -23,12 +25,12 @@ LOG_MODULE_REGISTER(tlv320dac310x);
 #define CODEC_OUTPUT_VOLUME_MIN		(-78 * 2)
 
 struct codec_driver_config {
-	struct device	*i2c_device;
+	const struct device *i2c_device;
 	const char	*i2c_dev_name;
-	u8_t		i2c_address;
-	struct device	*gpio_device;
+	uint8_t		i2c_address;
+	const struct device *gpio_device;
 	const char	*gpio_dev_name;
-	u32_t		gpio_pin;
+	uint32_t		gpio_pin;
 	int		gpio_flags;
 };
 
@@ -38,40 +40,43 @@ struct codec_driver_data {
 
 static struct codec_driver_config codec_device_config = {
 	.i2c_device	= NULL,
-	.i2c_dev_name	= DT_INST_0_TI_TLV320DAC_BUS_NAME,
-	.i2c_address	= DT_INST_0_TI_TLV320DAC_BASE_ADDRESS,
+	.i2c_dev_name	= DT_INST_BUS_LABEL(0),
+	.i2c_address	= DT_INST_REG_ADDR(0),
 	.gpio_device	= NULL,
-	.gpio_dev_name	= DT_INST_0_TI_TLV320DAC_RESET_GPIOS_CONTROLLER,
-	.gpio_pin	= DT_INST_0_TI_TLV320DAC_RESET_GPIOS_PIN,
-	.gpio_flags	= DT_INST_0_TI_TLV320DAC_RESET_GPIOS_FLAGS,
+	.gpio_dev_name	= DT_INST_GPIO_LABEL(0, reset_gpios),
+	.gpio_pin	= DT_INST_GPIO_PIN(0, reset_gpios),
+	.gpio_flags	= DT_INST_GPIO_FLAGS(0, reset_gpios),
 };
 
 static struct codec_driver_data codec_device_data;
 
 #define DEV_CFG(dev) \
-	((struct codec_driver_config *const)(dev)->config->config_info)
+	((struct codec_driver_config *const)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct codec_driver_data *const)(dev)->driver_data)
+	((struct codec_driver_data *const)(dev)->data)
 
-static void codec_write_reg(struct device *dev, struct reg_addr reg, u8_t val);
-static void codec_read_reg(struct device *dev, struct reg_addr reg, u8_t *val);
-static void codec_soft_reset(struct device *dev);
-static int codec_configure_dai(struct device *dev, audio_dai_cfg_t *cfg);
-static int codec_configure_clocks(struct device *dev,
-		struct audio_codec_cfg *cfg);
-static int codec_configure_filters(struct device *dev, audio_dai_cfg_t *cfg);
+static void codec_write_reg(const struct device *dev, struct reg_addr reg,
+			    uint8_t val);
+static void codec_read_reg(const struct device *dev, struct reg_addr reg,
+			   uint8_t *val);
+static void codec_soft_reset(const struct device *dev);
+static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg);
+static int codec_configure_clocks(const struct device *dev,
+				  struct audio_codec_cfg *cfg);
+static int codec_configure_filters(const struct device *dev,
+				   audio_dai_cfg_t *cfg);
 static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg);
-static void codec_configure_output(struct device *dev);
-static int codec_set_output_volume(struct device *dev, int vol);
+static void codec_configure_output(const struct device *dev);
+static int codec_set_output_volume(const struct device *dev, int vol);
 
 #if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
-static void codec_read_all_regs(struct device *dev);
+static void codec_read_all_regs(const struct device *dev);
 #define CODEC_DUMP_REGS(dev)	codec_read_all_regs((dev))
 #else
 #define CODEC_DUMP_REGS(dev)
 #endif
 
-static int codec_initialize(struct device *dev)
+static int codec_initialize(const struct device *dev)
 {
 	struct codec_driver_config *const dev_cfg = DEV_CFG(dev);
 
@@ -94,8 +99,8 @@ static int codec_initialize(struct device *dev)
 	return 0;
 }
 
-static int codec_configure(struct device *dev,
-		struct audio_codec_cfg *cfg)
+static int codec_configure(const struct device *dev,
+			   struct audio_codec_cfg *cfg)
 {
 	struct codec_driver_config *const dev_cfg = DEV_CFG(dev);
 	int ret;
@@ -125,7 +130,7 @@ static int codec_configure(struct device *dev,
 	return ret;
 }
 
-static void codec_start_output(struct device *dev)
+static void codec_start_output(const struct device *dev)
 {
 	/* powerup DAC channels */
 	codec_write_reg(dev, DATA_PATH_SETUP_ADDR, DAC_LR_POWERUP_DEFAULT);
@@ -136,7 +141,7 @@ static void codec_start_output(struct device *dev)
 	CODEC_DUMP_REGS(dev);
 }
 
-static void codec_stop_output(struct device *dev)
+static void codec_stop_output(const struct device *dev)
 {
 	/* mute DAC channels */
 	codec_write_reg(dev, VOL_CTRL_ADDR, VOL_CTRL_MUTE_DEFAULT);
@@ -145,21 +150,22 @@ static void codec_stop_output(struct device *dev)
 	codec_write_reg(dev, DATA_PATH_SETUP_ADDR, DAC_LR_POWERDN_DEFAULT);
 }
 
-static void codec_mute_output(struct device *dev)
+static void codec_mute_output(const struct device *dev)
 {
 	/* mute DAC channels */
 	codec_write_reg(dev, VOL_CTRL_ADDR, VOL_CTRL_MUTE_DEFAULT);
 }
 
-static void codec_unmute_output(struct device *dev)
+static void codec_unmute_output(const struct device *dev)
 {
 	/* unmute DAC channels */
 	codec_write_reg(dev, VOL_CTRL_ADDR, VOL_CTRL_UNMUTE_DEFAULT);
 }
 
-static int codec_set_property(struct device *dev,
-		audio_property_t property, audio_channel_t channel,
-		audio_property_value_t val)
+static int codec_set_property(const struct device *dev,
+			      audio_property_t property,
+			      audio_channel_t channel,
+			      audio_property_value_t val)
 {
 	/* individual channel control not currently supported */
 	if (channel != AUDIO_CHANNEL_ALL) {
@@ -187,13 +193,14 @@ static int codec_set_property(struct device *dev,
 	return -EINVAL;
 }
 
-static int codec_apply_properties(struct device *dev)
+static int codec_apply_properties(const struct device *dev)
 {
 	/* nothing to do because there is nothing cached */
 	return 0;
 }
 
-static void codec_write_reg(struct device *dev, struct reg_addr reg, u8_t val)
+static void codec_write_reg(const struct device *dev, struct reg_addr reg,
+			    uint8_t val)
 {
 	struct codec_driver_data *const dev_data = DEV_DATA(dev);
 	struct codec_driver_config *const dev_cfg = DEV_CFG(dev);
@@ -211,7 +218,8 @@ static void codec_write_reg(struct device *dev, struct reg_addr reg, u8_t val)
 			reg.page, reg.reg_addr, val);
 }
 
-static void codec_read_reg(struct device *dev, struct reg_addr reg, u8_t *val)
+static void codec_read_reg(const struct device *dev, struct reg_addr reg,
+			   uint8_t *val)
 {
 	struct codec_driver_data *const dev_data = DEV_DATA(dev);
 	struct codec_driver_config *const dev_cfg = DEV_CFG(dev);
@@ -229,15 +237,15 @@ static void codec_read_reg(struct device *dev, struct reg_addr reg, u8_t *val)
 			reg.page, reg.reg_addr, *val);
 }
 
-static void codec_soft_reset(struct device *dev)
+static void codec_soft_reset(const struct device *dev)
 {
 	/* soft reset the DAC */
 	codec_write_reg(dev, SOFT_RESET_ADDR, SOFT_RESET_ASSERT);
 }
 
-static int codec_configure_dai(struct device *dev, audio_dai_cfg_t *cfg)
+static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 {
-	u8_t val;
+	uint8_t val;
 
 	/* configure I2S interface */
 	val = IF_CTRL_IFTYPE(IF_CTRL_IFTYPE_I2S);
@@ -272,8 +280,8 @@ static int codec_configure_dai(struct device *dev, audio_dai_cfg_t *cfg)
 	return 0;
 }
 
-static int codec_configure_clocks(struct device *dev,
-		struct audio_codec_cfg *cfg)
+static int codec_configure_clocks(const struct device *dev,
+				  struct audio_codec_cfg *cfg)
 {
 	int dac_clk, mod_clk;
 	struct i2s_config *i2s;
@@ -350,11 +358,11 @@ static int codec_configure_clocks(struct device *dev,
 
 	/* set NDAC, then MDAC, followed by OSR */
 	codec_write_reg(dev, NDAC_DIV_ADDR,
-			(u8_t)(NDAC_DIV(ndac) | NDAC_POWER_UP_MASK));
+			(uint8_t)(NDAC_DIV(ndac) | NDAC_POWER_UP_MASK));
 	codec_write_reg(dev, MDAC_DIV_ADDR,
-			(u8_t)(MDAC_DIV(mdac) | MDAC_POWER_UP_MASK));
-	codec_write_reg(dev, OSR_MSB_ADDR, (u8_t)((osr >> 8) & OSR_MSB_MASK));
-	codec_write_reg(dev, OSR_LSB_ADDR, (u8_t)(osr & OSR_LSB_MASK));
+			(uint8_t)(MDAC_DIV(mdac) | MDAC_POWER_UP_MASK));
+	codec_write_reg(dev, OSR_MSB_ADDR, (uint8_t)((osr >> 8) & OSR_MSB_MASK));
+	codec_write_reg(dev, OSR_LSB_ADDR, (uint8_t)(osr & OSR_LSB_MASK));
 
 	if (i2s->options & I2S_OPT_BIT_CLK_MASTER) {
 		codec_write_reg(dev, BCLK_DIV_ADDR,
@@ -371,7 +379,8 @@ static int codec_configure_clocks(struct device *dev,
 	return 0;
 }
 
-static int codec_configure_filters(struct device *dev, audio_dai_cfg_t *cfg)
+static int codec_configure_filters(const struct device *dev,
+				   audio_dai_cfg_t *cfg)
 {
 	enum proc_block proc_blk;
 
@@ -411,9 +420,9 @@ static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg)
 	return osr;
 }
 
-static void codec_configure_output(struct device *dev)
+static void codec_configure_output(const struct device *dev)
 {
-	u8_t val;
+	uint8_t val;
 
 	/*
 	 * set common mode voltage to 1.65V (half of AVDD)
@@ -451,18 +460,18 @@ static void codec_configure_output(struct device *dev)
 	codec_write_reg(dev, HEADPHONE_DRV_ADDR, val);
 }
 
-static int codec_set_output_volume(struct device *dev, int vol)
+static int codec_set_output_volume(const struct device *dev, int vol)
 {
-	u8_t vol_val;
+	uint8_t vol_val;
 	int vol_index;
-	u8_t vol_array[] = {
+	uint8_t vol_array[] = {
 		107, 108, 110, 113, 116, 120, 125, 128, 132, 138, 144
 	};
 
 	if ((vol > CODEC_OUTPUT_VOLUME_MAX) ||
 			(vol < CODEC_OUTPUT_VOLUME_MIN)) {
 		LOG_ERR("Invalid volume %d.%d dB",
-				vol >> 1, ((u32_t)vol & 1) ? 5 : 0);
+				vol >> 1, ((uint32_t)vol & 1) ? 5 : 0);
 		return -EINVAL;
 	}
 
@@ -481,7 +490,7 @@ static int codec_set_output_volume(struct device *dev, int vol)
 		}
 		vol_val = HPX_ANA_VOL_LOW_THRESH + vol_index + 1;
 	} else {
-		vol_val = (u8_t)vol;
+		vol_val = (uint8_t)vol;
 	}
 
 	codec_write_reg(dev, HPL_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(vol_val));
@@ -490,9 +499,9 @@ static int codec_set_output_volume(struct device *dev, int vol)
 }
 
 #if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
-static void codec_read_all_regs(struct device *dev)
+static void codec_read_all_regs(const struct device *dev)
 {
-	u8_t val;
+	uint8_t val;
 
 	codec_read_reg(dev, SOFT_RESET_ADDR, &val);
 	codec_read_reg(dev, NDAC_DIV_ADDR, &val);
@@ -534,6 +543,6 @@ static const struct audio_codec_api codec_driver_api = {
 	.apply_properties	= codec_apply_properties,
 };
 
-DEVICE_AND_API_INIT(tlv320dac310x, DT_INST_0_TI_TLV320DAC_LABEL, codec_initialize,
+DEVICE_DT_INST_DEFINE(0, codec_initialize, device_pm_control_nop,
 		&codec_device_data, &codec_device_config, POST_KERNEL,
 		CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);

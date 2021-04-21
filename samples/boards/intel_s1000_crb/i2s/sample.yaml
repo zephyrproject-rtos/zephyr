@@ -1,6 +1,8 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
 sample:
   name: I2S Audio Sample
 tests:
   sample.board.intel_s1000_crb.i2s:
-    platform_whitelist: intel_s1000_crb
+    platform_allow: intel_s1000_crb
     tags: i2s

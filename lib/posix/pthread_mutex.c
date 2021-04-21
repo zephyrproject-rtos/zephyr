@@ -9,7 +9,7 @@
 #include <wait_q.h>
 #include <posix/pthread.h>
 
-s64_t timespec_to_timeoutms(const struct timespec *abstime);
+int64_t timespec_to_timeoutms(const struct timespec *abstime);
 
 #define MUTEX_MAX_REC_LOCK 32767
 
@@ -20,7 +20,7 @@ static const pthread_mutexattr_t def_attr = {
 	.type = PTHREAD_MUTEX_DEFAULT,
 };
 
-static int acquire_mutex(pthread_mutex_t *m, int timeout)
+static int acquire_mutex(pthread_mutex_t *m, k_timeout_t timeout)
 {
 	int rc = 0, key = irq_lock();
 
@@ -45,7 +45,7 @@ static int acquire_mutex(pthread_mutex_t *m, int timeout)
 		return rc;
 	}
 
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		irq_unlock(key);
 		return EINVAL;
 	}
@@ -77,8 +77,8 @@ int pthread_mutex_trylock(pthread_mutex_t *m)
 int pthread_mutex_timedlock(pthread_mutex_t *m,
 			    const struct timespec *abstime)
 {
-	s32_t timeout = (s32_t)timespec_to_timeoutms(abstime);
-	return acquire_mutex(m, timeout);
+	int32_t timeout = (int32_t)timespec_to_timeoutms(abstime);
+	return acquire_mutex(m, K_MSEC(timeout));
 }
 
 /**
@@ -142,8 +142,8 @@ int pthread_mutex_unlock(pthread_mutex_t *m)
 		if (thread) {
 			m->owner = (pthread_t)thread;
 			m->lock_count++;
-			z_ready_thread(thread);
 			arch_thread_return_value_set(thread, 0);
+			z_ready_thread(thread);
 			z_reschedule_irqlock(key);
 			return 0;
 		}

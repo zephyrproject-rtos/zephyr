@@ -6,94 +6,108 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <drivers/gpio.h>
-
-#include <display/mb_display.h>
 
 #include <bluetooth/mesh.h>
-
+#include <display/mb_display.h>
+#include <drivers/gpio.h>
 #include "board.h"
 
-static u32_t oob_number;
-static struct device *gpio;
+static uint32_t oob_number;
+static const struct gpio_dt_spec button =
+	GPIO_DT_SPEC_GET(DT_NODELABEL(buttona), gpios);
+static const struct mb_image onoff[] = {
+	MB_IMAGE({ 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0 },
+		 { 0, 0, 0, 0, 0 }),
+	MB_IMAGE({ 1, 1, 1, 1, 1 },
+		 { 1, 1, 1, 1, 1 },
+		 { 1, 1, 1, 1, 1 },
+		 { 1, 1, 1, 1, 1 },
+		 { 1, 1, 1, 1, 1 }),
+};
+static struct k_work *button_work;
 
-static void button_pressed(struct device *dev, struct gpio_callback *cb,
-			   u32_t pins)
+static void button_pressed(const struct device *dev, struct gpio_callback *cb,
+			   uint32_t pins)
 {
 	struct mb_display *disp = mb_display_get();
 
-	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, K_MSEC(500),
-			 "%04u", oob_number);
+	/*
+	 * CONFIG_MICROBIT_DISPLAY_STR_MAX needs adjustment if you
+	 * change this.
+	 */
+	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, 500, "%04u",
+			 oob_number);
+
+	if (button_work) {
+		k_work_submit(button_work);
+	}
 }
 
 static void configure_button(void)
 {
 	static struct gpio_callback button_cb;
 
-	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
+	gpio_pin_configure_dt(&button, GPIO_INPUT);
+	gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
 
-	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   GPIO_INPUT | DT_ALIAS_SW0_GPIOS_FLAGS);
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_init_callback(&button_cb, button_pressed, BIT(button.pin));
 
-	gpio_init_callback(&button_cb, button_pressed, BIT(DT_ALIAS_SW0_GPIOS_PIN));
-
-	gpio_add_callback(gpio, &button_cb);
+	gpio_add_callback(button.port, &button_cb);
 }
 
-void board_output_number(bt_mesh_output_action_t action, u32_t number)
+void board_output_number(bt_mesh_output_action_t action, uint32_t number)
 {
 	struct mb_display *disp = mb_display_get();
-	struct mb_image arrow = MB_IMAGE({ 0, 0, 1, 0, 0 },
-					 { 0, 1, 0, 0, 0 },
-					 { 1, 1, 1, 1, 1 },
-					 { 0, 1, 0, 0, 0 },
-					 { 0, 0, 1, 0, 0 });
+	const struct mb_image arrow = MB_IMAGE({ 0, 0, 1, 0, 0 },
+					       { 0, 1, 0, 0, 0 },
+					       { 1, 1, 1, 1, 1 },
+					       { 0, 1, 0, 0, 0 },
+					       { 0, 0, 1, 0, 0 });
 
 	oob_number = number;
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
 
-	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, K_FOREVER, &arrow, 1);
+	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, SYS_FOREVER_MS, &arrow,
+			 1);
 }
 
 void board_prov_complete(void)
 {
 	struct mb_display *disp = mb_display_get();
-	struct mb_image arrow = MB_IMAGE({ 0, 1, 0, 1, 0 },
-					 { 0, 1, 0, 1, 0 },
-					 { 0, 0, 0, 0, 0 },
-					 { 1, 0, 0, 0, 1 },
-					 { 0, 1, 1, 1, 0 });
+	const struct mb_image smile = MB_IMAGE({ 0, 1, 0, 1, 0 },
+					       { 0, 1, 0, 1, 0 },
+					       { 0, 0, 0, 0, 0 },
+					       { 1, 0, 0, 0, 1 },
+					       { 0, 1, 1, 1, 0 });
 
+	gpio_pin_interrupt_configure_dt(&button, GPIO_INT_DISABLE);
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-				     GPIO_INT_DISABLE);
-
-	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, K_SECONDS(10),
-			 &arrow, 1);
+	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, 10 * MSEC_PER_SEC,
+			 &smile, 1);
 }
 
-void board_init(void)
+int board_init(struct k_work *button_work_arg)
 {
 	struct mb_display *disp = mb_display_get();
-	static struct mb_image blink[] = {
-		MB_IMAGE({ 1, 1, 1, 1, 1 },
-			 { 1, 1, 1, 1, 1 },
-			 { 1, 1, 1, 1, 1 },
-			 { 1, 1, 1, 1, 1 },
-			 { 1, 1, 1, 1, 1 }),
-		MB_IMAGE({ 0, 0, 0, 0, 0 },
-			 { 0, 0, 0, 0, 0 },
-			 { 0, 0, 0, 0, 0 },
-			 { 0, 0, 0, 0, 0 },
-			 { 0, 0, 0, 0, 0 })
-	};
 
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
-			 K_SECONDS(1), blink, ARRAY_SIZE(blink));
+			 1 * MSEC_PER_SEC, onoff, ARRAY_SIZE(onoff));
+
+	button_work = button_work_arg;
 
 	configure_button();
+
+	return 0;
+}
+
+void board_led_set(bool val)
+{
+	struct mb_display *disp = mb_display_get();
+
+	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, SYS_FOREVER_MS,
+			 &onoff[val], 1);
 }

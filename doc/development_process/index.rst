@@ -12,7 +12,6 @@ Development Model
    code_flow
    dev_env_and_tools
    issues
-   api_lifecycle
    communication
    documentation
 

@@ -17,17 +17,17 @@
 #define _ISR_OFFSET 0
 
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
-/* The customized solution for nRF5X-based platforms
- * requires that the POWER_CLOCK_IRQn line equals 0.
+/* The customized solution for nRF51X-based and nRF52X-based
+ * platforms requires that the POWER_CLOCK_IRQn line equals 0.
  */
-BUILD_ASSERT_MSG(POWER_CLOCK_IRQn == 0,
+BUILD_ASSERT(POWER_CLOCK_IRQn == 0,
 	"POWER_CLOCK_IRQn != 0. Consider rework manual vector table.");
 
-/* The customized solution for nRF5X-based platforms
- * requires that the RTC1 IRQ line equals 17.
+/* The customized solution for nRF51X-based and nRF52X-based
+ * platforms requires that the RTC1 IRQ line equals 17.
  */
-BUILD_ASSERT_MSG(RTC1_IRQn == 17,
-	 "RTC1_IRQn != 17. Consider rework manual vector table.");
+BUILD_ASSERT(RTC1_IRQn == 17,
+	     "RTC1_IRQn != 17. Consider rework manual vector table.");
 
 #undef _ISR_OFFSET
 #if !defined(CONFIG_BOARD_QEMU_CORTEX_M0)
@@ -37,8 +37,8 @@ BUILD_ASSERT_MSG(RTC1_IRQn == 17,
 /* The customized solution for nRF51-based QEMU Cortex-M0 platform
  * requires that the TIMER0 IRQ line equals 8.
  */
-BUILD_ASSERT_MSG(TIMER0_IRQn == 8,
-	 "TIMER0_IRQn != 8. Consider rework manual vector table.");
+BUILD_ASSERT(TIMER0_IRQn == 8,
+	     "TIMER0_IRQn != 8. Consider rework manual vector table.");
 /* Interrupt lines 9-11 is the first set of consecutive interrupts implemented
  * in QEMU Cortex M0.
  */
@@ -46,20 +46,28 @@ BUILD_ASSERT_MSG(TIMER0_IRQn == 8,
 
 #endif
 
-#elif defined(CONFIG_SOC_SERIES_NRF91X)
-/* The customized solution for nRF91X-based platforms
- * requires that the POWER_CLOCK_IRQn line equals 5.
+#elif defined(CONFIG_SOC_SERIES_NRF53X) || defined(CONFIG_SOC_SERIES_NRF91X)
+/* The customized solution for nRF91X-based and nRF53X-based
+ * platforms requires that the POWER_CLOCK_IRQn line equals 5.
  */
-BUILD_ASSERT_MSG(CLOCK_POWER_IRQn == 5,
-	"POWER_CLOCK_IRQn != 5."
-	"Consider rework manual vector table.");
+BUILD_ASSERT(CLOCK_POWER_IRQn == 5,
+	     "POWER_CLOCK_IRQn != 5."
+	     "Consider rework manual vector table.");
 
+#if !defined(CONFIG_SOC_NRF5340_CPUNET)
 /* The customized solution for nRF91X-based platforms
  * requires that the RTC1 IRQ line equals 21.
  */
-BUILD_ASSERT_MSG(RTC1_IRQn == 21,
-	 "RTC1_IRQn != 21. Consider rework manual vector table.");
+BUILD_ASSERT(RTC1_IRQn == 21,
+	     "RTC1_IRQn != 21. Consider rework manual vector table.");
 
+#else /* CONFIG_SOC_NRF5340_CPUNET */
+/* The customized solution for nRF5340_CPUNET
+ * requires that the RTC1 IRQ line equals 22.
+ */
+BUILD_ASSERT(RTC1_IRQn == 22,
+	     "RTC1_IRQn != 22. Consider rework manual vector table.");
+#endif
 #undef _ISR_OFFSET
 /* Interrupt lines 8-10 is the first set of consecutive interrupts implemented
  * in nRF9160 SOC.
@@ -139,7 +147,7 @@ void test_arm_irq_vector_table(void)
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(_ISR_OFFSET + ii);
 		z_arm_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
-		k_sem_init(&sem[ii], 0, UINT_MAX);
+		k_sem_init(&sem[ii], 0, K_SEM_MAX_LIMIT);
 	}
 
 	zassert_true((k_sem_take(&sem[0], K_NO_WAIT) ||
@@ -177,29 +185,39 @@ typedef void (*vth)(void); /* Vector Table Handler */
  *
  * Note: qemu_cortex_m0 uses TIMER0 to implement system timer.
  */
-void rtc1_nrf_isr(void);
-void nrf_power_clock_isr(void);
+void rtc_nrf_isr(void);
+void nrfx_power_clock_irq_handler(void);
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
 #if defined(CONFIG_BOARD_QEMU_CORTEX_M0)
 void timer0_nrf_isr(void);
 vth __irq_vector_table _irq_vector_table[] = {
-	nrf_power_clock_isr, 0, 0, 0, 0, 0, 0, 0, timer0_nrf_isr, isr0, isr1, isr2
+	nrfx_power_clock_irq_handler, 0, 0, 0, 0, 0, 0, 0,
+	timer0_nrf_isr, isr0, isr1, isr2
 };
 #else
 vth __irq_vector_table _irq_vector_table[] = {
-	nrf_power_clock_isr,
+	nrfx_power_clock_irq_handler,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	rtc1_nrf_isr
+	rtc_nrf_isr
 };
 #endif /* CONFIG_BOARD_QEMU_CORTEX_M0 */
-#elif defined(CONFIG_SOC_SERIES_NRF91X)
+#elif defined(CONFIG_SOC_SERIES_NRF53X) || defined(CONFIG_SOC_SERIES_NRF91X)
+#ifndef CONFIG_SOC_NRF5340_CPUNET
 vth __irq_vector_table _irq_vector_table[] = {
-	0, 0, 0, 0, 0, nrf_power_clock_isr, 0, 0,
+	0, 0, 0, 0, 0, nrfx_power_clock_irq_handler, 0, 0,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	rtc1_nrf_isr
+	rtc_nrf_isr
 };
+#else
+vth __irq_vector_table _irq_vector_table[] = {
+	0, 0, 0, 0, 0, nrfx_power_clock_irq_handler, 0, 0,
+	isr0, isr1, isr2,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	rtc_nrf_isr
+};
+#endif
 #endif
 #elif defined(CONFIG_SOC_SERIES_CC13X2_CC26X2)
 /* TI CC13x2/CC26x2 based platforms also employ a Hardware RTC peripheral
@@ -216,7 +234,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 vth __irq_vector_table _irq_vector_table[] = {
 	isr0, isr1, isr2
 };
-#endif /* CONFIG_SOC_SERIES_NRF52X || CONFIG_SOC_SERIES_NRF91X */
+#endif /* CONFIG_SOC_FAMILY_NRF */
 
 /**
  * @}

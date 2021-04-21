@@ -30,12 +30,13 @@ static int write_read(const char *tag,
 	struct fs_dirent stat;
 	struct fs_file_t file;
 	size_t total = nbuf * buf_size;
-	u32_t t0;
-	u32_t t1;
-	u8_t *buf;
+	uint32_t t0;
+	uint32_t t1;
+	uint8_t *buf;
 	int rc;
 	int rv = TC_FAIL;
 
+	fs_file_t_init(&file);
 	TC_PRINT("clearing %s for %s write/read test\n",
 		 mp->mnt_point, tag);
 	if (testfs_lfs_wipe_partition(mp) != TC_PASS) {
@@ -64,7 +65,7 @@ static int write_read(const char *tag,
 			 "data",
 			 TESTFS_PATH_END);
 
-	buf = calloc(buf_size, sizeof(u8_t));
+	buf = calloc(buf_size, sizeof(uint8_t));
 	if (buf == NULL) {
 		TC_PRINT("Failed to allocate %zu-byte buffer\n", buf_size);
 		goto out_mnt;
@@ -77,7 +78,7 @@ static int write_read(const char *tag,
 	TC_PRINT("creating and writing %zu %zu-byte blocks\n",
 		 nbuf, buf_size);
 
-	rc = fs_open(&file, path.path);
+	rc = fs_open(&file, path.path, FS_O_CREATE | FS_O_RDWR);
 	if (rc != 0) {
 		TC_PRINT("Failed to open %s for write: %d\n", path.path, rc);
 		goto out_buf;
@@ -113,10 +114,10 @@ static int write_read(const char *tag,
 	TC_PRINT("%s write %zu * %zu = %zu bytes in %u ms: "
 		 "%u By/s, %u KiBy/s\n",
 		 tag, nbuf, buf_size, total, (t1 - t0),
-		 (u32_t)(total * 1000U / (t1 - t0)),
-		 (u32_t)(total * 1000U / (t1 - t0) / 1024U));
+		 (uint32_t)(total * 1000U / (t1 - t0)),
+		 (uint32_t)(total * 1000U / (t1 - t0) / 1024U));
 
-	rc = fs_open(&file, path.path);
+	rc = fs_open(&file, path.path, FS_O_CREATE | FS_O_RDWR);
 	if (rc != 0) {
 		TC_PRINT("Failed to open %s for write: %d\n", path.path, rc);
 		goto out_buf;
@@ -139,8 +140,8 @@ static int write_read(const char *tag,
 	TC_PRINT("%s read %zu * %zu = %zu bytes in %u ms: "
 		 "%u By/s, %u KiBy/s\n",
 		 tag, nbuf, buf_size, total, (t1 - t0),
-		 (u32_t)(total * 1000U / (t1 - t0)),
-		 (u32_t)(total * 1000U / (t1 - t0) / 1024U));
+		 (uint32_t)(total * 1000U / (t1 - t0)),
+		 (uint32_t)(total * 1000U / (t1 - t0) / 1024U));
 
 	rv = TC_PASS;
 
@@ -231,21 +232,23 @@ void test_lfs_perf(void)
 		      TC_PASS,
 		      "failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
-	zassert_equal(small_8_1K_cust(), TC_PASS,
-		      "failed");
+	if (IS_ENABLED(CONFIG_APP_TEST_CUSTOM)) {
+		k_sleep(K_MSEC(100));   /* flush log messages */
+		zassert_equal(small_8_1K_cust(), TC_PASS,
+			      "failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
-	zassert_equal(write_read("medium 32x2K dflt",
-				 &testfs_medium_mnt,
-				 2048, 32),
-		      TC_PASS,
-		      "failed");
+		k_sleep(K_MSEC(100));   /* flush log messages */
+		zassert_equal(write_read("medium 32x2K dflt",
+					 &testfs_medium_mnt,
+					 2048, 32),
+			      TC_PASS,
+			      "failed");
 
-	k_sleep(K_MSEC(100));   /* flush log messages */
-	zassert_equal(write_read("large 64x4K dflt",
-				 &testfs_large_mnt,
-				 4096, 64),
-		      TC_PASS,
-		      "failed");
+		k_sleep(K_MSEC(100));   /* flush log messages */
+		zassert_equal(write_read("large 64x4K dflt",
+					 &testfs_large_mnt,
+					 4096, 64),
+			      TC_PASS,
+			      "failed");
+	}
 }

@@ -27,7 +27,7 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 #define LLDP_TLV_GET_LENGTH(type_length)	(type_length & BIT_MASK(9))
-#define LLDP_TLV_GET_TYPE(type_length)		((u8_t)(type_length >> 9))
+#define LLDP_TLV_GET_TYPE(type_length)		((uint8_t)(type_length >> 9))
 
 /* LLDP Definitions */
 
@@ -135,29 +135,29 @@ enum net_lldp_tlv_type {
 /** Chassis ID TLV, see chapter 8.5.2 in IEEE 802.1AB */
 struct net_lldp_chassis_tlv {
 	/** 7 bits for type, 9 bits for length */
-	u16_t type_length;
+	uint16_t type_length;
 	/** ID subtype */
-	u8_t subtype;
+	uint8_t subtype;
 	/** Chassis ID value */
-	u8_t value[NET_LLDP_CHASSIS_ID_VALUE_LEN];
+	uint8_t value[NET_LLDP_CHASSIS_ID_VALUE_LEN];
 } __packed;
 
 /** Port ID TLV, see chapter 8.5.3 in IEEE 802.1AB */
 struct net_lldp_port_tlv {
 	/** 7 bits for type, 9 bits for length */
-	u16_t type_length;
+	uint16_t type_length;
 	/** ID subtype */
-	u8_t subtype;
+	uint8_t subtype;
 	/** Port ID value */
-	u8_t value[NET_LLDP_PORT_ID_VALUE_LEN];
+	uint8_t value[NET_LLDP_PORT_ID_VALUE_LEN];
 } __packed;
 
 /** Time To Live TLV, see chapter 8.5.4 in IEEE 802.1AB */
 struct net_lldp_time_to_live_tlv {
 	/** 7 bits for type, 9 bits for length */
-	u16_t type_length;
+	uint16_t type_length;
 	/** Time To Live (TTL) value */
-	u16_t ttl;
+	uint16_t ttl;
 } __packed;
 
 /**
@@ -189,7 +189,8 @@ int net_lldp_config(struct net_if *iface, const struct net_lldpdu *lldpdu);
  *
  * @return 0 if ok, <0 if error
  */
-int net_lldp_config_optional(struct net_if *iface, const u8_t *tlv, size_t len);
+int net_lldp_config_optional(struct net_if *iface, const uint8_t *tlv,
+			     size_t len);
 
 /**
  * @brief Initialize LLDP engine.

@@ -85,10 +85,10 @@ const char *testfs_path_extend(struct testfs_path *pp,
 }
 
 int testfs_write_constant(struct fs_file_t *fp,
-			  u8_t value,
+			  uint8_t value,
 			  unsigned int len)
 {
-	u8_t buffer[TESTFS_BUFFER_SIZE];
+	uint8_t buffer[TESTFS_BUFFER_SIZE];
 	unsigned int rem = len;
 
 	memset(buffer, value, sizeof(buffer));
@@ -113,10 +113,10 @@ int testfs_write_constant(struct fs_file_t *fp,
 }
 
 int testfs_verify_constant(struct fs_file_t *fp,
-			   u8_t value,
+			   uint8_t value,
 			   unsigned int len)
 {
-	u8_t buffer[TESTFS_BUFFER_SIZE];
+	uint8_t buffer[TESTFS_BUFFER_SIZE];
 	unsigned int match = 0;
 
 	while (len > 0) {
@@ -153,10 +153,10 @@ int testfs_verify_constant(struct fs_file_t *fp,
 }
 
 int testfs_write_incrementing(struct fs_file_t *fp,
-			      u8_t value,
+			      uint8_t value,
 			      unsigned int len)
 {
-	u8_t buffer[TESTFS_BUFFER_SIZE];
+	uint8_t buffer[TESTFS_BUFFER_SIZE];
 	unsigned int rem = len;
 
 	while (rem > 0) {
@@ -183,10 +183,10 @@ int testfs_write_incrementing(struct fs_file_t *fp,
 }
 
 int testfs_verify_incrementing(struct fs_file_t *fp,
-			       u8_t value,
+			       uint8_t value,
 			       unsigned int len)
 {
-	u8_t buffer[TESTFS_BUFFER_SIZE];
+	uint8_t buffer[TESTFS_BUFFER_SIZE];
 	unsigned int match = 0;
 
 	while (len > 0) {
@@ -232,10 +232,12 @@ int testfs_build(struct testfs_path *root,
 		if (TESTFS_BCMD_IS_FILE(cp)) {
 			struct fs_file_t file;
 
+			fs_file_t_init(&file);
 			rc = fs_open(&file,
 				     testfs_path_extend(root,
 							cp->name,
-							TESTFS_PATH_END));
+							TESTFS_PATH_END),
+				     FS_O_CREATE | FS_O_RDWR);
 			TC_PRINT("create at %s with %u from 0x%02x: %d\n",
 				 root->path, cp->size, cp->value, rc);
 			if (rc == 0) {
@@ -295,7 +297,8 @@ static int check_layout_entry(struct testfs_path *pp,
 	if (statp->type == FS_DIR_ENTRY_FILE) {
 		struct fs_file_t file;
 
-		rc = fs_open(&file, pp->path);
+		fs_file_t_init(&file);
+		rc = fs_open(&file, pp->path, FS_O_CREATE | FS_O_RDWR);
 		if (rc < 0) {
 			TC_PRINT("%s: content check open failed: %d\n",
 				 pp->path, rc);
@@ -350,6 +353,8 @@ int testfs_bcmd_verify_layout(struct testfs_path *pp,
 		cp->matched = false;
 		++cp;
 	}
+
+	fs_dir_t_init(&dir);
 
 	int rc = fs_opendir(&dir, pp->path);
 

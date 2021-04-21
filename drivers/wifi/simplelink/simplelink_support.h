@@ -19,20 +19,22 @@ extern "C" {
 
 /* Define ID for simplelink_wifi_cb to not conflict with WLAN event IDs: */
 #define SIMPLELINK_WIFI_CB_IPACQUIRED \
-		(SL_WLAN_EVENT_MAX + SL_DEVICE_EVENT_DROPPED_NETAPP_IPACQUIRED)
+		(SL_WLAN_EVENT_MAX + SL_NETAPP_EVENT_IPV4_ACQUIRED)
+#define SIMPLELINK_WIFI_CB_IPV6ACQUIRED \
+		(SL_WLAN_EVENT_MAX + SL_NETAPP_EVENT_IPV6_ACQUIRED)
 
 struct sl_connect_state {
-	u32_t gateway_ip;
-	u8_t ssid[SSID_LEN_MAX + 1];
-	u8_t bssid[BSSID_LEN_MAX];
-	u32_t ip_addr;
-	u32_t sta_ip;
-	u32_t ipv6_addr[4];
-	s16_t error;
+	uint32_t gateway_ip;
+	uint8_t ssid[SSID_LEN_MAX + 1];
+	uint8_t bssid[BSSID_LEN_MAX];
+	uint32_t ip_addr;
+	uint32_t sta_ip;
+	uint32_t ipv6_addr[4];
+	int16_t error;
 };
 
 /* Callback from SimpleLink Event Handlers: */
-typedef void (*simplelink_wifi_cb_t)(u32_t mgmt_event,
+typedef void (*simplelink_wifi_cb_t)(uint32_t mgmt_event,
 				     struct sl_connect_state *conn);
 
 extern int z_simplelink_start_scan(void);

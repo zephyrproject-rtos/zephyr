@@ -33,9 +33,9 @@
 		0xef, 0xcd, 0xab, 0x89, 0x67, 0x45, 0x23, 0x01, \
 		0x00, 0x00, 0x00, 0x00, 0xd4, 0xd5, 0x00, 0x00)
 
-static u8_t   value_v5_value = 0x05;
+static uint8_t   value_v5_value = 0x05;
 static struct bt_gatt_cep cha_ext_pro_value = { 0x0003 };
-static u8_t   cha_user_des_value[] = {
+static uint8_t   cha_user_des_value[] = {
 	      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
 	      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 	      '\0'
@@ -43,7 +43,7 @@ static u8_t   cha_user_des_value[] = {
 static const struct bt_gatt_cpf cha_format_value = {
 	     0x04, 0x00, 0x3001, 0x01, 0x3111
 };
-static u8_t   des_v5d4__128_bit_uuid_value = 0x44;
+static uint8_t   des_v5d4__128_bit_uuid_value = 0x44;
 static bool   bAuthorized;
 
 /**
@@ -60,9 +60,9 @@ static bool   bAuthorized;
  */
 static ssize_t read_value_v5(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
-			     u16_t len, u16_t offset)
+			     uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(value_v5_value));
@@ -83,9 +83,9 @@ static ssize_t read_value_v5(struct bt_conn *conn,
  */
 static ssize_t write_value_v5(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
-			      u16_t len, u16_t offset, u8_t flags)
+			      uint16_t len, uint16_t offset, uint8_t flags)
 {
-	u8_t *value = attr->user_data;
+	uint8_t *value = attr->user_data;
 
 	if (offset >= sizeof(value_v5_value))
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -114,9 +114,9 @@ static ssize_t write_value_v5(struct bt_conn *conn,
  */
 static ssize_t read_des_v5d4__128_bit_uuid(struct bt_conn *conn,
 					   const struct bt_gatt_attr *attr,
-					   void *buf, u16_t len, u16_t offset)
+					   void *buf, uint16_t len, uint16_t offset)
 {
-	const u8_t *value = attr->user_data;
+	const uint8_t *value = attr->user_data;
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
 				 sizeof(des_v5d4__128_bit_uuid_value));

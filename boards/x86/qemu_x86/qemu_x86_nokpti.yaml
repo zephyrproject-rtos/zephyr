@@ -1,0 +1,13 @@
+identifier: qemu_x86_nokpti
+name: QEMU Emulation for X86 (KPTI disabled)
+type: qemu
+arch: x86
+simulation: qemu
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  default: true
+  only_tags:
+     - kernel
+     - userspace

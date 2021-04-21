@@ -10,100 +10,141 @@
 #include <spinlock.h>
 #include <arch/cpu.h>
 
-#define CYC_PER_TICK	((u32_t)((u64_t)sys_clock_hw_cycles_per_sec() \
-			       / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
-
-#define MAX_TICKS	((0xffffffffu - CYC_PER_TICK) / CYC_PER_TICK)
+#define CYC_PER_TICK	((uint64_t)sys_clock_hw_cycles_per_sec() \
+			/ (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define MAX_TICKS	INT32_MAX
 #define MIN_DELAY	(1000)
 
 static struct k_spinlock lock;
-static volatile u64_t last_cycle;
+static volatile uint64_t last_cycle;
 
-static void arm_arch_timer_compare_isr(void *arg)
+static void arm_arch_timer_compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	u64_t curr_cycle = arm_arch_timer_count();
-	u32_t delta_ticks = (u32_t)((curr_cycle - last_cycle) / CYC_PER_TICK);
+	uint64_t curr_cycle = arm_arch_timer_count();
+	uint32_t delta_ticks = (uint32_t)((curr_cycle - last_cycle) / CYC_PER_TICK);
 
 	last_cycle += delta_ticks * CYC_PER_TICK;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) ||
-	     IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND)) {
-		u64_t next_cycle = last_cycle + CYC_PER_TICK;
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		uint64_t next_cycle = last_cycle + CYC_PER_TICK;
 
-		if ((s64_t)(next_cycle - curr_cycle) < MIN_DELAY) {
+		if ((uint64_t)(next_cycle - curr_cycle) < MIN_DELAY) {
 			next_cycle += CYC_PER_TICK;
 		}
 		arm_arch_timer_set_compare(next_cycle);
+		arm_arch_timer_set_irq_mask(false);
+	} else {
+		arm_arch_timer_set_irq_mask(true);
 	}
 
 	k_spin_unlock(&lock, key);
 
-	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : 1);
+	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : 1);
 }
 
-int z_clock_driver_init(struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, 0, arm_arch_timer_compare_isr, 0,
-		    ARM_TIMER_FLAGS);
+	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
+		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
+	arm_arch_timer_init();
 	arm_arch_timer_set_compare(arm_arch_timer_count() + CYC_PER_TICK);
 	arm_arch_timer_enable(true);
 	irq_enable(ARM_ARCH_TIMER_IRQ);
+	arm_arch_timer_set_irq_mask(false);
 
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
-	ARG_UNUSED(idle);
+#if defined(CONFIG_TICKLESS_KERNEL)
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
-
-	if (idle) {
+	if (ticks == K_TICKS_FOREVER && idle) {
 		return;
 	}
 
-	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : \
+		MIN(MAX_TICKS,  MAX(ticks - 1,  0));
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u64_t curr_cycle = arm_arch_timer_count();
-	u32_t req_cycle = ticks * CYC_PER_TICK;
+	uint64_t curr_cycle = arm_arch_timer_count();
+	uint64_t req_cycle = ticks * CYC_PER_TICK;
 
 	/* Round up to next tick boundary */
-	req_cycle += (u32_t)(curr_cycle - last_cycle) + (CYC_PER_TICK - 1);
+	req_cycle += (curr_cycle - last_cycle) + (CYC_PER_TICK - 1);
+
 	req_cycle = (req_cycle / CYC_PER_TICK) * CYC_PER_TICK;
 
-	if ((s32_t)(req_cycle + last_cycle - curr_cycle) < MIN_DELAY) {
+	if ((req_cycle + last_cycle - curr_cycle) < MIN_DELAY) {
 		req_cycle += CYC_PER_TICK;
 	}
 
 	arm_arch_timer_set_compare(req_cycle + last_cycle);
+	arm_arch_timer_set_irq_mask(false);
 	k_spin_unlock(&lock, key);
 
+#else  /* CONFIG_TICKLESS_KERNEL */
+	ARG_UNUSED(ticks);
+	ARG_UNUSED(idle);
 #endif
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t ret = ((u32_t)arm_arch_timer_count() - (u32_t)last_cycle)
-		    / CYC_PER_TICK;
+	uint32_t ret = (uint32_t)((arm_arch_timer_count() - last_cycle)
+		    / CYC_PER_TICK);
 
 	k_spin_unlock(&lock, key);
 	return ret;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
-	return (u32_t)arm_arch_timer_count();
+	return (uint32_t)arm_arch_timer_count();
 }
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+void arch_busy_wait(uint32_t usec_to_wait)
+{
+	if (usec_to_wait == 0) {
+		return;
+	}
+
+	uint64_t start_cycles = arm_arch_timer_count();
+
+	uint64_t cycles_to_wait = sys_clock_hw_cycles_per_sec() / USEC_PER_SEC * usec_to_wait;
+
+	for (;;) {
+		uint64_t current_cycles = arm_arch_timer_count();
+
+		/* this handles the rollover on an unsigned 32-bit value */
+		if ((current_cycles - start_cycles) >= cycles_to_wait) {
+			break;
+		}
+	}
+}
+#endif
+
+#ifdef CONFIG_SMP
+void smp_timer_init(void)
+{
+	/*
+	 * set the initial status of timer0 of each secondary core
+	 */
+	arm_arch_timer_set_compare(arm_arch_timer_count() + CYC_PER_TICK);
+	arm_arch_timer_enable(true);
+	irq_enable(ARM_ARCH_TIMER_IRQ);
+	arm_arch_timer_set_irq_mask(false);
+}
+#endif

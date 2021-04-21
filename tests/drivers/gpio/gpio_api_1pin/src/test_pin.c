@@ -4,20 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_gpio_api
- * @{
- * @defgroup t_gpio_api_pin test_gpio_api_pin
- * @brief TestPurpose: verify all gpio pin functions using single pin configured
- *        as input/output.
- * @}
- */
 
 #include <limits.h>
 #include <sys/util.h>
 #include "test_gpio_api.h"
 
-static void pin_get_raw_and_verify(struct device *port, unsigned int pin,
+static void pin_get_raw_and_verify(const struct device *port,
+				   unsigned int pin,
 				   int val_expected, int idx)
 {
 	int val_actual;
@@ -29,7 +22,7 @@ static void pin_get_raw_and_verify(struct device *port, unsigned int pin,
 		      "Test point %d: invalid physical pin get value", idx);
 }
 
-static void pin_get_and_verify(struct device *port, unsigned int pin,
+static void pin_get_and_verify(const struct device *port, unsigned int pin,
 			       int val_expected, int idx)
 {
 	int val_actual;
@@ -41,7 +34,8 @@ static void pin_get_and_verify(struct device *port, unsigned int pin,
 		      "Test point %d: invalid logical pin get value", idx);
 }
 
-static void pin_set_raw_and_verify(struct device *port, unsigned int pin,
+static void pin_set_raw_and_verify(const struct device *port,
+				   unsigned int pin,
 				   int val, int idx)
 {
 	zassert_equal(gpio_pin_set_raw(port, pin, val), 0,
@@ -49,7 +43,8 @@ static void pin_set_raw_and_verify(struct device *port, unsigned int pin,
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
 
-static void pin_set_and_verify(struct device *port, unsigned int pin, int val,
+static void pin_set_and_verify(const struct device *port, unsigned int pin,
+			       int val,
 			       int idx)
 {
 	zassert_equal(gpio_pin_set(port, pin, val), 0,
@@ -64,7 +59,7 @@ static void pin_set_and_verify(struct device *port, unsigned int pin, int val,
  */
 void test_gpio_pin_toggle(void)
 {
-	struct device *port;
+	const struct device *port;
 	int val_expected;
 	int ret;
 
@@ -106,7 +101,7 @@ void test_gpio_pin_toggle(void)
  */
 void test_gpio_pin_toggle_visual(void)
 {
-	struct device *port;
+	const struct device *port;
 	int val_expected;
 	int ret;
 
@@ -141,7 +136,7 @@ void test_gpio_pin_toggle_visual(void)
  */
 void test_gpio_pin_set_get_raw(void)
 {
-	struct device *port;
+	const struct device *port;
 	int val_expected;
 	int ret;
 
@@ -178,7 +173,7 @@ void test_gpio_pin_set_get_raw(void)
  */
 void test_gpio_pin_set_get(void)
 {
-	struct device *port;
+	const struct device *port;
 	int val_expected;
 	int ret;
 
@@ -217,7 +212,7 @@ void test_gpio_pin_set_get(void)
  */
 void test_gpio_pin_set_get_active_high(void)
 {
-	struct device *port;
+	const struct device *port;
 	int val_expected;
 	int ret;
 
@@ -267,7 +262,7 @@ void test_gpio_pin_set_get_active_high(void)
  */
 void test_gpio_pin_set_get_active_low(void)
 {
-	struct device *port;
+	const struct device *port;
 	int val_expected, val_raw_expected;
 	int ret;
 

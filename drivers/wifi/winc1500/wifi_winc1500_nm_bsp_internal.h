@@ -16,6 +16,10 @@
 
 extern tstrNmBusCapabilities egstrNmBusCapabilities;
 
+#if defined(CONFIG_WINC1500_DRV_USE_OLD_SPI_SW)
+#define USE_OLD_SPI_SW
+#endif /*CONFIG_WINC1500_DRV_USE_OLD_SPI_SW*/
+
 #define NM_EDGE_INTERRUPT	(1)
 
 #define NM_DEBUG		CONF_WINC_DEBUG
@@ -30,14 +34,14 @@ enum winc1500_gpio_index {
 };
 
 struct winc1500_gpio_configuration {
-	struct device *dev;
-	u32_t pin;
+	const struct device *dev;
+	uint32_t pin;
 };
 
 struct winc1500_device {
 	struct winc1500_gpio_configuration	*gpios;
 	struct gpio_callback			gpio_cb;
-	struct device				*spi;
+	const struct device *spi;
 	struct spi_config			spi_cfg;
 };
 

@@ -3,7 +3,7 @@ sample:
   name: LMP90100 EVB RTD
 tests:
   sample.shields.lmp90100_evb.rtd:
-    platform_whitelist: frdm_k64f
+    platform_allow: frdm_k64f
     harness: shield
     tags: shield
     depends_on: arduino_spi

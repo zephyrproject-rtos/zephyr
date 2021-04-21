@@ -31,15 +31,15 @@ static int internal_rand(void *buf, size_t len)
 {
 /* Force using controller rand function. */
 #if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO)
-	return util_rand(buf, len);
+	return lll_csrand_get(buf, len);
 #else
 	return bt_rand(buf, len);
 #endif
 }
 #endif /* defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_CTLR_PRIVACY) */
 
-static int internal_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
-			       u8_t enc_data[16])
+static int internal_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
+			       uint8_t enc_data[16])
 {
 /* Force using controller encrypt function if supported. */
 #if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO) && \
@@ -51,9 +51,9 @@ static int internal_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
 #endif
 }
 
-static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
+static int ah(const uint8_t irk[16], const uint8_t r[3], uint8_t out[3])
 {
-	u8_t res[16];
+	uint8_t res[16];
 	int err;
 
 	BT_DBG("irk %s", bt_hex(irk, 16));
@@ -80,9 +80,9 @@ static int ah(const u8_t irk[16], const u8_t r[3], u8_t out[3])
 }
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CTLR_PRIVACY)
-bool bt_rpa_irk_matches(const u8_t irk[16], const bt_addr_t *addr)
+bool bt_rpa_irk_matches(const uint8_t irk[16], const bt_addr_t *addr)
 {
-	u8_t hash[3];
+	uint8_t hash[3];
 	int err;
 
 	BT_DBG("IRK %s bdaddr %s", bt_hex(irk, 16), bt_addr_str(addr));
@@ -97,7 +97,7 @@ bool bt_rpa_irk_matches(const u8_t irk[16], const bt_addr_t *addr)
 #endif
 
 #if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_CTLR_PRIVACY)
-int bt_rpa_create(const u8_t irk[16], bt_addr_t *rpa)
+int bt_rpa_create(const uint8_t irk[16], bt_addr_t *rpa)
 {
 	int err;
 
@@ -118,7 +118,7 @@ int bt_rpa_create(const u8_t irk[16], bt_addr_t *rpa)
 	return 0;
 }
 #else
-int bt_rpa_create(const u8_t irk[16], bt_addr_t *rpa)
+int bt_rpa_create(const uint8_t irk[16], bt_addr_t *rpa)
 {
 	return -ENOTSUP;
 }

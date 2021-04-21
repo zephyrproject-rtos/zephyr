@@ -11,20 +11,20 @@ used as project list.
 Include file is generated for Kconfig using --kconfig-out.
 A <name>:<path> text file is generated for use with CMake using --cmake-out.
 
-Using --sanitycheck-out <filename> an argument file for sanitycheck script will
+Using --twister-out <filename> an argument file for twister script will
 be generated which would point to test and sample roots available in modules
-that can be included during a sanitycheck run. This allows testing code
+that can be included during a twister run. This allows testing code
 maintained in modules in addition to what is available in the main Zephyr tree.
 '''
 
 import argparse
 import os
+import re
 import sys
 import yaml
 import pykwalify.core
-import subprocess
-import re
 from pathlib import Path, PurePath
+from collections import namedtuple
 
 METADATA_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
@@ -34,6 +34,9 @@ METADATA_SCHEMA = '''
 # the build system.
 type: map
 mapping:
+  name:
+    required: false
+    type: str
   build:
     required: false
     type: map
@@ -44,6 +47,38 @@ mapping:
       kconfig:
         required: false
         type: str
+      cmake-ext:
+        required: false
+        type: bool
+        default: false
+      kconfig-ext:
+        required: false
+        type: bool
+        default: false
+      depends:
+        required: false
+        type: seq
+        sequence:
+          - type: str
+      settings:
+        required: false
+        type: map
+        mapping:
+          board_root:
+            required: false
+            type: str
+          dts_root:
+            required: false
+            type: str
+          soc_root:
+            required: false
+            type: str
+          arch_root:
+            required: false
+            type: str
+          module_ext_root:
+            required: false
+            type: str
   tests:
     required: false
     type: seq
@@ -93,11 +128,15 @@ def process_module(module):
             sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
                      .format(module_yml.as_posix(), e))
 
+        meta['name'] = meta.get('name', module_path.name)
+        meta['name-sanitized'] = re.sub('[^a-zA-Z0-9]', '_', meta['name'])
         return meta
 
     if Path(module_path.joinpath('zephyr/CMakeLists.txt')).is_file() and \
        Path(module_path.joinpath('zephyr/Kconfig')).is_file():
-        return {'build': {'cmake': 'zephyr', 'kconfig': 'zephyr/Kconfig'}}
+        return {'name': module_path.name,
+                'name-sanitized': re.sub('[^a-zA-Z0-9]', '_', module_path.name),
+                'build': {'cmake': 'zephyr', 'kconfig': 'zephyr/Kconfig'}}
 
     return None
 
@@ -106,39 +145,85 @@ def process_cmake(module, meta):
     section = meta.get('build', dict())
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
+
+    cmake_extern = section.get('cmake-ext', False)
+    if cmake_extern:
+        return('\"{}\":\"{}\":\"{}\"\n'
+               .format(meta['name'],
+                       module_path.as_posix(),
+                       "${ZEPHYR_" + meta['name-sanitized'].upper() + "_CMAKE_DIR}"))
+
     cmake_setting = section.get('cmake', None)
     if not validate_setting(cmake_setting, module, 'CMakeLists.txt'):
         sys.exit('ERROR: "cmake" key in {} has folder value "{}" which '
-                    'does not contain a CMakeLists.txt file.'
-                    .format(module_yml.as_posix(), cmake_setting))
+                 'does not contain a CMakeLists.txt file.'
+                 .format(module_yml.as_posix(), cmake_setting))
 
     cmake_path = os.path.join(module, cmake_setting or 'zephyr')
     cmake_file = os.path.join(cmake_path, 'CMakeLists.txt')
     if os.path.isfile(cmake_file):
-        return('\"{}\":\"{}\"\n'
-                        .format(module_path.name, Path(cmake_path).resolve().as_posix()))
+        return('\"{}\":\"{}\":\"{}\"\n'
+               .format(meta['name'],
+                       module_path.as_posix(),
+                       Path(cmake_path).resolve().as_posix()))
     else:
-        return ""
+        return('\"{}\":\"{}\":\"\"\n'
+               .format(meta['name'],
+                       module_path.as_posix()))
+
+
+def process_settings(module, meta):
+    section = meta.get('build', dict())
+    build_settings = section.get('settings', None)
+    out_text = ""
+
+    if build_settings is not None:
+        for root in ['board', 'dts', 'soc', 'arch', 'module_ext']:
+            setting = build_settings.get(root+'_root', None)
+            if setting is not None:
+                root_path = PurePath(module) / setting
+                out_text += f'"{root.upper()}_ROOT":'
+                out_text += f'"{root_path.as_posix()}"\n'
+
+    return out_text
+
+
+def kconfig_snippet(meta, path, kconfig_file=None):
+    name = meta['name']
+    name_sanitized = meta['name-sanitized']
+
+    snippet = (f'menu "{name} ({path})"',
+               f'osource "{kconfig_file.resolve().as_posix()}"' if kconfig_file
+               else f'osource "$(ZEPHYR_{name_sanitized.upper()}_KCONFIG)"',
+               f'config ZEPHYR_{name_sanitized.upper()}_MODULE',
+               '	bool',
+               '	default y',
+               'endmenu\n')
+    return '\n'.join(snippet)
+
 
 def process_kconfig(module, meta):
     section = meta.get('build', dict())
     module_path = PurePath(module)
     module_yml = module_path.joinpath('zephyr/module.yml')
+    kconfig_extern = section.get('kconfig-ext', False)
+    if kconfig_extern:
+        return kconfig_snippet(meta, module_path)
 
     kconfig_setting = section.get('kconfig', None)
     if not validate_setting(kconfig_setting, module):
         sys.exit('ERROR: "kconfig" key in {} has value "{}" which does '
-                    'not point to a valid Kconfig file.'
-                    .format(module_yml, kconfig_setting))
-
+                 'not point to a valid Kconfig file.'
+                 .format(module_yml, kconfig_setting))
 
     kconfig_file = os.path.join(module, kconfig_setting or 'zephyr/Kconfig')
     if os.path.isfile(kconfig_file):
-        return 'osource "{}"\n\n'.format(Path(kconfig_file).resolve().as_posix())
+        return kconfig_snippet(meta, module_path, Path(kconfig_file))
     else:
         return ""
 
-def process_sanitycheck(module, meta):
+
+def process_twister(module, meta):
 
     out = ""
     tests = meta.get('tests', [])
@@ -148,12 +233,14 @@ def process_sanitycheck(module, meta):
     for pth in tests + samples:
         if pth:
             dir = os.path.join(module, pth)
-            out += '-T\n{}\n'.format(PurePath(os.path.abspath(dir)).as_posix())
+            out += '-T\n{}\n'.format(PurePath(os.path.abspath(dir))
+                                     .as_posix())
 
     for pth in boards:
         if pth:
             dir = os.path.join(module, pth)
-            out += '--board-root\n{}\n'.format(PurePath(os.path.abspath(dir)).as_posix())
+            out += '--board-root\n{}\n'.format(PurePath(os.path.abspath(dir))
+                                               .as_posix())
 
     return out
 
@@ -166,65 +253,109 @@ def main():
     parser.add_argument('--kconfig-out',
                         help="""File to write with resulting KConfig import
                              statements.""")
-    parser.add_argument('--sanitycheck-out',
-                        help="""File to write with resulting sanitycheck parameters.""")
+    parser.add_argument('--twister-out',
+                        help="""File to write with resulting twister
+                             parameters.""")
     parser.add_argument('--cmake-out',
                         help="""File to write with resulting <name>:<path>
+                             values to use for including in CMake""")
+    parser.add_argument('--settings-out',
+                        help="""File to write with resulting <name>:<value>
                              values to use for including in CMake""")
     parser.add_argument('-m', '--modules', nargs='+',
                         help="""List of modules to parse instead of using `west
                              list`""")
     parser.add_argument('-x', '--extra-modules', nargs='+', default=[],
                         help='List of extra modules to parse')
-    parser.add_argument('-w', '--west-path', default='west',
-                        help='Path to west executable')
+    parser.add_argument('-z', '--zephyr-base',
+                        help='Path to zephyr repository')
     args = parser.parse_args()
 
     if args.modules is None:
-        p = subprocess.Popen([args.west_path, 'list', '--format={posixpath}'],
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        if p.returncode == 0:
-            projects = out.decode(sys.getdefaultencoding()).splitlines()
-        elif re.match((r'Error: .* is not in a west installation\.'
-                       '|FATAL ERROR: no west installation found from .*'
-                       '|FATAL ERROR: no west workspace.*'),
-                      err.decode(sys.getdefaultencoding())):
-            # Only accept the error the event we are outside a west
-            # workspace.
-            #
-            # TODO: we can just use "west topdir" instead if we can
-            # depend on west 0.7.0 or later.
+        # West is imported here, as it is optional
+        # (and thus maybe not installed)
+        # if user is providing a specific modules list.
+        from west.manifest import Manifest
+        from west.util import WestNotFound
+        from west.version import __version__ as WestVersion
+        from packaging import version
+        try:
+            manifest = Manifest.from_file()
+            if version.parse(WestVersion) >= version.parse('0.9.0'):
+                projects = [p.posixpath for p in manifest.get_projects([])
+                            if manifest.is_active(p)]
+            else:
+                projects = [p.posixpath for p in manifest.get_projects([])]
+        except WestNotFound:
+            # Only accept WestNotFound, meaning we are not in a west
+            # workspace. Such setup is allowed, as west may be installed
+            # but the project is not required to use west.
             projects = []
-        else:
-            print(err.decode(sys.getdefaultencoding()))
-            # A real error occurred, raise an exception
-            raise subprocess.CalledProcessError(cmd=p.args,
-                                                returncode=p.returncode)
     else:
-        projects = args.modules
+        projects = args.modules.copy()
 
     projects += args.extra_modules
     extra_modules = set(args.extra_modules)
 
     kconfig = ""
     cmake = ""
-    sanitycheck = ""
+    settings = ""
+    twister = ""
+
+    Module = namedtuple('Module', ['project', 'meta', 'depends'])
+    # dep_modules is a list of all modules that has an unresolved dependency
+    dep_modules = []
+    # start_modules is a list modules with no depends left (no incoming edge)
+    start_modules = []
+    # sorted_modules is a topological sorted list of the modules
+    sorted_modules = []
 
     for project in projects:
         # Avoid including Zephyr base project as module.
-        if project == os.environ.get('ZEPHYR_BASE'):
+        if project == args.zephyr_base:
             continue
 
         meta = process_module(project)
         if meta:
-            kconfig += process_kconfig(project, meta)
-            cmake += process_cmake(project, meta)
-            sanitycheck += process_sanitycheck(project, meta)
+            section = meta.get('build', dict())
+            deps = section.get('depends', [])
+            if not deps:
+                start_modules.append(Module(project, meta, []))
+            else:
+                dep_modules.append(Module(project, meta, deps))
         elif project in extra_modules:
             sys.exit(f'{project}, given in ZEPHYR_EXTRA_MODULES, '
                      'is not a valid zephyr module')
+
+    # This will do a topological sort to ensure the modules are ordered
+    # according to dependency settings.
+    while start_modules:
+        node = start_modules.pop(0)
+        sorted_modules.append(node)
+        node_name = node.meta['name']
+        to_remove = []
+        for module in dep_modules:
+            if node_name in module.depends:
+                module.depends.remove(node_name)
+                if not module.depends:
+                    start_modules.append(module)
+                    to_remove.append(module)
+        for module in to_remove:
+            dep_modules.remove(module)
+
+    if dep_modules:
+        # If there are any modules with unresolved dependencies, then the
+        # modules contains unmet or cyclic dependencies. Error out.
+        error = 'Unmet or cyclic dependencies in modules:\n'
+        for module in dep_modules:
+            error += f'{module.project} depends on: {module.depends}\n'
+        sys.exit(error)
+
+    for module in sorted_modules:
+        kconfig += process_kconfig(module.project, module.meta)
+        cmake += process_cmake(module.project, module.meta)
+        settings += process_settings(module.project, module.meta)
+        twister += process_twister(module.project, module.meta)
 
     if args.kconfig_out:
         with open(args.kconfig_out, 'w', encoding="utf-8") as fp:
@@ -234,9 +365,14 @@ def main():
         with open(args.cmake_out, 'w', encoding="utf-8") as fp:
             fp.write(cmake)
 
-    if args.sanitycheck_out:
-        with open(args.sanitycheck_out, 'w', encoding="utf-8") as fp:
-            fp.write(sanitycheck)
+    if args.settings_out:
+        with open(args.settings_out, 'w', encoding="utf-8") as fp:
+            fp.write(settings)
+
+    if args.twister_out:
+        with open(args.twister_out, 'w', encoding="utf-8") as fp:
+            fp.write(twister)
+
 
 if __name__ == "__main__":
     main()

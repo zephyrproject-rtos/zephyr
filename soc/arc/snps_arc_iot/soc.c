@@ -13,12 +13,13 @@
 #include <init.h>
 #include "sysconf.h"
 
-static int arc_iot_init(struct device *dev)
+#define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+
+static int arc_iot_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	if (arc_iot_pll_fout_config(
-			     DT_SNPS_ARCEM_0_CLOCK_FREQUENCY / 1000000) < 0) {
+	if (arc_iot_pll_fout_config(CPU_FREQ / 1000000) < 0) {
 		return -1;
 	}
 

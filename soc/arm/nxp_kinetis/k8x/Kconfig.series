@@ -17,6 +17,7 @@ config SOC_SERIES_KINETIS_K8X
 	select HAS_MCUX_FTFX
 	select HAS_MCUX_FTM
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_PIT
 	select HAS_MCUX_RTC
 	select HAS_MCUX_SIM
 	select HAS_MCUX_TRNG

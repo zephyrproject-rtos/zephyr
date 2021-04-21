@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2020 Yestin Sun
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l5/stm32l562Xe.dtsi>
+#include <st/l5/stm32l562qeixq-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		red_led_9: led_9 {
+			gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+			label = "User LD9";
+		};
+		green_led_10: led_10 {
+			gpios = <&gpiog 12 GPIO_ACTIVE_LOW>;
+			label = "User LD10";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	power-states {
+		stop0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <100>;
+		};
+		stop1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <2>;
+			min-residency-us = <500>;
+		};
+		stop2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			substate-id = <3>;
+			min-residency-us = <900>;
+		};
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lsm6dso@6a {
+		compatible = "st,lsm6dso";
+		reg = <0x6a>;
+		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
+		label = "LSM6DSO";
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pg2 &spi1_miso_pg3 &spi1_mosi_pg4>;
+	cs-gpios = <&gpiog 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	status = "okay";
+
+	spbtle-rf@0 {
+		compatible = "zephyr,bt-hci-spi";
+		reg = <0>;
+		irq-gpios = <&gpiog 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		reset-gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		spi-max-frequency = <2000000>;
+		label = "SPBTLE-RF";
+	};
+};

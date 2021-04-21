@@ -24,9 +24,9 @@
  *
  * @return 0
  */
-static int st_stm32f7_init(struct device *arg)
+static int st_stm32f7_init(const struct device *arg)
 {
-	u32_t key;
+	uint32_t key;
 
 	ARG_UNUSED(arg);
 

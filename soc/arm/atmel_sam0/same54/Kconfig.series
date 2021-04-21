@@ -8,6 +8,8 @@ config SOC_SERIES_SAME54
 	select ARM
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_SAM0
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
 	select CPU_CORTEX_M_HAS_DWT
 	select ASF
 	help

@@ -10,21 +10,16 @@
 	clock-frequency = <500000000>;
 };
 
-/* i.MX rt1010 default FlexRAM partition:
- * ITCM: 32KB
- * DTCM: 32KB
- * OCRAM: 64KB
- */
-&itcm0 {
-	reg = <0x00000000 0x8000>;
+&itcm {
+	reg = <0x00000000 DT_SIZE_K(32)>;
 };
 
-&dtcm0 {
-	reg = <0x20000000 0x8000>;
+&dtcm {
+	reg = <0x20000000 DT_SIZE_K(32)>;
 };
 
-&ocram0 {
-	reg = <0x20200000 0x10000>;
+&ocram {
+	reg = <0x20200000 DT_SIZE_K(64)>;
 };
 
 &gpio1 {
@@ -37,17 +32,19 @@
 
 &gpt1 {
 	interrupts = <30 0>;
+	gptfreq = <12500000>;
 };
 
 &gpt2 {
 	interrupts = <31 0>;
+	gptfreq = <12500000>;
 };
 
-&usbd1 {
+&usb1 {
 	interrupts = <25 0>;
 };
 
-&flexspi0 {
+&flexspi {
 	interrupts = <26 0>;
 };
 
@@ -72,12 +69,11 @@
 };
 
 / {
-	aliases {
-		gpio-2 = &gpio2_rt1010;
-	};
-
 	soc {
-		gpio2_rt1010: gpio@42000000 {
+		/* Fixup GPIO2 its a different location on RT1010 */
+		/delete-node/ gpio@401bc000;
+
+		gpio2: gpio@42000000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x42000000 0x4000>;
 			interrupts = <72 0>;
@@ -85,5 +81,9 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
+
+		/* Remove GPIO3 & GPIO4, they dont exist on RT1010 */
+		/delete-node/ gpio@401c0000;
+		/delete-node/ gpio@401c4000;
 	};
 };

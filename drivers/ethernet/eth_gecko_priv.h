@@ -63,8 +63,8 @@
 #define ETH_TX_DISABLE(base)  (base->NETWORKCTRL &= ~ETH_NETWORKCTRL_ENBTX)
 
 struct eth_buf_desc {
-	u32_t address;
-	u32_t status;
+	uint32_t address;
+	uint32_t status;
 };
 
 struct eth_gecko_pin_list {
@@ -76,7 +76,7 @@ struct eth_gecko_pin_list {
 struct eth_gecko_dev_cfg {
 	ETH_TypeDef *regs;
 	const struct eth_gecko_pin_list *pin_list;
-	u32_t pin_list_size;
+	uint32_t pin_list_size;
 	void (*config_func)(void);
 	struct phy_gecko_dev phy;
 };
@@ -84,60 +84,60 @@ struct eth_gecko_dev_cfg {
 /* Device run time data */
 struct eth_gecko_dev_data {
 	struct net_if *iface;
-	u8_t mac_addr[6];
+	uint8_t mac_addr[6];
 	struct k_sem tx_sem;
 	struct k_sem rx_sem;
 
-	K_THREAD_STACK_MEMBER(rx_thread_stack,
+	K_KERNEL_STACK_MEMBER(rx_thread_stack,
 		CONFIG_ETH_GECKO_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
 	bool link_up;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((struct eth_gecko_dev_cfg *)(dev)->config->config_info)
+	((const struct eth_gecko_dev_cfg *)(dev)->config)
 #define DEV_DATA(dev) \
-	((struct eth_gecko_dev_data *)(dev)->driver_data)
+	((struct eth_gecko_dev_data *)(dev)->data)
 
 /* PHY Management pins */
-#define PIN_PHY_MDC {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_PHY_MDC_1, \
-	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_PHY_MDC_2, gpioModePushPull,\
+#define PIN_PHY_MDC {DT_INST_PROP_BY_IDX(0, location_phy_mdc, 1), \
+	DT_INST_PROP_BY_IDX(0, location_phy_mdc, 2), gpioModePushPull,\
 	0}
-#define PIN_PHY_MDIO {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_PHY_MDIO_1, \
-	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_PHY_MDIO_2, gpioModePushPull,\
+#define PIN_PHY_MDIO {DT_INST_PROP_BY_IDX(0, location_phy_mdio, 1), \
+	DT_INST_PROP_BY_IDX(0, location_phy_mdio, 2), gpioModePushPull,\
 	0}
 
 #define PIN_LIST_PHY {PIN_PHY_MDC, PIN_PHY_MDIO}
 
 /* RMII pins excluding reference clock, handled by board.c */
-#define PIN_RMII_CRSDV {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_CRS_DV_1,\
-	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_CRS_DV_2, gpioModeInput, 0}
+#define PIN_RMII_CRSDV {DT_INST_PROP_BY_IDX(0, location_rmii_crs_dv, 1),\
+	DT_INST_PROP_BY_IDX(0, location_rmii_crs_dv, 2), gpioModeInput, 0}
 
-#define PIN_RMII_TXD0 {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_TXD0_1,\
-	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_TXD0_2, gpioModePushPull, 0}
+#define PIN_RMII_TXD0 {DT_INST_PROP_BY_IDX(0, location_rmii_txd0, 1),\
+	DT_INST_PROP_BY_IDX(0, location_rmii_txd0, 2), gpioModePushPull, 0}
 
-#define PIN_RMII_TXD1 {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_TXD1_1,\
-	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_TXD1_2, gpioModePushPull, 0}
+#define PIN_RMII_TXD1 {DT_INST_PROP_BY_IDX(0, location_rmii_txd1, 1),\
+	DT_INST_PROP_BY_IDX(0, location_rmii_txd1, 2), gpioModePushPull, 0}
 
-#define PIN_RMII_TX_EN {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_TX_EN_1,\
-	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_TX_EN_2, gpioModePushPull, 0}
+#define PIN_RMII_TX_EN {DT_INST_PROP_BY_IDX(0, location_rmii_tx_en, 1),\
+	DT_INST_PROP_BY_IDX(0, location_rmii_tx_en, 2), gpioModePushPull, 0}
 
-#define PIN_RMII_RXD0 {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_RXD0_1,\
-	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_RXD0_2, gpioModeInput, 0}
+#define PIN_RMII_RXD0 {DT_INST_PROP_BY_IDX(0, location_rmii_rxd0, 1),\
+	DT_INST_PROP_BY_IDX(0, location_rmii_rxd0, 2), gpioModeInput, 0}
 
-#define PIN_RMII_RXD1 {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_RXD1_1,\
-	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_RXD1_2, gpioModeInput, 0}
+#define PIN_RMII_RXD1 {DT_INST_PROP_BY_IDX(0, location_rmii_rxd1, 1),\
+	DT_INST_PROP_BY_IDX(0, location_rmii_rxd1, 2), gpioModeInput, 0}
 
-#define PIN_RMII_RX_ER {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_RX_ER_1,\
-	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_RX_ER_2, gpioModeInput, 0}
+#define PIN_RMII_RX_ER {DT_INST_PROP_BY_IDX(0, location_rmii_rx_er, 1),\
+	DT_INST_PROP_BY_IDX(0, location_rmii_rx_er, 2), gpioModeInput, 0}
 
 #define PIN_LIST_RMII {PIN_RMII_CRSDV, PIN_RMII_TXD0, PIN_RMII_TXD1, \
 	PIN_RMII_TX_EN, PIN_RMII_RXD0, PIN_RMII_RXD1, PIN_RMII_RX_ER}
 
 /* RMII reference clock is not included in RMII pin set
- * #define PIN_RMII_REFCLK {DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_REFCLK_1,\
- *	DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_REFCLK_2, gpioModePushPull, 0}
+ * #define PIN_RMII_REFCLK {DT_INST_PROP_BY_IDX(0, location_rmii_refclk, 1),\
+ *	DT_INST_PROP_BY_IDX(0, location_rmii_refclk, 2), gpioModePushPull, 0}
  */
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_GECKO_PRIV_H_ */

@@ -3,6 +3,19 @@
 # Copyright (c) 2019 Benjamin Valentin
 # SPDX-License-Identifier: Apache-2.0
 
+if BOARD_ATSAME54_XPRO
+
 config BOARD
 	default "atsame54_xpro"
-	depends on BOARD_ATSAME54_XPRO
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config ETH_SAM_GMAC
+	default y if NET_L2_ETHERNET
+
+endif # NETWORKING
+
+endif # BOARD_ATSAME54_XPRO

@@ -4,5 +4,5 @@ sample:
 tests:
   sample.bluetooth.scan_adv:
     harness: bluetooth
-    platform_whitelist: qemu_cortex_m3 qemu_x86
+    platform_allow: qemu_cortex_m3 qemu_x86
     tags: bluetooth

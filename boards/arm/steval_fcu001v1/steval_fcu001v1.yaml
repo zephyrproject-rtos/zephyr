@@ -1,5 +1,5 @@
 identifier: steval_fcu001v1
-name: FLIGHT-CONTROLLER-BOARD
+name: ST STM32 Flight Controller Unit
 type: mcu
 arch: arm
 toolchain:

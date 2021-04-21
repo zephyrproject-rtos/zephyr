@@ -18,11 +18,12 @@
 #include "posix_core.h"
 #include "irq.h"
 #include "kswap.h"
+#include <power/power.h>
 
 int arch_swap(unsigned int key)
 {
 	/*
-	 * struct k_thread * _kernel.current is the currently runnig thread
+	 * struct k_thread * _current is the currently runnig thread
 	 * struct k_thread * _kernel.ready_q.cache contains the next thread to
 	 * run (cannot be NULL)
 	 *
@@ -30,8 +31,11 @@ int arch_swap(unsigned int key)
 	 * and so forth.  But we do not need to do so because we use posix
 	 * threads => those are all nicely kept by the native OS kernel
 	 */
-	_kernel.current->callee_saved.key = key;
-	_kernel.current->callee_saved.retval = -EAGAIN;
+#if CONFIG_INSTRUMENT_THREAD_SWITCHING
+	z_thread_mark_switched_out();
+#endif
+	_current->callee_saved.key = key;
+	_current->callee_saved.retval = -EAGAIN;
 
 	/* retval may be modified with a call to
 	 * arch_thread_return_value_set()
@@ -43,10 +47,13 @@ int arch_swap(unsigned int key)
 
 	posix_thread_status_t *this_thread_ptr  =
 		(posix_thread_status_t *)
-		_kernel.current->callee_saved.thread_status;
+		_current->callee_saved.thread_status;
 
 
-	_kernel.current = _kernel.ready_q.cache;
+	_current = _kernel.ready_q.cache;
+#if CONFIG_INSTRUMENT_THREAD_SWITCHING
+	z_thread_mark_switched_in();
+#endif
 
 	/*
 	 * Here a "real" arch would load all processor registers for the thread
@@ -59,9 +66,9 @@ int arch_swap(unsigned int key)
 
 	/* When we continue, _kernel->current points back to this thread */
 
-	irq_unlock(_kernel.current->callee_saved.key);
+	irq_unlock(_current->callee_saved.key);
 
-	return _kernel.current->callee_saved.retval;
+	return _current->callee_saved.retval;
 }
 
 
@@ -73,35 +80,41 @@ int arch_swap(unsigned int key)
  * Note that we will never come back to this thread: posix_main_thread_start()
  * does never return.
  */
-void arch_switch_to_main_thread(struct k_thread *main_thread,
-				k_thread_stack_t *main_stack,
-				size_t main_stack_size, k_thread_entry_t _main)
+void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
+				k_thread_entry_t _main)
 {
+	ARG_UNUSED(stack_ptr);
+	ARG_UNUSED(_main);
+
 	posix_thread_status_t *ready_thread_ptr =
 			(posix_thread_status_t *)
 			_kernel.ready_q.cache->callee_saved.thread_status;
 
-	sys_trace_thread_switched_out();
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	z_thread_mark_switched_out();
+#endif
 
-	_kernel.current = _kernel.ready_q.cache;
+	_current = _kernel.ready_q.cache;
 
-	sys_trace_thread_switched_in();
+#ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
+	z_thread_mark_switched_in();
+#endif
 
 	posix_main_thread_start(ready_thread_ptr->thread_idx);
 } /* LCOV_EXCL_LINE */
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#ifdef CONFIG_PM
 /**
  * If the kernel is in idle mode, take it out
  */
 void posix_irq_check_idle_exit(void)
 {
 	if (_kernel.idle) {
-		s32_t idle_val = _kernel.idle;
+		int32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		z_sys_power_save_idle_exit(idle_val);
+		z_pm_save_idle_exit(idle_val);
 	}
 }
 #endif

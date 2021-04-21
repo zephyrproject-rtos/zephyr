@@ -20,12 +20,12 @@ LOG_MODULE_REGISTER(audio_core);
 #define AUDIO_ACTIVE_CHANNELS	2
 
 /* core audio processing buffers with interleaved samples */
-static s32_t mic_input[AUDIO_ACTIVE_CHANNELS][AUDIO_SAMPLES_PER_FRAME];
-static s32_t host_input[AUDIO_ACTIVE_CHANNELS][AUDIO_SAMPLES_PER_FRAME];
+static int32_t mic_input[AUDIO_ACTIVE_CHANNELS][AUDIO_SAMPLES_PER_FRAME];
+static int32_t host_input[AUDIO_ACTIVE_CHANNELS][AUDIO_SAMPLES_PER_FRAME];
 
 static bool tuning_reply_ready;
-static u32_t *tuning_command_buffer;
-static u32_t tuning_cmd_buf_size_in_words;
+static uint32_t *tuning_command_buffer;
+static uint32_t tuning_cmd_buf_size_in_words;
 
 #define CMD_START_AUDIO		1
 #define CMD_STOP_AUDIO		2
@@ -35,11 +35,11 @@ int audio_core_initialize(void)
 	return 0;
 }
 
-int audio_core_process_mic_source(s32_t *buffer, int channels)
+int audio_core_process_mic_source(int32_t *buffer, int channels)
 {
 	int sample;
 	int channel;
-	s32_t *read;
+	int32_t *read;
 
 	read = buffer;
 
@@ -54,11 +54,11 @@ int audio_core_process_mic_source(s32_t *buffer, int channels)
 	return 0;
 }
 
-int audio_core_process_host_source(s32_t *buffer, int channels)
+int audio_core_process_host_source(int32_t *buffer, int channels)
 {
 	int sample;
 	int channel;
-	s32_t *read;
+	int32_t *read;
 
 	read = buffer;
 
@@ -73,11 +73,11 @@ int audio_core_process_host_source(s32_t *buffer, int channels)
 	return 0;
 }
 
-int audio_core_process_speaker_sink(s32_t *buffer, int channels)
+int audio_core_process_speaker_sink(int32_t *buffer, int channels)
 {
 	int sample;
 	int channel;
-	s32_t *write;
+	int32_t *write;
 
 	write = buffer;
 
@@ -92,11 +92,11 @@ int audio_core_process_speaker_sink(s32_t *buffer, int channels)
 	return 0;
 }
 
-int audio_core_process_host_sink(s32_t *buffer, int channels)
+int audio_core_process_host_sink(int32_t *buffer, int channels)
 {
 	int sample;
 	int channel;
-	s32_t *write;
+	int32_t *write;
 
 	write = buffer;
 
@@ -116,7 +116,7 @@ int audio_core_notify_frame_tick(void)
 	return 0;
 }
 
-int audio_core_tuning_interface_init(u32_t *command_buffer, u32_t size_in_words)
+int audio_core_tuning_interface_init(uint32_t *command_buffer, uint32_t size_in_words)
 {
 	tuning_command_buffer = command_buffer;
 	tuning_cmd_buf_size_in_words = size_in_words;
@@ -125,8 +125,8 @@ int audio_core_tuning_interface_init(u32_t *command_buffer, u32_t size_in_words)
 
 int audio_core_notify_tuning_cmd(void)
 {
-	u32_t first_word = *((u32_t *)tuning_command_buffer);
-	u32_t command = (first_word << 16) >> 16;
+	uint32_t first_word = *((uint32_t *)tuning_command_buffer);
+	uint32_t command = (first_word << 16) >> 16;
 
 	switch (command) {
 	case CMD_START_AUDIO:

@@ -1,0 +1,126 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Specific fields for USB audio microphone.
+
+description: USB Audio microphone specific fields.
+
+compatible: "usb-audio-mic"
+
+include: usb-audio.yaml
+
+properties:
+  resolution:
+    type: int
+    default: 16
+    required: false
+    enum:
+     - 8
+     - 16
+     - 24
+     - 32
+  sync-type:
+    required: false
+    default: "Synchronous"
+    type: string
+    description: Type of endpoint synchronization for IN devices.
+                 Default value is Sychronous.
+                 Adaptive is not supported.
+    enum:
+     - "No Synchronization"
+     - "Asynchronous"
+     - "Adaptive"
+     - "Synchronous"
+# channel configuration options
+  channel-l:
+    type: boolean
+    required: false
+    description: Enable (l) channel.
+  channel-r:
+    type: boolean
+    required: false
+    description: Enable (r) channel.
+  channel-c:
+    type: boolean
+    required: false
+    description: Enable (c) channel.
+  channel-lfe:
+    type: boolean
+    required: false
+    description: Enable (lfe) channel.
+  channel-ls:
+    type: boolean
+    required: false
+    description: Enable (ls) channel.
+  channel-rs:
+    type: boolean
+    required: false
+    description: Enable (rs) channel.
+  channel-lc:
+    type: boolean
+    required: false
+    description: Enable (lc) channel.
+  channel-rc:
+    type: boolean
+    required: false
+    description: Enable (rc) channel.
+  channel-s:
+    type: boolean
+    required: false
+    description: Enable (s) channel.
+  channel-sl:
+    type: boolean
+    required: false
+    description: Enable (sl) channel.
+  channel-sr:
+    type: boolean
+    required: false
+    description: Enable (sr) channel.
+  channel-t:
+    type: boolean
+    required: false
+    description: Enable (t) channel.
+  channel-cfg:
+    type: boolean
+    required: false
+    description: Enable (cfg) channel.
+# feature unit configuration options
+  feature-mute:
+    type: boolean
+    required: true
+    description: Enable Mute feature.
+  feature-volume:
+    type: boolean
+    required: false
+    description: Enable Volume feature.
+                 Currently not supported.
+  feature-tone-control:
+    type: boolean
+    required: false
+    description: Enable Tone Control (Bass, Mid, Treble) feature.
+                 Currently not supported.
+  feature-graphic-equalizer:
+    type: boolean
+    required: false
+    description: Enable  Graphic Equalizer feature.
+                 Currently not supported.
+  feature-automatic-gain-control:
+    type: boolean
+    required: false
+    description: Enable Autoamtic Gain Control feature.
+                 Currently not supported.
+  feature-delay:
+    type: boolean
+    required: false
+    description: Enable Delay feature.
+                 Currently not supported.
+  feature-bass-boost:
+    type: boolean
+    required: false
+    description: Enable Bass Boost feature.
+                 Currently not supported.
+  feature-loudness:
+    type: boolean
+    required: false
+    description: Enable Loudness feature.
+                 Currently not supported.

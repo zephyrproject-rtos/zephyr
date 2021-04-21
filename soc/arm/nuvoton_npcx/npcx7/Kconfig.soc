@@ -1,0 +1,35 @@
+# Nuvoton NPCX7 EC series
+
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "NPCX7 Selection"
+	depends on SOC_SERIES_NPCX7
+
+config SOC_NPCX7M6FB
+	bool "NPCX7M6FB"
+
+config SOC_NPCX7M6FC
+	bool "NPCX7M6FC"
+
+config SOC_NPCX7M7FC
+	bool "NPCX7M7FC"
+
+endchoice
+
+config SOC_POWER_MANAGEMENT
+	bool "System Power Management in NPCX series"
+	depends on SOC_SERIES_NPCX7
+	help
+	  This option enables the board to implement SoC specific power
+	  management policies whenever the kernel becomes idle. The power
+	  management subsystem will restore to the active state until an
+	  wake-up event is received no matter the system timer is expired or
+	  the other signals occurred such as GPIO, host access, and so on.
+
+config SOC_POWER_MANAGEMENT_TRACE
+	bool "Trace System Power Management in NPCX series"
+	depends on SOC_POWER_MANAGEMENT
+	help
+	  Internal config to enable runtime power management traces.

@@ -1,0 +1,13 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for USB audio class
+
+description: Common fields for USB audio devices
+compatible: "usb-audio"
+
+properties:
+  label:
+    required: true
+    type: string
+    description: Human readable string describing the device (used as device_get_binding() argument)

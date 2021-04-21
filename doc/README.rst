@@ -8,6 +8,8 @@ documentation on your local system using the same documentation sources
 as we use to create the online documentation found at
 https://docs.zephyrproject.org
 
+.. _documentation-overview:
+
 Documentation overview
 **********************
 
@@ -45,70 +47,75 @@ and make use of the breathe extension for including the doxygen-generated API
 material.  Additional tools are required to generate the
 documentation locally, as described in the following sections.
 
+.. _documentation-processors:
+
 Installing the documentation processors
 ***************************************
 
 Our documentation processing has been tested to run with:
 
 * Doxygen version 1.8.13
-* Sphinx version 1.7.5
-* Breathe version 4.9.1
-* docutils version 0.14
-* sphinx_rtd_theme version 0.4.0
-* sphinxcontrib-svg2pdfconverter version 0.1.0
 * Latexmk version 4.56
+* All Python dependencies listed in the repository file
+  ``scripts/requirements-doc.txt``
 
 In order to install the documentation tools, first install Zephyr as
 described in :ref:`getting_started`. Then install additional tools
 that are only required to generate the documentation,
 as described below:
 
-On Ubuntu Linux:
+.. tabs::
 
-.. code-block:: console
+   .. group-tab:: Linux
 
-   sudo apt-get install --no-install-recommends doxygen librsvg2-bin \
-     texlive-latex-base texlive-latex-extra latexmk texlive-fonts-recommended
+      On Ubuntu Linux:
 
-On Fedora Linux:
+      .. code-block:: console
 
-.. code-block:: console
+         sudo apt-get install --no-install-recommends doxygen librsvg2-bin \
+         texlive-latex-base texlive-latex-extra latexmk texlive-fonts-recommended
 
-   sudo dnf install doxygen texlive-latex latexmk \
-     texlive-collection-fontsrecommended librsvg2-tools
+      On Fedora Linux:
 
-On Clear Linux:
+      .. code-block:: console
 
-.. code-block:: console
+         sudo dnf install doxygen texlive-latex latexmk \
+         texlive-collection-fontsrecommended librsvg2-tools
 
-  sudo swupd bundle-add texlive
+      On Clear Linux:
 
-On Arch Linux:
+      .. code-block:: console
 
-.. code-block:: console
+         sudo swupd bundle-add texlive
 
-   sudo pacman -S doxygen librsvg texlive-core texlive-bin
+      On Arch Linux:
 
-On macOS:
+      .. code-block:: console
 
-.. code-block:: console
+         sudo pacman -S doxygen librsvg texlive-core texlive-bin
 
-   brew install doxygen mactex librsvg
-   tlmgr install latexmk
-   tlmgr install collection-fontsrecommended
+   .. group-tab:: macOS
 
-On Windows in an Administrator ``cmd.exe`` prompt:
+      .. code-block:: console
 
-.. code-block:: console
+         brew install doxygen mactex librsvg
+         tlmgr install latexmk
+         tlmgr install collection-fontsrecommended
 
-   choco install doxygen.install strawberryperl miktex rsvg-convert
+   .. group-tab:: Windows
 
-.. note::
-   On Windows, the Sphinx executable ``sphinx-build.exe`` is placed in
-   the ``Scripts`` folder of your Python installation path.
-   Dependending on how you have installed Python, you may need to
-   add this folder to your ``PATH`` environment variable. Follow
-   the instructions in `Windows Python Path`_ to add those if needed.
+      Run in an Administrator ``cmd.exe`` prompt:
+
+      .. code-block:: console
+
+         choco install doxygen.install strawberryperl miktex rsvg-convert
+
+      .. note::
+         On Windows, the Sphinx executable ``sphinx-build.exe`` is placed in
+         the ``Scripts`` folder of your Python installation path.
+         Dependending on how you have installed Python, you may need to
+         add this folder to your ``PATH`` environment variable. Follow
+         the instructions in `Windows Python Path`_ to add those if needed.
 
 Documentation presentation theme
 ********************************
@@ -132,16 +139,15 @@ folder, here are the commands to generate the html content locally:
 .. code-block:: console
 
    # On Linux/macOS
-   cd ~/zephyr
-   source zephyr-env.sh
-   mkdir -p doc/_build && cd doc/_build
+   cd ~/zephyr/doc
    # On Windows
-   cd %userprofile%\zephyr
-   zephyr-env.cmd
-   mkdir doc\_build & cd doc/_build
+   cd %userprofile%\zephyr\doc
 
    # Use cmake to configure a Ninja-based build system:
-   cmake -GNinja ..
+   cmake -GNinja -B_build .
+
+   # Enter the build directory
+   cd _build
 
    # To generate HTML output, run ninja on the generated build system:
    ninja htmldocs
@@ -174,14 +180,13 @@ of the build folder and run ``cmake`` and then ``ninja`` again.
 
    If you add or remove a file from the documentation, you need to re-run CMake.
 
-On Unix platforms a convenience :zephyr_file:`Makefile` at the root folder
+On Unix platforms a convenience :zephyr_file:`Makefile` at the ``doc`` folder
 of the Zephyr repository can be used to build the documentation directly from
 there:
 
 .. code-block:: console
 
-   cd ~/zephyr
-   source zephyr-env.sh
+   cd ~/zephyr/doc
 
    # To generate HTML output
    make htmldocs
@@ -192,24 +197,20 @@ there:
 Filtering expected warnings
 ***************************
 
-Alas, there are some known issues with the doxygen/Sphinx/Breathe
-processing that generates warnings for some constructs, in particular
-around unnamed structures in nested unions or structs.
-While these issues are being considered for fixing in
-Sphinx/Breathe, we've added a post-processing filter on the output of
-the documentation build process to check for "expected" messages from the
-generation process output.
+There are some known issues with Sphinx/Breathe that generate Sphinx warnings
+even though the input is valid C code. While these issues are being considered
+for fixing we have created a Sphinx extension that allows to filter them out
+based on a set of regular expressions. The extension is named
+``zephyr.warnings_filter`` and it is located at
+``doc/_extensions/zephyr/warnings_filter.py``. The warnings to be filtered out
+can be added to the ``doc/known-warnings.txt`` file.
 
-The output from the Sphinx build is processed by the python script
-``scripts/filter-known-issues.py`` together with a set of filter
-configuration files in the ``.known-issues/doc`` folder.  (This
-filtering is done as part of the ``doc/CMakeLists.txt`` CMake listfile.)
+The most common warning reported by Sphinx/Breathe is related to duplicate C
+declarations. This warning may be caused by different Sphinx/Breathe issues:
 
-If you're contributing components included in the Zephyr API
-documentation and run across these warnings, you can include filtering
-them out as "expected" warnings by adding a conf file to the
-``.known-issues/doc`` folder, following the example of other conf files
-found there.
+- Multiple declarations of the same object are not supported
+- Different objects (e.g. a struct and a function) can not share the same name
+- Nested elements (e.g. in a struct or union) can not share the same name
 
 Developer-mode Document Building
 ********************************
@@ -227,7 +228,6 @@ To enable this mode, set the following option when invoking cmake::
 or invoke make with the following target::
 
    cd ~/zephyr
-   source zephyr-env.sh
 
    # To generate HTML output without detailed Kconfig
    make htmldocs-fast

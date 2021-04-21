@@ -1,7 +1,7 @@
 .. _stm32f429i_disc1_board:
 
-ST STM32F429I-DISC1 Discovery board
-###################################
+ST STM32F429I Discovery
+#######################
 
 Overview
 ********

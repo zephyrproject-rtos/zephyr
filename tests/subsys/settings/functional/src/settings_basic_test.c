@@ -31,7 +31,7 @@ static void test_clear_settings(void)
 {
 #if IS_ENABLED(CONFIG_SETTINGS_FCB) || IS_ENABLED(CONFIG_SETTINGS_NVS)
 	const struct flash_area *fap;
-	int rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
+	int rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
 
 	if (rc == 0) {
 		rc = flash_area_erase(fap, 0, fap->fa_size);
@@ -46,7 +46,7 @@ static void test_clear_settings(void)
 	static struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &cstorage,
-	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
+	.storage_dev = (void *)FLASH_AREA_ID(storage),
 	.mnt_point = "/ff"
 };
 
@@ -157,9 +157,9 @@ static void test_support_rtn(void)
 }
 
 struct stored_data {
-	u8_t val1;
-	u8_t val2;
-	u8_t val3;
+	uint8_t val1;
+	uint8_t val2;
+	uint8_t val3;
 	bool en1;
 	bool en2;
 	bool en3;
@@ -229,13 +229,13 @@ int settings_deregister(struct settings_handler *handler)
 static void test_register_and_loading(void)
 {
 	int rc, err;
-	u8_t val = 0;
+	uint8_t val = 0;
 
 	rc = settings_subsys_init();
 	zassert_true(rc == 0, "subsys init failed");
 
 
-	settings_save_one("ps/ss/ss/val2", &val, sizeof(u8_t));
+	settings_save_one("ps/ss/ss/val2", &val, sizeof(uint8_t));
 
 	memset(&data, 0, sizeof(struct stored_data));
 
@@ -269,7 +269,7 @@ static void test_register_and_loading(void)
 	err = (data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
 
-	settings_save_one("ps/ss/val3", &val, sizeof(u8_t));
+	settings_save_one("ps/ss/val3", &val, sizeof(uint8_t));
 	memset(&data, 0, sizeof(struct stored_data));
 	/* when we load settings now data.val2 and data.val1 should receive a
 	 * value
@@ -300,7 +300,7 @@ static void test_register_and_loading(void)
 	err = (data.en1) && (data.en2) && (data.en3);
 	zassert_true(err, "wrong data enable found");
 
-	settings_save_one("ps/val1", &val, sizeof(u8_t));
+	settings_save_one("ps/val1", &val, sizeof(uint8_t));
 	memset(&data, 0, sizeof(struct stored_data));
 	/* when we load settings all data should receive a value loaded */
 	rc = settings_load();
@@ -350,7 +350,7 @@ int val123_set(const char *key, size_t len,
 	       settings_read_cb read_cb, void *cb_arg)
 {
 	int rc;
-	u8_t val;
+	uint8_t val;
 
 	zassert_equal(1, len, "Unexpected size");
 
@@ -384,7 +384,7 @@ static struct settings_handler val123_settings = {
 };
 
 unsigned int direct_load_cnt;
-u8_t val_directly_loaded;
+uint8_t val_directly_loaded;
 
 int direct_loader(
 	const char *key,
@@ -394,7 +394,7 @@ int direct_loader(
 	void *param)
 {
 	int rc;
-	u8_t val;
+	uint8_t val;
 
 	zassert_equal(0x1234, (size_t)param, NULL);
 
@@ -415,14 +415,14 @@ int direct_loader(
 static void test_direct_loading(void)
 {
 	int rc;
-	u8_t val;
+	uint8_t val;
 
 	val = 11;
-	settings_save_one("val/1", &val, sizeof(u8_t));
+	settings_save_one("val/1", &val, sizeof(uint8_t));
 	val = 23;
-	settings_save_one("val/2", &val, sizeof(u8_t));
+	settings_save_one("val/2", &val, sizeof(uint8_t));
 	val = 35;
-	settings_save_one("val/3", &val, sizeof(u8_t));
+	settings_save_one("val/3", &val, sizeof(uint8_t));
 
 	rc = settings_register(&val123_settings);
 	zassert_true(rc == 0, NULL);

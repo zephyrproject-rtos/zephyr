@@ -9,6 +9,7 @@ toolchain:
   - xtools
 supported:
   - netif:serial-net
+  - gpio
 ram: 64
 flash: 256
 testing:

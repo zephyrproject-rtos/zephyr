@@ -5,8 +5,6 @@
  */
 
 #include <kernel.h>
-#include <openthread-config.h>
-#include <openthread/openthread.h>
 #include <openthread/platform/diag.h>
 
 #include "platform-zephyr.h"
@@ -17,23 +15,29 @@
  */
 static bool sDiagMode;
 
-void otPlatDiagProcess(otInstance *aInstance,
-		       int argc,
-		       char *argv[],
-		       char *aOutput,
-		       size_t aOutputMaxLen)
+otError otPlatDiagProcess(otInstance *aInstance,
+			  uint8_t argc,
+			  char   *argv[],
+			  char   *aOutput,
+			  size_t  aOutputMaxLen)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(aInstance);
 
 	/* Add more plarform specific diagnostics features here. */
-	snprintf(aOutput, aOutputMaxLen,
+	snprintk(aOutput, aOutputMaxLen,
 		 "diag feature '%s' is not supported\r\n", argv[0]);
+
+	return OT_ERROR_NOT_IMPLEMENTED;
 }
 
 void otPlatDiagModeSet(bool aMode)
 {
 	sDiagMode = aMode;
+
+	if (!sDiagMode) {
+		otPlatRadioSleep(NULL);
+	}
 }
 
 bool otPlatDiagModeGet(void)
@@ -52,8 +56,8 @@ void otPlatDiagTxPowerSet(int8_t aTxPower)
 }
 
 void otPlatDiagRadioReceived(otInstance *aInstance,
-			     RadioPacket *aFrame,
-			     ThreadError aError)
+			     otRadioFrame *aFrame,
+			     otError aError)
 {
 	ARG_UNUSED(aInstance);
 	ARG_UNUSED(aFrame);

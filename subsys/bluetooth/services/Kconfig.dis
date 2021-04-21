@@ -3,46 +3,47 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig BT_GATT_DIS
+menuconfig BT_DIS
 	bool "Enable GATT Device Information service"
 
-if BT_GATT_DIS
+if BT_DIS
 
-config BT_GATT_DIS_SETTINGS
+config BT_DIS_SETTINGS
 	bool "Enable Settings usage in Device Information Service"
+	select SETTINGS
 	help
 	  Enable Settings usage in Device Information Service.
 
-config BT_GATT_DIS_STR_MAX
+config BT_DIS_STR_MAX
 	int "Maximum size in bytes for DIS strings"
-	depends on BT_GATT_DIS_SETTINGS
+	depends on BT_DIS_SETTINGS
 	default 21
 	range 2 248
 	help
 	  Bluetooth DIS string storage size. Storage can be up to 248 bytes
 	  long (excluding NULL termination).
 
-config BT_GATT_DIS_MODEL
+config BT_DIS_MODEL
 	string "Model name"
 	default SOC
 	help
 	  The device model inside Device Information Service.
 
-config BT_GATT_DIS_MANUF
+config BT_DIS_MANUF
 	string "Manufacturer name"
 	default "Manufacturer"
 	help
 	  The device manufacturer inside Device Information Service.
 
-config BT_GATT_DIS_PNP
+config BT_DIS_PNP
 	bool "Enable PnP_ID characteristic"
 	default y
 	help
 	  Enable PnP_ID characteristic in Device Information Service.
 
-if BT_GATT_DIS_PNP
+if BT_DIS_PNP
 
-config BT_GATT_DIS_PNP_VID_SRC
+config BT_DIS_PNP_VID_SRC
 	int "Vendor ID source"
 	range 1 2
 	default 1
@@ -53,7 +54,7 @@ config BT_GATT_DIS_PNP_VID_SRC
 	  - 1 Bluetooth SIG, the Vendor ID was assigned by the Bluetooth SIG
 	  - 2 USB IF, the Vendor ID was assigned by the USB IF
 
-config BT_GATT_DIS_PNP_VID
+config BT_DIS_PNP_VID
 	hex "Vendor ID"
 	range 0 0xFFFF
 	default 0
@@ -67,7 +68,7 @@ config BT_GATT_DIS_PNP_VID
 	  Device providers should procure the Vendor ID from the USB Implementers
 	  Forum or the Company Identifier from the Bluetooth SIG.
 
-config BT_GATT_DIS_PNP_PID
+config BT_DIS_PNP_PID
 	hex "Product ID"
 	range 0 0xFFFF
 	default 0
@@ -76,7 +77,7 @@ config BT_GATT_DIS_PNP_PID
 	  made by the vendor identified with the Vendor ID field. The vendors
 	  themselves manage Product ID field values.
 
-config BT_GATT_DIS_PNP_VER
+config BT_DIS_PNP_VER
 	hex "Product Version"
 	range 0 0xFFFF
 	default 1
@@ -95,50 +96,50 @@ config BT_GATT_DIS_PNP_VER
 	  made to the device, it is recommended that the major version number be
 	  incremented. The sub-minor version is incremented for bug fixes.
 
-endif # BT_GATT_DIS_PNP
+endif # BT_DIS_PNP
 
-config BT_GATT_DIS_SERIAL_NUMBER
+config BT_DIS_SERIAL_NUMBER
 	bool "Enable DIS Serial number characteristic"
 	help
 	  Enable Serial Number characteristic in Device Information Service.
 
-config BT_GATT_DIS_SERIAL_NUMBER_STR
+config BT_DIS_SERIAL_NUMBER_STR
 	string "Serial Number"
-	depends on BT_GATT_DIS_SERIAL_NUMBER
+	depends on BT_DIS_SERIAL_NUMBER
 	help
 	  Enable Serial Number characteristic in Device Information Service.
 
-config BT_GATT_DIS_FW_REV
+config BT_DIS_FW_REV
 	bool "Enable DIS Firmware Revision characteristic"
 	help
 	  Enable Firmware Revision characteristic in Device Information Service.
 
-config BT_GATT_DIS_FW_REV_STR
+config BT_DIS_FW_REV_STR
 	string "Firmware revision"
-	depends on BT_GATT_DIS_FW_REV
+	depends on BT_DIS_FW_REV
 	help
 	  Enable firmware revision characteristic in Device Information Service.
 
-config BT_GATT_DIS_HW_REV
+config BT_DIS_HW_REV
 	bool "Enable DIS Hardware Revision characteristic"
 	help
 	  Enable Hardware Revision characteristic in Device Information Service.
 
-config BT_GATT_DIS_HW_REV_STR
+config BT_DIS_HW_REV_STR
 	string "Hardware revision"
-	depends on BT_GATT_DIS_HW_REV
+	depends on BT_DIS_HW_REV
 	help
 	  Enable hardware revision characteristic in Device Information Service.
 
-config BT_GATT_DIS_SW_REV
+config BT_DIS_SW_REV
 	bool "Enable DIS Software Revision characteristic"
 	help
 	  Enable Software Revision characteristic in Device Information Service.
 
-config BT_GATT_DIS_SW_REV_STR
+config BT_DIS_SW_REV_STR
 	string "Software revision"
-	depends on BT_GATT_DIS_SW_REV
+	depends on BT_DIS_SW_REV
 	help
 	  Enable software revision characteristic in Device Information Service.
 
-endif # BT_GATT_DIS
+endif # BT_DIS

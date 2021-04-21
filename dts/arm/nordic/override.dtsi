@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * File intentionally left blank. Will be used when there is no other
+ * higher-priority dts/arm/nordic/override.dtsi file in use.
+ */

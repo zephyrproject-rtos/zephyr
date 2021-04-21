@@ -3,25 +3,29 @@
 
 if BOARD_MPS2_AN521
 
+# MPU-based null-pointer dereferencing detection cannot
+# be applied as the (0x0 - 0x400) is unmapped but QEMU
+# will still permit bus access.
+choice CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION
+	bool
+	default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE if QEMU_TARGET
+endchoice
+
 config BOARD
 	default "mps2_an521_nonsecure" if TRUSTED_EXECUTION_NONSECURE
 	default "mps2_an521"
 
+# By default, if we build for a Non-Secure version of the board,
+# force building with TF-M as the Secure Execution Environment.
+# Openamp samples assume the non-secure build is the remote
+# core image, so do not build with TF-M in this case.
+config BUILD_WITH_TFM
+	default y if TRUSTED_EXECUTION_NONSECURE && !OPENAMP
+
+
 if GPIO
 
 config GPIO_CMSDK_AHB
-	default y
-
-config GPIO_CMSDK_AHB_PORT0
-	default y
-
-config GPIO_CMSDK_AHB_PORT1
-	default y
-
-config GPIO_CMSDK_AHB_PORT2
-	default y
-
-config GPIO_CMSDK_AHB_PORT3
 	default y
 
 endif # GPIO
@@ -43,5 +47,12 @@ config WDOG_CMSDK_APB
 config I2C_SBCON
 	default y
 	depends on I2C
+
+if IPM
+
+config IPM_MHU
+	default y
+
+endif # IPM
 
 endif

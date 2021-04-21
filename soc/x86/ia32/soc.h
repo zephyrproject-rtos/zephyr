@@ -25,9 +25,8 @@
 /*
  * UART
  */
-#define UART_NS16550_ACCESS_IOPORT
+#define UART_NS16550_ACCESS_IOPORT 0x3f8
 
-#define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 /* PCI definitions */
 #define PCI_BUS_NUMBERS 1
 

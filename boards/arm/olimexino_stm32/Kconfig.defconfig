@@ -8,39 +8,8 @@ if BOARD_OLIMEXINO_STM32
 config BOARD
 	default "olimexino_stm32"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-endif # I2C
-
-if SPI
-
 config SPI_STM32_INTERRUPT
 	default y
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
-endif # SPI
-
-config PWM_STM32_1
-	default y
-	depends on PWM
-
-config CAN_1
-	default y
-	depends on CAN
+	depends on SPI
 
 endif # BOARD_OLIMEXINO_STM32

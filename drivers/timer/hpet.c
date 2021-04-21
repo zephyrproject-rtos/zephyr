@@ -3,16 +3,23 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT intel_hpet
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <irq.h>
 
-#define HPET_REG32(off) (*(volatile u32_t *)(long)			\
-		       (DT_INST_0_INTEL_HPET_BASE_ADDRESS + (off)))
+#include <dt-bindings/interrupt-controller/intel-ioapic.h>
+
+DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
+
+#define HPET_REG32(off) (*(volatile uint32_t *)(long)			\
+			 (DEVICE_MMIO_TOPLEVEL_GET(hpet_regs) + (off)))
 
 #define CLK_PERIOD_REG        HPET_REG32(0x04) /* High dword of caps reg */
 #define GENERAL_CONF_REG      HPET_REG32(0x10)
+#define INTR_STATUS_REG       HPET_REG32(0x20)
 #define MAIN_COUNTER_REG      HPET_REG32(0xf0)
 #define TIMER0_CONF_REG       HPET_REG32(0x100)
 #define TIMER0_COMPARATOR_REG HPET_REG32(0x108)
@@ -21,11 +28,16 @@
 #define GCONF_ENABLE BIT(0)
 #define GCONF_LR     BIT(1) /* legacy interrupt routing, disables PIT */
 
+/* INTR_STATUS_REG bits */
+#define TIMER0_INT_STS   BIT(0)
+
 /* TIMERn_CONF_REG bits */
+#define TCONF_INT_LEVEL  BIT(1)
 #define TCONF_INT_ENABLE BIT(2)
 #define TCONF_PERIODIC   BIT(3)
 #define TCONF_VAL_SET    BIT(6)
 #define TCONF_MODE32     BIT(8)
+#define TCONF_FSB_EN     BIT(14) /* FSB interrupt delivery enable */
 
 #define MIN_DELAY 1000
 
@@ -34,11 +46,22 @@ static unsigned int max_ticks;
 static unsigned int cyc_per_tick;
 static unsigned int last_count;
 
-static void hpet_isr(void *arg)
+static void hpet_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t now = MAIN_COUNTER_REG;
+
+	uint32_t now = MAIN_COUNTER_REG;
+
+#if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
+	/*
+	 * Clear interrupt only if level trigger is selected.
+	 * When edge trigger is selected, spec says only 0 can
+	 * be written.
+	 */
+	INTR_STATUS_REG = TIMER0_INT_STS;
+#endif
 
 	if (IS_ENABLED(CONFIG_SMP) &&
 	    IS_ENABLED(CONFIG_QEMU_TARGET)) {
@@ -47,51 +70,59 @@ static void hpet_isr(void *arg)
 		 * on the other CPU, despite the HPET being
 		 * theoretically a global device.
 		 */
-		s32_t diff = (s32_t)(now - last_count);
+		int32_t diff = (int32_t)(now - last_count);
 
 		if (last_count && diff < 0) {
 			now = last_count;
 		}
 	}
-	u32_t dticks = (now - last_count) / cyc_per_tick;
+	uint32_t dticks = (now - last_count) / cyc_per_tick;
 
 	last_count += dticks * cyc_per_tick;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) ||
-	    IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND)) {
-		u32_t next = last_count + cyc_per_tick;
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		uint32_t next = last_count + cyc_per_tick;
 
-		if ((s32_t)(next - now) < MIN_DELAY) {
+		if ((int32_t)(next - now) < MIN_DELAY) {
 			next += cyc_per_tick;
 		}
 		TIMER0_COMPARATOR_REG = next;
 	}
 
 	k_spin_unlock(&lock, key);
-	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
 static void set_timer0_irq(unsigned int irq)
 {
 	/* 5-bit IRQ field starting at bit 9 */
-	u32_t val = (TIMER0_CONF_REG & ~(0x1f << 9)) | ((irq & 0x1f) << 9);
+	uint32_t val = (TIMER0_CONF_REG & ~(0x1f << 9)) | ((irq & 0x1f) << 9);
+
+#if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
+	/* Level trigger */
+	val |= TCONF_INT_LEVEL;
+#endif
 
 	TIMER0_CONF_REG = val;
 }
 
-int z_clock_driver_init(struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
 	extern int z_clock_hw_cycles_per_sec;
-	u32_t hz;
+	uint32_t hz;
 
-	IRQ_CONNECT(DT_INST_0_INTEL_HPET_IRQ_0,
-		    DT_INST_0_INTEL_HPET_IRQ_0_PRIORITY,
-		    hpet_isr, 0, 0);
-	set_timer0_irq(DT_INST_0_INTEL_HPET_IRQ_0);
-	irq_enable(DT_INST_0_INTEL_HPET_IRQ_0);
+	ARG_UNUSED(dev);
+
+	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
+
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
+		    hpet_isr, 0, DT_INST_IRQ(0, sense));
+	set_timer0_irq(DT_INST_IRQN(0));
+	irq_enable(DT_INST_IRQN(0));
 
 	/* CLK_PERIOD_REG is in femtoseconds (1e-15 sec) */
-	hz = (u32_t)(1000000000000000ull / CLK_PERIOD_REG);
+	hz = (uint32_t)(1000000000000000ull / CLK_PERIOD_REG);
 	z_clock_hw_cycles_per_sec = hz;
 	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
@@ -103,6 +134,7 @@ int z_clock_driver_init(struct device *device)
 	 */
 	GENERAL_CONF_REG |= GCONF_LR | GCONF_ENABLE;
 	TIMER0_CONF_REG &= ~TCONF_PERIODIC;
+	TIMER0_CONF_REG &= ~TCONF_FSB_EN;
 	TIMER0_CONF_REG |= TCONF_MODE32;
 
 	max_ticks = (0x7fffffff - cyc_per_tick) / cyc_per_tick;
@@ -122,22 +154,22 @@ void smp_timer_init(void)
 	 */
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
-	if (ticks == K_FOREVER && idle) {
+#if defined(CONFIG_TICKLESS_KERNEL)
+	if (ticks == K_TICKS_FOREVER && idle) {
 		GENERAL_CONF_REG &= ~GCONF_ENABLE;
 		return;
 	}
 
-	ticks = ticks == K_FOREVER ? max_ticks : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t)max_ticks), 0);
+	ticks = ticks == K_TICKS_FOREVER ? max_ticks : ticks;
+	ticks = CLAMP(ticks - 1, 0, (int32_t)max_ticks);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t now = MAIN_COUNTER_REG, cyc, adj;
-	u32_t max_cyc = max_ticks * cyc_per_tick;
+	uint32_t now = MAIN_COUNTER_REG, cyc, adj;
+	uint32_t max_cyc = max_ticks * cyc_per_tick;
 
 	/* Round up to next tick boundary. */
 	cyc = ticks * cyc_per_tick;
@@ -159,25 +191,25 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	u32_t ret = (MAIN_COUNTER_REG - last_count) / cyc_per_tick;
+	uint32_t ret = (MAIN_COUNTER_REG - last_count) / cyc_per_tick;
 
 	k_spin_unlock(&lock, key);
 	return ret;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	return MAIN_COUNTER_REG;
 }
 
-void z_clock_idle_exit(void)
+void sys_clock_idle_exit(void)
 {
 	GENERAL_CONF_REG |= GCONF_ENABLE;
 }

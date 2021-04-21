@@ -43,7 +43,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 }
 
 static int setup_iface(struct net_if *iface, const char *ipv6_addr,
-		       const char *ipv4_addr, u16_t vlan_tag)
+		       const char *ipv4_addr, uint16_t vlan_tag)
 {
 	struct net_if_addr *ifaddr;
 	struct in_addr addr4;
@@ -67,7 +67,7 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 	}
 
 	if (net_addr_pton(AF_INET, ipv4_addr, &addr4)) {
-		LOG_ERR("Invalid address: %s", ipv6_addr);
+		LOG_ERR("Invalid address: %s", ipv4_addr);
 		return -EINVAL;
 	}
 

@@ -4,14 +4,19 @@
 
 #include <mem.h>
 
-#define DT_SRAM_SIZE		DT_SIZE_K(4096)
+#ifndef DT_DRAM_BASE
+#define DT_DRAM_BASE		0
+#endif
+#ifndef DT_DRAM_SIZE
+#define DT_DRAM_SIZE		DT_SIZE_K(4096)
+#endif
 #define DT_FLASH_SIZE		DT_SIZE_K(4096)
 
 #include <ia32.dtsi>
 
 / {
-	model = "QEMU X86";
-	compatible = "intel,ia32";
+	model = "QEMU X86 emulator";
+	compatible = "qemu,x86_emulator";
 
 	flash0: flash@500000 {
 		compatible = "soc-nv-flash";
@@ -22,10 +27,11 @@
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		eeprom-0 = &eeprom0;
+		eeprom-1 = &eeprom1;
 	};
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &dram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
@@ -33,6 +39,7 @@
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &sim_flash;
 	};
 
 	soc {
@@ -40,19 +47,20 @@
 			compatible = "intel,e1000";
 			reg = <0xfebc0000 0x100>;
 			label = "eth0";
-			interrupts = <11 IRQ_TYPE_EDGE_RISING 3>;
+			interrupts = <11 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 
 			status = "okay";
 		};
 	};
 
-	sim_flash {
+	sim_flash: sim_flash {
 		compatible = "zephyr,sim-flash";
 		label = "FLASH_SIMULATOR";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
+		erase-value = <0xff>;
 
 		flash_sim0: flash_sim@0 {
 			compatible = "soc-nv-flash";
@@ -63,12 +71,23 @@
 		};
 	};
 
-	eeprom0: eeprom {
+	eeprom1: eeprom1 {
+		status = "okay";
+		compatible = "zephyr,emu-eeprom";
+		label = "EEPROM_1";
+		size = <DT_SIZE_K(4)>;
+		pagesize = <DT_SIZE_K(8)>;
+		partition = <&eepromemu_partition>;
+		rambuf;
+	};
+
+	eeprom0: eeprom0 {
 		status = "okay";
 		compatible = "zephyr,sim-eeprom";
 		label = "EEPROM_0";
-		size = <DT_SIZE_K(32)>;
+		size = <DT_SIZE_K(4)>;
 	};
+
 };
 
 &uart0 {
@@ -86,10 +105,7 @@
 };
 
 &flash_sim0 {
-	/*
-	 * For more information, see:
-	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
-	 */
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -111,6 +127,10 @@
 		slot1_partition: partition@21000 {
 			label = "image-1";
 			reg = <0x00021000 0x00010000>;
+		};
+		eepromemu_partition: partition@31000 {
+			label = "eeprom-emu";
+			reg = <0x00031000 0x00010000>;
 		};
 	};
 };

@@ -1,0 +1,24 @@
+# BMD-340-EVAL board configuration
+
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UBX_BMD340EVAL_NRF52840
+
+config BOARD
+	default "ubx_bmd340eval_nrf52840"
+
+if USB
+
+config USB_NRFX
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+endif # USB
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_UBX_BMD340EVAL_NRF52840

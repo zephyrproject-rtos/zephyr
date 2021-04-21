@@ -1,0 +1,175 @@
+# OpenThread stack features selection
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "OpenThread stack version"
+	help
+	  This option selects version of Thread stack
+
+config OPENTHREAD_THREAD_VERSION_1_1
+	bool "Version 1.1"
+config OPENTHREAD_THREAD_VERSION_1_2
+	bool "Version 1.2"
+endchoice
+
+config OPENTHREAD_THREAD_VERSION
+	string
+	default "1.1" if OPENTHREAD_THREAD_VERSION_1_1
+	default "1.2" if OPENTHREAD_THREAD_VERSION_1_2
+	default "unknown"
+
+config OPENTHREAD_BACKBONE_ROUTER
+	bool "Enable Backbone Router functionality"
+
+config OPENTHREAD_BORDER_AGENT
+	bool "Enable Border Agent support"
+
+config OPENTHREAD_BORDER_ROUTER
+	bool "Enable Border Router support"
+
+config OPENTHREAD_COAP
+	bool "Enable OpenThread CoAP support"
+	help
+	  Enable CoAP API for the application with use of OpenThread stack
+
+config OPENTHREAD_COAPS
+	bool "Enable Secure CoAP API support"
+	depends on OPENTHREAD_COAP
+
+config OPENTHREAD_COAP_BLOCK
+	bool "Enable CoAP Block-wise option support"
+
+config OPENTHREAD_COAP_OBSERVE
+	bool "Enable CoAP Observe option support"
+
+config OPENTHREAD_COMMISSIONER
+	bool "Enable Commissioner functions support"
+	help
+	  Enable commissioner capability in OpenThread stack. Note, that DTLS
+	  handshake used in the commissioning procedure requires a larger
+	  mbedTLS heap than the default value. A minimum recommended value of
+	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
+
+config OPENTHREAD_CHANNEL_MANAGER
+	bool "Enable channel manager support"
+	depends on OPENTHREAD_CHANNEL_MONITOR
+
+config OPENTHREAD_CHANNEL_MONITOR
+	bool "Enable channel monitor support"
+
+config OPENTHREAD_CHILD_SUPERVISION
+	bool "Enable child supervision support"
+
+config OPENTHREAD_CSL_RECEIVER
+	bool "Enable CSL Receiver support"
+	help
+	  Enable CSL Receiver support for Thread 1.2
+
+config OPENTHREAD_DHCP6_CLIENT
+	bool "Enable DHCPv6 client support"
+
+config OPENTHREAD_DHCP6_SERVER
+	bool "Enable DHCPv6 server support"
+
+config OPENTHREAD_DIAG
+	bool "Enable Diagnostic functions support"
+	help
+	  Enable OpenThread CLI diagnostic commands
+
+config OPENTHREAD_DNS_CLIENT
+	bool "Enable DNS client support"
+
+config OPENTHREAD_DNSSD_SERVER
+	bool "Enable DNS-SD server support"
+
+config OPENTHREAD_DUA
+	bool "Enable Domain Unicast Address support"
+	help
+	  Enable Domain Unicast Address feature for Thread 1.2
+
+config OPENTHREAD_LOG_LEVEL_DYNAMIC
+	bool "Enable dynamic log level control"
+
+config OPENTHREAD_ECDSA
+	bool "Enable ECDSA support"
+
+config OPENTHREAD_EXTERNAL_HEAP
+	bool "Enable external heap support"
+
+config OPENTHREAD_IP6_FRAGM
+	bool "Enable IPv6 fragmentation support"
+
+config OPENTHREAD_JAM_DETECTION
+	bool "Enable Jam detection support"
+
+config OPENTHREAD_JOINER
+	bool "Enable Joiner functions support"
+	help
+	  Enable joiner capability in OpenThread stack. Note, that DTLS
+	  handshake used in the commissioning procedure requires a larger
+	  mbedTLS heap than the default value. A minimum recommended value of
+	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
+
+config OPENTHREAD_LEGACY
+	bool "Enable legacy network support"
+
+config OPENTHREAD_RAW
+	bool "Enable raw Link support"
+
+config OPENTHREAD_MAC_FILTER
+	bool "Enable MAC filter support"
+
+config OPENTHREAD_MLE_LONG_ROUTES
+	bool "Enable MLE long routes extension (experimental)"
+	help
+	  Enable MLE long routes extension (experimental, breaks Thread conformance)
+
+config OPENTHREAD_MLR
+	bool "Enable Multicast Listener Registration support"
+	help
+	  Enable Multicast Listener Registration support for Thread 1.2
+
+config OPENTHREAD_MTD_NETDIAG
+	bool "Enable TMF network diagnostics on MTDs"
+
+config OPENTHREAD_MULTIPLE_INSTANCE
+	bool "Enable OpenThread multiple instances"
+
+config OPENTHREAD_PLATFORM_UDP
+	bool "Enable platform UDP support"
+
+config OPENTHREAD_PLATFORM_NETIF
+	bool "Enable platform netif support"
+
+config OPENTHREAD_REFERENCE_DEVICE
+	bool "Enable Reference Device support"
+	help
+	  Enable Thread Certification reference device support in OpenThread stack
+
+config OPENTHREAD_ENABLE_SERVICE
+	bool "Enable Service support"
+	help
+	  Enable Thread Services capability in OpenThread stack
+
+config OPENTHREAD_SLAAC
+	bool "Enable SLAAC support"
+
+config OPENTHREAD_SNTP_CLIENT
+	bool "Enable SNTP Client support"
+
+config OPENTHREAD_TIME_SYNC
+	bool "Enable the time synchronization service feature"
+
+config OPENTHREAD_UDP_FORWARD
+	bool "Enable UDP forward support"
+
+config OPENTHREAD_SETTINGS_RAM
+	bool "Enable volatile-only storage of settings"
+
+config OPENTHREAD_OTNS
+	bool "Enable OTNS support"
+
+config OPENTHREAD_FULL_LOGS
+	bool "Enable OpenThread full logs"

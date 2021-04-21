@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019 Linaro Limited
+# Copyright (c) 2019,2020 Linaro Limited
 #
 # SPDX-License-Identifier: Apache-2.0
 #

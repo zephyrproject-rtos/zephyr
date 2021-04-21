@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_rtc
+
 /*
  * TI SimpleLink CC13X2/CC26X2 RTC-based system timer
  *
@@ -50,18 +52,18 @@
 #define COMPARE_MARGIN 6
 
 /* RTC count of the last announce call, rounded down to tick boundary. */
-static volatile u64_t rtc_last;
+static volatile uint64_t rtc_last;
 
 #ifdef CONFIG_TICKLESS_KERNEL
 static struct k_spinlock lock;
 #else
-static u64_t nextThreshold = RTC_COUNTS_PER_TICK;
+static uint64_t nextThreshold = RTC_COUNTS_PER_TICK;
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 
-static void setThreshold(u32_t next)
+static void setThreshold(uint32_t next)
 {
-	u32_t now;
+	uint32_t now;
 	unsigned int key;
 
 	key = irq_lock();
@@ -71,10 +73,10 @@ static void setThreshold(u32_t next)
 
 	/* if next is too soon, set at least one RTC tick in future */
 	/* assume next never be more than half the maximum 32 bit count value */
-	if ((next - now) > (u32_t)0x80000000) {
+	if ((next - now) > (uint32_t)0x80000000) {
 		/* now is past next */
 		next = now + COMPARE_MARGIN;
-	} else if ((now + COMPARE_MARGIN - next) < (u32_t)0x80000000) {
+	} else if ((now + COMPARE_MARGIN - next) < (uint32_t)0x80000000) {
 		if (next < now + COMPARE_MARGIN) {
 			next = now + COMPARE_MARGIN;
 		}
@@ -86,13 +88,13 @@ static void setThreshold(u32_t next)
 	irq_unlock(key);
 }
 
-void rtc_isr(void *arg)
+void rtc_isr(const void *arg)
 {
 #ifndef CONFIG_TICKLESS_KERNEL
-	u64_t newThreshold;
-	u32_t next;
+	uint64_t newThreshold;
+	uint32_t next;
 #else
-	u64_t ticks, currCount;
+	uint64_t ticks, currCount;
 #endif
 
 	ARG_UNUSED(arg);
@@ -101,27 +103,27 @@ void rtc_isr(void *arg)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	currCount = (u64_t)AONRTCCurrent64BitValueGet();
+	currCount = (uint64_t)AONRTCCurrent64BitValueGet();
 	ticks = (currCount - rtc_last) / RTC_COUNTS_PER_TICK;
 
 	rtc_last += ticks * RTC_COUNTS_PER_TICK;
 	k_spin_unlock(&lock, key);
 
-	z_clock_announce(ticks);
+	sys_clock_announce(ticks);
 
 #else /* !CONFIG_TICKLESS_KERNEL */
 
 	/* calculate new 64-bit RTC count for next interrupt */
 	newThreshold = nextThreshold + RTC_COUNTS_PER_TICK;
 
-	next = (u32_t)((u64_t)newThreshold >> 16);
+	next = (uint32_t)((uint64_t)newThreshold >> 16);
 	setThreshold(next);
 
 	nextThreshold = newThreshold;
 
 	rtc_last += RTC_COUNTS_PER_TICK;
 
-	z_clock_announce(1);
+	sys_clock_announce(1);
 
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
@@ -143,8 +145,8 @@ static void initDevice(void)
 
 static void startDevice(void)
 {
-	u32_t compare;
-	u64_t period;
+	uint32_t compare;
+	uint64_t period;
 	unsigned int key;
 
 	key = irq_lock();
@@ -181,9 +183,9 @@ static void startDevice(void)
 	irq_unlock(key);
 }
 
-int z_clock_driver_init(struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	rtc_last = 0U;
 
@@ -191,28 +193,28 @@ int z_clock_driver_init(struct device *device)
 	startDevice();
 
 	/* Enable RTC interrupt. */
-	IRQ_CONNECT(DT_INST_0_TI_CC13XX_CC26XX_RTC_IRQ_0,
-		DT_INST_0_TI_CC13XX_CC26XX_RTC_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		DT_INST_IRQ(0, priority),
 		rtc_isr, 0, 0);
-	irq_enable(DT_INST_0_TI_CC13XX_CC26XX_RTC_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
 
-void z_clock_set_timeout(s32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t) MAX_TICKS), 0);
+	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
+	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/* Compute number of RTC cycles until the next timeout. */
-	u64_t count = AONRTCCurrent64BitValueGet();
-	u64_t timeout = ticks * RTC_COUNTS_PER_TICK +
+	uint64_t count = AONRTCCurrent64BitValueGet();
+	uint64_t timeout = ticks * RTC_COUNTS_PER_TICK +
 		(count - rtc_last);
 
 	/* Round to the nearest tick boundary. */
@@ -228,15 +230,15 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-u32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
-	u32_t ret = (AONRTCCurrent64BitValueGet() - rtc_last) /
+	uint32_t ret = (AONRTCCurrent64BitValueGet() - rtc_last) /
 		RTC_COUNTS_PER_TICK;
 
 	return ret;
 }
 
-u32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	return (AONRTCCurrent64BitValueGet() / RTC_COUNTS_PER_CYCLE)
 		& 0xFFFFFFFF;

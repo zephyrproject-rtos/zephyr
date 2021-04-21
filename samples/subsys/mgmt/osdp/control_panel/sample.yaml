@@ -1,0 +1,10 @@
+sample:
+  description: OSDP Control Panel Sample
+  name: osdp
+tests:
+  sample.mgmt.osdp.control_panel:
+    tags: osdp
+    filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and CONFIG_SERIAL
+    harness: osdp
+    integration_platforms:
+      - frdm_k64f

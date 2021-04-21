@@ -17,7 +17,7 @@ extern "C" {
 
 struct phy_gecko_dev {
 	ETH_TypeDef *regs;
-	u8_t address;
+	uint8_t address;
 };
 
 /**
@@ -36,14 +36,14 @@ int phy_gecko_init(const struct phy_gecko_dev *phy);
  * @return 0 on success or a negative error value on failure
  */
 int phy_gecko_auto_negotiate(const struct phy_gecko_dev *phy,
-				u32_t *status);
+				uint32_t *status);
 /**
  * @brief Get PHY ID value.
  *
  * @param phy PHY instance
  * @return PHY ID value or 0xFFFFFFFF on failure
  */
-u32_t phy_gecko_id_get(const struct phy_gecko_dev *phy);
+uint32_t phy_gecko_id_get(const struct phy_gecko_dev *phy);
 
 /**
  * @brief Get PHY linked status.

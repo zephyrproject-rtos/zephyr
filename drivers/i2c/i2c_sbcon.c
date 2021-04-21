@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT arm_versatile_i2c
+
 /**
  * @file
  * @brief Driver for ARM's SBCon 2-wire serial bus interface
@@ -20,10 +22,10 @@
 /* SBCon hardware registers layout */
 struct sbcon {
 	union {
-		volatile u32_t SB_CONTROLS; /* Write to set pins high */
-		volatile u32_t SB_CONTROL;  /* Read for state of pins */
+		volatile uint32_t SB_CONTROLS; /* Write to set pins high */
+		volatile uint32_t SB_CONTROL;  /* Read for state of pins */
 	};
-	volatile u32_t SB_CONTROLC;	/* Write to set pins low */
+	volatile uint32_t SB_CONTROLC;	/* Write to set pins low */
 };
 
 /* Bits values for SCL and SDA lines in struct sbcon registers */
@@ -75,17 +77,17 @@ static const struct i2c_bitbang_io io_fns = {
 	.get_sda = &i2c_sbcon_get_sda,
 };
 
-static int i2c_sbcon_configure(struct device *dev, u32_t dev_config)
+static int i2c_sbcon_configure(const struct device *dev, uint32_t dev_config)
 {
-	struct i2c_sbcon_context *context = dev->driver_data;
+	struct i2c_sbcon_context *context = dev->data;
 
 	return i2c_bitbang_configure(&context->bitbang, dev_config);
 }
 
-static int i2c_sbcon_transfer(struct device *dev, struct i2c_msg *msgs,
-				u8_t num_msgs, u16_t slave_address)
+static int i2c_sbcon_transfer(const struct device *dev, struct i2c_msg *msgs,
+				uint8_t num_msgs, uint16_t slave_address)
 {
-	struct i2c_sbcon_context *context = dev->driver_data;
+	struct i2c_sbcon_context *context = dev->data;
 
 	return i2c_bitbang_transfer(&context->bitbang, msgs, num_msgs,
 							slave_address);
@@ -96,10 +98,10 @@ static struct i2c_driver_api api = {
 	.transfer = i2c_sbcon_transfer,
 };
 
-static int i2c_sbcon_init(struct device *dev)
+static int i2c_sbcon_init(const struct device *dev)
 {
-	struct i2c_sbcon_context *context = dev->driver_data;
-	const struct i2c_sbcon_config *config = dev->config->config_info;
+	struct i2c_sbcon_context *context = dev->data;
+	const struct i2c_sbcon_config *config = dev->config;
 
 	i2c_bitbang_init(&context->bitbang, &io_fns, config->sbcon);
 
@@ -111,27 +113,14 @@ static int i2c_sbcon_init(struct device *dev)
 static struct i2c_sbcon_context i2c_sbcon_dev_data_##_num;		\
 									\
 static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {	\
-	.sbcon		= (void *)DT_INST_##_num##_ARM_VERSATILE_I2C_BASE_ADDRESS, \
+	.sbcon		= (void *)DT_INST_REG_ADDR(_num), \
 };									\
 									\
-DEVICE_AND_API_INIT(i2c_sbcon_##_num, DT_INST_##_num##_ARM_VERSATILE_I2C_LABEL, \
+DEVICE_DT_INST_DEFINE(_num,						\
 	    i2c_sbcon_init,						\
+	    device_pm_control_nop,					\
 	    &i2c_sbcon_dev_data_##_num,					\
 	    &i2c_sbcon_dev_cfg_##_num,					\
-	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api)
+	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api);
 
-#ifdef DT_INST_0_ARM_VERSATILE_I2C
-DEFINE_I2C_SBCON(0);
-#endif
-
-#ifdef DT_INST_1_ARM_VERSATILE_I2C
-DEFINE_I2C_SBCON(1);
-#endif
-
-#ifdef DT_INST_2_ARM_VERSATILE_I2C
-DEFINE_I2C_SBCON(2);
-#endif
-
-#ifdef DT_INST_3_ARM_VERSATILE_I2C
-DEFINE_I2C_SBCON(3);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_SBCON)

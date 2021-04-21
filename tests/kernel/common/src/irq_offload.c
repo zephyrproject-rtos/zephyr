@@ -17,12 +17,12 @@
 #include <kernel_structs.h>
 #include <irq_offload.h>
 
-volatile u32_t sentinel;
+volatile uint32_t sentinel;
 #define SENTINEL_VALUE 0xDEADBEEF
 
-static void offload_function(void *param)
+static void offload_function(const void *param)
 {
-	u32_t x = POINTER_TO_INT(param);
+	uint32_t x = POINTER_TO_INT(param);
 
 	/* Make sure we're in IRQ context */
 	zassert_true(k_is_in_isr(), "Not in IRQ context!");
@@ -55,8 +55,8 @@ void test_irq_offload(void)
 	arch_irq_unlock(key1);
 
 	/**TESTPOINT: Offload to IRQ context*/
-	irq_offload(offload_function, (void *)SENTINEL_VALUE);
+	irq_offload(offload_function, (const void *)SENTINEL_VALUE);
 
 	zassert_equal(sentinel, SENTINEL_VALUE,
-		"irq_offload() didn't work properly");
+		      "irq_offload() didn't work properly");
 }

@@ -49,7 +49,7 @@ config BT_SPI
 config BT_STM32_IPM
 	bool "IPM HCI"
 	select USE_STM32_HAL_CORTEX
-	select HAS_STLIB
+	select HAS_STM32LIB
 	help
 	  TODO
 
@@ -85,6 +85,10 @@ config BT_UART_ON_DEV_NAME
 
 if BT_SPI
 
+config BT_SPI_INIT_PRIORITY
+	int "BT SPI init priority"
+	default 75
+
 config BT_BLUENRG_ACI
 	bool "Enable ACI message with with BlueNRG-based devices"
 	help
@@ -99,29 +103,37 @@ config BT_SPI_BLUENRG
 
 endif # BT_SPI
 
+config BT_STM32_IPM_RX_STACK_SIZE
+	int "STM32 IPM stack size for RX thread"
+	depends on BT_STM32_IPM
+	default 512
+
 config BT_RPMSG_NRF53
 	bool "nRF53 configuration of RPMsg"
-	default y if (BOARD_NRF5340_DK_NRF5340_CPUAPP || BOARD_NRF5340_DK_NRF5340_CPUAPPNS)
+	default y if SOC_NRF5340_CPUAPP
 	depends on BT_RPMSG
-	select IPM
-	select IPM_NRFX
-	select IPM_MSG_CH_1_ENABLE
-	select IPM_MSG_CH_0_ENABLE
-	select IPM_MSG_CH_0_TX
-	select IPM_MSG_CH_1_RX
-	select OPENAMP
+	select RPMSG_SERVICE
 	help
 	  Enable RPMsg configuration for nRF53. Two channels of the IPM driver
 	  are used in the HCI driver: channel 0 for TX and channel 1 for RX.
 
 if BT_RPMSG_NRF53
 
-config BT_RPMSG_NRF53_RX_STACK_SIZE
-	int "RPMsg stack size for RX thread"
-	default 1024
-
-config BT_RPMSG_NRF53_RX_PRIO
-	int "RPMsg RX thread priority"
-	default 8
+choice RPMSG_SERVICE_MODE
+	default RPMSG_SERVICE_MODE_MASTER
+endchoice
 
 endif # BT_RPMSG_NRF53
+
+config BT_DRIVER_QUIRK_NO_AUTO_DLE
+	bool "Host auto-initiated Data Length Update quirk"
+	depends on BT_AUTO_DATA_LEN_UPDATE
+	default y if BT_RPMSG_NRF53
+	help
+	  Enable the quirk wherein BT Host stack will auto-initiate Data Length
+	  Update procedure for new connections for controllers that do not
+	  auto-initiate the procedure if the default data length parameters are
+	  not equal to the initial parameters.
+
+	  This has to be enabled when the BLE controller connected is Zephyr
+	  open source controller.

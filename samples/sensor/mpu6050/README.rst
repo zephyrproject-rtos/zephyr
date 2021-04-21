@@ -28,7 +28,7 @@ build this sample app using:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/mpu6050
-   :board: nrf52_pca10040
+   :board: nrf52dk_nrf52832
    :goals: build flash
 
 Sample Output

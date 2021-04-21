@@ -10,9 +10,9 @@
 #include <soc.h>
 #include <string.h>
 
-static u8_t sam_uid[16];
+static uint8_t sam_uid[16];
 
-ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
+ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	if (length > sizeof(sam_uid)) {
 		length = sizeof(sam_uid);
@@ -33,8 +33,8 @@ ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
  */
 __ramfunc static void hwinfo_sam_read_device_id(void)
 {
-	Efc *efc = (Efc *)DT_FLASH_DEV_BASE_ADDRESS;
-	u8_t *flash = (u8_t *)CONFIG_FLASH_BASE_ADDRESS;
+	Efc *efc = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller));
+	uint8_t *flash = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS;
 	int i;
 
 	/* Switch the flash controller to the unique identifier area. The flash
@@ -62,10 +62,10 @@ __ramfunc static void hwinfo_sam_read_device_id(void)
 	}
 }
 
-static int hwinfo_sam_init(struct device *arg)
+static int hwinfo_sam_init(const struct device *arg)
 {
-	Efc *efc = (Efc *)DT_FLASH_DEV_BASE_ADDRESS;
-	u32_t fmr;
+	Efc *efc = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller));
+	uint32_t fmr;
 	int key;
 
 	/* Disable interrupts. */
@@ -73,7 +73,13 @@ static int hwinfo_sam_init(struct device *arg)
 
 	/* Disable code loop optimization and sequential code optimization. */
 	fmr = efc->EEFC_FMR;
+
+#ifndef CONFIG_SOC_SERIES_SAM3X
 	efc->EEFC_FMR = (fmr & (~EEFC_FMR_CLOE)) | EEFC_FMR_SCOD;
+#else
+	/* SAM3x does not have loop optimization (EEFC_FMR_CLOE) */
+	efc->EEFC_FMR |= EEFC_FMR_SCOD;
+#endif
 
 	/* Read the device ID using code in RAM */
 	hwinfo_sam_read_device_id();

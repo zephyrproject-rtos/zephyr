@@ -13,43 +13,9 @@ choice STM32_LPTIM_CLOCK
 	depends on STM32_LPTIM_TIMER
 endchoice
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-config UART_4
-	default y
-	depends on SERIAL
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-config I2C_3
-	default y
-
-endif # I2C
-
-if SPI
-
 config SPI_STM32_INTERRUPT
 	default y
-
-config SPI_1
-	default y
-
-config SPI_3
-	default y
-
-endif # SPI
-
-config PWM_STM32_2
-	default y
-	depends on PWM
+	depends on SPI
 
 choice LIS3MDL_TRIGGER_MODE
 	default LIS3MDL_TRIGGER_NONE

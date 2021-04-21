@@ -1,0 +1,52 @@
+# Emulator configuration options
+
+# Copyright 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Emulator options
+#
+menuconfig EMUL
+	bool "Emulation drivers"
+	help
+	  Enable Emulation Driver Configuration
+	  These drivers are used to emulate hardware devices, to support testing
+	  of various subsystems. For example, it is possible to write an
+	  emulator for an I2C compass such that it appears on the I2C bus and
+	  can be used just like a real hardware device.
+
+	  Emulators often implement special features for testing. For example
+	  a compass may support returning bogus data if the I2C bus speed is
+	  too high, or may return invalid measurements if calibration has not
+	  yet been completed. This allows for testing that high-level code can
+	  handle these situations correctly. Test coverage can therefore
+	  approach 100% if all failure conditions are emulated.
+
+if EMUL
+
+config EMUL_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  Emulation device driver initialisation priority.
+
+module = EMUL
+module-str = emul
+source "subsys/logging/Kconfig.template.log_config"
+
+config EMUL_BMI160
+	bool "Emulate a Bosch BMI160 accelerometer"
+	help
+	  This is an emulator for the Bosch BMI160 accelerometer.
+
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.
+
+	  It supports both I2C and SPI which is why it is not in one of the
+	  i2c/ or spi/ directories.
+
+source "subsys/emul/i2c/Kconfig"
+source "subsys/emul/spi/Kconfig"
+source "subsys/emul/espi/Kconfig"
+
+endif

@@ -1,0 +1,4 @@
+tests:
+  drivers.clock.nrf_onoff_and_bt:
+    tags: drivers
+    platform_allow: nrf51dk_nrf51422 nrf52dk_nrf52832 nrf52840dk_nrf52840

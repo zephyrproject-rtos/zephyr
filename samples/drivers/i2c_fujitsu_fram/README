@@ -1,6 +1,0 @@
-This is a sample app to read and write
-the Fujitsu MB85RC256V FRAM chip via I2C
-on the Quark SE Sensor Subsystem.
-
-This assumes the slave address of FRAM is 0x50,
-where A0, A1, and A2 are all tied to ground.

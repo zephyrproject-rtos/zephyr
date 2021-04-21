@@ -1,5 +1,5 @@
 common:
-  tags: timeutils
+  tags: timeutil
   type: unit
 
 tests:

@@ -1,0 +1,17 @@
+identifier: black_f407ve
+name: Black STM32 F407VE Development Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 192
+flash: 512
+supported:
+  - can
+  - pwm
+  - counter
+  - usb
+  - spi
+  - gpio

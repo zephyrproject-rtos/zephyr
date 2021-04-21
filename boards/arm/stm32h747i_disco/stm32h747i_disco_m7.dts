@@ -6,11 +6,12 @@
 
 /dts-v1/;
 #include <st/h7/stm32h747Xi_m7.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
 #include "stm32h747i_disco.dtsi"
 
 / {
 	model = "STMicroelectronics STM32H747I DISCOVERY board";
-	compatible = "st,stm32h747i-disco", "st,stm32h747";
+	compatible = "st,stm32h747i-disco";
 
 	/* HW resources are split between CM7 and CM4 */
 	chosen {
@@ -18,6 +19,11 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+	};
+
+	sdram2: sdram@d0000000 {
+		device_type = "memory";
+		reg = <0xd0000000 DT_SIZE_M(32)>;
 	};
 
 	leds {
@@ -43,11 +49,81 @@
 };
 
 &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;
 	status = "okay";
 };
 
 &uart8 {
+	pinctrl-0 = <&uart8_tx_pj8 &uart8_rx_pj9>;
 	current-speed = <115200>;
 	status = "okay";
+};
+
+
+&mac {
+	/*
+	 * From UM2411 Rev 4:
+	 * With the default setting, the Ethernet feature is not working due
+	 * of a pin conflict between ETH_MDC and SAI4_D1 of the MEMs digital
+	 * microphone.
+	 * Cf Ethernet section in board documentation for more information on
+	 * the hw modification to be done to enable it.
+	 */
+	status = "okay";
+	pinctrl-0 = <&eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_tx_en_pg11
+		     &eth_txd0_pg13
+		     &eth_txd1_pg12>;
+};
+
+&rng {
+	status = "okay";
+};
+
+&fmc {
+	status = "okay";
+	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1 &fmc_nbl2_pi4 &fmc_nbl3_pi5
+		     &fmc_sdclk_pg8 &fmc_sdnwe_ph5 &fmc_sdcke1_ph7
+		     &fmc_sdne1_ph6 &fmc_sdnras_pf11 &fmc_sdncas_pg15
+		     &fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4
+		     &fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14
+		     &fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1 &fmc_a12_pg2
+		     &fmc_a14_pg4 &fmc_a15_pg5 &fmc_d0_pd14 &fmc_d1_pd15
+		     &fmc_d2_pd0 &fmc_d3_pd1 &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9
+		     &fmc_d7_pe10 &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13
+		     &fmc_d11_pe14 &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9
+		     &fmc_d15_pd10 &fmc_d16_ph8 &fmc_d17_ph9 &fmc_d18_ph10
+		     &fmc_d19_ph11 &fmc_d20_ph12 &fmc_d21_ph13 &fmc_d22_ph14
+		     &fmc_d23_ph15 &fmc_d24_pi0 &fmc_d25_pi1 &fmc_d26_pi2
+		     &fmc_d27_pi3 &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9
+		     &fmc_d31_pi10>;
+
+	sdram {
+		status = "okay";
+
+		power-up-delay = <100>;
+		num-auto-refresh = <8>;
+		mode-register = <0x220>;
+		refresh-rate = <603>;
+
+		bank@1 {
+			reg = <1>;
+
+			st,sdram-control = <STM32_FMC_SDRAM_NC_9
+					    STM32_FMC_SDRAM_NR_12
+					    STM32_FMC_SDRAM_MWID_32
+					    STM32_FMC_SDRAM_NB_4
+					    STM32_FMC_SDRAM_CAS_2
+					    STM32_FMC_SDRAM_SDCLK_PERIOD_2
+					    STM32_FMC_SDRAM_RBURST_ENABLE
+					    STM32_FMC_SDRAM_RPIPE_0>;
+			st,sdram-timing = <2 6 4 6 2 2 2>;
+		};
+	};
 };

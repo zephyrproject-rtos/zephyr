@@ -9,62 +9,42 @@
 #include <sys/util.h>	/* for ARRAY_SIZE */
 #include <ztest.h>
 
-#define CLIENTID	"zephyr"
-#define CLIENTID_LEN	6
-#define TOPIC		"sensors"
-#define TOPIC_LEN	7
-#define WILL_TOPIC	"quitting"
-#define WILL_TOPIC_LEN	8
-#define WILL_MSG	"bye"
-#define WILL_MSG_LEN	3
-#define USERNAME	"zephyr1"
-#define USERNAME_LEN	7
-#define PASSWORD	"password"
-#define PASSWORD_LEN	8
+#define CLIENTID	MQTT_UTF8_LITERAL("zephyr")
+#define TOPIC		MQTT_UTF8_LITERAL("sensors")
+#define WILL_TOPIC	MQTT_UTF8_LITERAL("quitting")
+#define WILL_MSG	MQTT_UTF8_LITERAL("bye")
+#define USERNAME	MQTT_UTF8_LITERAL("zephyr1")
+#define PASSWORD	MQTT_UTF8_LITERAL("password")
 
 #define BUFFER_SIZE 128
 
-static ZTEST_DMEM u8_t rx_buffer[BUFFER_SIZE];
-static ZTEST_DMEM u8_t tx_buffer[BUFFER_SIZE];
+static ZTEST_DMEM uint8_t rx_buffer[BUFFER_SIZE];
+static ZTEST_DMEM uint8_t tx_buffer[BUFFER_SIZE];
 static ZTEST_DMEM struct mqtt_client client;
 
 static ZTEST_DMEM struct mqtt_topic topic_qos_0 = {
 	.qos = 0,
-	.topic.utf8 = TOPIC,
-	.topic.size = TOPIC_LEN
+	.topic = TOPIC,
 };
 static ZTEST_DMEM struct mqtt_topic topic_qos_1 = {
 	.qos = 1,
-	.topic.utf8 = TOPIC,
-	.topic.size = TOPIC_LEN
+	.topic = TOPIC,
 };
 static ZTEST_DMEM struct mqtt_topic topic_qos_2 = {
 	.qos = 2,
-	.topic.utf8 = TOPIC,
-	.topic.size = TOPIC_LEN
+	.topic = TOPIC,
 };
 static ZTEST_DMEM struct mqtt_topic will_topic_qos_0 = {
 	.qos = 0,
-	.topic.utf8 = WILL_TOPIC,
-	.topic.size = WILL_TOPIC_LEN
+	.topic = WILL_TOPIC,
 };
 static ZTEST_DMEM struct mqtt_topic will_topic_qos_1 = {
 	.qos = 1,
-	.topic.utf8 = WILL_TOPIC,
-	.topic.size = WILL_TOPIC_LEN
+	.topic = WILL_TOPIC,
 };
-static ZTEST_DMEM struct mqtt_utf8 will_msg = {
-	.utf8 = WILL_MSG,
-	.size = WILL_MSG_LEN
-};
-static ZTEST_DMEM struct mqtt_utf8 username = {
-	.utf8 = USERNAME,
-	.size = USERNAME_LEN
-};
-static ZTEST_DMEM struct mqtt_utf8 password = {
-	.utf8 = PASSWORD,
-	.size = PASSWORD_LEN
-};
+static ZTEST_DMEM struct mqtt_utf8 will_msg = WILL_MSG;
+static ZTEST_DMEM struct mqtt_utf8 username = USERNAME;
+static ZTEST_DMEM struct mqtt_utf8 password = PASSWORD;
 
 /**
  * @brief MQTT test structure
@@ -85,10 +65,10 @@ struct mqtt_test {
 	int (*eval_fcn)(struct mqtt_test *);
 
 	/* expected result */
-	u8_t *expected;
+	uint8_t *expected;
 
 	/* length of 'expected' */
-	u16_t expected_len;
+	uint16_t expected_len;
 };
 
 /**
@@ -108,6 +88,15 @@ static int eval_msg_connect(struct mqtt_test *mqtt_test);
  * @return			TC_FAIL on error
  */
 static int eval_msg_publish(struct mqtt_test *mqtt_test);
+
+/**
+ * @brief eval_msg_corrupted_publish Evaluate the given mqtt_test against the
+ *				     corrupted publish message.
+ * @param [in] mqtt_test	     MQTT test structure
+ * @return			     TC_PASS on success
+ * @return			     TC_FAIL on error
+ */
+static int eval_msg_corrupted_publish(struct mqtt_test *mqtt_test);
 
 /**
  * @brief eval_msg_subscribe	Evaluate the given mqtt_test against the
@@ -191,6 +180,24 @@ static int eval_msg_unsuback(struct mqtt_test *mqtt_test);
 static int eval_msg_disconnect(struct mqtt_test *mqtt_test);
 
 /**
+ * @brief eval_max_pkt_len	Evaluate header with maximum allowed packet
+ *				length.
+ * @param [in] mqtt_test	MQTT test structure
+ * @return			TC_PASS on success
+ * @return			TC_FAIL on error
+ */
+static int eval_max_pkt_len(struct mqtt_test *mqtt_test);
+
+/**
+ * @brief eval_corrupted_pkt_len Evaluate header exceeding maximum
+ *				 allowed packet length.
+ * @param [in] mqtt_test	 MQTT test structure
+ * @return			 TC_PASS on success
+ * @return			 TC_FAIL on error
+ */
+static int eval_corrupted_pkt_len(struct mqtt_test *mqtt_test);
+
+/**
  * @brief eval_buffers		Evaluate if two given buffers are equal
  * @param [in] buf		Input buffer 1, mostly used as the 'computed'
  *				buffer
@@ -200,14 +207,15 @@ static int eval_msg_disconnect(struct mqtt_test *mqtt_test);
  * @return			TC_FAIL on error and prints both buffers
  */
 static int eval_buffers(const struct buf_ctx *buf,
-			const u8_t *expected, u16_t len);
+			const uint8_t *expected, uint16_t len);
+
 
 /**
  * @brief print_array		Prints the array 'a' of 'size' elements
  * @param a			The array
  * @param size			Array's size
  */
-static void print_array(const u8_t *a, u16_t size);
+static void print_array(const uint8_t *a, uint16_t size);
 
 /*
  * MQTT CONNECT msg:
@@ -220,13 +228,12 @@ static void print_array(const u8_t *a, u16_t size);
  * mosquitto_sub -V mqttv311 -i zephyr -k 60 -t sensors
  */
 static ZTEST_DMEM
-u8_t connect1[] = {0x10, 0x12, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+uint8_t connect1[] = {0x10, 0x12, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x04, 0x02, 0x00, 0x3c, 0x00, 0x06, 0x7a, 0x65,
 		   0x70, 0x68, 0x79, 0x72};
 
 static ZTEST_DMEM struct mqtt_client client_connect1 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 0, .will_topic = NULL,
 	.will_message = NULL, .user_name = NULL,
 	.password = NULL
@@ -243,15 +250,14 @@ static ZTEST_DMEM struct mqtt_client client_connect1 = {
  * --will-qos 0 --will-payload bye
  */
 static ZTEST_DMEM
-u8_t connect2[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+uint8_t connect2[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x04, 0x06, 0x00, 0x3c, 0x00, 0x06, 0x7a, 0x65,
 		   0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		   0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
 		   0x62, 0x79, 0x65};
 
 static ZTEST_DMEM struct mqtt_client client_connect2 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 0, .will_topic = &will_topic_qos_0,
 	.will_message = &will_msg, .user_name = NULL,
 	.password = NULL
@@ -266,15 +272,14 @@ static ZTEST_DMEM struct mqtt_client client_connect2 = {
  * --will-qos 0 --will-payload bye  --will-retain
  */
 static ZTEST_DMEM
-u8_t connect3[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+uint8_t connect3[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x04, 0x26, 0x00, 0x3c, 0x00, 0x06, 0x7a, 0x65,
 		   0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		   0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
 		   0x62, 0x79, 0x65};
 
 static ZTEST_DMEM struct mqtt_client client_connect3 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 1, .will_topic = &will_topic_qos_0,
 	.will_message = &will_msg, .user_name = NULL,
 	.password = NULL
@@ -289,15 +294,14 @@ static ZTEST_DMEM struct mqtt_client client_connect3 = {
  * --will-qos 1 --will-payload bye
  */
 static ZTEST_DMEM
-u8_t connect4[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+uint8_t connect4[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x04, 0x0e, 0x00, 0x3c, 0x00, 0x06, 0x7a, 0x65,
 		   0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		   0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
 		   0x62, 0x79, 0x65};
 
 static ZTEST_DMEM struct mqtt_client client_connect4 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 0, .will_topic = &will_topic_qos_1,
 	.will_message = &will_msg, .user_name = NULL,
 	.password = NULL
@@ -312,15 +316,14 @@ static ZTEST_DMEM struct mqtt_client client_connect4 = {
  * --will-qos 1 --will-payload bye --will-retain
  */
 static ZTEST_DMEM
-u8_t connect5[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+uint8_t connect5[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x04, 0x2e, 0x00, 0x3c, 0x00, 0x06, 0x7a, 0x65,
 		   0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		   0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
 		   0x62, 0x79, 0x65};
 
 static ZTEST_DMEM struct mqtt_client client_connect5 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 1, .will_topic = &will_topic_qos_1,
 	.will_message = &will_msg, .user_name = NULL,
 	.password = NULL
@@ -335,7 +338,7 @@ static ZTEST_DMEM struct mqtt_client client_connect5 = {
  * --will-qos 1 --will-payload bye --will-retain -u zephyr1 -P password
  */
 static ZTEST_DMEM
-u8_t connect6[] = {0x10, 0x34, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
+uint8_t connect6[] = {0x10, 0x34, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		  0x04, 0xee, 0x00, 0x3c, 0x00, 0x06, 0x7a, 0x65,
 		  0x70, 0x68, 0x79, 0x72, 0x00, 0x08, 0x71, 0x75,
 		  0x69, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x00, 0x03,
@@ -344,15 +347,14 @@ u8_t connect6[] = {0x10, 0x34, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		  0x73, 0x73, 0x77, 0x6f, 0x72, 0x64};
 
 static ZTEST_DMEM struct mqtt_client client_connect6 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 1, .will_topic = &will_topic_qos_1,
 	.will_message = &will_msg, .user_name = &username,
 	.password = &password
 };
 
 static ZTEST_DMEM
-u8_t disconnect1[] = {0xe0, 0x00};
+uint8_t disconnect1[] = {0xe0, 0x00};
 
 /*
  * MQTT PUBLISH msg:
@@ -362,15 +364,14 @@ u8_t disconnect1[] = {0xe0, 0x00};
  * mosquitto_pub -V mqttv311 -i zephyr -t sensors -q 0 -m "OK"
  */
 static ZTEST_DMEM
-u8_t publish1[] = {0x30, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+uint8_t publish1[] = {0x30, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		   0x6f, 0x72, 0x73, 0x4f, 0x4b};
 
 static ZTEST_DMEM struct mqtt_publish_param msg_publish1 = {
 	.dup_flag = 0, .retain_flag = 0, .message_id = 0,
 	.message.topic.qos = 0,
-	.message.topic.topic.utf8 = TOPIC,
-	.message.topic.topic.size = TOPIC_LEN,
-	.message.payload.data = (u8_t *)"OK",
+	.message.topic.topic = TOPIC,
+	.message.payload.data = (uint8_t *)"OK",
 	.message.payload.len = 2,
 };
 
@@ -382,15 +383,14 @@ static ZTEST_DMEM struct mqtt_publish_param msg_publish1 = {
  * mosquitto_pub -V mqttv311 -i zephyr -t sensors -q 0 -m "OK" -r
  */
 static ZTEST_DMEM
-u8_t publish2[] = {0x31, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+uint8_t publish2[] = {0x31, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		   0x6f, 0x72, 0x73, 0x4f, 0x4b};
 
 static ZTEST_DMEM struct mqtt_publish_param msg_publish2 = {
 	.dup_flag = 0, .retain_flag = 1, .message_id = 0,
 	.message.topic.qos = 0,
-	.message.topic.topic.utf8 = TOPIC,
-	.message.topic.topic.size = TOPIC_LEN,
-	.message.payload.data = (u8_t *)"OK",
+	.message.topic.topic = TOPIC,
+	.message.payload.data = (uint8_t *)"OK",
 	.message.payload.len = 2,
 };
 
@@ -402,15 +402,14 @@ static ZTEST_DMEM struct mqtt_publish_param msg_publish2 = {
  * mosquitto_pub -V mqttv311 -i zephyr -t sensors -q 1 -m "OK" -r
  */
 static ZTEST_DMEM
-u8_t publish3[] = {0x33, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+uint8_t publish3[] = {0x33, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		   0x6f, 0x72, 0x73, 0x00, 0x01, 0x4f, 0x4b};
 
 static ZTEST_DMEM struct mqtt_publish_param msg_publish3 = {
 	.dup_flag = 0, .retain_flag = 1, .message_id = 1,
 	.message.topic.qos = 1,
-	.message.topic.topic.utf8 = TOPIC,
-	.message.topic.topic.size = TOPIC_LEN,
-	.message.payload.data = (u8_t *)"OK",
+	.message.topic.topic = TOPIC,
+	.message.payload.data = (uint8_t *)"OK",
 	.message.payload.len = 2,
 };
 
@@ -422,15 +421,22 @@ static ZTEST_DMEM struct mqtt_publish_param msg_publish3 = {
  * mosquitto_pub -V mqttv311 -i zephyr -t sensors -q 2 -m "OK"
  */
 static ZTEST_DMEM
-u8_t publish4[] = {0x34, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+uint8_t publish4[] = {0x34, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 		   0x6f, 0x72, 0x73, 0x00, 0x01, 0x4f, 0x4b};
 static ZTEST_DMEM struct mqtt_publish_param msg_publish4 = {
 	.dup_flag = 0, .retain_flag = 0, .message_id = 1,
 	.message.topic.qos = 2,
-	.message.topic.topic.utf8 = TOPIC,
-	.message.topic.topic.size = TOPIC_LEN,
-	.message.payload.data = (u8_t *)"OK",
+	.message.topic.topic = TOPIC,
+	.message.payload.data = (uint8_t *)"OK",
 	.message.payload.len = 2,
+};
+
+static ZTEST_DMEM
+uint8_t publish_corrupted[] = {0x30, 0x07, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+			    0x6f, 0x72, 0x73, 0x00, 0x01, 0x4f, 0x4b};
+static ZTEST_DMEM struct buf_ctx publish_corrupted_buf = {
+	.cur = publish_corrupted,
+	.end = publish_corrupted + sizeof(publish_corrupted)
 };
 
 /*
@@ -441,7 +447,7 @@ static ZTEST_DMEM struct mqtt_publish_param msg_publish4 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 0
  */
 static ZTEST_DMEM
-u8_t subscribe1[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
+uint8_t subscribe1[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
 		     0x6e, 0x73, 0x6f, 0x72, 0x73, 0x00};
 static ZTEST_DMEM struct mqtt_subscription_list msg_subscribe1 = {
 	.message_id = 1, .list_count = 1, .list = &topic_qos_0
@@ -455,7 +461,7 @@ static ZTEST_DMEM struct mqtt_subscription_list msg_subscribe1 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 1
  */
 static ZTEST_DMEM
-u8_t subscribe2[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
+uint8_t subscribe2[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
 		     0x6e, 0x73, 0x6f, 0x72, 0x73, 0x01};
 static ZTEST_DMEM struct mqtt_subscription_list msg_subscribe2 = {
 	.message_id = 1, .list_count = 1, .list = &topic_qos_1
@@ -469,7 +475,7 @@ static ZTEST_DMEM struct mqtt_subscription_list msg_subscribe2 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 2
  */
 static ZTEST_DMEM
-u8_t subscribe3[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
+uint8_t subscribe3[] = {0x82, 0x0c, 0x00, 0x01, 0x00, 0x07, 0x73, 0x65,
 		     0x6e, 0x73, 0x6f, 0x72, 0x73, 0x02};
 static ZTEST_DMEM struct mqtt_subscription_list msg_subscribe3 = {
 	.message_id = 1, .list_count = 1, .list = &topic_qos_2
@@ -483,8 +489,8 @@ static ZTEST_DMEM struct mqtt_subscription_list msg_subscribe3 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 0
  */
 static ZTEST_DMEM
-u8_t suback1[] = {0x90, 0x03, 0x00, 0x01, 0x00};
-static ZTEST_DMEM u8_t data_suback1[] = { MQTT_SUBACK_SUCCESS_QoS_0 };
+uint8_t suback1[] = {0x90, 0x03, 0x00, 0x01, 0x00};
+static ZTEST_DMEM uint8_t data_suback1[] = { MQTT_SUBACK_SUCCESS_QoS_0 };
 static ZTEST_DMEM struct mqtt_suback_param msg_suback1 = {
 	.message_id = 1, .return_codes.len = 1,
 	.return_codes.data = data_suback1
@@ -498,8 +504,8 @@ static ZTEST_DMEM struct mqtt_suback_param msg_suback1 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 1
  */
 static ZTEST_DMEM
-u8_t suback2[] = {0x90, 0x03, 0x00, 0x01, 0x01};
-static ZTEST_DMEM u8_t data_suback2[] = { MQTT_SUBACK_SUCCESS_QoS_1 };
+uint8_t suback2[] = {0x90, 0x03, 0x00, 0x01, 0x01};
+static ZTEST_DMEM uint8_t data_suback2[] = { MQTT_SUBACK_SUCCESS_QoS_1 };
 static ZTEST_DMEM struct mqtt_suback_param msg_suback2 = {
 	.message_id = 1, .return_codes.len = 1,
 	.return_codes.data = data_suback2
@@ -513,35 +519,48 @@ static ZTEST_DMEM struct mqtt_suback_param msg_suback2 = {
  * mosquitto_sub -V mqttv311 -i zephyr -t sensors -q 2
  */
 static ZTEST_DMEM
-u8_t suback3[] = {0x90, 0x03, 0x00, 0x01, 0x02};
-static ZTEST_DMEM u8_t data_suback3[] = { MQTT_SUBACK_SUCCESS_QoS_2 };
+uint8_t suback3[] = {0x90, 0x03, 0x00, 0x01, 0x02};
+static ZTEST_DMEM uint8_t data_suback3[] = { MQTT_SUBACK_SUCCESS_QoS_2 };
 static ZTEST_DMEM struct mqtt_suback_param msg_suback3 = {
 	.message_id = 1, .return_codes.len = 1,
 	.return_codes.data = data_suback3
 };
 
 static ZTEST_DMEM
-u8_t pingreq1[] = {0xc0, 0x00};
+uint8_t pingreq1[] = {0xc0, 0x00};
 
 static ZTEST_DMEM
-u8_t puback1[] = {0x40, 0x02, 0x00, 0x01};
+uint8_t puback1[] = {0x40, 0x02, 0x00, 0x01};
 static ZTEST_DMEM struct mqtt_puback_param msg_puback1 = {.message_id = 1};
 
 static ZTEST_DMEM
-u8_t pubrec1[] = {0x50, 0x02, 0x00, 0x01};
+uint8_t pubrec1[] = {0x50, 0x02, 0x00, 0x01};
 static ZTEST_DMEM struct mqtt_pubrec_param msg_pubrec1 = {.message_id = 1};
 
 static ZTEST_DMEM
-u8_t pubrel1[] = {0x62, 0x02, 0x00, 0x01};
+uint8_t pubrel1[] = {0x62, 0x02, 0x00, 0x01};
 static ZTEST_DMEM struct mqtt_pubrel_param msg_pubrel1 = {.message_id = 1};
 
 static ZTEST_DMEM
-u8_t pubcomp1[] = {0x70, 0x02, 0x00, 0x01};
+uint8_t pubcomp1[] = {0x70, 0x02, 0x00, 0x01};
 static ZTEST_DMEM struct mqtt_pubcomp_param msg_pubcomp1 = {.message_id = 1};
 
 static ZTEST_DMEM
-u8_t unsuback1[] = {0xb0, 0x02, 0x00, 0x01};
+uint8_t unsuback1[] = {0xb0, 0x02, 0x00, 0x01};
 static ZTEST_DMEM struct mqtt_unsuback_param msg_unsuback1 = {.message_id = 1};
+
+static ZTEST_DMEM
+uint8_t max_pkt_len[] = {0x30, 0xff, 0xff, 0xff, 0x7f};
+static ZTEST_DMEM struct buf_ctx max_pkt_len_buf = {
+	.cur = max_pkt_len, .end = max_pkt_len + sizeof(max_pkt_len)
+};
+
+static ZTEST_DMEM
+uint8_t corrupted_pkt_len[] = {0x30, 0xff, 0xff, 0xff, 0xff, 0x01};
+static ZTEST_DMEM struct buf_ctx corrupted_pkt_len_buf = {
+	.cur = corrupted_pkt_len,
+	.end = corrupted_pkt_len + sizeof(corrupted_pkt_len)
+};
 
 static ZTEST_DMEM
 struct mqtt_test mqtt_tests[] = {
@@ -589,6 +608,9 @@ struct mqtt_test mqtt_tests[] = {
 	{.test_name = "PUBLISH, qos = 2",
 	 .ctx = &msg_publish4, .eval_fcn = eval_msg_publish,
 	 .expected = publish4, .expected_len = sizeof(publish4)},
+
+	{.test_name = "PUBLISH, corrupted message length (smaller than topic)",
+	 .ctx = &publish_corrupted_buf, .eval_fcn = eval_msg_corrupted_publish},
 
 	{.test_name = "SUBSCRIBE, one topic, qos = 0",
 	 .ctx = &msg_subscribe1, .eval_fcn = eval_msg_subscribe,
@@ -638,13 +660,19 @@ struct mqtt_test mqtt_tests[] = {
 	 .ctx = &msg_unsuback1, .eval_fcn = eval_msg_unsuback,
 	 .expected = unsuback1, .expected_len = sizeof(unsuback1)},
 
+	{.test_name = "Maximum packet length",
+	 .ctx = &max_pkt_len_buf, .eval_fcn = eval_max_pkt_len},
+
+	{.test_name = "Corrupted packet length",
+	 .ctx = &corrupted_pkt_len_buf, .eval_fcn = eval_corrupted_pkt_len},
+
 	/* last test case, do not remove it */
 	{.test_name = NULL}
 };
 
-static void print_array(const u8_t *a, u16_t size)
+static void print_array(const uint8_t *a, uint16_t size)
 {
-	u16_t i;
+	uint16_t i;
 
 	TC_PRINT("\n");
 	for (i = 0U; i < size; i++) {
@@ -657,7 +685,7 @@ static void print_array(const u8_t *a, u16_t size)
 }
 
 static
-int eval_buffers(const struct buf_ctx *buf, const u8_t *expected, u16_t len)
+int eval_buffers(const struct buf_ctx *buf, const uint8_t *expected, uint16_t len)
 {
 	if (buf->end - buf->cur != len) {
 		goto exit_eval;
@@ -736,8 +764,8 @@ static int eval_msg_publish(struct mqtt_test *mqtt_test)
 			(struct mqtt_publish_param *)mqtt_test->ctx;
 	struct mqtt_publish_param dec_param;
 	int rc;
-	u8_t type_and_flags;
-	u32_t length;
+	uint8_t type_and_flags;
+	uint32_t length;
 	struct buf_ctx buf;
 
 	memset(&dec_param, 0, sizeof(dec_param));
@@ -791,6 +819,23 @@ static int eval_msg_publish(struct mqtt_test *mqtt_test)
 	return TC_PASS;
 }
 
+static int eval_msg_corrupted_publish(struct mqtt_test *mqtt_test)
+{
+	struct buf_ctx *buf = (struct buf_ctx *)mqtt_test->ctx;
+	int rc;
+	uint8_t type_and_flags;
+	uint32_t length;
+	struct mqtt_publish_param dec_param;
+
+	rc = fixed_header_decode(buf, &type_and_flags, &length);
+	zassert_equal(rc, 0, "fixed_header_decode failed");
+
+	rc = publish_decode(type_and_flags, length, buf, &dec_param);
+	zassert_equal(rc, -EINVAL, "publish_decode should fail");
+
+	return TC_PASS;
+}
+
 static int eval_msg_subscribe(struct mqtt_test *mqtt_test)
 {
 	struct mqtt_subscription_list *param =
@@ -816,8 +861,8 @@ static int eval_msg_suback(struct mqtt_test *mqtt_test)
 	struct mqtt_suback_param dec_param;
 
 	int rc;
-	u8_t type_and_flags;
-	u32_t length;
+	uint8_t type_and_flags;
+	uint32_t length;
 	struct buf_ctx buf;
 
 	buf.cur = mqtt_test->expected;
@@ -873,8 +918,8 @@ static int eval_msg_puback(struct mqtt_test *mqtt_test)
 			(struct mqtt_puback_param *)mqtt_test->ctx;
 	struct mqtt_puback_param dec_param;
 	int rc;
-	u8_t type_and_flags;
-	u32_t length;
+	uint8_t type_and_flags;
+	uint32_t length;
 	struct buf_ctx buf;
 
 	memset(&dec_param, 0, sizeof(dec_param));
@@ -911,8 +956,8 @@ static int eval_msg_pubcomp(struct mqtt_test *mqtt_test)
 			(struct mqtt_pubcomp_param *)mqtt_test->ctx;
 	struct mqtt_pubcomp_param dec_param;
 	int rc;
-	u32_t length;
-	u8_t type_and_flags;
+	uint32_t length;
+	uint8_t type_and_flags;
 	struct buf_ctx buf;
 
 	memset(&dec_param, 0, sizeof(dec_param));
@@ -949,8 +994,8 @@ static int eval_msg_pubrec(struct mqtt_test *mqtt_test)
 			(struct mqtt_pubrec_param *)mqtt_test->ctx;
 	struct mqtt_pubrec_param dec_param;
 	int rc;
-	u32_t length;
-	u8_t type_and_flags;
+	uint32_t length;
+	uint8_t type_and_flags;
 	struct buf_ctx buf;
 
 	memset(&dec_param, 0, sizeof(dec_param));
@@ -987,8 +1032,8 @@ static int eval_msg_pubrel(struct mqtt_test *mqtt_test)
 			(struct mqtt_pubrel_param *)mqtt_test->ctx;
 	struct mqtt_pubrel_param dec_param;
 	int rc;
-	u32_t length;
-	u8_t type_and_flags;
+	uint32_t length;
+	uint8_t type_and_flags;
 	struct buf_ctx buf;
 
 	memset(&dec_param, 0, sizeof(dec_param));
@@ -1025,8 +1070,8 @@ static int eval_msg_unsuback(struct mqtt_test *mqtt_test)
 			(struct mqtt_unsuback_param *)mqtt_test->ctx;
 	struct mqtt_unsuback_param dec_param;
 	int rc;
-	u32_t length;
-	u8_t type_and_flags;
+	uint32_t length;
+	uint8_t type_and_flags;
 	struct buf_ctx buf;
 
 	memset(&dec_param, 0, sizeof(dec_param));
@@ -1044,6 +1089,36 @@ static int eval_msg_unsuback(struct mqtt_test *mqtt_test)
 
 	zassert_equal(dec_param.message_id, param->message_id,
 		      "packet identifier error");
+
+	return TC_PASS;
+}
+
+static int eval_max_pkt_len(struct mqtt_test *mqtt_test)
+{
+	struct buf_ctx *buf = (struct buf_ctx *)mqtt_test->ctx;
+	int rc;
+	uint8_t flags;
+	uint32_t length;
+
+	rc = fixed_header_decode(buf, &flags, &length);
+
+	zassert_equal(rc, 0, "fixed_header_decode failed");
+	zassert_equal(length, MQTT_MAX_PAYLOAD_SIZE,
+		      "Invalid packet length decoded");
+
+	return TC_PASS;
+}
+
+static int eval_corrupted_pkt_len(struct mqtt_test *mqtt_test)
+{
+	struct buf_ctx *buf = (struct buf_ctx *)mqtt_test->ctx;
+	int rc;
+	uint8_t flags;
+	uint32_t length;
+
+	rc = fixed_header_decode(buf, &flags, &length);
+
+	zassert_equal(rc, -EINVAL, "fixed_header_decode should fail");
 
 	return TC_PASS;
 }

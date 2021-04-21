@@ -1,0 +1,46 @@
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_INTEL_ADSP_CAVS15
+
+config BOARD
+	default "intel_adsp_cavs15"
+
+config CAVS_ICTL_0_OFFSET
+	default 6
+config CAVS_ICTL_1_OFFSET
+	default 10
+config CAVS_ICTL_2_OFFSET
+	default 13
+config CAVS_ICTL_3_OFFSET
+	default 16
+
+config 2ND_LVL_INTR_00_OFFSET
+	default CAVS_ICTL_0_OFFSET
+config 2ND_LVL_INTR_01_OFFSET
+	default CAVS_ICTL_1_OFFSET
+config 2ND_LVL_INTR_02_OFFSET
+	default CAVS_ICTL_2_OFFSET
+config 2ND_LVL_INTR_03_OFFSET
+	default CAVS_ICTL_3_OFFSET
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 4
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 21
+
+config CAVS_ISR_TBL_OFFSET
+	default 2ND_LVL_ISR_TBL_OFFSET
+
+config DMA_DW
+	default y
+	depends on DMA
+
+config I2S_CAVS
+	default y
+	depends on I2S
+
+endif # BOARD_INTEL_ADSP_CAVS15

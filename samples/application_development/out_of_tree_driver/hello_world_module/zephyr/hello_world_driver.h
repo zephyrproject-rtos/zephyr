@@ -22,19 +22,18 @@ extern "C" {
  * The driver exists to demonstrate (and test) custom drivers that are
  * maintained outside of Zephyr.
  */
-
-struct hello_world_driver_api {
+__subsystem struct hello_world_driver_api {
 	/* This struct has a member called 'print'. 'print' is function
 	 * pointer to a function that takes 'struct device *dev' as an
 	 * argument and returns 'void'.
 	 */
-	void (*print)(struct device *dev);
+	void (*print)(const struct device *dev);
 };
 
-__syscall     void        hello_world_print(struct device *dev);
-static inline void z_impl_hello_world_print(struct device *dev)
+__syscall     void        hello_world_print(const struct device *dev);
+static inline void z_impl_hello_world_print(const struct device *dev)
 {
-	const struct hello_world_driver_api *api = dev->driver_api;
+	const struct hello_world_driver_api *api = dev->api;
 
 	__ASSERT(api->print, "Callback pointer should not be NULL");
 

@@ -14,11 +14,11 @@
 #include <stdlib.h>
 
 struct args_index {
-	u8_t device;
-	u8_t pwm;
-	u8_t period;
-	u8_t pulse;
-	u8_t flags;
+	uint8_t device;
+	uint8_t pwm;
+	uint8_t period;
+	uint8_t pulse;
+	uint8_t flags;
 };
 
 static const struct args_index args_indx = {
@@ -32,10 +32,10 @@ static const struct args_index args_indx = {
 static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
-	struct device *dev;
-	u32_t period;
-	u32_t pulse;
-	u32_t pwm;
+	const struct device *dev;
+	uint32_t period;
+	uint32_t pulse;
+	uint32_t pwm;
 	int err;
 
 	dev = device_get_binding(argv[args_indx.device]);
@@ -65,10 +65,10 @@ static int cmd_cycles(const struct shell *shell, size_t argc, char **argv)
 static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
-	struct device *dev;
-	u32_t period;
-	u32_t pulse;
-	u32_t pwm;
+	const struct device *dev;
+	uint32_t period;
+	uint32_t pulse;
+	uint32_t pwm;
 	int err;
 
 	dev = device_get_binding(argv[args_indx.device]);
@@ -97,10 +97,10 @@ static int cmd_usec(const struct shell *shell, size_t argc, char **argv)
 static int cmd_nsec(const struct shell *shell, size_t argc, char **argv)
 {
 	pwm_flags_t flags = 0;
-	struct device *dev;
-	u32_t period;
-	u32_t pulse;
-	u32_t pwm;
+	const struct device *dev;
+	uint32_t period;
+	uint32_t pulse;
+	uint32_t pwm;
 	int err;
 
 	dev = device_get_binding(argv[args_indx.device]);

@@ -1,0 +1,111 @@
+/*
+ * Copyright (c) 2020 Google LLC.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <atmel/samd5xx19.dtsi>
+
+/ {
+	model = "Adafruit ItsyBitsy M4 Express";
+	compatible = "adafruit,itsybitsy-m4-express";
+
+	chosen {
+		zephyr,console = &sercom3;
+		zephyr,shell-uart = &sercom3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		pwm-0 = &tcc0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&porta 22 0>;
+			label = "LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 2>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&sercom3 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+};
+
+&sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-spi";
+	dipo = <3>;
+	dopo = <0>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&tcc0 {
+	status = "okay";
+	compatible = "atmel,sam0-tcc-pwm";
+	prescaler = <8>;
+
+	#pwm-cells = <1>;
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&dmac {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "uf2";
+			reg = <0x00000000 DT_SIZE_K(16)>;
+			read-only;
+		};
+
+		code_partition: partition@4000 {
+			label = "code";
+			reg = <0x4000 DT_SIZE_K(512-16-16)>;
+			read-only;
+		};
+
+		/*
+		 * The final 16 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@7c000 {
+			label = "storage";
+			reg = <0x7c000 DT_SIZE_K(16)>;
+		};
+	};
+};

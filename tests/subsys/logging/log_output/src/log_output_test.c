@@ -20,9 +20,9 @@
 #define LOG_MODULE_NAME test
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-static u8_t mock_buffer[512];
-static u8_t log_output_buf[8];
-static u32_t mock_len;
+static uint8_t mock_buffer[512];
+static uint8_t log_output_buf[8];
+static uint32_t mock_len;
 
 static void reset_mock_buffer(void)
 {
@@ -40,7 +40,7 @@ static void teardown(void)
 
 }
 
-static int mock_output_func(u8_t *buf, size_t size, void *ctx)
+static int mock_output_func(uint8_t *buf, size_t size, void *ctx)
 {
 	memcpy(&mock_buffer[mock_len], buf, size);
 	mock_len += size;
@@ -61,8 +61,8 @@ static void validate_output_string(const char *exp)
 }
 
 static void log_output_string_varg(const struct log_output *log_output,
-		       struct log_msg_ids src_level, u32_t timestamp,
-		       u32_t flags, const char *fmt, ...)
+		       struct log_msg_ids src_level, uint32_t timestamp,
+		       uint32_t flags, const char *fmt, ...)
 {
 	va_list ap;
 

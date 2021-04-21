@@ -18,7 +18,7 @@
 static const char *now_str(void)
 {
 	static char buf[16]; /* ...HH:MM:SS.MMM */
-	u32_t now = k_uptime_get_32();
+	uint32_t now = k_uptime_get_32();
 	unsigned int ms = now % MSEC_PER_SEC;
 	unsigned int s;
 	unsigned int min;
@@ -40,7 +40,7 @@ static const char *now_str(void)
 
 static struct sensor_trigger trig;
 
-static int set_window(struct device *dev,
+static int set_window(const struct device *dev,
 		      const struct sensor_value *temp)
 {
 	const int temp_ucel = temp->val1 * UCEL_PER_CEL + temp->val2;
@@ -68,8 +68,8 @@ static int set_window(struct device *dev,
 	return rc;
 }
 
-static inline int set_window_ucel(struct device *dev,
-				 int temp_ucel)
+static inline int set_window_ucel(const struct device *dev,
+				  int temp_ucel)
 {
 	struct sensor_value val = {
 		.val1 = temp_ucel / UCEL_PER_CEL,
@@ -79,14 +79,24 @@ static inline int set_window_ucel(struct device *dev,
 	return set_window(dev, &val);
 }
 
-static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *trig)
 {
 	struct sensor_value temp;
 	static size_t cnt;
+	int rc;
 
 	++cnt;
-	sensor_sample_fetch(dev);
-	sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
+	rc = sensor_sample_fetch(dev);
+	if (rc != 0) {
+		printf("sensor_sample_fetch error: %d\n", rc);
+		return;
+	}
+	rc = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
+	if (rc != 0) {
+		printf("sensor_channel_get error: %d\n", rc);
+		return;
+	}
 
 	printf("trigger fired %u, temp %g deg C\n", cnt,
 	       sensor_value_to_double(&temp));
@@ -96,8 +106,8 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 
 void main(void)
 {
-	const char *const devname = DT_INST_0_MICROCHIP_MCP9808_LABEL;
-	struct device *dev = device_get_binding(devname);
+	const char *const devname = DT_LABEL(DT_INST(0, microchip_mcp9808));
+	const struct device *dev = device_get_binding(devname);
 	int rc;
 
 	if (dev == NULL) {

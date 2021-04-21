@@ -14,6 +14,8 @@
  */
 #define EVENT_OVERHEAD_END_US         40
 #define EVENT_JITTER_US               16
+/* Inter-Event Space (IES) */
+#define EVENT_TIES_US                 625
 /* Ticker resolution margin
  * Needed due to the lack of fine timing resolution in ticker_start
  * and ticker_update. Set to 32 us, which is ~1 tick with 32768 Hz

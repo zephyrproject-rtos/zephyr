@@ -1,0 +1,27 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM XDMAC controller
+
+compatible: "atmel,sam-xdmac"
+
+include: dma-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      required: true
+
+    "#dma-cells":
+      const: 2
+
+dma-cells:
+  - channel
+  - perid

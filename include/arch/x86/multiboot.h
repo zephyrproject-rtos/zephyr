@@ -17,21 +17,21 @@
  */
 
 struct multiboot_info {
-	u32_t flags;
-	u32_t mem_lower;
-	u32_t mem_upper;
-	u32_t unused0[8];
-	u32_t mmap_length;
-	u32_t mmap_addr;
-	u32_t unused1[9];
-	u32_t fb_addr_lo;
-	u32_t fb_addr_hi;
-	u32_t fb_pitch;
-	u32_t fb_width;
-	u32_t fb_height;
-	u8_t  fb_bpp;
-	u8_t  fb_type;
-	u8_t  fb_color_info[6];
+	uint32_t flags;
+	uint32_t mem_lower;
+	uint32_t mem_upper;
+	uint32_t unused0[8];
+	uint32_t mmap_length;
+	uint32_t mmap_addr;
+	uint32_t unused1[9];
+	uint32_t fb_addr_lo;
+	uint32_t fb_addr_hi;
+	uint32_t fb_pitch;
+	uint32_t fb_width;
+	uint32_t fb_height;
+	uint8_t  fb_bpp;
+	uint8_t  fb_type;
+	uint8_t  fb_color_info[6];
 };
 
 extern struct multiboot_info multiboot_info;
@@ -43,10 +43,10 @@ extern void z_multiboot_init(struct multiboot_info *);
  */
 
 struct multiboot_mmap {
-	u32_t size;
-	u64_t base;
-	u64_t length;
-	u32_t type;
+	uint32_t size;
+	uint64_t base;
+	uint64_t length;
+	uint32_t type;
 } __packed;
 
 #endif /* _ASMLANGUAGE */

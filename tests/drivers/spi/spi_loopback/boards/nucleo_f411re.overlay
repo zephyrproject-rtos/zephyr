@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	dmas = <&dma2 5 3 0x28440 0x03
+		&dma2 2 3 0x28480 0x03>;
+	dma-names = "tx", "rx";
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};

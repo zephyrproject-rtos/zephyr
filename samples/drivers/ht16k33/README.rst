@@ -22,17 +22,17 @@ The sample logs keyscan events on the console.
 Building and Running
 ********************
 
-Build the application for the :ref:`nrf52840_pca10056` board, and
+Build the application for the :ref:`nrf52840dk_nrf52840` board, and
 connect a HT16K33 LED driver at address 0x70 on the I2C-0 bus.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/ht16k33
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build
    :compact:
 
 For flashing the application, refer to the Flashing section of the
-:ref:`nrf52840_pca10056` board documentation.
+:ref:`nrf52840dk_nrf52840` board documentation.
 
 References
 **********

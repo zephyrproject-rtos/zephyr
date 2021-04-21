@@ -8,10 +8,6 @@ if BOARD_PICO_PI_M4
 config BOARD
 	default "pico_pi_m4"
 
-config UART_IMX_UART_6
-	default y
-	depends on UART_IMX
-
 if !XIP
 config FLASH_SIZE
 	default 0

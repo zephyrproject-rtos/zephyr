@@ -9,32 +9,4 @@ config BOARD
 	default "stm32_min_dev_blue" if BOARD_STM32_MIN_DEV_BLUE
 	default "stm32_min_dev_black" if BOARD_STM32_MIN_DEV_BLACK
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-endif # I2C
-
-config PWM_STM32_1
-	default y
-	depends on PWM
-
-if SPI
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
-endif # SPI
-
 endif # BOARD_STM32_MIN_DEV_BLUE || BOARD_STM32_MIN_DEV_BLACK

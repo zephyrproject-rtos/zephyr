@@ -85,9 +85,12 @@ static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
  */
 static ALWAYS_INLINE void z_arm_exc_setup(void)
 {
-	NVIC_SetPriority(PendSV_IRQn, 0xff);
+	NVIC_SetPriority(PendSV_IRQn, _EXC_PENDSV_PRIO);
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_BASEPRI
+	/* Note: SVCall IRQ priority level is left to default (0)
+	 * for Cortex-M variants without BASEPRI (e.g. ARMv6-M).
+	 */
 	NVIC_SetPriority(SVCall_IRQn, _EXC_SVC_PRIO);
 #endif
 
@@ -150,6 +153,16 @@ static ALWAYS_INLINE void z_arm_clear_faults(void)
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
+
+/**
+ * @brief Assess whether a debug monitor event should be treated as an error
+ *
+ * This routine checks the status of a debug_monitor() exception, and
+ * evaluates whether this needs to be considered as a processor error.
+ *
+ * @return true if the DM exception is a processor error, otherwise false
+ */
+bool z_arm_debug_monitor_event_error_check(void);
 
 #ifdef __cplusplus
 }

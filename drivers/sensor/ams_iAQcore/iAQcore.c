@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ams_iaqcore
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <kernel.h>
@@ -17,23 +19,24 @@
 
 LOG_MODULE_REGISTER(IAQ_CORE, CONFIG_SENSOR_LOG_LEVEL);
 
-static int iaqcore_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int iaqcore_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
-	struct iaq_core_data *drv_data = dev->driver_data;
+	struct iaq_core_data *drv_data = dev->data;
 	struct iaq_registers buf;
 	struct i2c_msg msg;
 	int ret, tries;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	msg.buf = (u8_t *)&buf;
+	msg.buf = (uint8_t *)&buf;
 	msg.len = sizeof(struct iaq_registers);
 	msg.flags = I2C_MSG_READ | I2C_MSG_STOP;
 
 	for (tries = 0; tries < CONFIG_IAQ_CORE_MAX_READ_RETRIES; tries++) {
 
 		ret = i2c_transfer(drv_data->i2c, &msg, 1,
-				   DT_INST_0_AMS_IAQCORE_BASE_ADDRESS);
+				   DT_INST_REG_ADDR(0));
 		if (ret < 0) {
 			LOG_ERR("Failed to read registers data [%d].", ret);
 			return -EIO;
@@ -64,11 +67,11 @@ static int iaqcore_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return -EIO;
 }
 
-static int iaqcore_channel_get(struct device *dev,
+static int iaqcore_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
-	struct iaq_core_data *drv_data = dev->driver_data;
+	struct iaq_core_data *drv_data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_CO2:
@@ -95,14 +98,14 @@ static const struct sensor_driver_api iaq_core_driver_api = {
 	.channel_get = iaqcore_channel_get,
 };
 
-static int iaq_core_init(struct device *dev)
+static int iaq_core_init(const struct device *dev)
 {
-	struct iaq_core_data *drv_data = dev->driver_data;
+	struct iaq_core_data *drv_data = dev->data;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_AMS_IAQCORE_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_INST_0_AMS_IAQCORE_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -111,6 +114,6 @@ static int iaq_core_init(struct device *dev)
 
 static struct iaq_core_data iaq_core_driver;
 
-DEVICE_AND_API_INIT(iaq_core, DT_INST_0_AMS_IAQCORE_LABEL, iaq_core_init,
+DEVICE_DT_INST_DEFINE(0, iaq_core_init, device_pm_control_nop,
 		    &iaq_core_driver, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &iaq_core_driver_api);

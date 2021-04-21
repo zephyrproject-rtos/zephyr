@@ -24,9 +24,9 @@ DEFAULT_CMAKE_GENERATOR = 'Ninja'
 '''Name of the default CMake generator.'''
 
 FIND_BUILD_DIR_DESCRIPTION = '''\
-If not given, the default build directory ({}/ unless the
-build.dir-fmt configuration variable is set) and the current directory are
-checked, in that order. If one is a Zephyr build directory, it is used.
+If the build directory is not given, the default is {}/ unless the
+build.dir-fmt configuration variable is set. The current directory is
+checked after that. If either is a Zephyr build directory, it is used.
 '''.format(DEFAULT_BUILD_DIR)
 
 def _resolve_build_dir(fmt, guess, cwd, **kwargs):
@@ -111,18 +111,25 @@ def is_zephyr_build(path):
     build directory.
 
     "Valid" means the given path is a directory which contains a CMake
-    cache with a 'ZEPHYR_TOOLCHAIN_VARIANT' key.
+    cache with a 'ZEPHYR_BASE' or 'ZEPHYR_TOOLCHAIN_VARIANT' variable.
+
+    (The check for ZEPHYR_BASE introduced sometime after Zephyr 2.4 to
+    fix https://github.com/zephyrproject-rtos/zephyr/issues/28876; we
+    keep support for the second variable around for compatibility with
+    versions 2.2 and earlier, which didn't have ZEPHYR_BASE in cache.
+    The cached ZEPHYR_BASE was added in
+    https://github.com/zephyrproject-rtos/zephyr/pull/23054.)
     '''
     try:
         cache = zcmake.CMakeCache.from_build_dir(path)
     except FileNotFoundError:
         cache = {}
 
-    if 'ZEPHYR_TOOLCHAIN_VARIANT' in cache:
-        log.dbg('{} is a zephyr build directory'.format(path),
+    if 'ZEPHYR_BASE' in cache or 'ZEPHYR_TOOLCHAIN_VARIANT' in cache:
+        log.dbg(f'{path} is a zephyr build directory',
                 level=log.VERBOSE_EXTREME)
         return True
-    else:
-        log.dbg('{} is NOT a valid zephyr build directory'.format(path),
-                level=log.VERBOSE_EXTREME)
-        return False
+
+    log.dbg(f'{path} is NOT a valid zephyr build directory',
+            level=log.VERBOSE_EXTREME)
+    return False

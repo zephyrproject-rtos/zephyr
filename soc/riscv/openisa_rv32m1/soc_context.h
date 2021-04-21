@@ -15,21 +15,21 @@
 
 /* Extra state for RI5CY hardware loop registers. */
 #define SOC_ESF_MEMBERS					\
-	u32_t lpstart0;					\
-	u32_t lpend0;						\
-	u32_t lpcount0;					\
-	u32_t lpstart1;					\
-	u32_t lpend1;						\
-	u32_t lpcount1
+	uint32_t lpstart0;					\
+	uint32_t lpend0;						\
+	uint32_t lpcount0;					\
+	uint32_t lpstart1;					\
+	uint32_t lpend1;						\
+	uint32_t lpcount1
 
 /* Initial saved state. */
 #define SOC_ESF_INIT						\
-	0xdeadbaad,						\
-	0xdeadbaad,						\
-	0xdeadbaad,						\
-	0xdeadbaad,						\
-	0xdeadbaad,						\
-	0xdeadbaad
+	0,						\
+	0,						\
+	0,						\
+	0,						\
+	0,						\
+	0
 
 #endif /* CONFIG_SOC_OPENISA_RV32M1_RI5CY */
 

@@ -39,19 +39,19 @@
 
 /* Common part of device data */
 struct usb_dev_data {
-	struct device *dev;
+	const struct device *dev;
 	sys_snode_t node;
 };
 
 struct usb_dev_data *usb_get_dev_data_by_cfg(sys_slist_t *list,
 					     struct usb_cfg_data *cfg);
 struct usb_dev_data *usb_get_dev_data_by_iface(sys_slist_t *list,
-					       u8_t iface_num);
-struct usb_dev_data *usb_get_dev_data_by_ep(sys_slist_t *list, u8_t ep);
+					       uint8_t iface_num);
+struct usb_dev_data *usb_get_dev_data_by_ep(sys_slist_t *list, uint8_t ep);
 
 int usb_get_str_descriptor_idx(void *ptr);
 
-u8_t *usb_update_sn_string_descriptor(void);
-u8_t *usb_get_device_descriptor(void);
+uint8_t *usb_update_sn_string_descriptor(void);
+uint8_t *usb_get_device_descriptor(void);
 
 #endif /* __USB_DESCRIPTOR_H__ */

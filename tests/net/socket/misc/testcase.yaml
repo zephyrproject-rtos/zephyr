@@ -1,5 +1,6 @@
 common:
   depends_on: netif
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
 tests:
   net.socket.misc:
     min_ram: 21

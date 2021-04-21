@@ -9,7 +9,7 @@
 int set_lvgl_rendering_cb(lv_disp_drv_t *disp_drv)
 {
 	int err = 0;
-	struct device *display_dev = (struct device *)disp_drv->user_data;
+	const struct device *display_dev = (const struct device *)disp_drv->user_data;
 	struct display_capabilities cap;
 
 	display_get_capabilities(display_dev, &cap);

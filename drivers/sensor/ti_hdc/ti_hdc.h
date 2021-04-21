@@ -22,15 +22,15 @@
 #define HDC_CONVERSION_TIME     13
 
 struct ti_hdc_data {
-	struct device *i2c;
-	u16_t t_sample;
-	u16_t rh_sample;
+	const struct device *i2c;
+	uint16_t t_sample;
+	uint16_t rh_sample;
 
-#if defined(DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER)
-	struct device *gpio;
+#if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_sem data_sem;
-#endif  /* DT_INST_0_TI_HDC_DRDY_GPIOS_CONTROLLER */
+#endif  /* DT_INST_NODE_HAS_PROP(0, drdy_gpios) */
 };
 
 #endif

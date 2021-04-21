@@ -20,6 +20,8 @@ zephyr_sources_ifdef(CONFIG_ETH_MCUX		   eth_mcux.c)
 zephyr_sources_ifdef(CONFIG_ETH_SMSC911X	 eth_smsc911x.c)
 zephyr_sources_ifdef(CONFIG_ETH_STM32_HAL	 eth_stm32_hal.c)
 zephyr_sources_ifdef(CONFIG_ETH_LITEETH		 eth_liteeth.c)
+zephyr_sources_ifdef(CONFIG_ETH_W5500		 eth_w5500.c)
+zephyr_sources_ifdef(CONFIG_DSA_KSZ8794		 dsa_ksz8794.c)
 
 if(CONFIG_ETH_NATIVE_POSIX)
 	zephyr_library()

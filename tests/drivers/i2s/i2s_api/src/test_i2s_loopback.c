@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @addtogroup t_i2s_api
- * @{
- * @defgroup t_i2s_loopback test_i2s_loopback
- * @brief TestPurpose: verify I2S master can read and write in loopback mode
- * @}
- */
 
 #include <zephyr.h>
 #include <ztest.h>
@@ -22,11 +15,11 @@
 K_MEM_SLAB_DEFINE(rx_0_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, 32);
 K_MEM_SLAB_DEFINE(tx_0_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, 32);
 
-static int tx_block_write(struct device *dev_i2s, int att, int err)
+static int tx_block_write(const struct device *dev_i2s, int att, int err)
 {
 	return tx_block_write_slab(dev_i2s, att, err, &tx_0_mem_slab);
 }
-static int rx_block_read(struct device *dev_i2s, int att)
+static int rx_block_read(const struct device *dev_i2s, int att)
 {
 	return rx_block_read_slab(dev_i2s, att, &rx_0_mem_slab);
 }
@@ -34,7 +27,7 @@ static int rx_block_read(struct device *dev_i2s, int att)
 /** Configure I2S TX transfer. */
 void test_i2s_tx_transfer_configure_0(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	int ret;
 
@@ -60,7 +53,7 @@ void test_i2s_tx_transfer_configure_0(void)
 /** Configure I2S RX transfer. */
 void test_i2s_rx_transfer_configure_0(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 	int ret;
 
@@ -93,7 +86,7 @@ void test_i2s_rx_transfer_configure_0(void)
  */
 void test_i2s_transfer_short(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	int ret;
 
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
@@ -157,7 +150,7 @@ void test_i2s_transfer_short(void)
  */
 void test_i2s_transfer_long(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	int ret;
 
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
@@ -209,7 +202,7 @@ void test_i2s_transfer_long(void)
  */
 void test_i2s_rx_sync_start(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	size_t rx_size;
 	int ret;
 	char buf[BLOCK_SIZE];
@@ -219,7 +212,7 @@ void test_i2s_rx_sync_start(void)
 
 	/* Prefill TX queue */
 	for (int n = 0; n < NUM_TX_BLOCKS; n++) {
-		fill_buf_const((u16_t *)buf, 1, 2);
+		fill_buf_const((uint16_t *)buf, 1, 2);
 		ret = i2s_buf_write(dev_i2s, buf, BLOCK_SIZE);
 		zassert_equal(ret, TC_PASS, NULL);
 		TC_PRINT("%d->OK\n", n);
@@ -236,7 +229,7 @@ void test_i2s_rx_sync_start(void)
 	zassert_equal(ret, 0, "RX START trigger failed");
 	ret = i2s_buf_read(dev_i2s, buf, &rx_size);
 	zassert_equal(ret, TC_PASS, NULL);
-	ret = verify_buf_const((u16_t *)buf, 1, 2);
+	ret = verify_buf_const((uint16_t *)buf, 1, 2);
 
 	zassert_equal(ret, TC_PASS, NULL);
 	TC_PRINT("%d<-OK\n", 1);
@@ -259,7 +252,7 @@ void test_i2s_rx_sync_start(void)
  */
 void test_i2s_rx_empty_timeout(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	size_t rx_size;
 	int ret;
 	char buf[BLOCK_SIZE];
@@ -271,8 +264,6 @@ void test_i2s_rx_empty_timeout(void)
 	zassert_equal(ret, -EAGAIN, "i2s_read did not timed out");
 }
 
-#define TEST_I2S_TRANSFER_RESTART_PAUSE_LENGTH_US  1000
-
 /** @brief Re-start I2S transfer.
  *
  * - STOP trigger stops transfer / reception at the end of the current block,
@@ -281,7 +272,7 @@ void test_i2s_rx_empty_timeout(void)
  */
 void test_i2s_transfer_restart(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	int ret;
 
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
@@ -319,7 +310,7 @@ void test_i2s_transfer_restart(void)
 	TC_PRINT("Stop transmission\n");
 
 	/* Keep interface inactive */
-	k_sleep(TEST_I2S_TRANSFER_RESTART_PAUSE_LENGTH_US);
+	k_sleep(K_MSEC(1000));
 
 	TC_PRINT("Start transmission\n");
 
@@ -353,8 +344,6 @@ void test_i2s_transfer_restart(void)
 	TC_PRINT("%d<-OK\n", 3);
 }
 
-#define TEST_I2S_TRANSFER_RX_OVERRUN_PAUSE_LENGTH_US  200
-
 /** @brief RX buffer overrun.
  *
  * - In case of RX buffer overrun it is possible to read out all RX data blocks
@@ -366,7 +355,7 @@ void test_i2s_transfer_restart(void)
  */
 void test_i2s_transfer_rx_overrun(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	size_t rx_size;
 	int ret;
 	char rx_buf[BLOCK_SIZE];
@@ -396,7 +385,7 @@ void test_i2s_transfer_rx_overrun(void)
 	zassert_equal(ret, 0, "TX DRAIN trigger failed");
 
 	/* Wait for transmission to finish */
-	k_sleep(TEST_I2S_TRANSFER_RX_OVERRUN_PAUSE_LENGTH_US);
+	k_sleep(K_MSEC(200));
 
 	/* Read all available data blocks in RX queue */
 	for (int i = 0; i < NUM_RX_BLOCKS; i++) {
@@ -438,7 +427,7 @@ void test_i2s_transfer_rx_overrun(void)
  */
 void test_i2s_transfer_tx_underrun(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	int ret;
 
 	dev_i2s = device_get_binding(I2S_DEV_NAME);

@@ -524,11 +524,11 @@
 
 struct lsm9ds0_mfd_config {
 	char *i2c_master_dev_name;
-	u16_t i2c_slave_addr;
+	uint16_t i2c_slave_addr;
 };
 
 struct lsm9ds0_mfd_data {
-	struct device *i2c_master;
+	const struct device *i2c_master;
 
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
 	int sample_accel_x, sample_accel_y, sample_accel_z;
@@ -544,13 +544,13 @@ struct lsm9ds0_mfd_data {
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
-	u8_t accel_fs, sample_accel_fs;
+	uint8_t accel_fs, sample_accel_fs;
 #endif
 #endif
 
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
 #if !defined(LSM9DS0_MFD_MAGN_DISABLED)
-	u8_t magn_fs, sample_magn_fs;
+	uint8_t magn_fs, sample_magn_fs;
 #endif
 #endif
 };

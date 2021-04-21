@@ -7,14 +7,14 @@
 #include <zephyr.h>
 #include <sys/printk.h>
 
-u32_t var_sram2_data = 10U;
-u32_t var_sram2_bss;
+uint32_t var_sram2_data = 10U;
+uint32_t var_sram2_bss;
 K_SEM_DEFINE(test, 0, 1);
-const u32_t var_sram2_rodata = 100U;
+const uint32_t var_sram2_rodata = 100U;
 
-__in_section(custom_section, static, var) u32_t var_custom_data = 1U;
+__in_section(custom_section, static, var) uint32_t var_custom_data = 1U;
 
-extern void function_in_sram(s32_t value);
+extern void function_in_sram(int32_t value);
 void function_in_custom_section(void);
 void function_in_sram2(void)
 {

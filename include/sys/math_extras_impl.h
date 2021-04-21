@@ -29,12 +29,17 @@
 #endif
 
 #if use_builtin(__builtin_add_overflow)
-static inline bool u32_add_overflow(u32_t a, u32_t b, u32_t *result)
+static inline bool u16_add_overflow(uint16_t a, uint16_t b, uint16_t *result)
 {
 	return __builtin_add_overflow(a, b, result);
 }
 
-static inline bool u64_add_overflow(u64_t a, u64_t b, u64_t *result)
+static inline bool u32_add_overflow(uint32_t a, uint32_t b, uint32_t *result)
+{
+	return __builtin_add_overflow(a, b, result);
+}
+
+static inline bool u64_add_overflow(uint64_t a, uint64_t b, uint64_t *result)
 {
 	return __builtin_add_overflow(a, b, result);
 }
@@ -44,18 +49,27 @@ static inline bool size_add_overflow(size_t a, size_t b, size_t *result)
 	return __builtin_add_overflow(a, b, result);
 }
 #else /* !use_builtin(__builtin_add_overflow) */
-static inline bool u32_add_overflow(u32_t a, u32_t b, u32_t *result)
+static inline bool u16_add_overflow(uint16_t a, uint16_t b, uint16_t *result)
 {
-	u32_t c = a + b;
+	uint16_t c = a + b;
 
 	*result = c;
 
 	return c < a;
 }
 
-static inline bool u64_add_overflow(u64_t a, u64_t b, u64_t *result)
+static inline bool u32_add_overflow(uint32_t a, uint32_t b, uint32_t *result)
 {
-	u64_t c = a + b;
+	uint32_t c = a + b;
+
+	*result = c;
+
+	return c < a;
+}
+
+static inline bool u64_add_overflow(uint64_t a, uint64_t b, uint64_t *result)
+{
+	uint64_t c = a + b;
 
 	*result = c;
 
@@ -73,12 +87,17 @@ static inline bool size_add_overflow(size_t a, size_t b, size_t *result)
 #endif /* use_builtin(__builtin_add_overflow) */
 
 #if use_builtin(__builtin_mul_overflow)
-static inline bool u32_mul_overflow(u32_t a, u32_t b, u32_t *result)
+static inline bool u16_mul_overflow(uint16_t a, uint16_t b, uint16_t *result)
 {
 	return __builtin_mul_overflow(a, b, result);
 }
 
-static inline bool u64_mul_overflow(u64_t a, u64_t b, u64_t *result)
+static inline bool u32_mul_overflow(uint32_t a, uint32_t b, uint32_t *result)
+{
+	return __builtin_mul_overflow(a, b, result);
+}
+
+static inline bool u64_mul_overflow(uint64_t a, uint64_t b, uint64_t *result)
 {
 	return __builtin_mul_overflow(a, b, result);
 }
@@ -88,18 +107,27 @@ static inline bool size_mul_overflow(size_t a, size_t b, size_t *result)
 	return __builtin_mul_overflow(a, b, result);
 }
 #else /* !use_builtin(__builtin_mul_overflow) */
-static inline bool u32_mul_overflow(u32_t a, u32_t b, u32_t *result)
+static inline bool u16_mul_overflow(uint16_t a, uint16_t b, uint16_t *result)
 {
-	u32_t c = a * b;
+	uint16_t c = a * b;
 
 	*result = c;
 
 	return a != 0 && (c / a) != b;
 }
 
-static inline bool u64_mul_overflow(u64_t a, u64_t b, u64_t *result)
+static inline bool u32_mul_overflow(uint32_t a, uint32_t b, uint32_t *result)
 {
-	u64_t c = a * b;
+	uint32_t c = a * b;
+
+	*result = c;
+
+	return a != 0 && (c / a) != b;
+}
+
+static inline bool u64_mul_overflow(uint64_t a, uint64_t b, uint64_t *result)
+{
+	uint64_t c = a * b;
 
 	*result = c;
 
@@ -157,12 +185,12 @@ static inline bool size_mul_overflow(size_t a, size_t b, size_t *result)
  */
 
 #if use_builtin(__builtin_clz)
-static inline int u32_count_leading_zeros(u32_t x)
+static inline int u32_count_leading_zeros(uint32_t x)
 {
 	return x == 0 ? 32 : __builtin_clz(x);
 }
 #else /* !use_builtin(__builtin_clz) */
-static inline int u32_count_leading_zeros(u32_t x)
+static inline int u32_count_leading_zeros(uint32_t x)
 {
 	int b;
 
@@ -175,15 +203,15 @@ static inline int u32_count_leading_zeros(u32_t x)
 #endif /* use_builtin(__builtin_clz) */
 
 #if use_builtin(__builtin_clzll)
-static inline int u64_count_leading_zeros(u64_t x)
+static inline int u64_count_leading_zeros(uint64_t x)
 {
 	return x == 0 ? 64 : __builtin_clzll(x);
 }
 #else /* !use_builtin(__builtin_clzll) */
-static inline int u64_count_leading_zeros(u64_t x)
+static inline int u64_count_leading_zeros(uint64_t x)
 {
-	if (x == (u32_t)x) {
-		return 32 + u32_count_leading_zeros((u32_t)x);
+	if (x == (uint32_t)x) {
+		return 32 + u32_count_leading_zeros((uint32_t)x);
 	} else {
 		return u32_count_leading_zeros(x >> 32);
 	}
@@ -191,12 +219,12 @@ static inline int u64_count_leading_zeros(u64_t x)
 #endif /* use_builtin(__builtin_clzll) */
 
 #if use_builtin(__builtin_ctz)
-static inline int u32_count_trailing_zeros(u32_t x)
+static inline int u32_count_trailing_zeros(uint32_t x)
 {
 	return x == 0 ? 32 : __builtin_ctz(x);
 }
 #else /* !use_builtin(__builtin_ctz) */
-static inline int u32_count_trailing_zeros(u32_t x)
+static inline int u32_count_trailing_zeros(uint32_t x)
 {
 	int b;
 
@@ -209,15 +237,15 @@ static inline int u32_count_trailing_zeros(u32_t x)
 #endif /* use_builtin(__builtin_ctz) */
 
 #if use_builtin(__builtin_ctzll)
-static inline int u64_count_trailing_zeros(u64_t x)
+static inline int u64_count_trailing_zeros(uint64_t x)
 {
 	return x == 0 ? 64 : __builtin_ctzll(x);
 }
 #else /* !use_builtin(__builtin_ctzll) */
-static inline int u64_count_trailing_zeros(u64_t x)
+static inline int u64_count_trailing_zeros(uint64_t x)
 {
-	if ((u32_t)x) {
-		return u32_count_trailing_zeros((u32_t)x);
+	if ((uint32_t)x) {
+		return u32_count_trailing_zeros((uint32_t)x);
 	} else {
 		return 32 + u32_count_trailing_zeros(x >> 32);
 	}

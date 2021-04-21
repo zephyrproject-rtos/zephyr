@@ -1,0 +1,12 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+sample:
+  description: Hawkbit Firmware Over-the-Air (FOTA)
+  name: hawkbit
+tests:
+  samples.net.hawkbit:
+    harness: net
+    tags: net
+    depends_on: netif
+    build_only: true
+    platform_allow: frdm_k64f

@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc55S16_ns.dtsi>
+#include "lpcxpresso55s16_common.dtsi"
+
+/ {
+	model = "NXP LPCXpresso55S16 board (non-secure)";
+	compatible = "nxp,lpc55xxx", "nxp,lpc";
+};

@@ -41,7 +41,8 @@ globally for whenever you run west, use:
 
    west config --global commands.allow_extensions false
 
-If you want to, you can then re-enable them in a particular installation with:
+If you want to, you can then re-enable them in a particular :term:`west
+workspace` with:
 
 .. code-block:: console
 

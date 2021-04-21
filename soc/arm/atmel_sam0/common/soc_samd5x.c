@@ -43,10 +43,10 @@ static void osc32k_init(void)
 #error "No Clock Source selected."
 #endif
 
-static void dpll_init(u8_t n, u32_t f_cpu)
+static void dpll_init(uint8_t n, uint32_t f_cpu)
 {
 	/* We source the DPLL from 32kHz GCLK1 */
-	const u32_t LDR = ((f_cpu << 5) / SOC_ATMEL_SAM0_OSC32K_FREQ_HZ);
+	const uint32_t LDR = ((f_cpu << 5) / SOC_ATMEL_SAM0_OSC32K_FREQ_HZ);
 
 	/* disable the DPLL before changing the configuration */
 	OSCCTRL->Dpll[n].DPLLCTRLA.bit.ENABLE = 0;
@@ -78,7 +78,7 @@ static void dpll_init(u8_t n, u32_t f_cpu)
 
 static void dfll_init(void)
 {
-	u32_t reg = OSCCTRL_DFLLCTRLB_QLDIS
+	uint32_t reg = OSCCTRL_DFLLCTRLB_QLDIS
 #ifdef OSCCTRL_DFLLCTRLB_WAITLOCK
 		     | OSCCTRL_DFLLCTRLB_WAITLOCK
 #endif
@@ -91,17 +91,17 @@ static void dfll_init(void)
 	}
 }
 
-static void gclk_connect(u8_t gclk, u8_t src, u8_t div)
+static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 {
 	GCLK->GENCTRL[gclk].reg = GCLK_GENCTRL_SRC(src)
 				| GCLK_GENCTRL_DIV(div)
 				| GCLK_GENCTRL_GENEN;
 }
 
-static int atmel_samd_init(struct device *arg)
+static int atmel_samd_init(const struct device *arg)
 {
-	u32_t key;
-	u8_t dfll_div;
+	uint32_t key;
+	uint8_t dfll_div;
 
 	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC < SAM0_DFLL_FREQ_HZ) {
 		dfll_div = 3;

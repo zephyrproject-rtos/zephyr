@@ -41,7 +41,7 @@ void main(void)
 	}
 
 	LOG_INF("Sending SNTP IPv4 request...");
-	rv = sntp_query(&ctx, K_SECONDS(4), &sntp_time);
+	rv = sntp_query(&ctx, 4 * MSEC_PER_SEC, &sntp_time);
 	if (rv < 0) {
 		LOG_ERR("SNTP IPv4 request failed: %d", rv);
 		goto end;
@@ -49,7 +49,7 @@ void main(void)
 
 	LOG_INF("status: %d", rv);
 	LOG_INF("time since Epoch: high word: %u, low word: %u",
-		(u32_t)(sntp_time.seconds >> 32), (u32_t)sntp_time.seconds);
+		(uint32_t)(sntp_time.seconds >> 32), (uint32_t)sntp_time.seconds);
 
 #if defined(CONFIG_NET_IPV6)
 	sntp_close(&ctx);
@@ -69,7 +69,7 @@ void main(void)
 
 	LOG_INF("Sending SNTP IPv6 request...");
 	/* With such a timeout, this is expected to fail. */
-	rv = sntp_query(&ctx, K_NO_WAIT, &sntp_time);
+	rv = sntp_query(&ctx, 0, &sntp_time);
 	if (rv < 0) {
 		LOG_ERR("SNTP IPv6 request: %d", rv);
 		goto end;
@@ -77,7 +77,7 @@ void main(void)
 
 	LOG_INF("status: %d", rv);
 	LOG_INF("time since Epoch: high word: %u, low word: %u",
-		(u32_t)(sntp_time.seconds >> 32), (u32_t)sntp_time.seconds);
+		(uint32_t)(sntp_time.seconds >> 32), (uint32_t)sntp_time.seconds);
 #endif
 
 end:

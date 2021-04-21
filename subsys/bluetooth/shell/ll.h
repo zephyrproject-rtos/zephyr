@@ -21,6 +21,4 @@ int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[]);
 int cmd_test_tx(const struct shell *shell, size_t  argc, char *argv[]);
 int cmd_test_rx(const struct shell *shell, size_t  argc, char *argv[]);
 int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[]);
-
-int cmd_ull_reset(const struct shell *shell, size_t  argc, char *argv[]);
 #endif /* __LL_H */

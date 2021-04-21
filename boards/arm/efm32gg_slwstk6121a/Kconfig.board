@@ -1,0 +1,10 @@
+# EFM32GG SLWSTK6121A board configuration
+# Copyright (c) 2019 Interay Solutions B.V.
+# Copyright (c) 2019 Oane Kingma
+# Copyright (c) 2020 Thorvald Natvig
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFM32GG_SLWSTK6121A
+	bool "SiLabs EFM32GG-SLWSTK6121A (WGM160P)"
+	depends on SOC_SERIES_EFM32GG11B
+	select SOC_PART_NUMBER_EFM32GG11B820F2048GM64

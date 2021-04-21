@@ -1,1 +1,0 @@
-zephyr_sources(altera_epcq_controller.c)

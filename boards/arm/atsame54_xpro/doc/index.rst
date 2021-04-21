@@ -58,6 +58,8 @@ features:
 +-----------+------------+--------------------------------------+
 | GPIO      | on-chip    | I/O ports                            |
 +-----------+------------+--------------------------------------+
+| PWM       | on-chip    | Pulse Width Modulation               |
++-----------+------------+--------------------------------------+
 | USART     | on-chip    | Serial ports                         |
 +-----------+------------+--------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports    |
@@ -88,7 +90,7 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 - SERCOM2 USART TX : PB24
 - SERCOM2 USART RX : PB25
-- GPIO LED0        : PC18
+- GPIO/PWM LED0    : PC18
 - GPIO SW0         : PB31
 
 System Clock
@@ -104,6 +106,13 @@ The SAME54 MCU has 8 SERCOM based USARTs with one configured as USARTs in
 this BSP. SERCOM2 is the default Zephyr console.
 
 - SERCOM2 115200 8n1 connected to the onboard Atmel Embedded Debugger (EDBG)
+
+PWM
+===
+
+The SAME54 MCU has 5 TCC based PWM units with up to 6 outputs each and a period
+of 24 bits or 16 bits.  If :code:`CONFIG_PWM_SAM0_TCC` is enabled then LED0 is
+driven by TCC0 instead of by GPIO.
 
 SPI Port
 ========

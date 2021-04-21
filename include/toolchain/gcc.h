@@ -50,16 +50,20 @@
 
 /* C++11 has static_assert built in */
 #ifdef __cplusplus
-#define BUILD_ASSERT(EXPR) static_assert(EXPR, "")
-#define BUILD_ASSERT_MSG(EXPR, MSG) static_assert(EXPR, MSG)
+#define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+#define BUILD_ASSERT_MSG(EXPR, MSG) __DEPRECATED_MACRO BUILD_ASSERT(EXPR, MSG)
+
 /*
  * GCC 4.6 and higher have the C11 _Static_assert built in, and its
  * output is easier to understand than the common BUILD_ASSERT macros.
  */
 #elif (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) || \
 	(__STDC_VERSION__) >= 201100
-#define BUILD_ASSERT(EXPR) _Static_assert(EXPR, "")
-#define BUILD_ASSERT_MSG(EXPR, MSG) _Static_assert(EXPR, MSG)
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#define BUILD_ASSERT_MSG(EXPR, MSG) __DEPRECATED_MACRO BUILD_ASSERT(EXPR, MSG)
+#else
+#define BUILD_ASSERT(EXPR, MSG...)
+#define BUILD_ASSERT_MSG(EXPR, MSG)
 #endif
 
 #include <toolchain/common.h>
@@ -88,7 +92,7 @@
 /* The GNU assembler for Cortex-M3 uses # for immediate values, not
  * comments, so the @nobits# trick does not work.
  */
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 #define _NODATA_SECTION(segment)  __attribute__((section(#segment)))
 #else
 #define _NODATA_SECTION(segment)				\
@@ -105,7 +109,7 @@ __extension__ ({							\
 })
 
 
-#if __GNUC__ >= 7 && defined(CONFIG_ARM)
+#if __GNUC__ >= 7 && (defined(CONFIG_ARM) || defined(CONFIG_ARM64))
 
 /* Version of UNALIGNED_PUT() which issues a compiler_barrier() after
  * the store. It is required to workaround an apparent optimization
@@ -164,6 +168,14 @@ do {                                                                    \
 			__attribute__((long_call, section(".ramfunc")))
 #endif /* !CONFIG_XIP */
 
+#ifndef __fallthrough
+#if __GNUC__ >= 7
+#define __fallthrough        __attribute__((fallthrough))
+#else
+#define __fallthrough
+#endif	/* __GNUC__ >= 7 */
+#endif
+
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
 #endif
@@ -178,12 +190,19 @@ do {                                                                    \
 #ifndef __deprecated
 #define __deprecated	__attribute__((deprecated))
 #endif
+#ifndef __attribute_const__
+#define __attribute_const__ __attribute__((__const__))
+#endif
 #define ARG_UNUSED(x) (void)(x)
 
 #define likely(x)   __builtin_expect((bool)!!(x), true)
 #define unlikely(x) __builtin_expect((bool)!!(x), false)
 
 #define popcount(x) __builtin_popcount(x)
+
+#ifndef __no_optimization
+#define __no_optimization __attribute__((optimize("-O0")))
+#endif
 
 #ifndef __weak
 #define __weak __attribute__((__weak__))
@@ -230,30 +249,26 @@ do {                                                                    \
 
 #if defined(_ASMLANGUAGE)
 
-#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
+#if defined(CONFIG_ARM)
 
-#if defined(CONFIG_ISA_THUMB2)
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
 
 #define FUNC_CODE() .thumb;
 #define FUNC_INSTR(a)
 
-#elif defined(CONFIG_ISA_ARM)
+#else
 
 #define FUNC_CODE() .code 32
 #define FUNC_INSTR(a)
 
-#else
-
-#error unknown instruction set
-
-#endif /* ISA */
+#endif /* CONFIG_ASSEMBLER_ISA_THUMB2 */
 
 #else
 
 #define FUNC_CODE()
 #define FUNC_INSTR(a)
 
-#endif /* !CONFIG_ARM */
+#endif /* CONFIG_ARM */
 
 #endif /* _ASMLANGUAGE */
 
@@ -267,7 +282,7 @@ do {                                                                    \
 #if defined(_ASMLANGUAGE)
 
 #if defined(CONFIG_ARM) || defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) \
-	|| defined(CONFIG_XTENSA)
+	|| defined(CONFIG_XTENSA) || defined(CONFIG_ARM64)
 #define GTEXT(sym) .global sym; .type sym, %function
 #define GDATA(sym) .global sym; .type sym, %object
 #define WTEXT(sym) .weak sym; .type sym, %function
@@ -359,14 +374,18 @@ do {                                                                    \
 
 #endif /* _ASMLANGUAGE */
 
-#if defined(CONFIG_ARM) && defined(_ASMLANGUAGE)
-#if defined(CONFIG_ISA_THUMB2)
+#if defined(_ASMLANGUAGE)
+#if defined(CONFIG_ARM)
+#if defined(CONFIG_ASSEMBLER_ISA_THUMB2)
 /* '.syntax unified' is a gcc-ism used in thumb-2 asm files */
 #define _ASM_FILE_PROLOGUE .text; .syntax unified; .thumb
 #else
 #define _ASM_FILE_PROLOGUE .text; .code 32
-#endif
-#endif
+#endif /* CONFIG_ASSEMBLER_ISA_THUMB2 */
+#elif defined(CONFIG_ARM64)
+#define _ASM_FILE_PROLOGUE .text
+#endif /* CONFIG_ARM64 || CONFIG_ARM */
+#endif /* _ASMLANGUAGE */
 
 /*
  * These macros generate absolute symbols for GCC
@@ -383,7 +402,24 @@ do {                                                                    \
 
 #define GEN_ABS_SYM_END }
 
-#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
+/*
+ * Note that GEN_ABSOLUTE_SYM(), depending on the architecture
+ * and toolchain, may restrict the range of values permitted
+ * for assignment to the named symbol.
+ *
+ * For example, on x86, "value" is interpreated as signed
+ * 32-bit integer. Passing in an unsigned 32-bit integer
+ * with MSB set would result in a negative integer.
+ * Moreover, GCC would error out if an integer larger
+ * than 2^32-1 is passed as "value".
+ */
+
+/*
+ * GEN_ABSOLUTE_SYM_KCONFIG() is outputted by the build system
+ * to generate named symbol/value pairs for kconfigs.
+ */
+
+#if defined(CONFIG_ARM)
 
 /*
  * GNU/ARM backend does not have a proper operand modifier which does not
@@ -398,12 +434,22 @@ do {                                                                    \
 		",%B0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(~(value)))
 
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",%object")
+
 #elif defined(CONFIG_X86)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \
-		",%p0"                              \
+		",%c0"                              \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",@object")
 
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM64)
 
@@ -411,6 +457,11 @@ do {                                                                    \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \
 		",%c0"                              \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",@object")
 
 #elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_XTENSA)
 
@@ -420,11 +471,33 @@ do {                                                                    \
 		",%0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(value))
 
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",%object")
+
 #elif defined(CONFIG_ARCH_POSIX)
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \
 		",%c0"                              \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",@object")
+
+#elif defined(CONFIG_SPARC)
+#define GEN_ABSOLUTE_SYM(name, value)			\
+	__asm__(".global\t" #name "\n\t.equ\t" #name	\
+		",%0"					\
+		"\n\t.type\t" #name ",#object" : : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value       \
+		"\n\t.type\t" #name ",#object")
+
 #else
 #error processor architecture not supported
 #endif
@@ -440,7 +513,7 @@ do {                                                                    \
  * @note Macro has limited usage compared to the standard macro as it cannot be
  *	 used:
  *	 - to generate constant integer, e.g. __aligned(Z_MAX(4,5))
- *	 - static variable, e.g. array like static u8_t array[Z_MAX(...)];
+ *	 - static variable, e.g. array like static uint8_t array[Z_MAX(...)];
  */
 #define Z_MAX(a, b) ({ \
 		/* random suffix to avoid naming conflict */ \
@@ -460,6 +533,37 @@ do {                                                                    \
 		__typeof__(b) _value_b_ = (b); \
 		_value_a_ < _value_b_ ? _value_a_ : _value_b_; \
 	})
+
+/** @brief Return a value clamped to a given range.
+ *
+ * Macro ensures that expressions are evaluated only once. See @ref Z_MAX for
+ * macro limitations.
+ */
+#define Z_CLAMP(val, low, high) ({                                             \
+		/* random suffix to avoid naming conflict */                   \
+		__typeof__(val) _value_val_ = (val);                           \
+		__typeof__(low) _value_low_ = (low);                           \
+		__typeof__(high) _value_high_ = (high);                        \
+		(_value_val_ < _value_low_)  ? _value_low_ :                   \
+		(_value_val_ > _value_high_) ? _value_high_ :                  \
+					       _value_val_;                    \
+	})
+
+/**
+ * @brief Calculate power of two ceiling for some nonzero value
+ *
+ * @param x Nonzero unsigned long value
+ * @return X rounded up to the next power of two
+ */
+#ifdef CONFIG_64BIT
+#define Z_POW2_CEIL(x) ((1UL << (63U - __builtin_clzl(x))) < x ?  \
+		1UL << (63U - __builtin_clzl(x) + 1U) : \
+		1UL << (63U - __builtin_clzl(x)))
+#else
+#define Z_POW2_CEIL(x) ((1UL << (31U - __builtin_clzl(x))) < x ?  \
+		1UL << (31U - __builtin_clzl(x) + 1U) : \
+		1UL << (31U - __builtin_clzl(x)))
+#endif
 
 #endif /* !_LINKER */
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_GCC_H_ */

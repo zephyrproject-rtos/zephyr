@@ -18,8 +18,8 @@ LOG_MODULE_REGISTER(main);
 #include <drivers/spi.h>
 #include <sys/util.h>
 
-#define STRIP_LABEL		DT_ALIAS_LED_STRIP_LABEL
-#define STRIP_NUM_PIXELS	DT_ALIAS_LED_STRIP_CHAIN_LENGTH
+#define STRIP_LABEL		DT_LABEL(DT_ALIAS(led_strip))
+#define STRIP_NUM_PIXELS	DT_PROP(DT_ALIAS(led_strip), chain_length)
 
 #define DELAY_TIME K_MSEC(50)
 
@@ -35,7 +35,7 @@ struct led_rgb pixels[STRIP_NUM_PIXELS];
 
 void main(void)
 {
-	struct device *strip;
+	const struct device *strip;
 	size_t cursor = 0, color = 0;
 	int rc;
 

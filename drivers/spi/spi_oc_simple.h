@@ -7,7 +7,7 @@
 #include "spi_context.h"
 
 #define SPI_OC_SIMPLE_DATA(dev) \
-	((struct spi_oc_simple_data *) ((dev)->driver_data))
+	((struct spi_oc_simple_data *) ((dev)->data))
 
 #define SPI_OC_SIMPLE_REG(info, offset) \
 	((mem_addr_t) (info->base + \
@@ -24,8 +24,8 @@
 #define SPI_OC_SIMPLE_SPCR_CPHA BIT(2)
 
 struct spi_oc_simple_cfg {
-	u32_t base;
-	u32_t f_sys;
+	uint32_t base;
+	uint32_t f_sys;
 };
 
 struct spi_oc_simple_data {

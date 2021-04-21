@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @addtogroup t_driver_dma
- * @{
- * @defgroup t_dma_mem_to_mem test_dma_mem_to_mem
- * @}
- */
 
 #include <zephyr.h>
 #include <ztest.h>

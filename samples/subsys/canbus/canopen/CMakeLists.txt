@@ -2,7 +2,14 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+macro(app_set_runner_args)
+  board_runner_args(canopen "--node-id=${CONFIG_CANOPEN_NODE_ID}")
+  board_runner_args(dfu-util "--dfuse-modifiers=force:mass-erase")
+  board_runner_args(pyocd "--erase")
+  board_runner_args(nrfjprog "--erase")
+endmacro()
+
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(CANopen)
 
 target_sources(app PRIVATE src/main.c objdict/CO_OD.c)

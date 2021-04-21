@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&enet {
+	/* ENET MUST be disabled because share
+	 * pins with UART-3
+	 */
+	status = "disabled";
+};

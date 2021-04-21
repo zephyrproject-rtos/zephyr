@@ -25,7 +25,7 @@
  * system where top-left is (0, 0) and bottom-right is (49, 49).
  */
 
-#define SCROLL_SPEED      K_MSEC(400)  /* Text scrolling speed */
+#define SCROLL_SPEED      400          /* Text scrolling speed */
 
 #define PIXEL_SIZE        10           /* Virtual coordinates per real pixel */
 
@@ -42,8 +42,10 @@
 #define BALL_POS_Y_MIN    0            /* Maximum ball Y coordinate */
 #define BALL_POS_Y_MAX    39           /* Maximum ball Y coordinate */
 
-#define START_THRESHOLD   K_MSEC(100)  /* Max time between A & B press */
-#define RESTART_THRESHOLD K_SECONDS(2) /* Time before restart is allowed */
+#define START_THRESHOLD   100          /* Max time between A & B press */
+#define RESTART_THRESHOLD (2 * MSEC_PER_SEC) /* Time before restart is
+					      *	allowed
+					      */
 
 #define REAL_TO_VIRT(r)  ((r) * 10)
 #define VIRT_TO_REAL(v)  ((v) / 10)
@@ -86,9 +88,9 @@ static const struct pong_choice mode_choice[] = {
 
 static bool remote_lost;
 static bool started;
-static s64_t ended;
+static int64_t ended;
 
-static struct k_delayed_work refresh;
+static struct k_work_delayable refresh;
 
 /* Semaphore to indicate that there was an update to the display */
 static K_SEM_DEFINE(disp_update, 0, 1);
@@ -102,14 +104,14 @@ static struct x_y ball_pos = BALL_START;
 /* Ball velocity */
 static struct x_y ball_vel = { 0, 0 };
 
-static s64_t a_timestamp;
-static s64_t b_timestamp;
+static int64_t a_timestamp;
+static int64_t b_timestamp;
 
 #define SOUND_PIN            EXT_P0_GPIO_PIN
 #define SOUND_PERIOD_PADDLE  200
 #define SOUND_PERIOD_WALL    1000
 
-static struct device *pwm;
+static const struct device *pwm;
 
 static enum sound_state {
 	SOUND_IDLE,    /* No sound */
@@ -212,7 +214,7 @@ static void mode_selected(int val)
 	default:
 		printk("Unknown state %d\n", state);
 		return;
-	};
+	}
 }
 
 static const struct pong_selection mode_selection = {
@@ -228,8 +230,8 @@ static bool ball_visible(void)
 
 static void check_start(void)
 {
-	u32_t delta;
-	u8_t rnd;
+	uint32_t delta;
+	uint8_t rnd;
 
 	if (!a_timestamp || !b_timestamp) {
 		return;
@@ -260,7 +262,7 @@ static void check_start(void)
 
 	started = true;
 	remote_lost = false;
-	k_delayed_work_submit(&refresh, K_NO_WAIT);
+	k_work_reschedule(&refresh, K_NO_WAIT);
 }
 
 static void game_ended(bool won)
@@ -295,22 +297,21 @@ static void game_ended(bool won)
 		printk("You lost!\n");
 	}
 
-	k_delayed_work_submit(&refresh, RESTART_THRESHOLD);
+	k_work_reschedule(&refresh, K_MSEC(RESTART_THRESHOLD));
 }
 
 static void game_stack_dump(const struct k_thread *thread, void *user_data)
 {
-#if defined(CONFIG_THREAD_STACK_INFO)
-	stack_analyze((char *)user_data, (char *)thread->stack_info.start,
-						thread->stack_info.size);
-#endif
+	ARG_UNUSED(user_data);
+
+	log_stack_usage(thread);
 }
 
 static void game_refresh(struct k_work *work)
 {
 	if (sound_state != SOUND_IDLE) {
 		sound_set(SOUND_IDLE);
-		k_thread_foreach(game_stack_dump, "Test");
+		k_thread_foreach(game_stack_dump, NULL);
 	}
 
 	if (state == INIT) {
@@ -375,11 +376,11 @@ static void game_refresh(struct k_work *work)
 		sound_set(SOUND_PADDLE);
 	}
 
-	k_delayed_work_submit(&refresh, GAME_REFRESH);
+	k_work_reschedule(&refresh, GAME_REFRESH);
 	k_sem_give(&disp_update);
 }
 
-void pong_ball_received(s8_t x_pos, s8_t y_pos, s8_t x_vel, s8_t y_vel)
+void pong_ball_received(int8_t x_pos, int8_t y_pos, int8_t x_vel, int8_t y_vel)
 {
 	printk("ball_received(%d, %d, %d, %d)\n", x_pos, y_pos, x_vel, y_vel);
 
@@ -388,29 +389,34 @@ void pong_ball_received(s8_t x_pos, s8_t y_pos, s8_t x_vel, s8_t y_vel)
 	ball_vel.x = x_vel;
 	ball_vel.y = y_vel;
 
-	k_delayed_work_submit(&refresh, K_NO_WAIT);
+	k_work_reschedule(&refresh, K_NO_WAIT);
 }
 
-static void button_pressed(struct device *dev, struct gpio_callback *cb,
-			   u32_t pins)
+static void button_pressed(const struct device *dev, struct gpio_callback *cb,
+			   uint32_t pins)
 {
 	/* Filter out spurious presses */
-	if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
+	if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {
 		printk("A pressed\n");
-		if (k_uptime_delta(&a_timestamp) < K_MSEC(100)) {
+		if (k_uptime_delta(&a_timestamp) < 100) {
 			printk("Too quick A presses\n");
 			return;
 		}
 	} else {
 		printk("B pressed\n");
-		if (k_uptime_delta(&b_timestamp) < K_MSEC(100)) {
+		if (k_uptime_delta(&b_timestamp) < 100) {
 			printk("Too quick B presses\n");
 			return;
 		}
 	}
 
 	if (ended && (k_uptime_get() - ended) > RESTART_THRESHOLD) {
-		k_delayed_work_cancel(&refresh);
+		int busy = k_work_cancel_delayable(&refresh);
+
+		if (busy != 0) {
+			printk("WARNING: Data-race (work and event)\n");
+		}
+
 		game_init(state == SINGLE || remote_lost);
 		k_sem_give(&disp_update);
 		return;
@@ -423,7 +429,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 		return;
 	}
 
-	if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
+	if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {
 		if (select) {
 			pong_select_change();
 			return;
@@ -472,7 +478,7 @@ void pong_conn_ready(bool initiator)
 void pong_remote_disconnected(void)
 {
 	state = INIT;
-	k_delayed_work_submit(&refresh, K_SECONDS(1));
+	k_work_reschedule(&refresh, K_SECONDS(1));
 }
 
 void pong_remote_lost(void)
@@ -484,24 +490,24 @@ void pong_remote_lost(void)
 static void configure_buttons(void)
 {
 	static struct gpio_callback button_cb_data;
-	struct device *gpio;
+	const struct device *gpio;
 
-	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
 
-	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
-	gpio_pin_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
-			   DT_ALIAS_SW1_GPIOS_FLAGS | GPIO_INPUT);
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+			   DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios) | GPIO_INPUT);
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
+			   DT_GPIO_FLAGS(DT_ALIAS(sw1), gpios) | GPIO_INPUT);
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	gpio_init_callback(&button_cb_data, button_pressed,
-			   BIT(DT_ALIAS_SW0_GPIOS_PIN) |
-			   BIT(DT_ALIAS_SW1_GPIOS_PIN));
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)) |
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw1), gpios)));
 
 	gpio_add_callback(gpio, &button_cb_data);
 }
@@ -512,9 +518,9 @@ void main(void)
 
 	configure_buttons();
 
-	k_delayed_work_init(&refresh, game_refresh);
+	k_work_init_delayable(&refresh, game_refresh);
 
-	pwm = device_get_binding(DT_INST_0_NORDIC_NRF_SW_PWM_LABEL);
+	pwm = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_sw_pwm)));
 
 	ble_init();
 
@@ -539,6 +545,6 @@ void main(void)
 		}
 
 		mb_display_image(disp, MB_DISPLAY_MODE_SINGLE,
-				 K_FOREVER, &img, 1);
+				 SYS_FOREVER_MS, &img, 1);
 	}
 }

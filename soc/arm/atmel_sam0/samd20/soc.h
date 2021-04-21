@@ -13,6 +13,9 @@
 
 #include <zephyr/types.h>
 
+/* Add include for DTS generated information */
+#include <devicetree.h>
+
 #if defined(CONFIG_SOC_PART_NUMBER_SAMD20E14)
 #include <samd20e14.h>
 #elif defined(CONFIG_SOC_PART_NUMBER_SAMD20E15)
@@ -53,8 +56,11 @@
 
 #endif /* _ASMLANGUAGE */
 
+#include "../common/atmel_sam0_dt.h"
+
 /** Processor Clock (HCLK) Frequency */
-#define SOC_ATMEL_SAM0_HCLK_FREQ_HZ DT_ARM_CORTEX_M0PLUS_0_CLOCK_FREQUENCY
+#define SOC_ATMEL_SAM0_HCLK_FREQ_HZ ATMEL_SAM0_DT_CPU_CLK_FREQ_HZ
+
 /** Master Clock (MCK) Frequency */
 #define SOC_ATMEL_SAM0_MCK_FREQ_HZ SOC_ATMEL_SAM0_HCLK_FREQ_HZ
 #define SOC_ATMEL_SAM0_XOSC32K_FREQ_HZ 32768

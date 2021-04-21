@@ -221,6 +221,11 @@ void zephyr_app_main(void);
 #define stat		zap_stat
 #define mkdir		zap_mkdir
 
+/* eventfd */
+#define eventfd		zap_eventfd
+#define eventfd_read	zap_eventfd_read
+#define eventfd_write	zap_eventfd_write
+
 #endif /* CONFIG_POSIX_API */
 
 #endif /* ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_ */
