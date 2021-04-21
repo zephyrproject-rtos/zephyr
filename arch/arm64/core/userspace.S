@@ -115,25 +115,10 @@ valid_syscall_id:
 	ldr	x9, =_k_syscall_table
 	ldr	x9, [x9, x8, lsl #3]
 
-	/* Recover the privileged stack */
-	get_cpu	x10
-	ldr	x10, [x10, #___cpu_t_current_OFFSET]
-	ldr     x10, [x10, #_thread_offset_to_priv_stack_start]
-	add	x10, x10, #CONFIG_PRIVILEGED_STACK_SIZE
-
-	/* Save the original SP on the privileged stack */
-	mov	x11, sp
-	mov	sp, x10
-	str	x11,  [sp, #-16]!
-
 	/* Jump into the syscall */
 	msr	daifclr, #(DAIFSET_IRQ_BIT)
 	blr	x9
 	msr	daifset, #(DAIFSET_IRQ_BIT)
-
-	/* Restore the original SP containing the ESF */
-	ldr	x11, [sp], #16
-	mov	sp, x11
 
 	/* Save the return value into the ESF */
 	str	x0, [sp, ___esf_t_x0_x1_OFFSET]
@@ -151,5 +136,18 @@ valid_syscall_id:
 
 GTEXT(z_arm64_userspace_enter)
 SECTION_FUNC(TEXT, z_arm64_userspace_enter)
+	/*
+	 * When a kernel thread is moved to user mode it doesn't have any
+	 * SP_EL0 set yet. We set it here for the first time pointing to the
+	 * beginning of the user accessible part of the stack (the top).
+	 */
+	msr	sp_el0, x1
+
+	/*
+	 * Set SP_EL1 to point at the end of the ESF. Since we have relocated
+	 * the ESF at the beginning of the privileged stack area, when the ESF
+	 * is popped out by z_arm64_exit_exc() the SP_EL1 will be at the right
+	 * location for when the next exception will come.
+	 */
 	mov	sp, x0
 	b	z_arm64_exit_exc

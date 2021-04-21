@@ -25,10 +25,6 @@ _ASM_FILE_PROLOGUE
  */
 
 .macro z_arm64_enter_exc xreg0, xreg1
-
-	/* Switch to SP_EL0 */
-	msr	spsel, #0
-
 	/*
 	 * Two things can happen to the remaining registers:
 	 *

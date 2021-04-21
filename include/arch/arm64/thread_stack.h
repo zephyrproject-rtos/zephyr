@@ -18,6 +18,8 @@
 #endif
 
 /*
+ * [ see also comments in arch/arm64/core/thread.c ]
+ *
  * High memory addresses
  *
  * +-------------------+ <- thread.stack_info.start + thread.stack_info.size
@@ -31,7 +33,7 @@
  * |   Unused stack    |
  * |                   |
  * +-------------------+ <- thread.stack_info.start
- * |  Reserved memory  | } K_(THREAD|KERNEL)_STACK_RESERVED
+ * | Privileged stack  | } K_(THREAD|KERNEL)_STACK_RESERVED
  * +-------------------+ <- thread.stack_obj
  *
  * Low Memory addresses
