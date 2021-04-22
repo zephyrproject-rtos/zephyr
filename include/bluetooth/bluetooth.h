@@ -614,10 +614,20 @@ enum {
 };
 
 struct bt_le_per_adv_param {
-	/** Minimum Periodic Advertising Interval (N * 1.25 ms) */
+	/**
+	 * @brief Minimum Periodic Advertising Interval (N * 1.25 ms)
+	 *
+	 * Shall be greater or equal to BT_GAP_PER_ADV_MIN_INTERVAL and
+	 * less or equal to interval_max.
+	 */
 	uint16_t interval_min;
 
-	/** Maximum Periodic Advertising Interval (N * 1.25 ms) */
+	/**
+	 * @brief Maximum Periodic Advertising Interval (N * 1.25 ms)
+	 *
+	 * Shall be less or equal to BT_GAP_PER_ADV_MAX_INTERVAL and
+	 * greater or equal to interval_min.
+	 */
 	uint16_t interval_max;
 
 	/** Bit-field of periodic advertising options */
