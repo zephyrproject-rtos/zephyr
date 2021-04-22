@@ -23,8 +23,8 @@ enum device_pm_state {
 };
 
 /* Device PM request type */
-#define PM_DEVICE_SYNC			(0 << 0)
-#define PM_DEVICE_ASYNC			(1 << 0)
+#define PM_DEVICE_SYNC          BIT(0)
+#define PM_DEVICE_ASYNC         BIT(1)
 
 static void device_pm_callback(const struct device *dev,
 			       int retval, uint32_t *state, void *arg)
