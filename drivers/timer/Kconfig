@@ -262,6 +262,15 @@ config CC13X2_CC26X2_RTC_TIMER
 	  CC13X2_CC26X2 series Real Time Counter and provides the standard
 	  "system clock driver" interfaces.
 
+config RCAR_CMT_TIMER
+	bool "Renesas RCar cmt timer"
+	default y
+	depends on SOC_SERIES_RCAR_GEN3
+	help
+	  This module implements a kernel device driver for the Renesas RCAR
+	  platform provides the standard "system clock driver" interfaces.
+	  If unchecked, no timer will be used.
+
 config XLNX_PSTTC_TIMER
 	bool "Xilinx PS ttc timer support"
 	default y
