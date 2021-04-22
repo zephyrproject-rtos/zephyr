@@ -23,7 +23,7 @@ import os
 import re
 import sys
 import textwrap
-from typing import Dict, Iterable, List, NoReturn, Optional
+from typing import Any, Dict, Iterable, List, NoReturn, Optional, Tuple
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -277,15 +277,18 @@ class Property:
     # Public interface
     #
 
-    def __init__(self, node, name):
+    def __init__(self, node: Node, name: str):
         if "@" in name:
             node.dt._parse_error("'@' is only allowed in node names")
 
         self.name = name
         self.node = node
         self.value = b""
-        self.labels = []
-        self.offset_labels = []
+        self.labels: List[str] = []
+        self._label_offset_lst: List[Tuple[str, int]] = []
+        # We have to wait to set this until later, when we've got
+        # the entire tree.
+        self.offset_labels: Dict[str, int] = {}
 
         # A list of [offset, label, type] lists (sorted by offset),
         # giving the locations of references within the value. 'type'
@@ -293,9 +296,9 @@ class Property:
         # _MarkerType.PHANDLE, for a phandle reference, or
         # _MarkerType.LABEL, for a label on/within data. Node paths
         # and phandles need to be patched in after parsing.
-        self._markers = []
+        self._markers: List[List] = []
 
-    def to_num(self, signed=False):
+    def to_num(self, signed=False) -> int:
         """
         Returns the value of the property as a number.
 
@@ -316,7 +319,7 @@ class Property:
 
         return int.from_bytes(self.value, "big", signed=signed)
 
-    def to_nums(self, signed=False):
+    def to_nums(self, signed=False) -> List[int]:
         """
         Returns the value of the property as a list of numbers.
 
@@ -338,7 +341,7 @@ class Property:
         return [int.from_bytes(self.value[i:i + 4], "big", signed=signed)
                 for i in range(0, len(self.value), 4)]
 
-    def to_bytes(self):
+    def to_bytes(self) -> bytes:
         """
         Returns the value of the property as a raw 'bytes', like
         Property.value, except with added type checking.
@@ -356,7 +359,7 @@ class Property:
 
         return self.value
 
-    def to_string(self):
+    def to_string(self) -> str:
         """
         Returns the value of the property as a string.
 
@@ -375,13 +378,15 @@ class Property:
                          self))
 
         try:
-            return self.value.decode("utf-8")[:-1]  # Strip null
+            ret = self.value.decode("utf-8")[:-1]  # Strip null
         except UnicodeDecodeError:
-            _err("value of property '{}' ({}) on {} in {} is not valid UTF-8"
+            _err("value of property '{}' ({!r}) on {} in {} is not valid UTF-8"
                  .format(self.name, self.value, self.node.path,
                          self.node.dt.filename))
 
-    def to_strings(self):
+        return ret  # The separate 'return' appeases the type checker.
+
+    def to_strings(self) -> List[str]:
         """
         Returns the value of the property as a list of strings.
 
@@ -399,13 +404,15 @@ class Property:
                          self))
 
         try:
-            return self.value.decode("utf-8").split("\0")[:-1]
+            ret = self.value.decode("utf-8").split("\0")[:-1]
         except UnicodeDecodeError:
-            _err("value of property '{}' ({}) on {} in {} is not valid UTF-8"
+            _err("value of property '{}' ({!r}) on {} in {} is not valid UTF-8"
                  .format(self.name, self.value, self.node.path,
                          self.node.dt.filename))
 
-    def to_node(self):
+        return ret  # The separate 'return' appeases the type checker.
+
+    def to_node(self) -> Node:
         """
         Returns the Node the phandle in the property points to.
 
@@ -422,7 +429,7 @@ class Property:
 
         return self.node.dt.phandle2node[int.from_bytes(self.value, "big")]
 
-    def to_nodes(self):
+    def to_nodes(self) -> List[Node]:
         """
         Returns a list with the Nodes the phandles in the property point to.
 
@@ -450,7 +457,7 @@ class Property:
                                                          "big")]
                 for i in range(0, len(self.value), 4)]
 
-    def to_path(self):
+    def to_path(self) -> Node:
         """
         Returns the Node referenced by the path stored in the property.
 
@@ -471,19 +478,21 @@ class Property:
         try:
             path = self.value.decode("utf-8")[:-1]
         except UnicodeDecodeError:
-            _err("value of property '{}' ({}) on {} in {} is not valid UTF-8"
+            _err("value of property '{}' ({!r}) on {} in {} is not valid UTF-8"
                  .format(self.name, self.value, self.node.path,
                          self.node.dt.filename))
 
         try:
-            return self.node.dt.get_node(path)
+            ret = self.node.dt.get_node(path)
         except DTError:
             _err("property '{}' on {} in {} points to the non-existent node "
                  "\"{}\"".format(self.name, self.node.path,
                                  self.node.dt.filename, path))
 
+        return ret  # The separate 'return' appeases the type checker.
+
     @property
-    def type(self):
+    def type(self) -> int:
         """
         See the class docstring.
         """
@@ -593,7 +602,7 @@ class Property:
     # Internal functions
     #
 
-    def _add_marker(self, marker_type, data=None):
+    def _add_marker(self, marker_type: _MarkerType, data: Any = None):
         # Helper for registering markers in the value that are processed after
         # parsing. See _fixup_props(). 'marker_type' identifies the type of
         # marker, and 'data' has any optional data associated with the marker.
@@ -1572,10 +1581,10 @@ class DT:
 
                     if marker_type is _MarkerType.LABEL:
                         # This is a temporary format so that we can catch
-                        # duplicate references. prop.offset_labels is changed
+                        # duplicate references. prop._label_offset_lst is changed
                         # to a dictionary that maps labels to offsets in
                         # _register_labels().
-                        _append_no_dup(prop.offset_labels, (ref, len(res)))
+                        _append_no_dup(prop._label_offset_lst, (ref, len(res)))
                     elif marker_type in (_MarkerType.PATH, _MarkerType.PHANDLE):
                         # Path or phandle reference
                         try:
@@ -1652,13 +1661,12 @@ class DT:
                     label2things[label].add(prop)
                     self.label2prop[label] = prop
 
-                for label, offset in prop.offset_labels:
+                for label, offset in prop._label_offset_lst:
                     label2things[label].add((prop, offset))
                     self.label2prop_offset[label] = (prop, offset)
 
                 # See _fixup_props()
-                prop.offset_labels = {label: offset for label, offset in
-                                      prop.offset_labels}
+                prop.offset_labels = dict(prop._label_offset_lst)
 
         for label, things in label2things.items():
             if len(things) > 1:
