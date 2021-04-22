@@ -90,6 +90,7 @@ void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
 static int gpio_npcx_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
+	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
 	struct gpio_reg *const inst = HAL_INSTANCE(dev);
 	uint32_t mask = BIT(pin);
 
@@ -111,6 +112,15 @@ static int gpio_npcx_config(const struct device *dev,
 	 */
 	if ((flags & GPIO_OUTPUT) == 0)
 		inst->PDIR &= ~mask;
+
+	/*
+	 * If this IO pad is configured for low-voltage power supply, the GPIO
+	 * driver must set the related PORTx_OUT_TYPE bit to 1 (i.e. select io
+	 * type to open-drain) also.
+	 */
+	if (npcx_lvol_is_enabled(config->port, pin)) {
+		flags |= GPIO_OPEN_DRAIN;
+	}
 
 	/* Select open drain 0:push-pull 1:open-drain */
 	if ((flags & GPIO_OPEN_DRAIN) != 0)
