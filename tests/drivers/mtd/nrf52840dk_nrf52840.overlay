@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2021 Laczen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+
+&flash0 {
+        partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+                boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x0000C000>;
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				bootsub_partition: partition@4000 {
+					label = "mcu-sub";
+					reg = <0x000004000 0x00004000>;
+				};
+			};
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x000069000>;
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				slot0sub_partition: partition@4000 {
+					label = "image-0-sub";
+					reg = <0x000004000 0x00004000>;
+				};
+			};
+		};
+        };
+};

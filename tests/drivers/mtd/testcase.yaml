@@ -1,0 +1,4 @@
+tests:
+  drivers.flash.mtd_part:
+    platform_allow: native_posix nrf52840dk_nrf52840
+    tags: mtd_part

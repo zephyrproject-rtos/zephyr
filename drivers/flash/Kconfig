@@ -58,6 +58,16 @@ config FLASH_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
+config MTD_SUPPORT
+	bool "API for working with memory technology devices (MTD)"
+	depends on FLASH_PAGE_LAYOUT
+	help
+	  This option enables support for working with memory technology devices
+	  (flash devices) that use read/write/erase methods. Memory technology
+	  devices can be paritioned using devicetree and access is provided to
+	  both master devices (the complete flash device), partitions and
+	  subpartitions.
+
 source "drivers/flash/Kconfig.at45"
 
 source "drivers/flash/Kconfig.esp32"

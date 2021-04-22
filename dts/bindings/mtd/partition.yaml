@@ -28,3 +28,12 @@ child-binding:
           type: array
           description: register space
           required: true
+       erase-block-size:
+          type: int
+          required: false
+          description: Erase block size used for erasing the partition, should
+                       be multiple of the flash erase block size at the location
+                       of the partition. When a partition is used that spans
+                       regions with different erase block sizes the value should
+                       be a multiple of the largest block size. If unspecified
+                       the partition size is used as erase block size.
