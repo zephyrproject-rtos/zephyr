@@ -1369,8 +1369,8 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 		return -EINVAL;
 	}
 
-	if (param->interval_min < 0x0006 ||
-	    param->interval_max > 0xFFFF ||
+	if (param->interval_min < BT_GAP_PER_ADV_MIN_INTERVAL ||
+	    param->interval_max > BT_GAP_PER_ADV_MAX_INTERVAL ||
 	    param->interval_min > param->interval_max) {
 		return -EINVAL;
 	}
