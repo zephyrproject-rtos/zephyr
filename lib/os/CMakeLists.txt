@@ -22,6 +22,7 @@ zephyr_sources(
   timeutil.c
   heap.c
   heap-validate.c
+  bitarray.c
   )
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
