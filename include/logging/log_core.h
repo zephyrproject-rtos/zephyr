@@ -141,33 +141,44 @@ extern "C" {
 	  (0)\
 	)
 
+/* Set of defines that are set to 1 if function name prefix is enabled for given level. */
+#define Z_LOG_FUNC_PREFIX_1U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_ERR, (1), (0))
+#define Z_LOG_FUNC_PREFIX_2U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_WRN, (1), (0))
+#define Z_LOG_FUNC_PREFIX_3U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_INF, (1), (0))
+#define Z_LOG_FUNC_PREFIX_4U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_DBG, (1), (0))
 
 /**
  * @brief Macro for optional injection of function name as first argument of
  *	  formatted string. COND_CODE_0() macro is used to handle no arguments
  *	  case.
  *
- *	  The purpose of this macro is to prefix string literal with format
- *	  specifier for function name and inject function name as first
- *	  argument. In order to handle string with no arguments _LOG_Z_EVAL is
- *	  used.
+ * The purpose of this macro is to prefix string literal with format specifier
+ * for function name and inject function name as first argument. In order to
+ * handle string with no arguments _LOG_Z_EVAL is used.
  */
-#define Z_LOG_STR2(...) "%s: " GET_ARG_N(1, __VA_ARGS__), \
-				(const char *)__func__\
+#define Z_LOG_STR_WITH_PREFIX2(...) \
+	"%s: " GET_ARG_N(1, __VA_ARGS__), (const char *)__func__\
 		COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
 			    (),\
 			    (, GET_ARGS_LESS_N(1, __VA_ARGS__))\
 			   )
+
+/* Macro handles case when no format string is provided: e.g. LOG_DBG().
+ * Handling of format string is deferred to the next level macro.
+ */
+#define Z_LOG_STR_WITH_PREFIX(...) \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
+		("%s", (const char *)__func__), \
+		(Z_LOG_STR_WITH_PREFIX2(__VA_ARGS__)))
 
 /**
  * @brief Handle optional injection of function name as the first argument.
  *
  * Additionally, macro is handling the empty message case.
  */
-#define Z_LOG_STR(...) \
-	COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
-		("%s", (const char *)__func__), \
-		(Z_LOG_STR2(__VA_ARGS__)))
+#define Z_LOG_STR(_level, ...) \
+	COND_CODE_1(UTIL_CAT(Z_LOG_FUNC_PREFIX_##_level), \
+		(Z_LOG_STR_WITH_PREFIX(__VA_ARGS__)), (__VA_ARGS__))
 
 /******************************************************************************/
 /****************** Internal macros for log frontend **************************/
@@ -212,12 +223,8 @@ extern "C" {
 		.domain_id = CONFIG_LOG_DOMAIN_ID, \
 		.source_id = src_id \
 	}; \
-	if (BIT(_level) & LOG_FUNCTION_PREFIX_MASK) {\
-		Z_LOG_INTERNAL2(is_user_context, src_level, \
-				Z_LOG_STR(__VA_ARGS__)); \
-	} else { \
-		Z_LOG_INTERNAL2(is_user_context, src_level, __VA_ARGS__); \
-	} \
+	Z_LOG_INTERNAL2(is_user_context, src_level, \
+			Z_LOG_STR(_level, __VA_ARGS__)); \
 } while (0)
 
 #define _LOG_INTERNAL_0(_src_level, _str) \
@@ -312,7 +319,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
 		int _mode; \
-		Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), _mode, \
+		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 				  CONFIG_LOG_DOMAIN_ID, _source, _level, NULL,\
 				  0, __VA_ARGS__); \
 	} else { \
@@ -360,7 +367,7 @@ static inline char z_log_minimal_level_to_char(int level)
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
 		int mode; \
-		Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode, \
+		Z_LOG_MSG2_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
 				  CONFIG_LOG_DOMAIN_ID, _source, _level, \
 				  _data, _len, \
 				COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), \
