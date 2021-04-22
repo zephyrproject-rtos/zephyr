@@ -318,9 +318,15 @@ static int cmd_bass_client_add_src(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	/* TODO: Support multiple subgroups */
 	if (argc > 6) {
-		subgroup.bis_sync = strtoul(argv[6], NULL, 0);
+		param.pa_interval = strtol(argv[6], NULL, 0);
+	} else {
+		param.pa_interval = BASS_PA_INTERVAL_UNKNOWN;
+	}
+
+	/* TODO: Support multiple subgroups */
+	if (argc > 7) {
+		subgroup.bis_sync = strtoul(argv[7], NULL, 0);
 		if (subgroup.bis_sync > UINT32_MAX) {
 			shell_error(shell, "bis_sync shall be 0x00000000 "
 				    "to 0xFFFFFFFF");
@@ -328,8 +334,8 @@ static int cmd_bass_client_add_src(const struct shell *shell, size_t argc,
 		}
 	}
 
-	if (argc > 7) {
-		subgroup.metadata_len = hex2bin(argv[7], strlen(argv[7]),
+	if (argc > 8) {
+		subgroup.metadata_len = hex2bin(argv[8], strlen(argv[8]),
 						subgroup.metadata, sizeof(subgroup.metadata));
 
 		if (!subgroup.metadata_len) {
@@ -367,6 +373,12 @@ static int cmd_bass_client_mod_src(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
+	if (argc > 3) {
+		param.pa_interval = strtol(argv[3], NULL, 0);
+	} else {
+		param.pa_interval = BASS_PA_INTERVAL_UNKNOWN;
+	}
+
 	/* TODO: Support multiple subgroups */
 	if (argc > 3) {
 		subgroup.bis_sync = strtoul(argv[3], NULL, 0);
@@ -377,8 +389,8 @@ static int cmd_bass_client_mod_src(const struct shell *shell, size_t argc,
 		}
 	}
 
-	if (argc > 4) {
-		subgroup.metadata_len = hex2bin(argv[4], strlen(argv[4]),
+	if (argc > 5) {
+		subgroup.metadata_len = hex2bin(argv[5], strlen(argv[5]),
 						subgroup.metadata,
 						sizeof(subgroup.metadata));
 
@@ -489,10 +501,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bass_client_cmds,
 	SHELL_CMD_ARG(add_src, NULL,
 		      "Add a source <address: XX:XX:XX:XX:XX:XX> "
 		      "<type: public/random> <adv_sid> <sync_pa> "
-		      "<broadcast_id> [<sync_bis>] [<metadata>]",
-		      cmd_bass_client_add_src, 6, 2),
+		      "<broadcast_id> [<pa_interval>] [<sync_bis>] "
+		      "[<metadata>]",
+		      cmd_bass_client_add_src, 6, 3),
 	SHELL_CMD_ARG(mod_src, NULL,
-		      "Set sync <src_id> <sync_pa> [<sync_bis>] [<metadata>]",
+		      "Set sync <src_id> <sync_pa> [<pa_interval>] "
+		      "[<sync_bis>] [<metadata>]",
 		      cmd_bass_client_mod_src, 3, 2),
 	SHELL_CMD_ARG(broadcast_code, NULL,
 		      "Send a space separated broadcast code of up to 16 bytes "
