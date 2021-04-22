@@ -1454,6 +1454,10 @@ struct bt_gatt_subscribe_params;
 /** @typedef bt_gatt_notify_func_t
  *  @brief Notification callback function
  *
+ *  In the case of an empty notification, the @p data pointer will be non-NULL
+ *  while the @p length will be 0, which is due to the special case where
+ *  a @p data NULL pointer means unsubscribed.
+ *
  *  @param conn Connection object. May be NULL, indicating that the peer is
  *              being unpaired
  *  @param params Subscription parameters.
