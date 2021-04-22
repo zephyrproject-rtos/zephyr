@@ -934,7 +934,7 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 				    net_pkt_timestamp(pkt)->nanosecond,
 				    end_tick);
 
-	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
+	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)) {
 		uint32_t val, prev = net_pkt_timestamp(pkt)->nanosecond;
 		int i;
 
