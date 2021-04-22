@@ -2097,6 +2097,13 @@ static int cmd_conn_update(const struct shell *shell, size_t argc, char *argv[])
 	struct bt_le_conn_param param;
 	int err;
 
+	if (default_conn == NULL) {
+		shell_error(shell,
+				"%s: at least, one connection is required",
+				shell->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
+
 	param.interval_min = strtoul(argv[1], NULL, 16);
 	param.interval_max = strtoul(argv[2], NULL, 16);
 	param.latency = strtoul(argv[3], NULL, 16);
@@ -2138,6 +2145,13 @@ static int cmd_conn_data_len_update(const struct shell *shell, size_t argc,
 {
 	struct bt_conn_le_data_len_param param;
 	int err;
+
+	if (default_conn == NULL) {
+		shell_error(shell,
+				"%s: at least, one connection is required",
+				shell->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
 
 	param.tx_max_len = strtoul(argv[1], NULL, 10);
 
