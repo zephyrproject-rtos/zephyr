@@ -192,12 +192,14 @@ static void gpio_litex_irq_handler(const struct device *dev)
 
 	uint8_t int_status =
 		litex_read(gpio_config->ev_pending_addr, gpio_config->reg_size);
+	uint8_t ev_enabled =
+		litex_read(gpio_config->ev_enable_addr, gpio_config->reg_size);
 
 	/* clear events */
 	litex_write(gpio_config->ev_pending_addr, gpio_config->reg_size,
 			int_status);
 
-	gpio_fire_callbacks(&data->cb, dev, int_status);
+	gpio_fire_callbacks(&data->cb, dev, int_status & ev_enabled);
 }
 
 static int gpio_litex_manage_callback(const struct device *dev,
@@ -224,6 +226,14 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 				gpio_config->reg_size);
 		litex_write(gpio_config->ev_enable_addr, gpio_config->reg_size,
 			    ev_enabled | BIT(pin));
+		return 0;
+	}
+
+	if (mode == GPIO_INT_DISABLE) {
+		uint8_t ev_enabled = litex_read(gpio_config->ev_enable_addr,
+				gpio_config->reg_size);
+		litex_write(gpio_config->ev_enable_addr, gpio_config->reg_size,
+			    ev_enabled & ~BIT(pin));
 		return 0;
 	}
 
