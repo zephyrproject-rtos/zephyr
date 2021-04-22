@@ -263,23 +263,21 @@
 			compatible = "ite,it8xxx2-watchdog";
 			reg = <0x00f01f00 0x0062>;
 			label = "TWD_0";
-			interrupts = <30 IRQ_TYPE_EDGE_RISING>;
+			interrupts = <IT8XXX2_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING   /* Warning timer */
+				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
 			interrupt-parent = <&intc>;
 		};
 
 		timer: timer@f01f10 {
 			compatible = "ite,it8xxx2-timer";
-			reg = <0x00f01f00 0x0062>;
-			label = "sys_clock";
-			interrupts = <0 IRQ_TYPE_NONE
-				30 IRQ_TYPE_EDGE_RISING
-				58 IRQ_TYPE_EDGE_RISING
-				155 IRQ_TYPE_EDGE_FALLING
-				156 IRQ_TYPE_EDGE_FALLING
-				157 IRQ_TYPE_EDGE_FALLING
-				158 IRQ_TYPE_EDGE_FALLING
-				159 IRQ_TYPE_EDGE_FALLING
-				80 IRQ_TYPE_EDGE_RISING>;
+			reg = <0x00f01f10 0x0052>;
+			label = "TIMER";
+			interrupts = <IT8XXX2_IRQ_TIMER3 IRQ_TYPE_EDGE_RISING   /* Event timer */
+				      IT8XXX2_IRQ_TIMER4 IRQ_TYPE_EDGE_RISING   /* Free run timer */
+				      IT8XXX2_IRQ_TIMER5 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_TIMER6 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_TIMER7 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_TIMER8 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 		};
 
