@@ -23,6 +23,7 @@ import os
 import re
 import sys
 import textwrap
+from typing import NoReturn
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -1820,7 +1821,7 @@ def _root_and_path_to_node(cur, path, fullpath):
 
     return cur
 
-def _err(msg):
+def _err(msg) -> NoReturn:
     raise DTError(msg)
 
 _escape_table = str.maketrans({
