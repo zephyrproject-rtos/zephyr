@@ -5468,8 +5468,6 @@ static uint8_t cis_req_recv(struct ll_conn *conn, memq_link_t *link,
 	conn->llcp_cis.framed = req->framed;
 	conn->llcp_cis.c_max_sdu = sys_le16_to_cpu(req->c_max_sdu);
 	conn->llcp_cis.p_max_sdu = sys_le16_to_cpu(req->p_max_sdu);
-	conn->llcp_cis.c_sdu_interval = sys_get_le24(req->c_sdu_interval);
-	conn->llcp_cis.p_sdu_interval = sys_get_le24(req->p_sdu_interval);
 	conn->llcp_cis.cis_offset_min = sys_get_le24(req->cis_offset_min);
 	conn->llcp_cis.cis_offset_max = sys_get_le24(req->cis_offset_max);
 	conn->llcp_cis.conn_event_count =

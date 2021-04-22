@@ -331,8 +331,6 @@ struct ll_conn {
 		uint32_t c_max_sdu:12;
 		uint32_t p_max_sdu:12;
 		uint32_t framed:1;
-		uint32_t c_sdu_interval;
-		uint32_t p_sdu_interval;
 		uint32_t cis_offset_min;
 		uint32_t cis_offset_max;
 		uint16_t conn_event_count;
