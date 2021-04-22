@@ -361,27 +361,38 @@ int edac_ibecc_init(const struct device *dev)
 {
 	const pcie_bdf_t bdf = PCI_HOST_BRIDGE;
 	struct ibecc_data *data = dev->data;
-	uint32_t tolud;
 	uint64_t touud, tom, mchbar;
+	uint32_t tolud, conf_data;
 
 	LOG_INF("EDAC IBECC initialization");
 
-	if (!pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU5)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU6)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU7)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU8)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU9)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU10)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU11)) &&
-	    !pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
-				     PCI_DEVICE_ID_SKU12))) {
+	conf_data = pcie_conf_read(bdf, PCIE_CONF_ID);
+	switch (conf_data) {
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU5):
+		LOG_INF("SKU5");
+		break;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU6):
+		LOG_INF("SKU6");
+		break;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU7):
+		LOG_INF("SKU7");
+		break;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU8):
+		LOG_INF("SKU8");
+		break;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU9):
+		LOG_INF("SKU9");
+		break;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU10):
+		LOG_INF("SKU10");
+		break;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU11):
+		LOG_INF("SKU11");
+		break;
+	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU12):
+		LOG_INF("SKU12");
+		break;
+	default:
 		LOG_ERR("PCI Probe failed");
 		return -ENODEV;
 	}
