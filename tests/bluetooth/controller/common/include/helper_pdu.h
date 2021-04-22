@@ -24,6 +24,10 @@ void helper_pdu_encode_start_enc_req(struct pdu_data *pdu, void *param);
 
 void helper_pdu_encode_start_enc_rsp(struct pdu_data *pdu, void *param);
 
+void helper_pdu_encode_pause_enc_req(struct pdu_data *pdu, void *param);
+
+void helper_pdu_encode_pause_enc_rsp(struct pdu_data *pdu, void *param);
+
 void helper_pdu_encode_reject_ext_ind(struct pdu_data *pdu, void *param);
 
 void helper_pdu_encode_phy_req(struct pdu_data *pdu, void *param);
@@ -66,6 +70,10 @@ void helper_pdu_verify_start_enc_req(const char *file, uint32_t line, struct pdu
 
 void helper_pdu_verify_start_enc_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
+void helper_pdu_verify_pause_enc_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+
+void helper_pdu_verify_pause_enc_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+
 void helper_pdu_verify_reject_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
 void helper_pdu_verify_reject_ext_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
@@ -104,6 +112,8 @@ typedef enum {
 	LL_ENC_RSP,
 	LL_START_ENC_REQ,
 	LL_START_ENC_RSP,
+	LL_PAUSE_ENC_REQ,
+	LL_PAUSE_ENC_RSP,
 	LL_PHY_REQ,
 	LL_PHY_RSP,
 	LL_PHY_UPDATE_IND,
