@@ -131,7 +131,10 @@ config OPENTHREAD_THREAD_PRIORITY
 config OPENTHREAD_THREAD_STACK_SIZE
 	int "OpenThread thread stack size"
 	default 6144 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	default 6240 if (OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER) && MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
+	default 3168 if MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
 	default 3072
+
 
 config OPENTHREAD_PKT_LIST_SIZE
 	int "List size for IPv6 packet buffering"
@@ -139,6 +142,7 @@ config OPENTHREAD_PKT_LIST_SIZE
 
 config OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
 	int "OpenThread radio transmit workqueue stack size"
+	default 608 if MPU_STACK_GUARD && FPU_SHARING && CPU_CORTEX_M
 	default 512
 
 endmenu # "Zephyr optimizations"
