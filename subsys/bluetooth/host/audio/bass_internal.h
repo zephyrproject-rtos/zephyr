@@ -48,7 +48,7 @@ struct bass_cp_subgroup {
 	uint32_t bis_sync;
 	uint8_t metadata_len;
 	uint8_t metadata[0];
-};
+} __packed;
 
 struct bass_cp_add_src_t {
 	uint8_t opcode;

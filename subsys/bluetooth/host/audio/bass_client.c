@@ -631,7 +631,7 @@ int bt_bass_client_add_src(struct bt_conn *conn, struct bt_bass_add_src_param *p
 
 	cp->num_subgroups = param->num_subgroups;
 	for (int i = 0; i < param->num_subgroups; i++) {
-		struct bt_bass_subgroup *subgroup;
+		struct bass_cp_subgroup *subgroup;
 		const size_t subgroup_size = sizeof(subgroup->bis_sync) +
 						sizeof(subgroup->metadata_len) +
 						param->subgroups[i].metadata_len;
@@ -698,7 +698,7 @@ int bt_bass_client_mod_src(struct bt_conn *conn, struct bt_bass_mod_src_param *p
 
 	cp->num_subgroups = param->num_subgroups;
 	for (int i = 0; i < param->num_subgroups; i++) {
-		struct bt_bass_subgroup *subgroup;
+		struct bass_cp_subgroup *subgroup;
 		const size_t subgroup_size = sizeof(subgroup->bis_sync) +
 						sizeof(subgroup->metadata_len) +
 						param->subgroups[i].metadata_len;
@@ -724,7 +724,6 @@ int bt_bass_client_mod_src(struct bt_conn *conn, struct bt_bass_mod_src_param *p
 		} else {
 			subgroup->metadata_len = 0;
 		}
-
 	}
 
 	return bt_bass_client_common_cp(conn, &cp_buf);
