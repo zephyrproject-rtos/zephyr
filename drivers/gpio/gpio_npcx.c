@@ -58,6 +58,34 @@ const struct device *npcx_get_gpio_dev(int port)
 	return gpio_devs[port];
 }
 
+void npcx_gpio_enable_io_pads(const struct device *dev, int pin)
+{
+	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct npcx_wui *io_wui = &config->wui_maps[pin];
+
+	/*
+	 * If this pin is configurred as a GPIO interrupt source, do not
+	 * implement bypass. Or ec cannot wake up via this event.
+	 */
+	if (pin < NPCX_GPIO_PORT_PIN_NUM && !npcx_miwu_irq_get_state(io_wui)) {
+		npcx_miwu_io_enable(io_wui);
+	}
+}
+
+void npcx_gpio_disable_io_pads(const struct device *dev, int pin)
+{
+	const struct gpio_npcx_config *const config = DRV_CONFIG(dev);
+	const struct npcx_wui *io_wui = &config->wui_maps[pin];
+
+	/*
+	 * If this pin is configurred as a GPIO interrupt source, do not
+	 * implement bypass. Or ec cannot wake up via this event.
+	 */
+	if (pin < NPCX_GPIO_PORT_PIN_NUM && !npcx_miwu_irq_get_state(io_wui)) {
+		npcx_miwu_io_disable(io_wui);
+	}
+}
+
 /* GPIO api functions */
 static int gpio_npcx_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)

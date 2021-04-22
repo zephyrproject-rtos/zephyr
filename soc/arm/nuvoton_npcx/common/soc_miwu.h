@@ -131,6 +131,20 @@ void npcx_miwu_irq_enable(const struct npcx_wui *wui);
 void npcx_miwu_irq_disable(const struct npcx_wui *wui);
 
 /**
+ * @brief Connect io to the wake-up input source
+ *
+ * @param wui A pointer on wake-up input source
+ */
+void npcx_miwu_io_enable(const struct npcx_wui *wui);
+
+/**
+ * @brief Disconnect io to the wake-up input source
+ *
+ * @param wui A pointer on wake-up input source
+ */
+void npcx_miwu_io_disable(const struct npcx_wui *wui);
+
+/**
  * @brief Get interrupt state of the wake-up input source
  *
  * @param wui A pointer on wake-up input source

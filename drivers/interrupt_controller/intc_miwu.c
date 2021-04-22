@@ -170,6 +170,20 @@ void npcx_miwu_irq_disable(const struct npcx_wui *wui)
 	NPCX_WKEN(base, wui->group) &= ~BIT(wui->bit);
 }
 
+void npcx_miwu_io_enable(const struct npcx_wui *wui)
+{
+	const uint32_t base = DRV_CONFIG(miwu_devs[wui->table])->base;
+
+	NPCX_WKINEN(base, wui->group) |= BIT(wui->bit);
+}
+
+void npcx_miwu_io_disable(const struct npcx_wui *wui)
+{
+	const uint32_t base = DRV_CONFIG(miwu_devs[wui->table])->base;
+
+	NPCX_WKINEN(base, wui->group) &= ~BIT(wui->bit);
+}
+
 bool npcx_miwu_irq_get_state(const struct npcx_wui *wui)
 {
 	const uint32_t base = DRV_CONFIG(miwu_devs[wui->table])->base;
