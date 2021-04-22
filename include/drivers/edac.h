@@ -72,7 +72,7 @@ __subsystem struct edac_driver_api {
  * @param dev Pointer to the device structure
  * @param value First injection parameter
  *
- * @retval -ENOTSUP if not supported
+ * @retval -ENOSYS if the optional interface is not implemented
  * @retval 0 on success, other error code otherwise
  */
 static inline int edac_inject_set_param1(const struct device *dev,
@@ -82,7 +82,7 @@ static inline int edac_inject_set_param1(const struct device *dev,
 		(const struct edac_driver_api *)dev->api;
 
 	if (api->inject_set_param1 == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->inject_set_param1(dev, value);
@@ -96,7 +96,7 @@ static inline int edac_inject_set_param1(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param value Pointer to the first injection parameter
  *
- * @retval -ENOTSUP if not supported
+ * @retval -ENOSYS if the optional interface is not implemented
  * @retval 0 on success, error code otherwise
  */
 static inline int edac_inject_get_param1(const struct device *dev,
@@ -106,7 +106,7 @@ static inline int edac_inject_get_param1(const struct device *dev,
 		(const struct edac_driver_api *)dev->api;
 
 	if (api->inject_get_param1 == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->inject_get_param1(dev, value);
@@ -121,7 +121,7 @@ static inline int edac_inject_get_param1(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param value Second injection parameter
  *
- * @retval -ENOTSUP if not supported
+ * @retval -ENOSYS if the optional interface is not implemented
  * @retval 0 on success, error code otherwise
  */
 static inline int edac_inject_set_param2(const struct device *dev,
@@ -131,7 +131,7 @@ static inline int edac_inject_set_param2(const struct device *dev,
 		(const struct edac_driver_api *)dev->api;
 
 	if (api->inject_set_param2 == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->inject_set_param2(dev, value);
@@ -143,7 +143,7 @@ static inline int edac_inject_set_param2(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param value Pointer to the second injection parameter
  *
- * @retval -ENOTSUP if not supported
+ * @retval -ENOSYS if the optional interface is not implemented
  * @retval 0 on success, error code otherwise
  */
 static inline uint64_t edac_inject_get_param2(const struct device *dev,
@@ -153,7 +153,7 @@ static inline uint64_t edac_inject_get_param2(const struct device *dev,
 		(const struct edac_driver_api *)dev->api;
 
 	if (api->inject_get_param2 == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->inject_get_param2(dev, value);
@@ -167,7 +167,7 @@ static inline uint64_t edac_inject_get_param2(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param error_type Error type value
  *
- * @retval -ENOTSUP if not supported
+ * @retval -ENOSYS if the optional interface is not implemented
  * @retval 0 on success, error code otherwise
  */
 static inline int edac_inject_set_error_type(const struct device *dev,
@@ -177,7 +177,7 @@ static inline int edac_inject_set_error_type(const struct device *dev,
 		(const struct edac_driver_api *)dev->api;
 
 	if (api->inject_set_error_type == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->inject_set_error_type(dev, error_type);
@@ -191,7 +191,7 @@ static inline int edac_inject_set_error_type(const struct device *dev,
  * @param dev Pointer to the device structure
  * @param error_type Pointer to error type value
  *
- * @retval -ENOTSUP if not supported
+ * @retval -ENOSYS if the optional interface is not implemented
  * @retval 0 on success, error code otherwise
  */
 static inline uint32_t edac_inject_get_error_type(const struct device *dev,
@@ -201,7 +201,7 @@ static inline uint32_t edac_inject_get_error_type(const struct device *dev,
 		(const struct edac_driver_api *)dev->api;
 
 	if (api->inject_get_error_type == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->inject_get_error_type(dev, error_type);
@@ -214,7 +214,7 @@ static inline uint32_t edac_inject_get_error_type(const struct device *dev,
  *
  * @param dev Pointer to the device structure
  *
- * @retval -ENOTSUP if not supported
+ * @retval -ENOSYS if the optional interface is not implemented
  * @retval 0 on success, error code otherwise
  */
 static inline int edac_inject_error_trigger(const struct device *dev)
@@ -223,7 +223,7 @@ static inline int edac_inject_error_trigger(const struct device *dev)
 		(const struct edac_driver_api *)dev->api;
 
 	if (api->inject_error_trigger == NULL) {
-		return -ENOTSUP;
+		return -ENOSYS;
 	}
 
 	return api->inject_error_trigger(dev);
