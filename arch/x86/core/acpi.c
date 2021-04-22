@@ -4,6 +4,7 @@
  */
 #include <kernel.h>
 #include <arch/x86/acpi.h>
+#include <arch/x86/efi.h>
 
 static struct acpi_rsdp *rsdp;
 bool is_rdsp_searched = false;
@@ -34,13 +35,21 @@ static void find_rsdp(void)
 		return;
 	}
 
+	/* Let's first get it from EFI, if enabled */
+	if (IS_ENABLED(CONFIG_X86_EFI)) {
+		rsdp = efi_get_acpi_rsdp();
+		if (rsdp != NULL) {
+			goto out;
+		}
+	}
+
 	if (zero_page_base == NULL) {
 		z_phys_map(&zero_page_base, 0, 4096, K_MEM_PERM_RW);
 	}
 
 	/* Physical (real mode!) address 0000:040e stores a (real
 	 * mode!!) segment descriptor pointing to the 1kb Extended
-	 * BIOS Data Area.  Look there first.
+	 * BIOS Data Area.
 	 *
 	 * We had to memory map this segment descriptor since it is in
 	 * the NULL page. The remaining structures (EBDA etc) are identity
@@ -72,10 +81,6 @@ static void find_rsdp(void)
 		}
 	}
 
-	/* Now we're supposed to look in the UEFI system table, which
-	 * is passed as a function argument to the bootloader and long
-	 * forgotten by now...
-	 */
 	rsdp = NULL;
 out:
 	is_rdsp_searched = true;

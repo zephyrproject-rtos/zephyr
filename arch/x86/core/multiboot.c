@@ -9,8 +9,6 @@
 #include <arch/x86/multiboot.h>
 #include <arch/x86/memmap.h>
 
-#ifdef CONFIG_MULTIBOOT_INFO
-
 struct multiboot_info multiboot_info;
 
 /*
@@ -185,5 +183,3 @@ DEVICE_DEFINE(multiboot_framebuf,
 		    &framebuf_display_api);
 
 #endif /* CONFIG_MULTIBOOT_FRAMEBUF */
-
-#endif /* CONFIG_MULTIBOOT_INFO */

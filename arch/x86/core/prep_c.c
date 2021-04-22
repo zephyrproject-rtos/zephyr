@@ -8,17 +8,22 @@
 #include <kernel_internal.h>
 #include <arch/x86/acpi.h>
 #include <arch/x86/multiboot.h>
+#include <arch/x86/efi.h>
 #include <x86_mmu.h>
 
 extern FUNC_NORETURN void z_cstart(void);
 extern void x86_64_irq_init(void);
+
+#if !defined(CONFIG_X86_64)
+x86_boot_arg_t *x86_cpu_boot_arg;
+#endif
 
 /* Early global initialization functions, C domain. This runs only on the first
  * CPU for SMP systems.
  */
 FUNC_NORETURN void z_x86_prep_c(void *arg)
 {
-	struct multiboot_info *info = arg;
+	x86_boot_arg_t *cpu_arg = arg;
 
 	_kernel.cpus[0].nested = 0;
 
@@ -34,11 +39,15 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 	x86_64_irq_init();
 #endif
 
-#ifdef CONFIG_MULTIBOOT_INFO
-	z_multiboot_init(info);
-#else
-	ARG_UNUSED(info);
-#endif
+	if (IS_ENABLED(CONFIG_MULTIBOOT_INFO) &&
+	    cpu_arg->boot_type == MULTIBOOT_BOOT_TYPE) {
+		z_multiboot_init((struct multiboot_info *)cpu_arg->arg);
+	} else if (IS_ENABLED(CONFIG_X86_EFI) &&
+		   cpu_arg->boot_type == EFI_BOOT_TYPE) {
+		efi_init((struct efi_boot_arg *)cpu_arg->arg);
+	} else {
+		ARG_UNUSED(cpu_arg);
+	}
 
 #ifdef CONFIG_MMU
 	z_x86_mmu_init();
