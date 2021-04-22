@@ -138,6 +138,31 @@ static struct clock_control_driver_api npcx_clock_control_api = {
 	.get_rate = npcx_clock_control_get_subsys_rate,
 };
 
+/* valid clock frequency check */
+BUILD_ASSERT(CORE_CLK <= 100000000 &&
+	     CORE_CLK >= 4000000 &&
+	     OSC_CLK % CORE_CLK == 0 &&
+	     OSC_CLK / CORE_CLK <= 10,
+	     "Invalid CORE_CLK setting");
+BUILD_ASSERT(CORE_CLK / (FIUDIV_VAL + 1) <= 50000000 &&
+	     CORE_CLK / (FIUDIV_VAL + 1) >= 4000000,
+	     "Invalid FIUCLK setting");
+BUILD_ASSERT(CORE_CLK / (AHB6DIV_VAL + 1) <= 50000000 &&
+	     CORE_CLK / (AHB6DIV_VAL + 1) >= 4000000,
+	     "Invalid AHB6_CLK setting");
+BUILD_ASSERT(APBSRC_CLK / (APB1DIV_VAL + 1) <= 50000000 &&
+	     APBSRC_CLK / (APB1DIV_VAL + 1) >= 4000000 &&
+	     (APB1DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
+	     "Invalid APB1_CLK setting");
+BUILD_ASSERT(APBSRC_CLK / (APB2DIV_VAL + 1) <= 50000000 &&
+	     APBSRC_CLK / (APB2DIV_VAL + 1) >= 8000000 &&
+	     (APB2DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
+	     "Invalid APB2_CLK setting");
+BUILD_ASSERT(APBSRC_CLK / (APB3DIV_VAL + 1) <= 50000000 &&
+	     APBSRC_CLK / (APB3DIV_VAL + 1) >= 12500000 &&
+	     (APB3DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
+	     "Invalid APB3_CLK setting");
+
 static int npcx_clock_control_init(const struct device *dev)
 {
 	struct cdcg_reg *const inst_cdcg = HAL_CDCG_INST(dev);
