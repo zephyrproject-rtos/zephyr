@@ -402,6 +402,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf);
 void bt_hci_le_per_adv_report(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_lost(struct net_buf *buf);
 void bt_hci_le_biginfo_adv_report(struct net_buf *buf);
+void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_past_received(struct net_buf *buf);
 
 /* Adv HCI event handlers */
