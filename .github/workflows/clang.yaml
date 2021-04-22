@@ -19,10 +19,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        subset: [1, 2, 3, 4, 5, 6, 7 , 8, 9, 10]
+        subset: [1, 2, 3, 4, 5]
     env:
       ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.12.4
       CLANG_ROOT_DIR: /usr/lib/llvm-12
+      MATRIX_SIZE: 5
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.6.0
@@ -55,7 +56,7 @@ jobs:
           #source zephyr-env.sh
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
-          ./scripts/twister --inline-logs -N -v -p native_posix --subset ${{matrix.subset}}/10 --retry-failed 3
+          ./scripts/twister --inline-logs -N -v -p native_posix --subset ${{matrix.subset}}/${MATRIX_SIZE} --retry-failed 3
 
       - name: Upload Unit Test Results
         if: always()
