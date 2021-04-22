@@ -1027,7 +1027,15 @@ static void query_timeout(struct k_work *work)
 	if (ret != 0) {
 		struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 
-		k_work_reschedule(dwork, K_NO_WAIT);
+		/*
+		 * Reschedule query timeout handler with some delay, so that all
+		 * threads (including those with lower priorities) have a chance
+		 * to move forward and release DNS context lock.
+		 *
+		 * Timeout value was arbitrarily chosen and can be updated in
+		 * future if needed.
+		 */
+		k_work_reschedule(dwork, K_MSEC(10));
 		return;
 	}
 
