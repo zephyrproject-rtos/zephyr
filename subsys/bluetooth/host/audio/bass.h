@@ -208,7 +208,11 @@ struct bt_bass_add_src_param {
 	uint8_t pa_sync;
 	/** 24-bit broadcast ID */
 	uint32_t broadcast_id;
-	/** Periodic advertising interval. BASS_PA_INTERVAL_UNKNOWN if unknown. */
+	/**
+	 * @brief Periodic advertising interval in milliseconds.
+	 *
+	 * BASS_PA_INTERVAL_UNKNOWN if unknown.
+	 */
 	uint16_t pa_interval;
 	/** Number of subgroups */
 	uint8_t num_subgroups;
