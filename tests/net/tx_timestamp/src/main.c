@@ -435,7 +435,6 @@ static void send_some_data(struct net_if *iface)
 		.sin6_family = AF_INET6,
 		.sin6_port = 0,
 	};
-	bool timestamp = true;
 	int ret;
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
@@ -451,9 +450,6 @@ static void send_some_data(struct net_if *iface)
 
 	ret = add_neighbor(iface, &dst_addr);
 	zassert_true(ret, "Cannot add neighbor\n");
-
-	net_context_set_option(udp_v6_ctx, NET_OPT_TIMESTAMP,
-			       &timestamp, sizeof(timestamp));
 
 	ret = net_context_sendto(udp_v6_ctx, test_data, strlen(test_data),
 				 (struct sockaddr *)&dst_addr6,

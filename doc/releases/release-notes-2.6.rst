@@ -92,6 +92,13 @@ Deprecated in this release
 
 * :c:func:`flash_write_protection_set()`.
 
+* The ``CONFIG_NET_CONTEXT_TIMESTAMP`` is removed as it was only able to work
+  with transmitted data. The same functionality can be achieved by setting
+  ``CONFIG_NET_PKT_RXTIME_STATS`` and ``CONFIG_NET_PKT_TXTIME_STATS`` options.
+  These options are also able to calculate the RX & TX times more accurately.
+  This means that support for the SO_TIMESTAMPING socket option is also removed
+  as it was used by the removed config option.
+
 ==========================
 
 Removed APIs in this release
