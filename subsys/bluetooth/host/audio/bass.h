@@ -42,6 +42,8 @@
 	 !bt_addr_le_cmp(&(rs)->addr, BT_ADDR_LE_ANY) && (rs)->adv_sid == 0 && \
 	 (rs)->num_subgroups == 0)
 
+#define BT_BASS_BIS_SYNC_NO_PREF        0xFFFFFFFF
+
 struct bt_bass_subgroup {
 	uint32_t bis_sync;
 	uint32_t requested_bis_sync;

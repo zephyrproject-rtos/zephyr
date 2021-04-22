@@ -75,6 +75,19 @@ static bool bits_subset_of(uint32_t a, uint32_t b)
 	return (((a) & (~(b))) == 0);
 }
 
+static bool valid_bis_syncs(uint32_t bis_sync)
+{
+	if (bis_sync == BT_BASS_BIS_SYNC_NO_PREF) {
+		return true;
+	}
+
+	if (bis_sync > 0x7FFFFFFF) { /* Max BIS index */
+		return false;
+	}
+
+	return true;
+}
+
 static void bt_debug_dump_recv_state(const struct bass_recv_state_internal_t *recv_state)
 {
 	const struct bt_bass_recv_state *state = &recv_state->state;
@@ -517,6 +530,7 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 	bt_addr_t *addr;
 	uint8_t pa_sync;
 	uint16_t pa_interval;
+	uint32_t aggregated_bis_syncs = 0;
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bass_cp_add_src_t) - 1) {
@@ -586,6 +600,21 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 
+		/* Verify that the request BIS sync indexes are unique or no preference */
+		if (subgroup->requested_bis_sync & aggregated_bis_syncs &&
+		    subgroup->requested_bis_sync != BT_BASS_BIS_SYNC_NO_PREF &&
+		    aggregated_bis_syncs != BT_BASS_BIS_SYNC_NO_PREF) {
+			BT_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
+			       i, subgroup->requested_bis_sync,
+			       aggregated_bis_syncs);
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
+
+		if (!valid_bis_syncs(subgroup->requested_bis_sync)) {
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
+		aggregated_bis_syncs |= subgroup->requested_bis_sync;
+
 		subgroup->metadata_len = net_buf_simple_pull_u8(buf);
 
 		if (buf->len < subgroup->metadata_len) {
@@ -640,6 +669,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	uint8_t num_subgroups;
 	struct bt_bass_subgroup subgroups[CONFIG_BT_BASS_MAX_SUBGROUPS];
 	uint8_t pa_sync;
+	uint32_t aggregated_bis_syncs = 0;
 
 	/* subtract 1 as the opcode has already been pulled */
 	if (buf->len < sizeof(struct bass_cp_mod_src_t) - 1) {
@@ -680,6 +710,21 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 			BT_DBG("Cannot sync to BIS without PA");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
+
+		/* Verify that the request BIS sync indexes are unique or no preference */
+		if (subgroup->requested_bis_sync & aggregated_bis_syncs &&
+		    subgroup->requested_bis_sync != BT_BASS_BIS_SYNC_NO_PREF &&
+		    aggregated_bis_syncs != BT_BASS_BIS_SYNC_NO_PREF) {
+			BT_DBG("Duplicate BIS index [%d]%x (aggregated %x)",
+			       i, subgroup->requested_bis_sync,
+			       aggregated_bis_syncs);
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
+
+		if (!valid_bis_syncs(subgroup->requested_bis_sync)) {
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
+		aggregated_bis_syncs |= subgroup->requested_bis_sync;
 
 		subgroup->metadata_len = net_buf_simple_pull_u8(buf);
 
