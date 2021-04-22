@@ -82,8 +82,9 @@ jobs:
         run: ls -R
 
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1.6
+        uses: EnricoMi/publish-unit-test-result-action@v1.12
         with:
           check_name: Unit Test Results
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: "**/twister.xml"
+          comment_on_pr: false
