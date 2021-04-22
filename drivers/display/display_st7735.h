@@ -31,23 +31,6 @@ struct st7735_data
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //128*160
 
 #define LCD_WIDTH         129               // 设置屏幕的像素大小，
@@ -75,6 +58,8 @@ struct st7735_data
 
 #define ST7735_CMD_RAMWR        0x2C
 
+#define ST7735_CMD_NULL         0
+
 // 颜色定义， 移植时不用修改
 #define WHITE         	 0xFFFF
 #define BLACK         	 0x0000	  
@@ -99,4 +84,15 @@ struct st7735_data
 #define LGRAYBLUE        0XA651 //浅灰蓝色(中间层颜色)
 #define LBBLUE           0X2B12 //浅棕蓝色(选择条目的反色)
 
+
+#define read_byte(addr) (*(const unsigned char *)(addr))
+
+#define _swap_int16_t(a, b)                                                    \
+  {                                                                            \
+    int16_t t = a;                                                             \
+    a = b;                                                                     \
+    b = t;                                                                     \
+  }
+
+                              
 #endif
