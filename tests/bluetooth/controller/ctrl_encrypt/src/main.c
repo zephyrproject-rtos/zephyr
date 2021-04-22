@@ -1108,10 +1108,179 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
 }
 
+void test_encryption_pause_mas_loc(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	const uint8_t rand[] = {RAND};
+	const uint8_t ediv[] = {EDIV};
+	const uint8_t ltk[] = {LTK};
+	const uint8_t skd[] = {SKDM, SKDS};
+	const uint8_t sk_be[] = {SK_BE};
+	const uint8_t iv[] = {IVM, IVS};
+
+	/* Prepare expected LL_ENC_REQ */
+	struct pdu_data_llctrl_enc_req exp_enc_req = {
+		.rand = {RAND},
+		.ediv = {EDIV},
+		.skdm = {SKDM},
+		.ivm = {IVM},
+	};
+
+	/* Prepare LL_ENC_RSP */
+	struct pdu_data_llctrl_enc_rsp enc_rsp = {
+		.skds = {SKDS},
+		.ivs = {IVS}
+	};
+
+	/* Prepare mocked call(s) to lll_csrand_get */
+	/* First call for SKDm */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.skdm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.skdm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.skdm));
+	/* Second call for IVm */
+	ztest_returns_value(lll_csrand_get, sizeof(exp_enc_req.ivm));
+	ztest_return_data(lll_csrand_get, buf, exp_enc_req.ivm);
+	ztest_expect_value(lll_csrand_get, len, sizeof(exp_enc_req.ivm));
+
+	/* Prepare mocked call to ecb_encrypt */
+	ztest_expect_data(ecb_encrypt, key_le, ltk);
+	ztest_expect_data(ecb_encrypt, clear_text_le, skd);
+	ztest_return_data(ecb_encrypt, cipher_text_be, sk_be);
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Fake that encryption is already active */
+	conn.lll.enc_rx = 1U;
+	conn.lll.enc_tx = 1U;
+
+	/**** ENCRYPTED ****/
+
+	/* Initiate an Encryption Pause Procedure */
+	err = ull_cp_encryption_pause(&conn, rand, ediv, ltk);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PAUSE_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Rx */
+	lt_tx(LL_PAUSE_ENC_RSP, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PAUSE_ENC_RSP, &conn, &tx, NULL);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Tx Encryption should be disabled */
+	zassert_equal(conn.lll.enc_tx, 0U, NULL);
+
+	/* Rx Decryption should be disabled */
+	zassert_equal(conn.lll.enc_rx, 0U, NULL);
+
+	/**** UNENCRYPTED ****/
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, &enc_rsp);
+
+	/* Rx */
+	lt_tx(LL_START_ENC_REQ, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* CCM Tx/Rx SK should be the same */
+	zassert_mem_equal(conn.lll.ccm_tx.key, conn.lll.ccm_rx.key, sizeof(conn.lll.ccm_tx.key), "CCM Tx/Rx SK not the same");
+
+	/* CCM Tx/Rx SK should match SK */
+	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx/Rx SK not equal to expected SK");
+
+	/* CCM Tx/Rx IV should be the same */
+	zassert_mem_equal(conn.lll.ccm_tx.iv, conn.lll.ccm_rx.iv, sizeof(conn.lll.ccm_tx.iv), "CCM Tx/Rx IV not the same");
+
+	/* CCM Tx/Rx IV should match the IV */
+	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx/Rx IV not equal to (IVm | IVs)");
+
+	/* CCM Tx/Rx Counter should be zero */
+	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
+	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
+
+	/* CCM Tx Direction should be M->S */
+	zassert_equal(conn.lll.ccm_tx.direction, 1U, NULL);
+
+	/* CCM Rx Direction should be S->M */
+	zassert_equal(conn.lll.ccm_rx.direction, 0U, NULL);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Rx */
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+}
+
+
 
 void test_main(void)
 {
-	ztest_test_suite(encryption,
+	ztest_test_suite(encryption_start,
 			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_limited_memory, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_no_ltk, setup, unit_test_noop),
@@ -1120,5 +1289,10 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_encryption_start_sla_rem_no_ltk, setup, unit_test_noop)
 			);
 
-	ztest_run_test_suite(encryption);
+	ztest_test_suite(encryption_pause,
+			 ztest_unit_test_setup_teardown(test_encryption_pause_mas_loc, setup, unit_test_noop)
+			);
+
+	ztest_run_test_suite(encryption_start);
+	ztest_run_test_suite(encryption_pause);
 }
