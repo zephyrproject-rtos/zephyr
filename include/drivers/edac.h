@@ -81,7 +81,7 @@ static inline int edac_inject_set_param1(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->inject_set_param1) {
+	if (api->inject_set_param1 == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -105,7 +105,7 @@ static inline int edac_inject_get_param1(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->inject_get_param1) {
+	if (api->inject_get_param1 == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -130,7 +130,7 @@ static inline int edac_inject_set_param2(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->inject_set_param2) {
+	if (api->inject_set_param2 == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -152,7 +152,7 @@ static inline uint64_t edac_inject_get_param2(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->inject_get_param2) {
+	if (api->inject_get_param2 == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -176,7 +176,7 @@ static inline int edac_inject_set_error_type(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->inject_set_error_type) {
+	if (api->inject_set_error_type == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -200,7 +200,7 @@ static inline uint32_t edac_inject_get_error_type(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->inject_get_error_type) {
+	if (api->inject_get_error_type == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -222,7 +222,7 @@ static inline int edac_inject_error_trigger(const struct device *dev)
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->inject_error_trigger) {
+	if (api->inject_error_trigger == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -248,7 +248,7 @@ static inline int edac_ecc_error_log_get(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->ecc_error_log_get) {
+	if (api->ecc_error_log_get == NULL) {
 		return -ENOSYS;
 	}
 
@@ -270,7 +270,7 @@ static inline int edac_ecc_error_log_clear(const struct device *dev)
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->ecc_error_log_clear) {
+	if (api->ecc_error_log_clear == NULL) {
 		return -ENOSYS;
 	}
 
@@ -294,7 +294,7 @@ static inline int edac_parity_error_log_get(const struct device *dev,
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->parity_error_log_get) {
+	if (api->parity_error_log_get == NULL) {
 		return -ENOSYS;
 	}
 
@@ -316,7 +316,7 @@ static inline int edac_parity_error_log_clear(const struct device *dev)
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->parity_error_log_clear) {
+	if (api->parity_error_log_clear == NULL) {
 		return -ENOSYS;
 	}
 
@@ -336,7 +336,7 @@ static inline int edac_errors_cor_get(const struct device *dev)
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->errors_cor_get) {
+	if (api->errors_cor_get == NULL) {
 		return -ENOSYS;
 	}
 
@@ -356,7 +356,7 @@ static inline int edac_errors_uc_get(const struct device *dev)
 	const struct edac_driver_api *api =
 		(const struct edac_driver_api *)dev->api;
 
-	if (!api->errors_uc_get) {
+	if (api->errors_uc_get == NULL) {
 		return -ENOSYS;
 	}
 
@@ -379,7 +379,7 @@ static inline int edac_notify_callback_set(const struct device *dev,
 {
 	const struct edac_driver_api *api = dev->api;
 
-	if (!api->notify_cb_set) {
+	if (api->notify_cb_set == NULL) {
 		return -ENOSYS;
 	}
 
