@@ -57,6 +57,9 @@ struct bt_conn;
 /* Don't require everyone to include iso.h */
 struct bt_iso_biginfo;
 
+/* Don't require everyone to include direction.h */
+struct bt_df_per_adv_sync_iq_samples_report;
+
 struct bt_le_ext_adv_sent_info {
 	/** The number of advertising events completed. */
 	uint8_t num_sent;
@@ -1242,6 +1245,16 @@ struct bt_le_per_adv_sync_cb {
 	 * @param biginfo  The BIGInfo report.
 	 */
 	void (*biginfo)(struct bt_le_per_adv_sync *sync, const struct bt_iso_biginfo *biginfo);
+
+	/**
+	 * @brief Callback for IQ samples report collected when sampling
+	 *        CTE received with periodic advertising PDU.
+	 *
+	 * @param sync The periodic advertising sync object.
+	 * @param info Information about the sync event.
+	 */
+	void (*cte_report_cb)(struct bt_le_per_adv_sync *sync,
+			      struct bt_df_per_adv_sync_iq_samples_report const *info);
 
 	sys_snode_t node;
 };

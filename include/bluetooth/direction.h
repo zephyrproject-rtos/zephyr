@@ -88,6 +88,25 @@ struct bt_df_per_adv_sync_cte_rx_param {
 	const uint8_t *ant_ids;
 };
 
+struct bt_df_per_adv_sync_iq_samples_report {
+	/** Channel index used to receive PDU with CTE that was sampled. */
+	uint8_t chan_idx;
+	/** The RSSI of the PDU with CTE (excluding CTE). */
+	int16_t rssi;
+	/** Id of antenna used to measure the RSSI. */
+	uint8_t rssi_ant_id;
+	/** Type of CTE (@ref BT_DF_CTE_TYPE). */
+	uint8_t cte_type;
+	/** Duration of slots when received CTE type is AoA (@ref BT_DF_ANTENNA_SWITCHING_SLOT). */
+	uint8_t slot_durations;
+	/** Status of received PDU with CTE (@ref BT_DF_RX_POCKET_STATUS). */
+	uint8_t packet_status;
+	/** Number of IQ samples in report. */
+	uint8_t sample_count;
+	/** Pinter to IQ samples data. */
+	struct bt_hci_le_iq_sample const *sample;
+};
+
 /**
  * @brief Set or update the Constant Tone Extension parameters for periodic advertising set.
  *
