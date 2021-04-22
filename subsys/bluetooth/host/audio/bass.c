@@ -25,7 +25,6 @@
 #include "../conn_internal.h"
 #include "../hci_core.h"
 
-#define PA_SYNC_TIMEOUT           10000 /* ms */
 #define PA_SYNC_SKIP              5
 #define PA_SYNC_RETRY_COUNT       6 /* similar to retries for connections */
 #define PAST_TIMEOUT              K_SECONDS(10)
@@ -275,6 +274,29 @@ static struct bass_recv_state_internal_t *bass_lookup_addr(
 	return NULL;
 }
 
+static uint16_t pa_interval_to_pa_timeout(uint16_t pa_interval)
+{
+	uint16_t pa_timeout;
+
+	if (pa_interval == BASS_PA_INTERVAL_UNKNOWN) {
+		/* Use maximum value to maximize chance of success */
+		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
+	} else {
+		/* Ensure that the following calculation does not overflow silently */
+		__ASSERT(PA_SYNC_RETRY_COUNT < 10,
+			 "PA_SYNC_RETRY_COUNT shall be less than 10");
+
+		/* Add retries and convert to unit in 10's of ms */
+		pa_timeout = ((uint32_t)pa_interval * PA_SYNC_RETRY_COUNT) / 10;
+
+		/* Enforce restraints */
+		pa_timeout = CLAMP(pa_timeout, BT_GAP_PER_ADV_MIN_TIMEOUT,
+				   BT_GAP_PER_ADV_MAX_TIMEOUT);
+	}
+
+	return pa_timeout;
+}
+
 static void pa_synced(struct bt_le_per_adv_sync *sync,
 		      struct bt_le_per_adv_sync_synced_info *info)
 {
@@ -401,12 +423,7 @@ static void bass_pa_sync_past(struct bt_conn *conn,
 	struct bt_le_per_adv_sync_transfer_param param = { 0 };
 
 	param.skip = PA_SYNC_SKIP;
-	if (pa_interval == BASS_PA_INTERVAL_UNKNOWN) {
-		param.timeout = PA_SYNC_TIMEOUT / 10;
-	} else {
-		param.timeout = MIN(BT_GAP_PER_ADV_MAX_TIMEOUT,
-				    MAX(100, pa_interval * PA_SYNC_RETRY_COUNT) / 10);
-	}
+	param.timeout = pa_interval_to_pa_timeout(pa_interval);
 
 	err = bt_le_per_adv_sync_transfer_subscribe(conn, &param);
 	if (err) {
@@ -442,13 +459,7 @@ static void bass_pa_sync_no_past(struct bass_recv_state_internal_t *state,
 	bt_addr_le_copy(&param.addr, &recv_state->addr);
 	param.sid = recv_state->adv_sid;
 	param.skip = PA_SYNC_SKIP;
-
-	if (pa_interval == BASS_PA_INTERVAL_UNKNOWN) {
-		param.timeout = PA_SYNC_TIMEOUT / 10;
-	} else {
-		param.timeout = MIN(BT_GAP_PER_ADV_MAX_TIMEOUT,
-				    MAX(100, pa_interval * PA_SYNC_RETRY_COUNT) / 10);
-	}
+	param.timeout = pa_interval_to_pa_timeout(pa_interval);
 
 	err = bt_le_per_adv_sync_create(&param, &state->pa_sync);
 	if (err) {
@@ -582,10 +593,6 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	pa_interval = net_buf_simple_pull_le16(buf);
-	if (pa_interval < 0x0006) {
-		BT_DBG("Invalid PA interval %u", pa_interval);
-		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
-	}
 
 	state->num_subgroups = net_buf_simple_pull_u8(buf);
 	for (int i = 0; i < state->num_subgroups; i++) {
