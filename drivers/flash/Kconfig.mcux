@@ -34,10 +34,17 @@ config FLASH_MCUX_FLEXSPI_NOR
 	select MEMC
 	select MEMC_MCUX_FLEXSPI
 
+config FLASH_MCUX_FLEXSPI_MX25UM51345G
+	bool "MCUX FlexSPI MX25UM51345G driver"
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select MEMC
+	select MEMC_MCUX_FLEXSPI
+
 config FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 	bool "MCUX FlexSPI NOR write RAM buffer"
 	default y
-	depends on FLASH_MCUX_FLEXSPI_NOR
+	depends on (FLASH_MCUX_FLEXSPI_NOR || FLASH_MCUX_FLEXSPI_MX25UM51345G)
 	help
 	  Copy the data to a RAM buffer before writing it to the flash.
 	  This prevents faults when the data to write would be located on the
@@ -46,7 +53,7 @@ config FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 config FLASH_MCUX_FLEXSPI_XIP
 	bool "MCUX FlexSPI flash access with xip"
 	depends on MEMC_MCUX_FLEXSPI
-	depends on (CODE_FLEXSPI || CODE_FLEXSPI2)
+	depends on (CODE_FLEXSPI || CODE_FLEXSPI2 || SOC_SERIES_IMX_RT6XX)
 	select XIP
 	help
 	  Allows using the flash API while running in XIP.
