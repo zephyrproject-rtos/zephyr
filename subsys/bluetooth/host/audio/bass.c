@@ -43,7 +43,6 @@ struct bass_recv_state_internal_t {
 	bool active;
 	uint8_t index;
 	struct bt_bass_recv_state state;
-	uint32_t requested_bis_sync[CONFIG_BT_BASS_MAX_SUBGROUPS];
 	uint8_t broadcast_code[BASS_BROADCAST_CODE_SIZE];
 #if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	struct bt_le_per_adv_sync *pa_sync;
@@ -63,6 +62,19 @@ static bool conn_cb_registered;
 static struct bass_inst_t bass_inst;
 static struct bt_bass_cb_t *bass_cbs;
 
+/**
+ * @brief Returns whether a value's bits is a subset of another value's bits
+ *
+ * @param a The subset to check
+ * @param b The bits to check against
+ *
+ * @return True if @p a is a bitwise subset of of @p b
+ */
+static bool bits_subset_of(uint32_t a, uint32_t b)
+{
+	return (((a) & (~(b))) == 0);
+}
+
 static void bt_debug_dump_recv_state(const struct bass_recv_state_internal_t *recv_state)
 {
 	const struct bt_bass_recv_state *state = &recv_state->state;
@@ -80,7 +92,7 @@ static void bt_debug_dump_recv_state(const struct bass_recv_state_internal_t *re
 		const struct bt_bass_subgroup *subgroup = &state->subgroups[i];
 
 		BT_DBG("\tSubsgroup[%d]: BIS sync %u (requested %u), metadata_len %u, metadata: %s",
-		       i, subgroup->bis_sync, recv_state->requested_bis_sync[i],
+		       i, subgroup->bis_sync, subgroup->requested_bis_sync,
 		       subgroup->metadata_len,
 		       bt_hex(subgroup->metadata, subgroup->metadata_len));
 	}
@@ -566,9 +578,9 @@ static int bass_add_source(struct bt_conn *conn, struct net_buf_simple *buf)
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
-		internal_state->requested_bis_sync[i] = net_buf_simple_pull_le32(buf);
+		subgroup->requested_bis_sync = net_buf_simple_pull_le32(buf);
 
-		if (internal_state->requested_bis_sync[i] &&
+		if (subgroup->requested_bis_sync &&
 		    pa_sync == BASS_PA_REQ_NO_SYNC) {
 			BT_DBG("Cannot sync to BIS without PA");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -659,12 +671,12 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 		uint8_t *metadata;
 
 		if (buf->len < (sizeof(subgroup->bis_sync) + sizeof(subgroup->metadata_len))) {
-			BT_DBG("Invalid length %u", buf->size);
+			BT_DBG("Invalid length %u", buf->len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
-		subgroup->bis_sync = net_buf_simple_pull_le32(buf);
-		if (subgroup->bis_sync && pa_sync == BASS_PA_REQ_NO_SYNC) {
+		subgroup->requested_bis_sync = net_buf_simple_pull_le32(buf);
+		if (subgroup->requested_bis_sync && pa_sync == BASS_PA_REQ_NO_SYNC) {
 			BT_DBG("Cannot sync to BIS without PA");
 			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
@@ -672,7 +684,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 		subgroup->metadata_len = net_buf_simple_pull_u8(buf);
 
 		if (buf->len < subgroup->metadata_len) {
-			BT_DBG("Invalid length %u", buf->size);
+			BT_DBG("Invalid length %u", buf->len);
 			return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
 
@@ -708,7 +720,7 @@ static int bass_mod_src(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	for (int i = 0; i < num_subgroups; i++) {
-		internal_state->requested_bis_sync[i] = subgroups[i].bis_sync;
+		state->subgroups[i].requested_bis_sync = subgroups[i].requested_bis_sync;
 
 		/* If the metadata len is 0, we shall not overwrite the existing metadata */
 		if (subgroups[i].metadata_len == 0) {
@@ -808,7 +820,6 @@ static int bass_rem_src(struct net_buf_simple *buf)
 
 	internal_state->active = false;
 	memset(&internal_state->state, 0, sizeof(internal_state->state));
-	memset(internal_state->requested_bis_sync, 0, sizeof(internal_state->requested_bis_sync));
 	memset(internal_state->broadcast_code, 0, sizeof(internal_state->broadcast_code));
 
 	/* restore src_id */
@@ -1026,18 +1037,21 @@ int bt_bass_set_synced(uint8_t src_id, uint8_t pa_sync_state,
 	}
 
 	for (int i = 0; i < recv_state->state.num_subgroups; i++) {
+		struct bt_bass_subgroup *subgroup = &recv_state->state.subgroups[i];
+
 		if (bis_synced[i] && pa_sync_state == BASS_PA_STATE_NOT_SYNCED) {
 			BT_DBG("Cannot set BIS sync when PA sync is not synced");
 			return -EINVAL;
 		}
-		if (bis_synced[i] > recv_state->requested_bis_sync[i]) {
-			BT_DBG("Subgroup[%d] invalid bis_sync value %x",
-			       i, bis_synced[i]);
+		if (bits_subset_of(bis_synced[i],
+				   subgroup->requested_bis_sync)) {
+			BT_DBG("Subgroup[%d] invalid bis_sync value %x for %x",
+			       i, bis_synced[i], subgroup->requested_bis_sync);
 			return -EINVAL;
 		}
-		if (bis_synced[i] != recv_state->state.subgroups[i].bis_sync) {
+		if (bis_synced[i] != subgroup->bis_sync) {
 			notify = true;
-			recv_state->state.subgroups[i].bis_sync = bis_synced[i];
+			subgroup->bis_sync = bis_synced[i];
 		}
 	}
 

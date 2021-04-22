@@ -44,6 +44,7 @@
 
 struct bt_bass_subgroup {
 	uint32_t bis_sync;
+	uint32_t requested_bis_sync;
 	uint8_t metadata_len;
 	uint8_t metadata[BASS_MAX_METADATA_LEN];
 };
