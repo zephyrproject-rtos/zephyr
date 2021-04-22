@@ -392,6 +392,23 @@ do {\
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (0)
+#elif CONFIG_LOG2_MODE_IMMEDIATE /* CONFIG_LOG2_ALWAYS_RUNTIME */
+#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+			  _level, _data, _dlen, ...) \
+do { \
+	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
+	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, __VA_ARGS__)) { \
+		LOG_MSG2_DBG("create runtime message\n");\
+		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
+					  _level, (uint8_t *)_data, _dlen,\
+					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
+		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
+	} else {\
+		Z_LOG_MSG2_SYNC(_domain_id, _source, _level, \
+				_data, _dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
+		_mode = Z_LOG_MSG2_MODE_SYNC; \
+	} \
+} while (0)
 #else /* CONFIG_LOG2_ALWAYS_RUNTIME */
 #define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
@@ -403,10 +420,6 @@ do { \
 					  _level, (uint8_t *)_data, _dlen,\
 					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
-	} else if (IS_ENABLED(CONFIG_LOG2_MODE_IMMEDIATE)) {\
-		Z_LOG_MSG2_SYNC(_domain_id, _source, _level, \
-				_data, _dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG2_MODE_SYNC; \
 	} else if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0)) {\
 		LOG_MSG2_DBG("create zero-copy message\n");\
 		Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, \
@@ -425,13 +438,9 @@ do { \
 #define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do { \
-	if (BIT(_level) & LOG_FUNCTION_PREFIX_MASK) {\
-		Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, 1, _domain_id, _source, \
-				   _level, _data, _dlen, Z_LOG_STR(__VA_ARGS__));\
-	} else { \
-		Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, 0, _domain_id, _source, \
-				   _level, _data, _dlen, __VA_ARGS__); \
-	} \
+	Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, UTIL_CAT(Z_LOG_FUNC_PREFIX_##_level), \
+			   _domain_id, _source, _level, _data, _dlen, \
+			   Z_LOG_STR(_level, __VA_ARGS__));\
 } while (0)
 
 #define Z_TRACING_LOG_HDR_INIT(name, id) \
