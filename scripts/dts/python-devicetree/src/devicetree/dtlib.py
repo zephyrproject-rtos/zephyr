@@ -192,6 +192,21 @@ class Type(enum.IntEnum):
     PHANDLES_AND_NUMS = 9
     COMPOUND = 10
 
+class _MarkerType(enum.IntEnum):
+    # Types of markers in property values
+
+    # References
+    PATH = 0     # &foo
+    PHANDLE = 1  # <&foo>
+    LABEL = 2    # foo: <1 2 3>
+
+    # Start of data blocks of specific type
+    UINT8 = 3   # [00 01 02] (and also used for /incbin/)
+    UINT16 = 4  # /bits/ 16 <1 2 3>
+    UINT32 = 5  # <1 2 3>
+    UINT64 = 6  # /bits/ 64 <1 2 3>
+    STRING = 7  # "foo"
+
 class Property:
     """
     Represents a property ('x = ...').
@@ -272,11 +287,12 @@ class Property:
         self.labels = []
         self.offset_labels = []
 
-        # A list of (offset, label, type) tuples (sorted by offset), giving the
-        # locations of references within the value. 'type' is either _REF_PATH,
-        # for a node path reference, _REF_PHANDLE, for a phandle reference, or
-        # _REF_LABEL, for a label on/within data. Node paths and phandles need
-        # to be patched in after parsing.
+        # A list of [offset, label, type] lists (sorted by offset),
+        # giving the locations of references within the value. 'type'
+        # is either _MarkerType.PATH, for a node path reference,
+        # _MarkerType.PHANDLE, for a phandle reference, or
+        # _MarkerType.LABEL, for a label on/within data. Node paths
+        # and phandles need to be patched in after parsing.
         self._markers = []
 
     def to_num(self, signed=False):
@@ -474,32 +490,33 @@ class Property:
         # Data labels (e.g. 'foo = label: <3>') are irrelevant, so filter them
         # out
         types = [marker[1] for marker in self._markers
-                 if marker[1] != _REF_LABEL]
+                 if marker[1] != _MarkerType.LABEL]
 
         if not types:
             return Type.EMPTY
 
-        if types == [_TYPE_UINT8]:
+        if types == [_MarkerType.UINT8]:
             return Type.BYTES
 
-        if types == [_TYPE_UINT32]:
+        if types == [_MarkerType.UINT32]:
             return Type.NUM if len(self.value) == 4 else Type.NUMS
 
         # Treat 'foo = <1 2 3>, <4 5>, ...' as Type.NUMS too
-        if set(types) == {_TYPE_UINT32}:
+        if set(types) == {_MarkerType.UINT32}:
             return Type.NUMS
 
-        if set(types) == {_TYPE_STRING}:
+        if set(types) == {_MarkerType.STRING}:
             return Type.STRING if len(types) == 1 else Type.STRINGS
 
-        if types == [_REF_PATH]:
+        if types == [_MarkerType.PATH]:
             return Type.PATH
 
-        if types == [_TYPE_UINT32, _REF_PHANDLE] and len(self.value) == 4:
+        if types == [_MarkerType.UINT32, _MarkerType.PHANDLE] and \
+                len(self.value) == 4:
             return Type.PHANDLE
 
-        if set(types) == {_TYPE_UINT32, _REF_PHANDLE}:
-            if len(self.value) == 4*types.count(_REF_PHANDLE):
+        if set(types) == {_MarkerType.UINT32, _MarkerType.PHANDLE}:
+            if len(self.value) == 4*types.count(_MarkerType.PHANDLE):
                 # Array with just phandles in it
                 return Type.PHANDLES
             # Array with both phandles and numbers
@@ -523,27 +540,27 @@ class Property:
             # End of current marker
             end = next_marker[0] if next_marker else len(self.value)
 
-            if marker_type is _TYPE_STRING:
+            if marker_type is _MarkerType.STRING:
                 # end - 1 to strip off the null terminator
                 s += ' "{}"'.format(_decode_and_escape(
                     self.value[pos:end - 1]))
                 if end != len(self.value):
                     s += ","
-            elif marker_type is _REF_PATH:
+            elif marker_type is _MarkerType.PATH:
                 s += " &" + ref
                 if end != len(self.value):
                     s += ","
             else:
                 # <> or []
 
-                if marker_type is _REF_LABEL:
+                if marker_type is _MarkerType.LABEL:
                     s += " {}:".format(ref)
-                elif marker_type is _REF_PHANDLE:
+                elif marker_type is _MarkerType.PHANDLE:
                     s += " &" + ref
                     pos += 4
                     # Subtle: There might be more data between the phandle and
                     # the next marker, so we can't 'continue' here
-                else:  # marker_type is _TYPE_UINT*
+                else:  # marker_type is _MarkerType.UINT*
                     elm_size = _TYPE_TO_N_BYTES[marker_type]
                     s += _N_BYTES_TO_START_STR[elm_size]
 
@@ -559,7 +576,7 @@ class Property:
 
                 if pos != 0 and \
                    (not next_marker or
-                    next_marker[1] not in (_REF_PHANDLE, _REF_LABEL)):
+                    next_marker[1] not in (_MarkerType.PHANDLE, _MarkerType.LABEL)):
 
                     s += _N_BYTES_TO_END_STR[elm_size]
                     if pos != len(self.value):
@@ -589,7 +606,7 @@ class Property:
 
         # For phandle references, add a dummy value with the same length as a
         # phandle. This is handy for the length check in _register_phandles().
-        if marker_type is _REF_PHANDLE:
+        if marker_type is _MarkerType.PHANDLE:
             self.value += b"\0\0\0\0"
 
 class DT:
@@ -981,11 +998,11 @@ class DT:
                 self._parse_bytes(prop)
 
             elif tok.id is _T_STRING:
-                prop._add_marker(_TYPE_STRING)
+                prop._add_marker(_MarkerType.STRING)
                 prop.value += self._unescape(tok.val.encode("utf-8")) + b"\0"
 
             elif tok.id is _T_REF:
-                prop._add_marker(_REF_PATH, tok.val)
+                prop._add_marker(_MarkerType.PATH, tok.val)
 
             elif tok.id is _T_INCBIN:
                 self._parse_incbin(prop)
@@ -1015,10 +1032,10 @@ class DT:
                 if n_bytes != 4:
                     self._parse_error("phandle references are only allowed in "
                                       "arrays with 32-bit elements")
-                prop._add_marker(_REF_PHANDLE, tok.val)
+                prop._add_marker(_MarkerType.PHANDLE, tok.val)
 
             elif tok.id is _T_LABEL:
-                prop._add_marker(_REF_LABEL, tok.val)
+                prop._add_marker(_MarkerType.LABEL, tok.val)
                 self._next_token()
 
             elif self._check_token(">"):
@@ -1040,7 +1057,7 @@ class DT:
     def _parse_bytes(self, prop):
         # Parses '[ ... ]'
 
-        prop._add_marker(_TYPE_UINT8)
+        prop._add_marker(_MarkerType.UINT8)
 
         while True:
             tok = self._next_token()
@@ -1048,7 +1065,7 @@ class DT:
                 prop.value += tok.val.to_bytes(1, "big")
 
             elif tok.id is _T_LABEL:
-                prop._add_marker(_REF_LABEL, tok.val)
+                prop._add_marker(_MarkerType.LABEL, tok.val)
 
             elif tok.val == "]":
                 return
@@ -1065,7 +1082,7 @@ class DT:
         #
         #   /incbin/ ("filename", <offset>, <size>)
 
-        prop._add_marker(_TYPE_UINT8)
+        prop._add_marker(_MarkerType.UINT8)
 
         self._expect_token("(")
 
@@ -1104,7 +1121,7 @@ class DT:
             tok = self._peek_token()
             if tok.id is not _T_LABEL:
                 return
-            prop._add_marker(_REF_LABEL, tok.val)
+            prop._add_marker(_MarkerType.LABEL, tok.val)
             self._next_token()
 
     def _node_phandle(self, node):
@@ -1118,7 +1135,7 @@ class DT:
             phandle_prop = node.props["phandle"]
         else:
             phandle_prop = Property(node, "phandle")
-            phandle_prop._add_marker(_TYPE_UINT32)  # For displaying
+            phandle_prop._add_marker(_MarkerType.UINT32)  # For displaying
             phandle_prop.value = b'\0\0\0\0'
 
         if phandle_prop.value == b'\0\0\0\0':
@@ -1496,7 +1513,7 @@ class DT:
                 is_self_referential = False
                 for marker in phandle._markers:
                     _, marker_type, ref = marker
-                    if marker_type is _REF_PHANDLE:
+                    if marker_type is _MarkerType.PHANDLE:
                         # The phandle's value is itself a phandle reference
                         if self._ref2node(ref) is node:
                             # Alright to set a node's phandle equal to its own
@@ -1553,13 +1570,13 @@ class DT:
                     # references, which expand to something like "/foo/bar".
                     marker[0] = len(res)
 
-                    if marker_type is _REF_LABEL:
+                    if marker_type is _MarkerType.LABEL:
                         # This is a temporary format so that we can catch
                         # duplicate references. prop.offset_labels is changed
                         # to a dictionary that maps labels to offsets in
                         # _register_labels().
                         _append_no_dup(prop.offset_labels, (ref, len(res)))
-                    elif marker_type in (_REF_PATH, _REF_PHANDLE):
+                    elif marker_type in (_MarkerType.PATH, _MarkerType.PHANDLE):
                         # Path or phandle reference
                         try:
                             ref_node = self._ref2node(ref)
@@ -1569,7 +1586,7 @@ class DT:
                         # For /omit-if-no-ref/
                         ref_node._is_referenced = True
 
-                        if marker_type is _REF_PATH:
+                        if marker_type is _MarkerType.PATH:
                             res += ref_node.path.encode("utf-8") + b'\0'
                         else:  # marker_type is PHANDLE
                             res += self._node_phandle(ref_node)
@@ -1920,31 +1937,18 @@ def _init_tokens():
 
 _init_tokens()
 
-# Markers in property values
-
-# References
-_REF_PATH = 0     # &foo
-_REF_PHANDLE = 1  # <&foo>
-_REF_LABEL = 2    # foo: <1 2 3>
-# Start of data blocks of specific type
-_TYPE_UINT8 = 3   # [00 01 02] (and also used for /incbin/)
-_TYPE_UINT16 = 4  # /bits/ 16 <1 2 3>
-_TYPE_UINT32 = 5  # <1 2 3>
-_TYPE_UINT64 = 6  # /bits/ 64 <1 2 3>
-_TYPE_STRING = 7  # "foo"
-
 _TYPE_TO_N_BYTES = {
-    _TYPE_UINT8: 1,
-    _TYPE_UINT16: 2,
-    _TYPE_UINT32: 4,
-    _TYPE_UINT64: 8,
+    _MarkerType.UINT8: 1,
+    _MarkerType.UINT16: 2,
+    _MarkerType.UINT32: 4,
+    _MarkerType.UINT64: 8,
 }
 
 _N_BYTES_TO_TYPE = {
-    1: _TYPE_UINT8,
-    2: _TYPE_UINT16,
-    4: _TYPE_UINT32,
-    8: _TYPE_UINT64,
+    1: _MarkerType.UINT8,
+    2: _MarkerType.UINT16,
+    4: _MarkerType.UINT32,
+    8: _MarkerType.UINT64,
 }
 
 _N_BYTES_TO_START_STR = {
