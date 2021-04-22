@@ -120,6 +120,7 @@ void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 		lp_comm_rx(conn, ctx, rx);
 		break;
 	case PROC_ENCRYPTION_START:
+	case PROC_ENCRYPTION_PAUSE:
 		lp_enc_rx(conn, ctx, rx);
 		break;
 	case PROC_PHY_UPDATE:
@@ -181,6 +182,7 @@ static void lr_act_run(struct ll_conn *conn)
 		lp_comm_run(conn, ctx, NULL);
 		break;
 	case PROC_ENCRYPTION_START:
+	case PROC_ENCRYPTION_PAUSE:
 		lp_enc_run(conn, ctx, NULL);
 		break;
 	case PROC_PHY_UPDATE:
