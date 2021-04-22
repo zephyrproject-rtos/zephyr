@@ -96,23 +96,6 @@ char *net_sprint_addr(sa_family_t af, const void *addr);
 
 #define net_sprint_ipv6_addr(_addr) net_sprint_addr(AF_INET6, _addr)
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-int net_context_get_timestamp(struct net_context *context,
-			      struct net_pkt *pkt,
-			      struct net_ptp_time *timestamp);
-#else
-static inline int net_context_get_timestamp(struct net_context *context,
-					    struct net_pkt *pkt,
-					    struct net_ptp_time *timestamp)
-{
-	ARG_UNUSED(context);
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(timestamp);
-
-	return -ENOTSUP;
-}
-#endif
-
 #if defined(CONFIG_COAP)
 /**
  * @brief CoAP init function declaration. It belongs here because we don't want

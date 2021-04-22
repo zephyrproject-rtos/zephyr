@@ -1007,8 +1007,7 @@ static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
 	 CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS) || \
-	defined(CONFIG_NET_PKT_RXTIME_STATS) || \
-	defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+	defined(CONFIG_NET_PKT_RXTIME_STATS)
 
 #if (NET_TC_TX_COUNT > 1) || (NET_TC_RX_COUNT > 1)
 static char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
@@ -1031,8 +1030,7 @@ static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
 	return "\0";
 }
 #endif
-#endif /* CONFIG_NET_PKT_TXTIME_STATS) || CONFIG_NET_PKT_RXTIME_STATS ||
-	  CONFIG_NET_CONTEXT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_TXTIME_STATS) || CONFIG_NET_PKT_RXTIME_STATS */
 #endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
 	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
@@ -1043,8 +1041,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 
 	PR("TX traffic class statistics:\n");
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
-				defined(CONFIG_NET_PKT_TXTIME_STATS)
+#if defined(CONFIG_NET_PKT_TXTIME_STATS)
 	PR("TC  Priority\tSent pkts\tbytes\ttime\n");
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
@@ -1078,7 +1075,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 		   GET_STAT(iface, tc.sent[i].pkts),
 		   GET_STAT(iface, tc.sent[i].bytes));
 	}
-#endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_TXTIME_STATS */
 #else
 	ARG_UNUSED(shell);
 
@@ -1267,14 +1264,6 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, tcp.conndrop),
 	   GET_STAT(iface, tcp.connrst));
 	PR("TCP pkt drop   %d\n", GET_STAT(iface, tcp.drop));
-#endif
-
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
-	if (GET_STAT(iface, tx_time.count) > 0) {
-		PR("Network pkt TX time %lu us\n",
-		   (uint32_t)(GET_STAT(iface, tx_time.sum) /
-			   (uint64_t)GET_STAT(iface, tx_time.count)));
-	}
 #endif
 
 	PR("Bytes received %u\n", GET_STAT(iface, bytes.received));

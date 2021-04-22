@@ -527,13 +527,6 @@ config NET_CONTEXT_PRIORITY
 	  It is possible to prioritize network traffic. This requires
 	  also traffic class support to work as expected.
 
-config NET_CONTEXT_TIMESTAMP
-	bool "Add timestamp support to net_context"
-	select NET_PKT_TIMESTAMP
-	help
-	  It is possible to timestamp outgoing packets and get information
-	  about these timestamps.
-
 config NET_CONTEXT_TXTIME
 	bool "Add TXTIME support to net_context"
 	select NET_PKT_TXTIME

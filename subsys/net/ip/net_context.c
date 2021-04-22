@@ -1165,22 +1165,6 @@ static int get_context_priority(struct net_context *context,
 #endif
 }
 
-static int get_context_timepstamp(struct net_context *context,
-				  void *value, size_t *len)
-{
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-	*((bool *)value) = context->options.timestamp;
-
-	if (len) {
-		*len = sizeof(bool);
-	}
-
-	return 0;
-#else
-	return -ENOTSUP;
-#endif
-}
-
 static int get_context_proxy(struct net_context *context,
 			     void *value, size_t *len)
 {
@@ -1204,23 +1188,6 @@ static int get_context_proxy(struct net_context *context,
 	return -ENOTSUP;
 #endif
 }
-
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-int net_context_get_timestamp(struct net_context *context,
-			      struct net_pkt *pkt,
-			      struct net_ptp_time *timestamp)
-{
-	bool is_timestamped;
-
-	get_context_timepstamp(context, &is_timestamped, NULL);
-	if (is_timestamped) {
-		memcpy(timestamp, net_pkt_timestamp(pkt), sizeof(*timestamp));
-		return 0;
-	}
-
-	return -ENOENT;
-}
-#endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
 
 static int get_context_txtime(struct net_context *context,
 			      void *value, size_t *len)
@@ -1658,36 +1625,6 @@ static int context_sendto(struct net_context *context,
 
 		get_context_priority(context, &priority, NULL);
 		net_pkt_set_priority(pkt, priority);
-	}
-
-	if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP)) {
-		bool timestamp;
-
-		get_context_timepstamp(context, &timestamp, NULL);
-		if (timestamp) {
-			struct net_ptp_time tp = {
-				/* Use the nanosecond field to temporarily
-				 * store the cycle count as it is a 32-bit
-				 * variable. The value is checked in
-				 * net_if.c:net_if_tx()
-				 *
-				 * The net_pkt timestamp field is used in two
-				 * roles here:
-				 * 1) To calculate how long it takes the packet
-				 *    from net_context to be sent by the
-				 *    network device driver.
-				 * 2) gPTP enabled Ethernet device driver will
-				 *    use the value to tell gPTP what time the
-				 *    packet was sent.
-				 *
-				 * Because these two things are happening at
-				 * different times, we can share the variable.
-				 */
-				.nanosecond = k_cycle_get_32(),
-			};
-
-			net_pkt_set_timestamp(pkt, &tp);
-		}
 	}
 
 	/* If there is ancillary data in msghdr, then we need to add that
@@ -2190,22 +2127,6 @@ static int set_context_priority(struct net_context *context,
 #endif
 }
 
-static int set_context_timestamp(struct net_context *context,
-				 const void *value, size_t len)
-{
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-	if (len > sizeof(bool)) {
-		return -EINVAL;
-	}
-
-	context->options.timestamp = *((bool *)value);
-
-	return 0;
-#else
-	return -ENOTSUP;
-#endif
-}
-
 static int set_context_txtime(struct net_context *context,
 			      const void *value, size_t len)
 {
@@ -2295,9 +2216,6 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_PRIORITY:
 		ret = set_context_priority(context, value, len);
 		break;
-	case NET_OPT_TIMESTAMP:
-		ret = set_context_timestamp(context, value, len);
-		break;
 	case NET_OPT_TXTIME:
 		ret = set_context_txtime(context, value, len);
 		break;
@@ -2334,9 +2252,6 @@ int net_context_get_option(struct net_context *context,
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = get_context_priority(context, value, len);
-		break;
-	case NET_OPT_TIMESTAMP:
-		ret = get_context_timepstamp(context, value, len);
 		break;
 	case NET_OPT_TXTIME:
 		ret = get_context_txtime(context, value, len);

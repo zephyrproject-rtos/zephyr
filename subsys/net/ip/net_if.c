@@ -214,7 +214,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	/* Timestamp of the current network packet sent if enabled */
 	struct net_ptp_time start_timestamp;
-	uint32_t curr_time = 0;
 
 	/* We collect send statistics for each socket priority if enabled */
 	uint8_t pkt_priority;
@@ -247,15 +246,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_set_queued(pkt, false);
 		}
 
-		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && context) {
-			if (net_context_get_timestamp(context, pkt,
-						      &start_timestamp) < 0) {
-				start_timestamp.nanosecond = 0;
-			} else {
-				pkt_priority = net_pkt_priority(pkt);
-			}
-		}
-
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
 			memcpy(&start_timestamp, net_pkt_timestamp(pkt),
 			       sizeof(start_timestamp));
@@ -270,13 +260,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		}
 
 		status = net_if_l2(iface)->send(iface, pkt);
-
-		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && status >= 0 &&
-		    context) {
-			if (start_timestamp.nanosecond > 0) {
-				curr_time = k_cycle_get_32();
-			}
-		}
 
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
 			uint32_t end_tick = k_cycle_get_32();
@@ -326,18 +309,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			context, status);
 
 		net_context_send_cb(context, status);
-
-		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && status >= 0 &&
-		    start_timestamp.nanosecond && curr_time > 0) {
-			/* So we know now how long the network packet was in
-			 * transit from when it was allocated to when we
-			 * got information that it was sent successfully.
-			 */
-			net_stats_update_tc_tx_time(iface,
-						    pkt_priority,
-						    start_timestamp.nanosecond,
-						    curr_time);
-		}
 	}
 
 	if (ll_dst.addr) {
