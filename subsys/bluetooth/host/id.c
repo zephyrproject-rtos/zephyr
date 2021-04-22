@@ -1573,7 +1573,7 @@ int bt_br_oob_get_local(struct bt_br_oob *oob)
 
 int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 {
-	struct bt_le_ext_adv *adv;
+	struct bt_le_ext_adv *adv = NULL;
 	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
@@ -1584,7 +1584,9 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 		return -EINVAL;
 	}
 
-	adv = bt_le_adv_lookup_legacy();
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		adv = bt_le_adv_lookup_legacy();
+	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    !(adv && adv->id == id &&
