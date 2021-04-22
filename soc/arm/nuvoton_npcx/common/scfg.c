@@ -127,6 +127,18 @@ void npcx_lvol_suspend_io_pads(void)
 	}
 }
 
+bool npcx_lvol_is_enabled(int port, int pin)
+{
+	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
+		if (def_lvols[i].io_port == port &&
+		    def_lvols[i].io_bit == pin) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void npcx_pinctrl_i2c_port_sel(int controller, int port)
 {
 	struct glue_reg *const inst_glue = HAL_GLUE_INST();
