@@ -132,7 +132,7 @@ extern "C" {
 
 static inline void cbprintf_wcpy(int *dst, int *src, size_t len)
 {
-	for (int i = 0; i < len; i++) {
+	for (size_t i = 0; i < len; i++) {
 		dst[i] = src[i];
 	}
 }
@@ -301,7 +301,7 @@ do { \
 			"Buffer must be aligned."); \
 	} \
 	uint8_t *_pbuf = buf; \
-	int _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
+	size_t _pmax = (buf != NULL) ? _inlen : SIZE_MAX; \
 	int _pkg_len = 0; \
 	int _pkg_offset = _align_offset; \
 	union z_cbprintf_hdr *_len_loc; \
