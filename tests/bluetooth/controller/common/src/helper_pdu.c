@@ -155,6 +155,20 @@ void helper_pdu_encode_start_enc_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
 }
 
+void helper_pdu_encode_pause_enc_req(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, pause_enc_req) + sizeof(struct pdu_data_llctrl_pause_enc_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ;
+}
+
+void helper_pdu_encode_pause_enc_rsp(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, pause_enc_rsp) + sizeof(struct pdu_data_llctrl_pause_enc_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
+}
+
 void helper_pdu_encode_reject_ext_ind(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_reject_ext_ind *p = param;
@@ -410,6 +424,18 @@ void helper_pdu_verify_start_enc_rsp(const char *file, uint32_t line, struct pdu
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP, "Not a LL_START_ENC_RSP.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_pause_enc_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ, "Not a LL_PAUSE_ENC_REQ.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_pause_enc_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP, "Not a LL_PAUSE_ENC_RSP.\nCalled at %s:%d\n", file, line);
 }
 
 void helper_pdu_verify_reject_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
