@@ -1,7 +1,7 @@
 # Copyright (c) 2019, Nordic Semiconductor
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Tip: You can view just the documentation with 'pydoc3 dtlib'
+# Tip: You can view just the documentation with 'pydoc3 devicetree.dtlib'
 
 # _init_tokens() builds names dynamically.
 #
@@ -24,7 +24,7 @@ import re
 import sys
 import textwrap
 
-# NOTE: testdtlib.py is the test suite for this library.
+# NOTE: tests/test_dtlib.py is the test suite for this library.
 
 class DT:
     """
