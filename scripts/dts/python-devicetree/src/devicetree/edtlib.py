@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Tip: You can view just the documentation with 'pydoc3 edtlib'
+# Tip: You can view just the documentation with 'pydoc3 devicetree.edtlib'
 
 """
 Library for working with devicetrees at a higher level compared to dtlib. Like
@@ -25,7 +25,7 @@ See their constructor docstrings for details. There is also a
 bindings_from_paths() helper function.
 """
 
-# NOTE: testedtlib.py is the test suite for this library.
+# NOTE: tests/test_edtlib.py is the test suite for this library.
 
 # Implementation notes
 # --------------------
