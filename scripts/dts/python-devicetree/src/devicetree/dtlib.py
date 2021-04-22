@@ -23,7 +23,7 @@ import os
 import re
 import sys
 import textwrap
-from typing import NoReturn
+from typing import Dict, Iterable, List, NoReturn, Optional
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -49,7 +49,7 @@ class Node:
     props:
       A collections.OrderedDict that maps the properties defined on the node to
       their values. 'props' is indexed by property name (a string), and values
-      are represented as 'bytes' arrays.
+      are Property objects.
 
       To convert property values to Python numbers or strings, use
       dtlib.to_num(), dtlib.to_nums(), or dtlib.to_string().
@@ -87,7 +87,7 @@ class Node:
     # Public interface
     #
 
-    def __init__(self, name, parent, dt):
+    def __init__(self, name: str, parent: Optional['Node'], dt: 'DT'):
         """
         Node constructor. Not meant to be called directly by clients.
         """
@@ -95,21 +95,21 @@ class Node:
         self.parent = parent
         self.dt = dt
 
-        self.props = collections.OrderedDict()
-        self.nodes = collections.OrderedDict()
-        self.labels = []
+        self.props: Dict[str, 'Property'] = collections.OrderedDict()
+        self.nodes: Dict[str, 'Node'] = collections.OrderedDict()
+        self.labels: List[str] = []
         self._omit_if_no_ref = False
         self._is_referenced = False
 
     @property
-    def unit_addr(self):
+    def unit_addr(self) -> str:
         """
         See the class documentation.
         """
         return self.name.partition("@")[2]
 
     @property
-    def path(self):
+    def path(self) -> str:
         """
         See the class documentation.
         """
@@ -122,7 +122,7 @@ class Node:
 
         return "/" + "/".join(reversed(node_names))
 
-    def node_iter(self):
+    def node_iter(self) -> Iterable['Node']:
         """
         Returns a generator for iterating over the node and its children,
         recursively.
@@ -137,7 +137,7 @@ class Node:
         for node in self.nodes.values():
             yield from node.node_iter()
 
-    def _get_prop(self, name):
+    def _get_prop(self, name: str) -> 'Property':
         # Returns the property named 'name' on the node, creating it if it
         # doesn't already exist
 
@@ -147,10 +147,9 @@ class Node:
             self.props[name] = prop
         return prop
 
-    def _del(self):
+    def _del(self) -> None:
         # Removes the node from the tree
-
-        self.parent.nodes.pop(self.name)
+        self.parent.nodes.pop(self.name)  # type: ignore
 
     def __str__(self):
         """
