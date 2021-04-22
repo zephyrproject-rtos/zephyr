@@ -114,10 +114,10 @@
 		};
 		gpio_in: gpio@e0006000 {
 			compatible = "litex,gpio";
-			reg = <0xe0006000 0x4>;
+			reg = <0xe0006000 0x4 0xe0006008 0x1 0xe000600c 0x1>;
 			interrupt-parent = <&intc0>;
 			interrupts = <4 2>;
-			reg-names = "control";
+			reg-names = "control", "irq_pend", "irq_en";
 			ngpios = <4>;
 			label = "gpio_in";
 			status = "disabled";
