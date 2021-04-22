@@ -55,7 +55,7 @@ jobs:
           #source zephyr-env.sh
           export ZEPHYR_BASE=${PWD}
           export ZEPHYR_TOOLCHAIN_VARIANT=llvm
-          ./scripts/twister --inline-logs -N -v --integration -p native_posix --subset ${{matrix.subset}}/10 --retry-failed 3
+          ./scripts/twister --inline-logs -N -v -p native_posix --subset ${{matrix.subset}}/10 --retry-failed 3
 
       - name: Upload Unit Test Results
         if: always()
