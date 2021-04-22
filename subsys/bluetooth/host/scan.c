@@ -12,9 +12,11 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/iso.h>
 #include <bluetooth/buf.h>
+#include <bluetooth/direction.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
+#include "direction_internal.h"
 #include "id.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
@@ -904,6 +906,22 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 	}
 }
 #endif /* defined(CONFIG_BT_ISO_BROADCAST) */
+#if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
+void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf)
+{
+	struct bt_df_per_adv_sync_iq_samples_report cte_report;
+	struct bt_le_per_adv_sync *per_adv_sync;
+	struct bt_le_per_adv_sync_cb *listener;
+
+	hci_df_prepare_connectionless_iq_report(buf, &cte_report, &per_adv_sync);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
+		if (listener->cte_report_cb) {
+			listener->cte_report_cb(per_adv_sync, &cte_report);
+		}
+	}
+}
+#endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 

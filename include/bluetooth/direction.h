@@ -95,11 +95,11 @@ struct bt_df_per_adv_sync_iq_samples_report {
 	int16_t rssi;
 	/** Id of antenna used to measure the RSSI. */
 	uint8_t rssi_ant_id;
-	/** Type of CTE (@ref BT_DF_CTE_TYPE). */
+	/** Type of CTE (@ref bt_df_cte_type). */
 	uint8_t cte_type;
-	/** Duration of slots when received CTE type is AoA (@ref BT_DF_ANTENNA_SWITCHING_SLOT). */
+	/** Duration of slots when received CTE type is AoA (@ref bt_df_antenna_switching_slot). */
 	uint8_t slot_durations;
-	/** Status of received PDU with CTE (@ref BT_DF_RX_POCKET_STATUS). */
+	/** Status of received PDU with CTE (@ref bt_df_packet_status). */
 	uint8_t packet_status;
 	/** Number of IQ samples in report. */
 	uint8_t sample_count;
