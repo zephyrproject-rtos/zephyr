@@ -2133,6 +2133,10 @@ static const struct event_handler meta_events[] = {
 		      sizeof(struct bt_hci_evt_le_biginfo_adv_report)),
 #endif /* (CONFIG_BT_ISO_BROADCAST) */
 #endif /* (CONFIG_BT_ISO) */
+#if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
+	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT, bt_hci_le_df_connectionless_iq_report,
+		      sizeof(struct bt_hci_evt_le_connectionless_iq_report)),
+#endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 };
 
 static void hci_le_meta_event(struct net_buf *buf)
@@ -2682,6 +2686,11 @@ static int le_set_event_mask(void)
 			mask |= BT_EVT_MASK_LE_BIG_SYNC_LOST;
 			mask |= BT_EVT_MASK_LE_BIGINFO_ADV_REPORT;
 		}
+	}
+
+	/* Enable IQ samples report events receiver */
+	if (IS_ENABLED(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)) {
+		mask |= BT_EVT_MASK_LE_CONNECTIONLESS_IQ_REPORT;
 	}
 
 	sys_put_le64(mask, cp_mask->events);
