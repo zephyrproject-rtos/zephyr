@@ -14,8 +14,8 @@
 LOG_MODULE_DECLARE(power);
 
 /* Device PM request type */
-#define DEVICE_PM_SYNC			(0 << 0)
-#define DEVICE_PM_ASYNC			(1 << 0)
+#define DEVICE_PM_SYNC   BIT(0)
+#define DEVICE_PM_ASYNC  BIT(1)
 
 /* Device PM states */
 enum device_pm_state {
