@@ -24,53 +24,6 @@
 #define IRAM_REGION iram0_0_seg :iram0_0_phdr
 #define FLASH_CODE_REGION irom0_0_seg :irom0_0_phdr
 
-PROVIDE ( __stack = 0x3ffe3f20 );
-
-/* Global symbols required for espressif hal build */
-PROVIDE ( ets_printf = 0x40007d54 );
-PROVIDE ( intr_matrix_set = 0x4000681c );
-PROVIDE ( g_ticks_per_us_app = 0x3ffe40f0 );
-PROVIDE ( g_ticks_per_us_pro = 0x3ffe01e0 );
-PROVIDE ( ets_delay_us = 0x40008534 );
-PROVIDE ( gpio_output_set = 0x40009b24 );
-PROVIDE ( gpio_output_set_high = 0x40009b5c );
-PROVIDE ( roundup2 = 0x4000ab7c );
-PROVIDE ( crc32_le = 0x4005cfec );
-PROVIDE ( Cache_Read_Disable_rom = 0x40009ab8 );
-PROVIDE ( Cache_Read_Enable_rom = 0x40009a84 );
-PROVIDE ( Cache_Read_Init_rom = 0x40009950 );
-PROVIDE ( phy_get_romfuncs = 0x40004100 );
-PROVIDE ( esp_rom_spiflash_read_user_cmd = 0x400621b0 );
-PROVIDE ( g_rom_spiflash_dummy_len_plus = 0x3ffae290 );
-PROVIDE ( g_rom_flashchip = 0x3ffae270 );
-PROVIDE ( SPI0 = 0x3ff43000 );
-PROVIDE ( SPI1 = 0x3ff42fff );
-PROVIDE ( SPI2 = 0x3ff64fff );
-PROVIDE ( SPI3 = 0x3ff65fff );
-
-PROVIDE ( esp32_rom_uart_tx_one_char = 0x40009200 );
-PROVIDE ( esp32_rom_uart_rx_one_char = 0x400092d0 );
-PROVIDE ( esp32_rom_uart_attach = 0x40008fd0 );
-PROVIDE ( esp32_rom_uart_tx_wait_idle = 0x40009278 );
-PROVIDE ( esp32_rom_intr_matrix_set = intr_matrix_set );
-PROVIDE ( esp32_rom_gpio_matrix_in = 0x40009edc );
-PROVIDE ( esp32_rom_gpio_matrix_out = 0x40009f0c );
-PROVIDE ( esp32_rom_Cache_Flush = 0x40009a14 );
-PROVIDE ( esp32_rom_Cache_Read_Enable = 0x40009a84 );
-PROVIDE ( esp32_rom_ets_set_appcpu_boot_addr = 0x4000689c );
-PROVIDE ( esp32_rom_i2c_readReg = 0x40004148 );
-PROVIDE ( esp32_rom_i2c_writeReg = 0x400041a4 );
-PROVIDE ( esp32_rom_ets_printf = ets_printf );
-PROVIDE ( esp32_rom_g_ticks_per_us_app = g_ticks_per_us_app );
-PROVIDE ( esp32_rom_g_ticks_per_us_pro = g_ticks_per_us_app );
-PROVIDE ( esp32_rom_ets_delay_us = ets_delay_us );
-PROVIDE ( TIMERG0 = 0x3ff5F000 );
-PROVIDE ( TIMERG1 = 0x3ff60000 );
-
-/* __udivdi3 is exported using assignment, which declares strong symbols */
-__udivdi3 = 0x4000cff8;
-__umoddi3 = 0x4000d280;
-
 MEMORY
 {
   iram0_0_seg(RX): org = 0x40080000, len = 0x20000
