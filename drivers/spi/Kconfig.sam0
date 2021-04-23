@@ -10,3 +10,11 @@ config SPI_SAM0
 	select DMA if SPI_ASYNC
 	help
 	  Enable support for the SAM0 SERCOM SPI driver.
+
+config QSPI_SAM0
+	bool "Atmel SAM0 series QSPI driver"
+	default y
+	depends on SOC_FAMILY_SAM0
+	select DMA if SPI_ASYNC
+	help
+	  Enable support for the SAM0 QSPI driver.
