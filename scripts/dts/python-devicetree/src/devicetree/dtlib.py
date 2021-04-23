@@ -1784,7 +1784,8 @@ class DT:
 # Public functions
 #
 
-def to_num(data, length=None, signed=False):
+def to_num(data: bytes, length: Optional[int] = None,
+           signed: bool = False) -> int:
     """
     Converts the 'bytes' array 'data' to a number. The value is expected to be
     in big-endian format, which is standard in devicetree.
@@ -1800,12 +1801,12 @@ def to_num(data, length=None, signed=False):
     if length is not None:
         _check_length_positive(length)
         if len(data) != length:
-            _err("{} is {} bytes long, expected {}"
+            _err("{!r} is {} bytes long, expected {}"
                  .format(data, len(data), length))
 
     return int.from_bytes(data, "big", signed=signed)
 
-def to_nums(data, length=4, signed=False):
+def to_nums(data: bytes, length: int = 4, signed: bool = False) -> List[int]:
     """
     Like Property.to_nums(), but takes an arbitrary 'bytes' array. The values
     are assumed to be in big-endian format, which is standard in devicetree.
@@ -1814,7 +1815,7 @@ def to_nums(data, length=4, signed=False):
     _check_length_positive(length)
 
     if len(data) % length:
-        _err("{} is {} bytes long, expected a length that's a a multiple of {}"
+        _err("{!r} is {} bytes long, expected a length that's a a multiple of {}"
              .format(data, len(data), length))
 
     return [int.from_bytes(data[i:i + length], "big", signed=signed)
