@@ -1004,6 +1004,14 @@ struct mesh_lpn_polled_ev {
 	uint8_t retry;
 } __packed;
 
+#define MESH_EV_PROV_NODE_ADDED		0x8e
+struct mesh_prov_node_added_ev {
+	uint16_t net_idx;
+	uint16_t addr;
+	uint8_t uuid[16];
+	uint8_t num_elems;
+} __packed;
+
 void tester_init(void);
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t index, uint8_t status);
 void tester_send(uint8_t service, uint8_t opcode, uint8_t index, uint8_t *data,
