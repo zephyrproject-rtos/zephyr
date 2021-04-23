@@ -30,10 +30,10 @@
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
-	/* verify we don't have rogue .init_<something> initlevel sections */
+	/* verify we don't have rogue .z_init_<something> initlevel sections */
 	SECTION_PROLOGUE(initlevel_error,,)
 	{
-		KEEP(*(SORT(.init_[_A-Z0-9]*)))
+		KEEP(*(SORT(.z_init_[_A-Z0-9]*)))
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
