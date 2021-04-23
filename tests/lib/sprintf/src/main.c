@@ -914,7 +914,7 @@ void test_fwrite(void)
 	zassert_equal(ret, 0, "fwrite failed!");
 
 	ret = fwrite("This 3", 4, 4, stdout);
-	zassert_not_equal(ret, 0, "fwrite failed!");
+	zassert_equal(ret, 0, "fwrite failed!");
 
 	ret = fwrite("This 3", 4, 4, stdin);
 	zassert_equal(ret, 0, "fwrite failed!");

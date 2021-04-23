@@ -65,6 +65,10 @@ size_t z_impl_zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 		return 0;
 	}
 
+	if ((strlen(ptr) + 1) < (size * nitems)) {
+		return 0;
+	}
+
 	p = ptr;
 	i = nitems;
 	do {
