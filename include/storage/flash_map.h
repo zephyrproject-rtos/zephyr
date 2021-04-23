@@ -36,6 +36,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <devicetree.h>
+#include <device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +59,38 @@ struct flash_area {
 	size_t fa_size;
 };
 
+/*
+ * The getter functions cover fields of flash_area from mcuboot not the internal implementation
+ * of Zephyr.
+ */
+static inline off_t flash_area_get_off(const struct flash_area *fa)
+{
+	return fa->fa_off;
+}
+
+static inline size_t flash_area_get_size(const struct flash_area *fa)
+{
+	return fa->fa_size;
+}
+
+static inline uint8_t flash_area_get_id(const struct flash_area *fa)
+{
+	extern const struct flash_area __flash_map_list_start[];
+#ifdef CONFIG_ASSERT
+	extern const struct flash_area __flash_map_list_end[];
+
+	__ASSERT_NO_MSG(fa >= __flash_map_list_start && fa < __flash_map_list_end &&
+			!((uintptr_t)__alignof(struct flash_area) & (const uintptr_t)fa));
+#endif
+
+	return fa - __flash_map_list_start;
+}
+
+static inline uint8_t flash_area_get_device_id(const struct flash_area *fa)
+{
+	return SOC_FLASH_0_ID;
+}
+
 /**
  * @brief Structure for transfer flash sector boundaries
  *
@@ -70,6 +103,16 @@ struct flash_sector {
 	/** Sector size in bytes */
 	size_t fs_size;
 };
+
+static inline off_t flash_sector_get_off(const struct flash_sector *fs)
+{
+	return fs->fs_off;
+}
+
+static inline size_t flash_sector_get_size(const struct flash_sector *fs)
+{
+	return fs->fs_size;
+}
 
 #if defined(CONFIG_FLASH_AREA_CHECK_INTEGRITY)
 /**
