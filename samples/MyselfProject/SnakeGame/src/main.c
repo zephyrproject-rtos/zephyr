@@ -12,6 +12,9 @@
 
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7735))
 
+#define PRINT_MACRO_HELPER(x) #x
+#define PRINT_MACRO(x) #x"="PRINT_MACRO_HELPER(x)
+
 struct k_msgq input_key_message;
 // uint16_t message_buffer[10];
 
@@ -27,7 +30,9 @@ void main(void)
     // k_msgq_init(&input_key_message, message_buffer, sizeof(uint16_t), 10);
 
     //屏幕初始化
-    const struct device* display_dev=device_get_binding(DISPLAY_DEV_NAME);
+    const struct device* display_dev=device_get_binding("ST7735");
+
+    #pragma message(PRINT_MACRO(DISPLAY_DEV_NAME))
 
     if(!display_dev){
         printk("===display dev is so null===\n");
