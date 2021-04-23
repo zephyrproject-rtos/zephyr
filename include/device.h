@@ -1040,7 +1040,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".device_" #level STRINGIFY(prio)"_"))) = { \
+	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
