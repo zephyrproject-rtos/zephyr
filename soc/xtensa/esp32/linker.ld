@@ -398,10 +398,17 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
     *libnet80211.a:( .wifirxiram  .wifirxiram.*)
     *libpp.a:( .wifirxiram  .wifirxiram.*)
+#endif
+
     _iram_text_end = ABSOLUTE(.);
   } GROUP_LINK_IN(IRAM_REGION)
 
@@ -409,6 +416,16 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
   {
     _stext = .;
     _text_start = ABSOLUTE(.);
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.*)
+#endif
 
     *(.literal .text .literal.* .text.*)
     _text_end = ABSOLUTE(.);
