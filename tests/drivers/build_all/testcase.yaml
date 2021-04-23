@@ -67,6 +67,11 @@ tests:
     min_ram: 32
     platform_exclude: serpente
     depends_on: gpio spi
+  drivers.led.build:
+    build_only: true
+    extra_args: CONF_FILE=led.conf
+    min_ram: 32
+    tags: drivers
   drivers.eeprom.build:
     build_only: true
     extra_args: CONF_FILE=eeprom.conf
