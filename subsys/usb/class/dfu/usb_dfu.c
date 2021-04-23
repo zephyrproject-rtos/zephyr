@@ -827,7 +827,7 @@ static bool is_dfu_started(void)
  */
 void wait_for_usb_dfu(k_timeout_t delay)
 {
-	uint64_t end = z_timeout_end_calc(delay);
+	uint64_t end = sys_clock_timeout_end_calc(delay);
 
 	/* Wait for a prescribed duration of time. If DFU hasn't started within
 	 * that time, stop waiting and proceed further.
