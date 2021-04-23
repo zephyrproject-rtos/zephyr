@@ -131,6 +131,15 @@
 
 	Z_ITERABLE_SECTION_ROM(k_p4wq_initparam, 4)
 
+#if defined(CONFIG_FLASH_MAP)
+	SECTION_DATA_PROLOGUE(_flash_map,,SUBALIGN(4))
+	{
+		__flash_map_list_start = .;
+		KEEP(*(SORT_BY_NAME("._flash_map.static.*")));
+		__flash_map_list_end = .;
+	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 #if defined(CONFIG_EMUL)
 	SECTION_DATA_PROLOGUE(emulators_section,,)
 	{
