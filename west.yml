@@ -21,6 +21,10 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: mcu-tools
+      url-base: https://github.com/mcu-tools
+    - name: de-nordic
+      url-base: https://github.com/de-nordic
 
   #
   # Please add items below based on alphabetical order
@@ -91,7 +95,8 @@ manifest:
       revision: 5765cb7f75a9973ae9232d438e361a9d7bbc49e7
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: 2fce9769b191411d580bbc65b043956c2ae9307e
+      remote: de-nordic
+      revision: 4106d2ac8279cef805e617e0d4c8ef15bcb8352b
       path: bootloader/mcuboot
     - name: mcumgr
       revision: 5c5055f5a7565f8152d75fcecf07262928b4d56e
@@ -142,12 +147,15 @@ manifest:
       path: tools/edtt
       revision: 7dd56fc100d79cc45c33d43e7401d1803e26f6e7
     - name: trusted-firmware-m
+      remote: de-nordic
       path: modules/tee/tfm
-      revision: 51cdecd6f9e6b0aa66da45db22f4b478183d472f
+      revision: 56475a72eec338e5ed0dd46867f497beaebfc7aa
     - name: tfm-mcuboot # This is used by the trusted-firmware-m module.
+      remote: de-nordic
       repo-path: mcuboot
       path: modules/tee/tfm-mcuboot
-      revision: v1.7.2
+      # This is temporarly taken from private repo for the RFC purpose, it should be PR to TFM
+      revision: 96dd06f133518ed6f116a69fb25684b12cbb5e1f
     - name: nanopb
       path: modules/lib/nanopb
       revision: d148bd26718e4c10414f07a7eb1bd24c62e56c5d
