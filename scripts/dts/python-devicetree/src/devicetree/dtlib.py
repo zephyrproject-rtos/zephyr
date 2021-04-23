@@ -723,6 +723,8 @@ class DT:
 
         self._lineno = 1
 
+        self._root: Optional[Node] = None
+
         self._parse_dt()
 
         self._register_phandles()
@@ -730,6 +732,16 @@ class DT:
         self._register_aliases()
         self._remove_unreferenced()
         self._register_labels()
+
+    @property
+    def root(self) -> Node:
+        """
+        See the class documentation.
+        """
+        # This is necessary because mypy can't tell that we never
+        # treat self._root as a non-None value until it's initialized
+        # properly in _parse_dt().
+        return self._root       # type: ignore
 
     def get_node(self, path):
         """
@@ -827,15 +839,13 @@ class DT:
         self._parse_header()
         self._parse_memreserves()
 
-        self.root = None
-
         while True:
             tok = self._next_token()
 
             if tok.val == "/":
                 # '/ { ... };', the root node
-                if not self.root:
-                    self.root = Node(name="/", parent=None, dt=self)
+                if not self._root:
+                    self._root = Node(name="/", parent=None, dt=self)
                 self._parse_node(self.root)
 
             elif tok.id in (_T.LABEL, _T.REF):
@@ -868,7 +878,7 @@ class DT:
                 self._expect_token(";")
 
             elif tok.id == _T.EOF:
-                if not self.root:
+                if not self._root:
                     self._parse_error("no root node defined")
                 return
 
