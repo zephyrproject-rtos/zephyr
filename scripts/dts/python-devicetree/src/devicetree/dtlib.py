@@ -618,6 +618,34 @@ class Property:
         if marker_type is _MarkerType.PHANDLE:
             self.value += b"\0\0\0\0"
 
+class _T(enum.IntEnum):
+    # Token IDs used by the DT lexer.
+
+    # These values must be contiguous and start from 1.
+    INCLUDE = 1
+    LINE = 2
+    STRING = 3
+    DTS_V1 = 4
+    PLUGIN = 5
+    MEMRESERVE = 6
+    BITS = 7
+    DEL_PROP = 8
+    DEL_NODE = 9
+    OMIT_IF_NO_REF = 10
+    LABEL = 11
+    CHAR_LITERAL = 12
+    REF = 13
+    INCBIN = 14
+    SKIP = 15
+    EOF = 16
+
+    # These values must be larger than the above contiguous range.
+    NUM = 17
+    PROPNODENAME = 18
+    MISC = 19
+    BYTE = 20
+    BAD = 21
+
 class DT:
     """
     Represents a devicetree parsed from a .dts file (or from many files, if the
@@ -810,14 +838,14 @@ class DT:
                     self.root = Node(name="/", parent=None, dt=self)
                 self._parse_node(self.root)
 
-            elif tok.id in (_T_LABEL, _T_REF):
+            elif tok.id in (_T.LABEL, _T.REF):
                 # '&foo { ... };' or 'label: &foo { ... };'. The C tools only
                 # support a single label here too.
 
-                if tok.id is _T_LABEL:
+                if tok.id == _T.LABEL:
                     label = tok.val
                     tok = self._next_token()
-                    if tok.id is not _T_REF:
+                    if tok.id != _T.REF:
                         self._parse_error("expected label reference (&foo)")
                 else:
                     label = None
@@ -831,15 +859,15 @@ class DT:
                 if label:
                     _append_no_dup(node.labels, label)
 
-            elif tok.id is _T_DEL_NODE:
+            elif tok.id == _T.DEL_NODE:
                 self._next_ref2node()._del()
                 self._expect_token(";")
 
-            elif tok.id is _T_OMIT_IF_NO_REF:
+            elif tok.id == _T.OMIT_IF_NO_REF:
                 self._next_ref2node()._omit_if_no_ref = True
                 self._expect_token(";")
 
-            elif tok.id is _T_EOF:
+            elif tok.id == _T.EOF:
                 if not self.root:
                     self._parse_error("no root node defined")
                 return
@@ -853,12 +881,12 @@ class DT:
 
         has_dts_v1 = False
 
-        while self._peek_token().id is _T_DTS_V1:
+        while self._peek_token().id == _T.DTS_V1:
             has_dts_v1 = True
             self._next_token()
             self._expect_token(";")
             # /plugin/ always comes after /dts-v1/
-            if self._peek_token().id is _T_PLUGIN:
+            if self._peek_token().id == _T.PLUGIN:
                 self._parse_error("/plugin/ is not supported")
 
         if not has_dts_v1:
@@ -871,10 +899,10 @@ class DT:
         while True:
             # Labels before /memreserve/
             labels = []
-            while self._peek_token().id is _T_LABEL:
+            while self._peek_token().id == _T.LABEL:
                 _append_no_dup(labels, self._next_token().val)
 
-            if self._peek_token().id is _T_MEMRESERVE:
+            if self._peek_token().id == _T.MEMRESERVE:
                 self._next_token()
                 self.memreserves.append(
                     (labels, self._eval_prim(), self._eval_prim()))
@@ -894,7 +922,7 @@ class DT:
             labels, omit_if_no_ref = self._parse_propnode_labels()
             tok = self._next_token()
 
-            if tok.id is _T_PROPNODENAME:
+            if tok.id == _T.PROPNODENAME:
                 if self._peek_token().val == "{":
                     # '<tok> { ...', expect node
 
@@ -933,17 +961,17 @@ class DT:
                     for label in labels:
                         _append_no_dup(prop.labels, label)
 
-            elif tok.id is _T_DEL_NODE:
+            elif tok.id == _T.DEL_NODE:
                 tok2 = self._next_token()
-                if tok2.id is not _T_PROPNODENAME:
+                if tok2.id != _T.PROPNODENAME:
                     self._parse_error("expected node name")
                 if tok2.val in node.nodes:
                     node.nodes[tok2.val]._del()
                 self._expect_token(";")
 
-            elif tok.id is _T_DEL_PROP:
+            elif tok.id == _T.DEL_PROP:
                 tok2 = self._next_token()
-                if tok2.id is not _T_PROPNODENAME:
+                if tok2.id != _T.PROPNODENAME:
                     self._parse_error("expected property name")
                 node.props.pop(tok2.val, None)
                 self._expect_token(";")
@@ -964,11 +992,11 @@ class DT:
         omit_if_no_ref = False
         while True:
             tok = self._peek_token()
-            if tok.id is _T_LABEL:
+            if tok.id == _T.LABEL:
                 _append_no_dup(labels, tok.val)
-            elif tok.id is _T_OMIT_IF_NO_REF:
+            elif tok.id == _T.OMIT_IF_NO_REF:
                 omit_if_no_ref = True
-            elif (labels or omit_if_no_ref) and tok.id is not _T_PROPNODENAME:
+            elif (labels or omit_if_no_ref) and tok.id != _T.PROPNODENAME:
                 # Got something like 'foo: bar: }'
                 self._parse_error("expected node or property name")
             else:
@@ -996,7 +1024,7 @@ class DT:
             if tok.val == "<":
                 self._parse_cells(prop, 4)
 
-            elif tok.id is _T_BITS:
+            elif tok.id == _T.BITS:
                 n_bits = self._expect_num()
                 if n_bits not in {8, 16, 32, 64}:
                     self._parse_error("expected 8, 16, 32, or 64")
@@ -1006,14 +1034,14 @@ class DT:
             elif tok.val == "[":
                 self._parse_bytes(prop)
 
-            elif tok.id is _T_STRING:
+            elif tok.id == _T.STRING:
                 prop._add_marker(_MarkerType.STRING)
                 prop.value += self._unescape(tok.val.encode("utf-8")) + b"\0"
 
-            elif tok.id is _T_REF:
+            elif tok.id == _T.REF:
                 prop._add_marker(_MarkerType.PATH, tok.val)
 
-            elif tok.id is _T_INCBIN:
+            elif tok.id == _T.INCBIN:
                 self._parse_incbin(prop)
 
             else:
@@ -1036,14 +1064,14 @@ class DT:
 
         while True:
             tok = self._peek_token()
-            if tok.id is _T_REF:
+            if tok.id == _T.REF:
                 self._next_token()
                 if n_bytes != 4:
                     self._parse_error("phandle references are only allowed in "
                                       "arrays with 32-bit elements")
                 prop._add_marker(_MarkerType.PHANDLE, tok.val)
 
-            elif tok.id is _T_LABEL:
+            elif tok.id == _T.LABEL:
                 prop._add_marker(_MarkerType.LABEL, tok.val)
                 self._next_token()
 
@@ -1070,10 +1098,10 @@ class DT:
 
         while True:
             tok = self._next_token()
-            if tok.id is _T_BYTE:
+            if tok.id == _T.BYTE:
                 prop.value += tok.val.to_bytes(1, "big")
 
-            elif tok.id is _T_LABEL:
+            elif tok.id == _T.LABEL:
                 prop._add_marker(_MarkerType.LABEL, tok.val)
 
             elif tok.val == "]":
@@ -1096,7 +1124,7 @@ class DT:
         self._expect_token("(")
 
         tok = self._next_token()
-        if tok.id is not _T_STRING:
+        if tok.id != _T.STRING:
             self._parse_error("expected quoted filename")
         filename = tok.val
 
@@ -1128,7 +1156,7 @@ class DT:
 
         while True:
             tok = self._peek_token()
-            if tok.id is not _T_LABEL:
+            if tok.id != _T.LABEL:
                 return
             prop._add_marker(_MarkerType.LABEL, tok.val)
             self._next_token()
@@ -1162,7 +1190,7 @@ class DT:
 
     def _eval_prim(self):
         tok = self._peek_token()
-        if tok.id in (_T_NUM, _T_CHAR_LITERAL):
+        if tok.id in (_T.NUM, _T.CHAR_LITERAL):
             return self._next_token().val
 
         tok = self._next_token()
@@ -1309,7 +1337,7 @@ class DT:
             match = _token_re.match(self._file_contents, self._tok_end_i)
             if match:
                 tok_id = match.lastindex
-                if tok_id is _T_CHAR_LITERAL:
+                if tok_id == _T.CHAR_LITERAL:
                     val = self._unescape(match.group(tok_id).encode("utf-8"))
                     if len(val) != 1:
                         self._parse_error("character literals must be length 1")
@@ -1320,7 +1348,7 @@ class DT:
             elif self._lexer_state is _DEFAULT:
                 match = _num_re.match(self._file_contents, self._tok_end_i)
                 if match:
-                    tok_id = _T_NUM
+                    tok_id = _T.NUM
                     num_s = match.group(1)
                     tok_val = int(num_s,
                                   16 if num_s.startswith(("0x", "0X")) else
@@ -1331,21 +1359,20 @@ class DT:
                 match = _propnodename_re.match(self._file_contents,
                                                self._tok_end_i)
                 if match:
-                    tok_id = _T_PROPNODENAME
+                    tok_id = _T.PROPNODENAME
                     tok_val = match.group(1)
                     self._lexer_state = _DEFAULT
 
             else:  # self._lexer_state is _EXPECT_BYTE
                 match = _byte_re.match(self._file_contents, self._tok_end_i)
                 if match:
-                    tok_id = _T_BYTE
+                    tok_id = _T.BYTE
                     tok_val = int(match.group(), 16)
-
 
             if not tok_id:
                 match = _misc_re.match(self._file_contents, self._tok_end_i)
                 if match:
-                    tok_id = _T_MISC
+                    tok_id = _T.MISC
                     tok_val = match.group()
                 else:
                     self._tok_i = self._tok_end_i
@@ -1354,18 +1381,18 @@ class DT:
                     # files. Generate a token for it so that the error can
                     # trickle up to some context where we can give a more
                     # helpful error message.
-                    return _Token(_T_BAD, "<unknown token>")
+                    return _Token(_T.BAD, "<unknown token>")
 
             self._tok_i = match.start()
             self._tok_end_i = match.end()
 
-            if tok_id is _T_SKIP:
+            if tok_id == _T.SKIP:
                 self._lineno += tok_val.count("\n")
                 continue
 
             # /include/ is handled in the lexer in the C tools as well, and can
             # appear anywhere
-            if tok_id is _T_INCLUDE:
+            if tok_id == _T.INCLUDE:
                 # Can have newlines between /include/ and the filename
                 self._lineno += tok_val.count("\n")
                 # Do this manual extraction instead of doing it in the regex so
@@ -1374,21 +1401,21 @@ class DT:
                 self._enter_file(filename)
                 continue
 
-            if tok_id is _T_LINE:
+            if tok_id == _T.LINE:
                 # #line directive
                 self._lineno = int(tok_val.split()[0]) - 1
                 self.filename = tok_val[tok_val.find('"') + 1:-1]
                 continue
 
-            if tok_id is _T_EOF:
+            if tok_id == _T.EOF:
                 if self._filestack:
                     self._leave_file()
                     continue
-                return _Token(_T_EOF, "<EOF>")
+                return _Token(_T.EOF, "<EOF>")
 
             # State handling
 
-            if tok_id in (_T_DEL_PROP, _T_DEL_NODE, _T_OMIT_IF_NO_REF) or \
+            if tok_id in (_T.DEL_PROP, _T.DEL_NODE, _T.OMIT_IF_NO_REF) or \
                tok_val in ("{", ";"):
 
                 self._lexer_state = _EXPECT_PROPNODENAME
@@ -1396,7 +1423,7 @@ class DT:
             elif tok_val == "[":
                 self._lexer_state = _EXPECT_BYTE
 
-            elif tok_id in (_T_MEMRESERVE, _T_BITS) or tok_val == "]":
+            elif tok_id in (_T.MEMRESERVE, _T.BITS) or tok_val == "]":
                 self._lexer_state = _DEFAULT
 
             return _Token(tok_id, tok_val)
@@ -1416,7 +1443,7 @@ class DT:
         # Raises an error if the next token is not a number. Returns the token.
 
         tok = self._next_token()
-        if tok.id is not _T_NUM:
+        if tok.id != _T.NUM:
             self._parse_error("expected number")
         return tok.val
 
@@ -1472,7 +1499,7 @@ class DT:
         # on errors to save some code in callers.
 
         label = self._next_token()
-        if label.id is not _T_REF:
+        if label.id != _T.REF:
             self._parse_error(
                 "expected label (&foo) or path (&{/foo/bar}) reference")
         try:
@@ -1892,58 +1919,45 @@ _line_re = re.compile(
     re.MULTILINE)
 
 def _init_tokens():
-    # Builds a (<token 1>)|(<token 2>)|... regex and assigns the index of each
-    # capturing group to a corresponding _T_<TOKEN> variable. This makes the
-    # token type appear in match.lastindex after a match.
-
-    global _token_re
-    global _T_NUM
-    global _T_PROPNODENAME
-    global _T_MISC
-    global _T_BYTE
-    global _T_BAD
+    # Builds a (<token 1>)|(<token 2>)|... regex and returns it. The
+    # way this is constructed makes the token's value as an int appear
+    # in match.lastindex after a match.
 
     # Each pattern must have exactly one capturing group, which can capture any
     # part of the pattern. This makes match.lastindex match the token type.
     # _Token.val is based on the captured string.
-    token_spec = (("_T_INCLUDE",        r'(/include/\s*"(?:[^\\"]|\\.)*")'),
-                  ("_T_LINE",  # #line directive
-                   r'^#(?:line)?[ \t]+([0-9]+[ \t]+"(?:[^\\"]|\\.)*")(?:[ \t]+[0-9]+)?'),
-                  ("_T_STRING",         r'"((?:[^\\"]|\\.)*)"'),
-                  ("_T_DTS_V1",         r"(/dts-v1/)"),
-                  ("_T_PLUGIN",         r"(/plugin/)"),
-                  ("_T_MEMRESERVE",     r"(/memreserve/)"),
-                  ("_T_BITS",           r"(/bits/)"),
-                  ("_T_DEL_PROP",       r"(/delete-property/)"),
-                  ("_T_DEL_NODE",       r"(/delete-node/)"),
-                  ("_T_OMIT_IF_NO_REF", r"(/omit-if-no-ref/)"),
-                  ("_T_LABEL",          r"([a-zA-Z_][a-zA-Z0-9_]*):"),
-                  ("_T_CHAR_LITERAL",   r"'((?:[^\\']|\\.)*)'"),
-                  ("_T_REF",
-                   r"&([a-zA-Z_][a-zA-Z0-9_]*|{[a-zA-Z0-9,._+*#?@/-]*})"),
-                  ("_T_INCBIN",         r"(/incbin/)"),
-                  # Whitespace, C comments, and C++ comments
-                  ("_T_SKIP", r"(\s+|(?:/\*(?:.|\n)*?\*/)|//.*$)"),
-                  # Return a token for end-of-file so that the parsing code can
-                  # always assume that there are more tokens when looking
-                  # ahead. This simplifies things.
-                  ("_T_EOF",            r"(\Z)"))
+    token_spec = {
+        _T.INCLUDE: r'(/include/\s*"(?:[^\\"]|\\.)*")',
+        # #line directive
+        _T.LINE:
+        r'^#(?:line)?[ \t]+([0-9]+[ \t]+"(?:[^\\"]|\\.)*")(?:[ \t]+[0-9]+)?',
+
+        _T.STRING: r'"((?:[^\\"]|\\.)*)"',
+        _T.DTS_V1: r"(/dts-v1/)",
+        _T.PLUGIN: r"(/plugin/)",
+        _T.MEMRESERVE: r"(/memreserve/)",
+        _T.BITS: r"(/bits/)",
+        _T.DEL_PROP: r"(/delete-property/)",
+        _T.DEL_NODE: r"(/delete-node/)",
+        _T.OMIT_IF_NO_REF: r"(/omit-if-no-ref/)",
+        _T.LABEL: r"([a-zA-Z_][a-zA-Z0-9_]*):",
+        _T.CHAR_LITERAL: r"'((?:[^\\']|\\.)*)'",
+        _T.REF: r"&([a-zA-Z_][a-zA-Z0-9_]*|{[a-zA-Z0-9,._+*#?@/-]*})",
+        _T.INCBIN: r"(/incbin/)",
+        # Whitespace, C comments, and C++ comments
+        _T.SKIP: r"(\s+|(?:/\*(?:.|\n)*?\*/)|//.*$)",
+        # Return a token for end-of-file so that the parsing code can
+        # always assume that there are more tokens when looking
+        # ahead. This simplifies things.
+        _T.EOF: r"(\Z)",
+    }
 
     # MULTILINE is needed for C++ comments and #line directives
-    _token_re = re.compile("|".join(spec[1] for spec in token_spec),
-                           re.MULTILINE | re.ASCII)
+    return re.compile("|".join(token_spec[tok_id] for tok_id in
+                               range(1, _T.EOF + 1)),
+                      re.MULTILINE | re.ASCII)
 
-    for i, spec in enumerate(token_spec, 1):
-        globals()[spec[0]] = i
-
-    # pylint: disable=undefined-loop-variable
-    _T_NUM = i + 1
-    _T_PROPNODENAME = i + 2
-    _T_MISC = i + 3
-    _T_BYTE = i + 4
-    _T_BAD = i + 5
-
-_init_tokens()
+_token_re = _init_tokens()
 
 _TYPE_TO_N_BYTES = {
     _MarkerType.UINT8: 1,
