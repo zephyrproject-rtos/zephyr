@@ -700,27 +700,29 @@ add_subdirectory(kernel)
 get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
-  get_property(source_list  TARGET ${zephyr_lib} PROPERTY SOURCES)
   get_property(lib_type     TARGET ${zephyr_lib} PROPERTY TYPE)
-  get_property(lib_imported TARGET ${zephyr_lib} PROPERTY IMPORTED)
-
   # To prevent CMake failure when a driver is enabled, for example: REGULATOR=y
   # we disable any Zephyr libraries without sources and adds the `empty_file.c`.
   if(${lib_type} STREQUAL STATIC_LIBRARY
-     AND NOT ${lib_imported}
-     AND NOT source_list
      AND NOT ${zephyr_lib} STREQUAL app
   )
-    message(WARNING
-      "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
+    get_property(source_list  TARGET ${zephyr_lib} PROPERTY SOURCES)
+    get_property(lib_imported TARGET ${zephyr_lib} PROPERTY IMPORTED)
+    if(NOT source_list
+       AND NOT ${lib_imported}
     )
-    target_sources(${zephyr_lib} PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
-    set_property(TARGET ${zephyr_lib} PROPERTY EXCLUDE_FROM_ALL TRUE)
-    list(REMOVE_ITEM ZEPHYR_LIBS_PROPERTY ${zephyr_lib})
-  else()
-    # TODO: Could this become an INTERFACE property of zephyr_interface?
-    add_dependencies(${zephyr_lib} zephyr_generated_headers)
+      message(WARNING
+        "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
+      )
+      target_sources(${zephyr_lib} PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+      set_property(TARGET ${zephyr_lib} PROPERTY EXCLUDE_FROM_ALL TRUE)
+      list(REMOVE_ITEM ZEPHYR_LIBS_PROPERTY ${zephyr_lib})
+      continue()
+    endif()
   endif()
+
+  # TODO: Could this become an INTERFACE property of zephyr_interface?
+  add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
