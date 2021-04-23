@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
  *
@@ -18,23 +18,17 @@ struct flash_sector fs_sectors[256];
  */
 void test_flash_area_get_sectors(void)
 {
-	const struct flash_area *fa;
+	const struct flash_area *fa = FLASH_AREA(image_1);
 	uint32_t sec_cnt;
 	int i;
 	int rc;
 	off_t off;
 	uint8_t wd[256];
 	uint8_t rd[256];
-	const struct device *flash_dev;
 
-	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);
-	zassert_true(rc == 0, "flash_area_open() fail");
+	zassert_true(fa != NULL, "Flash area pointer nULL");
 
-	/* First erase the area so it's ready for use. */
-	flash_dev =
-		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-
-	rc = flash_erase(flash_dev, fa->fa_off, fa->fa_size);
+	rc = flash_erase(fa->fa_dev, fa->fa_off, fa->fa_size);
 	zassert_true(rc == 0, "flash area erase fail");
 
 	(void)memset(wd, 0xa5, sizeof(wd));
@@ -51,14 +45,14 @@ void test_flash_area_get_sectors(void)
 		zassert_true(rc == 0, "flash_area_write() fail");
 
 		/* read it back via hal_flash_Read() */
-		rc = flash_read(flash_dev, fa->fa_off + off, rd, sizeof(rd));
+		rc = flash_read(fa->fa_dev, fa->fa_off + off, rd, sizeof(rd));
 		zassert_true(rc == 0, "hal_flash_read() fail");
 
 		rc = memcmp(wd, rd, sizeof(wd));
 		zassert_true(rc == 0, "read data != write data");
 
 		/* write stuff to end of area */
-		rc = flash_write(flash_dev, fa->fa_off + off +
+		rc = flash_write(fa->fa_dev, fa->fa_off + off +
 					    fs_sectors[i].fs_size - sizeof(wd),
 				 wd, sizeof(wd));
 		zassert_true(rc == 0, "hal_flash_write() fail");
@@ -107,13 +101,12 @@ void test_flash_area_check_int_sha256(void)
 			      0x40, 0x69, 0x43, 0xa6, 0xef, 0xe1, 0xa3, 0xf9,
 			      0x3d, 0xdf, 0x15, 0x9e, 0x06, 0xf8, 0xdd, 0xbd };
 
-	const struct flash_area *fa;
+	const struct flash_area *fa = FLASH_AREA(image_1);
 	struct flash_area_check fac = { NULL, 0, -1, NULL, 0 };
 	uint8_t buffer[16];
 	int rc;
 
-	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);
-	zassert_true(rc == 0, "flash_area_open() fail, error %d\n", rc);
+	zassert_true(fa != NULL, "Flash area pointer NULL\n");
 	rc = flash_area_erase(fa, 0, fa->fa_size);
 	zassert_true(rc == 0, "Flash erase failure (%d), error %d\n", rc);
 	rc = flash_area_write(fa, 0, tst_vec, sizeof(tst_vec));
@@ -147,23 +140,19 @@ void test_flash_area_check_int_sha256(void)
 	tst_sha[0] = 0x00;
 	rc = flash_area_check_int_sha256(fa, &fac);
 	zassert_false(rc == 0, "Flash area check int 256 wrong sha\n");
-
-	flash_area_close(fa);
 }
 
 void test_flash_area_erased_val(void)
 {
 	const struct flash_parameters *param;
-	const struct flash_area *fa;
+	const struct flash_area *fa = FLASH_AREA(image_1);
 	uint8_t val;
-	int rc;
 
-	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);
-	zassert_true(rc == 0, "flash_area_open() fail");
+	zassert_true(fa != NULL, "Flash area pointer NULL");
 
 	val = flash_area_erased_val(fa);
 
-	param = flash_get_parameters(device_get_binding(fa->fa_dev_name));
+	param = flash_get_parameters(fa->fa_dev);
 
 	zassert_equal(param->erase_value, val,
 		      "value different than the flash erase value");

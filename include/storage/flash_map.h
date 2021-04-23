@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -31,9 +31,12 @@
 /**
  *
  */
+#include <zephyr.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <devicetree.h>
+#include <storage/flash_map_phase_out.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,20 +54,9 @@ extern "C" {
  * Each partition contains one or more flash sectors.
  */
 struct flash_area {
-	/** ID number */
-	uint8_t fa_id;
-	/** Provided for compatibility with MCUboot */
-	uint8_t fa_device_id;
-	uint16_t pad16;
-	/** Start offset from the beginning of the flash device */
+	const struct device *fa_dev;
 	off_t fa_off;
-	/** Total size */
 	size_t fa_size;
-	/**
-	 * Name of the flash device, suitable for passing to
-	 * device_get_binding().
-	 */
-	const char *fa_dev_name;
 };
 
 /**
@@ -107,30 +99,6 @@ struct flash_area_check {
 int flash_area_check_int_sha256(const struct flash_area *fa,
 				const struct flash_area_check *fac);
 #endif
-
-/**
- * @brief Retrieve partitions flash area from the flash_map.
- *
- * Function Retrieves flash_area from flash_map for given partition.
- *
- * @param[in]  id ID of the flash partition.
- * @param[out] fa Pointer which has to reference flash_area. If
- * @p ID is unknown, it will be NULL on output.
- *
- * @return  0 on success, -EACCES if the flash_map is not available ,
- * -ENOENT if @p ID is unknown.
- */
-int flash_area_open(uint8_t id, const struct flash_area **fa);
-
-/**
- * @brief Close flash_area
- *
- * Reserved for future usage and external projects compatibility reason.
- * Currently is NOP.
- *
- * @param[in] fa Flash area to be closed.
- */
-void flash_area_close(const struct flash_area *fa);
 
 /**
  * @brief Read flash area data
@@ -227,25 +195,6 @@ typedef void (*flash_area_cb_t)(const struct flash_area *fa,
 void flash_area_foreach(flash_area_cb_t user_cb, void *user_data);
 
 /**
- * Check whether given flash area has supporting flash driver
- * in the system.
- *
- * @param[in] fa Flash area.
- *
- * @return 1 On success. -ENODEV if no driver match.
- */
-int flash_area_has_driver(const struct flash_area *fa);
-
-/**
- * Get driver for given flash area.
- *
- * @param fa Flash area.
- *
- * @return device driver.
- */
-const struct device *flash_area_get_device(const struct flash_area *fa);
-
-/**
  * Get the value expected to be read when accessing any erased
  * flash byte.
  * This API is compatible with the MCUBoot's porting layer.
@@ -262,14 +211,72 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define FLASH_AREA_LABEL_STR(lbl) \
 	DT_PROP(DT_NODE_BY_FIXED_PARTITION_LABEL(lbl), label)
 
-#define FLASH_AREA_ID(label) \
-	DT_FIXED_PARTITION_ID(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
+/**
+ * Obtain pointer to flash_area objet directly from DTS node of fixed partition.
+ *
+ * @param[in] label Fixed partition node to use; for example:
+ *	      DT_N_S_flash_controller_0_S_flash_0_S_partitions_S_partition_fc000
+ *
+ * @return const struct flash_area * to flash_area object will fail compilation in case when
+ *	   generating object pointer will not be possible.
+ */
+#define FLASH_AREA_NODE(node) (&_CONCAT(_flash_map_area_, DT_FIXED_PARTITION_ID(node)))
+
+/**
+ * Obtain pointer to flash_area objet directly from DTS label of fixed partition.
+ *
+ * @param[in] label Fixed partition label to use; this C identifier type label, which means that
+ *	      instead of, for example, image-0, image_0 should be provided.
+ *
+ * @return const struct flash_area * to flash_area object will fail compilation in case when
+ *	   generating object pointer will not be possible.
+ */
+#define FLASH_AREA(label) FLASH_AREA_NODE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
+
+/**
+ * Obtain identifier of flash_area from DTS label.
+ *
+ * @param[in] label Fixed partition label to use; this C identifier type label, which means that
+ *	      instead of, for example, image-0, image_0 should be provided.
+ *
+ * @return Identifier of fixed partition that has been assigned to the partition with given label.
+ */
+#define FLASH_AREA_ID(label) DT_FIXED_PARTITION_ID(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
 
 #define FLASH_AREA_OFFSET(label) \
 	DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
 
 #define FLASH_AREA_SIZE(label) \
 	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
+
+/**
+ * Define flash_area type object and place within _flash_map linker section.
+ *
+ * Usage: DEFINE_FLASH_AREA(some) = { ... };
+ */
+#define DEFINE_FLASH_AREA(name)									\
+	Z_DECL_ALIGN(const struct flash_area) _CONCAT(_flash_map_area_, name)			\
+		__in_section(_flash_map, static, _CONCAT(_flash_map_area_, name)) __used;	\
+	const struct flash_area _CONCAT(_flash_map_area_, name)
+
+/**
+ * Declares flash_area type object for access within code.
+ *
+ * Usage: DECLARE_FLASH_AREA(some);
+ */
+#define DECLARE_FLASH_AREA(name) const extern struct flash_area _CONCAT(_flash_map_area_, name)
+
+
+#define DT_FLASH_AREA_FOREACH_OKAY_FIXED_PARTITION(fn)				\
+		    UTIL_CAT(DT_FOREACH_OKAY_INST_, fixed_partitions)(fn)
+
+/* Declare all known partitions generated from DTS */
+#define DECLARE_FLASH_AREA_FOO(part) DECLARE_FLASH_AREA(DT_FIXED_PARTITION_ID(part));
+#define FOREACH_AREA(n) \
+	DT_FOREACH_CHILD_STATUS_OKAY(DT_INST(n, fixed_partitions), DECLARE_FLASH_AREA_FOO)
+DT_FLASH_AREA_FOREACH_OKAY_FIXED_PARTITION(FOREACH_AREA)
+#undef DECLARE_FLASH_AREA_FOO
+#undef FOREACH_AREA
 
 #ifdef __cplusplus
 }
