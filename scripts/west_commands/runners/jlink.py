@@ -151,7 +151,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     def supports_nogui(self):
         ver = self.read_version()
         # -nogui was introduced in J-Link Commander v6.80
-        return version.parse(ver) >= version.parse("6.80")
+        return version.LegacyVersion(ver) >= version.LegacyVersion("6.80")
 
     def do_run(self, command, **kwargs):
         if MISSING_REQUIREMENTS:
