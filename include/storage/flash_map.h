@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -53,20 +53,9 @@ extern "C" {
  * Each partition contains one or more flash sectors.
  */
 struct flash_area {
-	/** ID number */
-	uint8_t fa_id;
-	/** Provided for compatibility with MCUboot */
-	uint8_t fa_device_id;
-	uint16_t pad16;
-	/** Start offset from the beginning of the flash device */
+	const struct device *fa_dev;
 	off_t fa_off;
-	/** Total size */
 	size_t fa_size;
-	/**
-	 * Name of the flash device, suitable for passing to
-	 * device_get_binding().
-	 */
-	const char *fa_dev_name;
 };
 
 /**

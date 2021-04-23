@@ -56,7 +56,7 @@ void main(void)
 	}
 
 	printk("Area %u at 0x%x on %s for %u bytes\n",
-	       id, (unsigned int)pfa->fa_off, pfa->fa_dev_name,
+	       id, (unsigned int)pfa->fa_off, pfa->fa_dev->name,
 	       (unsigned int)pfa->fa_size);
 
 	/* Optional wipe flash contents */

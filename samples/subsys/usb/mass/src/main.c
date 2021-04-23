@@ -40,7 +40,7 @@ static int setup_flash(struct fs_mount_t *mnt)
 
 	rc = flash_area_open(id, &pfa);
 	printk("Area %u at 0x%x on %s for %u bytes\n",
-	       id, (unsigned int)pfa->fa_off, pfa->fa_dev_name,
+	       id, (unsigned int)pfa->fa_off, pfa->fa_dev->name,
 	       (unsigned int)pfa->fa_size);
 
 	if (rc < 0 && IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2017 Linaro Ltd
  * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
@@ -10,6 +10,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <sys/check.h>
 #include <device.h>
 #include <storage/flash_map.h>
 #include <drivers/flash.h>
@@ -109,8 +110,6 @@ static bool should_bail(const struct flash_pages_info *info,
 static int flash_area_layout(const struct flash_area *fa, uint32_t *cnt, void *ret,
 flash_page_cb cb, struct layout_data *cb_data)
 {
-	const struct device *flash_dev;
-
 	if (fa == NULL) {
 		return -EINVAL;
 	}
@@ -121,12 +120,11 @@ flash_page_cb cb, struct layout_data *cb_data)
 	cb_data->ret_len = *cnt;
 	cb_data->status = 0;
 
-	flash_dev = device_get_binding(fa->fa_dev_name);
-	if (flash_dev == NULL) {
+	CHECKIF(fa->fa_dev == NULL) {
 		return -ENODEV;
 	}
 
-	flash_page_foreach(flash_dev, cb, cb_data);
+	flash_page_foreach(fa->fa_dev, cb, cb_data);
 
 	if (cb_data->status == 0) {
 		*cnt = cb_data->ret_idx;
@@ -170,78 +168,85 @@ int flash_area_get_sectors(int id, uint32_t *cnt, struct flash_sector *ret)
 int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
 		    size_t len)
 {
-	const struct device *dev;
+	CHECKIF(fa->fa_dev == NULL) {
+		return -ENODEV;
+	}
 
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
 	}
 
-	dev = device_get_binding(fa->fa_dev_name);
+	if (!device_is_ready(fa->fa_dev)) {
+		return -EIO;
+	}
 
-	return flash_read(dev, fa->fa_off + off, dst, len);
+	return flash_read(fa->fa_dev, fa->fa_off + off, dst, len);
 }
 
 int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 		     size_t len)
 {
-	const struct device *flash_dev;
-	int rc;
+	CHECKIF(fa->fa_dev == NULL) {
+		return -ENODEV;
+	}
 
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
 	}
 
-	flash_dev = device_get_binding(fa->fa_dev_name);
+	if (!device_is_ready(fa->fa_dev)) {
+		return -EIO;
+	}
 
-	rc = flash_write(flash_dev, fa->fa_off + off, (void *)src, len);
+	return flash_write(fa->fa_dev, fa->fa_off + off, (void *)src, len);
 
-	return rc;
 }
 
 int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 {
-	const struct device *flash_dev;
-	int rc;
+	CHECKIF(fa->fa_dev == NULL) {
+		return -ENODEV;
+	}
 
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
 	}
 
-	flash_dev = device_get_binding(fa->fa_dev_name);
+	if (!device_is_ready(fa->fa_dev)) {
+		return -EIO;
+	}
 
-	rc = flash_erase(flash_dev, fa->fa_off + off, len);
-
-	return rc;
+	return flash_erase(fa->fa_dev, fa->fa_off + off, len);
 }
 
 uint8_t flash_area_align(const struct flash_area *fa)
 {
-	const struct device *dev;
+	CHECKIF(fa->fa_dev == NULL) {
+		return -ENODEV;
+	}
 
-	dev = device_get_binding(fa->fa_dev_name);
-
-	return flash_get_write_block_size(dev);
+	return flash_get_write_block_size(fa->fa_dev);
 }
 
 int flash_area_has_driver(const struct flash_area *fa)
 {
-	if (device_get_binding(fa->fa_dev_name) == NULL) {
-		return -ENODEV;
-	}
-
-	return 1;
+	return fa->fa_dev == NULL ? -ENODEV : 0;
 }
 
 const struct device *flash_area_get_device(const struct flash_area *fa)
 {
-	return device_get_binding(fa->fa_dev_name);
+	return fa->fa_dev;
 }
 
 uint8_t flash_area_erased_val(const struct flash_area *fa)
 {
 	const struct flash_parameters *param;
 
-	param = flash_get_parameters(device_get_binding(fa->fa_dev_name));
+	CHECKIF(fa->fa_dev == NULL) {
+		return -ENODEV;
+	}
+
+	param = flash_get_parameters(fa->fa_dev);
 
 	return param->erase_value;
 }
@@ -252,7 +257,6 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 {
 	unsigned char hash[TC_SHA256_DIGEST_SIZE];
 	struct tc_sha256_state_struct sha;
-	const struct device *dev;
 	int to_read;
 	int pos;
 	int rc;
@@ -270,7 +274,10 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 		return -ESRCH;
 	}
 
-	dev = device_get_binding(fa->fa_dev_name);
+	CHECKIF(fa->fa_dev == NULL) {
+		return -ENODEV;
+	}
+
 	to_read = fac->rblen;
 
 	for (pos = 0; pos < fac->clen; pos += to_read) {
@@ -278,7 +285,7 @@ int flash_area_check_int_sha256(const struct flash_area *fa,
 			to_read = fac->clen - pos;
 		}
 
-		rc = flash_read(dev, (fa->fa_off + fac->off + pos),
+		rc = flash_read(fa->fa_dev, (fa->fa_off + fac->off + pos),
 				fac->rbuf, to_read);
 		if (rc != 0) {
 			return rc;
