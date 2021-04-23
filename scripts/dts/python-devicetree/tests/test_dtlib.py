@@ -2077,7 +2077,7 @@ foo: / {
 def test_reprs():
     '''Test the __repr__() functions.'''
 
-    dt = parse("""
+    dts = """
 /dts-v1/;
 
 / {
@@ -2086,15 +2086,21 @@ def test_reprs():
 		y = < 1 >;
 	};
 };
-""",
-    include_path=("foo", "bar"))
+"""
 
-    assert re.fullmatch(r"DT\(filename='.*', include_path=\('foo', 'bar'\)\)",
+    dt = parse(dts, include_path=("foo", "bar"))
+
+    assert re.fullmatch(r"DT\(filename='.*', include_path=.'foo', 'bar'.\)",
                         repr(dt))
     assert re.fullmatch("<Property 'x' at '/' in '.*'>",
                         repr(dt.root.props["x"]))
     assert re.fullmatch("<Node /sub in '.*'>",
                         repr(dt.root.nodes["sub"]))
+
+    dt = parse(dts, include_path=iter(("foo", "bar")))
+
+    assert re.fullmatch(r"DT\(filename='.*', include_path=.'foo', 'bar'.\)",
+                        repr(dt))
 
 def test_names():
     '''Tests for node/property names.'''
