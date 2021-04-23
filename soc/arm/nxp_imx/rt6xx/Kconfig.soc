@@ -68,6 +68,7 @@ config SYSOSC_SETTLING_US
 
 menuconfig NXP_IMX_RT6XX_BOOT_HEADER
 	bool "Enable the boot header"
+	depends on !BOOTLOADER_MCUBOOT
 	help
 	  Enable data structures required by the boot ROM to boot the
 	  application from an external flash device.
