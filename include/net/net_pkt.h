@@ -97,17 +97,16 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP) || \
-				defined(CONFIG_NET_PKT_RXTIME_STATS) ||	\
-				defined(CONFIG_NET_PKT_TXTIME_STATS)
-	struct {
-		/** Timestamp if available. */
-		struct net_ptp_time timestamp;
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	/** Timestamp if available. */
+	struct net_ptp_time timestamp;
+#endif
 
 #if defined(CONFIG_NET_PKT_RXTIME_STATS) || defined(CONFIG_NET_PKT_TXTIME_STATS)
+	struct {
 		/** Create time in cycles */
 		uint32_t create_time;
-#endif
+
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
 	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
 		/** Collect extra statistics for net_pkt processing
@@ -122,7 +121,7 @@ struct net_pkt {
 #endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
 	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 	};
-#endif /* CONFIG_NET_PKT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_RXTIME_STATS || CONFIG_NET_PKT_TXTIME_STATS */
 
 #if defined(CONFIG_NET_PKT_TXTIME)
 	/** Network packet TX time in the future (in nanoseconds) */
