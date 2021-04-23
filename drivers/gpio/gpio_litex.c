@@ -37,6 +37,8 @@ struct gpio_litex_cfg {
 	int reg_size;
 	volatile uint32_t *ev_pending_addr;
 	volatile uint32_t *ev_enable_addr;
+	volatile uint32_t *ev_mode_addr;
+	volatile uint32_t *ev_edge_addr;
 	int nr_gpios;
 	bool port_is_output;
 };
@@ -224,8 +226,31 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 	if (mode == GPIO_INT_MODE_EDGE) {
 		uint8_t ev_enabled = litex_read(gpio_config->ev_enable_addr,
 				gpio_config->reg_size);
+		uint8_t ev_mode = litex_read(gpio_config->ev_mode_addr,
+				gpio_config->reg_size);
+		uint8_t ev_edge = litex_read(gpio_config->ev_edge_addr,
+				gpio_config->reg_size);
+
 		litex_write(gpio_config->ev_enable_addr, gpio_config->reg_size,
 			    ev_enabled | BIT(pin));
+
+		if (trig == GPIO_INT_TRIG_HIGH) {
+			/* Change mode to 'edge' and edge to 'rising' */
+			litex_write(gpio_config->ev_mode_addr, gpio_config->reg_size,
+			    ev_mode & ~BIT(pin));
+			litex_write(gpio_config->ev_edge_addr, gpio_config->reg_size,
+			    ev_edge & ~BIT(pin));
+		} else if (trig == GPIO_INT_TRIG_LOW) {
+			/* Change mode to 'edge' and edge to 'falling' */
+			litex_write(gpio_config->ev_mode_addr, gpio_config->reg_size,
+			    ev_mode & ~BIT(pin));
+			litex_write(gpio_config->ev_edge_addr, gpio_config->reg_size,
+			    ev_edge | BIT(pin));
+		} else if (trig == GPIO_INT_TRIG_BOTH) {
+			/* Change mode to 'change' */
+			litex_write(gpio_config->ev_mode_addr, gpio_config->reg_size,
+			    ev_mode | BIT(pin));
+		}
 		return 0;
 	}
 
@@ -273,6 +298,10 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 		.reg_size = DT_INST_REG_SIZE(n) / 4, \
 		.nr_gpios = DT_INST_PROP(n, ngpios), \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0), ( \
+			.ev_mode_addr = \
+			(volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, irq_mode), \
+			.ev_edge_addr = \
+			(volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, irq_edge), \
 			.ev_pending_addr = \
 			(volatile uint32_t *) DT_INST_REG_ADDR_BY_NAME(n, irq_pend), \
 			.ev_enable_addr = \
