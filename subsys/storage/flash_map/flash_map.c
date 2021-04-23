@@ -24,9 +24,7 @@
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 struct layout_data {
-	uint32_t area_idx;
-	uint32_t area_off;
-	uint32_t area_len;
+	const struct flash_area *fa;
 	void *ret;        /* struct flash_area* or struct flash_sector* */
 	uint32_t ret_idx;
 	uint32_t ret_len;
@@ -34,47 +32,33 @@ struct layout_data {
 };
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-extern const struct flash_area *flash_map;
-extern const int flash_map_entries;
-
-static struct flash_area const *get_flash_area_from_id(int idx)
-{
-	for (int i = 0; i < flash_map_entries; i++) {
-		if (flash_map[i].fa_id == idx) {
-			return &flash_map[i];
-		}
-	}
-
-	return NULL;
-}
-
 void flash_area_foreach(flash_area_cb_t user_cb, void *user_data)
 {
-	for (int i = 0; i < flash_map_entries; i++) {
-		user_cb(&flash_map[i], user_data);
+	extern const struct flash_area __flash_map_list_start[];
+	extern const struct flash_area __flash_map_list_end[];
+	const struct flash_area *iter = __flash_map_list_start;
+
+	while (iter < __flash_map_list_end) {
+		user_cb(iter, user_data);
+		++iter;
 	}
 }
 
 int flash_area_open(uint8_t id, const struct flash_area **fap)
 {
-	const struct flash_area *area;
+	extern const struct flash_area __flash_map_list_start[];
+	extern const struct flash_area __flash_map_list_end[];
 
-	if (flash_map == NULL) {
+	if ((uint8_t)(__flash_map_list_end - __flash_map_list_start) == 0) {
 		return -EACCES;
-	}
-
-	area = get_flash_area_from_id(id);
-	if (area == NULL) {
+	} else if (id >= (uint8_t)(__flash_map_list_end - __flash_map_list_start)) {
+		fap = NULL;
 		return -ENOENT;
+	} else {
+		*fap = &__flash_map_list_start[id];
 	}
 
-	*fap = area;
 	return 0;
-}
-
-void flash_area_close(const struct flash_area *fa)
-{
-	/* nothing to do for now */
 }
 
 static inline bool is_in_flash_area_bounds(const struct flash_area *fa,
@@ -101,10 +85,10 @@ static bool should_bail(const struct flash_pages_info *info,
 						struct layout_data *data,
 						bool *bail_value)
 {
-	if (info->start_offset < data->area_off) {
+	if (info->start_offset < data->fa->fa_off) {
 		*bail_value = true;
 		return true;
-	} else if (info->start_offset >= data->area_off + data->area_len) {
+	} else if (info->start_offset >= data->fa->fa_off + data->fa->fa_size) {
 		*bail_value = false;
 		return true;
 	} else if (data->ret_idx >= data->ret_len) {
@@ -122,24 +106,16 @@ static bool should_bail(const struct flash_pages_info *info,
  * flash_area_get_sectors(). A lot of this can be inlined once
  * flash_area_to_sectors() is removed.
  */
-static int flash_area_layout(int idx, uint32_t *cnt, void *ret,
+static int flash_area_layout(const struct flash_area *fa, uint32_t *cnt, void *ret,
 flash_page_cb cb, struct layout_data *cb_data)
 {
 	const struct device *flash_dev;
 
-	cb_data->area_idx = idx;
-
-	const struct flash_area *fa;
-
-	fa = get_flash_area_from_id(idx);
 	if (fa == NULL) {
 		return -EINVAL;
 	}
 
-	cb_data->area_idx = idx;
-	cb_data->area_off = fa->fa_off;
-	cb_data->area_len = fa->fa_size;
-
+	cb_data->fa = fa;
 	cb_data->ret = ret;
 	cb_data->ret_idx = 0U;
 	cb_data->ret_len = *cnt;
@@ -169,18 +145,25 @@ static bool get_sectors_cb(const struct flash_pages_info *info, void *datav)
 		return bail;
 	}
 
-	ret[data->ret_idx].fs_off = info->start_offset - data->area_off;
+	ret[data->ret_idx].fs_off = info->start_offset - data->fa->fa_off;
 	ret[data->ret_idx].fs_size = info->size;
 	data->ret_idx++;
 
 	return true;
 }
 
-int flash_area_get_sectors(int idx, uint32_t *cnt, struct flash_sector *ret)
+int flash_area_get_sectors(int id, uint32_t *cnt, struct flash_sector *ret)
 {
 	struct layout_data data;
+	const struct flash_area *fa;
 
-	return flash_area_layout(idx, cnt, ret, get_sectors_cb, &data);
+	int rc = flash_area_open(id, &fa);
+
+	if (rc != 0) {
+		return rc;
+	}
+
+	return flash_area_layout(fa, cnt, ret, get_sectors_cb, &data);
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
