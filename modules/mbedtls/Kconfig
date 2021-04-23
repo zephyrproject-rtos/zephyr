@@ -5,9 +5,17 @@
 
 config ZEPHYR_MBEDTLS_MODULE
 	bool
+config MBEDTLS_PROMPTLESS
+	bool
+	help
+	  Symbol to disable the prompt for MBEDTLS selection.
+	  This symbol may be used internally in a Kconfig tree to hide the
+	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
+	  dependent sub-configurations and thus preven stuck symbol behavior.
+
 
 menuconfig MBEDTLS
-	bool "mbedTLS Support"
+	bool "mbed TLS Support" if !MBEDTLS_PROMPTLESS
 	help
 	  This option enables the mbedTLS cryptography library.
 
@@ -32,8 +40,15 @@ config MBEDTLS_LIBRARY
 
 endchoice
 
+config CUSTOM_MBEDTLS_CFG_FILE
+	bool "Custom mbed TLS configuration file"
+	help
+	  Allow user defined input for the MBEDTLS_CFG_FILE setting.
+	  You can specify the actual configuration file using the
+	  MBEDTLS_CFG_FILE setting.
+
 config MBEDTLS_CFG_FILE
-	string "mbed TLS configuration file"
+	string "mbed TLS configuration file" if CUSTOM_MBEDTLS_CFG_FILE
 	depends on MBEDTLS_BUILTIN
 	default "config-tls-generic.h"
 	help
