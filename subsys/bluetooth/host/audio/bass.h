@@ -70,6 +70,8 @@ struct bt_bass_cb_t {
 	void (*pa_recv)(struct bt_bass_recv_state *recv_state,
 			const struct bt_le_per_adv_sync_recv_info *info,
 			struct net_buf_simple *buf);
+	void (*biginfo)(struct bt_bass_recv_state *recv_state,
+			const struct bt_iso_biginfo *biginfo);
 #else
 	void (*pa_sync_req)(struct bt_bass_recv_state *recv_state,
 			    uint16_t pa_interval);
