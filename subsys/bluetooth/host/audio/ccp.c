@@ -1566,7 +1566,7 @@ int bt_ccp_originate_call(struct bt_conn *conn, uint8_t inst_index,
 	uri_len = strlen(uri);
 
 	if (uri_len > max_uri_len) {
-		BT_DBG("URI len (%u) longer than maximum writable %u",
+		BT_DBG("URI len (%zu) longer than maximum writable %zu",
 		       uri_len, max_uri_len);
 		return -ENOMEM;
 	}
@@ -1604,7 +1604,7 @@ int bt_ccp_join_calls(struct bt_conn *conn, uint8_t inst_index,
 		}
 
 		if (count > max_call_cnt) {
-			BT_DBG("Call count (%u) larger than maximum writable %u",
+			BT_DBG("Call count (%u) larger than maximum writable %zu",
 			       count, max_call_cnt);
 			return -ENOMEM;
 		}
