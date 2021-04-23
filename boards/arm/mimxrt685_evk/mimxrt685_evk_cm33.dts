@@ -22,7 +22,9 @@
 	};
 
 	chosen {
+		zephyr,flash-controller = &flexspi;
 		zephyr,flash = &mx25um51345g;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
@@ -180,12 +182,30 @@ i2s1: &flexcomm3 {
 		spi-max-frequency = <200000000>;
 		status = "okay";
 		jedec-id = [c2 81 3a];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(64)>;
+			};
+			slot0_partition: partition@10000 {
+				label = "image-0";
+				reg = <0x00010000 DT_SIZE_M(24)>;
+			};
+			slot1_partition: partition@1810000 {
+				label = "image-1";
+				reg = <0x01810000 DT_SIZE_M(24)>;
+			};
+			scratch_partition: partition@3010000 {
+				label = "image-scratch";
+				reg = <0x03010000 DT_SIZE_K(8128)>;
+			};
 			storage_partition: partition@3f00000 {
 				label = "storage";
 				reg = <0x03f00000 DT_SIZE_M(1)>;
