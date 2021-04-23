@@ -170,6 +170,39 @@ otError otPlatUartEnable(void)
 	uart_irq_callback_user_data_set(ot_uart.dev,
 					uart_callback,
 					(void *)&ot_uart);
+
+#ifdef CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM
+	{
+		int ret;
+		uint32_t dtr = 0U;
+
+		ret = usb_enable(NULL);
+		if (ret != 0) {
+			LOG_ERR("Failed to enable USB");
+			return OT_ERROR_FAILED;
+		}
+
+		LOG_INF("Waiting for host to be ready to communicate");
+
+		/* Data Terminal Ready - check if host is ready to communicate */
+		while (!dtr) {
+			ret = uart_line_ctrl_get(ot_uart.dev,
+						 UART_LINE_CTRL_DTR, &dtr);
+			if (ret) {
+				LOG_ERR("Failed to get Data Terminal Ready line state: %d",
+					ret);
+				continue;
+			}
+			k_msleep(100);
+		}
+
+		/* Data Carrier Detect Modem - mark connection as established */
+		(void)uart_line_ctrl_set(ot_uart.dev, UART_LINE_CTRL_DCD, 1);
+		/* Data Set Ready - the NCP SoC is ready to communicate */
+		(void)uart_line_ctrl_set(ot_uart.dev, UART_LINE_CTRL_DSR, 1);
+	}
+#endif /* CONFIG_OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_ACM */
+
 	uart_irq_rx_enable(ot_uart.dev);
 
 	return OT_ERROR_NONE;
