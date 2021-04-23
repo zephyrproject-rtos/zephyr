@@ -19,6 +19,12 @@ mem_addr_t gic_rdists[CONFIG_MP_NUM_CPUS];
 #else
 #define IGROUPR_VAL	0x0U
 #endif
+
+static inline mem_addr_t gic_get_rdist(void)
+{
+	return gic_rdists[arch_curr_cpu()->id];
+}
+
 /*
  * Wait for register write pending
  * TODO: add timed wait
@@ -29,7 +35,7 @@ static int gic_wait_rwp(uint32_t intid)
 	mem_addr_t base;
 
 	if (intid < GIC_SPI_INT_BASE) {
-		base = (GIC_GET_RDIST(GET_CPUID()) + GICR_CTLR);
+		base = (gic_get_rdist() + GICR_CTLR);
 		rwp_mask = BIT(GICR_CTLR_RWP);
 	} else {
 		base = GICD_CTLR;
@@ -175,7 +181,7 @@ static void gicv3_cpuif_init(void)
 	uint32_t icc_sre;
 	uint32_t intid;
 
-	mem_addr_t base = gic_rdists[GET_CPUID()] + GICR_SGI_BASE_OFF;
+	mem_addr_t base = gic_get_rdist() + GICR_SGI_BASE_OFF;
 
 	/* Disable all sgi ppi */
 	sys_write32(BIT_MASK(GIC_NUM_INTR_PER_REG), ICENABLER(base, 0));
@@ -310,21 +316,25 @@ static void gicv3_dist_init(void)
 #endif
 }
 
+static void __arm_gic_init(void)
+{
+	uint8_t cpu;
+
+	cpu = arch_curr_cpu()->id;
+	gic_rdists[cpu] = GIC_RDIST_BASE + MPIDR_TO_CORE(GET_MPIDR()) * 0x20000;
+
+	gicv3_rdist_enable(gic_get_rdist());
+
+	gicv3_cpuif_init();
+}
+
 int arm_gic_init(const struct device *unused)
 {
-	int i;
-
 	ARG_UNUSED(unused);
 
 	gicv3_dist_init();
 
-	/* Fixme: populate each redistributor */
-	for (i = 0; i < GIC_NUM_CPU_IF; i++)
-		gic_rdists[i] = GIC_RDIST_BASE + i * 0x20000;
-
-	gicv3_rdist_enable(GIC_GET_RDIST(GET_CPUID()));
-
-	gicv3_cpuif_init();
+	__arm_gic_init();
 
 	return 0;
 }
@@ -333,8 +343,6 @@ SYS_INIT(arm_gic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)
 {
-	gicv3_rdist_enable(GIC_GET_RDIST(GET_CPUID()));
-
-	gicv3_cpuif_init();
+	__arm_gic_init();
 }
 #endif
