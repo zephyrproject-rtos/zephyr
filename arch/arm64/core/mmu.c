@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <cache.h>
 #include <device.h>
 #include <init.h>
 #include <kernel.h>
@@ -762,6 +763,10 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 	/* Ensure these changes are seen before MMU is enabled */
 	isb();
 
+#ifdef	CONFIG_CACHE_MANAGEMENT
+	/* Invalidate all data caches before enable them */
+	arch_dcache_all(K_CACHE_INVD);
+#endif
 	/* Enable the MMU and data cache */
 	val = read_sctlr_el1();
 	write_sctlr_el1(val | SCTLR_M_BIT | SCTLR_C_BIT);
