@@ -116,8 +116,8 @@
  */
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
-		KEEP(*(SORT(.object##_##level[0-9]_*)));		\
-		KEEP(*(SORT(.object##_##level[1-9][0-9]_*)));
+		KEEP(*(SORT(.z_##object##_##level[0-9]_*)));		\
+		KEEP(*(SORT(.z_##object##_##level[1-9][0-9]_*)));
 
 /*
  * link in shell initialization objects for all modules that use shell and
