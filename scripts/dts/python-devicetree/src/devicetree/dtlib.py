@@ -23,7 +23,8 @@ import os
 import re
 import sys
 import textwrap
-from typing import Any, Dict, Iterable, List, NoReturn, Optional, Tuple
+from typing import Any, Dict, Iterable, List, \
+    NamedTuple, NoReturn, Optional, Tuple, Union
 
 # NOTE: tests/test_dtlib.py is the test suite for this library.
 
@@ -646,6 +647,20 @@ class _T(enum.IntEnum):
     BYTE = 20
     BAD = 21
 
+class _FileStackElt(NamedTuple):
+    # Used for maintaining the /include/ stack.
+
+    filename: str
+    lineno: int
+    contents: str
+    pos: int
+
+_TokVal = Union[int, str]
+
+class _Token(NamedTuple):
+    id: int
+    val: _TokVal
+
 class DT:
     """
     Represents a devicetree parsed from a .dts file (or from many files, if the
@@ -694,7 +709,7 @@ class DT:
     # Public interface
     #
 
-    def __init__(self, filename, include_path=()):
+    def __init__(self, filename: str, include_path: Iterable[str] = ()):
         """
         Parses a DTS file to create a DT instance. Raises OSError if 'filename'
         can't be opened, and DTError for any parse errors.
@@ -714,14 +729,14 @@ class DT:
             self._file_contents = f.read()
 
         self._tok_i = self._tok_end_i = 0
-        self._filestack = []
+        self._filestack: List[_FileStackElt] = []
 
-        self.alias2node = {}
+        self.alias2node: Dict[str, Node] = {}
 
-        self._lexer_state = _DEFAULT
-        self._saved_token = None
+        self._lexer_state: int = _DEFAULT
+        self._saved_token: Optional[_Token] = None
 
-        self._lineno = 1
+        self._lineno: int = 1
 
         self._root: Optional[Node] = None
 
@@ -743,7 +758,7 @@ class DT:
         # properly in _parse_dt().
         return self._root       # type: ignore
 
-    def get_node(self, path):
+    def get_node(self, path: str) -> Node:
         """
         Returns the Node instance for the node with path or alias 'path' (a
         string). Raises DTError if the path or alias doesn't exist.
@@ -780,7 +795,7 @@ class DT:
 
         return _root_and_path_to_node(self.alias2node[alias], rest, path)
 
-    def has_node(self, path):
+    def has_node(self, path: str) -> bool:
         """
         Returns True if the path or alias 'path' exists. See Node.get_node().
         """
@@ -790,7 +805,7 @@ class DT:
         except DTError:
             return False
 
-    def node_iter(self):
+    def node_iter(self) -> Iterable[Node]:
         """
         Returns a generator for iterating over all nodes in the devicetree.
 
@@ -1469,8 +1484,9 @@ class DT:
         # Enters the /include/d file 'filename', remembering the position in
         # the /include/ing file for later
 
-        self._filestack.append((self.filename, self._lineno,
-                                self._file_contents, self._tok_end_i))
+        self._filestack.append(
+            _FileStackElt(self.filename, self._lineno,
+                          self._file_contents, self._tok_end_i))
 
         # Handle escapes in filenames, just for completeness
         filename = self._unescape(filename.encode("utf-8"))
@@ -1896,8 +1912,6 @@ _escape_table = str.maketrans({
     "\v": "\\v",
     "\f": "\\f",
     "\r": "\\r"})
-
-_Token = collections.namedtuple("Token", "id val")
 
 # Lexer states
 _DEFAULT = 0
