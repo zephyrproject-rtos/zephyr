@@ -257,7 +257,16 @@ void transmit_message(struct k_work *tx_job)
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
 	radio_api->set_txpower(radio_dev, tx_power);
 
-	if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
+	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
+	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
+		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
+				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
+		net_pkt_set_txtime(tx_pkt, NSEC_PER_USEC * tx_at);
+		if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA,
+				  tx_pkt, tx_payload)) {
+			tx_result = OT_ERROR_INVALID_STATE;
+		}
+	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
 		if (radio_api->get_capabilities(radio_dev) &
 		    IEEE802154_HW_CSMA) {
 			if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA,
@@ -877,4 +886,11 @@ otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 	tx_power = aPower;
 
 	return OT_ERROR_NONE;
+}
+
+uint64_t otPlatRadioGetNow(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return radio_api->get_time(radio_dev);
 }
