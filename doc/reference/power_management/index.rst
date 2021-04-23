@@ -480,10 +480,6 @@ the following configuration flags.
    This flag is enabled if the SOC interface and the devices support device power
    management.
 
-:code:`CONFIG_PM_DEVICE_IDLE`
-
-   This flag enables the Device Idle Power Management.
-
 API Reference
 *************
 

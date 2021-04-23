@@ -475,7 +475,7 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 
-#ifdef CONFIG_PM_DEVICE_IDLE
+#ifdef CONFIG_PM_DEVICE
 	/* Enable device clock before configuration (requires bank writes) */
 	device_pm_get_sync(dev);
 #endif /* CONFIG_PM_DEVICE */
@@ -491,7 +491,7 @@ static int gpio_stm32_config(const struct device *dev,
 	gpio_stm32_configure(dev, pin, pincfg, 0);
 
 	/* Device released */
-#ifdef CONFIG_PM_DEVICE_IDLE
+#ifdef CONFIG_PM_DEVICE
 	/* Release clock only if configuration requires bank writes */
 	if (((flags & GPIO_OUTPUT) != 0)) {
 		device_pm_put(dev);
@@ -648,15 +648,12 @@ static int gpio_stm32_init(const struct device *dev)
 
 	data->dev = dev;
 
-#ifdef CONFIG_PM_DEVICE_IDLE
+#ifdef CONFIG_PM_DEVICE
 	data->power_state = DEVICE_PM_OFF_STATE;
 	device_pm_enable(dev);
 
 	return 0;
 #else
-#ifdef CONFIG_PM_DEVICE
-	data->power_state = DEVICE_PM_ACTIVE_STATE;
-#endif
 	return gpio_stm32_clock_request(dev, true);
 #endif
 }

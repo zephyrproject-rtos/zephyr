@@ -818,7 +818,7 @@ int device_any_busy_check(void);
  */
 int device_busy_check(const struct device *chk_dev);
 
-#ifdef CONFIG_PM_DEVICE_IDLE
+#ifdef CONFIG_PM_DEVICE
 
 /**
  * @brief Enable device idle PM
