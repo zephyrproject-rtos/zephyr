@@ -1,0 +1,23 @@
+# Copyright (c) 2020, Open Cosmos ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM0 QSPI controller
+
+compatible: "atmel,sam0-spi-quadspi"
+
+include: spi-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    clocks:
+      required: true
+
+    clock-names:
+      required: true
+      description: |
+        This should be "QSPI_AHB_Clock", "QSPI_2X_AHB_Clock", "QSPI_APB_Clock".
+
+        For example
+           clock-names = "QSPI_AHB_Clock", "QSPI_2X_AHB_Clock", "QSPI_APB_Clock";

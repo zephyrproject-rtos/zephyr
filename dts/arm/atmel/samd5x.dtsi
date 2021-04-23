@@ -445,6 +445,18 @@
 			channels = <2>;
 			counter-size = <16>;
 		};
+
+		qspi0: qspi@42003400 {
+			compatible = "atmel,sam0-spi-quadspi";
+			reg = <0x42003400 0x400>;
+			interrupts = <134 0>;
+			status = "disabled";
+			label = "QSPI0";
+			clocks = <&mclk 0x10 13>, <&mclk 0x10 21>, <&mclk 0x1C 13>;
+			clock-names = "QSPI_AHB_Clock", "QSPI_2X_AHB_Clock", "QSPI_APB_Clock";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
 
