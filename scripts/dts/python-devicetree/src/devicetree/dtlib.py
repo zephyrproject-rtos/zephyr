@@ -708,7 +708,7 @@ class DT:
           relative to the .dts file that contains the /include/ or /incbin/.
         """
         self.filename = filename
-        self._include_path = include_path
+        self._include_path = list(include_path)
 
         with open(filename, encoding="utf-8") as f:
             self._file_contents = f.read()
