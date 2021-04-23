@@ -68,7 +68,7 @@ void test_nvs_init(void)
 	zassert_true(err == 0, "flash_area_open() fail: %d", err);
 
 	fs.offset = TEST_FLASH_AREA_STORAGE_OFFSET;
-	err = flash_get_page_info_by_offs(flash_area_get_device(fa), fs.offset,
+	err = flash_get_page_info_by_offs(fa->fa_dev, fs.offset,
 					  &info);
 	zassert_true(err == 0,  "Unable to get page info: %d", err);
 

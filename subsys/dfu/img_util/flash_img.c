@@ -77,7 +77,7 @@ int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id)
 		return rc;
 	}
 
-	flash_dev = flash_area_get_device(ctx->flash_area);
+	flash_dev = ctx->flash_area->fa_dev;
 
 	return stream_flash_init(&ctx->stream, flash_dev, ctx->buf,
 			CONFIG_IMG_BLOCK_BUF_SIZE, ctx->flash_area->fa_off,

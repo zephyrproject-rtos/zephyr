@@ -596,9 +596,8 @@ static lfs_size_t get_block_size(const struct flash_area *fa)
 		.area = fa,
 		.max_size = 0,
 	};
-	const struct device *dev = flash_area_get_device(fa);
 
-	flash_page_foreach(dev, get_page_cb, &ctx);
+	flash_page_foreach(fa->fa_dev, get_page_cb, &ctx);
 
 	return ctx.max_size;
 }
@@ -633,9 +632,9 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 		area_id, (uint32_t)fs->area->fa_off,
 		(uint32_t)fs->area->fa_size);
 
-	dev = flash_area_get_device(fs->area);
+	dev = fs->area->fa_dev;
 	if (dev == NULL) {
-		LOG_ERR("can't get flash device: %s", log_strdup(fs->area->fa_dev_name));
+		LOG_ERR("can't get flash device: %s", log_strdup(fs->area->fa_dev->name));
 		ret = -ENODEV;
 		goto out;
 	}

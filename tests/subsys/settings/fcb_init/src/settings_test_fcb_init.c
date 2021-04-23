@@ -103,7 +103,7 @@ void test_prepare_storage(void)
 		err = flash_area_open(FLASH_AREA_ID(image_0), &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
-		dev = flash_area_get_device(fa);
+		dev = fa->fa_dev;
 
 		(void)memset(new_val, (~ERASED_VAL) & 0xFF,
 			     FLASH_WRITE_BLOCK_SIZE);

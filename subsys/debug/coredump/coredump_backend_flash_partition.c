@@ -318,7 +318,7 @@ static void coredump_flash_backend_start(void)
 	if (ret == 0) {
 		backend_ctx.checksum = 0;
 
-		flash_dev = flash_area_get_device(backend_ctx.flash_area);
+		flash_dev = flash_area->fa_dev;
 
 		/*
 		 * Reserve space for header from beginning of flash device.
@@ -376,7 +376,7 @@ static void coredump_flash_backend_end(void)
 	hdr.error = backend_ctx.error;
 	hdr.flags = 0;
 
-	flash_dev = flash_area_get_device(backend_ctx.flash_area);
+	flash_dev = backend_ctx.flash_area->fa_dev;
 
 	/* Need to re-init context to write at beginning of flash */
 	ret = stream_flash_init(&backend_ctx.stream_ctx, flash_dev,
