@@ -51,13 +51,14 @@
 
 			itcm: itcm@0 {
 				compatible = "nxp,imx-itcm", "linkable-memory";
-				label = "ITCM";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "ITCM";
 			};
 
 			dtcm: dtcm@20000000 {
-				compatible = "nxp,imx-dtcm";
+				compatible = "nxp,imx-dtcm", "linkable-memory";
 				reg = <0x20000000 DT_SIZE_K(128)>;
+				label = "DTCM";
 			};
 
 			ocram: ocram@20200000 {

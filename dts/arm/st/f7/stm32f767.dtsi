@@ -17,8 +17,9 @@
 	};
 
 	dtcm: memory@20000000 {
-		compatible = "arm,dtcm";
+		compatible = "arm,dtcm", "linkable-memory";
 		reg = <0x20000000 DT_SIZE_K(128)>;
+		label = "DTCM";
 	};
 
 	soc {

@@ -119,7 +119,9 @@
 	};
 
 	dtcm: dtcm@30000000 {	/* alias @ 0x20000000 */
+		compatible = "linkable-memory";
 		reg = <0x30000000 DT_SIZE_K(512)>;
+		label = "DTCM";
 	};
 
 	isram: sram@31000000 {/* alias @ 0x21000000 */
