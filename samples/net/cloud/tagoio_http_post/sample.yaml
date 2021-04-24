@@ -16,4 +16,7 @@ tests:
     platform_allow: frdm_k64f nucleo_f767zi
   sample.net.cloud.tagoio_http_post.modem:
     extra_args: OVERLAY_CONFIG="overlay-modem.conf"
-    platform_allow: sam4e_xpro frdm_k64f
+    platform_allow: sam4e_xpro
+  sample.net.cloud.tagoio_http_post.modem.arduino:
+    extra_args: OVERLAY_CONFIG="overlay-modem.conf" DTC_OVERLAY_FILE="arduino.overlay"
+    platform_allow: frdm_k64f
