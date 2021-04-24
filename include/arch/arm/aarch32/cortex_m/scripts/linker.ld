@@ -103,6 +103,8 @@ MEMORY
     DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM1, rw, DT_NODELABEL(sdram1))
     DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM2, rw, DT_NODELABEL(sdram2))
     DT_REGION_FROM_NODE_STATUS_OKAY(BACKUP_SRAM, rw, DT_NODELABEL(backup_sram))
+    /* Generate memory regions for 'linkable-memory' compatible */
+    DT_LINKABLE_MEMORY_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
