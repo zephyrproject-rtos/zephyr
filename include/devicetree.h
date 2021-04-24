@@ -1626,6 +1626,18 @@
 		 UTIL_CAT(DT_N_INST, DT_DASH(compat, NUM_OKAY)))
 
 /**
+ * @brief Call "fn" on all nodes with a compatible matching "compat"
+ *        and status "okay"
+ *
+ * @param compat compatible to match
+ * @param fn macro to evaluate on each matching compatible
+ */
+#define DT_COMPAT_FOREACH_STATUS_OKAY(compat, fn)		   \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),		   \
+		    (UTIL_CAT(DT_FOREACH_OKAY_INST_, compat)(fn)), \
+		    ())
+
+/**
  * @brief Does a devicetree node match a compatible?
  *
  * Example devicetree fragment:
@@ -2207,11 +2219,8 @@
  * @param fn Macro to call for each enabled node. Must accept an
  *           instance number as its only parameter.
  */
-#define DT_INST_FOREACH_STATUS_OKAY(fn) \
-	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT),	\
-		    (UTIL_CAT(DT_FOREACH_OKAY_INST_,		\
-			      DT_DRV_COMPAT)(fn)),		\
-		    ())
+#define DT_INST_FOREACH_STATUS_OKAY(fn)	\
+	DT_COMPAT_FOREACH_STATUS_OKAY(DT_DRV_COMPAT, fn)
 
 /**
  * @brief Invokes "fn" for each element of property "prop" for
