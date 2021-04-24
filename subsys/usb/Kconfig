@@ -44,6 +44,7 @@ config USB_DEVICE_PRODUCT
 
 config USB_DEVICE_SN
 	string "USB device Serial Number String"
+	default "0123456789ABCDEF01234567" if HWINFO_STM32
 	default "0123456789ABCDEF"
 	help
 	  Placeholder for USB device Serial Number String.
