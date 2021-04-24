@@ -772,7 +772,7 @@
 		};
 
 		backup_sram: memory@38800000 {
-			compatible = "st,stm32-backup-sram";
+			compatible = "st,stm32-backup-sram", "linkable-memory";
 			reg = <0x38800000 DT_SIZE_K(4)>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x10000000>;
 			label = "BACKUP_SRAM";
