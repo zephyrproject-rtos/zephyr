@@ -320,20 +320,20 @@ struct gpio_dt_spec {
 /**
  * @brief Static initializer for a @p gpio_dt_spec
  *
- * This returns a static initializer for a @p gpio_dt_spec structure
- * given a devicetree node identifier and a property specifying a
- * GPIO.
+ * This returns a static initializer for a @p gpio_dt_spec structure given a
+ * devicetree node identifier, a property specifying a GPIO and an index.
  *
  * Example devicetree fragment:
  *
  *	n: node {
- *		foo-gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+ *		foo-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>,
+ *			    <&gpio1 2 GPIO_ACTIVE_LOW>;
  *	}
  *
  * Example usage:
  *
- *	const struct gpio_dt_spec spec = GPIO_DT_SPEC_GET(DT_NODELABEL(n),
- *							  foo_gpios);
+ *	const struct gpio_dt_spec spec = GPIO_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n),
+ *								 foo_gpios, 1);
  *	// Initializes 'spec' to:
  *	// {
  *	//         .port = DEVICE_DT_GET(DT_NODELABEL(gpio1)),
@@ -348,14 +348,50 @@ struct gpio_dt_spec {
  *
  * @param node_id devicetree node identifier
  * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
  * @return static initializer for a struct gpio_dt_spec for the property
  */
-#define GPIO_DT_SPEC_GET(node_id, prop)					\
-	{								\
-		.port = DEVICE_DT_GET(DT_GPIO_CTLR(node_id, prop)),	\
-		.pin = DT_GPIO_PIN(node_id, prop),			\
-		.dt_flags = DT_GPIO_FLAGS(node_id, prop),		\
+#define GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)			       \
+	{								       \
+		.port = DEVICE_DT_GET(DT_GPIO_CTLR_BY_IDX(node_id, prop, idx)),\
+		.pin = DT_GPIO_PIN_BY_IDX(node_id, prop, idx),		       \
+		.dt_flags = DT_GPIO_FLAGS_BY_IDX(node_id, prop, idx),	       \
 	}
+
+/**
+ * @brief Equivalent to GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, 0).
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @return static initializer for a struct gpio_dt_spec for the property
+ * @see GPIO_DT_SPEC_GET_BY_IDX()
+ */
+#define GPIO_DT_SPEC_GET(node_id, prop) \
+	GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, 0)
+
+/**
+ * @brief Static initializer for a @p gpio_dt_spec from a DT_DRV_COMPAT
+ * instance's GPIO property at an index.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
+ * @return static initializer for a struct gpio_dt_spec for the property
+ * @see GPIO_DT_SPEC_GET_BY_IDX()
+ */
+#define GPIO_DT_SPEC_INST_GET_BY_IDX(inst, prop, idx) \
+	GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Equivalent to GPIO_DT_SPEC_INST_GET_BY_IDX(inst, prop, 0).
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @return static initializer for a struct gpio_dt_spec for the property
+ * @see GPIO_DT_SPEC_INST_GET_BY_IDX()
+ */
+#define GPIO_DT_SPEC_INST_GET(inst, prop) \
+	GPIO_DT_SPEC_INST_GET_BY_IDX(inst, prop, 0)
 
 /**
  * @brief Maximum number of pins that are supported by `gpio_port_pins_t`.
