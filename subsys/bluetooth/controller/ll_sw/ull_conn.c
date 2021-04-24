@@ -3340,6 +3340,9 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 
 	/* master respond with connection update */
 	if (!conn->lll.role) {
+		uint16_t interval_max;
+		uint8_t preferred_periodicity;
+
 		if (conn->llcp_cu.req != conn->llcp_cu.ack) {
 			return;
 		}
@@ -3350,15 +3353,20 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		/* Initiate connection update procedure */
 		conn->llcp_cu.win_size = 1U;
 		conn->llcp_cu.win_offset_us = 0U;
-		if (conn->llcp_conn_param.preferred_periodicity) {
-			conn->llcp_cu.interval =
-				((conn->llcp_conn_param.interval_min /
-				  conn->llcp_conn_param.preferred_periodicity) +
-				 1) *
-				conn->llcp_conn_param.preferred_periodicity;
+
+		interval_max = conn->llcp_conn_param.interval_max;
+		preferred_periodicity = conn->llcp_conn_param.preferred_periodicity;
+		if (preferred_periodicity) {
+			/* Find interval with preferred periodicity by rounding down from max */
+			conn->llcp_cu.interval = (interval_max / preferred_periodicity) *
+						  preferred_periodicity;
+			/* Use maximum in case of underflowing minimum interval */
+			if (conn->llcp_cu.interval < conn->llcp_conn_param.interval_min) {
+				conn->llcp_cu.interval = interval_max;
+			}
 		} else {
-			conn->llcp_cu.interval =
-				conn->llcp_conn_param.interval_max;
+			/* Choose maximum interval as default */
+			conn->llcp_cu.interval = interval_max;
 		}
 		conn->llcp_cu.latency = conn->llcp_conn_param.latency;
 		conn->llcp_cu.timeout = conn->llcp_conn_param.timeout;
