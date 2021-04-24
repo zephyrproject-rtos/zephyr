@@ -87,8 +87,10 @@ Modem
 The Modem support is quite similar to WIFI, you need a board with an embedded
 Modem support or you can add a shield.  Currently, the overlay was created to
 allow modems with PPP support.  This was tested using ``SIMcom SIM808 EVB``.
-Additionally you need fill ``CONFIG_MODEM_GSM_UART_NAME`` with the UART label
-``CONFIG_MODEM_GSM_APN`` with the correspondent Access Point Name (APN) at
+Additionally you need to add a modem subnode under the UART in the dts, see
+:zephyr_file:`samples/net/gsm_modem/boards/frdm_uart2_dts.overlay`
+and fill ``CONFIG_MODEM_GSM_APN`` with the correspondent Access Point Name
+(APN) at
 :zephyr_file:`samples/net/cloud/tagoio_http_post/overlay-modem.conf` file.
 
 .. zephyr-app-commands::

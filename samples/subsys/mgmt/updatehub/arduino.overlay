@@ -6,7 +6,9 @@
 
 &arduino_serial {
 	status = "okay";
-	label = "arduino_serial";
+	gsm: gsm_modem {
+		compatible = "gsm,ppp";
+	};
 
 	current-speed = <115200>;
 };

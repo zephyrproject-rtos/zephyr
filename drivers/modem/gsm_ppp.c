@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#define DT_DRV_COMPAT gsm_ppp
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
@@ -22,6 +23,8 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_cmd_handler.h"
 #include "../console/gsm_mux.h"
 
+#define GSM_UART_DEV_ID                 DT_INST_BUS(0)
+#define GSM_UART_DEV_NAME               DT_INST_BUS_LABEL(0)
 #define GSM_CMD_READ_BUF                128
 #define GSM_CMD_AT_TIMEOUT              K_SECONDS(2)
 #define GSM_CMD_SETUP_TIMEOUT           K_SECONDS(6)
@@ -557,7 +560,7 @@ static void mux_setup(struct k_work *work)
 {
 	struct gsm_modem *gsm = CONTAINER_OF(work, struct gsm_modem,
 					     gsm_configure_work);
-	const struct device *uart = device_get_binding(CONFIG_MODEM_GSM_UART_NAME);
+	const struct device *uart = DEVICE_DT_GET(GSM_UART_DEV_ID);
 	int ret;
 
 	/* We need to call this to reactivate mux ISR. Note: This is only called
@@ -716,7 +719,7 @@ void gsm_ppp_start(const struct device *dev)
 
 	/* Re-init underlying UART comms */
 	int r = modem_iface_uart_init_dev(&gsm->context.iface,
-					  CONFIG_MODEM_GSM_UART_NAME);
+					  GSM_UART_DEV_NAME);
 	if (r) {
 		LOG_ERR("modem_iface_uart_init returned %d", r);
 		return;
@@ -788,7 +791,7 @@ static int gsm_init(const struct device *dev)
 	gsm->gsm_data.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf);
 
 	r = modem_iface_uart_init(&gsm->context.iface, &gsm->gsm_data,
-				  CONFIG_MODEM_GSM_UART_NAME);
+				  GSM_UART_DEV_NAME);
 	if (r < 0) {
 		LOG_DBG("iface uart error %d", r);
 		return r;
