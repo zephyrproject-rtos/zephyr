@@ -92,8 +92,6 @@ MEMORY
     /* STM32 alternate RAM configurations */
     DT_REGION_FROM_NODE_STATUS_OKAY(SRAM3, rw, DT_NODELABEL(sram3))
     DT_REGION_FROM_NODE_STATUS_OKAY(SRAM4, rw, DT_NODELABEL(sram4))
-    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM1, rw, DT_NODELABEL(sdram1))
-    DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM2, rw, DT_NODELABEL(sdram2))
     /* Generate memory regions for 'linkable-memory' compatible */
     DT_LINKABLE_MEMORY_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */

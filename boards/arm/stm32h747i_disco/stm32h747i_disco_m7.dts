@@ -22,8 +22,10 @@
 	};
 
 	sdram2: sdram@d0000000 {
+		compatible = "linkable-memory";
 		device_type = "memory";
 		reg = <0xd0000000 DT_SIZE_M(32)>;
+		label = "SDRAM2";
 	};
 
 	leds {
