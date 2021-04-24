@@ -89,8 +89,7 @@ MEMORY
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* TI CCFG Registers */
     DT_REGION_FROM_NODE_STATUS_OKAY(FLASH_CCFG, rwx, DT_NODELABEL(ti_ccfg_partition))
-    /* Data & Instruction Tightly Coupled Memory */
-    DT_REGION_FROM_NODE_STATUS_OKAY(ITCM, rw, DT_CHOSEN(zephyr_itcm))
+    /* Data Tightly Coupled Memory */
     DT_REGION_FROM_NODE_STATUS_OKAY(DTCM, rw, DT_CHOSEN(zephyr_dtcm))
     /* STM32 Core Coupled Memory */
     DT_REGION_FROM_NODE_STATUS_OKAY(CCM, rw, DT_CHOSEN(zephyr_ccm))

@@ -108,7 +108,9 @@
 	 * you'll get the non-secure alias
 	 */
 	itcm: itcm@10000000 {	/* alias @ 0x0 */
+		compatible = "linkable-memory";
 		reg = <0x10000000 DT_SIZE_K(512)>;
+		label = "ITCM";
 	};
 
 	sram: sram@11000000 {	/* alias @ 0x01000000 */

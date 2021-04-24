@@ -50,7 +50,8 @@
 			#size-cells = <1>;
 
 			itcm: itcm@0 {
-				compatible = "nxp,imx-itcm";
+				compatible = "nxp,imx-itcm", "linkable-memory";
+				label = "ITCM";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
 
