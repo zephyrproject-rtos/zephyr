@@ -955,3 +955,9 @@ config BOARD
 	  The Board is the first location where we search for a linker.ld file,
 	  if not found we look for the linker file in
 	  soc/<arch>/<family>/<series>
+
+config TOOLCHAIN_HAS_BUILTIN_FFS
+	bool
+	default y if !(64BIT && RISCV)
+	help
+	  Hidden option to signal that toolchain has __builtin_ffs*().
