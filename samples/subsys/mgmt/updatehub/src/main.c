@@ -131,10 +131,10 @@ void main(void)
 	}
 #elif defined(CONFIG_MODEM_GSM_PPP)
 	const struct device *uart_dev =
-		device_get_binding(CONFIG_MODEM_GSM_UART_NAME);
+		device_get_binding(DT_BUS_LABEL(DT_INST(0, gsm_ppp)));
 
 	LOG_INF("APN '%s' UART '%s' device %p", CONFIG_MODEM_GSM_APN,
-		CONFIG_MODEM_GSM_UART_NAME, uart_dev);
+		DT_BUS_LABEL(DT_INST(0, gsm_ppp)), uart_dev);
 #endif
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler, EVENT_MASK);

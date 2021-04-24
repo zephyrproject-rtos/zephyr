@@ -45,3 +45,8 @@ test_quectel_bg9x: quectel_bg9x {
       mdm-power-gpios = <&test_gpio 0 0>;
       mdm-reset-gpios = <&test_gpio 0 0>;
 };
+
+test_gsm_ppp: gsm_ppp {
+	compatible = "gsm,ppp";
+	label = "gsm,ppp";
+};

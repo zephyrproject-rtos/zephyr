@@ -380,6 +380,7 @@
 /dts/bindings/i2c/zephyr*i2c-emul.yaml    @sjg20
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/modem/*hl7800.yaml          @rerickson1
+/dts/bindings/modem/gsm-ppp.yaml          @ycsin
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
 /dts/bindings/wifi/*esp.yaml              @mniestroj
 /dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
