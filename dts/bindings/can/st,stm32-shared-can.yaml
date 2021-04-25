@@ -1,0 +1,13 @@
+description: STM32 CAN controller
+
+compatible: "st,stm32-shared-can"
+
+include: stm32-base.yaml
+
+properties:
+
+    filter-controller:
+      type: phandles
+      required: false
+      description: |
+        Handle to the CAN controller that controls the filters (Master CAN)

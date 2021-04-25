@@ -1,0 +1,28 @@
+description: STM32 CAN controller base
+
+include: can-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    clocks:
+      required: true
+
+    pinctrl-0:
+      type: phandles
+      required: false
+      description: |
+        GPIO pin configuration for CAN RX and TX. The phandles are
+        expected to reference pinctrl nodes, e.g.
+
+          pinctrl-0 = <&can1_rx_pa11 &can1_tx_pa12>;
+
+    filter-banks:
+      type: int
+      required: true
+      description: |
+        Number of filter banks used by this can controller.
