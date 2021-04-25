@@ -123,11 +123,10 @@ amount of time, or the special values :c:macro:`K_NO_WAIT` and
 :c:macro:`K_FOREVER` to either not wait or wait until an event condition is
 satisfied and not sooner.
 
-Only one thread can poll on a semaphore or a FIFO at a time. If a second thread
-tries to poll on the same semaphore or FIFO, :c:func:`k_poll` immediately
-returns with the return value -:c:macro:`EADDRINUSE`. In that case, if other
-conditions passed to :c:func:`k_poll` were met, their state will be set in
-the corresponding poll event.
+A list of pollers is offered on each semaphore or FIFO and as many events
+can wait in it as the app wants.
+Notice that the waiters will be served in first-come-first-serve order,
+not in priority order.
 
 In case of success, :c:func:`k_poll` returns 0. If it times out, it returns
 -:c:macro:`EAGAIN`.
