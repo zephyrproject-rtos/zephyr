@@ -134,6 +134,7 @@ static int mcux_flexcan_set_timing(const struct device *dev,
 	ARG_UNUSED(timing_data);
 	struct mcux_flexcan_data *data = dev->data;
 	const struct mcux_flexcan_config *config = dev->config;
+	uint8_t sjw_backup = data->timing.sjw;
 	flexcan_timing_config_t timing_tmp;
 
 	if (!timing) {
@@ -141,6 +142,9 @@ static int mcux_flexcan_set_timing(const struct device *dev,
 	}
 
 	data->timing = *timing;
+	if (timing->sjw == CAN_SJW_NO_CHANGE) {
+		data->timing.sjw = sjw_backup;
+	}
 
 	timing_tmp.preDivider = data->timing.prescaler - 1U;
 	timing_tmp.rJumpwidth = data->timing.sjw - 1U;
