@@ -365,6 +365,7 @@
 			peripheral-id = <23 24 25>;
 			status = "disabled";
 			label = "TC0";
+			pinctrl-0 = <>;
 		};
 
 		tc1: tc@40010000 {
@@ -376,6 +377,7 @@
 			peripheral-id = <26 27 28>;
 			status = "disabled";
 			label = "TC1";
+			pinctrl-0 = <>;
 		};
 
 		tc2: tc@40014000 {
@@ -387,6 +389,7 @@
 			peripheral-id = <47 48 49>;
 			status = "disabled";
 			label = "TC2";
+			pinctrl-0 = <>;
 		};
 
 		tc3: tc@40054000 {
@@ -398,6 +401,7 @@
 			peripheral-id = <50 51 52>;
 			status = "disabled";
 			label = "TC3";
+			pinctrl-0 = <>;
 		};
 
 		trng: random@40070000 {
