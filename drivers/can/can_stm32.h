@@ -71,7 +71,7 @@ struct can_stm32_data {
 
 struct can_stm32_config {
 	CAN_TypeDef *can;   /*!< CAN Registers*/
-	CAN_TypeDef *master_can;
+	CAN_TypeDef *filter_can;
 	uint32_t bus_speed;
 	uint16_t sample_point;
 	uint8_t sjw;
@@ -83,6 +83,7 @@ struct can_stm32_config {
 	void (*config_irq)(CAN_TypeDef *can);
 	const struct soc_gpio_pinctrl *pinctrl;
 	size_t pinctrl_len;
+	uint8_t *filter_usage;
 };
 
 #endif /*ZEPHYR_DRIVERS_CAN_STM32_CAN_H_*/
