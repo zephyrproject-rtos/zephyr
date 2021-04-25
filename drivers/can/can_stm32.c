@@ -371,14 +371,15 @@ int can_stm32_set_timing(const struct device *dev,
 		goto done;
 	}
 
-	can->BTR &= ~(CAN_BTR_BRP_Msk | CAN_BTR_TS1_Msk |
-		      CAN_BTR_TS2_Msk | CAN_BTR_SJW_Msk);
-
-	can->BTR |=
+	can->BTR = (can->BTR & ~(CAN_BTR_BRP_Msk | CAN_BTR_TS1_Msk | CAN_BTR_TS2_Msk)) |
 	     (((timing->phase_seg1 - 1) << CAN_BTR_TS1_Pos) & CAN_BTR_TS1_Msk) |
 	     (((timing->phase_seg2 - 1) << CAN_BTR_TS2_Pos) & CAN_BTR_TS2_Msk) |
-	     (((timing->sjw        - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk) |
 	     (((timing->prescaler  - 1) << CAN_BTR_BRP_Pos) & CAN_BTR_BRP_Msk);
+
+	if (timing->sjw != CAN_SJW_NO_CHANGE) {
+		can->BTR = (can->BTR & ~CAN_BTR_SJW_Msk) |
+			   (((timing->sjw - 1) << CAN_BTR_SJW_Pos) & CAN_BTR_SJW_Msk);
+	}
 
 	ret = can_leave_init_mode(can);
 	if (ret) {
