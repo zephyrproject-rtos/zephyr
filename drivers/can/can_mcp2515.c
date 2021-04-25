@@ -335,8 +335,11 @@ static int mcp2515_set_timing(const struct device *dev,
 	/* CNF1; SJW<7:6> | BRP<5:0> */
 	__ASSERT(timing->prescaler > 0, "Prescaler should be bigger than zero");
 	uint8_t brp = timing->prescaler - 1;
-	const uint8_t sjw = (timing->sjw - 1) << 6;
-	uint8_t cnf1 = sjw | brp;
+	if (timing->sjw != CAN_SJW_NO_CHANGE) {
+		dev_data->sjw = (timing->sjw - 1) << 6;
+	}
+
+	uint8_t cnf1 = dev_data->sjw | brp;
 
 	/* CNF2; BTLMODE<7>|SAM<6>|PHSEG1<5:3>|PRSEG<2:0> */
 	const uint8_t btlmode = 1 << 7;
@@ -363,8 +366,7 @@ static int mcp2515_set_timing(const struct device *dev,
 	const uint8_t rx0_ctrl = BIT(6) | BIT(5) | BIT(2);
 	const uint8_t rx1_ctrl = BIT(6) | BIT(5);
 
-	__ASSERT((timing->sjw >= 1) && (timing->sjw <= 4),
-		 "1 <= SJW <= 4");
+	__ASSERT(timing->sjw <= 4, "1 <= SJW <= 4");
 	__ASSERT((timing->prop_seg >= 1) && (timing->prop_seg <= 8),
 		 "1 <= PROP <= 8");
 	__ASSERT((timing->phase_seg1 >= 1) && (timing->phase_seg1 <= 8),
