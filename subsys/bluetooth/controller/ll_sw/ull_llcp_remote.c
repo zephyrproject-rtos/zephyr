@@ -83,6 +83,7 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 		return 0U;
 		break;
 	case PROC_ENCRYPTION_START:
+	case PROC_ENCRYPTION_PAUSE:
 		return 0U;
 		break;
 	case PROC_PHY_UPDATE:
@@ -186,6 +187,7 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 		rp_comm_rx(conn, ctx, rx);
 		break;
 	case PROC_ENCRYPTION_START:
+	case PROC_ENCRYPTION_PAUSE:
 		rp_enc_rx(conn, ctx, rx);
 		break;
 	case PROC_PHY_UPDATE:
@@ -244,6 +246,7 @@ static void rr_act_run(struct ll_conn *conn)
 		rp_comm_run(conn, ctx, NULL);
 		break;
 	case PROC_ENCRYPTION_START:
+	case PROC_ENCRYPTION_PAUSE:
 		rp_enc_run(conn, ctx, NULL);
 		break;
 	case PROC_PHY_UPDATE:
@@ -557,6 +560,9 @@ void ull_cp_priv_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 		break;
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		proc = PROC_ENCRYPTION_START;
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
+		proc = PROC_ENCRYPTION_PAUSE;
 		break;
 	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
 		proc = PROC_PHY_UPDATE;
