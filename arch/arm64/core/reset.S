@@ -115,7 +115,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/* loop until our turn comes */
 1:	dmb	ld
-	ldr	x2, [x0]
+	ldr	x2, [x0, #BOOT_PARAM_MPID_OFFSET]
 	cmp	x1, x2
 	bne	1b
 
