@@ -1646,6 +1646,34 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
 						   struct net_if **iface);
 
 /**
+ * @brief Mark a given multicast address to be joined.
+ *
+ * @param addr IPv4 multicast address
+ */
+void net_if_ipv4_maddr_join(struct net_if_mcast_addr *addr);
+
+/**
+ * @brief Check if given multicast address is joined or not.
+ *
+ * @param addr IPv4 multicast address
+ *
+ * @return True if address is joined, False otherwise.
+ */
+static inline bool net_if_ipv4_maddr_is_joined(struct net_if_mcast_addr *addr)
+{
+	NET_ASSERT(addr);
+
+	return addr->is_joined;
+}
+
+/**
+ * @brief Mark a given multicast address to be left.
+ *
+ * @param addr IPv4 multicast address
+ */
+void net_if_ipv4_maddr_leave(struct net_if_mcast_addr *addr);
+
+/**
  * @brief Get the IPv4 address of the given router
  * @param router a network router
  *
