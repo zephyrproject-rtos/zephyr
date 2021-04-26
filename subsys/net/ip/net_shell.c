@@ -1236,7 +1236,12 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, icmp.typeerr),
 	   GET_STAT(iface, icmp.chkerr));
 #endif
-
+#if defined(CONFIG_NET_STATISTICS_IGMP)
+	PR("IGMP recv      %d\tsent\t%d\tdrop\t%d\n",
+	   GET_STAT(iface, ipv4_igmp.recv),
+	   GET_STAT(iface, ipv4_igmp.sent),
+	   GET_STAT(iface, ipv4_igmp.drop));
+#endif /* CONFIG_NET_STATISTICS_IGMP */
 #if defined(CONFIG_NET_STATISTICS_UDP) && defined(CONFIG_NET_NATIVE_UDP)
 	PR("UDP recv       %d\tsent\t%d\tdrop\t%d\n",
 	   GET_STAT(iface, udp.recv),
