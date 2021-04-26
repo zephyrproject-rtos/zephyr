@@ -27,6 +27,7 @@
 #define NET_IPV4_OPTS_NOP  1   /* No operation */
 #define NET_IPV4_OPTS_RR   7   /* Record Route */
 #define NET_IPV4_OPTS_TS   68  /* Timestamp */
+#define NET_IPV4_OPTS_RA   148 /* Router Alert */
 
 /* IPv4 Options Timestamp flags */
 #define NET_IPV4_TS_OPT_TS_ONLY	0 /* Timestamp only */
@@ -38,6 +39,26 @@
 /* Fragment bits */
 #define NET_IPV4_MF BIT(0) /* More fragments  */
 #define NET_IPV4_DF BIT(1) /* Do not fragment */
+
+#define NET_IPV4_IGMP_QUERY     0x11 /* Membership query     */
+#define NET_IPV4_IGMP_REPORT_V1 0x12 /* v1 Membership report */
+#define NET_IPV4_IGMP_REPORT_V2 0x16 /* v2 Membership report */
+#define NET_IPV4_IGMP_LEAVE     0x17 /* v2 Leave group       */
+#define NET_IPV4_IGMP_REPORT_V3 0x22 /* v3 Membership report */
+
+struct net_ipv4_igmp_v2_query {
+	uint8_t type;
+	uint8_t max_rsp;
+	uint16_t chksum;
+	struct in_addr address;
+} __packed;
+
+struct net_ipv4_igmp_v2_report {
+	uint8_t type;
+	uint8_t max_rsp;
+	uint16_t chksum;
+	struct in_addr address;
+} __packed;
 
 /**
  * @brief Create IPv4 packet in provided net_pkt with option to set all the

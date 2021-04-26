@@ -326,6 +326,14 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 			goto drop;
 		}
 		return verdict;
+#if defined(CONFIG_NET_IPV4_IGMP)
+	case IPPROTO_IGMP:
+		verdict = net_ipv4_igmp_input(pkt, hdr);
+		if (verdict == NET_DROP) {
+			goto drop;
+		}
+		return verdict;
+#endif
 	case IPPROTO_TCP:
 		proto_hdr.tcp = net_tcp_input(pkt, &tcp_access);
 		if (proto_hdr.tcp) {
