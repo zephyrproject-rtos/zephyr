@@ -52,7 +52,7 @@
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
-#ifdef CONFIG_CPLUSPLUS
+#ifdef CONFIG_CPP_STATIC_INIT_GNU
 	SECTION_PROLOGUE(_CTOR_SECTION_NAME,,)
 	{
 		/*
