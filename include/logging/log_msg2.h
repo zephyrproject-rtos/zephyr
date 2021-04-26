@@ -438,7 +438,7 @@ do { \
 #define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do { \
-	Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, UTIL_CAT(Z_LOG_FUNC_PREFIX_##_level), \
+	Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, UTIL_CAT(Z_LOG_FUNC_PREFIX_, _level), \
 			   _domain_id, _source, _level, _data, _dlen, \
 			   Z_LOG_STR(_level, __VA_ARGS__));\
 } while (0)
