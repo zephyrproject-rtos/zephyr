@@ -47,7 +47,7 @@ volatile struct boot_params __aligned(L1_CACHE_BYTES) arm64_cpu_boot_params = {
 #define CPU_REG_ID(cpu_node_id) DT_REG_ADDR(cpu_node_id),
 
 static const uint64_t cpu_node_list[] = {
-	DT_FOREACH_CHILD(DT_PATH(cpus), CPU_REG_ID)
+	DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(cpus), CPU_REG_ID)
 };
 
 /* Called from Zephyr initialization */
