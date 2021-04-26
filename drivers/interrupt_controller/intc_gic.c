@@ -17,7 +17,7 @@
 
 #define CPU_REG_ID(cpu_node_id) DT_REG_ADDR(cpu_node_id),
 static const uint64_t cpu_mpid_list[] = {
-	DT_FOREACH_CHILD(DT_PATH(cpus), CPU_REG_ID)
+	DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(cpus), CPU_REG_ID)
 };
 
 BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_NUM_CPUS,
