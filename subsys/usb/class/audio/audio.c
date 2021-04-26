@@ -937,7 +937,7 @@ void usb_audio_register(const struct device *dev,
 	};								  \
 	DEVICE_DT_DEFINE(DT_INST(i, COMPAT_##dev),			  \
 			    &usb_audio_device_init,			  \
-			    device_pm_control_nop,			  \
+			    NULL,					  \
 			    &dev##_audio_dev_data_##i,			  \
 			    &dev##_audio_config_##i, APPLICATION,	  \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		  \
