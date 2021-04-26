@@ -141,7 +141,7 @@ typedef int16_t device_handle_t;
  * @param init_fn Address to the init function of the driver.
  *
  * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
+ * Can be NULL if not implemented.
  *
  * @param data_ptr Pointer to the device's private data.
  *
@@ -199,7 +199,7 @@ typedef int16_t device_handle_t;
  * @param init_fn Address to the init function of the driver.
  *
  * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
+ * Can be NULL if not implemented.
  *
  * @param data_ptr Pointer to the device's private data.
  *
@@ -745,25 +745,6 @@ void device_busy_clear(const struct device *dev);
  */
 
 /**
- * @brief No-op function to initialize unimplemented hook
- *
- * This function should be used to initialize device hook
- * for which a device has no PM operations.
- *
- * @param unused_device Unused
- * @param unused_ctrl_command Unused
- * @param unused_context Unused
- * @param cb Unused
- * @param unused_arg Unused
- *
- * @retval -ENOTSUP for all operations.
- */
-int device_pm_control_nop(const struct device *unused_device,
-			  uint32_t unused_ctrl_command,
-			  void *unused_context,
-			  device_pm_cb cb,
-			  void *unused_arg);
-/**
  * @brief Call the set power state function of a device
  *
  * Called by the application or power management service to let the device do
@@ -781,15 +762,12 @@ static inline int device_set_power_state(const struct device *dev,
 					 uint32_t device_power_state,
 					 device_pm_cb cb, void *arg)
 {
-	if (dev->device_pm_control) {
-		return dev->device_pm_control(dev,
-						 DEVICE_PM_SET_POWER_STATE,
-						 &device_power_state, cb, arg);
-	} else {
-		return device_pm_control_nop(dev,
-						 DEVICE_PM_SET_POWER_STATE,
-						 &device_power_state, cb, arg);
+	if (dev->device_pm_control ==  NULL) {
+		return -ENOSYS;
 	}
+
+	return dev->device_pm_control(dev, DEVICE_PM_SET_POWER_STATE,
+				      &device_power_state, cb, arg);
 }
 
 /**
@@ -808,15 +786,12 @@ static inline int device_set_power_state(const struct device *dev,
 static inline int device_get_power_state(const struct device *dev,
 					 uint32_t *device_power_state)
 {
-	if (dev->device_pm_control) {
-		return dev->device_pm_control(dev,
-						 DEVICE_PM_GET_POWER_STATE,
-						 device_power_state, NULL, NULL);
-	} else {
-		return device_pm_control_nop(dev,
-						 DEVICE_PM_GET_POWER_STATE,
-						 device_power_state, NULL, NULL);
+	if (dev->device_pm_control == NULL) {
+		return -ENOSYS;
 	}
+
+	return dev->device_pm_control(dev, DEVICE_PM_GET_POWER_STATE,
+				      device_power_state, NULL, NULL);
 }
 
 /**
@@ -945,9 +920,14 @@ static inline int device_pm_get_sync(const struct device *dev) { return -ENOTSUP
 static inline int device_pm_put(const struct device *dev) { return -ENOTSUP; }
 static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP; }
 #endif
-#else
-#define device_pm_control_nop(...) NULL
 #endif
+
+/**
+ * @brief Alias for legacy use of device_pm_control_nop.
+ *
+ * @note Usage of NULL is preferred, this alias will eventually be removed.
+ */
+#define device_pm_control_nop NULL
 
 /**
  * @}
