@@ -61,8 +61,9 @@ void test_fcb_reset(void)
 	(void)memset(fcb, 0, sizeof(*fcb));
 	fcb->f_sector_cnt = 2U;
 	fcb->f_sectors = test_fcb_sector;
+	fcb->fap = TEST_FCB_FLASH_AREA;
 
-	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
+	rc = fcb_init(-1, fcb);
 	zassert_true(rc == 0, "fcb_init call failure");
 
 	var_cnt = 32;
@@ -99,8 +100,9 @@ void test_fcb_reset(void)
 	(void)memset(fcb, 0, sizeof(*fcb));
 	fcb->f_sector_cnt = 2U;
 	fcb->f_sectors = test_fcb_sector;
+	fcb->fap = TEST_FCB_FLASH_AREA;
 
-	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
+	rc = fcb_init(-1, fcb);
 	zassert_true(rc == 0, "fcb_init call failure");
 
 	/*
