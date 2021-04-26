@@ -82,4 +82,4 @@ jobs:
           check_name: Bluetooth Test Results
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: "**/bsim_results.xml"
-          omment_on_pr: false
+          comment_on_pr: false
