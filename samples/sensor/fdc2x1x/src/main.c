@@ -62,22 +62,22 @@ static void pm_cb(const struct device *dev,
 }
 #endif
 
+#define DEVICE_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ti_fdc2x1x)
+
 void main(void)
 {
 	struct sensor_value ch_buf[] = {
-		DT_FOREACH_CHILD(DT_INST(0, ti_fdc2x1x), CH_BUF_INIT)
+		DT_FOREACH_CHILD(DEVICE_NODE, CH_BUF_INIT)
 	};
 
 	uint8_t num_ch = ARRAY_SIZE(ch_buf);
 	enum sensor_channel base;
 	int i;
 
-	const struct device *dev =
-		device_get_binding(DT_LABEL(DT_INST(0, ti_fdc2x1x)));
+	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
 
-	if (dev == NULL) {
-		printk("Could not get %s device\n",
-		       DT_LABEL(DT_INST(0, ti_fdc2x1x)));
+	if (!device_is_ready(dev)) {
+		printk("Device %s is not ready\n", dev->name);
 		return;
 	}
 
