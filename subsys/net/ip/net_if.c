@@ -3736,6 +3736,28 @@ out:
 	return addr;
 }
 
+void net_if_ipv4_maddr_leave(struct net_if_mcast_addr *addr)
+{
+	NET_ASSERT(addr);
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	addr->is_joined = false;
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_ipv4_maddr_join(struct net_if_mcast_addr *addr)
+{
+	NET_ASSERT(addr);
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	addr->is_joined = true;
+
+	k_mutex_unlock(&lock);
+}
+
 static void iface_ipv4_init(int if_count)
 {
 	int i;
