@@ -863,7 +863,16 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	return ull_cp_encryption_start(conn, rand, ediv, ltk);
+	if (!conn->lll.enc_tx && !conn->lll.enc_rx) {
+		/* Encryption is fully disabled */
+		return ull_cp_encryption_start(conn, rand, ediv, ltk);
+	} else if (conn->lll.enc_tx && conn->lll.enc_rx) {
+		/* Encryption is fully enabled */
+		return ull_cp_encryption_pause(conn, rand, ediv, ltk);
+	} else {
+		/* Encryption is in limbo */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
