@@ -240,6 +240,7 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 		rp_comm_init_proc(ctx);
 		break;
 	case PROC_ENCRYPTION_START:
+	case PROC_ENCRYPTION_PAUSE:
 		rp_enc_init_proc(ctx);
 		break;
 	case PROC_PHY_UPDATE:
