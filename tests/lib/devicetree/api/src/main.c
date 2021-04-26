@@ -1568,8 +1568,13 @@ static void test_child_nodes_list(void)
 		DT_INST_FOREACH_CHILD(0, TEST_FUNC)
 	};
 
+	struct vnd_child_binding vals_status_okay[] = {
+		DT_FOREACH_CHILD_STATUS_OKAY(TEST_PARENT, TEST_FUNC)
+	};
+
 	zassert_equal(ARRAY_SIZE(vals), 3, "");
 	zassert_equal(ARRAY_SIZE(vals_inst), 3, "");
+	zassert_equal(ARRAY_SIZE(vals_status_okay), 2, "");
 
 	zassert_false(strlen(STRINGIFY(TEST_PARENT)) == 0, "");
 
@@ -1579,6 +1584,8 @@ static void test_child_nodes_list(void)
 	zassert_equal(vals_inst[0].val, 0, "");
 	zassert_equal(vals_inst[1].val, 1, "");
 	zassert_equal(vals_inst[2].val, 2, "");
+	zassert_equal(vals_status_okay[0].val, 0, "");
+	zassert_equal(vals_status_okay[1].val, 1, "");
 
 	#undef TEST_PARENT
 	#undef TEST_FUNC

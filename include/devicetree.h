@@ -1486,6 +1486,21 @@
 	DT_CAT(node_id, _FOREACH_CHILD)(fn)
 
 /**
+ * @brief Call "fn" on the child nodes with status "okay"
+ *
+ * The macro "fn" should take one argument, which is the node
+ * identifier for the child node.
+ *
+ * As usual, both a missing status and an "ok" status are
+ * treated as "okay".
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_CHILD_STATUS_OKAY(node_id, fn) \
+	DT_CAT(node_id, _FOREACH_CHILD_STATUS_OKAY)(fn)
+
+/**
  * @brief Invokes "fn" for each element in the value of property "prop".
  *
  * The macro "fn" must take three parameters: fn(node_id, prop, idx).
