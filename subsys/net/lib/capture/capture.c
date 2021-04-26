@@ -700,7 +700,7 @@ static const struct net_capture_interface_api capture_interface_api = {
 	DEVICE_DEFINE(net_capture_##x,					\
 		      "NET_CAPTURE" #x,					\
 		      &capture_dev_init,				\
-		      device_pm_control_nop,				\
+		      NULL,						\
 		      &capture_dev_data_##x,				\
 		      NULL,						\
 		      POST_KERNEL,					\
