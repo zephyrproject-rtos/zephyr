@@ -5,7 +5,7 @@
  */
 
 / {
-	npcx7_alts_map {
+	npcx-alts-map {
 		compatible = "nuvoton,npcx-pinctrl-conf";
 
 		/* SCFG device alternative table */

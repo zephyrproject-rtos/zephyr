@@ -6,7 +6,7 @@
 
 / {
 	/* Mapping between MIWU wui bits and source device */
-	npcx7_miwus_wui {
+	npcx-miwus-wui-map {
 		compatible = "nuvoton,npcx-miwu-wui-map";
 
 		/* MIWU table 0 */
