@@ -142,6 +142,7 @@ extern "C" {
 	)
 
 /* Set of defines that are set to 1 if function name prefix is enabled for given level. */
+#define Z_LOG_FUNC_PREFIX_0U 0
 #define Z_LOG_FUNC_PREFIX_1U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_ERR, (1), (0))
 #define Z_LOG_FUNC_PREFIX_2U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_WRN, (1), (0))
 #define Z_LOG_FUNC_PREFIX_3U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_INF, (1), (0))
