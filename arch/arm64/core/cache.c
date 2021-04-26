@@ -1,7 +1,7 @@
 /* cache.c - d-cache support for AARCH64 CPUs */
 
 /*
- * Copyright 2020 NXP
+ * Copyright 2020-2021 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,10 +15,10 @@
 
 #include <cache.h>
 
-#define	CTR_EL0_DMINLINE_SHIFT	16
-#define	CTR_EL0_DMINLINE_MASK	GENMASK(19, 16)
-#define	CTR_EL0_CWG_SHIFT	24
-#define	CTR_EL0_CWG_MASK	GENMASK(27, 24)
+#define	CTR_EL0_DMINLINE_SHIFT		16
+#define	CTR_EL0_DMINLINE_MASK		BIT_MASK(4)
+#define	CTR_EL0_CWG_SHIFT		24
+#define	CTR_EL0_CWG_MASK		BIT_MASK(4)
 
 /* clidr_el1 */
 #define CLIDR_EL1_LOC_SHIFT		24
@@ -39,28 +39,11 @@
 	__asm__ volatile ("dc " op ", %0" :: "r" (val) : "memory");	\
 })
 
-int arch_dcache_flush(void *addr, size_t size);
-int arch_dcache_invd(void *addr, size_t size);
-
 static size_t dcache_line_size;
-
-int arch_dcache_range(void *addr, size_t size, int op)
-{
-	if (op == K_CACHE_INVD) {
-		arch_dcache_invd(addr, size);
-	} else if (op == K_CACHE_WB_INVD) {
-		arch_dcache_flush(addr, size);
-	} else {
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
 
 size_t arch_dcache_line_size_get(void)
 {
 	uint64_t ctr_el0;
-	uint32_t cwg;
 	uint32_t dminline;
 
 	if (dcache_line_size)
@@ -68,13 +51,48 @@ size_t arch_dcache_line_size_get(void)
 
 	ctr_el0 = read_sysreg(CTR_EL0);
 
-	cwg = (ctr_el0 & CTR_EL0_CWG_MASK) >> CTR_EL0_CWG_SHIFT;
-	dminline = (ctr_el0 & CTR_EL0_DMINLINE_MASK) >>
-		CTR_EL0_DMINLINE_SHIFT;
+	dminline = (ctr_el0 >> CTR_EL0_DMINLINE_SHIFT) & CTR_EL0_DMINLINE_MASK;
 
-	dcache_line_size = cwg ? 4 << cwg : 4 << dminline;
+	dcache_line_size = 4 << dminline;
 
 	return dcache_line_size;
+}
+
+/*
+ * operation for data cache by virtual address to PoC
+ * ops:  K_CACHE_INVD: invalidate
+ *	 K_CACHE_WB: clean
+ *	 K_CACHE_WB_INVD: clean and invalidate
+ */
+int arch_dcache_range(void *addr, size_t size, int op)
+{
+	size_t line_size;
+	uintptr_t start_addr = (uintptr_t)addr;
+	uintptr_t end_addr = start_addr + size;
+
+	if (op != K_CACHE_INVD && op != K_CACHE_WB && op != K_CACHE_WB_INVD)
+		return -ENOTSUP;
+
+	line_size = arch_dcache_line_size_get();
+
+	/* Align address to line size */
+	start_addr &= ~(line_size - 1);
+
+	do {
+		if (op == K_CACHE_INVD) {
+			dc_ops("ivac", start_addr);
+		} else if (op == K_CACHE_WB) {
+			dc_ops("cvac", start_addr);
+		} else if (op == K_CACHE_WB_INVD) {
+			dc_ops("civac", start_addr);
+		}
+
+		start_addr += line_size;
+	} while (start_addr < end_addr);
+
+	dsb();
+
+	return 0;
 }
 
 /*
