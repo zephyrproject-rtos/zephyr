@@ -120,6 +120,9 @@ enum {
 
 	/* Unknown response recieved */
 	RP_ENC_EVT_UNKNOWN,
+
+	/* Request recieved */
+	RP_ENC_EVT_PAUSE_ENC_REQ,
 };
 
 /*
@@ -580,6 +583,9 @@ static struct node_tx *rp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uin
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		pdu_encode_start_enc_rsp(pdu);
 		break;
+	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
+		pdu_encode_pause_enc_rsp(pdu);
+		break;
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
 		pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_ENC_REQ, BT_HCI_ERR_PIN_OR_KEY_MISSING);
@@ -749,6 +755,21 @@ static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 	}
 }
 
+static void rp_enc_send_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+{
+	if (!tx_alloc_is_available()) {
+		ctx->state = RP_ENC_STATE_WAIT_TX_PAUSE_ENC_RSP;
+	} else {
+		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP);
+		/* Wait for the LL_PAUSE_ENC_RSP */
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
+		ctx->state = RP_ENC_STATE_WAIT_RX_PAUSE_ENC_RSP;
+
+		/* Rx Decryption disabled */
+		conn->lll.enc_rx = 0U;
+	}
+}
+
 static void rp_enc_state_unencrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (evt) {
@@ -903,17 +924,42 @@ static void rp_enc_state_wait_tx_start_enc_rsp(struct ll_conn *conn, struct proc
 
 static void rp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		ctx->state = RP_ENC_STATE_WAIT_RX_PAUSE_ENC_REQ;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
+	switch (evt) {
+	case RP_ENC_EVT_PAUSE_ENC_REQ:
+		tx_pause_data(conn);
+		tx_flush(conn);
+		rp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_enc_state_wait_tx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		rp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_enc_state_wait_rx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -984,6 +1030,9 @@ void ull_cp_priv_rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct no
 		break;
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_START_ENC_RSP, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
+		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_PAUSE_ENC_REQ, pdu);
 		break;
 	default:
 		/* Unknown opcode */
