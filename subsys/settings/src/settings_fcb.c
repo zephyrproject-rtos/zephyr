@@ -38,9 +38,10 @@ int settings_fcb_src(struct settings_fcb *cf)
 
 	cf->cf_fcb.f_version = SETTINGS_FCB_VERS;
 	cf->cf_fcb.f_scratch_cnt = 1;
+	cf->cf_fcb.fap = FLASH_AREA(storage);
 
 	while (1) {
-		rc = fcb_init(FLASH_AREA_ID(storage), &cf->cf_fcb);
+		rc = fcb_init(-1, &cf->cf_fcb);
 		if (rc) {
 			return -EINVAL;
 		}
