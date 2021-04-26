@@ -112,13 +112,17 @@ macro(toolchain_ld_baremetal)
   zephyr_ld_options(
     -Hlld
     -Hnosdata
-    -Hnocrt
     -Xtimer0 # to suppress the warning message
     -Hnoxcheck_obj
     -Hnocplus
     -Hheap=0
     -Hnoivt
   )
+
+  # We only use CPP initialization code from crt
+  if(NOT CONFIG_CPLUSPLUS)
+    zephyr_ld_options(-Hnocrt)
+  endif()
 
   # Funny thing is if this is set to =error, some architectures will
   # skip this flag even though the compiler flag check passes
