@@ -225,6 +225,17 @@ Drivers and Sensors
 
 * GPIO
 
+  * :c:struct:`gpio_dt_spec`: a new structure which makes it more convenient to
+    access GPIO configuration in the :ref:`devicetree <dt-guide>`.
+  * New macros for initializing ``gpio_dt_spec`` values:
+    :c:macro:`GPIO_DT_SPEC_GET_BY_IDX`, :c:macro:`GPIO_DT_SPEC_GET_BY_IDX_OR`,
+    :c:macro:`GPIO_DT_SPEC_GET`, :c:macro:`GPIO_DT_SPEC_GET_OR`,
+    :c:macro:`GPIO_DT_SPEC_INST_GET_BY_IDX`,
+    :c:macro:`GPIO_DT_SPEC_INST_GET_BY_IDX_OR`,
+    :c:macro:`GPIO_DT_SPEC_INST_GET`, and :c:macro:`GPIO_DT_SPEC_INST_GET_OR`
+  * New helper functions for using ``gpio_dt_spec`` values:
+    :c:func:`gpio_pin_configure_dt`, :c:func:`gpio_pin_interrupt_configure_dt`
+
 * Hardware Info
 
 * I2C

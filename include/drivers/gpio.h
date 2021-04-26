@@ -359,6 +359,28 @@ struct gpio_dt_spec {
 	}
 
 /**
+ * @brief Like GPIO_DT_SPEC_GET_BY_IDX(), with a fallback to a default value
+ *
+ * If the devicetree node identifier 'node_id' refers to a node with a
+ * property 'prop', this expands to
+ * <tt>GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)</tt>. The @p
+ * default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to @p default_value.
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
+ * @param default_value fallback value to expand to
+ * @return static initializer for a struct gpio_dt_spec for the property,
+ *         or default_value if the node or property do not exist
+ */
+#define GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, prop, idx, default_value)	\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop),			\
+		    (GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx)),	\
+		    (default_value))
+
+/**
  * @brief Equivalent to GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, 0).
  *
  * @param node_id devicetree node identifier
@@ -368,6 +390,19 @@ struct gpio_dt_spec {
  */
 #define GPIO_DT_SPEC_GET(node_id, prop) \
 	GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, 0)
+
+/**
+ * @brief Equivalent to
+ *        GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, prop, 0, default_value).
+ *
+ * @param node_id devicetree node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param default_value fallback value to expand to
+ * @return static initializer for a struct gpio_dt_spec for the property
+ * @see GPIO_DT_SPEC_GET_BY_IDX_OR()
+ */
+#define GPIO_DT_SPEC_GET_OR(node_id, prop, default_value) \
+	GPIO_DT_SPEC_GET_BY_IDX_OR(node_id, prop, 0, default_value)
 
 /**
  * @brief Static initializer for a @p gpio_dt_spec from a DT_DRV_COMPAT
@@ -383,6 +418,20 @@ struct gpio_dt_spec {
 	GPIO_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
+ * @brief Static initializer for a @p gpio_dt_spec from a DT_DRV_COMPAT
+ *        instance's GPIO property at an index, with fallback
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx logical index into "prop"
+ * @param default_value fallback value to expand to
+ * @return static initializer for a struct gpio_dt_spec for the property
+ * @see GPIO_DT_SPEC_GET_BY_IDX()
+ */
+#define GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, idx, default_value)	\
+	GPIO_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), prop, idx, default_value)
+
+/**
  * @brief Equivalent to GPIO_DT_SPEC_INST_GET_BY_IDX(inst, prop, 0).
  *
  * @param inst DT_DRV_COMPAT instance number
@@ -392,6 +441,19 @@ struct gpio_dt_spec {
  */
 #define GPIO_DT_SPEC_INST_GET(inst, prop) \
 	GPIO_DT_SPEC_INST_GET_BY_IDX(inst, prop, 0)
+
+/**
+ * @brief Equivalent to
+ *        GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, 0, default_value).
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param default_value fallback value to expand to
+ * @return static initializer for a struct gpio_dt_spec for the property
+ * @see GPIO_DT_SPEC_INST_GET_BY_IDX()
+ */
+#define GPIO_DT_SPEC_INST_GET_OR(inst, prop, default_value) \
+	GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, 0, default_value)
 
 /**
  * @brief Maximum number of pins that are supported by `gpio_port_pins_t`.
