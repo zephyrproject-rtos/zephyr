@@ -206,6 +206,20 @@ struct net_stats_ipv6_mld {
 };
 
 /**
+ * @brief IPv4 IGMP daemon statistics
+ */
+struct net_stats_ipv4_igmp {
+	/** Number of received IPv4 IGMP queries */
+	net_stats_t recv;
+
+	/** Number of sent IPv4 IGMP reports */
+	net_stats_t sent;
+
+	/** Number of dropped IPv4 IGMP packets */
+	net_stats_t drop;
+};
+
+/**
  * @brief Network packet transfer times for calculating average TX time
  */
 struct net_stats_tx_time {
@@ -321,6 +335,11 @@ struct net_stats {
 #if defined(CONFIG_NET_STATISTICS_MLD)
 	/** IPv6 MLD statistics */
 	struct net_stats_ipv6_mld ipv6_mld;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_IGMP)
+	/** IPv4 IGMP statistics */
+	struct net_stats_ipv4_igmp ipv4_igmp;
 #endif
 
 #if NET_TC_COUNT > 1
