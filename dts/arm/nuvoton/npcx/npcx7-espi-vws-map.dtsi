@@ -28,7 +28,7 @@
  */
 
 / {
-	npcx7-espi-vws-map {
+	npcx-espi-vws-map {
 		compatible = "nuvoton,npcx-espi-vw-conf";
 
 		/* eSPI Virtual Vire (VW) input configuration */

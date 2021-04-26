@@ -402,7 +402,7 @@
  * @param i index of npcx miwu devices
  * @return node identifier with that path.
  */
-#define NPCX_DT_NODE_FROM_MIWU_MAP(i)  DT_PATH(npcx7_miwus_int_map, \
+#define NPCX_DT_NODE_FROM_MIWU_MAP(i)  DT_PATH(npcx_miwus_int_map, \
 						map_miwu##i##_groups)
 /**
  * @brief Get the index prop from parent MIWU device node.
@@ -436,18 +436,18 @@
 	} while (0)
 
 /**
- * @brief Get a child node from path '/npcx7-espi-vws-map/name'.
+ * @brief Get a child node from path '/npcx-espi-vws-map/name'.
  *
- * @param name a path which name is /npcx7-espi-vws-map/'name'.
+ * @param name a path which name is /npcx-espi-vws-map/'name'.
  * @return child node identifier with that path.
  */
-#define NPCX_DT_NODE_FROM_VWTABLE(name) DT_CHILD(DT_PATH(npcx7_espi_vws_map),  \
+#define NPCX_DT_NODE_FROM_VWTABLE(name) DT_CHILD(DT_PATH(npcx_espi_vws_map),  \
 									name)
 
 /**
  * @brief Get phandle from vw-wui property of child node with that path.
  *
- * @param name path which name is /npcx7-espi-vws-map/'name'.
+ * @param name path which name is /npcx-espi-vws-map/'name'.
  * @return phandle from "vw-wui" prop of child node with that path.
  */
 #define NPCX_DT_PHANDLE_VW_WUI(name) DT_PHANDLE(NPCX_DT_NODE_FROM_VWTABLE(     \
@@ -457,7 +457,7 @@
  * @brief Construct a npcx_wui structure from vw-wui property of a child node
  * with that path.
  *
- * @param name a path which name is /npcx7-espi-vws-map/'name'.
+ * @param name a path which name is /npcx-espi-vws-map/'name'.
  * @return npcx_wui item with that path.
  */
 #define NPCX_DT_VW_WUI_ITEM(name)			                       \
@@ -473,7 +473,7 @@
  * a child node with that path.
  *
  * @signal vw input signal name.
- * @param name a path which name is /npcx7-espi-vws-map/'name'.
+ * @param name a path which name is /npcx-espi-vws-map/'name'.
  * @return npcx_vw_in_config item with that path.
  */
 #define NPCX_DT_VW_IN_CONF(signal, name)                                       \
@@ -491,7 +491,7 @@
  * a child node with that path.
  *
  * @signal vw output signal name.
- * @param name a path which name is /npcx7-espi-vws-map/'name'.
+ * @param name a path which name is /npcx-espi-vws-map/'name'.
  * @return npcx_vw_in_config item with that path.
  */
 #define NPCX_DT_VW_OUT_CONF(signal, name)                                      \
