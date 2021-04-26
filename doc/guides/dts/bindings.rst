@@ -928,6 +928,7 @@ Finally, you can filter from a child binding like this:
            - child-prop-to-allow
 
 .. _dt-inferred-bindings:
+.. _dt-zephyr-user:
 
 Inferred bindings
 *****************
