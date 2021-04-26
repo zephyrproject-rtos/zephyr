@@ -15,21 +15,25 @@ void test_fcb_init(void)
 	fcb = &test_fcb;
 	(void)memset(fcb, 0, sizeof(*fcb));
 	fcb->f_erase_value = fcb_test_erase_value;
+	fcb->fap = TEST_FCB_FLASH_AREA;
 
-	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
+	rc = fcb_init(-1, fcb);
 	zassert_true(rc == -EINVAL, "fcb_init call should fail");
 
 	fcb->f_sectors = test_fcb_sector;
+	fcb->fap = TEST_FCB_FLASH_AREA;
 
-	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
+	rc = fcb_init(-1, fcb);
 	zassert_true(rc == -EINVAL, "fcb_init call should fail");
 
 	fcb->f_sector_cnt = 2U;
 	fcb->f_magic = 0x12345678;
-	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
+	fcb->fap = TEST_FCB_FLASH_AREA;
+	rc = fcb_init(-1, fcb);
 	zassert_true(rc == -ENOMSG, "fcb_init call should fail");
 
 	fcb->f_magic = 0U;
-	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
+	fcb->fap = TEST_FCB_FLASH_AREA;
+	rc = fcb_init(-1, fcb);
 	zassert_true(rc == 0,  "fcb_init call failure");
 }

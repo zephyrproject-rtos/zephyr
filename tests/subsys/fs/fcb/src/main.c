@@ -43,11 +43,10 @@ struct flash_sector test_fcb_sector[] = {
 void test_fcb_wipe(void)
 {
 	int i;
-	int rc;
-	const struct flash_area *fap;
+	int rc = 0;
+	const struct flash_area *fap = TEST_FCB_FLASH_AREA;
 
-	rc = flash_area_open(TEST_FCB_FLASH_AREA_ID, &fap);
-	zassert_true(rc == 0, "flash area open call failure");
+	zassert_true(fap != NULL, "failed to obtain flash area ");
 
 	for (i = 0; i < ARRAY_SIZE(test_fcb_sector); i++) {
 		rc = flash_area_erase(fap, test_fcb_sector[i].fs_off,
@@ -113,9 +112,10 @@ void fcb_tc_pretest(int sectors)
 	fcb->f_erase_value = fcb_test_erase_value;
 	fcb->f_sector_cnt = sectors;
 	fcb->f_sectors = test_fcb_sector; /* XXX */
+	fcb->fap = TEST_FCB_FLASH_AREA;
 
 	rc = 0;
-	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
+	rc = fcb_init(-1, fcb);
 	if (rc != 0) {
 		printf("%s rc == %xm, %d\n", __func__, rc, rc);
 		zassert_true(rc == 0, "fbc initialization failure");
@@ -145,18 +145,14 @@ void test_get_flash_erase_value(void)
 {
 	const struct flash_area *fa;
 	const struct flash_parameters *fp;
-	const struct device *dev;
-	int rc = 0;
 
-	rc = flash_area_open(TEST_FCB_FLASH_AREA_ID, &fa);
-	zassert_equal(rc, 0, "Failed top open flash area");
+	fa = TEST_FCB_FLASH_AREA;
 
-	dev = device_get_binding(fa->fa_dev->name);
-	flash_area_close(fa);
+	zassert_true(fa != NULL, "Failed top obtain flash area");
 
-	zassert_true(dev != NULL, "Failed to obtain device");
+	zassert_true(fa->fa_dev != NULL, "Failed to obtain device");
 
-	fp = flash_get_parameters(dev);
+	fp = flash_get_parameters(fa->fa_dev);
 	zassert_true(fp != NULL, "Failed to get flash device parameters");
 
 	fcb_test_erase_value = fp->erase_value;
