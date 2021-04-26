@@ -545,11 +545,11 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, 
 
 void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
 {
-	/* TODO */
+	/* TODO(thoh): Call rp_enc to query if LTK request reply is allowed */
 	struct proc_ctx *ctx;
 
 	ctx = rr_peek(conn);
-	if (ctx && ctx->proc == PROC_ENCRYPTION_START) {
+	if (ctx && (ctx->proc == PROC_ENCRYPTION_START || ctx->proc == PROC_ENCRYPTION_PAUSE)) {
 		memcpy(ctx->data.enc.ltk, ltk, sizeof(ctx->data.enc.ltk));
 		rp_enc_ltk_req_reply(conn, ctx);
 	}
@@ -557,11 +557,11 @@ void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
 
 void ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 {
-	/* TODO */
+	/* TODO(thoh): Call rp_enc to query if LTK negative request reply is allowed */
 	struct proc_ctx *ctx;
 
 	ctx = rr_peek(conn);
-	if (ctx && ctx->proc == PROC_ENCRYPTION_START) {
+	if (ctx && (ctx->proc == PROC_ENCRYPTION_START || ctx->proc == PROC_ENCRYPTION_PAUSE)) {
 		rp_enc_ltk_req_neg_reply(conn, ctx);
 	}
 }
