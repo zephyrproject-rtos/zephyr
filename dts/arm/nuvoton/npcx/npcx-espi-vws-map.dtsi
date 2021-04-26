@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2020 Nuvoton Technology Corporation.
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <dt-bindings/espi/npcx_espi.h>
 
 /*
  *                Nuvoton NPCX7 eSPI Virtual Wires Mapping Table
