@@ -119,6 +119,7 @@ def main():
                               f"DT_{node.parent.z_path_id}")
 
             write_child_functions(node)
+            write_child_functions_status_okay(node)
             write_dep_info(node)
             write_idents_and_existence(node)
             write_bus(node)
@@ -477,6 +478,18 @@ def write_child_functions(node):
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
             " ".join(f"fn(DT_{child.z_path_id})" for child in
                 node.children.values()))
+
+
+def write_child_functions_status_okay(node):
+    # Writes macro that are helpers that will call a macro/function
+    # for each child node with status "okay".
+
+    functions = ''
+    for child in node.children.values():
+        if child.status == "okay":
+            functions = functions + f"fn(DT_{child.z_path_id}) "
+
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY(fn)", functions)
 
 
 def write_status(node):

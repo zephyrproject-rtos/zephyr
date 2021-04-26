@@ -386,12 +386,15 @@
 
 			test_child_a: child-a {
 				val = <0>;
+				status = "okay";
 			};
 			test_child_b: child-b {
 				val = <1>;
+				status = "okay";
 			};
 			test_child_c: child-c {
 				val = <2>;
+				status = "disabled";
 			};
 		};
 
