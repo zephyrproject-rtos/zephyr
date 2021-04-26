@@ -13,6 +13,10 @@ Building and Running
 
 The DAC output is defined in the board's devicetree and pinmux file.
 
+The board's :ref:`/zephyr,user <dt-zephyr-user>` node must have ``dac``,
+``dac-channel-id``, and ``dac-resolution`` properties set. See the predefined
+overlays in :zephyr_file:`samples/drivers/dac/boards` for examples.
+
 Building and Running for ST Nucleo L073RZ
 =========================================
 The sample can be built and executed for the
