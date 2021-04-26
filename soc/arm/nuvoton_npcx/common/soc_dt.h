@@ -8,6 +8,35 @@
 #define _NUVOTON_NPCX_SOC_DT_H_
 
 /**
+ * @brief Like DT_PROP(), but expand parameters with
+ *        DT_ENUM_UPPER_TOKEN not DT_PROP
+ *
+ * If the prop exists, this expands to DT_ENUM_UPPER_TOKEN(node_id, prop).
+ * The default_value parameter is not expanded in this case.
+ *
+ * Otherwise, this expands to default_value.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's enum upper token value or default_value
+ */
+#define NPCX_DT_PROP_ENUM_OR(node_id, prop, default_value) \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
+		    (DT_ENUM_UPPER_TOKEN(node_id, prop)), (default_value))
+
+/**
+ * @brief Like DT_INST_PROP_OR(), but expand parameters with
+ *        NPCX_DT_PROP_ENUM_OR not DT_PROP_OR
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param default_value a fallback value to expand to
+ * @return the property's enum upper token value or default_value
+ */
+#define NPCX_DT_INST_PROP_ENUM_OR(inst, prop, default_value) \
+	NPCX_DT_PROP_ENUM_OR(DT_DRV_INST(inst), prop, default_value)
+
+/**
  * @brief Construct a npcx_clk_cfg item from first item in 'clocks' prop which
  * type is 'phandle-array' to handle "clock-cells" in current driver.
  *
@@ -27,7 +56,8 @@
  */
 #define NPCX_DT_CLK_CFG_ITEM(inst)                                             \
 	{                                                                      \
-	  .bus  = DT_PHA(DT_DRV_INST(inst), clocks, bus),                      \
+	  .bus  = NPCX_DT_INST_PROP_ENUM_OR(inst, clock_bus,                   \
+				DT_PHA(DT_DRV_INST(inst), clocks, bus)),       \
 	  .ctrl = DT_PHA(DT_DRV_INST(inst), clocks, ctl),                      \
 	  .bit  = DT_PHA(DT_DRV_INST(inst), clocks, bit),                      \
 	}
