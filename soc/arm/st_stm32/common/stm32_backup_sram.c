@@ -53,6 +53,5 @@ static const struct stm32_backup_sram_config config = {
 		    .enr = DT_INST_CLOCKS_CELL(0, bits) },
 };
 
-DEVICE_DT_INST_DEFINE(0, stm32_backup_sram_init, device_pm_control_nop,
-		      NULL, &config, POST_KERNEL,
-		      CONFIG_APPLICATION_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, stm32_backup_sram_init, NULL, NULL, &config,
+		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, NULL);
