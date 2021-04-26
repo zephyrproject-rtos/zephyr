@@ -17,10 +17,8 @@ config BOARD
 
 # By default, if we build for a Non-Secure version of the board,
 # force building with TF-M as the Secure Execution Environment.
-# Openamp samples assume the non-secure build is the remote
-# core image, so do not build with TF-M in this case.
 config BUILD_WITH_TFM
-	default y if TRUSTED_EXECUTION_NONSECURE && !OPENAMP
+	default y if TRUSTED_EXECUTION_NONSECURE
 
 
 if GPIO
