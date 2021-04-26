@@ -48,10 +48,14 @@ void main(void)
 	int i;
 	char meter[200];
 
-	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, adi_adxl372)));
+	const struct device *dev = DEVICE_DT_GET_ANY(adi_adxl372);
 
-	if (dev == NULL) {
-		printf("Could not get %s device\n", DT_LABEL(DT_INST(0, adi_adxl372)));
+	if (!dev) {
+		printf("Devicetree has no adi,adxl372 node\n");
+		return;
+	}
+	if (!device_is_ready(dev)) {
+		printf("Device %s is not ready\n", dev->name);
 		return;
 	}
 
