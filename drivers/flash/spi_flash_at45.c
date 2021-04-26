@@ -11,6 +11,8 @@
 
 LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 
+#define DT_DRV_COMPAT atmel_at45
+
 /* AT45 commands used by this driver: */
 /* - Continuous Array Read (Low Power Mode) */
 #define CMD_READ		0x01
@@ -42,6 +44,11 @@ LOG_MODULE_REGISTER(spi_flash_at45, CONFIG_FLASH_LOG_LEVEL);
 #define STATUS_REG_LSB_RDY_BUSY_BIT	0x80
 #define STATUS_REG_LSB_PAGE_SIZE_BIT	0x01
 
+#define INST_HAS_WP_OR(inst) DT_INST_NODE_HAS_PROP(inst, wp_gpios) ||
+#define ANY_INST_HAS_WP_GPIOS DT_INST_FOREACH_STATUS_OKAY(INST_HAS_WP_OR) 0
+
+#define INST_HAS_RESET_OR(inst) DT_INST_NODE_HAS_PROP(inst, reset_gpios) ||
+#define ANY_INST_HAS_RESET_GPIOS DT_INST_FOREACH_STATUS_OKAY(INST_HAS_RESET_OR) 0
 
 #define DEF_BUF_SET(_name, _buf_array) \
 	const struct spi_buf_set _name = { \
@@ -64,6 +71,12 @@ struct spi_flash_at45_config {
 	const char *cs_gpio;
 	gpio_pin_t cs_pin;
 	gpio_dt_flags_t cs_dt_flags;
+#if ANY_INST_HAS_RESET_GPIOS
+	const struct gpio_dt_spec *reset;
+#endif
+#if ANY_INST_HAS_WP_GPIOS
+	const struct gpio_dt_spec *wp;
+#endif
 #if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout pages_layout;
 #endif
@@ -340,6 +353,12 @@ static int spi_flash_at45_write(const struct device *dev, off_t offset,
 
 	acquire(dev);
 
+#if ANY_INST_HAS_WP_GPIOS
+	if (cfg->wp) {
+		gpio_pin_set(cfg->wp->port, cfg->wp->pin, 0);
+	}
+#endif
+
 	while (len) {
 		size_t chunk_len = len;
 		off_t current_page_start =
@@ -359,6 +378,12 @@ static int spi_flash_at45_write(const struct device *dev, off_t offset,
 		offset += chunk_len;
 		len    -= chunk_len;
 	}
+
+#if ANY_INST_HAS_WP_GPIOS
+	if (cfg->wp) {
+		gpio_pin_set(cfg->wp->port, cfg->wp->pin, 1);
+	}
+#endif
 
 	release(dev);
 
@@ -446,6 +471,12 @@ static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 
 	acquire(dev);
 
+#if ANY_INST_HAS_WP_GPIOS
+	if (cfg->wp) {
+		gpio_pin_set(cfg->wp->port, cfg->wp->pin, 0);
+	}
+#endif
+
 	if (size == cfg->chip_size) {
 		err = perform_chip_erase(dev);
 	} else {
@@ -480,6 +511,12 @@ static int spi_flash_at45_erase(const struct device *dev, off_t offset,
 			}
 		}
 	}
+
+#if ANY_INST_HAS_WP_GPIOS
+	if (cfg->wp) {
+		gpio_pin_set(cfg->wp->port, cfg->wp->pin, 1);
+	}
+#endif
 
 	release(dev);
 
@@ -533,6 +570,28 @@ static int spi_flash_at45_init(const struct device *dev)
 		LOG_ERR("Cannot find %s", dev_config->spi_bus);
 		return -ENODEV;
 	}
+
+#if ANY_INST_HAS_RESET_GPIOS
+	if (dev_config->reset) {
+		if (gpio_pin_configure_dt(dev_config->reset,
+					GPIO_OUTPUT_ACTIVE)) {
+			LOG_ERR("Couldn't configure reset pin");
+			return -ENODEV;
+		}
+		gpio_pin_set(dev_config->reset->port, dev_config->reset->pin, 0);
+	}
+#endif
+
+#if ANY_INST_HAS_WP_GPIOS
+	if (dev_config->wp) {
+		if (gpio_pin_configure_dt(dev_config->wp,
+					GPIO_OUTPUT_ACTIVE)) {
+			LOG_ERR("Couldn't configure write protect pin");
+			return -ENODEV;
+		}
+		gpio_pin_set(dev_config->wp->port, dev_config->wp->pin, 1);
+	}
+#endif
 
 	if (dev_config->cs_gpio) {
 		dev_data->spi_cs.gpio_dev =
@@ -636,7 +695,21 @@ static const struct flash_driver_api spi_flash_at45_api = {
 #endif
 };
 
-#define DT_DRV_COMPAT atmel_at45
+#define INST_HAS_RESET_GPIO(idx) \
+	DT_NODE_HAS_PROP(DT_DRV_INST(idx), reset_gpios)
+
+#define INST_RESET_GPIO_SPEC(idx)					\
+	IF_ENABLED(INST_HAS_RESET_GPIO(idx),				\
+		(static const struct gpio_dt_spec reset_##idx =	\
+		GPIO_DT_SPEC_GET(DT_DRV_INST(idx), reset_gpios);))
+
+#define INST_HAS_WP_GPIO(idx) \
+	DT_NODE_HAS_PROP(DT_DRV_INST(idx), wp_gpios)
+
+#define INST_WP_GPIO_SPEC(idx)						\
+	IF_ENABLED(INST_HAS_WP_GPIO(idx),				\
+		(static const struct gpio_dt_spec wp_##idx =		\
+		GPIO_DT_SPEC_GET(DT_DRV_INST(idx), wp_gpios);))
 
 #define SPI_FLASH_AT45_INST(idx)					     \
 	enum {								     \
@@ -648,7 +721,9 @@ static const struct flash_driver_api spi_flash_at45_api = {
 		.lock = Z_SEM_INITIALIZER(inst_##idx##_data.lock, 1, 1),     \
 		IF_ENABLED(CONFIG_PM_DEVICE, (		     \
 			.pm_state = PM_DEVICE_ACTIVE_STATE))		     \
-	};								     \
+	};						\
+	INST_RESET_GPIO_SPEC(idx)				\
+	INST_WP_GPIO_SPEC(idx)					\
 	static const struct spi_flash_at45_config inst_##idx##_config = {    \
 		.spi_bus = DT_INST_BUS_LABEL(idx),			     \
 		.spi_cfg = {						     \
@@ -662,6 +737,10 @@ static const struct flash_driver_api spi_flash_at45_api = {
 			.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_LABEL(idx),      \
 			.cs_pin  = DT_INST_SPI_DEV_CS_GPIOS_PIN(idx),	     \
 			.cs_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(idx),)) \
+		IF_ENABLED(INST_HAS_RESET_GPIO(idx),			\
+			(.reset = &reset_##idx,))			\
+		IF_ENABLED(INST_HAS_WP_GPIO(idx),			\
+			(.wp = &wp_##idx,))			\
 		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (			     \
 			.pages_layout = {				     \
 				.pages_count = INST_##idx##_PAGES,	     \
