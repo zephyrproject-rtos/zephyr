@@ -25,8 +25,8 @@
 K_THREAD_STACK_DEFINE(rx_thread_stack, RX_THREAD_STACK_SIZE);
 K_THREAD_STACK_DEFINE(poll_state_stack, STATE_POLL_THREAD_STACK_SIZE);
 
-const struct device *can_dev;
-const struct device *led_gpio_dev;
+const struct device *can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_can_primary));
+struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
 struct k_thread rx_thread_data;
 struct k_thread poll_state_thread_data;
@@ -82,27 +82,19 @@ void change_led(struct zcan_frame *msg, void *unused)
 {
 	ARG_UNUSED(unused);
 
-#if DT_PHA_HAS_CELL(DT_ALIAS(led0), gpios, pin) && \
-    DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
-
-	if (!led_gpio_dev) {
-		printk("No LED GPIO device\n");
+	if (led.port == NULL) {
+		printk("LED %s\n", msg->data[0] == SET_LED ? "ON" : "OFF");
 		return;
 	}
 
 	switch (msg->data[0]) {
 	case SET_LED:
-		gpio_pin_set(led_gpio_dev,
-			     DT_GPIO_PIN(DT_ALIAS(led0), gpios), 1);
+		gpio_pin_set(led.port, led.pin, 1);
 		break;
 	case RESET_LED:
-		gpio_pin_set(led_gpio_dev,
-			     DT_GPIO_PIN(DT_ALIAS(led0), gpios), 0);
+		gpio_pin_set(led.port, led.pin, 0);
 		break;
 	}
-#else
-	printk("LED %s\n", msg->data[0] == SET_LED ? "ON" : "OFF");
-#endif
 }
 
 char *state_to_str(enum can_state state)
@@ -198,10 +190,8 @@ void main(void)
 	k_tid_t rx_tid, get_state_tid;
 	int ret;
 
-	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
-
-	if (!can_dev) {
-		printk("CAN: Device driver not found.\n");
+	if (!device_is_ready(can_dev)) {
+		printk("CAN: Device %s not ready.\n", can_dev->name);
 		return;
 	}
 
@@ -209,22 +199,20 @@ void main(void)
 	can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 #endif
 
-#if DT_PHA_HAS_CELL(DT_ALIAS(led0), gpios, pin) && \
-    DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
-	led_gpio_dev = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
-	if (!led_gpio_dev) {
-		printk("LED: Device driver not found.\n");
-		return;
+	if (led.port != NULL) {
+		if (!device_is_ready(led.port)) {
+			printk("LED: Device %s not ready.\n",
+			       led.port->name);
+			return;
+		}
+		ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_HIGH);
+		if (ret < 0) {
+			printk("Error setting LED pin to output mode [%d]",
+			       ret);
+			led.port = NULL;
+		}
 	}
 
-	ret = gpio_pin_configure(led_gpio_dev,
-				 DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-				 GPIO_OUTPUT_HIGH |
-				 DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
-	if (ret < 0) {
-		printk("Error setting LED pin to output mode [%d]", ret);
-	}
-#endif
 
 	k_work_init(&state_change_work, state_change_work_handler);
 
