@@ -14,6 +14,7 @@ supported:
   - hwinfo
   - pinmux
   - spi
+  - i2c
   - uart
   - usb_device
   - watchdog
