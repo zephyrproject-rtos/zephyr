@@ -592,7 +592,9 @@ void log_init(void)
 				backend->api->init(backend);
 			}
 
-			log_backend_enable(backend, NULL, CONFIG_LOG_MAX_LEVEL);
+			log_backend_enable(backend,
+					   backend->cb->ctx,
+					   CONFIG_LOG_MAX_LEVEL);
 		}
 	}
 }
