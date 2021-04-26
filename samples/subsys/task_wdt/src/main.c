@@ -16,31 +16,27 @@
  * To use this sample, either the devicetree's /aliases must have a
  * 'watchdog0' property, or one of the following watchdog compatibles
  * must have an enabled node.
+ *
+ * If the devicetree has a watchdog node, we get the watchdog device
+ * from there. Otherwise, the task watchdog will be used without a
+ * hardware watchdog fallback.
  */
 #if DT_NODE_HAS_STATUS(DT_ALIAS(watchdog0), okay)
 #define WDT_NODE DT_ALIAS(watchdog0)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
-#define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
+#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(st_stm32_window_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
-#define WDT_NODE DT_INST(0, st_stm32_watchdog)
+#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(st_stm32_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
-#define WDT_NODE DT_INST(0, nordic_nrf_watchdog)
+#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_watchdog)
-#define WDT_NODE DT_INST(0, espressif_esp32_watchdog)
+#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(espressif_esp32_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(silabs_gecko_wdog)
-#define WDT_NODE DT_INST(0, silabs_gecko_wdog)
+#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(silabs_gecko_wdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_wdog32)
-#define WDT_NODE DT_INST(0, nxp_kinetis_wdog32)
+#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_kinetis_wdog32)
 #elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_watchdog)
-#define WDT_NODE DT_INST(0, microchip_xec_watchdog)
-#endif
-
-/*
- * If the devicetree has a watchdog node, get its label property. Otherwise
- * the task watchdog will be used without a hardware watchdog fallback.
- */
-#ifdef WDT_NODE
-#define WDT_DEV_NAME DT_LABEL(WDT_NODE)
+#define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(microchip_xec_watchdog)
 #endif
 
 static void task_wdt_callback(int channel_id, void *user_data)
@@ -62,13 +58,19 @@ static void task_wdt_callback(int channel_id, void *user_data)
 
 void main(void)
 {
-#ifdef WDT_DEV_NAME
-	const struct device *hw_wdt_dev = device_get_binding(WDT_DEV_NAME);
+#ifdef WDT_NODE
+	const struct device *hw_wdt_dev = DEVICE_DT_GET(WDT_NODE);
 #else
 	const struct device *hw_wdt_dev = NULL;
 #endif
 
 	printk("Task watchdog sample application.\n");
+
+	if (!device_is_ready(hw_wdt_dev)) {
+		printk("Hardware watchdog %s is not ready; ignoring it.\n",
+		       hw_wdt_dev->name);
+		hw_wdt_dev = NULL;
+	}
 
 	task_wdt_init(hw_wdt_dev);
 
