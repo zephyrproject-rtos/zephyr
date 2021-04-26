@@ -123,6 +123,9 @@ enum {
 
 	/* Request recieved */
 	RP_ENC_EVT_PAUSE_ENC_REQ,
+
+	/* Response recieved */
+	RP_ENC_EVT_PAUSE_ENC_RSP,
 };
 
 /*
@@ -965,6 +968,20 @@ static void rp_enc_state_wait_tx_pause_enc_rsp(struct ll_conn *conn, struct proc
 static void rp_enc_state_wait_rx_pause_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	/* TODO */
+	switch (evt) {
+	case RP_ENC_EVT_PAUSE_ENC_RSP:
+		/* Continue with an encapsulated Start Procedure */
+		/* Wait for the LL_ENC_REQ */
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
+		ctx->state = RP_ENC_STATE_WAIT_RX_ENC_REQ;
+
+		/* Tx Encryption disabled */
+		conn->lll.enc_tx = 0U;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_enc_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -1033,6 +1050,9 @@ void ull_cp_priv_rp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct no
 		break;
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_PAUSE_ENC_REQ, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
+		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_PAUSE_ENC_RSP, pdu);
 		break;
 	default:
 		/* Unknown opcode */
