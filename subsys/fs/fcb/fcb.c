@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -95,26 +95,31 @@ int
 fcb_init(int f_area_id, struct fcb *fcb)
 {
 	struct flash_sector *sector;
-	int rc;
+	int rc = 0;
 	int i;
 	uint8_t align;
 	int oldest = -1, newest = -1;
 	struct flash_sector *oldest_sector = NULL, *newest_sector = NULL;
 	struct fcb_disk_area fda;
-	const struct device *dev = NULL;
 	const struct flash_parameters *fparam;
 
 	if (!fcb->f_sectors || fcb->f_sector_cnt - fcb->f_scratch_cnt < 1) {
 		return -EINVAL;
 	}
 
-	rc = flash_area_open(f_area_id, &fcb->fap);
-	if (rc != 0) {
+	/*
+	 * When ID is not -1 then it is real ID to open, otherwise the fcb->fap is expected to be
+	 * initialized to valid flash_area object pointer.
+	 */
+	if (f_area_id != -1) {
+		rc = flash_area_open(f_area_id, &fcb->fap);
+	}
+
+	if (fcb->fap == NULL || rc != 0) {
 		return -EINVAL;
 	}
 
-	dev = device_get_binding(fcb->fap->fa_dev->name);
-	fparam = flash_get_parameters(dev);
+	fparam = flash_get_parameters(fcb->fap->fa_dev);
 	fcb->f_erase_value = fparam->erase_value;
 
 	align = fcb_get_align(fcb);

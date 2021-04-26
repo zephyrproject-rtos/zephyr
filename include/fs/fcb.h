@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -145,7 +145,9 @@ struct fcb {
 /**
  * Initialize FCB instance.
  *
- * @param[in] f_area_id ID of flash area where fcb storage resides.
+ * @param[in] f_area_id ID of flash area where fcb storage resides;
+ *	      setting this to -1 means that user has provided pointer to flash_area directly via
+ *	      fcb->fap structure member.
  * @param[in,out] fcb   FCB instance structure.
  *
  * @return 0 on success, non-zero on failure.
