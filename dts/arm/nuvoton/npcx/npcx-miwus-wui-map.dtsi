@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Nuvoton Technology Corporation.
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,9 +22,6 @@
 		};
 		wui_io83: wui0-1-3 {
 			miwus = <&miwu0 0 3>; /* GPIO83 */
-		};
-		wui_io86: wui0-1-6 {
-			miwus = <&miwu0 0 6>; /* GPIO86 */
 		};
 		wui_cr_sin2: wui0-1-6-2 {
 			miwus = <&miwu0 0 6>; /* CR_SIN2 */
@@ -181,9 +178,6 @@
 		};
 		wui_iod5: wui0-7-5 {
 			miwus = <&miwu0 6 5>; /* GPIOD5 */
-		};
-		wui_iod7: wui0-7-6 {
-			miwus = <&miwu0 6 6>; /* GPIOD7 */
 		};
 		wui_ioe0: wui0-7-7 {
 			miwus = <&miwu0 6 7>; /* GPIOE0 */
