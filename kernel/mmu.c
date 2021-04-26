@@ -15,6 +15,7 @@
 #include <syscall_handler.h>
 #include <toolchain.h>
 #include <linker/linker-defs.h>
+#include <sys/bitarray.h>
 #include <timing/timing.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -169,32 +170,118 @@ void z_page_frames_dump(void)
  * +--------------+ <- mappings start here
  * | Reserved     | <- special purpose virtual page(s) of size Z_VM_RESERVED
  * +--------------+ <- Z_VIRT_RAM_END
- *
- * At the moment we just have one downward-growing area for mappings.
- * There is currently no support for un-mapping memory, see #28900.
  */
-static uint8_t *mapping_pos = Z_VIRT_RAM_END - Z_VM_RESERVED;
 
-/* Get a chunk of virtual memory and mark it as being in-use.
+/* Bitmap of virtual addresses where one bit corresponds to one page.
+ * This is being used for virt_region_alloc() to figure out which
+ * region of virtual addresses can be used for memory mapping.
  *
- * This may be called from arch early boot code before z_cstart() is invoked.
- * Data will be copied and BSS zeroed, but this must not rely on any
- * initialization functions being called prior to work correctly.
+ * Note that bit #0 is the highest address so that allocation is
+ * done in reverse from highest address.
  */
-static void *virt_region_get(size_t size)
+SYS_BITARRAY_DEFINE(virt_region_bitmap,
+		    CONFIG_KERNEL_VM_SIZE / CONFIG_MMU_PAGE_SIZE);
+
+static bool virt_region_inited;
+
+#define Z_VIRT_REGION_START_ADDR	Z_FREE_VM_START
+#define Z_VIRT_REGION_END_ADDR		(Z_VIRT_RAM_END - Z_VM_RESERVED)
+
+static inline uintptr_t virt_from_bitmap_offset(size_t offset, size_t size)
 {
-	uint8_t *dest_addr;
+	return POINTER_TO_UINT(Z_VIRT_RAM_END)
+	       - (offset * CONFIG_MMU_PAGE_SIZE) - size;
+}
 
-	if ((mapping_pos - size) < Z_FREE_VM_START) {
+static inline size_t virt_to_bitmap_offset(void *vaddr, size_t size)
+{
+	return (POINTER_TO_UINT(Z_VIRT_RAM_END)
+		- POINTER_TO_UINT(vaddr) - size) / CONFIG_MMU_PAGE_SIZE;
+}
+
+static void virt_region_init(void)
+{
+	size_t offset, num_bits;
+
+	/* There are regions where we should never map via
+	 * k_mem_map() and z_phys_map(). Mark them as
+	 * already allocated so they will never be used.
+	 */
+
+	if (Z_VM_RESERVED > 0) {
+		/* Mark reserved region at end of virtual address space */
+		offset = virt_to_bitmap_offset(Z_VIRT_REGION_END_ADDR,
+					       Z_VM_RESERVED);
+		num_bits = Z_VM_RESERVED / CONFIG_MMU_PAGE_SIZE;
+		(void)sys_bitarray_set_region(&virt_region_bitmap,
+					      num_bits, 0);
+	}
+
+	/* Mark all bits up to Z_FREE_VM_START as allocated */
+	num_bits = POINTER_TO_UINT(Z_FREE_VM_START)
+		   - POINTER_TO_UINT(Z_VIRT_RAM_START);
+	offset = virt_to_bitmap_offset(Z_VIRT_RAM_START, num_bits);
+	num_bits /= CONFIG_MMU_PAGE_SIZE;
+	(void)sys_bitarray_set_region(&virt_region_bitmap,
+				      num_bits, offset);
+
+	virt_region_inited = true;
+}
+
+static void *virt_region_alloc(size_t size)
+{
+	uintptr_t dest_addr;
+	size_t offset;
+	size_t num_bits;
+	int ret;
+
+	if (unlikely(!virt_region_inited)) {
+		virt_region_init();
+	}
+
+	num_bits = size / CONFIG_MMU_PAGE_SIZE;
+	ret = sys_bitarray_alloc(&virt_region_bitmap, num_bits, &offset);
+	if (ret != 0) {
 		LOG_ERR("insufficient virtual address space (requested %zu)",
 			size);
 		return NULL;
 	}
 
-	mapping_pos -= size;
-	dest_addr = mapping_pos;
+	/* Remember that bit #0 in bitmap corresponds to the highest
+	 * virtual address. So here we need to go downwards (backwards?)
+	 * to get the starting address of the allocated region.
+	 */
+	dest_addr = virt_from_bitmap_offset(offset, size);
 
-	return dest_addr;
+	/* Need to make sure this does not step into kernel memory */
+	if (dest_addr < POINTER_TO_UINT(Z_VIRT_REGION_START_ADDR)) {
+		(void)sys_bitarray_free(&virt_region_bitmap, size, offset);
+		return NULL;
+	}
+
+	return UINT_TO_POINTER(dest_addr);
+}
+
+static void virt_region_free(void *vaddr, size_t size)
+{
+	size_t offset, num_bits;
+	uint8_t *vaddr_u8 = (uint8_t *)vaddr;
+
+	if (unlikely(!virt_region_inited)) {
+		virt_region_init();
+	}
+
+	__ASSERT((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
+		 && ((vaddr_u8 + size) < Z_VIRT_REGION_END_ADDR),
+		 "invalid virtual address region %p (%zu)", vaddr_u8, size);
+	if (!((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
+	      && ((vaddr_u8 + size) < Z_VIRT_REGION_END_ADDR))) {
+		return;
+	}
+
+	offset = virt_to_bitmap_offset(vaddr, size);
+	num_bits = size / CONFIG_MMU_PAGE_SIZE;
+	(void)sys_bitarray_free(&virt_region_bitmap, num_bits, offset);
 }
 
 /*
@@ -407,7 +494,7 @@ void *k_mem_map(size_t size, uint32_t flags)
 	 */
 	total_size = size + CONFIG_MMU_PAGE_SIZE * 2;
 
-	dst = virt_region_get(total_size);
+	dst = virt_region_alloc(total_size);
 	if (dst == NULL) {
 		/* Address space has no free region */
 		goto out;
@@ -446,6 +533,7 @@ void k_mem_unmap(void *addr, size_t size)
 	uint8_t *pos;
 	struct z_page_frame *pf;
 	k_spinlock_key_t key;
+	size_t total_size;
 	int ret;
 
 	/* Need space for the "before" guard page */
@@ -519,6 +607,13 @@ void k_mem_unmap(void *addr, size_t size)
 		page_frame_free_locked(pf);
 	}
 
+	/* There are guard pages just before and after the mapped
+	 * region. So we also need to free them from the bitmap.
+	 */
+	pos = (uint8_t *)addr - CONFIG_MMU_PAGE_SIZE;
+	total_size = size + CONFIG_MMU_PAGE_SIZE * 2;
+	virt_region_free(pos, total_size);
+
 out:
 	k_spin_unlock(&z_mm_lock, key);
 }
@@ -558,7 +653,7 @@ void z_phys_map(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
 
 	key = k_spin_lock(&z_mm_lock);
 	/* Obtain an appropriately sized chunk of virtual memory */
-	dest_addr = virt_region_get(aligned_size);
+	dest_addr = virt_region_alloc(aligned_size);
 	if (!dest_addr) {
 		goto fail;
 	}
@@ -606,7 +701,7 @@ void z_phys_unmap(uint8_t *virt, size_t size)
 
 	key = k_spin_lock(&z_mm_lock);
 	arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
-	/* TODO: Need to reclaim the space allocated by virt_region_get(). */
+	virt_region_free(virt, size);
 	k_spin_unlock(&z_mm_lock, key);
 }
 
