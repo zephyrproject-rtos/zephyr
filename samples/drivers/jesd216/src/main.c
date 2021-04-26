@@ -12,13 +12,13 @@
 #include <inttypes.h>
 #include <string.h>
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, jedec_spi_nor), okay)
-#define FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_spi_nor))
-#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_qspi_nor), okay)
-#define FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
+#if DT_HAS_COMPAT_STATUS_OKAY(jedec_spi_nor)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(jedec_spi_nor)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_qspi_nor)
+#define FLASH_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_qspi_nor)
 #else
 #error Unsupported flash driver
-#define FLASH_DEVICE ""
+#define FLASH_NODE DT_INVALID_NODE
 #endif
 
 typedef void (*dw_extractor)(const struct jesd216_param_header *php,
@@ -274,10 +274,10 @@ static void dump_bytes(const struct jesd216_param_header *php,
 
 void main(void)
 {
-	const struct device *dev = device_get_binding(FLASH_DEVICE);
+	const struct device *dev = DEVICE_DT_GET(FLASH_NODE);
 
-	if (!dev) {
-		printf("%s: device not found\n", FLASH_DEVICE);
+	if (!device_is_ready(dev)) {
+		printf("%s: device not ready\n", dev->name);
 		return;
 	}
 
