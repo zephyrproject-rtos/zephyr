@@ -30,17 +30,29 @@ void main(void)
     // k_msgq_init(&input_key_message, message_buffer, sizeof(uint16_t), 10);
 
     //屏幕初始化
-    const struct device* display_dev=device_get_binding("ST7735");
+
+    #if DT_NODE_HAS_STATUS(DT_INST(0, sitronix_st7735), okay)
+    #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7735))
+    #else 
+    #define DISPLAY_DEV_NAME ""
+    #pragma message("sitronix_st7735 not find")
+    #endif
 
     #pragma message(PRINT_MACRO(DISPLAY_DEV_NAME))
 
-    if(!display_dev){
-        printk("===display dev is so null===\n");
-    }
+
     // st7735_LcdInit(display_dev);
     Adafruit_displayInit(INIT_ST7735);
-    for(int i=3;i<120;i+=3)
-        Adafruit_drawLine(0,i,0,150,BLACK);
+    Adafruit_clear(0,0,129,160,WHITE);
+    // Adafruit_fillRect(0,0,129,160,WHITE);
+    // for(int i=3;i<120;i+=10)
+    //     Adafruit_drawLine(0,i,0,150,GREEN);
+    
+    // Adafruit_drawCircle(60,60,20,RED);
+
+    // Adafruit_fillRoundRect(20,60,80,30,15,BLUE);
+    // for(int x=4,w=120;x<=w;x+=4)
+    // Adafruit_drawRect(x,x,w-2*x,w-2*x,RED);//这个错误竟然产生了漂亮的效果
 
     while (1)
     {

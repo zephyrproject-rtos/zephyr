@@ -350,7 +350,7 @@ static struct st7735_data st7735_info=
 
 #define ST7735_DC_LOW()   gpio_pin_set(st7735_info.cmd_data_gpio, ST7735_CMD_DATA_PIN, 0);
 #define ST7735_DC_HIGH()  gpio_pin_set(st7735_info.cmd_data_gpio, ST7735_CMD_DATA_PIN, 1);
-
+#define ST7735_BLK_OPEN()   gpio_pin_set(st7735_info.blk_gpio, ST7735_BLK_PIN, 1);
 
 
 
@@ -428,7 +428,18 @@ static int st7735_init(const struct device *dev)
         return -EPERM;
     }
     gpio_pin_configure(data->blk_gpio,ST7735_BLK_PIN,GPIO_OUTPUT|BLK_FLAGS);
+
+    ST7735_BLK_OPEN();
+
+
+    gpio_pin_set(data->reset_gpio,ST7735_RES_PIN,0);
+    k_sleep(K_MSEC(10));
+    gpio_pin_set(data->reset_gpio,ST7735_RES_PIN,1);
+    k_sleep(K_MSEC(10));
+
     printk("lcd init ok~\n");
+
+    return 0;
 
 }
 

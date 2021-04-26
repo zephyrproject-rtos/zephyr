@@ -87,6 +87,8 @@ void z_sys_init_run_level(int32_t level)
 		const struct device *dev = entry->dev;
 		int rc = entry->init(dev);
 
+		// printk("dev name:%s,%d\n",dev->name,rc);
+
 		if (dev != NULL) {
 			/* Mark device initialized.  If initialization
 			 * failed, record the error condition.
@@ -122,13 +124,17 @@ const struct device *z_impl_device_get_binding(const char *name)
 	 * performed. Reserve string comparisons for a fallback.
 	 */
 	for (dev = __device_start; dev != __device_end; dev++) {
+		printk("1:=======%s\n",dev->name);
 		if (z_device_ready(dev) && (dev->name == name)) {
+			printk("1=ok:=======%s\n",dev->name);
 			return dev;
 		}
 	}
 
 	for (dev = __device_start; dev != __device_end; dev++) {
+		printk("2:=======%s\n",dev->name);
 		if (z_device_ready(dev) && (strcmp(name, dev->name) == 0)) {
+			printk("2=ok:=======%s\n",dev->name);
 			return dev;
 		}
 	}

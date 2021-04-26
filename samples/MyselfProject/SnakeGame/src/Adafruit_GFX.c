@@ -15,10 +15,13 @@
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7735))
 
 
-#define adafruit_abs(a)         \
-                ({((a)<0)?(-(a)):(a);})
+// #define adafruit_abs(a)         
+//                 ({((a)<0)?(-(a)):(a);})
 
-
+inline int adafruit_abs(int a)
+{
+    return a<0?-a:a;
+}
 
 
 static const uint8_t
@@ -90,6 +93,9 @@ void Adafruit_displayInit(uint8_t options)//addr指向的值不可修改,但是a
         printk("displaly is null\n");
         return;
     }
+    Adafruit_display_write(display_dev,ST7735_CMD_SLEEP_OUT,NULL,0);
+    k_sleep(K_MSEC(100));//唤醒屏幕
+
     numCmds = read_byte(addr++);
     while(numCmds--){
         cmd = read_byte(addr++);
@@ -127,7 +133,7 @@ void Adafruit_drawPixel(int x, int y, uint16_t color)
         return;
     }
     struct st7735_data* st7735_info = (struct st7735_data*)display_dev->data;
-    if((x >= 0)&&(x < st7735_info->width)&&(y >=0)&&(y < st7735_info->height)){
+    if((x >= 0)&&(x <=st7735_info->width)&&(y >=0)&&(y <=st7735_info->height)){
 
         __setAddrWindow(x,y,1,1);
         Adafruit_display_write(display_dev,ST7735_CMD_NULL,COLOR_DATA,sizeof(COLOR_DATA));
@@ -180,16 +186,16 @@ void Adafruit_drawLine(int16_t x0, int16_t x1, int16_t y0, int16_t y1, uint16_t 
 }
 
 
-inline void Adafruit_drawFastVLine(int16_t x, int16_t y, int16_t h,
+void Adafruit_drawFastVLine(int16_t x, int16_t y, int16_t h,
                                  uint16_t color)
 {
-    Adafruit_drawLine(x, y, x, y + h - 1, color);
+    Adafruit_drawLine(x, x, y, y + h - 1, color);
 }
 
-inline void Adafruit_drawFastHLine(int16_t x, int16_t y, int16_t w,
+void Adafruit_drawFastHLine(int16_t x, int16_t y, int16_t w,
                                  uint16_t color)
 {
-    Adafruit_drawLine(x, y, x + w - 1, y, color);
+    Adafruit_drawLine(x, x + w - 1, y, y, color);
 }
 /**
  * 无填充画圆
@@ -282,7 +288,6 @@ void Adafruit_drawRoundRect(int16_t x, int16_t y, int16_t w, int16_t h,
     int16_t max_radius = ((w < h) ? w : h) / 2; // 1/2 minor axis
     if (r > max_radius)
         r = max_radius;
-
     Adafruit_drawFastHLine(x + r, y, w - 2 * r, color);         // Top
     Adafruit_drawFastHLine(x + r, y + h - 1, w - 2 * r, color); // Bottom
     Adafruit_drawFastVLine(x, y + r, h - 2 * r, color);         // Left
@@ -326,6 +331,26 @@ void Adafruit_fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
   }
 }
 
+void Adafruit_clear(int16_t x, int16_t y, int16_t w, int16_t h,
+                            uint16_t color)
+{
+    uint32_t pixel=(w-x+1)*(h-y+1);
+    uint8_t COLOR_DATA[] = {color>>8,color}; 
+    if(!display_dev){
+        return;
+    }
+    struct st7735_data* st7735_info = (struct st7735_data*)display_dev->data;
+    if((x >= 0)&&(x <= st7735_info->width)&&(y >=0)&&(y <= st7735_info->height)){
+
+        __setAddrWindow(x,y,w-x+1,h-y+1);
+        while(pixel>0)
+        {
+            pixel--;
+            Adafruit_display_write(display_dev,ST7735_CMD_NULL,COLOR_DATA,sizeof(COLOR_DATA));
+        }
+    }
+
+}
 
 void Adafruit_fillCircleHelper(int16_t x0, int16_t y0, int16_t r,
                                     uint8_t corners, int16_t delta,
@@ -371,7 +396,7 @@ void Adafruit_fillCircleHelper(int16_t x0, int16_t y0, int16_t r,
 
 //填充圆角矩形
 
-void fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h,
+void Adafruit_fillRoundRect(int16_t x, int16_t y, int16_t w, int16_t h,
                                  int16_t r, uint16_t color)
 {
     int16_t max_radius = ((w < h) ? w : h) / 2; // 1/2 minor axis
