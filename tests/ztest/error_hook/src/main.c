@@ -51,11 +51,11 @@ static void trigger_fault_illegal_instruction(void)
 
 static void trigger_fault_access(void)
 {
-#if defined(CONFIG_SOC_ARC_IOT) || defined(CONFIG_SOC_NSIM)
-	/* For iotdk and ARC/nSIM, nSIM simulates full address space of memory,
-	 * so all accesses outside of CCMs are valid and access to 0x0 address
-	 * doesn't generate any exception.So we access it 0XFFFFFFFF instead to
-	 * trigger exception. See issue #31419.
+#if defined(CONFIG_SOC_ARC_IOT) || defined(CONFIG_SOC_NSIM) || defined(CONFIG_SOC_EMSK)
+	/* For iotdk, em_starterkit and ARC/nSIM, nSIM simulates full address space of
+	 * memory, iotdk has eflash at 0x0 address, em_starterkit has ICCM at 0x0 address,
+	 * access to 0x0 address doesn't generate any exception. So we access to 0XFFFFFFFF
+	 * address instead to trigger exception. See issue #31419.
 	 */
 	void *a = (void *)0xFFFFFFFF;
 #elif defined(CONFIG_CPU_CORTEX_M)
