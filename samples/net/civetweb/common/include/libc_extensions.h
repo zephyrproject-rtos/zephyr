@@ -15,6 +15,7 @@
 
 #define POLLIN ZSOCK_POLLIN
 #define POLLOUT ZSOCK_POLLOUT
+#define POLLERR ZSOCK_POLLERR
 
 #define addrinfo zsock_addrinfo
 
