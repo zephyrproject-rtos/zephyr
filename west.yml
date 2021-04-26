@@ -38,7 +38,7 @@ manifest:
       path: modules/lib/canopennode
       revision: 468d350028a975b96563e58344de48281a0ab371
     - name: civetweb
-      revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
+      revision: 3cf9654b168cfd8a994d707163f4497791866019
       path: modules/lib/civetweb
     - name: hal_espressif
       west-commands: west/west-commands.yml
