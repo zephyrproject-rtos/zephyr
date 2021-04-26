@@ -256,7 +256,7 @@ static void test_enable_and_disable_automatic_idle_pm(void)
 	/* check its status at first */
 	/* for cases that cannot run IDLE power, we skip it now */
 	ret = device_get_power_state(dev, &device_power_state);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOSYS) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
 		return;
@@ -317,7 +317,7 @@ void test_dummy_device_pm(void)
 
 	/* Set device state to DEVICE_PM_ACTIVE_STATE */
 	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOSYS) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
 		return;
