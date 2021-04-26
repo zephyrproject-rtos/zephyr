@@ -193,15 +193,6 @@ int device_required_foreach(const struct device *dev,
 }
 
 #ifdef CONFIG_PM_DEVICE
-int device_pm_control_nop(const struct device *unused_device,
-			  uint32_t unused_ctrl_command,
-			  void *unused_context,
-			  device_pm_cb cb,
-			  void *unused_arg)
-{
-	return -ENOTSUP;
-}
-
 int device_any_busy_check(void)
 {
 	const struct device *dev = __device_start;
