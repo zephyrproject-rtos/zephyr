@@ -109,7 +109,7 @@ struct npcx_vw_out_config {
 
 /*
  * eSPI VW input/Output signal configuration tables. Please refer
- * npcx7-espi-vws-map.dtsi device tree file for more detail.
+ * npcxn-espi-vws-map.dtsi device tree file for more detail.
  */
 static const struct npcx_vw_in_config vw_in_tbl[] = {
 	/* index 02h (In)  */

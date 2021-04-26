@@ -6,7 +6,7 @@
 
 / {
 	/* Mapping between MIWU group and interrupts */
-	npcx7-miwus-int-map {
+	npcx-miwus-int-map {
 		map_miwu0_groups: map-miwu0-groups {
 			compatible = "nuvoton,npcx-miwu-int-map";
 			parent = <&miwu0>;
