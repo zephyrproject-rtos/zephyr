@@ -29,12 +29,12 @@
 			label = "Red LED 0";
 		};
 		led1: led_1 {
-			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
-			label = "Blue LED 1";
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			label = "Green LED 1";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
-			label = "Green LED 2";
+			gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+			label = "Blue LED 2";
 		};
 	};
 
@@ -44,10 +44,10 @@
 			pwms = <&pwm0 13>;
 		};
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm0 32>;
+			pwms = <&pwm0 25>;
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm0 25>;
+			pwms = <&pwm0 32>;
 		};
 	};
 
@@ -111,11 +111,11 @@
 		led1 = &led1;
 		led2 = &led2;
 		pwm-led0 = &red_pwm_led;
-		pwm-led1 = &blue_pwm_led;
-		pwm-led2 = &green_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
 		red-pwm-led = &red_pwm_led;
-		blue-pwm-led = &blue_pwm_led;
 		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
 		sw1 = &button1;
 	};
