@@ -98,11 +98,9 @@ struct pm_device {
 	/** Device idle internal power state */
 	atomic_t fsm_state;
 	/** Work object for asynchronous calls */
-	struct k_work work;
-	/** Event object to listen to the sync request events */
-	struct k_poll_event event;
-	/** Signal to notify the Async API callers */
-	struct k_poll_signal signal;
+	struct k_work_delayable work;
+	/** Event conditional var to listen to the sync request events */
+	struct k_condvar condvar;
 };
 
 /** Bit position in device_pm::atomic_flags that records whether the
