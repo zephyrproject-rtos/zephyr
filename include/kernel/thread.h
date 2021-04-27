@@ -278,7 +278,7 @@ struct k_thread {
 	/** Runtime statistics */
 	struct _thread_runtime_stats rt_stats;
 #endif
-
+	sys_dlist_t thread_timer_q;
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };
