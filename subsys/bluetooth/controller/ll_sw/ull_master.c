@@ -152,12 +152,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
-	ull_scan_params_set(lll, 0, scan_interval, scan_window, filter_policy);
-
-	lll->adv_addr_type = peer_addr_type;
-	memcpy(lll->adv_addr, peer_addr, BDADDR_SIZE);
-	lll->conn_timeout = timeout;
-
 	conn_lll = &conn->lll;
 
 	err = util_aa_le32(conn_lll->access_addr);
@@ -354,6 +348,11 @@ conn_is_valid:
 #endif
 
 	scan->own_addr_type = own_addr_type;
+	lll->adv_addr_type = peer_addr_type;
+	memcpy(lll->adv_addr, peer_addr, BDADDR_SIZE);
+	lll->conn_timeout = timeout;
+
+	ull_scan_params_set(lll, 0, scan_interval, scan_window, filter_policy);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	return 0;
