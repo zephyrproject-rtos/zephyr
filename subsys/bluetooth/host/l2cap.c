@@ -66,7 +66,7 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 
 #define L2CAP_MAX_LE_MPS	CONFIG_BT_L2CAP_RX_MTU
 /* For now use MPS - SDU length to disable segmentation */
-#define L2CAP_MAX_LE_MTU	(L2CAP_MAX_LE_MPS - 2)
+#define L2CAP_MAX_LE_MTU	(L2CAP_MAX_LE_MPS - BT_L2CAP_SDU_HDR_SIZE)
 
 #define L2CAP_ECRED_CHAN_MAX	5
 
@@ -1820,7 +1820,7 @@ static int l2cap_chan_le_send_sdu(struct bt_l2cap_le_chan *ch,
 
 	if (!sent) {
 		/* Add SDU length for the first segment */
-		ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_LEN);
+		ret = l2cap_chan_le_send(ch, frag, BT_L2CAP_SDU_HDR_SIZE);
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				/* Store sent data into user_data */
