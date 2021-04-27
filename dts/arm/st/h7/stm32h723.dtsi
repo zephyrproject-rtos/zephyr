@@ -23,6 +23,15 @@
 			label = "UART_9";
 		};
 
+		usart10: serial@40011c00 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x40011c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000080>;
+			interrupts = <156 0>;
+			status = "disabled";
+			label = "UART_10";
+		};
+
 		dmamux1: dmamux@40020800 {
 			dma-requests= <129>;
 		};
