@@ -79,7 +79,8 @@ void main(void)
 	int rv, i;
 	const struct device *ipm;
 
-	TC_START("Test IPM");
+	TC_SUITE_START("test_ipm");
+	TC_START(__func__);
 	ipm = device_get_binding("ipm_dummy0");
 
 	/* Try sending a raw string to the IPM device to show that the
@@ -105,5 +106,6 @@ void main(void)
 
 	rv = TC_PASS;
 	TC_END_RESULT(rv);
+	TC_SUITE_END("test_ipm", rv);
 	TC_END_REPORT(rv);
 }
