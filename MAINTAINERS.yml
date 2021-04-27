@@ -254,7 +254,7 @@ CMSIS API layer:
         - "area: Portability"
 
 Common arch:
-    status: maintained
+    status: orphaned
     collaborators:
         - dcpleung
         - nashif
@@ -1008,7 +1008,7 @@ MCU Manager:
         - "area: mcumgr"
 
 OSDP:
-    status: maintained
+    status: orphaned
     collaborators:
         - cbsiddharth
     files:
@@ -1243,7 +1243,7 @@ Shields:
         - "area: Shields"
 
 SPARC arch:
-    status: maintained
+    status: orphaned
     collaborators:
         - martin-aberg
     files:
@@ -1267,7 +1267,7 @@ Synopsys Platforms:
         - "platform: Synopsys"
 
 Nuvoton Platforms:
-    status: maintained
+    status: orphaned
     collaborators:
         - MulinChao
         - sjg20
@@ -1284,7 +1284,7 @@ Nuvoton Platforms:
         - "platform: Nuvoton"
 
 SiLabs Platforms:
-    status: maintained
+    status: orphaned
     collaborators:
         - chrta
     files:
