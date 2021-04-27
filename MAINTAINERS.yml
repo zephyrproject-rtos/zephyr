@@ -910,7 +910,6 @@ JSON Web Token:
         - mrfuchs
     files:
         - subsys/jwt/
-
     labels:
         - "area: JSON"
 
@@ -966,7 +965,6 @@ Little FS:
         - tests/subsys/fs/littlefs/
     description: >-
        Little FS
-
     labels:
         - "area: File System"
 
@@ -1086,7 +1084,6 @@ Networking:
         - include/net/buf.h
         - subsys/net/buf.c
         - tests/net/buf/
-
     labels:
         - "area: Networking"
 
@@ -1102,6 +1099,7 @@ Networking:
         - tests/net/lib/coap/
     labels:
         - "area: Networking"
+
 "Networking: LWM2M":
     status: maintained
     maintainers:
@@ -1500,7 +1498,6 @@ VFS:
 
     labels:
         - "area: File System"
-
 
 West:
     status: maintained
