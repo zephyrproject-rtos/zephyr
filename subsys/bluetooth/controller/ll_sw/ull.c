@@ -181,9 +181,15 @@
 #define BT_CTLR_MAX_CONNECTABLE 1
 #endif
 #define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CENTRAL)
+#define BT_CTLR_ADV_EXT_RX_CNT  1
+#else
+#define BT_CTLR_ADV_EXT_RX_CNT  0
+#endif
 #else
 #define BT_CTLR_MAX_CONNECTABLE 0
 #define BT_CTLR_MAX_CONN        0
+#define BT_CTLR_ADV_EXT_RX_CNT  0
 #endif
 
 #if !defined(TICKER_USER_LLL_VENDOR_OPS)
@@ -285,7 +291,7 @@ static struct {
 /* No. of node rx for LLL to ULL.
  * Reserve 3, 1 for adv data, 1 for scan response and 1 for empty PDU reception.
  */
-#define PDU_RX_CNT    (CONFIG_BT_CTLR_RX_BUFFERS + 3)
+#define PDU_RX_CNT    (3 + BT_CTLR_ADV_EXT_RX_CNT + CONFIG_BT_CTLR_RX_BUFFERS)
 
 /* Part sum of LLL to ULL and ULL to LL/HCI thread node rx count.
  * Will be used below in allocating node rx pool.
