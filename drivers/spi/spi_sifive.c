@@ -115,27 +115,29 @@ uint16_t spi_sifive_recv(const struct device *dev)
 void spi_sifive_xfer(const struct device *dev, const bool hw_cs_control)
 {
 	struct spi_context *ctx = &SPI_DATA(dev)->ctx;
+	uint16_t txd, rxd;
 
-	uint32_t send_len = spi_context_longest_current_buf(ctx);
-
-	for (uint32_t i = 0; i < send_len; i++) {
-
+	do {
 		/* Send a frame */
-		if (i < ctx->tx_len) {
-			spi_sifive_send(dev, (uint16_t) (ctx->tx_buf)[i]);
+		if (spi_context_tx_buf_on(ctx)) {
+			txd = *ctx->tx_buf;
 		} else {
-			/* Send dummy bytes */
-			spi_sifive_send(dev, 0);
+			txd = 0U;
 		}
+
+		spi_sifive_send(dev, txd);
+
+		spi_context_update_tx(ctx, 1, 1);
 
 		/* Receive a frame */
-		if (i < ctx->rx_len) {
-			ctx->rx_buf[i] = (uint8_t) spi_sifive_recv(dev);
-		} else {
-			/* Discard returned value */
-			spi_sifive_recv(dev);
+		rxd = spi_sifive_recv(dev);
+
+		if (spi_context_rx_buf_on(ctx)) {
+			*ctx->rx_buf = rxd;
 		}
-	}
+
+		spi_context_update_rx(ctx, 1, 1);
+	} while (spi_context_tx_on(ctx) || spi_context_rx_on(ctx));
 
 	/* Deassert the CS line */
 	if (!hw_cs_control) {
