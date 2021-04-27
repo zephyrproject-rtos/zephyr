@@ -750,6 +750,11 @@ static int mod_pub_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	uint8_t *mod_id, status;
 	bool vnd;
 
+	if ((buf->len != 4U) && (buf->len != 6U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
+
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
 		BT_WARN("Prohibited element address");
@@ -797,6 +802,11 @@ static int mod_pub_set(struct bt_mesh_model *model,
 	struct bt_mesh_elem *elem;
 	uint8_t *mod_id;
 	bool vnd;
+
+	if ((buf->len != 11U) && (buf->len != 13U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
 
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
@@ -892,6 +902,11 @@ static int mod_pub_va_set(struct bt_mesh_model *model,
 	uint8_t *label_uuid;
 	uint8_t *mod_id;
 	bool vnd;
+
+	if ((buf->len != 25U) && (buf->len != 27U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
 
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
@@ -993,6 +1008,11 @@ static int mod_sub_add(struct bt_mesh_model *model,
 	uint16_t *entry;
 	bool vnd;
 
+	if ((buf->len != 6U) && (buf->len != 8U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
+
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
 		BT_WARN("Prohibited element address");
@@ -1065,6 +1085,11 @@ static int mod_sub_del(struct bt_mesh_model *model,
 	uint16_t *match;
 	uint8_t status;
 	bool vnd;
+
+	if ((buf->len != 6U) && (buf->len != 8U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
 
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
@@ -1143,6 +1168,11 @@ static int mod_sub_overwrite(struct bt_mesh_model *model,
 	uint8_t status;
 	bool vnd;
 
+	if ((buf->len != 6U) && (buf->len != 8U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
+
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
 		BT_WARN("Prohibited element address");
@@ -1209,6 +1239,11 @@ static int mod_sub_del_all(struct bt_mesh_model *model,
 	uint8_t *mod_id;
 	uint8_t status;
 	bool vnd;
+
+	if ((buf->len != 4U) && (buf->len != 6U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
 
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
@@ -1414,6 +1449,11 @@ static int mod_sub_va_add(struct bt_mesh_model *model,
 	uint8_t status;
 	bool vnd;
 
+	if ((buf->len != 20U) && (buf->len != 22U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
+
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
 		BT_WARN("Prohibited element address");
@@ -1491,6 +1531,11 @@ static int mod_sub_va_del(struct bt_mesh_model *model,
 	uint8_t status;
 	bool vnd;
 
+	if ((buf->len != 20U) && (buf->len != 22U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
+
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
 		BT_WARN("Prohibited element address");
@@ -1557,6 +1602,11 @@ static int mod_sub_va_overwrite(struct bt_mesh_model *model,
 	uint8_t *mod_id;
 	uint8_t status;
 	bool vnd;
+
+	if ((buf->len != 20U) && (buf->len != 22U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
 
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
@@ -1833,6 +1883,11 @@ static int mod_app_bind(struct bt_mesh_model *model,
 	uint8_t *mod_id, status;
 	bool vnd;
 
+	if ((buf->len != 6U) && (buf->len != 8U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
+
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
 		BT_WARN("Prohibited element address");
@@ -1892,6 +1947,11 @@ static int mod_app_unbind(struct bt_mesh_model *model,
 	uint8_t *mod_id, status;
 	bool vnd;
 
+	if ((buf->len != 6U) && (buf->len != 8U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
+
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
 		BT_WARN("Prohibited element address");
@@ -1949,6 +2009,11 @@ static int mod_app_get(struct bt_mesh_model *model,
 	uint8_t *mod_id, status;
 	uint16_t elem_addr;
 	bool vnd;
+
+	if ((buf->len != 4U) && (buf->len != 6U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
 
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
@@ -2404,53 +2469,53 @@ static int heartbeat_sub_set(struct bt_mesh_model *model,
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
-	{ OP_DEV_COMP_DATA_GET,        1,   dev_comp_data_get },
-	{ OP_APP_KEY_ADD,              19,  app_key_add },
-	{ OP_APP_KEY_UPDATE,           19,  app_key_update },
-	{ OP_APP_KEY_DEL,              3,   app_key_del },
-	{ OP_APP_KEY_GET,              2,   app_key_get },
-	{ OP_BEACON_GET,               0,   beacon_get },
-	{ OP_BEACON_SET,               1,   beacon_set },
-	{ OP_DEFAULT_TTL_GET,          0,   default_ttl_get },
-	{ OP_DEFAULT_TTL_SET,          1,   default_ttl_set },
-	{ OP_GATT_PROXY_GET,           0,   gatt_proxy_get },
-	{ OP_GATT_PROXY_SET,           1,   gatt_proxy_set },
-	{ OP_NET_TRANSMIT_GET,         0,   net_transmit_get },
-	{ OP_NET_TRANSMIT_SET,         1,   net_transmit_set },
-	{ OP_RELAY_GET,                0,   relay_get },
-	{ OP_RELAY_SET,                2,   relay_set },
-	{ OP_MOD_PUB_GET,              4,   mod_pub_get },
-	{ OP_MOD_PUB_SET,              11,  mod_pub_set },
-	{ OP_MOD_PUB_VA_SET,           24,  mod_pub_va_set },
-	{ OP_MOD_SUB_ADD,              6,   mod_sub_add },
-	{ OP_MOD_SUB_VA_ADD,           20,  mod_sub_va_add },
-	{ OP_MOD_SUB_DEL,              6,   mod_sub_del },
-	{ OP_MOD_SUB_VA_DEL,           20,  mod_sub_va_del },
-	{ OP_MOD_SUB_OVERWRITE,        6,   mod_sub_overwrite },
-	{ OP_MOD_SUB_VA_OVERWRITE,     20,  mod_sub_va_overwrite },
-	{ OP_MOD_SUB_DEL_ALL,          4,   mod_sub_del_all },
-	{ OP_MOD_SUB_GET,              4,   mod_sub_get },
-	{ OP_MOD_SUB_GET_VND,          6,   mod_sub_get_vnd },
-	{ OP_NET_KEY_ADD,              18,  net_key_add },
-	{ OP_NET_KEY_UPDATE,           18,  net_key_update },
-	{ OP_NET_KEY_DEL,              2,   net_key_del },
-	{ OP_NET_KEY_GET,              0,   net_key_get },
-	{ OP_NODE_IDENTITY_GET,        2,   node_identity_get },
-	{ OP_NODE_IDENTITY_SET,        3,   node_identity_set },
-	{ OP_MOD_APP_BIND,             6,   mod_app_bind },
-	{ OP_MOD_APP_UNBIND,           6,   mod_app_unbind },
-	{ OP_SIG_MOD_APP_GET,          4,   mod_app_get },
-	{ OP_VND_MOD_APP_GET,          6,   mod_app_get },
-	{ OP_NODE_RESET,               0,   node_reset },
-	{ OP_FRIEND_GET,               0,   friend_get },
-	{ OP_FRIEND_SET,               1,   friend_set },
-	{ OP_LPN_TIMEOUT_GET,          2,   lpn_timeout_get },
-	{ OP_KRP_GET,                  2,   krp_get },
-	{ OP_KRP_SET,                  3,   krp_set },
-	{ OP_HEARTBEAT_PUB_GET,        0,   heartbeat_pub_get },
-	{ OP_HEARTBEAT_PUB_SET,        9,   heartbeat_pub_set },
-	{ OP_HEARTBEAT_SUB_GET,        0,   heartbeat_sub_get },
-	{ OP_HEARTBEAT_SUB_SET,        5,   heartbeat_sub_set },
+	{ OP_DEV_COMP_DATA_GET,        BT_MESH_LEN_EXACT(1),   dev_comp_data_get },
+	{ OP_APP_KEY_ADD,              BT_MESH_LEN_EXACT(19),  app_key_add },
+	{ OP_APP_KEY_UPDATE,           BT_MESH_LEN_EXACT(19),  app_key_update },
+	{ OP_APP_KEY_DEL,              BT_MESH_LEN_EXACT(3),   app_key_del },
+	{ OP_APP_KEY_GET,              BT_MESH_LEN_EXACT(2),   app_key_get },
+	{ OP_BEACON_GET,               BT_MESH_LEN_EXACT(0),   beacon_get },
+	{ OP_BEACON_SET,               BT_MESH_LEN_EXACT(1),   beacon_set },
+	{ OP_DEFAULT_TTL_GET,          BT_MESH_LEN_EXACT(0),   default_ttl_get },
+	{ OP_DEFAULT_TTL_SET,          BT_MESH_LEN_EXACT(1),   default_ttl_set },
+	{ OP_GATT_PROXY_GET,           BT_MESH_LEN_EXACT(0),   gatt_proxy_get },
+	{ OP_GATT_PROXY_SET,           BT_MESH_LEN_EXACT(1),   gatt_proxy_set },
+	{ OP_NET_TRANSMIT_GET,         BT_MESH_LEN_EXACT(0),   net_transmit_get },
+	{ OP_NET_TRANSMIT_SET,         BT_MESH_LEN_EXACT(1),   net_transmit_set },
+	{ OP_RELAY_GET,                BT_MESH_LEN_EXACT(0),   relay_get },
+	{ OP_RELAY_SET,                BT_MESH_LEN_EXACT(2),   relay_set },
+	{ OP_MOD_PUB_GET,              BT_MESH_LEN_MIN(4),     mod_pub_get },
+	{ OP_MOD_PUB_SET,              BT_MESH_LEN_MIN(11),    mod_pub_set },
+	{ OP_MOD_PUB_VA_SET,           BT_MESH_LEN_MIN(25),    mod_pub_va_set },
+	{ OP_MOD_SUB_ADD,              BT_MESH_LEN_MIN(6),     mod_sub_add },
+	{ OP_MOD_SUB_VA_ADD,           BT_MESH_LEN_MIN(20),    mod_sub_va_add },
+	{ OP_MOD_SUB_DEL,              BT_MESH_LEN_MIN(6),     mod_sub_del },
+	{ OP_MOD_SUB_VA_DEL,           BT_MESH_LEN_MIN(20),    mod_sub_va_del },
+	{ OP_MOD_SUB_OVERWRITE,        BT_MESH_LEN_MIN(6),     mod_sub_overwrite },
+	{ OP_MOD_SUB_VA_OVERWRITE,     BT_MESH_LEN_MIN(20),    mod_sub_va_overwrite },
+	{ OP_MOD_SUB_DEL_ALL,          BT_MESH_LEN_MIN(4),     mod_sub_del_all },
+	{ OP_MOD_SUB_GET,              BT_MESH_LEN_EXACT(4),   mod_sub_get },
+	{ OP_MOD_SUB_GET_VND,          BT_MESH_LEN_EXACT(6),   mod_sub_get_vnd },
+	{ OP_NET_KEY_ADD,              BT_MESH_LEN_EXACT(18),  net_key_add },
+	{ OP_NET_KEY_UPDATE,           BT_MESH_LEN_EXACT(18),  net_key_update },
+	{ OP_NET_KEY_DEL,              BT_MESH_LEN_EXACT(2),   net_key_del },
+	{ OP_NET_KEY_GET,              BT_MESH_LEN_EXACT(0),   net_key_get },
+	{ OP_NODE_IDENTITY_GET,        BT_MESH_LEN_EXACT(2),   node_identity_get },
+	{ OP_NODE_IDENTITY_SET,        BT_MESH_LEN_EXACT(3),   node_identity_set },
+	{ OP_MOD_APP_BIND,             BT_MESH_LEN_MIN(6),     mod_app_bind },
+	{ OP_MOD_APP_UNBIND,           BT_MESH_LEN_MIN(6),     mod_app_unbind },
+	{ OP_SIG_MOD_APP_GET,          BT_MESH_LEN_MIN(4),     mod_app_get },
+	{ OP_VND_MOD_APP_GET,          BT_MESH_LEN_MIN(6),     mod_app_get },
+	{ OP_NODE_RESET,               BT_MESH_LEN_EXACT(0),   node_reset },
+	{ OP_FRIEND_GET,               BT_MESH_LEN_EXACT(0),   friend_get },
+	{ OP_FRIEND_SET,               BT_MESH_LEN_EXACT(1),   friend_set },
+	{ OP_LPN_TIMEOUT_GET,          BT_MESH_LEN_EXACT(2),   lpn_timeout_get },
+	{ OP_KRP_GET,                  BT_MESH_LEN_EXACT(2),   krp_get },
+	{ OP_KRP_SET,                  BT_MESH_LEN_EXACT(3),   krp_set },
+	{ OP_HEARTBEAT_PUB_GET,        BT_MESH_LEN_EXACT(0),   heartbeat_pub_get },
+	{ OP_HEARTBEAT_PUB_SET,        BT_MESH_LEN_EXACT(9),   heartbeat_pub_set },
+	{ OP_HEARTBEAT_SUB_GET,        BT_MESH_LEN_EXACT(0),   heartbeat_sub_get },
+	{ OP_HEARTBEAT_SUB_SET,        BT_MESH_LEN_EXACT(5),   heartbeat_sub_set },
 	BT_MESH_MODEL_OP_END,
 };
 

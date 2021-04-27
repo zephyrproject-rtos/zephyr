@@ -149,22 +149,7 @@ static int net_transmit_status(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	uint8_t *status;
-
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
-	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
-	       bt_hex(buf->data, buf->len));
-
-	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NET_TRANSMIT_STATUS, ctx->addr,
-				       (void **)&status)) {
-		return -ENOENT;
-	}
-
-	*status = net_buf_simple_pull_u8(buf);
-
-	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
-
-	return 0;
+	return state_status_u8(model, ctx, buf, OP_NET_TRANSMIT_STATUS);
 }
 
 struct net_key_param {
@@ -235,6 +220,11 @@ static int net_key_list(struct bt_mesh_model *model,
 		param->keys[i++] = net_buf_simple_pull_le16(buf) & 0xfff;
 	}
 
+	if (buf->len > 0) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
+
 	*param->key_cnt = i;
 
 	bt_mesh_msg_ack_ctx_rx(&cli->ack_ctx);
@@ -247,11 +237,11 @@ static int node_reset_status(struct bt_mesh_model *model,
 			     struct net_buf_simple *buf)
 {
 	bool *param = NULL;
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x",
-		ctx->net_idx, ctx->app_idx, ctx->addr);
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x", ctx->net_idx,
+	       ctx->app_idx, ctx->addr);
 
-	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NODE_RESET_STATUS, ctx->addr,
-				       (void **)&param)) {
+	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_NODE_RESET_STATUS,
+				       ctx->addr, (void **)&param)) {
 		return -ENOENT;
 	}
 
@@ -344,6 +334,11 @@ static int app_key_list(struct bt_mesh_model *model,
 		param->keys[i++] = net_buf_simple_pull_le16(buf) & 0xfff;
 	}
 
+	if (buf->len > 0U) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EINVAL;
+	}
+
 	*param->key_cnt = i;
 	if (param->status) {
 		*param->status = status;
@@ -373,6 +368,11 @@ static int mod_app_status(struct bt_mesh_model *model,
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
 	       bt_hex(buf->data, buf->len));
+
+	if ((buf->len != 7U) && (buf->len != 9U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_MOD_APP_STATUS, ctx->addr,
 				       (void **)&param)) {
@@ -424,6 +424,11 @@ static int mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
 	uint8_t status;
 	int i;
 
+	if ((vnd && buf->len < 7U) || (buf->len < 5U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EMSGSIZE;
+	}
+
 	status = net_buf_simple_pull_u8(buf);
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (vnd) {
@@ -438,9 +443,9 @@ static int mod_member_list_handle(struct bt_mesh_msg_ctx *ctx,
 		return -ENOENT;
 	}
 
-	if (buf->len % 2) {
-		BT_WARN("Model Member List invalid length");
-		return -EINVAL;
+	if (buf->len % 2U) {
+		BT_ERR("Model Member List invalid length");
+		return -EMSGSIZE;
 	}
 
 	for (i = 0; i < *param->member_cnt && buf->len; i++) {
@@ -512,6 +517,11 @@ static int mod_pub_status(struct bt_mesh_model *model,
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
 	       bt_hex(buf->data, buf->len));
+
+	if ((buf->len != 12U) && (buf->len != 14U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EINVAL;
+	}
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_MOD_PUB_STATUS, ctx->addr,
 				       (void **)&param)) {
@@ -589,6 +599,11 @@ static int mod_sub_status(struct bt_mesh_model *model,
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
 	       bt_hex(buf->data, buf->len));
+
+	if ((buf->len != 7U) && (buf->len != 9U)) {
+		BT_ERR("The message size for the application opcode is incorrect.");
+		return -EINVAL;
+	}
 
 	if (!bt_mesh_msg_ack_ctx_match(&cli->ack_ctx, OP_MOD_SUB_STATUS, ctx->addr,
 				       (void **)&param)) {
@@ -734,27 +749,27 @@ static int hb_pub_status(struct bt_mesh_model *model,
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
-	{ OP_DEV_COMP_DATA_STATUS,   15,  comp_data_status },
-	{ OP_BEACON_STATUS,          1,   beacon_status },
-	{ OP_DEFAULT_TTL_STATUS,     1,   ttl_status },
-	{ OP_FRIEND_STATUS,          1,   friend_status },
-	{ OP_GATT_PROXY_STATUS,      1,   gatt_proxy_status },
-	{ OP_RELAY_STATUS,           2,   relay_status },
-	{ OP_NET_TRANSMIT_STATUS,    1,   net_transmit_status },
-	{ OP_NET_KEY_STATUS,         3,   net_key_status },
-	{ OP_NET_KEY_LIST,           0,   net_key_list },
-	{ OP_APP_KEY_STATUS,         4,   app_key_status },
-	{ OP_APP_KEY_LIST,           3,   app_key_list },
-	{ OP_MOD_APP_STATUS,         7,   mod_app_status },
-	{ OP_SIG_MOD_APP_LIST,       5,   mod_app_list },
-	{ OP_VND_MOD_APP_LIST,       7,   mod_app_list_vnd },
-	{ OP_MOD_PUB_STATUS,         12,  mod_pub_status },
-	{ OP_MOD_SUB_STATUS,         7,   mod_sub_status },
-	{ OP_MOD_SUB_LIST,           5,   mod_sub_list },
-	{ OP_MOD_SUB_LIST_VND,       7,   mod_sub_list_vnd },
-	{ OP_HEARTBEAT_SUB_STATUS,   9,   hb_sub_status },
-	{ OP_HEARTBEAT_PUB_STATUS,   10,  hb_pub_status },
-	{ OP_NODE_RESET_STATUS,      0,   node_reset_status },
+	{ OP_DEV_COMP_DATA_STATUS,   BT_MESH_LEN_MIN(15),     comp_data_status },
+	{ OP_BEACON_STATUS,          BT_MESH_LEN_EXACT(1),    beacon_status },
+	{ OP_DEFAULT_TTL_STATUS,     BT_MESH_LEN_EXACT(1),    ttl_status },
+	{ OP_FRIEND_STATUS,          BT_MESH_LEN_EXACT(1),    friend_status },
+	{ OP_GATT_PROXY_STATUS,      BT_MESH_LEN_EXACT(1),    gatt_proxy_status },
+	{ OP_RELAY_STATUS,           BT_MESH_LEN_EXACT(2),    relay_status },
+	{ OP_NET_TRANSMIT_STATUS,    BT_MESH_LEN_EXACT(1),    net_transmit_status },
+	{ OP_NET_KEY_STATUS,         BT_MESH_LEN_EXACT(3),    net_key_status },
+	{ OP_NET_KEY_LIST,           BT_MESH_LEN_MIN(0),      net_key_list },
+	{ OP_APP_KEY_STATUS,         BT_MESH_LEN_EXACT(4),    app_key_status },
+	{ OP_APP_KEY_LIST,           BT_MESH_LEN_MIN(3),      app_key_list },
+	{ OP_MOD_APP_STATUS,         BT_MESH_LEN_MIN(7),      mod_app_status },
+	{ OP_SIG_MOD_APP_LIST,       BT_MESH_LEN_MIN(5),      mod_app_list },
+	{ OP_VND_MOD_APP_LIST,       BT_MESH_LEN_MIN(7),      mod_app_list_vnd },
+	{ OP_MOD_PUB_STATUS,         BT_MESH_LEN_MIN(12),     mod_pub_status },
+	{ OP_MOD_SUB_STATUS,         BT_MESH_LEN_MIN(7),      mod_sub_status },
+	{ OP_MOD_SUB_LIST,           BT_MESH_LEN_MIN(5),      mod_sub_list },
+	{ OP_MOD_SUB_LIST_VND,       BT_MESH_LEN_MIN(7),      mod_sub_list_vnd },
+	{ OP_HEARTBEAT_SUB_STATUS,   BT_MESH_LEN_EXACT(9),    hb_sub_status },
+	{ OP_HEARTBEAT_PUB_STATUS,   BT_MESH_LEN_EXACT(10),   hb_pub_status },
+	{ OP_NODE_RESET_STATUS,      BT_MESH_LEN_EXACT(0),    node_reset_status },
 	BT_MESH_MODEL_OP_END,
 };
 
