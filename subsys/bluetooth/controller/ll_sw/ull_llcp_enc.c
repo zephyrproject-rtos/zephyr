@@ -313,6 +313,7 @@ static void lp_enc_st_unencrypted(struct ll_conn *conn, struct proc_ctx *ctx, ui
 	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
+		/* Pause Tx data */
 		tx_pause_data(conn);
 		tx_flush(conn);
 		lp_enc_send_enc_req(conn, ctx, evt, param);
@@ -374,6 +375,8 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ll_conn *conn, struct proc_ct
 		lp_enc_send_start_enc_rsp(conn, ctx, evt, param);
 		break;
 	case LP_ENC_EVT_REJECT:
+		/* Resume Tx data */
+		tx_resume_data(conn);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
 		ctx->data.enc.error = pdu->llctrl.reject_ext_ind.error_code;
@@ -401,6 +404,8 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ct
 {
 	switch (evt) {
 	case LP_ENC_EVT_START_ENC_RSP:
+		/* Resume Tx data */
+		tx_resume_data(conn);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
 		ctx->data.enc.error = BT_HCI_ERR_SUCCESS;
@@ -430,6 +435,7 @@ static void lp_enc_state_encrypted(struct ll_conn *conn, struct proc_ctx *ctx, u
 	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_RUN:
+		/* Pause Tx data */
 		tx_pause_data(conn);
 		tx_flush(conn);
 		lp_enc_send_pause_enc_req(conn, ctx, evt, param);
@@ -749,6 +755,11 @@ static void rp_enc_send_reject_ind(struct ll_conn *conn, struct proc_ctx *ctx, u
 		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
 		rr_complete(conn);
 		ctx->state = RP_ENC_STATE_UNENCRYPTED;
+
+		/* Resume Tx data */
+		tx_resume_data(conn);
+		/* Resume Rx data */
+		ull_conn_resume_rx_data(conn);
 	}
 }
 
@@ -761,6 +772,8 @@ static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 		rr_complete(conn);
 		ctx->state = RP_ENC_STATE_UNENCRYPTED;
 
+		/* Resume Tx data */
+		tx_resume_data(conn);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
 
@@ -819,6 +832,9 @@ static void rp_enc_state_wait_rx_enc_req(struct ll_conn *conn, struct proc_ctx *
 {
 	switch (evt) {
 	case RP_ENC_EVT_ENC_REQ:
+		/* Pause Tx data */
+		tx_pause_data(conn);
+		tx_flush(conn);
 		/* Pause Rx data */
 		ull_conn_pause_rx_data(conn);
 		rp_enc_store_m(conn, ctx, param);
@@ -955,6 +971,7 @@ static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc
 	/* TODO */
 	switch (evt) {
 	case RP_ENC_EVT_PAUSE_ENC_REQ:
+		/* Pause Tx data */
 		tx_pause_data(conn);
 		tx_flush(conn);
 		/* Pause Rx data; will be resumed when the encapsulated
