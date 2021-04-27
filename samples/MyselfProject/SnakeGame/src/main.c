@@ -7,6 +7,7 @@
 
 #include "snake.h"
 #include "Adafruit_GFX_api.h"
+#include "coll_ball.h"
 // #include "drivers/display/Adafruit_GFX_api.h"
 // #include "drivers/display/display_st7735.h"
 
@@ -16,20 +17,8 @@
 #define PRINT_MACRO(x) #x"="PRINT_MACRO_HELPER(x)
 
 struct k_msgq input_key_message;
-// uint16_t message_buffer[10];
-
-// Snake littlesnake;
-// food  delicious_fd;
-
 void main(void)
 {
-    // uint16_t key_value=0;
-
-
-    //消息队列初始化
-    // k_msgq_init(&input_key_message, message_buffer, sizeof(uint16_t), 10);
-
-    //屏幕初始化
 
     #if DT_NODE_HAS_STATUS(DT_INST(0, sitronix_st7735), okay)
     #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7735))
@@ -41,9 +30,18 @@ void main(void)
     #pragma message(PRINT_MACRO(DISPLAY_DEV_NAME))
 
 
-    // st7735_LcdInit(display_dev);
     Adafruit_displayInit(INIT_ST7735);
     Adafruit_clear(0,0,129,160,WHITE);
+
+    // LIST_HEAD(list_handle);
+
+    struct coll_ball ball[3];
+    rand_init_ball(&ball[0]);
+    printk("x:%d,y:%d,r:%d,speed_x:%d,speed_y:%d\n",ball[0].x,ball[0].y,ball[0].r,ball[0].speed_x,ball[0].speed_y);
+    rand_init_ball(&ball[1]);
+    printk("x:%d,y:%d,r:%d,speed_x:%d,speed_y:%d\n",ball[1].x,ball[1].y,ball[1].r,ball[1].speed_x,ball[1].speed_y);
+    rand_init_ball(&ball[2]);
+    printk("x:%d,y:%d,r:%d,speed_x:%d,speed_y:%d\n",ball[2].x,ball[2].y,ball[2].r,ball[2].speed_x,ball[2].speed_y);
     // Adafruit_fillRect(0,0,129,160,WHITE);
     // for(int i=3;i<120;i+=10)
     //     Adafruit_drawLine(0,i,0,150,GREEN);
@@ -53,49 +51,29 @@ void main(void)
     // Adafruit_fillRoundRect(20,60,80,30,15,BLUE);
     // for(int x=4,w=120;x<=w;x+=4)
     // Adafruit_drawRect(x,x,w-2*x,w-2*x,RED);//这个错误竟然产生了漂亮的效果
-
+    int cnt=0;
     while (1)
     {
+        for(int i=0;i<3;i++){
+            hit_wall_detect(&ball[i]);
+        }
+        Adafruit_clear(0,0,129,160,WHITE);
+        for(int i=0;i<3;i++){
+            Adafruit_drawCircle(ball[i].x,ball[i].y,ball[i].r,BLUE);
+        }
+        if(cnt>20){
+            for(int i=0;i<3;i++){
+                for (int j=i+1;j<3;j++){
+                    hit_body_detect(&ball[i],&ball[j]);
+                }
+            }
+        }else{
+            cnt++;
+        }
+        // k_sleep(K_MSEC(10));
         
     }
     
     
-    //蛇初始化
-    // SnakeInit(display_dev,&littlesnake,&delicious_fd);
 
-    // st7735_drawAscii(display_dev,10,10,0x41,24,WHITE,GREEN);
-    // st7735_drawAscii(display_dev,40,10,0x1A,24,WHITE,GREEN);
-    // map_init();
-    // while(1)
-    // {
-    //     // while(!k_msgq_get(&input_key_message, &key_value, K_NO_WAIT))
-    //     // {
-    //     //     printk("key_value:%0x\n",key_value);
-    //     //     st7735_drawAscii(display_dev,10,10+cnt*30,'0'+((key_value>>8)&0xff),24,BLACK,WHITE);
-    //     //     st7735_drawAscii(display_dev,40,10+cnt*30,'0'+((key_value)&0xff),24,BLACK,WHITE);
-    //     //     cnt++;
-    //     // }
-    //     // cnt=0;
-        
-    //     k_msgq_get(&input_key_message, &key_value, K_NO_WAIT);
-    //     updata_control_input(&littlesnake,key_value);
-    //     key_value=0;
-    //     if(SnakeAutoMove(display_dev,&littlesnake,&delicious_fd))
-    //     {
-    //         CreatFood(display_dev,&littlesnake,&delicious_fd);
-    //         k_sleep(K_MSEC(200));
-    //     }
-    //     while(1);
-    //     // if(SnakeMove(display_dev,&littlesnake,&delicious_fd))
-    //     // {
-    //     //     CreatFood(display_dev,&littlesnake,&delicious_fd);
-    //     //     k_sleep(K_MSEC(200));
-    //     // }else
-    //     // {
-    //     //     st7735_LcdInit(display_dev);
-    //     //     SnakeInit(display_dev,&littlesnake,&delicious_fd);
-    //     // }
-        
-        
-    // }
 }
