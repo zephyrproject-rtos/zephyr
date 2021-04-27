@@ -338,8 +338,7 @@ config MBEDTLS_USER_CONFIG_ENABLE
 	  the generic config file.
 
 config MBEDTLS_USER_CONFIG_FILE
-	string "User configuration file for mbedTLS"
-	depends on MBEDTLS_USER_CONFIG_ENABLE
+	string "User configuration file for mbed TLS" if MBEDTLS_USER_CONFIG_ENABLE
 	help
 	  User config file that can contain mbedTLS configs that were not
 	  covered by the generic config file.
