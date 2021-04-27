@@ -961,12 +961,32 @@ void ll_rx_dequeue(void)
 			ARG_UNUSED(cc);
 #endif /* !CONFIG_BT_PERIPHERAL */
 
-		} else if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+#if defined(CONFIG_BT_CENTRAL)
+		} else {
 			struct ll_scan_set *scan = HDR_LLL2ULL(ftr->param);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
+			struct ll_scan_set *scan_other =
+				ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
+
+			if (scan_other) {
+				if (scan_other == scan) {
+					scan_other = ull_scan_is_enabled_get(SCAN_HANDLE_1M);
+				}
+
+				if (scan_other) {
+					scan_other->lll.conn = NULL;
+					scan_other->is_enabled = 0U;
+				}
+			}
+#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
+
+			scan->lll.conn = NULL;
 			scan->is_enabled = 0U;
+#else /* !CONFIG_BT_CENTRAL */
 		} else {
 			LL_ASSERT(0);
+#endif /* !CONFIG_BT_CENTRAL */
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {

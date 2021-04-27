@@ -124,16 +124,31 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	DEBUG_RADIO_START_O(1);
 
+	lll = p->param;
+	aux_set = HDR_LLL2ULL(lll);
+	scan_set = HDR_LLL2ULL(aux_set->rx_head->rx_ftr.param);
+	lll_scan = &scan_set->lll;
+
+#if defined(CONFIG_BT_CENTRAL)
+	/* Check if stopped (on connection establishment race between LLL and
+	 * ULL.
+	 */
+	if (unlikely(lll_scan->is_stop ||
+		     (lll_scan->conn &&
+		      (lll_scan->conn->master.initiated ||
+		       lll_scan->conn->master.cancelled)))) {
+		radio_isr_set(lll_isr_early_abort, lll);
+		radio_disable();
+
+		return 0;
+	}
+#endif /* CONFIG_BT_CENTRAL */
+
 	/* Start setting up Radio h/w */
 	radio_reset();
 
 	/* Reset Tx/rx count */
 	trx_cnt = 0U;
-
-	lll = p->param;
-	aux_set = HDR_LLL2ULL(lll);
-	scan_set = HDR_LLL2ULL(aux_set->rx_head->rx_ftr.param);
-	lll_scan = &scan_set->lll;
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
@@ -371,7 +386,7 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 	if (0) {
 #if defined(CONFIG_BT_CENTRAL)
 	/* Initiator */
-	} else if (lll_scan->conn &&
+	} else if (lll_scan->conn && !lll_scan->conn->master.cancelled &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) &&
 		   isr_scan_init_check(lll_scan, pdu, rl_idx)) {
 		struct node_rx_ftr *ftr;
@@ -492,6 +507,12 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		 * {cpu_sleep();}
 		 * radio_status_reset();
 		 */
+
+		/* Stop further connection initiation */
+		lll_scan->conn->master.initiated = 1U;
+
+		/* Stop further initiating events */
+		lll_scan->is_stop = 1U;
 
 		rx = ull_pdu_rx_alloc();
 
@@ -657,6 +678,12 @@ static void isr_rx_connect_rsp(void *param)
 	if (!trx_done) {
 		struct node_rx_ftr *ftr;
 
+		/* Try again with connection initiation */
+		lll->conn->master.initiated = 0U;
+
+		/* Dont stop initiating events on primary channels */
+		lll->is_stop = 0U;
+
 		ftr = &(rx->hdr.rx_ftr);
 
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
@@ -666,9 +693,6 @@ static void isr_rx_connect_rsp(void *param)
 		rx->hdr.type = NODE_RX_TYPE_RELEASE;
 		goto isr_rx_do_close;
 	}
-
-	/* Stop further LLL radio events */
-	lll->conn->master.initiated = 1;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	lll->conn->phy_tx = lll_aux->phy;

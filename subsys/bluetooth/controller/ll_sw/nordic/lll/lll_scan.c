@@ -217,9 +217,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Check if stopped (on connection establishment race between LLL and
 	 * ULL.
 	 */
-	if (unlikely(lll->conn &&
-		     (lll->conn->master.initiated ||
-		      lll->conn->master.cancelled))) {
+	if (unlikely(lll->is_stop ||
+		     (lll->conn &&
+		      (lll->conn->master.initiated ||
+		       lll->conn->master.cancelled)))) {
 		radio_isr_set(lll_isr_early_abort, lll);
 		radio_disable();
 
@@ -960,8 +961,14 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		 * radio_status_reset();
 		 */
 
-		/* Stop further LLL radio events */
-		lll->conn->master.initiated = 1;
+		/* Stop further connection initiation */
+		/* FIXME: for extended connection initiation, handle reset on
+		 *        event aborted before connect_rsp is received.
+		 */
+		lll->conn->master.initiated = 1U;
+
+		/* Stop further initiating events */
+		lll->is_stop = 1U;
 
 		rx = ull_pdu_rx_alloc();
 
