@@ -8,13 +8,19 @@
 #include "snake.h"
 #include "Adafruit_GFX_api.h"
 #include "coll_ball.h"
-
+#include "drivers/thread_timer.h"
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7735))
 
 #define PRINT_MACRO_HELPER(x) #x
 #define PRINT_MACRO(x) #x"="PRINT_MACRO_HELPER(x)
 
 struct k_msgq input_key_message;
+
+static void _check_system_status(struct thread_timer *ttimer,
+                                 void *expiry_fn_arg)
+{
+    printk("thread timer test\n");
+}
 void main(void)
 {
 
@@ -43,6 +49,10 @@ void main(void)
 
     // for(int x=4,w=120;x<=w;x+=4)
     // Adafruit_drawRect(x,x,w-2*x,w-2*x,RED);//这个错误竟然产生了漂亮的效果
+    struct thread_timer status_check_timer;
+    thread_timer_init(&status_check_timer,
+	                  _check_system_status, NULL);
+    thread_timer_start(&status_check_timer,1000,1000);
     int cnt=0;
     while (1)
     {
@@ -62,6 +72,8 @@ void main(void)
         }else{
             cnt++;
         }
+
+        thread_timer_handle_expired();
         // k_sleep(K_MSEC(10));
         
     }

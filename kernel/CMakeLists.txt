@@ -26,6 +26,7 @@ list(APPEND kernel_files
   condvar.c
   smp.c
   banner.c
+  thread_timer.c
   )
 
 if(CONFIG_XIP)
