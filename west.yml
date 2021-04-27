@@ -48,7 +48,7 @@ manifest:
       revision: 1d1fcc725aa1cb3c32f366e0c53d7490d0fe1109
       path: modules/fs/fatfs
     - name: hal_cypress
-      revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
+      revision: 81a059f21435bc7e315bccd720da5a9b615bbb50
       path: modules/hal/cypress
     - name: hal_infineon
       revision: f1fa8241f8786198ba41155413243de36ed878a5
