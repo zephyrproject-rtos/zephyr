@@ -143,7 +143,7 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 
 	if (z_user_string_copy(name_copy, (char *)name, sizeof(name_copy))
 	    != 0) {
-		return 0;
+		return NULL;
 	}
 
 	return z_impl_device_get_binding(name_copy);
