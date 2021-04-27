@@ -370,6 +370,7 @@ Documentation:
         - nashif
         - utzig
         - jocelyn-li
+        - mbolivar-nordic
     files:
         - doc/*
         - doc/static/
