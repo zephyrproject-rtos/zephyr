@@ -1,0 +1,11 @@
+# Nuvoton Cortex-M4 Embedded Controller
+
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NPCX9M3F
+
+config SOC
+	default "npcx9m3f"
+
+endif # SOC_NPCX9M3F
