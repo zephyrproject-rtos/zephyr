@@ -18,13 +18,20 @@
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
-#include "dmamux_stm32.h"
 #include "dma_stm32.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dmamux_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32_dmamux
+
+/* this is the configuration of one dmamux channel */
+struct dmamux_stm32_channel {
+	/* pointer to the associated dma instance */
+	const struct device *dev_dma;
+	/* ref of the associated dma stream for this instance */
+	uint8_t dma_id;
+};
 
 /* the table of all the dmamux channel */
 struct dmamux_stm32_data {
@@ -49,8 +56,15 @@ struct dmamux_stm32_config {
  * UTIL_LISTIFY is used to generate arrays with function pointers to check
  * and clear interrupt flags using LL functions
  */
+#define DMAMUX_CHANNEL(i, _)		LL_DMAMUX_CHANNEL_ ## i,
 #define IS_ACTIVE_FLAG_SOX(i, _)	LL_DMAMUX_IsActiveFlag_SO  ## i,
 #define CLEAR_FLAG_SOX(i, _)		LL_DMAMUX_ClearFlag_SO ## i,
+#define IS_ACTIVE_FLAG_RGOX(i, _)	LL_DMAMUX_IsActiveFlag_RGO  ## i,
+#define CLEAR_FLAG_RGOX(i, _)		LL_DMAMUX_ClearFlag_RGO ## i,
+
+uint32_t table_ll_channel[] = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), DMAMUX_CHANNEL)
+};
 
 uint32_t (*func_ll_is_active_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
 	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), IS_ACTIVE_FLAG_SOX)
@@ -58,6 +72,14 @@ uint32_t (*func_ll_is_active_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
 
 void (*func_ll_clear_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
 	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), CLEAR_FLAG_SOX)
+};
+
+uint32_t (*func_ll_is_active_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_generators), IS_ACTIVE_FLAG_RGOX)
+};
+
+void (*func_ll_clear_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_generators), CLEAR_FLAG_RGOX)
 };
 
 int dmamux_stm32_configure(const struct device *dev, uint32_t id,
