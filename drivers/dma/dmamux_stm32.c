@@ -45,6 +45,21 @@ struct dmamux_stm32_config {
 	const struct dmamux_stm32_channel *mux_channels;
 };
 
+/*
+ * UTIL_LISTIFY is used to generate arrays with function pointers to check
+ * and clear interrupt flags using LL functions
+ */
+#define IS_ACTIVE_FLAG_SOX(i, _)	LL_DMAMUX_IsActiveFlag_SO  ## i,
+#define CLEAR_FLAG_SOX(i, _)		LL_DMAMUX_ClearFlag_SO ## i,
+
+uint32_t (*func_ll_is_active_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), IS_ACTIVE_FLAG_SOX)
+};
+
+void (*func_ll_clear_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), CLEAR_FLAG_SOX)
+};
+
 int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 				struct dma_config *config)
 {
