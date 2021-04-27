@@ -8,14 +8,16 @@
 #ifndef ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_
 #define ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #endif
 
 struct flash_stm32_priv {
 	FLASH_TypeDef *regs;
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
 #endif
