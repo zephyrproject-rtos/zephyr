@@ -101,24 +101,23 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 				 const struct isoal_sdu_produced *valid_sdu)
 {
-	struct ll_conn_iso_stream *cis;
-	uint16_t handle;
-	uint16_t handle_packed;
-	uint8_t  ts, pb;
-	uint16_t len;
+	struct bt_hci_iso_ts_data_hdr *data_hdr;
 	uint16_t packet_status_flag;
 	uint16_t slen, slen_packed;
 	struct bt_hci_iso_hdr *hdr;
-	struct bt_hci_iso_ts_data_hdr *data_hdr;
+	uint16_t handle_packed;
+	struct net_buf *buf;
+	uint16_t handle;
+	uint8_t  ts, pb;
+	uint16_t len;
 
-	struct net_buf *buf = (struct net_buf *) valid_sdu->contents.dbuf;
+	buf = (struct net_buf *) valid_sdu->contents.dbuf;
 
 	if (buf) {
 		data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
 		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
 
-		cis = sink_ctx->session.cis;
-		handle = ll_conn_iso_stream_handle_get(cis);
+		handle = sink_ctx->session.handle;
 
 		pb = sink_ctx->sdu_production.sdu_state;
 

@@ -31,7 +31,8 @@
 #include "ull_iso_types.h"
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
-static struct ll_iso_datapath datapath_pool[CONFIG_BT_CTLR_CONN_ISO_STREAMS];
+/* Allocate data path pools for RX/TX directions for each stream */
+static struct ll_iso_datapath datapath_pool[2*CONFIG_BT_CTLR_CONN_ISO_STREAMS];
 #endif
 static void *datapath_free;
 
@@ -105,8 +106,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		return 0;
 	}
 
-	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
-
 	if (path_dir > BT_HCI_DATAPATH_DIR_CTLR_TO_HOST) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -115,6 +114,11 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	 * that does not exist or that is not for a CIS or a BIS, the Controller
 	 * shall return the error code Unknown Connection Identifier (0x02)
 	 */
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
+	struct ll_conn_iso_group *cig;
+
+	cig = cis->group;
 
 	if ((path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR  &&
 		cis->datapath_in) ||
@@ -123,6 +127,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		/* Data path has been set up, can only do setup once */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif
 	if (path_is_vendor_specific(path_id) &&
 	    !ll_data_path_configured(path_dir, path_id)) {
 		/* Data path must be configured prior to setup */
@@ -145,21 +150,43 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	dp->coding_format = coding_format;
 	dp->company_id    = company_id;
 
-	/* TBD dp->sync_delay    = controller_delay; ?*/
+	/* TODO dp->sync_delay    = controller_delay; ?*/
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	uint32_t sdu_interval;
+	uint8_t burst_number;
 
 	if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
+		burst_number = cis->lll.tx.burst_number;
+		if (cig->lll.role) {
+			/* peripheral */
+			sdu_interval = cig->p_sdu_interval;
+		} else {
+			/* central */
+			sdu_interval = cig->c_sdu_interval;
+		}
 		cis->datapath_in = dp;
 	} else {
+		burst_number = cis->lll.rx.burst_number;
+		if (cig->lll.role) {
+			/* peripheral */
+			sdu_interval = cig->c_sdu_interval;
+		} else {
+			/* central */
+			sdu_interval = cig->p_sdu_interval;
+		}
 		cis->datapath_out = dp;
 	}
 
 	if (path_id == BT_HCI_DATAPATH_ID_HCI) {
 		/* Not vendor specific, thus alloc and emit functions known */
-		err = isoal_sink_create(&sink_hdl, cis, sink_sdu_alloc_hci,
+		err = isoal_sink_create(&sink_hdl, handle, burst_number, sdu_interval,
+					cig->iso_interval, sink_sdu_alloc_hci,
 					sink_sdu_emit_hci, sink_sdu_write_hci);
 	} else {
 		/* TBD call vendor specific function to set up ISO path */
 	}
+#endif
 
 	if (!err) {
 		dp->sink_hdl = sink_hdl;
