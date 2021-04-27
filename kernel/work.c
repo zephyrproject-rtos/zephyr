@@ -135,7 +135,7 @@ void k_work_init(struct k_work *work,
 		  k_work_handler_t handler)
 {
 	__ASSERT_NO_MSG(work != NULL);
-	__ASSERT_NO_MSG(handler != 0);
+	__ASSERT_NO_MSG(handler != NULL);
 
 	*work = (struct k_work)Z_WORK_INITIALIZER(handler);
 }
@@ -674,7 +674,7 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 			bool yield;
 			k_work_handler_t handler = work->handler;
 
-			__ASSERT_NO_MSG(handler != 0);
+			__ASSERT_NO_MSG(handler != NULL);
 
 			if (work_set_running(work, queue)) {
 				handler(work);
@@ -815,7 +815,7 @@ void k_work_init_delayable(struct k_work_delayable *dwork,
 			    k_work_handler_t handler)
 {
 	__ASSERT_NO_MSG(dwork != NULL);
-	__ASSERT_NO_MSG(handler != 0);
+	__ASSERT_NO_MSG(handler != NULL);
 
 	*dwork = (struct k_work_delayable){
 		.work = {
