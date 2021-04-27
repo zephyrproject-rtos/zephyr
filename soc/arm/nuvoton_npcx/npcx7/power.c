@@ -45,6 +45,7 @@
  * INCLUDE FILES: soc_clock.h
  */
 
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr.h>
 #include <drivers/espi.h>
 #include <power/power.h>
