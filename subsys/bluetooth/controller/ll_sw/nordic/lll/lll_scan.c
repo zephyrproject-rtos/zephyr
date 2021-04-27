@@ -153,24 +153,17 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	 * 1.25ms for a legacy PDU, 2.5ms for an LE Uncoded PHY and 3.75ms for
 	 * an LE Coded PHY.
 	 */
-	switch (phy) {
-	case PHY_LEGACY:
-		conn_offset_us += 1250;
-		break;
+	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	case PHY_1M:
-	case PHY_2M:
-		conn_offset_us += 2500;
-		break;
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case PHY_CODED:
-		conn_offset_us += 3750;
-		break;
-#endif /* CONFIG_BT_CTLR_PHY_CODED */
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-	default:
-		LL_ASSERT(0);
-		break;
+	} else if (phy) {
+		if (phy & PHY_CODED) {
+			conn_offset_us += WIN_DELAY_CODED;
+		} else {
+			conn_offset_us += WIN_DELAY_UNCODED;
+		}
+#endif
+	} else {
+		conn_offset_us += WIN_DELAY_LEGACY;
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) ||
