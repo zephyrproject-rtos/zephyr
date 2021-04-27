@@ -5182,7 +5182,7 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_PHY */
 			}
 
-			/* prepare event params */
+			/* prepare event parameters */
 			lr->max_rx_octets = sys_cpu_to_le16(eff_rx_octets);
 			lr->max_tx_octets = sys_cpu_to_le16(eff_tx_octets);
 

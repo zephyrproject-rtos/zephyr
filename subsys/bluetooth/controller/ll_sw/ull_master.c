@@ -54,8 +54,8 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-static void ticker_op_stop_scan_cb(uint32_t status, void *params);
-static void ticker_op_cb(uint32_t status, void *params);
+static void ticker_op_stop_scan_cb(uint32_t status, void *param);
+static void ticker_op_cb(uint32_t status, void *param);
 static inline void conn_release(struct ll_scan_set *scan);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -910,14 +910,14 @@ void ull_master_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t
 	DEBUG_RADIO_PREPARE_M(1);
 }
 
-static void ticker_op_stop_scan_cb(uint32_t status, void *params)
+static void ticker_op_stop_scan_cb(uint32_t status, void *param)
 {
 	/* TODO: */
 }
 
-static void ticker_op_cb(uint32_t status, void *params)
+static void ticker_op_cb(uint32_t status, void *param)
 {
-	ARG_UNUSED(params);
+	ARG_UNUSED(param);
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
