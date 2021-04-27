@@ -100,7 +100,11 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 
 	lll = &scan->lll;
 
+	/* NOTE: Pass invalid interval value to not start scanning using this
+	 *       scan instance.
+	 */
 	if (!interval) {
+		/* Set PHY to 0 to not start scanning on this instance */
 		lll->phy = 0U;
 
 		return 0;

@@ -169,10 +169,14 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	win_offset = sys_le16_to_cpu(pdu_adv->connect_ind.win_offset);
 	conn_interval_us = lll->interval * CONN_INT_UNIT_US;
 
+	/* transmitWindowDelay to default calculated connection offset:
+	 * 1.25ms for a legacy PDU, 2.5ms for an LE Uncoded PHY and 3.75ms for
+	 * an LE Coded PHY.
+	 */
 	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (adv->lll.aux) {
-		if (adv->lll.phy_s & BIT(2)) {
+		if (adv->lll.phy_s & PHY_CODED) {
 			win_delay_us = WIN_DELAY_CODED;
 		} else {
 			win_delay_us = WIN_DELAY_UNCODED;

@@ -354,15 +354,6 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 	struct lll_scan *lll_scan;
 	struct pdu_adv *pdu;
 
-#if defined(CONFIG_BT_CENTRAL)
-	/* AUX_CONNECT_REQ is the same as CONNECT_IND */
-	const uint8_t aux_connect_req_len = sizeof(struct pdu_adv_connect_ind);
-	/* AUX_CONNECT_RSP has only AdvA and TargetA in extended header */
-	const uint8_t aux_connect_rsp_len = PDU_AC_EXT_HEADER_SIZE_MIN +
-					    sizeof(struct pdu_adv_ext_hdr) +
-					    ADVA_SIZE + TARGETA_SIZE;
-#endif
-
 	node_rx = ull_pdu_rx_alloc_peek(3);
 	if (!node_rx) {
 		return -ENOBUFS;
@@ -413,6 +404,17 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 			pdu_end_us %= scan_interval_us;
 		}
 
+		/* AUX_CONNECT_REQ is the same as CONNECT_IND */
+		const uint8_t aux_connect_req_len =
+			sizeof(struct pdu_adv_connect_ind);
+		/* AUX_CONNECT_RSP has only AdvA and TargetA in extended common
+		 * header
+		 */
+		const uint8_t aux_connect_rsp_len =
+			PDU_AC_EXT_HEADER_SIZE_MIN +
+			sizeof(struct pdu_adv_ext_hdr) +
+			ADVA_SIZE + TARGETA_SIZE;
+
 		ull = HDR_LLL2ULL(lll_scan);
 		if (pdu_end_us > (HAL_TICKER_TICKS_TO_US(ull->ticks_slot) -
 				  EVENT_IFS_US -
@@ -460,7 +462,7 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		radio_tmr_end_capture();
 
 		radio_tmr_tifs_set(EVENT_IFS_US);
-		radio_switch_complete_and_rx(PHY_1M);
+		radio_switch_complete_and_rx(lll->phy);
 		radio_isr_set(isr_tx_connect_req, lll);
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
@@ -678,7 +680,7 @@ isr_rx_do_close:
 	ull_rx_put(rx->hdr.link, rx);
 	ull_rx_sched();
 
-	radio_isr_set(isr_done, lll);
+	radio_isr_set(isr_done, lll_aux);
 	radio_disable();
 }
 #endif /* CONFIG_BT_CENTRAL */
