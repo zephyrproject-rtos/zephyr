@@ -430,8 +430,14 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 
 		for (int i = 0; i < log_backend_count_get(); i++) {
 			backend = log_backend_get(i);
+			bool runtime_ok =
+				IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+				(src_level.level <= log_filter_get(backend,
+								src_level.domain_id,
+								src_level.source_id,
+								true)) : true;
 
-			if (log_backend_is_active(backend)) {
+			if (log_backend_is_active(backend) && runtime_ok) {
 				va_list ap_tmp;
 
 				va_copy(ap_tmp, ap);
@@ -495,8 +501,14 @@ void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
 
 		for (int i = 0; i < log_backend_count_get(); i++) {
 			backend = log_backend_get(i);
+			bool runtime_ok =
+				IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+				(src_level.level <= log_filter_get(backend,
+								src_level.domain_id,
+								src_level.source_id,
+								true)) : true;
 
-			if (log_backend_is_active(backend)) {
+			if (log_backend_is_active(backend) && runtime_ok) {
 				log_backend_put_sync_hexdump(
 					backend, src_level, timestamp, metadata,
 					(const uint8_t *)data, len);
