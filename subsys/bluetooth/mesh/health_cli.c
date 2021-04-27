@@ -164,10 +164,10 @@ static int health_attention_status(struct bt_mesh_model *model,
 }
 
 const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
-	{ OP_HEALTH_FAULT_STATUS,    3,   health_fault_status },
-	{ OP_HEALTH_CURRENT_STATUS,  3,   health_current_status },
-	{ OP_HEALTH_PERIOD_STATUS,   1,   health_period_status },
-	{ OP_ATTENTION_STATUS,       1,   health_attention_status },
+	{ OP_HEALTH_FAULT_STATUS,     BT_MESH_LEN_MIN(3),    health_fault_status },
+	{ OP_HEALTH_CURRENT_STATUS,   BT_MESH_LEN_MIN(3),    health_current_status },
+	{ OP_HEALTH_PERIOD_STATUS,    BT_MESH_LEN_EXACT(1),  health_period_status },
+	{ OP_ATTENTION_STATUS,        BT_MESH_LEN_EXACT(1),  health_attention_status },
 	BT_MESH_MODEL_OP_END,
 };
 
