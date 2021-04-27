@@ -326,6 +326,14 @@ Libraries / Subsystems
 
 * Debug
 
+* OS
+
+  * Reboot functionality has been moved to ``subsys/os`` from ``subsys/power``.
+    A consequence of this movement is that the ``<power/reboot.h>`` header has
+    been moved to ``<sys/reboot.h>``. ``<power/reboot.h>`` is still provided
+    for compatibility, but it will produce a warning to inform users of the
+    relocation.
+
 HALs
 ****
 
