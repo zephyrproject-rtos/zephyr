@@ -209,6 +209,12 @@ union mpsc_pbuf_generic *mpsc_pbuf_alloc(struct mpsc_pbuf_buffer *buffer,
 	uint32_t free_wlen;
 
 	MPSC_PBUF_DBG(buffer, "alloc %d words, ", (int)wlen);
+
+	if (wlen > (buffer->size - 1)) {
+		MPSC_PBUF_DBG(buffer, "Failed to alloc, ");
+		return NULL;
+	}
+
 	do {
 		k_spinlock_key_t key;
 		bool wrap;
