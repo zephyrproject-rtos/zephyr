@@ -63,7 +63,7 @@ manifest:
       revision: b4d31f33238713a568e23618845702fadd67386f
       path: modules/hal/nuvoton
     - name: hal_microchip
-      revision: a1ec761014740a08699720298dd37ad4da360840
+      revision: b280eec5d3b1296b231117c1999bcd0269b6ecc4
       path: modules/hal/microchip
     - name: hal_silabs
       revision: be39d4eebeddac6e18e9c0c3ba1b31ad1e82eaed
