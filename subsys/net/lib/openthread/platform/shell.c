@@ -22,14 +22,14 @@ static char rx_buffer[OT_SHELL_BUFFER_SIZE];
 
 static const struct shell *shell_p;
 
-int otConsoleOutputCallback(const char *aBuf, uint16_t aBufLength,
-			    void *aContext)
+int otConsoleOutputCallback(void *aContext, const char *aFormat,
+			    va_list aArguments)
 {
 	ARG_UNUSED(aContext);
 
-	shell_fprintf(shell_p, SHELL_NORMAL, "%s", aBuf);
+	shell_vfprintf(shell_p, SHELL_NORMAL, aFormat, aArguments);
 
-	return aBufLength;
+	return 0;
 }
 
 #define SHELL_HELP_OT	"OpenThread subcommands\n" \
@@ -71,7 +71,7 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 	 * rescheduled into the OT thread in the middle of command processing.
 	 */
 	k_thread_suspend(ot_tid);
-	otCliConsoleInputLine(rx_buffer, OT_SHELL_BUFFER_SIZE - buf_len);
+	otCliInputLine(rx_buffer);
 	k_thread_resume(ot_tid);
 
 	return 0;
@@ -81,5 +81,5 @@ SHELL_CMD_ARG_REGISTER(ot, NULL, SHELL_HELP_OT, ot_cmd, 2, 255);
 
 void platformShellInit(otInstance *aInstance)
 {
-	otCliConsoleInit(aInstance, otConsoleOutputCallback, NULL);
+	otCliInit(aInstance, otConsoleOutputCallback, NULL);
 }
