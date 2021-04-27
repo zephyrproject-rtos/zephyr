@@ -388,7 +388,7 @@ static MEMQ_DECLARE(ull_done);
 #if defined(CONFIG_BT_CONN)
 static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
-		    CONFIG_BT_CTLR_TX_BUFFERS);
+		    CONFIG_BT_BUF_ACL_TX_COUNT);
 
 static void *mark_update;
 #endif /* CONFIG_BT_CONN */

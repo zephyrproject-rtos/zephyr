@@ -172,29 +172,6 @@ config BT_CTLR_RX_BUFFERS
 	  connection interval and 2M PHY, maximum 18 packets with L2CAP payload
 	  size of 1 byte can be received.
 
-config BT_CTLR_TX_BUFFERS
-	int "Number of Tx buffers"
-	default 7 if BT_HCI_RAW
-	default 3
-	range 1 19
-	help
-	  Set the number of Tx PDUs to be queued for transmission in the
-	  controller. In a 7.5ms connection interval and 2M PHY, maximum 19
-	  packets can be enqueued, with 18 packets with L2CAP payload size of 1
-	  byte can be acknowledged.
-
-config BT_CTLR_TX_BUFFER_SIZE
-	int "Tx buffer size"
-	range 27 251
-	default 27
-	help
-	  Size of the Tx buffers and the value returned in HCI LE Read Buffer
-	  Size command response. If this size if greater than effective PDU size
-	  then controller will perform fragmentation before transmitting on the
-	  the packet on air.
-	  Maximum is set to 251 due to implementation limitations (use of
-	  uint8_t for length field in PDU buffer structure).
-
 config BT_CTLR_ISO_TX_BUFFERS
 	int "Number of Isochronous Tx buffers"
 	default 3
@@ -345,6 +322,7 @@ config BT_CTLR_DATA_LENGTH_MAX
 	int "Maximum data length supported"
 	depends on BT_CTLR_DATA_LENGTH
 	default 27
+	range 27 BT_BUF_ACL_RX_SIZE if BT_BUF_ACL_RX_SIZE < 251
 	range 27 251
 	help
 	  Set the maximum data length of PDU supported in the Controller.

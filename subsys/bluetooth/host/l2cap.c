@@ -32,11 +32,7 @@
 #define L2CAP_LE_MIN_MTU		23
 #define L2CAP_ECRED_MIN_MTU		64
 
-#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-#define L2CAP_LE_MAX_CREDITS		(CONFIG_BT_ACL_RX_COUNT - 1)
-#else
-#define L2CAP_LE_MAX_CREDITS		(CONFIG_BT_RX_BUF_COUNT - 1)
-#endif
+#define L2CAP_LE_MAX_CREDITS		(CONFIG_BT_BUF_ACL_RX_COUNT - 1)
 
 #define L2CAP_LE_CID_DYN_START	0x0040
 #define L2CAP_LE_CID_DYN_END	0x007f
@@ -64,7 +60,8 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 				sizeof(struct bt_l2cap_disconn_req)),
 			  NULL);
 
-#define L2CAP_MAX_LE_MPS	CONFIG_BT_L2CAP_RX_MTU
+/* Maximum Packet Size (MPS) is defined as the MTU of an L2CAP Basic Frame. */
+#define L2CAP_MAX_LE_MPS	BT_L2CAP_RX_MTU
 /* For now use MPS - SDU length to disable segmentation */
 #define L2CAP_MAX_LE_MTU	(L2CAP_MAX_LE_MPS - BT_L2CAP_SDU_HDR_SIZE)
 
