@@ -52,7 +52,7 @@
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
-					       void *params);
+					       void *param);
 
 void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		     struct node_rx_ftr *ftr, struct lll_conn *lll)
@@ -576,9 +576,9 @@ static void ticker_op_cb(uint32_t status, void *param)
 }
 
 static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
-					       void *params)
+					       void *param)
 {
-	struct ll_conn *conn = params;
+	struct ll_conn *conn = param;
 
 	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
 
