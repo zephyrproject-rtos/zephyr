@@ -13,7 +13,7 @@
 #include <kernel.h>
 #include <drivers/timer/system_timer.h>
 #include <sys/printk.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 
 extern void sys_arch_reboot(int type);
 extern void sys_clock_disable(void);

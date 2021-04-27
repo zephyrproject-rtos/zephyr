@@ -571,14 +571,6 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 
 endchoice
 
-config REBOOT
-	bool "Reboot functionality"
-	select SYSTEM_CLOCK_DISABLE
-	help
-	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
-	  needed to perform a "safe" reboot (e.g. SYSTEM_CLOCK_DISABLE, to stop the
-	  system clock before issuing a reset).
-
 config MISRA_SANE
 	bool "MISRA standards compliance features"
 	help
