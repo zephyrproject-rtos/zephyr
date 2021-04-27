@@ -546,8 +546,11 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		lll->node_conn_rx = rx;
 
 		return 0;
-#endif /* CONFIG_BT_CENTRAL */
+
+	} else if (!lll_scan->conn) {
+#else /* !CONFIG_BT_CENTRAL */
 	} else {
+#endif /* !CONFIG_BT_CENTRAL */
 		ull_pdu_rx_alloc();
 
 		trx_cnt++;
@@ -567,10 +570,10 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		/* TODO: Use correct rl_idx value when privacy support is added */
 		ftr->rl_idx = FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
-	}
 
-	ull_rx_put(node_rx->hdr.link, node_rx);
-	ull_rx_sched();
+		ull_rx_put(node_rx->hdr.link, node_rx);
+		ull_rx_sched();
+	}
 
 	return -ECANCELED;
 }
