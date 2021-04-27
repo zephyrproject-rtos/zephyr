@@ -21,19 +21,6 @@
 extern "C" {
 #endif
 
-#define _BT_ACL_BUF_SIZE(len) (BT_BUF_RESERVE + \
-				BT_HCI_ACL_HDR_SIZE + \
-				(len))
-
-/** Data size needed for ACL buffers */
-#define BT_BUF_ACL_SIZE _BT_ACL_BUF_SIZE(CONFIG_BT_HCI_ACL_DATA_SIZE)
-
-#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
-#define BT_HCI_ACL_COUNT CONFIG_BT_CTLR_TX_BUFFERS
-#else
-#define BT_HCI_ACL_COUNT 6
-#endif
-
 /** @brief Send packet to the Bluetooth controller
  *
  * Send packet to the Bluetooth controller. Caller needs to

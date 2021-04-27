@@ -29,6 +29,12 @@ extern "C" {
 /** L2CAP header size, used for buffer size calculations */
 #define BT_L2CAP_HDR_SIZE               4
 
+/** Maximum Transmission Unit (MTU) for an outgoing L2CAP PDU. */
+#define BT_L2CAP_TX_MTU (CONFIG_BT_L2CAP_TX_MTU)
+
+/** Maximum Transmission Unit (MTU) for an incoming L2CAP PDU. */
+#define BT_L2CAP_RX_MTU (CONFIG_BT_BUF_ACL_RX_SIZE - BT_L2CAP_HDR_SIZE)
+
 /** @def BT_L2CAP_BUF_SIZE
  *
  *  @brief Helper to calculate needed buffer size for L2CAP PDUs.

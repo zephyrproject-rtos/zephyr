@@ -124,6 +124,11 @@ static uint32_t conn_count;
 static uint32_t cis_pending_count;
 #endif
 
+#if !defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
+#define ADV_REPORT_EVT_MAX_LEN CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE
+#else
+#define ADV_REPORT_EVT_MAX_LEN CONFIG_BT_BUF_EVT_RX_SIZE
+#endif
 
 #define DEFAULT_EVENT_MASK           0x1fffffffffff
 #define DEFAULT_EVENT_MASK_PAGE_2    0x0
@@ -1152,8 +1157,8 @@ static void le_read_buffer_size(struct net_buf *buf, struct net_buf **evt)
 
 	rp->status = 0x00;
 
-	rp->le_max_len = sys_cpu_to_le16(CONFIG_BT_CTLR_TX_BUFFER_SIZE);
-	rp->le_max_num = CONFIG_BT_CTLR_TX_BUFFERS;
+	rp->le_max_len = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_TX_SIZE);
+	rp->le_max_num = CONFIG_BT_BUF_ACL_TX_COUNT;
 }
 
 static void le_read_local_features(struct net_buf *buf, struct net_buf **evt)
@@ -3770,7 +3775,7 @@ static void vs_read_build_info(struct net_buf *buf, struct net_buf **evt)
 			    sizeof(struct bt_hci_rp_vs_read_build_info) + \
 			    sizeof(build_info))
 
-	BUILD_ASSERT(CONFIG_BT_RX_BUF_LEN >= BUILD_INFO_EVT_LEN);
+	BUILD_ASSERT(CONFIG_BT_BUF_EVT_RX_SIZE >= BUILD_INFO_EVT_LEN);
 
 	rp = hci_cmd_complete(evt, sizeof(*rp) + sizeof(build_info));
 	rp->status = 0x00;
@@ -4165,7 +4170,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 		return -EINVAL;
 	}
 
-	if (len > CONFIG_BT_CTLR_TX_BUFFER_SIZE) {
+	if (len > CONFIG_BT_BUF_ACL_TX_SIZE) {
 		BT_ERR("Invalid HCI ACL Data length");
 		return -EINVAL;
 	}
@@ -4932,8 +4937,7 @@ no_ext_hdr:
 	if (!data_status) {
 		uint8_t data_max_len;
 
-		data_max_len = CONFIG_BT_DISCARDABLE_BUF_SIZE -
-			       BT_HCI_ACL_HDR_SIZE - sizeof(*sep) -
+		data_max_len = ADV_REPORT_EVT_MAX_LEN - sizeof(*sep) -
 			       sizeof(*adv_info);
 
 		/* if data cannot fit the event, mark it as incomplete */
@@ -5268,8 +5272,7 @@ no_ext_hdr:
 	if (!data_status) {
 		uint8_t data_max_len;
 
-		data_max_len = CONFIG_BT_DISCARDABLE_BUF_SIZE -
-			       BT_HCI_ACL_HDR_SIZE - sizeof(*sep);
+		data_max_len = ADV_REPORT_EVT_MAX_LEN - sizeof(*sep);
 
 		/* if data cannot fit the event, mark it as incomplete */
 		if (data_len > data_max_len) {
