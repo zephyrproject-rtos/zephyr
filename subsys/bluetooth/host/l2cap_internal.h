@@ -225,8 +225,6 @@ struct bt_l2cap_ecred_reconf_rsp {
 	uint16_t result;
 } __packed;
 
-#define BT_L2CAP_SDU_HDR_LEN            2
-
 struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);

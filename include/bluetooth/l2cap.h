@@ -31,16 +31,28 @@ extern "C" {
 
 /** @def BT_L2CAP_BUF_SIZE
  *
- *  @brief Helper to calculate needed outgoing buffer size, useful e.g. for
- *  creating buffer pools.
+ *  @brief Helper to calculate needed buffer size for L2CAP PDUs.
+ *         Useful for creating buffer pools.
  *
- *  @param mtu Needed L2CAP MTU.
+ *  @param mtu Needed L2CAP PDU MTU.
+ *
+ *  @return Needed buffer size to match the requested L2CAP PDU MTU.
+ */
+#define BT_L2CAP_BUF_SIZE(mtu) BT_BUF_ACL_SIZE(BT_L2CAP_HDR_SIZE + (mtu))
+
+/** L2CAP SDU header size, used for buffer size calculations */
+#define BT_L2CAP_SDU_HDR_SIZE           2
+
+/** @def BT_L2CAP_SDU_BUF_SIZE
+ *
+ *  @brief Helper to calculate needed buffer size for L2CAP SDUs.
+ *         Useful for creating buffer pools.
+ *
+ *  @param mtu Needed L2CAP SDU MTU.
  *
  *  @return Needed buffer size to match the requested L2CAP MTU.
  */
-#define BT_L2CAP_BUF_SIZE(mtu) (BT_BUF_RESERVE + \
-				BT_HCI_ACL_HDR_SIZE + BT_L2CAP_HDR_SIZE + \
-				(mtu))
+#define BT_L2CAP_SDU_BUF_SIZE(mtu) BT_L2CAP_BUF_SIZE(BT_L2CAP_SDU_HDR_SIZE + (mtu))
 
 struct bt_l2cap_chan;
 
@@ -274,7 +286,7 @@ struct bt_l2cap_chan_ops {
 /** @def BT_L2CAP_CHAN_SEND_RESERVE
  *  @brief Headroom needed for outgoing buffers
  */
-#define BT_L2CAP_CHAN_SEND_RESERVE (BT_BUF_RESERVE + 4 + 4)
+#define BT_L2CAP_CHAN_SEND_RESERVE (BT_L2CAP_BUF_SIZE(0))
 
 /** @brief L2CAP Server structure. */
 struct bt_l2cap_server {
