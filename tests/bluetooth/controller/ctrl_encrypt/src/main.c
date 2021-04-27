@@ -36,6 +36,50 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
+/* Tx/Rx pause flag */
+#define RESUMED 0U
+#define PAUSED  1U
+
+/* Tx/Rx encryption flag */
+#define UNENCRYPTED 0U
+#define ENCRYPTED   1U
+
+/* Check Rx Pause and Encryption state */
+#define CHECK_RX_PE_STATE(_conn, _pause, _enc)\
+do {\
+	zassert_equal(_conn.pause_rx_data, _pause, "Rx Data pause state is wrong.");\
+	zassert_equal(_conn.lll.enc_rx, _enc, "Rx Encryption state is wrong.");\
+} while (0)
+
+/* Check Tx Pause and Encryption state */
+#define CHECK_TX_PE_STATE(_conn, _pause, _enc)\
+do {\
+	zassert_equal(_conn.tx_q.pause_data, _pause, "Tx Data pause state is wrong.");\
+	zassert_equal(_conn.lll.enc_tx, _enc, "Tx Encryption state is wrong.");\
+} while (0)
+
+/* CCM direction flag */
+#define CCM_DIR_M_TO_S 1U
+#define CCM_DIR_S_TO_M 0U
+
+/* Check Rx CCM state */
+#define CHECK_RX_CCM_STATE(_conn, _sk_be, _iv, _cnt, _dir)\
+do {\
+	zassert_mem_equal(_conn.lll.ccm_rx.key, _sk_be, sizeof(_sk_be), "CCM Rx SK not equal to expected SK");\
+	zassert_mem_equal(_conn.lll.ccm_rx.iv, _iv, sizeof(_iv), "CCM Rx IV not equal to (IVm | IVs)");\
+	zassert_equal(_conn.lll.ccm_rx.counter, _cnt, "CCM Rx Counter is wrong");\
+	zassert_equal(_conn.lll.ccm_rx.direction, _dir, "CCM Rx Direction is wrong");\
+} while (0)
+
+/* Check Tx CCM state */
+#define CHECK_TX_CCM_STATE(_conn, _sk_be, _iv, _cnt, _dir)\
+do {\
+	zassert_mem_equal(_conn.lll.ccm_tx.key, _sk_be, sizeof(_sk_be), "CCM Tx SK not equal to expected SK");\
+	zassert_mem_equal(_conn.lll.ccm_tx.iv, _iv, sizeof(_iv), "CCM Tx IV not equal to (IVm | IVs)");\
+	zassert_equal(_conn.lll.ccm_tx.counter, _cnt, "CCM Tx Counter is wrong");\
+	zassert_equal(_conn.lll.ccm_tx.direction, _dir, "CCM Tx Direction is wrong");\
+} while (0)
+
 struct ll_conn conn;
 
 static void setup(void)
@@ -158,6 +202,10 @@ void test_encryption_start_mas_loc(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
@@ -168,6 +216,10 @@ void test_encryption_start_mas_loc(void)
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
 	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -181,6 +233,18 @@ void test_encryption_start_mas_loc(void)
 	/* Done */
 	event_done(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Tx paused & enc. */
+
+	/* CCM Tx/Rx SK should match SK */
+	/* CCM Tx/Rx IV should match the IV */
+	/* CCM Tx/Rx Counter should be zero */
+	/* CCM Rx Direction should be S->M */
+	/* CCM Tx Direction should be M->S */
+	CHECK_RX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
+	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
+
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -188,36 +252,12 @@ void test_encryption_start_mas_loc(void)
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty(&conn);
 
-	/* CCM Tx/Rx SK should be the same */
-	zassert_mem_equal(conn.lll.ccm_tx.key, conn.lll.ccm_rx.key, sizeof(conn.lll.ccm_tx.key), "CCM Tx/Rx SK not the same");
-
-	/* CCM Tx/Rx SK should match SK */
-	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx/Rx SK not equal to expected SK");
-
-	/* CCM Tx/Rx IV should be the same */
-	zassert_mem_equal(conn.lll.ccm_tx.iv, conn.lll.ccm_rx.iv, sizeof(conn.lll.ccm_tx.iv), "CCM Tx/Rx IV not the same");
-
-	/* CCM Tx/Rx IV should match the IV */
-	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx/Rx IV not equal to (IVm | IVs)");
-
-	/* CCM Tx/Rx Counter should be zero */
-	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
-	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
-
-	/* CCM Tx Direction should be M->S */
-	zassert_equal(conn.lll.ccm_tx.direction, 1U, NULL);
-
-	/* CCM Rx Direction should be S->M */
-	zassert_equal(conn.lll.ccm_rx.direction, 0U, NULL);
-
-	/* Tx Encryption should be enabled */
-	zassert_equal(conn.lll.enc_tx, 1U, NULL);
-
-	/* Rx Decryption should be enabled */
-	zassert_equal(conn.lll.enc_rx, 1U, NULL);
-
 	/* Release Tx */
 	ull_cp_release_tx(tx);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Tx paused & enc. */
 
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
@@ -225,18 +265,16 @@ void test_encryption_start_mas_loc(void)
 	/* Done */
 	event_done(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
 	/* There should be one host notification */
 	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-
-	/* Tx Encryption should be enabled */
-	zassert_equal(conn.lll.enc_tx, 1U, NULL);
-
-	/* Rx Decryption should be enabled */
-	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
@@ -328,6 +366,10 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Steal all tx buffers */
 	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
 		tx = tx_alloc();
@@ -351,8 +393,16 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	/* Tx Queue should have no LL Control PDU */
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -364,6 +414,10 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Rx */
 	lt_tx(LL_ENC_RSP, &conn, &enc_rsp);
 
@@ -372,6 +426,10 @@ void test_encryption_start_mas_loc_limited_memory(void)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Tx Queue should have no LL Control PDU */
 	lt_rx_q_is_empty(&conn);
@@ -386,33 +444,17 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty(&conn);
 
-	/* CCM Tx/Rx SK should be the same */
-	zassert_mem_equal(conn.lll.ccm_tx.key, conn.lll.ccm_rx.key, sizeof(conn.lll.ccm_tx.key), "CCM Tx/Rx SK not the same");
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Tx paused & enc. */
 
 	/* CCM Tx/Rx SK should match SK */
-	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx/Rx SK not equal to expected SK");
-
-	/* CCM Tx/Rx IV should be the same */
-	zassert_mem_equal(conn.lll.ccm_tx.iv, conn.lll.ccm_rx.iv, sizeof(conn.lll.ccm_tx.iv), "CCM Tx/Rx IV not the same");
-
 	/* CCM Tx/Rx IV should match the IV */
-	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx/Rx IV not equal to (IVm | IVs)");
-
 	/* CCM Tx/Rx Counter should be zero */
-	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
-	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
-
 	/* CCM Tx Direction should be M->S */
-	zassert_equal(conn.lll.ccm_tx.direction, 1U, NULL);
-
 	/* CCM Rx Direction should be S->M */
-	zassert_equal(conn.lll.ccm_rx.direction, 0U, NULL);
-
-	/* Tx Encryption should be enabled */
-	zassert_equal(conn.lll.enc_tx, 1U, NULL);
-
-	/* Rx Decryption should be enabled */
-	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+	CHECK_RX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
+	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -423,6 +465,10 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	/* Done */
 	event_done(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
@@ -432,8 +478,16 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	/* Prepare */
 	event_prepare(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
@@ -525,6 +579,10 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Initiate an Encryption Start Procedure */
 	err = ull_cp_encryption_start(&conn, rand, ediv, ltk);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
@@ -535,6 +593,10 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_ENC_REQ, &conn, &tx, &exp_enc_req);
 	lt_rx_q_is_empty(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -548,18 +610,16 @@ void test_encryption_start_mas_loc_no_ltk(void)
 	/* Done */
 	event_done(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* There should be one host notification */
 	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-
-	/* Tx Encryption should be disabled */
-	zassert_equal(conn.lll.enc_tx, 0U, NULL);
-
-	/* Rx Decryption should be disabled */
-	zassert_equal(conn.lll.enc_rx, 0U, NULL);
 
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
@@ -646,8 +706,16 @@ void test_encryption_start_sla_rem(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Prepare */
 	event_prepare(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
 
 	/* Rx */
 	lt_tx(LL_ENC_REQ, &conn, &enc_req);
@@ -655,8 +723,16 @@ void test_encryption_start_sla_rem(void)
 	/* Done */
 	event_done(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Prepare */
 	event_prepare(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_ENC_RSP, &conn, &tx, &exp_enc_rsp);
@@ -664,6 +740,10 @@ void test_encryption_start_sla_rem(void)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -678,6 +758,10 @@ void test_encryption_start_sla_rem(void)
 	/* LTK request reply */
 	ull_cp_ltk_req_reply(&conn, ltk);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -685,35 +769,42 @@ void test_encryption_start_sla_rem(void)
 	lt_rx(LL_START_ENC_REQ, &conn, &tx, NULL);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* CCM Rx SK should match SK */
-	zassert_mem_equal(conn.lll.ccm_rx.key, sk_be, sizeof(sk_be), "CCM Rx SK not equal to expected SK");
-
 	/* CCM Rx IV should match the IV */
-	zassert_mem_equal(conn.lll.ccm_rx.iv, iv, sizeof(iv), "CCM Rx IV not equal to (IVm | IVs)");
-
 	/* CCM Rx Counter should be zero */
-	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
-
 	/* CCM Rx Direction should be M->S */
-	zassert_equal(conn.lll.ccm_rx.direction, 1U, NULL);
-
-	/* Rx Decryption should be enabled */
-	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+	CHECK_RX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
 
 	/* Prepare */
 	event_prepare(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
 
 	/* There should be a host notification */
 	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
@@ -726,26 +817,25 @@ void test_encryption_start_sla_rem(void)
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* CCM Tx SK should match SK */
-	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx SK not equal to expected SK");
-
 	/* CCM Tx IV should match the IV */
-	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx IV not equal to (IVm | IVs)");
-
 	/* CCM Tx Counter should be zero */
-	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
-
 	/* CCM Tx Direction should be S->M */
-	zassert_equal(conn.lll.ccm_tx.direction, 0U, NULL);
-
-	/* Tx Encryption should be enabled */
-	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
 
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
@@ -849,6 +939,10 @@ void test_encryption_start_sla_rem_limited_memory(void)
 		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	}
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -858,8 +952,16 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	/* Tx Queue should not have a LL Control PDU */
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Release tx */
 	ull_cp_release_tx(tx);
@@ -871,8 +973,16 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	lt_rx(LL_ENC_RSP, &conn, &tx, &exp_enc_rsp);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* There should not be a host notification */
 	ut_rx_q_is_empty();
@@ -883,6 +993,10 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	/* Prepare */
 	event_prepare(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* There should be one host notification */
 	ut_rx_pdu(LL_ENC_REQ, &ntf, &enc_req);
 	ut_rx_q_is_empty();
@@ -890,8 +1004,16 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	/* Done */
 	event_done(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* LTK request reply */
 	ull_cp_ltk_req_reply(&conn, ltk);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -899,8 +1021,16 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	/* Tx Queue should not have one LL Control PDU */
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Release tx */
 	ull_cp_release_tx(tx);
@@ -912,23 +1042,22 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	lt_rx(LL_START_ENC_REQ, &conn, &tx, NULL);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Done */
 	event_done(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* CCM Rx SK should match SK */
-	zassert_mem_equal(conn.lll.ccm_rx.key, sk_be, sizeof(sk_be), "CCM Rx SK not equal to expected SK");
-
 	/* CCM Rx IV should match the IV */
-	zassert_mem_equal(conn.lll.ccm_rx.iv, iv, sizeof(iv), "CCM Rx IV not equal to (IVm | IVs)");
-
 	/* CCM Rx Counter should be zero */
-	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
-
 	/* CCM Rx Direction should be M->S */
-	zassert_equal(conn.lll.ccm_rx.direction, 1U, NULL);
-
-	/* Rx Decryption should be enabled */
-	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+	CHECK_RX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -936,8 +1065,16 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* There should not be a host notification */
 	ut_rx_q_is_empty();
@@ -955,8 +1092,16 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	/* Tx Queue should not have a LL Control PDU */
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, ENCRYPTED); /* Rx paused & enc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Release tx */
 	ull_cp_release_tx(tx);
@@ -968,23 +1113,22 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
 	/* Done */
 	event_done(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Rx enc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, ENCRYPTED); /* Tx enc. */
+
 	/* CCM Tx SK should match SK */
-	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx SK not equal to expected SK");
-
 	/* CCM Tx IV should match the IV */
-	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx IV not equal to (IVm | IVs)");
-
 	/* CCM Tx Counter should be zero */
-	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
-
 	/* CCM Tx Direction should be S->M */
-	zassert_equal(conn.lll.ccm_tx.direction, 0U, NULL);
-
-	/* Tx Encryption should be enabled */
-	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
 
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
@@ -1050,14 +1194,26 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Prepare */
 	event_prepare(&conn);
 
 	/* Rx */
 	lt_tx(LL_ENC_REQ, &conn, &enc_req);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -1066,8 +1222,16 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	lt_rx(LL_ENC_RSP, &conn, &tx, &exp_enc_rsp);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Rx paused & unenc. */
+	CHECK_TX_PE_STATE(conn, PAUSED, UNENCRYPTED); /* Tx paused & unenc. */
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -1082,6 +1246,11 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	/* LTK request reply */
 	ull_cp_ltk_req_neq_reply(&conn);
 
+	/* Check state */
+	/* TODO(thoh): THIS IS WRONG! */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -1089,20 +1258,22 @@ void test_encryption_start_sla_rem_no_ltk(void)
 	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
 	lt_rx_q_is_empty(&conn);
 
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check state */
+	CHECK_RX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Rx unenc. */
+	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* There should not be a host notification */
 	ut_rx_q_is_empty();
-
-	/* Tx Encryption should be disabled */
-	zassert_equal(conn.lll.enc_tx, 0U, NULL);
-
-	/* Rx Decryption should be disabled */
-	zassert_equal(conn.lll.enc_rx, 0U, NULL);
 
 	/* Note that for this test the context is not released */
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
@@ -1223,27 +1394,13 @@ void test_encryption_pause_mas_loc(void)
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty(&conn);
 
-	/* CCM Tx/Rx SK should be the same */
-	zassert_mem_equal(conn.lll.ccm_tx.key, conn.lll.ccm_rx.key, sizeof(conn.lll.ccm_tx.key), "CCM Tx/Rx SK not the same");
-
 	/* CCM Tx/Rx SK should match SK */
-	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx/Rx SK not equal to expected SK");
-
-	/* CCM Tx/Rx IV should be the same */
-	zassert_mem_equal(conn.lll.ccm_tx.iv, conn.lll.ccm_rx.iv, sizeof(conn.lll.ccm_tx.iv), "CCM Tx/Rx IV not the same");
-
 	/* CCM Tx/Rx IV should match the IV */
-	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx/Rx IV not equal to (IVm | IVs)");
-
 	/* CCM Tx/Rx Counter should be zero */
-	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
-	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
-
-	/* CCM Tx Direction should be M->S */
-	zassert_equal(conn.lll.ccm_tx.direction, 1U, NULL);
-
 	/* CCM Rx Direction should be S->M */
-	zassert_equal(conn.lll.ccm_rx.direction, 0U, NULL);
+	/* CCM Tx Direction should be M->S */
+	CHECK_RX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
+	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U, NULL);
@@ -1405,16 +1562,10 @@ void test_encryption_pause_sla_rem(void)
 	ull_cp_release_tx(tx);
 
 	/* CCM Rx SK should match SK */
-	zassert_mem_equal(conn.lll.ccm_rx.key, sk_be, sizeof(sk_be), "CCM Rx SK not equal to expected SK");
-
 	/* CCM Rx IV should match the IV */
-	zassert_mem_equal(conn.lll.ccm_rx.iv, iv, sizeof(iv), "CCM Rx IV not equal to (IVm | IVs)");
-
 	/* CCM Rx Counter should be zero */
-	zassert_equal(conn.lll.ccm_rx.counter, 0U, NULL);
-
 	/* CCM Rx Direction should be M->S */
-	zassert_equal(conn.lll.ccm_rx.direction, 1U, NULL);
+	CHECK_RX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_M_TO_S);
 
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U, NULL);
@@ -1446,16 +1597,10 @@ void test_encryption_pause_sla_rem(void)
 	ull_cp_release_tx(tx);
 
 	/* CCM Tx SK should match SK */
-	zassert_mem_equal(conn.lll.ccm_tx.key, sk_be, sizeof(sk_be), "CCM Tx SK not equal to expected SK");
-
 	/* CCM Tx IV should match the IV */
-	zassert_mem_equal(conn.lll.ccm_tx.iv, iv, sizeof(iv), "CCM Tx IV not equal to (IVm | IVs)");
-
 	/* CCM Tx Counter should be zero */
-	zassert_equal(conn.lll.ccm_tx.counter, 0U, NULL);
-
 	/* CCM Tx Direction should be S->M */
-	zassert_equal(conn.lll.ccm_tx.direction, 0U, NULL);
+	CHECK_TX_CCM_STATE(conn, sk_be, iv, 0U, CCM_DIR_S_TO_M);
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U, NULL);
