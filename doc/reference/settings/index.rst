@@ -207,7 +207,7 @@ up from where it was before restart.
 .. code-block:: c
 
     #include <zephyr.h>
-    #include <power/reboot.h>
+    #include <sys/reboot.h>
     #include <settings/settings.h>
     #include <sys/printk.h>
     #include <inttypes.h>

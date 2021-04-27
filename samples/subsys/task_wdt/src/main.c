@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <drivers/watchdog.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <task_wdt/task_wdt.h>
 #include <sys/printk.h>
 #include <stdbool.h>

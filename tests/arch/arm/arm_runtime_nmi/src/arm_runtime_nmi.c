@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <ztest.h>
 #include <tc_util.h>
