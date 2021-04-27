@@ -3141,12 +3141,20 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 						      conn_latency,
 						      supervision_timeout,
 						      phy);
-			if (status) {
-				*evt = cmd_status(status);
-				return;
-			}
-
 			p++;
+		} else {
+			uint8_t type;
+
+			type = (phy << 1);
+			/* NOTE: Pass invalid interval value to not start
+			 *       scanning using this scan instance.
+			 */
+			status = ll_scan_params_set(type, 0, 0, 0, 0);
+		}
+
+		if (status) {
+			*evt = cmd_status(status);
+			return;
 		}
 
 		phys_bitmask &= (phys_bitmask - 1);
