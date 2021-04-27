@@ -2,6 +2,12 @@
 
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
+config OPENTHREAD_SECURITY_INTERNAL
+	bool
+	help
+	  OpenThread setting to signal that OpenThread security settings, such
+	  as the OPENTHREAD_MBEDTLS setting will be controlled through other
+	  Kconfig dependencies and should not be user configurable.
 
 menuconfig NET_L2_OPENTHREAD
 	bool "OpenThread L2"
@@ -153,9 +159,32 @@ config OPENTHREAD_SHELL
 	depends on SHELL
 	default y
 
+config MBEDTLS_PROMPTLESS
+	bool
+	default y if !CUSTOM_OPENTHREAD_SECURITY
+
+choice OPENTHREAD_SECURITY
+	prompt "OpenThread security"
+	default OPENTHREAD_MBEDTLS_CHOICE
+	depends on !OPENTHREAD_SECURITY_INTERNAL
+
+config CUSTOM_OPENTHREAD_SECURITY
+	bool "Custom"
+	help
+	  Security settings will be controlled directly by the user.
+	  Enabling this setting will give access to full control of mbed TLS
+	  configuration.
+
+config OPENTHREAD_MBEDTLS_CHOICE
+	bool "mbed TLS built-in"
+	select OPENTHREAD_MBEDTLS
+	help
+	  Use the OpenThread mbed TLS configuration pre-defined security scheme.
+
+endchoice
+
 config OPENTHREAD_MBEDTLS
-	bool "Enable built-in mbedtls for use with OpenThread"
-	default y
+	bool
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
 	select MBEDTLS_CIPHER_AES_ENABLED
