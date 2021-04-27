@@ -8,11 +8,11 @@
  * @file
  * @brief Common target reboot functionality
  *
- * @details See misc/Kconfig and the reboot help for details.
+ * @details See subsys/os/Kconfig and the reboot help for details.
  */
 
-#ifndef ZEPHYR_INCLUDE_POWER_REBOOT_H_
-#define ZEPHYR_INCLUDE_POWER_REBOOT_H_
+#ifndef ZEPHYR_INCLUDE_SYS_REBOOT_H_
+#define ZEPHYR_INCLUDE_SYS_REBOOT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,4 +39,4 @@ extern void sys_reboot(int type);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_POWER_REBOOT_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_REBOOT_H_ */

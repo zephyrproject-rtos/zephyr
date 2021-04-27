@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include <net/coap.h>
 #include <net/dns_resolve.h>
 #include <drivers/flash.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <tinycrypt/sha256.h>
 #include <data/json.h>
 #include <storage/flash_map.h>

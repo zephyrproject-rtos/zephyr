@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(hawkbit);
 #include <net/net_ip.h>
 #include <net/socket.h>
 #include <net/net_mgmt.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <drivers/flash.h>
 #include <net/http_client.h>
 #include <net/dns_resolve.h>

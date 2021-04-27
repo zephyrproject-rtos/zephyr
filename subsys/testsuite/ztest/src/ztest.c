@@ -10,7 +10,7 @@
 #ifdef CONFIG_USERSPACE
 #include <sys/libc-hooks.h>
 #endif
-#include <power/reboot.h>
+#include <sys/reboot.h>
 
 #ifdef KERNEL
 static struct k_thread ztest_thread;
