@@ -4,16 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @file common target reboot functionality
- *
- * @details See misc/Kconfig and the reboot help for details.
- */
-
 #include <kernel.h>
-#include <drivers/timer/system_timer.h>
 #include <sys/printk.h>
-#include <sys/reboot.h>
 
 extern void sys_arch_reboot(int type);
 extern void sys_clock_disable(void);
