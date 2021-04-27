@@ -14,6 +14,7 @@
 #include <sys/check.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/l2cap.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio/vocs.h>
@@ -71,7 +72,7 @@ uint8_t vocs_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 			BT_DBG("Invalid state length %u", length);
 		}
 	} else if (handle == inst->cli.desc_handle) {
-		char desc[MIN(CONFIG_BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
+		char desc[MIN(BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
 
 		/* Truncate if too large */
 
@@ -289,7 +290,7 @@ static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
 {
 	int cb_err = err;
 	struct bt_vocs *inst = lookup_vocs_by_handle(conn, params->single.handle);
-	char desc[MIN(CONFIG_BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
+	char desc[MIN(BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
 
 	memset(params, 0, sizeof(*params));
 

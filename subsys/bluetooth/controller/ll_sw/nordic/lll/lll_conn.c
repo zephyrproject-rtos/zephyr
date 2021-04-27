@@ -78,7 +78,7 @@ static uint8_t force_md_cnt;
 #define FORCE_MD_CNT_SET() \
 		do { \
 			if (force_md_cnt || \
-			    (trx_cnt >= ((CONFIG_BT_CTLR_TX_BUFFERS) - 1))) { \
+			    (trx_cnt >= ((CONFIG_BT_BUF_ACL_TX_COUNT) - 1))) { \
 				force_md_cnt = BT_CTLR_FORCE_MD_COUNT; \
 			} \
 		} while (0)

@@ -112,7 +112,7 @@ struct cmd_data {
 	struct k_sem *sync;
 };
 
-static struct cmd_data cmd_data[CONFIG_BT_HCI_CMD_COUNT];
+static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
 
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
@@ -127,11 +127,12 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 	cmd(buf)->state = state;
 }
 
-/* HCI command buffers. Derive the needed size from BT_BUF_RX_SIZE since
- * the same buffer is also used for the response.
+/* HCI command buffers. Derive the needed size from both Command and Event
+ * buffer length since the buffer is also used for the response event i.e
+ * command complete or command status.
  */
-#define CMD_BUF_SIZE BT_BUF_RX_SIZE
-NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
+#define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
 			  CMD_BUF_SIZE, NULL);
 
 struct event_handler {
@@ -1534,9 +1535,8 @@ static int set_flow_control(void)
 
 	hbs = net_buf_add(buf, sizeof(*hbs));
 	(void)memset(hbs, 0, sizeof(*hbs));
-	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_L2CAP_RX_MTU +
-				       sizeof(struct bt_l2cap_hdr));
-	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BT_ACL_RX_COUNT);
+	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_SIZE);
+	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_COUNT);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
 	if (err) {
