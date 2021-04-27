@@ -1,0 +1,34 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/dac/stm32_dac.h>
+
+/* dac needs pa4 */
+&spi1 {
+	status = "disabled";
+};
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+	st,external-trigger = <STM32_DAC_TRIG_TIM2_TRGO>;
+	dmas = <&dmamux1 2 6 0x2c40 0>;
+	dma-names = "channel1";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&hwtrig2 {
+	status = "okay";
+};
+
+&pwm2 {
+	status = "disabled";
+};

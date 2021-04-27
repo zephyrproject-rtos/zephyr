@@ -36,7 +36,19 @@ extern "C" {
 struct dac_channel_cfg {
 	uint8_t channel_id;
 	uint8_t resolution;
+	bool enable_hw_trigger;
 };
+
+/**
+ * @typedef dac_callback_t
+ * @brief Define the application callback function signature for
+ * dac_callback_set() function.
+ *
+ * @param dev       DAC device structure.
+ * @param user_data Pointer to data specified by user.
+ */
+typedef void (*dac_callback_t)(const struct device *dev,
+				uint8_t channel, void *user_data);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -59,6 +71,30 @@ typedef int (*dac_api_write_value)(const struct device *dev,
 				    uint8_t channel, uint32_t value);
 
 /*
+ * Type definition of DAC API function for setting a callback
+ * for continuos api.
+ * See dac_callback_set() for argument descriptions.
+ */
+typedef int (*dac_api_callback_set)(const struct device *dev,
+				    dac_callback_t callback, void *user_data);
+
+/*
+ * Type definition of DAC API function for start dac in
+ * continuos mode.
+ * See dac_start_continuous() for argument descriptions.
+ */
+typedef int (*dac_api_start_continuous)(const struct device *dev,
+					uint8_t channel);
+
+/*
+ * Type definition of DAC API function for fill dac buffer in
+ * continuos mode.
+ * See dac_fill_buffer() for argument descriptions.
+ */
+typedef int (*dac_api_fill_buffer)(const struct device *dev, uint8_t channel,
+					uint8_t *data, size_t size);
+
+/*
  * DAC driver API
  *
  * This is the mandatory API any DAC driver needs to expose.
@@ -66,6 +102,11 @@ typedef int (*dac_api_write_value)(const struct device *dev,
 __subsystem struct dac_driver_api {
 	dac_api_channel_setup channel_setup;
 	dac_api_write_value   write_value;
+#ifdef CONFIG_DAC_CONTINUOUS_API
+	dac_api_callback_set callback_set;
+	dac_api_start_continuous start_continuous;
+	dac_api_fill_buffer fill_buffer;
+#endif
 };
 
 /**
@@ -117,6 +158,82 @@ static inline int z_impl_dac_write_value(const struct device *dev,
 				(const struct dac_driver_api *)dev->api;
 
 	return api->write_value(dev, channel, value);
+}
+
+/**
+ * @brief Set event handler function.
+ * 
+ * This function will be called when the dac device is free to receive
+ * more samples to send.
+ *
+ * @param dev       DAC device structure.
+ * @param callback  Event handler.
+ * @param user_data Data to pass to event handler function.
+ *
+ * @retval -ENOTSUP If not supported.
+ * @retval 0	    If successful, negative errno code otherwise.
+ */
+static inline int dac_callback_set(const struct device *dev,
+				    dac_callback_t callback,
+				    void *user_data)
+{
+#ifdef CONFIG_DAC_CONTINUOUS_API
+	const struct dac_driver_api *api =
+				(const struct dac_driver_api *)dev->api;
+
+	return api->callback_set(dev, callback, user_data);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+/**
+ * @brief Start DAC in continuous mode.
+ * 
+ * This will start the dac driver to send continuously the samples
+ * it has in its buffer.
+ *
+ * @param dev       DAC device structure.
+ * @param channel   Number of the channel to be used.
+ *
+ * @retval -ENOTSUP If not supported.
+ * @retval 0	    If successful, negative errno code otherwise.
+ */
+static inline int dac_start_continuous(const struct device *dev,
+					uint8_t channel)
+{
+#ifdef CONFIG_DAC_CONTINUOUS_API
+	const struct dac_driver_api *api =
+				(const struct dac_driver_api *)dev->api;
+
+	return api->start_continuous(dev, channel);
+#else
+	return -ENOTSUP;
+#endif
+}
+
+/**
+ * @brief Start DAC in continuous mode.
+ *
+ * @param dev       DAC device structure.
+ * @param channel   Number of the channel to be used.
+ * @param data      samples to send.
+ * @param size      size of data buffer.
+ *
+ * @retval -ENOTSUP If not supported.
+ * @retval number of bytes sent,	    If successful.
+ */
+static inline int dac_fill_buffer(const struct device *dev, uint8_t channel,
+					uint8_t *data, size_t size)
+{
+#ifdef CONFIG_DAC_CONTINUOUS_API
+	const struct dac_driver_api *api =
+				(const struct dac_driver_api *)dev->api;
+
+	return api->fill_buffer(dev, channel, data, size);
+#else
+	return -ENOTSUP;
+#endif
 }
 
 /**
