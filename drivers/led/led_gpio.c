@@ -24,7 +24,6 @@ struct led_gpio_config {
 	const struct gpio_dt_spec *led;
 };
 
-
 static int led_gpio_set_brightness(const struct device *dev, uint32_t led, uint8_t value)
 {
 
@@ -37,7 +36,7 @@ static int led_gpio_set_brightness(const struct device *dev, uint32_t led, uint8
 
 	led_gpio = &config->led[led];
 
-	return gpio_pin_set(led_gpio->port, led_gpio->pin, (value >= 50));
+	return gpio_pin_set(led_gpio->port, led_gpio->pin, value > 0);
 }
 
 static int led_gpio_on(const struct device *dev, uint32_t led)
@@ -64,8 +63,7 @@ static int led_gpio_init(const struct device *dev)
 		const struct gpio_dt_spec *led = &config->led[i];
 
 		if (device_is_ready(led->port)) {
-			err = gpio_pin_configure(led->port, led->pin,
-						 led->dt_flags | GPIO_OUTPUT_INACTIVE);
+			err = gpio_pin_configure_dt(led, GPIO_OUTPUT_INACTIVE);
 
 			if (err) {
 				LOG_ERR("Cannot configure GPIO (err %d)", err);
