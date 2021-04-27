@@ -81,12 +81,14 @@
 	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
 		     &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
 	status = "okay";
+	dmas = <&dma1 3 1 0x20440 0x00>;/*dma1 通道3 请求1 内存到外设 外设地址不自增 内存地址自增 高优先级*/
+	dma-names = "tx";
 
 	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 	lcd_st7735:st7735@0{
 			compatible = "sitronix,st7735";
 			reg=<0>;
-			spi-max-frequency = <120000000>; /* 8MHz */
+			spi-max-frequency = <80000000>; /* 8MHz */
 			label = "ST7735";
 			reset-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
 			blk_gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
@@ -94,6 +96,9 @@
 			width = <129>;
 			height = <160>;
 	};
+};
+&dma1 {
+	status = "okay";
 };
 
 &spi2 {

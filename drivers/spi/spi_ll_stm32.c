@@ -822,6 +822,7 @@ static int spi_stm32_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_SPI_STM32_DMA
+	#pragma message("======spi dma========") 
 	if (data->dma_tx.dma_name != NULL) {
 		/* Get the binding to the DMA device */
 		data->dma_tx.dma_dev = device_get_binding(data->dma_tx.dma_name);

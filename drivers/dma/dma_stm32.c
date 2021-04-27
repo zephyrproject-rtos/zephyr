@@ -458,7 +458,7 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	 * the with dma V2 and dma mux,
 	 * the request ID is stored in the dma_slot
 	 */
-	DMA_InitStruct.PeriphRequest = config->dma_slot;
+	// DMA_InitStruct.PeriphRequest = config->dma_slot;
 #endif
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
