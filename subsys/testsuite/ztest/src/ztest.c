@@ -372,8 +372,7 @@ void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 
 	init_testing();
 
-	PRINT("Running test suite %s\n", name);
-	PRINT_LINE;
+	TC_SUITE_START(name);
 	while (suite->test) {
 		fail += run_test(suite);
 		suite++;
@@ -382,11 +381,7 @@ void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 			break;
 		}
 	}
-	if (fail) {
-		TC_PRINT("Test suite %s failed.\n", name);
-	} else {
-		TC_PRINT("Test suite %s succeeded\n", name);
-	}
+	TC_SUITE_END(name, (fail > 0 ? TC_FAIL : TC_PASS));
 
 	test_status = (test_status || fail) ? 1 : 0;
 }
