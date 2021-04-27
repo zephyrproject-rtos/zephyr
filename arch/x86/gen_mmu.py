@@ -93,6 +93,7 @@ def bit(pos):
 FLAG_P = bit(0)
 FLAG_RW = bit(1)
 FLAG_US = bit(2)
+FLAG_CD = bit(4)
 FLAG_SZ = bit(7)
 FLAG_G = bit(8)
 FLAG_XD = bit(63)
@@ -158,6 +159,9 @@ def dump_flags(flags):
 
     if flags & FLAG_SZ:
         ret += "SZ "
+
+    if flags & FLAG_CD:
+        ret += "CD "
 
     return ret.strip()
 
@@ -289,7 +293,7 @@ class Pdpt(MMUTable):
     addr_mask = 0x7FFFFFFFFFFFF000
     type_code = 'Q'
     num_entries = 512
-    supported_flags = INT_FLAGS | FLAG_SZ
+    supported_flags = INT_FLAGS | FLAG_SZ | FLAG_CD
 
 class PdptPAE(Pdpt):
     """Page directory pointer table for PAE"""
@@ -301,7 +305,7 @@ class Pd(MMUTable):
     addr_mask = 0xFFFFF000
     type_code = 'I'
     num_entries = 1024
-    supported_flags = INT_FLAGS | FLAG_SZ
+    supported_flags = INT_FLAGS | FLAG_SZ | FLAG_CD
 
 class PdXd(Pd):
     """Page directory for either PAE or IA-32e"""
@@ -316,7 +320,7 @@ class Pt(MMUTable):
     addr_mask = 0xFFFFF000
     type_code = 'I'
     num_entries = 1024
-    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G |
+    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_CD |
                        FLAG_IGNORED0 | FLAG_IGNORED1)
 
 class PtXd(Pt):
@@ -324,7 +328,7 @@ class PtXd(Pt):
     addr_mask = 0x07FFFFFFFFFFF000
     type_code = 'Q'
     num_entries = 512
-    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_XD |
+    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_XD | FLAG_CD |
                        FLAG_IGNORED0 | FLAG_IGNORED1 | FLAG_IGNORED2)
 
 
@@ -610,12 +614,13 @@ def parse_args():
     parser.add_argument("--map", action='append',
                         help=textwrap.dedent('''\
                             Map extra memory:
-                            <physical address>,<size>[,<flags:LUWX>[,<virtual adderss>]]
+                            <physical address>,<size>[,<flags:LUWXD>[,<virtual adderss>]]
                             where flags can be empty or combination of:
                                 L - Large page (2MB or 4MB),
                                 U - Userspace accessible,
                                 W - Writable,
-                                X - Executable.
+                                X - Executable,
+                                D - Cache disabled.
                             Default is
                                 small (4KB) page,
                                 supervisor only,
@@ -625,7 +630,7 @@ def parse_args():
     parser.add_argument("-v", "--verbose", action="count",
                         help="Print extra debugging information")
     args = parser.parse_args()
-    if "VERBOSE" in os.environ and args.verbose == 0:
+    if "VERBOSE" in os.environ:
         args.verbose = 1
 
 
@@ -677,7 +682,7 @@ def map_extra_regions(pt):
             map_flags = elements[2]
 
             # Check for allowed flags
-            if not bool(re.match('^[LUWX]*$', map_flags)):
+            if not bool(re.match('^[LUWXD]*$', map_flags)):
                 error("Unrecognized flags: %s" % map_flags)
 
             flags = FLAG_P | ENTRY_XD
@@ -690,6 +695,8 @@ def map_extra_regions(pt):
             if 'L' in map_flags:
                 flags |=  FLAG_SZ
                 one_map['large_page'] = True
+            if 'D' in map_flags:
+                flags |= FLAG_CD
 
         one_map['flags'] = flags
 

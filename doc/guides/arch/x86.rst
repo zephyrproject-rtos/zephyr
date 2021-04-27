@@ -112,6 +112,8 @@ The argument ``--map`` takes the following value:
 
   - ``X``: Allow execution.
 
+  - ``D``: Cache disabled.
+
     - Default is small page (4KB), supervisor only, read only, and
       execution disabled.
 
