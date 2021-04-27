@@ -179,6 +179,10 @@ static inline int z_impl_led_get_info(const struct device *dev, uint32_t led,
  * This optional routine sets the brightness of a LED to the given value.
  * Calling this function after led_blink() won't affect blinking.
  *
+ * LEDs which can only be turned on or off may provide this function.
+ * These should simply turn the LED on if @p value is nonzero, and off
+ * if @p value is zero.
+ *
  * @param dev LED device
  * @param led LED number
  * @param value Brightness value to set in percent
