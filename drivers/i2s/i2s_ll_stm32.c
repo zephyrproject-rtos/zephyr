@@ -873,7 +873,7 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 		.channel_direction = src_dev##_TO_##dest_dev,		\
 		.source_data_size = 2,  /* 16bit default */		\
 		.dest_data_size = 2,    /* 16bit default */		\
-		.source_burst_length = 0, /* SINGLE transfer */		\
+		.source_burst_length = 1, /* SINGLE transfer */		\
 		.dest_burst_length = 1,					\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
 	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
