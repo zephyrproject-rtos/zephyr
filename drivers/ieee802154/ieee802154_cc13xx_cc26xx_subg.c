@@ -759,7 +759,7 @@ static struct ieee802154_cc13xx_cc26xx_subg_data
 #if defined(CONFIG_NET_L2_IEEE802154_SUB_GHZ)
 NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx_subg,
 		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_DRV_NAME,
-		ieee802154_cc13xx_cc26xx_subg_init, device_pm_control_nop,
+		ieee802154_cc13xx_cc26xx_subg_init, NULL,
 		&ieee802154_cc13xx_cc26xx_subg_data, NULL,
 		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
 		&ieee802154_cc13xx_cc26xx_subg_radio_api, IEEE802154_L2,
@@ -768,7 +768,7 @@ NET_DEVICE_INIT(ieee802154_cc13xx_cc26xx_subg,
 DEVICE_DEFINE(ieee802154_cc13xx_cc26xx_subg,
 		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_DRV_NAME,
 		ieee802154_cc13xx_cc26xx_subg_init,
-		device_pm_control_nop,
+		NULL,
 		&ieee802154_cc13xx_cc26xx_subg_data, NULL, POST_KERNEL,
 		CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ_INIT_PRIO,
 		&ieee802154_cc13xx_cc26xx_subg_radio_api);
