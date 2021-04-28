@@ -329,7 +329,7 @@ static struct adc_it8xxx2_data adc_it8xxx2_data_0 = {
 		ADC_CONTEXT_INIT_SYNC(adc_it8xxx2_data_0, ctx),
 };
 DEVICE_DT_INST_DEFINE(0, adc_it8xxx2_init,
-				device_pm_control_nop,
+				NULL,
 				&adc_it8xxx2_data_0,
 				NULL, POST_KERNEL,
 				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
