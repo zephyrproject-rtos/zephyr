@@ -34,6 +34,26 @@ config ARM_CUSTOM_INTERRUPT_CONTROLLER
 	       family cores. The Cortex-M family cores are always equipped with
 	       the ARM Nested Vectored Interrupt Controller (NVIC).
 
+config CODE_DATA_RELOCATION
+	bool "Relocate code/data sections"
+	depends on CPU_CORTEX_M
+	help
+	  When selected this will relocate .text, data and .bss sections from
+	  the specified files and places it in the required memory region. The
+	  files should be specified in the CMakeList.txt file with
+	  a cmake API zephyr_code_relocate().
+
+config CODE_DATA_RELOCATION_SRAM
+	bool "Relocate code/data sections to SRAM"
+	depends on CPU_CORTEX_M
+	select CODE_DATA_RELOCATION
+	help
+	  When selected this will relocate .text, data and .bss sections from
+	  the specified files and places it in SRAM. The files should be specified
+	  in the CMakeList.txt file with a cmake API zephyr_code_relocate(). This
+	  config is used to create an MPU entry for the SRAM space used for code
+	  relocation.
+
 rsource "core/aarch32/Kconfig"
 
 endmenu
