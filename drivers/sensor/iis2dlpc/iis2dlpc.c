@@ -392,7 +392,7 @@ static int iis2dlpc_init(const struct device *dev)
 #define IIS2DLPC_DEVICE_INIT(inst)					\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    iis2dlpc_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &iis2dlpc_data_##inst,			\
 			    &iis2dlpc_config_##inst,			\
 			    POST_KERNEL,				\
