@@ -916,7 +916,7 @@ static struct i2s_stm32_data i2s_stm32_data_##index = {			\
 		I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL)),\
 };									\
 DEVICE_DT_DEFINE(DT_NODELABEL(i2s##index),				\
-		    &i2s_stm32_initialize, device_pm_control_nop,	\
+		    &i2s_stm32_initialize, NULL,			\
 		    &i2s_stm32_data_##index,				\
 		    &i2s_stm32_config_##index, POST_KERNEL,		\
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);	\

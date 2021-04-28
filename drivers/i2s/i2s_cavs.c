@@ -872,7 +872,7 @@ static const struct i2s_driver_api i2s_cavs_driver_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			i2s_cavs_initialize, device_pm_control_nop,	\
+			i2s_cavs_initialize, NULL,			\
 			&i2s_cavs_data_##n,				\
 			&i2s_cavs_config_##n,				\
 			POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,		\
