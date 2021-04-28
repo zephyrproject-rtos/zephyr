@@ -218,7 +218,7 @@ static const struct clock_control_driver_api rcar_cpg_mssr_api = {
 								    \
 	DEVICE_DT_INST_DEFINE(inst,				    \
 			      &rcar_cpg_mssr_init,		    \
-			      device_pm_control_nop,		    \
+			      NULL,				    \
 			      NULL, &rcar_mssr##inst##_config,	    \
 			      PRE_KERNEL_1,			    \
 			      CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,  \
