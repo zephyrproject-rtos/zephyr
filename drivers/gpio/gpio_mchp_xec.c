@@ -346,7 +346,7 @@ static struct gpio_xec_data gpio_xec_port000_036_data;
 
 DEVICE_DT_DEFINE(DT_NODELABEL(gpio_000_036),
 		    gpio_xec_port000_036_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &gpio_xec_port000_036_data, &gpio_xec_port000_036_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_xec_driver_api);
@@ -392,7 +392,7 @@ static struct gpio_xec_data gpio_xec_port040_076_data;
 
 DEVICE_DT_DEFINE(DT_NODELABEL(gpio_040_076),
 		    gpio_xec_port040_076_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &gpio_xec_port040_076_data, &gpio_xec_port040_076_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_xec_driver_api);
@@ -438,7 +438,7 @@ static struct gpio_xec_data gpio_xec_port100_136_data;
 
 DEVICE_DT_DEFINE(DT_NODELABEL(gpio_100_136),
 		    gpio_xec_port100_136_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &gpio_xec_port100_136_data, &gpio_xec_port100_136_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_xec_driver_api);
@@ -484,7 +484,7 @@ static struct gpio_xec_data gpio_xec_port140_176_data;
 
 DEVICE_DT_DEFINE(DT_NODELABEL(gpio_140_176),
 		    gpio_xec_port140_176_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &gpio_xec_port140_176_data, &gpio_xec_port140_176_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_xec_driver_api);
@@ -530,7 +530,7 @@ static struct gpio_xec_data gpio_xec_port200_236_data;
 
 DEVICE_DT_DEFINE(DT_NODELABEL(gpio_200_236),
 		    gpio_xec_port200_236_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &gpio_xec_port200_236_data, &gpio_xec_port200_236_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_xec_driver_api);
@@ -576,7 +576,7 @@ static struct gpio_xec_data gpio_xec_port240_276_data;
 
 DEVICE_DT_DEFINE(DT_NODELABEL(gpio_240_276),
 		    gpio_xec_port240_276_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &gpio_xec_port240_276_data, &gpio_xec_port240_276_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_xec_driver_api);
