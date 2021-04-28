@@ -413,9 +413,9 @@ class ZephyrBinaryRunner(abc.ABC):
         if caps.flash_addr:
             parser.add_argument('--dt-flash', default='n', choices=_YN_CHOICES,
                                 action=_DTFlashAction,
-                                help='''If 'yes', use configuration generated
-                                by device tree (DT) to compute flash
-                                addresses.''')
+                                help='''If 'yes', try to use flash address
+                                information from devicetree when flash
+                                addresses are unknown (e.g. when flashing a .bin)''')
         else:
             parser.add_argument('--dt-flash', help=argparse.SUPPRESS)
 
