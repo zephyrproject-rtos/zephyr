@@ -294,7 +294,7 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &mcux_adc16_init,			\
-			    device_pm_control_nop, &mcux_adc16_data_##n,\
+			    NULL, &mcux_adc16_data_##n,			\
 			    &mcux_adc16_config_##n, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &mcux_adc16_driver_api);			\
