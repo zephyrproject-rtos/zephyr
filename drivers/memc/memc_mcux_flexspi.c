@@ -163,7 +163,7 @@ static int memc_flexspi_init(const struct device *dev)
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			      memc_flexspi_init,			\
-			      device_pm_control_nop,			\
+			      NULL,					\
 			      &memc_flexspi_data_##n,			\
 			      &memc_flexspi_config_##n,			\
 			      POST_KERNEL,				\
