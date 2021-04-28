@@ -362,6 +362,6 @@ static const struct sam_xdmac_dev_cfg dma0_sam_config = {
 
 static struct sam_xdmac_dev_data dma0_sam_data;
 
-DEVICE_DT_INST_DEFINE(0, &sam_xdmac_initialize, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &sam_xdmac_initialize, NULL,
 		    &dma0_sam_data, &dma0_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &sam_xdmac_driver_api);

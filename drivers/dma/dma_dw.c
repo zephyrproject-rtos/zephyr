@@ -410,7 +410,7 @@ static const struct dma_driver_api dw_dma_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    &dw_dma_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &dw_dma##inst##_data,			\
 			    &dw_dma##inst##_config, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
