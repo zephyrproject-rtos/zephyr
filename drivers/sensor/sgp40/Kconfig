@@ -1,0 +1,10 @@
+# SGP40 multipixel gas sensor configuration options
+
+# Copyright (c) 2021 Leonard Pollak
+# SPDX-License-Identifier: Apache-2.0
+
+config SGP40
+	bool "SGP40 Multipixel Gas Sensor"
+	depends on I2C
+	help
+	  Enable driver for SGP40 Multipixel Gas Sensor.
