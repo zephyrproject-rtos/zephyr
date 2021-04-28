@@ -306,7 +306,7 @@ static const struct cy8c95xx_config cy8c95xx_##idx##_cfg = { \
 static struct cy8c95xx_drv_data cy8c95xx_##idx##_drvdata = { \
 	.lock = &cy8c95xx_lock, \
 }; \
-DEVICE_DT_INST_DEFINE(idx, cy8c95xx_init, device_pm_control_nop, \
+DEVICE_DT_INST_DEFINE(idx, cy8c95xx_init, NULL, \
 				&cy8c95xx_##idx##_drvdata, &cy8c95xx_##idx##_cfg, \
 				POST_KERNEL, CONFIG_GPIO_CY8C95XX_INIT_PRIORITY, \
 				&api_table);
