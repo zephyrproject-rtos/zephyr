@@ -41,7 +41,6 @@ description: |
                0x1: medium
                0x2: high
                0x3: very high
-     4. features: NOT USED by dmamux
    exemple for stm32wb55x
      dmamux1: dmamux@40020800 {
          compatible = "st,stm32-dmamux";
@@ -55,10 +54,11 @@ description: |
     for client SPI of stm32wb55x
      spi1: spi@40013000 {
          compatible = "st,stm32-spi";
-         dmas = <&dmamux1 11 7 0x20440 0
-         &dmamux1 1 6 0x20480 0>;
+         dmas = <&dmamux1 11 7 0x20440
+                  &dmamux1 1 6 0x20480>;
          dma-names = "tx", "rx";
         };
+
 compatible: "st,stm32-dmamux"
 
 include: dmamux-controller.yaml
@@ -71,7 +71,7 @@ properties:
       required: true
 
     "#dma-cells":
-      const: 4
+      const: 3
 
 # Parameter syntax of stm32 follows the dma client dts syntax
 # in the Linux kernel declared in
@@ -81,4 +81,3 @@ dma-cells:
   - channel
   - slot
   - channel-config
-  - features
