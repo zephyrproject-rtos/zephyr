@@ -72,11 +72,6 @@
 		pll: pll {
 			#clock-cells = <0>;
 			compatible = "st,stm32l4-pll-clock";
-			div-m = <1>;
-			mul-n = <1>;
-			div-p = <7>;
-			div-q = <2>;
-			div-r = <2>;
 			status = "disabled";
 		};
 	};
