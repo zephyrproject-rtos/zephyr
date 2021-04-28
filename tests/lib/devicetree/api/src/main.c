@@ -1315,7 +1315,7 @@ static const struct gpio_driver_api test_api;
 	};							\
 	DEVICE_DT_DEFINE(INST(num),				\
 			    test_gpio_init,			\
-			    device_pm_control_nop,		\
+			    NULL,				\
 			    &gpio_data_##num,			\
 			    &gpio_info_##num,			\
 			    POST_KERNEL,			\
