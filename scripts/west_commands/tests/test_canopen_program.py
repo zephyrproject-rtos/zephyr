@@ -30,10 +30,12 @@ TEST_CASES = [(n, x, p, c, o, t)
               for o in (False, True)
               for t in range(1, 3)]
 
+os_path_isfile = os.path.isfile
+
 def os_path_isfile_patch(filename):
     if filename == RC_KERNEL_BIN:
         return True
-    return os.path.isfile(filename)
+    return os_path_isfile(filename)
 
 @pytest.mark.parametrize('test_case', TEST_CASES)
 @patch('runners.canopen_program.CANopenProgramDownloader')

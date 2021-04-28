@@ -55,10 +55,12 @@ def find_device_patch():
 def require_patch(program):
     assert program in [DFU_UTIL, TEST_EXE]
 
+os_path_isfile = os.path.isfile
+
 def os_path_isfile_patch(filename):
     if filename == RC_KERNEL_BIN:
         return True
-    return os.path.isfile(filename)
+    return os_path_isfile(filename)
 
 def id_fn(tc):
     return 'exe={},alt={},dfuse_config={},img={}'.format(*tc)
