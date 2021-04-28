@@ -953,7 +953,7 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 	DEVICE_DT_INST_DEFINE(			   \
 		n,				   \
 		&rf2xx_init,			   \
-		device_pm_control_nop,		   \
+		NULL,				   \
 		&rf2xx_ctx_data_##n,		   \
 		&rf2xx_ctx_config_##n,		   \
 		POST_KERNEL,			   \
@@ -964,7 +964,7 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 	NET_DEVICE_DT_INST_DEFINE(		   \
 		n,				   \
 		&rf2xx_init,			   \
-		device_pm_control_nop,		   \
+		NULL,				   \
 		&rf2xx_ctx_data_##n,		   \
 		&rf2xx_ctx_config_##n,		   \
 		CONFIG_IEEE802154_RF2XX_INIT_PRIO, \
