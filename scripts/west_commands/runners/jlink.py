@@ -13,8 +13,7 @@ import subprocess
 import sys
 import tempfile
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, \
-    BuildConfiguration
+from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 try:
     from pylink.library import Library
