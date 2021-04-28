@@ -674,7 +674,7 @@ static struct dma_stm32_data dma_stm32_data_##index = {			\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
 		    &dma_stm32_init,					\
-		    device_pm_control_nop,				\
+		    NULL,						\
 		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &dma_funcs)
