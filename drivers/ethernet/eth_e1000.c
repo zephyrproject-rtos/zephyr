@@ -324,7 +324,7 @@ static const struct ethernet_api e1000_api = {
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    e1000_probe,
-		    device_pm_control_nop,
+		    NULL,
 		    &e1000_dev,
 		    NULL,
 		    CONFIG_ETH_INIT_PRIORITY,
@@ -448,7 +448,7 @@ static int ptp_e1000_init(const struct device *port)
 }
 
 DEVICE_DEFINE(e1000_ptp_clock, PTP_CLOCK_NAME, ptp_e1000_init,
-	      device_pm_control_nop, &ptp_e1000_context, NULL, POST_KERNEL,
+	      NULL, &ptp_e1000_context, NULL, POST_KERNEL,
 	      CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 #endif /* CONFIG_ETH_E1000_PTP_CLOCK */

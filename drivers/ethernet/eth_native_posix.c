@@ -634,7 +634,7 @@ UTIL_LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, _)
 #define DEFINE_ETH_DEVICE(x, _)						\
 	ETH_NET_DEVICE_INIT(eth_native_posix_##x,			\
 			    CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,	\
-			    eth_init, device_pm_control_nop,		\
+			    eth_init, NULL,				\
 			    &eth_context_data_##x,			\
 			    NULL,					\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
@@ -733,7 +733,7 @@ UTIL_LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, PTP_INIT_FUNC, _)
 	DEVICE_DEFINE(eth_native_posix_ptp_clock_##x,			\
 			    PTP_CLOCK_NAME "_" #x,			\
 			    ptp_init_##x,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &ptp_context_##x,				\
 			    NULL,					\
 			    POST_KERNEL,				\

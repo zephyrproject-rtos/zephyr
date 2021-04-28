@@ -679,6 +679,6 @@ int eth_init(const struct device *dev)
 static struct eth_context eth_0_context;
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
-		eth_init, device_pm_control_nop, &eth_0_context,
+		eth_init, NULL, &eth_0_context,
 		NULL /*&eth_config_0*/, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		NET_ETH_MTU /*MTU*/);
