@@ -188,7 +188,7 @@ static int eth_init(const struct device *dev)
 }
 
 ETH_NET_DEVICE_INIT(eth_test, "eth_test",
-		    eth_init, device_pm_control_nop,
+		    eth_init, NULL,
 		    &eth_context, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs, NET_ETH_MTU);
 
@@ -251,7 +251,7 @@ NET_DEVICE_INIT_INSTANCE(eth_test_dummy1,
 			 "iface1",
 			 iface1,
 			 net_iface_dev_init,
-			 device_pm_control_nop,
+			 NULL,
 			 &net_iface1_data,
 			 NULL,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -264,7 +264,7 @@ NET_DEVICE_INIT_INSTANCE(eth_test_dummy2,
 			 "iface2",
 			 iface2,
 			 net_iface_dev_init,
-			 device_pm_control_nop,
+			 NULL,
 			 &net_iface2_data,
 			 NULL,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

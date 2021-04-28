@@ -185,7 +185,7 @@ static struct dummy_api net_tcp_if_api = {
 };
 
 NET_DEVICE_INIT(net_tcp_test, "net_tcp_test",
-		net_tcp_dev_init, device_pm_control_nop,
+		net_tcp_dev_init, NULL,
 		&net_tcp_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_tcp_if_api, DUMMY_L2,
