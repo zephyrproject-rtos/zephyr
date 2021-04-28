@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define DT_DRV_COMPAT st_stm32_dma_v1
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2)
 #define DT_DRV_COMPAT st_stm32_dma_v2
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis)
+#define DT_DRV_COMPAT st_stm32_dma_v2bis
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
