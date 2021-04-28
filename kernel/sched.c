@@ -930,7 +930,7 @@ void *z_get_next_switch_handle(void *interrupted)
 }
 #endif
 
-ALWAYS_INLINE void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
+void z_priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
 {
 	struct k_thread *t;
 
