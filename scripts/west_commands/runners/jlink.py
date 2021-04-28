@@ -33,7 +33,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, device,
                  commander=DEFAULT_JLINK_EXE,
-                 flash_addr=0x0, erase=True, reset_after_load=False,
+                 dt_flash=True, erase=True, reset_after_load=False,
                  iface='swd', speed='auto',
                  gdbserver='JLinkGDBServer',
                  gdb_host='',
@@ -46,7 +46,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.device = device
         self.commander = commander
-        self.flash_addr = flash_addr
+        self.dt_flash = dt_flash
         self.erase = erase
         self.reset_after_load = reset_after_load
         self.gdbserver = gdbserver
@@ -104,11 +104,10 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
-        build_conf = BuildConfiguration(cfg.build_dir)
-        flash_addr = cls.get_flash_address(args, build_conf)
         return JLinkBinaryRunner(cfg, args.device,
                                  commander=args.commander,
-                                 flash_addr=flash_addr, erase=args.erase,
+                                 dt_flash=args.dt_flash,
+                                 erase=args.erase,
                                  reset_after_load=args.reset_after_load,
                                  iface=args.iface, speed=args.speed,
                                  gdbserver=args.gdbserver,
@@ -227,16 +226,20 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # Get the build artifact to flash, prefering .hex over .bin
         if self.hex_name is not None and os.path.isfile(self.hex_name):
             flash_file = self.hex_name
-            flash_fmt = 'loadfile {}'
+            flash_cmd = f'loadfile {self.hex_name}'
         elif self.bin_name is not None and os.path.isfile(self.bin_name):
+            if self.dt_flash:
+                flash_addr = self.flash_address_from_build_conf(self.build_conf)
+            else:
+                flash_addr = 0
             flash_file = self.bin_name
-            flash_fmt = 'loadfile {} 0x{:x}'
+            flash_cmd = f'loadfile {self.bin_name} 0x{flash_addr:x}'
         else:
             err = 'Cannot flash; no hex ({}) or bin ({}) files found.'
             raise ValueError(err.format(self.hex_name, self.bin_name))
 
         # Flash the selected build artifact
-        lines.append(flash_fmt.format(flash_file, self.flash_addr))
+        lines.append(flash_cmd)
 
         if self.reset_after_load:
             lines.append('r') # Reset and halt the target
