@@ -3,13 +3,14 @@ common:
   integration_platforms:
     - mps2_an385
 tests:
-  application_development.cpp.libcxx:
+  cpp.libcxx:
     platform_exclude: qemu_x86_coverage
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
-  application_development.cpp.libcxx.exceptions:
-    platform_exclude: qemu_x86_coverage
+  cpp.libcxx.exceptions:
+    # FIXME: change when issue is resolved #32448
+    platform_allow: mps2_an385
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
