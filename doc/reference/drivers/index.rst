@@ -326,7 +326,7 @@ Then when the particular instance is declared:
   static struct my_data_0;
 
   DEVICE_DEFINE(my_driver_0, MY_DRIVER_0_NAME, my_driver_init,
-                device_pm_control_nop, &my_data_0, &my_driver_config_0,
+                NULL, &my_data_0, &my_driver_config_0,
                 POST_KERNEL, MY_DRIVER_0_PRIORITY, &my_api_funcs);
 
   #endif /* CONFIG_MY_DRIVER_0 */
