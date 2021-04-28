@@ -457,28 +457,33 @@ class ZephyrBinaryRunner(abc.ABC):
                   args: argparse.Namespace) -> 'ZephyrBinaryRunner':
         '''Hook for instance creation from command line arguments.'''
 
-    @classmethod
-    def get_flash_address(cls, args: argparse.Namespace,
+    @staticmethod
+    def get_flash_address(args: argparse.Namespace,
                           build_conf: BuildConfiguration,
                           default: int = 0x0) -> int:
         '''Helper method for extracting a flash address.
 
-        If args.dt_flash is true, get the address from the
-        BoardConfiguration, build_conf. (If
-        CONFIG_HAS_FLASH_LOAD_OFFSET is n in that configuration, it
-        returns CONFIG_FLASH_BASE_ADDRESS. Otherwise, it returns
-        CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET.)
+        If args.dt_flash is true, returns the address obtained from
+        ZephyrBinaryRunner.flash_address_from_build_conf(build_conf).
 
         Otherwise (when args.dt_flash is False), the default value is
         returned.'''
         if args.dt_flash:
-            if build_conf['CONFIG_HAS_FLASH_LOAD_OFFSET']:
-                return (build_conf['CONFIG_FLASH_BASE_ADDRESS'] +
-                        build_conf['CONFIG_FLASH_LOAD_OFFSET'])
-            else:
-                return build_conf['CONFIG_FLASH_BASE_ADDRESS']
+            return ZephyrBinaryRunner.flash_address_from_build_conf(build_conf)
         else:
             return default
+
+    @staticmethod
+    def flash_address_from_build_conf(build_conf: BuildConfiguration):
+        '''If CONFIG_HAS_FLASH_LOAD_OFFSET is n in build_conf,
+        return the CONFIG_FLASH_BASE_ADDRESS value. Otherwise, return
+        CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET.
+        '''
+        if build_conf['CONFIG_HAS_FLASH_LOAD_OFFSET']:
+            return (build_conf['CONFIG_FLASH_BASE_ADDRESS'] +
+                    build_conf['CONFIG_FLASH_LOAD_OFFSET'])
+        else:
+            return build_conf['CONFIG_FLASH_BASE_ADDRESS']
 
     def run(self, command: str, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver', 'attach').
