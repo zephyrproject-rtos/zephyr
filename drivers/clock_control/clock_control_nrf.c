@@ -702,7 +702,7 @@ static const struct nrf_clock_control_config config = {
 	}
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(clock), clk_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(DT_NODELABEL(clock), clk_init, NULL,
 		 &data, &config,
 		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		 &clock_control_api);
