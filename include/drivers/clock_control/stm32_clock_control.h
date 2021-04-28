@@ -121,7 +121,7 @@
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_lse), fixed_clock, okay)
-#define STM32_LSE_CLOCK		DT_PROP(DT_NODELABEL(clk_hse), clock_frequency)
+#define STM32_LSE_CLOCK		DT_PROP(DT_NODELABEL(clk_lse), clock_frequency)
 #else
 #define STM32_LSE_CLOCK		CONFIG_CLOCK_STM32_LSE
 #endif
