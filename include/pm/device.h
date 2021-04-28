@@ -73,6 +73,24 @@ struct device;
  */
 #define PM_DEVICE_OFF_STATE             5
 
+/** @def PM_DEVICE_RESUMING_STATE
+ *
+ * @brief device is resuming to active state.
+ *
+ * @details - The device was previously suspended and is now
+ * transitioning to become ACTIVE.
+ */
+#define PM_DEVICE_RESUMING_STATE             6
+
+/** @def PM_DEVICE_SUSPENDING_STATE
+ *
+ * @brief device is suspending.
+ *
+ * @details - The device is currently transitioning from ACTIVE
+ * to SUSPEND.
+ */
+#define PM_DEVICE_SUSPENDING_STATE             7
+
 /* Constants defining support device power commands */
 #define PM_DEVICE_STATE_SET       1
 #define PM_DEVICE_STATE_GET       2
