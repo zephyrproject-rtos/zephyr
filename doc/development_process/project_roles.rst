@@ -24,7 +24,7 @@ particular code base areas or subsystems.
 
 
 Contributor
-###########
++++++++++++
 
 A *Contributor* is a developer who wishes to contribute to the project,
 at any level. Contributors who show dedication and skill are rewarded with
@@ -50,7 +50,7 @@ Contributors are granted the following rights and responsibilities:
   (https://github.com/zephyrproject-rtos/zephyr/blob/master/CODE_OF_CONDUCT.md)
 
 Collaborator
-############
+++++++++++++
 
 A *Collaborator* is a Contributor who is also responsible for the maintenance
 of Zephyr source code. Their opinions weigh more when decisions are made, in a
@@ -70,7 +70,7 @@ in addition to those listed for Contributors:
   process, when those happen.
 
 Maintainer
-##########
+++++++++++
 
 A *Maintainer* is a Collaborator who is also responsible for knowing,
 directing and anticipating the needs of a given zephyr source code area.
@@ -105,10 +105,10 @@ Role Retirement
 
 
 Teams and Supporting Activities
-*******************************
+###############################
 
 Assignee
-########
+++++++++
 
 An *Assignee* is one of the maintainers of a subsystem or code being changed.
 Assignees are set either automatically based on the code being changed or set
@@ -125,7 +125,7 @@ the latter is not possible.
 * Responsibility to drive the escalation process
 
 Release Engineering Team
-########################
+++++++++++++++++++++++++
 
 A team of active Maintainers involved in multiple areas.
 
@@ -161,13 +161,53 @@ Joining the Release Engineering team
   geographically distributed across multiple locations and
   time-zones).
 
-Release Activity
-################
 
-.. figure:: img/img_release_activity.png
-     :width: 663px
-     :align: center
-     :alt: Release Activity
+Release Manager
++++++++++++++++
+
+A *Maintainer* responsible for driving a specific release to
+completion following the milestones and the roadmap of the
+project for this specific release.
+
+* TSC has to approve a release manager.
+
+A Release Manager is a member of the Release Engineering team and has
+the rights and responsibilities of that team in addition to
+the following:
+
+* Right to manage and coordinate all code merges after the
+  code freeze milestone (M3, see `program management overview <https://wiki.zephyrproject.org/Program-Management>`_.)
+* Responsibility to drive and coordinate the triaging process
+  for the release
+* Responsibility to create the release notes of the release
+* Responsibility to notify all stakeholders of the project,
+  including the community at large about the status of the
+  release in a timely manner.
+* Responsibility to coordinate with QA and validation and
+  verify changes either directly or through QA before major
+  changes and major milestones.
+
+Roles / Permissions
++++++++++++++++++++
+
+.. table:: Project Roles vs Github Permissions
+    :widths: 20 20 10 10 10 10 10
+    :align: center
+
+    ================ =================== =========== ================ =========== =========== ============
+          ..             ..               **Admin**  **Merge Rights**   Member      Owner     Collaborator
+    ---------------- ------------------- ----------- ---------------- ----------- ----------- ------------
+    Main Roles       Contributor                                                                 x
+    ---------------- ------------------- ----------- ---------------- ----------- ----------- ------------
+        ..           Collaborator                                       x
+    ---------------- ------------------- ----------- ---------------- ----------- ----------- ------------
+        ..           Maintainer                                         x
+    Supportive Roles QA/Validation                                      x                        x
+        ..           DevOps                   **x**
+        ..           System Admin             **x**                                      x
+        ..           Release Engineering      **x**      **x**          x
+
+    ================ =================== =========== ================ =========== =========== ============
 
 
 MAINTAINERS File
@@ -222,8 +262,16 @@ Generic guidelines for deciding and filling in the Maintainers' list
     implementation
 
 
+Release Activity
+################
+
+    .. figure:: img/img_release_activity.png
+         :width: 663px
+         :align: center
+         :alt: Release Activity
+
 Merge Criteria
-##############
+++++++++++++++
 
 * All continuous integration checks have passed
 
@@ -260,7 +308,7 @@ Merge Criteria
 * All required checks are passing
 
 Escalation Process
-##################
+++++++++++++++++++
 
 * Contributors may object to change requests or decisions made by
   Maintainers.
@@ -280,51 +328,3 @@ Escalation Process
     a binding resolution in the TSC.
   * Assignee to ensure the resolution of the escalation is
     reflected in the PR review.
-
-
-Release Manager
-###############
-
-A *Maintainer* responsible for driving a specific release to
-completion following the milestones and the roadmap of the
-project for this specific release.
-
-* TSC has to approve a release manager.
-
-A Release Manager is a member of the Release Engineering team and has
-the rights and responsibilities of that team in addition to
-the following:
-
-* Right to manage and coordinate all code merges after the
-  code freeze milestone (M3, see `program management overview <https://wiki.zephyrproject.org/Program-Management>`_.)
-* Responsibility to drive and coordinate the triaging process
-  for the release
-* Responsibility to create the release notes of the release
-* Responsibility to notify all stakeholders of the project,
-  including the community at large about the status of the
-  release in a timely manner.
-* Responsibility to coordinate with QA and validation and
-  verify changes either directly or through QA before major
-  changes and major milestones.
-
-Roles / Permissions
-###################
-
-.. table:: Project Roles vs Github Permissions
-    :widths: 20 20 10 10 10 10 10
-    :align: center
-
-    ================ =================== =========== ================ =========== =========== ============
-          ..             ..               **Admin**  **Merge Rights**   Member      Owner     Collaborator
-    ---------------- ------------------- ----------- ---------------- ----------- ----------- ------------
-    Main Roles       Contributor                                                                 x
-    ---------------- ------------------- ----------- ---------------- ----------- ----------- ------------
-        ..           Collaborator                                       x
-    ---------------- ------------------- ----------- ---------------- ----------- ----------- ------------
-        ..           Maintainer                                         x
-    Supportive Roles QA/Validation                                      x                        x
-        ..           DevOps                   **x**
-        ..           System Admin             **x**                                      x
-        ..           Release Engineering      **x**      **x**          x
-
-    ================ =================== =========== ================ =========== =========== ============
