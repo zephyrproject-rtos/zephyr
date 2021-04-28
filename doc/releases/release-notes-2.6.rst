@@ -309,6 +309,12 @@ Libraries / Subsystems
 
 * Power management
 
+  * ``device_pm_control_nop`` has been removed in favor of ``NULL`` when device
+    PM is not supported by a device. In order to make transition easier for
+    out-of-tree users a macro with the same name is provided as an alias to
+    ``NULL``. The macro is flagged as deprecated to make users aware of the
+    change.
+
 * Logging
 
 * LVGL
