@@ -431,7 +431,7 @@ void test_udp(void)
 	test_failed = false;
 
 	struct net_conn_handle *handlers[CONFIG_NET_MAX_CONN];
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface;
 	struct net_if_addr *ifaddr;
 	struct ud *ud;
 	int ret, i = 0;
@@ -456,6 +456,8 @@ void test_udp(void)
 
 	struct sockaddr_in peer_addr4;
 	struct in_addr in4addr_peer = { { { 192, 0, 2, 9 } } };
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
 	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_any);
 	any_addr6.sin6_family = AF_INET6;

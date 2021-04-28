@@ -460,7 +460,8 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	uint16_t len;
 	int remaining;
 
-	pkt = net_pkt_alloc_on_iface(net_if_get_default(), K_FOREVER);
+	pkt = net_pkt_alloc_on_iface(
+		net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)), K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -1153,8 +1154,10 @@ void test_loop(void)
 	}
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
-	net_6lo_set_context(net_if_get_default(), &ctx1);
-	net_6lo_set_context(net_if_get_default(), &ctx2);
+	net_6lo_set_context(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
+			    &ctx1);
+	net_6lo_set_context(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
+			    &ctx2);
 #endif
 
 	for (count = 0; count < ARRAY_SIZE(tests); count++) {

@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define STACK_SIZE 1024
 #define THREAD_PRIORITY K_PRIO_COOP(8)
 
+static struct net_if *default_iface;
+
 static ZTEST_BMEM int fd;
 static ZTEST_BMEM struct in6_addr addr_v6;
 static ZTEST_DMEM struct in_addr addr_v4 = { { { 192, 0, 2, 3 } } };
@@ -274,7 +276,7 @@ static void trigger_events(void)
 	struct net_if *iface;
 	int ret;
 
-	iface = net_if_get_default();
+	iface = default_iface;
 
 	net_ipv6_addr_create(&addr_v6, 0x2001, 0x0db8, 0, 0, 0, 0, 0, 0x0003);
 
@@ -342,10 +344,24 @@ static char *get_ip_addr(char *ipaddr, size_t len, sa_family_t family,
 	return buf;
 }
 
+static void iface_cb(struct net_if *iface, void *user_data)
+{
+	struct net_if **my_iface = user_data;
+
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		if (PART_OF_ARRAY(NET_IF_GET_NAME(eth_fake, 0), iface)) {
+			*my_iface = iface;
+		}
+	}
+}
+
 static void test_net_mgmt_setup(void)
 {
 	struct sockaddr_nm sockaddr;
 	int ret;
+
+	net_if_foreach(iface_cb, &default_iface);
+	zassert_not_null(default_iface, "Cannot find test interface");
 
 	fd = socket(AF_NET_MGMT, SOCK_DGRAM, NET_MGMT_EVENT_PROTO);
 	zassert_false(fd < 0, "Cannot create net_mgmt socket (%d)", errno);
@@ -363,7 +379,7 @@ static void test_net_mgmt_setup(void)
 	memset(&sockaddr, 0, sizeof(sockaddr));
 
 	sockaddr.nm_family = AF_NET_MGMT;
-	sockaddr.nm_ifindex = net_if_get_by_iface(net_if_get_default());
+	sockaddr.nm_ifindex = net_if_get_by_iface(default_iface);
 	sockaddr.nm_pid = (uintptr_t)k_current_get();
 	sockaddr.nm_mask = NET_EVENT_IPV6_DAD_SUCCEED |
 			   NET_EVENT_IPV6_ADDR_ADD |

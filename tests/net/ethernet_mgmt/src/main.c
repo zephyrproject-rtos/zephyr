@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
+
 #include <logging/log.h>
-LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
+LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr.h>
 
@@ -14,6 +16,14 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <net/ethernet_mgmt.h>
 
 #include <ztest.h>
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#else
+#define DBG(fmt, ...)
+#endif
+
+static struct net_if *default_iface;
 
 static const uint8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
 				       0x04,  0x05,  0x06 };
@@ -305,9 +315,49 @@ ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
 		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &eth_fake_api_funcs, NET_ETH_MTU);
 
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+static const char *iface2str(struct net_if *iface)
+{
+#ifdef CONFIG_NET_L2_ETHERNET
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		return "Ethernet";
+	}
+#endif
+
+#ifdef CONFIG_NET_L2_DUMMY
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+		return "Dummy";
+	}
+#endif
+
+	return "<unknown type>";
+}
+#endif
+
+static void iface_cb(struct net_if *iface, void *user_data)
+{
+	struct net_if **my_iface = user_data;
+
+	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
+	    net_if_get_by_iface(iface));
+
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		if (PART_OF_ARRAY(NET_IF_GET_NAME(eth_fake, 0), iface)) {
+			*my_iface = iface;
+		}
+	}
+}
+
+static void test_setup(void)
+{
+	net_if_foreach(iface_cb, &default_iface);
+
+	zassert_not_null(default_iface, "Cannot find test interface");
+}
+
 static void test_change_mac_when_up(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params;
 	int ret;
 
@@ -322,7 +372,7 @@ static void test_change_mac_when_up(void)
 
 static void test_change_mac_when_down(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params;
 	int ret;
 
@@ -345,7 +395,7 @@ static void test_change_mac_when_down(void)
 
 static void test_change_auto_neg(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params;
 	int ret;
 
@@ -359,7 +409,7 @@ static void test_change_auto_neg(void)
 
 static void test_change_to_same_auto_neg(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params;
 	int ret;
 
@@ -374,7 +424,7 @@ static void test_change_to_same_auto_neg(void)
 
 static void test_change_link(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params = { 0 };
 	int ret;
 
@@ -388,7 +438,7 @@ static void test_change_link(void)
 
 static void test_change_same_link(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params = { 0 };
 	int ret;
 
@@ -402,7 +452,7 @@ static void test_change_same_link(void)
 
 static void test_change_unsupported_link(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params = { 0 };
 	int ret;
 
@@ -416,7 +466,7 @@ static void test_change_unsupported_link(void)
 
 static void test_change_duplex(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params;
 	int ret;
 
@@ -430,7 +480,7 @@ static void test_change_duplex(void)
 
 static void test_change_same_duplex(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params;
 	int ret;
 
@@ -444,7 +494,7 @@ static void test_change_same_duplex(void)
 
 static void test_change_qav_params(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->data;
 	struct ethernet_req_params params;
@@ -620,7 +670,7 @@ static void test_change_qav_params(void)
 
 static void test_change_promisc_mode(bool mode)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params;
 	int ret;
 
@@ -644,7 +694,7 @@ static void test_change_promisc_mode_off(void)
 
 static void test_change_to_same_promisc_mode(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 	struct ethernet_req_params params;
 	int ret;
 
@@ -660,6 +710,7 @@ static void test_change_to_same_promisc_mode(void)
 void test_main(void)
 {
 	ztest_test_suite(ethernet_mgmt_test,
+			 ztest_unit_test(test_setup),
 			 ztest_unit_test(test_change_mac_when_up),
 			 ztest_unit_test(test_change_mac_when_down),
 			 ztest_unit_test(test_change_auto_neg),
