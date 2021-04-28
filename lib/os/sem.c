@@ -74,8 +74,9 @@ int sys_sem_give(struct sys_sem *sem)
 		}
 	} else if (old_value >= sem->limit) {
 		return -EAGAIN;
+	} else {
+		;
 	}
-
 	return ret;
 }
 
