@@ -237,7 +237,8 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	uint16_t len;
 	int remaining;
 
-	pkt = net_pkt_alloc_on_iface(net_if_get_default(), K_FOREVER);
+	pkt = net_pkt_alloc_on_iface(
+		net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)), K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -294,7 +295,8 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	net_pkt_lladdr_dst(pkt)->type = NET_LINK_IEEE802154;
 
 	memcpy(net_pkt_lladdr_src(pkt),
-	       net_if_get_link_addr(net_if_get_default()),
+	       net_if_get_link_addr(
+		       net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY))),
 	       sizeof(struct net_linkaddr));
 
 	return pkt;

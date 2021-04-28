@@ -143,7 +143,7 @@ NET_DEVICE_INIT(net_udp_test, "net_udp_test",
 
 static void test_setup(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface;
 	struct net_if_addr *ifaddr;
 
 	struct sockaddr_in6 any_addr6;
@@ -166,6 +166,7 @@ static void test_setup(void)
 	struct sockaddr_in peer_addr4;
 	struct in_addr in4addr_peer = { { { 192, 0, 2, 9 } } };
 
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	test_failed = false;
 
 	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_any);

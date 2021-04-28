@@ -206,7 +206,7 @@ static void test_mld_setup(void)
 
 	setup_mgmt_events();
 
-	iface = net_if_get_default();
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
 	zassert_not_null(iface, "Interface is NULL");
 
@@ -400,8 +400,10 @@ static void send_query(struct net_if *iface)
  */
 static void join_mldv2_capable_routers_group(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface;
 	int ret;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
 	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
 	ret = net_ipv6_mld_join(iface, &mcast_addr);
@@ -419,8 +421,10 @@ static void join_mldv2_capable_routers_group(void)
 
 static void leave_mldv2_capable_routers_group(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface;
 	int ret;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
 	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
 	ret = net_ipv6_mld_leave(iface, &mcast_addr);
@@ -462,7 +466,7 @@ static void test_catch_query(void)
 
 	net_icmpv6_register_handler(&mld_query_input_handler);
 
-	send_query(net_if_get_default());
+	send_query(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)));
 
 	if (IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)) {
 		/* Let the network stack to proceed */
@@ -495,7 +499,7 @@ static void test_verify_send_report(void)
 
 	test_join_group();
 
-	send_query(net_if_get_default());
+	send_query(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)));
 
 	k_yield();
 

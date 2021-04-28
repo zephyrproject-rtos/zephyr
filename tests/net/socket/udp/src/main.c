@@ -1019,12 +1019,23 @@ ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, NULL,
 		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &eth_fake_api_funcs, NET_ETH_MTU);
 
+static void iface_cb(struct net_if *iface, void *user_data)
+{
+	struct net_if **my_iface = user_data;
+
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		if (PART_OF_ARRAY(NET_IF_GET_NAME(eth_fake, 0), iface)) {
+			*my_iface = iface;
+		}
+	}
+}
+
 static void test_setup_eth(void)
 {
 	struct net_if_addr *ifaddr;
 	int ret;
 
-	eth_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	net_if_foreach(iface_cb, &eth_iface);
 	zassert_not_null(eth_iface, "No ethernet interface found");
 
 	ifaddr = net_if_ipv6_addr_add(eth_iface, &my_addr1,

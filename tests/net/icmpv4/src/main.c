@@ -418,7 +418,7 @@ static void test_icmpv4(void)
 {
 	struct net_if_addr *ifaddr;
 
-	iface = net_if_get_default();
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	if (!iface) {
 		zassert_true(false, "Interface not available");
 	}
