@@ -79,10 +79,13 @@ target_sources_ifdef(
   kernel PRIVATE
   futex.c
   mem_domain.c
-  cache_handlers.c
   userspace_handler.c
   userspace.c
   )
+
+if(CONFIG_CACHE_MANAGEMENT AND CONFIG_USERSPACE)
+  target_sources(kernel PRIVATE cache_handlers.c)
+endif()
 
 target_include_directories(kernel PRIVATE
   ${ZEPHYR_BASE}/kernel/include
