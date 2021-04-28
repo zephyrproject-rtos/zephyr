@@ -1,0 +1,21 @@
+# SGP40 multipixel gas sensor configuration options
+
+# Copyright (c) 2021 Leonard Pollak
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SGP40
+	bool "SGP40 Multipixel Gas Sensor"
+	depends on I2C
+	help
+	  Enable driver for SGP40 Multipixel Gas Sensor.
+
+if SGP40
+
+config SGP40_SELFTEST
+	bool "Run Selftest at driver initialization"
+	help
+	  This will run a selftest when the driver initializes.
+	  The selftest takes ~250ms.
+
+
+endif # SGP40
