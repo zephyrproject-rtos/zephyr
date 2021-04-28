@@ -403,7 +403,7 @@ static struct lpc11u6x_i2c_data i2c_data_##idx;			              \
 									      \
 DEVICE_DT_INST_DEFINE(idx,						      \
 		    &lpc11u6x_i2c_init,					      \
-		    device_pm_control_nop,				      \
+		    NULL,						      \
 		    &i2c_data_##idx, &i2c_cfg_##idx,			      \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	      \
 		    &i2c_api);						      \
