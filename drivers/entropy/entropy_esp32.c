@@ -72,6 +72,6 @@ static const struct entropy_driver_api entropy_esp32_api_funcs = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    entropy_esp32_init, device_pm_control_nop, NULL, NULL,
+		    entropy_esp32_init, NULL, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_esp32_api_funcs);
