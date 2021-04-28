@@ -953,7 +953,7 @@ static const struct led_driver_api lp5562_led_api = {
 	.off = lp5562_led_off,
 };
 
-DEVICE_DT_INST_DEFINE(0, &lp5562_led_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &lp5562_led_init, NULL,
 		&lp5562_led_data,
 		NULL, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,
 		&lp5562_led_api);
