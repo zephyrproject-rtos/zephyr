@@ -1137,7 +1137,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 static struct uart_sam0_dev_data uart_sam0_data_##n;			\
 UART_SAM0_IRQ_HANDLER_DECL(n);						\
 UART_SAM0_CONFIG_DEFN(n);						\
-DEVICE_DT_INST_DEFINE(n, uart_sam0_init, device_pm_control_nop,		\
+DEVICE_DT_INST_DEFINE(n, uart_sam0_init, NULL,				\
 		    &uart_sam0_data_##n,				\
 		    &uart_sam0_config_##n, PRE_KERNEL_1,		\
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\

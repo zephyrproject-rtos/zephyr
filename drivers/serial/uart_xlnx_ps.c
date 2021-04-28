@@ -1205,7 +1205,7 @@ static struct uart_xlnx_ps_dev_config uart_xlnx_ps_dev_cfg_##port = { \
 #define UART_XLNX_PS_INIT(port) \
 DEVICE_DT_INST_DEFINE(port, \
 	uart_xlnx_ps_init, \
-	device_pm_control_nop, \
+	NULL, \
 	&uart_xlnx_ps_dev_data_##port, \
 	&uart_xlnx_ps_dev_cfg_##port, \
 	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \

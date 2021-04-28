@@ -1088,7 +1088,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),                      \
 		DEV_DATA_DLF_INIT(n)                                                 \
 	};                                                                           \
-	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, device_pm_control_nop,          \
+	DEVICE_DT_INST_DEFINE(n, &uart_ns16550_init, NULL,                           \
 			      &uart_ns16550_dev_data_##n, &uart_ns16550_dev_cfg_##n, \
 			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,      \
 			      &uart_ns16550_driver_api);                             \

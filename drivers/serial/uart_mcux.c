@@ -406,7 +406,7 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &uart_mcux_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &uart_mcux_##n##_data,			\
 			    &uart_mcux_##n##_config,			\
 			    PRE_KERNEL_1,				\
