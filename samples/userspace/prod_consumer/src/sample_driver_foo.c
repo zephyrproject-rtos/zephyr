@@ -112,8 +112,7 @@ static int sample_driver_foo_init(const struct device *dev)
 static struct sample_driver_foo_dev_data sample_driver_foo_dev_data_0;
 
 DEVICE_DEFINE(sample_driver_foo_0, SAMPLE_DRIVER_NAME_0,
-		    &sample_driver_foo_init,
-		    device_pm_control_nop,
+		    &sample_driver_foo_init, NULL,
 		    &sample_driver_foo_dev_data_0, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &sample_driver_foo_api);
