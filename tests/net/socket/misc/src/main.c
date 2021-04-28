@@ -145,13 +145,13 @@ static int dummy_init(const struct device *dev)
 #define DEV2_NAME "dummy_2"
 
 NET_DEVICE_INIT(dummy_1, DEV1_NAME, dummy_init,
-		device_pm_control_nop, &dummy_data1, NULL,
+		NULL, &dummy_data1, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_api_funcs,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
 
 NET_DEVICE_INIT(dummy_2, DEV2_NAME, dummy_init,
-		device_pm_control_nop, &dummy_data2, NULL,
+		NULL, &dummy_data2, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &dummy_api_funcs,
 		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 

@@ -292,7 +292,7 @@ static int eth_init(const struct device *dev)
 
 ETH_NET_DEVICE_INIT(eth1_offloading_disabled_test,
 		    "eth1_offloading_disabled_test",
-		    eth_init, device_pm_control_nop,
+		    eth_init, NULL,
 		    &eth_context_offloading_disabled, NULL,
 		    CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs_offloading_disabled,
@@ -300,7 +300,7 @@ ETH_NET_DEVICE_INIT(eth1_offloading_disabled_test,
 
 ETH_NET_DEVICE_INIT(eth0_offloading_enabled_test,
 		    "eth0_offloading_enabled_test",
-		    eth_init, device_pm_control_nop,
+		    eth_init, NULL,
 		    &eth_context_offloading_enabled, NULL,
 		    CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs_offloading_enabled,
