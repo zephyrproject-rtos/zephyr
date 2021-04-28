@@ -252,7 +252,7 @@ static const struct wdt_driver_api wdt_api = {
 													   \
 	DEVICE_DT_INST_DEFINE(idx,									   \
 			    wdt_esp32_init,								   \
-			    device_pm_control_nop,							   \
+			    NULL,									   \
 			    &wdt##idx##_data,								   \
 			    &wdt_esp32_config##idx,							   \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				   \

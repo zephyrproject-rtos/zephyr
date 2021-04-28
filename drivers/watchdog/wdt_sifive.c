@@ -282,6 +282,6 @@ static const struct wdt_sifive_device_config wdt_sifive_cfg = {
 	.regs = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, wdt_sifive_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, wdt_sifive_init, NULL,
 		      &wdt_sifive_data, &wdt_sifive_cfg, PRE_KERNEL_1,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sifive_api);
