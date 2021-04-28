@@ -380,7 +380,7 @@ static struct dummy_api net_dhcpv4_if_api = {
 };
 
 NET_DEVICE_INIT(net_dhcpv4_test, "net_dhcpv4_test",
-		net_dhcpv4_dev_init, device_pm_control_nop,
+		net_dhcpv4_dev_init, NULL,
 		&net_dhcpv4_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_dhcpv4_if_api, DUMMY_L2,
