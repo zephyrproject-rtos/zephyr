@@ -465,7 +465,7 @@ using instance numbers. Do this after defining ``my_api_funcs``.
    	};								\
    	DEVICE_DT_INST_DEFINE(inst,					\
    			      my_dev_init_function,			\
-			      device_pm_control_nop,			\
+			      NULL,             			\
    			      &my_data_##inst,				\
    			      &my_cfg_##inst,				\
    			      MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
@@ -542,7 +542,7 @@ devicetree to operate on specific device nodes:
 	static const struct my_dev_cfg my_cfg_##idx = { /* ... */ };	\
    	DEVICE_DT_DEFINE(MYDEV(idx),					\
    			my_dev_init_function,				\
-			device_pm_control_nop,				\
+			NULL,           				\
 			&my_data_##idx,					\
 			&my_cfg_##idx,					\
 			MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
