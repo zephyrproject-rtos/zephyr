@@ -919,6 +919,23 @@ config ICACHE_LINE_SIZE
 
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
+choice
+	prompt "Cache type"
+	depends on CACHE_MANAGEMENT
+	default HAS_ARCH_CACHE
+
+config HAS_ARCH_CACHE
+	bool "Integrated cache controller"
+	help
+	  "Integrade on-core cache controller"
+
+config HAS_EXTERNAL_CACHE
+	bool "External cache controller"
+	help
+	  "External cache controller or cache management system"
+
+endchoice
+
 endmenu
 
 config ARCH

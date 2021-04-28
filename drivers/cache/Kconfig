@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CACHE
+	bool "External cache controllers drivers"
+	help
+	  Enable support for external cache controllers drivers
+
+if CACHE
+
+module = CACHE
+module-str = cache
+source "subsys/logging/Kconfig.template.log_config"
+
+config CACHE_HAS_DRIVER
+	bool
+
+endif # CACHE
