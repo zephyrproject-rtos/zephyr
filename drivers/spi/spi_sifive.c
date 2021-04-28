@@ -250,7 +250,7 @@ static struct spi_driver_api spi_sifive_api = {
 	}; \
 	DEVICE_DT_INST_DEFINE(n, \
 			spi_sifive_init, \
-			device_pm_control_nop, \
+			NULL, \
 			&spi_sifive_data_##n, \
 			&spi_sifive_cfg_##n, \
 			POST_KERNEL, \

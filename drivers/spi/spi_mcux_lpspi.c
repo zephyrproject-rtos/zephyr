@@ -303,7 +303,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##n, ctx),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &spi_mcux_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(n, &spi_mcux_init, NULL,			\
 			    &spi_mcux_data_##n,				\
 			    &spi_mcux_config_##n, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
