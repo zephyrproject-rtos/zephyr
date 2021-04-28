@@ -216,7 +216,7 @@ static struct imx_mu_data imx_mu_b_data;
 
 DEVICE_DT_INST_DEFINE(0,
 		    &imx_mu_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &imx_mu_b_data, &imx_mu_b_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &imx_mu_driver_api);
