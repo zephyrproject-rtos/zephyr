@@ -920,7 +920,7 @@ static int i2c_ctrl_init(const struct device *dev)
 									       \
 	DEVICE_DT_INST_DEFINE(inst,                                            \
 			    NPCX_I2C_CTRL_INIT_FUNC(inst),                     \
-			    device_pm_control_nop,                             \
+			    NULL,                                              \
 			    &i2c_ctrl_data_##inst, &i2c_ctrl_cfg_##inst,       \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
 			    NULL);                                             \

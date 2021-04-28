@@ -126,7 +126,7 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 									       \
 	DEVICE_DT_INST_DEFINE(n,					       \
 			   i2c_litex_init,				       \
-			   device_pm_control_nop,			       \
+			   NULL,					       \
 			   &i2c_bitbang_##n,	                               \
 			   &i2c_litex_cfg_##n,				       \
 			   POST_KERNEL,					       \
