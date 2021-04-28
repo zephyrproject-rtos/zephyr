@@ -139,7 +139,7 @@ static struct temp_nrf5_data temp_nrf5_driver;
 
 DEVICE_DT_INST_DEFINE(0,
 		    temp_nrf5_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &temp_nrf5_driver,
 		    NULL,
 		    POST_KERNEL,

@@ -332,7 +332,7 @@ static int iis2mdc_init(const struct device *dev)
 #define IIS2MDC_DEVICE_INIT(inst)					\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    iis2mdc_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &iis2mdc_data_##inst,			\
 			    &iis2mdc_config_##inst,			\
 			    POST_KERNEL,				\

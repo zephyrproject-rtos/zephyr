@@ -432,7 +432,7 @@ static const struct mcux_acmp_config mcux_acmp_config_##n = {		\
 	static const struct mcux_acmp_config mcux_acmp_config_##n;	\
 									\
 	DEVICE_DT_INST_DEFINE(n, &mcux_acmp_init,			\
-			      device_pm_control_nop,			\
+			      NULL,					\
 			      &mcux_acmp_data_##n,			\
 			      &mcux_acmp_config_##n, POST_KERNEL,	\
 			      CONFIG_SENSOR_INIT_PRIORITY,		\

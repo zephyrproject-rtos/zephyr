@@ -326,6 +326,6 @@ static const struct ms5837_config ms5837_config = {
 	.i2c_address = DT_INST_REG_ADDR(0)
 };
 
-DEVICE_DT_INST_DEFINE(0, ms5837_init, device_pm_control_nop, &ms5837_data,
+DEVICE_DT_INST_DEFINE(0, ms5837_init, NULL, &ms5837_data,
 		    &ms5837_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &ms5837_api_funcs);

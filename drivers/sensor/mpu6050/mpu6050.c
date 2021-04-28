@@ -237,7 +237,7 @@ static const struct mpu6050_config mpu6050_cfg = {
 #endif /* CONFIG_MPU6050_TRIGGER */
 };
 
-DEVICE_DT_INST_DEFINE(0, mpu6050_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, mpu6050_init, NULL,
 		    &mpu6050_driver, &mpu6050_cfg,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &mpu6050_driver_api);
