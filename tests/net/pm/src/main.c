@@ -108,9 +108,11 @@ NET_DEVICE_INIT(fake_dev, "fake_dev",
 
 void test_setup(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface;
 	struct in_addr in4addr_my = { { { 192, 168, 0, 2 } } };
 	struct net_if_addr *ifaddr;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
 	net_if_up(iface);
 
@@ -120,7 +122,8 @@ void test_setup(void)
 
 void test_pm(void)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface =
+		net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	const struct device *dev = net_if_get_device(iface);
 	char data[] = "some data";
 	struct sockaddr_in addr4;

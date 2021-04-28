@@ -34,6 +34,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #define DBG(fmt, ...)
 #endif
 
+static struct net_if *default_iface;
+
 #define TEST_BYTE_1(value, expected)				 \
 	do {							 \
 		char out[3];					 \
@@ -234,7 +236,7 @@ static void test_ipv6_addresses(void)
 	zassert_true(net_ipv6_is_addr_mcast(&mcast),
 		     "IPv6 multicast address check failed.");
 
-	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
+	ifaddr1 = net_if_ipv6_addr_add(default_iface,
 				      &addr6,
 				      NET_ADDR_MANUAL,
 				      0);
@@ -272,12 +274,12 @@ static void test_ipv6_addresses(void)
 					 (uint8_t *)&addr6_pref3, 255),
 		      "Too long prefix test failed");
 
-	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &mcast);
+	ifmaddr1 = net_if_ipv6_maddr_add(default_iface, &mcast);
 
 	/**TESTPOINTS: Check IPv6 addresses*/
 	zassert_not_null(ifmaddr1, "IPv6 multicast address add failed");
 
-	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &addr6);
+	ifmaddr1 = net_if_ipv6_maddr_add(default_iface, &addr6);
 
 	zassert_is_null(ifmaddr1,
 			"IPv6 multicast address could be added failed");
@@ -285,7 +287,7 @@ static void test_ipv6_addresses(void)
 	zassert_false(memcmp(net_ipv6_unspecified_address(), &any, sizeof(any)),
 		      "My IPv6 unspecified address check failed");
 
-	ifaddr2 = net_if_ipv6_addr_add(net_if_get_default(),
+	ifaddr2 = net_if_ipv6_addr_add(default_iface,
 				       &addr6,
 				       NET_ADDR_AUTOCONF,
 				       0);
@@ -293,18 +295,18 @@ static void test_ipv6_addresses(void)
 
 	ifaddr2->addr_state = NET_ADDR_PREFERRED;
 
-	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
+	tmp = net_if_ipv6_get_ll(default_iface, NET_ADDR_PREFERRED);
 	zassert_false(tmp && memcmp(tmp, &addr6.s6_addr,
 				    sizeof(struct in6_addr)),
 		      "IPv6 ll address fetch failed");
 
 	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
-	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
+	tmp = net_if_ipv6_get_ll(default_iface, NET_ADDR_PREFERRED);
 	zassert_false(tmp && !memcmp(tmp, &any, sizeof(struct in6_addr)),
 		      "IPv6 preferred ll address fetch failed");
 
-	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
+	ifaddr1 = net_if_ipv6_addr_add(default_iface,
 				       &addr6_pref2,
 				       NET_ADDR_AUTOCONF,
 				       0);
@@ -315,7 +317,7 @@ static void test_ipv6_addresses(void)
 	/* Two tests for IPv6, first with interface given, then when
 	 * iface is NULL
 	 */
-	for (i = 0, iface = net_if_get_default(); i < 2; i++, iface = NULL) {
+	for (i = 0, iface = default_iface; i < 2; i++, iface = NULL) {
 		ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
 		out = net_if_ipv6_select_src_addr(iface, &addr6_pref1);
@@ -360,9 +362,9 @@ static void test_ipv6_addresses(void)
 			      iface);
 	}
 
-	zassert_true(net_if_ipv6_addr_rm(net_if_get_default(), &addr6),
+	zassert_true(net_if_ipv6_addr_rm(default_iface, &addr6),
 		     "IPv6 removing address failed\n");
-	zassert_true(net_if_ipv6_addr_rm(net_if_get_default(), &addr6_pref2),
+	zassert_true(net_if_ipv6_addr_rm(default_iface, &addr6_pref2),
 		     "IPv6 removing address failed\n");
 }
 
@@ -391,7 +393,7 @@ static void test_ipv4_addresses(void)
 	struct net_if *iface, *iface1, *iface2;
 	int i, ret;
 
-	ifaddr1 = net_if_ipv4_addr_add(net_if_get_default(),
+	ifaddr1 = net_if_ipv4_addr_add(default_iface,
 				       &addr4,
 				       NET_ADDR_MANUAL,
 				       0);
@@ -400,7 +402,7 @@ static void test_ipv4_addresses(void)
 	zassert_true(net_ipv4_is_my_addr(&addr4),
 		     "My IPv4 address check failed");
 
-	ifaddr1 = net_if_ipv4_addr_add(net_if_get_default(),
+	ifaddr1 = net_if_ipv4_addr_add(default_iface,
 				       &lladdr4,
 				       NET_ADDR_MANUAL,
 				       0);
@@ -415,7 +417,7 @@ static void test_ipv4_addresses(void)
 	/* Two tests for IPv4, first with interface given, then when
 	 * iface is NULL
 	 */
-	for (i = 0, iface = net_if_get_default(); i < 2; i++, iface = NULL) {
+	for (i = 0, iface = default_iface; i < 2; i++, iface = NULL) {
 		out = net_if_ipv4_select_src_addr(iface, &addr4);
 		zassert_not_null(out,  "IPv4 src addr selection failed, "
 				 "iface %p\n", iface);
@@ -464,7 +466,7 @@ static void test_ipv4_addresses(void)
 			      iface);
 	}
 
-	iface = net_if_get_default();
+	iface = default_iface;
 
 	net_if_ipv4_set_gw(iface, &gw);
 	net_if_ipv4_set_netmask(iface, &netmask);
@@ -485,10 +487,10 @@ static void test_ipv4_addresses(void)
 
 	zassert_false(net_ipv4_is_addr_mcast(&bcast_addr1), "IPv4 broadcast address");
 
-	ifmaddr1 = net_if_ipv4_maddr_add(net_if_get_default(), &maddr4a);
+	ifmaddr1 = net_if_ipv4_maddr_add(default_iface, &maddr4a);
 	zassert_not_null(ifmaddr1, "IPv4 multicast address add failed");
 
-	ifmaddr1 = net_if_ipv4_maddr_add(net_if_get_default(), &maddr4b);
+	ifmaddr1 = net_if_ipv4_maddr_add(default_iface, &maddr4b);
 	zassert_not_null(ifmaddr1, "IPv4 multicast address add failed");
 
 	iface = NULL;
@@ -559,7 +561,7 @@ static void test_ipv6_mesh_addresses(void)
 					 0, 0, 0, 0, 0x1 } } };
 	struct in6_addr ml_mcast = { { { 0xff, 0x03, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0x1 } } };
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = default_iface;
 
 	ifaddr = net_if_ipv6_addr_add(iface, &lla, NET_ADDR_AUTOCONF, 0);
 	zassert_not_null(ifaddr, "IPv6 ll address autoconf add failed");
@@ -600,6 +602,8 @@ static void test_ipv6_mesh_addresses(void)
 
 void test_main(void)
 {
+	default_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+
 	ztest_test_suite(test_ip_addr_fn,
 			 ztest_unit_test(test_ip_addresses),
 			 ztest_unit_test(test_ipv6_addresses),

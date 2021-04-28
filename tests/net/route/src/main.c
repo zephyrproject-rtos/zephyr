@@ -237,8 +237,8 @@ static void test_init(void)
 	struct net_if_addr *ifaddr;
 	int i;
 
-	my_iface = net_if_get_default();
-	peer_iface = net_if_get_default() + 1;
+	my_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	peer_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)) + 1;
 
 	DBG("Interfaces: [%d] my %p, [%d] peer %p\n",
 	    net_if_get_by_iface(my_iface), my_iface,
@@ -341,7 +341,7 @@ static void test_populate_nbr_cache(void)
 
 	zassert_true(net_test_send_ns(peer_iface, &peer_addr), NULL);
 
-	nbr = net_ipv6_nbr_add(net_if_get_default(),
+	nbr = net_ipv6_nbr_add(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
 			       &peer_addr,
 			       &net_route_data_peer.ll_addr,
 			       false,

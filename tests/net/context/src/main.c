@@ -978,8 +978,9 @@ static void test_init(void)
 {
 	struct net_if_addr *ifaddr;
 	struct net_if_mcast_addr *maddr;
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface;
 
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	zassert_not_null(iface, "Interface is NULL");
 
 	ifaddr = net_if_ipv6_addr_add(iface, &in6addr_my,

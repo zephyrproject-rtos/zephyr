@@ -276,7 +276,7 @@ static void address_setup(void)
 	struct net_if_addr *ifaddr;
 	struct net_if *iface1;
 
-	iface1 = net_if_get_default();
+	iface1 = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
 	zassert_not_null(iface1, "Interface 1");
 
@@ -379,7 +379,7 @@ static void setup_net_context(struct net_context **ctx)
 	int ret;
 	struct net_if *iface1;
 
-	iface1 = net_if_get_default();
+	iface1 = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, ctx);
 	zassert_equal(ret, 0, "Create IPv6 UDP context %p failed (%d)\n",
