@@ -40,7 +40,6 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 	char *buf_ptr = rx_buffer;
 	size_t buf_len = OT_SHELL_BUFFER_SIZE;
 	size_t arg_len = 0;
-	k_tid_t ot_tid = openthread_thread_id_get();
 	int i;
 
 	for (i = 1; i < argc; i++) {
@@ -67,12 +66,9 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 
 	shell_p = shell;
 
-	/* Halt the OpenThread thread execution. This will prevent from being
-	 * rescheduled into the OT thread in the middle of command processing.
-	 */
-	k_thread_suspend(ot_tid);
+	openthread_api_mutex_lock(openthread_get_default_context());
 	otCliInputLine(rx_buffer);
-	k_thread_resume(ot_tid);
+	openthread_api_mutex_unlock(openthread_get_default_context());
 
 	return 0;
 }
