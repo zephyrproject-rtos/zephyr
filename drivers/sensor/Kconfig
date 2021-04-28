@@ -180,6 +180,8 @@ source "drivers/sensor/qdec_sam/Kconfig"
 
 source "drivers/sensor/sbs_gauge/Kconfig"
 
+source "drivers/sensor/sgp40/Kconfig"
+
 source "drivers/sensor/shtcx/Kconfig"
 
 source "drivers/sensor/sht3xd/Kconfig"
