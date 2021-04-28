@@ -588,7 +588,7 @@ static const struct dma_pl330_config pl330_config = {
 
 static struct dma_pl330_dev_data pl330_data;
 
-DEVICE_DT_INST_DEFINE(0, &dma_pl330_initialize, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &dma_pl330_initialize, NULL,
 		    &pl330_data, &pl330_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pl330_driver_api);

@@ -469,7 +469,7 @@ static const struct dma_mcux_lpc_config dma_##n##_config = {	\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &dma_mcux_lpc_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &dma_data_##n, &dma_##n##_config,\
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,\
 			    &dma_mcux_lpc_api);			\

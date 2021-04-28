@@ -277,7 +277,7 @@ static struct dmamux_stm32_data dmamux_stm32_data_##index;		\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
 		    &dmamux_stm32_init,					\
-		    device_pm_control_nop,				\
+		    NULL,						\
 		    &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &dma_funcs);
