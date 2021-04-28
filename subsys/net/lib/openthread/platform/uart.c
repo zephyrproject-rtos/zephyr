@@ -23,8 +23,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <usb/usb_device.h>
 #endif
 
+#include <openthread/ncp.h>
 #include <openthread-system.h>
-#include <openthread/platform/uart.h>
+#include <utils/uart.h>
 
 #include "platform-zephyr.h"
 
@@ -116,6 +117,16 @@ static void uart_callback(const struct device *dev, void *user_data)
 			uart_tx_handle(dev);
 		}
 	}
+}
+
+void otPlatUartReceived(const uint8_t *aBuf, uint16_t aBufLength)
+{
+	otNcpHdlcReceive(aBuf, aBufLength);
+}
+
+void otPlatUartSendDone(void)
+{
+	otNcpHdlcSendDone();
 }
 
 void platformUartProcess(otInstance *aInstance)
