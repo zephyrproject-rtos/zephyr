@@ -530,7 +530,7 @@ static const struct uart_driver_api apbuart_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(index,					\
 			    &apbuart_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &apbuart##index##_data,			\
 			    &apbuart##index##_config,			\
 			    PRE_KERNEL_1,				\
