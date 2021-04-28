@@ -18,11 +18,14 @@
 
 /* for checking power suspend and resume order between system and devices */
 static bool enter_low_power;
+static bool deep_sleep;
 static bool notify_app_entry;
 static bool notify_app_exit;
 static bool set_pm;
 static bool leave_idle;
 static bool idle_entered;
+/* 1: test low power case, 2: test deep sleep case */
+static int in_case;
 
 static const struct device *dev;
 static struct dummy_driver_api *api;
@@ -73,6 +76,10 @@ struct pm_state_info pm_policy_next_state(int ticks)
 		enter_low_power = false;
 		notify_app_entry = true;
 		info.state = PM_STATE_RUNTIME_IDLE;
+	} else if (deep_sleep) {
+		deep_sleep = false;
+		notify_app_entry = true;
+		info.state = PM_STATE_SUSPEND_TO_RAM;
 	} else {
 		/* only test pm_policy_next_state()
 		 * no PM operation done
@@ -91,7 +98,10 @@ static void notify_pm_state_entry(enum pm_state state)
 	zassert_true(notify_app_entry == true,
 		     "Notification to enter suspend was not sent to the App");
 	zassert_true(z_is_idle_thread_object(_current), NULL);
-	zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
+	if (in_case == 1)
+		zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
+	if (in_case == 2)
+		zassert_equal(state, PM_STATE_SUSPEND_TO_RAM, NULL);
 
 	/* at this point, devices should not be active */
 	device_get_power_state(dev, &device_power_state);
@@ -109,7 +119,10 @@ static void notify_pm_state_exit(enum pm_state state)
 	zassert_true(notify_app_exit == true,
 		     "Notification to leave suspend was not sent to the App");
 	zassert_true(z_is_idle_thread_object(_current), NULL);
-	zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
+	if (in_case == 1)
+		zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
+	if (in_case == 2)
+		zassert_equal(state, PM_STATE_SUSPEND_TO_RAM, NULL);
 
 	/* at this point, devices are active again*/
 	device_get_power_state(dev, &device_power_state);
@@ -155,10 +168,18 @@ void test_power_idle(void)
  */
 void test_power_state_trans(void)
 {
+	in_case = 1;
 	enter_low_power = true;
 	/* give way to idle thread */
 	k_sleep(SLEEP_TIMEOUT);
 	zassert_true(leave_idle, NULL);
+
+	in_case = 2;
+	deep_sleep = true;
+	/* give way to idle thread */
+	k_sleep(SLEEP_TIMEOUT);
+	zassert_true(leave_idle, NULL);
+	in_case = 0;
 }
 
 /*

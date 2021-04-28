@@ -15,4 +15,7 @@ typedef int (*dummy_api_close_t)(const struct device *dev);
 struct dummy_driver_api {
 	dummy_api_open_t open;
 	dummy_api_close_t close;
+	dummy_api_close_t busy;
+	dummy_api_close_t low_power_times;
+	dummy_api_close_t pm_disable;
 };
