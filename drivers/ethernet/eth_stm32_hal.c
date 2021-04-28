@@ -912,5 +912,5 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_initialize,
-		    device_pm_control_nop, &eth0_data, &eth0_config,
+		    NULL, &eth0_data, &eth0_config,
 		    CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_STM32_HAL_MTU);
