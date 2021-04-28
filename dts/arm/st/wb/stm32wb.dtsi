@@ -377,7 +377,7 @@
 
 		dma1: dma@40020000 {
 			compatible = "st,stm32-dma-v2";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
@@ -389,7 +389,7 @@
 
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
 			interrupts = <55 0 56 0 57 0 58 0 59 0 60 0 61 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
@@ -401,7 +401,7 @@
 
 		dmamux1: dmamux@40020800 {
 			compatible = "st,stm32-dmamux";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020800 0x400>;
 			interrupts = <62 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x4>;
