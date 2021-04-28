@@ -1846,7 +1846,7 @@ static struct net_if_api api_funcs = {
 	.init	= offload_iface_init,
 };
 
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, wncm14a2a_init, device_pm_control_nop,
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, wncm14a2a_init, NULL,
 				  &ictx, NULL,
 				  CONFIG_MODEM_WNCM14A2A_INIT_PRIORITY,
 				  &api_funcs,
