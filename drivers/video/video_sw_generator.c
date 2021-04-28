@@ -275,7 +275,7 @@ static int video_sw_generator_init(const struct device *dev)
 }
 
 DEVICE_DEFINE(video_sw_generator, "VIDEO_SW_GENERATOR",
-		    &video_sw_generator_init, device_pm_control_nop,
+		    &video_sw_generator_init, NULL,
 		    &video_sw_generator_data_0, NULL,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_sw_generator_driver_api);
