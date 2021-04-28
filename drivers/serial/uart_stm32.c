@@ -1493,12 +1493,18 @@ static int uart_stm32_pm_control(const struct device *dev,
 #define DMA_CTLR(id, dir)						\
 	DT_INST_DMAS_CTLR_BY_NAME(id, dir)
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis)
+#define DMA_SLOT(index, dir, slot) DT_INST_DMAS_CELL_BY_NAME(index, dir, slot)
+#else
+#define DMA_SLOT(index, dir, slot) 0
+#endif
+
 /* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
 #define UART_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)	\
 	.dma_dev = DEVICE_DT_GET(DMA_CTLR(index, dir)),			\
 	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
 	.dma_cfg = {							\
-		.dma_slot = DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),\
+		.dma_slot = DMA_SLOT(index, dir, slot),\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(	\
 					DMA_CHANNEL_CONFIG(index, dir)),\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
