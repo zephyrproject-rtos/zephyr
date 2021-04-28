@@ -71,6 +71,6 @@ static const struct pinmux_driver_api pinmux_hsdk_driver_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		&pinmux_hsdk_init, device_pm_control_nop, NULL, NULL,
+		&pinmux_hsdk_init, NULL, NULL, NULL,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&pinmux_hsdk_driver_api);

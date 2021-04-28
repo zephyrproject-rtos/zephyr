@@ -100,7 +100,7 @@ static const struct pinmux_sifive_config pinmux_sifive_0_config = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &pinmux_sifive_init, device_pm_control_nop, NULL,
+		    &pinmux_sifive_init, NULL, NULL,
 		    &pinmux_sifive_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_sifive_driver_api);
