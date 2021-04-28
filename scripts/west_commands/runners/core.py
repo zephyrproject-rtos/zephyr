@@ -497,7 +497,7 @@ class ZephyrBinaryRunner(abc.ABC):
         In case of an unsupported command, raise a ValueError.'''
 
     @staticmethod
-    def require(program: str):
+    def require(program: str) -> str:
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
@@ -507,9 +507,12 @@ class ZephyrBinaryRunner(abc.ABC):
         binary, this call succeeds. Otherwise, try to find the program
         by name on the system PATH.
 
-        On error, raises MissingProgram.'''
-        if shutil.which(program) is None:
+        If the program can be found, its path is returned.
+        Otherwise, raises MissingProgram.'''
+        ret = shutil.which(program)
+        if ret is None:
             raise MissingProgram(program)
+        return ret
 
     def run_server_and_client(self, server, client):
         '''Run a server that ignores SIGINT, and a client that handles it.
