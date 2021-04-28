@@ -361,6 +361,8 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 		merge_chunks(h, c, rc);
 		set_chunk_used(h, c, true);
 		return ptr;
+	} else {
+		;
 	}
 
 	/* Fallback: allocate and copy */
