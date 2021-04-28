@@ -69,7 +69,7 @@ static const struct clock_control_driver_api rv32m1_pcc_api = {
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    &rv32m1_pcc_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    NULL, &rv32m1_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	\
