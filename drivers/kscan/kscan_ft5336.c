@@ -267,7 +267,7 @@ static const struct kscan_driver_api ft5336_driver_api = {
 #define FT5336_INIT(index)                                                     \
 	FT5336_DEFINE_CONFIG(index);					       \
 	static struct ft5336_data ft5336_data_##index;			       \
-	DEVICE_DT_INST_DEFINE(index, ft5336_init, device_pm_control_nop,       \
+	DEVICE_DT_INST_DEFINE(index, ft5336_init, NULL,			       \
 			    &ft5336_data_##index, &ft5336_config_##index,      \
 			    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,	       \
 			    &ft5336_driver_api);
