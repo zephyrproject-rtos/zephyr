@@ -523,7 +523,7 @@
 
 		dma1: dma@40020000 {
 			compatible = "st,stm32-dma-v2";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
 			dma-offset = <0>;
@@ -533,7 +533,7 @@
 
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x2>;
 			status = "disabled";
@@ -542,7 +542,7 @@
 
 		dmamux1: dmamux@40020800 {
 			compatible = "st,stm32-dmamux";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020800 0x400>;
 			interrupts = <94 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x4>;
