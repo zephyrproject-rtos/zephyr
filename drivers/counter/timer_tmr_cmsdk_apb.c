@@ -188,7 +188,7 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    tmr_cmsdk_apb_init,				\
-			    device_pm_control_nop,			\
+			    NULL,			\
 			    &tmr_cmsdk_apb_dev_data_##inst,		\
 			    &tmr_cmsdk_apb_cfg_##inst, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

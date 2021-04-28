@@ -324,7 +324,7 @@ static int counter_xec_init(const struct device *dev)
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    counter_xec_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &counter_xec_dev_data_##inst,		\
 			    &counter_xec_dev_config_##inst,		\
 			    POST_KERNEL,				\
