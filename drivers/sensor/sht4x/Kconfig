@@ -1,0 +1,78 @@
+# SHT4x temperature and humidity sensor configuration options
+
+# Copyright (c) 2021 Leonard Pollak
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SHT4X
+	bool "SHT4x Temperature and Humidity Sensor"
+	depends on I2C
+	help
+	  Enable driver for SHT4x temperature and humidity sensors.
+
+if SHT4X
+
+
+choice
+	prompt "Measurement repeatability"
+	default SHT4X_REPEATABILITY_HIGH
+	help
+	  Repeatability modes differ with respect to measurement duration,
+	  noise level and energy consumption.
+
+config SHT4X_REPEATABILITY_LOW
+	bool "low"
+
+config SHT4X_REPEATABILITY_MEDIUM
+	bool "medium"
+
+config SHT4X_REPEATABILITY_HIGH
+	bool "high"
+
+endchoice
+
+config SHT4X_HEATER_ENABLE
+	prompt "Heater"
+	bool
+
+if SHT4X_HEATER_ENABLE
+
+choice
+	prompt "Heater power"
+	default SHT4X_HEATER_POWER_LOW
+	help
+	  low => typ. 20mW @ 3.3V)
+	  med => typ. 110mW @ 3.3V)
+	  high => typ. 200mW @ 3.3V)
+
+config SHT4X_HEATER_POWER_LOW
+	bool "low"
+
+config SHT4X_HEATER_POWER_MEDIUM
+	bool "medium"
+
+config SHT4X_HEATER_POWER_HIGH
+	bool "high"
+
+endchoice
+
+choice
+	prompt "Heater duration"
+	default SHT4X_HEATER_SHORT
+	help
+	  short => 0.1 s
+	  long => 1 s
+
+config SHT4X_HEATER_SHORT
+	bool "short"
+
+config SHT4X_POWER_MEDIUM
+	bool "medium"
+
+config SHT4X_POWER_HIGH
+	bool "high"
+
+endchoice
+
+endif # HEATER
+
+endif # SHT4X
