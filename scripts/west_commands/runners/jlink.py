@@ -5,9 +5,11 @@
 '''Runner for debugging with J-Link.'''
 
 import argparse
+import logging
 import os
 from pathlib import Path
 import shlex
+import subprocess
 import sys
 import tempfile
 
@@ -280,4 +282,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                    self.tool_opt)
 
             self.logger.info('Flashing file: {}'.format(flash_file))
-            self.check_call(cmd)
+            kwargs = {}
+            if not self.logger.isEnabledFor(logging.DEBUG):
+                kwargs['stdout'] = subprocess.DEVNULL
+            self.check_call(cmd, **kwargs)
