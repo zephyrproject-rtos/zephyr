@@ -118,7 +118,7 @@ static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {	\
 									\
 DEVICE_DT_INST_DEFINE(_num,						\
 	    i2c_sbcon_init,						\
-	    device_pm_control_nop,					\
+	    NULL,							\
 	    &i2c_sbcon_dev_data_##_num,					\
 	    &i2c_sbcon_dev_cfg_##_num,					\
 	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api);
