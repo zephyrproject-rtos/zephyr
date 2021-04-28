@@ -60,6 +60,10 @@ struct npcx_clk_cfg {
 #define APB2DIV_VAL (CONFIG_CLOCK_NPCX_APB2_PRESCALER - 1)
 /* APB3 clock divider, default value (APB3 clock = OSC_CLK/2) */
 #define APB3DIV_VAL (CONFIG_CLOCK_NPCX_APB3_PRESCALER - 1)
+/* APB4 clock divider, default value (APB4 clock = OSC_CLK/6) */
+#ifdef CONFIG_CLOCK_NPCX_APB4_PRESCALER
+#define APB4DIV_VAL (CONFIG_CLOCK_NPCX_APB4_PRESCALER - 1)
+#endif
 
 /* AHB6 clock */
 #if (CORE_CLK > 50000000)
