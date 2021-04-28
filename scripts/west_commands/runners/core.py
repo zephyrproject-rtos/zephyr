@@ -130,7 +130,7 @@ class BuildConfiguration:
         self.build_dir = build_dir
         self.options: Dict[str, Union[str, int]] = {}
         self.path = os.path.join(self.build_dir, 'zephyr', '.config')
-        self._init()
+        self._parse()
 
     def __contains__(self, item):
         return item in self.options
@@ -141,10 +141,14 @@ class BuildConfiguration:
     def get(self, option, *args):
         return self.options.get(option, *args)
 
-    def _init(self):
-        self._parse(self.path)
+    def getboolean(self, option):
+        '''If a boolean option is explicitly set to y or n,
+        returns its value. Otherwise, falls back to False.
+        '''
+        return self.options.get(option, False)
 
-    def _parse(self, filename: str):
+    def _parse(self):
+        filename = self.path
         opt_value = re.compile('^(?P<option>CONFIG_[A-Za-z0-9_]+)=(?P<value>.*)$')
         not_set = re.compile('^# (?P<option>CONFIG_[A-Za-z0-9_]+) is not set$')
 
@@ -154,8 +158,16 @@ class BuildConfiguration:
                 if match:
                     value = match.group('value').rstrip()
                     if value.startswith('"') and value.endswith('"'):
+                        # A string literal should have the quotes stripped,
+                        # but otherwise be left as is.
                         value = value[1:-1]
+                    elif value == 'y':
+                        # The character 'y' is a boolean option
+                        # that is set to True.
+                        value = True
                     else:
+                        # Neither a string nor 'y', so try to parse it
+                        # as an integer.
                         try:
                             base = 16 if value.startswith('0x') else 10
                             self.options[match.group('option')] = int(value, base=base)
@@ -168,7 +180,8 @@ class BuildConfiguration:
 
                 match = not_set.match(line)
                 if match:
-                    self.options[match.group('option')] = 'n'
+                    # '# CONFIG_FOO is not set' means a boolean option is false.
+                    self.options[match.group('option')] = False
 
 class MissingProgram(FileNotFoundError):
     '''FileNotFoundError subclass for missing program dependencies.
@@ -479,7 +492,7 @@ class ZephyrBinaryRunner(abc.ABC):
         return the CONFIG_FLASH_BASE_ADDRESS value. Otherwise, return
         CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET.
         '''
-        if build_conf['CONFIG_HAS_FLASH_LOAD_OFFSET']:
+        if build_conf.getboolean('CONFIG_HAS_FLASH_LOAD_OFFSET'):
             return (build_conf['CONFIG_FLASH_BASE_ADDRESS'] +
                     build_conf['CONFIG_FLASH_LOAD_OFFSET'])
         else:
