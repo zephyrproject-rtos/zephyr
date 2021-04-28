@@ -501,6 +501,13 @@ class ZephyrBinaryRunner(abc.ABC):
 
         In case of an unsupported command, raise a ValueError.'''
 
+    @property
+    def build_conf(self) -> BuildConfiguration:
+        '''Get a BuildConfiguration for the build directory.'''
+        if not hasattr(self, '_build_conf'):
+            self._build_conf = BuildConfiguration(self.cfg.build_dir)
+        return self._build_conf
+
     @staticmethod
     def require(program: str) -> str:
         '''Require that a program is installed before proceeding.
