@@ -201,7 +201,7 @@ static struct ps2_xec_data ps2_xec_port_data_0;
 
 DEVICE_DT_INST_DEFINE(0,
 		    &ps2_xec_init_0,
-		    device_pm_control_nop,
+		    NULL,
 		    &ps2_xec_port_data_0, &ps2_xec_config_0,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
 		    &ps2_xec_driver_api);
@@ -240,7 +240,7 @@ static struct ps2_xec_data ps2_xec_port_data_1;
 
 DEVICE_DT_INST_DEFINE(1,
 		    &ps2_xec_init_1,
-		    device_pm_control_nop,
+		    NULL,
 		    &ps2_xec_port_data_1, &ps2_xec_config_1,
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
 		    &ps2_xec_driver_api);
