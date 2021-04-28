@@ -99,7 +99,7 @@ static const struct led_gpio_config led_gpio_config_##i = {	\
 	.led		= gpio_dt_spec_##i,			\
 };								\
 								\
-DEVICE_DT_INST_DEFINE(i, &led_gpio_init, device_pm_control_nop,	\
+DEVICE_DT_INST_DEFINE(i, &led_gpio_init, NULL,			\
 		      NULL, &led_gpio_config_##i,		\
 		      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
 		      &led_gpio_api);
