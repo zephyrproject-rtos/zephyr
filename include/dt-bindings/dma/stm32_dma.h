@@ -28,7 +28,11 @@
 /* priority defined on bits 16-17 as 0, 1, 2, 3 */
 #define STM32_DMA_CONFIG_PRIORITY(config)		((config >> 16) & 0x3)
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
 /* macros for features */
 #define STM32_DMA_FEATURES_FIFO_THRESHOLD(features)	(features & 0x3)
+#else
+#define STM32_DMA_FEATURES_FIFO_THRESHOLD(features)	0
+#endif
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_DMA_STM32_DMA_H_ */
