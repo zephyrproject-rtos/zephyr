@@ -254,8 +254,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
         lines.append('q') # Close the connection and quit
 
-        self.logger.debug('JLink commander script:')
-        self.logger.debug('\n'.join(lines))
+        self.logger.debug('JLink commander script:\n' +
+                          '\n'.join(lines))
 
         # Don't use NamedTemporaryFile: the resulting file can't be
         # opened again on Windows.
