@@ -58,5 +58,5 @@ static const struct memc_stm32_config config = {
 	.pinctrl_len = ARRAY_SIZE(pinctrl),
 };
 
-DEVICE_DT_INST_DEFINE(0, memc_stm32_init, device_pm_control_nop, NULL,
+DEVICE_DT_INST_DEFINE(0, memc_stm32_init, NULL, NULL,
 	      &config, POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);
