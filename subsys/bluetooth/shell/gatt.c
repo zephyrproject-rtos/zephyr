@@ -29,6 +29,53 @@
 
 extern uint8_t selected_id;
 
+static struct write_stats {
+	uint32_t count;
+	uint32_t len;
+	uint32_t total;
+	uint32_t rate;
+} write_stats;
+
+static void update_write_stats(uint16_t len)
+{
+	static uint32_t cycle_stamp;
+	uint32_t delta;
+
+	delta = k_cycle_get_32() - cycle_stamp;
+	delta = (uint32_t)k_cyc_to_ns_floor64(delta);
+
+	if (!delta) {
+		delta = 1;
+	}
+
+	write_stats.count++;
+	write_stats.total += len;
+
+	/* if last data rx-ed was greater than 1 second in the past,
+	 * reset the metrics.
+	 */
+	if (delta > 1000000000) {
+		write_stats.len = 0U;
+		write_stats.rate = 0U;
+		cycle_stamp = k_cycle_get_32();
+	} else {
+		write_stats.len += len;
+		write_stats.rate = ((uint64_t)write_stats.len << 3) *
+			1000000000U / delta;
+	}
+}
+
+static void print_write_stats(void)
+{
+	shell_print(ctx_shell, "Write #%u: %u bytes (%u bps)",
+		    write_stats.count, write_stats.total, write_stats.rate);
+}
+
+static void reset_write_stats(void)
+{
+	memset(&write_stats, 0, sizeof(write_stats));
+}
+
 #if defined(CONFIG_BT_GATT_CLIENT)
 static void exchange_func(struct bt_conn *conn, uint8_t err,
 			  struct bt_gatt_exchange_params *params)
@@ -398,53 +445,6 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	return err;
-}
-
-static struct write_stats {
-	uint32_t count;
-	uint32_t len;
-	uint32_t total;
-	uint32_t rate;
-} write_stats;
-
-static void update_write_stats(uint16_t len)
-{
-	static uint32_t cycle_stamp;
-	uint32_t delta;
-
-	delta = k_cycle_get_32() - cycle_stamp;
-	delta = (uint32_t)k_cyc_to_ns_floor64(delta);
-
-	if (!delta) {
-		delta = 1;
-	}
-
-	write_stats.count++;
-	write_stats.total += len;
-
-	/* if last data rx-ed was greater than 1 second in the past,
-	 * reset the metrics.
-	 */
-	if (delta > 1000000000) {
-		write_stats.len = 0U;
-		write_stats.rate = 0U;
-		cycle_stamp = k_cycle_get_32();
-	} else {
-		write_stats.len += len;
-		write_stats.rate = ((uint64_t)write_stats.len << 3) *
-				   1000000000U / delta;
-	}
-}
-
-static void reset_write_stats(void)
-{
-	memset(&write_stats, 0, sizeof(write_stats));
-}
-
-static void print_write_stats(void)
-{
-	shell_print(ctx_shell, "Write #%u: %u bytes (%u bps)",
-		    write_stats.count, write_stats.total, write_stats.rate);
 }
 
 static void write_without_rsp_cb(struct bt_conn *conn, void *user_data)
