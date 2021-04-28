@@ -60,6 +60,19 @@
 	status = "okay";
 };
 
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 2KB of storage at the end of first 1MB flash */
+		storage_partition: partition@ff800 {
+			label = "storage";
+			reg = <0x000ff800 0x00000800>;
+		};
+	};
+};
 
 &mac {
 	/*
