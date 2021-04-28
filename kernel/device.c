@@ -30,7 +30,7 @@ static inline void device_pm_state_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 	*dev->pm = (struct pm_device){
 		.usage = ATOMIC_INIT(0),
-		.lock = Z_SEM_INITIALIZER(dev->pm->lock, 1, 1),
+		.lock = {},
 		.condvar = Z_CONDVAR_INITIALIZER(dev->pm->condvar),
 	};
 #endif /* CONFIG_PM_DEVICE */
