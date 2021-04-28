@@ -293,7 +293,7 @@ static int can_loopback_init(const struct device *dev)
 static struct can_loopback_data can_loopback_dev_data_1;
 
 DEVICE_DEFINE(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
-		    &can_loopback_init, device_pm_control_nop,
+		    &can_loopback_init, NULL,
 		    &can_loopback_dev_data_1, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &can_api_funcs);
@@ -327,7 +327,7 @@ static int socket_can_init_1(const struct device *dev)
 }
 
 NET_DEVICE_INIT(socket_can_loopback_1, SOCKET_CAN_NAME_1, socket_can_init_1,
-		device_pm_control_nop, &socket_can_context_1, NULL,
+		NULL, &socket_can_context_1, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&socket_can_api,
 		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
