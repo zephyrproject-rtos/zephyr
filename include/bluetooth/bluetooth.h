@@ -709,6 +709,14 @@ struct bt_le_per_adv_param {
 						 BT_GAP_ADV_FAST_INT_MAX_2, \
 						 NULL)
 
+/** Connectable extended advertising with @ref BT_LE_ADV_OPT_USE_NAME */
+#define BT_LE_EXT_ADV_CONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV | \
+						BT_LE_ADV_OPT_CONNECTABLE | \
+						BT_LE_ADV_OPT_USE_NAME, \
+						BT_GAP_ADV_FAST_INT_MIN_2, \
+						BT_GAP_ADV_FAST_INT_MAX_2, \
+						NULL)
+
 /** Non-connectable extended advertising with private address */
 #define BT_LE_EXT_ADV_NCONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_EXT_ADV, \
 					    BT_GAP_ADV_FAST_INT_MIN_2, \
