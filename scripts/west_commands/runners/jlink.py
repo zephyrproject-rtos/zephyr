@@ -93,7 +93,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help='''Additional options for JLink Commander,
                             e.g. \'-autoconnect 1\' ''')
         parser.add_argument('--commander', default=DEFAULT_JLINK_EXE,
-                            help='J-Link Commander, default is JLinkExe')
+                            help=f'''J-Link Commander, default is
+                            {DEFAULT_JLINK_EXE}''')
         parser.add_argument('--reset-after-load', '--no-reset-after-load',
                             dest='reset_after_load', nargs=0,
                             action=ToggleAction,
