@@ -8,6 +8,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <sys/__assert.h>
+#include <spinlock.h>
 
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
@@ -156,6 +157,8 @@ int device_pm_put_sync(const struct device *dev)
 
 void device_pm_enable(const struct device *dev)
 {
+	k_spinlock_key_t key;
+
 	if (k_is_pre_kernel()) {
 		dev->pm->dev = dev;
 		atomic_set(&dev->pm->fsm_state, DEVICE_PM_SUSPEND_STATE);
@@ -164,7 +167,7 @@ void device_pm_enable(const struct device *dev)
 		return;
 	}
 
-	k_sem_take(&dev->pm->lock, K_FOREVER);
+	key = k_spin_lock(&dev->pm->lock);
 	dev->pm->enable = true;
 
 	/* During the driver init, device can set the
@@ -179,17 +182,19 @@ void device_pm_enable(const struct device *dev)
 	} else {
 		k_work_schedule(&dev->pm->work, K_NO_WAIT);
 	}
-	k_sem_give(&dev->pm->lock);
+	k_spin_unlock(&dev->pm->lock, key);
 }
 
 void device_pm_disable(const struct device *dev)
 {
+	k_spinlock_key_t key;
+
 	__ASSERT(k_is_pre_kernel() == false, "Device should not be disabled "
 		 "before kernel is initialized");
 
-	k_sem_take(&dev->pm->lock, K_FOREVER);
+	key = k_spin_lock(&dev->pm->lock);
 	dev->pm->enable = false;
 	/* Bring up the device before disabling the Idle PM */
 	k_work_schedule(&dev->pm->work, K_NO_WAIT);
-	k_sem_give(&dev->pm->lock);
+	k_spin_unlock(&dev->pm->lock, key);
 }
