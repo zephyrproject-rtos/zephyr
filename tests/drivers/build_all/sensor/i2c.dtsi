@@ -230,6 +230,13 @@ test_i2c_sx9500: sx9500@22 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_sgp40: sgp40@59 {
+	compatible = "sensirion,sgp40";
+	label = "SGP40";
+	reg = <0x59>;
+	enable-selftest;
+};
+
 test_i2c_sht3xd: sht3xd@23 {
 	compatible = "sensirion,sht3xd";
 	label = "SHT3XD";

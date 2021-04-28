@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2021, Leonard Pollak
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion SGP40 Multipixel Gas Sensor
+
+compatible: "sensirion,sgp40"
+
+include: i2c-device.yaml
+
+properties:
+    enable-selftest:
+      type: boolean
+      description: |
+        Enabling this will run a selftest when the driver initializes.
+        The selftest takes ~250ms.
