@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define DT_DRV_COMPAT st_stm32_dma_v1
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2)
 #define DT_DRV_COMPAT st_stm32_dma_v2
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis)
+#define DT_DRV_COMPAT st_stm32_dma_v2bis
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
@@ -463,11 +465,13 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	}
 
 #if defined(CONFIG_DMA_STM32_V2) || defined(CONFIG_DMAMUX_STM32)
+#if  !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis)
 	/*
 	 * the with dma V2 and dma mux,
 	 * the request ID is stored in the dma_slot
 	 */
 	DMA_InitStruct.PeriphRequest = config->dma_slot;
+#endif
 #endif
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
