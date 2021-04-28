@@ -244,6 +244,13 @@ test_i2c_sht3xd: sht3xd@23 {
 	alert-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_sht4xd: sht4x@44 {
+	compatible = "sensirion,sht4x";
+	reg = <0x44>;
+	label = "SHT4X";
+	repeatability = <2>;
+};
+
 test_i2c_shtc3: SHTC3@70 {
 	compatible = "sensirion,shtcx";
 	label = "SHTC3";
