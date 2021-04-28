@@ -48,7 +48,6 @@ config FLASH_MCUX_FLEXSPI_XIP
 	depends on MEMC_MCUX_FLEXSPI
 	depends on (CODE_FLEXSPI || CODE_FLEXSPI2)
 	select XIP
-	select CODE_DATA_RELOCATION
 	help
 	  Allows using the flash API while running in XIP.
 	  WARNING: It is possible to overwrite the running application itself.
@@ -64,9 +63,11 @@ choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
 
 config FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
 	bool "ITCM"
+	select CODE_DATA_RELOCATION
 
 config FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
 	bool "SRAM"
+	select CODE_DATA_RELOCATION_SRAM
 
 endchoice
 
