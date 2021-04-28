@@ -820,7 +820,7 @@ void arch_gdb_step(void);
  * @{
  */
 
-#ifdef CONFIG_CACHE_MANAGEMENT
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_HAS_ARCH_CACHE)
 /**
  *
  * @brief Enable d-cache
@@ -905,7 +905,7 @@ size_t arch_dcache_line_size_get(void);
 size_t arch_icache_line_size_get(void);
 #endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
 
-#endif /* CONFIG_CACHE_MANAGEMENT */
+#endif /* CONFIG_CACHE_MANAGEMENT && CONFIG_HAS_ARCH_CACHE */
 
 /** @} */
 
