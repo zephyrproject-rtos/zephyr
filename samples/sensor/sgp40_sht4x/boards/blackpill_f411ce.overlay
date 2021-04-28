@@ -1,0 +1,19 @@
+&i2c1 {
+	status = "okay";
+	compatible = "st,stm32-i2c-v1";
+
+	clock-frequency = <I2C_BITRATE_FAST>;
+	label = "I2C_0";
+	sht4x@44 {
+		status = "okay";
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		label = "SHT4X";
+	};
+	sgp40@59 {
+		status = "okay";
+		compatible = "sensirion,sgp40";
+		reg = <0x59>;
+		label = "SGP40";
+	};
+};
