@@ -6,10 +6,8 @@
 
 import argparse
 import os
-import platform
-import re
+from pathlib import Path
 import shlex
-from subprocess import TimeoutExpired
 import sys
 import tempfile
 
@@ -17,7 +15,7 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
 
 try:
-    from packaging import version
+    from pylink.library import Library
     MISSING_REQUIREMENTS = False
 except ImportError:
     MISSING_REQUIREMENTS = True
@@ -121,43 +119,63 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.logger.info('J-Link GDB server running on port {}'.
                          format(self.gdb_port))
 
-    def read_version(self):
-        '''Read the J-Link Commander version output.
-
-        J-Link Commander does not provide neither a stand-alone version string
-        output nor command line parameter help output. To find the version, we
-        launch it using a bogus command line argument (to get it to fail) and
-        read the version information provided to stdout.
-
-        A timeout is used since the J-Link Commander takes up to a few seconds
-        to exit upon failure.'''
-        if platform.system() == 'Windows' or "microsoft" in platform.release().lower():
-            # The check below does not work on Microsoft Windows or in WSL
-            return ''
-
-        self.require(self.commander)
-        # Match "Vd.dd" substring
-        ver_re = re.compile(r'\s+V([.0-9]+)[a-zA-Z]*\s+', re.IGNORECASE)
-        cmd = ([self.commander] + ['-bogus-argument-that-does-not-exist'])
-        try:
-            self.check_output(cmd, timeout=1)
-        except TimeoutExpired as e:
-            ver_m = ver_re.search(e.output.decode('utf-8'))
-            if ver_m:
-                return ver_m.group(1)
+    @property
+    def jlink_version(self):
+        # Get the J-Link version as a (major, minor, rev) tuple of integers.
+        #
+        # J-Link's command line tools provide neither a standalone
+        # "--version" nor help output that contains the version. Hack
+        # around this deficiency by using the third-party pylink library
+        # to load the shared library distributed with the tools, which
+        # provides an API call for getting the version.
+        if not hasattr(self, '_jlink_version'):
+            plat = sys.platform
+            if plat.startswith('win32'):
+                libname = Library.get_appropriate_windows_sdk_name() + '.dll'
+            elif plat.startswith('linux'):
+                libname = Library.JLINK_SDK_NAME + '.so'
+            elif plat.startswith('darwin'):
+                libname = Library.JLINK_SDK_NAME + '.dylib'
             else:
-                return ''
+                self.logger.warning(f'unknown platform {plat}; assuming UNIX')
+                libname = Library.JLINK_SDK_NAME + '.so'
+
+            lib = Library(dllpath=os.fspath(Path(self.commander).parent /
+                                            libname))
+            version = int(lib.dll().JLINKARM_GetDLLVersion())
+            self.logger.debug('JLINKARM_GetDLLVersion()=%s', version)
+            # The return value is an int with 2 decimal digits per
+            # version subfield.
+            self._jlink_version = (version // 10000,
+                                   (version // 100) % 100,
+                                   version % 100)
+
+        return self._jlink_version
+
+    @property
+    def jlink_version_str(self):
+        # Converts the numeric revision tuple to something human-readable.
+        if not hasattr(self, '_jlink_version_str'):
+            major, minor, rev = self.jlink_version
+            rev_str = chr(ord('a') + rev - 1) if rev else ''
+            self._jlink_version_str = f'{major}.{minor:02}{rev_str}'
+        return self._jlink_version_str
 
     def supports_nogui(self):
-        ver = self.read_version()
         # -nogui was introduced in J-Link Commander v6.80
-        return version.parse(ver) >= version.parse("6.80")
+        return self.jlink_version >= (6, 80, 0)
 
     def do_run(self, command, **kwargs):
         if MISSING_REQUIREMENTS:
             raise RuntimeError('one or more Python dependencies were missing; '
                                "see the getting started guide for details on "
                                "how to fix")
+        # Convert commander to a real absolute path. We need this to
+        # be able to find the shared library that tells us what
+        # version of the tools we're using.
+        self.commander = os.fspath(
+            Path(self.require(self.commander)).resolve())
+        self.logger.info(f'JLink version: {self.jlink_version_str}')
 
         server_cmd = ([self.gdbserver] +
                       ['-select', 'usb', # only USB connections supported
@@ -200,8 +218,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 self.run_client(client_cmd)
 
     def flash(self, **kwargs):
-        self.require(self.commander)
-
         lines = ['r'] # Reset and halt the target
 
         if self.erase:
