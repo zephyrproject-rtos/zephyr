@@ -922,12 +922,8 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 #endif
 #endif
 
-/**
- * @brief Alias for legacy use of device_pm_control_nop.
- *
- * @note Usage of NULL is preferred, this alias will eventually be removed.
- */
-#define device_pm_control_nop NULL
+/** Alias for legacy use of device_pm_control_nop */
+#define device_pm_control_nop __DEPRECATED_MACRO NULL
 
 /**
  * @}
