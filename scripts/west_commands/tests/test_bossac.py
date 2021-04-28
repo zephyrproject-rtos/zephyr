@@ -161,11 +161,12 @@ def bcfg_check_cond5(item):
 def bcfg_get_cond5(item):
     return dict(BC_DICT_COND5)[item]
 
+os_path_isfile = os.path.isfile
+
 def os_path_isfile_patch(filename):
     if filename == RC_KERNEL_BIN:
         return True
-    return os.path.isfile(filename)
-
+    return os_path_isfile(filename)
 
 @patch('runners.bossac.BossacBinaryRunner.supports',
 	return_value=False)
