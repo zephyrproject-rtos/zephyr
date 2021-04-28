@@ -273,7 +273,7 @@ static void counter_esp32_isr(struct device *dev)
 										 \
 	DEVICE_DT_INST_DEFINE(n,						 \
 			      counter_esp32_init,				 \
-			      device_pm_control_nop, &counter_data_##n,		 \
+			      NULL, &counter_data_##n,				 \
 			      &counter_config_##n, PRE_KERNEL_1,		 \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &counter_api);
 
