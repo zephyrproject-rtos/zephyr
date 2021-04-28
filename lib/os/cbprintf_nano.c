@@ -204,8 +204,6 @@ start:
 			} else if (special == '+') {
 				prefix = "+";
 				min_width--;
-			} else {
-				;
 			}
 			data_len = convert_value(d, 10, 0, buf + sizeof(buf));
 			data = buf + sizeof(buf) - data_len;
