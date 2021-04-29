@@ -250,13 +250,20 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 
 static uint32_t adc_stm32_getChannelByIndx(const uint8_t index) {
 	uint32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(index);
-#if DT_N_S_soc_S_adc_40012000_P_ch17_internal == 1
+	/*
+	 * the stm32f4xx offers internal channels
+	 * they could be used through dts flags
+	 * for now only the channel 17 (VRef internal)
+	 * is implemented
+	 */
+#if defined(CONFIG_SOC_SERIES_STM32F4X)
+#if (DT_PROP(DT_NODELABEL(adc1), ch17_internal) == 1)
 	if (index == 17) {
 		channel = LL_ADC_CHANNEL_VREFINT;
 	}
-#else
-	// we don't use the internal channel
 #endif
+
+#endif /* SOC STM32F4xx */
 	return channel;
 }
 
@@ -728,12 +735,19 @@ static int adc_stm32_init(const struct device *dev)
 	}
 #endif
 
-	// handle internal channels
-#if DT_N_S_soc_S_adc_40012000_P_ch17_internal == 1
+	/*
+	 * the stm32f4xx offers internal channels
+	 * they could be used through dts flags
+	 * for now only the channel 17 (VRef internal)
+	 * is implemented. So we need to make sure that
+	 * they are enabled
+	 */
+#if defined(CONFIG_SOC_SERIES_STM32F4X)
+#if (DT_PROP(DT_NODELABEL(adc1), ch17_internal) == 1)
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), LL_ADC_PATH_INTERNAL_VREFINT);
-#else
-	// we don't use the internal channel
 #endif
+#endif /* SOC STM32F4xx */
+
 
 	LL_ADC_Enable(adc);
 
@@ -804,7 +818,7 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 };									\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
-		    &adc_stm32_init, device_pm_control_nop,		\
+		    &adc_stm32_init, NULL,				\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &api_stm32_driver_api);				\
