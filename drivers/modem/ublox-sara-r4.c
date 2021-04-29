@@ -43,7 +43,9 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 /* pin settings */
 enum mdm_control_pins {
 	MDM_POWER = 0,
+#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
 	MDM_RESET,
+#endif
 #if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
 	MDM_VINT,
 #endif
@@ -55,10 +57,12 @@ static struct modem_pin modem_pins[] = {
 		  DT_INST_GPIO_PIN(0, mdm_power_gpios),
 		  DT_INST_GPIO_FLAGS(0, mdm_power_gpios) | GPIO_OUTPUT),
 
+#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
 	/* MDM_RESET */
 	MODEM_PIN(DT_INST_GPIO_LABEL(0, mdm_reset_gpios),
 		  DT_INST_GPIO_PIN(0, mdm_reset_gpios),
 		  DT_INST_GPIO_FLAGS(0, mdm_reset_gpios) | GPIO_OUTPUT),
+#endif
 
 #if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
 	/* MDM_VINT */
@@ -904,8 +908,10 @@ static int pin_init(void)
 {
 	LOG_INF("Setting Modem Pins");
 
+#if DT_INST_NODE_HAS_PROP(0, mdm_reset_gpios)
 	LOG_DBG("MDM_RESET_PIN -> NOT_ASSERTED");
 	modem_pin_write(&mctx, MDM_RESET, MDM_RESET_NOT_ASSERTED);
+#endif
 
 	LOG_DBG("MDM_POWER_PIN -> ENABLE");
 	modem_pin_write(&mctx, MDM_POWER, MDM_POWER_ENABLE);
