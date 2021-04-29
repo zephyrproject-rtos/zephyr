@@ -12,6 +12,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/memory-controller/stm32-fmc-sdram.h>
+#include <freq.h>
 
 / {
 	chosen {
@@ -38,6 +39,62 @@
 		};
 	};
 
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "st,stm32-hse-clock";
+			/* H7 clock driver may not always need this value */
+			/* but it is required by the binding */
+			clock-frequency = <DT_FREQ_M(25)>;
+			status = "disabled";
+		};
+
+		clk_hsi: clk-hsi {
+			#clock-cells = <0>;
+			compatible = "st,stm32h7-hsi-clock";
+			clock-frequency = <DT_FREQ_M(64)>;
+			status = "disabled";
+		};
+
+		clk_csi: clk-csi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(4)>;
+			status = "disabled";
+		};
+
+		clk_lse: clk-lse {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		clk_lsi: clk-lsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(32)>;
+			status = "disabled";
+		};
+
+		pll: pll@0 {
+			#clock-cells = <0>;
+			compatible = "st,stm32h7-pll-clock";
+			reg = <0>;
+			status = "disabled";
+		};
+
+		pll3: pll@2 {
+			#clock-cells = <0>;
+			compatible = "st,stm32h7-pll-clock";
+			reg = <1>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		flash: flash-controller@52002000 {
 			compatible = "st,stm32h7-flash-controller";
@@ -51,7 +108,7 @@
 		};
 
 		rcc: rcc@58024400 {
-			compatible = "st,stm32-rcc";
+			compatible = "st,stm32h7-rcc";
 			#clock-cells = <2>;
 			reg = <0x58024400 0x400>;
 		};
