@@ -10,8 +10,8 @@
 
 #include <bluetooth/services/ots.h>
 
-#include "mpl.h"
-#include "mpl_internal.h"
+#include "media_proxy.h"
+#include "media_proxy_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_mpl

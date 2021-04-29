@@ -17,7 +17,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include "../../../../subsys/bluetooth/host/audio/mpl.h"
+#include "../../../../subsys/bluetooth/host/audio/media_proxy.h"
 
 #include "common.h"
 
