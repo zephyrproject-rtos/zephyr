@@ -364,12 +364,8 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_print();
 }
 
-static void process_rx_packet(struct k_work *work)
+void net_process_rx_packet(struct net_pkt *pkt)
 {
-	struct net_pkt *pkt;
-
-	pkt = CONTAINER_OF(work, struct net_pkt, work);
-
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
 	net_capture_pkt(net_pkt_iface(pkt), pkt);
@@ -382,8 +378,6 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 	uint8_t prio = net_pkt_priority(pkt);
 	uint8_t tc = net_rx_priority2tc(prio);
 
-	k_work_init(net_pkt_work(pkt), process_rx_packet);
-
 #if defined(CONFIG_NET_STATISTICS)
 	net_stats_update_tc_recv_pkt(iface, tc);
 	net_stats_update_tc_recv_bytes(iface, tc, net_pkt_get_len(pkt));
@@ -395,7 +389,7 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 #endif
 
 	if (NET_TC_RX_COUNT == 0) {
-		process_rx_packet(net_pkt_work(pkt));
+		net_process_rx_packet(pkt);
 	} else {
 		net_tc_submit_to_rx_queue(tc, pkt);
 	}
