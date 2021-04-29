@@ -17,7 +17,7 @@ properties:
 
     mdm-reset-gpios:
       type: phandle-array
-      required: true
+      required: false
 
     mdm-vint-gpios:
       type: phandle-array
