@@ -24,6 +24,7 @@
 #define ADC_ACQ_TIME(unit, value)  (((unit) << 14) | ((value) & BIT_MASK(14)))
 /** Value indicating that the default acquisition time should be used. */
 #define ADC_ACQ_TIME_DEFAULT       0
+#define ADC_ACQ_TIME_MAX           BIT_MASK(14)
 
 #define ADC_ACQ_TIME_UNIT(time)    (((time) >> 14) & BIT_MASK(2))
 #define ADC_ACQ_TIME_VALUE(time)   ((time) & BIT_MASK(14))
