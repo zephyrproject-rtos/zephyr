@@ -57,7 +57,7 @@
 
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
-	current-speed = <115200>;
+	current-speed = <3000000>;
 	status = "okay";
 };
 
@@ -76,19 +76,20 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
-
+/*dma1 通道3 请求1 内存到外设 外设地址不自增 内存地址自增 高优先级*/
 &spi1 {
 	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
 		     &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
 	status = "okay";
-	dmas = <&dma1 3 1 0x20440 0x00>;/*dma1 通道3 请求1 内存到外设 外设地址不自增 内存地址自增 高优先级*/
-	dma-names = "tx";
+	dmas = <&dma1 3 1 0x20440 0x00>,
+            <&dma1 2 1 0x20480 0x00>;
+    dma-names = "tx", "rx";
 
 	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
 	lcd_st7735:st7735@0{
 			compatible = "sitronix,st7735";
 			reg=<0>;
-			spi-max-frequency = <80000000>; /* 8MHz */
+			spi-max-frequency = <18000000>; /* 8MHz 36000000*/
 			label = "ST7735";
 			reset-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
 			blk_gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;

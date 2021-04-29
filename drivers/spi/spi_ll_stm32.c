@@ -8,7 +8,7 @@
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(spi_ll_stm32);
+LOG_MODULE_REGISTER(spi_ll_stm32,LOG_LEVEL_DBG);
 
 #include <sys/util.h>
 #include <kernel.h>

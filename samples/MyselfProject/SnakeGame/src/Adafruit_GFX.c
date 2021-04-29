@@ -100,7 +100,7 @@ void Adafruit_displayInit(uint8_t options)//addr指向的值不可修改,但是a
     while(numCmds--){
         cmd = read_byte(addr++);
         numArgs = read_byte(addr++);
-        printk("cmd:%d==numargs:%d\n",cmd,numArgs);
+        // printk("cmd:%d==numargs:%d\n",cmd,numArgs);
         Adafruit_display_write(display_dev,cmd,addr,numArgs);
         addr += numArgs;
     }
