@@ -93,7 +93,6 @@ static uint8_t per_adv_data2[] = {
 		8, BT_DATA_NAME_COMPLETE, 'Z', 'e', 'p', 'h', 'y', 'r', '1',
 	};
 
-static struct bt_conn *default_conn;
 static bool volatile is_connected, is_disconnected;
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
@@ -102,13 +101,9 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 	printk("Connected.\n");
 
-	if (!default_conn) {
-		default_conn = conn;
-	}
-
 	is_connected = true;
 
-	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		printk("Disconnection failed (err %d).\n", err);
 	}
@@ -117,9 +112,6 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected.\n");
-
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
 
 	is_disconnected = true;
 }
@@ -744,6 +736,7 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 	printk("%s: type = 0x%x.\n", __func__, adv_type);
 
 	static bool connection_tested;
+	struct bt_conn *conn;
 
 	if (!connection_tested) {
 		int err;
@@ -758,9 +751,11 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 
 		err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
 					BT_LE_CONN_PARAM_DEFAULT,
-					(void *)&default_conn);
+					&conn);
 		if (err) {
 			printk("Create conn failed (err %d)\n", err);
+		} else {
+			bt_conn_unref(conn);
 		}
 	}
 }
