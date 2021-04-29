@@ -16,6 +16,10 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
+
+static int nvs_flash_block_cmp(struct nvs_fs *fs, uint32_t addr, const void *data,
+				size_t len);
+
 /* basic routines */
 /* nvs_al_size returns size aligned to fs->write_block_size */
 static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
@@ -31,8 +35,8 @@ static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 
 /* flash routines */
 /* basic aligned flash write to nvs address */
-static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
-			     size_t len)
+static inline int _nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr,
+				    const void *data, size_t len)
 {
 	const uint8_t *data8 = (const uint8_t *)data;
 	int rc = 0;
@@ -70,6 +74,35 @@ static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
 	}
 
 end:
+	return rc;
+}
+
+static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
+			     size_t len)
+{
+	int rc;
+
+#ifdef CONFIG_NVS_WRITE_RETRY
+	for (int i = 0; i < 2; i++) {
+#endif
+		rc = _nvs_flash_al_wrt(fs, addr, data, len);
+#ifdef CONFIG_NVS_WRITE_CHECK
+		if (rc == 0) {
+			rc = nvs_flash_block_cmp(fs, addr, data, len);
+			if (rc == 1) {
+				rc = -EIO;
+			}
+	#ifdef CONFIG_NVS_WRITE_RETRY
+			if (rc <= 0) {
+				break;
+			}
+	#endif	/* CONFIG_NVS_WRITE_RETRY */
+		}
+
+#endif /* CONFIG_NVS_WRITE_CHECK */
+#ifdef CONFIG_NVS_WRITE_RETRY
+	}
+#endif
 	return rc;
 }
 
@@ -483,10 +516,28 @@ static int nvs_gc(struct nvs_fs *fs)
 
 	stop_addr = gc_addr - ate_size;
 
-	if (!nvs_ate_crc8_check(&close_ate)) {
+	if (!nvs_ate_crc8_check(&close_ate) &&
+	    (close_ate.offset <= stop_addr) &&
+	    !(close_ate.offset % ate_size)) {
+		if (close_ate.offset == stop_addr) {
+			/* close_ate.offset == stop_addr is results of closing
+			 * a sector which contain only corrupted written data.
+			 * It is possible corner case
+			 */
+			goto clean_up;
+		}
 		gc_addr &= ADDR_SECT_MASK;
 		gc_addr += close_ate.offset;
 	} else {
+		/**
+		 * - If ate was corrupted or
+		 * - ate.offset has unaligned value
+		 * - If the last data ate offset is greather that allowed
+		 * assume that somehow sector was closed despite it
+		 * doesn't contain any data.
+		 *
+		 * Consider this sector as to be recovered.
+		 */
 		rc = nvs_recover_last_ate(fs, &gc_addr);
 		if (rc) {
 			return rc;
@@ -546,7 +597,7 @@ static int nvs_gc(struct nvs_fs *fs)
 			}
 		}
 	} while (gc_prev_addr != stop_addr);
-
+clean_up:
 	rc = nvs_flash_erase_sector(fs, sec_addr);
 	if (rc) {
 		return rc;
@@ -615,6 +666,9 @@ static int nvs_startup(struct nvs_fs *fs)
 	 */
 	fs->ate_wra = addr - ate_size;
 	fs->data_wra = addr & ADDR_SECT_MASK;
+#ifdef CONFIG_NVS_ALLOW_ATE_GAPS
+	uint32_t addr2 = fs->ate_wra;
+#endif
 
 	while (fs->ate_wra >= fs->data_wra) {
 		rc = nvs_flash_ate_rd(fs, fs->ate_wra, &last_ate);
@@ -622,18 +676,22 @@ static int nvs_startup(struct nvs_fs *fs)
 			goto end;
 		}
 
+#ifndef CONFIG_NVS_ALLOW_ATE_GAPS
 		rc = nvs_ate_cmp_const(&last_ate, erase_value);
 
 		if (!rc) {
 			/* found ff empty location */
 			break;
 		}
-
+#endif
 		if (!nvs_ate_crc8_check(&last_ate)) {
 			/* crc8 is ok, complete write of ate was performed */
 			fs->data_wra = addr & ADDR_SECT_MASK;
 			fs->data_wra += last_ate.offset;
 			fs->data_wra += nvs_al_size(fs, last_ate.len);
+#ifdef CONFIG_NVS_ALLOW_ATE_GAPS
+			addr2 = fs->ate_wra;
+#endif
 
 			/* ate on the last possition within the sector is
 			 * reserved for deletion an entry
@@ -647,7 +705,9 @@ static int nvs_startup(struct nvs_fs *fs)
 
 		fs->ate_wra -= ate_size;
 	}
-
+#ifdef CONFIG_NVS_ALLOW_ATE_GAPS
+	fs->ate_wra = addr2;
+#endif
 	/* possible data write after last ate write, update data_wra */
 	while (fs->ate_wra > fs->data_wra) {
 		empty_len = fs->ate_wra - fs->data_wra;
