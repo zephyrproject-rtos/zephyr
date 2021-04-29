@@ -94,6 +94,7 @@ static uint8_t per_adv_data2[] = {
 	};
 
 static bool volatile is_connected, is_disconnected;
+static bool volatile connection_to_test;
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
@@ -735,13 +736,12 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 {
 	printk("%s: type = 0x%x.\n", __func__, adv_type);
 
-	static bool connection_tested;
 	struct bt_conn *conn;
 
-	if (!connection_tested) {
+	if (connection_to_test) {
 		int err;
 
-		connection_tested = true;
+		connection_to_test = false;
 
 		err = bt_le_scan_stop();
 		if (err) {
@@ -941,6 +941,8 @@ static void test_scanx_main(void)
 	printk("Periodic Advertising callbacks register...");
 	bt_le_per_adv_sync_cb_register(&sync_cb);
 	printk("Success.\n");
+
+	connection_to_test = true;
 
 	printk("Start scanning...");
 	err = bt_le_scan_start(&scan_param, scan_cb);
