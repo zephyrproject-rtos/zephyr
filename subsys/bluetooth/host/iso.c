@@ -405,7 +405,12 @@ static struct net_buf *hci_le_set_cig_params(struct bt_iso_create_param *param)
 		sys_put_le24(param->chans[0]->qos->tx->interval, req->m_interval);
 		req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->tx->latency);
 	} else {
-		/* Use RX values if TX is disabled */
+		/* Use RX values if TX is disabled.
+		 * If TX is disabled then the values don't have any meaning, as
+		 * we will create a new CIG in case we want to change the
+		 * directions, but will need to be set to the fields to some
+		 * valid (nonzero) values for the controller to accept them.
+		 */
 		sys_put_le24(param->chans[0]->qos->rx->interval, req->m_interval);
 		req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->rx->latency);
 	}
@@ -414,7 +419,12 @@ static struct net_buf *hci_le_set_cig_params(struct bt_iso_create_param *param)
 		sys_put_le24(param->chans[0]->qos->rx->interval, req->s_interval);
 		req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->rx->latency);
 	} else {
-		/* Use TX values if RX is disabled */
+		/* Use TX values if RX is disabled.
+		 * If RX is disabled then the values don't have any meaning, as
+		 * we will create a new CIG in case we want to change the
+		 * directions, but will need to be set to the fields to some
+		 * valid (nonzero) values for the controller to accept them.
+		 */
 		sys_put_le24(param->chans[0]->qos->tx->interval, req->s_interval);
 		req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->tx->latency);
 	}
