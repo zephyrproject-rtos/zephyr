@@ -395,7 +395,7 @@ static struct lpc11u6x_syscon_data syscon_data;
 
 DEVICE_DT_INST_DEFINE(0,
 		    &lpc11u6x_syscon_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &syscon_data, &syscon_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
 		    &lpc11u6x_clock_control_api);

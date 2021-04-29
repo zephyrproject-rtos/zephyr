@@ -605,8 +605,8 @@ void flash_stm32_page_layout(const struct device *dev,
 
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
-	.pclken = { .bus = STM32_CLOCK_BUS_AHB3,
-		    .enr = LL_AHB3_GRP1_PERIPH_FLASH },
+	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
+		    .enr = DT_INST_CLOCKS_CELL(0, bits)},
 };
 
 static const struct flash_driver_api flash_stm32h7_api = {
@@ -650,6 +650,6 @@ static int stm32h7_flash_init(const struct device *dev)
 }
 
 
-DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, NULL,
 		    &flash_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32h7_api);

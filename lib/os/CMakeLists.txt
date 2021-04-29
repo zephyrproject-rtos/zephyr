@@ -39,6 +39,8 @@ zephyr_sources_ifdef(CONFIG_MPSC_PBUF mpsc_pbuf.c)
 
 zephyr_sources_ifdef(CONFIG_SCHED_DEADLINE p4wq.c)
 
+zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
+
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include

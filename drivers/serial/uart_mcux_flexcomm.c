@@ -332,7 +332,7 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &mcux_flexcomm_init,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &mcux_flexcomm_##n##_data,			\
 			    &mcux_flexcomm_##n##_config,		\
 			    PRE_KERNEL_1,				\

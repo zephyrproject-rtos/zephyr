@@ -843,7 +843,7 @@ static const struct espi_npcx_config espi_npcx_config = {
 	.alts_list = espi_alts,
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_npcx_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &espi_npcx_init, NULL,
 		    &espi_npcx_data, &espi_npcx_config,
 		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
 		    &espi_npcx_driver_api);

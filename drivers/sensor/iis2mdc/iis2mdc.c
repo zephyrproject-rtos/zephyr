@@ -332,7 +332,7 @@ static int iis2mdc_init(const struct device *dev)
 #define IIS2MDC_DEVICE_INIT(inst)					\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    iis2mdc_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &iis2mdc_data_##inst,			\
 			    &iis2mdc_config_##inst,			\
 			    POST_KERNEL,				\
@@ -345,7 +345,7 @@ static int iis2mdc_init(const struct device *dev)
 
 #ifdef CONFIG_IIS2MDC_TRIGGER
 #define IIS2MDC_CFG_IRQ(inst) \
-	.gpio_drdy = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), drdy_gpios),
+	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),
 #else
 #define IIS2MDC_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2MDC_TRIGGER */

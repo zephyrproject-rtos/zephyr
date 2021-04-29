@@ -179,7 +179,7 @@ BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
 									\
 	DEVICE_DT_INST_DEFINE(id,					\
 			    &gpio_lmp90xxx_init,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &gpio_lmp90xxx_##id##_data,			\
 			    &gpio_lmp90xxx_##id##_cfg, POST_KERNEL,	\
 			    CONFIG_GPIO_LMP90XXX_INIT_PRIORITY,		\

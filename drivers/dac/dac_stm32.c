@@ -165,7 +165,7 @@ static struct dac_stm32_data dac_stm32_data_##index = {			\
 	.channel_count = STM32_CHANNEL_COUNT				\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(index, &dac_stm32_init, device_pm_control_nop,	\
+DEVICE_DT_INST_DEFINE(index, &dac_stm32_init, NULL,			\
 		    &dac_stm32_data_##index,				\
 		    &dac_stm32_cfg_##index, POST_KERNEL,		\
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\

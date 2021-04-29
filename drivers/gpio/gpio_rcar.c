@@ -306,7 +306,7 @@ static const struct gpio_driver_api gpio_rcar_driver_api = {
 								    \
 	DEVICE_DT_INST_DEFINE(n,				    \
 			      gpio_rcar_init,			    \
-			      device_pm_control_nop,		    \
+			      NULL,				    \
 			      &gpio_rcar_data_##n,		    \
 			      &gpio_rcar_cfg_##n,		    \
 			      POST_KERNEL,			    \

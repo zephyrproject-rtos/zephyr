@@ -592,7 +592,7 @@ static int gpio_stm32_init(const struct device *dev)
 	static struct gpio_stm32_data gpio_stm32_data_## __suffix;	       \
 	DEVICE_DT_DEFINE(__node,					       \
 			    gpio_stm32_init,				       \
-			    device_pm_control_nop,			       \
+			    NULL,					       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
 			    POST_KERNEL,				       \

@@ -252,7 +252,7 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 											\
 	DEVICE_DT_INST_DEFINE(n,							\
 			    gpio_stellaris_init,					\
-			    device_pm_control_nop,					\
+			    NULL,							\
 			    &port_## n ##_stellaris_runtime,				\
 			    &gpio_stellaris_port_## n ##_config,			\
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\

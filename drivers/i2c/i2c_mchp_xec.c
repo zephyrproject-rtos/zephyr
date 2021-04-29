@@ -654,7 +654,7 @@ static int i2c_xec_init(const struct device *dev)
 		.girq_bit = DT_INST_PROP(n, girq_bit),			\
 		.irq_config_func = i2c_xec_irq_config_func_##n,		\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, &i2c_xec_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(n, &i2c_xec_init, NULL,			\
 		&i2c_xec_data_##n, &i2c_xec_config_##n,			\
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
 		&i2c_xec_driver_api);					\

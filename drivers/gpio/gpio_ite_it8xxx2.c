@@ -457,7 +457,7 @@ static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
 	};                                                         \
 DEVICE_DT_INST_DEFINE(inst,                                        \
 		gpio_ite_init,                                     \
-		device_pm_control_nop,                             \
+		NULL,                                              \
 		&gpio_ite_data_##inst,                             \
 		&gpio_ite_cfg_##inst,                              \
 		POST_KERNEL,                                       \

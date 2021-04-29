@@ -224,38 +224,38 @@ static const struct wdt_driver_api wdt_api = {
 	.feed = wdt_esp32_feed
 };
 
-#define ESP32_WDT_INIT(idx)										   \
-	static void wdt_esp32_connect_irq_func##idx(void)						   \
-	{												   \
-		esp32_rom_intr_matrix_set(0, ETS_TG##idx##_WDT_LEVEL_INTR_SOURCE,			   \
-					  CONFIG_WDT##idx##_ESP32_IRQ);					   \
-		IRQ_CONNECT(CONFIG_WDT##idx##_ESP32_IRQ,						   \
-			    4,										   \
-			    wdt_esp32_isr,								   \
-			    DEVICE_DT_INST_GET(idx),							   \
-			    0);										   \
-	}												   \
-													   \
-	static struct wdt_esp32_data wdt##idx##_data;							   \
-	static struct wdt_esp32_config wdt_esp32_config##idx = {					   \
-		.base = (struct wdt_esp32_regs_t *) DT_INST_REG_ADDR(idx), \
-		.irq_regs = {										   \
-			.timer_int_ena = (uint32_t *)TIMG_INT_ENA_TIMERS_REG(idx),				   \
-			.timer_int_clr = (uint32_t *)TIMG_INT_CLR_TIMERS_REG(idx),				   \
-		},											   \
-		.irq = {										   \
-			.source =  ETS_TG##idx##_WDT_LEVEL_INTR_SOURCE,					   \
-			.line =  CONFIG_WDT##idx##_ESP32_IRQ,						   \
-		},											   \
-		.connect_irq = wdt_esp32_connect_irq_func##idx						   \
-	};												   \
-													   \
-	DEVICE_DT_INST_DEFINE(idx,									   \
-			    wdt_esp32_init,								   \
-			    device_pm_control_nop,							   \
-			    &wdt##idx##_data,								   \
-			    &wdt_esp32_config##idx,							   \
-			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				   \
+#define ESP32_WDT_INIT(idx)								\
+	static void wdt_esp32_connect_irq_func##idx(void)				\
+	{										\
+		esp32_rom_intr_matrix_set(0, ETS_TG##idx##_WDT_LEVEL_INTR_SOURCE,	\
+					  CONFIG_WDT##idx##_ESP32_IRQ);			\
+		IRQ_CONNECT(CONFIG_WDT##idx##_ESP32_IRQ,				\
+			    4,								\
+			    wdt_esp32_isr,						\
+			    DEVICE_DT_INST_GET(idx),					\
+			    0);								\
+	}										\
+											\
+	static struct wdt_esp32_data wdt##idx##_data;					\
+	static struct wdt_esp32_config wdt_esp32_config##idx = {			\
+		.base = (struct wdt_esp32_regs_t *) DT_INST_REG_ADDR(idx),		\
+		.irq_regs = {								\
+			.timer_int_ena = (uint32_t *)TIMG_INT_ENA_TIMERS_REG(idx),	\
+			.timer_int_clr = (uint32_t *)TIMG_INT_CLR_TIMERS_REG(idx),	\
+		},									\
+		.irq = {								\
+			.source =  ETS_TG##idx##_WDT_LEVEL_INTR_SOURCE,			\
+			.line =  CONFIG_WDT##idx##_ESP32_IRQ,				\
+		},									\
+		.connect_irq = wdt_esp32_connect_irq_func##idx				\
+	};										\
+											\
+	DEVICE_DT_INST_DEFINE(idx,							\
+			    wdt_esp32_init,						\
+			    NULL,							\
+			    &wdt##idx##_data,						\
+			    &wdt_esp32_config##idx,					\
+			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &wdt_api)
 
 static void wdt_esp32_isr(const struct device *dev)

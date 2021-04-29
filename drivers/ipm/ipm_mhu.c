@@ -187,7 +187,7 @@ static struct ipm_mhu_data ipm_mhu_data_0 = {
 
 DEVICE_DT_INST_DEFINE(0,
 			&ipm_mhu_init,
-			device_pm_control_nop,
+			NULL,
 			&ipm_mhu_data_0,
 			&ipm_mhu_cfg_0, PRE_KERNEL_1,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -218,7 +218,7 @@ static struct ipm_mhu_data ipm_mhu_data_1 = {
 
 DEVICE_DT_INST_DEFINE(1,
 			&ipm_mhu_init,
-			device_pm_control_nop,
+			NULL,
 			&ipm_mhu_data_1,
 			&ipm_mhu_cfg_1, PRE_KERNEL_1,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

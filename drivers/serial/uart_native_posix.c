@@ -365,14 +365,14 @@ static int np_uart_tty_poll_in(const struct device *dev,
 }
 
 DEVICE_DT_INST_DEFINE(0,
-	    &np_uart_0_init, device_pm_control_nop,
+	    &np_uart_0_init, NULL,
 	    (void *)&native_uart_status_0, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	    &np_uart_driver_api_0);
 
 #if defined(CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE)
 DEVICE_DT_INST_DEFINE(1,
-	    &np_uart_1_init, device_pm_control_nop,
+	    &np_uart_1_init, NULL,
 	    (void *)&native_uart_status_1, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	    &np_uart_driver_api_1);

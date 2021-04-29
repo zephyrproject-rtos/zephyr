@@ -797,7 +797,7 @@ static int lsm6dso_init(const struct device *dev)
 #define LSM6DSO_DEVICE_INIT(inst)					\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    lsm6dso_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &lsm6dso_data_##inst,			\
 			    &lsm6dso_config_##inst,			\
 			    POST_KERNEL,				\
@@ -810,7 +810,7 @@ static int lsm6dso_init(const struct device *dev)
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
 #define LSM6DSO_CFG_IRQ(inst) \
-	.gpio_drdy = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), irq_gpios),	\
+	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),	\
 	.int_pin = DT_INST_PROP(inst, int_pin)
 #else
 #define LSM6DSO_CFG_IRQ(inst)

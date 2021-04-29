@@ -2851,7 +2851,7 @@ static int disk_usdhc_init(const struct device *dev)
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &disk_usdhc_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &usdhc_priv_##n,				\
 			    &usdhc_config_##n,				\
 			    POST_KERNEL,				\

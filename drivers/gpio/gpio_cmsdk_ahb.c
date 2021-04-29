@@ -274,7 +274,7 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			    gpio_cmsdk_ahb_init,				\
-			    device_pm_control_nop,				\
+			    NULL,						\
 			    &gpio_cmsdk_port_##n##_data,			\
 			    &gpio_cmsdk_port_## n ##_config,			\
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\

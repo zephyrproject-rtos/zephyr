@@ -183,7 +183,7 @@ static void wdt_event_handler(const struct device *dev)
 	};								       \
 	DEVICE_DT_DEFINE(WDT(idx),					       \
 			    wdt_##idx##_init,				       \
-			    device_pm_control_nop,			       \
+			    NULL,					       \
 			    &wdt_##idx##_data,				       \
 			    &wdt_##idx##z_config,			       \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \

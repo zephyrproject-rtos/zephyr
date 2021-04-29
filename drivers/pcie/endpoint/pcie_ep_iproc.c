@@ -490,7 +490,7 @@ static struct pcie_ep_driver_api iproc_pcie_ep_api = {
 	.dma_xfer = iproc_pcie_pl330_dma_xfer,
 };
 
-DEVICE_DT_INST_DEFINE(0, &iproc_pcie_ep_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &iproc_pcie_ep_init, NULL,
 		    &iproc_pcie_ep_ctx_0,
 		    &iproc_pcie_ep_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

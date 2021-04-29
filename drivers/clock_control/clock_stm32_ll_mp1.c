@@ -411,7 +411,7 @@ static int stm32_clock_control_init(const struct device *dev)
  */
 DEVICE_DT_DEFINE(DT_NODELABEL(rcc),
 		    &stm32_clock_control_init,
-		    device_pm_control_nop,
+		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1,
 		    CONFIG_CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY,

@@ -1524,6 +1524,24 @@ list(APPEND
   ${extra_post_build_byproducts}
   )
 
+if(CONFIG_LOG_DICTIONARY_SUPPORT)
+  set(LOG_DICT_DB_NAME ${PROJECT_BINARY_DIR}/log_dictionary.json)
+
+  list(APPEND
+    post_build_commands
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
+    ${KERNEL_ELF_NAME}
+    ${LOG_DICT_DB_NAME}
+    --build ${BUILD_VERSION}
+    )
+  list(APPEND
+    post_build_byproducts
+    ${LOG_DICT_DB_NAME}
+    )
+endif()
+
 # Add post_build_commands to post-process the final .elf file produced by
 # either the ZEPHYR_PREBUILT_EXECUTABLE or the KERNEL_ELF executable
 # targets above.

@@ -386,7 +386,7 @@ static struct pwm_data pwm_nrf5_sw_0_data;
 
 DEVICE_DT_INST_DEFINE(0,
 		    pwm_nrf5_sw_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &pwm_nrf5_sw_0_data,
 		    &pwm_nrf5_sw_0_config,
 		    POST_KERNEL,

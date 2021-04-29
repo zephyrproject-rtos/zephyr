@@ -738,7 +738,7 @@ static int bmp388_init(const struct device *dev)
 
 #if defined(CONFIG_BMP388_TRIGGER)
 #define BMP388_INT_CFG(inst) \
-	.gpio_int = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), int_gpios),
+	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, int_gpios),
 #else
 #define BMP388_INT_CFG(inst)
 #endif

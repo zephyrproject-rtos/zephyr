@@ -309,6 +309,12 @@ Libraries / Subsystems
 
 * Power management
 
+  * ``device_pm_control_nop`` has been removed in favor of ``NULL`` when device
+    PM is not supported by a device. In order to make transition easier for
+    out-of-tree users a macro with the same name is provided as an alias to
+    ``NULL``. The macro is flagged as deprecated to make users aware of the
+    change.
+
 * Logging
 
 * LVGL
@@ -325,6 +331,14 @@ Libraries / Subsystems
     the runtime statistics enabled.
 
 * Debug
+
+* OS
+
+  * Reboot functionality has been moved to ``subsys/os`` from ``subsys/power``.
+    A consequence of this movement is that the ``<power/reboot.h>`` header has
+    been moved to ``<sys/reboot.h>``. ``<power/reboot.h>`` is still provided
+    for compatibility, but it will produce a warning to inform users of the
+    relocation.
 
 HALs
 ****

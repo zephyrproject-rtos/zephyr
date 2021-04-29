@@ -342,7 +342,7 @@ static struct gpio_esp32_data gpio_1_data = { /* 32..39 */
 	}; \
 	DEVICE_DT_INST_DEFINE(_id,					\
 			    gpio_esp32_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &gpio_##_id##_data, &gpio_##_id##_cfg,	\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

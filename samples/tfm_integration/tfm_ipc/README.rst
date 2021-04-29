@@ -20,6 +20,10 @@ non-secure configuration.
 The sample prints test info to the console either as a single-thread or
 multi-thread application.
 
+The sample reboots after 5 seconds to demonstrate rebooting with TF-M.
+The sys_reboot call is routed to TF-M, since the nonsecure app is not allowed
+to perform the reboot directly.
+
 Building and Running
 ********************
 

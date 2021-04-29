@@ -191,6 +191,6 @@ static const struct hts221_config hts221_cfg = {
 #endif /* HTS221_TRIGGER_ENABLED */
 };
 
-DEVICE_DT_INST_DEFINE(0, hts221_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, hts221_init, NULL,
 		    &hts221_driver, &hts221_cfg, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &hts221_driver_api);

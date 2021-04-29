@@ -237,7 +237,7 @@ out:
 #define ETH_MCUX_PM_FUNC eth_mcux_device_pm_control
 
 #else
-#define ETH_MCUX_PM_FUNC device_pm_control_nop
+#define ETH_MCUX_PM_FUNC NULL
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
 #if ETH_MCUX_FIXED_LINK
@@ -1536,7 +1536,7 @@ static int ptp_mcux_init(const struct device *port)
 }
 
 DEVICE_DEFINE(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
-		device_pm_control_nop, &ptp_mcux_0_context, NULL, POST_KERNEL,
+		NULL, &ptp_mcux_0_context, NULL, POST_KERNEL,
 		CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 #endif /* CONFIG_PTP_CLOCK_MCUX */

@@ -385,6 +385,11 @@ static struct net_buf *hci_le_set_cig_params(struct bt_iso_create_param *param)
 	struct net_buf *rsp;
 	int i, err;
 
+	if (!param->chans[0]->qos->tx && !param->chans[0]->qos->rx) {
+		BT_ERR("Both TX and RX QoS are disabled");
+		return NULL;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CIG_PARAMS,
 				sizeof(*req) + sizeof(*cis) * param->num_conns);
 	if (!buf) {
@@ -396,13 +401,27 @@ static struct net_buf *hci_le_set_cig_params(struct bt_iso_create_param *param)
 	memset(req, 0, sizeof(*req));
 
 	req->cig_id = param->conns[0]->iso.cig_id;
-	sys_put_le24(param->chans[0]->qos->tx->interval, req->m_interval);
-	sys_put_le24(param->chans[0]->qos->rx->interval, req->s_interval);
+	if (param->chans[0]->qos->tx) {
+		sys_put_le24(param->chans[0]->qos->tx->interval, req->m_interval);
+		req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->tx->latency);
+	} else {
+		/* Use RX values if TX is disabled */
+		sys_put_le24(param->chans[0]->qos->rx->interval, req->m_interval);
+		req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->rx->latency);
+	}
+
+	if (param->chans[0]->qos->rx) {
+		sys_put_le24(param->chans[0]->qos->rx->interval, req->s_interval);
+		req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->rx->latency);
+	} else {
+		/* Use TX values if RX is disabled */
+		sys_put_le24(param->chans[0]->qos->tx->interval, req->s_interval);
+		req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->tx->latency);
+	}
+
 	req->sca = param->chans[0]->qos->sca;
 	req->packing = param->chans[0]->qos->packing;
 	req->framing = param->chans[0]->qos->framing;
-	req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->tx->latency);
-	req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->rx->latency);
 	req->num_cis = param->num_conns;
 
 	/* Program the cis parameters */

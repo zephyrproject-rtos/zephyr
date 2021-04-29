@@ -374,7 +374,7 @@ static int kscan_xec_init(const struct device *dev);
 
 DEVICE_DT_INST_DEFINE(0,
 		    &kscan_xec_init,
-		    device_pm_control_nop,
+		    NULL,
 		    NULL, NULL,
 		    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
 		    &kscan_xec_driver_api);

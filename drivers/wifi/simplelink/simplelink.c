@@ -283,7 +283,7 @@ static int simplelink_init(const struct device *dev)
 }
 
 NET_DEVICE_OFFLOAD_INIT(simplelink, CONFIG_WIFI_SIMPLELINK_NAME,
-			simplelink_init, device_pm_control_nop,
+			simplelink_init, NULL,
 			&simplelink_data, NULL,
 			CONFIG_WIFI_INIT_PRIORITY, &simplelink_api,
 			CONFIG_WIFI_SIMPLELINK_MAX_PACKET_SIZE);

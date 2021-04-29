@@ -981,7 +981,7 @@ int bmi160_init(const struct device *dev)
 #endif
 
 #define BMI160_DEVICE_INIT(inst)					\
-	DEVICE_DT_INST_DEFINE(inst, bmi160_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(inst, bmi160_init, NULL,			\
 		&bmi160_data_##inst, &bmi160_cfg_##inst,		\
 		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
 		&bmi160_api);

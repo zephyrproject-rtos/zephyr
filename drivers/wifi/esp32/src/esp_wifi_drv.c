@@ -178,7 +178,7 @@ static const struct ethernet_api eth_esp32_apis = {
 };
 
 NET_DEVICE_DT_INST_DEFINE(0,
-		eth_esp32_dev_init, device_pm_control_nop,
+		eth_esp32_dev_init, NULL,
 		&eth_data, NULL, CONFIG_ETH_INIT_PRIORITY,
 		&eth_esp32_apis, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);

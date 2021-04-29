@@ -322,7 +322,7 @@ static struct adc_npcx_data adc_npcx_data_0 = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    adc_npcx_init, device_pm_control_nop,
+		    adc_npcx_init, NULL,
 		    &adc_npcx_data_0, &adc_npcx_cfg_0,
 		    PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

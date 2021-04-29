@@ -394,7 +394,7 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
 
 DEVICE_DT_INST_DEFINE(0,
 		    uart_sifive_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &uart_sifive_data_0, &uart_sifive_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_sifive_driver_api);
@@ -433,7 +433,7 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_1 = {
 
 DEVICE_DT_INST_DEFINE(1,
 		    uart_sifive_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &uart_sifive_data_1, &uart_sifive_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_sifive_driver_api);

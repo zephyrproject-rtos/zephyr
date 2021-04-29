@@ -264,21 +264,9 @@ Device Model with Power Management Support
 Drivers initialize the devices using macros. See :ref:`device_model_api` for
 details on how these macros are used. Use the DEVICE_DEFINE macro to initialize
 drivers providing power management support via the PM control function.
-One of the macro parameters is the pointer to the device_pm_control handler function.
-
-Default Initializer Function
-----------------------------
-
-.. code-block:: c
-
-   int device_pm_control_nop(const struct device *unused_device, uint32_t unused_ctrl_command, void *unused_context);
-
-
-If the driver doesn't implement any power control operations, the driver can
-initialize the corresponding pointer with this default nop function. This
-default nop function does nothing and should be used instead of
-implementing a dummy function to avoid wasting code memory in the driver.
-
+One of the macro parameters is the pointer to the device_pm_control handler
+function. If the driver doesn't implement any power control operations, it can
+initialize the corresponding pointer with ``NULL``.
 
 Device Power Management API
 ===========================
