@@ -139,14 +139,6 @@
 #define SRAM_ALIAS_MASK		0xFF000000
 #define SRAM_ALIAS_OFFSET	0x20000000
 
-
-#define uncache_to_cache(address) \
-	((__typeof__(address))((uint32_t)(address) + SRAM_ALIAS_OFFSET))
-#define cache_to_uncache(address) \
-	((__typeof__(address))((uint32_t)(address) - SRAM_ALIAS_OFFSET))
-#define is_uncached(address) \
-	(((uint32_t)(address) & SRAM_ALIAS_MASK) == SRAM_ALIAS_BASE)
-
 /* shim */
 #define SHIM_BASE		0x00071F00
 #define SHIM_SIZE		0x00000100
