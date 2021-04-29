@@ -81,8 +81,8 @@
 	pinctrl-0 = <&spi1_nss_master_pa4 &spi1_sck_master_pa5
 		     &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
 	status = "okay";
-	dmas = <&dma1 3 1 0x20440 0x00>,
-            <&dma1 2 1 0x20480 0x00>;
+	dmas = <&dma1 3 0x20440>,
+            <&dma1 2 0x20480>;
     dma-names = "tx", "rx";
 
 	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;

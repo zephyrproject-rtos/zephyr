@@ -38,13 +38,13 @@ void main(void)
     #pragma message(PRINT_MACRO(DISPLAY_DEV_NAME))
 
 
-    Adafruit_displayInit(INIT_ST7735);
-    Adafruit_clear(0,0,129,160,WHITE);
+    // Adafruit_displayInit(INIT_ST7735);
+    // Adafruit_clear(0,0,129,160,WHITE);
 
-    // LIST_HEAD(list_handle);
+    // // LIST_HEAD(list_handle);
 
-    struct coll_ball ball[3];
-    rand_init_ball(&ball[0]);
+    // struct coll_ball ball[3];
+    // rand_init_ball(&ball[0]);
     // printk("x:%d,y:%d,r:%d,speed_x:%d,speed_y:%d\n",ball[0].x,ball[0].y,ball[0].r,ball[0].speed_x,ball[0].speed_y);
     // rand_init_ball(&ball[1]);
     // printk("x:%d,y:%d,r:%d,speed_x:%d,speed_y:%d\n",ball[1].x,ball[1].y,ball[1].r,ball[1].speed_x,ball[1].speed_y);
@@ -56,7 +56,7 @@ void main(void)
     struct thread_timer status_check_timer;
     thread_timer_init(&status_check_timer,
 	                  _check_system_status, NULL);
-    // thread_timer_start(&status_check_timer,1000,1000);
+    thread_timer_start(&status_check_timer,1000,1000);
     int cnt=0;
     while (1)
     {
@@ -86,7 +86,7 @@ void main(void)
         // }
         printk("%d\n",k_uptime_get_32());
         LOG_INF("main");
-        // thread_timer_handle_expired();
+        thread_timer_handle_expired();
         // k_sleep(K_MSEC(10));
         
     }
