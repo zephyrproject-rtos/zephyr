@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <kernel.h>
-#include <power/power_state.h>
+#include <pm/state.h>
 #include "pm_policy.h"
 
 #include <logging/log.h>
