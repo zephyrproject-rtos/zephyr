@@ -532,7 +532,7 @@
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
 /samples/subsys/mgmt/osdp/                @cbsiddharth
 /samples/subsys/usb/                      @jfischer-no
-/samples/subsys/power/                    @nashif @ceolin
+/samples/subsys/pm/                       @nashif @ceolin
 /samples/tfm_integration/                 @ioannisg @microbuilder
 /samples/userspace/                       @dcpleung @nashif
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
