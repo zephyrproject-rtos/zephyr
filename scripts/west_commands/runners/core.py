@@ -521,6 +521,15 @@ class ZephyrBinaryRunner(abc.ABC):
             self._build_conf = BuildConfiguration(self.cfg.build_dir)
         return self._build_conf
 
+    @property
+    def thread_info_enabled(self) -> bool:
+        '''Returns True if self.build_conf has
+        CONFIG_DEBUG_THREAD_INFO enabled. This supports the
+        CONFIG_OPENOCD_SUPPORT fallback as well for now.
+        '''
+        return (self.build_conf.getboolean('CONFIG_DEBUG_THREAD_INFO') or
+                self.build_conf.getboolean('CONFIG_OPENOCD_SUPPORT'))
+
     @staticmethod
     def require(program: str) -> str:
         '''Require that a program is installed before proceeding.
