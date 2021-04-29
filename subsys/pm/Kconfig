@@ -26,7 +26,7 @@ config PM_DEBUG
 	help
 	  Enable System Power Management debugging hooks.
 
-source "subsys/power/policy/Kconfig"
+source "subsys/pm/policy/Kconfig"
 
 module = PM
 module-str = System Power Management

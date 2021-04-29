@@ -617,7 +617,7 @@
 /subsys/net/l2/                           @jukkar @tbursztyka
 /subsys/net/l2/canbus/                    @alexanderwachter @jukkar
 /subsys/net/*/openthread/                 @rlubos
-/subsys/power/                            @nashif @ceolin
+/subsys/pm/                               @nashif @ceolin
 /subsys/random/                           @dleach02
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jakub-uC @nordic-krch
