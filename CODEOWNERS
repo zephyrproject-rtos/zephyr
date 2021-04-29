@@ -85,6 +85,8 @@
 /boards/arm/96b_stm32_sensor_mez/         @Mani-Sadhasivam
 /boards/arm/96b_wistrio/                  @Mani-Sadhasivam
 /boards/arm/arduino_due/                  @ioannisg
+/boards/arm/blackpill_f401ce/             @coderkalyan
+/boards/arm/blackpill_f411ce/             @coderkalyan
 /boards/arm/bmd_345_eval/                 @Navin-Sankar
 /boards/arm/cc1352r1_launchxl/            @bwitherspoon
 /boards/arm/cc26x2r1_launchxl/            @bwitherspoon
