@@ -1,17 +1,15 @@
-/**
- * @file
- * @brief Internal header for the Media Control Service (MCS) and
- * Client (MCC) and for the media player (MPL).
- *
+/*
  * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MPL_INTERNAL_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MPL_INTERNAL_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_INTERNAL_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_INTERNAL_H_
 
-#include "mpl.h"
+/** @brief Internal APIs for Bluetooth Media Control */
+
+#include "media_proxy.h"
 
 #define MPL_NO_TRACK_ID 0
 
@@ -28,4 +26,4 @@
 	} while (0)
 
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MPL_INTERNAL_*/
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MEDIA_PROXY_INTERNAL_H_ */

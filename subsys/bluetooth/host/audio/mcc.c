@@ -20,8 +20,8 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/mcc.h>
 
-#include "mpl.h"
-#include "mpl_internal.h"
+#include "media_proxy.h"
+#include "media_proxy_internal.h"
 #include "otc.h"
 #include "otc_internal.h"
 

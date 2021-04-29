@@ -18,7 +18,7 @@
 #include "bt.h"
 
 #include "../host/audio/otc.h"
-#include "../host/audio/mpl_internal.h"
+#include "../host/audio/media_proxy_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_mcc_shell

@@ -20,7 +20,7 @@
 
 #include <bluetooth/mcc.h>
 
-#include "../../../../subsys/bluetooth/host/audio/mpl.h"
+#include "../../../../subsys/bluetooth/host/audio/media_proxy.h"
 #include "../../../../subsys/bluetooth/host/audio/otc.h"
 
 #include "common.h"

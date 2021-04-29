@@ -18,7 +18,7 @@
 #include <net/buf.h>
 
 /* Todo: Decide placement of headers below, fix */
-#include "../subsys/bluetooth/host/audio/mpl.h"
+#include "../subsys/bluetooth/host/audio/media_proxy.h"
 
 #ifdef __cplusplus
 extern "C" {

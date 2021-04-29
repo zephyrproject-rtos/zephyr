@@ -1,14 +1,32 @@
-/* @file
- * @brief Media player skeleton
- *
- * For use with the Media Control Service (MCS)
- *
- * Copyright (c) 2019 Nordic Semiconductor ASA
+/*
+ * Copyright (c) 2019 - 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_HOST_AUDIO_MPL_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_HOST_AUDIO_MPL_H_
+
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_HOST_AUDIO_MEDIA_PROXY_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_HOST_AUDIO_MEDIA_PROXY_H_
+
+/** @brief Media proxy module
+ *
+ * The media proxy module is the connection point between media player
+ * instances and media controllers.
+ *
+ * A media player has (access to) media content and knows how to
+ * navigate and play this content. A media controller reads or gets
+ * information from a player and controls the player by setting player
+ * parameters and giving the player commands.
+ *
+ * The media proxy module allows media player implementations to make
+ * themselves available to media controllers. And it allows
+ * controllers to access, and get updates from, any player.
+ *
+ * The media proxy module allows both local and remote control of
+ * local player instances: A media controller may be a local
+ * application, or it may be a Media Control Service relaying requests
+ * from a remote Media Control Client. There may be either local or
+ * remote control, or both, or even multiple instances of each.
+ */
 
 #include <stdbool.h>
 #include <zephyr/types.h>
@@ -117,6 +135,10 @@ struct mpl_search_t {
 };	                                /* - (type, length, param) */
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
 
+
+
+/* PUBLIC API FOR PLAYERS */
+
 int mpl_init(void);
 
 char *mpl_player_name_get(void);
@@ -208,4 +230,4 @@ struct bt_ots *bt_mcs_get_ots(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_HOST_AUDIO_MPL_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_HOST_AUDIO_MEDIA_PROXY_H_ */
