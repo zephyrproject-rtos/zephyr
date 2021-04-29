@@ -1167,7 +1167,7 @@ Power management:
         - mengxianglinx
     files:
         - include/pm/pm.h
-        - samples/subsys/power/
+        - samples/subsys/pm/
         - subsys/pm/
         - tests/subsys/power/
     labels:
