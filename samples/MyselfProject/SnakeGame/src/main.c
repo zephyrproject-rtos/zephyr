@@ -38,8 +38,8 @@ void main(void)
     #pragma message(PRINT_MACRO(DISPLAY_DEV_NAME))
 
 
-    // Adafruit_displayInit(INIT_ST7735);
-    // Adafruit_clear(0,0,129,160,WHITE);
+    Adafruit_displayInit(INIT_ST7735);
+    Adafruit_clear(0,0,129,160,WHITE);
 
     // // LIST_HEAD(list_handle);
 
