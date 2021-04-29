@@ -73,6 +73,8 @@ extern "C" {
 #define BOOT_TRAILER_IMG_STATUS_OFFS(bank_area) ((bank_area)->fa_size -\
 						  BOOT_MAGIC_SZ -\
 						  BOOT_MAX_ALIGN * 2)
+
+struct flash_area;
 /**
  * @brief MCUboot image header representation for image version
  *
@@ -136,9 +138,9 @@ struct mcuboot_img_header {
  * @brief Read the MCUboot image header information from an image bank.
  *
  * This attempts to parse the image header,
- * From the start of the @a area_id image.
+ * From the start of the @a fa image.
  *
- * @param area_id flash_area ID of image bank which stores the image.
+ * @param fa flash_area object pointer.
  * @param header On success, the returned header information is available
  *               in this structure.
  * @param header_size Size of the header structure passed by the caller.
@@ -146,7 +148,7 @@ struct mcuboot_img_header {
  *                    necessary information, an error is returned.
  * @return Zero on success, a negative value on error.
  */
-int boot_read_bank_header(uint8_t area_id,
+int boot_read_bank_header(const struct flash_area *fa,
 			  struct mcuboot_img_header *header,
 			  size_t header_size);
 

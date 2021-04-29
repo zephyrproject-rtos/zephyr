@@ -189,7 +189,7 @@ static inline CO_SDO_abortCode_t canopen_program_cmd_clear(void)
 	if (!IS_ENABLED(CONFIG_IMG_ERASE_PROGRESSIVELY)) {
 		LOG_DBG("erasing flash area");
 
-		err = boot_erase_img_bank(FLASH_AREA_ID(image_1));
+		err = boot_erase_img_bank(FLASH_AREA(image_1));
 		if (err) {
 			LOG_ERR("failed to erase image bank (err %d)", err);
 			CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
@@ -313,11 +313,10 @@ static int flash_crc(const struct flash_area *flash_area,
 
 static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 {
-	const struct flash_area *flash_area;
+	const struct flash_area *fa = NULL;
 	struct mcuboot_img_header header;
 	off_t offset = 0;
 	uint32_t crc = 0;
-	uint8_t fa_id;
 	uint32_t len;
 	int err;
 
@@ -344,12 +343,12 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 	 * started upon receiveing the next 'start' command.
 	 */
 	if (ctx.flash_written) {
-		fa_id = FLASH_AREA_ID(image_1);
+		fa = FLASH_AREA(image_1);
 	} else {
-		fa_id = FLASH_AREA_ID(image_0);
+		fa = FLASH_AREA(image_0);
 	}
 
-	err = boot_read_bank_header(fa_id, &header, sizeof(header));
+	err = boot_read_bank_header(fa, &header, sizeof(header));
 	if (err) {
 		LOG_WRN("failed to read bank header (err %d)", err);
 		CO_setUint32(odf_arg->data, 0U);
@@ -368,8 +367,7 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 	}
 	len = header.h.v1.image_size;
 
-	err = flash_area_open(fa_id, &flash_area);
-	if (err) {
+	if (fa == NULL) {
 		LOG_ERR("failed to open flash area (err %d)", err);
 		CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
 			       CO_EMC_HARDWARE, err);
@@ -378,9 +376,7 @@ static CO_SDO_abortCode_t canopen_odf_1f56(CO_ODF_arg_t *odf_arg)
 		return CO_SDO_AB_HW;
 	}
 
-	err = flash_crc(flash_area, offset, len, &crc);
-
-	flash_area_close(flash_area);
+	err = flash_crc(fa, offset, len, &crc);
 
 	if (err) {
 		LOG_ERR("failed to read flash (err %d)", err);

@@ -15,6 +15,7 @@
 
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
+#include <sys/check.h>
 
 #include "bootutil/bootutil_public.h"
 #include <dfu/mcuboot.h>
@@ -57,22 +58,19 @@ struct mcuboot_v1_raw_header {
  * End of strict defines
  */
 
-static int boot_read_v1_header(uint8_t area_id,
+static int boot_read_v1_header(const struct flash_area *fa,
 			       struct mcuboot_v1_raw_header *v1_raw)
 {
-	const struct flash_area *fa;
-	int rc;
+	int rc = 0;
 
-	rc = flash_area_open(area_id, &fa);
-	if (rc) {
-		return rc;
+	if (fa == NULL) {
+		return -EINVAL;
 	}
 
 	/*
 	 * Read and sanity-check the raw header.
 	 */
 	rc = flash_area_read(fa, 0, v1_raw, sizeof(*v1_raw));
-	flash_area_close(fa);
 	if (rc) {
 		return rc;
 	}
@@ -103,7 +101,7 @@ static int boot_read_v1_header(uint8_t area_id,
 	return 0;
 }
 
-int boot_read_bank_header(uint8_t area_id,
+int boot_read_bank_header(const struct flash_area *fa,
 			  struct mcuboot_img_header *header,
 			  size_t header_size)
 {
@@ -119,7 +117,7 @@ int boot_read_bank_header(uint8_t area_id,
 	if (header_size < v1_min_size) {
 		return -ENOMEM;
 	}
-	rc = boot_read_v1_header(area_id, &v1_raw);
+	rc = boot_read_v1_header(fa, &v1_raw);
 	if (rc) {
 		return rc;
 	}
@@ -169,12 +167,11 @@ int boot_request_upgrade(int permanent)
 
 bool boot_is_img_confirmed(void)
 {
-	const struct flash_area *fa;
+	const struct flash_area *fa = FLASH_AREA_IMAGE_PRIMARY;
 	int rc;
 	uint8_t flag_val;
 
-	rc = flash_area_open(FLASH_AREA_IMAGE_PRIMARY, &fa);
-	if (rc) {
+	CHECKIF(fa == NULL) {
 		return false;
 	}
 
@@ -198,19 +195,15 @@ int boot_write_img_confirmed(void)
 	return 0;
 }
 
-int boot_erase_img_bank(uint8_t area_id)
+int boot_erase_img_bank(uint8_t id)
 {
-	const struct flash_area *fa;
-	int rc;
+	const struct flash_area *fa = NULL;
+	int rc = flash_area_open(id, &fa);
 
-	rc = flash_area_open(area_id, &fa);
-	if (rc) {
+	if (rc != 0) {
 		return rc;
 	}
+	/* No need for flash_area_close() */
 
-	rc = flash_area_erase(fa, 0, fa->fa_size);
-
-	flash_area_close(fa);
-
-	return rc;
+	return flash_area_erase(fa, 0, fa->fa_size);
 }
