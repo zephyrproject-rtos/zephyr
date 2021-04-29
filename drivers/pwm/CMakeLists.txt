@@ -19,6 +19,7 @@ zephyr_library_sources_ifdef(CONFIG_PWM_SAM0_TCC	pwm_sam0_tcc.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_NPCX		pwm_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_XLNX_AXI_TIMER	pwm_xlnx_axi_timer.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_MCUX_PWT 	pwm_mcux_pwt.c)
+zephyr_library_sources_ifdef(CONFIG_PWM_GECKO   pwm_gecko.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   pwm_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_PWM_CAPTURE pwm_capture.c)

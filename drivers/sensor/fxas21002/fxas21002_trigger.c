@@ -171,7 +171,7 @@ int fxas21002_trigger_init(const struct device *dev)
 	data->dev = dev;
 
 #if defined(CONFIG_FXAS21002_TRIGGER_OWN_THREAD)
-	k_sem_init(&data->trig_sem, 0, UINT_MAX);
+	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_FXAS21002_THREAD_STACK_SIZE,
 			(k_thread_entry_t)fxas21002_thread_main, data, 0, NULL,

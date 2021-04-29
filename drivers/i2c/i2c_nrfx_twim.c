@@ -9,7 +9,6 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twim.h>
 #include <sys/util.h>
-#include <soc.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
@@ -128,6 +127,17 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			}
 		}
 
+		if (cur_xfer.primary_length == 0) {
+			/* For a zero-length transfer, the STOP task will not
+			 * be triggered automatically by the shortcut with the
+			 * event that signals the transfer end. It needs to be
+			 * done "manually" to prevent the driver getting stuck
+			 * after the address byte is acknowledged.
+			 */
+			nrf_twim_task_trigger(get_dev_config(dev)->twim.p_twim,
+					      NRF_TWIM_TASK_STOP);
+		}
+
 		ret = k_sem_take(&(get_dev_data(dev)->completion_sync),
 				 I2C_TRANSFER_TIMEOUT_MSEC);
 		if (ret != 0) {
@@ -149,7 +159,7 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		res = get_dev_data(dev)->res;
 
 		if (res != NRFX_SUCCESS) {
-			LOG_ERR("Error %d occurred for message %d", res, i);
+			LOG_ERR("Error 0x%08X occurred for message %d", res, i);
 			ret = -EIO;
 			break;
 		}
@@ -325,14 +335,6 @@ static int twim_nrfx_pm_control(const struct device *dev,
 	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
 		     I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \
-	NRF_DT_PSEL_CHECK_EXACTLY_ONE(I2C(idx),				       \
-				      sda_pin, "sda-pin",		       \
-				      sda_gpios, "sda-gpios");		       \
-	NRF_DT_PSEL_CHECK_EXACTLY_ONE(I2C(idx),				       \
-				      scl_pin, "scl-pin",		       \
-				      scl_gpios, "scl-gpios");		       \
-	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(I2C(idx), sda_gpios, "sda-gpios");       \
-	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(I2C(idx), scl_gpios, "scl-gpios");       \
 	static int twim_##idx##_init(const struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
@@ -353,8 +355,8 @@ static int twim_nrfx_pm_control(const struct device *dev,
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
 		.config = {						       \
-			.scl = NRF_DT_PSEL(I2C(idx), scl_pin, scl_gpios, 0),   \
-			.sda = NRF_DT_PSEL(I2C(idx), sda_pin, sda_gpios, 0),   \
+			.scl       = DT_PROP(I2C(idx), scl_pin),	       \
+			.sda       = DT_PROP(I2C(idx), sda_pin),	       \
 			.frequency = I2C_FREQUENCY(idx),		       \
 		}							       \
 	};								       \

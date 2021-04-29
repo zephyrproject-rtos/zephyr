@@ -62,6 +62,10 @@ static void lis2mdl_handle_interrupt(const struct device *dev)
 		lis2mdl->handler_drdy(dev, &drdy_trigger);
 	}
 
+	if (config->single_mode) {
+		k_sem_give(&lis2mdl->fetch_sem);
+	}
+
 	gpio_pin_interrupt_configure(lis2mdl->gpio, config->gpio_pin,
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
@@ -112,13 +116,13 @@ int lis2mdl_init_interrupt(const struct device *dev)
 	/* setup data ready gpio interrupt */
 	lis2mdl->gpio = device_get_binding(config->gpio_name);
 	if (lis2mdl->gpio == NULL) {
-		LOG_DBG("Cannot get pointer to %s device",
+		LOG_ERR("Cannot get pointer to %s device",
 			    config->gpio_name);
 		return -EINVAL;
 	}
 
 #if defined(CONFIG_LIS2MDL_TRIGGER_OWN_THREAD)
-	k_sem_init(&lis2mdl->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&lis2mdl->gpio_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&lis2mdl->thread, lis2mdl->thread_stack,
 			CONFIG_LIS2MDL_THREAD_STACK_SIZE,
 			(k_thread_entry_t)lis2mdl_thread, lis2mdl,
@@ -136,7 +140,7 @@ int lis2mdl_init_interrupt(const struct device *dev)
 			   BIT(config->gpio_pin));
 
 	if (gpio_add_callback(lis2mdl->gpio, &lis2mdl->gpio_cb) < 0) {
-		LOG_DBG("Could not set gpio callback");
+		LOG_ERR("Could not set gpio callback");
 		return -EIO;
 	}
 

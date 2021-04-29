@@ -12,13 +12,13 @@ bool is_dmar_searched;
 
 static bool check_sum(struct acpi_sdt *t)
 {
-	uint8_t sum = 0, *p = (uint8_t *)t;
+	uint8_t sum = 0U, *p = (uint8_t *)t;
 
 	for (int i = 0; i < t->length; i++) {
 		sum += p[i];
 	}
 
-	return sum == 0;
+	return sum == 0U;
 }
 
 
@@ -147,7 +147,7 @@ struct acpi_cpu *z_acpi_get_cpu(int n)
 		if (entry->type == ACPI_MADT_ENTRY_CPU) {
 			struct acpi_cpu *cpu = (struct acpi_cpu *)entry;
 
-			if (cpu->flags & ACPI_CPU_FLAGS_ENABLED) {
+			if ((cpu->flags & ACPI_CPU_FLAGS_ENABLED) != 0) {
 				if (n == 0) {
 					return cpu;
 				}

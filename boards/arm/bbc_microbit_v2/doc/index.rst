@@ -87,7 +87,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: bbc_microbit
+   :board: bbc_microbit_v2
    :goals: build flash
 
 

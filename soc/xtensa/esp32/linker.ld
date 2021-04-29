@@ -40,6 +40,10 @@ PROVIDE ( Cache_Read_Disable_rom = 0x40009ab8 );
 PROVIDE ( Cache_Read_Enable_rom = 0x40009a84 );
 PROVIDE ( Cache_Read_Init_rom = 0x40009950 );
 PROVIDE ( phy_get_romfuncs = 0x40004100 );
+PROVIDE ( esp_rom_spiflash_read_user_cmd = 0x400621b0 );
+PROVIDE ( g_rom_spiflash_dummy_len_plus = 0x3ffae290 );
+PROVIDE ( g_rom_flashchip = 0x3ffae270 );
+PROVIDE ( SPI0 = 0x3ff43000 );
 PROVIDE ( SPI1 = 0x3ff42fff );
 PROVIDE ( SPI2 = 0x3ff64fff );
 PROVIDE ( SPI3 = 0x3ff65fff );
@@ -60,6 +64,8 @@ PROVIDE ( esp32_rom_ets_printf = ets_printf );
 PROVIDE ( esp32_rom_g_ticks_per_us_app = g_ticks_per_us_app );
 PROVIDE ( esp32_rom_g_ticks_per_us_pro = g_ticks_per_us_app );
 PROVIDE ( esp32_rom_ets_delay_us = ets_delay_us );
+PROVIDE ( TIMERG0 = 0x3ff5F000 );
+PROVIDE ( TIMERG1 = 0x3ff60000 );
 
 /* __udivdi3 is exported using assignment, which declares strong symbols */
 __udivdi3 = 0x4000cff8;
@@ -267,6 +273,7 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
     *libzephyr.a:log_core.*(.rodata .rodata.*)
     *libzephyr.a:log_backend_uart.*(.rodata .rodata.*)
     *libzephyr.a:log_output.*(.rodata .rodata.*)
+    *libdrivers__flash.a:flash_esp32.*(.rodata  .rodata.*)
     *libdrivers__serial.a:uart_esp32.*(.rodata .rodata.*)
 
    . = ALIGN(4);
@@ -376,9 +383,9 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libsoc.a:cpu_util.*(.literal .text .literal.* .text.*)
-    *libhal.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:spi_flash_rom_patch.*(.literal .text .literal.* .text.*)
+    *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:windowspill_asm.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libzephyr.a:xtensa_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
@@ -391,10 +398,17 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
     *libnet80211.a:( .wifirxiram  .wifirxiram.*)
     *libpp.a:( .wifirxiram  .wifirxiram.*)
+#endif
+
     _iram_text_end = ABSOLUTE(.);
   } GROUP_LINK_IN(IRAM_REGION)
 
@@ -402,6 +416,16 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
   {
     _stext = .;
     _text_start = ABSOLUTE(.);
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.*)
+#endif
 
     *(.literal .text .literal.* .text.*)
     _text_end = ABSOLUTE(.);

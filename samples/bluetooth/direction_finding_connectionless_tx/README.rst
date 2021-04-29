@@ -69,11 +69,12 @@ switch patterns, then the radio loops back first pattern.
 To successfully use Direction Finding Beacon with AoD mode enabled provide
 following data related with owned antenna matrix design:
 
-* provide GPIO pins to :code:`dfegpio#-gpios` propreties in
-  :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/boards/
-  nrf52833dk_nrf52833.overlay` file
+* provide GPIO pins to :code:`dfegpio#-gpios` properties in
+  :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/boards/nrf52833dk_nrf52833.overlay`
+  file
 * provide default antenna that will be used to transmit PDU :code:`dfe-pdu-ant`
-  property in :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/boards/
-  nrf52833dk_nrf52833.overlay` file
-* update antenna patterns in :cpp:var:`ant_patterns` array in :zephyr_file:`samples/
-  bluetooth/direction_finding_connectionless_tx/src/main.c`.
+  property in
+  :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/boards/nrf52833dk_nrf52833.overlay`
+  file
+* update antenna patterns in :cpp:var:`ant_patterns` array in
+  :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/src/main.c`.

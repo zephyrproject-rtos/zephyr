@@ -26,9 +26,7 @@ static int viper_init(const struct device *arg)
 
 	key = irq_lock();
 
-#ifdef CONFIG_SOC_BCM58402_M7
 	NMI_INIT();
-#endif
 
 	/* pcie pmon lite init */
 	data = sys_read32(LS_ICFG_PMON_LITE_CLK_CTRL);

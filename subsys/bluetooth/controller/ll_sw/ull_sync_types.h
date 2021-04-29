@@ -13,7 +13,6 @@ struct ll_sync_iso;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 
 struct ll_sync_set {
-	struct evt_hdr evt;
 	struct ull_hdr ull;
 	struct lll_sync lll;
 
@@ -56,7 +55,6 @@ struct node_rx_sync {
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 struct ll_sync_iso {
-	struct evt_hdr evt;
 	struct ull_hdr ull;
 	struct lll_sync_iso lll;
 

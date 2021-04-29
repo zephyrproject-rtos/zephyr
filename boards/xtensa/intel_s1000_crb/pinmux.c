@@ -29,7 +29,7 @@ static int intel_s1000_pinmux_init(const struct device *dev)
 
 	__ASSERT_NO_MSG(device_is_ready(pinmux));
 
-	if (pinmux == NULL) {
+	if (!device_is_ready(pinmux)) {
 		return -ENXIO;
 	}
 

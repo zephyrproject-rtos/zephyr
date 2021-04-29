@@ -154,7 +154,7 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 	drv_data->dev = dev;
 
 #if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
-	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&drv_data->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_LSM6DSL_THREAD_STACK_SIZE,

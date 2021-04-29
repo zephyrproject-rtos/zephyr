@@ -124,7 +124,11 @@ static int test_loop(void)
 #ifdef CONFIG_DMA_MCUX_TEST_SLOT_START
 	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
 #endif
-	chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
+	chan_id = dma_request_channel(dma, NULL);
+	if (chan_id < 0) {
+		TC_PRINT("this platform do not support the dma channel\n");
+		chan_id = CONFIG_DMA_LOOP_TRANSFER_CHANNEL_NR;
+	}
 	transfer_count = 0;
 	TC_PRINT("Starting the transfer and waiting for 1 second\n");
 	dma_block_cfg.block_size = strlen(tx_data);
@@ -146,11 +150,10 @@ static int test_loop(void)
 	if (transfer_count < TRANSFER_LOOPS) {
 		transfer_count = TRANSFER_LOOPS;
 		TC_PRINT("ERROR: unfinished transfer\n");
-		return TC_FAIL;
 		if (dma_stop(dma, chan_id)) {
 			TC_PRINT("ERROR: transfer stop\n");
-			return TC_FAIL;
 		}
+		return TC_FAIL;
 	}
 
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");

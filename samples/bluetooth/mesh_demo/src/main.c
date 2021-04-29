@@ -268,7 +268,11 @@ void main(void)
 
 	printk("Initializing...\n");
 
-	board_init(&addr);
+	err = board_init(&addr);
+	if (err) {
+		printk("Board initialization failed\n");
+		return;
+	}
 
 	printk("Unicast address: 0x%04x\n", addr);
 
@@ -276,6 +280,7 @@ void main(void)
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
+		return;
 	}
 
 	while (1) {

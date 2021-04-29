@@ -37,15 +37,19 @@
 
 /** \brief Timer node type size.
  */
-#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if defined(CONFIG_BT_TICKER_LOW_LAT)
 #define TICKER_NODE_T_SIZE      40
 #else
 #if defined(CONFIG_BT_TICKER_EXT)
 #define TICKER_NODE_T_SIZE      48
 #else
+#if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+#define TICKER_NODE_T_SIZE      36
+#else
 #define TICKER_NODE_T_SIZE      44
+#endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 #endif /* CONFIG_BT_TICKER_EXT */
-#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE*/
+#endif /* CONFIG_BT_TICKER_LOW_LAT */
 
 /** \brief Timer user type size.
  */
@@ -56,7 +60,11 @@
 #if defined(CONFIG_BT_TICKER_EXT)
 #define TICKER_USER_OP_T_SIZE   52
 #else
+#if defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+#define TICKER_USER_OP_T_SIZE   44
+#else
 #define TICKER_USER_OP_T_SIZE   48
+#endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 #endif /* CONFIG_BT_TICKER_EXT */
 
 #define TICKER_CALL_ID_NONE     0
@@ -89,7 +97,7 @@ typedef void (*ticker_trigger_set_cb_t)(uint32_t value);
 /** \brief Timer timeout function type.
  */
 typedef void (*ticker_timeout_func) (uint32_t ticks_at_expire, uint32_t remainder,
-				     uint16_t lazy, void *context);
+				     uint16_t lazy, uint8_t force, void *context);
 
 /** \brief Timer operation complete function type.
  */
@@ -97,15 +105,15 @@ typedef void (*ticker_op_func) (uint32_t status, void *op_context);
 
 #if defined(CONFIG_BT_TICKER_EXT)
 struct ticker_ext {
-	uint32_t ticks_slot_window; /* Window in which the slot
-				  * reservation may be re-scheduled
-				  * to avoid collision
-				  */
-	int32_t ticks_drift;	 /* Applied drift since last expiry */
-	uint8_t  reschedule_state;	 /* State of re-scheduling of the
-				  * node. See defines
-				  * TICKER_RESCHEDULE_STATE_XXX
-				  */
+	uint32_t ticks_slot_window;/* Window in which the slot
+				    * reservation may be re-scheduled
+				    * to avoid collision
+				    */
+	int32_t ticks_drift;	   /* Applied drift since last expiry */
+	uint8_t reschedule_state;  /* State of re-scheduling of the
+				    * node. See defines
+				    * TICKER_RESCHEDULE_STATE_XXX
+				    */
 };
 #endif /* CONFIG_BT_TICKER_EXT */
 
@@ -144,15 +152,20 @@ uint32_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id, uint8_t ticker
 		      uint32_t ticks_at_stop, ticker_op_func fp_op_func,
 		      void *op_context);
 uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
-			   uint8_t *ticker_id_head, uint32_t *ticks_current,
-			   uint32_t *ticks_to_expire,
-			   ticker_op_func fp_op_func, void *op_context);
+			      uint8_t *ticker_id, uint32_t *ticks_current,
+			      uint32_t *ticks_to_expire,
+			      ticker_op_func fp_op_func, void *op_context);
+uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
+				  uint8_t *ticker_id, uint32_t *ticks_current,
+				  uint32_t *ticks_to_expire, uint16_t *lazy,
+				  ticker_op_func fp_op_func, void *op_context);
 uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 			  ticker_op_func fp_op_func, void *op_context);
 void ticker_job_sched(uint8_t instance_index, uint8_t user_id);
 uint32_t ticker_ticks_now_get(void);
 uint32_t ticker_ticks_diff_get(uint32_t ticks_now, uint32_t ticks_old);
-#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#if !defined(CONFIG_BT_TICKER_LOW_LAT) && \
+	!defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 uint32_t ticker_priority_set(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
 			  int8_t priority, ticker_op_func fp_op_func,
 			  void *op_context);
@@ -172,4 +185,6 @@ uint32_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
 			   ticker_op_func fp_op_func, void *op_context,
 			   uint8_t must_expire);
 #endif /* CONFIG_BT_TICKER_EXT */
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT &&
+	* !CONFIG_BT_TICKER_SLOT_AGNOSTIC
+	*/

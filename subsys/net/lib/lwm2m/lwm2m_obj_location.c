@@ -16,6 +16,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#define LOCATION_VERSION_MAJOR 1
+#define LOCATION_VERSION_MINOR 0
+
 /* resource IDs */
 #define LOCATION_LATITUDE_ID			0
 #define LOCATION_LONGITUDE_ID			1
@@ -96,6 +99,9 @@ static int ipso_location_init(const struct device *dev)
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 
 	location.obj_id = LWM2M_OBJECT_LOCATION_ID;
+	location.version_major = LOCATION_VERSION_MAJOR;
+	location.version_minor = LOCATION_VERSION_MINOR;
+	location.is_core = true;
 	location.fields = fields;
 	location.field_count = ARRAY_SIZE(fields);
 	location.max_instance_count = 1U;

@@ -395,7 +395,7 @@ int lis2dh_init_interrupt(const struct device *dev)
 	lis2dh->dev = dev;
 
 #if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
-	k_sem_init(&lis2dh->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&lis2dh->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lis2dh->thread, lis2dh->thread_stack,
 			CONFIG_LIS2DH_THREAD_STACK_SIZE,

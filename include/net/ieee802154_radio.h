@@ -237,6 +237,9 @@ struct ieee802154_radio_api {
 	int (*ed_scan)(const struct device *dev,
 		       uint16_t duration,
 		       energy_scan_done_cb_t done_cb);
+
+	/** Get the current radio time in microseconds */
+	uint64_t (*get_time)(const struct device *dev);
 };
 
 /* Make sure that the network interface API is properly setup inside

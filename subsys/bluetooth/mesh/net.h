@@ -152,7 +152,7 @@ struct bt_mesh_lpn {
 	uint16_t adv_duration;
 
 	/* Next LPN related action timer */
-	struct k_delayed_work timer;
+	struct k_work_delayable timer;
 
 	/* Subscribed groups */
 	uint16_t groups[LPN_GROUPS];

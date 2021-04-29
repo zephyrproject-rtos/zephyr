@@ -245,20 +245,20 @@ void test_sensor_handle_triggers(void)
 				trigger_elements[i].trig.chan,
 				trigger_elements[i].attr,
 				&trigger_elements[i].data),
-				-ENOTSUP, "fail to set attributes");
+				-ENOSYS, "fail to set attributes");
 
 		/* read-back attributes for no trig dev*/
 		zassert_equal(sensor_attr_get(dev_no_trig,
 				trigger_elements[i].trig.chan,
 				trigger_elements[i].attr,
 				&data),
-				-ENOTSUP, "fail to get attributes");
+				-ENOSYS, "fail to get attributes");
 
 		/* setting a sensor's trigger and handler for no trig dev */
 		zassert_equal(sensor_trigger_set(dev_no_trig,
 				&trigger_elements[i].trig,
 				trigger_handler),
-				-ENOTSUP, "fail to set trigger");
+				-ENOSYS, "fail to set trigger");
 	}
 }
 

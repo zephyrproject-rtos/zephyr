@@ -21,7 +21,7 @@ static const struct device *timer0;
 static struct timeutil_sync_config sync_config;
 static uint64_t counter_ref;
 static struct timeutil_sync_state sync_state;
-static struct k_delayed_work sync_work;
+static struct k_work_delayable sync_work;
 
 /* Convert local time in ticks to microseconds. */
 uint64_t local_to_us(uint64_t local)
@@ -160,13 +160,40 @@ static void sync_work_handler(struct k_work *work)
 		if (rc > 0) {
 			float skew = timeutil_sync_estimate_skew(&sync_state);
 
+			/* Create a state with the current skew estimate.  Use
+			 * it to reconstruct the expected reference time from
+			 * the latest local time, then display that time and
+			 * its error from the latest reference time.
+			 */
+			uint64_t rec_ref;
+			struct timeutil_sync_state st2 = sync_state;
+
+			(void)timeutil_sync_state_set_skew(&st2, skew, NULL);
+			(void)timeutil_sync_ref_from_local(&st2, latest->local,
+							   &rec_ref);
+
+			char err_sign = ' ';
+			uint64_t err_us;
+
+			if (rec_ref < latest->ref) {
+				err_sign = '-';
+				err_us = ref_to_us(latest->ref - rec_ref);
+			} else {
+				err_us = ref_to_us(rec_ref - latest->ref);
+			}
+
+			printf("RHF %s                                   ",
+			       us_to_text(ref_to_us(rec_ref)));
+			printf("%c%s\n", err_sign, us_to_text(err_us));
+
 			printf("Skew %f ; err %d ppb\n", skew,
 			       timeutil_sync_skew_to_ppb(skew));
 		} else if (rc < 0) {
 			printf("Sync update error: %d\n", rc);
 		}
 	}
-	k_delayed_work_submit(&sync_work, K_SECONDS(UPDATE_INTERVAL_S));
+	(void)k_work_schedule(k_work_delayable_from_work(work),
+			      K_SECONDS(UPDATE_INTERVAL_S));
 }
 
 void main(void)
@@ -227,8 +254,8 @@ void main(void)
 	printf("Timer wraps every %u s\n",
 	       (uint32_t)(BIT64(32) / sync_config.ref_Hz));
 
-	k_delayed_work_init(&sync_work, sync_work_handler);
-	rc = k_delayed_work_submit(&sync_work, K_NO_WAIT);
+	k_work_init_delayable(&sync_work, sync_work_handler);
+	rc = k_work_schedule(&sync_work, K_NO_WAIT);
 
 	printk("Started sync: %d\n", rc);
 }

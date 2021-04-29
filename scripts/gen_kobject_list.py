@@ -598,8 +598,14 @@ def find_kobjects(elf, syms):
                           (name, hex(opcode)))
             continue
 
-        addr = (loc.value[1] | (loc.value[2] << 8) |
-                (loc.value[3] << 16) | (loc.value[4] << 24))
+        if "CONFIG_64BIT" in syms:
+            addr = ((loc.value[1] << 0 ) | (loc.value[2] << 8)  |
+                    (loc.value[3] << 16) | (loc.value[4] << 24) |
+                    (loc.value[5] << 32) | (loc.value[6] << 40) |
+                    (loc.value[7] << 48) | (loc.value[8] << 56))
+        else:
+            addr = ((loc.value[1] << 0 ) | (loc.value[2] << 8)  |
+                    (loc.value[3] << 16) | (loc.value[4] << 24))
 
         if addr == 0:
             # Never linked; gc-sections deleted it
@@ -774,7 +780,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
                      " priv_stacks[%d][Z_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)];\n"
                      % stack_counter)
 
-            fp.write("static struct z_stack_data stack_data[%d] = {\n"
+            fp.write("static const struct z_stack_data stack_data[%d] = {\n"
                      % stack_counter)
             counter = 0
             for _, ko in objs.items():
@@ -852,7 +858,6 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
 
     # Generate the array of already mapped thread indexes
     fp.write('\n')
-    fp.write('Z_GENERIC_SECTION(.kobject_data.data) ')
     fp.write('uint8_t _thread_idx_map[%d] = {' % (thread_max_bytes))
 
     for i in range(0, thread_max_bytes):

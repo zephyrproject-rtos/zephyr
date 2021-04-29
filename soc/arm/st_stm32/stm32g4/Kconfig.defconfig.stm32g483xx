@@ -1,0 +1,14 @@
+# STMicroelectronics STM32G483XX MCU
+
+# Copyright (c) 2021 Guðni Már Gilbert
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32G483XX
+
+config SOC
+	default "stm32g483xx"
+
+config NUM_IRQS
+	default 102
+
+endif # SOC_STM32G483XX

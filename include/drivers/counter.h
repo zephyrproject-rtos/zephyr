@@ -183,7 +183,6 @@ typedef int (*counter_api_set_top_value)(const struct device *dev,
 					 const struct counter_top_cfg *cfg);
 typedef uint32_t (*counter_api_get_pending_int)(const struct device *dev);
 typedef uint32_t (*counter_api_get_top_value)(const struct device *dev);
-typedef uint32_t (*counter_api_get_max_relative_alarm)(const struct device *dev);
 typedef uint32_t (*counter_api_get_guard_period)(const struct device *dev,
 						 uint32_t flags);
 typedef int (*counter_api_set_guard_period)(const struct device *dev,
@@ -199,7 +198,6 @@ __subsystem struct counter_driver_api {
 	counter_api_set_top_value set_top_value;
 	counter_api_get_pending_int get_pending_int;
 	counter_api_get_top_value get_top_value;
-	counter_api_get_max_relative_alarm get_max_relative_alarm;
 	counter_api_get_guard_period get_guard_period;
 	counter_api_set_guard_period set_guard_period;
 };
@@ -516,24 +514,6 @@ static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
 }
 
 /**
- * @brief Function to retrieve maximum relative value that can be set by @ref
- *        counter_set_channel_alarm.
- *
- * @param[in]  dev    Pointer to the device structure for the driver instance.
- *
- * @return Max alarm value.
- */
-__deprecated __syscall uint32_t counter_get_max_relative_alarm(const struct device *dev);
-
-static inline uint32_t z_impl_counter_get_max_relative_alarm(const struct device *dev)
-{
-	const struct counter_driver_api *api =
-				(struct counter_driver_api *)dev->api;
-
-	return api->get_max_relative_alarm(dev);
-}
-
-/**
  * @brief Set guard period in counter ticks.
  *
  * Setting non-zero guard period enables detection of setting absolute alarm
@@ -599,21 +579,6 @@ static inline uint32_t z_impl_counter_get_guard_period(const struct device *dev,
 				(struct counter_driver_api *)dev->api;
 
 	return (api->get_guard_period) ? api->get_guard_period(dev, flags) : 0;
-}
-
-/* Deprecated counter callback. */
-typedef void (*counter_callback_t)(const struct device *dev, void *user_data);
-
-/* Deprecated counter read function. Use counter_get_value() instead. */
-__deprecated static inline uint32_t counter_read(const struct device *dev)
-{
-	uint32_t ticks;
-
-	if (counter_get_value(dev, &ticks) == 0) {
-		return ticks;
-	}
-
-	return 0;
 }
 
 #ifdef __cplusplus

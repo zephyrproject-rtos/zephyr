@@ -201,7 +201,10 @@ static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
 		model->pub->count = 0U;
 
 		if (model->pub->update) {
-			k_delayed_work_cancel(&model->pub->timer);
+			/* If this fails, the timer will check pub->addr and
+			 * exit without transmitting.
+			 */
+			(void)k_work_cancel_delayable(&model->pub->timer);
 		}
 
 		if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
@@ -239,10 +242,13 @@ static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
 		BT_DBG("period %u ms", period_ms);
 
 		if (period_ms > 0) {
-			k_delayed_work_submit(&model->pub->timer,
-					      K_MSEC(period_ms));
+			k_work_reschedule(&model->pub->timer,
+					  K_MSEC(period_ms));
 		} else {
-			k_delayed_work_cancel(&model->pub->timer);
+			/* If this fails, publication will stop after the
+			 * ongoing set of retransmits.
+			 */
+			(void)k_work_cancel_delayable(&model->pub->timer);
 		}
 	}
 
@@ -2045,8 +2051,8 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
 {
 	BT_MESH_MODEL_BUF_DEFINE(msg, OP_LPN_TIMEOUT_STATUS, 5);
 	struct bt_mesh_friend *frnd;
+	int32_t timeout_steps;
 	uint16_t lpn_addr;
-	int32_t timeout_ms;
 
 	lpn_addr = net_buf_simple_pull_le16(buf);
 
@@ -2062,20 +2068,21 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(&msg, lpn_addr);
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-		timeout_ms = 0;
+		timeout_steps = 0;
 		goto send_rsp;
 	}
 
 	frnd = bt_mesh_friend_find(BT_MESH_KEY_ANY, lpn_addr, true, true);
 	if (!frnd) {
-		timeout_ms = 0;
+		timeout_steps = 0;
 		goto send_rsp;
 	}
 
-	timeout_ms = k_delayed_work_remaining_get(&frnd->timer) / 100;
+	/* PollTimeout should be reported in steps of 100ms. */
+	timeout_steps = frnd->poll_to / 100;
 
 send_rsp:
-	net_buf_simple_add_le24(&msg, timeout_ms);
+	net_buf_simple_add_le24(&msg, timeout_steps);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		BT_ERR("Unable to send LPN PollTimeout Status");

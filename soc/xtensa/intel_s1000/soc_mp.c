@@ -10,6 +10,7 @@
 #include <kernel_structs.h>
 #include <sys/sys_io.h>
 #include <sys/__assert.h>
+#include <xtensa/corebits.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
@@ -169,7 +170,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	/* Wait for core power down */
 	while ((soc_glb_regs->cavs_dsp1power_control &
 		SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CPA) != 0) {
-	};
+	}
 
 	/* Now power up the core */
 	soc_glb_regs->cavs_dsp1power_control |=
@@ -178,7 +179,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	/* Wait for core power up*/
 	while ((soc_glb_regs->cavs_dsp1power_control &
 		SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CPA) == 0) {
-	};
+	}
 
 	/* Then step out of reset, and un-stall */
 	soc_glb_regs->cavs_dsp1power_control &=

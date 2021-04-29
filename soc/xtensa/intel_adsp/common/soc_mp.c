@@ -18,6 +18,7 @@
 LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 
 #include <soc.h>
+#include <arch/xtensa/cache.h>
 #include <adsp/io.h>
 
 #include <soc/shim.h>
@@ -55,36 +56,77 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 static const struct device *idc;
 #endif
 
-extern void __start(void);
-
 struct cpustart_rec {
 	uint32_t		cpu;
 
 	arch_cpustart_t	fn;
-	char		*stack_top;
 	void		*arg;
 	uint32_t		vecbase;
 
 	uint32_t		alive;
-
-	/* padding to cache line */
-	uint8_t		padding[XCHAL_DCACHE_LINESIZE - 6 * 4];
 };
 
-static __aligned(XCHAL_DCACHE_LINESIZE)
-struct cpustart_rec start_rec;
+char *z_mp_stack_top;
 
-static void *mp_top;
+#ifdef CONFIG_KERNEL_COHERENCE
+/* Coherence guarantees that normal .data will be coherent and that it
+ * won't overlap any cached memory.
+ */
+static struct {
+	struct cpustart_rec cpustart;
+} cpustart_mem;
+#else
+/* If .data RAM is by default incoherent, then the start record goes
+ * into its own dedicated cache line(s)
+ */
+static __aligned(XCHAL_DCACHE_LINESIZE) union {
+	struct cpustart_rec cpustart;
+	char pad[XCHAL_DCACHE_LINESIZE];
+} cpustart_mem;
+#endif
 
-static void mp_entry2(void)
+#define start_rec \
+	(*((volatile struct cpustart_rec *) \
+	   z_soc_uncached_ptr(&cpustart_mem.cpustart)))
+
+/* Tiny assembly stub for calling z_mp_entry() on the auxiliary CPUs.
+ * Mask interrupts, clear the register window state and set the stack
+ * pointer.  This represents the minimum work required to run C code
+ * safely.
+ *
+ * Note that alignment is absolutely required: the IDC protocol passes
+ * only the upper 30 bits of the address to the second CPU.
+ */
+void z_soc_mp_asm_entry(void);
+__asm__(".align 4                   \n\t"
+	".global z_soc_mp_asm_entry \n\t"
+	"z_soc_mp_asm_entry:        \n\t"
+	"  rsil  a0, 5              \n\t" /* 5 == XCHAL_EXCM_LEVEL */
+	"  movi  a0, 0              \n\t"
+	"  wsr   a0, WINDOWBASE     \n\t"
+	"  movi  a0, 1              \n\t"
+	"  wsr   a0, WINDOWSTART    \n\t"
+	"  rsync                    \n\t"
+	"  movi  a1, z_mp_stack_top \n\t"
+	"  l32i  a1, a1, 0          \n\t"
+	"  call4 z_mp_entry         \n\t");
+BUILD_ASSERT(XCHAL_EXCM_LEVEL == 5);
+
+void z_mp_entry(void)
 {
 	volatile int ie;
 	uint32_t idc_reg;
 
 	/* We don't know what the boot ROM might have touched and we
-	 * don't care.  Make sure it's not in our local cache.
+	 * don't care.  Make sure it's not in our local cache to be
+	 * flushed accidentally later.
+	 *
+	 * Note that technically this is dropping our own (cached)
+	 * stack memory, which we don't have a guarantee the compiler
+	 * isn't using yet.  Manual inspection of generated code says
+	 * we're safe, but really we need a better solution here.
 	 */
-	xthal_dcache_all_writeback_inv();
+	z_xtensa_cache_flush_inv_all();
 
 	/* Copy over VECBASE from the main CPU for an initial value
 	 * (will need to revisit this if we ever allow a user API to
@@ -111,7 +153,6 @@ static void mp_entry2(void)
 #endif /* CONFIG_IPM_CAVS_IDC */
 
 	start_rec.alive = 1;
-	SOC_DCACHE_FLUSH(&start_rec, sizeof(start_rec));
 
 	start_rec.fn(start_rec.arg);
 
@@ -127,35 +168,6 @@ static void mp_entry2(void)
 #endif
 }
 
-/* Defines a locally callable "function" named mp_stack_switch().  The
- * first argument (in register a2 post-ENTRY) is the new stack pointer
- * to go into register a1.  The second (a3) is the entry point.
- * Because this never returns, a0 is used as a scratch register then
- * set to zero for the called function (a null return value is the
- * signal for "top of stack" to the debugger).
- */
-void mp_stack_switch(void *stack, void *entry);
-__asm__("\n"
-	".align 4		\n"
-	"mp_stack_switch:	\n\t"
-
-	"entry a1, 16		\n\t"
-
-	"movi a0, 0		\n\t"
-
-	"jx a3			\n\t");
-
-/* Carefully constructed to use no stack beyond compiler-generated ABI
- * instructions. Stack pointer is pointing to __stack at this point.
- */
-void z_mp_entry(void)
-{
-	*(uint32_t *)CONFIG_SRAM_BASE_ADDRESS = 0xDEADBEEF;
-	SOC_DCACHE_FLUSH((uint32_t *)CONFIG_SRAM_BASE_ADDRESS, 64);
-
-	mp_stack_switch(mp_top, mp_entry2);
-}
-
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
@@ -169,14 +181,11 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	start_rec.cpu = cpu_num;
 	start_rec.fn = fn;
-	start_rec.stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 	start_rec.arg = arg;
 	start_rec.vecbase = vecbase;
 	start_rec.alive = 0;
 
-	mp_top = Z_THREAD_STACK_BUFFER(stack) + sz;
-
-	SOC_DCACHE_FLUSH(&start_rec, sizeof(start_rec));
+	z_mp_stack_top = Z_THREAD_STACK_BUFFER(stack) + sz;
 
 #ifdef CONFIG_IPM_CAVS_IDC
 	idc = device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
@@ -190,7 +199,9 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
 
 	/* Send power up message to the other core */
-	idc_write(IPC_IDCIETC(cpu_num), 0, IDC_MSG_POWER_UP_EXT(RAM_BASE));
+	uint32_t ietc = IDC_MSG_POWER_UP_EXT((long) z_soc_mp_asm_entry);
+
+	idc_write(IPC_IDCIETC(cpu_num), 0, ietc);
 	idc_write(IPC_IDCITC(cpu_num), 0, IDC_MSG_POWER_UP | IPC_IDCITC_BUSY);
 
 	/* Disable IDC interrupt on other core so IPI won't cause
@@ -202,9 +213,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	sys_clear_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
 		      CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
 
-	do {
-		SOC_DCACHE_INVALIDATE(&start_rec, sizeof(start_rec));
-	} while (start_rec.alive == 0);
+	while (start_rec.alive == 0) {
+	}
 
 	/* Clear done bit from responding the power up message */
 	idc_reg = idc_read(IPC_IDCIETC(cpu_num), 0) | IPC_IDCIETC_DONE;

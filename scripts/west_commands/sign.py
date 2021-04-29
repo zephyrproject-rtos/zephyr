@@ -19,11 +19,10 @@ from build_helpers import find_build_dir, is_zephyr_build, \
     FIND_BUILD_DIR_DESCRIPTION
 from runners.core import BuildConfiguration
 from zcmake import CMakeCache
-from zephyr_ext_common import Forceable, load_dot_config, \
-    ZEPHYR_SCRIPTS
+from zephyr_ext_common import Forceable, ZEPHYR_SCRIPTS
 
 # This is needed to load edt.pickle files.
-sys.path.append(str(ZEPHYR_SCRIPTS / 'dts'))
+sys.path.append(str(ZEPHYR_SCRIPTS / 'dts' / 'python-devicetree' / 'src'))
 
 SIGN_DESCRIPTION = '''\
 This command automates some of the drudgery of creating signed Zephyr
@@ -222,17 +221,11 @@ class ImgtoolSigner(Signer):
         flash = self.edt_flash_node(b, args.quiet)
         align, addr, size = self.edt_flash_params(flash)
 
-        dot_config_file = b / 'zephyr' / '.config'
-        if not dot_config_file.is_file():
-            log.die(f"no .config found at {dot_config_file}")
-
-        dot_config = load_dot_config(dot_config_file)
-
-        if dot_config.get('CONFIG_BOOTLOADER_MCUBOOT', 'n') != 'y':
+        if bcfg.get('CONFIG_BOOTLOADER_MCUBOOT', 'n') != 'y':
             log.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
-                    f"{dot_config_file}; this probably won't work")
+                    f"{bcfg.path}; this probably won't work")
 
-        kernel = dot_config.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
+        kernel = bcfg.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
         if 'bin' in formats:
             in_bin = b / 'zephyr' / f'{kernel}.bin'

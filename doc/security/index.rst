@@ -11,6 +11,7 @@ for ensuring security is addressed within the Zephyr project.
    :glob:
 
    security-overview.rst
+   reporting.rst
    secure-coding.rst
    sensor-threat.rst
    hardening-tool.rst

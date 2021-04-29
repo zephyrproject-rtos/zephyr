@@ -69,5 +69,5 @@ void wifi_connect(void)
 
 	while (connected == 0) {
 		k_msleep(100);
-	};
+	}
 }

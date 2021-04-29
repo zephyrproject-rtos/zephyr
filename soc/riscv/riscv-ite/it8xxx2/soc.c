@@ -10,11 +10,6 @@
 #include <init.h>
 #include <soc.h>
 
-void sys_arch_reboot(int type)
-{
-	ARG_UNUSED(type);
-}
-
 static int ite_it8xxx2_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);

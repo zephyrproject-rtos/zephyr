@@ -8,16 +8,6 @@ if BOARD_TWR_KE18F
 config BOARD
 	default "twr_ke18f"
 
-if SPI_MCUX_LPSPI
-
-config SPI_0
-	default y
-
-config SPI_1
-	default y
-
-endif # SPI_MCUX_LPSPI
-
 config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc0)"
 	depends on SENSOR && ADC

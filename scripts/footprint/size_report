@@ -12,6 +12,7 @@ import os
 import sys
 import re
 from pathlib import Path
+import json
 
 from distutils.version import LooseVersion
 
@@ -30,7 +31,7 @@ if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
 from colorama import init, Fore
 
 from anytree import RenderTree, NodeMixin, findall_by_attr
-from anytree.exporter import JsonExporter
+from anytree.exporter import DictExporter
 
 
 # ELF section flags
@@ -538,12 +539,12 @@ def generate_any_tree(symbol_dict):
 def node_sort(items):
     return sorted(items, key=lambda item: item.name)
 
-def print_any_tree(root, total_size):
+def print_any_tree(root, total_size, depth):
 
     print('{:101s} {:7s} {:8s}'.format(
         Fore.YELLOW + "Path", "Size", "%" + Fore.RESET))
     print('=' * 110)
-    for row in RenderTree(root, childiter=node_sort):
+    for row in RenderTree(root, childiter=node_sort, maxlevel=depth):
         f = len(row.pre) + len(row.node.name)
         s = str(row.node.size).rjust(100-f)
         percent = 100 * float(row.node.size) / float(total_size)
@@ -574,7 +575,8 @@ def parse_args():
     parser.add_argument("-o", "--output", required=True,
                         help="Output path")
     parser.add_argument("target", choices=['rom', 'ram'])
-    parser.add_argument("-d", "--depth", dest="depth", type=int,
+    parser.add_argument("-d", "--depth", dest="depth",
+                        type=int, default=None,
                         help="How deep should we go into the tree",
                         metavar="DEPTH")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -601,7 +603,7 @@ def main():
 
     symbols = get_symbols(elf, addr_ranges)
 
-    for sym in symbols['unassigned']:
+    for sym in symbols['unassigned'].values():
         print("WARN: Symbol '{0}' is not in RAM or ROM".format(sym['name']))
 
     symbol_dict = None
@@ -630,13 +632,15 @@ def main():
                 print("INFO: Unmapped symbol: {0}".format(sym))
 
         root = generate_any_tree(symbol_dict)
-        print_any_tree(root, symsize)
+        print_any_tree(root, symsize, args.depth)
 
         if args.json:
-            exporter = JsonExporter(indent=2, sort_keys=True)
-            data = exporter.export(root)
+            exporter = DictExporter()
+            data = dict()
+            data["symbols"] = exporter.export(root)
+            data["total_size"] = symsize
             with open(args.json, "w") as fp:
-                fp.write(data)
+                json.dump(data, fp, indent=4)
 
 
 if __name__ == "__main__":

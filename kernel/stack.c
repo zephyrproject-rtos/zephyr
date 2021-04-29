@@ -108,10 +108,10 @@ int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 	first_pending_thread = z_unpend_first_thread(&stack->wait_q);
 
 	if (first_pending_thread != NULL) {
-		z_ready_thread(first_pending_thread);
-
 		z_thread_return_value_set_with_data(first_pending_thread,
 						   0, (void *)data);
+
+		z_ready_thread(first_pending_thread);
 		z_reschedule(&stack->lock, key);
 		goto end;
 	} else {

@@ -112,9 +112,10 @@ static inline uint32_t stm32_pinval_get(int pin)
 /**
  * @brief Configure the hardware.
  */
-int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf)
+int gpio_stm32_configure(const struct device *dev, int pin, int conf, int altf)
 {
-	GPIO_TypeDef *gpio = (GPIO_TypeDef *)base_addr;
+	const struct gpio_stm32_config *cfg = dev->config;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
 	int pin_ll = stm32_pinval_get(pin);
 
@@ -221,6 +222,49 @@ int gpio_stm32_configure(uint32_t *base_addr, int pin, int conf, int altf)
 	return 0;
 }
 
+/**
+ * @brief GPIO port clock handling
+ */
+int gpio_stm32_clock_request(const struct device *dev, bool on)
+{
+	const struct gpio_stm32_config *cfg = dev->config;
+	int ret = 0;
+
+	__ASSERT_NO_MSG(dev != NULL);
+
+	/* enable clock for subsystem */
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+
+	if (on) {
+		ret = clock_control_on(clk,
+					(clock_control_subsys_t *)&cfg->pclken);
+
+	} else {
+		ret = clock_control_off(clk,
+					(clock_control_subsys_t *)&cfg->pclken);
+	}
+
+	if (ret != 0) {
+		return ret;
+	}
+
+#if defined(PWR_CR2_IOSV) && DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay)
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+	if (cfg->port == STM32_PORTG) {
+		/* Port G[15:2] requires external power supply */
+		/* Cf: L4/L5 RM, Chapter "Independent I/O supply rail" */
+		if (on) {
+			LL_PWR_EnableVddIO2();
+		} else {
+			LL_PWR_DisableVddIO2();
+		}
+	}
+	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
+#endif
+
+	return ret;
+}
+
 static inline uint32_t gpio_stm32_pin_to_exti_line(int pin)
 {
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || \
@@ -319,8 +363,13 @@ static int gpio_stm32_enable_int(int port, int pin)
 		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 	};
+	int ret;
+
 	/* Enable SYSCFG clock */
-	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+	ret = clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+	if (ret != 0) {
+		return ret;
+	}
 #endif
 
 	gpio_stm32_set_exti_source(port, pin);
@@ -414,7 +463,6 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 static int gpio_stm32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
-	const struct gpio_stm32_config *cfg = dev->config;
 	int err = 0;
 	int pincfg;
 
@@ -434,7 +482,7 @@ static int gpio_stm32_config(const struct device *dev,
 		}
 	}
 
-	gpio_stm32_configure(cfg->base, pin, pincfg, 0);
+	gpio_stm32_configure(dev, pin, pincfg, 0);
 
 exit:
 	return err;
@@ -523,38 +571,13 @@ static const struct gpio_driver_api gpio_stm32_driver = {
  *
  * @return 0
  */
-static int gpio_stm32_init(const struct device *device)
+static int gpio_stm32_init(const struct device *dev)
 {
-	const struct gpio_stm32_config *cfg = device->config;
-	struct gpio_stm32_data *data = device->data;
+	struct gpio_stm32_data *data = dev->data;
 
-	data->dev = device;
+	data->dev = dev;
 
-	/* enable clock for subsystem */
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	if (clock_control_on(clk,
-			     (clock_control_subsys_t *)&cfg->pclken) != 0) {
-		return -EIO;
-	}
-
-#ifdef PWR_CR2_IOSV
-	if (cfg->port == STM32_PORTG) {
-		/* Port G[15:2] requires external power supply */
-		/* Cf: L4XX RM, §5.1 Power supplies */
-		z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-		if (LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_PWR)) {
-			LL_PWR_EnableVddIO2();
-		} else {
-			LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-			LL_PWR_EnableVddIO2();
-			LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
-		}
-		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-	}
-#endif  /* PWR_CR2_IOSV */
-
-	return 0;
+	return gpio_stm32_clock_request(dev, true);
 }
 
 #define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
@@ -631,9 +654,9 @@ GPIO_DEVICE_INIT_STM32(k, K);
 
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 
-static int gpio_stm32_afio_init(const struct device *device)
+static int gpio_stm32_afio_init(const struct device *dev)
 {
-	UNUSED(device);
+	UNUSED(dev);
 
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 

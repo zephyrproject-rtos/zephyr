@@ -37,6 +37,7 @@
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;
 			interrupts = <4 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000010>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -348,19 +349,9 @@
 			phase-seg2 = <6>;
 		};
 
-		adc1: adc@50000000 {
-			compatible = "st,stm32-adc";
-			reg = <0x50000000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
-			interrupts = <18 0>;
-			status = "disabled";
-			label = "ADC_1";
-			#io-channel-cells = <1>;
-		};
-
 		dma1: dma@40020000 {
 			compatible = "st,stm32-dma-v2";
-			#dma-cells = <4>;
+			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;

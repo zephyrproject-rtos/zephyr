@@ -36,7 +36,7 @@ extern "C" {
  */
 
 #define ARCH_EXCEPT(reason_p)	do {			\
-		if (_is_user_context()) {		\
+		if (k_is_user_context()) {		\
 			arch_syscall_invoke1(reason_p,	\
 				K_SYSCALL_USER_FAULT);	\
 		} else {				\

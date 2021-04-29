@@ -379,6 +379,12 @@ static void node_id_start(struct bt_mesh_subnet *sub)
 {
 	sub->node_id = BT_MESH_NODE_IDENTITY_RUNNING;
 	sub->node_id_start = k_uptime_get_32();
+
+	Z_STRUCT_SECTION_FOREACH(bt_mesh_proxy_cb, cb) {
+		if (cb->identity_enabled) {
+			cb->identity_enabled(sub->net_idx);
+		}
+	}
 }
 
 void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub)
@@ -393,6 +399,12 @@ void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub)
 {
 	sub->node_id = BT_MESH_NODE_IDENTITY_STOPPED;
 	sub->node_id_start = 0U;
+
+	Z_STRUCT_SECTION_FOREACH(bt_mesh_proxy_cb, cb) {
+		if (cb->identity_disabled) {
+			cb->identity_disabled(sub->net_idx);
+		}
+	}
 }
 
 int bt_mesh_proxy_identity_enable(void)
@@ -536,7 +548,7 @@ static void proxy_connected(struct bt_conn *conn, uint8_t err)
 	struct bt_mesh_proxy_client *client;
 	int i;
 
-	BT_DBG("conn %p err 0x%02x", conn, err);
+	BT_DBG("conn %p err 0x%02x", (void *)conn, err);
 
 	conn_count++;
 
@@ -567,7 +579,7 @@ static void proxy_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	int i;
 
-	BT_DBG("conn %p reason 0x%02x", conn, reason);
+	BT_DBG("conn %p reason 0x%02x", (void *)conn, reason);
 
 	conn_count--;
 
@@ -664,7 +676,7 @@ int bt_mesh_proxy_prov_enable(void)
 		return -EBUSY;
 	}
 
-	bt_gatt_service_register(&prov_svc);
+	(void)bt_gatt_service_register(&prov_svc);
 	gatt_svc = MESH_GATT_PROV;
 	prov_fast_adv = true;
 
@@ -784,7 +796,7 @@ int bt_mesh_proxy_gatt_enable(void)
 		return -EBUSY;
 	}
 
-	bt_gatt_service_register(&proxy_svc);
+	(void)bt_gatt_service_register(&proxy_svc);
 	gatt_svc = MESH_GATT_PROXY;
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
@@ -969,7 +981,7 @@ static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
 {
 	uint16_t mtu;
 
-	BT_DBG("conn %p type 0x%02x len %u: %s", conn, type, msg->len,
+	BT_DBG("conn %p type 0x%02x len %u: %s", (void *)conn, type, msg->len,
 	       bt_hex(msg->data, msg->len));
 
 	/* ATT_MTU - OpCode (1 byte) - Handle (2 bytes) */

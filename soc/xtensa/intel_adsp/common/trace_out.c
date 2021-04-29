@@ -28,11 +28,6 @@
 #define NSLOTS (SRAM_TRACE_SIZE / SLOT_SIZE)
 #define MSGSZ (SLOT_SIZE - sizeof(struct slot_hdr))
 
-/* Translates a SRAM pointer into an address of the same memory in the
- * uncached region from 0x80000000-0x9fffffff
- */
-#define UNCACHED_PTR(p) ((void *)(((int)p) & ~0x20000000))
-
 struct slot_hdr {
 	uint16_t magic;
 	uint16_t id;
@@ -56,11 +51,11 @@ static __aligned(64) union {
 	uint32_t cache_pad[16];
 } data_rec;
 
-#define data ((volatile struct metadata *)UNCACHED_PTR(&data_rec.meta))
+#define data ((volatile struct metadata *)z_soc_uncached_ptr(&data_rec.meta))
 
 static inline struct slot *slot(int i)
 {
-	struct slot *slots = UNCACHED_PTR(SRAM_TRACE_BASE);
+	struct slot *slots = z_soc_uncached_ptr((void *)SRAM_TRACE_BASE);
 
 	return &slots[i];
 }

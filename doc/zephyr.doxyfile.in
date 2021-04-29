@@ -363,7 +363,7 @@ INLINE_GROUPED_CLASSES = NO
 # Man pages) or section (for LaTeX and RTF).
 # The default value is: NO.
 
-INLINE_SIMPLE_STRUCTS  = YES
+INLINE_SIMPLE_STRUCTS  = NO
 
 # When TYPEDEF_HIDES_STRUCT tag is enabled, a typedef of a struct, union, or
 # enum is documented as struct, union, or enum with the name of the typedef. So
@@ -795,8 +795,8 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @ZEPHYR_BASE@/include/cmsis_rtos_v1/cmsis_os.h \
-                         @ZEPHYR_BASE@/include/cmsis_rtos_v2/cmsis_os2.h \
+EXCLUDE                = @ZEPHYR_BASE@/include/portability/cmsis_os.h \
+                         @ZEPHYR_BASE@/include/portability/cmsis_os2.h \
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1992,6 +1992,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_THREAD_CUSTOM_DATA" \
                          "CONFIG_THREAD_MONITOR" \
                          "CONFIG_THREAD_STACK_INFO" \
+			 "CONFIG_TIMING_FUNCTIONS" \
                          "CONFIG_UART_DRV_CMD" \
                          "CONFIG_UART_INTERRUPT_DRIVEN" \
                          "CONFIG_UART_ASYNC_API" \
@@ -2007,7 +2008,8 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "__printf_like(x, y)=" \
                          "__attribute__(x)=" \
                          "__syscall=" \
-                         "DT_DOXYGEN"
+                         "DT_DOXYGEN" \
+                         "ATOMIC_DEFINE(x, y)=atomic_t x[ATOMIC_BITMAP_SIZE(y)]"
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

@@ -27,23 +27,26 @@ void z_impl_test_cpu_write_reg(void)
 #if CONFIG_X86
 #ifndef CONFIG_X86_64
 	__asm__ volatile (
-		"movl $0xDEADBEEF, %eax;\n\t"
-		"movl $0xDEADBEEF, %ebx;\n\t"
-		"movl $0xDEADBEEF, %ecx;\n\t"
-		"movl $0xDEADBEEF, %edx;\n\t"
-		"movl $0xDEADBEEF, %edi;\n\t"
+		"movl $0xDEADBEEF, %%eax;\n\t"
+		"movl $0xDEADBEEF, %%ebx;\n\t"
+		"movl $0xDEADBEEF, %%ecx;\n\t"
+		"movl $0xDEADBEEF, %%edx;\n\t"
+		"movl $0xDEADBEEF, %%edi;\n\t"
+		: : : "eax", "ebx", "ecx", "edx", "edi"
 		);
 #else
 	__asm__ volatile (
-		"movq $0xDEADBEEF, %rax;\n\t"
-		"movq $0xDEADBEEF, %rcx;\n\t"
-		"movq $0xDEADBEEF, %rdx;\n\t"
-		"movq $0xDEADBEEF, %rsi;\n\t"
-		"movq $0xDEADBEEF, %rdi;\n\t"
-		"movq $0xDEADBEEF, %r8;\n\t"
-		"movq $0xDEADBEEF, %r9;\n\t"
-		"movq $0xDEADBEEF, %r10;\n\t"
-		"movq $0xDEADBEEF, %r11;\n\t"
+		"movq $0xDEADBEEF, %%rax;\n\t"
+		"movq $0xDEADBEEF, %%rcx;\n\t"
+		"movq $0xDEADBEEF, %%rdx;\n\t"
+		"movq $0xDEADBEEF, %%rsi;\n\t"
+		"movq $0xDEADBEEF, %%rdi;\n\t"
+		"movq $0xDEADBEEF, %%r8;\n\t"
+		"movq $0xDEADBEEF, %%r9;\n\t"
+		"movq $0xDEADBEEF, %%r10;\n\t"
+		"movq $0xDEADBEEF, %%r11;\n\t"
+		: : : "rax", "rcx", "rdx", "rsi", "rdi",
+		      "r8",  "r9",  "r10", "r11"
 		);
 #endif
 #endif

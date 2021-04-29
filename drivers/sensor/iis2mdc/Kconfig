@@ -53,8 +53,4 @@ config IIS2MDC_MAG_ODR_RUNTIME
 	bool "Set magnetometer sampling frequency (ODR) at runtime (default: 10 Hz)"
 	default y
 
-config IIS2MDC_SPI_FULL_DUPLEX
-	bool "Enable SPI 4wire mode (separated MISO and MOSI lines)"
-	depends on SPI
-
 endif # IIS2MDC

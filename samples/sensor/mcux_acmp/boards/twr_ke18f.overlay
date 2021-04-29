@@ -6,4 +6,5 @@
 
 &cmp2 {
 	status = "okay";
+	pinctrl-0 = <&ADC0_SE12_PTC14>;
 };

@@ -43,12 +43,12 @@ int fputc(int c, FILE *stream)
 	return zephyr_fputc(c, stream);
 }
 
-int fputs(const char *_MLIBC_RESTRICT string, FILE *_MLIBC_RESTRICT stream)
+int fputs(const char *_MLIBC_RESTRICT s, FILE *_MLIBC_RESTRICT stream)
 {
-	int len = strlen(string);
+	int len = strlen(s);
 	int ret;
 
-	ret = fwrite(string, 1, len, stream);
+	ret = fwrite(s, 1, len, stream);
 
 	return len == ret ? 0 : EOF;
 }
@@ -103,9 +103,9 @@ size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
 }
 
 
-int puts(const char *string)
+int puts(const char *s)
 {
-	if (fputs(string, stdout) == EOF) {
+	if (fputs(s, stdout) == EOF) {
 		return EOF;
 	}
 

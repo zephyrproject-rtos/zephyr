@@ -9,6 +9,10 @@
  *
  * This module contains the initial code executed by the Zephyr Kernel ELF image
  * after having been loaded into RAM.
+ *
+ * Note that most addresses (functions and variables) must be in physical
+ * address space. Depending on page table setup, they may or may not be
+ * available in virtual address space after loading of page table.
  */
 
 #include <arch/x86/ia32/asm.h>
@@ -17,11 +21,11 @@
 #include <arch/cpu.h>
 #include <arch/x86/multiboot.h>
 #include <x86_mmu.h>
+#include <sys/mem_manage.h>
 
 	/* exports (private APIs) */
 
 	GTEXT(__start)
-	GTEXT(z_x86_enable_paging)
 
 	/* externs */
 	GTEXT(z_x86_prep_c)
@@ -39,6 +43,51 @@
 #if defined(CONFIG_X86_SSE)
 	GDATA(_sse_mxcsr_default_value)
 #endif
+
+.macro install_page_tables
+#ifdef CONFIG_X86_MMU
+	/* Enable paging. If virtual memory is enabled, the instruction pointer
+	 * is currently at a physical address. There is an identity mapping
+	 * for all RAM, plus a virtual mapping of RAM starting at
+	 * CONFIG_KERNEL_VM_BASE using the same paging structures.
+	 *
+	 * Until we enable these page tables, only physical memory addresses
+	 * work.
+	 */
+	movl	$Z_MEM_PHYS_ADDR(z_x86_kernel_ptables), %eax
+	movl	%eax, %cr3
+
+#ifdef CONFIG_X86_PAE
+	/* Enable PAE */
+	movl	%cr4, %eax
+	orl	$CR4_PAE, %eax
+	movl	%eax, %cr4
+
+	/* IA32_EFER NXE bit set */
+	movl	$0xC0000080, %ecx
+	rdmsr
+	orl	$0x800, %eax
+	wrmsr
+#endif /* CONFIG_X86_PAE */
+
+	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
+	movl	%cr0, %eax
+	orl	$(CR0_PG | CR0_WP), %eax
+	movl	%eax, %cr0
+
+#ifdef Z_VM_KERNEL
+	/* Jump to a virtual address, which works because the identity and
+	 * virtual mappings both are to the same physical address.
+	 */
+	ljmp    $CODE_SEG, $vm_enter
+vm_enter:
+	/* We are now executing in virtual memory. We'll un-map the identity
+	 * mappings later once we are in the C domain
+	 */
+#endif /* Z_VM_KERNEL */
+
+#endif /* CONFIG_X86_MMU */
+.endm
 
 SECTION_FUNC(TEXT_START, __start)
 
@@ -62,7 +111,8 @@ SECTION_FUNC(TEXT_START, __start)
 	 * booted operating systems to setup their own IDT and GDT.
 	 */
 #if CONFIG_SET_GDT
-	lgdt	_gdt_rom		/* load 32-bit operand size GDT */
+	/* load 32-bit operand size GDT */
+	lgdt	Z_MEM_PHYS_ADDR(_gdt_rom)
 
 	/* If we set our own GDT, update the segment registers as well.
 	 */
@@ -74,7 +124,7 @@ SECTION_FUNC(TEXT_START, __start)
 	movw	%ax, %fs	/* Zero FS */
 	movw	%ax, %gs	/* Zero GS */
 
-	ljmp	$CODE_SEG, $__csSet	/* set CS = 0x08 */
+	ljmp	$CODE_SEG, $Z_MEM_PHYS_ADDR(__csSet)	/* set CS = 0x08 */
 
 __csSet:
 #endif /* CONFIG_SET_GDT */
@@ -135,7 +185,7 @@ __csSet:
 	 */
 #ifdef CONFIG_INIT_STACKS
 	movl $0xAAAAAAAA, %eax
-	leal z_interrupt_stacks, %edi
+	leal Z_MEM_PHYS_ADDR(z_interrupt_stacks), %edi
 #ifdef CONFIG_X86_STACK_PROTECTION
 	addl $4096, %edi
 #endif
@@ -144,7 +194,7 @@ __csSet:
 	rep  stosl
 #endif
 
-	movl	$z_interrupt_stacks, %esp
+	movl	$Z_MEM_PHYS_ADDR(z_interrupt_stacks), %esp
 #ifdef CONFIG_X86_STACK_PROTECTION
 	/* In this configuration, all stacks, including IRQ stack, are declared
 	 * with a 4K non-present guard page preceding the stack buffer
@@ -153,9 +203,6 @@ __csSet:
 #else
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
 #endif
-
-	/* Clear BSS */
-	call	z_bss_zero
 
 #ifdef CONFIG_XIP
 	/* Copy data from flash to RAM.
@@ -166,6 +213,12 @@ __csSet:
 	call	z_data_copy
 #endif
 
+	/* Note that installing page tables must be done after
+	 * z_data_copy() as the page tables are being copied into
+	 * RAM there.
+	 */
+	install_page_tables
+
 #ifdef CONFIG_GDT_DYNAMIC
 	/* activate RAM-based Global Descriptor Table (GDT) */
 	lgdt	%ds:_gdt
@@ -175,31 +228,25 @@ __csSet:
 	mov $MAIN_TSS, %ax
 	ltr %ax
 #endif
-	lidt	z_x86_idt		/* load 32-bit operand size IDT */
 
-#ifdef CONFIG_X86_MMU
-	/* Install page tables */
-	movl $Z_X86_PHYS_ADDR(z_x86_kernel_ptables), %eax
-	movl %eax, %cr3
+#ifdef Z_VM_KERNEL
+	/* Need to reset the stack to virtual address after
+	 * page table is loaded.
+	 */
 
-#ifdef CONFIG_X86_PAE
-	/* Enable PAE */
-	movl %cr4, %eax
-	orl $CR4_PAE, %eax
-	movl %eax, %cr4
+	movl	$z_interrupt_stacks, %esp
+#ifdef CONFIG_X86_STACK_PROTECTION
+	addl	$(CONFIG_ISR_STACK_SIZE + 4096), %esp
+#else
+	addl	$CONFIG_ISR_STACK_SIZE, %esp
+#endif
+#endif /* Z_VM_KERNEL */
 
-	/* IA32_EFER NXE bit set */
-	movl $0xC0000080, %ecx
-	rdmsr
-	orl $0x800, %eax
-	wrmsr
-#endif /* CONFIG_X86_PAE */
+	/* Clear BSS */
+	call	z_bss_zero
 
-	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
-	movl %cr0, %eax
-	orl $(CR0_PG | CR0_WP), %eax
-	movl %eax, %cr0
-#endif /* CONFIG_X86_MMU */
+	/* load 32-bit operand size IDT */
+	lidt	z_x86_idt
 
 	pushl	%ebx		/* pointer to multiboot info, or NULL */
 	call	z_x86_prep_c	/* enter kernel; never returns */
@@ -224,7 +271,8 @@ z_x86_idt:
 	 * setup by the BIOS (or GRUB?).
 	 */
 
-	.long	_idt_base_address		/* physical start address */
+	/* IDT table start address */
+	.long	_idt_base_address
 
 
 #ifdef CONFIG_SET_GDT
@@ -260,8 +308,11 @@ _gdt_rom:
 	/* Entry 0 (selector=0x0000): The "NULL descriptor". The CPU never
 	 * actually looks at this entry, so we stuff 6-byte the pseudo
 	 * descriptor here */
-	.word _gdt_rom_end - _gdt_rom - 1	/* Limit on GDT */
-	.long _gdt_rom				/* table address: _gdt_rom */
+
+	/* Limit on GDT */
+	.word Z_MEM_PHYS_ADDR(_gdt_rom_end) - Z_MEM_PHYS_ADDR(_gdt_rom) - 1
+	/* table address: _gdt_rom */
+	.long Z_MEM_PHYS_ADDR(_gdt_rom)
 	.word   0x0000
 
 	/* Entry 1 (selector=0x0008): Code descriptor: DPL0 */

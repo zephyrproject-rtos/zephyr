@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2020 Erwin Rol <erwin@erwinrol.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	dmas = <&dma1 3 0x20440
+		&dma1 2 0x20480>;
+	dma-names = "tx", "rx";
+};
+
+&dma1 {
+	status = "okay";
+};

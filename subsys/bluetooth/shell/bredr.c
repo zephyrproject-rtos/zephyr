@@ -114,7 +114,7 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi,
 	while (len) {
 		if (len < 2) {
 			break;
-		};
+		}
 
 		/* Look for early termination */
 		if (!eir[0]) {

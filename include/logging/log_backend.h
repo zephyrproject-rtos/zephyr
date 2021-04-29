@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 
 #include <logging/log_msg.h>
+#include <logging/log_msg2.h>
 #include <stdarg.h>
 #include <sys/__assert.h>
 #include <sys/util.h>
@@ -29,6 +30,9 @@ struct log_backend;
  * @brief Logger backend API.
  */
 struct log_backend_api {
+	void (*process)(const struct log_backend *const backend,
+			union log_msg2_generic *msg);
+
 	void (*put)(const struct log_backend *const backend,
 		    struct log_msg *msg);
 	void (*put_sync_string)(const struct log_backend *const backend,
@@ -40,7 +44,7 @@ struct log_backend_api {
 
 	void (*dropped)(const struct log_backend *const backend, uint32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
-	void (*init)(void);
+	void (*init)(const struct log_backend *const backend);
 };
 
 /**
@@ -101,6 +105,16 @@ static inline void log_backend_put(const struct log_backend *const backend,
 	__ASSERT_NO_MSG(msg != NULL);
 	backend->api->put(backend, msg);
 }
+
+static inline void log_backend_msg2_process(
+					const struct log_backend *const backend,
+					union log_msg2_generic *msg)
+{
+	__ASSERT_NO_MSG(backend != NULL);
+	__ASSERT_NO_MSG(msg != NULL);
+	backend->api->process(backend, msg);
+}
+
 
 /**
  * @brief Synchronously process log message.

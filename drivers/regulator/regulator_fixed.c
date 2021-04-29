@@ -39,7 +39,7 @@ struct driver_data_onoff {
 	const struct device *dev;
 	struct onoff_manager mgr;
 #ifdef CONFIG_MULTITHREADING
-	struct k_delayed_work delayed_work;
+	struct k_work_delayable dwork;
 #endif /* CONFIG_MULTITHREADING */
 	onoff_notify_fn notify;
 	enum work_task task;
@@ -114,8 +114,7 @@ static void finalize_transition(struct driver_data_onoff *data,
 			__ASSERT_NO_MSG(data->task == WORK_TASK_UNDEFINED);
 			data->task = WORK_TASK_DELAY;
 			data->notify = notify;
-			rc = k_delayed_work_submit(&data->delayed_work,
-						   K_USEC(delay_us));
+			rc = k_work_schedule(&data->dwork, K_USEC(delay_us));
 			if (rc == 0) {
 				return;
 			}
@@ -136,11 +135,11 @@ static void finalize_transition(struct driver_data_onoff *data,
  */
 static void onoff_worker(struct k_work *work)
 {
-	struct k_delayed_work *delayed_work
-		= CONTAINER_OF(work, struct k_delayed_work, work);
+	struct k_work_delayable *dwork
+		= k_work_delayable_from_work(work);
 	struct driver_data_onoff *data
-		= CONTAINER_OF(delayed_work, struct driver_data_onoff,
-			       delayed_work);
+		= CONTAINER_OF(dwork, struct driver_data_onoff,
+			       dwork);
 	onoff_notify_fn notify = data->notify;
 	const struct driver_config *cfg = data->dev->config;
 	uint32_t delay_us = 0;
@@ -190,7 +189,7 @@ static void start(struct onoff_manager *mgr,
 		__ASSERT_NO_MSG(data->task == WORK_TASK_UNDEFINED);
 		data->task = WORK_TASK_ENABLE;
 		data->notify = notify;
-		k_delayed_work_submit(&data->delayed_work, K_NO_WAIT);
+		k_work_schedule(&data->dwork, K_NO_WAIT);
 		return;
 	}
 #endif /* CONFIG_MULTITHREADING */
@@ -228,7 +227,7 @@ static void stop(struct onoff_manager *mgr,
 		__ASSERT_NO_MSG(data->task == WORK_TASK_UNDEFINED);
 		data->task = WORK_TASK_DISABLE;
 		data->notify = notify;
-		k_delayed_work_submit(&data->delayed_work, K_NO_WAIT);
+		k_work_schedule(&data->dwork, K_NO_WAIT);
 		return;
 	}
 #endif /* CONFIG_MULTITHREADING */
@@ -271,7 +270,7 @@ static int regulator_fixed_init_onoff(const struct device *dev)
 	__ASSERT_NO_MSG(rc == 0);
 
 #ifdef CONFIG_MULTITHREADING
-	k_delayed_work_init(&data->delayed_work, onoff_worker);
+	k_work_init_delayable(&data->dwork, onoff_worker);
 #endif /* CONFIG_MULTITHREADING */
 
 	rc = common_init(dev, &data->gpio);

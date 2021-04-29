@@ -5,15 +5,11 @@
  */
 
 &spi1 {
-	dmas = <&dma1 3 1 0x20440 0x04
-		&dma1 2 1 0x20480 0x04>;
+	dmas = <&dma1 3 1 0x20440
+		&dma1 2 1 0x20480>;
 	dma-names = "tx", "rx";
 };
 
 &dma1 {
-	status = "okay";
-};
-
-&dma2 {
 	status = "okay";
 };

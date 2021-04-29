@@ -52,7 +52,6 @@ typedef void (*irq_config_func_t)(const struct device *dev);
 
 
 struct stream {
-	const char *name;
 	DMA_TypeDef *reg;
 	const struct device *dev;
 	uint32_t channel;
@@ -79,7 +78,6 @@ struct flash_stm32_qspi_data {
 	struct jesd216_erase_type erase_types[JESD216_NUM_ERASE_TYPES];
 	/* Number of bytes per page */
 	uint16_t page_size;
-	bool write_protection;
 	int cmd_status;
 	struct stream dma;
 };
@@ -286,12 +284,7 @@ static int qspi_wait_until_ready(const struct device *dev)
 static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 				  const void *data, size_t size)
 {
-	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
 	int ret = 0;
-
-	if (dev_data->write_protection) {
-		return -EACCES;
-	}
 
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
@@ -362,10 +355,6 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
 	int ret = 0;
 
-	if (dev_data->write_protection) {
-		return -EACCES;
-	}
-
 	if (!qspi_address_is_valid(dev, addr, size)) {
 		LOG_DBG("Error: address or size exceeds expected values: "
 			"addr 0x%lx, size %zu", (long)addr, size);
@@ -431,16 +420,6 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 	qspi_unlock_thread(dev);
 
 	return ret;
-}
-
-static int flash_stm32_qspi_write_protection_set(const struct device *dev,
-						 bool write_protect)
-{
-	struct flash_stm32_qspi_data *dev_data = DEV_DATA(dev);
-
-	dev_data->write_protection = write_protect;
-
-	return 0;
 }
 
 static const struct flash_parameters flash_stm32_qspi_parameters = {
@@ -574,7 +553,6 @@ static const struct flash_driver_api flash_stm32_qspi_driver_api = {
 	.read = flash_stm32_qspi_read,
 	.write = flash_stm32_qspi_write,
 	.erase = flash_stm32_qspi_erase,
-	.write_protection = flash_stm32_qspi_write_protection_set,
 	.get_parameters = flash_stm32_qspi_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_stm32_qspi_pages_layout,
@@ -695,14 +673,9 @@ static int flash_stm32_qspi_init(const struct device *dev)
 	struct dma_config dma_cfg = dev_data->dma.cfg;
 	static DMA_HandleTypeDef hdma;
 
-	if (dev_data->dma.name != NULL) {
-		dev_data->dma.dev = device_get_binding(dev_data->dma.name);
-		if (!dev_data->dma.dev) {
-			LOG_ERR("%s device not found", dev_data->dma.name);
-			return -ENODEV;
-		}
-	} else {
-		return -EINVAL;
+	if (!device_is_ready(dev_data->dma.dev)) {
+		LOG_ERR("%s device not ready", dev_data->dma.dev->name);
+		return -ENODEV;
 	}
 
 	/* Proceed to the minimum Zephyr DMA driver init */
@@ -861,7 +834,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
 #define QSPI_DMA_CHANNEL_INIT(node, dir)				\
-	.name = DT_DMAS_LABEL_BY_NAME(node, dir),			\
+	.dev = DEVICE_DT_GET(DT_DMAS_CTLR(node)),			\
 	.channel = DT_DMAS_CELL_BY_NAME(node, dir, channel),		\
 	.reg = (DMA_TypeDef *)DT_REG_ADDR(				\
 				   DT_PHANDLE_BY_NAME(node, dmas, dir)),\

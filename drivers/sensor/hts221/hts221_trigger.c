@@ -151,7 +151,7 @@ int hts221_init_interrupt(const struct device *dev)
 	}
 
 #if defined(CONFIG_HTS221_TRIGGER_OWN_THREAD)
-	k_sem_init(&data->drdy_sem, 0, UINT_MAX);
+	k_sem_init(&data->drdy_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_HTS221_THREAD_STACK_SIZE,

@@ -12,7 +12,9 @@
 #ifndef ZEPHYR_INCLUDE_NET_NET_L2_H_
 #define ZEPHYR_INCLUDE_NET_NET_L2_H_
 
+#include <device.h>
 #include <net/buf.h>
+#include <net/capture.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,6 +84,11 @@ struct net_l2 {
 	extern const struct net_l2 NET_L2_GET_NAME(_name)
 #define NET_L2_GET_CTX_TYPE(_name) _name##_CTX_TYPE
 
+#ifdef CONFIG_NET_L2_VIRTUAL
+#define VIRTUAL_L2		VIRTUAL
+NET_L2_DECLARE_PUBLIC(VIRTUAL_L2);
+#endif /* CONFIG_NET_L2_DUMMY */
+
 #ifdef CONFIG_NET_L2_DUMMY
 #define DUMMY_L2		DUMMY
 #define DUMMY_L2_CTX_TYPE	void*
@@ -138,6 +145,18 @@ NET_L2_DECLARE_PUBLIC(CANBUS_L2);
 
 #define NET_L2_DATA_INIT(name, sfx, ctx_type)				\
 	static ctx_type NET_L2_GET_DATA(name, sfx) __used;
+
+typedef int (*net_l2_send_t)(const struct device *dev, struct net_pkt *pkt);
+
+static inline int net_l2_send(net_l2_send_t send_fn,
+			      const struct device *dev,
+			      struct net_if *iface,
+			      struct net_pkt *pkt)
+{
+	net_capture_pkt(iface, pkt);
+
+	return send_fn(dev, pkt);
+}
 
 /** @endcond */
 

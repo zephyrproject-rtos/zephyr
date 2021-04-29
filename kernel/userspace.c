@@ -806,7 +806,7 @@ char *z_user_string_alloc_copy(const char *src, size_t maxlen)
 	 * properly.
 	 */
 	if (ret != NULL) {
-		ret[actual_len - 1] = '\0';
+		ret[actual_len - 1U] = '\0';
 	}
 out:
 	return ret;

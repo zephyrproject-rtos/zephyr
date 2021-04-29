@@ -27,13 +27,13 @@
 #include <string.h>
 #include <sys/dlist.h>
 #include <kernel_internal.h>
-#include <kswap.h>
 #include <drivers/entropy.h>
 #include <logging/log_ctrl.h>
 #include <tracing/tracing.h>
 #include <stdbool.h>
 #include <debug/gcov.h>
 #include <kswap.h>
+#include <timing/timing.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -333,7 +333,7 @@ sys_rand_fallback:
 	 * those devices without a HWRNG entropy driver.
 	 */
 
-	while (length > 0) {
+	while (length > 0U) {
 		uint32_t rndbits;
 		uint8_t *p_rndbits = (uint8_t *)&rndbits;
 
@@ -383,9 +383,6 @@ FUNC_NORETURN void z_cstart(void)
 
 	z_dummy_thread_init(&dummy_thread);
 #endif
-#if defined(CONFIG_MMU) && defined(CONFIG_USERSPACE)
-	z_kernel_map_fixup();
-#endif
 	/* do any necessary initialization of static devices */
 	z_device_state_init();
 
@@ -401,7 +398,7 @@ FUNC_NORETURN void z_cstart(void)
 	__stack_chk_guard <<= 8;
 #endif	/* CONFIG_STACK_CANARIES */
 
-#ifdef CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
+#ifdef CONFIG_TIMING_FUNCTIONS_NEED_AT_BOOT
 	timing_init();
 	timing_start();
 #endif

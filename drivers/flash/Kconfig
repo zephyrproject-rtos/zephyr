@@ -60,6 +60,8 @@ config FLASH_PAGE_LAYOUT
 
 source "drivers/flash/Kconfig.at45"
 
+source "drivers/flash/Kconfig.esp32"
+
 source "drivers/flash/Kconfig.nrf"
 
 source "drivers/flash/Kconfig.lpc"

@@ -1,29 +1,9 @@
 # Copyright 2020 Broadcom
 # SPDX-License-Identifier: Apache-2.0
 
-description: PL330 DMA Controller
-
-compatible: "arm,dma-pl330"
-
-include: dma-controller.yaml
-
-properties:
-    reg:
-      required: true
-    microcode:
-      type: array
-      required: true
-      description: microcode's physical memory address
-    label:
-      required: true
-    "#dma-cells":
-      const: 1
-
-# Parameter syntax
-dma-cells:
-  - channel
-
 description: |
+  PL330 DMA Controller
+
   A phandle to the DMA controller plus "channel" integer cell specifying
   channel to be used for data transfer
 
@@ -44,3 +24,22 @@ description: |
                   dma-names = "txdma", "rxdma";
                   label = "PCIE_0";
             };
+compatible: "arm,dma-pl330"
+
+include: dma-controller.yaml
+
+properties:
+    reg:
+      required: true
+    microcode:
+      type: array
+      required: true
+      description: microcode's physical memory address
+    label:
+      required: true
+    "#dma-cells":
+      const: 1
+
+# Parameter syntax
+dma-cells:
+  - channel

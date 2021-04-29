@@ -16,7 +16,7 @@ properties:
         required: true
         description: configurations of device source clock controller
 
-    host_acc_wui:
+    host-acc-wui:
         type: phandle
         required: true
         description: |
@@ -24,4 +24,4 @@ properties:
             access transactions.
 
             For example the WUI mapping on NPCX7 would be
-               host_acc_wui = <&wui_host_acc>;
+               host-acc-wui = <&wui_host_acc>;

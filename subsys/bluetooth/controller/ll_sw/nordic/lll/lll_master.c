@@ -101,7 +101,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint32_t remainder_us;
 	uint8_t data_chan_use;
 	struct lll_conn *lll;
-	struct evt_hdr *evt;
+	struct ull_hdr *ull;
 	uint32_t remainder;
 
 	DEBUG_RADIO_START_M(1);
@@ -111,14 +111,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Check if stopped (on disconnection between prepare and pre-empt)
 	 */
 	if (unlikely(lll->handle == 0xFFFF)) {
-		int err;
+		radio_isr_set(lll_isr_early_abort, lll);
+		radio_disable();
 
-		err = lll_hfclock_off();
-		LL_ASSERT(err >= 0);
-
-		lll_done(NULL);
-
-		DEBUG_RADIO_CLOSE_M(0);
 		return 0;
 	}
 
@@ -188,8 +183,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	ticks_at_event = p->ticks_at_expire;
-	evt = HDR_LLL2EVT(lll);
-	ticks_at_event += lll_evt_offset_get(evt);
+	ull = HDR_LLL2ULL(lll);
+	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
@@ -220,7 +215,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(evt, (TICKER_ID_CONN_BASE + lll->handle),
+	if (lll_preempt_calc(ull, (TICKER_ID_CONN_BASE + lll->handle),
 			     ticks_at_event)) {
 		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();

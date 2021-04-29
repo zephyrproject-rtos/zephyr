@@ -52,7 +52,7 @@ static int pinmux_cc13xx_cc26xx_pullup(const struct device *dev, uint32_t pin,
 	case PINMUX_PULLUP_DISABLE:
 		IOCIOPortPullSet(pin, IOC_NO_IOPULL);
 		return 0;
-	};
+	}
 
 	return -EINVAL;
 }
@@ -71,7 +71,7 @@ static int pinmux_cc13xx_cc26xx_input(const struct device *dev, uint32_t pin,
 	case PINMUX_OUTPUT_ENABLED:
 		IOCIOInputSet(pin, IOC_INPUT_DISABLE);
 		return 0;
-	};
+	}
 
 	return -EINVAL;
 }

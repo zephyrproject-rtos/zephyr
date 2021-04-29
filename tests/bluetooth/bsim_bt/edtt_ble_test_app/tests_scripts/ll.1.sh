@@ -4,7 +4,7 @@
 
 # LL regression tests based on the EDTTool (part 1)
 
-CWD=`pwd`"/"`dirname $0`
+CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
 
 export SIMULATION_ID="edtt_ll_set1"
 export TEST_FILE=${CWD}"/ll.set1.test_list"

@@ -5,4 +5,4 @@
 
 config TOOLCHAIN_ZEPHYR_0_11
 	def_bool y
-	select HAS_NEWLIB_LIBC_NANO if (ARC || (ARM && !ARM64) || RISCV)
+	select HAS_NEWLIB_LIBC_NANO if (ARC || ARM || RISCV)

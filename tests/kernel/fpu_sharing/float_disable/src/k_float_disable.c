@@ -36,7 +36,7 @@ static void usr_fp_thread_entry_1(void)
 	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 #define K_FLOAT_DISABLE_SYSCALL_RETVAL 0
 #else
-#define K_FLOAT_DISABLE_SYSCALL_RETVAL -ENOSYS
+#define K_FLOAT_DISABLE_SYSCALL_RETVAL -ENOTSUP
 #endif
 
 static void usr_fp_thread_entry_2(void)
@@ -98,7 +98,7 @@ void test_k_float_disable_common(void)
 		usr_fp_thread.base.user_options);
 #else
 	/* Verify k_float_disable() is not supported */
-	zassert_true((k_float_disable(&usr_fp_thread) == -ENOSYS),
+	zassert_true((k_float_disable(&usr_fp_thread) == -ENOTSUP),
 		"k_float_disable() successful when not supported");
 #endif
 }

@@ -167,4 +167,5 @@ extern void z_soc_irq_enable(uint32_t irq);
 extern void z_soc_irq_disable(uint32_t irq);
 extern int z_soc_irq_is_enabled(unsigned int irq);
 
+
 #endif /* __INC_SOC_H */

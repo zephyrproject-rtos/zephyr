@@ -290,7 +290,7 @@ int bmg160_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	k_sem_init(&bmg160->sem, 1, UINT_MAX);
+	k_sem_init(&bmg160->sem, 1, K_SEM_MAX_LIMIT);
 
 	if (bmg160_read_byte(dev, BMG160_REG_CHIPID, &chip_id) < 0) {
 		LOG_DBG("Failed to read chip id.");

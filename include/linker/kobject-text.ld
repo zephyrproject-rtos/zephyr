@@ -12,7 +12,7 @@
 	*(".kobject_data.text*")
 	_kobject_text_area_end = .;
 	_kobject_text_area_used = _kobject_text_area_end - _kobject_text_area_start;
-#ifndef LINKER_PASS2
+#ifndef LINKER_ZEPHYR_FINAL
 #ifdef CONFIG_DYNAMIC_OBJECTS
 	PROVIDE(z_object_gperf_find = .);
 	PROVIDE(z_object_gperf_wordlist_foreach = .);
@@ -32,11 +32,7 @@
 
 	ASSERT(
 		CONFIG_KOBJECT_TEXT_AREA >= _kobject_text_area_used,
-"The configuration system has incorrectly set \
-'CONFIG_KOBJECT_TEXT_AREA' to \
-CONFIG_KOBJECT_TEXT_AREA, which is not big enough. You must \
-through Kconfig either disable 'CONFIG_USERSPACE', or set \
-'CONFIG_KOBJECT_TEXT_AREA' to a value larger than \
-CONFIG_KOBJECT_TEXT_AREA."
+"Reserved space for kobject text area is too small. \
+Please change CONFIG_KOBJECT_TEXT_AREA to a larger number."
 		);
 #endif /* CONFIG_USERSPACE */

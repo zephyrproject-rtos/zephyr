@@ -499,17 +499,14 @@ void test_thread_timeout_remaining_expires(void)
 {
 	k_ticks_t r, e, r1, ticks, expected_expires_ticks;
 
-	ticks = CONFIG_SYS_CLOCK_TICKS_PER_SEC * WAIT_TO_START_MS / 1000;
+	ticks = k_ms_to_ticks_ceil32(WAIT_TO_START_MS);
+	expected_expires_ticks = k_uptime_ticks() + ticks;
+
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      user_start_thread, k_current_get(), NULL,
 				      NULL, 0, K_USER,
-				      Z_TIMEOUT_MS(WAIT_TO_START_MS));
+				      K_MSEC(WAIT_TO_START_MS));
 
-	/* for many platforms, ticks are often be calculated with one tick
-	 * given or taken, so values depend on ticks can't be compared with
-	 * "=="
-	 */
-	expected_expires_ticks = k_uptime_ticks() + ticks;
 	k_msleep(10);
 	e = k_thread_timeout_expires_ticks(tid);
 	TC_PRINT("thread_expires_ticks: %d, expect: %d\n", (int)e,

@@ -31,9 +31,50 @@ config FLASH_MCUX_FLEXSPI_NOR
 	bool "MCUX FlexSPI NOR driver"
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
-	select FLASH_MCUX_FLEXSPI
+	select MEMC
+	select MEMC_MCUX_FLEXSPI
 
-config FLASH_MCUX_FLEXSPI
-	bool
+config FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
+	bool "MCUX FlexSPI NOR write RAM buffer"
+	default y
+	depends on FLASH_MCUX_FLEXSPI_NOR
+	help
+	  Copy the data to a RAM buffer before writing it to the flash.
+	  This prevents faults when the data to write would be located on the
+	  flash itself.
+
+config FLASH_MCUX_FLEXSPI_XIP
+	bool "MCUX FlexSPI flash access with xip"
+	depends on MEMC_MCUX_FLEXSPI
+	depends on (CODE_FLEXSPI || CODE_FLEXSPI2)
+	select XIP
+	select CODE_DATA_RELOCATION
+	help
+	  Allows using the flash API while running in XIP.
+	  WARNING: It is possible to overwrite the running application itself.
+
+if FLASH_MCUX_FLEXSPI_XIP
+
+choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
+	prompt "FlexSPI drivers relocation target"
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
+	help
+	  Select the location to run the FlexSPI drivers when using
+	  the flash API.
+
+config FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
+	bool "ITCM"
+
+config FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
+	bool "SRAM"
+
+endchoice
+
+config FLASH_MCUX_FLEXSPI_XIP_MEM
+	string
+	default "ITCM" if FLASH_MCUX_FLEXSPI_XIP_MEM_ITCM
+	default "SRAM" if FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
+
+endif # FLASH_MCUX_FLEXSPI_XIP
 
 endif # HAS_MCUX_FLEXSPI

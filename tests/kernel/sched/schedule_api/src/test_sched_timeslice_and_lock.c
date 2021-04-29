@@ -142,7 +142,7 @@ void test_sleep_cooperative(void)
 
 void test_busy_wait_cooperative(void)
 {
-	/* set current thread to a preemptible priority */
+	/* set current thread to a cooperative priority */
 	init_prio = -1;
 	setup_threads();
 

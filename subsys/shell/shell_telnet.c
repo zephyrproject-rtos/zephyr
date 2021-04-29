@@ -30,7 +30,7 @@ struct shell_telnet *sh_telnet;
 #define TELNET_LINE_SIZE CONFIG_SHELL_TELNET_LINE_BUF_SIZE
 #define TELNET_TIMEOUT   CONFIG_SHELL_TELNET_SEND_TIMEOUT
 
-#define TELNET_MIN_MSG 2
+#define TELNET_MIN_COMMAND_LEN 2
 
 /* Basic TELNET implmentation. */
 
@@ -43,7 +43,8 @@ static void telnet_end_client_connection(void)
 	sh_telnet->client_ctx = NULL;
 	sh_telnet->output_lock = false;
 
-	k_delayed_work_cancel(&sh_telnet->send_work);
+	k_work_cancel_delayable_sync(&sh_telnet->send_work,
+				     &sh_telnet->work_sync);
 
 	/* Flush the RX FIFO */
 	while ((pkt = k_fifo_get(&sh_telnet->rx_fifo, K_NO_WAIT)) != NULL) {
@@ -109,7 +110,8 @@ static void telnet_reply_command(struct telnet_simple_command *cmd)
 		/* OK, no output then */
 		sh_telnet->output_lock = true;
 		sh_telnet->line_out.len = 0;
-		k_delayed_work_cancel(&sh_telnet->send_work);
+		k_work_cancel_delayable_sync(&sh_telnet->send_work,
+					     &sh_telnet->work_sync);
 		break;
 	case NVT_CMD_AYT:
 		telnet_reply_ay_command();
@@ -194,14 +196,12 @@ static void telnet_recv(struct net_context *client,
 	}
 
 	len = net_pkt_remaining_data(pkt);
-	if (len < TELNET_MIN_MSG) {
-		LOG_DBG("Packet smaller than minimum length");
-		goto unref;
-	}
 
-	if (telnet_handle_command(pkt)) {
-		LOG_DBG("Handled command");
-		goto unref;
+	if (len >= TELNET_MIN_COMMAND_LEN) {
+		if (telnet_handle_command(pkt)) {
+			LOG_DBG("Handled command");
+			goto unref;
+		}
 	}
 
 	/* Fifo add */
@@ -343,7 +343,7 @@ static int init(const struct shell_transport *transport,
 	sh_telnet->shell_context = context;
 
 	k_fifo_init(&sh_telnet->rx_fifo);
-	k_delayed_work_init(&sh_telnet->send_work, telnet_send_prematurely);
+	k_work_init_delayable(&sh_telnet->send_work, telnet_send_prematurely);
 
 	return 0;
 }
@@ -373,6 +373,7 @@ static int write(const struct shell_transport *transport,
 	size_t copy_len;
 	int err;
 	uint32_t timeout;
+	bool was_running;
 
 	if (sh_telnet == NULL) {
 		*cnt = 0;
@@ -389,8 +390,10 @@ static int write(const struct shell_transport *transport,
 
 	/* Stop the transmission timer, so it does not interrupt the operation.
 	 */
-	timeout = k_delayed_work_remaining_get(&sh_telnet->send_work);
-	k_delayed_work_cancel(&sh_telnet->send_work);
+	timeout = k_ticks_to_ms_ceil32(
+			k_work_delayable_remaining_get(&sh_telnet->send_work));
+	was_running = k_work_cancel_delayable_sync(&sh_telnet->send_work,
+						   &sh_telnet->work_sync);
 
 	do {
 		if (lb->len + length - *cnt > TELNET_LINE_SIZE) {
@@ -420,9 +423,9 @@ static int write(const struct shell_transport *transport,
 	if (lb->len > 0) {
 		/* Check if the timer was already running, initialize otherwise.
 		 */
-		timeout = (timeout == 0) ? TELNET_TIMEOUT : timeout;
+		timeout = was_running ? timeout : TELNET_TIMEOUT;
 
-		k_delayed_work_submit(&sh_telnet->send_work, K_MSEC(timeout));
+		k_work_reschedule(&sh_telnet->send_work, K_MSEC(timeout));
 	}
 
 	sh_telnet->shell_handler(SHELL_TRANSPORT_EVT_TX_RDY,

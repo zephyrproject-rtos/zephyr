@@ -3,6 +3,8 @@ sample:
   name: NXP MCUX ACMP sample
 common:
   platform_allow: twr_ke18f
+  integration_platforms:
+    - twr_ke18f
   tags: drivers
 tests:
   sample.sensor.mcux_acmp:

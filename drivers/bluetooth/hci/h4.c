@@ -475,6 +475,7 @@ int __weak bt_hci_transport_setup(const struct device *dev)
 static int h4_open(void)
 {
 	int ret;
+	k_tid_t tid;
 
 	BT_DBG("");
 
@@ -488,11 +489,12 @@ static int h4_open(void)
 
 	uart_irq_callback_set(h4_dev, bt_uart_isr);
 
-	k_thread_create(&rx_thread_data, rx_thread_stack,
-			K_KERNEL_STACK_SIZEOF(rx_thread_stack),
-			rx_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_BT_RX_PRIO),
-			0, K_NO_WAIT);
+	tid = k_thread_create(&rx_thread_data, rx_thread_stack,
+			      K_KERNEL_STACK_SIZEOF(rx_thread_stack),
+			      rx_thread, NULL, NULL, NULL,
+			      K_PRIO_COOP(CONFIG_BT_RX_PRIO),
+			      0, K_NO_WAIT);
+	k_thread_name_set(tid, "bt_rx_thread");
 
 	return 0;
 }

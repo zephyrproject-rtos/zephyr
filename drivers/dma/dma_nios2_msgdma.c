@@ -218,7 +218,7 @@ static int nios2_msgdma0_initialize(const struct device *dev)
 
 	alt_msgdma_init(dev_cfg->msgdma_dev, 0, DT_INST_IRQN(0));
 
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(inst, priority),
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nios2_msgdma_isr, DEVICE_DT_INST_GET(0), 0);
 
 	irq_enable(DT_INST_IRQN(0));

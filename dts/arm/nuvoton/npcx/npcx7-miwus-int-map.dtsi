@@ -6,30 +6,30 @@
 
 / {
 	/* Mapping between MIWU group and interrupts */
-	npcx7_miwus_int_map {
+	npcx7-miwus-int-map {
 		map_miwu0_groups: map-miwu0-groups {
 			compatible = "nuvoton,npcx-miwu-int-map";
 			parent = <&miwu0>;
 
-			group_ad0: group_ad0_map {
+			group_ad0: group-ad0-map {
 				irq        = <7>;
-				irq_prio   = <0>;
-				group_mask = <0x09>;
+				irq-prio   = <2>;
+				group-mask = <0x09>;
 			};
-			group_b0: group_b0_map {
+			group_b0: group-b0-map {
 				irq        = <31>;
-				irq_prio   = <0>;
-				group_mask = <0x02>;
+				irq-prio   = <2>;
+				group-mask = <0x02>;
 			};
-			group_c0: group_c0_map {
+			group_c0: group-c0-map {
 				irq        = <15>;
-				irq_prio   = <0>;
-				group_mask = <0x04>;
+				irq-prio   = <2>;
+				group-mask = <0x04>;
 			};
-			group_efgh0: group_efgh0_map {
+			group_efgh0: group-efgh0-map {
 				irq        = <11>;
-				irq_prio   = <0>;
-				group_mask = <0xF0>;
+				irq-prio   = <2>;
+				group-mask = <0xF0>;
 			};
 		};
 
@@ -37,45 +37,45 @@
 			compatible = "nuvoton,npcx-miwu-int-map";
 			parent = <&miwu1>;
 
-			group_a1: group_a1_map {
+			group_a1: group-a1-map {
 				irq        = <47>;
-				irq_prio   = <0>;
-				group_mask = <0x01>;
+				irq-prio   = <2>;
+				group-mask = <0x01>;
 			};
-			group_b1: group_b1_map {
+			group_b1: group-b1-map {
 				irq        = <48>;
-				irq_prio   = <0>;
-				group_mask = <0x02>;
+				irq-prio   = <2>;
+				group-mask = <0x02>;
 			};
-			group_c1: group_c1_map {
+			group_c1: group-c1-map {
 				irq        = <49>;
-				irq_prio   = <0>;
-				group_mask = <0x04>;
+				irq-prio   = <2>;
+				group-mask = <0x04>;
 			};
-			group_d1: group_d1_map {
+			group_d1: group-d1-map {
 				irq        = <50>;
-				irq_prio   = <0>;
-				group_mask = <0x08>;
+				irq-prio   = <2>;
+				group-mask = <0x08>;
 			};
-			group_e1: group_e1_map {
+			group_e1: group-e1-map {
 				irq        = <51>;
-				irq_prio   = <0>;
-				group_mask = <0x10>;
+				irq-prio   = <2>;
+				group-mask = <0x10>;
 			};
-			group_f1: group_f1_map {
+			group_f1: group-f1-map {
 				irq        = <52>;
-				irq_prio   = <0>;
-				group_mask = <0x20>;
+				irq-prio   = <2>;
+				group-mask = <0x20>;
 			};
-			group_g1: group_g1_map {
+			group_g1: group-g1-map {
 				irq        = <53>;
-				irq_prio   = <0>;
-				group_mask = <0x40>;
+				irq-prio   = <2>;
+				group-mask = <0x40>;
 			};
-			group_h1: group_h1_map {
+			group_h1: group-h1-map {
 				irq        = <54>;
-				irq_prio   = <0>;
-				group_mask = <0x80>;
+				irq-prio   = <2>;
+				group-mask = <0x80>;
 			};
 		};
 
@@ -83,30 +83,30 @@
 			compatible = "nuvoton,npcx-miwu-int-map";
 			parent = <&miwu2>;
 
-			group_a2: group_a2_map {
+			group_a2: group-a2-map {
 				irq        = <60>;
-				irq_prio   = <0>;
-				group_mask = <0x01>;
+				irq-prio   = <2>;
+				group-mask = <0x01>;
 			};
-			group_b2: group_b2_map {
+			group_b2: group-b2-map {
 				irq        = <61>;
-				irq_prio   = <0>;
-				group_mask = <0x02>;
+				irq-prio   = <2>;
+				group-mask = <0x02>;
 			};
-			group_c2: group_c2_map {
+			group_c2: group-c2-map {
 				irq        = <62>;
-				irq_prio   = <0>;
-				group_mask = <0x04>;
+				irq-prio   = <2>;
+				group-mask = <0x04>;
 			};
-			group_d2: group_d2_map {
+			group_d2: group-d2-map {
 				irq        = <63>;
-				irq_prio   = <0>;
-				group_mask = <0x08>;
+				irq-prio   = <2>;
+				group-mask = <0x08>;
 			};
-			group_fg2: group_fg2_map {
+			group_fg2: group-fg2-map {
 				irq        = <59>;
-				irq_prio   = <0>;
-				group_mask = <0x60>;
+				irq-prio   = <2>;
+				group-mask = <0x60>;
 			};
 		};
 	};

@@ -306,7 +306,7 @@ int net_context_get(sa_family_t family,
 		}
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
-		k_sem_init(&contexts[i].recv_data_wait, 1, UINT_MAX);
+		k_sem_init(&contexts[i].recv_data_wait, 1, K_SEM_MAX_LIMIT);
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
 		k_mutex_init(&contexts[i].lock);
@@ -528,6 +528,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EINVAL;
 		}
 
+		if (net_context_is_bound_to_iface(context)) {
+			iface = net_context_get_iface(context);
+		}
+
 		if (net_ipv6_is_addr_mcast(&addr6->sin6_addr)) {
 			struct net_if_mcast_addr *maddr;
 
@@ -540,15 +544,18 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ptr = &maddr->address.in6_addr;
 
 		} else if (net_ipv6_is_addr_unspecified(&addr6->sin6_addr)) {
-			iface = net_if_ipv6_select_src_iface(
-				&net_sin6(&context->remote)->sin6_addr);
+			if (iface == NULL) {
+				iface = net_if_ipv6_select_src_iface(
+					&net_sin6(&context->remote)->sin6_addr);
+			}
 
 			ptr = (struct in6_addr *)net_ipv6_unspecified_address();
 		} else {
 			struct net_if_addr *ifaddr;
 
-			ifaddr = net_if_ipv6_addr_lookup(&addr6->sin6_addr,
-							 &iface);
+			ifaddr = net_if_ipv6_addr_lookup(
+					&addr6->sin6_addr,
+					iface == NULL ? &iface : NULL);
 			if (!ifaddr) {
 				return -ENOENT;
 			}
@@ -598,12 +605,13 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 				net_sin6_ptr(&context->local)->sin6_port;
 		}
 
-		NET_DBG("Context %p binding to %s [%s]:%d iface %p",
+		NET_DBG("Context %p binding to %s [%s]:%d iface %d (%p)",
 			context,
 			net_proto2str(AF_INET6,
 				      net_context_get_ip_proto(context)),
 			log_strdup(net_sprint_ipv6_addr(ptr)),
-			ntohs(addr6->sin6_port), iface);
+			ntohs(addr6->sin6_port),
+			net_if_get_by_iface(iface), iface);
 
 	unlock_ipv6:
 		k_mutex_unlock(&context->lock);
@@ -621,6 +629,10 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			return -EINVAL;
 		}
 
+		if (net_context_is_bound_to_iface(context)) {
+			iface = net_context_get_iface(context);
+		}
+
 		if (net_ipv4_is_addr_mcast(&addr4->sin_addr)) {
 			struct net_if_mcast_addr *maddr;
 
@@ -633,13 +645,16 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ptr = &maddr->address.in_addr;
 
 		} else if (addr4->sin_addr.s_addr == INADDR_ANY) {
-			iface = net_if_ipv4_select_src_iface(
-				&net_sin(&context->remote)->sin_addr);
+			if (iface == NULL) {
+				iface = net_if_ipv4_select_src_iface(
+					&net_sin(&context->remote)->sin_addr);
+			}
 
 			ptr = (struct in_addr *)net_ipv4_unspecified_address();
 		} else {
-			ifaddr = net_if_ipv4_addr_lookup(&addr4->sin_addr,
-							 &iface);
+			ifaddr = net_if_ipv4_addr_lookup(
+					&addr4->sin_addr,
+					iface == NULL ? &iface : NULL);
 			if (!ifaddr) {
 				return -ENOENT;
 			}
@@ -689,12 +704,13 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 				net_sin_ptr(&context->local)->sin_port;
 		}
 
-		NET_DBG("Context %p binding to %s %s:%d iface %p",
+		NET_DBG("Context %p binding to %s %s:%d iface %d (%p)",
 			context,
 			net_proto2str(AF_INET,
 				      net_context_get_ip_proto(context)),
 			log_strdup(net_sprint_ipv4_addr(ptr)),
-			ntohs(addr4->sin_port), iface);
+			ntohs(addr4->sin_port),
+			net_if_get_by_iface(iface), iface);
 
 	unlock_ipv4:
 		k_mutex_unlock(&context->lock);
@@ -1149,22 +1165,6 @@ static int get_context_priority(struct net_context *context,
 #endif
 }
 
-static int get_context_timepstamp(struct net_context *context,
-				  void *value, size_t *len)
-{
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-	*((bool *)value) = context->options.timestamp;
-
-	if (len) {
-		*len = sizeof(bool);
-	}
-
-	return 0;
-#else
-	return -ENOTSUP;
-#endif
-}
-
 static int get_context_proxy(struct net_context *context,
 			     void *value, size_t *len)
 {
@@ -1188,23 +1188,6 @@ static int get_context_proxy(struct net_context *context,
 	return -ENOTSUP;
 #endif
 }
-
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-int net_context_get_timestamp(struct net_context *context,
-			      struct net_pkt *pkt,
-			      struct net_ptp_time *timestamp)
-{
-	bool is_timestamped;
-
-	get_context_timepstamp(context, &is_timestamped, NULL);
-	if (is_timestamped) {
-		memcpy(timestamp, net_pkt_timestamp(pkt), sizeof(*timestamp));
-		return 0;
-	}
-
-	return -ENOENT;
-}
-#endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
 
 static int get_context_txtime(struct net_context *context,
 			      void *value, size_t *len)
@@ -1462,6 +1445,21 @@ static int context_sendto(struct net_context *context,
 		if (net_ipv6_is_addr_unspecified(&addr6->sin6_addr)) {
 			return -EDESTADDRREQ;
 		}
+
+		/* If application has not yet set the destination address
+		 * i.e., by not calling connect(), then set the interface
+		 * here so that the packet gets sent to the correct network
+		 * interface. This issue can be seen if there are multiple
+		 * network interfaces and we are trying to send data to
+		 * second or later network interface.
+		 */
+		if (net_ipv6_is_addr_unspecified(
+				&net_sin6(&context->remote)->sin6_addr) &&
+		    !net_context_is_bound_to_iface(context)) {
+			iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
+			net_context_set_iface(context, iface);
+		}
+
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == AF_INET) {
 		const struct sockaddr_in *addr4 =
@@ -1488,6 +1486,20 @@ static int context_sendto(struct net_context *context,
 		if (!addr4->sin_addr.s_addr) {
 			return -EDESTADDRREQ;
 		}
+
+		/* If application has not yet set the destination address
+		 * i.e., by not calling connect(), then set the interface
+		 * here so that the packet gets sent to the correct network
+		 * interface. This issue can be seen if there are multiple
+		 * network interfaces and we are trying to send data to
+		 * second or later network interface.
+		 */
+		if (net_sin(&context->remote)->sin_addr.s_addr == 0U &&
+		    !net_context_is_bound_to_iface(context)) {
+			iface = net_if_ipv4_select_src_iface(&addr4->sin_addr);
+			net_context_set_iface(context, iface);
+		}
+
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_context_get_family(context) == AF_PACKET) {
 		struct sockaddr_ll *ll_addr = (struct sockaddr_ll *)dst_addr;
@@ -1615,36 +1627,6 @@ static int context_sendto(struct net_context *context,
 		net_pkt_set_priority(pkt, priority);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP)) {
-		bool timestamp;
-
-		get_context_timepstamp(context, &timestamp, NULL);
-		if (timestamp) {
-			struct net_ptp_time tp = {
-				/* Use the nanosecond field to temporarily
-				 * store the cycle count as it is a 32-bit
-				 * variable. The value is checked in
-				 * net_if.c:net_if_tx()
-				 *
-				 * The net_pkt timestamp field is used in two
-				 * roles here:
-				 * 1) To calculate how long it takes the packet
-				 *    from net_context to be sent by the
-				 *    network device driver.
-				 * 2) gPTP enabled Ethernet device driver will
-				 *    use the value to tell gPTP what time the
-				 *    packet was sent.
-				 *
-				 * Because these two things are happening at
-				 * different times, we can share the variable.
-				 */
-				.nanosecond = k_cycle_get_32(),
-			};
-
-			net_pkt_set_timestamp(pkt, &tp);
-		}
-	}
-
 	/* If there is ancillary data in msghdr, then we need to add that
 	 * to net_pkt as there is no other way to store it.
 	 */
@@ -1711,7 +1693,12 @@ static int context_sendto(struct net_context *context,
 
 		net_pkt_cursor_init(pkt);
 
-		net_if_queue_tx(net_pkt_iface(pkt), pkt);
+		if (net_context_get_ip_proto(context) == IPPROTO_RAW) {
+			/* Pass to L2: */
+			ret = net_send_data(pkt);
+		} else {
+			net_if_queue_tx(net_pkt_iface(pkt), pkt);
+		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 		   net_context_get_family(context) == AF_CAN &&
 		   net_context_get_ip_proto(context) == CAN_RAW) {
@@ -1928,6 +1915,7 @@ static int recv_udp(struct net_context *context,
 				laddr,
 				ntohs(net_sin(&context->remote)->sin_port),
 				ntohs(lport),
+				context,
 				net_context_packet_received,
 				user_data,
 				&context->conn_handler);
@@ -1995,6 +1983,7 @@ static int recv_raw(struct net_context *context,
 	ret = net_conn_register(net_context_get_ip_proto(context),
 				net_context_get_family(context),
 				NULL, local_addr, 0, 0,
+				context,
 				net_context_raw_packet_received,
 				user_data,
 				&context->conn_handler);
@@ -2138,22 +2127,6 @@ static int set_context_priority(struct net_context *context,
 #endif
 }
 
-static int set_context_timestamp(struct net_context *context,
-				 const void *value, size_t len)
-{
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-	if (len > sizeof(bool)) {
-		return -EINVAL;
-	}
-
-	context->options.timestamp = *((bool *)value);
-
-	return 0;
-#else
-	return -ENOTSUP;
-#endif
-}
-
 static int set_context_txtime(struct net_context *context,
 			      const void *value, size_t len)
 {
@@ -2243,9 +2216,6 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_PRIORITY:
 		ret = set_context_priority(context, value, len);
 		break;
-	case NET_OPT_TIMESTAMP:
-		ret = set_context_timestamp(context, value, len);
-		break;
 	case NET_OPT_TXTIME:
 		ret = set_context_txtime(context, value, len);
 		break;
@@ -2282,9 +2252,6 @@ int net_context_get_option(struct net_context *context,
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = get_context_priority(context, value, len);
-		break;
-	case NET_OPT_TIMESTAMP:
-		ret = get_context_timepstamp(context, value, len);
 		break;
 	case NET_OPT_TXTIME:
 		ret = get_context_txtime(context, value, len);
@@ -2344,5 +2311,5 @@ const char *net_context_state(struct net_context *context)
 
 void net_context_init(void)
 {
-	k_sem_init(&contexts_lock, 1, UINT_MAX);
+	k_sem_init(&contexts_lock, 1, K_SEM_MAX_LIMIT);
 }

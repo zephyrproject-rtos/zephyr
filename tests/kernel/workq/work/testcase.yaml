@@ -1,0 +1,4 @@
+tests:
+  kernel.work.api:
+    min_flash: 34
+    tags: kernel

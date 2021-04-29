@@ -1,18 +1,20 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nrf9160dk_nrf52840_reset_on_if5.dtsi>
+
+#include <nrf9160dk_uart1_on_if0_3.dtsi>
+
+&uart1 {
+	current-speed = <1000000>;
+	hw-flow-control;
+};
 
 / {
 	chosen {
 		zephyr,bt-c2h-uart=&uart1;
 	};
-};
-
-&uart1 {
-	compatible = "nordic,nrf-uarte";
-	current-speed = <1000000>;
-	status = "okay";
-	hw-flow-control;
-	tx-pin = <17>;
-	rx-pin = <20>;
-	rts-pin = <15>;
-	cts-pin = <22>;
 };

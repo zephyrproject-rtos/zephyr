@@ -344,7 +344,7 @@ void test_arp(void)
 
 	net_arp_init();
 
-	iface = net_if_get_default();
+	iface = net_if_lookup_by_dev(DEVICE_GET(net_arp_test));
 
 	net_if_ipv4_set_gw(iface, &gw);
 	net_if_ipv4_set_netmask(iface, &netmask);

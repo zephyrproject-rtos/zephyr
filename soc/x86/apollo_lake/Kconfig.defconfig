@@ -49,10 +49,6 @@ config I2C_DW
 	default y
 	depends on I2C
 
-config I2C_DW_MAX_INSTANCES
-	default 8
-	depends on I2C_DW
-
 config GPIO_INTEL_APL
 	default y
 	depends on GPIO

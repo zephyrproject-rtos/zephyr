@@ -125,7 +125,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	struct bt_gatt_ots_l2cap *l2cap_ctx;
 
-	LOG_DBG("Incoming conn %p", conn);
+	LOG_DBG("Incoming conn %p", (void *)conn);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&channels, l2cap_ctx, node) {
 		if (l2cap_ctx->ot_chan.chan.conn) {

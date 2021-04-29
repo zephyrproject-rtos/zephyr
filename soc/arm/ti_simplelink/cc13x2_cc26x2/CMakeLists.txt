@@ -7,3 +7,5 @@ zephyr_sources(ccfg.c)
 
 zephyr_library_sources_ifdef(CONFIG_PM    power.c)
 zephyr_library_sources_ifdef(CONFIG_PM_DEVICE   power.c)
+
+zephyr_linker_sources_ifdef(CONFIG_HAS_TI_CCFG SECTIONS ccfg.ld)

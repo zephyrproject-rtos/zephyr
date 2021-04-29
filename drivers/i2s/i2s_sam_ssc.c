@@ -64,6 +64,7 @@ struct ring_buf {
 
 /* Device constant configuration parameters */
 struct i2s_sam_dev_cfg {
+	const struct device *dev_dma;
 	Ssc *regs;
 	void (*irq_config)(void);
 	const struct soc_gpio_pin *pin_list;
@@ -92,7 +93,6 @@ struct stream {
 
 /* Device run time data */
 struct i2s_sam_dev_data {
-	const struct device *dev_dma;
 	struct stream rx;
 	struct stream tx;
 };
@@ -235,7 +235,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 		goto rx_disable;
 	}
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel, &stream->dma_cfg,
+	ret = start_dma(dev_cfg->dev_dma, stream->dma_channel, &stream->dma_cfg,
 			(void *)&(ssc->SSC_RHR), stream->mem_block,
 			stream->cfg.block_size);
 	if (ret < 0) {
@@ -246,7 +246,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *user_data,
 	return;
 
 rx_disable:
-	rx_stream_disable(stream, ssc, dev_data->dev_dma);
+	rx_stream_disable(stream, ssc, dev_cfg->dev_dma);
 }
 
 /* This function is executed in the interrupt context */
@@ -296,7 +296,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 	/* Assure cache coherency before DMA read operation */
 	DCACHE_CLEAN(stream->mem_block, mem_block_size);
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel, &stream->dma_cfg,
+	ret = start_dma(dev_cfg->dev_dma, stream->dma_channel, &stream->dma_cfg,
 			stream->mem_block, (void *)&(ssc->SSC_THR),
 			mem_block_size);
 	if (ret < 0) {
@@ -307,7 +307,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *user_data,
 	return;
 
 tx_disable:
-	tx_stream_disable(stream, ssc, dev_data->dev_dma);
+	tx_stream_disable(stream, ssc, dev_cfg->dev_dma);
 }
 
 static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
@@ -777,7 +777,7 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 
 		__ASSERT_NO_MSG(stream->mem_block == NULL);
 
-		ret = stream->stream_start(stream, ssc, dev_data->dev_dma);
+		ret = stream->stream_start(stream, ssc, dev_cfg->dev_dma);
 		if (ret < 0) {
 			LOG_DBG("START trigger failed %d", ret);
 			return ret;
@@ -815,7 +815,7 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 			LOG_DBG("DROP trigger: invalid state");
 			return -EIO;
 		}
-		stream->stream_disable(stream, ssc, dev_data->dev_dma);
+		stream->stream_disable(stream, ssc, dev_cfg->dev_dma);
 		stream->queue_drop(stream);
 		stream->state = I2S_STATE_READY;
 		break;
@@ -929,8 +929,8 @@ static int i2s_sam_initialize(const struct device *dev)
 	k_sem_init(&dev_data->tx.sem, CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT,
 		   CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT);
 
-	if (!device_is_ready(dev_data->dev_dma)) {
-		LOG_ERR("%s device not ready", dev_data->dev_dma->name);
+	if (!device_is_ready(dev_cfg->dev_dma)) {
+		LOG_ERR("%s device not ready", dev_cfg->dev_dma->name);
 		return -ENODEV;
 	}
 
@@ -975,6 +975,7 @@ static void i2s0_sam_irq_config(void)
 static const struct soc_gpio_pin i2s0_pins[] = ATMEL_SAM_DT_PINS(0);
 
 static const struct i2s_sam_dev_cfg i2s0_sam_config = {
+	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(0, tx)),
 	.regs = (Ssc *)DT_INST_REG_ADDR(0),
 	.irq_config = i2s0_sam_irq_config,
 	.periph_id = DT_INST_PROP(0, peripheral_id),
@@ -987,7 +988,6 @@ struct queue_item rx_0_ring_buf[CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT + 1];
 struct queue_item tx_0_ring_buf[CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1];
 
 static struct i2s_sam_dev_data i2s0_sam_data = {
-	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(0, tx)),
 	.rx = {
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
 		.dma_cfg = {

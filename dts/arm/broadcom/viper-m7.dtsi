@@ -38,17 +38,17 @@
 };
 
 &uart1 {
-	interrupts = <197 3>;
+	interrupts = <203 3>;
 };
 
 &pcie0_ep {
 	interrupt-parent = <&nvic>;
-	interrupts = <44 3>, <46 3>, <98 3>, <123 3>, <215 3>;
+	interrupts = <44 3>, <46 3>, <98 3>, <99 3>, <215 3>;
 	interrupt-names = "perst", "perst_inband", "flr",
 			  "snoop_irq1", "pcie_pmon_lite";
 };
 
 &paxdma {
 	interrupt-parent = <&nvic>;
-	interrupts = <226 3>;
+	interrupts = <228 3>;
 };

@@ -3,6 +3,8 @@ sample:
   name: Out-of-tree driver
 tests:
   sample.drivers.out_of_tree:
+    integration_platforms:
+      - native_posix
     tags: out_of_tree
     harness: console
     harness_config:

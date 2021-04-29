@@ -199,7 +199,7 @@ config BT_CTLR_ISO_TX_BUFFERS
 	int "Number of Isochronous Tx buffers"
 	default 3
 	range 1 19
-	depends on BT_CTLR_ADV_ISO || BT_CTLR_SYNC_ISO || BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	help
 	  Set the number of Isochronous Tx PDUs to be queued for transmission
 	  in the controller.
@@ -372,6 +372,10 @@ config BT_CTLR_CONN_RSSI
 	help
 	  Enable connection RSSI measurement.
 
+config BT_CTLR_CHECK_SAME_PEER_CONN
+	bool
+	default BT_MAX_CONN > 1 && !BT_CTLR_ALLOW_SAME_PEER_CONN
+
 endif # BT_CONN
 
 config BT_CTLR_FILTER
@@ -508,6 +512,13 @@ config BT_CTLR_SYNC_ISO
 	  Enable support for Bluetooth 5.2 LE Isochronous Advertising sync in
 	  the Controller.
 
+config BT_CTLR_SYNC_ISO
+	bool "LE Broadcast Isochronous Channel advertising sync [EXPERIMENTAL]" if BT_LL_SW_SPLIT
+
+config BT_CTLR_BROADCAST_ISO
+	bool
+	default BT_CTLR_ADV_ISO || BT_CTLR_SYNC_ISO
+
 config BT_CTLR_ADV_ISO_SET
 	int "LE Isochronous Channel advertising sets"
 	depends on BT_CTLR_ADV_ISO
@@ -515,9 +526,6 @@ config BT_CTLR_ADV_ISO_SET
 	default 1
 	help
 	  Maximum supported advertising sets.
-
-config BT_CTLR_SYNC_ISO
-	bool "LE Broadcast Isochronous Channel advertising sync [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 
 config BT_CTLR_ADV_DATA_LEN_MAX
 	int "Maximum Advertising Data Length"
@@ -554,9 +562,13 @@ config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral [EXPERIMENTAL]" if BT_LL_SW_SPLIT
 	select BT_CTLR_SET_HOST_FEATURE
 
+config BT_CTLR_CONN_ISO
+	bool
+	default BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+
 config BT_CTLR_CONN_ISO_STREAMS
 	int "LE Connected Isochronous Streams"
-	depends on BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+	depends on BT_CTLR_CONN_ISO
 	range 1 64
 	default 2
 	help
@@ -564,7 +576,7 @@ config BT_CTLR_CONN_ISO_STREAMS
 
 config BT_CTLR_CONN_ISO_GROUPS
 	int "LE Connected Isochronous Groups"
-	depends on BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+	depends on BT_CTLR_CONN_ISO
 	range 1 240
 	default 1
 	help
@@ -572,11 +584,15 @@ config BT_CTLR_CONN_ISO_GROUPS
 
 config BT_CTLR_CONN_ISO_STREAMS_PER_GROUP
 	int "LE Connected Isochronous Streams per Group"
-	depends on BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+	depends on BT_CTLR_CONN_ISO
 	range 1 31
 	default 2
 	help
 	  Maximum supported CISes per CIG.
+
+config BT_CTLR_ISO
+	bool
+	default BT_CTLR_BROADCAST_ISO || BT_CTLR_CONN_ISO
 
 config BT_CTLR_DTM
 	bool

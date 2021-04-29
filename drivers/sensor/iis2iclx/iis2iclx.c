@@ -68,9 +68,9 @@ static int iis2iclx_accel_range_to_fs_val(int32_t range)
 
 static inline int iis2iclx_reboot(const struct device *dev)
 {
-	struct iis2iclx_data *data = dev->data;
+	const struct iis2iclx_config *cfg = dev->config;
 
-	if (iis2iclx_boot_set(data->ctx, 1) < 0) {
+	if (iis2iclx_boot_set((stmdev_ctx_t *)&cfg->ctx, 1) < 0) {
 		return -EIO;
 	}
 
@@ -82,9 +82,10 @@ static inline int iis2iclx_reboot(const struct device *dev)
 
 static int iis2iclx_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 {
+	const struct iis2iclx_config *cfg = dev->config;
 	struct iis2iclx_data *data = dev->data;
 
-	if (iis2iclx_xl_full_scale_set(data->ctx, fs) < 0) {
+	if (iis2iclx_xl_full_scale_set((stmdev_ctx_t *)&cfg->ctx, fs) < 0) {
 		return -EIO;
 	}
 
@@ -95,9 +96,10 @@ static int iis2iclx_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 
 static int iis2iclx_accel_set_odr_raw(const struct device *dev, uint8_t odr)
 {
+	const struct iis2iclx_config *cfg = dev->config;
 	struct iis2iclx_data *data = dev->data;
 
-	if (iis2iclx_xl_data_rate_set(data->ctx, odr) < 0) {
+	if (iis2iclx_xl_data_rate_set((stmdev_ctx_t *)&cfg->ctx, odr) < 0) {
 		return -EIO;
 	}
 
@@ -193,10 +195,11 @@ static int iis2iclx_attr_set(const struct device *dev,
 
 static int iis2iclx_sample_fetch_accel(const struct device *dev)
 {
+	const struct iis2iclx_config *cfg = dev->config;
 	struct iis2iclx_data *data = dev->data;
 	int16_t buf[2];
 
-	if (iis2iclx_acceleration_raw_get(data->ctx, buf) < 0) {
+	if (iis2iclx_acceleration_raw_get((stmdev_ctx_t *)&cfg->ctx, buf) < 0) {
 		LOG_ERR("Failed to read sample");
 		return -EIO;
 	}
@@ -213,7 +216,7 @@ static int iis2iclx_sample_fetch_temp(const struct device *dev)
 	struct iis2iclx_data *data = dev->data;
 	int16_t buf;
 
-	if (iis2iclx_temperature_raw_get(data->ctx, &buf) < 0) {
+	if (iis2iclx_temperature_raw_get(&data->ctx, &buf) < 0) {
 		LOG_ERR("Failed to read sample");
 		return -EIO;
 	}
@@ -540,7 +543,7 @@ static int iis2iclx_init_chip(const struct device *dev)
 
 	iis2iclx->dev = dev;
 
-	if (iis2iclx_device_id_get(iis2iclx->ctx, &chip_id) < 0) {
+	if (iis2iclx_device_id_get((stmdev_ctx_t *)&cfg->ctx, &chip_id) < 0) {
 		LOG_ERR("Failed reading chip id");
 		return -EIO;
 	}
@@ -553,7 +556,7 @@ static int iis2iclx_init_chip(const struct device *dev)
 	}
 
 	/* reset device */
-	if (iis2iclx_reset_set(iis2iclx->ctx, 1) < 0) {
+	if (iis2iclx_reset_set((stmdev_ctx_t *)&cfg->ctx, 1) < 0) {
 		return -EIO;
 	}
 
@@ -573,12 +576,13 @@ static int iis2iclx_init_chip(const struct device *dev)
 	}
 
 	/* Set FIFO bypass mode */
-	if (iis2iclx_fifo_mode_set(iis2iclx->ctx, IIS2ICLX_BYPASS_MODE) < 0) {
+	if (iis2iclx_fifo_mode_set((stmdev_ctx_t *)&cfg->ctx,
+				   IIS2ICLX_BYPASS_MODE) < 0) {
 		LOG_ERR("failed to set FIFO mode");
 		return -EIO;
 	}
 
-	if (iis2iclx_block_data_update_set(iis2iclx->ctx, 1) < 0) {
+	if (iis2iclx_block_data_update_set((stmdev_ctx_t *)&cfg->ctx, 1) < 0) {
 		LOG_ERR("failed to set BDU mode");
 		return -EIO;
 	}
@@ -588,17 +592,9 @@ static int iis2iclx_init_chip(const struct device *dev)
 
 static int iis2iclx_init(const struct device *dev)
 {
-	const struct iis2iclx_config * const config = dev->config;
+#if defined(CONFIG_IIS2ICLX_SENSORHUB)
 	struct iis2iclx_data *data = dev->data;
-
-	data->bus = device_get_binding(config->bus_name);
-	if (!data->bus) {
-		LOG_DBG("master not found: %s",
-			    config->bus_name);
-		return -EINVAL;
-	}
-
-	config->bus_init(dev);
+#endif /* CONFIG_IIS2ICLX_SENSORHUB */
 
 	if (iis2iclx_init_chip(dev) < 0) {
 		LOG_ERR("failed to initialize chip");
@@ -646,72 +642,40 @@ static int iis2iclx_init(const struct device *dev)
  * Instantiation macros used when a device is on a SPI bus.
  */
 
-#define IIS2ICLX_HAS_CS(inst) DT_INST_SPI_DEV_HAS_CS_GPIOS(inst)
-
-#define IIS2ICLX_DATA_SPI_CS(inst)					\
-	{ .cs_ctrl = {							\
-		.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),		\
-		.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst),	\
-		},							\
-	}
-
-#define IIS2ICLX_DATA_SPI(inst)						\
-	COND_CODE_1(IIS2ICLX_HAS_CS(inst),				\
-		    (IIS2ICLX_DATA_SPI_CS(inst)),			\
-		    ({}))
-
-#define IIS2ICLX_SPI_CS_PTR(inst)					\
-	COND_CODE_1(IIS2ICLX_HAS_CS(inst),				\
-		    (&(iis2iclx_data_##inst.cs_ctrl)),			\
-		    (NULL))
-
-#define IIS2ICLX_SPI_CS_LABEL(inst)					\
-	COND_CODE_1(IIS2ICLX_HAS_CS(inst),				\
-		    (DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst)), (NULL))
-
-#define IIS2ICLX_SPI_CFG(inst)						\
-	(&(struct iis2iclx_spi_cfg) {					\
-		.spi_conf = {						\
-			.frequency =					\
-				DT_INST_PROP(inst, spi_max_frequency),	\
-			.operation = (SPI_WORD_SET(8) |			\
-				      SPI_OP_MODE_MASTER |		\
-				      SPI_MODE_CPOL |			\
-				      SPI_MODE_CPHA),			\
-			.slave = DT_INST_REG_ADDR(inst),		\
-			.cs = IIS2ICLX_SPI_CS_PTR(inst),		\
-		},							\
-		.cs_gpios_label = IIS2ICLX_SPI_CS_LABEL(inst),		\
-	})
-
-
 #ifdef CONFIG_IIS2ICLX_TRIGGER
 #define IIS2ICLX_CFG_IRQ(inst) \
-		.irq_dev_name = DT_INST_GPIO_LABEL(inst, drdy_gpios),	\
-		.irq_pin = DT_INST_GPIO_PIN(inst, drdy_gpios),		\
-		.irq_flags = DT_INST_GPIO_FLAGS(inst, drdy_gpios),	\
-		.int_pin = DT_INST_PROP(inst, int_pin)
+	.gpio_drdy = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), drdy_gpios),	\
+	.int_pin = DT_INST_PROP(inst, int_pin)
 #else
 #define IIS2ICLX_CFG_IRQ(inst)
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
 
+#define IIS2ICLX_SPI_OPERATION (SPI_WORD_SET(8) |			\
+				SPI_OP_MODE_MASTER |			\
+				SPI_MODE_CPOL |				\
+				SPI_MODE_CPHA)				\
+
 #define IIS2ICLX_CONFIG_SPI(inst)					\
 	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
-		.bus_init = iis2iclx_spi_init,				\
-		.bus_cfg = { .spi_cfg = IIS2ICLX_SPI_CFG(inst)	},	\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_spi_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_spi_write,	\
+			.handle =					\
+			   (void *)&iis2iclx_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg.spi = {					\
+			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
+			.spi_cfg = SPI_CONFIG_DT_INST(inst,		\
+					   IIS2ICLX_SPI_OPERATION,	\
+					   0),				\
+		},							\
 		.odr = DT_INST_PROP(inst, odr),				\
 		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2ICLX_CFG_IRQ(inst)), ())			\
 	}
-
-#define IIS2ICLX_DEFINE_SPI(inst)					\
-	static struct iis2iclx_data iis2iclx_data_##inst =		\
-		IIS2ICLX_DATA_SPI(inst);				\
-	static const struct iis2iclx_config iis2iclx_config_##inst =	\
-		IIS2ICLX_CONFIG_SPI(inst);				\
-	IIS2ICLX_DEVICE_INIT(inst)
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
@@ -719,28 +683,35 @@ static int iis2iclx_init(const struct device *dev)
 
 #define IIS2ICLX_CONFIG_I2C(inst)					\
 	{								\
-		.bus_name = DT_INST_BUS_LABEL(inst),			\
-		.bus_init = iis2iclx_i2c_init,				\
-		.bus_cfg = { .i2c_slv_addr = DT_INST_REG_ADDR(inst), },	\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_i2c_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_i2c_write,	\
+			.handle =					\
+			   (void *)&iis2iclx_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg.i2c = {					\
+			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
+			.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
+		},							\
 		.odr = DT_INST_PROP(inst, odr),				\
 		.range = DT_INST_PROP(inst, range),			\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),	\
 			(IIS2ICLX_CFG_IRQ(inst)), ())			\
 	}
 
-#define IIS2ICLX_DEFINE_I2C(inst)					\
-	static struct iis2iclx_data iis2iclx_data_##inst;		\
-	static const struct iis2iclx_config iis2iclx_config_##inst =	\
-		IIS2ICLX_CONFIG_I2C(inst);				\
-	IIS2ICLX_DEVICE_INIT(inst)
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
 #define IIS2ICLX_DEFINE(inst)						\
-	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
-		    (IIS2ICLX_DEFINE_SPI(inst)),			\
-		    (IIS2ICLX_DEFINE_I2C(inst)))
+	static struct iis2iclx_data iis2iclx_data_##inst;		\
+	static const struct iis2iclx_config iis2iclx_config_##inst =	\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+			(IIS2ICLX_CONFIG_SPI(inst)),			\
+			(IIS2ICLX_CONFIG_I2C(inst)));			\
+	IIS2ICLX_DEVICE_INIT(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2ICLX_DEFINE)

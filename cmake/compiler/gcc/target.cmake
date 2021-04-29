@@ -47,6 +47,8 @@ include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
 if("${ARCH}" STREQUAL "arm")
   include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
+elseif("${ARCH}" STREQUAL "arm64")
+  include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm64.cmake)
 elseif("${ARCH}" STREQUAL "arc")
   list(APPEND TOOLCHAIN_C_FLAGS
     -mcpu=${GCC_M_CPU}

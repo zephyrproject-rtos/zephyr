@@ -127,7 +127,7 @@ int stts751_init_interrupt(const struct device *dev)
 	}
 
 #if defined(CONFIG_STTS751_TRIGGER_OWN_THREAD)
-	k_sem_init(&stts751->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&stts751->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&stts751->thread, stts751->thread_stack,
 			CONFIG_STTS751_THREAD_STACK_SIZE,

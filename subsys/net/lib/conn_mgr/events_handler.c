@@ -25,7 +25,8 @@ static void conn_mgr_iface_events_handler(struct net_mgmt_event_callback *cb,
 {
 	int idx;
 
-	NET_DBG("Iface event %u received on iface %p", mgmt_event, iface);
+	NET_DBG("Iface event %u received on iface %d (%p)", mgmt_event,
+		net_if_get_by_iface(iface), iface);
 
 	if ((mgmt_event & CONN_MGR_IFACE_EVENTS_MASK) != mgmt_event) {
 		return;
@@ -57,7 +58,8 @@ static void conn_mgr_ipv6_events_handler(struct net_mgmt_event_callback *cb,
 {
 	int idx;
 
-	NET_DBG("IPv6 event %u received on iface %p", mgmt_event, iface);
+	NET_DBG("IPv6 event %u received on iface %d (%p)", mgmt_event,
+		net_if_get_by_iface(iface), iface);
 
 	if ((mgmt_event & CONN_MGR_IPV6_EVENTS_MASK) != mgmt_event) {
 		return;
@@ -114,7 +116,8 @@ static void conn_mgr_ipv4_events_handler(struct net_mgmt_event_callback *cb,
 {
 	int idx;
 
-	NET_DBG("IPv4 event %u received on iface %p", mgmt_event, iface);
+	NET_DBG("IPv4 event %u received on iface %d (%p)", mgmt_event,
+		net_if_get_by_iface(iface), iface);
 
 	if ((mgmt_event & CONN_MGR_IPV4_EVENTS_MASK) != mgmt_event) {
 		return;

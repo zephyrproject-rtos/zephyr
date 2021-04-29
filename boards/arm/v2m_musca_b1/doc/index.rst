@@ -143,8 +143,9 @@ in the following table:
 +------+------------+----------------+--------------------------+
 | 10   | Reserved   |                | not handled              |
 +------+------------+----------------+--------------------------+
-| 11   | SVC        |                | context switch and       |
-|      |            |                | software interrupts      |
+| 11   | SVC        |                | system calls, kernel     |
+|      |            |                | run-time exceptions,     |
+|      |            |                | and IRQ offloading       |
 +------+------------+----------------+--------------------------+
 | 12   | Debug      |                | system fatal error       |
 |      | monitor    |                |                          |

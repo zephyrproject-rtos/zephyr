@@ -55,11 +55,11 @@ static void lptim_irq_handler(const struct device *unused)
 
 		k_spinlock_key_t key = k_spin_lock(&lock);
 
-		/* do not change ARR yet, z_clock_announce will do */
+		/* do not change ARR yet, sys_clock_announce will do */
 		LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
 
 		/* increase the total nb of autoreload count
-		 * used in the z_timer_cycle_get_32() function.
+		 * used in the sys_clock_cycle_get_32() function.
 		 * Reading the CNT register gives a reliable value
 		 */
 		uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1) + 1;
@@ -73,14 +73,14 @@ static void lptim_irq_handler(const struct device *unused)
 				* CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 				/ LPTIM_CLOCK;
 
-		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
+		sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 				? dticks : (dticks > 0));
 	}
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	/* enable LPTIM clock source */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_LPTIM1);
@@ -105,6 +105,7 @@ int z_clock_driver_init(const struct device *device)
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif /* LL_APB1_GRP1_PERIPH_PWR */
+
 	/* enable backup domain */
 	LL_PWR_EnableBkUpAccess();
 
@@ -114,6 +115,9 @@ int z_clock_driver_init(const struct device *device)
 	while (!LL_RCC_LSE_IsReady()) {
 		/* Wait for LSE ready */
 	}
+#ifdef RCC_BDCR_LSESYSEN
+	LL_RCC_LSE_EnablePropagation();
+#endif /* RCC_BDCR_LSESYSEN */
 	LL_RCC_SetLPTIMClockSource(LL_RCC_LPTIM1_CLKSOURCE_LSE);
 
 #endif /* CONFIG_STM32_LPTIM_CLOCK_LSI */
@@ -188,7 +192,7 @@ static inline uint32_t z_clock_lptim_getcounter(void)
 	return lp_time;
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	/* new LPTIM1 AutoReload value to set (aligned on Kernel ticks) */
 	uint32_t next_arr = 0;
@@ -268,7 +272,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -296,7 +300,7 @@ uint32_t z_clock_elapsed(void)
 	return (uint32_t)(ret);
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	/* just gives the accumulated count in a number of hw cycles */
 

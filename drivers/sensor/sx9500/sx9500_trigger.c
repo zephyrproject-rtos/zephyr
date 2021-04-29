@@ -133,7 +133,7 @@ int sx9500_setup_interrupt(const struct device *dev)
 	const struct device *gpio;
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
-	k_sem_init(&data->sem, 0, UINT_MAX);
+	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 #else
 	data->work.handler = sx9500_work_cb;
 #endif

@@ -136,7 +136,7 @@ int lps22hh_init_interrupt(const struct device *dev)
 	}
 
 #if defined(CONFIG_LPS22HH_TRIGGER_OWN_THREAD)
-	k_sem_init(&lps22hh->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&lps22hh->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lps22hh->thread, lps22hh->thread_stack,
 		       CONFIG_LPS22HH_THREAD_STACK_SIZE,

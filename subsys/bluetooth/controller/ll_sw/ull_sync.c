@@ -24,6 +24,7 @@
 #include "lll.h"
 #include "lll_clock.h"
 #include "lll/lll_vendor.h"
+#include "lll_chan.h"
 #include "lll_scan.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
@@ -47,7 +48,7 @@ static int init_reset(void);
 static inline struct ll_sync_set *sync_acquire(void);
 static void timeout_cleanup(struct ll_sync_set *sync);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, void *param);
+		      uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_sync_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
@@ -153,7 +154,6 @@ uint8_t ll_sync_create(uint8_t options, uint8_t sid, uint8_t adv_addr_type,
 	lll_sync = &sync->lll;
 	lll_sync->skip_prepare = 0U;
 	lll_sync->skip_event = 0U;
-	lll_sync->data_chan_id = 0U;
 	lll_sync->window_widening_prepare_us = 0U;
 	lll_sync->window_widening_event_us = 0U;
 
@@ -323,7 +323,7 @@ uint16_t ull_sync_handle_get(struct ll_sync_set *sync)
 
 uint16_t ull_sync_lll_handle_get(struct lll_sync *lll)
 {
-	return ull_sync_handle_get((void *)HDR_LLL2EVT(lll));
+	return ull_sync_handle_get(HDR_LLL2ULL(lll));
 }
 
 void ull_sync_release(struct ll_sync_set *sync)
@@ -376,6 +376,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	}
 
 	memcpy(lll->access_addr, &si->aa, sizeof(lll->access_addr));
+	lll->data_chan_id = lll_chan_id(lll->access_addr);
 	memcpy(lll->crc_init, si->crc_init, sizeof(lll->crc_init));
 	lll->event_counter = si->evt_cntr;
 	lll->phy = aux->lll.phy;
@@ -429,20 +430,20 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	interval_us -= lll->window_widening_periodic_us;
 
 	/* TODO: active_to_start feature port */
-	sync->evt.ticks_active_to_start = 0U;
-	sync->evt.ticks_xtal_to_start =
+	sync->ull.ticks_active_to_start = 0U;
+	sync->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	sync->evt.ticks_preempt_to_start =
+	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync->evt.ticks_slot =
+	sync->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
 				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
 						 0, lll->phy) +
 				       EVENT_OVERHEAD_END_US);
 
-	ticks_slot_offset = MAX(sync->evt.ticks_active_to_start,
-				sync->evt.ticks_xtal_to_start);
+	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
+				sync->ull.ticks_prepare_to_start);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
@@ -457,7 +458,7 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us),
 			   TICKER_NULL_LAZY,
-			   (sync->evt.ticks_slot + ticks_slot_overhead),
+			   (sync->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync, ticker_op_cb, (void *)__LINE__);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
@@ -465,14 +466,18 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 
 void ull_sync_done(struct node_rx_event_done *done)
 {
-	struct lll_sync *lll = (void *)HDR_ULL2LLL(done->param);
-	struct ll_sync_set *sync = (void *)HDR_LLL2EVT(lll);
 	uint32_t ticks_drift_minus;
 	uint32_t ticks_drift_plus;
+	struct ll_sync_set *sync;
 	uint16_t elapsed_event;
+	struct lll_sync *lll;
 	uint16_t skip_event;
 	uint16_t lazy;
 	uint8_t force;
+
+	/* Get reference to ULL context */
+	sync = CONTAINER_OF(done->param, struct ll_sync_set, ull);
+	lll = &sync->lll;
 
 	/* Events elapsed used in timeout checks below */
 	skip_event = lll->skip_event;
@@ -584,7 +589,7 @@ static void timeout_cleanup(struct ll_sync_set *sync)
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
-		      uint16_t lazy, void *param)
+		      uint16_t lazy, uint8_t force, void *param)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_sync_prepare};
@@ -606,6 +611,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 	p.ticks_at_expire = ticks_at_expire;
 	p.remainder = remainder;
 	p.lazy = lazy;
+	p.force = force;
 	p.param = lll;
 	mfy.param = &p;
 

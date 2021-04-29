@@ -296,7 +296,7 @@ const struct shell_static_entry *z_shell_find_cmd(
 		if (strcmp(cmd_str, entry->syntax) == 0) {
 			return entry;
 		}
-	};
+	}
 
 	return NULL;
 }

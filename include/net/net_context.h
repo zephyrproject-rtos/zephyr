@@ -65,6 +65,9 @@ enum net_context_state {
 /** Is the socket closing / closed */
 #define NET_CONTEXT_CLOSING_SOCK  BIT(10)
 
+/* Context is bound to a specific interface */
+#define NET_CONTEXT_BOUND_TO_IFACE BIT(11)
+
 struct net_context;
 
 /**
@@ -249,11 +252,6 @@ __net_socket struct net_context {
 	net_pkt_get_pool_func_t data_pool;
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-#if defined(CONFIG_NET_TCP1)
-	/** TCP connection information */
-	struct net_tcp *tcp;
-#endif /* CONFIG_NET_TCP1 */
-
 #if defined(CONFIG_NET_TCP2)
 	/** TCP connection information */
 	void *tcp;
@@ -276,6 +274,13 @@ __net_socket struct net_context {
 		struct k_fifo accept_q;
 	};
 
+	struct {
+		/** Condition variable used when receiving data */
+		struct k_condvar recv;
+
+		/** Mutex used by condition variable */
+		struct k_mutex *lock;
+	} cond;
 #endif /* CONFIG_NET_SOCKETS */
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -292,9 +297,6 @@ __net_socket struct net_context {
 #if defined(CONFIG_NET_CONTEXT_PRIORITY)
 		/** Priority of the network data sent via this net_context */
 		uint8_t priority;
-#endif
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
-		bool timestamp;
 #endif
 #if defined(CONFIG_NET_CONTEXT_TXTIME)
 		bool txtime;
@@ -339,6 +341,13 @@ static inline bool net_context_is_used(struct net_context *context)
 	NET_ASSERT(context);
 
 	return context->flags & NET_CONTEXT_IN_USE;
+}
+
+static inline bool net_context_is_bound_to_iface(struct net_context *context)
+{
+	NET_ASSERT(context);
+
+	return context->flags & NET_CONTEXT_BOUND_TO_IFACE;
 }
 
 /**
@@ -1047,11 +1056,10 @@ int net_context_update_recv_wnd(struct net_context *context,
 
 enum net_context_option {
 	NET_OPT_PRIORITY	= 1,
-	NET_OPT_TIMESTAMP	= 2,
-	NET_OPT_TXTIME		= 3,
-	NET_OPT_SOCKS5		= 4,
-	NET_OPT_RCVTIMEO        = 5,
-	NET_OPT_SNDTIMEO        = 6,
+	NET_OPT_TXTIME		= 2,
+	NET_OPT_SOCKS5		= 3,
+	NET_OPT_RCVTIMEO        = 4,
+	NET_OPT_SNDTIMEO        = 5,
 };
 
 /**

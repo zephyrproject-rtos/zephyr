@@ -16,11 +16,9 @@ choice GPIO_STM32_SWJ
 	depends on SOC_SERIES_STM32F1X
 
 config GPIO_STM32_SWJ_ENABLE
-	depends on !(SOC_STM32F103XE && SPI_3)
 	bool "Full SWJ (JTAG-DP + SW-DP): Reset State"
 
 config GPIO_STM32_SWJ_NONJTRST
-	depends on !(SOC_STM32F103XE && SPI_3)
 	bool "Full SWJ (JTAG-DP + SW-DP) but without NJTRST"
 
 config GPIO_STM32_SWJ_NOJTAG

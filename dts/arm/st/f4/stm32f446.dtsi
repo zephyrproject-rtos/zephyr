@@ -8,6 +8,20 @@
 
 / {
 	soc {
+		i2s1: i2s@40013000 {
+			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
+			interrupts = <35 5>;
+			dmas = <&dma2 3 3 0x400 0x3
+				&dma2 2 3 0x400 0x3>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+			label = "I2S_1";
+		};
+
 		usart3: serial@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
@@ -35,6 +49,41 @@
 			label = "UART_5";
 		};
 
+		can1: can@40006400 {
+			compatible = "st,stm32-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006400 0x400>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			status = "disabled";
+			label = "CAN_1";
+			bus-speed = <125000>;
+			sjw = <1>;
+			prop-seg = <0>;
+			phase-seg1 = <5>;
+			phase-seg2 = <6>;
+		};
+
+		can2: can@40006800 {
+			compatible = "st,stm32-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006800 0x400>;
+			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			master-can-reg = <0x40006400>;
+			status = "disabled";
+			label = "CAN_2";
+			bus-speed = <125000>;
+			sjw = <1>;
+			prop-seg = <0>;
+			phase-seg1 = <5>;
+			phase-seg2 = <6>;
+		};
+
 		usbotg_fs: usb@50000000 {
 			num-bidir-endpoints = <6>;
 		};
@@ -59,6 +108,15 @@
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 			label = "BACKUP_SRAM";
 			status = "disabled";
+		};
+
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			status = "disabled";
+			label = "DAC_1";
+			#io-channel-cells = <1>;
 		};
 	};
 

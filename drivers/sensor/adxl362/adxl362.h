@@ -194,9 +194,14 @@ struct adxl362_data {
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control adxl362_cs_ctrl;
 #endif
-	int16_t acc_x;
-	int16_t acc_y;
-	int16_t acc_z;
+	union {
+		int16_t acc_xyz[3];
+		struct {
+			int16_t acc_x;
+			int16_t acc_y;
+			int16_t acc_z;
+		};
+	} __packed;
 	int16_t temp;
 	uint8_t selected_range;
 

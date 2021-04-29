@@ -30,7 +30,8 @@
 #define LOG_MODULE_NAME hci_uart
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-static const struct device *hci_uart_dev;
+static const struct device *hci_uart_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_c2h_uart));
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
 static K_FIFO_DEFINE(tx_queue);
@@ -307,9 +308,8 @@ static int hci_uart_init(const struct device *unused)
 {
 	LOG_DBG("");
 
-	/* Derived from DT's bt-c2h-uart chosen node */
-	hci_uart_dev = device_get_binding(CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME);
-	if (!hci_uart_dev) {
+	if (!device_is_ready(hci_uart_dev)) {
+		LOG_ERR("HCI UART %s is not ready", hci_uart_dev->name);
 		return -EINVAL;
 	}
 

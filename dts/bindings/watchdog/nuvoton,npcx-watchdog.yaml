@@ -12,10 +12,10 @@ properties:
         required: true
     label:
         required: true
-    t0_out:
+    t0-out:
         type: phandle
         required: true
         description: |
             Mapping table between Wake-Up Input (WUI) and t0-out timer expired signal.
             For example, the WUI mapping on NPCX7 t0-out timer would be
-               t0_out = <&wui_t0out>;
+               t0-out = <&wui_t0out>;

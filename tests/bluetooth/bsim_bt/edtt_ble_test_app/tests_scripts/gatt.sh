@@ -6,7 +6,7 @@
 SIMULATION_ID="edtt_gatt"
 VERBOSITY_LEVEL=2
 PROCESS_IDS=""; EXIT_CODE=0
-CWD=`pwd`"/"`dirname $0`
+CWD="$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)"
 
 function Execute(){
   if [ ! -f $1 ]; then

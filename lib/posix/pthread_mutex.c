@@ -142,8 +142,8 @@ int pthread_mutex_unlock(pthread_mutex_t *m)
 		if (thread) {
 			m->owner = (pthread_t)thread;
 			m->lock_count++;
-			z_ready_thread(thread);
 			arch_thread_return_value_set(thread, 0);
+			z_ready_thread(thread);
 			z_reschedule_irqlock(key);
 			return 0;
 		}

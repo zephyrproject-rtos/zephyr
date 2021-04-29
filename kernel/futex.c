@@ -27,7 +27,7 @@ static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
 	k_spinlock_key_t key;
-	unsigned int woken = 0;
+	unsigned int woken = 0U;
 	struct k_thread *thread;
 	struct z_futex_data *futex_data;
 
@@ -40,10 +40,10 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 
 	do {
 		thread = z_unpend_first_thread(&futex_data->wait_q);
-		if (thread) {
-			z_ready_thread(thread);
-			arch_thread_return_value_set(thread, 0);
+		if (thread != NULL) {
 			woken++;
+			arch_thread_return_value_set(thread, 0);
+			z_ready_thread(thread);
 		}
 	} while (thread && wake_all);
 

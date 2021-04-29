@@ -193,13 +193,14 @@
 #endif /* CONFIG_GIC_V2 */
 
 /* GICD_SGIR */
-#define GICD_SGIR_TGTFILT(x)		(x << 24)
+#define GICD_SGIR_TGTFILT(x)		((x) << 24)
 #define GICD_SGIR_TGTFILT_CPULIST	GICD_SGIR_TGTFILT(0b00)
 #define GICD_SGIR_TGTFILT_ALLBUTREQ	GICD_SGIR_TGTFILT(0b01)
 #define GICD_SGIR_TGTFILT_REQONLY	GICD_SGIR_TGTFILT(0b10)
 
-#define GICD_SGIR_CPULIST(x)		(x << 16)
+#define GICD_SGIR_CPULIST(x)		((x) << 16)
 #define GICD_SGIR_CPULIST_CPU(n)	GICD_SGIR_CPULIST(BIT(n))
+#define GICD_SGIR_CPULIST_MASK		0xff
 
 #define GICD_SGIR_NSATT			BIT(15)
 
@@ -252,9 +253,7 @@
 #define GIC_INTID_SPURIOUS		1023
 
 /* Fixme: update from platform specific define or dt */
-#define GIC_NUM_CPU_IF			1
-/* Fixme: arch support need to provide api/macro in SMP implementation */
-#define GET_CPUID			0
+#define GIC_NUM_CPU_IF			CONFIG_MP_NUM_CPUS
 
 #ifndef _ASMLANGUAGE
 
@@ -311,7 +310,13 @@ unsigned int arm_gic_get_active(void);
  */
 void arm_gic_eoi(unsigned int irq);
 
-#if defined(CONFIG_GIC_V3)
+#ifdef CONFIG_SMP
+/**
+ * @brief Initialize GIC of secondary cores
+ */
+void arm_gic_secondary_init(void);
+#endif
+
 /**
  * @brief raise SGI to target cores
  *
@@ -323,7 +328,6 @@ void arm_gic_eoi(unsigned int irq);
 void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 		   uint16_t target_list);
 
-#endif /* CONFIG_GIC_V3 */
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_GIC_H_ */

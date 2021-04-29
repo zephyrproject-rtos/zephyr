@@ -7,3 +7,4 @@ Architecture-related Guides
    :maxdepth: 1
 
    arc-support-status.rst
+   x86.rst

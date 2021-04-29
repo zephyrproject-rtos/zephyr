@@ -16,6 +16,10 @@
 
 extern tstrNmBusCapabilities egstrNmBusCapabilities;
 
+#if defined(CONFIG_WINC1500_DRV_USE_OLD_SPI_SW)
+#define USE_OLD_SPI_SW
+#endif /*CONFIG_WINC1500_DRV_USE_OLD_SPI_SW*/
+
 #define NM_EDGE_INTERRUPT	(1)
 
 #define NM_DEBUG		CONF_WINC_DEBUG

@@ -897,13 +897,13 @@ UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, _)
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEV_DATA, _)
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEVICE, _)
 
-static int init_uart_mux(const struct device *device)
+static int init_uart_mux(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
-	k_work_q_start(&uart_mux_workq, uart_mux_stack,
-		       K_KERNEL_STACK_SIZEOF(uart_mux_stack),
-		       K_PRIO_COOP(UART_MUX_WORKQ_PRIORITY));
+	k_work_queue_start(&uart_mux_workq, uart_mux_stack,
+			   K_KERNEL_STACK_SIZEOF(uart_mux_stack),
+			   K_PRIO_COOP(UART_MUX_WORKQ_PRIORITY), NULL);
 	k_thread_name_set(&uart_mux_workq.thread, "uart_mux_workq");
 
 	return 0;

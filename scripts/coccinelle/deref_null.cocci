@@ -16,7 +16,7 @@ virtual report
 
 // The following two rules are separate, because both can match a single
 // expression in different ways
-@pr1 depends on !(file in "ext")@
+@pr1 depends on !(file in "ext") expression@
 expression E;
 identifier f;
 position p1;
@@ -212,7 +212,7 @@ else S3
 // The following three rules are duplicates of ifm, pr1 and pr2 respectively.
 // It is need because the previous rule as already made a "change".
 
-@pr11 depends on context && !org && !report && !(file in "ext") && pr1@
+@pr11 depends on context && !org && !report && !(file in "ext") && pr1 expression@
 expression E;
 identifier f;
 position p1;

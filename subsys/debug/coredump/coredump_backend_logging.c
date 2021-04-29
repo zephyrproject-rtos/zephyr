@@ -11,6 +11,7 @@
 #include "coredump_internal.h"
 
 #include <logging/log.h>
+#include <logging/log_ctrl.h>
 LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
 
 /* Length of buffer of printable size */
@@ -29,6 +30,9 @@ static void coredump_logging_backend_start(void)
 	/* Reset error */
 	error = 0;
 
+	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+		LOG_PANIC();
+	}
 	LOG_ERR(COREDUMP_PREFIX_STR COREDUMP_BEGIN_STR);
 }
 
@@ -70,7 +74,7 @@ static void coredump_logging_backend_buffer_output(uint8_t *buf, size_t buflen)
 
 		if ((log_ptr >= LOG_BUF_SZ) || (remaining == 0)) {
 			log_buf[log_ptr] = '\0';
-			LOG_ERR(COREDUMP_PREFIX_STR "%s", log_buf);
+			LOG_ERR(COREDUMP_PREFIX_STR "%s", log_strdup(log_buf));
 			log_ptr = 0;
 		}
 	}

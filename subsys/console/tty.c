@@ -270,7 +270,7 @@ int tty_set_rx_buf(struct tty_serial *tty, void *buf, size_t size)
 	tty->rx_ringbuf_sz = size;
 
 	if (size > 0) {
-		k_sem_init(&tty->rx_sem, 0, UINT_MAX);
+		k_sem_init(&tty->rx_sem, 0, K_SEM_MAX_LIMIT);
 		uart_irq_rx_enable(tty->uart_dev);
 	}
 
@@ -284,7 +284,7 @@ int tty_set_tx_buf(struct tty_serial *tty, void *buf, size_t size)
 	tty->tx_ringbuf = buf;
 	tty->tx_ringbuf_sz = size;
 
-	k_sem_init(&tty->tx_sem, size - 1, UINT_MAX);
+	k_sem_init(&tty->tx_sem, size - 1, K_SEM_MAX_LIMIT);
 
 	/* New buffer is initially empty, no need to re-enable interrupts,
 	 * it will be done when needed (on first output char).

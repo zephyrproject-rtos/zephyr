@@ -9,7 +9,6 @@ struct lll_df_adv_cfg;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 struct ll_adv_set {
-	struct evt_hdr evt;
 	struct ull_hdr ull;
 	struct lll_adv lll;
 
@@ -37,9 +36,13 @@ struct ll_adv_set {
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	uint8_t  own_addr_type:2;
-	uint8_t  id_addr_type:1;
-	uint8_t  id_addr[BDADDR_SIZE];
+	uint8_t  peer_addr_type:1;
+	uint8_t  peer_addr[BDADDR_SIZE];
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
+	uint8_t  own_addr[BDADDR_SIZE];
+#endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	struct lll_df_adv_cfg *df_cfg;
@@ -48,7 +51,6 @@ struct ll_adv_set {
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 struct ll_adv_aux_set {
-	struct evt_hdr     evt;
 	struct ull_hdr     ull;
 	struct lll_adv_aux lll;
 
@@ -58,7 +60,6 @@ struct ll_adv_aux_set {
 };
 
 struct ll_adv_sync_set {
-	struct evt_hdr      evt;
 	struct ull_hdr      ull;
 	struct lll_adv_sync lll;
 
@@ -69,7 +70,6 @@ struct ll_adv_sync_set {
 };
 
 struct ll_adv_iso {
-	struct evt_hdr        evt;
 	struct ull_hdr        ull;
 	struct lll_adv_iso    lll;
 

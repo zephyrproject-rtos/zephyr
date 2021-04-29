@@ -5,6 +5,8 @@ tests:
     harness: console
     tags: sensors
     platform_allow: adafruit_feather_m0_basic_proto
+    integration_platforms:
+      - adafruit_feather_m0_basic_proto
     harness_config:
         type: one_line
         regex:

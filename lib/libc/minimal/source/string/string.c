@@ -313,7 +313,7 @@ void *memcpy(void *_MLIBC_RESTRICT d, const void *_MLIBC_RESTRICT s, size_t n)
 			}
 			*(d_byte++) = *(s_byte++);
 			n--;
-		};
+		}
 
 		/* do word-sized copying as long as possible */
 
@@ -359,7 +359,7 @@ void *memset(void *buf, int c, size_t n)
 		}
 		*(d_byte++) = c_byte;
 		n--;
-	};
+	}
 
 	/* do word-sized initialization as long as possible */
 

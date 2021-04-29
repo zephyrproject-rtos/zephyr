@@ -66,7 +66,7 @@ static inline void init_app(void)
 {
 	LOG_INF("Run IPSP sample");
 
-	k_sem_init(&quit_lock, 0, UINT_MAX);
+	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,

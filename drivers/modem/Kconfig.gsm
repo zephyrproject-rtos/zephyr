@@ -53,6 +53,23 @@ config MODEM_GSM_APN
 	  Specify Access Point Name, i.e. the name to identify Internet IP
 	  GPRS cellular data context.
 
+config GSM_PPP_AUTOSTART
+	bool "Auto-start PPP at boot"
+	default y
+	help
+	  This setting lets driver connect to network and initialize PPP at
+	  boot. Unselect this if you want to run application code before
+	  modem connects to network. See contents of "drivers/gsm_ppp.h"
+	  to get an idea of the API.
+
+config MODEM_GSM_ATTACH_TIMEOUT
+	int "Timeout for attaching to packet service"
+	default 30
+	help
+	  Before activating PPP, attachment to packet service is checked
+	  using AT+CGATT. This setting dictates how much time in seconds
+	  we give the modem before giving up.
+
 config MODEM_GSM_MANUAL_MCCMNO
 	string "MCC/MNO for establishing network connection"
 	help
@@ -60,5 +77,13 @@ config MODEM_GSM_MANUAL_MCCMNO
 	  for the network connection context.  This value is specific to
 	  the network provider and may need to be changed if auto is not
 	  selected.
+
+config MODEM_GSM_FACTORY_RESET_AT_BOOT
+	bool "Factory reset modem at boot"
+	help
+	  If this is enabled, the modem will be reset to factory default
+	  settings first thing in the initialization sequence. This is
+	  helpful if your modem has a tendency to get stuck due to cached
+	  state.
 
 endif

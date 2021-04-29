@@ -5,4 +5,4 @@ description: ARM Cortex-M23 CPU
 
 compatible: "arm,cortex-m23"
 
-include: cpu.yaml
+include: arm,cortex-m.yaml

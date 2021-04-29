@@ -62,6 +62,15 @@ config CPU_CORTEX_M33
 	help
 	  This option signifies the use of a Cortex-M33 CPU
 
+config CPU_CORTEX_M55
+	bool
+	select CPU_CORTEX_M
+	select ARMV8_1_M_MAINLINE
+	select ARMV8_M_SE if CPU_HAS_TEE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-M55 CPU
+
 config CPU_CORTEX_M7
 	bool
 	select CPU_CORTEX_M
@@ -213,6 +222,16 @@ config ARMV8_M_MAINLINE
 	  ARMv8-M Main Extension includes additional features
 	  not present in the ARMv7-M architecture.
 
+config ARMV8_1_M_MAINLINE
+	bool
+	select ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of an ARMv8.1-M processor
+	  implementation, supporting the Main Extension.
+
+	  ARMv8.1-M Main Extension includes additional features
+	  not present in the ARMv8-M architecture.
+
 config ARMV8_M_SE
 	bool
 	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
@@ -304,6 +323,100 @@ config TEST_EXTRA_STACKSIZE
 	default 512 if TEST_ARM_CORTEX_M && FPU_SHARING
 
 endmenu
+
+# Implement the null pointer detection using either the Data Watchpoint and
+# Trace Unit and the Debug Monitor Exception, or the Memory Protection Unit.
+
+choice CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION
+	bool "Enable and use null-pointer exception"
+	# Disable this until https://github.com/zephyrproject-rtos/zephyr/issues/32984 is fixed
+	# default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && CPU_CORTEX_M_HAS_DWT
+	default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_MPU if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && ARM_MPU && !CPU_CORTEX_M_HAS_DWT
+	default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE
+	help
+	  There are 2 implementations available, one based
+	  on DWT and the other based on MPU. Use this choice
+	  symbol to select one of the options. By default the
+	  feature is disabled. In the test suite the feature
+	  is enabled and the DWT-based solution is preferred.
+
+config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE
+	bool "Do not enable null pointer exception detection"
+	help
+	  Null pointer exception detection feature is not
+	  enabled.
+
+config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT
+	bool "Use DWT for null pointer exception detection"
+	depends on CPU_CORTEX_M_HAS_DWT
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	select CORTEX_M_DWT
+	select CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION
+	help
+	  Null pointer dereference detection implemented
+	  using the DWT unit functionality.
+	  Notes:
+	  - Not enabled for Non-Secure FW images, where
+	  null-pointer dereferencing is likely caught as
+	  a SecureFault.
+	  - Requires DWT functionality in the Cortex-M SoC
+	  implementation (1 comparator for ARMv7-M, 2 comparators
+	  for ARMv8-M).
+	  - Requires the Cortex-M core be in normal mode.
+
+config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_MPU
+	bool "Use MPU for null pointer exception detection"
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	depends on ARM_MPU
+	select CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION
+	help
+	  Null pointer dereference detection implemented
+	  using MPU functionality.
+	  Notes:
+	  - Mutually exclusive to the DWT-based solution
+	  - Not enabled for Non-Secure FW images, where
+	  null-pointer dereferencing is likely caught as
+	  a SecureFault.
+	  - Requires MPU functionality to be present and
+	  enabled. The implementation consumes 1 MPU region.
+	  - In ARMv8-M, explicit null-pointer dereference
+	  detection with MPU requires, additionally, that
+	  the area: [0x0,
+	  CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE)
+	  is not unmapped (covered by an MPU region already).
+	  If it is unmapped null-pointer dereferencing may
+	  still be idirectly detected (e.g. via a precise
+	  Bus access fault), but this is not guaranteed. A
+	  build-time message warns the user of this scenario.
+
+endchoice
+
+config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION
+	bool
+	help
+	  Enable and use the null pointer exception option.
+	  This is a debug feature in Cortex-M, allowing for
+	  detecting null pointer dereferencing (raising a
+	  CPU fault). Supporting the feature results in an
+	  increased code footprint, determined by option
+	  CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE.
+
+	  Note: this hidden option is selected by the choice
+	  symbols corresponding to the DWT-based or to the
+	  MPU-based solution.
+
+if CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION
+
+config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE
+	hex "Size of paged unmapped to implement null pointer detection"
+	default 0x400
+	help
+	  Size of the page reserved for detecting null pointer
+	  dereferencing. Must be a power of two. A large value
+	  offers enhanced detection performance to the cost of
+	  wasting a large flash area that code may not use.
+
+endif # CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION
 
 rsource "mpu/Kconfig"
 rsource "tz/Kconfig"

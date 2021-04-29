@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <net/dns_resolve.h>
 #include <net/gptp.h>
 #include <net/websocket.h>
+#include <net/ethernet.h>
+#include <net/capture.h>
 
 #if defined(CONFIG_NET_LLDP)
 #include <net/lldp.h>
@@ -61,7 +63,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	int ret;
 	bool locally_routed = false;
 
-	ret = net_packet_socket_input(pkt);
+	ret = net_packet_socket_input(pkt, ETH_P_ALL);
 	if (ret != NET_CONTINUE) {
 		return ret;
 	}
@@ -97,6 +99,12 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		}
 	}
 
+	/* L2 processed, now we can pass IPPROTO_RAW to packet socket: */
+	ret = net_packet_socket_input(pkt, IPPROTO_RAW);
+	if (ret != NET_CONTINUE) {
+		return ret;
+	}
+
 	ret = net_canbus_socket_input(pkt);
 	if (ret != NET_CONTINUE) {
 		return ret;
@@ -129,7 +137,19 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 
 static void processing_data(struct net_pkt *pkt, bool is_loopback)
 {
+again:
 	switch (process_data(pkt, is_loopback)) {
+	case NET_CONTINUE:
+		if (IS_ENABLED(CONFIG_NET_L2_VIRTUAL)) {
+			/* If we have a tunneling packet, feed it back
+			 * to the stack in this case.
+			 */
+			goto again;
+		} else {
+			NET_DBG("Dropping pkt %p", pkt);
+			net_pkt_unref(pkt);
+		}
+		break;
 	case NET_OK:
 		NET_DBG("Consumed pkt %p", pkt);
 		break;
@@ -352,6 +372,8 @@ static void process_rx_packet(struct k_work *work)
 
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
+	net_capture_pkt(net_pkt_iface(pkt), pkt);
+
 	net_rx(net_pkt_iface(pkt), pkt);
 }
 
@@ -372,7 +394,11 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
 
-	net_tc_submit_to_rx_queue(tc, pkt);
+	if (NET_TC_RX_COUNT == 0) {
+		process_rx_packet(net_pkt_work(pkt));
+	} else {
+		net_tc_submit_to_rx_queue(tc, pkt);
+	}
 }
 
 /* Called by driver when an IP packet has been received */

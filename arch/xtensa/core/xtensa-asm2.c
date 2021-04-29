@@ -60,9 +60,6 @@ void *xtensa_init_stack(struct k_thread *thread, int *stack_top,
 	bsa[-9] = bsa;
 	ret = &bsa[-9];
 
-#ifdef CONFIG_KERNEL_COHERENCE
-	xthal_dcache_region_writeback(ret, (char *)stack_top - (char *)ret);
-#endif
 	return ret;
 }
 
@@ -73,6 +70,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->switch_handle = xtensa_init_stack(thread,
 						  (int *)stack_ptr, entry,
 						  p1, p2, p3);
+#ifdef CONFIG_KERNEL_COHERENCE
+	__ASSERT((((size_t)stack) % XCHAL_DCACHE_LINESIZE) == 0, "");
+	__ASSERT((((size_t)stack_ptr) % XCHAL_DCACHE_LINESIZE) == 0, "");
+	z_xtensa_cache_flush_inv(stack, (char *)stack_ptr - (char *)stack);
+#endif
 }
 
 void z_irq_spurious(const void *arg)
@@ -228,5 +230,5 @@ int z_xtensa_irq_is_enabled(unsigned int irq)
 
 	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
 
-	return (ie & (1 << irq)) != 0;
+	return (ie & (1 << irq)) != 0U;
 }

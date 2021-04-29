@@ -92,11 +92,6 @@ static uint32_t ctr_get_top_value(const struct device *dev)
 	return TOP_VALUE;
 }
 
-static uint32_t ctr_get_max_relative_alarm(const struct device *dev)
-{
-	return TOP_VALUE;
-}
-
 static int ctr_set_alarm(const struct device *dev, uint8_t chan_id,
 			 const struct counter_alarm_cfg *alarm_cfg)
 {
@@ -144,7 +139,6 @@ static const struct counter_driver_api ctr_api = {
 	.set_top_value = ctr_set_top_value,
 	.get_pending_int = ctr_get_pending_int,
 	.get_top_value = ctr_get_top_value,
-	.get_max_relative_alarm = ctr_get_max_relative_alarm,
 };
 
 static const struct counter_config_info ctr_config = {
@@ -154,6 +148,6 @@ static const struct counter_config_info ctr_config = {
 	.flags = DRIVER_CONFIG_INFO_FLAGS
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(DT_COUNTER_LABEL), device_pm_control_nop,
-		    &ctr_init, NULL, &ctr_config, PRE_KERNEL_1,
+DEVICE_DT_DEFINE(DT_NODELABEL(DT_COUNTER_LABEL), ctr_init,
+		    device_pm_control_nop, NULL, &ctr_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ctr_api);

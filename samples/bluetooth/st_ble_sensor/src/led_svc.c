@@ -8,53 +8,45 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/printk.h>
-#include <sys/byteorder.h>
+#include "led_svc.h"
+
 #include <zephyr.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(led_svc);
 
-#define LED_PORT DT_GPIO_LABEL(DT_ALIAS(led0), gpios)
-#define LED     DT_GPIO_PIN(DT_ALIAS(led0), gpios)
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
+static bool led_state; /* Tracking state here supports GPIO expander-based LEDs. */
+static bool led_ok;
 
-const struct device *led_dev;
-bool led_state;
-
-void led_on_off(bool led_state)
+void led_update(void)
 {
-	int led_param = (led_state == true) ? 1 : 0;
-	if (led_dev) {
-		gpio_pin_set(led_dev, LED, led_param);
+	if (!led_ok) {
+		return;
 	}
+
+	led_state = !led_state;
+	LOG_INF("Turn %s LED", led_state ? "on" : "off");
+	gpio_pin_set(led.port, led.pin, led_state);
 }
 
 int led_init(void)
 {
 	int ret;
 
-	led_dev = device_get_binding(LED_PORT);
-	if (!led_dev) {
-		return (-EOPNOTSUPP);
+	led_ok = device_is_ready(led.port);
+	if (!led_ok) {
+		LOG_ERR("Error: LED on GPIO %s pin %d is not ready",
+			led.port->name, led.pin);
+		return -ENODEV;
 	}
 
-	/* Set LED pin as output */
-
-	ret = gpio_pin_configure(led_dev, LED,
-				 GPIO_OUTPUT_ACTIVE
-				 | DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
+	ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
-		LOG_ERR("Error %d: failed to configure pin %d '%s'\n",
-		ret, LED, DT_LABEL(DT_ALIAS(led0)));
-		return ret;
+		LOG_ERR("Error %d: failed to configure GPIO %s pin %d",
+			ret, led.port->name, led.pin);
 	}
 
-	led_state = false;
-	led_on_off(led_state);
-	return 0;
+	return ret;
 }

@@ -146,8 +146,13 @@ enum {
 #define BT_GAP_DATA_TIME_MAX                    0x4290 /* 17040 us */
 
 #define BT_GAP_SID_MAX                          0x0F
-#define BT_GAP_PER_ADV_MAX_MAX_SKIP             0x01F3
-#define BT_GAP_PER_ADV_MAX_MAX_TIMEOUT          0x4000
+#define BT_GAP_PER_ADV_MAX_SKIP                 0x01F3
+#define BT_GAP_PER_ADV_MIN_TIMEOUT              0x000A
+#define BT_GAP_PER_ADV_MAX_TIMEOUT              0x4000
+/** Minimum Periodic Advertising Interval (N * 1.25 ms) */
+#define BT_GAP_PER_ADV_MIN_INTERVAL             0x0006
+/** Maximum Periodic Advertising Interval (N * 1.25 ms) */
+#define BT_GAP_PER_ADV_MAX_INTERVAL             0xFFFF
 
 
 /** Constant Tone Extension (CTE) types */
@@ -160,6 +165,20 @@ enum {
 	BT_GAP_CTE_AOD_2US = 0x02,
 	/** No extensions */
 	BT_GAP_CTE_NONE = 0xFF,
+};
+
+
+/** @brief Peripheral sleep clock accuracy (SCA) in ppm (parts per million) */
+enum {
+	BT_GAP_SCA_UNKNOWN = 0,
+	BT_GAP_SCA_251_500 = 0,
+	BT_GAP_SCA_151_250 = 1,
+	BT_GAP_SCA_101_150 = 2,
+	BT_GAP_SCA_76_100 = 3,
+	BT_GAP_SCA_51_75 = 4,
+	BT_GAP_SCA_31_50 = 5,
+	BT_GAP_SCA_21_30 = 6,
+	BT_GAP_SCA_0_20 = 7,
 };
 
 /**

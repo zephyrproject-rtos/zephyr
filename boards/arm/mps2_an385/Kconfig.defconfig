@@ -44,4 +44,23 @@ config I2C_SBCON
 config ZTEST_STACKSIZE
 	default 4096 if ZTEST
 
+if COVERAGE
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config IDLE_STACK_SIZE
+	default 4096
+
+config PRIVILEGED_STACK_SIZE
+	default 4096
+
+config ISR_STACK_SIZE
+	default 4096
+
+config TEST_EXTRA_STACKSIZE
+	default 4096
+
+endif # COVERAGE
+
 endif

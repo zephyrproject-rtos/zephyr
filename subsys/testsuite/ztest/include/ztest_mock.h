@@ -10,8 +10,8 @@
  * @brief Ztest mocking support
  */
 
-#ifndef __ZTEST_MOCK_H__
-#define __ZTEST_MOCK_H__
+#ifndef ZEPHYR_TESTSUITE_ZTEST_MOCK_H_
+#define ZEPHYR_TESTSUITE_ZTEST_MOCK_H_
 
 /**
  * @defgroup ztest_mock Ztest mocking support
@@ -84,6 +84,33 @@
 				    (void *)(param), (length))
 
 /**
+ * @brief Tell function @a func to return the data @a data for @a param
+ *
+ * When using ztest_return_data(), the data pointed to by @a param should be
+ * same @a data in this function. Only data pointer is stored by this function,
+ * so it must still be valid when ztest_copy_return_data is called.
+ *
+ * @param func Function in question
+ * @param param Parameter for which the data should be set
+ * @param data pointer for the data for parameter @a param
+ */
+#define ztest_return_data(func, param, data)                                   \
+	z_ztest_return_data(STRINGIFY(func), STRINGIFY(param), (void *)(data))
+
+/**
+ * @brief Copy the data set by ztest_return_data to the memory pointed by
+ * @a param
+ *
+ * This will first check that @a param is not null and then copy the data.
+ * This must be called from the called function.
+ *
+ * @param param Parameter to return data for
+ * @param length Length of the data to return
+ */
+#define ztest_copy_return_data(param, length)                                  \
+	z_ztest_copy_return_data(__func__, STRINGIFY(param),                   \
+				 (void *)(param), (length))
+/**
  * @brief Tell @a func that it should return @a value
  *
  * @param func Function that should return @a value
@@ -136,6 +163,10 @@ void z_ztest_expect_data(const char *fn, const char *name, void *val);
 void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
 				 uint32_t length);
 
+void z_ztest_return_data(const char *fn, const char *name, void *val);
+void z_ztest_copy_return_data(const char *fn, const char *name, void *data,
+			      uint32_t length);
+
 void z_ztest_returns_value(const char *fn, uintptr_t value);
 uintptr_t z_ztest_get_return_value(const char *fn);
 
@@ -150,4 +181,4 @@ uintptr_t z_ztest_get_return_value(const char *fn);
 
 #endif /* CONFIG_ZTEST_MOCKING */
 
-#endif /* __ZTEST_H__ */
+#endif /* ZEPHYR_TESTSUITE_ZTEST_MOCK_H_ */

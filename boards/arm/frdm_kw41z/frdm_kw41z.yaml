@@ -2,6 +2,8 @@ identifier: frdm_kw41z
 name: NXP FRDM-KW41Z
 type: mcu
 arch: arm
+ram: 128
+flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
@@ -15,3 +17,6 @@ supported:
   - ieee802154
   - spi
   - pwm
+testing:
+  ignore_tags:
+    - bluetooth

@@ -38,7 +38,6 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 
 void z_sched_init(void);
 void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
-void z_remove_thread_from_ready_q(struct k_thread *thread);
 int z_is_thread_time_slicing(struct k_thread *thread);
 void z_unpend_thread_no_timeout(struct k_thread *thread);
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q);
@@ -55,9 +54,7 @@ int z_unpend_all(_wait_q_t *wait_q);
 void z_thread_priority_set(struct k_thread *thread, int prio);
 bool z_set_prio(struct k_thread *thread, int prio);
 void *z_get_next_switch_handle(void *interrupted);
-struct k_thread *z_find_first_thread_to_unpend(_wait_q_t *wait_q,
-					      struct k_thread *from);
-void idle(void *a, void *b, void *c);
+void idle(void *unused1, void *unused2, void *unused3);
 void z_time_slice(int ticks);
 void z_reset_time_slice(void);
 void z_sched_abort(struct k_thread *thread);
@@ -219,7 +216,7 @@ static inline bool z_is_prio_lower_or_equal(int prio1, int prio2)
 	return z_is_prio1_lower_than_or_equal_to_prio2(prio1, prio2);
 }
 
-int32_t z_sched_prio_cmp(struct k_thread *t1, struct k_thread *t2);
+int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct k_thread *thread_2);
 
 static inline bool _is_valid_prio(int prio, void *entry_point)
 {
@@ -253,7 +250,7 @@ static inline void z_sched_lock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 1, "");
+	__ASSERT(_current->base.sched_locked != 1U, "");
 
 	--_current->base.sched_locked;
 
@@ -266,7 +263,7 @@ static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!arch_is_in_isr(), "");
-	__ASSERT(_current->base.sched_locked != 0, "");
+	__ASSERT(_current->base.sched_locked != 0U, "");
 
 	compiler_barrier();
 
@@ -282,5 +279,91 @@ static ALWAYS_INLINE bool z_is_thread_timeout_expired(struct k_thread *thread)
 	return 0;
 #endif
 }
+
+/*
+ * APIs for working with the Zephyr kernel scheduler. Intended for use in
+ * management of IPC objects, either in the core kernel or other IPC
+ * implemented by OS compatibility layers, providing basic wait/wake operations
+ * with spinlocks used for synchronization.
+ *
+ * These APIs are public and will be treated as contract, even if the
+ * underlying scheduler implementation changes.
+ */
+
+/**
+ * Wake up a thread pending on the provided wait queue
+ *
+ * Given a wait_q, wake up the highest priority thread on the queue. If the
+ * queue was empty just return false.
+ *
+ * Otherwise, do the following, in order,  holding sched_spinlock the entire
+ * time so that the thread state is guaranteed not to change:
+ * - Set the thread's swap return values to swap_retval and swap_data
+ * - un-pend and ready the thread, but do not invoke the scheduler.
+ *
+ * Repeated calls to this function until it returns false is a suitable
+ * way to wake all threads on the queue.
+ *
+ * It is up to the caller to implement locking such that the return value of
+ * this function (whether a thread was woken up or not) does not immediately
+ * become stale. Calls to wait and wake on the same wait_q object must have
+ * synchronization. Calling this without holding any spinlock is a sign that
+ * this API is not being used properly.
+ *
+ * @param wait_q Wait queue to wake up the highest prio thread
+ * @param swap_retval Swap return value for woken thread
+ * @param swap_data Data return value to supplement swap_retval. May be NULL.
+ * @retval true If a thread was woken up
+ * @retval false If the wait_q was empty
+ */
+bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data);
+
+/**
+ * Wake up all threads pending on the provided wait queue
+ *
+ * Convenience function to invoke z_sched_wake() on all threads in the queue
+ * until there are no more to wake up.
+ *
+ * @param wait_q Wait queue to wake up the highest prio thread
+ * @param swap_retval Swap return value for woken thread
+ * @param swap_data Data return value to supplement swap_retval. May be NULL.
+ * @retval true If any threads were woken up
+ * @retval false If the wait_q was empty
+ */
+static inline bool z_sched_wake_all(_wait_q_t *wait_q, int swap_retval,
+				    void *swap_data)
+{
+	bool woken = false;
+
+	while (z_sched_wake(wait_q, swap_retval, swap_data)) {
+		woken = true;
+	}
+
+	/* True if we woke at least one thread up */
+	return woken;
+}
+
+/**
+ * Atomically put the current thread to sleep on a wait queue, with timeout
+ *
+ * The thread will be added to the provided waitqueue. The lock, which should
+ * be held by the caller with the provided key, will be released once this is
+ * completely done and we have swapped out.
+ *
+ * The return value and data pointer is set by whoever woke us up via
+ * z_sched_wake.
+ *
+ * @param lock Address of spinlock to release when we swap out
+ * @param key Key to the provided spinlock when it was locked
+ * @param wait_q Wait queue to go to sleep on
+ * @param timeout Waiting period to be woken up, or K_FOREVER to wait
+ *                indefinitely.
+ * @param data Storage location for data pointer set when thread was woken up.
+ *             May be NULL if not used.
+ * @retval Return value set by whatever woke us up, or -EAGAIN if the timeout
+ *         expired without being woken up.
+ */
+int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
+		 _wait_q_t *wait_q, k_timeout_t timeout, void **data);
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */

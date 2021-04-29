@@ -15,7 +15,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			#address-cells = <1>;
@@ -38,6 +38,14 @@
 		compatible = "mmio-sram";
 		reg = <0x20180000 DT_SIZE_K(3072)>;
 	};
+};
+
+&systick {
+	/*
+	 * RT600 relies by default on the OS Timer for system clock
+	 * implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
 };
 
 &peripheral {
@@ -190,6 +198,14 @@
 		label = "DMA_1";
 		status = "disabled";
 		#dma-cells = <1>;
+	};
+
+	os_timer: timers@113000 {
+		compatible = "nxp,os-timer";
+		reg = <0x113000 0x1000>;
+		interrupts = <41 0>;
+		status = "disabled";
+		label = "OS_TIMER";
 	};
 };
 

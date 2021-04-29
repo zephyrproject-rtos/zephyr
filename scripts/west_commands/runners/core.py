@@ -21,6 +21,7 @@ import shlex
 import shutil
 import signal
 import subprocess
+import re
 from typing import Dict, List, NamedTuple, NoReturn, Optional, Set, Type, \
     Union
 
@@ -128,6 +129,7 @@ class BuildConfiguration:
     def __init__(self, build_dir: str):
         self.build_dir = build_dir
         self.options: Dict[str, Union[str, int]] = {}
+        self.path = os.path.join(self.build_dir, 'zephyr', '.config')
         self._init()
 
     def __contains__(self, item):
@@ -140,26 +142,33 @@ class BuildConfiguration:
         return self.options.get(option, *args)
 
     def _init(self):
-        self._parse(os.path.join(self.build_dir, 'zephyr', '.config'))
+        self._parse(self.path)
 
     def _parse(self, filename: str):
+        opt_value = re.compile('^(?P<option>CONFIG_[A-Za-z0-9_]+)=(?P<value>.*)$')
+        not_set = re.compile('^# (?P<option>CONFIG_[A-Za-z0-9_]+) is not set$')
+
         with open(filename, 'r') as f:
             for line in f:
-                line = line.strip()
-                if not line or line.startswith('#'):
+                match = opt_value.match(line)
+                if match:
+                    value = match.group('value').rstrip()
+                    if value.startswith('"') and value.endswith('"'):
+                        value = value[1:-1]
+                    else:
+                        try:
+                            base = 16 if value.startswith('0x') else 10
+                            self.options[match.group('option')] = int(value, base=base)
+                            continue
+                        except ValueError:
+                            pass
+
+                    self.options[match.group('option')] = value
                     continue
-                option, value = line.split('=', 1)
-                self.options[option] = self._parse_value(value)
 
-    @staticmethod
-    def _parse_value(value):
-        if value.startswith('"') or value.startswith("'"):
-            return value.split()
-        try:
-            return int(value, 0)
-        except ValueError:
-            return value
-
+                match = not_set.match(line)
+                if match:
+                    self.options[match.group('option')] = 'n'
 
 class MissingProgram(FileNotFoundError):
     '''FileNotFoundError subclass for missing program dependencies.
@@ -514,13 +523,19 @@ class ZephyrBinaryRunner(abc.ABC):
 
         It's useful to e.g. open a GDB server and client.'''
         server_proc = self.popen_ignore_int(server)
+        try:
+            self.run_client(client)
+        finally:
+            server_proc.terminate()
+            server_proc.wait()
+
+    def run_client(self, client):
+        '''Run a client that handles SIGINT.'''
         previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
             self.check_call(client)
         finally:
             signal.signal(signal.SIGINT, previous)
-            server_proc.terminate()
-            server_proc.wait()
 
     def _log_cmd(self, cmd: List[str]):
         escaped = ' '.join(shlex.quote(s) for s in cmd)

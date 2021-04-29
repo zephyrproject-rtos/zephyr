@@ -18,6 +18,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <drivers/pcie/pcie.h>
 #include "eth_e1000_priv.h"
 
+#if defined(CONFIG_ETH_E1000_PTP_CLOCK)
+#include <ptp_clock.h>
+
+#define PTP_INST_NODEID(n) DT_CHILD(DT_DRV_INST(n), ptp)
+#endif
+
 #if defined(CONFIG_ETH_E1000_VERBOSE_DEBUG)
 #define hexdump(_buf, _len, fmt, args...)				\
 ({									\
@@ -85,9 +91,21 @@ static enum ethernet_hw_caps e1000_caps(const struct device *dev)
 #if IS_ENABLED(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
+#if IS_ENABLED(CONFIG_ETH_E1000_PTP_CLOCK)
+		ETHERNET_PTP |
+#endif
 		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
 		ETHERNET_LINK_1000BASE_T;
 }
+
+#if defined(CONFIG_ETH_E1000_PTP_CLOCK)
+static const struct device *e1000_get_ptp_clock(const struct device *dev)
+{
+	struct e1000_dev *ctx = dev->data;
+
+	return ctx->ptp_clock;
+}
+#endif
 
 static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 {
@@ -108,9 +126,9 @@ static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 	return (dev->tx.sta & TDESC_STA_DD) ? 0 : -EIO;
 }
 
-static int e1000_send(const struct device *device, struct net_pkt *pkt)
+static int e1000_send(const struct device *ddev, struct net_pkt *pkt)
 {
-	struct e1000_dev *dev = device->data;
+	struct e1000_dev *dev = ddev->data;
 	size_t len = net_pkt_get_len(pkt);
 
 	if (net_pkt_read(pkt, dev->txb, len)) {
@@ -160,9 +178,9 @@ out:
 	return pkt;
 }
 
-static void e1000_isr(const struct device *device)
+static void e1000_isr(const struct device *ddev)
 {
-	struct e1000_dev *dev = device->data;
+	struct e1000_dev *dev = ddev->data;
 	uint32_t icr = ior32(dev, ICR); /* Cleared upon read */
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 
@@ -210,10 +228,10 @@ static void e1000_isr(const struct device *device)
 #define PCI_VENDOR_ID_INTEL	0x8086
 #define PCI_DEVICE_ID_I82540EM	0x100e
 
-int e1000_probe(const struct device *device)
+int e1000_probe(const struct device *ddev)
 {
 	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);
-	struct e1000_dev *dev = device->data;
+	struct e1000_dev *dev = ddev->data;
 	uint32_t ral, rah;
 	struct pcie_mbar mbar;
 
@@ -297,6 +315,9 @@ static struct e1000_dev e1000_dev;
 
 static const struct ethernet_api e1000_api = {
 	.iface_api.init		= e1000_iface_init,
+#if defined(CONFIG_ETH_E1000_PTP_CLOCK)
+	.get_ptp_clock		= e1000_get_ptp_clock,
+#endif
 	.get_capabilities	= e1000_caps,
 	.send			= e1000_send,
 };
@@ -309,3 +330,125 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0,
 		    CONFIG_ETH_INIT_PRIORITY,
 		    &e1000_api,
 		    NET_ETH_MTU);
+
+#if defined(CONFIG_ETH_E1000_PTP_CLOCK)
+struct ptp_context {
+	struct e1000_dev *eth_context;
+
+	/* Simulate the clock. This is only for testing.
+	 * The value is in nanoseconds
+	 */
+	uint64_t clock_time;
+};
+
+static struct ptp_context ptp_e1000_context;
+
+static int ptp_clock_e1000_set(const struct device *dev,
+			       struct net_ptp_time *tm)
+{
+	struct ptp_context *ptp_context = dev->data;
+
+	/* TODO: Set the clock real value here */
+	ptp_context->clock_time = tm->second * NSEC_PER_SEC + tm->nanosecond;
+
+	return 0;
+}
+
+static int ptp_clock_e1000_get(const struct device *dev,
+			       struct net_ptp_time *tm)
+{
+	struct ptp_context *ptp_context = dev->data;
+
+	/* TODO: Get the clock value */
+	tm->second = ptp_context->clock_time / NSEC_PER_SEC;
+	tm->nanosecond = ptp_context->clock_time - tm->second * NSEC_PER_SEC;
+
+	return 0;
+}
+
+static int ptp_clock_e1000_adjust(const struct device *dev, int increment)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(increment);
+
+	/* TODO: Implement clock adjustment */
+
+	return 0;
+}
+
+static int ptp_clock_e1000_rate_adjust(const struct device *dev, float ratio)
+{
+	const int hw_inc = NSEC_PER_SEC / CONFIG_ETH_E1000_PTP_CLOCK_SRC_HZ;
+	struct ptp_context *ptp_context = dev->data;
+	struct e1000_dev *context = ptp_context->eth_context;
+	int corr;
+	int32_t mul;
+	float val;
+
+	/* No change needed. */
+	if (ratio == 1.0) {
+		return 0;
+	}
+
+	ratio *= context->clk_ratio;
+
+	/* Limit possible ratio. */
+	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
+			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
+		return -EINVAL;
+	}
+
+	/* Save new ratio. */
+	context->clk_ratio = ratio;
+
+	if (ratio < 1.0) {
+		corr = hw_inc - 1;
+		val = 1.0 / (hw_inc * (1.0 - ratio));
+	} else if (ratio > 1.0) {
+		corr = hw_inc + 1;
+		val = 1.0 / (hw_inc * (ratio-1.0));
+	} else {
+		val = 0;
+		corr = hw_inc;
+	}
+
+	if (val >= INT32_MAX) {
+		/* Value is too high.
+		 * It is not possible to adjust the rate of the clock.
+		 */
+		mul = 0;
+	} else {
+		mul = val;
+	}
+
+	/* TODO: Adjust the clock here */
+
+	return 0;
+}
+
+static const struct ptp_clock_driver_api api = {
+	.set = ptp_clock_e1000_set,
+	.get = ptp_clock_e1000_get,
+	.adjust = ptp_clock_e1000_adjust,
+	.rate_adjust = ptp_clock_e1000_rate_adjust,
+};
+
+static int ptp_e1000_init(const struct device *port)
+{
+	const struct device *eth_dev = DEVICE_DT_INST_GET(0);
+	struct e1000_dev *context = eth_dev->data;
+	struct ptp_context *ptp_context = port->data;
+
+	context->ptp_clock = port;
+	ptp_context->eth_context = context;
+
+	ptp_context->clock_time = k_ticks_to_ns_floor64(k_uptime_ticks());
+
+	return 0;
+}
+
+DEVICE_DEFINE(e1000_ptp_clock, PTP_CLOCK_NAME, ptp_e1000_init,
+	      device_pm_control_nop, &ptp_e1000_context, NULL, POST_KERNEL,
+	      CONFIG_APPLICATION_INIT_PRIORITY, &api);
+
+#endif /* CONFIG_ETH_E1000_PTP_CLOCK */

@@ -43,12 +43,12 @@ static void arm_arch_timer_compare_isr(const void *arg)
 
 	k_spin_unlock(&lock, key);
 
-	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : 1);
+	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : 1);
 }
 
-int z_clock_driver_init(const struct device *device)
+int sys_clock_driver_init(const struct device *dev)
 {
-	ARG_UNUSED(device);
+	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
 		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
@@ -61,7 +61,7 @@ int z_clock_driver_init(const struct device *device)
 	return 0;
 }
 
-void z_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
 
@@ -95,7 +95,7 @@ void z_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
-uint32_t z_clock_elapsed(void)
+uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -109,7 +109,42 @@ uint32_t z_clock_elapsed(void)
 	return ret;
 }
 
-uint32_t z_timer_cycle_get_32(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	return (uint32_t)arm_arch_timer_count();
 }
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+void arch_busy_wait(uint32_t usec_to_wait)
+{
+	if (usec_to_wait == 0) {
+		return;
+	}
+
+	uint64_t start_cycles = arm_arch_timer_count();
+
+	uint64_t cycles_to_wait = sys_clock_hw_cycles_per_sec() / USEC_PER_SEC * usec_to_wait;
+
+	for (;;) {
+		uint64_t current_cycles = arm_arch_timer_count();
+
+		/* this handles the rollover on an unsigned 32-bit value */
+		if ((current_cycles - start_cycles) >= cycles_to_wait) {
+			break;
+		}
+	}
+}
+#endif
+
+#ifdef CONFIG_SMP
+void smp_timer_init(void)
+{
+	/*
+	 * set the initial status of timer0 of each secondary core
+	 */
+	arm_arch_timer_set_compare(arm_arch_timer_count() + CYC_PER_TICK);
+	arm_arch_timer_enable(true);
+	irq_enable(ARM_ARCH_TIMER_IRQ);
+	arm_arch_timer_set_irq_mask(false);
+}
+#endif

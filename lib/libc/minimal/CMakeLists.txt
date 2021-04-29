@@ -20,3 +20,5 @@ zephyr_library_sources(
   source/stdout/fprintf.c
   source/time/gmtime.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK source/time/time.c)

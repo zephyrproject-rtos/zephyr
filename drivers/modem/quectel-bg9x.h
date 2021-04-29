@@ -40,7 +40,7 @@
 #define MDM_WAIT_FOR_RSSI_COUNT		  10
 #define MDM_WAIT_FOR_RSSI_DELAY		  K_SECONDS(2)
 #define BUF_ALLOC_TIMEOUT		  K_SECONDS(1)
-#define MDM_MAX_AT_RETRIES		  50
+#define MDM_MAX_BOOT_TIME		  K_SECONDS(50)
 
 /* Default lengths of certain things. */
 #define MDM_MANUFACTURER_LENGTH		  10
@@ -89,7 +89,7 @@ struct modem_data {
 	struct modem_socket sockets[MDM_MAX_SOCKETS];
 
 	/* RSSI work */
-	struct k_delayed_work rssi_query_work;
+	struct k_work_delayable rssi_query_work;
 
 	/* modem data */
 	char mdm_manufacturer[MDM_MANUFACTURER_LENGTH];
@@ -147,4 +147,4 @@ static struct modem_pin modem_pins[] = {
 #endif
 };
 
-#endif /* #ifndef QUECTEL_BG9X_H */
+#endif /* QUECTEL_BG9X_H */

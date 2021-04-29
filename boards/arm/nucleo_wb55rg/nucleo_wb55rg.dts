@@ -26,19 +26,19 @@
 		stop0: state0 {
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-idle";
-			substate-id = <0>;
+			substate-id = <1>;
 			min-residency-us = <100>;
 		};
 		stop1: state1 {
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-idle";
-			substate-id = <1>;
+			substate-id = <2>;
 			min-residency-us = <500>;
 		};
 		stop2: state2 {
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-idle";
-			substate-id = <2>;
+			substate-id = <3>;
 			min-residency-us = <900>;
 		};
 	};
@@ -81,6 +81,21 @@
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
 	};
+};
+
+
+&clk_hse{
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&clk_hse>;
+	clock-frequency = <DT_FREQ_M(32)>;
+	cpu1-prescaler = <1>;
+	cpu2-prescaler = <1>;
+	ahb4-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
 };
 
 &cpu0 {

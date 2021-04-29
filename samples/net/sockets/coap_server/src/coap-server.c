@@ -49,13 +49,13 @@ static struct coap_observer observers[NUM_OBSERVERS];
 
 static struct coap_pending pendings[NUM_PENDINGS];
 
-static struct k_delayed_work observer_work;
+static struct k_work_delayable observer_work;
 
 static int obs_counter;
 
 static struct coap_resource *resource_to_notify;
 
-static struct k_delayed_work retransmit_work;
+static struct k_work_delayable retransmit_work;
 
 #if defined(CONFIG_NET_IPV6)
 static bool join_coap_multicast_group(void)
@@ -966,7 +966,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	k_delayed_work_submit(&retransmit_work, K_MSEC(pending->timeout));
+	k_work_reschedule(&retransmit_work, K_MSEC(pending->timeout));
 }
 
 static void update_counter(struct k_work *work)
@@ -977,7 +977,7 @@ static void update_counter(struct k_work *work)
 		coap_resource_notify(resource_to_notify);
 	}
 
-	k_delayed_work_submit(&observer_work, K_SECONDS(5));
+	k_work_reschedule(&observer_work, K_SECONDS(5));
 }
 
 static int create_pending_request(struct coap_packet *response,
@@ -1004,7 +1004,7 @@ static int create_pending_request(struct coap_packet *response,
 		return 0;
 	}
 
-	k_delayed_work_submit(&retransmit_work, K_MSEC(pending->timeout));
+	k_work_reschedule(&retransmit_work, K_MSEC(pending->timeout));
 
 	return 0;
 }
@@ -1081,7 +1081,7 @@ static int send_notification_packet(const struct sockaddr *addr,
 		}
 	}
 
-	k_delayed_work_submit(&observer_work, K_SECONDS(5));
+	k_work_reschedule(&observer_work, K_SECONDS(5));
 
 	r = send_coap_reply(&response, addr, addr_len);
 
@@ -1416,8 +1416,8 @@ void main(void)
 		goto quit;
 	}
 
-	k_delayed_work_init(&retransmit_work, retransmit_request);
-	k_delayed_work_init(&observer_work, update_counter);
+	k_work_init_delayable(&retransmit_work, retransmit_request);
+	k_work_init_delayable(&observer_work, update_counter);
 
 	while (1) {
 		r = process_client_request();

@@ -9,3 +9,10 @@ config BOARD
 
 config ENTROPY_ESP32_RNG
 	default y if ENTROPY_GENERATOR
+
+if LOG
+
+config LOG_DETECT_MISSED_STRDUP
+	default n
+
+endif

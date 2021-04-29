@@ -260,7 +260,7 @@ static void test_p4wq_simple(void)
 	k_p4wq_submit(&wq, &simple_item);
 	zassert_false(has_run, "ran too early");
 
-	k_sleep(K_TICKS(1));
+	k_msleep(10);
 	zassert_true(has_run, "low-priority item didn't run");
 
 	/* Higher priority, should preempt us */

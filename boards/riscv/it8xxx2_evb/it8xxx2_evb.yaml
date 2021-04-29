@@ -1,7 +1,7 @@
 identifier: it8xxx2_evb
 name: it8xxx2_evb
 type: mcu
-arch: riscv
+arch: riscv32
 toolchain:
   - zephyr
 ram: 60

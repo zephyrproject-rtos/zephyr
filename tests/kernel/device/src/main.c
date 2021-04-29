@@ -224,7 +224,7 @@ void test_pre_kernel_detection(void)
  * It queries the list of devices in the system, used to suspend or
  * resume the devices in PM applications.
  *
- * @see device_list_get()
+ * @see z_device_get_all_static()
  */
 static void test_build_suspend_device_list(void)
 {
@@ -256,7 +256,7 @@ static void test_enable_and_disable_automatic_idle_pm(void)
 	/* check its status at first */
 	/* for cases that cannot run IDLE power, we skip it now */
 	ret = device_get_power_state(dev, &device_power_state);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOSYS) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
 		return;
@@ -284,7 +284,7 @@ static void test_enable_and_disable_automatic_idle_pm(void)
  *
  * @see device_get_binding(), device_busy_set(), device_busy_clear(),
  * device_busy_check(), device_any_busy_check(),
- * device_list_get(), device_set_power_state()
+ * device_set_power_state()
  */
 void test_dummy_device_pm(void)
 {
@@ -317,7 +317,7 @@ void test_dummy_device_pm(void)
 
 	/* Set device state to DEVICE_PM_ACTIVE_STATE */
 	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOSYS) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
 		return;

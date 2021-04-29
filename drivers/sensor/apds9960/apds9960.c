@@ -396,7 +396,7 @@ static int apds9960_init_interrupt(const struct device *dev)
 	}
 
 #else
-	k_sem_init(&drv_data->data_sem, 0, UINT_MAX);
+	k_sem_init(&drv_data->data_sem, 0, K_SEM_MAX_LIMIT);
 #endif
 	apds9960_setup_int(drv_data, true);
 

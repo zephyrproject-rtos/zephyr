@@ -251,7 +251,7 @@ int vcnl4040_trigger_init(const struct device *dev)
 	data->dev = dev;
 
 #if defined(CONFIG_VCNL4040_TRIGGER_OWN_THREAD)
-	k_sem_init(&data->trig_sem, 0, UINT_MAX);
+	k_sem_init(&data->trig_sem, 0, K_SEM_MAX_LIMIT);
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_VCNL4040_THREAD_STACK_SIZE,
 			(k_thread_entry_t)vcnl4040_thread_main,

@@ -7,10 +7,11 @@ import os
 import pickle
 import sys
 
-ZEPHYR_BASE = os.environ.get("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/dts"))
+ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
+                                "python-devicetree", "src"))
 
-import edtlib
+from devicetree import edtlib
 
 # Types we support
 # 'string', 'int', 'hex', 'bool'

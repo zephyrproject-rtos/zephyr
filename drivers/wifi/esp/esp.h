@@ -218,7 +218,7 @@ struct esp_data {
 	/* work */
 	struct k_work_q workq;
 	struct k_work init_work;
-	struct k_delayed_work ip_addr_work;
+	struct k_work_delayable ip_addr_work;
 	struct k_work scan_work;
 	struct k_work connect_work;
 	struct k_work mode_switch_work;

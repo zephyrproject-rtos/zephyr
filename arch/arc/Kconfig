@@ -9,20 +9,15 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-choice
-	prompt "ARC core family"
-	default CPU_ARCEM
 
 config CPU_ARCEM
-	bool "ARC EM cores"
-	select CPU_ARCV2
+	bool
 	select ATOMIC_OPERATIONS_C
 	help
 	  This option signifies the use of an ARC EM CPU
 
 config CPU_ARCHS
-	bool "ARC HS cores"
-	select CPU_ARCV2
+	bool
 	# FIXME: ATOMIC_OPERATIONS_BUILTIN still has some problem in arcmwdt
 	# toolchain, so choosing ATOMIC_OPERATIONS_C instead.
 	select ATOMIC_OPERATIONS_C if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
@@ -30,49 +25,68 @@ config CPU_ARCHS
 	help
 	  This option signifies the use of an ARC HS CPU
 
+
+choice
+	prompt "ARC Instruction Set"
+	default ISA_ARCV2
+
+config ISA_ARCV2
+	bool "ARC ISA v2"
+	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || (ARC_MPU && ARC_MPU_VER !=2)
+	select ARCH_HAS_USERSPACE if ARC_MPU
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  v2 ISA for the ARC-HS & ARC-EM cores
+
 endchoice
+
+if ISA_ARCV2
 
 config CPU_EM4
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 CPU
 
 config CPU_EM4_DMIPS
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 DMIPS CPU
 
 config CPU_EM4_FPUS
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 DMIPS CPU with the single-precision
 	  floating-point extension
 
 config CPU_EM4_FPUDA
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM4 DMIPS CPU with single-precision
 	  floating-point and double assist instructions
 
 config CPU_EM6
 	bool
+	select CPU_ARCEM
 	help
 	  If y, the SoC uses an ARC EM6 CPU
+
+config CPU_HS3X
+	bool
+	select CPU_ARCHS
+	help
+	  If y, the SoC uses an ARC HS3x or HS4x CPU
+
+endif #ISA_ARCV2
 
 config FP_FPU_DA
 	bool
 
-menu "ARCv2 Family Options"
-
-config CPU_ARCV2
-	bool
-	select ARCH_HAS_STACK_PROTECTION if ARC_HAS_STACK_CHECKING || ARC_MPU
-	select ARCH_HAS_USERSPACE if ARC_MPU
-	select USE_SWITCH
-	select USE_SWITCH_SUPPORTED
-	default y
-	help
-	  This option signifies the use of a CPU of the ARCv2 family.
+menu "ARC CPU Options"
 
 config NUM_IRQ_PRIO_LEVELS
 	int "Number of supported interrupt priority levels"
@@ -96,7 +110,7 @@ config NUM_IRQS
 
 config RGF_NUM_BANKS
 	int "Number of General Purpose Register Banks"
-	depends on CPU_ARCV2
+	depends on ARC_FIRQ
 	range 1 2
 	default 2
 	help

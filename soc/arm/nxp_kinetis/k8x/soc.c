@@ -22,6 +22,12 @@
 #define RUNM_VLPR		(2)
 #define RUNM_HSRUN		(3)
 
+#define CLOCK_NODEID(clk) \
+	DT_CHILD(DT_INST(0, nxp_kinetis_sim), clk)
+
+#define CLOCK_DIVIDER(clk) \
+	DT_PROP_OR(CLOCK_NODEID(clk), clock_div, 1) - 1
+
 static const osc_config_t osc_config = {
 	.freq = CONFIG_OSC_XTAL0_FREQ,
 	.capLoad = 0,
@@ -54,10 +60,10 @@ static const mcg_pll_config_t pll0_config = {
 static const sim_clock_config_t sim_config = {
 	.pllFllSel = DT_PROP(DT_INST(0, nxp_kinetis_sim), pllfll_select),
 	.er32kSrc = DT_PROP(DT_INST(0, nxp_kinetis_sim), er32k_select),
-	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CONFIG_K8X_CORE_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV2(CONFIG_K8X_BUS_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV3(CONFIG_K8X_FLEXBUS_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV4(CONFIG_K8X_FLASH_CLOCK_DIVIDER - 1),
+	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CLOCK_DIVIDER(core_clk)) |
+		   SIM_CLKDIV1_OUTDIV2(CLOCK_DIVIDER(bus_clk)) |
+		   SIM_CLKDIV1_OUTDIV3(CLOCK_DIVIDER(flexbus_clk)) |
+		   SIM_CLKDIV1_OUTDIV4(CLOCK_DIVIDER(flash_clk)),
 	/* Divide PLL output frequency by 2 for peripherals */
 	.pllFllDiv = (1),
 	.pllFllFrac = (0),

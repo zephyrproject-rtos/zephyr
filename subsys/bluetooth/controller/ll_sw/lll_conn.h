@@ -56,17 +56,26 @@ struct lll_conn {
 		uint16_t data_chan_id;
 	};
 
+	union {
+		struct {
+			uint8_t initiated:1;
+			uint8_t cancelled:1;
+		} master;
 #if defined(CONFIG_BT_PERIPHERAL)
-	struct {
-		uint8_t  latency_enabled:1;
-		uint32_t window_widening_periodic_us;
-		uint32_t window_widening_max_us;
-		uint32_t window_widening_prepare_us;
-		uint32_t window_widening_event_us;
-		uint32_t window_size_prepare_us;
-		uint32_t window_size_event_us;
-	} slave;
+		struct {
+			uint8_t  initiated:1;
+			uint8_t  cancelled:1;
+			uint8_t  latency_enabled:1;
+
+			uint32_t window_widening_periodic_us;
+			uint32_t window_widening_max_us;
+			uint32_t window_widening_prepare_us;
+			uint32_t window_widening_event_us;
+			uint32_t window_size_prepare_us;
+			uint32_t window_size_event_us;
+		} slave;
 #endif /* CONFIG_BT_PERIPHERAL */
+	};
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	uint16_t max_tx_octets;

@@ -27,6 +27,7 @@ static inline uint8_t ull_ref_dec(struct ull_hdr *hdr)
 
 static inline void ull_hdr_init(struct ull_hdr *hdr)
 {
+	hdr->ref = 0U;
 	hdr->disabled_cb = hdr->disabled_param = NULL;
 }
 

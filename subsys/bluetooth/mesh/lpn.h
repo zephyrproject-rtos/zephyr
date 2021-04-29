@@ -43,14 +43,6 @@ static inline bool bt_mesh_lpn_waiting_update(void)
 #endif
 }
 
-static inline bool bt_mesh_lpn_timer(void)
-{
-#if defined(CONFIG_BT_MESH_LPN_AUTO)
-	return (bt_mesh.lpn.state == BT_MESH_LPN_TIMER);
-#else
-	return false;
-#endif
-}
 
 void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx);
 

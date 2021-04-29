@@ -145,7 +145,7 @@ static int ti_hdc_init(const struct device *dev)
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, drdy_gpios)
-	k_sem_init(&drv_data->data_sem, 0, UINT_MAX);
+	k_sem_init(&drv_data->data_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(

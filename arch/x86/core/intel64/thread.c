@@ -43,7 +43,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	switch_entry = z_thread_entry;
 #endif
 	iframe = Z_STACK_PTR_TO_FRAME(struct x86_initial_frame, stack_ptr);
-	iframe->rip = 0;
+	iframe->rip = 0U;
 	thread->callee_saved.rsp = (long) iframe;
 	thread->callee_saved.rip = (long) switch_entry;
 	thread->callee_saved.rflags = EFLAGS_INITIAL;

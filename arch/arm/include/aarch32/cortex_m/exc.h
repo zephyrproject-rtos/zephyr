@@ -154,6 +154,16 @@ static ALWAYS_INLINE void z_arm_clear_faults(void)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
+/**
+ * @brief Assess whether a debug monitor event should be treated as an error
+ *
+ * This routine checks the status of a debug_monitor() exception, and
+ * evaluates whether this needs to be considered as a processor error.
+ *
+ * @return true if the DM exception is a processor error, otherwise false
+ */
+bool z_arm_debug_monitor_event_error_check(void);
+
 #ifdef __cplusplus
 }
 #endif

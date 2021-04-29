@@ -186,6 +186,16 @@ static int send_packet_socket(struct packet_data *packet)
 			}
 		}
 
+		/* If we have received any data, flush it here in order to
+		 * not to leak memory in IP stack.
+		 */
+		do {
+			static char recv_buffer[RECV_BUFFER_SIZE];
+
+			ret = recv(packet->send_sock, recv_buffer,
+				   sizeof(recv_buffer), MSG_DONTWAIT);
+		} while (ret > 0);
+
 		if (!FLOOD) {
 			k_msleep(WAIT_TIME);
 		}
@@ -215,7 +225,7 @@ static void send_packet(void)
 
 void main(void)
 {
-	k_sem_init(&quit_lock, 0, UINT_MAX);
+	k_sem_init(&quit_lock, 0, K_SEM_MAX_LIMIT);
 
 	LOG_INF("Packet socket sample is running");
 

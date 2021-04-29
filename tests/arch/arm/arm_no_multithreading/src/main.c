@@ -96,24 +96,26 @@ void test_main(void)
 		}
 	}
 
-	__ASSERT(i >= 0,
-		"No available IRQ line to use in the test\n");
+	if (i >= 0) {
 
-	printk("Available IRQ line: %u\n", i);
+		printk("Available IRQ line: %u\n", i);
 
-	arch_irq_connect_dynamic(i, 0 /* highest priority */,
-		arm_isr_handler,
-		NULL,
-		0);
+		arch_irq_connect_dynamic(i, 0 /* highest priority */,
+			arm_isr_handler,
+			NULL,
+			0);
 
-	NVIC_EnableIRQ(i);
+		NVIC_EnableIRQ(i);
 
-	__DSB();
-	__ISB();
+		__DSB();
+		__ISB();
 
-	flag = test_flag;
+		flag = test_flag;
 
-	__ASSERT(flag > 0, "Test flag not set by IRQ\n");
+		__ASSERT(flag > 0, "Test flag not set by IRQ\n");
 
-	printk("ARM no multithreading test successful\n");
+		printk("ARM no multithreading test successful\n");
+	} else {
+		__ASSERT(0, "No available IRQ line to use in the test\n");
+	}
 }

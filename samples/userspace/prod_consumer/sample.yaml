@@ -2,6 +2,8 @@ sample:
   description: userspace producer-consumer example
   name: producer-consumer
 common:
+    integration_platforms:
+      - mps2_an385
     tags: userspace
     harness: console
     harness_config:

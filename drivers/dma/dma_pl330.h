@@ -56,7 +56,14 @@
 #define DMAC_PL330_DBGINST0	0xd08
 #define DMAC_PL330_DBGINST1	0xd0c
 
-#define DMA_TIMEOUT_US		10
+/*
+ * TIMEOUT value of 100000us is kept to cover all possible data
+ * transfer sizes, with lesser time out value(10us) DMA channel
+ * appears to be busy on FPGA/Emul environment. Ideally 100000us
+ * timeout value should never hit.
+ */
+#define DMA_TIMEOUT_US		100000
+
 #define CH_STATUS_MASK		0xf
 #define DATA_MASK		0xf
 
@@ -143,7 +150,7 @@ struct dma_pl330_ch_config {
 	uint32_t trans_size;
 	void *user_data;
 	dma_callback_t dma_callback;
-	uint32_t dma_exe_addr;
+	mem_addr_t dma_exec_addr;
 	struct k_mutex ch_mutex;
 	int channel_active;
 
@@ -152,10 +159,10 @@ struct dma_pl330_ch_config {
 };
 
 struct dma_pl330_config {
-	uint32_t mcode_base;
-	uint32_t reg_base;
+	mem_addr_t mcode_base;
+	mem_addr_t reg_base;
 #ifdef CONFIG_DMA_64BIT
-	uint32_t control_reg_base;
+	mem_addr_t control_reg_base;
 #endif
 };
 

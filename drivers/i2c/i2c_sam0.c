@@ -36,7 +36,7 @@ struct i2c_sam0_dev_config {
 	void (*irq_config_func)(const struct device *dev);
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
-	char *dma_dev;
+	const struct device *dma_dev;
 	uint8_t write_dma_request;
 	uint8_t read_dma_request;
 	uint8_t dma_channel;
@@ -52,10 +52,6 @@ struct i2c_sam0_msg {
 struct i2c_sam0_dev_data {
 	struct k_sem sem;
 	struct i2c_sam0_msg msg;
-
-#ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
-	const struct device *dma;
-#endif
 };
 
 #define DEV_NAME(dev) ((dev)->name)
@@ -102,8 +98,8 @@ static bool i2c_sam0_terminate_on_error(const struct device *dev)
 	}
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
-	if (data->dma && cfg->dma_channel != 0xFF) {
-		dma_stop(data->dma, cfg->dma_channel);
+	if (cfg->dma_channel != 0xFF) {
+		dma_stop(cfg->dma_dev, cfg->dma_channel);
 	}
 #endif
 
@@ -226,10 +222,6 @@ static bool i2c_sam0_dma_write_start(const struct device *dev)
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
-	if (!data->dma) {
-		return false;
-	}
-
 	if (cfg->dma_channel == 0xFF) {
 		return false;
 	}
@@ -247,7 +239,7 @@ static bool i2c_sam0_dma_write_start(const struct device *dev)
 	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
-	dma_cfg.user_data = dev;
+	dma_cfg.user_data = (void *)dev;
 	dma_cfg.dma_callback = i2c_sam0_dma_write_done;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
@@ -258,14 +250,14 @@ static bool i2c_sam0_dma_write_start(const struct device *dev)
 	dma_blk.dest_address = (uint32_t)(&(i2c->DATA.reg));
 	dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
-	retval = dma_config(data->dma, cfg->dma_channel, &dma_cfg);
+	retval = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (retval != 0) {
 		LOG_ERR("Write DMA configure on %s failed: %d",
 			DEV_NAME(dev), retval);
 		return false;
 	}
 
-	retval = dma_start(data->dma, cfg->dma_channel);
+	retval = dma_start(cfg->dma_dev, cfg->dma_channel);
 	if (retval != 0) {
 		LOG_ERR("Write DMA start on %s failed: %d",
 			DEV_NAME(dev), retval);
@@ -322,10 +314,6 @@ static bool i2c_sam0_dma_read_start(const struct device *dev)
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
-	if (!data->dma) {
-		return false;
-	}
-
 	if (cfg->dma_channel == 0xFF) {
 		return false;
 	}
@@ -344,7 +332,7 @@ static bool i2c_sam0_dma_read_start(const struct device *dev)
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.source_data_size = 1;
 	dma_cfg.dest_data_size = 1;
-	dma_cfg.user_data = dev;
+	dma_cfg.user_data = (void *)dev;
 	dma_cfg.dma_callback = i2c_sam0_dma_read_done;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
@@ -355,14 +343,14 @@ static bool i2c_sam0_dma_read_start(const struct device *dev)
 	dma_blk.source_address = (uint32_t)(&(i2c->DATA.reg));
 	dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
-	retval = dma_config(data->dma, cfg->dma_channel, &dma_cfg);
+	retval = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (retval != 0) {
 		LOG_ERR("Read DMA configure on %s failed: %d",
 			DEV_NAME(dev), retval);
 		return false;
 	}
 
-	retval = dma_start(data->dma, cfg->dma_channel);
+	retval = dma_start(cfg->dma_dev, cfg->dma_channel);
 	if (retval != 0) {
 		LOG_ERR("Read DMA start on %s failed: %d",
 			DEV_NAME(dev), retval);
@@ -715,9 +703,9 @@ static int i2c_sam0_initialize(const struct device *dev)
 	cfg->irq_config_func(dev);
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
-
-	data->dma = device_get_binding(cfg->dma_dev);
-
+	if (!device_is_ready(cfg->dma_dev)) {
+		return -ENODEV;
+	}
 #endif
 
 	i2c->CTRLA.bit.ENABLE = 1;
@@ -738,7 +726,7 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
 #define I2C_SAM0_DMA_CHANNELS(n)					\
-	.dma_dev = ATMEL_SAM0_DT_INST_DMA_NAME(n, tx),			\
+	.dma_dev = DEVICE_DT_GET(ATMEL_SAM0_DT_INST_DMA_CTLR(n, tx)),	\
 	.write_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),	\
 	.read_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),	\
 	.dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, rx),

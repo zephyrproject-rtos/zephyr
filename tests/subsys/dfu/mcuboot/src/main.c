@@ -77,7 +77,7 @@ void test_request_upgrade(void)
 	zassert(memcmp(expectation, readout, sizeof(expectation)) == 0,
 		"pass", "fail");
 
-	boot_erase_img_bank(FLASH_AREA_ID(image_1));
+	zassert(boot_erase_img_bank(FLASH_AREA_ID(image_1)) == 0, "pass", "fail");
 
 	zassert(boot_request_upgrade(true) == 0, "pass", "fail");
 

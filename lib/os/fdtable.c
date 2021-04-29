@@ -25,6 +25,7 @@ struct fd_entry {
 	void *obj;
 	const struct fd_op_vtable *vtable;
 	atomic_t refcount;
+	struct k_mutex lock;
 };
 
 #ifdef CONFIG_POSIX_API
@@ -120,34 +121,39 @@ static int _check_fd(int fd)
 
 void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 {
-	struct fd_entry *fd_entry;
+	struct fd_entry *entry;
 
 	if (_check_fd(fd) < 0) {
 		return NULL;
 	}
 
-	fd_entry = &fdtable[fd];
+	entry = &fdtable[fd];
 
-	if (vtable != NULL && fd_entry->vtable != vtable) {
+	if (vtable != NULL && entry->vtable != vtable) {
 		errno = err;
 		return NULL;
 	}
 
-	return fd_entry->obj;
+	return entry->obj;
 }
 
-void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable)
+void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable,
+			      struct k_mutex **lock)
 {
-	struct fd_entry *fd_entry;
+	struct fd_entry *entry;
 
 	if (_check_fd(fd) < 0) {
 		return NULL;
 	}
 
-	fd_entry = &fdtable[fd];
-	*vtable = fd_entry->vtable;
+	entry = &fdtable[fd];
+	*vtable = entry->vtable;
 
-	return fd_entry->obj;
+	if (lock) {
+		*lock = &entry->lock;
+	}
+
+	return entry->obj;
 }
 
 int z_reserve_fd(void)
@@ -162,6 +168,7 @@ int z_reserve_fd(void)
 		(void)z_fd_ref(fd);
 		fdtable[fd].obj = NULL;
 		fdtable[fd].vtable = NULL;
+		k_mutex_init(&fdtable[fd].lock);
 	}
 
 	k_mutex_unlock(&fdtable_lock);
@@ -184,6 +191,15 @@ void z_finalize_fd(int fd, void *obj, const struct fd_op_vtable *vtable)
 #endif
 	fdtable[fd].obj = obj;
 	fdtable[fd].vtable = vtable;
+
+	/* Let the object know about the lock just in case it needs it
+	 * for something. For BSD sockets, the lock is used with condition
+	 * variables to avoid keeping the lock for a long period of time.
+	 */
+	if (vtable && vtable->ioctl) {
+		(void)z_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK,
+					   &fdtable[fd].lock);
+	}
 }
 
 void z_free_fd(int fd)

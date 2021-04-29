@@ -890,7 +890,7 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 
 #define I2S_INIT(index, clk_sel)					\
 static const struct soc_gpio_pinctrl i2s_pins_##index[] =		\
-				     ST_STM32_DT_INST_PINCTRL(index, 0);\
+				     ST_STM32_DT_PINCTRL(i2s##index, 0);\
 									\
 static void i2s_stm32_irq_config_func_##index(const struct device *dev);\
 									\

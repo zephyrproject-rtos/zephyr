@@ -455,7 +455,7 @@ static inline int is_in_region(uint32_t r_index, uint32_t start, uint32_t size)
 	r_addr_start = SYSMPU->WORD[r_index][0];
 	r_addr_end = SYSMPU->WORD[r_index][1];
 
-	size = size == 0 ? 0 : size - 1;
+	size = size == 0U ? 0U : size - 1U;
 	if (u32_add_overflow(start, size, &end)) {
 		return 0;
 	}
@@ -526,7 +526,7 @@ static inline int is_user_accessible_region(uint32_t r_index, int write)
 {
 	uint32_t r_ap = SYSMPU->WORD[r_index][2];
 
-	if (write) {
+	if (write != 0) {
 		return (r_ap & MPU_REGION_WRITE) == MPU_REGION_WRITE;
 	}
 

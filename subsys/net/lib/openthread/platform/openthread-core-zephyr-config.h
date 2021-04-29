@@ -98,11 +98,11 @@
  * in platform.
  *
  */
-#ifdef CONFIG_OPENTHREAD_PLATFORM_USEC_TIMER_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 1
-#endif
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE                           \
+	(OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE &&                          \
+	 (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2))
 
-/* Zephyr does not use OpenThreads heap. mbedTLS will use heap memory allocated
+/* Zephyr does not use OpenThread's heap. mbedTLS will use heap memory allocated
  * by Zephyr. Here, we use some dummy values to prevent OpenThread warnings.
  */
 

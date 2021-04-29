@@ -18,6 +18,20 @@ properties:
         type: phandles
         required: true
         description: configurations of pinmux controllers
+    drive-open-drain:
+        type: boolean
+        description: |
+            The PWM output will be configured as open-drain. If not set,
+            defaults to push-pull.
+    clock-bus:
+        required: false
+        type: string
+        description: |
+            Select a specific input clock source for the PWM module. If this
+            property doesn't exist, fallback to default value in clocks property.
+        enum:
+            - NPCX_CLOCK_BUS_APB2
+            - NPCX_CLOCK_BUS_LFCLK
 
 pwm-cells:
     - channel

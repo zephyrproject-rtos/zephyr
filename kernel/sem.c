@@ -65,7 +65,7 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	/*
 	 * Limit cannot be zero and count cannot be greater than limit
 	 */
-	CHECKIF(limit == 0U || initial_count > limit) {
+	CHECKIF(limit == 0U || limit > K_SEM_MAX_LIMIT || initial_count > limit) {
 		return -EINVAL;
 	}
 
@@ -161,6 +161,25 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 out:
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
 	return ret;
+}
+
+void z_impl_k_sem_reset(struct k_sem *sem)
+{
+	struct k_thread *thread;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	while (true) {
+		thread = z_unpend_first_thread(&sem->wait_q);
+		if (thread == NULL) {
+			break;
+		}
+		arch_thread_return_value_set(thread, -EAGAIN);
+		z_ready_thread(thread);
+	}
+	sem->count = 0;
+	handle_poll_events(sem);
+
+	z_reschedule(&lock, key);
 }
 
 #ifdef CONFIG_USERSPACE

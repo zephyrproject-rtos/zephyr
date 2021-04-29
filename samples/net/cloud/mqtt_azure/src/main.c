@@ -39,9 +39,9 @@ static int nfds;
 
 static bool mqtt_connected;
 
-static struct k_delayed_work pub_message;
+static struct k_work_delayable pub_message;
 #if defined(CONFIG_NET_DHCPV4)
-static struct k_delayed_work check_network_conn;
+static struct k_work_delayable check_network_conn;
 
 /* Network Management events */
 #define L4_EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
@@ -343,7 +343,7 @@ static void publish_timeout(struct k_work *work)
 
 	LOG_DBG("mqtt_publish OK");
 end:
-	k_delayed_work_submit(&pub_message, K_SECONDS(timeout_for_publish()));
+	k_work_reschedule(&pub_message, K_SECONDS(timeout_for_publish()));
 }
 
 static int try_to_connect(struct mqtt_client *client)
@@ -374,8 +374,8 @@ static int try_to_connect(struct mqtt_client *client)
 
 		if (mqtt_connected) {
 			subscribe(client);
-			k_delayed_work_submit(&pub_message,
-					      K_SECONDS(timeout_for_publish()));
+			k_work_reschedule(&pub_message,
+					  K_SECONDS(timeout_for_publish()));
 			return 0;
 		}
 
@@ -471,7 +471,7 @@ static void check_network_connection(struct k_work *work)
 	LOG_INF("waiting for DHCP to acquire addr");
 
 end:
-	k_delayed_work_submit(&check_network_conn, K_SECONDS(3));
+	k_work_reschedule(&check_network_conn, K_SECONDS(3));
 }
 #endif
 
@@ -481,7 +481,7 @@ static void abort_mqtt_connection(void)
 	if (mqtt_connected) {
 		mqtt_connected = false;
 		mqtt_abort(&client_ctx);
-		k_delayed_work_cancel(&pub_message);
+		k_work_cancel_delayable(&pub_message);
 	}
 }
 
@@ -494,14 +494,14 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb,
 
 	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
 		/* Wait for DHCP to be back in BOUND state */
-		k_delayed_work_submit(&check_network_conn, K_SECONDS(3));
+		k_work_reschedule(&check_network_conn, K_SECONDS(3));
 
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
 		abort_mqtt_connection();
-		k_delayed_work_cancel(&check_network_conn);
+		k_work_cancel_delayable(&check_network_conn);
 
 		return;
 	}
@@ -519,10 +519,10 @@ void main(void)
 		return;
 	}
 
-	k_delayed_work_init(&pub_message, publish_timeout);
+	k_work_init_delayable(&pub_message, publish_timeout);
 
 #if defined(CONFIG_NET_DHCPV4)
-	k_delayed_work_init(&check_network_conn, check_network_connection);
+	k_work_init_delayable(&check_network_conn, check_network_connection);
 
 	net_mgmt_init_event_callback(&l4_mgmt_cb, l4_event_handler,
 				     L4_EVENT_MASK);

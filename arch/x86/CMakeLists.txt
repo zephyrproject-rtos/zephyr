@@ -35,6 +35,17 @@ endif()
 if (CONFIG_MMU)
   set(GEN_MMU ${ZEPHYR_BASE}/arch/x86/gen_mmu.py)
 
+  if(DEFINED X86_EXTRA_GEN_MMU_ARGUMENTS)
+    # Make the string into a list, or else it will be passed to ${GEN_MMU}
+    # as a quoted string, which is then parsed as one item by Python's
+    # argparse.
+    string(REPLACE " " ";"
+           X86_EXTRA_GEN_MMU_ARGUMENTS
+           "${X86_EXTRA_GEN_MMU_ARGUMENTS}")
+  else()
+    set(X86_EXTRA_GEN_MMU_ARGUMENTS "")
+  endif()
+
   add_custom_target(
     pagetables_bin_target
     DEPENDS
@@ -48,6 +59,7 @@ if (CONFIG_MMU)
     --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --output pagetables.bin
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+    ${X86_EXTRA_GEN_MMU_ARGUMENTS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE} ${GEN_MMU}
   )

@@ -89,7 +89,7 @@ static void fsm_send_configure_req(struct ppp_fsm *fsm, bool retransmit)
 
 	fsm->retransmits--;
 
-	(void)k_delayed_work_submit(&fsm->timer, FSM_TIMEOUT);
+	(void)k_work_reschedule(&fsm->timer, FSM_TIMEOUT);
 }
 
 static void ppp_fsm_timeout(struct k_work *work)
@@ -147,7 +147,7 @@ static void ppp_fsm_timeout(struct k_work *work)
 
 			fsm->retransmits--;
 
-			(void)k_delayed_work_submit(&fsm->timer, FSM_TIMEOUT);
+			(void)k_work_reschedule(&fsm->timer, FSM_TIMEOUT);
 		}
 
 		break;
@@ -177,7 +177,7 @@ void ppp_fsm_init(struct ppp_fsm *fsm, uint16_t protocol)
 	fsm->state = PPP_INITIAL;
 	fsm->flags = 0U;
 
-	k_delayed_work_init(&fsm->timer, ppp_fsm_timeout);
+	k_work_init_delayable(&fsm->timer, ppp_fsm_timeout);
 }
 
 static void fsm_down(struct ppp_fsm *fsm)
@@ -196,7 +196,7 @@ static void fsm_down(struct ppp_fsm *fsm)
 static void terminate(struct ppp_fsm *fsm, enum ppp_state next_state)
 {
 	if (fsm->state != PPP_OPENED) {
-		k_delayed_work_cancel(&fsm->timer);
+		k_work_cancel_delayable(&fsm->timer);
 	} else {
 		fsm_down(fsm);
 	}
@@ -218,7 +218,7 @@ static void terminate(struct ppp_fsm *fsm, enum ppp_state next_state)
 		return;
 	}
 
-	(void)k_delayed_work_submit(&fsm->timer, FSM_TIMEOUT);
+	(void)k_work_reschedule(&fsm->timer, FSM_TIMEOUT);
 
 	fsm->retransmits--;
 
@@ -276,7 +276,7 @@ void ppp_fsm_lower_down(struct ppp_fsm *fsm)
 	case PPP_REQUEST_SENT:
 	case PPP_STOPPING:
 		ppp_change_state(fsm, PPP_STARTING);
-		k_delayed_work_cancel(&fsm->timer);
+		k_work_cancel_delayable(&fsm->timer);
 		break;
 
 	case PPP_CLOSED:
@@ -285,7 +285,7 @@ void ppp_fsm_lower_down(struct ppp_fsm *fsm)
 
 	case PPP_CLOSING:
 		ppp_change_state(fsm, PPP_INITIAL);
-		k_delayed_work_cancel(&fsm->timer);
+		k_work_cancel_delayable(&fsm->timer);
 		break;
 
 	case PPP_OPENED:
@@ -651,7 +651,7 @@ static enum net_verdict fsm_recv_configure_req(struct ppp_fsm *fsm,
 
 	if (code == PPP_CONFIGURE_ACK) {
 		if (fsm->state == PPP_ACK_RECEIVED) {
-			k_delayed_work_cancel(&fsm->timer);
+			k_work_cancel_delayable(&fsm->timer);
 
 			ppp_change_state(fsm, PPP_OPENED);
 
@@ -706,13 +706,13 @@ static enum net_verdict fsm_recv_configure_ack(struct ppp_fsm *fsm, uint8_t id,
 
 	switch (fsm->state) {
 	case PPP_ACK_RECEIVED:
-		k_delayed_work_cancel(&fsm->timer);
+		k_work_cancel_delayable(&fsm->timer);
 		fsm_send_configure_req(fsm, false);
 		ppp_change_state(fsm, PPP_REQUEST_SENT);
 		break;
 
 	case PPP_ACK_SENT:
-		k_delayed_work_cancel(&fsm->timer);
+		k_work_cancel_delayable(&fsm->timer);
 		ppp_change_state(fsm, PPP_OPENED);
 		fsm->retransmits = MAX_CONFIGURE_REQ;
 		if (fsm->cb.up) {
@@ -816,14 +816,14 @@ static enum net_verdict fsm_recv_configure_nack_rej(struct ppp_fsm *fsm,
 
 	switch (fsm->state) {
 	case PPP_ACK_RECEIVED:
-		k_delayed_work_cancel(&fsm->timer);
+		k_work_cancel_delayable(&fsm->timer);
 		fsm_send_configure_req(fsm, false);
 		ppp_change_state(fsm, PPP_REQUEST_SENT);
 		break;
 
 	case PPP_ACK_SENT:
 	case PPP_REQUEST_SENT:
-		k_delayed_work_cancel(&fsm->timer);
+		k_work_cancel_delayable(&fsm->timer);
 		fsm_send_configure_req(fsm, false);
 		break;
 
@@ -881,7 +881,7 @@ static enum net_verdict fsm_recv_terminate_req(struct ppp_fsm *fsm, uint8_t id,
 
 		fsm_down(fsm);
 
-		(void)k_delayed_work_submit(&fsm->timer, FSM_TIMEOUT);
+		(void)k_work_reschedule(&fsm->timer, FSM_TIMEOUT);
 		break;
 
 	default:
@@ -934,7 +934,7 @@ static enum net_verdict fsm_recv_terminate_ack(struct ppp_fsm *fsm, uint8_t id,
 	return NET_OK;
 
 stopped:
-	k_delayed_work_cancel(&fsm->timer);
+	k_work_cancel_delayable(&fsm->timer);
 	ppp_change_state(fsm, new_state);
 
 	if (fsm->cb.finished) {
@@ -983,7 +983,7 @@ void ppp_fsm_proto_reject(struct ppp_fsm *fsm)
 	case PPP_ACK_SENT:
 	case PPP_STOPPING:
 	case PPP_REQUEST_SENT:
-		k_delayed_work_cancel(&fsm->timer);
+		k_work_cancel_delayable(&fsm->timer);
 		ppp_change_state(fsm, PPP_STOPPED);
 		if (fsm->cb.finished) {
 			fsm->cb.finished(fsm);
@@ -1000,7 +1000,7 @@ void ppp_fsm_proto_reject(struct ppp_fsm *fsm)
 		break;
 
 	case PPP_CLOSING:
-		k_delayed_work_cancel(&fsm->timer);
+		k_work_cancel_delayable(&fsm->timer);
 		ppp_change_state(fsm, PPP_CLOSED);
 		if (fsm->cb.finished) {
 			fsm->cb.finished(fsm);

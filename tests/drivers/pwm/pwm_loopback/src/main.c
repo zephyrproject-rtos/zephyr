@@ -14,7 +14,7 @@ void test_main(void)
 	struct test_pwm in;
 	struct test_pwm out;
 
-	get_test_pwms(&in, &out);
+	get_test_pwms(&out, &in);
 
 	k_object_access_grant(out.dev, k_current_get());
 	k_object_access_grant(in.dev, k_current_get());

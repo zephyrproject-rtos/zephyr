@@ -27,6 +27,8 @@ static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
 static struct k_thread tdata1;
+static K_THREAD_STACK_DEFINE(tstack2, STACK_SIZE);
+static struct k_thread tdata2;
 static struct k_sem end_sema;
 
 static void tqueue_append(struct k_queue *pqueue)
@@ -292,7 +294,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
  * @brief Test queue alloc append and prepend
  * @ingroup kernel_queue_tests
  * @see k_queue_alloc_append(), k_queue_alloc_prepend(),
- * z_thread_resource_pool_assign(), k_queue_is_empty(),
+ * z_thread_heap_assign(), k_queue_is_empty(),
  * k_queue_get(), k_queue_remove()
  */
 void test_queue_alloc(void)
@@ -334,22 +336,22 @@ static void queue_poll_race_consume(void *p1, void *p2, void *p3)
 void test_queue_poll_race(void)
 {
 	int prio = k_thread_priority_get(k_current_get());
-	int mid_count = 0, low_count = 0;
+	static volatile int mid_count, low_count;
 
 	k_queue_init(&queue);
 
 	k_thread_create(&tdata, tstack, STACK_SIZE,
 			queue_poll_race_consume,
-			&queue, &mid_count, NULL,
+			&queue, (void *)&mid_count, NULL,
 			prio + 1, 0, K_NO_WAIT);
 
 	k_thread_create(&tdata1, tstack1, STACK_SIZE,
 			queue_poll_race_consume,
-			&queue, &low_count, NULL,
+			&queue, (void *)&low_count, NULL,
 			prio + 2, 0, K_NO_WAIT);
 
 	/* Let them initialize and block */
-	k_sleep(K_TICKS(2));
+	k_sleep(K_MSEC(10));
 
 	/* Insert two items.  This will wake up both threads, but the
 	 * higher priority thread (tdata1) might (if CONFIG_POLL)
@@ -362,7 +364,7 @@ void test_queue_poll_race(void)
 	zassert_true(low_count == 0, NULL);
 	zassert_true(mid_count == 0, NULL);
 
-	k_sleep(K_TICKS(2));
+	k_sleep(K_MSEC(10));
 
 	zassert_true(low_count + mid_count == 2, NULL);
 
@@ -429,4 +431,98 @@ void test_access_kernel_obj_with_priv_data(void)
 	k_thread_create(&tdata, tstack, STACK_SIZE, user_access_queue_private_data,
 					NULL, NULL, NULL, 0, K_USER, K_NO_WAIT);
 	k_thread_join(&tdata, K_FOREVER);
+}
+
+static void low_prio_wait_for_queue(void *p1, void *p2, void *p3)
+{
+	struct k_queue *q = p1;
+	uint32_t *ret = NULL;
+
+	ret = k_queue_get(q, K_FOREVER);
+	zassert_true(*ret == 0xccc,
+	"The low priority thread get the queue data failed lastly");
+}
+
+static void high_prio_t1_wait_for_queue(void *p1, void *p2, void *p3)
+{
+	struct k_queue *q = p1;
+	uint32_t *ret = NULL;
+
+	ret = k_queue_get(q, K_FOREVER);
+	zassert_true(*ret == 0xaaa,
+	"The highest priority and waited longest get the queue data failed firstly");
+}
+
+static void high_prio_t2_wait_for_queue(void *p1, void *p2, void *p3)
+{
+	struct k_queue *q = p1;
+	uint32_t *ret = NULL;
+
+	ret = k_queue_get(q, K_FOREVER);
+	zassert_true(*ret == 0xbbb,
+	"The higher priority and waited longer get the queue data failed secondly");
+}
+
+/**
+ * @brief Test multi-threads to get data from a queue.
+ *
+ * @details Define three threads, and set a higher priority for two of them,
+ * and set a lower priority for the last one. Then Add a delay between
+ * creating the two high priority threads.
+ * Test point:
+ * 1. Any number of threads may wait on an empty FIFO simultaneously.
+ * 2. When a data item is added, it is given to the highest priority
+ * thread that has waited longest.
+ *
+ * @ingroup kernel_queue_tests
+ */
+void test_queue_multithread_competition(void)
+{
+	int old_prio = k_thread_priority_get(k_current_get());
+	int prio = 10;
+	uint32_t test_data[3];
+
+	memset(test_data, 0, sizeof(test_data));
+	k_thread_priority_set(k_current_get(), prio);
+	k_queue_init(&queue);
+	zassert_true(k_queue_is_empty(&queue) != 0, " Initializing queue failed");
+
+	/* Set up some values */
+	test_data[0] = 0xAAA;
+	test_data[1] = 0xBBB;
+	test_data[2] = 0xCCC;
+
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+			low_prio_wait_for_queue,
+			&queue, NULL, NULL,
+			prio + 4, 0, K_NO_WAIT);
+
+	k_thread_create(&tdata1, tstack1, STACK_SIZE,
+			high_prio_t1_wait_for_queue,
+			&queue, NULL, NULL,
+			prio + 2, 0, K_NO_WAIT);
+
+	/* Make thread tdata and tdata1 wait more time */
+	k_sleep(K_MSEC(10));
+
+	k_thread_create(&tdata2, tstack2, STACK_SIZE,
+			high_prio_t2_wait_for_queue,
+			&queue, NULL, NULL,
+			prio + 2, 0, K_NO_WAIT);
+
+	/* Initialize them and block */
+	k_sleep(K_MSEC(50));
+
+	/* Insert some data to wake up thread */
+	k_queue_append(&queue, &test_data[0]);
+	k_queue_append(&queue, &test_data[1]);
+	k_queue_append(&queue, &test_data[2]);
+
+	/* Wait for thread exiting */
+	k_thread_join(&tdata, K_FOREVER);
+	k_thread_join(&tdata1, K_FOREVER);
+	k_thread_join(&tdata2, K_FOREVER);
+
+	/* Revert priority of the main thread */
+	k_thread_priority_set(k_current_get(), old_prio);
 }

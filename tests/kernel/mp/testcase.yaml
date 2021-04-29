@@ -1,4 +1,4 @@
 tests:
   kernel.multiprocessing:
-    tags: smp
+    tags: kernel smp
     filter: CONFIG_MP_NUM_CPUS > 1

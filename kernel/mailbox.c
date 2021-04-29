@@ -97,12 +97,12 @@ SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
 
-void k_mbox_init(struct k_mbox *mbox_ptr)
+void k_mbox_init(struct k_mbox *mbox)
 {
-	z_waitq_init(&mbox_ptr->tx_msg_queue);
-	z_waitq_init(&mbox_ptr->rx_msg_queue);
-	mbox_ptr->lock = (struct k_spinlock) {};
-	SYS_TRACING_OBJ_INIT(k_mbox, mbox_ptr);
+	z_waitq_init(&mbox->tx_msg_queue);
+	z_waitq_init(&mbox->rx_msg_queue);
+	mbox->lock = (struct k_spinlock) {};
+	SYS_TRACING_OBJ_INIT(k_mbox, mbox);
 }
 
 /**
@@ -343,7 +343,7 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer)
 	}
 
 	/* copy message data to buffer, then dispose of message */
-	if ((rx_msg->tx_data != NULL) && (rx_msg->size > 0)) {
+	if ((rx_msg->tx_data != NULL) && (rx_msg->size > 0U)) {
 		(void)memcpy(buffer, rx_msg->tx_data, rx_msg->size);
 	}
 	mbox_message_dispose(rx_msg);
@@ -370,7 +370,7 @@ static int mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 	if (buffer != NULL) {
 		/* retrieve data now, then dispose of message */
 		k_mbox_data_get(rx_msg, buffer);
-	} else if (rx_msg->size == 0) {
+	} else if (rx_msg->size == 0U) {
 		/* there is no data to get, so just dispose of message */
 		mbox_message_dispose(rx_msg);
 	} else {

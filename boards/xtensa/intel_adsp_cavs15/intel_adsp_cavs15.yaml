@@ -4,7 +4,3 @@ type: mcu
 arch: xtensa
 toolchain:
   - zephyr
-testing:
-  only_tags:
-     - kernel
-     - sof

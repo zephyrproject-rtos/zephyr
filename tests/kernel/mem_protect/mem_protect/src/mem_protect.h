@@ -53,6 +53,18 @@ extern void test_create_new_higher_prio_thread_from_user(void);
 extern void test_create_new_invalid_prio_thread_from_user(void);
 extern void test_mark_thread_exit_uninitialized(void);
 extern void test_mem_part_overlap(void);
+extern void test_kobject_access_grant_error(void);
+extern void test_kobject_access_grant_error_user(void);
+extern void test_kobject_access_grant_error_user_null(void);
+extern void test_kobject_access_all_grant_error(void);
+extern void test_kobject_release_null(void);
+extern void test_kobject_free_error(void);
+extern void test_kobject_init_error(void);
+extern void test_kobj_create_out_of_memory(void);
+extern void test_thread_alloc_out_of_idx(void);
+extern void test_alloc_kobjects(void);
+extern void test_kobject_perm_error(void);
+
 
 /* Flag needed to figure out if the fault was expected or not. */
 extern volatile bool valid_fault;
@@ -101,6 +113,8 @@ static inline void set_fault_valid(bool valid)
 #define MEM_REGION_ALLOC (4096)
 #elif defined(CONFIG_ARC)
 #define MEM_REGION_ALLOC (Z_ARC_MPU_ALIGN)
+#elif defined(CONFIG_ARM64)
+#define MEM_REGION_ALLOC (4096)
 #elif defined(CONFIG_ARM)
 #define MEM_REGION_ALLOC (Z_THREAD_MIN_STACK_ALIGN)
 #elif defined(CONFIG_RISCV)
@@ -112,6 +126,16 @@ static inline void set_fault_valid(bool valid)
 
 /* for kobject.c */
 #define KOBJECT_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+
+
+
+#if defined(CONFIG_X86_64)
+#define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 1024
+#define MAX_OBJ 512
+#else
+#define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 256
+#define MAX_OBJ 256
+#endif
 
 #ifndef _TEST_SYSCALLS_H_
 #define _TEST_SYSCALLS_H_

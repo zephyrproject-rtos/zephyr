@@ -213,6 +213,29 @@ void test_k_poll_user_type_fifo_err(void)
 }
 
 /**
+ * @brief Test API k_poll with NULL message queue event in user mode
+ *
+ * @details Define a poll, and using API k_poll with NULL message queue
+ * as parameter to check if a error will be met.
+ *
+ * @see k_poll()
+ *
+ * @ingroup kernel_poll_tests
+ */
+void test_k_poll_user_type_msgq_err(void)
+{
+	struct k_poll_event event[] = {
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+					 K_POLL_MODE_NOTIFY_ONLY,
+					 NULL),
+	};
+
+	ztest_set_fault_valid(true);
+	k_poll(event, 1, K_NO_WAIT);
+}
+
+
+/**
  * @brief Test API k_poll_signal_init with NULL in user mode
  *
  * @details Using API k_poll_signal_init with NULL as

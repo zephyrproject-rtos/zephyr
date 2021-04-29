@@ -129,13 +129,14 @@ int net_udp_register(uint8_t family,
 		     const struct sockaddr *local_addr,
 		     uint16_t remote_port,
 		     uint16_t local_port,
+		     struct net_context *context,
 		     net_conn_cb_t cb,
 		     void *user_data,
 		     struct net_conn_handle **handle)
 {
 	return net_conn_register(IPPROTO_UDP, family, remote_addr, local_addr,
-				 remote_port, local_port, cb, user_data,
-				 handle);
+				 remote_port, local_port, context, cb,
+				 user_data, handle);
 }
 
 int net_udp_unregister(struct net_conn_handle *handle)

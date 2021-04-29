@@ -14,7 +14,7 @@
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(pwrmgmt_test);
 
-#define SLP_STATES_SUPPORTED      2ul
+#define SLP_STATES_SUPPORTED      (PM_STATE_SOFT_OFF + 1)
 
 /* Thread properties */
 #undef TASK_STACK_SIZE
@@ -78,13 +78,8 @@ static void notify_pm_state_entry(enum pm_state state)
 		return;
 	}
 
-	if (pm_is_sleep_state(state)) {
-		pm_counters[0].entry_cnt++;
-		pm_latency_check();
-	} else if (pm_is_deep_sleep_state(state)) {
-		pm_counters[1].entry_cnt++;
-		pm_latency_check();
-	}
+	pm_counters[(int)state].entry_cnt++;
+	pm_latency_check();
 }
 
 static void notify_pm_state_exit(enum pm_state state)
@@ -93,11 +88,7 @@ static void notify_pm_state_exit(enum pm_state state)
 		return;
 	}
 
-	if (pm_is_sleep_state(state)) {
-		pm_counters[0].exit_cnt++;
-	} else if (pm_is_deep_sleep_state(state)) {
-		pm_counters[1].exit_cnt++;
-	}
+	pm_counters[(int)state].exit_cnt++;
 }
 
 static struct pm_notifier notifier = {

@@ -410,8 +410,8 @@ static int eswifi_socket_open(int family, int type, int proto)
 	socket->recv_cb = __process_received;
 	socket->recv_data = socket;
 
-	k_delayed_work_submit_to_queue(&eswifi->work_q, &socket->read_work,
-					K_MSEC(500));
+	k_work_reschedule_for_queue(&eswifi->work_q, &socket->read_work,
+				    K_MSEC(500));
 
 unlock:
 	eswifi_unlock(eswifi);

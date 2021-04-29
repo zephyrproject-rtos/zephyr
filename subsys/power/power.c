@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <kernel.h>
+#include <timeout_q.h>
 #include <init.h>
 #include <string.h>
 #include <power/power.h>
@@ -18,7 +19,6 @@
 LOG_MODULE_REGISTER(power);
 
 static int post_ops_done = 1;
-static bool z_forced_power_state;
 static struct pm_state_info z_power_state;
 static sys_slist_t pm_notifiers = SYS_SLIST_STATIC_INIT(&pm_notifiers);
 static struct k_spinlock pm_notifier_lock;
@@ -73,7 +73,11 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 	/*
 	 * This function is supposed to be overridden to do SoC or
 	 * architecture specific post ops after sleep state exits.
+	 *
+	 * The kernel expects that irqs are unlocked after this.
 	 */
+
+	irq_unlock(0);
 }
 
 __weak void pm_power_state_set(struct pm_state_info info)
@@ -82,22 +86,6 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	 * This function is supposed to be overridden to do SoC or
 	 * architecture specific post ops after sleep state exits.
 	 */
-}
-
-void pm_power_state_force(struct pm_state_info info)
-{
-	__ASSERT(info.state < PM_STATES_LEN,
-		 "Invalid power state %d!", info.state);
-
-#ifdef CONFIG_PM_DIRECT_FORCE_MODE
-	(void)arch_irq_lock();
-	z_forced_power_state = true;
-	z_power_state = info;
-	pm_system_suspend(K_TICKS_FOREVER);
-#else
-	z_power_state = info;
-	z_forced_power_state = true;
-#endif
 }
 
 /*
@@ -125,91 +113,6 @@ static inline void pm_state_notify(bool entering_state)
 	k_spin_unlock(&pm_notifier_lock, pm_notifier_key);
 }
 
-static enum pm_state _handle_device_abort(struct pm_state_info info)
-{
-	LOG_DBG("Some devices didn't enter suspend state!");
-	pm_resume_devices();
-	pm_state_notify(false);
-
-	z_power_state.state = PM_STATE_ACTIVE;
-	return PM_STATE_ACTIVE;
-}
-
-static enum pm_state pm_policy_mgr(int32_t ticks)
-{
-	bool deep_sleep;
-#if CONFIG_PM_DEVICE
-	bool low_power = false;
-#endif
-
-	if (z_forced_power_state == false) {
-		z_power_state = pm_policy_next_state(ticks);
-	}
-
-	if (z_power_state.state == PM_STATE_ACTIVE) {
-		LOG_DBG("No PM operations done.");
-		return z_power_state.state;
-	}
-
-	deep_sleep = pm_is_deep_sleep_state(z_power_state.state);
-
-	post_ops_done = 0;
-	pm_state_notify(true);
-
-	if (deep_sleep) {
-		/* Suspend peripherals. */
-		if (IS_ENABLED(CONFIG_PM_DEVICE) && pm_suspend_devices()) {
-			return _handle_device_abort(z_power_state);
-		}
-		/*
-		 * Disable idle exit notification as it is not needed
-		 * in deep sleep mode.
-		 */
-		pm_idle_exit_notification_disable();
-#if CONFIG_PM_DEVICE
-	} else {
-		if (pm_policy_low_power_devices(z_power_state.state)) {
-			/* low power peripherals. */
-			if (pm_low_power_devices()) {
-				return _handle_device_abort(z_power_state);
-			}
-
-			low_power = true;
-		}
-#endif
-	}
-
-	pm_debug_start_timer();
-	/* Enter power state */
-	pm_power_state_set(z_power_state);
-	pm_debug_stop_timer();
-
-	/* Wake up sequence starts here */
-#if CONFIG_PM_DEVICE
-	if (deep_sleep || low_power) {
-		/* Turn on peripherals and restore device states as necessary */
-		pm_resume_devices();
-	}
-#endif
-	pm_log_debug_info(z_power_state.state);
-
-	if (!post_ops_done) {
-		post_ops_done = 1;
-		/* clear z_forced_power_state */
-		z_forced_power_state = false;
-		pm_state_notify(false);
-		pm_power_state_exit_post_ops(z_power_state);
-	}
-
-	return z_power_state.state;
-}
-
-
-enum pm_state pm_system_suspend(int32_t ticks)
-{
-	return pm_policy_mgr(ticks);
-}
-
 void pm_system_resume(void)
 {
 	/*
@@ -229,9 +132,126 @@ void pm_system_resume(void)
 	 */
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		pm_state_notify(false);
 		pm_power_state_exit_post_ops(z_power_state);
+		pm_state_notify(false);
 	}
+}
+
+void pm_power_state_force(struct pm_state_info info)
+{
+	__ASSERT(info.state < PM_STATES_LEN,
+		 "Invalid power state %d!", info.state);
+
+	if (info.state == PM_STATE_ACTIVE) {
+		return;
+	}
+
+	(void)arch_irq_lock();
+	z_power_state = info;
+	post_ops_done = 0;
+	pm_state_notify(true);
+
+	k_sched_lock();
+	pm_debug_start_timer();
+	/* Enter power state */
+	pm_power_state_set(z_power_state);
+	pm_debug_stop_timer();
+
+	pm_system_resume();
+	k_sched_unlock();
+}
+
+#if CONFIG_PM_DEVICE
+static enum pm_state _handle_device_abort(struct pm_state_info info)
+{
+	LOG_DBG("Some devices didn't enter suspend state!");
+	pm_resume_devices();
+
+	z_power_state.state = PM_STATE_ACTIVE;
+	return PM_STATE_ACTIVE;
+}
+#endif
+
+enum pm_state pm_system_suspend(int32_t ticks)
+{
+	z_power_state = pm_policy_next_state(ticks);
+	if (z_power_state.state == PM_STATE_ACTIVE) {
+		LOG_DBG("No PM operations done.");
+		return z_power_state.state;
+	}
+	post_ops_done = 0;
+
+	if (ticks != K_TICKS_FOREVER) {
+		/*
+		 * Just a sanity check in case the policy manager does not
+		 * handle this error condition properly.
+		 */
+		__ASSERT(z_power_state.min_residency_us >=
+			z_power_state.exit_latency_us,
+			"min_residency_us < exit_latency_us");
+
+		/*
+		 * We need to set the timer to interrupt a little bit early to
+		 * accommodate the time required by the CPU to fully wake up.
+		 */
+		z_set_timeout_expiry(ticks -
+		     k_us_to_ticks_ceil32(z_power_state.exit_latency_us), true);
+	}
+
+#if CONFIG_PM_DEVICE
+
+	bool should_resume_devices = true;
+
+	switch (z_power_state.state) {
+	case PM_STATE_RUNTIME_IDLE:
+		__fallthrough;
+	case PM_STATE_SUSPEND_TO_IDLE:
+		__fallthrough;
+	case PM_STATE_STANDBY:
+		/* low power peripherals. */
+		if (pm_low_power_devices()) {
+			return _handle_device_abort(z_power_state);
+		}		break;
+	case PM_STATE_SUSPEND_TO_RAM:
+		__fallthrough;
+	case PM_STATE_SUSPEND_TO_DISK:
+		if (pm_suspend_devices()) {
+			return _handle_device_abort(z_power_state);
+		}
+		break;
+	default:
+		should_resume_devices = false;
+		break;
+	}
+#endif
+	/*
+	 * This function runs with interruptions locked but it is
+	 * expected the SoC to unlock them in
+	 * pm_power_state_exit_post_ops() when returning to active
+	 * state. We don't want to be scheduled out yet, first we need
+	 * to send a notification about leaving the idle state. So,
+	 * we lock the scheduler here and unlock just after we have
+	 * sent the notification in pm_system_resume().
+	 */
+	k_sched_lock();
+	pm_debug_start_timer();
+	/* Enter power state */
+	pm_state_notify(true);
+	pm_power_state_set(z_power_state);
+	pm_debug_stop_timer();
+
+	/* Wake up sequence starts here */
+#if CONFIG_PM_DEVICE
+	if (should_resume_devices) {
+		/* Turn on peripherals and restore device states as necessary */
+		pm_resume_devices();
+	}
+#endif
+	pm_log_debug_info(z_power_state.state);
+	pm_system_resume();
+	k_sched_unlock();
+
+	return z_power_state.state;
 }
 
 void pm_notifier_register(struct pm_notifier *notifier)

@@ -226,7 +226,7 @@ static int mcp23s17_config(const struct device *dev,
 	if ((flags & GPIO_OPEN_DRAIN) != 0U) {
 		ret = -ENOTSUP;
 		goto done;
-	};
+	}
 
 	ret = setup_pin_dir(dev, pin, flags);
 	if (ret) {

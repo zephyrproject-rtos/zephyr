@@ -65,7 +65,7 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
 #else
     pop {r0, lr}
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-#endif /* CONFIG_TRACING */
+#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
     /* load _kernel into r1 and current k_thread into r2 */
     ldr r1, =_kernel
@@ -104,7 +104,11 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
     b out_fp_endif
 
 out_fp_active:
-    /* FP context active: set FP state and store callee-saved registers */
+    /* FP context active: set FP state and store callee-saved registers.
+     * Note: if Lazy FP stacking is enabled, storing the callee-saved
+     * registers will automatically trigger FP state preservation in
+     * the thread's stack. This will also clear the FPCCR.LSPACT flag.
+     */
     add r0, r2, #_thread_offset_to_preempt_float
     vstmia r0, {s16-s31}
     ldr r0, [r2, #_thread_offset_to_mode]
@@ -112,6 +116,9 @@ out_fp_active:
 
 out_fp_endif:
     str r0, [r2, #_thread_offset_to_mode]
+    /* At this point FPCCR.LSPACT is guaranteed to be cleared,
+     * regardless of whether the thread has an active FP context.
+     */
 #endif /* CONFIG_FPU_SHARING */
 #elif defined(CONFIG_ARMV7_R)
     /* Store rest of process context */
@@ -376,7 +383,7 @@ _thread_irq_disabled:
 #else
     pop {r0, lr}
 #endif
-#endif /* CONFIG_TRACING */
+#endif /* CONFIG_INSTRUMENT_THREAD_SWITCHING */
 
     /*
      * Cortex-M: return from PendSV exception

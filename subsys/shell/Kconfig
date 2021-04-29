@@ -27,7 +27,8 @@ config SHELL_MINIMAL
 
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"
-	default 2520 if OPENTHREAD_SHELL
+	default 3168 if OPENTHREAD_SHELL && OPENTHREAD_JOINER
+	default 2616 if OPENTHREAD_SHELL
 	default 2048 if MULTITHREADING
 	default 0 if !MULTITHREADING
 	help
@@ -102,6 +103,13 @@ config SHELL_ECHO_STATUS
 	default y
 	help
 	  If enabled shell prints back every input byte.
+
+config SHELL_START_OBSCURED
+	bool "Display asterisk when echoing"
+	default n
+	help
+	  If enabled, don't echo actual character, but echo * instead.
+	  This is used for login prompts.
 
 config SHELL_VT100_COLORS
 	bool "Enable colors in shell"

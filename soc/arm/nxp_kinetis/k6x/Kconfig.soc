@@ -91,34 +91,6 @@ config SOC_PART_NUMBER_KINETIS_K6X
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
 
-config K6X_CORE_CLOCK_DIVIDER
-	int "Freescale K6X core clock divider"
-	default 1
-	help
-	  This option specifies the divide value for the K6X processor core clock
-	  from the system clock.
-
-config K6X_BUS_CLOCK_DIVIDER
-	int "Freescale K6X bus clock divider"
-	default 2
-	help
-	  This option specifies the divide value for the K6X bus clock from the
-	  system clock.
-
-config K6X_FLEXBUS_CLOCK_DIVIDER
-	int "Freescale K6X FlexBus clock divider"
-	default 3
-	help
-	  This option specifies the divide value for the K6X FlexBus clock from the
-	  system clock.
-
-config K6X_FLASH_CLOCK_DIVIDER
-	int "Freescale K6X flash clock divider"
-	default 5
-	help
-	  This option specifies the divide value for the K6X flash clock from the
-	  system clock.
-
 config K6X_HSRUN
 	bool "High Speed RUN mode"
 	depends on SOC_MK66F18

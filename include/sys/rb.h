@@ -44,6 +44,7 @@
 #define ZEPHYR_INCLUDE_SYS_RB_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 struct rbnode {
 	struct rbnode *children[2];
@@ -58,6 +59,12 @@ struct rbnode {
 #define Z_PBITS(t) (8 * sizeof(t))
 #define Z_MAX_RBTREE_DEPTH (2 * (Z_PBITS(int *) - Z_TBITS(int *) - 1) + 1)
 
+
+ /**
+  * @defgroup rbtree_apis Balanced Red/Black Tree
+  * @ingroup datastructure_apis
+  * @{
+  */
 /**
  * @typedef rb_lessthan_t
  * @brief Red/black tree comparison predicate
@@ -85,12 +92,12 @@ struct rbtree {
 
 typedef void (*rb_visit_t)(struct rbnode *node, void *cookie);
 
-struct rbnode *z_rb_child(struct rbnode *node, int side);
+struct rbnode *z_rb_child(struct rbnode *node, uint8_t side);
 int z_rb_is_black(struct rbnode *node);
 #ifndef CONFIG_MISRA_SANE
 void z_rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie);
 #endif
-struct rbnode *z_rb_get_minmax(struct rbtree *tree, int side);
+struct rbnode *z_rb_get_minmax(struct rbtree *tree, uint8_t side);
 
 /**
  * @brief Insert node into tree
@@ -107,7 +114,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node);
  */
 static inline struct rbnode *rb_get_min(struct rbtree *tree)
 {
-	return z_rb_get_minmax(tree, 0);
+	return z_rb_get_minmax(tree, 0U);
 }
 
 /**
@@ -115,7 +122,7 @@ static inline struct rbnode *rb_get_min(struct rbtree *tree)
  */
 static inline struct rbnode *rb_get_max(struct rbtree *tree)
 {
-	return z_rb_get_minmax(tree, 1);
+	return z_rb_get_minmax(tree, 1U);
 }
 
 /**
@@ -147,8 +154,8 @@ static inline void rb_walk(struct rbtree *tree, rb_visit_t visit_fn,
 
 struct _rb_foreach {
 	struct rbnode **stack;
-	char *is_left;
-	int top;
+	uint8_t *is_left;
+	int32_t top;
 };
 
 #ifdef CONFIG_MISRA_SANE
@@ -161,7 +168,7 @@ struct _rb_foreach {
 #define _RB_FOREACH_INIT(tree, node) {					\
 	.stack   = (struct rbnode **)					\
 			alloca((tree)->max_depth * sizeof(struct rbnode *)), \
-	.is_left = (char *)alloca((tree)->max_depth * sizeof(char)),		\
+	.is_left = (uint8_t *)alloca((tree)->max_depth * sizeof(uint8_t)),\
 	.top     = -1							\
 }
 #endif
@@ -210,5 +217,7 @@ struct rbnode *z_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
 			 node = n ? CONTAINER_OF(n, __typeof__(*(node)),   \
 					 field) : NULL; }) != NULL;        \
 			 /**/)
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_SYS_RB_H_ */

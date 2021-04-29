@@ -241,7 +241,18 @@ if(${BOARD}_DEPRECATED)
   message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
 endif()
 
+zephyr_boilerplate_watch(BOARD)
+
 foreach(root ${BOARD_ROOT})
+  # Check that the board root looks reasonable.
+  if(NOT IS_DIRECTORY "${root}/boards")
+    message(WARNING "BOARD_ROOT element without a 'boards' subdirectory:
+${root}
+Hints:
+  - if your board directory is '/foo/bar/boards/<ARCH>/my_board' then add '/foo/bar' to BOARD_ROOT, not the entire board directory
+  - if in doubt, use absolute paths")
+  endif()
+
   # NB: find_path will return immediately if the output variable is
   # already set
   if (BOARD_ALIAS)
@@ -283,7 +294,7 @@ if(DEFINED BOARD_REVISION)
 endif()
 
 # Check that SHIELD has not changed.
-zephyr_check_cache(SHIELD)
+zephyr_check_cache(SHIELD WATCH)
 
 if(SHIELD)
   set(BOARD_MESSAGE "${BOARD_MESSAGE}, Shield(s): ${SHIELD}")
@@ -557,6 +568,15 @@ endif()
 # Use SOC to search for a 'CMakeLists.txt' file.
 # e.g. zephyr/soc/xtense/intel_apl_adsp/CMakeLists.txt.
 foreach(root ${SOC_ROOT})
+  # Check that the root looks reasonable.
+  if(NOT IS_DIRECTORY "${root}/soc")
+    message(WARNING "SOC_ROOT element without a 'soc' subdirectory:
+${root}
+Hints:
+  - if your SoC family directory is '/foo/bar/soc/<ARCH>/my_soc_family', then add '/foo/bar' to SOC_ROOT, not the entire SoC family path
+  - if in doubt, use absolute paths")
+  endif()
+
   if(EXISTS ${root}/soc/${ARCH}/${SOC_PATH})
     set(SOC_DIR ${root}/soc)
     break()
@@ -634,8 +654,6 @@ endif()
 #
 # Currently used properties:
 # - COMPILES_OPTIONS: Used by application memory partition feature
-# - ${TARGET}_DEPENDENCIES: additional dependencies for targets that need them
-#   like flash (FLASH_DEPENDENCIES), debug (DEBUG_DEPENDENCIES), etc.
 add_custom_target(zephyr_property_target)
 
 # "app" is a CMake library containing all the application code and is

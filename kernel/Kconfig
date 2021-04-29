@@ -332,14 +332,14 @@ config BOOT_DELAY
 	  all serial ports have DCD.
 
 config THREAD_MONITOR
-	bool "Thread monitoring [EXPERIMENTAL]"
+	bool "Thread monitoring"
 	help
 	  This option instructs the kernel to maintain a list of all threads
 	  (excluding those that have not yet started or have already
 	  terminated).
 
 config THREAD_NAME
-	bool "Thread name [EXPERIMENTAL]"
+	bool "Thread name"
 	help
 	  This option allows to set a name for a thread.
 
@@ -369,7 +369,7 @@ if THREAD_RUNTIME_STATS
 
 config THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS
 	bool "Use timing functions to gather statistics"
-	select TIMING_FUNCTIONS
+	select TIMING_FUNCTIONS_NEED_AT_BOOT
 	help
 	  Use timing functions to gather thread runtime statistics.
 
@@ -396,6 +396,15 @@ config SYSTEM_WORKQUEUE_PRIORITY
 	  priority. This means that any work handler, once started, won't
 	  be preempted by any other thread until finished.
 
+config SYSTEM_WORKQUEUE_NO_YIELD
+	bool "Select whether system work queue yields"
+	help
+	  By default, the system work queue yields between each work item, to
+	  prevent other threads from being starved.  Selecting this removes
+	  this yield, which may be useful if the work queue thread is
+	  cooperative and a sequence of work items is expected to complete
+	  without yielding.
+
 endmenu
 
 menu "Atomic Operations"
@@ -406,7 +415,7 @@ config ATOMIC_OPERATIONS_BUILTIN
 	  the preferred method. However, support for all arches in GCC is
 	  incomplete.
 
-config ATOMIC_OPERATIONS_CUSTOM
+config ATOMIC_OPERATIONS_ARCH
 	bool
 	help
 	  Use when there isn't support for compiler built-ins, but you have
@@ -744,7 +753,6 @@ config ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 	  arch_mem_domain_thread_remove
 	  arch_mem_domain_partition_remove
 	  arch_mem_domain_partition_add
-	  arch_mem_domain_destroy
 
 	  It's important to note that although supervisor threads can be
 	  members of memory domains, they have no implications on supervisor
@@ -831,27 +839,6 @@ config KERNEL_COHERENCE
 	  mistakes, but not all circumstances can be tested.
 
 endmenu
-
-config TICKLESS_IDLE
-	# NB: This option is deprecated, see TICKLESS_KERNEL and
-	# https://github.com/zephyrproject-rtos/zephyr/pull/12234
-	bool "Tickless idle"
-	default y if PM || TICKLESS_CAPABLE
-	help
-	  This option suppresses periodic system clock interrupts whenever the
-	  kernel becomes idle. This permits the system to remain in a power
-	  saving state for extended periods without having to wake up to
-	  service each tick as it occurs.
-
-config TICKLESS_IDLE_THRESH
-	int "Tickless idle threshold"
-	default 3
-	depends on TICKLESS_IDLE
-	help
-	  This option enables clock interrupt suppression when the kernel idles
-	  for only a short period of time. It specifies the minimum number of
-	  ticks that must occur before the next kernel timer expires in order
-	  for suppression to happen.
 
 config TICKLESS_KERNEL
 	bool "Tickless kernel"

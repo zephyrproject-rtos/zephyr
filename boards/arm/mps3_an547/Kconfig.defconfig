@@ -1,0 +1,30 @@
+# Copyright (c) 2018-2021 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MPS3_AN547
+
+config BOARD
+	default "mps3_an547"
+
+if GPIO
+
+config GPIO_CMSDK_AHB
+	default y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_CMSDK_APB
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+config I2C_SBCON
+	default y
+	depends on I2C
+
+endif

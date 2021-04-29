@@ -6,4 +6,6 @@ tests:
     harness: sensor
     tags: sensors
     depends_on: spi
+    integration_platforms:
+      - nrf52dk_nrf52832
     platform_allow: nrf52dk_nrf52832

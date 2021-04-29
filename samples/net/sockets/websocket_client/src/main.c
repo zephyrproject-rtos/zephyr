@@ -214,7 +214,7 @@ static void recv_data_wso_api(int sock, size_t amount, uint8_t *buf,
 
 		read_pos += ret;
 		total_read += ret;
-	};
+	}
 
 	if (remaining != 0 || total_read != amount ||
 	    /* Do not check the final \n at the end of the msg */

@@ -34,14 +34,6 @@ Building the application for mps2_an521
    :board: mps2_an521
    :goals: debug
 
-Building the application for v2m_musca
-**************************************
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/subsys/ipc/openamp
-   :board: v2m_musca
-   :goals: debug
-
 Building the application for v2m_musca_b1
 *****************************************
 

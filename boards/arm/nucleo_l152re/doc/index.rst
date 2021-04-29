@@ -88,11 +88,15 @@ The Zephyr nucleo_l152re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash memory                        |
++-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | PWM                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
@@ -124,6 +128,7 @@ Default Zephyr Peripheral Mapping:
 - B1 (USER/blue) : PC13
 - LD1 : PA5
 - DAC : PA4
+- PWM_3_CH1 : PA6
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 

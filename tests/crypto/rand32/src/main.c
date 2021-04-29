@@ -30,15 +30,17 @@
 
 void test_rand32(void)
 {
-	uint32_t gen, last_gen;
+	uint32_t gen, last_gen, tmp;
 	int rnd_cnt;
 	int equal_count = 0;
 	uint32_t buf[N_VALUES];
 
 	/* Test early boot random number generation function */
+	/* Cover the case, where argument "length" is < size of "size_t" */
+	z_early_boot_rand_get((uint8_t *)&tmp, (size_t)1);
 	z_early_boot_rand_get((uint8_t *)&last_gen, sizeof(last_gen));
 	z_early_boot_rand_get((uint8_t *)&gen, sizeof(gen));
-	zassert_true(last_gen != gen,
+	zassert_true(last_gen != gen && last_gen != tmp && tmp != gen,
 			"z_early_boot_rand_get failed");
 
 	/*

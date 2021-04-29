@@ -162,8 +162,8 @@ static int multiboot_framebuf_init(const struct device *dev)
 		adj_x = info->fb_width - CONFIG_MULTIBOOT_FRAMEBUF_X;
 		adj_y = info->fb_height - CONFIG_MULTIBOOT_FRAMEBUF_Y;
 		data->pitch = (info->fb_pitch / 4) + adj_x;
-		adj_x /= 2;
-		adj_y /= 2;
+		adj_x /= 2U;
+		adj_y /= 2U;
 		buffer = (uint32_t *) (uintptr_t) info->fb_addr_lo;
 		buffer += adj_x;
 		buffer += adj_y * data->pitch;
@@ -177,7 +177,7 @@ static int multiboot_framebuf_init(const struct device *dev)
 DEVICE_DEFINE(multiboot_framebuf,
 		    "FRAMEBUF",
 		    multiboot_framebuf_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &multiboot_framebuf_data,
 		    NULL,
 		    PRE_KERNEL_1,

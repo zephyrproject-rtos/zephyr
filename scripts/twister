@@ -464,6 +464,20 @@ Artificially long but functional example:
         action="store",
         help="Load list of tests and platforms to be run from file.")
 
+    parser.add_argument(
+        "--quarantine-list",
+        metavar="FILENAME",
+        help="Load list of test scenarios under quarantine. The entries in "
+             "the file need to correspond to the test scenarios names as in"
+             "corresponding tests .yaml files. These scenarios"
+             "will be skipped with quarantine as the reason")
+
+    parser.add_argument(
+        "--quarantine-verify",
+        action="store_true",
+        help="Use the list of test scenarios under quarantine and run them"
+             "to verify their current status")
+
     case_select.add_argument(
         "-E",
         "--save-tests",
@@ -1021,6 +1035,15 @@ def main():
     else:
         last_run = os.path.join(options.outdir, "twister.csv")
 
+    if options.quarantine_list:
+        suite.load_quarantine(options.quarantine_list)
+
+    if options.quarantine_verify:
+        if not options.quarantine_list:
+            logger.error("No quarantine list given to be verified")
+            sys.exit(1)
+        suite.quarantine_verify = options.quarantine_verify
+
     if options.only_failed:
         suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
@@ -1040,9 +1063,6 @@ def main():
         suite.load_from_file(last_run, filter_status=['skipped', 'error'],
                              filter_platform=connected_list)
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
-
-
-
     else:
         discards = suite.apply_filters(
             enable_slow=options.enable_slow,
@@ -1126,10 +1146,16 @@ def main():
         else:
             suite.instances = OrderedDict(sorted(suite.instances.items()))
 
+        # Do calculation based on what is actually going to be run and evaluated
+        # at runtime, ignore the cases we already know going to be skipped.
+        # This fixes an issue where some sets would get majority of skips and
+        # basically run nothing beside filtering.
+        to_run = {k : v for k,v in suite.instances.items() if v.status is None}
+
         subset, sets = options.subset.split("/")
         subset = int(subset)
         sets = int(sets)
-        total = len(suite.instances)
+        total = len(to_run)
         per_set = int(total / sets)
         num_extra_sets = total - (per_set * sets)
 
@@ -1144,8 +1170,13 @@ def main():
             start = ((subset - num_extra_sets - 1) * per_set) + base
             end = start + per_set
 
-        sliced_instances = islice(suite.instances.items(), start, end)
+        sliced_instances = islice(to_run.items(), start, end)
+        skipped = {k : v for k,v in suite.instances.items() if v.status == 'skipped'}
         suite.instances = OrderedDict(sliced_instances)
+        if subset == 1:
+            # add all pre-filtered tests that are skipped to the first set to
+            # allow for better distribution among all sets.
+            suite.instances.update(skipped)
 
     if options.save_tests:
         suite.csv_report(options.save_tests)
@@ -1195,6 +1226,7 @@ def main():
             except queue.Empty:
                 break
             else:
+                inst.metrics.update(suite.instances[inst.name].metrics)
                 inst.metrics["handler_time"] = inst.handler.duration if inst.handler else 0
                 inst.metrics["unrecognized"] = []
                 suite.instances[inst.name] = inst

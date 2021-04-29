@@ -97,12 +97,15 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP) || \
-				defined(CONFIG_NET_PKT_RXTIME_STATS) ||	\
-				defined(CONFIG_NET_PKT_TXTIME_STATS)
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	/** Timestamp if available. */
+	struct net_ptp_time timestamp;
+#endif
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) || defined(CONFIG_NET_PKT_TXTIME_STATS)
 	struct {
-		/** Timestamp if available. */
-		struct net_ptp_time timestamp;
+		/** Create time in cycles */
+		uint32_t create_time;
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
 	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
@@ -118,7 +121,7 @@ struct net_pkt {
 #endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
 	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 	};
-#endif /* CONFIG_NET_PKT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_RXTIME_STATS || CONFIG_NET_PKT_TXTIME_STATS */
 
 #if defined(CONFIG_NET_PKT_TXTIME)
 	/** Network packet TX time in the future (in nanoseconds) */
@@ -132,13 +135,9 @@ struct net_pkt {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
-#if defined(CONFIG_NET_TCP1) || defined(CONFIG_NET_TCP2)
-	union {
-		sys_snode_t sent_list;
-
-		/** Allow placing the packet into sys_slist_t */
-		sys_snode_t next;
-	};
+#if defined(CONFIG_NET_TCP2)
+	/** Allow placing the packet into sys_slist_t */
+	sys_snode_t next;
 #endif
 
 	uint8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
@@ -189,6 +188,9 @@ struct net_pkt {
 					* segment.
 					*/
 #endif
+	uint8_t captured : 1; /* Set to 1 if this packet is already being
+			       * captured
+			       */
 
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
@@ -331,6 +333,16 @@ static inline bool net_pkt_is_gptp(struct net_pkt *pkt)
 static inline void net_pkt_set_gptp(struct net_pkt *pkt, bool is_gptp)
 {
 	pkt->gptp_pkt = is_gptp;
+}
+
+static inline bool net_pkt_is_captured(struct net_pkt *pkt)
+{
+	return !!(pkt->captured);
+}
+
+static inline void net_pkt_set_captured(struct net_pkt *pkt, bool is_captured)
+{
+	pkt->captured = is_captured;
 }
 
 static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
@@ -797,6 +809,33 @@ static inline void net_pkt_set_timestamp(struct net_pkt *pkt,
 	ARG_UNUSED(timestamp);
 }
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
+
+#if defined(CONFIG_NET_PKT_RXTIME_STATS) || defined(CONFIG_NET_PKT_TXTIME_STATS)
+static inline uint32_t net_pkt_create_time(struct net_pkt *pkt)
+{
+	return pkt->create_time;
+}
+
+static inline void net_pkt_set_create_time(struct net_pkt *pkt,
+					   uint32_t create_time)
+{
+	pkt->create_time = create_time;
+}
+#else
+static inline uint32_t net_pkt_create_time(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0U;
+}
+
+static inline void net_pkt_set_create_time(struct net_pkt *pkt,
+					   uint32_t create_time)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(create_time);
+}
+#endif /* CONFIG_NET_PKT_RXTIME_STATS || CONFIG_NET_PKT_TXTIME_STATS */
 
 #if defined(CONFIG_NET_PKT_TXTIME)
 static inline uint64_t net_pkt_txtime(struct net_pkt *pkt)

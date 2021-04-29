@@ -479,7 +479,7 @@ struct dma_iproc_pax_ring_data {
 	/* alert for the ring */
 	struct k_sem alert;
 	/* posted write sync src location */
-	struct dma_iproc_pax_write_sync_data sync_loc;
+	struct dma_iproc_pax_write_sync_data *sync_loc;
 	/* posted write sync pci dst address */
 	struct dma_iproc_pax_addr64 sync_pci;
 	/* ring status */

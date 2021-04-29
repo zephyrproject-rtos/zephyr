@@ -24,10 +24,16 @@ set(TFM_VALID_PARTITIONS
 # BINARY_DIR: The location where the build outputs will be written
 # BOARD: The string identifying the board target for TF-M (AN521, etc.)
 # CMAKE_BUILD_TYPE: The TF-M build type to use, (Debug, Release, etc.)
+# PSA_TEST_SUITE: A PSA test suite to add, choose one of
+#                 PROTECTED_STORAGE/INTERNAL_TRUSTED_STORAGE/STORAGE/CRYPTO/
+#                 INITIAL_ATTESTATION
 # IPC: Build TFM IPC library. This library allows a non-secure application to
 #      interface to secure domain using IPC.
 # ISOLATION_LEVEL: The TF-M isolation level to use
-# REGRESSION: Boolean if TF-M build includes building the TF-M regression tests
+# REGRESSION_S: Boolean if TF-M build includes building the secure TF-M
+#               regression tests
+# REGRESSION_NS: Boolean if TF-M build includes building the non-secure
+#                TF-M regression tests
 # BL2: Boolean if the TF-M build uses MCUboot. Default: True
 # ENABLED_PARTITIONS: List of TFM partitions to enable.
 #
@@ -38,14 +44,15 @@ set(TFM_VALID_PARTITIONS
 #                        CMAKE_BUILD_TYPE Release
 #                        IPC
 #                        ISOLATION_LEVEL 2
-#                        REGRESSION
+#                        REGRESSION_S
+#                        REGRESSION_NS
 #                        BL2
 #                        BUILD_PROFILE profile_small
 #                        ENABLED_PARTITIONS TFM_PARTITION_PLATFORM TFM_PARTITION_CRYPTO)
 function(trusted_firmware_build)
-  set(options IPC REGRESSION BL2)
+  set(options IPC BL2 REGRESSION_S REGRESSION_NS)
   set(oneValueArgs BINARY_DIR BOARD ISOLATION_LEVEL CMAKE_BUILD_TYPE BUILD_PROFILE
-    MCUBOOT_IMAGE_NUMBER)
+    MCUBOOT_IMAGE_NUMBER PSA_TEST_SUITE)
   set(multiValueArgs ENABLED_PARTITIONS)
   cmake_parse_arguments(TFM "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -65,12 +72,12 @@ function(trusted_firmware_build)
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
   endif()
 
-  if(DEFINED TFM_ISOLATION_LEVEL)
-    set(TFM_ISOLATION_LEVEL_ARG -DTFM_ISOLATION_LEVEL=${TFM_ISOLATION_LEVEL})
+  if (TFM_REGRESSION_S)
+    set(TFM_REGRESSION_S_ARG -DTEST_S=ON)
   endif()
 
-  if(TFM_REGRESSION)
-    set(TFM_REGRESSION_ARG -DTEST_S=ON)
+  if (TFM_REGRESSION_NS)
+    set(TFM_REGRESSION_NS_ARG -DTEST_NS=ON)
   endif()
 
   if(DEFINED TFM_CMAKE_BUILD_TYPE)
@@ -87,9 +94,25 @@ function(trusted_firmware_build)
     set(MCUBOOT_IMAGE_NUM_ARG -DMCUBOOT_IMAGE_NUMBER=${TFM_MCUBOOT_IMAGE_NUMBER})
   endif()
 
+  if(DEFINED TFM_PSA_TEST_SUITE)
+    set(PSA_TEST_ARG -DTEST_PSA_API=${TFM_PSA_TEST_SUITE})
+  endif()
+
   set(VENEERS_FILE ${TFM_BINARY_DIR}/secure_fw/s_veneers.o)
-  set(PSA_API_NS_PATH ${TFM_BINARY_DIR}/interface/libpsa_api_ns.a)
+  set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/app/libtfm_api_ns.a)
   set(TFM_GENERATED_INCLUDES ${TFM_BINARY_DIR}/generated/interface/include)
+  set(PLATFORM_NS_FILE ${TFM_BINARY_DIR}/platform/libplatform_ns.a)
+
+  if (TFM_PSA_TEST_SUITE)
+    set(PSA_TEST_VAL_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/val/val_nspe.a)
+    set(PSA_TEST_PAL_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/platform/pal_nspe.a)
+    set(COMBINE_DIR_STORAGE storage)
+    set(COMBINE_DIR_PROTECTED_STORAGE storage)
+    set(COMBINE_DIR_INTERNAL_TRUSTED_STORAGE storage)
+    set(COMBINE_DIR_CRYPTO crypto)
+    set(COMBINE_DIR_INITIAL_ATTESTATION initial_attestation)
+    set(PSA_TEST_COMBINE_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/dev_apis/${COMBINE_DIR_${TFM_PSA_TEST_SUITE}}/test_combine.a)
+  endif()
 
   if(TFM_BL2)
     set(BL2_BIN_FILE ${TFM_BINARY_DIR}/bin/bl2.bin)
@@ -105,8 +128,12 @@ function(trusted_firmware_build)
 
   set(BUILD_BYPRODUCTS
     ${VENEERS_FILE}
-    ${PSA_API_NS_PATH}
+    ${TFM_API_NS_PATH}
     ${TFM_GENERATED_INCLUDES}/psa_manifest/sid.h
+    ${PSA_TEST_VAL_FILE}
+    ${PSA_TEST_PAL_FILE}
+    ${PSA_TEST_COMBINE_FILE}
+    ${PLATFORM_NS_FILE}
     ${BL2_BIN_FILE}
     ${BL2_HEX_FILE}
     ${TFM_S_BIN_FILE}
@@ -146,11 +173,14 @@ function(trusted_firmware_build)
                -DBL2=${TFM_BL2}
                ${TFM_IPC_ARG}
                ${TFM_ISOLATION_LEVEL_ARG}
-               ${TFM_REGRESSION_ARG}
+               ${TFM_REGRESSION_S_ARG}
+               ${TFM_REGRESSION_NS_ARG}
                ${TFM_PROFILE_ARG}
                ${MCUBOOT_IMAGE_NUM_ARG}
+               ${PSA_TEST_ARG}
                -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
                -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mcuboot
+               -DPSA_ARCH_TESTS_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/psa-arch-tests
                ${TFM_PARTITIONS_ARGS}
     BUILD_ALWAYS True
     USES_TERMINAL_BUILD True
@@ -181,8 +211,9 @@ function(trusted_firmware_build)
     )
 
   add_library(tfm_api
-    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests/app/os_wrapper_cmsis_rtos_v2.c
+    ${ZEPHYR_BASE}/modules/trusted-firmware-m/src/zephyr_tfm_log.c
   )
+  zephyr_sources_ifndef(CONFIG_TFM_PSA_TEST_NONE src/zephyr_tfm_psa_test.c)
 
   target_include_directories(tfm_api
     PRIVATE
@@ -197,7 +228,11 @@ function(trusted_firmware_build)
     PUBLIC
     zephyr_interface
     INTERFACE
-    ${PSA_API_NS_PATH}
+    ${PSA_TEST_VAL_FILE}
+    ${PSA_TEST_PAL_FILE}
+    ${PSA_TEST_COMBINE_FILE}
+    ${PLATFORM_NS_FILE}
+    ${TFM_API_NS_PATH}
     ${VENEERS_FILE}
     $<TARGET_FILE:tfm_api>
   )
@@ -205,12 +240,19 @@ function(trusted_firmware_build)
   add_dependencies(tfm_api tfm)
 endfunction()
 
+zephyr_library_sources_ifdef(CONFIG_BUILD_WITH_TFM  interface/interface.c)
+# Non-Secure interface to request system reboot
+zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM  src/reboot.c)
+
 if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_IPC)
     set(TFM_IPC_ARG IPC)
   endif()
-  if (CONFIG_TFM_REGRESSION)
-    set(TFM_REGRESSION_ARG REGRESSION)
+  if (CONFIG_TFM_REGRESSION_S)
+    set(TFM_REGRESSION_S_ARG REGRESSION_S)
+  endif()
+  if (CONFIG_TFM_REGRESSION_NS)
+    set(TFM_REGRESSION_NS_ARG REGRESSION_NS)
   endif()
   if (CONFIG_TFM_BL2)
     set(TFM_BL2_ARG BL2)
@@ -220,6 +262,17 @@ if (CONFIG_BUILD_WITH_TFM)
   endif()
   if (CONFIG_TFM_PROFILE)
     set(TFM_PROFILE_ARG BUILD_PROFILE ${CONFIG_TFM_PROFILE})
+  endif()
+  if (CONFIG_TFM_PSA_TEST_CRYPTO)
+    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE CRYPTO)
+  elseif (CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE)
+    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE PROTECTED_STORAGE)
+  elseif (CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE)
+    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE INTERNAL_TRUSTED_STORAGE)
+  elseif (CONFIG_TFM_PSA_TEST_STORAGE)
+    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE STORAGE)
+  elseif (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION)
+    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE INITIAL_ATTESTATION)
   endif()
   if (CONFIG_TFM_CMAKE_BUILD_TYPE_RELEASE)
     set(TFM_CMAKE_BUILD_TYPE "Release")
@@ -250,8 +303,10 @@ if (CONFIG_BUILD_WITH_TFM)
     ${TFM_IMAGE_NUMBER_ARG}
     ${TFM_BL2_ARG}
     ${TFM_IPC_ARG}
-    ${TFM_REGRESSION_ARG}
+    ${TFM_REGRESSION_S_ARG}
+    ${TFM_REGRESSION_NS_ARG}
     ENABLED_PARTITIONS ${TFM_ENABLED_PARTITIONS_ARG}
+    ${TFM_PSA_TEST_ARG}
     CMAKE_BUILD_TYPE ${TFM_CMAKE_BUILD_TYPE}
   )
 
@@ -278,6 +333,14 @@ if (CONFIG_BUILD_WITH_TFM)
     set(TFM_PUBLIC_KEY_FORMAT "full")
   endif()
 
+  if(DEFINED TFM_HEX_BASE_ADDRESS_S)
+    set(HEX_ADDR_ARGS_S "--hex-addr=${TFM_HEX_BASE_ADDRESS_S}")
+  endif()
+
+  if(DEFINED TFM_HEX_BASE_ADDRESS_NS)
+    set(HEX_ADDR_ARGS_NS "--hex-addr=${TFM_HEX_BASE_ADDRESS_NS}")
+  endif()
+
   function(tfm_sign OUT_ARG SUFFIX PAD INPUT_FILE OUTPUT_FILE)
     if(PAD)
       set(pad_args --pad --pad-header)
@@ -290,6 +353,7 @@ if (CONFIG_BUILD_WITH_TFM)
       --align 1
       -v ${TFM_IMAGE_VERSION_${SUFFIX}}
       ${pad_args}
+      ${HEX_ADDR_ARGS_${SUFFIX}}
       ${ADD_${SUFFIX}_IMAGE_MIN_VER}
       -s auto
       -H ${CONFIG_ROM_START_OFFSET}
@@ -320,11 +384,17 @@ if (CONFIG_BUILD_WITH_TFM)
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
     tfm_sign(sign_cmd NS TRUE ${S_NS_FILE} ${S_NS_SIGNED_FILE})
 
+    if (CONFIG_TFM_REGRESSION_NS)
+      set(NS_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
+    else()
+      set(NS_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+    endif()
+
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
         -o ${S_NS_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-        ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME}
+        ${NS_APP_FILE}
 
       COMMAND ${sign_cmd}
 
@@ -341,7 +411,12 @@ if (CONFIG_BUILD_WITH_TFM)
     )
 
   else()
-    tfm_sign(sign_cmd_ns NS FALSE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME} ${NS_SIGNED_FILE})
+    if (CONFIG_TFM_REGRESSION_NS)
+      tfm_sign(sign_cmd_ns NS TRUE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE> ${NS_SIGNED_FILE})
+    else()
+      tfm_sign(sign_cmd_ns NS FALSE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME} ${NS_SIGNED_FILE})
+    endif()
+
     tfm_sign(sign_cmd_s S TRUE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE> ${S_SIGNED_FILE})
 
     #Create and sign for concatenated binary image, should align with the TF-M BL2

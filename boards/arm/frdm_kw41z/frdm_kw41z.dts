@@ -2,7 +2,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_kw41z.dtsi>
+#include <nxp/MKW41Z512VHT4.dtsi>
 
 / {
 	model = "NXP Freedom KW41Z board";
@@ -109,10 +109,12 @@
 
 &adc0 {
 	status = "okay";
+	pinctrl-0 = <&ADC0_SE3_PTB2>;
 };
 
 &i2c1 {
 	status = "okay";
+	pinctrl-0 = <&I2C1_SCL_PTC2 &I2C1_SDA_PTC3>;
 
 	fxos8700@1f {
 		compatible = "nxp,fxos8700";
@@ -122,8 +124,17 @@
 	};
 };
 
+&I2C1_SCL_PTC2 {
+	bias-pull-up;
+};
+
+&I2C1_SDA_PTC3 {
+	bias-pull-up;
+};
+
 &lpuart0 {
 	status = "okay";
+	pinctrl-0 = <&UART0_RX_PTC6 &UART0_TX_PTC7>;
 	current-speed = <115200>;
 };
 
@@ -135,8 +146,14 @@
 	status = "okay";
 };
 
+&spi0 {
+	pinctrl-0 = <&SPI0_SCK_PTC16 &SPI0_SOUT_PTC17
+		     &SPI0_SIN_PTC18 &SPI0_PCS0_PTC19>;
+};
+
 &tpm0 {
 	status = "okay";
+	pinctrl-0 = <&TPM0_CH2_PTC1>;
 };
 
 &tpm1 {
@@ -145,4 +162,5 @@
 
 &tpm2 {
 	status = "okay";
+	pinctrl-0 = <&TPM2_CH1_PTA19 &TPM2_CH0_PTA18>;
 };

@@ -21,6 +21,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			swo-ref-frequency = <32000000>;
 		};
 	};
 

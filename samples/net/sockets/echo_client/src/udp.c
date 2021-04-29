@@ -40,7 +40,7 @@ static int send_udp_data(struct data *data)
 
 	LOG_DBG("%s UDP: Sent %d bytes", data->proto, data->udp.expecting);
 
-	k_delayed_work_submit(&data->udp.recv, UDP_WAIT);
+	k_work_reschedule(&data->udp.recv, UDP_WAIT);
 
 	return ret < 0 ? -EIO : 0;
 }
@@ -83,8 +83,8 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 {
 	int ret;
 
-	k_delayed_work_init(&data->udp.recv, wait_reply);
-	k_delayed_work_init(&data->udp.transmit, wait_transmit);
+	k_work_init_delayable(&data->udp.recv, wait_reply);
+	k_work_init_delayable(&data->udp.transmit, wait_transmit);
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	data->udp.sock = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_DTLS_1_2);
@@ -168,11 +168,11 @@ static int process_udp_proto(struct data *data)
 			data->udp.counter);
 	}
 
-	k_delayed_work_cancel(&data->udp.recv);
+	k_work_cancel_delayable(&data->udp.recv);
 
 	/* Do not flood the link if we have also TCP configured */
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
-		k_delayed_work_submit(&data->udp.transmit, UDP_SLEEP);
+		k_work_reschedule(&data->udp.transmit, UDP_SLEEP);
 		ret = 0;
 	} else {
 		ret = send_udp_data(data);
@@ -251,8 +251,8 @@ int process_udp(void)
 void stop_udp(void)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		k_delayed_work_cancel(&conf.ipv6.udp.recv);
-		k_delayed_work_cancel(&conf.ipv6.udp.transmit);
+		k_work_cancel_delayable(&conf.ipv6.udp.recv);
+		k_work_cancel_delayable(&conf.ipv6.udp.transmit);
 
 		if (conf.ipv6.udp.sock >= 0) {
 			(void)close(conf.ipv6.udp.sock);
@@ -260,8 +260,8 @@ void stop_udp(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		k_delayed_work_cancel(&conf.ipv4.udp.recv);
-		k_delayed_work_cancel(&conf.ipv4.udp.transmit);
+		k_work_cancel_delayable(&conf.ipv4.udp.recv);
+		k_work_cancel_delayable(&conf.ipv4.udp.transmit);
 
 		if (conf.ipv4.udp.sock >= 0) {
 			(void)close(conf.ipv4.udp.sock);

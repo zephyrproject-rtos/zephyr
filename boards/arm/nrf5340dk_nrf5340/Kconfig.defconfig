@@ -14,6 +14,17 @@ config BOARD
 config BUILD_WITH_TFM
 	default y if BOARD_NRF5340DK_NRF5340_CPUAPPNS
 
+if BUILD_WITH_TFM
+
+# By default, if we build with TF-M, instruct build system to
+# flash the combined TF-M (Secure) & Zephyr (Non Secure) image
+# (when building in-tree tests).
+config TFM_FLASH_MERGED_BINARY
+	bool
+	default y if TEST_ARM_CORTEX_M
+
+endif # BUILD_WITH_TFM
+
 # Code Partition:
 #
 # For the secure version of the board the firmware is linked at the beginning

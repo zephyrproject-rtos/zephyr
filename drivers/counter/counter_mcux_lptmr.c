@@ -103,14 +103,6 @@ static uint32_t mcux_lptmr_get_top_value(const struct device *dev)
 	return (config->base->CMR & LPTMR_CMR_COMPARE_MASK) + 1U;
 }
 
-static uint32_t mcux_lptmr_get_max_relative_alarm(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	/* Alarms not supported */
-	return 0;
-}
-
 static void mcux_lptmr_isr(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
@@ -156,7 +148,6 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 	.set_top_value = mcux_lptmr_set_top_value,
 	.get_pending_int = mcux_lptmr_get_pending_int,
 	.get_top_value = mcux_lptmr_get_top_value,
-	.get_max_relative_alarm = mcux_lptmr_get_max_relative_alarm,
 };
 
 #define TO_LPTMR_CLK_SEL(val) _DO_CONCAT(kLPTMR_PrescalerClock_, val)

@@ -446,7 +446,7 @@ void test_spi_quad_write(void)
 				"error %d", ret);
 
 		spi_status2 = safbuf2[0];
-		zassert_true((spi_status2 & SPI_STATUS2_QE) == 1,
+		zassert_true((spi_status2 & SPI_STATUS2_QE) == SPI_STATUS2_QE,
 				"Enable QSPI mode failure");
 	}
 

@@ -690,12 +690,11 @@ static void dsa_delayed_work(struct k_work *item)
 		context->link_up[i] = link_state;
 	}
 
-	k_delayed_work_submit(&context->dsa_work, DSA_STATUS_PERIOD_MS);
+	k_work_reschedule(&context->dsa_work, DSA_STATUS_PERIOD_MS);
 }
 
 int dsa_port_init(const struct device *dev)
 {
-	struct dsa_context *context = dev->data;
 	struct dsa_ksz8794_spi *swspi = &phy_spi;
 
 	if (swspi->is_init) {
@@ -703,9 +702,6 @@ int dsa_port_init(const struct device *dev)
 	}
 
 	dsa_hw_init(NULL);
-	k_delayed_work_init(&context->dsa_work, dsa_delayed_work);
-	k_delayed_work_submit(&context->dsa_work, DSA_STATUS_PERIOD_MS);
-
 	return 0;
 }
 
@@ -961,10 +957,27 @@ static void dsa_iface_init(struct net_if *iface)
 				     NET_LINK_ETHERNET);
 		ctx->dsa_port_idx = i;
 		ctx->dsa_ctx = context;
+
+		/*
+		 * Initialize ethernet context 'work' for this iface to
+		 * be able to monitor the carrier status.
+		 */
+		ethernet_init(iface);
 	}
 
 	i++;
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+
+	/*
+	 * Start DSA work to monitor status of ports (read from switch IC)
+	 * only when carrier_work is properly initialized for each iface.
+	 */
+	if (context->iface_slave[KSZ8794_PORT1] &&
+	    context->iface_slave[KSZ8794_PORT2] &&
+	    context->iface_slave[KSZ8794_PORT3]) {
+		k_work_init_delayable(&context->dsa_work, dsa_delayed_work);
+		k_work_reschedule(&context->dsa_work, DSA_STATUS_PERIOD_MS);
+	}
 }
 
 static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)

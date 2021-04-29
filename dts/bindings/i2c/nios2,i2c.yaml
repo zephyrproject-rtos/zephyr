@@ -10,3 +10,6 @@ include: i2c-controller.yaml
 properties:
     reg:
       required: true
+
+    interrupts:
+      required: true

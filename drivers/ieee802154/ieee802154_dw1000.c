@@ -1607,10 +1607,9 @@ static int dw1000_init(const struct device *dev)
 			  DWT_SYS_MASK_MRXSFDTO);
 
 	/* Initialize IRQ event work queue */
-	k_work_q_start(&dwt_work_queue,
-		       dwt_work_queue_stack,
-		       K_KERNEL_STACK_SIZEOF(dwt_work_queue_stack),
-		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
+	k_work_queue_start(&dwt_work_queue, dwt_work_queue_stack,
+			   K_KERNEL_STACK_SIZEOF(dwt_work_queue_stack),
+			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
 
 	k_work_init(&ctx->irq_cb_work, dwt_irq_work_handler);
 

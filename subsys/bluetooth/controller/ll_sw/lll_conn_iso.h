@@ -22,8 +22,10 @@ struct lll_conn_iso_stream_rxtx {
 };
 
 struct lll_conn_iso_stream {
-	/* Link to ACL connection (for encryption, channel map, crc init) */
-	struct lll_conn *conn;
+	uint16_t acl_handle;        /* ACL connection handle (for encryption,
+				     * channel map, crc init)
+				     */
+	uint16_t handle;            /* CIS handle */
 
 	/* Connection parameters */
 	uint8_t  access_addr[4];    /* Access address */
@@ -55,10 +57,11 @@ struct lll_conn_iso_stream {
 struct lll_conn_iso_group {
 	struct lll_hdr hdr;
 
+	uint16_t handle;   /* CIG handle (internal) */
 	uint8_t  num_cis;  /* Number of CISes in this CIG */
+	uint8_t  role;     /* 0: CENTRAL, 1: PERIPHERAL*/
 #if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP)
-	struct lll_conn_iso_stream *streams
-				[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
+	uint16_t cis_handles[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
 #endif /* CONFIG_BT_CTLR_CONN_ISO_STREAMS */
 
 	/* Resumption information */
@@ -68,4 +71,6 @@ struct lll_conn_iso_group {
 
 int lll_conn_iso_init(void);
 int lll_conn_iso_reset(void);
+void lll_conn_iso_done(struct lll_conn_iso_group *cig, uint8_t trx_cnt,
+		       uint16_t prog_to_anchor_us, uint8_t mic_state);
 void lll_conn_iso_flush(uint16_t handle, struct lll_conn_iso_stream *lll);

@@ -53,8 +53,8 @@ static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 /* Destination address for test packets */
-static struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 9, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
 /* Extra address is assigned to ll_addr */
 static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
@@ -290,16 +290,16 @@ static int eth_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_offloading_disabled_test,
-		    "eth_offloading_disabled_test",
+ETH_NET_DEVICE_INIT(eth1_offloading_disabled_test,
+		    "eth1_offloading_disabled_test",
 		    eth_init, device_pm_control_nop,
 		    &eth_context_offloading_disabled, NULL,
 		    CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs_offloading_disabled,
 		    NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth_offloading_enabled_test,
-		    "eth_offloading_enabled_test",
+ETH_NET_DEVICE_INIT(eth0_offloading_enabled_test,
+		    "eth0_offloading_enabled_test",
 		    eth_init, device_pm_control_nop,
 		    &eth_context_offloading_enabled, NULL,
 		    CONFIG_ETH_INIT_PRIORITY,
@@ -845,7 +845,7 @@ static void test_rx_chksum_offload_enabled_test_v6(void)
 			       sizeof(struct sockaddr_in6));
 	zassert_equal(ret, 0, "Context bind failure test failed");
 
-	iface = eth_interfaces[1];
+	iface = net_if_ipv6_select_src_iface(&dst_addr6.sin6_addr);
 	ctx = net_if_get_device(iface)->data;
 	zassert_equal_ptr(&eth_context_offloading_enabled, ctx,
 			  "eth context mismatch");

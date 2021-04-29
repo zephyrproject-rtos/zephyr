@@ -317,6 +317,18 @@ struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool)
 				  sizeof(struct bt_rfcomm_hdr) + 1);
 }
 
+static int rfcomm_send(struct bt_rfcomm_session *session, struct net_buf *buf)
+{
+	int err;
+
+	err = bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	if (err < 0) {
+		net_buf_unref(buf);
+	}
+
+	return err;
+}
+
 static int rfcomm_send_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 {
 	struct bt_rfcomm_hdr *hdr;
@@ -334,7 +346,7 @@ static int rfcomm_send_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	return rfcomm_send(session, buf);
 }
 
 static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
@@ -355,7 +367,7 @@ static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	return rfcomm_send(session, buf);
 }
 
 static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
@@ -502,7 +514,7 @@ static int rfcomm_send_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	return rfcomm_send(session, buf);
 }
 
 static void rfcomm_check_fc(struct bt_rfcomm_dlc *dlc)
@@ -558,10 +570,9 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 			break;
 		}
 
-		if (bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf) < 0) {
+		if (rfcomm_send(dlc->session, buf) < 0) {
 			/* This fails only if channel is disconnected */
 			dlc->state = BT_RFCOMM_STATE_DISCONNECTED;
-			net_buf_unref(buf);
 			break;
 		}
 
@@ -608,7 +619,7 @@ static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_NON_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	return rfcomm_send(session, buf);
 }
 
 static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr,
@@ -629,7 +640,7 @@ static int rfcomm_send_msc(struct bt_rfcomm_dlc *dlc, uint8_t cr,
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+	return rfcomm_send(dlc->session, buf);
 }
 
 static int rfcomm_send_rls(struct bt_rfcomm_dlc *dlc, uint8_t cr,
@@ -650,7 +661,7 @@ static int rfcomm_send_rls(struct bt_rfcomm_dlc *dlc, uint8_t cr,
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+	return rfcomm_send(dlc->session, buf);
 }
 
 static int rfcomm_send_rpn(struct bt_rfcomm_session *session, uint8_t cr,
@@ -666,7 +677,7 @@ static int rfcomm_send_rpn(struct bt_rfcomm_session *session, uint8_t cr,
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	return rfcomm_send(session, buf);
 }
 
 static int rfcomm_send_test(struct bt_rfcomm_session *session, uint8_t cr,
@@ -682,7 +693,7 @@ static int rfcomm_send_test(struct bt_rfcomm_session *session, uint8_t cr,
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	return rfcomm_send(session, buf);
 }
 
 static int rfcomm_send_nsc(struct bt_rfcomm_session *session, uint8_t cmd_type)
@@ -698,7 +709,7 @@ static int rfcomm_send_nsc(struct bt_rfcomm_session *session, uint8_t cmd_type)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	return rfcomm_send(session, buf);
 }
 
 static int rfcomm_send_fcon(struct bt_rfcomm_session *session, uint8_t cr)
@@ -711,7 +722,7 @@ static int rfcomm_send_fcon(struct bt_rfcomm_session *session, uint8_t cr)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	return rfcomm_send(session, buf);
 }
 
 static int rfcomm_send_fcoff(struct bt_rfcomm_session *session, uint8_t cr)
@@ -724,7 +735,7 @@ static int rfcomm_send_fcoff(struct bt_rfcomm_session *session, uint8_t cr)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&session->br_chan.chan, buf);
+	return rfcomm_send(session, buf);
 }
 
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
@@ -926,7 +937,7 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+	return rfcomm_send(dlc->session, buf);
 }
 
 static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
@@ -949,7 +960,7 @@ static int rfcomm_send_credit(struct bt_rfcomm_dlc *dlc, uint8_t credits)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	return bt_l2cap_chan_send(&dlc->session->br_chan.chan, buf);
+	return rfcomm_send(dlc->session, buf);
 }
 
 static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
@@ -1186,7 +1197,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 			if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
 				session->cfc = BT_RFCOMM_CFC_SUPPORTED;
 			}
-			k_sem_init(&dlc->tx_credits, 0, UINT32_MAX);
+			k_sem_init(&dlc->tx_credits, 0, K_SEM_MAX_LIMIT);
 			rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 		} else {
 			session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;
@@ -1216,7 +1227,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 				if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
 					session->cfc = BT_RFCOMM_CFC_SUPPORTED;
 				}
-				k_sem_init(&dlc->tx_credits, 0, UINT32_MAX);
+				k_sem_init(&dlc->tx_credits, 0, K_SEM_MAX_LIMIT);
 				rfcomm_dlc_tx_give_credits(dlc, pn->credits);
 			} else {
 				session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;

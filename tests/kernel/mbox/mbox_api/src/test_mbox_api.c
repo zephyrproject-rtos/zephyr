@@ -442,11 +442,8 @@ static void thread_mbox_data_get_null(void *p1, void *p2, void *p3)
 	get_msg.size = 16;
 	get_msg.rx_source_thread = K_ANY;
 	get_msg.tx_block.data = str_data;
-	get_msg._syncing_thread = receiver_tid;
-
-	k_mbox_data_get(&get_msg, NULL);
-
 	get_msg._syncing_thread = NULL;
+
 	k_mbox_data_get(&get_msg, NULL);
 	k_sem_give(&end_sema);
 }
@@ -480,7 +477,7 @@ void test_mbox_data_get_null(void)
 static void thread_mbox_get_block_data(void *p1, void *p2, void *p3)
 {
 	k_sem_take(&sync_sema, K_FOREVER);
-	struct k_mbox_msg bdmsg;
+	struct k_mbox_msg bdmsg = {0};
 
 	bdmsg.size = MAIL_LEN;
 	bdmsg.rx_source_thread = sender_tid;
@@ -498,7 +495,7 @@ static void thread_mbox_get_block_data(void *p1, void *p2, void *p3)
 /* give a block data to API k_mbox_async_put */
 static void thread_mbox_put_block_data(void *p1, void *p2, void *p3)
 {
-	struct k_mbox_msg put_msg;
+	struct k_mbox_msg put_msg = {0};
 
 	put_msg.size = MAIL_LEN;
 	put_msg.tx_data = NULL;

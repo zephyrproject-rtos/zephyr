@@ -213,6 +213,7 @@ static int link_key_commit(void)
 SETTINGS_STATIC_HANDLER_DEFINE(bt_link_key, "bt/link_key", NULL, link_key_set,
 			       link_key_commit, NULL);
 
+#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 void bt_keys_link_key_update_usage(const bt_addr_t *addr)
 {
 	struct bt_keys_link_key *link_key = bt_keys_find_link_key(addr);
@@ -235,5 +236,6 @@ void bt_keys_link_key_update_usage(const bt_addr_t *addr)
 		bt_keys_link_key_store(link_key);
 	}
 }
+#endif  /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 
-#endif
+#endif /* defined(CONFIG_BT_SETTINGS) */

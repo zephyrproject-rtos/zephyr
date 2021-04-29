@@ -2,9 +2,15 @@ identifier: mps2_an521_nonsecure
 name: ARM V2M MPS2-AN521_nonsecure
 type: mcu
 arch: arm
+simulation: qemu
 toolchain:
   - gnuarmemb
   - zephyr
   - xtools
-supported:
-  - gpio
+testing:
+  default: true
+  only_tags:
+     - arm
+     - kernel
+     - tfm
+     - userspace

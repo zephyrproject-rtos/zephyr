@@ -80,6 +80,7 @@
 		sw1 = &button1;
 		sw2 = &button2;
 		sw3 = &button3;
+		bootloader-led0 = &led0;
 	};
 };
 
@@ -109,8 +110,8 @@
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	/* Arduino compatible PINs */
-	sda-gpios = <&gpio0 26 0>;
-	scl-gpios = <&gpio0 27 0>;
+	sda-pin = <26>;
+	scl-pin = <27>;
 };
 
 &pwm0 {

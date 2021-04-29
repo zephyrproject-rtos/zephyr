@@ -72,7 +72,7 @@ static void test_starve(void)
 		last_now = now;
 
 		/* Assume tick delta fits in printable 32 bits */
-		uint64_t ticks = z_tick_get();
+		uint64_t ticks = sys_clock_tick_get();
 		int64_t ticks_diff = ticks - last_ticks;
 
 		zassert_true(ticks_diff > 0,

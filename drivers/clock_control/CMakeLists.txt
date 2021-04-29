@@ -16,6 +16,7 @@ endif()
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_control_rv32m1_pcc.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_ESP32               clock_control_esp32.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_LITEX               clock_control_litex.c)
+zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_RCAR_CPG_MSSR       clock_control_rcar_cpg_mssr.c)
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 if(CONFIG_SOC_SERIES_STM32MP1X)

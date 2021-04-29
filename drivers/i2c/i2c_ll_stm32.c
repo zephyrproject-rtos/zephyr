@@ -186,7 +186,7 @@ static int i2c_stm32_init(const struct device *dev)
 	int ret;
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 #ifdef CONFIG_I2C_STM32_INTERRUPT
-	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
+	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	cfg->irq_config_func(dev);
 #endif
 
@@ -241,9 +241,9 @@ static int i2c_stm32_init(const struct device *dev)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
-#if defined(CONFIG_SOC_STM32F103X8) || defined(CONFIG_SOC_STM32F103XB)
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
 	/*
-	 * Force i2c reset for STM32 (F101X8/B, F102X8/B), F103X8/B.
+	 * Force i2c reset for STM32F1 series.
 	 * So that they can enter master mode properly.
 	 * Issue described in ES096 2.14.7
 	 */

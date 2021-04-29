@@ -77,7 +77,7 @@ struct z_app_region {
  * specific: "aw" indicates section is allocatable and writable,
  * and "@progbits" indicates the section has data.
  */
-#ifdef CONFIG_ARM
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 /* ARM has a quirk in that '@' denotes a comment, so we have to send
  * %progbits to the assembler instead.
  */

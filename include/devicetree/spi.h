@@ -148,7 +148,7 @@ extern "C" {
  * @return node identifier for spi_dev's chip select GPIO controller
  */
 #define DT_SPI_DEV_CS_GPIOS_CTLR(spi_dev) \
-	DT_PHANDLE_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
+	DT_GPIO_CTLR_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR(spi_dev))
 
 /**
  * @brief Get a SPI device's chip select GPIO controller's label property

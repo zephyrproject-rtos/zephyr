@@ -222,9 +222,9 @@ void platformRadioInit(void)
 		return;
 	}
 
-	k_work_q_start(&ot_work_q, ot_task_stack,
-		       K_KERNEL_STACK_SIZEOF(ot_task_stack),
-		       OT_WORKER_PRIORITY);
+	k_work_queue_start(&ot_work_q, ot_task_stack,
+			   K_KERNEL_STACK_SIZEOF(ot_task_stack),
+			   OT_WORKER_PRIORITY, NULL);
 	k_thread_name_set(&ot_work_q.thread, "ot_radio_workq");
 
 	if ((radio_api->get_capabilities(radio_dev) &
@@ -257,7 +257,16 @@ void transmit_message(struct k_work *tx_job)
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
 	radio_api->set_txpower(radio_dev, tx_power);
 
-	if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
+	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
+	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
+		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
+				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
+		net_pkt_set_txtime(tx_pkt, NSEC_PER_USEC * tx_at);
+		if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA,
+				  tx_pkt, tx_payload)) {
+			tx_result = OT_ERROR_INVALID_STATE;
+		}
+	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
 		if (radio_api->get_capabilities(radio_dev) &
 		    IEEE802154_HW_CSMA) {
 			if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA,
@@ -379,14 +388,13 @@ int notify_new_tx_frame(struct net_pkt *pkt)
 
 static int run_tx_task(otInstance *aInstance)
 {
-	static struct k_work tx_job;
+	static K_WORK_DEFINE(tx_job, transmit_message);
 
 	ARG_UNUSED(aInstance);
 
-	if (k_work_pending(&tx_job) == 0) {
+	if (!k_work_is_pending(&tx_job)) {
 		sState = OT_RADIO_STATE_TRANSMIT;
 
-		k_work_init(&tx_job, transmit_message);
 		k_work_submit_to_queue(&ot_work_q, &tx_job);
 		return 0;
 	} else {
@@ -878,4 +886,11 @@ otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 	tx_power = aPower;
 
 	return OT_ERROR_NONE;
+}
+
+uint64_t otPlatRadioGetNow(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return radio_api->get_time(radio_dev);
 }

@@ -42,20 +42,8 @@ static int frdm_k82f_pinmux_init(const struct device *dev)
 	/* Red, green, blue LEDs as PWM channels */
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt4));
-#else
-	/* Red, green, blue LEDs as GPIOs */
-	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
-
-	/* Buttons */
-	pinmux_pin_set(porta, 4, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portc, 6, PORT_PCR_MUX(kPORT_MuxAsGpio));
-
-	/* FXOS8700 INT1 */
-	pinmux_pin_set(portc, 13, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c3), okay) && CONFIG_I2C
 	/* I2C3 SDA, SCL */
@@ -71,9 +59,6 @@ static int frdm_k82f_pinmux_init(const struct device *dev)
 	pinmux_pin_set(porte, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(porte, 4, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(porte, 5, PORT_PCR_MUX(kPORT_MuxAlt2));
-	/* SPI1 NOR RESET, WP */
-	pinmux_pin_set(porte, 0, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(porte, 3, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart4), okay) && CONFIG_SERIAL

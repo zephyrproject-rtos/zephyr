@@ -10,6 +10,7 @@
 #include <dt-bindings/espi/npcx_espi.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pinctrl/npcx-pinctrl.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/sensor/npcx_tach.h>
 
@@ -23,6 +24,8 @@
 #include "npcx/npcx7-espi-vws-map.dtsi"
 /* NPCX7 series low-voltage io controls mapping table */
 #include "npcx/npcx7-lvol-ctrl-map.dtsi"
+/* NPCX7 series power-switch-logic (PSL) io controls mapping table */
+#include "npcx/npcx7-psl-ctrl-map.dtsi"
 
 / {
 	cpus {
@@ -36,7 +39,7 @@
 		};
 	};
 
-	def_io_conf: def_io_conf_list {
+	def-io-conf-list {
 		compatible = "nuvoton,npcx-pinctrl-def";
 		/* Change default functional pads to GPIOs
 		 * no_spip - PIN95.97.A1.A3
@@ -85,14 +88,28 @@
 			   &alta_no_kso17_sl>;
 	};
 
-	def_lvol_io_list {
+	def-lvol-io-list {
 		compatible = "nuvoton,npcx-lvolctrl-def";
-		/* Put low-voltage io pads into "lvol_io_pads" property if the
+		/* Put low-voltage io pads into "lvol-io-pads" property if the
 		 * detection level of them is 1.8V, For example, if the bus
 		 * voltage of i2c1_0 port is 1.8V, this property should be:
-		 * lvol_io_pads = <&lvol_io90 &lvol_io87>;
+		 * lvol-io-pads = <&lvol_io90 &lvol_io87>;
 		 */
-		lvol_io_pads = <>;
+		lvol-io-pads = <>;
+	};
+
+	vsby-psl-in-list {
+		compatible = "nuvoton,npcx-pslctrl-def";
+		/* Put Power Switch Logic (PSL) input pads which detect the
+		 * wake-up events and turn on core power supply (VCC1) from
+		 * standby power state (ultra-low-power mode) into "psl-in-pads"
+		 * property. For example, if PSL input 1 that is plan to detect
+		 * a 'falling edge' event, this property should be:
+		 *   psl-in-pads = <&psl_in1>;
+		 * And the flag property in psl_in1 should change to
+		 *   flag = <NPCX_PSL_FALLING_EDGE>;
+		 */
+		psl-in-pads = <>;
 	};
 
 	soc {
@@ -105,7 +122,7 @@
 			reg-names = "evt_itim", "sys_itim";
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 3
 				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 5>;
-			interrupts = <46 0>; /* Event timer interrupt */
+			interrupts = <46 2>; /* Event timer interrupt */
 			label = "ITIM";
 		};
 
@@ -121,8 +138,8 @@
 			label = "PMC_CDCG";
 		};
 
-		scfg: pin-controller@400c3000 {
-			compatible = "nuvoton,npcx-pinctrl";
+		scfg: scfg@400c3000 {
+			compatible = "nuvoton,npcx-scfg";
 			/* First reg region is System Configuration Device */
 			/* Second reg region is System Glue Device */
 			reg = <0x400c3000 0x70
@@ -136,10 +153,10 @@
 		uart1: serial@400c4000 {
 			compatible = "nuvoton,npcx-uart";
 			reg = <0x400C4000 0x2000>;
-			interrupts = <33 0>;
+			interrupts = <33 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
 			pinctrl-0 = <&alta_uart1_sl1>; /* PIN10.11 */
-			uart_rx = <&wui_cr_sin1>;
+			uart-rx = <&wui_cr_sin1>;
 			status = "disabled";
 			label = "UART_1";
 		};
@@ -147,10 +164,10 @@
 		uart2: serial@400c6000 {
 			compatible = "nuvoton,npcx-uart";
 			reg = <0x400C6000 0x2000>;
-			interrupts = <32 0>;
+			interrupts = <32 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL7 6>;
 			pinctrl-0 = <&alta_uart2_sl>; /* PIN75.86 */
-			uart_rx = <&wui_cr_sin2>;
+			uart-rx = <&wui_cr_sin2>;
 			status = "disabled";
 			label = "UART_2";
 		};
@@ -184,7 +201,7 @@
 			reg = <0x40081000 0x2000>;
 			gpio-controller;
 			index = <0x0>;
-			wui_maps = <&wui_io00 &wui_io01 &wui_io02 &wui_io03
+			wui-maps = <&wui_io00 &wui_io01 &wui_io02 &wui_io03
 				    &wui_io04 &wui_io05 &wui_io06 &wui_io07>;
 			#gpio-cells=<2>;
 			label="GPIO_0";
@@ -195,7 +212,7 @@
 			reg = <0x40083000 0x2000>;
 			gpio-controller;
 			index = <0x1>;
-			wui_maps = <&wui_io10 &wui_io11 &wui_none &wui_none
+			wui-maps = <&wui_io10 &wui_io11 &wui_none &wui_none
 				    &wui_io14 &wui_io15 &wui_io16 &wui_io17>;
 			#gpio-cells=<2>;
 			label="GPIO_1";
@@ -206,7 +223,7 @@
 			reg = <0x40085000 0x2000>;
 			gpio-controller;
 			index = <0x2>;
-			wui_maps = <&wui_io20 &wui_io21 &wui_io22 &wui_io23
+			wui-maps = <&wui_io20 &wui_io21 &wui_io22 &wui_io23
 				    &wui_io24 &wui_io25 &wui_io26 &wui_io27>;
 			#gpio-cells=<2>;
 			label="GPIO_2";
@@ -217,7 +234,7 @@
 			reg = <0x40087000 0x2000>;
 			gpio-controller;
 			index = <0x3>;
-			wui_maps = <&wui_io30 &wui_io31 &wui_none &wui_io33
+			wui-maps = <&wui_io30 &wui_io31 &wui_none &wui_io33
 				    &wui_io34 &wui_none &wui_io36 &wui_io37>;
 			#gpio-cells=<2>;
 			label="GPIO_3";
@@ -228,7 +245,7 @@
 			reg = <0x40089000 0x2000>;
 			gpio-controller;
 			index = <0x4>;
-			wui_maps = <&wui_io40 &wui_io41 &wui_io42 &wui_io43
+			wui-maps = <&wui_io40 &wui_io41 &wui_io42 &wui_io43
 				    &wui_io44 &wui_io45 &wui_io46 &wui_io47>;
 			#gpio-cells=<2>;
 			label="GPIO_4";
@@ -239,7 +256,7 @@
 			reg = <0x4008b000 0x2000>;
 			gpio-controller;
 			index = <0x5>;
-			wui_maps = <&wui_io50 &wui_io51 &wui_io52 &wui_io53
+			wui-maps = <&wui_io50 &wui_io51 &wui_io52 &wui_io53
 				    &wui_io54 &wui_io55 &wui_io56 &wui_io57>;
 			#gpio-cells=<2>;
 			label="GPIO_5";
@@ -250,7 +267,7 @@
 			reg = <0x4008d000 0x2000>;
 			gpio-controller;
 			index = <0x6>;
-			wui_maps = <&wui_io60 &wui_io61 &wui_io62 &wui_io63
+			wui-maps = <&wui_io60 &wui_io61 &wui_io62 &wui_io63
 				    &wui_io64 &wui_none &wui_none &wui_io67>;
 			#gpio-cells=<2>;
 			label="GPIO_6";
@@ -261,7 +278,7 @@
 			reg = <0x4008f000 0x2000>;
 			gpio-controller;
 			index = <0x7>;
-			wui_maps = <&wui_io70 &wui_none &wui_io72 &wui_io73
+			wui-maps = <&wui_io70 &wui_none &wui_io72 &wui_io73
 				    &wui_io74 &wui_io75 &wui_io76 &wui_none>;
 			#gpio-cells=<2>;
 			label="GPIO_7";
@@ -272,7 +289,7 @@
 			reg = <0x40091000 0x2000>;
 			gpio-controller;
 			index = <0x8>;
-			wui_maps = <&wui_io80 &wui_io81 &wui_io82 &wui_io83
+			wui-maps = <&wui_io80 &wui_io81 &wui_io82 &wui_io83
 				    &wui_none &wui_none &wui_io86 &wui_io87>;
 			#gpio-cells=<2>;
 			label="GPIO_8";
@@ -283,7 +300,7 @@
 			reg = <0x40093000 0x2000>;
 			gpio-controller;
 			index = <0x9>;
-			wui_maps = <&wui_io90 &wui_io91 &wui_io92 &wui_io93
+			wui-maps = <&wui_io90 &wui_io91 &wui_io92 &wui_io93
 				    &wui_io94 &wui_io95 &wui_io96 &wui_io97>;
 			#gpio-cells=<2>;
 			label="GPIO_9";
@@ -294,7 +311,7 @@
 			reg = <0x40095000 0x2000>;
 			gpio-controller;
 			index = <0xA>;
-			wui_maps = <&wui_ioa0 &wui_ioa1 &wui_ioa2 &wui_ioa3
+			wui-maps = <&wui_ioa0 &wui_ioa1 &wui_ioa2 &wui_ioa3
 				    &wui_ioa4 &wui_ioa5 &wui_ioa6 &wui_ioa7>;
 			#gpio-cells=<2>;
 			label="GPIO_A";
@@ -305,7 +322,7 @@
 			reg = <0x40097000 0x2000>;
 			gpio-controller;
 			index = <0xB>;
-			wui_maps = <&wui_iob0 &wui_iob1 &wui_iob2 &wui_iob3
+			wui-maps = <&wui_iob0 &wui_iob1 &wui_iob2 &wui_iob3
 				    &wui_iob4 &wui_iob5 &wui_none &wui_iob7>;
 			#gpio-cells=<2>;
 			label="GPIO_B";
@@ -316,7 +333,7 @@
 			reg = <0x40099000 0x2000>;
 			gpio-controller;
 			index = <0xC>;
-			wui_maps = <&wui_ioc0 &wui_ioc1 &wui_ioc2 &wui_ioc3
+			wui-maps = <&wui_ioc0 &wui_ioc1 &wui_ioc2 &wui_ioc3
 				    &wui_ioc4 &wui_ioc5 &wui_ioc6 &wui_ioc7>;
 			#gpio-cells=<2>;
 			label="GPIO_C";
@@ -327,7 +344,7 @@
 			reg = <0x4009b000 0x2000>;
 			gpio-controller;
 			index = <0xD>;
-			wui_maps = <&wui_iod0 &wui_iod1 &wui_iod2 &wui_iod3
+			wui-maps = <&wui_iod0 &wui_iod1 &wui_iod2 &wui_iod3
 				    &wui_iod4 &wui_iod5 &wui_none &wui_iod7>;
 			#gpio-cells=<2>;
 			label="GPIO_D";
@@ -338,7 +355,7 @@
 			reg = <0x4009d000 0x2000>;
 			gpio-controller;
 			index = <0xE>;
-			wui_maps = <&wui_ioe0 &wui_ioe1 &wui_ioe2 &wui_ioe3
+			wui-maps = <&wui_ioe0 &wui_ioe1 &wui_ioe2 &wui_ioe3
 				    &wui_ioe4 &wui_ioe5 &wui_none &wui_none>;
 			#gpio-cells=<2>;
 			label="GPIO_E";
@@ -349,7 +366,7 @@
 			reg = <0x4009f000 0x2000>;
 			gpio-controller;
 			index = <0xF>;
-			wui_maps = <&wui_iof0 &wui_iof1 &wui_iof2 &wui_iof3
+			wui-maps = <&wui_iof0 &wui_iof1 &wui_iof2 &wui_iof3
 				    &wui_iof4 &wui_iof5 &wui_none &wui_none>;
 			#gpio-cells=<2>;
 			label="GPIO_F";
@@ -439,7 +456,7 @@
 			compatible = "nuvoton,npcx-adc";
 			#io-channel-cells = <1>;
 			reg = <0x400d1000 0x2000>;
-			interrupts = <10 0>;
+			interrupts = <10 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL4 4>;
 			pinctrl-0 = <&alt6_adc0_sl   /* ADC0 - PIN45 */
 				     &alt6_adc1_sl   /* ADC1 - PIN44 */
@@ -459,7 +476,7 @@
 		twd0: watchdog@400d8000 {
 			compatible = "nuvoton,npcx-watchdog";
 			reg = <0x400d8000 0x2000>;
-			t0_out = <&wui_t0out>;
+			t0-out = <&wui_t0out>;
 			label = "TWD_0";
 		};
 
@@ -473,7 +490,7 @@
 			/* PIN46.47.51.52.53.54.55.57 */
 			pinctrl-0 = <&alt1_no_lpc_espi>;
 			/* WUI maps for eSPI signals */
-			espi_rst_wui = <&wui_espi_rst>;
+			espi-rst-wui = <&wui_espi_rst>;
 			label = "ESPI_0";
 
 			#address-cells = <1>;
@@ -504,7 +521,7 @@
 					  "pmch_obe", "p80_fifo";
 
 			/* WUI map for accessing host sub-modules */
-			host_acc_wui = <&wui_host_acc>;
+			host-acc-wui = <&wui_host_acc>;
 
 			/* clocks for host sub-modules */
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 3>,
@@ -530,7 +547,7 @@
 		i2c_ctrl0: i2c@40009000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40009000 0x1000>;
-			interrupts = <13 0>;
+			interrupts = <13 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 0>;
 			label = "I2CCTRL_0";
 		};
@@ -538,7 +555,7 @@
 		i2c_ctrl1: i2c@4000b000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x4000b000 0x1000>;
-			interrupts = <14 0>;
+			interrupts = <14 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 1>;
 			label = "I2CCTRL_1";
 		};
@@ -546,7 +563,7 @@
 		i2c_ctrl2: i2c@400c0000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x400c0000 0x1000>;
-			interrupts = <36 0>;
+			interrupts = <36 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 2>;
 			label = "I2CCTRL_2";
 		};
@@ -554,7 +571,7 @@
 		i2c_ctrl3: i2c@400c2000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x400c2000 0x1000>;
-			interrupts = <37 0>;
+			interrupts = <37 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL3 3>;
 			label = "I2CCTRL_3";
 		};
@@ -562,7 +579,7 @@
 		i2c_ctrl4: i2c@40008000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40008000 0x1000>;
-			interrupts = <19 0>;
+			interrupts = <19 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL3 4>;
 			label = "I2CCTRL_4";
 		};
@@ -570,7 +587,7 @@
 		i2c_ctrl5: i2c@40017000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40017000 0x1000>;
-			interrupts = <20 0>;
+			interrupts = <20 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 0>;
 			label = "I2CCTRL_5";
 		};
@@ -578,7 +595,7 @@
 		i2c_ctrl6: i2c@40018000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40018000 0x1000>;
-			interrupts = <16 0>;
+			interrupts = <16 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 1>;
 			label = "I2CCTRL_6";
 		};
@@ -586,7 +603,7 @@
 		i2c_ctrl7: i2c@40019000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
 			reg = <0x40019000 0x1000>;
-			interrupts = <8 0>;
+			interrupts = <8 3>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL7 2>;
 			label = "I2CCTRL_7";
 		};
@@ -716,6 +733,13 @@
 			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL1 6>;
 			label = "TACH_2";
 			status = "disabled";
+		};
+
+		psl_out: psl-out {
+			compatible = "nuvoton,npcx-psl-out";
+			controller = <&gpio8>;
+			pin = <5>;
+			label = "PSL_OUT";
 		};
 	};
 };

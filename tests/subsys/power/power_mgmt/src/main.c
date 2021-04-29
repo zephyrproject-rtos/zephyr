@@ -45,7 +45,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	zassert_false(device_power_state == DEVICE_PM_ACTIVE_STATE, NULL);
 
 	/* this function is called when system entering low power state, so
-	 * parameter state should not be POWER_STATE_ACTIVE
+	 * parameter state should not be PM_STATE_ACTIVE
 	 */
 	zassert_false(info.state == PM_STATE_ACTIVE,
 		      "Entering low power state with a wrong parameter");
@@ -57,11 +57,6 @@ __weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 	 * unlock irq before leave pm_system_suspend
 	 */
 	irq_unlock(0);
-}
-
-__weak bool pm_policy_low_power_devices(enum pm_state state)
-{
-	return pm_is_sleep_state(state);
 }
 
 /* Our PM policy handler */
@@ -98,9 +93,9 @@ static void notify_pm_state_entry(enum pm_state state)
 	zassert_true(z_is_idle_thread_object(_current), NULL);
 	zassert_equal(state, PM_STATE_RUNTIME_IDLE, NULL);
 
-	/* at this point, devices are active */
+	/* at this point, devices should not be active */
 	device_get_power_state(dev, &device_power_state);
-	zassert_equal(device_power_state, DEVICE_PM_ACTIVE_STATE, NULL);
+	zassert_false(device_power_state == DEVICE_PM_ACTIVE_STATE, NULL);
 	set_pm = true;
 	notify_app_exit = true;
 }
@@ -131,7 +126,7 @@ static void notify_pm_state_exit(enum pm_state state)
  *  - The idle routine provide a timeout parameter to the suspend routine
  *    indicating the amount of time guaranteed to expire before the next
  *    timeout, pm_policy_next_state() handle this parameter.
- *  - In this case, pm_policy_next_sate() return POWER_STATE_ACTIVE,
+ *  - In this case, pm_policy_next_sate() return PM_STATE_ACTIVE,
  *    so there is no low power operation happen.
  *
  * @see pm_policy_next_state()

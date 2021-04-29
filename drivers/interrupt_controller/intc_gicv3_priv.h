@@ -16,8 +16,6 @@
 
 #define GIC_RDIST_BASE	DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 1)
 
-#define GIC_GET_RDIST(cpuid)		gic_rdists[cpuid]
-
 /* SGI base is at 64K offset from Redistributor */
 #define GICR_SGI_BASE_OFF		0x10000
 

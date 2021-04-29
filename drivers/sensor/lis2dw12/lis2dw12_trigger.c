@@ -245,7 +245,7 @@ int lis2dw12_init_interrupt(const struct device *dev)
 	lis2dw12->dev = dev;
 
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
-	k_sem_init(&lis2dw12->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&lis2dw12->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lis2dw12->thread, lis2dw12->thread_stack,
 		       CONFIG_LIS2DW12_THREAD_STACK_SIZE,

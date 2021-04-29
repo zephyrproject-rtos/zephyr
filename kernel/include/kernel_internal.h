@@ -199,13 +199,68 @@ void z_thread_mark_switched_out(void);
  */
 void z_mem_manage_init(void);
 
-/* Workaround for build-time page table mapping of the kernel */
-void z_kernel_map_fixup(void);
-
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\
 			!__i.key;					\
 			k_spin_unlock(lck, __key), __i.key = 1)
+
+#ifdef CONFIG_PM
+
+/* When the kernel is about to go idle, it calls this function to notify the
+ * power management subsystem, that the kernel is ready to enter the idle state.
+ *
+ * At this point, the kernel has disabled interrupts and computed the maximum
+ * time the system can remain idle. The function passes the time that the system
+ * can remain idle. The SOC interface performs power operations that can be done
+ * in the available time. The power management operations must halt execution of
+ * the CPU.
+ *
+ * This function assumes that a wake up event has already been set up by the
+ * application.
+ *
+ * This function is entered with interrupts disabled. It should re-enable
+ * interrupts if it had entered a power state.
+ */
+enum pm_state pm_system_suspend(int32_t ticks);
+
+/**
+ * Notify exit from kernel idling after PM operations
+ *
+ * This function would notify exit from kernel idling if a corresponding
+ * pm_system_suspend() notification was handled and did not return
+ * PM_STATE_ACTIVE.
+ *
+ * This function would be called from the ISR context of the event
+ * that caused the exit from kernel idling. This will be called immediately
+ * after interrupts are enabled. This is called to give a chance to do
+ * any operations before the kernel would switch tasks or processes nested
+ * interrupts. This is required for cpu low power states that would require
+ * interrupts to be enabled while entering low power states. e.g. C1 in x86. In
+ * those cases, the ISR would be invoked immediately after the event wakes up
+ * the CPU, before code following the CPU wait, gets a chance to execute. This
+ * can be ignored if no operation needs to be done at the wake event
+ * notification. Alternatively pm_idle_exit_notification_disable() can
+ * be called in pm_system_suspend to disable this notification.
+ */
+void pm_system_resume(void);
+
+#endif
+
+#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
+/**
+ * Initialize the timing histograms for demand paging.
+ */
+void z_paging_histogram_init(void);
+
+/**
+ * Increment the counter in the timing histogram.
+ *
+ * @param hist The timing histogram to be updated.
+ * @param cycles Time spent in measured operation.
+ */
+void z_paging_histogram_inc(struct k_mem_paging_histogram_t *hist,
+			    uint32_t cycles);
+#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
 #ifdef __cplusplus
 }

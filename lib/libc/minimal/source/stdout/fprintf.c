@@ -12,24 +12,24 @@
 
 #define DESC(d) ((void *)d)
 
-int fprintf(FILE *_MLIBC_RESTRICT F, const char *_MLIBC_RESTRICT format, ...)
+int fprintf(FILE *_MLIBC_RESTRICT stream, const char *_MLIBC_RESTRICT format, ...)
 {
 	va_list vargs;
 	int     r;
 
 	va_start(vargs, format);
-	r = cbvprintf(fputc, DESC(F), format, vargs);
+	r = cbvprintf(fputc, DESC(stream), format, vargs);
 	va_end(vargs);
 
 	return r;
 }
 
-int vfprintf(FILE *_MLIBC_RESTRICT F, const char *_MLIBC_RESTRICT format,
+int vfprintf(FILE *_MLIBC_RESTRICT stream, const char *_MLIBC_RESTRICT format,
 	     va_list vargs)
 {
 	int r;
 
-	r = cbvprintf(fputc, DESC(F), format, vargs);
+	r = cbvprintf(fputc, DESC(stream), format, vargs);
 
 	return r;
 }

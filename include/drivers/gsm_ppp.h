@@ -11,8 +11,8 @@
 
 /** @cond INTERNAL_HIDDEN */
 struct device;
-void gsm_ppp_start(const struct device *device);
-void gsm_ppp_stop(const struct device *device);
+void gsm_ppp_start(const struct device *dev);
+void gsm_ppp_stop(const struct device *dev);
 /** @endcond */
 
 #endif /* GSM_PPP_H_ */

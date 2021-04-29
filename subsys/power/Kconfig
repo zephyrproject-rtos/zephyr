@@ -11,8 +11,7 @@ config SYS_POWER_MANAGEMENT
 	  This option is deprecated. Please use CONFIG_PM instead.
 
 menuconfig PM
-	bool "System Power management"
-	select TICKLESS_IDLE
+	bool "System Power Management"
 	depends on SYS_CLOCK_EXISTS && !HAS_NO_SYS_PM
 	help
 	  This option enables the board to implement extra power management
@@ -21,14 +20,6 @@ menuconfig PM
 	  timer is due to expire.
 
 if PM
-
-config PM_DIRECT_FORCE_MODE
-	bool "System power management direct force trigger mode"
-	help
-	  Enable system power management direct force trigger mode. In
-	  this mode application thread can directly put system in sleep
-	  or deep sleep mode instead of waiting for idle thread to do
-	  it, so that it can reduce latency to enter low power mode.
 
 config PM_DEBUG
 	bool "System Power Management debug hooks"

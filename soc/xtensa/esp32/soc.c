@@ -21,6 +21,7 @@
 #include "hal/soc_ll.h"
 #include "soc/cpu.h"
 #include "soc/gpio_periph.h"
+#include "esp_spi_flash.h"
 
 extern void z_cstart(void);
 
@@ -95,6 +96,9 @@ void __attribute__((section(".iram1"))) __start(void)
 	*wdt_rtc_protect = 0;
 #endif
 
+#if CONFIG_SOC_FLASH_ESP32
+	spi_flash_guard_set(&g_flash_guard_default_ops);
+#endif
 	/* Start Zephyr */
 	z_cstart();
 

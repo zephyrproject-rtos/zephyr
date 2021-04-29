@@ -50,7 +50,7 @@ int bt_mesh_prov_reset_state(void (*func)(const uint8_t key[64]))
 {
 	int err;
 	static struct bt_pub_key_cb pub_key_cb;
-	const size_t offset = offsetof(struct bt_mesh_prov_link, dhkey);
+	const size_t offset = offsetof(struct bt_mesh_prov_link, auth);
 
 	pub_key_cb.func = func ? func : pub_key_ready;
 
@@ -171,7 +171,19 @@ int bt_mesh_prov_auth(uint8_t method, uint8_t action, uint8_t size)
 			uint32_t num;
 
 			bt_rand(&num, sizeof(num));
-			num %= div[size - 1];
+
+			if (output == BT_MESH_BLINK ||
+			    output == BT_MESH_BEEP ||
+			    output == BT_MESH_VIBRATE) {
+				/* According to the Bluetooth Mesh Profile
+				 * Specification Section 5.4.2.4, blink, beep
+				 * and vibrate should be a random integer
+				 * between 0 and 10^size, *exclusive*:
+				 */
+				num = (num % (div[size - 1] - 1)) + 1;
+			} else {
+				num %= div[size - 1];
+			}
 
 			sys_put_be32(num, &bt_mesh_prov_link.auth[12]);
 			(void)memset(bt_mesh_prov_link.auth, 0, 12);
@@ -268,7 +280,7 @@ static void prov_recv(const struct prov_bearer *bearer, void *cb_data,
 
 	if (type >= ARRAY_SIZE(bt_mesh_prov_link.role->op)) {
 		BT_ERR("Unknown provisioning PDU type 0x%02x", type);
-		bt_mesh_prov_link.role->error(PROV_ERR_NVAL_FMT);
+		bt_mesh_prov_link.role->error(PROV_ERR_NVAL_PDU);
 		return;
 	}
 

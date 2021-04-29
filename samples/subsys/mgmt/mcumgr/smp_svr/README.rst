@@ -333,3 +333,16 @@ on the next reset unless the image is confirmed. To confirm the new image:
 Note that if you try to send the very same image that is already flashed in
 slot-0 then the procedure will not complete successfully since the hash values
 for both slots will be identical.
+
+Download file from File System
+******************************
+
+SMP server supports downloading files from File System on device via
+:file:`mcumgr`. This is useful with FS log backend, when files are stored in
+non-volatile memory. Build and flash both MCUboot and smp_svr applications and
+then use :file:`mcumgr` with :file:`download` command, e.g.:
+
+.. code-block:: console
+
+   mcumgr --conntype serial --connstring='dev=/dev/ttyACM0,baud=115200' \
+   fs download /lfs/log.0000 ~/log.txt

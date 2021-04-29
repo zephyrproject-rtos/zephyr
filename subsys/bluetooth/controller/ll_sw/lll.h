@@ -26,11 +26,6 @@
 #define SCAN_INT_UNIT_US 625U
 #define CONN_INT_UNIT_US 1250U
 
-#define HDR_ULL(p)     ((void *)((uint8_t *)(p) + sizeof(struct evt_hdr)))
-#define HDR_ULL2LLL(p) ((struct lll_hdr *)((uint8_t *)(p) + \
-					   sizeof(struct ull_hdr)))
-#define HDR_LLL2EVT(p) ((struct evt_hdr *)((struct lll_hdr *)(p))->parent)
-
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 #define XON_BITMASK BIT(31) /* XTAL has been retained from previous prepare */
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -114,6 +109,12 @@ enum {
 			       1),
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	TICKER_ID_CONN_ISO_BASE,
+	TICKER_ID_CONN_ISO_LAST = ((TICKER_ID_CONN_ISO_BASE) +
+				   (CONFIG_BT_CTLR_CONN_ISO_GROUPS) - 1),
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
 #if defined(CONFIG_BT_CTLR_USER_EXT) && \
 	(CONFIG_BT_CTLR_USER_TICKER_ID_RANGE > 0)
 	TICKER_ID_USER_BASE,
@@ -131,42 +132,57 @@ enum {
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
 
-enum ull_status {
-	ULL_STATUS_SUCCESS,
-	ULL_STATUS_FAILURE,
-	ULL_STATUS_BUSY,
-};
-
-struct evt_hdr {
-	uint32_t ticks_xtal_to_start;
-	uint32_t ticks_active_to_start;
-	uint32_t ticks_preempt_to_start;
-	uint32_t ticks_slot;
-};
-
 struct ull_hdr {
 	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
 				* events
 				*/
+
+	/* Event parameters */
+	/* TODO: The intention is to use the greater of the
+	 *       ticks_prepare_to_start or ticks_active_to_start as the prepare
+	 *       offset. At the prepare tick generate a software interrupt
+	 *       servicable by application as the per role configurable advance
+	 *       radio event notification, usable for data acquisitions.
+	 *       ticks_preempt_to_start is the per role dynamic preempt offset,
+	 *       which shall be based on role's preparation CPU usage
+	 *       requirements.
+	 */
+	struct {
+		uint32_t ticks_active_to_start;
+		uint32_t ticks_prepare_to_start;
+		uint32_t ticks_preempt_to_start;
+		uint32_t ticks_slot;
+	};
+
+	/* ULL context disabled callback and its parameter */
 	void (*disabled_cb)(void *param);
 	void *disabled_param;
 };
 
 struct lll_hdr {
 	void *parent;
-	uint8_t is_stop:1;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint8_t score;
+	uint8_t latency;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 };
+
+#define HDR_LLL2ULL(p) (((struct lll_hdr *)(p))->parent)
 
 struct lll_prepare_param {
 	uint32_t ticks_at_expire;
 	uint32_t remainder;
 	uint16_t lazy;
-	void  *param;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	int8_t  prio;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+	uint8_t force;
+	void *param;
 };
 
 typedef int (*lll_prepare_cb_t)(struct lll_prepare_param *prepare_param);
-typedef int (*lll_is_abort_cb_t)(void *next, int prio, void *curr,
-				 lll_prepare_cb_t *resume_cb, int *resume_prio);
+typedef int (*lll_is_abort_cb_t)(void *next, void *curr,
+				 lll_prepare_cb_t *resume_cb);
 typedef void (*lll_abort_cb_t)(struct lll_prepare_param *prepare_param,
 			       void *param);
 
@@ -175,9 +191,8 @@ struct lll_event {
 	lll_prepare_cb_t         prepare_cb;
 	lll_is_abort_cb_t        is_abort_cb;
 	lll_abort_cb_t           abort_cb;
-	int                      prio;
-	uint8_t                     is_resume:1;
-	uint8_t                     is_aborted:1;
+	uint8_t                  is_resume:1;
+	uint8_t                  is_aborted:1;
 };
 
 #define DEFINE_NODE_RX_USER_TYPE(i, _) NODE_RX_TYPE_##i,
@@ -280,9 +295,7 @@ struct node_rx_hdr {
 
 	union {
 		struct node_rx_ftr rx_ftr;
-#if defined(CONFIG_BT_CTLR_SYNC_ISO) || \
-	defined(BT_CTLR_PERIPHERAL_ISO) || \
-	defined(BT_CTLR_CENTRAL_ISO)
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 		struct node_rx_iso_meta rx_iso_meta;
 #endif
 #if defined(CONFIG_BT_CTLR_RX_PDU_META)
@@ -325,6 +338,10 @@ enum {
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+	EVENT_DONE_EXTRA_TYPE_CIS,
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 /* Following proprietary defines must be at end of enum range */
 #if defined(CONFIG_BT_CTLR_USER_EXT)
@@ -370,23 +387,20 @@ static inline void lll_hdr_init(void *lll, void *parent)
 	struct lll_hdr *hdr = lll;
 
 	hdr->parent = parent;
-	hdr->is_stop = 0U;
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	hdr->score = 0U;
+	hdr->latency = 0U;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 }
 
-static inline int lll_stop(void *lll)
-{
-	struct lll_hdr *hdr = lll;
-	int ret = !!hdr->is_stop;
-
-	hdr->is_stop = 1U;
-
-	return ret;
-}
+void lll_done_score(void *param, uint8_t too_late, uint8_t aborted);
 
 int lll_init(void);
 int lll_reset(void);
 void lll_resume(void *param);
 void lll_disable(void *param);
+void lll_done_sync(void);
 uint32_t lll_radio_is_idle(void);
 uint32_t lll_radio_tx_ready_delay_get(uint8_t phy, uint8_t flags);
 uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags);
@@ -402,10 +416,11 @@ int lll_rand_isr_get(void *buf, size_t len);
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			       lll_abort_cb_t abort_cb,
 			       struct lll_prepare_param *prepare_param,
-			       lll_prepare_cb_t prepare_cb, int prio,
+			       lll_prepare_cb_t prepare_cb,
 			       uint8_t is_resume);
 void *ull_prepare_dequeue_get(void);
 void *ull_prepare_dequeue_iter(uint8_t *idx);
+void ull_prepare_dequeue(uint8_t caller_id);
 void *ull_pdu_rx_alloc_peek(uint8_t count);
 void *ull_pdu_rx_alloc_peek_iter(uint8_t *idx);
 void *ull_pdu_rx_alloc(void);
@@ -418,3 +433,13 @@ void ull_rx_sched(void);
 void ull_rx_sched_done(void);
 void *ull_event_done_extra_get(void);
 void *ull_event_done(void *param);
+
+int lll_prepare(lll_is_abort_cb_t is_abort_cb,
+		lll_abort_cb_t abort_cb,
+		lll_prepare_cb_t prepare_cb, int8_t event_prio,
+		struct lll_prepare_param *prepare_param);
+int lll_resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
+int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
+			lll_prepare_cb_t prepare_cb,
+			struct lll_prepare_param *prepare_param,
+			uint8_t is_resume, uint8_t is_dequeue);

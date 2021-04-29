@@ -12,11 +12,15 @@
 #include <dt-bindings/pwm/pwm.h>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
@@ -198,6 +202,18 @@
 			label = "LPUART_1";
 		};
 
+		lptim1: timers@40007c00 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40007c00 0x400>;
+			interrupts = <67 0>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+			label = "LPTIM_1";
+		};
+
 		i2c1: i2c@40005400 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -220,6 +236,15 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
 			status = "disabled";
 			label = "SPI_1";
+		};
+
+		rng: rng@420c0800 {
+			compatible = "st,stm32-rng";
+			reg = <0x420c0800 0x400>;
+			interrupts = <94 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			status = "disabled";
+			label = "RNG";
 		};
 	};
 };

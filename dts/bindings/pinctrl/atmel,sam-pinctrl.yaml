@@ -1,11 +1,22 @@
 # Copyright (c) 2020, Linaro Limited
+# Copyright (c) 2021, Gerson Fernando Budke
 # SPDX-License-Identifier: Apache-2.0
 
-description: Atmel SAM Pinctrl container node
+description: |
+  Atmel SAM Pinctrl container node
+
+  The Atmel SAM pins implements following pin configuration option:
+
+    * bias-pull-up
+    * bias-pull-down
+    * drive-open-drain
+
+  These options define devicetree flags that are converted to SoC flags at
+  ATMEL_SAM_PIN_FLAGS().
 
 compatible: "atmel,sam-pinctrl"
 
-include: [base.yaml]
+include: [base.yaml, pincfg-node.yaml]
 
 properties:
     "#address-cells":
@@ -16,22 +27,7 @@ properties:
       const: 1
 
 child-binding:
-    description: atmel pins
+    description: Atmel pins
     properties:
       "atmel,pins":
         type: phandle-array
-
-      bias-pull-up:
-        required: false
-        type: boolean
-        description: pull up the pin
-
-      bias-pull-down:
-        required: false
-        type: boolean
-        description: pull down the pin
-
-      drive-open-drain:
-        required: false
-        type: boolean
-        description: drive with open drain

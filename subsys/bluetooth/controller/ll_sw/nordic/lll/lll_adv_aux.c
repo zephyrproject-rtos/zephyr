@@ -25,6 +25,7 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_chan.h"
+#include "lll_conn.h"
 #include "lll_adv_types.h"
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
@@ -56,7 +57,9 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
 			     uint8_t irkmatch_ok, uint8_t irkmatch_id,
 			     uint8_t rssi_ready);
+#if defined(CONFIG_BT_PERIPHERAL)
 static void isr_tx_connect_rsp(void *param);
+#endif /* CONFIG_BT_PERIPHERAL */
 
 static struct pdu_adv *init_connect_rsp_pdu(void)
 {
@@ -103,6 +106,7 @@ static struct pdu_adv *init_connect_rsp_pdu(void)
 	return pdu;
 }
 
+#if defined(CONFIG_BT_PERIPHERAL)
 static struct pdu_adv *update_connect_rsp_pdu(struct pdu_adv *pdu_ci)
 {
 	struct pdu_adv_com_ext_adv *cr_com_hdr;
@@ -127,6 +131,7 @@ static struct pdu_adv *update_connect_rsp_pdu(struct pdu_adv *pdu_ci)
 
 	return pdu_cr;
 }
+#endif /* CONFIG_BT_PERIPHERAL */
 
 int lll_adv_aux_init(void)
 {
@@ -183,7 +188,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	struct pdu_adv_ext_hdr *pri_hdr;
 	struct lll_adv_aux *lll;
 	struct lll_adv *lll_adv;
-	struct evt_hdr *evt;
+	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
 	uint8_t *pri_dptr;
@@ -192,11 +197,6 @@ static int prepare_cb(struct lll_prepare_param *p)
 	uint32_t aa;
 
 	DEBUG_RADIO_START_A(1);
-
-#if !defined(BT_CTLR_ADV_EXT_PBACK)
-	/* Set up Radio H/W */
-	radio_reset();
-#endif  /* !BT_CTLR_ADV_EXT_PBACK */
 
 	lll = p->param;
 
@@ -228,17 +228,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Abort if no aux_ptr filled */
 	if (unlikely(!pri_hdr->aux_ptr || !aux_ptr->offs)) {
-		int err;
+		radio_isr_set(lll_isr_early_abort, lll);
+		radio_disable();
 
-		err = lll_hfclock_off();
-		LL_ASSERT(err >= 0);
-
-		lll_done(NULL);
-
-		DEBUG_RADIO_CLOSE_A(0);
 		return 0;
 	}
 
+	/* Set up Radio H/W */
+	radio_reset();
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
@@ -252,13 +249,11 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_phy_set(phy_s, 1);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (phy_s << 1));
 
-#if !defined(BT_CTLR_ADV_EXT_PBACK)
 	/* Access address and CRC */
 	aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	radio_aa_set((uint8_t *)&aa);
 	radio_crc_configure(((0x5bUL) | ((0x06UL) << 8) | ((0x00UL) << 16)),
 			    0x555555);
-#endif  /* !BT_CTLR_ADV_EXT_PBACK */
 
 	/* Use channel idx in aux_ptr */
 	lll_chan_set(aux_ptr->chan_idx);
@@ -297,21 +292,15 @@ static int prepare_cb(struct lll_prepare_param *p)
 		radio_switch_complete_and_disable();
 	}
 
-#if defined(BT_CTLR_ADV_EXT_PBACK)
-	start_us = 1000;
-	radio_tmr_start_us(1, start_us);
-#else /* !BT_CTLR_ADV_EXT_PBACK */
-
 	ticks_at_event = p->ticks_at_expire;
-	evt = HDR_LLL2EVT(lll);
-	ticks_at_event += lll_evt_offset_get(evt);
+	ull = HDR_LLL2ULL(lll);
+	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	remainder = p->remainder;
 	start_us = radio_tmr_start(1, ticks_at_start, remainder);
-#endif /* !BT_CTLR_ADV_EXT_PBACK */
 
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
@@ -327,7 +316,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
 	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	if (lll_preempt_calc(evt, (TICKER_ID_ADV_AUX_BASE +
+	if (lll_preempt_calc(ull, (TICKER_ID_ADV_AUX_BASE +
 				   ull_adv_aux_lll_handle_get(lll)),
 			     ticks_at_event)) {
 		radio_isr_set(lll_isr_abort, lll);
@@ -487,7 +476,6 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 	struct pdu_adv *pdu_adv;
 	struct pdu_adv *pdu_aux;
 	struct pdu_adv *pdu_rx;
-	struct pdu_adv *pdu_tx;
 	struct lll_adv *lll;
 	uint8_t *tgt_addr;
 	uint8_t tx_addr;
@@ -566,13 +554,17 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 		return 0;
+
+#if defined(CONFIG_BT_PERIPHERAL)
 	} else if ((pdu_rx->type == PDU_ADV_TYPE_AUX_CONNECT_REQ) &&
 		   (pdu_rx->len == sizeof(struct pdu_adv_connect_ind)) &&
 		   lll_adv_connect_ind_check(lll, pdu_rx, tx_addr, addr,
 					     rx_addr, tgt_addr,
-					     devmatch_ok, &rl_idx)) {
+					     devmatch_ok, &rl_idx) &&
+		   lll->conn) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
+		struct pdu_adv *pdu_tx;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			rx = ull_pdu_rx_alloc_peek(4);
@@ -637,18 +629,19 @@ static inline int isr_rx_pdu(struct lll_adv_aux *lll_aux,
 		}
 
 		return 0;
+#endif /* CONFIG_BT_PERIPHERAL */
 	}
 
 	return -EINVAL;
 }
 
+#if defined(CONFIG_BT_PERIPHERAL)
 static void isr_tx_connect_rsp(void *param)
 {
 	struct node_rx_ftr *ftr;
 	struct node_rx_pdu *rx;
 	struct lll_adv *lll;
 	bool is_done;
-	int ret;
 
 	rx = param;
 	ftr = &(rx->hdr.rx_ftr);
@@ -676,11 +669,11 @@ static void isr_tx_connect_rsp(void *param)
 
 	if (is_done) {
 		/* Stop further LLL radio events */
-		ret = lll_stop(lll);
-		LL_ASSERT(!ret);
+		lll->conn->slave.initiated = 1;
 	}
 
 	/* Clear radio status and events */
 	lll_isr_status_reset();
 	lll_isr_cleanup(lll);
 }
+#endif /* CONFIG_BT_PERIPHERAL */

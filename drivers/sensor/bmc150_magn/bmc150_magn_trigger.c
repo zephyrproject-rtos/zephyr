@@ -144,7 +144,7 @@ int bmc150_magn_init_interrupt(const struct device *dev)
 
 	data->handler_drdy = NULL;
 
-	k_sem_init(&data->sem, 0, UINT_MAX);
+	k_sem_init(&data->sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_BMC150_MAGN_TRIGGER_THREAD_STACK,

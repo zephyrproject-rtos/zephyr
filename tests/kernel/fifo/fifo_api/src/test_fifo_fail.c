@@ -21,7 +21,7 @@
  */
 void test_fifo_get_fail(void *p1, void *p2, void *p3)
 {
-	struct k_fifo fifo;
+	static struct k_fifo fifo;
 
 	k_fifo_init(&fifo);
 	/**TESTPOINT: fifo get returns NULL*/

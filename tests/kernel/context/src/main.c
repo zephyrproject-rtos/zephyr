@@ -73,6 +73,8 @@
 #define TICK_IRQ DT_IRQN(DT_ALIAS(system_lptmr))
 #elif defined(CONFIG_XLNX_PSTTC_TIMER)
 #define TICK_IRQ DT_IRQN(DT_INST(0, xlnx_ttcps))
+#elif defined(CONFIG_RCAR_CMT_TIMER)
+#define TICK_IRQ DT_IRQN(DT_INST(0, renesas_rcar_cmt))
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
  * The Cortex-M use the SYSTICK exception for the system timer, which is
@@ -397,15 +399,15 @@ static void _test_kernel_cpu_idle(int atomic)
  *
  * @see k_cpu_idle()
  */
-#ifndef CONFIG_ARM
+#if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 static void test_kernel_cpu_idle_atomic(void)
 {
-	_test_kernel_cpu_idle(1);
+	ztest_test_skip();
 }
 #else
 static void test_kernel_cpu_idle_atomic(void)
 {
-	ztest_test_skip();
+	_test_kernel_cpu_idle(1);
 }
 #endif
 
@@ -442,15 +444,15 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	int imask;
 
 	/* Align to a "tick boundary" */
-	tick = z_tick_get_32();
-	while (z_tick_get_32() == tick) {
+	tick = sys_clock_tick_get_32();
+	while (sys_clock_tick_get_32() == tick) {
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(1000);
 #endif
 	}
 
 	tick++;
-	while (z_tick_get_32() == tick) {
+	while (sys_clock_tick_get_32() == tick) {
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(1000);
 #endif
@@ -467,15 +469,15 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	count <<= 4;
 
 	imask = disable_int(irq);
-	tick = z_tick_get_32();
+	tick = sys_clock_tick_get_32();
 	for (i = 0; i < count; i++) {
-		z_tick_get_32();
+		sys_clock_tick_get_32();
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(1000);
 #endif
 	}
 
-	tick2 = z_tick_get_32();
+	tick2 = sys_clock_tick_get_32();
 
 	/*
 	 * Re-enable interrupts before returning (for both success and failure
@@ -493,13 +495,13 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 
 	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
-		z_tick_get_32();
+		sys_clock_tick_get_32();
 #if defined(CONFIG_ARCH_POSIX)
 		k_busy_wait(1000);
 #endif
 	}
 
-	tick2 = z_tick_get_32();
+	tick2 = sys_clock_tick_get_32();
 	zassert_not_equal(tick, tick2,
 			  "tick didn't advance as expected");
 }
@@ -530,13 +532,13 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
  * -# Do action to align to a tick boundary.
  * -# Left shift 4 bits for the value of counts.
  * -# Call irq_lock() and restore its return value to imask.
- * -# Call z_tick_get_32() and store its return value to tick.
- * -# Repeat counts of calling z_tick_get_32().
- * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Call sys_clock_tick_get_32() and store its return value to tick.
+ * -# Repeat counts of calling sys_clock_tick_get_32().
+ * -# Call sys_clock_tick_get_32() and store its return value to tick2.
  * -# Call irq_unlock() with parameter imask.
  * -# Check if tick is equal to tick2.
- * -# Repeat counts of calling z_tick_get_32().
- * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Repeat counts of calling sys_clock_tick_get_32().
+ * -# Call sys_clock_tick_get_32() and store its return value to tick2.
  * -# Check if tick is NOT equal to tick2.
  *
  * Expected Test Result:
@@ -588,13 +590,13 @@ static void test_kernel_interrupts(void)
  * -# Do action to align to a tick boundary.
  * -# Left shift 4 bit for the value of counts.
  * -# Call irq_disable() and restore its return value to imask.
- * -# Call z_tick_get_32() and store its return value to tick.
- * -# Repeat counts of calling z_tick_get_32().
- * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Call sys_clock_tick_get_32() and store its return value to tick.
+ * -# Repeat counts of calling sys_clock_tick_get_32().
+ * -# Call sys_clock_tick_get_32() and store its return value to tick2.
  * -# Call irq_enable() with parameter imask.
  * -# Check if tick is equal to tick2.
- * -# Repeat counts of calling z_tick_get_32().
- * -# Call z_tick_get_32() and store its return value to tick2.
+ * -# Repeat counts of calling sys_clock_tick_get_32().
+ * -# Call sys_clock_tick_get_32() and store its return value to tick2.
  * -# Check if tick is NOT equal to tick2.
  *
  * Expected Test Result:

@@ -276,6 +276,22 @@ struct bt_gatt_ccc {
 	uint16_t flags;
 };
 
+/** Server Characteristic Configuration Values */
+
+/** @def BT_GATT_SCC_BROADCAST
+ *  @brief Server Characteristic Configuration Broadcast
+ *
+ *  If set, the characteristic value shall be broadcast in the advertising data
+ *  when the server is advertising.
+ */
+#define BT_GATT_SCC_BROADCAST                   0x0001
+
+/** Server Characterestic Configuration Attribute Value */
+struct bt_gatt_scc {
+	/** Server Characteristic Configuration flags */
+	uint16_t flags;
+};
+
 /** @brief GATT Characteristic Presentation Format Attribute Value. */
 struct bt_gatt_cpf {
 	/** Format of the value of the characteristic */
@@ -606,10 +622,12 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 						   })),                      \
 	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _value)
 
-#if IS_ENABLED(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
+#if defined(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
 	#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_CONN)
-#else
+#elif defined(CONFIG_BT_CONN)
 	#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
+#else
+	#define BT_GATT_CCC_MAX 0
 #endif
 
 /** @brief GATT CCC configuration entry. */
@@ -906,6 +924,10 @@ struct bt_gatt_notify_params {
  *  callback function will be called.
  *
  *  The callback is run from System Workqueue context.
+ *  When called from the System Workqueue context this API will not wait for
+ *  resources for the callback but instead return an error.
+ *  The number of pending callbacks can be increased with the
+ *  @option{CONFIG_BT_CONN_TX_MAX} option.
  *
  *  Alternatively it is possible to notify by UUID by setting it on the
  *  parameters, when using this method the attribute given is used as the
@@ -920,6 +942,8 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params);
 
 /** @brief Notify multiple attribute value change.
+ *
+ *  This function works in the same way as @ref bt_gatt_notify_cb.
  *
  *  @param conn Connection object.
  *  @param num_params Number of notification parameters.
@@ -1046,8 +1070,6 @@ struct bt_gatt_indicate_params {
  *  by BT_GATT_CCC, or the Characteristic Value Declaration which is
  *  automatically created after the Characteristic Declaration when using
  *  BT_GATT_CHARACTERISTIC.
- *
- *  The callback is run from System Workqueue context.
  *
  *  Alternatively it is possible to indicate by UUID by setting it on the
  *  parameters, when using this method the attribute given is used as the
@@ -1193,6 +1215,17 @@ enum {
 	 *        as it may incur in more round trips.
 	 */
 	BT_GATT_DISCOVER_ATTRIBUTE,
+	/** @brief Discover standard characteristic descriptor values.
+	 *
+	 *  Discover standard characterestic descriptor values and their
+	 *  properties.
+	 *  Supported descriptors:
+	 *   - Characteristic Extended Properties
+	 *   - Client Characteristic Configuration
+	 *   - Server Characteristic Configuration
+	 *   - Characteristic Presentation Format
+	 */
+	BT_GATT_DISCOVER_STD_CHAR_DESC,
 };
 
 /** @brief GATT Discover Attributes parameters */
@@ -1369,6 +1402,11 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  called.
  *
  *  The callback is run from System Workqueue context.
+ *  When called from the System Workqueue context this API will not wait for
+ *  resources for the callback but instead return an error.
+ *  The number of pending callbacks can be increased with the
+ *  @option{CONFIG_BT_CONN_TX_MAX} option.
+
  *
  *  @note By using a callback it also disable the internal flow control
  *        which would prevent sending multiple commands without waiting for
@@ -1415,6 +1453,10 @@ struct bt_gatt_subscribe_params;
 
 /** @typedef bt_gatt_notify_func_t
  *  @brief Notification callback function
+ *
+ *  In the case of an empty notification, the @p data pointer will be non-NULL
+ *  while the @p length will be 0, which is due to the special case where
+ *  a @p data NULL pointer means unsubscribed.
  *
  *  @param conn Connection object. May be NULL, indicating that the peer is
  *              being unpaired

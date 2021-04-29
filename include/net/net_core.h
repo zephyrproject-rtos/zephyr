@@ -55,6 +55,11 @@ extern "C" {
 #define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
 
+#define NET_HEXDUMP_DBG(_data, _length, _str) LOG_HEXDUMP_DBG(_data, _length, _str)
+#define NET_HEXDUMP_ERR(_data, _length, _str) LOG_HEXDUMP_ERR(_data, _length, _str)
+#define NET_HEXDUMP_WARN(_data, _length, _str) LOG_HEXDUMP_WRN(_data, _length, _str)
+#define NET_HEXDUMP_INFO(_data, _length, _str) LOG_HEXDUMP_INF(_data, _length, _str)
+
 #define NET_ASSERT(cond, ...) __ASSERT(cond, "" __VA_ARGS__)
 
 /* This needs to be here in order to avoid circular include dependency between
@@ -139,9 +144,9 @@ int net_send_data(struct net_pkt *pkt);
 #define NET_TC_COUNT NET_TC_RX_COUNT
 #endif
 #else /* CONFIG_NET_TC_TX_COUNT && CONFIG_NET_TC_RX_COUNT */
-#define NET_TC_TX_COUNT 1
-#define NET_TC_RX_COUNT 1
-#define NET_TC_COUNT 1
+#define NET_TC_TX_COUNT 0
+#define NET_TC_RX_COUNT 0
+#define NET_TC_COUNT 0
 #endif /* CONFIG_NET_TC_TX_COUNT && CONFIG_NET_TC_RX_COUNT */
 
 /* @endcond */

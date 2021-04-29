@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_sockets_raw, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include "connection.h"
 #include "packet_socket.h"
 
-enum net_verdict net_packet_socket_input(struct net_pkt *pkt)
+enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 {
 #if IS_ENABLED(CONFIG_NET_DSA)
 	/*
@@ -48,5 +48,5 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt)
 
 	net_pkt_set_family(pkt, AF_PACKET);
 
-	return net_conn_input(pkt, NULL, ETH_P_ALL, NULL);
+	return net_conn_input(pkt, NULL, proto, NULL);
 }

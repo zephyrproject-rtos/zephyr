@@ -2,5 +2,5 @@ tests:
   arch.interrupt:
     # nios2 excluded, see #22956
     arch_exclude: nios2
-    tags: interrupt
+    tags: kernel interrupt
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE

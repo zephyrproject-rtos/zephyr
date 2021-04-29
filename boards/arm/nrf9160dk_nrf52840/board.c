@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA.
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,197 +7,92 @@
 #include <zephyr.h>
 #include <init.h>
 #include <drivers/gpio.h>
+#include <devicetree.h>
 #include <logging/log.h>
+#include <hal/nrf_gpio.h>
 
 LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_NRF9160DK_LOG_LEVEL);
 
-/* The following pins on the nRF52840 control the routing of certain
- * components/lines on the nRF9160 DK. They are specified as follows:
- *
- * COMPONENT_SWITCH : ROUTING PIN
- *
- * NOTE: UART1_VCOM_U7 is on pin 12 of both P0 and P1.
- * Both P0.12 -and- P1.12 need to be toggled to route UART1 to VCOM2.
+#define GET_CTLR(name, prop, idx) \
+	DT_GPIO_CTLR_BY_IDX(DT_NODELABEL(name), prop, idx)
+#define GET_PIN(name, prop, idx) \
+	DT_GPIO_PIN_BY_IDX(DT_NODELABEL(name), prop, idx)
+#define GET_PORT(name, prop, idx) \
+	DT_PROP_BY_PHANDLE_IDX(DT_NODELABEL(name), prop, idx, port)
+#define GET_FLAGS(name, prop, idx) \
+	DT_GPIO_FLAGS_BY_IDX(DT_NODELABEL(name), prop, idx)
+#define GET_DEV(name, prop, idx) DEVICE_DT_GET(GET_CTLR(name, prop, idx))
+
+/* If the GPIO pin selected to be the reset line is actually the pin that
+ * exposes the nRESET function (P0.18 in nRF52840), there is no need to
+ * provide any additional GPIO configuration for it.
  */
+#define RESET_INPUT_IS_PINRESET (IS_ENABLED(CONFIG_GPIO_AS_PINRESET) && \
+				 GET_PORT(reset_input, gpios, 0) == 0 && \
+				 GET_PIN(reset_input, gpios, 0) == 18)
+#define USE_RESET_GPIO \
+	(DT_NODE_HAS_STATUS(DT_NODELABEL(reset_input), okay) && \
+	 !RESET_INPUT_IS_PINRESET)
 
-/* GPIO pins on Port 0 */
-
-#define INTERFACE0_U5 13 /* MCU interface pins 0 - 2 */
-#define INTERFACE1_U6 24 /* MCU interface pins 3 - 5 */
-#define UART1_VCOM_U7 12 /* Route nRF9160 UART1 to VCOM2 */
-#define BUTTON1_U12 6
-#define BUTTON2_U12 26
-#define SWITCH2_U9 8
-
-/* GPIO pins on Port 1 */
-
-#define INTERFACE2_U21 10 /* COEX interface pins 6 - 8 */
-#define UART0_VCOM_U14 14 /* Route nRF9160 UART0 to VCOM0 */
-#define UART1_VCOM_U7 12  /* Route nRF9160 UART1 to VCOM2 */
-#define LED1_U8 5
-#define LED2_U8 7
-#define LED3_U11 1
-#define LED4_U11 3
-#define SWITCH1_U9 9
-
-/* MCU interface pins
- * These pins can be used for inter-SoC communication.
- *
- * | nRF9160 |				 | nRF52840 | nRF9160 DK |
- * | P0.17   | -- MCU Interface Pin 0 -- | P0.17    | Arduino 4  |
- * | P0.18   | -- MCU Interface Pin 1 -- | P0.20    | Arduino 5  |
- * | P0.19   | -- MCU Interface Pin 2 -- | P0.15    | Arduino 6  |
- * | P0.21   | -- MCU Interface Pin 3 -- | P0.22    | TRACECLK   |
- * | P0.22   | -- MCU Interface Pin 4 -- | P1.04    | TRACEDATA0 |
- * | P0.23   | -- MCU Interface Pin 5 -- | P1.02    | TRACEDATA1 |
- * | COEX0   | -- MCU Interface Pin 6 -- | P1.13    | COEX0_PH   |
- * | COEX1   | -- MCU Interface Pin 7 -- | P1.11    | COEX1_PH   |
- * | COEX2   | -- MCU Interface Pin 8 -- | P1.15    | COEX2_PH   |
- */
-
-__packed struct pin_config {
-	uint8_t pin;
-	uint8_t val;
+struct switch_cfg {
+	const struct device *gpio;
+	gpio_pin_t pin;
+	gpio_dt_flags_t flags;
+	bool on;
+#if IS_ENABLED(CONFIG_LOG)
+	uint8_t port;
+	bool info;
+	const char *name;
+#endif
 };
 
-/* The following tables specify the configuration of each pin based on the
- * Kconfig options that drive it.
- * The switches have active-low logic, so when writing to the port we will
- * need to invert the value to match the IS_ENABLED() logic.
- */
-
-static const struct pin_config pins_on_p0[] = {
-	{ INTERFACE0_U5, IS_ENABLED(CONFIG_BOARD_NRF9160DK_INTERFACE0_ARDUINO) },
-	{ INTERFACE1_U6, IS_ENABLED(CONFIG_BOARD_NRF9160DK_INTERFACE1_TRACE) },
-	{ UART1_VCOM_U7, IS_ENABLED(CONFIG_BOARD_NRF9160DK_UART1_ARDUINO) },
-	{ BUTTON1_U12,   IS_ENABLED(CONFIG_BOARD_NRF9160DK_BUTTON0_PHY) },
-	{ BUTTON2_U12,   IS_ENABLED(CONFIG_BOARD_NRF9160DK_BUTTON1_PHY) },
-	{ SWITCH2_U9,    IS_ENABLED(CONFIG_BOARD_NRF9160DK_SWITCH1_PHY) },
-};
-
-static const struct pin_config pins_on_p1[] = {
-	{ INTERFACE2_U21, IS_ENABLED(CONFIG_BOARD_NRF9160DK_INTERFACE2_COEX) },
-	{ UART0_VCOM_U14, IS_ENABLED(CONFIG_BOARD_NRF9160DK_UART0_VCOM) },
-	{ UART1_VCOM_U7,  IS_ENABLED(CONFIG_BOARD_NRF9160DK_UART1_ARDUINO) },
-	{ LED1_U8,        IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED0_PHY) },
-	{ LED2_U8,        IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED1_PHY) },
-	{ LED3_U11,       IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED2_PHY) },
-	{ LED4_U11,       IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED3_PHY) },
-	{ SWITCH1_U9,     IS_ENABLED(CONFIG_BOARD_NRF9160DK_SWITCH0_PHY) },
-};
-
-static void config_print(void)
-{
-	/* Interface pins 0-2 */
-	LOG_INF("Routing interface pins 0-2 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_INTERFACE0_MCU) ?
-			"nRF52840" :
-			"Arduino headers",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_INTERFACE0_MCU));
-
-	/* Interface pins 3-5 */
-	LOG_INF("Routing interface pins 3-5 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_INTERFACE1_MCU) ?
-			"nRF52840" :
-			"TRACE header",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_INTERFACE1_MCU));
-
-	/* Interface pins 6-8 */
-	LOG_INF("Routing interface pins 6-8 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_INTERFACE2_MCU) ?
-			"nRF52840" :
-			"COEX header",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_INTERFACE2_MCU));
-
-	LOG_INF("Routing nRF9160 UART0 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_UART0_ARDUINO) ?
-			"Arduino pin headers" :
-			"VCOM0",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_UART0_ARDUINO));
-
-	LOG_INF("Routing nRF9160 UART1 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_UART1_ARDUINO) ?
-			"Arduino pin headers" :
-			"VCOM2",
-		/* defaults to arduino pins */
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_UART1_VCOM));
-
-	LOG_INF("Routing nRF9160 LED 1 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED0_ARDUINO) ?
-			"Arduino pin headers" :
-			"physical LED",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED0_ARDUINO));
-
-	LOG_INF("Routing nRF9160 LED 2 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED1_ARDUINO) ?
-			"Arduino pin headers" :
-			"physical LED",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED1_ARDUINO));
-
-	LOG_INF("Routing nRF9160 LED 3 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED2_ARDUINO) ?
-			"Arduino pin headers" :
-			"physical LED",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED2_ARDUINO));
-
-	LOG_INF("Routing nRF9160 LED 4 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED3_ARDUINO) ?
-			"Arduino pin headers" :
-			"physical LED",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_LED3_ARDUINO));
-
-	LOG_INF("Routing nRF9160 button 1 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_BUTTON0_ARDUINO) ?
-			"Arduino pin headers" :
-			"physical button",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_BUTTON0_ARDUINO));
-
-	LOG_INF("Routing nRF9160 button 2 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_BUTTON1_ARDUINO) ?
-			"Arduino pin headers" :
-			"physical button",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_BUTTON1_ARDUINO));
-
-	LOG_INF("Routing nRF9160 switch 1 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_SWITCH0_ARDUINO) ?
-			"Arduino pin headers" :
-			"physical switch",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_SWITCH0_ARDUINO));
-
-	LOG_INF("Routing nRF9160 switch 2 to %s (pin -> %d)",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_SWITCH1_ARDUINO) ?
-			"Arduino pin headers" :
-			"physical switch",
-		IS_ENABLED(CONFIG_BOARD_NRF9160DK_SWITCH1_ARDUINO));
+#define ROUTING_ENABLED(_name) DT_NODE_HAS_STATUS(DT_NODELABEL(_name), okay)
+#define SWITCH_CFG(_name, _idx)					\
+{								\
+	.gpio  = GET_DEV(_name, control_gpios, _idx),		\
+	.pin   = GET_PIN(_name, control_gpios, _idx),		\
+	.flags = GET_FLAGS(_name, control_gpios, _idx),		\
+	.on    = ROUTING_ENABLED(_name),			\
+	COND_CODE_1(CONFIG_LOG,					\
+	(							\
+		.port = GET_PORT(_name, control_gpios, _idx),	\
+		.info = (_idx == 0),				\
+		.name = #_name,					\
+	), ())							\
 }
+#define HAS_TWO_PINS(_name) \
+	DT_PHA_HAS_CELL_AT_IDX(DT_NODELABEL(_name), control_gpios, 1, pin)
 
-static int pins_configure(const struct device *port,
-			  const struct pin_config cfg[],
-			  size_t pins)
-{
-	int err;
+#define ROUTING_SWITCH(_name)					\
+	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(_name)),	\
+	(							\
+		COND_CODE_1(HAS_TWO_PINS(_name),		\
+		(						\
+			SWITCH_CFG(_name, 1),			\
+		), ())						\
+		SWITCH_CFG(_name, 0),				\
+	), ())
 
-	for (size_t i = 0; i < pins; i++) {
-		/* A given pin controlling the switch needs to be driven
-		 * to the low state to activate the routing indicated by
-		 * the corresponding IS_ENABLED() macro in the table,
-		 * so configure the pin as output with the proper initial
-		 * state.
-		 */
-		uint32_t flag = (cfg[i].val ? GPIO_OUTPUT_LOW
-					 : GPIO_OUTPUT_HIGH);
-		err = gpio_pin_configure(port, cfg[i].pin, flag);
-		if (err) {
-			return cfg[i].pin;
-		}
+static const struct switch_cfg routing_switches[] = {
+	ROUTING_SWITCH(vcom0_pins_routing)
+	ROUTING_SWITCH(vcom2_pins_routing)
+	ROUTING_SWITCH(led1_pin_routing)
+	ROUTING_SWITCH(led2_pin_routing)
+	ROUTING_SWITCH(led3_pin_routing)
+	ROUTING_SWITCH(led4_pin_routing)
+	ROUTING_SWITCH(switch1_pin_routing)
+	ROUTING_SWITCH(switch2_pin_routing)
+	ROUTING_SWITCH(button1_pin_routing)
+	ROUTING_SWITCH(button2_pin_routing)
+	ROUTING_SWITCH(nrf_interface_pins_0_2_routing)
+	ROUTING_SWITCH(nrf_interface_pins_3_5_routing)
+	ROUTING_SWITCH(nrf_interface_pins_6_8_routing)
+	ROUTING_SWITCH(nrf_interface_pin_9_routing)
+	ROUTING_SWITCH(io_expander_pins_routing)
+	ROUTING_SWITCH(external_flash_pins_routing)
+};
 
-		LOG_DBG("port %p, pin %u -> %u",
-			port, cfg[i].pin, !cfg[i].val);
-	}
-
-	return 0;
-}
-
+#if USE_RESET_GPIO
 static void chip_reset(const struct device *gpio,
 		       struct gpio_callback *cb, uint32_t pins)
 {
@@ -209,127 +104,105 @@ static void chip_reset(const struct device *gpio,
 	NVIC_SystemReset();
 }
 
-static void reset_pin_wait_low(const struct device *port, uint32_t pin)
+static void reset_pin_wait_inactive(const struct device *gpio, uint32_t pin)
 {
 	int val;
 
-	/* Wait until the pin is pulled low */
+	/* Wait until the pin becomes inactive. */
 	do {
-		val = gpio_pin_get_raw(port, pin);
+		val = gpio_pin_get(gpio, pin);
 	} while (val > 0);
 }
 
-static int reset_pin_configure(const struct device *p0,
-			       const struct device *p1)
+static int reset_pin_configure(void)
 {
-	int err;
-	uint32_t pin = 0;
-	const struct device *port = NULL;
-
+	int rc;
 	static struct gpio_callback gpio_ctx;
 
-	/* MCU interface pins 0-2 */
-	if (IS_ENABLED(CONFIG_BOARD_NRF9160DK_NRF52840_RESET_P0_17)) {
-		port = p0;
-		pin = 17;
-	}
-	if (IS_ENABLED(CONFIG_BOARD_NRF9160DK_NRF52840_RESET_P0_20)) {
-		port = p0;
-		pin = 20;
-	}
-	if (IS_ENABLED(CONFIG_BOARD_NRF9160DK_NRF52840_RESET_P0_15)) {
-		port = p0;
-		pin = 15;
-	}
-	/* MCU interface pins 3-6 */
-	if (IS_ENABLED(CONFIG_BOARD_NRF9160DK_NRF52840_RESET_P0_22)) {
-		port = p0;
-		pin = 22;
-	}
-	if (IS_ENABLED(CONFIG_BOARD_NRF9160DK_NRF52840_RESET_P1_04)) {
-		port = p1;
-		pin = 4;
-	}
-	if (IS_ENABLED(CONFIG_BOARD_NRF9160DK_NRF52840_RESET_P1_02)) {
-		port = p1;
-		pin = 2;
+	const struct device *gpio = GET_DEV(reset_input, gpios, 0);
+	gpio_pin_t pin = GET_PIN(reset_input, gpios, 0);
+	gpio_dt_flags_t flags = GET_FLAGS(reset_input, gpios, 0);
+
+	if (!device_is_ready(gpio)) {
+		LOG_ERR("%s is not ready", gpio->name);
+		return -ENODEV;
 	}
 
-	__ASSERT_NO_MSG(port != NULL);
-
-	err = gpio_pin_configure(port, pin, GPIO_INPUT | GPIO_PULL_DOWN);
-	if (err) {
-		return err;
+	rc = gpio_pin_configure(gpio, pin, flags | GPIO_INPUT);
+	if (rc) {
+		LOG_ERR("Error %d while configuring pin P%d.%02d",
+			rc, GET_PORT(reset_input, gpios, 0), pin);
+		return rc;
 	}
 
 	gpio_init_callback(&gpio_ctx, chip_reset, BIT(pin));
 
-	err = gpio_add_callback(port, &gpio_ctx);
-	if (err) {
-		return err;
+	rc = gpio_add_callback(gpio, &gpio_ctx);
+	if (rc) {
+		return rc;
 	}
 
-	err = gpio_pin_interrupt_configure(port, pin, GPIO_INT_EDGE_RISING);
-	if (err) {
-		return err;
+	rc = gpio_pin_interrupt_configure(gpio, pin, GPIO_INT_EDGE_TO_ACTIVE);
+	if (rc) {
+		return rc;
 	}
 
-	/* Wait until the pin is pulled low before continuing.
+	LOG_INF("GPIO reset line enabled on pin P%d.%02d, holding...",
+		GET_PORT(reset_input, gpios, 0), pin);
+
+	/* Wait until the pin becomes inactive before continuing.
 	 * This lets the other side ensure that they are ready.
 	 */
-	LOG_INF("GPIO reset line enabled on pin %s.%02u, holding..",
-		port == p0 ? "P0" : "P1", pin);
-
-	reset_pin_wait_low(port, pin);
+	reset_pin_wait_inactive(gpio, pin);
 
 	return 0;
 }
+#endif /* USE_RESET_GPIO */
 
 static int init(const struct device *dev)
 {
 	int rc;
-	const struct device *p0;
-	const struct device *p1;
 
-	p0 = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
-	if (!p0) {
-		LOG_ERR("GPIO device " DT_LABEL(DT_NODELABEL(gpio0))
-			" not found!");
-		return -EIO;
-	}
+	for (int i = 0; i < ARRAY_SIZE(routing_switches); ++i) {
+		const struct switch_cfg *cfg = &routing_switches[i];
+		gpio_flags_t flags = cfg->flags;
 
-	p1 = device_get_binding(DT_LABEL(DT_NODELABEL(gpio1)));
-	if (!p1) {
-		LOG_ERR("GPIO device " DT_LABEL(DT_NODELABEL(gpio1))
-			" not found!");
-		return -EIO;
-	}
+		if (!device_is_ready(cfg->gpio)) {
+			LOG_ERR("%s is not ready", cfg->gpio->name);
+			return -ENODEV;
+		}
 
-	/* Configure pins on each port */
-	rc = pins_configure(p0, pins_on_p0, ARRAY_SIZE(pins_on_p0));
-	if (rc) {
-		LOG_ERR("Error while configuring pin P0.%02d", rc);
-		return -EIO;
+		flags |= (cfg->on ? GPIO_OUTPUT_ACTIVE
+				  : GPIO_OUTPUT_INACTIVE);
+		rc = gpio_pin_configure(cfg->gpio, cfg->pin, flags);
+#if IS_ENABLED(CONFIG_LOG)
+		LOG_DBG("Configuring P%d.%02d with flags: 0x%08x",
+			cfg->port, cfg->pin, flags);
+		if (rc) {
+			LOG_ERR("Error %d while configuring pin P%d.%02d (%s)",
+				rc, cfg->port, cfg->pin, cfg->name);
+		} else if (cfg->info) {
+			LOG_INF("%s is %s",
+				cfg->name, cfg->on ? "ENABLED" : "disabled");
+		}
+#endif
+		if (rc) {
+			return rc;
+		}
 	}
-	rc = pins_configure(p1, pins_on_p1, ARRAY_SIZE(pins_on_p1));
-	if (rc) {
-		LOG_ERR("Error while configuring pin P1.%02d", rc);
-		return -EIO;
-	}
-
-	config_print();
 
 	/* Make sure to configure the switches before initializing
 	 * the GPIO reset pin, so that we are connected to
 	 * the nRF9160 before enabling our interrupt.
 	 */
-	if (IS_ENABLED(CONFIG_BOARD_NRF9160DK_NRF52840_RESET)) {
-		rc = reset_pin_configure(p0, p1);
-		if (rc) {
-			LOG_ERR("Unable to configure reset pin, err %d", rc);
-			return -EIO;
-		}
+
+#if USE_RESET_GPIO
+	rc = reset_pin_configure();
+	if (rc) {
+		LOG_ERR("Unable to configure reset pin, err %d", rc);
+		return -EIO;
 	}
+#endif
 
 	LOG_INF("Board configured.");
 
@@ -337,3 +210,32 @@ static int init(const struct device *dev)
 }
 
 SYS_INIT(init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+
+#define EXT_MEM_CTRL DT_NODELABEL(external_flash_pins_routing)
+#if DT_NODE_EXISTS(EXT_MEM_CTRL)
+
+static int early_init(const struct device *dev)
+{
+	/* As soon as possible after the system starts up, enable the analog
+	 * switch that routes signals to the external flash. Otherwise, the
+	 * HOLD line in the flash chip may not be properly pulled up internally
+	 * and consequently the chip will not respond to any command.
+	 * Later on, during the normal initialization performed above, this
+	 * analog switch will get configured according to what is selected
+	 * in devicetree.
+	 */
+	uint32_t psel = NRF_DT_GPIOS_TO_PSEL(EXT_MEM_CTRL, control_gpios);
+	gpio_dt_flags_t flags = DT_GPIO_FLAGS(EXT_MEM_CTRL, control_gpios);
+
+	if (flags & GPIO_ACTIVE_LOW) {
+		nrf_gpio_pin_clear(psel);
+	} else {
+		nrf_gpio_pin_set(psel);
+	}
+	nrf_gpio_cfg_output(psel);
+
+	return 0;
+}
+
+SYS_INIT(early_init, PRE_KERNEL_1, 0);
+#endif

@@ -57,9 +57,9 @@
 "area: ARM":
   - "arch/arm/**/*"
   - "include/arch/arm/**/*"
-"area: ARM_64":
-  - "arch/arm/core/aarch64/**/*"
-  - "include/arch/arm/aarch64/**/*"
+"area: ARM64":
+  - "arch/arm64/**/*"
+  - "include/arch/arm64/**/*"
 "area: NIOS2":
   - "arch/nios2/**/*"
   - "include/arch/nios2/**/*"

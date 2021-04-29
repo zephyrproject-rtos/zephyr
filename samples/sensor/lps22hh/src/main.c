@@ -74,7 +74,7 @@ void main(void)
 		if (sensor_trigger_set(dev, &trig, lps22hh_handler) < 0) {
 			printf("Cannot configure trigger\n");
 			return;
-		};
+		}
 		printk("Configured for triggered collection at %u Hz\n",
 		       attr.val1);
 	}

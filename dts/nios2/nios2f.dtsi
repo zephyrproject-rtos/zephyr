@@ -50,6 +50,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x100200 0x400>;
+			interrupts = <4 10>;
 			label = "I2C_0";
 		};
 

@@ -1,0 +1,8 @@
+# STM32 Nucleo-32 development board with STM32F031K6 MCU configuration
+
+# Copyright (c) 2021 Sebastian Schwabe <sebastian.schwabe@mailbox.tu-dresden.de>
+# SPDX -License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F031K6
+	bool "NUCLEO-32 F031K6 Development Board"
+	depends on SOC_STM32F031X6

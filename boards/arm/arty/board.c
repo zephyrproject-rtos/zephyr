@@ -33,7 +33,7 @@ int board_daplink_qspi_mux_select(enum board_daplink_qspi_mux_mode mode)
 	default:
 		__ASSERT(0, "invalid mode");
 		return -EINVAL;
-	};
+	}
 
 	gpio = device_get_binding(DT_GPIO_LABEL(DAPLINK_QSPI_MUX_NODE,
 						mux_gpios));

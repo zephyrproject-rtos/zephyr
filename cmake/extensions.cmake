@@ -823,14 +823,16 @@ endfunction()
 #                   `<board>@2.0.0` or higher.
 #                   This field is not needed when `EXACT` is used.
 #
+# VALID_REVISIONS:  A list of valid revisions for this board.
+#                   If this argument is not provided, then each Kconfig fragment
+#                   of the form ``<board>_<revision>.conf`` in the board folder
+#                   will be used as a valid revision for the board.
+#
 function(board_check_revision)
   set(options EXACT)
   set(single_args FORMAT DEFAULT_REVISION HIGHEST_REVISION)
-  cmake_parse_arguments(BOARD_REV "${options}" "${single_args}" "" ${ARGN})
-
-  file(GLOB revision_candidates LIST_DIRECTORIES false RELATIVE ${BOARD_DIR}
-         ${BOARD_DIR}/${BOARD}_*.conf
-    )
+  set(multi_args  VALID_REVISIONS)
+  cmake_parse_arguments(BOARD_REV "${options}" "${single_args}" "${multi_args}" ${ARGN})
 
   string(TOUPPER ${BOARD_REV_FORMAT} BOARD_REV_FORMAT)
 
@@ -882,31 +884,40 @@ function(board_check_revision)
             Board `${BOARD}` uses revision format: ${BOARD_REV_FORMAT}.")
   endif()
 
-  string(REPLACE "." "_" underscore_revision_regex ${revision_regex})
-  set(file_revision_regex "${BOARD}_${underscore_revision_regex}.conf")
-  foreach(candidate ${revision_candidates})
-    if(${candidate} MATCHES "${file_revision_regex}")
-      string(REPLACE "_" "." FOUND_BOARD_REVISION ${CMAKE_MATCH_1})
-      if(${BOARD_REVISION} STREQUAL ${FOUND_BOARD_REVISION})
-        # Found exact match.
-        return()
+  if(NOT DEFINED BOARD_REV_VALID_REVISIONS)
+    file(GLOB revision_candidates LIST_DIRECTORIES false RELATIVE ${BOARD_DIR}
+         ${BOARD_DIR}/${BOARD}_*.conf
+    )
+    string(REPLACE "." "_" underscore_revision_regex ${revision_regex})
+    set(file_revision_regex "${BOARD}_${underscore_revision_regex}.conf")
+    foreach(candidate ${revision_candidates})
+      if(${candidate} MATCHES "${file_revision_regex}")
+        string(REPLACE "_" "." FOUND_BOARD_REVISION ${CMAKE_MATCH_1})
+        list(APPEND BOARD_REV_VALID_REVISIONS ${FOUND_BOARD_REVISION})
       endif()
+    endforeach()
+  endif()
 
-      if(NOT BOARD_REV_EXACT)
-        if((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
-           (${BOARD_REVISION} VERSION_GREATER_EQUAL ${FOUND_BOARD_REVISION}) AND
-           (${FOUND_BOARD_REVISION} VERSION_GREATER_EQUAL "${ACTIVE_BOARD_REVISION}")
-        )
-          set(ACTIVE_BOARD_REVISION ${FOUND_BOARD_REVISION})
-        elseif((BOARD_REV_FORMAT STREQUAL LETTER) AND
-               (${BOARD_REVISION} STRGREATER ${FOUND_BOARD_REVISION}) AND
-               (${FOUND_BOARD_REVISION} STRGREATER "${ACTIVE_BOARD_REVISION}")
-        )
-          set(ACTIVE_BOARD_REVISION ${FOUND_BOARD_REVISION})
-        endif()
+  if(${BOARD_REVISION} IN_LIST BOARD_REV_VALID_REVISIONS)
+    # Found exact match.
+    return()
+  endif()
+
+  if(NOT BOARD_REV_EXACT)
+    foreach(TEST_REVISION ${BOARD_REV_VALID_REVISIONS})
+      if((BOARD_REV_FORMAT MATCHES "^MAJOR\.MINOR\.PATCH$") AND
+         (${BOARD_REVISION} VERSION_GREATER_EQUAL ${TEST_REVISION}) AND
+         (${TEST_REVISION} VERSION_GREATER_EQUAL "${ACTIVE_BOARD_REVISION}")
+      )
+        set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
+      elseif((BOARD_REV_FORMAT STREQUAL LETTER) AND
+             (${BOARD_REVISION} STRGREATER ${TEST_REVISION}) AND
+             (${TEST_REVISION} STRGREATER "${ACTIVE_BOARD_REVISION}")
+      )
+        set(ACTIVE_BOARD_REVISION ${TEST_REVISION})
       endif()
-    endif()
-  endforeach()
+    endforeach()
+  endif()
 
   if(BOARD_REV_EXACT OR NOT DEFINED ACTIVE_BOARD_REVISION)
     message(FATAL_ERROR "Board revision `${BOARD_REVISION}` for board \
@@ -1300,9 +1311,9 @@ endfunction()
 # ifdef functions are added on an as-need basis. See
 # https://cmake.org/cmake/help/latest/manual/cmake-commands.7.html for
 # a list of available functions.
-function(add_subdirectory_ifdef feature_toggle dir)
+function(add_subdirectory_ifdef feature_toggle source_dir)
   if(${${feature_toggle}})
-    add_subdirectory(${dir})
+    add_subdirectory(${source_dir} ${ARGN})
   endif()
 endfunction()
 
@@ -1863,6 +1874,13 @@ endfunction()
 #                    The conf file search will return existing configuration
 #                    files for the current board.
 #                    CONF_FILES takes the following additional arguments:
+#                    BOARD <board>:             Find configuration files for specified board.
+#                    BOARD_REVISION <revision>: Find configuration files for specified board
+#                                               revision. Requires BOARD to be specified.
+#
+#                                               If no board is given the current BOARD and
+#                                               BOARD_REVISION will be used.
+#
 #                    DTS <list>:   List to populate with DTS overlay files
 #                    KCONF <list>: List to populate with Kconfig fragment files
 #                    BUILD <type>: Build type to include for search.
@@ -1881,7 +1899,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
   if(${ARGV0} STREQUAL APPLICATION_ROOT)
     set(single_args APPLICATION_ROOT)
   elseif(${ARGV0} STREQUAL CONF_FILES)
-    set(single_args CONF_FILES DTS KCONF BUILD)
+    set(single_args CONF_FILES BOARD BOARD_REVISION DTS KCONF BUILD)
   endif()
 
   cmake_parse_arguments(FILE "" "${single_args}" "" ${ARGN})
@@ -1926,10 +1944,26 @@ Relative paths are only allowed with `-D${ARGV1}=<path>`")
   endif()
 
   if(FILE_CONF_FILES)
-    set(FILENAMES ${BOARD})
+    if(DEFINED FILE_BOARD_REVISION AND NOT FILE_BOARD)
+        message(FATAL_ERROR
+          "zephyr_file(${ARGV0} <path> BOARD_REVISION ${FILE_BOARD_REVISION} ...)"
+          " given without BOARD argument, please specify BOARD"
+        )
+    endif()
 
-    if(DEFINED BOARD_REVISION)
-      list(APPEND FILENAMES "${BOARD}_${BOARD_REVISION_STRING}")
+    if(NOT DEFINED FILE_BOARD)
+      # Defaulting to system wide settings when BOARD is not given as argument
+      set(FILE_BOARD ${BOARD})
+      if(DEFINED BOARD_REVISION)
+        set(FILE_BOARD_REVISION ${BOARD_REVISION})
+      endif()
+    endif()
+
+    set(FILENAMES ${FILE_BOARD})
+
+    if(DEFINED FILE_BOARD_REVISION)
+      string(REPLACE "." "_" revision_string ${FILE_BOARD_REVISION})
+      list(APPEND FILENAMES "${FILE_BOARD}_${revision_string}")
     endif()
 
     if(FILE_DTS)
@@ -2015,6 +2049,8 @@ endfunction()
 # variable: Name of <variable> to check and set, for example BOARD.
 # REQUIRED: Optional flag. If specified, then an unset <variable> will be
 #           treated as an error.
+# WATCH: Optional flag. If specified, watch the variable and print a warning if
+#        the variable is later being changed.
 #
 # Details:
 #   <variable> can be set by 3 sources.
@@ -2045,7 +2081,7 @@ endfunction()
 #   <variable> the build directory must be cleaned.
 #
 function(zephyr_check_cache variable)
-  cmake_parse_arguments(CACHE_VAR "REQUIRED" "" "" ${ARGN})
+  cmake_parse_arguments(CACHE_VAR "REQUIRED;WATCH" "" "" ${ARGN})
   string(TOLOWER ${variable} variable_text)
   string(REPLACE "_" " " variable_text ${variable_text})
 
@@ -2109,8 +2145,10 @@ function(zephyr_check_cache variable)
   set(${variable} ${${variable}} PARENT_SCOPE)
   set(CACHED_${variable} ${${variable}} CACHE STRING "Selected ${variable_text}")
 
-  # The variable is now set to its final value.
-  zephyr_boilerplate_watch(${variable})
+  if(CACHE_VAR_WATCH)
+    # The variable is now set to its final value.
+    zephyr_boilerplate_watch(${variable})
+  endif()
 endfunction(zephyr_check_cache variable)
 
 

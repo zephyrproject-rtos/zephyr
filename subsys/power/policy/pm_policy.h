@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _PM_POLICY_H_
-#define _PM_POLICY_H_
+#ifndef ZEPHYR_POWER_PM_POLICY_H_
+#define ZEPHYR_POWER_PM_POLICY_H_
 
 #include <power/power.h>
 
@@ -43,14 +43,9 @@ void pm_resume_devices(void);
  */
 struct pm_state_info pm_policy_next_state(int32_t ticks);
 
-/**
- * @brief Function to determine whether to put devices in low
- *        power state, given the system PM state.
- */
-bool pm_policy_low_power_devices(enum pm_state state);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _PM_POLICY_H_ */
+#endif /* ZEPHYR_POWER_PM_POLICY_H_ */
