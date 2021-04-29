@@ -302,7 +302,7 @@ void arm_core_mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int arm_mpu_init(const struct device *arg)
+int z_arm_mpu_init(void)
 {
 	uint32_t r_index;
 
@@ -416,8 +416,6 @@ static int arm_mpu_init(const struct device *arg)
 		NUM_MPU_REGIONS,
 		"Invalid number of MPU regions\n");
 #endif /* CORTEX_M0PLUS || CPU_CORTEX_M3 || CPU_CORTEX_M4 */
+
 	return 0;
 }
-
-SYS_INIT(arm_mpu_init, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
