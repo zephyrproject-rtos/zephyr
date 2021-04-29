@@ -40,6 +40,7 @@ extern void test_k_thread_foreach_unlocked_null_cb(void);
 extern void test_k_thread_state_str(void);
 extern void test_threads_cpu_mask(void);
 extern void test_threads_suspend_timeout(void);
+extern void test_resume_unsuspend_thread(void);
 extern void test_threads_suspend(void);
 extern void test_abort_from_isr(void);
 extern void test_abort_from_isr_not_self(void);
@@ -686,6 +687,7 @@ void test_main(void)
 			 ztest_unit_test(test_user_mode),
 			 ztest_1cpu_unit_test(test_threads_cpu_mask),
 			 ztest_unit_test(test_threads_suspend_timeout),
+			 ztest_unit_test(test_resume_unsuspend_thread),
 			 ztest_unit_test(test_threads_suspend),
 			 ztest_user_unit_test(test_thread_join),
 			 ztest_unit_test(test_thread_join_isr),
