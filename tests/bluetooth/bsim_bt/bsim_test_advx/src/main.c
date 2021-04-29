@@ -201,6 +201,45 @@ static void test_advx_main(void)
 	}
 	printk("success.\n");
 
+	k_sleep(K_MSEC(100));
+
+	is_connected = false;
+	is_disconnected = false;
+
+	printk("Connectable extended advertising...");
+	printk("Create advertising set...");
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, &adv_callbacks, &adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Start advertising...");
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for connection...");
+	while (!is_connected) {
+		k_sleep(K_MSEC(100));
+	}
+
+	printk("Waiting for disconnect...");
+	while (!is_disconnected) {
+		k_sleep(K_MSEC(100));
+	}
+
+	printk("Removing connectable adv aux set...");
+	err = bt_le_ext_adv_delete(adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(1000));
+
 	printk("Starting non-connectable advertising...");
 	err = bt_le_adv_start(BT_LE_ADV_NCONN, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
@@ -942,6 +981,27 @@ static void test_scanx_main(void)
 	bt_le_per_adv_sync_cb_register(&sync_cb);
 	printk("Success.\n");
 
+	connection_to_test = true;
+
+	printk("Start scanning...");
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for connection...");
+	while (!is_connected) {
+		k_sleep(K_MSEC(100));
+	}
+
+	printk("Waiting for disconnect...");
+	while (!is_disconnected) {
+		k_sleep(K_MSEC(100));
+	}
+
+	is_connected = false;
+	is_disconnected = false;
 	connection_to_test = true;
 
 	printk("Start scanning...");
