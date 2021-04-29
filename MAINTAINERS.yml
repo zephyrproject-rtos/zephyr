@@ -1169,7 +1169,7 @@ Power management:
         - include/pm/pm.h
         - samples/subsys/pm/
         - subsys/pm/
-        - tests/subsys/power/
+        - tests/subsys/pm/
     labels:
         - "area: Power Management"
 
