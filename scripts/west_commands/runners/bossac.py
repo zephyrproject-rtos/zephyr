@@ -122,7 +122,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         if 'CONFIG_BOARD' not in build_conf:
             return '<board>'
 
-        return build_conf['CONFIG_BOARD'][0].replace('"', '')
+        return build_conf['CONFIG_BOARD']
 
     def get_dts_img_offset(self):
         build_conf = BuildConfiguration(self.cfg.build_dir)

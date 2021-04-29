@@ -12,7 +12,6 @@ from unittest.mock import patch, call
 
 import pytest
 
-from runners.core import RunnerConfig
 from runners.nrfjprog import NrfJprogBinaryRunner
 from conftest import RC_KERNEL_HEX
 
@@ -375,11 +374,6 @@ def os_path_isfile_patch(filename):
         return True
     return os_path_isfile(filename)
 
-def build_configuration(test_case):
-    return {
-        f'CONFIG_SOC_SERIES_{test_case.family}X': 'y',
-    }
-
 #
 # Test functions.
 #
@@ -400,38 +394,47 @@ def id_fn(test_case):
 
 def fix_up_runner_config(test_case, runner_config, tmpdir):
     # Helper that adjusts the common runner_config fixture for our
-    # nRF53-specific tests that use real hex files.
+    # nRF-specific tests.
+
+    to_replace = {}
+
+    # Provide a skeletal zephyr/.config file to use as the runner's
+    # BuildConfiguration.
+    zephyr = tmpdir / 'zephyr'
+    zephyr.mkdir()
+    dotconfig = os.fspath(zephyr / '.config')
+    with open(dotconfig, 'w') as f:
+        f.write(f'''
+CONFIG_SOC_SERIES_{test_case.family}X=y
+''')
+    to_replace['build_dir'] = tmpdir
 
     if test_case.family != 'NRF53':
-        return runner_config
-
-    config_as_dict = runner_config._asdict()
+        return runner_config._replace(**to_replace)
 
     if test_case.coprocessor == 'APP':
-        config_as_dict['hex_file'] = NRF5340_APP_ONLY_HEX
+        to_replace['hex_file'] = NRF5340_APP_ONLY_HEX
     elif test_case.coprocessor == 'NET':
-        config_as_dict['hex_file'] = NRF5340_NET_ONLY_HEX
+        to_replace['hex_file'] = NRF5340_NET_ONLY_HEX
     elif test_case.coprocessor == 'APP+NET':
         # Since the runner is going to generate files next to its input
         # file, we need to stash a copy in a tmpdir it can use.
         outfile = tmpdir / Path(NRF5340_APP_AND_NET_HEX).name
         shutil.copyfile(NRF5340_APP_AND_NET_HEX, outfile)
-        config_as_dict['hex_file'] = os.fspath(outfile)
+        to_replace['hex_file'] = os.fspath(outfile)
     else:
         assert False, f'bad test case {test_case}'
 
-    return RunnerConfig(**config_as_dict)
+    return runner_config._replace(**to_replace)
 
 @pytest.mark.parametrize('test_case', EXPECTED_RESULTS.keys(), ids=id_fn)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr',
        side_effect=get_board_snr_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.check_call')
-@patch('runners.nrfjprog.BuildConfiguration')
-def test_nrfjprog_init(build_conf, check_call, get_snr, require, test_case,
+def test_nrfjprog_init(check_call, get_snr, require, test_case,
                        runner_config, tmpdir):
     runner_config = fix_up_runner_config(test_case, runner_config, tmpdir)
-    build_conf.return_value = build_configuration(test_case)
     expected = EXPECTED_RESULTS[test_case]
     snr = TEST_OVR_SNR if test_case.snr else None
     runner = NrfJprogBinaryRunner(runner_config,
@@ -461,11 +464,9 @@ def test_nrfjprog_init(build_conf, check_call, get_snr, require, test_case,
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr',
        side_effect=get_board_snr_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.check_call')
-@patch('runners.nrfjprog.BuildConfiguration')
-def test_nrfjprog_create(build_conf, check_call, get_snr, require, test_case,
+def test_nrfjprog_create(check_call, get_snr, require, test_case,
                          runner_config, tmpdir):
     runner_config = fix_up_runner_config(test_case, runner_config, tmpdir)
-    build_conf.return_value = build_configuration(test_case)
     expected = EXPECTED_RESULTS[test_case]
 
     args = []
