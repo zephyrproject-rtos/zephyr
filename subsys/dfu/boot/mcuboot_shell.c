@@ -14,7 +14,7 @@
 
 struct area_desc {
 	const char *name;
-	unsigned int id;
+	const struct flash_area *fa;
 };
 
 static const struct area_desc areas[] = {
@@ -136,14 +136,14 @@ static int cmd_mcuboot_info_area(const struct shell *shell,
 	struct boot_swap_state swap_state;
 	int err;
 
-	err = boot_read_bank_header(area->id, &hdr, sizeof(hdr));
+	err = boot_read_bank_header(area->fa, &hdr, sizeof(hdr));
 	if (err) {
-		shell_error(shell, "failed to read %s area (%u) %s: %d",
-			    area->name, area->id, "header", err);
+		shell_error(shell, "failed to read %s area (%p) %s: %d",
+			    area->name, area->fa, "header", err);
 		return err;
 	}
 
-	shell_print(shell, "%s area (%u):", area->name, area->id);
+	shell_print(shell, "%s area (%p):", area->name, area->fa);
 	shell_print(shell, "  version: %u.%u.%u+%u",
 		    (unsigned int) hdr.h.v1.sem_ver.major,
 		    (unsigned int) hdr.h.v1.sem_ver.minor,
@@ -152,10 +152,10 @@ static int cmd_mcuboot_info_area(const struct shell *shell,
 	shell_print(shell, "  image size: %u",
 		    (unsigned int) hdr.h.v1.image_size);
 
-	err = boot_read_swap_state_by_id(area->id, &swap_state);
+	err = boot_read_swap_state_by_id(area->fa, &swap_state);
 	if (err) {
-		shell_error(shell, "failed to read %s area (%u) %s: %d",
-			    area->name, area->id, "swap state", err);
+		shell_error(shell, "failed to read %s area (%p) %s: %d",
+			    area->name, area->fa, "swap state", err);
 		return err;
 	}
 
