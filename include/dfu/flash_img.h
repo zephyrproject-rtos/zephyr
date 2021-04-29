@@ -36,12 +36,25 @@ struct flash_img_check {
 /**
  * @brief Initialize context needed for writing the image to the flash.
  *
+ * This API call is deprecated and flash_img_init_area should be used instead.
+ *
  * @param ctx     context to be initialized
  * @param area_id flash area id of partition where the image should be written
  *
  * @return  0 on success, negative errno code on fail
  */
 int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id);
+
+/**
+ * @brief Initialize context needed for writing the image to the flash.
+ *
+ * @param ctx     context to be initialized
+ * @param fa	  pointer to flash area objet representing the partition where the image should be
+ *		  written
+ *
+ * @return  0 on success, negative errno code on fail
+ */
+int flash_img_init_area(struct flash_img_context *ctx, const struct flash_area *fa);
 
 /**
  * @brief Initialize context needed for writing the image to the flash.
