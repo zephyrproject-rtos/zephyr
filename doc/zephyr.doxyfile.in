@@ -1989,7 +1989,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_NET_UDP" \
                          "CONFIG_PM" \
                          "CONFIG_PM_DEVICE" \
-                         "CONFIG_PM_DEVICE_IDLE" \
+                         "CONFIG_PM_DEVICE_RUNTIME" \
                          "CONFIG_PWM_CAPTURE" \
                          "CONFIG_SCHED_CPU_MASK" \
                          "CONFIG_SCHED_DEADLINE" \

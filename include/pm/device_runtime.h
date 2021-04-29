@@ -23,7 +23,7 @@ extern "C" {
  * @{
  */
 
-#ifdef CONFIG_PM_DEVICE_IDLE
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 
 /**
  * @brief Enable device idle PM
