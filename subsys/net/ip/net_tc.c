@@ -40,12 +40,19 @@ static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
 static struct net_traffic_class rx_classes[NET_TC_RX_COUNT];
 #endif
 
+#if NET_TC_RX_COUNT > 0 || NET_TC_TX_COUNT > 0
+static void submit_to_queue(struct k_fifo *queue, struct net_pkt *pkt)
+{
+	k_fifo_put(queue, pkt);
+}
+#endif
+
 bool net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt)
 {
 #if NET_TC_TX_COUNT > 0
 	net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
-	k_work_submit_to_queue(&tx_classes[tc].work_q, net_pkt_work(pkt));
+	submit_to_queue(&tx_classes[tc].fifo, pkt);
 #else
 	ARG_UNUSED(tc);
 	ARG_UNUSED(pkt);
@@ -58,7 +65,7 @@ void net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt)
 #if NET_TC_RX_COUNT > 0
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
-	k_work_submit_to_queue(&rx_classes[tc].work_q, net_pkt_work(pkt));
+	submit_to_queue(&rx_classes[tc].fifo, pkt);
 #else
 	ARG_UNUSED(tc);
 	ARG_UNUSED(pkt);
@@ -229,9 +236,40 @@ static void net_tc_rx_stats_priority_setup(struct net_if *iface,
 #endif
 #endif
 
-/* Create workqueue for each traffic class we are using. All the network
- * traffic goes through these classes. There needs to be at least one traffic
- * class in the system.
+#if NET_TC_RX_COUNT > 0
+static void tc_rx_handler(struct k_fifo *fifo)
+{
+	struct net_pkt *pkt;
+
+	while (1) {
+		pkt = k_fifo_get(fifo, K_FOREVER);
+		if (pkt == NULL) {
+			continue;
+		}
+
+		net_process_rx_packet(pkt);
+	}
+}
+#endif
+
+#if NET_TC_TX_COUNT > 0
+static void tc_tx_handler(struct k_fifo *fifo)
+{
+	struct net_pkt *pkt;
+
+	while (1) {
+		pkt = k_fifo_get(fifo, K_FOREVER);
+		if (pkt == NULL) {
+			continue;
+		}
+
+		net_process_tx_packet(pkt);
+	}
+}
+#endif
+
+/* Create a fifo for each traffic class we are using. All the network
+ * traffic goes through these classes.
  */
 void net_tc_tx_init(void)
 {
@@ -250,6 +288,7 @@ void net_tc_tx_init(void)
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
 		uint8_t thread_priority;
 		int priority;
+		k_tid_t tid;
 
 		thread_priority = tx_tc2thread(i);
 
@@ -257,25 +296,35 @@ void net_tc_tx_init(void)
 			K_PRIO_COOP(thread_priority) :
 			K_PRIO_PREEMPT(thread_priority);
 
-		NET_DBG("[%d] Starting TX queue %p stack size %zd "
+		NET_DBG("[%d] Starting TX handler %p stack size %zd "
 			"prio %d %s(%d)", i,
-			&tx_classes[i].work_q,
+			&tx_classes[i].handler,
 			K_KERNEL_STACK_SIZEOF(tx_stack[i]),
 			thread_priority,
 			IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
 							"coop" : "preempt",
 			priority);
 
-		k_work_queue_start(&tx_classes[i].work_q, tx_stack[i],
-				   K_KERNEL_STACK_SIZEOF(tx_stack[i]), priority,
-				   NULL);
+		k_fifo_init(&tx_classes[i].fifo);
+
+		tid = k_thread_create(&tx_classes[i].handler, tx_stack[i],
+				      K_KERNEL_STACK_SIZEOF(tx_stack[i]),
+				      (k_thread_entry_t)tc_tx_handler,
+				      &tx_classes[i].fifo, NULL, NULL,
+				      priority, 0, K_FOREVER);
+		if (!tid) {
+			NET_ERR("Cannot create TC handler thread %d", i);
+			continue;
+		}
 
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			char name[MAX_NAME_LEN];
 
 			snprintk(name, sizeof(name), "tx_q[%d]", i);
-			k_thread_name_set(&tx_classes[i].work_q.thread, name);
+			k_thread_name_set(tid, name);
 		}
+
+		k_thread_start(tid);
 	}
 #endif
 }
@@ -297,6 +346,7 @@ void net_tc_rx_init(void)
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
 		uint8_t thread_priority;
 		int priority;
+		k_tid_t tid;
 
 		thread_priority = rx_tc2thread(i);
 
@@ -304,25 +354,35 @@ void net_tc_rx_init(void)
 			K_PRIO_COOP(thread_priority) :
 			K_PRIO_PREEMPT(thread_priority);
 
-		NET_DBG("[%d] Starting RX queue %p stack size %zd "
+		NET_DBG("[%d] Starting RX handler %p stack size %zd "
 			"prio %d %s(%d)", i,
-			&rx_classes[i].work_q,
+			&rx_classes[i].handler,
 			K_KERNEL_STACK_SIZEOF(rx_stack[i]),
 			thread_priority,
 			IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
 							"coop" : "preempt",
 			priority);
 
-		k_work_queue_start(&rx_classes[i].work_q, rx_stack[i],
-				   K_KERNEL_STACK_SIZEOF(rx_stack[i]), priority,
-				   NULL);
+		k_fifo_init(&rx_classes[i].fifo);
+
+		tid = k_thread_create(&rx_classes[i].handler, rx_stack[i],
+				      K_KERNEL_STACK_SIZEOF(rx_stack[i]),
+				      (k_thread_entry_t)tc_rx_handler,
+				      &rx_classes[i].fifo, NULL, NULL,
+				      priority, 0, K_FOREVER);
+		if (!tid) {
+			NET_ERR("Cannot create TC handler thread %d", i);
+			continue;
+		}
 
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			char name[MAX_NAME_LEN];
 
 			snprintk(name, sizeof(name), "rx_q[%d]", i);
-			k_thread_name_set(&rx_classes[i].work_q.thread, name);
+			k_thread_name_set(tid, name);
 		}
+
+		k_thread_start(tid);
 	}
 #endif
 }
