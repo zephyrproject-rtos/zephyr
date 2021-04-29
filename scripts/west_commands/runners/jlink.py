@@ -162,6 +162,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             self._jlink_version_str = f'{major}.{minor:02}{rev_str}'
         return self._jlink_version_str
 
+    @property
     def supports_nogui(self):
         # -nogui was introduced in J-Link Commander v6.80
         return self.jlink_version >= (6, 80, 0)
@@ -186,6 +187,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                        '-device', self.device,
                        '-silent',
                        '-singlerun'] +
+                      (['-nogui'] if self.supports_nogui else []) +
                       self.tool_opt)
 
         if command == 'flash':
@@ -268,16 +270,13 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             with open(fname, 'wb') as f:
                 f.writelines(bytes(line + '\n', 'utf-8') for line in lines)
 
-            if self.supports_nogui():
-                nogui = ['-nogui', '1']
-            else:
-                nogui = []
-
-            cmd = ([self.commander] + nogui +
+            cmd = ([self.commander] +
+                   (['-nogui', '1'] if self.supports_nogui else []) +
                    ['-if', self.iface,
                     '-speed', self.speed,
                     '-device', self.device,
                     '-CommanderScript', fname] +
+                   (['-nogui', '1'] if self.supports_nogui else []) +
                    self.tool_opt)
 
             self.logger.info('Flashing file: {}'.format(flash_file))
