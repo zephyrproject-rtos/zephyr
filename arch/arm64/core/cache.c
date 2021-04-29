@@ -110,6 +110,9 @@ int arch_dcache_all(int op)
 	if (op != K_CACHE_INVD && op != K_CACHE_WB && op != K_CACHE_WB_INVD)
 		return -ENOTSUP;
 
+	/* Data barrier before start */
+	dsb();
+
 	clidr_el1 = read_clidr_el1();
 
 	loc = (clidr_el1 >> CLIDR_EL1_LOC_SHIFT) & CLIDR_EL1_LOC_MASK;
@@ -157,5 +160,11 @@ int arch_dcache_all(int op)
 			}
 		}
 	}
+
+	/* Restore csselr_el1 to level 0 */
+	write_csselr_el1(0);
+	dsb();
+	isb();
+
 	return 0;
 }
