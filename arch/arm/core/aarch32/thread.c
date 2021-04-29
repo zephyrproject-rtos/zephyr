@@ -484,16 +484,6 @@ static void z_arm_prepare_switch_to_main(void)
 	__ISB();
 #endif /* CONFIG_FPU_SHARING */
 #endif /* CONFIG_FPU */
-
-#ifdef CONFIG_ARM_MPU
-	/* Configure static memory map. This will program MPU regions,
-	 * to set up access permissions for fixed memory sections, such
-	 * as Application Memory or No-Cacheable SRAM area.
-	 *
-	 * This function is invoked once, upon system initialization.
-	 */
-	z_arm_configure_static_mpu_regions();
-#endif
 }
 
 void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
