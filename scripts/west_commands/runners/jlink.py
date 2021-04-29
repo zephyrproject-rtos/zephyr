@@ -117,8 +117,14 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  tui=args.tui, tool_opt=args.tool_opt)
 
     def print_gdbserver_message(self):
-        self.logger.info('J-Link GDB server running on port {}'.
-                         format(self.gdb_port))
+        if not self.thread_info_enabled:
+            thread_msg = '; no thread info available'
+        elif self.supports_thread_info:
+            thread_msg = '; thread info enabled'
+        else:
+            thread_msg = '; update J-Link software for thread info'
+        self.logger.info('J-Link GDB server running on port '
+                         f'{self.gdb_port}{thread_msg}')
 
     @property
     def jlink_version(self):
@@ -167,6 +173,11 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # -nogui was introduced in J-Link Commander v6.80
         return self.jlink_version >= (6, 80, 0)
 
+    @property
+    def supports_thread_info(self):
+        # RTOSPlugin_Zephyr was introduced in 7.11b
+        return self.jlink_version >= (7, 11, 2)
+
     def do_run(self, command, **kwargs):
         if MISSING_REQUIREMENTS:
             raise RuntimeError('one or more Python dependencies were missing; '
@@ -179,6 +190,10 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             Path(self.require(self.commander)).resolve())
         self.logger.info(f'JLink version: {self.jlink_version_str}')
 
+        rtos = self.thread_info_enabled and self.supports_thread_info
+        plugin_dir = os.fspath(Path(self.commander).parent / 'GDBServer' /
+                               'RTOSPlugin_Zephyr')
+
         server_cmd = ([self.gdbserver] +
                       ['-select', 'usb', # only USB connections supported
                        '-port', str(self.gdb_port),
@@ -188,6 +203,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                        '-silent',
                        '-singlerun'] +
                       (['-nogui'] if self.supports_nogui else []) +
+                      (['-rtos', plugin_dir] if rtos else []) +
                       self.tool_opt)
 
         if command == 'flash':
