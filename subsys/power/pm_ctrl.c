@@ -8,7 +8,7 @@
 #include <string.h>
 #include <device.h>
 #include <sys/atomic.h>
-#include <power/power_state.h>
+#include <pm/state.h>
 #include "policy/pm_policy.h"
 
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
