@@ -1166,7 +1166,7 @@ Power management:
         - nashif
         - mengxianglinx
     files:
-        - include/power/power.h
+        - include/pm/pm.h
         - samples/subsys/power/
         - subsys/power/
         - tests/subsys/power/

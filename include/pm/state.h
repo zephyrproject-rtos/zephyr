@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_POWER_POWER_STATE_H_
-#define ZEPHYR_INCLUDE_POWER_POWER_STATE_H_
+#ifndef ZEPHYR_INCLUDE_PM_STATE_H_
+#define ZEPHYR_INCLUDE_PM_STATE_H_
 
 #include <sys/util.h>
 #include <devicetree.h>

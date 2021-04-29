@@ -478,7 +478,7 @@
 /include/net/lwm2m*.h                     @jukkar @rlubos
 /include/net/mqtt.h                       @jukkar @rlubos
 /include/posix/                           @pfalcon
-/include/power/power.h                    @nashif @ceolin
+/include/pm/pm.h                          @nashif @ceolin
 /include/drivers/ptp_clock.h              @jukkar
 /include/shared_irq.h                     @dcpleung @nashif @andyross
 /include/shell/                           @jakub-uC @nordic-krch
