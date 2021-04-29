@@ -225,6 +225,7 @@
 		uart1: uart@f02700 {
 			compatible = "ns16550";
 			reg = <0x00f02700 0x0020>;
+			status = "disabled";
 			label = "console";
 			current-speed = <115200>;
 			clock-frequency = <1804800>;
@@ -234,6 +235,7 @@
 		uart2: uart@f02800 {
 			compatible = "ns16550";
 			reg = <0x00f02800 0x0020>;
+			status = "disabled";
 			label = "UART_2";
 			current-speed = <460800>;
 			clock-frequency = <1804800>;
