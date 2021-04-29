@@ -601,10 +601,8 @@ void arm_core_mpu_configure_dynamic_mpu_regions(
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int nxp_mpu_init(const struct device *arg)
+int z_arm_mpu_init(void)
 {
-	ARG_UNUSED(arg);
-
 	uint32_t r_index;
 
 	if (mpu_config.num_regions > get_num_regions()) {
@@ -640,15 +638,5 @@ static int nxp_mpu_init(const struct device *arg)
 
 	arm_core_mpu_enable();
 
-
 	return 0;
 }
-
-#if defined(CONFIG_LOG)
-/* To have logging the driver needs to be initialized later */
-SYS_INIT(nxp_mpu_init, PRE_KERNEL_2,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#else
-SYS_INIT(nxp_mpu_init, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif
