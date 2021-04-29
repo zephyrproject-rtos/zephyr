@@ -70,7 +70,7 @@ static void cavs_idc_isr(const struct device *dev)
 				ext = UINT_TO_POINTER(
 					idc_read(IPC_IDCTEFC(i), curr_cpu_id) &
 					IPC_IDCTEFC_MSG_MASK);
-			drv_data->cb(dev, drv_data->user_data, id, ext);
+				drv_data->cb(dev, drv_data->user_data, id, ext);
 			}
 			break;
 		}
