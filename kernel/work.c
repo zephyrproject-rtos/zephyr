@@ -824,7 +824,6 @@ void k_work_init_delayable(struct k_work_delayable *dwork,
 		},
 	};
 	z_init_timeout(&dwork->timeout);
-	(void)work_timeout;
 }
 
 static inline int work_delayable_busy_get_locked(const struct k_work_delayable *dwork)
