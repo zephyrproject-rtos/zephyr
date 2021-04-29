@@ -1389,7 +1389,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		fp = extract_conversion(conv, sp);
 
 		/* If dynamic width is specified, process it,
-		 * otherwise set with if present.
+		 * otherwise set width if present.
 		 */
 		if (conv->width_star) {
 			width = va_arg(ap, int);
