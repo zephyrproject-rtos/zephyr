@@ -30,3 +30,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(240)>;
+};
