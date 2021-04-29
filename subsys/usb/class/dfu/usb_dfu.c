@@ -292,7 +292,7 @@ static struct usb_cfg_data dfu_config;
 
 /* Device data structure */
 struct dfu_data_t {
-	uint8_t flash_area_id;
+	const struct flash_area *fa;
 	uint32_t flash_upload_size;
 	/* Number of bytes sent during upload */
 	uint32_t bytes_sent;
@@ -305,16 +305,16 @@ struct dfu_data_t {
 };
 
 #if FLASH_AREA_LABEL_EXISTS(image_1)
-	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_1)
+	#define UPLOAD_FLASH_AREA FLASH_AREA(image_1)
 #else
-	#define UPLOAD_FLASH_AREA_ID FLASH_AREA_ID(image_0)
+	#define UPLOAD_FLASH_AREA FLASH_AREA(image_0)
 #endif
 
 
 static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
-	.flash_area_id = UPLOAD_FLASH_AREA_ID,
+	.fa = UPLOAD_FLASH_AREA,
 	.alt_setting = 0,
 	.bwPollTimeout = CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT,
 };
@@ -466,8 +466,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_reset_counters();
 			k_poll_signal_reset(&dfu_signal);
 
-			if (dfu_data.flash_area_id !=
-			    UPLOAD_FLASH_AREA_ID) {
+			if (dfu_data.fa != UPLOAD_FLASH_AREA) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
 				LOG_ERR("This area can not be overwritten");
@@ -538,23 +537,15 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			}
 
 			if (len) {
-				const struct flash_area *fa;
+				const struct flash_area *fa = dfu_data.fa;
 
-				ret = flash_area_open(dfu_data.flash_area_id,
-						      &fa);
-				if (ret) {
+				if (fa == NULL) {
 					dfu_data.state = dfuERROR;
 					dfu_data.status = errFILE;
 					break;
 				}
 				ret = flash_area_read(fa, dfu_data.bytes_sent,
 						      *data, len);
-				flash_area_close(fa);
-				if (ret) {
-					dfu_data.state = dfuERROR;
-					dfu_data.status = errFILE;
-					break;
-				}
 			}
 			*data_len = len;
 
@@ -686,30 +677,25 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 		if (pSetup->bRequest == REQ_SET_INTERFACE) {
 			LOG_DBG("DFU alternate setting %d", pSetup->wValue);
 
-			const struct flash_area *fa;
+			const struct flash_area *fa = NULL;
 
 			switch (pSetup->wValue) {
 			case 0:
-				dfu_data.flash_area_id =
-				    FLASH_AREA_ID(image_0);
+				dfu_data.fa = FLASH_AREA(image_0);
 				break;
 #if FLASH_AREA_LABEL_EXISTS(image_1)
 			case 1:
-				dfu_data.flash_area_id =
-				    UPLOAD_FLASH_AREA_ID;
+				dfu_data.fa = UPLOAD_FLASH_AREA;
 				break;
 #endif
-			default:
+			}
+
+			if (fa == NULL) {
 				LOG_WRN("Invalid DFU alternate setting");
 				return -ENOTSUP;
 			}
 
-			if (flash_area_open(dfu_data.flash_area_id, &fa)) {
-				return -EIO;
-			}
-
 			dfu_data.flash_upload_size = fa->fa_size;
-			flash_area_close(fa);
 
 			dfu_data.alt_setting = pSetup->wValue;
 			*data_len = 0;
@@ -769,7 +755,7 @@ static void dfu_work_handler(struct k_work *item)
  * image collection, so not erase whole bank at DFU beginning
  */
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		if (boot_erase_img_bank(UPLOAD_FLASH_AREA_ID)) {
+		if (boot_erase_img_bank(UPLOAD_FLASH_AREA)) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errERASE;
 			break;
@@ -787,20 +773,17 @@ static void dfu_work_handler(struct k_work *item)
 
 static int usb_dfu_init(const struct device *dev)
 {
-	const struct flash_area *fa;
-
 	ARG_UNUSED(dev);
 
 	k_work_init(&dfu_work, dfu_work_handler);
 	k_poll_signal_init(&dfu_signal);
 	k_timer_init(&dfu_timer, dfu_timer_expired, NULL);
 
-	if (flash_area_open(dfu_data.flash_area_id, &fa)) {
+	if (dfu_data.fa == NULL) {
 		return -EIO;
 	}
 
-	dfu_data.flash_upload_size = fa->fa_size;
-	flash_area_close(fa);
+	dfu_data.flash_upload_size = dfu_data.fa->fa_size;
 
 	return 0;
 }
