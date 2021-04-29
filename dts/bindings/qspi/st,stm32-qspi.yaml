@@ -9,7 +9,8 @@ description: |
             pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
                          &quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
                          &quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
-
+        For example dmas for TX/RX on QSPI, depending on the dma version
+        the dma-cells has 2 or 3 or 4 cells
             dmas = <&dma1 5 5 0x0000 0x03>;
             dma-names = "tx_rx";
 
@@ -35,7 +36,8 @@ properties:
         hold a phandle reference to the dma controller, the channel number,
         the slot number, channel configuration and finally features.
 
-        For example dmas for TX/RX on QSPI
+        For example dmas for TX/RX on QSPI, depending on the dma version
+        the dma-cells has 2 or 3 or 4 cells
            dmas = <&dma1 5 5 0x0000 0x03>;
 
     dma-names:
