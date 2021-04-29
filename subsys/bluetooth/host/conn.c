@@ -1791,7 +1791,7 @@ struct bt_conn *bt_conn_lookup_state_le(uint8_t id, const bt_addr_le_t *peer,
 		}
 
 		if (conn->type != BT_CONN_TYPE_LE) {
-			bt_conn_ref(conn);
+			bt_conn_unref(conn);
 			continue;
 		}
 
