@@ -305,10 +305,10 @@ struct net_buf *bt_l2cap_create_rsp(struct net_buf *buf, size_t reserve);
 int bt_l2cap_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 		     bt_conn_tx_cb_t cb, void *user_data);
 
-static inline void bt_l2cap_send(struct bt_conn *conn, uint16_t cid,
-				 struct net_buf *buf)
+static inline int bt_l2cap_send(struct bt_conn *conn, uint16_t cid,
+				struct net_buf *buf)
 {
-	bt_l2cap_send_cb(conn, cid, buf, NULL, NULL);
+	return bt_l2cap_send_cb(conn, cid, buf, NULL, NULL);
 }
 
 /* Receive a new L2CAP PDU from a connection */

@@ -1017,8 +1017,11 @@ static void smp_br_timeout(struct k_work *work)
 static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 			bt_conn_tx_cb_t cb)
 {
-	bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb,
-			 NULL);
+	if (bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb, NULL)) {
+		net_buf_unref(buf);
+		return;
+	}
+
 	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
 }
 
@@ -1575,7 +1578,9 @@ static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 	 * SMP timer is not restarted for PairingFailed so don't use
 	 * smp_br_send
 	 */
-	bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf);
+	if (bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf)) {
+		net_buf_unref(buf);
+	}
 
 	return 0;
 }
@@ -1893,7 +1898,11 @@ static void smp_timeout(struct k_work *work)
 static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		     bt_conn_tx_cb_t cb, void *user_data)
 {
-	bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb, NULL);
+	if (bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb, NULL)) {
+		net_buf_unref(buf);
+		return;
+	}
+
 	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
 }
 
@@ -1918,7 +1927,9 @@ static int smp_error(struct bt_smp *smp, uint8_t reason)
 	rsp->reason = reason;
 
 	/* SMP timer is not restarted for PairingFailed so don't use smp_send */
-	bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf);
+	if (bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf)) {
+		net_buf_unref(buf);
+	}
 
 	return 0;
 }
@@ -2875,6 +2886,7 @@ static int smp_send_security_req(struct bt_conn *conn)
 	struct bt_smp *smp;
 	struct bt_smp_security_request *req;
 	struct net_buf *req_buf;
+	int err;
 
 	BT_DBG("");
 	smp = smp_chan_get(conn);
@@ -2922,7 +2934,11 @@ static int smp_send_security_req(struct bt_conn *conn)
 	req->auth_req = get_auth(conn, BT_SMP_AUTH_DEFAULT);
 
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+	err = bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+	if (err) {
+		net_buf_unref(req_buf);
+		return err;
+	}
 
 	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);

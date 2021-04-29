@@ -39,11 +39,14 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	return -ENOTSUP;
 }
 
-static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *req_buf)
 {
 	struct bt_conn *conn = chan->conn;
 	struct bt_smp_pairing_fail *rsp;
 	struct bt_smp_hdr *hdr;
+	struct net_buf *buf;
+
+	ARG_UNUSED(req_buf);
 
 	/* If a device does not support pairing then it shall respond with
 	 * a Pairing Failed command with the reason set to "Pairing Not
@@ -60,7 +63,9 @@ static int bt_smp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->reason = BT_SMP_ERR_PAIRING_NOTSUPP;
 
-	bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf);
+	if (bt_l2cap_send(conn, BT_L2CAP_CID_SMP, buf)) {
+		net_buf_unref(buf);
+	}
 
 	return 0;
 }
