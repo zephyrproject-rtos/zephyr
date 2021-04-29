@@ -80,9 +80,6 @@ struct spi_nor_config {
 	/* Expected JEDEC ID, from jedec-id property */
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 
-	/* Optional bits in SR to be cleared on startup */
-	uint8_t has_lock;
-
 #if defined(CONFIG_SPI_NOR_SFDP_MINIMAL)
 	/* Optional support for entering 32-bit address mode. */
 	uint8_t enter_4byte_addr;
@@ -98,6 +95,12 @@ struct spi_nor_config {
 	const struct jesd216_bfp *bfp;
 #endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
+
+	/* Optional bits in SR to be cleared on startup.
+	 *
+	 * This information cannot be derived from SFDP.
+	 */
+	uint8_t has_lock;
 };
 
 /**
@@ -1012,9 +1015,7 @@ static int spi_nor_configure(const struct device *dev)
 {
 	struct spi_nor_data *data = dev->data;
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
-#ifndef CONFIG_SPI_NOR_SFDP_RUNTIME
 	const struct spi_nor_config *cfg = dev->config;
-#endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 	int rc;
 
 	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
@@ -1067,7 +1068,11 @@ static int spi_nor_configure(const struct device *dev)
 	}
 #endif
 
-	/* Check for block protect bits that need to be cleared. */
+	/* Check for block protect bits that need to be cleared.  This
+	 * information cannot be determined from SFDP content, so the
+	 * devicetree node property must be set correctly for any device
+	 * that powers up with block protect enabled.
+	 */
 	if (cfg->has_lock != 0) {
 		acquire_device(dev);
 
