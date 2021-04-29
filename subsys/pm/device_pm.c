@@ -14,6 +14,14 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
+/* Device PM states */
+enum device_pm_state {
+	DEVICE_PM_STATE_ACTIVE = 1,
+	DEVICE_PM_STATE_SUSPENDED,
+	DEVICE_PM_STATE_SUSPENDING,
+	DEVICE_PM_STATE_RESUMING,
+};
+
 /* Device PM request type */
 #define DEVICE_PM_SYNC			(0 << 0)
 #define DEVICE_PM_ASYNC			(1 << 0)
