@@ -215,6 +215,16 @@ config ARM_NONSECURE_FIRMWARE
 	  resources of the Cortex-M MCU, and, therefore, it shall avoid
 	  accessing them.
 
+config ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	bool "Allow secure function calls to be preempted"
+	depends on ARM_NONSECURE_FIRMWARE
+	help
+	  When enabled, this option indicates that preemptible Zephyr
+	  threads performing secure function calls, are allowed to be
+	  preempted. When disabled, the option indicates that such
+	  threads many not be context-switched-out while doing a Secure
+	  function call.
+
 choice
 	prompt "Floating point ABI"
 	default FP_HARDABI
