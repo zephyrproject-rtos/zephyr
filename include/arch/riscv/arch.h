@@ -285,7 +285,7 @@ int arch_irq_is_enabled(unsigned int irq);
 void arch_irq_priority_set(unsigned int irq, unsigned int prio);
 void z_irq_spurious(const void *unused);
 
-#if defined(CONFIG_RISCV_HAS_PLIC)
+#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_NUCLEI_ECLIC)
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \

@@ -36,6 +36,15 @@
 		compatible = "gigadevice,gd32vf103-soc", "simple-bus";
 		ranges;
 
+		eclic: interrupt-controller@d2000000 {
+			#interrupt-cells = <2>;
+			compatible = "nuclei,eclic";
+			interrupt-controller;
+			reg = <0xd2000000 0x0001
+			       0xd2000004 0x0001
+			       0xd2000400 0x1000>;
+			label = "GD32_ECLIC";
+		};
 	};
 
 };

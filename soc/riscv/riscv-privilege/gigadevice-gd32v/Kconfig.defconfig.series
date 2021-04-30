@@ -30,6 +30,9 @@ config FLASH_LOAD_OFFSET
 config PLIC
 	default n
 
+config NUCLEI_ECLIC
+	default y
+
 config NUM_IRQS
 	default 64
 
