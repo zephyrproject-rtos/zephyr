@@ -165,10 +165,13 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
 				     offsetof(struct pdu_data, llctrl) + \
 				     sizeof(struct pdu_data_llctrl))
 
+/* Terminate procedure state values */
+#define TERM_REQ   1
+#define TERM_ACKED 3
+
 static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_CTLR_TX_BUFFERS);
 static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),
 		    (CONFIG_BT_CTLR_TX_BUFFERS + CONN_TX_CTRL_BUFFERS));
-
 
 static struct {
 	void *free;
@@ -458,18 +461,21 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
 	struct ll_conn *conn;
 
-	if (!is_valid_disconnect_reason(reason)) {
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
-
 	conn = ll_connected_get(handle);
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	conn->llcp_terminate.reason_own = reason;
+	if (conn->llcp_terminate.req != conn->llcp_terminate.ack) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
-	conn->llcp_terminate.req++;
+	if (!is_valid_disconnect_reason(reason)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	conn->llcp_terminate.reason_own = reason;
+	conn->llcp_terminate.req++; /* (req - ack) == 1, TERM_REQ */
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn->lll.role) {
 		ull_slave_latency_cancel(conn, handle);
@@ -1109,15 +1115,18 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CTLR_LE_ENC */
 
 	/* Terminate Procedure Request */
-	if (conn->llcp_terminate.ack != conn->llcp_terminate.req) {
+	if (((conn->llcp_terminate.req - conn->llcp_terminate.ack) & 0xFF) ==
+	    TERM_REQ) {
 		struct node_tx *tx;
 
 		tx = mem_acquire(&mem_conn_tx_ctrl.free);
 		if (tx) {
 			struct pdu_data *pdu_tx = (void *)tx->pdu;
 
-			/* Terminate Procedure acked */
-			conn->llcp_terminate.ack = conn->llcp_terminate.req;
+			/* Terminate Procedure initiated,
+			 * make (req - ack) == 2
+			 */
+			conn->llcp_terminate.ack--;
 
 			/* place the terminate ind packet in tx queue */
 			pdu_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -1212,8 +1221,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	/* Master transmitted ack for the received terminate ind or
-	 * Slave received terminate ind or MIC failure
+	/* Peripheral received terminate ind or
+	 * Central received ack for the transmitted terminate ind or
+	 * Central transmitted ack for the received terminate ind or
+	 * there has been MIC failure
 	 */
 	reason_final = conn->llcp_terminate.reason_final;
 	if (reason_final && (
@@ -1223,6 +1234,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 			    0 ||
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
+			    (((conn->llcp_terminate.req -
+			       conn->llcp_terminate.ack) & 0xFF) ==
+			     TERM_ACKED) ||
 			    conn->master.terminate_ack ||
 			    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
 #else /* CONFIG_BT_CENTRAL */
@@ -5576,6 +5590,11 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			conn->llcp_terminate.reason_final =
 			      pdu_tx->llctrl.terminate_ind.error_code;
 		}
+
+		/* Make (req - ack) == 3, a state indicating terminate_ind has
+		 * been ack-ed.
+		 */
+		conn->llcp_terminate.ack--;
 	}
 	break;
 
