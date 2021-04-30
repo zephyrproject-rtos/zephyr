@@ -152,6 +152,18 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
 
 /**
+ * @brief Erase whole flash area
+ *
+ * @param[in] fa Pointer to flash_area object
+ *
+ * @return 0 on success, negative error code on fail.
+ */
+static inline int flash_area_erase_whole(const struct flash_area *fa)
+{
+	return flash_area_erase(fa, 0, fa->fa_size);
+}
+
+/**
  * @brief Get write block size of the flash area
  *
  * Currently write block size might be treated as read block size, although

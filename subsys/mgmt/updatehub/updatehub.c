@@ -531,7 +531,7 @@ cleanup:
 
 static enum updatehub_response install_update(void)
 {
-	if (boot_erase_img_bank(FLASH_AREA_ID(image_1)) != 0) {
+	if (flash_area_erase_whole(FLASH_AREA(image_1)) != 0) {
 		LOG_ERR("Failed to init flash and erase second slot");
 		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
 		goto error;

@@ -755,7 +755,7 @@ static void dfu_work_handler(struct k_work *item)
  * image collection, so not erase whole bank at DFU beginning
  */
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		if (boot_erase_img_bank(UPLOAD_FLASH_AREA)) {
+		if (flash_area_erase_whole(UPLOAD_FLASH_AREA)) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errERASE;
 			break;
