@@ -486,7 +486,7 @@ Device Model Drivers with multiple MMIO regions
 ===============================================
 
 Some drivers may have multiple MMIO regions. In addition, some drivers
-may already be implementing a form of inheritance whice requires some other
+may already be implementing a form of inheritance which requires some other
 data to be placed first in the  ``config_info`` and ``driver_data``
 structures.
 
