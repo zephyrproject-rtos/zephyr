@@ -247,6 +247,10 @@ Drivers and Sensors
     :c:macro:`GPIO_DT_SPEC_INST_GET`, and :c:macro:`GPIO_DT_SPEC_INST_GET_OR`
   * New helper functions for using ``gpio_dt_spec`` values:
     :c:func:`gpio_pin_configure_dt`, :c:func:`gpio_pin_interrupt_configure_dt`
+  * Remove support for ``GPIO_INT_*`` flags in :c:func:`gpio_pin_configure()`.
+    The feature has been deprecated in the Zephyr 2.2 release. The interrupt
+    flags are now accepted by :c:func:`gpio_pin_interrupt_configure()`
+    function only.
 
 * Hardware Info
 

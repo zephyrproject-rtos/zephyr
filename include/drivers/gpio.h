@@ -127,6 +127,13 @@ extern "C" {
  */
 #define GPIO_INT_HIGH_1                (1U << 18)
 
+#define GPIO_INT_MASK                  (GPIO_INT_DISABLE | \
+					GPIO_INT_ENABLE | \
+					GPIO_INT_LEVELS_LOGICAL | \
+					GPIO_INT_EDGE | \
+					GPIO_INT_LOW_0 | \
+					GPIO_INT_HIGH_1)
+
 /** @endcond */
 
 /** Configures GPIO interrupt to be triggered on pin rising edge and enables it.
@@ -583,18 +590,6 @@ __subsystem struct gpio_driver_api {
 	uint32_t (*get_pending_int)(const struct device *dev);
 };
 
-__syscall int gpio_config(const struct device *port, gpio_pin_t pin,
-			  gpio_flags_t flags);
-
-static inline int z_impl_gpio_config(const struct device *port,
-				     gpio_pin_t pin, gpio_flags_t flags)
-{
-	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->api;
-
-	return api->pin_configure(port, pin, flags);
-}
-
 /**
  * @endcond
  */
@@ -708,9 +703,13 @@ static inline int gpio_pin_interrupt_configure_dt(const struct gpio_dt_spec *spe
  * @retval -EIO I/O error when accessing an external GPIO chip.
  * @retval -EWOULDBLOCK if operation would block.
  */
-static inline int gpio_pin_configure(const struct device *port,
-				     gpio_pin_t pin,
-				     gpio_flags_t flags)
+__syscall int gpio_pin_configure(const struct device *port,
+				 gpio_pin_t pin,
+				 gpio_flags_t flags);
+
+static inline int z_impl_gpio_pin_configure(const struct device *port,
+					    gpio_pin_t pin,
+					    gpio_flags_t flags)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
@@ -718,7 +717,9 @@ static inline int gpio_pin_configure(const struct device *port,
 		(const struct gpio_driver_config *)port->config;
 	struct gpio_driver_data *data =
 		(struct gpio_driver_data *)port->data;
-	int ret;
+
+	__ASSERT((flags & GPIO_INT_MASK) == 0,
+		 "Interrupt flags are not supported");
 
 	__ASSERT((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) !=
 		 (GPIO_PULL_UP | GPIO_PULL_DOWN),
@@ -751,23 +752,13 @@ static inline int gpio_pin_configure(const struct device *port,
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
-	ret = gpio_config(port, pin, flags);
-	if (ret != 0) {
-		return ret;
-	}
-
 	if ((flags & GPIO_ACTIVE_LOW) != 0) {
 		data->invert |= (gpio_port_pins_t)BIT(pin);
 	} else {
 		data->invert &= ~(gpio_port_pins_t)BIT(pin);
 	}
-	if (((flags & (GPIO_INT_DISABLE | GPIO_INT_ENABLE)) != 0U)
-	    && (api->pin_interrupt_configure != NULL)) {
-		flags &= ~GPIO_INT_DEBOUNCE;
-		ret = z_impl_gpio_pin_interrupt_configure(port, pin, flags);
-	}
 
-	return ret;
+	return api->pin_configure(port, pin, flags);
 }
 
 /**
