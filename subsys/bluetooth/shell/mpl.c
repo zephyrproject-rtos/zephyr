@@ -29,28 +29,28 @@ extern "C" {
 #if defined(CONFIG_BT_MCS)
 
 #if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
-int cmd_mpl_test_set_media_state(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_test_set_media_state(const struct shell *shell, size_t argc,
 				  char *argv[])
 {
 	uint8_t state = strtol(argv[1], NULL, 0);
 
-	mpl_test_media_state_set(state);
+	media_proxy_pl_test_media_state_set(state);
 
 	return 0;
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_mpl_test_unset_parent_group(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_test_unset_parent_group(const struct shell *shell, size_t argc,
 				    char *argv[])
 {
-	mpl_test_unset_parent_group();
+	media_proxy_pl_test_unset_parent_group();
 
 	return 0;
 }
 #endif /* CONFIG_BT_OTS */
 
 /* Interface to _local_ control point, for testing and debugging */
-int cmd_mpl_test_set_operation(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_test_set_operation(const struct shell *shell, size_t argc,
 				char *argv[])
 {
 	struct mpl_op_t op;
@@ -71,29 +71,29 @@ int cmd_mpl_test_set_operation(const struct shell *shell, size_t argc,
 		op.param = 0;
 	}
 
-	mpl_operation_set(op);
+	media_proxy_pl_operation_set(op);
 
 	return 0;
 }
 #endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 
 #if defined(CONFIG_BT_DEBUG_MCS)
-int cmd_mpl_debug_dump_state(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_debug_dump_state(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
-	mpl_debug_dump_state();
+	media_proxy_pl_debug_dump_state();
 
 	return 0;
 }
 #endif /* CONFIG_BT_DEBUG_MCS */
 
-int cmd_mpl_init(const struct shell *shell, size_t argc, char *argv[])
+int cmd_media_proxy_pl_init(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (!ctx_shell) {
 		ctx_shell = shell;
 	}
 
-	int err = mpl_init();
+	int err = media_proxy_pl_init();
 
 	if (err) {
 		shell_error(shell, "Could not init mpl");
@@ -103,117 +103,117 @@ int cmd_mpl_init(const struct shell *shell, size_t argc, char *argv[])
 }
 
 
-int cmd_mpl_track_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_track_changed_cb(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
-	mpl_track_changed_cb();
+	media_proxy_pl_track_changed_cb();
 
 	return 0;
 }
 
-int cmd_mpl_title_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_title_changed_cb(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
-	mpl_track_title_cb("Interlude #3");
+	media_proxy_pl_track_title_cb("Interlude #3");
 
 	return 0;
 }
 
-int cmd_mpl_duration_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_duration_changed_cb(const struct shell *shell, size_t argc,
 				char *argv[])
 {
-	mpl_track_duration_cb(12000);
+	media_proxy_pl_track_duration_cb(12000);
 
 	return 0;
 }
 
-int cmd_mpl_position_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_position_changed_cb(const struct shell *shell, size_t argc,
 				char *argv[])
 {
-	mpl_track_position_cb(2048);
+	media_proxy_pl_track_position_cb(2048);
 
 	return 0;
 }
 
-int cmd_mpl_playback_speed_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_playback_speed_changed_cb(const struct shell *shell, size_t argc,
 				      char *argv[])
 {
-	mpl_playback_speed_cb(96);
+	media_proxy_pl_playback_speed_cb(96);
 
 	return 0;
 }
 
-int cmd_mpl_seeking_speed_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_seeking_speed_changed_cb(const struct shell *shell, size_t argc,
 				     char *argv[])
 {
-	mpl_seeking_speed_cb(4);
+	media_proxy_pl_seeking_speed_cb(4);
 
 	return 0;
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_mpl_current_track_id_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_current_track_id_changed_cb(const struct shell *shell, size_t argc,
 					char *argv[])
 {
-	mpl_current_track_id_cb(16);
+	media_proxy_pl_current_track_id_cb(16);
 
 	return 0;
 }
 
-int cmd_mpl_next_track_id_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_next_track_id_changed_cb(const struct shell *shell, size_t argc,
 				     char *argv[])
 {
-	mpl_next_track_id_cb(17);
+	media_proxy_pl_next_track_id_cb(17);
 
 	return 0;
 }
 
-int cmd_mpl_group_id_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_group_id_changed_cb(const struct shell *shell, size_t argc,
 				char *argv[])
 {
-	mpl_group_id_cb(19);
+	media_proxy_pl_group_id_cb(19);
 
 	return 0;
 }
 
-int cmd_mpl_parent_group_id_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_parent_group_id_changed_cb(const struct shell *shell, size_t argc,
 				       char *argv[])
 {
-	mpl_parent_group_id_cb(23);
+	media_proxy_pl_parent_group_id_cb(23);
 
 	return 0;
 }
 #endif /* CONFIG_BT_OTS */
 
-int cmd_mpl_playing_order_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_playing_order_changed_cb(const struct shell *shell, size_t argc,
 				     char *argv[])
 {
-	mpl_playing_order_cb(1);
+	media_proxy_pl_playing_order_cb(1);
 
 	return 0;
 }
 
-int cmd_mpl_state_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_state_changed_cb(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
-	mpl_media_state_cb(BT_MCS_MEDIA_STATE_SEEKING);
+	media_proxy_pl_media_state_cb(BT_MCS_MEDIA_STATE_SEEKING);
 
 	return 0;
 }
 
-int cmd_mpl_media_opcodes_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_media_opcodes_changed_cb(const struct shell *shell, size_t argc,
 				     char *argv[])
 {
-	mpl_operations_supported_cb(0x00aa55aa);
+	media_proxy_pl_operations_supported_cb(0x00aa55aa);
 
 	return 0;
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_mpl_search_results_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_search_results_changed_cb(const struct shell *shell, size_t argc,
 				      char *argv[])
 {
-	mpl_search_results_id_cb(19);
+	media_proxy_pl_search_results_id_cb(19);
 
 	return 0;
 }
@@ -230,69 +230,69 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 #if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
 	SHELL_CMD_ARG(test_set_media_state, NULL,
 		      "Set the media player state (test) <state>",
-		      cmd_mpl_test_set_media_state, 2, 0),
+		      cmd_media_proxy_pl_test_set_media_state, 2, 0),
 #if CONFIG_BT_OTS
 	SHELL_CMD_ARG(test_unset_parent_group, NULL,
 		      "Set current group to be its own parent (test)",
-		      cmd_mpl_test_unset_parent_group, 1, 0),
+		      cmd_media_proxy_pl_test_unset_parent_group, 1, 0),
 #endif /* CONFIG_BT_OTS */
 	SHELL_CMD_ARG(test_set_operation, NULL,
 		      "Write opcode to local control point (test) <opcode> [argument]",
-		      cmd_mpl_test_set_operation, 2, 1),
+		      cmd_media_proxy_pl_test_set_operation, 2, 1),
 #endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 #if defined(CONFIG_BT_DEBUG_MCS)
 	SHELL_CMD_ARG(debug_dump_state, NULL,
 		      "Dump media player's state as debug output (debug)",
-		      cmd_mpl_debug_dump_state, 1, 0),
+		      cmd_media_proxy_pl_debug_dump_state, 1, 0),
 #endif /* CONFIG_BT_DEBUG_MCC */
 	SHELL_CMD_ARG(init, NULL,
 		      "Initialize media player",
-		      cmd_mpl_init, 1, 0),
+		      cmd_media_proxy_pl_init, 1, 0),
 	SHELL_CMD_ARG(track_changed_cb, NULL,
 		      "Send Track Changed notification",
-		      cmd_mpl_track_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_track_changed_cb, 1, 0),
 	SHELL_CMD_ARG(title_changed_cb, NULL,
 		      "Send (fake) Track Title notification",
-		      cmd_mpl_title_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_title_changed_cb, 1, 0),
 	SHELL_CMD_ARG(duration_changed_cb, NULL,
 		      "Send Track Duration notification",
-		      cmd_mpl_duration_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_duration_changed_cb, 1, 0),
 	SHELL_CMD_ARG(position_changed_cb, NULL,
 		      "Send Track Position notification",
-		      cmd_mpl_position_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_position_changed_cb, 1, 0),
 	SHELL_CMD_ARG(playback_speed_changed_cb, NULL,
 		      "Send Playback Speed notification",
-		      cmd_mpl_playback_speed_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_playback_speed_changed_cb, 1, 0),
 	SHELL_CMD_ARG(seeking_speed_changed_cb, NULL,
 		      "Send Seeking Speed notification",
-		      cmd_mpl_seeking_speed_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_seeking_speed_changed_cb, 1, 0),
 #ifdef CONFIG_BT_OTS
 	SHELL_CMD_ARG(current_track_id_changed_cb, NULL,
 		      "Send Current Track notification",
-		      cmd_mpl_current_track_id_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_current_track_id_changed_cb, 1, 0),
 	SHELL_CMD_ARG(next_track_id_changed_cb, NULL,
 		      "Send Next Track notification",
-		      cmd_mpl_next_track_id_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_next_track_id_changed_cb, 1, 0),
 	SHELL_CMD_ARG(group_id_changed_cb, NULL,
 		      "Send Current Group notification",
-		      cmd_mpl_group_id_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_group_id_changed_cb, 1, 0),
 	SHELL_CMD_ARG(parent_group_id_changed_cb, NULL,
 		      "Send Parent Group notification",
-		      cmd_mpl_parent_group_id_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_parent_group_id_changed_cb, 1, 0),
 #endif /* CONFIG_BT_OTS */
 	SHELL_CMD_ARG(playing_order_changed_cb, NULL,
 		      "Send Playing Order notification",
-		      cmd_mpl_playing_order_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_playing_order_changed_cb, 1, 0),
 	SHELL_CMD_ARG(state_changed_cb, NULL,
 		      "Send Media State notification",
-		      cmd_mpl_state_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_state_changed_cb, 1, 0),
 	SHELL_CMD_ARG(media_opcodes_changed_cb, NULL,
 		      "Send Supported Opcodes notfication",
-		      cmd_mpl_media_opcodes_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_media_opcodes_changed_cb, 1, 0),
 #ifdef CONFIG_BT_OTS
 	SHELL_CMD_ARG(search_results_changed_cb, NULL,
 		      "Send Search Results Object ID notification",
-		      cmd_mpl_search_results_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_search_results_changed_cb, 1, 0),
 #endif /* CONFIG_BT_OTS */
 	SHELL_SUBCMD_SET_END
 );
