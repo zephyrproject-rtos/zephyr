@@ -54,7 +54,7 @@ the **running** state and begins counting down towards expiry.
 
 Note that the timer's duration and period parameters specify
 **minimum** delays that will elapse.  Because of internal system timer
-precision (and potentially runtime interractions like interrupt delay)
+precision (and potentially runtime interactions like interrupt delay)
 it is possible that more time may have passed as measured by reads
 from the relevant system time APIs.  But at least this much time is
 guaranteed to have elapsed.

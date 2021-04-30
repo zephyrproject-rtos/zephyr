@@ -6,7 +6,7 @@ Vulnerabilities
 This page collects all of the vulnerabilities that are discovered and
 fixed in each release.  It will also often have more details than is
 available in the releases.  Some vulnerabilities are deemed to be
-sensitive, and will not be publically discussed until there is
+sensitive, and will not be publicly discussed until there is
 sufficient time to fix them.  Because the release notes are locked to
 a version, the information here can be updated after the embargo is
 lifted.
@@ -51,7 +51,7 @@ CVE-2017-14202
 --------------
 
 The shell implementation does not protect against buffer overruns
-resulting in unpredicable behavior.
+resulting in unpredictable behavior.
 
 Improper Restriction of Operations within the Bounds of a Memory
 Buffer vulnerability in the shell component of Zephyr allows a serial

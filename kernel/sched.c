@@ -893,7 +893,7 @@ void *z_get_next_switch_handle(void *interrupted)
 
 #ifdef CONFIG_SPIN_VALIDATE
 			/* Changed _current!  Update the spinlock
-			 * bookeeping so the validation doesn't get
+			 * bookkeeping so the validation doesn't get
 			 * confused when the "wrong" thread tries to
 			 * release the lock.
 			 */

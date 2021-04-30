@@ -19,7 +19,7 @@
  * into the function.  The output was compared to the original
  * pt text and matched.  The result of the test matched the
  * expected outcome, but it does not validate the algorithm
- * meets any security requirments.
+ * meets any security requirements.
  *
  * **********************************************************
  *
