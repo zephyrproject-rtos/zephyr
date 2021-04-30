@@ -54,9 +54,6 @@ struct iis2iclx_config {
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
 };
 
-/* sensor data forward declaration (member definition is below) */
-struct iis2iclx_data;
-
 #define IIS2ICLX_SHUB_MAX_NUM_SLVS			2
 
 struct iis2iclx_data {
@@ -98,8 +95,6 @@ struct iis2iclx_data {
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
 };
 
-int iis2iclx_spi_init(const struct device *dev);
-int iis2iclx_i2c_init(const struct device *dev);
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 int iis2iclx_shub_init(const struct device *dev);
 int iis2iclx_shub_fetch_external_devs(const struct device *dev);
