@@ -479,7 +479,7 @@ Many race conditions have been present in Zephyr code because the results of
 an operation were not checked.
 
 There may be good reason to believe that a return value indicating that the
-operation did not complete as expected is not a problem.  In thoses cases the
+operation did not complete as expected is not a problem.  In those cases the
 code should clearly document this, by (1) casting the return value to ``void``
 to indicate that the result is intentionally ignored, and (2) documenting what
 happens in the unexpected case.  For example:
