@@ -362,8 +362,14 @@
 			pinctrl-0 = <&pd0a_gmac_gtxck &pd1a_gmac_gtxen
 				     &pd2a_gmac_gtx0 &pd3a_gmac_gtx1
 				     &pd4a_gmac_grxdv &pd5a_gmac_grx0
-				     &pd6a_gmac_grx1 &pd7a_gmac_grxer
-				     &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
+				     &pd6a_gmac_grx1 &pd7a_gmac_grxer>;
+
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				label = "MDIO";
+				status = "disabled";
+				pinctrl-0 = <&pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
+			};
 		};
 
 		tc0: tc@4000c000 {
