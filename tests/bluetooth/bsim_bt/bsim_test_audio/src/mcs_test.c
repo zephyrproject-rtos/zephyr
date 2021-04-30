@@ -75,7 +75,7 @@ static void test_main(void)
 	bt_conn_cb_register(&conn_callbacks);
 
 	/* Initialize media player */
-	err = mpl_init();
+	err = media_proxy_pl_init();
 	if (err) {
 		FAIL("Initializing MPL failed (err %d)", err);
 		return;
