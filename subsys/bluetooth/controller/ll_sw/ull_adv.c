@@ -913,6 +913,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_feature.features_peer = 0;
 		conn->llcp_version.req = conn->llcp_version.ack = 0;
 		conn->llcp_version.tx = conn->llcp_version.rx = 0;
+		conn->llcp_terminate.req = conn->llcp_terminate.ack = 0;
 		conn->llcp_terminate.reason_final = 0;
 		/* NOTE: use allocated link for generating dedicated
 		 * terminate ind rx node
