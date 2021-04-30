@@ -77,7 +77,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fmt, va_list ap)
 
 start:
 	while (*++fmt != '%') {
-		if (*fmt == 0) {
+		if (*fmt == '\0') {
 			return count;
 		}
 		OUTC(*fmt);
@@ -105,7 +105,7 @@ start:
 
 		case '.':
 			precision = 0;
-			padding_mode &= ~PAD_ZERO;
+			padding_mode &= (char)~PAD_ZERO;
 			continue;
 
 		case '0':
@@ -159,7 +159,7 @@ start:
 				length_mod = 'H';
 			} else if (*fmt == 'l' && length_mod == 'l') {
 				length_mod = 'L';
-			} else if (length_mod == 0) {
+			} else if (length_mod == '\0') {
 				length_mod = *fmt;
 			} else {
 				OUTC('%');
@@ -219,7 +219,7 @@ start:
 
 			if (*fmt == 'p') {
 				x = (uintptr_t)va_arg(ap, void *);
-				if (x == 0) {
+				if (x == (uint_value_type)0) {
 					data = "(nil)";
 					data_len = 5;
 					precision = 0;
