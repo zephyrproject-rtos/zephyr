@@ -166,6 +166,12 @@
 				     &pd12a_gmac_grx3 &pd13a_gmac_gcol
 				     &pd10a_gmac_gcrs &pd8a_gmac_gmdc
 				     &pd9a_gmac_gmdio>;
+
+			mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				label = "MDIO";
+				status = "disabled";
+			};
 		};
 
 		pinctrl@400e0e00 {
