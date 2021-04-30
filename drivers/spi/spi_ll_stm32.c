@@ -33,6 +33,9 @@ LOG_MODULE_REGISTER(spi_ll_stm32,LOG_LEVEL_DBG);
 #define DEV_DATA(dev)					\
 (struct spi_stm32_data * const)(dev->data)
 
+#define PRINT_MACRO_HELPER(x) #x
+#define PRINT_MACRO(x) #x"="PRINT_MACRO_HELPER(x)
+
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
  * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
@@ -822,15 +825,20 @@ static int spi_stm32_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_SPI_STM32_DMA
+	data->dma_tx.dma_dev=device_get_binding("DMA_1");
+	data->dma_rx.dma_dev=device_get_binding("DMA_1");
+	if(data->dma_tx.dma_dev == NULL){
+		printk("tx dma is null\n");
+	}
 	if ((data->dma_rx.dma_dev != NULL) &&
 				!device_is_ready(data->dma_rx.dma_dev)) {
-		LOG_ERR("%s device not ready", data->dma_rx.dma_dev->name);
+		printk("%s device not ready", data->dma_rx.dma_dev->name);
 		return -ENODEV;
 	}
 
 	if ((data->dma_tx.dma_dev != NULL) &&
 				!device_is_ready(data->dma_tx.dma_dev)) {
-		LOG_ERR("%s device not ready", data->dma_tx.dma_dev->name);
+		printk("%s device not ready", data->dma_tx.dma_dev->name);
 		return -ENODEV;
 	}
 #endif /* CONFIG_SPI_STM32_DMA */
@@ -942,6 +950,10 @@ DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, NULL,			\
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
 		    &api_funcs);					\
 									\
-STM32_SPI_IRQ_HANDLER(id)
+STM32_SPI_IRQ_HANDLER(id)	\
+
+
+#pragma message(PRINT_MACRO(DEVICE_DT_GET(DMA_CTLR(0, tx))))
+#pragma message(PRINT_MACRO(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)))
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_SPI_INIT)
