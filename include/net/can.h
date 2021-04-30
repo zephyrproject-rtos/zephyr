@@ -131,6 +131,14 @@ struct canbus_net_ctx {
 	struct net_if *iface;
 	/** The link layer address chosen for this interface */
 	uint16_t ll_addr;
+	/** TX queue */
+	struct k_fifo tx_queue;
+	/** RX error queue */
+	struct k_fifo rx_err_queue;
+	/** Queue handler thread */
+	struct k_thread queue_handler;
+	/** Queue handler thread stack */
+	K_KERNEL_STACK_MEMBER(queue_stack, 512);
 };
 
 /**
