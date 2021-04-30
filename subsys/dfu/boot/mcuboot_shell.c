@@ -152,7 +152,7 @@ static int cmd_mcuboot_info_area(const struct shell *shell,
 	shell_print(shell, "  image size: %u",
 		    (unsigned int) hdr.h.v1.image_size);
 
-	err = boot_read_swap_state_by_id(area->fa, &swap_state);
+	err = boot_read_swap_state_by_id(flash_area_get_id(area->fa), &swap_state);
 	if (err) {
 		shell_error(shell, "failed to read %s area (%p) %s: %d",
 			    area->name, area->fa, "swap state", err);

@@ -636,7 +636,7 @@ int hawkbit_init(void)
 		}
 
 		LOG_DBG("Marked image as OK");
-		ret = boot_erase_img_bank(FLASH_AREA_ID(image_1));
+		ret = flash_area_erase_whole(FLASH_AREA(image_1));
 		if (ret) {
 			LOG_ERR("Failed to erase second slot");
 			return ret;

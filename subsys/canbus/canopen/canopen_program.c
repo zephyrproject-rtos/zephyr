@@ -189,7 +189,7 @@ static inline CO_SDO_abortCode_t canopen_program_cmd_clear(void)
 	if (!IS_ENABLED(CONFIG_IMG_ERASE_PROGRESSIVELY)) {
 		LOG_DBG("erasing flash area");
 
-		err = boot_erase_img_bank(FLASH_AREA(image_1));
+		err = flash_area_erase_whole(FLASH_AREA(image_1));
 		if (err) {
 			LOG_ERR("failed to erase image bank (err %d)", err);
 			CO_errorReport(ctx.em, CO_EM_NON_VOLATILE_MEMORY,
