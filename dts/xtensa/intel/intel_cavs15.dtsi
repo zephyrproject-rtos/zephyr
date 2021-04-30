@@ -100,11 +100,6 @@
 			label = "IPM_0";
 		};
 
-		ipm_console: ipm_console {
-			compatible = "zephyr,ipm-console";
-			label="IPM_0";
-		};
-
 		mailbox: mailbox@1180 {
 			compatible = "intel,intel-adsp-mailbox";
 			reg = <0x1180 0x20>;
