@@ -54,7 +54,7 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 
 #ifdef CONFIG_SOC_STM32F10X_DENSITY_DEVICE
 	/* PLL prediv */
-#ifdef STM32_PLL_XTPRE
+#if STM32_PLL_XTPRE
 	/*
 	 * SOC_STM32F10X_DENSITY_DEVICE:
 	 * PLLXPTRE (depends on PLL source HSE)
