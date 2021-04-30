@@ -232,3 +232,21 @@
 &pit0 {
 	status = "okay";
 };
+
+arduino_i2c: &i2c0 {
+	status = "okay";
+	pinctrl-0 = <&I2C0_SDA_PTB3 &I2C0_SCL_PTB2>;
+};
+
+&I2C0_SDA_PTB3 {
+	drive-open-drain;
+};
+
+&I2C0_SCL_PTB2 {
+	drive-open-drain;
+};
+
+arduino_spi: &spi0 {
+	status = "okay";
+	pinctrl-0 = <&SPI0_SCK_PTD1 &SPI0_SOUT_PTD2 &SPI0_SIN_PTD3 &SPI0_PCS1_PTD4>;
+};
