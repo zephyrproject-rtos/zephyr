@@ -159,18 +159,6 @@ static void ppp_fsm_timeout(struct k_work *work)
 	}
 }
 
-static void ppp_pkt_send(struct k_work *work)
-{
-	struct net_pkt *pkt = CONTAINER_OF(work, struct net_pkt, work);
-	int ret;
-
-	ret = net_send_data(pkt);
-	if (ret < 0) {
-		net_pkt_unref(pkt);
-	}
-}
-
-
 void ppp_fsm_init(struct ppp_fsm *fsm, uint16_t protocol)
 {
 	fsm->protocol = protocol;
@@ -541,8 +529,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		 * have returned from this function. That is bad because the
 		 * fsm would be in wrong state and the received pkt is dropped.
 		 */
-		k_work_init(net_pkt_work(pkt), ppp_pkt_send);
-		k_work_submit(net_pkt_work(pkt));
+		ppp_queue_pkt(pkt);
 	} else {
 		ret = net_send_data(pkt);
 		if (ret < 0) {
