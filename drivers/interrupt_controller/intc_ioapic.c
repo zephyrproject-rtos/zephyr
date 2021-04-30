@@ -265,7 +265,6 @@ int ioapic_suspend(const struct device *port)
 			store_flags(irq, rte_lo);
 		}
 	}
-	ioapic_device_power_state = PM_DEVICE_SUSPEND_STATE;
 	return 0;
 }
 
@@ -295,7 +294,6 @@ int ioapic_resume_from_suspend(const struct device *port)
 		ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
 		ioApicRedSetLo(irq, rteValue);
 	}
-	ioapic_device_power_state = PM_DEVICE_ACTIVE_STATE;
 	return 0;
 }
 
@@ -310,10 +308,28 @@ static int ioapic_device_ctrl(const struct device *dev,
 	int ret = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		if (*((uint32_t *)context) == PM_DEVICE_SUSPEND_STATE) {
+		uint32_t new_state = *((uint32_t *)context);
+
+		switch (new_state) {
+		case PM_DEVICE_LOW_POWER_STATE:
+			break;
+		case PM_DEVICE_ACTIVE_STATE:
+			if (ioapic_device_power_state !=
+					PM_DEVICE_LOW_POWER_STATE) {
+				ret = ioapic_resume_from_suspend(dev);
+			}
+			break;
+		case PM_DEVICE_SUSPEND_STATE:
+		case PM_DEVICE_FORCE_SUSPEND_STATE:
+		case PM_DEVICE_OFF_STATE:
 			ret = ioapic_suspend(dev);
-		} else if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
-			ret = ioapic_resume_from_suspend(dev);
+			break;
+		default:
+			ret = -ENOTSUP;
+		}
+
+		if (ret == 0) {
+			ioapic_device_power_state = new_state;
 		}
 	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
 		*((uint32_t *)context) = ioapic_device_power_state;
