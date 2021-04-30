@@ -37,7 +37,7 @@ static ssize_t player_name_read(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
-	char *name = mpl_player_name_get();
+	char *name = media_proxy_pl_player_name_get();
 
 	BT_DBG("Player name read: %s", log_strdup(name));
 
@@ -56,7 +56,7 @@ static ssize_t icon_id_read(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
 {
-	uint64_t icon_id = mpl_icon_id_get();
+	uint64_t icon_id = media_proxy_pl_icon_id_get();
 
 	BT_DBG_OBJ_ID("Icon object read: ", icon_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &icon_id,
@@ -68,7 +68,7 @@ static ssize_t icon_uri_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	char *uri = mpl_icon_uri_get();
+	char *uri = media_proxy_pl_icon_uri_get();
 
 	BT_DBG("Icon URI read, offset: %d, len:%d, URI: %s", offset, len,
 	       log_strdup(uri));
@@ -86,7 +86,7 @@ static ssize_t track_title_read(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
-	char *title = mpl_track_title_get();
+	char *title = media_proxy_pl_track_title_get();
 
 	BT_DBG("Track title read, offset: %d, len:%d, title: %s", offset, len,
 	       log_strdup(title));
@@ -105,7 +105,7 @@ static ssize_t track_duration_read(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
-	int32_t duration = mpl_track_duration_get();
+	int32_t duration = media_proxy_pl_track_duration_get();
 
 	BT_DBG("Track duration read: %d (0x%08x)", duration, duration);
 
@@ -123,7 +123,7 @@ static ssize_t track_position_read(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
-	int32_t position = mpl_track_position_get();
+	int32_t position = media_proxy_pl_track_position_get();
 
 	BT_DBG("Track position read: %d (0x%08x)", position, position);
 
@@ -147,7 +147,7 @@ static ssize_t track_position_write(struct bt_conn *conn,
 
 	memcpy(&position, buf, len);
 
-	mpl_track_position_set(position);
+	media_proxy_pl_track_position_set(position);
 
 	BT_DBG("Track position write: %d", position);
 
@@ -164,7 +164,7 @@ static ssize_t playback_speed_read(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
-	int8_t speed = mpl_playback_speed_get();
+	int8_t speed = media_proxy_pl_playback_speed_get();
 
 	BT_DBG("Playback speed read: %d", speed);
 
@@ -188,7 +188,7 @@ static ssize_t playback_speed_write(struct bt_conn *conn,
 
 	memcpy(&speed, buf, len);
 
-	mpl_playback_speed_set(speed);
+	media_proxy_pl_playback_speed_set(speed);
 
 	BT_DBG("Playback speed write: %d", speed);
 
@@ -205,7 +205,7 @@ static ssize_t seeking_speed_read(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	int8_t speed = mpl_seeking_speed_get();
+	int8_t speed = media_proxy_pl_seeking_speed_get();
 
 	BT_DBG("Seeking speed read: %d", speed);
 
@@ -224,7 +224,7 @@ static ssize_t track_segments_id_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint64_t track_segments_id = mpl_track_segments_id_get();
+	uint64_t track_segments_id = media_proxy_pl_track_segments_id_get();
 
 	BT_DBG_OBJ_ID("Track segments ID read: ", track_segments_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
@@ -235,7 +235,7 @@ static ssize_t current_track_id_read(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
-	uint64_t track_id = mpl_current_track_id_get();
+	uint64_t track_id = media_proxy_pl_current_track_id_get();
 
 	BT_DBG_OBJ_ID("Current track ID read: ", track_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &track_id,
@@ -268,7 +268,7 @@ static ssize_t current_track_id_write(struct bt_conn *conn,
 		       offset, len, log_strdup(str));
 	}
 
-	mpl_current_track_id_set(id);
+	media_proxy_pl_current_track_id_set(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -283,7 +283,7 @@ static ssize_t next_track_id_read(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	uint64_t track_id = mpl_next_track_id_get();
+	uint64_t track_id = media_proxy_pl_next_track_id_get();
 
 	if (track_id == MPL_NO_TRACK_ID) {
 		BT_DBG("Next track read, but it is empty");
@@ -323,7 +323,7 @@ static ssize_t next_track_id_write(struct bt_conn *conn,
 		       offset, len, log_strdup(str));
 	}
 
-	mpl_next_track_id_set(id);
+	media_proxy_pl_next_track_id_set(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -338,7 +338,7 @@ static ssize_t group_id_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	uint64_t group_id = mpl_group_id_get();
+	uint64_t group_id = media_proxy_pl_group_id_get();
 
 	BT_DBG_OBJ_ID("Group read: ", group_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
@@ -371,7 +371,7 @@ static ssize_t group_id_write(struct bt_conn *conn,
 		       offset, len, log_strdup(str));
 	}
 
-	mpl_group_id_set(id);
+	media_proxy_pl_group_id_set(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -385,7 +385,7 @@ static ssize_t parent_group_id_read(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
-	uint64_t group_id = mpl_parent_group_id_get();
+	uint64_t group_id = media_proxy_pl_parent_group_id_get();
 
 	BT_DBG_OBJ_ID("Parent group read: ", group_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
@@ -403,7 +403,7 @@ static ssize_t playing_order_read(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	uint8_t order = mpl_playing_order_get();
+	uint8_t order = media_proxy_pl_playing_order_get();
 
 	BT_DBG("Playing order read: %d (0x%02x)", order, order);
 
@@ -429,7 +429,7 @@ static ssize_t playing_order_write(struct bt_conn *conn,
 
 	memcpy(&order, buf, len);
 
-	mpl_playing_order_set(order);
+	media_proxy_pl_playing_order_set(order);
 
 	BT_DBG("Playing order write: %d", order);
 
@@ -446,7 +446,7 @@ static ssize_t playing_orders_supported_read(struct bt_conn *conn,
 					     const struct bt_gatt_attr *attr,
 					     void *buf, uint16_t len, uint16_t offset)
 {
-	uint16_t orders = mpl_playing_orders_supported_get();
+	uint16_t orders = media_proxy_pl_playing_orders_supported_get();
 
 	BT_DBG("Playing orders read: %d (0x%04x)", orders, orders);
 
@@ -458,7 +458,7 @@ static ssize_t media_state_read(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
-	uint8_t state = mpl_media_state_get();
+	uint8_t state = media_proxy_pl_media_state_get();
 
 	BT_DBG("Media state read: %d", state);
 
@@ -500,7 +500,7 @@ static ssize_t control_point_write(struct bt_conn *conn,
 		BT_DBG("Parameter: %d", operation.param);
 	}
 
-	mpl_operation_set(operation);
+	media_proxy_pl_operation_set(operation);
 
 	return len;
 }
@@ -515,7 +515,7 @@ static ssize_t opcodes_supported_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint32_t opcodes = mpl_operations_supported_get();
+	uint32_t opcodes = media_proxy_pl_operations_supported_get();
 
 	BT_DBG("Opcodes_supported read: %d (0x%08x)", opcodes, opcodes);
 
@@ -550,7 +550,7 @@ static ssize_t search_control_point_write(struct bt_conn *conn,
 	BT_DBG("Search length: %d", len);
 	BT_HEXDUMP_DBG(&search.search, search.len, "Search content");
 
-	mpl_scp_set(search);
+	media_proxy_pl_scp_set(search);
 
 	return len;
 }
@@ -565,7 +565,7 @@ static ssize_t search_results_id_read(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint64_t search_id = mpl_search_results_id_get();
+	uint64_t search_id = media_proxy_pl_search_results_id_get();
 
 	BT_DBG_OBJ_ID("Search results id read: ", search_id);
 
@@ -598,7 +598,7 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
-	uint8_t id = mpl_content_ctrl_id_get();
+	uint8_t id = media_proxy_pl_content_ctrl_id_get();
 
 	BT_DBG("Content control ID read: %d", id);
 
@@ -855,49 +855,49 @@ static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
 	}
 }
 
-void mpl_track_changed_cb(void)
+void media_proxy_pl_track_changed_cb(void)
 {
 	BT_DBG("Notifying track change");
 	notify(BT_UUID_MCS_TRACK_CHANGED, NULL, 0);
 }
 
-void mpl_track_title_cb(char *title)
+void media_proxy_pl_track_title_cb(char *title)
 {
 	BT_DBG("Notifying track title: %s", log_strdup(title));
 	notify(BT_UUID_MCS_TRACK_TITLE, title, strlen(title));
 }
 
-void mpl_track_position_cb(int32_t position)
+void media_proxy_pl_track_position_cb(int32_t position)
 {
 	BT_DBG("Notifying track position: %d", position);
 	notify(BT_UUID_MCS_TRACK_POSITION, &position, sizeof(position));
 }
 
-void mpl_track_duration_cb(int32_t duration)
+void media_proxy_pl_track_duration_cb(int32_t duration)
 {
 	BT_DBG("Notifying track duration: %d", duration);
 	notify(BT_UUID_MCS_TRACK_DURATION, &duration, sizeof(duration));
 }
 
-void mpl_playback_speed_cb(int8_t speed)
+void media_proxy_pl_playback_speed_cb(int8_t speed)
 {
 	BT_DBG("Notifying playback speed: %d", speed);
 	notify(BT_UUID_MCS_PLAYBACK_SPEED, &speed, sizeof(speed));
 }
 
-void mpl_seeking_speed_cb(int8_t speed)
+void media_proxy_pl_seeking_speed_cb(int8_t speed)
 {
 	BT_DBG("Notifying seeking speed: %d", speed);
 	notify(BT_UUID_MCS_SEEKING_SPEED, &speed, sizeof(speed));
 }
 
-void mpl_current_track_id_cb(uint64_t id)
+void media_proxy_pl_current_track_id_cb(uint64_t id)
 {
 	BT_DBG_OBJ_ID("Notifying current track ID: ", id);
 	notify(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
-void mpl_next_track_id_cb(uint64_t id)
+void media_proxy_pl_next_track_id_cb(uint64_t id)
 {
 	if (id == MPL_NO_TRACK_ID) {
 		/* "If the media player has no next track, the length of the */
@@ -910,39 +910,39 @@ void mpl_next_track_id_cb(uint64_t id)
 	}
 }
 
-void mpl_group_id_cb(uint64_t id)
+void media_proxy_pl_group_id_cb(uint64_t id)
 {
 	BT_DBG_OBJ_ID("Notifying group ID: ", id);
 	notify(BT_UUID_MCS_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 
-void mpl_parent_group_id_cb(uint64_t id)
+void media_proxy_pl_parent_group_id_cb(uint64_t id)
 {
 	BT_DBG_OBJ_ID("Notifying group ID: ", id);
 	notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
-void mpl_playing_order_cb(uint8_t order)
+void media_proxy_pl_playing_order_cb(uint8_t order)
 {
 	BT_DBG("Notifying playing order: %d", order);
 	notify(BT_UUID_MCS_PLAYING_ORDER, &order, sizeof(order));
 }
 
-void mpl_media_state_cb(uint8_t state)
+void media_proxy_pl_media_state_cb(uint8_t state)
 {
 	BT_DBG("Notifying media state: %d", state);
 	notify(BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
 }
 
-void mpl_operation_cb(struct mpl_op_ntf_t op_ntf)
+void media_proxy_pl_operation_cb(struct mpl_op_ntf_t op_ntf)
 {
 	BT_DBG("Notifying control point - opcode: %d, result: %d",
 	       op_ntf.requested_opcode, op_ntf.result_code);
 	notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &op_ntf, sizeof(op_ntf));
 }
 
-void mpl_operations_supported_cb(uint32_t operations)
+void media_proxy_pl_operations_supported_cb(uint32_t operations)
 {
 	BT_DBG("Notifying opcodes supported: %d (0x%08x)", operations,
 	       operations);
@@ -950,14 +950,14 @@ void mpl_operations_supported_cb(uint32_t operations)
 	       BT_MCS_OPCODES_SUPPORTED_LEN);
 }
 
-void mpl_search_cb(uint8_t result_code)
+void media_proxy_pl_search_cb(uint8_t result_code)
 {
 	BT_DBG("Notifying search control point - result: %d", result_code);
 	notify(BT_UUID_MCS_SEARCH_CONTROL_POINT, &result_code,
 	       sizeof(result_code));
 }
 
-void mpl_search_results_id_cb(uint64_t id)
+void media_proxy_pl_search_results_id_cb(uint64_t id)
 {
 	BT_DBG_OBJ_ID("Notifying search results ID: ", id);
 	notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
