@@ -116,6 +116,18 @@ void test_ram_perms(void)
 			 */
 			expected = MMU_P | MMU_US | MMU_RW | MMU_XD;
 #endif /* CONFIG_X86_KPTI */
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+		} else if (IN_REGION(lnkr_boot_text, pos)) {
+			expected = MMU_P | MMU_US;
+		} else if (IN_REGION(lnkr_boot_rodata, pos)) {
+			expected = MMU_P | MMU_US | MMU_XD;
+#endif
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+		} else if (IN_REGION(lnkr_pinned_text, pos)) {
+			expected = MMU_P | MMU_US;
+		} else if (IN_REGION(lnkr_pinned_rodata, pos)) {
+			expected = MMU_P | MMU_US | MMU_XD;
+#endif
 		} else {
 			/* We forced CONFIG_HW_STACK_PROTECTION off otherwise
 			 * guard pages will have RW cleared. We can relax this
