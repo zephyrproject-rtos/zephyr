@@ -256,7 +256,7 @@ BSS.
 
 The build system will ensure that the base address of my_partition will
 be properly aligned, and the total size of the region conforms to the memory
-management hardware requirments, adding padding if necessary.
+management hardware requirements, adding padding if necessary.
 
 If multiple partitions are being created, a variadic preprocessor macro can be
 used as provided in ``app_macro_support.h``:

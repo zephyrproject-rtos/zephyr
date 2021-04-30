@@ -555,7 +555,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 	  For asynchronous timekeeping, the kernel defines a "ticks" concept. A
 	  "tick" is the internal count in which the kernel does all its internal
-	  uptime and timeout bookeeping. Interrupts are expected to be delivered
+	  uptime and timeout bookkeeping. Interrupts are expected to be delivered
 	  on tick boundaries to the extent practical, and no fractional ticks
 	  are tracked.
 

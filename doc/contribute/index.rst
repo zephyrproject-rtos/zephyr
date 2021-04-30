@@ -215,7 +215,7 @@ on https://github.com and have Git tools available on your development system.
    are only available on Linux and macOS. On Windows, instead of running these
    tools yourself, you will need to rely on the Continuous Integration (CI)
    service ``buildkite``, which runs automatically on GitHub when you submit
-   your Pull Request (PR).  You can see any failure results in the Shippable
+   your Pull Request (PR).  You can see any failure results in the Buildkite
    details link near the end of the PR conversation list. See
    `Continuous Integration`_ for more information
 
