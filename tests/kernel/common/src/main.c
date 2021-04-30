@@ -33,6 +33,7 @@ extern void test_sys_put_le48(void);
 extern void test_sys_get_le64(void);
 extern void test_sys_put_le64(void);
 extern void test_atomic(void);
+extern void test_threads_access_atomic(void);
 extern void test_errno(void);
 extern void test_printk(void);
 extern void test_timeout_order(void);
@@ -140,6 +141,7 @@ void test_main(void)
 			 ztest_unit_test(test_sys_get_le64),
 			 ztest_unit_test(test_sys_put_le64),
 			 ztest_user_unit_test(test_atomic),
+			 ztest_unit_test(test_threads_access_atomic),
 			 ztest_unit_test(test_bitfield),
 			 ztest_unit_test(test_printk),
 			 ztest_1cpu_unit_test(test_timeout_order),
