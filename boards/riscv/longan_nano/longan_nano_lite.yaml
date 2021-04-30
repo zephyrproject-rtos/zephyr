@@ -1,0 +1,12 @@
+identifier: longan_nano_lite
+name: Sipeed Longan Nano Lite
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+  - xtools
+flash: 32
+ram: 20
+supported:
+  - gpio
+  - uart

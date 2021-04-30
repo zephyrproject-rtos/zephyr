@@ -1,0 +1,5 @@
+description: GD32 Family flash controller
+
+compatible: "gigadevice,gd32-flash-controller"
+
+include: flash-controller.yaml

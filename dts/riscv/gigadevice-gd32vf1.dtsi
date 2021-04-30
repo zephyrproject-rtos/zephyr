@@ -5,7 +5,9 @@
  */
 
 #include <dt-bindings/clock/gd32_clock.h>
+#include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	#address-cells = <1>;
@@ -16,7 +18,6 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			clock-frequency = <0>;
 			device_type = "cpu";
 			compatible = "nuclei,bumblebee", "riscv";
 			reg = <0>;
@@ -24,10 +25,6 @@
 		};
 	};
 
-	flash0: flash@8000000 {
-		compatible = "soc-nv-flash";
-		label = "FLASH_GD32";
-	};
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
@@ -49,6 +46,25 @@
 			riscv,max-priority = <7>;
 			label = "GD32_ECLIC";
 		};
+
+		flash: flash-controller@40022000 {
+			compatible = "gigadevice,gd32-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40022000 0x400>;
+			interrupts = <3 0>;
+			interrupt-parent = <&eclic>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+
+				write-block-size = <2>;
+			};
+		};
+
 
 		rcu: rcu@40021000 {
 			compatible = "gigadevice,gd32-rcu";
