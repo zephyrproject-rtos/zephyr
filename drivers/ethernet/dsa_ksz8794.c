@@ -595,6 +595,7 @@ static int dsa_ksz8794_set_lowspeed_drivestrength(struct dsa_ksz8794_spi *sdev)
 }
 #endif
 
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 static int dsa_ksz8794_gpio_reset(struct dsa_ksz8794_spi *swspi)
 {
 	const struct device *reset_dev =
@@ -614,6 +615,7 @@ static int dsa_ksz8794_gpio_reset(struct dsa_ksz8794_spi *swspi)
 
 	return 0;
 }
+#endif
 
 /* Low level initialization code for DSA PHY */
 int dsa_hw_init(struct device *dev)
@@ -981,8 +983,10 @@ static struct dsa_api dsa_api_f = {
 	.switch_write = dsa_ksz8794_sw_write_reg,
 	.switch_set_mac_table_entry = dsa_ksz8794_set_mac_table_entry,
 	.switch_get_mac_table_entry = dsa_ksz8794_get_mac_table_entry,
+#if defined(CONFIG_DSA_KSZ8794_TAIL_TAGGING)
 	.dsa_xmit_pkt = dsa_ksz8794_xmit_pkt,
 	.dsa_get_iface = dsa_ksz8794_get_iface,
+#endif
 };
 
 static struct dsa_context dsa_context = {
