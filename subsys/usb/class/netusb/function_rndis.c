@@ -412,7 +412,7 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		return;
 	}
 
-	LOG_DBG("To asemble %d bytes, reading %u bytes",
+	LOG_DBG("To assemble %d bytes, reading %u bytes",
 		rndis.in_pkt_len, len);
 
 	rndis.in_pkt_len -= len;
