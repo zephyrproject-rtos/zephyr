@@ -264,14 +264,6 @@ enum {
 	KSZ8794_PORT4 = 3,
 };
 
-#include <drivers/spi.h>
-struct dsa_ksz8794_spi {
-	const struct device *spi;
-	struct spi_config spi_cfg;
-	struct spi_cs_control cs_ctrl;
-	bool is_init;
-};
-
 #define KSZ8794_REG_IND_DATA_8                        0x70
 #define KSZ8794_REG_IND_DATA_7                        0x71
 #define KSZ8794_REG_IND_DATA_6                        0x72
