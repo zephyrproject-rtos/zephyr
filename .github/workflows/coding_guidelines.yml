@@ -52,8 +52,5 @@ jobs:
             errors="${errors//$'\n'/'%0A'}"
             errors="${errors//$'\r'/'%0D'}"
             echo "::error file=output.txt::$errors"
-            exit=1
-        fi
-        if [ ${exit} == 1 ]; then
-          exit 1;
+            exit 1;
         fi
