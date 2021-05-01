@@ -152,6 +152,9 @@ struct dsa_context {
 
 	/** Status of each port */
 	bool link_up[NET_DSA_PORT_MAX_COUNT];
+
+	/** Instance specific data */
+	void *prv_data;
 };
 
 /**
