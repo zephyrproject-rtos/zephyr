@@ -264,6 +264,8 @@ enum {
 	KSZ8794_PORT4 = 3,
 };
 
+#define KSZ8794_CPU_PORT                              KSZ8794_PORT4
+
 #define KSZ8794_REG_IND_DATA_8                        0x70
 #define KSZ8794_REG_IND_DATA_7                        0x71
 #define KSZ8794_REG_IND_DATA_6                        0x72
