@@ -5,4 +5,4 @@ common:
 tests:
   arch.arm.no_multithreading:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
-    platform_exclude: degu_evk
+    platform_allow: qemu_cortex_m0 qemu_cortex_m3 mps2_an385 mps2_an521
