@@ -93,21 +93,6 @@ static bool dsa_ksz8794_port_link_status(struct dsa_ksz8794_spi *sdev,
 	return tmp & KSZ8794_STAT2_LINK_GOOD;
 }
 
-static bool dsa_ksz8794_link_status(struct dsa_ksz8794_spi *sdev)
-{
-	bool ret = false;
-	uint8_t i;
-
-	for (i = KSZ8794_PORT1; i <= KSZ8794_PORT3; i++) {
-		if (dsa_ksz8794_port_link_status(sdev, i)) {
-			LOG_INF("Port: %d link UP!", i);
-			ret |= true;
-		}
-	}
-
-	return ret;
-}
-
 #if !DT_INST_NODE_HAS_PROP(0, reset_gpios)
 static void dsa_ksz8794_soft_reset(struct dsa_ksz8794_spi *sdev)
 {
@@ -662,9 +647,6 @@ int dsa_hw_init(struct device *dev)
 	/* apply workarounds */
 	dsa_ksz8794_apply_workarounds(swspi);
 #endif
-
-	/* Read ports status */
-	dsa_ksz8794_link_status(swspi);
 
 	swspi->is_init = true;
 
