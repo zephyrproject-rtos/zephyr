@@ -108,6 +108,56 @@
 				label = "GPIOE";
 			};
 		};
+
+		usart0: serial@40013800 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40013800 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB2 0x00004000>;
+			interrupts = <56 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		usart1: serial@40004400 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40004400 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB1 0x00020000>;
+			interrupts = <57 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		usart2: serial@40004800 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40004800 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB1 0x00040000>;
+			interrupts = <58 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		uart3: serial@40004c00 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40004c00 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB1 0x00080000>;
+			interrupts = <71 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_3";
+		};
+
+		uart4: serial@40005000 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB1 0x00100000>;
+			interrupts = <72 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_4";
+		};
 	};
 
 };
