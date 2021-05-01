@@ -26,7 +26,7 @@ coccinelle_scripts = ["/scripts/coccinelle/reserved_names.cocci",
 
 
 def parse_coccinelle(contents: str, violations: dict):
-    reg = re.compile("([a-zA-Z0-9/]*\\.[ch]:[0-9]*)(:[0-9\\-]*: )(.*)")
+    reg = re.compile("([a-zA-Z0-9_/]*\\.[ch]:[0-9]*)(:[0-9\\-]*: )(.*)")
     for line in contents.split("\n"):
         r = reg.match(line)
         if r:
