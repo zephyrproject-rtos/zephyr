@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_ETHERNET_LOG_LEVEL);
 #include "dsa_ksz8794.h"
 
 struct ksz8794_data {
+	int iface_init_count;
 	bool is_init;
 	const struct device *spi;
 	struct spi_config spi_cfg;
@@ -29,6 +30,7 @@ struct ksz8794_data {
 };
 
 static struct ksz8794_data private_data = {
+	.iface_init_count = 0,
 	.is_init = false,
 };
 
@@ -96,7 +98,7 @@ static bool dsa_ksz8794_port_link_status(struct ksz8794_data *pdev,
 {
 	uint8_t tmp;
 
-	if (port < KSZ8794_PORT1 || port > KSZ8794_PORT3) {
+	if (port < KSZ8794_PORT1 || port >= KSZ8794_CPU_PORT) {
 		return false;
 	}
 
@@ -249,7 +251,7 @@ static int dsa_ksz8794_switch_setup(struct ksz8794_data *pdev)
 	 * Loop through ports - The same setup when tail tagging is enabled or
 	 * disabled.
 	 */
-	for (i = KSZ8794_PORT1; i <= KSZ8794_PORT3; i++) {
+	for (i = KSZ8794_PORT1; i < KSZ8794_CPU_PORT; i++) {
 		/* Enable transmission, reception and switch address learning */
 		dsa_ksz8794_read_reg(pdev, KSZ8794_CTRL2_PORTn(i), &tmp);
 		tmp |= KSZ8794_CTRL2_TRANSMIT_EN;
@@ -693,7 +695,7 @@ static void dsa_delayed_work(struct k_work *item)
 	bool link_state;
 	uint8_t i;
 
-	for (i = KSZ8794_PORT1; i <= KSZ8794_PORT3; i++) {
+	for (i = KSZ8794_PORT1; i < KSZ8794_CPU_PORT; i++) {
 		link_state = dsa_ksz8794_port_link_status(pdev, i);
 		if (link_state && !context->link_up[i]) {
 			LOG_INF("DSA port: %d link UP!", i);
@@ -916,8 +918,9 @@ static void dsa_iface_init(struct net_if *iface)
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct device *dm, *dev = net_if_get_device(iface);
 	struct dsa_context *context = dev->data;
+	struct ksz8794_data *pdev = PRV_DATA(context);
 	struct ethernet_context *ctx_master;
-	static uint8_t i = KSZ8794_PORT1;
+	int i = pdev->iface_init_count;
 
 	/* Find master port for ksz8794 switch */
 	if (context->iface_master == NULL) {
@@ -953,16 +956,15 @@ static void dsa_iface_init(struct net_if *iface)
 		ethernet_init(iface);
 	}
 
-	i++;
+	pdev->iface_init_count++;
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	/*
 	 * Start DSA work to monitor status of ports (read from switch IC)
-	 * only when carrier_work is properly initialized for each iface.
+	 * only when carrier_work is properly initialized for all slave
+	 * interfaces.
 	 */
-	if (context->iface_slave[KSZ8794_PORT1] &&
-	    context->iface_slave[KSZ8794_PORT2] &&
-	    context->iface_slave[KSZ8794_PORT3]) {
+	if (pdev->iface_init_count == context->num_slave_ports) {
 		k_work_init_delayable(&context->dsa_work, dsa_delayed_work);
 		k_work_reschedule(&context->dsa_work, DSA_STATUS_PERIOD_MS);
 	}
