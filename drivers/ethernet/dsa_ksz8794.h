@@ -234,12 +234,12 @@
 #define KSZ8794_GLOBAL_CTRL10_TAIL_TAG_EN            BIT(1)
 #define KSZ8794_GLOBAL_CTRL2_LEG_MAX_PKT_SIZ_CHK_DIS BIT(1)
 
-#define KSZ8794_CTRL2_PORTn(n)                       (0x02 + ((n) * 0x10))
+#define KSZ8794_CTRL2_PORTn(n)                       (0x12 + ((n) * 0x10))
 #define KSZ8794_CTRL2_TRANSMIT_EN                    BIT(2)
 #define KSZ8794_CTRL2_RECEIVE_EN                     BIT(1)
 #define KSZ8794_CTRL2_LEARNING_DIS                   BIT(0)
 
-#define KSZ8794_STAT2_PORTn(n)                       (0x0E + ((n) * 0x10))
+#define KSZ8794_STAT2_PORTn(n)                       (0x1E + ((n) * 0x10))
 #define KSZ8794_STAT2_LINK_GOOD                      BIT(5)
 
 #define KSZ8794_CHIP_ID0_ID_DEFAULT                  0x87
@@ -257,11 +257,11 @@
 
 enum {
 	/* LAN ports for the ksz8794 switch */
-	KSZ8794_PORT1 = 1,
+	KSZ8794_PORT1 = 0,
 	KSZ8794_PORT2,
 	KSZ8794_PORT3,
 	/* SWITCH <-> CPU port */
-	KSZ8794_PORT4 = 4,
+	KSZ8794_PORT4 = 3,
 };
 
 #include <drivers/spi.h>
