@@ -63,8 +63,9 @@
 	};
 
 	sram4: memory@20040000 {
-		compatible = "mmio-sram";
+		compatible = "mmio-sram", "linkable-memory";
 		reg = <0x20040000 DT_SIZE_K(16)>;
+		label = "SRAM4";
 	};
 };
 

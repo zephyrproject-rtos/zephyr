@@ -56,8 +56,9 @@
 
 	sram4: memory@20010000 {
 		/* Conencted to USB bus*/
-		compatible = "mmio-sram";
+		compatible = "mmio-sram", "linkable-memory";
 		reg = <0x20010000 DT_SIZE_K(16)>;
+		label = "SRAM4";
 	};
 };
 

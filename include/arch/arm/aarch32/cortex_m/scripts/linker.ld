@@ -89,9 +89,6 @@ MEMORY
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* TI CCFG Registers */
     DT_REGION_FROM_NODE_STATUS_OKAY(FLASH_CCFG, rwx, DT_NODELABEL(ti_ccfg_partition))
-    /* STM32 alternate RAM configurations */
-    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM3, rw, DT_NODELABEL(sram3))
-    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM4, rw, DT_NODELABEL(sram4))
     /* Generate memory regions for 'linkable-memory' compatible */
     DT_LINKABLE_MEMORY_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */

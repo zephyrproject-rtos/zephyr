@@ -54,14 +54,16 @@
 
 	/* System data RAM accessible over AHB bus: SRAM3 in D2 domain */
 	sram3: memory@30040000 {
-		compatible = "mmio-sram";
+		compatible = "mmio-sram", "linkable-memory";
 		reg = <0x30040000 DT_SIZE_K(32)>;
+		label = "SRAM3";
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM4 in D3 domain  */
 	sram4: memory@38000000 {
+		compatible = "mmio-sram", "linkable-memory";
 		reg = <0x38000000 DT_SIZE_K(64)>;
-		compatible = "mmio-sram";
+		label = "SRAM4";
 	};
 
 	dtcm: memory@20000000 {
