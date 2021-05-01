@@ -39,6 +39,9 @@
 #include <gd32vf103.h>
 #include <core_feature_timer.h>
 
+/* common clock control device name for all GD32 chips */
+#define GD32_CLOCK_CONTROL_NODE DT_NODELABEL(rcu)
+
 struct gd32_pclken {
 	uint32_t bus;
 	uint32_t enr;

@@ -40,4 +40,11 @@ config CLOCK_CONTROL_GD32
 	default y
 	depends on CLOCK_CONTROL
 
+if GPIO
+
+config GPIO_GD32
+	default y
+
+endif # GPIO
+
 endif # SOC_SERIES_RISCV_GIGADEVICE_GD32V
