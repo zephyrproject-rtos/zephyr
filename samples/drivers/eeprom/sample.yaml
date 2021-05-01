@@ -1,0 +1,20 @@
+sample:
+  name: EEPROM Sample
+common:
+    tags: eeprom
+    integration_platforms:
+      - native_posix
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Reset the MCU to see the inceasing boot counter."
+
+tests:
+  sample.drivers.eeprom:
+    tags: eeprom
+    platform_allow: native_posix
+  sample.drivers.eeprom.shield.x_nucleo_eeprma2:
+    tags: eeprom shield
+    depends_on: arduino_gpio arduino_i2c
+    extra_args: SHIELD=x_nucleo_eeprma2
