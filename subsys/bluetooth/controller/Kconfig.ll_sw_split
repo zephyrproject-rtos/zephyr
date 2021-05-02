@@ -112,6 +112,11 @@ config BT_CTLR_ADVANCED_FEATURES
 	help
 	  Makes advanced features visible to controller developers.
 
+config BT_CTLR_SNIFF
+	bool "Air Traffic Sniffer"
+	help
+	  Add support for Bluetooth Low Energy air traffic sniffing state.
+
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
 
