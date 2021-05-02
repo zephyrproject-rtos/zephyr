@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Tokita, Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_GD32
+	bool "GD32 Clock Control"
+	depends on SOC_SERIES_RISCV_GIGADEVICE_GD32V
+	default y if SOC_SERIES_RISCV_GIGADEVICE_GD32V
+	help
+	  Enable driver for Reset & Clock Uint found
+	  in GD32 family of MCUs

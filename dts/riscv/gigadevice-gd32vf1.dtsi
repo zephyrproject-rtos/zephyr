@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <dt-bindings/clock/gd32_clock.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -38,12 +40,20 @@
 
 		eclic: interrupt-controller@d2000000 {
 			#interrupt-cells = <2>;
-			compatible = "nuclei,eclic";
+			compatible = "nuclei,eclic0";
 			interrupt-controller;
 			reg = <0xd2000000 0x0001
 			       0xd2000004 0x0001
 			       0xd2000400 0x1000>;
+			riscv,max-priority = <7>;
 			label = "GD32_ECLIC";
+		};
+
+		rcu: rcu@40021000 {
+			compatible = "gigadevice,gd32-rcu";
+			#clock-cells = <2>;
+			reg = <0x40021000 0x400>;
+			label = "GD32_CLK_RCU";
 		};
 	};
 
