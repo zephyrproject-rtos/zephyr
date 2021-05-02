@@ -186,6 +186,7 @@ config BT_CTLR_MESH_SF_PATTERNS
 config BT_CTLR_RX_BUFFERS
 	int "Number of Rx buffers"
 	default 6 if BT_HCI_RAW
+	default 10 if BT_CTLR_SNIFF
 	default 1
 	range 1 18
 	help

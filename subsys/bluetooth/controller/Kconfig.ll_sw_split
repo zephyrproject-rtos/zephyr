@@ -293,6 +293,11 @@ config BT_CTLR_SCAN_ENABLE_STRICT
 	  Enforce returning HCI Error Command Disallowed on enabling/disabling
 	  already enabled/disabled scanning.
 
+config BT_CTLR_SNIFF
+	bool "Air Traffic Sniffer"
+	help
+	  Add support for Bluetooth Low Energy air traffic sniffing state.
+
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
 	depends on ZERO_LATENCY_IRQS

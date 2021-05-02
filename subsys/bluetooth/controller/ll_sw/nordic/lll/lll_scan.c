@@ -409,6 +409,11 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 	/* setup tIFS switching */
 	if (0) {
+#if defined(CONFIG_BT_CTLR_SNIFF)
+	} else if (1) {
+		radio_tmr_tifs_set(EVENT_IFS_US);
+		radio_switch_complete_and_b2b_rx(0, 0, 0, 0);
+#endif
 	} else if (lll->type ||
 #if defined(CONFIG_BT_CENTRAL)
 		   lll->conn) {
@@ -590,6 +595,8 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		 */
 		return 0;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_SNIFF)) {
+		return 0;
 	} else {
 		/* Switch scan window to next radio channel */
 		radio_isr_set(isr_window, lll);
@@ -750,7 +757,11 @@ static void isr_rx(void *param)
 	}
 
 isr_rx_do_close:
-	radio_isr_set(isr_done, lll);
+	if (IS_ENABLED(CONFIG_BT_CTLR_SNIFF)) {
+		radio_isr_set(isr_window, lll);
+	} else {
+		radio_isr_set(isr_done, lll);
+	}
 	radio_disable();
 }
 
@@ -826,6 +837,11 @@ static void isr_common_done(void *param)
 	/* setup tIFS switching */
 	if (0) {
 		/* TODO: Add Rx-Rx switch usecase improvement in the future */
+#if defined(CONFIG_BT_CTLR_SNIFF)
+	} else if (1) {
+		radio_tmr_tifs_set(EVENT_IFS_US);
+		radio_switch_complete_and_b2b_rx(0, 0, 0, 0);
+#endif
 	} else if (lll->type ||
 #if defined(CONFIG_BT_CENTRAL)
 		   lll->conn) {
@@ -1357,10 +1373,14 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 						       pdu_adv_rx, rl_idx,
 						       &dir_report)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+		  (IS_ENABLED(CONFIG_BT_CTLR_SNIFF) &&
+		   (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_REQ) &&
+		   (pdu_adv_rx->len == sizeof(struct pdu_adv_scan_req))) ||
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (pdu_adv_rx->len <= sizeof(struct pdu_adv_scan_rsp)) &&
-		   (lll->state != 0U) &&
-		   isr_scan_rsp_adva_matches(pdu_adv_rx))) &&
+		   (IS_ENABLED(CONFIG_BT_CTLR_SNIFF) ||
+		    ((lll->state != 0U) &&
+		     isr_scan_rsp_adva_matches(pdu_adv_rx))))) &&
 		 (pdu_adv_rx->len != 0) &&
 #if defined(CONFIG_BT_CENTRAL)
 		   /* Note: ADV_EXT_IND is allowed here even if initiating
@@ -1376,6 +1396,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 		/* save the scan response packet */
 		err = isr_rx_scan_report(lll, rssi_ready, phy_flags_rx,
 					 irkmatch_ok, rl_idx, dir_report);
+
+		/* FIXME: Ignore and proceed to setup Rx again when sniffing */
 		if (err) {
 			/* Auxiliary PDU LLL scanning has been setup */
 			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
@@ -1385,9 +1407,59 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 			return err;
 		}
-	}
+
+#if defined(CONFIG_BT_CTLR_SNIFF)
+		if (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) {
+			radio_isr_set(isr_window, lll);
+			radio_disable();
+
+			return 0;
+		}
+
+		struct node_rx_pdu *node_rx;
+		uint32_t hcto;
+
+		/* setup tIFS switching */
+		radio_tmr_tifs_set(EVENT_IFS_US);
+		radio_switch_complete_and_b2b_rx(0, 0, 0, 0);
+
+		node_rx = ull_pdu_rx_alloc_peek(1);
+		LL_ASSERT(node_rx);
+		radio_pkt_rx_set(node_rx->pdu);
+
+		/* assert if radio packet ptr is not set and radio started rx */
+		LL_ASSERT(!radio_is_ready());
+
+		/* +/- 2us active clock jitter, +1 us hcto compensation */
+		hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
+		hcto += addr_us_get(0);
+
+		radio_tmr_hcto_configure(hcto);
+
+		/* capture end of Tx-ed PDU, used to calculate HCTO. */
+		radio_tmr_end_capture();
+
+		radio_rssi_measure();
+
+#if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
+		radio_gpio_lna_setup();
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 EVENT_IFS_US - 4 -
+					 radio_tx_chain_delay_get(0, 0) -
+					 HAL_RADIO_GPIO_LNA_OFFSET);
+#endif /* HAL_RADIO_GPIO_HAVE_LNA_PIN */
+
+		return 0;
+#endif /* CONFIG_BT_CTLR_SNIFF */
+
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_SNIFF) &&
+		   (pdu_adv_rx->type == PDU_ADV_TYPE_CONNECT_IND) &&
+		   (pdu_adv_rx->len == sizeof(struct pdu_adv_connect_ind))) {
+		/* TODO: Follow a connection */
+
 	/* invalid PDU */
-	else {
+	} else {
+
 		/* ignore and close this rx/tx chain ( code below ) */
 		return -EINVAL;
 	}
