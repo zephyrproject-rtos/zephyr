@@ -69,6 +69,7 @@
 /soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda
 /soc/riscv/openisa*/                      @MaureenHelm
+/soc/riscv/riscv-privilege/gigadevice-gd32v/  @soburi
 /soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif

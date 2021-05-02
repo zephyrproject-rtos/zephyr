@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			clock-frequency = <0>;
+			device_type = "cpu";
+			compatible = "nuclei,bumblebee", "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imac";
+		};
+	};
+
+	flash0: flash@8000000 {
+		compatible = "soc-nv-flash";
+		label = "FLASH_GD32";
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "gigadevice,gd32vf103-soc", "simple-bus";
+		ranges;
+
+	};
+
+};
+
