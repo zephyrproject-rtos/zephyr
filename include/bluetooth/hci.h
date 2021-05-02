@@ -167,6 +167,43 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
 						 BIT((n) & 7))
 
+#ifdef CONFIG_BT_CTLR
+/* In a combined controller and host build, the controller feature support
+ * is known at compile time.
+ */
+
+#define BT_FEAT_LE_ENCR(feat)                   IS_ENABLED(CONFIG_BT_CTLR_LE_ENC)
+#define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    IS_ENABLED(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+#define BT_FEAT_LE_SLAVE_FEATURE_XCHG(feat)     IS_ENABLED(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
+#define BT_FEAT_LE_DLE(feat)                    IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH)
+#define BT_FEAT_LE_PHY_2M(feat)                 IS_ENABLED(CONFIG_BT_CTLR_PHY_2M)
+#define BT_FEAT_LE_PHY_CODED(feat)              IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)
+#define BT_FEAT_LE_PRIVACY(feat)                IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)
+#define BT_FEAT_LE_EXT_ADV(feat)                IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)
+#define BT_FEAT_LE_EXT_PER_ADV(feat)            (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC) \
+						|| IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC))
+#define BT_FEAT_LE_CONNECTIONLESS_CTE_TX(feat)  IS_ENABLED(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+#define BT_FEAT_LE_ANT_SWITCH_TX_AOD(feat)      IS_ENABLED(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+
+#define BT_FEAT_LE_PAST_SEND(feat)              BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_PAST_SEND)
+#define BT_FEAT_LE_PAST_RECV(feat)              BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_PAST_RECV)
+
+#define BT_FEAT_LE_CIS_MASTER(feat)             IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO)
+#define BT_FEAT_LE_CIS_SLAVE(feat)              IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO)
+#define BT_FEAT_LE_ISO_BROADCASTER(feat)        IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO)
+#define BT_FEAT_LE_SYNC_RECEIVER(feat)          IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO)
+
+#define BT_FEAT_LE_ISO_CHANNELS(feat)           BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_ISO_CHANNELS)
+
+#else
+
+/* Controller is build as a separate image, feature support must be
+ * read out from the feature set bit field.
+ */
+
 #define BT_FEAT_LE_ENCR(feat)                   BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_ENC)
 #define BT_FEAT_LE_CONN_PARAM_REQ_PROC(feat)    BT_LE_FEAT_TEST(feat, \
@@ -203,6 +240,8 @@ struct bt_hci_cmd_hdr {
 						BT_LE_FEAT_BIT_SYNC_RECEIVER)
 #define BT_FEAT_LE_ISO_CHANNELS(feat)           BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_ISO_CHANNELS)
+
+#endif /* ifdef CONFIG_BT_CTLR */
 
 #define BT_FEAT_LE_CIS(feat)            (BT_FEAT_LE_CIS_MASTER(feat) | \
 					BT_FEAT_LE_CIS_SLAVE(feat))
