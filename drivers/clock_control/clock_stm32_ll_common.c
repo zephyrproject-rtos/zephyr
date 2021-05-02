@@ -574,13 +574,13 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 	/* Set C2 AHB & AHB4 prescalers */
-	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct->CPU2CLKDivider);
-	LL_RCC_SetAHB4Prescaler(s_ClkInitStruct->AHB4CLKDivider);
+	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
+	LL_RCC_SetAHB4Prescaler(s_ClkInitStruct.AHB4CLKDivider);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 #ifdef CONFIG_SOC_SERIES_STM32WLX
 	/* Set C2 AHB & AHB3 prescalers */
-	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct->CPU2CLKDivider);
-	LL_RCC_SetAHB3Prescaler(s_ClkInitStruct->AHB3CLKDivider);
+	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
+	LL_RCC_SetAHB3Prescaler(s_ClkInitStruct.AHB3CLKDivider);
 #endif /* CONFIG_SOC_SERIES_STM32WLX */
 	/* If freq not increased, set flash latency after all clock setting */
 	if (new_hclk_freq <= old_hclk_freq) {
