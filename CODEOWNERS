@@ -222,6 +222,7 @@
 /drivers/ethernet/*stm32*                 @Nukersson @lochej
 /drivers/ethernet/*w5500*                 @parthitce
 /drivers/ethernet/*xlnx_gem*              @ibirnbaum
+/drivers/mdio/                            @rlubos @tbursztyka @arvinf
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*b91*                      @yurvyn
 /drivers/flash/*nrf*                      @nvlsianpu
