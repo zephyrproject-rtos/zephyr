@@ -7,11 +7,6 @@ zephyr_library_sources_ifdef(CONFIG_ETH_GECKO
 	phy_gecko.c
 	)
 
-zephyr_library_sources_ifdef(CONFIG_ETH_SAM_GMAC
-	eth_sam_gmac.c
-	phy_sam_gmac.c
-	)
-
 zephyr_library_sources_ifdef(CONFIG_ETH_XLNX_GEM
 	eth_xlnx_gem.c
 	phy_xlnx_gem.c
@@ -27,6 +22,8 @@ zephyr_library_sources_ifdef(CONFIG_ETH_SMSC911X	eth_smsc911x.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STELLARIS	eth_stellaris.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STM32_HAL	eth_stm32_hal.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_W5500		eth_w5500.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_SAM_GMAC	eth_sam_gmac.c)
+zephyr_library_sources_ifdef(CONFIG_DSA_KSZ8XXX		dsa_ksz8xxx.c)
 
 if(CONFIG_ETH_NATIVE_POSIX)
 	zephyr_library_named(drivers__ethernet__native_posix)
