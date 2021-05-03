@@ -38,7 +38,8 @@
 #define L2CAP_POLICY_WHITELIST		0x01
 #define L2CAP_POLICY_16BYTE_KEY		0x02
 
-NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1,
+			  BT_L2CAP_SDU_BUF_SIZE(DATA_MTU), NULL);
 NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_MTU, NULL);
 
 static uint8_t l2cap_policy;
@@ -347,7 +348,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 
 	while (count--) {
 		buf = net_buf_alloc(&data_tx_pool, K_FOREVER);
-		net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+		net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len);
 		ret = bt_l2cap_chan_send(&l2ch_chan.ch.chan, buf);
