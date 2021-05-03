@@ -48,7 +48,7 @@
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <zephyr.h>
 #include <drivers/espi.h>
-#include <power/power.h>
+#include <pm/pm.h>
 #include <soc.h>
 
 #include "soc_host.h"
