@@ -358,7 +358,7 @@ struct device_state {
 
 #ifdef CONFIG_PM_DEVICE
 	/* Power management data */
-	struct device_pm pm;
+	struct pm_device pm;
 #endif /* CONFIG_PM_DEVICE */
 };
 
@@ -389,7 +389,7 @@ struct device {
 	int (*device_pm_control)(const struct device *dev, uint32_t command,
 				 void *context, device_pm_cb cb, void *arg);
 	/** Pointer to device instance power management data */
-	struct device_pm * const pm;
+	struct pm_device * const pm;
 #endif
 };
 

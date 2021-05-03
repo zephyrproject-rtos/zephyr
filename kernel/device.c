@@ -28,7 +28,7 @@ extern uint32_t __device_init_status_start[];
 static inline void device_pm_state_init(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
-	*dev->pm = (struct device_pm){
+	*dev->pm = (struct pm_device){
 		.usage = ATOMIC_INIT(0),
 		.lock = Z_SEM_INITIALIZER(dev->pm->lock, 1, 1),
 		.signal = K_POLL_SIGNAL_INITIALIZER(dev->pm->signal),

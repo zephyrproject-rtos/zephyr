@@ -45,8 +45,8 @@ static void device_pm_callback(const struct device *dev,
 
 static void pm_work_handler(struct k_work *work)
 {
-	struct device_pm *pm = CONTAINER_OF(work,
-					struct device_pm, work);
+	struct pm_device *pm = CONTAINER_OF(work,
+					struct pm_device, work);
 	const struct device *dev = pm->dev;
 	int ret = 0;
 	uint8_t pm_state;

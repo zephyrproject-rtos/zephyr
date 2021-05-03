@@ -83,7 +83,7 @@ typedef void (*device_pm_cb)(const struct device *dev,
 /**
  * @brief Device PM info
  */
-struct device_pm {
+struct pm_device {
 	/** Pointer to the device */
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
