@@ -637,60 +637,6 @@ void device_busy_set(const struct device *dev);
 void device_busy_clear(const struct device *dev);
 
 #ifdef CONFIG_PM_DEVICE
-/*
- * Device PM functions
- */
-
-/**
- * @brief Call the set power state function of a device
- *
- * Called by the application or power management service to let the device do
- * required operations when moving to the required power state
- * Note that devices may support just some of the device power states
- * @param dev Pointer to device structure of the driver instance.
- * @param device_power_state Device power state to be set
- * @param cb Callback function to notify device power status
- * @param arg Caller passed argument to callback function
- *
- * @retval 0 If successful in queuing the request or changing the state.
- * @retval Errno Negative errno code if failure. Callback will not be called.
- */
-static inline int device_set_power_state(const struct device *dev,
-					 uint32_t device_power_state,
-					 pm_device_cb cb, void *arg)
-{
-	if (dev->pm_control == NULL) {
-		return -ENOSYS;
-	}
-
-	return dev->pm_control(dev, PM_DEVICE_SET_POWER_STATE,
-			       &device_power_state, cb, arg);
-}
-
-/**
- * @brief Call the get power state function of a device
- *
- * This function lets the caller know the current device
- * power state at any time. This state will be one of the defined
- * power states allowed for the devices in that system
- *
- * @param dev pointer to device structure of the driver instance.
- * @param device_power_state Device power state to be filled by the device
- *
- * @retval 0 If successful.
- * @retval Errno Negative errno code if failure.
- */
-static inline int device_get_power_state(const struct device *dev,
-					 uint32_t *device_power_state)
-{
-	if (dev->pm_control == NULL) {
-		return -ENOSYS;
-	}
-
-	return dev->pm_control(dev, PM_DEVICE_GET_POWER_STATE,
-			       device_power_state, NULL, NULL);
-}
-
 /**
  * @brief Check if any device is in the middle of a transaction
  *
