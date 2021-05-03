@@ -27,13 +27,13 @@ static int fake_dev_pm_control(const struct device *dev, uint32_t command,
 	struct fake_dev_context *ctx = dev->data;
 	int ret = 0;
 
-	if (command == DEVICE_PM_SET_POWER_STATE) {
-		if (*(uint32_t *)context == DEVICE_PM_SUSPEND_STATE) {
+	if (command == PM_DEVICE_SET_POWER_STATE) {
+		if (*(uint32_t *)context == PM_DEVICE_SUSPEND_STATE) {
 			ret = net_if_suspend(ctx->iface);
 			if (ret == -EBUSY) {
 				goto out;
 			}
-		} else if (*(uint32_t *)context == DEVICE_PM_ACTIVE_STATE) {
+		} else if (*(uint32_t *)context == PM_DEVICE_ACTIVE_STATE) {
 			ret = net_if_resume(ctx->iface);
 		}
 	} else {
@@ -149,14 +149,14 @@ void test_pm(void)
 	 */
 	k_yield();
 
-	ret = device_set_power_state(dev, DEVICE_PM_SUSPEND_STATE,
+	ret = device_set_power_state(dev, PM_DEVICE_SUSPEND_STATE,
 				     NULL, NULL);
 	zassert_true(ret == 0, "Could not set state");
 
 	zassert_true(net_if_is_suspended(iface), "net iface is not suspended");
 
 	/* Let's try to suspend it again, it should fail relevantly */
-	ret = device_set_power_state(dev, DEVICE_PM_SUSPEND_STATE,
+	ret = device_set_power_state(dev, PM_DEVICE_SUSPEND_STATE,
 				     NULL, NULL);
 	zassert_true(ret == -EALREADY, "Could change state");
 
@@ -167,13 +167,13 @@ void test_pm(void)
 		     (struct sockaddr *)&addr4, sizeof(struct sockaddr_in));
 	zassert_true(ret < 0, "Could send data");
 
-	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE,
+	ret = device_set_power_state(dev, PM_DEVICE_ACTIVE_STATE,
 				     NULL, NULL);
 	zassert_true(ret == 0, "Could not set state");
 
 	zassert_false(net_if_is_suspended(iface), "net iface is suspended");
 
-	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE,
+	ret = device_set_power_state(dev, PM_DEVICE_ACTIVE_STATE,
 				     NULL, NULL);
 	zassert_true(ret == -EALREADY, "Could change state");
 

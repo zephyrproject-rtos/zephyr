@@ -199,7 +199,7 @@ int device_any_busy_check(void)
 
 	while (dev < __device_end) {
 		if (atomic_test_bit(&dev->pm->atomic_flags,
-				    DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT)) {
+				    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
 			return -EBUSY;
 		}
 		++dev;
@@ -211,7 +211,7 @@ int device_any_busy_check(void)
 int device_busy_check(const struct device *dev)
 {
 	if (atomic_test_bit(&dev->pm->atomic_flags,
-			    DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT)) {
+			    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
 		return -EBUSY;
 	}
 	return 0;
@@ -223,7 +223,7 @@ void device_busy_set(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
 	atomic_set_bit(&dev->pm->atomic_flags,
-		       DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT);
+		       PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
 #else
 	ARG_UNUSED(dev);
 #endif
@@ -233,7 +233,7 @@ void device_busy_clear(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
 	atomic_clear_bit(&dev->pm->atomic_flags,
-			 DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT);
+			 PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
 #else
 	ARG_UNUSED(dev);
 #endif

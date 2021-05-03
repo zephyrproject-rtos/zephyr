@@ -402,7 +402,7 @@ static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 {
 	int ret = 0;
 
-	if ((new_state == DEVICE_PM_ACTIVE_STATE) &&
+	if ((new_state == PM_DEVICE_ACTIVE_STATE) &&
 		(new_state != get_dev_data(dev)->pm_state)) {
 		if (get_dev_conf(dev)->regs ==
 			DT_INST_REG_ADDR(0)) {
@@ -417,11 +417,11 @@ static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 			get_dev_data(dev)->pm_state = new_state;
 		}
 	} else {
-		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
-			new_state == DEVICE_PM_SUSPEND_STATE ||
-			new_state == DEVICE_PM_OFF_STATE);
+		__ASSERT_NO_MSG(new_state == PM_DEVICE_LOW_POWER_STATE ||
+			new_state == PM_DEVICE_SUSPEND_STATE ||
+			new_state == PM_DEVICE_OFF_STATE);
 
-		if (get_dev_data(dev)->pm_state == DEVICE_PM_ACTIVE_STATE) {
+		if (get_dev_data(dev)->pm_state == PM_DEVICE_ACTIVE_STATE) {
 			UARTDisable(get_dev_conf(dev)->regs);
 			/*
 			 * Release power dependency - i.e. potentially power
@@ -449,7 +449,7 @@ static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
 {
 	int ret = 0;
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
 		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != get_dev_data(dev)->pm_state) {
@@ -457,7 +457,7 @@ static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
 				new_state);
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_GET_POWER_STATE);
 		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
 	}
 
@@ -581,7 +581,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 
 #define UART_CC13XX_CC26XX_INIT_PM_STATE				\
 	do {								\
-		get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;	\
+		get_dev_data(dev)->pm_state = PM_DEVICE_ACTIVE_STATE;	\
 	} while (0)
 #else
 #define UART_CC13XX_CC26XX_INIT_PM_STATE

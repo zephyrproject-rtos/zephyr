@@ -215,20 +215,20 @@ registers, clocks, memory etc.
 
 The four device power states:
 
-:code:`DEVICE_PM_ACTIVE_STATE`
+:code:`PM_DEVICE_ACTIVE_STATE`
 
    Normal operation of the device. All device context is retained.
 
-:code:`DEVICE_PM_LOW_POWER_STATE`
+:code:`PM_DEVICE_LOW_POWER_STATE`
 
    Device context is preserved by the HW and need not be restored by the driver.
 
-:code:`DEVICE_PM_SUSPEND_STATE`
+:code:`PM_DEVICE_SUSPEND_STATE`
 
    Most device context is lost by the hardware. Device drivers must save and
    restore or reinitialize any context lost by the hardware.
 
-:code:`DEVICE_PM_OFF_STATE`
+:code:`PM_DEVICE_OFF_STATE`
 
    Power has been fully removed from the device. The device context is lost
    when this state is entered. Need to reinitialize the device when powering
@@ -241,8 +241,8 @@ Zephyr RTOS power management subsystem provides a control function interface
 to device drivers to indicate power management operations to perform.
 The supported PM control commands are:
 
-* DEVICE_PM_SET_POWER_STATE
-* DEVICE_PM_GET_POWER_STATE
+* PM_DEVICE_SET_POWER_STATE
+* PM_DEVICE_GET_POWER_STATE
 
 Each device driver defines:
 
@@ -298,7 +298,7 @@ Device Set Power State
    int device_set_power_state(const struct device *dev, uint32_t device_power_state, device_pm_cb cb, void *arg);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
-device driver with DEVICE_PM_SET_POWER_STATE command.
+device driver with PM_DEVICE_SET_POWER_STATE command.
 
 Device Get Power State
 ----------------------
@@ -308,7 +308,7 @@ Device Get Power State
    int device_get_power_state(const struct device *dev, uint32_t * device_power_state);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
-device driver with DEVICE_PM_GET_POWER_STATE command.
+device driver with PM_DEVICE_GET_POWER_STATE command.
 
 Busy Status Indication
 ======================
