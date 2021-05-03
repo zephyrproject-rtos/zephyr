@@ -60,11 +60,6 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 				sizeof(struct bt_l2cap_disconn_req)),
 			  NULL);
 
-/* Maximum Packet Size (MPS) is defined as the MTU of an L2CAP Basic Frame. */
-#define L2CAP_MAX_LE_MPS	BT_L2CAP_RX_MTU
-/* For now use MPS - SDU length to disable segmentation */
-#define L2CAP_MAX_LE_MTU	(L2CAP_MAX_LE_MPS - BT_L2CAP_SDU_HDR_SIZE)
-
 #define L2CAP_ECRED_CHAN_MAX	5
 
 #define l2cap_lookup_ident(conn, ident) __l2cap_lookup_ident(conn, ident, false)
@@ -801,20 +796,25 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 
 	/* Use existing MTU if defined */
 	if (!chan->rx.mtu) {
-		chan->rx.mtu = L2CAP_MAX_LE_MTU;
+		/* If application has not provide the incoming L2CAP SDU MTU use
+		 * an MTU that does not require segmentation.
+		 */
+		chan->rx.mtu = BT_L2CAP_SDU_RX_MTU;
 	}
 
-	/* MPS shall not be bigger than MTU + 2 as the remaining bytes cannot
-	 * be used.
+	/* MPS shall not be bigger than MTU + BT_L2CAP_SDU_HDR_SIZE as the
+	 * remaining bytes cannot be used.
 	 */
-	chan->rx.mps = MIN(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
+	chan->rx.mps = MIN(chan->rx.mtu + BT_L2CAP_SDU_HDR_SIZE,
+			   BT_L2CAP_RX_MTU);
 
 	/* Truncate MTU if channel have disabled segmentation but still have
 	 * set an MTU which requires it.
 	 */
-	if (!chan->chan.ops->alloc_buf && (chan->rx.mps < chan->rx.mtu + 2)) {
+	if (!chan->chan.ops->alloc_buf &&
+	    (chan->rx.mps < chan->rx.mtu + BT_L2CAP_SDU_HDR_SIZE)) {
 		BT_WARN("Segmentation disabled but MTU > MPS, truncating MTU");
-		chan->rx.mtu = chan->rx.mps - 2;
+		chan->rx.mtu = chan->rx.mps - BT_L2CAP_SDU_HDR_SIZE;
 	}
 
 	/* Use existing credits if defined */
@@ -823,7 +823,7 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 			/* Auto tune credits to receive a full packet */
 			chan->rx.init_credits =
 				ceiling_fraction(chan->rx.mtu,
-						 L2CAP_MAX_LE_MPS);
+						 BT_L2CAP_RX_MTU);
 		} else {
 			chan->rx.init_credits = L2CAP_LE_MAX_CREDITS;
 		}
@@ -832,7 +832,8 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	atomic_set(&chan->rx.credits,  0);
 
 	if (BT_DBG_ENABLED &&
-	    chan->rx.init_credits * chan->rx.mps < chan->rx.mtu + 2) {
+	    chan->rx.init_credits * chan->rx.mps <
+	    chan->rx.mtu + BT_L2CAP_SDU_HDR_SIZE) {
 		BT_WARN("Not enough credits for a full packet");
 	}
 }
