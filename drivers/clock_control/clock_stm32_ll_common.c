@@ -36,6 +36,15 @@
 #define z_mco2_prescaler(v) LL_RCC_MCO2_DIV_ ## v
 #define mco2_prescaler(v) z_mco2_prescaler(v)
 
+/* Calculate MSI freq for the given range(at RUN range, not after standby) */
+#if defined(CONFIG_SOC_SERIES_STM32WBX)
+#define RCC_CALC_MSI_RUN_FREQ(range) __LL_RCC_CALC_MSI_FREQ( \
+						range << RCC_CR_MSIRANGE_Pos)
+#else
+#define RCC_CALC_MSI_RUN_FREQ(range) __LL_RCC_CALC_MSI_FREQ( \
+			LL_RCC_MSIRANGESEL_RUN, range << RCC_CR_MSIRANGE_Pos)
+#endif
+
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
 #define __LL_RCC_CALC_HCLK_FREQ __LL_RCC_CALC_HCLK1_FREQ
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
@@ -401,7 +410,9 @@ int stm32_clock_control_init(const struct device *dev)
 #if STM32_PLL_SRC_MSI
 
 	/* Set MSI Range */
+#if !defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_RCC_MSI_EnableRangeSelection();
+#endif
 	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
 	LL_RCC_MSI_SetCalibTrimming(0);
 
@@ -523,14 +534,9 @@ int stm32_clock_control_init(const struct device *dev)
 #elif STM32_SYSCLK_SRC_MSI
 
 	old_hclk_freq = HAL_RCC_GetHCLKFreq();
-
-	/* Calculate new SystemCoreClock variable with MSI freq */
-	/* MSI freq is defined from RUN range selection */
-	new_hclk_freq =
-		__LL_RCC_CALC_HCLK_FREQ(
-			__LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN,
-			STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos),
-			hclk_prescaler);
+	new_hclk_freq = __LL_RCC_CALC_HCLK_FREQ(
+				RCC_CALC_MSI_RUN_FREQ(STM32_MSI_RANGE),
+				hclk_prescaler);
 
 #if defined(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
 	__ASSERT(new_hclk_freq == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
@@ -544,7 +550,9 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 
 	/* Set MSI Range */
+#if !defined(CONFIG_SOC_SERIES_STM32WBX)
 	LL_RCC_MSI_EnableRangeSelection();
+#endif
 	LL_RCC_MSI_SetRange(STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
 
 #if STM32_MSI_PLL_MODE
