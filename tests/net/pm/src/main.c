@@ -22,7 +22,7 @@ struct fake_dev_context {
 };
 
 static int fake_dev_pm_control(const struct device *dev, uint32_t command,
-			       void *context, device_pm_cb cb, void *arg)
+			       void *context, pm_device_cb cb, void *arg)
 {
 	struct fake_dev_context *ctx = dev->data;
 	int ret = 0;

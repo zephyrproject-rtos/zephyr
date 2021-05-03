@@ -590,7 +590,7 @@ static int bmp388_device_ctrl(
 	const struct device *dev,
 	uint32_t ctrl_command,
 	void *context,
-	device_pm_cb cb,
+	pm_device_cb cb,
 	void *arg)
 {
 	int ret = 0;

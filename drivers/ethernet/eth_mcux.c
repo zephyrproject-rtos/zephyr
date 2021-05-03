@@ -186,7 +186,7 @@ void eth_mcux_phy_stop(struct eth_context *context);
 
 static int eth_mcux_device_pm_control(const struct device *dev,
 				      uint32_t command,
-				      void *context, device_pm_cb cb, void *arg)
+				      void *context, pm_device_cb cb, void *arg)
 {
 	struct eth_context *eth_ctx = (struct eth_context *)dev->data;
 	int ret = 0;
