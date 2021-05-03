@@ -692,6 +692,16 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_FAILURE) ||
 		  (ret == TICKER_STATUS_BUSY));
+
+	/* Find next prepare needing preempt timeout to be setup */
+	do {
+		p = ull_prepare_dequeue_iter(&idx);
+		if (!p) {
+			return err;
+		}
+	} while (p->is_aborted || p->is_resume);
+
+	preempt_ticker_start(&p->prepare_param);
 #endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
 	return err;
@@ -813,7 +823,7 @@ static void preempt(void *param)
 		next->is_aborted = 1;
 		next->abort_cb(&next->prepare_param, next->prepare_param.param);
 
-		goto preempt_next;
+		return;
 	}
 
 	event.curr.abort_cb(NULL, event.curr.param);
@@ -848,16 +858,6 @@ static void preempt(void *param)
 	} else {
 		LL_ASSERT(ret == -ECANCELED);
 	}
-
-preempt_next:
-	do {
-		next = ull_prepare_dequeue_iter(&idx);
-		if (!next) {
-			return;
-		}
-	} while (next->is_aborted || next->is_resume);
-
-	preempt_ticker_start(&next->prepare_param);
 }
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 
