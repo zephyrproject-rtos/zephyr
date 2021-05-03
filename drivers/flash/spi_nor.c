@@ -37,9 +37,9 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
  * Kconfig option.
  *
  * When mapped to the Zephyr Device Power Management states:
- * * DEVICE_PM_ACTIVE_STATE covers both active and standby modes;
- * * DEVICE_PM_LOW_POWER_STATE, DEVICE_PM_SUSPEND_STATE, and
- *   DEVICE_PM_OFF_STATE all correspond to deep-power-down mode.
+ * * PM_DEVICE_ACTIVE_STATE covers both active and standby modes;
+ * * PM_DEVICE_LOW_POWER_STATE, PM_DEVICE_SUSPEND_STATE, and
+ *   PM_DEVICE_OFF_STATE all correspond to deep-power-down mode.
  */
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4

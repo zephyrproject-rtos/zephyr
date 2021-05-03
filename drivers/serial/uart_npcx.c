@@ -432,8 +432,8 @@ static inline int uart_npcx_set_power_state(const struct device *dev,
 	struct uart_npcx_data *const data = DRV_DATA(dev);
 
 	/* If next device power state is LOW or SUSPEND power state */
-	if (next_state == DEVICE_PM_LOW_POWER_STATE ||
-	    next_state == DEVICE_PM_SUSPEND_STATE) {
+	if (next_state == PM_DEVICE_LOW_POWER_STATE ||
+	    next_state == PM_DEVICE_SUSPEND_STATE) {
 		/*
 		 * If uart device is busy with transmitting, the driver will
 		 * stay in while loop and wait for the transaction is completed.
@@ -454,10 +454,10 @@ static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
 	int ret = 0;
 
 	switch (ctrl_command) {
-	case DEVICE_PM_SET_POWER_STATE:
+	case PM_DEVICE_SET_POWER_STATE:
 		ret = uart_npcx_set_power_state(dev, *((uint32_t *)context));
 		break;
-	case DEVICE_PM_GET_POWER_STATE:
+	case PM_DEVICE_GET_POWER_STATE:
 		ret = uart_npcx_get_power_state(dev, (uint32_t *)context);
 		break;
 	default:

@@ -24,24 +24,24 @@ extern "C" {
 
 struct device;
 
-/** @def DEVICE_PM_ACTIVE_STATE
+/** @def PM_DEVICE_ACTIVE_STATE
  *
  * @brief device is in ACTIVE power state
  *
  * @details Normal operation of the device. All device context is retained.
  */
-#define DEVICE_PM_ACTIVE_STATE          1
+#define PM_DEVICE_ACTIVE_STATE          1
 
-/** @def DEVICE_PM_LOW_POWER_STATE
+/** @def PM_DEVICE_LOW_POWER_STATE
  *
  * @brief device is in LOW power state
  *
  * @details Device context is preserved by the HW and need not be
  * restored by the driver.
  */
-#define DEVICE_PM_LOW_POWER_STATE       2
+#define PM_DEVICE_LOW_POWER_STATE       2
 
-/** @def DEVICE_PM_SUSPEND_STATE
+/** @def PM_DEVICE_SUSPEND_STATE
  *
  * @brief device is in SUSPEND power state
  *
@@ -49,9 +49,9 @@ struct device;
  * Device drivers must save and restore or reinitialize any context
  * lost by the hardware
  */
-#define DEVICE_PM_SUSPEND_STATE         3
+#define PM_DEVICE_SUSPEND_STATE         3
 
-/** @def DEVICE_PM_FORCE_SUSPEND_STATE
+/** @def PM_DEVICE_FORCE_SUSPEND_STATE
  *
  * @brief device is in force SUSPEND power state
  *
@@ -61,9 +61,9 @@ struct device;
  * Most device context is lost by the hardware. Device drivers must
  * save and restore or reinitialize any context lost by the hardware.
  */
-#define DEVICE_PM_FORCE_SUSPEND_STATE	4
+#define PM_DEVICE_FORCE_SUSPEND_STATE	4
 
-/** @def DEVICE_PM_OFF_STATE
+/** @def PM_DEVICE_OFF_STATE
  *
  * @brief device is in OFF power state
  *
@@ -71,11 +71,11 @@ struct device;
  * The device context is lost when this state is entered, so the OS
  * software will reinitialize the device when powering it back on
  */
-#define DEVICE_PM_OFF_STATE             5
+#define PM_DEVICE_OFF_STATE             5
 
 /* Constants defining support device power commands */
-#define DEVICE_PM_SET_POWER_STATE       1
-#define DEVICE_PM_GET_POWER_STATE       2
+#define PM_DEVICE_SET_POWER_STATE       1
+#define PM_DEVICE_GET_POWER_STATE       2
 
 typedef void (*device_pm_cb)(const struct device *dev,
 			     int status, void *context, void *arg);
@@ -108,7 +108,7 @@ struct device_pm {
 /** Bit position in device_pm::atomic_flags that records whether the
  * device is busy.
  */
-#define DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT 0
+#define PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT 0
 
 /**
  * @brief Get name of device PM state
