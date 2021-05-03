@@ -9,7 +9,7 @@
 #include <linker/sections.h>
 #include <drivers/timer/system_timer.h>
 #include <wait_q.h>
-#include <power/power.h>
+#include <pm/pm.h>
 #include <stdbool.h>
 #include <logging/log.h>
 #include <ksched.h>
