@@ -408,13 +408,13 @@ static int loapic_device_ctrl(const struct device *port,
 {
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		if (*((uint32_t *)context) == PM_DEVICE_SUSPEND_STATE) {
 			ret = loapic_suspend(port);
 		} else if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
 			ret = loapic_resume(port);
 		}
-	} else if (ctrl_command == PM_DEVICE_GET_POWER_STATE) {
+	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
 		*((uint32_t *)context) = loapic_device_power_state;
 	}
 

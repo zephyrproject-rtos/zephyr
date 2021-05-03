@@ -181,11 +181,11 @@ static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
 	int err;
 
 	switch (ctrl_command) {
-	case PM_DEVICE_GET_POWER_STATE:
+	case PM_DEVICE_STATE_GET:
 		err = led_pwm_pm_get_state(dev, context);
 		break;
 
-	case PM_DEVICE_SET_POWER_STATE:
+	case PM_DEVICE_STATE_SET:
 		err = led_pwm_pm_set_state(dev, *((uint32_t *)context));
 		break;
 

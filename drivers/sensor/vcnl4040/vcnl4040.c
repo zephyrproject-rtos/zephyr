@@ -224,7 +224,7 @@ static int vcnl4040_device_ctrl(const struct device *dev,
 {
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		uint32_t device_pm_state = *(uint32_t *)context;
 		uint16_t ps_conf;
 
@@ -274,7 +274,7 @@ static int vcnl4040_device_ctrl(const struct device *dev,
 #endif
 		}
 
-	} else if (ctrl_command == PM_DEVICE_GET_POWER_STATE) {
+	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
 		*((uint32_t *)context) = PM_DEVICE_ACTIVE_STATE;
 	}
 

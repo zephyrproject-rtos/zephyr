@@ -529,14 +529,14 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 	uint32_t new_state;
 
 	switch (ctrl_command) {
-	case PM_DEVICE_SET_POWER_STATE:
+	case PM_DEVICE_STATE_SET:
 		new_state = *((const uint32_t *)context);
 		if (new_state != current_state) {
 			status = lis2mdl_set_power_state(lis2mdl, config,
 							new_state);
 		}
 		break;
-	case PM_DEVICE_GET_POWER_STATE:
+	case PM_DEVICE_STATE_GET:
 		*((uint32_t *)context) = current_state;
 		break;
 	default:
