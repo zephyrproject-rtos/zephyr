@@ -26,11 +26,10 @@ LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
  */
 #define BT_GATT_OTS_L2CAP_PSM	0x0025
 
-/* Maximum size of TX buffer and its payload. */
-#define MAX_TX_BUF_SIZE		256
-#define MAX_TX_BUF_PAYLOAD_SIZE (MAX_TX_BUF_SIZE - BT_L2CAP_CHAN_SEND_RESERVE)
-
-NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, 1, MAX_TX_BUF_SIZE, NULL);
+/* Maximum size of outgoing data. */
+#define OT_TX_MTU 256
+NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, 1, BT_L2CAP_SDU_BUF_SIZE(OT_TX_MTU),
+			  NULL);
 
 /* List of Object Transfer Channels. */
 static sys_slist_t channels;
@@ -42,12 +41,12 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 	uint32_t len;
 
 	/* Calculate maximum length of data chunk. */
-	len = MIN(l2cap_ctx->ot_chan.tx.mtu, MAX_TX_BUF_PAYLOAD_SIZE);
+	len = MIN(l2cap_ctx->ot_chan.tx.mtu, OT_TX_MTU);
 	len = MIN(len, l2cap_ctx->tx.len - l2cap_ctx->tx.len_sent);
 
 	/* Prepare buffer for sending. */
 	buf = net_buf_alloc(&ot_chan_tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, &l2cap_ctx->tx.data[l2cap_ctx->tx.len_sent], len);
 
 	ret = bt_l2cap_chan_send(&l2cap_ctx->ot_chan.chan, buf);
