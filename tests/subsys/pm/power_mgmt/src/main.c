@@ -168,7 +168,7 @@ void test_power_state_trans(void)
  *  - device driver notify its power state change by pm_device_get and
  *    pm_device_put
  *  - system inform device system power state change through device interface
- *    device_pm_control
+ *    pm_control
  *
  * @see pm_device_get(), pm_device_put(), device_set_power_state(),
  *      device_get_power_state()
