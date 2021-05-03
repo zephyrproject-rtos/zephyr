@@ -30,24 +30,19 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_arm64_context_switch)
 SECTION_FUNC(TEXT, z_arm64_context_switch)
 
-	ldr	x3, =_thread_offset_to_callee_saved
-
-	/* addr of callee-saved regs in thread in x2 */
-	add	x2, x1, x3
-
 	/* Save the current SP_EL0 */
 	mrs	x4, sp_el0
 
-	stp	x19, x20, [x2, ___callee_saved_t_x19_x20_OFFSET]
-	stp	x21, x22, [x2, ___callee_saved_t_x21_x22_OFFSET]
-	stp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
-	stp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
-	stp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
-	stp	x29, x4,  [x2, ___callee_saved_t_x29_sp_el0_OFFSET]
+	stp	x19, x20, [x1, #_thread_offset_to_callee_saved_x19_x20]
+	stp	x21, x22, [x1, #_thread_offset_to_callee_saved_x21_x22]
+	stp	x23, x24, [x1, #_thread_offset_to_callee_saved_x23_x24]
+	stp	x25, x26, [x1, #_thread_offset_to_callee_saved_x25_x26]
+	stp	x27, x28, [x1, #_thread_offset_to_callee_saved_x27_x28]
+	stp	x29, x4,  [x1, #_thread_offset_to_callee_saved_x29_sp_el0]
 
 	/* Save the current SP_ELx */
 	mov	x4, sp
-	str	x4, [x2, ___callee_saved_t_sp_elx_OFFSET]
+	str	x4, [x1, #_thread_offset_to_callee_saved_sp_elx]
 
 	/* save current thread's exception depth */
 	mrs	x4, tpidrro_el0
@@ -69,8 +64,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	/* Grab the TLS pointer */
-	ldr	x2, =_thread_offset_to_tls
-	ldr	x2, [x0, x2]
+	ldr	x2, [x0, #_thread_offset_to_tls]
 
 	/* Store in the "Thread ID" register.
 	 * This register is used as a base pointer to all
@@ -79,22 +73,19 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	msr	tpidr_el0, x2
 #endif
 
-	/* addr of callee-saved regs in thread in x2 */
-	add	x2, x0, x3
-
-	ldp	x19, x20, [x2, ___callee_saved_t_x19_x20_OFFSET]
-	ldp	x21, x22, [x2, ___callee_saved_t_x21_x22_OFFSET]
-	ldp	x23, x24, [x2, ___callee_saved_t_x23_x24_OFFSET]
-	ldp	x25, x26, [x2, ___callee_saved_t_x25_x26_OFFSET]
-	ldp	x27, x28, [x2, ___callee_saved_t_x27_x28_OFFSET]
-	ldp	x29, x1,  [x2, ___callee_saved_t_x29_sp_el0_OFFSET]
+	ldp	x19, x20, [x0, #_thread_offset_to_callee_saved_x19_x20]
+	ldp	x21, x22, [x0, #_thread_offset_to_callee_saved_x21_x22]
+	ldp	x23, x24, [x0, #_thread_offset_to_callee_saved_x23_x24]
+	ldp	x25, x26, [x0, #_thread_offset_to_callee_saved_x25_x26]
+	ldp	x27, x28, [x0, #_thread_offset_to_callee_saved_x27_x28]
+	ldp	x29, x4,  [x0, #_thread_offset_to_callee_saved_x29_sp_el0]
 
 	/* Restore SP_EL0 */
-	msr	sp_el0, x1
+	msr	sp_el0, x4
 
 	/* Restore SP_EL1 */
-	ldr	x1, [x2, ___callee_saved_t_sp_elx_OFFSET]
-	mov	sp, x1
+	ldr	x4, [x0, #_thread_offset_to_callee_saved_sp_elx]
+	mov	sp, x4
 
 #ifdef CONFIG_USERSPACE
 	stp     xzr, x30, [sp, #-16]!
