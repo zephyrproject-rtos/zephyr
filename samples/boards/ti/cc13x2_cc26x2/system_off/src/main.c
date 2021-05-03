@@ -10,7 +10,7 @@
 #include <init.h>
 #include <device.h>
 #include <drivers/gpio.h>
-#include <power/power.h>
+#include <pm/pm.h>
 
 #include <driverlib/ioc.h>
 

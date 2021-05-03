@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <soc.h>
-#include <power/power.h>
+#include <pm/pm.h>
 #include <logging/log.h>
 #define LOG_LEVEL LOG_LEVEL_DBG
 LOG_MODULE_REGISTER(pwrmgmt_test);
