@@ -115,7 +115,7 @@ struct pm_device {
  *
  * @param state State id which name should be returned
  */
-const char *device_pm_state_str(uint32_t state);
+const char *pm_device_state_str(uint32_t state);
 
 /** Alias for legacy use of device_pm_control_nop */
 #define device_pm_control_nop __DEPRECATED_MACRO NULL
