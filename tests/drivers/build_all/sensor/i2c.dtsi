@@ -657,3 +657,15 @@ test_i2c_lm75: lm75@4e {
 	label = "LM75";
 	reg = <0x4e>;
 };
+
+test_i2c_ina23x: ina23x@4f {
+	compatible = "ti,ina23x";
+	label = "INA23X";
+	reg = <0x4f>;
+	config = <0>;
+	current_lsb = <1>;
+	rshunt = <0>;
+	mask = <0>;
+	alert_limit = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};

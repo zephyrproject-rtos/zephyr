@@ -1,0 +1,19 @@
+# Copyright 2021 The Chromium OS Authors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INA23X
+	bool "INA23X Current and Power Monitor"
+	depends on I2C
+	help
+	  Enable driver for INA23X Current and Power Monitor.
+
+if INA23X
+
+config INA23X_TRIGGER
+	bool "Trigger mode"
+	help
+	  Set to enable trigger mode using gpio interrupt, where
+	  interrupts are configured to line ALERT PIN.
+
+endif # INA23X
