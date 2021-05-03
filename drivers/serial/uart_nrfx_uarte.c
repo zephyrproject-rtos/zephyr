@@ -1452,7 +1452,7 @@ static int uarte_nrfx_fifo_read(const struct device *dev,
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	const struct uarte_nrfx_data *data = get_dev_data(dev);
 
-	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
+	if (size > 0 && nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 		/* Clear the interrupt */
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
 
