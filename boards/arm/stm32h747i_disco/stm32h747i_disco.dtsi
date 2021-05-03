@@ -66,4 +66,13 @@
 	};
 };
 
+&rcc {
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
 arduino_serial: &uart8 {};
