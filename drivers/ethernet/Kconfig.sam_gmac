@@ -7,6 +7,7 @@ menuconfig ETH_SAM_GMAC
 	bool "Atmel SAM Ethernet driver"
 	depends on SOC_FAMILY_SAM0 || SOC_FAMILY_SAM
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select MDIO
 	help
 	  Enable Atmel SAM MCU Family Ethernet driver.
 
@@ -68,14 +69,6 @@ config ETH_SAM_GMAC_BUF_RX_COUNT
 	  fit at least two Ethernet frames: one being received by the GMAC module
 	  and the other being processed by the higher layer networking stack.
 
-config ETH_SAM_GMAC_MONITOR_PERIOD
-	int "Monitor task execution period"
-	default 1000
-	help
-	  Monitor task execution period in milliseconds. The monitor task is
-	  periodically executed to detect and report any changes in the PHY
-	  link status to the operating system.
-
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	bool "Read from an I2C EEPROM"
 	help
@@ -111,14 +104,6 @@ config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
 	  obtain handle to the I2C device object.
 
 endif # ETH_SAM_GMAC_MAC_I2C_EEPROM
-
-config ETH_SAM_GMAC_PHY_ADDR
-	int "GMAC PHY Address"
-	default 0
-	help
-	  GMAC PHY Address as used by IEEE 802.3, Section 2 MII compatible PHY
-	  transceivers. If you have a single PHY on board it is safe to leave it
-	  at 0 which is the broadcast address.
 
 config PTP_CLOCK_SAM_GMAC
 	bool "SAM GMAC PTP clock driver support"
