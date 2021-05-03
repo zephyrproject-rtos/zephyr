@@ -1,0 +1,30 @@
+# MDIO configuration options
+
+# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# MDIO options
+#
+menuconfig MDIO
+	bool "MDIO Drivers"
+	help
+	  Enable MDIO Driver Configuration
+
+if MDIO
+
+# Include these first so that any properties (e.g. defaults) below can be
+# overridden (by defining symbols in multiple locations)
+
+config MDIO_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  MDIO device driver initialization priority.
+
+
+module = MDIO
+module-str = mdio
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MDIO
