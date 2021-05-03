@@ -31,13 +31,6 @@ void main(void)
 	char vs1[32];
 	void *p = s;
 
-#ifdef CONFIG_FPU
-	float f = 66.67;
-	double d = 68.69;
-
-	long double ld = 70.71;
-#endif
-
 	printk("Hello World! %s\n", CONFIG_BOARD);
 
 	LOG_ERR("error string");
@@ -66,6 +59,14 @@ void main(void)
 	LOG_HEXDUMP_DBG(hexdump_msg, strlen(hexdump_msg), "For HeXdUmP!");
 
 #ifdef CONFIG_FPU
-	LOG_DBG("float %f, double %f, long double %Lf", f, d, ld);
+	float f = 66.67;
+	double d = 68.69;
+
+	LOG_DBG("float %f, double %f", f, d);
+#ifdef CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE
+	long double ld = 70.71;
+
+	LOG_DBG("long double %Lf", ld);
+#endif
 #endif
 }
