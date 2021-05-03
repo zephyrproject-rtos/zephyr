@@ -369,7 +369,7 @@ void test_multiple_condvar_wait_wake(void)
 	}
 
 	/* giving time for the other threads to execute */
-	k_yield();
+	k_msleep(10);
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i],
@@ -581,6 +581,7 @@ void test_main(void)
 				      &multiple_tid[i],
 				      &multiple_wake_tid[i],
 				      &multiple_stack[i],
+				      &multiple_condvar[i],
 				      &multiple_wake_stack[i]);
 	}
 	ztest_test_suite(test_condvar,
