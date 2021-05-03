@@ -182,3 +182,26 @@ const char *pm_device_state_str(uint32_t state)
 		return "";
 	}
 }
+
+int device_set_power_state(const struct device *dev,
+			   uint32_t device_power_state, pm_device_cb cb,
+			   void *arg)
+{
+	if (dev->pm_control == NULL) {
+		return -ENOSYS;
+	}
+
+	return dev->pm_control(dev, PM_DEVICE_SET_POWER_STATE,
+			       &device_power_state, cb, arg);
+}
+
+int device_get_power_state(const struct device *dev,
+			   uint32_t *device_power_state)
+{
+	if (dev->pm_control == NULL) {
+		return -ENOSYS;
+	}
+
+	return dev->pm_control(dev, PM_DEVICE_GET_POWER_STATE,
+			       device_power_state, NULL, NULL);
+}
