@@ -16,11 +16,6 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_gpio
 
-#define GPCR_PORT_PIN_MODE_INPUT    BIT(7)
-#define GPCR_PORT_PIN_MODE_OUTPUT   BIT(6)
-#define GPCR_PORT_PIN_MODE_PULLUP   BIT(2)
-#define GPCR_PORT_PIN_MODE_PULLDOWN BIT(1)
-
 /*
  * Strcture gpio_ite_cfg is about the setting of gpio
  * this config will be used at initial time
