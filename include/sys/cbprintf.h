@@ -47,6 +47,13 @@ extern "C" {
 /** @brief Required alignment of the buffer used for packaging. */
 #ifdef __xtensa__
 #define CBPRINTF_PACKAGE_ALIGNMENT 16
+#elif defined(CONFIG_X86) && !defined(CONFIG_64BIT)
+/* sizeof(long double) is 12 on x86-32, which is not power of 2.
+ * So set it manually.
+ */
+#define CBPRINTF_PACKAGE_ALIGNMENT \
+	(IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE) ? \
+		16 : MAX(sizeof(double), sizeof(long long)))
 #else
 #define CBPRINTF_PACKAGE_ALIGNMENT \
 	(IS_ENABLED(CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE) ? \
