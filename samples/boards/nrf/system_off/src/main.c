@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include <device.h>
 #include <init.h>
-#include <power/power.h>
+#include <pm/pm.h>
 #include "retained.h"
 #include <hal/nrf_gpio.h>
 
