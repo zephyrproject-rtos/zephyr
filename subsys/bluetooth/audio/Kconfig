@@ -53,5 +53,6 @@ config BT_AUDIO_DEBUG
 source "subsys/bluetooth/audio/Kconfig.vocs"
 source "subsys/bluetooth/audio/Kconfig.aics"
 source "subsys/bluetooth/audio/Kconfig.vcs"
+source "subsys/bluetooth/audio/Kconfig.mics"
 
 endif # BT_AUDIO
