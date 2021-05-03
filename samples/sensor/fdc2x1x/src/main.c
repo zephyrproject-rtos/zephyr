@@ -98,13 +98,13 @@ void main(void)
 	uint32_t p_state;
 
 	p_state = PM_DEVICE_LOW_POWER_STATE;
-	device_set_power_state(dev, p_state, pm_cb, NULL);
+	pm_device_state_set(dev, p_state, pm_cb, NULL);
 
 	p_state = PM_DEVICE_OFF_STATE;
-	device_set_power_state(dev, p_state, pm_cb, NULL);
+	pm_device_state_set(dev, p_state, pm_cb, NULL);
 
 	p_state = PM_DEVICE_ACTIVE_STATE;
-	device_set_power_state(dev, p_state, pm_cb, NULL);
+	pm_device_state_set(dev, p_state, pm_cb, NULL);
 #endif
 
 	while (1) {
@@ -133,10 +133,10 @@ void main(void)
 
 #ifdef CONFIG_PM_DEVICE
 		p_state = PM_DEVICE_OFF_STATE;
-		device_set_power_state(dev, p_state, pm_cb, NULL);
+		pm_device_state_set(dev, p_state, pm_cb, NULL);
 		k_sleep(K_MSEC(2000));
 		p_state = PM_DEVICE_ACTIVE_STATE;
-		device_set_power_state(dev, p_state, pm_cb, NULL);
+		pm_device_state_set(dev, p_state, pm_cb, NULL);
 #elif CONFIG_FDC2X1X_TRIGGER_NONE
 		k_sleep(K_MSEC(100));
 #endif

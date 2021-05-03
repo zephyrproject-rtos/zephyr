@@ -147,7 +147,7 @@ static int cmd_device_list(const struct shell *shell,
 		} else {
 #ifdef CONFIG_PM_DEVICE
 			uint32_t st = PM_DEVICE_ACTIVE_STATE;
-			int err = device_get_power_state(dev, &st);
+			int err = pm_device_state_get(dev, &st);
 
 			if (!err) {
 				state = pm_device_state_str(st);

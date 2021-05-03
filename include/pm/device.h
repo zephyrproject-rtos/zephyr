@@ -131,9 +131,8 @@ const char *pm_device_state_str(uint32_t state);
  * @retval 0 If successful in queuing the request or changing the state.
  * @retval Errno Negative errno code if failure. Callback will not be called.
  */
-int device_set_power_state(const struct device *dev,
-			   uint32_t device_power_state,
-			   pm_device_cb cb, void *arg);
+int pm_device_state_set(const struct device *dev, uint32_t device_power_state,
+			pm_device_cb cb, void *arg);
 
 /**
  * @brief Call the get power state function of a device
@@ -148,8 +147,7 @@ int device_set_power_state(const struct device *dev,
  * @retval 0 If successful.
  * @retval Errno Negative errno code if failure.
  */
-int device_get_power_state(const struct device *dev,
-			   uint32_t *device_power_state);
+int pm_device_state_get(const struct device *dev, uint32_t *device_power_state);
 
 /** Alias for legacy use of device_pm_control_nop */
 #define device_pm_control_nop __DEPRECATED_MACRO NULL
