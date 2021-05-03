@@ -217,7 +217,7 @@ SECTION_FUNC(TEXT, z_arm64_exit_exc)
 	bl	z_arm64_fpu_exit_exc
 
  GTEXT(z_arm64_exit_exc_fpu_done)
- SECTION_FUNC(TEXT, z_arm64_exit_exc_fpu_done)
+ z_arm64_exit_exc_fpu_done:
 #endif
 
 	ldp	x0, x1, [sp, ___esf_t_spsr_elr_OFFSET]
