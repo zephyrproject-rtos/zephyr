@@ -352,6 +352,7 @@
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi1: spi@4002d000 {
