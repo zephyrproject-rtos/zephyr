@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <power/power.h>
+#include <pm/pm.h>
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define NUM_THREAD 4

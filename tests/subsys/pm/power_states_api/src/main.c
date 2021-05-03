@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <ztest.h>
-#include <power/power.h>
+#include <pm/pm.h>
 
 /* Last state has not declared a minimum residency, so it should be
  * set the default 0 value
