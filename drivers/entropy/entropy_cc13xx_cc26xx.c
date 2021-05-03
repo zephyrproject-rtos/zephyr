@@ -10,7 +10,7 @@
 #include <device.h>
 #include <drivers/entropy.h>
 #include <irq.h>
-#include <power/power.h>
+#include <pm/device.h>
 
 #include <sys/ring_buffer.h>
 #include <sys/sys_io.h>

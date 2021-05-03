@@ -8,7 +8,7 @@
 
 #include <kernel.h>
 #include <drivers/i2c.h>
-#include <power/power.h>
+#include <pm/device.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>

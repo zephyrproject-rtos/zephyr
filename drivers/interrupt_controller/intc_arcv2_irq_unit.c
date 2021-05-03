@@ -24,7 +24,7 @@
 extern void *_VectorTable;
 
 #ifdef CONFIG_PM_DEVICE
-#include <power/power.h>
+#include <pm/device.h>
 #include <kernel_structs.h>
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE

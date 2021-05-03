@@ -9,7 +9,7 @@
 #include <device.h>
 #include <errno.h>
 #include <sys/__assert.h>
-#include <power/power.h>
+#include <pm/device.h>
 #include <drivers/uart.h>
 
 #include <driverlib/ioc.h>
