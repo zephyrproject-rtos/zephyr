@@ -172,6 +172,16 @@ static int i2c_is_busy(const struct device *dev)
 	return (IT83XX_I2C_STR(base) & E_HOSTA_BB);
 }
 
+static int i2c_bus_not_available(const struct device *dev)
+{
+	if (i2c_is_busy(dev) ||
+		(i2c_get_line_levels(dev) != I2C_LINE_IDLE)) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static void i2c_reset(const struct device *dev, int cause)
 {
 	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
@@ -711,6 +721,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 {
 	struct i2c_it8xxx2_data *data = DEV_DATA(dev);
 	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	int res;
 
 	/* Check for NULL pointers */
 	if (dev == NULL) {
@@ -720,6 +731,18 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (msgs == NULL) {
 		LOG_ERR("Device message is NULL");
 		return -EINVAL;
+	}
+	/* Make sure we're in a good state to start */
+	if (i2c_bus_not_available(dev)) {
+		/* reset i2c port */
+		i2c_reset(dev, I2C_RC_NO_IDLE_FOR_START);
+		/*
+		 * After resetting I2C bus, if I2C bus is not available
+		 * (No external pull-up), drop the transaction.
+		 */
+		if (i2c_bus_not_available(dev)) {
+			return -EIO;
+		}
 	}
 
 	msgs->flags |= I2C_MSG_START;
@@ -732,12 +755,6 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		data->msgs = &(msgs[i]);
 		data->addr_16bit = addr;
 
-		/* Make sure we're in a good state to start */
-		if ((msgs->flags & I2C_MSG_START) && (i2c_is_busy(dev)
-			|| (i2c_get_line_levels(dev) != I2C_LINE_IDLE))) {
-			/* reset i2c port */
-			i2c_reset(dev, I2C_RC_NO_IDLE_FOR_START);
-		}
 		if (msgs->flags & I2C_MSG_START) {
 			data->i2ccs = I2C_CH_NORMAL;
 			/* enable i2c interrupt */
@@ -746,7 +763,15 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		/* Start transaction */
 		i2c_transaction(dev);
 		/* Wait for the transfer to complete */
-		k_sem_take(&data->device_sync_sem, K_FOREVER);
+		/* TODO: the timeout should be adjustable */
+		res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
+		if (res != 0) {
+			data->err = ETIMEDOUT;
+			/* reset i2c port */
+			i2c_reset(dev, I2C_RC_TIMEOUT);
+			/* If this message is sent fail, drop the transaction. */
+			break;
+		}
 	}
 
 	/* reset i2c channel status */
