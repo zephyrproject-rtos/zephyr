@@ -405,7 +405,7 @@ Enable Device Idle Power Management of a Device API
 
 .. code-block:: c
 
-   void device_pm_enable(const struct device *dev);
+   void pm_device_enable(const struct device *dev);
 
 Enbles Idle Power Management of the device.
 
@@ -414,7 +414,7 @@ Disable Device Idle Power Management of a Device API
 
 .. code-block:: c
 
-   void device_pm_disable(const struct device *dev);
+   void pm_device_disable(const struct device *dev);
 
 Disables Idle Power Management of the device.
 
@@ -423,7 +423,7 @@ Resume Device asynchronously API
 
 .. code-block:: c
 
-   int device_pm_get(const struct device *dev);
+   int pm_device_get(const struct device *dev);
 
 Marks the device as being used. This API will asynchronously
 bring the device to resume state. The API returns 0 on success.
@@ -433,7 +433,7 @@ Resume Device synchronously API
 
 .. code-block:: c
 
-   int device_pm_get_sync(const struct device *dev);
+   int pm_device_get_sync(const struct device *dev);
 
 Marks the device as being used. It will bring up or resume
 the device if it is in suspended state based on the device
@@ -445,7 +445,7 @@ Suspend Device asynchronously API
 
 .. code-block:: c
 
-   int device_pm_put(const struct device *dev);
+   int pm_device_put(const struct device *dev);
 
 Marks the device as being released. This API asynchronously put
 the device to suspend state if not already in suspend state.
@@ -456,7 +456,7 @@ Suspend Device synchronously API
 
 .. code-block:: c
 
-   int device_pm_put_sync(const struct device *dev);
+   int pm_device_put_sync(const struct device *dev);
 
 Marks the device as being released. It will put the device to
 suspended state if is is in active state based on the device
