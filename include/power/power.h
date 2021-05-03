@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_POWER_POWER_H_
 #define ZEPHYR_INCLUDE_POWER_POWER_H_
 
-/* NOTE: This header is kept for compatibility but will be deprecated soon */
+#warning "<power/power.h> header is deprecated, use <pm/pm.h> instead"
 
 #include <pm/pm.h>
 
