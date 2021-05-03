@@ -923,13 +923,13 @@ void uart_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
 
 	(void)k_work_cancel_delayable(&data->dma_tx.timeout_work);
 
-	data->dma_tx.buffer_length = 0;
-
 	if (!dma_get_status(data->dma_tx.dma_dev,
 				data->dma_tx.dma_channel, &stat)) {
 		data->dma_tx.counter = data->dma_tx.buffer_length -
 					stat.pending_length;
 	}
+
+	data->dma_tx.buffer_length = 0;
 
 	irq_unlock(key);
 }
