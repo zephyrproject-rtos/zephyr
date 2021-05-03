@@ -18,7 +18,7 @@ canopen
 packaging
 progress
 psutil
-pylink
+pylink-square
 
 # for ram/rom reports
 anytree
