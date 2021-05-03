@@ -20,12 +20,12 @@ static int dummy_open(const struct device *dev)
 	printk("open()\n");
 
 	/* Make sure parent is resumed */
-	ret = device_pm_get_sync(parent);
+	ret = pm_device_get_sync(parent);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = device_pm_get(dev);
+	ret = pm_device_get(dev);
 	if (ret < 0) {
 		return ret;
 	}
@@ -80,14 +80,14 @@ static int dummy_close(const struct device *dev)
 	int ret;
 
 	printk("close()\n");
-	ret = device_pm_put_sync(dev);
+	ret = pm_device_put_sync(dev);
 	if (ret == 1) {
 		printk("Async suspend request ququed\n");
 	}
 
 	/* Parent can be suspended */
 	if (parent) {
-		device_pm_put(parent);
+		pm_device_put(parent);
 	}
 
 	return ret;
@@ -155,7 +155,7 @@ int dummy_init(const struct device *dev)
 		printk("parent not found\n");
 	}
 
-	device_pm_enable(dev);
+	pm_device_enable(dev);
 	device_power_state = DEVICE_PM_ACTIVE_STATE;
 
 	k_poll_event_init(&async_evt, K_POLL_TYPE_SIGNAL,

@@ -6,18 +6,19 @@
 
 #include <sys/printk.h>
 #include <zephyr/types.h>
+#include <pm/device_runtime.h>
 #include "dummy_driver.h"
 
 static uint32_t device_power_state;
 
 static int dummy_open(const struct device *dev)
 {
-	return device_pm_get_sync(dev);
+	return pm_device_get_sync(dev);
 }
 
 static int dummy_close(const struct device *dev)
 {
-	return device_pm_put_sync(dev);
+	return pm_device_put_sync(dev);
 }
 
 static uint32_t dummy_get_power_state(const struct device *dev)
@@ -73,7 +74,7 @@ static const struct dummy_driver_api funcs = {
 
 int dummy_init(const struct device *dev)
 {
-	device_pm_enable(dev);
+	pm_device_enable(dev);
 	return 0;
 }
 

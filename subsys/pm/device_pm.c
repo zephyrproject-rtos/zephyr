@@ -94,7 +94,7 @@ fsm_out:
 	k_poll_signal_raise(&dev->pm->signal, pm_state);
 }
 
-static int device_pm_request(const struct device *dev,
+static int pm_device_request(const struct device *dev,
 			     uint32_t target_state, uint32_t pm_flags)
 {
 	int result, signaled = 0;
@@ -134,29 +134,29 @@ static int device_pm_request(const struct device *dev,
 	return result == target_state ? 0 : -EIO;
 }
 
-int device_pm_get(const struct device *dev)
+int pm_device_get(const struct device *dev)
 {
-	return device_pm_request(dev,
+	return pm_device_request(dev,
 			DEVICE_PM_ACTIVE_STATE, DEVICE_PM_ASYNC);
 }
 
-int device_pm_get_sync(const struct device *dev)
+int pm_device_get_sync(const struct device *dev)
 {
-	return device_pm_request(dev, DEVICE_PM_ACTIVE_STATE, 0);
+	return pm_device_request(dev, DEVICE_PM_ACTIVE_STATE, 0);
 }
 
-int device_pm_put(const struct device *dev)
+int pm_device_put(const struct device *dev)
 {
-	return device_pm_request(dev,
+	return pm_device_request(dev,
 			DEVICE_PM_SUSPEND_STATE, DEVICE_PM_ASYNC);
 }
 
-int device_pm_put_sync(const struct device *dev)
+int pm_device_put_sync(const struct device *dev)
 {
-	return device_pm_request(dev, DEVICE_PM_SUSPEND_STATE, 0);
+	return pm_device_request(dev, DEVICE_PM_SUSPEND_STATE, 0);
 }
 
-void device_pm_enable(const struct device *dev)
+void pm_device_enable(const struct device *dev)
 {
 	k_sem_take(&dev->pm->lock, K_FOREVER);
 	dev->pm->enable = true;
@@ -176,7 +176,7 @@ void device_pm_enable(const struct device *dev)
 	k_sem_give(&dev->pm->lock);
 }
 
-void device_pm_disable(const struct device *dev)
+void pm_device_disable(const struct device *dev)
 {
 	k_sem_take(&dev->pm->lock, K_FOREVER);
 	dev->pm->enable = false;

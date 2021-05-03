@@ -26,27 +26,27 @@ extern "C" {
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 
 /**
- * @brief Enable device idle PM
+ * @brief Enable device runtime PM
  *
- * Called by a device driver to enable device idle power management.
- * The device might be asynchronously suspended if Idle PM is enabled
+ * Called by a device driver to enable device runtime power management.
+ * The device might be asynchronously suspended if runtime PM is enabled
  * when the device is not use.
  *
  * @param dev Pointer to device structure of the specific device driver
  * the caller is interested in.
  */
-void device_pm_enable(const struct device *dev);
+void pm_device_enable(const struct device *dev);
 
 /**
- * @brief Disable device idle PM
+ * @brief Disable device runtime PM
  *
- * Called by a device driver to disable device idle power management.
- * The device might be asynchronously resumed if Idle PM is disabled
+ * Called by a device driver to disable device runtime power management.
+ * The device might be asynchronously resumed if runtime PM is disabled
  *
  * @param dev Pointer to device structure of the specific device driver
  * the caller is interested in.
  */
-void device_pm_disable(const struct device *dev);
+void pm_device_disable(const struct device *dev);
 
 /**
  * @brief Call device resume asynchronously based on usage count
@@ -62,7 +62,7 @@ void device_pm_disable(const struct device *dev);
  * pm signal mechanism to know the completion of resume operation.
  * @retval Errno Negative errno code if failure.
  */
-int device_pm_get(const struct device *dev);
+int pm_device_get(const struct device *dev);
 
 /**
  * @brief Call device resume synchronously based on usage count
@@ -77,7 +77,7 @@ int device_pm_get(const struct device *dev);
  * @retval 0 If successful.
  * @retval Errno Negative errno code if failure.
  */
-int device_pm_get_sync(const struct device *dev);
+int pm_device_get_sync(const struct device *dev);
 
 /**
  * @brief Call device suspend asynchronously based on usage count
@@ -93,7 +93,7 @@ int device_pm_get_sync(const struct device *dev);
  * signal mechanism to know the completion of suspend operation.
  * @retval Errno Negative errno code if failure.
  */
-int device_pm_put(const struct device *dev);
+int pm_device_put(const struct device *dev);
 
 /**
  * @brief Call device suspend synchronously based on usage count
@@ -108,14 +108,14 @@ int device_pm_put(const struct device *dev);
  * @retval 0 If successful.
  * @retval Errno Negative errno code if failure.
  */
-int device_pm_put_sync(const struct device *dev);
+int pm_device_put_sync(const struct device *dev);
 #else
-static inline void device_pm_enable(const struct device *dev) { }
-static inline void device_pm_disable(const struct device *dev) { }
-static inline int device_pm_get(const struct device *dev) { return -ENOSYS; }
-static inline int device_pm_get_sync(const struct device *dev) { return -ENOSYS; }
-static inline int device_pm_put(const struct device *dev) { return -ENOSYS; }
-static inline int device_pm_put_sync(const struct device *dev) { return -ENOSYS; }
+static inline void pm_device_enable(const struct device *dev) { }
+static inline void pm_device_disable(const struct device *dev) { }
+static inline int pm_device_get(const struct device *dev) { return -ENOSYS; }
+static inline int pm_device_get_sync(const struct device *dev) { return -ENOSYS; }
+static inline int pm_device_put(const struct device *dev) { return -ENOSYS; }
+static inline int pm_device_put_sync(const struct device *dev) { return -ENOSYS; }
 #endif
 
 /** @} */
