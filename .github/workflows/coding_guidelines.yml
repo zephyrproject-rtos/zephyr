@@ -38,6 +38,10 @@ jobs:
         BASE_REF: ${{ github.base_ref }}
       run: |
         export ZEPHYR_BASE=$PWD
+        git config --global user.email "actions@zephyrproject.org"
+        git config --global user.name "Github Actions"
+        git remote -v
+        git rebase origin/${BASE_REF}
         source zephyr-env.sh
         # debug
         ls -la
