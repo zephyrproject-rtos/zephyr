@@ -117,6 +117,40 @@ struct pm_device {
  */
 const char *pm_device_state_str(uint32_t state);
 
+/**
+ * @brief Call the set power state function of a device
+ *
+ * Called by the application or power management service to let the device do
+ * required operations when moving to the required power state
+ * Note that devices may support just some of the device power states
+ * @param dev Pointer to device structure of the driver instance.
+ * @param device_power_state Device power state to be set
+ * @param cb Callback function to notify device power status
+ * @param arg Caller passed argument to callback function
+ *
+ * @retval 0 If successful in queuing the request or changing the state.
+ * @retval Errno Negative errno code if failure. Callback will not be called.
+ */
+int device_set_power_state(const struct device *dev,
+			   uint32_t device_power_state,
+			   pm_device_cb cb, void *arg);
+
+/**
+ * @brief Call the get power state function of a device
+ *
+ * This function lets the caller know the current device
+ * power state at any time. This state will be one of the defined
+ * power states allowed for the devices in that system
+ *
+ * @param dev pointer to device structure of the driver instance.
+ * @param device_power_state Device power state to be filled by the device
+ *
+ * @retval 0 If successful.
+ * @retval Errno Negative errno code if failure.
+ */
+int device_get_power_state(const struct device *dev,
+			   uint32_t *device_power_state);
+
 /** Alias for legacy use of device_pm_control_nop */
 #define device_pm_control_nop __DEPRECATED_MACRO NULL
 
