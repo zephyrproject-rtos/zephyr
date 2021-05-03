@@ -437,6 +437,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_VOCS \
 	BT_UUID_DECLARE_16(BT_UUID_VOCS_VAL)
+/** @def BT_UUID_MICS_VAL
+ *  @brief Microphone Input Control Service value
+ */
+#define BT_UUID_MICS_VAL 0x184D
+/** @def BT_UUID_MICS
+ *  @brief Microphone Input Control Service
+ */
+#define BT_UUID_MICS \
+	BT_UUID_DECLARE_16(BT_UUID_MICS_VAL)
 /** @def BT_UUID_GATT_PRIMARY_VAL
  *  @brief GATT Primary Service UUID value
  */
@@ -1448,6 +1457,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_VOCS_DESCRIPTION \
 	BT_UUID_DECLARE_16(BT_UUID_VOCS_DESCRIPTION_VAL)
+/** @def BT_UUID_MICS_MUTE_VAL
+ *  @brief Microphone Input Control Service Mute value
+ */
+#define BT_UUID_MICS_MUTE_VAL 0x2BC3
+/** @def BT_UUID_MICS_MUTE
+ *  @brief Microphone Input Control Service Mute
+ */
+#define BT_UUID_MICS_MUTE \
+	BT_UUID_DECLARE_16(BT_UUID_MICS_MUTE_VAL)
 /*
  * Protocol UUIDs
  */
