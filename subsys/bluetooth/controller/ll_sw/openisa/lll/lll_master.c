@@ -33,7 +33,7 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
-static int prepare_cb(struct lll_prepare_param *prepare_param);
+static int prepare_cb(struct lll_prepare_param *p);
 
 int lll_master_init(void)
 {
@@ -61,22 +61,14 @@ int lll_master_reset(void)
 
 void lll_master_prepare(void *param)
 {
-	struct lll_prepare_param *p = param;
-	struct lll_conn *lll = p->param;
-	uint16_t elapsed;
 	int err;
 
 	err = lll_clk_on();
 	LL_ASSERT(!err || err == -EINPROGRESS);
 
-	/* Instants elapsed */
-	elapsed = p->lazy + 1;
-
-	/* Save the (latency + 1) for use in event */
-	lll->latency_prepare += elapsed;
-
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, lll_conn_abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_is_abort_cb, lll_conn_abort_cb, prepare_cb, 0,
+			  param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -85,30 +77,33 @@ static int init_reset(void)
 	return 0;
 }
 
-static int prepare_cb(struct lll_prepare_param *prepare_param)
+static int prepare_cb(struct lll_prepare_param *p)
 {
-	struct lll_conn *lll = prepare_param->param;
-	uint32_t ticks_at_event, ticks_at_start;
 	struct pdu_data *pdu_data_tx;
+	uint32_t ticks_at_event;
+	uint32_t ticks_at_start;
 	uint16_t event_counter;
 	uint32_t remainder_us;
 	uint8_t data_chan_use;
+	struct lll_conn *lll;
 	struct ull_hdr *ull;
 	uint32_t remainder;
 
 	DEBUG_RADIO_START_M(1);
 
+	lll = p->param;
+
 	/* Reset connection event global variables */
 	lll_conn_prepare_reset();
 
-	/* Deduce the latency */
-	lll->latency_event = lll->latency_prepare - 1;
+	/* Calculate the current event latency */
+	lll->latency_event = lll->latency_prepare + p->lazy;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->latency_event;
 
 	/* Update event counter to next value */
-	lll->event_counter = lll->event_counter + lll->latency_prepare;
+	lll->event_counter = (event_counter + 1);
 
 	/* Reset accumulated latencies */
 	lll->latency_prepare = 0;
@@ -159,14 +154,14 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	radio_switch_complete_and_rx(0);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
-	ticks_at_event = prepare_param->ticks_at_expire;
+	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
 	ticks_at_event += lll_event_offset_get(ull);
 
 	ticks_at_start = ticks_at_event;
 	ticks_at_start += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
-	remainder = prepare_param->remainder;
+	remainder = p->remainder;
 	remainder_us = radio_tmr_start(1, ticks_at_start, remainder);
 
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */

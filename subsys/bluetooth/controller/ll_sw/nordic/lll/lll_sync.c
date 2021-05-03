@@ -35,6 +35,7 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx(void *param);
 
 int lll_sync_init(void)
@@ -65,7 +66,6 @@ void lll_sync_prepare(void *param)
 {
 	struct lll_prepare_param *p;
 	struct lll_sync *lll;
-	uint16_t elapsed;
 	int err;
 
 	/* Request to start HF Clock */
@@ -74,23 +74,17 @@ void lll_sync_prepare(void *param)
 
 	p = param;
 
-	/* Instants elapsed */
-	elapsed = p->lazy + 1;
-
 	lll = p->param;
-
-	/* Save the (skip + 1) for use in event */
-	lll->skip_prepare += elapsed;
 
 	/* Accumulate window widening */
 	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   elapsed;
+					   (p->lazy + 1);
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -116,14 +110,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	/* Deduce the skip */
-	lll->skip_event = lll->skip_prepare - 1;
+	/* Calculate the current event latency */
+	lll->skip_event = lll->skip_prepare + p->lazy;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->skip_event;
 
 	/* Update event counter to next value */
-	lll->event_counter = lll->event_counter + lll->skip_prepare;
+	lll->event_counter = (event_counter + 1);
 
 	/* Reset accumulated latencies */
 	lll->skip_prepare = 0;
@@ -222,6 +216,35 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	DEBUG_RADIO_START_O(1);
 	return 0;
+}
+
+static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
+{
+	struct lll_sync *lll;
+	int err;
+
+	/* NOTE: This is not a prepare being cancelled */
+	if (!prepare_param) {
+		/* Perform event abort here.
+		 * After event has been cleanly aborted, clean up resources
+		 * and dispatch event done.
+		 */
+		radio_isr_set(lll_isr_done, param);
+		radio_disable();
+		return;
+	}
+
+	/* NOTE: Else clean the top half preparations of the aborted event
+	 * currently in preparation pipeline.
+	 */
+	err = lll_hfclock_off();
+	LL_ASSERT(err >= 0);
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
+	lll = prepare_param->param;
+	lll->skip_prepare += (prepare_param->lazy + 1);
+
+	lll_done(param);
 }
 
 static void isr_rx(void *param)
