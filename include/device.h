@@ -123,7 +123,7 @@ typedef int16_t device_handle_t;
  * @def DEVICE_DEFINE
  *
  * @brief Create device object and set it up for boot time initialization,
- * with the option to device_pm_control. In case of Device Idle Power
+ * with the option to pm_control. In case of Device Idle Power
  * Management is enabled, make sure the device is in suspended state after
  * initialization.
  *
@@ -141,7 +141,7 @@ typedef int16_t device_handle_t;
  *
  * @param init_fn Address to the init function of the driver.
  *
- * @param pm_control_fn Pointer to device_pm_control function.
+ * @param pm_control_fn Pointer to pm_control function.
  * Can be NULL if not implemented.
  *
  * @param data_ptr Pointer to the device's private data.
@@ -199,7 +199,7 @@ typedef int16_t device_handle_t;
  *
  * @param init_fn Address to the init function of the driver.
  *
- * @param pm_control_fn Pointer to device_pm_control function.
+ * @param pm_control_fn Pointer to pm_control function.
  * Can be NULL if not implemented.
  *
  * @param data_ptr Pointer to the device's private data.
@@ -386,7 +386,7 @@ struct device {
 	const device_handle_t *const handles;
 #ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
-	int (*device_pm_control)(const struct device *dev, uint32_t command,
+	int (*pm_control)(const struct device *dev, uint32_t command,
 				 void *context, device_pm_cb cb, void *arg);
 	/** Pointer to device instance power management data */
 	struct pm_device * const pm;
@@ -659,12 +659,12 @@ static inline int device_set_power_state(const struct device *dev,
 					 uint32_t device_power_state,
 					 device_pm_cb cb, void *arg)
 {
-	if (dev->device_pm_control ==  NULL) {
+	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
-	return dev->device_pm_control(dev, PM_DEVICE_SET_POWER_STATE,
-				      &device_power_state, cb, arg);
+	return dev->pm_control(dev, PM_DEVICE_SET_POWER_STATE,
+			       &device_power_state, cb, arg);
 }
 
 /**
@@ -683,12 +683,12 @@ static inline int device_set_power_state(const struct device *dev,
 static inline int device_get_power_state(const struct device *dev,
 					 uint32_t *device_power_state)
 {
-	if (dev->device_pm_control == NULL) {
+	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
-	return dev->device_pm_control(dev, PM_DEVICE_GET_POWER_STATE,
-				      device_power_state, NULL, NULL);
+	return dev->pm_control(dev, PM_DEVICE_GET_POWER_STATE,
+			       device_power_state, NULL, NULL);
 }
 
 /**
@@ -823,7 +823,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 
 #ifdef CONFIG_PM_DEVICE
 #define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)		\
-	.device_pm_control = (pm_control_fn),				\
+	.pm_control = (pm_control_fn),				\
 	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
 #else
 #define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)

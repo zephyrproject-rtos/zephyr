@@ -2262,7 +2262,7 @@ struct net_if_api {
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to device_pm_control function.
+ * @param pm_control_fn Pointer to pm_control function.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
@@ -2289,7 +2289,7 @@ struct net_if_api {
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to device_pm_control function.
+ * @param pm_control_fn Pointer to pm_control function.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
@@ -2344,7 +2344,7 @@ struct net_if_api {
  * the system.
  * @param instance Instance identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to device_pm_control function.
+ * @param pm_control_fn Pointer to pm_control function.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
@@ -2376,7 +2376,7 @@ struct net_if_api {
  * @param node_id The devicetree node identifier.
  * @param instance Instance identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to device_pm_control function.
+ * @param pm_control_fn Pointer to pm_control function.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
@@ -2428,7 +2428,7 @@ struct net_if_api {
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to device_pm_control function.
+ * @param pm_control_fn Pointer to pm_control function.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
@@ -2454,7 +2454,7 @@ struct net_if_api {
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to device_pm_control function.
+ * @param pm_control_fn Pointer to pm_control function.
  * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the

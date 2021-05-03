@@ -142,7 +142,7 @@ void pm_create_device_list(void)
 		const struct device *dev = &all_devices[pmi];
 
 		/* Ignore "device"s that don't support PM */
-		if (dev->device_pm_control == NULL) {
+		if (dev->pm_control == NULL) {
 			continue;
 		}
 
