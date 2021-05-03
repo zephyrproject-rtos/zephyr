@@ -604,3 +604,15 @@ test_i2c_sbc_gauge: sbsgauge@4d {
 	label = "SBSGAUGE";
 	reg = <0x4d>;
 };
+
+test_i2c_ina23x: ina23x@4e {
+	compatible = "ti,ina23x";
+	label = "INA23X";
+	reg = <0x4e>;
+	config = <0>;
+	current_lsb = <1>;
+	rshunt = <0>;
+	mask = <0>;
+	alert_limit = <0>;
+	irq-gpios = <&test_gpio 0 0>;
+};
