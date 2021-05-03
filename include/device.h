@@ -663,7 +663,7 @@ static inline int device_set_power_state(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return dev->device_pm_control(dev, DEVICE_PM_SET_POWER_STATE,
+	return dev->device_pm_control(dev, PM_DEVICE_SET_POWER_STATE,
 				      &device_power_state, cb, arg);
 }
 
@@ -687,7 +687,7 @@ static inline int device_get_power_state(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return dev->device_pm_control(dev, DEVICE_PM_GET_POWER_STATE,
+	return dev->device_pm_control(dev, PM_DEVICE_GET_POWER_STATE,
 				      device_power_state, NULL, NULL);
 }
 

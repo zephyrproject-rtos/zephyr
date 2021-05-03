@@ -3490,7 +3490,7 @@ static void shutdown_uart(void)
 		HL7800_IO_DBG_LOG("Power OFF the UART");
 		uart_irq_rx_disable(ictx.mdm_ctx.uart_dev);
 		rc = device_set_power_state(ictx.mdm_ctx.uart_dev,
-					    DEVICE_PM_OFF_STATE, NULL, NULL);
+					    PM_DEVICE_OFF_STATE, NULL, NULL);
 		if (rc) {
 			LOG_ERR("Error disabling UART peripheral (%d)", rc);
 		}
@@ -3507,7 +3507,7 @@ static void power_on_uart(void)
 	if (!ictx.uart_on) {
 		HL7800_IO_DBG_LOG("Power ON the UART");
 		rc = device_set_power_state(ictx.mdm_ctx.uart_dev,
-					    DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+					    PM_DEVICE_ACTIVE_STATE, NULL, NULL);
 		if (rc) {
 			LOG_ERR("Error enabling UART peripheral (%d)", rc);
 		}

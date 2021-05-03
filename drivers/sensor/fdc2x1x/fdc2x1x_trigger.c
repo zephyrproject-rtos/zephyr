@@ -25,7 +25,7 @@ static void fdc2x1x_thread_cb(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 	/* INTB asserts after exiting shutdown mode. Drop this interrupt */
-	if (drv_data->pm_state == DEVICE_PM_OFF_STATE) {
+	if (drv_data->pm_state == PM_DEVICE_OFF_STATE) {
 		return;
 	}
 #endif

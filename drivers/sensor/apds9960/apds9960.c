@@ -416,10 +416,10 @@ static int apds9960_device_ctrl(const struct device *dev,
 	struct apds9960_data *data = dev->data;
 	int ret = 0;
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
 		uint32_t device_pm_state = *(uint32_t *)context;
 
-		if (device_pm_state == DEVICE_PM_ACTIVE_STATE) {
+		if (device_pm_state == PM_DEVICE_ACTIVE_STATE) {
 			if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 						APDS9960_ENABLE_REG,
 						APDS9960_ENABLE_PON,
@@ -441,8 +441,8 @@ static int apds9960_device_ctrl(const struct device *dev,
 			}
 		}
 
-	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
-		*((uint32_t *)context) = DEVICE_PM_ACTIVE_STATE;
+	} else if (ctrl_command == PM_DEVICE_GET_POWER_STATE) {
+		*((uint32_t *)context) = PM_DEVICE_ACTIVE_STATE;
 	}
 
 	if (cb) {

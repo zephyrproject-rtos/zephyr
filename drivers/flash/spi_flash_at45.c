@@ -576,21 +576,21 @@ static int spi_flash_at45_pm_control(const struct device *dev,
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
 	int err = 0;
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
 		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != dev_data->pm_state) {
 			switch (new_state) {
-			case DEVICE_PM_ACTIVE_STATE:
+			case PM_DEVICE_ACTIVE_STATE:
 				acquire(dev);
 				power_down_op(dev, CMD_EXIT_DPD,
 					      dev_config->t_exit_dpd);
 				release(dev);
 				break;
 
-			case DEVICE_PM_LOW_POWER_STATE:
-			case DEVICE_PM_SUSPEND_STATE:
-			case DEVICE_PM_OFF_STATE:
+			case PM_DEVICE_LOW_POWER_STATE:
+			case PM_DEVICE_SUSPEND_STATE:
+			case PM_DEVICE_OFF_STATE:
 				acquire(dev);
 				power_down_op(dev,
 					dev_config->use_udpd ? CMD_ENTER_UDPD
@@ -606,7 +606,7 @@ static int spi_flash_at45_pm_control(const struct device *dev,
 			dev_data->pm_state = new_state;
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_GET_POWER_STATE);
 		*((uint32_t *)context) = dev_data->pm_state;
 	}
 
@@ -647,7 +647,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 	static struct spi_flash_at45_data inst_##idx##_data = {		     \
 		.lock = Z_SEM_INITIALIZER(inst_##idx##_data.lock, 1, 1),     \
 		IF_ENABLED(CONFIG_PM_DEVICE, (		     \
-			.pm_state = DEVICE_PM_ACTIVE_STATE))		     \
+			.pm_state = PM_DEVICE_ACTIVE_STATE))		     \
 	};								     \
 	static const struct spi_flash_at45_config inst_##idx##_config = {    \
 		.spi_bus = DT_INST_BUS_LABEL(idx),			     \

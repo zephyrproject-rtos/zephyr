@@ -16,15 +16,15 @@ LOG_MODULE_DECLARE(power);
 
 /* Device PM states */
 enum device_pm_state {
-	DEVICE_PM_STATE_ACTIVE = 1,
-	DEVICE_PM_STATE_SUSPENDED,
-	DEVICE_PM_STATE_SUSPENDING,
-	DEVICE_PM_STATE_RESUMING,
+	PM_DEVICE_STATE_ACTIVE = 1,
+	PM_DEVICE_STATE_SUSPENDED,
+	PM_DEVICE_STATE_SUSPENDING,
+	PM_DEVICE_STATE_RESUMING,
 };
 
 /* Device PM request type */
-#define DEVICE_PM_SYNC			(0 << 0)
-#define DEVICE_PM_ASYNC			(1 << 0)
+#define PM_DEVICE_SYNC			(0 << 0)
+#define PM_DEVICE_ASYNC			(1 << 0)
 
 static void device_pm_callback(const struct device *dev,
 			       int retval, void *context, void *arg)
@@ -32,12 +32,12 @@ static void device_pm_callback(const struct device *dev,
 	__ASSERT(retval == 0, "Device set power state failed");
 
 	/* Set the fsm_state */
-	if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+	if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
 		atomic_set(&dev->pm->fsm_state,
-			   DEVICE_PM_STATE_ACTIVE);
+			   PM_DEVICE_STATE_ACTIVE);
 	} else {
 		atomic_set(&dev->pm->fsm_state,
-			   DEVICE_PM_STATE_SUSPENDED);
+			   PM_DEVICE_STATE_SUSPENDED);
 	}
 
 	k_work_submit(&dev->pm->work);
@@ -52,34 +52,34 @@ static void pm_work_handler(struct k_work *work)
 	uint8_t pm_state;
 
 	switch (atomic_get(&dev->pm->fsm_state)) {
-	case DEVICE_PM_STATE_ACTIVE:
+	case PM_DEVICE_STATE_ACTIVE:
 		if ((atomic_get(&dev->pm->usage) == 0) &&
 					dev->pm->enable) {
 			atomic_set(&dev->pm->fsm_state,
-				   DEVICE_PM_STATE_SUSPENDING);
+				   PM_DEVICE_STATE_SUSPENDING);
 			ret = device_set_power_state(dev,
-						DEVICE_PM_SUSPEND_STATE,
+						PM_DEVICE_SUSPEND_STATE,
 						device_pm_callback, NULL);
 		} else {
-			pm_state = DEVICE_PM_ACTIVE_STATE;
+			pm_state = PM_DEVICE_ACTIVE_STATE;
 			goto fsm_out;
 		}
 		break;
-	case DEVICE_PM_STATE_SUSPENDED:
+	case PM_DEVICE_STATE_SUSPENDED:
 		if ((atomic_get(&dev->pm->usage) > 0) ||
 					!dev->pm->enable) {
 			atomic_set(&dev->pm->fsm_state,
-				   DEVICE_PM_STATE_RESUMING);
+				   PM_DEVICE_STATE_RESUMING);
 			ret = device_set_power_state(dev,
-						DEVICE_PM_ACTIVE_STATE,
+						PM_DEVICE_ACTIVE_STATE,
 						device_pm_callback, NULL);
 		} else {
-			pm_state = DEVICE_PM_SUSPEND_STATE;
+			pm_state = PM_DEVICE_SUSPEND_STATE;
 			goto fsm_out;
 		}
 		break;
-	case DEVICE_PM_STATE_SUSPENDING:
-	case DEVICE_PM_STATE_RESUMING:
+	case PM_DEVICE_STATE_SUSPENDING:
+	case PM_DEVICE_STATE_RESUMING:
 		/* Do nothing: We are waiting for device_pm_callback() */
 		break;
 	default:
@@ -99,11 +99,11 @@ static int pm_device_request(const struct device *dev,
 {
 	int result, signaled = 0;
 
-	__ASSERT((target_state == DEVICE_PM_ACTIVE_STATE) ||
-			(target_state == DEVICE_PM_SUSPEND_STATE),
+	__ASSERT((target_state == PM_DEVICE_ACTIVE_STATE) ||
+			(target_state == PM_DEVICE_SUSPEND_STATE),
 			"Invalid device PM state requested");
 
-	if (target_state == DEVICE_PM_ACTIVE_STATE) {
+	if (target_state == PM_DEVICE_ACTIVE_STATE) {
 		if (atomic_inc(&dev->pm->usage) < 0) {
 			return 0;
 		}
@@ -116,7 +116,7 @@ static int pm_device_request(const struct device *dev,
 	k_work_submit(&dev->pm->work);
 
 	/* Return in case of Async request */
-	if (pm_flags & DEVICE_PM_ASYNC) {
+	if (pm_flags & PM_DEVICE_ASYNC) {
 		return 0;
 	}
 
@@ -137,23 +137,23 @@ static int pm_device_request(const struct device *dev,
 int pm_device_get(const struct device *dev)
 {
 	return pm_device_request(dev,
-			DEVICE_PM_ACTIVE_STATE, DEVICE_PM_ASYNC);
+			PM_DEVICE_ACTIVE_STATE, PM_DEVICE_ASYNC);
 }
 
 int pm_device_get_sync(const struct device *dev)
 {
-	return pm_device_request(dev, DEVICE_PM_ACTIVE_STATE, 0);
+	return pm_device_request(dev, PM_DEVICE_ACTIVE_STATE, 0);
 }
 
 int pm_device_put(const struct device *dev)
 {
 	return pm_device_request(dev,
-			DEVICE_PM_SUSPEND_STATE, DEVICE_PM_ASYNC);
+			PM_DEVICE_SUSPEND_STATE, PM_DEVICE_ASYNC);
 }
 
 int pm_device_put_sync(const struct device *dev)
 {
-	return pm_device_request(dev, DEVICE_PM_SUSPEND_STATE, 0);
+	return pm_device_request(dev, PM_DEVICE_SUSPEND_STATE, 0);
 }
 
 void pm_device_enable(const struct device *dev)
@@ -168,7 +168,7 @@ void pm_device_enable(const struct device *dev)
 	if (!dev->pm->dev) {
 		dev->pm->dev = dev;
 		atomic_set(&dev->pm->fsm_state,
-			   DEVICE_PM_STATE_SUSPENDED);
+			   PM_DEVICE_STATE_SUSPENDED);
 		k_work_init(&dev->pm->work, pm_work_handler);
 	} else {
 		k_work_submit(&dev->pm->work);
