@@ -449,7 +449,7 @@ static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
 {
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != get_dev_data(dev)->pm_state) {
@@ -457,7 +457,7 @@ static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
 				new_state);
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
 		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
 	}
 

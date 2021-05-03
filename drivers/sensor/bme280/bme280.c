@@ -398,7 +398,7 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 	int ret = 0;
 
 	/* Set power state */
-	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		uint32_t new_pm_state = *((const uint32_t *)context);
 
 		if (new_pm_state != data->pm_state) {
@@ -429,7 +429,7 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 	}
 	/* Get power state */
 	else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
 		*((uint32_t *)context) = data->pm_state;
 	}
 

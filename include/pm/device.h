@@ -74,8 +74,8 @@ struct device;
 #define PM_DEVICE_OFF_STATE             5
 
 /* Constants defining support device power commands */
-#define PM_DEVICE_SET_POWER_STATE       1
-#define PM_DEVICE_GET_POWER_STATE       2
+#define PM_DEVICE_STATE_SET       1
+#define PM_DEVICE_STATE_GET       2
 
 typedef void (*pm_device_cb)(const struct device *dev,
 			     int status, void *context, void *arg);

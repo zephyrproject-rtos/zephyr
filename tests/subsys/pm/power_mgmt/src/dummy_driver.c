@@ -45,14 +45,14 @@ static int dummy_device_pm_ctrl(const struct device *dev,
 	int ret = 0;
 
 	switch (ctrl_command) {
-	case PM_DEVICE_SET_POWER_STATE:
+	case PM_DEVICE_STATE_SET:
 		if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
 			ret = dummy_resume_from_suspend(dev);
 		} else {
 			ret = dummy_suspend(dev);
 		}
 		break;
-	case PM_DEVICE_GET_POWER_STATE:
+	case PM_DEVICE_STATE_GET:
 		*((uint32_t *)context) = dummy_get_power_state(dev);
 		break;
 	default:

@@ -549,7 +549,7 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 	uint32_t new_state;
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		new_state = *(uint32_t *)context;
 		if (new_state != data->pm_state) {
 			switch (new_state) {
@@ -563,7 +563,7 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 				ret = -EINVAL;
 			}
 		}
-	} else if (ctrl_command == PM_DEVICE_GET_POWER_STATE) {
+	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
 		*((uint32_t *)context) = data->pm_state;
 	}
 
