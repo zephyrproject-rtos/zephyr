@@ -41,6 +41,16 @@ config CLOCK_STM32_HSE_CLOCK
 	  };
 	  Note: Device tree configuration is overridden when current symbol is set:
 	  CONFIG_CLOCK_STM32_HSE_CLOCK=32000000
+
+config CLOCK_CONTROL_STM32_HAS_DTS
+	bool
+	default y if "$(dt_node_has_prop,rcc,clocks)"
+	help
+	  This symbol is added to prevent default use of CLOCK_CONTROL_STM32_* symbols
+	  when board make use of device tree to configure clocks.
+
+if !CLOCK_CONTROL_STM32_HAS_DTS
+
 choice CLOCK_STM32_SYSCLK_SRC
 	prompt "STM32 System Clock Source"
 
@@ -213,6 +223,8 @@ config CLOCK_STM32_AHB4_PRESCALER
 	  64, 128, 256, 512.
 
 endif # !SOC_SERIES_STM32H7X
+
+endif # CLOCK_CONTROL_STM32_HAS_DTS
 
 # Micro-controller Clock output configuration options
 
