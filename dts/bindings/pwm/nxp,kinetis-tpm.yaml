@@ -14,6 +14,10 @@ properties:
     interrupts:
       required: true
 
+    pinctrl-0:
+      type: phandles
+      required: true
+
     "#pwm-cells":
       const: 3
 

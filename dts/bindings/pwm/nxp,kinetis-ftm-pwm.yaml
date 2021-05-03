@@ -11,6 +11,10 @@ properties:
     "#pwm-cells":
       const: 3
 
+    pinctrl-0:
+      type: phandles
+      required: true
+
 pwm-cells:
   - channel
 # period in terms of nanoseconds
