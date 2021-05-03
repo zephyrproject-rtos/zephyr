@@ -585,6 +585,8 @@ void test_sem_take_timeout_isr(void)
 	k_sem_reset(&simple_sem);
 
 	expect_k_sem_take_nomsg(&simple_sem, SEM_TIMEOUT, 0);
+
+	k_thread_join(&sem_tid_1, K_FOREVER);
 }
 
 /**
