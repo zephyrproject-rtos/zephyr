@@ -391,7 +391,7 @@ static int bme280_chip_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				void *context, pm_device_cb cb, void *arg)
 {
 	struct bme280_data *data = to_data(dev);
 

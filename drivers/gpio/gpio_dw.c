@@ -461,7 +461,7 @@ static inline int gpio_dw_resume_from_suspend_port(const struct device *port)
 */
 static int gpio_dw_device_ctrl(const struct device *port,
 			       uint32_t ctrl_command,
-			       void *context, device_pm_cb cb, void *arg)
+			       void *context, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 

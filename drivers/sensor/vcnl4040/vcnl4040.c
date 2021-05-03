@@ -220,7 +220,7 @@ static int vcnl4040_ambient_setup(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int vcnl4040_device_ctrl(const struct device *dev,
 				uint32_t ctrl_command, void *context,
-				device_pm_cb cb, void *arg)
+				pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 

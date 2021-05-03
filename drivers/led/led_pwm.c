@@ -176,7 +176,7 @@ static int led_pwm_pm_set_state(const struct device *dev, uint32_t new_state)
 }
 
 static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
-			      void *context, device_pm_cb cb, void *arg)
+			      void *context, pm_device_cb cb, void *arg)
 {
 	int err;
 
