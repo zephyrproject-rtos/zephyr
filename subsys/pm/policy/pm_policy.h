@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_POWER_PM_POLICY_H_
 #define ZEPHYR_POWER_PM_POLICY_H_
 
-#include <power/power.h>
+#include <pm/pm.h>
 
 #ifdef __cplusplus
 extern "C" {
