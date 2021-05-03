@@ -28,6 +28,65 @@
  * Kconfig related symbols.
  */
 
+#if defined(STM32_AHB_PRESCALER) || \
+	defined(CONFIG_CLOCK_STM32_APB1_PRESCALER) || \
+	defined(CONFIG_CLOCK_STM32_APB2_PRESCALER) || \
+	defined(CONFIG_CLOCK_STM32_AHB3_PRESCALER) || \
+	defined(CONFIG_CLOCK_STM32_AHB4_PRESCALER) || \
+	defined(CONFIG_CLOCK_STM32_CPU1_PRESCALER) || \
+	defined(CONFIG_CLOCK_STM32_CPU2_PRESCALER) || \
+	defined(CONFIG_CLOCK_STM32_PLL_M_DIVISOR) || \
+	defined(CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER) || \
+	defined(CONFIG_CLOCK_STM32_PLL_P_DIVISOR) || \
+	defined(CONFIG_CLOCK_STM32_PLL_Q_DIVISOR) || \
+	defined(CONFIG_CLOCK_STM32_PLL_R_DIVISOR) || \
+	defined(CONFIG_CLOCK_STM32_PLL_XTPRE) || \
+	defined(CONFIG_CLOCK_STM32_PLL_MULTIPLIER) || \
+	defined(CONFIG_CLOCK_STM32_PLL_PREDIV1) || \
+	defined(CONFIG_CLOCK_STM32_PLL_PREDIV) || \
+	defined(CONFIG_CLOCK_STM32_PLL_DIVISOR) || \
+	defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL) || \
+	defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI) || \
+	defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_HSE) || \
+	defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI) || \
+	defined(CONFIG_CLOCK_STM32_PLL_SRC_MSI) || \
+	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI) || \
+	defined(CONFIG_CLOCK_STM32_PLL_SRC_HSE) || \
+	defined(CONFIG_CLOCK_STM32_PLL_SRC_PLL2) || \
+	defined(CONFIG_CLOCK_STM32_LSE) || \
+	defined(CONFIG_CLOCK_STM32_MSI_RANGE) || \
+	defined(CONFIG_CLOCK_STM32_MSI_PLL_MODE) || \
+	defined(CONFIG_CLOCK_STM32_HSE_BYPASS) || \
+	defined(CONFIG_CLOCK_STM32_D1CPRE) || \
+	defined(CONFIG_CLOCK_STM32_HPRE) || \
+	defined(CONFIG_CLOCK_STM32_D2PPRE1) || \
+	defined(CONFIG_CLOCK_STM32_D2PPRE2) || \
+	defined(CONFIG_CLOCK_STM32_D1PPRE) || \
+	defined(CONFIG_CLOCK_STM32_D3PPRE) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_ENABLE) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_M_DIVISOR) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_N_MULTIPLIER) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_P_ENABLE) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_P_DIVISOR) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_Q_ENABLE) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_Q_DIVISOR) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_R_ENABLE) || \
+	defined(CONFIG_CLOCK_STM32_PLL3_R_DIVISOR) || \
+	defined(CONFIG_CLOCK_STM32_SYSCLK_SRC_CSI) || \
+	defined(CONFIG_CLOCK_STM32_HSI_DIVISOR)
+#warning "Deprecated: Please use device tree for STM32 clock_control configuration"
+/*
+ * Use of Kconfig for STM32 clock_control configuration is deprecated.
+ * It is replaced by use of device tree.
+ * For more information, see:
+ * https://github.com/zephyrproject-rtos/zephyr/pull/34120
+ * https://github.com/zephyrproject-rtos/zephyr/pull/34609
+ * https://github.com/zephyrproject-rtos/zephyr/pull/34701
+ * and
+ * https://github.com/zephyrproject-rtos/zephyr/issues/34633
+ */
+#endif
+
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), ahb_prescaler) || \
 	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), ahb_prescaler)
 #define STM32_AHB_PRESCALER	DT_PROP(DT_NODELABEL(rcc), ahb_prescaler)
