@@ -1122,40 +1122,57 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 			   MASK_ALL, 0);
 }
 
-static void identity_map_remove(void)
-{
 #ifdef Z_VM_KERNEL
-	size_t size, scope = get_entry_scope(0);
+static void identity_map_remove(uint32_t level)
+{
+	size_t size, scope = get_entry_scope(level);
+	pentry_t *table;
+	uint32_t cur_level;
 	uint8_t *pos;
+	pentry_t entry;
+	pentry_t *entry_ptr;
 
 	k_mem_region_align((uintptr_t *)&pos, &size,
 			   (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
 			   (size_t)CONFIG_SRAM_SIZE * 1024U, scope);
 
-	/* We booted with RAM mapped both to its identity and virtual
-	 * mapping starting at CONFIG_KERNEL_VM_BASE. This was done by
-	 * double-linking the relevant tables in the top-level table.
-	 * At this point we don't need the identity mapping(s) any more,
-	 * zero the top-level table entries corresponding to the
-	 * physical mapping.
-	 */
 	while (size != 0U) {
-		pentry_t *entry = get_entry_ptr(z_x86_kernel_ptables, pos, 0);
+		/* Need to get to the correct table */
+		table = z_x86_kernel_ptables;
+		for (cur_level = 0; cur_level < level; cur_level++) {
+			entry = get_entry(table, pos, cur_level);
+			table = next_table(entry, level);
+		}
+
+		entry_ptr = get_entry_ptr(table, pos, level);
 
 		/* set_pte */
-		*entry = 0;
+		*entry_ptr = 0;
 		pos += scope;
 		size -= scope;
 	}
-#endif
 }
+#endif
 
 /* Invoked to remove the identity mappings in the page tables,
  * they were only needed to tranisition the instruction pointer at early boot
  */
 void z_x86_mmu_init(void)
 {
-	identity_map_remove();
+#ifdef Z_VM_KERNEL
+	/* We booted with physical address space being identity mapped.
+	 * As we are now executing in virtual address space,
+	 * the identity map is no longer needed. So remove them.
+	 *
+	 * Without PAE, only need to remove the entries at the PD level.
+	 * With PAE, need to also remove the entry at PDP level.
+	 */
+	identity_map_remove(PDE_LEVEL);
+
+#ifdef CONFIG_X86_PAE
+	identity_map_remove(0);
+#endif
+#endif
 }
 
 #if CONFIG_X86_STACK_PROTECTION

@@ -68,6 +68,14 @@
 	rdmsr
 	orl	$0x800, %eax
 	wrmsr
+#else
+	/* Enable Page Size Extensions (allowing 4MB pages).
+	 * This is ignored if PAE is enabled so no need to do
+	 * this above in PAE code.
+	 */
+	movl	%cr4, %eax
+	orl	$CR4_PSE, %eax
+	movl	%eax, %cr4
 #endif /* CONFIG_X86_PAE */
 
 	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
