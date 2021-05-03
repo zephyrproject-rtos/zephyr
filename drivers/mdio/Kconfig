@@ -15,6 +15,7 @@ if MDIO
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
+source "drivers/mdio/Kconfig.sam"
 
 config MDIO_INIT_PRIORITY
 	int "Init priority"
