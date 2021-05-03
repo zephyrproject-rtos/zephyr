@@ -1,7 +1,26 @@
 sample:
   description: Dictionary-based Logging Sample Application
   name: logging_dictionary
+common:
+  integration_platforms:
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_cortex_a53
+    - qemu_cortex_a53_smp
 tests:
   sample.logger.basic.dictionary:
     build_only: true
     tags: logging
+  sample.logger.basic.dictionary.fpu:
+    build_only: true
+    tags: logging
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
+  sample.logger.basic.dictionary.fpu.long_double:
+    build_only: true
+    tags: logging
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
