@@ -432,7 +432,7 @@ class PtableSet():
 
     def reserve(self, virt_base, size, to_level=PT_LEVEL):
         """Reserve page table space with already aligned virt_base and size"""
-        debug("Reserving paging structures 0x%x (0x%x)" %
+        debug("Reserving paging structures for 0x%x (0x%x)" %
               (virt_base, size))
 
         align_check(virt_base, size)
@@ -458,15 +458,11 @@ class PtableSet():
 
         self.reserve(mem_start, mem_size, to_level)
 
-    def map(self, phys_base, virt_base, size, flags, level=PT_LEVEL, double_map=True):
+    def map(self, phys_base, virt_base, size, flags, level=PT_LEVEL):
         """Map an address range in the page tables provided access flags.
-
         If virt_base is None, identity mapping using phys_base is done.
-        If virt_base is not the same address as phys_base, the same memory
-        will be double mapped to the virt_base address if double_map == True;
-        or normal mapping to virt_base if double_map == False.
         """
-        skip_vm_map = virt_base is None or virt_base == phys_base
+        is_identity_map = virt_base is None or virt_base == phys_base
 
         if virt_base is None:
             virt_base = phys_base
@@ -479,53 +475,23 @@ class PtableSet():
         align_check(phys_base, size, scope)
         align_check(virt_base, size, scope)
         for paddr in range(phys_base, phys_base + size, scope):
-            if paddr == 0 and skip_vm_map:
-                # Never map the NULL page
-                #
-                # If skip_vm_map, the identify map of physical
-                # memory will be unmapped at boot. So the actual
-                # NULL page will not be mapped after that.
+            if is_identity_map and paddr == 0 and level == PT_LEVEL:
+                # Never map the NULL page at page table level.
                 continue
 
             vaddr = virt_base + (paddr - phys_base)
 
             self.map_page(vaddr, paddr, flags, False, level)
 
-        if skip_vm_map or not double_map:
-            return
+    def identity_map_unaligned(self, phys_base, size, flags, level=PT_LEVEL):
+        """Identity map a region of memory"""
+        scope = 1 << self.levels[level].addr_shift
 
-        # Find how much VM a top-level entry covers
-        scope = 1 << self.toplevel.addr_shift
-        debug("Double map %s entries with scope 0x%x" %
-              (self.toplevel.__class__.__name__, scope))
+        phys_aligned_base = round_down(phys_base, scope)
+        phys_aligned_end = round_up(phys_base + size, scope)
+        phys_aligned_size = phys_aligned_end - phys_aligned_base
 
-        # Round bases down to the entry granularity
-        pd_virt_base = round_down(virt_base, scope)
-        pd_phys_base = round_down(phys_base, scope)
-        size = size + (phys_base - pd_phys_base)
-
-        # The base addresses have to line up such that they can be mapped
-        # by the same second-level table
-        if phys_base - pd_phys_base != virt_base - pd_virt_base:
-            error("mis-aligned virtual 0x%x and physical base addresses 0x%x" %
-                  (virt_base, phys_base))
-
-        # Round size up to entry granularity
-        size = round_up(size, scope)
-
-        for offset in range(0, size, scope):
-            cur_virt = pd_virt_base + offset
-            cur_phys = pd_phys_base + offset
-
-            # Get the physical address of the second-level table that
-            # maps the current chunk of virtual memory
-            table_link_phys = self.toplevel.lookup(cur_virt)
-
-            debug("copy mappings 0x%x - 0x%x to 0x%x, using table 0x%x" %
-                  (cur_phys, cur_phys + scope - 1, cur_virt, table_link_phys))
-
-            # Link to the entry for the physical mapping (i.e. mirroring).
-            self.toplevel.map(cur_phys, table_link_phys, INT_FLAGS)
+        self.map(phys_aligned_base, None, phys_aligned_size, flags, level)
 
     def set_region_perms(self, name, flags, level=PT_LEVEL):
         """Set access permissions for a named region that is already mapped
@@ -723,7 +689,7 @@ def map_extra_regions(pt):
 
         # Reserve space in page table, and map the region
         pt.reserve_unaligned(virt, size, level)
-        pt.map(phys, virt, size, flags, level, double_map=False)
+        pt.map(phys, virt, size, flags, level)
 
 
 def main():
@@ -786,6 +752,10 @@ def main():
     debug("Zephyr image: 0x%x - 0x%x size 0x%x" %
           (image_base, image_base + image_size - 1, image_size))
 
+    if virt_to_phys_offset != 0:
+        debug("Physical address space: 0x%x - 0x%x size 0x%x" %
+              (sram_base, sram_base + sram_size - 1, sram_size))
+
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
 
     if image_size >= vm_size:
@@ -803,6 +773,17 @@ def main():
     pt.reserve(vm_base, vm_size)
     # Map the zephyr image
     pt.map(image_base_phys, image_base, image_size, map_flags | ENTRY_RW)
+
+    if virt_to_phys_offset != 0:
+        # Need to identity map the physical address space
+        # as it is needed during early boot process.
+        # This will be unmapped once z_x86_mmu_init()
+        # is called.
+        # Note that this only does the identity mapping
+        # at the page directory level to minimize wasted space.
+        pt.reserve_unaligned(image_base_phys, image_size, to_level=PD_LEVEL)
+        pt.identity_map_unaligned(image_base_phys, image_size,
+                                  FLAG_P | FLAG_RW | FLAG_SZ, level=PD_LEVEL)
 
     if isdef("CONFIG_X86_64"):
         # 64-bit has a special region in the first 64K to bootstrap other CPUs

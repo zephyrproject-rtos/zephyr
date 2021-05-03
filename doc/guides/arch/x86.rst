@@ -34,22 +34,22 @@ space before ``vm_enter`` inside :file:`arch/x86/core/ia32/crt0.S`.
 After ``vm_enter``, code execution is done via virtual addresses
 and data can be referred via their virtual addresses. This is
 possible as the page table generation script
-(:file:`arch/x86/gen_mmu.py`) copies the mappings at the top level
-page table such that the same second level tables are used for both
-identity and virutal memory mappings.  Later in the boot process,
-the entries for identity mapping at the top level page table is
+(:file:`arch/x86/gen_mmu.py`) identity maps the physical addresses
+at the page directory level, in addition to mapping virtual addresses
+to the physical memory. Later in the boot process,
+the entries for identity mapping at the page directory level are
 cleared in :c:func:`z_x86_mmu_init()`, effectively removing
 the identity mapping of physical memory. This unmapping must be done
 for userspace isolation or else they would be able to access
 restricted memory via physical addresses. Since the identity mapping
-is done at the top level, there is no need to allocate additional
-space for lower level tables in the whole page table structure,
-or else the extra tables become wasted space once unmapped and
-no longer referred. Because of this, there are restrictions on
-where virtual address space can be:
+is done at the page directory level, there is no need to allocate
+additional space for the page table. However, additional space may
+still be required for additional page directory table.
+
+There are restrictions on where virtual address space can be:
 
 - Physical and virtual address spaces must be disjoint. This is
-  required as the entries in top level will be cleared.
+  required as the entries in page directory table will be cleared.
   If they are not disjoint, it would clear the entries needed for
   virtual addresses.
 
@@ -72,10 +72,6 @@ where virtual address space can be:
 
   - Both ``CONFIG_SRAM_BASE_ADDRESS`` and ``CONFIG_KERNEL_VM_BASE``
     must also align with the starting addresses of targeted regions.
-
-- Due to re-using of second level entries, both
-  ``CONFIG_SRAM_OFFSET`` and ``CONFIG_KERNEL_VM_OFFSET`` must be of
-  same value.
 
 Specifying Additional Memory Mappings at Build Time
 ***************************************************
