@@ -240,7 +240,7 @@ static void test_build_suspend_device_list(void)
  *
  * @details Test the API enable and disable, cause we do not implement our PM
  * API here, it will use the default function to handle power status. So when
- * we try to get power state by device_get_power_state(), it will default
+ * we try to get power state by pm_device_state_get(), it will default
  * return power state zero. And we check it.
  *
  * @ingroup kernel_device_tests
@@ -256,7 +256,7 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
 
 	/* check its status at first */
 	/* for cases that cannot run runtime PM, we skip it now */
-	ret = device_get_power_state(dev, &device_power_state);
+	ret = pm_device_state_get(dev, &device_power_state);
 	if (ret == -ENOSYS) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
@@ -285,7 +285,7 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
  *
  * @see device_get_binding(), device_busy_set(), device_busy_clear(),
  * device_busy_check(), device_any_busy_check(),
- * device_set_power_state()
+ * pm_device_state_set()
  */
 void test_dummy_device_pm(void)
 {
@@ -317,7 +317,7 @@ void test_dummy_device_pm(void)
 	test_build_suspend_device_list();
 
 	/* Set device state to PM_DEVICE_ACTIVE_STATE */
-	ret = device_set_power_state(dev, PM_DEVICE_ACTIVE_STATE, NULL, NULL);
+	ret = pm_device_state_set(dev, PM_DEVICE_ACTIVE_STATE, NULL, NULL);
 	if (ret == -ENOSYS) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
@@ -327,19 +327,19 @@ void test_dummy_device_pm(void)
 	zassert_true((ret == 0),
 			"Unable to set active state to device");
 
-	ret = device_get_power_state(dev, &device_power_state);
+	ret = pm_device_state_get(dev, &device_power_state);
 	zassert_true((ret == 0),
 			"Unable to get active state to device");
 	zassert_true((device_power_state == PM_DEVICE_ACTIVE_STATE),
 			"Error power status");
 
 	/* Set device state to PM_DEVICE_FORCE_SUSPEND_STATE */
-	ret = device_set_power_state(dev,
+	ret = pm_device_state_set(dev,
 		PM_DEVICE_FORCE_SUSPEND_STATE, NULL, NULL);
 
 	zassert_true((ret == 0), "Unable to force suspend device");
 
-	ret = device_get_power_state(dev, &device_power_state);
+	ret = pm_device_state_get(dev, &device_power_state);
 	zassert_true((ret == 0),
 			"Unable to get suspend state to device");
 	zassert_true((device_power_state == PM_DEVICE_ACTIVE_STATE),

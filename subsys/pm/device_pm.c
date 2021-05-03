@@ -57,9 +57,8 @@ static void pm_work_handler(struct k_work *work)
 					dev->pm->enable) {
 			atomic_set(&dev->pm->fsm_state,
 				   PM_DEVICE_STATE_SUSPENDING);
-			ret = device_set_power_state(dev,
-						PM_DEVICE_SUSPEND_STATE,
-						device_pm_callback, NULL);
+			ret = pm_device_state_set(dev, PM_DEVICE_SUSPEND_STATE,
+						  device_pm_callback, NULL);
 		} else {
 			pm_state = PM_DEVICE_ACTIVE_STATE;
 			goto fsm_out;
@@ -70,9 +69,8 @@ static void pm_work_handler(struct k_work *work)
 					!dev->pm->enable) {
 			atomic_set(&dev->pm->fsm_state,
 				   PM_DEVICE_STATE_RESUMING);
-			ret = device_set_power_state(dev,
-						PM_DEVICE_ACTIVE_STATE,
-						device_pm_callback, NULL);
+			ret = pm_device_state_set(dev, PM_DEVICE_ACTIVE_STATE,
+						  device_pm_callback, NULL);
 		} else {
 			pm_state = PM_DEVICE_SUSPEND_STATE;
 			goto fsm_out;

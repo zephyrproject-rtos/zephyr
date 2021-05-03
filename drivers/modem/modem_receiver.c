@@ -199,7 +199,7 @@ int mdm_receiver_sleep(struct mdm_receiver_context *ctx)
 {
 	uart_irq_rx_disable(ctx->uart_dev);
 #ifdef PM_DEVICE_LOW_POWER_STATE
-	device_set_power_state(ctx->uart_dev, PM_DEVICE_LOW_POWER_STATE, NULL, NULL);
+	pm_device_state_set(ctx->uart_dev, PM_DEVICE_LOW_POWER_STATE, NULL, NULL);
 #endif
 	return 0;
 }
@@ -207,7 +207,7 @@ int mdm_receiver_sleep(struct mdm_receiver_context *ctx)
 int mdm_receiver_wake(struct mdm_receiver_context *ctx)
 {
 #ifdef PM_DEVICE_LOW_POWER_STATE
-	device_set_power_state(ctx->uart_dev, PM_DEVICE_ACTIVE_STATE, NULL, NULL);
+	pm_device_state_set(ctx->uart_dev, PM_DEVICE_ACTIVE_STATE, NULL, NULL);
 #endif
 	uart_irq_rx_enable(ctx->uart_dev);
 
