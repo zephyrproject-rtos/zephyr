@@ -77,7 +77,7 @@ struct device;
 #define PM_DEVICE_SET_POWER_STATE       1
 #define PM_DEVICE_GET_POWER_STATE       2
 
-typedef void (*device_pm_cb)(const struct device *dev,
+typedef void (*pm_device_cb)(const struct device *dev,
 			     int status, void *context, void *arg);
 
 /**

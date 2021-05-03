@@ -387,7 +387,7 @@ struct device {
 #ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
 	int (*pm_control)(const struct device *dev, uint32_t command,
-				 void *context, device_pm_cb cb, void *arg);
+				 void *context, pm_device_cb cb, void *arg);
 	/** Pointer to device instance power management data */
 	struct pm_device * const pm;
 #endif
@@ -657,7 +657,7 @@ void device_busy_clear(const struct device *dev);
  */
 static inline int device_set_power_state(const struct device *dev,
 					 uint32_t device_power_state,
-					 device_pm_cb cb, void *arg)
+					 pm_device_cb cb, void *arg)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;

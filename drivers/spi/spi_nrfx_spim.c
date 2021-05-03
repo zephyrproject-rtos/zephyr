@@ -334,7 +334,7 @@ static int init_spim(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int spim_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				void *context, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 	struct spi_nrfx_data *data = get_dev_data(dev);

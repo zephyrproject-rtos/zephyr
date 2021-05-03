@@ -543,7 +543,7 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 
 static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 				  uint32_t ctrl_command,
-				  void *context, device_pm_cb cb, void *arg)
+				  void *context, pm_device_cb cb, void *arg)
 {
 	struct fdc2x1x_data *data = dev->data;
 	uint32_t new_state;
