@@ -56,13 +56,14 @@
  */
 static void config_bus_clk_init(LL_UTILS_ClkInitTypeDef *clk_init)
 {
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+	clk_init->CPU2CLKDivider = ahb_prescaler(STM32_CPU2_PRESCALER);
+#endif
 #if defined(CONFIG_SOC_SERIES_STM32WBX)
 	clk_init->CPU1CLKDivider = ahb_prescaler(STM32_CPU1_PRESCALER);
-	clk_init->CPU2CLKDivider = ahb_prescaler(STM32_CPU2_PRESCALER);
 	clk_init->AHB4CLKDivider = ahb_prescaler(STM32_AHB4_PRESCALER);
 #elif defined(CONFIG_SOC_SERIES_STM32WLX)
 	clk_init->CPU1CLKDivider = ahb_prescaler(STM32_CPU1_PRESCALER);
-	clk_init->CPU2CLKDivider = ahb_prescaler(STM32_CPU2_PRESCALER);
 	clk_init->AHB3CLKDivider = ahb_prescaler(STM32_AHB3_PRESCALER);
 #else
 	clk_init->AHBCLKDivider = ahb_prescaler(STM32_AHB_PRESCALER);
@@ -572,16 +573,15 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
+#endif
 #ifdef CONFIG_SOC_SERIES_STM32WBX
-	/* Set C2 AHB & AHB4 prescalers */
-	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
 	LL_RCC_SetAHB4Prescaler(s_ClkInitStruct.AHB4CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
+#endif
 #ifdef CONFIG_SOC_SERIES_STM32WLX
-	/* Set C2 AHB & AHB3 prescalers */
-	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
 	LL_RCC_SetAHB3Prescaler(s_ClkInitStruct.AHB3CLKDivider);
-#endif /* CONFIG_SOC_SERIES_STM32WLX */
+#endif
 	/* If freq not increased, set flash latency after all clock setting */
 	if (new_hclk_freq <= old_hclk_freq) {
 		LL_SetFlashLatency(new_hclk_freq);
