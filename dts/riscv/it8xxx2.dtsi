@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
 
 / {
 	#address-cells = <1>;
@@ -42,9 +43,174 @@
 				write-block-size = <4>;
 			};
 		};
-		pinmux: pinmux@f016f0 {
+		pinmuxa: pinmux@f01610 {
 			compatible = "ite,it8xxx2-pinmux";
-			reg = <0x00f016f0 0x0010>;
+			reg = <0x00f01610 0x0008>;
+			label = "PINMUXA";
+			func3_gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 0xf02032 0xf02032 0xf016f0 0xf016f0>;
+			func3_en_mask = <0        0        0        0
+					 0x02     0x02     0x10     0x0C    >;
+			func4_gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4_en_mask = <0        0        0        0
+					 0        0        0        0       >;
+		};
+		pinmuxb: pinmux@f01618 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01618 0x0008>;
+			label = "PINMUXB";
+			func3_gcr =     <0xf016f5 0xf016f5 NO_FUNC NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC 0xf01600>;
+			func3_en_mask = <0x01     0x02     0       0
+					 0        0        0       0x02    >;
+			func4_gcr =     <NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC 0xf016f1>;
+			func4_en_mask = <0        0        0       0
+					 0        0        0       0x40    >;
+		};
+		pinmuxc: pinmux@f01620 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01620 0x0008>;
+			label = "PINMUXC";
+			func3_gcr =     <NO_FUNC NO_FUNC  NO_FUNC 0xf016f0
+					 NO_FUNC 0xf016f0 NO_FUNC 0xf016f3>;
+			func3_en_mask = <0       0        0       0x10
+					 0       0x10     0       0x02    >;
+			func4_gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC 0xf016f6>;
+			func4_en_mask = <0       0        0       0
+					 0       0        0       0x80    >;
+		};
+		pinmuxd: pinmux@f01628 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01628 0x0008>;
+			label = "PINMUXD";
+			func3_gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC 0xf016f0 NO_FUNC NO_FUNC>;
+			func3_en_mask = <0       0        0       0
+					 0       0x02     0       0      >;
+			func4_gcr =     <NO_FUNC NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC NO_FUNC>;
+			func4_en_mask = <0       0        0       0
+					 0       0        0       0      >;
+		};
+		pinmuxe: pinmux@f01630 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01630 0x0008>;
+			label = "PINMUXE";
+			func3_gcr =     <0xf02032 NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC  0xf016f0 NO_FUNC 0xf02032>;
+			func3_en_mask = <0x01     0        0       0
+					 0        0x08     0       0x01    >;
+			func4_gcr =     <0xf016f3 NO_FUNC  NO_FUNC NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC >;
+			func4_en_mask = <0x01     0        0       0
+					 0        0        0       0       >;
+		};
+		pinmuxf: pinmux@f01638 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01638 0x0008>;
+			label = "PINMUXF";
+			func3_gcr =     <NO_FUNC NO_FUNC 0xf016f0 0xf016f0
+					 NO_FUNC NO_FUNC 0xf016f1 0xf016f1>;
+			func3_en_mask = <0       0       0x02     0x02
+					 0       0       0x10     0x10    >;
+			func4_gcr =     <NO_FUNC NO_FUNC 0xf016f1 0xf016f1
+					 NO_FUNC NO_FUNC NO_FUNC  NO_FUNC >;
+			func4_en_mask = <0       0       0x20     0x20
+					 0       0       0        0       >;
+		};
+		pinmuxg: pinmux@f01640 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01640 0x0008>;
+			label = "PINMUXG";
+			func3_gcr =     <0xf016f0 0xf016f0 0xf016f0 NO_FUNC
+					 NO_FUNC  NO_FUNC  0xf016f0 NO_FUNC>;
+			func3_en_mask = <0x20     0x08     0x10     0
+					 0        0        0x02     0      >;
+			func4_gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4_en_mask = <0        0        0        0
+					 0        0        0        0      >;
+		};
+		pinmuxh: pinmux@f01648 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01648 0x0008>;
+			label = "PINMUXH";
+			func3_gcr =     <NO_FUNC 0xf016f1 0xf016f1 NO_FUNC
+					 NO_FUNC 0xf016f5 0xf016f5 NO_FUNC>;
+			func3_en_mask = <0       0x20     0x20     0
+					 0       0x04     0x08     0      >;
+			func4_gcr =     <NO_FUNC 0xf016f5 0xf016f5 NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4_en_mask = <0       0x04     0x08     0
+					 0       0        0        0      >;
+		};
+		pinmuxi: pinmux@f01650 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01650 0x0008>;
+			label = "PINMUXI";
+			func3_gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC 0xf016f0 0xf016f0 0xf016f0>;
+			func3_en_mask = <0       0        0        0
+					 0       0x08     0x08     0x08    >;
+			func4_gcr =     <NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC >;
+			func4_en_mask = <0       0        0        0
+					 0       0        0        0       >;
+		};
+		pinmuxj: pinmux@f01658 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01658 0x0008>;
+			label = "PINMUXJ";
+			func3_gcr =     <0xf016f4 NO_FUNC  0xf016f4 0xf016f4
+					 0xf016f0 0xf016f0 NO_FUNC  NO_FUNC>;
+			func3_en_mask = <0x01     0        0x01     0x02
+					 0x02     0x03     0        0      >;
+			func4_gcr =     <NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC
+					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
+			func4_en_mask = <0        0        0        0
+					 0        0        0        0      >;
+		};
+		pinmuxk: pinmux@f01690 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01690 0x0008>;
+			label = "PINMUXK";
+			func3_gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3_en_mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4_gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4_en_mask = <0       0       0       0
+					 0       0       0       0      >;
+		};
+		pinmuxl: pinmux@f01698 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f01698 0x0008>;
+			label = "PINMUXL";
+			func3_gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3_en_mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4_gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4_en_mask = <0       0       0       0
+					 0       0       0       0      >;
+		};
+		pinmuxm: pinmux@f016a0 {
+			compatible = "ite,it8xxx2-pinmux";
+			reg = <0x00f016a0 0x0008>;
+			label = "PINMUXM";
+			func3_gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func3_en_mask = <0       0       0       0
+					 0       0       0       0      >;
+			func4_gcr =     <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
+					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
+			func4_en_mask = <0       0       0       0
+					 0       0       0       0      >;
 		};
 		sram0: memory@80100000 {
 			compatible = "mmio-sram";

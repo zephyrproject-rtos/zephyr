@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2021 ITE Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_IT8XXX2_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_IT8XXX2_PINCTRL_H_
+
+#define NO_FUNC 0
+
+#endif	/* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_IT8XXX2_PINCTRL_H_ */
