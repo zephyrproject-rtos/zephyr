@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include <sys/sys_io.h>
 #include <sys/__assert.h>
-#include <power/power.h>
+#include <pm/pm.h>
 #include <soc.h>
 
 /*
