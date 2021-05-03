@@ -220,7 +220,7 @@ static int twi_nrfx_pm_control(const struct device *dev,
 	int ret = 0;
 	uint32_t pm_current_state = get_dev_data(dev)->pm_state;
 
-	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != pm_current_state) {
@@ -250,7 +250,7 @@ static int twi_nrfx_pm_control(const struct device *dev,
 			}
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_GET_POWER_STATE);
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
 		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
 	}
 

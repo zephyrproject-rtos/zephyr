@@ -416,7 +416,7 @@ static int apds9960_device_ctrl(const struct device *dev,
 	struct apds9960_data *data = dev->data;
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		uint32_t device_pm_state = *(uint32_t *)context;
 
 		if (device_pm_state == PM_DEVICE_ACTIVE_STATE) {
@@ -441,7 +441,7 @@ static int apds9960_device_ctrl(const struct device *dev,
 			}
 		}
 
-	} else if (ctrl_command == PM_DEVICE_GET_POWER_STATE) {
+	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
 		*((uint32_t *)context) = PM_DEVICE_ACTIVE_STATE;
 	}
 

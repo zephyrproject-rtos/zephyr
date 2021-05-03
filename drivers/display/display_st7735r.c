@@ -526,7 +526,7 @@ static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
 
 	switch (ctrl_command) {
-	case PM_DEVICE_SET_POWER_STATE:
+	case PM_DEVICE_STATE_SET:
 		if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
 			ret = st7735r_exit_sleep(data);
 			if (ret < 0) {
@@ -543,7 +543,7 @@ static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
 
 		break;
 
-	case PM_DEVICE_GET_POWER_STATE:
+	case PM_DEVICE_STATE_GET:
 		*((uint32_t *)context) = data->pm_state;
 
 		break;

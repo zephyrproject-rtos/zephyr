@@ -454,10 +454,10 @@ static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
 	int ret = 0;
 
 	switch (ctrl_command) {
-	case PM_DEVICE_SET_POWER_STATE:
+	case PM_DEVICE_STATE_SET:
 		ret = uart_npcx_set_power_state(dev, *((uint32_t *)context));
 		break;
-	case PM_DEVICE_GET_POWER_STATE:
+	case PM_DEVICE_STATE_GET:
 		ret = uart_npcx_get_power_state(dev, (uint32_t *)context);
 		break;
 	default:

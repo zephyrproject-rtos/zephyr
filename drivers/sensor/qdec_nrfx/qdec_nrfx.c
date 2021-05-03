@@ -276,11 +276,11 @@ static int qdec_nrfx_pm_control(const struct device *dev,
 	LOG_DBG("");
 
 	switch (ctrl_command) {
-	case PM_DEVICE_GET_POWER_STATE:
+	case PM_DEVICE_STATE_GET:
 		err = qdec_nrfx_pm_get_state(data, context);
 		break;
 
-	case PM_DEVICE_SET_POWER_STATE:
+	case PM_DEVICE_STATE_SET:
 		err = qdec_nrfx_pm_set_state(data, *((uint32_t *)context));
 		break;
 

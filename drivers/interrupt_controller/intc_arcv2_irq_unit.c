@@ -198,13 +198,13 @@ static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
 	int ret = 0;
 	unsigned int key = arch_irq_lock();
 
-	if (ctrl_command == PM_DEVICE_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		if (*((uint32_t *)context) == PM_DEVICE_SUSPEND_STATE) {
 			ret = arc_v2_irq_unit_suspend(dev);
 		} else if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
 			ret = arc_v2_irq_unit_resume(dev);
 		}
-	} else if (ctrl_command == PM_DEVICE_GET_POWER_STATE) {
+	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
 		*((uint32_t *)context) = arc_v2_irq_unit_get_state(dev);
 	}
 

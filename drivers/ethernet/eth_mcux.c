@@ -198,7 +198,7 @@ static int eth_mcux_device_pm_control(const struct device *dev,
 		goto out;
 	}
 
-	if (command == PM_DEVICE_SET_POWER_STATE) {
+	if (command == PM_DEVICE_STATE_SET) {
 		if (*(uint32_t *)context == PM_DEVICE_SUSPEND_STATE) {
 			LOG_DBG("Suspending");
 

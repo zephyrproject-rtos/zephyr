@@ -415,7 +415,7 @@ static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 
 	switch (ctrl_command) {
-	case PM_DEVICE_SET_POWER_STATE:
+	case PM_DEVICE_STATE_SET:
 		if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
 			st7789v_exit_sleep(data);
 			data->pm_state = PM_DEVICE_ACTIVE_STATE;
@@ -426,7 +426,7 @@ static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
 			ret = 0;
 		}
 		break;
-	case PM_DEVICE_GET_POWER_STATE:
+	case PM_DEVICE_STATE_GET:
 		*((uint32_t *)context) = data->pm_state;
 		break;
 	default:

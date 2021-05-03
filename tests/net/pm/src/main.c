@@ -27,7 +27,7 @@ static int fake_dev_pm_control(const struct device *dev, uint32_t command,
 	struct fake_dev_context *ctx = dev->data;
 	int ret = 0;
 
-	if (command == PM_DEVICE_SET_POWER_STATE) {
+	if (command == PM_DEVICE_STATE_SET) {
 		if (*(uint32_t *)context == PM_DEVICE_SUSPEND_STATE) {
 			ret = net_if_suspend(ctx->iface);
 			if (ret == -EBUSY) {
