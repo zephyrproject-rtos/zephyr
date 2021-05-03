@@ -264,9 +264,9 @@ Device Model with Power Management Support
 Drivers initialize the devices using macros. See :ref:`device_model_api` for
 details on how these macros are used. Use the DEVICE_DEFINE macro to initialize
 drivers providing power management support via the PM control function.
-One of the macro parameters is the pointer to the device_pm_control handler
-function. If the driver doesn't implement any power control operations, it can
-initialize the corresponding pointer with ``NULL``.
+One of the macro parameters is the pointer to the pm_control handler function.
+If the driver doesn't implement any power control operations, it can initialize
+the corresponding pointer with ``NULL``.
 
 Device Power Management API
 ===========================
@@ -297,7 +297,7 @@ Device Set Power State
 
    int device_set_power_state(const struct device *dev, uint32_t device_power_state, device_pm_cb cb, void *arg);
 
-Calls the :c:func:`device_pm_control()` handler function implemented by the
+Calls the :c:func:`pm_control()` handler function implemented by the
 device driver with PM_DEVICE_SET_POWER_STATE command.
 
 Device Get Power State
@@ -307,7 +307,7 @@ Device Get Power State
 
    int device_get_power_state(const struct device *dev, uint32_t * device_power_state);
 
-Calls the :c:func:`device_pm_control()` handler function implemented by the
+Calls the :c:func:`pm_control()` handler function implemented by the
 device driver with PM_DEVICE_GET_POWER_STATE command.
 
 Busy Status Indication
