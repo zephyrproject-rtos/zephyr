@@ -10,7 +10,7 @@
 #include <ztest.h>
 #include <ksched.h>
 #include <kernel.h>
-#include <power/power.h>
+#include <pm/pm.h>
 #include "dummy_driver.h"
 
 #define SLEEP_MSEC 100
