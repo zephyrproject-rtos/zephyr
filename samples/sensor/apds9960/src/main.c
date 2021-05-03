@@ -80,11 +80,11 @@ void main(void)
 		uint32_t p_state;
 
 		p_state = PM_DEVICE_LOW_POWER_STATE;
-		device_set_power_state(dev, p_state, NULL, NULL);
+		pm_device_state_set(dev, p_state, NULL, NULL);
 		printk("set low power state for 2s\n");
 		k_sleep(K_MSEC(2000));
 		p_state = PM_DEVICE_ACTIVE_STATE;
-		device_set_power_state(dev, p_state, NULL, NULL);
+		pm_device_state_set(dev, p_state, NULL, NULL);
 #endif
 	}
 }

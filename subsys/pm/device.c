@@ -72,7 +72,7 @@ static int _pm_devices(uint32_t state)
 		/* TODO: Improve the logic by checking device status
 		 * and set the device states accordingly.
 		 */
-		rc = device_set_power_state(dev, state, NULL, NULL);
+		rc = pm_device_state_set(dev, state, NULL, NULL);
 		if ((rc != -ENOTSUP) && (rc != 0)) {
 			LOG_DBG("%s did not enter %s state: %d",
 				dev->name, pm_device_state_str(state), rc);
@@ -108,7 +108,7 @@ void pm_resume_devices(void)
 	while (pmi < num_pm) {
 		device_idx_t idx = pm_devices[pmi];
 
-		device_set_power_state(&all_devices[idx],
+		pm_device_state_set(&all_devices[idx],
 				       PM_DEVICE_ACTIVE_STATE,
 				       NULL, NULL);
 		++pmi;
@@ -183,9 +183,8 @@ const char *pm_device_state_str(uint32_t state)
 	}
 }
 
-int device_set_power_state(const struct device *dev,
-			   uint32_t device_power_state, pm_device_cb cb,
-			   void *arg)
+int pm_device_state_set(const struct device *dev, uint32_t device_power_state,
+			pm_device_cb cb, void *arg)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
@@ -195,8 +194,7 @@ int device_set_power_state(const struct device *dev,
 			       &device_power_state, cb, arg);
 }
 
-int device_get_power_state(const struct device *dev,
-			   uint32_t *device_power_state)
+int pm_device_state_get(const struct device *dev, uint32_t *device_power_state)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
