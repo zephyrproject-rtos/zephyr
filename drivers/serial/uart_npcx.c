@@ -11,7 +11,7 @@
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
 #include <kernel.h>
-#include <power/power.h>
+#include <pm/device.h>
 #include <soc.h>
 #include "soc_miwu.h"
 

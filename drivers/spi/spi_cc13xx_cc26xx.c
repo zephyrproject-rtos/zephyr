@@ -11,7 +11,7 @@
 LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
 
 #include <drivers/spi.h>
-#include <power/power.h>
+#include <pm/device.h>
 
 #include <driverlib/prcm.h>
 #include <driverlib/ssi.h>

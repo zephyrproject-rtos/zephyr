@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(modem_hl7800, CONFIG_MODEM_LOG_LEVEL);
 #include <device.h>
 #include <init.h>
 
-#include <power/power.h>
+#include <pm/device.h>
 #include <drivers/uart.h>
 
 #include <net/net_context.h>
