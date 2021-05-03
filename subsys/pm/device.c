@@ -75,7 +75,7 @@ static int _pm_devices(uint32_t state)
 		rc = device_set_power_state(dev, state, NULL, NULL);
 		if ((rc != -ENOTSUP) && (rc != 0)) {
 			LOG_DBG("%s did not enter %s state: %d",
-				dev->name, device_pm_state_str(state), rc);
+				dev->name, pm_device_state_str(state), rc);
 			return rc;
 		}
 
@@ -165,7 +165,7 @@ void pm_create_device_list(void)
 }
 #endif /* defined(CONFIG_PM) */
 
-const char *device_pm_state_str(uint32_t state)
+const char *pm_device_state_str(uint32_t state)
 {
 	switch (state) {
 	case PM_DEVICE_ACTIVE_STATE:

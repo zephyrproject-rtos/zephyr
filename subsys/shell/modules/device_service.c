@@ -150,7 +150,7 @@ static int cmd_device_list(const struct shell *shell,
 			int err = device_get_power_state(dev, &st);
 
 			if (!err) {
-				state = device_pm_state_str(st);
+				state = pm_device_state_str(st);
 			}
 #endif /* CONFIG_PM_DEVICE */
 		}
