@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-/** L2CAP header size, used for buffer size calculations */
+/** L2CAP PDU header size, used for buffer size calculations */
 #define BT_L2CAP_HDR_SIZE               4
 
 /** Maximum Transmission Unit (MTU) for an outgoing L2CAP PDU. */
@@ -49,14 +49,36 @@ extern "C" {
 /** L2CAP SDU header size, used for buffer size calculations */
 #define BT_L2CAP_SDU_HDR_SIZE           2
 
+/** @brief Maximum Transmission Unit for an unsegmented outgoing L2CAP SDU.
+ *
+ *  The Maximum Transmission Unit for an outgoing L2CAP SDU when sent without
+ *  segmentation, i.e a single L2CAP SDU will fit inside a single L2CAP PDU.
+ *
+ *  The MTU for outgoing L2CAP SDUs with segmentation is defined by the
+ *  size of the application buffer pool.
+ */
+#define BT_L2CAP_SDU_TX_MTU (BT_L2CAP_TX_MTU - BT_L2CAP_SDU_HDR_SIZE)
+
+/** @brief Maximum Transmission Unit for an unsegmented incoming L2CAP SDU.
+ *
+ *  The Maximum Transmission Unit for an incoming L2CAP SDU when sent without
+ *  segmentation, i.e a single L2CAP SDU will fit inside a single L2CAP PDU.
+ *
+ *  The MTU for incoming L2CAP SDUs with segmentation is defined by the
+ *  size of the application buffer pool. The application will have to define
+ *  an alloc_buf callback for the channel in order to support receiving
+ *  segmented L2CAP SDUs.
+ */
+#define BT_L2CAP_SDU_RX_MTU (BT_L2CAP_RX_MTU - BT_L2CAP_SDU_HDR_SIZE)
+
 /** @def BT_L2CAP_SDU_BUF_SIZE
  *
  *  @brief Helper to calculate needed buffer size for L2CAP SDUs.
  *         Useful for creating buffer pools.
  *
- *  @param mtu Needed L2CAP SDU MTU.
+ *  @param mtu Required BT_L2CAP_*_SDU.
  *
- *  @return Needed buffer size to match the requested L2CAP MTU.
+ *  @return Needed buffer size to match the requested L2CAP SDU MTU.
  */
 #define BT_L2CAP_SDU_BUF_SIZE(mtu) BT_L2CAP_BUF_SIZE(BT_L2CAP_SDU_HDR_SIZE + (mtu))
 
@@ -148,7 +170,14 @@ struct bt_l2cap_le_endpoint {
 struct bt_l2cap_le_chan {
 	/** Common L2CAP channel reference object */
 	struct bt_l2cap_chan		chan;
-	/** Channel Receiving Endpoint */
+	/** @brief Channel Receiving Endpoint.
+	 *
+	 *  If the application has set an alloc_buf channel callback for the
+	 *  channel to support receiving segmented L2CAP SDUs the application
+	 *  should inititalize the MTU of the Receiving Endpoint. Otherwise the
+	 *  MTU of the receiving endpoint will be initialized to
+	 *  @ref BT_L2CAP_SDU_RX_MTU by the stack.
+	 */
 	struct bt_l2cap_le_endpoint	rx;
 	/** Channel Transmission Endpoint */
 	struct bt_l2cap_le_endpoint	tx;
@@ -240,6 +269,8 @@ struct bt_l2cap_chan_ops {
 	 *  If this callback is provided the channel will use it to allocate
 	 *  buffers to store incoming data. Channels that requires segmentation
 	 *  must set this callback.
+	 *  If the application has not set a callback the L2CAP SDU MTU will be
+	 *  truncated to @ref BT_L2CAP_SDU_RX_MTU.
 	 *
 	 *  @param chan The channel requesting a buffer.
 	 *
@@ -290,9 +321,14 @@ struct bt_l2cap_chan_ops {
 };
 
 /** @def BT_L2CAP_CHAN_SEND_RESERVE
- *  @brief Headroom needed for outgoing buffers
+ *  @brief Headroom needed for outgoing L2CAP PDUs.
  */
 #define BT_L2CAP_CHAN_SEND_RESERVE (BT_L2CAP_BUF_SIZE(0))
+
+/** @def BT_L2CAP_SDU_CHAN_SEND_RESERVE
+ * @brief Headroom needed for outgoing L2CAP SDUs.
+ */
+#define BT_L2CAP_SDU_CHAN_SEND_RESERVE (BT_L2CAP_SDU_BUF_SIZE(0))
 
 /** @brief L2CAP Server structure. */
 struct bt_l2cap_server {
@@ -420,6 +456,25 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  *  be queued and sent as and when credits are received from peer.
  *  Regarding to first input parameter, to get details see reference description
  *  to bt_l2cap_chan_connect() API above.
+ *
+ *  When sending L2CAP data over an BR/EDR connection the application is sending
+ *  L2CAP PDUs. The application is required to have reserved
+ *  @ref BT_L2CAP_CHAN_SEND_RESERVE bytes in the buffer before sending.
+ *  The application should use the @def BT_L2CAP_BUF_SIZE helper to correctly
+ *  size the buffers for the for the outgoing buffer pool.
+ *
+ *  When sending L2CAP data over an LE connection the applicatios is sending
+ *  L2CAP SDUs. The application can optionally reserve
+ *  @ref BT_L2CAP_SDU_CHAN_SEND_RESERVE bytes in the buffer before sending.
+ *  By reserving bytes in the buffer the stack can use this buffer as a segment
+ *  directly, otherwise it will have to allocate a new segment for the first
+ *  segment.
+ *  If the application is reserving the bytes it should use the
+ *  @def BT_L2CAP_BUF_SIZE helper to correctly size the buffers for the for the
+ *  outgoing buffer pool.
+ *  When segmenting an L2CAP SDU into L2CAP PDUs the stack will first attempt
+ *  to allocate buffers from the original buffer pool of the L2CAP SDU before
+ *  using the stacks own buffer pool.
  *
  *  @note Buffer ownership is transferred to the stack in case of success, in
  *  case of an error the caller retains the ownership of the buffer.
