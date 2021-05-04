@@ -8,17 +8,6 @@
 
 #include <kernel.h>
 
-/* Below IDs are used with systemview, not final to the zephyr tracing API */
-#define SYS_TRACE_ID_OFFSET                  (32u)
-
-#define SYS_TRACE_ID_MUTEX_INIT              (1u + SYS_TRACE_ID_OFFSET)
-#define SYS_TRACE_ID_MUTEX_UNLOCK            (2u + SYS_TRACE_ID_OFFSET)
-#define SYS_TRACE_ID_MUTEX_LOCK              (3u + SYS_TRACE_ID_OFFSET)
-#define SYS_TRACE_ID_SEMA_INIT               (4u + SYS_TRACE_ID_OFFSET)
-#define SYS_TRACE_ID_SEMA_GIVE               (5u + SYS_TRACE_ID_OFFSET)
-#define SYS_TRACE_ID_SEMA_TAKE               (6u + SYS_TRACE_ID_OFFSET)
-#define SYS_TRACE_ID_SLEEP                   (7u + SYS_TRACE_ID_OFFSET)
-
 #if defined CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
 
