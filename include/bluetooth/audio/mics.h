@@ -68,8 +68,9 @@ struct bt_mics {
  * @brief Initialize the Microphone Input Control Service
  *
  * This will enable the service and make it discoverable by clients.
+ * This can only be done as the server.
  *
- * @param param  Pointer to a initialization structure.
+ * @param param  Pointer to an initialization structure.
  *
  * @return 0 if success, errno on failure.
  */
@@ -111,9 +112,7 @@ typedef void (*bt_mics_discover_cb)(struct bt_conn *conn, int err,
  *
  * @param conn     Connection to peer device, or NULL if local server read.
  * @param err      Error value. 0 on success, GATT error or errno on fail.
- *                 For notifications, this will always be 0. For reads, if
- *                 this is 0, the @p volume and @p mute values are the last
- *                 known values.
+ *                 For notifications, this will always be 0.
  * @param mute     The mute setting of the Microphone Input Control Service.
  */
 typedef void (*bt_mics_mute_read_cb)(struct bt_conn *conn, int err,
@@ -260,7 +259,7 @@ int bt_mics_aics_unmute(struct bt_conn *conn, struct bt_aics *inst);
 int bt_mics_aics_mute(struct bt_conn *conn, struct bt_aics *inst);
 
 /**
- * @brief Set input gain to manual.
+ * @brief Set Audio Input Control Service gain mode to manual.
  *
  * @param conn          Connection to peer device,
  *                      or NULL to set local server value.
@@ -271,7 +270,7 @@ int bt_mics_aics_mute(struct bt_conn *conn, struct bt_aics *inst);
 int bt_mics_aics_manual_gain_set(struct bt_conn *conn, struct bt_aics *inst);
 
 /**
- * @brief Set Audio Input Control Service input gain to automatic.
+ * @brief Set Audio Input Control Service gain mode to automatic.
  *
  * @param conn          Connection to peer device,
  *                      or NULL to set local server value.
@@ -322,7 +321,7 @@ int bt_mics_aics_description_set(struct bt_conn *conn, struct bt_aics *inst,
  * @brief Deactivates a Audio Input Control Service instance.
  *
  * Audio Input Control Services are activated by default, but this will allow
- * the server deactivate a Audio Input Control Service.
+ * the server to deactivate a Audio Input Control Service.
  * This can only be done as the server.
  *
  * @param inst          Pointer to the Audio Input Control Service instance.
@@ -335,7 +334,7 @@ int bt_mics_aics_deactivate(struct bt_aics *inst);
  * @brief Activates a Audio Input Control Service instance.
  *
  * Audio Input Control Services are activated by default, but this will allow
- * the server reactivate a Audio Input Control Service instance after it has
+ * the server to reactivate a Audio Input Control Service instance after it has
  * been deactivated with @ref bt_mics_aics_deactivate.
  * This can only be done as the server.
  *
