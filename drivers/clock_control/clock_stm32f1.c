@@ -52,6 +52,11 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	pllinit->PLLMul = ((STM32_PLL_MULTIPLIER - 2)
 					<< RCC_CFGR_PLLMULL_Pos);
 
+#if STM32_PLL_SRC_HSI
+	/* In case PLL source is HSI, prediv is 2 */
+	pllinit->Prediv = LL_RCC_PREDIV_DIV_2;
+#else
+	/* In case PLL source is not HSI, set prediv case by case */
 #ifdef CONFIG_SOC_STM32F10X_DENSITY_DEVICE
 	/* PLL prediv */
 #ifdef STM32_PLL_XTPRE
@@ -80,6 +85,8 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	 */
 	pllinit->Prediv = STM32_PLL_PREDIV1 - 1;
 #endif /* CONFIG_SOC_STM32F10X_DENSITY_DEVICE */
+
+#endif /* STM32_PLL_SRC_HSI */
 }
 
 #endif /* STM32_SYSCLK_SRC_PLL */
