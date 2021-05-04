@@ -33,78 +33,78 @@ extern "C" {
 /* Driver interface mirrored in include/drivers/cache.h */
 
 /* Enable d-cache */
-extern void dcache_enable(void);
+extern void cache_data_enable(void);
 
 /* Disable d-cache */
-extern void dcache_disable(void);
+extern void cache_data_disable(void);
 
 /* Enable i-cache */
-extern void icache_enable(void);
+extern void cache_instr_enable(void);
 
 /* Disable i-cache */
-extern void icache_disable(void);
+extern void cache_instr_disable(void);
 
 /* Write-back / Invalidate / Write-back + Invalidate all d-cache */
-extern int dcache_all(int op);
+extern int cache_data_all(int op);
 
 /* Write-back / Invalidate / Write-back + Invalidate d-cache lines */
-extern int dcache_range(void *addr, size_t size, int op);
+extern int cache_data_range(void *addr, size_t size, int op);
 
 /* Write-back / Invalidate / Write-back + Invalidate all i-cache */
-extern int icache_all(int op);
+extern int cache_instr_all(int op);
 
 /* Write-back / Invalidate / Write-back + Invalidate i-cache lines */
-extern int icache_range(void *addr, size_t size, int op);
+extern int cache_instr_range(void *addr, size_t size, int op);
 
 #else
 
 /* Hooks into arch code */
 
-#define dcache_enable			arch_dcache_enable
-#define dcache_disable			arch_dcache_disable
-#define icache_enable			arch_icache_enable
-#define icache_disable			arch_icache_disable
-#define dcache_all(op)			arch_dcache_all(op)
-#define dcache_range(addr, size, op)	arch_dcache_range(addr, size, op)
-#define icache_all(op)			arch_icache_all(op)
-#define icache_range(addr, size, op)	arch_icache_range(addr, size, op)
-#define dcache_line_size_get		arch_dcache_line_size_get
-#define icache_line_size_get		arch_icache_line_size_get
+#define cache_data_enable			arch_dcache_enable
+#define cache_data_disable			arch_dcache_disable
+#define cache_instr_enable			arch_icache_enable
+#define cache_instr_disable			arch_icache_disable
+#define cache_data_all(op)			arch_dcache_all(op)
+#define cache_data_range(addr, size, op)	arch_dcache_range(addr, size, op)
+#define cache_instr_all(op)			arch_icache_all(op)
+#define cache_instr_range(addr, size, op)	arch_icache_range(addr, size, op)
+#define cache_data_line_size_get		arch_dcache_line_size_get
+#define cache_instr_line_size_get		arch_icache_line_size_get
 
 #endif
 
-__syscall int sys_dcache_all(int op);
-static inline int z_impl_sys_dcache_all(int op)
+__syscall int sys_cache_data_all(int op);
+static inline int z_impl_sys_cache_data_all(int op)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT)
-	return dcache_all(op);
-#endif
-	return -ENOTSUP;
-}
-
-__syscall int sys_dcache_range(void *addr, size_t size, int op);
-static inline int z_impl_sys_dcache_range(void *addr, size_t size, int op)
-{
-#if defined(CONFIG_CACHE_MANAGEMENT)
-	return dcache_range(addr, size, op);
+	return cache_data_all(op);
 #endif
 	return -ENOTSUP;
 }
 
-__syscall int sys_icache_all(int op);
-static inline int z_impl_sys_icache_all(int op)
+__syscall int sys_cache_data_range(void *addr, size_t size, int op);
+static inline int z_impl_sys_cache_data_range(void *addr, size_t size, int op)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT)
-	return icache_all(op);
+	return cache_data_range(addr, size, op);
 #endif
 	return -ENOTSUP;
 }
 
-__syscall int sys_icache_range(void *addr, size_t size, int op);
-static inline int z_impl_sys_icache_range(void *addr, size_t size, int op)
+__syscall int sys_cache_instr_all(int op);
+static inline int z_impl_sys_cache_instr_all(int op)
 {
 #if defined(CONFIG_CACHE_MANAGEMENT)
-	return icache_range(addr, size, op);
+	return cache_instr_all(op);
+#endif
+	return -ENOTSUP;
+}
+
+__syscall int sys_cache_instr_range(void *addr, size_t size, int op);
+static inline int z_impl_sys_cache_instr_range(void *addr, size_t size, int op)
+{
+#if defined(CONFIG_CACHE_MANAGEMENT)
+	return cache_instr_range(addr, size, op);
 #endif
 	return -ENOTSUP;
 }
@@ -112,7 +112,7 @@ static inline int z_impl_sys_icache_range(void *addr, size_t size, int op)
 #ifdef CONFIG_LIBMETAL
 static inline void sys_cache_flush(void *addr, size_t size)
 {
-	sys_dcache_range(addr, size, K_CACHE_WB);
+	sys_cache_data_range(addr, size, K_CACHE_WB);
 }
 #endif
 
@@ -126,10 +126,10 @@ static inline void sys_cache_flush(void *addr, size_t size)
  *
  * @return size of the d-cache line or 0 if the d-cache is not enabled.
  */
-static inline size_t sys_dcache_line_size_get(void)
+static inline size_t sys_cache_data_line_size_get(void)
 {
 #ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
-	return dcache_line_size_get();
+	return cache_data_line_size_get();
 #elif (CONFIG_DCACHE_LINE_SIZE != 0)
 	return CONFIG_DCACHE_LINE_SIZE;
 #else
@@ -145,10 +145,10 @@ static inline size_t sys_dcache_line_size_get(void)
  *
  * @return size of the i-cache line or 0 if the i-cache is not enabled.
  */
-static inline size_t sys_icache_line_size_get(void)
+static inline size_t sys_cache_instr_line_size_get(void)
 {
 #ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
-	return icache_line_size_get();
+	return cache_instr_line_size_get();
 #elif (CONFIG_ICACHE_LINE_SIZE != 0)
 	return CONFIG_ICACHE_LINE_SIZE;
 #else

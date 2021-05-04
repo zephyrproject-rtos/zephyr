@@ -31,7 +31,7 @@
  */
 static void arch_dcache_flush(void *start_addr, size_t size)
 {
-	size_t line_size = sys_dcache_line_size_get();
+	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start = (uintptr_t)start_addr;
 	uintptr_t end;
 
