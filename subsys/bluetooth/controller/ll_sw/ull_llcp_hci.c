@@ -591,7 +591,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
 	conn_lll->role = 0;
-	conn_lll->initiated = 0;
+	conn_lll->master.initiated = 0;
+	conn_lll->master.cancelled = 0;
 	/* FIXME: END: Move to ULL? */
 #if defined(CONFIG_BT_CTLR_CONN_META)
 	memset(&conn_lll->conn_meta, 0, sizeof(conn_lll->conn_meta));
@@ -656,12 +657,12 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	ll_conn_init(conn);
 
 	/* TODO: active_to_start feature port */
-	conn->evt.ticks_active_to_start = 0U;
-	conn->evt.ticks_xtal_to_start =
+	conn->ull.ticks_active_to_start = 0U;
+	conn->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	conn->evt.ticks_preempt_to_start =
+	conn->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->evt.ticks_slot =
+	conn->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
 				       328 + EVENT_IFS_US + 328);
@@ -790,11 +791,12 @@ uint8_t ll_connect_disable(void **rx)
 	}
 
 	if (!err) {
-		struct ll_conn *conn = (void *)HDR_LLL2EVT(conn_lll);
+		struct ll_conn *conn;
 		struct node_rx_pdu *node_rx;
 		struct node_rx_cc *cc;
 		memq_link_t *link;
 
+		conn = HDR_LLL2ULL(conn_lll);
 		node_rx = (void *)&conn->terminate.node_rx;
 		link = node_rx->hdr.link;
 		LL_ASSERT(link);
@@ -991,17 +993,18 @@ static void tx_demux(void *param)
 
 static inline void conn_release(struct ll_scan_set *scan)
 {
-	struct lll_conn *lll = scan->lll.conn;
 	struct node_rx_pdu *cc;
+	struct lll_conn *lll;
 	struct ll_conn *conn;
 	memq_link_t *link;
 
+	lll = scan->lll.conn;
 	LL_ASSERT(!lll->link_tx_free);
 	link = memq_deinit(&lll->memq_tx.head, &lll->memq_tx.tail);
 	LL_ASSERT(link);
 	lll->link_tx_free = link;
 
-	conn = (void *)HDR_LLL2EVT(lll);
+	conn = HDR_LLL2ULL(lll);
 
 	cc = (void *)&conn->terminate.node_rx;
 	link = cc->hdr.link;
