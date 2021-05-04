@@ -508,10 +508,10 @@ this:
 
    / {
            soc {
-                   mydevice0: dev@... {
+                   mydevice0: dev@0 {
                            compatible = "vnd,my-device";
                    };
-                   mydevice1: dev@... {
+                   mydevice1: dev@1 {
                            compatible = "vnd,my-device";
                    };
            };
@@ -659,7 +659,7 @@ node with path ``/soc/i2c@12340000`` in a C/C++ file:
 
 And if you're trying to **set** that property in a devicetree overlay:
 
-.. code-block:: devicetree
+.. code-block:: none
 
    /*
     * foo.overlay: DTS names with special characters, etc.

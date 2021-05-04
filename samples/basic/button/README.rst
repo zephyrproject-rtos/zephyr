@@ -48,7 +48,7 @@ simplicity.
    	};
 
    	soc {
-   		gpio0: gpio@... {
+   		gpio0: gpio@0 {
    			status = "okay";
    			gpio-controller;
    			#gpio-cells = <2>;
