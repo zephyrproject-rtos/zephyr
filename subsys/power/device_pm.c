@@ -115,6 +115,22 @@ static int device_pm_request(const struct device *dev,
 	}
 
 	if (k_is_pre_kernel()) {
+		/* TODO: Add a check here to test if device pm is enabled.
+		 *
+		 * Unfortunately the system is not initializing devices
+		 * according with their dependencies. For example, uart depends
+		 * on gpio but gpio is initialized after uart. So for now,
+		 * just power on/off according with device usage.
+		 */
+		if (dev->pm->usage == 1) {
+			(void)device_set_power_state(dev,
+						     DEVICE_PM_ACTIVE_STATE,
+						     NULL, NULL);
+		} else if (dev->pm->usage == 0) {
+			(void)device_set_power_state(dev,
+						     DEVICE_PM_SUSPEND_STATE,
+						     NULL, NULL);
+		}
 		return 0;
 	}
 
