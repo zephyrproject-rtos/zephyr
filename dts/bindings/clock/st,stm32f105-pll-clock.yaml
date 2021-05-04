@@ -44,6 +44,7 @@ properties:
         - 6   # x6
         - 7   # x7
         - 8   # x8
+        - 9   # x9
         - 15  # x6.5
 
     prediv:
