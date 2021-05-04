@@ -5,7 +5,6 @@ description: |
   PLL node binding for STM32H7 devices
 
   It can be used to describe 3 different PLLs: PLL1 (Main PLL), PLL2 and PLL3.
-  Only PLL1 and PLL3 are supported for now.
 
   These PLLs could take one of clk_hse, clk_hsi or clk_csi as input clock, with
   an input frequency from 1 to 16 MHz. PLLM factor is used to set the input
@@ -20,7 +19,7 @@ description: |
 
       with f(VCOx clock) = f(REFx_CK) × (PLLNx / PLLMx)
 
-  The PLL output frequency must not exceed 80 MHz.
+  The PLL output frequency must not exceed ??? MHz.
 
 compatible: "st,stm32h7-pll-clock"
 

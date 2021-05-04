@@ -87,10 +87,17 @@
 			status = "disabled";
 		};
 
-		pll3: pll@2 {
+        pll2: pll@1 {
 			#clock-cells = <0>;
 			compatible = "st,stm32h7-pll-clock";
 			reg = <1>;
+			status = "disabled";
+		};
+
+		pll3: pll@2 {
+			#clock-cells = <0>;
+			compatible = "st,stm32h7-pll-clock";
+			reg = <2>;
 			status = "disabled";
 		};
 	};

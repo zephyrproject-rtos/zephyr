@@ -38,6 +38,12 @@
 #define z_apb4_prescaler(v) LL_RCC_APB4_DIV_ ## v
 #define apb4_prescaler(v) z_apb4_prescaler(v)
 
+#define z_mco1_prescaler(v) LL_RCC_MCO1_DIV_ ## v
+#define mco1_prescaler(v) z_mco1_prescaler(v)
+
+#define z_mco2_prescaler(v) LL_RCC_MCO2_DIV_ ## v
+#define mco2_prescaler(v) z_mco2_prescaler(v)
+
 /* Macro to check for clock feasability */
 /* It is Cortex M7's responsibility to setup clock tree */
 /* This check should only be performed for the M7 core code */
@@ -65,6 +71,36 @@
 #else
 #define PLLSRC_FREQ 0
 #endif
+
+#if CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK
+#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_NOCLOCK
+#elif CONFIG_CLOCK_STM32_MCO1_SRC_LSE
+#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_LSE
+#elif CONFIG_CLOCK_STM32_MCO1_SRC_HSE
+	#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_HSE
+#elif CONFIG_CLOCK_STM32_MCO1_SRC_HSI
+	#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_HSI
+#elif CONFIG_CLOCK_STM32_MCO1_SRC_RC48
+	#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_RC48
+#elif CONFIG_CLOCK_STM32_MCO1_SRC_PLL1Q
+	#define MCO1_SOURCE		LL_RCC_MCO1SOURCE_PLL1QCLK
+#endif
+
+#if CONFIG_CLOCK_STM32_MCO2_SRC_SYSCLK
+#define MCO2_SOURCE		LL_RCC_MCO2SOURCE_SYSCLK
+#elif CONFIG_CLOCK_STM32_MCO2_SRC_PLL2P
+#define MCO2_SOURCE		LL_RCC_MCO2SOURCE_PLL2PCLK
+#elif CONFIG_CLOCK_STM32_MCO2_SRC_HSE
+#define MCO2_SOURCE		LL_RCC_MCO2SOURCE_HSE
+#elif CONFIG_CLOCK_STM32_MCO2_SRC_PLL1P
+    #define MCO2_SOURCE		LL_RCC_MCO2SOURCE_PLL1PCLK
+#elif CONFIG_CLOCK_STM32_MCO2_SRC_CSI
+    #define MCO2_SOURCE		LL_RCC_MCO2SOURCE_CSI
+#elif CONFIG_CLOCK_STM32_MCO2_SRC_LSI
+    #define MCO2_SOURCE		LL_RCC_MCO2SOURCE_LSI
+#endif
+
+
 
 /* Given source clock and dividers, computed the output frequency of PLLP */
 #define PLLP_FREQ(pllsrc_freq, divm, divn, divp)	(((pllsrc_freq)*\
@@ -465,6 +501,23 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	return 0;
 }
 
+/*
+ * MCO configure doesn't active requested clock source,
+ * so please make sure the clock source was enabled.
+ */
+static inline void stm32_clock_control_mco_init(void)
+{
+#ifndef CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK
+    LL_RCC_ConfigMCO(MCO1_SOURCE,
+			 mco1_prescaler(CONFIG_CLOCK_STM32_MCO1_DIV));
+#endif /* CONFIG_CLOCK_STM32_MCO1_SRC_NOCLOCK */
+
+#ifndef CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK
+    LL_RCC_ConfigMCO(MCO2_SOURCE,
+                     mco2_prescaler(CONFIG_CLOCK_STM32_MCO2_DIV));
+#endif /* CONFIG_CLOCK_STM32_MCO2_SRC_NOCLOCK */
+}
+
 static struct clock_control_driver_api stm32_clock_control_api = {
 	.on = stm32_clock_control_on,
 	.off = stm32_clock_control_off,
@@ -681,6 +734,41 @@ static int stm32_clock_control_init(const struct device *dev)
 
 #endif /* CONFIG_CPU_CORTEX_M4 */
 
+#if STM32_PLL2_ENABLE
+    /* Initialize PLL 2 */
+	r = get_vco_input_range(STM32_PLL2_M_DIVISOR, &vco_input_range);
+	if (r < 0) {
+		return r;
+	}
+
+	vco_output_range = get_vco_output_range(vco_input_range);
+
+	LL_RCC_PLL2FRACN_Disable();
+
+	LL_RCC_PLL2_SetM(STM32_PLL2_M_DIVISOR);
+	LL_RCC_PLL2_SetN(STM32_PLL2_N_MULTIPLIER);
+
+	LL_RCC_PLL2_SetVCOInputRange(vco_input_range);
+	LL_RCC_PLL2_SetVCOOutputRange(vco_output_range);
+
+#if STM32_PLL2_P_ENABLE
+	LL_RCC_PLL2P_Enable();
+	LL_RCC_PLL2_SetP(STM32_PLL2_P_DIVISOR);
+#endif /* STM32_PLL2_P_ENABLE */
+#if STM32_PLL2_Q_ENABLE
+	LL_RCC_PLL2Q_Enable();
+	LL_RCC_PLL2_SetQ(STM32_PLL2_Q_DIVISOR);
+#endif /* STM32_PLL2_Q_ENABLE */
+#if STM32_PLL2_R_ENABLE
+	LL_RCC_PLL2R_Enable();
+	LL_RCC_PLL2_SetR(STM32_PLL2_R_DIVISOR);
+#endif /* STM32_PLL2_R_ENABLE */
+
+	LL_RCC_PLL2_Enable();
+	while (LL_RCC_PLL2_IsReady() != 1U) {
+	}
+#endif /* STM32_PLL2_ENABLE */
+
 #if STM32_PLL3_ENABLE
 	/* Initialize PLL 3 */
 	r = get_vco_input_range(STM32_PLL3_M_DIVISOR, &vco_input_range);
@@ -716,7 +804,10 @@ static int stm32_clock_control_init(const struct device *dev)
 	}
 #endif /* STM32_PLL3_ENABLE */
 
-	/* Set systick to 1ms */
+    /* configure MCO1/MCO2 based on Kconfig */
+    stm32_clock_control_mco_init();
+
+    /* Set systick to 1ms */
 	SysTick_Config(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000);
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
