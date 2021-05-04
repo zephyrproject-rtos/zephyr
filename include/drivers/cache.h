@@ -17,7 +17,7 @@
  *
  * @return N/A
  */
-void dcache_enable(void);
+void cache_data_enable(void);
 
 /**
  *
@@ -27,7 +27,7 @@ void dcache_enable(void);
  *
  * @return N/A
  */
-void dcache_disable(void);
+void cache_data_disable(void);
 
 /**
  *
@@ -37,7 +37,7 @@ void dcache_disable(void);
  *
  * @return N/A
  */
-void icache_enable(void);
+void cache_instr_enable(void);
 
 /**
  *
@@ -47,7 +47,7 @@ void icache_enable(void);
  *
  * @return N/A
  */
-void icache_disable(void);
+void cache_instr_disable(void);
 
 /**
  *
@@ -60,7 +60,7 @@ void icache_disable(void);
  * @retval 0		On success
  * @retval -ENOTSUP	If the operation is not supported
  */
-int dcache_all(int op);
+int cache_data_all(int op);
 
 /**
  *
@@ -80,7 +80,7 @@ int dcache_all(int op);
  * @retval 0		On success
  * @retval -ENOTSUP	If the operation is not supported
  */
-int dcache_range(void *addr, size_t size, int op);
+int cache_data_range(void *addr, size_t size, int op);
 
 /**
  *
@@ -93,7 +93,7 @@ int dcache_range(void *addr, size_t size, int op);
  * @retval 0		On success
  * @retval -ENOTSUP	If the operation is not supported
  */
-int icache_all(int op);
+int cache_instr_all(int op);
 
 /**
  *
@@ -113,7 +113,7 @@ int icache_all(int op);
  * @retval 0		On success
  * @retval -ENOTSUP	If the operation is not supported
  */
-int icache_range(void *addr, size_t size, int op);
+int cache_instr_range(void *addr, size_t size, int op);
 
 #ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
 /**
@@ -124,7 +124,7 @@ int icache_range(void *addr, size_t size, int op);
  *
  * @return size of the i-cache line or 0 if the i-cache is not enabled.
  */
-size_t dcache_line_size_get(void);
+size_t cache_data_line_size_get(void);
 
 #endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
 
@@ -137,7 +137,7 @@ size_t dcache_line_size_get(void);
  *
  * @return size of the i-cache line or 0 if the i-cache is not enabled.
  */
-size_t icache_line_size_get(void);
+size_t cache_instr_line_size_get(void);
 
 #endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
 
