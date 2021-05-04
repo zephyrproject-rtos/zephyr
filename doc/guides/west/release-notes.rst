@@ -1,6 +1,31 @@
 West Release Notes
 ##################
 
+v0.11.0
+*******
+
+New features:
+
+- ``west update`` now supports ``--narrow``, ``--name-cache``, and
+  ``--path-cache`` options. These can be influenced by the ``update.narrow``,
+  ``update.name-cache``, and ``update.path-cache`` :ref:`west-config` options.
+  These can be used to optimize the speed of the update.
+- ``west update`` now supports a ``--fetch-opt`` option that will be passed to
+  the ``git fetch`` command used to fetch remote revisions when updating each
+  project.
+
+Bug fixes:
+
+- ``west update`` now synchronizes Git submodules in projects by default. This
+  avoids issues if the URL changes in the manifest file from when the submodule
+  was first initialized. This behavior can be disabled by setting the
+  ``update.sync-submodules`` configuration option to ``false``.
+
+Other changes:
+
+- the :ref:`west-apis-manifest` module has fixed docstrings for the Project
+  class
+
 v0.10.1
 *******
 
