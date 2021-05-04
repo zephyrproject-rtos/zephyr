@@ -103,7 +103,7 @@ manifest:
       revision: 27a464e4885f393dc376a53d9fc8d52078848496
       path: modules/hal/nxp
     - name: open-amp
-      revision: de1b85a13032a2de1d8b6695ae5f800b613e739d
+      revision: 6010f0523cbc75f551d9256cf782f173177acdef
       path: modules/lib/open-amp
     - name: loramac-node
       revision: 2cee5f7295ff0ff804bf06fea5de006bc7cd121e
