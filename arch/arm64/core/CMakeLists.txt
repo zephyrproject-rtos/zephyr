@@ -36,3 +36,4 @@ endif ()
 add_subdirectory_ifdef(CONFIG_ARM_MPU cortex_r/mpu)
 
 zephyr_cc_option_ifdef(CONFIG_USERSPACE -mno-outline-atomics)
+zephyr_cc_option_ifndef(CONFIG_FPU -mgeneral-regs-only)
