@@ -10,8 +10,7 @@
 #include <init.h>
 
 #include <SEGGER_SYSVIEW.h>
-#include <Global.h>
-#include "SEGGER_SYSVIEW_Zephyr.h"
+
 
 #ifdef __cplusplus
 extern "C" {
