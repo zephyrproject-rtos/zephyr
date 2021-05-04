@@ -5,3 +5,5 @@ tests:
   sample.logger.basic.dictionary:
     build_only: true
     tags: logging
+    extra_configs:
+      - CONFIG_CBPRINTF_PACKAGE_LONGDOUBLE=y
