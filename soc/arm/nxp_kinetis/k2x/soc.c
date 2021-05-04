@@ -123,32 +123,12 @@ static int fsl_frdm_k22f_init(const struct device *arg)
 	ARG_UNUSED(arg);
 
 	unsigned int oldLevel; /* old interrupt lock level */
-#if !defined(CONFIG_ARM_MPU)
-#if defined(SYSMPU)
-	uint32_t temp_reg;
-#endif
-#endif /* !CONFIG_ARM_MPU */
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
-
-#if !defined(CONFIG_ARM_MPU)
-	/*
-	 * Disable memory protection and clear slave port errors.
-	 * Note that the K22F does not implement the optional ARMv7-M memory
-	 * protection unit (MPU), specified by the architecture (PMSAv7), in the
-	 * Cortex-M4 core.  Instead, the processor includes its own MPU module.
-	 */
-#if defined(SYSMPU)
-	temp_reg = SYSMPU->CESR;
-	temp_reg &= ~SYSMPU_CESR_VLD_MASK;
-	temp_reg |= SYSMPU_CESR_SPERR_MASK;
-	SYSMPU->CESR = temp_reg;
-#endif
-#endif /* !CONFIG_ARM_MPU */
 
 	/* Initialize PLL/system clock to 120 MHz */
 	clock_init();

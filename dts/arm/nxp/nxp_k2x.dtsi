@@ -52,13 +52,6 @@
 	};
 
 	soc {
-		mpu: mpu@4000d000 {
-			compatible = "nxp,k22f-mpu";
-			reg = <0x4000d000 0x824>;
-
-			status = "disabled";
-		};
-
 		mcg: clock-controller@40064000 {
 			compatible = "nxp,kinetis-mcg";
 			reg = <0x40064000 0xd>;
