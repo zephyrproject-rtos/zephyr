@@ -14,6 +14,11 @@ properties:
     label:
       required: true
 
+    index:
+        type: int
+        required: true
+        description: Index in gpio_1p8v for voltage level control register element.
+
 gpio-cells:
   - pin
   - flags
