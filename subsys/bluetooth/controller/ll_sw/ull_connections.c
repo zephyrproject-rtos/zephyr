@@ -513,26 +513,71 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 
 void ull_conn_done(struct node_rx_event_done *done)
 {
-	struct lll_conn *lll = (void *)HDR_ULL2LLL(done->param);
-	struct ll_conn *conn = (void *)HDR_LLL2EVT(lll);
 	uint32_t ticks_drift_minus;
 	uint32_t ticks_drift_plus;
 	uint16_t latency_event;
 	uint16_t elapsed_event;
-	uint8_t reason;
+	struct lll_conn *lll;
+	struct ll_conn *conn;
+	uint8_t reason_final;
 	uint16_t lazy;
 	uint8_t force;
+
+	/* Get reference to ULL context */
+	conn = CONTAINER_OF(done->param, struct ll_conn, ull);
+	lll = &conn->lll;
 
 	/* Skip if connection terminated by local host */
 	if (unlikely(lll->handle == 0xFFFF)) {
 		return;
 	}
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	/* Check authenticated payload expiry or MIC failure */
+	switch (done->extra.mic_state) {
+	case LLL_CONN_MIC_NONE:
+#if defined(CONFIG_BT_CTLR_LE_PING)
+		if (lll->enc_rx || conn->llcp.enc.pause_rx) {
+			uint16_t appto_reload_new;
+
+			/* check for change in apto */
+			appto_reload_new = (conn->apto_reload >
+					    (lll->latency + 6)) ?
+					   (conn->apto_reload -
+					    (lll->latency + 6)) :
+					   conn->apto_reload;
+			if (conn->appto_reload != appto_reload_new) {
+				conn->appto_reload = appto_reload_new;
+				conn->apto_expire = 0U;
+			}
+
+			/* start authenticated payload (pre) timeout */
+			if (conn->apto_expire == 0U) {
+				conn->appto_expire = conn->appto_reload;
+				conn->apto_expire = conn->apto_reload;
+			}
+		}
+#endif /* CONFIG_BT_CTLR_LE_PING */
+		break;
+
+	case LLL_CONN_MIC_PASS:
+#if defined(CONFIG_BT_CTLR_LE_PING)
+		conn->appto_expire = conn->apto_expire = 0U;
+#endif /* CONFIG_BT_CTLR_LE_PING */
+		break;
+
+	case LLL_CONN_MIC_FAIL:
+		conn->terminate.reason =
+			BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
+		break;
+	}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 	/* Master transmitted ack for the received terminate ind or
 	 * Slave received terminate ind or MIC failure
 	 */
-	reason = conn->terminate.reason;
-	if (reason && (
+	reason_final = conn->terminate.reason;
+	if (reason_final && (
 #if defined(CONFIG_BT_PERIPHERAL)
 			    lll->role ||
 #else /* CONFIG_BT_PERIPHERAL */
@@ -540,12 +585,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 			    conn->master.terminate_ack ||
-			    (reason == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
+			    (reason_final == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL)
 #else /* CONFIG_BT_CENTRAL */
 			    1
 #endif /* CONFIG_BT_CENTRAL */
 			    )) {
-		conn_cleanup(conn, reason);
+		conn_cleanup(conn, reason_final);
 
 		return;
 	}
@@ -573,6 +618,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 			ull_drift_ticks_get(done, &ticks_drift_plus,
 					    &ticks_drift_minus);
 
+			/*
+			** EGON TODO to be verified
+			*/
 			if (!ull_tx_q_peek(&conn->tx_q)) {
 				ull_conn_tx_demux(UINT8_MAX);
 			}
@@ -587,7 +635,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
-		} else if (reason) {
+		} else if (reason_final) {
 			conn->master.terminate_ack = 1;
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -704,6 +752,19 @@ void ull_conn_done(struct node_rx_event_done *done)
 			conn->appto_expire -= elapsed_event;
 		} else {
 			conn->appto_expire = 0U;
+
+			/*
+			** EGON TODO: check what we need to do here
+			*/
+
+			/*
+			** as a placeholder from original code
+			if ((conn->procedure_expire == 0U) &&
+			    (conn->llcp_req == conn->llcp_ack)) {
+				conn->llcp_type = LLCP_PING;
+				conn->llcp_ack -= 2U;
+			}
+			*/
 		}
 	}
 #endif /* CONFIG_BT_CTLR_LE_PING */
@@ -733,6 +794,22 @@ void ull_conn_done(struct node_rx_event_done *done)
 		}
 	}
 #endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
+
+	/*
+	** EGON TODO: verify what we need to do here
+	*/
+
+
+	/* break latency based on ctrl procedure pending */
+	/*
+	** Original code
+	if (((((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) &&
+	     ((conn->llcp_type == LLCP_CONN_UPD) ||
+	      (conn->llcp_type == LLCP_CHAN_MAP))) ||
+	    (conn->llcp_cu.req != conn->llcp_cu.ack)) {
+		lll->latency_event = 0U;
+	}
+	*/
 
 	/* check if latency needs update */
 	lazy = 0U;
@@ -1168,13 +1245,17 @@ static void tx_ull_flush(struct ll_conn *conn)
 
 static void tx_lll_flush(void *param)
 {
-	struct ll_conn *conn = (void *)HDR_LLL2EVT(param);
-	uint16_t handle = ll_conn_handle_get(conn);
-	struct lll_conn *lll = param;
 	struct node_rx_pdu *rx;
+	struct lll_conn *lll;
+	struct ll_conn *conn;
 	struct node_tx *tx;
 	memq_link_t *link;
+	uint16_t handle;
 
+	/* Get reference to ULL context */
+	lll = param;
+	conn = HDR_LLL2ULL(lll);
+	handle = ll_conn_handle_get(conn);
 	lll_conn_flush(handle, lll);
 
 	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,

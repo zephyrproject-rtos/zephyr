@@ -441,8 +441,7 @@ struct llcp_struct {
 }; /* struct llcp_struct */
 
 struct ll_conn {
-	struct evt_hdr  evt;
-	struct ull_hdr  ull;
+ 	struct ull_hdr  ull;
 	struct lll_conn lll;
 
 	struct ull_tx_q tx_q;
