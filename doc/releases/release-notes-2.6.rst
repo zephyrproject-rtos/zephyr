@@ -134,6 +134,8 @@ Architectures
 
     * Added initial support for Arm v8.1-m and Cortex-M55
 
+    * Added support for preempting threads while they are performing secure calls in Cortex-M.
+
   * AARCH64
 
 * POSIX
