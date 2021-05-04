@@ -1637,18 +1637,18 @@ void ull_rx_sched_done(void)
 }
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
-int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
-			lll_abort_cb_t abort_cb,
-			struct lll_prepare_param *prepare_param,
-			lll_prepare_cb_t prepare_cb,
-			uint8_t is_resume)
+struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
+				      lll_abort_cb_t abort_cb,
+				      struct lll_prepare_param *prepare_param,
+				      lll_prepare_cb_t prepare_cb,
+				      uint8_t is_resume)
 {
 	struct lll_event *e;
 	uint8_t idx;
 
 	idx = MFIFO_ENQUEUE_GET(prep, (void **)&e);
 	if (!e) {
-		return -ENOBUFS;
+		return NULL;
 	}
 
 	memcpy(&e->prepare_param, prepare_param, sizeof(e->prepare_param));
@@ -1660,7 +1660,7 @@ int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 
 	MFIFO_ENQUEUE(prep, idx);
 
-	return 0;
+	return e;
 }
 
 void *ull_prepare_dequeue_get(void)
