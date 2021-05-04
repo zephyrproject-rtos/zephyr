@@ -27,12 +27,6 @@
   #define RAMABLE_REGION SRAM
 #endif
 
-#if defined(CONFIG_XIP)
-  #define _DATA_IN_ROM __data_rom_start
-#else
-  #define _DATA_IN_ROM
-#endif
-
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
   #define ROM_ADDR RAM_ADDR
 #else
