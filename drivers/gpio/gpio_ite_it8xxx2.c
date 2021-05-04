@@ -31,6 +31,8 @@ struct gpio_ite_cfg {
 	uintptr_t reg_gpdmr;
 	/* gpio port output type register (bit mapping to pin) */
 	uintptr_t reg_gpotr;
+	/* Index in gpio_1p8v for voltage level control register element. */
+	uint8_t index;
 	/* gpio's irq */
 	uint8_t gpio_irq[8];
 };
@@ -222,6 +224,122 @@ static const struct {
 };
 BUILD_ASSERT(ARRAY_SIZE(gpio_irqs) == IT8XXX2_IRQ_COUNT + 1);
 
+/* 1.8v gpio group a, b, c, d, e, f, g, h, i, j, k, l, and m */
+#define GPIO_GROUP_COUNT 13
+#define GPIO_GROUP_INDEX(label) \
+		(uint8_t)(DT_REG_ADDR(DT_NODELABEL(label)) - \
+			  DT_REG_ADDR(DT_NODELABEL(gpioa)))
+
+/* general control registers for selecting 1.8V/3.3V */
+static const struct {
+	uint8_t offset;
+	uint8_t mask_1p8v;
+} gpio_1p8v[GPIO_GROUP_COUNT][8] = {
+	[GPIO_GROUP_INDEX(gpioa)] = {
+		[4] = {IT8XXX2_GPIO_GCR24_OFFSET, BIT(0)},
+		[5] = {IT8XXX2_GPIO_GCR24_OFFSET, BIT(1)},
+		[6] = {IT8XXX2_GPIO_GCR24_OFFSET, BIT(5)},
+		[7] = {IT8XXX2_GPIO_GCR24_OFFSET, BIT(6)} },
+	[GPIO_GROUP_INDEX(gpiob)] = {
+		[3] = {IT8XXX2_GPIO_GCR22_OFFSET, BIT(1)},
+		[4] = {IT8XXX2_GPIO_GCR22_OFFSET, BIT(0)},
+		[5] = {IT8XXX2_GPIO_GCR19_OFFSET, BIT(7)},
+		[6] = {IT8XXX2_GPIO_GCR19_OFFSET, BIT(6)},
+		[7] = {IT8XXX2_GPIO_GCR24_OFFSET, BIT(4)} },
+	[GPIO_GROUP_INDEX(gpioc)] = {
+		[0] = {IT8XXX2_GPIO_GCR22_OFFSET, BIT(7)},
+		[1] = {IT8XXX2_GPIO_GCR19_OFFSET, BIT(5)},
+		[2] = {IT8XXX2_GPIO_GCR19_OFFSET, BIT(4)},
+		[4] = {IT8XXX2_GPIO_GCR24_OFFSET, BIT(2)},
+		[6] = {IT8XXX2_GPIO_GCR24_OFFSET, BIT(3)},
+		[7] = {IT8XXX2_GPIO_GCR19_OFFSET, BIT(3)} },
+	[GPIO_GROUP_INDEX(gpiod)] = {
+		[0] = {IT8XXX2_GPIO_GCR19_OFFSET, BIT(2)},
+		[1] = {IT8XXX2_GPIO_GCR19_OFFSET, BIT(1)},
+		[2] = {IT8XXX2_GPIO_GCR19_OFFSET, BIT(0)},
+		[3] = {IT8XXX2_GPIO_GCR20_OFFSET, BIT(7)},
+		[4] = {IT8XXX2_GPIO_GCR20_OFFSET, BIT(6)},
+		[5] = {IT8XXX2_GPIO_GCR22_OFFSET, BIT(4)},
+		[6] = {IT8XXX2_GPIO_GCR22_OFFSET, BIT(5)},
+		[7] = {IT8XXX2_GPIO_GCR22_OFFSET, BIT(6)} },
+	[GPIO_GROUP_INDEX(gpioe)] = {
+		[0] = {IT8XXX2_GPIO_GCR20_OFFSET, BIT(5)},
+		[1] = {IT8XXX2_GPIO_GCR28_OFFSET, BIT(6)},
+		[2] = {IT8XXX2_GPIO_GCR28_OFFSET, BIT(7)},
+		[4] = {IT8XXX2_GPIO_GCR22_OFFSET, BIT(2)},
+		[5] = {IT8XXX2_GPIO_GCR22_OFFSET, BIT(3)},
+		[6] = {IT8XXX2_GPIO_GCR20_OFFSET, BIT(4)},
+		[7] = {IT8XXX2_GPIO_GCR20_OFFSET, BIT(3)} },
+	[GPIO_GROUP_INDEX(gpiof)] = {
+		[0] = {IT8XXX2_GPIO_GCR28_OFFSET, BIT(4)},
+		[1] = {IT8XXX2_GPIO_GCR28_OFFSET, BIT(5)},
+		[2] = {IT8XXX2_GPIO_GCR20_OFFSET, BIT(2)},
+		[3] = {IT8XXX2_GPIO_GCR20_OFFSET, BIT(1)},
+		[4] = {IT8XXX2_GPIO_GCR20_OFFSET, BIT(0)},
+		[5] = {IT8XXX2_GPIO_GCR21_OFFSET, BIT(7)},
+		[6] = {IT8XXX2_GPIO_GCR21_OFFSET, BIT(6)},
+		[7] = {IT8XXX2_GPIO_GCR21_OFFSET, BIT(5)} },
+	[GPIO_GROUP_INDEX(gpiog)] = {
+		[0] = {IT8XXX2_GPIO_GCR28_OFFSET, BIT(2)},
+		[1] = {IT8XXX2_GPIO_GCR21_OFFSET, BIT(4)},
+		[2] = {IT8XXX2_GPIO_GCR28_OFFSET, BIT(3)},
+		[6] = {IT8XXX2_GPIO_GCR21_OFFSET, BIT(3)} },
+	[GPIO_GROUP_INDEX(gpioh)] = {
+		[0] = {IT8XXX2_GPIO_GCR21_OFFSET, BIT(2)},
+		[1] = {IT8XXX2_GPIO_GCR21_OFFSET, BIT(1)},
+		[2] = {IT8XXX2_GPIO_GCR21_OFFSET, BIT(0)},
+		[5] = {IT8XXX2_GPIO_GCR27_OFFSET, BIT(7)},
+		[6] = {IT8XXX2_GPIO_GCR28_OFFSET, BIT(0)} },
+	[GPIO_GROUP_INDEX(gpioi)] = {
+		[0] = {IT8XXX2_GPIO_GCR27_OFFSET, BIT(3)},
+		[1] = {IT8XXX2_GPIO_GCR23_OFFSET, BIT(4)},
+		[2] = {IT8XXX2_GPIO_GCR23_OFFSET, BIT(5)},
+		[3] = {IT8XXX2_GPIO_GCR23_OFFSET, BIT(6)},
+		[4] = {IT8XXX2_GPIO_GCR23_OFFSET, BIT(7)},
+		[5] = {IT8XXX2_GPIO_GCR27_OFFSET, BIT(4)},
+		[6] = {IT8XXX2_GPIO_GCR27_OFFSET, BIT(5)},
+		[7] = {IT8XXX2_GPIO_GCR27_OFFSET, BIT(6)} },
+	[GPIO_GROUP_INDEX(gpioj)] = {
+		[0] = {IT8XXX2_GPIO_GCR23_OFFSET, BIT(0)},
+		[1] = {IT8XXX2_GPIO_GCR23_OFFSET, BIT(1)},
+		[2] = {IT8XXX2_GPIO_GCR23_OFFSET, BIT(2)},
+		[3] = {IT8XXX2_GPIO_GCR23_OFFSET, BIT(3)},
+		[4] = {IT8XXX2_GPIO_GCR27_OFFSET, BIT(0)},
+		[5] = {IT8XXX2_GPIO_GCR27_OFFSET, BIT(1)},
+		[6] = {IT8XXX2_GPIO_GCR27_OFFSET, BIT(2)},
+		[7] = {IT8XXX2_GPIO_GCR33_OFFSET, BIT(2)} },
+	[GPIO_GROUP_INDEX(gpiok)] = {
+		[0] = {IT8XXX2_GPIO_GCR26_OFFSET, BIT(0)},
+		[1] = {IT8XXX2_GPIO_GCR26_OFFSET, BIT(1)},
+		[2] = {IT8XXX2_GPIO_GCR26_OFFSET, BIT(2)},
+		[3] = {IT8XXX2_GPIO_GCR26_OFFSET, BIT(3)},
+		[4] = {IT8XXX2_GPIO_GCR26_OFFSET, BIT(4)},
+		[5] = {IT8XXX2_GPIO_GCR26_OFFSET, BIT(5)},
+		[6] = {IT8XXX2_GPIO_GCR26_OFFSET, BIT(6)},
+		[7] = {IT8XXX2_GPIO_GCR26_OFFSET, BIT(7)} },
+	[GPIO_GROUP_INDEX(gpiol)] = {
+		[0] = {IT8XXX2_GPIO_GCR25_OFFSET, BIT(0)},
+		[1] = {IT8XXX2_GPIO_GCR25_OFFSET, BIT(1)},
+		[2] = {IT8XXX2_GPIO_GCR25_OFFSET, BIT(2)},
+		[3] = {IT8XXX2_GPIO_GCR25_OFFSET, BIT(3)},
+		[4] = {IT8XXX2_GPIO_GCR25_OFFSET, BIT(4)},
+		[5] = {IT8XXX2_GPIO_GCR25_OFFSET, BIT(5)},
+		[6] = {IT8XXX2_GPIO_GCR25_OFFSET, BIT(6)},
+		[7] = {IT8XXX2_GPIO_GCR25_OFFSET, BIT(7)} },
+	/*
+	 * M group's voltage level is according to chip's VCC is connected
+	 * to 1.8V or 3.3V.
+	 */
+	[GPIO_GROUP_INDEX(gpiom)] = {
+		[0] = {IT8XXX2_GPIO_GCR30_OFFSET, BIT(4)},
+		[1] = {IT8XXX2_GPIO_GCR30_OFFSET, BIT(4)},
+		[2] = {IT8XXX2_GPIO_GCR30_OFFSET, BIT(4)},
+		[3] = {IT8XXX2_GPIO_GCR30_OFFSET, BIT(4)},
+		[4] = {IT8XXX2_GPIO_GCR30_OFFSET, BIT(4)},
+		[5] = {IT8XXX2_GPIO_GCR30_OFFSET, BIT(4)},
+		[6] = {IT8XXX2_GPIO_GCR30_OFFSET, BIT(4)} },
+};
+
 /**
  * Driver functions
  */
@@ -234,7 +352,12 @@ static int gpio_ite_configure(const struct device *dev,
 	volatile uint8_t *reg_gpdr = (uint8_t *)gpio_config->reg_gpdr;
 	volatile uint8_t *reg_gpcr = (uint8_t *)(gpio_config->reg_gpcr + pin);
 	volatile uint8_t *reg_gpotr = (uint8_t *)gpio_config->reg_gpotr;
+	volatile uint8_t *reg_1p8v;
+	volatile uint8_t mask_1p8v;
 	uint8_t mask = BIT(pin);
+
+	__ASSERT(gpio_config->index < GPIO_GROUP_COUNT,
+		"Invalid GPIO group index");
 
 	/*
 	 * Select open drain first, so that we don't glitch the signal
@@ -244,6 +367,25 @@ static int gpio_ite_configure(const struct device *dev,
 		*reg_gpotr |= mask;
 	else
 		*reg_gpotr &= ~mask;
+
+	/* 1.8V or 3.3V */
+	reg_1p8v = &IT8XXX2_GPIO_GCRX(
+			gpio_1p8v[gpio_config->index][pin].offset);
+	mask_1p8v = gpio_1p8v[gpio_config->index][pin].mask_1p8v;
+	if (reg_1p8v != &IT8XXX2_GPIO_GCRX(0)) {
+		gpio_flags_t volt = flags & GPIO_VOLTAGE_MASK;
+
+		if (volt == GPIO_VOLTAGE_1P8) {
+			__ASSERT(!(flags & GPIO_PULL_UP),
+			"Don't enable internal pullup if 1.8V voltage is used");
+			*reg_1p8v |= mask_1p8v;
+		} else if (volt == GPIO_VOLTAGE_3P3 ||
+			   volt == GPIO_VOLTAGE_DEFAULT) {
+			*reg_1p8v &= ~mask_1p8v;
+		} else {
+			return -EINVAL;
+		}
+	}
 
 	/* If output, set level before changing type to an output. */
 	if (flags & GPIO_OUTPUT) {
@@ -273,11 +415,6 @@ static int gpio_ite_configure(const struct device *dev,
 		*reg_gpcr &= ~(GPCR_PORT_PIN_MODE_PULLUP |
 				GPCR_PORT_PIN_MODE_PULLDOWN);
 	}
-
-	/*
-	 * TODO: There are some gpios are 1.8v input at default.
-	 * Is there a configuration flag for 1.8/3.3v selection.
-	 */
 
 	return 0;
 }
@@ -440,6 +577,8 @@ static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
 	.reg_gpcr = DT_INST_REG_ADDR_BY_IDX(inst, 1),              \
 	.reg_gpdmr = DT_INST_REG_ADDR_BY_IDX(inst, 2),             \
 	.reg_gpotr = DT_INST_REG_ADDR_BY_IDX(inst, 3),             \
+	.index = (uint8_t)(DT_INST_REG_ADDR(inst) -                \
+			   DT_REG_ADDR(DT_NODELABEL(gpioa))),      \
 	.gpio_irq[0] = DT_INST_IRQ_BY_IDX(inst, 0, irq),           \
 	.gpio_irq[1] = DT_INST_IRQ_BY_IDX(inst, 1, irq),           \
 	.gpio_irq[2] = DT_INST_IRQ_BY_IDX(inst, 2, irq),           \
