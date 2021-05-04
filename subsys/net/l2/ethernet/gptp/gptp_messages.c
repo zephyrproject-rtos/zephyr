@@ -643,7 +643,9 @@ void gptp_handle_pdelay_req(int port, struct net_pkt *pkt)
 	GPTP_STATS_INC(port, rx_pdelay_req_count);
 
 	if (ts_cb_registered == true) {
+#ifndef CONFIG_PTP_CLOCK_LOWRISC
 		NET_WARN("Multiple pdelay requests");
+#endif
 
 		net_if_unregister_timestamp_cb(&pdelay_response_timestamp_cb);
 		net_pkt_unref(pdelay_response_timestamp_cb.pkt);

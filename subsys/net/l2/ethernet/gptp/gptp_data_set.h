@@ -277,7 +277,7 @@ struct gptp_default_ds {
 	bool gm_capable;
 
 	/** Number of ports of the time-aware system. */
-	uint8_t nb_ports;
+	uint32_t nb_ports;
 
 	/** Primary priority of the time-aware system. */
 	uint8_t priority1;

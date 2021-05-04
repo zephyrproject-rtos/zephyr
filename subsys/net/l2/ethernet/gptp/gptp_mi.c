@@ -746,6 +746,8 @@ static void gptp_update_local_port_clock(void)
 	struct net_ptp_time tm;
 	int key;
 
+	NET_WARN("Setting CLOCK!\n");
+
 	state = &GPTP_STATE()->clk_slave_sync;
 	global_ds = GPTP_GLOBAL_DS();
 	port = state->pss_rcv_ptr->local_port_number;
@@ -865,6 +867,8 @@ static void gptp_mi_clk_slave_sync_state_machine(void)
 			gptp_update_local_port_clock();
 #endif
 			gptp_call_phase_dis_cb();
+		} else  {
+		        NET_WARN("slave_sync: would set clock but !state->rcvd_pss");
 		}
 
 		break;
@@ -920,6 +924,7 @@ static inline void gptp_mi_setup_sync_send_time(void)
 	struct gptp_global_ds *global_ds;
 	uint64_t time_helper;
 
+	NET_WARN("Recogni should never be here");
 	state = &GPTP_STATE()->clk_master_sync_send;
 	global_ds = GPTP_GLOBAL_DS();
 
@@ -1721,6 +1726,7 @@ static int compute_best_vector(void)
 		global_ds->gm_priority.port_number = best_vector->port_number;
 	}
 
+        NET_WARN("compute_best_vector: %d", best_port);
 	return best_port;
 }
 
@@ -1863,6 +1869,8 @@ static void gptp_updt_roles_tree(void)
 	global_ds->gm_present =
 		(gm_prio->root_system_id.grand_master_prio1 == 255U) ?
 		false : true;
+
+	NET_WARN("gptp_updt_roles_tree(): gm_present = %d, master_prio %d", global_ds->gm_present, gm_prio->root_system_id.grand_master_prio1);
 
 	/* Assign the port role for port 0. */
 	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
