@@ -676,7 +676,7 @@ static int gpio_stm32_init(const struct device *dev)
 			    NULL,					       \
 			    &gpio_stm32_data_## __suffix,		       \
 			    &gpio_stm32_cfg_## __suffix,		       \
-			    POST_KERNEL,				       \
+			    PRE_KERNEL_1,				       \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
 			    &gpio_stm32_driver)
 
