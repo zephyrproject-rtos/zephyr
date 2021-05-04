@@ -687,7 +687,7 @@ either an SPI or an I2C controller, like this:
 
 .. code-block:: devicetree
 
-   spi-bus@... {
+   spi-bus@0 {
       /* ... some compatible with 'bus: spi', etc. ... */
 
       sensor@0 {
@@ -697,7 +697,7 @@ either an SPI or an I2C controller, like this:
       };
    };
 
-   i2c-bus@... {
+   i2c-bus@0 {
       /* ... some compatible with 'bus: i2c', etc. ... */
 
       sensor@79 {
@@ -751,12 +751,12 @@ looked up in each of the PWM controller nodes ``pwm0`` and ``pwm3``, like so:
 
 .. code-block:: devicetree
 
-   pwm0: pwm@... {
+   pwm0: pwm@0 {
    	compatible = "foo,pwm";
    	#pwm-cells = <2>;
    };
 
-   pwm3: pwm@... {
+   pwm3: pwm@3 {
    	compatible = "bar,pwm";
    	#pwm-cells = <1>;
    };
