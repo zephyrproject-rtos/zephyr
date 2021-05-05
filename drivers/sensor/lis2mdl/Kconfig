@@ -53,8 +53,4 @@ config LIS2MDL_MAG_ODR_RUNTIME
 	bool "Set magnetometer sampling frequency (ODR) at runtime (default: 10 Hz)"
 	default y
 
-config LIS2MDL_SPI_FULL_DUPLEX
-	bool "Enable SPI 4wire mode (separated MISO and MOSI lines)"
-	depends on SPI
-
 endif # LIS2MDL
