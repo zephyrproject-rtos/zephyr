@@ -100,7 +100,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 #endif
 
 	if (write) {
-		if ((offset % FLASH_NB_32BITWORD_IN_FLASHWORD * 4) != 0) {
+		if ((offset % (FLASH_NB_32BITWORD_IN_FLASHWORD * 4)) != 0) {
 			LOG_ERR("Write offset not aligned on flashword length. "
 				"Offset: 0x%lx, flashword length: %d",
 				(unsigned long) offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
