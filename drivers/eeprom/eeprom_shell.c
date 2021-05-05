@@ -90,7 +90,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	for (i = 0; i < len; i++) {
-		byte = strtoul(argv[args_indx.data + i], NULL, 0);
+		byte = strtoul(argv[args_indx.data + i], NULL, 16);
 		if (byte > UINT8_MAX) {
 			shell_error(shell, "Error parsing data byte %d", i);
 			return -EINVAL;
