@@ -49,7 +49,8 @@
 #include "ll_sw/ull_conn_types.h"
 #include "ll_sw/ull_conn_internal.h"
 #include "ll_sw/ull_conn_iso_types.h"
-#include "ll_sw/ull_df.h"
+#include "ll_sw/ull_df_types.h"
+#include "ll_sw/ull_df_internal.h"
 
 #include "ll.h"
 #include "ll_feat.h"
