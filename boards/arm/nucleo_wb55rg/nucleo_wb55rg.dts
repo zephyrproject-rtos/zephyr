@@ -88,6 +88,10 @@
 	status = "okay";
 };
 
+&clk_lse{
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&clk_hse>;
 	clock-frequency = <DT_FREQ_M(32)>;
