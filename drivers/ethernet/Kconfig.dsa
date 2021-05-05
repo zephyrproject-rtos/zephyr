@@ -13,13 +13,18 @@ menuconfig NET_DSA
 
 if NET_DSA
 
+config DSA_KSZ8XXX
+	bool
+
 config DSA_KSZ8794
 	bool "Enable support for KSZ8794"
+	select DSA_KSZ8XXX
 	help
 	  Add support for KSZ8794 DSA device driver.
 
 config DSA_KSZ8863
 	bool "Enable support for KSZ8863"
+	select DSA_KSZ8XXX
 	help
 	  Add support for KSZ8863 DSA device driver.
 
