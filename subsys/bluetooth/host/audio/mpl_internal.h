@@ -71,18 +71,19 @@ struct mpl_mediaplayer_t {
 	uint64_t            icon_id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
 	char                icon_url[CONFIG_BT_MCS_ICON_URL_MAX];
-	struct mpl_group_t *group;
-	int32_t             track_pos;
-	uint8_t             state;
-	int8_t              playback_speed_param;
-	int8_t              seeking_speed_factor;
-	uint8_t             playing_order;
-	uint16_t            playing_orders_supported;
-	uint32_t            operations_supported;
+	struct mpl_group_t  *group;
+	int32_t              track_pos;
+	uint8_t              state;
+	int8_t               playback_speed_param;
+	int8_t               seeking_speed_factor;
+	uint8_t              playing_order;
+	uint16_t             playing_orders_supported;
+	uint32_t             operations_supported;
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
-	uint64_t            search_results_id;
+	uint64_t             search_results_id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	uint8_t             content_ctrl_id;
+	uint8_t              content_ctrl_id;
+	struct media_proxy_pl_calls calls;
 };
 
 
