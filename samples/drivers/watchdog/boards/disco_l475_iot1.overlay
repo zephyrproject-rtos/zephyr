@@ -1,3 +1,7 @@
+&rcc {
+	apb1-prescaler = <16>;
+};
+
 &wwdg {
 	status = "okay";
 };
