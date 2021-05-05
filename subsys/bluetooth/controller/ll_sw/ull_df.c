@@ -33,7 +33,8 @@
 #include "ull_sync_types.h"
 #include "ull_sync_internal.h"
 #include "ull_adv_types.h"
-#include "ull_df.h"
+#include "ull_df_types.h"
+#include "ull_df_internal.h"
 
 #include "ull_adv_internal.h"
 #include "ull_internal.h"
@@ -53,18 +54,6 @@
 #define IQ_REPORT_STRUCT_OVERHEAD  (IQ_REPORT_HEADER_SIZE)
 #define IQ_SAMPLE_SIZE (sizeof(struct iq_sample))
 
-/* TODO Verify required number of IQ reports.
- * At the moment it is set to 2 (if CONFIG_BT_PER_ADV_SYNC_MAX is set the value
- * is multiplied by 2):
- * - for LLL -> ULL
- * - for ULL -> LL(HCI).
- */
-#if defined(CONFIG_BT_PER_ADV_SYNC_MAX)
-#define IQ_REPORT_CNT (CONFIG_BT_PER_ADV_SYNC_MAX * 2)
-#else
-#define IQ_REPORT_CNT 2
-#endif
-
 #define IQ_REPORT_RX_NODE_POOL_ELEMENT_SIZE              \
 	MROUND(IQ_REPORT_STRUCT_OVERHEAD + (IQ_SAMPLE_TOTAL_CNT * IQ_SAMPLE_SIZE))
 #define IQ_REPORT_POOL_SIZE (IQ_REPORT_RX_NODE_POOL_ELEMENT_SIZE * IQ_REPORT_CNT)
@@ -75,18 +64,11 @@ static struct {
 	uint8_t pool[IQ_REPORT_POOL_SIZE];
 } mem_iq_report;
 
-#define LINK_IQ_REPORT_POOL_SIZE (sizeof(memq_link_t) * IQ_REPORT_CNT)
-
-/* Linked list to store pointers to mem_iq_report memory pool for IQ reports. */
-static struct {
-	uint8_t quota_pdu; /* Number of un-utilized buffers */
-
-	void *free;
-	uint8_t pool[LINK_IQ_REPORT_POOL_SIZE];
-} mem_link_iq_report;
-
 /* FIFO to store free IQ report norde_rx objects. */
 static MFIFO_DEFINE(iq_report_free, sizeof(void *), IQ_REPORT_CNT);
+
+/* Number of available instance of linked list to be used for node_rx_iq_reports. */
+static uint8_t mem_link_iq_report_quota_pdu;
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 /* ToDo:
@@ -168,13 +150,8 @@ static int init_reset(void)
 		 sizeof(mem_iq_report.pool) / (IQ_REPORT_RX_NODE_POOL_ELEMENT_SIZE),
 		 &mem_iq_report.free);
 
-	/* Initialize IQ report link pool. */
-	mem_init(mem_link_iq_report.pool, sizeof(memq_link_t),
-		 sizeof(mem_link_iq_report.pool) / sizeof(memq_link_t),
-		 &mem_link_iq_report.free);
-
 	/* Allocate free IQ report node rx */
-	mem_link_iq_report.quota_pdu = IQ_REPORT_CNT;
+	mem_link_iq_report_quota_pdu = IQ_REPORT_CNT;
 	ull_df_rx_iq_report_alloc(UINT8_MAX);
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 	return 0;
@@ -582,11 +559,6 @@ void *ull_df_iq_report_alloc(void)
 	return MFIFO_DEQUEUE(iq_report_free);
 }
 
-void ull_df_iq_report_link_release(memq_link_t *link)
-{
-	mem_release(link, &mem_link_iq_report.free);
-}
-
 void ull_df_iq_report_mem_release(struct node_rx_hdr *rx)
 {
 	mem_release(rx, &mem_iq_report.free);
@@ -594,30 +566,30 @@ void ull_df_iq_report_mem_release(struct node_rx_hdr *rx)
 
 void ull_iq_report_link_inc_quota(int8_t delta)
 {
-	LL_ASSERT(delta <= 0 || mem_link_iq_report.quota_pdu < IQ_REPORT_CNT);
-	mem_link_iq_report.quota_pdu += delta;
+	LL_ASSERT(delta <= 0 || mem_link_iq_report_quota_pdu < IQ_REPORT_CNT);
+	mem_link_iq_report_quota_pdu += delta;
 }
 
 void ull_df_rx_iq_report_alloc(uint8_t max)
 {
 	uint8_t idx;
 
-	if (max > mem_link_iq_report.quota_pdu) {
-		max = mem_link_iq_report.quota_pdu;
+	if (max > mem_link_iq_report_quota_pdu) {
+		max = mem_link_iq_report_quota_pdu;
 	}
 
 	while ((max--) && MFIFO_ENQUEUE_IDX_GET(iq_report_free, &idx)) {
 		memq_link_t *link;
 		struct node_rx_hdr *rx;
 
-		link = mem_acquire(&mem_link_iq_report.free);
+		link = ll_rx_link_alloc();
 		if (!link) {
 			return;
 		}
 
 		rx = mem_acquire(&mem_iq_report.free);
 		if (!rx) {
-			mem_release(link, &mem_link_iq_report.free);
+			ll_rx_link_release(link);
 			return;
 		}
 

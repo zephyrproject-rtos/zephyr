@@ -36,7 +36,8 @@
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_sync_internal.h"
-#include "ull_df.h"
+#include "ull_df_types.h"
+#include "ull_df_internal.h"
 
 #include "ll.h"
 
