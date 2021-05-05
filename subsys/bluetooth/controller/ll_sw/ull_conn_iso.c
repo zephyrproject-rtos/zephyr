@@ -30,6 +30,8 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
+#define LAST_VALID_CIS_HANDLE (CONFIG_BT_CTLR_CONN_ISO_STREAMS + LL_CIS_HANDLE_BASE - 1)
+
 static struct ll_conn_iso_stream cis_pool[CONFIG_BT_CTLR_CONN_ISO_STREAMS];
 static void *cis_free;
 
@@ -110,6 +112,29 @@ struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle)
 	}
 
 	return cis;
+}
+
+struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_group *cig,
+							   uint16_t *handle_iter)
+{
+	struct ll_conn_iso_stream *cis;
+	uint16_t handle_start;
+	uint16_t handle;
+
+	handle_start = (handle_iter == NULL) || ((*handle_iter) == UINT16_MAX) ?
+			LL_CIS_HANDLE_BASE : (*handle_iter) + 1;
+
+	for (handle = handle_start; handle <= LAST_VALID_CIS_HANDLE; handle++) {
+		cis = ll_conn_iso_stream_get(handle);
+		if (cis->group == cig) {
+			if (*handle_iter) {
+				(*handle_iter) = handle;
+			}
+			return cis;
+		}
+	}
+
+	return NULL;
 }
 
 int ull_conn_iso_init(void)
@@ -268,7 +293,7 @@ static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t remainder,
 }
 
 void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
-				      uint8_t  resume_cis_index,
+				      uint16_t cis_handle,
 				      uint32_t ticks_anchor,
 				      uint32_t resume_timeout)
 {
@@ -282,7 +307,7 @@ void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
 	cig = resume_event->prepare_param.param;
 	ticker_id = TICKER_ID_CONN_ISO_RESUME_BASE + cig->handle;
 
-	cig->resume_cis = resume_cis_index;
+	cig->resume_cis = cis_handle;
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -290,7 +315,7 @@ void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
 		struct ll_conn_iso_stream *cis;
 		struct ll_conn *acl;
 
-		cis = ll_conn_iso_stream_get(cig->cis_handles[resume_cis_index]);
+		cis = ll_conn_iso_stream_get(cis_handle);
 		acl = ll_conn_get(cis->lll.acl_handle);
 
 		ready_delay_us = lll_radio_rx_ready_delay_get(acl->lll.phy_rx, 1);
