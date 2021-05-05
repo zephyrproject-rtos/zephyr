@@ -44,6 +44,11 @@ static int prepare_cb_common(struct lll_prepare_param *p);
 static void isr_rx_estab(void *param);
 static void isr_rx(void *param);
 
+/* FIXME: Optimize by moving to a common place, as similar variable is used for
+ *        connections too.
+ */
+static uint8_t trx_cnt;
+
 int lll_sync_iso_init(void)
 {
 	int err;
@@ -211,6 +216,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	lll->irc_curr = 1U;
 	lll->bn_curr = 1U;
 
+	/* Initialize trx chain count */
+	trx_cnt = 0U;
+
 	/* Calculate the Access Address for the BIS event */
 	util_bis_aa_le32(lll->bis_curr, lll->seed_access_addr, access_addr);
 	data_chan_id = lll_chan_id(access_addr);
@@ -266,8 +274,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
-	radio_tmr_aa_capture();
+	radio_tmr_ready_save(remainder_us);
 	radio_tmr_aa_save(0);
+	radio_tmr_aa_capture();
 
 	hcto = remainder_us +
 	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
@@ -316,17 +325,15 @@ static void isr_rx_estab(void *param)
 {
 	struct event_done_extra *e;
 	uint8_t trx_done;
-	uint8_t trx_cnt;
 	uint8_t crc_ok;
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
-		trx_cnt = 1U;
+		trx_cnt++;
 	} else {
 		crc_ok = 0U;
-		trx_cnt = 0U;
 	}
 
 	/* Clear radio rx status and events */
@@ -370,7 +377,6 @@ static void isr_rx(void *param)
 	uint8_t crc_init[3];
 	uint8_t rssi_ready;
 	uint8_t trx_done;
-	uint8_t trx_cnt;
 	uint8_t crc_ok;
 	uint32_t hcto;
 	uint8_t bis;
@@ -381,11 +387,10 @@ static void isr_rx(void *param)
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		rssi_ready = radio_rssi_is_ready();
-		trx_cnt = 1U;
+		trx_cnt++;
 	} else {
 		crc_ok = 0U;
 		rssi_ready = 0U;
-		trx_cnt = 0U;
 	}
 
 	/* Clear radio rx status and events */
@@ -433,8 +438,8 @@ static void isr_rx(void *param)
 	}
 
 isr_rx_done:
-	/* Save the AA captured for the first Rx in connection event */
-	if (!radio_tmr_aa_restore()) {
+	/* Save the AA captured for the first anchor point sync */
+	if (!radio_tmr_aa_restore() && trx_cnt) {
 		radio_tmr_aa_save(radio_tmr_aa_get());
 		radio_tmr_ready_save(radio_tmr_ready_get());
 	}
@@ -607,22 +612,34 @@ isr_rx_next_subevent:
 
 	radio_switch_complete_and_disable();
 
-	hcto = radio_tmr_aa_restore();
-	hcto += (lll->sub_interval *
-		 (((lll->bis_curr - 1) * ((lll->bn * lll->irc) + lll->ptc)) +
-		  (((lll->irc_curr - 1) * lll->bn) + (lll->bn_curr - 1) +
-		   lll->ptc_curr)));
-	hcto -= radio_rx_chain_delay_get(lll->phy, 1);
-	hcto -= addr_us_get(lll->phy);
-	hcto -= radio_rx_ready_delay_get(lll->phy, 1);
-	hcto -= 4;
+	hcto = (lll->sub_interval *
+		(((lll->bis_curr - 1) * ((lll->bn * lll->irc) + lll->ptc)) +
+		 (((lll->irc_curr - 1) * lll->bn) + (lll->bn_curr - 1) +
+		  lll->ptc_curr) + lll->ctrl));
 
-	radio_tmr_start_us(0, hcto);
+	if (trx_cnt) {
+		hcto += radio_tmr_aa_restore();
+		hcto -= radio_rx_chain_delay_get(lll->phy, 1);
+		hcto -= addr_us_get(lll->phy);
+		hcto -= radio_rx_ready_delay_get(lll->phy, 1);
+		hcto -= 4;
+
+		radio_tmr_start_us(0, hcto);
+
+		hcto += 8;
+	} else {
+		hcto += radio_tmr_ready_restore();
+
+		radio_tmr_start_us(0, hcto);
+
+		hcto += ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
+			  lll->window_widening_event_us) << 1) +
+			lll->window_size_event_us;
+	}
 
 	hcto += radio_rx_ready_delay_get(lll->phy, 1);
 	hcto += addr_us_get(lll->phy);
 	hcto += radio_rx_chain_delay_get(lll->phy, 1);
-	hcto += 8;
 
 	radio_tmr_hcto_configure(hcto);
 	radio_tmr_end_capture();
