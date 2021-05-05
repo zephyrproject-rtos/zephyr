@@ -44,11 +44,6 @@ struct ksz8xxx_data {
 #endif
 };
 
-static struct ksz8xxx_data private_data = {
-	.iface_init_count = 0,
-	.is_init = false,
-};
-
 #define DEV_DATA(dev) ((struct dsa_context *const)(dev)->data)
 #define PRV_DATA(ctx) ((struct ksz8xxx_data *const)(ctx)->prv_data)
 
@@ -796,25 +791,29 @@ int dsa_port_init(const struct device *dev)
 }
 
 /* Generic implementation of writing value to DSA register */
-static int dsa_ksz8xxx_sw_write_reg(int switch_id, uint16_t reg_addr,
+static int dsa_ksz8xxx_sw_write_reg(const struct device *dev, uint16_t reg_addr,
 				    uint8_t value)
 {
-	dsa_ksz8xxx_write_reg(&private_data, reg_addr, value);
+	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+
+	dsa_ksz8xxx_write_reg(pdev, reg_addr, value);
 	return 0;
 }
 
 /* Generic implementation of reading value from DSA register */
-static int dsa_ksz8xxx_sw_read_reg(int switch_id, uint16_t reg_addr,
+static int dsa_ksz8xxx_sw_read_reg(const struct device *dev, uint16_t reg_addr,
 				   uint8_t *value)
 {
-	dsa_ksz8xxx_read_reg(&private_data, reg_addr, value);
+	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+
+	dsa_ksz8xxx_read_reg(pdev, reg_addr, value);
 	return 0;
 }
 
 /**
  * @brief Set entry to DSA MAC address table
  *
- * @param switch_id The id number (equal to reg=<X>) of switch chip
+ * @param dev DSA device
  * @param mac The MAC address to be set in the table
  * @param fw_port Port number to forward packets
  * @param tbl_entry_idx The index of entry in the table
@@ -822,16 +821,19 @@ static int dsa_ksz8xxx_sw_read_reg(int switch_id, uint16_t reg_addr,
  *
  * @return 0 if ok, < 0 if error
  */
-static int dsa_ksz8xxx_set_mac_table_entry(int switch_id, const uint8_t *mac,
-					   uint8_t fw_port,
-					   uint16_t tbl_entry_idx,
-					   uint16_t flags)
+static int dsa_ksz8xxx_set_mac_table_entry(const struct device *dev,
+						const uint8_t *mac,
+						uint8_t fw_port,
+						uint16_t tbl_entry_idx,
+						uint16_t flags)
 {
+	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+
 	if (flags != 0) {
 		return -EINVAL;
 	}
 
-	dsa_ksz8xxx_set_static_mac_table(&private_data, mac, fw_port,
+	dsa_ksz8xxx_set_static_mac_table(pdev, mac, fw_port,
 						tbl_entry_idx);
 
 	return 0;
@@ -840,16 +842,19 @@ static int dsa_ksz8xxx_set_mac_table_entry(int switch_id, const uint8_t *mac,
 /**
  * @brief Get DSA MAC address table entry
  *
- * @param switch_id The id number (equal to reg=<X>) of switch chip
+ * @param dev DSA device
  * @param buf The buffer for data read from the table
  * @param tbl_entry_idx The index of entry in the table
  *
  * @return 0 if ok, < 0 if error
  */
-static int dsa_ksz8xxx_get_mac_table_entry(int switch_id, uint8_t *buf,
-					   uint16_t tbl_entry_idx)
+static int dsa_ksz8xxx_get_mac_table_entry(const struct device *dev,
+						uint8_t *buf,
+						uint16_t tbl_entry_idx)
 {
-	dsa_ksz8xxx_read_static_mac_table(&private_data, tbl_entry_idx, buf);
+	struct ksz8xxx_data *pdev = PRV_DATA(DEV_DATA(dev));
+
+	dsa_ksz8xxx_read_static_mac_table(pdev, tbl_entry_idx, buf);
 
 	return 0;
 }
@@ -1072,13 +1077,6 @@ static struct dsa_api dsa_api_f = {
 #endif
 };
 
-static struct dsa_context dsa_context = {
-	.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),
-	.switch_id = 0,
-	.dapi = &dsa_api_f,
-	.prv_data = (void *)&private_data,
-};
-
 /*
  * The order of NET_DEVICE_INIT_INSTANCE() placement IS important.
  *
@@ -1103,16 +1101,16 @@ static struct dsa_context dsa_context = {
  * For simple cases it is just good enough.
  */
 
-#define NET_SLAVE_DEVICE_INIT_INSTANCE(slave)                              \
+#define NET_SLAVE_DEVICE_INIT_INSTANCE(slave, n)                           \
 	const struct dsa_slave_config dsa_0_slave_##slave##_config = {     \
 		.mac_addr = DT_PROP_OR(slave, local_mac_address, {0})      \
 	};                                                                 \
 	NET_DEVICE_INIT_INSTANCE(dsa_slave_port_##slave,                   \
 	DT_LABEL(slave),                                                   \
-	0,                                                                 \
+	n,                                                                 \
 	dsa_port_init,                                                     \
 	NULL,                                                              \
-	&dsa_context,                                                      \
+	&dsa_context_##n,                                                  \
 	&dsa_0_slave_##slave##_config,                                     \
 	CONFIG_ETH_INIT_PRIORITY,                                          \
 	&dsa_eth_api_funcs,                                                \
@@ -1120,4 +1118,28 @@ static struct dsa_context dsa_context = {
 	NET_L2_GET_CTX_TYPE(ETHERNET_L2),                                  \
 	NET_ETH_MTU);
 
-DT_INST_FOREACH_CHILD(0, NET_SLAVE_DEVICE_INIT_INSTANCE);
+#define NET_SLAVE_DEVICE_0_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 0)
+#define NET_SLAVE_DEVICE_1_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 1)
+#define NET_SLAVE_DEVICE_2_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 2)
+#define NET_SLAVE_DEVICE_3_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 3)
+#define NET_SLAVE_DEVICE_4_INIT_INSTANCE(slave)				\
+		NET_SLAVE_DEVICE_INIT_INSTANCE(slave, 4)
+
+#define DSA_DEVICE(n)							\
+	static struct ksz8xxx_data dsa_device_prv_data_##n = {		\
+		.iface_init_count = 0,					\
+		.is_init = false,					\
+	};								\
+	static struct dsa_context dsa_context_##n = {			\
+		.num_slave_ports = DT_INST_PROP(0, dsa_slave_ports),	\
+		.dapi = &dsa_api_f,					\
+		.prv_data = (void *)&dsa_device_prv_data_##n,		\
+	};								\
+	DT_INST_FOREACH_CHILD_VARGS(n, NET_SLAVE_DEVICE_INIT_INSTANCE, n);
+
+
+DT_INST_FOREACH_STATUS_OKAY(DSA_DEVICE);

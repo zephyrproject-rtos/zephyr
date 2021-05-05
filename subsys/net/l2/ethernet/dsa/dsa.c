@@ -20,22 +20,6 @@ LOG_MODULE_REGISTER(net_dsa, CONFIG_NET_DSA_LOG_LEVEL);
 #include <net/dsa.h>
 
 /*
- * Helper functions
- */
-struct dsa_context *dsa_get_context(struct net_if *iface)
-{
-	struct ethernet_context *eth_ctx;
-
-	eth_ctx = net_if_l2_data(iface);
-	if (eth_ctx == NULL) {
-		LOG_ERR("Iface %p context not available!", iface);
-		return NULL;
-	}
-
-	return eth_ctx->dsa_ctx;
-}
-
-/*
  * Store, in the ethernet_context for master interface, the original
  * eth_tx() function, which will send packet with tag appended.
  */
@@ -197,4 +181,87 @@ int dsa_tx(const struct device *dev, struct net_pkt *pkt)
 	ctx = net_if_l2_data(iface_master);
 	return ctx->dsa_send(net_if_get_device(iface_master),
 			     context->dapi->dsa_xmit_pkt(iface, pkt));
+}
+
+struct net_if *dsa_get_slave_port(struct net_if *iface, int slave_num)
+{
+	struct ethernet_context *eth_ctx;
+	struct dsa_context *dsa_ctx;
+
+	eth_ctx = net_if_l2_data(iface);
+	if (eth_ctx == NULL) {
+		LOG_ERR("Iface %p context not available!", iface);
+		return NULL;
+	}
+
+	dsa_ctx = eth_ctx->dsa_ctx;
+
+	if (slave_num < 0 || slave_num >= dsa_ctx->num_slave_ports) {
+		return NULL;
+	}
+
+	return dsa_ctx->iface_slave[slave_num];
+}
+
+int dsa_switch_read(struct net_if *iface, uint16_t reg_addr, uint8_t *value)
+{
+	const struct device *dev = iface->if_dev->dev;
+	const struct dsa_api *api =
+		(const struct dsa_api *)dev->api;
+
+	return api->switch_read(dev, reg_addr, value);
+}
+
+int dsa_switch_write(struct net_if *iface, uint16_t reg_addr, uint8_t value)
+{
+	const struct device *dev = iface->if_dev->dev;
+	const struct dsa_api *api =
+		(const struct dsa_api *)dev->api;
+
+	return api->switch_write(dev, reg_addr, value);
+}
+
+/**
+ * @brief      Write static MAC table entry
+ *
+ * @param      iface          Master DSA interface
+ * @param[in]  mac            MAC address
+ * @param[in]  fw_port        The firmware port
+ * @param[in]  tbl_entry_idx  Table entry index
+ * @param[in]  flags          Flags
+ *
+ * @return     0 if successful, negative if error
+ */
+int dsa_switch_set_mac_table_entry(struct net_if *iface,
+					const uint8_t *mac,
+					uint8_t fw_port,
+					uint16_t tbl_entry_idx,
+					uint16_t flags)
+{
+	const struct device *dev = iface->if_dev->dev;
+	const struct dsa_api *api =
+		(const struct dsa_api *)dev->api;
+
+	return api->switch_set_mac_table_entry(dev, mac, fw_port,
+							tbl_entry_idx, flags);
+}
+
+/**
+ * @brief      Read static MAC table entry
+ *
+ * @param      iface          Master DSA interface
+ * @param      buf            Buffer to receive MAC address
+ * @param[in]  tbl_entry_idx  Table entry index
+ *
+ * @return     0 if successful, negative if error
+ */
+int dsa_switch_get_mac_table_entry(struct net_if *iface,
+					uint8_t *buf,
+					uint16_t tbl_entry_idx)
+{
+	const struct device *dev = iface->if_dev->dev;
+	const struct dsa_api *api =
+		(const struct dsa_api *)dev->api;
+
+	return api->switch_get_mac_table_entry(dev, buf, tbl_entry_idx);
 }
