@@ -65,6 +65,10 @@ static bool should_suspend(const struct device *dev, uint32_t state)
 	int rc;
 	uint32_t current_state;
 
+	if (device_busy_check(dev) != 0) {
+		return false;
+	}
+
 	rc = pm_device_state_get(dev, &current_state);
 	if ((rc != -ENOTSUP) && (rc != 0)) {
 		LOG_DBG("Was not possible to get device %s state: %d",
