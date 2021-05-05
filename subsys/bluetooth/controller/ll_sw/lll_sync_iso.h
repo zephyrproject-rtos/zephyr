@@ -16,6 +16,9 @@ struct lll_sync_iso {
 	uint16_t data_chan_remap_idx;
 
 	uint64_t payload_count:39;
+	uint64_t ctrl:1;
+	uint64_t cssn_curr:3;
+	uint64_t cssn_next:3;
 
 	uint8_t data_chan_map[5];
 	uint8_t data_chan_count:6;
@@ -40,7 +43,10 @@ struct lll_sync_iso {
 	uint8_t bn_curr:3;
 	uint8_t bis_curr:5;
 
+	uint8_t term_reason;
+
 	uint8_t ctrl_chan_use;
+	uint16_t ctrl_instant;
 
 	struct node_rx_pdu *payload[PDU_BIG_PAYLOAD_COUNT_MAX];
 	uint8_t payload_count_max;
