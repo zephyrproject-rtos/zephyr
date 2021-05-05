@@ -50,31 +50,33 @@ int cmd_media_proxy_pl_test_unset_parent_group(const struct shell *shell, size_t
 #endif /* CONFIG_BT_OTS */
 
 /* Interface to _local_ control point, for testing and debugging */
-int cmd_media_proxy_pl_test_set_operation(const struct shell *shell, size_t argc,
-				char *argv[])
-{
-	struct mpl_op_t op;
-
-
-	if (argc > 1) {
-		op.opcode = strtol(argv[1], NULL, 0);
-	} else {
-		shell_error(shell, "Invalid parameter");
-		return -ENOEXEC;
-	}
-
-	if (argc > 2) {
-		op.use_param = true;
-		op.param = strtol(argv[2], NULL, 0);
-	} else {
-		op.use_param = false;
-		op.param = 0;
-	}
-
-	media_proxy_pl_operation_set(op);
-
-	return 0;
-}
+/* TODO: Enable again after MCS/MPL/Media Proxy interface rework
+ *int cmd_media_proxy_pl_test_set_operation(const struct shell *shell, size_t argc,
+ *				char *argv[])
+ *{
+ *	struct mpl_op_t op;
+ *
+ *
+ *	if (argc > 1) {
+ *		op.opcode = strtol(argv[1], NULL, 0);
+ *	} else {
+ *		shell_error(shell, "Invalid parameter");
+ *		return -ENOEXEC;
+ *	}
+ *
+ *	if (argc > 2) {
+ *		op.use_param = true;
+ *		op.param = strtol(argv[2], NULL, 0);
+ *	} else {
+ *		op.use_param = false;
+ *		op.param = 0;
+ *	}
+ *
+ *	media_proxy_pl_operation_set(op);
+ *
+ *	return 0;
+ *}
+ */
 #endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 
 #if defined(CONFIG_BT_DEBUG_MCS)
@@ -236,9 +238,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 		      "Set current group to be its own parent (test)",
 		      cmd_media_proxy_pl_test_unset_parent_group, 1, 0),
 #endif /* CONFIG_BT_OTS */
+/* TODO: Reenable after MCS/MPL/MPLC rework
 	SHELL_CMD_ARG(test_set_operation, NULL,
 		      "Write opcode to local control point (test) <opcode> [argument]",
 		      cmd_media_proxy_pl_test_set_operation, 2, 1),
+*/
 #endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 #if defined(CONFIG_BT_DEBUG_MCS)
 	SHELL_CMD_ARG(debug_dump_state, NULL,
