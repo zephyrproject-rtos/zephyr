@@ -55,6 +55,27 @@ struct uart_npcx_data {
 	(struct uart_reg *)(DRV_CONFIG(dev)->uconf.base)
 
 /* UART local functions */
+static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate,
+				   int src_clk)
+{
+	/* Fix baud rate to 115200 so far */
+	if (baud_rate  == 115200) {
+		if (src_clk == 15000000) {
+			inst->UPSR = 0x38;
+			inst->UBAUD = 0x01;
+		} else if (src_clk == 20000000) {
+			inst->UPSR = 0x08;
+			inst->UBAUD = 0x0a;
+		} else {
+			return -EINVAL;
+		}
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_npcx_tx_fifo_ready(const struct device *dev)
 {
@@ -352,14 +373,14 @@ static int uart_npcx_init(const struct device *dev)
 		LOG_ERR("Get UART clock rate error %d", ret);
 		return ret;
 	}
-	__ASSERT(uart_rate == 15000000, "Unsupported apb2 clock for UART!");
 
-	/* Fix baud rate to 115200 */
-	if (data->baud_rate  == 115200) {
-		inst->UPSR = 0x38;
-		inst->UBAUD = 0x01;
-	} else
-		return -EINVAL;
+	/* Configure baud rate */
+	ret = uart_set_npcx_baud_rate(inst, data->baud_rate, uart_rate);
+	if (ret < 0) {
+		LOG_ERR("Set baud rate %d with unsupported apb clock %d failed",
+			data->baud_rate, uart_rate);
+		return ret;
+	}
 
 	/*
 	 * 8-N-1, FIFO enabled.  Must be done after setting
