@@ -376,17 +376,21 @@ static void deferred_work(struct k_work *work)
 		if (IS_ENABLED(CONFIG_BT_ISO)) {
 			struct bt_conn *iso;
 
+			/* Disconnect all ISO channels associated
+			 * with ACL conn.
+			 */
 			iso = conn_lookup_iso(conn);
-			if (iso) {
+			while (iso) {
 				iso->err = conn->err;
 
 				bt_iso_disconnected(iso);
 				bt_conn_unref(iso);
-			}
 
-			/* Stop if only ISO was Disconnected */
-			if (conn->type == BT_CONN_TYPE_ISO) {
-				return;
+				/* Stop if only ISO was Disconnected */
+				if (conn->type == BT_CONN_TYPE_ISO) {
+					return;
+				}
+				iso = conn_lookup_iso(conn);
 			}
 		}
 
