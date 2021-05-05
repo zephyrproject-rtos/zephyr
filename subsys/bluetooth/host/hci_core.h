@@ -252,6 +252,22 @@ struct bt_dev {
 #else
 	/* Pointer to reserved advertising set */
 	struct bt_le_ext_adv    *adv;
+#if (CONFIG_BT_ID_MAX > 1) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
+	/* When supporting multiple concurrent connectable advertising sets
+	 * with multiple identities, we need to know the identity of
+	 * the terminating advertising set to identify the connection object.
+	 * The identity of the advertising set is determined by its
+	 * advertising handle, which is part of the
+	 * LE Set Advertising Set Terminated event which is always sent
+	 * _after_ the LE Enhanced Connection complete event.
+	 * Therefore we need cache this event until its identity is known.
+	 */
+	struct {
+		bool valid;
+		struct bt_hci_evt_le_enh_conn_complete evt;
+	} cached_conn_complete[MIN(CONFIG_BT_MAX_CONN,
+				CONFIG_BT_EXT_ADV_MAX_ADV_SET)];
+#endif
 #endif
 	/* Current local Random Address */
 	bt_addr_le_t            random_addr;
@@ -393,6 +409,9 @@ void bt_hci_auth_complete(struct net_buf *buf);
 /* ECC HCI event handlers */
 void bt_hci_evt_le_pkey_complete(struct net_buf *buf);
 void bt_hci_evt_le_dhkey_complete(struct net_buf *buf);
+
+/* Common HCI event handlers */
+void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt);
 
 /* Scan HCI event handlers */
 void bt_hci_le_adv_report(struct net_buf *buf);
