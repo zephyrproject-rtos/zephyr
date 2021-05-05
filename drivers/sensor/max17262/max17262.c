@@ -334,7 +334,7 @@ static const struct sensor_driver_api max17262_battery_driver_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &max17262_data_##n,				\
 			    &max17262_config_##n, POST_KERNEL,		\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
