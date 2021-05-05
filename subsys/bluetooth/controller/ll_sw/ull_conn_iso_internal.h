@@ -19,11 +19,13 @@ void ll_conn_iso_stream_release(struct ll_conn_iso_stream *cis);
 uint16_t ll_conn_iso_stream_handle_get(struct ll_conn_iso_stream *cis);
 struct ll_conn_iso_stream *ll_conn_iso_stream_get(uint16_t handle);
 struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle);
+struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_group *cig,
+							   uint16_t *handle_iter);
 
 void ull_conn_iso_done(struct node_rx_event_done *done);
 void ull_conn_iso_cis_established(struct ll_conn_iso_stream *cis);
 
 void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
-				      uint8_t  resume_cis,
+				      uint16_t cis_handle,
 				      uint32_t ticks_anchor,
 				      uint32_t resume_timeout);

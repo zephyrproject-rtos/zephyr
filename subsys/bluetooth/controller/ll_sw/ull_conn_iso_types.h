@@ -40,10 +40,6 @@ struct ll_conn_iso_group {
 	uint32_t p_sdu_interval;
 	uint16_t iso_interval;
 	uint8_t  cig_id;
-
-#if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP)
-	uint16_t cis_handles[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
-#endif /* CONFIG_BT_CTLR_CONN_ISO_STREAMS */
 };
 
 struct node_rx_conn_iso_req {
