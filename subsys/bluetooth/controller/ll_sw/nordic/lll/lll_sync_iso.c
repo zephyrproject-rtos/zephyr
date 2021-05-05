@@ -216,6 +216,9 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	lll->irc_curr = 1U;
 	lll->bn_curr = 1U;
 
+	/* Initialize control subevent flag */
+	lll->ctrl = 0U;
+
 	/* Initialize trx chain count */
 	trx_cnt = 0U;
 
@@ -407,15 +410,54 @@ static void isr_rx(void *param)
 
 	/* Check CRC and generate ISO Data PDU */
 	if (crc_ok) {
+		struct pdu_bis *pdu;
+
+		if ((lll->bn_curr == lll->bn) &&
+		    (lll->irc_curr == lll->irc) &&
+		    (lll->ptc_curr == lll->ptc) &&
+		    (lll->bis_curr == lll->num_bis) &&
+		    lll->ctrl) {
+			lll->cssn_curr = lll->cssn_next;
+
+			node_rx = ull_pdu_rx_alloc_peek(1);
+			LL_ASSERT(node_rx);
+
+			pdu = (void *)node_rx->pdu;
+			if (pdu->ll_id != PDU_BIS_LLID_CTRL) {
+				goto isr_rx_done;
+			}
+
+			if (pdu->ctrl.opcode == PDU_BIG_CTRL_TYPE_TERM_IND) {
+				if (!lll->term_reason) {
+					struct pdu_big_ctrl_term_ind *term;
+
+					term = (void *)&pdu->ctrl.term_ind;
+					lll->term_reason = term->reason;
+					lll->ctrl_instant = term->instant;
+				}
+			}
+		} else {
+			node_rx = ull_pdu_rx_alloc_peek(3);
+			if (!node_rx) {
+				goto isr_rx_done;
+			}
+		}
+
+		pdu = (void *)node_rx->pdu;
+
+		/* Check for new control PDU in control subevent */
+		if (pdu->cstf && (pdu->cssn != lll->cssn_curr)) {
+			lll->cssn_next = pdu->cssn;
+			/* TODO: check same CSSN is used in every subevent */
+		}
+
 		payload_index = lll->payload_tail + (lll->bn_curr - 1) +
 				(lll->ptc_curr * lll->pto);
 		if (payload_index >= lll->payload_count_max) {
 			payload_index -= lll->payload_count_max;
 		}
 
-		node_rx = ull_pdu_rx_alloc_peek(3);
-
-		if (node_rx && !lll->payload[payload_index] &&
+		if (!lll->payload[payload_index] &&
 		    ((payload_index >= lll->payload_tail) ||
 		     (payload_index < lll->payload_head))) {
 			struct node_rx_ftr *ftr;
@@ -486,7 +528,9 @@ isr_rx_find_subevent:
 				skipped++;
 				is_new_burst = 1U;
 
-				/* Receive the missing (bn_curr)th Rx PDU of bis_curr */
+				/* Receive the missing (bn_curr)th Rx PDU of
+				 * bis_curr
+				 */
 				goto isr_rx_find_subevent;
 			}
 		} else {
@@ -517,10 +561,14 @@ isr_rx_find_subevent:
 		goto isr_rx_next_subevent;
 	}
 
-	if (0) {
-		/* Reeive the control PDU and close the BIG event
+	if (!lll->ctrl && (lll->cssn_next != lll->cssn_curr)) {
+		/* Receive the control PDU and close the BIG event
 		 *  there after.
 		 */
+		lll->ctrl = 1U;
+
+		/* control subevent to use bis = 0 and se_n = 1 */
+		bis = 0U;
 
 		goto isr_rx_next_subevent;
 	}
@@ -548,10 +596,18 @@ isr_rx_find_subevent:
 	}
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
-	/* Calculate and place the drift information in done event */
 	e = ull_event_done_extra_get();
 	LL_ASSERT(e);
 
+	/* Check if BIG terminate procedure received */
+	if (lll->term_reason) {
+		e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO_TERMINATE;
+
+		lll_isr_cleanup(param);
+		return;
+	}
+
+	/* Calculate and place the drift information in done event */
 	e->type = EVENT_DONE_EXTRA_TYPE_SYNC_ISO;
 	e->trx_cnt = trx_cnt;
 	e->crc_valid = crc_ok;
@@ -569,7 +625,6 @@ isr_rx_find_subevent:
 	}
 
 	lll_isr_cleanup(param);
-
 	return;
 
 isr_rx_next_subevent:
