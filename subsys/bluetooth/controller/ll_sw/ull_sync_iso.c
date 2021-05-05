@@ -524,6 +524,34 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 	}
 }
 
+void ull_sync_iso_done_terminate(struct node_rx_event_done *done)
+{
+	struct ll_sync_iso_set *sync_iso;
+	struct lll_sync_iso *lll;
+	struct node_rx_pdu *rx;
+	uint8_t handle;
+	uint32_t ret;
+
+	/* Get reference to ULL context */
+	sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
+	lll = &sync_iso->lll;
+
+	/* Populate the Sync Lost which will be enqueued in disabled_cb */
+	rx = (void *)&sync_iso->node_rx_lost;
+	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
+	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
+	rx->hdr.rx_ftr.param = sync_iso;
+	*((uint8_t *)rx->pdu) = lll->term_reason;
+
+	/* Stop Sync ISO Ticker */
+	handle = ull_sync_iso_handle_get(sync_iso);
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
+			  ticker_stop_op_cb, (void *)sync_iso);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+}
+
 static int init_reset(void)
 {
 	/* Initialize sync pool. */
@@ -541,12 +569,19 @@ static inline struct ll_sync_iso_set *sync_iso_acquire(void)
 
 static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 {
-	uint16_t handle;
+	struct node_rx_pdu *rx;
+	uint8_t handle;
 	uint32_t ret;
 
-	handle = ull_sync_iso_handle_get(sync_iso);
+	/* Populate the Sync Lost which will be enqueued in disabled_cb */
+	rx = (void *)&sync_iso->node_rx_lost;
+	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
+	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
+	rx->hdr.rx_ftr.param = sync_iso;
+	*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
 
-	/* Stop Periodic Sync Ticker */
+	/* Stop Sync ISO Ticker */
+	handle = ull_sync_iso_handle_get(sync_iso);
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  (TICKER_ID_SCAN_SYNC_ISO_BASE + handle),
 			  ticker_stop_op_cb, (void *)sync_iso);
@@ -645,18 +680,18 @@ static void disabled_cb(void *param)
 {
 	struct ll_sync_iso_set *sync_iso;
 	struct node_rx_pdu *rx;
+	memq_link_t *link;
 
 	/* Get reference to ULL context */
 	sync_iso = HDR_LLL2ULL(param);
 
 	/* Generate BIG sync lost */
 	rx = (void *)&sync_iso->node_rx_lost;
-	rx->hdr.handle = ull_sync_iso_handle_get(sync_iso);
-	rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
-	rx->hdr.rx_ftr.param = sync_iso;
-	*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
+	LL_ASSERT(rx->hdr.link);
+	link = rx->hdr.link;
+	rx->hdr.link = NULL;
 
 	/* Enqueue the BIG sync lost towards ULL context */
-	ll_rx_put(rx->hdr.link, rx);
+	ll_rx_put(link, rx);
 	ll_rx_sched();
 }
