@@ -49,7 +49,7 @@ config CLOCK_CONTROL_STM32_HAS_DTS
 	  This symbol is added to prevent default use of CLOCK_CONTROL_STM32_* symbols
 	  when board make use of device tree to configure clocks.
 
-if !CLOCK_CONTROL_STM32_HAS_DTS
+if !CLOCK_CONTROL_STM32_HAS_DTS && !SOC_SERIES_STM32MP1X
 
 choice CLOCK_STM32_SYSCLK_SRC
 	prompt "STM32 System Clock Source"
@@ -222,7 +222,7 @@ config CLOCK_STM32_AHB4_PRESCALER
 	  HCLK4 prescaler, allowed values: 1, 2, 3, 4, 5, 6, 8, 10, 16, 32,
 	  64, 128, 256, 512.
 
-endif # !SOC_SERIES_STM32H7X
+endif # !SOC_SERIES_STM32H7X && !SOC_SERIES_STM32MP1X
 
 endif # CLOCK_CONTROL_STM32_HAS_DTS
 
