@@ -304,6 +304,7 @@
 /drivers/spi/                             @tbursztyka
 /drivers/spi/spi_rv32m1_lpspi*            @karstenkoenig
 /drivers/timer/apic_timer.c               @dcpleung @nashif
+/drivers/timer/apic_tsc.c                 @andyross
 /drivers/timer/arm_arch_timer.c           @carlocaione
 /drivers/timer/cortex_m_systick.c         @ioannisg
 /drivers/timer/altera_avalon_timer_hal.c  @nashif
