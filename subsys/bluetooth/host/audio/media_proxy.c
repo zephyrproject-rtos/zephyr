@@ -14,6 +14,11 @@
 #include "common/log.h"
 
 
+/* Media player */
+struct player {
+	struct media_proxy_pl_calls *calls;
+};
+
 /* Synchronous controller - controller using the synchronous API */
 struct scontroller {
 	struct media_proxy_sctrl_cbs *cbs;
@@ -22,6 +27,7 @@ struct scontroller {
 /* Media proxy */
 struct mprx {
 	struct scontroller sctrlr;
+	struct player player;
 };
 
 static struct mprx mprx = { 0 };
@@ -37,145 +43,154 @@ int media_proxy_sctrl_register(struct media_proxy_sctrl_cbs *sctrl_cbs)
 
 char *media_proxy_sctrl_player_name_get(void)
 {
-	return media_proxy_pl_player_name_get();
+	/* TODO: Add check for whether function pointer is non-NULL everywhere */
+	return mprx.player.calls->player_name_get();
 }
 
 #ifdef CONFIG_BT_OTS
 uint64_t media_proxy_sctrl_icon_id_get(void)
 {
-	return media_proxy_pl_icon_id_get();
+	return mprx.player.calls->icon_id_get();
 }
 #endif /* CONFIG_BT_OTS */
 
 char *media_proxy_sctrl_icon_url_get(void)
 {
-	return media_proxy_pl_icon_url_get();
+	return mprx.player.calls->icon_url_get();
 }
 
 char *media_proxy_sctrl_track_title_get(void)
 {
-	return media_proxy_pl_track_title_get();
+	return mprx.player.calls->track_title_get();
 }
 
 int32_t media_proxy_sctrl_track_duration_get(void)
 {
-	return media_proxy_pl_track_duration_get();
+	return mprx.player.calls->track_duration_get();
 }
 
 int32_t media_proxy_sctrl_track_position_get(void)
 {
-	return media_proxy_pl_track_position_get();
+	return mprx.player.calls->track_position_get();
 }
 
 void media_proxy_sctrl_track_position_set(int32_t position)
 {
-	media_proxy_pl_track_position_set(position);
+	mprx.player.calls->track_position_set(position);
 }
 
 int8_t media_proxy_sctrl_playback_speed_get(void)
 {
-	return media_proxy_pl_playback_speed_get();
+	return mprx.player.calls->playback_speed_get();
 }
 
 void media_proxy_sctrl_playback_speed_set(int8_t speed)
 {
-	media_proxy_pl_playback_speed_set(speed);
+	mprx.player.calls->playback_speed_set(speed);
 }
 
 int8_t media_proxy_sctrl_seeking_speed_get(void)
 {
-	return media_proxy_pl_seeking_speed_get();
+	return mprx.player.calls->seeking_speed_get();
 }
 
 #ifdef CONFIG_BT_OTS
 uint64_t media_proxy_sctrl_track_segments_id_get(void)
 {
-	return media_proxy_pl_track_segments_id_get();
+	return mprx.player.calls->track_segments_id_get();
 }
 
 uint64_t media_proxy_sctrl_current_track_id_get(void)
 {
-	return media_proxy_pl_current_track_id_get();
+	return mprx.player.calls->current_track_id_get();
 }
 
 void media_proxy_sctrl_current_track_id_set(uint64_t id)
 {
-	media_proxy_pl_current_track_id_set(id);
+	mprx.player.calls->current_track_id_set(id);
 }
 
 uint64_t media_proxy_sctrl_next_track_id_get(void)
 {
-	return media_proxy_pl_next_track_id_get();
+	return mprx.player.calls->next_track_id_get();
 }
 
 void media_proxy_sctrl_next_track_id_set(uint64_t id)
 {
-	media_proxy_pl_next_track_id_set(id);
+	mprx.player.calls->next_track_id_set(id);
 }
 
 uint64_t media_proxy_sctrl_current_group_id_get(void)
 {
-	return media_proxy_pl_current_group_id_get();
+	return mprx.player.calls->current_group_id_get();
 }
 
 void media_proxy_sctrl_current_group_id_set(uint64_t id)
 {
-	media_proxy_pl_current_group_id_set(id);
+	mprx.player.calls->current_group_id_set(id);
 }
 
 uint64_t media_proxy_sctrl_parent_group_id_get(void)
 {
-	return media_proxy_pl_parent_group_id_get();
+	return mprx.player.calls->parent_group_id_get();
 }
 #endif /* CONFIG_BT_OTS */
 
 uint8_t media_proxy_sctrl_playing_order_get(void)
 {
-	return media_proxy_pl_playing_order_get();
+	return mprx.player.calls->playing_order_get();
 }
 
 void media_proxy_sctrl_playing_order_set(uint8_t order)
 {
-	media_proxy_pl_playing_order_set(order);
+	mprx.player.calls->playing_order_set(order);
 }
 
 uint16_t media_proxy_sctrl_playing_orders_supported_get(void)
 {
-	return media_proxy_pl_playing_orders_supported_get();
+	return mprx.player.calls->playing_orders_supported_get();
 }
 
 uint8_t media_proxy_sctrl_media_state_get(void)
 {
-	return media_proxy_pl_media_state_get();
+	return mprx.player.calls->media_state_get();
 }
 
 void media_proxy_sctrl_operation_set(struct mpl_op_t operation)
 {
-	media_proxy_pl_operation_set(operation);
+	mprx.player.calls->operation_set(operation);
 }
 
 uint32_t media_proxy_sctrl_operations_supported_get(void)
 {
-	return media_proxy_pl_operations_supported_get();
+	return mprx.player.calls->operations_supported_get();
 }
 
 #ifdef CONFIG_BT_OTS
 void media_proxy_sctrl_scp_set(struct mpl_search_t search)
 {
-	media_proxy_pl_scp_set(search);
+	mprx.player.calls->scp_set(search);
 }
 
 uint64_t media_proxy_sctrl_search_results_id_get(void)
 {
-	return media_proxy_pl_search_results_id_get();
+	return mprx.player.calls->search_results_id_get();
 }
 void media_proxy_sctrl_search_results_id_cb(uint64_t id);
 #endif /* CONFIG_BT_OTS */
 
 uint8_t media_proxy_sctrl_content_ctrl_id_get(void)
 {
-	return media_proxy_pl_content_ctrl_id_get();
+	return mprx.player.calls->content_ctrl_id_get();
 }
+
+/* Player calls *******************************************/
+
+int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls)
+{
+	mprx.player.calls = pl_calls;
+	return 0;
+};
 
 /* Player callbacks ********************************/
 
