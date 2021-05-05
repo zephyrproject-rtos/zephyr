@@ -1,5 +1,4 @@
 /*
- *
  * Copyright (c) 2017 Linaro Limited.
  * Copyright (c) 2017 RnDity Sp. z o.o.
  *
@@ -19,22 +18,22 @@
 #include "clock_stm32_ll_common.h"
 
 /* Macros to fill up prescaler values */
-#define z_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
-#define ahb_prescaler(v) z_ahb_prescaler(v)
+#define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
+#define ahb_prescaler(v) fn_ahb_prescaler(v)
 
-#define z_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) z_apb1_prescaler(v)
+#define fn_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
+#define apb1_prescaler(v) fn_apb1_prescaler(v)
 
 #ifndef CONFIG_SOC_SERIES_STM32F0X
-#define z_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) z_apb2_prescaler(v)
+#define fn_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
+#define apb2_prescaler(v) fn_apb2_prescaler(v)
 #endif /* CONFIG_SOC_SERIES_STM32F0X  */
 
-#define z_mco1_prescaler(v) LL_RCC_MCO1_DIV_ ## v
-#define mco1_prescaler(v) z_mco1_prescaler(v)
+#define fn_mco1_prescaler(v) LL_RCC_MCO1_DIV_ ## v
+#define mco1_prescaler(v) fn_mco1_prescaler(v)
 
-#define z_mco2_prescaler(v) LL_RCC_MCO2_DIV_ ## v
-#define mco2_prescaler(v) z_mco2_prescaler(v)
+#define fn_mco2_prescaler(v) LL_RCC_MCO2_DIV_ ## v
+#define mco2_prescaler(v) fn_mco2_prescaler(v)
 
 /* Calculate MSI freq for the given range(at RUN range, not after standby) */
 #if defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -307,7 +306,7 @@ static struct clock_control_driver_api stm32_clock_control_api = {
  * Unconditionally switch the system clock source to HSI.
  */
 __unused
-static void stm32_clock_switch_to_hsi(uint32_t ahb_prescaler)
+static void stm32_clock_switch_to_hsi(uint32_t new_ahb_prescaler)
 {
 	/* Enable HSI if not enabled */
 	if (LL_RCC_HSI_IsReady() != 1) {
@@ -320,7 +319,7 @@ static void stm32_clock_switch_to_hsi(uint32_t ahb_prescaler)
 
 	/* Set HSI as SYSCLCK source */
 	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
-	LL_RCC_SetAHBPrescaler(ahb_prescaler);
+	LL_RCC_SetAHBPrescaler(new_ahb_prescaler);
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 	}
 }
