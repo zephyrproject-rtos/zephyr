@@ -279,6 +279,12 @@ def ast_expr(ast, env, edt):
         if node and node.status == "okay":
             return True
         return False
+    elif ast[0] == "dt_nodelabel_enabled":
+        label = ast[1][0]
+        node = edt.label2node.get(label)
+        if node and node.status == "okay":
+            return True
+        return False
 
 def ast_handle_dt_enabled_alias_with_parent_compat(edt, alias, compat):
     # Helper shared with the now deprecated
