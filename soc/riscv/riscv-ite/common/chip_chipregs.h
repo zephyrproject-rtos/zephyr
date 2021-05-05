@@ -1625,55 +1625,39 @@
 #define IT8XXX2_GPIO_GRC21      ECREG(IT8XXX2_GPIO_BASE + 0xE6)
 
 /* Analog to Digital Converter (ADC) */
-#define IT83XX_ADC_BASE   0x00f01900
 
-#define IT83XX_ADC_ADCSTS       ECREG(IT83XX_ADC_BASE + 0x00)
-#define IT83XX_ADC_ADCCTS1			BIT(7)
-#define IT83XX_ADC_AINITB			BIT(3)
-#define IT83XX_ADC_ADCCFG       ECREG(IT83XX_ADC_BASE + 0x01)
-#define IT83XX_ADC_ADCCTS0			BIT(5)
-#define IT83XX_ADC_ADCEN			BIT(0)
-#define IT83XX_ADC_ADCCTL       ECREG(IT83XX_ADC_BASE + 0x02)
-#define IT83XX_ADC_ADCGCR       ECREG(IT83XX_ADC_BASE + 0x03)
-#define IT83XX_ADC_VCH0CTL      ECREG(IT83XX_ADC_BASE + 0x04)
+#ifndef __ASSEMBLER__
+struct adc_it8xxx2_regs {
+	volatile uint8_t ADCSTS;
+	volatile uint8_t ADCCFG;
+	volatile uint8_t ADCCTL;
+	volatile uint8_t ADCGCR;
+	volatile uint8_t VCH0CTL;
+	volatile uint8_t KDCTL;
+	volatile uint8_t reserved1[18];
+	volatile uint8_t VCH0DATL;
+	volatile uint8_t VCH0DATM;
+	volatile uint8_t reserved2[42];
+	volatile uint8_t ADCDVSTS;
+};
+#endif /* !__ASSEMBLER__ */
+
+/* ADC conversion time select 1 */
+#define IT8XXX2_ADC_ADCCTS1			BIT(7)
+/* Analog accuracy initialization */
+#define IT8XXX2_ADC_AINITB			BIT(3)
+/* ADC conversion time select 0 */
+#define IT8XXX2_ADC_ADCCTS0			BIT(5)
+/* ADC module enable */
+#define IT8XXX2_ADC_ADCEN			BIT(0)
+/* ADC data buffer keep enable */
+#define IT8XXX2_ADC_DBKEN			BIT(7)
 /* W/C data valid flag */
-#define IT83XX_ADC_DATVAL			BIT(7)
-/* Data valid interrupt of adc. */
-#define IT83XX_ADC_INTDVEN			BIT(5)
-#define IT83XX_ADC_KDCTL        ECREG(IT83XX_ADC_BASE + 0x05)
-#define IT83XX_ADC_AHCE				BIT(7)
-#define IT83XX_ADC_VCH1CTL      ECREG(IT83XX_ADC_BASE + 0x06)
-#define IT83XX_ADC_VCH1DATL     ECREG(IT83XX_ADC_BASE + 0x07)
-#define IT83XX_ADC_VCH1DATM     ECREG(IT83XX_ADC_BASE + 0x08)
-#define IT83XX_ADC_VCH2CTL      ECREG(IT83XX_ADC_BASE + 0x09)
-#define IT83XX_ADC_VCH2DATL     ECREG(IT83XX_ADC_BASE + 0x0A)
-#define IT83XX_ADC_VCH2DATM     ECREG(IT83XX_ADC_BASE + 0x0B)
-#define IT83XX_ADC_VCH3CTL      ECREG(IT83XX_ADC_BASE + 0x0C)
-#define IT83XX_ADC_VCH3DATL     ECREG(IT83XX_ADC_BASE + 0x0D)
-#define IT83XX_ADC_VCH3DATM     ECREG(IT83XX_ADC_BASE + 0x0E)
-#define IT83XX_ADC_VHSCDBL      ECREG(IT83XX_ADC_BASE + 0x14)
-#define IT83XX_ADC_VHSCDBM      ECREG(IT83XX_ADC_BASE + 0x15)
-#define IT83XX_ADC_VCH0DATL     ECREG(IT83XX_ADC_BASE + 0x18)
-#define IT83XX_ADC_VCH0DATM     ECREG(IT83XX_ADC_BASE + 0x19)
-#define IT83XX_ADC_VHSGCDBL     ECREG(IT83XX_ADC_BASE + 0x1C)
-#define IT83XX_ADC_VHSGCDBM     ECREG(IT83XX_ADC_BASE + 0x1D)
-#define IT83XX_ADC_ADCSAR       ECREG(IT83XX_ADC_BASE + 0x32)
-#define IT83XX_ADC_VCMPSCP      ECREG(IT83XX_ADC_BASE + 0x37)
-#define IT83XX_ADC_VCH4CTL      ECREG(IT83XX_ADC_BASE + 0x38)
-/* Voltage channel enable (ch4~ch7) */
-#define IT83XX_ADC_VCHEN			BIT(4)
-#define IT83XX_ADC_VCH4DATM     ECREG(IT83XX_ADC_BASE + 0x39)
-#define IT83XX_ADC_VCH4DATL     ECREG(IT83XX_ADC_BASE + 0x3A)
-#define IT83XX_ADC_VCH5CTL      ECREG(IT83XX_ADC_BASE + 0x3B)
-#define IT83XX_ADC_VCH5DATM     ECREG(IT83XX_ADC_BASE + 0x3C)
-#define IT83XX_ADC_VCH5DATL     ECREG(IT83XX_ADC_BASE + 0x3D)
-#define IT83XX_ADC_VCH6CTL      ECREG(IT83XX_ADC_BASE + 0x3E)
-#define IT83XX_ADC_VCH6DATM     ECREG(IT83XX_ADC_BASE + 0x3F)
-#define IT83XX_ADC_VCH6DATL     ECREG(IT83XX_ADC_BASE + 0x40)
-#define IT83XX_ADC_VCH7CTL      ECREG(IT83XX_ADC_BASE + 0x41)
-#define IT83XX_ADC_VCH7DATM     ECREG(IT83XX_ADC_BASE + 0x42)
-#define IT83XX_ADC_VCH7DATL     ECREG(IT83XX_ADC_BASE + 0x43)
-#define IT83XX_ADC_ADCDVSTS     ECREG(IT83XX_ADC_BASE + 0x44)
+#define IT8XXX2_ADC_DATVAL			BIT(7)
+/* Data valid interrupt of adc */
+#define IT8XXX2_ADC_INTDVEN			BIT(5)
+/* Automatic hardware calibration enable */
+#define IT8XXX2_ADC_AHCE			BIT(7)
 
 /*
  * Clock and Power Management (ECPM)
