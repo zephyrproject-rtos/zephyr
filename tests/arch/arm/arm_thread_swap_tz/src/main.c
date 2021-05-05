@@ -19,7 +19,7 @@ static struct k_work_delayable interrupting_work;
 static volatile bool work_done;
 static char dummy_string[0x1000];
 static char dummy_digest_correct[HASH_LEN];
-static const uint32_t delay_ms = 4;
+static const uint32_t delay_ms = 1;
 static volatile const struct k_thread *main_thread;
 
 static void do_hash(char *hash)
@@ -76,7 +76,7 @@ static void work_func(struct k_work *work)
 	zassert_equal(PSA_SUCCESS, status, NULL);
 }
 
-void test_thread_swap(void)
+void test_thread_swap_tz(void)
 {
 	int err;
 	char dummy_digest[HASH_LEN];
@@ -141,8 +141,8 @@ void test_thread_swap(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_thread_swap,
-			ztest_unit_test(test_thread_swap)
+	ztest_test_suite(test_thread_swap_tz,
+			ztest_unit_test(test_thread_swap_tz)
 			);
-	ztest_run_test_suite(test_thread_swap);
+	ztest_run_test_suite(test_thread_swap_tz);
 }
