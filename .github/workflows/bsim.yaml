@@ -45,8 +45,9 @@ jobs:
 
       - name: west setup
         run: |
+          pip install west~=0.11.0
           west init -l . || true
-          west update
+          west update --narrow
 
       - name: Run Bluetooth Tests with BSIM
         run: |

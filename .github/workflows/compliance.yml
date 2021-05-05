@@ -28,7 +28,7 @@ jobs:
         pip3 install setuptools
         pip3 install wheel
         pip3 install python-magic junitparser==1.6.3 gitlint pylint pykwalify
-        pip3 install west
+        pip3 install west~=0.11.0
 
     - name: west setup
       env:
@@ -41,7 +41,7 @@ jobs:
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l . || true
-        west update
+        west update --narrow
 
     - name: Run Compliance Tests
       continue-on-error: true
