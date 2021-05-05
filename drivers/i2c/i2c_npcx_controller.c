@@ -145,6 +145,7 @@ struct i2c_ctrl_data {
 	uint8_t *ptr_msg; /* current msg pointer for FIFO read/write */
 	uint16_t addr; /* slave address of transcation */
 	uint8_t port; /* current port used the controller */
+	const struct npcx_i2c_timing_cfg *ptr_speed_confs;
 };
 
 /* Driver convenience defines */
@@ -158,10 +159,16 @@ struct i2c_ctrl_data {
 	(struct smb_fifo_reg *)(DRV_CONFIG(dev)->base)
 
 /* Recommended I2C timing values are based on 15 MHz */
-static const struct npcx_i2c_timing_cfg npcx_speed_confs[] = {
+static const struct npcx_i2c_timing_cfg npcx_15m_speed_confs[] = {
 	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 0, .k1 = 75, .k2 = 0},
 	[NPCX_I2C_BUS_SPEED_400KHZ] = {.HLDT = 7, .k1 = 24, .k2 = 18,},
 	[NPCX_I2C_BUS_SPEED_1MHZ] = {.HLDT  = 7, .k1 = 14, .k2 = 10,},
+};
+
+static const struct npcx_i2c_timing_cfg npcx_20m_speed_confs[] = {
+	[NPCX_I2C_BUS_SPEED_100KHZ] = {.HLDT = 0, .k1 = 100, .k2 = 0},
+	[NPCX_I2C_BUS_SPEED_400KHZ] = {.HLDT = 7, .k1 = 32, .k2 = 22},
+	[NPCX_I2C_BUS_SPEED_1MHZ] = {.HLDT  = 7, .k1 = 16, .k2 = 10},
 };
 
 /* I2C controller inline functions access shared registers */
@@ -330,7 +337,9 @@ static void i2c_ctrl_config_bus_freq(const struct device *dev,
 						enum npcx_i2c_freq bus_freq)
 {
 	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
-	const struct npcx_i2c_timing_cfg bus_cfg = npcx_speed_confs[bus_freq];
+	struct i2c_ctrl_data *const data = DRV_DATA(dev);
+	const struct npcx_i2c_timing_cfg bus_cfg =
+						data->ptr_speed_confs[bus_freq];
 
 	/* Switch to bank 0 to configure bus speed */
 	i2c_ctrl_bank_sel(dev, NPCX_I2C_BANK_NORMAL);
@@ -871,7 +880,15 @@ static int i2c_ctrl_init(const struct device *dev)
 		LOG_ERR("Get %s clock rate error.", dev->name);
 		return -EIO;
 	}
-	__ASSERT(i2c_rate == 15000000, "Unsupported apb2/3 freq for I2C!");
+
+	if (i2c_rate == 15000000)
+		data->ptr_speed_confs = npcx_15m_speed_confs;
+	else if (i2c_rate == 20000000) {
+		data->ptr_speed_confs = npcx_20m_speed_confs;
+	} else {
+		LOG_ERR("Unsupported apb2/3 freq for %s.", dev->name);
+		return -EIO;
+	}
 
 	/* Initialize i2c module */
 	i2c_ctrl_init_module(dev);
