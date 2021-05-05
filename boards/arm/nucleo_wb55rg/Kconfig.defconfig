@@ -8,9 +8,6 @@ if BOARD_NUCLEO_WB55RG
 config BOARD
 	default "nucleo_wb55rg"
 
-config CLOCK_STM32_LSE
-	default y
-
 choice STM32_LPTIM_CLOCK
 	default STM32_LPTIM_CLOCK_LSE
 	depends on STM32_LPTIM_TIMER
