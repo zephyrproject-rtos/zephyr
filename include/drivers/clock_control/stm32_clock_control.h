@@ -135,7 +135,7 @@
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32h7_rcc, okay) && \
-	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), clocks)
+	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), d1cpre)
 #define STM32_D1CPRE	DT_PROP(DT_NODELABEL(rcc), d1cpre)
 #define STM32_HPRE	DT_PROP(DT_NODELABEL(rcc), hpre)
 #define STM32_D2PPRE1	DT_PROP(DT_NODELABEL(rcc), d2ppre1)
