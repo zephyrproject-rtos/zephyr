@@ -130,9 +130,9 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
-		apb_psc = CONFIG_CLOCK_STM32_D2PPRE1;
+		apb_psc = STM32_D2PPRE1;
 	} else {
-		apb_psc = CONFIG_CLOCK_STM32_D2PPRE2;
+		apb_psc = STM32_D2PPRE2;
 	}
 #else
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
