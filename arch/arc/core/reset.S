@@ -54,17 +54,6 @@ SECTION_FUNC(TEXT,__start)
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	sflag r0
 #endif
-
-#if defined(CONFIG_BOOT_TIME_MEASUREMENT) && defined(CONFIG_ARCV2_TIMER)
-	/*
-	 * ARCV2 timer (timer0) is a free run timer, let it start to count
-	 * here.
-	 */
-	mov_s r0, 0xffffffff
-	sr r0, [_ARC_V2_TMR0_LIMIT]
-	mov_s r0, 0
-	sr r0, [_ARC_V2_TMR0_COUNT]
-#endif
 	/* interrupt related init */
 #ifndef CONFIG_ARC_NORMAL_FIRMWARE
 	/* IRQ_ACT and IRQ_CTRL should be initialized and set in secure mode */
