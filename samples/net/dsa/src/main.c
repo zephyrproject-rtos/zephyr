@@ -10,23 +10,6 @@ LOG_MODULE_REGISTER(net_dsa_lldp_sample, CONFIG_NET_DSA_LOG_LEVEL);
 #include <net/dsa.h>
 #include "main.h"
 
-static void dsa_slave_port_setup(struct net_if *iface, struct ud *ifaces)
-{
-	struct dsa_context *context = net_if_get_device(iface)->data;
-
-	if (ifaces->lan1 == NULL) {
-		ifaces->lan1 = context->iface_slave[1];
-	}
-
-	if (ifaces->lan2 == NULL) {
-		ifaces->lan2 = context->iface_slave[2];
-	}
-
-	if (ifaces->lan3 == NULL) {
-		ifaces->lan3 = context->iface_slave[3];
-	}
-}
-
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 
@@ -39,12 +22,20 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	if (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_MASTER_PORT) {
 		if (ifaces->master == NULL) {
 			ifaces->master = iface;
+
+			/* Get slave interfaces */
+			for (int i = 0; i < ARRAY_SIZE(ifaces->lan); i++) {
+				struct net_if *slave = dsa_get_slave_port(iface, i);
+
+				if (slave == NULL) {
+					LOG_ERR("Slave interface %d not found.", i);
+					break;
+				}
+
+				ifaces->lan[i] = slave;
+			}
 			return;
 		}
-	}
-
-	if (net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_SLAVE_PORT) {
-		dsa_slave_port_setup(iface, ifaces);
 	}
 }
 
@@ -102,7 +93,6 @@ int start_slave_port_packet_socket(struct net_if *iface,
 struct ud ifaces;
 static int init_dsa_ports(void)
 {
-	struct dsa_context *ctx;
 	uint8_t tbl_buf[8];
 
 	/* Initialize interfaces - read them to ifaces */
@@ -110,26 +100,15 @@ static int init_dsa_ports(void)
 	net_if_foreach(iface_cb, &ifaces);
 
 	/*
-	 * Read the DSA context - single structure for all
-	 * LAN ports.
-	 */
-	ctx = dsa_get_context(ifaces.lan1);
-	if (ctx == NULL) {
-		LOG_ERR("DSA context not available!");
-		return -ENODEV;
-	}
-
-	/*
 	 * Set static table to forward LLDP protocol packets
 	 * to master port.
 	 */
-	ctx->dapi->switch_set_mac_table_entry(ctx->switch_id,
+	dsa_switch_set_mac_table_entry(ifaces.lan[0],
 					      &eth_filter_l2_addr_base[0][0],
 					      BIT(4), 0, 0);
-	ctx->dapi->switch_get_mac_table_entry(ctx->switch_id, tbl_buf, 0);
+	dsa_switch_get_mac_table_entry(ifaces.lan[0], tbl_buf, 0);
 
-	LOG_INF("DSA chip:%d static MAC address table entry [%d]:",
-		ctx->switch_id, 0);
+	LOG_INF("DSA static MAC address table entry [%d]:", 0);
 	LOG_INF("0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x",
 		tbl_buf[7], tbl_buf[6], tbl_buf[5], tbl_buf[4],
 		tbl_buf[3], tbl_buf[2], tbl_buf[1], tbl_buf[0]);
