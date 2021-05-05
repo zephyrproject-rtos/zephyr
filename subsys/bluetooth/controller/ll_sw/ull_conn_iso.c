@@ -19,9 +19,9 @@
 #include "lll_conn.h"
 #include "ull_conn_types.h"
 #include "lll_conn_iso.h"
-
 #include "ull_conn_iso_types.h"
 #include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
 #include "ull_internal.h"
 #include "lll/lll_vendor.h"
 
@@ -114,6 +114,51 @@ struct ll_conn_iso_stream *ll_iso_stream_connected_get(uint16_t handle)
 	return cis;
 }
 
+struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_acl(struct ll_conn *conn, uint16_t *cis_iter)
+{
+	uint8_t cis_iter_start = (cis_iter == NULL) || (*cis_iter) == UINT16_MAX;
+	uint8_t cig_handle;
+
+	/* Find CIS associated with ACL conn */
+	for (cig_handle = 0; cig_handle < CONFIG_BT_CTLR_CONN_ISO_GROUPS; cig_handle++) {
+		struct ll_conn_iso_stream *cis;
+		struct ll_conn_iso_group *cig;
+		uint16_t handle_iter;
+		int8_t cis_idx;
+
+		cig = ll_conn_iso_group_get(cig_handle);
+		if (!cig) {
+			continue;
+		}
+
+		handle_iter = UINT16_MAX;
+
+		for (cis_idx = 0; cis_idx < cig->lll.num_cis; cis_idx++) {
+			cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+			LL_ASSERT(cis);
+
+			uint16_t cis_handle = cis->lll.handle;
+
+			cis = ll_iso_stream_connected_get(cis_handle);
+			if (!cis) {
+				continue;
+			}
+
+			if (!cis_iter_start) {
+				/* Look for iterator start handle */
+				cis_iter_start = cis_handle == (*cis_iter);
+			} else if (cis->lll.acl_handle == conn->lll.handle) {
+				if (cis_iter) {
+					(*cis_iter) = cis_handle;
+				}
+				return cis;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_group *cig,
 							   uint16_t *handle_iter)
 {
@@ -127,7 +172,7 @@ struct ll_conn_iso_stream *ll_conn_iso_stream_get_by_group(struct ll_conn_iso_gr
 	for (handle = handle_start; handle <= LAST_VALID_CIS_HANDLE; handle++) {
 		cis = ll_conn_iso_stream_get(handle);
 		if (cis->group == cig) {
-			if (*handle_iter) {
+			if (handle_iter) {
 				(*handle_iter) = handle;
 			}
 			return cis;
@@ -348,4 +393,156 @@ void ull_conn_iso_resume_ticker_start(struct lll_event *resume_event,
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
+}
+
+static void disabled_cig_cb(void *param)
+{
+	struct ll_conn_iso_group *cig;
+
+	cig = param;
+
+	ll_conn_iso_group_release(cig);
+
+	/* TODO: Flush pending TX in LLL */
+}
+
+static void ticker_stop_op_cb(uint32_t status, void *param)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
+	struct ll_conn_iso_group *cig;
+	struct ull_hdr *hdr;
+	uint32_t ret;
+
+	/* Assert if race between thread and ULL */
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	cig = param;
+	hdr = &cig->ull;
+	mfy.param = cig;
+
+	if (ull_ref_get(hdr)) {
+		/* Event active (prepare/done ongoing) - wait for done and
+		 * disable there. Abort the ongoing event in LLL.
+		 */
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = mfy.param;
+		hdr->disabled_cb = disabled_cig_cb;
+
+		mfy.fp = lll_disable;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	} else {
+		/* Disable now */
+		mfy.fp = disabled_cig_cb;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+		LL_ASSERT(!ret);
+	}
+}
+
+static void disabled_cis_cb(void *param)
+{
+	struct ll_conn_iso_group *cig;
+	struct ll_conn_iso_stream *cis;
+	uint32_t ticker_status;
+	uint16_t handle_iter;
+	uint8_t cis_idx;
+	uint8_t num_cis;
+
+	cig = param;
+	num_cis = cig->lll.num_cis;
+	handle_iter = UINT16_MAX;
+
+	/* Remove all CISes marked for teardown */
+	for (cis_idx = 0; cis_idx < cig->lll.num_cis; cis_idx++) {
+		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		LL_ASSERT(cis);
+
+		if (cis->teardown) {
+			struct ll_conn *conn;
+			ll_iso_stream_released_cb_t cis_released_cb;
+
+			conn = ll_conn_get(cis->lll.acl_handle);
+			cis_released_cb = cis->released_cb;
+
+			ll_conn_iso_stream_release(cis);
+			cig->lll.num_cis--;
+
+			/* Check if removed CIS had an ACL disassociation callback. Invoke
+			 * the callback to allow cleanup.
+			 */
+			if (cis_released_cb) {
+				/* CIS removed - notify caller */
+				cis_released_cb(conn);
+			}
+		}
+	}
+
+	if (num_cis && cig->lll.num_cis == 0) {
+		/* This was the last CIS of the CIG. Initiate CIG teardown by
+		 * stopping ticker.
+		 */
+		ticker_status = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+					    TICKER_USER_ID_ULL_HIGH,
+					    TICKER_ID_CONN_ISO_BASE +
+					    ll_conn_iso_group_handle_get(cig),
+					    ticker_stop_op_cb,
+					    cig);
+
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY));
+	}
+}
+
+/**
+ * @brief Stop and tear down a connected ISO stream
+ * This function may be called to tear down a CIS. When the CIS teardown
+ * has completed and the stream is released and callback is provided, the
+ * cis_released_cb callback is invoked.
+ *
+ * @param cis		 Pointer to connected ISO stream to stop
+ * @param cis_relased_cb Callback to invoke when the CIS has been released.
+ *                       NULL to ignore.
+ */
+void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
+			   ll_iso_stream_released_cb_t cis_relased_cb)
+{
+	struct ll_conn_iso_group *cig;
+	struct ull_hdr *hdr;
+
+	cig = cis->group;
+	hdr = &cig->ull;
+
+	if (cis->teardown) {
+		/* Teardown already started */
+		return;
+	}
+	cis->teardown = 1;
+	cis->released_cb = cis_relased_cb;
+
+	if (ull_ref_get(hdr)) {
+		/* Event is active (prepare/done ongoing) - wait for done and
+		 * continue CIS teardown from there. The disabled_cb cannot be
+		 * reserved for other use.
+		 */
+		LL_ASSERT(!hdr->disabled_cb || hdr->disabled_cb == disabled_cis_cb);
+
+		hdr->disabled_param = cig;
+		hdr->disabled_cb = disabled_cis_cb;
+	} else {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, NULL};
+
+		/* Tear down CIS now in ULL_HIGH context. Ignore enqueue
+		 * error (already enqueued) as all CISes marked for teardown
+		 * will be handled in disabled_cis_cb. Use mayfly chaining to
+		 * prevent recursive stop calls.
+		 */
+		mfy.fp = disabled_cis_cb;
+		mfy.param = cig;
+		mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+			       TICKER_USER_ID_ULL_HIGH, 1, &mfy);
+	}
 }

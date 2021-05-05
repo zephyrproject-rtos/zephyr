@@ -25,10 +25,11 @@
 #include "hal/debug.h"
 
 #include "lll_conn_iso.h"
-#include "ull_conn_iso_internal.h"
 #include "ull_conn_iso_types.h"
 #include "isoal.h"
 #include "ull_iso_types.h"
+#include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
 /* Allocate data path pools for RX/TX directions for each stream */

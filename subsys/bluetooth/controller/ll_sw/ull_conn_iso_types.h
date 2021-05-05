@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+struct ll_conn;
+
+typedef void (*ll_iso_stream_released_cb_t)(struct ll_conn *conn);
+
  #define LL_CIS_HANDLE_BASE CONFIG_BT_MAX_CONN
 
  #define LL_CIS_IDX_FROM_HANDLE(_handle) \
@@ -16,11 +20,13 @@ struct ll_conn_iso_stream {
 	uint8_t  cis_id;
 	struct ll_iso_datapath *datapath_in;
 	struct ll_iso_datapath *datapath_out;
-	uint32_t offset;        /* Offset of CIS from ACL event in us */
-	uint8_t  established;	/* 0 if CIS has not yet been established.
-				 * 1 if CIS has been established and host
-				 * notified.
-				 */
+	uint32_t offset;          /* Offset of CIS from ACL event in us */
+	ll_iso_stream_released_cb_t released_cb; /* CIS release callback */
+	uint8_t  established : 1; /* 0 if CIS has not yet been established.
+				   * 1 if CIS has been established and host
+				   * notified.
+				   */
+	uint8_t teardown : 1;     /* 1 if CIS teardown has been initiated */
 };
 
 struct ll_conn_iso_group {

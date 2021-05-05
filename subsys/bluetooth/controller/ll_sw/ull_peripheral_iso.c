@@ -24,11 +24,11 @@
 #include "lll_conn_iso.h"
 
 #include "ull_conn_types.h"
-#include "ull_conn_internal.h"
 #include "ull_conn_iso_types.h"
-#include "ull_conn_iso_internal.h"
 #include "ull_internal.h"
 
+#include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
 #include "lll_peripheral_iso.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -129,6 +129,8 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	cis->cis_id = req->cis_id;
 	cis->established = 0;
 	cis->group = cig;
+	cis->teardown = 0;
+	cis->released_cb = NULL;
 
 	cis->lll.handle = 0xFFFF;
 	cis->lll.acl_handle = acl->lll.handle;
