@@ -581,6 +581,25 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 	return OT_ERROR_NONE;
 }
 
+otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
+			     uint32_t aStart, uint32_t aDuration)
+{
+	int result;
+
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = {
+		.rx_slot.channel = aChannel,
+		.rx_slot.start = aStart,
+		.rx_slot.duration = aDuration,
+	};
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_RX_SLOT,
+				      &config);
+
+	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
+}
+
 otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 {
 	otError error = OT_ERROR_INVALID_STATE;
@@ -689,6 +708,10 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 		caps |= OT_RADIO_CAPS_TRANSMIT_TIMING;
 	}
 #endif
+
+	if (radio_caps & IEEE802154_HW_RXTIME) {
+		caps |= OT_RADIO_CAPS_RECEIVE_TIMING;
+	}
 
 	return caps;
 }

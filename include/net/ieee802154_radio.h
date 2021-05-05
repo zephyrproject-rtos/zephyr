@@ -56,6 +56,7 @@ enum ieee802154_hw_caps {
 	IEEE802154_HW_TXTIME	  = BIT(8), /* TX at specified time supported */
 	IEEE802154_HW_SLEEP_TO_TX = BIT(9), /* TX directly from sleep supported */
 	IEEE802154_HW_TX_SEC	  = BIT(10), /* TX security hadling supported */
+	IEEE802154_HW_RXTIME	  = BIT(11), /* RX at specified time supported */
 };
 
 enum ieee802154_filter_type {
@@ -158,6 +159,9 @@ enum ieee802154_config_type {
 
 	/** Sets the current MAC frame counter value for radios supporting transmit security. */
 	IEEE802154_CONFIG_FRAME_COUNTER,
+
+	/** Configure a radio reception slot */
+	IEEE802154_CONFIG_RX_SLOT,
 };
 
 /** IEEE802.15.4 driver configuration data. */
@@ -197,6 +201,13 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_FRAME_COUNTER`` */
 		uint32_t frame_counter;
+
+		/** ``IEEE802154_CONFIG_RX_SLOT`` */
+		struct {
+			uint8_t channel;
+			uint32_t start;
+			uint32_t duration;
+		} rx_slot;
 	};
 };
 
