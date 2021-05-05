@@ -37,12 +37,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
-/* boot time measurement items */
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-uint32_t __noinit z_timestamp_main;  /* timestamp when main task starts */
-uint32_t __noinit z_timestamp_idle;  /* timestamp when CPU goes idle */
-#endif
-
 /* the only struct z_kernel instance */
 struct z_kernel _kernel;
 
@@ -175,10 +169,6 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_SMP
 	z_smp_init();
 	z_sys_init_run_level(_SYS_INIT_LEVEL_SMP);
-#endif
-
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	z_timestamp_main = k_cycle_get_32();
 #endif
 
 	extern void main(void);

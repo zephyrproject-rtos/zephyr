@@ -127,11 +127,6 @@ extern void z_early_boot_rand_get(uint8_t *buf, size_t length);
 extern int z_stack_adjust_initialized;
 #endif
 
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-extern uint32_t z_timestamp_main; /* timestamp when main task starts */
-extern uint32_t z_timestamp_idle; /* timestamp when CPU goes idle */
-#endif
-
 extern struct k_thread z_main_thread;
 
 
