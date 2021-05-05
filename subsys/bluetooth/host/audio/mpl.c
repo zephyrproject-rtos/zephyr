@@ -258,6 +258,7 @@ static struct mpl_mediaplayer_t pl = {
 	.operations_supported	  = 0x001fffff, /* All opcodes */
 #ifdef CONFIG_BT_OTS
 	.search_results_id	  = 0,
+	.calls = { 0 }
 #endif /* CONFIG_BT_OTS */
 };
 
@@ -842,62 +843,6 @@ static struct bt_ots_cb ots_cbs = {
 
 #endif /* CONFIG_BT_OTS */
 
-
-int media_proxy_pl_init(void)
-{
-	static bool initialized;
-	int ret;
-
-	if (initialized) {
-		BT_DBG("Already initialized");
-		return -EALREADY;
-	}
-
-	/* Set up the media control service */
-#ifdef CONFIG_BT_OTS
-	ret = bt_mcs_init(&ots_cbs);
-#else
-	ret = bt_mcs_init(NULL);
-#endif /* CONFIG_BT_OTS */
-
-	if (ret) {
-		BT_ERR("Could not init MCS");
-	}
-
-	/* Get a Content Control ID */
-	pl.content_ctrl_id = ccid_get_value();
-
-#ifdef CONFIG_BT_OTS
-	/* Initialize the object content buffer */
-	net_buf_simple_init(obj.content, 0);
-
-	/* Icon Object */
-	ret = add_icon_object(&pl);
-	if (ret < 0) {
-		BT_ERR("Unable to add icon object, error %d", ret);
-		return ret;
-	}
-
-	/* Add all tracks and groups to OTS */
-	ret = add_group_and_track_objects(&pl);
-	if (ret < 0) {
-		BT_ERR("Error adding tracks and groups to OTS, error %d", ret);
-		return ret;
-	}
-
-	/* Initial setup of Track Segments Object */
-	/* TODO: Later, this should be done when the tracks are added */
-	/* but for no only one of the tracks has segments .*/
-	ret = add_current_track_segments_object(&pl);
-	if (ret < 0) {
-		BT_ERR("Error adding Track Segments Object to OTS, error %d", ret);
-		return ret;
-	}
-#endif /* CONFIG_BT_OTS */
-
-	initialized = true;
-	return 0;
-}
 
 /* TODO: It must be possible to replace the do_prev_segment(), do_prev_track */
 /* and do_prev_group() with a generic do_prev() command that can be used at */
@@ -2259,39 +2204,39 @@ void (*operation_handlers[BT_MCS_MEDIA_STATE_LAST])(struct mpl_op_t operation,
 	seeking_state_operation_handler
 };
 
-char *media_proxy_pl_player_name_get(void)
+char *player_name_get(void)
 {
 	return pl.name;
 }
 
 #ifdef CONFIG_BT_OTS
-uint64_t media_proxy_pl_icon_id_get(void)
+uint64_t icon_id_get(void)
 {
 	return pl.icon_id;
 }
 #endif /* CONFIG_BT_OTS */
 
-char *media_proxy_pl_icon_url_get(void)
+char *icon_url_get(void)
 {
 	return pl.icon_url;
 }
 
-char *media_proxy_pl_track_title_get(void)
+char *track_title_get(void)
 {
 	return pl.group->track->title;
 }
 
-int32_t media_proxy_pl_track_duration_get(void)
+int32_t track_duration_get(void)
 {
 	return pl.group->track->duration;
 }
 
-int32_t media_proxy_pl_track_position_get(void)
+int32_t track_position_get(void)
 {
 	return pl.track_pos;
 }
 
-void media_proxy_pl_track_position_set(int32_t position)
+void track_position_set(int32_t position)
 {
 	int32_t old_pos = pl.track_pos;
 	int32_t new_pos;
@@ -2324,33 +2269,33 @@ void media_proxy_pl_track_position_set(int32_t position)
 	}
 }
 
-int8_t media_proxy_pl_playback_speed_get(void)
+int8_t playback_speed_get(void)
 {
 	return pl.playback_speed_param;
 }
 
-void media_proxy_pl_playback_speed_set(int8_t speed)
+void playback_speed_set(int8_t speed)
 {
 	pl.playback_speed_param = speed;
 }
 
-int8_t media_proxy_pl_seeking_speed_get(void)
+int8_t seeking_speed_get(void)
 {
 	return pl.seeking_speed_factor;
 }
 
 #ifdef CONFIG_BT_OTS
-uint64_t media_proxy_pl_track_segments_id_get(void)
+uint64_t track_segments_id_get(void)
 {
 	return pl.group->track->segments_id;
 }
 
-uint64_t media_proxy_pl_current_track_id_get(void)
+uint64_t current_track_id_get(void)
 {
 	return pl.group->track->id;
 }
 
-void media_proxy_pl_current_track_id_set(uint64_t id)
+void current_track_id_set(uint64_t id)
 {
 	/* This requires that we have the track with the given ID */
 	/* and can find it and switch to it. */
@@ -2375,7 +2320,7 @@ void media_proxy_pl_current_track_id_set(uint64_t id)
 				/* who set the track */
 }
 
-uint64_t media_proxy_pl_next_track_id_get(void)
+uint64_t next_track_id_get(void)
 {
 	if (pl.group->track->next) {
 		return pl.group->track->next->id;
@@ -2385,7 +2330,7 @@ uint64_t media_proxy_pl_next_track_id_get(void)
 	return MPL_NO_TRACK_ID;
 }
 
-void media_proxy_pl_next_track_id_set(uint64_t id)
+void next_track_id_set(uint64_t id)
 {
 	BT_DBG_OBJ_ID("Track ID to set: ", id);
 
@@ -2400,18 +2345,18 @@ void media_proxy_pl_next_track_id_set(uint64_t id)
 				  /* who set the track */
 }
 
-uint64_t media_proxy_pl_current_group_id_get(void)
+uint64_t current_group_id_get(void)
 {
 	return pl.group->id;
 }
 
-void media_proxy_pl_current_group_id_set(uint64_t id)
+void current_group_id_set(uint64_t id)
 {
 	BT_DBG_OBJ_ID("Group ID to set: ", id);
 	pl.group->id = id;
 }
 
-uint64_t media_proxy_pl_parent_group_id_get(void)
+uint64_t parent_group_id_get(void)
 {
 	return pl.group->parent->id;
 }
@@ -2424,24 +2369,24 @@ void media_proxy_pl_test_unset_parent_group(void)
 #endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 #endif /* CONFIG_BT_OTS */
 
-uint8_t media_proxy_pl_playing_order_get(void)
+uint8_t playing_order_get(void)
 {
 	return pl.playing_order;
 }
 
-void media_proxy_pl_playing_order_set(uint8_t order)
+void playing_order_set(uint8_t order)
 {
 	if (BIT(order - 1) & pl.playing_orders_supported) {
 		pl.playing_order = order;
 	}
 }
 
-uint16_t media_proxy_pl_playing_orders_supported_get(void)
+uint16_t playing_orders_supported_get(void)
 {
 	return pl.playing_orders_supported;
 }
 
-uint8_t media_proxy_pl_media_state_get(void)
+uint8_t media_state_get(void)
 {
 	return pl.state;
 }
@@ -2454,7 +2399,7 @@ void media_proxy_pl_test_media_state_set(uint8_t state)
 }
 #endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 
-void media_proxy_pl_operation_set(struct mpl_op_t operation)
+void operation_set(struct mpl_op_t operation)
 {
 	struct mpl_op_ntf_t ntf;
 
@@ -2468,7 +2413,7 @@ void media_proxy_pl_operation_set(struct mpl_op_t operation)
 	}
 }
 
-uint32_t media_proxy_pl_operations_supported_get(void)
+uint32_t operations_supported_get(void)
 {
 	return pl.operations_supported;
 }
@@ -2528,7 +2473,7 @@ static void parse_search(struct mpl_search_t search)
 	media_proxy_pl_search_results_id_cb(pl.search_results_id);
 }
 
-void media_proxy_pl_scp_set(struct mpl_search_t search)
+void scp_set(struct mpl_search_t search)
 {
 	if (search.len > SEARCH_LEN_MAX) {
 		BT_WARN("Search too long: %d", search.len);
@@ -2539,13 +2484,13 @@ void media_proxy_pl_scp_set(struct mpl_search_t search)
 	parse_search(search);
 }
 
-uint64_t media_proxy_pl_search_results_id_get(void)
+uint64_t search_results_id_get(void)
 {
 	return pl.search_results_id;
 }
 #endif /* CONFIG_BT_OTS */
 
-uint8_t media_proxy_pl_content_ctrl_id_get(void)
+uint8_t content_ctrl_id_get(void)
 {
 	return pl.content_ctrl_id;
 }
@@ -2634,3 +2579,95 @@ void media_proxy_pl_debug_dump_state(void)
 #endif /* CONFIG_BT_OTS */
 }
 #endif /* CONFIG_BT_DEBUG_MCS */
+
+int media_proxy_pl_init(void)
+{
+	static bool initialized;
+	int ret;
+
+	if (initialized) {
+		BT_DBG("Already initialized");
+		return -EALREADY;
+	}
+
+	/* Set up the media control service */
+#ifdef CONFIG_BT_OTS
+	ret = bt_mcs_init(&ots_cbs);
+#else
+	ret = bt_mcs_init(NULL);
+#endif /* CONFIG_BT_OTS */
+
+	if (ret) {
+		BT_ERR("Could not init MCS");
+	}
+
+	/* Get a Content Control ID */
+	pl.content_ctrl_id = ccid_get_value();
+
+#ifdef CONFIG_BT_OTS
+	/* Initialize the object content buffer */
+	net_buf_simple_init(obj.content, 0);
+
+	/* Icon Object */
+	ret = add_icon_object(&pl);
+	if (ret < 0) {
+		BT_ERR("Unable to add icon object, error %d", ret);
+		return ret;
+	}
+
+	/* Add all tracks and groups to OTS */
+	ret = add_group_and_track_objects(&pl);
+	if (ret < 0) {
+		BT_ERR("Error adding tracks and groups to OTS, error %d", ret);
+		return ret;
+	}
+
+	/* Initial setup of Track Segments Object */
+	/* TODO: Later, this should be done when the tracks are added */
+	/* but for no only one of the tracks has segments .*/
+	ret = add_current_track_segments_object(&pl);
+	if (ret < 0) {
+		BT_ERR("Error adding Track Segments Object to OTS, error %d", ret);
+		return ret;
+	}
+#endif /* CONFIG_BT_OTS */
+
+	/* Set up the calls structure */
+	pl.calls.player_name_get              = player_name_get;
+#ifdef CONFIG_BT_OTS
+	pl.calls.icon_id_get                  = icon_id_get;
+#endif /* CONFIG_BT_OTS */
+	pl.calls.icon_url_get                 = icon_url_get;
+	pl.calls.track_title_get              = track_title_get;
+	pl.calls.track_duration_get           = track_duration_get;
+	pl.calls.track_position_get           = track_position_get;
+	pl.calls.track_position_set           = track_position_set;
+	pl.calls.playback_speed_get           = playback_speed_get;
+	pl.calls.playback_speed_set           = playback_speed_set;
+	pl.calls.seeking_speed_get            = seeking_speed_get;
+#ifdef CONFIG_BT_OTS
+	pl.calls.track_segments_id_get        = track_segments_id_get;
+	pl.calls.current_track_id_get         = current_track_id_get;
+	pl.calls.current_track_id_set         = current_track_id_set;
+	pl.calls.next_track_id_get            = next_track_id_get;
+	pl.calls.next_track_id_set            = next_track_id_set;
+	pl.calls.current_group_id_get         = current_group_id_get;
+	pl.calls.current_group_id_set         = current_group_id_set;
+	pl.calls.parent_group_id_get          = parent_group_id_get;
+#endif /* CONFIG_BT_OTS */
+	pl.calls.playing_order_get            = playing_order_get;
+	pl.calls.playing_order_set            = playing_order_set;
+	pl.calls.playing_orders_supported_get = playing_orders_supported_get;
+	pl.calls.media_state_get              = media_state_get;
+	pl.calls.operation_set                = operation_set;
+#ifdef CONFIG_BT_OTS
+	pl.calls.scp_set                      = scp_set;
+	pl.calls.search_results_id_get        = search_results_id_get;
+#endif /* CONFIG_BT_OTS */
+	pl.calls.content_ctrl_id_get          = content_ctrl_id_get;
+
+	media_proxy_pl_register(&pl.calls);
+
+	initialized = true;
+	return 0;
+}
