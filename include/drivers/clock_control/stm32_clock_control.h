@@ -95,13 +95,17 @@
 #endif
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb1_prescaler) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), apb1_prescaler)
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32f0_rcc), apb1_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), apb1_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), apb1_prescaler)
 #define STM32_APB1_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb1_prescaler)
 #else
 #define STM32_APB1_PRESCALER	CONFIG_CLOCK_STM32_APB1_PRESCALER
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb2_prescaler)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_rcc), apb2_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wb_rcc), apb2_prescaler) || \
+	DT_NODE_HAS_PROP(DT_INST(0, st_stm32wl_rcc), apb2_prescaler)
 #define STM32_APB2_PRESCALER	DT_PROP(DT_NODELABEL(rcc), apb2_prescaler)
 #elif !DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32f0_rcc, okay)
 	/* This should not be defined in F0 binding case */

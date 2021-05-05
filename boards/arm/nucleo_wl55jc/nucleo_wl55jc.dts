@@ -61,7 +61,6 @@
 	};
 };
 
-
 &clk_hsi {
 	status = "okay";
 };
