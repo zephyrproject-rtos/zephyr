@@ -53,6 +53,8 @@
 #define TICK_IRQ ARM_ARCH_TIMER_IRQ
 #elif defined(CONFIG_APIC_TIMER)
 #define TICK_IRQ CONFIG_APIC_TIMER_IRQ
+#elif defined(CONFIG_APIC_TSC_DEADLINE_TIMER)
+#define TICK_IRQ z_loapic_irq_base() /* first LVT interrupt */
 #elif defined(CONFIG_XTENSA_TIMER)
 #define TICK_IRQ UTIL_CAT(XCHAL_TIMER,		\
 			  UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
