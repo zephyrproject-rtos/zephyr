@@ -1044,6 +1044,37 @@ static void le_conn_complete_adv_timeout(void)
 
 static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
+#if (CONFIG_BT_ID_MAX > 1) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		evt->role == BT_HCI_ROLE_SLAVE &&
+		evt->status == BT_HCI_ERR_SUCCESS &&
+		(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+				BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+
+		/* Cache the connection complete event. Process it later.
+		 * See bt_dev.cached_conn_complete.
+		 */
+		for (int i = 0; i < ARRAY_SIZE(bt_dev.cached_conn_complete); i++) {
+			if (!bt_dev.cached_conn_complete[i].valid) {
+				(void)memcpy(&bt_dev.cached_conn_complete[i].evt,
+					evt,
+					sizeof(struct bt_hci_evt_le_enh_conn_complete));
+				bt_dev.cached_conn_complete[i].valid = true;
+				return;
+			}
+		}
+
+		__ASSERT(false, "No more cache entries available."
+				"This should not happen by design");
+
+		return;
+	}
+#endif
+	bt_hci_le_enh_conn_complete(evt);
+}
+
+void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
+{
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;

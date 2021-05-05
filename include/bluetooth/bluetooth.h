@@ -540,9 +540,6 @@ struct bt_le_adv_param {
 	 *       enabled or not supported by the controller it is not possible
 	 *       to scan and advertise simultaneously using two different
 	 *       random addresses.
-	 *
-	 * @note It is not possible to have multiple connectable advertising
-	 *       sets advertising simultaneously using different identities.
 	 */
 	uint8_t  id;
 
