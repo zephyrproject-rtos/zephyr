@@ -67,6 +67,9 @@
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(80)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
 };
 
 &usart1 {
