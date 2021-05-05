@@ -1577,7 +1577,7 @@ static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt,
 
 	*evt = cmd_complete_status(status);
 }
-#endif /* CONFIG_BT_CTLR_ADV_ISO */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
@@ -6335,6 +6335,7 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 		case NODE_RX_TYPE_CIS_REQUEST:
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
+
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
 		case NODE_RX_TYPE_CIS_ESTABLISHED:
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
