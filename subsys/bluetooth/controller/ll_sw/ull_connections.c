@@ -175,6 +175,22 @@ void ull_conn_mfifo_enqueue_tx(uint8_t idx)
 	MFIFO_ENQUEUE(conn_tx, idx);
 }
 
+/**
+ * @brief Pause the data path of a rx queue.
+ */
+void ull_conn_pause_rx_data(struct ll_conn *conn)
+{
+	conn->pause_rx_data = 1U;
+}
+
+/**
+ * @brief Resume the data path of a rx queue.
+ */
+void ull_conn_resume_rx_data(struct ll_conn *conn)
+{
+	conn->pause_rx_data = 0U;
+}
+
 /*
  * EGON: following 2 functions need to be removed when implementing tx/rx path
  * ll_rx_enqueue needs to be replaced with calls to ll_rx_put/ll_rx_sched
@@ -462,10 +478,8 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	case PDU_DATA_LLID_DATA_CONTINUE:
 	case PDU_DATA_LLID_DATA_START:
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-		/*
-		 * EGON TODO: use correct data structure
-		 */
-		if (conn->llcp.enc.pause_rx) {
+		if (conn->pause_rx_data) {
+			/* Data PDU recieved during data pause */
 			conn->terminate.reason =
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 
@@ -478,11 +492,8 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	case PDU_DATA_LLID_RESV:
 	default:
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-		/*
-		 * EGON TODO: use correct data structure
-		 * or more likely this is handled in ull_llcp.c
-		 */
-		if (conn->llcp.enc.pause_rx) {
+		if (conn->pause_rx_data) {
+			/* Data PDU recieved during data pause */
 			conn->terminate.reason =
 				BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL;
 		}
@@ -537,7 +548,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	switch (done->extra.mic_state) {
 	case LLL_CONN_MIC_NONE:
 #if defined(CONFIG_BT_CTLR_LE_PING)
-		if (lll->enc_rx || conn->llcp.enc.pause_rx) {
+		if (lll->enc_rx || conn->pause_rx_data) {
 			uint16_t appto_reload_new;
 
 			/* check for change in apto */
