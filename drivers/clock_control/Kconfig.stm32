@@ -44,7 +44,7 @@ config CLOCK_STM32_HSE_CLOCK
 
 config CLOCK_CONTROL_STM32_HAS_DTS
 	bool
-	default y if "$(dt_node_has_prop,rcc,clocks)"
+	default y if "$(dt_node_has_prop,rcc,clocks)" || "$(dt_node_has_prop,rcc,d1cpre)"
 	help
 	  This symbol is added to prevent default use of CLOCK_CONTROL_STM32_* symbols
 	  when board make use of device tree to configure clocks.
