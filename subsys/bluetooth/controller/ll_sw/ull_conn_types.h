@@ -482,6 +482,11 @@ struct ll_conn {
 #endif /* CONFIG_BT_CENTRAL */
 	};
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	/* Pause Rx data PDU's */
+	uint8_t pause_rx_data:1;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	uint16_t appto_reload;
 	uint16_t appto_expire;

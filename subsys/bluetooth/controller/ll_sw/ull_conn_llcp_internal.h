@@ -48,3 +48,13 @@ void *ull_conn_tx_mem_acquire(void);
 void ull_conn_tx_mem_release(void *tx);
 uint8_t ull_conn_mfifo_get_tx(void **lll_tx);
 void ull_conn_mfifo_enqueue_tx(uint8_t idx);
+
+/**
+ * @brief Pause the data path of a rx queue.
+ */
+void ull_conn_pause_rx_data(struct ll_conn *conn);
+
+/**
+ * @brief Resume the data path of a rx queue.
+ */
+void ull_conn_resume_rx_data(struct ll_conn *conn);
