@@ -34,12 +34,14 @@
 #include "ull_conn_types.h"
 #include "ull_conn_iso_types.h"
 #include "ull_internal.h"
-#include "ull_iso_internal.h"
 #include "ull_sched_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_conn_internal.h"
 #include "ull_slave_internal.h"
 #include "ull_master_internal.h"
+
+#include "ull_iso_internal.h"
+#include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
@@ -80,6 +82,7 @@ static void ticker_start_conn_op_cb(uint32_t status, void *param);
 static void conn_setup_adv_scan_disabled_cb(void *param);
 static inline void disable(uint16_t handle);
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
+static void conn_cleanup_finalize(struct ll_conn *conn);
 static void tx_ull_flush(struct ll_conn *conn);
 static void ticker_op_stop_cb(uint32_t status, void *param);
 static void disabled_cb(void *param);
@@ -1923,27 +1926,27 @@ static inline void disable(uint16_t handle)
 	conn->lll.link_tx_free = NULL;
 }
 
-static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+static void conn_cleanup_iso_cis_released_cb(struct ll_conn *conn)
+{
+	struct ll_conn_iso_stream *cis;
+
+	cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
+	if (cis) {
+		/* More associated CISes - stop next */
+		ull_conn_iso_cis_stop(cis, conn_cleanup_iso_cis_released_cb);
+	} else {
+		/* No more CISes associated with conn - finalize */
+		conn_cleanup_finalize(conn);
+	}
+}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+
+static void conn_cleanup_finalize(struct ll_conn *conn)
 {
 	struct lll_conn *lll = &conn->lll;
 	struct node_rx_pdu *rx;
 	uint32_t ticker_status;
-
-	/* reset mutex */
-	if (conn == conn_upd_curr) {
-		ull_conn_upd_curr_reset();
-	}
-
-	/* Only termination structure is populated here in ULL context
-	 * but the actual enqueue happens in the LLL context in
-	 * tx_lll_flush. The reason being to avoid passing the reason
-	 * value and handle through the mayfly scheduling of the
-	 * tx_lll_flush.
-	 */
-	rx = (void *)&conn->llcp_terminate.node_rx;
-	rx->hdr.handle = conn->lll.handle;
-	rx->hdr.type = NODE_RX_TYPE_TERMINATE;
-	*((uint8_t *)rx->pdu) = reason;
 
 	/* release any llcp reserved rx node */
 	rx = conn->llcp_rx;
@@ -1977,6 +1980,42 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 
 	/* Demux and flush Tx PDUs that remain enqueued in thread context */
 	ull_conn_tx_demux(UINT8_MAX);
+}
+
+static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
+{
+	struct node_rx_pdu *rx;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	struct ll_conn_iso_stream *cis;
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+
+	/* Reset mutex */
+	if (conn == conn_upd_curr) {
+		ull_conn_upd_curr_reset();
+	}
+
+	/* Only termination structure is populated here in ULL context
+	 * but the actual enqueue happens in the LLL context in
+	 * tx_lll_flush. The reason being to avoid passing the reason
+	 * value and handle through the mayfly scheduling of the
+	 * tx_lll_flush.
+	 */
+	rx = (void *)&conn->llcp_terminate.node_rx;
+	rx->hdr.handle = conn->lll.handle;
+	rx->hdr.type = NODE_RX_TYPE_TERMINATE;
+	*((uint8_t *)rx->pdu) = reason;
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) || defined(CONFIG_BT_CTLR_CENTRAL_ISO)
+	cis = ll_conn_iso_stream_get_by_acl(conn, NULL);
+	if (cis) {
+		/* Stop CIS and defer cleanup to after teardown. */
+		ull_conn_iso_cis_stop(cis, conn_cleanup_iso_cis_released_cb);
+		return;
+	}
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
+
+	conn_cleanup_finalize(conn);
 }
 
 static void tx_ull_flush(struct ll_conn *conn)

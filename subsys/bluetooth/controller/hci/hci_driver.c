@@ -43,13 +43,15 @@
 
 #include "ll_sw/pdu.h"
 #include "ll_sw/lll.h"
+#include "ll_sw/lll_conn.h"
 #include "ll.h"
 
 #include "isoal.h"
 #include "lll_conn_iso.h"
-#include "ull_conn_iso_internal.h"
 #include "ull_conn_iso_types.h"
 #include "ull_iso_types.h"
+#include "ull_conn_internal.h"
+#include "ull_conn_iso_internal.h"
 
 #include "hci_internal.h"
 
