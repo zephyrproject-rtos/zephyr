@@ -88,7 +88,7 @@ struct stream {
 			       const struct device *);
 	void (*queue_drop)(struct stream *);
 	int (*set_data_format)(const struct i2s_sam_dev_cfg *const,
-			       struct i2s_config *);
+			       const struct i2s_config *);
 };
 
 /* Device run time data */
