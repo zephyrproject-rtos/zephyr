@@ -39,7 +39,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define SHORT_ADDRESS_SIZE 2
 
 #define FCS_SIZE 2
+#if defined(CONFIG_IEEE802154_2015)
+#define ACK_PKT_LENGTH 127
+#else
 #define ACK_PKT_LENGTH 3
+#endif
 
 #define FRAME_TYPE_MASK 0x07
 #define FRAME_TYPE_ACK 0x02
@@ -131,7 +135,7 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 
 	size_t ack_len = net_pkt_get_len(pkt);
 
-	if (ack_len != ACK_PKT_LENGTH) {
+	if (ack_len > ACK_PKT_LENGTH) {
 		return NET_CONTINUE;
 	}
 
@@ -326,6 +330,17 @@ static void openthread_handle_received_frame(otInstance *instance,
 
 	recv_frame.mInfo.mRxInfo.mTimestamp =
 		time->second * USEC_PER_SEC + time->nanosecond / NSEC_PER_USEC;
+#endif
+
+#if defined(CONFIG_IEEE802154_2015)
+	if (net_pkt_ieee802154_arb(pkt) && net_pkt_ieee802154_fv2015(pkt)) {
+		recv_frame.mInfo.mRxInfo.mAckedWithSecEnhAck =
+			net_pkt_ieee802154_ack_seb(pkt);
+		recv_frame.mInfo.mRxInfo.mAckFrameCounter =
+			net_pkt_ieee802154_ack_fc(pkt);
+		recv_frame.mInfo.mRxInfo.mAckKeyId =
+			net_pkt_ieee802154_ack_keyid(pkt);
+	}
 #endif
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
@@ -663,6 +678,18 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 		caps |= OT_RADIO_CAPS_SLEEP_TO_TX;
 	}
 
+#if defined(CONFIG_IEEE802154_2015)
+	if (radio_caps & IEEE802154_HW_TX_SEC) {
+		caps |= OT_RADIO_CAPS_TRANSMIT_SEC;
+	}
+#endif
+
+#if defined(CONFIG_NET_PKT_TXTIME)
+	if (radio_caps & IEEE802154_HW_TXTIME) {
+		caps |= OT_RADIO_CAPS_TRANSMIT_TIMING;
+	}
+#endif
+
 	return caps;
 }
 
@@ -888,9 +915,44 @@ otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 	return OT_ERROR_NONE;
 }
 
+#if defined(CONFIG_NET_PKT_TXTIME)
 uint64_t otPlatRadioGetNow(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
 	return radio_api->get_time(radio_dev);
 }
+#endif
+
+#if defined(CONFIG_IEEE802154_2015)
+void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode,
+			  uint8_t aKeyId, const otMacKey *aPrevKey,
+			  const otMacKey *aCurrKey, const otMacKey *aNextKey)
+{
+	ARG_UNUSED(aInstance);
+	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL &&
+			aNextKey != NULL);
+
+	struct ieee802154_config config = {
+		.mac_keys.key_id_mode = aKeyIdMode,
+		.mac_keys.key_id = aKeyId,
+		.mac_keys.prev_key = (uint8_t *)aPrevKey->m8,
+		.mac_keys.curr_key = (uint8_t *)aCurrKey->m8,
+		.mac_keys.next_key = (uint8_t *)aNextKey->m8,
+	};
+
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_MAC_KEYS,
+				   &config);
+}
+
+void otPlatRadioSetMacFrameCounter(otInstance *aInstance,
+				   uint32_t aMacFrameCounter)
+{
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = { .frame_counter = aMacFrameCounter };
+
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_FRAME_COUNTER,
+				   &config);
+}
+#endif

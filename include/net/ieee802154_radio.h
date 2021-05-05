@@ -55,6 +55,7 @@ enum ieee802154_hw_caps {
 	IEEE802154_HW_ENERGY_SCAN = BIT(7), /* Energy scan supported */
 	IEEE802154_HW_TXTIME	  = BIT(8), /* TX at specified time supported */
 	IEEE802154_HW_SLEEP_TO_TX = BIT(9), /* TX directly from sleep supported */
+	IEEE802154_HW_TX_SEC	  = BIT(10), /* TX security hadling supported */
 };
 
 enum ieee802154_filter_type {
@@ -150,7 +151,13 @@ enum ieee802154_config_type {
 	/** Specifies new radio event handler. Specifying NULL as a handler
 	 *  will disable radio events notification.
 	 */
-	IEEE802154_CONFIG_EVENT_HANDLER
+	IEEE802154_CONFIG_EVENT_HANDLER,
+
+	/** Updates MAC keys and key index for radios supporting transmit security. */
+	IEEE802154_CONFIG_MAC_KEYS,
+
+	/** Sets the current MAC frame counter value for radios supporting transmit security. */
+	IEEE802154_CONFIG_FRAME_COUNTER,
 };
 
 /** IEEE802.15.4 driver configuration data. */
@@ -178,6 +185,18 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_EVENT_HANDLER`` */
 		ieee802154_event_cb_t event_handler;
+
+		/** ``IEEE802154_CONFIG_MAC_KEYS`` */
+		struct {
+			uint8_t key_id_mode;
+			uint8_t key_id;
+			uint8_t *prev_key;
+			uint8_t *curr_key;
+			uint8_t *next_key;
+		} mac_keys;
+
+		/** ``IEEE802154_CONFIG_FRAME_COUNTER`` */
+		uint32_t frame_counter;
 	};
 };
 
