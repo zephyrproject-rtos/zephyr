@@ -30,6 +30,7 @@
 #include "ull_internal.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
+#include "ull_conn_llcp_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp_enc
@@ -351,6 +352,8 @@ static void lp_enc_st_wait_rx_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 
 	switch (evt) {
 	case LP_ENC_EVT_ENC_RSP:
+		/* Pause Rx data */
+		ull_conn_pause_rx_data(conn);
 		lp_enc_store_s(conn, ctx, pdu);
 		/* Wait for LL_START_ENC_REQ */
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
@@ -364,7 +367,6 @@ static void lp_enc_st_wait_rx_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 
 static void lp_enc_st_wait_rx_start_enc_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
 	struct pdu_data *pdu = (struct pdu_data *) param;
 
 	switch (evt) {
@@ -372,6 +374,8 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ll_conn *conn, struct proc_ct
 		lp_enc_send_start_enc_rsp(conn, ctx, evt, param);
 		break;
 	case LP_ENC_EVT_REJECT:
+		/* Resume Rx data */
+		ull_conn_resume_rx_data(conn);
 		ctx->data.enc.error = pdu->llctrl.reject_ext_ind.error_code;
 		lp_enc_complete(conn, ctx, evt, param);
 		break;
@@ -395,9 +399,10 @@ static void lp_enc_st_wait_tx_start_enc_rsp(struct ll_conn *conn, struct proc_ct
 
 static void lp_enc_st_wait_rx_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_START_ENC_RSP:
+		/* Resume Rx data */
+		ull_conn_resume_rx_data(conn);
 		ctx->data.enc.error = BT_HCI_ERR_SUCCESS;
 		lp_enc_complete(conn, ctx, evt, param);
 		break;
@@ -451,6 +456,9 @@ static void lp_enc_state_wait_rx_pause_enc_rsp(struct ll_conn *conn, struct proc
 {
 	switch (evt) {
 	case LP_ENC_EVT_PAUSE_ENC_RSP:
+		/* Pause Rx data; will be resumed when the encapsulated
+		 * Start Procedure is done. */
+		ull_conn_pause_rx_data(conn);
 		lp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
 		break;
 	default:
@@ -753,6 +761,9 @@ static void rp_enc_send_start_enc_rsp(struct ll_conn *conn, struct proc_ctx *ctx
 		rr_complete(conn);
 		ctx->state = RP_ENC_STATE_UNENCRYPTED;
 
+		/* Resume Rx data */
+		ull_conn_resume_rx_data(conn);
+
 		/* Tx Encryption enabled */
 		conn->lll.enc_tx = 1U;
 	}
@@ -808,6 +819,8 @@ static void rp_enc_state_wait_rx_enc_req(struct ll_conn *conn, struct proc_ctx *
 {
 	switch (evt) {
 	case RP_ENC_EVT_ENC_REQ:
+		/* Pause Rx data */
+		ull_conn_pause_rx_data(conn);
 		rp_enc_store_m(conn, ctx, param);
 		rp_enc_send_enc_rsp(conn, ctx, evt, param);
 		break;
@@ -944,6 +957,9 @@ static void rp_enc_state_wait_rx_pause_enc_req(struct ll_conn *conn, struct proc
 	case RP_ENC_EVT_PAUSE_ENC_REQ:
 		tx_pause_data(conn);
 		tx_flush(conn);
+		/* Pause Rx data; will be resumed when the encapsulated
+		 * Start Procedure is done. */
+		ull_conn_pause_rx_data(conn);
 		rp_enc_send_pause_enc_rsp(conn, ctx, evt, param);
 		break;
 	default:
