@@ -341,8 +341,8 @@ void test_main(void)
 	ztest_test_suite(error_hook_tests,
 			 ztest_user_unit_test(test_catch_assert_fail),
 			 ztest_user_unit_test(test_catch_fatal_error),
-			 ztest_unit_test(test_catch_assert_in_isr),
-			 ztest_unit_test(test_catch_z_oops)
+			 ztest_unit_test(test_catch_z_oops),
+			 ztest_unit_test(test_catch_assert_in_isr)
 			 );
 	ztest_run_test_suite(error_hook_tests);
 #else
