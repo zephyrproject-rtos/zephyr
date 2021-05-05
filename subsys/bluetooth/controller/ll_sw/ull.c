@@ -46,7 +46,8 @@
 #include "ull_sync_types.h"
 #include "ull_conn_types.h"
 #include "ull_filter.h"
-#include "ull_df.h"
+#include "ull_df_types.h"
+#include "ull_df_internal.h"
 
 #include "isoal.h"
 #include "ull_internal.h"
@@ -369,10 +370,11 @@ static struct {
  * happen due to supervision timeout and other reasons that dont have an
  * incoming Rx-ed PDU).
  */
-#define LINK_RX_POOL_SIZE (sizeof(memq_link_t) * \
-			   (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET + \
-			    (BT_CTLR_SCAN_SYNC_SET * 2) + \
-			    (BT_CTLR_SCAN_SYNC_ISO_SET * 2)))
+#define LINK_RX_POOL_SIZE                                                      \
+	(sizeof(memq_link_t) *                                                 \
+	 (RX_CNT + 2 + BT_CTLR_MAX_CONN + BT_CTLR_ADV_SET +                    \
+	  (BT_CTLR_SCAN_SYNC_SET * 2) + (BT_CTLR_SCAN_SYNC_ISO_SET * 2) +      \
+	  (IQ_REPORT_CNT)))
 static struct {
 	uint8_t quota_pdu; /* Number of un-utilized buffers */
 
@@ -831,12 +833,7 @@ void ll_rx_dequeue(void)
 			    (void **)&rx);
 	LL_ASSERT(link);
 
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	if (rx->type != NODE_RX_TYPE_IQ_SAMPLE_REPORT)
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
-	{
-		mem_release(link, &mem_link_rx.free);
-	}
+	mem_release(link, &mem_link_rx.free);
 
 	/* handle object specific clean up */
 	switch (rx->type) {
@@ -925,13 +922,6 @@ void ll_rx_dequeue(void)
 	}
 	break;
 #endif /* CONFIG_BT_BROADCASTER */
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
-	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
-	{
-		ull_df_iq_report_link_release(link);
-	}
-	break;
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CONN)
@@ -1110,6 +1100,10 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_ISO)
 	case NODE_RX_TYPE_ISO_PDU:
 #endif
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	case NODE_RX_TYPE_IQ_SAMPLE_REPORT:
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 	/* Ensure that at least one 'case' statement is present for this
 	 * code block.
