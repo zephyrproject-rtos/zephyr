@@ -106,7 +106,11 @@ static MEMQ_DECLARE(ll_rx);
 static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 #endif /* CONFIG_BT_CONN */
 
+#ifdef ZTEST_UNITTEST
+extern sys_slist_t ut_rx_q;
+#else
 sys_slist_t ut_rx_q;
+#endif
 
 static inline int init_reset(void);
 static inline void rx_alloc(uint8_t max);
