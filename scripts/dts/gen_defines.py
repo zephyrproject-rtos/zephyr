@@ -51,7 +51,7 @@ class LogFormatter(logging.Formatter):
 
 def main():
     global header_file
-    global flash_area_num
+    global flash_area_num # This 0 based ID of only "okay" status partitions.
 
     args = parse_args()
 
@@ -125,6 +125,7 @@ def main():
             write_bus(node)
             write_special_props(node)
             write_vanilla_props(node)
+
 
         write_chosen(edt)
         write_global_compat_info(edt)
@@ -354,9 +355,11 @@ def write_special_props(node):
     write_status(node)
 
     if node.parent and "fixed-partitions" in node.parent.compats:
-        macro = f"{node.z_path_id}_PARTITION_ID"
-        out_dt_define(macro, flash_area_num)
-        flash_area_num += 1
+        if node.status == "okay":
+            macro = f"{node.z_path_id}_PARTITION_ID"
+            out_dt_define(macro, flash_area_num)
+            flash_area_num += 1
+
 
 def write_regs(node):
     # reg property: edtlib knows the right #address-cells and
