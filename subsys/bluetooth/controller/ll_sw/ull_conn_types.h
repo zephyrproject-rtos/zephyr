@@ -427,17 +427,6 @@ struct llcp_struct {
 	struct {
 		uint32_t win_offset_us;
 	} cu;
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	struct {
-		uint8_t pause_rx:1;
-		uint8_t pause_tx:1;
-		uint8_t refresh:1;
-		uint8_t ediv[2];
-		uint8_t rand[8];
-		uint8_t ltk[16];
-	} enc;
-#endif /* CONFIG_BT_CTLR_LE_ENC */
-
 }; /* struct llcp_struct */
 
 struct ll_conn {
