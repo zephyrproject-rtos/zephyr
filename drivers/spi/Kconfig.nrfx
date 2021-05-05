@@ -203,4 +203,7 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	  supplying buffers located in flash to the driver, otherwise such
 	  transfers will fail.
 
+config SPI_NRFX_HIGH_DRIVE_STRENGTH
+	bool "Use high drive strength for SCLK and MOSI pins"
+
 endif # SPI_NRFX

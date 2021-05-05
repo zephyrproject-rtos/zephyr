@@ -6,6 +6,7 @@
 
 #include <drivers/spi.h>
 #include <nrfx_spim.h>
+#include <hal/nrf_gpio.h>
 #include <string.h>
 
 #define LOG_DOMAIN "spi_nrfx_spim"
@@ -321,6 +322,22 @@ static int init_spim(const struct device *dev)
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s", dev->name);
 		return -EBUSY;
+	}
+	if (IS_ENABLED(CONFIG_SPI_NRFX_HIGH_DRIVE_STRENGTH)) {
+		const nrfx_spim_config_t *cfg = &get_dev_config(dev)->config;
+
+		nrf_gpio_cfg(cfg->sck_pin,
+			     NRF_GPIO_PIN_DIR_OUTPUT,
+			     NRF_GPIO_PIN_INPUT_CONNECT,
+			     NRF_GPIO_PIN_NOPULL,
+			     NRF_GPIO_PIN_H0H1,
+			     NRF_GPIO_PIN_NOSENSE);
+		nrf_gpio_cfg(cfg->mosi_pin,
+			     NRF_GPIO_PIN_DIR_OUTPUT,
+			     NRF_GPIO_PIN_INPUT_DISCONNECT,
+			     NRF_GPIO_PIN_NOPULL,
+			     NRF_GPIO_PIN_H0H1,
+			     NRF_GPIO_PIN_NOSENSE);
 	}
 
 #ifdef CONFIG_PM_DEVICE
