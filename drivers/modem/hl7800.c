@@ -256,6 +256,7 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_MAX_DATA_LENGTH 1500
 #define MDM_MTU 1500
 #define MDM_MAX_RESP_SIZE 128
+#define MDM_IP_INFO_RESP_SIZE 256
 
 #define MDM_HANDLER_MATCH_MAX_LEN 100
 
@@ -1530,9 +1531,10 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	int num_delims = CGCONTRDP_RESPONSE_NUM_DELIMS;
 	char *delims[CGCONTRDP_RESPONSE_NUM_DELIMS];
 	size_t out_len;
-	char value[MDM_MAX_RESP_SIZE];
+	char value[MDM_IP_INFO_RESP_SIZE];
 	char *search_start, *addr_start, *sm_start, *gw_start, *dns_start;
 	struct in_addr new_ipv4_addr;
+	bool is_ipv4;
 	int ipv4_len;
 	char ipv4_addr_str[NET_IPV4_ADDR_LEN];
 	int sn_len;
@@ -1540,10 +1542,12 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	int gw_len;
 	char gw_str[NET_IPV4_ADDR_LEN];
 	int dns_len;
+	k_timeout_t delay;
 
 	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
 	value[out_len] = 0;
 	search_start = value;
+	LOG_DBG("IP info: %s", log_strdup(value));
 
 	/* find all delimiters (,) */
 	for (int i = 0; i < num_delims; i++) {
@@ -1555,6 +1559,20 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		}
 		/* Start next search after current delim location */
 		search_start = delims[i] + 1;
+	}
+
+	/* determine if IPv4 or IPv6 by checking length of ip address plus
+	 * gateway string.
+	 */
+	is_ipv4 = false;
+	ipv4_len = delims[3] - delims[2];
+	LOG_DBG("IP string len: %d", ipv4_len);
+	if (ipv4_len <= (NET_IPV4_ADDR_LEN * 2)) {
+		is_ipv4 = true;
+	}
+
+	if (!is_ipv4) {
+		goto done;
 	}
 
 	/* Find start of subnet mask */
@@ -1617,7 +1635,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 
 	if (ictx.iface) {
 		/* remove the current IPv4 addr before adding a new one.
-		 *  We dont care if it is successful or not.
+		 * We dont care if it is successful or not.
 		 */
 		net_if_ipv4_addr_rm(ictx.iface, &ictx.ipv4Addr);
 
@@ -1634,10 +1652,11 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		net_ipaddr_copy(&ictx.ipv4Addr, &new_ipv4_addr);
 
 		/* start DNS update work */
-		k_timeout_t delay = K_NO_WAIT;
+		delay = K_NO_WAIT;
 		if (!ictx.initialized) {
 			/* Delay this in case the network
-			*  stack is still starting up */
+			 * stack is still starting up
+			 */
 			delay = K_SECONDS(DNS_WORK_DELAY_SECS);
 		}
 		k_work_reschedule_for_queue(&hl7800_workq, &ictx.dns_work,
@@ -1646,7 +1665,8 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		LOG_ERR("iface NULL");
 	}
 
-	/* TODO: IPv6 addr present, store it */
+	/* TODO: IPv6 addr present, configure iface with it */
+done:
 	return true;
 }
 
