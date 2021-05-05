@@ -1646,10 +1646,10 @@ struct bt_hci_rp_le_default_past_param {
 #define BT_HCI_OP_LE_READ_BUFFER_SIZE_V2        BT_OP(BT_OGF_LE, 0x0060)
 struct bt_hci_rp_le_read_buffer_size_v2 {
 	uint8_t  status;
-	uint16_t acl_mtu;
-	uint8_t  acl_max_pkt;
-	uint16_t iso_mtu;
-	uint8_t  iso_max_pkt;
+	uint16_t acl_max_len;
+	uint8_t  acl_max_num;
+	uint16_t iso_max_len;
+	uint8_t  iso_max_num;
 } __packed;
 
 #define BT_HCI_OP_LE_READ_ISO_TX_SYNC           BT_OP(BT_OGF_LE, 0x0061)
