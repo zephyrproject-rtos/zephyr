@@ -20,7 +20,7 @@
 
 set -xe
 
-twister_options=" --inline-logs -N -v --integration"
+twister_options=" --inline-logs -M -N -v --integration"
 
 west_commands_results_file="./pytest_out/west_commands.xml"
 
