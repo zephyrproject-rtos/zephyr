@@ -16,6 +16,12 @@ endchoice
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 
+config FLASH_MCUX_FLEXSPI_NOR
+	default y if FLASH && BOARD_MIMXRT1060_EVK
+
+config FLASH_MCUX_FLEXSPI_XIP
+	default y if FLASH && BOARD_MIMXRT1060_EVK
+
 config I2C
 	default y if KSCAN
 
