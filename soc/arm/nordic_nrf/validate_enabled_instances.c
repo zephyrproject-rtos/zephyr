@@ -50,3 +50,10 @@ BUILD_ASSERT(CHECK(0), MSG(0));
 BUILD_ASSERT(CHECK(1), MSG(1));
 BUILD_ASSERT(CHECK(2), MSG(2));
 BUILD_ASSERT(CHECK(3), MSG(3));
+
+#if IS_ENABLED(CONFIG_SOC_NRF52811)
+BUILD_ASSERT(!(SPI_ENABLED(1) && I2C_ENABLED(0)),
+	     "Only one of the following peripherals can be enabled: "
+	     "SPI1, SPIM1, SPIS1, TWI0, TWIM0, TWIS0. "
+	     "Check nodes with status \"okay\" in zephyr.dts.");
+#endif
