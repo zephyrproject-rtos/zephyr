@@ -2427,27 +2427,27 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 
 	BT_DBG("status %u", rp->status);
 
-	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->acl_mtu);
+	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
 	if (!bt_dev.le.acl_mtu) {
 		return;
 	}
 
-	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_pkt,
+	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num,
 		bt_dev.le.acl_mtu);
 
-	max_num = MIN(rp->acl_max_pkt, CONFIG_BT_CONN_TX_MAX);
+	max_num = MIN(rp->acl_max_num, CONFIG_BT_CONN_TX_MAX);
 	k_sem_init(&bt_dev.le.acl_pkts, max_num, max_num);
 
-	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_mtu);
+	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
 	if (!bt_dev.le.iso_mtu) {
 		BT_ERR("ISO buffer size not set");
 		return;
 	}
 
-	BT_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_pkt,
+	BT_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_num,
 		bt_dev.le.iso_mtu);
 
-	max_num = MIN(rp->iso_max_pkt, CONFIG_BT_ISO_TX_BUF_COUNT);
+	max_num = MIN(rp->iso_max_num, CONFIG_BT_ISO_TX_BUF_COUNT);
 	k_sem_init(&bt_dev.le.iso_pkts, max_num, max_num);
 #endif /* CONFIG_BT_ISO */
 }
