@@ -249,20 +249,6 @@ int gpio_stm32_clock_request(const struct device *dev, bool on)
 		return ret;
 	}
 
-#if defined(PWR_CR2_IOSV) && DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay)
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	if (cfg->port == STM32_PORTG) {
-		/* Port G[15:2] requires external power supply */
-		/* Cf: L4/L5 RM, Chapter "Independent I/O supply rail" */
-		if (on) {
-			LL_PWR_EnableVddIO2();
-		} else {
-			LL_PWR_DisableVddIO2();
-		}
-	}
-	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-#endif
-
 	return ret;
 }
 
