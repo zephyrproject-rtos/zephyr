@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +60,7 @@ struct i2c_esp32_cmd {
 struct i2c_esp32_data {
 	uint32_t dev_config;
 	uint16_t address;
+	uint32_t err_status;
 
 	struct k_sem fifo_sem;
 	struct k_sem transfer_sem;
@@ -293,19 +295,10 @@ static int i2c_esp32_transmit(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = dev->data;
-	uint32_t status;
 
 	/* Start transmission and wait for the ISR to give the semaphore */
 	sys_set_bit(I2C_CTR_REG(config->index), I2C_TRANS_START_S);
 	if (k_sem_take(&data->fifo_sem, K_MSEC(I2C_ESP32_TIMEOUT_MS)) < 0) {
-		return -ETIMEDOUT;
-	}
-
-	status = sys_read32(I2C_INT_RAW_REG(config->index));
-	if (status & (I2C_ARBITRATION_LOST_INT_RAW | I2C_ACK_ERR_INT_RAW)) {
-		return -EIO;
-	}
-	if (status & I2C_TIME_OUT_INT_RAW) {
 		return -ETIMEDOUT;
 	}
 
@@ -316,6 +309,8 @@ static int i2c_esp32_wait(const struct device *dev,
 			  volatile struct i2c_esp32_cmd *wait_cmd)
 {
 	const struct i2c_esp32_config *config = dev->config;
+	struct i2c_esp32_data *data = dev->data;
+	uint32_t status;
 	int counter = 0;
 	int ret;
 
@@ -334,6 +329,16 @@ static int i2c_esp32_wait(const struct device *dev,
 		if (ret < 0) {
 			return ret;
 		}
+	}
+
+	status = data->err_status;
+	if (status & (I2C_ARBITRATION_LOST_INT_RAW | I2C_ACK_ERR_INT_RAW)) {
+		data->err_status = 0;
+		return -EIO;
+	}
+	if (status & I2C_TIME_OUT_INT_RAW) {
+		data->err_status = 0;
+		return -ETIMEDOUT;
 	}
 
 	return 0;
@@ -554,14 +559,24 @@ static void i2c_esp32_isr(const struct device *dev)
 				   I2C_TRANS_COMPLETE_INT_ST |
 				   I2C_ARBITRATION_LOST_INT_ST;
 	const struct i2c_esp32_config *config = dev->config;
+	uint32_t status = sys_read32(I2C_INT_STATUS_REG(config->index));
 
-	if (sys_read32(I2C_INT_STATUS_REG(config->index)) & fifo_give_mask) {
+	if (status & fifo_give_mask) {
 		struct i2c_esp32_data *data = dev->data;
 
 		/* Only give the semaphore if a watched interrupt happens.
 		 * Error checking is performed at the other side of the
 		 * semaphore, by reading the status register.
 		 */
+		if (status & I2C_ACK_ERR_INT_ST) {
+			data->err_status |= I2C_ACK_ERR_INT_ST;
+		}
+		if (status & I2C_ARBITRATION_LOST_INT_ST) {
+			data->err_status |= I2C_ARBITRATION_LOST_INT_ST;
+		}
+		if (status & I2C_TIME_OUT_INT_ST) {
+			data->err_status |= I2C_TIME_OUT_INT_ST;
+		}
 		k_sem_give(&data->fifo_sem);
 	}
 
