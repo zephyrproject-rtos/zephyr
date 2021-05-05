@@ -244,7 +244,14 @@ struct net_pkt {
 #if defined(CONFIG_IEEE802154)
 	uint8_t ieee802154_rssi; /* Received Signal Strength Indication */
 	uint8_t ieee802154_lqi;  /* Link Quality Indicator */
+	uint8_t ieee802154_arb : 1; /* ACK Request Bit is set in the frame */
 	uint8_t ieee802154_ack_fpb : 1; /* Frame Pending Bit was set in the ACK */
+#if defined(CONFIG_IEEE802154_2015)
+	uint8_t ieee802154_fv2015 : 1; /* Frame version is IEEE 802.15.4-2015 */
+	uint8_t ieee802154_ack_seb : 1; /* Security Enabled Bit was set in the ACK */
+	uint32_t ieee802154_ack_fc; /* Frame counter set in the ACK */
+	uint8_t ieee802154_ack_keyid; /* Key index set in the ACK */
+#endif
 #endif
 #if defined(CONFIG_NET_L2_CANBUS)
 	union {
@@ -991,6 +998,16 @@ static inline void net_pkt_set_ieee802154_lqi(struct net_pkt *pkt,
 	pkt->ieee802154_lqi = lqi;
 }
 
+static inline bool net_pkt_ieee802154_arb(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_arb;
+}
+
+static inline void net_pkt_set_ieee802154_arb(struct net_pkt *pkt, bool arb)
+{
+	pkt->ieee802154_arb = arb;
+}
+
 static inline bool net_pkt_ieee802154_ack_fpb(struct net_pkt *pkt)
 {
 	return pkt->ieee802154_ack_fpb;
@@ -1001,7 +1018,51 @@ static inline void net_pkt_set_ieee802154_ack_fpb(struct net_pkt *pkt,
 {
 	pkt->ieee802154_ack_fpb = fpb;
 }
-#endif
+
+#if defined(CONFIG_IEEE802154_2015)
+static inline bool net_pkt_ieee802154_fv2015(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_fv2015;
+}
+
+static inline void net_pkt_set_ieee802154_fv2015(struct net_pkt *pkt, bool fv2015)
+{
+	pkt->ieee802154_fv2015 = fv2015;
+}
+
+static inline bool net_pkt_ieee802154_ack_seb(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_ack_seb;
+}
+
+static inline void net_pkt_set_ieee802154_ack_seb(struct net_pkt *pkt, bool seb)
+{
+	pkt->ieee802154_ack_seb = seb;
+}
+
+static inline uint32_t net_pkt_ieee802154_ack_fc(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_ack_fc;
+}
+
+static inline void net_pkt_set_ieee802154_ack_fc(struct net_pkt *pkt,
+						 uint32_t fc)
+{
+	pkt->ieee802154_ack_fc = fc;
+}
+
+static inline uint8_t net_pkt_ieee802154_ack_keyid(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_ack_keyid;
+}
+
+static inline void net_pkt_set_ieee802154_ack_keyid(struct net_pkt *pkt,
+						    uint8_t keyid)
+{
+	pkt->ieee802154_ack_keyid = keyid;
+}
+#endif /* CONFIG_IEEE802154_2015 */
+#endif /* CONFIG_IEEE802154 || CONFIG_IEEE802154_RAW_MODE */
 
 #if defined(CONFIG_NET_IPV4_AUTO)
 static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
