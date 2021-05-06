@@ -59,6 +59,11 @@
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHBPrescaler
 #endif
 
+/* Identify stm32wl dual-core socs by symbol defined in CMSIS dev header file */
+#if (defined(CONFIG_SOC_SERIES_STM32WLX) && defined(DUAL_CORE))
+#define STM32WL_DUAL_CORE
+#endif
+
 #if STM32_AHB_PRESCALER > 1
 /*
  * AHB prescaler allows to set a HCLK frequency (feeding cortex systick)
@@ -75,7 +80,7 @@
  */
 static void config_bus_clk_init(LL_UTILS_ClkInitTypeDef *clk_init)
 {
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(STM32WL_DUAL_CORE)
 	clk_init->CPU2CLKDivider = ahb_prescaler(STM32_CPU2_PRESCALER);
 #endif
 #if defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -568,7 +573,7 @@ int stm32_clock_control_init(const struct device *dev)
 	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
 #endif
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(STM32WL_DUAL_CORE)
 	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
 #endif
 #ifdef CONFIG_SOC_SERIES_STM32WBX
@@ -649,7 +654,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(STM32WL_DUAL_CORE)
 	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
 #endif
 #ifdef CONFIG_SOC_SERIES_STM32WBX
@@ -682,7 +687,7 @@ int stm32_clock_control_init(const struct device *dev)
 	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
 #endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(STM32WL_DUAL_CORE)
 	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
 #endif
 #ifdef CONFIG_SOC_SERIES_STM32WBX
