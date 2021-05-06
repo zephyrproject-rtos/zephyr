@@ -49,7 +49,7 @@ config I2C_DW
 	default y
 	depends on I2C
 
-config GPIO_INTEL_APL
+config GPIO_INTEL
 	default y
 	depends on GPIO
 
