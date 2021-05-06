@@ -178,6 +178,13 @@ int lwm2m_device_add_err(uint8_t error_code)
 	int i;
 
 	for (i = 0; i < DEVICE_ERROR_CODE_MAX; i++) {
+
+		uint8_t *err_i = (uint8_t *)error_code_ri[i].data_ptr;
+		if (*err_i == error_code) {
+			/* Error code already exists, do not add duplicate */
+			return 0;
+		}
+
 		if (error_code_ri[i].res_inst_id == RES_INSTANCE_NOT_CREATED) {
 			break;
 		}
