@@ -1017,3 +1017,26 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 
 	return radio_api->get_csl_acc(radio_dev);
 }
+
+#if defined(CONFIG_OPENTHREAD_MLE_LINK_METRICS_ENABLE)
+otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics aLinkMetrics,
+					  const otShortAddress aShortAddress,
+					  const otExtAddress *aExtAddress)
+{
+	int result;
+
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = {
+		.enh_ack.lqi = aLinkMetrics.mLqi,
+		.enh_ack.link_margin = aLinkMetrics.mLinkMargin,
+		.enh_ack.rssi = aLinkMetrics.mRssi,
+		.enh_ack.short_addr = aShortAddress,
+		.enh_ack.ext_addr = aExtAddress->m8,
+	};
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_PROBING, &config);
+
+	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
+}
+#endif /* OPENTHREAD_CONFIG_MLE_LINK_METRICS_ENABLE */
