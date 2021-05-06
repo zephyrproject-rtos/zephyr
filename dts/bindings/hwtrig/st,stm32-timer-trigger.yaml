@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 TIMER TRIGGER
+
+compatible: "st,stm32-timer-trigger"
+
+include: [base.yaml]
+
+properties:
+    label:
+      required: true
+
+    st,prescaler:
+      type: int
+      required: true
+      description: Clock prescaler at the input of the timer

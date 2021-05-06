@@ -1,0 +1,22 @@
+# HWTRIG configuration options
+
+# Copyright (c) 2021 Shlomi Vaknin
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# HWTRIG options
+#
+menuconfig HWTRIG
+	bool "HWTRIG Drivers"
+	help
+	  Enable Hardware Trigger Driver Configuration
+
+if HWTRIG
+
+source "drivers/hwtrig/Kconfig.stm32"
+
+module = HWTRIG
+module-str = hwtrig
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # HWTRIG
