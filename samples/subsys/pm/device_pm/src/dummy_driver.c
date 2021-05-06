@@ -37,7 +37,7 @@ static int dummy_open(const struct device *dev)
 	(void) k_condvar_wait(&dev->pm->condvar, &wait_mutex, K_FOREVER);
 	k_mutex_unlock(&wait_mutex);
 
-	if (atomic_get(&dev->pm->fsm_state) == PM_DEVICE_ACTIVE_STATE) {
+	if (atomic_get(&dev->pm->state) == PM_DEVICE_ACTIVE_STATE) {
 		printk("Dummy device resumed\n");
 		ret = 0;
 	} else {

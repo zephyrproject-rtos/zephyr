@@ -32,12 +32,12 @@ static void device_pm_callback(const struct device *dev,
 {
 	__ASSERT(retval == 0, "Device set power state failed");
 
-	/* Set the fsm_state */
+	/* Set the state */
 	if (*state == PM_DEVICE_ACTIVE_STATE) {
-		atomic_set(&dev->pm->fsm_state,
+		atomic_set(&dev->pm->state,
 			   PM_DEVICE_STATE_ACTIVE);
 	} else {
-		atomic_set(&dev->pm->fsm_state,
+		atomic_set(&dev->pm->state,
 			   PM_DEVICE_STATE_SUSPENDED);
 	}
 
@@ -55,11 +55,11 @@ static void pm_work_handler(struct k_work *work)
 	const struct device *dev = pm->dev;
 	int ret = 0;
 
-	switch (atomic_get(&dev->pm->fsm_state)) {
+	switch (atomic_get(&dev->pm->state)) {
 	case PM_DEVICE_STATE_ACTIVE:
 		if ((atomic_get(&dev->pm->usage) == 0) &&
 					dev->pm->enable) {
-			atomic_set(&dev->pm->fsm_state,
+			atomic_set(&dev->pm->state,
 				   PM_DEVICE_STATE_SUSPENDING);
 			ret = pm_device_state_set(dev, PM_DEVICE_SUSPEND_STATE,
 						  device_pm_callback, NULL);
@@ -70,7 +70,7 @@ static void pm_work_handler(struct k_work *work)
 	case PM_DEVICE_STATE_SUSPENDED:
 		if ((atomic_get(&dev->pm->usage) > 0) ||
 					!dev->pm->enable) {
-			atomic_set(&dev->pm->fsm_state,
+			atomic_set(&dev->pm->state,
 				   PM_DEVICE_STATE_RESUMING);
 			ret = pm_device_state_set(dev, PM_DEVICE_ACTIVE_STATE,
 						  device_pm_callback, NULL);
@@ -140,11 +140,11 @@ static int pm_device_request(const struct device *dev,
 	k_mutex_unlock(&request_mutex);
 
 	/*
-	 * dev->pm->fsm_state was set in device_pm_callback(). As the device
+	 * dev->pm->state was set in device_pm_callback(). As the device
 	 * may not have been properly changed to the target_state or another
 	 * thread we check it here before returning.
 	 */
-	return target_state == atomic_get(&dev->pm->fsm_state) ? 0 : -EIO;
+	return target_state == atomic_get(&dev->pm->state) ? 0 : -EIO;
 }
 
 int pm_device_get(const struct device *dev)
@@ -176,7 +176,7 @@ void pm_device_enable(const struct device *dev)
 	if (k_is_pre_kernel()) {
 		dev->pm->dev = dev;
 		dev->pm->enable = true;
-		atomic_set(&dev->pm->fsm_state, PM_DEVICE_STATE_SUSPENDED);
+		atomic_set(&dev->pm->state, PM_DEVICE_STATE_SUSPENDED);
 		k_work_init_delayable(&dev->pm->work, pm_work_handler);
 		return;
 	}
@@ -190,7 +190,7 @@ void pm_device_enable(const struct device *dev)
 	 */
 	if (!dev->pm->dev) {
 		dev->pm->dev = dev;
-		atomic_set(&dev->pm->fsm_state,
+		atomic_set(&dev->pm->state,
 			   PM_DEVICE_STATE_SUSPENDED);
 		k_work_init_delayable(&dev->pm->work, pm_work_handler);
 	} else {
