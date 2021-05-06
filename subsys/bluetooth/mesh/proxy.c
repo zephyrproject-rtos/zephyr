@@ -54,26 +54,34 @@
 #define CLIENT_BUF_SIZE 65
 
 #if defined(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)
-#define ADV_OPT                                                                \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_USE_IDENTITY)
+#define ADV_OPT_USE_IDENTITY BT_LE_ADV_OPT_USE_IDENTITY
 #else
-#define ADV_OPT                                                                \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME)
+#define ADV_OPT_USE_IDENTITY 0
 #endif
 
-static const struct bt_le_adv_param slow_adv_param = {
-	.options = ADV_OPT,
-	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,
-	.interval_max = BT_GAP_ADV_SLOW_INT_MAX,
-};
+#if defined(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)
+#define ADV_OPT_USE_NAME BT_LE_ADV_OPT_USE_NAME
+#else
+#define ADV_OPT_USE_NAME 0
+#endif
 
-static const struct bt_le_adv_param fast_adv_param = {
-	.options = ADV_OPT,
-	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
-	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
-};
+#define ADV_OPT_PROV                                                           \
+	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
+	 BT_LE_ADV_OPT_USE_NAME)
+
+#define ADV_OPT_PROXY                                                          \
+	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
+	 ADV_OPT_USE_NAME)
+
+#define ADV_SLOW_INT                                                           \
+	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,                               \
+	.interval_max = BT_GAP_ADV_SLOW_INT_MAX
+
+#define ADV_FAST_INT                                                           \
+	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,                             \
+	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 static void proxy_send_beacons(struct k_work *work);
@@ -1084,6 +1092,10 @@ static const struct bt_data net_id_ad[] = {
 
 static int node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 {
+	struct bt_le_adv_param fast_adv_param = {
+		.options = ADV_OPT_PROXY,
+		ADV_FAST_INT,
+	};
 	uint8_t tmp[16];
 	int err;
 
@@ -1120,6 +1132,10 @@ static int node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 {
+	struct bt_le_adv_param slow_adv_param = {
+		.options = ADV_OPT_PROXY,
+		ADV_SLOW_INT,
+	};
 	int err;
 
 	BT_DBG("");
@@ -1261,48 +1277,30 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 #endif /* GATT_PROXY */
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
-static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
+static size_t gatt_prov_adv_create(struct bt_data prov_sd[1])
 {
 	const struct bt_mesh_prov *prov = bt_mesh_prov_get();
-	const char *name = bt_get_name();
-	size_t name_len = strlen(name);
-	size_t prov_sd_len = 0;
-	size_t sd_space = 31;
+	size_t uri_len;
 
 	memcpy(prov_svc_data + 2, prov->uuid, 16);
 	sys_put_be16(prov->oob_info, prov_svc_data + 18);
 
-	if (prov->uri) {
-		size_t uri_len = strlen(prov->uri);
-
-		if (uri_len > 29) {
-			/* There's no way to shorten an URI */
-			BT_WARN("Too long URI to fit advertising packet");
-		} else {
-			prov_sd[0].type = BT_DATA_URI;
-			prov_sd[0].data_len = uri_len;
-			prov_sd[0].data = prov->uri;
-			sd_space -= 2 + uri_len;
-			prov_sd_len++;
-		}
+	if (!prov->uri) {
+		return 0;
 	}
 
-	if (sd_space > 2 && name_len > 0) {
-		sd_space -= 2;
-
-		if (sd_space < name_len) {
-			prov_sd[prov_sd_len].type = BT_DATA_NAME_SHORTENED;
-			prov_sd[prov_sd_len].data_len = sd_space;
-		} else {
-			prov_sd[prov_sd_len].type = BT_DATA_NAME_COMPLETE;
-			prov_sd[prov_sd_len].data_len = name_len;
-		}
-
-		prov_sd[prov_sd_len].data = name;
-		prov_sd_len++;
+	uri_len = strlen(prov->uri);
+	if (uri_len > 29) {
+		/* There's no way to shorten an URI */
+		BT_WARN("Too long URI to fit advertising packet");
+		return 0;
 	}
 
-	return prov_sd_len;
+	prov_sd[0].type = BT_DATA_URI;
+	prov_sd[0].data_len = uri_len;
+	prov_sd[0].data = prov->uri;
+
+	return 1;
 }
 #endif /* CONFIG_BT_MESH_PB_GATT */
 
@@ -1316,13 +1314,22 @@ int bt_mesh_proxy_adv_start(void)
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	if (!bt_mesh_is_provisioned()) {
-		struct bt_data prov_sd[2];
+		struct bt_le_adv_param fast_adv_param = {
+			.options = ADV_OPT_PROV,
+			ADV_FAST_INT,
+		};
+		struct bt_data prov_sd[1];
 		size_t prov_sd_len;
 		int err;
 
 		prov_sd_len = gatt_prov_adv_create(prov_sd);
 
 		if (!prov_fast_adv) {
+			struct bt_le_adv_param slow_adv_param = {
+				.options = ADV_OPT_PROV,
+				ADV_SLOW_INT,
+			};
+
 			return bt_mesh_adv_start(&slow_adv_param,
 						 SYS_FOREVER_MS, prov_ad,
 						 ARRAY_SIZE(prov_ad), prov_sd,
