@@ -375,6 +375,11 @@ submitted for inclusion, the project targets compliance with a series of
 coding guidelines. Refer to the :ref:`coding_guidelines` section of the
 documentation for additional details.
 
+.. toctree::
+   :maxdepth: 1
+
+   coding_guidelines/index.rst
+
 .. _Contribution Tools:
 
 .. _Contribution workflow:
