@@ -165,7 +165,11 @@ struct esp_socket {
 	/* work */
 	struct k_work connect_work;
 	struct k_work recvdata_work;
+	struct k_work send_work;
 	struct k_work close_work;
+
+	/* TX packets fifo */
+	struct k_fifo tx_fifo;
 
 	/* net context */
 	struct net_context *context;
@@ -335,6 +339,22 @@ static inline int esp_socket_work_submit(struct esp_socket *sock,
 	return ret;
 }
 
+static inline int esp_socket_queue_tx(struct esp_socket *sock,
+				      struct net_pkt *pkt)
+{
+	int ret = -EBUSY;
+
+	k_mutex_lock(&sock->lock, K_FOREVER);
+	if (!(esp_socket_flags(sock) & ESP_SOCK_WORKQ_STOPPED)) {
+		k_fifo_put(&sock->tx_fifo, pkt);
+		__esp_socket_work_submit(sock, &sock->send_work);
+		ret = 0;
+	}
+	k_mutex_unlock(&sock->lock);
+
+	return ret;
+}
+
 static inline bool esp_socket_connected(struct esp_socket *sock)
 {
 	return (esp_socket_flags(sock) & ESP_SOCK_CONNECTED) != 0;
@@ -378,6 +398,7 @@ static inline int esp_cmd_send(struct esp_data *data,
 void esp_connect_work(struct k_work *work);
 void esp_recvdata_work(struct k_work *work);
 void esp_close_work(struct k_work *work);
+void esp_send_work(struct k_work *work);
 
 #ifdef __cplusplus
 }
