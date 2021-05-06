@@ -901,6 +901,112 @@ void test_time(void)
 
 /**
  *
+ * @brief Test rand function
+ *
+ */
+void test_rand(void)
+{
+	int a;
+
+	a = rand();
+	/* The default seed is 1 */
+	zassert_equal(a, 1103527590, "rand failed");
+}
+
+/**
+ *
+ * @brief Test srand function
+ *
+ */
+void test_srand(void)
+{
+	int a;
+
+	srand(0);
+	a = rand();
+	zassert_equal(a, 12345, "srand with seed 0 failed");
+
+	srand(1);
+	a = rand();
+	zassert_equal(a, 1103527590, "srand with seed 1 failed");
+
+	srand(10);
+	a = rand();
+	zassert_equal(a, 297746555, "srand with seed 10 failed");
+
+	srand(UINT_MAX - 1);
+	a = rand();
+	zassert_equal(a, 2087949151, "srand with seed UINT_MAX - 1 failed");
+
+	srand(UINT_MAX);
+	a = rand();
+	zassert_equal(a, 1043980748, "srand with seed UINT_MAX failed");
+}
+
+/**
+ *
+ * @brief Test rand function for reproducibility
+ *
+ */
+void test_rand_reproducibility(void)
+{
+	int a;
+	int b;
+	int c;
+
+	srand(0);
+	a = rand();
+	zassert_equal(a, 12345, "srand with seed 0 failed");
+	srand(0);
+	b = rand();
+	zassert_equal(b, 12345, "srand with seed 0 failed (2nd)");
+	srand(0);
+	c = rand();
+	zassert_equal(c, 12345, "srand with seed 0 failed (3rd)");
+
+	srand(1);
+	a = rand();
+	zassert_equal(a, 1103527590, "srand with seed 1 failed");
+	srand(1);
+	b = rand();
+	zassert_equal(b, 1103527590, "srand with seed 1 failed (2nd)");
+	srand(1);
+	c = rand();
+	zassert_equal(c, 1103527590, "srand with seed 1 failed (3rd)");
+
+	srand(10);
+	a = rand();
+	zassert_equal(a, 297746555, "srand with seed 10 failed");
+	srand(10);
+	b = rand();
+	zassert_equal(b, 297746555, "srand with seed 10 failed (2nd)");
+	srand(10);
+	c = rand();
+	zassert_equal(c, 297746555, "srand with seed 10 failed (3rd)");
+
+	srand(UINT_MAX - 1);
+	a = rand();
+	zassert_equal(a, 2087949151, "srand with seed UINT_MAX - 1 failed");
+	srand(UINT_MAX - 1);
+	b = rand();
+	zassert_equal(b, 2087949151, "srand with seed UINT_MAX - 1 failed (2nd)");
+	srand(UINT_MAX - 1);
+	c = rand();
+	zassert_equal(c, 2087949151, "srand with seed UINT_MAX - 1 failed (3rd)");
+
+	srand(UINT_MAX);
+	a = rand();
+	zassert_equal(a, 1043980748, "srand with seed UINT_MAX failed");
+	srand(UINT_MAX);
+	b = rand();
+	zassert_equal(b, 1043980748, "srand with seed UINT_MAX failed (2nd)");
+	srand(UINT_MAX);
+	c = rand();
+	zassert_equal(c, 1043980748, "srand with seed UINT_MAX failed (3rd)");
+}
+
+/**
+ *
  * @brief test abort functions
  *
  * @see abort().
@@ -966,6 +1072,9 @@ void test_main(void)
 			 ztest_unit_test(test_memcpy),
 			 ztest_unit_test(test_memmove),
 			 ztest_unit_test(test_time),
+			 ztest_unit_test(test_rand),
+			 ztest_unit_test(test_srand),
+			 ztest_unit_test(test_rand_reproducibility),
 			 ztest_unit_test(test_abort),
 			 ztest_unit_test(test_exit),
 			 ztest_unit_test(test_str_operate),
