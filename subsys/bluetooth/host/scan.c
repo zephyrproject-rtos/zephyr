@@ -657,7 +657,7 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 
 	info.tx_power = evt->tx_power;
 	info.rssi = evt->rssi;
-	info.cte_type = evt->cte_type;
+	info.cte_type = BIT(evt->cte_type);
 	info.addr = &per_adv_sync->addr;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
