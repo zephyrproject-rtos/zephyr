@@ -113,6 +113,7 @@ struct lsm6dso_config {
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	const struct gpio_dt_spec gpio_drdy;
 	uint8_t int_pin;
+	bool trig_enabled;
 #endif /* CONFIG_LSM6DSO_TRIGGER */
 };
 

@@ -769,14 +769,19 @@ static int lsm6dso_init_chip(const struct device *dev)
 
 static int lsm6dso_init(const struct device *dev)
 {
+#ifdef CONFIG_LSM6DSO_TRIGGER
+	const struct lsm6dso_config *cfg = dev->config;
+#endif
 	struct lsm6dso_data *data = dev->data;
 
 	data->dev = dev;
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
-	if (lsm6dso_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
-		return -EIO;
+	if (cfg->trig_enabled) {
+		if (lsm6dso_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt.");
+			return -EIO;
+		}
 	}
 #endif
 
@@ -819,8 +824,9 @@ static int lsm6dso_init(const struct device *dev)
  */
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
-#define LSM6DSO_CFG_IRQ(inst) \
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),	\
+#define LSM6DSO_CFG_IRQ(inst)						\
+	.trig_enabled = true,						\
+	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
 	.int_pin = DT_INST_PROP(inst, int_pin)
 #else
 #define LSM6DSO_CFG_IRQ(inst)
