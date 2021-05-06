@@ -24,13 +24,15 @@ from devicetree import dtlib
 #   - to run a particular test function or functions, use
 #     '-k test_function_pattern_goes_here'
 
-def parse(dts, include_path=()):
-    '''Parse a DTS string 'dts', using the given include path.'''
+def parse(dts, include_path=(), **kwargs):
+    '''Parse a DTS string 'dts', using the given include path.
+
+    Any kwargs are passed on to DT().'''
 
     fd, path = tempfile.mkstemp(prefix='pytest-', suffix='.dts')
     try:
         os.write(fd, dts.encode('utf-8'))
-        return dtlib.DT(path, include_path)
+        return dtlib.DT(path, include_path, **kwargs)
     finally:
         os.close(fd)
         os.unlink(path)
@@ -2250,3 +2252,13 @@ l1: l2: &foo {
 / {
 };
 """)
+
+def test_dangling_alias():
+    dt = parse('''
+/dts-v1/;
+
+/ {
+	aliases { foo = "/missing"; };
+};
+''', force=True)
+    assert dt.get_node('/aliases').props['foo'].to_string() == '/missing'
