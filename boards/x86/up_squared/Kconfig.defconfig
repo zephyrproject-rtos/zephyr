@@ -1,25 +1,33 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_UP_SQUARED
+if BOARD_UP_SQUARED || BOARD_UP_SQUARED_32
 
 config BOARD
+	default "up_squared_32" if BOARD_UP_SQUARED_32
 	default "up_squared"
 
-config BUILD_OUTPUT_STRIPPED
-	default y
-
 config MP_NUM_CPUS
-	default 2
-
-endif # BOARD_UP_SQUARED
-
-
-if BOARD_UP_SQUARED_32
-
-config BOARD
-	default "up_squared_32"
+	default 2 if BOARD_UP_SQUARED
 
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-endif # BOARD_UP_SQUARED_32
+config APIC_TSC_DEADLINE_TIMER
+	default y
+
+# TSC on this board is 1.5936 GHz, HPET and APIC are 19.2 MHz
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1593600000 if APIC_TSC_DEADLINE_TIMER
+	default 1593600000 if APIC_TIMER_TSC
+	default 19200000
+
+if APIC_TIMER
+config APIC_TIMER_IRQ
+	default 24
+config APIC_TIMER_TSC_M
+	default 3
+config APIC_TIMER_TSC_N
+	default 249
+endif
+
+endif # BOARD_UP_SQUARED || BOARD_UP_SQUARED_32
