@@ -10,7 +10,6 @@ User and Developer Guides
    arch/index.rst
    bluetooth/index.rst
    build/index
-   coding_guidelines/index
    ../README.rst
    documentation/index
    coccinelle.rst
