@@ -170,6 +170,11 @@ enum ieee802154_config_type {
 	 *  based on the radio time.
 	 */
 	IEEE802154_CONFIG_CSL_RX_TIME,
+
+	/** Enable/disable or update Enhanced-ACK Based Probing in radio
+	 *  for a specific Initiator.
+	 */
+	IEEE802154_CONFIG_ENH_ACK_PROBING,
 };
 
 /** IEEE802.15.4 driver configuration data. */
@@ -225,6 +230,15 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_CSL_RX_TIME`` */
 		uint32_t csl_rx_time;
+
+		/** ``IEEE802154_CONFIG_ENH_ACK_PROBING`` */
+		struct {
+			bool lqi : 1;
+			bool link_margin : 1;
+			bool rssi : 1;
+			uint16_t short_addr;
+			const uint8_t *ext_addr;
+		} enh_ack;
 	};
 };
 
