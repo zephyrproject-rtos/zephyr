@@ -11,7 +11,7 @@
 	pinctrl-0 = <&pa21a_usart1_rxd1 &pa22a_usart1_txd1>;
 
 	esp8266 {
-		compatible = "espressif,esp";
+		compatible = "espressif,esp-at";
 		label = "esp8266";
 		status = "okay";
 	};

@@ -8,10 +8,10 @@
 #include "esp.h"
 
 #include <logging/log.h>
-LOG_MODULE_DECLARE(wifi_esp, CONFIG_WIFI_LOG_LEVEL);
+LOG_MODULE_DECLARE(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 
 #define RX_NET_PKT_ALLOC_TIMEOUT				\
-	K_MSEC(CONFIG_WIFI_ESP_RX_NET_PKT_ALLOC_TIMEOUT)
+	K_MSEC(CONFIG_WIFI_ESP_AT_RX_NET_PKT_ALLOC_TIMEOUT)
 
 struct esp_workq_flush_data {
 	struct k_work work;
