@@ -11,7 +11,6 @@ User and Developer Guides
    bluetooth/index.rst
    build/index
    ../README.rst
-   documentation/index
    coccinelle.rst
    code-relocation.rst
    crypto/index
