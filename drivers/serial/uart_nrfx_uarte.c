@@ -51,6 +51,7 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
 	(defined(CONFIG_UART_3_NRF_UARTE) && !defined(CONFIG_UART_3_ASYNC))
 #define UARTE_ANY_NONE_ASYNC 1
 #endif
+
 /*
  * RX timeout is divided into time slabs, this define tells how many divisions
  * should be made. More divisions - higher timeout accuracy and processor usage.
@@ -1672,7 +1673,8 @@ static int uarte_instance_init(const struct device *dev,
 	data->pm_state = PM_DEVICE_ACTIVE_STATE;
 #endif
 
-	if (get_dev_config(dev)->flags & UARTE_CFG_FLAG_PPI_ENDTX) {
+	if (IS_ENABLED(CONFIG_UART_ENHANCED_POLL_OUT) &&
+	    get_dev_config(dev)->flags & UARTE_CFG_FLAG_PPI_ENDTX) {
 		err = endtx_stoptx_ppi_init(uarte, data);
 		if (err < 0) {
 			return err;
