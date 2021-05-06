@@ -20,7 +20,7 @@ sh_special_args = {
 
 coccinelle_scripts = ["/scripts/coccinelle/reserved_names.cocci",
                       "/scripts/coccinelle/same_identifier.cocci",
-                      "/scripts/coccinelle/identifier_length.cocci",
+                      #"/scripts/coccinelle/identifier_length.cocci",
                       ]
 
 
