@@ -72,6 +72,7 @@
 		green-pwm-led = &green_pwm_led;
 		blue-pwm-led = &blue_pwm_led;
 		sw0 = &button0;
+		bootloader-led0 = &green_pwm_led;
 	};
 
 	vbatt {
@@ -157,18 +158,6 @@
 	ch2-inverted;
 };
 
-&pwm1 {
-	status = "okay";
-};
-
-&pwm2 {
-	status = "okay";
-};
-
-&pwm3 {
-	status = "okay";
-};
-
 &timer0 {
 	status = "okay";
 };
@@ -225,8 +214,8 @@
 			/* Secure image memory */
 		};
 
-		sram0_bsd: image_bsd@20010000 {
-			/* BSD (shared) memory */
+		sram0_modem: image_modem@20010000 {
+			/* Modem (shared) memory */
 		};
 
 		sram0_ns: image_ns@20020000 {
