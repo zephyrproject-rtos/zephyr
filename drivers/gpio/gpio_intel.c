@@ -19,8 +19,6 @@
  * we export GPIO_INTEL_NR_SUBDEVS devices to the kernel.
  */
 
-#define GPIO_INTEL_NR_SUBDEVS 10
-
 #include <errno.h>
 #include <drivers/gpio.h>
 #include <soc.h>
@@ -33,8 +31,6 @@
 
 BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 
-#define REG_PAD_BASE_ADDR		0x000C
-
 #define REG_MISCCFG			0x0010
 #define MISCCFG_IRQ_ROUTE_POS		3
 
@@ -45,12 +41,10 @@ BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 #define PAD_OWN_ISH			2
 #define PAD_OWN_IE			3
 
-#define REG_PAD_HOST_SW_OWNER		0x0080
 #define PAD_HOST_SW_OWN_GPIO		1
 #define PAD_HOST_SW_OWN_ACPI		0
 
 #define REG_GPI_INT_STS_BASE		0x0100
-#define REG_GPI_INT_EN_BASE		0x0110
 
 #define PAD_CFG0_RXPADSTSEL		BIT(29)
 #define PAD_CFG0_RXRAW1			BIT(28)
@@ -104,26 +98,34 @@ BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 struct gpio_intel_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
+
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 
 	uint8_t	pin_offset;
+	uint8_t group_index;
 	uint8_t	num_pins;
 };
 
 struct gpio_intel_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
+
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 
 	/* Pad base address */
-	uint32_t		pad_base;
+	uint32_t pad_base;
 
-	sys_slist_t	cb;
+	sys_slist_t cb;
 };
 
 static inline mm_reg_t regs(const struct device *dev)
 {
-	return DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	return GPIO_REG_BASE(DEVICE_MMIO_NAMED_GET(dev, reg_base));
+}
+
+static inline mm_reg_t pad_base(const struct device *dev)
+{
+	return GPIO_PAD_BASE(DEVICE_MMIO_NAMED_GET(dev, reg_base));
 }
 
 #ifdef CONFIG_GPIO_INTEL_CHECK_PERMS
@@ -138,16 +140,18 @@ static inline mm_reg_t regs(const struct device *dev)
 static bool check_perm(const struct device *dev, uint32_t raw_pin)
 {
 	struct gpio_intel_data *data = dev->data;
-	uint32_t offset, val;
+	const struct gpio_intel_config *cfg = dev->config;
+	uint32_t offset, val, pin_offset;
 
+	pin_offset = cfg->pin_offset;
 	/* First is to establish that host software owns the pin */
 
 	/* read the Pad Ownership register related to the pin */
-	offset = REG_PAD_OWNER_BASE + ((raw_pin >> 3) << 2);
+	offset = GPIO_PAD_OWNERSHIP(raw_pin, pin_offset);
 	val = sys_read32(regs(dev) + offset);
 
 	/* get the bits about ownership */
-	offset = raw_pin % 8;
+	offset = GPIO_OWNERSHIP_BIT(raw_pin);
 	val = (val >> offset) & PAD_OWN_MASK;
 	if (val) {
 		/* PAD_OWN_HOST == 0, so !0 => false*/
@@ -191,7 +195,7 @@ static void gpio_intel_isr(const struct device *dev)
 		data = dev->data;
 
 		reg = regs(dev) + REG_GPI_INT_STS_BASE
-			+ ((cfg->pin_offset >> 5) << 2);
+		      + GPIO_INTERRUPT_BASE(cfg);
 		int_sts = sys_read32(reg);
 		acc_mask = 0U;
 
@@ -223,14 +227,14 @@ static int gpio_intel_config(const struct device *dev,
 
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
-	raw_pin = cfg->pin_offset + pin;
+	raw_pin = GPIO_RAW_PIN(pin, cfg->pin_offset);
 
 	if (!check_perm(dev, raw_pin)) {
 		return -EINVAL;
 	}
 
 	/* read in pad configuration register */
-	reg = regs(dev) + data->pad_base + (raw_pin * 8U);
+	reg = regs(dev) + data->pad_base + (raw_pin * PIN_OFFSET);
 	cfg0 = sys_read32(reg);
 	cfg1 = sys_read32(reg + 4);
 
@@ -300,28 +304,28 @@ static int gpio_intel_pin_interrupt_configure(const struct device *dev,
 
 	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
-	raw_pin = cfg->pin_offset + pin;
+	raw_pin = GPIO_RAW_PIN(pin, cfg->pin_offset);
 
 	if (!check_perm(dev, raw_pin)) {
 		return -EINVAL;
 	}
 
 	/* set owner to GPIO driver mode for legacy interrupt mode */
-	reg = regs(dev) + REG_PAD_HOST_SW_OWNER;
+	reg = regs(dev) + REG_PAD_HOST_SW_OWNER + GPIO_BASE(cfg);
 	sys_bitfield_set_bit(reg, raw_pin);
 
 	/* read in pad configuration register */
-	reg = regs(dev) + data->pad_base + (raw_pin * 8U);
+	reg = regs(dev) + data->pad_base + (raw_pin * PIN_OFFSET);
 	cfg0 = sys_read32(reg);
 	cfg1 = sys_read32(reg + 4);
 
-	reg_en = regs(dev) + REG_GPI_INT_EN_BASE;
+	reg_en = regs(dev) + REG_GPI_INT_EN_BASE + GPIO_BASE(cfg);
 
 	/* disable interrupt bit first before setup */
 	sys_bitfield_clear_bit(reg_en, raw_pin);
 
 	/* clear (by setting) interrupt status bit */
-	reg_sts = regs(dev) + REG_GPI_INT_STS_BASE;
+	reg_sts = regs(dev) + REG_GPI_INT_STS_BASE + GPIO_BASE(cfg);
 	sys_bitfield_set_bit(reg_sts, raw_pin);
 
 	/* clear level/edge configuration bits */
@@ -408,13 +412,13 @@ static int port_get_raw(const struct device *dev, uint32_t mask,
 
 		mask &= ~BIT(pin);
 
-		raw_pin = cfg->pin_offset + pin;
+		raw_pin = GPIO_RAW_PIN(pin, cfg->pin_offset);
 
 		if (!check_perm(dev, raw_pin)) {
 			continue;
 		}
 
-		reg_addr = regs(dev) + data->pad_base + (raw_pin * 8U);
+		reg_addr = regs(dev) + data->pad_base + (raw_pin * PIN_OFFSET);
 		reg_val = sys_read32(reg_addr);
 
 		if ((reg_val & cmp) != 0U) {
@@ -441,13 +445,13 @@ static int port_set_raw(const struct device *dev, uint32_t mask,
 
 		mask &= ~BIT(pin);
 
-		raw_pin = cfg->pin_offset + pin;
+		raw_pin = GPIO_RAW_PIN(pin, cfg->pin_offset);
 
 		if (!check_perm(dev, raw_pin)) {
 			continue;
 		}
 
-		reg_addr = regs(dev) + data->pad_base + (raw_pin * 8U);
+		reg_addr = regs(dev) + data->pad_base + (raw_pin * PIN_OFFSET);
 		reg_val = sys_read32(reg_addr);
 
 		if ((value & BIT(pin)) != 0) {
@@ -525,7 +529,7 @@ int gpio_intel_init(const struct device *dev)
 	struct gpio_intel_data *data = dev->data;
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE);
-	data->pad_base = sys_read32(regs(dev) + REG_PAD_BASE_ADDR);
+	data->pad_base = pad_base(dev);
 
 	__ASSERT(nr_isr_devs < GPIO_INTEL_NR_SUBDEVS, "too many subdevs");
 
@@ -551,26 +555,27 @@ int gpio_intel_init(const struct device *dev)
 	return 0;
 }
 
-#define GPIO_INTEL_DEV_CFG_DATA(n)					\
-static const struct gpio_intel_config					\
-	gpio_intel_cfg_##n = {						\
-	.common = {							\
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-	},								\
-	DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),			\
-	.pin_offset = DT_INST_PROP(n, pin_offset),			\
-	.num_pins = DT_INST_PROP(n, ngpios),				\
-};									\
-									\
-static struct gpio_intel_data gpio_intel_data_##n;			\
-									\
-DEVICE_DT_INST_DEFINE(n,						\
-		    gpio_intel_init,					\
-		    NULL,						\
-		    &gpio_intel_data_##n,				\
-		    &gpio_intel_cfg_##n,				\
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-		    &gpio_intel_api);
+#define GPIO_INTEL_DEV_CFG_DATA(n)					       \
+	static const struct gpio_intel_config				       \
+		gpio_intel_cfg_##n = {					       \
+		.common = {						       \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),   \
+		},							       \
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	       \
+		.pin_offset = DT_INST_PROP(n, pin_offset),		       \
+		.group_index = DT_INST_PROP_OR(n, group_index, 0),	       \
+		.num_pins = DT_INST_PROP(n, ngpios),			       \
+	};								       \
+									       \
+	static struct gpio_intel_data gpio_intel_data_##n;		       \
+									       \
+	DEVICE_DT_INST_DEFINE(n,					       \
+			      gpio_intel_init,				       \
+			      NULL,					       \
+			      &gpio_intel_data_##n,			       \
+			      &gpio_intel_cfg_##n,			       \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      &gpio_intel_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_NR_SUBDEVS of these! */
 DT_INST_FOREACH_STATUS_OKAY(GPIO_INTEL_DEV_CFG_DATA)
