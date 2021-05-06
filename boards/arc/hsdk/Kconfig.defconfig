@@ -15,6 +15,12 @@ config GPIO_DW_0
 	default y
 	depends on GPIO_DW
 
+config I2C
+	default y
+
+config GPIO_CY8C95XX
+	default y
+
 endif # GPIO
 
 if SPI
