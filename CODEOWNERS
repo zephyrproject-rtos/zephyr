@@ -293,6 +293,7 @@
 /drivers/serial/*xmc4xxx*                 @parthitce
 /drivers/serial/*nuvoton*                 @ssekar15
 /drivers/serial/*apbuart*                 @martin-aberg
+/drivers/serial/*rcar*                    @aaillet
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_spi.c                 @JunYangNXP
