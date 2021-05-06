@@ -126,7 +126,13 @@ int lsm6dso_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
+	const struct lsm6dso_config *cfg = dev->config;
 	struct lsm6dso_data *lsm6dso = dev->data;
+
+	if (!cfg->trig_enabled) {
+		LOG_ERR("trigger_set op not supported");
+		return -ENOTSUP;
+	}
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		lsm6dso->handler_drdy_acc = handler;
