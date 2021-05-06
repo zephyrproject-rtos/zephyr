@@ -38,6 +38,7 @@ zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
 if (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86 OR DEFINED CONFIG_ARM64
     OR DEFINED CONFIG_SOC_OPENISA_RV32M1_RISCV32)
   zephyr_linker_sources(ROM_START SORT_KEY 0x0 rom_start_offset.ld)
+  # Handled in ld.cmake
 endif()
 
 
