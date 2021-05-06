@@ -218,7 +218,7 @@
 		};
 
 		gpio_n_000_031: gpio@d0c50000 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c50000 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -234,7 +234,7 @@
 		};
 
 		gpio_n_032_063: gpio@d0c50001 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c50001 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -250,7 +250,7 @@
 		};
 
 		gpio_n_064_077: gpio@d0c50002 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c50002 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -266,7 +266,7 @@
 		};
 
 		gpio_nw_000_031: gpio@d0c40000 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c40000 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -282,7 +282,7 @@
 		};
 
 		gpio_nw_032_063: gpio@d0c40001 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c40001 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -298,7 +298,7 @@
 		};
 
 		gpio_nw_064_076: gpio@d0c40002 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c40002 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -314,7 +314,7 @@
 		};
 
 		gpio_w_000_031: gpio@d0c70000 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c70000 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -330,7 +330,7 @@
 		};
 
 		gpio_w_032_046: gpio@d0c70001 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c70001 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -346,7 +346,7 @@
 		};
 
 		gpio_sw_000_031: gpio@d0c00000 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c00000 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
@@ -363,7 +363,7 @@
 
 
 		gpio_sw_032_042: gpio@d0c00001 {
-			compatible = "intel,apl-gpio";
+			compatible = "intel,gpio";
 			reg = <0xd0c00001 0x1000>;
 			interrupts = <14 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
