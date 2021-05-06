@@ -8,7 +8,10 @@
 
 #include <kernel.h>
 
-#if defined CONFIG_SEGGER_SYSTEMVIEW
+#if defined CONFIG_PERCEPIO_TRACERECORDER
+#include "tracing_tracerecorder.h"
+
+#elif defined CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
 
 #elif defined CONFIG_TRACING_CTF
