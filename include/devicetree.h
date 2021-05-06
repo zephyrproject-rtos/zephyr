@@ -45,6 +45,7 @@
  * _ENUM_UPPER_TOKEN: like _ENUM_TOKEN, but uppercased
  * _EXISTS: property is defined
  * _FOREACH_PROP_ELEM: helper for "iterating" over values in the property
+ * _FOREACH_PROP_ELEM_VARGS: foreach functions with variable number of arguments
  * _IDX_<i>: logical index into property
  * _IDX_<i>_EXISTS: logical index into property is defined
  * _IDX_<i>_PH: phandle array's phandle by index (or phandle, phandles)
@@ -1486,6 +1487,21 @@
 	DT_CAT(node_id, _FOREACH_CHILD)(fn)
 
 /**
+ * @brief Invokes "fn" for each child of "node_id" with multiple arguments
+ *
+ * The macro "fn" takes multiple arguments. The first should be the node
+ * identifier for the child node. The remaining are passed-in by the caller.
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_CHILD
+ */
+#define DT_FOREACH_CHILD_VARGS(node_id, fn, ...) \
+	DT_CAT(node_id, _FOREACH_CHILD_VARGS)(fn, __VA_ARGS__)
+
+/**
  * @brief Call "fn" on the child nodes with status "okay"
  *
  * The macro "fn" should take one argument, which is the node
@@ -1499,6 +1515,25 @@
  */
 #define DT_FOREACH_CHILD_STATUS_OKAY(node_id, fn) \
 	DT_CAT(node_id, _FOREACH_CHILD_STATUS_OKAY)(fn)
+
+/**
+ * @brief Call "fn" on the child nodes with status "okay" with multiple
+ * arguments
+ *
+ * The macro "fn" takes multiple arguments. The first should be the node
+ * identifier for the child node. The remaining are passed-in by the caller.
+ *
+ * As usual, both a missing status and an "ok" status are
+ * treated as "okay".
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_CHILD_STATUS_OKAY
+ */
+#define DT_FOREACH_CHILD_STATUS_OKAY_VARGS(node_id, fn, ...) \
+	DT_CAT(node_id, _FOREACH_CHILD_STATUS_OKAY_VARGS)(fn, __VA_ARGS__)
 
 /**
  * @brief Invokes "fn" for each element in the value of property "prop".
@@ -1546,6 +1581,26 @@
  */
 #define DT_FOREACH_PROP_ELEM(node_id, prop, fn)		\
 	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM)(fn)
+
+/**
+ * @brief Invokes "fn" for each element in the value of property "prop" with
+ * multiple arguments.
+ *
+ * The macro "fn" must take multiple parameters: fn(node_id, prop, idx, ...).
+ * "node_id" and "prop" are the same as what is passed to
+ * DT_FOREACH_PROP_ELEM, and "idx" is the current index into the array.
+ * The "idx" values are integer literals starting from 0. The remaining
+ * arguments are passed-in by the caller.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param fn macro to invoke
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_PROP_ELEM
+ */
+#define DT_FOREACH_PROP_ELEM_VARGS(node_id, prop, fn, ...)		\
+	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM_VARGS)(fn, __VA_ARGS__)
 
 /**
  * @}
@@ -1819,6 +1874,21 @@
  */
 #define DT_INST_FOREACH_CHILD(inst, fn) \
 	DT_FOREACH_CHILD(DT_DRV_INST(inst), fn)
+
+/**
+ * @brief Call "fn" on all child nodes of DT_DRV_INST(inst).
+ *
+ * The macro "fn" takes multiple arguments. The first should be the node
+ * identifier for the child node. The remaining are passed-in by the caller.
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each child node identifier
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_FOREACH_CHILD
+ */
+#define DT_INST_FOREACH_CHILD_VARGS(inst, fn, ...) \
+	DT_FOREACH_CHILD_VARGS(DT_DRV_INST(inst), fn, __VA_ARGS__)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance property
@@ -2214,6 +2284,23 @@
 		    ())
 
 /**
+ * @brief Call "fn" on all nodes with compatible DT_DRV_COMPAT
+ *        and status "okay" with multiple arguments
+ *
+ *
+ * @param fn Macro to call for each enabled node. Must accept an
+ *           instance number as its only parameter.
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_INST_FOREACH_STATUS_OKAY
+ */
+#define DT_INST_FOREACH_STATUS_OKAY_VARGS(fn, ...) \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT),	\
+		    (UTIL_CAT(DT_FOREACH_OKAY_INST_VARGS_,	\
+			      DT_DRV_COMPAT)(fn, __VA_ARGS__)),	\
+		    ())
+
+/**
  * @brief Invokes "fn" for each element of property "prop" for
  *        a DT_DRV_COMPAT instance.
  *
@@ -2225,6 +2312,23 @@
  */
 #define DT_INST_FOREACH_PROP_ELEM(inst, prop, fn) \
 	DT_FOREACH_PROP_ELEM(DT_DRV_INST(inst), prop, fn)
+
+/**
+ * @brief Invokes "fn" for each element of property "prop" for
+ *        a DT_DRV_COMPAT instance with multiple arguments.
+ *
+ * Equivalent to
+ *      DT_FOREACH_PROP_ELEM_VARGS(DT_DRV_INST(inst), prop, fn, __VA_ARGS__)
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param fn macro to invoke
+ * @param ... variable number of arguments to pass to fn
+ *
+ * @see DT_INST_FOREACH_PROP_ELEM
+ */
+#define DT_INST_FOREACH_PROP_ELEM_VARGS(inst, prop, fn, ...) \
+	DT_FOREACH_PROP_ELEM_VARGS(DT_DRV_INST(inst), prop, fn, __VA_ARGS__)
 
 /**
  * @brief Does a DT_DRV_COMPAT instance have a property?
