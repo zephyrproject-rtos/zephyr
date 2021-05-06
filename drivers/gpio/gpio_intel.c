@@ -406,7 +406,7 @@ static int port_get_raw(const struct device *dev, uint32_t mask,
 	while (mask != 0U) {
 		pin = find_lsb_set(mask) - 1;
 
-		if (pin > cfg->num_pins) {
+		if (pin >= cfg->num_pins) {
 			break;
 		}
 
@@ -439,7 +439,7 @@ static int port_set_raw(const struct device *dev, uint32_t mask,
 	while (mask != 0) {
 		pin = find_lsb_set(mask) - 1;
 
-		if (pin > cfg->num_pins) {
+		if (pin >= cfg->num_pins) {
 			break;
 		}
 
