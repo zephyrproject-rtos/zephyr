@@ -8,26 +8,26 @@
 #include <drivers/sensor.h>
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(max17262, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(max1726x, CONFIG_SENSOR_LOG_LEVEL);
 
-#include "max17262.h"
+#include "max1726x.h"
 
-#define DT_DRV_COMPAT maxim_max17262
+#define DT_DRV_COMPAT maxim_max1726x
 
 /**
  * @brief Read a register value
  *
  * Registers have an address and a 16-bit value
  *
- * @param dev MAX17262 device to access
+ * @param dev MAX1726X device to access
  * @param reg_addr Register address to read
  * @param valp Place to put the value on success
  * @return 0 if successful, or negative error code from I2C API
  */
-static int max17262_reg_read(const struct device *dev, uint8_t reg_addr,
+static int max1726x_reg_read(const struct device *dev, uint8_t reg_addr,
 			     int16_t *valp)
 {
-	const struct max17262_config *cfg = dev->config;
+	const struct max1726x_config *cfg = dev->config;
 	uint8_t i2c_data[2];
 	int rc;
 
@@ -47,15 +47,15 @@ static int max17262_reg_read(const struct device *dev, uint8_t reg_addr,
  *
  * Registers have an address and a 16-bit value
  *
- * @param dev MAX17262 device to access
+ * @param dev MAX1726X device to access
  * @param reg_addr Register address to write to
  * @param val Register value to write
  * @return 0 if successful, or negative error code from I2C API
  */
-static int max17262_reg_write(const struct device *dev, uint8_t reg_addr,
+static int max1726x_reg_write(const struct device *dev, uint8_t reg_addr,
 			     int16_t val)
 {
-	const struct max17262_config *cfg = dev->config;
+	const struct max1726x_config *cfg = dev->config;
 	uint8_t i2c_data[3] = {reg_addr, val & 0xFF, (uint16_t)val >> 8};
 
 	return i2c_write(cfg->i2c, i2c_data, sizeof(i2c_data),
@@ -77,18 +77,18 @@ static void convert_millis(struct sensor_value *val, int32_t val_millis)
 /**
  * @brief Convert raw register values for specific channel
  *
- * @param dev MAX17262 device to access
+ * @param dev MAX1726X device to access
  * @param chan Channel number to read
  * @param valp Returns the sensor value read on success
  * @return 0 if successful
  * @return -ENOTSUP for unsupported channels
  */
-static int max17262_channel_get(const struct device *dev,
+static int max1726x_channel_get(const struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *valp)
 {
-	const struct max17262_config *const config = dev->config;
-	struct max17262_data *const data = dev->data;
+	const struct max1726x_config *const config = dev->config;
+	struct max1726x_data *const data = dev->data;
 	int32_t tmp;
 
 	switch (chan) {
@@ -159,7 +159,7 @@ static int max17262_channel_get(const struct device *dev,
 		valp->val1 = data->ichg_term;
 		valp->val2 = 0;
 		break;
-	case MAX17262_COULOMB_COUNTER:
+	case MAX1726X_COULOMB_COUNTER:
 		/* Get spent capacity in mAh */
 		data->coulomb_counter = 0xffff - data->coulomb_counter;
 		valp->val1 = data->coulomb_counter / 2;
@@ -176,13 +176,13 @@ static int max17262_channel_get(const struct device *dev,
 /**
  * @brief Read register values for supported channels
  *
- * @param dev MAX17262 device to access
+ * @param dev MAX1726X device to access
  * @return 0 if successful, or negative error code from I2C API
  */
-static int max17262_sample_fetch(const struct device *dev,
+static int max1726x_sample_fetch(const struct device *dev,
 				 enum sensor_channel chan)
 {
-	struct max17262_data *data = dev->data;
+	struct max1726x_data *data = dev->data;
 	struct {
 		int reg_addr;
 		int16_t *dest;
@@ -205,7 +205,7 @@ static int max17262_sample_fetch(const struct device *dev,
 	for (size_t i = 0; i < ARRAY_SIZE(regs); i++) {
 		int rc;
 
-		rc = max17262_reg_read(dev, regs[i].reg_addr, regs[i].dest);
+		rc = max1726x_reg_read(dev, regs[i].reg_addr, regs[i].dest);
 		if (rc != 0) {
 			LOG_ERR("Failed to read channel %d", chan);
 			return rc;
@@ -218,13 +218,13 @@ static int max17262_sample_fetch(const struct device *dev,
 /**
  * @brief Initialise the fuel gauge
  *
- * @param dev MAX17262 device to access
+ * @param dev MAX1726X device to access
  * @return 0 for success
  * @return -EINVAL if the I2C controller could not be found
  */
-static int max17262_gauge_init(const struct device *dev)
+static int max1726x_gauge_init(const struct device *dev)
 {
-	const struct max17262_config *const config = dev->config;
+	const struct max1726x_config *const config = dev->config;
 	int16_t tmp, hibcfg;
 
 	if (!device_is_ready(config->i2c)) {
@@ -233,11 +233,11 @@ static int max17262_gauge_init(const struct device *dev)
 	}
 
 	/* Read Status register */
-	max17262_reg_read(dev, STATUS, &tmp);
+	max1726x_reg_read(dev, STATUS, &tmp);
 
 	if (!(tmp & STATUS_POR)) {
 		/*
-		 * Status.POR bit is set to 1 when MAX17262 detects that
+		 * Status.POR bit is set to 1 when MAX1726X detects that
 		 * a software or hardware POR event has occurred and
 		 * therefore a custom configuration needs to be set...
 		 * If POR event did not happen (Status.POR == 0), skip
@@ -249,78 +249,78 @@ static int max17262_gauge_init(const struct device *dev)
 	LOG_DBG("POR detected, setting custom device configuration...");
 
 	/** STEP 1 */
-	max17262_reg_read(dev, FSTAT, &tmp);
+	max1726x_reg_read(dev, FSTAT, &tmp);
 
 	/* Do not continue until FSTAT.DNR bit is cleared */
 	while (tmp & FSTAT_DNR) {
 		k_sleep(K_MSEC(10));
-		max17262_reg_read(dev, FSTAT, &tmp);
+		max1726x_reg_read(dev, FSTAT, &tmp);
 	}
 
 	/** STEP 2 */
 	/* Store original HibCFG value */
-	max17262_reg_read(dev, HIBCFG, &hibcfg);
+	max1726x_reg_read(dev, HIBCFG, &hibcfg);
 
 	/* Exit Hibernate Mode step 1 */
-	max17262_reg_write(dev, SOFT_WAKEUP, 0x0090);
+	max1726x_reg_write(dev, SOFT_WAKEUP, 0x0090);
 	/* Exit Hibernate Mode step 2 */
-	max17262_reg_write(dev, HIBCFG, 0x0000);
+	max1726x_reg_write(dev, HIBCFG, 0x0000);
 	/* Exit Hibernate Mode step 3 */
-	max17262_reg_write(dev, SOFT_WAKEUP, 0x0000);
+	max1726x_reg_write(dev, SOFT_WAKEUP, 0x0000);
 
 	/** STEP 2.1 --> OPTION 1 EZ Config (No INI file is needed) */
 	/* Write DesignCap */
-	max17262_reg_write(dev, DESIGN_CAP, config->design_cap);
+	max1726x_reg_write(dev, DESIGN_CAP, config->design_cap);
 
 	/* Write IChgTerm */
-	max17262_reg_write(dev, ICHG_TERM, config->desired_charging_current);
+	max1726x_reg_write(dev, ICHG_TERM, config->desired_charging_current);
 
 	/* Write VEmpty */
-	max17262_reg_write(dev, VEMPTY, ((config->empty_voltage / 10) << 7) |
+	max1726x_reg_write(dev, VEMPTY, ((config->empty_voltage / 10) << 7) |
 					  ((config->recovery_voltage / 40) & 0x7F));
 
 	/* Write ModelCFG */
 	if (config->charge_voltage > 4275) {
-		max17262_reg_write(dev, MODELCFG, 0x8400);
+		max1726x_reg_write(dev, MODELCFG, 0x8400);
 	} else {
-		max17262_reg_write(dev, MODELCFG, 0x8000);
+		max1726x_reg_write(dev, MODELCFG, 0x8000);
 	}
 
 	/*
 	 * Read ModelCFG.Refresh (highest bit),
 	 * proceed to Step 3 when ModelCFG.Refresh == 0
 	 */
-	max17262_reg_read(dev, MODELCFG, &tmp);
+	max1726x_reg_read(dev, MODELCFG, &tmp);
 
 	/* Do not continue until ModelCFG.Refresh == 0 */
 	while (tmp & MODELCFG_REFRESH) {
 		k_sleep(K_MSEC(10));
-		max17262_reg_read(dev, MODELCFG, &tmp);
+		max1726x_reg_read(dev, MODELCFG, &tmp);
 	}
 
 	/* Restore Original HibCFG value */
-	max17262_reg_write(dev, HIBCFG, hibcfg);
+	max1726x_reg_write(dev, HIBCFG, hibcfg);
 
 	/** STEP 3 */
 	/* Read Status register */
-	max17262_reg_read(dev, STATUS, &tmp);
+	max1726x_reg_read(dev, STATUS, &tmp);
 
 	/* Clear PowerOnReset bit */
 	tmp &= ~STATUS_POR;
-	max17262_reg_write(dev, STATUS, tmp);
+	max1726x_reg_write(dev, STATUS, tmp);
 
 	return 0;
 }
 
-static const struct sensor_driver_api max17262_battery_driver_api = {
-	.sample_fetch = max17262_sample_fetch,
-	.channel_get = max17262_channel_get,
+static const struct sensor_driver_api max1726x_battery_driver_api = {
+	.sample_fetch = max1726x_sample_fetch,
+	.channel_get = max1726x_channel_get,
 };
 
-#define MAX17262_INIT(n)						\
-	static struct max17262_data max17262_data_##n;			\
+#define MAX1726X_INIT(n)						\
+	static struct max1726x_data max1726x_data_##n;			\
 									\
-	static const struct max17262_config max17262_config_##n = {	\
+	static const struct max1726x_config max1726x_config_##n = {	\
 		.i2c = DEVICE_DT_GET(DT_BUS(DT_DRV_INST(n))),		\
 		.i2c_addr = DT_INST_REG_ADDR(n),			\
 		.design_voltage = DT_INST_PROP(n, design_voltage),	\
@@ -333,11 +333,11 @@ static const struct sensor_driver_api max17262_battery_driver_api = {
 		.charge_voltage = DT_INST_PROP(n, charge_voltage),	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &max17262_gauge_init,			\
+	DEVICE_DT_INST_DEFINE(n, &max1726x_gauge_init,			\
 			    NULL,					\
-			    &max17262_data_##n,				\
-			    &max17262_config_##n, POST_KERNEL,		\
+			    &max1726x_data_##n,				\
+			    &max1726x_config_##n, POST_KERNEL,		\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &max17262_battery_driver_api);
+			    &max1726x_battery_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(MAX17262_INIT)
+DT_INST_FOREACH_STATUS_OKAY(MAX1726X_INIT)

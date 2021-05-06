@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_BATTERY_MAX17262_H_
-#define ZEPHYR_DRIVERS_SENSOR_BATTERY_MAX17262_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_BATTERY_MAX1726X_H_
+#define ZEPHYR_DRIVERS_SENSOR_BATTERY_MAX1726X_H_
 
 #define VOLTAGE_MULTIPLIER_UV	1250 / 16
 #define CURRENT_MULTIPLIER_NA	156250
@@ -40,12 +40,12 @@ enum {
 	MODELCFG_REFRESH = 0x8000,
 };
 
-/* MAX17262 specific channels */
-enum max17262_channel {
-	MAX17262_COULOMB_COUNTER,
+/* MAX1726X specific channels */
+enum max1726x_channel {
+	MAX1726X_COULOMB_COUNTER,
 };
 
-struct max17262_data {
+struct max1726x_data {
 	/* Current cell voltage in units of 1.25/16mV */
 	uint16_t voltage;
 	/* Average current in units of 156.25uA */
@@ -72,7 +72,7 @@ struct max17262_data {
 	uint16_t coulomb_counter;
 };
 
-struct max17262_config {
+struct max1726x_config {
 	const struct device *i2c;
 	uint16_t i2c_addr;
 	/* Value of Rsense resistor in milliohms (typicallly 5 or 10) */

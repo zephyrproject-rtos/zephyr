@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Maxim MAX17262 Fuel Gauge
+description: Maxim MAX1726X Fuel Gauge
 
-compatible: "maxim,max17262"
+compatible: "maxim,max1726x"
 
 include: i2c-device.yaml
 

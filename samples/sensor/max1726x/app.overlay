@@ -7,9 +7,9 @@
 &arduino_i2c {
 	status = "okay";
 
-	max17262@36 {
-		compatible = "maxim,max17262";
-		label = "MAX17262";
+	max1726x@36 {
+		compatible = "maxim,max1726x";
+		label = "MAX1726X";
 		reg = <0x36>;
 		design-voltage = <3600>;
 		desired-voltage = <3600>;

@@ -1,19 +1,19 @@
-.. _max17262:
+.. _max1726x:
 
-MAX17262 Fuel Gauge Sensor
+MAX1726X Fuel Gauge Sensor
 ###################################
 
 Overview
 ********
 
 This sample application periodically reads voltage, current and temperature
-data from the MAX17262 device that implements SENSOR_CHAN_GAUGE_VOLTAGE,
+data from the MAX1726X device that implements SENSOR_CHAN_GAUGE_VOLTAGE,
 SENSOR_CHAN_GAUGE_AVG_CURRENT, and SENSOR_CHAN_GAUGE_TEMP.
 
 Requirements
 ************
 
-The MAX17262 is an ultra-low power fuel-gauge IC which implements the Maxim
+The MAX1726X is an ultra-low power fuel-gauge IC which implements the Maxim
 ModelGauge m5 algorithm. The IC monitors a single-cell battery pack and
 supports internal current sensing for up to 3.1A pulse current. The IC
 provides best performance for batteries with 100mAhr to 6Ahr capacity.
@@ -21,17 +21,17 @@ provides best performance for batteries with 100mAhr to 6Ahr capacity.
 This sample requires a board which provides a configuration for Arduino
 connectors and defines node aliases for the I2C interface.
 For more info about the node structure see
-:zephyr_file:`samples/sensor/max17262/app.overlay`
+:zephyr_file:`samples/sensor/max1726x/app.overlay`
 
 Building and Running
 ********************
 
-This sample application uses an MAX17262 sensor connected to a board via I2C.
+This sample application uses an MAX1726X sensor connected to a board via I2C.
 Connect the sensor pins according to the connection diagram given in the
-`max17262 datasheet`_.
+`max1726x datasheet`_.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensor/max17262
+   :zephyr-app: samples/sensor/max1726x
    :board: nrf52840dk_nrf52840
    :goals: build flash
    :compact:
@@ -54,4 +54,4 @@ This example uses ``picocom`` on the serial port ``/dev/ttyUSB0``:
 References
 ***********
 
-.. _max17262 datasheet: https://datasheets.maximintegrated.com/en/ds/MAX17262.pdf
+.. _max1726x datasheet: https://pdfserv.maximintegrated.com/en/an/user-guide-6597-max1726x-m5-ez-rev3-p4.pdf
