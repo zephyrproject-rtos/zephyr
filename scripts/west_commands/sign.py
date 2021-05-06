@@ -220,7 +220,11 @@ class ImgtoolSigner(Signer):
         flash = self.edt_flash_node(b, args.quiet)
         align, addr, size = self.edt_flash_params(flash)
 
+<<<<<<< HEAD
         if build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
+=======
+        if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
+>>>>>>> 0dede00f15... sign alignment fix
             log.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
                     f"{build_conf.path}; this probably won't work")
 
@@ -371,6 +375,13 @@ class ImgtoolSigner(Signer):
         if align == 0:
             log.die('expected nonzero flash alignment, but got '
                     'DT flash device write-block-size {}'.format(align))
+
+        # If write-block-size > 8 force alignment to 8 bytes since higher
+        # value is not yet supported by the tool.
+        if align > 8:
+            log.wrn('device alignment {} is > 8 bytes. '
+                    'Forcing 8 byte alignment'.format(align))
+            align = 8
 
         # The partitions node, and its subnode, must provide
         # the size of image-1 or image-0 partition via the regs property.
