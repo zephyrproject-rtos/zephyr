@@ -1,0 +1,275 @@
+/*
+ * Copyright (c) 2019-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2021 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		boot_button0: boot_button {
+			gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
+			label = "Bootloader button S4";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sw0 = &boot_button0;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	sda-pin = <34>;
+	scl-pin = <35>;
+
+	at24c256@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		label = "EEPROM";
+		size = <32768>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <10>;
+	};
+
+	lis3dh@18 {
+		compatible = "st,lis2dh";
+		label = "LIS3DH";
+		reg = <0x18>;
+		irq-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>, <&gpio0 24 GPIO_ACTIVE_LOW>;
+	};
+
+	ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "TOUCH";
+		int-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+	};
+
+	bme680@76 {
+		compatible = "bosch,bme680";
+		reg = <0x76>;
+		label = "BME680";
+	};
+};
+
+&spi2 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+	miso-pin = <26>;
+	mosi-pin = <27>;
+	sck-pin = <28>;
+
+	enc424j600@0 {
+		compatible = "microchip,enc424j600";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		label = "ETHERNET";
+		int-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	sck-pin = <46>;
+	miso-pin = <47>;
+	mosi-pin = <45>;
+	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+
+	sdhc@0 {
+		compatible = "zephyr,mmc-spi-slot";
+		reg = <0>;
+		status = "okay";
+		label = "SDHC";
+		spi-max-frequency = <8000000>;
+	};
+};
+
+&spi4 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+	miso-pin = <10>;
+	mosi-pin = <9>;
+	sck-pin = <8>;
+
+	ili9340@0 {
+		compatible = "ilitek,ili9340";
+		reg = <0>;
+		spi-max-frequency = <32000000>;
+		label = "DISPLAY";
+		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+		cmd-data-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		rotation = <270>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	tx-pin = <20>;
+	rx-pin = <22>;
+	rts-pin = <19>;
+	cts-pin = <21>;
+};
+
+&pwm0 {
+	status = "okay";
+	ch0-pin = <28>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&qspi {
+	status = "okay";
+	sck-pin = <17>;
+	io-pins = <13>, <14>, <15>, <16>;
+	csn-pins = <18>;
+	mx25r64: mx25r6435f@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		/* MX24R64 supports only pp and pp4io */
+		writeoc = "pp4io";
+		/* MX24R64 supports all readoc options */
+		readoc = "read4io";
+		sck-frequency = <8000000>;
+		label = "MX25R64";
+		jedec-id = [c2 28 17];
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
+			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
+		];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 64K */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+		};
+		/* 640K */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		/* 256K */
+		slot0_ns_partition: partition@b0000 {
+			label = "image-0-nonsecure";
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 */
+
+		/*
+		 * Storage partition will be used by FCB/NVS
+		 * if enabled. 32K
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
+		};
+	};
+};
+
+&mx25r64 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 640K */
+		slot1_partition: partition@0 {
+			label = "image-1";
+		};
+		/* 256K */
+		slot1_ns_partition: partition@A0000 {
+			label = "image-1-nonsecure";
+		};
+		/* 128K */
+		scratch_partition: partition@e0000 {
+			label = "image-scratch";
+			reg = <0x000e0000 0x00020000>;
+		};
+		/* 7MB */
+		lfs_partition: partition@100000 {
+			label = "lfs_storage";
+			reg = <0x00100000 0x000700000>;
+		};
+	};
+};
+
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_image: image@20000000 {
+			/* Zephyr image(s) memory */
+		};
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_ns: image_ns@20040000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "bl5340_dvk_cpuapp_partition_conf.dts"
