@@ -177,6 +177,9 @@
 /* Mask to filter away octet 0 for feature exchange */
 #define LL_FEAT_FILTER_OCTET0    (LL_FEAT_BIT_MASK & ~0xFFULL)
 
+/* Mask for host controlled features */
+#define LL_FEAT_HOST_BIT_MASK    0x100000000ULL
+
 /* Feature bits of this controller */
 #define LL_FEAT                  (LL_FEAT_BIT_ENC | \
 				  LL_FEAT_BIT_CONN_PARAM_REQ | \

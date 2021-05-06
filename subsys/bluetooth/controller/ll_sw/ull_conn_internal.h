@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@ void ll_conn_release(struct ll_conn *conn);
 uint16_t ll_conn_handle_get(struct ll_conn *conn);
 struct ll_conn *ll_conn_get(uint16_t handle);
 struct ll_conn *ll_connected_get(uint16_t handle);
+uint16_t ll_conn_free_count_get(void);
 void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx);
 int ull_conn_init(void);
 int ull_conn_reset(void);
