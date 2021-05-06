@@ -144,6 +144,13 @@ config BT_MESH_PROXY_FILTER_SIZE
 	  This option specifies how many Proxy Filter entries the local
 	  node supports.
 
+config BT_MESH_PROXY_USE_DEVICE_NAME
+	bool "Include Bluetooth device name in scan response"
+	depends on BT_MESH_GATT_PROXY
+	help
+	  This option includes GAP device name in scan response when
+	  the GATT Proxy feature is enabled.
+
 endif # BT_CONN
 
 config BT_MESH_SELF_TEST
