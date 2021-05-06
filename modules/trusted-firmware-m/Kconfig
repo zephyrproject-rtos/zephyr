@@ -17,6 +17,7 @@ config TFM_BOARD
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
 	default "musca_b1/sse_200" if BOARD_MUSCA_B1
 	default "musca_s1" if BOARD_MUSCA_S1
+	default "lairdconnectivity/bl5340_dvk_cpuapp" if BOARD_BL5340_DVK_CPUAPPNS
 	help
 	  The board name used for building TFM. Building with TFM requires that
 	  TFM has been ported to the given board/SoC.
