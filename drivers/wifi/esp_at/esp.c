@@ -5,10 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT espressif_esp
+#define DT_DRV_COMPAT espressif_esp_at
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(wifi_esp, CONFIG_WIFI_LOG_LEVEL);
+LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 
 #include <kernel.h>
 #include <ctype.h>
@@ -58,12 +58,12 @@ NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE,
 
 /* RX thread structures */
 K_KERNEL_STACK_DEFINE(esp_rx_stack,
-		      CONFIG_WIFI_ESP_RX_STACK_SIZE);
+		      CONFIG_WIFI_ESP_AT_RX_STACK_SIZE);
 struct k_thread esp_rx_thread;
 
 /* RX thread work queue */
 K_KERNEL_STACK_DEFINE(esp_workq_stack,
-		      CONFIG_WIFI_ESP_WORKQ_STACK_SIZE);
+		      CONFIG_WIFI_ESP_AT_WORKQ_STACK_SIZE);
 
 struct esp_data esp_driver_data;
 
@@ -441,13 +441,13 @@ static void esp_ip_addr_work(struct k_work *work)
 	/* update interface addresses */
 	net_if_ipv4_set_gw(dev->net_iface, &dev->gw);
 	net_if_ipv4_set_netmask(dev->net_iface, &dev->nm);
-#if defined(CONFIG_WIFI_ESP_IP_STATIC)
+#if defined(CONFIG_WIFI_ESP_AT_IP_STATIC)
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_MANUAL, 0);
 #else
 	net_if_ipv4_addr_add(dev->net_iface, &dev->ip, NET_ADDR_DHCP, 0);
 #endif
 
-	if (IS_ENABLED(CONFIG_WIFI_ESP_DNS_USE)) {
+	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_DNS_USE)) {
 		ret = esp_cmd_send(dev, dns_cmds, ARRAY_SIZE(dns_cmds),
 				   "AT+CIPDNS?", ESP_CMD_TIMEOUT);
 		if (ret) {
@@ -913,12 +913,12 @@ static void esp_init_work(struct k_work *work)
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(STA)),
 #endif
-#if defined(CONFIG_WIFI_ESP_IP_STATIC)
+#if defined(CONFIG_WIFI_ESP_AT_IP_STATIC)
 		/* enable Static IP Config */
 		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 0)),
-		SETUP_CMD_NOHANDLE(ESP_CMD_SET_IP(CONFIG_WIFI_ESP_IP_ADDRESS,
-						  CONFIG_WIFI_ESP_IP_GATEWAY,
-						  CONFIG_WIFI_ESP_IP_MASK)),
+		SETUP_CMD_NOHANDLE(ESP_CMD_SET_IP(CONFIG_WIFI_ESP_AT_IP_ADDRESS,
+						  CONFIG_WIFI_ESP_AT_IP_GATEWAY,
+						  CONFIG_WIFI_ESP_AT_IP_MASK)),
 #else
 		/* enable DHCP */
 		SETUP_CMD_NOHANDLE(ESP_CMD_DHCP_ENABLE(STATION, 1)),
@@ -932,7 +932,7 @@ static void esp_init_work(struct k_work *work)
 		SETUP_CMD_NOHANDLE("AT+CWAUTOCONN=0"),
 		SETUP_CMD_NOHANDLE(ESP_CMD_CWMODE(NONE)),
 #endif
-#if defined(CONFIG_WIFI_ESP_PASSIVE_MODE)
+#if defined(CONFIG_WIFI_ESP_AT_PASSIVE_MODE)
 		SETUP_CMD_NOHANDLE("AT+CIPRECVMODE=1"),
 #endif
 		SETUP_CMD("AT+"_CIPSTAMAC"?", "+"_CIPSTAMAC":",
@@ -1023,7 +1023,7 @@ static void esp_reset(struct esp_data *dev)
 	while (retries--) {
 		ret = modem_cmd_send(&dev->mctx.iface, &dev->mctx.cmd_handler,
 				     NULL, 0, "AT+RST", &dev->sem_if_ready,
-				     K_MSEC(CONFIG_WIFI_ESP_RESET_TIMEOUT));
+				     K_MSEC(CONFIG_WIFI_ESP_AT_RESET_TIMEOUT));
 		if (ret == 0 || ret != -ETIMEDOUT) {
 			break;
 		}
@@ -1070,7 +1070,7 @@ static int esp_init(const struct device *dev)
 	k_work_init(&data->scan_work, esp_mgmt_scan_work);
 	k_work_init(&data->connect_work, esp_mgmt_connect_work);
 	k_work_init(&data->mode_switch_work, esp_mode_switch_work);
-	if (IS_ENABLED(CONFIG_WIFI_ESP_DNS_USE)) {
+	if (IS_ENABLED(CONFIG_WIFI_ESP_AT_DNS_USE)) {
 		k_work_init(&data->dns_work, esp_dns_work);
 	}
 
@@ -1079,7 +1079,7 @@ static int esp_init(const struct device *dev)
 	/* initialize the work queue */
 	k_work_queue_start(&data->workq, esp_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(esp_workq_stack),
-			   K_PRIO_COOP(CONFIG_WIFI_ESP_WORKQ_THREAD_PRIORITY),
+			   K_PRIO_COOP(CONFIG_WIFI_ESP_AT_WORKQ_THREAD_PRIORITY),
 			   NULL);
 	k_thread_name_set(&data->workq.thread, "esp_workq");
 
@@ -1126,7 +1126,7 @@ static int esp_init(const struct device *dev)
 			K_KERNEL_STACK_SIZEOF(esp_rx_stack),
 			(k_thread_entry_t)esp_rx,
 			data, NULL, NULL,
-			K_PRIO_COOP(CONFIG_WIFI_ESP_RX_THREAD_PRIORITY), 0,
+			K_PRIO_COOP(CONFIG_WIFI_ESP_AT_RX_THREAD_PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_name_set(&esp_rx_thread, "esp_rx");
 

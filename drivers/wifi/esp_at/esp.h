@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_H_
-#define ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_AT_ESP_H_
+#define ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_AT_ESP_H_
 
 #include <kernel.h>
 #include <net/net_context.h>
@@ -48,7 +48,7 @@ extern "C" {
  * passive mode. For AT version 1.7 passive mode only affects TCP but in AT
  * version 2.0 it affects both TCP and UDP.
  */
-#if defined(CONFIG_WIFI_ESP_PASSIVE_MODE)
+#if defined(CONFIG_WIFI_ESP_AT_PASSIVE_MODE)
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 #define ESP_PROTO_PASSIVE(proto) (proto == IPPROTO_TCP)
 #else
@@ -57,7 +57,7 @@ extern "C" {
 #endif /* CONFIG_WIFI_ESP_AT_VERSION_1_7 */
 #else
 #define ESP_PROTO_PASSIVE(proto) 0
-#endif /* CONFIG_WIFI_ESP_PASSIVE_MODE */
+#endif /* CONFIG_WIFI_ESP_AT_PASSIVE_MODE */
 
 #define ESP_BUS DT_BUS(DT_DRV_INST(0))
 
@@ -79,7 +79,7 @@ extern "C" {
 #define CONN_CMD_MAX_LEN (sizeof("AT+"_CWJAP"=\"\",\"\"") + \
 			  WIFI_SSID_MAX_LEN + WIFI_PSK_MAX_LEN)
 
-#if defined(CONFIG_WIFI_ESP_DNS_USE)
+#if defined(CONFIG_WIFI_ESP_AT_DNS_USE)
 #define ESP_MAX_DNS	MIN(3, CONFIG_DNS_RESOLVER_MAX_SERVERS)
 #else
 #define ESP_MAX_DNS	0
@@ -93,9 +93,9 @@ extern "C" {
 
 #define INVALID_LINK_ID		255
 
-#define MDM_RING_BUF_SIZE	CONFIG_WIFI_ESP_MDM_RING_BUF_SIZE
-#define MDM_RECV_MAX_BUF	CONFIG_WIFI_ESP_MDM_RX_BUF_COUNT
-#define MDM_RECV_BUF_SIZE	CONFIG_WIFI_ESP_MDM_RX_BUF_SIZE
+#define MDM_RING_BUF_SIZE	CONFIG_WIFI_ESP_AT_MDM_RING_BUF_SIZE
+#define MDM_RECV_MAX_BUF	CONFIG_WIFI_ESP_AT_MDM_RX_BUF_COUNT
+#define MDM_RECV_BUF_SIZE	CONFIG_WIFI_ESP_AT_MDM_RX_BUF_SIZE
 
 #define ESP_CMD_TIMEOUT		K_SECONDS(10)
 #define ESP_SCAN_TIMEOUT	K_SECONDS(10)
@@ -383,4 +383,4 @@ void esp_close_work(struct k_work *work);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_WIFI_ESP_AT_ESP_H_ */

@@ -84,7 +84,7 @@
 	txpo = <0>;
 
 	nina_prog {
-		compatible = "espressif,esp";
+		compatible = "espressif,esp-at";
 		label = "NINA_PROG";
 		reset-gpios = <&porta 8 GPIO_ACTIVE_LOW>;
 	};

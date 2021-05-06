@@ -3,7 +3,7 @@
 
 description: Espressif ESP8266/ESP32 WiFi modem (AT Commands)
 
-compatible: "espressif,esp"
+compatible: "espressif,esp-at"
 
 include: uart-device.yaml
 
