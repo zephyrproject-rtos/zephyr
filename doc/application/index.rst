@@ -428,6 +428,229 @@ should know about.
   additional directories with source code, Kconfig, etc. that should be used in
   the application build. See :ref:`modules` for details.
 
+
+Application CMakeLists.txt
+**************************
+
+Every application must have a :file:`CMakeLists.txt` file. This file is the
+entry point, or top level, of the build system. The final :file:`zephyr.elf`
+image contains both the application and the kernel libraries.
+
+This section describes some of what you can do in your :file:`CMakeLists.txt`.
+Make sure to follow these steps in order.
+
+#. If you only want to build for one board, add the name of the board
+   configuration for your application on a new line. For example:
+
+   .. code-block:: cmake
+
+      set(BOARD qemu_x86)
+
+   Refer to :ref:`boards` for more information on available boards.
+
+   The Zephyr build system determines a value for :makevar:`BOARD` by checking
+   the following, in order (when a BOARD value is found, CMake stops looking
+   further down the list):
+
+   - Any previously used value as determined by the CMake cache takes highest
+     precedence. This ensures you don't try to run a build with a different
+     :makevar:`BOARD` value than you set during the build configuration step.
+
+   - Any value given on the CMake command line (directly or indirectly via
+     ``west build``) using ``-DBOARD=YOUR_BOARD`` will be checked for and
+     used next.
+
+   - If an :ref:`environment variable <env_vars>` ``BOARD`` is set, its value
+     will then be used.
+
+   - Finally, if you set ``BOARD`` in your application :file:`CMakeLists.txt`
+     as described in this step, this value will be used.
+
+#. If your application uses a configuration file or files other than
+   the usual :file:`prj.conf` (or :file:`prj_YOUR_BOARD.conf`, where
+   ``YOUR_BOARD`` is a board name), add lines setting the
+   :makevar:`CONF_FILE` variable to these files appropriately.
+   If multiple filenames are given, separate them by a single space or
+   semicolon.  CMake lists can be used to build up configuration fragment
+   files in a modular way when you want to avoid setting :makevar:`CONF_FILE`
+   in a single place. For example:
+
+   .. code-block:: cmake
+
+     set(CONF_FILE "fragment_file1.conf")
+     list(APPEND CONF_FILE "fragment_file2.conf")
+
+   See :ref:`initial-conf` for more information.
+
+#. If your application uses devicetree overlays, you may need to set
+   :ref:`DTC_OVERLAY_FILE <important-build-vars>`.
+   See :ref:`set-devicetree-overlays`.
+
+#. If your application has its own kernel configuration options,
+   create a :file:`Kconfig` file in the same directory as your
+   application's :file:`CMakeLists.txt`.
+
+   See :ref:`the Kconfig section of the manual <kconfig>` for detailed
+   Kconfig documentation.
+
+   An (unlikely) advanced use case would be if your application has its own
+   unique configuration **options** that are set differently depending on the
+   build configuration.
+
+   If you just want to set application specific **values** for existing Zephyr
+   configuration options, refer to the :makevar:`CONF_FILE` description above.
+
+   Structure your :file:`Kconfig` file like this:
+
+   .. literalinclude:: application-kconfig.include
+
+   .. note::
+
+      Environment variables in ``source`` statements are expanded directly, so
+      you do not need to define an ``option env="ZEPHYR_BASE"`` Kconfig
+      "bounce" symbol. If you use such a symbol, it must have the same name as
+      the environment variable.
+
+      See :ref:`kconfig_extensions` for more information.
+
+   The :file:`Kconfig` file is automatically detected when placed in
+   the application directory, but it is also possible for it to be
+   found elsewhere if the CMake variable :makevar:`KCONFIG_ROOT` is
+   set with an absolute path.
+
+#. Specify that the application requires Zephyr on a new line, **after any
+   lines added from the steps above**:
+
+   .. code-block:: cmake
+
+      find_package(Zephyr)
+      project(my_zephyr_app)
+
+   .. note:: ``find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})`` can be used if
+             enforcing a specific Zephyr installation by explicitly
+             setting the ``ZEPHYR_BASE`` environment variable should be
+             supported. All samples in Zephyr supports the ``ZEPHYR_BASE``
+             environment variable.
+
+#. Now add any application source files to the 'app' target
+   library, each on their own line, like so:
+
+   .. code-block:: cmake
+
+      target_sources(app PRIVATE src/main.c)
+
+Below is a simple example :file:`CMakeList.txt`:
+
+.. code-block:: cmake
+
+   set(BOARD qemu_x86)
+
+   find_package(Zephyr)
+   project(my_zephyr_app)
+
+   target_sources(app PRIVATE src/main.c)
+
+The Cmake property ``HEX_FILES_TO_MERGE``
+leverages the application configuration provided by
+Kconfig and CMake to let you merge externally built hex files
+with the hex file generated when building the Zephyr application.
+For example:
+
+.. code-block:: cmake
+
+  set_property(GLOBAL APPEND PROPERTY HEX_FILES_TO_MERGE
+      ${app_bootloader_hex}
+      ${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}
+      ${app_provision_hex})
+
+CMakeCache.txt
+**************
+
+CMake uses a CMakeCache.txt file as persistent key/value string
+storage used to cache values between runs, including compile and build
+options and paths to library dependencies. This cache file is created
+when CMake is run in an empty build folder.
+
+For more details about the CMakeCache.txt file see the official CMake
+documentation `runningcmake`_ .
+
+.. _runningcmake: http://cmake.org/runningcmake/
+
+Application Configuration
+*************************
+
+.. _application-kconfig:
+
+Kconfig Configuration
+=====================
+
+Application configuration options are usually set in :file:`prj.conf` in the
+application directory. For example, C++ support could be enabled with this
+assignment:
+
+.. code-block:: none
+
+   CONFIG_CPLUSPLUS=y
+
+Looking at :ref:`existing samples <samples-and-demos>` is a good way to get
+started.
+
+See :ref:`setting_configuration_values` for detailed documentation on setting
+Kconfig configuration values. The :ref:`initial-conf` section on the same page
+explains how the initial configuration is derived. See
+:ref:`configuration_options` for a complete list of configuration options.
+See :ref:`hardening` for security information related with Kconfig options.
+
+The other pages in the :ref:`Kconfig section of the manual <kconfig>` are also
+worth going through, especially if you planning to add new configuration
+options.
+
+Devicetree Overlays
+===================
+
+See :ref:`set-devicetree-overlays`.
+
+Application-Specific Code
+*************************
+
+Application-specific source code files are normally added to the
+application's :file:`src` directory. If the application adds a large
+number of files the developer can group them into sub-directories
+under :file:`src`, to whatever depth is needed.
+
+Application-specific source code should not use symbol name prefixes that have
+been reserved by the kernel for its own use. For more information, see `Naming
+Conventions
+<https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions>`_.
+
+Third-party Library Code
+========================
+
+It is possible to build library code outside the application's :file:`src`
+directory but it is important that both application and library code targets
+the same Application Binary Interface (ABI). On most architectures there are
+compiler flags that control the ABI targeted, making it important that both
+libraries and applications have certain compiler flags in common. It may also
+be useful for glue code to have access to Zephyr kernel header files.
+
+To make it easier to integrate third-party components, the Zephyr
+build system has defined CMake functions that give application build
+scripts access to the zephyr compiler options. The functions are
+documented and defined in :zephyr_file:`cmake/extensions.cmake`
+and follow the naming convention ``zephyr_get_<type>_<format>``.
+
+The following variables will often need to be exported to the
+third-party build system.
+
+* ``CMAKE_C_COMPILER``, ``CMAKE_AR``.
+
+* ``ARCH`` and ``BOARD``, together with several variables that identify the
+  Zephyr kernel version.
+
+:zephyr_file:`samples/application_development/external_lib` is a sample
+project that demonstrates some of these features.
+
+
 .. _build_an_application:
 
 Building an Application
@@ -761,6 +984,120 @@ again.
    to the path of the QEMU binary you want to use instead.
 
 .. _application_debugging:
+
+Application Debugging
+*********************
+
+This section is a quick hands-on reference to start debugging your
+application with QEMU. Most content in this section is already covered in
+`QEMU`_ and `GNU_Debugger`_ reference manuals.
+
+.. _QEMU: http://wiki.qemu.org/Main_Page
+
+.. _GNU_Debugger: http://www.gnu.org/software/gdb
+
+In this quick reference, you'll find shortcuts, specific environmental
+variables, and parameters that can help you to quickly set up your debugging
+environment.
+
+The simplest way to debug an application running in QEMU is using the GNU
+Debugger and setting a local GDB server in your development system through QEMU.
+
+You will need an Executable and Linkable Format (ELF) binary image for
+debugging purposes.  The build system generates the image in the build
+directory.  By default, the kernel binary name is
+:file:`zephyr.elf`. The name can be changed using a Kconfig option.
+
+We will use the standard 1234 TCP port to open a :abbr:`GDB (GNU Debugger)`
+server instance. This port number can be changed for a port that best suits the
+development environment.
+
+You can run QEMU to listen for a "gdb connection" before it starts executing any
+code to debug it.
+
+.. code-block:: bash
+
+   qemu -s -S <image>
+
+will setup Qemu to listen on port 1234 and wait for a GDB connection to it.
+
+The options used above have the following meaning:
+
+* ``-S`` Do not start CPU at startup; rather, you must type 'c' in the
+  monitor.
+* ``-s`` Shorthand for :literal:`-gdb tcp::1234`: open a GDB server on
+  TCP port 1234.
+
+To debug with QEMU and to start a GDB server and wait for a remote connect, run
+either of the following inside the build directory of an application:
+
+.. code-block:: bash
+
+   ninja debugserver
+
+The build system will start a QEMU instance with the CPU halted at startup
+and with a GDB server instance listening at the TCP port 1234.
+
+Using a local GDB configuration :file:`.gdbinit` can help initialize your GDB
+instance on every run.
+In this example, the initialization file points to the GDB server instance.
+It configures a connection to a remote target at the local host on the TCP
+port 1234. The initialization sets the kernel's root directory as a
+reference.
+
+The :file:`.gdbinit` file contains the following lines:
+
+.. code-block:: bash
+
+   target remote localhost:1234
+   dir ZEPHYR_BASE
+
+.. note::
+
+   Substitute the correct :ref:`ZEPHYR_BASE <important-build-vars>` for your
+   system.
+
+Execute the application to debug from the same directory that you chose for
+the :file:`gdbinit` file. The command can include the ``--tui`` option
+to enable the use of a terminal user interface. The following commands
+connects to the GDB server using :file:`gdb`. The command loads the symbol
+table from the elf binary file. In this example, the elf binary file name
+corresponds to :file:`zephyr.elf` file:
+
+.. code-block:: bash
+
+   ..../path/to/gdb --tui zephyr.elf
+
+.. note::
+
+   The GDB version on the development system might not support the --tui
+   option. Please make sure you use the GDB binary from the SDK which
+   corresponds to the toolchain that has been used to build the binary.
+
+If you are not using a .gdbinit file, issue the following command inside GDB to
+connect to the remote GDB server on port 1234:
+
+.. code-block:: bash
+
+   (gdb) target remote localhost:1234
+
+Finally, the command below connects to the GDB server using the Data
+Displayer Debugger (:file:`ddd`). The command loads the symbol table from the
+elf binary file, in this instance, the :file:`zephyr.elf` file.
+
+The :abbr:`DDD (Data Displayer Debugger)` may not be installed in your
+development system by default. Follow your system instructions to install
+it. For example, use ``sudo apt-get install ddd`` on an Ubuntu system.
+
+.. code-block:: bash
+
+   ddd --gdb --debugger "gdb zephyr.elf"
+
+
+Both commands execute the :abbr:`gdb (GNU Debugger)`. The command name might
+change depending on the toolchain you are using and your cross-development
+tools.
+
 .. _custom_board_definition:
 
 Custom Board, Devicetree and SOC Definitions
@@ -994,121 +1331,10 @@ Cache variable:
    :goals: build
    :compact:
 
-Application Debugging
-*********************
-
-This section is a quick hands-on reference to start debugging your
-application with QEMU. Most content in this section is already covered in
-`QEMU`_ and `GNU_Debugger`_ reference manuals.
-
-.. _QEMU: http://wiki.qemu.org/Main_Page
-
-.. _GNU_Debugger: http://www.gnu.org/software/gdb
-
-In this quick reference, you'll find shortcuts, specific environmental
-variables, and parameters that can help you to quickly set up your debugging
-environment.
-
-The simplest way to debug an application running in QEMU is using the GNU
-Debugger and setting a local GDB server in your development system through QEMU.
-
-You will need an Executable and Linkable Format (ELF) binary image for
-debugging purposes.  The build system generates the image in the build
-directory.  By default, the kernel binary name is
-:file:`zephyr.elf`. The name can be changed using a Kconfig option.
-
-We will use the standard 1234 TCP port to open a :abbr:`GDB (GNU Debugger)`
-server instance. This port number can be changed for a port that best suits the
-development environment.
-
-You can run QEMU to listen for a "gdb connection" before it starts executing any
-code to debug it.
-
-.. code-block:: bash
-
-   qemu -s -S <image>
-
-will setup Qemu to listen on port 1234 and wait for a GDB connection to it.
-
-The options used above have the following meaning:
-
-* ``-S`` Do not start CPU at startup; rather, you must type 'c' in the
-  monitor.
-* ``-s`` Shorthand for :literal:`-gdb tcp::1234`: open a GDB server on
-  TCP port 1234.
-
-To debug with QEMU and to start a GDB server and wait for a remote connect, run
-either of the following inside the build directory of an application:
-
-.. code-block:: bash
-
-   ninja debugserver
-
-The build system will start a QEMU instance with the CPU halted at startup
-and with a GDB server instance listening at the TCP port 1234.
-
-Using a local GDB configuration :file:`.gdbinit` can help initialize your GDB
-instance on every run.
-In this example, the initialization file points to the GDB server instance.
-It configures a connection to a remote target at the local host on the TCP
-port 1234. The initialization sets the kernel's root directory as a
-reference.
-
-The :file:`.gdbinit` file contains the following lines:
-
-.. code-block:: bash
-
-   target remote localhost:1234
-   dir ZEPHYR_BASE
-
-.. note::
-
-   Substitute the correct :ref:`ZEPHYR_BASE <important-build-vars>` for your
-   system.
-
-Execute the application to debug from the same directory that you chose for
-the :file:`gdbinit` file. The command can include the ``--tui`` option
-to enable the use of a terminal user interface. The following commands
-connects to the GDB server using :file:`gdb`. The command loads the symbol
-table from the elf binary file. In this example, the elf binary file name
-corresponds to :file:`zephyr.elf` file:
-
-.. code-block:: bash
-
-   ..../path/to/gdb --tui zephyr.elf
-
-.. note::
-
-   The GDB version on the development system might not support the --tui
-   option. Please make sure you use the GDB binary from the SDK which
-   corresponds to the toolchain that has been used to build the binary.
-
-If you are not using a .gdbinit file, issue the following command inside GDB to
-connect to the remote GDB server on port 1234:
-
-.. code-block:: bash
-
-   (gdb) target remote localhost:1234
-
-Finally, the command below connects to the GDB server using the Data
-Displayer Debugger (:file:`ddd`). The command loads the symbol table from the
-elf binary file, in this instance, the :file:`zephyr.elf` file.
-
-The :abbr:`DDD (Data Displayer Debugger)` may not be installed in your
-development system by default. Follow your system instructions to install
-it. For example, use ``sudo apt-get install ddd`` on an Ubuntu system.
-
-.. code-block:: bash
-
-   ddd --gdb --debugger "gdb zephyr.elf"
 
 
-Both commands execute the :abbr:`gdb (GNU Debugger)`. The command name might
-change depending on the toolchain you are using and your cross-development
-tools.
-
-Eclipse Debugging
-*****************
+Debug with Eclipse
+******************
 
 Overview
 ========
@@ -1227,273 +1453,7 @@ Support for Zephyr RTOS awareness is implemented in `pyOCD v0.11.0`_ and later.
 It is compatible with GDB PyOCD Debugging in Eclipse, but you must enable
 CONFIG_DEBUG_THREAD_INFO=y in your application.
 
-.. _cmake-details:
 
-CMake Details
-*************
-
-Overview
-========
-
-CMake is used to build your application together with the Zephyr kernel. A
-CMake build is done in two stages. The first stage is called
-**configuration**. During configuration, the CMakeLists.txt build scripts are
-executed. After configuration is finished, CMake has an internal model of the
-Zephyr build, and can generate build scripts that are native to the host
-platform.
-
-CMake supports generating scripts for several build systems, but only Ninja and
-Make are tested and supported by Zephyr. After configuration, you begin the
-**build** stage by executing the generated build scripts. These build scripts
-can recompile the application without involving CMake following
-most code changes. However, after certain changes, the configuration step must
-be executed again before building. The build scripts can detect some of these
-situations and reconfigure automatically, but there are cases when this must be
-done manually.
-
-Zephyr uses CMake's concept of a 'target' to organize the build. A
-target can be an executable, a library, or a generated file. For
-application developers, the library target is the most important to
-understand. All source code that goes into a Zephyr build does so by
-being included in a library target, even application code.
-
-Library targets have source code, that is added through CMakeLists.txt
-build scripts like this:
-
-.. code-block:: cmake
-
-   target_sources(app PRIVATE src/main.c)
-
-In the above :file:`CMakeLists.txt`, an existing library target named ``app``
-is configured to include the source file :file:`src/main.c`. The ``PRIVATE``
-keyword indicates that we are modifying the internals of how the library is
-being built. Using the keyword ``PUBLIC`` would modify how other
-libraries that link with app are built. In this case, using ``PUBLIC``
-would cause libraries that link with ``app`` to also include the
-source file :file:`src/main.c`, behavior that we surely do not want. The
-``PUBLIC`` keyword could however be useful when modifying the include
-paths of a target library.
-
-Application CMakeLists.txt
-==========================
-
-Every application must have a :file:`CMakeLists.txt` file. This file is the
-entry point, or top level, of the build system. The final :file:`zephyr.elf`
-image contains both the application and the kernel libraries.
-
-This section describes some of what you can do in your :file:`CMakeLists.txt`.
-Make sure to follow these steps in order.
-
-#. If you only want to build for one board, add the name of the board
-   configuration for your application on a new line. For example:
-
-   .. code-block:: cmake
-
-      set(BOARD qemu_x86)
-
-   Refer to :ref:`boards` for more information on available boards.
-
-   The Zephyr build system determines a value for :makevar:`BOARD` by checking
-   the following, in order (when a BOARD value is found, CMake stops looking
-   further down the list):
-
-   - Any previously used value as determined by the CMake cache takes highest
-     precedence. This ensures you don't try to run a build with a different
-     :makevar:`BOARD` value than you set during the build configuration step.
-
-   - Any value given on the CMake command line (directly or indirectly via
-     ``west build``) using ``-DBOARD=YOUR_BOARD`` will be checked for and
-     used next.
-
-   - If an :ref:`environment variable <env_vars>` ``BOARD`` is set, its value
-     will then be used.
-
-   - Finally, if you set ``BOARD`` in your application :file:`CMakeLists.txt`
-     as described in this step, this value will be used.
-
-#. If your application uses a configuration file or files other than
-   the usual :file:`prj.conf` (or :file:`prj_YOUR_BOARD.conf`, where
-   ``YOUR_BOARD`` is a board name), add lines setting the
-   :makevar:`CONF_FILE` variable to these files appropriately.
-   If multiple filenames are given, separate them by a single space or
-   semicolon.  CMake lists can be used to build up configuration fragment
-   files in a modular way when you want to avoid setting :makevar:`CONF_FILE`
-   in a single place. For example:
-
-   .. code-block:: cmake
-
-     set(CONF_FILE "fragment_file1.conf")
-     list(APPEND CONF_FILE "fragment_file2.conf")
-
-   See :ref:`initial-conf` for more information.
-
-#. If your application uses devicetree overlays, you may need to set
-   :ref:`DTC_OVERLAY_FILE <important-build-vars>`.
-   See :ref:`set-devicetree-overlays`.
-
-#. If your application has its own kernel configuration options,
-   create a :file:`Kconfig` file in the same directory as your
-   application's :file:`CMakeLists.txt`.
-
-   See :ref:`the Kconfig section of the manual <kconfig>` for detailed
-   Kconfig documentation.
-
-   An (unlikely) advanced use case would be if your application has its own
-   unique configuration **options** that are set differently depending on the
-   build configuration.
-
-   If you just want to set application specific **values** for existing Zephyr
-   configuration options, refer to the :makevar:`CONF_FILE` description above.
-
-   Structure your :file:`Kconfig` file like this:
-
-   .. literalinclude:: application-kconfig.include
-
-   .. note::
-
-      Environment variables in ``source`` statements are expanded directly, so
-      you do not need to define an ``option env="ZEPHYR_BASE"`` Kconfig
-      "bounce" symbol. If you use such a symbol, it must have the same name as
-      the environment variable.
-
-      See :ref:`kconfig_extensions` for more information.
-
-   The :file:`Kconfig` file is automatically detected when placed in
-   the application directory, but it is also possible for it to be
-   found elsewhere if the CMake variable :makevar:`KCONFIG_ROOT` is
-   set with an absolute path.
-
-#. Specify that the application requires Zephyr on a new line, **after any
-   lines added from the steps above**:
-
-   .. code-block:: cmake
-
-      find_package(Zephyr)
-      project(my_zephyr_app)
-
-   .. note:: ``find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})`` can be used if
-             enforcing a specific Zephyr installation by explicitly
-             setting the ``ZEPHYR_BASE`` environment variable should be
-             supported. All samples in Zephyr supports the ``ZEPHYR_BASE``
-             environment variable.
-
-#. Now add any application source files to the 'app' target
-   library, each on their own line, like so:
-
-   .. code-block:: cmake
-
-      target_sources(app PRIVATE src/main.c)
-
-Below is a simple example :file:`CMakeList.txt`:
-
-.. code-block:: cmake
-
-   set(BOARD qemu_x86)
-
-   find_package(Zephyr)
-   project(my_zephyr_app)
-
-   target_sources(app PRIVATE src/main.c)
-
-The Cmake property ``HEX_FILES_TO_MERGE``
-leverages the application configuration provided by
-Kconfig and CMake to let you merge externally built hex files
-with the hex file generated when building the Zephyr application.
-For example:
-
-.. code-block:: cmake
-
-  set_property(GLOBAL APPEND PROPERTY HEX_FILES_TO_MERGE
-      ${app_bootloader_hex}
-      ${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}
-      ${app_provision_hex})
-
-CMakeCache.txt
-==============
-
-CMake uses a CMakeCache.txt file as persistent key/value string
-storage used to cache values between runs, including compile and build
-options and paths to library dependencies. This cache file is created
-when CMake is run in an empty build folder.
-
-For more details about the CMakeCache.txt file see the official CMake
-documentation `runningcmake`_ .
-
-.. _runningcmake: http://cmake.org/runningcmake/
-
-Application Configuration
-*************************
-
-.. _application-kconfig:
-
-Kconfig Configuration
-=====================
-
-Application configuration options are usually set in :file:`prj.conf` in the
-application directory. For example, C++ support could be enabled with this
-assignment:
-
-.. code-block:: none
-
-   CONFIG_CPLUSPLUS=y
-
-Looking at :ref:`existing samples <samples-and-demos>` is a good way to get
-started.
-
-See :ref:`setting_configuration_values` for detailed documentation on setting
-Kconfig configuration values. The :ref:`initial-conf` section on the same page
-explains how the initial configuration is derived. See
-:ref:`configuration_options` for a complete list of configuration options.
-See :ref:`hardening` for security information related with Kconfig options.
-
-The other pages in the :ref:`Kconfig section of the manual <kconfig>` are also
-worth going through, especially if you planning to add new configuration
-options.
-
-Devicetree Overlays
-===================
-
-See :ref:`set-devicetree-overlays`.
-
-Application-Specific Code
-*************************
-
-Application-specific source code files are normally added to the
-application's :file:`src` directory. If the application adds a large
-number of files the developer can group them into sub-directories
-under :file:`src`, to whatever depth is needed.
-
-Application-specific source code should not use symbol name prefixes that have
-been reserved by the kernel for its own use. For more information, see `Naming
-Conventions
-<https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions>`_.
-
-Support for building third-party library code
-=============================================
-
-It is possible to build library code outside the application's :file:`src`
-directory but it is important that both application and library code targets
-the same Application Binary Interface (ABI). On most architectures there are
-compiler flags that control the ABI targeted, making it important that both
-libraries and applications have certain compiler flags in common. It may also
-be useful for glue code to have access to Zephyr kernel header files.
-
-To make it easier to integrate third-party components, the Zephyr
-build system has defined CMake functions that give application build
-scripts access to the zephyr compiler options. The functions are
-documented and defined in :zephyr_file:`cmake/extensions.cmake`
-and follow the naming convention ``zephyr_get_<type>_<format>``.
-
-The following variables will often need to be exported to the
-third-party build system.
-
-* ``CMAKE_C_COMPILER``, ``CMAKE_AR``.
-
-* ``ARCH`` and ``BOARD``, together with several variables that identify the
-  Zephyr kernel version.
-
-:zephyr_file:`samples/application_development/external_lib` is a sample
-project that demonstrates some of these features.
 
 .. _CMake: https://www.cmake.org
 .. _CMake introduction: https://cmake.org/cmake/help/latest/manual/cmake.1.html#description
