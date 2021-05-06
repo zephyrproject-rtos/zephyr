@@ -89,11 +89,11 @@ The Cortex®-R7 of rcar_h3ulcb board needs to be started by the Cortex®-A cores
 Building
 ========
 
-Applications for the ``rcar_h3ulcb`` board configuration can be built in the usual way (see :ref:`build_an_application` for more details).
+Applications for the ``rcar_h3ulcb_cr7`` board configuration can be built in the usual way (see :ref:`build_an_application` for more details).
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: rcar_h3ulcb
+   :board: rcar_h3ulcb_cr7
    :goals: build
 
 Debugging
