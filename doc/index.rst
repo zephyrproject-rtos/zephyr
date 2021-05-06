@@ -112,6 +112,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
    getting_started/index.rst
    contribute/index.rst
    development_process/index.rst
+   guides/build/index.rst
    application/index.rst
    reference/index.rst
    guides/index.rst

@@ -9,7 +9,6 @@ User and Developer Guides
    beyond-GSG.rst
    arch/index.rst
    bluetooth/index.rst
-   build/index
    ../README.rst
    coccinelle.rst
    code-relocation.rst
@@ -19,7 +18,7 @@ User and Developer Guides
    device_mgmt/dfu
    dts/index
    emulator/index.rst
-   kconfig/index
+
    modules.rst
    networking/index
    platformio/index.rst
