@@ -1,6 +1,6 @@
 common:
   filter: (CONFIG_TFM_BOARD != "") and CONFIG_ARM_NONSECURE_FIRMWARE
-  tags: arm
+  tags: arm tfm
   arch_allow: arm
 tests:
   arch.arm.swap.tz: {}
