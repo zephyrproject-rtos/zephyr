@@ -1684,8 +1684,15 @@ class DT:
                     _err("/aliases: alias property name '{}' should include "
                          "only characters from [0-9a-z-]".format(prop.name))
 
-                # Property.to_path() already checks that the node exists
-                alias2node[prop.name] = prop.to_path()
+                # Property.to_path() checks that the node exists, has
+                # the right type, etc. Swallow errors for invalid
+                # aliases with self._force.
+                try:
+                    alias2node[prop.name] = prop.to_path()
+                except DTError:
+                    if self._force:
+                        continue
+                    raise
 
         self.alias2node = alias2node
 
