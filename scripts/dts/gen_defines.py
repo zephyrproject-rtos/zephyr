@@ -479,17 +479,25 @@ def write_child_functions(node):
             " ".join(f"fn(DT_{child.z_path_id})" for child in
                 node.children.values()))
 
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_VARGS(fn, ...)",
+            " ".join(f"fn(DT_{child.z_path_id}, __VA_ARGS__)" for child in
+                node.children.values()))
 
 def write_child_functions_status_okay(node):
     # Writes macro that are helpers that will call a macro/function
     # for each child node with status "okay".
 
     functions = ''
+    functions_args = ''
     for child in node.children.values():
         if child.status == "okay":
             functions = functions + f"fn(DT_{child.z_path_id}) "
+            functions_args = functions_args + f"fn(DT_{child.z_path_id}, " \
+                                                            "__VA_ARGS__) "
 
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY(fn)", functions)
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY_VARGS(fn, ...)",
+                                                                functions_args)
 
 
 def write_status(node):
@@ -547,6 +555,11 @@ def write_vanilla_props(node):
             # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM
             macro2val[f"{macro}_FOREACH_PROP_ELEM(fn)"] = \
                 ' \\\n\t'.join(f'fn(DT_{node.z_path_id}, {prop_id}, {i})'
+                              for i in range(len(prop.val)))
+
+            macro2val[f"{macro}_FOREACH_PROP_ELEM_VARGS(fn, ...)"] = \
+                ' \\\n\t'.join(f'fn(DT_{node.z_path_id}, {prop_id}, {i},'
+                                ' __VA_ARGS__)'
                               for i in range(len(prop.val)))
 
         plen = prop_len(prop)
@@ -747,6 +760,10 @@ def write_global_compat_info(edt):
         n_okay_macros[f"DT_N_INST_{ident}_NUM_OKAY"] = len(okay_nodes)
         for_each_macros[f"DT_FOREACH_OKAY_INST_{ident}(fn)"] = \
             " ".join(f"fn({edt.compat2nodes[compat].index(node)})"
+                     for node in okay_nodes)
+
+        for_each_macros[f"DT_FOREACH_OKAY_INST_VARGS_{ident}(fn, ...)"] = \
+            " ".join(f"fn({edt.compat2nodes[compat].index(node)}, __VA_ARGS__)"
                      for node in okay_nodes)
 
     for compat, nodes in edt.compat2nodes.items():
