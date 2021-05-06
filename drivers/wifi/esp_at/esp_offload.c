@@ -290,24 +290,32 @@ out:
 	return ret;
 }
 
-static void esp_send_work(struct k_work *work)
+void esp_send_work(struct k_work *work)
 {
-	struct net_pkt *pkt = CONTAINER_OF(work, struct net_pkt, work);
-	struct net_context *context = pkt->context;
-	struct esp_socket *sock = context->offload_context;
+	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
+					       send_work);
+	struct net_context *context = sock->context;
+	struct net_pkt *pkt;
 	int ret = 0;
 
-	ret = _sock_send(sock, pkt);
-	if (ret < 0) {
-		LOG_ERR("Failed to send data: link %d, ret %d", sock->link_id,
-			ret);
-	}
+	while (true) {
+		pkt = k_fifo_get(&sock->tx_fifo, K_NO_WAIT);
+		if (!pkt) {
+			break;
+		}
 
-	if (context->send_cb) {
-		context->send_cb(context, ret, context->user_data);
-	}
+		ret = _sock_send(sock, pkt);
+		if (ret < 0) {
+			LOG_ERR("Failed to send data: link %d, ret %d",
+				sock->link_id, ret);
+		}
 
-	net_pkt_unref(pkt);
+		if (context->send_cb) {
+			context->send_cb(context, ret, context->user_data);
+		}
+
+		net_pkt_unref(pkt);
+	}
 }
 
 static int esp_sendto(struct net_pkt *pkt,
@@ -359,10 +367,7 @@ static int esp_sendto(struct net_pkt *pkt,
 		}
 	}
 
-	k_work_init(&pkt->work, esp_send_work);
-	esp_socket_work_submit(sock, &pkt->work);
-
-	return 0;
+	return esp_socket_queue_tx(sock, pkt);
 }
 
 static int esp_send(struct net_pkt *pkt,

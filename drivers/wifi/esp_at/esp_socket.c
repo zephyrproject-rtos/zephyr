@@ -93,6 +93,8 @@ void esp_socket_init(struct esp_data *data)
 		k_work_init(&sock->connect_work, esp_connect_work);
 		k_work_init(&sock->recvdata_work, esp_recvdata_work);
 		k_work_init(&sock->close_work, esp_close_work);
+		k_work_init(&sock->send_work, esp_send_work);
+		k_fifo_init(&sock->tx_fifo);
 	}
 }
 
