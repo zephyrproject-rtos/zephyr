@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -237,6 +237,11 @@ struct ll_conn *ll_connected_get(uint16_t handle)
 	}
 
 	return conn;
+}
+
+uint16_t ll_conn_free_count_get(void)
+{
+	return mem_free_count_get(conn_free);
 }
 
 void *ll_tx_mem_acquire(void)
