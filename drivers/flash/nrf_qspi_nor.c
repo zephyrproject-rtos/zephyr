@@ -519,7 +519,7 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 	/* Configure Protocol interface */
 #if DT_INST_NODE_HAS_PROP(0, readoc)
 	initstruct->prot_if.readoc =
-		(nrf_qspi_writeoc_t)qspi_get_lines_read(DT_ENUM_IDX(DT_DRV_INST(0), readoc));
+		(nrf_qspi_readoc_t)qspi_get_lines_read(DT_ENUM_IDX(DT_DRV_INST(0), readoc));
 #else
 	initstruct->prot_if.readoc = NRF_QSPI_READOC_FASTREAD;
 #endif
