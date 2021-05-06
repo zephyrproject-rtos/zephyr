@@ -1171,7 +1171,7 @@ struct bt_le_per_adv_sync_recv_info {
 	/** The RSSI of the advertisement excluding any CTE. */
 	int8_t rssi;
 
-	/** The Constant Tone Extension (CTE) of the advertisement */
+	/** The Constant Tone Extension (CTE) of the advertisement (@ref bt_df_cte_type) */
 	uint8_t cte_type;
 };
 
