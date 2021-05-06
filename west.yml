@@ -132,6 +132,9 @@ manifest:
     - name: nrf_hw_models
       path: modules/bsim_hw_models/nrf_hw_models
       revision: a47e326ca772ddd14cc3b9d4ca30a9ab44ecca16
+    - name: TraceRecorderSource
+      path: modules/debug/TraceRecorder
+      revision: 41daf89c15ff841ed63fa882a916ec97089141ce
     - name: hal_xtensa
       revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
       path: modules/hal/xtensa
