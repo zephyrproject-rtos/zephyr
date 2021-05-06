@@ -50,7 +50,7 @@ manifest:
       revision: 81a059f21435bc7e315bccd720da5a9b615bbb50
       path: modules/hal/cypress
     - name: hal_espressif
-      revision: 22e757632677e3579e6f20bb9955fffb2e1b3e1c
+      revision: a5d7cb9e6676b08b15ac5b0c54a98514d8bc257c
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
     - name: hal_infineon

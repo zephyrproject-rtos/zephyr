@@ -70,7 +70,7 @@
 				label = "FLASH_ESP32";
 				reg = <0 0x400000>;
 				erase-block-size = <4096>;
-				write-block-size = <1>;
+				write-block-size = <4>;
 			};
 		};
 
