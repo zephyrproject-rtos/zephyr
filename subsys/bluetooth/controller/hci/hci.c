@@ -5267,7 +5267,10 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		/* No TargetA */
 
 		if (h->cte_info) {
-			cte_type = *(int8_t *)ptr;
+			struct pdu_cte_info *cte_info;
+
+			cte_info = (void *)ptr;
+			cte_type = cte_info->type;
 			ptr++;
 
 			BT_DBG("    CTE type= %d", cte_type);
