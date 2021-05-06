@@ -1,152 +1,96 @@
+common:
+  filter: CONFIG_QEMU_TARGET or CONFIG_BOARD_NATIVE_POSIX
+  tags: log_api logging
+  integration_platforms:
+    - native_posix
 tests:
   logging.log_api_deferred_overflow_rt_filter:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
-
   logging.log_api_deferred_overflow:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
-
   logging.log_api_deferred_no_overflow:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=n
 
   logging.log_api_deferred_static_filter:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log_api_deferred_func_prefix:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
       - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
+      - CONFIG_LOG_DETECT_MISSED_STRDUP=n
 
   logging.log_api_immediate:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
 
   logging.log_api_immediate_rt_filter:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.log_api_immediate_static_filter:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG_MODE_IMMEDIATE=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log2_api_deferred_overflow_rt_filter:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.log2_api_deferred_overflow:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=y
 
   logging.log2_api_deferred_no_overflow:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_DEFERRED=y
       - CONFIG_LOG_MODE_OVERFLOW=n
 
   logging.log2_api_deferred_static_filter:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log2_api_deferred_func_prefix:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_DEFERRED=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
       - CONFIG_LOG_FUNC_NAME_PREFIX_DBG=y
 
   logging.log2_api_deferred_64b_timestamp:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_DEFERRED=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
 
   logging.log2_api_immediate:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_IMMEDIATE=y
 
   logging.log2_api_immediate_rt_filter:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_IMMEDIATE=y
       - CONFIG_LOG_RUNTIME_FILTERING=y
 
   logging.log2_api_immediate_static_filter:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_IMMEDIATE=y
       - CONFIG_SAMPLE_MODULE_LOG_LEVEL_DBG=y
 
   logging.log2_api_immediate_64b_timestamp:
-    integration_platforms:
-      - native_posix
-    tags: log_api logging
     extra_configs:
       - CONFIG_LOG2_MODE_IMMEDIATE=y
       - CONFIG_LOG_TIMESTAMP_64BIT=y
-
-common:
-  platform_allow: >
-    qemu_arc_em qemu_arc_hs qemu_cortex_a53 qemu_cortex_m0 qemu_cortex_m3
-    qemu_cortex_r5 qemu_leon3 qemu_nios2 qemu_riscv32 qemu_riscv64 qemu_x86
-    qemu_x86_64 qemu_xtensa
