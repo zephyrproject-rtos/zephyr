@@ -127,17 +127,6 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			}
 		}
 
-		if (cur_xfer.primary_length == 0) {
-			/* For a zero-length transfer, the STOP task will not
-			 * be triggered automatically by the shortcut with the
-			 * event that signals the transfer end. It needs to be
-			 * done "manually" to prevent the driver getting stuck
-			 * after the address byte is acknowledged.
-			 */
-			nrf_twim_task_trigger(get_dev_config(dev)->twim.p_twim,
-					      NRF_TWIM_TASK_STOP);
-		}
-
 		ret = k_sem_take(&(get_dev_data(dev)->completion_sync),
 				 I2C_TRANSFER_TIMEOUT_MSEC);
 		if (ret != 0) {
