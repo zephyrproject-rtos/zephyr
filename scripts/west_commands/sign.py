@@ -220,7 +220,7 @@ class ImgtoolSigner(Signer):
         flash = self.edt_flash_node(b, args.quiet)
         align, addr, size = self.edt_flash_params(flash)
 
-        if build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
+        if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
             log.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
                     f"{build_conf.path}; this probably won't work")
 
