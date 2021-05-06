@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include "esp_private/wifi.h"
 #include "esp_event.h"
 #include "esp_timer.h"
-#include "esp_wifi_system.h"
+#include "esp_system.h"
 #include "esp_wpa.h"
 
 #define DEV_DATA(dev) \

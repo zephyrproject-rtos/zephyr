@@ -59,18 +59,20 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	struct spi_esp32_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	spi_hal_context_t *hal = &data->hal;
+	spi_hal_dev_config_t *hal_dev = &data->dev_config;
+	spi_hal_trans_config_t *hal_trans = &data->trans_config;
 	size_t chunk_len = spi_context_max_continuous_chunk(&data->ctx);
 
 	/* clean up and prepare SPI hal */
 	memset((uint32_t *) hal->hw->data_buf, 0, sizeof(hal->hw->data_buf));
-	hal->send_buffer = (uint8_t *) ctx->tx_buf;
-	hal->rcv_buffer = ctx->rx_buf;
-	hal->tx_bitlen = chunk_len << 3;
-	hal->rx_bitlen = chunk_len << 3;
+	hal_trans->send_buffer = (uint8_t *) ctx->tx_buf;
+	hal_trans->rcv_buffer = ctx->rx_buf;
+	hal_trans->tx_bitlen = chunk_len << 3;
+	hal_trans->rx_bitlen = chunk_len << 3;
 
 	/* configure SPI */
-	spi_hal_setup_trans(hal);
-	spi_hal_prepare_data(hal);
+	spi_hal_setup_trans(hal, hal_dev, hal_trans);
+	spi_hal_prepare_data(hal, hal_dev, hal_trans);
 
 	/* send data */
 	spi_hal_user_start(hal);
@@ -161,6 +163,8 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	struct spi_esp32_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 	spi_hal_context_t *hal = &data->hal;
+	spi_hal_dev_config_t *hal_dev = &data->dev_config;
+	int freq;
 
 	if (spi_context_configured(ctx, spi_cfg)) {
 		return 0;
@@ -197,9 +201,9 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 				GPIO_OUTPUT);
 
 	if (ctx->config->cs == NULL) {
-		data->hal.cs_setup = 1;
-		data->hal.cs_hold = 1;
-		data->hal.cs_pin_id = 0;
+		hal_dev->cs_setup = 1;
+		hal_dev->cs_hold = 1;
+		hal_dev->cs_pin_id = 0;
 
 		spi_esp32_configure_pin(cfg->pins.csel,
 					cfg->signals.csel_s,
@@ -208,28 +212,36 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 
 	spi_context_cs_configure(&data->ctx);
 
-	spi_hal_get_clock_conf(hal, spi_cfg->frequency, 128, true, 0, NULL,
-			       &data->timing_conf);
+	/* input parameters to calculate timing configuration */
+	spi_hal_timing_param_t timing_param = {
+		.half_duplex = hal_dev->half_duplex,
+		.no_compensate = hal_dev->no_compensate,
+		.clock_speed_hz = cfg->frequency,
+		.duty_cycle = cfg->duty_cycle == 0 ? 128 : cfg->duty_cycle,
+		.input_delay_ns = cfg->input_delay_ns,
+		.use_gpio = true
+	};
 
-	data->hal.timing_conf = &data->timing_conf;
-	data->hal.dummy_bits = data->hal.timing_conf->timing_dummy;
+	spi_hal_cal_clock_conf(&timing_param, &freq, &hal_dev->timing_conf);
 
-	data->hal.tx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
-	data->hal.rx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
+	data->trans_config.dummy_bits = hal_dev->timing_conf.timing_dummy;
 
-	data->hal.io_mode = spi_esp32_get_io_mode(spi_cfg->operation);
+	hal_dev->tx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
+	hal_dev->rx_lsbfirst = spi_cfg->operation & SPI_TRANSFER_LSB ? 1 : 0;
+
+	data->trans_config.io_mode = spi_esp32_get_io_mode(spi_cfg->operation);
 
 	/* SPI mode */
-	data->hal.mode = 0;
+	hal_dev->mode = 0;
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL) {
-		data->hal.mode = BIT(0);
+		hal_dev->mode = BIT(0);
 	}
 
 	if (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA) {
-		data->hal.mode |= BIT(1);
+		hal_dev->mode |= BIT(1);
 	}
 
-	spi_hal_setup_device(hal);
+	spi_hal_setup_device(hal, hal_dev);
 
 	return 0;
 }
@@ -381,10 +393,11 @@ static const struct spi_driver_api spi_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_data_##idx, ctx),	\
 		.hal = {	\
 			.hw = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
+		},	\
+		.dev_config = {	\
 			.half_duplex = DT_PROP(DT_NODELABEL(spi##idx), half_duplex),	\
 			.as_cs = DT_PROP(DT_NODELABEL(spi##idx), clk_as_cs),	\
 			.positive_cs = DT_PROP(DT_NODELABEL(spi##idx), positive_cs),	\
-			.dma_enabled = DT_PROP(DT_NODELABEL(spi##idx), dma),	\
 			.no_compensate = DT_PROP(DT_NODELABEL(spi##idx), dummy_comp),	\
 			.sio = DT_PROP(DT_NODELABEL(spi##idx), sio)	\
 		}	\
@@ -395,7 +408,9 @@ static const struct spi_driver_api spi_api = {
 			\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(spi##idx))),	\
 		ESP32_SPI_IRQ_HANDLER_FUNC(idx)	\
-				\
+		.frequency = SPI_MASTER_FREQ_8M,\
+		.duty_cycle = 0, \
+		.input_delay_ns = 0, \
 		.signals = {	\
 			.miso_s = MISO_IDX_##idx,	\
 			.mosi_s = MOSI_IDX_##idx,	\

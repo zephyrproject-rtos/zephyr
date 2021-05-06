@@ -13,6 +13,7 @@
 #include <esp32/rom/gpio.h>
 
 #include <soc/gpio_sig_map.h>
+#include <soc/uart_reg.h>
 
 #include <device.h>
 #include <soc.h>
