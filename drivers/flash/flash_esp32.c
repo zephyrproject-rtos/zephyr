@@ -96,7 +96,7 @@ int configure_read_mode(spi_dev_t *hw,
 	if (!byte_cmd) {
 		REG_SET_FIELD(PERIPHS_SPI_FLASH_USRREG2, SPI_USR_COMMAND_VALUE, cmd);
 	} else {
-		spi_flash_ll_set_command8(hw, (uint8_t) cmd);
+		spi_flash_ll_set_command(hw, (uint8_t) cmd, 8);
 	}
 
 	return 0;
@@ -330,7 +330,7 @@ static int wait_idle(const struct device *dev)
 	int64_t timeout = k_uptime_get() + SPI_TIMEOUT_MSEC;
 
 	/* wait for spi control ready */
-	while (host_idle(cfg->controller)) {
+	while (!host_idle(cfg->controller)) {
 		if (k_uptime_get() > timeout) {
 			return -ETIMEDOUT;
 		}
