@@ -979,3 +979,41 @@ void otPlatRadioSetMacFrameCounter(otInstance *aInstance,
 				   &config);
 }
 #endif
+
+#if defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
+otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod,
+			     const otExtAddress *aExtAddr)
+{
+	int result;
+
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = {
+		.csl_recv.period = aCslPeriod,
+		.csl_recv.addr = aExtAddr,
+	};
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RECEIVER,
+				      &config);
+
+	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
+}
+
+void otPlatRadioUpdateCslSampleTime(otInstance *aInstance,
+				    uint32_t aCslSampleTime)
+{
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = { .csl_rx_time = aCslSampleTime };
+
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RX_TIME,
+				   &config);
+}
+#endif /* CONFIG_OPENTHREAD_CSL_RECEIVER */
+
+uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return radio_api->get_csl_acc(radio_dev);
+}
