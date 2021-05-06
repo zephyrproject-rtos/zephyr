@@ -171,7 +171,9 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 		return err;
 	}
 
-	bt_addr_copy(&adv->random_addr.a, addr);
+	if (&adv->random_addr.a != addr) {
+		bt_addr_copy(&adv->random_addr.a, addr);
+	}
 	adv->random_addr.type = BT_ADDR_LE_RANDOM;
 	return 0;
 }
