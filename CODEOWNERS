@@ -327,7 +327,7 @@
 /drivers/watchdog/wdt_handlers.c          @dcpleung @nashif
 /drivers/watchdog/*cc32xx*                @pavlohamov
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
-/drivers/wifi/esp/                        @mniestroj
+/drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
 /drivers/wifi/winc1500/                   @kludentwo
 /drivers/virtualization/		  @tbursztyka
@@ -385,7 +385,7 @@
 /dts/bindings/adc/st*stm32-adc.yaml       @cybertale
 /dts/bindings/modem/*hl7800.yaml          @rerickson1
 /dts/bindings/serial/ns16550.yaml         @dcpleung @nashif
-/dts/bindings/wifi/*esp.yaml              @mniestroj
+/dts/bindings/wifi/*esp-at.yaml           @mniestroj
 /dts/bindings/*/*npcx*                    @MulinChao @WealianLiao @ChiHuaL
 /dts/bindings/*/*psoc6*                   @nandojve
 /dts/bindings/*/nordic*                   @anangl

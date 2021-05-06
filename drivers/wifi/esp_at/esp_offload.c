@@ -6,7 +6,7 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(wifi_esp_offload, CONFIG_WIFI_LOG_LEVEL);
+LOG_MODULE_REGISTER(wifi_esp_at_offload, CONFIG_WIFI_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <kernel.h>
