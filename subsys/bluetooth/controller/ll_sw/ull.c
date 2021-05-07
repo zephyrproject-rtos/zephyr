@@ -288,6 +288,12 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
  * Queue of pointers to struct node_rx_event_done.
  * The actual backing behind these pointers is mem_done
  */
+#if !defined(VENDOR_EVENT_DONE_MAX)
+#define EVENT_DONE_MAX 3
+#else
+#define EVENT_DONE_MAX VENDOR_EVENT_DONE_MAX
+#endif
+
 static MFIFO_DEFINE(done, sizeof(struct node_rx_event_done *), EVENT_DONE_MAX);
 
 /* Backing storage for elements in mfifo_done */
