@@ -121,6 +121,9 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         return self.build_conf['CONFIG_BOARD']
 
     def get_dts_img_offset(self):
+        if self.build_conf.getboolean('CONFIG_BOOTLOADER_BOSSA_LEGACY'):
+            return 0
+
         if self.build_conf.getboolean('CONFIG_HAS_FLASH_LOAD_OFFSET'):
             return self.build_conf['CONFIG_FLASH_LOAD_OFFSET']
 
