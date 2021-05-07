@@ -390,7 +390,7 @@ static int send_data(struct wncm14a2a_socket *sock, struct net_pkt *pkt)
 
 	frag = pkt->frags;
 	/* use SOCKWRITE with binary mode formatting */
-	snprintk(buf, sizeof(buf), "AT@SOCKWRITE=%d,%u,1\r",
+	snprintk(buf, sizeof(buf), "AT@SOCKWRITE=%d,%zu,1\r",
 		 sock->socket_id, net_buf_frags_len(frag));
 	mdm_receiver_send(&ictx.mdm_ctx, buf, strlen(buf));
 
@@ -1091,7 +1091,7 @@ static void wncm14a2a_read_rx(struct net_buf **buf)
 					      read_rx_allocator,
 					      &mdm_recv_pool);
 		if (rx_len < bytes_read) {
-			LOG_ERR("Data was lost! read %u of %u!",
+			LOG_ERR("Data was lost! read %u of %zu!",
 				    rx_len, bytes_read);
 		}
 	}

@@ -584,7 +584,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 		return -1;
 	}
 
-	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%d", sock->sock_fd, len);
+	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%zd", sock->sock_fd, len);
 
 	/* Socket read settings */
 	(void) memset(&sock_data, 0, sizeof(sock_data));
@@ -815,7 +815,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 	ssize_t sent = 0;
 	int rc;
 
-	LOG_DBG("msg_iovlen:%d flags:%d", msg->msg_iovlen, flags);
+	LOG_DBG("msg_iovlen:%zd flags:%d", msg->msg_iovlen, flags);
 
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		const char *buf = msg->msg_iov[i].iov_base;
