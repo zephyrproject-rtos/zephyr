@@ -34,8 +34,8 @@
 #if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS)
 /* Allocate data path pools for RX/TX directions for each stream */
 static struct ll_iso_datapath datapath_pool[2*CONFIG_BT_CTLR_CONN_ISO_STREAMS];
-#endif
 static void *datapath_free;
+#endif
 
 static int init_reset(void);
 
@@ -113,11 +113,13 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	 * shall return the error code Unknown Connection Identifier (0x02)
 	 */
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
+	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
+	struct ll_conn_iso_group *cig;
 	isoal_sink_handle_t sink_hdl;
 	isoal_status_t err = 0;
 
-	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
-	struct ll_conn_iso_group *cig;
+	cis = ll_conn_iso_stream_get(handle);
+	/* TODO: Check valid cis */
 
 	cig = cis->group;
 
@@ -129,6 +131,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 #endif
+
 	if (path_is_vendor_specific(path_id) &&
 	    !ll_data_path_configured(path_dir, path_id)) {
 		/* Data path must be configured prior to setup */
@@ -143,8 +146,11 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* Allocate and configure datapath */
 	struct ll_iso_datapath *dp = mem_acquire(&datapath_free);
+
+	/* TODO: check valid dp buffer */
 
 	dp->path_dir      = path_dir;
 	dp->path_id       = path_id;
@@ -153,7 +159,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 	/* TODO dp->sync_delay    = controller_delay; ?*/
 
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	uint32_t sdu_interval;
 	uint8_t burst_number;
 
@@ -201,12 +206,14 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 {
-	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* TBD: If the Host issues this command with a Connection_Handle that does not exist
 	 * or is not for a CIS or a BIS, the Controller shall return the error code Unknown
 	 * Connection Identifier (0x02).
 	 */
 	struct ll_iso_datapath *dp;
+
+	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
 
 	if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
 		dp = cis->datapath_in;
@@ -230,6 +237,7 @@ uint8_t ll_remove_iso_path(uint16_t handle, uint8_t path_dir)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 
 	}
+#endif
 
 	return 0;
 }

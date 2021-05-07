@@ -76,6 +76,11 @@ if(CONFIG_BT_LL_SW_SPLIT)
     CONFIG_BT_CTLR_PERIPHERAL_ISO
     ll_sw/nordic/lll/lll_peripheral_iso.c
     )
+  if(CONFIG_BT_CTLR_ADV_ISO OR CONFIG_BT_CTLR_SYNC_ISO OR CONFIG_BT_CTLR_CONN_ISO)
+    zephyr_library_sources(
+      ll_sw/nordic/ull/ull_iso_vendor.c
+      )
+  endif()
 endif()
 
 zephyr_library_sources(
