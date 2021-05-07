@@ -438,6 +438,7 @@ static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate)
 		(*addr) += close_ate.offset;
 		return 0;
 	}
+
 	/* The close_ate was invalid, `lets find out the last valid ate
 	 * and point the address to this found ate.
 	 *
@@ -485,7 +486,18 @@ static int nvs_sector_close(struct nvs_fs *fs)
 	return 0;
 }
 
+static int nvs_add_gc_done_ate(struct nvs_fs *fs)
+{
+	struct nvs_ate gc_done_ate;
 
+	LOG_DBG("Adding gc done ate at %x", fs->ate_wra & ADDR_OFFS_MASK);
+	gc_done_ate.id = 0xffff;
+	gc_done_ate.len = 0U;
+	gc_done_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
+	nvs_ate_crc8_update(&gc_done_ate);
+
+	return nvs_flash_ate_wrt(fs, &gc_done_ate);
+}
 /* garbage collection: the address ate_wra has been updated to the new sector
  * that has just been started. The data to gc is in the sector after this new
  * sector.
@@ -513,11 +525,7 @@ static int nvs_gc(struct nvs_fs *fs)
 
 	rc = nvs_ate_cmp_const(&close_ate, fs->flash_parameters->erase_value);
 	if (!rc) {
-		rc = nvs_flash_erase_sector(fs, sec_addr);
-		if (rc) {
-			return rc;
-		}
-		return 0;
+		goto gc_done;
 	}
 
 	stop_addr = gc_addr - ate_size;
@@ -586,6 +594,22 @@ static int nvs_gc(struct nvs_fs *fs)
 		}
 	} while (gc_prev_addr != stop_addr);
 
+gc_done:
+
+	/* Make it possible to detect that gc has finished by writing a
+	 * gc done ate to the sector. In the field we might have nvs systems
+	 * that do not have sufficient space to add this ate, so for these
+	 * situations avoid adding the gc done ate.
+	 */
+
+	if (fs->ate_wra >= (fs->data_wra + ate_size)) {
+		rc = nvs_add_gc_done_ate(fs);
+		if (rc) {
+			return rc;
+		}
+	}
+
+	/* Erase the gc'ed sector */
 	rc = nvs_flash_erase_sector(fs, sec_addr);
 	if (rc) {
 		return rc;
@@ -704,8 +728,10 @@ static int nvs_startup(struct nvs_fs *fs)
 	}
 
 	/* if the sector after the write sector is not empty gc was interrupted
-	 * we need to restart gc, first erase the sector before restarting gc
-	 * otherwise the data may not fit into the sector.
+	 * we might need to restart gc if it has not yet finished. Otherwise
+	 * just erase the sector.
+	 * When gc needs to be restarted, first erase the sector otherwise the
+	 * data might not fit into the sector.
 	 */
 	addr = fs->ate_wra & ADDR_SECT_MASK;
 	nvs_sector_advance(fs, &addr);
@@ -714,7 +740,36 @@ static int nvs_startup(struct nvs_fs *fs)
 		goto end;
 	}
 	if (rc) {
-		/* the sector after fs->ate_wrt is not empty */
+		/* the sector after fs->ate_wrt is not empty, look for a marker
+		 * (gc_done_ate) that indicates that gc was finished.
+		 */
+		bool gc_done_marker = false;
+		struct nvs_ate gc_done_ate;
+
+		addr = fs->ate_wra + ate_size;
+		while ((addr & ADDR_OFFS_MASK) < (fs->sector_size - ate_size)) {
+			rc = nvs_flash_ate_rd(fs, addr, &gc_done_ate);
+			if (rc) {
+				goto end;
+			}
+			if (nvs_ate_valid(fs, &gc_done_ate) &&
+			    (gc_done_ate.id == 0xffff) &&
+			    (gc_done_ate.len == 0U)) {
+				gc_done_marker = true;
+				break;
+			}
+			addr += ate_size;
+		}
+
+		if (gc_done_marker) {
+			/* erase the next sector */
+			LOG_INF("GC Done marker found");
+			addr = fs->ate_wra & ADDR_SECT_MASK;
+			nvs_sector_advance(fs, &addr);
+			rc = nvs_flash_erase_sector(fs, addr);
+			goto end;
+		}
+		LOG_INF("No GC Done marker found: restarting gc");
 		rc = nvs_flash_erase_sector(fs, fs->ate_wra);
 		if (rc) {
 			goto end;
@@ -756,6 +811,14 @@ static int nvs_startup(struct nvs_fs *fs)
 	}
 
 end:
+	/* If the sector is empty add a gc done ate to avoid having insufficient
+	 * space when doing gc.
+	 */
+	if ((!rc) && ((fs->ate_wra & ADDR_OFFS_MASK) ==
+		      (fs->sector_size - 2 * ate_size))) {
+
+		rc = nvs_add_gc_done_ate(fs);
+	}
 	k_mutex_unlock(&fs->nvs_lock);
 	return rc;
 }
@@ -862,11 +925,11 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 	data_size = nvs_al_size(fs, len);
 
-	/* The maximum data size is sector size - 3 ate
-	 * where: 1 ate for data, 1 ate for sector close
+	/* The maximum data size is sector size - 4 ate
+	 * where: 1 ate for data, 1 ate for sector close, 1 ate for gc done,
 	 * and 1 ate to always allow a delete.
 	 */
-	if ((len > (fs->sector_size - 3 * ate_size)) ||
+	if ((len > (fs->sector_size - 4 * ate_size)) ||
 	    ((len > 0) && (data == NULL))) {
 		return -EINVAL;
 	}
@@ -936,7 +999,7 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 			goto end;
 		}
 
-		if (fs->ate_wra >= fs->data_wra + required_space) {
+		if (fs->ate_wra >= (fs->data_wra + required_space)) {
 
 			rc = nvs_flash_wrt_entry(fs, id, data, len);
 			if (rc) {
