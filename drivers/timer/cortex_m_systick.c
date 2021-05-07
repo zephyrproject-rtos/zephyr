@@ -180,6 +180,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t delay;
+	uint32_t val1, val2;
+	uint32_t last_load_ = last_load;
 
 	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
@@ -187,6 +189,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	uint32_t pending = elapsed();
+
+	val1 = SysTick->VAL;
 
 	cycle_count += pending;
 	overflow_cyc = 0U;
@@ -217,9 +221,27 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 			last_load = delay;
 		}
 	}
+
+	val2 = SysTick->VAL;
+
 	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
 
+	/*
+	 * Add elapsed cycles while computing the new load to cycle_count.
+	 *
+	 * Note that comparing val1 and val2 is normaly not good enough to
+	 * guess if the counter wrapped during this interval. Indeed if val1 is
+	 * close to LOAD, then there are little chances to catch val2 between
+	 * val1 and LOAD after a wrap. COUNTFLAG should be checked in addition.
+	 * But since the load computation is faster than MIN_DELAY, then we
+	 * don't need to worry about this case.
+	 */
+	if (val1 < val2) {
+		cycle_count += (val1 + (last_load_ - val2));
+	} else {
+		cycle_count += (val1 - val2);
+	}
 	k_spin_unlock(&lock, key);
 #endif
 }
