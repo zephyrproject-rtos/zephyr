@@ -83,12 +83,11 @@
 	};
 };
 
-
-&clk_hse{
+&clk_hse {
 	status = "okay";
 };
 
-&clk_lse{
+&clk_lse {
 	status = "okay";
 };
 

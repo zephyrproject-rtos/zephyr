@@ -9,7 +9,7 @@
 #include "arduino_r3_connector.dtsi"
 
 / {
-    leds {
+	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
@@ -34,7 +34,7 @@
 	};
 };
 
-&clk_msi{
+&clk_msi {
 	status = "okay";
 	msi-range = <6>;
 };

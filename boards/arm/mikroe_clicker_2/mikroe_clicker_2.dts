@@ -20,7 +20,6 @@
 		zephyr,ccm = &ccm0;
 	};
 
-
 	leds {
 		compatible = "gpio-leds";
 		ld1: led_1 {
@@ -102,7 +101,6 @@
 	status = "okay";
 };
 
-
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
@@ -129,7 +127,6 @@
 	status ="okay";
 	pinctrl-0 = <&adc1_in2_pa2 &adc1_in3_pa3>;
 };
-
 
 mikrobus_1_i2c: &i2c3 {};
 

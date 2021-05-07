@@ -63,7 +63,7 @@
 	};
 };
 
-&clk_hsi{
+&clk_hsi {
 	status = "okay";
 };
 
@@ -134,7 +134,6 @@
 		     &spi3_miso_pc11 &spi3_mosi_pc12>;
 	status = "okay";
 };
-
 
 &timers2 {
 	status = "okay";
