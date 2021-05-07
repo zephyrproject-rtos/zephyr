@@ -1424,8 +1424,10 @@ static int uart_stm32_init(const struct device *dev)
 static int uart_stm32_set_power_state(const struct device *dev,
 					      uint32_t new_state)
 {
+	const struct uart_stm32_config *config = DEV_CFG(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
+	int err;
 
 	/* setting a low power mode */
 	if (new_state != PM_DEVICE_ACTIVE_STATE) {
@@ -1444,6 +1446,20 @@ static int uart_stm32_set_power_state(const struct device *dev,
 		/* Clear OVERRUN flag */
 		LL_USART_ClearFlag_ORE(UartInstance);
 		/* Leave UartInstance unchanged */
+
+		/* Configure dt provided device LP signals when available */
+		stm32_dt_pinctrl_configure(config->lp_pinctrl_list,
+						 config->lp_pinctrl_list_size,
+						 (uint32_t)UART_STRUCT(dev));
+		/* Don't check errors as LP signals are optional */
+	} else {
+		/* Configure dt provided device active signals when available */
+		err = stm32_dt_pinctrl_configure(config->pinctrl_list,
+						 config->pinctrl_list_size,
+						 (uint32_t)UART_STRUCT(dev));
+		if (err < 0) {
+			return err;
+		}
 	}
 	data->pm_state = new_state;
 	/* UartInstance returning to active mode has nothing special to do */
@@ -1558,6 +1574,8 @@ STM32_UART_IRQ_HANDLER_DECL(index);					\
 									\
 static const struct soc_gpio_pinctrl uart_pins_##index[] =		\
 				ST_STM32_DT_INST_PINCTRL(index, 0);	\
+static const struct soc_gpio_pinctrl uart_lp_pins_##index[] =		\
+				ST_STM32_DT_INST_PINCTRL(index, 1);	\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.uconf = {							\
@@ -1571,6 +1589,8 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.parity = DT_INST_PROP_OR(index, parity, UART_CFG_PARITY_NONE),	\
 	.pinctrl_list = uart_pins_##index,				\
 	.pinctrl_list_size = ARRAY_SIZE(uart_pins_##index),		\
+	.lp_pinctrl_list = uart_lp_pins_##index,			\
+	.lp_pinctrl_list_size = ARRAY_SIZE(uart_lp_pins_##index),	\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
