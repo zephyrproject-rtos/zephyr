@@ -1,0 +1,8 @@
+common:
+  build_only: true
+  tags: drivers
+tests:
+  drivers.dac.build:
+    min_ram: 32
+    depends_on: dac spi
+    platform_exclude: serpente
