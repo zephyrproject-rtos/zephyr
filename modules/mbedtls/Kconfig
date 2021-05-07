@@ -3,6 +3,9 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_MBEDTLS_MODULE
+	bool
+
 menuconfig MBEDTLS
 	bool "mbedTLS Support"
 	help
