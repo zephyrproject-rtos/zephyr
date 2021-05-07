@@ -377,9 +377,14 @@ HALs
 Trusted Firmware-m
 ******************
 
+* Synchronized Trusted-Firmware-M module to the upstream v1.3.0 release.
 * Configured QEMU to run Zephyr samples and tests in CI on mps2_an521_nonsecure
   (Cortex-M33 Non-Secure) with TF-M as the secure firmware component.
-* Synchronized Trusted-Firmware-M module to the upstream v1.3.0 release.
+* Added Kconfig options for selecting the desired TF-M profile and build type
+* Added Kconfig options for enabling the desired TF-M secure partitions
+* Added a new sample to run the PSA tests with Zephyr
+* Added a new sample to run the TF-M regression tests using the Zephyr build system
+
 
 
 Documentation
