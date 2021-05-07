@@ -122,8 +122,13 @@ static inline void arch_setup_callee_saved_regs(struct k_thread *thread,
 	ARG_UNUSED(regs);
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-	/* R26 is used for thread pointer */
+#ifdef CONFIG_ISA_ARCV2
+	/* R26 is used for thread pointer for ARCv2 */
 	regs->r26 = thread->tls;
+#else
+	/* R30 is used for thread pointer for ARCv3 */
+	regs->r30 = thread->tls;
+#endif /* CONFIG_ISA_ARCV2 */
 #endif
 }
 
