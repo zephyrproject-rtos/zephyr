@@ -20,23 +20,19 @@ set -e
 # and the remote account must have password-free sudo ability.  (The
 # intent is that isolating the host like this to be a CAVS test unit
 # means that simple device access at root is acceptable.)  There must
-# be a current Zephyr tree on the host, and a working loadable
-# "diag_driver" kernel module.
+# be a current Zephyr tree on the host.
 
 # Remote host on which to test
 HOST=up2
 
 # Zephyr tree on the host
-HOST_ZEPHYR_BASE=z/zephyr
+HOST_ZEPHYR_BASE=$HOME/z/zephyr
 
 # rimage key to use for signing binaries
 KEY=$HOME/otc_private_key.pem
 
-# Local path to a built rimage (https://github.com/thesofproject/rimage)
-RIMAGE=$ZEPHYR_BASE/../modules/audio/sof/zephyr/ext/rimage
-
-# Kernel module on host (https://github.com/thesofproject/sof-diagnostic-driver)
-HOST_DRIVER=sof-diagnostic-driver/diag_driver.ko
+# Local path to a built (!) rimage (https://github.com/thesofproject/rimage)
+RIMAGE=$ZEPHYR_BASE/../modules/audio/sof/rimage
 
 ########################################################################
 #
@@ -81,7 +77,7 @@ fi
 IMAGE=$ZEPHYR_BASE/_cavstmp.ri
 LOADLOG=$ZEPHYR_BASE/_cavsload_load.log
 HOST_TOOLS=$HOST_ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools
-FWLOAD=$HOST_TOOLS/fw_loader.py
+CAVSFW=$HOST_TOOLS/cavs-fw.py
 ADSPLOG=$HOST_TOOLS/adsplog.py
 
 if [ "$DO_SIGN" = "1" ]; then
@@ -97,11 +93,10 @@ if [ "$DO_LOAD" = "1" ]; then
     done
 
     scp $IMAGE $HOST:_cavstmp.ri
-    ssh $HOST "(lsmod | grep -q diag_driver) || sudo insmod $HOST_DRIVER"
 
     # The script sometimes gets stuck
-    ssh $HOST "sudo pkill -f -9 fw_loader.py" || true
-    ssh $HOST "sudo $FWLOAD -f _cavstmp.ri || true" > $LOADLOG 2>&1
+    ssh $HOST "sudo pkill -f -9 cavs-fw.py" || true
+    ssh $HOST "sudo $CAVSFW _cavstmp.ri" > $LOADLOG 2>&1
 
     if [ "$DO_SIGN" = "1" ]; then
 	cat $LOADLOG
