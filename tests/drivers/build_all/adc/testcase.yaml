@@ -1,0 +1,8 @@
+common:
+  build_only: true
+  tags: drivers
+tests:
+  drivers.adc.build:
+    min_ram: 32
+    depends_on: adc spi
+    platform_exclude: serpente
