@@ -44,14 +44,26 @@
 
 		boot_partition: partition@0 {
 			label = "sam-ba";
-			reg = <0x0 0x10000>;
+			reg = <0x00000000 0x00010000>;
 			read-only;
 		};
 
 		code_partition: partition@10000 {
 			label = "code";
-			reg = <0x10000 0xf0000>;
+			reg = <0x00010000 0x000e8000>;
 			read-only;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 *
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
 		};
 	};
 };
