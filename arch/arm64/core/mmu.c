@@ -908,6 +908,27 @@ void arch_mem_unmap(void *addr, size_t size)
 	}
 }
 
+int arch_page_phys_get(void *virt, uintptr_t *phys)
+{
+	uint64_t par;
+	int key;
+
+	key = arch_irq_lock();
+	__asm__ volatile ("at S1E1R, %0" : : "r" (virt));
+	isb();
+	par = read_sysreg(PAR_EL1);
+	arch_irq_unlock(key);
+
+	if (par & BIT(0)) {
+		return -EFAULT;
+	}
+
+	if (phys) {
+		*phys = par & GENMASK(47, 12);
+	}
+	return 0;
+}
+
 #ifdef CONFIG_USERSPACE
 
 static inline bool is_ptable_active(struct arm_mmu_ptables *ptables)
