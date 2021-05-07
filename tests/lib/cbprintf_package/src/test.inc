@@ -57,7 +57,9 @@ static void unpack(const char *desc, struct out_buffer *buf,
 }
 
 #define TEST_PACKAGING(fmt, ...) do { \
-	snprintf(compare_buf, sizeof(compare_buf), fmt, __VA_ARGS__); \
+	int must_runtime = CBPRINTF_MUST_RUNTIME_PACKAGE(0, fmt, __VA_ARGS__); \
+	zassert_equal(must_runtime, !Z_C_GENERIC, NULL); \
+	snprintfcb(compare_buf, sizeof(compare_buf), fmt, __VA_ARGS__); \
 	printk("-----------------------------------------\n"); \
 	printk("%s\n", compare_buf); \
 	uint8_t *pkg; \
