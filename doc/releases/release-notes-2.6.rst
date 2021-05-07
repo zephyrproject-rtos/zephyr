@@ -384,7 +384,10 @@ Trusted Firmware-m
 * Added Kconfig options for enabling the desired TF-M secure partitions
 * Added a new sample to run the PSA tests with Zephyr
 * Added a new sample to run the TF-M regression tests using the Zephyr build system
+* Added support for new platforms
 
+   * BL5340 DVK
+   * STM32L562E DK
 
 
 Documentation
