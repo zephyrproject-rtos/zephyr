@@ -1,0 +1,13 @@
+common:
+  build_only: true
+  tags: drivers
+tests:
+  drivers.modem.build:
+    extra_args: CONF_FILE=modem.conf
+    platform_exclude: serpente particle_boron rak5010_nrf52840
+  drivers.modem.ublox_sara.build:
+    extra_args: CONF_FILE=modem_ublox_sara.conf
+    platform_exclude: serpente pinnacle_100_dvk
+  drivers.modem.quectel_bg9x.build:
+    extra_args: CONF_FILE=modem_quectel_bg9x.conf
+    platform_exclude: serpente pinnacle_100_dvk
