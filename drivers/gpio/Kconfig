@@ -93,4 +93,6 @@ source "drivers/gpio/Kconfig.rcar"
 
 source "drivers/gpio/Kconfig.cy8c95xx"
 
+source "drivers/gpio/Kconfig.tca9538"
+
 endif # GPIO
