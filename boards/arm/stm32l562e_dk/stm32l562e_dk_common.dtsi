@@ -51,13 +51,13 @@
 	};
 };
 
-&clk_msi{
+&clk_msi {
 	status = "okay";
 	msi-range = <6>;
 	msi-pll-mode;
 };
 
-&clk_lse{
+&clk_lse {
 	status = "okay";
 };
 
