@@ -124,6 +124,22 @@ static int pm_device_request(const struct device *dev,
 		 * satisfied and this call just incremented the reference count
 		 * for this device.
 		 */
+
+		/* Unfortunately this is not what is happening yet. There are
+		 * cases, for example, like the pinmux being initialized before
+		 * the gpio. For that reason let's power on/off the device
+		 * here until we don't have it properly fixed.
+		 */
+		if (dev->pm->usage == 1) {
+			(void)pm_device_state_set(dev,
+						  PM_DEVICE_ACTIVE_STATE,
+						  NULL, NULL);
+		} else if (dev->pm->usage == 0) {
+			(void)pm_device_state_set(dev,
+						  PM_DEVICE_SUSPEND_STATE,
+						  NULL, NULL);
+		}
+
 		return 0;
 	}
 
