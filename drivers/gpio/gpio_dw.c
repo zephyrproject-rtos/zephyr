@@ -443,7 +443,7 @@ static uint32_t gpio_dw_get_power_state(const struct device *port)
 static inline int gpio_dw_suspend_port(const struct device *port)
 {
 	gpio_dw_clock_off(port);
-	gpio_dw_set_power_state(port, PM_DEVICE_SUSPEND_STATE);
+	gpio_dw_set_power_state(port, PM_DEVICE_STATE_SUSPEND);
 
 	return 0;
 }
@@ -451,7 +451,7 @@ static inline int gpio_dw_suspend_port(const struct device *port)
 static inline int gpio_dw_resume_from_suspend_port(const struct device *port)
 {
 	gpio_dw_clock_on(port);
-	gpio_dw_set_power_state(port, PM_DEVICE_ACTIVE_STATE);
+	gpio_dw_set_power_state(port, PM_DEVICE_STATE_ACTIVE);
 	return 0;
 }
 
@@ -466,9 +466,9 @@ static int gpio_dw_device_ctrl(const struct device *port,
 	int ret = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		if (*((uint32_t *)context) == PM_DEVICE_SUSPEND_STATE) {
+		if (*((uint32_t *)context) == PM_DEVICE_STATE_SUSPEND) {
 			ret = gpio_dw_suspend_port(port);
-		} else if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
+		} else if (*((uint32_t *)context) == PM_DEVICE_STATE_ACTIVE) {
 			ret = gpio_dw_resume_from_suspend_port(port);
 		}
 	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
@@ -544,7 +544,7 @@ static int gpio_dw_initialize(const struct device *port)
 		config->config_func(port);
 	}
 
-	gpio_dw_set_power_state(port, PM_DEVICE_ACTIVE_STATE);
+	gpio_dw_set_power_state(port, PM_DEVICE_STATE_ACTIVE);
 
 	return 0;
 }

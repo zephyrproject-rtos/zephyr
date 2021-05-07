@@ -200,7 +200,7 @@ static int eth_mcux_device_pm_control(const struct device *dev,
 	}
 
 	if (command == PM_DEVICE_STATE_SET) {
-		if (*state == PM_DEVICE_SUSPEND_STATE) {
+		if (*state == PM_DEVICE_STATE_SUSPEND) {
 			LOG_DBG("Suspending");
 
 			ret = net_if_suspend(eth_ctx->iface);
@@ -215,7 +215,7 @@ static int eth_mcux_device_pm_control(const struct device *dev,
 			ENET_Deinit(eth_ctx->base);
 			clock_control_off(eth_ctx->clock_dev,
 				(clock_control_subsys_t)eth_ctx->clock);
-		} else if (*state == PM_DEVICE_ACTIVE_STATE) {
+		} else if (*state == PM_DEVICE_STATE_ACTIVE) {
 			LOG_DBG("Resuming");
 
 			clock_control_on(eth_ctx->clock_dev,

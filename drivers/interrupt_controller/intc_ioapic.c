@@ -104,7 +104,7 @@ static uint32_t ioapic_rtes;
 #define SUSPEND_BITS_REQD (ROUND_UP((256 * BITS_PER_IRQ), 32))
 
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
-static uint32_t ioapic_device_power_state = PM_DEVICE_ACTIVE_STATE;
+static uint32_t ioapic_device_power_state = PM_DEVICE_STATE_ACTIVE;
 
 #endif
 
@@ -311,17 +311,17 @@ static int ioapic_device_ctrl(const struct device *dev,
 		uint32_t new_state = *((uint32_t *)context);
 
 		switch (new_state) {
-		case PM_DEVICE_LOW_POWER_STATE:
+		case PM_DEVICE_STATE_LOW_POWER:
 			break;
-		case PM_DEVICE_ACTIVE_STATE:
+		case PM_DEVICE_STATE_ACTIVE:
 			if (ioapic_device_power_state !=
-					PM_DEVICE_LOW_POWER_STATE) {
+					PM_DEVICE_STATE_LOW_POWER) {
 				ret = ioapic_resume_from_suspend(dev);
 			}
 			break;
-		case PM_DEVICE_SUSPEND_STATE:
-		case PM_DEVICE_FORCE_SUSPEND_STATE:
-		case PM_DEVICE_OFF_STATE:
+		case PM_DEVICE_STATE_SUSPEND:
+		case PM_DEVICE_STATE_FORCE_SUSPEND:
+		case PM_DEVICE_STATE_OFF:
 			ret = ioapic_suspend(dev);
 			break;
 		default:

@@ -151,7 +151,7 @@ void main(void)
 
 #if IS_ENABLED(CONFIG_PM_DEVICE)
 	printk("Putting the flash device into low power state... ");
-	err = pm_device_state_set(flash_dev, PM_DEVICE_LOW_POWER_STATE,
+	err = pm_device_state_set(flash_dev, PM_DEVICE_STATE_LOW_POWER,
 				  NULL, NULL);
 	if (err != 0) {
 		printk("FAILED\n");

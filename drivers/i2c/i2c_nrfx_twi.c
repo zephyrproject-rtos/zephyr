@@ -215,7 +215,7 @@ static int init_twi(const struct device *dev)
 		return -EBUSY;
 	}
 #ifdef CONFIG_PM_DEVICE
-	get_dev_data(dev)->pm_state = PM_DEVICE_ACTIVE_STATE;
+	get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	return 0;
@@ -234,7 +234,7 @@ static int twi_nrfx_pm_control(const struct device *dev,
 
 		if (new_state != pm_current_state) {
 			switch (new_state) {
-			case PM_DEVICE_ACTIVE_STATE:
+			case PM_DEVICE_STATE_ACTIVE:
 				init_twi(dev);
 				if (get_dev_data(dev)->dev_config) {
 					i2c_nrfx_twi_configure(
@@ -243,10 +243,10 @@ static int twi_nrfx_pm_control(const struct device *dev,
 				}
 				break;
 
-			case PM_DEVICE_LOW_POWER_STATE:
-			case PM_DEVICE_SUSPEND_STATE:
-			case PM_DEVICE_OFF_STATE:
-				if (pm_current_state == PM_DEVICE_ACTIVE_STATE) {
+			case PM_DEVICE_STATE_LOW_POWER:
+			case PM_DEVICE_STATE_SUSPEND:
+			case PM_DEVICE_STATE_OFF:
+				if (pm_current_state == PM_DEVICE_STATE_ACTIVE) {
 					nrfx_twi_uninit(&get_dev_config(dev)->twi);
 				}
 				break;

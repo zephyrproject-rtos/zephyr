@@ -215,20 +215,20 @@ registers, clocks, memory etc.
 
 The four device power states:
 
-:code:`PM_DEVICE_ACTIVE_STATE`
+:code:`PM_DEVICE_STATE_ACTIVE`
 
    Normal operation of the device. All device context is retained.
 
-:code:`PM_DEVICE_LOW_POWER_STATE`
+:code:`PM_DEVICE_STATE_LOW_POWER`
 
    Device context is preserved by the HW and need not be restored by the driver.
 
-:code:`PM_DEVICE_SUSPEND_STATE`
+:code:`PM_DEVICE_STATE_SUSPEND`
 
    Most device context is lost by the hardware. Device drivers must save and
    restore or reinitialize any context lost by the hardware.
 
-:code:`PM_DEVICE_OFF_STATE`
+:code:`PM_DEVICE_STATE_OFF`
 
    Power has been fully removed from the device. The device context is lost
    when this state is entered. Need to reinitialize the device when powering

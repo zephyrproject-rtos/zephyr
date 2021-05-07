@@ -24,24 +24,24 @@ extern "C" {
 
 struct device;
 
-/** @def PM_DEVICE_ACTIVE_STATE
+/** @def PM_DEVICE_STATE_ACTIVE
  *
  * @brief device is in ACTIVE power state
  *
  * @details Normal operation of the device. All device context is retained.
  */
-#define PM_DEVICE_ACTIVE_STATE          1
+#define PM_DEVICE_STATE_ACTIVE          1
 
-/** @def PM_DEVICE_LOW_POWER_STATE
+/** @def PM_DEVICE_STATE_LOW_POWER
  *
  * @brief device is in LOW power state
  *
  * @details Device context is preserved by the HW and need not be
  * restored by the driver.
  */
-#define PM_DEVICE_LOW_POWER_STATE       2
+#define PM_DEVICE_STATE_LOW_POWER       2
 
-/** @def PM_DEVICE_SUSPEND_STATE
+/** @def PM_DEVICE_STATE_SUSPEND
  *
  * @brief device is in SUSPEND power state
  *
@@ -49,9 +49,9 @@ struct device;
  * Device drivers must save and restore or reinitialize any context
  * lost by the hardware
  */
-#define PM_DEVICE_SUSPEND_STATE         3
+#define PM_DEVICE_STATE_SUSPEND         3
 
-/** @def PM_DEVICE_FORCE_SUSPEND_STATE
+/** @def PM_DEVICE_STATE_FORCE_SUSPEND
  *
  * @brief device is in force SUSPEND power state
  *
@@ -61,9 +61,9 @@ struct device;
  * Most device context is lost by the hardware. Device drivers must
  * save and restore or reinitialize any context lost by the hardware.
  */
-#define PM_DEVICE_FORCE_SUSPEND_STATE	4
+#define PM_DEVICE_STATE_FORCE_SUSPEND	4
 
-/** @def PM_DEVICE_OFF_STATE
+/** @def PM_DEVICE_STATE_OFF
  *
  * @brief device is in OFF power state
  *
@@ -71,25 +71,25 @@ struct device;
  * The device context is lost when this state is entered, so the OS
  * software will reinitialize the device when powering it back on
  */
-#define PM_DEVICE_OFF_STATE             5
+#define PM_DEVICE_STATE_OFF             5
 
-/** @def PM_DEVICE_RESUMING_STATE
+/** @def PM_DEVICE_STATE_RESUMING
  *
  * @brief device is resuming to active state.
  *
  * @details - The device was previously suspended and is now
  * transitioning to become ACTIVE.
  */
-#define PM_DEVICE_RESUMING_STATE             6
+#define PM_DEVICE_STATE_RESUMING             6
 
-/** @def PM_DEVICE_SUSPENDING_STATE
+/** @def PM_DEVICE_STATE_SUSPENDING
  *
  * @brief device is suspending.
  *
  * @details - The device is currently transitioning from ACTIVE
  * to SUSPEND.
  */
-#define PM_DEVICE_SUSPENDING_STATE             7
+#define PM_DEVICE_STATE_SUSPENDING             7
 
 /* Constants defining support device power commands */
 #define PM_DEVICE_STATE_SET       1

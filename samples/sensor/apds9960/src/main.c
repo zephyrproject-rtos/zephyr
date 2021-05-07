@@ -79,11 +79,11 @@ void main(void)
 #ifdef CONFIG_PM_DEVICE
 		uint32_t p_state;
 
-		p_state = PM_DEVICE_LOW_POWER_STATE;
+		p_state = PM_DEVICE_STATE_LOW_POWER;
 		pm_device_state_set(dev, p_state, NULL, NULL);
 		printk("set low power state for 2s\n");
 		k_sleep(K_MSEC(2000));
-		p_state = PM_DEVICE_ACTIVE_STATE;
+		p_state = PM_DEVICE_STATE_ACTIVE;
 		pm_device_state_set(dev, p_state, NULL, NULL);
 #endif
 	}

@@ -5529,7 +5529,7 @@ static int cmd_net_suspend(const struct shell *shell, size_t argc,
 
 		dev = net_if_get_device(iface);
 
-		ret = pm_device_state_set(dev, PM_DEVICE_SUSPEND_STATE,
+		ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND,
 					  NULL, NULL);
 		if (ret != 0) {
 			PR_INFO("Iface could not be suspended: ");
@@ -5574,7 +5574,7 @@ static int cmd_net_resume(const struct shell *shell, size_t argc,
 
 		dev = net_if_get_device(iface);
 
-		ret = pm_device_state_set(dev, PM_DEVICE_ACTIVE_STATE,
+		ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE,
 					  NULL, NULL);
 		if (ret != 0) {
 			PR_INFO("Iface could not be resumed\n");

@@ -33,7 +33,7 @@ static uint32_t dummy_get_power_state(const struct device *dev)
 static int dummy_suspend(const struct device *dev)
 {
 	printk("parent suspending..\n");
-	parent_power_state = PM_DEVICE_SUSPEND_STATE;
+	parent_power_state = PM_DEVICE_STATE_SUSPEND;
 
 	return 0;
 }
@@ -41,7 +41,7 @@ static int dummy_suspend(const struct device *dev)
 static int dummy_resume_from_suspend(const struct device *dev)
 {
 	printk("parent resuming..\n");
-	parent_power_state = PM_DEVICE_ACTIVE_STATE;
+	parent_power_state = PM_DEVICE_STATE_ACTIVE;
 
 	return 0;
 }
@@ -54,7 +54,7 @@ static int dummy_parent_pm_ctrl(const struct device *dev,
 
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_SET:
-		if (*state == PM_DEVICE_ACTIVE_STATE) {
+		if (*state == PM_DEVICE_STATE_ACTIVE) {
 			ret = dummy_resume_from_suspend(dev);
 		} else {
 			ret = dummy_suspend(dev);
@@ -79,7 +79,7 @@ static const struct dummy_parent_api funcs = {
 int dummy_parent_init(const struct device *dev)
 {
 	pm_device_enable(dev);
-	parent_power_state = PM_DEVICE_ACTIVE_STATE;
+	parent_power_state = PM_DEVICE_STATE_ACTIVE;
 	return 0;
 }
 

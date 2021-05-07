@@ -215,7 +215,7 @@ static int spi_cc13xx_cc26xx_set_power_state(const struct device *dev,
 {
 	int ret = 0;
 
-	if ((new_state == PM_DEVICE_ACTIVE_STATE) &&
+	if ((new_state == PM_DEVICE_STATE_ACTIVE) &&
 		(new_state != get_dev_data(dev)->pm_state)) {
 		if (get_dev_config(dev)->base ==
 			DT_INST_REG_ADDR(0)) {
@@ -225,11 +225,11 @@ static int spi_cc13xx_cc26xx_set_power_state(const struct device *dev,
 		}
 		get_dev_data(dev)->pm_state = new_state;
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_LOW_POWER_STATE ||
-			new_state == PM_DEVICE_SUSPEND_STATE ||
-			new_state == PM_DEVICE_OFF_STATE);
+		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
+			new_state == PM_DEVICE_STATE_SUSPEND ||
+			new_state == PM_DEVICE_STATE_OFF);
 
-		if (get_dev_data(dev)->pm_state == PM_DEVICE_ACTIVE_STATE) {
+		if (get_dev_data(dev)->pm_state == PM_DEVICE_STATE_ACTIVE) {
 			SSIDisable(get_dev_config(dev)->base);
 			/*
 			 * Release power dependency
@@ -338,7 +338,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 #ifdef CONFIG_PM_DEVICE
 #define SPI_CC13XX_CC26XX_INIT_PM_STATE					    \
 	do {								    \
-		get_dev_data(dev)->pm_state = PM_DEVICE_ACTIVE_STATE;	    \
+		get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;	    \
 	} while (0)
 #else
 #define SPI_CC13XX_CC26XX_INIT_PM_STATE
