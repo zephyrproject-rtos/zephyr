@@ -13,7 +13,7 @@ menuconfig MBEDTLS
 
 if MBEDTLS
 
-choice
+choice MBEDTLS_IMPLEMENTATION
 	prompt "Select implementation"
 	default MBEDTLS_BUILTIN
 
