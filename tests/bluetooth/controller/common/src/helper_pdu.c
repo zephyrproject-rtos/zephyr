@@ -209,10 +209,24 @@ void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
 
 void helper_pdu_encode_conn_param_req(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_conn_param_req *p = param;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_req) + sizeof(struct pdu_data_llctrl_conn_param_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
-	/* TODO(thoh): Fill in correct data */
+
+	pdu->llctrl.conn_param_req.interval_min = sys_cpu_to_le16(p->interval_min);
+	pdu->llctrl.conn_param_req.interval_max = sys_cpu_to_le16(p->interval_max);
+	pdu->llctrl.conn_param_req.latency = sys_cpu_to_le16(p->latency);
+	pdu->llctrl.conn_param_req.timeout = sys_cpu_to_le16(p->timeout);
+	pdu->llctrl.conn_param_req.preferred_periodicity = p->preferred_periodicity;
+	pdu->llctrl.conn_param_req.reference_conn_event_count = sys_cpu_to_le16(p->reference_conn_event_count);
+	pdu->llctrl.conn_param_req.offset0 = sys_cpu_to_le16(p->offset0);
+	pdu->llctrl.conn_param_req.offset1 = sys_cpu_to_le16(p->offset1);
+	pdu->llctrl.conn_param_req.offset2 = sys_cpu_to_le16(p->offset2);
+	pdu->llctrl.conn_param_req.offset3 = sys_cpu_to_le16(p->offset3);
+	pdu->llctrl.conn_param_req.offset4 = sys_cpu_to_le16(p->offset4);
+	pdu->llctrl.conn_param_req.offset5 = sys_cpu_to_le16(p->offset5);
 }
 
 void helper_pdu_encode_conn_param_rsp(struct pdu_data *pdu, void *param)
@@ -230,8 +244,13 @@ void helper_pdu_encode_conn_update_ind(struct pdu_data *pdu, void *param)
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, conn_update_ind) + sizeof(struct pdu_data_llctrl_conn_update_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
+
+	pdu->llctrl.conn_update_ind.win_size = p->win_size;
+	pdu->llctrl.conn_update_ind.win_offset = sys_cpu_to_le16(p->win_offset);
+	pdu->llctrl.conn_update_ind.interval = sys_cpu_to_le16(p->interval);
+	pdu->llctrl.conn_update_ind.latency = sys_cpu_to_le16(p->latency);
+	pdu->llctrl.conn_update_ind.timeout = sys_cpu_to_le16(p->timeout);
 	pdu->llctrl.conn_update_ind.instant = sys_cpu_to_le16(p->instant);
-	/* TODO(thoh): Fill in correct data */
 }
 
 void helper_pdu_encode_terminate_ind(struct pdu_data *pdu, void *param)

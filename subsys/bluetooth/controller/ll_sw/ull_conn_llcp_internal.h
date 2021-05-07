@@ -48,3 +48,5 @@ void *ull_conn_tx_mem_acquire(void);
 void ull_conn_tx_mem_release(void *tx);
 uint8_t ull_conn_mfifo_get_tx(void **lll_tx);
 void ull_conn_mfifo_enqueue_tx(uint8_t idx);
+uint8_t ull_conn_mfifo_get_ack(void **lll_tx);
+void ull_conn_mfifo_enqueue_ack(uint8_t idx);

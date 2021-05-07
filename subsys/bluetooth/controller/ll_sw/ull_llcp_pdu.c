@@ -393,14 +393,31 @@ void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data
 {
 	ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 }
+
 /*
  * Connection Update Procedure Helper
  */
 void ull_cp_priv_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	struct pdu_data_llctrl_conn_param_req *p;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_req) + sizeof(struct pdu_data_llctrl_conn_param_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+
+	p = (void *)&pdu->llctrl.conn_param_req;
+	p->interval_min = sys_cpu_to_le16(ctx->data.conn_param.interval_min);
+	p->interval_max = sys_cpu_to_le16(ctx->data.conn_param.interval_max);
+	p->latency = sys_cpu_to_le16(ctx->data.conn_param.latency);
+	p->timeout = sys_cpu_to_le16(ctx->data.conn_param.timeout);
+	p->preferred_periodicity = ctx->data.conn_param.preferred_periodicity;
+	p->reference_conn_event_count = sys_cpu_to_le16(ctx->data.conn_param.reference_conn_event_count);
+	p->offset0 = sys_cpu_to_le16(ctx->data.conn_param.offset0);
+	p->offset1 = sys_cpu_to_le16(ctx->data.conn_param.offset1);
+	p->offset2 = sys_cpu_to_le16(ctx->data.conn_param.offset2);
+	p->offset3 = sys_cpu_to_le16(ctx->data.conn_param.offset3);
+	p->offset4 = sys_cpu_to_le16(ctx->data.conn_param.offset4);
+	p->offset5 = sys_cpu_to_le16(ctx->data.conn_param.offset5);
 }
 
 void ull_cp_priv_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -419,11 +436,21 @@ void ull_cp_priv_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_dat
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
 
 	p = (void *)&pdu->llctrl.conn_update_ind;
+	p->win_size = ctx->data.cu.win_size;
+	p->win_offset = sys_cpu_to_le16(ctx->data.cu.win_offset_us / CONN_INT_UNIT_US);
+	p->latency = sys_cpu_to_le16(ctx->data.cu.latency);
+	p->interval = sys_cpu_to_le16(ctx->data.cu.interval);
+	p->timeout = sys_cpu_to_le16(ctx->data.cu.timeout);
 	p->instant = sys_cpu_to_le16(ctx->data.cu.instant);
 }
 
 void ull_cp_priv_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	ctx->data.cu.win_size = pdu->llctrl.conn_update_ind.win_size;
+	ctx->data.cu.win_offset_us = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.win_offset * CONN_INT_UNIT_US);
+	ctx->data.cu.latency = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.latency);
+	ctx->data.cu.interval = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.interval);
+	ctx->data.cu.timeout = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.timeout);
 	ctx->data.cu.instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
 }
 
