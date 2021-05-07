@@ -272,16 +272,16 @@ static int entropy_cc13xx_cc26xx_set_power_state(const struct device *dev,
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 	int ret = 0;
 
-	if ((new_state == PM_DEVICE_ACTIVE_STATE) &&
+	if ((new_state == PM_DEVICE_STATE_ACTIVE) &&
 		(new_state != data->pm_state)) {
 		Power_setDependency(PowerCC26XX_PERIPH_TRNG);
 		start_trng(data);
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_LOW_POWER_STATE ||
-			new_state == PM_DEVICE_SUSPEND_STATE ||
-			new_state == PM_DEVICE_OFF_STATE);
+		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
+			new_state == PM_DEVICE_STATE_SUSPEND ||
+			new_state == PM_DEVICE_STATE_OFF);
 
-		if (data->pm_state == PM_DEVICE_ACTIVE_STATE) {
+		if (data->pm_state == PM_DEVICE_STATE_ACTIVE) {
 			stop_trng(data);
 			Power_releaseDependency(PowerCC26XX_PERIPH_TRNG);
 		}
@@ -324,7 +324,7 @@ static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 
 #ifdef CONFIG_PM_DEVICE
-	get_dev_data(dev)->pm_state = PM_DEVICE_ACTIVE_STATE;
+	get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	/* Initialize driver data */

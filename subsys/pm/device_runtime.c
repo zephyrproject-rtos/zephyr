@@ -41,31 +41,31 @@ static void pm_work_handler(struct k_work *work)
 	int ret = 0;
 
 	switch (atomic_get(&dev->pm->state)) {
-	case PM_DEVICE_ACTIVE_STATE:
+	case PM_DEVICE_STATE_ACTIVE:
 		if ((atomic_get(&dev->pm->usage) == 0) &&
 					dev->pm->enable) {
 			atomic_set(&dev->pm->state,
-				   PM_DEVICE_SUSPENDING_STATE);
-			ret = pm_device_state_set(dev, PM_DEVICE_SUSPEND_STATE,
+				   PM_DEVICE_STATE_SUSPENDING);
+			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND,
 						  device_pm_callback, NULL);
 		} else {
 			goto fsm_out;
 		}
 		break;
-	case PM_DEVICE_SUSPEND_STATE:
+	case PM_DEVICE_STATE_SUSPEND:
 		if ((atomic_get(&dev->pm->usage) > 0) ||
 					!dev->pm->enable) {
 			atomic_set(&dev->pm->state,
-				   PM_DEVICE_RESUMING_STATE);
-			ret = pm_device_state_set(dev, PM_DEVICE_ACTIVE_STATE,
+				   PM_DEVICE_STATE_RESUMING);
+			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE,
 						  device_pm_callback, NULL);
 		} else {
 			goto fsm_out;
 		}
 		break;
-	case PM_DEVICE_SUSPENDING_STATE:
+	case PM_DEVICE_STATE_SUSPENDING:
 		__fallthrough;
-	case PM_DEVICE_RESUMING_STATE:
+	case PM_DEVICE_STATE_RESUMING:
 		/* Do nothing: We are waiting for device_pm_callback() */
 		break;
 	default:
@@ -88,11 +88,11 @@ static int pm_device_request(const struct device *dev,
 {
 	struct k_mutex request_mutex;
 
-	__ASSERT((target_state == PM_DEVICE_ACTIVE_STATE) ||
-			(target_state == PM_DEVICE_SUSPEND_STATE),
+	__ASSERT((target_state == PM_DEVICE_STATE_ACTIVE) ||
+			(target_state == PM_DEVICE_STATE_SUSPEND),
 			"Invalid device PM state requested");
 
-	if (target_state == PM_DEVICE_ACTIVE_STATE) {
+	if (target_state == PM_DEVICE_STATE_ACTIVE) {
 		if (atomic_inc(&dev->pm->usage) < 0) {
 			return 0;
 		}
@@ -116,11 +116,11 @@ static int pm_device_request(const struct device *dev,
 		 */
 		if (dev->pm->usage == 1) {
 			(void)pm_device_state_set(dev,
-						  PM_DEVICE_ACTIVE_STATE,
+						  PM_DEVICE_STATE_ACTIVE,
 						  NULL, NULL);
 		} else if (dev->pm->usage == 0) {
 			(void)pm_device_state_set(dev,
-						  PM_DEVICE_SUSPEND_STATE,
+						  PM_DEVICE_STATE_SUSPEND,
 						  NULL, NULL);
 		}
 
@@ -150,23 +150,23 @@ static int pm_device_request(const struct device *dev,
 int pm_device_get(const struct device *dev)
 {
 	return pm_device_request(dev,
-			PM_DEVICE_ACTIVE_STATE, PM_DEVICE_ASYNC);
+			PM_DEVICE_STATE_ACTIVE, PM_DEVICE_ASYNC);
 }
 
 int pm_device_get_sync(const struct device *dev)
 {
-	return pm_device_request(dev, PM_DEVICE_ACTIVE_STATE, 0);
+	return pm_device_request(dev, PM_DEVICE_STATE_ACTIVE, 0);
 }
 
 int pm_device_put(const struct device *dev)
 {
 	return pm_device_request(dev,
-			PM_DEVICE_SUSPEND_STATE, PM_DEVICE_ASYNC);
+			PM_DEVICE_STATE_SUSPEND, PM_DEVICE_ASYNC);
 }
 
 int pm_device_put_sync(const struct device *dev)
 {
-	return pm_device_request(dev, PM_DEVICE_SUSPEND_STATE, 0);
+	return pm_device_request(dev, PM_DEVICE_STATE_SUSPEND, 0);
 }
 
 void pm_device_enable(const struct device *dev)
@@ -176,7 +176,7 @@ void pm_device_enable(const struct device *dev)
 	if (k_is_pre_kernel()) {
 		dev->pm->dev = dev;
 		dev->pm->enable = true;
-		atomic_set(&dev->pm->state, PM_DEVICE_SUSPEND_STATE);
+		atomic_set(&dev->pm->state, PM_DEVICE_STATE_SUSPEND);
 		k_work_init_delayable(&dev->pm->work, pm_work_handler);
 		return;
 	}
@@ -190,7 +190,7 @@ void pm_device_enable(const struct device *dev)
 	 */
 	if (!dev->pm->dev) {
 		dev->pm->dev = dev;
-		atomic_set(&dev->pm->state, PM_DEVICE_SUSPEND_STATE);
+		atomic_set(&dev->pm->state, PM_DEVICE_STATE_SUSPEND);
 		k_work_init_delayable(&dev->pm->work, pm_work_handler);
 	} else {
 		k_work_schedule(&dev->pm->work, K_NO_WAIT);

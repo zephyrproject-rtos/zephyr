@@ -42,7 +42,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 	uint32_t device_power_state;
 	/* at this point, devices have been deactivated */
 	pm_device_state_get(dev, &device_power_state);
-	zassert_false(device_power_state == PM_DEVICE_ACTIVE_STATE, NULL);
+	zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
 
 	/* this function is called when system entering low power state, so
 	 * parameter state should not be PM_STATE_ACTIVE
@@ -95,7 +95,7 @@ static void notify_pm_state_entry(enum pm_state state)
 
 	/* at this point, devices should not be active */
 	pm_device_state_get(dev, &device_power_state);
-	zassert_false(device_power_state == PM_DEVICE_ACTIVE_STATE, NULL);
+	zassert_false(device_power_state == PM_DEVICE_STATE_ACTIVE, NULL);
 	set_pm = true;
 	notify_app_exit = true;
 }
@@ -113,7 +113,7 @@ static void notify_pm_state_exit(enum pm_state state)
 
 	/* at this point, devices are active again*/
 	pm_device_state_get(dev, &device_power_state);
-	zassert_equal(device_power_state, PM_DEVICE_ACTIVE_STATE, NULL);
+	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE, NULL);
 	leave_idle = true;
 
 }
@@ -180,11 +180,11 @@ void test_power_state_notification(void)
 	uint32_t device_power_state;
 
 	pm_device_state_get(dev, &device_power_state);
-	zassert_equal(device_power_state, PM_DEVICE_ACTIVE_STATE, NULL);
+	zassert_equal(device_power_state, PM_DEVICE_STATE_ACTIVE, NULL);
 
 	api->close(dev);
 	pm_device_state_get(dev, &device_power_state);
-	zassert_equal(device_power_state, PM_DEVICE_SUSPEND_STATE, NULL);
+	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPEND, NULL);
 	/* reopen device as it will be closed in teardown */
 	api->open(dev);
 }

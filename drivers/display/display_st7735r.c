@@ -476,7 +476,7 @@ static int st7735r_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	data->pm_state = PM_DEVICE_ACTIVE_STATE;
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	data->cmd_data_dev = device_get_binding(config->cmd_data.name);
@@ -527,18 +527,18 @@ static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
 
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_SET:
-		if (*((uint32_t *)context) == PM_DEVICE_ACTIVE_STATE) {
+		if (*((uint32_t *)context) == PM_DEVICE_STATE_ACTIVE) {
 			ret = st7735r_exit_sleep(data);
 			if (ret < 0) {
 				return ret;
 			}
-			data->pm_state = PM_DEVICE_ACTIVE_STATE;
+			data->pm_state = PM_DEVICE_STATE_ACTIVE;
 		} else {
 			ret = st7735r_enter_sleep(data);
 			if (ret < 0) {
 				return ret;
 			}
-			data->pm_state = PM_DEVICE_LOW_POWER_STATE;
+			data->pm_state = PM_DEVICE_STATE_LOW_POWER;
 		}
 
 		break;

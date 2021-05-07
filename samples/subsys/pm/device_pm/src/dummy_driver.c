@@ -37,7 +37,7 @@ static int dummy_open(const struct device *dev)
 	(void) k_condvar_wait(&dev->pm->condvar, &wait_mutex, K_FOREVER);
 	k_mutex_unlock(&wait_mutex);
 
-	if (atomic_get(&dev->pm->state) == PM_DEVICE_ACTIVE_STATE) {
+	if (atomic_get(&dev->pm->state) == PM_DEVICE_STATE_ACTIVE) {
 		printk("Dummy device resumed\n");
 		ret = 0;
 	} else {
@@ -97,7 +97,7 @@ static uint32_t dummy_get_power_state(const struct device *dev)
 static int dummy_suspend(const struct device *dev)
 {
 	printk("child suspending..\n");
-	device_power_state = PM_DEVICE_SUSPEND_STATE;
+	device_power_state = PM_DEVICE_STATE_SUSPEND;
 
 	return 0;
 }
@@ -105,7 +105,7 @@ static int dummy_suspend(const struct device *dev)
 static int dummy_resume_from_suspend(const struct device *dev)
 {
 	printk("child resuming..\n");
-	device_power_state = PM_DEVICE_ACTIVE_STATE;
+	device_power_state = PM_DEVICE_STATE_ACTIVE;
 
 	return 0;
 }
@@ -118,7 +118,7 @@ static int dummy_device_pm_ctrl(const struct device *dev,
 
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_SET:
-		if (*state == PM_DEVICE_ACTIVE_STATE) {
+		if (*state == PM_DEVICE_STATE_ACTIVE) {
 			ret = dummy_resume_from_suspend(dev);
 		} else {
 			ret = dummy_suspend(dev);
@@ -152,7 +152,7 @@ int dummy_init(const struct device *dev)
 	}
 
 	pm_device_enable(dev);
-	device_power_state = PM_DEVICE_ACTIVE_STATE;
+	device_power_state = PM_DEVICE_STATE_ACTIVE;
 
 	return 0;
 }

@@ -1410,7 +1410,7 @@ static int uart_stm32_init(const struct device *dev)
 	config->uconf.irq_config_func(dev);
 #endif
 #ifdef CONFIG_PM_DEVICE
-	data->pm_state = PM_DEVICE_ACTIVE_STATE;
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -1428,7 +1428,7 @@ static int uart_stm32_set_power_state(const struct device *dev,
 	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	/* setting a low power mode */
-	if (new_state != PM_DEVICE_ACTIVE_STATE) {
+	if (new_state != PM_DEVICE_STATE_ACTIVE) {
 #ifdef USART_ISR_BUSY
 		/* Make sure that no USART transfer is on-going */
 		while (LL_USART_IsActiveFlag_BUSY(UartInstance) == 1) {

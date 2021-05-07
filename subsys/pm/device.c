@@ -80,7 +80,7 @@ static bool should_suspend(const struct device *dev, uint32_t state)
 	 * If the device is currently powered off or the request was
 	 * to go to the same state, just ignore it.
 	 */
-	if ((current_state == PM_DEVICE_OFF_STATE) ||
+	if ((current_state == PM_DEVICE_STATE_OFF) ||
 			(current_state == state)) {
 		return false;
 	}
@@ -128,17 +128,17 @@ static int _pm_devices(uint32_t state)
 
 int pm_suspend_devices(void)
 {
-	return _pm_devices(PM_DEVICE_SUSPEND_STATE);
+	return _pm_devices(PM_DEVICE_STATE_SUSPEND);
 }
 
 int pm_low_power_devices(void)
 {
-	return _pm_devices(PM_DEVICE_LOW_POWER_STATE);
+	return _pm_devices(PM_DEVICE_STATE_LOW_POWER);
 }
 
 int pm_force_suspend_devices(void)
 {
-	return _pm_devices(PM_DEVICE_FORCE_SUSPEND_STATE);
+	return _pm_devices(PM_DEVICE_STATE_FORCE_SUSPEND);
 }
 
 void pm_resume_devices(void)
@@ -150,7 +150,7 @@ void pm_resume_devices(void)
 		device_idx_t idx = pm_devices[pmi];
 
 		pm_device_state_set(&all_devices[idx],
-				       PM_DEVICE_ACTIVE_STATE,
+				       PM_DEVICE_STATE_ACTIVE,
 				       NULL, NULL);
 		++pmi;
 	}
@@ -209,15 +209,15 @@ void pm_create_device_list(void)
 const char *pm_device_state_str(uint32_t state)
 {
 	switch (state) {
-	case PM_DEVICE_ACTIVE_STATE:
+	case PM_DEVICE_STATE_ACTIVE:
 		return "active";
-	case PM_DEVICE_LOW_POWER_STATE:
+	case PM_DEVICE_STATE_LOW_POWER:
 		return "low power";
-	case PM_DEVICE_SUSPEND_STATE:
+	case PM_DEVICE_STATE_SUSPEND:
 		return "suspend";
-	case PM_DEVICE_FORCE_SUSPEND_STATE:
+	case PM_DEVICE_STATE_FORCE_SUSPEND:
 		return "force suspend";
-	case PM_DEVICE_OFF_STATE:
+	case PM_DEVICE_STATE_OFF:
 		return "off";
 	default:
 		return "";
