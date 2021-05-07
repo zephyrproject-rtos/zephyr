@@ -1077,7 +1077,7 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 	/* start sending data */
 	k_sem_reset(&sock->sock_send_sem);
 	if (sock->type == SOCK_STREAM) {
-		snprintk(buf, sizeof(buf), "AT+KTCPSND=%d,%u", sock->socket_id,
+		snprintk(buf, sizeof(buf), "AT+KTCPSND=%d,%zu", sock->socket_id,
 			 send_len);
 	} else {
 		if (!net_addr_ntop(sock->family, &net_sin(&sock->dst)->sin_addr,
@@ -1085,7 +1085,7 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 			LOG_ERR("Invalid dst addr");
 			return -EINVAL;
 		}
-		snprintk(buf, sizeof(buf), "AT+KUDPSND=%d,\"%s\",%u,%u",
+		snprintk(buf, sizeof(buf), "AT+KUDPSND=%d,\"%s\",%u,%zu",
 			 sock->socket_id, dst_addr,
 			 net_sin(&sock->dst)->sin_port, send_len);
 	}
@@ -1111,10 +1111,10 @@ static int send_data(struct hl7800_socket *sock, struct net_pkt *pkt)
 		frag = frag->frags;
 	}
 	if (actual_send_len != send_len) {
-		LOG_WRN("AT+K**PSND act: %d exp: %d", actual_send_len,
+		LOG_WRN("AT+K**PSND act: %zd exp: %zd", actual_send_len,
 			send_len);
 	}
-	LOG_DBG("Sent %u bytes", actual_send_len);
+	LOG_DBG("Sent %zu bytes", actual_send_len);
 
 	/* Send EOF pattern to terminate data */
 	k_sem_reset(&sock->sock_send_sem);
@@ -2813,7 +2813,7 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 		wait_for_modem_data(buf, 0, sock->rx_size);
 	}
 
-	LOG_DBG("Processing RX, buf len: %d", net_buf_frags_len(*buf));
+	LOG_DBG("Processing RX, buf len: %zd", net_buf_frags_len(*buf));
 
 	/* allocate an RX pkt */
 	sock->recv_pkt = net_pkt_rx_alloc_with_buffer(
@@ -2852,7 +2852,7 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 		}
 	}
 
-	LOG_DBG("Got all data, get EOF and OK (buf len:%d)",
+	LOG_DBG("Got all data, get EOF and OK (buf len:%zd)",
 		net_buf_frags_len(*buf));
 
 	if (!*buf || (net_buf_frags_len(*buf) < strlen(EOF_PATTERN))) {
@@ -3161,7 +3161,7 @@ static size_t hl7800_read_rx(struct net_buf **buf)
 					     BUF_ALLOC_TIMEOUT,
 					     read_rx_allocator, &mdm_recv_pool);
 		if (rx_len < bytes_read) {
-			LOG_ERR("Data was lost! read %u of %u!", rx_len,
+			LOG_ERR("Data was lost! read %u of %zu!", rx_len,
 				bytes_read);
 		}
 		total_read += bytes_read;
@@ -4650,7 +4650,7 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 	/* get file info */
 	ret = fs_stat(file_path, &file_info);
 	if (ret >= 0) {
-		LOG_DBG("file '%s' size %u", log_strdup(file_info.name),
+		LOG_DBG("file '%s' size %zu", log_strdup(file_info.name),
 			file_info.size);
 	} else {
 		LOG_ERR("Failed to get file [%s] info: %d",
@@ -4678,10 +4678,10 @@ int32_t mdm_hl7800_update_fw(char *file_path)
 	}
 
 	/* start firmware update process */
-	LOG_INF("Initiate FW update, total packets: %d",
+	LOG_INF("Initiate FW update, total packets: %zd",
 		((file_info.size / XMODEM_DATA_SIZE) + 1));
 	set_fota_state(HL7800_FOTA_START);
-	snprintk(cmd1, sizeof(cmd1), "AT+WDSD=%d", file_info.size);
+	snprintk(cmd1, sizeof(cmd1), "AT+WDSD=%zd", file_info.size);
 	send_at_cmd(NULL, cmd1, K_NO_WAIT, 0, false);
 
 	goto done;

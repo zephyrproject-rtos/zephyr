@@ -1589,7 +1589,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 		next_packet_size = MDM_MAX_DATA_LENGTH;
 	}
 
-	snprintk(sendbuf, sizeof(sendbuf), "AT+USO%s=%d,%d",
+	snprintk(sendbuf, sizeof(sendbuf), "AT+USO%s=%d,%zd",
 		 sock->ip_proto == IPPROTO_UDP ? "RF" : "RD", sock->id,
 		 len < next_packet_size ? len : next_packet_size);
 
@@ -1708,7 +1708,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 		full_len += msg->msg_iov[i].iov_len;
 	}
 
-	LOG_DBG("msg_iovlen:%d flags:%d, full_len:%d",
+	LOG_DBG("msg_iovlen:%zd flags:%d, full_len:%zd",
 		msg->msg_iovlen, flags, full_len);
 
 	while (full_len > sent) {
