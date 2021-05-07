@@ -66,17 +66,17 @@ void main(void)
 	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
 
 	printk("Busy-wait %u s with UART off\n", BUSY_WAIT_S);
-	rc = pm_device_state_set(cons, PM_DEVICE_LOW_POWER_STATE, NULL, NULL);
+	rc = pm_device_state_set(cons, PM_DEVICE_STATE_LOW_POWER, NULL, NULL);
 	k_busy_wait(BUSY_WAIT_S * USEC_PER_SEC);
-	rc = pm_device_state_set(cons, PM_DEVICE_ACTIVE_STATE, NULL, NULL);
+	rc = pm_device_state_set(cons, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
 
 	printk("Sleep %u s\n", SLEEP_S);
 	k_sleep(K_SECONDS(SLEEP_S));
 
 	printk("Sleep %u s with UART off\n", SLEEP_S);
-	rc = pm_device_state_set(cons, PM_DEVICE_LOW_POWER_STATE, NULL, NULL);
+	rc = pm_device_state_set(cons, PM_DEVICE_STATE_LOW_POWER, NULL, NULL);
 	k_sleep(K_SECONDS(SLEEP_S));
-	rc = pm_device_state_set(cons, PM_DEVICE_ACTIVE_STATE, NULL, NULL);
+	rc = pm_device_state_set(cons, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
 
 	printk("Entering system off; press BUTTON1 to restart\n");
 

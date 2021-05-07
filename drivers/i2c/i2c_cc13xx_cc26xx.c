@@ -333,7 +333,7 @@ static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
 {
 	int ret = 0;
 
-	if ((new_state == PM_DEVICE_ACTIVE_STATE) &&
+	if ((new_state == PM_DEVICE_STATE_ACTIVE) &&
 		(new_state != get_dev_data(dev)->pm_state)) {
 		Power_setDependency(PowerCC26XX_PERIPH_I2C0);
 		IOCPinTypeI2c(get_dev_config(dev)->base,
@@ -346,11 +346,11 @@ static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
 			get_dev_data(dev)->pm_state = new_state;
 		}
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_LOW_POWER_STATE ||
-			new_state == PM_DEVICE_SUSPEND_STATE ||
-			new_state == PM_DEVICE_OFF_STATE);
+		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
+			new_state == PM_DEVICE_STATE_SUSPEND ||
+			new_state == PM_DEVICE_STATE_OFF);
 
-		if (get_dev_data(dev)->pm_state == PM_DEVICE_ACTIVE_STATE) {
+		if (get_dev_data(dev)->pm_state == PM_DEVICE_STATE_ACTIVE) {
 			I2CMasterIntDisable(get_dev_config(dev)->base);
 			I2CMasterDisable(get_dev_config(dev)->base);
 			/* Reset pin type to default GPIO configuration */
@@ -399,7 +399,7 @@ static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 	int err;
 
 #ifdef CONFIG_PM_DEVICE
-	get_dev_data(dev)->pm_state = PM_DEVICE_ACTIVE_STATE;
+	get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 #ifdef CONFIG_PM

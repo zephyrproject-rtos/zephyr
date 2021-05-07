@@ -43,13 +43,13 @@ static void pm_cb(const struct device *dev,
 	ARG_UNUSED(arg);
 
 	switch (*(uint32_t *)context) {
-	case PM_DEVICE_ACTIVE_STATE:
+	case PM_DEVICE_STATE_ACTIVE:
 		printk("Enter ACTIVE_STATE ");
 		break;
-	case PM_DEVICE_LOW_POWER_STATE:
+	case PM_DEVICE_STATE_LOW_POWER:
 		printk("Enter LOW_POWER_STATE ");
 		break;
-	case PM_DEVICE_OFF_STATE:
+	case PM_DEVICE_STATE_OFF:
 		printk("Enter OFF_STATE ");
 		break;
 	}
@@ -97,13 +97,13 @@ void main(void)
 	/* Testing the power modes */
 	uint32_t p_state;
 
-	p_state = PM_DEVICE_LOW_POWER_STATE;
+	p_state = PM_DEVICE_STATE_LOW_POWER;
 	pm_device_state_set(dev, p_state, pm_cb, NULL);
 
-	p_state = PM_DEVICE_OFF_STATE;
+	p_state = PM_DEVICE_STATE_OFF;
 	pm_device_state_set(dev, p_state, pm_cb, NULL);
 
-	p_state = PM_DEVICE_ACTIVE_STATE;
+	p_state = PM_DEVICE_STATE_ACTIVE;
 	pm_device_state_set(dev, p_state, pm_cb, NULL);
 #endif
 
@@ -132,10 +132,10 @@ void main(void)
 
 
 #ifdef CONFIG_PM_DEVICE
-		p_state = PM_DEVICE_OFF_STATE;
+		p_state = PM_DEVICE_STATE_OFF;
 		pm_device_state_set(dev, p_state, pm_cb, NULL);
 		k_sleep(K_MSEC(2000));
-		p_state = PM_DEVICE_ACTIVE_STATE;
+		p_state = PM_DEVICE_STATE_ACTIVE;
 		pm_device_state_set(dev, p_state, pm_cb, NULL);
 #elif CONFIG_FDC2X1X_TRIGGER_NONE
 		k_sleep(K_MSEC(100));

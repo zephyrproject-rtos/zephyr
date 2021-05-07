@@ -641,16 +641,16 @@ static int spi_flash_at45_pm_control(const struct device *dev,
 
 		if (new_state != dev_data->pm_state) {
 			switch (new_state) {
-			case PM_DEVICE_ACTIVE_STATE:
+			case PM_DEVICE_STATE_ACTIVE:
 				acquire(dev);
 				power_down_op(dev, CMD_EXIT_DPD,
 					      dev_config->t_exit_dpd);
 				release(dev);
 				break;
 
-			case PM_DEVICE_LOW_POWER_STATE:
-			case PM_DEVICE_SUSPEND_STATE:
-			case PM_DEVICE_OFF_STATE:
+			case PM_DEVICE_STATE_LOW_POWER:
+			case PM_DEVICE_STATE_SUSPEND:
+			case PM_DEVICE_STATE_OFF:
 				acquire(dev);
 				power_down_op(dev,
 					dev_config->use_udpd ? CMD_ENTER_UDPD
@@ -721,7 +721,7 @@ static const struct flash_driver_api spi_flash_at45_api = {
 	static struct spi_flash_at45_data inst_##idx##_data = {		     \
 		.lock = Z_SEM_INITIALIZER(inst_##idx##_data.lock, 1, 1),     \
 		IF_ENABLED(CONFIG_PM_DEVICE, (		     \
-			.pm_state = PM_DEVICE_ACTIVE_STATE))		     \
+			.pm_state = PM_DEVICE_STATE_ACTIVE))		     \
 	};						\
 	INST_RESET_GPIO_SPEC(idx)				\
 	INST_WP_GPIO_SPEC(idx)					\

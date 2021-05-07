@@ -1377,7 +1377,7 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	int key;
 
 #ifdef CONFIG_PM_DEVICE
-	if (data->pm_state != PM_DEVICE_ACTIVE_STATE) {
+	if (data->pm_state != PM_DEVICE_STATE_ACTIVE) {
 		return;
 	}
 #endif
@@ -1670,7 +1670,7 @@ static int uarte_instance_init(const struct device *dev,
 	}
 
 #ifdef CONFIG_PM_DEVICE
-	data->pm_state = PM_DEVICE_ACTIVE_STATE;
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	if (IS_ENABLED(CONFIG_UART_ENHANCED_POLL_OUT) &&
@@ -1775,7 +1775,7 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
-	if (new_state == PM_DEVICE_ACTIVE_STATE) {
+	if (new_state == PM_DEVICE_STATE_ACTIVE) {
 		uarte_nrfx_pins_enable(dev, true);
 		nrf_uarte_enable(uarte);
 
@@ -1803,14 +1803,14 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 #endif
 		}
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_LOW_POWER_STATE ||
-				new_state == PM_DEVICE_SUSPEND_STATE ||
-				new_state == PM_DEVICE_OFF_STATE);
+		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
+				new_state == PM_DEVICE_STATE_SUSPEND ||
+				new_state == PM_DEVICE_STATE_OFF);
 
 		/* if pm is already not active, driver will stay indefinitely
 		 * in while loop waiting for event NRF_UARTE_EVENT_RXTO
 		 */
-		if (data->pm_state != PM_DEVICE_ACTIVE_STATE) {
+		if (data->pm_state != PM_DEVICE_STATE_ACTIVE) {
 			return;
 		}
 

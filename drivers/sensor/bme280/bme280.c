@@ -183,7 +183,7 @@ static int bme280_sample_fetch(const struct device *dev,
 
 #ifdef CONFIG_PM_DEVICE
 	/* Do not allow sample fetching from OFF state */
-	if (data->pm_state == PM_DEVICE_OFF_STATE)
+	if (data->pm_state == PM_DEVICE_STATE_OFF)
 		return -EIO;
 #endif
 
@@ -383,7 +383,7 @@ static int bme280_chip_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 	/* Set power state to ACTIVE */
-	data->pm_state = PM_DEVICE_ACTIVE_STATE;
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 	LOG_DBG("\"%s\" OK", dev->name);
 	return 0;
@@ -404,13 +404,13 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 		if (new_pm_state != data->pm_state) {
 
 			/* Switching from OFF to any */
-			if (data->pm_state == PM_DEVICE_OFF_STATE) {
+			if (data->pm_state == PM_DEVICE_STATE_OFF) {
 
 				/* Re-initialize the chip */
 				ret = bme280_chip_init(dev);
 			}
 			/* Switching to OFF from any */
-			else if (new_pm_state == PM_DEVICE_OFF_STATE) {
+			else if (new_pm_state == PM_DEVICE_STATE_OFF) {
 
 				/* Put the chip into sleep mode */
 				ret = bme280_reg_write(dev,

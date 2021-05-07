@@ -209,7 +209,7 @@ static int qdec_nrfx_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 
-	data->pm_state = PM_DEVICE_ACTIVE_STATE;
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	return 0;
@@ -242,18 +242,18 @@ static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
 		return 0;
 	}
 
-	if (old_state == PM_DEVICE_ACTIVE_STATE) {
+	if (old_state == PM_DEVICE_STATE_ACTIVE) {
 		/* device must be suspended */
 		nrfx_qdec_disable();
 		qdec_nrfx_gpio_ctrl(false);
 	}
 
-	if (new_state == PM_DEVICE_OFF_STATE) {
+	if (new_state == PM_DEVICE_STATE_OFF) {
 		/* device must be uninitialized */
 		nrfx_qdec_uninit();
 	}
 
-	if (new_state == PM_DEVICE_ACTIVE_STATE) {
+	if (new_state == PM_DEVICE_STATE_ACTIVE) {
 		qdec_nrfx_gpio_ctrl(true);
 		nrfx_qdec_enable();
 	}

@@ -63,7 +63,7 @@
 #ifdef CONFIG_PM_DEVICE
 #include <pm/device.h>
 uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
-static uint32_t loapic_device_power_state = PM_DEVICE_ACTIVE_STATE;
+static uint32_t loapic_device_power_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
@@ -364,7 +364,7 @@ static int loapic_suspend(const struct device *port)
 			}
 		}
 	}
-	loapic_device_power_state = PM_DEVICE_SUSPEND_STATE;
+	loapic_device_power_state = PM_DEVICE_STATE_SUSPEND;
 	return 0;
 }
 
@@ -393,7 +393,7 @@ int loapic_resume(const struct device *port)
 			}
 		}
 	}
-	loapic_device_power_state = PM_DEVICE_ACTIVE_STATE;
+	loapic_device_power_state = PM_DEVICE_STATE_ACTIVE;
 
 	return 0;
 }
@@ -409,9 +409,9 @@ static int loapic_device_ctrl(const struct device *port,
 	int ret = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		if (*context == PM_DEVICE_SUSPEND_STATE) {
+		if (*context == PM_DEVICE_STATE_SUSPEND) {
 			ret = loapic_suspend(port);
-		} else if (*context == PM_DEVICE_ACTIVE_STATE) {
+		} else if (*context == PM_DEVICE_STATE_ACTIVE) {
 			ret = loapic_resume(port);
 		}
 	} else if (ctrl_command == PM_DEVICE_STATE_GET) {

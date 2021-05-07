@@ -466,7 +466,7 @@ static int gpio_stm32_config(const struct device *dev,
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	/* Enable device clock before configuration (requires bank writes) */
-	if (data->power_state != PM_DEVICE_ACTIVE_STATE) {
+	if (data->power_state != PM_DEVICE_STATE_ACTIVE) {
 		err = pm_device_get_sync(dev);
 		if (err < 0) {
 			return err;
@@ -586,11 +586,11 @@ static int gpio_stm32_set_power_state(const struct device *dev,
 	struct gpio_stm32_data *data = dev->data;
 	int ret = 0;
 
-	if (new_state == PM_DEVICE_ACTIVE_STATE) {
+	if (new_state == PM_DEVICE_STATE_ACTIVE) {
 		ret = gpio_stm32_clock_request(dev, true);
-	} else if (new_state == PM_DEVICE_SUSPEND_STATE) {
+	} else if (new_state == PM_DEVICE_STATE_SUSPEND) {
 		ret = gpio_stm32_clock_request(dev, false);
-	} else if (new_state == PM_DEVICE_LOW_POWER_STATE) {
+	} else if (new_state == PM_DEVICE_STATE_LOW_POWER) {
 		ret = gpio_stm32_clock_request(dev, false);
 	}
 
@@ -660,13 +660,13 @@ static int gpio_stm32_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	data->power_state = PM_DEVICE_OFF_STATE;
+	data->power_state = PM_DEVICE_STATE_OFF;
 	pm_device_enable(dev);
 
 	return 0;
 #else
 #ifdef CONFIG_PM_DEVICE
-	data->power_state = PM_DEVICE_ACTIVE_STATE;
+	data->power_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 	return gpio_stm32_clock_request(dev, true);
 #endif
