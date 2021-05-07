@@ -94,8 +94,7 @@ int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 	 */
 	int request_id = config->dma_slot;
 
-	if (request_id == 0 ||
-	    request_id > dev_config->req_nb + dev_config->gen_nb) {
+	if (request_id > dev_config->req_nb + dev_config->gen_nb) {
 		LOG_ERR("request ID %d is not valid.", request_id);
 		return -EINVAL;
 	}
