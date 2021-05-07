@@ -79,6 +79,10 @@ Deprecated in this release
   USB_HID_PROTOCOL_CODE does not allow to set boot protocol code for specific
   HID device. USB HID API function usb_hid_set_proto_code() can be used instead.
 
+* USB HID class API is changed by removing get_protocol/set_protocol and
+  get_idle/set_idle callbacks. These callbacks are redundant or do not provide
+  any additional value and have led to incorrect usage of HID class API.
+
 * The ``CONFIG_OPENOCD_SUPPORT`` Kconfig option has been deprecated in favor
   of ``CONFIG_DEBUG_THREAD_INFO``.
 
