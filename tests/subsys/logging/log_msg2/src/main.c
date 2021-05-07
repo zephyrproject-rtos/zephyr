@@ -308,7 +308,7 @@ void test_log_msg2_fp(void)
 	static const uint8_t level = 2;
 	const void *source = (const void *)123;
 	int mode;
-	long long lli;
+	long long lli = 0x1122334455;
 	float f = 1.234;
 	double d = 11.3434;
 	char str[256];
@@ -317,16 +317,16 @@ void test_log_msg2_fp(void)
 	test_init();
 
 	Z_LOG_MSG2_CREATE2(1, mode, 0, domain, source, level, NULL, 0,
-			TEST_MSG, i, lli, f, str, d, source);
+			TEST_MSG, i, lli, f, &i, d, source);
 	zassert_equal(mode, EXP_MODE(ZERO_COPY), NULL);
 
 	Z_LOG_MSG2_CREATE2(0, mode, 0, domain, source, level, NULL, 0,
-			TEST_MSG, i, lli, f, str, d, source);
+			TEST_MSG, i, lli, f, &i, d, source);
 	zassert_equal(mode, EXP_MODE(FROM_STACK), NULL);
 
 	z_log_msg2_runtime_create(domain, (void *)source, level, NULL, 0,
-				  TEST_MSG, i, lli, f, str, d, source);
-	snprintfcb(str, sizeof(str), TEST_MSG, i, lli, f, str, d, source);
+				  TEST_MSG, i, lli, f, &i, d, source);
+	snprintfcb(str, sizeof(str), TEST_MSG, i, lli, f, &i, d, source);
 
 	validate_base_message_set(source, domain, level,
 				   TEST_TIMESTAMP_INIT_VALUE,
