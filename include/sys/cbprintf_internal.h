@@ -84,17 +84,18 @@ extern "C" {
 #ifdef __cplusplus
 #define Z_CBPRINTF_IS_PCHAR(x) z_cbprintf_cxx_is_pchar(x)
 #else
-#define Z_CBPRINTF_IS_PCHAR(x) _Generic((x), \
-			char * : 1, \
-			const char * : 1, \
-			volatile char * : 1, \
-			const volatile char * : 1, \
-			wchar_t * : 1, \
-			const wchar_t * : 1, \
-			volatile wchar_t * : 1, \
-			const volatile wchar_t * : 1, \
-			default : \
-				0)
+#define Z_CBPRINTF_IS_PCHAR(x) \
+	_Generic((x) + 0, \
+		char * : 1, \
+		const char * : 1, \
+		volatile char * : 1, \
+		const volatile char * : 1, \
+		wchar_t * : 1, \
+		const wchar_t * : 1, \
+		volatile wchar_t * : 1, \
+		const volatile wchar_t * : 1, \
+		default : \
+			0)
 #endif
 
 /** @brief Calculate number of char * or wchar_t * arguments in the arguments.
@@ -120,10 +121,15 @@ extern "C" {
  * @retval 0 if string can be statically packaged.
  */
 #if Z_C_GENERIC
-#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ...) \
-	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ...) ({\
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	int _rv = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
 			(0), \
-			(((Z_CBPRINTF_HAS_PCHAR_ARGS(__VA_ARGS__) - skip) > 0)))
+			(((Z_CBPRINTF_HAS_PCHAR_ARGS(__VA_ARGS__) - skip) > 0))); \
+	_Pragma("GCC diagnostic pop")\
+	_rv; \
+})
 #else
 #define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ...) 1
 #endif
@@ -140,13 +146,15 @@ extern "C" {
 #ifdef __cplusplus
 #define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
 #else
-#define Z_CBPRINTF_ARG_SIZE(v) \
-	_Generic((v), \
+#define Z_CBPRINTF_ARG_SIZE(v) ({\
+	__auto_type _v = (v) + 0; \
+	size_t _arg_size = _Generic((v), \
 		float : sizeof(double), \
 		default : \
-			/* coverity[bad_sizeof] */ \
-			sizeof((v) + 0) \
-		)
+			sizeof((_v)) \
+		); \
+	_arg_size; \
+})
 #endif
 
 /** @brief Promote and store argument in the buffer.
@@ -212,14 +220,22 @@ extern "C" {
 			__alignof__((_arg) + 0)), VA_STACK_MIN_ALIGN)
 #endif
 
-/** @brief Detect long double variable.
+/** @brief Detect long double variable as a constant expression.
+ *
+ * Macro is used in static assertion. On some platforms C++ static inline
+ * template function is not a constant expression and cannot be used. In that
+ * case long double usage will not be detected.
  *
  * @param x Argument.
  *
  * @return 1 if @p x is a long double, 0 otherwise.
  */
 #ifdef __cplusplus
+#if defined(__x86_64__) || defined(__riscv) || defined(__aarch64__)
+#define Z_CBPRINTF_IS_LONGDOUBLE(x) 0
+#else
 #define Z_CBPRINTF_IS_LONGDOUBLE(x) z_cbprintf_cxx_is_longdouble(x)
+#endif
 #else
 #define Z_CBPRINTF_IS_LONGDOUBLE(x) \
 	_Generic((x) + 0, long double : 1, default : 0)
