@@ -10,5 +10,7 @@ supported:
   - netif:eth
   - usb_device
   - adc
+  - i2c
+  - spi
 testing:
   default: true
