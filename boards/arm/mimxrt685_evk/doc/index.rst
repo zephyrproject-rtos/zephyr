@@ -239,7 +239,7 @@ should see the following message in the terminal:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt600-evaluation-kit:MIMXRT685-EVK
 
 .. _MIMXRT685-EVK User Guide:
-   https://www.nxp.com/docs/en/user-guide/UM11159.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM11159
 
 .. _MIMXRT685-EVK Schematics:
    https://www.nxp.com/downloads/en/design-support/RT685-DESIGNFILES.zip
@@ -251,4 +251,4 @@ should see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/DS-RT600.pdf
 
 .. _i.MX RT685 Reference Manual:
-   https://www.nxp.com/docs/en/user-guide/UM11147.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM11147
