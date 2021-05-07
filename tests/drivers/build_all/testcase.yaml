@@ -1,8 +1,0 @@
-common:
-  depends_on: gpio spi i2c
-tests:
-  drivers.xlnx.build:
-    build_only: true
-    extra_args: CONF_FILE=xlnx.conf
-    platform_allow: arty_a7_arm_designstart_m1
-    tags: drivers
