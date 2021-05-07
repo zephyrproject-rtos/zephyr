@@ -1,0 +1,9 @@
+common:
+  build_only: true
+  tags: drivers
+tests:
+  net.ethernet.build:
+    min_flash: 42
+    min_ram: 32
+    platform_exclude:  frdm_kw41z
+    depends_on: spi netif
