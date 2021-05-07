@@ -59,18 +59,6 @@ test_i2c_bme280: bme280@7 {
 	reg = <0x7>;
 };
 
-test_i2c_at24: at24@8 {
-	compatible = "atmel,at24";
-	label = "AT24";
-	reg = <0x8>;
-	size = <0>;
-	pagesize = <0>;
-	address-width = <0>;
-	timeout = <0>;
-	wp-gpios = <&test_gpio 0 0>;
-	/* read-only; */
-};
-
 test_i2c_apds9960: apds9960@9 {
 	compatible = "avago,apds9960";
 	label = "APDS9960";
@@ -216,15 +204,6 @@ test_i2c_fxos8700: fxos8700@1d {
 	int2-gpios = <&test_gpio 0 0>;
 };
 
-test_i2c_pca95xx: pca95xx@1e {
-	compatible = "nxp,pca95xx";
-	label = "PCA95XX";
-	reg = <0x1e>;
-	/* has-pud; */
-	#gpio-cells = <2>;
-	gpio-controller;
-};
-
 test_i2c_pca9633: pca9633@1f {
 	compatible = "nxp,pca9633";
 	label = "PCA9633";
@@ -236,15 +215,6 @@ test_i2c_amg88xx: amg88xx@20 {
 	label = "AMG88XX";
 	reg = <0x20>;
 	int-gpios = <&test_gpio 0 0>;
-};
-
-test_i2c_sx1509b: sx1509b@21 {
-	compatible = "semtech,sx1509b";
-	label = "SX1509B";
-	reg = <0x21>;
-	#gpio-cells = <2>;
-	ngpios = <16>;
-	gpio-controller;
 };
 
 test_i2c_sx9500: sx9500@22 {
@@ -597,17 +567,6 @@ test_i2c_bmi270: bmi270@4a {
 	compatible = "bosch,bmi270";
 	label = "BMI270";
 	reg = <0x4a>;
-};
-
-test_i2c_pcal6408a: pcal6408a@4b {
-	compatible = "nxp,pcal6408a";
-	label = "PCAL6408A";
-	reg = <0x4b>;
-	gpio-controller;
-	#gpio-cells = <2>;
-	ngpios = <8>;
-	int-gpios = <&test_gpio 0 0>;
-	reset-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_fdc2x1x: fdc2x1x@2a {

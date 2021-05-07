@@ -29,19 +29,6 @@ test_spi_apa102: apa102@2 {
 	spi-max-frequency = <0>;
 };
 
-test_spi_at25: at25@3 {
-	compatible = "atmel,at25";
-	label = "AT25";
-	reg = <0x3>;
-	spi-max-frequency = <0>;
-	size = <0>;
-	pagesize = <0>;
-	address-width = <0>;
-	timeout = <0>;
-	wp-gpios = <&test_gpio 0 0>;
-	/* read-only; */
-};
-
 test_spi_rf2xx: rf2xx@4 {
 	compatible = "atmel,rf2xx";
 	label = "RF2XX";
@@ -148,31 +135,6 @@ test_spi_ms5607: ms5607@e {
 	label = "MS5607";
 	reg = <0xe>;
 	spi-max-frequency = <0>;
-};
-
-test_spi_enc28j60: enc28j60@f {
-	compatible = "microchip,enc28j60";
-	label = "ENC28J60";
-	reg = <0xf>;
-	spi-max-frequency = <0>;
-	int-gpios = <&test_gpio 0 0>;
-};
-
-test_spi_enc424j600: enc424j600@10 {
-	compatible = "microchip,enc424j600";
-	label = "ENC424J600";
-	reg = <0x10>;
-	spi-max-frequency = <0>;
-	int-gpios = <&test_gpio 0 0>;
-};
-test_spi_mcp23s17: mcp23s17@11 {
-	compatible = "microchip,mcp23s17";
-	label = "GPIO_E0";
-	spi-max-frequency = <0>;
-	reg = <0x11>;
-	gpio-controller;
-	#gpio-cells = <2>;
-	ngpios = <16>;
 };
 
 test_spi_mcp2515: mcp2515@12 {
@@ -481,74 +443,6 @@ test_spi_iis2dh: iis2dh@31 {
 	reg = <0x31>;
 	spi-max-frequency = <0>;
 	drdy-gpios = <&test_gpio 0 0>;
-};
-
-test_spi_mcp3204: mcp3204@32 {
-	compatible = "microchip,mcp3204";
-	reg = <0x32>;
-	spi-max-frequency = <0>;
-	label = "MCP3204";
-	#io-channel-cells = <1>;
-};
-
-test_spi_dac60508: dac60508@33 {
-	compatible = "ti,dac60508";
-	label = "DAC60508";
-	reg = <0x33>;
-	spi-max-frequency = <0>;
-	#io-channel-cells = <1>;
-	voltage-reference = <0>;
-	channel0-gain = <0>;
-	channel1-gain = <0>;
-	channel2-gain = <0>;
-	channel3-gain = <0>;
-	channel4-gain = <0>;
-	channel5-gain = <0>;
-	channel6-gain = <0>;
-	channel7-gain = <0>;
-};
-
-test_spi_dac70508: dac70508@34 {
-	compatible = "ti,dac70508";
-	label = "DAC70508";
-	reg = <0x34>;
-	spi-max-frequency = <0>;
-	#io-channel-cells = <1>;
-	voltage-reference = <0>;
-	channel0-gain = <0>;
-	channel1-gain = <0>;
-	channel2-gain = <0>;
-	channel3-gain = <0>;
-	channel4-gain = <0>;
-	channel5-gain = <0>;
-	channel6-gain = <0>;
-	channel7-gain = <0>;
-};
-
-test_spi_dac80508: dac80508@35 {
-	compatible = "ti,dac80508";
-	label = "DAC80508";
-	reg = <0x35>;
-	spi-max-frequency = <0>;
-	#io-channel-cells = <1>;
-	voltage-reference = <0>;
-	channel0-gain = <0>;
-	channel1-gain = <0>;
-	channel2-gain = <0>;
-	channel3-gain = <0>;
-	channel4-gain = <0>;
-	channel5-gain = <0>;
-	channel6-gain = <0>;
-	channel7-gain = <0>;
-};
-
-test_spi_w5500: w5500@36 {
-	compatible = "wiznet,w5500";
-	label = "w5500";
-	reg = <0x36>;
-	spi-max-frequency = <0>;
-	int-gpios = <&test_gpio 0 0>;
-	reset-gpios = <&test_gpio 0 0>;
 };
 
 test_spi_iis2iclx: iis2iclx@37 {
