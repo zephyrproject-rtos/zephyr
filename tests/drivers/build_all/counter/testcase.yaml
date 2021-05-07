@@ -1,0 +1,8 @@
+common:
+  build_only: true
+  tags: drivers
+tests:
+  drivers.counter.build.xlnx:
+    platform_allow: arty_a7_arm_designstart_m1
+    extra_configs:
+      - CONFIG_COUNTER_XLNX_AXI_TIMER=y
