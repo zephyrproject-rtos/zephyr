@@ -46,9 +46,6 @@ LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 #define LSM6DSO_SHUB_SLVX_WRITE				0x0
 #define LSM6DSO_SHUB_SLVX_READ				0x1
 
-static uint8_t num_ext_dev;
-static uint8_t shub_ext[LSM6DSO_SHUB_MAX_NUM_SLVS];
-
 static int lsm6dso_shub_write_slave_reg(const struct device *dev,
 					uint8_t slv_addr, uint8_t slv_reg,
 					uint8_t *value, uint16_t len);
@@ -630,14 +627,15 @@ static int lsm6dso_shub_write_slave_reg(const struct device *dev,
  */
 static int lsm6dso_shub_set_data_channel(const struct device *dev)
 {
+	struct lsm6dso_data *data = dev->data;
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t n, i, slv_cfg[6];
 	struct lsm6dso_shub_slist *sp;
 
 	/* Set data channel for slave devices */
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
 		i = n * 3;
 		slv_cfg[i] = (sp->ext_i2c_addr << 1) | LSM6DSO_SHUB_SLVX_READ;
@@ -675,18 +673,20 @@ static int lsm6dso_shub_set_data_channel(const struct device *dev)
 	return 0;
 }
 
-int lsm6dso_shub_get_idx(enum sensor_channel type)
+int lsm6dso_shub_get_idx(const struct device *dev, enum sensor_channel type)
 {
 	uint8_t n;
+	struct lsm6dso_data *data = dev->data;
 	struct lsm6dso_shub_slist *sp;
 
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
 		if (sp->type == type)
 			return n;
 	}
 
+	LOG_ERR("shub: dev %s type %d not supported", dev->name, type);
 	return -ENOTSUP;
 }
 
@@ -701,8 +701,8 @@ int lsm6dso_shub_fetch_external_devs(const struct device *dev)
 	/* read data from external slave */
 	lsm6dso_shub_embedded_en(ctx, true);
 
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
 		if (lsm6dso_read_reg(ctx, sp->sh_out_reg,
 				     data->ext_data[n], sp->out_data_len) < 0) {
@@ -721,18 +721,19 @@ int lsm6dso_shub_config(const struct device *dev, enum sensor_channel chan,
 			enum sensor_attribute attr,
 			const struct sensor_value *val)
 {
+	struct lsm6dso_data *data = dev->data;
 	struct lsm6dso_shub_slist *sp = NULL;
 	uint8_t n;
 
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
 		if (sp->type == chan)
 			break;
 	}
 
-	if (n == num_ext_dev) {
-		LOG_DBG("shub: chan not supported");
+	if (n == data->num_ext_dev) {
+		LOG_DBG("shub: %s chan %d not supported", dev->name, chan);
 		return -ENOTSUP;
 	}
 
@@ -746,12 +747,14 @@ int lsm6dso_shub_config(const struct device *dev, enum sensor_channel chan,
 
 int lsm6dso_shub_init(const struct device *dev)
 {
+	struct lsm6dso_data *data = dev->data;
 	uint8_t i, n = 0, regn;
 	uint8_t chip_id;
 	struct lsm6dso_shub_slist *sp;
 
+	LOG_INF("shub: start sensorhub for %s", dev->name);
 	for (n = 0; n < ARRAY_SIZE(lsm6dso_shub_slist); n++) {
-		if (num_ext_dev >= LSM6DSO_SHUB_MAX_NUM_SLVS)
+		if (data->num_ext_dev >= LSM6DSO_SHUB_MAX_NUM_SLVS)
 			break;
 
 		chip_id = 0;
@@ -782,17 +785,18 @@ int lsm6dso_shub_init(const struct device *dev)
 		LOG_INF("shub: Ext Device Chip Id: %02x", chip_id);
 		sp->ext_i2c_addr = sp->i2c_addr[i];
 
-		shub_ext[num_ext_dev++] = n;
+		data->shub_ext[data->num_ext_dev++] = n;
 	}
 
-	if (num_ext_dev == 0) {
+	LOG_DBG("shub: dev %s - num_ext_dev %d", dev->name, data->num_ext_dev);
+	if (data->num_ext_dev == 0) {
 		LOG_ERR("shub: no slave devices found");
 		return -EINVAL;
 	}
 
 	/* init external devices */
-	for (n = 0, regn = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0, regn = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 		sp->sh_out_reg = LSM6DSO_SHUB_DATA_OUT + regn;
 		regn += sp->out_data_len;
 		sp->dev_init(dev, sp->ext_i2c_addr);
