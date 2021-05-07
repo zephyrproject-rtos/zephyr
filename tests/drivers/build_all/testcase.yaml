@@ -1,11 +1,6 @@
 common:
   depends_on: gpio spi i2c
 tests:
-  drivers.led.build:
-    build_only: true
-    extra_args: CONF_FILE=led.conf
-    min_ram: 32
-    tags: drivers
   drivers.xlnx.build:
     build_only: true
     extra_args: CONF_FILE=xlnx.conf
