@@ -137,9 +137,35 @@ struct proc_ctx {
 
 		/* Connection Update & Connection Parameter Request */
 		struct {
+			uint8_t params_changed;
 			uint8_t error;
+			uint8_t win_size;
+			uint16_t win_offset_us;
+			uint16_t interval;
+			uint16_t latency;
+			uint16_t timeout;
 			uint16_t instant;
 		} cu;
+
+		struct {
+			uint8_t  disabled:1;					//TODO(tosk): use?
+			uint8_t  status;
+			uint16_t interval_min;
+			uint16_t interval_max;
+			uint16_t latency;
+			uint16_t timeout;
+			uint8_t  preferred_periodicity;
+			uint16_t reference_conn_event_count;
+			uint16_t offset0;
+			uint16_t offset1;
+			uint16_t offset2;
+			uint16_t offset3;
+			uint16_t offset4;
+			uint16_t offset5;
+			uint16_t *pdu_win_offset0;
+			uint32_t ticks_ref;
+			uint32_t ticks_to_offset_next;
+		} conn_param;
 
 		/* Use by ACL Termination Procedure */
 		struct {

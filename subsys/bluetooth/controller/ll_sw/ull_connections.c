@@ -175,6 +175,16 @@ void ull_conn_mfifo_enqueue_tx(uint8_t idx)
 	MFIFO_ENQUEUE(conn_tx, idx);
 }
 
+uint8_t ull_conn_mfifo_get_ack(void **lll_tx)
+{
+	return MFIFO_ENQUEUE_GET(conn_ack, lll_tx);
+}
+
+void ull_conn_mfifo_enqueue_ack(uint8_t idx)
+{
+	MFIFO_ENQUEUE(conn_ack, idx);
+}
+
 /*
  * EGON: following 2 functions need to be removed when implementing tx/rx path
  * ll_rx_enqueue needs to be replaced with calls to ll_rx_put/ll_rx_sched
@@ -505,6 +515,14 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 {
 	LL_ASSERT(conn->lll.handle != ULL_HANDLE_NOT_CONNECTED);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	conn->llcp.conn_upd.ticks_at_expire = ticks_at_expire;  //TODO(tosk): Place correct
+#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	ARG_UNUSED(ticks_at_expire);
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+	conn->llcp.conn_upd.lazy = lazy;                        //TODO(tosk): Place correct
 
 	ull_cp_run(conn);
 

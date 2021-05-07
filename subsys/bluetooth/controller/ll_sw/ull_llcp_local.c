@@ -125,6 +125,7 @@ void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	case PROC_PHY_UPDATE:
 		lp_pu_rx(conn, ctx, rx);
 		break;
+	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		lp_cu_rx(conn, ctx, rx);
 		break;
@@ -186,6 +187,7 @@ static void lr_act_run(struct ll_conn *conn)
 	case PROC_PHY_UPDATE:
 		lp_pu_run(conn, ctx, NULL);
 		break;
+	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		lp_cu_run(conn, ctx, NULL);
 		break;

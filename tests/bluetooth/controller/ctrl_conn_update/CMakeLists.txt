@@ -10,6 +10,10 @@ FILE(GLOB SOURCES
   src/*.c
 )
 
+if(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+  add_compile_definitions(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+endif()
+
 project(bluetooth_ctrl_ull_conn)
 find_package(ZephyrUnittest HINTS $ENV{ZEPHYR_BASE})
 include(${ZEPHYR_BASE}/tests/bluetooth/controller/common/defaults_cmake.txt)

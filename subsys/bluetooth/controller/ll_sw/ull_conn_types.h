@@ -394,12 +394,13 @@ struct llcp_struct {
 		uint16_t instant;
 		uint16_t *pdu_win_offset;
 		uint32_t ticks_anchor;
+		uint32_t ticks_at_expire;	//TODO: Place correct?
+		uint16_t lazy;			//TODO(tosk): Place correct?
 	} conn_upd;
 
 	struct {
-		uint8_t  cmd:1;
-		uint8_t  disabled:1;
-		uint8_t  status;
+		uint8_t  disabled:1;		//TODO(tosk): use?
+		uint8_t  status;		//TODO(tosk): use (for reject)?
 		uint16_t interval_min;
 		uint16_t interval_max;
 		uint16_t latency;
@@ -416,9 +417,16 @@ struct llcp_struct {
 		uint32_t ticks_ref;
 		uint32_t ticks_to_offset_next;
 	} conn_param;
+
 	struct {
-		uint32_t win_offset_us;
+		uint8_t win_size;
+		uint16_t win_offset_us;
+		uint16_t interval;
+		uint16_t latency;
+		uint16_t timeout;
+		uint16_t instant;
 	} cu;
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	struct {
 		uint8_t pause_rx:1;

@@ -88,6 +88,7 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	case PROC_PHY_UPDATE:
 		return 1U;
 		break;
+	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		return 1U;
 		break;
@@ -191,6 +192,7 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	case PROC_PHY_UPDATE:
 		rp_pu_rx(conn, ctx, rx);
 		break;
+	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		rp_cu_rx(conn, ctx, rx);
 		break;
@@ -249,6 +251,7 @@ static void rr_act_run(struct ll_conn *conn)
 	case PROC_PHY_UPDATE:
 		rp_pu_run(conn, ctx, NULL);
 		break;
+	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		rp_cu_run(conn, ctx, NULL);
 		break;
@@ -365,7 +368,8 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 
 	switch (evt) {
 	case RR_EVT_PREPARE:
-		if ((ctx = rr_peek(conn))){
+		ctx = rr_peek(conn);
+		if (ctx) {
 			const enum proc_incompat incompat = rr_get_incompat(conn);
 			const bool slave = !!(conn->lll.role == BT_HCI_ROLE_SLAVE);
 			const bool master = !!(conn->lll.role == BT_HCI_ROLE_MASTER);
@@ -545,6 +549,9 @@ void ull_cp_priv_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 	pdu = (struct pdu_data *) rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
+		proc = PROC_CONN_UPDATE;
+		break;
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		proc = PROC_FEATURE_EXCHANGE;

@@ -6,7 +6,6 @@
 
 #include <zephyr/types.h>
 #include <ztest.h>
-#include "kconfig.h"
 
 #define ULL_LLCP_UNITTEST
 
@@ -34,11 +33,81 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
+/* Default connection values */
+#define INTVL_MIN  6U /* multiple of 1.25 ms (min 6, max 3200) */
+#define INTVL_MAX  6U /* multiple of 1.25 ms (min 6, max 3200) */
+#define LATENCY    1U
+#define TIMEOUT   10U /* multiple of 10 ms (min 10, max 3200) */
+
+/* Default conn_update_ind PDU */
+struct pdu_data_llctrl_conn_update_ind conn_update_ind = {
+	.win_size = 1U,
+	.win_offset = 0U,
+	.interval = INTVL_MAX,
+	.latency = LATENCY,
+	.timeout = TIMEOUT,
+	.instant = 6U
+};
+
+/* Default conn_param_req PDU */
+struct pdu_data_llctrl_conn_param_req conn_param_req = {
+	.interval_min = INTVL_MIN,
+	.interval_max = INTVL_MAX,
+	.latency = LATENCY,
+	.timeout = TIMEOUT,
+	.preferred_periodicity = 0U,
+	.reference_conn_event_count = 0u,
+	.offset0 = 0U,
+	.offset1 = 1U,
+	.offset2 = 2U,
+	.offset3 = 3U,
+	.offset4 = 4U,
+	.offset5 = 5U,
+};
+
 static struct ll_conn conn;
+
+static void setup_feature_bit(bool valid, uint64_t feature_bit, bool value)
+{
+	/* Pretend that features have been exchanged */
+	conn.llcp.fex.sent = 1U;						//TODO(tosk): use this?
+	conn.llcp.fex.valid = 1U;						//TODO(tosk): use this?
+
+	/* Setup the feature */
+	if (value) {
+		conn.llcp.fex.features_used |= BIT64(feature_bit);
+	} else {
+		conn.llcp.fex.features_used &= ~(uint64_t)BIT64(feature_bit);
+	}
+}
 
 static void setup(void)
 {
 	test_setup(&conn);
+
+	/* Initialize lll conn parameters (different from new) */
+	struct lll_conn *lll = &conn.lll;
+
+	lll->interval = 0;
+	lll->latency = 0;
+	conn.supervision_reload = 1U;
+
+	/* Initialize llcp cu values */
+	conn.llcp.cu.interval = INTVL_MAX;
+	conn.llcp.cu.latency = LATENCY;
+	conn.llcp.cu.timeout = TIMEOUT;
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	/* Initialize llcp conn_param values */
+	conn.llcp.conn_param.interval_min = INTVL_MIN;
+	conn.llcp.conn_param.interval_max = INTVL_MAX;
+	conn.llcp.conn_param.latency = LATENCY;
+	conn.llcp.conn_param.timeout = TIMEOUT;
+
+	setup_feature_bit(true, BT_LE_FEAT_BIT_CONN_PARAM_REQ, true);
+#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	setup_feature_bit(false, BT_LE_FEAT_BIT_CONN_PARAM_REQ, false);
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }
 
 static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
@@ -90,8 +159,8 @@ void test_conn_update_mas_loc_accept(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -202,8 +271,8 @@ void test_conn_update_mas_loc_reject(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -280,8 +349,8 @@ void test_conn_update_mas_loc_unsupp_feat(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -416,8 +485,8 @@ void test_conn_update_mas_loc_collision(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* (A) Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* (A) Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -428,7 +497,7 @@ void test_conn_update_mas_loc_collision(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* (B) Rx */
-	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, NULL);
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
 
 	/* Done */
 	event_done(&conn);
@@ -566,7 +635,7 @@ void test_conn_update_mas_rem_accept(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, NULL);
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
 
 	/* Done */
 	event_done(&conn);
@@ -595,7 +664,6 @@ void test_conn_update_mas_rem_accept(void)
 
 	/* Done */
 	event_done(&conn);
-
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
@@ -680,7 +748,7 @@ void test_conn_update_mas_rem_reject(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, NULL);
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
 
 	/* Done */
 	event_done(&conn);
@@ -825,15 +893,15 @@ void test_conn_update_mas_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (A) Rx */
-	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, NULL);
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
 
 	/* Done */
 	event_done(&conn);
 
 	/*******************/
 
-	/* (B) Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* (B) Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -1006,16 +1074,14 @@ void test_conn_update_sla_loc_accept(void)
 		.status = BT_HCI_ERR_SUCCESS
 	};
 
-	struct pdu_data_llctrl_conn_update_ind conn_update_ind = {0};
-
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -1038,7 +1104,7 @@ void test_conn_update_sla_loc_accept(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	conn_update_ind.instant = instant = event_counter(&conn) + 6;
+	instant = conn_update_ind.instant;
 	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
 
 	/* Done */
@@ -1119,8 +1185,8 @@ void test_conn_update_sla_loc_reject(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -1199,8 +1265,8 @@ void test_conn_update_sla_loc_unsupp_feat(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -1309,16 +1375,14 @@ void test_conn_update_sla_loc_collision(void)
 		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
 	};
 
-	struct pdu_data_llctrl_conn_update_ind conn_update_ind = {0};
-
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* (A) Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* (A) Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -1329,7 +1393,7 @@ void test_conn_update_sla_loc_collision(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* (B) Rx */
-	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, NULL);
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
 
 	/* Done */
 	event_done(&conn);
@@ -1461,8 +1525,6 @@ void test_conn_update_sla_rem_accept(void)
 		.status = BT_HCI_ERR_SUCCESS
 	};
 
-	struct pdu_data_llctrl_conn_update_ind conn_update_ind = {0};
-
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
@@ -1476,7 +1538,7 @@ void test_conn_update_sla_rem_accept(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, NULL);
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
 
 	/* Done */
 	event_done(&conn);
@@ -1510,7 +1572,7 @@ void test_conn_update_sla_rem_accept(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	conn_update_ind.instant = instant = event_counter(&conn) + 6;
+	instant = conn_update_ind.instant;
 	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
 
 	/* Done */
@@ -1598,7 +1660,7 @@ void test_conn_update_sla_rem_reject(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, NULL);
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
 
 	/* Done */
 	event_done(&conn);
@@ -1731,8 +1793,6 @@ void test_conn_update_sla_rem_collision(void)
 		.status = BT_HCI_ERR_SUCCESS
 	};
 
-	struct pdu_data_llctrl_conn_update_ind conn_update_ind = {0};
-
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
 
@@ -1745,15 +1805,15 @@ void test_conn_update_sla_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (A) Rx */
-	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, NULL);
+	lt_tx(LL_CONNECTION_PARAM_REQ, &conn, &conn_param_req);
 
 	/* Done */
 	event_done(&conn);
 
 	/*******************/
 
-	/* (B) Initiate an Connection Parameter Request Procedure */
-	err = ull_cp_conn_update(&conn, 0, 0, 0, 0);
+	/* (B) Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/*******************/
@@ -1797,7 +1857,7 @@ void test_conn_update_sla_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (A) Rx */
-	conn_update_ind.instant = instant = event_counter(&conn) + 6;
+	instant = conn_update_ind.instant;
 	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
 
 	/* Done */
@@ -1844,8 +1904,9 @@ void test_conn_update_sla_rem_collision(void)
 	/* (B) Tx Queue should NOT have a LL Control PDU */
 	lt_rx_q_is_empty(&conn);
 
-	/* (B) Rx */
-	conn_update_ind.instant = instant = event_counter(&conn) + 6;
+	/* (B) Rx (changed conn parameters to trigger a host ntf) */
+	conn_update_ind.interval++;
+	conn_update_ind.latency++;
 	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
 
 	/* Done */
@@ -1884,10 +1945,231 @@ void test_conn_update_sla_rem_collision(void)
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
+/*
+ * Parameter Request Procedure not supported.
+ * Master-initiated Connection Update procedure.
+ * Master requests update of LE connection.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_M  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           |
+ *    |                           | LL_CONNECTION_UPDATE_IND  |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |      LE Connection Update |                           |
+ *    |                  Complete |                           |
+ *    |<--------------------------|                           |
+ *    |                           |                           |
+ */
+void test_conn_update_mas_loc_accept_no_param_req(void)
+{
+	uint8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+	uint16_t instant;
+
+	struct node_rx_pu cu = {
+		.status = BT_HCI_ERR_SUCCESS
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate a Connection Update Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Save (and verify) Instant */
+	pdu = (struct pdu_data *)tx->pdu;
+	instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
+	zassert_equal(instant, conn_update_ind.instant, NULL);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/*
+ * Parameter Request Procedure not supported.
+ * Master-initiated Connection Update procedure.
+ * Slave receives Connection Update parameters.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_S  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ *    |      LE Connection Update |                           |
+ *    |                  Complete |                           |
+ *    |<--------------------------|                           |
+ *    |                           |                           |
+ */
+void test_conn_update_sla_rem_accept_no_param_req(void)
+{
+	struct node_rx_pdu *ntf;
+	uint16_t instant;
+
+	struct node_rx_pu cu = {
+		.status = BT_HCI_ERR_SUCCESS
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	instant = conn_update_ind.instant;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+}
+
+/*
+ * Parameter Request Procedure not supported.
+ * Slave-initiated Connection Update procedure (not allowed).
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_S  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           |
+ *    |                           |                           |
+ *    |      ERR CMD Disallowed   |                           |
+ *    |<--------------------------|                           |
+ *    |                           |                           |
+ */
+void test_conn_update_sla_loc_disallowed_no_param_req(void)
+{
+	uint8_t err;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate a Connection Update Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT);
+	zassert_equal(err, BT_HCI_ERR_CMD_DISALLOWED, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have no LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+}
 
 void test_main(void)
 {
-
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	ztest_test_suite(mas_loc,
 			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_accept, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_reject, setup, unit_test_noop),
@@ -1920,4 +2202,23 @@ void test_main(void)
 	ztest_run_test_suite(mas_rem);
 	ztest_run_test_suite(sla_loc);
 	ztest_run_test_suite(sla_rem);
+
+#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	ztest_test_suite(mas_loc_no_param_req,
+			 ztest_unit_test_setup_teardown(test_conn_update_mas_loc_accept_no_param_req, setup, unit_test_noop)
+			);
+
+	ztest_test_suite(sla_rem_no_param_req,
+			 ztest_unit_test_setup_teardown(test_conn_update_sla_rem_accept_no_param_req, setup, unit_test_noop)
+			);
+
+	ztest_test_suite(sla_loc_no_param_req,
+			 ztest_unit_test_setup_teardown(test_conn_update_sla_loc_disallowed_no_param_req, setup, unit_test_noop)
+			);
+
+	ztest_run_test_suite(mas_loc_no_param_req);
+	ztest_run_test_suite(sla_rem_no_param_req);
+	ztest_run_test_suite(sla_loc_no_param_req);
+
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 }
