@@ -354,7 +354,7 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 					      data->rx_buf, 0, len);
 		if ((data->match_buf_len - 1) < match_len) {
 			LOG_ERR("Match buffer size (%zu) is too small for "
-				"incoming command size: %u!  Truncating!",
+				"incoming command size: %zu!  Truncating!",
 				data->match_buf_len - 1, match_len);
 		}
 
@@ -366,7 +366,7 @@ static void cmd_handler_process_rx_buf(struct modem_cmd_handler_data *data)
 
 		cmd = find_cmd_match(data);
 		if (cmd) {
-			LOG_DBG("match cmd [%s] (len:%u)",
+			LOG_DBG("match cmd [%s] (len:%zu)",
 				log_strdup(cmd->cmd), match_len);
 
 			if (process_cmd(cmd, match_len, data) == -EAGAIN) {
