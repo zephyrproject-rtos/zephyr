@@ -112,8 +112,7 @@ static int pm_device_request(const struct device *dev,
 
 		/* Unfortunately this is not what is happening yet. There are
 		 * cases, for example, like the pinmux being initialized before
-		 * the gpio. For that reason let's power on/off the device
-		 * here until we don't have it properly fixed.
+		 * the gpio. Lets just power on/off the device.
 		 */
 		if (dev->pm->usage == 1) {
 			(void)pm_device_state_set(dev,
