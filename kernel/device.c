@@ -80,10 +80,10 @@ void z_sys_init_run_level(int32_t level)
 	const struct init_entry *entry;
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
-		const struct device *dev = entry->dev;
-		int rc = entry->init(dev);
+		int rc = entry->init(entry->user_data);
+		const struct device *dev = entry->user_data;
 
-		if (dev != NULL) {
+		if (dev >= __device_start && dev < __device_end) {
 			/* Mark device initialized.  If initialization
 			 * failed, record the error condition.
 			 */
