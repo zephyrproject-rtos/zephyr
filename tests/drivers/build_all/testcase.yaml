@@ -1,12 +1,6 @@
 common:
   depends_on: gpio spi i2c
 tests:
-  drivers.gpio.build:
-    build_only: true
-    extra_args: CONF_FILE=gpio.conf
-    min_ram: 32
-    platform_exclude: serpente
-    depends_on: gpio spi
   drivers.led.build:
     build_only: true
     extra_args: CONF_FILE=led.conf
