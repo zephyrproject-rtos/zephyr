@@ -52,13 +52,21 @@ static inline int z_cbprintf_cxx_is_pchar(const volatile wchar_t *)
 template < typename T >
 static inline int z_cbprintf_cxx_is_pchar(T arg)
 {
+	_Pragma("GCC diagnostic push")
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"")
 	return 0;
+	_Pragma("GCC diagnostic pop")
 }
 
 /* C++ version for calculating argument size. */
 static inline size_t z_cbprintf_cxx_arg_size(float f)
 {
 	return sizeof(double);
+}
+
+static inline size_t z_cbprintf_cxx_arg_size(void *p)
+{
+	return sizeof(void *);
 }
 
 template < typename T >
@@ -73,6 +81,46 @@ static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, float arg)
 	double d = (double)arg;
 
 	z_cbprintf_wcpy((int *)dst, (int *)&d, sizeof(d) / sizeof(int));
+}
+
+static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, void *p)
+{
+	z_cbprintf_wcpy((int *)dst, (int *)&p, sizeof(p) / sizeof(int));
+}
+
+static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, char arg)
+{
+	int tmp = arg + 0;
+
+	z_cbprintf_wcpy((int *)dst, &tmp, 1);
+}
+
+static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, unsigned char arg)
+{
+	int tmp = arg + 0;
+
+	z_cbprintf_wcpy((int *)dst, &tmp, 1);
+}
+
+static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, signed char arg)
+{
+	int tmp = arg + 0;
+
+	z_cbprintf_wcpy((int *)dst, &tmp, 1);
+}
+
+static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, short arg)
+{
+	int tmp = arg + 0;
+
+	z_cbprintf_wcpy((int *)dst, &tmp, 1);
+}
+
+static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, unsigned short arg)
+{
+	int tmp = arg + 0;
+
+	z_cbprintf_wcpy((int *)dst, &tmp, 1);
 }
 
 template < typename T >
