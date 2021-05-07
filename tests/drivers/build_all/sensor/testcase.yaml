@@ -1,0 +1,26 @@
+common:
+  depends_on: gpio spi i2c
+  tags: drivers
+  platform_exclude: frdm_kw41z serpente
+  min_ram: 32
+  build_only: true
+tests:
+  sensors.build.trigger_a_h:
+    extra_args: CONF_FILE=sensors_trigger_a_h.conf
+    depends_on: adc spi
+  sensors.build.trigger_i_z:
+    extra_args: CONF_FILE=sensors_trigger_i_z.conf
+    depends_on: gpio adc spi
+  sensors.build.a_h:
+    extra_args: CONF_FILE=sensors_a_h.conf
+    min_flash: 44
+    depends_on: adc spi
+  sensors.build.i_z:
+    extra_args: CONF_FILE=sensors_i_z.conf
+    depends_on: gpio adc spi
+  sensors.build.stmemsc:
+    extra_args: CONF_FILE=sensors_stmemsc.conf
+    depends_on: adc spi
+  sensors.build.stmemsc_trigger:
+    extra_args: CONF_FILE=sensors_stmemsc_trigger.conf
+    depends_on: adc spi

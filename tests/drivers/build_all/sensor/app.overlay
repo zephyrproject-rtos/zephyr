@@ -122,11 +122,7 @@
 			reg = <0x55556666 0x1000>;
 			label = "TEST_UART_CTLR";
 			status = "okay";
-
-			#include "uart.dtsi"
 		};
-
-		#include "led.dtsi"
 
 		dht22 {
 			compatible = "aosong,dht";
@@ -142,15 +138,6 @@
  * here to keep the bus specific dtsi files (i2c.dtsi, spi.dtsi, etc..)
  * pristine
  */
-
-/* setup valid params for the device */
-&test_i2c_at24 {
-	reg = <0x8>;
-	size = <32768>;
-	pagesize = <64>;
-	address-width = <16>;
-	timeout = <5>;
-};
 
 /* disable device to conflict with i2c version */
 &test_i2c_iis2dlpc {
@@ -197,22 +184,9 @@
 	status = "disabled";
 };
 
-/* setup valid params for the device */
-&test_spi_at25 {
-	size = <32768>;
-	pagesize = <64>;
-	address-width = <16>;
-	timeout = <5>;
-};
-
 /* disable device to conflict with i2c version */
 &test_spi_bme280 {
 	status = "disabled";
-};
-
-/* setup valid params for the device */
-&test_spi_enc28j60 {
-	local-mac-address = [00 00 00 00 00 00];
 };
 
 /* disable device to conflict with i2c version */
