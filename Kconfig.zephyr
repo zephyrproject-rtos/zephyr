@@ -561,7 +561,6 @@ config BOOTLOADER_ESP_IDF
 config BOOTLOADER_BOSSA
 	bool "BOSSA bootloader support"
 	select USE_DT_CODE_PARTITION
-	depends on SOC_FAMILY_SAM0
 
 	help
 	  Signifies that the target uses a BOSSA compatible bootloader.  If CDC
@@ -578,6 +577,13 @@ config BOOTLOADER_BOSSA_DEVICE_NAME
 choice
 	prompt "BOSSA bootloader variant"
 	depends on BOOTLOADER_BOSSA
+
+config BOOTLOADER_BOSSA_LEGACY
+	bool "Legacy"
+	help
+	  Select the Legacy variant of the BOSSA bootloader.  This is defined
+	  for compatibility mode only.  The recommendation is use newer
+	  versions like Arduino or Adafruit UF2.
 
 config BOOTLOADER_BOSSA_ARDUINO
 	bool "Arduino"

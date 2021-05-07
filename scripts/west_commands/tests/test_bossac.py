@@ -1,6 +1,6 @@
 # Copyright (c) 2018 Foundries.io
 # Copyright (c) 2019 Nordic Semiconductor ASA.
-# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2020-2021 Gerson Fernando Budke <nandojve@gmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -119,6 +119,15 @@ CONFIG_BOARD="{TEST_BOARD_NAME}"
 CONFIG_USE_DT_CODE_PARTITION=y
 CONFIG_HAS_FLASH_LOAD_OFFSET=y
 CONFIG_FLASH_LOAD_OFFSET=0x0
+'''
+
+# SAM-BA Legacy Mode
+DOTCONFIG_COND6 = f'''
+CONFIG_BOARD="{TEST_BOARD_NAME}"
+CONFIG_USE_DT_CODE_PARTITION=y
+CONFIG_BOOTLOADER_BOSSA_LEGACY=y
+CONFIG_HAS_FLASH_LOAD_OFFSET=y
+CONFIG_FLASH_LOAD_OFFSET=0x162e
 '''
 
 def adjust_runner_config(runner_config, tmpdir, dotconfig):
@@ -394,6 +403,41 @@ def test_bossac_create_with_adafruit(cc, req, get_cod_par, sup,
     with patch('os.path.isfile', side_effect=os_path_isfile_patch):
         runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_EXTENDED]
+
+
+@patch('runners.bossac.BossacBinaryRunner.supports',
+	return_value=True)
+@patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
+	return_value=True)
+@patch('runners.core.ZephyrBinaryRunner.require',
+	side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_bossac_create_with_legacy(cc, req, get_cod_par, sup,
+				   runner_config, tmpdir):
+    """
+    Test SAM-BA legacy protocol
+
+    Requirements:
+	Any SDK
+
+    Configuration:
+	Extended bootloader
+	CONFIG_USE_DT_CODE_PARTITION=y
+	CONFIG_BOOTLOADER_BOSSA_LEGACY=y
+	with zephyr,code-partition
+
+    Input:
+	--bossac-port
+
+    Output:
+	no --offset
+    """
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND6)
+    runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
+    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
 
 
 @patch('runners.bossac.BossacBinaryRunner.supports',
