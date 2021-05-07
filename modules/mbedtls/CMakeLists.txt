@@ -7,7 +7,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
 	)
 
   target_include_directories(mbedTLS INTERFACE
-    ${ZEPHYR_CURRENT_MODULE_DIR}/include
+    ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/include
     configs
 	)
 
@@ -15,7 +15,7 @@ if(CONFIG_MBEDTLS_BUILTIN)
 
   file(GLOB
     mbedtls_sources # This is an output parameter
-      ${ZEPHYR_CURRENT_MODULE_DIR}/library/*.c
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/library/*.c
     )
 
   zephyr_library_sources(
@@ -28,7 +28,7 @@ if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT)
   # i386 assembly code used in MBEDTLS does not compile with size optimization
   # if address sanitizer is enabled, as such switch default optimization level
   # to speed
-  set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/library/bignum.c APPEND PROPERTY COMPILE_OPTIONS
+  set_property(SOURCE ${ZEPHYR_CURRENT_MODULE_DIR}/mbedtls/library/bignum.c APPEND PROPERTY COMPILE_OPTIONS
       "${OPTIMIZE_FOR_SPEED_FLAG}")
 endif ()
 
