@@ -484,6 +484,17 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		/* Handle any LL Control Procedures */
 		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
 		if (ret) {
+			/* NOTE: Under BT_CTLR_LOW_LAT, ULL_LOW context is
+			 *       disabled inside radio events, hence, abort any
+			 *       active radio event which will re-enable
+			 *       ULL_LOW context that permits ticker job to run.
+			 */
+			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+			    (CONFIG_BT_CTLR_LLL_PRIO ==
+			     CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+				ll_radio_state_abort();
+			}
+
 			DEBUG_RADIO_CLOSE_S(0);
 			return;
 		}
