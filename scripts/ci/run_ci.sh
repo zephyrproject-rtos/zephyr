@@ -232,7 +232,7 @@ if [ -n "$main_ci" ]; then
 	echo "+++ run twister"
 
 	# Run a subset of tests based on matrix size
-	${twister} ${twister_options} --load-tests test_file.txt \
+	${twister} --inline-logs -M -N -v --platform qemu_arc_hs6x --platform nsim_hs6x \
 		--subset ${matrix}/${matrix_builds} --retry-failed 3
 
 	# Run module tests on matrix #1
@@ -253,4 +253,3 @@ elif [ -n "$success" ]; then
 else
 	echo "Nothing to do"
 fi
-
