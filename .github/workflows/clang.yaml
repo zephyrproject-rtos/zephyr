@@ -21,7 +21,7 @@ jobs:
       matrix:
         subset: [1, 2, 3, 4, 5]
     env:
-      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.12.4
+      ZEPHYR_SDK_INSTALL_DIR: /opt/toolchains/zephyr-sdk-0.13.0-alpha-1
       CLANG_ROOT_DIR: /usr/lib/llvm-12
       MATRIX_SIZE: 5
     steps:
