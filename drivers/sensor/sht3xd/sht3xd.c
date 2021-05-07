@@ -11,6 +11,8 @@
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <sys/__assert.h>
+#include <sys/byteorder.h>
+#include <sys/crc.h>
 #include <logging/log.h>
 
 #include "sht3xd.h"
@@ -42,29 +44,17 @@ static const int measure_wait[3] = {
  */
 static uint8_t sht3xd_compute_crc(uint16_t value)
 {
-	uint8_t buf[2] = { value >> 8, value & 0xFF };
-	uint8_t crc = 0xFF;
-	uint8_t polynom = 0x31;
-	int i, j;
+	uint8_t buf[2];
 
-	for (i = 0; i < 2; ++i) {
-		crc = crc ^ buf[i];
-		for (j = 0; j < 8; ++j) {
-			if (crc & 0x80) {
-				crc = (crc << 1) ^ polynom;
-			} else {
-				crc = crc << 1;
-			}
-		}
-	}
-
-	return crc;
+	sys_put_be16(value, buf);
+	return crc8(buf, 2, 0x31, 0xFF, false);
 }
 
 int sht3xd_write_command(const struct device *dev, uint16_t cmd)
 {
-	uint8_t tx_buf[2] = { cmd >> 8, cmd & 0xFF };
+	uint8_t tx_buf[2];
 
+	sys_put_be16(cmd, tx_buf);
 	return i2c_write(sht3xd_i2c_device(dev), tx_buf, sizeof(tx_buf),
 			 sht3xd_i2c_address(dev));
 }
@@ -73,10 +63,8 @@ int sht3xd_write_reg(const struct device *dev, uint16_t cmd, uint16_t val)
 {
 	uint8_t tx_buf[5];
 
-	tx_buf[0] = cmd >> 8;
-	tx_buf[1] = cmd & 0xFF;
-	tx_buf[2] = val >> 8;
-	tx_buf[3] = val & 0xFF;
+	sys_put_be16(cmd, &tx_buf[0]);
+	sys_put_be16(val, &tx_buf[2]);
 	tx_buf[4] = sht3xd_compute_crc(val);
 
 	return i2c_write(sht3xd_i2c_device(dev), tx_buf, sizeof(tx_buf),
@@ -110,10 +98,9 @@ static int sht3xd_sample_fetch(const struct device *dev,
 	}
 #endif
 #ifdef CONFIG_SHT3XD_PERIODIC_MODE
-	uint8_t tx_buf[2] = {
-		SHT3XD_CMD_FETCH >> 8,
-		SHT3XD_CMD_FETCH & 0xFF
-	};
+	uint8_t tx_buf[2];
+
+	sys_put_be16(SHT3XD_CMD_FETCH, tx_buf);
 
 	if (i2c_write_read(i2c, address, tx_buf, sizeof(tx_buf),
 			   rx_buf, sizeof(rx_buf)) < 0) {
@@ -122,13 +109,13 @@ static int sht3xd_sample_fetch(const struct device *dev,
 	}
 #endif
 
-	t_sample = (rx_buf[0] << 8) | rx_buf[1];
+	t_sample = sys_get_be16(&rx_buf[0]);
 	if (sht3xd_compute_crc(t_sample) != rx_buf[2]) {
 		LOG_DBG("Received invalid temperature CRC!");
 		return -EIO;
 	}
 
-	rh_sample = (rx_buf[3] << 8) | rx_buf[4];
+	rh_sample = sys_get_be16(&rx_buf[3]);
 	if (sht3xd_compute_crc(rh_sample) != rx_buf[5]) {
 		LOG_DBG("Received invalid relative humidity CRC!");
 		return -EIO;
