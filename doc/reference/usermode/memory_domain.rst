@@ -200,7 +200,7 @@ automatically.
 Manual Memory Partitions
 ------------------------
 
-The following code declares a global array buf, and then declares
+The following code declares a global array ``buf``, and then declares
 a read-write partition for it which may be added to a domain:
 
 .. code-block:: c
@@ -255,7 +255,7 @@ BSS.
      */
     K_APP_BMEM(my_partition) int var2;
 
-The build system will ensure that the base address of my_partition will
+The build system will ensure that the base address of ``my_partition`` will
 be properly aligned, and the total size of the region conforms to the memory
 management hardware requirements, adding padding if necessary.
 
