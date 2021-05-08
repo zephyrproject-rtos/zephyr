@@ -485,8 +485,8 @@ The following code illustrates the ways a thread can terminate.
         /* thread terminates at end of entry point function */
     }
 
-If CONFIG_USERSPACE is enabled, aborting a thread will additionally mark the
-thread and stack objects as uninitialized so that they may be re-used.
+If :kconfig:`CONFIG_USERSPACE` is enabled, aborting a thread will additionally
+mark the thread and stack objects as uninitialized so that they may be re-used.
 
 Runtime Statistics
 ******************
