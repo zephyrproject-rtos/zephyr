@@ -989,11 +989,11 @@ if(CONFIG_USERSPACE)
     ${APP_SMEM_UNALIGNED_LD}
     )
 
-  if(CONFIG_NEWLIB_LIBC)
-    set(NEWLIB_PART -l libc.a z_libc_partition)
+  if(CONFIG_MINIMAL_LIBC OR CONFIG_NEWLIB_LIBC)
+    set(LIBC_PART -l libc.a z_libc_partition)
   endif()
   if(CONFIG_NEWLIB_LIBC_NANO)
-    set(NEWLIB_PART -l libc_nano.a z_libc_partition)
+    set(LIBC_PART -l libc_nano.a z_libc_partition)
   endif()
 
   add_custom_command(
@@ -1002,7 +1002,7 @@ if(CONFIG_USERSPACE)
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -d ${OBJ_FILE_DIR}
     -o ${APP_SMEM_UNALIGNED_LD}
-    ${NEWLIB_PART}
+    ${LIBC_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
@@ -1056,7 +1056,7 @@ if(CONFIG_USERSPACE)
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -e $<TARGET_FILE:app_smem_unaligned_prebuilt>
     -o ${APP_SMEM_ALIGNED_LD}
-    ${NEWLIB_PART}
+    ${LIBC_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
