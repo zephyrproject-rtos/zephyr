@@ -302,8 +302,8 @@ There are a few memory partitions which are pre-defined by the system:
    to specific memory domains.
 
  - ``z_libc_partition`` - Contains globals required by the C library and runtime.
-   Required if using newlib. Required if using minimal libc with
-   ``CONFIG_STACK_CANARIES`` enabled.
+   Required when using either the Minimal C library or the Newlib C Library.
+   Required when option:`CONFIG_STACK_CANARIES` is enabled.
 
 Library-specific partitions are listed in ``include/app_memory/partitions.h``.
 For example, to use the MBEDTLS library from user mode, the
