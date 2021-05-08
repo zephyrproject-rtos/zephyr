@@ -257,7 +257,7 @@ static int sm351lt_init(const struct device *dev)
 								     \
 	DEVICE_DT_INST_DEFINE(inst,				     \
 			    sm351lt_init,			     \
-			    device_pm_control_nop,		     \
+			    NULL,				     \
 			    &sm351lt_data_##inst,		     \
 			    &sm351lt_config_##inst,		     \
 			    POST_KERNEL,			     \

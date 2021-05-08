@@ -7,6 +7,6 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_IIS2DLPC            iis2dlpc)
-zephyr_library_sources_ifdef(CONFIG_IIS2DLPC            iis2dlpc_i2c.c)
-zephyr_library_sources_ifdef(CONFIG_IIS2DLPC            iis2dlpc_spi.c)
 zephyr_library_sources_ifdef(CONFIG_IIS2DLPC_TRIGGER    iis2dlpc_trigger.c)
+
+zephyr_library_include_directories(../stmemsc)

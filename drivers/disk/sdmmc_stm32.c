@@ -428,7 +428,7 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	}
 };
 
-DEVICE_DT_INST_DEFINE(0, disk_stm32_sdmmc_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, disk_stm32_sdmmc_init, NULL,
 		    &stm32_sdmmc_priv_1, NULL, POST_KERNEL,
 		    CONFIG_SDMMC_INIT_PRIORITY,
 		    NULL);

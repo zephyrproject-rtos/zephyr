@@ -18,6 +18,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_MCUX_LPUART uart_mcux_lpuart.c)
 zephyr_library_sources_ifdef(CONFIG_UART_MCUX_LPSCI uart_mcux_lpsci.c)
 zephyr_library_sources_ifdef(CONFIG_UART_MIV uart_miv.c)
 zephyr_library_sources_ifdef(CONFIG_UART_MSP432P4XX uart_msp432p4xx.c)
+zephyr_library_sources_ifdef(CONFIG_UART_NS16550 uart_ns16550.c)
 zephyr_library_sources_ifdef(CONFIG_NRF_UART_PERIPHERAL uart_nrfx_uart.c)
 zephyr_library_sources_ifdef(CONFIG_NRF_UARTE_PERIPHERAL uart_nrfx_uarte.c)
 zephyr_library_sources_ifdef(CONFIG_UART_NUVOTON uart_nuvoton.c)
@@ -37,21 +38,9 @@ zephyr_library_sources_ifdef(CONFIG_UART_XMC4XXX uart_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_NPCX uart_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_APBUART uart_apbuart.c)
 zephyr_library_sources_ifdef(CONFIG_USB_CDC_ACM ${ZEPHYR_BASE}/misc/empty_file.c)
+zephyr_library_sources_ifdef(CONFIG_UART_RCAR uart_rcar.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
-
-if(CONFIG_UART_NS16550)
-  zephyr_library_sources(uart_ns16550.c)
-  math(EXPR max_index "${CONFIG_UART_NS16550_MAX_INSTANCES} - 1")
-  foreach(NUM RANGE 0 ${max_index})
-    math(EXPR NEXT_NUM "${NUM} + 1")
-    configure_file(
-      uart_ns16550_port_x.h
-      ${PROJECT_BINARY_DIR}/include/generated/uart_ns16550_port_${NUM}.h
-      @ONLY
-      )
-  endforeach(NUM)
-endif()
 
 if(CONFIG_UART_NATIVE_POSIX)
   zephyr_library_compile_definitions(NO_POSIX_CHEATS)

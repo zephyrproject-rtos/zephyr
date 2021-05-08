@@ -8,7 +8,7 @@
 #include <drivers/flash.h>
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include "mgmt/hawkbit.h"
 #include "hawkbit_firmware.h"
 #include "hawkbit_device.h"

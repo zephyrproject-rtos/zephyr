@@ -47,6 +47,7 @@ struct bt_vocs_client {
 	struct bt_gatt_subscribe_params location_sub_params;
 	struct bt_gatt_subscribe_params desc_sub_params;
 	uint8_t subscribe_cnt;
+	bool cp_retried;
 
 	bool busy;
 	struct bt_vocs_control cp;

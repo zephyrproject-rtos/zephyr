@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2021, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		uart-6 = &uart6;
+	};
+
+	chosen {
+		zephyr,console = &uart6;
+		zephyr,shell-uart = &uart6;
+	};
+};
+
+&uart6 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&p13_0_uart6_rx &p13_1_uart6_tx>;
+};

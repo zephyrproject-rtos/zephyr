@@ -313,7 +313,7 @@ static int bmp388_attr_set(const struct device *dev,
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	struct bmp388_data *data = DEV_DATA(dev);
 
-	if (data->device_power_state != DEVICE_PM_ACTIVE_STATE) {
+	if (data->device_power_state != PM_DEVICE_STATE_ACTIVE) {
 		return -EBUSY;
 	}
 #endif
@@ -348,7 +348,7 @@ static int bmp388_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	if (bmp388->device_power_state != DEVICE_PM_ACTIVE_STATE) {
+	if (bmp388->device_power_state != PM_DEVICE_STATE_ACTIVE) {
 		return -EBUSY;
 	}
 #endif
@@ -557,10 +557,10 @@ static int bmp388_set_power_state(const struct device *dev,
 		return 0;
 	}
 
-	if (power_state == DEVICE_PM_ACTIVE_STATE) {
+	if (power_state == PM_DEVICE_STATE_ACTIVE) {
 		reg_val = BMP388_PWR_CTRL_MODE_NORMAL;
-	} else if ((power_state == DEVICE_PM_SUSPEND_STATE) ||
-		   (power_state == DEVICE_PM_OFF_STATE)) {
+	} else if ((power_state == PM_DEVICE_STATE_SUSPEND) ||
+		   (power_state == PM_DEVICE_STATE_OFF)) {
 		reg_val = BMP388_PWR_CTRL_MODE_SLEEP;
 	} else {
 		return 0;
@@ -590,14 +590,14 @@ static int bmp388_device_ctrl(
 	const struct device *dev,
 	uint32_t ctrl_command,
 	void *context,
-	device_pm_cb cb,
+	pm_device_cb cb,
 	void *arg)
 {
 	int ret = 0;
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		ret = bmp388_set_power_state(dev, *((uint32_t *)context));
-	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
 		*((uint32_t *)context) = bmp388_get_power_state(dev);
 	}
 
@@ -672,7 +672,7 @@ static int bmp388_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-	bmp388->device_power_state = DEVICE_PM_ACTIVE_STATE;
+	bmp388->device_power_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	/* Read calibration data */
@@ -738,7 +738,7 @@ static int bmp388_init(const struct device *dev)
 
 #if defined(CONFIG_BMP388_TRIGGER)
 #define BMP388_INT_CFG(inst) \
-	.gpio_int = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), int_gpios),
+	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, int_gpios),
 #else
 #define BMP388_INT_CFG(inst)
 #endif

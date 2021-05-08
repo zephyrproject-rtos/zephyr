@@ -532,7 +532,7 @@ static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
+	shell_print(ctx_shell, "BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
 		    "nse 0x%02x, interval 0x%04x (%u ms), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
 		    "max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
 		    "%sencrypted",
@@ -2097,6 +2097,13 @@ static int cmd_conn_update(const struct shell *shell, size_t argc, char *argv[])
 	struct bt_le_conn_param param;
 	int err;
 
+	if (default_conn == NULL) {
+		shell_error(shell,
+				"%s: at least, one connection is required",
+				shell->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
+
 	param.interval_min = strtoul(argv[1], NULL, 16);
 	param.interval_max = strtoul(argv[2], NULL, 16);
 	param.latency = strtoul(argv[3], NULL, 16);
@@ -2139,6 +2146,13 @@ static int cmd_conn_data_len_update(const struct shell *shell, size_t argc,
 	struct bt_conn_le_data_len_param param;
 	int err;
 
+	if (default_conn == NULL) {
+		shell_error(shell,
+				"%s: at least, one connection is required",
+				shell->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
+
 	param.tx_max_len = strtoul(argv[1], NULL, 10);
 
 	if (argc > 2) {
@@ -2178,6 +2192,13 @@ static int cmd_conn_phy_update(const struct shell *shell, size_t argc,
 {
 	struct bt_conn_le_phy_param param;
 	int err;
+
+	if (default_conn == NULL) {
+		shell_error(shell,
+				"%s: at least, one connection is required",
+				shell->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
 
 	param.pref_tx_phy = strtoul(argv[1], NULL, 16);
 	param.pref_rx_phy = param.pref_tx_phy;

@@ -17,6 +17,7 @@
 &pwt {
 	status = "okay";
 	prescaler = <32>;
+	pinctrl-0 = <&PWT_IN1_PTE11>;
 };
 
 &ftm2 {
@@ -24,4 +25,5 @@
 	compatible = "nxp,kinetis-ftm-pwm";
 	prescaler = <128>;
 	#pwm-cells = <3>;
+	pinctrl-0 = <&FTM2_CH6_PTE15>;
 };

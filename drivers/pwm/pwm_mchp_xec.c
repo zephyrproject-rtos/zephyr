@@ -389,7 +389,7 @@ static struct pwm_driver_api pwm_xec_api = {
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    pwm_xec_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    NULL,					\
 			    &pwm_xec_dev_config_##inst,			\
 			    POST_KERNEL,				\

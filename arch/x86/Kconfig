@@ -370,6 +370,7 @@ config X86_MAX_ADDITIONAL_MEM_DOMAINS
 
 config X86_EXTRA_PAGE_TABLE_PAGES
 	int "Reserve extra pages in page table"
+	default 1 if X86_PAE && (KERNEL_VM_BASE != SRAM_BASE_ADDRESS)
 	default 0
 	depends on X86_MMU
 	help

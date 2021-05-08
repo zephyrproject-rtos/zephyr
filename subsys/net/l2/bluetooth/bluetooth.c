@@ -119,6 +119,7 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 	if (ret < 0) {
 		NET_ERR("Unable to send packet: %d", ret);
 		bt_l2cap_chan_disconnect(&conn->ipsp_chan.chan);
+		net_buf_unref(buffer);
 		return ret;
 	}
 
@@ -319,7 +320,7 @@ static int ipsp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	struct bt_if_conn *if_conn = NULL;
 	int i;
 
-	NET_DBG("Incoming conn %p", conn);
+	NET_DBG("Incoming conn %p", (void *)conn);
 
 	/* Find unused slot to store the iface */
 	for (i = 0; i < CONFIG_BT_MAX_CONN; i++) {
@@ -629,8 +630,7 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_SCAN, bt_scan);
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_DISCONNECT, bt_disconnect);
 #endif
 
-DEVICE_DEFINE(net_bt, "net_bt", net_bt_init, device_pm_control_nop,
-	      &bt_context_data, NULL, POST_KERNEL,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &bt_if_api);
+DEVICE_DEFINE(net_bt, "net_bt", net_bt_init, NULL, &bt_context_data, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &bt_if_api);
 NET_L2_DATA_INIT(net_bt, 0, NET_L2_GET_CTX_TYPE(BLUETOOTH_L2));
 NET_IF_INIT(net_bt, 0, BLUETOOTH_L2, L2CAP_IPSP_MTU, CONFIG_BT_MAX_CONN);

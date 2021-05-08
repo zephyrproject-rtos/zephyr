@@ -892,7 +892,7 @@ static struct flash_stm32_qspi_data flash_stm32_qspi_dev_data = {
 	QSPI_DMA_CHANNEL(STM32_QSPI_NODE, tx_rx)
 };
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_qspi_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &flash_stm32_qspi_init, NULL,
 		      &flash_stm32_qspi_dev_data, &flash_stm32_qspi_cfg,
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &flash_stm32_qspi_driver_api);

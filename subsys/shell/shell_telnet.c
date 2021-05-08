@@ -30,7 +30,7 @@ struct shell_telnet *sh_telnet;
 #define TELNET_LINE_SIZE CONFIG_SHELL_TELNET_LINE_BUF_SIZE
 #define TELNET_TIMEOUT   CONFIG_SHELL_TELNET_SEND_TIMEOUT
 
-#define TELNET_MIN_MSG 2
+#define TELNET_MIN_COMMAND_LEN 2
 
 /* Basic TELNET implmentation. */
 
@@ -196,14 +196,12 @@ static void telnet_recv(struct net_context *client,
 	}
 
 	len = net_pkt_remaining_data(pkt);
-	if (len < TELNET_MIN_MSG) {
-		LOG_DBG("Packet smaller than minimum length");
-		goto unref;
-	}
 
-	if (telnet_handle_command(pkt)) {
-		LOG_DBG("Handled command");
-		goto unref;
+	if (len >= TELNET_MIN_COMMAND_LEN) {
+		if (telnet_handle_command(pkt)) {
+			LOG_DBG("Handled command");
+			goto unref;
+		}
 	}
 
 	/* Fifo add */

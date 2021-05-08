@@ -181,7 +181,7 @@ static int i2s_stm32_set_clock(const struct device *dev,
 }
 
 static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
-			       struct i2s_config *i2s_cfg)
+			       const struct i2s_config *i2s_cfg)
 {
 	const struct i2s_stm32_cfg *const cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
@@ -193,6 +193,8 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		stream = &dev_data->rx;
 	} else if (dir == I2S_DIR_TX) {
 		stream = &dev_data->tx;
+	} else if (dir == I2S_DIR_BOTH) {
+		return -ENOSYS;
 	} else {
 		LOG_ERR("Either RX or TX direction must be selected");
 		return -EINVAL;
@@ -296,6 +298,8 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 		stream = &dev_data->rx;
 	} else if (dir == I2S_DIR_TX) {
 		stream = &dev_data->tx;
+	} else if (dir == I2S_DIR_BOTH) {
+		return -ENOSYS;
 	} else {
 		LOG_ERR("Either RX or TX direction must be selected");
 		return -EINVAL;
@@ -869,7 +873,7 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 		.channel_direction = src_dev##_TO_##dest_dev,		\
 		.source_data_size = 2,  /* 16bit default */		\
 		.dest_data_size = 2,    /* 16bit default */		\
-		.source_burst_length = 0, /* SINGLE transfer */		\
+		.source_burst_length = 1, /* SINGLE transfer */		\
 		.dest_burst_length = 1,					\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
 	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
@@ -890,7 +894,7 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 
 #define I2S_INIT(index, clk_sel)					\
 static const struct soc_gpio_pinctrl i2s_pins_##index[] =		\
-				     ST_STM32_DT_INST_PINCTRL(index, 0);\
+				     ST_STM32_DT_PINCTRL(i2s##index, 0);\
 									\
 static void i2s_stm32_irq_config_func_##index(const struct device *dev);\
 									\
@@ -916,7 +920,7 @@ static struct i2s_stm32_data i2s_stm32_data_##index = {			\
 		I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL)),\
 };									\
 DEVICE_DT_DEFINE(DT_NODELABEL(i2s##index),				\
-		    &i2s_stm32_initialize, device_pm_control_nop,	\
+		    &i2s_stm32_initialize, NULL,			\
 		    &i2s_stm32_data_##index,				\
 		    &i2s_stm32_config_##index, POST_KERNEL,		\
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);	\

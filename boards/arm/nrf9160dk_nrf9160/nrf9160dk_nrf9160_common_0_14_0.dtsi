@@ -24,8 +24,8 @@
 &i2c2 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-gpios = <&gpio0 30 0>;
-	scl-gpios = <&gpio0 31 0>;
+	sda-pin = <30>;
+	scl-pin = <31>;
 
 	pcal6408a: pcal6408a@20 {
 		compatible = "nxp,pcal6408a";

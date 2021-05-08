@@ -16,7 +16,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <sys/printk.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 

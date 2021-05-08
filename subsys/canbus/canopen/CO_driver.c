@@ -472,9 +472,9 @@ static int canopen_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	k_work_q_start(&canopen_tx_workq, canopen_tx_workq_stack,
-		       K_KERNEL_STACK_SIZEOF(canopen_tx_workq_stack),
-		       CONFIG_CANOPEN_TX_WORKQUEUE_PRIORITY);
+	k_work_queue_start(&canopen_tx_workq, canopen_tx_workq_stack,
+			   K_KERNEL_STACK_SIZEOF(canopen_tx_workq_stack),
+			   CONFIG_CANOPEN_TX_WORKQUEUE_PRIORITY, NULL);
 
 	k_work_init(&canopen_tx_queue.work, canopen_tx_retry);
 

@@ -109,9 +109,8 @@ static const struct pinmux_lpc11u6x_config			\
 };								\
 								\
 DEVICE_DT_INST_DEFINE(id, &pinmux_lpc11u6x_init,		\
-		    device_pm_control_nop, NULL,		\
-		    &pinmux_lpc11u6x_config_##id, PRE_KERNEL_1,	\
-		    CONFIG_PINMUX_INIT_PRIORITY,		\
+		    NULL, NULL, &pinmux_lpc11u6x_config_##id,	\
+		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,	\
 		    &pinmux_lpc11u6x_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PINMUX_LPC11U6X_INIT)

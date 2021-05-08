@@ -27,6 +27,8 @@ static void dir_list_object_encode(struct bt_gatt_ots_object *obj,
 {
 	uint8_t flags = 0;
 	uint8_t *start;
+	uint16_t len;
+	size_t obj_name_len;
 
 	BT_OTS_DIR_LIST_SET_FLAG_PROPERTIES(flags);
 	BT_OTS_DIR_LIST_SET_FLAG_CUR_SIZE(flags);
@@ -41,7 +43,10 @@ static void dir_list_object_encode(struct bt_gatt_ots_object *obj,
 	net_buf_simple_add_le48(net_buf, obj->id);
 
 	/* Name length */
-	net_buf_simple_add_u8(net_buf, strlen(obj->metadata.name));
+	obj_name_len = strlen(obj->metadata.name);
+	__ASSERT(obj_name_len > 0 && obj_name_len <= BT_OTS_OBJ_MAX_NAME_LEN,
+		 "Dir list object len is incorrect %zu", len);
+	net_buf_simple_add_u8(net_buf, obj_name_len);
 
 	/* Name */
 	net_buf_simple_add_mem(net_buf, obj->metadata.name,
@@ -64,8 +69,15 @@ static void dir_list_object_encode(struct bt_gatt_ots_object *obj,
 	/* Object properties */
 	net_buf_simple_add_le32(net_buf, obj->metadata.props);
 
+	len = net_buf_simple_tail(net_buf) - start;
+
+	__ASSERT(len >= DIR_LIST_OBJ_RECORD_MIN_SIZE,
+		 "Dir list object len is too small %u", len);
+	__ASSERT(len <= DIR_LIST_OBJ_RECORD_MAX_SIZE,
+		 "Dir list object len is too large %u", len);
+
 	/* Update the record length at the beginning */
-	sys_put_le16(net_buf_simple_tail(net_buf) - start, start);
+	sys_put_le16(len, start);
 }
 
 void bt_ots_dir_list_obj_add(struct bt_ots_dir_list *dir_list, void *obj_manager,
@@ -112,10 +124,20 @@ void bt_ots_dir_list_obj_remove(struct bt_ots_dir_list *dir_list, void *obj_mana
 	}
 
 	while (offset < dir_list->net_buf.len) {
-		uint16_t len = sys_get_le16(dir_list->net_buf.data + offset);
-		uint64_t id = sys_get_le64(dir_list->net_buf.data + offset + sizeof(len));
+		uint16_t len;
+		uint64_t id;
+
+		__ASSERT((DIR_LIST_OBJ_RECORD_MIN_SIZE + offset) <= dir_list->net_buf.len,
+			 "Invalid dir_list buf length %u, expected at least %u",
+			 dir_list->net_buf.len, DIR_LIST_OBJ_RECORD_MIN_SIZE + offset);
+
+		len = sys_get_le16(dir_list->net_buf.data + offset);
+		id = sys_get_le64(dir_list->net_buf.data + offset + sizeof(len));
 
 		__ASSERT(len, "Invalid object length");
+		__ASSERT((len + offset) <= dir_list->net_buf.len,
+			 "Invalid dir_list buf length %u, expected at least %u",
+			 dir_list->net_buf.len, len + offset);
 
 		if (id == obj->id) {
 			/* Delete object by moving memory after the object to
@@ -198,8 +220,9 @@ void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
 
 	__ASSERT(*dir_list, "Could not assign Directory Listing Object");
 
-	__ASSERT(strlen(dir_list_obj_name) < UINT8_MAX,
-		 "BT_OTS_DIR_LIST_OBJ_NAME shall be less than 255 octets");
+	__ASSERT(strlen(dir_list_obj_name) <= BT_OTS_OBJ_MAX_NAME_LEN,
+		 "BT_OTS_DIR_LIST_OBJ_NAME shall be less than %u octets",
+		 BT_OTS_OBJ_MAX_NAME_LEN);
 
 	err = bt_gatt_ots_obj_manager_obj_add(obj_manager, &dir_list_obj);
 

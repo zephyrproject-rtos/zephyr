@@ -12,4 +12,7 @@ source "soc/arm/st_stm32/stm32f0/Kconfig.defconfig.stm32f0*"
 config SOC_SERIES
 	default "stm32f0"
 
+config SRAM_VECTOR_TABLE
+	default y
+
 endif # SOC_SERIES_STM32F0X

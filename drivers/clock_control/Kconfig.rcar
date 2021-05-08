@@ -1,0 +1,10 @@
+# Renesas RCar Gen3
+
+# Copyright (c) 2021 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RCAR_CPG_MSSR
+	bool "RCar CPG MSSR driver"
+	depends on SOC_SERIES_RCAR_GEN3
+	help
+	  Enable support for Renesas RCar CPG MSSR driver.

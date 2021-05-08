@@ -24,10 +24,29 @@ config CAN_SHELL
 	help
 	  Enable CAN Shell for testing.
 
-config CAN_FD_MODE
+config CAN_HAS_CANFD
 	bool
 	help
+	  driver supports CAN-FD
+
+config CAN_FD_MODE
+	bool "CAN-FD"
+	default y
+	depends on CAN_HAS_CANFD
+	help
 	  Enable CAN-FD compatible API
+
+if CAN_FD_MODE
+
+config CANFD_MAX_DLC
+	int "Max data length code in CAN frames"
+	range 8 15
+	default 15
+	help
+	  Maximum allowed DLC in a CAN frame. This parameter sets the
+	  data buffer size in a CAN frame and is therefore only used to
+	  optimize memory consumption.
+endif # CAN_FD_MODE
 
 config CAN_INIT_PRIORITY
 	int "CAN driver init priority"
@@ -47,7 +66,7 @@ config CAN_WORKQ_FRAMES_BUF_CNT
 
 config CAN_RX_TIMESTAMP
 	bool "Enable receiving timestamps"
-	depends on CAN_STM32 || CAN_MCUX_FLEXCAN
+	depends on CAN_STM32 || CAN_MCUX_FLEXCAN || CAN_STM32FD
 	help
 	  This option enables a timestamp value of the CAN free running timer.
 	  The value is incremented every bit time and starts when the controller
@@ -63,8 +82,10 @@ config CAN_AUTO_BUS_OFF_RECOVERY
 	  available.
 
 source "drivers/can/Kconfig.stm32"
+source "drivers/can/Kconfig.stm32fd"
 source "drivers/can/Kconfig.mcux"
 source "drivers/can/Kconfig.mcp2515"
+source "drivers/can/Kconfig.mcan"
 source "drivers/can/Kconfig.loopback"
 source "drivers/can/Kconfig.net"
 

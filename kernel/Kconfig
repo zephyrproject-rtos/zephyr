@@ -10,11 +10,9 @@ module-str = kernel
 source "subsys/logging/Kconfig.template.log_config"
 
 config MULTITHREADING
-	bool "Multi-threading (DEPRECATED)"
+	bool "Multi-threading"
 	default y
 	help
-	  Disabling this option is DEPRECATED.
-
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
 	  probably not behave as expected, especially with regards to pending,
@@ -24,11 +22,6 @@ config MULTITHREADING
 	  Many drivers and subsystems will not work with this option
 	  set to 'n'; disable only when you REALLY know what you are
 	  doing.
-
-if !MULTITHREADING
-comment "*** WARNING ***"
-comment "Single threaded mode (MULTITHREADING option disabled) is deprecated"
-endif
 
 config NUM_COOP_PRIORITIES
 	int "Number of coop priorities" if MULTITHREADING
@@ -562,7 +555,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 
 	  For asynchronous timekeeping, the kernel defines a "ticks" concept. A
 	  "tick" is the internal count in which the kernel does all its internal
-	  uptime and timeout bookeeping. Interrupts are expected to be delivered
+	  uptime and timeout bookkeeping. Interrupts are expected to be delivered
 	  on tick boundaries to the extent practical, and no fractional ticks
 	  are tracked.
 
@@ -791,6 +784,14 @@ config SMP
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
+
+config SMP_BOOT_DELAY
+	bool "Delay booting secondary cores"
+	depends on SMP
+	help
+	  By default Zephyr will boot all available CPUs during start up.
+	  Select this option to skip this and allow architecture code boot
+	  secondary CPUs at a later time.
 
 config MP_NUM_CPUS
 	int "Number of CPUs/cores"

@@ -394,7 +394,7 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 	};														\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-		&mcux_lpadc_init, device_pm_control_nop, &mcux_lpadc_data_##n,	\
+		&mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,			\
 		&mcux_lpadc_config_##n, POST_KERNEL,				\
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,					\
 		&mcux_lpadc_driver_api);							\

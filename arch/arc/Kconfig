@@ -39,6 +39,11 @@ config ISA_ARCV2
 	help
 	  v2 ISA for the ARC-HS & ARC-EM cores
 
+config ISA_ARCV3
+	bool "ARC ISA v3"
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+
 endchoice
 
 if ISA_ARCV2
@@ -83,10 +88,33 @@ config CPU_HS3X
 
 endif #ISA_ARCV2
 
+if ISA_ARCV3
+
+config CPU_HS6X
+	bool
+	select CPU_ARCHS
+	select 64BIT
+	help
+	  If y, the SoC uses an ARC HS6x CPU
+
+endif #ISA_ARCV3
+
 config FP_FPU_DA
 	bool
 
 menu "ARC CPU Options"
+
+config ARC_HAS_ZOL
+	bool
+	depends on ISA_ARCV2
+	default y
+	help
+	  ARCv2 CPUs have ZOL hardware loop mechanism which the ARCv3 ISA drops.
+	  Architecturally ZOL provides
+	  - LPcc instruction
+	  - LP_COUNT core reg
+	  - LP_START, LP_END aux regs
+	  Disabling this option removes usage of ZOL regs from code
 
 config NUM_IRQ_PRIO_LEVELS
 	int "Number of supported interrupt priority levels"
@@ -123,6 +151,7 @@ config RGF_NUM_BANKS
 
 config ARC_FIRQ
 	bool "FIRQ enable"
+	depends on ISA_ARCV2
 	default y
 	help
 	  Fast interrupts are supported (FIRQ). If FIRQ enabled, for interrupts
@@ -147,6 +176,7 @@ config ARC_FIRQ_STACK_SIZE
 
 config ARC_HAS_STACK_CHECKING
 	bool "ARC has STACK_CHECKING"
+	depends on ISA_ARCV2
 	default y
 	help
 	  ARC is configured with STACK_CHECKING which is a mechanism for
@@ -233,6 +263,7 @@ config ARC_HAS_ACCL_REGS
 
 config ARC_HAS_SECURE
 	bool "ARC has SecureShield"
+	depends on ISA_ARCV2
 	select CPU_HAS_TEE
 	select ARCH_HAS_TRUSTED_EXECUTION
 	help
@@ -320,3 +351,15 @@ config ARC_EXCEPTION_DEBUG
 	  strings.
 
 endmenu
+
+config MAIN_STACK_SIZE
+	default 4096 if 64BIT
+
+config TEST_EXTRA_STACKSIZE
+	default 1024 if 64BIT
+
+config CMSIS_THREAD_MAX_STACK_SIZE
+	default 1024 if 64BIT
+
+config CMSIS_V2_THREAD_MAX_STACK_SIZE
+	default 1024 if 64BIT

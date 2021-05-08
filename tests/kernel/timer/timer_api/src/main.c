@@ -82,7 +82,10 @@ static void init_timer_data(void)
 	tdata.expire_cnt = 0;
 	tdata.stop_cnt = 0;
 
-	k_usleep(1); /* align to tick */
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_usleep(1); /* align to tick */
+	}
+
 	tdata.timestamp = k_uptime_get();
 }
 
@@ -640,7 +643,15 @@ void test_timer_user_data(void)
 			      K_NO_WAIT);
 	}
 
-	k_msleep(50 * ii + 50);
+	uint32_t wait_ms = 50 * ii + 50;
+
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_msleep(wait_ms);
+	} else {
+		uint32_t wait_us = 1000 * wait_ms;
+
+		k_busy_wait(wait_us + (wait_us * BUSY_TICK_SLEW_PPM) / PPM_DIVISOR);
+	}
 
 	for (ii = 0; ii < 5; ii++) {
 		k_timer_stop(user_data_timer[ii]);
@@ -752,7 +763,10 @@ void test_timeout_abs(void)
 	 */
 	init_timer_data();
 	k_timer_start(&remain_timer, t, K_FOREVER);
-	k_usleep(1);
+
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_usleep(1);
+	}
 
 	do {
 		t0 = k_uptime_ticks();
@@ -771,6 +785,11 @@ void test_timeout_abs(void)
 
 void test_sleep_abs(void)
 {
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		/* k_sleep is not supported when multithreading is off. */
+		return;
+	}
+
 	const int sleep_ticks = 50;
 	int64_t start, end;
 
@@ -795,7 +814,10 @@ void test_sleep_abs(void)
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
 		       k_timer_stop_t stop_fn)
 {
-	k_object_access_grant(timer, k_current_get());
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_object_access_grant(timer, k_current_get());
+	}
+
 	k_timer_init(timer, expiry_fn, stop_fn);
 }
 
@@ -811,8 +833,10 @@ void test_main(void)
 	timer_init(&status_sync_timer, duration_expire, duration_stop);
 	timer_init(&remain_timer, duration_expire, duration_stop);
 
-	k_thread_access_grant(k_current_get(), &ktimer, &timer0, &timer1,
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_thread_access_grant(k_current_get(), &ktimer, &timer0, &timer1,
 			      &timer2, &timer3, &timer4);
+	}
 
 	ztest_test_suite(timer_api,
 			 ztest_unit_test(test_time_conversions),

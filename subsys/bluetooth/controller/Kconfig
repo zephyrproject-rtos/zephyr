@@ -172,40 +172,18 @@ config BT_CTLR_RX_BUFFERS
 	  connection interval and 2M PHY, maximum 18 packets with L2CAP payload
 	  size of 1 byte can be received.
 
-config BT_CTLR_TX_BUFFERS
-	int "Number of Tx buffers"
-	default 7 if BT_HCI_RAW
-	default 3
-	range 1 19
-	help
-	  Set the number of Tx PDUs to be queued for transmission in the
-	  controller. In a 7.5ms connection interval and 2M PHY, maximum 19
-	  packets can be enqueued, with 18 packets with L2CAP payload size of 1
-	  byte can be acknowledged.
-
-config BT_CTLR_TX_BUFFER_SIZE
-	int "Tx buffer size"
-	range 27 251
-	default 27
-	help
-	  Size of the Tx buffers and the value returned in HCI LE Read Buffer
-	  Size command response. If this size if greater than effective PDU size
-	  then controller will perform fragmentation before transmitting on the
-	  the packet on air.
-	  Maximum is set to 251 due to implementation limitations (use of
-	  uint8_t for length field in PDU buffer structure).
-
 config BT_CTLR_ISO_TX_BUFFERS
 	int "Number of Isochronous Tx buffers"
-	default 3
-	range 1 19
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
+	range 1 19
+	default 3
 	help
 	  Set the number of Isochronous Tx PDUs to be queued for transmission
 	  in the controller.
 
 config BT_CTLR_ISO_TX_BUFFER_SIZE
 	int "Isochronous Tx buffer size"
+	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
 	range 1 4095
 	default 27
 	help
@@ -345,6 +323,7 @@ config BT_CTLR_DATA_LENGTH_MAX
 	int "Maximum data length supported"
 	depends on BT_CTLR_DATA_LENGTH
 	default 27
+	range 27 BT_BUF_ACL_RX_SIZE if BT_BUF_ACL_RX_SIZE < 251
 	range 27 251
 	help
 	  Set the maximum data length of PDU supported in the Controller.
@@ -469,6 +448,13 @@ config BT_CTLR_ADV_SET
 	help
 	  Maximum supported advertising sets.
 
+config BT_CTLR_ADV_DATA_LEN_MAX
+	int "Maximum Advertising Data Length"
+	range 31 1650
+	default 251
+	help
+	  Maximum Extended Advertising Data Length.
+
 config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising in Advertising State" if !BT_LL_SW_SPLIT
 	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_SUPPORT
@@ -497,6 +483,7 @@ config BT_CTLR_ADV_ISO
 	bool "LE Broadcast Isochronous Channel advertising" if !BT_LL_SW_SPLIT
 	depends on BT_BROADCASTER && BT_CTLR_ADV_ISO_SUPPORT
 	select BT_CTLR_ADV_PERIODIC
+	select BT_CTLR_SET_HOST_FEATURE
 	help
 	  Enable support for Bluetooth 5.2 LE Isochronous Advertising in the
 	  Controller.
@@ -508,6 +495,7 @@ config BT_CTLR_SYNC_ISO
 	bool "LE Broadcast Isochronous Channel advertising sync" if !BT_LL_SW_SPLIT
 	depends on BT_OBSERVER && BT_CTLR_SYNC_ISO_SUPPORT
 	select BT_CTLR_SYNC_PERIODIC
+	select BT_CTLR_SET_HOST_FEATURE
 	help
 	  Enable support for Bluetooth 5.2 LE Isochronous Advertising sync in
 	  the Controller.
@@ -527,11 +515,22 @@ config BT_CTLR_ADV_ISO_SET
 	help
 	  Maximum supported advertising sets.
 
-config BT_CTLR_ADV_DATA_LEN_MAX
-	int "Maximum Advertising Data Length"
-	range 31 1650
+config BT_CTLR_ADV_ISO_PDU_LEN_MAX
+	int "Maximum Broadcast Isochronous Channel PDU Length"
+	depends on BT_CTLR_ADV_ISO
+	range 27 251
+	default 251
 	help
-	  Maximum Extended Advertising Data Length.
+	  Maximum Broadcast Isochronous Channel PDU Length.
+
+config BT_CTLR_SYNC_ISO_PDU_LEN_MAX
+	int "Maximum Synchronized Isochronous Channel PDU Length"
+	depends on BT_CTLR_SYNC_ISO
+	range 251 251 if BT_HCI_RAW
+	range 27 251
+	default 251
+	help
+	  Maximum Synchronized Receiver Isochronous Channel PDU Length.
 
 endif # BT_CTLR_ADV_EXT
 

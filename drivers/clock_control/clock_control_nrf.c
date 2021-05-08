@@ -501,7 +501,7 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		 * happen before calling idle. That would lead to deadlock.
 		 */
 		if (!IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH)) {
-			if (isr_mode) {
+			if (isr_mode || !IS_ENABLED(CONFIG_MULTITHREADING)) {
 				k_cpu_atomic_idle(key);
 			} else {
 				k_msleep(1);
@@ -702,7 +702,7 @@ static const struct nrf_clock_control_config config = {
 	}
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(clock), clk_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(DT_NODELABEL(clock), clk_init, NULL,
 		 &data, &config,
 		 PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		 &clock_control_api);

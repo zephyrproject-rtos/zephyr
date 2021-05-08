@@ -130,7 +130,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 		goto out;
 	}
 
-	/* Then enable the interrupt in CAVS interrupt controller */
+	/* Then check the interrupt in CAVS interrupt controller */
 	ret = irq_line_is_enabled_next_level(dev_cavs, CAVS_IRQ_NUMBER(irq));
 
 out:

@@ -610,7 +610,7 @@ static const struct flash_esp32_dev_config flash_esp32_config = {
 };
 
 DEVICE_DT_INST_DEFINE(0, flash_esp32_init,
-		      device_pm_control_nop,
+		      NULL,
 		      &flash_esp32_data, &flash_esp32_config,
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &flash_esp32_driver_api);

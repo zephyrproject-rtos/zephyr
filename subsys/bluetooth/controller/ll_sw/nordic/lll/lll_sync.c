@@ -11,6 +11,7 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
+#include "hal/radio_df.h"
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -21,11 +22,15 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_chan.h"
+#include "lll_df_types.h"
 #include "lll_sync.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
+
+#include "lll_df.h"
+#include "lll_df_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_sync
@@ -35,7 +40,13 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
+static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx(void *param);
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
+				    uint8_t packet_status);
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
 int lll_sync_init(void)
 {
@@ -65,7 +76,6 @@ void lll_sync_prepare(void *param)
 {
 	struct lll_prepare_param *p;
 	struct lll_sync *lll;
-	uint16_t elapsed;
 	int err;
 
 	/* Request to start HF Clock */
@@ -74,23 +84,17 @@ void lll_sync_prepare(void *param)
 
 	p = param;
 
-	/* Instants elapsed */
-	elapsed = p->lazy + 1;
-
 	lll = p->param;
-
-	/* Save the (skip + 1) for use in event */
-	lll->skip_prepare += elapsed;
 
 	/* Accumulate window widening */
 	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   elapsed;
+					   (p->lazy + 1);
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, lll_abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -116,14 +120,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll = p->param;
 
-	/* Deduce the skip */
-	lll->skip_event = lll->skip_prepare - 1;
+	/* Calculate the current event latency */
+	lll->skip_event = lll->skip_prepare + p->lazy;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->skip_event;
 
 	/* Update event counter to next value */
-	lll->event_counter = lll->event_counter + lll->skip_prepare;
+	lll->event_counter = (event_counter + 1);
 
 	/* Reset accumulated latencies */
 	lll->skip_prepare = 0;
@@ -165,11 +169,31 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	lll_chan_set(data_chan_use);
 
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	struct lll_df_sync_cfg *cfg;
+
+	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
+
+	if (cfg->is_enabled) {
+		lll_df_conf_cte_rx_enable(cfg->slot_durations,
+					  cfg->ant_sw_len,
+					  cfg->ant_ids);
+		cfg->cte_count = 0;
+	}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
 	radio_isr_set(isr_rx, lll);
 
 	radio_tmr_tifs_set(EVENT_IFS_US);
 
-	radio_switch_complete_and_disable();
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	if (cfg->is_enabled) {
+		radio_switch_complete_and_phy_end_disable();
+	} else
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	{
+		radio_switch_complete_and_disable();
+	}
 
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
@@ -222,6 +246,35 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	DEBUG_RADIO_START_O(1);
 	return 0;
+}
+
+static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
+{
+	struct lll_sync *lll;
+	int err;
+
+	/* NOTE: This is not a prepare being cancelled */
+	if (!prepare_param) {
+		/* Perform event abort here.
+		 * After event has been cleanly aborted, clean up resources
+		 * and dispatch event done.
+		 */
+		radio_isr_set(lll_isr_done, param);
+		radio_disable();
+		return;
+	}
+
+	/* NOTE: Else clean the top half preparations of the aborted event
+	 * currently in preparation pipeline.
+	 */
+	err = lll_hfclock_off();
+	LL_ASSERT(err >= 0);
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
+	lll = prepare_param->param;
+	lll->skip_prepare += (prepare_param->lazy + 1);
+
+	lll_done(param);
 }
 
 static void isr_rx(void *param)
@@ -280,9 +333,25 @@ static void isr_rx(void *param)
 								     1);
 
 			ull_rx_put(node_rx->hdr.link, node_rx);
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+			create_iq_report(lll, rssi_ready, BT_HCI_LE_CTE_CRC_OK);
+
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 			ull_rx_sched();
 		}
 	}
+#if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
+	else {
+		int err;
+
+		err = create_iq_report(lll, rssi_ready,
+				       BT_HCI_LE_CTE_CRC_ERR_CTE_BASED_TIME);
+		if (!err) {
+			ull_rx_sched();
+		}
+	}
+#endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 
 isr_rx_done:
 	/* Calculate and place the drift information in done event */
@@ -305,3 +374,52 @@ isr_rx_done:
 
 	lll_isr_cleanup(param);
 }
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
+				   uint8_t packet_status)
+{
+	struct node_rx_iq_report *iq_report;
+	struct lll_df_sync_cfg *cfg;
+	struct node_rx_ftr *ftr;
+	uint8_t sample_cnt;
+	uint8_t cte_info;
+	uint8_t ant;
+
+	cfg = lll_df_sync_cfg_curr_get(&lll->df_cfg);
+
+	if (cfg->is_enabled) {
+
+		if (cfg->cte_count < cfg->max_cte_count) {
+			sample_cnt = radio_df_iq_samples_amount_get();
+
+			/* If there are no samples available, the CTEInfo was
+			 * not detected and sampling was not started.
+			 */
+			if (sample_cnt > 0) {
+				cte_info = radio_df_cte_status_get();
+				ant = radio_df_pdu_antenna_switch_pattern_get();
+				iq_report = ull_df_iq_report_alloc();
+
+				iq_report->hdr.type = NODE_RX_TYPE_IQ_SAMPLE_REPORT;
+				iq_report->sample_count = sample_cnt;
+				iq_report->packet_status = packet_status;
+				iq_report->rssi_ant_id = ant;
+				iq_report->cte_info = *(struct pdu_cte_info *)&cte_info;
+				iq_report->local_slot_durations = cfg->slot_durations;
+
+				ftr = &iq_report->hdr.rx_ftr;
+				ftr->param = lll;
+				ftr->rssi = ((rssi_ready) ? radio_rssi_get() :
+					     BT_HCI_LE_RSSI_NOT_AVAILABLE);
+
+				ull_rx_put(iq_report->hdr.link, iq_report);
+			} else {
+				return -ENODATA;
+			}
+		}
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */

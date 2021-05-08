@@ -1,0 +1,12 @@
+/*
+* Copyright (c) 2020, NXP
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
+&adc0 {
+	clk-source = <0>;
+	hw-trigger-src = <4>;
+	continuous-convert;
+	high-speed;
+	periodic-trigger;
+};

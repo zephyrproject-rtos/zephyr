@@ -233,7 +233,7 @@ struct bt_recv_job_data {
 	struct k_work work;  /* Work item */
 	struct k_sem *sync;  /* Semaphore to synchronize with */
 	struct net_buf *buf; /* Net buffer to be passed to bt_recv() */
-} job_data[CONFIG_BT_RX_BUF_COUNT];
+} job_data[CONFIG_BT_BUF_EVT_RX_COUNT];
 
 #define job(buf) (&job_data[net_buf_id(buf)])
 

@@ -32,9 +32,9 @@
 	#define MCO2_SOURCE		LL_RCC_MCO2SOURCE_PLLCLK
 #endif
 
-#ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
+#if STM32_SYSCLK_SRC_PLL
 void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit);
-#endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
+#endif /* STM32_SYSCLK_SRC_PLL */
 void config_enable_default_clocks(void);
 
 /* Section for functions not available in every Cube packages */

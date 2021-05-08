@@ -1,0 +1,14 @@
+# ST Microelectronics STM32F031X6 MCU
+
+# Copyright (c) 2021 Sebastian Schwabe <sebastian.schwabe@mailbox.tu-dresden.de>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F031X6
+
+config SOC
+	default "stm32f031x6"
+
+config NUM_IRQS
+	default 28
+
+endif # SOC_STM32F031X6

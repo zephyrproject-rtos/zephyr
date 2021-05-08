@@ -365,7 +365,7 @@ static const struct esp32_clock_config esp32_clock_config0 = {
 
 DEVICE_DT_INST_DEFINE(0,
 		    &clock_control_esp32_init,
-		    device_pm_control_nop,
+		    NULL,
 		    NULL, &esp32_clock_config0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
 		    &clock_control_esp32_api);

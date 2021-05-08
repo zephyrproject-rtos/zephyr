@@ -78,7 +78,7 @@ static uint8_t force_md_cnt;
 #define FORCE_MD_CNT_SET() \
 		do { \
 			if (force_md_cnt || \
-			    (trx_cnt >= ((CONFIG_BT_CTLR_TX_BUFFERS) - 1))) { \
+			    (trx_cnt >= ((CONFIG_BT_BUF_ACL_TX_COUNT) - 1))) { \
 				force_md_cnt = BT_CTLR_FORCE_MD_COUNT; \
 			} \
 		} while (0)
@@ -136,6 +136,7 @@ void lll_conn_prepare_reset(void)
 
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+	struct lll_conn *lll;
 	int err;
 
 	/* NOTE: This is not a prepare being cancelled */
@@ -154,6 +155,10 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 */
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
+	lll = prepare_param->param;
+	lll->latency_prepare += (prepare_param->lazy + 1);
 
 	lll_done(param);
 }

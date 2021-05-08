@@ -7,13 +7,13 @@ Logging
     :local:
     :depth: 2
 
-The logger API provides a common interface to process messages issued by
+The logging API provides a common interface to process messages issued by
 developers. Messages are passed through a frontend and are then
 processed by active backends.
 Custom frontend and backends can be used if needed.
 Default configuration uses built-in frontend and UART backend.
 
-Summary of logger features:
+Summary of the logging features:
 
 - Deferred logging reduces the time needed to log a message by shifting time
   consuming operations to a known context instead of processing and sending
@@ -26,13 +26,32 @@ Summary of logger features:
 - Timestamping with user provided function.
 - Dedicated API for dumping data.
 - Dedicated API for handling transient strings.
-- Panic support - in panic mode logger switches to blocking, synchronous
+- Panic support - in panic mode logging switches to blocking, synchronous
   processing.
-- Printk support - printk message can be redirected to the logger.
+- Printk support - printk message can be redirected to the logging.
 - Design ready for multi-domain/multi-processor system.
 
-Logger API is highly configurable at compile time as well as at run time. Using
-Kconfig options (see :ref:`logger_kconfig`) logs can be gradually removed from
+Logging v2 introduces following changes:
+
+- Option to use 64 bit timestamp
+- Support for logging floating point variables
+- Support for logging variables extending size of a machine word (64 bit values
+  on 32 bit architectures)
+- Remove the need for special treatment of ``%s`` format specifier
+- Extend API for dumping data to accept formatted string
+- Improve memory utilization. More log messages fit in the logging buffer in
+  deferred mode.
+- Log message is no longer fragmented. It is self-contained block of memory which
+  simplifies out of domain handling (e.g. offline processing)
+- Improved performance when logging from user space
+- Improved performance when logging to full buffer and message are dropped.
+- Slightly degrade performance in normal circumstances due to the fact that
+  allocation from ring buffer is more complex than from memslab.
+- No change in logging API
+- Logging backend API exteded with function for processing v2 messages.
+
+Logging API is highly configurable at compile time as well as at run time. Using
+Kconfig options (see :ref:`logging_kconfig`) logs can be gradually removed from
 compilation to reduce image size and execution time when logs are not needed.
 During compilation logs can be filtered out on module basis and severity level.
 
@@ -41,7 +60,7 @@ time filtering is independent for each backend and each source of log messages.
 Source of log messages can be a module or specific instance of the module.
 
 There are four severity levels available in the system: error, warning, info
-and debug. For each severity level the logger API (:zephyr_file:`include/logging/log.h`)
+and debug. For each severity level the logging API (:zephyr_file:`include/logging/log.h`)
 has set of dedicated macros. Logger API also has macros for logging data.
 
 For each level following set of macros are available:
@@ -65,39 +84,45 @@ system, where maximal means lowest severity (e.g. if maximal level in the system
 is set to info, it means that errors, warnings and info levels are present but
 debug messages are excluded).
 
-Each module which is using the logger must specify its unique name and
-register itself to the logger. If module consists of more than one file,
+Each module which is using the logging must specify its unique name and
+register itself to the logging. If module consists of more than one file,
 registration is performed in one file but each file must define a module name.
 
 Logger's default frontend is designed to be thread safe and minimizes time needed
 to log the message. Time consuming operations like string formatting or access to the
-transport are not performed by default when logger API is called. When logger
+transport are not performed by default when logging API is called. When logging
 API is called a message is created and added to the list. Dedicated,
-configurable pool of log messages is used. There are 2 types of messages:
+configurable buffer for pool of log messages is used. There are 2 types of messages:
 standard and hexdump. Each message contain source ID (module or instance ID and
 domain ID which might be used for multiprocessor systems), timestamp and
-severity level. Standard message contains pointer to the string and 32 bit
-arguments. Hexdump message contains copied data.
+severity level. Standard message contains pointer to the string and arguments.
+Hexdump message contains copied data and string.
 
-.. _logger_kconfig:
+.. _logging_kconfig:
 
 Global Kconfig Options
 **********************
 
 These options can be found in the following path :zephyr_file:`subsys/logging/Kconfig`.
 
-:option:`CONFIG_LOG`: Global switch, turns on/off the logger.
+:option:`CONFIG_LOG`: Global switch, turns on/off the logging.
+
+Mode of operations:
+
+:option:`CONFIG_LOG_MODE_DEFERRED`: Deferred mode.
+
+:option:`CONFIG_LOG2_MODE_DEFERRED`: Deferred mode v2.
+
+:option:`CONFIG_LOG_MODE_IMMEDIATE`: Immediate (synchronous) mode.
+
+:option:`CONFIG_LOG2_MODE_IMMEDIATE`: Immediate (synchronous) mode v2.
+
+:option:`CONFIG_LOG_MODE_MINIMAL`: Minimal footprint mode.
+
+Filtering options:
 
 :option:`CONFIG_LOG_RUNTIME_FILTERING`: Enables runtime reconfiguration of the
-logger.
-
-:option:`CONFIG_LOG_MODE_OVERFLOW`: When logger cannot allocate new message
-oldest one are discarded.
-
-:option:`CONFIG_LOG_BLOCK_IN_THREAD`: If enabled and new log message cannot
-be allocated thread context will block for up to
-:option:`CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS` or until log message is
-allocated.
+filtering.
 
 :option:`CONFIG_LOG_DEFAULT_LEVEL`: Default level, sets the logging level
 used by modules that are not setting their own logging level.
@@ -108,38 +133,33 @@ it is not set or set lower than the override value.
 :option:`CONFIG_LOG_MAX_LEVEL`: Maximal (lowest severity) level which is
 compiled in.
 
-:option:`CONFIG_LOG_FUNC_NAME_PREFIX_ERR`: Prepend standard ERROR log messages
-with function name. Hexdump messages are not prepended.
+Processing options:
 
-:option:`CONFIG_LOG_FUNC_NAME_PREFIX_WRN`: Prepend standard WARNING log messages
-with function name. Hexdump messages are not prepended.
+:option:`CONFIG_LOG_MODE_OVERFLOW`: When new message cannot be allocated,
+oldest one are discarded.
 
-:option:`CONFIG_LOG_FUNC_NAME_PREFIX_INF`: Prepend standard INFO log messages
-with function name. Hexdump messages are not prepended.
+:option:`CONFIG_LOG_BLOCK_IN_THREAD`: If enabled and new log message cannot
+be allocated thread context will block for up to
+:option:`CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS` or until log message is
+allocated.
 
-:option:`CONFIG_LOG_FUNC_NAME_PREFIX_DBG`: Prepend standard DEBUG log messages
-with function name. Hexdump messages are not prepended.
-
-:option:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logger.
+:option:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logging.
 
 :option:`CONFIG_LOG_PRINTK_MAX_STRING_LENGTH`: Maximal string length that can
 be processed by printk. Longer strings are trimmed.
-
-:option:`CONFIG_LOG_IMMEDIATE`: Messages are processed in the context
-of the log macro call. Note that it can lead to errors when logger is used in
-the interrupt context.
 
 :option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
 messages reaches the threshold dedicated thread (see :c:func:`log_thread_set`)
 is waken up. If :option:`CONFIG_LOG_PROCESS_THREAD` is enabled then this
 threshold is used by the internal thread.
 
-:option:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logger is creating own thread
+:option:`CONFIG_LOG_PROCESS_THREAD`: When enabled, logging thread is created
 which handles log processing.
 
-:option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the logger
-message pool. Single message capable of storing standard log with up to 3
-arguments or hexdump message with 12 bytes of data take 32 bytes.
+:option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the message pool.
+Single message capable of storing standard log with up to 3 arguments or hexdump
+message with 12 bytes of data take 32 bytes. In v2 it indicates buffer size
+dedicated for circular packet buffer.
 
 :option:`CONFIG_LOG_DETECT_MISSED_STRDUP`: Enable detection of missed transient
 strings handling.
@@ -154,13 +174,31 @@ log_strdup().
 
 :option:`CONFIG_LOG_FRONTEND`: Redirect logs to a custom frontend.
 
-:option:`CONFIG_LOG_BACKEND_UART`: Enabled build-in UART backend.
+:option:`CONFIG_LOG_TIMESTAMP_64BIT`: 64 bit timestamp.
+
+Formatting options:
+
+:option:`CONFIG_LOG_FUNC_NAME_PREFIX_ERR`: Prepend standard ERROR log messages
+with function name. Hexdump messages are not prepended.
+
+:option:`CONFIG_LOG_FUNC_NAME_PREFIX_WRN`: Prepend standard WARNING log messages
+with function name. Hexdump messages are not prepended.
+
+:option:`CONFIG_LOG_FUNC_NAME_PREFIX_INF`: Prepend standard INFO log messages
+with function name. Hexdump messages are not prepended.
+
+:option:`CONFIG_LOG_FUNC_NAME_PREFIX_DBG`: Prepend standard DEBUG log messages
+with function name. Hexdump messages are not prepended.
 
 :option:`CONFIG_LOG_BACKEND_SHOW_COLOR`: Enables coloring of errors (red)
 and warnings (yellow).
 
 :option:`CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP`: If enabled timestamp is
 formatted to *hh:mm:ss:mmm,uuu*. Otherwise is printed in raw format.
+
+Backend options:
+
+:option:`CONFIG_LOG_BACKEND_UART`: Enabled build-in UART backend.
 
 .. _log_usage:
 
@@ -170,12 +208,11 @@ Usage
 Logging in a module
 ===================
 
-In order to use logger in the module, a unique name of a module must be
-specified and module must be registered with the logger core using
-:c:macro:`LOG_MODULE_REGISTER`. Optionally, a compile time log level for the
-module can be specified as the second parameter. Default log level
-(:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used if custom log level is not
-provided.
+In order to use logging in the module, a unique name of a module must be
+specified and module must be registered using :c:macro:`LOG_MODULE_REGISTER`.
+Optionally, a compile time log level for the module can be specified as the
+second parameter. Default log level (:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used
+if custom log level is not provided.
 
 .. code-block:: c
 
@@ -195,9 +232,9 @@ is used if custom log level is not provided.
    /* In all files comprising the module but one */
    LOG_MODULE_DECLARE(foo, CONFIG_FOO_LOG_LEVEL);
 
-In order to use logger API in a function implemented in a header file
+In order to use logging API in a function implemented in a header file
 :c:macro:`LOG_MODULE_DECLARE` macro must be used in the function body
-before logger API is called. Optionally, a compile time log level for the module
+before logging API is called. Optionally, a compile time log level for the module
 can be specified as the second parameter. Default log level
 (:option:`CONFIG_LOG_DEFAULT_LEVEL`) is used if custom log level is not
 provided.
@@ -235,7 +272,7 @@ level. In that case logging can be enabled for particular instance.
 
 In order to use instance level filtering following steps must be performed:
 
-- a pointer to specific logger structure is declared in instance structure.
+- a pointer to specific logging structure is declared in instance structure.
   :c:macro:`LOG_INSTANCE_PTR_DECLARE` is used for that.
 
 .. code-block:: c
@@ -247,7 +284,7 @@ In order to use instance level filtering following steps must be performed:
    	uint32_t id;
    }
 
-- module must provide macro for instantiation. In that macro, logger instance
+- module must provide macro for instantiation. In that macro, logging instance
   is registered and log instance pointer is initialized in the object structure.
 
 .. code-block:: c
@@ -258,7 +295,7 @@ In order to use instance level filtering following steps must be performed:
    		LOG_INSTANCE_PTR_INIT(log, foo, _name)          \
    	}
 
-Note that when logger is disabled logger instance and pointer to that instance
+Note that when logging is disabled logging instance and pointer to that instance
 are not created.
 
 In order to use the instance logging API in a source file, a compile-time log
@@ -285,17 +322,17 @@ level must be set using :c:macro:`LOG_LEVEL_SET`.
    	LOG_INST_INF(f->log, "Initialized.");
    }
 
-Controlling the logger
-======================
+Controlling the logging
+=======================
 
-Logger can be controlled using API defined in
+Logging can be controlled using API defined in
 :zephyr_file:`include/logging/log_ctrl.h`. Logger must be initialized before it can be
 used. Optionally, user can provide function which returns timestamp value. If
 not provided, :c:macro:`k_cycle_get_32` is used for timestamping.
 :c:func:`log_process` function is used to trigger processing of one log
 message (if pending). Function returns true if there is more messages pending.
 
-Following snippet shows how logger can be processed in simple forever loop.
+Following snippet shows how logging can be processed in simple forever loop.
 
 .. code-block:: c
 
@@ -312,33 +349,24 @@ Following snippet shows how logger can be processed in simple forever loop.
    	}
    }
 
-Logger controlling API contains also functions for run time reconfiguration of
-the logger. If run time filtering is enabled the :c:func:`log_filter_set` can
-be used to change maximal severity level for given module. Module is identified
-by source ID and domain ID. Source ID can be retrieved if source name is known
-by iterating through all registered sources.
-
-If logger is processed from a thread then it is possible to enable a feature
+If logs are processed from a thread then it is possible to enable a feature
 which will wake up processing thread when certain amount of log messages are
 buffered (see :option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`). It is also
-possible to enable internal logger thread (see
-:option:`CONFIG_LOG_PROCESS_THREAD`). In that case logger thread is initialized
-and log messages are processed implicitly.
+possible to enable internal logging thread (see :option:`CONFIG_LOG_PROCESS_THREAD`).
+In that case, logging thread is initialized and log messages are processed implicitly.
 
-.. _logger_panic:
+.. _logging_panic:
 
-Logger panic
-************
+Logging panic
+*************
 
 In case of error condition system usually can no longer rely on scheduler or
 interrupts. In that situation deferred log message processing is not an option.
 Logger controlling API provides a function for entering into panic mode
 (:c:func:`log_panic`) which should be called in such situation.
 
-When :c:func:`log_panic` is called, logger sends _panic_ notification to
-all active backends. It is backend responsibility to react. Backend should
-switch to blocking, synchronous mode (stop using interrupts) or disable itself.
-Once all backends are notified, logger flushes all buffered messages. Since
+When :c:func:`log_panic` is called, _panic_ notification is sent to all active
+backends. Once all backends are notified, all buffered messages are flushed. Since
 that moment all logs are processed in a blocking way.
 
 .. _log_architecture:
@@ -346,7 +374,7 @@ that moment all logs are processed in a blocking way.
 Architecture
 ************
 
-Logger consists of 3 main parts:
+Logging consists of 3 main parts:
 
 - Frontend
 - Core
@@ -358,32 +386,106 @@ instance of a module.
 Default Frontend
 ================
 
-Default frontend is engaged when logger API is called in a source of logging (e.g.
+Default frontend is engaged when logging API is called in a source of logging (e.g.
 :c:macro:`LOG_INF`) and is responsible for filtering a message (compile and run
-time), allocating buffer for the message, creating the message and putting that
-message into the list of pending messages. Since logger API can be called in an
-interrupt, frontend is optimized to log the message as fast as possible. Each
-log message consists of one or more fixed size chunks. Message head chunk
+time), allocating buffer for the message, creating the message and committing that
+message. Since logging API can be called in an interrupt, frontend is optimized
+to log the message as fast as possible.
+
+Log message v1
+--------------
+
+Each log message consists of one or more fixed size chunks allocated from the
+pool of fixed size buffers (:ref:`memory_slabs_v2`). Message head chunk
 contains log entry details like: source ID, timestamp, severity level and the
 data (string pointer and arguments or raw data). Message contains also a
 reference counter which indicates how many users still uses this message. It is
 used to return message to the pool once last user indicates that it can be
 freed. If more than 3 arguments or 12 bytes of raw data is used in the log then
-log message is formed from multiple chunks which are linked together.
+log message is formed from multiple chunks which are linked together. When
+message body is filled it is put into the list.
+When log processing is triggered, a message is removed from the list of pending
+messages. If runtime filtering is disabled, the message is passed to all
+active backends, otherwise the message is passed to only those backends that
+have requested messages from that particular source (based on the source ID in
+the message), and severity level. Once all backends are iterated, the message
+is considered processed, but the message may still be in use by a backend.
+Because message is allocated from a pool, it is not mandatory to sequentially
+free messages. Processing by the backends is asynchronous and memory is freed
+when last user indicates that message can be freed. It also means that improper
+backend implementation may lead to pool drought.
 
-It may happen that frontend cannot allocate message. It happens if system is
+Log message v2
+--------------
+
+Log message v2 contains message descriptor (source, domain and level), timestamp,
+formatted string details (see :ref:`cbprintf_packaging`) and optional data.
+Log messages v2 are stored in a continuous block of memory (contrary to v1).
+Memory is allocated from a circular packet buffer (:ref:`mpsc_pbuf`). It has
+few consequences:
+
+ * Each message is self-contained, continuous block of memory thus it is suited
+   for copying the message (e.g. for offline processing).
+ * Memory is better utilized because fixed size chunks are not used.
+ * Messages must be sequentially freed. Backend processing is synchronous. Backend
+   can make a copy for deferred processing.
+
+Log message has following format:
+
++------------------+----------------------------------------------------+
+| Message Header   | 2 bits: MPSC packet buffer header                  |
+|                  +----------------------------------------------------+
+|                  | 1 bit: Trace/Log message flag                      |
+|                  +----------------------------------------------------+
+|                  | 3 bits: Domain ID                                  |
+|                  +----------------------------------------------------+
+|                  | 3 bits: Level                                      |
+|                  +----------------------------------------------------+
+|                  | 10 bits: Cbprintf Package Length                   |
+|                  +----------------------------------------------------+
+|                  | 12 bits: Data length                               |
+|                  +----------------------------------------------------+
+|                  | 1 bit: Reserved                                    |
+|                  +----------------------------------------------------+
+|                  | pointer: Pointer to the source descriptor [#l0]_   |
+|                  +----------------------------------------------------+
+|                  | 32 or 64 bits: Timestamp [#l0]_                    |
+|                  +----------------------------------------------------+
+|                  | Optional padding [#l1]_                            |
++------------------+----------------------------------------------------+
+| Cbprintf         | Header                                             |
+|                  +----------------------------------------------------+
+| | package        | Arguments                                          |
+| | (optional)     +----------------------------------------------------+
+|                  | Appended strings                                   |
++------------------+----------------------------------------------------+
+| Hexdump data (optional)                                               |
++------------------+----------------------------------------------------+
+| Alignment padding (optional)                                          |
++------------------+----------------------------------------------------+
+
+.. rubric:: Footnotes
+
+.. [#l0] Depending on the platform and the timestamp size fields may be swapped.
+.. [#l1] It may be required for cbprintf package alignment
+
+Log message allocation
+----------------------
+
+It may happen that frontend cannot allocate a message. It happens if system is
 generating more log messages than it can process in certain time frame. There
 are two strategies to handle that case:
 
-- Overflow - oldest pending messages are freed, before backends process them,
-  until new message can be allocated.
-- No overflow - new log is dropped if message cannot be allocated.
+- No overflow - new log is dropped if space for a message cannot be allocated.
+- Overflow - oldest pending messages are freed, until new message can be
+  allocated. Enabled by :option:`CONFIG_LOG_MODE_OVERFLOW`. Note that it degrades
+  performance thus it is recommended to adjust buffer size and amount of enabled
+  logs to limit dropping.
 
-Second option is simpler however in many case less welcomed. On the other hand,
-handling overflows degrades performance of the logger since allocating a
-message requires freeing other messages which degrades logger performance. It
-is thus recommended to avoid such cases by increasing logger buffer or
-filtering out logs.
+.. _logging_runtime_filtering:
+
+Run-time filtering
+------------------
 
 If run-time filtering is enabled, then for each source of logging a filter
 structure in RAM is declared. Such filter is using 32 bits divided into ten 3
@@ -391,8 +493,9 @@ bit slots. Except *slot 0*, each slot stores current filter for one backend in
 the system. *Slot 0* (bits 0-2) is used to aggregate maximal filter setting for
 given source of logging. Aggregate slot determines if log message is created
 for given entry since it indicates if there is at least one backend expecting
-that log entry. Backend slots are examined when message is process by the
-logger core to determine if message is accepted by given backend.
+that log entry. Backend slots are examined when message is processed by the core
+to determine if message is accepted by the given backend. Contrary to compile
+time filtering, binary footprint is increased because logs are compiled in.
 
 In the example below backend 1 is set to receive errors (*slot 1*) and backend
 2 up to info level (*slot 2*). Slots 3-9 are not used. Aggregated filter
@@ -410,32 +513,24 @@ Custom Frontend
 
 Custom frontend is enabled using :option:`CONFIG_LOG_FRONTEND`. Logs are redirected
 to functions declared in :zephyr_file:`include/logging/log_frontend.h`.
-This may be required in very time-sensitive cases, but this hurts
-logger functionality. All features from default frontend, core and all backends
-are not used.
+This may be required in very time-sensitive cases, but most of the logging
+features cannot be used then, which includes default frontend, core and all
+backends features.
 
-Core
-====
-
-When log processing is triggered, a message is removed from the list of pending
-messages.  If runtime filtering is disabled, the message is passed to all
-active backends, otherwise the message is passed to only those backends that
-have requested messages from that particular source (based on the source ID in
-the message), and severity level. Once all backends are iterated, the message
-is considered processed by the logger, but the message may still be in use by a
-backend.
-
-.. _logger_strings:
+.. _logging_strings:
 
 Logging strings
 ===============
-Logger stores the address of a log message string argument passed to it. Because
-a string variable argument could be transient, allocated on the stack, or
-modifiable, logger provides a mechanism and a dedicated buffer pool to hold
-copies of strings.  The buffer size and count is configurable
-(see :option:`CONFIG_LOG_STRDUP_MAX_STRING` and
-:option:`CONFIG_LOG_STRDUP_BUF_COUNT`).
 
+Logging v1
+----------
+
+Since log message contains only the value of the argument, when ``%s`` is used
+only the address of a string is stored. Because a string variable argument could
+be transient, allocated on the stack, or modifiable, logger provides a mechanism
+and a dedicated buffer pool to hold copies of strings. The buffer size and count
+is configurable (see :option:`CONFIG_LOG_STRDUP_MAX_STRING` and
+:option:`CONFIG_LOG_STRDUP_BUF_COUNT`).
 
 If a string argument is transient, the user must call :c:func:`log_strdup` to
 duplicate the passed string into a buffer from the pool. See the examples below.
@@ -456,16 +551,41 @@ address is not in read only memory section or does not belong to memory pool
 dedicated to string duplicates. It indictes that :c:func:`log_strdup` is
 missing in a call to log a message, such as ``LOG_INF``.
 
-Logger backends
-===============
+Logging v2
+----------
 
-Logger supports up to 9 concurrent backends. Logger backend interface consists
-of two functions:
+String arguments are handled by :ref:`cbprintf_packaging` thus no special action
+is required.
 
-- :c:func:`log_backend_put` - backend gets log message.
-- :c:func:`log_backend_panic` - on that call backend is notified that it must
-  switch to panic (synchronous) mode. If backend cannot support synchronous,
-  interrupt-less operation (e.g. network) it should stop any processing.
+Logging backends
+================
+
+Logging backends are registered using :c:macro:`LOG_BACKEND_DEFINE`. The macro
+creates an instance in the dedicated memory section. Backends can be dynamically
+enabled (:c:func:`log_backend_enable`) and disabled. When
+:ref:`logging_runtime_filtering` is enabled, :c:func:`log_filter_set` can be used
+to dynamically change filtering of a module logs for given backend. Module is
+identified by source ID and domain ID. Source ID can be retrieved if source name
+is known by iterating through all registered sources.
+
+Logging supports up to 9 concurrent backends. Log message is passed to the
+each backend in processing phase. Additionally, backend is notfied when logging
+enter panic mode with :c:func:`log_backend_panic`. On that call backend should
+switch to synchronous, interrupt-less operation or shut down itself if that is
+not supported.  Occasionally, logging may inform backend about number of dropped
+messages with :c:func:`log_backend_dropped`. Message processing API is version
+specific.
+
+Logging v1
+----------
+
+Logging backend interface contains following functions for processing:
+
+- :c:func:`log_backend_put` - backend gets log message in deferred mode.
+- :c:func:`log_backend_put_sync_string` - backend gets log message with formatted
+  string message in the immediate mode.
+- :c:func:`log_backend_put_sync_hexdump` - backend gets log message with hexdump
+  message in the immediate mode.
 
 The log message contains a reference counter tracking how many backends are
 processing the message. On receiving a message backend must claim it by calling
@@ -473,20 +593,12 @@ processing the message. On receiving a message backend must claim it by calling
 Once message is processed, backend puts back the message
 (:c:func:`log_msg_put`) decrementing a reference counter. On last
 :c:func:`log_msg_put`, when reference counter reaches 0, message is returned
-to the pool. It is up to the backend how message is processed. If backend
-intends to format message into the string, helper function for that are
-available in :zephyr_file:`include/logging/log_output.h`.
-
-Example message formatted using :c:func:`log_output_msg_process`.
-
-.. code-block:: console
-
-   [00:00:00.000,274] <info> sample_instance.inst1: logging message
+to the pool. It is up to the backend how message is processed.
 
 .. note::
 
    The message pool can be starved if a backend does not call
-   :c:func:`log_msg_put` when it is done processing a message. The logger
+   :c:func:`log_msg_put` when it is done processing a message. The logging
    core has no means to force messages back to the pool if they're still marked
    as in use (with a non-zero reference counter).
 
@@ -504,22 +616,178 @@ Example message formatted using :c:func:`log_output_msg_process`.
    	log_msg_put(msg);
    }
 
-Logger backends are registered to the logger using
-:c:macro:`LOG_BACKEND_DEFINE` macro. The macro creates an instance in the
-dedicated memory section. Backends can be dynamically enabled
-(:c:func:`log_backend_enable`) and disabled.
+Logging v2
+----------
 
-Limitations
-***********
+:c:func:`log_backend_msg2_process` is used for processing message. It is common for
+standard and hexdump messages because log message v2 hold string with arguments
+and data. It is also common for deferred and immediate logging.
 
-The Logger architecture has the following limitations:
+Message formatting
+------------------
 
-- Strings as arguments (*%s*) require special treatment (see
-  :ref:`logger_strings`).
-- Logging double floating point variables is not possible because arguments are
-  32 bit values.
-- Number of arguments in the string is limited to 9.
+Logging provides set of function that can be used by the backend to format a
+message. Helper functions are available in :zephyr_file:`include/logging/log_output.h`.
 
+Example message formatted using :c:func:`log_output_msg_process` or
+:c:func:`log_output_msg2_process`.
+
+.. code-block:: console
+
+   [00:00:00.000,274] <info> sample_instance.inst1: logging message
+
+
+.. _logging_guide_dictionary:
+
+Dictionary-based Logging
+========================
+
+Dictionary-based logging, instead of human readable texts, outputs the log
+messages in binary format. This binary format encodes arguments to formatted
+strings in their native storage formats which can be more compact than their
+text equivalents. For statically defined strings (including the format
+strings and any string arguments), references to the ELF file are encoded
+instead of the whole strings. A dictionary created at build time contains
+the mappings between these references and the actual strings. This allows
+the offline parser to obtain the strings from the dictionary to parse
+the log messages. This binary format allows a more compact representation
+of log messages in certain scenarios. However, this requires the use of
+an offline parser and is not as intuitive to use as text-based log messages.
+
+Note that ``long double`` is not supported by Python's ``struct`` module.
+Therefore, log messages with ``long double`` will not display the correct
+values.
+
+
+Configuration
+-------------
+
+Here are kconfig options related to dictionary-based logging:
+
+- :option:`CONFIG_LOG_DICTIONARY_SUPPORT` enables dictionary-based logging
+  support. This should be selected by the backends which require it.
+
+- The UART backend can be used for dictionary-based logging. These are
+  additional config for the UART backend:
+
+  - :option:`CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX` tells
+    the UART backend to output hexadecimal characters for dictionary based
+    logging. This is useful when the log data needs to be captured manually
+    via terminals and consoles.
+
+  - :option:`CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN` tells
+    the UART backend to output binary data.
+
+
+Usage
+-----
+
+When dictionary-based logging is enabled via enabling related logging backends,
+a JSON database file, named :file:`log_dictionary.json`, will be created
+in the build directory. This database file contains information for the parser
+to correctly parse the log data. Note that this database file only works
+with the same build, and cannot be used for any other builds.
+
+To use the log parser:
+
+.. code-block:: console
+
+  ./scripts/logging/dictionary/log_parser.py <build dir>/log_dictionary.json <log data file>
+
+The parser takes two required arguments, where the first one is the full path
+to the JSON database file, and the second part is the file containing log data.
+Add an optional argument ``--hex`` to the end if the log data file contains
+hexadecimal characters
+(e.g. when ``CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX=y``). This tells
+the parser to convert the hexadecimal characters to binary before parsing.
+
+Please refer to :ref:`logging_dictionary_sample` on how to use the log parser.
+
+
+
+Limitations and recommendations
+*******************************
+
+Logging v1
+==========
+
+The are following limitations:
+
+* Strings as arguments (*%s*) require special treatment (see
+  :ref:`logging_strings`).
+* Logging double and float variables is not possible because arguments are
+  word size.
+* Variables larger than word size cannot be logged.
+* Number of arguments in the string is limited to 15.
+
+Logging v2
+==========
+
+Solves major limitations of v1. However, in order to get most of the logging
+capabilities following recommendations shall be followed:
+
+* Enable :option:`CONFIG_LOG_SPEED` to slightly speed up deferred logging at the
+  cost of slight increase in memory footprint.
+* Compiler with C11 ``_Generic`` keyword support is recommended. Logging
+  performance is significantly degraded without it. See :ref:`cbprintf_packaging`.
+* When ``_Generic`` is supported, during compilation it is determined which
+  packaging method shall be used: static or runtime. It is done by searching for
+  any string pointers in the argument list. If string pointer is used with
+  format specifier other than string, e.g. ``%p``, it is recommended to cast it
+  to ``void *``.
+
+.. code-block:: c
+
+   LOG_WRN("%s", str);
+   LOG_WRN("%p", (void *)str);
+
+Benchmark
+*********
+
+Benchmark numbers from :zephyr_file:`tests/subsys/logging/log_benchmark` performed
+on ``qemu_x86``. It is a rough comparison to give general overview. Overall,
+logging v2 improves in most a the areas with the biggest improvement in logging
+from userspace. It is at the cost of larger memory footprint for a log message.
+
++--------------------------------------------+----------------+------------------+----------------+
+| Feature                                    | v1             | v2               | Summary        |
++============================================+================+==================+================+
+| Kernel logging                             | 7us            | 7us [#f0]_/11us  | No significant |
+|                                            |                |                  | change         |
++--------------------------------------------+----------------+------------------+----------------+
+| User logging                               | 86us           | 13us             | **Strongly     |
+|                                            |                |                  | improved**     |
++--------------------------------------------+----------------+------------------+----------------+
+| kernel logging with overwrite              | 23us           | 10us [#f0]_/15us | **Improved**   |
++--------------------------------------------+----------------+------------------+----------------+
+| Logging transient string                   | 16us           | 42us             | **Degraded**   |
++--------------------------------------------+----------------+------------------+----------------+
+| Logging transient string from user         | 111us          | 50us             | **Improved**   |
++--------------------------------------------+----------------+------------------+----------------+
+| Memory utilization [#f1]_                  | 416            | 518              | Slightly       |
+|                                            |                |                  | improved       |
++--------------------------------------------+----------------+------------------+----------------+
+| Memory footprint (test) [#f2]_             | 3.2k           | 2k               | **Improved**   |
++--------------------------------------------+----------------+------------------+----------------+
+| Memory footprint (application) [#f3]_      | 6.2k           | 3.5k             | **Improved**   |
++--------------------------------------------+----------------+------------------+----------------+
+| Message footprint [#f4]_                   | 15 bytes       | 47 [#f0]_/32     | **Degraded**   |
+|                                            |                | bytes            |                |
++--------------------------------------------+----------------+------------------+----------------+
+
+.. rubric:: Benchmark details
+
+.. [#f0] :option:`CONFIG_LOG_SPEED` enabled.
+
+.. [#f1] Number of log messages with various number of arguments that fits in 2048
+  bytes dedicated for logging.
+
+.. [#f2] Logging subsystem memory footprint in :zephyr_file:`tests/subsys/logging/log_benchmark`
+  where filtering and formatting features are not used.
+
+.. [#f3] Logging subsystem memory footprint in :zephyr_file:`samples/subsys/logging/logger`.
+
+.. [#f4] Avarage size of a log message (excluding string) with 2 arguments on ``Cortex M3``
 
 API Reference
 *************

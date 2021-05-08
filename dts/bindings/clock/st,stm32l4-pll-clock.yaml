@@ -1,0 +1,80 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PLL node binding for STM32L4 and STM32L5 devices
+
+  It can be used to describe 3 different PLLs: PLL, PLLSAI1 and PLLSAI2.
+  Only main PLL is supported for now.
+
+  These PLLs could take one of clk_hse, clk_hsi or clk_msi as input clock, with
+  an input frequency from 4 to 16 MHz. PLLM factor is used to set the input
+  clock in this acceptable range.
+
+  Each PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLL_P) = f(VCO clock) / PLLP  --> PLLSAI3CLK
+    f(PLL_Q) = f(VCO clock) / PLLQ  --> PLL48M1CLK
+    f(PLL_R) = f(VCO clock) / PLLR  --> PLLCLK (System Clock)
+
+      with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+
+  The PLL output frequency must not exceed 80 MHz.
+
+compatible: "st,stm32l4-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    "#clock-cells":
+      const: 0
+
+    clocks:
+      required: true
+
+    div-m:
+      type: int
+      required: true
+      description: |
+          Division factor for the main PLL and audio PLLs (PLLSAI1 and PLLSAI2)
+          input clock
+          Valid range: 1 - 8
+
+    mul-n:
+      type: int
+      required: true
+      description: |
+          Main PLL multiplication factor for VCO
+          Valid range: 8 - 86
+
+    div-p:
+      type: int
+      required: false
+      description: |
+          Main PLL division factor for PLLSAI3CLK
+      enum:
+        - 7
+        - 17
+
+    div-q:
+      type: int
+      required: false
+      description: |
+          Main PLL division factor for PLL48M1CLK (48 MHz clock).
+      enum:
+        - 2
+        - 4
+        - 6
+        - 8
+
+    div-r:
+      type: int
+      required: true
+      description: |
+          Main PLL division factor for PLLCLK (system clock)
+      enum:
+        - 2
+        - 4
+        - 6
+        - 8

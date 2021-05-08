@@ -1063,7 +1063,7 @@ static void setup_dns_context(struct dns_resolve_context *ctx,
 	ctx->queries[idx].query = query;
 	ctx->queries[idx].query_type = query_type;
 	ctx->queries[idx].query_hash = crc16_ansi(query, query_len);
-	ctx->is_used = true;
+	ctx->state = DNS_RESOLVE_CONTEXT_ACTIVE;
 
 }
 

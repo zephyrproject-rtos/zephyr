@@ -88,7 +88,7 @@ struct stream {
 			       const struct device *);
 	void (*queue_drop)(struct stream *);
 	int (*set_data_format)(const struct i2s_sam_dev_cfg *const,
-			       struct i2s_config *);
+			       const struct i2s_config *);
 };
 
 /* Device run time data */
@@ -311,7 +311,7 @@ tx_disable:
 }
 
 static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
-			      struct i2s_config *i2s_cfg)
+			      const struct i2s_config *i2s_cfg)
 {
 	Ssc *const ssc = dev_cfg->regs;
 	const bool pin_rk_en = IS_ENABLED(CONFIG_I2S_SAM_SSC_0_PIN_RK_EN);
@@ -404,7 +404,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 }
 
 static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
-			      struct i2s_config *i2s_cfg)
+			      const struct i2s_config *i2s_cfg)
 {
 	Ssc *const ssc = dev_cfg->regs;
 	uint8_t word_size_bits = i2s_cfg->word_size;
@@ -515,8 +515,8 @@ static int bit_clock_set(Ssc *const ssc, uint32_t bit_clk_freq)
 	return 0;
 }
 
-static struct i2s_config *i2s_sam_config_get(const struct device *dev,
-					     enum i2s_dir dir)
+static const struct i2s_config *i2s_sam_config_get(const struct device *dev,
+						   enum i2s_dir dir)
 {
 	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
 	struct stream *stream;
@@ -535,7 +535,7 @@ static struct i2s_config *i2s_sam_config_get(const struct device *dev,
 }
 
 static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
-			     struct i2s_config *i2s_cfg)
+			     const struct i2s_config *i2s_cfg)
 {
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
@@ -551,6 +551,8 @@ static int i2s_sam_configure(const struct device *dev, enum i2s_dir dir,
 		stream = &dev_data->rx;
 	} else if (dir == I2S_DIR_TX) {
 		stream = &dev_data->tx;
+	} else if (dir == I2S_DIR_BOTH) {
+		return -ENOSYS;
 	} else {
 		LOG_ERR("Either RX or TX direction must be selected");
 		return -EINVAL;
@@ -763,6 +765,8 @@ static int i2s_sam_trigger(const struct device *dev, enum i2s_dir dir,
 		stream = &dev_data->rx;
 	} else if (dir == I2S_DIR_TX) {
 		stream = &dev_data->tx;
+	} else if (dir == I2S_DIR_BOTH) {
+		return -ENOSYS;
 	} else {
 		LOG_ERR("Either RX or TX direction must be selected");
 		return -EINVAL;
@@ -1024,6 +1028,6 @@ static struct i2s_sam_dev_data i2s0_sam_data = {
 	},
 };
 
-DEVICE_DT_INST_DEFINE(0, &i2s_sam_initialize, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &i2s_sam_initialize, NULL,
 		    &i2s0_sam_data, &i2s0_sam_config, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_sam_driver_api);

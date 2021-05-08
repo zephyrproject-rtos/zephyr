@@ -525,7 +525,7 @@ static struct intel_gna_data intel_gna_driver_data = {
 };
 
 DEVICE_DT_INST_DEFINE(0, intel_gna_initialize,
-		      device_pm_control_nop,
+		      NULL,
 		      (void *)&intel_gna_driver_data, NULL,
 		      POST_KERNEL, CONFIG_INTEL_GNA_INIT_PRIORITY,
 		      &gna_driver_api);

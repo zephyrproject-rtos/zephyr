@@ -9,7 +9,7 @@ companies, and individuals from the community.
 
 A time-based release process enables the Zephyr project to provide users with a
 balance of the latest technologies and features and excellent overall quality. A
-roughly 3-month release cycle allows the project to coordinate development of
+roughly 4-month release cycle allows the project to coordinate development of
 the features that have actually been implemented, allowing the project to
 maintain the quality of the overall release without delays because of one or two
 features that are not ready yet.
@@ -18,7 +18,7 @@ The Zephyr release model is loosely based on the Linux kernel model:
 
 - Release tagging procedure:
 
-  - linear mode on master,
+  - linear mode on main branch,
   - release branches for maintenance after release tagging.
 - Each release period will consist of a merge window period followed by one or
   more release candidates on which only stabilization changes, bug fixes, and
@@ -131,12 +131,12 @@ The following syntax should be used for releases and tags in Git:
 
   - v[Major].[Minor].[Patch Level]-rc[RC Number]
   - v[Major].[Minor].[Patch Level]
-  - v[Major].[Minor].99 - A tag applied to master branch to signify that work on
+  - v[Major].[Minor].99 - A tag applied to main branch to signify that work on
     v[Major].[Minor+1] has started. For example, v1.7.99 will be tagged at the
     start of v1.8 process. The tag corresponds to
     VERSION_MAJOR/VERSION_MINOR/PATCHLEVEL macros as defined for a
-    work-in-progress master version. Presence of this tag allows generation of
-    sensible output for "git describe" on master, as typically used for
+    work-in-progress main branch version. Presence of this tag allows generation of
+    sensible output for "git describe" on main branch, as typically used for
     automated builds and CI tools.
 
 
@@ -151,15 +151,105 @@ The following syntax should be used for releases and tags in Git:
 Long Term Support (LTS)
 =======================
 
-Long-term support releases are designed to be supported for a longer than normal
-period and will be the basis for products and certification for various usages.
+Long-term support releases are designed to be supported and maintained
+for an extended period and is the recommended release for
+products and the auditable branch used for certification.
 
-An LTS release is made every 2 years and is branched and maintained
-independently from the mainline tree.
+An LTS release is defined as:
 
-An LTS release will be branched and maintained independently of the mainline
-tree.
+- **Product focused**
+- **Extended Stabilisation period**: Allow for more testing and bug fixing
+- **Stable APIs**
+- **Quality Driven Process**
+- **Long Term**: Maintained for an extended period of time (at least 2.5 years)
+  overlapping previous LTS release for at least half a year.
 
+
+Product Focused
++++++++++++++++
+
+Zephyr LTS is the recommended release for product makers with an extended
+support and maintenance which includes general stability and bug fixes,
+security fixes.
+
+An LTS includes both mature and new features. API and feature maturity is
+documented and tracked. The footprint and scope of mature and stable APIs expands
+as we move from one LTS to the next giving users access to bleading edge features
+and new hardware while keeping a stable foundation that evolves over time.
+
+Extended Stabilisation Period
++++++++++++++++++++++++++++++
+
+Zephyr LTS development cycle differs from regular releases and has an extended
+stabilization period. Feature freeze of regular releases happens 3-4 weeks
+before the scheduled release date. The stabilisation period for LTS is extended
+by 3 weeks with the feature freeze occurring 6-7 weeks before the anticipated
+release date. The time between code freeze and release date is extended in this case.
+
+Stable APIs
++++++++++++
+
+Zephyr LTS provides a stable and long-lived foundation for developing
+products. To guarantee stability of the APIs and the implementation of such
+APIs it is required that any release software that makes the core of the OS
+went through the Zephyr API lifecycle and stabilised over at least 2 releases.
+This guarantees that we release many of the highlighted and core features with
+mature and well-established implementations with stable APIs that are
+supported during the lifetime of the release LTS.
+
+- API Freeze (LTS - 2)
+
+  - All stable APIs need to be frozen 2 releases before an LTS. APIs can be extended
+    with additional features, but the core implementation is not modified. This
+    is valid for the following subsystems for example:
+
+    - Device Drivers (i2c.h, spi.h)...
+    - Kernel (k_*):
+    - OS services (logging,debugging, ..)
+    - DTS: API and bindings stability
+    - Kconfig
+
+  - New APIs for experimental features can be added at any time as long as they
+    are standalone and documented as experimental or unstable features/APIs.
+- Feature Freeze (LTS - 1)
+  - No new features or overhaul/restructuring of code covering major LTS features.
+
+    - Kernel + Base OS
+    - Additional advertised LTS features
+
+  - Auxiliary features on top of and/or extending the base OS and advertised LTS features
+    can be added at any time and should be marked as experimental if applicable
+
+Quality Driven Process
+++++++++++++++++++++++
+
+The Zephyr project follows industry standards and processes with the goal of
+providing a quality oriented releases. This is achieved by providing the
+following products to track progress, integrity and quality of the software
+components provided by the project:
+
+- Compliance with pubished coding guidelines, style guides and naming
+  conventions and documentation of deviations.
+- Regular static analysis on the complete tree using available commercial and
+  open-source tools and documentation of deviations and false positives.
+- Documented components and APIS
+- Requirements Catalog
+- Verification Plans
+- Verification Reports
+- Coverage Reports
+- Requirements Traceability Matrix (RTM)
+- SPDX License Reports
+
+Each release is created with the above products to document the quality and the
+state of the software when it was released.
+
+Long Term Support and Maintenance
+++++++++++++++++++++++++++++++++++
+
+A Zephyr LTS release is published every 2 years and is branched and maintained
+independently from the main tree for at least 2.5 years after it was
+released. Support and maintenance for an LTS release stops at least half a year
+after the following LTS release is published.
 
 .. figure:: lts.png
     :align: center
@@ -169,13 +259,12 @@ tree.
 
     Long Term Support Release
 
-Changes and fixes flow in both directions. However, changes from master to an
+Changes and fixes flow in both directions. However, changes from main branch to an
 LTS branch will be limited to fixes that apply to both branches and for existing
 features only.
 
-All fixes for an LTS branch that apply to the mainline tree are pushed to
-mainline as well.
-
+All fixes for an LTS branch that apply to the mainline tree shall be submitted to
+mainline tree as well.
 
 Auditable Code Base
 ===================

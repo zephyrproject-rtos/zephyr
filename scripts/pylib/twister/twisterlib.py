@@ -468,6 +468,10 @@ class BinaryHandler(Handler):
         self.line = proc.stdout.readline()
 
     def _output_handler(self, proc, harness):
+        if harness.is_pytest:
+            harness.handle(None)
+            return
+
         log_out_fp = open(self.log, "wt")
         timeout_extended = False
         timeout_time = time.time() + self.timeout
@@ -567,6 +571,8 @@ class BinaryHandler(Handler):
         if sys.stdout.isatty():
             subprocess.call(["stty", "sane"])
 
+        if harness.is_pytest:
+            harness.pytest_run(self.log)
         self.instance.results = harness.tests
 
         if not self.terminated and self.returncode != 0:
@@ -600,6 +606,10 @@ class DeviceHandler(Handler):
         self.suite = None
 
     def monitor_serial(self, ser, halt_fileno, harness):
+        if harness.is_pytest:
+            harness.handle(None)
+            return
+
         log_out_fp = open(self.log, "wt")
 
         ser_fileno = ser.fileno()
@@ -858,6 +868,8 @@ class DeviceHandler(Handler):
             elif out_state == "flash_error":
                 self.instance.reason = "Flash error"
 
+        if harness.is_pytest:
+            harness.pytest_run(self.log)
         self.instance.results = harness.tests
 
         # sometimes a test instance hasn't been executed successfully with an
@@ -978,6 +990,11 @@ class QEMUHandler(Handler):
             if pid == 0 and os.path.exists(pid_fn):
                 pid = int(open(pid_fn).read())
 
+            if harness.is_pytest:
+                harness.handle(None)
+                out_state = harness.state
+                break
+
             try:
                 c = in_fp.read(1).decode("utf-8")
             except UnicodeDecodeError:
@@ -1020,6 +1037,10 @@ class QEMUHandler(Handler):
                     else:
                         timeout_time = time.time() + 2
             line = ""
+
+        if harness.is_pytest:
+            harness.pytest_run(logfile)
+            out_state = harness.state
 
         handler.record(harness)
 
@@ -1070,6 +1091,7 @@ class QEMUHandler(Handler):
         harness_import = HarnessImporter(self.instance.testcase.harness.capitalize())
         harness = harness_import.instance
         harness.configure(self.instance)
+
         self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
                                        args=(self, self.timeout, self.build_dir,
                                              self.log_fn, self.fifo_fn,
@@ -1775,7 +1797,7 @@ class TestInstance(DisablePyTestCollectionMixin):
     def testcase_runnable(testcase, fixtures):
         can_run = False
         # console harness allows us to run the test and capture data.
-        if testcase.harness in [ 'console', 'ztest']:
+        if testcase.harness in [ 'console', 'ztest', 'pytest']:
             can_run = True
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
@@ -3256,8 +3278,16 @@ class TestSuite(DisablePyTestCollectionMixin):
 
         for instance in self.discards:
             instance.reason = self.discards[instance]
-            instance.status = "skipped"
-            instance.fill_results_by_status()
+            # If integration mode is on all skips on integration_platforms are treated as errors.
+            # TODO: add quarantine relief here when PR with quarantine feature gets merged
+            if self.integration and instance.platform.name in instance.testcase.integration_platforms:
+                instance.status = "error"
+                instance.reason += " but is one of the integration platforms"
+                instance.fill_results_by_status()
+                self.instances[instance.name] = instance
+            else:
+                instance.status = "skipped"
+                instance.fill_results_by_status()
 
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
                                       if p.status != "skipped" )
@@ -3295,6 +3325,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                     logger.debug(f"adding {instance.name}")
                     instance.status = None
                     pipeline.put({"op": "cmake", "test": instance})
+                # If the instance got 'error' status before, proceed to the report stage
+                if instance.status == "error":
+                    pipeline.put({"op": "report", "test": instance})
 
     def pipeline_mgr(self, pipeline, done_queue, lock, results):
         while True:

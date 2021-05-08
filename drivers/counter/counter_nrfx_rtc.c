@@ -688,7 +688,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	};								       \
 	DEVICE_DT_DEFINE(RTC(idx),					       \
 			    counter_##idx##_init,			       \
-			    device_pm_control_nop,			       \
+			    NULL,					       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \

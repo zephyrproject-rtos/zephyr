@@ -215,20 +215,20 @@ registers, clocks, memory etc.
 
 The four device power states:
 
-:code:`DEVICE_PM_ACTIVE_STATE`
+:code:`PM_DEVICE_STATE_ACTIVE`
 
    Normal operation of the device. All device context is retained.
 
-:code:`DEVICE_PM_LOW_POWER_STATE`
+:code:`PM_DEVICE_STATE_LOW_POWER`
 
    Device context is preserved by the HW and need not be restored by the driver.
 
-:code:`DEVICE_PM_SUSPEND_STATE`
+:code:`PM_DEVICE_STATE_SUSPEND`
 
    Most device context is lost by the hardware. Device drivers must save and
    restore or reinitialize any context lost by the hardware.
 
-:code:`DEVICE_PM_OFF_STATE`
+:code:`PM_DEVICE_STATE_OFF`
 
    Power has been fully removed from the device. The device context is lost
    when this state is entered. Need to reinitialize the device when powering
@@ -241,8 +241,8 @@ Zephyr RTOS power management subsystem provides a control function interface
 to device drivers to indicate power management operations to perform.
 The supported PM control commands are:
 
-* DEVICE_PM_SET_POWER_STATE
-* DEVICE_PM_GET_POWER_STATE
+* PM_DEVICE_STATE_SET
+* PM_DEVICE_STATE_GET
 
 Each device driver defines:
 
@@ -264,21 +264,9 @@ Device Model with Power Management Support
 Drivers initialize the devices using macros. See :ref:`device_model_api` for
 details on how these macros are used. Use the DEVICE_DEFINE macro to initialize
 drivers providing power management support via the PM control function.
-One of the macro parameters is the pointer to the device_pm_control handler function.
-
-Default Initializer Function
-----------------------------
-
-.. code-block:: c
-
-   int device_pm_control_nop(const struct device *unused_device, uint32_t unused_ctrl_command, void *unused_context);
-
-
-If the driver doesn't implement any power control operations, the driver can
-initialize the corresponding pointer with this default nop function. This
-default nop function does nothing and should be used instead of
-implementing a dummy function to avoid wasting code memory in the driver.
-
+One of the macro parameters is the pointer to the pm_control handler function.
+If the driver doesn't implement any power control operations, it can initialize
+the corresponding pointer with ``NULL``.
 
 Device Power Management API
 ===========================
@@ -307,20 +295,20 @@ Device Set Power State
 
 .. code-block:: c
 
-   int device_set_power_state(const struct device *dev, uint32_t device_power_state, device_pm_cb cb, void *arg);
+   int pm_device_state_set(const struct device *dev, uint32_t device_power_state, pm_device_cb cb, void *arg);
 
-Calls the :c:func:`device_pm_control()` handler function implemented by the
-device driver with DEVICE_PM_SET_POWER_STATE command.
+Calls the :c:func:`pm_control()` handler function implemented by the
+device driver with PM_DEVICE_STATE_SET command.
 
 Device Get Power State
 ----------------------
 
 .. code-block:: c
 
-   int device_get_power_state(const struct device *dev, uint32_t * device_power_state);
+   int pm_device_state_get(const struct device *dev, uint32_t * device_power_state);
 
-Calls the :c:func:`device_pm_control()` handler function implemented by the
-device driver with DEVICE_PM_GET_POWER_STATE command.
+Calls the :c:func:`pm_control()` handler function implemented by the
+device driver with PM_DEVICE_STATE_GET command.
 
 Busy Status Indication
 ======================
@@ -417,7 +405,7 @@ Enable Device Idle Power Management of a Device API
 
 .. code-block:: c
 
-   void device_pm_enable(const struct device *dev);
+   void pm_device_enable(const struct device *dev);
 
 Enbles Idle Power Management of the device.
 
@@ -426,7 +414,7 @@ Disable Device Idle Power Management of a Device API
 
 .. code-block:: c
 
-   void device_pm_disable(const struct device *dev);
+   void pm_device_disable(const struct device *dev);
 
 Disables Idle Power Management of the device.
 
@@ -435,7 +423,7 @@ Resume Device asynchronously API
 
 .. code-block:: c
 
-   int device_pm_get(const struct device *dev);
+   int pm_device_get(const struct device *dev);
 
 Marks the device as being used. This API will asynchronously
 bring the device to resume state. The API returns 0 on success.
@@ -445,7 +433,7 @@ Resume Device synchronously API
 
 .. code-block:: c
 
-   int device_pm_get_sync(const struct device *dev);
+   int pm_device_get_sync(const struct device *dev);
 
 Marks the device as being used. It will bring up or resume
 the device if it is in suspended state based on the device
@@ -457,7 +445,7 @@ Suspend Device asynchronously API
 
 .. code-block:: c
 
-   int device_pm_put(const struct device *dev);
+   int pm_device_put(const struct device *dev);
 
 Marks the device as being released. This API asynchronously put
 the device to suspend state if not already in suspend state.
@@ -468,7 +456,7 @@ Suspend Device synchronously API
 
 .. code-block:: c
 
-   int device_pm_put_sync(const struct device *dev);
+   int pm_device_put_sync(const struct device *dev);
 
 Marks the device as being released. It will put the device to
 suspended state if is is in active state based on the device
@@ -492,9 +480,9 @@ the following configuration flags.
    This flag is enabled if the SOC interface and the devices support device power
    management.
 
-:code:`CONFIG_PM_DEVICE_IDLE`
+:code:`CONFIG_PM_DEVICE_RUNTIME`
 
-   This flag enables the Device Idle Power Management.
+   This flag enables the Runtime Power Management.
 
 API Reference
 *************

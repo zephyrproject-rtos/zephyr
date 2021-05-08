@@ -147,6 +147,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
+include(${ZEPHYR_BASE}/cmake/git.cmake)
 include(${ZEPHYR_BASE}/cmake/version.cmake)  # depends on hex.cmake
 
 #
@@ -155,7 +156,6 @@ include(${ZEPHYR_BASE}/cmake/version.cmake)  # depends on hex.cmake
 
 include(${ZEPHYR_BASE}/cmake/python.cmake)
 include(${ZEPHYR_BASE}/cmake/west.cmake)
-include(${ZEPHYR_BASE}/cmake/git.cmake)  # depends on version.cmake
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
 
 if(ZEPHYR_EXTRA_MODULES)
@@ -654,8 +654,6 @@ endif()
 #
 # Currently used properties:
 # - COMPILES_OPTIONS: Used by application memory partition feature
-# - ${TARGET}_DEPENDENCIES: additional dependencies for targets that need them
-#   like flash (FLASH_DEPENDENCIES), debug (DEBUG_DEPENDENCIES), etc.
 add_custom_target(zephyr_property_target)
 
 # "app" is a CMake library containing all the application code and is

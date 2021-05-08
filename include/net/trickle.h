@@ -60,6 +60,7 @@ struct net_trickle {
 	uint8_t c;		/**< Consistency counter */
 
 	uint32_t Imax_abs;	/**< Max interval size in ms (not doublings) */
+	bool double_to;
 
 	struct k_work_delayable timer;
 	net_trickle_cb_t cb;	/**< Callback to be called when timer expires */

@@ -64,12 +64,21 @@ config USB_MAX_NUM_TRANSFERS
         Allocates buffers used for parallel transfers. Increase this number
         according to USB devices count.
 
+config USB_DEVICE_BLUETOOTH_BIG_BUF
+	bool
+	# Hidden option to simplify bluetooth buffer requirement
+	# TODO: Add BUF reserve in H4 mode and ISO?
+	default y if BT_BUF_ACL_RX_SIZE > 123 # 4 byte header
+	default y if BT_BUF_ACL_TX_SIZE > 123 # 4 byte header
+	default y if BT_BUF_EVT_RX_SIZE > 125 # 2 byte header
+	default y if BT_BUF_CMD_TX_SIZE > 124 # 3 byte header
+
 config USB_REQUEST_BUFFER_SIZE
 	int "Set buffer size for Standard, Class and Vendor request handlers"
 	range 256 65536 if USB_DEVICE_NETWORK_RNDIS
 	range 8 65536
 	default 256 if USB_DEVICE_NETWORK_RNDIS
-	default 266 if (BT_RX_BUF_LEN > 127 && USB_DEVICE_BLUETOOTH)
+	default 266 if (USB_DEVICE_BLUETOOTH && USB_DEVICE_BLUETOOTH_BIG_BUF)
 	default 1024 if USB_DEVICE_LOOPBACK
 	default 128
 

@@ -1,0 +1,71 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32WB and STM32WL PLL node.
+
+  It can be used to describe 2 different PLLs: PLL, PLLSAI1.
+  Only main PLL is supported for now.
+
+  These PLLs could take one of clk_hse, clk_hsi or clk_msi as input clock, with
+  an input frequency from 2.66 to 16 MHz. PLLM factor is used to set the input
+  clock in this acceptable range.
+
+  Each PLL can have up to 3 output clocks and for each output clock, the
+  frequency can be computed with the following formulae:
+
+    f(PLL_P) = f(VCO clock) / PLLP  --> PLLPCLK
+    f(PLL_Q) = f(VCO clock) / PLLQ  --> PLLQCLK
+    f(PLL_R) = f(VCO clock) / PLLR  --> PLLRCLK (System Clock)
+
+      with f(VCO clock) = f(PLL clock input) × (PLLN / PLLM)
+
+  The PLL output frequency must not exceed:
+          - 64 MHz on STM32WB
+          - 62 MHz on STM32WL
+
+compatible: "st,stm32wb-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    "#clock-cells":
+      const: 0
+
+    clocks:
+      required: true
+
+    div-m:
+      type: int
+      required: true
+      description: |
+          Main PLL division factor for PLL input clock
+          Valid range: 1 - 8
+
+    mul-n:
+      type: int
+      required: true
+      description: |
+          Main PLL multiplication factor for VCO
+          Valid range: 6 - 127
+
+    div-p:
+      type: int
+      required: false
+      description: |
+          Main PLL division factor for PLLPCLK
+          Valid range: 2 - 32
+
+    div-q:
+      type: int
+      required: false
+      description: |
+          Main PLL division factor for PLLQCLK
+          Valid range: 2 - 8
+
+    div-r:
+      type: int
+      required: true
+      description: |
+          Main PLL division factor for PLLRCLK (system clock)
+          Valid range: 2 - 8

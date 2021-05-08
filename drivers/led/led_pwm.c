@@ -120,7 +120,7 @@ static int led_pwm_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 	struct led_pwm_data *data = DEV_DATA(dev);
 
-	data->pm_state = DEVICE_PM_ACTIVE_STATE;
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	return 0;
@@ -160,7 +160,7 @@ static int led_pwm_pm_set_state(const struct device *dev, uint32_t new_state)
 		const struct led_pwm *led_pwm = &config->led[i];
 
 		LOG_DBG("Switching PWM %p to state %" PRIu32, led_pwm->dev, new_state);
-		int err = device_set_power_state(led_pwm->dev, new_state, NULL, NULL);
+		int err = pm_device_state_set(led_pwm->dev, new_state, NULL, NULL);
 
 		if (err) {
 			LOG_ERR("Cannot switch PWM %p power state", led_pwm->dev);
@@ -176,16 +176,16 @@ static int led_pwm_pm_set_state(const struct device *dev, uint32_t new_state)
 }
 
 static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
-			      void *context, device_pm_cb cb, void *arg)
+			      void *context, pm_device_cb cb, void *arg)
 {
 	int err;
 
 	switch (ctrl_command) {
-	case DEVICE_PM_GET_POWER_STATE:
+	case PM_DEVICE_STATE_GET:
 		err = led_pwm_pm_get_state(dev, context);
 		break;
 
-	case DEVICE_PM_SET_POWER_STATE:
+	case PM_DEVICE_STATE_SET:
 		err = led_pwm_pm_set_state(dev, *((uint32_t *)context));
 		break;
 

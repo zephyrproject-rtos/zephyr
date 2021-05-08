@@ -297,6 +297,46 @@ static inline int64_t z_vrfy_k_uptime_ticks(void)
 #include <syscalls/k_uptime_ticks_mrsh.c>
 #endif
 
+void z_impl_k_busy_wait(uint32_t usec_to_wait)
+{
+	SYS_PORT_TRACING_FUNC_ENTER(k_thread, busy_wait, usec_to_wait);
+	if (usec_to_wait == 0U) {
+		SYS_PORT_TRACING_FUNC_EXIT(k_thread, busy_wait, usec_to_wait);
+		return;
+	}
+
+#if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
+	uint32_t start_cycles = k_cycle_get_32();
+
+	/* use 64-bit math to prevent overflow when multiplying */
+	uint32_t cycles_to_wait = (uint32_t)(
+		(uint64_t)usec_to_wait *
+		(uint64_t)sys_clock_hw_cycles_per_sec() /
+		(uint64_t)USEC_PER_SEC
+	);
+
+	for (;;) {
+		uint32_t current_cycles = k_cycle_get_32();
+
+		/* this handles the rollover on an unsigned 32-bit value */
+		if ((current_cycles - start_cycles) >= cycles_to_wait) {
+			break;
+		}
+	}
+#else
+	arch_busy_wait(usec_to_wait);
+#endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT */
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, busy_wait, usec_to_wait);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_busy_wait(uint32_t usec_to_wait)
+{
+	z_impl_k_busy_wait(usec_to_wait);
+}
+#include <syscalls/k_busy_wait_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 /* Returns the uptime expiration (relative to an unlocked "now"!) of a
  * timeout object.  When used correctly, this should be called once,
  * synchronously with the user passing a new timeout value.  It should
@@ -310,12 +350,13 @@ uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
 		return UINT64_MAX;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		return sys_clock_tick_get();
-	}
+	} else {
 
-	dt = timeout.ticks;
+		dt = timeout.ticks;
 
-	if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(dt) >= 0) {
-		return Z_TICK_ABS(dt);
+		if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(dt) >= 0) {
+			return Z_TICK_ABS(dt);
+		}
+		return sys_clock_tick_get() + MAX(1, dt);
 	}
-	return sys_clock_tick_get() + MAX(1, dt);
 }

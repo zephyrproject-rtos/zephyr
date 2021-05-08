@@ -63,7 +63,7 @@
 #define PDU_AC_LL_SIZE_MAX     (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
 
 /* Advertisement channel maximum legacy advertising/scan data size */
-#define PDU_AC_DATA_SIZE_MAX 31
+#define PDU_AC_DATA_SIZE_MAX   31
 
 /* Advertisement channel Access Address */
 #define PDU_AC_ACCESS_ADDR     0x8e89bed6
@@ -78,6 +78,9 @@
 /* Link Layer Max size of an empty PDU. TODO: Remove; only used in Nordic LLL */
 #define PDU_EM_LL_SIZE_MAX     (PDU_DC_LL_HEADER_SIZE)
 
+/* Link Layer header size of BIS PDU. Assumes pdu_bis is packed */
+#define PDU_BIS_LL_HEADER_SIZE (offsetof(struct pdu_bis, payload))
+
 /* Event interframe timings */
 #define EVENT_IFS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
@@ -86,6 +89,10 @@
 #define EVENT_MAFS_US           300
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + 2)
+/* Minimum Subevent Space timings */
+#define EVENT_MSS_US            150
+/* Standard allows 2 us timing uncertainty inside the event */
+#define EVENT_MSS_MAX_US        (EVENT_MSS_US + 2)
 
 /* Offset Units field encoding */
 #define OFFS_UNIT_30_US         30
@@ -152,6 +159,8 @@
 #define PKT_US(octets, phy) PKT_DC_US((octets), (PDU_MIC_SIZE), (phy))
 
 #define PKT_AC_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
+
+#define PKT_BIS_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
 
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
  * index, directed adv report, and mesh channel and instant.
@@ -823,7 +832,7 @@ struct pdu_bis {
 #else
 #error "Unsupported endianness"
 #endif /* __BYTE_ORDER__ */
-	uint8_t length;
+	uint8_t len;
 	union {
 		uint8_t payload[0];
 		struct pdu_big_ctrl ctrl;
@@ -832,8 +841,8 @@ struct pdu_bis {
 
 struct pdu_big_info {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	uint32_t offset:14;
-	uint32_t offset_units:1;
+	uint32_t offs:14;
+	uint32_t offs_units:1;
 	uint32_t iso_interval:12;
 	uint32_t num_bis:5;
 
@@ -855,8 +864,8 @@ struct pdu_big_info {
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	uint32_t num_bis:5;
 	uint32_t iso_interval:12;
-	uint32_t offset_units:1;
-	uint32_t offset:14;
+	uint32_t offs_units:1;
+	uint32_t offs:14;
 
 	uint32_t pto:4;
 	uint32_t sub_interval:20;

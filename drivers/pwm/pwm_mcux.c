@@ -165,7 +165,7 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 									  \
 	DEVICE_DT_INST_DEFINE(n,					  \
 			    pwm_mcux_init,				  \
-			    device_pm_control_nop,			  \
+			    NULL,					  \
 			    &pwm_mcux_data_ ## n,			  \
 			    &pwm_mcux_config_ ## n,			  \
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\

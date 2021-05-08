@@ -44,6 +44,7 @@
  *              enum values are identifiers)
  * _ENUM_UPPER_TOKEN: like _ENUM_TOKEN, but uppercased
  * _EXISTS: property is defined
+ * _FOREACH_PROP_ELEM: helper for "iterating" over values in the property
  * _IDX_<i>: logical index into property
  * _IDX_<i>_EXISTS: logical index into property is defined
  * _IDX_<i>_PH: phandle array's phandle by index (or phandle, phandles)
@@ -1484,6 +1485,67 @@
 #define DT_FOREACH_CHILD(node_id, fn) \
 	DT_CAT(node_id, _FOREACH_CHILD)(fn)
 
+/**
+ * @brief Call "fn" on the child nodes with status "okay"
+ *
+ * The macro "fn" should take one argument, which is the node
+ * identifier for the child node.
+ *
+ * As usual, both a missing status and an "ok" status are
+ * treated as "okay".
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_CHILD_STATUS_OKAY(node_id, fn) \
+	DT_CAT(node_id, _FOREACH_CHILD_STATUS_OKAY)(fn)
+
+/**
+ * @brief Invokes "fn" for each element in the value of property "prop".
+ *
+ * The macro "fn" must take three parameters: fn(node_id, prop, idx).
+ * "node_id" and "prop" are the same as what is passed to
+ * DT_FOREACH_PROP_ELEM, and "idx" is the current index into the array.
+ * The "idx" values are integer literals starting from 0.
+ *
+ * Example devicetree fragment:
+ *
+ *     n: node {
+ *             my-ints = <1 2 3>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     #define TIMES_TWO(node_id, prop, idx) \
+ *	       (2 * DT_PROP_BY_IDX(node_id, prop, idx)),
+ *
+ *     int array[] = {
+ *             DT_FOREACH_PROP_ELEM(DT_NODELABEL(n), my_ints, TIMES_TWO)
+ *     };
+ *
+ * This expands to:
+ *
+ *     int array[] = {
+ *             (2 * 1), (2 * 2), (2 * 3),
+ *     };
+ *
+ * In general, this macro expands to:
+ *
+ *     fn(node_id, prop, 0) fn(node_id, prop, 1) [...] fn(node_id, prop, n-1)
+ *
+ * where "n" is the number of elements in "prop", as it would be
+ * returned by <tt>DT_PROP_LEN(node_id, prop)</tt>.
+ *
+ * The "prop" argument must refer to a property with type string,
+ * array, uint8-array, string-array, phandles, or phandle-array. It is
+ * an error to use this macro with properties of other types.
+ *
+ * @param node_id node identifier
+ * @param prop lowercase-and-underscores property name
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_PROP_ELEM(node_id, prop, fn)		\
+	DT_CAT4(node_id, _P_, prop, _FOREACH_PROP_ELEM)(fn)
 
 /**
  * @}
@@ -2150,6 +2212,19 @@
 		    (UTIL_CAT(DT_FOREACH_OKAY_INST_,		\
 			      DT_DRV_COMPAT)(fn)),		\
 		    ())
+
+/**
+ * @brief Invokes "fn" for each element of property "prop" for
+ *        a DT_DRV_COMPAT instance.
+ *
+ * Equivalent to DT_FOREACH_PROP_ELEM(DT_DRV_INST(inst), prop, fn).
+ *
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param fn macro to invoke
+ */
+#define DT_INST_FOREACH_PROP_ELEM(inst, prop, fn) \
+	DT_FOREACH_PROP_ELEM(DT_DRV_INST(inst), prop, fn)
 
 /**
  * @brief Does a DT_DRV_COMPAT instance have a property?

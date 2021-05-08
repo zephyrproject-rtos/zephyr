@@ -46,6 +46,16 @@ config NET_IPV4_ACCEPT_ZERO_BROADCAST
 	  If set, then accept UDP packets destined to non-standard
 	  0.0.0.0 broadcast address as described in RFC 1122 ch. 3.3.6
 
+config NET_IPV4_IGMP
+	bool "Internet Group Management Protocol (IGMP) support"
+	select NET_IPV4_HDR_OPTIONS
+	help
+	  The value depends on your network needs. IGMP should normally be
+	  enabled if IPv4 multicast support is needed. Currently we support
+	  IGMPv2 and earlier versions. This requires IPv4 header support
+	  because IP Router Alert option must be sent.
+	  See RFC 2236 for details.
+
 config NET_DHCPV4
 	bool "Enable DHCPv4 client"
 	select NET_MGMT

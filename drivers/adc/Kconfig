@@ -60,4 +60,6 @@ source "drivers/adc/Kconfig.npcx"
 
 source "drivers/adc/Kconfig.cc32xx"
 
+source "drivers/adc/Kconfig.adc_emul"
+
 endif # ADC

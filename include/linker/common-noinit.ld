@@ -24,3 +24,5 @@ SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
 #include <snippets-noinit.ld>
 
 } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#include "kobject-priv-stacks.ld"

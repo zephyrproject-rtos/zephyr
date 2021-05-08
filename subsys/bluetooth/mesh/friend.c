@@ -67,6 +67,11 @@ static struct bt_mesh_adv *adv_alloc(int id)
 	return &adv_pool[id].adv;
 }
 
+static bool friend_is_allocated(const struct bt_mesh_friend *frnd)
+{
+	return frnd->subnet != NULL;
+}
+
 static bool is_lpn_unicast(struct bt_mesh_friend *frnd, uint16_t addr)
 {
 	if (frnd->lpn == BT_MESH_ADDR_UNASSIGNED) {
@@ -86,7 +91,7 @@ struct bt_mesh_friend *bt_mesh_friend_find(uint16_t net_idx, uint16_t lpn_addr,
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
-		if (valid && !frnd->subnet) {
+		if (valid && !friend_is_allocated(frnd)) {
 			continue;
 		}
 
@@ -149,7 +154,8 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 
 	BT_DBG("LPN 0x%04x", frnd->lpn);
 
-	k_delayed_work_cancel(&frnd->timer);
+	/* If cancelling the timer fails, we'll exit early in the work handler. */
+	(void)k_work_cancel_delayable(&frnd->timer);
 
 	memset(frnd->cred, 0, sizeof(frnd->cred));
 
@@ -197,7 +203,7 @@ void bt_mesh_friends_clear(void)
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
-		if (!frnd->subnet) {
+		if (!friend_is_allocated(frnd)) {
 			continue;
 		}
 
@@ -216,7 +222,7 @@ void bt_mesh_friend_sec_update(uint16_t net_idx)
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
-		if (!frnd->subnet) {
+		if (!friend_is_allocated(frnd)) {
 			continue;
 		}
 
@@ -531,7 +537,7 @@ static struct net_buf *encode_update(struct bt_mesh_friend *frnd, uint8_t md)
 	struct bt_mesh_ctl_friend_update *upd;
 	NET_BUF_SIMPLE_DEFINE(sdu, 1 + sizeof(*upd));
 
-	__ASSERT_NO_MSG(frnd->subnet);
+	__ASSERT_NO_MSG(friend_is_allocated(frnd));
 
 	BT_DBG("lpn 0x%04x md 0x%02x", frnd->lpn, md);
 
@@ -582,7 +588,7 @@ static void friend_recv_delay(struct bt_mesh_friend *frnd)
 	int32_t delay = recv_delay(frnd);
 
 	frnd->pending_req = 1U;
-	k_delayed_work_submit(&frnd->timer, K_MSEC(delay));
+	k_work_reschedule(&frnd->timer, K_MSEC(delay));
 	BT_DBG("Waiting RecvDelay of %d ms", delay);
 }
 
@@ -762,8 +768,8 @@ static void friend_clear_sent(int err, void *user_data)
 {
 	struct bt_mesh_friend *frnd = user_data;
 
-	k_delayed_work_submit(&frnd->clear.timer,
-			      K_SECONDS(frnd->clear.repeat_sec));
+	k_work_reschedule(&frnd->clear.timer,
+			  K_SECONDS(frnd->clear.repeat_sec));
 	frnd->clear.repeat_sec *= 2U;
 }
 
@@ -798,9 +804,15 @@ static void send_friend_clear(struct bt_mesh_friend *frnd)
 
 static void clear_timeout(struct k_work *work)
 {
-	struct bt_mesh_friend *frnd = CONTAINER_OF(work, struct bt_mesh_friend,
-						   clear.timer.work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_mesh_friend *frnd = CONTAINER_OF(dwork, struct bt_mesh_friend,
+						   clear.timer);
 	uint32_t duration;
+
+	if (frnd->clear.frnd == BT_MESH_ADDR_UNASSIGNED) {
+		/* Failed cancelling timer, return early. */
+		return;
+	}
 
 	BT_DBG("LPN 0x%04x (old) Friend 0x%04x", frnd->lpn, frnd->clear.frnd);
 
@@ -858,7 +870,8 @@ int bt_mesh_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 		return 0;
 	}
 
-	k_delayed_work_cancel(&frnd->clear.timer);
+	/* If this fails, the unassigned check will make the handler return early. */
+	(void)k_work_cancel_delayable(&frnd->clear.timer);
 	frnd->clear.frnd = BT_MESH_ADDR_UNASSIGNED;
 
 	return 0;
@@ -1028,7 +1041,7 @@ init_friend:
 	}
 
 	delay = offer_delay(frnd, rx->ctx.recv_rssi, msg->criteria);
-	k_delayed_work_submit(&frnd->timer, K_MSEC(delay));
+	k_work_reschedule(&frnd->timer, K_MSEC(delay));
 
 	enqueue_offer(frnd, rx->ctx.recv_rssi);
 
@@ -1145,11 +1158,12 @@ static void buf_send_end(int err, void *user_data)
 	}
 
 	if (frnd->established) {
-		k_delayed_work_submit(&frnd->timer, K_MSEC(frnd->poll_to));
+		/* Always restart poll timeout timer after sending */
+		k_work_reschedule(&frnd->timer, K_MSEC(frnd->poll_to));
 		BT_DBG("Waiting %u ms for next poll", frnd->poll_to);
 	} else {
 		/* Friend offer timeout is 1 second */
-		k_delayed_work_submit(&frnd->timer, K_SECONDS(1));
+		k_work_reschedule(&frnd->timer, K_SECONDS(1));
 		BT_DBG("Waiting for first poll");
 	}
 }
@@ -1188,14 +1202,18 @@ end:
 
 static void friend_timeout(struct k_work *work)
 {
-	struct bt_mesh_friend *frnd = CONTAINER_OF(work, struct bt_mesh_friend,
-						   timer.work);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_mesh_friend *frnd = CONTAINER_OF(dwork, struct bt_mesh_friend,
+						   timer);
 	static const struct bt_mesh_send_cb buf_sent_cb = {
 		.start = buf_send_start,
 		.end = buf_send_end,
 	};
-
 	uint8_t md;
+
+	if (!friend_is_allocated(frnd)) {
+		return;
+	}
 
 	__ASSERT_NO_MSG(frnd->pending_buf == 0U);
 
@@ -1301,8 +1319,8 @@ int bt_mesh_friend_init(void)
 
 		sys_slist_init(&frnd->queue);
 
-		k_delayed_work_init(&frnd->timer, friend_timeout);
-		k_delayed_work_init(&frnd->clear.timer, clear_timeout);
+		k_work_init_delayable(&frnd->timer, friend_timeout);
+		k_work_init_delayable(&frnd->clear.timer, clear_timeout);
 
 		for (j = 0; j < ARRAY_SIZE(frnd->seg); j++) {
 			sys_slist_init(&frnd->seg[j].queue);

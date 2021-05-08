@@ -33,6 +33,9 @@ extern "C" {
 				  BT_HCI_ISO_HDR_SIZE + \
 				  BT_HCI_ISO_DATA_HDR_SIZE)
 
+/** Value to set the ISO data path over HCi. */
+#define BT_ISO_DATA_PATH_HCI     0x00
+
 struct bt_iso_chan;
 
 /** @brief Life-span states of ISO channel. Used only by internal APIs
@@ -79,8 +82,10 @@ struct bt_iso_chan_io_qos {
 	uint8_t				phy;
 	/** Channel Retransmission Number. Value range 0x00 - 0x0F. */
 	uint8_t				rtn;
-	/** Channel data path reference.
-	 *  Setting to NULL default to HCI data path.
+	/** @brief Channel data path reference
+	 *
+	 *  Setting to NULL default to HCI data path (same as setting path.pid
+	 *  to BT_ISO_DATA_PATH_HCI).
 	 */
 	struct bt_iso_chan_path		*path;
 };
@@ -97,12 +102,20 @@ struct bt_iso_chan_qos {
 	uint8_t				packing;
 	/** Channel framing mode. 0 for unframed, 1 for framed. */
 	uint8_t				framing;
-	/** Channel Receiving QoS:
-	 *  Setting NULL disables data path BT_HCI_DATAPATH_DIR_CTLR_TO_HOST
+	/** @brief Channel Receiving QoS.
+	 *
+	 *  Setting NULL disables data path BT_HCI_DATAPATH_DIR_CTLR_TO_HOST.
+	 *
+	 *  Can only be set for a connected isochronous channel, or a broadcast
+	 *  isochronous receiver.
 	 */
 	struct bt_iso_chan_io_qos	*rx;
-	/** Channel Transmission QoS:
-	 *  Setting NULL disables data path BT_HCI_DATAPATH_DIR_HOST_TO_CTRL
+	/** @brief Channel Transmission QoS
+	 *
+	 *  Setting NULL disables data path BT_HCI_DATAPATH_DIR_HOST_TO_CTRL.
+	 *
+	 *  Can only be set for a connected isochronous channel, or a broadcast
+	 *  isochronous transmitter.
 	 */
 	struct bt_iso_chan_io_qos	*tx;
 };
@@ -355,6 +368,9 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan);
  *  be queued and sent as and when credits are received from peer.
  *  Regarding to first input parameter, to get details see reference description
  *  to bt_iso_chan_connect() API above.
+ *
+ *  @note Buffer ownership is transferred to the stack in case of success, in
+ *  case of an error the caller retains the ownership of the buffer.
  *
  *  @param chan Channel object.
  *  @param buf Buffer containing data to be sent.

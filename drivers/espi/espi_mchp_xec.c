@@ -1374,7 +1374,7 @@ static const struct espi_xec_config espi_xec_config = {
 	.pc_girq_id = DT_INST_PROP(0, pc_girq),
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_xec_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &espi_xec_init, NULL,
 		    &espi_xec_data, &espi_xec_config,
 		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
 		    &espi_xec_driver_api);

@@ -10,16 +10,53 @@ config LOG_BACKEND_UART
 	help
 	  When enabled backend is using UART to output logs.
 
+if LOG_BACKEND_UART
+
+config LOG_BACKEND_UART_OUTPUT_DICTIONARY
+	bool
+	depends on LOG2
+	select LOG_DICTIONARY_SUPPORT
+	help
+	  UART backend is in dictionary-based logging output mode.
+
+choice
+	prompt "UART Backend Output Mode"
+	default LOG_BACKEND_UART_OUTPUT_TEXT
+
+config LOG_BACKEND_UART_OUTPUT_TEXT
+	bool "Text"
+	help
+	  Output in text.
+
 config LOG_BACKEND_UART_SYST_ENABLE
-	bool "Enable UART syst backend"
+	bool "MIPI SyS-T"
 	depends on LOG_BACKEND_UART
 	depends on LOG_MIPI_SYST_ENABLE
 	help
 	  When enabled backend is using UART to output syst format logs.
 
+config LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX
+	bool "Dictionary (hexadecimal)"
+	depends on LOG2
+	select LOG_BACKEND_UART_OUTPUT_DICTIONARY
+	help
+	  Dictionary-based logging output in hexadecimal.
+
+config LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN
+	bool "Dictionary (binary)"
+	depends on LOG2
+	select LOG_BACKEND_UART_OUTPUT_DICTIONARY
+	help
+	  Dictionary-based logging output in binary.
+
+endchoice
+
+endif # LOG_BACKEND_UART
+
 config LOG_BACKEND_SWO
 	bool "Enable Serial Wire Output (SWO) backend"
 	depends on HAS_SWO
+	depends on !LOG2
 	help
 	  When enabled, backend will use SWO for logging.
 
@@ -152,6 +189,7 @@ config LOG_BACKEND_SPINEL
 	bool "Enable OpenThread dedicated Spinel protocol backend"
 	depends on (OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME!=UART_CONSOLE_ON_DEV_NAME || !LOG_BACKEND_UART)
 	depends on NET_L2_OPENTHREAD
+	depends on !LOG2
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
 	  This protocol is byte oriented and wrapps given messages into serial frames.
@@ -177,6 +215,7 @@ config LOG_BACKEND_NATIVE_POSIX
 config LOG_BACKEND_XTENSA_SIM
 	bool "Enable xtensa simulator backend"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER || SOC_FAMILY_INTEL_ADSP
+	depends on !LOG2
 	help
 	  Enable backend in xtensa simulator
 
@@ -192,6 +231,7 @@ config LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
 # rsyslog message to be malformed.
 config LOG_BACKEND_NET
 	bool "Enable networking backend"
+	depends on !LOG2
 	depends on NETWORKING && NET_UDP && !LOG_IMMEDIATE
 	select NET_CONTEXT_NET_PKT_POOL
 	help

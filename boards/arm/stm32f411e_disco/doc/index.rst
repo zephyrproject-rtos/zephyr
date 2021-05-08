@@ -14,9 +14,9 @@ Here are some highlights of the STM32F411E-DISCO board:
 - On-board ST-LINK/V2 with selection mode switch to use the kit as a standalone STLINK/V2 (with SWD connector for programming and debugging)
 - Board power supply: through USB bus or from an external 5 V supply voltage
 - External application power supply: 3 V and 5 V
-- L3GD20, ST MEMS motion sensor, 3-axis digital output gyroscope.
-- LSM303DLHC, ST MEMS system-in-package featuring a 3D digital linear acceleration sensor and a 3D digital magnetic sensor.
-- MP45DT02, ST MEMS audio sensor, omnidirectional digital microphone
+- L3GD20(rev B) or I3G4250D(rev D): ST MEMS motion sensor, 3-axis digital output gyroscope.
+- LSM303DLHC(rev B) or LSM303AGR(rev D): ST MEMS system-in-package featuring a 3D digital linear acceleration sensor and a 3D digital magnetic sensor.
+- MP45DT02(rev B) or IMP34DT05(rev D), ST MEMS audio sensor, omnidirectional digital microphone
 - CS43L22, audio DAC with integrated class D speaker driver
 - Eight LEDs:
     - LD1 (red/green) for USB communication
@@ -104,10 +104,10 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 - UART_2_TX : PA2
 - UART_2_RX : PA3
-- LD3 : PD13
+- LD3 : PD13 (PWM4 CH2)
 - LD4 : PD12 (PWM4 CH1)
-- LD5 : PD14
-- LD6 : PD15
+- LD5 : PD14 (PWM4 CH3)
+- LD6 : PD15 (PWM4 CH4)
 
 System Clock
 ============
@@ -148,6 +148,14 @@ Here is an example for the :ref:`blinky-sample` application.
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
    :board: stm32f411e_disco
+   :goals: build flash
+
+Incase you are using PCB revision B, you have to use an
+adapted board definition as the default PCB rev here is D:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm32f411e_disco@B
    :goals: build flash
 
 You should see the orange led (LD3) blinking every second.

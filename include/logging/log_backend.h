@@ -7,6 +7,7 @@
 #define ZEPHYR_INCLUDE_LOGGING_LOG_BACKEND_H_
 
 #include <logging/log_msg.h>
+#include <logging/log_msg2.h>
 #include <stdarg.h>
 #include <sys/__assert.h>
 #include <sys/util.h>
@@ -29,6 +30,9 @@ struct log_backend;
  * @brief Logger backend API.
  */
 struct log_backend_api {
+	void (*process)(const struct log_backend *const backend,
+			union log_msg2_generic *msg);
+
 	void (*put)(const struct log_backend *const backend,
 		    struct log_msg *msg);
 	void (*put_sync_string)(const struct log_backend *const backend,
@@ -72,10 +76,13 @@ extern const struct log_backend __log_backends_end[];
  * @param _api		Logger backend API.
  * @param _autostart	If true backend is initialized and activated together
  *			with the logger subsystem.
+ * @param ...		Optional context.
  */
-#define LOG_BACKEND_DEFINE(_name, _api, _autostart)			       \
+#define LOG_BACKEND_DEFINE(_name, _api, _autostart, ...)		       \
 	static struct log_backend_control_block UTIL_CAT(backend_cb_, _name) = \
 	{								       \
+		COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__),	       \
+				(), (.ctx = __VA_ARGS__,))		       \
 		.id = 0,						       \
 		.active = false,					       \
 	};								       \
@@ -101,6 +108,16 @@ static inline void log_backend_put(const struct log_backend *const backend,
 	__ASSERT_NO_MSG(msg != NULL);
 	backend->api->put(backend, msg);
 }
+
+static inline void log_backend_msg2_process(
+					const struct log_backend *const backend,
+					union log_msg2_generic *msg)
+{
+	__ASSERT_NO_MSG(backend != NULL);
+	__ASSERT_NO_MSG(msg != NULL);
+	backend->api->process(backend, msg);
+}
+
 
 /**
  * @brief Synchronously process log message.

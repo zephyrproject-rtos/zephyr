@@ -281,7 +281,7 @@ static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, gpio_cc13xx_cc26xx_init,
-		    device_pm_control_nop, &gpio_cc13xx_cc26xx_data_0,
+		    NULL, &gpio_cc13xx_cc26xx_data_0,
 		    &gpio_cc13xx_cc26xx_cfg_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_cc13xx_cc26xx_driver_api);

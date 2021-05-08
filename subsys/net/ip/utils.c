@@ -615,6 +615,18 @@ uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 }
 #endif /* CONFIG_NET_IPV4 */
 
+#if defined(CONFIG_NET_IPV4_IGMP)
+uint16_t net_calc_chksum_igmp(uint8_t *data, size_t len)
+{
+	uint16_t sum;
+
+	sum = calc_chksum(0, data, len);
+	sum = (sum == 0U) ? 0xffff : htons(sum);
+
+	return ~sum;
+}
+#endif /* CONFIG_NET_IPV4_IGMP */
+
 #if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
 static bool convert_port(const char *buf, uint16_t *port)
 {

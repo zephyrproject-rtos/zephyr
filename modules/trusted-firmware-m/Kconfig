@@ -17,6 +17,7 @@ config TFM_BOARD
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
 	default "musca_b1/sse_200" if BOARD_MUSCA_B1
 	default "musca_s1" if BOARD_MUSCA_S1
+	default "lairdconnectivity/bl5340_dvk_cpuapp" if BOARD_BL5340_DVK_CPUAPPNS
 	help
 	  The board name used for building TFM. Building with TFM requires that
 	  TFM has been ported to the given board/SoC.
@@ -28,6 +29,7 @@ menuconfig BUILD_WITH_TFM
 	depends on ARM_TRUSTZONE_M
 	select BUILD_OUTPUT_HEX
 	imply INIT_ARCH_HW_AT_BOOT
+	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionaly generate a TF-M image for the Secure Execution
@@ -38,10 +40,13 @@ menuconfig BUILD_WITH_TFM
 	  TF-M and Zephyr images, as well as the veneer object file that links
 	  them, are generated during the normal Zephyr build process.
 
-	  Note:
+	  Notes:
 	    Building with the "_nonsecure" BOARD variant (e.g.
 	    "mps2_an521_nonsecure") ensures that
 	    CONFIG_TRUSTED_EXECUTION_NONSECURE ie enabled.
+
+	    By default we allow Zephyr preemptible threads be preempted
+	    while performing a secure function call.
 
 if BUILD_WITH_TFM
 
@@ -229,12 +234,54 @@ config TFM_IPC
 	  TF-M Profile option is supplied, do not allow manual setting of
 	  the IPC mode, as it is determined by the profile setting.
 
-config TFM_REGRESSION
-	bool "Regression tests"
+config TFM_REGRESSION_S
+	bool "TF-M Secure Regression tests"
 	help
 	  When enabled, this option signifies that the TF-M build includes
-	  the Secure and the Non-Secure regression tests.
+	  the Secure domain regression tests.
 
+config TFM_REGRESSION_NS
+	bool "Use the TF-M Non-Secure Regression test application"
+	help
+	  When this is enabled, the Zephyr application as a whole will be
+	  replaced with the TF-M Non-Secure Regression test application.
+
+choice TFM_PSA_TEST
+	prompt "Enable a PSA test suite"
+	default TFM_PSA_TEST_NONE
+
+config TFM_PSA_TEST_CRYPTO
+	bool "Crypto tests"
+	depends on MAIN_STACK_SIZE >= 4096
+	help
+	  Enable the PSA Crypto test suite.
+
+config TFM_PSA_TEST_PROTECTED_STORAGE
+	bool "Storage tests"
+	help
+	  Enable the PSA Protected Storage test suite.
+
+config TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE
+	bool "Internal Trusted Storage tests"
+	help
+	  Enable the PSA Internal Trusted Storage test suite.
+
+config TFM_PSA_TEST_STORAGE
+	bool "Storage tests"
+	help
+	  Enable the PSA Storage test suite. This is a combination of the
+	  protected storage and internal trusted storage tests.
+
+config TFM_PSA_TEST_INITIAL_ATTESTATION
+	bool "Initial attestation tests"
+	depends on MAIN_STACK_SIZE >= 4096
+	help
+	  Enable the PSA Initial Attestation test suite.
+
+config TFM_PSA_TEST_NONE
+	bool "No PSA test suite"
+
+endchoice
 
 if TFM_BL2
 

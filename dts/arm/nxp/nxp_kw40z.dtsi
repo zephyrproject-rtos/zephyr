@@ -177,6 +177,7 @@
 			interrupts = <10 3>;
 			label = "SPI_0";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
+			status = "disabled";
 
 			#address-cells = <1>;
 			#size-cells = <0>;

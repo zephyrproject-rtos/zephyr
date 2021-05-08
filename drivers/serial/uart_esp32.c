@@ -536,7 +536,7 @@ static struct uart_esp32_data uart_esp32_data_##idx = {			       \
 									       \
 DEVICE_DT_INST_DEFINE(idx,						       \
 		    uart_esp32_init,					       \
-		    device_pm_control_nop,				       \
+		    NULL,						       \
 		    &uart_esp32_data_##idx,				       \
 		    &uart_esp32_cfg_port_##idx,				       \
 		    PRE_KERNEL_1,					       \

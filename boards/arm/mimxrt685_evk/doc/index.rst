@@ -65,15 +65,21 @@ features:
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| OS_TIMER  | on-chip    | os timer                            |
++-----------+------------+-------------------------------------+
 | IOCON     | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | OctalSPI Flash                      |
 +-----------+------------+-------------------------------------+
 | USART     | on-chip    | serial port-polling                 |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| I2S       | on-chip    | i2s                                 |
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
@@ -115,13 +121,42 @@ functionality of a pin.
 +---------+-----------------+----------------------------+
 | PIO1_6  | SPI             | SPI SSEL                   |
 +---------+-----------------+----------------------------+
+| PIO0_23 | I2S             | I2S DATAOUT                |
++---------+-----------------+----------------------------+
+| PIO0_22 | I2S             | I2S TX WS                  |
++---------+-----------------+----------------------------+
+| PIO0_21 | I2S             | I2S TX SCK                 |
++---------+-----------------+----------------------------+
+| PIO0_9  | I2S             | I2S DATAIN                 |
++---------+-----------------+----------------------------+
+| PIO1_11 | FLEXSPI0B_DATA0 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO1_12 | FLEXSPI0B_DATA1 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO1_13 | FLEXSPI0B_DATA2 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO1_14 | FLEXSPI0B_DATA3 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO1_29 | FLEXSPI0B_SCLK  | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO2_12 | PIO2_12         | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO2_17 | FLEXSPI0B_DATA4 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO2_18 | FLEXSPI0B_DATA5 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO2_19 | FLEXSPI0B_SS0_N | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO2_22 | FLEXSPI0B_DATA6 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
+| PIO2_23 | FLEXSPI0B_DATA7 | OctalSPI Flash             |
++---------+-----------------+----------------------------+
 
 System Clock
 ============
 
-The MIMXRT685 SoC is configured to use the main system PLL at 250MHz
-as a source for the system clock. Other sources for the system clock
-are provided in the SOC, depending on your system requirements.
+The MIMXRT685 EVK is configured to use the OS Event timer
+as a source for the system clock.
 
 Serial Port
 ===========
@@ -204,7 +239,7 @@ should see the following message in the terminal:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt600-evaluation-kit:MIMXRT685-EVK
 
 .. _MIMXRT685-EVK User Guide:
-   https://www.nxp.com/docs/en/user-guide/UM11159.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM11159
 
 .. _MIMXRT685-EVK Schematics:
    https://www.nxp.com/downloads/en/design-support/RT685-DESIGNFILES.zip
@@ -216,4 +251,4 @@ should see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/DS-RT600.pdf
 
 .. _i.MX RT685 Reference Manual:
-   https://www.nxp.com/docs/en/user-guide/UM11147.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM11147

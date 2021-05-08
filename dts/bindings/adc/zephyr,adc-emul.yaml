@@ -1,0 +1,46 @@
+# Copyright 2021 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr ADC Emulator
+
+compatible: "zephyr,adc-emul"
+
+include: adc-controller.yaml
+
+properties:
+    nchannels:
+        type: int
+        required: true
+        description: Number of emulated ADC channels. Should be in 1-32 range.
+
+    ref-internal-mv:
+        type: int
+        required: false
+        default: 0
+        description:
+          Internal reference voltage in mV. If not provided or set to zero,
+          channel setup with ADC_REF_INTERNAL will fail.
+
+    ref-vdd-mv:
+        type: int
+        required: false
+        default: 0
+        description:
+          VDD reference voltage in mV. If not provided or set to zero,
+          channel setup with ADC_REF_VDD_X will fail.
+
+    ref-external0-mv:
+        type: int
+        required: false
+        default: 0
+        description:
+          External 0 reference voltage in mV. If not provided or set to zero,
+          channel setup with ADC_REF_EXTERNAL0 will fail.
+
+    ref-external1-mv:
+        type: int
+        required: false
+        default: 0
+        description:
+          External 1 reference voltage in mV. If not provided or set to zero,
+          channel setup with ADC_REF_EXTERNAL1 will fail.

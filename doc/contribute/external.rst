@@ -137,7 +137,7 @@ source code is the best solution, and the external source code is licensed under
 the Apache-2.0 license, the submission process is complete and the external
 source code can be integrated.
 
-If, however, the esternal source code uses a license other than Apache-2.0,
+If, however, the external source code uses a license other than Apache-2.0,
 then these additional steps must be followed:
 
 #. The TSC chair will forward the link to the GitHub issue created during the

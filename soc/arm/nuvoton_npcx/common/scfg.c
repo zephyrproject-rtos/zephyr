@@ -5,9 +5,12 @@
  */
 
 #include <device.h>
+#include <drivers/gpio.h>
 #include <dt-bindings/pinctrl/npcx-pinctrl.h>
 #include <kernel.h>
 #include <soc.h>
+
+#include "soc_gpio.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pimux_npcx, LOG_LEVEL_ERR);
@@ -104,6 +107,36 @@ void npcx_lvol_pads_configure(void)
 		LOG_DBG("IO%x%x turn on low-voltage", def_lvols[i].io_port,
 							def_lvols[i].io_bit);
 	}
+}
+
+void npcx_lvol_restore_io_pads(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
+		npcx_gpio_enable_io_pads(
+				npcx_get_gpio_dev(def_lvols[i].io_port),
+				def_lvols[i].io_bit);
+	}
+}
+
+void npcx_lvol_suspend_io_pads(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
+		npcx_gpio_disable_io_pads(
+				npcx_get_gpio_dev(def_lvols[i].io_port),
+				def_lvols[i].io_bit);
+	}
+}
+
+bool npcx_lvol_is_enabled(int port, int pin)
+{
+	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
+		if (def_lvols[i].io_port == port &&
+		    def_lvols[i].io_bit == pin) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void npcx_pinctrl_i2c_port_sel(int controller, int port)

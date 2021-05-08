@@ -23,6 +23,20 @@
 #define FP_GUARD_EXTRA_SIZE	0
 #endif
 
+#ifndef EXC_RETURN_FTYPE
+/* bit [4] allocate stack for floating-point context: 0=done 1=skipped  */
+#define EXC_RETURN_FTYPE           (0x00000010UL)
+#endif
+
+/* Default last octet of EXC_RETURN, for threads that have not run yet.
+ * The full EXC_RETURN value will be e.g. 0xFFFFFFBC.
+ */
+#if defined(CONFIG_ARM_NONSECURE_FIRMWARE)
+#define DEFAULT_EXC_RETURN 0xBC;
+#else
+#define DEFAULT_EXC_RETURN 0xFD;
+#endif
+
 #if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_CPU_CORTEX_M)
 extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 #endif
@@ -101,8 +115,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.psp = (uint32_t)iframe;
 	thread->arch.basepri = 0;
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_ARM_STORE_EXC_RETURN) || defined(CONFIG_USERSPACE)
 	thread->arch.mode = 0;
+#if defined(CONFIG_ARM_STORE_EXC_RETURN)
+	thread->arch.mode_exc_return = DEFAULT_EXC_RETURN;
+#endif
 #if FP_GUARD_EXTRA_SIZE > 0
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
 		thread->arch.mode |= Z_ARM_MODE_MPU_GUARD_FLOAT_Msk;
@@ -177,7 +194,7 @@ static inline void z_arm_thread_stack_info_adjust(struct k_thread *thread,
 uint32_t z_arm_mpu_stack_guard_and_fpu_adjust(struct k_thread *thread)
 {
 	if (((thread->base.user_options & K_FP_REGS) != 0) ||
-		((thread->arch.mode & CONTROL_FPCA_Msk) != 0)) {
+		((thread->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0)) {
 		/* The thread has been pre-tagged (at creation or later) with
 		 * K_FP_REGS, i.e. it is expected to be using the FPU registers
 		 * (if not already). Activate lazy stacking and program a large
@@ -484,16 +501,6 @@ static void z_arm_prepare_switch_to_main(void)
 	__ISB();
 #endif /* CONFIG_FPU_SHARING */
 #endif /* CONFIG_FPU */
-
-#ifdef CONFIG_ARM_MPU
-	/* Configure static memory map. This will program MPU regions,
-	 * to set up access permissions for fixed memory sections, such
-	 * as Application Memory or No-Cacheable SRAM area.
-	 *
-	 * This function is invoked once, upon system initialization.
-	 */
-	z_arm_configure_static_mpu_regions();
-#endif
 }
 
 void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,

@@ -10,6 +10,12 @@ if(NOT CONFIG_LOG_MINIMAL)
   )
 
   zephyr_sources_ifdef(
+    CONFIG_LOG2
+    log_msg2.c
+  )
+
+
+  zephyr_sources_ifdef(
     CONFIG_LOG_BACKEND_UART
     log_backend_uart.c
   )
@@ -71,6 +77,10 @@ if(NOT CONFIG_LOG_MINIMAL)
     CONFIG_LOG_BACKEND_SPINEL
     log_backend_spinel.c
   )
+
+  if(CONFIG_LOG_DICTIONARY_SUPPORT)
+    zephyr_sources(log_output_dict.c)
+  endif()
 
 else()
   zephyr_sources(log_minimal.c)

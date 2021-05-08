@@ -21,6 +21,7 @@ extern "C" {
 typedef int atomic_t;
 typedef atomic_t atomic_val_t;
 typedef void *atomic_ptr_t;
+typedef atomic_ptr_t atomic_ptr_val_t;
 
 /* Low-level primitives come in several styles: */
 
@@ -32,7 +33,10 @@ typedef void *atomic_ptr_t;
 # ifdef CONFIG_XTENSA
 /* Not all Xtensa toolchains support GCC-style atomic intrinsics */
 # include <arch/xtensa/atomic_xtensa.h>
-# endif
+# else
+/* Other arch specific implementation */
+# include <sys/atomic_arch.h>
+# endif /* CONFIG_XTENSA */
 #else
 /* Default.  See this file for the Doxygen reference: */
 #include <sys/atomic_builtin.h>
@@ -55,6 +59,17 @@ typedef void *atomic_ptr_t;
  * @param i Value to assign to atomic variable.
  */
 #define ATOMIC_INIT(i) (i)
+
+/**
+ * @brief Initialize an atomic pointer variable.
+ *
+ * This macro can be used to initialize an atomic pointer variable. For
+ * example,
+ * @code atomic_ptr_t my_ptr = ATOMIC_PTR_INIT(&data); @endcode
+ *
+ * @param p Pointer value to assign to atomic pointer variable.
+ */
+#define ATOMIC_PTR_INIT(p) (p)
 
 /**
  * @cond INTERNAL_HIDDEN

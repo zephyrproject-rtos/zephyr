@@ -23,6 +23,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <string.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +34,22 @@ extern "C" {
 #define CAN_STD_ID_MASK CAN_MAX_STD_ID
 #define CAN_EXT_ID_MASK (0x1FFFFFFF)
 #define CAN_MAX_DLC    (8)
+#define CANFD_MAX_DLC  CONFIG_CANFD_MAX_DLC
+#ifndef CONFIG_CANFD_MAX_DLC
 #define CAN_MAX_DLEN    8
+#else
+#if CONFIG_CANFD_MAX_DLC <= 8
+#define CAN_MAX_DLEN    CONFIG_CANFD_MAX_DLC
+#elif CONFIG_CANFD_MAX_DLC <= 12
+#define CAN_MAX_DLEN    CONFIG_CANFD_MAX_DLC + (CONFIG_CANFD_MAX_DLC - 8) * 4
+#elif CONFIG_CANFD_MAX_DLC == 13
+#define CAN_MAX_DLEN 32
+#elif CONFIG_CANFD_MAX_DLC == 14
+#define CAN_MAX_DLEN 48
+#elif CONFIG_CANFD_MAX_DLC == 15
+#define CAN_MAX_DLEN 64
+#endif
+#endif /* CONFIG_CANFD_MAX_DLC */
 
 /* CAN_TX_* are the error flags from tx_callback and send.*/
 /** send successfully */
@@ -387,6 +403,45 @@ __subsystem struct can_driver_api {
 	struct can_timing timing_max_data;
 #endif
 };
+
+/**
+ * @brief Convert the DLC to the number of bytes
+ *
+ * This function converts a the Data Length Code to the number of bytes.
+ *
+ * @param dlc The Data Length Code
+ *
+ * @retval Number of bytes
+ */
+static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
+{
+	static const uint8_t dlc_table[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12,
+					 16, 20, 24, 32, 48, 64};
+
+	return dlc > 0x0F ? 64 : dlc_table[dlc];
+}
+
+/**
+ * @brief Convert a number of bytes to the DLC
+ *
+ * This function converts a number of bytes to the Data Length Code
+ *
+ * @param num_bytes The number of bytes
+ *
+ * @retval The DLC
+ */
+
+static inline uint8_t can_bytes_to_dlc(uint8_t num_bytes)
+{
+	return num_bytes <= 8  ? num_bytes :
+	       num_bytes <= 12 ? 9 :
+	       num_bytes <= 16 ? 10 :
+	       num_bytes <= 20 ? 11 :
+	       num_bytes <= 24 ? 12 :
+	       num_bytes <= 32 ? 13 :
+	       num_bytes <= 48 ? 14 :
+	       15;
+}
 
 /**
  * @brief Perform data transfer to CAN bus.

@@ -38,6 +38,8 @@ struct pwm_npcx_config {
 	uintptr_t base;
 	/* clock configuration */
 	struct npcx_clk_cfg clk_cfg;
+	/* Output buffer - open drain */
+	const bool is_od;
 	/* pinmux configuration */
 	const uint8_t alts_size;
 	const struct npcx_alt *alts_list;
@@ -59,6 +61,7 @@ struct pwm_npcx_data {
 /* PWM local functions */
 static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 {
+	const struct pwm_npcx_config *const config = DRV_CONFIG(dev);
 	struct pwm_reg *const inst = HAL_INSTANCE(dev);
 
 	/* Disable PWM for module configuration first */
@@ -80,6 +83,12 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 		inst->PWMCTL |= BIT(NPCX_PWMCTL_CKSEL);
 	else
 		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_CKSEL);
+
+	/* Select output buffer type of io pad */
+	if (config->is_od)
+		inst->PWMCTLEX |= BIT(NPCX_PWMCTLEX_OD_OUT);
+	else
+		inst->PWMCTLEX &= ~BIT(NPCX_PWMCTLEX_OD_OUT);
 }
 
 /* PWM api functions */
@@ -202,6 +211,7 @@ static int pwm_npcx_init(const struct device *dev)
 	static const struct pwm_npcx_config pwm_npcx_cfg_##inst = {            \
 		.base = DT_INST_REG_ADDR(inst),                                \
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                         \
+		.is_od = DT_INST_PROP(inst, drive_open_drain),                 \
 		.alts_size = ARRAY_SIZE(pwm_alts##inst),                       \
 		.alts_list = pwm_alts##inst,                                   \
 	};                                                                     \
@@ -209,7 +219,7 @@ static int pwm_npcx_init(const struct device *dev)
 	static struct pwm_npcx_data pwm_npcx_data_##inst;                      \
 									       \
 	DEVICE_DT_INST_DEFINE(inst,					       \
-			    &pwm_npcx_init, device_pm_control_nop,             \
+			    &pwm_npcx_init, NULL,			       \
 			    &pwm_npcx_data_##inst, &pwm_npcx_cfg_##inst,       \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
 			    &pwm_npcx_driver_api);

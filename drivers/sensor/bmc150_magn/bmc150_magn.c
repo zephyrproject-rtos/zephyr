@@ -607,6 +607,6 @@ static const struct bmc150_magn_config bmc150_magn_config = {
 
 static struct bmc150_magn_data bmc150_magn_data;
 
-DEVICE_DT_INST_DEFINE(0, bmc150_magn_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, bmc150_magn_init, NULL,
 	    &bmc150_magn_data, &bmc150_magn_config, POST_KERNEL,
 	    CONFIG_SENSOR_INIT_PRIORITY, &bmc150_magn_api_funcs);

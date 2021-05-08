@@ -31,7 +31,7 @@ static struct dummy_api offload_if_api = {
 };
 
 NET_DEVICE_OFFLOAD_INIT(net_offload, "net_offload",
-			NULL, device_pm_control_nop,
+			NULL, NULL,
 			&offload_context_data, NULL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&offload_if_api, 0);

@@ -365,7 +365,7 @@ static void adc_sam_isr(const struct device *dev)
 		ADC_CONTEXT_INIT_SYNC(adc##n##_sam_data, ctx),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, adc_sam_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(n, adc_sam_init, NULL,			\
 			    &adc##n##_sam_data,				\
 			    &adc##n##_sam_cfg, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

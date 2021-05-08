@@ -3,6 +3,9 @@
 Threads
 #######
 
+.. note::
+   There is also limited support for using :ref:`nothread`.
+
 .. contents::
     :local:
     :depth: 2
@@ -176,11 +179,11 @@ met:
   sized and aligned such that a memory protection region may be programmed
   to exactly fit.
 
-The aligment constraints can be quite restrictive, for example some MPUs
+The alignment constraints can be quite restrictive, for example some MPUs
 require their regions to be of some power of two in size, and aligned to its
 own size.
 
-Becasue of this, portable code can't simply pass an arbitrary character buffer
+Because of this, portable code can't simply pass an arbitrary character buffer
 to :c:func:`k_thread_create`. Special macros exist to instantiate stacks,
 prefixed with ``K_KERNEL_STACK`` and ``K_THREAD_STACK``.
 

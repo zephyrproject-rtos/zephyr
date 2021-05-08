@@ -60,6 +60,29 @@ config PRINTK_SYNC
 	  interleaving with concurrent usage from another CPU or an
 	  preempting interrupt.
 
+config MPSC_PBUF
+	bool "Multi producer, single consumer packet buffer"
+	select TIMEOUT_64BIT
+	help
+	  Enable usage of mpsc packet buffer. Packet buffer is capable of
+	  storing variable length packets in a circular way and operate directly
+	  on the buffer memory.
+
+if MPSC_PBUF
+config MPSC_CLEAR_ALLOCATED
+	bool "Clear allocated packet"
+	help
+	  When enabled packet space is zeroed before returning from allocation.
+endif
+
+config REBOOT
+	bool "Reboot functionality"
+	select SYSTEM_CLOCK_DISABLE
+	help
+	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
+	  needed to perform a "safe" reboot (e.g. SYSTEM_CLOCK_DISABLE, to stop the
+	  system clock before issuing a reset).
+
 rsource "Kconfig.cbprintf"
 
 endmenu

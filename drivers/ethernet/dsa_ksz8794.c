@@ -1041,7 +1041,7 @@ static struct dsa_context dsa_context = {
 	DT_LABEL(slave),                                                   \
 	0,                                                                 \
 	dsa_port_init,                                                     \
-	device_pm_control_nop,                                             \
+	NULL,                                                              \
 	&dsa_context,                                                      \
 	&dsa_0_slave_##slave##_config,                                     \
 	CONFIG_ETH_INIT_PRIORITY,                                          \

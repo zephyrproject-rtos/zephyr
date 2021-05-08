@@ -44,6 +44,20 @@ static unsigned int get_page(off_t offset)
 	return offset >> STM32G0X_PAGE_SHIFT;
 }
 
+static inline void flush_cache(FLASH_TypeDef *regs)
+{
+	if (regs->ACR & FLASH_ACR_ICEN) {
+		regs->ACR &= ~FLASH_ACR_ICEN;
+		/* Datasheet: ICRST: Instruction cache reset :
+		 * This bit can be written only when the instruction cache
+		 * is disabled
+		 */
+		regs->ACR |= FLASH_ACR_ICRST;
+		regs->ACR &= ~FLASH_ACR_ICRST;
+		regs->ACR |= FLASH_ACR_ICEN;
+	}
+}
+
 static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
 	volatile uint32_t *flash = (uint32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
@@ -103,6 +117,13 @@ static int erase_page(const struct device *dev, unsigned int page)
 	if (rc < 0) {
 		return rc;
 	}
+
+	/*
+	 * If an erase operation in Flash memory also concerns data
+	 * in the instruction cache, the user has to ensure that these data
+	 * are rewritten before they are accessed during code execution.
+	 */
+	flush_cache(regs);
 
 	/* Set the PER bit and select the page you wish to erase */
 	regs->CR |= FLASH_CR_PER;

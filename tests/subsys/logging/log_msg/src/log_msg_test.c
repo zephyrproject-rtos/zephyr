@@ -458,7 +458,6 @@ void test_log_hexdump_data_put_chunks(void)
 	log_msg_put(msg);
 }
 
-
 /*test case main entry*/
 void test_main(void)
 {
@@ -468,6 +467,7 @@ void test_main(void)
 		ztest_unit_test(test_log_hexdump_data_get_single_chunk),
 		ztest_unit_test(test_log_hexdump_data_get_two_chunks),
 		ztest_unit_test(test_log_hexdump_data_get_multiple_chunks),
-		ztest_unit_test(test_log_hexdump_data_put_chunks));
+		ztest_unit_test(test_log_hexdump_data_put_chunks)
+		);
 	ztest_run_test_suite(test_log_message);
 }

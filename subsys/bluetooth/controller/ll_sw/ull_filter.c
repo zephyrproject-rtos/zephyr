@@ -108,7 +108,7 @@ static struct lll_filter rl_filter;
 static uint32_t rpa_timeout_ms;
 static int64_t rpa_last_ms;
 
-static struct k_delayed_work rpa_work;
+static struct k_work_delayable rpa_work;
 
 #define LIST_MATCH(list, i, type, addr) (list[i].taken && \
 		    (list[i].id_addr_type == (type & 0x1)) && \
@@ -651,13 +651,13 @@ void ull_filter_reset(bool init)
 	prpa_cache_clear();
 #endif
 	if (init) {
-		k_delayed_work_init(&rpa_work, rpa_timeout);
+		k_work_init_delayable(&rpa_work, rpa_timeout);
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 		k_work_init(&(resolve_work.prpa_work), prpa_cache_resolve);
 		k_work_init(&(t_work.target_work), target_resolve);
 #endif
 	} else {
-		k_delayed_work_cancel(&rpa_work);
+		k_work_cancel_delayable(&rpa_work);
 	}
 #else
 	filter_clear(&wl_filter);
@@ -1020,18 +1020,18 @@ static int rl_access_check(bool check_ar)
 static void rpa_timeout(struct k_work *work)
 {
 	ull_filter_rpa_update(true);
-	k_delayed_work_submit(&rpa_work, K_MSEC(rpa_timeout_ms));
+	k_work_schedule(&rpa_work, K_MSEC(rpa_timeout_ms));
 }
 
 static void rpa_refresh_start(void)
 {
 	BT_DBG("");
-	k_delayed_work_submit(&rpa_work, K_MSEC(rpa_timeout_ms));
+	k_work_schedule(&rpa_work, K_MSEC(rpa_timeout_ms));
 }
 
 static void rpa_refresh_stop(void)
 {
-	k_delayed_work_cancel(&rpa_work);
+	k_work_cancel_delayable(&rpa_work);
 }
 
 #else /* !CONFIG_BT_CTLR_PRIVACY */

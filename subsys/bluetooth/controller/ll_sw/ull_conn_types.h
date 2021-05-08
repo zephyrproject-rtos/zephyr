@@ -140,6 +140,7 @@ struct ll_conn {
 				LLCP_ENC_STATE_INPROG,
 				LLCP_ENC_STATE_INIT,
 				LLCP_ENC_STATE_LTK_WAIT,
+				LLCP_ENC_STATE_ENC_WAIT,
 			} state:2 __packed;
 			uint8_t  error_code;
 			uint8_t  skd[16];
@@ -171,6 +172,7 @@ struct ll_conn {
 	struct {
 		uint8_t  req;
 		uint8_t  ack;
+		/* TODO: 8, 16, 32 or 64 based on local supported features */
 		uint64_t features_conn;
 		uint64_t features_peer;
 	} llcp_feature;
@@ -330,8 +332,6 @@ struct ll_conn {
 		uint32_t c_max_sdu:12;
 		uint32_t p_max_sdu:12;
 		uint32_t framed:1;
-		uint32_t c_sdu_interval;
-		uint32_t p_sdu_interval;
 		uint32_t cis_offset_min;
 		uint32_t cis_offset_max;
 		uint16_t conn_event_count;

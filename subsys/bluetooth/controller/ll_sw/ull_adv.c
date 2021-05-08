@@ -61,12 +61,12 @@ static int init_reset(void);
 static inline struct ll_adv_set *is_disabled_get(uint8_t handle);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
-static void ticker_op_update_cb(uint32_t status, void *params);
+static void ticker_op_update_cb(uint32_t status, void *param);
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder,
 			   uint16_t lazy, uint8_t force, void *param);
-static void ticker_op_stop_cb(uint32_t status, void *params);
+static void ticker_op_stop_cb(uint32_t status, void *param);
 static void disabled_cb(void *param);
 static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
@@ -275,7 +275,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	adv->is_created = 1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-	/* remember params so that set adv/scan data and adv enable
+	/* remember parameters so that set adv/scan data and adv enable
 	 * interface can correctly update adv/scan data in the
 	 * double buffer between caller and controller context.
 	 */
@@ -909,10 +909,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->llcp_rx = NULL;
 		conn->llcp_cu.req = conn->llcp_cu.ack = 0;
 		conn->llcp_feature.req = conn->llcp_feature.ack = 0;
-		conn->llcp_feature.features_conn = LL_FEAT;
+		conn->llcp_feature.features_conn = ll_feat_get();
 		conn->llcp_feature.features_peer = 0;
 		conn->llcp_version.req = conn->llcp_version.ack = 0;
 		conn->llcp_version.tx = conn->llcp_version.rx = 0;
+		conn->llcp_terminate.req = conn->llcp_terminate.ack = 0;
 		conn->llcp_terminate.reason_final = 0;
 		/* NOTE: use allocated link for generating dedicated
 		 * terminate ind rx node
@@ -1836,7 +1837,7 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	/* FIXME: why is this here for Mesh commands? */
-	if (params) {
+	if (param) {
 		return;
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */

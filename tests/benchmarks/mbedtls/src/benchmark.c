@@ -106,8 +106,13 @@ static void my_debug(void *ctx, int level,
 
 volatile int mbedtls_timing_alarmed;
 
-static struct k_delayed_work mbedtls_alarm;
+static struct k_work_delayable mbedtls_alarm;
 static void mbedtls_alarm_timeout(struct k_work *work);
+
+/* Work synchronization objects must be in cache-coherent memory,
+ * which excludes stacks on some architectures.
+ */
+static struct k_work_sync work_sync;
 
 static void mbedtls_alarm_timeout(struct k_work *work)
 {
@@ -118,7 +123,7 @@ void mbedtls_set_alarm(int seconds)
 {
 	mbedtls_timing_alarmed = 0;
 
-	k_delayed_work_submit(&mbedtls_alarm, K_SECONDS(seconds));
+	k_work_schedule(&mbedtls_alarm, K_SECONDS(seconds));
 }
 
 /*
@@ -177,6 +182,8 @@ do {                                                                  \
 	delta = k_cycle_get_32() - tsc;                               \
 	delta = k_cyc_to_ns_floor64(delta);                   \
 								      \
+	(void)k_work_cancel_delayable_sync(&mbedtls_alarm, &work_sync);\
+								      \
 	mbedtls_printf("%9lu KiB/s,  %9lu ns/byte\n",                 \
 		       ii * BUFSIZE / 1024,                           \
 		       (unsigned long)(delta / (jj * BUFSIZE)));      \
@@ -230,6 +237,8 @@ do {                                                                  \
 		MEMORY_MEASURE_PRINT(sizeof(TYPE) + 1);               \
 		mbedtls_printf("\n");                                 \
 	}                                                             \
+								      \
+	(void)k_work_cancel_delayable_sync(&mbedtls_alarm, &work_sync);\
 } while (0)
 
 static int myrand(void *rng_state, unsigned char *output, size_t len)
@@ -305,7 +314,7 @@ void main(void)
 #endif
 	mbedtls_ssl_conf_dbg(&conf, my_debug, NULL);
 
-	k_delayed_work_init(&mbedtls_alarm, mbedtls_alarm_timeout);
+	k_work_init_delayable(&mbedtls_alarm, mbedtls_alarm_timeout);
 	memset(&todo, 1, sizeof(todo));
 
 	memset(buf, 0xAA, sizeof(buf));

@@ -18,6 +18,25 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "platform-zephyr.h"
 
+/* Convert OT log level to zephyr log level. */
+static inline int log_translate(otLogLevel aLogLevel)
+{
+	switch (aLogLevel) {
+	case OT_LOG_LEVEL_CRIT:
+		return LOG_LEVEL_ERR;
+	case OT_LOG_LEVEL_WARN:
+		return LOG_LEVEL_WRN;
+	case OT_LOG_LEVEL_NOTE:
+	case OT_LOG_LEVEL_INFO:
+		return LOG_LEVEL_INF;
+	case OT_LOG_LEVEL_DEBG:
+		return LOG_LEVEL_DBG;
+	default:
+		break;
+	}
+
+	return -1;
+}
 
 void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
 	       const char *aFormat, ...)
@@ -47,6 +66,11 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
 #endif
 
 	va_list param_list;
+	int level = log_translate(aLogLevel);
+
+	if (level < 0) {
+		return;
+	}
 
 	va_start(param_list, aFormat);
 
@@ -55,26 +79,6 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
 	 * been duplicated. So, to save time, in Z_LOG_VA macro calls
 	 * we will use LOG_STRDUP_EXEC option.
 	 */
-	switch (aLogLevel) {
-	case OT_LOG_LEVEL_CRIT:
-		Z_LOG_VA(LOG_LEVEL_ERR, aFormat, param_list, args_num,
-			LOG_STRDUP_EXEC);
-		break;
-	case OT_LOG_LEVEL_WARN:
-		Z_LOG_VA(LOG_LEVEL_WRN, aFormat, param_list, args_num,
-			LOG_STRDUP_EXEC);
-		break;
-	case OT_LOG_LEVEL_NOTE:
-	case OT_LOG_LEVEL_INFO:
-		Z_LOG_VA(LOG_LEVEL_INF, aFormat, param_list, args_num,
-			LOG_STRDUP_EXEC);
-		break;
-	case OT_LOG_LEVEL_DEBG:
-		Z_LOG_VA(LOG_LEVEL_DBG, aFormat, param_list, args_num,
-			LOG_STRDUP_EXEC);
-		break;
-	default:
-		break;
-	}
+	Z_LOG_VA(level, aFormat, param_list, args_num, LOG_STRDUP_EXEC);
 	va_end(param_list);
 }

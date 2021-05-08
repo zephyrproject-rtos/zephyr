@@ -135,11 +135,11 @@ void *bt_aics_svc_decl_get(struct bt_aics *aics);
  * @brief Initialize the Audio Input Control Service instance.
  *
  * @param aics      Audio Input Control Service instance.
- * @param init      Audio Input Control Service initialization structure.
+ * @param param     Audio Input Control Service register parameters.
  *
- * @return 0 if success, ERRNO on failure.
+ * @return 0 if success, errno on failure.
  */
-int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *init);
+int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param);
 
 /**
  * @brief Callback function for writes.
@@ -147,7 +147,7 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *init);
  * @param conn         Connection to peer device, or NULL if local server write.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
- *                     or ERRNO on negative value.
+ *                     or errno on negative value.
  */
 typedef void (*bt_aics_write_cb)(struct bt_conn *conn, struct bt_aics *inst,
 				 int err);
@@ -161,7 +161,7 @@ typedef void (*bt_aics_write_cb)(struct bt_conn *conn, struct bt_aics *inst,
  * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
- *                     or ERRNO on negative value.
+ *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  * @param gain         The gain setting value.
  * @param mute         The mute value.
@@ -180,7 +180,7 @@ typedef void (*bt_aics_state_cb)(struct bt_conn *conn, struct bt_aics *inst,
  * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
- *                     or ERRNO on negative value.
+ *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  * @param units        The value that reflect the size of a single increment or decrement of the
  *                     Gain Setting value in 0.1 decibel units.
@@ -200,7 +200,7 @@ typedef void (*bt_aics_gain_setting_cb)(struct bt_conn *conn,
  * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
- *                     or ERRNO on negative value.
+ *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  * @param type   The input type.
  */
@@ -215,7 +215,7 @@ typedef void (*bt_aics_type_cb)(struct bt_conn *conn, struct bt_aics *inst,
  * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
- *                     or ERRNO on negative value.
+ *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  * @param active       Whether the instance is active or inactive.
  */
@@ -230,7 +230,7 @@ typedef void (*bt_aics_status_cb)(struct bt_conn *conn, struct bt_aics *inst,
  * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
- *                     or ERRNO on negative value.
+ *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  * @param description  The description as an UTF-8 encoded string (may have been clipped).
  */
@@ -247,7 +247,7 @@ typedef void (*bt_aics_description_cb)(struct bt_conn *conn,
  * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
- *                     or ERRNO on negative value.
+ *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  */
 typedef void (*bt_aics_discover_cb)(struct bt_conn *conn, struct bt_aics *inst,
@@ -281,7 +281,7 @@ struct bt_aics_cb {
  * @param inst      The instance pointer.
  * @param param     Pointer to the parameters.
  *
- * @return 0 on success, ERRNO on fail.
+ * @return 0 on success, errno on fail.
  */
 int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
 		     const struct bt_aics_discover_param *param);
@@ -294,7 +294,7 @@ int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
  *
  * @param inst         The instance pointer.
  *
- * @return 0 if success, ERRNO on failure.
+ * @return 0 if success, errno on failure.
  */
 int bt_aics_deactivate(struct bt_aics *inst);
 
@@ -307,7 +307,7 @@ int bt_aics_deactivate(struct bt_aics *inst);
  *
  * @param inst         The instance pointer.
  *
- * @return 0 if success, ERRNO on failure.
+ * @return 0 if success, errno on failure.
  */
 int bt_aics_activate(struct bt_aics *inst);
 

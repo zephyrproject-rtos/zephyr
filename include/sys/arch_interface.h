@@ -216,6 +216,14 @@ typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
  */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg);
+
+/**
+ * @brief Return CPU power status
+ *
+ * @param cpu_num Integer number of the CPU
+ */
+bool arch_cpu_active(int cpu_num);
+
 /** @} */
 
 
@@ -812,7 +820,7 @@ void arch_gdb_step(void);
  * @{
  */
 
-#ifdef CONFIG_CACHE_MANAGEMENT
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_HAS_ARCH_CACHE)
 /**
  *
  * @brief Enable d-cache
@@ -882,7 +890,7 @@ int arch_icache_range(void *addr, size_t size, int op);
  *
  * @brief Get d-cache line size
  *
- * @see sys_dcache_line_size_get
+ * @see sys_cache_data_line_size_get
  */
 size_t arch_dcache_line_size_get(void);
 #endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
@@ -892,12 +900,12 @@ size_t arch_dcache_line_size_get(void);
  *
  * @brief Get i-cache line size
  *
- * @see sys_icache_line_size_get
+ * @see sys_cache_instr_line_size_get
  */
 size_t arch_icache_line_size_get(void);
 #endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
 
-#endif /* CONFIG_CACHE_MANAGEMENT */
+#endif /* CONFIG_CACHE_MANAGEMENT && CONFIG_HAS_ARCH_CACHE */
 
 /** @} */
 

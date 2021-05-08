@@ -47,7 +47,7 @@ jobs:
         sudo pip3 install -U setuptools wheel pip
         pip3 install -r scripts/requirements-base.txt
         pip3 install -r scripts/requirements-doc.txt
-        pip3 install west==0.10.1
+        pip3 install west==0.11.0
 
     - name: west setup
       run: |

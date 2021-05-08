@@ -209,18 +209,24 @@ static struct net_buf *bt_sdp_create_pdu(void)
  *
  *  @return None
  */
-static void bt_sdp_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
-			uint8_t op, uint16_t tid)
+static int bt_sdp_send(struct bt_l2cap_chan *chan, struct net_buf *buf,
+		       uint8_t op, uint16_t tid)
 {
 	struct bt_sdp_hdr *hdr;
 	uint16_t param_len = buf->len;
+	int err;
 
 	hdr = net_buf_push(buf, sizeof(struct bt_sdp_hdr));
 	hdr->op_code = op;
 	hdr->tid = tid;
 	hdr->param_len = sys_cpu_to_be16(param_len);
 
-	bt_l2cap_chan_send(chan, buf);
+	err = bt_l2cap_chan_send(chan, buf);
+	if (err < 0) {
+		net_buf_unref(buf);
+	}
+
+	return err;
 }
 
 /* @brief Sends an error response PDU
@@ -1469,7 +1475,6 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 static int sdp_client_ssa_search(struct bt_sdp_client *session)
 {
 	const struct bt_sdp_discover_params *param;
-	struct bt_sdp_hdr *hdr;
 	struct net_buf *buf;
 
 	/*
@@ -1489,11 +1494,8 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session)
 		return -EINVAL;
 	}
 
-	buf = bt_l2cap_create_pdu(&sdp_pool, 0);
+	buf = bt_sdp_create_pdu();
 
-	hdr = net_buf_add(buf, sizeof(*hdr));
-
-	hdr->op_code = BT_SDP_SVC_SEARCH_ATTR_REQ;
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
 	net_buf_add_u8(buf, BT_SDP_SEQ8);
 
@@ -1550,15 +1552,12 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session)
 				session->cstate.length);
 	}
 
-	/* set overall PDU length */
-	hdr->param_len = sys_cpu_to_be16(buf->len - sizeof(*hdr));
-
 	/* Update context param to the one being resolving now */
 	session->param = param;
 	session->tid++;
-	hdr->tid = sys_cpu_to_be16(session->tid);
 
-	return bt_l2cap_chan_send(&session->chan.chan, buf);
+	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_ATTR_REQ,
+			   session->tid);
 }
 
 static void sdp_client_params_iterator(struct bt_sdp_client *session)

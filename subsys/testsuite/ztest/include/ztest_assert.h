@@ -27,13 +27,16 @@ const char *ztest_relative_filename(const char *file);
 void ztest_test_fail(void);
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 0
 
-static inline void z_zassert_(bool cond, const char *file, int line)
+static inline bool z_zassert_(bool cond, const char *file, int line)
 {
 	if (cond == false) {
 		PRINT("\n    Assertion failed at %s:%d\n",
 		      ztest_relative_filename(file), line);
 		ztest_test_fail();
+		return false;
 	}
+
+	return true;
 }
 
 #define z_zassert(cond, default_msg, file, line, func, msg, ...)	\
@@ -41,7 +44,7 @@ static inline void z_zassert_(bool cond, const char *file, int line)
 
 #else /* CONFIG_ZTEST_ASSERT_VERBOSE != 0 */
 
-static inline void z_zassert(bool cond,
+static inline bool z_zassert(bool cond,
 			    const char *default_msg,
 			    const char *file,
 			    int line, const char *func,
@@ -57,6 +60,7 @@ static inline void z_zassert(bool cond,
 		printk("\n");
 		va_end(vargs);
 		ztest_test_fail();
+		return false;
 	}
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 2
 	else {
@@ -64,6 +68,7 @@ static inline void z_zassert(bool cond,
 		      ztest_relative_filename(file), line, func);
 	}
 #endif
+	return true;
 }
 
 #endif /* CONFIG_ZTEST_ASSERT_VERBOSE */
@@ -84,14 +89,25 @@ static inline void z_zassert(bool cond,
  * You probably don't need to call this macro directly. You should
  * instead use zassert_{condition} macros below.
  *
+ * Note that when CONFIG_MULTITHREADING=n macro returns from the function. It is
+ * then expected that in that case ztest asserts will be used only in the
+ * context of the test function.
+ *
  * @param cond Condition to check
  * @param msg Optional, can be NULL. Message to print if @a cond is false.
  * @param default_msg Message to print if @a cond is false
  */
-
-#define zassert(cond, default_msg, msg, ...)			    \
-	z_zassert(cond, msg ? ("(" default_msg ")") : (default_msg), \
-		 __FILE__, __LINE__, __func__, msg ? msg : "", ##__VA_ARGS__)
+#define zassert(cond, default_msg, msg, ...) do { \
+	bool _ret = z_zassert(cond, msg ? ("(" default_msg ")") : (default_msg), \
+			     __FILE__, __LINE__, __func__, \
+			     msg ? msg : "", ##__VA_ARGS__); \
+	if (!_ret) { \
+		/* If kernel but without multithreading return. */ \
+		COND_CODE_1(KERNEL, \
+			    (COND_CODE_1(CONFIG_MULTITHREADING, (), (return;))), \
+			    ()) \
+	} \
+} while (0)
 
 /**
  * @brief Assert that this function call won't be reached

@@ -54,7 +54,8 @@ when no work items are available.
    Using the return values of :c:func:`k_work_busy_get()` or
    :c:func:`k_work_is_pending()`, or measurements of remaining time until
    delayable work is scheduled, should be avoided to prevent race conditions
-   of the type observed with the previous implementation.
+   of the type observed with the previous implementation.  See also `Workqueue
+   Best Practices`_.
 
 Work Item Lifecycle
 ********************
@@ -70,14 +71,14 @@ itself.  The work item also maintains information about its status.
 A work item must be initialized before it can be used. This records the work
 item's handler function and marks it as not pending.
 
-A work item may be **submitted** (:c:macro:`K_WORK_QUEUED`) to a workqueue by
-an ISR or a thread.  Submitting a work item appends the work item to the
-workqueue's queue.  Once the workqueue's thread has processed all of the
-preceding work items in its queue the thread will remove a pending work item
-from its queue and invoke the work item's handler function. Depending on the
-scheduling priority of the workqueue's thread, and the work required by other
-items in the queue, a pending work item may be processed quickly or it may
-remain in the queue for an extended period of time.
+A work item may be **queued** (:c:macro:`K_WORK_QUEUED`) by submitting it to a
+workqueue by an ISR or a thread.  Submitting a work item appends the work item
+to the workqueue's queue.  Once the workqueue's thread has processed all of
+the preceding work items in its queue the thread will remove the next work
+item from the queue and invoke the work item's handler function. Depending on
+the scheduling priority of the workqueue's thread, and the work required by
+other items in the queue, a queued work item may be processed quickly or it
+may remain in the queue for an extended period of time.
 
 A delayable work item may be **scheduled** (:c:macro:`K_WORK_DELAYED`) to a
 workqueue; see `Delayable Work`_.
@@ -102,21 +103,21 @@ operations that are potentially blocking (e.g. taking a semaphore) must be
 used with care, since the workqueue cannot process subsequent work items in
 its queue until the handler function finishes executing.
 
-The single argument that is passed to a handler function can be ignored if
-it is not required. If the handler function requires additional information
-about the work it is to perform, the work item can be embedded in a larger
-data structure. The handler function can then use the argument value to compute
-the address of the enclosing data structure, and thereby obtain access to the
-additional information it needs.
+The single argument that is passed to a handler function can be ignored if it
+is not required. If the handler function requires additional information about
+the work it is to perform, the work item can be embedded in a larger data
+structure. The handler function can then use the argument value to compute the
+address of the enclosing data structure with :c:macro:`CONTAINER_OF`, and
+thereby obtain access to the additional information it needs.
 
 A work item is typically initialized once and then submitted to a specific
 workqueue whenever work needs to be performed. If an ISR or a thread attempts
-to submit a work item that is already pending, the work item is not affected;
+to submit a work item that is already queued the work item is not affected;
 the work item remains in its current place in the workqueue's queue, and
 the work is only performed once.
 
 A handler function is permitted to re-submit its work item argument
-to the workqueue, since the work item is no longer pending at that time.
+to the workqueue, since the work item is no longer queued at that time.
 This allows the handler to execute work in stages, without unduly delaying
 the processing of other work items in the workqueue's queue.
 
@@ -145,7 +146,22 @@ manner to a standard work item, although different kernel APIs are used.  When
 the schedule request is made the kernel initiates a timeout mechanism that is
 triggered after the specified delay has elapsed. Once the timeout occurs the
 kernel submits the work item to the specified workqueue, where it remains
-pending until it is processed in the standard manner.
+queued until it is processed in the standard manner.
+
+Note that work handler used for delayable still receives a pointer to the
+underlying non-delayable work structure, which is not publicly accessible from
+:c:struct:`k_work_delayable`.  To get access to an object that contains the
+delayable work object use this idiom:
+
+.. code-block:: c
+
+   static void work_handler(struct k_work *work)
+   {
+           struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+           struct work_context *ctx = CONTAINER_OF(dwork, struct work_context,
+	                                           timed_work);
+           ...
+
 
 Triggered Work
 **************
@@ -170,7 +186,7 @@ manner to a standard work item, although dedicated kernel APIs are used.
 When a submit request is made, the kernel begins observing kernel objects
 specified by the poll events. Once at least one of the observed kernel
 object's changes state, the work item is submitted to the specified workqueue,
-where it remains pending until it is processed in the standard manner.
+where it remains queued until it is processed in the standard manner.
 
 .. important::
     The triggered work item as well as the referenced array of poll events
@@ -199,8 +215,8 @@ use of it.
     for example, if the new work items perform blocking operations that
     would delay other system workqueue processing to an unacceptable degree.
 
-Implementation
-**************
+How to Use Workqueues
+*********************
 
 Defining and Controlling a Workqueue
 ====================================
@@ -211,7 +227,7 @@ and then calling :c:func:`k_work_queue_start`. The stack area must be defined
 using :c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
 memory.
 
-The following code defines and initializes a workqueue.
+The following code defines and initializes a workqueue:
 
 .. code-block:: c
 
@@ -232,12 +248,15 @@ rescheduling can be controlled by the optional final parameter; see
 
 The following API can be used to interact with a workqueue:
 
-* :c:func:`k_work_queue_drain()` can be used to block the caller until no more
-  items are pending for the queue.  Work items resubmitted from the workqueue
+* :c:func:`k_work_queue_drain()` can be used to block the caller until the
+  work queue has no items left.  Work items resubmitted from the workqueue
   thread are accepted while a queue is draining, but work items from any other
   thread or ISR are rejected.  The restriction on submitting more work can be
   extended past the completion of the drain operation in order to allow the
   blocking thread to perform additional work while the queue is "plugged".
+  Note that draining a queue has no effect on scheduling or processing
+  delayable items, but if the queue is plugged and the deadline expires the
+  item will silently fail to be submitted.
 * :c:func:`k_work_queue_unplug()` removes any previous block on submission to
   the queue due to a previous drain operation.
 
@@ -245,7 +264,9 @@ Submitting a Work Item
 ======================
 
 A work item is defined using a variable of type :c:struct:`k_work`.  It must
-be initialized by calling :c:func:`k_work_init`.
+be initialized by calling :c:func:`k_work_init`, unless it is defined using
+:c:macro:`K_WORK_DEFINE` in which case initialization is performed at
+compile-time.
 
 An initialized work item can be submitted to the system workqueue by
 calling :c:func:`k_work_submit`, or to a specified workqueue by
@@ -253,7 +274,7 @@ calling :c:func:`k_work_submit_to_queue`.
 
 The following code demonstrates how an ISR can offload the printing
 of error messages to the system workqueue. Note that if the ISR attempts
-to resubmit the work item while it is still pending, the work item is left
+to resubmit the work item while it is still queued, the work item is left
 unchanged and the associated error message will not be printed.
 
 .. code-block:: c
@@ -297,7 +318,7 @@ work item:
   executed, or otherwise still being referenced by the workqueue
   infrastructure.
 * :c:func:`k_work_is_pending()` is a helper that indicates ``true`` if and only
-  if the work is scheduled, submitted, or being executed.
+  if the work is scheduled, queued, or running.
 * :c:func:`k_work_flush()` may be invoked from threads to block until the work
   item has completed.  It returns immediately if the work is not pending.
 * :c:func:`k_work_cancel()` attempts to prevent the work item from being
@@ -309,23 +330,29 @@ work item:
   can be used after :c:func:`k_work_cancel()` is invoked (from an ISR)` to
   confirm completion of an ISR-initiated cancellation.
 
-Submitting a Delayable Work Item
+Scheduling a Delayable Work Item
 ================================
 
 A delayable work item is defined using a variable of type
 :c:struct:`k_work_delayable`. It must be initialized by calling
 :c:func:`k_work_init_delayable`.
 
-There are two APIs that submit delayable work:
+For delayed work there are two common use cases, depending on whether a
+deadline should be extended if a new event occurs. An example is collecting
+data that comes in asynchronously, e.g. characters from a UART associated with
+a keyboard.  There are two APIs that submit work after a delay:
 
 * :c:func:`k_work_schedule()` (or :c:func:`k_work_schedule_for_queue()`)
   schedules work to be executed at a specific time or after a delay.  Further
   attempts to schedule the same item with this API before the delay completes
   will not change the time at which the item will be submitted to its queue.
-
+  Use this if the policy is to keep collecting data until a specified delay
+  since the **first** unprocessed data was received;
 * :c:func:`k_work_reschedule()` (or :c:func:`k_work_reschedule_for_queue()`)
   unconditionally sets the deadline for the work, replacing any previous
-  incomplete delay and changing the destination queue if necessary.
+  incomplete delay and changing the destination queue if necessary.  Use this
+  if the policy is to keep collecting data until a specified delay since the
+  **last** unprocessed data was received.
 
 If the work item is not scheduled both APIs behave the same.  If
 :c:macro:`K_NO_WAIT` is specified as the delay the behavior is as if the item
@@ -370,6 +397,132 @@ synchronization objects.  These objects should not be allocated on a stack if
 the code is expected to work on architectures with
 :option:`CONFIG_KERNEL_COHERENCE`.
 
+Workqueue Best Practices
+************************
+
+Avoid Race Conditions
+=====================
+
+Sometimes the data a work item must process is naturally thread-safe, for
+example when it's put into a :c:struct:`k_queue` by some thread and processed
+in the work thread. More often external synchronization is required to avoid
+data races: cases where the work thread might inspect or manipulate shared
+state that's being accessed by another thread or interrupt.  Such state might
+be a flag indicating that work needs to be done, or a shared object that is
+filled by an ISR or thread and read by the work handler.
+
+For simple flags :ref:`atomic_v2` may be sufficient.  In other cases spin
+locks (:c:struct:`k_spinlock_t`) or thread-aware locks (:c:struct:`k_sem`,
+:c:struct:`k_mutex` , ...) may be used to ensure data races don't occur.
+
+If the selected lock mechanism can :ref:`api_term_sleep` then allowing the
+work thread to sleep will starve other work queue items, which may need to
+make progress in order to get the lock released. Work handlers should try to
+take the lock with its no-wait path. For example:
+
+.. code-block:: c
+
+   static void work_handler(struct work *work)
+   {
+           struct work_context *parent = CONTAINER_OF(work, struct work_context,
+	                                              work_item);
+
+           if (k_mutex_lock(&parent->lock, K_NO_WAIT) != 0) {
+                   /* NB: Submit will fail if the work item is being cancelled. */
+                   (void)k_work_submit(work);
+		   return;
+	   }
+
+	   /* do stuff under lock */
+	   k_mutex_unlock(&parent->lock);
+	   /* do stuff without lock */
+   }
+
+Be aware that if the lock is held by a thread with a lower priority than the
+work queue the resubmission may starve the thread that would release the lock,
+causing the application to fail.  Where the idiom above is required a
+delayable work item is preferred, and the work should be (re-)scheduled with a
+non-zero delay to allow the thread holding the lock to make progress.
+
+Note that submitting from the work handler can fail if the work item had been
+cancelled.  Generally this is acceptable, since the cancellation will complete
+once the handler finishes.  If it is not, the code above must take other steps
+to notify the application that the work could not be performed.
+
+Work items in isolation are self-locking, so you don't need to hold an
+external lock just to submit or schedule them. Even if you use external state
+protected by such a lock to prevent further resubmission, it's safe to do the
+resubmit as long as you're sure that eventually the item will take its lock
+and check that state to determine whether it should do anything.  Where a
+delayable work item is being rescheduled in its handler due to inability to
+take the lock some other self-locking state, such as an atomic flag set by the
+application/driver when the cancel is initiated, would be required to detect
+the cancellation and avoid the cancelled work item being submitted again after
+the deadline.
+
+Check Return Values
+===================
+
+All work API functions return status of the underlying operation, and in many
+cases it is important to verify that the intended result was obtained.
+
+* Submitting a work item (:c:func:`k_work_submit_to_queue`) can fail if the
+  work is being cancelled or the queue is not accepting new items.  If this
+  happens the work will not be executed, which could cause a subsystem that is
+  animated by work handler activity to become non-responsive.
+* Asynchronous cancellation (:c:func:`k_work_cancel` or
+  :c:func:`k_work_cancel_delayable`) can complete while the work item is still
+  being run by a handler.  Proceeding to manipulate state shared with the work
+  handler will result in data races that can cause failures.
+
+Many race conditions have been present in Zephyr code because the results of
+an operation were not checked.
+
+There may be good reason to believe that a return value indicating that the
+operation did not complete as expected is not a problem.  In those cases the
+code should clearly document this, by (1) casting the return value to ``void``
+to indicate that the result is intentionally ignored, and (2) documenting what
+happens in the unexpected case.  For example:
+
+.. code-block:: c
+
+   /* If this fails, the work handler will check pub->active and
+    * exit without transmitting.
+    */
+   (void)k_work_cancel_delayable(&pub->timer);
+
+However in such a case the following code must still avoid data races, as it
+cannot guarantee that the work thread is not accessing work-related state.
+
+Don't Optimize Prematurely
+==========================
+
+The workqueue API is designed to be safe when invoked from multiple threads
+and interrupts. Attempts to externally inspect a work item's state and make
+decisions based on the result are likely to create new problems.
+
+So when new work comes in, just submit it. Don't attempt to "optimize" by
+checking whether the work item is already submitted by inspecting snapshot
+state with :c:func:`k_work_is_pending` or :c:func:`k_work_busy_get`, or
+checking for a non-zero delay from
+:c:func:`k_work_delayable_remaining_get()`. Those checks are fragile: a "busy"
+indication can be obsolete by the time the test is returned, and a "not-busy"
+indication can also be wrong if work is submitted from multiple contexts, or
+(for delayable work) if the deadline has completed but the work is still in
+queued or running state.
+
+A general best practice is to always maintain in shared state some condition
+that can be checked by the handler to confirm whether there is work to be
+done.  This way you can use the work handler as the standard cleanup path:
+rather than having to deal with cancellation and cleanup at points where items
+are submitted, you may be able to have everything done in the work handler
+itself.
+
+A rare case where you could safely use :c:func:`k_work_is_pending` is as a
+check to avoid invoking :c:func:`k_work_flush` or
+:c:func:`k_work_cancel_sync`, if you are *certain* that nothing else might
+submit the work while you're checking (generally because you're holding a lock
+that prevents access to state used for submission).
 
 Suggested Uses
 **************

@@ -14,6 +14,7 @@
 #include <drivers/gpio.h>
 #include <sys/util.h>
 #include <drivers/sensor.h>
+#include <stmemsc.h>
 #include "iis2dlpc_reg.h"
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -23,11 +24,6 @@
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
-
-union axis3bit16_t {
-	int16_t i16bit[3];
-	uint8_t u8bit[6];
-};
 
 /* Return ODR reg value based on data rate set */
 #define IIS2DLPC_ODR_TO_REG(_odr) \
@@ -53,23 +49,6 @@ union axis3bit16_t {
 #define IIS2DLPC_SHIFT_PM1		4
 #define IIS2DLPC_SHIFT_PMOTHER		2
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-struct iis2dlpc_spi_cfg {
-	struct spi_config spi_conf;
-	const char *cs_gpios_label;
-};
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-
-union iis2dlpc_bus_cfg {
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	uint16_t i2c_slv_addr;
-#endif
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	const struct iis2dlpc_spi_cfg *spi_cfg;
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
-};
-
 /**
  * struct iis2dlpc_dev_config - iis2dlpc hw configuration
  * @bus_name: Pointer to bus master identifier.
@@ -78,16 +57,20 @@ union iis2dlpc_bus_cfg {
  * @irq_pin: GPIO pin number connecter to sensor int pin.
  * @drdy_int: Sensor drdy int (int1/int2).
  */
-struct iis2dlpc_dev_config {
-	const char *bus_name;
-	int (*bus_init)(const struct device *dev);
-	const union iis2dlpc_bus_cfg bus_cfg;
+struct iis2dlpc_config {
+	stmdev_ctx_t ctx;
+	union {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+		const struct stmemsc_cfg_i2c i2c;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		const struct stmemsc_cfg_spi spi;
+#endif
+	} stmemsc_cfg;
 	iis2dlpc_mode_t pm;
 	uint8_t range;
 #ifdef CONFIG_IIS2DLPC_TRIGGER
-	const char *irq_dev_name;
-	gpio_pin_t irq_pin;
-	gpio_flags_t irq_flags;
+	const struct gpio_dt_spec gpio_drdy;
 	uint8_t drdy_int;
 #ifdef CONFIG_IIS2DLPC_TAP
 	uint8_t tap_mode;
@@ -102,20 +85,10 @@ struct iis2dlpc_dev_config {
 /* sensor data */
 struct iis2dlpc_data {
 	const struct device *dev;
-	const struct device *bus;
 	int16_t acc[3];
 
 	 /* save sensitivity */
 	uint16_t gain;
-
-	stmdev_ctx_t *ctx;
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	stmdev_ctx_t ctx_i2c;
-#endif
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	stmdev_ctx_t ctx_spi;
-#endif
 
 #ifdef CONFIG_IIS2DLPC_TRIGGER
 	const struct device *gpio;
@@ -134,13 +107,7 @@ struct iis2dlpc_data {
 	struct k_work work;
 #endif /* CONFIG_IIS2DLPC_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_IIS2DLPC_TRIGGER */
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_cs_control cs_ctrl;
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
-
-int iis2dlpc_i2c_init(const struct device *dev);
-int iis2dlpc_spi_init(const struct device *dev);
 
 #ifdef CONFIG_IIS2DLPC_TRIGGER
 int iis2dlpc_init_interrupt(const struct device *dev);

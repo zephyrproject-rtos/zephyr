@@ -599,7 +599,7 @@ static int gpio_nrfx_init(const struct device *port)
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
 									\
 	DEVICE_DT_DEFINE(GPIO(id), gpio_nrfx_init,			\
-			 device_pm_control_nop,				\
+			 NULL,						\
 			 &gpio_nrfx_p##id##_data,			\
 			 &gpio_nrfx_p##id##_cfg,			\
 			 POST_KERNEL,					\

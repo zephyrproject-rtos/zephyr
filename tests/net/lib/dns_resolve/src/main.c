@@ -188,7 +188,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
 			 net_iface_dev_init,
-			 device_pm_control_nop,
+			 NULL,
 			 &net_iface1_data,
 			 NULL,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -347,7 +347,7 @@ static void test_dns_query_server_count(void)
 	int i, count = 0;
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
-		if (!ctx->is_used) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
 			continue;
 		}
 
@@ -368,7 +368,7 @@ static void test_dns_query_ipv4_server_count(void)
 	int i, count = 0, port = 0;
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
-		if (!ctx->is_used) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
 			continue;
 		}
 
@@ -398,7 +398,7 @@ static void test_dns_query_ipv6_server_count(void)
 	int i, count = 0, port = 0;
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
-		if (!ctx->is_used) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
 			continue;
 		}
 

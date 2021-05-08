@@ -27,6 +27,19 @@ config LOG_MIPI_SYST_ENABLE
 	help
 	  Enable MIPI SyS-T format output for the logger system.
 
+config LOG_DICTIONARY_SUPPORT
+	bool
+	depends on LOG2
+	help
+	  Enable support for dictionary based logging.
+
+	  Dictionary based logging is binary based where predefined strings
+	  are replaced with their equivalent addresses from the built binary
+	  image file in log output. This reduces the size required to store
+	  the log output when there are long format strings to be logged.
+
+	  This should be selected by the backend automatically.
+
 config LOG_IMMEDIATE_CLEAN_OUTPUT
 	bool "Clean log output"
 	depends on LOG_IMMEDIATE

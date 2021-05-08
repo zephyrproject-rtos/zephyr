@@ -38,7 +38,8 @@
 #define L2CAP_POLICY_WHITELIST		0x01
 #define L2CAP_POLICY_16BYTE_KEY		0x02
 
-NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1, DATA_MTU, NULL);
+NET_BUF_POOL_FIXED_DEFINE(data_tx_pool, 1,
+			  BT_L2CAP_SDU_BUF_SIZE(DATA_MTU), NULL);
 NET_BUF_POOL_FIXED_DEFINE(data_rx_pool, 1, DATA_MTU, NULL);
 
 static uint8_t l2cap_policy;
@@ -48,7 +49,7 @@ static uint32_t l2cap_rate;
 static uint32_t l2cap_recv_delay_ms;
 static K_FIFO_DEFINE(l2cap_recv_fifo);
 struct l2ch {
-	struct k_delayed_work recv_work;
+	struct k_work_delayable recv_work;
 	struct bt_l2cap_le_chan ch;
 };
 #define L2CH_CHAN(_chan) CONTAINER_OF(_chan, struct l2ch, ch.chan)
@@ -112,10 +113,11 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (k_fifo_is_empty(&l2cap_recv_fifo)) {
 			shell_print(ctx_shell, "Delaying response in %u ms...",
 				    l2cap_recv_delay_ms);
-			k_delayed_work_submit(&l2ch->recv_work,
-					      K_MSEC(l2cap_recv_delay_ms));
 		}
+
 		net_buf_put(&l2cap_recv_fifo, buf);
+		k_work_schedule(&l2ch->recv_work, K_MSEC(l2cap_recv_delay_ms));
+
 		return -EINPROGRESS;
 	}
 
@@ -136,7 +138,7 @@ static void l2cap_connected(struct bt_l2cap_chan *chan)
 {
 	struct l2ch *c = L2CH_CHAN(chan);
 
-	k_delayed_work_init(&c->recv_work, l2cap_recv_cb);
+	k_work_init_delayable(&c->recv_work, l2cap_recv_cb);
 
 	shell_print(ctx_shell, "Channel %p connected", chan);
 }
@@ -326,18 +328,27 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 {
 	static uint8_t buf_data[DATA_MTU] = { [0 ... (DATA_MTU - 1)] = 0xff };
-	int ret, len, count = 1;
+	int ret, len = DATA_MTU, count = 1;
 	struct net_buf *buf;
 
 	if (argc > 1) {
 		count = strtoul(argv[1], NULL, 10);
 	}
 
-	len = MIN(l2ch_chan.ch.tx.mtu, DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE);
+	if (argc > 2) {
+		len = strtoul(argv[2], NULL, 10);
+		if (len > DATA_MTU) {
+			shell_print(shell,
+				    "Length exceeds TX MTU for the channel");
+			return -ENOEXEC;
+		}
+	}
+
+	len = MIN(l2ch_chan.ch.tx.mtu, len);
 
 	while (count--) {
 		buf = net_buf_alloc(&data_tx_pool, K_FOREVER);
-		net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+		net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len);
 		ret = bt_l2cap_chan_send(&l2ch_chan.ch.chan, buf);
@@ -434,7 +445,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_CMD_ARG(recv, NULL, "[delay (in miliseconds)", cmd_recv, 1, 1),
 	SHELL_CMD_ARG(register, NULL, "<psm> [sec_level] "
 		      "[policy: whitelist, 16byte_key]", cmd_register, 2, 2),
-	SHELL_CMD_ARG(send, NULL, "<number of packets>", cmd_send, 2, 0),
+	SHELL_CMD_ARG(send, NULL, "[number of packets] [length of packet(s)]",
+		      cmd_send, 1, 2),
 	SHELL_CMD_ARG(whitelist, &whitelist_cmds, HELP_NONE, NULL, 1, 0),
 	SHELL_SUBCMD_SET_END
 );

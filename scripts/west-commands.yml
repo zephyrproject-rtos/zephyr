@@ -41,3 +41,8 @@ west-commands:
       - name: zephyr-export
         class: ZephyrExport
         help: export Zephyr installation as a CMake config package
+  - file: scripts/west_commands/spdx.py
+    commands:
+      - name: spdx
+        class: ZephyrSpdx
+        help: create SPDX bill of materials

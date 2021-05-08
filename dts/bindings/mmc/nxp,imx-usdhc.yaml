@@ -27,5 +27,12 @@ properties:
         property value should ensure the flags properly describe the signal
         that is presented to the driver.
 
+    no-1-8-v:
+      type: boolean
+      required: false
+      description:
+        When the external SD card circuit does not support 1.8V, add this
+        property to disable 1.8v card voltage of SD card controller.
+
     label:
       required: true

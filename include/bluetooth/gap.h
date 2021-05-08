@@ -146,8 +146,13 @@ enum {
 #define BT_GAP_DATA_TIME_MAX                    0x4290 /* 17040 us */
 
 #define BT_GAP_SID_MAX                          0x0F
-#define BT_GAP_PER_ADV_MAX_MAX_SKIP             0x01F3
-#define BT_GAP_PER_ADV_MAX_MAX_TIMEOUT          0x4000
+#define BT_GAP_PER_ADV_MAX_SKIP                 0x01F3
+#define BT_GAP_PER_ADV_MIN_TIMEOUT              0x000A
+#define BT_GAP_PER_ADV_MAX_TIMEOUT              0x4000
+/** Minimum Periodic Advertising Interval (N * 1.25 ms) */
+#define BT_GAP_PER_ADV_MIN_INTERVAL             0x0006
+/** Maximum Periodic Advertising Interval (N * 1.25 ms) */
+#define BT_GAP_PER_ADV_MAX_INTERVAL             0xFFFF
 
 
 /** Constant Tone Extension (CTE) types */

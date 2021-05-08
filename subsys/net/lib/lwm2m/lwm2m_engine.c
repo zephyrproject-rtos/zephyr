@@ -68,6 +68,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define MAX_TOKEN_LEN		8
 
+#define LWM2M_MAX_PATH_STR_LEN sizeof("65535/65535/65535/65535")
+
 struct observe_node {
 	sys_snode_t node;
 	struct lwm2m_ctx *ctx;
@@ -556,9 +558,8 @@ static int engine_remove_observer(const uint8_t *token, uint8_t tkl)
 }
 
 #if defined(CONFIG_LOG)
-char *lwm2m_path_log_strdup(struct lwm2m_obj_path *path)
+char *lwm2m_path_log_strdup(char *buf, struct lwm2m_obj_path *path)
 {
-	char buf[sizeof("65535/65535/65535/65535")];
 	size_t cur = sprintf(buf, "%u", path->obj_id);
 
 	if (path->level > 1) {
@@ -578,6 +579,7 @@ char *lwm2m_path_log_strdup(struct lwm2m_obj_path *path)
 #if defined(CONFIG_LWM2M_CANCEL_OBSERVE_BY_PATH)
 static int engine_remove_observer_by_path(struct lwm2m_obj_path *path)
 {
+	char buf[LWM2M_MAX_PATH_STR_LEN];
 	struct observe_node *obs, *found_obj = NULL;
 	sys_snode_t *prev_node = NULL;
 
@@ -595,7 +597,8 @@ static int engine_remove_observer_by_path(struct lwm2m_obj_path *path)
 		return -ENOENT;
 	}
 
-	LOG_INF("Removing observer for path %s", lwm2m_path_log_strdup(path));
+	LOG_INF("Removing observer for path %s",
+		lwm2m_path_log_strdup(buf, path));
 	sys_slist_remove(&engine_observer_list, prev_node, &found_obj->node);
 	(void)memset(found_obj, 0, sizeof(*found_obj));
 
@@ -1441,8 +1444,48 @@ int lwm2m_engine_create_obj_inst(char *pathstr)
 		return -EINVAL;
 	}
 
-	return lwm2m_create_obj_inst(path.obj_id, path.obj_inst_id, &obj_inst);
+	ret = lwm2m_create_obj_inst(path.obj_id, path.obj_inst_id, &obj_inst);
+	if (ret < 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+	engine_trigger_update(true);
+#endif
+
+	return 0;
 }
+
+int lwm2m_engine_delete_obj_inst(char *pathstr)
+{
+	struct lwm2m_obj_path path;
+	int ret = 0;
+
+	LOG_DBG("path: %s", log_strdup(pathstr));
+
+	/* translate path -> path_obj */
+	ret = string_to_path(pathstr, &path, '/');
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (path.level != 2U) {
+		LOG_ERR("path must have 2 parts");
+		return -EINVAL;
+	}
+
+	ret = lwm2m_delete_obj_inst(path.obj_id, path.obj_inst_id);
+	if (ret < 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+	engine_trigger_update(true);
+#endif
+
+	return 0;
+}
+
 
 int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, uint16_t data_len,
 			      uint8_t data_flags)
@@ -3104,13 +3147,17 @@ static int lwm2m_delete_handler(struct lwm2m_message *msg)
 	}
 
 	ret = lwm2m_delete_obj_inst(msg->path.obj_id, msg->path.obj_inst_id);
+	if (ret < 0) {
+		return ret;
+	}
+
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
-	if (!ret) {
+	if (!msg->ctx->bootstrap_mode) {
 		engine_trigger_update(true);
 	}
 #endif
 
-	return ret;
+	return 0;
 }
 
 static int do_read_op(struct lwm2m_message *msg, uint16_t content_format)

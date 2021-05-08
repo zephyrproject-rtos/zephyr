@@ -437,7 +437,7 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {	\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &mcux_lpuart_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &mcux_lpuart_##n##_data,			\
 			    &mcux_lpuart_##n##_config,			\
 			    PRE_KERNEL_1,				\

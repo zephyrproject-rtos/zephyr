@@ -192,7 +192,7 @@ your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
 
 In general, :file:`plank.dts` should look like this:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /dts-v1/;
    #include <your_soc_vendor/your_soc.dtsi>
@@ -273,7 +273,7 @@ generic across K6X-based boards, it leaves many devices disabled by default
 using ``status`` properties.  For example, there is a CAN controller defined as
 follows (with unimportant parts skipped):
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    can0: can@40024000 {
 	...
@@ -289,7 +289,7 @@ such as adding nodes for on-board sensors, LEDs, buttons, etc.
 For example, FRDM-K64 (but not Hexiwear K64) :file:`.dts` enables the CAN
 controller and sets the bus speed:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    &can0 {
 	status = "okay";

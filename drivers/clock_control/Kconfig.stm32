@@ -24,6 +24,33 @@ config CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY
 	  is initialized earlier in the startup cycle. If unsure, leave
 	  at default value 1
 
+DT_STM32_HSE_CLOCK := $(dt_nodelabel_path,clk_hse)
+DT_STM32_HSE_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_HSE_CLOCK),clock-frequency)
+
+config CLOCK_STM32_HSE_CLOCK
+	int "HSE clock value"
+	default "$(DT_STM32_HSE_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,clk_hse)"
+	default 8000000
+	help
+	  Value of external high-speed clock (HSE). This symbol could be optionally
+	  configured using device tree by setting "clock-frequency" value of clk_hse
+	  node. For instance:
+	  &clk_hse{
+	  status = "okay";
+	  clock-frequency = <DT_FREQ_M(25)>;
+	  };
+	  Note: Device tree configuration is overridden when current symbol is set:
+	  CONFIG_CLOCK_STM32_HSE_CLOCK=32000000
+
+config CLOCK_CONTROL_STM32_HAS_DTS
+	bool
+	default y if "$(dt_node_has_prop,rcc,clocks)" || "$(dt_node_has_prop,rcc,d1cpre)"
+	help
+	  This symbol is added to prevent default use of CLOCK_CONTROL_STM32_* symbols
+	  when board make use of device tree to configure clocks.
+
+if !CLOCK_CONTROL_STM32_HAS_DTS && !SOC_SERIES_STM32MP1X
+
 choice CLOCK_STM32_SYSCLK_SRC
 	prompt "STM32 System Clock Source"
 
@@ -61,13 +88,6 @@ config CLOCK_STM32_HSE_BYPASS
 	depends on CLOCK_STM32_SYSCLK_SRC_HSE || CLOCK_STM32_PLL_SRC_HSE
 	help
 	  Enable this option to bypass external high-speed clock (HSE).
-
-config CLOCK_STM32_HSE_CLOCK
-	int "HSE clock value"
-	depends on CLOCK_STM32_SYSCLK_SRC_HSE || CLOCK_STM32_PLL_SRC_HSE
-	default 8000000
-	help
-	  Value of external high-speed clock (HSE).
 
 config CLOCK_STM32_MSI_RANGE
 	int "MSI frequency range"
@@ -202,7 +222,9 @@ config CLOCK_STM32_AHB4_PRESCALER
 	  HCLK4 prescaler, allowed values: 1, 2, 3, 4, 5, 6, 8, 10, 16, 32,
 	  64, 128, 256, 512.
 
-endif # !SOC_SERIES_STM32H7X
+endif # !SOC_SERIES_STM32H7X && !SOC_SERIES_STM32MP1X
+
+endif # CLOCK_CONTROL_STM32_HAS_DTS
 
 # Micro-controller Clock output configuration options
 

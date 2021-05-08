@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include <net/coap.h>
 #include <net/dns_resolve.h>
 #include <drivers/flash.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <tinycrypt/sha256.h>
 #include <data/json.h>
 #include <storage/flash_map.h>
@@ -83,7 +83,7 @@ static struct update_info {
 	int image_size;
 } update_info;
 
-static struct k_delayed_work updatehub_work_handle;
+static struct k_work_delayable updatehub_work_handle;
 
 static int bin2hex_str(uint8_t *bin, size_t bin_len, char *str, size_t str_buf_len)
 {
@@ -996,7 +996,7 @@ static void autohandler(struct k_work *work)
 		break;
 	}
 
-	k_delayed_work_submit(&updatehub_work_handle, UPDATEHUB_POLL_INTERVAL);
+	k_work_reschedule(&updatehub_work_handle, UPDATEHUB_POLL_INTERVAL);
 }
 
 void updatehub_autohandler(void)
@@ -1011,6 +1011,6 @@ void updatehub_autohandler(void)
 	LOG_INF("SHA-256 verification on download and from flash");
 #endif
 
-	k_delayed_work_init(&updatehub_work_handle, autohandler);
-	k_delayed_work_submit(&updatehub_work_handle, K_NO_WAIT);
+	k_work_init_delayable(&updatehub_work_handle, autohandler);
+	k_work_reschedule(&updatehub_work_handle, K_NO_WAIT);
 }

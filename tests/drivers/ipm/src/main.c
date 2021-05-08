@@ -31,7 +31,7 @@ extern struct ipm_driver_api ipm_dummy_api;
 /* Set up the dummy IPM driver */
 struct ipm_dummy_driver_data ipm_dummy0_driver_data;
 DEVICE_DEFINE(ipm_dummy0, "ipm_dummy0", ipm_dummy_init,
-		device_pm_control_nop, &ipm_dummy0_driver_data, NULL,
+		NULL, &ipm_dummy0_driver_data, NULL,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&ipm_dummy_api);
 
@@ -79,7 +79,8 @@ void main(void)
 	int rv, i;
 	const struct device *ipm;
 
-	TC_START("Test IPM");
+	TC_SUITE_START("test_ipm");
+	TC_START(__func__);
 	ipm = device_get_binding("ipm_dummy0");
 
 	/* Try sending a raw string to the IPM device to show that the
@@ -105,5 +106,6 @@ void main(void)
 
 	rv = TC_PASS;
 	TC_END_RESULT(rv);
+	TC_SUITE_END("test_ipm", rv);
 	TC_END_REPORT(rv);
 }

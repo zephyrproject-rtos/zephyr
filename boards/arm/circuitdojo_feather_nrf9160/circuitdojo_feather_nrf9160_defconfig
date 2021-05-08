@@ -10,6 +10,9 @@ CONFIG_ARM_MPU=y
 # Enable TrustZone-M
 CONFIG_ARM_TRUSTZONE_M=y
 
+# Hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
 # enable GPIO
 CONFIG_GPIO=y
 

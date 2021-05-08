@@ -278,7 +278,7 @@ static struct lp503x_data lp503x_data_##id = {			\
 								\
 DEVICE_DT_INST_DEFINE(id,					\
 		    &lp503x_init,				\
-		    device_pm_control_nop,			\
+		    NULL,					\
 		    &lp503x_data_##id,				\
 		    &lp503x_config_##id,			\
 		    POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\

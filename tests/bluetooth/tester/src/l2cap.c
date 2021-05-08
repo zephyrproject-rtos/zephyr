@@ -19,8 +19,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0
-#define DATA_BUF_SIZE (256 + BT_L2CAP_CHAN_SEND_RESERVE)
-#define DATA_MTU (DATA_BUF_SIZE - BT_L2CAP_CHAN_SEND_RESERVE)
+#define DATA_MTU 256
+#define DATA_BUF_SIZE BT_L2CAP_SDU_BUF_SIZE(DATA_MTU)
 #define CHANNELS 2
 #define SERVERS 1
 
@@ -205,9 +205,10 @@ static void connect(uint8_t *data, uint16_t len)
 	return;
 
 fail:
-	while (i >= 0) {
-		channels[i].in_use = false;
-		i--;
+	for (i = 0U; i < ARRAY_SIZE(allocated_channels); i++) {
+		if (allocated_channels[i]) {
+			channels[allocated_channels[i]->ident].in_use = false;
+		}
 	}
 	tester_rsp(BTP_SERVICE_ID_L2CAP, L2CAP_CONNECT, CONTROLLER_INDEX,
 		   BTP_STATUS_FAILED);
@@ -252,7 +253,7 @@ static void send_data(uint8_t *data, uint16_t len)
 	}
 
 	buf = net_buf_alloc(&data_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 
 	net_buf_add_mem(buf, cmd->data, data_len);
 	ret = bt_l2cap_chan_send(&chan->le.chan, buf);

@@ -401,7 +401,7 @@ static const struct itds_device_config itds_config_##idx = {		\
 	.def_op_mode = DT_ENUM_IDX(DT_DRV_INST(idx), op_mode),		\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(idx, itds_init, device_pm_control_nop,		\
+DEVICE_DT_INST_DEFINE(idx, itds_init, NULL,				\
 		    &itds_data_##idx, &itds_config_##idx,		\
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
 		    &itds_api);						\

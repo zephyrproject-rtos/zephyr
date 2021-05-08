@@ -22,6 +22,7 @@ zephyr_sources(
   timeutil.c
   heap.c
   heap-validate.c
+  bitarray.c
   )
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
@@ -35,7 +36,11 @@ zephyr_sources_ifdef(CONFIG_ASSERT assert.c)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE mutex.c user_work.c)
 
+zephyr_sources_ifdef(CONFIG_MPSC_PBUF mpsc_pbuf.c)
+
 zephyr_sources_ifdef(CONFIG_SCHED_DEADLINE p4wq.c)
+
+zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include

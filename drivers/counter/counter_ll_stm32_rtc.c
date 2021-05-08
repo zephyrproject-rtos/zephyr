@@ -337,7 +337,7 @@ static int rtc_stm32_init(const struct device *dev)
 	while (LL_RCC_LSE_IsReady() != 1) {
 	}
 
-#if defined(CONFIG_CLOCK_STM32_MSI_PLL_MODE)
+#if STM32_MSI_PLL_MODE
 	/* Enable MSI hardware auto calibration */
 	LL_RCC_MSI_EnablePLLMode();
 #endif
@@ -418,7 +418,7 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 		.get_top_value = rtc_stm32_get_top_value,
 };
 
-DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, NULL,
 		    &rtc_data, &rtc_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &rtc_stm32_driver_api);
 

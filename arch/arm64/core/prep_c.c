@@ -20,9 +20,9 @@
 extern FUNC_NORETURN void z_cstart(void);
 
 #ifdef CONFIG_ARM_MMU
-extern void z_arm64_mmu_init(void);
+extern void z_arm64_mmu_init(bool is_primary_core);
 #else
-static inline void z_arm64_mmu_init(void) { }
+static inline void z_arm64_mmu_init(bool is_primary_core) { }
 #endif
 
 static inline void z_arm64_bss_zero(void)
@@ -52,7 +52,7 @@ void z_arm64_prep_c(void)
 #ifdef CONFIG_XIP
 	z_data_copy();
 #endif
-	z_arm64_mmu_init();
+	z_arm64_mmu_init(true);
 	z_arm64_interrupt_init();
 	z_cstart();
 

@@ -820,6 +820,11 @@ static inline bool atomic_pte_cas(pentry_t *target, pentry_t old_value,
  */
 #define OPTION_RESET		BIT(2)
 
+/* Indicates that the mapping will need to be cleared entirely. This is
+ * mainly used for unmapping the memory region.
+ */
+#define OPTION_CLEAR		BIT(3)
+
 /**
  * Atomically update bits in a page table entry
  *
@@ -829,9 +834,9 @@ static inline bool atomic_pte_cas(pentry_t *target, pentry_t old_value,
  *
  * @param pte Pointer to page table entry to update
  * @param update_val Updated bits to set/clear in PTE. Ignored with
- *        OPTION_RESET.
+ *        OPTION_RESET or OPTION_CLEAR.
  * @param update_mask Which bits to modify in the PTE. Ignored with
- *        OPTION_RESET
+ *        OPTION_RESET or OPTION_CLEAR.
  * @param options Control flags
  * @retval Old PTE value
  */
@@ -841,6 +846,7 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
 {
 	bool user_table = (options & OPTION_USER) != 0U;
 	bool reset = (options & OPTION_RESET) != 0U;
+	bool clear = (options & OPTION_CLEAR) != 0U;
 	pentry_t old_val, new_val;
 
 	do {
@@ -856,6 +862,8 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
 
 		if (reset) {
 			new_val = reset_pte(new_val);
+		} else if (clear) {
+			new_val = 0;
 		} else {
 			new_val = ((new_val & ~update_mask) |
 				   (update_val & update_mask));
@@ -895,9 +903,11 @@ static inline pentry_t pte_atomic_update(pentry_t *pte, pentry_t update_val,
  *
  * @param ptables Page tables to modify
  * @param virt Virtual page table entry to update
- * @param entry_val Value to update in the PTE (ignored if OPTION_RESET)
+ * @param entry_val Value to update in the PTE (ignored if OPTION_RESET or
+ *        OPTION_CLEAR)
  * @param [out] old_val_ptr Filled in with previous PTE value. May be NULL.
- * @param mask What bits to update in the PTE (ignored if OPTION_RESET)
+ * @param mask What bits to update in the PTE (ignored if OPTION_RESET or
+ *        OPTION_CLEAR)
  * @param options Control options, described above
  */
 static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
@@ -955,21 +965,21 @@ static void page_map_set(pentry_t *ptables, void *virt, pentry_t entry_val,
  * @param ptables Page tables to modify
  * @param virt Base page-aligned virtual memory address to map the region.
  * @param phys Base page-aligned physical memory address for the region.
- *        Ignored if OPTION_RESET. Also affected by the mask parameter. This
- *        address is not directly examined, it will simply be programmed into
- *        the PTE.
+ *        Ignored if OPTION_RESET or OPTION_CLEAR. Also affected by the mask
+ *        parameter. This address is not directly examined, it will simply be
+ *        programmed into the PTE.
  * @param size Size of the physical region to map
  * @param entry_flags Non-address bits to set in every PTE. Ignored if
  *        OPTION_RESET. Also affected by the mask parameter.
  * @param mask What bits to update in each PTE. Un-set bits will never be
- *        modified. Ignored if OPTION_RESET.
+ *        modified. Ignored if OPTION_RESET or OPTION_CLEAR.
  * @param options Control options, described above
  */
 static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 			      size_t size, pentry_t entry_flags, pentry_t mask,
 			      uint32_t options)
 {
-	bool reset = (options & OPTION_RESET) != 0U;
+	bool zero_entry = (options & (OPTION_RESET | OPTION_CLEAR)) != 0U;
 
 	assert_addr_aligned(phys);
 	__ASSERT((size & (CONFIG_MMU_PAGE_SIZE - 1)) == 0U,
@@ -986,7 +996,7 @@ static void range_map_ptables(pentry_t *ptables, void *virt, uintptr_t phys,
 		uint8_t *dest_virt = (uint8_t *)virt + offset;
 		pentry_t entry_val;
 
-		if (reset) {
+		if (zero_entry) {
 			entry_val = 0;
 		} else {
 			entry_val = (phys + offset) | entry_flags;
@@ -1122,40 +1132,64 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 			   MASK_ALL, 0);
 }
 
-static void identity_map_remove(void)
+/* unmap region addr..addr+size, reset entries and flush TLB */
+void arch_mem_unmap(void *addr, size_t size)
 {
+	range_map_unlocked((void *)addr, 0, size, 0, 0,
+			   OPTION_FLUSH | OPTION_CLEAR);
+}
+
 #ifdef Z_VM_KERNEL
-	size_t size, scope = get_entry_scope(0);
+static void identity_map_remove(uint32_t level)
+{
+	size_t size, scope = get_entry_scope(level);
+	pentry_t *table;
+	uint32_t cur_level;
 	uint8_t *pos;
+	pentry_t entry;
+	pentry_t *entry_ptr;
 
 	k_mem_region_align((uintptr_t *)&pos, &size,
 			   (uintptr_t)CONFIG_SRAM_BASE_ADDRESS,
 			   (size_t)CONFIG_SRAM_SIZE * 1024U, scope);
 
-	/* We booted with RAM mapped both to its identity and virtual
-	 * mapping starting at CONFIG_KERNEL_VM_BASE. This was done by
-	 * double-linking the relevant tables in the top-level table.
-	 * At this point we don't need the identity mapping(s) any more,
-	 * zero the top-level table entries corresponding to the
-	 * physical mapping.
-	 */
 	while (size != 0U) {
-		pentry_t *entry = get_entry_ptr(z_x86_kernel_ptables, pos, 0);
+		/* Need to get to the correct table */
+		table = z_x86_kernel_ptables;
+		for (cur_level = 0; cur_level < level; cur_level++) {
+			entry = get_entry(table, pos, cur_level);
+			table = next_table(entry, level);
+		}
+
+		entry_ptr = get_entry_ptr(table, pos, level);
 
 		/* set_pte */
-		*entry = 0;
+		*entry_ptr = 0;
 		pos += scope;
 		size -= scope;
 	}
-#endif
 }
+#endif
 
 /* Invoked to remove the identity mappings in the page tables,
  * they were only needed to tranisition the instruction pointer at early boot
  */
 void z_x86_mmu_init(void)
 {
-	identity_map_remove();
+#ifdef Z_VM_KERNEL
+	/* We booted with physical address space being identity mapped.
+	 * As we are now executing in virtual address space,
+	 * the identity map is no longer needed. So remove them.
+	 *
+	 * Without PAE, only need to remove the entries at the PD level.
+	 * With PAE, need to also remove the entry at PDP level.
+	 */
+	identity_map_remove(PDE_LEVEL);
+
+#ifdef CONFIG_X86_PAE
+	identity_map_remove(0);
+#endif
+#endif
 }
 
 #if CONFIG_X86_STACK_PROTECTION
@@ -1767,8 +1801,6 @@ static void mark_addr_page_reserved(uintptr_t addr, size_t len)
 		struct z_page_frame *pf = z_phys_to_page_frame(pos);
 
 		pf->flags |= Z_PAGE_FRAME_RESERVED;
-
-		z_free_page_count--;
 	}
 }
 
@@ -1811,6 +1843,29 @@ void arch_reserved_pages_update(void)
 #endif /* CONFIG_X86_MEMMAP */
 }
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
+
+int arch_page_phys_get(void *virt, uintptr_t *phys)
+{
+	pentry_t pte = 0;
+	int level, ret;
+
+	__ASSERT(POINTER_TO_UINT(virt) % CONFIG_MMU_PAGE_SIZE == 0U,
+		 "unaligned address %p to %s", virt, __func__);
+
+	pentry_get(&level, &pte, z_x86_page_tables_get(), virt);
+
+	if ((pte & MMU_P) != 0) {
+		if (phys != NULL) {
+			*phys = (uintptr_t)get_entry_phys(pte, PTE_LEVEL);
+		}
+		ret = 0;
+	} else {
+		/* Not mapped */
+		ret = -EFAULT;
+	}
+
+	return ret;
+}
 
 #ifdef CONFIG_DEMAND_PAGING
 #define PTE_MASK (paging_levels[PTE_LEVEL].mask)

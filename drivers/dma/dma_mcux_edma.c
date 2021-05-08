@@ -14,6 +14,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <devicetree.h>
+#include <sys/atomic.h>
 #include <drivers/dma.h>
 #include <drivers/clock_control.h>
 
@@ -28,6 +29,7 @@ LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 struct dma_mcux_edma_config {
 	DMA_Type *base;
 	DMAMUX_Type *dmamux_base;
+	int dma_channels; /* number of channels */
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -45,7 +47,10 @@ struct call_back {
 };
 
 struct dma_mcux_edma_data {
+	struct dma_context dma_ctx;
 	struct call_back data_cb[DT_INST_PROP(0, dma_channels)];
+	ATOMIC_DEFINE(channels_atomic, DT_INST_PROP(0, dma_channels));
+	struct k_mutex dma_mutex;
 };
 
 #define DEV_CFG(dev)                                                           \
@@ -396,12 +401,26 @@ static int dma_mcux_edma_get_status(const struct device *dev,
 	return 0;
 }
 
+static bool dma_mcux_edma_channel_filter(const struct device *dev,
+				int channel_id, void *param)
+{
+	enum dma_channel_filter *filter = (enum dma_channel_filter *)param;
+
+	if (filter && *filter == DMA_CHANNEL_PERIODIC) {
+		if (channel_id > 3) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static const struct dma_driver_api dma_mcux_edma_api = {
 	.reload = dma_mcux_edma_reload,
 	.config = dma_mcux_edma_configure,
 	.start = dma_mcux_edma_start,
 	.stop = dma_mcux_edma_stop,
 	.get_status = dma_mcux_edma_get_status,
+	.chan_filter = dma_mcux_edma_channel_filter,
 };
 
 static int dma_mcux_edma_init(const struct device *dev)
@@ -415,6 +434,10 @@ static int dma_mcux_edma_init(const struct device *dev)
 	DEV_CFG(dev)->irq_config_func(dev);
 	memset(DEV_DATA(dev), 0, sizeof(struct dma_mcux_edma_data));
 	memset(tcdpool, 0, sizeof(tcdpool));
+	k_mutex_init(&DEV_DATA(dev)->dma_mutex);
+	DEV_DATA(dev)->dma_ctx.magic = DMA_MAGIC;
+	DEV_DATA(dev)->dma_ctx.dma_channels = DEV_CFG(dev)->dma_channels;
+	DEV_DATA(dev)->dma_ctx.atomic = DEV_DATA(dev)->channels_atomic;
 	return 0;
 }
 
@@ -423,6 +446,7 @@ static void dma_imx_config_func_0(const struct device *dev);
 static const struct dma_mcux_edma_config dma_config_0 = {
 	.base = (DMA_Type *)DT_INST_REG_ADDR(0),
 	.dmamux_base = (DMAMUX_Type *)DT_INST_REG_ADDR_BY_IDX(0, 1),
+	.dma_channels = DT_INST_PROP(0, dma_channels),
 	.irq_config_func = dma_imx_config_func_0,
 };
 
@@ -430,7 +454,7 @@ struct dma_mcux_edma_data dma_data;
 /*
  * define the dma
  */
-DEVICE_DT_INST_DEFINE(0, &dma_mcux_edma_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &dma_mcux_edma_init, NULL,
 		    &dma_data, &dma_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dma_mcux_edma_api);
 

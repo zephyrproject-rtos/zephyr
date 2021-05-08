@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2021 IoT.bzh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-r.dtsi>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/renesas_rcar_cpg.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r7";
+			reg = <0>;
+		};
+	};
+
+	soc {
+		sram0: memory@40040000 {
+			compatible = "mmio-sram";
+			reg = <0x40040000 0x1fc0000>;
+		};
+
+		gic: interrupt-controller@f1110000 {
+			compatible = "arm,gic";
+			reg = <0xf1110000 0x1000>,
+			      <0xf1120000 0x20000>,
+			      <0xf1140000 0x20000>,
+			      <0xf1060000 0x20000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			label = "GIC";
+			status = "okay";
+		};
+
+		gpio5: gpio@e6055000 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6055000 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 907>;
+			status = "disabled";
+			label = "gpio5";
+		};
+
+		gpio6: gpio@e6055400 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0xe6055400 0x50>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 906>;
+			status = "disabled";
+			label = "gpio6";
+		};
+
+		cmt0: timer@e60f0500 {
+			compatible = "renesas,rcar-cmt";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 143 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			reg = <0xe60f0500 0x1004>;
+			clocks = <&cpg CPG_MOD 303>;
+			status = "disabled";
+			label = "cmt0";
+		};
+
+		cpg: clock-controller@e6150000 {
+			compatible = "renesas,rcar-cpg-mssr";
+			reg = <0xe6150000 0x1000>;
+			#clock-cells = <2>;
+			label = "cpg";
+		};
+
+		scif1: serial@e6e68000 {
+			compatible = "renesas,rcar-scif";
+			reg = <0xe6e68000 0x64>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 206>,
+			<&cpg CPG_CORE CPG_CORE_CLK_S3D4>;
+			current-speed = <115200>;
+			status = "disabled";
+			label = "scif1";
+		};
+
+		scif2: serial@e6e88000 {
+			compatible = "renesas,rcar-scif";
+			reg = <0xe6e88000 0x64>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 310>,
+			<&cpg CPG_CORE CPG_CORE_CLK_S3D4>;
+			current-speed = <115200>;
+			status = "disabled";
+			label = "scif2";
+		};
+	};
+};

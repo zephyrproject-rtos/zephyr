@@ -96,11 +96,25 @@
 			power-state-name = "runtime-idle";
 			min-residency-us = <10>;
 		};
+		suspend: suspend {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000>;
+		};
 	};
 };
 
 &cpu0 {
-	cpu-power-states = <&idle>;
+	cpu-power-states = <&idle &suspend>;
+};
+
+/*
+ * RT600 EVK board uses OS timer as the kernel timer
+ * In case we need to switch to SYSTICK timer, then
+ * replace &os_timer with &systick
+ */
+&os_timer {
+	status = "okay";
 };
 
 &flexcomm0 {
@@ -132,6 +146,52 @@ arduino_spi: &flexcomm5 {
 	#size-cells = <0>;
 	dmas = <&dma0 10>, <&dma0 11>;
 	dma-names = "rx", "tx";
+};
+
+/* I2S receive channel */
+i2s0: &flexcomm1 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	label = "I2S_0";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 2>;
+	dma-names = "rx";
+};
+
+/* I2S transmit channel */
+i2s1: &flexcomm3 {
+	status = "okay";
+	compatible = "nxp,lpc-i2s";
+	label = "I2S_1";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 7>;
+	dma-names = "tx";
+};
+
+&flexspi {
+	reg = <0x50134000 0x4000>, <0x18000000 DT_SIZE_M(64)>;
+	mx25um51345g: mx25um51345g@2 {
+		compatible = "nxp,imx-flexspi-mx25um51345g";
+		size = <536870912>;
+		label = "MX25UM51345G";
+		reg = <2>;
+		spi-max-frequency = <200000000>;
+		status = "okay";
+		jedec-id = [c2 81 3a];
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@3f00000 {
+				label = "storage";
+				reg = <0x03f00000 DT_SIZE_M(1)>;
+			};
+		};
+	};
 };
 
 &gpio0 {

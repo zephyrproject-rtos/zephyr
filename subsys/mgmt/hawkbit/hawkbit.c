@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(hawkbit);
 #include <net/net_ip.h>
 #include <net/socket.h>
 #include <net/net_mgmt.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <drivers/flash.h>
 #include <net/http_client.h>
 #include <net/dns_resolve.h>
@@ -91,7 +91,7 @@ static union {
 	struct hawkbit_cancel cancel;
 } hawkbit_results;
 
-static struct k_delayed_work hawkbit_work_handle;
+static struct k_work_delayable hawkbit_work_handle;
 
 static const struct json_obj_descr json_href_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct hawkbit_href, href, JSON_TOK_STRING),
@@ -1264,11 +1264,11 @@ static void autohandler(struct k_work *work)
 		break;
 	}
 
-	k_delayed_work_submit(&hawkbit_work_handle, K_MSEC(poll_sleep));
+	k_work_reschedule(&hawkbit_work_handle, K_MSEC(poll_sleep));
 }
 
 void hawkbit_autohandler(void)
 {
-	k_delayed_work_init(&hawkbit_work_handle, autohandler);
-	k_delayed_work_submit(&hawkbit_work_handle, K_NO_WAIT);
+	k_work_init_delayable(&hawkbit_work_handle, autohandler);
+	k_work_reschedule(&hawkbit_work_handle, K_NO_WAIT);
 }

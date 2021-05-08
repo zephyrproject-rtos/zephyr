@@ -13,6 +13,13 @@ tests:
     tags: kernel
     timeout: 600
     min_ram: 16
+  kernel.fpu_sharing.generic.arm64:
+    extra_args: PI_NUM_ITERATIONS=70000
+    arch_allow: arm64
+    filter: CONFIG_CPU_CORTEX_A
+    slow: true
+    tags: kernel
+    timeout: 600
   kernel.fpu_sharing.generic.riscv32:
     extra_args: PI_NUM_ITERATIONS=500
     filter: CONFIG_CPU_HAS_FPU

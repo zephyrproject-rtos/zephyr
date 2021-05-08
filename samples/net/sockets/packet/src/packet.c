@@ -186,6 +186,16 @@ static int send_packet_socket(struct packet_data *packet)
 			}
 		}
 
+		/* If we have received any data, flush it here in order to
+		 * not to leak memory in IP stack.
+		 */
+		do {
+			static char recv_buffer[RECV_BUFFER_SIZE];
+
+			ret = recv(packet->send_sock, recv_buffer,
+				   sizeof(recv_buffer), MSG_DONTWAIT);
+		} while (ret > 0);
+
 		if (!FLOOD) {
 			k_msleep(WAIT_TIME);
 		}

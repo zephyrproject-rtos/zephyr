@@ -348,14 +348,14 @@ flash_stm32_get_parameters(const struct device *dev)
 
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
-	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
-		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
+	/* Getting clocks information from device tree description depending
+	 * on the presence of 'clocks' property.
+	 */
+#if DT_INST_NODE_HAS_PROP(0, clocks)
+	.pclken = {
+		.enr = DT_INST_CLOCKS_CELL(0, bits),
+		.bus = DT_INST_CLOCKS_CELL(0, bus),
+	}
 #endif
 };
 
@@ -372,21 +372,21 @@ static const struct flash_driver_api flash_stm32_api = {
 static int stm32_flash_init(const struct device *dev)
 {
 	int rc;
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X)
+	/* Below is applicable to F0, F1, F3, G0, G4, L1, L4 & WB55 series.
+	 * For F2, F4, F7 & H7 series, this is not applicable.
+	 */
+#if DT_INST_NODE_HAS_PROP(0, clocks)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/*
-	 * On STM32F0, Flash interface clock source is always HSI,
-	 * so statically enable HSI here.
+	 * On STM32 F0, F1, F3 & L1 series, flash interface clock source is
+	 * always HSI, so statically enable HSI here.
 	 */
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F1X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X)
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32L1X)
 	LL_RCC_HSI_Enable();
 
 	while (!LL_RCC_HSI_IsReady()) {
@@ -429,6 +429,6 @@ static int stm32_flash_init(const struct device *dev)
 	return flash_stm32_write_protection(dev, false);
 }
 
-DEVICE_DT_INST_DEFINE(0, stm32_flash_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL,
 		    &flash_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32_api);

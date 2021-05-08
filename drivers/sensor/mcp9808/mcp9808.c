@@ -140,6 +140,6 @@ static const struct mcp9808_config mcp9808_cfg = {
 #endif /* CONFIG_MCP9808_TRIGGER */
 };
 
-DEVICE_DT_INST_DEFINE(0, mcp9808_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, mcp9808_init, NULL,
 		      &mcp9808_data, &mcp9808_cfg, POST_KERNEL,
 		      CONFIG_SENSOR_INIT_PRIORITY, &mcp9808_api_funcs);

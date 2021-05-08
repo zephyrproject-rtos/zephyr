@@ -159,37 +159,26 @@ foreach(target flash debug debugserver attach)
     set(RUNNER_VERBOSE)
   endif()
 
-  # We pass --skip-rebuild here because the DEPENDS value ensures the
-  # build is already up to date before west is run.
   if(WEST)
-    set(cmd
-      ${CMAKE_COMMAND} -E env
-      ${WEST}
-      ${RUNNER_VERBOSE}
-      ${target}
-      --skip-rebuild
-      DEPENDS ${RUNNERS_DEPS}
-              $<TARGET_PROPERTY:zephyr_property_target,${TARGET_UPPER}_DEPENDENCIES>
-      WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-      )
-
     add_custom_target(${target}
+      # This script will print an error message and fail if <target> has added
+      # dependencies. This is done using dedicated CMake script, as
+      # `cmake -E {true|false}` is not available until CMake 3.16.
+      COMMAND ${CMAKE_COMMAND}
+        -DTARGET=${target}
+        -DDEPENDENCIES="$<TARGET_PROPERTY:${target},MANUALLY_ADDED_DEPENDENCIES>"
+        -P ${CMAKE_CURRENT_LIST_DIR}/check_runner_dependencies.cmake
       COMMAND
-      ${cmd}
+        ${CMAKE_COMMAND} -E env
+        ${WEST}
+        ${RUNNER_VERBOSE}
+        ${target}
+      WORKING_DIRECTORY
+        ${APPLICATION_BINARY_DIR}
       COMMENT
-      ${comment}
+        ${comment}
       USES_TERMINAL
-      )
-
-    # This is an artificial target to allow west to ensure all dependencies of
-    # target is build before carrying out the actual command.
-    # This allows `west` to run just the dependencies before flashing.
-    add_custom_target(west_${target}_depends
-      COMMAND ${CMAKE_COMMAND} -E echo ""
-      DEPENDS ${RUNNERS_DEPS}
-              $<TARGET_PROPERTY:zephyr_property_target,${TARGET_UPPER}_DEPENDENCIES>
-      USES_TERMINAL
-      )
+    )
   else()
     add_custom_target(${target}
       COMMAND ${CMAKE_COMMAND} -E echo \"West was not found in path. To support

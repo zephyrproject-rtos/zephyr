@@ -11,13 +11,6 @@ menuconfig UART_NS16550
 
 if UART_NS16550
 
-config UART_NS16550_MAX_INSTANCES
-	int "Maximum number of supported driver instances"
-	range 1 32
-	default 4
-	help
-	  The maximum number of supported driver instances in device tree.
-
 config UART_NS16550_LINE_CTRL
 	bool "Enable Serial Line Control for Apps"
 	depends on UART_LINE_CTRL

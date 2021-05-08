@@ -1410,7 +1410,7 @@ static int uart_stm32_init(const struct device *dev)
 	config->uconf.irq_config_func(dev);
 #endif
 #ifdef CONFIG_PM_DEVICE
-	data->pm_state = DEVICE_PM_ACTIVE_STATE;
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -1428,7 +1428,7 @@ static int uart_stm32_set_power_state(const struct device *dev,
 	struct uart_stm32_data *data = DEV_DATA(dev);
 
 	/* setting a low power mode */
-	if (new_state != DEVICE_PM_ACTIVE_STATE) {
+	if (new_state != PM_DEVICE_STATE_ACTIVE) {
 #ifdef USART_ISR_BUSY
 		/* Make sure that no USART transfer is on-going */
 		while (LL_USART_IsActiveFlag_BUSY(UartInstance) == 1) {
@@ -1461,24 +1461,24 @@ static int uart_stm32_set_power_state(const struct device *dev,
  */
 static int uart_stm32_pm_control(const struct device *dev,
 					 uint32_t ctrl_command,
-					 void *context, device_pm_cb cb,
+					 uint32_t *state, pm_device_cb cb,
 					 void *arg)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		uint32_t new_state = *((const uint32_t *)context);
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
+		uint32_t new_state = *state;
 
 		if (new_state != data->pm_state) {
 			uart_stm32_set_power_state(dev, new_state);
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((uint32_t *)context) = data->pm_state;
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
+		*state = data->pm_state;
 	}
 
 	if (cb) {
-		cb(dev, 0, context, arg);
+		cb(dev, 0, state, arg);
 	}
 
 	return 0;

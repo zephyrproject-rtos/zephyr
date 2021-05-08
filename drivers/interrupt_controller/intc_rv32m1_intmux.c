@@ -213,6 +213,6 @@ static int rv32m1_intmux_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, &rv32m1_intmux_init, device_pm_control_nop, NULL,
+DEVICE_DT_INST_DEFINE(0, &rv32m1_intmux_init, NULL, NULL,
 		    &rv32m1_intmux_cfg, PRE_KERNEL_1,
 		    CONFIG_RV32M1_INTMUX_INIT_PRIORITY, &rv32m1_intmux_apis);

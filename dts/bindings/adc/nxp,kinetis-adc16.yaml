@@ -20,8 +20,44 @@ properties:
     interrupts:
       required: true
 
+    periodic-trigger:
+      type: boolean
+      required: false
+      description: if periodic trigger enabled
+
     "#io-channel-cells":
       const: 1
+
+    clk-source:
+      type: int
+      required: false
+      description: use alternate clock reference source
+
+    long-sample:
+      type: int
+      required: false
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+      description: long sample mode
+
+    continuous-convert:
+      type: boolean
+      required: false
+      description: If use continuous convert
+
+    high-speed:
+      type: boolean
+      required: false
+      description: If use high speed
+
+    hw-trigger-src:
+      type: int
+      required: false
+      description: hardware trigger source (See ADCxTRGSEL field in user manual for more details)
 
 io-channel-cells:
     - input

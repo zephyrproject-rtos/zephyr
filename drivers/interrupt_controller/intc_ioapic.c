@@ -88,7 +88,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
 static uint32_t ioapic_rtes;
 
 #ifdef CONFIG_PM_DEVICE
-#include <power/power.h>
+#include <pm/device.h>
 
 #define BITS_PER_IRQ  4
 #define IOAPIC_BITFIELD_HI_LO	0
@@ -104,7 +104,7 @@ static uint32_t ioapic_rtes;
 #define SUSPEND_BITS_REQD (ROUND_UP((256 * BITS_PER_IRQ), 32))
 
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
-static uint32_t ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
+static uint32_t ioapic_device_power_state = PM_DEVICE_STATE_ACTIVE;
 
 #endif
 
@@ -265,7 +265,6 @@ int ioapic_suspend(const struct device *port)
 			store_flags(irq, rte_lo);
 		}
 	}
-	ioapic_device_power_state = DEVICE_PM_SUSPEND_STATE;
 	return 0;
 }
 
@@ -295,7 +294,6 @@ int ioapic_resume_from_suspend(const struct device *port)
 		ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
 		ioApicRedSetLo(irq, rteValue);
 	}
-	ioapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
 	return 0;
 }
 
@@ -305,17 +303,35 @@ int ioapic_resume_from_suspend(const struct device *port)
 */
 static int ioapic_device_ctrl(const struct device *dev,
 			      uint32_t ctrl_command,
-			      void *context, device_pm_cb cb, void *arg)
+			      uint32_t *context, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		if (*((uint32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
+		uint32_t new_state = *((uint32_t *)context);
+
+		switch (new_state) {
+		case PM_DEVICE_STATE_LOW_POWER:
+			break;
+		case PM_DEVICE_STATE_ACTIVE:
+			if (ioapic_device_power_state !=
+					PM_DEVICE_STATE_LOW_POWER) {
+				ret = ioapic_resume_from_suspend(dev);
+			}
+			break;
+		case PM_DEVICE_STATE_SUSPEND:
+		case PM_DEVICE_STATE_FORCE_SUSPEND:
+		case PM_DEVICE_STATE_OFF:
 			ret = ioapic_suspend(dev);
-		} else if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			ret = ioapic_resume_from_suspend(dev);
+			break;
+		default:
+			ret = -ENOTSUP;
 		}
-	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
+
+		if (ret == 0) {
+			ioapic_device_power_state = new_state;
+		}
+	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
 		*((uint32_t *)context) = ioapic_device_power_state;
 	}
 

@@ -32,6 +32,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'python-devicetree',
 
 from devicetree import edtlib
 
+# The set of binding types whose values can be iterated over with
+# DT_FOREACH_PROP_ELEM(). If you change this, make sure to update the
+# doxygen string for that macro.
+FOREACH_PROP_ELEM_TYPES = set(['string', 'array', 'uint8-array', 'string-array',
+                               'phandles', 'phandle-array'])
+
 class LogFormatter(logging.Formatter):
     '''A log formatter that prints the level name in lower case,
     for compatibility with earlier versions of edtlib.'''
@@ -113,6 +119,7 @@ def main():
                               f"DT_{node.parent.z_path_id}")
 
             write_child_functions(node)
+            write_child_functions_status_okay(node)
             write_dep_info(node)
             write_idents_and_existence(node)
             write_bus(node)
@@ -473,6 +480,18 @@ def write_child_functions(node):
                 node.children.values()))
 
 
+def write_child_functions_status_okay(node):
+    # Writes macro that are helpers that will call a macro/function
+    # for each child node with status "okay".
+
+    functions = ''
+    for child in node.children.values():
+        if child.status == "okay":
+            functions = functions + f"fn(DT_{child.z_path_id}) "
+
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD_STATUS_OKAY(fn)", functions)
+
+
 def write_status(node):
     out_dt_define(f"{node.z_path_id}_STATUS_{str2ident(node.status)}", 1)
 
@@ -490,7 +509,8 @@ def write_vanilla_props(node):
 
     macro2val = {}
     for prop_name, prop in node.props.items():
-        macro = f"{node.z_path_id}_P_{str2ident(prop_name)}"
+        prop_id = str2ident(prop_name)
+        macro = f"{node.z_path_id}_P_{prop_id}"
         val = prop2value(prop)
         if val is not None:
             # DT_N_<node-id>_P_<prop-id>
@@ -522,6 +542,12 @@ def write_vanilla_props(node):
                 else:
                     macro2val[macro + f"_IDX_{i}"] = subval
                 macro2val[macro + f"_IDX_{i}_EXISTS"] = 1
+
+        if prop.type in FOREACH_PROP_ELEM_TYPES:
+            # DT_N_<node-id>_P_<prop-id>_FOREACH_PROP_ELEM
+            macro2val[f"{macro}_FOREACH_PROP_ELEM(fn)"] = \
+                ' \\\n\t'.join(f'fn(DT_{node.z_path_id}, {prop_id}, {i})'
+                              for i in range(len(prop.val)))
 
         plen = prop_len(prop)
         if plen is not None:

@@ -44,6 +44,15 @@
 		green_pwm_led: green_pwm_led {
 			pwms = <&pwm4 1 0 PWM_POLARITY_NORMAL>;
 		};
+		orange_pwm_led: orange_pwm_led {
+			pwms = <&pwm4 2 0 PWM_POLARITY_NORMAL>;
+		};
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm4 3 0 PWM_POLARITY_NORMAL>;
+		};
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&pwm4 4 0 PWM_POLARITY_NORMAL>;
+		};
 	};
 
 	gpio_keys {
@@ -61,7 +70,32 @@
 		led3 = &blue_led_6;
 		sw0 = &user_button;
 		pwm-led0 = &green_pwm_led;
+		pwm-led1 = &orange_pwm_led;
+		pwm-led2 = &red_pwm_led;
+		pwm-led3 = &blue_pwm_led;
 	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <4>;
+	mul-n = <96>;
+	div-p = <2>;
+	div-q = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(96)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
 };
 
 &timers4 {
@@ -69,7 +103,33 @@
 
 	pwm4: pwm {
 		status = "okay";
-		pinctrl-0 = <&tim4_ch1_pd12>;
+		pinctrl-0 = <&tim4_ch1_pd12
+			     &tim4_ch2_pd13
+			     &tim4_ch3_pd14
+			     &tim4_ch4_pd15>;
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lsm303agr-magn@1e {
+		compatible = "st,lis2mdl", "st,lsm303agr-magn";
+		status = "okay";
+		reg = <0x1e>;
+		irq-gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+		label = "LSM303AGR-MAGN";
+	};
+
+	lsm303agr-accel@19 {
+		compatible = "st,lis2dh", "st,lsm303agr-accel";
+		status = "okay";
+		reg = <0x19>;
+		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
+			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
+		label = "LSM303AGR-ACCEL";
 	};
 };
 

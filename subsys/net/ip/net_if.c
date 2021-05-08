@@ -210,11 +210,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	};
 	struct net_linkaddr_storage ll_dst_storage;
 	struct net_context *context;
+	uint32_t create_time;
 	int status;
-
-	/* Timestamp of the current network packet sent if enabled */
-	struct net_ptp_time start_timestamp;
-	uint32_t curr_time = 0;
 
 	/* We collect send statistics for each socket priority if enabled */
 	uint8_t pkt_priority;
@@ -222,6 +219,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	if (!pkt) {
 		return false;
 	}
+
+	create_time = net_pkt_create_time(pkt);
 
 	debug_check_packet(pkt);
 
@@ -247,18 +246,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			net_pkt_set_queued(pkt, false);
 		}
 
-		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && context) {
-			if (net_context_get_timestamp(context, pkt,
-						      &start_timestamp) < 0) {
-				start_timestamp.nanosecond = 0;
-			} else {
-				pkt_priority = net_pkt_priority(pkt);
-			}
-		}
-
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
-			memcpy(&start_timestamp, net_pkt_timestamp(pkt),
-			       sizeof(start_timestamp));
 			pkt_priority = net_pkt_priority(pkt);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
@@ -271,13 +259,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 		status = net_if_l2(iface)->send(iface, pkt);
 
-		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && status >= 0 &&
-		    context) {
-			if (start_timestamp.nanosecond > 0) {
-				curr_time = k_cycle_get_32();
-			}
-		}
-
 		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
 			uint32_t end_tick = k_cycle_get_32();
 
@@ -285,13 +266,13 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 			net_stats_update_tc_tx_time(iface,
 						    pkt_priority,
-						    start_timestamp.nanosecond,
+						    create_time,
 						    end_tick);
 
 			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
 				update_txtime_stats_detail(
 					pkt,
-					start_timestamp.nanosecond,
+					create_time,
 					end_tick);
 
 				net_stats_update_tc_tx_time_detail(
@@ -326,18 +307,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			context, status);
 
 		net_context_send_cb(context, status);
-
-		if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP) && status >= 0 &&
-		    start_timestamp.nanosecond && curr_time > 0) {
-			/* So we know now how long the network packet was in
-			 * transit from when it was allocated to when we
-			 * got information that it was sent successfully.
-			 */
-			net_stats_update_tc_tx_time(iface,
-						    pkt_priority,
-						    start_timestamp.nanosecond,
-						    curr_time);
-		}
 	}
 
 	if (ll_dst.addr) {
@@ -347,12 +316,9 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	return true;
 }
 
-static void process_tx_packet(struct k_work *work)
+void net_process_tx_packet(struct net_pkt *pkt)
 {
 	struct net_if *iface;
-	struct net_pkt *pkt;
-
-	pkt = CONTAINER_OF(work, struct net_pkt, work);
 
 	net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
@@ -370,11 +336,21 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 	uint8_t prio = net_pkt_priority(pkt);
 	uint8_t tc = net_tx_priority2tc(prio);
 
-	k_work_init(net_pkt_work(pkt), process_tx_packet);
-
 	net_stats_update_tc_sent_pkt(iface, tc);
 	net_stats_update_tc_sent_bytes(iface, tc, net_pkt_get_len(pkt));
 	net_stats_update_tc_sent_priority(iface, tc, prio);
+
+	/* For highest priority packet, skip the TX queue and push directly to
+	 * the driver. Also if there are no TX queue/thread, push the packet
+	 * directly to the driver.
+	 */
+	if ((IS_ENABLED(CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO) &&
+	     prio == NET_PRIORITY_CA) || NET_TC_TX_COUNT == 0) {
+		net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
+
+		net_if_tx(net_pkt_iface(pkt), pkt);
+		return;
+	}
 
 #if NET_TC_TX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
@@ -3753,6 +3729,28 @@ out:
 	k_mutex_unlock(&lock);
 
 	return addr;
+}
+
+void net_if_ipv4_maddr_leave(struct net_if_mcast_addr *addr)
+{
+	NET_ASSERT(addr);
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	addr->is_joined = false;
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_ipv4_maddr_join(struct net_if_mcast_addr *addr)
+{
+	NET_ASSERT(addr);
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	addr->is_joined = true;
+
+	k_mutex_unlock(&lock);
 }
 
 static void iface_ipv4_init(int if_count)

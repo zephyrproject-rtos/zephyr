@@ -8,6 +8,7 @@
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <freq.h>
 
 / {
 	chosen {
@@ -27,6 +28,50 @@
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
+	};
+
+	clocks {
+		clk_hse: clk-hse {
+			#clock-cells = <0>;
+			compatible = "st,stm32-hse-clock";
+			/* Expected clock-frequency on the whole series 32MHz */
+			clock-frequency = <DT_FREQ_M(32)>;
+			status = "disabled";
+		};
+
+		clk_hsi: clk-hsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(16)>;
+			status = "disabled";
+		};
+
+		clk_msi: clk-msi {
+			#clock-cells = <0>;
+			compatible = "st,stm32-msi-clock";
+			msi-range = <6>; /* 4MHz (reset value) */
+			status = "disabled";
+		};
+
+		clk_lse: clk-lse {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		clk_lsi: clk-lsi {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(32)>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "st,stm32wb-pll-clock";
+			status = "disabled";
+		};
 	};
 
 	soc {
@@ -49,7 +94,7 @@
 		};
 
 		rcc: rcc@58000000 {
-			compatible = "st,stm32-rcc";
+			compatible = "st,stm32wl-rcc";
 			#clock-cells = <2>;
 			reg = <0x58000000 0x400>;
 			label = "STM32_CLK_RCC";

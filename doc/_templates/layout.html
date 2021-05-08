@@ -18,3 +18,9 @@
   {% include "zversions.html" %}
   {{ super() }}
 {% endblock %}
+{% block extrahead %}
+  <meta name="color-scheme" content="dark light">
+  {# Light/Dark stylesheets added here due to https://github.com/readthedocs/sphinx_rtd_theme/issues/1100 #}
+  <link rel="stylesheet" href="{{ pathto('_static/css/light.css', 1) }}" type="text/css" media="(prefers-color-scheme: light)"/>
+  <link rel="stylesheet" href="{{ pathto('_static/css/dark.css', 1) }}" type="text/css" media="(prefers-color-scheme: dark)"/>
+{% endblock %}

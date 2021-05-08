@@ -1,0 +1,108 @@
+/*
+ * Copyright 2021 The Chromium OS Authors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/g0/stm32g071Xb.dtsi>
+#include <st/g0/stm32g071r(6-8-b)tx-pinctrl.dtsi>
+
+/ {
+	model = "STM32G071B DEMO board";
+	compatible = "st,stm32g071-demo";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led_4: led4 {
+			gpios = <&gpiod 9 GPIO_ACTIVE_HIGH>;
+			label = "TO_REC";
+		};
+		red_led_5: led5 {
+			gpios = <&gpiod 8 GPIO_ACTIVE_HIGH>;
+			label = "TO_PLUG";
+		};
+		green_led_6: led6 {
+			gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>;
+			label = "SINK_SPY";
+		};
+		green_led_7: led7 {
+			gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
+			label = "SOURCE";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		joy_sel: button0 {
+			label = "JOY_SEL";
+			gpios = <&gpioc 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+		joy_left: button1 {
+			label = "JOY_LEFT";
+			gpios = <&gpioc 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+		joy_down: button2 {
+			label = "JOY_DOWN";
+			gpios = <&gpioc 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+		joy_right: button3 {
+			label = "JOY_RIGHT";
+			gpios = <&gpioc 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+		joy_up: button4 {
+			label = "JOY_UP";
+			gpios = <&gpioc 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led_4;
+		led1 = &red_led_5;
+		led2 = &green_led_6;
+		led3 = &green_led_7;
+		sw0 = &joy_sel;
+		sw1 = &joy_left;
+		sw2 = &joy_down;
+		sw3 = &joy_right;
+		sw4 = &joy_up;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <8>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};

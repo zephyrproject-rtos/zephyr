@@ -696,7 +696,7 @@ static int gpio_emul_init(const struct device *dev)
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(_num, gpio_emul_init,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &gpio_emul_data_##_num,			\
 			    &gpio_emul_config_##_num, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

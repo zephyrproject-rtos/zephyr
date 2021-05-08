@@ -1,0 +1,299 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+		};
+		button1: button_1 {
+			gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 2";
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_1 {
+			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+			label = "RGB red LED";
+		};
+		green_led: led_2 {
+			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+			label = "RGB green LED";
+		};
+		blue_led: led_3 {
+			gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+			label = "RGB blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		red_led_pwm: led_pwm_0 {
+			pwms = <&pwm0 40>;
+			label = "Red PWM LED";
+		};
+
+		green_led_pwm: led_pwm_1 {
+			pwms = <&pwm0 38>;
+			label = "Green PWM LED";
+		};
+
+		blue_led_pwm: led_pwm_2 {
+			pwms = <&pwm0 39>;
+			label = "Blue PWM LED";
+		};
+	};
+
+	vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 2>;
+		output-ohms = <180000>;
+		full-ohms = <(1500000 + 180000)>;
+		power-gpios = <&gpio0 16 0>;
+	};
+
+	regulator_3v3: regulator-3v3-ctrl {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "vsys-3v3-ctrl";
+		regulator-name = "ncp114";
+		enable-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
+
+	sensor_pwr_ctrl: sensor-pwr-ctrl {
+		compatible = "regulator-fixed-sync", "regulator-fixed";
+		label = "sens-pwr-ctrl";
+		regulator-name = "tck106ag";
+		enable-gpios = <&gpio0 31 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	nrf21540fem_ctrl: nrf21540fem-ctrl {
+		compatible = "nordic,nrf21540-fem";
+		rx-en-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		mode-gpios  = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		pdn-gpios   = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		tx-en-gpios = <&gpio0 30 GPIO_ACTIVE_HIGH>;
+	};
+
+	aliases {
+		sw0 = &button0;
+		sw1 = &button1;
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		pwm-led0 = &red_led_pwm;
+		pwm-led1 = &green_led_pwm;
+		pwm-led2 = &blue_led_pwm;
+	};
+};
+
+/* RGB LED control */
+&pwm0 {
+	status = "okay";
+	ch0-pin = <40>;
+	ch1-pin = <38>;
+	ch2-pin = <39>;
+};
+
+/* Buzzer control */
+&pwm1 {
+	status = "okay";
+	ch0-pin = <47>;
+};
+
+&adc {
+	status = "okay";
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	sda-pin = <34>;
+	scl-pin = <35>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	bmm150@10 {
+		compatible = "bosch,bmm150";
+		label = "BMM150";
+		reg = <0x10>;
+	};
+
+	bh1749@38 {
+		compatible = "rohm,bh1749";
+		label = "BH1749";
+		reg = <0x38>;
+		int-gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	sck-pin = <29>;
+	mosi-pin = <28>;
+	miso-pin = <26>;
+	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>,
+		   <&gpio1 4  GPIO_ACTIVE_LOW>,
+		   <&gpio0 24 GPIO_ACTIVE_LOW>;
+
+	adxl362: spi-dev-adxl362@0 {
+		compatible = "adi,adxl362";
+		label = "ADXL362";
+		spi-max-frequency = <8000000>;
+		reg = <0>;
+		int1-gpios = <&gpio0 19 0>;
+	};
+
+	bmi270: spi-dev-bmi270@1 {
+		compatible = "bosch,bmi270";
+		label = "BMI270";
+		spi-max-frequency = <8000000>;
+		reg = <1>;
+		int1-gpios = <&gpio0 23 0>;
+	};
+
+	nrf21540fem: spi-dev-nrf21540fem@2 {
+		compatible = "nordic,nrf21540-fem-spi";
+		status = "okay";
+		reg = <2>;
+		label = "FEM_SPI_IF";
+		spi-max-frequency = <8000000>;
+	};
+};
+
+/* UART0 GPIOs can be configured for other use-cases */
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <12>;
+	rx-pin = <11>;
+	rts-pin = <10>;
+	cts-pin = <9>;
+};
+
+&qspi {
+	status = "okay";
+	sck-pin = <17>;
+	io-pins = <13>, <14>;
+	csn-pins = <18>;
+	mx25r64: mx25r6435f@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		/* MX24R64 supports only pp and pp4io */
+		/* Thingy:53 supports only pp and pp2o options */
+		writeoc = "pp";
+		/* MX24R64 supports all readoc options */
+		/* Thingy:53 supports only fastread and read2io options */
+		readoc = "read2io";
+		sck-frequency = <8000000>;
+		label = "MX25R64";
+		jedec-id = [c2 28 17];
+		sfdp-bfp = [
+			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
+			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
+			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
+		];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <35000>;
+	};
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+		};
+		slot0_ns_partition: partition@50000 {
+			label = "image-0-nonsecure";
+		};
+		slot1_partition: partition@80000 {
+			label = "image-1";
+		};
+		slot1_ns_partition: partition@c0000 {
+			label = "image-1-nonsecure";
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0x000f0000 0xa000>;
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0x000fa000 0x00006000>;
+		};
+	};
+};
+
+/ {
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_image: image@20000000 {
+			/* Zephyr image(s) memory */
+		};
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_ns: image_ns@20040000 {
+			/* Non-Secure image memory */
+		};
+	};
+};
+
+/* Include partition configuration file */
+#include "thingy53_nrf5340_partition_conf.dts"

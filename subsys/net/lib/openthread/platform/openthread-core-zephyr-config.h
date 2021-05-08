@@ -92,6 +92,48 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE
+ *
+ * Define to 1 to enable software transmission target time logic.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE                        \
+	(OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2)
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_RX_TIMING_ENABLE
+ *
+ * Define to 1 to enable software reception target time logic.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_SOFTWARE_RX_TIMING_ENABLE
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_RX_TIMING_ENABLE                        \
+	(OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2)
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_HEADER_IE_SUPPORT
+ *
+ * Define as 1 to support IEEE 802.15.4-2015 Header IE (Information Element) generation and parsing,
+ * it must be set to support following features:
+ *    1. Time synchronization service feature (i.e., OPENTHREAD_CONFIG_TIME_SYNC_ENABLE is set).
+ *    2. Thread 1.2.
+ *
+ * @note If it's enabled, platform must support interrupt context and concurrent access AES.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_HEADER_IE_SUPPORT
+#if OPENTHREAD_CONFIG_TIME_SYNC_ENABLE ||                                      \
+	(OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2)
+#define OPENTHREAD_CONFIG_MAC_HEADER_IE_SUPPORT 1
+#else
+#define OPENTHREAD_CONFIG_MAC_HEADER_IE_SUPPORT 0
+#endif
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
  *
  * Define to 1 if you want to enable microsecond backoff timer implemented
@@ -248,5 +290,16 @@
 #define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD \
 	CONFIG_OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 #endif /* CONFIG_OPENTHREAD_CSL_RECEIVE_TIME_AHEAD */
+
+/**
+ * @def OPENTHREAD_CONFIG_MLE_LINK_METRICS_ENABLE
+ *
+ * Set to 1 to enable Link Metrics feature.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_MLE_LINK_METRICS_ENABLE
+#define OPENTHREAD_CONFIG_MLE_LINK_METRICS_ENABLE                              \
+	CONFIG_OPENTHREAD_MLE_LINK_METRICS_ENABLE
+#endif /* CONFIG_OPENTHREAD_MLE_LINK_METRICS_ENABLE */
 
 #endif  /* OPENTHREAD_CORE_ZEPHYR_CONFIG_H_ */

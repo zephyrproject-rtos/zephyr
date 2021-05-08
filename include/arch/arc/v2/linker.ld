@@ -188,7 +188,7 @@ SECTIONS {
 	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
-#include <linker/kobject.ld>
+#include <linker/kobject-data.ld>
 
 #ifdef __MWDT_LINKER_CMD__
 /* TODO: add mwdt specific RAM C++ sections */

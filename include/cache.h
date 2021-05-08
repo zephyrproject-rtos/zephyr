@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_CACHE_H_
 
 #include <kernel.h>
+#include <kernel_structs.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,156 +23,96 @@ extern "C" {
  * INVD means invalidate and will mark cache lines as not valid. A future
  * access to the associated address is guaranteed to generate a memory fetch.
  */
+
 #define K_CACHE_WB	BIT(0)
 #define K_CACHE_INVD	BIT(1)
 #define K_CACHE_WB_INVD	(K_CACHE_WB | K_CACHE_INVD)
 
-/**
- *
- * @brief Enable d-cache
- *
- * Enable the d-cache.
- *
- * @return N/A
- */
-void arch_dcache_enable(void);
+#if defined(CONFIG_HAS_EXTERNAL_CACHE)
 
-/**
- *
- * @brief Disable d-cache
- *
- * Disable the d-cache.
- *
- * @return N/A
- */
-void arch_dcache_disable(void);
+/* Driver interface mirrored in include/drivers/cache.h */
 
-/**
- *
- * @brief Enable i-cache
- *
- * Enable the i-cache.
- *
- * @return N/A
- */
-void arch_icache_enable(void);
+/* Enable d-cache */
+extern void cache_data_enable(void);
 
-/**
- *
- * @brief Disable i-cache
- *
- * Disable the i-cache.
- *
- * @return N/A
- */
-void arch_icache_disable(void);
+/* Disable d-cache */
+extern void cache_data_disable(void);
 
-/**
- *
- * @brief Write-back / Invalidate / Write-back + Invalidate all d-cache
- *
- * Write-back, Invalidate or Write-back + Invalidate the whole d-cache.
- *
- * @param op	Operation to perform (one of the K_CACHE_* operations)
- *
- * @retval 0		On success
- * @retval -ENOTSUP	If the operation is not supported
- */
-int arch_dcache_all(int op);
+/* Enable i-cache */
+extern void cache_instr_enable(void);
 
-/**
- *
- * @brief Write-back / Invalidate / Write-back + Invalidate d-cache lines
- *
- * No alignment is required for either addr or size, but since
- * arch_dcache_range() iterates on the d-cache lines, a d-cache line alignment
- * for both is optimal.
- *
- * The d-cache line size is specified either via the CONFIG_DCACHE_LINE_SIZE
- * kconfig option or it is detected at runtime.
- *
- * @param addr	The pointer to start the multi-line operation
- * @param size	The number of bytes that are to be acted on
- * @param op	Operation to perform (one of the K_CACHE_* operations)
- *
- * @retval 0		On success
- * @retval -ENOTSUP	If the operation is not supported
- */
-int arch_dcache_range(void *addr, size_t size, int op);
+/* Disable i-cache */
+extern void cache_instr_disable(void);
 
-/**
- *
- * @brief Write-back / Invalidate / Write-back + Invalidate all i-cache
- *
- * Write-back, Invalidate or Write-back + Invalidate the whole i-cache.
- *
- * @param op	Operation to perform (one of the K_CACHE_* operations)
- *
- * @retval 0		On success
- * @retval -ENOTSUP	If the operation is not supported
- */
-int arch_icache_all(int op);
+/* Write-back / Invalidate / Write-back + Invalidate all d-cache */
+extern int cache_data_all(int op);
 
-/**
- *
- * @brief Write-back / Invalidate / Write-back + Invalidate i-cache lines
- *
- * No alignment is required for either addr or size, but since
- * arch_icache_range() iterates on the i-cache lines, an i-cache line alignment
- * for both is optimal.
- *
- * The i-cache line size is specified either via the CONFIG_ICACHE_LINE_SIZE
- * kconfig option or it is detected at runtime.
- *
- * @param addr	The pointer to start the multi-line operation
- * @param size	The number of bytes that are to be acted on
- * @param op	Operation to perform (one of the K_CACHE_* operations)
- *
- * @retval 0		On success
- * @retval -ENOTSUP	If the operation is not supported
- */
-int arch_icache_range(void *addr, size_t size, int op);
+/* Write-back / Invalidate / Write-back + Invalidate d-cache lines */
+extern int cache_data_range(void *addr, size_t size, int op);
 
-__syscall int sys_dcache_all(int op);
-static inline int z_impl_sys_dcache_all(int op)
+/* Write-back / Invalidate / Write-back + Invalidate all i-cache */
+extern int cache_instr_all(int op);
+
+/* Write-back / Invalidate / Write-back + Invalidate i-cache lines */
+extern int cache_instr_range(void *addr, size_t size, int op);
+
+#else
+
+/* Hooks into arch code */
+
+#define cache_data_enable			arch_dcache_enable
+#define cache_data_disable			arch_dcache_disable
+#define cache_instr_enable			arch_icache_enable
+#define cache_instr_disable			arch_icache_disable
+#define cache_data_all(op)			arch_dcache_all(op)
+#define cache_data_range(addr, size, op)	arch_dcache_range(addr, size, op)
+#define cache_instr_all(op)			arch_icache_all(op)
+#define cache_instr_range(addr, size, op)	arch_icache_range(addr, size, op)
+#define cache_data_line_size_get		arch_dcache_line_size_get
+#define cache_instr_line_size_get		arch_icache_line_size_get
+
+#endif
+
+__syscall int sys_cache_data_all(int op);
+static inline int z_impl_sys_cache_data_all(int op)
 {
-	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT)) {
-		return arch_dcache_all(op);
-	}
+#if defined(CONFIG_CACHE_MANAGEMENT)
+	return cache_data_all(op);
+#endif
 	return -ENOTSUP;
 }
 
-__syscall int sys_dcache_range(void *addr, size_t size, int op);
-static inline int z_impl_sys_dcache_range(void *addr, size_t size, int op)
+__syscall int sys_cache_data_range(void *addr, size_t size, int op);
+static inline int z_impl_sys_cache_data_range(void *addr, size_t size, int op)
 {
-	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT)) {
-		return arch_dcache_range(addr, size, op);
-	}
+#if defined(CONFIG_CACHE_MANAGEMENT)
+	return cache_data_range(addr, size, op);
+#endif
 	return -ENOTSUP;
 }
 
-__syscall int sys_icache_all(int op);
-static inline int z_impl_sys_icache_all(int op)
+__syscall int sys_cache_instr_all(int op);
+static inline int z_impl_sys_cache_instr_all(int op)
 {
-	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT)) {
-		return arch_icache_all(op);
-	}
+#if defined(CONFIG_CACHE_MANAGEMENT)
+	return cache_instr_all(op);
+#endif
 	return -ENOTSUP;
 }
 
-__syscall int sys_icache_range(void *addr, size_t size, int op);
-static inline int z_impl_sys_icache_range(void *addr, size_t size, int op)
+__syscall int sys_cache_instr_range(void *addr, size_t size, int op);
+static inline int z_impl_sys_cache_instr_range(void *addr, size_t size, int op)
 {
-	if (IS_ENABLED(CONFIG_CACHE_MANAGEMENT)) {
-		return arch_icache_range(addr, size, op);
-	}
+#if defined(CONFIG_CACHE_MANAGEMENT)
+	return cache_instr_range(addr, size, op);
+#endif
 	return -ENOTSUP;
 }
 
 #ifdef CONFIG_LIBMETAL
 static inline void sys_cache_flush(void *addr, size_t size)
 {
-	sys_dcache_range(addr, size, K_CACHE_WB);
+	sys_cache_data_range(addr, size, K_CACHE_WB);
 }
 #endif
 
@@ -185,10 +126,10 @@ static inline void sys_cache_flush(void *addr, size_t size)
  *
  * @return size of the d-cache line or 0 if the d-cache is not enabled.
  */
-static inline size_t sys_dcache_line_size_get(void)
+static inline size_t sys_cache_data_line_size_get(void)
 {
 #ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
-	return arch_dcache_line_size_get();
+	return cache_data_line_size_get();
 #elif (CONFIG_DCACHE_LINE_SIZE != 0)
 	return CONFIG_DCACHE_LINE_SIZE;
 #else
@@ -204,10 +145,10 @@ static inline size_t sys_dcache_line_size_get(void)
  *
  * @return size of the i-cache line or 0 if the i-cache is not enabled.
  */
-static inline size_t sys_icache_line_size_get(void)
+static inline size_t sys_cache_instr_line_size_get(void)
 {
 #ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
-	return arch_icache_line_size_get();
+	return cache_instr_line_size_get();
 #elif (CONFIG_ICACHE_LINE_SIZE != 0)
 	return CONFIG_ICACHE_LINE_SIZE;
 #else

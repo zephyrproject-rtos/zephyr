@@ -7,8 +7,4 @@ tests:
     platform_allow: qemu_x86_tiny
     filter: CONFIG_DEMAND_PAGING
     extra_configs:
-      # The timing functions take up some more memory.
-      # So need to shrink an even number of page to
-      # compensate for that (default is 16).
-      - CONFIG_BACKING_STORE_RAM_PAGES=14
       - CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS=y

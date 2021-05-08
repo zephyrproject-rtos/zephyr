@@ -40,7 +40,7 @@ Here is a minimal devicetree fragment which supports this sample. This only
 includes a ``sw0`` alias; the optional ``led0`` alias is left out for
 simplicity.
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
    	aliases {
@@ -48,7 +48,7 @@ simplicity.
    	};
 
    	soc {
-   		gpio0: gpio@... {
+   		gpio0: gpio@0 {
    			status = "okay";
    			gpio-controller;
    			#gpio-cells = <2>;

@@ -1,0 +1,10 @@
+identifier: mps2_an521_remote
+name: ARM V2M MPS2-AN521_remote
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+  - xtools
+testing:
+  default: false

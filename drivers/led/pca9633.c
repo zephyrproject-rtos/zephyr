@@ -203,7 +203,7 @@ static const struct led_driver_api pca9633_led_api = {
 	.off = pca9633_led_off,
 };
 
-DEVICE_DT_INST_DEFINE(0, &pca9633_led_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &pca9633_led_init, NULL,
 		    &pca9633_led_data,
 		    NULL, POST_KERNEL, CONFIG_LED_INIT_PRIORITY,
 		    &pca9633_led_api);

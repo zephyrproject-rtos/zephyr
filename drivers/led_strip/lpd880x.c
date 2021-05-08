@@ -154,7 +154,7 @@ static const struct led_strip_driver_api lpd880x_strip_api = {
 	.update_channels = lpd880x_strip_update_channels,
 };
 
-DEVICE_DT_INST_DEFINE(0, lpd880x_strip_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, lpd880x_strip_init, NULL,
 		    &lpd880x_strip_data,
 		    NULL, POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY,
 		    &lpd880x_strip_api);

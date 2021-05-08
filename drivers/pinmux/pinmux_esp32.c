@@ -187,6 +187,6 @@ static int pinmux_initialize(const struct device *dev)
  * mux driver.
  */
 DEVICE_DT_INST_DEFINE(0, &pinmux_initialize,
-		    device_pm_control_nop, NULL, NULL,
+		    NULL, NULL, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);

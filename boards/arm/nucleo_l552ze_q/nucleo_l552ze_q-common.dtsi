@@ -34,6 +34,29 @@
 	};
 };
 
+&clk_msi{
+	status = "okay";
+	msi-range = <6>;
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <55>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_msi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(110)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
 &rng {
 	status = "okay";
 };

@@ -49,7 +49,7 @@ sys_notify_generic_callback sys_notify_finalize(struct sys_notify *notify,
 						    int res)
 {
 	struct k_poll_signal *sig = NULL;
-	sys_notify_generic_callback rv = 0;
+	sys_notify_generic_callback rv = NULL;
 	uint32_t method = sys_notify_get_method(notify);
 
 	/* Store the result and capture secondary notification

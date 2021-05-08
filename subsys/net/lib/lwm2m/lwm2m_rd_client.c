@@ -229,6 +229,11 @@ static void socket_fault_cb(int error)
 /* force re-update with remote peer */
 void engine_trigger_update(bool update_objects)
 {
+	if (client.engine_state < ENGINE_REGISTRATION_SENT ||
+	    client.engine_state > ENGINE_UPDATE_SENT) {
+		return;
+	}
+
 	/* TODO: add locking? */
 	client.trigger_update = true;
 

@@ -1,0 +1,304 @@
+/*
+ * Copyright (c) 2021 IoT.bzh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT renesas_rcar_scif
+
+#include <errno.h>
+#include <device.h>
+#include <devicetree.h>
+#include <drivers/uart.h>
+#include <drivers/clock_control.h>
+#include <drivers/clock_control/rcar_clock_control.h>
+
+struct uart_rcar_cfg {
+	uint32_t reg_addr;
+	const struct device *clock_dev;
+	struct rcar_cpg_clk mod_clk;
+	struct rcar_cpg_clk bus_clk;
+};
+
+struct uart_rcar_data {
+	struct uart_config current_config;
+	uint32_t clk_rate;
+};
+
+/* Registers */
+#define SCSMR           0x00    /* Serial Mode Register */
+#define SCBRR           0x04    /* Bit Rate Register */
+#define SCSCR           0x08    /* Serial Control Register */
+#define SCFTDR          0x0c    /* Transmit FIFO Data Register */
+#define SCFSR           0x10    /* Serial Status Register */
+#define SCFRDR          0x14    /* Receive FIFO Data Register */
+#define SCFCR           0x18    /* FIFO Control Register */
+#define SCFDR           0x1c    /* FIFO Data Count Register */
+#define SCSPTR          0x20    /* Serial Port Register */
+#define SCLSR           0x24    /* Line Status Register */
+#define DL              0x30    /* Frequency Division Register */
+#define CKS             0x34    /* Clock Select Register */
+
+/* SCSMR (Serial Mode Register) */
+#define SCSMR_C_A       BIT(7)  /* Communication Mode */
+#define SCSMR_CHR       BIT(6)  /* 7-bit Character Length */
+#define SCSMR_PE        BIT(5)  /* Parity Enable */
+#define SCSMR_O_E       BIT(4)  /* Odd Parity */
+#define SCSMR_STOP      BIT(3)  /* Stop Bit Length */
+#define SCSMR_CKS1      BIT(1)  /* Clock Select 1 */
+#define SCSMR_CKS0      BIT(0)  /* Clock Select 0 */
+
+/* SCSCR (Serial Control Register) */
+#define SCSCR_TEIE      BIT(11) /* Transmit End Interrupt Enable */
+#define SCSCR_TIE       BIT(7)  /* Transmit Interrupt Enable */
+#define SCSCR_RIE       BIT(6)  /* Receive Interrupt Enable */
+#define SCSCR_TE        BIT(5)  /* Transmit Enable */
+#define SCSCR_RE        BIT(4)  /* Receive Enable */
+#define SCSCR_REIE      BIT(3)  /* Receive Error Interrupt Enable */
+#define SCSCR_TOIE      BIT(2)  /* Timeout Interrupt Enable */
+#define SCSCR_CKE1      BIT(1)  /* Clock Enable 1 */
+#define SCSCR_CKE0      BIT(0)  /* Clock Enable 0 */
+
+/* SCFCR (FIFO Control Register) */
+#define SCFCR_RTRG1     BIT(7)  /* Receive FIFO Data Count Trigger 1 */
+#define SCFCR_RTRG0     BIT(6)  /* Receive FIFO Data Count Trigger 0 */
+#define SCFCR_TTRG1     BIT(5)  /* Transmit FIFO Data Count Trigger 1 */
+#define SCFCR_TTRG0     BIT(4)  /* Transmit FIFO Data Count Trigger 0 */
+#define SCFCR_MCE       BIT(3)  /* Modem Control Enable */
+#define SCFCR_TFRST     BIT(2)  /* Transmit FIFO Data Register Reset */
+#define SCFCR_RFRST     BIT(1)  /* Receive FIFO Data Register Reset */
+#define SCFCR_LOOP      BIT(0)  /* Loopback Test */
+
+/* SCFSR (Serial Status Register) */
+#define SCFSR_PER3      BIT(15) /* Parity Error Count 3 */
+#define SCFSR_PER2      BIT(14) /* Parity Error Count 2 */
+#define SCFSR_PER1      BIT(13) /* Parity Error Count 1 */
+#define SCFSR_PER0      BIT(12) /* Parity Error Count 0 */
+#define SCFSR_FER3      BIT(11) /* Framing Error Count 3 */
+#define SCFSR_FER2      BIT(10) /* Framing Error Count 2 */
+#define SCFSR_FER_1     BIT(9)  /* Framing Error Count 1 */
+#define SCFSR_FER0      BIT(8)  /* Framing Error Count 0 */
+#define SCFSR_ER        BIT(7)  /* Receive Error */
+#define SCFSR_TEND      BIT(6)  /* Transmission ended */
+#define SCFSR_TDFE      BIT(5)  /* Transmit FIFO Data Empty */
+#define SCFSR_BRK       BIT(4)  /* Break Detect */
+#define SCFSR_FER       BIT(3)  /* Framing Error */
+#define SCFSR_PER       BIT(2)  /* Parity Error */
+#define SCFSR_RDF       BIT(1)  /* Receive FIFO Data Full */
+#define SCFSR_DR        BIT(0)  /* Receive Data Ready */
+
+/* SCLSR (Line Status Register) on (H)SCIF */
+#define SCLSR_TO        BIT(2)  /* Timeout */
+#define SCLSR_ORER      BIT(0)  /* Overrun Error */
+
+/* Helper macros for UART */
+#define DEV_UART_CFG(dev) \
+	((const struct uart_rcar_cfg *)(dev)->config)
+#define DEV_UART_DATA(dev) \
+	((struct uart_rcar_data *)(dev)->data)
+
+static void uart_rcar_write_8(const struct uart_rcar_cfg *config,
+			      uint32_t offs, uint8_t value)
+{
+	sys_write8(value, config->reg_addr + offs);
+}
+
+static uint16_t uart_rcar_read_16(const struct uart_rcar_cfg *config,
+				  uint32_t offs)
+{
+	return sys_read16(config->reg_addr + offs);
+}
+
+static void uart_rcar_write_16(const struct uart_rcar_cfg *config,
+			       uint32_t offs, uint16_t value)
+{
+	sys_write16(value, config->reg_addr + offs);
+}
+
+static void uart_rcar_set_baudrate(const struct device *dev,
+				   uint32_t baud_rate)
+{
+	const struct uart_rcar_cfg *config = DEV_UART_CFG(dev);
+	struct uart_rcar_data *data = DEV_UART_DATA(dev);
+	uint8_t reg_val;
+
+	reg_val = ((data->clk_rate + 16 * baud_rate) / (32 * baud_rate) - 1);
+	uart_rcar_write_8(config, SCBRR, reg_val);
+}
+
+static int uart_rcar_poll_in(const struct device *dev, unsigned char *p_char)
+{
+	const struct uart_rcar_cfg *config = DEV_UART_CFG(dev);
+	uint16_t reg_val;
+
+	/* Receive FIFO empty */
+	if (!((uart_rcar_read_16(config, SCFSR)) & SCFSR_RDF)) {
+		return -1;
+	}
+
+	*p_char = uart_rcar_read_16(config, SCFRDR);
+
+	reg_val = uart_rcar_read_16(config, SCFSR);
+	reg_val &= ~SCFSR_RDF;
+	uart_rcar_write_16(config, SCFSR, reg_val);
+
+	return 0;
+}
+
+static void uart_rcar_poll_out(const struct device *dev, unsigned char out_char)
+{
+	const struct uart_rcar_cfg *config = DEV_UART_CFG(dev);
+	uint16_t reg_val;
+
+	/* Wait for empty space in transmit FIFO */
+	while (!(uart_rcar_read_16(config, SCFSR) & SCFSR_TDFE)) {
+	}
+
+	uart_rcar_write_8(config, SCFTDR, out_char);
+
+	reg_val = uart_rcar_read_16(config, SCFSR);
+	reg_val &= ~(SCFSR_TDFE | SCFSR_TEND);
+	uart_rcar_write_16(config, SCFSR, reg_val);
+}
+
+static int uart_rcar_configure(const struct device *dev,
+			       const struct uart_config *cfg)
+{
+	const struct uart_rcar_cfg *config = DEV_UART_CFG(dev);
+	struct uart_rcar_data *data = DEV_UART_DATA(dev);
+
+	uint16_t reg_val;
+
+	if (cfg->parity != UART_CFG_PARITY_NONE ||
+	    cfg->stop_bits != UART_CFG_STOP_BITS_1 ||
+	    cfg->data_bits != UART_CFG_DATA_BITS_8 ||
+	    cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
+		return -ENOTSUP;
+	}
+
+	/* Disable Transmit and Receive */
+	reg_val = uart_rcar_read_16(config, SCSCR);
+	reg_val &= ~(SCSCR_TE | SCSCR_RE);
+	uart_rcar_write_16(config, SCSCR, reg_val);
+
+	/* Emptying Transmit and Receive FIFO */
+	reg_val = uart_rcar_read_16(config, SCFCR);
+	reg_val |= (SCFCR_TFRST | SCFCR_RFRST);
+	uart_rcar_write_16(config, SCFCR, reg_val);
+
+	/* Resetting Errors Registers */
+	reg_val = uart_rcar_read_16(config, SCFSR);
+	reg_val &= ~(SCFSR_ER | SCFSR_DR | SCFSR_BRK | SCFSR_RDF);
+	uart_rcar_write_16(config, SCFSR, reg_val);
+
+	reg_val = uart_rcar_read_16(config, SCLSR);
+	reg_val &= ~(SCLSR_TO | SCLSR_ORER);
+	uart_rcar_write_16(config, SCLSR, reg_val);
+
+	/* Clock selection */
+	reg_val = uart_rcar_read_16(config, SCSCR);
+	reg_val &= ~(SCSCR_CKE1 | SCSCR_CKE0 | SCSCR_TIE | SCSCR_RIE |
+		     SCSCR_TE | SCSCR_RE | SCSCR_TOIE);
+	uart_rcar_write_16(config, SCSCR, reg_val);
+
+	/* Serial Configuration (8N1) & Clock Source selection */
+	reg_val = uart_rcar_read_16(config, SCSMR);
+	reg_val &= ~(SCSMR_C_A | SCSMR_CHR | SCSMR_PE | SCSMR_O_E | SCSMR_STOP |
+		     SCSMR_CKS1 | SCSMR_CKS0);
+	uart_rcar_write_16(config, SCSMR, reg_val);
+
+	/* Set baudrate */
+	uart_rcar_set_baudrate(dev, cfg->baudrate);
+
+	/* FIFOs data count trigger configuration */
+	reg_val = uart_rcar_read_16(config, SCFCR);
+	reg_val &= ~(SCFCR_RTRG1 | SCFCR_RTRG0 | SCFCR_TTRG1 | SCFCR_TTRG0 |
+		     SCFCR_MCE | SCFCR_TFRST | SCFCR_RFRST);
+	uart_rcar_write_16(config, SCFCR, reg_val);
+
+	/* Enable Transmit & Receive */
+	reg_val = uart_rcar_read_16(config, SCSCR);
+	reg_val |= (SCSCR_TE | SCSCR_RE);
+	reg_val &= ~(SCSCR_TIE | SCSCR_RIE | SCSCR_TEIE | SCSCR_REIE |
+		     SCSCR_TOIE);
+	uart_rcar_write_16(config, SCSCR, reg_val);
+
+	data->current_config = *cfg;
+
+	return 0;
+}
+
+static int uart_rcar_config_get(const struct device *dev,
+				struct uart_config *cfg)
+{
+	struct uart_rcar_data *data = DEV_UART_DATA(dev);
+
+	*cfg = data->current_config;
+
+	return 0;
+}
+
+static int uart_rcar_init(const struct device *dev)
+{
+	const struct uart_rcar_cfg *config = DEV_UART_CFG(dev);
+	struct uart_rcar_data *data = DEV_UART_DATA(dev);
+	int ret;
+
+	ret = clock_control_on(config->clock_dev,
+			       (clock_control_subsys_t *)&config->mod_clk);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = clock_control_get_rate(config->clock_dev,
+				     (clock_control_subsys_t *)&config->bus_clk,
+				     &data->clk_rate);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return uart_rcar_configure(dev, &data->current_config);
+}
+
+static const struct uart_driver_api uart_rcar_driver_api = {
+	.poll_in = uart_rcar_poll_in,
+	.poll_out = uart_rcar_poll_out,
+	.configure = uart_rcar_configure,
+	.config_get = uart_rcar_config_get,
+};
+
+/* Device Instantiation */
+#define UART_RCAR_INIT(n)							\
+	static const struct uart_rcar_cfg uart_rcar_cfg_##n = {			\
+		.reg_addr = DT_INST_REG_ADDR(n),				\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
+		.mod_clk.module =						\
+			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),		\
+		.mod_clk.domain =						\
+			DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),		\
+		.bus_clk.module =						\
+			DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),		\
+		.bus_clk.domain =						\
+			DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),		\
+	};									\
+										\
+	static struct uart_rcar_data uart_rcar_data_##n = {			\
+		.current_config = {						\
+			.baudrate = DT_INST_PROP(n, current_speed),		\
+			.parity = UART_CFG_PARITY_NONE,				\
+			.stop_bits = UART_CFG_STOP_BITS_1,			\
+			.data_bits = UART_CFG_DATA_BITS_8,			\
+			.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,			\
+		},								\
+	};									\
+										\
+	DEVICE_DT_INST_DEFINE(n,						\
+			      uart_rcar_init,					\
+			      NULL,						\
+			      &uart_rcar_data_##n,				\
+			      &uart_rcar_cfg_##n,				\
+			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+			      &uart_rcar_driver_api				\
+			      );						\
+
+DT_INST_FOREACH_STATUS_OKAY(UART_RCAR_INIT)

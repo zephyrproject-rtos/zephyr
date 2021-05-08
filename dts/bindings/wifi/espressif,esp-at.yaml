@@ -1,0 +1,27 @@
+# Copyright (c) 2019 Tobias Svehagen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Espressif ESP8266/ESP32 WiFi modem (AT Commands)
+
+compatible: "espressif,esp-at"
+
+include: uart-device.yaml
+
+properties:
+    label:
+      required: true
+
+    power-gpios:
+      type: phandle-array
+      required: false
+
+    reset-gpios:
+      type: phandle-array
+      required: false
+
+    target-speed:
+      type: int
+      required: false
+      description:
+        UART baudrate which will be requested using AT commands and to which
+        UART interface will be reconfigured during initialization phase.

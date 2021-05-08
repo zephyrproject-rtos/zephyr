@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(espi_emul_ctlr);
 
 #include <device.h>
-#include <emul.h>
+#include <drivers/emul.h>
 #include <drivers/espi.h>
 #include <drivers/espi_emul.h>
 #include "espi_utils.h"
@@ -196,7 +196,7 @@ static struct emul_espi_driver_api emul_espi_driver_api = {
 	static struct espi_emul_data espi_emul_data_##n;	      \
 	DEVICE_DT_INST_DEFINE(n,				      \
 			      &espi_emul_init,			      \
-			      device_pm_control_nop,		      \
+			      NULL,				      \
 			      &espi_emul_data_##n,		      \
 			      &espi_emul_cfg_##n,		      \
 			      POST_KERNEL,			      \

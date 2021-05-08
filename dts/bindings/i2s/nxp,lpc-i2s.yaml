@@ -1,0 +1,8 @@
+# Copyright (c) 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC I2S node
+
+compatible: "nxp,lpc-i2s"
+
+include: [i2s-controller.yaml, "nxp,lpc-flexcomm.yaml"]

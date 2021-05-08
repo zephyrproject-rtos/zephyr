@@ -168,14 +168,17 @@ static void test_trigger_mode(const struct device *bmg160)
 
 void main(void)
 {
-	const struct device *bmg160;
+	const struct device *bmg160 = DEVICE_DT_GET_ANY(bosch_bmg160);
 #if defined(CONFIG_BMG160_RANGE_RUNTIME)
 	struct sensor_value attr;
 #endif
 
-	bmg160 = device_get_binding("bmg160");
 	if (!bmg160) {
 		printf("Device not found.\n");
+		return;
+	}
+	if (!device_is_ready(bmg160)) {
+		printf("Device %s is not ready.\n", bmg160->name);
 		return;
 	}
 

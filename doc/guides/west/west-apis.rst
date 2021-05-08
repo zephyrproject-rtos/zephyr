@@ -89,6 +89,12 @@ WestCommand
       True if reading the manifest property will succeed instead of erroring
       out.
 
+   .. py:attribute:: git_version_info
+
+      A tuple of Git version information.
+
+   .. versionadded:: 0.11.0
+
    Constructor:
 
    .. automethod:: __init__
@@ -108,6 +114,14 @@ WestCommand
       The *topdir* argument was added.
 
    .. automethod:: add_parser
+
+   .. automethod:: check_call
+
+   .. versionchanged:: 0.11.0
+
+   .. automethod:: check_output
+
+   .. versionchanged:: 0.11.0
 
    All subclasses must provide the following abstract methods, which are used
    to implement the above:

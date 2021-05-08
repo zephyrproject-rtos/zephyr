@@ -26,6 +26,7 @@ LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *lsm6dso = dev->data;
 	lsm6dso_int2_ctrl_t int2_ctrl;
 
@@ -33,17 +34,16 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 		union axis1bit16_t buf;
 
 		/* dummy read: re-trigger interrupt */
-		lsm6dso_temperature_raw_get(&lsm6dso->ctx, buf.u8bit);
+		lsm6dso_temperature_raw_get(ctx, buf.u8bit);
 	}
 
 	/* set interrupt (TEMP DRDY interrupt is only on INT2) */
 	if (cfg->int_pin == 1)
 		return -EIO;
 
-	lsm6dso_read_reg(&lsm6dso->ctx, LSM6DSO_INT2_CTRL,
-			 (uint8_t *)&int2_ctrl, 1);
+	lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL, (uint8_t *)&int2_ctrl, 1);
 	int2_route.int2_ctrl.int2_drdy_temp = enable;
-	return lsm6dso_write_reg(&lsm6dso->ctx, LSM6DSO_INT2_CTRL,
+	return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL,
 				 (uint8_t *)&int2_ctrl, 1);
 }
 #endif
@@ -54,32 +54,32 @@ static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 static int lsm6dso_enable_xl_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
-	struct lsm6dso_data *lsm6dso = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	if (enable) {
 		union axis3bit16_t buf;
 
 		/* dummy read: re-trigger interrupt */
-		lsm6dso_acceleration_raw_get(&lsm6dso->ctx, buf.u8bit);
+		lsm6dso_acceleration_raw_get(ctx, buf.u8bit);
 	}
 
 	/* set interrupt */
 	if (cfg->int_pin == 1) {
 		lsm6dso_int1_ctrl_t int1_ctrl;
 
-		lsm6dso_read_reg(&lsm6dso->ctx, LSM6DSO_INT1_CTRL,
+		lsm6dso_read_reg(ctx, LSM6DSO_INT1_CTRL,
 				 (uint8_t *)&int1_ctrl, 1);
 
 		int1_ctrl.int1_drdy_xl = enable;
-		return lsm6dso_write_reg(&lsm6dso->ctx, LSM6DSO_INT1_CTRL,
+		return lsm6dso_write_reg(ctx, LSM6DSO_INT1_CTRL,
 					 (uint8_t *)&int1_ctrl, 1);
 	} else {
 		lsm6dso_int2_ctrl_t int2_ctrl;
 
-		lsm6dso_read_reg(&lsm6dso->ctx, LSM6DSO_INT2_CTRL,
+		lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL,
 				 (uint8_t *)&int2_ctrl, 1);
 		int2_ctrl.int2_drdy_xl = enable;
-		return lsm6dso_write_reg(&lsm6dso->ctx, LSM6DSO_INT2_CTRL,
+		return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL,
 					 (uint8_t *)&int2_ctrl, 1);
 	}
 }
@@ -90,31 +90,31 @@ static int lsm6dso_enable_xl_int(const struct device *dev, int enable)
 static int lsm6dso_enable_g_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config;
-	struct lsm6dso_data *lsm6dso = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	if (enable) {
 		union axis3bit16_t buf;
 
 		/* dummy read: re-trigger interrupt */
-		lsm6dso_angular_rate_raw_get(&lsm6dso->ctx, buf.u8bit);
+		lsm6dso_angular_rate_raw_get(ctx, buf.u8bit);
 	}
 
 	/* set interrupt */
 	if (cfg->int_pin == 1) {
 		lsm6dso_int1_ctrl_t int1_ctrl;
 
-		lsm6dso_read_reg(&lsm6dso->ctx, LSM6DSO_INT1_CTRL,
+		lsm6dso_read_reg(ctx, LSM6DSO_INT1_CTRL,
 				 (uint8_t *)&int1_ctrl, 1);
 		int1_ctrl.int1_drdy_g = enable;
-		return lsm6dso_write_reg(&lsm6dso->ctx, LSM6DSO_INT1_CTRL,
+		return lsm6dso_write_reg(ctx, LSM6DSO_INT1_CTRL,
 					 (uint8_t *)&int1_ctrl, 1);
 	} else {
 		lsm6dso_int2_ctrl_t int2_ctrl;
 
-		lsm6dso_read_reg(&lsm6dso->ctx, LSM6DSO_INT2_CTRL,
+		lsm6dso_read_reg(ctx, LSM6DSO_INT2_CTRL,
 				 (uint8_t *)&int2_ctrl, 1);
 		int2_ctrl.int2_drdy_g = enable;
-		return lsm6dso_write_reg(&lsm6dso->ctx, LSM6DSO_INT2_CTRL,
+		return lsm6dso_write_reg(ctx, LSM6DSO_INT2_CTRL,
 					 (uint8_t *)&int2_ctrl, 1);
 	}
 }
@@ -126,7 +126,13 @@ int lsm6dso_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
+	const struct lsm6dso_config *cfg = dev->config;
 	struct lsm6dso_data *lsm6dso = dev->data;
+
+	if (!cfg->trig_enabled) {
+		LOG_ERR("trigger_set op not supported");
+		return -ENOTSUP;
+	}
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		lsm6dso->handler_drdy_acc = handler;
@@ -168,10 +174,11 @@ static void lsm6dso_handle_interrupt(const struct device *dev)
 		.type = SENSOR_TRIG_DATA_READY,
 	};
 	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lsm6dso_status_reg_t status;
 
 	while (1) {
-		if (lsm6dso_status_reg_get(&lsm6dso->ctx, &status) < 0) {
+		if (lsm6dso_status_reg_get(ctx, &status) < 0) {
 			LOG_DBG("failed reading status reg");
 			return;
 		}
@@ -246,6 +253,7 @@ int lsm6dso_init_interrupt(const struct device *dev)
 {
 	struct lsm6dso_data *lsm6dso = dev->data;
 	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
@@ -283,8 +291,7 @@ int lsm6dso_init_interrupt(const struct device *dev)
 	}
 
 	/* enable interrupt on int1/int2 in pulse mode */
-	if (lsm6dso_int_notification_set(&lsm6dso->ctx,
-					 LSM6DSO_ALL_INT_PULSED) < 0) {
+	if (lsm6dso_int_notification_set(ctx, LSM6DSO_ALL_INT_PULSED) < 0) {
 		LOG_DBG("Could not set pulse mode");
 		return -EIO;
 	}

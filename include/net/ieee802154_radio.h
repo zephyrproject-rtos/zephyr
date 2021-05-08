@@ -55,6 +55,8 @@ enum ieee802154_hw_caps {
 	IEEE802154_HW_ENERGY_SCAN = BIT(7), /* Energy scan supported */
 	IEEE802154_HW_TXTIME	  = BIT(8), /* TX at specified time supported */
 	IEEE802154_HW_SLEEP_TO_TX = BIT(9), /* TX directly from sleep supported */
+	IEEE802154_HW_TX_SEC	  = BIT(10), /* TX security hadling supported */
+	IEEE802154_HW_RXTIME	  = BIT(11), /* RX at specified time supported */
 };
 
 enum ieee802154_filter_type {
@@ -150,7 +152,29 @@ enum ieee802154_config_type {
 	/** Specifies new radio event handler. Specifying NULL as a handler
 	 *  will disable radio events notification.
 	 */
-	IEEE802154_CONFIG_EVENT_HANDLER
+	IEEE802154_CONFIG_EVENT_HANDLER,
+
+	/** Updates MAC keys and key index for radios supporting transmit security. */
+	IEEE802154_CONFIG_MAC_KEYS,
+
+	/** Sets the current MAC frame counter value for radios supporting transmit security. */
+	IEEE802154_CONFIG_FRAME_COUNTER,
+
+	/** Configure a radio reception slot */
+	IEEE802154_CONFIG_RX_SLOT,
+
+	/** Enable CSL receiver (Endpoint) */
+	IEEE802154_CONFIG_CSL_RECEIVER,
+
+	/** Configure the next CSL receive window center, in units of microseconds,
+	 *  based on the radio time.
+	 */
+	IEEE802154_CONFIG_CSL_RX_TIME,
+
+	/** Enable/disable or update Enhanced-ACK Based Probing in radio
+	 *  for a specific Initiator.
+	 */
+	IEEE802154_CONFIG_ENH_ACK_PROBING,
 };
 
 /** IEEE802.15.4 driver configuration data. */
@@ -178,6 +202,43 @@ struct ieee802154_config {
 
 		/** ``IEEE802154_CONFIG_EVENT_HANDLER`` */
 		ieee802154_event_cb_t event_handler;
+
+		/** ``IEEE802154_CONFIG_MAC_KEYS`` */
+		struct {
+			uint8_t key_id_mode;
+			uint8_t key_id;
+			uint8_t *prev_key;
+			uint8_t *curr_key;
+			uint8_t *next_key;
+		} mac_keys;
+
+		/** ``IEEE802154_CONFIG_FRAME_COUNTER`` */
+		uint32_t frame_counter;
+
+		/** ``IEEE802154_CONFIG_RX_SLOT`` */
+		struct {
+			uint8_t channel;
+			uint32_t start;
+			uint32_t duration;
+		} rx_slot;
+
+		/** ``IEEE802154_CONFIG_CSL_RECEIVER`` */
+		struct {
+			uint32_t period;
+			uint8_t *addr;
+		} csl_recv;
+
+		/** ``IEEE802154_CONFIG_CSL_RX_TIME`` */
+		uint32_t csl_rx_time;
+
+		/** ``IEEE802154_CONFIG_ENH_ACK_PROBING`` */
+		struct {
+			bool lqi : 1;
+			bool link_margin : 1;
+			bool rssi : 1;
+			uint16_t short_addr;
+			const uint8_t *ext_addr;
+		} enh_ack;
 	};
 };
 
@@ -237,6 +298,16 @@ struct ieee802154_radio_api {
 	int (*ed_scan)(const struct device *dev,
 		       uint16_t duration,
 		       energy_scan_done_cb_t done_cb);
+
+	/** Get the current radio time in microseconds */
+	uint64_t (*get_time)(const struct device *dev);
+
+	/** Get the current accuracy, in units of ± ppm, of the clock used for
+	 *  scheduling CSL transmissions or receive windows.
+	 *  Note: Implementations may optimize this value based on operational
+	 *  conditions (i.e.: temperature).
+	 */
+	uint8_t (*get_csl_acc)(const struct device *dev);
 };
 
 /* Make sure that the network interface API is properly setup inside

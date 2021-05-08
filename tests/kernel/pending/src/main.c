@@ -248,10 +248,10 @@ void task_high(void)
 	k_sem_init(&sync_test_sem, 0, UINT_MAX);
 	k_sem_init(&end_test_sem, 0, UINT_MAX);
 
-	k_work_q_start(&offload_work_q,
+	k_work_queue_start(&offload_work_q,
 		       offload_work_q_stack,
 		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
-		       OFFLOAD_WORKQUEUE_PRIORITY);
+		       OFFLOAD_WORKQUEUE_PRIORITY, NULL);
 
 	counter = SEM_TEST_START;
 

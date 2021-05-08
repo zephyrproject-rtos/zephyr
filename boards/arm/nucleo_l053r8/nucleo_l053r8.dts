@@ -43,6 +43,28 @@
 	};
 };
 
+&clk_hse{
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(8)>;
+	hse-bypass;
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	mul = <8>;
+	div = <2>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(32)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+
 /* Due to limited available memory, don't enable gpiod and gpiof */
 /* (Test cases fail due to 'SRAM' region overflow) */
 &gpiod {status = "disabled";};

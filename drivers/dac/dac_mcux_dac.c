@@ -105,7 +105,7 @@ static const struct dac_driver_api mcux_dac_driver_api = {
 		.low_power = DT_INST_PROP(n, low_power_mode),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, mcux_dac_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(n, mcux_dac_init, NULL,			\
 			&mcux_dac_data_##n,				\
 			&mcux_dac_config_##n,				\
 			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\

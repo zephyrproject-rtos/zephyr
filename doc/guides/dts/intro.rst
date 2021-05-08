@@ -61,7 +61,7 @@ for this tree is called DTS (for devicetree source), and is defined in the
 
 Here is an example DTS file:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /dts-v1/;
 
@@ -121,7 +121,7 @@ Similar conventions exist for representing other types of hardware.
 
 The DTS would look something like this:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /dts-v1/;
 
@@ -154,7 +154,7 @@ names and properties you might see when working with I2C devices.
 
 This is the corresponding DTS:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /dts-v1/;
 
@@ -230,7 +230,7 @@ Fixed flash partitions
     The unit address is the partition's start offset within the flash memory.
     For example, take this flash device and its partitions:
 
-    .. code-block:: DTS
+    .. code-block:: devicetree
 
         flash@8000000 {
             /* ... */
@@ -339,6 +339,121 @@ interrupts
 .. _Devicetree Specification release v0.3:
    https://www.devicetree.org/specifications/
 
+.. highlight:: none
+
+.. _dt-writing-property-values:
+
+Writing property values
+***********************
+
+This section describes how to write property values in DTS format. The property
+types in the table below are described in detail in :ref:`dt-bindings`.
+
+Some specifics are skipped in the interest of keeping things simple; if you're
+curious about details, see the devicetree specification.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 1 4 4
+
+   * - Property type
+     - How to write
+     - Example
+
+   * - string
+     - Double quoted
+     - ``a-string = "hello, world!";``
+
+   * - int
+     - between angle brackets (``<`` and ``>``)
+     - ``an-int = <1>;``
+
+   * - boolean
+     - for ``true``, with no value (for ``false``, use ``/delete-property/``)
+     - ``my-true-boolean;``
+
+   * - array
+     - between angle brackets (``<`` and ``>``), separated by spaces
+     - ``foo = <0xdeadbeef 1234 0>;``
+
+   * - uint8-array
+     - in hexadecimal *without* leading ``0x``, between square brackets (``[`` and ``]``).
+     - ``a-byte-array = [00 01 ab];``
+
+   * - string-array
+     - separated by commas
+     - ``a-string-array = "string one", "string two", "string three";``
+
+   * - phandle
+     - between angle brackets (``<`` and ``>``)
+     - ``a-phandle = <&mynode>;``
+
+   * - phandles
+     - between angle brackets (``<`` and ``>``), separated by spaces
+     - ``some-phandles = <&mynode0 &mynode1 &mynode2>;``
+
+   * - phandle-array
+     - between angle brackets (``<`` and ``>``), separated by spaces
+     - ``a-phandle-array = <&mynode0 1 2 &mynode1 3 4>;``
+
+Additional notes on the above:
+
+- Boolean properties are true if present. They should not have a value.
+  A boolean property is only false if it is completely missing in the DTS.
+
+- The ``foo`` property value above has three *cells* with values 0xdeadbeef, 1234,
+  and 0, in that order. Note that hexadecimal and decimal numbers are allowed and
+  can be intermixed. Since Zephyr transforms DTS to C sources, it is not
+  necessary to specify the endianness of an individual cell here.
+
+- 64-bit integers are written as two 32-bit cells in big-endian order. The value
+  0xaaaa0000bbbb1111 would be written ``<0xaaaa0000 0xbbbb1111>``.
+
+- The ``a-byte-array`` property value is the three bytes 0x00, 0x01, and 0xab, in
+  that order.
+
+- Parentheses, arithmetic operators, and bitwise operators are allowed. The
+  ``bar`` property contains a single cell with value 64::
+
+  	bar = <(2 * (1 << 5))>;
+
+  Note that the entire expression must be parenthesized.
+
+- Property values refer to other nodes in the devicetree by their *phandles*.
+  You can write a phandle using ``&foo``, where ``foo`` is a :ref:`node label
+  <dt-node-labels>`. Here is an example devicetree fragment:
+
+  .. code-block:: devicetree
+
+     foo: device@0 { };
+     device@1 {
+             sibling = <&foo 1 2>;
+     };
+
+  The ``sibling`` property of node ``device@1`` contains three cells, in this order:
+
+  #. The ``device@0`` node's phandle, which is written here as ``&foo`` since
+     the ``device@0`` node has a node label ``foo``
+  #. The value 1
+  #. The value 2
+
+  In the devicetree, a phandle value is a cell -- which again is just a 32-bit
+  unsigned int. However, the Zephyr devicetree API generally exposes these
+  values as *node identifiers*. Node identifiers are covered in more detail in
+  :ref:`dt-from-c`.
+
+- Array and similar type property values can be split several ``<>``
+  blocks, like this:
+
+  .. code-block:: none
+
+     foo = <1 2>, <3 4>;                         // Okay for 'type: array'
+     foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
+     foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
+
+  This is recommended for readability when possible if the value can be
+  logically grouped into blocks of sub-values.
+
 .. _dt-alias-chosen:
 
 Aliases and chosen nodes
@@ -350,7 +465,7 @@ chosen node.
 
 Here is an example devicetree which uses both:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    /dts-v1/;
 
@@ -531,66 +646,3 @@ These are created in your application's build directory.
    The preprocessed and concatenated DTS sources and overlays. This is an
    intermediate output file, which is used to create :file:`zephyr.dts`
    and :file:`devicetree_unfixed.h`.
-
-.. highlight:: none
-
-.. _dt-writing-property-values:
-
-Writing property values
-***********************
-
-Here are some example ways to write property values in DTS format. Some
-specifics are skipped in the interest of keeping things simple; if you're
-curious about details, see the devicetree specification.
-
-Arrays of 32-bit unsigned integers, or *cells*, can be written between angle
-brackets (``<`` and ``>``) and separated by spaces::
-
-   foo = <0xdeadbeef 1234 0>;
-
-The ``foo`` property value is three cells with values 0xdeadbeef, 1234, and 0,
-in that order. Note that hexadecimal and decimal numbers are allowed and can be
-intermixed. Since Zephyr transforms DTS to C sources, it is not necessary to
-specify the endianness of an individual cell here.
-
-64-bit integers are written as two 32-bit cells in big-endian order. The value
-0xaaaa0000bbbb1111 would be written ``<0xaaaa0000 0xbbbb1111>``.
-
-Parentheses, arithmetic operators, and bitwise operators are allowed. The
-``bar`` property contains a single cell with value 64::
-
-   bar = <2 * (1 << 5)>;
-
-Strings are double quoted::
-
-   a-string = "hello, world!";
-
-String arrays are separated by commas::
-
-   a-string-array = "string one", "string two", "string three";
-
-Arrays of bytes are written in hexadecimal *without* leading ``0x`` between
-square brackets (``[`` and ``]``). Property ``a-byte-array`` is the three bytes
-0x00, 0x01, 0xab, in that order::
-
-   a-byte-array = [00 01 ab];
-
-Properties can refer to other nodes in the devicetree by their *phandles*. You
-can write a phandle using ``&label``, like in this devicetree fragment:
-
-.. code-block:: DTS
-
-   baz: device@0 {
-           /* ... */
-   };
-   device@1 {
-           sibling = <&baz 1 2>;
-           /* ... */
-   };
-
-The ``sibling`` property of node ``device@1`` contains three cells:
-
-- The ``device@0`` node's phandle. Each phandle occupies an entire cell. The
-  ``baz`` label is used to write the phandle ``&baz`` inside the ``sibling``
-  property value.
-- The values 1 and 2, each in its own cell, in that order.

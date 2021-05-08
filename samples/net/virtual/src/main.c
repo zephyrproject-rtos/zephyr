@@ -171,7 +171,7 @@ static const struct virtual_interface_api virtual_test_iface_api = {
 };
 
 NET_VIRTUAL_INTERFACE_INIT(virtual_test1, VIRTUAL_TEST,
-			   virtual_test_init, device_pm_control_nop,
+			   virtual_test_init, NULL,
 			   &virtual_test_context_data1,
 			   NULL,
 			   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -179,7 +179,7 @@ NET_VIRTUAL_INTERFACE_INIT(virtual_test1, VIRTUAL_TEST,
 			   VIRTUAL_TEST_MTU);
 
 NET_VIRTUAL_INTERFACE_INIT(virtual_test2, VIRTUAL_TEST2,
-			   virtual_test_init, device_pm_control_nop,
+			   virtual_test_init, NULL,
 			   &virtual_test_context_data2,
 			   NULL,
 			   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -187,7 +187,7 @@ NET_VIRTUAL_INTERFACE_INIT(virtual_test2, VIRTUAL_TEST2,
 			   VIRTUAL_TEST_MTU);
 
 NET_VIRTUAL_INTERFACE_INIT(virtual_test3, VIRTUAL_TEST3,
-			   virtual_test_init, device_pm_control_nop,
+			   virtual_test_init, NULL,
 			   &virtual_test_context_data3,
 			   NULL,
 			   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

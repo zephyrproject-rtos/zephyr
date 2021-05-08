@@ -166,7 +166,7 @@ static const struct pwm_driver_api imx_pwm_driver_api = {
 									\
 	static struct imx_pwm_data imx_pwm_data_##n;			\
 									\
-	DEVICE_DT_INST_DEFINE(n, &imx_pwm_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(n, &imx_pwm_init, NULL,			\
 			    &imx_pwm_data_##n,				\
 			    &imx_pwm_config_##n, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

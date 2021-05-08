@@ -26,25 +26,24 @@ LOG_MODULE_DECLARE(IIS2ICLX, CONFIG_SENSOR_LOG_LEVEL);
 static int iis2iclx_enable_t_int(const struct device *dev, int enable)
 {
 	const struct iis2iclx_config *cfg = dev->config;
-	struct iis2iclx_data *iis2iclx = dev->data;
 	iis2iclx_pin_int2_route_t int2_route;
 
 	if (enable) {
 		int16_t buf;
 
 		/* dummy read: re-trigger interrupt */
-		iis2iclx_temperature_raw_get(&iis2iclx->ctx, &buf);
+		iis2iclx_temperature_raw_get((stmdev_ctx_t *)&cfg->ctx, &buf);
 	}
 
 	/* set interrupt (TEMP DRDY interrupt is only on INT2) */
 	if (cfg->int_pin == 1)
 		return -EIO;
 
-	iis2iclx_read_reg(&iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
-			    (uint8_t *)&int2_route.int2_ctrl, 1);
+	iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_INT2_CTRL,
+			  (uint8_t *)&int2_route.int2_ctrl, 1);
 	int2_route.int2_ctrl.int2_drdy_temp = enable;
-	return iis2iclx_write_reg(&iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
-				    (uint8_t *)&int2_route.int2_ctrl, 1);
+	return iis2iclx_write_reg((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_INT2_CTRL,
+				  (uint8_t *)&int2_route.int2_ctrl, 1);
 }
 #endif
 
@@ -54,33 +53,34 @@ static int iis2iclx_enable_t_int(const struct device *dev, int enable)
 static int iis2iclx_enable_xl_int(const struct device *dev, int enable)
 {
 	const struct iis2iclx_config *cfg = dev->config;
-	struct iis2iclx_data *iis2iclx = dev->data;
 
 	if (enable) {
 		int16_t buf[3];
 
 		/* dummy read: re-trigger interrupt */
-		iis2iclx_acceleration_raw_get(&iis2iclx->ctx, buf);
+		iis2iclx_acceleration_raw_get((stmdev_ctx_t *)&cfg->ctx, buf);
 	}
 
 	/* set interrupt */
 	if (cfg->int_pin == 1) {
 		iis2iclx_pin_int1_route_t int1_route;
 
-		iis2iclx_read_reg(&iis2iclx->ctx, IIS2ICLX_INT1_CTRL,
+		iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_INT1_CTRL,
 				    (uint8_t *)&int1_route.int1_ctrl, 1);
 
 		int1_route.int1_ctrl.int1_drdy_xl = enable;
-		return iis2iclx_write_reg(&iis2iclx->ctx, IIS2ICLX_INT1_CTRL,
-					    (uint8_t *)&int1_route.int1_ctrl, 1);
+		return iis2iclx_write_reg((stmdev_ctx_t *)&cfg->ctx,
+					  IIS2ICLX_INT1_CTRL,
+					  (uint8_t *)&int1_route.int1_ctrl, 1);
 	} else {
 		iis2iclx_pin_int2_route_t int2_route;
 
-		iis2iclx_read_reg(&iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
+		iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, IIS2ICLX_INT2_CTRL,
 				    (uint8_t *)&int2_route.int2_ctrl, 1);
 		int2_route.int2_ctrl.int2_drdy_xl = enable;
-		return iis2iclx_write_reg(&iis2iclx->ctx, IIS2ICLX_INT2_CTRL,
-					    (uint8_t *)&int2_route.int2_ctrl, 1);
+		return iis2iclx_write_reg((stmdev_ctx_t *)&cfg->ctx,
+					  IIS2ICLX_INT2_CTRL,
+					  (uint8_t *)&int2_route.int2_ctrl, 1);
 	}
 }
 
@@ -92,12 +92,6 @@ int iis2iclx_trigger_set(const struct device *dev,
 			   sensor_trigger_handler_t handler)
 {
 	struct iis2iclx_data *iis2iclx = dev->data;
-
-	/* If drdy_gpio is not configured in DT just return error */
-	if (!iis2iclx->gpio) {
-		LOG_ERR("triggers not supported");
-		return -ENOTSUP;
-	}
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		iis2iclx->handler_drdy_acc = handler;
@@ -135,7 +129,8 @@ static void iis2iclx_handle_interrupt(const struct device *dev)
 	iis2iclx_status_reg_t status;
 
 	while (1) {
-		if (iis2iclx_status_reg_get(&iis2iclx->ctx, &status) < 0) {
+		if (iis2iclx_status_reg_get((stmdev_ctx_t *)&cfg->ctx,
+					    &status) < 0) {
 			LOG_DBG("failed reading status reg");
 			return;
 		}
@@ -159,8 +154,8 @@ static void iis2iclx_handle_interrupt(const struct device *dev)
 #endif
 	}
 
-	gpio_pin_interrupt_configure(iis2iclx->gpio, cfg->irq_pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
+					GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void iis2iclx_gpio_callback(const struct device *dev,
@@ -172,8 +167,7 @@ static void iis2iclx_gpio_callback(const struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_interrupt_configure(iis2iclx->gpio, cfg->irq_pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_IIS2ICLX_TRIGGER_OWN_THREAD)
 	k_sem_give(&iis2iclx->gpio_sem);
@@ -209,10 +203,9 @@ int iis2iclx_init_interrupt(const struct device *dev)
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
-	iis2iclx->gpio = device_get_binding(cfg->irq_dev_name);
-	if (iis2iclx->gpio == NULL) {
-		LOG_INF("Cannot get pointer to irq_dev_name");
-		goto end;
+	if (!device_is_ready(cfg->gpio_drdy.port)) {
+		LOG_ERR("Cannot get pointer to drdy_gpio device");
+		return -EINVAL;
 	}
 
 #if defined(CONFIG_IIS2ICLX_TRIGGER_OWN_THREAD)
@@ -228,8 +221,7 @@ int iis2iclx_init_interrupt(const struct device *dev)
 	iis2iclx->work.handler = iis2iclx_work_cb;
 #endif /* CONFIG_IIS2ICLX_TRIGGER_OWN_THREAD */
 
-	ret = gpio_pin_configure(iis2iclx->gpio, cfg->irq_pin,
-				 GPIO_INPUT | cfg->irq_flags);
+	ret = gpio_pin_configure_dt(&cfg->gpio_drdy, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_ERR("Could not configure gpio");
 		return ret;
@@ -237,26 +229,25 @@ int iis2iclx_init_interrupt(const struct device *dev)
 
 	gpio_init_callback(&iis2iclx->gpio_cb,
 			   iis2iclx_gpio_callback,
-			   BIT(cfg->irq_pin));
+			   BIT(cfg->gpio_drdy.pin));
 
-	if (gpio_add_callback(iis2iclx->gpio, &iis2iclx->gpio_cb) < 0) {
+	if (gpio_add_callback(cfg->gpio_drdy.port, &iis2iclx->gpio_cb) < 0) {
 		LOG_ERR("Could not set gpio callback");
 		return -EIO;
 	}
 
 	/* enable interrupt on int1/int2 in pulse mode */
-	if (iis2iclx_int_notification_set(&iis2iclx->ctx,
+	if (iis2iclx_int_notification_set((stmdev_ctx_t *)&cfg->ctx,
 					    IIS2ICLX_ALL_INT_PULSED) < 0) {
 		LOG_ERR("Could not set pulse mode");
 		return -EIO;
 	}
 
-	if (gpio_pin_interrupt_configure(iis2iclx->gpio, cfg->irq_pin,
+	if (gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
 					    GPIO_INT_EDGE_TO_ACTIVE) < 0) {
 		LOG_ERR("Could not configure interrupt");
 		return -EIO;
 	}
 
-end:
 	return 0;
 }

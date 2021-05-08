@@ -50,6 +50,12 @@
 #else
 #include "float_regs_arm_other.h"
 #endif /* __GNUC__ */
+#elif defined(CONFIG_ARM64)
+#if defined(__GNUC__)
+#include "float_regs_arm64_gcc.h"
+#else
+#include "float_regs_arm64_other.h"
+#endif /* __GNUC__ */
 #elif defined(CONFIG_ISA_ARCV2)
 #if defined(__GNUC__)
 #include "float_regs_arc_gcc.h"
@@ -84,7 +90,7 @@ static volatile unsigned int load_store_low_count;
 static volatile unsigned int load_store_high_count;
 
 /* Indicates that the load/store test exited */
-static bool test_exited;
+static volatile bool test_exited;
 
 /* Semaphore for signaling end of test */
 static K_SEM_DEFINE(test_exit_sem, 0, 1);

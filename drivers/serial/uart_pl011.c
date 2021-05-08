@@ -440,7 +440,7 @@ static struct pl011_data pl011_data_port_0 = {
 
 DEVICE_DT_INST_DEFINE(0,
 		    &pl011_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &pl011_data_port_0,
 		    &pl011_cfg_port_0, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -503,7 +503,7 @@ static struct pl011_data pl011_data_port_1 = {
 
 DEVICE_DT_INST_DEFINE(1,
 		    &pl011_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &pl011_data_port_1,
 		    &pl011_cfg_port_1, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -568,7 +568,7 @@ static struct pl011_data pl011_data_sbsa = {
 
 DEVICE_DT_INST_DEFINE(0,
 		      &pl011_init,
-		      device_pm_control_nop,
+		      NULL,
 		      &pl011_data_sbsa,
 		      &pl011_cfg_sbsa, PRE_KERNEL_1,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

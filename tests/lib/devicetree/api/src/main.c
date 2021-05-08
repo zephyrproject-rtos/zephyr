@@ -1252,6 +1252,34 @@ static void test_arrays(void)
 	zassert_equal(DT_PROP_LEN(TEST_ARRAYS, c), 2, "");
 }
 
+static void test_foreach_prop_elem(void)
+{
+#define TIMES_TWO(node_id, prop, idx) \
+	(2 * DT_PROP_BY_IDX(node_id, prop, idx)),
+
+	int array[] = {
+		DT_FOREACH_PROP_ELEM(TEST_ARRAYS, a, TIMES_TWO)
+	};
+
+	zassert_equal(ARRAY_SIZE(array), 3, "");
+	zassert_equal(array[0], 2000, "");
+	zassert_equal(array[1], 4000, "");
+	zassert_equal(array[2], 6000, "");
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_array_holder
+
+	int inst_array[] = {
+		DT_INST_FOREACH_PROP_ELEM(0, a, TIMES_TWO)
+	};
+
+	zassert_equal(ARRAY_SIZE(inst_array), ARRAY_SIZE(array), "");
+	zassert_equal(inst_array[0], array[0], "");
+	zassert_equal(inst_array[1], array[1], "");
+	zassert_equal(inst_array[2], array[2], "");
+#undef TIMES_TWO
+}
+
 struct test_gpio_info {
 	uint32_t reg_addr;
 	uint32_t reg_len;
@@ -1287,7 +1315,7 @@ static const struct gpio_driver_api test_api;
 	};							\
 	DEVICE_DT_DEFINE(INST(num),				\
 			    test_gpio_init,			\
-			    device_pm_control_nop,		\
+			    NULL,				\
 			    &gpio_data_##num,			\
 			    &gpio_info_##num,			\
 			    POST_KERNEL,			\
@@ -1540,8 +1568,13 @@ static void test_child_nodes_list(void)
 		DT_INST_FOREACH_CHILD(0, TEST_FUNC)
 	};
 
+	struct vnd_child_binding vals_status_okay[] = {
+		DT_FOREACH_CHILD_STATUS_OKAY(TEST_PARENT, TEST_FUNC)
+	};
+
 	zassert_equal(ARRAY_SIZE(vals), 3, "");
 	zassert_equal(ARRAY_SIZE(vals_inst), 3, "");
+	zassert_equal(ARRAY_SIZE(vals_status_okay), 2, "");
 
 	zassert_false(strlen(STRINGIFY(TEST_PARENT)) == 0, "");
 
@@ -1551,6 +1584,8 @@ static void test_child_nodes_list(void)
 	zassert_equal(vals_inst[0].val, 0, "");
 	zassert_equal(vals_inst[1].val, 1, "");
 	zassert_equal(vals_inst[2].val, 2, "");
+	zassert_equal(vals_status_okay[0].val, 0, "");
+	zassert_equal(vals_status_okay[1].val, 1, "");
 
 	#undef TEST_PARENT
 	#undef TEST_FUNC
@@ -1782,6 +1817,7 @@ void test_main(void)
 			 ztest_unit_test(test_pwms),
 			 ztest_unit_test(test_macro_names),
 			 ztest_unit_test(test_arrays),
+			 ztest_unit_test(test_foreach_prop_elem),
 			 ztest_unit_test(test_devices),
 			 ztest_unit_test(test_cs_gpios),
 			 ztest_unit_test(test_chosen),

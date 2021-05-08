@@ -56,16 +56,6 @@
 	status = "okay";
 };
 
-&i2c0 {
-	status = "okay";
-};
-
-&ftm1 {
-	status = "okay";
-	compatible = "nxp,kinetis-ftm-pwm";
-	#pwm-cells = <3>;
-};
-
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
