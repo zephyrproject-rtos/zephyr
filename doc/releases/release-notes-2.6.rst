@@ -341,6 +341,13 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
+  * rf2xx:
+
+    * Added support for tx mode direct.
+    * Added support for tx mode CCA.
+    * Added support to enable promiscuous mode.
+    * Added support to enable pan coordinator mode.
+
 * Interrupt Controller
 
 * IPM
