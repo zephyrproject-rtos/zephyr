@@ -10,72 +10,31 @@
 #include <drivers/i2s.h>
 #include "i2s_api_test.h"
 
-#define NUM_RX_BLOCKS 4
-#define NUM_TX_BLOCKS 4
-K_MEM_SLAB_DEFINE(rx_0_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, 32);
-K_MEM_SLAB_DEFINE(tx_0_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, 32);
-
-static int tx_block_write(const struct device *dev_i2s, int att, int err)
-{
-	return tx_block_write_slab(dev_i2s, att, err, &tx_0_mem_slab);
-}
-static int rx_block_read(const struct device *dev_i2s, int att)
-{
-	return rx_block_read_slab(dev_i2s, att, &rx_0_mem_slab);
-}
+static ZTEST_DMEM const struct device *dev_i2s_rx;
+static ZTEST_DMEM const struct device *dev_i2s_tx;
 
 /** Configure I2S TX transfer. */
 void test_i2s_tx_transfer_configure_0(void)
 {
-	const struct device *dev_i2s;
-	struct i2s_config i2s_cfg;
 	int ret;
 
-	dev_i2s = device_get_binding(I2S_DEV_NAME_TX);
-	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME_TX " not found");
+	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
+	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
 
-	/* Configure */
-
-	i2s_cfg.word_size = 16U;
-	i2s_cfg.channels = 2U;
-	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
-	/* Configure the Transmit port as Master */
-	i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
-	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
-	i2s_cfg.block_size = BLOCK_SIZE;
-	i2s_cfg.mem_slab = &tx_0_mem_slab;
-	i2s_cfg.timeout = TIMEOUT;
-	i2s_cfg.options |= I2S_OPT_LOOPBACK;
-
-	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
-	zassert_equal(ret, 0, "Failed to configure I2S TX stream");
+	ret = configure_stream(dev_i2s_tx, I2S_DIR_TX);
+	zassert_equal(ret, TC_PASS, NULL);
 }
 
 /** Configure I2S RX transfer. */
 void test_i2s_rx_transfer_configure_0(void)
 {
-	const struct device *dev_i2s;
-	struct i2s_config i2s_cfg;
 	int ret;
 
-	dev_i2s = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME_RX " not found");
+	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
+	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
 
-	/* Configure */
-
-	i2s_cfg.word_size = 16U;
-	i2s_cfg.channels = 2U;
-	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
-	/* Configure the Receive port as Slave */
-	i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
-	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
-	i2s_cfg.block_size = BLOCK_SIZE;
-	i2s_cfg.mem_slab = &rx_0_mem_slab;
-	i2s_cfg.timeout = TIMEOUT;
-	i2s_cfg.options |= I2S_OPT_LOOPBACK;
-
-	ret = i2s_configure(dev_i2s, I2S_DIR_RX, &i2s_cfg);
-	zassert_equal(ret, 0, "Failed to configure I2S RX stream");
+	ret = configure_stream(dev_i2s_rx, I2S_DIR_RX);
+	zassert_equal(ret, TC_PASS, NULL);
 }
 
 /** @brief Short I2S transfer.
@@ -88,15 +47,13 @@ void test_i2s_rx_transfer_configure_0(void)
  */
 void test_i2s_transfer_short(void)
 {
-	const struct device *dev_i2s_rx;
-	const struct device *dev_i2s_tx;
+	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
+		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
+		ztest_test_skip();
+		return;
+	}
+
 	int ret;
-
-	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
-
-	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
-	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
 
 	/* Prefill TX queue */
 	ret = tx_block_write(dev_i2s_tx, 0, 0);
@@ -156,15 +113,13 @@ void test_i2s_transfer_short(void)
  */
 void test_i2s_transfer_long(void)
 {
-	const struct device *dev_i2s_rx;
-	const struct device *dev_i2s_tx;
+	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
+		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
+		ztest_test_skip();
+		return;
+	}
+
 	int ret;
-
-	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
-
-	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
-	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
 
 	/* Prefill TX queue */
 	ret = tx_block_write(dev_i2s_tx, 0, 0);
@@ -212,17 +167,15 @@ void test_i2s_transfer_long(void)
  */
 void test_i2s_rx_sync_start(void)
 {
-	const struct device *dev_i2s_rx;
-	const struct device *dev_i2s_tx;
+	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
+		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
+		ztest_test_skip();
+		return;
+	}
+
 	size_t rx_size;
 	int ret;
 	char buf[BLOCK_SIZE];
-
-	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
-
-	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
-	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
 
 	/* Prefill TX queue */
 	for (int n = 0; n < NUM_TX_BLOCKS; n++) {
@@ -266,15 +219,11 @@ void test_i2s_rx_sync_start(void)
  */
 void test_i2s_rx_empty_timeout(void)
 {
-	const struct device *dev_i2s;
 	size_t rx_size;
 	int ret;
 	char buf[BLOCK_SIZE];
 
-	dev_i2s = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME_RX " not found");
-
-	ret = i2s_buf_read(dev_i2s, buf, &rx_size);
+	ret = i2s_buf_read(dev_i2s_rx, buf, &rx_size);
 	zassert_equal(ret, -EAGAIN, "i2s_read did not timed out");
 }
 
@@ -286,15 +235,13 @@ void test_i2s_rx_empty_timeout(void)
  */
 void test_i2s_transfer_restart(void)
 {
-	const struct device *dev_i2s_rx;
-	const struct device *dev_i2s_tx;
+	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
+		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
+		ztest_test_skip();
+		return;
+	}
+
 	int ret;
-
-	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
-
-	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
-	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
 
 	/* Prefill TX queue */
 	ret = tx_block_write(dev_i2s_tx, 0, 0);
@@ -373,17 +320,15 @@ void test_i2s_transfer_restart(void)
  */
 void test_i2s_transfer_rx_overrun(void)
 {
-	const struct device *dev_i2s_rx;
-	const struct device *dev_i2s_tx;
+	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
+		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
+		ztest_test_skip();
+		return;
+	}
+
 	size_t rx_size;
 	int ret;
 	char rx_buf[BLOCK_SIZE];
-
-	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
-
-	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
-	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
 
 	/* Prefill TX queue */
 	ret = tx_block_write(dev_i2s_tx, 0, 0);
@@ -453,15 +398,13 @@ void test_i2s_transfer_rx_overrun(void)
  */
 void test_i2s_transfer_tx_underrun(void)
 {
-	const struct device *dev_i2s_rx;
-	const struct device *dev_i2s_tx;
+	if (IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
+		TC_PRINT("RX/TX transfer requires use of I2S_DIR_BOTH.\n");
+		ztest_test_skip();
+		return;
+	}
+
 	int ret;
-
-	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
-	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
-
-	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
-	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
 
 	/* Prefill TX queue */
 	ret = tx_block_write(dev_i2s_tx, 0, 0);
