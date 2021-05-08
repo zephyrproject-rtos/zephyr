@@ -274,9 +274,9 @@ The build-time logic for setting up automatic memory partitions is in
 it is possible to route all the globals in that library to a specific
 memory partition with the ``--library`` argument.
 
-For example, if the Newlib C library is enabled, the Newlib globals all need
-to be placed in ``z_libc_partition``. The invocation of the script in the
-top-level ``CMakeLists.txt`` adds the following:
+For example, if the Minimal C library or the Newlib C library is enabled, the
+all libc globals need to be placed in ``z_libc_partition``. The invocation of
+the script in the top-level ``CMakeLists.txt`` adds the following:
 
 .. code-block:: none
 
@@ -302,8 +302,8 @@ There are a few memory partitions which are pre-defined by the system:
    to specific memory domains.
 
  - ``z_libc_partition`` - Contains globals required by the C library and runtime.
-   Required if using newlib. Required if using minimal libc with
-   ``CONFIG_STACK_CANARIES`` enabled.
+   Required when using either the Minimal C library or the Newlib C Library.
+   Required when option:`CONFIG_STACK_CANARIES` is enabled.
 
 Library-specific partitions are listed in ``include/app_memory/partitions.h``.
 For example, to use the MBEDTLS library from user mode, the
