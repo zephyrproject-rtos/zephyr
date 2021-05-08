@@ -69,19 +69,15 @@ for building ``hello_world`` application following steps are needed.
 Loading image to Audio DSP
 ==========================
 
-`SOF Diagnostic Driver`_ provide interface for firmware loading. Python tools
-in the board support directory use the interface to load firmware to ``ADSP``.
-
-Note that the ``/dev/hda`` device file created by the diagnostic
-driver must be readable and writable by the process.  This can be
-accomplished via a simple chmod, via a udev handler that associates
-the device with a particular user or group, or simply by running the
-loader script as root:
+Use the ``cavs-fw.py`` script to load a signed image onto the DSP on
+the device.  This script needs write access so the PCI device BAR in
+sysfs (see below) and the CAP_SYS_ADMIN capability to change the
+vm.nr_hugepages setting in the kernel.  In practice it's easiest to
+run it as root.
 
 .. code-block:: console
 
-   $ sudo chmod 777 /dev/hda
-   $ boards/xtensa/intel_adsp_cavs15/tools/fw_loader.py -f <path to zephyr.ri>
+   $ sudo boards/xtensa/intel_adsp_cavs15/tools/cavs-fw.py <path to zephyr.ri>
 
 Debugging
 =========
@@ -109,24 +105,27 @@ Integration Testing With Twister
 ================================
 
 The ADSP hardware also has integration for testing using the twister
-tool.  The ``adsplog`` script can be used as the
-``--device-serial-pty`` handler, and the west flash script should take
-a path to the same key file used above.  Remember to pass the
-``--no-history`` argument to ``adsplog.py``, because by default it
-will dump the current log buffer, which may contain output from a
-previous test run.
+tool from a remote build system with ssh access to the DSP device
+under test.  A single "cavsload.sh" script is provided that can act as
+both the device-serial-pty handler and the west-flash loader.
 
 .. code-block:: console
 
-    $ZEPHYR_BASE/scripts/twister --device-testing -p intel_adsp_cavs15 \
-      --device-serial-pty $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/adsplog.py,--no-history \
-      --west-flash $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/flash.sh,$PATH_TO_KEYFILE.pem
+    $ CAVSLOAD=$ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/cavsload.sh
+    $ $ZEPHYR_BASE/scripts/twister -p intel_adsp_cavs15 --device-testing \
+      --device-serial-pty=$CAVSLOAD --west-flash=$CAVSLOAD
+
+See configuration details at the top of the script.  Note the script
+may also be passed a built zephyr.elf file as a single argument and it
+will sign, load and run it, emitting the console to standard output:
+
+.. code-block:: console
+
+    $ZEPHYR_BASE/boards/xtensa/intel_adsp_cavs15/tools/cavsload.sh build/zephyr/zephyr.elf
 
 .. target-notes::
 
 .. _Getting Started with Ubuntu Core on an UP Squared Board: https://software.intel.com/en-us/articles/getting-started-with-ubuntu-core-on-an-up-squared-board
-
-.. _SOF Diagnostic Driver: https://github.com/thesofproject/sof-diagnostic-driver
 
 .. _Sound Open Firmware: https://github.com/thesofproject/sof
 
