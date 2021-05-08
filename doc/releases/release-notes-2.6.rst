@@ -413,6 +413,13 @@ Build and Infrastructure
 
   - :c:macro:`DT_COMPAT_GET_ANY_STATUS_OKAY`: new macro
 
+* West
+
+  * Improve bossac runner.  Added legacy mode option into extended SAM-BA
+    bootloader selection.  This extends compatibility between Zephyr and
+    some Arduino IDE bootloaders.
+
+
 Libraries / Subsystems
 **********************
 
