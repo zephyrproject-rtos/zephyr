@@ -19,6 +19,7 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
+#define MBEDTLS_ECDH_LEGACY_CONTEXT
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
 #include "mbedtls/config.h"
 #else
