@@ -9,6 +9,7 @@
 #define I2S_API_TEST_H
 
 #include <kernel.h>
+#include <drivers/i2s.h>
 
 void test_i2s_tx_transfer_configure_0(void);
 void test_i2s_rx_transfer_configure_0(void);
@@ -55,5 +56,9 @@ int tx_block_write_slab(const struct device *dev_i2s, int att, int err,
 
 void fill_buf_const(int16_t *tx_block, int16_t val_l, int16_t val_r);
 int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r);
+
+i2s_opt_t get_options_for_stream(enum i2s_dir dir);
+int start_both_streams(const struct device *dev_i2s_rx,
+		       const struct device *dev_i2s_tx);
 
 #endif
