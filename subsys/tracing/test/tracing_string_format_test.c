@@ -186,20 +186,18 @@ void sys_trace_k_sem_give_enter(struct k_sem *sem)
 
 void sys_trace_k_sem_take_enter(struct k_sem *sem, k_timeout_t timeout)
 {
-	TRACING_STRING("%s: %p, timeout: %d\n", __func__, sem, timeout);
+	TRACING_STRING("%s: %p, timeout: %u\n", __func__, sem, (uint32_t)timeout.ticks);
 }
 
 void sys_trace_k_sem_take_exit(struct k_sem *sem, k_timeout_t timeout, int ret)
 {
-	TRACING_STRING("%s: %p, timeout: %d\n", __func__, sem, timeout);
+	TRACING_STRING("%s: %p, timeout: %u\n", __func__, sem, (uint32_t)timeout.ticks);
 }
-
 
 void sys_trace_k_sem_take_blocking(struct k_sem *sem, k_timeout_t timeout)
 {
-	TRACING_STRING("%s: %p\n", __func__, sem);
+	TRACING_STRING("%s: %p, timeout: %u\n", __func__, sem, (uint32_t)timeout.ticks);
 }
-
 
 void sys_trace_k_mutex_init(struct k_mutex *mutex, int ret)
 {
@@ -208,17 +206,18 @@ void sys_trace_k_mutex_init(struct k_mutex *mutex, int ret)
 
 void sys_trace_k_mutex_lock_enter(struct k_mutex *mutex, k_timeout_t timeout)
 {
-	TRACING_STRING("%s: %p, timeout: %d\n", __func__, mutex, timeout);
+	TRACING_STRING("%s: %p, timeout: %u\n", __func__, mutex, (uint32_t)timeout.ticks);
 }
 
 void sys_trace_k_mutex_lock_exit(struct k_mutex *mutex, k_timeout_t timeout, int ret)
 {
-	TRACING_STRING("%s: %p, timeout: %d, returns: %d\n", __func__, mutex, timeout, ret);
+	TRACING_STRING("%s: %p, timeout: %u, returns: %d\n", __func__, mutex,
+			(uint32_t)timeout.ticks, ret);
 }
 
 void sys_trace_k_mutex_lock_blocking(struct k_mutex *mutex, k_timeout_t timeout)
 {
-	TRACING_STRING("%s: %p, timeout: %d\n", __func__, mutex, timeout);
+	TRACING_STRING("%s: %p, timeout: %u\n", __func__, mutex, (uint32_t)timeout.ticks);
 }
 
 void sys_trace_k_mutex_unlock_enter(struct k_mutex *mutex)
