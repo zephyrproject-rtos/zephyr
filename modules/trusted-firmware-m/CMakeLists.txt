@@ -241,8 +241,11 @@ function(trusted_firmware_build)
   zephyr_library_sources_ifndef(CONFIG_TFM_PSA_TEST_NONE src/zephyr_tfm_psa_test.c)
 
   zephyr_include_directories(
-    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/interface/include
     ${TFM_GENERATED_INCLUDES}
+    )
+
+  target_include_directories(tfm_api PRIVATE
+    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/interface/include
     )
 
   zephyr_library_link_libraries(
