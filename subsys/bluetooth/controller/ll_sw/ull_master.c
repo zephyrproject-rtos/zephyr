@@ -665,8 +665,8 @@ void ull_master_cleanup(struct node_rx_hdr *rx_free)
 #endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
 }
 
-void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
-		      struct node_rx_ftr *ftr, struct lll_conn *lll)
+void ull_master_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
+		      struct lll_conn *lll)
 {
 	uint32_t conn_offset_us, conn_interval_us;
 	uint8_t ticker_id_scan, ticker_id_conn;
@@ -679,6 +679,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	uint32_t ticker_status;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
+	memq_link_t *link;
 	uint8_t chan_sel;
 
 	/* Get reference to Tx-ed CONNECT_IND PDU */
@@ -740,6 +741,11 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+
+	/* Use the link stored in the node rx to enqueue connection
+	 * complete node rx towards LL context.
+	 */
+	link = rx->link;
 
 	/* Use Channel Selection Algorithm #2 if peer too supports it */
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
