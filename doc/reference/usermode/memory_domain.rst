@@ -49,7 +49,8 @@ Hardware Stack Overflow
 ``CONFIG_HW_STACK_PROTECTION`` is an optional feature which detects stack
 buffer overflows when the system is running in supervisor mode. This
 catches issues when the entire stack buffer has overflowed, and not
-individual stack frames, use compiler-assisted CONFIG_STACK_CANARIES for that.
+individual stack frames, use compiler-assisted :kconfig:`CONFIG_STACK_CANARIES`
+for that.
 
 Like any crash in supervisor mode, no guarantees can be made about the overall
 health of the system after a supervisor mode stack overflow, and any instances
