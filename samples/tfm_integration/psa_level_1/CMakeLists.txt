@@ -14,3 +14,7 @@ target_sources(app PRIVATE src/shell.c)
 target_sources(app PRIVATE src/util_app_cfg.c)
 target_sources(app PRIVATE src/util_app_log.c)
 target_sources(app PRIVATE src/util_sformat.c)
+
+target_include_directories(app PRIVATE
+  ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/interface/include
+)
