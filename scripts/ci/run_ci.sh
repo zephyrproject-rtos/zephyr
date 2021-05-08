@@ -224,8 +224,14 @@ if [ -n "$main_ci" ]; then
 	# Remove headers from all files but the first one to generate one
 	# single file with only one header row
 	tail -n +2 test_file_archs.txt > test_file_archs_in.txt
+	echo "+++ test_file_archs_in"
+	cat test_file_archs_in.txt
 	tail -n +2 test_file_tests.txt > test_file_tests_in.txt
+	echo "+++ test_file_tests_in"
+	cat test_file_tests_in.txt
 	tail -n +2 test_file_boards.txt > test_file_boards_in.txt
+	echo "+++ test_file_boards_in"
+	cat test_file_boards_in.txt
 	cat test_file_main.txt test_file_archs_in.txt test_file_tests_in.txt \
 		test_file_boards_in.txt > test_file.txt
 
