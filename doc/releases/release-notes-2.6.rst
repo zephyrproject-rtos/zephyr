@@ -198,6 +198,7 @@ Boards & SoC Support
 * Added support for these ARM boards:
 
    * MPS3-AN547
+   * ST Nucleo L412RB-P
 
 * Removed support for these ARM boards:
 
