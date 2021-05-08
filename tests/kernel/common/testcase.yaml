@@ -17,7 +17,6 @@ tests:
       - CONFIG_MISRA_SANE=y
   kernel.common.nano32:
     tags: kernel userspace
-    skip: true
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
