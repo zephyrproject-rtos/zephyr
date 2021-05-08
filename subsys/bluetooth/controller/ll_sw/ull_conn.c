@@ -77,6 +77,7 @@ static void ticker_update_conn_op_cb(uint32_t status, void *param);
 static void ticker_stop_conn_op_cb(uint32_t status, void *param);
 static void ticker_start_conn_op_cb(uint32_t status, void *param);
 
+static void conn_setup_adv_scan_disabled_cb(void *param);
 static inline void disable(uint16_t handle);
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
 static void tx_ull_flush(struct ll_conn *conn);
@@ -817,10 +818,21 @@ bool ull_conn_peer_connected(uint8_t own_addr_type, uint8_t *own_addr,
 }
 #endif /* CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN */
 
-void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx)
+void ull_conn_setup(memq_link_t *rx_link, struct node_rx_hdr *rx)
 {
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
 	struct node_rx_ftr *ftr;
 	struct lll_conn *lll;
+	struct ull_hdr *hdr;
+
+	/* Pass the node rx as mayfly function parameter */
+	mfy.param = rx;
+
+	/* Store the link in the node rx so that when done event is
+	 * processed it can be used to enqueue node rx towards LL context
+	 */
+	rx->link = rx_link;
 
 	ftr = &(rx->rx_ftr);
 
@@ -829,22 +841,29 @@ void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	 */
 	lll = *((struct lll_conn **)((uint8_t *)ftr->param +
 				     sizeof(struct lll_hdr)));
-	switch (lll->role) {
-#if defined(CONFIG_BT_CENTRAL)
-	case 0:
-		ull_master_setup(link, rx, ftr, lll);
-		break;
-#endif /* CONFIG_BT_CENTRAL */
 
-#if defined(CONFIG_BT_PERIPHERAL)
-	case 1:
-		ull_slave_setup(link, rx, ftr, lll);
-		break;
-#endif /* CONFIG_BT_PERIPHERAL */
+	/* Check for reference count and decide to setup connection
+	 * here or when done event arrives.
+	 */
+	hdr = HDR_LLL2ULL(ftr->param);
+	if (ull_ref_get(hdr)) {
+		uint32_t ret;
 
-	default:
-		LL_ASSERT(0);
-		break;
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_param = mfy.param;
+		hdr->disabled_cb = conn_setup_adv_scan_disabled_cb;
+
+		mfy.fp = lll_disable;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT(!ret);
+	} else {
+		uint32_t ret;
+
+		mfy.fp = conn_setup_adv_scan_disabled_cb;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
+		LL_ASSERT(!ret);
 	}
 }
 
@@ -1871,6 +1890,39 @@ static void ticker_start_conn_op_cb(uint32_t status, void *param)
 
 	p = ull_update_unmark(param);
 	LL_ASSERT(p == param);
+}
+
+static void conn_setup_adv_scan_disabled_cb(void *param)
+{
+	struct node_rx_ftr *ftr;
+	struct node_rx_hdr *rx;
+	struct lll_conn *lll;
+
+	rx = param;
+	ftr = &(rx->rx_ftr);
+
+	/* NOTE: LLL conn context SHALL be after lll_hdr in
+	 *       struct lll_adv and struct lll_scan.
+	 */
+	lll = *((struct lll_conn **)((uint8_t *)ftr->param +
+				     sizeof(struct lll_hdr)));
+	switch (lll->role) {
+#if defined(CONFIG_BT_CENTRAL)
+	case 0:
+		ull_master_setup(rx, ftr, lll);
+		break;
+#endif /* CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_PERIPHERAL)
+	case 1:
+		ull_slave_setup(rx, ftr, lll);
+		break;
+#endif /* CONFIG_BT_PERIPHERAL */
+
+	default:
+		LL_ASSERT(0);
+		break;
+	}
 }
 
 static inline void disable(uint16_t handle)
