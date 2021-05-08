@@ -343,11 +343,11 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 	}
 #endif
 
+	timing.sjw = cfg->sjw;
 #ifdef CONFIG_CAN_FD_MODE
 	timing_data.sjw = cfg->sjw_data;
 	can_mcan_configure_timing(can, &timing, &timing_data);
 #else
-	timing.sjw = cfg->sjw;
 	can_mcan_configure_timing(can, &timing, NULL);
 #endif
 
