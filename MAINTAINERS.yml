@@ -1011,7 +1011,7 @@ MCU Manager:
 OSDP:
     status: orphaned
     collaborators:
-        - cbsiddharth
+        - sidcha
     files:
         - subsys/mgmt/osdp/
         - include/mgmt/osdp.h

@@ -138,7 +138,7 @@
 /boards/deprecated.cmake                  @tejlmand
 /boards/nios2/                            @nashif
 /boards/nios2/altera_max10/               @nashif
-/boards/arm/stm32_min_dev/                @cbsiddharth
+/boards/arm/stm32_min_dev/                @sidcha
 /boards/posix/                            @aescolar @daor-oti
 /boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
 /boards/riscv/                            @kgugala @pgielda
@@ -474,7 +474,7 @@
 /include/linker/                          @dcpleung @nashif @andyross
 /include/logging/                         @nordic-krch
 /include/lorawan/lorawan.h                @Mani-Sadhasivam
-/include/mgmt/osdp.h                      @cbsiddharth
+/include/mgmt/osdp.h                      @sidcha
 /include/net/                             @jukkar @tbursztyka @pfalcon
 /include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
 /include/net/coap*.h                      @jukkar @rlubos
@@ -533,7 +533,7 @@
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
 /samples/subsys/mgmt/mcumgr/smp_svr/      @aunsbjerg @nvlsianpu
 /samples/subsys/mgmt/updatehub/           @nandojve @otavio
-/samples/subsys/mgmt/osdp/                @cbsiddharth
+/samples/subsys/mgmt/osdp/                @sidcha
 /samples/subsys/usb/                      @jfischer-no
 /samples/subsys/pm/                       @nashif @ceolin
 /samples/tfm_integration/                 @ioannisg @microbuilder
@@ -604,7 +604,7 @@
 /subsys/mgmt/hawkbit/                     @Navin-Sankar
 /subsys/mgmt/mcumgr/smp_udp.c             @aunsbjerg
 /subsys/mgmt/updatehub/                   @nandojve @otavio
-/subsys/mgmt/osdp/                        @cbsiddharth
+/subsys/mgmt/osdp/                        @sidcha
 /subsys/modbus/                           @jfischer-no
 /subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
 /subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
