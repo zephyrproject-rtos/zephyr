@@ -145,6 +145,19 @@ config MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE
 	  Enable smaller but potentially slower implementations of memcpy and
 	  memset. On the Cortex-M0+ this reduces the total code size by 120 bytes.
 
+config MINIMAL_LIBC_RAND
+	bool "Enables rand and srand functions"
+	select NEED_LIBC_MEM_PARTITION
+	help
+	  Enable rand() and srand() for the minimal libc. The
+	  functions implicitly access global/static data.  Such data
+	  must be put into a memory partition if CONFIG_USERSPACE=y,
+	  and disabling this option may save an entry for application
+	  defining many custom partitions.
+
+	  Say 'Y' here if you need rand() and srand(). This might require
+	  an additional memory partition.
+
 endif # MINIMAL_LIBC
 
 config STDOUT_CONSOLE
