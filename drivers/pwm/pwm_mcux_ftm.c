@@ -476,7 +476,7 @@ static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 	static struct mcux_ftm_data mcux_ftm_data_##n; \
 	static const struct mcux_ftm_config mcux_ftm_config_##n; \
 	DEVICE_DT_INST_DEFINE(n, &mcux_ftm_init,		       \
-			    device_pm_control_nop, &mcux_ftm_data_##n, \
+			    NULL, &mcux_ftm_data_##n, \
 			    &mcux_ftm_config_##n, \
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			    &mcux_ftm_driver_api); \

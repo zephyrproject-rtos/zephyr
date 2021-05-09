@@ -305,7 +305,7 @@ static struct dummy_api net_icmpv4_if_api = {
 };
 
 NET_DEVICE_INIT(net_icmpv4_test, "net_icmpv4_test",
-		net_icmpv4_dev_init, device_pm_control_nop,
+		net_icmpv4_dev_init, NULL,
 		&net_icmpv4_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_icmpv4_if_api, DUMMY_L2,
@@ -418,7 +418,7 @@ static void test_icmpv4(void)
 {
 	struct net_if_addr *ifaddr;
 
-	iface = net_if_get_default();
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	if (!iface) {
 		zassert_true(false, "Interface not available");
 	}

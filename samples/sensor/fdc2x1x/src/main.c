@@ -43,13 +43,13 @@ static void pm_cb(const struct device *dev,
 	ARG_UNUSED(arg);
 
 	switch (*(uint32_t *)context) {
-	case DEVICE_PM_ACTIVE_STATE:
+	case PM_DEVICE_STATE_ACTIVE:
 		printk("Enter ACTIVE_STATE ");
 		break;
-	case DEVICE_PM_LOW_POWER_STATE:
+	case PM_DEVICE_STATE_LOW_POWER:
 		printk("Enter LOW_POWER_STATE ");
 		break;
-	case DEVICE_PM_OFF_STATE:
+	case PM_DEVICE_STATE_OFF:
 		printk("Enter OFF_STATE ");
 		break;
 	}
@@ -62,22 +62,22 @@ static void pm_cb(const struct device *dev,
 }
 #endif
 
+#define DEVICE_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(ti_fdc2x1x)
+
 void main(void)
 {
 	struct sensor_value ch_buf[] = {
-		DT_FOREACH_CHILD(DT_INST(0, ti_fdc2x1x), CH_BUF_INIT)
+		DT_FOREACH_CHILD(DEVICE_NODE, CH_BUF_INIT)
 	};
 
 	uint8_t num_ch = ARRAY_SIZE(ch_buf);
 	enum sensor_channel base;
 	int i;
 
-	const struct device *dev =
-		device_get_binding(DT_LABEL(DT_INST(0, ti_fdc2x1x)));
+	const struct device *dev = DEVICE_DT_GET(DEVICE_NODE);
 
-	if (dev == NULL) {
-		printk("Could not get %s device\n",
-		       DT_LABEL(DT_INST(0, ti_fdc2x1x)));
+	if (!device_is_ready(dev)) {
+		printk("Device %s is not ready\n", dev->name);
 		return;
 	}
 
@@ -97,14 +97,14 @@ void main(void)
 	/* Testing the power modes */
 	uint32_t p_state;
 
-	p_state = DEVICE_PM_LOW_POWER_STATE;
-	device_set_power_state(dev, p_state, pm_cb, NULL);
+	p_state = PM_DEVICE_STATE_LOW_POWER;
+	pm_device_state_set(dev, p_state, pm_cb, NULL);
 
-	p_state = DEVICE_PM_OFF_STATE;
-	device_set_power_state(dev, p_state, pm_cb, NULL);
+	p_state = PM_DEVICE_STATE_OFF;
+	pm_device_state_set(dev, p_state, pm_cb, NULL);
 
-	p_state = DEVICE_PM_ACTIVE_STATE;
-	device_set_power_state(dev, p_state, pm_cb, NULL);
+	p_state = PM_DEVICE_STATE_ACTIVE;
+	pm_device_state_set(dev, p_state, pm_cb, NULL);
 #endif
 
 	while (1) {
@@ -132,11 +132,11 @@ void main(void)
 
 
 #ifdef CONFIG_PM_DEVICE
-		p_state = DEVICE_PM_OFF_STATE;
-		device_set_power_state(dev, p_state, pm_cb, NULL);
+		p_state = PM_DEVICE_STATE_OFF;
+		pm_device_state_set(dev, p_state, pm_cb, NULL);
 		k_sleep(K_MSEC(2000));
-		p_state = DEVICE_PM_ACTIVE_STATE;
-		device_set_power_state(dev, p_state, pm_cb, NULL);
+		p_state = PM_DEVICE_STATE_ACTIVE;
+		pm_device_state_set(dev, p_state, pm_cb, NULL);
 #elif CONFIG_FDC2X1X_TRIGGER_NONE
 		k_sleep(K_MSEC(100));
 #endif

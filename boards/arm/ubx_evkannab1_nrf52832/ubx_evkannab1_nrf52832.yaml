@@ -1,0 +1,22 @@
+identifier: ubx_evkannab1_nrf52832
+name: UBX-EVKANNAB1-NRF52832
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - gpio
+  - counter
+  - nvs
+  - i2c
+  - pwm
+  - spi
+  - watchdog

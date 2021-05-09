@@ -469,6 +469,6 @@ static struct crypto_driver_api mtls_crypto_funcs = {
 };
 
 DEVICE_DEFINE(crypto_mtls, CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME,
-		    &mtls_shim_init, device_pm_control_nop, NULL, NULL,
+		    &mtls_shim_init, NULL, NULL, NULL,
 		    POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		    (void *)&mtls_crypto_funcs);

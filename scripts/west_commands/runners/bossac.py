@@ -10,7 +10,7 @@ import pickle
 import platform
 import subprocess
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
+from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 # This is needed to load edt.pickle files.
 try:
@@ -79,22 +79,16 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         return False
 
     def is_extended_samba_protocol(self):
-        build_conf = BuildConfiguration(self.cfg.build_dir)
         ext_samba_versions = ['CONFIG_BOOTLOADER_BOSSA_ARDUINO',
                               'CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2']
 
         for x in ext_samba_versions:
-            if x in build_conf:
+            if self.build_conf.getboolean(x):
                 return True
         return False
 
     def is_partition_enabled(self):
-        build_conf = BuildConfiguration(self.cfg.build_dir)
-
-        if 'CONFIG_USE_DT_CODE_PARTITION' not in build_conf:
-            return False
-
-        return True
+        return self.build_conf.getboolean('CONFIG_USE_DT_CODE_PARTITION')
 
     def get_chosen_code_partition_node(self):
         # Get the EDT Node corresponding to the zephyr,code-partition
@@ -117,18 +111,14 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         return edt.chosen_node('zephyr,code-partition')
 
     def get_board_name(self):
-        build_conf = BuildConfiguration(self.cfg.build_dir)
-
-        if 'CONFIG_BOARD' not in build_conf:
+        if 'CONFIG_BOARD' not in self.build_conf:
             return '<board>'
 
-        return build_conf['CONFIG_BOARD'][0].replace('"', '')
+        return self.build_conf['CONFIG_BOARD']
 
     def get_dts_img_offset(self):
-        build_conf = BuildConfiguration(self.cfg.build_dir)
-
-        if build_conf['CONFIG_HAS_FLASH_LOAD_OFFSET']:
-            return build_conf['CONFIG_FLASH_LOAD_OFFSET']
+        if self.build_conf.getboolean('CONFIG_HAS_FLASH_LOAD_OFFSET'):
+            return self.build_conf['CONFIG_FLASH_LOAD_OFFSET']
 
         return 0
 

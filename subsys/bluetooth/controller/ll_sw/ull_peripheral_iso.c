@@ -128,7 +128,9 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
-	cig->iso_interval = sys_le16_to_cpu(req->iso_interval);
+	cig->iso_interval   = sys_le16_to_cpu(req->iso_interval);
+	cig->c_sdu_interval = sys_get_le24(req->c_sdu_interval);
+	cig->p_sdu_interval = sys_get_le24(req->p_sdu_interval);
 
 	cis->cis_id = req->cis_id;
 	cis->established = 0;

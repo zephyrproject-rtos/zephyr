@@ -154,6 +154,25 @@ static inline void test_time_ms(void)
 	Z_TC_END_RESULT((result), __func__)
 #endif
 
+#ifndef TC_SUITE_START
+#define TC_SUITE_START(name)					\
+	do {							\
+		TC_PRINT("Running test suite %s\n", name);	\
+		PRINT_LINE;					\
+	} while (0)
+#endif
+
+#ifndef TC_SUITE_END
+#define TC_SUITE_END(name, result)				\
+	do {								\
+		if (result == TC_PASS) {					\
+			TC_PRINT("Test suite %s succeeded\n", name);	\
+		} else {						\
+			TC_PRINT("Test suite %s failed.\n", name);	\
+		}							\
+	} while (0)
+#endif
+
 #if defined(CONFIG_ARCH_POSIX)
 #define TC_END_POST(result) posix_exit(result)
 #else

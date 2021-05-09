@@ -107,7 +107,7 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
-			    &sam_pwm_init, device_pm_control_nop	\
+			    &sam_pwm_init, NULL				\
 			    NULL, &sam_pwm_config_##inst,		\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

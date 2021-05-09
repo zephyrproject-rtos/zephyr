@@ -5,10 +5,6 @@ source "lib/libc/Kconfig"
 
 menu "Additional libraries"
 
-source "lib/cmsis_rtos_v1/Kconfig"
-
-source "lib/cmsis_rtos_v2/Kconfig"
-
 source "lib/gui/Kconfig"
 
 source "lib/os/Kconfig"

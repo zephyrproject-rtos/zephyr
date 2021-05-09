@@ -149,6 +149,10 @@ void test_touch_anon_pages(void)
 	zassert_not_equal(stats.eviction.dirty, 0UL,
 			  "there should be dirty pages being evicted.");
 
+#ifdef CONFIG_EVICTION_NRU
+	k_msleep(CONFIG_EVICTION_NRU_PERIOD * 2);
+#endif /* CONFIG_EVICTION_NRU */
+
 	/* There should be some clean pages to be evicted now,
 	 * since the arena is not modified.
 	 */

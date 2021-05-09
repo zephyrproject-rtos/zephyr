@@ -225,8 +225,6 @@ struct bt_l2cap_ecred_reconf_rsp {
 	uint16_t result;
 } __packed;
 
-#define BT_L2CAP_SDU_HDR_LEN            2
-
 struct bt_l2cap_fixed_chan {
 	uint16_t		cid;
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
@@ -300,19 +298,15 @@ struct net_buf *bt_l2cap_create_rsp(struct net_buf *buf, size_t reserve);
 
 /* Send L2CAP PDU over a connection
  *
- * Buffer ownership is transferred to stack so either in case of success
- * or error the buffer will be unref internally.
- *
- * Calling this from RX thread is assumed to never fail so the return can be
- * ignored.
+ * Buffer ownership is transferred to stack in case of success.
  */
 int bt_l2cap_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 		     bt_conn_tx_cb_t cb, void *user_data);
 
-static inline void bt_l2cap_send(struct bt_conn *conn, uint16_t cid,
-				 struct net_buf *buf)
+static inline int bt_l2cap_send(struct bt_conn *conn, uint16_t cid,
+				struct net_buf *buf)
 {
-	bt_l2cap_send_cb(conn, cid, buf, NULL, NULL);
+	return bt_l2cap_send_cb(conn, cid, buf, NULL, NULL);
 }
 
 /* Receive a new L2CAP PDU from a connection */

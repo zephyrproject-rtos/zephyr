@@ -10,9 +10,6 @@ tests:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
-  sample.net.syslog.without_timefuncs:
-    extra_configs:
-      - CONFIG_NEWLIB_LIBC=n
   sample.net.syslog.ipv4_only:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:

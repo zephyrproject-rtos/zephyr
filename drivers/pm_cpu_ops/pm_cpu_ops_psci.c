@@ -146,6 +146,6 @@ static int psci_init(const struct device *dev)
 	return psci_detect();
 }
 
-DEVICE_DT_INST_DEFINE(0, psci_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, psci_init, NULL,
 	&psci_data, NULL, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	NULL);

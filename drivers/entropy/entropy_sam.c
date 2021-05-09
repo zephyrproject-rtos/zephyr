@@ -184,7 +184,7 @@ static const struct trng_sam_dev_cfg trng_sam_cfg = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    entropy_sam_init, device_pm_control_nop,
+		    entropy_sam_init, NULL,
 		    NULL, &trng_sam_cfg,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_sam_api);

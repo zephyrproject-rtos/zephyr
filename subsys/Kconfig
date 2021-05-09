@@ -38,7 +38,9 @@ source "subsys/modbus/Kconfig"
 
 source "subsys/net/Kconfig"
 
-source "subsys/power/Kconfig"
+source "subsys/portability/Kconfig"
+
+source "subsys/pm/Kconfig"
 
 source "subsys/shell/Kconfig"
 

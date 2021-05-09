@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <drivers/gpio.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <settings/settings.h>
 #include <canbus/canopen.h>
 

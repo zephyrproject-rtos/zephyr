@@ -192,7 +192,7 @@ static int tmp116_init(const struct device *dev)
 		.i2c_addr = DT_INST_REG_ADDR(_num), \
 		.i2c_bus_label = DT_INST_BUS_LABEL(_num) \
 	}; \
-	DEVICE_DT_INST_DEFINE(_num, tmp116_init, device_pm_control_nop, \
+	DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL,			\
 		&tmp116_data_##_num, &tmp116_config_##_num, POST_KERNEL, \
 		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api)
 

@@ -13,7 +13,11 @@ menuconfig APIC_TIMER
 	depends on LOAPIC
 	select TICKLESS_CAPABLE
 	help
-	  Use the x86 local APIC as the system time source.
+	  Use the x86 local APIC in one-shot mode as the system time
+	  source.  NOTE: this probably isn't what you want except on
+	  older or idiosyncratic hardware (or environments like qemu
+	  without complete APIC emulation).  Modern hardware will work
+	  better with CONFIG_APIC_TSC_DEADLINE_TIMER.
 
 if APIC_TIMER
 
@@ -22,12 +26,11 @@ config APIC_TIMER_IRQ
 	default 24
 	help
 	  This option specifies the IRQ used by the local APIC timer.
-
-config APIC_TIMER_IRQ_PRIORITY
-	int "Local APIC timer IRQ priority"
-	default 4
-	help
-	  This option specifies the IRQ priority used by the local APIC timer.
+	  Note: this MUST be set to the index immediately after the
+	  last IO-APIC IRQ (the timer is the first entry in the APIC
+	  local vector table).  This footgun is not intended to be
+	  user-configurable and almost certainly should be managed via
+	  a different mechanism.
 
 config APIC_TIMER_TSC
 	bool "Use invariant TSC for sys_clock_cycle_get_32()"
@@ -50,6 +53,29 @@ config APIC_TIMER_TSC_M
 endif # APIC_TIMER_TSC
 
 endif # APIC_TIMER
+
+config APIC_TIMER_IRQ_PRIORITY
+	int "Local APIC timer interrupt priority"
+	default 4
+	help
+	  This option specifies the interrupt priority used by the
+	  local APIC timer.
+
+config APIC_TSC_DEADLINE_TIMER
+	bool "Even newer APIC timer using TSC deadline mode"
+	depends on X86
+	select LOAPIC
+	select TICKLESS_CAPABLE
+	help
+	  Extremely simple timer driver based the local APIC TSC
+	  deadline capability.  The use of a free-running 64 bit
+	  counter with comparator eliminates almost all edge cases
+	  from the handling, and the near-instruction-cycle resolution
+	  permits effectively unlimited precision where needed (the
+	  limit becomes the CPU time taken to execute the timing
+	  logic). SMP-safe and very fast, this should be the obvious
+	  choice for any x86 device with invariant TSC and TSC
+	  deadline capability.
 
 config HPET_TIMER
 	bool "HPET timer"
@@ -262,6 +288,15 @@ config CC13X2_CC26X2_RTC_TIMER
 	  CC13X2_CC26X2 series Real Time Counter and provides the standard
 	  "system clock driver" interfaces.
 
+config RCAR_CMT_TIMER
+	bool "Renesas RCar cmt timer"
+	default y
+	depends on SOC_SERIES_RCAR_GEN3
+	help
+	  This module implements a kernel device driver for the Renesas RCAR
+	  platform provides the standard "system clock driver" interfaces.
+	  If unchecked, no timer will be used.
+
 config XLNX_PSTTC_TIMER
 	bool "Xilinx PS ttc timer support"
 	default y
@@ -350,5 +385,16 @@ config TICKLESS_CAPABLE
 	  one should be expected not to produce a call to
 	  sys_clock_announce() (really, not to produce an interrupt at
 	  all) until the specified expiration.
+
+DT_COMPAT_NXP_OS_TIMER := nxp,os-timer
+
+config MCUX_OS_TIMER
+	bool "MCUX OS Event timer"
+	depends on HAS_MCUX_OS_TIMER
+	default $(dt_compat_enabled,$(DT_COMPAT_NXP_OS_TIMER))
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the NXP OS
+	  event timer and provides the standard "system clock driver" interfaces.
 
 endmenu

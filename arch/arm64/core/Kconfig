@@ -8,6 +8,9 @@ config CPU_CORTEX_A
 	select CPU_CORTEX
 	select HAS_FLASH_LOAD_OFFSET
 	select SCHED_IPI_SUPPORTED if SMP
+	select CPU_HAS_FPU
+	imply FPU
+	imply FPU_SHARING
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
 

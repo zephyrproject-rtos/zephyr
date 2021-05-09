@@ -11,7 +11,7 @@ updates:
 At this time, with the latest release of v2.5.0, the supported
 versions are:
 
-  - 1.14.x: Current LTS
+  - 1.14.2: Current LTS
   - v2.4.0: Prior release
   - v2.5.0: Current release
 

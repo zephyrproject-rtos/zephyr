@@ -12,6 +12,53 @@ This document explains how to participate in project conversations, log bugs
 and enhancement requests, and submit patches to the project so your patch will
 be accepted quickly in the codebase.
 
+
+.. _help:
+
+Asking for Help
+***************
+
+You can ask for help on a mailing list or on Slack. Please send bug reports and
+feature requests to GitHub.
+
+* **Mailing Lists**: users@lists.zephyrproject.org is usually the right list to
+  ask for help. `Search archives and sign up here`_.
+* **Slack**: Zephyr's workspace is https://zephyrproject.slack.com; you can
+  register with this `Slack invite`_.
+* **GitHub**: Use `GitHub issues`_ for bugs and feature requests.
+
+How to Ask
+===========
+
+.. important::
+
+   Please search this documentation and the mailing list archives first. Your
+   question may have an answer there.
+
+Don't just say "this isn't working" or ask "is this working?". Include as much
+detail as you can about:
+
+#. What you want to do
+#. What you tried (commands you typed, etc.)
+#. What happened (output of each command, etc.)
+
+Use Copy/Paste
+==============
+
+Please **copy/paste text** instead of taking a picture or a screenshot of it.
+Text includes source code, terminal commands, and their output.
+
+Doing this makes it easier for people to help you, and also helps other users
+search the archives.
+
+When copy/pasting more than 5 lines of text into Slack, create a `snippet`_.
+
+.. _Search archives and sign up here: https://lists.zephyrproject.org/g/users
+.. _Slack invite: https://tinyurl.com/y5glwylp
+.. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
+.. _snippet: https://get.slack.help/hc/en-us/articles/204145658-Create-a-snippet
+
+
 Licensing
 *********
 
@@ -168,7 +215,7 @@ on https://github.com and have Git tools available on your development system.
    are only available on Linux and macOS. On Windows, instead of running these
    tools yourself, you will need to rely on the Continuous Integration (CI)
    service ``buildkite``, which runs automatically on GitHub when you submit
-   your Pull Request (PR).  You can see any failure results in the Shippable
+   your Pull Request (PR).  You can see any failure results in the Buildkite
    details link near the end of the PR conversation list. See
    `Continuous Integration`_ for more information
 
@@ -213,55 +260,9 @@ Issues`_ in Github issues.
 
  .. _Continuous Integration:
 
-Continuous Integration (CI)
-***************************
 
-The Zephyr Project operates a Continuous Integration (CI) system that runs on
-every Pull Request (PR) in order to verify several aspects of the PR:
-
-* Git commit formatting
-* Coding Style
-* Twister builds for multiple architectures and boards
-* Documentation build to verify any doc changes
-
-CI is run both on the ``buildkite`` cloud service and Github Actions and it uses
-the same tools described in the `Contribution Tools`_ section.
-The CI results must be green indicating "All checks have passed" before
-the Pull Request can be merged.  CI is run when the PR is created, and
-again every time the PR is modified with a commit.
-
-The current status of the CI run can always be found at the bottom of the
-GitHub PR page, below the review status. Depending on the success or failure
-of the run you will see:
-
-* "All checks have passed"
-* "All checks have failed"
-
-In case of failure you can click on the "Details" link presented below the
-failure message in order to navigate to ``buildkite`` or ``Github Actions``
-and inspect the results.
-Once you click on the link you will be taken to the ``buildkite`` summary
-results page where a table with all the different builds will be shown. To see
-what build or test failed click on the row that contains the failed (i.e.
-non-green) build and then click on the "Tests" tab to see the console output
-messages indicating the failure.
-
-The `builds@lists.zephyrproject.org mailing list
-<https://lists.zephyrproject.org/g/builds>`_
-archives the CI (buildkite) nightly build results.
-
-Coding Guidelines
-*****************
-
-Beyond the :ref:`coding_style` that Zephyr enforces for all code that is
-submitted for inclusion, the project targets compliance with a series of
-coding guidelines. Refer to the :ref:`coding_guidelines` section of the
-documentation for additional details.
-
- .. _Contribution Tools:
-
-Contribution Tools and Git Setup
-********************************
+Tools and Git Setup
+*******************
 
 Signed-off-by
 =============
@@ -411,6 +412,17 @@ issues, you can add option --no-verify to the git push command.
 
 A more complete alternative to this is using check_compliance.py script from
 ci-tools repo.
+
+
+Coding Guidelines
+*****************
+
+Beyond the :ref:`coding_style` that Zephyr enforces for all code that is
+submitted for inclusion, the project targets compliance with a series of
+coding guidelines. Refer to the :ref:`coding_guidelines` section of the
+documentation for additional details.
+
+.. _Contribution Tools:
 
 .. _Contribution workflow:
 
@@ -576,12 +588,6 @@ workflow here:
    Additional information about the CI system can be found in
    `Continuous Integration`_.
 
-Contributions to External Modules
-**********************************
-
-Follow the guidelines in the :ref:`modules` section for contributing
-:ref:`new modules <submitting_new_modules>` and
-submitting changes to :ref:`existing modules <changes_to_existing_module>`.
 
 Commit Guidelines
 *****************
@@ -651,6 +657,7 @@ Other Commit Expectations
   and tests MUST cover at least 80% of the added functionality using the code
   coverage tool and reporting provided by the project.
 
+
 Submitting Proposals
 ====================
 
@@ -683,7 +690,7 @@ cases where the file is an original to Zephyr, the commit message should
 include the following ("Original" is the assumption if no Origin tag is
 present)::
 
-    Origin: Original
+      Origin: Original
 
 In cases where the file is :ref:`imported from an external project
 <external-contributions>`, the commit message shall contain details regarding
@@ -692,19 +699,64 @@ commit for the file and the intended purpose.
 
 For example, a copy of a locally maintained import::
 
-    Origin: Contiki OS
-    License: BSD 3-Clause
-    URL: http://www.contiki-os.org/
-    commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
-    Purpose: Introduction of networking stack.
+      Origin: Contiki OS
+      License: BSD 3-Clause
+      URL: http://www.contiki-os.org/
+      commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
+      Purpose: Introduction of networking stack.
 
 For example, a copy of an externally maintained import in a module repository::
 
-    Origin: Tiny Crypt
-    License: BSD 3-Clause
-    URL: https://github.com/01org/tinycrypt
-    commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
-    Purpose: Introduction of TinyCrypt
+      Origin: Tiny Crypt
+      License: BSD 3-Clause
+      URL: https://github.com/01org/tinycrypt
+      commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
+      Purpose: Introduction of TinyCrypt
+
+
+Continuous Integration (CI)
+***************************
+
+The Zephyr Project operates a Continuous Integration (CI) system that runs on
+every Pull Request (PR) in order to verify several aspects of the PR:
+
+* Git commit formatting
+* Coding Style
+* Twister builds for multiple architectures and boards
+* Documentation build to verify any doc changes
+
+CI is run both on the ``buildkite`` cloud service and Github Actions and it uses
+the same tools described in the `Contribution Tools`_ section.
+The CI results must be green indicating "All checks have passed" before
+the Pull Request can be merged.  CI is run when the PR is created, and
+again every time the PR is modified with a commit.
+
+The current status of the CI run can always be found at the bottom of the
+GitHub PR page, below the review status. Depending on the success or failure
+of the run you will see:
+
+* "All checks have passed"
+* "All checks have failed"
+
+In case of failure you can click on the "Details" link presented below the
+failure message in order to navigate to ``buildkite`` or ``Github Actions``
+and inspect the results.
+Once you click on the link you will be taken to the ``buildkite`` summary
+results page where a table with all the different builds will be shown. To see
+what build or test failed click on the row that contains the failed (i.e.
+non-green) build and then click on the "Tests" tab to see the console output
+messages indicating the failure.
+
+The `builds@lists.zephyrproject.org mailing list
+<https://lists.zephyrproject.org/g/builds>`_
+archives the CI (buildkite) nightly build results.
+
+Contributions to External Modules
+**********************************
+
+Follow the guidelines in the :ref:`modules` section for contributing
+:ref:`new modules <submitting_new_modules>` and
+submitting changes to :ref:`existing modules <changes_to_existing_module>`.
 
 Contributing External Components
 ********************************
@@ -713,30 +765,3 @@ Contributing External Components
    :maxdepth: 1
 
    external.rst
-
-Contribution Roles and Responsibilities
-***************************************
-
-.. toctree::
-   :maxdepth: 1
-
-   modifying_contributions.rst
-   project_roles.rst
-
-The Zephyr project defines a development process workflow using GitHub
-**Issues** to track feature, enhancement, and bug reports together with GitHub
-**Pull Requests** (PRs) for submitting and reviewing changes.  Zephyr
-community members work together to review these Issues and PRs, managing
-feature enhancements and quality improvements of Zephyr through its regular
-releases, as outlined in the
-`program management overview <https://wiki.zephyrproject.org/Program-Management>`_.
-
-We can only manage the volume of Issues and PRs, by requiring timely reviews,
-feedback, and responses from the community and contributors, both for initial
-submissions and for followup questions and clarifications.  Read about the
-project's :ref:`development processes and tools <dev-environment-and-tools>`
-and specifics about :ref:`review timelines <review_time>` to learn about the
-project's goals and guidelines for our active developer community.
-
-:ref:`project_roles` describes in detail the Zephyr project roles and associated permissions
-with respect to the development process workflow.

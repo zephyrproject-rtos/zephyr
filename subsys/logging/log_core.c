@@ -152,16 +152,13 @@ uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
  */
 static bool is_rodata(const void *addr)
 {
-#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || defined(CONFIG_ARM64)
+#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONFIG_X86) || \
+	defined(CONFIG_ARM64) || defined(CONFIG_NIOS2) || \
+	defined(CONFIG_RISCV) || defined(CONFIG_SPARC)
 	extern const char *_image_rodata_start[];
 	extern const char *_image_rodata_end[];
 	#define RO_START _image_rodata_start
 	#define RO_END _image_rodata_end
-#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV) || defined(CONFIG_SPARC)
-	extern const char *_image_rom_start[];
-	extern const char *_image_rom_end[];
-	#define RO_START _image_rom_start
-	#define RO_END _image_rom_end
 #elif defined(CONFIG_XTENSA)
 	extern const char *_rodata_start[];
 	extern const char *_rodata_end[];
@@ -433,8 +430,14 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
 
 		for (int i = 0; i < log_backend_count_get(); i++) {
 			backend = log_backend_get(i);
+			bool runtime_ok =
+				IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+				(src_level.level <= log_filter_get(backend,
+								src_level.domain_id,
+								src_level.source_id,
+								true)) : true;
 
-			if (log_backend_is_active(backend)) {
+			if (log_backend_is_active(backend) && runtime_ok) {
 				va_list ap_tmp;
 
 				va_copy(ap_tmp, ap);
@@ -498,8 +501,14 @@ void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
 
 		for (int i = 0; i < log_backend_count_get(); i++) {
 			backend = log_backend_get(i);
+			bool runtime_ok =
+				IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+				(src_level.level <= log_filter_get(backend,
+								src_level.domain_id,
+								src_level.source_id,
+								true)) : true;
 
-			if (log_backend_is_active(backend)) {
+			if (log_backend_is_active(backend) && runtime_ok) {
 				log_backend_put_sync_hexdump(
 					backend, src_level, timestamp, metadata,
 					(const uint8_t *)data, len);
@@ -523,6 +532,8 @@ static log_timestamp_t default_lf_get_timestamp(void)
 void log_core_init(void)
 {
 	uint32_t freq;
+
+	panic_mode = false;
 
 	/* Set default timestamp. */
 	if (sys_clock_hw_cycles_per_sec() > 1000000) {
@@ -595,7 +606,9 @@ void log_init(void)
 				backend->api->init(backend);
 			}
 
-			log_backend_enable(backend, NULL, CONFIG_LOG_MAX_LEVEL);
+			log_backend_enable(backend,
+					   backend->cb->ctx,
+					   CONFIG_LOG_MAX_LEVEL);
 		}
 	}
 }
@@ -928,7 +941,7 @@ uint32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 			    int16_t src_id,
 			    uint32_t level)
 {
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(backend == 0,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(backend == NULL,
 		"Setting per-backend filters from user mode is not supported"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(domain_id == CONFIG_LOG_DOMAIN_ID,
 		"Invalid log domain_id"));
@@ -969,7 +982,7 @@ void log_backend_enable(struct log_backend const *const backend,
 	/* Wakeup logger thread after attaching first backend. It might be
 	 * blocked with log messages pending.
 	 */
-	if (!backend_attached) {
+	if (IS_ENABLED(CONFIG_LOG_PROCESS_THREAD) && !backend_attached) {
 		k_sem_give(&log_process_thread_sem);
 	}
 

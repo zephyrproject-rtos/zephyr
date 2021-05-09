@@ -157,16 +157,16 @@ static int eth_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_test_1, "eth_test_1", eth_init, device_pm_control_nop,
-		    &eth_context_1, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+ETH_NET_DEVICE_INIT(eth3_test, "eth3_test", eth_init, NULL,
+		    &eth_context_3, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		    NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth_test_2, "eth_test_2", eth_init, device_pm_control_nop,
+ETH_NET_DEVICE_INIT(eth2_test, "eth2_test", eth_init, NULL,
 		    &eth_context_2, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		    NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth_test_3, "eth_test_3", eth_init, device_pm_control_nop,
-		    &eth_context_3, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
+ETH_NET_DEVICE_INIT(eth1_test, "eth1_test", eth_init, NULL,
+		    &eth_context_1, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		    NET_ETH_MTU);
 
 static uint64_t timestamp_to_nsec(struct net_ptp_time *ts)
@@ -187,7 +187,7 @@ static int my_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
 	struct ptp_context *ptp_ctx = dev->data;
 	struct eth_context *eth_ctx = ptp_ctx->eth_context;
 
-	if (&eth_context_1 != eth_ctx && &eth_context_2 != eth_ctx) {
+	if (&eth_context_3 != eth_ctx && &eth_context_2 != eth_ctx) {
 		zassert_true(false, "Context pointers do not match\n");
 	}
 
@@ -233,7 +233,7 @@ static const struct ptp_clock_driver_api api = {
 
 static int ptp_test_1_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_GET(eth_test_1);
+	const struct device *eth_dev = DEVICE_GET(eth3_test);
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 
@@ -244,12 +244,12 @@ static int ptp_test_1_init(const struct device *port)
 }
 
 DEVICE_DEFINE(ptp_clock_1, PTP_CLOCK_NAME, ptp_test_1_init,
-		device_pm_control_nop, &ptp_test_1_context, NULL,
+		NULL, &ptp_test_1_context, NULL,
 		POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 static int ptp_test_2_init(const struct device *port)
 {
-	const struct device *eth_dev = DEVICE_GET(eth_test_2);
+	const struct device *eth_dev = DEVICE_GET(eth2_test);
 	struct eth_context *context = eth_dev->data;
 	struct ptp_context *ptp_context = port->data;
 
@@ -260,7 +260,7 @@ static int ptp_test_2_init(const struct device *port)
 }
 
 DEVICE_DEFINE(ptp_clock_2, PTP_CLOCK_NAME, ptp_test_2_init,
-		device_pm_control_nop, &ptp_test_2_context, NULL,
+		NULL, &ptp_test_2_context, NULL,
 		POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
 struct user_data {
@@ -284,6 +284,18 @@ static const char *iface2str(struct net_if *iface)
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 	struct user_data *ud = user_data;
+
+	/*
+	 * The below code is to only use struct net_if devices defined in this
+	 * test as board on which it is run can have its own set of interfaces.
+	 *
+	 * As a result one will not rely on linker's specific 'net_if_area'
+	 * placement.
+	 */
+	if ((iface != net_if_lookup_by_dev(DEVICE_GET(eth3_test))) &&
+	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth2_test))) &&
+	    (iface != net_if_lookup_by_dev(DEVICE_GET(eth1_test))))
+		return;
 
 	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
 	    net_if_get_by_iface(iface));

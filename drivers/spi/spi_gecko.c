@@ -311,7 +311,7 @@ static struct spi_driver_api spi_gecko_api = {
 	}; \
 	DEVICE_DT_INST_DEFINE(n, \
 			spi_gecko_init, \
-			device_pm_control_nop, \
+			NULL, \
 			&spi_gecko_data_##n, \
 			&spi_gecko_cfg_##n, \
 			POST_KERNEL, \

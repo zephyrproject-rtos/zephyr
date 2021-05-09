@@ -772,4 +772,4 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_flash,
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
-SHELL_CMD_REGISTER(flash, &sub_flash, "Flash realated commands.", NULL);
+SHELL_CMD_REGISTER(flash, &sub_flash, "Flash related commands.", NULL);

@@ -10,9 +10,18 @@
  * NOTE: This driver implements the GICv1 and GICv2 interfaces.
  */
 
+#include <devicetree.h>
 #include <sw_isr_table.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <drivers/interrupt_controller/gic.h>
+
+#define CPU_REG_ID(cpu_node_id) DT_REG_ADDR(cpu_node_id),
+static const uint64_t cpu_mpid_list[] = {
+	DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(cpus), CPU_REG_ID)
+};
+
+BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_NUM_CPUS,
+		"The count of CPU Cores nodes in dts is less than CONFIG_MP_NUM_CPUS\n");
 
 void arm_gic_irq_enable(unsigned int irq)
 {
@@ -112,6 +121,8 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 static void gic_dist_init(void)
 {
 	unsigned int gic_irqs, i;
+	uint8_t cpu_mask = 0;
+	uint32_t reg_val;
 
 	gic_irqs = sys_read32(GICD_TYPER) & 0x1f;
 	gic_irqs = (gic_irqs + 1) * 32;
@@ -126,10 +137,16 @@ static void gic_dist_init(void)
 	sys_write32(0, GICD_CTLR);
 
 	/*
-	 * Set all global interrupts to all CPUs.
+	 * Enable all global interrupts distributing to CPUs listed
+	 * in dts with the count of CONFIG_MP_NUM_CPUS.
 	 */
+	for (i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		cpu_mask |= BIT(cpu_mpid_list[i]);
+	}
+	reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16)
+		| (cpu_mask << 24);
 	for (i = GIC_SPI_INT_BASE; i < gic_irqs; i += 4) {
-		sys_write32(0xffffffff, GICD_ITARGETSRn + i);
+		sys_write32(reg_val, GICD_ITARGETSRn + i);
 	}
 
 	/*

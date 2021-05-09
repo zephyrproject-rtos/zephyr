@@ -400,7 +400,7 @@ static struct gpio_eos_s3_data gpio_eos_s3_data = {
 
 DEVICE_DT_INST_DEFINE(0,
 		    gpio_eos_s3_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &gpio_eos_s3_data,
 		    &gpio_eos_s3_config,
 		    POST_KERNEL,

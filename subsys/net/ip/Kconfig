@@ -140,9 +140,12 @@ config NET_SHELL_DYN_CMD_COMPLETION
 
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
-	default 1
-	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
-	range 1 8
+	default 1 if USERSPACE
+	default 0
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && USERSPACE
+	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
+	range 1 8 if USERSPACE
+	range 0 8
 	help
 	  Define how many Tx traffic classes (queues) the system should have
 	  when sending a network packet. The network packet priority can then
@@ -153,12 +156,18 @@ config NET_TC_TX_COUNT
 	  The default value is 1 which means that all the network traffic is
 	  handled equally. In this implementation, the higher traffic class
 	  value corresponds to lower thread priority.
+	  If you select 0 here, then it means that all the network traffic
+	  is pushed to the driver directly without any queues.
+	  Note that if USERSPACE support is enabled, then currently we need to
+	  enable at least 1 TX thread.
 
 config NET_TC_RX_COUNT
 	int "How many Rx traffic classes to have for each network device"
 	default 1
-	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
-	range 1 8
+	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && USERSPACE
+	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
+	range 1 8 if USERSPACE
+	range 0 8
 	help
 	  Define how many Rx traffic classes (queues) the system should have
 	  when receiving a network packet. The network packet priority can then
@@ -169,6 +178,23 @@ config NET_TC_RX_COUNT
 	  The default value is 1 which means that all the network traffic is
 	  handled equally. In this implementation, the higher traffic class
 	  value corresponds to lower thread priority.
+	  If you select 0 here, then it means that all the network traffic
+	  is pushed from the driver to application thread without any
+	  intermediate RX queue. There is always a receive socket queue between
+	  device driver and application. Disabling RX thread means that the
+	  network device driver, that is typically running in IRQ context, will
+	  handle the packet all the way to the application. This might cause
+	  other incoming packets to be lost if the RX processing takes long
+	  time.
+	  Note that if USERSPACE support is enabled, then currently we need to
+	  enable at least 1 RX thread.
+
+config NET_TC_SKIP_FOR_HIGH_PRIO
+	bool "Push high priority packets directly to network driver"
+	help
+	  If this is set, then high priority (NET_PRIORITY_CA) net_pkt will be
+	  pushed directly to network driver and will skip the traffic class
+	  queues. This is currently not enabled by default.
 
 choice NET_TC_THREAD_TYPE
 	prompt "How the network RX/TX threads should work"
@@ -526,13 +552,6 @@ config NET_CONTEXT_PRIORITY
 	help
 	  It is possible to prioritize network traffic. This requires
 	  also traffic class support to work as expected.
-
-config NET_CONTEXT_TIMESTAMP
-	bool "Add timestamp support to net_context"
-	select NET_PKT_TIMESTAMP
-	help
-	  It is possible to timestamp outgoing packets and get information
-	  about these timestamps.
 
 config NET_CONTEXT_TXTIME
 	bool "Add TXTIME support to net_context"

@@ -330,7 +330,7 @@ static struct ms5607_data ms5607_data;
 
 DEVICE_DT_INST_DEFINE(0,
 		    ms5607_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &ms5607_data,
 		    &ms5607_config,
 		    POST_KERNEL,

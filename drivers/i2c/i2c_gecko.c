@@ -227,7 +227,7 @@ static const struct i2c_gecko_config i2c_gecko_config_##idx = { \
 static struct i2c_gecko_data i2c_gecko_data_##idx; \
 \
 DEVICE_DT_INST_DEFINE(idx, &i2c_gecko_init, \
-		 device_pm_control_nop,	\
+		 NULL, \
 		 &i2c_gecko_data_##idx, &i2c_gecko_config_##idx, \
 		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 		 &i2c_gecko_driver_api);

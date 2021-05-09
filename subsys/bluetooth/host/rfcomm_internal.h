@@ -21,7 +21,7 @@ struct bt_rfcomm_session {
 	/* L2CAP channel this context is associated with */
 	struct bt_l2cap_br_chan br_chan;
 	/* Response Timeout eXpired (RTX) timer */
-	struct k_delayed_work rtx_work;
+	struct k_work_delayable rtx_work;
 	/* Binary sem for aggregate fc */
 	struct k_sem fc;
 	struct bt_rfcomm_dlc *dlcs;

@@ -27,7 +27,7 @@ tests:
     platform_allow: nrf52840dk_nrf52840
   sample.mcumg.smp_svr.shell:
     extra_args: OVERLAY_CONFIG="overlay-shell.conf"
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk_nrf52840 mimxrt1060_evk mimxrt1064_evk
   sample.mcumg.smp_svr.shell_mgmt:
     extra_args: OVERLAY_CONFIG="overlay-shell-mgmt.conf"
     platform_allow: nrf52840dk_nrf52840

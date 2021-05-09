@@ -16,7 +16,7 @@
 LOG_MODULE_REGISTER(i2c_emul_ctlr);
 
 #include <device.h>
-#include <emul.h>
+#include <drivers/emul.h>
 #include <drivers/i2c.h>
 #include <drivers/i2c_emul.h>
 
@@ -145,7 +145,7 @@ static struct i2c_driver_api i2c_emul_api = {
 	static struct i2c_emul_data i2c_emul_data_##n; \
 	DEVICE_DT_INST_DEFINE(n, \
 			    i2c_emul_init, \
-			    device_pm_control_nop, \
+			    NULL, \
 			    &i2c_emul_data_##n, \
 			    &i2c_emul_cfg_##n, \
 			    POST_KERNEL, \

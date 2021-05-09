@@ -16,7 +16,7 @@
 #include "clock_stm32_ll_common.h"
 
 
-#ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
+#if STM32_SYSCLK_SRC_PLL
 
 /* Macros to fill up division factors values */
 #define z_pllm(v) LL_RCC_PLLM_DIV_ ## v
@@ -30,16 +30,16 @@
  */
 void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 {
-	pllinit->PLLM = pllm(CONFIG_CLOCK_STM32_PLL_M_DIVISOR);
-	pllinit->PLLN = CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER;
-	pllinit->PLLR = pllr(CONFIG_CLOCK_STM32_PLL_R_DIVISOR);
+	pllinit->PLLM = pllm(STM32_PLL_M_DIVISOR);
+	pllinit->PLLN = STM32_PLL_N_MULTIPLIER;
+	pllinit->PLLR = pllr(STM32_PLL_R_DIVISOR);
 
 	/* set power boost mode for sys clock greater than 150MHz */
 	if (sys_clock_hw_cycles_per_sec() >= MHZ(150)) {
 		LL_PWR_EnableRange1BoostMode();
 	}
 }
-#endif /* CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL */
+#endif /* STM32_SYSCLK_SRC_PLL */
 
 /**
  * @brief Activate default clocks
@@ -49,7 +49,7 @@ void config_enable_default_clocks(void)
 	/* Enable the power interface clock */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 
-#ifdef CONFIG_CLOCK_STM32_LSE
+#ifdef STM32_LSE
 	/* LSE belongs to the back-up domain, enable access.*/
 
 	/* Set the DBP bit in the Power control register 1 (PWR_CR1) */

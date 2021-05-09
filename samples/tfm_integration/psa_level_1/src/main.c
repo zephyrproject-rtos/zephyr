@@ -23,9 +23,6 @@ static struct cfg_data cfg;
 
 void main(void)
 {
-	/* Initialize the TFM NS interface */
-	tfm_ns_interface_init();
-
 	/* Initialise the logger subsys and dump the current buffer. */
 	log_init();
 

@@ -931,11 +931,11 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 
 	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
 				    net_pkt_priority(pkt),
-				    net_pkt_timestamp(pkt)->nanosecond,
+				    net_pkt_create_time(pkt),
 				    end_tick);
 
-	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
-		uint32_t val, prev = net_pkt_timestamp(pkt)->nanosecond;
+	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)) {
+		uint32_t val, prev = net_pkt_create_time(pkt);
 		int i;
 
 		for (i = 0; i < net_pkt_stats_tick_count(pkt); i++) {
@@ -1733,22 +1733,6 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_PRIORITY,
-							     optval, optlen);
-				if (ret < 0) {
-					errno = -ret;
-					return -1;
-				}
-
-				return 0;
-			}
-
-			break;
-
-		case SO_TIMESTAMPING:
-			/* Calculate TX network packet timings */
-			if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP)) {
-				ret = net_context_set_option(ctx,
-							     NET_OPT_TIMESTAMP,
 							     optval, optlen);
 				if (ret < 0) {
 					errno = -ret;

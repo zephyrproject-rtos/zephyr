@@ -31,7 +31,6 @@ struct lll_conn_iso_stream {
 	uint8_t  access_addr[4];    /* Access address */
 	uint32_t offset;            /* Offset of CIS from start of CIG in us */
 	uint32_t sub_interval;      /* Interval between subevents in us */
-	uint32_t subevent_length;   /* Length of subevent in us */
 	uint8_t  num_subevents;     /* Number of subevents */
 	struct lll_conn_iso_stream_rxtx rx; /* RX parameters */
 	struct lll_conn_iso_stream_rxtx tx; /* TX parameters */
@@ -57,16 +56,16 @@ struct lll_conn_iso_stream {
 struct lll_conn_iso_group {
 	struct lll_hdr hdr;
 
-	uint16_t handle;   /* CIG handle (internal) */
-	uint8_t  num_cis;  /* Number of CISes in this CIG */
-	uint8_t  role;     /* 0: CENTRAL, 1: PERIPHERAL*/
+	uint16_t handle;        /* CIG handle (internal) */
+	uint8_t  num_cis : 5;   /* Number of CISes in this CIG */
+	uint8_t  role : 1;      /* 0: CENTRAL, 1: PERIPHERAL*/
+	uint8_t  paused : 1;    /* 1: CIG is paused */
 #if defined(CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP)
 	uint16_t cis_handles[CONFIG_BT_CTLR_CONN_ISO_STREAMS_PER_GROUP];
 #endif /* CONFIG_BT_CTLR_CONN_ISO_STREAMS */
 
 	/* Resumption information */
-	uint8_t  next_cis;  /* Next CIS to schedule */
-	uint32_t next_time; /* When to trigger next activity in the CIG */
+	uint8_t  resume_cis;    /* CIS index to schedule at resume */
 };
 
 int lll_conn_iso_init(void);

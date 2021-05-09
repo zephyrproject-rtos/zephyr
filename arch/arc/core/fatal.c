@@ -24,17 +24,19 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #ifdef CONFIG_ARC_EXCEPTION_DEBUG
 static void dump_arc_esf(const z_arch_esf_t *esf)
 {
-	LOG_ERR(" r0: 0x%08x  r1: 0x%08x  r2: 0x%08x  r3: 0x%08x",
+	LOG_ERR(" r0: 0x%" PRIxPTR "  r1: 0x%" PRIxPTR "  r2: 0x%" PRIxPTR "  r3: 0x%" PRIxPTR "",
 		esf->r0, esf->r1, esf->r2, esf->r3);
-	LOG_ERR(" r4: 0x%08x  r5: 0x%08x  r6: 0x%08x  r7: 0x%08x",
+	LOG_ERR(" r4: 0x%" PRIxPTR "  r5: 0x%" PRIxPTR "  r6: 0x%" PRIxPTR "  r7: 0x%" PRIxPTR "",
 		esf->r4, esf->r5, esf->r6, esf->r7);
-	LOG_ERR(" r8: 0x%08x  r9: 0x%08x r10: 0x%08x r11: 0x%08x",
+	LOG_ERR(" r8: 0x%" PRIxPTR "  r9: 0x%" PRIxPTR " r10: 0x%" PRIxPTR " r11: 0x%" PRIxPTR "",
 		esf->r8, esf->r9, esf->r10, esf->r11);
-	LOG_ERR("r12: 0x%08x r13: 0x%08x  pc: 0x%08x",
+	LOG_ERR("r12: 0x%" PRIxPTR " r13: 0x%" PRIxPTR "  pc: 0x%" PRIxPTR "",
 		esf->r12, esf->r13, esf->pc);
-	LOG_ERR(" blink: 0x%08x status32: 0x%08x", esf->blink, esf->status32);
-	LOG_ERR("lp_end: 0x%08x lp_start: 0x%08x lp_count: 0x%08x",
+	LOG_ERR(" blink: 0x%" PRIxPTR " status32: 0x%" PRIxPTR "", esf->blink, esf->status32);
+#ifdef CONFIG_ARC_HAS_ZOL
+	LOG_ERR("lp_end: 0x%" PRIxPTR " lp_start: 0x%" PRIxPTR " lp_count: 0x%" PRIxPTR "",
 		esf->lp_end, esf->lp_start, esf->lp_count);
+#endif /* CONFIG_ARC_HAS_ZOL */
 }
 #endif
 

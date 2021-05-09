@@ -85,6 +85,7 @@ void lll_conn_prepare_reset(void)
 
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
+	struct lll_conn *lll;
 	int err;
 
 	/* NOTE: This is not a prepare being cancelled */
@@ -103,6 +104,10 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 */
 	err = lll_clk_off();
 	LL_ASSERT(!err || err == -EBUSY);
+
+	/* Accumulate the latency as event is aborted while being in pipeline */
+	lll = prepare_param->param;
+	lll->latency_prepare += (prepare_param->lazy + 1);
 
 	lll_done(param);
 }

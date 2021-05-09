@@ -54,7 +54,7 @@ static const struct gpio_mmio32_config _CONCAT(Z_DEVICE_DT_DEV_NAME(node_id), _c
 											\
 DEVICE_DT_DEFINE(node_id,								\
 		    &gpio_mmio32_init,							\
-		    device_pm_control_nop,						\
+		    NULL,								\
 		    &_CONCAT(Z_DEVICE_DT_DEV_NAME(node_id), _ctx),			\
 		    &_CONCAT(Z_DEVICE_DT_DEV_NAME(node_id), _cfg),			\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\

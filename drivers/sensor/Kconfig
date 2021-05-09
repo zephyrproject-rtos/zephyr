@@ -144,6 +144,8 @@ source "drivers/sensor/lsm9ds0_mfd/Kconfig"
 
 source "drivers/sensor/max17055/Kconfig"
 
+source "drivers/sensor/max17262/Kconfig"
+
 source "drivers/sensor/max30101/Kconfig"
 
 source "drivers/sensor/max44009/Kconfig"
@@ -172,6 +174,8 @@ source "drivers/sensor/qdec_nrfx/Kconfig"
 
 source "drivers/sensor/qdec_sam/Kconfig"
 
+source "drivers/sensor/sbs_gauge/Kconfig"
+
 source "drivers/sensor/sht3xd/Kconfig"
 
 source "drivers/sensor/si7006/Kconfig"
@@ -181,6 +185,8 @@ source "drivers/sensor/si7055/Kconfig"
 source "drivers/sensor/si7060/Kconfig"
 
 source "drivers/sensor/sm351lt/Kconfig"
+
+source "drivers/sensor/stm32_temp/Kconfig"
 
 source "drivers/sensor/stts751/Kconfig"
 

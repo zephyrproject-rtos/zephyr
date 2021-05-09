@@ -94,6 +94,14 @@ the expected device life (in minutes) can be calculated as::
 From this formula it is also clear what to do in case the expected life is too
 short: increase ``SECTOR_COUNT`` or ``SECTOR_SIZE``.
 
+Flash write block size migration
+********************************
+It is possible that during a DFU process, the flash driver used by the NVS
+changes the supported minimal write block size.
+The NVS in-flash image will stay compatible unless the
+physical ATE size changes.
+Especially, migration between 1,2,4,8-bytes write block sizes is allowed.
+
 Sample
 ******
 

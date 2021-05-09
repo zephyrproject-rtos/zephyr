@@ -156,6 +156,18 @@ commands are documented in the pages for those commands.
        from project remotes when those projects' revisions in the manifest file
        are SHAs or tags which are already available locally. The ``"always"``
        behavior is to unconditionally fetch from the remote.
+   * - ``update.name-cache``
+     - String. If non-empty, ``west update`` will use its value as the
+       ``--name-cache`` option's value if not given on the command line.
+   * - ``update.narrow``
+     - Boolean. If ``true``, ``west update`` behaves as if ``--narrow`` was
+       given on the command line. The default is ``false``.
+   * - ``update.path-cache``
+     - String. If non-empty, ``west update`` will use its value as the
+       ``--path-cache`` option's value if not given on the command line.
+   * - ``update.sync-submodules``
+     - Boolean. If ``true`` (the default), :ref:`west-update` will synchronize
+       Git submodules before updating them.
    * - ``zephyr.base``
      - String, default value to set for the :envvar:`ZEPHYR_BASE` environment
        variable while the west command is running. By default, this is set to

@@ -182,6 +182,16 @@ struct jesd216_bfp {
  * * DW17-20 (quad/oct support) no API except jesd216_bfp_read_support().
  */
 
+/* Extract the supported address bytes from BFP DW1. */
+static inline uint8_t jesd216_bfp_addrbytes(const struct jesd216_bfp *hp)
+{
+	uint32_t dw1 = sys_le32_to_cpu(hp->dw1);
+	uint8_t addr_support = (dw1 & JESD216_SFDP_BFP_DW1_ADDRBYTES_MASK)
+		>> JESD216_SFDP_BFP_DW1_ADDRBYTES_SHFT;
+
+	return addr_support;
+}
+
 /* Extract the density of the chip in bits from BFP DW2. */
 static inline uint64_t jesd216_bfp_density(const struct jesd216_bfp *hp)
 {

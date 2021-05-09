@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/joiner.h>
 #include <openthread-system.h>
 #include <openthread-config-generic.h>
+#include <utils/uart.h>
 
 #include <platform-zephyr.h>
 
@@ -130,6 +131,18 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 #endif
+
+static int ncp_hdlc_send(const uint8_t *buf, uint16_t len)
+{
+	otError err;
+
+	err = otPlatUartSend(buf, len);
+	if (err != OT_ERROR_NONE) {
+		return 0;
+	}
+
+	return len;
+}
 
 void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 {
@@ -454,7 +467,8 @@ static int openthread_init(struct net_if *iface)
 	}
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
-		otNcpInit(ot_context->instance);
+		otPlatUartEnable();
+		otNcpHdlcInit(ot_context->instance, ncp_hdlc_send);
 	} else {
 		otIp6SetReceiveFilterEnabled(ot_context->instance, true);
 		otIp6SetReceiveCallback(ot_context->instance,

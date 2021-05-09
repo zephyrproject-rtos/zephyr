@@ -297,14 +297,14 @@ static int pwm_nrfx_set_power_state(uint32_t new_state,
 	int err = 0;
 
 	switch (new_state) {
-	case DEVICE_PM_ACTIVE_STATE:
+	case PM_DEVICE_STATE_ACTIVE:
 		err = pwm_nrfx_init(dev);
 		break;
-	case DEVICE_PM_LOW_POWER_STATE:
-	case DEVICE_PM_SUSPEND_STATE:
-	case DEVICE_PM_FORCE_SUSPEND_STATE:
-	case DEVICE_PM_OFF_STATE:
-		if (current_state == DEVICE_PM_ACTIVE_STATE) {
+	case PM_DEVICE_STATE_LOW_POWER:
+	case PM_DEVICE_STATE_SUSPEND:
+	case PM_DEVICE_STATE_FORCE_SUSPEND:
+	case PM_DEVICE_STATE_OFF:
+		if (current_state == PM_DEVICE_STATE_ACTIVE) {
 			pwm_nrfx_uninit(dev);
 		}
 		break;
@@ -317,25 +317,25 @@ static int pwm_nrfx_set_power_state(uint32_t new_state,
 
 static int pwm_nrfx_pm_control(const struct device *dev,
 			       uint32_t ctrl_command,
-			       void *context,
+			       uint32_t *state,
 			       uint32_t *current_state)
 {
 	int err = 0;
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		uint32_t new_state = *((const uint32_t *)context);
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
+		uint32_t new_state = *((const uint32_t *)state);
 
 		if (new_state != (*current_state)) {
 			err = pwm_nrfx_set_power_state(new_state,
 						       *current_state,
 						       dev);
 			if (!err) {
-				(*current_state) = new_state;
+				*current_state = new_state;
 			}
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((uint32_t *)context) = (*current_state);
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
+		*state = *current_state;
 	}
 
 	return err;
@@ -344,16 +344,16 @@ static int pwm_nrfx_pm_control(const struct device *dev,
 #define PWM_NRFX_PM_CONTROL(idx)					\
 	static int pwm_##idx##_nrfx_pm_control(const struct device *dev,	\
 					       uint32_t ctrl_command,	\
-					       void *context,		\
-					       device_pm_cb cb,		\
+					       uint32_t *state,		\
+					       pm_device_cb cb,		\
 					       void *arg)		\
 	{								\
-		static uint32_t current_state = DEVICE_PM_ACTIVE_STATE;	\
+		static uint32_t current_state = PM_DEVICE_STATE_ACTIVE;	\
 		int ret = 0;                                            \
-		ret = pwm_nrfx_pm_control(dev, ctrl_command, context,	\
+		ret = pwm_nrfx_pm_control(dev, ctrl_command, state,	\
 					   &current_state);		\
 		if (cb) {                                               \
-			cb(dev, ret, context, arg);                     \
+			cb(dev, ret, state, arg);                       \
 		}                                                       \
 		return ret;                                             \
 	}

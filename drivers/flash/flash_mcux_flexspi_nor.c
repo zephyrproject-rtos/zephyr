@@ -555,7 +555,7 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			      flash_flexspi_nor_init,			\
-			      device_pm_control_nop,			\
+			      NULL,					\
 			      &flash_flexspi_nor_data_##n,		\
 			      &flash_flexspi_nor_config_##n,		\
 			      POST_KERNEL,				\

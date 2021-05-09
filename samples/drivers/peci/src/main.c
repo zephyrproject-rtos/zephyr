@@ -187,9 +187,9 @@ void main(void)
 		K_INHERIT_PERMS, K_FOREVER);
 
 #if DT_NODE_HAS_STATUS(DT_ALIAS(peci_0), okay)
-	peci_dev = device_get_binding(DT_LABEL(DT_ALIAS(peci_0)));
-	if (!peci_dev) {
-		printk("Err: PECI device not found\n");
+	peci_dev = DEVICE_DT_GET(DT_ALIAS(peci_0));
+	if (!device_is_ready(peci_dev)) {
+		printk("Err: PECI device is not ready\n");
 		return;
 	}
 

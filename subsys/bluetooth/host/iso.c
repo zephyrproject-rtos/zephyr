@@ -385,6 +385,11 @@ static struct net_buf *hci_le_set_cig_params(struct bt_iso_create_param *param)
 	struct net_buf *rsp;
 	int i, err;
 
+	if (!param->chans[0]->qos->tx && !param->chans[0]->qos->rx) {
+		BT_ERR("Both TX and RX QoS are disabled");
+		return NULL;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_CIG_PARAMS,
 				sizeof(*req) + sizeof(*cis) * param->num_conns);
 	if (!buf) {
@@ -396,13 +401,37 @@ static struct net_buf *hci_le_set_cig_params(struct bt_iso_create_param *param)
 	memset(req, 0, sizeof(*req));
 
 	req->cig_id = param->conns[0]->iso.cig_id;
-	sys_put_le24(param->chans[0]->qos->tx->interval, req->m_interval);
-	sys_put_le24(param->chans[0]->qos->rx->interval, req->s_interval);
+	if (param->chans[0]->qos->tx) {
+		sys_put_le24(param->chans[0]->qos->tx->interval, req->m_interval);
+		req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->tx->latency);
+	} else {
+		/* Use RX values if TX is disabled.
+		 * If TX is disabled then the values don't have any meaning, as
+		 * we will create a new CIG in case we want to change the
+		 * directions, but will need to be set to the fields to some
+		 * valid (nonzero) values for the controller to accept them.
+		 */
+		sys_put_le24(param->chans[0]->qos->rx->interval, req->m_interval);
+		req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->rx->latency);
+	}
+
+	if (param->chans[0]->qos->rx) {
+		sys_put_le24(param->chans[0]->qos->rx->interval, req->s_interval);
+		req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->rx->latency);
+	} else {
+		/* Use TX values if RX is disabled.
+		 * If RX is disabled then the values don't have any meaning, as
+		 * we will create a new CIG in case we want to change the
+		 * directions, but will need to be set to the fields to some
+		 * valid (nonzero) values for the controller to accept them.
+		 */
+		sys_put_le24(param->chans[0]->qos->tx->interval, req->s_interval);
+		req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->tx->latency);
+	}
+
 	req->sca = param->chans[0]->qos->sca;
 	req->packing = param->chans[0]->qos->packing;
 	req->framing = param->chans[0]->qos->framing;
-	req->m_latency = sys_cpu_to_le16(param->chans[0]->qos->tx->latency);
-	req->s_latency = sys_cpu_to_le16(param->chans[0]->qos->rx->latency);
 	req->num_cis = param->num_conns;
 
 	/* Program the cis parameters */
@@ -700,34 +729,52 @@ static int bt_iso_setup_data_path(struct bt_conn *conn)
 {
 	int err;
 	struct bt_iso_chan *chan;
-	struct bt_iso_chan_path path = {};
+	struct bt_iso_chan_path default_path = { .pid = BT_ISO_DATA_PATH_HCI };
 	struct bt_iso_data_path out_path = {
 		.dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST };
 	struct bt_iso_data_path in_path = {
 		.dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR };
+	struct bt_iso_chan_io_qos *tx_qos;
+	struct bt_iso_chan_io_qos *rx_qos;
 
 	chan = SYS_SLIST_PEEK_HEAD_CONTAINER(&conn->channels, chan, node);
 	if (!chan) {
 		return -EINVAL;
 	}
 
-	in_path.path = chan->qos->tx->path ? chan->qos->tx->path : &path;
-	out_path.path = chan->qos->rx->path ? chan->qos->rx->path : &path;
+	tx_qos = chan->qos->tx;
+	rx_qos = chan->qos->rx;
 
-	if (!chan->qos->tx) {
+	in_path.path = tx_qos && tx_qos->path ? tx_qos->path : &default_path;
+	out_path.path = rx_qos && rx_qos->path ? rx_qos->path : &default_path;
+
+	if (!tx_qos) {
 		in_path.pid = BT_ISO_DATA_PATH_DISABLED;
 	}
 
-	if (!chan->qos->rx) {
+	if (!rx_qos) {
 		out_path.pid = BT_ISO_DATA_PATH_DISABLED;
 	}
 
-	err = hci_le_setup_iso_data_path(conn, &in_path);
-	if (err) {
-		return err;
-	}
+	if (conn->iso.is_bis) {
+		/* Only set one data path for BIS as per the spec */
+		if (tx_qos) {
+			return hci_le_setup_iso_data_path(conn, &in_path);
 
-	return hci_le_setup_iso_data_path(conn, &out_path);
+		} else {
+			return hci_le_setup_iso_data_path(conn, &out_path);
+		}
+
+	} else {
+		/* Setup both directions for CIS*/
+		err = hci_le_setup_iso_data_path(conn, &in_path);
+		if (err) {
+			return err;
+		}
+
+		return hci_le_setup_iso_data_path(conn, &out_path);
+
+	}
 }
 
 void bt_iso_connected(struct bt_conn *conn)
@@ -761,9 +808,37 @@ static void bt_iso_remove_data_path(struct bt_conn *conn)
 {
 	BT_DBG("%p", conn);
 
-	/* Remove both directions */
-	hci_le_remove_iso_data_path(conn, BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
-	hci_le_remove_iso_data_path(conn, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+	if (conn->iso.is_bis) {
+		struct bt_iso_chan *chan;
+		struct bt_iso_chan_io_qos *tx_qos;
+		uint8_t dir;
+
+		chan = SYS_SLIST_PEEK_HEAD_CONTAINER(&conn->channels, chan, node);
+		if (!chan) {
+			return;
+		}
+
+		tx_qos = chan->qos->tx;
+
+		/* Only remove one data path for BIS as per the spec */
+		if (tx_qos) {
+			dir = BT_HCI_DATAPATH_DIR_HOST_TO_CTLR;
+		} else {
+			dir = BT_HCI_DATAPATH_DIR_CTLR_TO_HOST;
+		}
+
+		(void)hci_le_remove_iso_data_path(conn, dir);
+	} else {
+		/* Remove both directions for CIS*/
+
+		/* TODO: Check which has been setup first to avoid removing
+		 * data paths that are not setup
+		 */
+		(void)hci_le_remove_iso_data_path(conn,
+						  BT_HCI_DATAPATH_DIR_CTLR_TO_HOST);
+		(void)hci_le_remove_iso_data_path(conn,
+						  BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
+	}
 }
 
 static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)

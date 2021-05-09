@@ -51,6 +51,29 @@
 	};
 };
 
+&clk_hse{
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <6>;
+	mul-n = <85>;
+	div-p = <7>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(170)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pc4 &usart1_rx_pc5>;
 	current-speed = <115200>;

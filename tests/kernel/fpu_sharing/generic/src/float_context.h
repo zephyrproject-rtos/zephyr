@@ -88,6 +88,21 @@ struct fp_non_volatile_register_set {
 #define SIZEOF_FP_NON_VOLATILE_REGISTER_SET \
 	sizeof(struct fp_non_volatile_register_set)
 
+#elif defined(CONFIG_ARM64)
+
+struct fp_volatile_register_set {
+	__int128 regs[16];	/* q0..q15 */
+};
+
+struct fp_non_volatile_register_set {
+	__int128 regs[16];	/* q16..q31 */
+};
+
+#define SIZEOF_FP_VOLATILE_REGISTER_SET	\
+	sizeof(struct fp_volatile_register_set)
+#define SIZEOF_FP_NON_VOLATILE_REGISTER_SET \
+	sizeof(struct fp_non_volatile_register_set)
+
 #elif defined(CONFIG_ISA_ARCV2)
 
 struct fp_volatile_register_set {

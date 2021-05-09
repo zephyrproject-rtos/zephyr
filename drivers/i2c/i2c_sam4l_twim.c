@@ -632,7 +632,7 @@ static const struct i2c_driver_api i2c_sam_twim_driver_api = {
 	static struct i2c_sam_twim_dev_data i2c##n##_sam_data;		\
 									\
 	DEVICE_DT_INST_DEFINE(n, &i2c_sam_twim_initialize,		\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
 			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
 			    &i2c_sam_twim_driver_api)

@@ -75,6 +75,14 @@ config MPSC_CLEAR_ALLOCATED
 	  When enabled packet space is zeroed before returning from allocation.
 endif
 
+config REBOOT
+	bool "Reboot functionality"
+	select SYSTEM_CLOCK_DISABLE
+	help
+	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
+	  needed to perform a "safe" reboot (e.g. SYSTEM_CLOCK_DISABLE, to stop the
+	  system clock before issuing a reset).
+
 rsource "Kconfig.cbprintf"
 
 endmenu

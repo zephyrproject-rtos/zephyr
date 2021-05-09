@@ -39,7 +39,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define SHORT_ADDRESS_SIZE 2
 
 #define FCS_SIZE 2
+#if defined(CONFIG_IEEE802154_2015)
+#define ACK_PKT_LENGTH 127
+#else
 #define ACK_PKT_LENGTH 3
+#endif
 
 #define FRAME_TYPE_MASK 0x07
 #define FRAME_TYPE_ACK 0x02
@@ -131,7 +135,7 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 
 	size_t ack_len = net_pkt_get_len(pkt);
 
-	if (ack_len != ACK_PKT_LENGTH) {
+	if (ack_len > ACK_PKT_LENGTH) {
 		return NET_CONTINUE;
 	}
 
@@ -257,7 +261,16 @@ void transmit_message(struct k_work *tx_job)
 	radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
 	radio_api->set_txpower(radio_dev, tx_power);
 
-	if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
+	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
+	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
+		uint64_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
+				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
+		net_pkt_set_txtime(tx_pkt, NSEC_PER_USEC * tx_at);
+		if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA,
+				  tx_pkt, tx_payload)) {
+			tx_result = OT_ERROR_INVALID_STATE;
+		}
+	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
 		if (radio_api->get_capabilities(radio_dev) &
 		    IEEE802154_HW_CSMA) {
 			if (radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA,
@@ -317,6 +330,17 @@ static void openthread_handle_received_frame(otInstance *instance,
 
 	recv_frame.mInfo.mRxInfo.mTimestamp =
 		time->second * USEC_PER_SEC + time->nanosecond / NSEC_PER_USEC;
+#endif
+
+#if defined(CONFIG_IEEE802154_2015)
+	if (net_pkt_ieee802154_arb(pkt) && net_pkt_ieee802154_fv2015(pkt)) {
+		recv_frame.mInfo.mRxInfo.mAckedWithSecEnhAck =
+			net_pkt_ieee802154_ack_seb(pkt);
+		recv_frame.mInfo.mRxInfo.mAckFrameCounter =
+			net_pkt_ieee802154_ack_fc(pkt);
+		recv_frame.mInfo.mRxInfo.mAckKeyId =
+			net_pkt_ieee802154_ack_keyid(pkt);
+	}
 #endif
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_DIAG) && otPlatDiagModeGet()) {
@@ -557,6 +581,25 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 	return OT_ERROR_NONE;
 }
 
+otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel,
+			     uint32_t aStart, uint32_t aDuration)
+{
+	int result;
+
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = {
+		.rx_slot.channel = aChannel,
+		.rx_slot.start = aStart,
+		.rx_slot.duration = aDuration,
+	};
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_RX_SLOT,
+				      &config);
+
+	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
+}
+
 otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 {
 	otError error = OT_ERROR_INVALID_STATE;
@@ -652,6 +695,22 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 
 	if (radio_caps & IEEE802154_HW_SLEEP_TO_TX) {
 		caps |= OT_RADIO_CAPS_SLEEP_TO_TX;
+	}
+
+#if defined(CONFIG_IEEE802154_2015)
+	if (radio_caps & IEEE802154_HW_TX_SEC) {
+		caps |= OT_RADIO_CAPS_TRANSMIT_SEC;
+	}
+#endif
+
+#if defined(CONFIG_NET_PKT_TXTIME)
+	if (radio_caps & IEEE802154_HW_TXTIME) {
+		caps |= OT_RADIO_CAPS_TRANSMIT_TIMING;
+	}
+#endif
+
+	if (radio_caps & IEEE802154_HW_RXTIME) {
+		caps |= OT_RADIO_CAPS_RECEIVE_TIMING;
 	}
 
 	return caps;
@@ -878,3 +937,106 @@ otError otPlatRadioSetTransmitPower(otInstance *aInstance, int8_t aPower)
 
 	return OT_ERROR_NONE;
 }
+
+#if defined(CONFIG_NET_PKT_TXTIME)
+uint64_t otPlatRadioGetNow(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return radio_api->get_time(radio_dev);
+}
+#endif
+
+#if defined(CONFIG_IEEE802154_2015)
+void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode,
+			  uint8_t aKeyId, const otMacKey *aPrevKey,
+			  const otMacKey *aCurrKey, const otMacKey *aNextKey)
+{
+	ARG_UNUSED(aInstance);
+	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL &&
+			aNextKey != NULL);
+
+	struct ieee802154_config config = {
+		.mac_keys.key_id_mode = aKeyIdMode,
+		.mac_keys.key_id = aKeyId,
+		.mac_keys.prev_key = (uint8_t *)aPrevKey->m8,
+		.mac_keys.curr_key = (uint8_t *)aCurrKey->m8,
+		.mac_keys.next_key = (uint8_t *)aNextKey->m8,
+	};
+
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_MAC_KEYS,
+				   &config);
+}
+
+void otPlatRadioSetMacFrameCounter(otInstance *aInstance,
+				   uint32_t aMacFrameCounter)
+{
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = { .frame_counter = aMacFrameCounter };
+
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_FRAME_COUNTER,
+				   &config);
+}
+#endif
+
+#if defined(CONFIG_OPENTHREAD_CSL_RECEIVER)
+otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod,
+			     const otExtAddress *aExtAddr)
+{
+	int result;
+
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = {
+		.csl_recv.period = aCslPeriod,
+		.csl_recv.addr = aExtAddr,
+	};
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RECEIVER,
+				      &config);
+
+	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
+}
+
+void otPlatRadioUpdateCslSampleTime(otInstance *aInstance,
+				    uint32_t aCslSampleTime)
+{
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = { .csl_rx_time = aCslSampleTime };
+
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSL_RX_TIME,
+				   &config);
+}
+#endif /* CONFIG_OPENTHREAD_CSL_RECEIVER */
+
+uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
+{
+	ARG_UNUSED(aInstance);
+
+	return radio_api->get_csl_acc(radio_dev);
+}
+
+#if defined(CONFIG_OPENTHREAD_MLE_LINK_METRICS_ENABLE)
+otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics aLinkMetrics,
+					  const otShortAddress aShortAddress,
+					  const otExtAddress *aExtAddress)
+{
+	int result;
+
+	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = {
+		.enh_ack.lqi = aLinkMetrics.mLqi,
+		.enh_ack.link_margin = aLinkMetrics.mLinkMargin,
+		.enh_ack.rssi = aLinkMetrics.mRssi,
+		.enh_ack.short_addr = aShortAddress,
+		.enh_ack.ext_addr = aExtAddress->m8,
+	};
+
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_PROBING, &config);
+
+	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
+}
+#endif /* OPENTHREAD_CONFIG_MLE_LINK_METRICS_ENABLE */

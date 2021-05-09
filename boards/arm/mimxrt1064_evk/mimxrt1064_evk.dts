@@ -20,6 +20,9 @@
 	};
 
 	chosen {
+		zephyr,flash-controller = &flexspi2;
+		zephyr,flash = &w25q32jvwj0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sdram0;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
@@ -156,6 +159,35 @@ arduino_i2c: &lpi2c1 {};
 				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(8)>;
 			};
+		};
+	};
+};
+
+&flexspi2 {
+	status = "okay";
+};
+
+&w25q32jvwj0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(1984)>;
+		};
+		slot1_partition: partition@200000 {
+			label = "image-1";
+			reg = <0x00200000 DT_SIZE_K(1984)>;
+		};
+		scratch_partition: partition@3f0000 {
+			label = "image-scratch";
+			reg = <0x003f0000 DT_SIZE_K(64)>;
 		};
 	};
 };

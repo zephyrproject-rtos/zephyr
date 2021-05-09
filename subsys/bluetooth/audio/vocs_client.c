@@ -14,6 +14,7 @@
 #include <sys/check.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/l2cap.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio/vocs.h>
@@ -71,9 +72,14 @@ uint8_t vocs_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 			BT_DBG("Invalid state length %u", length);
 		}
 	} else if (handle == inst->cli.desc_handle) {
-		char desc[MIN(CONFIG_BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
+		char desc[MIN(BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
 
 		/* Truncate if too large */
+
+		if (length > sizeof(desc) - 1) {
+			BT_DBG("Description truncated from %u to %zu octets",
+			       length, sizeof(desc) - 1);
+		}
 		length = MIN(sizeof(desc) - 1, length);
 
 		memcpy(desc, data, length);
@@ -114,7 +120,9 @@ static uint8_t vocs_client_read_offset_state_cb(struct bt_conn *conn, uint8_t er
 	BT_DBG("Inst %p: err: 0x%02X", inst, err);
 	inst->cli.busy = false;
 
-	if (data) {
+	if (cb_err) {
+		BT_DBG("Offset state read failed: %d", err);
+	} else if (data) {
 		if (length == sizeof(inst->cli.state)) {
 			memcpy(&inst->cli.state, data, length);
 			BT_DBG("Offset %d, counter %u",
@@ -129,7 +137,8 @@ static uint8_t vocs_client_read_offset_state_cb(struct bt_conn *conn, uint8_t er
 	}
 
 	if (inst->cli.cb && inst->cli.cb->state) {
-		inst->cli.cb->state(conn, inst, cb_err, inst->cli.state.offset);
+		inst->cli.cb->state(conn, inst, cb_err,
+				    cb_err ? 0 : inst->cli.state.offset);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -152,7 +161,9 @@ static uint8_t vocs_client_read_location_cb(struct bt_conn *conn, uint8_t err,
 	BT_DBG("Inst %p: err: 0x%02X", inst, err);
 	inst->cli.busy = false;
 
-	if (data) {
+	if (cb_err) {
+		BT_DBG("Offset state read failed: %d", err);
+	} else if (data) {
 		if (length == sizeof(inst->cli.location)) {
 			memcpy(&inst->cli.location, data, length);
 			BT_DBG("Location %u", inst->cli.location);
@@ -167,7 +178,8 @@ static uint8_t vocs_client_read_location_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (inst->cli.cb && inst->cli.cb->location) {
-		inst->cli.cb->location(conn, inst, cb_err, inst->cli.location);
+		inst->cli.cb->location(conn, inst, cb_err,
+				       cb_err ? 0 : inst->cli.location);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -188,7 +200,7 @@ static uint8_t internal_read_volume_offset_state_cb(struct bt_conn *conn, uint8_
 	}
 
 	if (err) {
-		BT_WARN("Volume state read failed: %d", err);
+		BT_WARN("Volume offset state read failed: %d", err);
 		cb_err = BT_ATT_ERR_UNLIKELY;
 	} else if (data) {
 		if (length == sizeof(inst->cli.state)) {
@@ -210,7 +222,7 @@ static uint8_t internal_read_volume_offset_state_cb(struct bt_conn *conn, uint8_
 			cb_err = BT_ATT_ERR_UNLIKELY;
 		}
 	} else {
-		BT_DBG("Invalid location");
+		BT_DBG("Invalid (empty) offset state read");
 		cb_err = BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -245,8 +257,10 @@ static void vcs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
 	 * change counter has been read, we restart the applications write request. If it fails
 	 * the second time, we return an error to the application.
 	 */
-	if (cb_err == BT_VOCS_ERR_INVALID_COUNTER && inst->cli.state_handle) {
-		BT_DBG("Invalid change counter. Reading volume state from server.");
+	if (cb_err == BT_VOCS_ERR_INVALID_COUNTER && inst->cli.cp_retried) {
+		cb_err = BT_ATT_ERR_UNLIKELY;
+	} else if (cb_err == BT_VOCS_ERR_INVALID_COUNTER && inst->cli.state_handle) {
+		BT_DBG("Invalid change counter. Reading volume offset state from server.");
 
 		inst->cli.read_params.func = internal_read_volume_offset_state_cb;
 		inst->cli.read_params.handle_count = 1;
@@ -254,14 +268,16 @@ static void vcs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
 
 		cb_err = bt_gatt_read(conn, &inst->cli.read_params);
 		if (cb_err) {
-			BT_WARN("Could not read Volume state: %d", cb_err);
+			BT_WARN("Could not read Volume offset state: %d", cb_err);
+		} else {
+			inst->cli.cp_retried = true;
+			/* Wait for read callback */
+			return;
 		}
-	} else {
-		BT_DBG("Invalid location");
-		cb_err = BT_ATT_ERR_UNLIKELY;
 	}
 
 	inst->cli.busy = false;
+	inst->cli.cp_retried = false;
 
 	if (inst->cli.cb && inst->cli.cb->set_offset) {
 		inst->cli.cb->set_offset(conn, inst, cb_err);
@@ -274,7 +290,7 @@ static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
 {
 	int cb_err = err;
 	struct bt_vocs *inst = lookup_vocs_by_handle(conn, params->single.handle);
-	char desc[MIN(CONFIG_BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
+	char desc[MIN(BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
 
 	memset(params, 0, sizeof(*params));
 
@@ -286,21 +302,28 @@ static uint8_t vcs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err,
 	BT_DBG("Inst %p: err: 0x%02X", inst, err);
 	inst->cli.busy = false;
 
-	if (data) {
-		BT_HEXDUMP_DBG(data, length, "Output description read");
-		length = MIN(sizeof(desc) - 1, length);
+	if (cb_err) {
+		BT_DBG("Description read failed: %d", err);
+	} else {
+		if (data) {
+			BT_HEXDUMP_DBG(data, length, "Output description read");
 
-		/* TODO: Handle long reads */
-		memcpy(desc, data, length);
+			if (length > sizeof(desc) - 1) {
+				BT_DBG("Description truncated from %u to %zu octets",
+				       length, sizeof(desc) - 1);
+			}
+			length = MIN(sizeof(desc) - 1, length);
+
+			/* TODO: Handle long reads */
+			memcpy(desc, data, length);
+		}
 		desc[length] = '\0';
 		BT_DBG("Output description: %s", log_strdup(desc));
-	} else {
-		BT_DBG("Invalid location");
-		cb_err = BT_ATT_ERR_UNLIKELY;
 	}
 
 	if (inst->cli.cb && inst->cli.cb->description) {
-		inst->cli.cb->description(conn, inst, cb_err, desc);
+		inst->cli.cb->description(conn, inst, cb_err,
+					  cb_err ? NULL : desc);
 	}
 
 	return BT_GATT_ITER_STOP;

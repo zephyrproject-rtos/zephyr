@@ -18,13 +18,69 @@
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
-#include "dmamux_stm32.h"
 #include "dma_stm32.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dmamux_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32_dmamux
+
+/* this is the configuration of one dmamux channel */
+struct dmamux_stm32_channel {
+	/* pointer to the associated dma instance */
+	const struct device *dev_dma;
+	/* ref of the associated dma stream for this instance */
+	uint8_t dma_id;
+};
+
+/* the table of all the dmamux channel */
+struct dmamux_stm32_data {
+	void *callback_arg;
+	void (*dmamux_callback)(void *arg, uint32_t id,
+				int error_code);
+};
+
+/* this is the configuration of the dmamux IP */
+struct dmamux_stm32_config {
+#if DT_INST_NODE_HAS_PROP(0, clocks)
+	struct stm32_pclken pclken;
+#endif
+	uint32_t base;
+	uint8_t channel_nb;	/* total nb of channels */
+	uint8_t gen_nb;	/* total nb of Request generator */
+	uint8_t req_nb;	/* total nb of Peripheral Request inputs */
+	const struct dmamux_stm32_channel *mux_channels;
+};
+
+/*
+ * UTIL_LISTIFY is used to generate arrays with function pointers to check
+ * and clear interrupt flags using LL functions
+ */
+#define DMAMUX_CHANNEL(i, _)		LL_DMAMUX_CHANNEL_ ## i,
+#define IS_ACTIVE_FLAG_SOX(i, _)	LL_DMAMUX_IsActiveFlag_SO  ## i,
+#define CLEAR_FLAG_SOX(i, _)		LL_DMAMUX_ClearFlag_SO ## i,
+#define IS_ACTIVE_FLAG_RGOX(i, _)	LL_DMAMUX_IsActiveFlag_RGO  ## i,
+#define CLEAR_FLAG_RGOX(i, _)		LL_DMAMUX_ClearFlag_RGO ## i,
+
+uint32_t table_ll_channel[] = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), DMAMUX_CHANNEL)
+};
+
+uint32_t (*func_ll_is_active_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), IS_ACTIVE_FLAG_SOX)
+};
+
+void (*func_ll_clear_so[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_channels), CLEAR_FLAG_SOX)
+};
+
+uint32_t (*func_ll_is_active_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_generators), IS_ACTIVE_FLAG_RGOX)
+};
+
+void (*func_ll_clear_rgo[])(DMAMUX_Channel_TypeDef *DMAMUXx) = {
+	UTIL_LISTIFY(DT_INST_PROP(0, dma_generators), CLEAR_FLAG_RGOX)
+};
 
 int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 				struct dma_config *config)
@@ -38,8 +94,9 @@ int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 	 */
 	int request_id = config->dma_slot;
 
-	if (request_id >= dev_config->req_nb + dev_config->gen_nb) {
-		LOG_ERR("request ID %d is too big.", request_id);
+	if (request_id == 0 ||
+	    request_id > dev_config->req_nb + dev_config->gen_nb) {
+		LOG_ERR("request ID %d is not valid.", request_id);
 		return -EINVAL;
 	}
 
@@ -156,6 +213,7 @@ int dmamux_stm32_get_status(const struct device *dev, uint32_t id,
 
 static int dmamux_stm32_init(const struct device *dev)
 {
+#if DT_INST_NODE_HAS_PROP(0, clocks)
 	const struct dmamux_stm32_config *config = dev->config;
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
@@ -164,6 +222,7 @@ static int dmamux_stm32_init(const struct device *dev)
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
+#endif /* DT_INST_NODE_HAS_PROP(0, clocks) */
 
 	/* DMAs assigned to DMAMUX channels at build time might not be ready. */
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(dma1), okay)
@@ -230,6 +289,13 @@ static const struct dma_driver_api dma_funcs = {
 #define DMAMUX_CHANNELS_INIT_1(count) \
 	UTIL_LISTIFY(count, INIT_DMAMUX_1_CHANNEL)
 
+
+#define DMAMUX_CLOCK_INIT(index) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, clocks),		\
+	(.pclken = {	.bus = DT_INST_CLOCKS_CELL(index, bus),		\
+			.enr = DT_INST_CLOCKS_CELL(index, bits)},),	\
+	())
+
 #define DMAMUX_INIT(index)						\
 static const struct dmamux_stm32_channel				\
 	dmamux_stm32_channels_##index[DT_INST_PROP(index, dma_channels)] = {   \
@@ -237,8 +303,7 @@ static const struct dmamux_stm32_channel				\
 	};								       \
 									\
 const struct dmamux_stm32_config dmamux_stm32_config_##index = {	\
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),		\
-		    .enr = DT_INST_CLOCKS_CELL(index, bits) },		\
+	DMAMUX_CLOCK_INIT(index)					\
 	.base = DT_INST_REG_ADDR(index),				\
 	.channel_nb = DT_INST_PROP(index, dma_channels),		\
 	.gen_nb = DT_INST_PROP(index, dma_generators),			\
@@ -250,7 +315,7 @@ static struct dmamux_stm32_data dmamux_stm32_data_##index;		\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
 		    &dmamux_stm32_init,					\
-		    device_pm_control_nop,				\
+		    NULL,						\
 		    &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &dma_funcs);

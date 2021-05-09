@@ -41,7 +41,7 @@ ARM V2M MPS2 provides the following hardware components:
 - ARM Cortex-M3 (AN385)
 - ARM IoT Subsystem for Cortex-M
 - Form factor: 140x120cm
-- SRAM: 8MB single cycle SRAM, 16MB PSRAM
+- ZBTSRAM: 8MB single cycle SRAM, 16MB PSRAM
 - Video: QSVGA touch screen panel, 4bit RGB VGA connector
 - Audio: Audio Codec
 - Debug:
@@ -57,6 +57,9 @@ ARM V2M MPS2 provides the following hardware components:
   - GPIO
   - SPI
 
+.. note::
+   4 MB of flash memory (in ZBTSRAM 1, starting at address 0x00400000) and 4 MB of RAM
+   (in ZBTSRAM 2 & 3, starting at address 0x20000000) are available.
 
 Supported Features
 ==================
@@ -122,8 +125,9 @@ identifies the handlers used for each exception.
 |      |            | attempt to ARM |                          |
 |      |            | mode           |                          |
 +------+------------+----------------+--------------------------+
-| 11   | SVC        |                | context switch and       |
-|      |            |                | software interrupts      |
+| 11   | SVC        |                | system calls, kernel     |
+|      |            |                | run-time exceptions,     |
+|      |            |                | and IRQ offloading       |
 +------+------------+----------------+--------------------------+
 | 12   | Debug      |                | system fatal error       |
 |      | monitor    |                |                          |

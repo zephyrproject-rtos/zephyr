@@ -107,6 +107,6 @@ static const struct kscan_driver_api sdl_driver_api = {
 static struct sdl_data sdl_data;
 
 DEVICE_DEFINE(sdl, CONFIG_SDL_POINTER_KSCAN_DEV_NAME, sdl_init,
-		    device_pm_control_nop, &sdl_data, NULL,
+		    NULL, &sdl_data, NULL,
 		    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
 		    &sdl_driver_api);

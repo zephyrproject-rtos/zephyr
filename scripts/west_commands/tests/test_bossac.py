@@ -71,116 +71,85 @@ EXPECTED_COMMANDS_WITH_EXTENDED = [
     ],
 ]
 
-BC_DICT_STD = [
-	# SAM-BA ROM without offset
-	('CONFIG_BOARD', TEST_BOARD_NAME.split()),
-	# No code partition Kconfig
-	# No zephyr,code-partition (defined on DT)
-	('CONFIG_FLASH_LOAD_OFFSET', 0x162e)
-]
+# SAM-BA ROM without offset
+# No code partition Kconfig
+# No zephyr,code-partition (defined on DT)
+DOTCONFIG_STD = f'''
+CONFIG_BOARD="{TEST_BOARD_NAME}"
+CONFIG_FLASH_LOAD_OFFSET=0x162e
+'''
 
-BC_DICT_COND1 = [
-	# SAM-BA ROM/FLASH with offset
-	('CONFIG_BOARD', TEST_BOARD_NAME.split()),
-	('CONFIG_USE_DT_CODE_PARTITION', 'y'),
-	('CONFIG_HAS_FLASH_LOAD_OFFSET', 'y'),
-	('CONFIG_FLASH_LOAD_OFFSET', 0x162e)
-]
+# SAM-BA ROM/FLASH with offset
+DOTCONFIG_COND1 = f'''
+CONFIG_BOARD="{TEST_BOARD_NAME}"
+CONFIG_USE_DT_CODE_PARTITION=y
+CONFIG_HAS_FLASH_LOAD_OFFSET=y
+CONFIG_FLASH_LOAD_OFFSET=0x162e
+'''
 
-BC_DICT_COND2 = [
-	# SAM-BA ROM/FLASH without offset
-	('CONFIG_BOARD', TEST_BOARD_NAME.split()),
-	# No code partition Kconfig
-	('CONFIG_HAS_FLASH_LOAD_OFFSET', 'y'),
-	('CONFIG_FLASH_LOAD_OFFSET', 0x162e)
-]
+# SAM-BA ROM/FLASH without offset
+# No code partition Kconfig
+DOTCONFIG_COND2 = f'''
+CONFIG_BOARD="{TEST_BOARD_NAME}"
+CONFIG_HAS_FLASH_LOAD_OFFSET=y
+CONFIG_FLASH_LOAD_OFFSET=0x162e
+'''
 
-BC_DICT_COND3 = [
-	# SAM-BA Extended Arduino with offset
-	('CONFIG_BOARD', TEST_BOARD_NAME.split()),
-	('CONFIG_USE_DT_CODE_PARTITION', 'y'),
-	('CONFIG_BOOTLOADER_BOSSA_ARDUINO', 'y'),
-	('CONFIG_HAS_FLASH_LOAD_OFFSET', 'y'),
-	('CONFIG_FLASH_LOAD_OFFSET', 0x162e)
-]
+# SAM-BA Extended Arduino with offset
+DOTCONFIG_COND3 = f'''
+CONFIG_BOARD="{TEST_BOARD_NAME}"
+CONFIG_USE_DT_CODE_PARTITION=y
+CONFIG_BOOTLOADER_BOSSA_ARDUINO=y
+CONFIG_HAS_FLASH_LOAD_OFFSET=y
+CONFIG_FLASH_LOAD_OFFSET=0x162e
+'''
 
-BC_DICT_COND4 = [
-	# SAM-BA Extended Adafruit with offset
-	('CONFIG_BOARD', TEST_BOARD_NAME.split()),
-	('CONFIG_USE_DT_CODE_PARTITION', 'y'),
-	('CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2', 'y'),
-	('CONFIG_HAS_FLASH_LOAD_OFFSET', 'y'),
-	('CONFIG_FLASH_LOAD_OFFSET', 0x162e)
-]
+# SAM-BA Extended Adafruit with offset
+DOTCONFIG_COND4 = f'''
+CONFIG_BOARD="{TEST_BOARD_NAME}"
+CONFIG_USE_DT_CODE_PARTITION=y
+CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2=y
+CONFIG_HAS_FLASH_LOAD_OFFSET=y
+CONFIG_FLASH_LOAD_OFFSET=0x162e
+'''
 
-BC_DICT_COND5 = [
-	# SAM-BA omit offset
-	('CONFIG_BOARD', TEST_BOARD_NAME.split()),
-	('CONFIG_USE_DT_CODE_PARTITION', 'y'),
-	('CONFIG_HAS_FLASH_LOAD_OFFSET', 'y'),
-	('CONFIG_FLASH_LOAD_OFFSET', 0x0)
-]
+# SAM-BA omit offset
+DOTCONFIG_COND5 = f'''
+CONFIG_BOARD="{TEST_BOARD_NAME}"
+CONFIG_USE_DT_CODE_PARTITION=y
+CONFIG_HAS_FLASH_LOAD_OFFSET=y
+CONFIG_FLASH_LOAD_OFFSET=0x0
+'''
 
+def adjust_runner_config(runner_config, tmpdir, dotconfig):
+    # Adjust a RunnerConfig object, 'runner_config', by
+    # replacing its build directory with 'tmpdir' after writing
+    # the contents of 'dotconfig' to tmpdir/zephyr/.config.
+
+    zephyr = tmpdir / 'zephyr'
+    zephyr.mkdir()
+    with open(zephyr / '.config', 'w') as f:
+        f.write(dotconfig)
+    return runner_config._replace(build_dir=os.fspath(tmpdir))
 
 def require_patch(program):
     assert program in ['bossac', 'stty']
 
-def bcfg_check_std(item):
-    return item in dict(BC_DICT_STD)
-
-def bcfg_get_std(item):
-    return dict(BC_DICT_STD)[item]
-
-def bcfg_check_cond1(item):
-    return item in dict(BC_DICT_COND1)
-
-def bcfg_get_cond1(item):
-    return dict(BC_DICT_COND1)[item]
-
-def bcfg_check_cond2(item):
-    return item in dict(BC_DICT_COND2)
-
-def bcfg_get_cond2(item):
-    return dict(BC_DICT_COND2)[item]
-
-def bcfg_check_cond3(item):
-    return item in dict(BC_DICT_COND3)
-
-def bcfg_get_cond3(item):
-    return dict(BC_DICT_COND3)[item]
-
-def bcfg_check_cond4(item):
-    return item in dict(BC_DICT_COND4)
-
-def bcfg_get_cond4(item):
-    return dict(BC_DICT_COND4)[item]
-
-def bcfg_check_cond5(item):
-    return item in dict(BC_DICT_COND5)
-
-def bcfg_get_cond5(item):
-    return dict(BC_DICT_COND5)[item]
+os_path_isfile = os.path.isfile
 
 def os_path_isfile_patch(filename):
     if filename == RC_KERNEL_BIN:
         return True
-    return os.path.isfile(filename)
-
+    return os_path_isfile(filename)
 
 @patch('runners.bossac.BossacBinaryRunner.supports',
 	return_value=False)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=None)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_std)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_std)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_init(cc, req, bcfg_ini, bcfg_check, bcfg_val,
-		     get_cod_par, sup, runner_config):
+def test_bossac_init(cc, req, get_cod_par, sup, runner_config, tmpdir):
     """
     Test commands using a runner created by constructor.
 
@@ -198,6 +167,7 @@ def test_bossac_init(cc, req, bcfg_ini, bcfg_check, bcfg_val,
     Output:
 	no --offset
     """
+    runner_config = adjust_runner_config(runner_config, tmpdir, DOTCONFIG_STD)
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
     with patch('os.path.isfile', side_effect=os_path_isfile_patch):
         runner.run('flash')
@@ -208,16 +178,10 @@ def test_bossac_init(cc, req, bcfg_ini, bcfg_check, bcfg_val,
 	return_value=False)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=None)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_std)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_std)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_create(cc, req, bcfg_ini, bcfg_check, bcfg_val,
-		       get_cod_par, sup, runner_config):
+def test_bossac_create(cc, req, get_cod_par, sup, runner_config, tmpdir):
     """
     Test commands using a runner created from command line parameters.
 
@@ -239,6 +203,7 @@ def test_bossac_create(cc, req, bcfg_ini, bcfg_check, bcfg_val,
     parser = argparse.ArgumentParser()
     BossacBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
+    runner_config = adjust_runner_config(runner_config, tmpdir, DOTCONFIG_STD)
     runner = BossacBinaryRunner.create(runner_config, arg_namespace)
     with patch('os.path.isfile', side_effect=os_path_isfile_patch):
         runner.run('flash')
@@ -249,16 +214,10 @@ def test_bossac_create(cc, req, bcfg_ini, bcfg_check, bcfg_val,
 	return_value=False)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=None)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_std)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_std)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_create_with_speed(cc, req, bcfg_ini, bcfg_check, bcfg_val,
-                                  get_cod_par, sup, runner_config):
+def test_bossac_create_with_speed(cc, req, get_cod_par, sup, runner_config, tmpdir):
     """
     Test commands using a runner created from command line parameters.
 
@@ -282,6 +241,7 @@ def test_bossac_create_with_speed(cc, req, bcfg_ini, bcfg_check, bcfg_val,
     parser = argparse.ArgumentParser()
     BossacBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
+    runner_config = adjust_runner_config(runner_config, tmpdir, DOTCONFIG_STD)
     runner = BossacBinaryRunner.create(runner_config, arg_namespace)
     with patch('os.path.isfile', side_effect=os_path_isfile_patch):
         runner.run('flash')
@@ -292,17 +252,11 @@ def test_bossac_create_with_speed(cc, req, bcfg_ini, bcfg_check, bcfg_val,
 	return_value=True)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=True)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_cond1)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_cond1)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_create_with_flash_address(cc, req, bcfg_ini, bcfg_check,
-					  bcfg_val, get_cod_par, sup,
-					  runner_config):
+def test_bossac_create_with_flash_address(cc, req, get_cod_par, sup,
+					  runner_config, tmpdir):
     """
     Test command with offset parameter
 
@@ -327,6 +281,8 @@ def test_bossac_create_with_flash_address(cc, req, bcfg_ini, bcfg_check,
     parser = argparse.ArgumentParser()
     BossacBinaryRunner.add_parser(parser)
     arg_namespace = parser.parse_args(args)
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND1)
     runner = BossacBinaryRunner.create(runner_config, arg_namespace)
     with patch('os.path.isfile', side_effect=os_path_isfile_patch):
         runner.run('flash')
@@ -339,17 +295,11 @@ def test_bossac_create_with_flash_address(cc, req, bcfg_ini, bcfg_check,
 	return_value=False)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=True)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_cond5)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_cond5)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_create_with_omit_address(cc, req, bcfg_ini, bcfg_check,
-					  bcfg_val, get_cod_par, sup,
-					  runner_config):
+def test_bossac_create_with_omit_address(cc, req, bcfg_ini, sup,
+                                         runner_config, tmpdir):
     """
     Test command that will omit offset because CONFIG_FLASH_LOAD_OFFSET is 0.
     This case is valid for ROM bootloaders that define image start at 0 and
@@ -369,6 +319,8 @@ def test_bossac_create_with_omit_address(cc, req, bcfg_ini, bcfg_check,
     Output:
 	no --offset
     """
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND5)
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
     with patch('os.path.isfile', side_effect=os_path_isfile_patch):
         runner.run('flash')
@@ -379,17 +331,11 @@ def test_bossac_create_with_omit_address(cc, req, bcfg_ini, bcfg_check,
 	return_value=True)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=True)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_cond3)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_cond3)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_create_with_arduino(cc, req, bcfg_ini, bcfg_check,
-				    bcfg_val, get_cod_par, sup,
-				    runner_config):
+def test_bossac_create_with_arduino(cc, req, get_cod_par, sup,
+				    runner_config, tmpdir):
     """
     Test SAM-BA extended protocol with Arduino variation
 
@@ -408,6 +354,8 @@ def test_bossac_create_with_arduino(cc, req, bcfg_ini, bcfg_check,
     Output:
 	--offset
     """
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND3)
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
     with patch('os.path.isfile', side_effect=os_path_isfile_patch):
         runner.run('flash')
@@ -417,17 +365,11 @@ def test_bossac_create_with_arduino(cc, req, bcfg_ini, bcfg_check,
 	return_value=True)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=True)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_cond4)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_cond4)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_create_with_adafruit(cc, req, bcfg_ini, bcfg_check,
-				     bcfg_val, get_cod_par, sup,
-				     runner_config):
+def test_bossac_create_with_adafruit(cc, req, get_cod_par, sup,
+				     runner_config, tmpdir):
     """
     Test SAM-BA extended protocol with Adafruit UF2 variation
 
@@ -446,6 +388,8 @@ def test_bossac_create_with_adafruit(cc, req, bcfg_ini, bcfg_check,
     Output:
 	--offset
     """
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND4)
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
     with patch('os.path.isfile', side_effect=os_path_isfile_patch):
         runner.run('flash')
@@ -456,17 +400,11 @@ def test_bossac_create_with_adafruit(cc, req, bcfg_ini, bcfg_check,
 	return_value=False)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=True)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_cond1)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_cond1)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_create_with_oldsdk(cc, req, bcfg_ini, bcfg_check,
-				   bcfg_val, get_cod_par, sup,
-				   runner_config):
+def test_bossac_create_with_oldsdk(cc, req, get_cod_par, sup,
+				   runner_config, tmpdir):
     """
     Test old SDK and ask user to upgrade
 
@@ -483,6 +421,8 @@ def test_bossac_create_with_oldsdk(cc, req, bcfg_ini, bcfg_check,
     Output:
 	Abort
     """
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND1)
     runner = BossacBinaryRunner(runner_config)
     with pytest.raises(RuntimeError) as rinfo:
         with patch('os.path.isfile', side_effect=os_path_isfile_patch):
@@ -496,17 +436,11 @@ def test_bossac_create_with_oldsdk(cc, req, bcfg_ini, bcfg_check,
 	return_value=False)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=None)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_cond1)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_cond1)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_create_error_missing_dt_info(cc, req, bcfg_ini, bcfg_check,
-					     bcfg_val, get_cod_par, sup,
-					     runner_config):
+def test_bossac_create_error_missing_dt_info(cc, req, get_cod_par, sup,
+					     runner_config, tmpdir):
     """
     Test SAM-BA offset wrong configuration. No chosen code partition.
 
@@ -523,6 +457,8 @@ def test_bossac_create_error_missing_dt_info(cc, req, bcfg_ini, bcfg_check,
     Output:
 	Abort
     """
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND1)
     runner = BossacBinaryRunner(runner_config)
     with pytest.raises(RuntimeError) as rinfo:
         with patch('os.path.isfile', side_effect=os_path_isfile_patch):
@@ -535,17 +471,11 @@ def test_bossac_create_error_missing_dt_info(cc, req, bcfg_ini, bcfg_check,
 	return_value=False)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
 	return_value=True)
-@patch('runners.core.BuildConfiguration.__getitem__',
-	side_effect=bcfg_get_cond2)
-@patch('runners.core.BuildConfiguration.__contains__',
-	side_effect=bcfg_check_cond2)
-@patch('runners.core.BuildConfiguration._init')
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_bossac_create_error_missing_kconfig(cc, req, bcfg_ini, bcfg_check,
-					     bcfg_val, get_cod_par, sup,
-					     runner_config):
+def test_bossac_create_error_missing_kconfig(cc, req, get_cod_par, sup,
+					     runner_config, tmpdir):
     """
     Test SAM-BA offset wrong configuration. No CONFIG_USE_DT_CODE_PARTITION
     Kconfig definition.
@@ -563,6 +493,8 @@ def test_bossac_create_error_missing_kconfig(cc, req, bcfg_ini, bcfg_check,
     Output:
 	Abort
     """
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND2)
     runner = BossacBinaryRunner(runner_config)
     with pytest.raises(RuntimeError) as rinfo:
         with patch('os.path.isfile', side_effect=os_path_isfile_patch):

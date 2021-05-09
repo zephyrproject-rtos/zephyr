@@ -58,7 +58,7 @@ static struct {
 	const struct bt_mesh_send_cb *cb;
 	void *cb_data;
 	uint64_t timestamp;
-	struct k_delayed_work work;
+	struct k_work_delayable work;
 } adv;
 
 static int adv_start(const struct bt_le_adv_param *param,
@@ -201,7 +201,7 @@ static void schedule_send(void)
 	 * to the previous packet than what's permitted by the specification.
 	 */
 	delta = k_uptime_delta(&timestamp);
-	k_delayed_work_submit(&adv.work, K_MSEC(ADV_INT_FAST_MS - delta));
+	k_work_reschedule(&adv.work, K_MSEC(ADV_INT_FAST_MS - delta));
 }
 
 void bt_mesh_adv_update(void)
@@ -218,7 +218,7 @@ void bt_mesh_adv_buf_ready(void)
 
 void bt_mesh_adv_init(void)
 {
-	k_delayed_work_init(&adv.work, send_pending_adv);
+	k_work_init_delayable(&adv.work, send_pending_adv);
 }
 
 static void adv_sent(struct bt_le_ext_adv *instance,

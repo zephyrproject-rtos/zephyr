@@ -139,7 +139,7 @@ static const struct crypto_driver_api crypto_enc_funcs = {
 	.query_hw_caps = nrf_ecb_query_caps,
 };
 
-DEVICE_DT_INST_DEFINE(0, nrf_ecb_driver_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, nrf_ecb_driver_init, NULL,
 		      NULL, NULL,
 		      POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		      &crypto_enc_funcs);

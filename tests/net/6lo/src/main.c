@@ -270,7 +270,7 @@ static struct dummy_api net_6lo_if_api = {
 };
 
 NET_DEVICE_INIT(net_6lo_test, "net_6lo_test",
-		net_6lo_dev_init, device_pm_control_nop, NULL, NULL,
+		net_6lo_dev_init, NULL, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_6lo_if_api, DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
@@ -460,7 +460,8 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	uint16_t len;
 	int remaining;
 
-	pkt = net_pkt_alloc_on_iface(net_if_get_default(), K_FOREVER);
+	pkt = net_pkt_alloc_on_iface(
+		net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)), K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -1153,8 +1154,10 @@ void test_loop(void)
 	}
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
-	net_6lo_set_context(net_if_get_default(), &ctx1);
-	net_6lo_set_context(net_if_get_default(), &ctx2);
+	net_6lo_set_context(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
+			    &ctx1);
+	net_6lo_set_context(net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)),
+			    &ctx2);
 #endif
 
 	for (count = 0; count < ARRAY_SIZE(tests); count++) {

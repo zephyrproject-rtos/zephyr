@@ -766,7 +766,7 @@ static void spi_mcux_config_func_##id(const struct device *dev) \
 	};								\
 	DEVICE_DT_INST_DEFINE(id,					\
 			    &spi_mcux_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
 			    POST_KERNEL,				\

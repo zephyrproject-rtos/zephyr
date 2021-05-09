@@ -1,5 +1,14 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+#if defined(CONFIG_NETWORKING)
+#ifndef NETWORK_RAM_SECTIONS
+#define NETWORK_RAM_SECTIONS \
+	Z_ITERABLE_SECTION_RAM(net_if, 4) \
+	Z_ITERABLE_SECTION_RAM(net_if_dev, 4) \
+	Z_ITERABLE_SECTION_RAM(net_l2, 4)
+#endif
+#endif /* NETWORKING */
+
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
 	{
@@ -82,9 +91,7 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #if defined(CONFIG_NETWORKING)
-	Z_ITERABLE_SECTION_RAM(net_if, 4)
-	Z_ITERABLE_SECTION_RAM(net_if_dev, 4)
-	Z_ITERABLE_SECTION_RAM(net_l2, 4)
+	NETWORK_RAM_SECTIONS
 #endif /* NETWORKING */
 
 #if defined(CONFIG_UART_MUX)

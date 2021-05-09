@@ -15,8 +15,7 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_IRQ_OFFLOAD
-	typedef void (*irq_offload_routine_t)(const void *parameter);
+typedef void (*irq_offload_routine_t)(const void *parameter);
 
 /**
  * @brief Run a function in interrupt context
@@ -31,7 +30,6 @@ extern "C" {
  * interrupt
  */
 void irq_offload(irq_offload_routine_t routine, const void *parameter);
-#endif
 
 #ifdef __cplusplus
 }

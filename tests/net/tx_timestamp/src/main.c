@@ -153,11 +153,11 @@ static int eth_init(const struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_test, "eth_test", eth_init, device_pm_control_nop,
+ETH_NET_DEVICE_INIT(eth_test, "eth_test", eth_init, NULL,
 		    &eth_context, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		    NET_ETH_MTU);
 
-ETH_NET_DEVICE_INIT(eth_test2, "eth_test2", eth_init, device_pm_control_nop,
+ETH_NET_DEVICE_INIT(eth_test2, "eth_test2", eth_init, NULL,
 		    &eth_context2, NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		    NET_ETH_MTU);
 
@@ -435,7 +435,6 @@ static void send_some_data(struct net_if *iface)
 		.sin6_family = AF_INET6,
 		.sin6_port = 0,
 	};
-	bool timestamp = true;
 	int ret;
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
@@ -451,9 +450,6 @@ static void send_some_data(struct net_if *iface)
 
 	ret = add_neighbor(iface, &dst_addr);
 	zassert_true(ret, "Cannot add neighbor\n");
-
-	net_context_set_option(udp_v6_ctx, NET_OPT_TIMESTAMP,
-			       &timestamp, sizeof(timestamp));
 
 	ret = net_context_sendto(udp_v6_ctx, test_data, strlen(test_data),
 				 (struct sockaddr *)&dst_addr6,

@@ -127,6 +127,8 @@ Nucleo L412RB-P provides the following hardware components:
 - Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
 - All packages are ECOPACK2 compliant
 
+Note: the current board revision is C. (MB1319C)
+
 More information about STM32L412RB can be found here:
 
 - `STM32L412RB on www.st.com`_
@@ -150,6 +152,10 @@ The Zephyr ``nucleo_l412rb_p`` board configuration supports the following hardwa
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
@@ -179,14 +185,15 @@ For mode details please refer to `ST Nucleo L412RB-P User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- LPUART_1_TX : PA2
-- LPUART_1_RX : PA3
-- UART_1_TX : PA9
-- UART_1_RX : PA10
-- I2C_1_SCL : PB6
-- I2C_1_SDA : PB7
+- LPUART1 TX/RX : PA2/PA3
+- I2C1 SCL/SDA  : PB8/PB7 (Arduino I2C)
+- SPI2 CS/SCK/MISO/MOSI : PB12/PB13/PB14/PB15 (Arduino SPI)
+- UART1 TX/RX : PA9/PA10
 - PWM_2_CH1 : PA0
+- USER_PB   : PC13
 - LD4 : PB13
+
+Note: SPI2 CS pin (PB12) is not located on the Arduino connector.
 
 System Clock
 ------------

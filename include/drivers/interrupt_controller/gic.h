@@ -254,12 +254,6 @@
 
 /* Fixme: update from platform specific define or dt */
 #define GIC_NUM_CPU_IF			CONFIG_MP_NUM_CPUS
-/* Fixme: arch support need to provide api/macro in SMP implementation */
-#if defined(CONFIG_ARM64) && (CONFIG_MP_NUM_CPUS > 1)
-#define GET_CPUID()			MPIDR_TO_CORE(GET_MPIDR())
-#else
-#define GET_CPUID()			0
-#endif
 
 #ifndef _ASMLANGUAGE
 

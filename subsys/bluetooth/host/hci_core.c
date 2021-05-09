@@ -112,7 +112,7 @@ struct cmd_data {
 	struct k_sem *sync;
 };
 
-static struct cmd_data cmd_data[CONFIG_BT_HCI_CMD_COUNT];
+static struct cmd_data cmd_data[CONFIG_BT_BUF_CMD_TX_COUNT];
 
 #define cmd(buf) (&cmd_data[net_buf_id(buf)])
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
@@ -127,11 +127,12 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 	cmd(buf)->state = state;
 }
 
-/* HCI command buffers. Derive the needed size from BT_BUF_RX_SIZE since
- * the same buffer is also used for the response.
+/* HCI command buffers. Derive the needed size from both Command and Event
+ * buffer length since the buffer is also used for the response event i.e
+ * command complete or command status.
  */
-#define CMD_BUF_SIZE BT_BUF_RX_SIZE
-NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
+#define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_BUF_CMD_TX_COUNT,
 			  CMD_BUF_SIZE, NULL);
 
 struct event_handler {
@@ -1043,6 +1044,37 @@ static void le_conn_complete_adv_timeout(void)
 
 static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
+#if (CONFIG_BT_ID_MAX > 1) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		evt->role == BT_HCI_ROLE_SLAVE &&
+		evt->status == BT_HCI_ERR_SUCCESS &&
+		(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+				BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+
+		/* Cache the connection complete event. Process it later.
+		 * See bt_dev.cached_conn_complete.
+		 */
+		for (int i = 0; i < ARRAY_SIZE(bt_dev.cached_conn_complete); i++) {
+			if (!bt_dev.cached_conn_complete[i].valid) {
+				(void)memcpy(&bt_dev.cached_conn_complete[i].evt,
+					evt,
+					sizeof(struct bt_hci_evt_le_enh_conn_complete));
+				bt_dev.cached_conn_complete[i].valid = true;
+				return;
+			}
+		}
+
+		__ASSERT(false, "No more cache entries available."
+				"This should not happen by design");
+
+		return;
+	}
+#endif
+	bt_hci_le_enh_conn_complete(evt);
+}
+
+void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
+{
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
@@ -1534,9 +1566,8 @@ static int set_flow_control(void)
 
 	hbs = net_buf_add(buf, sizeof(*hbs));
 	(void)memset(hbs, 0, sizeof(*hbs));
-	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_L2CAP_RX_MTU +
-				       sizeof(struct bt_l2cap_hdr));
-	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BT_ACL_RX_COUNT);
+	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_SIZE);
+	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_COUNT);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
 	if (err) {
@@ -2133,6 +2164,10 @@ static const struct event_handler meta_events[] = {
 		      sizeof(struct bt_hci_evt_le_biginfo_adv_report)),
 #endif /* (CONFIG_BT_ISO_BROADCAST) */
 #endif /* (CONFIG_BT_ISO) */
+#if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
+	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT, bt_hci_le_df_connectionless_iq_report,
+		      sizeof(struct bt_hci_evt_le_connectionless_iq_report)),
+#endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 };
 
 static void hci_le_meta_event(struct net_buf *buf)
@@ -2423,27 +2458,27 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 
 	BT_DBG("status %u", rp->status);
 
-	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->acl_mtu);
+	bt_dev.le.acl_mtu = sys_le16_to_cpu(rp->acl_max_len);
 	if (!bt_dev.le.acl_mtu) {
 		return;
 	}
 
-	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_pkt,
+	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num,
 		bt_dev.le.acl_mtu);
 
-	max_num = MIN(rp->acl_max_pkt, CONFIG_BT_CONN_TX_MAX);
+	max_num = MIN(rp->acl_max_num, CONFIG_BT_CONN_TX_MAX);
 	k_sem_init(&bt_dev.le.acl_pkts, max_num, max_num);
 
-	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_mtu);
+	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
 	if (!bt_dev.le.iso_mtu) {
 		BT_ERR("ISO buffer size not set");
 		return;
 	}
 
-	BT_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_pkt,
+	BT_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_num,
 		bt_dev.le.iso_mtu);
 
-	max_num = MIN(rp->iso_max_pkt, CONFIG_BT_ISO_TX_BUF_COUNT);
+	max_num = MIN(rp->iso_max_num, CONFIG_BT_ISO_TX_BUF_COUNT);
 	k_sem_init(&bt_dev.le.iso_pkts, max_num, max_num);
 #endif /* CONFIG_BT_ISO */
 }
@@ -2684,6 +2719,11 @@ static int le_set_event_mask(void)
 		}
 	}
 
+	/* Enable IQ samples report events receiver */
+	if (IS_ENABLED(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)) {
+		mask |= BT_EVT_MASK_LE_CONNECTIONLESS_IQ_REPORT;
+	}
+
 	sys_put_le64(mask, cp_mask->events);
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, buf, NULL);
 }
@@ -2829,7 +2869,8 @@ static int le_init(void)
 #endif
 
 #if IS_ENABLED(CONFIG_BT_DF)
-	if (BT_FEAT_LE_CONNECTIONLESS_CTE_TX(bt_dev.le.features)) {
+	if (BT_FEAT_LE_CONNECTIONLESS_CTE_TX(bt_dev.le.features) ||
+	    BT_FEAT_LE_CONNECTIONLESS_CTE_RX(bt_dev.le.features)) {
 		err = le_df_init();
 		if (err) {
 			return err;

@@ -26,5 +26,9 @@
 			status = "disabled";
 			label = "UART_4";
 		};
+
+		dmamux1: dmamux@40020800 {
+			dma-requests= <57>;
+		};
 	};
 };

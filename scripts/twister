@@ -1146,10 +1146,16 @@ def main():
         else:
             suite.instances = OrderedDict(sorted(suite.instances.items()))
 
+        # Do calculation based on what is actually going to be run and evaluated
+        # at runtime, ignore the cases we already know going to be skipped.
+        # This fixes an issue where some sets would get majority of skips and
+        # basically run nothing beside filtering.
+        to_run = {k : v for k,v in suite.instances.items() if v.status is None}
+
         subset, sets = options.subset.split("/")
         subset = int(subset)
         sets = int(sets)
-        total = len(suite.instances)
+        total = len(to_run)
         per_set = int(total / sets)
         num_extra_sets = total - (per_set * sets)
 
@@ -1164,8 +1170,13 @@ def main():
             start = ((subset - num_extra_sets - 1) * per_set) + base
             end = start + per_set
 
-        sliced_instances = islice(suite.instances.items(), start, end)
+        sliced_instances = islice(to_run.items(), start, end)
+        skipped = {k : v for k,v in suite.instances.items() if v.status == 'skipped'}
         suite.instances = OrderedDict(sliced_instances)
+        if subset == 1:
+            # add all pre-filtered tests that are skipped to the first set to
+            # allow for better distribution among all sets.
+            suite.instances.update(skipped)
 
     if options.save_tests:
         suite.csv_report(options.save_tests)

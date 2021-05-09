@@ -14,24 +14,28 @@ K_APP_BMEM(z_libc_partition) static uint64_t tsc_freq;
 
 void arch_timing_x86_init(void)
 {
-	uint32_t cyc_start = k_cycle_get_32();
-	uint64_t tsc_start = z_tsc_read();
-
-	k_busy_wait(10 * USEC_PER_MSEC);
-
-	uint32_t cyc_end = k_cycle_get_32();
-	uint64_t tsc_end = z_tsc_read();
-
+	uint32_t cyc_start, cyc_end;
+	uint64_t tsc_start, tsc_end;
 	uint64_t cyc_freq = sys_clock_hw_cycles_per_sec();
+	uint64_t dcyc, dtsc;
 
-	/*
-	 * cycles are in 32-bit, and delta must be
-	 * calculated in 32-bit percision. Or it would
-	 * wrapping around in 64-bit.
-	 */
-	uint64_t dcyc = (uint32_t)cyc_end - (uint32_t)cyc_start;
+	do {
+		cyc_start = k_cycle_get_32();
+		tsc_start = z_tsc_read();
 
-	uint64_t dtsc = tsc_end - tsc_start;
+		k_busy_wait(10 * USEC_PER_MSEC);
+
+		cyc_end = k_cycle_get_32();
+		tsc_end = z_tsc_read();
+
+		/*
+		 * cycles are in 32-bit, and delta must be
+		 * calculated in 32-bit percision. Or it would
+		 * wrapping around in 64-bit.
+		 */
+		dcyc = (uint32_t)cyc_end - (uint32_t)cyc_start;
+		dtsc = tsc_end - tsc_start;
+	} while ((dcyc == 0) || (dtsc == 0));
 
 	tsc_freq = (cyc_freq * dtsc) / dcyc;
 }

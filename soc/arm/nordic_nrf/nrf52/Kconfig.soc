@@ -460,17 +460,6 @@ config SOC_DCDC_NRF52X
 	help
 	  Enable nRF52 series System on Chip DC/DC converter.
 
-config NFCT_PINS_AS_GPIOS
-	bool "NFCT pins as GPIOs"
-	depends on HAS_HW_NRF_NFCT
-	help
-	  P0.9 and P0.10 are usually reserved for NFC. This option switch
-	  them to normal GPIO mode. HW enabling happens once in the device
-	  lifetime, during the first system startup. Disabling this option will
-	  not switch back these pins to NFCT mode. Doing this requires UICR
-	  erase prior to flashing device using the image which has
-	  this option disabled.
-
 config GPIO_AS_PINRESET
 	bool "GPIO as pin reset (reset button)"
 	depends on SOC_SERIES_NRF52X

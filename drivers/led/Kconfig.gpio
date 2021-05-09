@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_GPIO
+	bool "GPIO LED driver"
+	depends on GPIO && $(dt_compat_enabled,gpio-leds)
+	help
+	  Enable driver for GPIO LEDs.

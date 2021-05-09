@@ -184,7 +184,7 @@ static const struct i2c_gpio_config i2c_gpio_dev_cfg_##_num = {		\
 									\
 DEVICE_DT_INST_DEFINE(_num,						\
 	    i2c_gpio_init,						\
-	    device_pm_control_nop,					\
+	    NULL,							\
 	    &i2c_gpio_dev_data_##_num,					\
 	    &i2c_gpio_dev_cfg_##_num,					\
 	    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY, &api);

@@ -231,7 +231,7 @@ static const struct pwm_driver_api pwm_sifive_api = {
 		};	\
 	DEVICE_DT_INST_DEFINE(n,	\
 			    pwm_sifive_init,	\
-			    device_pm_control_nop,	\
+			    NULL,	\
 			    &pwm_sifive_data_##n,	\
 			    &pwm_sifive_cfg_##n,	\
 			    POST_KERNEL,	\

@@ -16,3 +16,20 @@ config LOG_DETECT_MISSED_STRDUP
 	default n
 
 endif
+
+if BT
+
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+config ENTROPY_GENERATOR
+	default y
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+choice BT_HCI_BUS_TYPE
+	default BT_ESP32
+endchoice
+
+endif # BT

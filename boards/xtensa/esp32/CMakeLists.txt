@@ -35,6 +35,16 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
     INSTALL_COMMAND ""
     )
 
+  if(CONFIG_BUILD_OUTPUT_BIN)
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND python ${ESP_IDF_PATH}/components/esptool_py/esptool/esptool.py
+      ARGS --chip esp32 elf2image --flash_mode dio --flash_freq 40m
+      -o ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
+      ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
+  endif()
+
+  set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
+
   add_dependencies(app EspIdfBootloader EspPartitionTable)
 
   board_finalize_runner_args(esp32 "--esp-flash-bootloader=${espidf_build_dir}/bootloader/bootloader.bin")

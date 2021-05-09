@@ -81,7 +81,7 @@ static inline int z_vrfy_counter_set_channel_alarm(const struct device *dev,
 
 	Z_OOPS(Z_SYSCALL_DRIVER_COUNTER(dev, set_alarm));
 	Z_OOPS(z_user_from_copy(&cfg_copy, alarm_cfg, sizeof(cfg_copy)));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(cfg_copy.callback == 0,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(cfg_copy.callback == NULL,
 				    "callbacks may not be set from user mode"));
 	return z_impl_counter_set_channel_alarm((const struct device *)dev,
 						(uint8_t)chan_id,
@@ -107,7 +107,7 @@ static inline int z_vrfy_counter_set_top_value(const struct device *dev,
 
 	Z_OOPS(Z_SYSCALL_DRIVER_COUNTER(dev, set_top_value));
 	Z_OOPS(z_user_from_copy(&cfg_copy, cfg, sizeof(cfg_copy)));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(cfg_copy.callback == 0,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(cfg_copy.callback == NULL,
 				    "callbacks may not be set from user mode"));
 	return z_impl_counter_set_top_value((const struct device *)dev,
 					    (const struct counter_top_cfg *)

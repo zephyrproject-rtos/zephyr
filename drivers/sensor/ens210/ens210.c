@@ -344,6 +344,6 @@ static int ens210_init(const struct device *dev)
 
 static struct ens210_data ens210_driver;
 
-DEVICE_DT_INST_DEFINE(0, ens210_init, device_pm_control_nop, &ens210_driver,
+DEVICE_DT_INST_DEFINE(0, ens210_init, NULL, &ens210_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &en210_driver_api);

@@ -14,6 +14,9 @@ config ROM_START_OFFSET
 config NUM_IRQS
 	default 60
 
+config PM
+	select CODE_DATA_RELOCATION_SRAM
+
 source "soc/arm/nxp_imx/rt6xx/Kconfig.defconfig.mimxrt6*"
 
 endif # SOC_SERIES_MIMXRT6XX

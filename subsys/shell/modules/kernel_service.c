@@ -8,8 +8,7 @@
 #include <sys/printk.h>
 #include <shell/shell.h>
 #include <init.h>
-#include <debug/object_tracing.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <debug/stack.h>
 #include <string.h>
 #include <device.h>

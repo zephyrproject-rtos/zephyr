@@ -13,9 +13,9 @@
 
 # https://cmake.org/cmake/help/latest/module/FindGit.html
 find_package(Git QUIET)
-if(NOT BUILD_VERSION AND GIT_FOUND)
+if(NOT DEFINED BUILD_VERSION AND GIT_FOUND)
   execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --abbrev=12
+    COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always
     WORKING_DIRECTORY                ${ZEPHYR_BASE}
     OUTPUT_VARIABLE                  BUILD_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -24,9 +24,8 @@ if(NOT BUILD_VERSION AND GIT_FOUND)
     RESULT_VARIABLE                  return_code
   )
   if(return_code)
-    message(STATUS "git describe failed: ${stderr};
-   BUILD_VERSION is left undefined")
-  elseif(CMAKE_VERBOSE_MAKEFILE)
-    message(STATUS "git describe stderr: ${stderr}")
+    message(STATUS "git describe failed: ${stderr}")
+  elseif(NOT "${stderr}" STREQUAL "")
+    message(STATUS "git describe warned: ${stderr}")
   endif()
 endif()

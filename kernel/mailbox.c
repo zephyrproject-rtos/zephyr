@@ -10,7 +10,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <string.h>
@@ -44,12 +44,7 @@ static inline void mbox_async_free(struct k_mbox_async *async)
 
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
-#ifdef CONFIG_OBJECT_TRACING
-struct k_mbox *_trace_list_k_mbox;
-#endif	/* CONFIG_OBJECT_TRACING */
-
-#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0) || \
-	defined(CONFIG_OBJECT_TRACING)
+#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 
 /*
  * Do run-time initialization of mailbox object subsystem.
@@ -84,25 +79,20 @@ static int init_mbox_module(const struct device *dev)
 
 	/* Complete initialization of statically defined mailboxes. */
 
-#ifdef CONFIG_OBJECT_TRACING
-	Z_STRUCT_SECTION_FOREACH(k_mbox, mbox) {
-		SYS_TRACING_OBJ_INIT(k_mbox, mbox);
-	}
-#endif /* CONFIG_OBJECT_TRACING */
-
 	return 0;
 }
 
 SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
+#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
 
 void k_mbox_init(struct k_mbox *mbox)
 {
 	z_waitq_init(&mbox->tx_msg_queue);
 	z_waitq_init(&mbox->rx_msg_queue);
 	mbox->lock = (struct k_spinlock) {};
-	SYS_TRACING_OBJ_INIT(k_mbox, mbox);
+
+	SYS_PORT_TRACING_OBJ_INIT(k_mbox, mbox);
 }
 
 /**
@@ -248,6 +238,8 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	/* search mailbox's rx queue for a compatible receiver */
 	key = k_spin_lock(&mbox->lock);
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mbox, message_put, mbox, timeout);
+
 	_WAIT_Q_FOR_EACH(&mbox->rx_msg_queue, receiving_thread) {
 		rx_msg = (struct k_mbox_msg *)receiving_thread->base.swap_data;
 
@@ -273,18 +265,24 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 				return 0;
 			}
 #endif
+			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, message_put, mbox, timeout);
 
 			/*
 			 * synchronous send: pend current thread (unqueued)
 			 * until the receiver consumes the message
 			 */
-			return z_pend_curr(&mbox->lock, key, NULL, K_FOREVER);
+			int ret = z_pend_curr(&mbox->lock, key, NULL, K_FOREVER);
 
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, message_put, mbox, timeout, ret);
+
+			return ret;
 		}
 	}
 
 	/* didn't find a matching receiver: don't wait for one */
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, message_put, mbox, timeout, -ENOMSG);
+
 		k_spin_unlock(&mbox->lock, key);
 		return -ENOMSG;
 	}
@@ -297,9 +295,14 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		return 0;
 	}
 #endif
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, message_put, mbox, timeout);
 
 	/* synchronous send: sender waits on tx queue for receiver or timeout */
-	return z_pend_curr(&mbox->lock, key, &mbox->tx_msg_queue, timeout);
+	int ret = z_pend_curr(&mbox->lock, key, &mbox->tx_msg_queue, timeout);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, message_put, mbox, timeout, ret);
+
+	return ret;
 }
 
 int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
@@ -308,7 +311,13 @@ int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	/* configure things for a synchronous send, then send the message */
 	tx_msg->_syncing_thread = _current;
 
-	return mbox_message_put(mbox, tx_msg, timeout);
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mbox, put, mbox, timeout);
+
+	int ret = mbox_message_put(mbox, tx_msg, timeout);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, put, mbox, timeout, ret);
+
+	return ret;
 }
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
@@ -316,6 +325,8 @@ void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		      struct k_sem *sem)
 {
 	struct k_mbox_async *async;
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mbox, async_put, mbox, sem);
 
 	/*
 	 * allocate an asynchronous message descriptor, configure both parts,
@@ -330,6 +341,7 @@ void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	async->tx_msg._async_sem = sem;
 
 	(void)mbox_message_put(mbox, &async->tx_msg, K_FOREVER);
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, async_put, mbox, sem);
 }
 #endif
 
@@ -394,6 +406,8 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	/* search mailbox's tx queue for a compatible sender */
 	key = k_spin_lock(&mbox->lock);
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mbox, get, mbox, timeout);
+
 	_WAIT_Q_FOR_EACH(&mbox->tx_msg_queue, sending_thread) {
 		tx_msg = (struct k_mbox_msg *)sending_thread->base.swap_data;
 
@@ -404,17 +418,24 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 			k_spin_unlock(&mbox->lock, key);
 
 			/* consume message data immediately, if needed */
-			return mbox_message_data_check(rx_msg, buffer);
+			result = mbox_message_data_check(rx_msg, buffer);
+
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, get, mbox, timeout, result);
+			return result;
 		}
 	}
 
 	/* didn't find a matching sender */
 
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, get, mbox, timeout, -ENOMSG);
+
 		/* don't wait for a matching sender to appear */
 		k_spin_unlock(&mbox->lock, key);
 		return -ENOMSG;
 	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, get, mbox, timeout);
 
 	/* wait until a matching sender appears or a timeout occurs */
 	_current->base.swap_data = rx_msg;
@@ -424,6 +445,8 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	if (result == 0) {
 		result = mbox_message_data_check(rx_msg, buffer);
 	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, get, mbox, timeout, result);
 
 	return result;
 }

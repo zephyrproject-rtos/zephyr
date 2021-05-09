@@ -211,6 +211,7 @@ def main():
 
     used_nodes = set()
     for handle in handles:
+        handle.device = None
         for device in devices:
             if handle.addr == device.obj_handles:
                 handle.device = device

@@ -86,6 +86,10 @@ struct e1000_dev {
 	uint8_t mac[ETH_ALEN];
 	uint8_t txb[NET_ETH_MTU];
 	uint8_t rxb[NET_ETH_MTU];
+#if defined(CONFIG_ETH_E1000_PTP_CLOCK)
+	const struct device *ptp_clock;
+	float clk_ratio;
+#endif
 };
 
 static const char *e1000_reg_to_string(enum e1000_reg_t r)

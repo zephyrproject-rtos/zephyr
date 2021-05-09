@@ -4,6 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* This test covers deprecated API.  Avoid inappropriate diagnostics
+ * about the use of that API.
+ */
+#include <toolchain.h>
+#undef __deprecated
+#define __deprecated
+#undef __DEPRECATED_MACRO
+#define __DEPRECATED_MACRO
+
 #include <ztest.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -537,8 +546,10 @@ static void test_1cpu_queued_cancel_sync(void)
 	zassert_equal(rc, 1, NULL);
 	zassert_equal(coophi_counter(), 0, NULL);
 
-	/* Cancellation should complete immediately. */
-	zassert_false(k_work_cancel_sync(&work, &work_sync), NULL);
+	/* Cancellation should complete immediately, indicating that
+	 * work was pending.
+	 */
+	zassert_true(k_work_cancel_sync(&work, &work_sync), NULL);
 
 	/* Shouldn't have run. */
 	zassert_equal(coophi_counter(), 0, NULL);
@@ -582,8 +593,10 @@ static void test_1cpu_delayed_cancel_sync(void)
 	zassert_equal(rc, 1, NULL);
 	zassert_equal(coophi_counter(), 0, NULL);
 
-	/* Cancellation should complete immediately. */
-	zassert_false(k_work_cancel_delayable_sync(&dwork, &work_sync), NULL);
+	/* Cancellation should complete immediately, indicating that
+	 * work was pending.
+	 */
+	zassert_true(k_work_cancel_delayable_sync(&dwork, &work_sync), NULL);
 
 	/* Shouldn't have run. */
 	zassert_equal(coophi_counter(), 0, NULL);

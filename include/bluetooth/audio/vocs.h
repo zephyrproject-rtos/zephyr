@@ -43,8 +43,8 @@ extern "C" {
 /** @brief Opaque Volume Offset Control Service instance. */
 struct bt_vocs;
 
-/** @brief Structure for initializing a Volume Offset Control Service instance. */
-struct bt_vocs_init_param {
+/** @brief Structure for registering a Volume Offset Control Service instance. */
+struct bt_vocs_register_param {
 	/** Audio Location bitmask */
 	uint32_t location;
 
@@ -59,6 +59,9 @@ struct bt_vocs_init_param {
 
 	/** Boolean to set whether the description is writable by clients */
 	bool desc_writable;
+
+	/** Pointer to the callback structure. */
+	struct bt_vocs_cb *cb;
 };
 
 /** @brief Structure for discovering a Volume Offset Control Service instance. */
@@ -96,15 +99,15 @@ struct bt_vocs *bt_vocs_free_instance_get(void);
 void *bt_vocs_svc_decl_get(struct bt_vocs *vocs);
 
 /**
- * @brief Initialize the Volume Offset Control Service instance.
+ * @brief Register the Volume Offset Control Service instance.
  *
  * @param vocs      Volume Offset Control Service instance.
- * @param init      Volume Offset Control Service initialization structure.
- *                  May be NULL to use default values.
+ * @param param     Volume Offset Control Service register parameters.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vocs_init(struct bt_vocs *vocs, const struct bt_vocs_init_param *init);
+int bt_vocs_register(struct bt_vocs *vocs,
+		     const struct bt_vocs_register_param *param);
 
 /**
  * @brief Callback function for the offset state.
@@ -164,8 +167,9 @@ typedef void (*bt_vocs_description_cb_t)(struct bt_conn *conn, struct bt_vocs *i
 /**
  * @brief Callback function for bt_vocs_discover.
  *
- * This callback will usually be overwritten by the primary service that
- * includes the Volume Control Offset Service client.
+ * This callback should be overwritten by the primary service that
+ * includes the Volume Control Offset Service client, and should thus not be
+ * set by the application.
  *
  * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
@@ -256,16 +260,6 @@ int bt_vocs_description_get(struct bt_conn *conn, struct bt_vocs *inst);
  */
 int bt_vocs_description_set(struct bt_conn *conn, struct bt_vocs *inst,
 			    const char *description);
-
-/**
- * @brief Register callbacks for the Volume Offset Control Service.
- *
- * @param inst          Pointer to the Volume Offset Control Service instance.
- * @param cb            Pointer to the callback structure.
- *
- * @return 0 on success, GATT error value on fail.
- */
-int bt_vocs_cb_register(struct bt_vocs *inst, struct bt_vocs_cb *cb);
 
 /**
  * @brief Registers the callbacks for the Volume Offset Control Service client.

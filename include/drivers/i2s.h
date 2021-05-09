@@ -207,6 +207,8 @@ enum i2s_dir {
 	I2S_DIR_RX,
 	/** Transmit data */
 	I2S_DIR_TX,
+	/** Both receive and transmit data */
+	I2S_DIR_BOTH,
 };
 
 /** Interface state */
@@ -314,9 +316,9 @@ struct i2s_config {
  */
 __subsystem struct i2s_driver_api {
 	int (*configure)(const struct device *dev, enum i2s_dir dir,
-			 struct i2s_config *cfg);
-	struct i2s_config *(*config_get)(const struct device *dev,
-					 enum i2s_dir dir);
+			 const struct i2s_config *cfg);
+	const struct i2s_config *(*config_get)(const struct device *dev,
+				  enum i2s_dir dir);
 	int (*read)(const struct device *dev, void **mem_block, size_t *size);
 	int (*write)(const struct device *dev, void *mem_block, size_t size);
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
@@ -339,18 +341,21 @@ __subsystem struct i2s_driver_api {
  * the interface state will be changed to NOT_READY.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param dir Stream direction: RX or TX as defined by I2S_DIR_*
+ * @param dir Stream direction: RX, TX, or both, as defined by I2S_DIR_*.
+ *            The I2S_DIR_BOTH value may not be supported by some drivers.
+ *            For those, the RX and TX streams need to be configured separately.
  * @param cfg Pointer to the structure containing configuration parameters.
  *
  * @retval 0 If successful.
  * @retval -EINVAL Invalid argument.
+ * @retval -ENOSYS I2S_DIR_BOTH value is not supported.
  */
 __syscall int i2s_configure(const struct device *dev, enum i2s_dir dir,
-			    struct i2s_config *cfg);
+			    const struct i2s_config *cfg);
 
 static inline int z_impl_i2s_configure(const struct device *dev,
 				       enum i2s_dir dir,
-				       struct i2s_config *cfg)
+				       const struct i2s_config *cfg)
 {
 	const struct i2s_driver_api *api =
 		(const struct i2s_driver_api *)dev->api;
@@ -366,8 +371,8 @@ static inline int z_impl_i2s_configure(const struct device *dev,
  * @retval Pointer to the structure containing configuration parameters,
  *         or NULL if un-configured
  */
-static inline struct i2s_config *i2s_config_get(const struct device *dev,
-						enum i2s_dir dir)
+static inline const struct i2s_config *i2s_config_get(const struct device *dev,
+						      enum i2s_dir dir)
 {
 	const struct i2s_driver_api *api =
 		(const struct i2s_driver_api *)dev->api;
@@ -501,7 +506,10 @@ __syscall int i2s_buf_write(const struct device *dev, void *buf, size_t size);
  * @brief Send a trigger command.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param dir Stream direction: RX or TX.
+ * @param dir Stream direction: RX, TX, or both, as defined by I2S_DIR_*.
+ *            The I2S_DIR_BOTH value may not be supported by some drivers.
+ *            For those, triggering need to be done separately for the RX
+ *            and TX streams.
  * @param cmd Trigger command.
  *
  * @retval 0 If successful.
@@ -509,6 +517,7 @@ __syscall int i2s_buf_write(const struct device *dev, void *buf, size_t size);
  * @retval -EIO The trigger cannot be executed in the current state or a DMA
  *         channel cannot be allocated.
  * @retval -ENOMEM RX/TX memory block not available.
+ * @retval -ENOSYS I2S_DIR_BOTH value is not supported.
  */
 __syscall int i2s_trigger(const struct device *dev, enum i2s_dir dir,
 			  enum i2s_trigger_cmd cmd);

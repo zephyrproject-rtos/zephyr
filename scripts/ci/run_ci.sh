@@ -20,15 +20,8 @@
 
 set -xe
 
-twister_options=" --inline-logs -N -v --integration"
-export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
-if [ ! -d "${BSIM_OUT_PATH}" ]; then
-        unset BSIM_OUT_PATH
-fi
-export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
-export EDTT_PATH="${EDTT_PATH:-../tools/edtt}"
+twister_options=" --inline-logs -M -N -v --integration"
 
-bsim_bt_test_results_file="./bsim_bt_out/bsim_results.xml"
 west_commands_results_file="./pytest_out/west_commands.xml"
 
 matrix_builds=1
@@ -44,7 +37,6 @@ function handle_coverage() {
 			--directory twister-out/native_posix/ \
 			--directory twister-out/nrf52_bsim/ \
 			--directory twister-out/unit_testing/ \
-			--directory bsim_bt_out/ \
 			--output-file lcov.pre.info -q --rc lcov_branch_coverage=1
 
 		# Remove noise
@@ -93,13 +85,6 @@ function on_complete() {
 	else
 		rm -rf twister-out out-2nd-pass
 	fi
-}
-
-function run_bsim_bt_tests() {
-	WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim_bt/compile.sh
-	RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_test_results_file} \
-	SEARCH_PATH=tests/bluetooth/bsim_bt/ \
-	tests/bluetooth/bsim_bt/run_parallel.sh
 }
 
 function get_tests_to_run() {
@@ -218,17 +203,6 @@ if [ -n "$main_ci" ]; then
 		SC="full"
 	fi
 	$short_git_log
-
-
-	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
-		echo "Build and run BT simulator tests"
-		# Run BLE tests in simulator on the 1st CI instance:
-		if [ "$matrix" = "1" ]; then
-			run_bsim_bt_tests
-		fi
-	else
-		echo "Skipping BT simulator tests"
-	fi
 
 	# cleanup
 	rm -f test_file.txt

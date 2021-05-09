@@ -9,7 +9,13 @@
 #include <ztest.h>
 #include <drivers/i2s.h>
 
-#define I2S_DEV_NAME "I2S_0"
+#define I2S_DEV_NAME_RX "I2S_0"
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
+#define I2S_DEV_NAME_TX "I2S_1"
+#else
+#define I2S_DEV_NAME_TX "I2S_0"
+#endif
+
 #define NUM_BLOCKS 20
 #define SAMPLE_NO 64
 
@@ -80,15 +86,16 @@ void test_i2s_tx_transfer_configure(void)
 	struct i2s_config i2s_cfg;
 	int ret;
 
-	dev_i2s = device_get_binding(I2S_DEV_NAME);
-	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME " not found");
+	dev_i2s = device_get_binding(I2S_DEV_NAME_TX);
+	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME_TX " not found");
 
 	/* Configure */
 
 	i2s_cfg.word_size = 16U;
 	i2s_cfg.channels = 2U;
 	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
-	i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
+	/* Configure the Transmit port as Master */
+	i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
 	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.mem_slab = &tx_0_mem_slab;
@@ -106,14 +113,15 @@ void test_i2s_rx_transfer_configure(void)
 	struct i2s_config i2s_cfg;
 	int ret;
 
-	dev_i2s = device_get_binding(I2S_DEV_NAME);
-	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME " not found");
+	dev_i2s = device_get_binding(I2S_DEV_NAME_RX);
+	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME_RX " not found");
 
 	/* Configure */
 
 	i2s_cfg.word_size = 16U;
 	i2s_cfg.channels = 2U;
 	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
+	/* Configure the Receive port as Slave */
 	i2s_cfg.options = I2S_OPT_FRAME_CLK_SLAVE | I2S_OPT_BIT_CLK_SLAVE;
 	i2s_cfg.frame_clk_freq = FRAME_CLK_FREQ;
 	i2s_cfg.block_size = BLOCK_SIZE;
@@ -135,14 +143,18 @@ void test_i2s_rx_transfer_configure(void)
  */
 void test_i2s_transfer_short(void)
 {
-	const struct device *dev_i2s;
+	const struct device *dev_i2s_rx;
+	const struct device *dev_i2s_tx;
 	void *rx_block[3];
 	void *tx_block;
 	size_t rx_size;
 	int ret;
 
-	dev_i2s = device_get_binding(I2S_DEV_NAME);
-	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME " not found");
+	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
+	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
+
+	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
+	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
 
 	/* Prefill TX queue */
 	for (int i = 0; i < 3; i++) {
@@ -150,37 +162,37 @@ void test_i2s_transfer_short(void)
 		zassert_equal(ret, 0, NULL);
 		fill_buf((uint16_t *)tx_block, i);
 
-		ret = i2s_write(dev_i2s, tx_block, BLOCK_SIZE);
+		ret = i2s_write(dev_i2s_tx, tx_block, BLOCK_SIZE);
 		zassert_equal(ret, 0, NULL);
 
 		TC_PRINT("%d->OK\n", i);
 	}
 
 	/* Start reception */
-	ret = i2s_trigger(dev_i2s, I2S_DIR_RX, I2S_TRIGGER_START);
+	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_START);
 	zassert_equal(ret, 0, "RX START trigger failed");
 
 	/* Start transmission */
-	ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_START);
+	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_START);
 	zassert_equal(ret, 0, "TX START trigger failed");
 
 	/* All data written, drain TX queue and stop the transmission */
-	ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
+	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
 	zassert_equal(ret, 0, "TX DRAIN trigger failed");
 
-	ret = i2s_read(dev_i2s, &rx_block[0], &rx_size);
+	ret = i2s_read(dev_i2s_rx, &rx_block[0], &rx_size);
 	zassert_equal(ret, 0, NULL);
 	zassert_equal(rx_size, BLOCK_SIZE, NULL);
 
-	ret = i2s_read(dev_i2s, &rx_block[1], &rx_size);
+	ret = i2s_read(dev_i2s_rx, &rx_block[1], &rx_size);
 	zassert_equal(ret, 0, NULL);
 	zassert_equal(rx_size, BLOCK_SIZE, NULL);
 
 	/* All but one data block read, stop reception */
-	ret = i2s_trigger(dev_i2s, I2S_DIR_RX, I2S_TRIGGER_STOP);
+	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_STOP);
 	zassert_equal(ret, 0, "RX STOP trigger failed");
 
-	ret = i2s_read(dev_i2s, &rx_block[2], &rx_size);
+	ret = i2s_read(dev_i2s_rx, &rx_block[2], &rx_size);
 	zassert_equal(ret, 0, NULL);
 	zassert_equal(rx_size, BLOCK_SIZE, NULL);
 
@@ -211,7 +223,8 @@ void test_i2s_transfer_short(void)
  */
 void test_i2s_transfer_long(void)
 {
-	const struct device *dev_i2s;
+	const struct device *dev_i2s_rx;
+	const struct device *dev_i2s_tx;
 	void *rx_block[NUM_BLOCKS];
 	void *tx_block[NUM_BLOCKS];
 	size_t rx_size;
@@ -220,8 +233,11 @@ void test_i2s_transfer_long(void)
 	int num_verified;
 	int ret;
 
-	dev_i2s = device_get_binding(I2S_DEV_NAME);
-	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME " not found");
+	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
+	zassert_not_null(dev_i2s_rx, "device " I2S_DEV_NAME_RX " not found");
+
+	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
+	zassert_not_null(dev_i2s_tx, "device " I2S_DEV_NAME_TX " not found");
 
 	/* Prepare TX data blocks */
 	for (tx_idx = 0; tx_idx < NUM_BLOCKS; tx_idx++) {
@@ -234,42 +250,42 @@ void test_i2s_transfer_long(void)
 	tx_idx = 0;
 
 	/* Prefill TX queue */
-	ret = i2s_write(dev_i2s, tx_block[tx_idx++], BLOCK_SIZE);
+	ret = i2s_write(dev_i2s_tx, tx_block[tx_idx++], BLOCK_SIZE);
 	zassert_equal(ret, 0, NULL);
 
-	ret = i2s_write(dev_i2s, tx_block[tx_idx++], BLOCK_SIZE);
+	ret = i2s_write(dev_i2s_tx, tx_block[tx_idx++], BLOCK_SIZE);
 	zassert_equal(ret, 0, NULL);
 
 	/* Start reception */
-	ret = i2s_trigger(dev_i2s, I2S_DIR_RX, I2S_TRIGGER_START);
+	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_START);
 	zassert_equal(ret, 0, "RX START trigger failed");
 
 	/* Start transmission */
-	ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_START);
+	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_START);
 	zassert_equal(ret, 0, "TX START trigger failed");
 
 	for (; tx_idx < NUM_BLOCKS; ) {
-		ret = i2s_write(dev_i2s, tx_block[tx_idx++], BLOCK_SIZE);
+		ret = i2s_write(dev_i2s_tx, tx_block[tx_idx++], BLOCK_SIZE);
 		zassert_equal(ret, 0, NULL);
 
-		ret = i2s_read(dev_i2s, &rx_block[rx_idx++], &rx_size);
+		ret = i2s_read(dev_i2s_rx, &rx_block[rx_idx++], &rx_size);
 		zassert_equal(ret, 0, NULL);
 		zassert_equal(rx_size, BLOCK_SIZE, NULL);
 	}
 
 	/* All data written, flush TX queue and stop the transmission */
-	ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
+	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
 	zassert_equal(ret, 0, "TX DRAIN trigger failed");
 
-	ret = i2s_read(dev_i2s, &rx_block[rx_idx++], &rx_size);
+	ret = i2s_read(dev_i2s_rx, &rx_block[rx_idx++], &rx_size);
 	zassert_equal(ret, 0, NULL);
 	zassert_equal(rx_size, BLOCK_SIZE, NULL);
 
 	/* All but one data block read, stop reception */
-	ret = i2s_trigger(dev_i2s, I2S_DIR_RX, I2S_TRIGGER_STOP);
+	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_STOP);
 	zassert_equal(ret, 0, "RX STOP trigger failed");
 
-	ret = i2s_read(dev_i2s, &rx_block[rx_idx++], &rx_size);
+	ret = i2s_read(dev_i2s_rx, &rx_block[rx_idx++], &rx_size);
 	zassert_equal(ret, 0, NULL);
 	zassert_equal(rx_size, BLOCK_SIZE, NULL);
 

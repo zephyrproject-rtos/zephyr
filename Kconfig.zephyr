@@ -62,15 +62,6 @@ config LINKER_ORPHAN_SECTION_ERROR
 
 endchoice
 
-config CODE_DATA_RELOCATION
-	bool "Relocate code/data sections"
-	depends on ARM
-	help
-	  When selected this will relocate .text, data and .bss sections from
-	  the specified files and places it in the required memory region. The
-	  files should be specified in the CMakeList.txt file with
-	  a cmake API zephyr_code_relocate().
-
 config HAS_FLASH_LOAD_OFFSET
 	bool
 	help
@@ -167,6 +158,12 @@ config LINKER_SORT_BY_ALIGNMENT
 	  in decreasing size of symbols. This helps to minimize
 	  padding between symbols.
 
+config SRAM_VECTOR_TABLE
+	bool "Place the vector table in SRAM instead of flash"
+	help
+	  The option specifies that the vector table should be placed at the
+	  start of SRAM instead of the start of flash.
+
 config HAS_SRAM_OFFSET
 	bool
 	help
@@ -234,6 +231,12 @@ config NO_OPTIMIZATIONS
 	  options.
 
 endchoice
+
+config COMPILER_COLOR_DIAGNOSTICS
+	bool "Enable colored diganostics"
+	default y
+	help
+	  Compiler diagnostic messages are colorized.
 
 config COMPILER_OPT
 	string "Custom compiler options"
@@ -564,14 +567,6 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 	  0xf01669ef as the magic value to enter the bootloader.
 
 endchoice
-
-config REBOOT
-	bool "Reboot functionality"
-	select SYSTEM_CLOCK_DISABLE
-	help
-	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
-	  needed to perform a "safe" reboot (e.g. SYSTEM_CLOCK_DISABLE, to stop the
-	  system clock before issuing a reset).
 
 config MISRA_SANE
 	bool "MISRA standards compliance features"

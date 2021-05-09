@@ -27,6 +27,7 @@
 #include <sys/dlist.h>
 #include <sys/util.h>
 #include <sys/sys_heap.h>
+#include <arch/structs.h>
 #endif
 
 #define K_NUM_PRIORITIES \
@@ -125,6 +126,9 @@ struct _cpu {
 	/* True when _current is allowed to context switch */
 	uint8_t swap_ok;
 #endif
+
+	/* Per CPU architecture specifics */
+	struct _cpu_arch arch;
 };
 
 typedef struct _cpu _cpu_t;

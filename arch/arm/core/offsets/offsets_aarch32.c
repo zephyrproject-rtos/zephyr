@@ -34,9 +34,12 @@ GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
 GEN_OFFSET_SYM(_thread_arch_t, mode);
+#endif
+#if defined(CONFIG_ARM_STORE_EXC_RETURN)
+GEN_OFFSET_SYM(_thread_arch_t, mode_exc_return);
+#endif
 #if defined(CONFIG_USERSPACE)
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
-#endif
 #endif
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
@@ -51,6 +54,7 @@ GEN_OFFSET_SYM(_basic_sf_t, ip);
 GEN_OFFSET_SYM(_basic_sf_t, lr);
 GEN_OFFSET_SYM(_basic_sf_t, pc);
 GEN_OFFSET_SYM(_basic_sf_t, xpsr);
+GEN_ABSOLUTE_SYM(___basic_sf_t_SIZEOF, sizeof(_basic_sf_t));
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 GEN_OFFSET_SYM(_esf_t, s);
@@ -72,6 +76,10 @@ GEN_OFFSET_SYM(_callee_saved_t, psp);
 /* size of the entire preempt registers structure */
 
 GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
+
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+GEN_ABSOLUTE_SYM(___extra_esf_info_t_SIZEOF, sizeof(struct __extra_esf_info));
+#endif
 
 #if defined(CONFIG_THREAD_STACK_INFO)
 GEN_OFFSET_SYM(_thread_stack_info_t, start);

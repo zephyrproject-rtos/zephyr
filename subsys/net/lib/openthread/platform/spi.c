@@ -7,7 +7,6 @@
 #include <kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <openthread/platform/uart.h>
 #include <openthread/platform/spi-slave.h>
 
 #include "platform-zephyr.h"

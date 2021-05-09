@@ -157,6 +157,12 @@ typedef void (*dns_resolve_cb_t)(enum dns_resolve_status status,
 				 struct dns_addrinfo *info,
 				 void *user_data);
 
+enum dns_resolve_context_state {
+	DNS_RESOLVE_CONTEXT_ACTIVE,
+	DNS_RESOLVE_CONTEXT_DEACTIVATING,
+	DNS_RESOLVE_CONTEXT_INACTIVE,
+};
+
 /**
  * DNS resolve context structure.
  */
@@ -237,7 +243,7 @@ struct dns_resolve_context {
 	} queries[CONFIG_DNS_NUM_CONCUR_QUERIES];
 
 	/** Is this context in use */
-	bool is_used;
+	enum dns_resolve_context_state state;
 };
 
 /**
@@ -282,6 +288,29 @@ int dns_resolve_init(struct dns_resolve_context *ctx,
  * @return 0 if ok, <0 if error.
  */
 int dns_resolve_close(struct dns_resolve_context *ctx);
+
+/**
+ * @brief Reconfigure DNS resolving context.
+ *
+ * @details Reconfigures DNS context with new server list.
+ *
+ * @param ctx DNS context
+ * @param dns_servers_str DNS server addresses using textual strings. The
+ * array is NULL terminated. The port number can be given in the string.
+ * Syntax for the server addresses with or without port numbers:
+ *    IPv4        : 10.0.9.1
+ *    IPv4 + port : 10.0.9.1:5353
+ *    IPv6        : 2001:db8::22:42
+ *    IPv6 + port : [2001:db8::22:42]:5353
+ * @param dns_servers_sa DNS server addresses as struct sockaddr. The array
+ * is NULL terminated. Port numbers are optional in struct sockaddr, the
+ * default will be used if set to 0.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int dns_resolve_reconfigure(struct dns_resolve_context *ctx,
+			    const char *servers_str[],
+			    const struct sockaddr *servers_sa[]);
 
 /**
  * @brief Cancel a pending DNS query.

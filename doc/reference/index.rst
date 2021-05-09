@@ -6,8 +6,7 @@ API Reference
 .. toctree::
    :maxdepth: 1
 
-   overview.rst
-   terminology.rst
+   api/index.rst
    audio/index.rst
    misc/notify.rst
    bluetooth/index.rst

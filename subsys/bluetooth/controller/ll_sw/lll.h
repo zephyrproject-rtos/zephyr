@@ -15,7 +15,6 @@
 #define TICKER_USER_ID_THREAD   MAYFLY_CALL_ID_PROGRAM
 
 #define EVENT_PIPELINE_MAX 7
-#define EVENT_DONE_MAX 3
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 #define EVENT_DONE_LINK_CNT 0
 #else
@@ -113,6 +112,9 @@ enum {
 	TICKER_ID_CONN_ISO_BASE,
 	TICKER_ID_CONN_ISO_LAST = ((TICKER_ID_CONN_ISO_BASE) +
 				   (CONFIG_BT_CTLR_CONN_ISO_GROUPS) - 1),
+	TICKER_ID_CONN_ISO_RESUME_BASE,
+	TICKER_ID_CONN_ISO_RESUME_LAST = ((TICKER_ID_CONN_ISO_RESUME_BASE) +
+					  (CONFIG_BT_CTLR_CONN_ISO_GROUPS) - 1),
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_USER_EXT) && \
@@ -239,6 +241,7 @@ enum node_rx_type {
 	NODE_RX_TYPE_CIS_ESTABLISHED,
 	NODE_RX_TYPE_MESH_ADV_CPLT,
 	NODE_RX_TYPE_MESH_REPORT,
+	NODE_RX_TYPE_IQ_SAMPLE_REPORT,
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	/* No entries shall be added after the NODE_RX_TYPE_USER_START/END */
@@ -413,11 +416,11 @@ int lll_csrand_isr_get(void *buf, size_t len);
 int lll_rand_get(void *buf, size_t len);
 int lll_rand_isr_get(void *buf, size_t len);
 
-int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
-			       lll_abort_cb_t abort_cb,
-			       struct lll_prepare_param *prepare_param,
-			       lll_prepare_cb_t prepare_cb,
-			       uint8_t is_resume);
+struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
+				      lll_abort_cb_t abort_cb,
+				      struct lll_prepare_param *prepare_param,
+				      lll_prepare_cb_t prepare_cb,
+				      uint8_t is_resume);
 void *ull_prepare_dequeue_get(void);
 void *ull_prepare_dequeue_iter(uint8_t *idx);
 void ull_prepare_dequeue(uint8_t caller_id);

@@ -69,9 +69,13 @@ The default configuration can be found in the defconfig file for NON-SMP:
 
         ``boards/arm64/nxp_ls1046ardb/nxp_ls1046ardb_defconfig``
 
-Or for SMP:
+Or for SMP running on all four CPU Cores:
 
-	``boards/arm64/nxp_ls1046ardb/nxp_ls1046ardb_smp_defconfig``
+	``boards/arm64/nxp_ls1046ardb/nxp_ls1046ardb_smp_4cores_defconfig``
+
+Or for SMP running on 2 CPU Cores (Core2 and Core3):
+
+	``boards/arm64/nxp_ls1046ardb/nxp_ls1046ardb_smp_2cores_defconfig``
 
 There are two serial port on the board: uart1 and uart2, Zephyr is using
 uart2 as serial console.
@@ -82,6 +86,8 @@ Programming and Debugging
 Use the following configuration to run basic Zephyr applications and
 kernel tests on LS1046A RDB board. For example, with the :ref:`synchronization_sample`:
 
+1. Non-SMP mode
+
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
@@ -90,13 +96,20 @@ kernel tests on LS1046A RDB board. For example, with the :ref:`synchronization_s
 
 This will build an image with the synchronization sample app.
 
-Use u-boot to load and kick Zephyr.bin:
+Use u-boot to load and kick Zephyr.bin to CPU Core0:
 
 .. code-block:: console
 
-	tftp c0000000 zephyr.bin; dcache off; dcache flush; icache flush; icache off;go  0xc0000000;
+	tftp c0000000 zephyr.bin; dcache off; dcache flush; icache flush; icache off; go  0xc0000000;
 
-It will isplay the following console output:
+Or kick Zephyr.bin to any other CPU Cores, for example run Zephyr on Core3:
+
+.. code-block:: console
+
+	tftp c0000000 zephyr.bin; dcache off; dcache flush; icache flush; icache off; cpu 3 release 0xc0000000;
+
+
+It will display the following console output:
 
 .. code-block:: console
 
@@ -104,9 +117,83 @@ It will isplay the following console output:
 	thread_a: Hello World from cpu 0 on nxp_ls1046ardb!
 	thread_b: Hello World from cpu 0 on nxp_ls1046ardb!
 	thread_a: Hello World from cpu 0 on nxp_ls1046ardb!
-	thread_b: Hello World from cpu 0 on nxp_ls1046ardb!
+
+2. SMP mode running on 4 CPU Cores
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: nxp_ls1046ardb_smp_4cores
+   :goals: run
+
+This will build an image with the synchronization sample app.
+
+Use u-boot to load and kick Zephyr.bin to CPU Core0:
+
+.. code-block:: console
+
+	tftp c0000000 zephyr.bin; dcache off; dcache flush; icache flush; icache off; go  0xc0000000;
+
+It will display the following console output:
+
+.. code-block:: console
+
+	*** Booting Zephyr OS build zephyr-v2.5.0-1922-g3265b69d47e7  ***
+	Secondary CPU core 1 (MPID:0x1) is up
+	Secondary CPU core 2 (MPID:0x2) is up
+	Secondary CPU core 3 (MPID:0x3) is up
 	thread_a: Hello World from cpu 0 on nxp_ls1046ardb!
-	thread_b: Hello World from cpu 0 on nxp_ls1046ardb!
+	thread_b: Hello World from cpu 1 on nxp_ls1046ardb!
+	thread_a: Hello World from cpu 0 on nxp_ls1046ardb!
+
+3. SMP mode running on 2 CPU Cores: Core2 and Core3
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: nxp_ls1046ardb_smp_2cores
+   :goals: run
+
+This will build an image with the synchronization sample app.
+
+Use u-boot to load and kick Zephyr.bin to CPU Core2:
+
+.. code-block:: console
+
+	tftp c0000000 zephyr.bin; dcache off; dcache flush; icache flush; icache off; cpu 2 release 0xc0000000;
+
+It will display the following console output:
+
+.. code-block:: console
+
+	*** Booting Zephyr OS build zephyr-v2.5.0-1922-g3265b69d47e7  ***
+	Secondary CPU core 1 (MPID:0x3) is up
+	thread_a: Hello World from cpu 0 on nxp_ls1046ardb!
+	thread_b: Hello World from cpu 1 on nxp_ls1046ardb!
+	thread_a: Hello World from cpu 0 on nxp_ls1046ardb!
+
+4. Running Zephyr on Jailhouse inmate Cell
+
+Use the following to run Zephyr in Jailhouse inmate, need to configure Jailhouse
+inmate Cell to use a single Core for Zephyr non-SMP mode, or use Core2 and Core3
+for Zephyr SMP 2cores image.
+
+1) Use root Cell dts to boot root Cell Linux.
+
+2) Install Jailhouse module:
+
+.. code-block:: console
+
+	modprobe jailhouse
+
+3) Run Zephyr demo in inmate Cell:
+
+.. code-block:: console
+
+	jailhouse enable ls1046a-rdb.cell
+	jailhouse cell create ls1046a-rdb-inmate-demo.cell
+	jailhouse cell load 1 zephyr.bin --address 0xc0000000
+	jailhouse cell start 1
 
 Flashing
 ========

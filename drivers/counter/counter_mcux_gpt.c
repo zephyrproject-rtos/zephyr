@@ -219,7 +219,7 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	static int mcux_gpt_## n ##_init(const struct device *dev);	\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    mcux_gpt_## n ##_init,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &mcux_gpt_data_ ## n,			\
 			    &mcux_gpt_config_ ## n,			\
 			    POST_KERNEL,				\

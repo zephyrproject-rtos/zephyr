@@ -1,0 +1,55 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Main PLL node binding for Connectivity line devices (STM32F105/STM32F107)
+
+  Takes one of clk_hse, pll2 or clk_hsi as input clock.
+  When clk_hsi is used a fixed prescaler is applied. When input clock is hse or
+  pll2, configurable prescaler is used.
+
+  Up to 2 output clocks could be supported and for each output clock, the
+  frequency can be computed with the following formula:
+
+    f(PLLCLK) = f(PLLIN) x PLLMUL       --> SYSCLK (System Clock)
+    f(USBCLK) = f(PLLCLK) * 2 / USBPRE  --> USB
+
+    with, depending on the case:
+            f(PLLIN) = f(input_clk) / 2       if input_clk = clk_hsi
+            f(PLLIN) = f(input_clk) / PREDIV  if input_clk = clk_hse or pll2
+
+  The PLL output frequency must not exceed 72 MHz.
+
+
+compatible: "st,stm32f105-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+    "#clock-cells":
+      const: 0
+
+    clocks:
+      required: true
+
+    mul:
+      type: int
+      required: true
+      description: |
+          Main PLL multiplication factor for VCO.
+          Note: For x6.5 multiplier value, please use "mul = <15>;"
+      enum:
+        - 4   # x4
+        - 5   # x5
+        - 6   # x6
+        - 7   # x7
+        - 8   # x8
+        - 9   # x9
+        - 15  # x6.5
+
+    prediv:
+      type: int
+      required: false
+      description: |
+          Configurable prescaler
+          Valid range: 1 - 16

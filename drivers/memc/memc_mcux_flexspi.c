@@ -140,6 +140,8 @@ static int memc_flexspi_init(const struct device *dev)
 #define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi))
 #elif defined(CONFIG_XIP) && defined(CONFIG_CODE_FLEXSPI2)
 #define MEMC_FLEXSPI_CFG_XIP(node_id) DT_SAME_NODE(node_id, DT_NODELABEL(flexspi2))
+#elif defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+#define MEMC_FLEXSPI_CFG_XIP(node_id) IS_ENABLED(CONFIG_XIP)
 #else
 #define MEMC_FLEXSPI_CFG_XIP(node_id) false
 #endif
@@ -163,7 +165,7 @@ static int memc_flexspi_init(const struct device *dev)
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			      memc_flexspi_init,			\
-			      device_pm_control_nop,			\
+			      NULL,					\
 			      &memc_flexspi_data_##n,			\
 			      &memc_flexspi_config_##n,			\
 			      POST_KERNEL,				\

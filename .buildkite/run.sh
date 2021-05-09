@@ -24,6 +24,9 @@ function cleanup()
 	echo "--- ccache stats at finish"
 	ccache -s
 
+	# Cleanup on exit
+	rm -fr *
+
 	# disk usage
 	echo "--- disk usage at finish"
 	df -h

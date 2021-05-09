@@ -36,7 +36,6 @@
 #define LOAPIC_LINT0 0x350	/* LVT (LINT0) */
 #define LOAPIC_LINT1 0x360	/* LVT (LINT1) */
 #define LOAPIC_ERROR 0x370	/* LVT (ERROR) */
-#define LOAPIC_TIMER 0x320	/* LVT (Timer) */
 #define LOAPIC_TIMER_ICR 0x380    /* Timer Initial Count Reg */
 #define LOAPIC_TIMER_CCR 0x390    /* Timer Current Count Reg */
 #define LOAPIC_TIMER_CONFIG 0x3e0 /* Timer Divide Config Reg */

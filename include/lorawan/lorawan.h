@@ -13,6 +13,7 @@
  */
 
 #include <device.h>
+#include <sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,6 +104,35 @@ struct lorawan_join_config {
 	enum lorawan_act_type mode;
 };
 
+#define LW_RECV_PORT_ANY UINT16_MAX
+
+struct lorawan_downlink_cb {
+	/* Port to handle messages for:
+	 *               Port 0: TX packet acknowledgements
+	 *          Ports 1-255: Standard downlink port
+	 *     LW_RECV_PORT_ANY: All downlinks
+	 */
+	uint16_t port;
+	/**
+	 * @brief Callback function to run on downlink data
+	 *
+	 * @note Callbacks are run on the system workqueue,
+	 *       and should therefore be as short as possible.
+	 *
+	 * @param port Port message was sent on
+	 * @param data_pending Network server has more downlink packets pending
+	 * @param rssi Received signal strength in dBm
+	 * @param snr Signal to Noise ratio in dBm
+	 * @param len Length of data received, will be 0 for ACKs
+	 * @param data Data received, will be NULL for ACKs
+	 */
+	void (*cb)(uint8_t port, bool data_pending,
+		   int16_t rssi, int8_t snr,
+		   uint8_t len, const uint8_t *data);
+	/** Node for callback list */
+	sys_snode_t node;
+};
+
 /**
  * @brief Add battery level callback function.
  *
@@ -120,6 +150,13 @@ struct lorawan_join_config {
  * @return 0 if successful, negative errno code if failure
  */
 int lorawan_set_battery_level_callback(uint8_t (*battery_lvl_cb)(void));
+
+/**
+ * @brief Register a callback to be run on downlink packets
+ *
+ * @param cb Pointer to structure containing callback parameters
+ */
+void lorawan_register_downlink_callback(struct lorawan_downlink_cb *cb);
 
 /**
  * @brief Register a callback to be called when the datarate changes
@@ -198,7 +235,7 @@ int lorawan_set_conf_msg_tries(uint8_t tries);
  * @brief Enable Adaptive Data Rate (ADR)
  *
  * Control whether adaptive data rate (ADR) is enabled. When ADR is enabled,
- * the data rate is treated as a default data rate that wil be used if the
+ * the data rate is treated as a default data rate that will be used if the
  * ADR algorithm has not established a data rate. ADR should normally only
  * be enabled for devices with stable RF conditions (i.e., devices in a mostly
  * static location).
@@ -245,4 +282,4 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 }
 #endif
 
-#endif	/* ZEPHYR_INCLUDE_LORAWAN_LORAWAN_H_ */
+#endif /* ZEPHYR_INCLUDE_LORAWAN_LORAWAN_H_ */

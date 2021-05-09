@@ -28,7 +28,7 @@
 
 #include <arch/common/addr_types.h>
 #include <arch/x86/ia32/segmentation.h>
-#include <power/power.h>
+#include <pm/pm.h>
 
 #endif /* _ASMLANGUAGE */
 

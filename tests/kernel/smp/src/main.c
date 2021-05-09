@@ -10,6 +10,7 @@
 #include <kernel.h>
 #include <ksched.h>
 #include <kernel_structs.h>
+#include <ztest_error_hook.h>
 
 #if CONFIG_MP_NUM_CPUS < 2
 #error SMP test requires at least two CPUs!
@@ -36,6 +37,8 @@ volatile int rv;
 
 K_SEM_DEFINE(cpuid_sema, 0, 1);
 K_SEM_DEFINE(sema, 0, 1);
+static struct k_mutex smutex;
+static struct k_sem smp_sem;
 
 #define THREADS_NUM CONFIG_MP_NUM_CPUS
 
@@ -45,7 +48,7 @@ struct thread_info {
 	int priority;
 	int cpu_id;
 };
-static volatile struct thread_info tinfo[THREADS_NUM];
+static ZTEST_BMEM volatile struct thread_info tinfo[THREADS_NUM];
 static struct k_thread tthread[THREADS_NUM];
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
@@ -629,7 +632,7 @@ void test_smp_ipi(void)
 	}
 }
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void ztest_post_fatal_error_hook(unsigned int reason, const z_arch_esf_t *pEsf)
 {
 	static int times;
 
@@ -649,6 +652,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 void entry_oops(void *p1, void *p2, void *p3)
 {
 	unsigned int key;
+
+	ztest_set_fault_valid(true);
 
 	key = irq_lock();
 	k_oops();
@@ -717,6 +722,311 @@ void test_workq_on_smp(void)
 		"system workq run on the same core");
 }
 
+static void t1_mutex_lock(void *p1, void *p2, void *p3)
+{
+	/* t1 will get mutex first */
+	k_mutex_lock((struct k_mutex *)p1, K_FOREVER);
+
+	k_msleep(2);
+
+	k_mutex_unlock((struct k_mutex *)p1);
+}
+
+static void t2_mutex_lock(void *p1, void *p2, void *p3)
+{
+	zassert_equal(_current->base.global_lock_count, 0,
+			"thread global lock cnt %d is incorrect",
+			_current->base.global_lock_count);
+
+	k_mutex_lock((struct k_mutex *)p1, K_FOREVER);
+
+	zassert_equal(_current->base.global_lock_count, 0,
+			"thread global lock cnt %d is incorrect",
+			_current->base.global_lock_count);
+
+	k_mutex_unlock((struct k_mutex *)p1);
+
+	/**TESTPOINT: z_smp_release_global_lock() has been call during
+	 * context switch but global_lock_cnt has not been decrease
+	 * because no irq_lock() was called.
+	 */
+	zassert_equal(_current->base.global_lock_count, 0,
+			"thread global lock cnt %d is incorrect",
+			_current->base.global_lock_count);
+}
+
+static void t2_mutex_lock_with_irq(void *p1, void *p2, void *p3)
+{
+	int key;
+
+	zassert_equal(_current->base.global_lock_count, 0,
+			"thread global lock cnt %d is incorrect",
+			_current->base.global_lock_count);
+
+	key = irq_lock();
+
+	k_mutex_lock((struct k_mutex *)p1, K_FOREVER);
+
+	zassert_equal(_current->base.global_lock_count, 1,
+			"thread global lock cnt %d is incorrect",
+			_current->base.global_lock_count);
+
+	k_mutex_unlock((struct k_mutex *)p1);
+
+	/**TESTPOINT: Though the irq has not been locked yet, but the
+	 * global_lock_cnt has been decreased during context switch.
+	 */
+	zassert_equal(_current->base.global_lock_count, 0,
+			"thread global lock cnt %d is incorrect",
+			_current->base.global_lock_count);
+
+	irq_unlock(key);
+
+	zassert_equal(_current->base.global_lock_count, 0,
+			"thread global lock cnt %d is incorrect",
+			_current->base.global_lock_count);
+}
+
+/**
+ * @brief Test scenairo that a thread release the global lock
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details Validate the scenario that make the internal APIs of SMP
+ * z_smp_release_global_lock() to be called.
+ */
+void test_smp_release_global_lock(void)
+{
+	k_mutex_init(&smutex);
+
+	tinfo[0].tid =
+	k_thread_create(&tthread[0], tstack[0], STACK_SIZE,
+			(k_thread_entry_t)t1_mutex_lock,
+			&smutex, NULL, NULL,
+			K_PRIO_PREEMPT(5),
+			K_INHERIT_PERMS, K_NO_WAIT);
+
+	tinfo[1].tid =
+	k_thread_create(&tthread[1], tstack[1], STACK_SIZE,
+		(k_thread_entry_t)t2_mutex_lock,
+			&smutex, NULL, NULL,
+			K_PRIO_PREEMPT(3),
+			K_INHERIT_PERMS, K_MSEC(1));
+
+	/* Hold one of the cpu to ensure context switch as we wanted
+	 * can happen in another cpu.
+	 */
+	k_busy_wait(20000);
+
+	k_thread_join(tinfo[1].tid, K_FOREVER);
+	k_thread_join(tinfo[0].tid, K_FOREVER);
+	cleanup_resources();
+}
+
+/**
+ * @brief Test scenairo that a thread release the global lock
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details Validate the scenario that make the internal APIs of SMP
+ * z_smp_release_global_lock() to be called.
+ */
+void test_smp_release_global_lock_irq(void)
+{
+	k_mutex_init(&smutex);
+
+	tinfo[0].tid =
+	k_thread_create(&tthread[0], tstack[0], STACK_SIZE,
+			(k_thread_entry_t)t1_mutex_lock,
+			&smutex, NULL, NULL,
+			K_PRIO_PREEMPT(5),
+			K_INHERIT_PERMS, K_NO_WAIT);
+
+	tinfo[1].tid =
+	k_thread_create(&tthread[1], tstack[1], STACK_SIZE,
+		(k_thread_entry_t)t2_mutex_lock_with_irq,
+			&smutex, NULL, NULL,
+			K_PRIO_PREEMPT(3),
+			K_INHERIT_PERMS, K_MSEC(1));
+
+	/* Hold one of the cpu to ensure context switch as we wanted
+	 * can happen in another cpu.
+	 */
+	k_busy_wait(20000);
+
+	k_thread_join(tinfo[1].tid, K_FOREVER);
+	k_thread_join(tinfo[0].tid, K_FOREVER);
+	cleanup_resources();
+}
+
+#define LOOP_COUNT 20000
+
+enum sync_t {
+	LOCK_NO,
+	LOCK_IRQ,
+	LOCK_SEM,
+	LOCK_MUTEX
+};
+
+static int global_cnt;
+static struct k_mutex smp_mutex;
+
+static void (*sync_lock)(void *);
+static void (*sync_unlock)(void *);
+
+static void sync_lock_dummy(void *k)
+{
+	/* no sync lock used */
+}
+
+static void sync_lock_irq(void *k)
+{
+	*((int *)k) = irq_lock();
+}
+
+static void sync_unlock_irq(void *k)
+{
+	int key = POINTER_TO_INT(k);
+
+	irq_unlock(key);
+}
+
+static void sync_lock_sem(void *k)
+{
+	k_sem_take(&smp_sem, K_FOREVER);
+}
+
+static void sync_unlock_sem(void *k)
+{
+	k_sem_give(&smp_sem);
+}
+
+static void sync_lock_mutex(void *k)
+{
+	k_mutex_lock(&smp_mutex, K_FOREVER);
+}
+
+static void sync_unlock_mutex(void *k)
+{
+	k_mutex_unlock(&smp_mutex);
+}
+
+static void sync_init(int lock_type)
+{
+	switch (lock_type) {
+	case LOCK_IRQ:
+		sync_lock = sync_lock_irq;
+		sync_unlock = sync_unlock_irq;
+		break;
+	case LOCK_SEM:
+		sync_lock = sync_lock_sem;
+		sync_unlock = sync_unlock_sem;
+		k_sem_init(&smp_sem, 1, 3);
+		break;
+	case LOCK_MUTEX:
+		sync_lock = sync_lock_mutex;
+		sync_unlock = sync_unlock_mutex;
+		k_mutex_init(&smp_mutex);
+		break;
+
+	default:
+		sync_lock = sync_unlock = sync_lock_dummy;
+	}
+}
+
+static void inc_global_cnt(void *a, void *b, void *c)
+{
+	int key;
+
+	for (int i = 0; i < LOOP_COUNT; i++) {
+
+		sync_lock(&key);
+
+		global_cnt++;
+		global_cnt--;
+		global_cnt++;
+
+		sync_unlock(&key);
+	}
+}
+
+static int run_concurrency(int type, void *func)
+{
+	uint32_t start_t, end_t;
+
+	sync_init(type);
+	global_cnt = 0;
+	start_t = k_cycle_get_32();
+
+	tinfo[0].tid =
+	k_thread_create(&tthread[0], tstack[0], STACK_SIZE,
+			(k_thread_entry_t)func,
+			NULL, NULL, NULL,
+			K_PRIO_PREEMPT(1),
+			K_INHERIT_PERMS, K_NO_WAIT);
+
+	tinfo[1].tid =
+	k_thread_create(&tthread[1], tstack[1], STACK_SIZE,
+			(k_thread_entry_t)func,
+			NULL, NULL, NULL,
+			K_PRIO_PREEMPT(1),
+			K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_tid_t tid =
+	k_thread_create(&t2, t2_stack, T2_STACK_SIZE,
+			(k_thread_entry_t)func,
+			NULL, NULL, NULL,
+			K_PRIO_PREEMPT(1),
+			K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_join(tinfo[0].tid, K_FOREVER);
+	k_thread_join(tinfo[1].tid, K_FOREVER);
+	k_thread_join(tid, K_FOREVER);
+	cleanup_resources();
+
+	end_t =  k_cycle_get_32();
+
+	printk("type %d: cnt %d, spend %u ms\n", type, global_cnt,
+		k_cyc_to_ms_ceil32(end_t - start_t));
+
+	return global_cnt == (LOOP_COUNT * 3);
+}
+
+/**
+ * @brief Test if the concurrency of SMP works or not
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details Validate the global lock and unlock API of SMP are thread-safe.
+ * We make 3 thread to increase the global count in differenet cpu and
+ * they both do locking then unlocking for LOOP_COUNT times. It shall be no
+ * deadlock happened and total global count shall be 3 * LOOP COUNT.
+ *
+ * We show the 4 kinds of scenairo:
+ * - No any lock used
+ * - Use global irq lock
+ * - Use semaphore
+ * - Use mutex
+ */
+void test_inc_concurrency(void)
+{
+	/* increasing global var without lock */
+	zassert_false(run_concurrency(LOCK_NO, inc_global_cnt),
+			"total count %d is wrong", global_cnt);
+
+	/* increasing global var with irq lock */
+	zassert_true(run_concurrency(LOCK_IRQ, inc_global_cnt),
+			"total count %d is wrong(i)", global_cnt);
+
+	/* increasing global var with irq lock */
+	zassert_true(run_concurrency(LOCK_SEM, inc_global_cnt),
+			"total count %d is wrong(s)", global_cnt);
+
+	/* increasing global var with irq lock */
+	zassert_true(run_concurrency(LOCK_MUTEX, inc_global_cnt),
+			"total count %d is wrong(M)", global_cnt);
+}
+
 void test_main(void)
 {
 	/* Sleep a bit to guarantee that both CPUs enter an idle
@@ -736,7 +1046,10 @@ void test_main(void)
 			 ztest_unit_test(test_smp_ipi),
 			 ztest_unit_test(test_get_cpu),
 			 ztest_unit_test(test_fatal_on_smp),
-			 ztest_unit_test(test_workq_on_smp)
+			 ztest_unit_test(test_workq_on_smp),
+			 ztest_unit_test(test_smp_release_global_lock),
+			 ztest_unit_test(test_smp_release_global_lock_irq),
+			 ztest_unit_test(test_inc_concurrency)
 			 );
 	ztest_run_test_suite(smp);
 }

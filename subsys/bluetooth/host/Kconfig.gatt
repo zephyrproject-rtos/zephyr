@@ -42,18 +42,6 @@ config BT_EATT_MAX
 	help
 	  Number of Enhanced ATT bearers available.
 
-config BT_EATT_RX_MTU
-	int "Maximum supported Enhanced ATT MTU for incoming data"
-	default 70
-	range 70 519
-	depends on BT_EATT
-	help
-	  Maximum size incoming PDUs on EATT bearers, value shall include L2CAP
-	  headers and SDU length, maximum is limited to 512 bytes payload, which
-	  is the maximum size for a GATT attribute, plus 1 byte for ATT opcode.
-	  This option influences the stack buffer size and by that may also
-	  limit the outgoing MTU.
-
 config BT_EATT_SEC_LEVEL
 	int "Enhanced ATT bearer security level"
 	default 1

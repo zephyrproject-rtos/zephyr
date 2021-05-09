@@ -170,11 +170,37 @@ void npcx_miwu_irq_disable(const struct npcx_wui *wui)
 	NPCX_WKEN(base, wui->group) &= ~BIT(wui->bit);
 }
 
+void npcx_miwu_io_enable(const struct npcx_wui *wui)
+{
+	const uint32_t base = DRV_CONFIG(miwu_devs[wui->table])->base;
+
+	NPCX_WKINEN(base, wui->group) |= BIT(wui->bit);
+}
+
+void npcx_miwu_io_disable(const struct npcx_wui *wui)
+{
+	const uint32_t base = DRV_CONFIG(miwu_devs[wui->table])->base;
+
+	NPCX_WKINEN(base, wui->group) &= ~BIT(wui->bit);
+}
+
 bool npcx_miwu_irq_get_state(const struct npcx_wui *wui)
 {
 	const uint32_t base = DRV_CONFIG(miwu_devs[wui->table])->base;
 
 	return IS_BIT_SET(NPCX_WKEN(base, wui->group), wui->bit);
+}
+
+bool npcx_miwu_irq_get_and_clear_pending(const struct npcx_wui *wui)
+{
+	const uint32_t base = DRV_CONFIG(miwu_devs[wui->table])->base;
+	bool pending = IS_BIT_SET(NPCX_WKPND(base, wui->group), wui->bit);
+
+	if (pending) {
+		NPCX_WKPCL(base, wui->group) = BIT(wui->bit);
+	}
+
+	return pending;
 }
 
 int npcx_miwu_interrupt_configure(const struct npcx_wui *wui,
@@ -348,7 +374,7 @@ int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 									       \
 	DEVICE_DT_INST_DEFINE(inst,					       \
 			    NPCX_MIWU_INIT_FUNC(inst),                         \
-			    device_pm_control_nop,			       \
+			    NULL,					       \
 			    NULL, &miwu_config_##inst,                         \
 			    PRE_KERNEL_1,                                      \
 			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS, NULL);        \

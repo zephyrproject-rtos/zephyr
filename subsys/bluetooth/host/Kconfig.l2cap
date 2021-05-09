@@ -5,23 +5,10 @@
 
 menu "L2CAP Options"
 
-config BT_L2CAP_RX_MTU
-	int "Maximum supported L2CAP MTU for incoming data"
-	default 200 if BT_BREDR
-	default BT_EATT_RX_MTU if BT_EATT
-	default 65 if BT_SMP
-	default 23
-	range 70 1300 if BT_EATT
-	range 65 1300 if BT_SMP
-	range 23 1300
-	help
-	  Maximum size of each incoming L2CAP PDU.
-
 config BT_L2CAP_TX_BUF_COUNT
 	int "Number of L2CAP TX buffers"
 	default NET_BUF_TX_COUNT if NET_L2_BT
-	default BT_CTLR_TX_BUFFERS if BT_CTLR
-	default 3
+	default BT_BUF_ACL_TX_COUNT
 	range 2 255
 	help
 	  Number of buffers available for outgoing L2CAP packets.
@@ -42,6 +29,7 @@ config BT_L2CAP_TX_FRAG_COUNT
 config BT_L2CAP_TX_MTU
 	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
 	default 253 if BT_BREDR
+	default 69 if BT_MESH_PROXY
 	default 65 if BT_SMP
 	default 23
 	range 65 2000 if BT_SMP

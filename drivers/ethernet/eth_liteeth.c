@@ -255,7 +255,7 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx
 };
 
-NET_DEVICE_DT_INST_DEFINE(0, eth_initialize, device_pm_control_nop,
+NET_DEVICE_DT_INST_DEFINE(0, eth_initialize, NULL,
 		&eth_data, &eth_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
 		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 

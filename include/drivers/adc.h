@@ -14,6 +14,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_ADC_H_
 
 #include <device.h>
+#include <dt-bindings/adc/adc.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,20 +75,6 @@ enum adc_reference {
 	ADC_REF_EXTERNAL0, /**< External, input 0. */
 	ADC_REF_EXTERNAL1, /**< External, input 1. */
 };
-
-/** Acquisition time is expressed in microseconds. */
-#define ADC_ACQ_TIME_MICROSECONDS  (1u)
-/** Acquisition time is expressed in nanoseconds. */
-#define ADC_ACQ_TIME_NANOSECONDS   (2u)
-/** Acquisition time is expressed in ADC ticks. */
-#define ADC_ACQ_TIME_TICKS         (3u)
-/** Macro for composing the acquisition time value in given units. */
-#define ADC_ACQ_TIME(unit, value)  (((unit) << 14) | ((value) & BIT_MASK(14)))
-/** Value indicating that the default acquisition time should be used. */
-#define ADC_ACQ_TIME_DEFAULT       0
-
-#define ADC_ACQ_TIME_UNIT(time)    (((time) >> 14) & BIT_MASK(2))
-#define ADC_ACQ_TIME_VALUE(time)   ((time) & BIT_MASK(14))
 
 /**
  * @brief Structure for specifying the configuration of an ADC channel.

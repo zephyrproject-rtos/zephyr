@@ -52,7 +52,7 @@
 static void ticker_op_stop_adv_cb(uint32_t status, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
-					       void *params);
+					       void *param);
 
 void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		     struct node_rx_ftr *ftr, struct lll_conn *lll)
@@ -169,10 +169,14 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	win_offset = sys_le16_to_cpu(pdu_adv->connect_ind.win_offset);
 	conn_interval_us = lll->interval * CONN_INT_UNIT_US;
 
+	/* transmitWindowDelay to default calculated connection offset:
+	 * 1.25ms for a legacy PDU, 2.5ms for an LE Uncoded PHY and 3.75ms for
+	 * an LE Coded PHY.
+	 */
 	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (adv->lll.aux) {
-		if (adv->lll.phy_s & BIT(2)) {
+		if (adv->lll.phy_s & PHY_CODED) {
 			win_delay_us = WIN_DELAY_CODED;
 		} else {
 			win_delay_us = WIN_DELAY_UNCODED;
@@ -480,6 +484,17 @@ void ull_slave_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		/* Handle any LL Control Procedures */
 		ret = ull_conn_llcp(conn, ticks_at_expire, lazy);
 		if (ret) {
+			/* NOTE: Under BT_CTLR_LOW_LAT, ULL_LOW context is
+			 *       disabled inside radio events, hence, abort any
+			 *       active radio event which will re-enable
+			 *       ULL_LOW context that permits ticker job to run.
+			 */
+			if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT) &&
+			    (CONFIG_BT_CTLR_LLL_PRIO ==
+			     CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
+				ll_radio_state_abort();
+			}
+
 			DEBUG_RADIO_CLOSE_S(0);
 			return;
 		}
@@ -572,9 +587,9 @@ static void ticker_op_cb(uint32_t status, void *param)
 }
 
 static void ticker_update_latency_cancel_op_cb(uint32_t ticker_status,
-					       void *params)
+					       void *param)
 {
-	struct ll_conn *conn = params;
+	struct ll_conn *conn = param;
 
 	LL_ASSERT(ticker_status == TICKER_STATUS_SUCCESS);
 

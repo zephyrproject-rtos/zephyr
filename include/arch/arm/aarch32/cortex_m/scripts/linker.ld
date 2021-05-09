@@ -98,6 +98,8 @@ MEMORY
     DT_REGION_FROM_NODE_STATUS_OKAY(SRAM1, rw, DT_NODELABEL(sram1))
     DT_REGION_FROM_NODE_STATUS_OKAY(SRAM2, rw, DT_NODELABEL(sram2))
     /* STM32 alternate RAM configurations */
+    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM3, rw, DT_NODELABEL(sram3))
+    DT_REGION_FROM_NODE_STATUS_OKAY(SRAM4, rw, DT_NODELABEL(sram4))
     DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM1, rw, DT_NODELABEL(sdram1))
     DT_REGION_FROM_NODE_STATUS_OKAY(SDRAM2, rw, DT_NODELABEL(sdram2))
     DT_REGION_FROM_NODE_STATUS_OKAY(BACKUP_SRAM, rw, DT_NODELABEL(backup_sram))
@@ -252,16 +254,6 @@ SECTIONS
 	. = ALIGN(_region_min_align);
 	_image_ram_start = .;
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_IS_BOOTLOADER)
-    /* Must be first in ramable region */
-	SECTION_PROLOGUE(.st_stm32f0x_vt,(NOLOAD),)
-	{
-        _ram_vector_start = .;
-        . += _vector_end - _vector_start;
-        _ram_vector_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
-#endif
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
@@ -327,7 +319,7 @@ SECTIONS
     __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
-#include <linker/kobject.ld>
+#include <linker/kobject-data.ld>
 
 #include <linker/cplusplus-ram.ld>
 

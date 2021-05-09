@@ -1,0 +1,9 @@
+sample:
+  description: Usage of STM32 temperature sensor
+  name: stm32_temp_sensor
+tests:
+  sample.sensor.stm32_temp_sensor:
+    depends_on: adc
+    tags: sensors
+    build_only: true
+    platform_allow: nucleo_f401re stm32f103_mini

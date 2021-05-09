@@ -50,11 +50,14 @@ static void trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dh)));
+	const struct device *sensor = DEVICE_DT_GET_ANY(st_lis2dh);
 
 	if (sensor == NULL) {
-		printf("Could not get %s device\n",
-		       DT_LABEL(DT_INST(0, st_lis2dh)));
+		printf("No device found\n");
+		return;
+	}
+	if (!device_is_ready(sensor)) {
+		printf("Device %s is not ready\n", sensor->name);
 		return;
 	}
 

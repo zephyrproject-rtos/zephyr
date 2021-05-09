@@ -36,7 +36,7 @@ int bad_driver_init(const struct device *dev)
  * @cond INTERNAL_HIDDEN
  */
 DEVICE_DEFINE(bad_driver, BAD_DRIVER_NAME, &bad_driver_init,
-		device_pm_control_nop, NULL, NULL, POST_KERNEL,
+		NULL, NULL, NULL, POST_KERNEL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
 
 /**

@@ -397,6 +397,8 @@ static int bus_fault(z_arch_esf_t *esf, int from_hard_fault, bool *recoverable)
 #else
 	} else if (SCB->CFSR & SCB_CFSR_LSPERR_Msk) {
 		PR_FAULT_INFO("  Floating-point lazy state preservation error");
+	} else {
+		;
 	}
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
 
@@ -687,7 +689,11 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 		} else if (SAU->SFSR != 0) {
 			secure_fault(esf);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
+		} else {
+			;
 		}
+	} else {
+		;
 	}
 #else
 #error Unknown ARM architecture

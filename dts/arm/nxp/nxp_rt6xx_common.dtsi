@@ -40,6 +40,14 @@
 	};
 };
 
+&systick {
+	/*
+	 * RT600 relies by default on the OS Timer for system clock
+	 * implementation, so the SysTick node is not to be enabled.
+	 */
+	status = "disabled";
+};
+
 &peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -190,6 +198,14 @@
 		label = "DMA_1";
 		status = "disabled";
 		#dma-cells = <1>;
+	};
+
+	os_timer: timers@113000 {
+		compatible = "nxp,os-timer";
+		reg = <0x113000 0x1000>;
+		interrupts = <41 0>;
+		status = "disabled";
+		label = "OS_TIMER";
 	};
 };
 

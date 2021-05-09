@@ -1,0 +1,19 @@
+common:
+  filter: TOOLCHAIN_HAS_NEWLIB == 1
+  integration_platforms:
+    - mps2_an385
+tests:
+  cpp.libcxx:
+    platform_exclude: qemu_x86_coverage
+    toolchain_exclude: xcc
+    min_flash: 54
+    tags: cpp
+  cpp.libcxx.exceptions:
+    # FIXME: change when issue is resolved #32448
+    platform_allow: mps2_an385
+    toolchain_exclude: xcc
+    min_flash: 54
+    tags: cpp
+    timeout: 5
+    extra_configs:
+        - CONFIG_EXCEPTIONS=y

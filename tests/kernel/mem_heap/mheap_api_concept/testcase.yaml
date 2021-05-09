@@ -1,3 +1,10 @@
 tests:
   kernel.memory_heap:
     tags: kernel
+    extra_configs:
+      - CONFIG_IRQ_OFFLOAD=y
+  kernel.memory_heap_no_multithreading:
+    tags: kernel
+    platform_allow: qemu_cortex_m3 qemu_cortex_m0
+    extra_configs:
+      - CONFIG_MULTITHREADING=n

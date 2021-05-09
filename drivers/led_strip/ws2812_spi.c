@@ -223,7 +223,7 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 									\
 	DEVICE_DT_INST_DEFINE(idx,					\
 			    ws2812_spi_##idx##_init,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &ws2812_spi_##idx##_data,			\
 			    &ws2812_spi_##idx##_cfg,			\
 			    POST_KERNEL,				\

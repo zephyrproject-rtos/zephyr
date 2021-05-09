@@ -52,7 +52,9 @@ extern void test_create_new_essential_thread_from_user(void);
 extern void test_create_new_higher_prio_thread_from_user(void);
 extern void test_create_new_invalid_prio_thread_from_user(void);
 extern void test_mark_thread_exit_uninitialized(void);
+extern void test_krnl_obj_static_alloc_build_time(void);
 extern void test_mem_part_overlap(void);
+extern void test_mem_part_assert_add_overmax(void);
 extern void test_kobject_access_grant_error(void);
 extern void test_kobject_access_grant_error_user(void);
 extern void test_kobject_access_grant_error_user_null(void);
@@ -129,7 +131,7 @@ static inline void set_fault_valid(bool valid)
 
 
 
-#if defined(CONFIG_X86_64)
+#if defined(CONFIG_X86_64) || defined(CONFIG_ARM64)
 #define TEST_HEAP_SIZE	(2 << CONFIG_MAX_THREAD_BYTES) * 1024
 #define MAX_OBJ 512
 #else

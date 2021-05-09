@@ -25,10 +25,6 @@ _ASM_FILE_PROLOGUE
  */
 
 .macro z_arm64_enter_exc xreg0, xreg1
-
-	/* Switch to SP_EL0 */
-	msr	spsel, #0
-
 	/*
 	 * Two things can happen to the remaining registers:
 	 *
@@ -55,11 +51,15 @@ _ASM_FILE_PROLOGUE
 	mrs	\xreg1, elr_el1
 	stp	\xreg0, \xreg1, [sp, ___esf_t_spsr_elr_OFFSET]
 
-#ifdef CONFIG_USERSPACE
-	/* Clear usermode flag */
+	/* Clear usermode flag and increment exception depth */
 	mrs	\xreg0, tpidrro_el0
+	mov	\xreg1, #TPIDRROEL0_EXC_UNIT
 	bic	\xreg0, \xreg0, #TPIDRROEL0_IN_EL0
+	add	\xreg0, \xreg0, \xreg1
 	msr	tpidrro_el0, \xreg0
+
+#ifdef CONFIG_FPU_SHARING
+	bl	z_arm64_fpu_enter_exc
 #endif
 
 .endm
@@ -213,19 +213,25 @@ SECTION_FUNC(TEXT, z_arm64_serror)
 GTEXT(z_arm64_exit_exc)
 SECTION_FUNC(TEXT, z_arm64_exit_exc)
 
+#ifdef CONFIG_FPU_SHARING
+	bl	z_arm64_fpu_exit_exc
+
+ GTEXT(z_arm64_exit_exc_fpu_done)
+ z_arm64_exit_exc_fpu_done:
+#endif
+
 	ldp	x0, x1, [sp, ___esf_t_spsr_elr_OFFSET]
 	msr	spsr_el1, x0
 	msr	elr_el1, x1
 
-#ifdef CONFIG_USERSPACE
-	/* Restore the kernel/user mode flag */
+	/* Restore the kernel/user mode flag and decrement exception depth */
 	tst	x0, #SPSR_MODE_MASK	/* EL0 == 0 */
-	bne	1f
 	mrs	x0, tpidrro_el0
-	orr	x0, x0, #TPIDRROEL0_IN_EL0
+	mov	x1, #TPIDRROEL0_EXC_UNIT
+	orr	x2, x0, #TPIDRROEL0_IN_EL0
+	csel	x0, x2, x0, eq
+	sub	x0, x0, x1
 	msr	tpidrro_el0, x0
-1:
-#endif
 
 	ldp	x0, x1, [sp, ___esf_t_x0_x1_OFFSET]
 	ldp	x2, x3, [sp, ___esf_t_x2_x3_OFFSET]

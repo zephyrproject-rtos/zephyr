@@ -235,8 +235,10 @@ static void oob_data_request(struct bt_conn *conn,
 
 	bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 
+	switch (oob_info->type) {
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
-	if (oob_info->type == BT_CONN_OOB_LE_SC) {
+	case BT_CONN_OOB_LE_SC:
+	{
 		LOG_DBG("Set %s OOB SC data for %s, ",
 			oob_config_str(oob_info->lesc.oob_config),
 			log_strdup(addr));
@@ -272,17 +274,25 @@ static void oob_data_request(struct bt_conn *conn,
 			LOG_DBG("bt_le_oob_set_sc_data failed with: %d", err);
 		}
 
-		return;
+		break;
 	}
-#else /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
+#endif /* !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) */
 
-	LOG_DBG("Legacy OOB TK requested from remote %s", log_strdup(addr));
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
+	case BT_CONN_OOB_LE_LEGACY:
+		LOG_DBG("Legacy OOB TK requested from remote %s", log_strdup(addr));
 
-	err = bt_le_oob_set_legacy_tk(conn, oob_legacy_tk);
-	if (err < 0) {
-		LOG_ERR("Failed to set OOB Temp Key: %d", err);
+		err = bt_le_oob_set_legacy_tk(conn, oob_legacy_tk);
+		if (err < 0) {
+			LOG_ERR("Failed to set OOB TK: %d", err);
+		}
+
+		break;
+#endif /* !defined(CONFIG_BT_SMP_SC_PAIR_ONLY) */
+	default:
+		LOG_ERR("Unhandled OOB type %d", oob_info->type);
+		break;
 	}
-#endif
 }
 
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)

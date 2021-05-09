@@ -42,6 +42,8 @@ doc/doc.warnings
 .envrc
 .vscode
 hide-defaults-note
+venv
+.venv
 
 # Tag files
 GPATH

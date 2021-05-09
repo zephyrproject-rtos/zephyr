@@ -11,7 +11,7 @@
 #include <drivers/uart.h>
 #include <drivers/clock_control.h>
 #include <kernel.h>
-#include <power/power.h>
+#include <pm/device.h>
 #include <soc.h>
 #include "soc_miwu.h"
 
@@ -55,6 +55,27 @@ struct uart_npcx_data {
 	(struct uart_reg *)(DRV_CONFIG(dev)->uconf.base)
 
 /* UART local functions */
+static int uart_set_npcx_baud_rate(struct uart_reg *const inst, int baud_rate,
+				   int src_clk)
+{
+	/* Fix baud rate to 115200 so far */
+	if (baud_rate  == 115200) {
+		if (src_clk == 15000000) {
+			inst->UPSR = 0x38;
+			inst->UBAUD = 0x01;
+		} else if (src_clk == 20000000) {
+			inst->UPSR = 0x08;
+			inst->UBAUD = 0x0a;
+		} else {
+			return -EINVAL;
+		}
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static int uart_npcx_tx_fifo_ready(const struct device *dev)
 {
@@ -352,14 +373,14 @@ static int uart_npcx_init(const struct device *dev)
 		LOG_ERR("Get UART clock rate error %d", ret);
 		return ret;
 	}
-	__ASSERT(uart_rate == 15000000, "Unsupported apb2 clock for UART!");
 
-	/* Fix baud rate to 115200 */
-	if (data->baud_rate  == 115200) {
-		inst->UPSR = 0x38;
-		inst->UBAUD = 0x01;
-	} else
-		return -EINVAL;
+	/* Configure baud rate */
+	ret = uart_set_npcx_baud_rate(inst, data->baud_rate, uart_rate);
+	if (ret < 0) {
+		LOG_ERR("Set baud rate %d with unsupported apb clock %d failed",
+			data->baud_rate, uart_rate);
+		return ret;
+	}
 
 	/*
 	 * 8-N-1, FIFO enabled.  Must be done after setting
@@ -432,8 +453,8 @@ static inline int uart_npcx_set_power_state(const struct device *dev,
 	struct uart_npcx_data *const data = DRV_DATA(dev);
 
 	/* If next device power state is LOW or SUSPEND power state */
-	if (next_state == DEVICE_PM_LOW_POWER_STATE ||
-	    next_state == DEVICE_PM_SUSPEND_STATE) {
+	if (next_state == PM_DEVICE_STATE_LOW_POWER ||
+	    next_state == PM_DEVICE_STATE_SUSPEND) {
 		/*
 		 * If uart device is busy with transmitting, the driver will
 		 * stay in while loop and wait for the transaction is completed.
@@ -449,23 +470,23 @@ static inline int uart_npcx_set_power_state(const struct device *dev,
 
 /* Implements the device power management control functionality */
 static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
-				 void *context, device_pm_cb cb, void *arg)
+				 uint32_t *state, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 
 	switch (ctrl_command) {
-	case DEVICE_PM_SET_POWER_STATE:
-		ret = uart_npcx_set_power_state(dev, *((uint32_t *)context));
+	case PM_DEVICE_STATE_SET:
+		ret = uart_npcx_set_power_state(dev, *state);
 		break;
-	case DEVICE_PM_GET_POWER_STATE:
-		ret = uart_npcx_get_power_state(dev, (uint32_t *)context);
+	case PM_DEVICE_STATE_GET:
+		ret = uart_npcx_get_power_state(dev, state);
 		break;
 	default:
 		ret = -EINVAL;
 	}
 
 	if (cb != NULL) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 	return ret;
 }

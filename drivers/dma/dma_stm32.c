@@ -132,17 +132,23 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 
 #ifdef CONFIG_DMA_STM32_SHARED_IRQS
 
+#define HANDLE_IRQS(index)						       \
+	static const struct device *dev_##index = DEVICE_DT_INST_GET(index);   \
+	const struct dma_stm32_config *cfg_##index = dev_##index->config;      \
+	DMA_TypeDef *dma_##index = (DMA_TypeDef *)(cfg_##index->base);	       \
+									       \
+	for (id = 0; id < cfg_##index->max_streams; ++id) {		       \
+		if (stm32_dma_is_irq_active(dma_##index, id)) {		       \
+			dma_stm32_irq_handler(dev_##index, id);		       \
+		}							       \
+	}
+
 static void dma_stm32_shared_irq_handler(const struct device *dev)
 {
-	const struct dma_stm32_config *cfg = dev->config;
-	DMA_TypeDef *dma = (DMA_TypeDef *)(cfg->base);
+	ARG_UNUSED(dev);
 	uint32_t id = 0;
 
-	for (id = 0; id < cfg->max_streams; ++id) {
-		if (stm32_dma_is_irq_active(dma, id)) {
-			dma_stm32_irq_handler(dev, id);
-		}
-	}
+	DT_INST_FOREACH_STATUS_OKAY(HANDLE_IRQS)
 }
 
 #endif /* CONFIG_DMA_STM32_SHARED_IRQS */
@@ -668,7 +674,7 @@ static struct dma_stm32_data dma_stm32_data_##index = {			\
 									\
 DEVICE_DT_INST_DEFINE(index,						\
 		    &dma_stm32_init,					\
-		    device_pm_control_nop,				\
+		    NULL,						\
 		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &dma_funcs)
@@ -776,13 +782,11 @@ static void dma_stm32_config_irq_1(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+#ifndef CONFIG_DMA_STM32_SHARED_IRQS
 	DMA_STM32_IRQ_CONNECT(1, 0);
 	DMA_STM32_IRQ_CONNECT(1, 1);
-#ifndef CONFIG_DMA_STM32_SHARED_IRQS
 	DMA_STM32_IRQ_CONNECT(1, 2);
-#endif /* CONFIG_DMA_STM32_SHARED_IRQS */
 	DMA_STM32_IRQ_CONNECT(1, 3);
-#ifndef CONFIG_DMA_STM32_SHARED_IRQS
 	DMA_STM32_IRQ_CONNECT(1, 4);
 #if DT_INST_IRQ_HAS_IDX(1, 5)
 	DMA_STM32_IRQ_CONNECT(1, 5);
@@ -794,7 +798,10 @@ static void dma_stm32_config_irq_1(const struct device *dev)
 #endif /* DT_INST_IRQ_HAS_IDX(1, 6) */
 #endif /* DT_INST_IRQ_HAS_IDX(1, 7) */
 #endif /* CONFIG_DMA_STM32_SHARED_IRQS */
-/* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
+/*
+ * Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series.
+ * STM32F0 and STM32G0: if dma2 exits, the channel interrupts overlap with dma1
+ */
 }
 
 DMA_STM32_INIT_DEV(1);

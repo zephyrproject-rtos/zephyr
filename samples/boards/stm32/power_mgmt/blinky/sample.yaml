@@ -1,0 +1,9 @@
+sample:
+  name: STM32 GPIO Power Management
+tests:
+  sample.boards.stm32.power_mgmt.blinky:
+    tags: LED power
+    filter: dt_compat_enabled("zephyr,power-state") and
+            dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
+            dt_compat_enabled("st,stm32-lptim")
+    depends_on: gpio

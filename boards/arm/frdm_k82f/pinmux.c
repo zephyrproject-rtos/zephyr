@@ -42,7 +42,7 @@ static int frdm_k82f_pinmux_init(const struct device *dev)
 	/* Red, green, blue LEDs as PWM channels */
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt4));
+	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c3), okay) && CONFIG_I2C

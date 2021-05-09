@@ -602,7 +602,7 @@ do {									\
 		ADC_CONTEXT_INIT_LOCK(adc_sam_data_##n, ctx),		\
 		ADC_CONTEXT_INIT_SYNC(adc_sam_data_##n, ctx),		\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, adc_sam0_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(n, adc_sam0_init, NULL,			\
 			    &adc_sam_data_##n,				\
 			    &adc_sam_cfg_##n, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

@@ -126,60 +126,6 @@ static ALWAYS_INLINE
 	return ret;
 }
 
-static ALWAYS_INLINE uint8_t sys_read8(mem_addr_t addr)
-{
-	uint8_t value;
-
-	compiler_barrier();
-	value = *(volatile uint8_t *)addr;
-	compiler_barrier();
-
-	return value;
-}
-
-static ALWAYS_INLINE void sys_write8(uint8_t data, mem_addr_t addr)
-{
-	compiler_barrier();
-	*(volatile uint8_t *)addr = data;
-	compiler_barrier();
-}
-
-static ALWAYS_INLINE uint16_t sys_read16(mem_addr_t addr)
-{
-	uint16_t value;
-
-	compiler_barrier();
-	value = *(volatile uint16_t *)addr;
-	compiler_barrier();
-
-	return value;
-}
-
-static ALWAYS_INLINE void sys_write16(uint16_t data, mem_addr_t addr)
-{
-	compiler_barrier();
-	*(volatile uint16_t *)addr = data;
-	compiler_barrier();
-}
-
-static ALWAYS_INLINE uint32_t sys_read32(mem_addr_t addr)
-{
-	uint32_t value;
-
-	compiler_barrier();
-	value = *(volatile uint32_t *)addr;
-	compiler_barrier();
-
-	return value;
-}
-
-static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
-{
-	compiler_barrier();
-	*(volatile uint32_t *)addr = data;
-	compiler_barrier();
-}
-
 #ifdef __cplusplus
 }
 #endif

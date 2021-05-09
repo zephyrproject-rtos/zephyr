@@ -764,7 +764,7 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),	\
 	};								\
-	DEVICE_DT_INST_DEFINE(n, &spi_sam0_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(n, &spi_sam0_init, NULL,			\
 			    &spi_sam0_dev_data_##n,			\
 			    &spi_sam0_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY,			\

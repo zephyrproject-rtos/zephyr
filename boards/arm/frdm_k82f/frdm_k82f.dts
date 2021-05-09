@@ -221,6 +221,14 @@
 	status = "okay";
 };
 
+&edma0 {
+	status = "okay";
+};
+
+&adc0 {
+	status = "okay";
+};
+
 &pit0 {
 	status = "okay";
 };

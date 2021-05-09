@@ -1,0 +1,25 @@
+tests:
+  kernel.no-mt.cpu_exception:
+    platform_allow: qemu_cortex_m3
+    tags: kernel ignore_faults
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=0
+  kernel.no-mt.oops:
+    platform_allow: qemu_cortex_m3
+    tags: kernel ignore_faults
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=1
+  kernel.no-mt.panic:
+    platform_allow: qemu_cortex_m3
+    tags: kernel ignore_faults
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=2
+  kernel.no-mt.zephyr_assert:
+    platform_allow: qemu_cortex_m3
+    tags: kernel ignore_faults
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=3
+  kernel.no-mt.arbitrary_reason:
+    platform_allow: qemu_cortex_m3
+    tags: kernel ignore_faults
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=4
+  kernel.no-mt.arbitrary_reason_negative:
+    platform_allow: qemu_cortex_m3
+    tags: kernel ignore_faults
+    extra_args: EXTRA_CPPFLAGS=-DVIA_TWISTER=5

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Brian Bradley <brian.bradley.p@gmail.com>
+ * Copyright (c) 2021 Kalyan Sriram <coder.kalyan@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,4 +115,26 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in1_pa1>;
 	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <25>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <4>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(96)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
 };

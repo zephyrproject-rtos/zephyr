@@ -144,9 +144,9 @@ int net_send_data(struct net_pkt *pkt);
 #define NET_TC_COUNT NET_TC_RX_COUNT
 #endif
 #else /* CONFIG_NET_TC_TX_COUNT && CONFIG_NET_TC_RX_COUNT */
-#define NET_TC_TX_COUNT 1
-#define NET_TC_RX_COUNT 1
-#define NET_TC_COUNT 1
+#define NET_TC_TX_COUNT 0
+#define NET_TC_RX_COUNT 0
+#define NET_TC_COUNT 0
 #endif /* CONFIG_NET_TC_TX_COUNT && CONFIG_NET_TC_RX_COUNT */
 
 /* @endcond */

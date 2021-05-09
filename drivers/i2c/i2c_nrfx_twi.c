@@ -8,7 +8,6 @@
 #include <drivers/i2c.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twi.h>
-#include <soc.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
@@ -115,23 +114,32 @@ static int i2c_nrfx_twi_transfer(const struct device *dev,
 				 I2C_TRANSFER_TIMEOUT_MSEC);
 		if (ret != 0) {
 			/* Whatever the frequency, completion_sync should have
-			 * been give by the event handler.
+			 * been given by the event handler.
 			 *
-			 * If it hasn't it's probably due to an hardware issue
+			 * If it hasn't, it's probably due to an hardware issue
 			 * on the I2C line, for example a short between SDA and
 			 * GND.
+			 * This is issue has also been when trying to use the
+			 * I2C bus during MCU internal flash erase.
 			 *
-			 * Note to fully recover from this issue one should
-			 * reinit nrfx twi.
+			 * In many situation, a retry is sufficient.
+			 * However, some time the I2C device get stuck and need
+			 * help to recover.
+			 * Therefore we always call nrfx_twi_bus_recover() to
+			 * make sure everything has been done to restore the
+			 * bus from this error.
 			 */
 			LOG_ERR("Error on I2C line occurred for message %d", i);
+			nrfx_twi_disable(&get_dev_config(dev)->twi);
+			nrfx_twi_bus_recover(get_dev_config(dev)->config.scl,
+					     get_dev_config(dev)->config.sda);
 			ret = -EIO;
 			break;
 		}
 
 		res = get_dev_data(dev)->res;
 		if (res != NRFX_SUCCESS) {
-			LOG_ERR("Error %d occurred for message %d", res, i);
+			LOG_ERR("Error 0x%08X occurred for message %d", res, i);
 			ret = -EIO;
 			break;
 		}
@@ -207,7 +215,7 @@ static int init_twi(const struct device *dev)
 		return -EBUSY;
 	}
 #ifdef CONFIG_PM_DEVICE
-	get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;
+	get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	return 0;
@@ -216,17 +224,17 @@ static int init_twi(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int twi_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				uint32_t *state, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 	uint32_t pm_current_state = get_dev_data(dev)->pm_state;
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		uint32_t new_state = *((const uint32_t *)context);
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
+		uint32_t new_state = *state;
 
 		if (new_state != pm_current_state) {
 			switch (new_state) {
-			case DEVICE_PM_ACTIVE_STATE:
+			case PM_DEVICE_STATE_ACTIVE:
 				init_twi(dev);
 				if (get_dev_data(dev)->dev_config) {
 					i2c_nrfx_twi_configure(
@@ -235,10 +243,10 @@ static int twi_nrfx_pm_control(const struct device *dev,
 				}
 				break;
 
-			case DEVICE_PM_LOW_POWER_STATE:
-			case DEVICE_PM_SUSPEND_STATE:
-			case DEVICE_PM_OFF_STATE:
-				if (pm_current_state == DEVICE_PM_ACTIVE_STATE) {
+			case PM_DEVICE_STATE_LOW_POWER:
+			case PM_DEVICE_STATE_SUSPEND:
+			case PM_DEVICE_STATE_OFF:
+				if (pm_current_state == PM_DEVICE_STATE_ACTIVE) {
 					nrfx_twi_uninit(&get_dev_config(dev)->twi);
 				}
 				break;
@@ -251,12 +259,12 @@ static int twi_nrfx_pm_control(const struct device *dev,
 			}
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
+		*state = get_dev_data(dev)->pm_state;
 	}
 
 	if (cb) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 
 	return ret;
@@ -277,14 +285,6 @@ static int twi_nrfx_pm_control(const struct device *dev,
 	BUILD_ASSERT(I2C_FREQUENCY(idx)	!=				       \
 		     I2C_NRFX_TWI_INVALID_FREQUENCY,			       \
 		     "Wrong I2C " #idx " frequency setting in dts");	       \
-	NRF_DT_PSEL_CHECK_EXACTLY_ONE(I2C(idx),				       \
-				      sda_pin, "sda-pin",		       \
-				      sda_gpios, "sda-gpios");		       \
-	NRF_DT_PSEL_CHECK_EXACTLY_ONE(I2C(idx),				       \
-				      scl_pin, "scl-pin",		       \
-				      scl_gpios, "scl-gpios");		       \
-	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(I2C(idx), sda_gpios, "sda-gpios");       \
-	NRF_DT_CHECK_GPIO_CTLR_IS_SOC(I2C(idx), scl_gpios, "scl-gpios");       \
 	static int twi_##idx##_init(const struct device *dev)		\
 	{								       \
 		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
@@ -300,8 +300,8 @@ static int twi_nrfx_pm_control(const struct device *dev,
 	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {	       \
 		.twi = NRFX_TWI_INSTANCE(idx),				       \
 		.config = {						       \
-			.scl = NRF_DT_PSEL(I2C(idx), scl_pin, scl_gpios, 0),   \
-			.sda = NRF_DT_PSEL(I2C(idx), sda_pin, sda_gpios, 0),   \
+			.scl       = DT_PROP(I2C(idx), scl_pin),	       \
+			.sda       = DT_PROP(I2C(idx), sda_pin),	       \
 			.frequency = I2C_FREQUENCY(idx),		       \
 		}							       \
 	};								       \

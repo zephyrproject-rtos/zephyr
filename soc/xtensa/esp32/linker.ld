@@ -24,53 +24,6 @@
 #define IRAM_REGION iram0_0_seg :iram0_0_phdr
 #define FLASH_CODE_REGION irom0_0_seg :irom0_0_phdr
 
-PROVIDE ( __stack = 0x3ffe3f20 );
-
-/* Global symbols required for espressif hal build */
-PROVIDE ( ets_printf = 0x40007d54 );
-PROVIDE ( intr_matrix_set = 0x4000681c );
-PROVIDE ( g_ticks_per_us_app = 0x3ffe40f0 );
-PROVIDE ( g_ticks_per_us_pro = 0x3ffe01e0 );
-PROVIDE ( ets_delay_us = 0x40008534 );
-PROVIDE ( gpio_output_set = 0x40009b24 );
-PROVIDE ( gpio_output_set_high = 0x40009b5c );
-PROVIDE ( roundup2 = 0x4000ab7c );
-PROVIDE ( crc32_le = 0x4005cfec );
-PROVIDE ( Cache_Read_Disable_rom = 0x40009ab8 );
-PROVIDE ( Cache_Read_Enable_rom = 0x40009a84 );
-PROVIDE ( Cache_Read_Init_rom = 0x40009950 );
-PROVIDE ( phy_get_romfuncs = 0x40004100 );
-PROVIDE ( esp_rom_spiflash_read_user_cmd = 0x400621b0 );
-PROVIDE ( g_rom_spiflash_dummy_len_plus = 0x3ffae290 );
-PROVIDE ( g_rom_flashchip = 0x3ffae270 );
-PROVIDE ( SPI0 = 0x3ff43000 );
-PROVIDE ( SPI1 = 0x3ff42fff );
-PROVIDE ( SPI2 = 0x3ff64fff );
-PROVIDE ( SPI3 = 0x3ff65fff );
-
-PROVIDE ( esp32_rom_uart_tx_one_char = 0x40009200 );
-PROVIDE ( esp32_rom_uart_rx_one_char = 0x400092d0 );
-PROVIDE ( esp32_rom_uart_attach = 0x40008fd0 );
-PROVIDE ( esp32_rom_uart_tx_wait_idle = 0x40009278 );
-PROVIDE ( esp32_rom_intr_matrix_set = intr_matrix_set );
-PROVIDE ( esp32_rom_gpio_matrix_in = 0x40009edc );
-PROVIDE ( esp32_rom_gpio_matrix_out = 0x40009f0c );
-PROVIDE ( esp32_rom_Cache_Flush = 0x40009a14 );
-PROVIDE ( esp32_rom_Cache_Read_Enable = 0x40009a84 );
-PROVIDE ( esp32_rom_ets_set_appcpu_boot_addr = 0x4000689c );
-PROVIDE ( esp32_rom_i2c_readReg = 0x40004148 );
-PROVIDE ( esp32_rom_i2c_writeReg = 0x400041a4 );
-PROVIDE ( esp32_rom_ets_printf = ets_printf );
-PROVIDE ( esp32_rom_g_ticks_per_us_app = g_ticks_per_us_app );
-PROVIDE ( esp32_rom_g_ticks_per_us_pro = g_ticks_per_us_app );
-PROVIDE ( esp32_rom_ets_delay_us = ets_delay_us );
-PROVIDE ( TIMERG0 = 0x3ff5F000 );
-PROVIDE ( TIMERG1 = 0x3ff60000 );
-
-/* __udivdi3 is exported using assignment, which declares strong symbols */
-__udivdi3 = 0x4000cff8;
-__umoddi3 = 0x4000d280;
-
 MEMORY
 {
   iram0_0_seg(RX): org = 0x40080000, len = 0x20000
@@ -86,13 +39,15 @@ MEMORY
    *
    * FIXME:
    *  - Utilize available memory regions to full capacity
-   *  - Reserve memory region for BT controller library from ROM
    */
-  dram0_0_seg(RW): org = 0x3FFB0000, len = 0x30000
+  dram0_0_seg(RW): org = 0x3FFB0000 + CONFIG_ESP32_BT_RESERVE_DRAM, len = 0x2c200 - CONFIG_ESP32_BT_RESERVE_DRAM
   dram0_1_seg(RW): org = 0x3FFE4350, len = 0x1BCB0
   drom0_0_seg(R): org = 0x3F400020, len = 0x400000-0x20
   rtc_iram_seg(RWX): org = 0x400C0000, len = 0x2000
   rtc_slow_seg(RW): org = 0x50000000, len = 0x1000
+#if defined(CONFIG_ESP_SPIRAM)
+  ext_ram_seg(RW): org = 0x3F800000, len = CONFIG_ESP_SPIRAM_SIZE
+#endif
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
 #endif
@@ -253,6 +208,12 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
+
+    _btdm_data_start = ABSOLUTE(.);
+    *libbtdm_app.a:(.data .data.*)
+    . = ALIGN (4);
+    _btdm_data_end = ABSOLUTE(.);
+
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -292,6 +253,15 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
+#if defined(CONFIG_ESP_SPIRAM)
+  .ext_ram.bss (NOLOAD):
+  {
+    _ext_ram_data_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    _ext_ram_data_end = ABSOLUTE(.) + CONFIG_ESP_SPIRAM_SIZE;
+  } > ext_ram_seg
+#endif
+
  SECTION_PROLOGUE(_RODATA_SECTION_NAME,,ALIGN(20))
   {
     _rodata_start = ABSOLUTE(.);
@@ -306,6 +276,26 @@ _net_buf_pool_list = _esp_net_buf_pool_list;
     Z_LINK_ITERABLE(settings_handler_static);
     . = ALIGN(4);
 #endif
+
+#if defined(CONFIG_BT_BREDR)
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(bt_l2cap_br_fixed_chan);
+    . = ALIGN(4);
+#endif
+
+#if defined(CONFIG_BT_MESH)
+    Z_LINK_ITERABLE(bt_mesh_subnet_cb);
+    Z_LINK_ITERABLE(bt_mesh_app_key_cb);
+    Z_LINK_ITERABLE(bt_mesh_hb_cb);
+#endif
+
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(bt_gatt_service_static);
+    . = ALIGN(4);
+
+    . = ALIGN(4);
+    Z_LINK_ITERABLE(bt_l2cap_fixed_chan);
+    . = ALIGN(4);
 
     . = ALIGN(4);
     Z_LINK_ITERABLE(shell);
@@ -398,17 +388,36 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     *libzephyr.a:log_backend_uart.*(.literal .text .literal.* .text.*)
     *liblib__libc__minimal.a:string.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
     *libnet80211.a:( .wifi0iram  .wifi0iram.*)
     *libpp.a:( .wifi0iram  .wifi0iram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
     *libnet80211.a:( .wifirxiram  .wifirxiram.*)
     *libpp.a:( .wifirxiram  .wifirxiram.*)
+#endif
+
     _iram_text_end = ABSOLUTE(.);
+    . = ALIGN(4);
+    _iram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(IRAM_REGION)
 
   .flash.text :
   {
     _stext = .;
     _text_start = ABSOLUTE(.);
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libnet80211.a:( .wifi0iram  .wifi0iram.*)
+    *libpp.a:( .wifi0iram  .wifi0iram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:( .wifirxiram  .wifirxiram.*)
+    *libpp.a:( .wifirxiram  .wifirxiram.*)
+#endif
 
     *(.literal .text .literal.* .text.*)
     _text_end = ABSOLUTE(.);
@@ -426,6 +435,12 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
   {
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.);
+
+    _btdm_bss_start = ABSOLUTE(.);
+    *libbtdm_app.a:(.bss .bss.* COMMON)
+    . = ALIGN (4);
+    _btdm_bss_end = ABSOLUTE(.);
+
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
@@ -444,13 +459,15 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
     _bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
+  ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+          "DRAM segment data does not fit.")
+
   SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD),)
   {
     . = ALIGN (8);
     *(.noinit)
     *(".noinit.*")
     . = ALIGN (8);
-    _heap_start = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION_1)
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -465,3 +482,6 @@ __shell_root_cmds_end = __esp_shell_root_cmds_end;
   }
 
 }
+
+ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+          "IRAM0 segment data does not fit.")

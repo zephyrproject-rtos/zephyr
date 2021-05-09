@@ -8,7 +8,7 @@
 #include <logging/log_backend_std.h>
 #include <logging/log_output.h>
 #include <openthread/platform/logging.h>
-#include <openthread/platform/uart.h>
+#include <utils/uart.h>
 #include <platform-zephyr.h>
 
 #ifndef CONFIG_LOG_BACKEND_SPINEL_BUFFER_SIZE

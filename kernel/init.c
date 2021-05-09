@@ -37,11 +37,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 
-/* boot time measurement items */
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-uint32_t __noinit z_timestamp_main;  /* timestamp when main task starts */
-uint32_t __noinit z_timestamp_idle;  /* timestamp when CPU goes idle */
-#endif
+/* the only struct z_kernel instance */
+struct z_kernel _kernel;
 
 /* init/main and idle threads */
 K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
@@ -172,10 +169,6 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_SMP
 	z_smp_init();
 	z_sys_init_run_level(_SYS_INIT_LEVEL_SMP);
-#endif
-
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	z_timestamp_main = k_cycle_get_32();
 #endif
 
 	extern void main(void);
@@ -382,9 +375,6 @@ FUNC_NORETURN void z_cstart(void)
 	struct k_thread dummy_thread;
 
 	z_dummy_thread_init(&dummy_thread);
-#endif
-#if defined(CONFIG_MMU) && defined(CONFIG_USERSPACE)
-	z_kernel_map_fixup();
 #endif
 	/* do any necessary initialization of static devices */
 	z_device_state_init();

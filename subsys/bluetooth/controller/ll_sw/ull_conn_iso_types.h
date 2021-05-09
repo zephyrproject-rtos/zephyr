@@ -36,6 +36,8 @@ struct ll_conn_iso_group {
 				 * (FT_S_To_M) × ISO_Interval +
 				 * SDU_Interval_S_To_M
 				 */
+	uint32_t c_sdu_interval;
+	uint32_t p_sdu_interval;
 	uint16_t iso_interval;
 	uint8_t  cig_id;
 

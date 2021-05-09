@@ -25,9 +25,26 @@ OUTPUT_ARCH(xtensa)
 PROVIDE(__memctl_default = 0x00000000);
 PROVIDE(_MemErrorHandler = 0x00000000);
 
-#define RAMABLE_REGION ram :ram_phdr
-#define ROMABLE_REGION ram :ram_phdr
 #define LP_SRAM_REGION lpram
+
+/* DSP RAM regions (all of them) are mapped twice on the DSP: once in
+ * a 512MB region from 0x80000000-0x9fffffff and again from
+ * 0xa0000000-0xbfffffff.  The first mapping is set up to bypass the
+ * L1 cache, so it must be used when multiprocessor coherence is
+ * desired, where the latter mapping is best used for processor-local
+ * data (e.g. stacks) or shared data that is managed with explicit
+ * cache flush/invalidate operations.
+ *
+ * These macros will set up a segment start address correctly,
+ * including alignment to a cache line.  Be sure to also emit the
+ * section to ">ram :ram_phdr" or ">ucram :ucram_phdr" as
+ * appropriate. (Forgetting the correct PHDR will actually work, as
+ * the output tooling ignores it, but it will cause the linker to emit
+ * 512MB of unused data into the output file!)
+ *
+ */
+#define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
+#define SEGSTART_UNCACHED (ALIGN(64) & ~0x20000000)
 
 MEMORY
 {
@@ -97,6 +114,9 @@ MEMORY
   ram :
 	org = RAM_BASE,
 	len = RAM_SIZE
+  ucram :
+	org = RAM_BASE - 0x20000000,
+	len = RAM_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
 	org = IDT_BASE,
@@ -141,7 +161,7 @@ PHDRS
   vector_double_lit_phdr PT_LOAD;
   vector_double_text_phdr PT_LOAD;
   ram_phdr PT_LOAD;
-
+  ucram_phdr PT_LOAD;
   static_uuid_entries_phdr PT_NOTE;
   static_log_entries_phdr PT_NOTE;
   metadata_entries_phdr PT_NOTE;
@@ -186,16 +206,7 @@ _memmap_cacheattr_bp_allvalid = 0x22222222;
  * as cacheattr_set macro sets them both to the same set of
  * attributes.
  */
-#ifndef CONFIG_SMP
 _memmap_cacheattr_intel_cavs18_adsp = 0xFF42FFF2;
-#else
-/*
- * FIXME: Make 0xA0000000 - 0xBFFFFFFF to bypass cache under SMP
- * since there is no data cache manipulation for spinlock, kernel
- * object, scheduler, etc...
- */
-_memmap_cacheattr_intel_cavs18_adsp = 0xFF22FFF2;
-#endif
 
 PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_cavs18_adsp);
 
@@ -392,6 +403,7 @@ SECTIONS
     _bss_table_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
   } >ram :ram_phdr
+
   .module_init : ALIGN(4)
   {
     _module_init_start = ABSOLUTE(.);
@@ -399,6 +411,8 @@ SECTIONS
     _module_init_end = ABSOLUTE(.);
   } >ram :ram_phdr
 
+#define RAMABLE_REGION ram :ram_phdr
+#define ROMABLE_REGION ram :ram_phdr
 #include <linker/common-rom.ld>
 
   .fw_ready : ALIGN(4)
@@ -407,13 +421,13 @@ SECTIONS
     KEEP (*(.fw_ready_metadata))
   } >ram :ram_phdr
 
-  .noinit : ALIGN(4)
+  .noinit SEGSTART_UNCACHED : ALIGN(4)
   {
     *(.noinit)
     *(.noinit.*)
-  } >ram :ram_phdr
+  } >ucram :ucram_phdr
 
-  .data : ALIGN(4)
+  .data SEGSTART_UNCACHED : ALIGN(4)
   {
     _data_start = ABSOLUTE(.);
     *(.data)
@@ -432,8 +446,9 @@ SECTIONS
     *(.gna_model)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4096);
-  } >ram :ram_phdr
-  .lit4 : ALIGN(4)
+  } >ucram :ucram_phdr
+
+  .lit4 SEGSTART_CACHED : ALIGN(4)
   {
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
@@ -441,11 +456,33 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
   } >ram :ram_phdr
+
+/* These values need to change in our scheme, where the common-ram
+ * sections need to be linked in safe/uncached memory but common-rom
+ * wants to use the cache
+ */
+
+  . = SEGSTART_UNCACHED;
+
+#undef RAMABLE_REGION
+#undef ROMABLE_REGION
+#define RAMABLE_REGION ucram :ucram_phdr
+#define ROMABLE_REGION ucram :ucram_phdr
+
 #include <linker/common-ram.ld>
 
-  .bss (NOLOAD) : ALIGN(4096)
+  /* This section is cached.  By default it contains only declared
+   * thread stacks, but applications can put symbols here too.
+   */
+  .cached SEGSTART_CACHED :
   {
-    . = ALIGN(4096);
+    *(.cached .cached.*)
+  } >ram :ram_phdr
+
+  . = ALIGN(4096);
+
+  .bss SEGSTART_UNCACHED (NOLOAD) :
+  {
     _bss_start = ABSOLUTE(.);
     *(.dynsbss)
     *(.sbss)
@@ -462,12 +499,18 @@ SECTIONS
     *(COMMON)
     . = ALIGN(8);
     _bss_end = ABSOLUTE(.);
-  } >ram :ram_phdr
+  } >ucram :ucram_phdr
 
-  /* stack */
+  . = SEGSTART_UNCACHED;
   _end = ALIGN(8);
   PROVIDE(end = ALIGN(8));
+
+  /* Re-adjust to the upper mapping for the final symbols below */
+  . = SEGSTART_CACHED;
   __stack = L2_SRAM_BASE + L2_SRAM_SIZE;
+
+  . = SEGSTART_UNCACHED;
+
   /* dma buffers */
   .lpbuf (NOLOAD): ALIGN(4)
   {
@@ -475,7 +518,11 @@ SECTIONS
     *(.dma_buffers)
     _dma_buf_end = ABSOLUTE(.);
   } >LP_SRAM_REGION
-  _heap_sentry = L2_SRAM_BASE + L2_SRAM_SIZE;
+
+  . = L2_SRAM_BASE + L2_SRAM_SIZE;
+  . = SEGSTART_UNCACHED;
+  _heap_sentry = .;
+
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }
   .line 0 : { *(.line) }

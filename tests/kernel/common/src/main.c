@@ -33,6 +33,7 @@ extern void test_sys_put_le48(void);
 extern void test_sys_get_le64(void);
 extern void test_sys_put_le64(void);
 extern void test_atomic(void);
+extern void test_threads_access_atomic(void);
 extern void test_errno(void);
 extern void test_printk(void);
 extern void test_timeout_order(void);
@@ -43,6 +44,11 @@ extern void test_multilib(void);
 extern void test_thread_context(void);
 extern void test_bootdelay(void);
 extern void test_irq_offload(void);
+extern void test_bitarray_declare(void);
+extern void test_bitarray_set_clear(void);
+extern void test_bitarray_alloc_free(void);
+extern void test_bitarray_region_set_clear(void);
+extern void test_nop(void);
 
 /**
  * @defgroup kernel_common_tests Common Tests
@@ -140,7 +146,12 @@ void test_main(void)
 			 ztest_unit_test(test_sys_get_le64),
 			 ztest_unit_test(test_sys_put_le64),
 			 ztest_user_unit_test(test_atomic),
+			 ztest_unit_test(test_threads_access_atomic),
 			 ztest_unit_test(test_bitfield),
+			 ztest_unit_test(test_bitarray_declare),
+			 ztest_unit_test(test_bitarray_set_clear),
+			 ztest_unit_test(test_bitarray_alloc_free),
+			 ztest_unit_test(test_bitarray_region_set_clear),
 			 ztest_unit_test(test_printk),
 			 ztest_1cpu_unit_test(test_timeout_order),
 			 ztest_1cpu_user_unit_test(test_clock_uptime),
@@ -150,7 +161,8 @@ void test_main(void)
 			 ztest_unit_test(test_thread_context),
 			 ztest_user_unit_test(test_errno),
 			 ztest_unit_test(test_ms_time_duration),
-			 ztest_unit_test(test_bounds_check_mitigation)
+			 ztest_unit_test(test_bounds_check_mitigation),
+			 ztest_unit_test(test_nop)
 			 );
 
 	ztest_run_test_suite(common);

@@ -345,14 +345,12 @@ __no_optimization void test_memalloc_max(void)
 
 void test_main(void)
 {
-#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0)
-#ifndef CONFIG_NEWLIB_LIBC
+#if defined(CONFIG_MINIMAL_LIBC) && CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0
 	ztest_test_suite(test_c_lib_dynamic_memalloc,
 			 ztest_user_unit_test(test_no_mem_malloc),
 			 ztest_user_unit_test(test_no_mem_realloc)
 			 );
 	ztest_run_test_suite(test_c_lib_dynamic_memalloc);
-#endif
 #else
 	ztest_test_suite(test_c_lib_dynamic_memalloc,
 			 ztest_user_unit_test(test_malloc_align),

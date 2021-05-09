@@ -59,7 +59,7 @@ for dev in DEVICES:
         continue
 
     if not os.access(barfile, os.R_OK):
-        sys.stderr.write(f"ERROR: Cannot open {barfile} for reading.")
+        sys.stderr.write(f"ERROR: Cannot open {barfile} for reading.\n")
         sys.exit(1)
 
     fd = open(barfile)
@@ -67,7 +67,7 @@ for dev in DEVICES:
                     prot=mmap.PROT_READ)
 
 if mem is None:
-    sys.stderr.write("ERROR: No ADSP device found.")
+    sys.stderr.write("ERROR: No ADSP device found.\n")
     sys.exit(1)
 
 # Returns a tuple of (id, msg) if the slot is valid, or (-1, "") if

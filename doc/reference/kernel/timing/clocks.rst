@@ -33,7 +33,7 @@ CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC).
 
 For asynchronous timekeeping, the kernel defines a "ticks" concept.  A
 "tick" is the internal count in which the kernel does all its internal
-uptime and timeout bookeeping.  Interrupts are expected to be
+uptime and timeout bookkeeping.  Interrupts are expected to be
 delivered on tick boundaries to the extent practical, and no
 fractional ticks are tracked.  The choice of tick rate is configurable
 via :c:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`.  Defaults on most
@@ -188,7 +188,7 @@ provide irregular interrupts.  But a traditional, "ticked" or "dumb"
 counter driver can be trivially implemented also:
 
 * The driver can receive interrupts at a regular rate corresponding to
-  the OS tick rate, calling z_clock_anounce() with an argument of one
+  the OS tick rate, calling :c:func:`sys_clock_announce` with an argument of one
   each time.
 
 * The driver can ignore calls to :c:func:`sys_clock_set_timeout`, as every
@@ -269,7 +269,7 @@ acceptable.
 
 One complexity is :c:macro:`K_FOREVER`.  Subsystems that might have
 been able to accept this value to their millisecond API in the past no
-longer can, becauase it is no longer an intergral type.  Such code
+longer can, because it is no longer an intergral type.  Such code
 will need to use a different, integer-valued token to represent
 "forever".  :c:macro:`K_NO_WAIT` has the same typesafety concern too,
 of course, but as it is (and has always been) simply a numerical zero,

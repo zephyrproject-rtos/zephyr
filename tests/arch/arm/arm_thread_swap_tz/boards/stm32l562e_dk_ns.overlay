@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2021 Yestin Sun
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ /* This partition table should be used along with TFM configuration:
+  * - TEST_S=OFF (NO REGRESSION)
+  *
+  * In this configuration, TFM binary does not include tests.
+  * The partition sizes are compatible with TF-M platform flash_layout.h.
+  */
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot1_partition;
+	};
+};
+
+&flash0 {
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00019000>;
+			read-only;
+		};
+		/* Secure image primary slot */
+		slot0_partition: partition@00019000 {
+			label = "image-0";
+			reg = <0x00019000 0x00038000>;
+		};
+		/* Non-secure image primary slot */
+		slot1_partition: partition@00051000 {
+			label = "image-1";
+			reg = <0x00051000 0x0002A000>;
+		};
+		/*
+		 * The flash starting at 0x7F000 and ending at
+		 * 0x80000 is reserved for the application.
+		 */
+		storage_partition: partition@7F000 {
+			label = "storage";
+			reg = <0x0007F000 0x00001000>;
+		};
+	};
+};

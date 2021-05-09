@@ -134,7 +134,7 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 
 struct dyn_obj {
 	struct z_object kobj;
-	sys_dnode_t obj_list;
+	sys_dnode_t dobj_list;
 	struct rbnode node; /* must be immediately before data member */
 
 	/* The object itself */
@@ -321,7 +321,7 @@ struct z_object *z_dynamic_object_aligned_create(size_t align, size_t size)
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
 	rb_insert(&obj_rb_tree, &dyn->node);
-	sys_dlist_append(&obj_list, &dyn->obj_list);
+	sys_dlist_append(&obj_list, &dyn->dobj_list);
 	k_spin_unlock(&lists_lock, key);
 
 	return &dyn->kobj;
@@ -395,7 +395,7 @@ void k_object_free(void *obj)
 	dyn = dyn_object_find(obj);
 	if (dyn != NULL) {
 		rb_remove(&obj_rb_tree, &dyn->node);
-		sys_dlist_remove(&dyn->obj_list);
+		sys_dlist_remove(&dyn->dobj_list);
 
 		if (dyn->kobj.type == K_OBJ_THREAD) {
 			thread_idx_free(dyn->kobj.data.thread_id);
@@ -438,7 +438,7 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
-	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&obj_list, obj, next, obj_list) {
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&obj_list, obj, next, dobj_list) {
 		func(&obj->kobj, context);
 	}
 	k_spin_unlock(&lists_lock, key);
@@ -499,7 +499,7 @@ static void unref_check(struct z_object *ko, uintptr_t index)
 	}
 
 	rb_remove(&obj_rb_tree, &dyn->node);
-	sys_dlist_remove(&dyn->obj_list);
+	sys_dlist_remove(&dyn->dobj_list);
 	k_free(dyn);
 out:
 #endif

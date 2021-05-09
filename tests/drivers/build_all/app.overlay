@@ -126,6 +126,8 @@
 			#include "uart.dtsi"
 		};
 
+		#include "led.dtsi"
+
 		dht22 {
 			compatible = "aosong,dht";
 			status = "okay";

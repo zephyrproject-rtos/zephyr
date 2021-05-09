@@ -851,7 +851,7 @@ static const struct espi_saf_xec_config espi_saf_xec_config = {
 					 MCHP_SAF_FLASH_POLL_INTERVAL),
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &espi_saf_xec_init, NULL,
 		      &espi_saf_xec_data, &espi_saf_xec_config, POST_KERNEL,
 		      CONFIG_ESPI_SAF_INIT_PRIORITY, &espi_saf_xec_driver_api);
 

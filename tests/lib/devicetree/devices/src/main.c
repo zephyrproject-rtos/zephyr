@@ -30,16 +30,16 @@ static int dev_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(TEST_GPIO, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_GPIO, dev_init, NULL,
 		 NULL, NULL, PRE_KERNEL_1, 90, NULL);
-DEVICE_DT_DEFINE(TEST_I2C, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_I2C, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 10, NULL);
-DEVICE_DT_DEFINE(TEST_DEVA, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_DEVA, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 20, NULL);
 /* NB: Intentional init devb before required gpiox */
-DEVICE_DT_DEFINE(TEST_DEVB, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_DEVB, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 30, NULL);
-DEVICE_DT_DEFINE(TEST_GPIOX, dev_init, device_pm_control_nop,
+DEVICE_DT_DEFINE(TEST_GPIOX, dev_init, NULL,
 		 NULL, NULL, POST_KERNEL, 40, NULL);
 
 #define DEV_HDL(node_id) device_handle_get(DEVICE_DT_GET(node_id))

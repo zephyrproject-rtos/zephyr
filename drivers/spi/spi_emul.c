@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(spi_emul_ctlr);
 
 #include <device.h>
-#include <emul.h>
+#include <drivers/emul.h>
 #include <drivers/spi.h>
 #include <drivers/spi_emul.h>
 
@@ -132,7 +132,7 @@ static struct spi_driver_api spi_emul_api = {
 	static struct spi_emul_data spi_emul_data_##n; \
 	DEVICE_DT_INST_DEFINE(n, \
 			    spi_emul_init, \
-			    device_pm_control_nop, \
+			    NULL, \
 			    &spi_emul_data_##n, \
 			    &spi_emul_cfg_##n, \
 			    POST_KERNEL, \

@@ -58,43 +58,6 @@ static const uint8_t hid_report_desc[] = {
 	HID_MI_COLLECTION_END,
 };
 
-int debug_cb(struct usb_setup_packet *setup, int32_t *len,
-	     uint8_t **data)
-{
-	LOG_DBG("Debug callback");
-
-	return -ENOTSUP;
-}
-
-int set_idle_cb(struct usb_setup_packet *setup, int32_t *len,
-		uint8_t **data)
-{
-	LOG_DBG("Set Idle callback");
-
-	/* TODO: Do something */
-
-	return 0;
-}
-
-int get_report_cb(struct usb_setup_packet *setup, int32_t *len,
-		  uint8_t **data)
-{
-	LOG_DBG("Get report callback");
-
-	/* TODO: Do something */
-
-	return 0;
-}
-
-static struct hid_ops ops = {
-	.get_report = get_report_cb,
-	.get_idle = debug_cb,
-	.get_protocol = debug_cb,
-	.set_report = debug_cb,
-	.set_idle = set_idle_cb,
-	.set_protocol = debug_cb,
-};
-
 void hid_thread(void)
 {
 	uint8_t report_1[2] = { REPORT_ID_1, 0x00 };
@@ -110,7 +73,7 @@ void hid_thread(void)
 	}
 
 	usb_hid_register_device(hid_dev, hid_report_desc,
-				sizeof(hid_report_desc), &ops);
+				sizeof(hid_report_desc), NULL);
 
 	usb_hid_init(hid_dev);
 

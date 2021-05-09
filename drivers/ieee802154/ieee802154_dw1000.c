@@ -1667,14 +1667,14 @@ static struct ieee802154_radio_api dwt_radio_api = {
 #define DWT_PSDU_LENGTH		(127 - DWT_FCS_LENGTH)
 
 #if defined(CONFIG_IEEE802154_RAW_MODE)
-DEVICE_DT_INST_DEFINE(0, dw1000_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, dw1000_init, NULL,
 		    &dwt_0_context, &dw1000_0_config,
 		    POST_KERNEL, CONFIG_IEEE802154_DW1000_INIT_PRIO,
 		    &dwt_radio_api);
 #else
 NET_DEVICE_DT_INST_DEFINE(0,
 		dw1000_init,
-		device_pm_control_nop,
+		NULL,
 		&dwt_0_context,
 		&dw1000_0_config,
 		CONFIG_IEEE802154_DW1000_INIT_PRIO,

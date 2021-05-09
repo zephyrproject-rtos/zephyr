@@ -92,36 +92,37 @@ static void msg_to_fifo(const struct shell *shell,
 			struct log_msg *msg)
 {
 	int err;
+	bool cont;
 	struct shell_log_backend_msg t_msg = {
 		.msg = msg,
 		.timestamp = k_uptime_get_32()
 	};
 
-	err = k_msgq_put(shell->log_backend->msgq, &t_msg,
-			 K_MSEC(shell->log_backend->timeout));
+	do {
+		cont = false;
+		err = k_msgq_put(shell->log_backend->msgq, &t_msg,
+				 K_MSEC(shell->log_backend->timeout));
 
-	switch (err) {
-	case 0:
-		break;
-	case -EAGAIN:
-	case -ENOMSG:
-	{
-		flush_expired_messages(shell);
+		switch (err) {
+		case 0:
+			break;
+		case -EAGAIN:
+		case -ENOMSG:
+		{
+			/* Attempt to drop old message. */
+			flush_expired_messages(shell);
 
-		err = k_msgq_put(shell->log_backend->msgq, &msg, K_NO_WAIT);
-		if (err) {
-			/* Unexpected case as we just freed one element and
-			 * there is no other context that puts into the msgq.
-			 */
-			__ASSERT_NO_MSG(0);
+			/* Retry putting message. */
+			cont = true;
+
+			break;
 		}
-		break;
-	}
-	default:
-		/* Other errors are not expected. */
-		__ASSERT_NO_MSG(0);
-		break;
-	}
+		default:
+			/* Other errors are not expected. */
+			__ASSERT_NO_MSG(0);
+			break;
+		}
+	} while (cont);
 }
 
 void z_shell_log_backend_disable(const struct shell_log_backend *backend)

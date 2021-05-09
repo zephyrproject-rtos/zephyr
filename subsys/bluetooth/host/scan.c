@@ -12,9 +12,11 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/iso.h>
 #include <bluetooth/buf.h>
+#include <bluetooth/direction.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
+#include "direction_internal.h"
 #include "id.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
@@ -611,7 +613,7 @@ static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void)
 	return NULL;
 }
 
-static struct bt_le_per_adv_sync *get_per_adv_sync(uint16_t handle)
+struct bt_le_per_adv_sync *bt_hci_get_per_adv_sync(uint16_t handle)
 {
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
 		if (per_adv_sync_pool[i].handle == handle &&
@@ -639,7 +641,7 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	per_adv_sync = get_per_adv_sync(sys_le16_to_cpu(evt->handle));
+	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->handle));
 
 	if (!per_adv_sync) {
 		BT_ERR("Unknown handle 0x%04X for periodic advertising report",
@@ -655,7 +657,7 @@ void bt_hci_le_per_adv_report(struct net_buf *buf)
 
 	info.tx_power = evt->tx_power;
 	info.rssi = evt->rssi;
-	info.cte_type = evt->cte_type;
+	info.cte_type = BIT(evt->cte_type);
 	info.addr = &per_adv_sync->addr;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
@@ -786,7 +788,7 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 	struct bt_le_per_adv_sync *per_adv_sync;
 	struct bt_le_per_adv_sync_cb *listener;
 
-	per_adv_sync = get_per_adv_sync(sys_le16_to_cpu(evt->handle));
+	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->handle));
 
 	if (!per_adv_sync) {
 		BT_ERR("Unknown handle 0x%04Xfor periodic adv sync lost",
@@ -874,7 +876,7 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 
 	evt = net_buf_pull_mem(buf, sizeof(*evt));
 
-	per_adv_sync = get_per_adv_sync(sys_le16_to_cpu(evt->sync_handle));
+	per_adv_sync = bt_hci_get_per_adv_sync(sys_le16_to_cpu(evt->sync_handle));
 
 	if (!per_adv_sync) {
 		BT_ERR("Unknown handle 0x%04X for periodic advertising report",
@@ -904,6 +906,22 @@ void bt_hci_le_biginfo_adv_report(struct net_buf *buf)
 	}
 }
 #endif /* defined(CONFIG_BT_ISO_BROADCAST) */
+#if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
+void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf)
+{
+	struct bt_df_per_adv_sync_iq_samples_report cte_report;
+	struct bt_le_per_adv_sync *per_adv_sync;
+	struct bt_le_per_adv_sync_cb *listener;
+
+	hci_df_prepare_connectionless_iq_report(buf, &cte_report, &per_adv_sync);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&pa_sync_cbs, listener, node) {
+		if (listener->cte_report_cb) {
+			listener->cte_report_cb(per_adv_sync, &cte_report);
+		}
+	}
+}
+#endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
@@ -1150,8 +1168,9 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	}
 
 	if (param->sid > BT_GAP_SID_MAX ||
-		   param->skip > BT_GAP_PER_ADV_MAX_MAX_SKIP ||
-		   param->timeout > BT_GAP_PER_ADV_MAX_MAX_TIMEOUT) {
+		   param->skip > BT_GAP_PER_ADV_MAX_SKIP ||
+		   param->timeout > BT_GAP_PER_ADV_MAX_TIMEOUT ||
+		   param->timeout < BT_GAP_PER_ADV_MIN_TIMEOUT) {
 		return -EINVAL;
 	}
 

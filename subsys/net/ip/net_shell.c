@@ -287,6 +287,7 @@ static void print_supported_ethernet_capabilities(
 }
 #endif /* CONFIG_NET_L2_ETHERNET */
 
+#if defined(CONFIG_NET_NATIVE)
 static const char *iface_flags2str(struct net_if *iface)
 {
 	static char str[sizeof("POINTOPOINT") + sizeof("PROMISC") +
@@ -333,6 +334,7 @@ static const char *iface_flags2str(struct net_if *iface)
 
 	return str;
 }
+#endif
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
@@ -940,7 +942,7 @@ static char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
 }
 #endif /* (NET_TC_TX_COUNT > 1) || (NET_TC_RX_COUNT > 1) */
 
-#if (NET_TC_TX_COUNT == 1) || (NET_TC_RX_COUNT == 1)
+#if (NET_TC_TX_COUNT <= 1) || (NET_TC_RX_COUNT <= 1)
 static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
 {
 	static char extra_stats[sizeof("\t[0=xxxx us]") + sizeof("->xxxx") *
@@ -1007,8 +1009,7 @@ static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
 	 CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS) || \
-	defined(CONFIG_NET_PKT_RXTIME_STATS) || \
-	defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+	defined(CONFIG_NET_PKT_RXTIME_STATS)
 
 #if (NET_TC_TX_COUNT > 1) || (NET_TC_RX_COUNT > 1)
 static char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
@@ -1031,8 +1032,7 @@ static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
 	return "\0";
 }
 #endif
-#endif /* CONFIG_NET_PKT_TXTIME_STATS) || CONFIG_NET_PKT_RXTIME_STATS ||
-	  CONFIG_NET_CONTEXT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_TXTIME_STATS) || CONFIG_NET_PKT_RXTIME_STATS */
 #endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
 	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
@@ -1043,8 +1043,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 
 	PR("TX traffic class statistics:\n");
 
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
-				defined(CONFIG_NET_PKT_TXTIME_STATS)
+#if defined(CONFIG_NET_PKT_TXTIME_STATS)
 	PR("TC  Priority\tSent pkts\tbytes\ttime\n");
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
@@ -1078,7 +1077,7 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 		   GET_STAT(iface, tc.sent[i].pkts),
 		   GET_STAT(iface, tc.sent[i].bytes));
 	}
-#endif /* CONFIG_NET_CONTEXT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_TXTIME_STATS */
 #else
 	ARG_UNUSED(shell);
 
@@ -1237,7 +1236,12 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, icmp.typeerr),
 	   GET_STAT(iface, icmp.chkerr));
 #endif
-
+#if defined(CONFIG_NET_STATISTICS_IGMP)
+	PR("IGMP recv      %d\tsent\t%d\tdrop\t%d\n",
+	   GET_STAT(iface, ipv4_igmp.recv),
+	   GET_STAT(iface, ipv4_igmp.sent),
+	   GET_STAT(iface, ipv4_igmp.drop));
+#endif /* CONFIG_NET_STATISTICS_IGMP */
 #if defined(CONFIG_NET_STATISTICS_UDP) && defined(CONFIG_NET_NATIVE_UDP)
 	PR("UDP recv       %d\tsent\t%d\tdrop\t%d\n",
 	   GET_STAT(iface, udp.recv),
@@ -1267,14 +1271,6 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, tcp.conndrop),
 	   GET_STAT(iface, tcp.connrst));
 	PR("TCP pkt drop   %d\n", GET_STAT(iface, tcp.drop));
-#endif
-
-#if defined(CONFIG_NET_CONTEXT_TIMESTAMP) && defined(CONFIG_NET_NATIVE)
-	if (GET_STAT(iface, tx_time.count) > 0) {
-		PR("Network pkt TX time %lu us\n",
-		   (uint32_t)(GET_STAT(iface, tx_time.sum) /
-			   (uint64_t)GET_STAT(iface, tx_time.count)));
-	}
 #endif
 
 	PR("Bytes received %u\n", GET_STAT(iface, bytes.received));
@@ -5533,8 +5529,8 @@ static int cmd_net_suspend(const struct shell *shell, size_t argc,
 
 		dev = net_if_get_device(iface);
 
-		ret = device_set_power_state(dev, DEVICE_PM_SUSPEND_STATE,
-					     NULL, NULL);
+		ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND,
+					  NULL, NULL);
 		if (ret != 0) {
 			PR_INFO("Iface could not be suspended: ");
 
@@ -5578,8 +5574,8 @@ static int cmd_net_resume(const struct shell *shell, size_t argc,
 
 		dev = net_if_get_device(iface);
 
-		ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE,
-					     NULL, NULL);
+		ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE,
+					  NULL, NULL);
 		if (ret != 0) {
 			PR_INFO("Iface could not be resumed\n");
 		}

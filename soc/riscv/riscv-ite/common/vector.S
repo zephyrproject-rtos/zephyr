@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "chip_chipregs.h"
 #include <toolchain.h>
 
 /* exports */
@@ -24,6 +25,16 @@ SECTION_FUNC(vectors, __start)
 	la t0, __irq_wrapper
 	csrw mtvec, t0
 	csrwi mie, 0
+
+	/*
+	 * bit[3-0]@EIDSR=8: instruction local memory size is 1M byte
+	 * This operation must be done before accessing memory.
+	 */
+	la t0, IT8XXX2_GCTRL_EIDSR
+	lb t1, 0(t0)
+	andi t1, t1, 0xf0
+	ori  t1, t1, 0x8
+	sb t1, 0(t0)
 
 	/* Jump to __initialize */
 	tail __initialize

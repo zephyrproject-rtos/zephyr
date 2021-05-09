@@ -11,7 +11,7 @@
  */
 
 #include <kernel.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 
 /* reboot through Reset Control Register (I/O port 0xcf9) */
 

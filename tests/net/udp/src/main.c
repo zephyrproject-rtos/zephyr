@@ -138,7 +138,7 @@ static struct dummy_api net_udp_if_api = {
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
 NET_DEVICE_INIT(net_udp_test, "net_udp_test",
-		net_udp_dev_init, device_pm_control_nop,
+		net_udp_dev_init, NULL,
 		&net_udp_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_udp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
@@ -431,7 +431,7 @@ void test_udp(void)
 	test_failed = false;
 
 	struct net_conn_handle *handlers[CONFIG_NET_MAX_CONN];
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface;
 	struct net_if_addr *ifaddr;
 	struct ud *ud;
 	int ret, i = 0;
@@ -456,6 +456,8 @@ void test_udp(void)
 
 	struct sockaddr_in peer_addr4;
 	struct in_addr in4addr_peer = { { { 192, 0, 2, 9 } } };
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 
 	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_any);
 	any_addr6.sin6_family = AF_INET6;

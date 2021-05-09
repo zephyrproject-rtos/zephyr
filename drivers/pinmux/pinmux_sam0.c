@@ -79,7 +79,7 @@ static const struct pinmux_sam0_config pinmux_sam0_config_0 = {
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_a), pinmux_sam0_init,
-		    device_pm_control_nop, NULL, &pinmux_sam0_config_0,
+		    NULL, NULL, &pinmux_sam0_config_0,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
 #endif
@@ -90,7 +90,7 @@ static const struct pinmux_sam0_config pinmux_sam0_config_1 = {
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_b), pinmux_sam0_init,
-		    device_pm_control_nop, NULL, &pinmux_sam0_config_1,
+		    NULL, NULL, &pinmux_sam0_config_1,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
 #endif
@@ -101,7 +101,7 @@ static const struct pinmux_sam0_config pinmux_sam0_config_2 = {
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_c), pinmux_sam0_init,
-		    device_pm_control_nop, NULL, &pinmux_sam0_config_2,
+		    NULL, NULL, &pinmux_sam0_config_2,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
 #endif
@@ -112,7 +112,7 @@ static const struct pinmux_sam0_config pinmux_sam0_config_3 = {
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(pinmux_d), pinmux_sam0_init,
-		    device_pm_control_nop, NULL, &pinmux_sam0_config_3,
+		    NULL, NULL, &pinmux_sam0_config_3,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
 #endif

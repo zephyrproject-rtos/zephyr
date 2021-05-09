@@ -649,6 +649,18 @@ static inline double sensor_value_to_double(struct sensor_value *val)
 }
 
 /**
+ * @brief Helper function for converting double to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param inp The converted value.
+ */
+static inline void sensor_value_from_double(struct sensor_value *val, double inp)
+{
+	val->val1 = (int32_t) inp;
+	val->val2 = (int32_t)(inp * 1000000) % 1000000;
+}
+
+/**
  * @}
  */
 

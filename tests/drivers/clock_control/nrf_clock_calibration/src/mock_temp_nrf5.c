@@ -45,7 +45,7 @@ static const struct sensor_driver_api mock_temp_nrf5_driver_api = {
 
 DEVICE_DT_DEFINE(DT_INST(0, nordic_nrf_temp),
 		    mock_temp_nrf5_init,
-		    device_pm_control_nop,
+		    NULL,
 		    NULL,
 		    NULL,
 		    POST_KERNEL,

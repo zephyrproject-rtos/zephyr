@@ -59,7 +59,7 @@ When writing Zephyr applications, you'll often want to get a driver-level
 For example, with this devicetree fragment, you might want the struct device
 for ``serial@40002000``:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
            soc {
@@ -237,7 +237,7 @@ See :ref:`set-devicetree-overlays` for how to add an overlay to the build.
 Overlays can override node property values in multiple ways.
 For example, if your BOARD.dts contains this node:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
            soc {
@@ -465,7 +465,7 @@ using instance numbers. Do this after defining ``my_api_funcs``.
    	};								\
    	DEVICE_DT_INST_DEFINE(inst,					\
    			      my_dev_init_function,			\
-			      device_pm_control_nop,			\
+			      NULL,             			\
    			      &my_data_##inst,				\
    			      &my_cfg_##inst,				\
    			      MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
@@ -504,14 +504,14 @@ labels like ``mydevice0``, ``mydevice1``, etc. appropriately for the IP blocks
 your driver supports. The resulting devicetree usually looks something like
 this:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
            soc {
-                   mydevice0: dev@... {
+                   mydevice0: dev@0 {
                            compatible = "vnd,my-device";
                    };
-                   mydevice1: dev@... {
+                   mydevice1: dev@1 {
                            compatible = "vnd,my-device";
                    };
            };
@@ -542,7 +542,7 @@ devicetree to operate on specific device nodes:
 	static const struct my_dev_cfg my_cfg_##idx = { /* ... */ };	\
    	DEVICE_DT_DEFINE(MYDEV(idx),					\
    			my_dev_init_function,				\
-			device_pm_control_nop,				\
+			NULL,           				\
 			&my_data_##idx,					\
 			&my_cfg_##idx,					\
 			MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
@@ -659,7 +659,7 @@ node with path ``/soc/i2c@12340000`` in a C/C++ file:
 
 And if you're trying to **set** that property in a devicetree overlay:
 
-.. code-block:: DTS
+.. code-block:: none
 
    /*
     * foo.overlay: DTS names with special characters, etc.

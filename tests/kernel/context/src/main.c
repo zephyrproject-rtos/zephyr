@@ -53,6 +53,8 @@
 #define TICK_IRQ ARM_ARCH_TIMER_IRQ
 #elif defined(CONFIG_APIC_TIMER)
 #define TICK_IRQ CONFIG_APIC_TIMER_IRQ
+#elif defined(CONFIG_APIC_TSC_DEADLINE_TIMER)
+#define TICK_IRQ z_loapic_irq_base() /* first LVT interrupt */
 #elif defined(CONFIG_XTENSA_TIMER)
 #define TICK_IRQ UTIL_CAT(XCHAL_TIMER,		\
 			  UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
@@ -73,6 +75,8 @@
 #define TICK_IRQ DT_IRQN(DT_ALIAS(system_lptmr))
 #elif defined(CONFIG_XLNX_PSTTC_TIMER)
 #define TICK_IRQ DT_IRQN(DT_INST(0, xlnx_ttcps))
+#elif defined(CONFIG_RCAR_CMT_TIMER)
+#define TICK_IRQ DT_IRQN(DT_INST(0, renesas_rcar_cmt))
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
  * The Cortex-M use the SYSTICK exception for the system timer, which is

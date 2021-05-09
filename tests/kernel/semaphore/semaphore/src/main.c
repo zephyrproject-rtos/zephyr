@@ -21,6 +21,7 @@
 #define TOTAL_THREADS_WAITING (5)
 
 #define SEC2MS(s) ((s) * 1000)
+#define QSEC2MS(s) ((s) * 250)
 
 #define expect_k_sem_take(sem, timeout, exp, str) do { \
 	int _act = k_sem_take((sem), (timeout)); \
@@ -118,7 +119,7 @@ static void tsema_thread_thread(struct k_sem *psem)
 	expect_k_sem_take_nomsg(psem, K_FOREVER, 0);
 
 	/*clean the spawn thread avoid side effect in next TC*/
-	k_thread_abort(tid);
+	k_thread_join(tid, K_FOREVER);
 }
 
 static void tsema_thread_isr(struct k_sem *psem)
@@ -517,17 +518,18 @@ void test_sem_take_timeout(void)
 	k_thread_create(&sem_tid_1, stack_1, STACK_SIZE,
 			sem_give_task, &simple_sem, NULL, NULL,
 			K_PRIO_PREEMPT(0), K_USER | K_INHERIT_PERMS,
-			K_NO_WAIT);
+			K_FOREVER);
 
 	k_sem_reset(&simple_sem);
 
 	expect_k_sem_count_get_nomsg(&simple_sem, 0);
 
+	k_thread_start(&sem_tid_1);
 	/* Take semaphore and wait it given by other threads
 	 * in specified timeout
 	 */
 	expect_k_sem_take_nomsg(&simple_sem, SEM_TIMEOUT, 0);
-	k_thread_abort(&sem_tid_1);
+	k_thread_join(&sem_tid_1, K_FOREVER);
 
 }
 
@@ -561,7 +563,7 @@ void test_sem_take_timeout_forever(void)
 	 * other threads forever until it's available
 	 */
 	expect_k_sem_take_nomsg(&simple_sem, K_FOREVER, 0);
-	k_thread_abort(&sem_tid_1);
+	k_thread_join(&sem_tid_1, K_FOREVER);
 }
 
 /**
@@ -583,6 +585,8 @@ void test_sem_take_timeout_isr(void)
 	k_sem_reset(&simple_sem);
 
 	expect_k_sem_take_nomsg(&simple_sem, SEM_TIMEOUT, 0);
+
+	k_thread_join(&sem_tid_1, K_FOREVER);
 }
 
 /**
@@ -996,23 +1000,22 @@ void test_sem_multiple_take_and_timeouts(void)
 		k_thread_create(&multiple_tid[i],
 				multiple_stack[i], STACK_SIZE,
 				sem_multiple_take_and_timeouts_helper,
-				INT_TO_POINTER(SEC2MS(i + 1)), NULL, NULL,
+				INT_TO_POINTER(QSEC2MS(i + 1)), NULL, NULL,
 				K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 	}
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 		k_pipe_get(&timeout_info_pipe, &timeout, sizeof(int),
 			   &bytes_read, sizeof(int), K_FOREVER);
-		zassert_equal(timeout, SEC2MS(i + 1),
+		zassert_equal(timeout, QSEC2MS(i + 1),
 			     "timeout did not occur properly: %d != %d",
-				 timeout, SEC2MS(i + 1));
+				 timeout, QSEC2MS(i + 1));
 	}
 
 	/* cleanup */
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		k_thread_abort(&multiple_tid[i]);
+		k_thread_join(&multiple_tid[i], K_FOREVER);
 	}
-
 }
 
 void sem_multi_take_timeout_diff_sem_helper(void *p1, void *p2, void *p3)
@@ -1327,11 +1330,11 @@ void test_main(void)
 			 ztest_user_unit_test(test_sem_give_from_thread),
 			 ztest_user_unit_test(test_sem_take_no_wait),
 			 ztest_user_unit_test(test_sem_take_no_wait_fails),
-			 ztest_1cpu_user_unit_test(test_sem_take_timeout_fails),
+			 ztest_user_unit_test(test_sem_take_timeout_fails),
 			 ztest_user_unit_test(test_sem_take_timeout),
-			 ztest_1cpu_user_unit_test(test_sem_take_timeout_forever),
+			 ztest_user_unit_test(test_sem_take_timeout_forever),
 			 ztest_unit_test(test_sem_take_timeout_isr),
-			 ztest_1cpu_user_unit_test(test_sem_take_multiple),
+			 ztest_user_unit_test(test_sem_take_multiple),
 			 ztest_unit_test(test_sem_give_take_from_isr),
 			 ztest_user_unit_test(test_k_sem_correct_count_limit),
 			 ztest_unit_test(test_sem_multiple_threads_wait),
