@@ -426,7 +426,7 @@
 
 /* User config file */
 
-#if defined(CONFIG_MBEDTLS_USER_CONFIG_ENABLE)
+#if defined(CONFIG_MBEDTLS_USER_CONFIG_FILE)
 #include CONFIG_MBEDTLS_USER_CONFIG_FILE
 #endif
 
