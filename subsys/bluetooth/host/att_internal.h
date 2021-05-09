@@ -11,7 +11,11 @@
 #define BT_ATT_TIMEOUT		K_SECONDS(30)
 
 /* ATT MTU must be equal for RX and TX, so select the smallest value */
-#define BT_ATT_MTU (MIN(BT_L2CAP_RX_MTU, BT_L2CAP_TX_MTU))
+#if CONFIG_BT_L2CAP_RX_MTU < CONFIG_BT_L2CAP_TX_MTU
+#define BT_ATT_MTU CONFIG_BT_L2CAP_RX_MTU
+#else
+#define BT_ATT_MTU CONFIG_BT_L2CAP_TX_MTU
+#endif
 
 struct bt_att_hdr {
 	uint8_t  code;

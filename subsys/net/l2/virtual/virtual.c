@@ -92,14 +92,23 @@ static int virtual_enable(struct net_if *iface, bool state)
 		interfaces = &ctx->virtual_iface->config.virtual_interfaces;
 		ctx_orig = ctx;
 
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(interfaces, ctx_up, tmp,
-						  node) {
-			if (!net_if_is_up(ctx->iface)) {
-				continue;
+		do {
+			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(interfaces, ctx_up, tmp,
+							  node) {
+				if (!net_if_is_up(ctx->iface)) {
+					continue;
+				}
+
+				net_if_down(ctx_up->virtual_iface);
 			}
 
-			net_if_down(ctx_up->virtual_iface);
-		}
+			if (!ctx_up) {
+				break;
+			}
+
+			ctx = net_if_l2_data(ctx_up->virtual_iface);
+			interfaces = &ctx->virtual_iface->config.virtual_interfaces;
+		} while (!sys_slist_is_empty(interfaces));
 
 		if (net_if_is_up(ctx_orig->virtual_iface)) {
 			NET_DBG("Taking iface %d down",
@@ -200,7 +209,7 @@ int net_virtual_interface_attach(struct net_if *virtual_iface,
 	 * network interface (if IPv6). The actual link address is typically
 	 * not need in tunnels.
 	 */
-	if (iface) {
+	if (virtual_iface && iface) {
 		random_linkaddr(ctx->lladdr.addr, sizeof(ctx->lladdr.addr));
 
 		ctx->lladdr.len = sizeof(ctx->lladdr.addr);

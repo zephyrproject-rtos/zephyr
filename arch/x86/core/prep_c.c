@@ -22,10 +22,6 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 
 	_kernel.cpus[0].nested = 0;
 
-#ifdef CONFIG_MMU
-	z_x86_mmu_init();
-#endif
-
 #if defined(CONFIG_LOAPIC)
 	z_loapic_enable(0);
 #endif
@@ -42,6 +38,10 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 	z_multiboot_init(info);
 #else
 	ARG_UNUSED(info);
+#endif
+
+#ifdef CONFIG_MMU
+	z_x86_mmu_init();
 #endif
 
 #if CONFIG_X86_STACK_PROTECTION

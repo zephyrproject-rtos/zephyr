@@ -4,39 +4,29 @@
 # should not be --whole-archive'd
 
 list(APPEND kernel_files
-  banner.c
   device.c
   errno.c
   fatal.c
+  idle.c
   init.c
   kheap.c
-  mem_slab.c
-  thread.c
-  version.c
-  )
-
-if(CONFIG_MULTITHREADING)
-list(APPEND kernel_files
-  idle.c
   mailbox.c
+  mem_slab.c
   msg_q.c
   mutex.c
   pipes.c
   queue.c
+  sched.c
   sem.c
   stack.c
   system_work_q.c
-  work.c
-  sched.c
+  thread.c
+  version.c
   condvar.c
+  work.c
+  smp.c
+  banner.c
   )
-
-if(CONFIG_SMP)
-list(APPEND kernel_files
-     smp.c)
-endif()
-
-endif()
 
 if(CONFIG_XIP)
 list(APPEND kernel_files
@@ -70,6 +60,10 @@ if(${CONFIG_KERNEL_MEM_POOL})
   target_sources(kernel PRIVATE mempool.c)
 endif()
 
+if(NOT CONFIG_MULTITHREADING)
+  message(WARNING "Single threaded mode (CONFIG_MULTITHREADING=n) is deprecated")
+endif()
+
 # The last 2 files inside the target_sources_ifdef should be
 # userspace_handler.c and userspace.c. If not the linker would complain.
 # This order has to be maintained. Any new file should be placed
@@ -79,13 +73,10 @@ target_sources_ifdef(
   kernel PRIVATE
   futex.c
   mem_domain.c
+  cache_handlers.c
   userspace_handler.c
   userspace.c
   )
-
-if(CONFIG_CACHE_MANAGEMENT AND CONFIG_USERSPACE)
-  target_sources(kernel PRIVATE cache_handlers.c)
-endif()
 
 target_include_directories(kernel PRIVATE
   ${ZEPHYR_BASE}/kernel/include

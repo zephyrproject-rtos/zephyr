@@ -44,9 +44,5 @@
 				#pwm-cells = <3>;
 			};
 		};
-
-		dmamux1: dmamux@40020800 {
-			dma-requests= <53>;
-		};
 	};
 };

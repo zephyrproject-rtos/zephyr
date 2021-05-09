@@ -23,6 +23,12 @@
 &adc0 {
 	status = "okay";
 };
+&gpiob {
+	status = "okay";
+};
+&gpiof {
+	status = "okay";
+};
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;

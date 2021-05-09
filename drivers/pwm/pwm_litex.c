@@ -107,7 +107,7 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 									       \
 	DEVICE_DT_INST_DEFINE(n,					       \
 			    pwm_litex_init,				       \
-			    NULL,					       \
+			    device_pm_control_nop,			       \
 			    NULL,					       \
 			    &pwm_litex_cfg_##n,				       \
 			    POST_KERNEL,				       \

@@ -9,4 +9,3 @@ supported:
   - eeprom
   - netif:eth
   - usb_device
-  - adc

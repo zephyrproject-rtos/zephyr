@@ -34,15 +34,12 @@ synchronization.
    scheduling/index.rst
    threads/system_threads.rst
    threads/workqueue.rst
-   threads/nothread.rst
    other/interrupts.rst
    other/polling.rst
    synchronization/semaphores.rst
    synchronization/mutexes.rst
    synchronization/condvar.rst
    smp/smp.rst
-
-.. _kernel_data_passing_api:
 
 Data Passing
 ************
@@ -85,8 +82,6 @@ argument.
    data_passing/message_queues.rst
    data_passing/mailboxes.rst
    data_passing/pipes.rst
-
-.. _kernel_memory_management_api:
 
 Memory Management
 *****************

@@ -92,7 +92,6 @@ int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
 
 		ored_mask = read_mask | write_mask | except_mask;
 		if (ored_mask == 0U) {
-			fd_no += sizeof(ored_mask) * 8;
 			continue;
 		}
 

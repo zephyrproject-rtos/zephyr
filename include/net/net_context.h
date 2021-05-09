@@ -298,6 +298,9 @@ __net_socket struct net_context {
 		/** Priority of the network data sent via this net_context */
 		uint8_t priority;
 #endif
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+		bool timestamp;
+#endif
 #if defined(CONFIG_NET_CONTEXT_TXTIME)
 		bool txtime;
 #endif
@@ -1056,10 +1059,11 @@ int net_context_update_recv_wnd(struct net_context *context,
 
 enum net_context_option {
 	NET_OPT_PRIORITY	= 1,
-	NET_OPT_TXTIME		= 2,
-	NET_OPT_SOCKS5		= 3,
-	NET_OPT_RCVTIMEO        = 4,
-	NET_OPT_SNDTIMEO        = 5,
+	NET_OPT_TIMESTAMP	= 2,
+	NET_OPT_TXTIME		= 3,
+	NET_OPT_SOCKS5		= 4,
+	NET_OPT_RCVTIMEO        = 5,
+	NET_OPT_SNDTIMEO        = 6,
 };
 
 /**

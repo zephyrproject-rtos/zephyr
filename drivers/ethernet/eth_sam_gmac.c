@@ -47,8 +47,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "eth_sam0_gmac.h"
 #endif
 
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 #include <drivers/ptp_clock.h>
 #include <net/gptp.h>
+#endif
 
 #ifdef __DCACHE_PRESENT
 static bool dcache_enabled;
@@ -525,7 +527,7 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 #endif
 }
 
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 				       struct net_pkt *pkt,
 				       bool is_tx)
@@ -726,7 +728,7 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 	struct gmac_desc *tx_desc;
 	struct net_buf *frag;
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	struct net_pkt *pkt;
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct gptp_hdr *hdr;
@@ -760,7 +762,6 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 				vlan_tag = net_pkt_vlan_tag(pkt);
 			}
 #endif
-#if defined(CONFIG_NET_GPTP)
 			hdr = check_gptp_msg(get_iface(dev_data, vlan_tag),
 					     pkt, true);
 
@@ -769,7 +770,6 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 			if (hdr && need_timestamping(hdr)) {
 				net_if_add_tx_timestamp(pkt);
 			}
-#endif
 			net_pkt_unref(pkt);
 			LOG_DBG("Dropping pkt %p", pkt);
 #endif
@@ -1349,8 +1349,8 @@ static void eth_rx(struct gmac_queue *queue)
 			     queue_list[queue->que_idx]);
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *rx_frame;
-#if defined(CONFIG_NET_GPTP)
-	const struct device *const dev = net_if_get_device(dev_data->iface);
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+	const struct device *dev = net_if_get_device(dev_data->iface);
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
 	Gmac *gmac = cfg->regs;
 	struct gptp_hdr *hdr;
@@ -1391,7 +1391,7 @@ static void eth_rx(struct gmac_queue *queue)
 			}
 		}
 #endif
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 		hdr = check_gptp_msg(get_iface(dev_data, vlan_tag), rx_frame,
 				     false);
 
@@ -1400,7 +1400,7 @@ static void eth_rx(struct gmac_queue *queue)
 		if (hdr) {
 			update_pkt_priority(hdr, rx_frame);
 		}
-#endif /* CONFIG_NET_GPTP */
+#endif /* CONFIG_PTP_CLOCK_SAM_GMAC */
 
 		if (net_recv_data(get_iface(dev_data, vlan_tag),
 				  rx_frame) < 0) {
@@ -1461,7 +1461,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 #endif
 	uint8_t pkt_prio;
 #if GMAC_MULTIPLE_TX_PACKETS == 0
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct gptp_hdr *hdr;
 #if defined(CONFIG_NET_VLAN)
@@ -1606,20 +1606,18 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	if (queue->err_tx_flushed_count != err_tx_flushed_count_at_entry) {
 		return -EIO;
 	}
-#if defined(CONFIG_NET_GPTP)
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 #if defined(CONFIG_NET_VLAN)
 	eth_hdr = NET_ETH_HDR(pkt);
 	if (ntohs(eth_hdr->type) == NET_ETH_PTYPE_VLAN) {
 		vlan_tag = net_pkt_vlan_tag(pkt);
 	}
 #endif
-#if defined(CONFIG_NET_GPTP)
 	hdr = check_gptp_msg(get_iface(dev_data, vlan_tag), pkt, true);
 	timestamp_tx_pkt(gmac, hdr, pkt);
 	if (hdr && need_timestamping(hdr)) {
 		net_if_add_tx_timestamp(pkt);
 	}
-#endif
 #endif
 #endif
 
@@ -2396,7 +2394,7 @@ static struct eth_sam_dev_data eth0_data = {
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
-		    eth_initialize, NULL, &eth0_data,
+		    eth_initialize, device_pm_control_nop, &eth0_data,
 		    &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
 		    GMAC_MTU);
 
@@ -2479,7 +2477,7 @@ static int ptp_gmac_init(const struct device *port)
 }
 
 DEVICE_DEFINE(gmac_ptp_clock_0, PTP_CLOCK_NAME, ptp_gmac_init,
-		NULL, &ptp_gmac_0_context, NULL, POST_KERNEL,
+		device_pm_control_nop, &ptp_gmac_0_context, NULL, POST_KERNEL,
 		CONFIG_APPLICATION_INIT_PRIORITY, &ptp_api);
 
 #endif /* CONFIG_PTP_CLOCK_SAM_GMAC */

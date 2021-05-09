@@ -3,7 +3,6 @@ typealias integer { size = 8; align = 8; signed = true; } := int8_t;
 typealias integer { size = 8; align = 8; signed = false; } := uint8_t;
 typealias integer { size = 16; align = 8; signed = false; } := uint16_t;
 typealias integer { size = 32; align = 8; signed = false; } := uint32_t;
-typealias integer { size = 32; align = 8; signed = true; } := int32_t;
 typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
 typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := ctf_bounded_string_t;
 typealias enum : uint32_t {
@@ -54,8 +53,8 @@ event {
 	id = 0x12;
 	fields := struct {
 		uint32_t thread_id;
-		ctf_bounded_string_t name[20];
 		int8_t prio;
+		ctf_bounded_string_t name[20];
 	};
 
 };
@@ -135,27 +134,27 @@ event {
 
 event {
 	name = isr_enter;
-	id = 0x1B;
+	id = 0x20;
 };
 
 event {
 	name = isr_exit;
-	id = 0x1C;
+	id = 0x21;
 };
 
 event {
 	name = isr_exit_to_scheduler;
-	id = 0x1D;
+	id = 0x22;
 };
 
 event {
 	name = idle;
-	id = 0x1E;
+	id = 0x30;
 };
 
 event {
 	name = start_call;
-	id = 0x1F;
+	id = 0x41;
 	fields := struct {
 		call_id id;
 	};
@@ -163,7 +162,7 @@ event {
 
 event {
 	name = end_call;
-	id = 0x20;
+	id = 0x42;
 	fields := struct {
 		call_id id;
 	};
@@ -171,62 +170,23 @@ event {
 
 event {
 	name = semaphore_init;
-	id = 0x21;
-	fields := struct {
-		uint32_t id;
-		int32_t ret;
-	};
-};
-
-event {
-	name = semaphore_give_enter;
-	id = 0x22;
+	id = 0x43;
 	fields := struct {
 		uint32_t id;
 	};
 };
 
 event {
-	name = semaphore_give_exit;
-	id = 0x23;
+	name = semaphore_take;
+	id = 0x45;
 	fields := struct {
 		uint32_t id;
 	};
 };
 
 event {
-	name = semaphore_take_enter;
-	id = 0x24;
-	fields := struct {
-		uint32_t id;
-		uint32_t timeout;
-	};
-};
-
-event {
-	name = semaphore_take_exit;
-	id = 0x26;
-	fields := struct {
-		uint32_t id;
-		uint32_t timeout;
-		int32_t ret;
-	};
-};
-
-
-event {
-	name = semaphore_take_blocking;
-	id = 0x25;
-	fields := struct {
-		uint32_t id;
-		uint32_t timeout;
-	};
-};
-
-
-event {
-	name = semaphore_reset;
-	id = 0x27;
+	name = semaphore_give;
+	id = 0x44;
 	fields := struct {
 		uint32_t id;
 	};
@@ -234,54 +194,24 @@ event {
 
 event {
 	name = mutex_init;
-	id = 0x28;
-	fields := struct {
-		uint32_t id;
-		int32_t ret;
-	};
-};
-
-event {
-	name = mutex_lock_enter;
-	id = 0x29;
-	fields := struct {
-		uint32_t id;
-		uint32_t timeout;
-	};
-};
-
-event {
-	name = mutex_lock_blocking;
-	id = 0x2A;
-	fields := struct {
-		uint32_t id;
-		uint32_t timeout;
-	};
-};
-
-event {
-	name = mutex_lock_exit;
-	id = 0x2B;
-	fields := struct {
-		uint32_t id;
-		uint32_t timeout;
-		int32_t ret;
-	};
-};
-
-event {
-	name = mutex_unlock_enter;
-	id = 0x2C;
+	id = 0x46;
 	fields := struct {
 		uint32_t id;
 	};
 };
 
 event {
-	name = mutex_unlock_exit;
-	id = 0x2D;
+	name = mutex_lock;
+	id = 0x47;
 	fields := struct {
 		uint32_t id;
 	};
 };
 
+event {
+	name = mutex_unlock;
+	id = 0x48;
+	fields := struct {
+		uint32_t id;
+	};
+};

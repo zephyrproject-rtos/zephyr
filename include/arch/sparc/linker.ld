@@ -40,7 +40,6 @@ SECTIONS
 	} GROUP_LINK_IN(REGION_TEXT)
 
     _image_text_end = .;
-    _image_rodata_start = .;
 
 #include <linker/common-rom.ld>
 #include <linker/thread-local-storage.ld>
@@ -62,11 +61,7 @@ SECTIONS
 
 #include <linker/cplusplus-rom.ld>
 
-    _image_rodata_end = .;
-    _image_rodata_size = _image_rodata_end - _image_rodata_start;
-
     _image_rom_end = .;
-
     __data_rom_start = .;
 
 

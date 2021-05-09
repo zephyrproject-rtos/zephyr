@@ -25,10 +25,7 @@
 		interrupt-parent = <&test_intc>;
 
 		test_arrays: array-holder {
-			/*
-			 * vnd,undefined-compat is for DT_NODE_HAS_COMPAT_STATUS(..,okay).
-			 * There should only be one vnd,array-holder in the entire DTS.
-			 */
+			/* vnd,undefined-compat is for DT_NODE_HAS_COMPAT_STATUS(..,okay) */
 			compatible = "vnd,array-holder", "vnd,undefined-compat";
 			a = <1000 2000 3000>;
 			b = [aa bb cc dd];
@@ -386,15 +383,12 @@
 
 			test_child_a: child-a {
 				val = <0>;
-				status = "okay";
 			};
 			test_child_b: child-b {
 				val = <1>;
-				status = "okay";
 			};
 			test_child_c: child-c {
 				val = <2>;
-				status = "disabled";
 			};
 		};
 

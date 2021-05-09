@@ -65,12 +65,10 @@ def os_path_getsize_patch(filename):
         return TEST_BIN_SIZE
     return os.path.isfile(filename)
 
-os_path_isfile = os.path.isfile
-
 def os_path_isfile_patch(filename):
     if filename == RC_KERNEL_BIN:
         return True
-    return os_path_isfile(filename)
+    return os.path.isfile(filename)
 
 @pytest.mark.parametrize('action', EXPECTED_COMMANDS)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)

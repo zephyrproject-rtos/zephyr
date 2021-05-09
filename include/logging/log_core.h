@@ -292,13 +292,10 @@ static inline char z_log_minimal_level_to_char(int level)
 /*****************************************************************************/
 /****************** Macros for standard logging ******************************/
 /*****************************************************************************/
-<<<<<<< HEAD
 #if defined CONFIG_LOG_MINIMAL
 #define Z_LOG2(_level, _source, _dsource, ...) \
 		Z_LOG_TO_PRINTK(_level, __VA_ARGS__)
 #elif defined CONFIG_LOG
-=======
->>>>>>> 0622bde3bf22926544c1aaef4c01dfa23d79f26e
 #define Z_LOG2(_level, _source, _dsource, ...) do { \
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) { \
 		break; \
@@ -347,7 +344,6 @@ static inline char z_log_minimal_level_to_char(int level)
 /*****************************************************************************/
 /****************** Macros for hexdump logging *******************************/
 /*****************************************************************************/
-<<<<<<< HEAD
 #if defined CONFIG_LOG_MINIMAL
 #define Z_LOG_HEXDUMP2(_level, _source, _dsource, _data, _len, ...) do { \
 	Z_LOG_TO_PRINTK(_level, "%s", _str); \
@@ -355,8 +351,6 @@ static inline char z_log_minimal_level_to_char(int level)
 					(const char *)_data, _len); \
 } while (false)
 #elif defined CONFIG_LOG
-=======
->>>>>>> 0622bde3bf22926544c1aaef4c01dfa23d79f26e
 #define Z_LOG_HEXDUMP2(_level, _source, _dsource, _data, _len, ...) do { \
 	const char *_str = GET_ARG_N(1, __VA_ARGS__); \
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) {	\
@@ -818,15 +812,11 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 		 __log_current_const_data, \
 		 __log_current_dynamic_data, \
 		 _str, _valist, _argnum, _strdup_action)
-<<<<<<< HEAD
 		 
 #if defined CONFIG_LOG_MINIMAL
 #define __LOG_VA(_level, _source, _dsource, _str, _valist, _argnum, _strdup_action) \
 		 Z_LOG_TO_VPRINTK(_level, _str, _valist)
 #elif defined CONFIG_LOG
-=======
-
->>>>>>> 0622bde3bf22926544c1aaef4c01dfa23d79f26e
 #define __LOG_VA(_level, _source, _dsource, _str, _valist, _argnum, _strdup_action) do { \
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) { \
 		break; \

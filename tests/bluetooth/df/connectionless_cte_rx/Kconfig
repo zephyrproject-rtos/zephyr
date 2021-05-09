@@ -1,9 +1,0 @@
-# Copyright (c) 2021 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config BT_CTLR_DF_SUPPORT
-	bool
-	default y
-
-# Include Zephyr's Kconfig.
-source "Kconfig"

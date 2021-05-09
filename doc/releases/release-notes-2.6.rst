@@ -39,11 +39,6 @@ API Changes
 
 * Added disconnect reason to the :c:func:`disconnected` callback of :c:struct:`bt_iso_chan_ops`.
 
-* Align error handling of :c:func:bt_l2cap_chan_send and
-  :c:func:bt_iso_chan_send so when an error occur the buffer is not unref.
-
-* Added c:func:`lwm2m_engine_delete_obj_inst` function to the LwM2M library API.
-
 Deprecated in this release
 
 * :c:macro:`DT_CLOCKS_LABEL_BY_IDX`, :c:macro:`DT_CLOCKS_LABEL_BY_NAME`,
@@ -79,10 +74,6 @@ Deprecated in this release
   USB_HID_PROTOCOL_CODE does not allow to set boot protocol code for specific
   HID device. USB HID API function usb_hid_set_proto_code() can be used instead.
 
-* USB HID class API is changed by removing get_protocol/set_protocol and
-  get_idle/set_idle callbacks. These callbacks are redundant or do not provide
-  any additional value and have led to incorrect usage of HID class API.
-
 * The ``CONFIG_OPENOCD_SUPPORT`` Kconfig option has been deprecated in favor
   of ``CONFIG_DEBUG_THREAD_INFO``.
 
@@ -97,47 +88,6 @@ Deprecated in this release
   ``<include/storage/disk_access.h>``.
 
 * :c:func:`flash_write_protection_set()`.
-
-* The ``CONFIG_NET_CONTEXT_TIMESTAMP`` is removed as it was only able to work
-  with transmitted data. The same functionality can be achieved by setting
-  ``CONFIG_NET_PKT_RXTIME_STATS`` and ``CONFIG_NET_PKT_TXTIME_STATS`` options.
-  These options are also able to calculate the RX & TX times more accurately.
-  This means that support for the SO_TIMESTAMPING socket option is also removed
-  as it was used by the removed config option.
-
-* The device power management (PM) APIs and data structures have been renamed
-  from ``device_pm_*`` to ``pm_device_*`` since they are not device APIs but PM
-  subsystem APIs. The same applies to enumerations and definitions, they now
-  follow the ``PM_DEVICE_*`` convention. Some other API calls such as
-  ``device_set_power_state`` and ``device_get_power_state`` have been renamed to
-  ``pm_device_state_set`` and ``pm_device_state_get`` in order to align with
-  the naming of other device PM APIs.
-
-* The following functions, macros, and structures related to the kernel
-  work queue API:
-
-  * :c:func:`k_work_pending()` replace with :c:func:`k_work_is_pending()`
-  * :c:func:`k_work_q_start()` replace with :c:func:`k_work_queue_start()`
-  * :c:struct:`k_delayed_work` replace with :c:struct:`k_work_delayable`
-  * :c:func:`k_delayed_work_init()` replace with
-    :c:func:`k_work_init_delayable`
-  * :c:func:`k_delayed_work_submit_to_queue()` replace with
-    :c:func:`k_work_schedule_for_queue()` or
-    :c:func:`k_work_reschedule_for_queue()`
-  * :c:func:`k_delayed_work_submit()` replace with :c:func:`k_work_schedule()`
-    or :c:func:`k_work_reschedule()`
-  * :c:func:`k_delayed_work_pending()` replace with
-    :c:func:`k_work_delayable_is_pending()`
-  * :c:func:`k_delayed_work_cancel()` replace with
-    :c:func:`k_work_cancel_delayable()`
-  * :c:func:`k_delayed_work_remaining_get()` replace with
-    :c:func:`k_work_delayable_remaining_get()`
-  * :c:func:`k_delayed_work_expires_ticks()` replace with
-    :c:func:`k_work_delayable_expires_get()`
-  * :c:func:`k_delayed_work_remaining_ticks()` replace with
-    :c:func:`k_work_delayable_remaining_get()`
-  * :c:macro:`K_DELAYED_WORK_DEFINE` replace with
-    :c:macro:`K_WORK_DELAYABLE_DEFINE`
 
 ==========================
 
@@ -171,8 +121,6 @@ Architectures
     * Added support for null pointer dereferencing detection in Cortex-M.
 
     * Added initial support for Arm v8.1-m and Cortex-M55
-
-    * Added support for preempting threads while they are performing secure calls in Cortex-M.
 
   * AARCH64
 
@@ -263,21 +211,6 @@ Drivers and Sensors
 
 * GPIO
 
-  * :c:struct:`gpio_dt_spec`: a new structure which makes it more convenient to
-    access GPIO configuration in the :ref:`devicetree <dt-guide>`.
-  * New macros for initializing ``gpio_dt_spec`` values:
-    :c:macro:`GPIO_DT_SPEC_GET_BY_IDX`, :c:macro:`GPIO_DT_SPEC_GET_BY_IDX_OR`,
-    :c:macro:`GPIO_DT_SPEC_GET`, :c:macro:`GPIO_DT_SPEC_GET_OR`,
-    :c:macro:`GPIO_DT_SPEC_INST_GET_BY_IDX`,
-    :c:macro:`GPIO_DT_SPEC_INST_GET_BY_IDX_OR`,
-    :c:macro:`GPIO_DT_SPEC_INST_GET`, and :c:macro:`GPIO_DT_SPEC_INST_GET_OR`
-  * New helper functions for using ``gpio_dt_spec`` values:
-    :c:func:`gpio_pin_configure_dt`, :c:func:`gpio_pin_interrupt_configure_dt`
-  * Remove support for ``GPIO_INT_*`` flags in :c:func:`gpio_pin_configure()`.
-    The feature has been deprecated in the Zephyr 2.2 release. The interrupt
-    flags are now accepted by :c:func:`gpio_pin_interrupt_configure()`
-    function only.
-
 * Hardware Info
 
 * I2C
@@ -366,12 +299,6 @@ Libraries / Subsystems
 
 * Power management
 
-  * ``device_pm_control_nop`` has been removed in favor of ``NULL`` when device
-    PM is not supported by a device. In order to make transition easier for
-    out-of-tree users a macro with the same name is provided as an alias to
-    ``NULL``. The macro is flagged as deprecated to make users aware of the
-    change.
-
 * Logging
 
 * LVGL
@@ -389,14 +316,6 @@ Libraries / Subsystems
 
 * Debug
 
-* OS
-
-  * Reboot functionality has been moved to ``subsys/os`` from ``subsys/power``.
-    A consequence of this movement is that the ``<power/reboot.h>`` header has
-    been moved to ``<sys/reboot.h>``. ``<power/reboot.h>`` is still provided
-    for compatibility, but it will produce a warning to inform users of the
-    relocation.
-
 HALs
 ****
 
@@ -407,17 +326,9 @@ HALs
 Trusted Firmware-m
 ******************
 
-* Synchronized Trusted-Firmware-M module to the upstream v1.3.0 release.
 * Configured QEMU to run Zephyr samples and tests in CI on mps2_an521_nonsecure
   (Cortex-M33 Non-Secure) with TF-M as the secure firmware component.
-* Added Kconfig options for selecting the desired TF-M profile and build type
-* Added Kconfig options for enabling the desired TF-M secure partitions
-* Added a new sample to run the PSA tests with Zephyr
-* Added a new sample to run the TF-M regression tests using the Zephyr build system
-* Added support for new platforms
-
-   * BL5340 DVK
-   * STM32L562E DK
+* Synchronized Trusted-Firmware-M module to the upstream v1.3.0 release.
 
 
 Documentation

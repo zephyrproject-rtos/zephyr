@@ -181,7 +181,7 @@ static int memc_flexspi_hyperram_init(const struct device *dev)
 								  \
 	DEVICE_DT_INST_DEFINE(n,				  \
 			      memc_flexspi_hyperram_init,	  \
-			      NULL,				  \
+			      device_pm_control_nop,		  \
 			      &memc_flexspi_hyperram_data_##n,	  \
 			      &memc_flexspi_hyperram_config_##n,  \
 			      POST_KERNEL,			  \

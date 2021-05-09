@@ -3,10 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_ITE_IT8XXX2_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_ITE_IT8XXX2_H_
+#ifndef INTC_ITE_IT8XXX2
+#define INTC_ITE_IT8XXX2
 
-#include <dt-bindings/interrupt-controller/ite-intc.h>
+#include <dt-bindings/irq.h>
 #include <soc.h>
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_ITE_IT8XXX2_H_ */
+#endif	/* INTC_ITE_IT8XXX2 */

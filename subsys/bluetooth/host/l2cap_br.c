@@ -156,11 +156,8 @@ static void l2cap_br_chan_destroy(struct bt_l2cap_chan *chan)
 {
 	BT_DBG("chan %p cid 0x%04x", BR_CHAN(chan), BR_CHAN(chan)->rx.cid);
 
-	/* Cancel ongoing work. Since the channel can be re-used after this
-	 * we need to sync to make sure that the kernel does not have it
-	 * in its queue anymore.
-	 */
-	k_work_cancel_delayable_sync(&chan->rtx_work, &chan->rtx_sync);
+	/* Cancel ongoing work */
+	k_delayed_work_cancel(&chan->rtx_work);
 
 	atomic_clear(BR_CHAN(chan)->flags);
 }
@@ -204,13 +201,7 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 		return false;
 	}
 
-	/* All dynamic channels have the destroy handler which makes sure that
-	 * the RTX work structure is properly released with a cancel sync.
-	 * The fixed signal channel is only removed when disconnected and the
-	 * disconnected handler is always called from the workqueue itself so
-	 * canceling from there should always succeed.
-	 */
-	k_work_init_delayable(&chan->rtx_work, l2cap_br_rtx_timeout);
+	k_delayed_work_init(&chan->rtx_work, l2cap_br_rtx_timeout);
 	bt_l2cap_chan_add(conn, chan, destroy);
 
 	return true;
@@ -229,27 +220,9 @@ static uint8_t l2cap_br_get_ident(void)
 	return ident;
 }
 
-/* Send the buffer and release it in case of failure.
- * Any other cleanup in failure to send should be handled by the disconnected
- * handler.
- */
-static inline void l2cap_send(struct bt_conn *conn, uint16_t cid,
-			      struct net_buf *buf)
-{
-	if (bt_l2cap_send(conn, cid, buf)) {
-		net_buf_unref(buf);
-	}
-}
-
 static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 				   struct net_buf *buf, k_timeout_t timeout)
 {
-
-	if (bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf)) {
-		net_buf_unref(buf);
-		return;
-	}
-
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
 	 *
 	 * The value of this timer is implementation-dependent but the minimum
@@ -259,7 +232,9 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	k_work_reschedule(&chan->chan.rtx_work, timeout);
+	k_delayed_work_submit(&chan->chan.rtx_work, timeout);
+
+	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
 static void l2cap_br_get_info(struct bt_l2cap_br *l2cap, uint16_t info_type)
@@ -341,7 +316,7 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		 * Release RTX timer since got the response & there's pending
 		 * command request.
 		 */
-		k_work_cancel_delayable(&l2cap->chan.chan.rtx_work);
+		k_delayed_work_cancel(&l2cap->chan.chan.rtx_work);
 	}
 
 	if (buf->len < sizeof(*rsp)) {
@@ -457,7 +432,7 @@ static int l2cap_br_info_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 		break;
 	}
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, rsp_buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, rsp_buf);
 
 	return 0;
 }
@@ -665,7 +640,7 @@ static void l2cap_br_send_conn_rsp(struct bt_conn *conn, uint16_t scid,
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_NO_INFO);
 	}
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
 static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, uint16_t result)
@@ -753,7 +728,8 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR);
 
 	/* Disable fragmentation of l2cap rx pdu */
-	BR_CHAN(chan)->rx.mtu = MIN(BR_CHAN(chan)->rx.mtu, BT_L2CAP_RX_MTU);
+	BR_CHAN(chan)->rx.mtu = MIN(BR_CHAN(chan)->rx.mtu,
+				    CONFIG_BT_L2CAP_RX_MTU);
 
 	switch (l2cap_br_conn_security(chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
@@ -816,7 +792,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	/* Release RTX work since got the response */
-	k_work_cancel_delayable(&chan->rtx_work);
+	k_delayed_work_cancel(&chan->rtx_work);
 
 	/*
 	 * TODO: handle other results than success and parse response data if
@@ -903,7 +879,7 @@ static void l2cap_br_send_reject(struct bt_conn *conn, uint8_t ident,
 		net_buf_add_mem(buf, data, data_len);
 	}
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
 static uint16_t l2cap_br_conf_opt_mtu(struct bt_l2cap_chan *chan,
@@ -1032,7 +1008,7 @@ send_rsp:
 
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 
 	if (result != BT_L2CAP_CONF_SUCCESS) {
 		return;
@@ -1120,7 +1096,7 @@ static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 
 	bt_l2cap_chan_del(&chan->chan);
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+	bt_l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
 }
 
 static void l2cap_br_connected(struct bt_l2cap_chan *chan)
@@ -1134,11 +1110,8 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 
 	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
 				      L2CAP_FLAG_SIG_INFO_PENDING)) {
-		/* Cancel RTX work on signal channel.
-		 * Disconnected callback is always called from system worqueue
-		 * so this should always succeed.
-		 */
-		(void)k_work_cancel_delayable(&chan->rtx_work);
+		/* Cancel RTX work on signal channel */
+		k_delayed_work_cancel(&chan->rtx_work);
 	}
 }
 
@@ -1315,7 +1288,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	/* Release RTX work since got the response */
-	k_work_cancel_delayable(&chan->rtx_work);
+	k_delayed_work_cancel(&chan->rtx_work);
 
 	if (chan->state != BT_L2CAP_CONNECT) {
 		BT_DBG("Invalid channel %p state %s", chan,
@@ -1332,7 +1305,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident,
 		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		break;
 	case BT_L2CAP_BR_PENDING:
-		k_work_reschedule(&chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
+		k_delayed_work_submit(&chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
 		break;
 	default:
 		l2cap_br_chan_cleanup(chan);
@@ -1348,7 +1321,9 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return -EMSGSIZE;
 	}
 
-	return bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, buf, NULL, NULL);
+	bt_l2cap_send(ch->chan.conn, ch->tx.cid, buf);
+
+	return buf->len;
 }
 
 static int l2cap_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)

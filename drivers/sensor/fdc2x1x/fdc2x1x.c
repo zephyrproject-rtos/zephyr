@@ -424,7 +424,7 @@ static int fdc2x1x_reset(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 	struct fdc2x1x_data *data = dev->data;
 
-	data->pm_state = PM_DEVICE_STATE_LOW_POWER;
+	data->pm_state = DEVICE_PM_LOW_POWER_STATE;
 #endif
 
 	return ret;
@@ -496,8 +496,8 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 	const struct fdc2x1x_config *cfg = dev->config;
 
 	switch (pm_state) {
-	case PM_DEVICE_STATE_ACTIVE:
-		if (data->pm_state == PM_DEVICE_STATE_OFF) {
+	case DEVICE_PM_ACTIVE_STATE:
+		if (data->pm_state == DEVICE_PM_OFF_STATE) {
 			ret = fdc2x1x_set_shutdown(dev, false);
 			if (ret) {
 				return ret;
@@ -508,11 +508,11 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 		if (ret) {
 			return ret;
 		}
-		data->pm_state = PM_DEVICE_STATE_ACTIVE;
+		data->pm_state = DEVICE_PM_ACTIVE_STATE;
 
 		break;
-	case PM_DEVICE_STATE_LOW_POWER:
-		if (data->pm_state == PM_DEVICE_STATE_OFF) {
+	case DEVICE_PM_LOW_POWER_STATE:
+		if (data->pm_state == DEVICE_PM_OFF_STATE) {
 			ret = fdc2x1x_set_shutdown(dev, false);
 			if (ret) {
 				return ret;
@@ -522,13 +522,13 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 		if (ret) {
 			return ret;
 		}
-		data->pm_state = PM_DEVICE_STATE_LOW_POWER;
+		data->pm_state = DEVICE_PM_LOW_POWER_STATE;
 
 		break;
-	case PM_DEVICE_STATE_OFF:
+	case DEVICE_PM_OFF_STATE:
 		if (cfg->sd_gpio->name) {
 			ret = fdc2x1x_set_shutdown(dev, true);
-			data->pm_state = PM_DEVICE_STATE_OFF;
+			data->pm_state = DEVICE_PM_OFF_STATE;
 		} else {
 			LOG_ERR("SD pin not defined");
 			ret = -EINVAL;
@@ -543,19 +543,19 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 
 static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 				  uint32_t ctrl_command,
-				  void *context, pm_device_cb cb, void *arg)
+				  void *context, device_pm_cb cb, void *arg)
 {
 	struct fdc2x1x_data *data = dev->data;
 	uint32_t new_state;
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		new_state = *(uint32_t *)context;
 		if (new_state != data->pm_state) {
 			switch (new_state) {
-			case PM_DEVICE_STATE_ACTIVE:
-			case PM_DEVICE_STATE_LOW_POWER:
-			case PM_DEVICE_STATE_OFF:
+			case DEVICE_PM_ACTIVE_STATE:
+			case DEVICE_PM_LOW_POWER_STATE:
+			case DEVICE_PM_OFF_STATE:
 				ret = fdc2x1x_set_pm_state(dev, new_state);
 				break;
 			default:
@@ -563,7 +563,7 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 				ret = -EINVAL;
 			}
 		}
-	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
+	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((uint32_t *)context) = data->pm_state;
 	}
 
@@ -655,7 +655,7 @@ static int fdc2x1x_sample_fetch(const struct device *dev,
 #ifdef CONFIG_PM_DEVICE
 	struct fdc2x1x_data *data = dev->data;
 
-	if (data->pm_state != PM_DEVICE_STATE_ACTIVE) {
+	if (data->pm_state != DEVICE_PM_ACTIVE_STATE) {
 		LOG_ERR("Sample fetch failed, device is not in active mode");
 		return -ENXIO;
 	}

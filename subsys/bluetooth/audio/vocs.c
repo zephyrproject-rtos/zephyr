@@ -266,8 +266,7 @@ static void prepare_vocs_instances(void)
 	}
 }
 
-int bt_vocs_register(struct bt_vocs *vocs,
-		     const struct bt_vocs_register_param *param)
+int bt_vocs_init(struct bt_vocs *vocs, const struct bt_vocs_init_param *init)
 {
 	int err;
 	struct bt_gatt_attr *attr;
@@ -276,11 +275,6 @@ int bt_vocs_register(struct bt_vocs *vocs,
 
 	CHECKIF(!vocs) {
 		BT_DBG("Null VOCS pointer");
-		return -EINVAL;
-	}
-
-	CHECKIF(!param) {
-		BT_DBG("NULL params pointer");
 		return -EINVAL;
 	}
 
@@ -294,22 +288,21 @@ int bt_vocs_register(struct bt_vocs *vocs,
 		return -EALREADY;
 	}
 
-	CHECKIF(param->offset > BT_VOCS_MAX_OFFSET || param->offset < BT_VOCS_MIN_OFFSET) {
-		BT_DBG("Invalid offset %d", param->offset);
+	CHECKIF(init->offset > BT_VOCS_MAX_OFFSET || init->offset < BT_VOCS_MIN_OFFSET) {
+		BT_DBG("Invalid offset %d", init->offset);
 		return -EINVAL;
 	}
 
-	vocs->srv.location = param->location;
-	vocs->srv.state.offset = param->offset;
-	vocs->srv.cb = param->cb;
+	vocs->srv.location = init->location;
+	vocs->srv.state.offset = init->offset;
 
-	if (param->output_desc) {
-		strncpy(vocs->srv.output_desc, param->output_desc,
+	if (init->output_desc) {
+		strncpy(vocs->srv.output_desc, init->output_desc,
 			sizeof(vocs->srv.output_desc) - 1);
 		/* strncpy may not always null-terminate */
 		vocs->srv.output_desc[sizeof(vocs->srv.output_desc) - 1] = '\0';
 		if (IS_ENABLED(CONFIG_BT_DEBUG_VOCS) &&
-		    strcmp(vocs->srv.output_desc, param->output_desc)) {
+		    strcmp(vocs->srv.output_desc, init->output_desc)) {
 			BT_DBG("Output desc clipped to %s", log_strdup(vocs->srv.output_desc));
 		}
 	}
@@ -323,13 +316,13 @@ int bt_vocs_register(struct bt_vocs *vocs,
 	for (int i = 1; i < vocs->srv.service_p->attr_count; i++) {
 		attr = &vocs->srv.service_p->attrs[i];
 
-		if (param->location_writable && !bt_uuid_cmp(attr->uuid, BT_UUID_VOCS_LOCATION)) {
+		if (init->location_writable && !bt_uuid_cmp(attr->uuid, BT_UUID_VOCS_LOCATION)) {
 			/* Update attr and chrc to be writable */
 			chrc = vocs->srv.service_p->attrs[i - 1].user_data;
 			attr->write = write_location;
 			attr->perm |= BT_GATT_PERM_WRITE_ENCRYPT;
 			chrc->properties |= BT_GATT_CHRC_WRITE_WITHOUT_RESP;
-		} else if (param->desc_writable &&
+		} else if (init->desc_writable &&
 			   !bt_uuid_cmp(attr->uuid, BT_UUID_VOCS_DESCRIPTION)) {
 			/* Update attr and chrc to be writable */
 			chrc = vocs->srv.service_p->attrs[i - 1].user_data;
@@ -485,6 +478,18 @@ int bt_vocs_description_set(struct bt_conn *conn, struct bt_vocs *inst, const ch
 	}
 
 	return -ENOTSUP;
+}
+
+int bt_vocs_cb_register(struct bt_vocs *inst, struct bt_vocs_cb *cb)
+{
+	CHECKIF(!inst) {
+		BT_DBG("Null VOCS pointer");
+		return -EINVAL;
+	}
+
+	inst->srv.cb = cb;
+
+	return 0;
 }
 
 #endif /* CONFIG_BT_VOCS || CONFIG_BT_VOCS_CLIENT */

@@ -20,14 +20,6 @@
 #define LED0_NODE DT_ALIAS(led0)
 #define LED1_NODE DT_ALIAS(led1)
 
-#if !DT_NODE_HAS_STATUS(LED0_NODE, okay)
-#error "Unsupported board: led0 devicetree alias is not defined"
-#endif
-
-#if !DT_NODE_HAS_STATUS(LED1_NODE, okay)
-#error "Unsupported board: led1 devicetree alias is not defined"
-#endif
-
 struct printk_data_t {
 	void *fifo_reserved; /* 1st word reserved for use by fifo */
 	uint32_t led;
@@ -37,40 +29,34 @@ struct printk_data_t {
 K_FIFO_DEFINE(printk_fifo);
 
 struct led {
-	struct gpio_dt_spec spec;
+	const char *gpio_dev_name;
 	const char *gpio_pin_name;
-};
-
-static const struct led led0 = {
-	.spec = GPIO_DT_SPEC_GET_OR(LED0_NODE, gpios, {0}),
-	.gpio_pin_name = DT_PROP_OR(LED0_NODE, label, ""),
-};
-
-static const struct led led1 = {
-	.spec = GPIO_DT_SPEC_GET_OR(LED1_NODE, gpios, {0}),
-	.gpio_pin_name = DT_PROP_OR(LED1_NODE, label, ""),
+	unsigned int gpio_pin;
+	unsigned int gpio_flags;
 };
 
 void blink(const struct led *led, uint32_t sleep_ms, uint32_t id)
 {
-	const struct gpio_dt_spec *spec = &led->spec;
+	const struct device *gpio_dev;
 	int cnt = 0;
 	int ret;
 
-	if (!device_is_ready(spec->port)) {
-		printk("Error: %s device is not ready\n", spec->port->name);
+	gpio_dev = device_get_binding(led->gpio_dev_name);
+	if (gpio_dev == NULL) {
+		printk("Error: didn't find %s device\n",
+		       led->gpio_dev_name);
 		return;
 	}
 
-	ret = gpio_pin_configure_dt(spec, GPIO_OUTPUT);
+	ret = gpio_pin_configure(gpio_dev, led->gpio_pin, led->gpio_flags);
 	if (ret != 0) {
-		printk("Error %d: failed to configure pin %d (LED '%s')\n",
-			ret, spec->pin, led->gpio_pin_name);
+		printk("Error %d: failed to configure pin %d '%s'\n",
+			ret, led->gpio_pin, led->gpio_pin_name);
 		return;
 	}
 
 	while (1) {
-		gpio_pin_set(spec->port, spec->pin, cnt % 2);
+		gpio_pin_set(gpio_dev, led->gpio_pin, cnt % 2);
 
 		struct printk_data_t tx_data = { .led = id, .cnt = cnt };
 
@@ -89,11 +75,33 @@ void blink(const struct led *led, uint32_t sleep_ms, uint32_t id)
 
 void blink0(void)
 {
+	const struct led led0 = {
+#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+		.gpio_dev_name = DT_GPIO_LABEL(LED0_NODE, gpios),
+		.gpio_pin_name = DT_LABEL(LED0_NODE),
+		.gpio_pin = DT_GPIO_PIN(LED0_NODE, gpios),
+		.gpio_flags = GPIO_OUTPUT | DT_GPIO_FLAGS(LED0_NODE, gpios),
+#else
+#error "Unsupported board: led0 devicetree alias is not defined"
+#endif
+	};
+
 	blink(&led0, 100, 0);
 }
 
 void blink1(void)
 {
+	const struct led led1 = {
+#if DT_NODE_HAS_STATUS(LED1_NODE, okay)
+		.gpio_dev_name = DT_GPIO_LABEL(LED1_NODE, gpios),
+		.gpio_pin_name = DT_LABEL(LED1_NODE),
+		.gpio_pin = DT_GPIO_PIN(LED1_NODE, gpios),
+		.gpio_flags = GPIO_OUTPUT | DT_GPIO_FLAGS(LED1_NODE, gpios),
+#else
+#error "Unsupported board: led1 devicetree alias is not defined"
+#endif
+	};
+
 	blink(&led1, 1000, 1);
 }
 

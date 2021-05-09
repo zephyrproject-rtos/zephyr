@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <sys/reboot.h>
+#include <power/reboot.h>
 #include <openthread/instance.h>
 #include <openthread/platform/misc.h>
 

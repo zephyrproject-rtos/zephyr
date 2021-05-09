@@ -69,14 +69,14 @@
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <31>; //P0.31
-	scl-pin = <2>; //P0.02
+	sda-gpios = <&gpio0 31 0>;
+	scl-gpios = <&gpio0 2 0>;
 };
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-pin = <14>; //P0.14
-	scl-pin = <15>; //P0.15
+	sda-gpios = <&gpio0 14 0>;
+	scl-gpios = <&gpio0 15 0>;
 };
 // we use SPI2 because SPI1/0 shares conflicts with I2C1/0
 &spi2 {

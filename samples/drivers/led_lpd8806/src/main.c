@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(main);
  */
 #define STRIP_NUM_LEDS 32
 
+#define STRIP_DEV_NAME DT_LABEL(DT_INST(0, colorway_lpd8806))
 #define DELAY_TIME K_MSEC(40)
 
 static const struct led_rgb colors[] = {
@@ -38,8 +39,6 @@ static const struct led_rgb black = {
 
 struct led_rgb strip_colors[STRIP_NUM_LEDS];
 
-static const struct device *strip = DEVICE_DT_GET_ANY(colorway_lpd8806);
-
 const struct led_rgb *color_at(size_t time, size_t i)
 {
 	size_t rgb_start = time % STRIP_NUM_LEDS;
@@ -53,16 +52,16 @@ const struct led_rgb *color_at(size_t time, size_t i)
 
 void main(void)
 {
+	const struct device *strip;
 	size_t i, time;
 
-	if (!strip) {
-		LOG_ERR("LED strip device not found");
-		return;
-	} else if (!device_is_ready(strip)) {
-		LOG_INF("LED strip device %s is not ready", strip->name);
+	strip = device_get_binding(STRIP_DEV_NAME);
+	if (strip) {
+		LOG_INF("Found LED strip device %s", STRIP_DEV_NAME);
+	} else {
+		LOG_ERR("LED strip device %s not found", STRIP_DEV_NAME);
 		return;
 	}
-	LOG_INF("Found LED strip device %s", strip->name);
 
 	/*
 	 * Display a pattern that "walks" the three primary colors

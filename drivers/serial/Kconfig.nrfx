@@ -40,6 +40,8 @@ config UART_0_ENHANCED_POLL_OUT
 	bool "Efficient poll out on port 0"
 	default y
 	depends on UART_0_NRF_UARTE
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 	help
 	  When enabled, polling out does not trigger interrupt which stops TX.
 	  Feature uses a PPI channel.
@@ -133,6 +135,8 @@ config UART_1_ASYNC
 config UART_1_ENHANCED_POLL_OUT
 	bool "Efficient poll out on port 1"
 	default y
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 	help
 	  When enabled, polling out does not trigger interrupt which stops TX.
 	  Feature uses a PPI channel.
@@ -210,6 +214,8 @@ config UART_2_ASYNC
 config UART_2_ENHANCED_POLL_OUT
 	bool "Efficient poll out on port 2"
 	default y
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 	help
 	  When enabled, polling out does not trigger interrupt which stops TX.
 	  Feature uses a PPI channel.
@@ -286,6 +292,8 @@ config UART_3_ASYNC
 config UART_3_ENHANCED_POLL_OUT
 	bool "Efficient poll out on port 3"
 	default y
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 	help
 	  When enabled, polling out does not trigger interrupt which stops TX.
 	  Feature uses a PPI channel.
@@ -379,17 +387,6 @@ config NRFX_DPPI
 config UARTE_NRF_HW_ASYNC
 	bool
 	default y
-
-endif
-
-if UART_0_ENHANCED_POLL_OUT || UART_1_ENHANCED_POLL_OUT || \
-	UART_2_ENHANCED_POLL_OUT || UART_3_ENHANCED_POLL_OUT
-
-config UART_ENHANCED_POLL_OUT
-	bool
-	default y
-	select NRFX_PPI if HAS_HW_NRF_PPI
-	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 
 endif
 

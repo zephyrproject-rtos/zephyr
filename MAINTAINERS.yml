@@ -246,15 +246,15 @@ CMSIS API layer:
     collaborators:
          - nashif
     files:
-         - subsys/portability/cmsis_rtos_v*/
-         - include/portability/cmsis*
-         - samples/subsys/portability/cmsis_rtos_v*/
-         - tests/subsys/portability/cmsis_rtos_v*/
+         - lib/cmsis_rtos_v*/
+         - include/cmsis_rtos_v*/
+         - samples/portability/cmsis_rtos_v*/
+         - tests/portability/cmsis_rtos_v*/
     labels:
         - "area: Portability"
 
 Common arch:
-    status: orphaned
+    status: maintained
     collaborators:
         - dcpleung
         - nashif
@@ -370,7 +370,6 @@ Documentation:
         - nashif
         - utzig
         - jocelyn-li
-        - mbolivar-nordic
     files:
         - doc/*
         - doc/static/
@@ -911,6 +910,7 @@ JSON Web Token:
         - mrfuchs
     files:
         - subsys/jwt/
+
     labels:
         - "area: JSON"
 
@@ -966,6 +966,7 @@ Little FS:
         - tests/subsys/fs/littlefs/
     description: >-
        Little FS
+
     labels:
         - "area: File System"
 
@@ -1009,7 +1010,7 @@ MCU Manager:
         - "area: mcumgr"
 
 OSDP:
-    status: orphaned
+    status: maintained
     collaborators:
         - cbsiddharth
     files:
@@ -1085,6 +1086,7 @@ Networking:
         - include/net/buf.h
         - subsys/net/buf.c
         - tests/net/buf/
+
     labels:
         - "area: Networking"
 
@@ -1100,7 +1102,6 @@ Networking:
         - tests/net/lib/coap/
     labels:
         - "area: Networking"
-
 "Networking: LWM2M":
     status: maintained
     maintainers:
@@ -1166,10 +1167,10 @@ Power management:
         - nashif
         - mengxianglinx
     files:
-        - include/pm/pm.h
-        - samples/subsys/pm/
-        - subsys/pm/
-        - tests/subsys/pm/
+        - include/power/power.h
+        - samples/subsys/power/
+        - subsys/power/
+        - tests/subsys/power/
     labels:
         - "area: Power Management"
 
@@ -1244,7 +1245,7 @@ Shields:
         - "area: Shields"
 
 SPARC arch:
-    status: orphaned
+    status: maintained
     collaborators:
         - martin-aberg
     files:
@@ -1268,7 +1269,7 @@ Synopsys Platforms:
         - "platform: Synopsys"
 
 Nuvoton Platforms:
-    status: orphaned
+    status: maintained
     collaborators:
         - MulinChao
         - sjg20
@@ -1285,7 +1286,7 @@ Nuvoton Platforms:
         - "platform: Nuvoton"
 
 SiLabs Platforms:
-    status: orphaned
+    status: maintained
     collaborators:
         - chrta
     files:
@@ -1500,13 +1501,13 @@ VFS:
     labels:
         - "area: File System"
 
+
 West:
     status: maintained
     maintainers:
         - mbolivar-nordic
     collaborators:
         - carlescufi
-        - swinslow
     files:
         - scripts/west-commands.yml
         - scripts/west_commands/

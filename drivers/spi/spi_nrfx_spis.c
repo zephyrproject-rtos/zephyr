@@ -289,7 +289,7 @@ static int init_spis(const struct device *dev,
 	};								       \
 	DEVICE_DT_DEFINE(SPIS(idx),					       \
 			    spi_##idx##_init,				       \
-			    NULL,					       \
+			    device_pm_control_nop,			       \
 			    &spi_##idx##_data,				       \
 			    &spi_##idx##z_config,			       \
 			    POST_KERNEL,				       \

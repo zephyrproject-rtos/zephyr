@@ -26,6 +26,17 @@
 1:
 #endif
 
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+	/*
+	 * Boot time measurements use TSC as a datum; zero it.
+	 */
+
+	xorl %eax, %eax
+	xorl %edx, %edx
+	movl $X86_TIME_STAMP_COUNTER_MSR, %ecx
+	wrmsr
+#endif
+
 #ifdef CONFIG_PIC_DISABLE
 	/*
 	 * "Disable" legacy i8259 interrupt controllers. Note that we

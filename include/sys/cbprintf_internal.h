@@ -15,6 +15,10 @@
 #include <sys/util.h>
 #include <sys/__assert.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Special alignment cases
  */
@@ -45,20 +49,6 @@
 #define VA_STACK_ALIGN(type)	MAX(VA_STACK_MIN_ALIGN, __alignof__(type))
 #endif
 
-static inline void z_cbprintf_wcpy(int *dst, int *src, size_t len)
-{
-	for (size_t i = 0; i < len; i++) {
-		dst[i] = src[i];
-	}
-}
-
-#include <sys/cbprintf_cxx.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
 #if defined(__sparc__)
 /* The SPARC V8 ABI guarantees that the arguments of a variable argument
  * list function are stored on the stack at addresses which are 32-bit
@@ -81,22 +71,17 @@ extern "C" {
  *
  * @return 1 if char * or wchar_t *, 0 otherwise.
  */
-#ifdef __cplusplus
-#define Z_CBPRINTF_IS_PCHAR(x) z_cbprintf_cxx_is_pchar(x)
-#else
-#define Z_CBPRINTF_IS_PCHAR(x) \
-	_Generic((x) + 0, \
-		char * : 1, \
-		const char * : 1, \
-		volatile char * : 1, \
-		const volatile char * : 1, \
-		wchar_t * : 1, \
-		const wchar_t * : 1, \
-		volatile wchar_t * : 1, \
-		const volatile wchar_t * : 1, \
-		default : \
-			0)
-#endif
+#define Z_CBPRINTF_IS_PCHAR(x) _Generic((x), \
+			char * : 1, \
+			const char * : 1, \
+			volatile char * : 1, \
+			const volatile char * : 1, \
+			wchar_t * : 1, \
+			const wchar_t * : 1, \
+			volatile wchar_t * : 1, \
+			const volatile wchar_t * : 1, \
+			default : \
+				0)
 
 /** @brief Calculate number of char * or wchar_t * arguments in the arguments.
  *
@@ -121,15 +106,10 @@ extern "C" {
  * @retval 0 if string can be statically packaged.
  */
 #if Z_C_GENERIC
-#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ...) ({\
-	_Pragma("GCC diagnostic push") \
-	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
-	int _rv = COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+#define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ...) \
+	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
 			(0), \
-			(((Z_CBPRINTF_HAS_PCHAR_ARGS(__VA_ARGS__) - skip) > 0))); \
-	_Pragma("GCC diagnostic pop")\
-	_rv; \
-})
+			(((Z_CBPRINTF_HAS_PCHAR_ARGS(__VA_ARGS__) - skip) > 0)))
 #else
 #define Z_CBPRINTF_MUST_RUNTIME_PACKAGE(skip, ...) 1
 #endif
@@ -143,19 +123,19 @@ extern "C" {
  *
  * @return Number of bytes used for storing the argument.
  */
-#ifdef __cplusplus
-#define Z_CBPRINTF_ARG_SIZE(v) z_cbprintf_cxx_arg_size(v)
-#else
-#define Z_CBPRINTF_ARG_SIZE(v) ({\
-	__auto_type _v = (v) + 0; \
-	size_t _arg_size = _Generic((v), \
+#define Z_CBPRINTF_ARG_SIZE(v) \
+	_Generic((v), \
 		float : sizeof(double), \
 		default : \
-			sizeof((_v)) \
-		); \
-	_arg_size; \
-})
-#endif
+			sizeof((v)+0) \
+		)
+
+static inline void cbprintf_wcpy(int *dst, int *src, size_t len)
+{
+	for (int i = 0; i < len; i++) {
+		dst[i] = src[i];
+	}
+}
 
 /** @brief Promote and store argument in the buffer.
  *
@@ -163,9 +143,6 @@ extern "C" {
  *
  * @param arg Argument.
  */
-#ifdef __cplusplus
-#define Z_CBPRINTF_STORE_ARG(buf, arg) z_cbprintf_cxx_store_arg(buf, arg)
-#else
 #define Z_CBPRINTF_STORE_ARG(buf, arg) do { \
 	if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) { \
 		/* If required, copy arguments by word to avoid unaligned access.*/ \
@@ -176,7 +153,7 @@ extern "C" {
 					0.0); \
 		size_t arg_size = Z_CBPRINTF_ARG_SIZE(arg); \
 		size_t _wsize = arg_size / sizeof(int); \
-		z_cbprintf_wcpy((int *)buf, \
+		cbprintf_wcpy((int *)buf, \
 			      (int *) _Generic((arg) + 0, float : &_d, default : &_v), \
 			      _wsize); \
 	} else { \
@@ -198,7 +175,6 @@ extern "C" {
 				(const void **)buf) = arg; \
 	} \
 } while (0)
-#endif
 
 /** @brief Return alignment needed for given argument.
  *
@@ -206,9 +182,6 @@ extern "C" {
  *
  * @return Alignment in bytes.
  */
-#ifdef __cplusplus
-#define Z_CBPRINTF_ALIGNMENT(_arg) z_cbprintf_cxx_alignment(_arg)
-#else
 #define Z_CBPRINTF_ALIGNMENT(_arg) \
 	MAX(_Generic((_arg) + 0, \
 		float : VA_STACK_ALIGN(double), \
@@ -218,28 +191,15 @@ extern "C" {
 		unsigned long long : VA_STACK_ALIGN(long long), \
 		default : \
 			__alignof__((_arg) + 0)), VA_STACK_MIN_ALIGN)
-#endif
 
-/** @brief Detect long double variable as a constant expression.
- *
- * Macro is used in static assertion. On some platforms C++ static inline
- * template function is not a constant expression and cannot be used. In that
- * case long double usage will not be detected.
+/** @brief Detect long double variable.
  *
  * @param x Argument.
  *
  * @return 1 if @p x is a long double, 0 otherwise.
  */
-#ifdef __cplusplus
-#if defined(__x86_64__) || defined(__riscv) || defined(__aarch64__)
-#define Z_CBPRINTF_IS_LONGDOUBLE(x) 0
-#else
-#define Z_CBPRINTF_IS_LONGDOUBLE(x) z_cbprintf_cxx_is_longdouble(x)
-#endif
-#else
 #define Z_CBPRINTF_IS_LONGDOUBLE(x) \
 	_Generic((x) + 0, long double : 1, default : 0)
-#endif
 
 /** @brief Safely package arguments to a buffer.
  *
@@ -266,7 +226,7 @@ extern "C" {
 		_align_offset += sizeof(int); \
 	} \
 	uint32_t _arg_size = Z_CBPRINTF_ARG_SIZE(_arg); \
-	if (_buf && _idx < (int)_max) { \
+	if (_buf && _idx < _max) { \
 		Z_CBPRINTF_STORE_ARG(&_buf[_idx], _arg); \
 	} \
 	_idx += _arg_size; \
@@ -299,18 +259,6 @@ union z_cbprintf_hdr {
 	void *raw;
 };
 
-/* When using clang additional warning needs to be suppressed since each
- * argument of fmt string is used for sizeof() which results in the warning
- * if argument is a stirng literal. Suppression is added here instead of
- * the macro which generates the warning to not slow down the compiler.
- */
-#if __clang__ == 1
-#define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
-	_Pragma("GCC diagnostic ignored \"-Wsizeof-array-decay\"")
-#else
-#define Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY
-#endif
-
 /** @brief Statically package a formatted string with arguments.
  *
  * @param buf buffer. If null then only length is calculated.
@@ -329,7 +277,6 @@ union z_cbprintf_hdr {
 do { \
 	_Pragma("GCC diagnostic push") \
 	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
-	Z_CBPRINTF_SUPPRESS_SIZEOF_ARRAY_DECAY \
 	BUILD_ASSERT(!IS_ENABLED(CONFIG_XTENSA) || \
 		     (IS_ENABLED(CONFIG_XTENSA) && \
 		      !(_align_offset % CBPRINTF_PACKAGE_ALIGNMENT)), \
@@ -341,7 +288,7 @@ do { \
 			"Buffer must be aligned."); \
 	} \
 	uint8_t *_pbuf = buf; \
-	size_t _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
+	int _pmax = (buf != NULL) ? _inlen : INT32_MAX; \
 	int _pkg_len = 0; \
 	int _pkg_offset = _align_offset; \
 	union z_cbprintf_hdr *_len_loc; \
@@ -356,11 +303,11 @@ do { \
 	/* Pack remaining arguments */\
 	FOR_EACH(Z_CBPRINTF_PACK_ARG, (;), __VA_ARGS__);\
 	/* Store length */ \
-	_outlen = (_pkg_len > (int)_pmax) ? -ENOSPC : _pkg_len; \
+	_outlen = (_pkg_len > _pmax) ? -ENOSPC : _pkg_len; \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf) { \
 		union z_cbprintf_hdr hdr = { \
-			.desc = {.len = (uint8_t)(_pkg_len / sizeof(int)) } \
+			.desc = {.len = _pkg_len / sizeof(int) } \
 		}; \
 		*_len_loc = hdr; \
 	} \

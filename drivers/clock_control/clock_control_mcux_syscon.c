@@ -93,7 +93,7 @@ static const struct clock_control_driver_api mcux_lpc_syscon_api = {
 	\
 DEVICE_DT_INST_DEFINE(n, \
 		    &mcux_lpc_syscon_clock_control_init, \
-		    NULL, \
+		    device_pm_control_nop, \
 		    NULL, NULL, \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 		    &mcux_lpc_syscon_api);

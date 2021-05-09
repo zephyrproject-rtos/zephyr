@@ -72,7 +72,6 @@
 };
 
 &pwm6 {
-	drive-open-drain;
 	status = "okay";
 };
 

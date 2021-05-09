@@ -2,9 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SNTP
-	bool "SNTP (Simple Network Time Protocol)"
-	depends on NET_SOCKETS
-	depends on NET_SOCKETS_POSIX_NAMES || POSIX_API
+	bool "SNTP"
+	select NET_SOCKETS
 	help
 	  Enable SNTP client library
 

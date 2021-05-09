@@ -445,8 +445,7 @@ static inline bool ad_has_name(const struct bt_data *ad, size_t ad_len)
 static int le_adv_update(struct bt_le_ext_adv *adv,
 			 const struct bt_data *ad, size_t ad_len,
 			 const struct bt_data *sd, size_t sd_len,
-			 bool ext_adv, bool scannable, bool use_name,
-			 bool force_name_in_ad)
+			 bool ext_adv, bool scannable, bool use_name)
 {
 	struct bt_ad d[2] = {};
 	struct bt_data data;
@@ -467,12 +466,12 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 			name, strlen(name));
 	}
 
-	if (!(ext_adv && scannable) || force_name_in_ad) {
+	if (!(ext_adv && scannable)) {
 		d_len = 1;
 		d[0].data = ad;
 		d[0].len = ad_len;
 
-		if (use_name && (!scannable || force_name_in_ad)) {
+		if (use_name && !scannable) {
 			d[1].data = &data;
 			d[1].len = 1;
 			d_len = 2;
@@ -489,7 +488,7 @@ static int le_adv_update(struct bt_le_ext_adv *adv,
 		d[0].data = sd;
 		d[0].len = sd_len;
 
-		if (use_name && !force_name_in_ad) {
+		if (use_name) {
 			d[1].data = &data;
 			d[1].len = 1;
 			d_len = 2;
@@ -509,7 +508,7 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 			  const struct bt_data *sd, size_t sd_len)
 {
 	struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
-	bool scannable, use_name, force_name_in_ad;
+	bool scannable, use_name;
 
 	if (!adv) {
 		return -EINVAL;
@@ -521,10 +520,9 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 
 	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
 	use_name = atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME);
-	force_name_in_ad = atomic_test_bit(adv->flags, BT_ADV_FORCE_NAME_IN_AD);
 
 	return le_adv_update(adv, ad, ad_len, sd, sd_len, false, scannable,
-			     use_name, force_name_in_ad);
+			     use_name);
 }
 
 static uint8_t get_filter_policy(uint32_t options)
@@ -712,8 +710,7 @@ int bt_le_adv_start_legacy(struct bt_le_ext_adv *adv,
 	if (!dir_adv) {
 		err = le_adv_update(adv, ad, ad_len, sd, sd_len, false,
 				    scannable,
-				    param->options & BT_LE_ADV_OPT_USE_NAME,
-				    param->options & BT_LE_ADV_OPT_FORCE_NAME_IN_AD);
+				    param->options & BT_LE_ADV_OPT_USE_NAME);
 		if (err) {
 			return err;
 		}
@@ -758,9 +755,6 @@ set_adv_state:
 
 	atomic_set_bit_to(adv->flags, BT_ADV_INCLUDE_NAME,
 			  param->options & BT_LE_ADV_OPT_USE_NAME);
-
-	atomic_set_bit_to(adv->flags, BT_ADV_FORCE_NAME_IN_AD,
-			  param->options & BT_LE_ADV_OPT_FORCE_NAME_IN_AD);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE,
 			  param->options & BT_LE_ADV_OPT_CONNECTABLE);
@@ -895,9 +889,6 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	atomic_set_bit_to(adv->flags, BT_ADV_INCLUDE_NAME,
 			  param->options & BT_LE_ADV_OPT_USE_NAME);
-
-	atomic_set_bit_to(adv->flags, BT_ADV_FORCE_NAME_IN_AD,
-			  param->options & BT_LE_ADV_OPT_FORCE_NAME_IN_AD);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE,
 			  param->options & BT_LE_ADV_OPT_CONNECTABLE);
@@ -1302,15 +1293,14 @@ int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
 			   const struct bt_data *ad, size_t ad_len,
 			   const struct bt_data *sd, size_t sd_len)
 {
-	bool ext_adv, scannable, use_name, force_name_in_ad;
+	bool ext_adv, scannable, use_name;
 
 	ext_adv = atomic_test_bit(adv->flags, BT_ADV_EXT_ADV);
 	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
 	use_name = atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME);
-	force_name_in_ad = atomic_test_bit(adv->flags, BT_ADV_FORCE_NAME_IN_AD);
 
 	return le_adv_update(adv, ad, ad_len, sd, sd_len, ext_adv, scannable,
-			     use_name, force_name_in_ad);
+			     use_name);
 }
 
 int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
@@ -1369,8 +1359,8 @@ int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
 		return -EINVAL;
 	}
 
-	if (param->interval_min < BT_GAP_PER_ADV_MIN_INTERVAL ||
-	    param->interval_max > BT_GAP_PER_ADV_MAX_INTERVAL ||
+	if (param->interval_min < 0x0006 ||
+	    param->interval_max > 0xFFFF ||
 	    param->interval_min > param->interval_max) {
 		return -EINVAL;
 	}
@@ -1552,26 +1542,6 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 	evt = (void *)buf->data;
 	adv = bt_adv_lookup_handle(evt->adv_handle);
 	conn_handle = sys_le16_to_cpu(evt->conn_handle);
-
-#if (CONFIG_BT_ID_MAX > 1) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
-	bt_dev.adv_conn_id = adv->id;
-	for (int i = 0; i < ARRAY_SIZE(bt_dev.cached_conn_complete); i++) {
-		if (bt_dev.cached_conn_complete[i].valid &&
-		    bt_dev.cached_conn_complete[i].evt.handle == evt->conn_handle) {
-			if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
-				/* Process the cached connection complete event
-				 * now that the corresponding advertising set is known.
-				 *
-				 * If the advertiser has been stopped before the connection
-				 * complete event has been raised to the application, we
-				 * discard the event.
-				 */
-				bt_hci_le_enh_conn_complete(&bt_dev.cached_conn_complete[i].evt);
-			}
-			bt_dev.cached_conn_complete[i].valid = false;
-		}
-	}
-#endif
 
 	BT_DBG("status 0x%02x adv_handle %u conn_handle 0x%02x num %u",
 	       evt->status, evt->adv_handle, conn_handle,

@@ -314,7 +314,7 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    gpio_rv32m1_init,				\
-			    NULL,					\
+			    device_pm_control_nop,			\
 			    &gpio_rv32m1_##n##_data,			\
 			    &gpio_rv32m1_##n##_config,			\
 			    POST_KERNEL,				\

@@ -232,7 +232,7 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 \
 	DEVICE_DT_INST_DEFINE(n, \
 			    gpio_litex_init, \
-			    NULL, \
+			    device_pm_control_nop, \
 			    &gpio_litex_data_##n, \
 			    &gpio_litex_cfg_##n, \
 			    POST_KERNEL, \

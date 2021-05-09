@@ -34,6 +34,4 @@ source "drivers/dac/Kconfig.dacx0508"
 
 source "drivers/dac/Kconfig.dacx3608"
 
-source "drivers/dac/Kconfig.mcp4725"
-
 endif # DAC

@@ -20,7 +20,6 @@
 #include <kernel_structs.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
-#include <arch/arc/asm-compat/assembler.h>
 
 GTEXT(_isr_wrapper)
 GTEXT(_isr_demux)
@@ -239,8 +238,8 @@ rirq_path:
 	j_s [r2]
 #endif
 #else
-	MOVR r3, _rirq_exit
-	MOVR r2, _rirq_enter
+	mov_s r3, _rirq_exit
+	mov_s r2, _rirq_enter
 	j_s [r2]
 #endif
 
@@ -248,15 +247,14 @@ rirq_path:
 .macro exit_tickless_idle
 #if defined(CONFIG_PM)
 	clri r0 /* do not interrupt exiting tickless idle operations */
-	MOVR r1, _kernel
-	/* z_kernel.idle is 32 bit despite of platform bittnes */
+	mov_s r1, _kernel
 	ld_s r3, [r1, _kernel_offset_to_idle] /* requested idle duration */
 	breq r3, 0, _skip_pm_save_idle_exit
 
 	st 0, [r1, _kernel_offset_to_idle] /* zero idle duration */
-	PUSHR blink
+	push_s blink
 	jl z_pm_save_idle_exit
-	POPR blink
+	pop_s blink
 
 _skip_pm_save_idle_exit:
 	seti r0
@@ -265,16 +263,16 @@ _skip_pm_save_idle_exit:
 
 /* when getting here, r3 contains the interrupt exit stub to call */
 SECTION_FUNC(TEXT, _isr_demux)
-	PUSHR r3
+	push_s r3
 
 /* according to ARCv2 ISA, r25, r30, r58, r59 are caller-saved
  * scratch registers, possibly used by interrupt handlers
  */
-	PUSHR r25
-	PUSHR r30
+	push r25
+	push r30
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
-	PUSHR r58
-	PUSHR r59
+	push r58
+	push r59
 #endif
 
 #ifdef CONFIG_TRACING_ISR
@@ -292,30 +290,26 @@ irq_hint_handled:
 
 	sub r0, r0, 16
 
-	MOVR r1, _sw_isr_table
-	/* SW ISR table entries are 8-bytes wide for 32bit ISA and
-	 * 16-bytes wide for 64bit ISA */
-	ASLR r0, r0, (ARC_REGSHIFT + 1)
-	ADDR r0, r1, r0
-	/* ISR into r1 */
-	LDR r1, r0, ARC_REGSZ
+	mov_s r1, _sw_isr_table
+	add3 r0, r1, r0   /* table entries are 8-bytes wide */
+
+	ld_s r1, [r0, 4] /* ISR into r1 */
 	jl_s.d [r1]
-	/* delay slot: ISR parameter into r0 */
-	LDR r0, r0
+	ld_s r0, [r0] /* delay slot: ISR parameter into r0  */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
 #endif
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
-	POPR r59
-	POPR r58
+	pop r59
+	pop r58
 #endif
 
-	POPR r30
-	POPR r25
+	pop r30
+	pop r25
 
 	/* back from ISR, jump to exit stub */
-	POPR r3
+	pop_s r3
 	j_s [r3]
 	nop_s

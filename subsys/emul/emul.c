@@ -10,7 +10,7 @@
 LOG_MODULE_REGISTER(emul);
 
 #include <device.h>
-#include <drivers/emul.h>
+#include <emul.h>
 #include <string.h>
 
 /**

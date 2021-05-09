@@ -17,7 +17,6 @@
 #include <arch/cpu.h>
 #include <swap_macros.h>
 #include <syscall.h>
-#include <arch/arc/asm-compat/assembler.h>
 
 GTEXT(_Fault)
 GTEXT(__reset)
@@ -44,10 +43,10 @@ GTEXT(z_irq_do_offload);
 	lr r0,[_ARC_V2_ERSEC_STAT]
 	st_s r0, [sp, ___isf_t_sec_stat_OFFSET]
 #endif
-	LRR r0, [_ARC_V2_ERET]
-	STR r0, sp, ___isf_t_pc_OFFSET
-	LRR r0, [_ARC_V2_ERSTATUS]
-	STR r0, sp, ___isf_t_status32_OFFSET
+	lr r0,[_ARC_V2_ERET]
+	st_s r0, [sp, ___isf_t_pc_OFFSET]
+	lr r0,[_ARC_V2_ERSTATUS]
+	st_s r0, [sp, ___isf_t_status32_OFFSET]
 .endm
 
 /*
@@ -85,9 +84,9 @@ _exc_entry:
 	 * and exception is raised, then here it's guaranteed that
 	 * exception handling has necessary stack to use
 	 */
-	MOVR ilink, sp
+	mov ilink, sp
 	_get_curr_cpu_irq_stack sp
-	SUBR sp, sp, (CONFIG_ISR_STACK_SIZE - CONFIG_ARC_EXCEPTION_STACK_SIZE)
+	sub sp, sp, (CONFIG_ISR_STACK_SIZE - CONFIG_ARC_EXCEPTION_STACK_SIZE)
 
 	/*
 	 * save caller saved registers
@@ -103,9 +102,9 @@ _exc_entry:
 	_save_exc_regs_into_stack
 
 	/* sp is parameter of _Fault */
-	MOVR r0, sp
+	mov_s r0, sp
 	/* ilink is the thread's original sp */
-	MOVR r1, ilink
+	mov r1, ilink
 	jl _Fault
 
 _exc_return:
@@ -119,9 +118,9 @@ _exc_return:
 
 	_get_next_switch_handle
 
-	BREQR r0, r2, _exc_return_from_exc
+	breq r0, r2, _exc_return_from_exc
 
-	MOVR r2, r0
+	mov_s r2, r0
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	/*
@@ -146,8 +145,8 @@ _exc_return:
 	 */
 	mov ilink, r2
 #endif
-	LRR r3, [_ARC_V2_STATUS32]
-	ANDR r3, r3, (~(_ARC_V2_STATUS32_AE | _ARC_V2_STATUS32_RB(7)))
+	lr r3, [_ARC_V2_STATUS32]
+	and r3,r3,(~(_ARC_V2_STATUS32_AE | _ARC_V2_STATUS32_RB(7)))
 	kflag r3
 	/* pretend lowest priority interrupt happened to use common handler
 	 * if exception is raised in irq, i.e., _ARC_V2_AUX_IRQ_ACT !=0,
@@ -159,7 +158,7 @@ _exc_return:
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	mov_s r3, (1 << (ARC_N_IRQ_START_LEVEL - 1))
 #else
-	MOVR r3, (1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1))
+	mov_s r3, (1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1))
 #endif
 
 #ifdef CONFIG_ARC_NORMAL_FIRMWARE
@@ -170,7 +169,7 @@ _exc_return:
 	sjli SJLI_CALL_ARC_SECURE
 	pop_s r2
 #else
-	SRR r3, [_ARC_V2_AUX_IRQ_ACT]
+	sr r3, [_ARC_V2_AUX_IRQ_ACT]
 #endif
 
 #if defined(CONFIG_ARC_FIRQ) && CONFIG_RGF_NUM_BANKS != 1
@@ -184,18 +183,18 @@ _exc_return_from_exc:
 	/* exception handler may change return address.
 	 * reload it
 	 */
-	LDR r0, sp, ___isf_t_pc_OFFSET
-	SRR r0, [_ARC_V2_ERET]
+	ld_s r0, [sp, ___isf_t_pc_OFFSET]
+	sr r0, [_ARC_V2_ERET]
 
 	_pop_irq_stack_frame
-	MOVR sp, ilink
+	mov sp, ilink
 	rtie
 
 /* separated entry for trap which may be used by irq_offload, USERPSACE */
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	/* get the id of trap_s */
-	LRR ilink, [_ARC_V2_ECR]
-	ANDR ilink, ilink, 0x3f
+	lr ilink, [_ARC_V2_ECR]
+	and ilink, ilink, 0x3f
 #ifdef CONFIG_USERSPACE
 	cmp ilink, _TRAP_S_CALL_SYSTEM_CALL
 	bne _do_non_syscall_trap
@@ -237,7 +236,7 @@ _do_non_syscall_trap:
 	 * so its entry is different with normal exception handling, it is
 	 * handled in isr stack
 	 */
-	CMPR ilink, _TRAP_S_SCALL_IRQ_OFFLOAD
+	cmp ilink, _TRAP_S_SCALL_IRQ_OFFLOAD
 	bne _exc_entry
 	/* save caller saved registers */
 	_create_irq_stack_frame
@@ -248,15 +247,15 @@ _do_non_syscall_trap:
 	_check_and_inc_int_nest_counter r0, r1
 
 	bne.d exc_nest_handle
-	MOVR r0, sp
+	mov_s r0, sp
 
 	_get_curr_cpu_irq_stack sp
 exc_nest_handle:
-	PUSHR r0
+	push_s r0
 
 	jl z_irq_do_offload
 
-	POPR sp
+	pop sp
 
 	_dec_int_nest_counter r0, r1
 

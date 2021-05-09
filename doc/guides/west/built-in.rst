@@ -197,15 +197,9 @@ if you just want to disable a single group, e.g. ``--group-filter=-bar``.
 If a project in the manifest has a ``submodules`` key, the submodules are
 updated as follows, depending on the value of the ``submodules`` key.
 
-If the project has ``submodules: true``, west first synchronizes the project's
-submodules with:
-
-.. code-block::
-
-   git submodule sync --recursive
-
-West then runs one of the following in the project repository, depending on
-whether you run ``west update`` with the ``--rebase`` option or without it:
+If the project has ``submodules: true``, west runs one of the following in
+the project repository, depending on whether you run ``west update``
+with the ``--rebase`` option or without it:
 
 .. code-block::
 
@@ -216,14 +210,9 @@ whether you run ``west update`` with the ``--rebase`` option or without it:
    git submodule update --init --rebase --recursive
 
 Otherwise, the project has ``submodules: <list-of-submodules>``. In this
-case, west synchronizes the project's submodules with:
-
-.. code-block::
-
-   git submodule sync --recursive -- <submodule-path>
-
-Then it updates each submodule in the list as follows, depending on whether you
-run ``west update`` with the ``--rebase`` option or without it:
+case, west runs one of the following in the project repository for each
+submodule path in the list, depending on whether you run ``west update``
+with the ``--rebase`` option or without it:
 
 .. code-block::
 
@@ -232,9 +221,6 @@ run ``west update`` with the ``--rebase`` option or without it:
 
    # with --rebase, e.g. "west update --rebase":
    git submodule update --init --rebase --recursive <submodule-path>
-
-The ``git submodule sync`` commands are skipped if the
-``update.sync-submodules`` :ref:`west-config` option is false.
 
 .. _west-built-in-misc:
 

@@ -21,8 +21,7 @@ Building and Running
 
 The sample can be configured to support BME280 sensors connected via either I2C
 or SPI. Configuration is done via :ref:`devicetree <dt-guide>`. The devicetree
-must have an enabled node with ``compatible = "bosch,bme280";``. See
-:dtcompatible:`bosch,bme280` for the devicetree binding and see below for
+must have an enabled node with ``compatible = "bosch,bme280";``. See below for
 examples and common configurations.
 
 If the sensor is not built into your board, start by wiring the sensor pins
@@ -76,9 +75,8 @@ peripheral.
 Board-specific overlays
 =======================
 
-If your board's devicetree does not have a BME280 node already, you can create
-a board-specific devicetree overlay adding one in the :file:`boards` directory.
-See existing overlays for examples.
+You can create a board-specific devicetree overlay for any board in the
+:file:`boards` directory. This sample must provide
 
 The build system uses these overlays by default when targeting those boards, so
 no ``DTC_OVERLAY_FILE`` setting is needed when building and running.

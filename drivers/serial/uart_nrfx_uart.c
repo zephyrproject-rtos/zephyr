@@ -272,14 +272,10 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 		while (atomic_cas((atomic_t *) lock,
 				  (atomic_val_t) 0,
 				  (atomic_val_t) 1) == false) {
-			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-				/* k_sleep allows other threads to execute and finish
-				 * their transactions.
-				 */
-				k_msleep(1);
-			} else {
-				k_busy_wait(1000);
-			}
+			/* k_sleep allows other threads to execute and finish
+			 * their transactions.
+			 */
+			k_msleep(1);
 			if (--safety_cnt == 0) {
 				break;
 			}
@@ -1140,7 +1136,7 @@ static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 static void uart_nrfx_set_power_state(const struct device *dev,
 				      uint32_t new_state)
 {
-	if (new_state == PM_DEVICE_STATE_ACTIVE) {
+	if (new_state == DEVICE_PM_ACTIVE_STATE) {
 		uart_nrfx_pins_enable(dev, true);
 		nrf_uart_enable(uart0_addr);
 		if (RX_PIN_USED) {
@@ -1148,9 +1144,9 @@ static void uart_nrfx_set_power_state(const struct device *dev,
 					      NRF_UART_TASK_STARTRX);
 		}
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-				new_state == PM_DEVICE_STATE_SUSPEND ||
-				new_state == PM_DEVICE_STATE_OFF);
+		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
+				new_state == DEVICE_PM_SUSPEND_STATE ||
+				new_state == DEVICE_PM_OFF_STATE);
 		nrf_uart_disable(uart0_addr);
 		uart_nrfx_pins_enable(dev, false);
 	}
@@ -1158,24 +1154,24 @@ static void uart_nrfx_set_power_state(const struct device *dev,
 
 static int uart_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				uint32_t *state, pm_device_cb cb, void *arg)
+				void *context, device_pm_cb cb, void *arg)
 {
-	static uint32_t current_state = PM_DEVICE_STATE_ACTIVE;
+	static uint32_t current_state = DEVICE_PM_ACTIVE_STATE;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *state;
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != current_state) {
 			uart_nrfx_set_power_state(dev, new_state);
 			current_state = new_state;
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = current_state;
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((uint32_t *)context) = current_state;
 	}
 
 	if (cb) {
-		cb(dev, 0, state, arg);
+		cb(dev, 0, context, arg);
 	}
 
 	return 0;

@@ -1,0 +1,33 @@
+# Copyright (c) 2018-2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel Apollo Lake GPIO node
+
+compatible: "intel,apl-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    interrupts:
+      required: true
+
+    ngpios:
+      required: true
+
+    pin-offset:
+      type: int
+      required: true
+      description: Pin offset of this GPIO entry
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags

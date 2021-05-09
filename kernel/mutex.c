@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <debug/object_tracing_common.h>
 #include <tracing/tracing.h>
 #include <sys/check.h>
 #include <logging/log.h>
@@ -46,16 +47,39 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  */
 static struct k_spinlock lock;
 
+#ifdef CONFIG_OBJECT_TRACING
+
+struct k_mutex *_trace_list_k_mutex;
+
+/*
+ * Complete initialization of statically defined mutexes.
+ */
+static int init_mutex_module(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	Z_STRUCT_SECTION_FOREACH(k_mutex, mutex) {
+		SYS_TRACING_OBJ_INIT(k_mutex, mutex);
+	}
+	return 0;
+}
+
+SYS_INIT(init_mutex_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+
+#endif /* CONFIG_OBJECT_TRACING */
+
 int z_impl_k_mutex_init(struct k_mutex *mutex)
 {
 	mutex->owner = NULL;
 	mutex->lock_count = 0U;
 
+	sys_trace_mutex_init(mutex);
+
 	z_waitq_init(&mutex->wait_q);
 
+	SYS_TRACING_OBJ_INIT(k_mutex, mutex);
 	z_object_init(mutex);
-
-	SYS_PORT_TRACING_OBJ_INIT(k_mutex, mutex, 0);
+	sys_trace_end_call(SYS_TRACE_ID_MUTEX_INIT);
 
 	return 0;
 }
@@ -100,8 +124,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
-
+	sys_trace_mutex_lock(mutex);
 	key = k_spin_lock(&lock);
 
 	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current))) {
@@ -118,21 +141,16 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 			mutex->owner_orig_prio);
 
 		k_spin_unlock(&lock, key);
-
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, 0);
+		sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 
 		return 0;
 	}
 
 	if (unlikely(K_TIMEOUT_EQ(timeout, K_NO_WAIT))) {
 		k_spin_unlock(&lock, key);
-
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, -EBUSY);
-
+		sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 		return -EBUSY;
 	}
-
-	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mutex, lock, mutex, timeout);
 
 	new_prio = new_prio_for_inheritance(_current->base.prio,
 					    mutex->owner->base.prio);
@@ -151,7 +169,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 		got_mutex ? 'y' : 'n');
 
 	if (got_mutex == 0) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, 0);
+		sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 		return 0;
 	}
 
@@ -177,8 +195,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 		k_spin_unlock(&lock, key);
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, -EAGAIN);
-
+	sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 	return -EAGAIN;
 }
 
@@ -198,19 +215,13 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, unlock, mutex);
-
 	CHECKIF(mutex->owner == NULL) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, -EINVAL);
-
 		return -EINVAL;
 	}
 	/*
 	 * The current thread does not own the mutex.
 	 */
 	CHECKIF(mutex->owner != _current) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, -EPERM);
-
 		return -EPERM;
 	}
 
@@ -222,6 +233,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	 */
 	__ASSERT_NO_MSG(mutex->lock_count > 0U);
 
+	sys_trace_mutex_unlock(mutex);
 	z_sched_lock();
 
 	LOG_DBG("mutex %p lock_count: %d", mutex, mutex->lock_count);
@@ -265,8 +277,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 k_mutex_unlock_return:
 	k_sched_unlock();
-
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, 0);
+	sys_trace_end_call(SYS_TRACE_ID_MUTEX_UNLOCK);
 
 	return 0;
 }

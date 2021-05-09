@@ -20,7 +20,6 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
-#include <arch/arc/asm-compat/assembler.h>
 
 GTEXT(_rirq_enter)
 GTEXT(_rirq_exit)
@@ -217,11 +216,11 @@ SECTION_FUNC(TEXT, _rirq_enter)
 	_check_and_inc_int_nest_counter r0, r1
 
 	bne.d rirq_nest
-	MOVR r0, sp
+	mov_s r0, sp
 
 	_get_curr_cpu_irq_stack sp
 rirq_nest:
-	PUSHR r0
+	push_s r0
 
 	seti
 	j _isr_demux
@@ -237,7 +236,7 @@ rirq_nest:
 SECTION_FUNC(TEXT, _rirq_exit)
 	clri
 
-	POPR sp
+	pop sp
 
 	_dec_int_nest_counter r0, r1
 
@@ -252,7 +251,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	 */
 	_get_next_switch_handle
 
-	CMPR r0, r2
+	cmp r0, r2
 	beq _rirq_no_switch
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
@@ -264,11 +263,10 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	/* r2 is old thread */
 	_irq_store_old_thread_callee_regs
 
-	/* _thread_arch.relinquish_cause is 32 bit despite of platform bittnes */
-	_st32_huge_offset _CAUSE_RIRQ, r2, _thread_offset_to_relinquish_cause, r2
+	st _CAUSE_RIRQ, [r2, _thread_offset_to_relinquish_cause]
 
 	/* mov new thread (r0) to r2 */
-	MOVR r2, r0
+	mov r2, r0
 
 /* _rirq_newthread_switch required by exception handling */
 .align 4
@@ -297,13 +295,11 @@ _rirq_switch_from_coop:
 	 */
 
 	/* carve fake stack */
-	SUBR sp, sp, ___isf_t_pc_OFFSET
+	sub sp, sp, ___isf_t_pc_OFFSET
 
 
-#ifdef CONFIG_ARC_HAS_ZOL
 	/* reset zero-overhead loops */
-	STR 0, sp, ___isf_t_lp_end_OFFSET
-#endif /* CONFIG_ARC_HAS_ZOL */
+	st 0, [sp, ___isf_t_lp_end_OFFSET]
 
 	/*
 	 * r13 is part of both the callee and caller-saved register sets because
@@ -311,14 +307,14 @@ _rirq_switch_from_coop:
 	 * IRQ prologue. r13 thus has to be set to its correct value in the IRQ
 	 * stack frame.
 	 */
-	STR r13, sp, ___isf_t_r13_OFFSET
+	st_s r13, [sp, ___isf_t_r13_OFFSET]
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	PUSHR blink
+	push_s blink
 
 	bl z_thread_mark_switched_in
 
-	POPR blink
+	pop_s blink
 #endif
 	/* stack now has the IRQ stack frame layout, pointing to sp */
 	/* rtie will pop the rest from the stack */
@@ -331,11 +327,11 @@ _rirq_switch_from_rirq:
 	_set_misc_regs_irq_switch_from_irq
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	PUSHR blink
+	push_s blink
 
 	bl z_thread_mark_switched_in
 
-	POPR blink
+	pop_s blink
 #endif
 _rirq_no_switch:
 	rtie

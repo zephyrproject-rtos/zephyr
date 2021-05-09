@@ -699,7 +699,7 @@ static const struct sensor_driver_api bmi270_driver_api = {
 								       \
 	DEVICE_DT_INST_DEFINE(inst,				       \
 			      bmi270_init,			       \
-			      NULL,				       \
+			      device_pm_control_nop,		       \
 			      &bmi270_drv_##inst,		       \
 			      &bmi270_config_##inst,		       \
 			      POST_KERNEL,			       \

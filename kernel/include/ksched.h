@@ -141,15 +141,13 @@ static inline bool z_is_thread_queued(struct k_thread *thread)
 static inline void z_mark_thread_as_suspended(struct k_thread *thread)
 {
 	thread->base.thread_state |= _THREAD_SUSPENDED;
-
-	SYS_PORT_TRACING_FUNC(k_thread, sched_suspend, thread);
+	sys_trace_thread_suspend(thread);
 }
 
 static inline void z_mark_thread_as_not_suspended(struct k_thread *thread)
 {
 	thread->base.thread_state &= ~_THREAD_SUSPENDED;
-
-	SYS_PORT_TRACING_FUNC(k_thread, sched_resume, thread);
+	sys_trace_thread_resume(thread);
 }
 
 static inline void z_mark_thread_as_started(struct k_thread *thread)

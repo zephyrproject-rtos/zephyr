@@ -10,7 +10,7 @@
 #ifdef CONFIG_USERSPACE
 #include <sys/libc-hooks.h>
 #endif
-#include <sys/reboot.h>
+#include <power/reboot.h>
 
 #ifdef KERNEL
 static struct k_thread ztest_thread;
@@ -68,9 +68,7 @@ static int cleanup_test(struct unit_test *test)
 	 * Because we reuse the same k_thread structure this would
 	 * causes some problems.
 	 */
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_thread_abort(&ztest_thread);
-	}
+	k_thread_abort(&ztest_thread);
 #endif
 
 	if (!ret && mock_status == 1) {
@@ -81,8 +79,6 @@ static int cleanup_test(struct unit_test *test)
 		PRINT("Test %s failed: Unused mock return values\n",
 		      test->name);
 		ret = TC_FAIL;
-	} else {
-		;
 	}
 
 	return ret;
@@ -115,17 +111,6 @@ static void cpu_hold(void *arg1, void *arg2, void *arg3)
 	uint32_t dt, start_ms = k_uptime_get_32();
 
 	k_sem_give(&cpuhold_sem);
-
-#if defined(CONFIG_ARM64) && defined(CONFIG_FPU_SHARING)
-	/*
-	 * We'll be spinning with IRQs disabled. The flush-your-FPU request
-	 * IPI will never be serviced during that time. Therefore we flush
-	 * the FPU preemptively here to prevent any other CPU waiting after
-	 * this CPU forever and deadlock the system.
-	 */
-	extern void z_arm64_flush_local_fpu(void);
-	z_arm64_flush_local_fpu();
-#endif
 
 	while (cpuhold_active) {
 		k_busy_wait(1000);
@@ -299,30 +284,25 @@ K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
 		      CONFIG_TEST_EXTRA_STACKSIZE);
 static ZTEST_BMEM int test_result;
 
-static void test_finalize(void)
-{
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_thread_abort(&ztest_thread);
-		k_thread_abort(k_current_get());
-	}
-}
-
 void ztest_test_fail(void)
 {
 	test_result = -1;
-	test_finalize();
+	k_thread_abort(&ztest_thread);
+	k_thread_abort(k_current_get());
 }
 
 void ztest_test_pass(void)
 {
 	test_result = 0;
-	test_finalize();
+	k_thread_abort(&ztest_thread);
+	k_thread_abort(k_current_get());
 }
 
 void ztest_test_skip(void)
 {
 	test_result = -2;
-	test_finalize();
+	k_thread_abort(&ztest_thread);
+	k_thread_abort(k_current_get());
 }
 
 static void init_testing(void)
@@ -347,21 +327,15 @@ static int run_test(struct unit_test *test)
 	int ret = TC_PASS;
 
 	TC_START(test->name);
+	k_thread_create(&ztest_thread, ztest_thread_stack,
+			K_THREAD_STACK_SIZEOF(ztest_thread_stack),
+			(k_thread_entry_t) test_cb, (struct unit_test *)test,
+			NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY,
+			test->thread_options | K_INHERIT_PERMS,
+				K_NO_WAIT);
 
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_thread_create(&ztest_thread, ztest_thread_stack,
-				K_THREAD_STACK_SIZEOF(ztest_thread_stack),
-				(k_thread_entry_t) test_cb, (struct unit_test *)test,
-				NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY,
-				test->thread_options | K_INHERIT_PERMS,
-					K_NO_WAIT);
-
-		k_thread_name_set(&ztest_thread, "ztest_thread");
-		k_thread_join(&ztest_thread, K_FOREVER);
-	} else {
-		test_result = 1;
-		run_test_functions(test);
-	}
+	k_thread_name_set(&ztest_thread, "ztest_thread");
+	k_thread_join(&ztest_thread, K_FOREVER);
 
 	phase = TEST_PHASE_TEARDOWN;
 	test->teardown();
@@ -396,7 +370,8 @@ void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 
 	init_testing();
 
-	TC_SUITE_START(name);
+	PRINT("Running test suite %s\n", name);
+	PRINT_LINE;
 	while (suite->test) {
 		fail += run_test(suite);
 		suite++;
@@ -405,7 +380,11 @@ void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 			break;
 		}
 	}
-	TC_SUITE_END(name, (fail > 0 ? TC_FAIL : TC_PASS));
+	if (fail) {
+		TC_PRINT("Test suite %s failed.\n", name);
+	} else {
+		TC_PRINT("Test suite %s succeeded\n", name);
+	}
 
 	test_status = (test_status || fail) ? 1 : 0;
 }

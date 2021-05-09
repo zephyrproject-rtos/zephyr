@@ -35,29 +35,29 @@ extern "C" {
 #endif
 
 struct _callee_saved {
-	uintptr_t sp; /* r28 */
+	uint32_t sp; /* r28 */
 };
 typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
 
 	/* one of the _CAUSE_xxxx definitions above */
-	int32_t relinquish_cause;
+	int relinquish_cause;
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* High address of stack region, stack grows downward from this
 	 * location. Usesd for hardware stack checking
 	 */
-	uintptr_t k_stack_base;
-	uintptr_t k_stack_top;
+	uint32_t k_stack_base;
+	uint32_t k_stack_top;
 #ifdef CONFIG_USERSPACE
-	uintptr_t u_stack_base;
-	uintptr_t u_stack_top;
+	uint32_t u_stack_base;
+	uint32_t u_stack_top;
 #endif
 #endif
 
 #ifdef CONFIG_USERSPACE
-	uintptr_t priv_stack_start;
+	uint32_t priv_stack_start;
 #endif
 };
 

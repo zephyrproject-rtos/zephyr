@@ -33,10 +33,7 @@ typedef atomic_ptr_t atomic_ptr_val_t;
 # ifdef CONFIG_XTENSA
 /* Not all Xtensa toolchains support GCC-style atomic intrinsics */
 # include <arch/xtensa/atomic_xtensa.h>
-# else
-/* Other arch specific implementation */
-# include <sys/atomic_arch.h>
-# endif /* CONFIG_XTENSA */
+# endif
 #else
 /* Default.  See this file for the Doxygen reference: */
 #include <sys/atomic_builtin.h>

@@ -84,19 +84,16 @@ Supported Features
 
 The board configuration supports the following hardware features:
 
-+-----------+------------+-----------------------+
-| Interface | Controller | Driver/Component      |
-+===========+============+=======================+
-| NVIC      | on-chip    | nested vectored       |
-|           |            | interrupt controller  |
-+-----------+------------+-----------------------+
-| SYSTICK   | on-chip    | system clock          |
-+-----------+------------+-----------------------+
-| PINCTRL   | on-chip    | pin control           |
-+-----------+------------+-----------------------+
-| UART      | on-chip    | serial port-polling;  |
-|           |            | serial port-interrupt |
-+-----------+------------+-----------------------+
++-----------+------------+----------------------+
+| Interface | Controller | Driver/Component     |
++===========+============+======================+
+| NVIC      | on-chip    | nested vectored      |
+|           |            | interrupt controller |
++-----------+------------+----------------------+
+| SYSTICK   | on-chip    | system clock         |
++-----------+------------+----------------------+
+| UART      | on-chip    | serial port          |
++-----------+------------+----------------------+
 
 
 The default configuration can be found in the Kconfig

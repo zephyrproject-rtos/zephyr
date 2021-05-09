@@ -10,3 +10,9 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(tracing_tests)
 
 target_sources(app PRIVATE src/main.c)
+
+target_sources_ifdef(
+  CONFIG_TRACING_TEST
+  app PRIVATE
+  src/tracing_string_format_test.c
+)

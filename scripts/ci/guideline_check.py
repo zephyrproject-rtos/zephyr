@@ -20,12 +20,13 @@ sh_special_args = {
 
 coccinelle_scripts = ["/scripts/coccinelle/reserved_names.cocci",
                       "/scripts/coccinelle/same_identifier.cocci",
-                      #"/scripts/coccinelle/identifier_length.cocci",
+                      "/scripts/coccinelle/identifier_length.cocci",
+                      "/scripts/coccinelle/boolean.cocci",
                       ]
 
 
 def parse_coccinelle(contents: str, violations: dict):
-    reg = re.compile("([a-zA-Z0-9_/]*\\.[ch]:[0-9]*)(:[0-9\\-]*: )(.*)")
+    reg = re.compile("([a-zA-Z0-9/]*\\.[ch]:[0-9]*)(:[0-9\\-]*: )(.*)")
     for line in contents.split("\n"):
         r = reg.match(line)
         if r:
@@ -65,18 +66,13 @@ def main():
 
         for script in coccinelle_scripts:
             script_path = os.getenv("ZEPHYR_BASE") + "/" + script
-            print(f"Running {script} on {f.path}")
-            try:
-                cocci = sh.coccicheck(
-                    "--mode=report",
-                    "--cocci=" +
-                    script_path,
-                    f.path,
-                    _timeout=10,
-                    **sh_special_args)
-                parse_coccinelle(cocci, violations)
-            except sh.TimeoutException:
-                print("we timed out waiting, skipping...")
+            cocci = sh.coccicheck(
+                "--mode=report",
+                "--cocci=" +
+                script_path,
+                f.path,
+                **sh_special_args)
+            parse_coccinelle(cocci, violations)
 
         for hunk in f:
             for line in hunk:

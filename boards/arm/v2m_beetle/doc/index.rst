@@ -112,9 +112,8 @@ identifies the handlers used for each exception.
 |      |            | attempt to ARM |                          |
 |      |            | mode           |                          |
 +------+------------+----------------+--------------------------+
-| 11   | SVC        |                | system calls, kernel     |
-|      |            |                | run-time exceptions,     |
-|      |            |                | and IRQ offloading       |
+| 11   | SVC        |                | context switch and       |
+|      |            |                | software interrupts      |
 +------+------------+----------------+--------------------------+
 | 12   | Debug      |                | system fatal error       |
 |      | monitor    |                |                          |

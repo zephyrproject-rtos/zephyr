@@ -14,8 +14,8 @@ void main(void)
 
 	printf("Entropy Example! %s\n", CONFIG_ARCH);
 
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
-	if (!device_is_ready(dev)) {
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
+	if (!dev) {
 		printf("error: no entropy device\n");
 		return;
 	}

@@ -61,12 +61,8 @@ endif()
 
 set(PROJECT_VERSION_STR ${PROJECT_VERSION}${PROJECT_VERSION_EXTRA_STR})
 
-if(DEFINED BUILD_VERSION)
-  set(BUILD_VERSION_STR ", build: ${BUILD_VERSION}")
-endif()
-
 if (NOT NO_PRINT_VERSION)
-  message(STATUS "Zephyr version: ${PROJECT_VERSION_STR} (${ZEPHYR_BASE})${BUILD_VERSION_STR}")
+  message(STATUS "Zephyr version: ${PROJECT_VERSION_STR} (${ZEPHYR_BASE})")
 endif()
 
 set(MAJOR ${PROJECT_VERSION_MAJOR}) # Temporary convenience variable

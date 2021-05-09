@@ -150,7 +150,7 @@ static const struct irq_next_level_api cavs_apis = {
 	};								\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    cavs_ictl_##n##_initialize,			\
-			    NULL,					\
+			    device_pm_control_nop,			\
 			    &cavs_##n##_runtime, &cavs_config_##n,	\
 			    PRE_KERNEL_1,				\
 			    CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);\

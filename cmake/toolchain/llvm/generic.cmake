@@ -27,6 +27,8 @@ set(CMAKE_C_COMPILER_TARGET   ${triple})
 set(CMAKE_ASM_COMPILER_TARGET ${triple})
 set(CMAKE_CXX_COMPILER_TARGET ${triple})
 
-set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
+if("${ARCH}" STREQUAL "posix")
+  set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
+endif()
 
 message(STATUS "Found toolchain: host (clang/ld)")

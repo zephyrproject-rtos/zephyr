@@ -50,8 +50,11 @@ static uint32_t get_t(uint32_t I)
 	return I + (sys_rand32_get() % I);
 }
 
-static void double_interval_timeout(struct net_trickle *trickle)
+static void double_interval_timeout(struct k_work *work)
 {
+	struct net_trickle *trickle = CONTAINER_OF(work,
+						   struct net_trickle,
+						   timer);
 	uint32_t rand_time;
 	uint32_t last_end = get_end(trickle);
 
@@ -77,8 +80,7 @@ static void double_interval_timeout(struct net_trickle *trickle)
 	NET_DBG("doubling time %u", rand_time);
 
 	trickle->Istart = k_uptime_get_32() + rand_time;
-	trickle->double_to = false;
-
+	k_work_init_delayable(&trickle->timer, trickle_timeout);
 	k_work_reschedule(&trickle->timer, K_MSEC(rand_time));
 
 	NET_DBG("last end %u new end %u for %u I %u",
@@ -98,13 +100,16 @@ static inline void reschedule(struct net_trickle *trickle)
 		NET_DBG("Clock wrap");
 	}
 
-	trickle->double_to = true;
-
+	k_work_init_delayable(&trickle->timer, double_interval_timeout);
 	k_work_reschedule(&trickle->timer, K_MSEC(diff));
 }
 
-static void inteval_timeout(struct net_trickle *trickle)
+static void trickle_timeout(struct k_work *work)
 {
+	struct net_trickle *trickle = CONTAINER_OF(work,
+						   struct net_trickle,
+						   timer);
+
 	NET_DBG("Trickle timeout at %d", k_uptime_get_32());
 
 	if (trickle->cb) {
@@ -117,19 +122,6 @@ static void inteval_timeout(struct net_trickle *trickle)
 
 	if (net_trickle_is_running(trickle)) {
 		reschedule(trickle);
-	}
-}
-
-static void trickle_timeout(struct k_work *work)
-{
-	struct net_trickle *trickle = CONTAINER_OF(work,
-						   struct net_trickle,
-						   timer);
-
-	if (trickle->double_to) {
-		double_interval_timeout(trickle);
-	} else {
-		inteval_timeout(trickle);
 	}
 }
 
@@ -188,7 +180,6 @@ int net_trickle_start(struct net_trickle *trickle,
 
 	trickle->cb = cb;
 	trickle->user_data = user_data;
-	trickle->double_to = false;
 
 	/* Random I in [Imin , Imax] */
 	trickle->I = trickle->Imin +

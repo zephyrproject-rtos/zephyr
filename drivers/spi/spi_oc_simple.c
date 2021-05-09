@@ -216,7 +216,7 @@ int spi_oc_simple_init(const struct device *dev)
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    spi_oc_simple_init,				\
-			    NULL,					\
+			    device_pm_control_nop,			\
 			    &spi_oc_simple_data_##inst,			\
 			    &spi_oc_simple_cfg_##inst,			\
 			    POST_KERNEL,				\

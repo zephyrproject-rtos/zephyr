@@ -65,6 +65,7 @@ void lll_slave_prepare(void *param)
 {
 	struct lll_prepare_param *p;
 	struct lll_conn *lll;
+	uint16_t elapsed;
 	int err;
 
 	err = lll_hfclock_on();
@@ -72,11 +73,17 @@ void lll_slave_prepare(void *param)
 
 	p = param;
 
+	/* Instants elapsed */
+	elapsed = p->lazy + 1;
+
 	lll = p->param;
+
+	/* Save the (latency + 1) for use in event */
+	lll->latency_prepare += elapsed;
 
 	/* Accumulate window widening */
 	lll->slave.window_widening_prepare_us +=
-	    lll->slave.window_widening_periodic_us * (p->lazy + 1);
+	    lll->slave.window_widening_periodic_us * elapsed;
 	if (lll->slave.window_widening_prepare_us >
 	    lll->slave.window_widening_max_us) {
 		lll->slave.window_widening_prepare_us =
@@ -121,14 +128,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Reset connection event global variables */
 	lll_conn_prepare_reset();
 
-	/* Calculate the current event latency */
-	lll->latency_event = lll->latency_prepare + p->lazy;
+	/* Deduce the latency */
+	lll->latency_event = lll->latency_prepare - 1;
 
 	/* Calculate the current event counter value */
 	event_counter = lll->event_counter + lll->latency_event;
 
 	/* Update event counter to next value */
-	lll->event_counter = (event_counter + 1);
+	lll->event_counter = lll->event_counter + lll->latency_prepare;
 
 	/* Reset accumulated latencies */
 	lll->latency_prepare = 0;

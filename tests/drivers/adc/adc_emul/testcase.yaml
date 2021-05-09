@@ -1,5 +1,0 @@
-common:
-  tags: adc drivers userspace
-tests:
-  drivers.adc.emul:
-    depends_on: adc

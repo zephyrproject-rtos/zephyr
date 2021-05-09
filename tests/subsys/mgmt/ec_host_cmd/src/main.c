@@ -5,7 +5,7 @@
  */
 
 #include <drivers/ec_host_cmd_periph/ec_host_cmd_simulator.h>
-#include <mgmt/ec_host_cmd.h>
+#include <ec_host_cmd.h>
 #include <ztest.h>
 
 /* Variables used to record what is "sent" to host for verification. */

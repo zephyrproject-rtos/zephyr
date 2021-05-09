@@ -99,8 +99,7 @@ static void log_backend_swo_init(struct log_backend const *const backend)
 	/* Enable unprivileged access to ITM stimulus ports */
 	ITM->TPR  = 0x0;
 	/* Configure Debug Watchpoint and Trace */
-	DWT->CTRL &= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk | DWT_CTRL_CYCCNTENA_Msk);
-	DWT->CTRL |= (DWT_CTRL_POSTPRESET_Msk | DWT_CTRL_POSTINIT_Msk);
+	DWT->CTRL = 0x400003FE;
 	/* Configure Formatter and Flush Control Register */
 	TPI->FFCR = 0x00000100;
 	/* Enable ITM, set TraceBusID=1, no local timestamp generation */

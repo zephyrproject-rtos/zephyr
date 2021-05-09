@@ -12,4 +12,3 @@ supported:
   - gpio
   - uart
   - watchdog
-  - dma

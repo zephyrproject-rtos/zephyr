@@ -22,14 +22,14 @@ static char rx_buffer[OT_SHELL_BUFFER_SIZE];
 
 static const struct shell *shell_p;
 
-int otConsoleOutputCallback(void *aContext, const char *aFormat,
-			    va_list aArguments)
+int otConsoleOutputCallback(const char *aBuf, uint16_t aBufLength,
+			    void *aContext)
 {
 	ARG_UNUSED(aContext);
 
-	shell_vfprintf(shell_p, SHELL_NORMAL, aFormat, aArguments);
+	shell_fprintf(shell_p, SHELL_NORMAL, "%s", aBuf);
 
-	return 0;
+	return aBufLength;
 }
 
 #define SHELL_HELP_OT	"OpenThread subcommands\n" \
@@ -40,6 +40,7 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 	char *buf_ptr = rx_buffer;
 	size_t buf_len = OT_SHELL_BUFFER_SIZE;
 	size_t arg_len = 0;
+	k_tid_t ot_tid = openthread_thread_id_get();
 	int i;
 
 	for (i = 1; i < argc; i++) {
@@ -66,9 +67,12 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 
 	shell_p = shell;
 
-	openthread_api_mutex_lock(openthread_get_default_context());
-	otCliInputLine(rx_buffer);
-	openthread_api_mutex_unlock(openthread_get_default_context());
+	/* Halt the OpenThread thread execution. This will prevent from being
+	 * rescheduled into the OT thread in the middle of command processing.
+	 */
+	k_thread_suspend(ot_tid);
+	otCliConsoleInputLine(rx_buffer, OT_SHELL_BUFFER_SIZE - buf_len);
+	k_thread_resume(ot_tid);
 
 	return 0;
 }
@@ -77,5 +81,5 @@ SHELL_CMD_ARG_REGISTER(ot, NULL, SHELL_HELP_OT, ot_cmd, 2, 255);
 
 void platformShellInit(otInstance *aInstance)
 {
-	otCliInit(aInstance, otConsoleOutputCallback, NULL);
+	otCliConsoleInit(aInstance, otConsoleOutputCallback, NULL);
 }

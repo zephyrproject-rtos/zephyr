@@ -37,8 +37,7 @@ bool z_arm_debug_monitor_event_error_check(void)
 			"MATCHED flag should have been cleared on read.");
 
 		return true;
-	}
-	if (SCB->DFSR & SCB_DFSR_BKPT_Msk) {
+	} else if (SCB->DFSR & SCB_DFSR_BKPT_Msk) {
 		/* Treat BKPT events as an error as well (since they
 		 * would mean the system would be stuck in an infinite loop).
 		 */

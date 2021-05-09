@@ -1,0 +1,305 @@
+/* -- Extra CSS styles for Zephyr content (RTD theme) ----------------------- */
+
+/* make the page width fill the window */
+.wy-nav-content {
+   max-width: none;
+}
+
+/* pygments tweak for white-on-black console */
+/* hold off on this change for now
+
+.highlight-console .highlight {
+   background-color: black;
+}
+.highlight-console .highlight .go, .highlight-console .highlight .gp {
+   color: white;
+}
+.highlight-console .highlight .hll {
+   background-color: white;
+}
+.highlight-console .highlight .hll .go, .highlight-console .highlight .hll .gp {
+   color: black;
+   font-weight: bold;
+}
+*/
+
+/* tweak doc version selection */
+.rst-versions {
+   position: static !important;
+}
+
+
+.rst-versions .rst-current-version {
+   padding: 5px;
+   background-color: #2980B9;
+   color: #80FF80;
+}
+
+.rst-versions .rst-other-versions {
+   padding: 5px;
+}
+
+div.rst-other-versions dl {
+   margin-bottom: 0;
+}
+
+/* tweak spacing after a toctree, fixing issue from sphinx-tabs */
+.toctree-wrapper ul, ul.simple ol.simple {
+   margin-bottom: 24px !important;
+}
+
+/* code block highlight color in rtd changed to lime green, no no no */
+
+.rst-content tt.literal, .rst-content code.literal, .highlight {
+   background: #f0f0f0;
+}
+.rst-content tt.literal, .rst-content code.literal {
+    color: #000000;
+}
+
+/* code literal links should be blue, and purple after visiting */
+a.internal code.literal {
+   color: #2980B9;
+}
+a.internal:visited code.literal {
+   color: #9B59B9;
+}
+
+/* Make the version number more visible */
+.wy-side-nav-search>div.version {
+    color: rgba(255,255,255,1);
+}
+
+/* squish the space between a paragraph before a list */
+div > p + ul, div > p + ol {
+   margin-top: -20px;
+}
+
+/* squish space before an hlist in a list */
+li table.hlist {
+   margin-top: -10px;
+   margin-bottom: 5px;
+}
+
+/* add some space before the figure caption */
+p.caption  {
+#    border-top: 1px solid;
+    margin-top: 1em;
+}
+
+/* decrease line leading a bit, 24px is too wide */
+
+p {
+   line-height: 22px;
+}
+
+/* add a colon after the figure/table number (before the caption) */
+span.caption-number::after {
+   content: ": ";
+}
+
+p.extrafooter {
+   text-align: right;
+   margin-top: -36px;
+}
+
+table.align-center {
+   display: table !important;
+}
+
+/* put the table caption at the bottom, as done for figures */
+table {
+   caption-side: bottom;
+}
+
+.code-block-caption {
+    color: #000;
+    font: italic 85%/1 arial,sans-serif;
+    padding: 1em 0;
+    text-align: center;
+}
+
+/*  make .. hlist:: tables fill the page */
+table.hlist {
+    width: 95% !important;
+    table-layout: fixed;
+}
+
+/*  override rtd theme white-space no-wrap in table heading and content  */
+th,td {
+    white-space: normal !important;
+}
+
+/* dbk tweak for doxygen-generated API headings (for RTD theme) */
+.rst-content dl.group>dt, .rst-content dl.group>dd>p {
+   display:none !important;
+}
+.rst-content dl.group {
+  margin: 0 0 12px 0px;
+}
+.rst-content dl.group>dd {
+  margin-left: 0  !important;
+}
+.rst-content p.breathe-sectiondef-title {
+  text-decoration: underline;  /* dbk for API sub-headings */
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+.rst-content div.breathe-sectiondef {
+  padding-left: 0 !important;
+}
+
+/* doxygenXX item color tweaks, light blue background with dark blue top border */
+.rst-content dl:not(.docutils) dl dt, dl:not(.docutils,.rst-other-versions) dt {
+  background: #e7f2fa !important;
+  border-top: none !important;
+  border-left: none !important; */
+}
+
+
+/* tweak display of option tables to make first column wider */
+col.option {
+  width: 25%;
+}
+
+/* tweak format for <kbd> (:kbd:`F10`) */
+kbd
+{
+  -moz-border-radius:3px;
+  -moz-box-shadow:0 1px 0 rgba(0,0,0,0.2),0 0 0 2px #fff inset;
+  -webkit-border-radius:3px;
+  -webkit-box-shadow:0 1px 0 rgba(0,0,0,0.2),0 0 0 2px #fff inset;
+  background-color:#f7f7f7;
+  border:1px solid #ccc;
+  border-radius:3px;
+  box-shadow:0 1px 0 rgba(0,0,0,0.2),0 0 0 2px #fff inset;
+  color:#333;
+  display:inline-block;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:11px;
+  line-height:1.4;
+  margin:0 .1em;
+  padding:.1em .6em;
+  text-shadow:0 1px 0 #fff;
+}
+
+/* home page grid display */
+
+.grid {
+    list-style-type: none !important;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+        flex-wrap: wrap;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
+    margin: 1rem auto;
+    max-width: calc((250px + 2rem) * 4);
+}
+
+.grid-item {
+    list-style-type: none !important;
+    -webkit-box-flex: 0;
+        -ms-flex: 0 0 auto;
+            flex: 0 0 auto;
+    width: 200px;
+    text-align: center;
+    margin: 1rem;
+}
+
+.grid-item a {
+    display: block;
+    width: 200px;
+    height: 200px;
+    padding: 20px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    border: 1px solid #c6cbce;
+    background-color: #57D3FC;
+    color: white;
+}
+
+.grid-item h2 {
+    font-size: 1.1rem;
+}
+
+.grid-item img {
+    margin-bottom: 1.1rem;
+    max-width: 75%;
+}
+
+
+.grid-item a:hover {
+    background-color: #C756E9;
+    color: white;
+}
+
+
+.grid-item p {
+    margin-top: 0.5rem;
+    color: #333e48;
+}
+
+.grid-icon {
+   line-height: 1.8;
+   font-size: 4rem;
+   color: mediumslateblue;
+}
+
+/* add a class for multi-column support
+ * in docs to replace use of .hlist with
+ * a .. rst-class:: rst-columns
+ */
+
+.rst-columns {
+   column-width: 18em;
+}
+
+/* numbered "h2" steps */
+
+body {
+   counter-reset: step-count;
+}
+
+div.numbered-step h2::before {
+  counter-increment: step-count;
+  content: counter(step-count);
+  background: #cccccc;
+  border-radius: 0.8em;
+  -moz-border-radius: 0.8em;
+  -webkit-border-radius: 0.8em;
+  color: #ffffff;
+  display: inline-block;
+  font-weight: bold;
+  line-height: 1.6em;
+  margin-right: 5px;
+  text-align: center;
+  width: 1.6em;
+}
+
+/* tweak bottom margin of a code block in a list */
+
+.tab div[class^='highlight']:last-child {
+   margin-bottom: 1em;
+}
+
+/* force table content font-size in responsive tables to be 100%
+ * fixing larger font size for paragraphs in the kconfig tables */
+
+.wy-table-responsive td p {
+   font-size:100%;
+}

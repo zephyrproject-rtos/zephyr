@@ -204,7 +204,7 @@ static const struct pwm_driver_api xlnx_axi_timer_driver_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n, &xlnx_axi_timer_init,			\
-			    NULL, NULL,					\
+			    device_pm_control_nop, NULL,		\
 			    &xlnx_axi_timer_config_##n,			\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

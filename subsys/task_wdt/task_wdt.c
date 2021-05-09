@@ -7,7 +7,7 @@
 #include "task_wdt/task_wdt.h"
 
 #include <drivers/watchdog.h>
-#include <sys/reboot.h>
+#include <power/reboot.h>
 #include <device.h>
 #include <errno.h>
 

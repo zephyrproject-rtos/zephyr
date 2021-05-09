@@ -11,7 +11,7 @@
 LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
 
 #include <drivers/spi.h>
-#include <pm/device.h>
+#include <power/power.h>
 
 #include <driverlib/prcm.h>
 #include <driverlib/ssi.h>
@@ -215,7 +215,7 @@ static int spi_cc13xx_cc26xx_set_power_state(const struct device *dev,
 {
 	int ret = 0;
 
-	if ((new_state == PM_DEVICE_STATE_ACTIVE) &&
+	if ((new_state == DEVICE_PM_ACTIVE_STATE) &&
 		(new_state != get_dev_data(dev)->pm_state)) {
 		if (get_dev_config(dev)->base ==
 			DT_INST_REG_ADDR(0)) {
@@ -225,11 +225,11 @@ static int spi_cc13xx_cc26xx_set_power_state(const struct device *dev,
 		}
 		get_dev_data(dev)->pm_state = new_state;
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-			new_state == PM_DEVICE_STATE_SUSPEND ||
-			new_state == PM_DEVICE_STATE_OFF);
+		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
+			new_state == DEVICE_PM_SUSPEND_STATE ||
+			new_state == DEVICE_PM_OFF_STATE);
 
-		if (get_dev_data(dev)->pm_state == PM_DEVICE_STATE_ACTIVE) {
+		if (get_dev_data(dev)->pm_state == DEVICE_PM_ACTIVE_STATE) {
 			SSIDisable(get_dev_config(dev)->base);
 			/*
 			 * Release power dependency
@@ -251,25 +251,25 @@ static int spi_cc13xx_cc26xx_set_power_state(const struct device *dev,
 
 static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
 					uint32_t ctrl_command,
-					uint32_t *state, pm_device_cb cb,
+					void *context, device_pm_cb cb,
 					void *arg)
 {
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *state;
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		uint32_t new_state = *((const uint32_t *)context);
 
 		if (new_state != get_dev_data(dev)->pm_state) {
 			ret = spi_cc13xx_cc26xx_set_power_state(dev,
 				new_state);
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = get_dev_data(dev)->pm_state;
+		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
 	}
 
 	if (cb) {
-		cb(dev, ret, state, arg);
+		cb(dev, ret, context, arg);
 	}
 
 	return ret;
@@ -338,7 +338,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 #ifdef CONFIG_PM_DEVICE
 #define SPI_CC13XX_CC26XX_INIT_PM_STATE					    \
 	do {								    \
-		get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;	    \
+		get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;	    \
 	} while (0)
 #else
 #define SPI_CC13XX_CC26XX_INIT_PM_STATE

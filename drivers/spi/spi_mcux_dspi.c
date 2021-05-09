@@ -306,7 +306,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	};								\
 	DEVICE_DT_INST_DEFINE(id,					\
 			    &spi_mcux_init,				\
-			    NULL,					\
+			    device_pm_control_nop,			\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
 			    POST_KERNEL,				\

@@ -12,7 +12,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-
+#include <debug/object_tracing_common.h>
 #include <toolchain.h>
 #include <ksched.h>
 #include <wait_q.h>
@@ -36,12 +36,17 @@ struct k_pipe_async {
 	struct k_pipe_desc  desc;     /* Pipe message descriptor */
 };
 
+#ifdef CONFIG_OBJECT_TRACING
+struct k_pipe *_trace_list_k_pipe;
+#endif	/* CONFIG_OBJECT_TRACING */
+
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 /* stack of unused asynchronous message descriptors */
 K_STACK_DEFINE(pipe_async_msgs, CONFIG_NUM_PIPE_ASYNC_MSGS);
 #endif /* CONFIG_NUM_PIPE_ASYNC_MSGS > 0 */
 
-#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
+#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0) || \
+	defined(CONFIG_OBJECT_TRACING)
 
 /*
  * Do run-time initialization of pipe object subsystem.
@@ -78,12 +83,18 @@ static int init_pipes_module(const struct device *dev)
 
 	/* Complete initialization of statically defined mailboxes. */
 
+#ifdef CONFIG_OBJECT_TRACING
+	Z_STRUCT_SECTION_FOREACH(k_pipe, pipe) {
+		SYS_TRACING_OBJ_INIT(k_pipe, pipe);
+	}
+#endif /* CONFIG_OBJECT_TRACING */
+
 	return 0;
 }
 
 SYS_INIT(init_pipes_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
-#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS */
+#endif /* CONFIG_NUM_PIPE_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
 
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
@@ -95,8 +106,7 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	pipe->lock = (struct k_spinlock){};
 	z_waitq_init(&pipe->wait_q.writers);
 	z_waitq_init(&pipe->wait_q.readers);
-	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe);
-
+	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
 	pipe->flags = 0;
 	z_object_init(pipe);
 }
@@ -105,8 +115,6 @@ int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 {
 	void *buffer;
 	int ret;
-
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, alloc_init, pipe);
 
 	if (size != 0U) {
 		buffer = z_thread_malloc(size);
@@ -121,8 +129,6 @@ int z_impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 		k_pipe_init(pipe, NULL, 0);
 		ret = 0;
 	}
-
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, alloc_init, pipe, ret);
 
 	return ret;
 }
@@ -139,12 +145,8 @@ static inline int z_vrfy_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 
 int k_pipe_cleanup(struct k_pipe *pipe)
 {
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, cleanup, pipe);
-
 	CHECKIF(z_waitq_head(&pipe->wait_q.readers) != NULL ||
 			z_waitq_head(&pipe->wait_q.writers) != NULL) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, -EAGAIN);
-
 		return -EAGAIN;
 	}
 
@@ -153,9 +155,6 @@ int k_pipe_cleanup(struct k_pipe *pipe)
 		pipe->buffer = NULL;
 		pipe->flags &= ~K_PIPE_FLAG_ALLOC;
 	}
-
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, cleanup, pipe, 0);
-
 	return 0;
 }
 
@@ -410,11 +409,7 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	ARG_UNUSED(async_desc);
 #endif
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, put, pipe, timeout);
-
 	CHECKIF((min_xfer > bytes_to_write) || bytes_written == NULL) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, -EINVAL);
-
 		return -EINVAL;
 	}
 
@@ -430,13 +425,8 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 				min_xfer, timeout)) {
 		k_spin_unlock(&pipe->lock, key);
 		*bytes_written = 0;
-
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, -EIO);
-
 		return -EIO;
 	}
-
-	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, put, pipe, timeout);
 
 	z_sched_lock();
 	k_spin_unlock(&pipe->lock, key);
@@ -498,9 +488,6 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	if (num_bytes_written == bytes_to_write) {
 		*bytes_written = num_bytes_written;
 		k_sched_unlock();
-
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, 0);
-
 		return 0;
 	}
 
@@ -509,9 +496,6 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 	    && min_xfer > 0U) {
 		*bytes_written = num_bytes_written;
 		k_sched_unlock();
-
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, 0);
-
 		return 0;
 	}
 
@@ -538,10 +522,8 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 
 	*bytes_written = bytes_to_write - pipe_desc.bytes_to_xfer;
 
-	int ret = pipe_return_code(min_xfer, pipe_desc.bytes_to_xfer,
+	return pipe_return_code(min_xfer, pipe_desc.bytes_to_xfer,
 				 bytes_to_write);
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, put, pipe, timeout, ret);
-	return ret;
 }
 
 int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
@@ -553,11 +535,7 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 	size_t         num_bytes_read = 0;
 	size_t         bytes_copied;
 
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, get, pipe, timeout);
-
 	CHECKIF((min_xfer > bytes_to_read) || bytes_read == NULL) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, -EINVAL);
-
 		return -EINVAL;
 	}
 
@@ -572,13 +550,8 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 				min_xfer, timeout)) {
 		k_spin_unlock(&pipe->lock, key);
 		*bytes_read = 0;
-
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, -EIO);
-
 		return -EIO;
 	}
-
-	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_pipe, get, pipe, timeout);
 
 	z_sched_lock();
 	k_spin_unlock(&pipe->lock, key);
@@ -669,8 +642,6 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 		*bytes_read = num_bytes_read;
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, 0);
-
 		return 0;
 	}
 
@@ -680,8 +651,6 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		k_sched_unlock();
 
 		*bytes_read = num_bytes_read;
-
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, 0);
 
 		return 0;
 	}
@@ -706,10 +675,8 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 
 	*bytes_read = bytes_to_read - pipe_desc.bytes_to_xfer;
 
-	int ret = pipe_return_code(min_xfer, pipe_desc.bytes_to_xfer,
+	return pipe_return_code(min_xfer, pipe_desc.bytes_to_xfer,
 				 bytes_to_read);
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, get, pipe, timeout, ret);
-	return ret;
 }
 
 #ifdef CONFIG_USERSPACE

@@ -12,7 +12,7 @@ import subprocess
 import sys
 from re import fullmatch, escape
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
 
 try:
     from intelhex import IntelHex
@@ -169,13 +169,13 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         if self.family is not None:
             return
 
-        if self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF51X'):
+        if self.build_conf.get('CONFIG_SOC_SERIES_NRF51X', 'n') == 'y':
             self.family = 'NRF51'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF52X'):
+        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF52X', 'n') == 'y':
             self.family = 'NRF52'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF53X'):
+        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF53X', 'n') == 'y':
             self.family = 'NRF53'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF91X'):
+        elif self.build_conf.get('CONFIG_SOC_SERIES_NRF91X', 'n') == 'y':
             self.family = 'NRF91'
         else:
             raise RuntimeError(f'unknown nRF; update {__file__}')
@@ -352,6 +352,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         self.require('nrfjprog')
+        self.build_conf = BuildConfiguration(self.cfg.build_dir)
 
         self.ensure_output('hex')
         self.ensure_snr()

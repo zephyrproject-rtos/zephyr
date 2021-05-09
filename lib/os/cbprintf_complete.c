@@ -557,8 +557,6 @@ int_conv:
 			default:
 				break;
 			}
-		} else {
-			;
 		}
 		break;
 
@@ -588,8 +586,6 @@ int_conv:
 		} else if ((conv->length_mod != LENGTH_NONE)
 			   && (conv->length_mod != LENGTH_UPPER_L)) {
 			conv->invalid = true;
-		} else {
-			;
 		}
 
 		break;
@@ -806,8 +802,6 @@ static char *encode_uint(uint_value_type value,
 			conv->altform_0 = true;
 		} else if (radix == 16) {
 			conv->altform_0c = true;
-		} else {
-			;
 		}
 	}
 
@@ -884,8 +878,6 @@ static char *encode_float(double value,
 		*sign = '+';
 	} else if (conv->flag_space) {
 		*sign = ' ';
-	} else {
-		;
 	}
 
 	/* Extract the non-negative offset exponent and fraction.  Record
@@ -1389,7 +1381,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		fp = extract_conversion(conv, sp);
 
 		/* If dynamic width is specified, process it,
-		 * otherwise set width if present.
+		 * otherwise set with if present.
 		 */
 		if (conv->width_star) {
 			width = va_arg(ap, int);
@@ -1400,8 +1392,6 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			}
 		} else if (conv->width_present) {
 			width = conv->width_value;
-		} else {
-			;
 		}
 
 		/* If dynamic precision is specified, process it, otherwise
@@ -1418,8 +1408,6 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 			}
 		} else if (conv->prec_present) {
 			precision = conv->prec_value;
-		} else {
-			;
 		}
 
 		/* Reuse width and precision memory in conv for value

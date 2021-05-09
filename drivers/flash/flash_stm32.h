@@ -8,16 +8,26 @@
 #ifndef ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_
 #define ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #endif
 
 struct flash_stm32_priv {
 	FLASH_TypeDef *regs;
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_flash_controller), clocks) || \
-	DT_NODE_HAS_PROP(DT_INST(0, st_stm32h7_flash_controller), clocks)
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
 #endif

@@ -33,7 +33,7 @@
 #define PRIORITY2TC_GEN_INNER(TYPE, COUNT) priority2tc_ ## TYPE ## _ ## COUNT
 #define PRIORITY2TC_GEN(TYPE, COUNT) PRIORITY2TC_GEN_INNER(TYPE, COUNT)
 
-#if defined(CONFIG_NET_TC_MAPPING_STRICT) && (NET_TC_COUNT > 0)
+#if defined(CONFIG_NET_TC_MAPPING_STRICT)
 
 /* This is the recommended priority to traffic class mapping for
  * implementations that do not support the credit-based shaper transmission
@@ -66,14 +66,10 @@ static const uint8_t priority2tc_strict_7[] = {1, 0, 2, 3, 4, 4, 5, 6};
 static const uint8_t priority2tc_strict_8[] = {1, 0, 2, 3, 4, 5, 6, 7};
 #endif
 
-#if NET_TC_TX_COUNT > 0
 static const uint8_t *tx_prio2tc_map = PRIORITY2TC_GEN(strict, NET_TC_TX_COUNT);
-#endif
-#if NET_TC_RX_COUNT > 0
 static const uint8_t *rx_prio2tc_map = PRIORITY2TC_GEN(strict, NET_TC_RX_COUNT);
-#endif
 
-#elif defined(CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B) && (NET_TC_COUNT > 0)
+#elif defined(CONFIG_NET_TC_MAPPING_SR_CLASS_A_AND_B)
 
 /* This is the recommended priority to traffic class mapping for a system that
  * supports SR (Stream Reservation) class A and SR class B.
@@ -102,14 +98,10 @@ static const uint8_t priority2tc_sr_ab_7[] = {0, 0, 5, 6, 1, 2, 3, 4};
 static const uint8_t priority2tc_sr_ab_8[] = {1, 0, 6, 7, 2, 3, 4, 5};
 #endif
 
-#if NET_TC_TX_COUNT > 0
 static const uint8_t *tx_prio2tc_map = PRIORITY2TC_GEN(sr_ab, NET_TC_TX_COUNT);
-#endif
-#if NET_TC_RX_COUNT > 0
 static const uint8_t *rx_prio2tc_map = PRIORITY2TC_GEN(sr_ab, NET_TC_RX_COUNT);
-#endif
 
-#elif defined(CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY) && (NET_TC_COUNT > 0)
+#elif defined(CONFIG_NET_TC_MAPPING_SR_CLASS_B_ONLY)
 
 /* This is the recommended priority to traffic class mapping for a system that
  * supports SR (Stream Reservation) class B only.
@@ -138,12 +130,8 @@ static const uint8_t priority2tc_sr_b_7[] = {1, 0, 6, 2, 3, 3, 4, 5};
 static const uint8_t priority2tc_sr_b_8[] = {1, 0, 7, 2, 3, 4, 5, 6};
 #endif
 
-#if NET_TC_TX_COUNT > 0
 static const uint8_t *tx_prio2tc_map = PRIORITY2TC_GEN(sr_b, NET_TC_TX_COUNT);
-#endif
-#if NET_TC_RX_COUNT > 0
 static const uint8_t *rx_prio2tc_map = PRIORITY2TC_GEN(sr_b, NET_TC_RX_COUNT);
-#endif
 
 #endif
 

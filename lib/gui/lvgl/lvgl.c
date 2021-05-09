@@ -60,26 +60,13 @@ static void lvgl_log(lv_log_level_t level, const char *file, uint32_t line,
 	 * * LOG_LEVEL_INF 3
 	 * * LOG_LEVEL_DBG 4
 	 */
-	char *dupdsc = log_strdup(dsc);
+	uint8_t zephyr_level = LOG_LEVEL_DBG - level;
 
 	ARG_UNUSED(file);
 	ARG_UNUSED(line);
 	ARG_UNUSED(func);
 
-	switch (level) {
-	case LV_LOG_LEVEL_TRACE:
-		Z_LOG(LOG_LEVEL_DBG, "%s", dupdsc);
-		break;
-	case LV_LOG_LEVEL_INFO:
-		Z_LOG(LOG_LEVEL_INF, "%s", dupdsc);
-		break;
-	case LV_LOG_LEVEL_WARN:
-		Z_LOG(LOG_LEVEL_WRN, "%s", dupdsc);
-		break;
-	case LV_LOG_LEVEL_ERROR:
-		Z_LOG(LOG_LEVEL_ERR, "%s", dupdsc);
-		break;
-	}
+	Z_LOG(zephyr_level, "%s", log_strdup(dsc));
 }
 #endif
 

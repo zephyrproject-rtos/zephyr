@@ -56,15 +56,12 @@ void main(void)
 	const struct device *strip;
 	size_t i, time;
 
-	strip = DEVICE_DT_GET_ANY(apa_apa102);
-	if (!strip) {
-		LOG_ERR("LED strip device not found");
-		return;
-	} else if (!device_is_ready(strip)) {
-		LOG_ERR("LED strip device %s is not ready", strip->name);
-		return;
+	strip = device_get_binding(DT_LABEL(DT_INST(0, apa_apa102)));
+	if (strip) {
+		LOG_INF("Found LED strip device %s", DT_LABEL(DT_INST(0, apa_apa102)));
 	} else {
-		LOG_INF("Found LED strip device %s", strip->name);
+		LOG_ERR("LED strip device %s not found", DT_LABEL(DT_INST(0, apa_apa102)));
+		return;
 	}
 
 	/*

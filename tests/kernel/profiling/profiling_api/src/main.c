@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <pm/pm.h>
+#include <power/power.h>
 #include <irq_offload.h>
 #include <debug/stack.h>
 

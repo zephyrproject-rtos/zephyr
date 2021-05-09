@@ -150,8 +150,8 @@
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-pin = <16>;
-	scl-pin = <24>;
+	sda-gpios = <&gpio0 16 0>;
+	scl-gpios = <&gpio0 24 0>;
 };
 
 &spi0 {

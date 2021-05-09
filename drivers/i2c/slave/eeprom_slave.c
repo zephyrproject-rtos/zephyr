@@ -222,7 +222,7 @@ static int i2c_eeprom_slave_init(const struct device *dev)
 									\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			    &i2c_eeprom_slave_init,			\
-			    NULL,			\
+			    device_pm_control_nop,			\
 			    &i2c_eeprom_slave_##inst##_dev_data,	\
 			    &i2c_eeprom_slave_##inst##_cfg,		\
 			    POST_KERNEL,				\

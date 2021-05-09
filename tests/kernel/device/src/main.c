@@ -9,7 +9,6 @@
 #include <init.h>
 #include <ztest.h>
 #include <sys/printk.h>
-#include <pm/device_runtime.h>
 #include "abstract_driver.h"
 
 
@@ -236,16 +235,16 @@ static void test_build_suspend_device_list(void)
 }
 
 /**
- * @brief Test APIs to enable and disable automatic runtime power management
+ * @brief Test APIs to enable and disable automatic idle power management
  *
  * @details Test the API enable and disable, cause we do not implement our PM
  * API here, it will use the default function to handle power status. So when
- * we try to get power state by pm_device_state_get(), it will default
+ * we try to get power state by device_get_power_state(), it will default
  * return power state zero. And we check it.
  *
  * @ingroup kernel_device_tests
  */
-static void test_enable_and_disable_automatic_runtime_pm(void)
+static void test_enable_and_disable_automatic_idle_pm(void)
 {
 	const struct device *dev;
 	int ret;
@@ -255,9 +254,9 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
 	zassert_false((dev == NULL), NULL);
 
 	/* check its status at first */
-	/* for cases that cannot run runtime PM, we skip it now */
-	ret = pm_device_state_get(dev, &device_power_state);
-	if (ret == -ENOSYS) {
+	/* for cases that cannot run IDLE power, we skip it now */
+	ret = device_get_power_state(dev, &device_power_state);
+	if (ret == -ENOTSUP) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
 		return;
@@ -266,13 +265,13 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
 	zassert_true((ret == 0),
 		"Unable to get active state to device");
 
-	/* enable automatic runtime PM and check its status */
-	pm_device_enable(dev);
+	/* enable automatic idle PM and check its status */
+	device_pm_enable(dev);
 	zassert_not_null((dev->pm), "No device pm");
 	zassert_true((dev->pm->enable), "Pm is not enable");
 
-	/* disable automatic runtime PM and check its status */
-	pm_device_disable(dev);
+	/* disable automatic idle PM and check its status */
+	device_pm_disable(dev);
 	zassert_false((dev->pm->enable), "Pm shall not be enable");
 }
 
@@ -285,7 +284,7 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
  *
  * @see device_get_binding(), device_busy_set(), device_busy_clear(),
  * device_busy_check(), device_any_busy_check(),
- * pm_device_state_set()
+ * device_set_power_state()
  */
 void test_dummy_device_pm(void)
 {
@@ -316,9 +315,9 @@ void test_dummy_device_pm(void)
 
 	test_build_suspend_device_list();
 
-	/* Set device state to PM_DEVICE_STATE_ACTIVE */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
-	if (ret == -ENOSYS) {
+	/* Set device state to DEVICE_PM_ACTIVE_STATE */
+	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+	if (ret == -ENOTSUP) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
 		return;
@@ -327,26 +326,26 @@ void test_dummy_device_pm(void)
 	zassert_true((ret == 0),
 			"Unable to set active state to device");
 
-	ret = pm_device_state_get(dev, &device_power_state);
+	ret = device_get_power_state(dev, &device_power_state);
 	zassert_true((ret == 0),
 			"Unable to get active state to device");
-	zassert_true((device_power_state == PM_DEVICE_STATE_ACTIVE),
+	zassert_true((device_power_state == DEVICE_PM_ACTIVE_STATE),
 			"Error power status");
 
-	/* Set device state to PM_DEVICE_STATE_FORCE_SUSPEND */
-	ret = pm_device_state_set(dev,
-		PM_DEVICE_STATE_FORCE_SUSPEND, NULL, NULL);
+	/* Set device state to DEVICE_PM_FORCE_SUSPEND_STATE */
+	ret = device_set_power_state(dev,
+		DEVICE_PM_FORCE_SUSPEND_STATE, NULL, NULL);
 
 	zassert_true((ret == 0), "Unable to force suspend device");
 
-	ret = pm_device_state_get(dev, &device_power_state);
+	ret = device_get_power_state(dev, &device_power_state);
 	zassert_true((ret == 0),
 			"Unable to get suspend state to device");
-	zassert_true((device_power_state == PM_DEVICE_STATE_ACTIVE),
+	zassert_true((device_power_state == DEVICE_PM_ACTIVE_STATE),
 			"Error power status");
 }
 #else
-static void test_enable_and_disable_automatic_runtime_pm(void)
+static void test_enable_and_disable_automatic_idle_pm(void)
 {
 	ztest_test_skip();
 }
@@ -476,7 +475,7 @@ void test_main(void)
 			 ztest_unit_test(test_dummy_device_pm),
 			 ztest_unit_test(test_build_suspend_device_list),
 			 ztest_unit_test(test_dummy_device),
-			 ztest_unit_test(test_enable_and_disable_automatic_runtime_pm),
+			 ztest_unit_test(test_enable_and_disable_automatic_idle_pm),
 			 ztest_unit_test(test_pre_kernel_detection),
 			 ztest_user_unit_test(test_bogus_dynamic_name),
 			 ztest_user_unit_test(test_null_dynamic_name),

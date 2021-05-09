@@ -101,23 +101,24 @@ isoal_status_t sink_sdu_alloc_hci(const struct isoal_sink    *sink_ctx,
 isoal_status_t sink_sdu_emit_hci(const struct isoal_sink         *sink_ctx,
 				 const struct isoal_sdu_produced *valid_sdu)
 {
-	struct bt_hci_iso_ts_data_hdr *data_hdr;
+	struct ll_conn_iso_stream *cis;
+	uint16_t handle;
+	uint16_t handle_packed;
+	uint8_t  ts, pb;
+	uint16_t len;
 	uint16_t packet_status_flag;
 	uint16_t slen, slen_packed;
 	struct bt_hci_iso_hdr *hdr;
-	uint16_t handle_packed;
-	struct net_buf *buf;
-	uint16_t handle;
-	uint8_t  ts, pb;
-	uint16_t len;
+	struct bt_hci_iso_ts_data_hdr *data_hdr;
 
-	buf = (struct net_buf *) valid_sdu->contents.dbuf;
+	struct net_buf *buf = (struct net_buf *) valid_sdu->contents.dbuf;
 
 	if (buf) {
 		data_hdr = net_buf_push(buf, BT_HCI_ISO_TS_DATA_HDR_SIZE);
 		hdr = net_buf_push(buf, BT_HCI_ISO_HDR_SIZE);
 
-		handle = sink_ctx->session.handle;
+		cis = sink_ctx->session.cis;
+		handle = ll_conn_iso_stream_handle_get(cis);
 
 		pb = sink_ctx->sdu_production.sdu_state;
 
@@ -512,28 +513,16 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			buf = process_node(node_rx);
 		}
 
-		while (buf) {
-			struct net_buf *frag;
-
-			/* Increment ref count, which will be
-			 * unref on call to net_buf_frag_del
-			 */
-			frag = buf;
-			net_buf_ref(frag);
-			buf = net_buf_frag_del(NULL, frag);
-
-			if (frag->len) {
+		if (buf) {
+			if (buf->len) {
 				BT_DBG("Packet in: type:%u len:%u",
-					bt_buf_get_type(frag),
-					frag->len);
-
-				bt_recv(frag);
+					bt_buf_get_type(buf), buf->len);
+				bt_recv(buf);
 			} else {
-				net_buf_unref(frag);
+				net_buf_unref(buf);
 			}
-
-			k_yield();
 		}
+		k_yield();
 	}
 }
 

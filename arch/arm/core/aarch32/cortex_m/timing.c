@@ -26,8 +26,7 @@
  */
 static inline uint64_t z_arm_dwt_freq_get(void)
 {
-#if defined(CONFIG_SOC_FAMILY_NRF) || \
-	defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+#if defined(CONFIG_SOC_FAMILY_NRF)
 	/*
 	 * DWT frequency is taken directly from the
 	 * System Core clock (CPU) frequency, if the
@@ -43,35 +42,31 @@ static inline uint64_t z_arm_dwt_freq_get(void)
 	return CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 #else
 	static uint64_t dwt_frequency;
-	uint32_t cyc_start, cyc_end;
-	uint64_t dwt_start, dwt_end;
-	uint64_t cyc_freq = sys_clock_hw_cycles_per_sec();
-	uint64_t dcyc, ddwt;
 
 	if (!dwt_frequency) {
 
 		z_arm_dwt_init();
 
-		do {
-			cyc_start = k_cycle_get_32();
-			dwt_start = z_arm_dwt_get_cycles();
+		uint32_t cyc_start = k_cycle_get_32();
+		uint64_t dwt_start = z_arm_dwt_get_cycles();
 
-			k_busy_wait(10 * USEC_PER_MSEC);
+		k_busy_wait(10 * USEC_PER_MSEC);
 
-			cyc_end = k_cycle_get_32();
-			dwt_end = z_arm_dwt_get_cycles();
+		uint32_t cyc_end = k_cycle_get_32();
+		uint64_t dwt_end = z_arm_dwt_get_cycles();
 
-			/*
-			 * cycles are in 32-bit, and delta must be
-			 * calculated in 32-bit percision. Or it would
-			 * wrapping around in 64-bit.
-			 */
-			dcyc = (uint32_t)cyc_end - (uint32_t)cyc_start;
+		uint64_t cyc_freq = sys_clock_hw_cycles_per_sec();
 
-			ddwt = dwt_end - dwt_start;
-		} while ((dcyc == 0) || (ddwt == 0));
+		/*
+		 * cycles are in 32-bit, and delta must be
+		 * calculated in 32-bit percision. Or it would
+		 * wrapping around in 64-bit.
+		 */
+		uint64_t dcyc = (uint32_t)cyc_end - (uint32_t)cyc_start;
 
-		dwt_frequency = (cyc_freq * ddwt) / dcyc;
+		uint64_t dtsc = dwt_end - dwt_start;
+
+		dwt_frequency = (cyc_freq * dtsc) / dcyc;
 
 	}
 	return dwt_frequency;

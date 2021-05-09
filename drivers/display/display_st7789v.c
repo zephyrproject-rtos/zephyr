@@ -376,7 +376,7 @@ static int st7789v_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-	data->pm_state = PM_DEVICE_STATE_ACTIVE;
+	data->pm_state = DEVICE_PM_ACTIVE_STATE;
 #endif
 
 	data->cmd_data_gpio = device_get_binding(
@@ -409,32 +409,32 @@ static void st7789v_enter_sleep(struct st7789v_data *data)
 }
 
 static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
-				 uint32_t *state, pm_device_cb cb, void *arg)
+				 void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 
 	switch (ctrl_command) {
 	case DEVICE_PM_SET_POWER_STATE:
-		if (*state == PM_DEVICE_STATE_ACTIVE) {
+		if (*((uint32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
 			st7789v_exit_sleep(data);
-			data->pm_state = PM_DEVICE_STATE_ACTIVE;
+			data->pm_state = DEVICE_PM_ACTIVE_STATE;
 			ret = 0;
 		} else {
 			st7789v_enter_sleep(data);
-			data->pm_state = PM_DEVICE_STATE_LOW_POWER;
+			data->pm_state = DEVICE_PM_LOW_POWER_STATE;
 			ret = 0;
 		}
 		break;
-	case PM_DEVICE_STATE_GET:
-		*state = data->pm_state;
+	case DEVICE_PM_GET_POWER_STATE:
+		*((uint32_t *)context) = data->pm_state;
 		break;
 	default:
 		ret = -EINVAL;
 	}
 
 	if (cb != NULL) {
-		cb(dev, ret, state, arg);
+		cb(dev, ret, context, arg);
 	}
 	return ret;
 }

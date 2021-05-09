@@ -334,7 +334,7 @@ static int i2s_litex_initialize(const struct device *dev)
 }
 
 static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
-			       const struct i2s_config *i2s_cfg)
+			       struct i2s_config *i2s_cfg)
 {
 	struct i2s_litex_data *const dev_data = DEV_DATA(dev);
 	const struct i2s_litex_cfg *const cfg = DEV_CFG(dev);
@@ -351,8 +351,6 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 		stream = &dev_data->tx;
 		channels_concatenated = litex_read8(I2S_TX_STATUS_REG) &
 					I2S_TX_STAT_CHANNEL_CONCATENATED_MASK;
-	} else if (dir == I2S_DIR_BOTH) {
-		return -ENOSYS;
 	} else {
 		LOG_ERR("either RX or TX direction must be selected");
 		return -EINVAL;
@@ -393,9 +391,7 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 			"only %"
 			"i bytes of data are valid ",
 			req_buf_s);
-		/* The block_size field will be corrected to req_buf_s in the
-		 * structure copied as stream configuration (see below).
-		 */
+		i2s_cfg->block_size = req_buf_s;
 	}
 
 	int dev_sample_width = i2s_get_sample_width(cfg->base);
@@ -436,8 +432,6 @@ static int i2s_litex_configure(const struct device *dev, enum i2s_dir dir,
 #endif
 
 	memcpy(&stream->cfg, i2s_cfg, sizeof(struct i2s_config));
-	stream->cfg.block_size = req_buf_s;
-
 	stream->state = I2S_STATE_READY;
 	return 0;
 }
@@ -504,8 +498,6 @@ static int i2s_litex_trigger(const struct device *dev, enum i2s_dir dir,
 		stream = &dev_data->rx;
 	} else if (dir == I2S_DIR_TX) {
 		stream = &dev_data->tx;
-	} else if (dir == I2S_DIR_BOTH) {
-		return -ENOSYS;
 	} else {
 		LOG_ERR("either RX or TX direction must be selected");
 		return -EINVAL;
@@ -633,7 +625,7 @@ static const struct i2s_driver_api i2s_litex_driver_api = {
 		.irq_config = i2s_litex_irq_config_func_##dir                  \
 	};                                                                     \
 	DEVICE_DT_DEFINE(DT_NODELABEL(i2s_##dir), i2s_litex_initialize,        \
-				NULL, &i2s_litex_data_##dir,		       \
+				device_pm_control_nop, &i2s_litex_data_##dir,  \
 				&i2s_litex_cfg_##dir, POST_KERNEL,             \
 				CONFIG_I2S_INIT_PRIORITY,		       \
 				&i2s_litex_driver_api);			       \

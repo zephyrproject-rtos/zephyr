@@ -100,7 +100,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 #endif
 
 	if (write) {
-		if ((offset % (FLASH_NB_32BITWORD_IN_FLASHWORD * 4)) != 0) {
+		if ((offset % FLASH_NB_32BITWORD_IN_FLASHWORD * 4) != 0) {
 			LOG_ERR("Write offset not aligned on flashword length. "
 				"Offset: 0x%lx, flashword length: %d",
 				(unsigned long) offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
@@ -112,45 +112,21 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 
 static int flash_stm32_check_status(const struct device *dev)
 {
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	/* The hardware corrects single ECC errors and detects double
-	 * ECC errors. Corrected data is returned for single ECC
-	 * errors, so in this case we just log a warning.
-	 */
-	uint32_t const error_bank1 = (FLASH_FLAG_ALL_ERRORS_BANK1
-				      & ~FLASH_FLAG_SNECCERR_BANK1);
+	uint32_t const error_bank1 = FLASH_FLAG_ALL_ERRORS_BANK1;
 #ifdef DUAL_BANK
-	uint32_t const error_bank2 = (FLASH_FLAG_ALL_ERRORS_BANK2
-				      & ~FLASH_FLAG_SNECCERR_BANK2);
+	uint32_t const error_bank2 = FLASH_FLAG_ALL_ERRORS_BANK2;
 #endif
-	uint32_t sr;
 
-	/* Read the status flags. */
-	sr = regs->SR1;
-	if (sr & (FLASH_FLAG_SNECCERR_BANK1|FLASH_FLAG_DBECCERR_BANK1)) {
-		uint32_t word = regs->ECC_FA1 & FLASH_ECC_FA_FAIL_ECC_ADDR;
-
-		LOG_WRN("Bank%d ECC error at 0x%08x", 1,
-			word * 4 * FLASH_NB_32BITWORD_IN_FLASHWORD);
-	}
-	/* Clear the flags (including FA1R) */
-	regs->CCR1 = FLASH_FLAG_ALL_BANK1;
-	if (sr & error_bank1) {
-		LOG_ERR("Status Bank%d: 0x%08x", 1, sr);
+	if (FLASH_STM32_REGS(dev)->SR1 & error_bank1) {
+		LOG_ERR("Status Bank1: 0x%08x",
+			FLASH_STM32_REGS(dev)->SR1 & error_bank1);
 		return -EIO;
 	}
 
 #ifdef DUAL_BANK
-	sr = regs->SR2;
-	if (sr & (FLASH_FLAG_SNECCERR_BANK1|FLASH_FLAG_DBECCERR_BANK1)) {
-		uint32_t word = regs->ECC_FA2 & FLASH_ECC_FA_FAIL_ECC_ADDR;
-
-		LOG_WRN("Bank%d ECC error at 0x%08x", 2,
-			word * 4 * FLASH_NB_32BITWORD_IN_FLASHWORD);
-	}
-	regs->CCR2 = FLASH_FLAG_ALL_BANK2;
-	if (sr & error_bank2) {
-		LOG_ERR("Status Bank%d: 0x%08x", 2, sr);
+	if (FLASH_STM32_REGS(dev)->SR2 & error_bank2) {
+		LOG_ERR("Status Bank2: 0x%08x",
+			FLASH_STM32_REGS(dev)->SR2 & error_bank2);
 		return -EIO;
 	}
 #endif
@@ -560,27 +536,9 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 
 	LOG_DBG("Read offset: %ld, len: %zu", (long) offset, len);
 
-	/* During the read we mask bus errors and only allow NMI.
-	 *
-	 * If the flash has a double ECC error then there is normally
-	 * a bus fault, but we want to return an error code instead.
-	 */
-	unsigned int irq_lock_key = irq_lock();
-
-	__set_FAULTMASK(1);
-	SCB->CCR |= SCB_CCR_BFHFNMIGN_Msk;
-	__DSB();
-	__ISB();
-
 	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
-	__set_FAULTMASK(0);
-	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;
-	__DSB();
-	__ISB();
-	irq_unlock(irq_lock_key);
-
-	return flash_stm32_check_status(dev);
+	return 0;
 }
 
 
@@ -647,8 +605,8 @@ void flash_stm32_page_layout(const struct device *dev,
 
 static struct flash_stm32_priv flash_data = {
 	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
-	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
-		    .enr = DT_INST_CLOCKS_CELL(0, bits)},
+	.pclken = { .bus = STM32_CLOCK_BUS_AHB3,
+		    .enr = LL_AHB3_GRP1_PERIPH_FLASH },
 };
 
 static const struct flash_driver_api flash_stm32h7_api = {
@@ -692,6 +650,6 @@ static int stm32h7_flash_init(const struct device *dev)
 }
 
 
-DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, NULL,
+DEVICE_DT_INST_DEFINE(0, stm32h7_flash_init, device_pm_control_nop,
 		    &flash_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32h7_api);

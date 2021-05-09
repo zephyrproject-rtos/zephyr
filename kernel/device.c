@@ -28,10 +28,14 @@ extern uint32_t __device_init_status_start[];
 static inline void device_pm_state_init(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
-	*dev->pm = (struct pm_device){
+	*dev->pm = (struct device_pm){
 		.usage = ATOMIC_INIT(0),
-		.lock = {},
-		.condvar = Z_CONDVAR_INITIALIZER(dev->pm->condvar),
+		.lock = Z_SEM_INITIALIZER(dev->pm->lock, 1, 1),
+		.signal = K_POLL_SIGNAL_INITIALIZER(dev->pm->signal),
+		.event = K_POLL_EVENT_INITIALIZER(
+			K_POLL_TYPE_SIGNAL,
+			K_POLL_MODE_NOTIFY_ONLY,
+			&dev->pm->signal),
 	};
 #endif /* CONFIG_PM_DEVICE */
 }
@@ -139,7 +143,7 @@ static inline const struct device *z_vrfy_device_get_binding(const char *name)
 
 	if (z_user_string_copy(name_copy, (char *)name, sizeof(name_copy))
 	    != 0) {
-		return NULL;
+		return 0;
 	}
 
 	return z_impl_device_get_binding(name_copy);
@@ -189,13 +193,22 @@ int device_required_foreach(const struct device *dev,
 }
 
 #ifdef CONFIG_PM_DEVICE
+int device_pm_control_nop(const struct device *unused_device,
+			  uint32_t unused_ctrl_command,
+			  void *unused_context,
+			  device_pm_cb cb,
+			  void *unused_arg)
+{
+	return -ENOTSUP;
+}
+
 int device_any_busy_check(void)
 {
 	const struct device *dev = __device_start;
 
 	while (dev < __device_end) {
 		if (atomic_test_bit(&dev->pm->atomic_flags,
-				    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
+				    DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT)) {
 			return -EBUSY;
 		}
 		++dev;
@@ -207,7 +220,7 @@ int device_any_busy_check(void)
 int device_busy_check(const struct device *dev)
 {
 	if (atomic_test_bit(&dev->pm->atomic_flags,
-			    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
+			    DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT)) {
 		return -EBUSY;
 	}
 	return 0;
@@ -219,7 +232,7 @@ void device_busy_set(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
 	atomic_set_bit(&dev->pm->atomic_flags,
-		       PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
+		       DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT);
 #else
 	ARG_UNUSED(dev);
 #endif
@@ -229,7 +242,7 @@ void device_busy_clear(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE
 	atomic_clear_bit(&dev->pm->atomic_flags,
-			 PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
+			 DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT);
 #else
 	ARG_UNUSED(dev);
 #endif

@@ -33,8 +33,8 @@ void main(void)
 {
 	const struct device *ipm;
 
-	ipm = DEVICE_DT_GET(DT_NODELABEL(mub));
-	if (!device_is_ready(ipm)) {
+	ipm = device_get_binding("MU_B");
+	if (!ipm) {
 		while (1) {
 		}
 	}

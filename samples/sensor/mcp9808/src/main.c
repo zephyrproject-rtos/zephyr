@@ -106,15 +106,12 @@ static void trigger_handler(const struct device *dev,
 
 void main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
+	const char *const devname = DT_LABEL(DT_INST(0, microchip_mcp9808));
+	const struct device *dev = device_get_binding(devname);
 	int rc;
 
 	if (dev == NULL) {
-		printf("Device not found.\n");
-		return;
-	}
-	if (!device_is_ready(dev)) {
-		printf("Device %s is not ready.\n", dev->name);
+		printf("Device %s not found.\n", devname);
 		return;
 	}
 

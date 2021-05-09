@@ -330,7 +330,7 @@ static const struct uart_driver_api rv32m1_lpuart_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &rv32m1_lpuart_init,			\
-			    NULL,					\
+			    device_pm_control_nop,			\
 			    &rv32m1_lpuart_##n##_data,			\
 			    &rv32m1_lpuart_##n##_cfg,			\
 			    PRE_KERNEL_1,				\

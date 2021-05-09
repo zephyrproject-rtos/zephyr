@@ -78,10 +78,6 @@ if(NOT CONFIG_LOG_MINIMAL)
     log_backend_spinel.c
   )
 
-  if(CONFIG_LOG_DICTIONARY_SUPPORT)
-    zephyr_sources(log_output_dict.c)
-  endif()
-
 else()
   zephyr_sources(log_minimal.c)
 endif()

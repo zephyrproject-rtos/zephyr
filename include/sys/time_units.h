@@ -96,8 +96,7 @@ static TIME_CONSTEXPR ALWAYS_INLINE uint64_t z_tmcvt(uint64_t t, uint32_t from_h
 
 		if (round_up) {
 			off = rdivisor - 1U;
-		}
-		if (round_off) {
+		} else if (round_off) {
 			off = rdivisor / 2U;
 		}
 	}

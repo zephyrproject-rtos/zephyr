@@ -130,7 +130,7 @@ class BuildConfiguration:
         self.build_dir = build_dir
         self.options: Dict[str, Union[str, int]] = {}
         self.path = os.path.join(self.build_dir, 'zephyr', '.config')
-        self._parse()
+        self._init()
 
     def __contains__(self, item):
         return item in self.options
@@ -141,14 +141,10 @@ class BuildConfiguration:
     def get(self, option, *args):
         return self.options.get(option, *args)
 
-    def getboolean(self, option):
-        '''If a boolean option is explicitly set to y or n,
-        returns its value. Otherwise, falls back to False.
-        '''
-        return self.options.get(option, False)
+    def _init(self):
+        self._parse(self.path)
 
-    def _parse(self):
-        filename = self.path
+    def _parse(self, filename: str):
         opt_value = re.compile('^(?P<option>CONFIG_[A-Za-z0-9_]+)=(?P<value>.*)$')
         not_set = re.compile('^# (?P<option>CONFIG_[A-Za-z0-9_]+) is not set$')
 
@@ -158,16 +154,8 @@ class BuildConfiguration:
                 if match:
                     value = match.group('value').rstrip()
                     if value.startswith('"') and value.endswith('"'):
-                        # A string literal should have the quotes stripped,
-                        # but otherwise be left as is.
                         value = value[1:-1]
-                    elif value == 'y':
-                        # The character 'y' is a boolean option
-                        # that is set to True.
-                        value = True
                     else:
-                        # Neither a string nor 'y', so try to parse it
-                        # as an integer.
                         try:
                             base = 16 if value.startswith('0x') else 10
                             self.options[match.group('option')] = int(value, base=base)
@@ -180,8 +168,7 @@ class BuildConfiguration:
 
                 match = not_set.match(line)
                 if match:
-                    # '# CONFIG_FOO is not set' means a boolean option is false.
-                    self.options[match.group('option')] = False
+                    self.options[match.group('option')] = 'n'
 
 class MissingProgram(FileNotFoundError):
     '''FileNotFoundError subclass for missing program dependencies.
@@ -426,9 +413,9 @@ class ZephyrBinaryRunner(abc.ABC):
         if caps.flash_addr:
             parser.add_argument('--dt-flash', default='n', choices=_YN_CHOICES,
                                 action=_DTFlashAction,
-                                help='''If 'yes', try to use flash address
-                                information from devicetree when flash
-                                addresses are unknown (e.g. when flashing a .bin)''')
+                                help='''If 'yes', use configuration generated
+                                by device tree (DT) to compute flash
+                                addresses.''')
         else:
             parser.add_argument('--dt-flash', help=argparse.SUPPRESS)
 
@@ -470,33 +457,28 @@ class ZephyrBinaryRunner(abc.ABC):
                   args: argparse.Namespace) -> 'ZephyrBinaryRunner':
         '''Hook for instance creation from command line arguments.'''
 
-    @staticmethod
-    def get_flash_address(args: argparse.Namespace,
+    @classmethod
+    def get_flash_address(cls, args: argparse.Namespace,
                           build_conf: BuildConfiguration,
                           default: int = 0x0) -> int:
         '''Helper method for extracting a flash address.
 
-        If args.dt_flash is true, returns the address obtained from
-        ZephyrBinaryRunner.flash_address_from_build_conf(build_conf).
+        If args.dt_flash is true, get the address from the
+        BoardConfiguration, build_conf. (If
+        CONFIG_HAS_FLASH_LOAD_OFFSET is n in that configuration, it
+        returns CONFIG_FLASH_BASE_ADDRESS. Otherwise, it returns
+        CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET.)
 
         Otherwise (when args.dt_flash is False), the default value is
         returned.'''
         if args.dt_flash:
-            return ZephyrBinaryRunner.flash_address_from_build_conf(build_conf)
+            if build_conf['CONFIG_HAS_FLASH_LOAD_OFFSET']:
+                return (build_conf['CONFIG_FLASH_BASE_ADDRESS'] +
+                        build_conf['CONFIG_FLASH_LOAD_OFFSET'])
+            else:
+                return build_conf['CONFIG_FLASH_BASE_ADDRESS']
         else:
             return default
-
-    @staticmethod
-    def flash_address_from_build_conf(build_conf: BuildConfiguration):
-        '''If CONFIG_HAS_FLASH_LOAD_OFFSET is n in build_conf,
-        return the CONFIG_FLASH_BASE_ADDRESS value. Otherwise, return
-        CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET.
-        '''
-        if build_conf.getboolean('CONFIG_HAS_FLASH_LOAD_OFFSET'):
-            return (build_conf['CONFIG_FLASH_BASE_ADDRESS'] +
-                    build_conf['CONFIG_FLASH_LOAD_OFFSET'])
-        else:
-            return build_conf['CONFIG_FLASH_BASE_ADDRESS']
 
     def run(self, command: str, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver', 'attach').
@@ -514,24 +496,8 @@ class ZephyrBinaryRunner(abc.ABC):
 
         In case of an unsupported command, raise a ValueError.'''
 
-    @property
-    def build_conf(self) -> BuildConfiguration:
-        '''Get a BuildConfiguration for the build directory.'''
-        if not hasattr(self, '_build_conf'):
-            self._build_conf = BuildConfiguration(self.cfg.build_dir)
-        return self._build_conf
-
-    @property
-    def thread_info_enabled(self) -> bool:
-        '''Returns True if self.build_conf has
-        CONFIG_DEBUG_THREAD_INFO enabled. This supports the
-        CONFIG_OPENOCD_SUPPORT fallback as well for now.
-        '''
-        return (self.build_conf.getboolean('CONFIG_DEBUG_THREAD_INFO') or
-                self.build_conf.getboolean('CONFIG_OPENOCD_SUPPORT'))
-
     @staticmethod
-    def require(program: str) -> str:
+    def require(program: str):
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
@@ -541,12 +507,9 @@ class ZephyrBinaryRunner(abc.ABC):
         binary, this call succeeds. Otherwise, try to find the program
         by name on the system PATH.
 
-        If the program can be found, its path is returned.
-        Otherwise, raises MissingProgram.'''
-        ret = shutil.which(program)
-        if ret is None:
+        On error, raises MissingProgram.'''
+        if shutil.which(program) is None:
             raise MissingProgram(program)
-        return ret
 
     def run_server_and_client(self, server, client):
         '''Run a server that ignores SIGINT, and a client that handles it.
@@ -581,7 +544,7 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             self.logger.info(escaped)
 
-    def call(self, cmd: List[str], **kwargs) -> int:
+    def call(self, cmd: List[str]) -> int:
         '''Subclass subprocess.call() wrapper.
 
         Subclasses should use this method to run command in a
@@ -591,9 +554,9 @@ class ZephyrBinaryRunner(abc.ABC):
         self._log_cmd(cmd)
         if _DRY_RUN:
             return 0
-        return subprocess.call(cmd, **kwargs)
+        return subprocess.call(cmd)
 
-    def check_call(self, cmd: List[str], **kwargs):
+    def check_call(self, cmd: List[str]):
         '''Subclass subprocess.check_call() wrapper.
 
         Subclasses should use this method to run command in a
@@ -603,7 +566,7 @@ class ZephyrBinaryRunner(abc.ABC):
         self._log_cmd(cmd)
         if _DRY_RUN:
             return
-        subprocess.check_call(cmd, **kwargs)
+        subprocess.check_call(cmd)
 
     def check_output(self, cmd: List[str], **kwargs) -> bytes:
         '''Subclass subprocess.check_output() wrapper.

@@ -133,8 +133,6 @@ SECTIONS
         PROVIDE(gp = _gp);
 #endif
 
-    _image_rodata_start = .;
-
 #include <linker/common-rom.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -154,9 +152,6 @@ SECTIONS
         } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>
-
-    _image_rodata_end = .;
-    _image_rodata_size = _image_rodata_end - _image_rodata_start;
 
     _image_rom_end = .;
     __data_rom_start = ALIGN(4);    /* XIP imaged DATA ROM start addr */

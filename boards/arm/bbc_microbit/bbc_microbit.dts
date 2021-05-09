@@ -60,8 +60,8 @@
 &i2c0 {
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-	sda-pin = <30>;
-	scl-pin = <0>;
+	sda-gpios = <&gpio0 30 0>;
+	scl-gpios = <&gpio0 0 0>;
 
 	/* See https://tech.microbit.org/hardware/i2c/ for board variants */
 

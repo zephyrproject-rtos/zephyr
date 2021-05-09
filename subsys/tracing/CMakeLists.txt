@@ -50,7 +50,3 @@ zephyr_include_directories_ifdef(CONFIG_TRACING include)
 add_subdirectory_ifdef(CONFIG_TRACING_CTF ctf)
 
 add_subdirectory_ifdef(CONFIG_SEGGER_SYSTEMVIEW sysview)
-zephyr_sources_ifdef(
-  CONFIG_TRACING_TEST
-  tracing_string_format_test.c
-  )

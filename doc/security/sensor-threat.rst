@@ -398,7 +398,7 @@ Threats
    Reprovisioning a device shall be done securely.
 
 .. [th-destruction]
-   Upon decommissioning, the device secret shall be rendered
+   Upon decomissioning, the device secret shall be rendered
    ineffective.
 
 Notes
