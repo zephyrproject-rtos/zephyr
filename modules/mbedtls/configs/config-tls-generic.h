@@ -305,10 +305,6 @@
 #define MBEDTLS_CIPHER_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_PKCS1_V21_ENABLED)
-#define MBEDTLS_PKCS1_V21
-#endif
-
 #if defined(CONFIG_MBEDTLS_MD)
 #define MBEDTLS_MD_C
 #endif
@@ -340,6 +336,7 @@
     defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED) || \
     defined(MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED)
 #define MBEDTLS_PKCS1_V15
+#define MBEDTLS_PKCS1_V21
 #endif
 
 #if defined(MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED) || \
