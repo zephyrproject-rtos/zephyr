@@ -89,9 +89,3 @@ config OPENTHREAD_CSL_SAMPLE_WINDOW
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 	int "CSL receiver wake up margin in units of 10 symbols"
 	default 3
-
-config OPENTHREAD_SRP_CLIENT
-	bool "Enable SRP Client support"
-
-config OPENTHREAD_SRP_SERVER
-	bool "Enable SRP Server support"
