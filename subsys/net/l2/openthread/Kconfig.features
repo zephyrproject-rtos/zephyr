@@ -188,6 +188,8 @@ config OPENTHREAD_MLE_LINK_METRICS_ENABLE
 
 config OPENTHREAD_SRP_CLIENT
 	bool "Enable SRP Client support"
+	select OPENTHREAD_ECDSA
 
 config OPENTHREAD_SRP_SERVER
 	bool "Enable SRP Server support"
+	select OPENTHREAD_ECDSA
