@@ -477,7 +477,7 @@ the following configuration flags.
    This flag is enabled if the SOC interface and the devices support device power
    management.
 
-:code:`CONFIG_PM_DEVICE_RUNTIME`
+:option:`CONFIG_PM_DEVICE_RUNTIME`
 
    This flag enables the Runtime Power Management.
 
