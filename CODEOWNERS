@@ -187,6 +187,7 @@
 /drivers/cache/                           @carlocaione
 /drivers/can/                             @alexanderwachter
 /drivers/can/*mcp2515*                    @karstenkoenig
+/drivers/can/*rcar*                       @julien-massot
 /drivers/clock_control/*nrf*              @nordic-krch
 /drivers/clock_control/*esp32*            @extremegtx
 /drivers/clock_control/*rcar*             @julien-massot
