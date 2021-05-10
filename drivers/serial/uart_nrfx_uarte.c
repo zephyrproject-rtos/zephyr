@@ -34,14 +34,14 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
 #endif
 
 
-#if (defined(CONFIG_UART_0_NRF_UARTE) &&         \
-     defined(CONFIG_UART_0_INTERRUPT_DRIVEN)) || \
-    (defined(CONFIG_UART_1_NRF_UARTE) &&         \
-     defined(CONFIG_UART_1_INTERRUPT_DRIVEN)) || \
-    (defined(CONFIG_UART_2_NRF_UARTE) &&         \
-     defined(CONFIG_UART_2_INTERRUPT_DRIVEN)) || \
-    (defined(CONFIG_UART_3_NRF_UARTE) &&         \
-     defined(CONFIG_UART_3_INTERRUPT_DRIVEN))
+#if	(defined(CONFIG_UART_0_NRF_UARTE) &&         \
+	 defined(CONFIG_UART_0_INTERRUPT_DRIVEN)) || \
+	(defined(CONFIG_UART_1_NRF_UARTE) &&         \
+	 defined(CONFIG_UART_1_INTERRUPT_DRIVEN)) || \
+	(defined(CONFIG_UART_2_NRF_UARTE) &&         \
+	 defined(CONFIG_UART_2_INTERRUPT_DRIVEN)) || \
+	(defined(CONFIG_UART_3_NRF_UARTE) &&         \
+	 defined(CONFIG_UART_3_INTERRUPT_DRIVEN))
 	#define UARTE_INTERRUPT_DRIVEN	1
 #endif
 
@@ -681,10 +681,9 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 	if (data->async->tx_size) {
 		irq_unlock(key);
 		return -EBUSY;
-	} else {
-		data->async->tx_size = len;
 	}
 
+	data->async->tx_size = len;
 	nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 
 	if (!is_tx_ready(dev)) {
@@ -838,7 +837,7 @@ static int uarte_nrfx_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	int key = irq_lock();
 
-	if ((data->async->rx_buf == NULL)) {
+	if (data->async->rx_buf == NULL) {
 		err = -EACCES;
 	} else if (data->async->rx_next_buf == NULL) {
 		data->async->rx_next_buf = buf;
@@ -1857,7 +1856,7 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 			while (!nrf_uarte_event_check(uarte,
 						      NRF_UARTE_EVENT_RXTO) &&
 			       !nrf_uarte_event_check(uarte,
-			                              NRF_UARTE_EVENT_ERROR)) {
+						      NRF_UARTE_EVENT_ERROR)) {
 				/* Busy wait for event to register */
 			}
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
