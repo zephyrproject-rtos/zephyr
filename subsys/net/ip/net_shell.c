@@ -2159,7 +2159,7 @@ static void print_dns_info(const struct shell *shell,
 	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
 		int32_t remaining;
 
-		if (!ctx->queries[i].cb) {
+		if (!ctx->queries[i].cb || !ctx->queries[i].query) {
 			continue;
 		}
 
