@@ -219,8 +219,6 @@ def get_section_ranges(elf):
 
 def get_die_filename(die, lineprog):
     """Get the source code filename associated with a DIE"""
-    zephyrbase = os.path.normpath(args.zephyrbase)
-
     file_index = die.attributes['DW_AT_decl_file'].value
     file_entry = lineprog['file_entry'][file_index - 1]
 
@@ -242,15 +240,9 @@ def get_die_filename(die, lineprog):
     try:
         path = path.resolve()
     except OSError as e:
-        if '<built-in>' in str(path):
-            # This is expected, built-ins can't be resolved
-            return path
-        raise e
-    try:
-        new_path = path.relative_to(zephyrbase)
-        path = new_path
-    except ValueError:
-        pass
+        # built-ins can't be resolved, so it's not an issue
+        if '<built-in>' not in str(path):
+            raise e
 
     return path
 
@@ -570,8 +562,8 @@ def generate_any_tree(symbol_dict):
                 path = Path(file, name)
                 if path.is_absolute():
                     zb = Path(args.zephyrbase)
-                    if zb.parent in path.parents:
-                        path = path.relative_to(zb.parent)
+                    if zb in path.parents:
+                        path = path.relative_to(zb)
 
                 _insert_one_elem(root, path, size)
 
