@@ -7,6 +7,10 @@
 # Based on a script by:
 #       Chereau, Fabien <fabien.chereau@intel.com>
 
+"""
+Process an ELF file to generate size report on RAM and ROM.
+"""
+
 import argparse
 import os
 import sys
@@ -15,6 +19,11 @@ from pathlib import Path
 import json
 
 from distutils.version import LooseVersion
+
+from colorama import init, Fore
+
+from anytree import RenderTree, NodeMixin, findall_by_attr
+from anytree.exporter import DictExporter
 
 import elftools
 from elftools.elf.elffile import ELFFile
@@ -28,11 +37,6 @@ from elftools.dwarf.locationlists import (
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
-from colorama import init, Fore
-
-from anytree import RenderTree, NodeMixin, findall_by_attr
-from anytree.exporter import DictExporter
-
 
 # ELF section flags
 SHF_WRITE = 0x1
@@ -45,16 +49,20 @@ DT_LOCATION = re.compile(r"\(DW_OP_addr: ([0-9a-f]+)\)")
 
 
 def get_symbol_addr(sym):
+    """Get the address of a symbol"""
     return sym['st_value']
 
 
 def get_symbol_size(sym):
+    """Get the size of a symbol"""
     return sym['st_size']
 
 
-# Given a list of start/end addresses, test if the symbol
-# lies within any of these address ranges
 def is_symbol_in_ranges(sym, ranges):
+    """
+    Given a list of start/end addresses, test if the symbol
+    lies within any of these address ranges.
+    """
     for bound in ranges:
         if bound['start'] <= sym['st_value'] <= bound['end']:
             return True
@@ -62,8 +70,8 @@ def is_symbol_in_ranges(sym, ranges):
     return False
 
 
-# Get the bounding addresses from a DIE variable or subprogram
 def get_die_mapped_address(die, parser, dwarfinfo):
+    """Get the bounding addresses from a DIE variable or subprogram"""
     low = None
     high = None
 
@@ -95,10 +103,12 @@ def get_die_mapped_address(die, parser, dwarfinfo):
     return low, high
 
 
-# Find the symbol from a symbol list
-# where it matches the address in DIE variable,
-# or within the range of a DIE subprogram
 def match_symbol_address(symlist, die, parser, dwarfinfo):
+    """
+    Find the symbol from a symbol list
+    where it matches the address in DIE variable,
+    or within the range of a DIE subprogram.
+    """
     low, high = get_die_mapped_address(die, parser, dwarfinfo)
 
     if low is None:
@@ -111,9 +121,11 @@ def match_symbol_address(symlist, die, parser, dwarfinfo):
     return None
 
 
-# Fetch the symbols from the symbol table and put them
-# into ROM, RAM buckets
 def get_symbols(elf, addr_ranges):
+    """
+    Fetch the symbols from the symbol table and put them
+    into ROM, RAM buckets.
+    """
     rom_syms = dict()
     ram_syms = dict()
     unassigned_syms = dict()
@@ -156,9 +168,11 @@ def get_symbols(elf, addr_ranges):
     return ret
 
 
-# Parse ELF header to find out the address ranges of ROM or RAM sections
-# and their total sizes
 def get_section_ranges(elf):
+    """
+    Parse ELF header to find out the address ranges of ROM or RAM sections
+    and their total sizes.
+    """
     rom_addr_ranges = list()
     ram_addr_ranges = list()
     rom_size = 0
@@ -202,6 +216,7 @@ def get_section_ranges(elf):
 
 
 def get_die_filename(die, lineprog):
+    """Get the source code filename associated with a DIE"""
     zephyrbase = os.path.normpath(args.zephyrbase)
 
     file_index = die.attributes['DW_AT_decl_file'].value
@@ -238,10 +253,12 @@ def get_die_filename(die, lineprog):
     return path
 
 
-# Sequentially process DIEs in compiler units with direct file mappings
-# within the DIEs themselves, and do simply matching between DIE names
-# and symbol names.
 def do_simple_name_matching(elf, symbol_dict, processed):
+    """
+    Sequentially process DIEs in compiler units with direct file mappings
+    within the DIEs themselves, and do simply matching between DIE names
+    and symbol names.
+    """
     mapped_symbols = processed['mapped_symbols']
     mapped_addresses = processed['mapped_addr']
     unmapped_symbols = processed['unmapped_symbols']
@@ -328,11 +345,16 @@ def do_simple_name_matching(elf, symbol_dict, processed):
     processed['unmapped_dies'] = unmapped_dies
 
 
-# There are functions and variables which are aliases to
-# other functions/variables. So this marks them as mapped
-# so they will not get counted again when a tree is being
-# built for display.
 def mark_address_aliases(symbol_dict, processed):
+    """
+    Mark symbol aliases as already mapped to prevent
+    double counting.
+
+    There are functions and variables which are aliases to
+    other functions/variables. So this marks them as mapped
+    so they will not get counted again when a tree is being
+    built for display.
+    """
     mapped_symbols = processed['mapped_symbols']
     mapped_addresses = processed['mapped_addr']
     unmapped_symbols = processed['unmapped_symbols']
@@ -352,15 +374,19 @@ def mark_address_aliases(symbol_dict, processed):
     processed['unmapped_symbols'] = unmapped_symbols
 
 
-# This uses the address ranges of DIEs and map them to symbols
-# residing within those ranges, and works on DIEs that have not
-# been mapped in previous steps. This works on symbol names
-# that do not match the names in DIEs, e.g. "<func>" in DIE,
-# but "<func>.constprop.*" in symbol name list. This also
-# helps with mapping the mangled function names in C++,
-# since the names in DIE are actual function names in source
-# code and not mangled version of them.
 def do_address_range_matching(elf, symbol_dict, processed):
+    """
+    Match symbols indirectly using address ranges.
+
+    This uses the address ranges of DIEs and map them to symbols
+    residing within those ranges, and works on DIEs that have not
+    been mapped in previous steps. This works on symbol names
+    that do not match the names in DIEs, e.g. "<func>" in DIE,
+    but "<func>.constprop.*" in symbol name list. This also
+    helps with mapping the mangled function names in C++,
+    since the names in DIE are actual function names in source
+    code and not mangled version of them.
+    """
     if 'unmapped_dies' not in processed:
         return
 
@@ -456,10 +482,14 @@ def do_address_range_matching(elf, symbol_dict, processed):
     processed['unmapped_symbols'] = unmapped_symbols
 
 
-# Any unmapped symbols are added under the root node if those
-# symbols reside within the desired memory address ranges
-# (e.g. ROM or RAM).
 def set_root_path_for_unmapped_symbols(symbol_dict, addr_range, processed):
+    """
+    Set root path for unmapped symbols.
+
+    Any unmapped symbols are added under the root node if those
+    symbols reside within the desired memory address ranges
+    (e.g. ROM or RAM).
+    """
     mapped_symbols = processed['mapped_symbols']
     mapped_addresses = processed['mapped_addr']
     unmapped_symbols = processed['unmapped_symbols']
@@ -484,9 +514,14 @@ def set_root_path_for_unmapped_symbols(symbol_dict, addr_range, processed):
     processed['mapped_addr'] = mapped_addresses
     processed['unmapped_symbols'] = unmapped_symbols
 
+
 class TreeNode(NodeMixin):
+    """
+    A symbol node.
+    """
+
     def __init__(self, name, identifier, size=0, parent=None, children=None):
-        super(TreeNode, self).__init__()
+        super().__init__()
         self.name = name
         self.size = size
         self.parent = parent
@@ -497,7 +532,11 @@ class TreeNode(NodeMixin):
     def __repr__(self):
         return self.name
 
+
 def generate_any_tree(symbol_dict):
+    """
+    Generate a symbol tree for output.
+    """
     root = TreeNode('root', ":")
 
     # A set of helper function for building a simple tree with a path-like
@@ -536,11 +575,18 @@ def generate_any_tree(symbol_dict):
 
     return root
 
+
 def node_sort(items):
+    """
+    Node sorting used with RenderTree.
+    """
     return sorted(items, key=lambda item: item.name)
 
-def print_any_tree(root, total_size, depth):
 
+def print_any_tree(root, total_size, depth):
+    """
+    Print the symbol tree.
+    """
     print('{:101s} {:7s} {:8s}'.format(
         Fore.YELLOW + "Path", "Size", "%" + Fore.RESET))
     print('=' * 110)
@@ -562,8 +608,10 @@ def print_any_tree(root, total_size, depth):
     print(f'{total_size:>101}')
 
 
-
 def parse_args():
+    """
+    Parse command line arguments.
+    """
     global args
 
     parser = argparse.ArgumentParser()
@@ -586,6 +634,9 @@ def parse_args():
 
 
 def main():
+    """
+    Main program.
+    """
     parse_args()
 
     # Init colorama
