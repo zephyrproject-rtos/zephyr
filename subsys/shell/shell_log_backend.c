@@ -49,6 +49,10 @@ static struct log_msg *msg_from_fifo(const struct shell_log_backend *backend)
 	struct shell_log_backend_msg msg;
 	int err;
 
+	if (!backend->msgq) {
+		return NULL;
+	}
+
 	err = k_msgq_get(backend->msgq, &msg, K_NO_WAIT);
 
 	return (err == 0) ? msg.msg : NULL;
