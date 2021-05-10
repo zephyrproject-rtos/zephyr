@@ -230,13 +230,6 @@ static int iis2iclx_sample_fetch_temp(const struct device *dev)
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 static int iis2iclx_sample_fetch_shub(const struct device *dev)
 {
-	struct iis2iclx_data *data = dev->data;
-
-	if (!data->shub_inited) {
-		LOG_WRN("attr_set() shub not inited.");
-		return 0;
-	}
-
 	if (iis2iclx_shub_fetch_external_devs(dev) < 0) {
 		LOG_ERR("failed to read ext shub devices");
 		return -EIO;
@@ -249,13 +242,13 @@ static int iis2iclx_sample_fetch_shub(const struct device *dev)
 static int iis2iclx_sample_fetch(const struct device *dev,
 				   enum sensor_channel chan)
 {
+#if defined(CONFIG_IIS2ICLX_SENSORHUB)
+	struct iis2iclx_data *data = dev->data;
+#endif /* CONFIG_IIS2ICLX_SENSORHUB */
+
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		iis2iclx_sample_fetch_accel(dev);
-
-#if defined(CONFIG_IIS2ICLX_SENSORHUB)
-		iis2iclx_sample_fetch_shub(dev);
-#endif
 		break;
 #if defined(CONFIG_IIS2ICLX_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
@@ -268,7 +261,9 @@ static int iis2iclx_sample_fetch(const struct device *dev,
 		iis2iclx_sample_fetch_temp(dev);
 #endif
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
-		iis2iclx_sample_fetch_shub(dev);
+		if (data->shub_inited) {
+			iis2iclx_sample_fetch_shub(dev);
+		}
 #endif
 		break;
 	default:
@@ -353,7 +348,7 @@ static inline int iis2iclx_magn_get_channel(enum sensor_channel chan,
 	int16_t sample[3];
 	int idx;
 
-	idx = iis2iclx_shub_get_idx(SENSOR_CHAN_MAGN_XYZ);
+	idx = iis2iclx_shub_get_idx(data->dev, SENSOR_CHAN_MAGN_XYZ);
 	if (idx < 0) {
 		LOG_ERR("external magn not supported");
 		return -ENOTSUP;
@@ -397,7 +392,7 @@ static inline void iis2iclx_hum_convert(struct sensor_value *val,
 	struct hts221_data *ht = &data->hts221;
 	int idx;
 
-	idx = iis2iclx_shub_get_idx(SENSOR_CHAN_HUMIDITY);
+	idx = iis2iclx_shub_get_idx(data->dev, SENSOR_CHAN_HUMIDITY);
 	if (idx < 0) {
 		LOG_DBG("external press/temp not supported");
 		return;
@@ -421,7 +416,7 @@ static inline void iis2iclx_press_convert(struct sensor_value *val,
 	int32_t raw_val;
 	int idx;
 
-	idx = iis2iclx_shub_get_idx(SENSOR_CHAN_PRESS);
+	idx = iis2iclx_shub_get_idx(data->dev, SENSOR_CHAN_PRESS);
 	if (idx < 0) {
 		LOG_DBG("external press/temp not supported");
 		return;
@@ -444,7 +439,7 @@ static inline void iis2iclx_temp_convert(struct sensor_value *val,
 	int16_t raw_val;
 	int idx;
 
-	idx = iis2iclx_shub_get_idx(SENSOR_CHAN_PRESS);
+	idx = iis2iclx_shub_get_idx(data->dev, SENSOR_CHAN_PRESS);
 	if (idx < 0) {
 		LOG_DBG("external press/temp not supported");
 		return;
@@ -483,7 +478,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
 		if (!data->shub_inited) {
-			LOG_ERR("shub not inited.");
+			LOG_ERR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -492,7 +487,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
-			LOG_ERR("shub not inited.");
+			LOG_ERR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -501,7 +496,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 
 	case SENSOR_CHAN_PRESS:
 		if (!data->shub_inited) {
-			LOG_ERR("shub not inited.");
+			LOG_ERR("attr_set() shub not inited.");
 			return -ENOTSUP;
 		}
 
@@ -592,10 +587,10 @@ static int iis2iclx_init_chip(const struct device *dev)
 
 static int iis2iclx_init(const struct device *dev)
 {
-#if defined(CONFIG_IIS2ICLX_SENSORHUB)
 	struct iis2iclx_data *data = dev->data;
-#endif /* CONFIG_IIS2ICLX_SENSORHUB */
 
+	LOG_INF("Initialize device %s", dev->name);
+	data->dev = dev;
 	if (iis2iclx_init_chip(dev) < 0) {
 		LOG_ERR("failed to initialize chip");
 		return -EIO;
@@ -609,11 +604,11 @@ static int iis2iclx_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_IIS2ICLX_SENSORHUB
+	data->shub_inited = true;
 	if (iis2iclx_shub_init(dev) < 0) {
-		LOG_INF("failed to initialize external chips");
+		LOG_INF("shub: no external chips found");
 		data->shub_inited = false;
 	}
-	data->shub_inited = true;
 #endif
 
 	return 0;

@@ -75,6 +75,8 @@ struct iis2iclx_data {
 	} hts221;
 
 	bool shub_inited;
+	uint8_t num_ext_dev;
+	uint8_t shub_ext[IIS2ICLX_SHUB_MAX_NUM_SLVS];
 #endif /* CONFIG_IIS2ICLX_SENSORHUB */
 
 	uint16_t accel_freq;
@@ -98,7 +100,7 @@ struct iis2iclx_data {
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 int iis2iclx_shub_init(const struct device *dev);
 int iis2iclx_shub_fetch_external_devs(const struct device *dev);
-int iis2iclx_shub_get_idx(enum sensor_channel type);
+int iis2iclx_shub_get_idx(const struct device *dev, enum sensor_channel type);
 int iis2iclx_shub_config(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val);
