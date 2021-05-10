@@ -26,6 +26,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 NET_BUF_POOL_FIXED_DEFINE(data_pool, CHANNELS, DATA_BUF_SIZE, NULL);
 
+static bool authorize_flag;
+static uint8_t req_keysize;
+
 static struct channel {
 	uint8_t chan_id; /* Internal number that identifies L2CAP channel. */
 	struct bt_l2cap_le_chan le;
@@ -309,6 +312,19 @@ static int accept(struct bt_conn *conn, struct bt_l2cap_chan **l2cap_chan)
 		return -ENOMEM;
 	}
 
+	if (bt_conn_enc_key_size(conn) < req_keysize) {
+		/* TSPX_psm_encryption_key_size_required */
+		req_keysize = 0;
+		return -EPERM;
+	} else if (authorize_flag) {
+		/* TSPX_psm_authorization_required
+		 * we never authorize this connection, so return error
+		 * everytime this psm is used
+		 */
+		authorize_flag = false;
+		return -EACCES;
+	}
+
 	chan->le.chan.ops = &l2cap_ops;
 	chan->le.rx.mtu = DATA_MTU;
 
@@ -338,7 +354,10 @@ static void listen(uint8_t *data, uint16_t len)
 
 	if (server->psm == 0x00F4) {
 		/* TSPX_psm_encryption_key_size_required */
-		server->sec_level = BT_SECURITY_L4;
+		req_keysize = 16;
+	} else if (server->psm == 0x00F3) {
+		/* TSPX_psm_authentication_required */
+		authorize_flag = true;
 	} else if (server->psm == 0x00F2) {
 		/* TSPX_psm_authentication_required */
 		server->sec_level = BT_SECURITY_L3;
