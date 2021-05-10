@@ -33,7 +33,8 @@ properties:
       description: |
         Optional DMA channel specifier. If DMA should be used, specifier should
         hold a phandle reference to the dma controller, the channel number,
-        the slot number, channel configuration and finally features.
+        the slot number, channel configuration and finally features. For STM32H7
+        devices DMA is not yet supported.
 
         For example dmas for TX/RX on QSPI
            dmas = <&dma1 5 5 0x0000 0x03>;

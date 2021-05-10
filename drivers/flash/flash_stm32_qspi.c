@@ -29,6 +29,12 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(flash_stm32_qspi, CONFIG_FLASH_LOG_LEVEL);
 
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+#if DT_NODE_HAS_PROP(DT_NODELABEL(quadspi),dmas)
+#error "STM32H7 QSPI flash driver do not support DMA"
+#endif
+#endif
+
 #define STM32_QSPI_FIFO_THRESHOLD         8
 #define STM32_QSPI_CLOCK_PRESCALER_MAX  255
 
