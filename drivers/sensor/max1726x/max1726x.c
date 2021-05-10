@@ -6,7 +6,7 @@
 
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
-
+#include <drivers/sensor/max1726x.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(max1726x, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -72,6 +72,26 @@ static void convert_millis(struct sensor_value *val, int32_t val_millis)
 {
 	val->val1 = val_millis / 1000;
 	val->val2 = (val_millis % 1000) * 1000;
+}
+
+/**
+ * @brief Set hibernate mode
+ *
+ * @param dev MAX1726X device to access
+ * @return 0 if successful, or negative error code
+ */
+static int max1726x_set_hibernate(const struct device *dev)
+{
+	const struct max1726x_config *const config = dev->config;
+
+	/* Enable hibernate */
+	return max1726x_reg_write(
+		dev, HIBCFG,
+		MAX1726X_EN_HIB |
+			MAX1726X_HIB_ENTER_TIME(config->hibernate_enter_time) |
+			MAX1726X_HIB_THRESHOLD(config->hibernate_threshold) |
+			MAX1726X_HIB_EXIT_TIME(config->hibernate_exit_time) |
+			MAX1726X_HIB_SCALAR(config->hibernate_scalar));
 }
 
 /**
@@ -171,6 +191,49 @@ static int max1726x_channel_get(const struct device *dev,
 	}
 
 	return 0;
+}
+
+/**
+ * @brief Set a max1726x config
+ *
+ * @param dev MAX1726X device to access
+ * @param chan Channel number to read
+ * @param attr A sensor device private attribute
+ * @param val The value of the channel
+ * @return 0 if successful
+ * @return -ENOTSUP for unsupported channels
+ */
+static int max1726x_config(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr,
+			   const struct sensor_value *val)
+{
+	/* Check MAX1726x private attribute types */
+	switch ((enum max1726x_sensor_attribute)attr) {
+	case SENSOR_ATTR_MAX1726X_HIBERNATE:
+		return max1726x_set_hibernate(dev);
+	default:
+		LOG_DBG("max1726x attribute not supported");
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Set a max1726x attributes
+ *
+ * @param dev MAX1726X device to access
+ * @param chan Channel number to read
+ * @param attr A sensor device private attribute
+ * @param val The value of the channel
+ * @return 0 if max1726x config is successful
+ * @return -ENOTSUP if max1726x config failed
+ */
+static int max1726x_attr_set(const struct device *dev, enum sensor_channel chan,
+			     enum sensor_attribute attr,
+			     const struct sensor_value *val)
+{
+	return max1726x_config(dev, chan, attr, val);
 }
 
 /**
@@ -313,31 +376,34 @@ static int max1726x_gauge_init(const struct device *dev)
 }
 
 static const struct sensor_driver_api max1726x_battery_driver_api = {
+	.attr_set = max1726x_attr_set,
 	.sample_fetch = max1726x_sample_fetch,
 	.channel_get = max1726x_channel_get,
 };
 
-#define MAX1726X_INIT(n)						\
-	static struct max1726x_data max1726x_data_##n;			\
-									\
-	static const struct max1726x_config max1726x_config_##n = {	\
-		.i2c = DEVICE_DT_GET(DT_BUS(DT_DRV_INST(n))),		\
-		.i2c_addr = DT_INST_REG_ADDR(n),			\
-		.design_voltage = DT_INST_PROP(n, design_voltage),	\
-		.desired_voltage = DT_INST_PROP(n, desired_voltage),	\
-		.desired_charging_current =				\
-			DT_INST_PROP(n, desired_charging_current),	\
-		.design_cap = DT_INST_PROP(n, design_cap),		\
-		.empty_voltage = DT_INST_PROP(n, empty_voltage),	\
-		.recovery_voltage = DT_INST_PROP(n, recovery_voltage),	\
-		.charge_voltage = DT_INST_PROP(n, charge_voltage),	\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(n, &max1726x_gauge_init,			\
-			    NULL,					\
-			    &max1726x_data_##n,				\
-			    &max1726x_config_##n, POST_KERNEL,		\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &max1726x_battery_driver_api);
+#define MAX1726X_INIT(n)                                                       \
+	static struct max1726x_data max1726x_data_##n;                         \
+                                                                             \
+	static const struct max1726x_config max1726x_config_##n = {            \
+		.i2c = DEVICE_DT_GET(DT_BUS(DT_DRV_INST(n))),                  \
+		.i2c_addr = DT_INST_REG_ADDR(n),                               \
+		.design_voltage = DT_INST_PROP(n, design_voltage),             \
+		.desired_voltage = DT_INST_PROP(n, desired_voltage),           \
+		.desired_charging_current =                                    \
+			DT_INST_PROP(n, desired_charging_current),             \
+		.design_cap = DT_INST_PROP(n, design_cap),                     \
+		.empty_voltage = DT_INST_PROP(n, empty_voltage),               \
+		.recovery_voltage = DT_INST_PROP(n, recovery_voltage),         \
+		.charge_voltage = DT_INST_PROP(n, charge_voltage),             \
+		.hibernate_threshold = DT_INST_PROP(n, hibernate_threshold),   \
+		.hibernate_scalar = DT_INST_PROP(n, hibernate_scalar),         \
+		.hibernate_exit_time = DT_INST_PROP(n, hibernate_exit_time),   \
+		.hibernate_enter_time = DT_INST_PROP(n, hibernate_enter_time), \
+	};                                                                     \
+                                                                             \
+	DEVICE_DT_INST_DEFINE(n, &max1726x_gauge_init, NULL,                   \
+			      &max1726x_data_##n, &max1726x_config_##n,        \
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,        \
+			      &max1726x_battery_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX1726X_INIT)

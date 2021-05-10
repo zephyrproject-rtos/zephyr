@@ -45,3 +45,50 @@ properties:
       type: int
       required: true
       description: Charge voltage in mV
+
+    hibernate-threshold:
+      type: int
+      required: false
+      default: 7
+      description: |
+          Used to set the threshold level (in mA) for entering or exiting
+          hibernate mode. The threshold is defined by the following equation:
+          threshold (mA) = (FullCap(mAh) / 0.8hrs) / 2 ^ (hibernate-threshold).
+          Value must be betweew 0 and 15.
+          Hardware default to 7 at startup.
+
+    hibernate-scalar:
+      type: int
+      required: false
+      default: 4
+      description: |
+          Used to set the task period while in hibernate mode. The task period is
+          defined by the following equation:
+          Task Period (s) = 351ms x 2 ^ (hibernate-scalar).
+          Value must be between 0 and 7.
+          Hardware default to 4 at startup.
+
+    hibernate-exit-time:
+      type: int
+      required: false
+      default: 3
+      description: |
+          Used to set the required time period of consecutive current readings
+          above the hib-threshold value before the IC exits hibernate and return
+          to active mode of operation. The exit time is defined by the following
+          equation:
+          Exit Time (s) = (hibernate-exit-time+1) x 702ms x 2 ^ (hibernate-scalar).
+          Value must be between 0 and 3.
+          Hardware default to 3 at startup.
+
+    hibernate-enter-time:
+      type: int
+      required: false
+      default: 0
+      description: |
+          Used to set the time period that consecutive current readings must
+          remain below the hib-threshold value before the IC enters hibernate
+          mode. The enter time is defined by the following equation:
+          2.812s x 2 ^ (hibernate-enter-time) < Entry Time < 2.812s x 2 ^ (hibernate-enter-time + 1).
+          Value must be between 0 and 7.
+          Hardware default to 0 at startup.
