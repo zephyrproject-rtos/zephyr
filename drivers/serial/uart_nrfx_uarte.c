@@ -514,16 +514,19 @@ static void uarte_enable(const struct device *dev, uint32_t mask)
 {
 #ifdef CONFIG_UART_ASYNC_API
 	struct uarte_nrfx_data *data = get_dev_data(dev);
-	bool disabled = data->async->low_power_mask == 0;
 
-	data->async->low_power_mask |= mask;
-	if (hw_rx_counting_enabled(data) && disabled) {
-		const nrfx_timer_t *timer = &get_dev_config(dev)->timer;
+	if (data->async) {
+		bool disabled = data->async->low_power_mask == 0;
 
-		nrfx_timer_enable(timer);
+		data->async->low_power_mask |= mask;
+		if (hw_rx_counting_enabled(data) && disabled) {
+			const nrfx_timer_t *timer = &get_dev_config(dev)->timer;
 
-		for (int i = 0; i < data->async->rx_flush_cnt; i++) {
-			nrfx_timer_increment(timer);
+			nrfx_timer_enable(timer);
+
+			for (int i = 0; i < data->async->rx_flush_cnt; i++) {
+				nrfx_timer_increment(timer);
+			}
 		}
 	}
 #endif
