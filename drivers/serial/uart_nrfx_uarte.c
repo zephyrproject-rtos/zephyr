@@ -241,7 +241,7 @@ static void uarte_nrfx_isr_int(void *arg)
 #ifdef UARTE_INTERRUPT_DRIVEN
 		struct uarte_nrfx_data *data = get_dev_data(dev);
 
-		if (!data->int_driven)
+		if (!data->int_driven || data->int_driven->fifo_fill_lock == 0)
 #endif
 		{
 			nrf_uarte_int_disable(uarte,
