@@ -111,8 +111,8 @@ __no_optimization static void trigger_fault_divide_zero(void)
  * zero exception. We only skip the QEMU board here, this means this
  * test will still apply on the physical board.
  */
-#if (defined(CONFIG_SOC_SERIES_MPS2) && (CONFIG_QEMU_TARGET)) || \
-	(CONFIG_BOARD_QEMU_CORTEX_A53) || (CONFIG_SOC_QEMU_ARC)
+#if (defined(CONFIG_SOC_SERIES_MPS2) && defined(CONFIG_QEMU_TARGET)) || \
+	defined(CONFIG_BOARD_QEMU_CORTEX_A53) || defined(CONFIG_SOC_QEMU_ARC)
 	ztest_test_skip();
 #endif
 }
