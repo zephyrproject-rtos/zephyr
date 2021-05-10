@@ -385,7 +385,7 @@ Management mechanism which reduces the overall system Power consumtion
 by suspending the devices which are idle or not being used while the
 System is active or running.
 
-The framework uses device_set_power_state() API set the
+The framework uses :c:func:`pm_device_state_set()` API set the
 device power state accordingly based on the usage count.
 
 The interfaces and APIs provided by the Device Idle PM are
