@@ -89,48 +89,10 @@ set(I18NSPHINXOPTS  ${SPHINXOPTS})
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
 set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
-set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/rst)
+set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/src)
 set(DOC_WARN ${CMAKE_CURRENT_BINARY_DIR}/doc.warnings)
-set(CONTENT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/extracted-content.txt)
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
-
-# This command is used to copy all documentation source files from the
-# ZEPHYR_BASE/ environment variable into the build directory,
-#
-# We need to make copies because Sphinx requires a single
-# documentation root directory, but Zephyr's documentation is
-# scattered around the tree in samples/, boards/, and doc/. Putting
-# them into a single rooted tree in the build directory is a
-# workaround for this limitation.
-set(EXTRACT_CONTENT_COMMAND
-  ${CMAKE_COMMAND} -E env
-  ZEPHYR_BASE=${ZEPHYR_BASE}
-  ${PYTHON_EXECUTABLE} _scripts/extract_content.py
-  # Ignore any files in the output directory.
-  --ignore ${CMAKE_CURRENT_BINARY_DIR}
-  # Copy all files in doc to the rst folder.
-  "*:doc:${RST_OUT}"
-  # We want to copy the .rst files in samples/ and boards/ to the rst
-  # folder, and also the doc folder inside rst.
-  #
-  # Some files refer to items in samples/ and boards/ relative to
-  # their actual position in the Zephyr tree. For example, in
-  # subsystems/sensor.rst:
-  #
-  # .. literalinclude:: ../../samples/sensor/mcp9808/src/main.c
-  #
-  # The additional copy is a hackaround so these references work.
-  "*.rst:samples:${RST_OUT}" "*.rst:boards:${RST_OUT}"
-  "*.rst:samples:${RST_OUT}/doc" "*.rst:boards:${RST_OUT}/doc")
-
-add_custom_target(
-  content
-  # Copy all files in doc/ to the rst folder
-  COMMAND ${EXTRACT_CONTENT_COMMAND}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Copying files to ${RST_OUT}"
-)
 
 add_custom_target(
   doxygen
@@ -190,7 +152,7 @@ endforeach()
 
 add_custom_target(
   kconfig
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${RST_OUT}/doc/reference/kconfig
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${RST_OUT}/reference/kconfig
   COMMAND ${CMAKE_COMMAND} -E env
   PYTHONPATH=${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}
   ZEPHYR_BASE=${ZEPHYR_BASE}
@@ -204,7 +166,7 @@ add_custom_target(
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
   ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} _scripts/gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/
+    ${PYTHON_EXECUTABLE} _scripts/gen_kconfig_rest.py ${RST_OUT}/reference/kconfig/
       --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
@@ -216,7 +178,7 @@ add_custom_target(
 
   VERBATIM
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Running gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/"
+  COMMENT "Running gen_kconfig_rest.py ${RST_OUT}/reference/kconfig/"
 )
 
 #
@@ -235,7 +197,7 @@ add_custom_target(
 # If not set, these are the default values for these variables:
 #
 # - DTS_ROOTS: ZEPHYR_BASE
-# - DTS_BINDINGS_RST_OUT: ${RST_OUT}/doc/reference/devicetree
+# - DTS_BINDINGS_RST_OUT: ${RST_OUT}/reference/devicetree
 #
 
 set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
@@ -250,7 +212,7 @@ foreach(root ${DTS_ROOTS})
 endforeach()
 
 if(NOT DTS_BINDINGS_RST_OUT)
-  set(DTS_BINDINGS_RST_OUT ${RST_OUT}/doc/reference/devicetree)
+  set(DTS_BINDINGS_RST_OUT ${RST_OUT}/reference/devicetree)
 endif()
 
 add_custom_target(
@@ -278,7 +240,7 @@ set(SPHINX_BUILD_HTML_COMMAND
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
   DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
-  ${SPHINXBUILD} -W -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
+  ${SPHINXBUILD} -W -t ${DOC_TAG} -b html -c ${CMAKE_CURRENT_LIST_DIR} ${ALLSPHINXOPTS} ${RST_OUT} ${SPHINX_OUTPUT_DIR_HTML})
 
 # The sphinx-html target is provided as a convenience for incremental
 # re-builds of content files without regenerating the entire docs
@@ -292,7 +254,6 @@ add_custom_target(
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   USES_TERMINAL
 )
-add_dependencies(sphinx-html content)
 
 add_custom_target(
   html
@@ -310,7 +271,7 @@ set(SPHINX_BUILD_LATEX_COMMAND
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
   DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
-  ${SPHINXBUILD} -W -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX})
+  ${SPHINXBUILD} -W -t ${DOC_TAG} -b latex -c ${CMAKE_CURRENT_LIST_DIR} -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT} ${SPHINX_OUTPUT_DIR_LATEX})
 
 # The sphinx-latex target works similarly to sphinx-html, and carries
 # the same warnings.
@@ -321,7 +282,6 @@ add_custom_target(
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   USES_TERMINAL
 )
-add_dependencies(sphinx-latex content)
 
 
 add_custom_command(
@@ -375,14 +335,14 @@ endif()
 #
 # Dependencies and final targets
 #
-add_dependencies(html content kconfig devicetree)
+add_dependencies(html kconfig devicetree)
 
 add_custom_target(
   htmldocs
 )
 add_dependencies(htmldocs html)
 
-add_dependencies(latex content kconfig devicetree)
+add_dependencies(latex kconfig devicetree)
 
 add_custom_target(
   latexdocs
