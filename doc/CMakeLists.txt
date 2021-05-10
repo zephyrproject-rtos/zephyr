@@ -59,7 +59,7 @@ if(${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
 endif()
 
 if(NOT DEFINED SPHINXOPTS)
-  set(SPHINXOPTS -q -j auto)
+  set(SPHINXOPTS -j auto)
 else()
   separate_arguments(SPHINXOPTS)
 endif()
@@ -82,11 +82,6 @@ endif()
 
 # Internal variables.
 set(ALLSPHINXOPTS  -d ${CMAKE_CURRENT_BINARY_DIR}/doctrees ${SPHINXOPTS})
-if("-q" IN_LIST ALLSPHINXOPTS)
-  set(SPHINX_USES_TERMINAL )
-else()
-  set(SPHINX_USES_TERMINAL USES_TERMINAL)
-endif()
 
 # the i18n builder cannot share the environment and doctrees with the others
 set(I18NSPHINXOPTS  ${SPHINXOPTS})
@@ -283,7 +278,7 @@ set(SPHINX_BUILD_HTML_COMMAND
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
   DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
-  ${SPHINXBUILD} -W -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
+  ${SPHINXBUILD} -W -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
 
 # The sphinx-html target is provided as a convenience for incremental
 # re-builds of content files without regenerating the entire docs
@@ -304,7 +299,7 @@ add_custom_target(
   COMMAND ${SPHINX_BUILD_HTML_COMMAND}
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   COMMENT "Generating HTML documentation with ${SPHINXBUILD} ${SPHINXOPTS}"
-  ${SPHINX_USES_TERMINAL}
+  USES_TERMINAL
 )
 
 #
@@ -315,7 +310,7 @@ set(SPHINX_BUILD_LATEX_COMMAND
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
   DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
-  ${SPHINXBUILD} -W -N -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX})
+  ${SPHINXBUILD} -W -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX})
 
 # The sphinx-latex target works similarly to sphinx-html, and carries
 # the same warnings.
@@ -335,7 +330,7 @@ add_custom_command(
   COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   COMMENT "Generating LaTeX documentation"
-  ${SPHINX_USES_TERMINAL}
+  USES_TERMINAL
 )
 
 add_custom_target(
