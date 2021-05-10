@@ -404,7 +404,7 @@ Enable Device Idle Power Management of a Device API
 
    void pm_device_enable(const struct device *dev);
 
-Enbles Idle Power Management of the device.
+Enables Idle Power Management of the device.
 
 Disable Device Idle Power Management of a Device API
 ----------------------------------------------------
