@@ -140,10 +140,12 @@ struct bt_iso_chan_path {
 
 /** @brief ISO Meta Data structure for received ISO packets. */
 struct bt_iso_recv_info {
-	/** ISO timestamp - valid only if the Bluetooth controller includes it */
+	/** ISO timestamp - valid only if the Bluetooth controller includes it
+	 *  If time stamp is not pressent this value will be 0 on all iso packets
+	 */
 	uint32_t ts;
 
-	/** ISO Pkt Seq no of the first fragment in the SDU */
+	/** ISO packet sequence number of the first fragment in the SDU */
 	uint16_t sn;
 };
 
