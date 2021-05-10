@@ -28,6 +28,13 @@ Terminology
    the SOC level. Power states are represented by :c:enum:`pm_state` and each
    one has a different meaning.
 
+:dfn:`Device Runtime Power Management`
+   Device Runtime Power Management (PM) refers the capability of
+   devices be able of saving energy independently of the the
+   system. Devices will keep reference of their usage and will
+   automatically be suspended or resumed. This feature is enabled via
+   the ::option:`CONFIG_PM_DEVICE_RUNTIME` Kconfig option.
+
 Overview
 ********
 
