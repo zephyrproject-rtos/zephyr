@@ -47,6 +47,8 @@ SHF_ALLOC_EXEC = SHF_ALLOC | SHF_EXEC
 
 DT_LOCATION = re.compile(r"\(DW_OP_addr: ([0-9a-f]+)\)")
 
+SRC_FILE_EXT = ('.h', '.c', '.hpp', '.cpp', '.hxx', '.cxx', '.c++')
+
 
 def get_symbol_addr(sym):
     """Get the address of a symbol"""
@@ -599,7 +601,7 @@ def print_any_tree(root, total_size, depth):
         if not row.node.children:
             cc = Fore.CYAN
             cr = Fore.RESET
-        elif row.node.name.endswith(".c") or row.node.name.endswith(".h"):
+        elif row.node.name.endswith(SRC_FILE_EXT):
             cc = Fore.GREEN
             cr = Fore.RESET
 
