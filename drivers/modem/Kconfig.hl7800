@@ -270,4 +270,8 @@ config MODEM_HL7800_DELAY_START
 	help
 		When true the application must call mdm_hl7800_reset.
 
+config GET_IP_ADDR_INFO_ATTEMPTS
+	int "Number of attempts to get IP address info during init"
+	default 4
+
 endif # MODEM_HL7800
