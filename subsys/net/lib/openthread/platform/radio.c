@@ -1018,7 +1018,7 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 	return radio_api->get_csl_acc(radio_dev);
 }
 
-#if defined(CONFIG_OPENTHREAD_MLE_LINK_METRICS_ENABLE)
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS)
 otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics aLinkMetrics,
 					  const otShortAddress aShortAddress,
 					  const otExtAddress *aExtAddress)
