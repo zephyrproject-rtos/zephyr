@@ -637,3 +637,9 @@ test_i2c_sbc_gauge: sbsgauge@4d {
 	label = "SBSGAUGE";
 	reg = <0x4d>;
 };
+
+test_i2c_lm75: lm75@4e {
+	compatible = "lm75";
+	label = "LM75";
+	reg = <0x4e>;
+};
