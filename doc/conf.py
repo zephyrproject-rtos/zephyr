@@ -83,6 +83,7 @@ extensions = [
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
     "notfound.extension",
+    "zephyr.external_content",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -204,6 +205,22 @@ warnings_filter_silent = False
 # -- Options for notfound.extension ---------------------------------------
 
 notfound_urls_prefix = f"/{version}/"
+
+# -- Options for zephyr.external_content ----------------------------------
+
+external_content_contents = [
+    (ZEPHYR_BASE / "doc", "[!_]*"),
+    (ZEPHYR_BASE, "boards/**/*.rst"),
+    (ZEPHYR_BASE, "boards/**/doc"),
+    (ZEPHYR_BASE, "samples/**/*.rst"),
+    (ZEPHYR_BASE, "samples/**/doc"),
+]
+external_content_keep = [
+    "reference/kconfig/*",
+    "reference/devicetree/bindings.rst",
+    "reference/devicetree/bindings/**/*",
+    "reference/devicetree/compatibles/**/*",
+]
 
 # -- Linkcheck options ----------------------------------------------------
 
