@@ -99,11 +99,9 @@ void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 
 	if (atomic_get(pending_flags) & NO_WAIT_PENDING_BITS) {
 		timeout_ms = 0;
-	} else if (atomic_test_bit(pending_flags,
-				   BT_MESH_SETTINGS_RPL_PENDING) &&
-		   (!(atomic_get(pending_flags) & GENERIC_PENDING_BITS) ||
-		    (CONFIG_BT_MESH_RPL_STORE_TIMEOUT <
-		     CONFIG_BT_MESH_STORE_TIMEOUT))) {
+	} else if (CONFIG_BT_MESH_RPL_STORE_TIMEOUT >= 0 &&
+		   atomic_test_bit(pending_flags, BT_MESH_SETTINGS_RPL_PENDING) &&
+		   !(atomic_get(pending_flags) & GENERIC_PENDING_BITS)) {
 		timeout_ms = CONFIG_BT_MESH_RPL_STORE_TIMEOUT * MSEC_PER_SEC;
 	} else {
 		timeout_ms = CONFIG_BT_MESH_STORE_TIMEOUT * MSEC_PER_SEC;
@@ -123,13 +121,18 @@ void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 	}
 }
 
+void bt_mesh_settings_store_cancel(enum bt_mesh_settings_flag flag)
+{
+	atomic_clear_bit(pending_flags, flag);
+}
+
 static void store_pending(struct k_work *work)
 {
 	BT_DBG("");
 
 	if (atomic_test_and_clear_bit(pending_flags,
 				      BT_MESH_SETTINGS_RPL_PENDING)) {
-		bt_mesh_rpl_pending_store();
+		bt_mesh_rpl_pending_store(BT_MESH_ADDR_ALL_NODES);
 	}
 
 	if (atomic_test_and_clear_bit(pending_flags,

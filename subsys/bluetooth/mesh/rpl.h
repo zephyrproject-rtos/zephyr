@@ -29,4 +29,3 @@ bool bt_mesh_rpl_check(struct bt_mesh_net_rx *rx,
 void bt_mesh_rpl_clear(void);
 void bt_mesh_rpl_update(struct bt_mesh_rpl *rpl,
 			struct bt_mesh_net_rx *rx);
-void bt_mesh_rpl_pending_store(void);
