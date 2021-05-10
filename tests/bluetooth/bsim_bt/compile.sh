@@ -55,6 +55,8 @@ app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split.conf \
 	compile
 app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_privacy.conf \
   compile
+app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_low_lat.conf \
+  compile
 app=tests/bluetooth/bsim_bt/bsim_test_advx compile
 app=tests/bluetooth/bsim_bt/bsim_test_iso compile
 app=tests/bluetooth/bsim_bt/bsim_test_audio compile
