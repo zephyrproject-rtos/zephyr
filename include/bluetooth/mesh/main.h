@@ -666,6 +666,19 @@ struct bt_mesh_friend_cb {
  */
 int bt_mesh_friend_terminate(uint16_t lpn_addr);
 
+/** @brief Store pending RPL entry(ies) in the persistent storage.
+ *
+ * This API allows the user to store pending RPL entry(ies) in the persistent
+ * storage without waiting for the timeout.
+ *
+ * @note When flash is used as the persistent storage, calling this API too
+ *       frequently may wear it out.
+ *
+ * @param addr Address of the node which RPL entry needs to be stored or
+ * @ref BT_MESH_ADDR_ALL_NODES to store all pending RPL entries.
+ */
+void bt_mesh_rpl_pending_store(uint16_t addr);
+
 #ifdef __cplusplus
 }
 #endif

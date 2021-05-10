@@ -702,20 +702,24 @@ config BT_MESH_SEQ_STORE_RATE
 	  one used before power off.
 
 config BT_MESH_RPL_STORE_TIMEOUT
-	int "Minimum frequency that the RPL gets updated in storage"
-	range 0 1000000
+	int "Minimum interval after which unsaved RPL entries are updated in storage"
+	range -1 1000000
 	default 5
 	help
-	  This value defines in seconds how soon the RPL gets written to
-	  persistent storage after a change occurs. If the node receives
-	  messages frequently it may make sense to have this set to a
-	  large value, whereas if the RPL gets updated infrequently a
-	  value as low as 0 (write immediately) may make sense. Note that
-	  if the node operates a security sensitive use case, and there's
-	  a risk of sudden power loss, it may be a security vulnerability
-	  to set this value to anything else than 0 (a power loss before
-	  writing to storage exposes the node to potential message
-	  replay attacks).
+	  This value defines in seconds how soon unsaved RPL entries
+	  gets written to the persistent storage. Setting this value
+	  to a large number may lead to security vulnerabilities if a node
+	  gets powered off before the timer is fired. When flash is used
+	  as the persistent storage setting this value to a low number
+	  may wear out flash sooner or later. However, if the RPL gets
+	  updated infrequently a value as low as 0 (write immediately)
+	  may make sense. Setting this value to -1 will disable this timer.
+	  In this case, a user is responsible to store pending RPL entries
+	  using @ref bt_mesh_rpl_pending_store. In the mean time, when
+	  IV Index is updated, the outdated RPL entries will still be
+	  stored by @ref BT_MESH_STORE_TIMEOUT. Finding the right balance
+	  between this timeout and calling @ref bt_mesh_rpl_pending_store
+	  may reduce a risk of security vulnerability and flash wear out.
 
 endif # BT_SETTINGS
 
