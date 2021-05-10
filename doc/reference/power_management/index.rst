@@ -376,11 +376,10 @@ Check Busy Status of All Devices API
 
 Checks if any device is busy. The API returns 0 if no device in the system is busy.
 
-Device Idle Power Management
-****************************
+Device Runtime Power Management
+*******************************
 
-
-The Device Idle Power Management framework is a Active Power
+The Device Runtime Power Management framework is an Active Power
 Management mechanism which reduces the overall system Power consumtion
 by suspending the devices which are idle or not being used while the
 System is active or running.
@@ -388,32 +387,32 @@ System is active or running.
 The framework uses :c:func:`pm_device_state_set()` API set the
 device power state accordingly based on the usage count.
 
-The interfaces and APIs provided by the Device Idle PM are
+The interfaces and APIs provided by the Device Runtime PM are
 designed to be generic and architecture independent.
 
-Device Idle Power Management API
-================================
+Device Runtime Power Management API
+===================================
 
-The Device Drivers use these APIs to perform device idle power management
-operations on the devices.
+The Device Drivers use these APIs to perform device runtime power
+management operations on the devices.
 
-Enable Device Idle Power Management of a Device API
----------------------------------------------------
+Enable Device Runtime Power Management of a Device API
+------------------------------------------------------
 
 .. code-block:: c
 
    void pm_device_enable(const struct device *dev);
 
-Enables Idle Power Management of the device.
+Enables Runtime Power Management of the device.
 
-Disable Device Idle Power Management of a Device API
-----------------------------------------------------
+Disable Device Runtime Power Management of a Device API
+-------------------------------------------------------
 
 .. code-block:: c
 
    void pm_device_disable(const struct device *dev);
 
-Disables Idle Power Management of the device.
+Disables Runtime Power Management of the device.
 
 Resume Device asynchronously API
 --------------------------------
@@ -423,7 +422,12 @@ Resume Device asynchronously API
    int pm_device_get(const struct device *dev);
 
 Marks the device as being used. This API will asynchronously
-bring the device to resume state. The API returns 0 on success.
+bring the device to resume state if it was suspended. If the device
+was already active, it just increments the device usage count.
+The API returns 0 on success.
+
+Device drivers can monitor this operation to finish calling
+:c:func:`pm_device_wait`.
 
 Resume Device synchronously API
 -------------------------------
@@ -444,9 +448,12 @@ Suspend Device asynchronously API
 
    int pm_device_put(const struct device *dev);
 
-Marks the device as being released. This API asynchronously put
-the device to suspend state if not already in suspend state.
-The API returns 0 on success.
+Releases a device. This API asynchronously puts the device to suspend
+state if not already in suspend state if the usage count of this device
+reaches 0.
+
+Device drivers can monitor this operation to finish calling
+:c:func:`pm_device_wait`.
 
 Suspend Device synchronously API
 --------------------------------
