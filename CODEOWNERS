@@ -235,6 +235,7 @@
 /drivers/i2c/slave/*eeprom*               @henrikbrixandersen
 /drivers/i2c/Kconfig.test                 @mbolivar-nordic
 /drivers/i2c/i2c_test.c                   @mbolivar-nordic
+/drivers/i2c/*rcar*                       @aaillet
 /drivers/i2s/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/ieee802154/                      @rlubos @tbursztyka
 /drivers/ieee802154/ieee802154_rf2xx*     @tbursztyka @nandojve
