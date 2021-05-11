@@ -69,6 +69,15 @@ such as a SysTick, RTC, counter, or GPIO. Depending on the power mode entered,
 only some SoC peripheral modules may be active and can be used as a wake up
 source.
 
+Some handful examples using different power management features:
+
+* :zephyr_file:`samples/boards/stm32/power_mgmt/blinky/`
+* :zephyr_file:`samples/boards/nrf/system_off/`
+* :zephyr_file:`samples/subsys/pm/device_pm/`
+* :zephyr_file:`tests/subsys/pm/power_mgmt/`
+* :zephyr_file:`tests/subsys/pm/power_mgmt_soc/`
+* :zephyr_file:`tests/subsys/pm/power_state_api/`
+
 Power States
 ============
 
