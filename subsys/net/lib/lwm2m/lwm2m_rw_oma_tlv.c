@@ -935,6 +935,33 @@ error:
 	return ret;
 }
 
+static int write_tlv_resource(struct lwm2m_message *msg, struct oma_tlv *tlv)
+{
+	int ret;
+
+	if (msg->in.block_ctx) {
+		msg->in.block_ctx->res_id = tlv->id;
+	}
+
+	msg->path.res_id = tlv->id;
+	msg->path.level = 3U;
+	ret = do_write_op_tlv_item(msg);
+
+	/*
+	 * ignore errors for CREATE op
+	 * for OP_CREATE and BOOTSTRAP WRITE: errors on
+	 * optional resources are ignored (ENOTSUP)
+	 */
+	if (ret < 0 &&
+	    !((ret == -ENOTSUP) &&
+	      (msg->ctx->bootstrap_mode ||
+	       msg->operation == LWM2M_OP_CREATE))) {
+		return ret;
+	}
+
+	return 0;
+}
+
 int do_write_op_tlv(struct lwm2m_message *msg)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
@@ -942,16 +969,19 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 	struct oma_tlv tlv;
 	int ret;
 
-	/* In case of Firmware object Package resource go directly to the
+	/* In case of block transfer go directly to the
 	 * message processing - consecutive blocks will not carry the TLV
 	 * header.
 	 */
-	if (msg->in.block_ctx != NULL && msg->in.block_ctx->ctx.current > 0 &&
-	    msg->path.obj_id == 5 && msg->path.res_id == 0) {
+	if (msg->in.block_ctx != NULL && msg->in.block_ctx->ctx.current > 0) {
+		msg->path.res_id = msg->in.block_ctx->res_id;
+		msg->path.level = 3U;
 		ret = do_write_op_tlv_item(msg);
 		if (ret < 0) {
 			return ret;
 		}
+
+		return 0;
 	}
 
 	while (true) {
@@ -995,36 +1025,16 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 					continue;
 				}
 
-				msg->path.res_id = tlv2.id;
-				msg->path.level = 3U;
-				ret = do_write_op_tlv_item(msg);
-				/*
-				 * ignore errors for CREATE op
-				 * for OP_CREATE and BOOTSTRAP WRITE: errors on
-				 * optional resources are ignored (ENOTSUP)
-				 */
-				if (ret < 0 &&
-				    !((ret == -ENOTSUP) &&
-				      (msg->ctx->bootstrap_mode ||
-				       msg->operation == LWM2M_OP_CREATE))) {
+				ret = write_tlv_resource(msg, &tlv2);
+				if (ret) {
 					return ret;
 				}
 
 				pos += len2;
 			}
 		} else if (tlv.type == OMA_TLV_TYPE_RESOURCE) {
-			msg->path.res_id = tlv.id;
-			msg->path.level = 3U;
-			ret = do_write_op_tlv_item(msg);
-			/*
-			 * ignore errors for CREATE op
-			 * for OP_CREATE and BOOTSTRAP WRITE: errors on optional
-			 * resources are ignored (ENOTSUP)
-			 */
-			if (ret < 0 &&
-			    !((ret == -ENOTSUP) &&
-			      (msg->ctx->bootstrap_mode ||
-			       msg->operation == LWM2M_OP_CREATE))) {
+			ret = write_tlv_resource(msg, &tlv);
+			if (ret) {
 				return ret;
 			}
 		} else {
