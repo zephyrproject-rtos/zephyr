@@ -176,12 +176,11 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp.pu.disabled ||
-	    (!feature_phy_2m(conn) && !feature_phy_coded(conn))) {
+	if (!feature_phy_2m(conn) && !feature_phy_coded(conn)) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
-	return ull_cp_phy_update(conn, tx, flags, rx, 1);
+	return ull_cp_phy_update(conn, tx, flags, rx, 1U);
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
