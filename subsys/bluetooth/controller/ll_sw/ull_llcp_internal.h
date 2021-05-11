@@ -135,7 +135,7 @@ struct proc_ctx {
 			uint8_t tx:3;
 			uint8_t rx:3;
 			uint8_t flags:1;
-			uint8_t cmd:1;
+			uint8_t host_initiated:1;
 			uint8_t error;
 			uint16_t instant;
 			uint8_t m_to_s_phy;
@@ -470,6 +470,12 @@ static inline void lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 	return ull_cp_priv_lp_pu_run(conn, ctx, param);
 }
 
+void ull_cp_priv_lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+
+static inline void lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	return ull_cp_priv_lp_pu_tx_ack(conn, ctx, param);
+}
 
 /*
  * LLCP Local Procedure Connection Update
@@ -534,6 +540,13 @@ void ull_cp_priv_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *par
 static inline void rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	return ull_cp_priv_rp_pu_run(conn, ctx, param);
+}
+
+void ull_cp_priv_rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+
+static inline void rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	return ull_cp_priv_rp_pu_tx_ack(conn, ctx, param);
 }
 
 /*
@@ -954,25 +967,39 @@ static inline void pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t rejec
 /*
  * PHY Update Procedure Helper
  */
-void ull_cp_priv_pdu_encode_phy_req(struct pdu_data *pdu);
+void ull_cp_priv_pdu_encode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 
-static inline void pdu_encode_phy_req(struct pdu_data *pdu)
+static inline void pdu_encode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	return ull_cp_priv_pdu_encode_phy_req(pdu);
+	return ull_cp_priv_pdu_encode_phy_req(ctx, pdu);
 }
 
-void ull_cp_priv_pdu_encode_phy_rsp(struct pdu_data *pdu);
+void ull_cp_priv_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void pdu_encode_phy_rsp(struct pdu_data *pdu)
+static inline void pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
-	return ull_cp_priv_pdu_encode_phy_rsp(pdu);
+	return ull_cp_priv_pdu_encode_phy_rsp(conn, pdu);
 }
 
-void ull_cp_priv_pdu_encode_phy_update_ind(struct pdu_data *pdu, uint16_t instant);
+void ull_cp_priv_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 
-static inline void pdu_encode_phy_update_ind(struct pdu_data *pdu, uint16_t instant)
+static inline void pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	return ull_cp_priv_pdu_encode_phy_update_ind(pdu, instant);
+	return ull_cp_priv_pdu_encode_phy_update_ind(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_phy_req(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_phy_rsp(ctx, pdu);
 }
 
 void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);

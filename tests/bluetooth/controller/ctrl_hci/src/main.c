@@ -268,6 +268,7 @@ void test_hci_phy(void)
 	err = ll_phy_req_send(conn_handle+1,  0x00, 0x00, 0x00);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
 	conn_from_pool->llcp.fex.features_used = 0x00;
+	conn_from_pool->llcp.fex.valid = 1;
 	err = ll_phy_req_send(conn_handle,  0x03, 0xFF, 0x03);
 	zassert_equal(err, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
 		      "Errorcode %d", err);
