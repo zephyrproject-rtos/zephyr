@@ -161,17 +161,11 @@ uint8_t ll_phy_get(uint16_t handle, uint8_t *tx, uint8_t *rx)
 	}
 
 	/* TODO: context safe read */
-	/* TODO: get correct data
-	 *	*tx = conn->lll.phy_tx;
-	 *	*rx = conn->lll.phy_rx;
-	 */
-	*tx = 0;
-	*rx = 0;
+	*tx = conn->lll.phy_tx;
+	*rx = conn->lll.phy_rx;
 
 	return BT_HCI_ERR_SUCCESS;
 }
-
-
 
 uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 {
@@ -181,27 +175,13 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
-	/* TODO: get correct info in conn structure
-	 *	if (conn->llcp_phy.disabled ||
-	 */
-	if (
+
+	if (conn->llcp.pu.disabled ||
 	    (!feature_phy_2m(conn) && !feature_phy_coded(conn))) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
-	/*
-	 * EGON TODO: pass correct parameters
-	 */
-	/*
-	 * conn->llcp_phy.state = LLCP_PHY_STATE_REQ;
-	 * conn->llcp_phy.cmd = 1U;
-	 * conn->llcp_phy.tx = tx;
-	 * conn->llcp_phy.flags = flags;
-	 * conn->llcp_phy.rx = rx;
-	 * conn->llcp_phy.req++;
-	 */
-
-	return ull_cp_phy_update(conn);
+	return ull_cp_phy_update(conn, tx, flags, rx, 1);
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
