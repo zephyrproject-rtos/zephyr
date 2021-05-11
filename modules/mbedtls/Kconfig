@@ -3,6 +3,8 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_MBEDTLS_MODULE
+	bool
 config MBEDTLS_PROMPTLESS
 	bool
 	help
@@ -19,7 +21,7 @@ menuconfig MBEDTLS
 
 if MBEDTLS
 
-choice
+choice MBEDTLS_IMPLEMENTATION
 	prompt "Select implementation"
 	default MBEDTLS_BUILTIN
 

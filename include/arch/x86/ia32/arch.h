@@ -173,6 +173,12 @@ typedef struct s_isrList {
  */
 #define _VECTOR_ARG(irq_p)	(-1)
 
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+#define IRQSTUBS_TEXT_SECTION	".pinned_text.irqstubs"
+#else
+#define IRQSTUBS_TEXT_SECTION	".text.irqstubs"
+#endif
+
 /* Internally this function does a few things:
  *
  * 1. There is a declaration of the interrupt parameters in the .intList
@@ -202,7 +208,7 @@ typedef struct s_isrList {
 		".long 0\n\t"			/* ISR_LIST.dpl */ \
 		".long 0\n\t"			/* ISR_LIST.tss */ \
 		".popsection\n\t" \
-		".pushsection .text.irqstubs\n\t" \
+		".pushsection " IRQSTUBS_TEXT_SECTION "\n\t" \
 		".global %c[isr]_irq%c[irq]_stub\n\t" \
 		"%c[isr]_irq%c[irq]_stub:\n\t" \
 		"pushl %[isr_param]\n\t" \

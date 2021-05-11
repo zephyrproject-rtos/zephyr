@@ -183,6 +183,7 @@ function(trusted_firmware_build)
       ${PSA_TEST_ARG}
       ${TFM_CMAKE_ARGS}
       -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
+      -DMBEDCRYPTO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../../crypto/mbedtls/mbedtls
       -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mcuboot
       -DPSA_ARCH_TESTS_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/psa-arch-tests
       ${TFM_PARTITIONS_ARGS}
@@ -240,8 +241,11 @@ function(trusted_firmware_build)
   zephyr_library_sources_ifndef(CONFIG_TFM_PSA_TEST_NONE src/zephyr_tfm_psa_test.c)
 
   zephyr_include_directories(
-    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/interface/include
     ${TFM_GENERATED_INCLUDES}
+    )
+
+  target_include_directories(tfm_api PRIVATE
+    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/interface/include
     )
 
   zephyr_library_link_libraries(

@@ -112,6 +112,45 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 
 /**
+ * @def Z_KERNEL_STACK_DEFINE_IN
+ * @brief Define a toplevel kernel stack memory region in specified section
+ *
+ * This declares a region of memory for use as a thread stack in
+ * the specified linker section.
+ *
+ * It is legal to precede this definition with the 'static' keyword.
+ *
+ * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
+ * parameter of k_thread_create(), it may not be the same as the
+ * 'size' parameter. Use K_KERNEL_STACK_SIZEOF() instead.
+ *
+ * The total amount of memory allocated may be increased to accommodate
+ * fixed-size stack overflow guards.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ * @param lsect Linker section for this stack
+ */
+#define Z_KERNEL_STACK_DEFINE_IN(sym, size, lsect) \
+	struct z_thread_stack_element lsect \
+		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+
+/**
+ * @def Z_KERNEL_STACK_ARRAY_DEFINE_IN
+ * @brief Define a toplevel array of kernel stack memory regions in specified section
+ *
+ * @param sym Kernel stack array symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ * @param lsect Linker section for this array of stacks
+ */
+#define Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, lsect) \
+	struct z_thread_stack_element lsect \
+		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+
+/**
  * @def K_KERNEL_STACK_DEFINE
  * @brief Define a toplevel kernel stack memory region
  *
@@ -134,9 +173,28 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __kstackmem \
-		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem)
+
+/**
+ * @def K_KERNEL_PINNED_STACK_DEFINE
+ * @brief Define a toplevel kernel stack memory region in pinned section
+ *
+ * See K_KERNEL_STACK_DEFINE() for more information and constraints.
+ *
+ * This puts the stack into the pinned noinit linker section if
+ * CONFIG_LINKER_USE_PINNED_SECTION is enabled, or else it would
+ * put the stack into the same section as K_KERNEL_STACK_DEFINE().
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define K_KERNEL_PINNED_STACK_DEFINE(sym, size) \
+	Z_KERNEL_STACK_DEFINE_IN(sym, size, __pinned_noinit)
+#else
+#define K_KERNEL_PINNED_STACK_DEFINE(sym, size) \
+	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem)
+#endif
 
 #define Z_KERNEL_STACK_LEN(size) \
 	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
@@ -152,9 +210,29 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element __kstackmem \
-		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem)
+
+/**
+ * @def K_KERNEL_PINNED_STACK_ARRAY_DEFINE
+ * @brief Define a toplevel array of kernel stack memory regions in pinned section
+ *
+ * See K_KERNEL_STACK_ARRAY_DEFINE() for more information and constraints.
+ *
+ * This puts the stack into the pinned noinit linker section if
+ * CONFIG_LINKER_USE_PINNED_SECTION is enabled, or else it would
+ * put the stack into the same section as K_KERNEL_STACK_ARRAY_DEFINE().
+ *
+ * @param sym Kernel stack array symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ */
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define K_KERNEL_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __pinned_noinit)
+#else
+#define K_KERNEL_PINNED_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	Z_KERNEL_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __kstackmem)
+#endif
 
 /**
  * @def K_KERNEL_STACK_MEMBER
@@ -167,9 +245,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the stack memory region
  */
 #define K_KERNEL_STACK_MEMBER(sym, size) \
-	struct z_thread_stack_element \
-		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
-		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+	Z_KERNEL_STACK_DEFINE_IN(sym, size,)
 
 #define K_KERNEL_STACK_SIZEOF(sym) (sizeof(sym) - K_KERNEL_STACK_RESERVED)
 
@@ -309,6 +385,58 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_SIZEOF(sym)	(sizeof(sym) - K_THREAD_STACK_RESERVED)
 
 /**
+ * @brief Declare a toplevel thread stack memory region in specified region
+ *
+ * This declares a region of memory suitable for use as a thread's stack
+ * in specified region.
+ *
+ * This is the generic, historical definition. Align to Z_THREAD_STACK_OBJ_ALIGN
+ * and put in 'noinit' section so that it isn't zeroed at boot
+ *
+ * The declared symbol will always be a k_thread_stack_t which can be passed to
+ * k_thread_create(), but should otherwise not be manipulated. If the buffer
+ * inside needs to be examined, examine thread->stack_info for the associated
+ * thread object to obtain the boundaries.
+ *
+ * It is legal to precede this definition with the 'static' keyword.
+ *
+ * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
+ * parameter of k_thread_create(), it may not be the same as the
+ * 'size' parameter. Use K_THREAD_STACK_SIZEOF() instead.
+ *
+ * Some arches may round the size of the usable stack region up to satisfy
+ * alignment constraints. K_THREAD_STACK_SIZEOF() will return the aligned
+ * size.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ * @param lsect Linker section for this stack
+ */
+#define Z_THREAD_STACK_DEFINE_IN(sym, size, lsect) \
+	struct z_thread_stack_element lsect \
+		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
+		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
+
+/**
+ * @brief Declare a toplevel array of thread stack memory regions in specified region
+ *
+ * Create an array of equally sized stacks. See Z_THREAD_STACK_DEFINE_IN
+ * definition for additional details and constraints.
+ *
+ * This is the generic, historical definition. Align to Z_THREAD_STACK_OBJ_ALIGN
+ * and put in specified section so that it isn't zeroed at boot
+ *
+ * @param sym Thread stack symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ * @param lsect Linker section for this stack
+ */
+#define Z_THREAD_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, lsect) \
+	struct z_thread_stack_element lsect \
+		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
+		sym[nmemb][K_THREAD_STACK_LEN(size)]
+
+/**
  * @brief Declare a toplevel thread stack memory region
  *
  * This declares a region of memory suitable for use as a thread's stack.
@@ -335,9 +463,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __stackmem \
-		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
-		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
+	Z_THREAD_STACK_DEFINE_IN(sym, size, __stackmem)
 
 /**
  * @brief Calculate size of stacks to be allocated in a stack array
@@ -370,9 +496,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element __stackmem \
-		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
-		sym[nmemb][K_THREAD_STACK_LEN(size)]
+	Z_THREAD_STACK_ARRAY_DEFINE_IN(sym, nmemb, size, __stackmem)
 
 /**
  * @brief Declare an embedded stack memory region
@@ -393,9 +517,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_MEMBER(sym, size) \
-	struct z_thread_stack_element \
-		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
-		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
+	Z_THREAD_STACK_DEFINE_IN(sym, size,)
 
 /** @} */
 

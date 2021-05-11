@@ -9,6 +9,7 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <irq.h>
+#include <linker/sections.h>
 
 #include <dt-bindings/interrupt-controller/intel-ioapic.h>
 
@@ -41,11 +42,12 @@ DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 
 #define MIN_DELAY 1000
 
-static struct k_spinlock lock;
-static unsigned int max_ticks;
-static unsigned int cyc_per_tick;
-static unsigned int last_count;
+static __pinned_bss struct k_spinlock lock;
+static __pinned_bss unsigned int max_ticks;
+static __pinned_bss unsigned int cyc_per_tick;
+static __pinned_bss unsigned int last_count;
 
+__isr
 static void hpet_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
@@ -93,6 +95,7 @@ static void hpet_isr(const void *arg)
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
+__pinned_func
 static void set_timer0_irq(unsigned int irq)
 {
 	/* 5-bit IRQ field starting at bit 9 */
@@ -106,6 +109,7 @@ static void set_timer0_irq(unsigned int irq)
 	TIMER0_CONF_REG = val;
 }
 
+__boot_func
 int sys_clock_driver_init(const struct device *dev)
 {
 	extern int z_clock_hw_cycles_per_sec;
@@ -146,6 +150,7 @@ int sys_clock_driver_init(const struct device *dev)
 	return 0;
 }
 
+__boot_func
 void smp_timer_init(void)
 {
 	/* Noop, the HPET is a single system-wide device and it's
@@ -154,6 +159,7 @@ void smp_timer_init(void)
 	 */
 }
 
+__pinned_func
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -191,6 +197,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #endif
 }
 
+__pinned_func
 uint32_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -204,11 +211,13 @@ uint32_t sys_clock_elapsed(void)
 	return ret;
 }
 
+__pinned_func
 uint32_t sys_clock_cycle_get_32(void)
 {
 	return MAIN_COUNTER_REG;
 }
 
+__pinned_func
 void sys_clock_idle_exit(void)
 {
 	GENERAL_CONF_REG |= GCONF_ENABLE;

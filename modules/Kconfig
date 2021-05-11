@@ -18,7 +18,6 @@ source "modules/Kconfig.imx"
 source "modules/Kconfig.infineon"
 source "modules/Kconfig.libmetal"
 source "modules/Kconfig.loramac-node"
-source "modules/Kconfig.mbedtls"
 source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
 source "modules/Kconfig.nuvoton"
@@ -50,6 +49,9 @@ comment "Unavailable modules, please install those via the project manifest."
 
 comment "hal_nordic module not available."
 	depends on !ZEPHYR_HAL_NORDIC_MODULE
+
+comment "mbedtls module not available."
+	depends on !ZEPHYR_MBEDTLS_MODULE
 
 comment "Trusted-firmware-m module not available."
 	depends on !ZEPHYR_TRUSTED_FIRMWARE_M_MODULE

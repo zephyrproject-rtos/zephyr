@@ -117,7 +117,11 @@ __no_optimization void test_nop(void)
 
 	arch_nop();
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#if defined(CONFIG_RISCV)
+	/* do 2 nop instructions to cost cycles */
+	arch_nop();
+	arch_nop();
+#elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* do 4 nop instructions to cost cycles */
 	arch_nop();
 	arch_nop();

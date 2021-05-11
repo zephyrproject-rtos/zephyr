@@ -761,6 +761,23 @@ void z_mem_manage_init(void)
 		pf->flags |= Z_PAGE_FRAME_PINNED;
 	}
 
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+	/* Pin the page frames correspondng to the pinned symbols */
+	uintptr_t pinned_start = ROUND_DOWN(POINTER_TO_UINT(lnkr_pinned_start),
+					    CONFIG_MMU_PAGE_SIZE);
+	uintptr_t pinned_end = ROUND_UP(POINTER_TO_UINT(lnkr_pinned_end),
+					CONFIG_MMU_PAGE_SIZE);
+	size_t pinned_size = pinned_end - pinned_start;
+
+	VIRT_FOREACH(UINT_TO_POINTER(pinned_start), pinned_size, addr)
+	{
+		pf = z_phys_to_page_frame(Z_BOOT_VIRT_TO_PHYS(addr));
+		frame_mapped_set(pf, addr);
+
+		pf->flags |= Z_PAGE_FRAME_PINNED;
+	}
+#endif
+
 	/* Any remaining pages that aren't mapped, reserved, or pinned get
 	 * added to the free pages list
 	 */
