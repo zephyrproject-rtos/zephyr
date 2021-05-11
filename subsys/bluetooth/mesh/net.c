@@ -388,7 +388,7 @@ static void bt_mesh_net_local(struct k_work *work)
 static const struct bt_mesh_net_cred *net_tx_cred_get(struct bt_mesh_net_tx *tx)
 {
 #if defined(CONFIG_BT_MESH_LOW_POWER)
-	if (tx->friend_cred && bt_mesh_lpn_established()) {
+	if (tx->friend_cred && bt_mesh.lpn.frnd) {
 		return &bt_mesh.lpn.cred[SUBNET_KEY_TX_IDX(tx->sub)];
 	}
 #endif
