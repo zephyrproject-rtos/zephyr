@@ -23,7 +23,7 @@ void main(void)
 	const struct device *dev = device_get_binding(MAX17262_LABEL);
 
 	if (dev == NULL) {
-		printk("No device %s found...\n", dev->name);
+		printk("No device found...\n");
 		return;
 	}
 	printk("Found device %s\n", dev->name);
