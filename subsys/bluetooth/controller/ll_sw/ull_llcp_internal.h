@@ -132,8 +132,14 @@ struct proc_ctx {
 
 		/* PHY Update */
 		struct {
+			uint8_t tx:3;
+			uint8_t rx:3;
+			uint8_t flags:1;
+			uint8_t cmd:1;
 			uint8_t error;
 			uint16_t instant;
+			uint8_t m_to_s_phy;
+			uint8_t s_to_m_phy;
 		} pu;
 
 		/* Connection Update & Connection Parameter Request */
