@@ -2,4 +2,5 @@ tests:
   kernel.lifo.usage:
     # see #26646
     platform_exclude: m2gl025_miv
+    min_ram: 18
     tags: kernel
