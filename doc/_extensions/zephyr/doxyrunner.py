@@ -238,23 +238,25 @@ def sync_doxygen(doxyfile: str, new: Path, prev: Path) -> None:
         prev: Previous Doxygen build output directory.
     """
 
-    html_output = get_doxygen_option(doxyfile, "HTML_OUTPUT")
-    if not html_output:
-        raise ValueError("No HTML_OUTPUT set in Doxyfile")
+    generate_html = get_doxygen_option(doxyfile, "GENERATE_HTML")
+    if generate_html == "YES":
+        html_output = get_doxygen_option(doxyfile, "HTML_OUTPUT")
+        if not html_output:
+            raise ValueError("No HTML_OUTPUT set in Doxyfile")
+
+        new_htmldir = new / html_output[0]
+        prev_htmldir = prev / html_output[0]
+
+        if prev_htmldir.exists():
+            shutil.rmtree(prev_htmldir)
+        new_htmldir.rename(prev_htmldir)
 
     xml_output = get_doxygen_option(doxyfile, "XML_OUTPUT")
     if not xml_output:
         raise ValueError("No XML_OUTPUT set in Doxyfile")
 
-    new_htmldir = new / html_output[0]
-    prev_htmldir = prev / html_output[0]
-
     new_xmldir = new / xml_output[0]
     prev_xmldir = prev / xml_output[0]
-
-    if prev_htmldir.exists():
-        shutil.rmtree(prev_htmldir)
-    new_htmldir.rename(prev_htmldir)
 
     if prev_xmldir.exists():
         dcmp = filecmp.dircmp(new_xmldir, prev_xmldir)
