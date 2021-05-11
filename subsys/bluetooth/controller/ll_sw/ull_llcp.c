@@ -198,7 +198,7 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_PHY_UPDATE:
 		lp_pu_init_proc(ctx);
 		break;
-#endif //CONFIG_BT_CTLR_PHY
+#endif /* CONFIG_BT_CTLR_PHY */
 	case PROC_CONN_PARAM_REQ:
 		lp_cu_init_proc(ctx);
 		break;
@@ -249,7 +249,7 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	case PROC_PHY_UPDATE:
 		rp_pu_init_proc(ctx);
 		break;
-#endif //CONFIG_BT_CTLR_PHY
+#endif /* CONFIG_BT_CTLR_PHY */
 	case PROC_CONN_PARAM_REQ:
 		rp_cu_init_proc(ctx);
 		break;
@@ -300,10 +300,6 @@ void ll_conn_init(struct ll_conn *conn)
 	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
 	conn->llcp.fex.features_used = LL_FEAT;
 
-#ifdef CONFIG_BT_CTLR_PHY
-	/* Reset the cached phy update information (PROC_PHY_UPDATE) */
-	memset(&conn->llcp.pu, 0, sizeof(conn->llcp.pu));
-#endif
 	/* Reset encryption related state */
 	conn->lll.enc_tx = 0U;
 	conn->lll.enc_rx = 0U;
@@ -472,7 +468,7 @@ uint8_t ull_cp_encryption_paused(struct ll_conn *conn)
 	return 0;
 }
 
-uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8_t rx, uint8_t host_cmd)
+uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8_t rx, uint8_t host_initiated)
 {
 	struct proc_ctx *ctx;
 
@@ -486,7 +482,7 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 	ctx->data.pu.tx = tx;
 	ctx->data.pu.flags = flags;
 	ctx->data.pu.rx = rx;
-	ctx->data.pu.cmd = host_cmd;
+	ctx->data.pu.host_initiated = host_initiated;
 
 	lr_enqueue(conn, ctx);
 
@@ -563,7 +559,7 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, 
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	// Apply update to local
+	/* Apply update to local */
 	ull_dle_local_tx_update(conn, max_tx_octets, max_tx_time);
 
 	lr_enqueue(conn, ctx);
