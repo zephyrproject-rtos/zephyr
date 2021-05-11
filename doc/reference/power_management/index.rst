@@ -149,6 +149,9 @@ In this policy the application is free to decide which power state the
 system should go based on the remaining time for the next scheduled
 timeout.
 
+An example of an application that defines its own policy can be found in
+:zephyr_file:`tests/subsys/pm/power_mgmt/`.
+
 Dummy
 -----
 
