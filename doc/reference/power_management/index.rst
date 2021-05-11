@@ -327,22 +327,9 @@ off, then such transactions would be left in an inconsistent state. This
 infrastructure guards such transactions by indicating to the SOC interface that
 the device is in the middle of a hardware transaction.
 
-When the :code:`pm_system_suspend()` is called, the SOC interface checks if any device
-is busy. The SOC interface can then decide to execute a power management scheme other than deep sleep or
-to defer power management operations until the next call of
-:code:`pm_system_suspend()`.
-
-An alternative to using the busy status mechanism is to use the
-`distributed method`_ of device power management. In such a method where the
-device power management is handled in a distributed manner rather than centrally in
-:code:`pm_system_suspend()`, the decision to enter deep sleep can be made based
-on whether all devices are already turned off.
-
-This feature can be also used to emulate a hardware feature found in some SOCs
-that causes the system to automatically enter deep sleep when all devices are idle.
-In such an usage, the busy status can be set by default and cleared as each
-device becomes idle. When :code:`pm_system_suspend()` is called, deep sleep can
-be entered if no device is found to be busy.
+When the :c:func:`pm_system_suspend()` is called, depending on the power state
+returned by the policy manager, the system may suspend or put devices in low
+power if they are not marked as busy.
 
 Here are the APIs used to set, clear, and check the busy status of devices.
 
@@ -376,6 +363,8 @@ Check Busy Status of Single Device API
 
 Checks whether a device is busy. The API returns 0 if the device
 is not busy.
+
+This API is used by the system power management.
 
 Check Busy Status of All Devices API
 ------------------------------------
