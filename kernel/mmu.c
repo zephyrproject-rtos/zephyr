@@ -210,8 +210,6 @@ static void virt_region_init(void)
 
 	if (Z_VM_RESERVED > 0) {
 		/* Mark reserved region at end of virtual address space */
-		offset = virt_to_bitmap_offset(Z_VIRT_REGION_END_ADDR,
-					       Z_VM_RESERVED);
 		num_bits = Z_VM_RESERVED / CONFIG_MMU_PAGE_SIZE;
 		(void)sys_bitarray_set_region(&virt_region_bitmap,
 					      num_bits, 0);
