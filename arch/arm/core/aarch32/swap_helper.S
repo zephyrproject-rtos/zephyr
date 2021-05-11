@@ -710,11 +710,15 @@ _context_switch:
     b z_arm_int_exit
 
 _oops:
-    push {r0, lr}
-    blx z_do_kernel_oops
-    pop {r0, lr}
-    cpsie i
-    movs pc, lr
+    /*
+     * Pass the exception frame to z_do_kernel_oops.  r0 contains the
+     * exception reason.
+     */
+    cps #MODE_SYS
+    mov r0, sp
+    cps #MODE_SVC
+    bl z_do_kernel_oops
+    b z_arm_int_exit
 
 #if defined(CONFIG_USERSPACE)
     /*
