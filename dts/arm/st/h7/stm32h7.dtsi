@@ -388,7 +388,7 @@
 			status = "disabled";
 			label = "QUADSPI";
 		};
-        
+
 		spi1: spi@40013000 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
