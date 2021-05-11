@@ -414,6 +414,7 @@ struct lwm2m_block_context {
 	uint8_t token[8];
 	uint8_t tkl;
 	bool last_block : 1;
+	uint16_t res_id;
 };
 
 struct lwm2m_output_context {
