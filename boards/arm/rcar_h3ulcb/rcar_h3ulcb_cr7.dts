@@ -57,3 +57,11 @@
 &scif1 {
 	status = "okay";
 };
+
+&i2c2 {
+	status = "okay";
+};
+
+&i2c4 {
+	status = "okay";
+};
