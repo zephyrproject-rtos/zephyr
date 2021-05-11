@@ -194,7 +194,7 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	case PROC_PHY_UPDATE:
 		rp_pu_rx(conn, ctx, rx);
 		break;
-#endif //CONFIG_BT_CTLR_PHY
+#endif /* CONFIG_BT_CTLR_PHY */
 	case PROC_CONN_PARAM_REQ:
 		rp_cu_rx(conn, ctx, rx);
 		break;
@@ -220,6 +220,11 @@ void ull_cp_priv_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct no
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_tx_ack(conn, ctx, tx);
 		break;
+#ifdef CONFIG_BT_CTLR_PHY
+	case PROC_PHY_UPDATE:
+		rp_pu_tx_ack(conn, ctx, tx);
+		break;
+#endif /* CONFIG_BT_CTLR_PHY */
 	default:
 		/* Ignore tx_ack */
 		break;
@@ -255,7 +260,7 @@ static void rr_act_run(struct ll_conn *conn)
 	case PROC_PHY_UPDATE:
 		rp_pu_run(conn, ctx, NULL);
 		break;
-#endif //CONFIG_BT_CTLR_PHY
+#endif /* CONFIG_BT_CTLR_PHY */
 	case PROC_CONN_PARAM_REQ:
 		rp_cu_run(conn, ctx, NULL);
 		break;
