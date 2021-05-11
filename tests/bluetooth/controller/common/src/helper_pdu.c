@@ -190,21 +190,30 @@ void helper_pdu_encode_reject_ind(struct pdu_data *pdu, void *param)
 	pdu->llctrl.reject_ind.error_code = p->error_code;
 }
 
-
 void helper_pdu_encode_phy_req(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_phy_req *p = param;
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ;
-	/* TODO(thoh): Fill in correct data */
+	if (!param) {
+		return;
+	}
+	pdu->llctrl.phy_req.rx_phys = p->rx_phys;
+	pdu->llctrl.phy_req.tx_phys = p->tx_phys;
 }
 
 void helper_pdu_encode_phy_rsp(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_phy_rsp *p = param;
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
-	/* TODO(thoh): Fill in correct data */
+	if (!param) {
+		return;
+	}
+	pdu->llctrl.phy_rsp.rx_phys = p->rx_phys;
+	pdu->llctrl.phy_rsp.tx_phys = p->tx_phys;
 }
 
 void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param)
@@ -214,8 +223,12 @@ void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param)
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+	if (!param) {
+		return;
+	}
 	pdu->llctrl.phy_upd_ind.instant = p->instant;
-	/* TODO(thoh): Fill in correct data */
+	pdu->llctrl.phy_upd_ind.m_to_s_phy = p->m_to_s_phy;
+	pdu->llctrl.phy_upd_ind.s_to_m_phy = p->s_to_m_phy;
 }
 
 
@@ -474,26 +487,42 @@ void helper_pdu_verify_reject_ext_ind(const char *file, uint32_t line, struct pd
 
 void helper_pdu_verify_phy_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_phy_req *p = param;
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req), "Wrong length.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_REQ, "Not a LL_PHY_REQ.\nCalled at %s:%d\n", file, line);
-	/* TODO(thoh): Fill in correct data */
+	if (!param) {
+		return;
+	}
+	zassert_equal(pdu->llctrl.phy_req.rx_phys, p->rx_phys, "rx phys mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.phy_req.tx_phys, p->tx_phys, "tx phys mismatch.\nCalled at %s:%d\n", file, line);
 }
 
 void helper_pdu_verify_phy_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_phy_rsp *p = param;
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp), "Wrong length.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_RSP, "Not a LL_PHY_RSP.\nCalled at %s:%d\n", file, line);
-	/* TODO(thoh): Fill in correct data */
+	if (!param) {
+		return;
+	}
+	zassert_equal(pdu->llctrl.phy_rsp.rx_phys, p->rx_phys, "rx phys mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.phy_rsp.tx_phys, p->tx_phys, "tx phys mismatch.\nCalled at %s:%d\n", file, line);
 }
 
 void helper_pdu_verify_phy_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_phy_upd_ind *p = param;
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND, "Not a LL_PHY_UPDATE_IND.\nCalled at %s:%d\n", file, line);
-	/* TODO(thoh): Fill in correct data */
+	if (!param) {
+		return;
+	}
+	zassert_equal(pdu->llctrl.phy_upd_ind.instant, p->instant, "instant mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.phy_upd_ind.m_to_s_phy, p->m_to_s_phy, "m_to_s_phy mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.phy_upd_ind.s_to_m_phy, p->s_to_m_phy, "s_to_m_phy mismatch.\nCalled at %s:%d\n", file, line);
 }
 
 void helper_node_verify_phy_update(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param)
@@ -502,6 +531,9 @@ void helper_node_verify_phy_update(const char *file, uint32_t line, struct node_
 	struct node_rx_pu *p = param;
 
 	zassert_equal(rx->hdr.type, NODE_RX_TYPE_PHY_UPDATE, "Not a PHY_UPDATE node.\nCalled at %s:%d\n", file, line);
+	if (!param) {
+		return;
+	}
 	zassert_equal(pdu->status, p->status, "Status mismatch.\nCalled at %s:%d\n", file, line);
 }
 
