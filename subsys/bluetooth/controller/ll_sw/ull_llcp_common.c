@@ -263,11 +263,11 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		break;
 	case PROC_DATA_LENGTH_UPDATE:
 		if (ctx->response_opcode != PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) {
-			// Apply changes in data lengths/times
+			/* Apply changes in data lengths/times */
 			uint8_t dle_changed = ull_dle_update_eff(conn);
 
 			if (dle_changed && !ntf_alloc_is_available()) {
-				// We need to generate NTF but no buffers avail, so go wait for one
+				/* We need to generate NTF but no buffers avail, so go wait for one */
 				ctx->state = LP_COMMON_STATE_WAIT_NTF;
 			} else {
 				if (dle_changed) {
@@ -277,7 +277,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 				ctx->state = LP_COMMON_STATE_IDLE;
 			}
 		} else {
-			// Peer does not accept DLU, so disable on current connection
+			/* Peer does not accept DLU, so disable on current connection */
 			feature_unmask_features(conn, LL_FEAT_BIT_DLE);
 
 			lr_complete(conn);
@@ -285,8 +285,9 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 
 		if (!ull_cp_remote_dle_pending(conn)) {
-			// Resume data, but only if there is no remote procedure pending RSP
-			// in which case, the RSP tx-ACK will resume data
+			/* Resume data, but only if there is no remote procedure pending RSP
+			 * in which case, the RSP tx-ACK will resume data
+			 */
 			tx_resume_data(conn);
 		}
 		break;
@@ -352,17 +353,19 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			if (ctx->pause || !tx_alloc_is_available()) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
-				// Pause data tx, to ensure we can later (on RSP rx-ack) update DLE without
-				// conflicting with out-going LL Data PDUs
-				// See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
+				/* Pause data tx, to ensure we can later (on RSP rx-ack) update DLE without
+				 * conflicting with out-going LL Data PDUs
+				 * See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
+				 */
 				tx_pause_data(conn);
 				lp_comm_tx(conn, ctx);
 				ctx->state = LP_COMMON_STATE_WAIT_RX;
 			}
 		} else {
-			// REQ was received from peer and RSP not yet sent
-			// lets piggy-back on RSP instead af sending REQ
-			// thus we can complete local req
+			/* REQ was received from peer and RSP not yet sent
+			 * lets piggy-back on RSP instead af sending REQ
+			 * thus we can complete local req
+			 */
 			lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
 		}
@@ -569,10 +572,11 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		break;
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 		pdu_decode_length_req(conn, pdu);
-		// On reception of REQ mark RSP open for local piggy-back
-		// Pause data tx, to ensure we can later (on RSP tx ack) update DLE without
-		// conflicting with out-going LL Data PDUs
-		// See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
+		/* On reception of REQ mark RSP open for local piggy-back
+		 * Pause data tx, to ensure we can later (on RSP tx ack) update DLE without
+		 * conflicting with out-going LL Data PDUs
+		 * See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
+		 */
 		tx_pause_data(conn);
 		break;
 	default:
@@ -738,10 +742,10 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		if (ctx->pause || !tx_alloc_is_available()) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
-			// On RSP tx close the window for possible local req piggy-back
+			/* On RSP tx close the window for possible local req piggy-back */
 			rp_comm_tx(conn, ctx);
 
-			// Wait for the peer to have ack'ed the RSP before updating DLE
+			/* Wait for the peer to have ack'ed the RSP before updating DLE */
 			ctx->state = RP_COMMON_STATE_WAIT_TX_ACK;
 		}
 		break;
@@ -783,9 +787,8 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 		switch (ctx->proc) {
 		case PROC_DATA_LENGTH_UPDATE:
 			{
-				// Apply changes in data lengths/times
+				/* Apply changes in data lengths/times */
 				uint8_t dle_changed = ull_dle_update_eff(conn);
-				// resume data tx
 				tx_resume_data(conn);
 
 				if (dle_changed && !ntf_alloc_is_available()) {
@@ -795,7 +798,6 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 					if (dle_changed) {
 						rp_comm_ntf(conn, ctx);
 					}
-					// and complete
 					rr_complete(conn);
 					ctx->state = RP_COMMON_STATE_IDLE;
 				}

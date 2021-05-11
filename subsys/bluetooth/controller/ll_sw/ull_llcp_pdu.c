@@ -384,38 +384,59 @@ void ull_cp_priv_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_
 	pdu->llctrl.reject_ext_ind.error_code = error_code;
 }
 
+#ifdef CONFIG_BT_CTLR_PHY
 /*
  * PHY Update Procedure Helper
  */
 
-void ull_cp_priv_pdu_encode_phy_req(struct pdu_data *pdu)
+void ull_cp_priv_pdu_encode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ;
-	/* TODO(thoh): Fill in PDU with correct data */
+	pdu->llctrl.phy_req.rx_phys = ctx->data.pu.rx;
+	pdu->llctrl.phy_req.tx_phys = ctx->data.pu.tx;
 }
 
-void ull_cp_priv_pdu_encode_phy_rsp(struct pdu_data *pdu)
+void ull_cp_priv_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
-	/* TODO(thoh): Fill in PDU with correct data */
+	pdu->llctrl.phy_rsp.rx_phys = conn->phy_pref_rx;
+	pdu->llctrl.phy_rsp.tx_phys = conn->phy_pref_tx;
 }
 
-void ull_cp_priv_pdu_encode_phy_update_ind(struct pdu_data *pdu, uint16_t instant)
+void ull_cp_priv_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
-	pdu->llctrl.phy_upd_ind.instant = sys_cpu_to_le16(instant);
+	pdu->llctrl.phy_upd_ind.instant = sys_cpu_to_le16(ctx->data.pu.instant);
+	pdu->llctrl.phy_upd_ind.m_to_s_phy = ctx->data.pu.m_to_s_phy;
+	pdu->llctrl.phy_upd_ind.s_to_m_phy = ctx->data.pu.s_to_m_phy;
+}
+
+void ull_cp_priv_pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.pu.rx = pdu->llctrl.phy_req.tx_phys;
+	ctx->data.pu.tx = pdu->llctrl.phy_req.rx_phys;
+}
+
+void ull_cp_priv_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.pu.rx = pdu->llctrl.phy_rsp.tx_phys;
+	ctx->data.pu.tx = pdu->llctrl.phy_rsp.rx_phys;
 }
 
 void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+	ctx->data.pu.m_to_s_phy = pdu->llctrl.phy_upd_ind.m_to_s_phy;
+	ctx->data.pu.s_to_m_phy = pdu->llctrl.phy_upd_ind.s_to_m_phy;
 }
+#endif /* CONFIG_BT_CTLR_PHY */
+
 /*
  * Connection Update Procedure Helper
  */
