@@ -587,6 +587,9 @@ static int iis2iclx_init_chip(const struct device *dev)
 
 static int iis2iclx_init(const struct device *dev)
 {
+#ifdef CONFIG_IIS2ICLX_TRIGGER
+	const struct iis2iclx_config *cfg = dev->config;
+#endif
 	struct iis2iclx_data *data = dev->data;
 
 	LOG_INF("Initialize device %s", dev->name);
@@ -597,9 +600,11 @@ static int iis2iclx_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_IIS2ICLX_TRIGGER
-	if (iis2iclx_init_interrupt(dev) < 0) {
-		LOG_ERR("Failed to initialize interrupt.");
-		return -EIO;
+	if (cfg->trig_enabled) {
+		if (iis2iclx_init_interrupt(dev) < 0) {
+			LOG_ERR("Failed to initialize interrupt.");
+			return -EIO;
+		}
 	}
 #endif
 
@@ -639,7 +644,8 @@ static int iis2iclx_init(const struct device *dev)
 
 #ifdef CONFIG_IIS2ICLX_TRIGGER
 #define IIS2ICLX_CFG_IRQ(inst) \
-	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),	\
+	.trig_enabled = true,						\
+	.gpio_drdy = GPIO_DT_SPEC_INST_GET(inst, drdy_gpios),		\
 	.int_pin = DT_INST_PROP(inst, int_pin)
 #else
 #define IIS2ICLX_CFG_IRQ(inst)
