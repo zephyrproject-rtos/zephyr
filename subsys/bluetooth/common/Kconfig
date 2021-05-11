@@ -7,6 +7,7 @@
 config BT_BUF_ACL_TX_SIZE
 	int "Maximum supported ACL size for outgoing data"
 	range 27 251
+	default 251 if BT_HCI_RAW
 	default 27
 	help
 	  Maximum supported ACL size of data packets sent from the Host to the
@@ -53,6 +54,7 @@ config BT_BUF_ACL_RX_SIZE
 	default 73 if BT_MESH_PROXY
 	default 70 if BT_EATT
 	default 69 if BT_SMP
+	default 251 if BT_HCI_RAW
 	default 27
 	range 70 1300 if BT_EATT
 	range 69 1300 if BT_SMP
