@@ -254,10 +254,11 @@ static inline void dle_max_time_get(struct ll_conn *conn,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	if (conn->llcp.fex.valid && feature_phy_coded(conn)) {
-		// If coded PHY is supported on the connection
-		// this will define the max times
+		/* If coded PHY is supported on the connection
+		 * this will define the max times
+		 */
 		phy_select = PHY_CODED;
-		// If not, max times should be defined by 1M timing
+		/* If not, max times should be defined by 1M timing */
 	}
 #endif
 
@@ -347,10 +348,11 @@ void ull_dle_init(struct ll_conn *conn, uint8_t phy)
 	const uint16_t max_time_max = PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy);
 #endif
 
-	// Clear DLE data set
+	/* Clear DLE data set */
 	memset(&conn->lll.dle, 0, sizeof(conn->lll.dle));
-	// See BT. 5.2 Spec - Vol 6, Part B, Sect 4.5.10
-	// Default to locally max supported rx/tx length/time
+	/* See BT. 5.2 Spec - Vol 6, Part B, Sect 4.5.10
+	 * Default to locally max supported rx/tx length/time
+	 */
 	ull_dle_local_tx_update(conn, ull_conn_default_tx_octets_get(), ull_conn_default_tx_time_get());
 
 	conn->lll.dle.local.max_rx_octets = LL_LENGTH_OCTETS_RX_MAX;
@@ -358,7 +360,7 @@ void ull_dle_init(struct ll_conn *conn, uint8_t phy)
 	conn->lll.dle.local.max_rx_time = max_time_max;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-	// Default to minimum rx/tx data length/time
+	/* Default to minimum rx/tx data length/time */
 	conn->lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 	conn->lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 
@@ -367,11 +369,11 @@ void ull_dle_init(struct ll_conn *conn, uint8_t phy)
 	conn->lll.dle.remote.max_rx_time = max_time_min;
 #endif /* CONFIG_BT_CTLR_PHY */
 
-	//
 	ull_dle_update_eff(conn);
 
-	// Check whether the controller should perform a data length update after
-	// connection is established
+	/* Check whether the controller should perform a data length update after
+	 * connection is established
+	 */
 #if defined(CONFIG_BT_CTLR_PHY)
 	if ((conn->lll.dle.local.max_rx_time != max_time_min ||
 		 conn->lll.dle.local.max_tx_time != max_time_min)) {

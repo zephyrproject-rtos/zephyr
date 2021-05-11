@@ -35,12 +35,36 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
+#define PREFER_S8_CODING 1
+#define PREFER_S2_CODING 0
+
 static struct ll_conn conn;
 
 static void setup(void)
 {
 	test_setup(&conn);
+
+	/* Emulate initial conn state */
+	conn.phy_pref_rx = PHY_1M | PHY_2M | PHY_CODED;
+	conn.phy_pref_tx = PHY_1M | PHY_2M | PHY_CODED;
+	conn.lll.phy_flags = PREFER_S2_CODING;
+	conn.lll.phy_tx_time = PHY_1M;
+	conn.lll.phy_rx = PHY_1M;
+	conn.lll.phy_tx = PHY_1M;
 }
+
+#define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)\
+do {\
+	zassert_equal(_conn.phy_pref_rx, _rx, "Preferred RX PHY mismatch %d (actual) != %d (expected)",_conn.phy_pref_rx, _rx );\
+	zassert_equal(_conn.phy_pref_tx, _tx, "Preferred TX PHY mismatch %d (actual) != %d (expected)",_conn.phy_pref_tx, _tx );\
+} while (0)
+
+#define CHECK_CURRENT_PHY_STATE(_conn, _tx, _flags, _rx)\
+do {\
+	zassert_equal(_conn.lll.phy_rx, _rx, "Current RX PHY mismatch %d (actual) != %d (expected)",_conn.lll.phy_rx, _rx );\
+	zassert_equal(_conn.lll.phy_tx, _tx, "Current TX PHY mismatch %d (actual) != %d (expected)",_conn.lll.phy_tx, _tx );\
+	zassert_equal(_conn.lll.phy_rx, _rx, "Current Flags mismatch %d (actual) != %d (expected)",_conn.lll.phy_flags, _flags );\
+} while (0)
 
 static bool is_instant_reached(struct ll_conn *conn, uint16_t instant)
 {
@@ -58,6 +82,9 @@ void test_phy_update_mas_loc(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M, .tx_phys = PHY_1M | PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_2M };
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
@@ -71,18 +98,21 @@ void test_phy_update_mas_loc(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, 2, 0, 1, 1);
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_RSP, &conn, NULL);
+	lt_tx(LL_PHY_RSP, &conn, &rsp);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -94,8 +124,11 @@ void test_phy_update_mas_loc(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, NULL);
+	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -118,6 +151,8 @@ void test_phy_update_mas_loc(void)
 		/* Done */
 		event_done(&conn);
 
+		CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_1M);
+
 		/* There should NOT be a host notification */
 		ut_rx_q_is_empty();
 	}
@@ -138,6 +173,9 @@ void test_phy_update_mas_loc(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
+	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
+	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
+
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
@@ -146,6 +184,7 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 
 	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
 		.type = PDU_DATA_LLCTRL_TYPE_PHY_REQ
@@ -162,18 +201,21 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
 	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -196,6 +238,8 @@ void test_phy_update_mas_rem(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = 0, .s_to_m_phy = PHY_2M };
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
@@ -212,7 +256,10 @@ void test_phy_update_mas_rem(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_REQ, &conn, NULL);
+	lt_tx(LL_PHY_REQ, &conn, &req);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -221,8 +268,11 @@ void test_phy_update_mas_rem(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, NULL);
+	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -264,6 +314,8 @@ void test_phy_update_mas_rem(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+	CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_2M);
+	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
 
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
@@ -273,13 +325,14 @@ void test_phy_update_sla_loc(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
 		.status = BT_HCI_ERR_SUCCESS
 	};
 
-	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = {0};
+	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = {.m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_2M};
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -288,15 +341,18 @@ void test_phy_update_sla_loc(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -347,6 +403,8 @@ void test_phy_update_sla_loc(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
+	CHECK_PREF_PHY_STATE(conn, PHY_2M, PHY_2M);
 
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
@@ -355,13 +413,14 @@ void test_phy_update_sla_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M | PHY_CODED, .tx_phys = PHY_1M | PHY_2M | PHY_CODED};
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = 0, .s_to_m_phy = PHY_2M };
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
 		.status = BT_HCI_ERR_SUCCESS
 	};
-
-	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = {0};
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -376,7 +435,10 @@ void test_phy_update_sla_rem(void)
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_REQ, &conn, NULL);
+	lt_tx(LL_PHY_REQ, &conn, &req);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -385,12 +447,15 @@ void test_phy_update_sla_rem(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_RSP, &conn, &tx, NULL);
+	lt_rx(LL_PHY_RSP, &conn, &tx, &rsp);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	phy_update_ind.instant = instant = event_counter(&conn) + 6;
-	lt_tx(LL_PHY_UPDATE_IND, &conn, &phy_update_ind);
+	ind.instant = instant = event_counter(&conn) + 6;
+	lt_tx(LL_PHY_UPDATE_IND, &conn, &ind);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -428,6 +493,9 @@ void test_phy_update_sla_rem(void)
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
+
+	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_1M);
+	CHECK_PREF_PHY_STATE(conn, PHY_1M | PHY_2M | PHY_CODED, PHY_1M | PHY_2M | PHY_CODED);
 
 	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
@@ -438,6 +506,9 @@ void test_phy_update_mas_loc_collision(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M, .tx_phys = PHY_1M | PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 9, .m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_2M };
 	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -456,7 +527,7 @@ void test_phy_update_mas_loc_collision(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/*** ***/
@@ -465,11 +536,14 @@ void test_phy_update_mas_loc_collision(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
 	lt_rx_q_is_empty(&conn);
 
-	/* Rx */
-	lt_tx(LL_PHY_REQ, &conn, NULL);
+	/* Rx - emulate colliding PHY_REQ from peer */
+	lt_tx(LL_PHY_REQ, &conn, &req);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -486,6 +560,9 @@ void test_phy_update_mas_loc_collision(void)
 	printf("Tx REJECT\n");
 	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	printf("Done again\n");
@@ -505,7 +582,10 @@ void test_phy_update_mas_loc_collision(void)
 
 	/* Rx */
 	printf("Tx again\n");
-	lt_tx(LL_PHY_RSP, &conn, NULL);
+	lt_tx(LL_PHY_RSP, &conn, &rsp);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -517,8 +597,11 @@ void test_phy_update_mas_loc_collision(void)
 
 	/* Tx Queue should have one LL Control PDU */
 	printf("And again\n");
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, NULL);
+	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -572,6 +655,11 @@ void test_phy_update_mas_rem_collision(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
+	struct pdu_data_llctrl_phy_req req_slave = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req req_master = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M, .tx_phys = PHY_1M | PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind_1 = { .instant = 7, .m_to_s_phy = 0, .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind_2 = { .instant = 14, .m_to_s_phy = PHY_2M, .s_to_m_phy = 0 };
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
@@ -590,7 +678,7 @@ void test_phy_update_mas_rem_collision(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_REQ, &conn, NULL);
+	lt_tx(LL_PHY_REQ, &conn, &req_slave);
 
 	/* Done */
 	event_done(&conn);
@@ -598,7 +686,7 @@ void test_phy_update_mas_rem_collision(void)
 	/*** ***/
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/*** ***/
@@ -607,8 +695,11 @@ void test_phy_update_mas_rem_collision(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, NULL);
+	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind_1);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -641,11 +732,14 @@ void test_phy_update_mas_rem_collision(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req_master);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_RSP, &conn, NULL);
+	lt_tx(LL_PHY_RSP, &conn, &rsp);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -664,8 +758,11 @@ void test_phy_update_mas_rem_collision(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, NULL);
+	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind_2);
 	lt_rx_q_is_empty(&conn);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -716,6 +813,11 @@ void test_phy_update_sla_loc_collision(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
+	struct pdu_data_llctrl_phy_req req_master = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req req_slave = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_1M };
+//	struct pdu_data_llctrl_phy_upd_ind ind_2 = { .instant = 14, .m_to_s_phy = PHY_2M, .s_to_m_phy = 0 };
 	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -724,7 +826,6 @@ void test_phy_update_sla_loc_collision(void)
 	};
 
 	struct node_rx_pu pu = {0};
-	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = {0};
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -735,18 +836,21 @@ void test_phy_update_sla_loc_collision(void)
 	/*** ***/
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req_slave);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
-	lt_tx(LL_PHY_REQ, &conn, NULL);
+	lt_tx(LL_PHY_REQ, &conn, &req_master);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
@@ -758,7 +862,7 @@ void test_phy_update_sla_loc_collision(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_PHY_RSP, &conn, &tx, NULL);
+	lt_rx(LL_PHY_RSP, &conn, &tx, &rsp);
 	lt_rx_q_is_empty(&conn);
 
 	/* Rx */
@@ -779,8 +883,11 @@ void test_phy_update_sla_loc_collision(void)
 	event_prepare(&conn);
 
 	/* Rx */
-	phy_update_ind.instant = instant = event_counter(&conn) + 6;
-	lt_tx(LL_PHY_UPDATE_IND, &conn, &phy_update_ind);
+	ind.instant = instant = event_counter(&conn) + 6;
+	lt_tx(LL_PHY_UPDATE_IND, &conn, &ind);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
 
 	/* Done */
 	event_done(&conn);
