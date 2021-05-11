@@ -12,7 +12,6 @@
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <init.h>
-#include <drivers/entropy.h>
 #include <sys/util.h>
 #include <net/socket.h>
 #include <random/rand32.h>
@@ -26,7 +25,6 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include CONFIG_MBEDTLS_CFG_FILE
 #endif /* CONFIG_MBEDTLS_CFG_FILE */
 
-#include <mbedtls/ctr_drbg.h>
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/x509.h>
 #include <mbedtls/x509_crt.h>
@@ -163,12 +161,6 @@ __net_socket struct tls_context {
 #endif /* CONFIG_MBEDTLS */
 };
 
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
-static const struct device *entropy_dev;
-#endif
-
-static mbedtls_ctr_drbg_context tls_ctr_drbg;
-
 /* A global pool of TLS contexts. */
 static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
 
@@ -204,37 +196,18 @@ static void tls_debug(void *ctx, int level, const char *file,
 }
 #endif /* defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG) */
 
+static int tls_ctr_drbg_random(void *ctx, unsigned char *buf, size_t len)
+{
+	ARG_UNUSED(ctx);
+
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
-static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
-{
-	ARG_UNUSED(ctx);
-
-	return entropy_get_entropy(entropy_dev, buf, len);
-}
+	return sys_csrand_get(buf, len);
 #else
-static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)
-{
-	ARG_UNUSED(ctx);
-
-	size_t i = len / 4;
-	uint32_t val;
-
-	while (i--) {
-		val = sys_rand32_get();
-		UNALIGNED_PUT(val, (uint32_t *)buf);
-		buf += 4;
-	}
-
-	i = len & 0x3;
-	val = sys_rand32_get();
-	while (i--) {
-		*buf++ = val;
-		val >>= 8;
-	}
+	sys_rand_get(buf, len);
 
 	return 0;
+#endif
 }
-#endif /* defined(CONFIG_ENTROPY_HAS_DRIVER) */
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 /* mbedTLS-defined function for setting timer. */
@@ -287,33 +260,14 @@ static int tls_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	int ret;
-	static const unsigned char drbg_seed[] = "zephyr";
-
-#if defined(CONFIG_ENTROPY_HAS_DRIVER)
-	entropy_dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-	if (!entropy_dev) {
-		NET_ERR("Failed to obtain entropy device");
-		return -ENODEV;
-	}
-#else
+#if !defined(CONFIG_ENTROPY_HAS_DRIVER)
 	NET_WARN("No entropy device on the system, "
 		 "TLS communication may be insecure!");
-#endif /* defined(CONFIG_ENTROPY_HAS_DRIVER) */
+#endif
 
 	(void)memset(tls_contexts, 0, sizeof(tls_contexts));
 
 	k_mutex_init(&context_lock);
-
-	mbedtls_ctr_drbg_init(&tls_ctr_drbg);
-
-	ret = mbedtls_ctr_drbg_seed(&tls_ctr_drbg, tls_entropy_func, NULL,
-				    drbg_seed, sizeof(drbg_seed));
-	if (ret != 0) {
-		mbedtls_ctr_drbg_free(&tls_ctr_drbg);
-		NET_ERR("TLS entropy source initialization failed");
-		return -EFAULT;
-	}
 
 #if defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG)
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
@@ -953,8 +907,8 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		/* Configure cookie for DTLS server */
 		if (role == MBEDTLS_SSL_IS_SERVER) {
 			ret = mbedtls_ssl_cookie_setup(&context->cookie,
-						       mbedtls_ctr_drbg_random,
-						       &tls_ctr_drbg);
+						       tls_ctr_drbg_random,
+						       NULL);
 			if (ret != 0) {
 				return -ENOMEM;
 			}
@@ -990,8 +944,8 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 	}
 
 	mbedtls_ssl_conf_rng(&context->config,
-			     mbedtls_ctr_drbg_random,
-			     &tls_ctr_drbg);
+			     tls_ctr_drbg_random,
+			     NULL);
 
 	ret = tls_mbedtls_set_credentials(context);
 	if (ret != 0) {
