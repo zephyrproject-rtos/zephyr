@@ -194,9 +194,11 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_ENCRYPTION_PAUSE:
 		lp_enc_init_proc(ctx);
 		break;
+#ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		lp_pu_init_proc(ctx);
 		break;
+#endif //CONFIG_BT_CTLR_PHY
 	case PROC_CONN_PARAM_REQ:
 		lp_cu_init_proc(ctx);
 		break;
@@ -243,9 +245,11 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	case PROC_ENCRYPTION_PAUSE:
 		rp_enc_init_proc(ctx);
 		break;
+#ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		rp_pu_init_proc(ctx);
 		break;
+#endif //CONFIG_BT_CTLR_PHY
 	case PROC_CONN_PARAM_REQ:
 		rp_cu_init_proc(ctx);
 		break;
@@ -292,13 +296,14 @@ void ll_conn_init(struct ll_conn *conn)
 	/* Reset the cached min used channels information (PROC_MIN_USED_CHANS) */
 	memset(&conn->llcp.muc, 0, sizeof(conn->llcp.muc));
 
-	/*
-	 * set the feature exchange fields
-	 *
-	 */
+	/* Reset the feature exchange fields */
 	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
 	conn->llcp.fex.features_used = LL_FEAT;
 
+#ifdef CONFIG_BT_CTLR_PHY
+	/* Reset the cached phy update information (PROC_PHY_UPDATE) */
+	memset(&conn->llcp.pu, 0, sizeof(conn->llcp.pu));
+#endif
 	/* Reset encryption related state */
 	conn->lll.enc_tx = 0U;
 	conn->lll.enc_rx = 0U;
