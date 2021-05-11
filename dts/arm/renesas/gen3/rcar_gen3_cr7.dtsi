@@ -9,6 +9,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/renesas_rcar_cpg.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -102,6 +103,34 @@
 			phase-seg2 = <3>;
 			status = "disabled";
 			label = "can0";
+		};
+
+		i2c2: i2c@e6510000 {
+			compatible = "renesas,rcar-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe6510000 0x40>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 286 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 929>;
+			status = "disabled";
+			label = "i2c2";
+		};
+
+		i2c4: i2c@e66d8000 {
+			compatible = "renesas,rcar-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe66d8000 0x40>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL
+					IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 927>;
+			status = "disabled";
+			label = "i2c4";
 		};
 
 		scif1: serial@e6e68000 {
