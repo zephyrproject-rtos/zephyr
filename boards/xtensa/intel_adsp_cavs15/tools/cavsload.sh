@@ -92,10 +92,12 @@ if [ "$DO_LOAD" = "1" ]; then
 	sleep 0.1
     done
 
+    # The scripts sometimes gets stuck.  And having either banging on
+    # the window while doing a reset can be fatal.
+    ssh $HOST "sudo pkill -f -9 'cavs-fw|adsplog'" || true
+
     scp $IMAGE $HOST:_cavstmp.ri
 
-    # The script sometimes gets stuck
-    ssh $HOST "sudo pkill -f -9 cavs-fw.py" || true
     ssh $HOST "sudo $CAVSFW _cavstmp.ri" > $LOADLOG 2>&1
 
     if [ "$DO_SIGN" = "1" ]; then
@@ -107,6 +109,5 @@ if [ "$DO_LOAD" = "1" ]; then
 fi
 
 if [ "$DO_LOG" = "1" ]; then
-    ssh $HOST "sudo pkill -f -9 adsplog.py" || true
     ssh $HOST "sudo $ADSPLOG"
 fi
