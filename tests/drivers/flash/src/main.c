@@ -14,6 +14,12 @@
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
 #define FLASH_TEST_REGION_OFFSET 0xff000
 #define TEST_AREA_MAX DT_PROP(DT_INST(0, nordic_qspi_nor), size)
+
+#elif defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR)
+
+#define FLASH_DEVICE DT_LABEL(DT_INST(0, nxp_imx_flexspi_nor))
+#define FLASH_TEST_REGION_OFFSET FLASH_AREA_OFFSET(storage)
+#define TEST_AREA_MAX ((FLASH_AREA_SIZE(storage)) + (FLASH_TEST_REGION_OFFSET))
 #else
 
 /* SoC emebded NVM */
