@@ -99,7 +99,7 @@ void ull_cp_ltk_req_neq_reply(struct ll_conn *conn);
 /**
  * @brief Initiate a PHY Update Procedure.
  */
-uint8_t ull_cp_phy_update(struct ll_conn *conn);
+uint8_t ull_cp_phy_update(struct ll_conn *conn,uint8_t tx, uint8_t flags, uint8_t rx, uint8_t host_cmd);
 
 /**
  * @brief Initiate a Connection Parameter Request Procedure or Connection Update Procedure
