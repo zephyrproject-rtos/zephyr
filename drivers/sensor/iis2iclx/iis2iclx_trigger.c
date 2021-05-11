@@ -91,7 +91,13 @@ int iis2iclx_trigger_set(const struct device *dev,
 			   const struct sensor_trigger *trig,
 			   sensor_trigger_handler_t handler)
 {
+	const struct iis2iclx_config *cfg = dev->config;
 	struct iis2iclx_data *iis2iclx = dev->data;
+
+	if (!cfg->trig_enabled) {
+		LOG_ERR("trigger_set op not supported");
+		return -ENOTSUP;
+	}
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		iis2iclx->handler_drdy_acc = handler;

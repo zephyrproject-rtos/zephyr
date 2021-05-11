@@ -49,6 +49,7 @@ struct iis2iclx_config {
 	uint8_t odr;
 	uint8_t range;
 #ifdef CONFIG_IIS2ICLX_TRIGGER
+	bool trig_enabled;
 	uint8_t int_pin;
 	const struct gpio_dt_spec gpio_drdy;
 #endif /* CONFIG_IIS2ICLX_TRIGGER */
