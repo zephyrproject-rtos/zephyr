@@ -206,8 +206,8 @@ static void lsm6dso_handle_interrupt(const struct device *dev)
 #endif
 	}
 
-	gpio_pin_interrupt_configure(cfg->gpio_drdy.port, cfg->gpio_drdy.pin,
-				     GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
+					GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void lsm6dso_gpio_callback(const struct device *dev,
@@ -219,8 +219,7 @@ static void lsm6dso_gpio_callback(const struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_interrupt_configure(cfg->gpio_drdy.port, cfg->gpio_drdy.pin,
-				     GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy, GPIO_INT_DISABLE);
 
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	k_sem_give(&lsm6dso->gpio_sem);
@@ -274,8 +273,7 @@ int lsm6dso_init_interrupt(const struct device *dev)
 	lsm6dso->work.handler = lsm6dso_work_cb;
 #endif /* CONFIG_LSM6DSO_TRIGGER_OWN_THREAD */
 
-	ret = gpio_pin_configure(cfg->gpio_drdy.port, cfg->gpio_drdy.pin,
-				 GPIO_INPUT | cfg->gpio_drdy.dt_flags);
+	ret = gpio_pin_configure_dt(&cfg->gpio_drdy, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
@@ -296,7 +294,6 @@ int lsm6dso_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_interrupt_configure(cfg->gpio_drdy.port,
-					    cfg->gpio_drdy.pin,
-					    GPIO_INT_EDGE_TO_ACTIVE);
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
+					       GPIO_INT_EDGE_TO_ACTIVE);
 }
