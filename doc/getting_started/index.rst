@@ -211,7 +211,7 @@ additional Python dependencies.
 
          .. code-block:: bash
 
-            pip3 install west
+            pip3 install -U west
 
       #. Get the Zephyr source code:
 
@@ -242,7 +242,7 @@ additional Python dependencies.
 
          .. code-block:: bash
 
-            pip3 install west
+            pip3 install -U west
 
       #. Get the Zephyr source code:
 
