@@ -425,6 +425,15 @@ struct llcp_struct {
 	struct {
 		uint32_t win_offset_us;
 	} cu;
+#if defined(CONFIG_BT_CTLR_PHY)
+	struct {
+		uint8_t tx:3;
+		uint8_t rx:3;
+		uint8_t flags:1;
+		uint8_t cmd:1;
+		uint8_t disabled:1;
+	} pu;
+#endif /* CONFIG_BT_CTLR_PHY */
 }; /* struct llcp_struct */
 
 struct ll_conn {

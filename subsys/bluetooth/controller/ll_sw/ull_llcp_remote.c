@@ -190,9 +190,11 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	case PROC_ENCRYPTION_PAUSE:
 		rp_enc_rx(conn, ctx, rx);
 		break;
+#ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		rp_pu_rx(conn, ctx, rx);
 		break;
+#endif //CONFIG_BT_CTLR_PHY
 	case PROC_CONN_PARAM_REQ:
 		rp_cu_rx(conn, ctx, rx);
 		break;
@@ -249,9 +251,11 @@ static void rr_act_run(struct ll_conn *conn)
 	case PROC_ENCRYPTION_PAUSE:
 		rp_enc_run(conn, ctx, NULL);
 		break;
+#ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		rp_pu_run(conn, ctx, NULL);
 		break;
+#endif //CONFIG_BT_CTLR_PHY
 	case PROC_CONN_PARAM_REQ:
 		rp_cu_run(conn, ctx, NULL);
 		break;
