@@ -120,7 +120,7 @@ static int send_igmp_report(struct net_if *iface,
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	struct net_pkt *pkt = NULL;
 	int i, count = 0;
-	int ret;
+	int ret = 0;
 
 	if (!ipv4) {
 		return -ENOENT;
