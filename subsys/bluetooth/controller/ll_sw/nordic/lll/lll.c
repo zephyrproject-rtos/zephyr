@@ -71,7 +71,6 @@ static void isr_race(void *param);
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void ticker_start_op_cb(uint32_t status, void *param);
-static void ticker_start_next_op_cb(uint32_t status, void *param);
 static uint32_t preempt_ticker_start(struct lll_event *event,
 				     ticker_op_func op_cb);
 static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
@@ -644,6 +643,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 		ret  = preempt_ticker_start(next, ticker_start_op_cb);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_FAILURE) ||
 			  (ret == TICKER_STATUS_BUSY));
 
 #else /* CONFIG_BT_CTLR_LOW_LAT */
@@ -710,8 +710,9 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	} while (p->is_aborted || p->is_resume);
 
 	/* Start the preempt timeout */
-	ret = preempt_ticker_start(p, ticker_start_next_op_cb);
+	ret = preempt_ticker_start(p, ticker_start_op_cb);
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_FAILURE) ||
 		  (ret == TICKER_STATUS_BUSY));
 #endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
@@ -756,13 +757,6 @@ static void ticker_start_op_cb(uint32_t status, void *param)
 
 	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
 		  (status == TICKER_STATUS_FAILURE));
-}
-
-static void ticker_start_next_op_cb(uint32_t status, void *param)
-{
-	ARG_UNUSED(param);
-
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
 static uint32_t preempt_ticker_start(struct lll_event *event,
@@ -845,8 +839,9 @@ static void preempt(void *param)
 		uint32_t ret;
 
 		/* Start the preempt timeout */
-		ret = preempt_ticker_start(next, ticker_start_next_op_cb);
+		ret = preempt_ticker_start(next, ticker_start_op_cb);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_FAILURE) ||
 			  (ret == TICKER_STATUS_BUSY));
 
 		return;
