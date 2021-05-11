@@ -159,6 +159,12 @@ Stable API changes in this release
 Kernel
 ******
 
+* Added :c:func:`k_mem_unmap()` so anonymous memory mapped via :c:func:`k_mem_map()`
+  can be unmapped and virtual address reclaimed.
+
+* Added the ability to gather more statistics for demand paging, including execution
+  time histograms for eviction algorithms and backing stores.
+
 Architectures
 *************
 
