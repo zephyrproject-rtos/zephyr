@@ -508,6 +508,20 @@ def set_root_path_for_unmapped_symbols(symbol_dict, addr_range, processed):
     processed['mapped_addr'] = mapped_addresses
     processed['unmapped_symbols'] = unmapped_symbols
 
+def find_common_path_prefix(symbol_dict):
+    """
+    Find the common path prefix of all mapped files.
+    Must be called before set_root_path_for_unmapped_symbols().
+    """
+    paths = list()
+
+    for _, sym in symbol_dict.items():
+        for symbol in sym:
+            for file in symbol['mapped_files']:
+                paths.append(file)
+
+    return os.path.commonpath(paths)
+
 
 class TreeNode(NodeMixin):
     """
@@ -527,11 +541,35 @@ class TreeNode(NodeMixin):
         return self.name
 
 
-def generate_any_tree(symbol_dict):
+def sum_node_children_size(node):
+    """
+    Calculate the sum of symbol size of all direct children.
+    """
+    size = 0
+
+    for child in node.children:
+        size += child.size
+
+    return size
+
+
+def generate_any_tree(symbol_dict, path_prefix):
     """
     Generate a symbol tree for output.
     """
-    root = TreeNode('root', ":")
+    root = TreeNode('Symbols', ":")
+    node_no_paths = TreeNode('(no paths)', ":", parent=root)
+
+    if Path(path_prefix) == Path(args.zephyrbase):
+        # All source files are under ZEPHYR_BASE so there is
+        # no need for another level.
+        node_zephyr_base = root
+        node_output_dir = root
+        node_others = root
+    else:
+        node_zephyr_base = TreeNode('ZEPHYR_BASE', args.zephyrbase)
+        node_output_dir = TreeNode('OUTPUT_DIR', args.output)
+        node_others = TreeNode("/", "/")
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
@@ -555,17 +593,49 @@ def generate_any_tree(symbol_dict):
                     parent = node
                 node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
 
+    zbase = Path(args.zephyrbase)
+    outd = Path(args.output)
+
     for name, sym in symbol_dict.items():
         for symbol in sym:
             size = get_symbol_size(symbol['symbol'])
             for file in symbol['mapped_files']:
                 path = Path(file, name)
                 if path.is_absolute():
-                    zb = Path(args.zephyrbase)
-                    if zb in path.parents:
-                        path = path.relative_to(zb)
+                    if zbase in path.parents:
+                        path = path.relative_to(zbase)
+                        dest_node = node_zephyr_base
+                    elif outd in path.parents:
+                        path = path.relative_to(outd)
+                        dest_node = node_output_dir
+                    else:
+                        dest_node = node_others
+                else:
+                    dest_node = node_no_paths
 
-                _insert_one_elem(root, path, size)
+                _insert_one_elem(dest_node, path, size)
+
+
+    if node_zephyr_base is not root:
+        # ZEPHYR_BASE and OUTPUT_DIR nodes don't have sum of symbol size
+        # so calculate them here.
+        node_zephyr_base.size = sum_node_children_size(node_zephyr_base)
+        node_output_dir.size = sum_node_children_size(node_output_dir)
+
+        # Find out which nodes need to be in the tree.
+        # "(no path)", ZEPHYR_BASE nodes are essential.
+        children = [node_no_paths, node_zephyr_base]
+        if node_output_dir.height != 0:
+            # OUTPUT_DIR may be under ZEPHYR_BASE.
+            children.append(node_output_dir)
+        if node_others.height != 0:
+            # Only include "others" node if there is something.
+            children.append(node_others)
+
+        root.children = children
+
+    # Root node doesn't have sum of symbol size. So sum them up.
+    root.size = sum_node_children_size(root)
 
     return root
 
@@ -597,7 +667,7 @@ def print_any_tree(root, total_size, depth):
             cc = Fore.GREEN
             cr = Fore.RESET
 
-        print(f"{row.pre}{cc}{row.node.name}{cr} {s} {Fore.BLUE}{percent:.2f}%{Fore.RESET}")
+        print(f"{row.pre}{cc}{row.node.name}{cr} {s} {Fore.BLUE}{percent:5.2f}%{Fore.RESET}")
     print('=' * 110)
     print(f'{total_size:>101}')
 
@@ -670,13 +740,14 @@ def main():
         mark_address_aliases(symbol_dict, processed)
         do_address_range_matching(elf, symbol_dict, processed)
         mark_address_aliases(symbol_dict, processed)
+        common_path_prefix = find_common_path_prefix(symbol_dict)
         set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)
 
         if args.verbose:
             for sym in processed['unmapped_symbols']:
                 print("INFO: Unmapped symbol: {0}".format(sym))
 
-        root = generate_any_tree(symbol_dict)
+        root = generate_any_tree(symbol_dict, common_path_prefix)
         print_any_tree(root, symsize, args.depth)
 
         if args.json:
