@@ -25,6 +25,7 @@ extern "C" {
  */
 enum max1726x_sensor_attribute {
 	SENSOR_ATTR_MAX1726X_HIBERNATE = SENSOR_CHAN_PRIV_START,
+	SENSOR_ATTR_MAX1726X_SHUTDOWN,
 };
 
 #ifdef __cplusplus

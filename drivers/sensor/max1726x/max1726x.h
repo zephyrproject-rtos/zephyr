@@ -24,6 +24,9 @@
 #define MAX1726X_HIB_EXIT_TIME(n)	((MAX1726X_HIB_EXIT_TIME_MASK & n) << 0x03)
 #define MAX1726X_HIB_SCALAR(n)	(MAX1726X_HIB_SCALAR_MASK & n)
 
+/* MAX1726X SHUTDOWN */
+#define MAX1726X_EN_SHDN		(BIT(7))
+
 /* Register addresses */
 enum {
 	STATUS          = 0x00,
@@ -44,6 +47,8 @@ enum {
 	SOFT_WAKEUP     = 0x60,
 	HIBCFG          = 0xBA,
 	MODELCFG        = 0xDB,
+	CONFIG          = 0x1D,
+	SHDN_TIMER      = 0x3F,
 };
 
 /* Masks */

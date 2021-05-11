@@ -95,6 +95,35 @@ static int max1726x_set_hibernate(const struct device *dev)
 }
 
 /**
+ * @brief Set shutdown mode
+ *
+ * @param dev MAX1726X device to access
+ * @return 0 if successful, or -EIO error code
+ */
+static int max1726x_shutdown(const struct device *dev)
+{
+	uint16_t tmp, rc;
+
+	max1726x_reg_read(dev, HIBCFG, &tmp);
+	rc = max1726x_reg_write(dev, HIBCFG, tmp & (~MAX1726X_EN_HIB));
+	if (rc){
+		return -EIO;
+	}
+
+	rc = max1726x_reg_write(dev, SHDN_TIMER, 0x001E);
+	if (rc){
+		return -EIO;
+	}
+
+	rc = max1726x_reg_write(dev, CONFIG, MAX1726X_EN_SHDN);
+	if (rc){
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Convert raw register values for specific channel
  *
  * @param dev MAX1726X device to access
@@ -211,6 +240,8 @@ static int max1726x_config(const struct device *dev, enum sensor_channel chan,
 	switch ((enum max1726x_sensor_attribute)attr) {
 	case SENSOR_ATTR_MAX1726X_HIBERNATE:
 		return max1726x_set_hibernate(dev);
+	case SENSOR_ATTR_MAX1726X_SHUTDOWN:
+		return max1726x_shutdown(dev);
 	default:
 		LOG_DBG("max1726x attribute not supported");
 		return -ENOTSUP;
