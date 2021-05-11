@@ -1,0 +1,10 @@
+# Reneas R-Car Gen3 I2C configuration options
+
+# Copyright (c) 2021 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_RCAR
+	bool "Renesas R-Car I2C Driver"
+	depends on SOC_FAMILY_RCAR
+	help
+	  Enable Renesas R-Car I2C Driver.
