@@ -71,7 +71,7 @@ void test_phy_update_mas_loc(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn);
+	err = ull_cp_phy_update(&conn, 2, 0, 1, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -162,7 +162,7 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn);
+	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -288,7 +288,7 @@ void test_phy_update_sla_loc(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn);
+	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */
@@ -456,7 +456,7 @@ void test_phy_update_mas_loc_collision(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn);
+	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/*** ***/
@@ -598,7 +598,7 @@ void test_phy_update_mas_rem_collision(void)
 	/*** ***/
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn);
+	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/*** ***/
@@ -735,7 +735,7 @@ void test_phy_update_sla_loc_collision(void)
 	/*** ***/
 
 	/* Initiate an PHY Update Procedure */
-	err = ull_cp_phy_update(&conn);
+	err = ull_cp_phy_update(&conn, 0, 0, 0, 1);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
 	/* Prepare */

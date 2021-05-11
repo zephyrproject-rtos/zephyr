@@ -472,7 +472,7 @@ uint8_t ull_cp_encryption_paused(struct ll_conn *conn)
 	return 0;
 }
 
-uint8_t ull_cp_phy_update(struct ll_conn *conn)
+uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8_t rx, uint8_t host_cmd)
 {
 	struct proc_ctx *ctx;
 
@@ -482,6 +482,11 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn)
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	ctx->data.pu.tx = tx;
+	ctx->data.pu.flags = flags;
+	ctx->data.pu.rx = rx;
+	ctx->data.pu.cmd = host_cmd;
 
 	lr_enqueue(conn, ctx);
 
