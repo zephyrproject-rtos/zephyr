@@ -54,7 +54,26 @@ do { \
 		: "memory"); \
 } while (false)
 #elif defined(CONFIG_ARMV7_R)
-/* Pick up the default definition in kernel.h for now */
+/*
+ * In order to support using svc for an exception while running in an
+ * isr, stack $lr_svc before calling svc.  While exiting the isr,
+ * z_check_stack_sentinel is called.  $lr_svc contains the return address.
+ * If the sentinel is wrong, it calls svc to cause an oops.  This svc
+ * call will overwrite $lr_svc, losing the return address from the
+ * z_check_stack_sentinel call if it is not stacked before the svc.
+ */
+#define ARCH_EXCEPT(reason_p) \
+register uint32_t r0 __asm__("r0") = reason_p; \
+do { \
+	__asm__ volatile ( \
+		"push {lr}\n\t" \
+		"cpsie i\n\t" \
+		"svc %[id]\n\t" \
+		"pop {lr}\n\t" \
+		: \
+		: "r" (r0), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
+		: "memory"); \
+} while (false)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
