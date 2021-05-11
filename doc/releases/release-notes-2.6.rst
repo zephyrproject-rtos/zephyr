@@ -182,6 +182,20 @@ Architectures
 
 * x86
 
+  * Added SoC configuration for Lakemont SoC.
+
+  * Removed kconfig ``CONFIG_CPU_MINUTEIA`` as there is no user of this option.
+
+  * Renamed kconfig ``CONFIG_SSE*`` to ``CONFIG_X86_SSE*``.
+
+  * Extended the pagetable generation script to allow specifying additional
+    memory mapping during build.
+
+  * x86-32
+
+    * Added support for kernel image to reside in virtual address space, allowing
+      code execution and data manipulation via virtual addresses.
+
 Boards & SoC Support
 ********************
 
