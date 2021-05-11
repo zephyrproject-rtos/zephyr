@@ -135,6 +135,16 @@ power savings, and with a minimum residency value (in device tree, see
 :zephyr_file:`dts/bindings/power/state.yaml`) less than or equal to
 the scheduled system idle time duration.
 
+This policy also accounts for the time necessary to become active
+again. The core logic used by this policy to select the best power
+state is:
+
+.. code-block:: c
+
+   if (time_to_next_scheduled_event >= (state.min_residency_us + state.exit_latency))) {
+      return state
+   }
+
 Application
 -----------
 
