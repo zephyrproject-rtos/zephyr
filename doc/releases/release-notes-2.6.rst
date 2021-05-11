@@ -182,6 +182,26 @@ Architectures
 
   * AARCH64
 
+    * SMP support
+
+    * MMU dynamic mappings with page table sharing.
+
+    * Userspace (unprivileged) thread support.
+
+    * Standalone SMCCC support.
+
+    * XIP support.
+
+    * ARM64 is now a top-level standalone architecture.
+
+    * Support for Cortex-R82 and Armv8-R AArch64 MPU.
+
+    * Cache management support.
+
+    * Revamped boot code.
+
+    * Full FPU context switching.
+
 * POSIX
 
 * RISC-V
@@ -218,6 +238,12 @@ Boards & SoC Support
 * Added support for these ARM boards:
 
    * MPS3-AN547
+
+* Added support for these ARM64 boards:
+
+   * fvp_base_revc_2xaemv8a
+   * fvp_baser_aemv8r
+   * nxp_ls1046ardb
 
 * Removed support for these ARM boards:
 
