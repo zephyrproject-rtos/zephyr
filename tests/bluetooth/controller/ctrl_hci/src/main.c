@@ -265,7 +265,6 @@ void test_hci_phy(void)
 	/* Connect */
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
-
 	err = ll_phy_req_send(conn_handle+1,  0x00, 0x00, 0x00);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
 	conn_from_pool->llcp.fex.features_used = 0x00;
@@ -278,11 +277,13 @@ void test_hci_phy(void)
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
 	err = ll_phy_get(conn_handle + 1, &phy_tx, &phy_rx);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, NULL);
+
+	conn_from_pool->lll.phy_rx = 0x3;
+	conn_from_pool->lll.phy_tx = 0x7;
 	err = ll_phy_get(conn_handle, &phy_tx, &phy_rx);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-	/* EGON TODO: phy's to be filled with correct value */
-	zassert_equal(phy_tx, 0x00, NULL);
-	zassert_equal(phy_rx, 0x00, NULL);
+	zassert_equal(phy_tx, 0x07, NULL);
+	zassert_equal(phy_rx, 0x03, NULL);
 
 	err = ll_phy_default_set(0x00, 0x00);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
