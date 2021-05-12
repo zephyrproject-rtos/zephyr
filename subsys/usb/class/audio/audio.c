@@ -12,10 +12,8 @@
  */
 
 #include <kernel.h>
-#include <usb/usb_common.h>
 #include <usb/usb_device.h>
 #include <usb_descriptor.h>
-#include <usb/usbstruct.h>
 #include <usb/class/usb_audio.h>
 #include "usb_audio_internal.h"
 
@@ -693,8 +691,7 @@ static int audio_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
 
 	uint8_t iface = (pSetup->wIndex) & 0xFF;
 
-	if (REQTYPE_GET_RECIP(pSetup->bmRequestType) !=
-	    REQTYPE_RECIP_INTERFACE) {
+	if (pSetup->RequestType.recipient != USB_REQTYPE_RECIPIENT_INTERFACE) {
 		return -EINVAL;
 	}
 
@@ -733,7 +730,7 @@ static int audio_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
 						USB_FORMAT_TYPE_I_DESC_SIZE);
 	}
 
-	if (pSetup->bRequest == REQ_SET_INTERFACE) {
+	if (pSetup->bRequest == USB_SREQ_SET_INTERFACE) {
 		if (ep_desc->bEndpointAddress & USB_EP_DIR_MASK) {
 			audio_dev_data->tx_enable = pSetup->wValue;
 		} else {
@@ -760,8 +757,8 @@ static int audio_class_handle_req(struct usb_setup_packet *pSetup,
 		pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue,
 		pSetup->wIndex, pSetup->wLength);
 
-	switch (REQTYPE_GET_RECIP(pSetup->bmRequestType)) {
-	case REQTYPE_RECIP_INTERFACE:
+	switch (pSetup->RequestType.recipient) {
+	case USB_REQTYPE_RECIPIENT_INTERFACE:
 		return handle_interface_req(pSetup, len, data);
 	default:
 		LOG_ERR("Request recipient invalid");
