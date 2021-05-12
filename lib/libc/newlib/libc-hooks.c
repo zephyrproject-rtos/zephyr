@@ -16,6 +16,7 @@
 #include <app_memory/app_memdomain.h>
 #include <init.h>
 #include <sys/sem.h>
+#include <sys/mutex.h>
 #include <sys/mem_manage.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
@@ -290,6 +291,18 @@ void *_sbrk(intptr_t count)
 	return ret;
 }
 __weak FUNC_ALIAS(_sbrk, sbrk, void *);
+
+static LIBC_DATA SYS_MUTEX_DEFINE(heap_mutex);
+
+void __malloc_lock(struct _reent *reent)
+{
+	sys_mutex_lock(&heap_mutex, K_FOREVER);
+}
+
+void __malloc_unlock(struct _reent *reent)
+{
+	sys_mutex_unlock(&heap_mutex);
+}
 
 __weak int *__errno(void)
 {
