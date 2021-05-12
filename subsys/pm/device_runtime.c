@@ -136,7 +136,9 @@ static int pm_device_request(const struct device *dev,
 
 	k_mutex_init(&request_mutex);
 	k_mutex_lock(&request_mutex, K_FOREVER);
-	(void)k_condvar_wait(&dev->pm->condvar, &request_mutex, K_FOREVER);
+	if(k_condvar_wait(&dev->pm->condvar, &request_mutex, K_MSEC(1000)) == -EAGAIN){
+		LOG_ERR("THIS IS A BUG: power management timed out for %s\n", dev->name);
+	}
 	k_mutex_unlock(&request_mutex);
 
 	/*
