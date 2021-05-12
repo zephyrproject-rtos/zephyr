@@ -626,5 +626,12 @@
 			label = "I2C_5";
 			port-num = <5>;
 		};
+
+		ecpm: clock-controller@f01e00 {
+			compatible = "ite,it8xxx2-ecpm";
+			reg = <0x00f01e00 0x11>;
+			reg-names = "ecpm";
+			label = "EC_PM";
+		};
 	};
 };
