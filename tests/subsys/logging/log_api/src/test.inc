@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(MODULE_NAME, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 #define TIMESTAMP_INIT_VAL 0
 #endif
 
-MOCK_LOG_BACKEND_DEFINE(backend1, true);
+MOCK_LOG_BACKEND_DEFINE(backend1, false);
 MOCK_LOG_BACKEND_DEFINE(backend2, false);
 
 static log_timestamp_t stamp;
@@ -78,6 +78,8 @@ static void log_setup(bool backend2_enable)
 
 	mock_log_backend_reset(&backend1);
 	mock_log_backend_reset(&backend2);
+
+	log_backend_enable(&backend1, backend1.cb->ctx, LOG_LEVEL_DBG);
 
 	if (backend2_enable) {
 		log_backend_enable(&backend2, backend2.cb->ctx, LOG_LEVEL_DBG);
@@ -512,14 +514,17 @@ static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)
 {
 	log_timestamp_t exp_timestamp = TIMESTAMP_INIT_VAL;
 
+	log_setup(false);
+
 	stamp = TIMESTAMP_INIT_VAL;
 
 	for (uint32_t i = 0; i < n_msg; i++) {
 		if (i >= exp_dropped) {
 			mock_log_backend_record(&backend1, LOG_CURRENT_MODULE_ID(),
 				CONFIG_LOG_DOMAIN_ID, LOG_LEVEL_INF,
-				exp_timestamp++, "dummy");
+				exp_timestamp, "dummy");
 		}
+		exp_timestamp++;
 		LOG_INF("dummy");
 	}
 
@@ -548,9 +553,6 @@ static void test_log_msg_dropped_notification(void)
 	}
 
 	uint32_t capacity = get_short_msg_capacity();
-
-	return;
-	log_setup(false);
 
 	log_n_messages(capacity, 0);
 
