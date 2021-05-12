@@ -698,7 +698,7 @@ static void workq_handler(struct k_work *work)
  */
 void test_workq_on_smp(void)
 {
-	struct k_work work;
+	static struct k_work work;
 
 	k_work_init(&work, workq_handler);
 
@@ -858,7 +858,6 @@ void test_smp_release_global_lock_irq(void)
 #define LOOP_COUNT 20000
 
 enum sync_t {
-	LOCK_NO,
 	LOCK_IRQ,
 	LOCK_SEM,
 	LOCK_MUTEX
@@ -877,14 +876,12 @@ static void sync_lock_dummy(void *k)
 
 static void sync_lock_irq(void *k)
 {
-	*((int *)k) = irq_lock();
+	*((unsigned int *)k) = irq_lock();
 }
 
 static void sync_unlock_irq(void *k)
 {
-	int key = POINTER_TO_INT(k);
-
-	irq_unlock(key);
+	irq_unlock(*(unsigned int *)k);
 }
 
 static void sync_lock_sem(void *k)
@@ -1006,10 +1003,6 @@ static int run_concurrency(int type, void *func)
  */
 void test_inc_concurrency(void)
 {
-	/* increasing global var without lock */
-	zassert_false(run_concurrency(LOCK_NO, inc_global_cnt),
-			"total count %d is wrong", global_cnt);
-
 	/* increasing global var with irq lock */
 	zassert_true(run_concurrency(LOCK_IRQ, inc_global_cnt),
 			"total count %d is wrong(i)", global_cnt);
