@@ -11,7 +11,7 @@
 #include <logging/log_ctrl.h>
 
 #ifndef CONFIG_LOG_BUFFER_SIZE
-#define CONFIG_LOG_BUFFER_SIZE 0
+#define CONFIG_LOG_BUFFER_SIZE 4
 #endif
 
 #define MODULE_NAME test
