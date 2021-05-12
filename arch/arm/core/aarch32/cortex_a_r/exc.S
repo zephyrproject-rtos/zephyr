@@ -156,6 +156,17 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 
 	exception_entry MODE_ABT
 	bl z_arm_fault_data
+
+	/*
+	 * If z_arm_fault_data returns false, then we recovered from
+	 * the error.  It may have updated $pc, so copy $pc back to
+	 * the true esf from the one passed to z_arm_fault_data.
+	 */
+	cmp r0, #0
+	ldreq r1, [sp, #24]
+
 	exception_exit
+
+	streq r1, [sp, #24]
 
 	b z_arm_exc_exit
