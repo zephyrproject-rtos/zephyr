@@ -128,8 +128,9 @@ template < typename T >
 static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, T arg)
 {
 	size_t wlen = z_cbprintf_cxx_arg_size(arg) / sizeof(int);
+	void *p = &arg;
 
-	z_cbprintf_wcpy((int *)dst, (int *)&arg, wlen);
+	z_cbprintf_wcpy((int *)dst, (int *)p, wlen);
 }
 
 /* C++ version for long double detection. */
