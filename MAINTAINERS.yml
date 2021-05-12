@@ -152,12 +152,13 @@ ARM64 arch:
     collaborators:
         - npitre
         - ioannisg
+        - povergoing
     files:
         - arch/arm64/
         - include/arch/arm64/
         - tests/arch/arm64/
-        - soc/arm64/qemu_cortex_a53/
-        - boards/arm64/qemu_cortex_a53/
+        - soc/arm64/
+        - boards/arm64/
         - dts/arm64/
     labels:
         - "area: ARM64"
