@@ -27,6 +27,21 @@ else()
 endif()
 
 include(${ZEPHYR_BASE}/cmake/python.cmake)
+
+# The '-X utf8' option was added in 3.7.
+#
+# If given, it forces locale.getpreferredencoding() to return 'UTF-8'.
+# This in turn sets the default encoding used by open(), which lets us
+# skip the invasive change of adding encoding='utf-8' to every call to
+# that function done by doc build scripts.
+#
+# We still support Python 3.6, so omit this option if we're on that
+# version. Results vary in this case.
+set(PYTHONOPTS)
+if(WIN32 AND Python3_VERSION VERSION_GREATER_EQUAL 3.7)
+  list(APPEND PYTHONOPTS -X utf8)
+endif()
+
 set(DOXYGEN_SKIP_DOT True)
 find_package(Doxygen REQUIRED)
 find_package(LATEX)
@@ -111,7 +126,7 @@ configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 set(EXTRACT_CONTENT_COMMAND
   ${CMAKE_COMMAND} -E env
   ZEPHYR_BASE=${ZEPHYR_BASE}
-  ${PYTHON_EXECUTABLE} _scripts/extract_content.py
+  ${PYTHON_EXECUTABLE} ${PYTHONOPTS} _scripts/extract_content.py
   # Ignore any files in the output directory.
   --ignore ${CMAKE_CURRENT_BINARY_DIR}
   # Copy all files in doc to the rst folder.
@@ -209,7 +224,8 @@ add_custom_target(
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
   ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} _scripts/gen_kconfig_rest.py ${RST_OUT}/doc/reference/kconfig/
+    ${PYTHON_EXECUTABLE} ${PYTHONOPTS} _scripts/gen_kconfig_rest.py
+      ${RST_OUT}/doc/reference/kconfig/
       --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
@@ -264,7 +280,7 @@ add_custom_target(
   PYTHONPATH=${ZEPHYR_BASE}/scripts/dts/python-devicetree/src${SEP}$ENV{PYTHONPATH}
   ZEPHYR_BASE=${ZEPHYR_BASE}
   GEN_DEVICETREE_REST_ZEPHYR_DOCSET=${GEN_DEVICETREE_REST_ZEPHYR_DOCSET}
-  ${PYTHON_EXECUTABLE} ${GEN_DEVICETREE_REST_SCRIPT}
+  ${PYTHON_EXECUTABLE} ${PYTHONOPTS} ${GEN_DEVICETREE_REST_SCRIPT}
     --vendor-prefixes ${ZEPHYR_BASE}/dts/bindings/vendor-prefixes.txt
     ${DTS_ROOT_ARGS} ${DTS_BINDINGS_RST_OUT}
   VERBATIM
@@ -332,7 +348,7 @@ add_dependencies(sphinx-latex content)
 add_custom_command(
   OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
-  COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
+  COMMAND ${PYTHON_EXECUTABLE} ${PYTHONOPTS} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   COMMENT "Generating LaTeX documentation"
   ${SPHINX_USES_TERMINAL}
