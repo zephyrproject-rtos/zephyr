@@ -80,7 +80,7 @@ struct uart_esp32_config {
 		int cts;
 	} pins;
 
-	const clock_control_subsys_t peripheral_id;
+	const clock_control_subsys_t clock_subsys;
 
 	const struct {
 		int source;
@@ -192,7 +192,7 @@ static int uart_esp32_set_baudrate(const struct device *dev, int baudrate)
 	uint32_t sys_clk_freq = 0;
 
 	if (clock_control_get_rate(DEV_CFG(dev)->clock_dev,
-				   DEV_CFG(dev)->peripheral_id,
+				   DEV_CFG(dev)->clock_subsys,
 				   &sys_clk_freq)) {
 		return -EINVAL;
 	}
@@ -248,7 +248,7 @@ static int uart_esp32_configure(const struct device *dev,
 		      | (UART_TX_FIFO_THRESH << UART_TXFIFO_EMPTY_THRHD_S);
 
 	uart_esp32_configure_pins(dev);
-	clock_control_on(DEV_CFG(dev)->clock_dev, DEV_CFG(dev)->peripheral_id);
+	clock_control_on(DEV_CFG(dev)->clock_dev, DEV_CFG(dev)->clock_subsys);
 
 	/*
 	 * Reset RX Buffer by reading all received bytes
@@ -492,11 +492,11 @@ ESP32_UART_IRQ_HANDLER_DECL(idx);					       \
 static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 	.dev_conf = {							       \
 		.base =							       \
-		    (uint8_t *)DT_INST_REG_ADDR(idx), \
+		    (uint8_t *)DT_REG_ADDR(DT_NODELABEL(uart##idx)), \
 		ESP32_UART_IRQ_HANDLER_FUNC(idx)			       \
 	},								       \
 											   \
-	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),		       \
+	.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(uart##idx))),		       \
 											   \
 	.signals = {							       \
 		.tx_out = U##idx##TXD_OUT_IDX,				       \
@@ -506,16 +506,16 @@ static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	  
 	},								       \
 									       \
 	.pins = {							       \
-		.tx = DT_INST_PROP(idx, tx_pin),	       \
-		.rx = DT_INST_PROP(idx, rx_pin),	       \
+		.tx = DT_PROP(DT_NODELABEL(uart##idx), tx_pin),	       \
+		.rx = DT_PROP(DT_NODELABEL(uart##idx), rx_pin),	       \
 		IF_ENABLED(						       \
-			DT_INST_PROP(idx, hw_flow_control),  \
-			(.rts = DT_INST_PROP(idx, rts_pin),  \
-			.cts = DT_INST_PROP(idx, cts_pin),   \
+			DT_PROP(DT_NODELABEL(uart##idx), hw_flow_control),  \
+			(.rts = DT_PROP(DT_NODELABEL(uart##idx), rts_pin),  \
+			.cts = DT_PROP(DT_NODELABEL(uart##idx), cts_pin),   \
 			))						       \
 	},								       \
 											   \
-	.peripheral_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(idx, offset), \
+	.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(uart##idx), offset), \
 	.irq = {							       \
 		.source = ETS_UART##idx##_INTR_SOURCE,			       \
 		.line = INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	       \
@@ -524,19 +524,19 @@ static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	  
 									       \
 static struct uart_esp32_data uart_esp32_data_##idx = {			       \
 	.uart_config = {						       \
-		.baudrate = DT_INST_PROP(idx, current_speed),\
+		.baudrate = DT_PROP(DT_NODELABEL(uart##idx), current_speed),\
 		.parity = UART_CFG_PARITY_NONE,				       \
 		.stop_bits = UART_CFG_STOP_BITS_1,			       \
 		.data_bits = UART_CFG_DATA_BITS_8,			       \
 		.flow_ctrl = IS_ENABLED(				       \
-			DT_INST_PROP(idx, hw_flow_control)) ?\
+			DT_PROP(DT_NODELABEL(uart##idx), hw_flow_control)) ?\
 			UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE   \
 	}								       \
 };									       \
 									       \
-DEVICE_DT_INST_DEFINE(idx,						       \
-		    uart_esp32_init,					       \
-		    NULL,						       \
+DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx),				       \
+		    &uart_esp32_init,					       \
+		    NULL,				       \
 		    &uart_esp32_data_##idx,				       \
 		    &uart_esp32_cfg_port_##idx,				       \
 		    PRE_KERNEL_1,					       \
@@ -545,4 +545,14 @@ DEVICE_DT_INST_DEFINE(idx,						       \
 									       \
 ESP32_UART_IRQ_HANDLER(idx)
 
-DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
+ESP32_UART_INIT(0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
+ESP32_UART_INIT(1);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
+ESP32_UART_INIT(2);
+#endif
