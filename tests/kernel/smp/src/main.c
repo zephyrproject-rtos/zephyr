@@ -10,7 +10,6 @@
 #include <kernel.h>
 #include <ksched.h>
 #include <kernel_structs.h>
-#include <ztest_error_hook.h>
 
 #if CONFIG_MP_NUM_CPUS < 2
 #error SMP test requires at least two CPUs!
@@ -33,7 +32,6 @@ volatile int sync_count = -1;
 static int main_thread_id;
 static int child_thread_id;
 volatile int rv;
-
 
 K_SEM_DEFINE(cpuid_sema, 0, 1);
 K_SEM_DEFINE(sema, 0, 1);
@@ -632,59 +630,57 @@ void test_smp_ipi(void)
 	}
 }
 
-void ztest_post_fatal_error_hook(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
-	static int times;
+	static int trigger;
 
 	if (reason != K_ERR_KERNEL_OOPS) {
 		printk("wrong error reason\n");
 		k_fatal_halt(reason);
 	}
 
-	if (times == 0) {
-		main_thread_id = curr_cpu();
-		times++;
-	} else {
+	if (trigger == 0) {
 		child_thread_id = curr_cpu();
+		trigger++;
+	} else {
+		main_thread_id = curr_cpu();
+
+		/* Verify the fatal was happened on different core */
+		zassert_true(main_thread_id != child_thread_id,
+					"fatal on the same core");
 	}
 }
 
 void entry_oops(void *p1, void *p2, void *p3)
 {
-	unsigned int key;
-
-	ztest_set_fault_valid(true);
-
-	key = irq_lock();
 	k_oops();
 	TC_ERROR("SHOULD NEVER SEE THIS\n");
-	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 /**
  * @brief Test fatal error can be triggered on different core
 
- * @details When macro CONFIG_SMP is enabled, on some multiprocessor
- * platforms, fatal can be triggered on different core.
+ * @details When CONFIG_SMP is enabled, on some multiprocessor
+ * platforms, exception can be triggered on different core at
+ * the same time.
  *
  * @ingroup kernel_common_tests
  */
 void test_fatal_on_smp(void)
 {
-	/* Manually trigger the crash in mainthread */
-	entry_oops(NULL, NULL, NULL);
-
 	/* Creat a child thread and trigger a crash */
-	k_tid_t tid = k_thread_create(&t2, t2_stack, T2_STACK_SIZE, entry_oops,
+	k_thread_create(&t2, t2_stack, T2_STACK_SIZE, entry_oops,
 				      NULL, NULL, NULL,
 				      K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
 
-	/* Verify the fatal was happened on different core */
-	zassert_true(main_thread_id != child_thread_id,
-		"fatal on the same core");
+	/* hold cpu and wait for thread trigger exception */
+	k_busy_wait(2000);
 
-	k_thread_abort(tid);
+	/* Manually trigger the crash in mainthread */
+	entry_oops(NULL, NULL, NULL);
+
+	/* should not be here */
+	ztest_test_fail();
 }
 
 static void workq_handler(struct k_work *work)
