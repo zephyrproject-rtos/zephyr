@@ -573,79 +573,6 @@ bool k_work_cancel_sync(struct k_work *work,
 	return pending;
 }
 
-/* Work has been dequeued and is about to be invoked by the work
- * thread.
- *
- * If the work is being canceled the cancellation will be completed
- * here, and the caller told not to use the work item.
- *
- * Invoked by work queue thread.
- * Takes and releases lock.
- * Reschedules via finalize_cancel_locked
- *
- * @param work work that is changing state
- * @param queue queue that is running work
- *
- * @retval true if work is to be run by the work thread
- * @retval false if it has been canceled and should not be run
- */
-static inline bool work_set_running(struct k_work *work,
-				    struct k_work_q *queue)
-{
-	bool ret = false;
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	/* Allow the work to be queued again. */
-	flag_clear(&work->flags, K_WORK_QUEUED_BIT);
-
-	/* Normally we indicate that the work is being processed by
-	 * setting RUNNING.  However, something may have initiated
-	 * cancellation between when the work thread pulled this off
-	 * its queue and this claimed the work lock.  If that happened
-	 * we complete the cancellation now and tell the work thread
-	 * not to do anything.
-	 */
-	ret = !flag_test(&work->flags, K_WORK_CANCELING_BIT);
-	if (ret) {
-		/* Not cancelling: mark running and go */
-		flag_set(&work->flags, K_WORK_RUNNING_BIT);
-	} else {
-		/* Caught the item before being invoked; complete the
-		 * cancellation now.
-		 */
-		finalize_cancel_locked(work);
-	}
-
-	k_spin_unlock(&lock, key);
-
-	return ret;
-}
-
-/* Work handler has been called and is about to go idle.
- *
- * If the work is being canceled this will notify anything waiting
- * for the cancellation.
- *
- * Invoked by work queue thread.
- * Takes and releases lock.
- * Reschedules via finalize_cancel_locked
- *
- * @param work work that is in running state
- */
-static inline void work_clear_running(struct k_work *work)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	/* Clear running */
-	flag_clear(&work->flags, K_WORK_RUNNING_BIT);
-
-	if (flag_test(&work->flags, K_WORK_CANCELING_BIT)) {
-		finalize_cancel_locked(work);
-	}
-
-	k_spin_unlock(&lock, key);
-}
-
 /* Loop executed by a work queue thread.
  *
  * @param workq_ptr pointer to the work queue structure
@@ -657,11 +584,10 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 	while (true) {
 		sys_snode_t *node;
 		struct k_work *work = NULL;
+		k_work_handler_t handler = NULL;
 		k_spinlock_key_t key = k_spin_lock(&lock);
 
-		/* Clear the record of processing any previous work, and check
-		 * for new work.
-		 */
+		/* Check for and prepare any new work. */
 		node = sys_slist_get(&queue->pending);
 		if (node != NULL) {
 			/* Mark that there's some work active that's
@@ -669,6 +595,9 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 			 */
 			flag_set(&queue->flags, K_WORK_QUEUE_BUSY_BIT);
 			work = CONTAINER_OF(node, struct k_work, node);
+			flag_set(&work->flags, K_WORK_RUNNING_BIT);
+			flag_clear(&work->flags, K_WORK_QUEUED_BIT);
+			handler = work->handler;
 		} else if (flag_test_and_clear(&queue->flags,
 					       K_WORK_QUEUE_DRAIN_BIT)) {
 			/* Not busy and draining: move threads waiting for
@@ -704,20 +633,22 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 
 		if (work != NULL) {
 			bool yield;
-			k_work_handler_t handler = work->handler;
 
 			__ASSERT_NO_MSG(handler != NULL);
+			handler(work);
 
-			if (work_set_running(work, queue)) {
-				handler(work);
-				work_clear_running(work);
-			}
-
-			/* No longer referencing the work, so we can clear the
-			 * BUSY flag while we yield to prevent starving other
-			 * threads.
+			/* Mark the work item as no longer running and deal
+			 * with any cancellation issued while it was running.
+			 * Clear the BUSY flag and optionally yield to prevent
+			 * starving other threads.
 			 */
 			key = k_spin_lock(&lock);
+
+			flag_clear(&work->flags, K_WORK_RUNNING_BIT);
+			if (flag_test(&work->flags, K_WORK_CANCELING_BIT)) {
+				finalize_cancel_locked(work);
+			}
+
 			flag_clear(&queue->flags, K_WORK_QUEUE_BUSY_BIT);
 			yield = !flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT);
 			k_spin_unlock(&lock, key);
