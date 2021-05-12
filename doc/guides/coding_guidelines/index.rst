@@ -63,7 +63,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Dir 1.1
       -  Required
       -  Any implementation-defined behaviour on which the output of the program depends shall be documented and understood
-      -  `MSC09-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152154/>`_
+      -  `MSC09-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC09-C.+Character+encoding%3A+Use+subset+of+ASCII+for+safety>`_
       -  `Dir 1.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_01_01.c>`_
     * -  Dir 2.1
       -  Required
@@ -88,12 +88,12 @@ severity and the equivlent rules from other standards for reference.
     * -  Dir 4.4
       -  Advisory
       -  Sections of code should not be “commented out”
-      -  `MSC04-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152275/>`_
+      -  `MSC04-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC04-C.+Use+comments+consistently+and+in+a+readable+fashion>`_
       -  `Dir 4.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_04.c>`_
     * -  Dir 4.5
       -  Advisory
       -  Identifiers in the same name space with overlapping visibility should be typographically unambiguous
-      -  `DCL02-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152407/>`_
+      -  `DCL02-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL02-C.+Use+visually+distinct+identifiers>`_
       -  `Dir 4.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_05.c>`_
     * -  Dir 4.6
       -  Advisory
@@ -108,18 +108,18 @@ severity and the equivlent rules from other standards for reference.
     * -  Dir 4.8
       -  Advisory
       -  If a pointer to a structure or union is never dereferenced within a translation unit, then the implementation of the object should be hidden
-      -  `DCL12-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152098/>`_
+      -  `DCL12-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL12-C.+Implement+abstract+data+types+using+opaque+types>`_
       -  | `Dir 4.8 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_08_1.c>`_
          | `Dir 4.8 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_08_2.c>`_
     * -  Dir 4.9
       -  Advisory
       -  A function should be used in preference to a function-like macro where they are interchangeable
-      -  `PRE00-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152416/>`_
+      -  `PRE00-C <https://wiki.sei.cmu.edu/confluence/display/c/PRE00-C.+Prefer+inline+or+static+functions+to+function-like+macros>`_
       -  `Dir 4.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_09.c>`_
     * -  Dir 4.10
       -  Required
       -  Precautions shall be taken in order to prevent the contents of a header file being included more than once
-      -  `PRE06-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152155/>`_
+      -  `PRE06-C <https://wiki.sei.cmu.edu/confluence/display/c/PRE06-C.+Enclose+header+files+in+an+include+guard>`_
       -  `Dir 4.10 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_10.c>`_
     * -  Dir 4.11
       -  Required
@@ -129,7 +129,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Dir 4.12
       -  Required
       -  Dynamic memory allocation shall not be used
-      -  `STR01-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152414/>`_
+      -  `STR01-C <https://wiki.sei.cmu.edu/confluence/display/c/STR01-C.+Adopt+and+implement+a+consistent+plan+for+managing+strings>`_
       -  `Dir 4.12 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/D_04_12.c>`_
     * -  Dir 4.13
       -  Advisory
@@ -145,7 +145,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 1.2
       -  Advisory
       -  Language extensions should not be used
-      -  `MSC04-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152275/>`_
+      -  `MSC04-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC04-C.+Use+comments+consistently+and+in+a+readable+fashion>`_
       -  `Rule 1.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_01_02.c>`_
     * -  Rule 1.3
       -  Required
@@ -155,13 +155,13 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 2.1
       -  Required
       -  A project shall not contain unreachable code
-      -  `MSC07-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152362/>`_
+      -  `MSC07-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC07-C.+Detect+and+remove+dead+code>`_
       -  | `Rule 2.1 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_01_1.c>`_
          | `Rule 2.1 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_01_2.c>`_
     * -  Rule 2.2
       -  Required
       -  There shall be no dead code
-      -  `MSC12-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152101/>`_
+      -  `MSC12-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC12-C.+Detect+and+remove+code+that+has+no+effect+or+is+never+executed>`_
       -  `Rule 2.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_02_02.c>`_
     * -  Rule 2.3
       -  Advisory
@@ -181,7 +181,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 3.1
       -  Required
       -  The character sequences /* and // shall not be used within a comment
-      -  `MSC04-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152275/>`_
+      -  `MSC04-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC04-C.+Use+comments+consistently+and+in+a+readable+fashion>`_
       -  `Rule 3.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_03_01.c>`_
     * -  Rule 3.2
       -  Required
@@ -191,38 +191,38 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 4.1
       -  Required
       -  Octal and hexadecimal escape sequences shall be terminated
-      -  `MSC09-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152154/>`_
+      -  `MSC09-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC09-C.+Character+encoding%3A+Use+subset+of+ASCII+for+safety>`_
       -  `Rule 4.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_04_01.c>`_
     * -  Rule 4.2
       -  Advisory
       -  Trigraphs should not be used
-      -  `PRE07-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152056/>`_
+      -  `PRE07-C <https://wiki.sei.cmu.edu/confluence/display/c/PRE07-C.+Avoid+using+repeated+question+marks>`_
       -  `Rule 4.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_04_02.c>`_
     * -  Rule 5.1
       -  Required
       -  External identifiers shall be distinct
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL23-C.+Guarantee+that+mutually+visible+identifiers+are+unique>`_
       -  | `Rule 5.1 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_01_1.c>`_
          | `Rule 5.1 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_01_2.c>`_
     * -  Rule 5.2
       -  Required
       -  Identifiers declared in the same scope and name space shall be distinct
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL23-C.+Guarantee+that+mutually+visible+identifiers+are+unique>`_
       -  `Rule 5.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_02.c>`_
     * -  Rule 5.3
       -  Required
       -  An identifier declared in an inner scope shall not hide an identifier declared in an outer scope
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL23-C.+Guarantee+that+mutually+visible+identifiers+are+unique>`_
       -  `Rule 5.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_03.c>`_
     * -  Rule 5.4
       -  Required
       -  Macro identifiers shall be distinct
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL23-C.+Guarantee+that+mutually+visible+identifiers+are+unique>`_
       -  `Rule 5.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_04.c>`_
     * -  Rule 5.5
       -  Required
       -  Identifiers shall be distinct from macro names
-      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152406/>`_
+      -  `DCL23-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL23-C.+Guarantee+that+mutually+visible+identifiers+are+unique>`_
       -  `Rule 5.5 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_05_05.c>`_
     * -  Rule 5.6
       -  Required
@@ -249,17 +249,17 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 6.1
       -  Required
       -  Bit-fields shall only be declared with an appropriate type
-      -  `INT14-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152075/>`_
+      -  `INT14-C <https://wiki.sei.cmu.edu/confluence/display/c/INT14-C.+Avoid+performing+bitwise+and+arithmetic+operations+on+the+same+data>`_
       -  `Rule 6.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_06_01.c>`_
     * -  Rule 6.2
       -  Required
       -  Single-bit named bit fields shall not be of a signed type
-      -  `INT14-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152075/>`_
+      -  `INT14-C <https://wiki.sei.cmu.edu/confluence/display/c/INT14-C.+Avoid+performing+bitwise+and+arithmetic+operations+on+the+same+data>`_
       -  `Rule 6.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_06_02.c>`_
     * -  Rule 7.1
       -  Required
       -  Octal constants shall not be used
-      -  `DCL18-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152234/>`_
+      -  `DCL18-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL18-C.+Do+not+begin+integer+constants+with+0+when+specifying+a+decimal+value>`_
       -  `Rule 7.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_01.c>`_
     * -  Rule 7.2
       -  Required
@@ -269,7 +269,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 7.3
       -  Required
       -  The lowercase character l shall not be used in a literal suffix
-      -  `DCL16-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152241/>`_
+      -  `DCL16-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152241>`_
       -  `Rule 7.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_07_03.c>`_
     * -  Rule 7.4
       -  Required
@@ -284,7 +284,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 8.2
       -  Required
       -  Function types shall be in prototype form with named parameters
-      -  `DCL20-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152311/>`_
+      -  `DCL20-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL20-C.+Explicitly+specify+void+when+a+function+accepts+no+arguments>`_
       -  `Rule 8.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_02.c>`_
     * -  Rule 8.3
       -  Required
@@ -311,12 +311,12 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 8.8
       -  Required
       -  The static storage class specifier shall be used in all declarations of objects and functions that have internal linkage
-      -  `DCL15-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152278/>`_
+      -  `DCL15-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL15-C.+Declare+file-scope+objects+or+functions+that+do+not+need+external+linkage+as+static>`_
       -  `Rule 8.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_08.c>`_
     * -  Rule 8.9
       -  Advisory
       -  An object should be defined at block scope if its identifier only appears in a single function
-      -  `DCL19-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152335/>`_
+      -  `DCL19-C <https://wiki.sei.cmu.edu/confluence/display/c/DCL19-C.+Minimize+the+scope+of+variables+and+functions>`_
       -  `Rule 8.9 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_09.c>`_
     * -  Rule 8.10
       -  Required
@@ -326,7 +326,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 8.12
       -  Required
       -  Within an enumerator list, the value of an implicitly-specified enumeration constant shall be unique
-      -  `INT09-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152467/>`_
+      -  `INT09-C <https://wiki.sei.cmu.edu/confluence/display/c/INT09-C.+Ensure+enumeration+constants+map+to+unique+values>`_
       -  `Rule 8.12 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_08_12.c>`_
     * -  Rule 8.14
       -  Required
@@ -361,22 +361,22 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 10.1
       -  Required
       -  Operands shall not be of an inappropriate essential type
-      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152350/>`_
+      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
       -  `Rule 10.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_01.c>`_
     * -  Rule 10.2
       -  Required
       -  Expressions of essentially character type shall not be used inappropriately in addition and subtraction operations
-      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152350/>`_
+      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
       -  `Rule 10.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_02.c>`_
     * -  Rule 10.3
       -  Required
       -  The value of an expression shall not be assigned to an object with a narrower essential type or of a dierent essential type category
-      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152350/>`_
+      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
       -  `Rule 10.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_03.c>`_
     * -  Rule 10.4
       -  Required
       -  Both operands of an operator in which the usual arithmetic conversions are performed shall have the same essential type category
-      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152350/>`_
+      -  `STR04-C <https://wiki.sei.cmu.edu/confluence/display/c/STR04-C.+Use+plain+char+for+characters+in+the+basic+character+set>`_
       -  `Rule 10.4 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_04.c>`_
     * -  Rule 10.5
       -  Advisory
@@ -386,17 +386,17 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 10.6
       -  Required
       -  The value of a composite expression shall not be assigned to an object with wider essential type
-      -  `INT02-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152206/>`_
+      -  `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
       -  `Rule 10.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_06.c>`_
     * -  Rule 10.7
       -  Required
       -  If a composite expression is used as one operand of an operator in which the usual arithmetic conversions are performed then the other operand shall not have wider essential type
-      -  `INT02-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152206/>`_
+      -  `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
       -  `Rule 10.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_07.c>`_
     * -  Rule 10.8
       -  Required
       -  The value of a composite expression shall not be cast to a different essential type category or a wider essential type
-      -  `INT02-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152206/>`_
+      -  `INT02-C <https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.+Understand+integer+conversion+rules>`_
       -  `Rule 10.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_10_08.c>`_
     * -  Rule 11.2
       -  Required
@@ -416,7 +416,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 11.8
       -  Required
       -  A cast shall not remove any const or volatile qualification from the type pointed to by a pointer
-      -  `EXP05-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152191/>`_
+      -  `EXP05-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP05-C.+Do+not+cast+away+a+const+qualification>`_
       -  `Rule 11.8 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_11_08.c>`_
     * -  Rule 11.9
       -  Required
@@ -426,7 +426,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 12.1
       -  Advisory
       -  The precedence of operators within expressions should be made explicit
-      -  `EXP00-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152225/>`_
+      -  `EXP00-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP00-C.+Use+parentheses+for+precedence+of+operation>`_
       -  `Rule 12.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_12_01.c>`_
     * -  Rule 12.2
       -  Required
@@ -467,7 +467,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 13.5
       -  Required
       -  The right hand operand of a logical && or || operator shall not contain persistent side effects
-      -  `EXP10-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152207/>`_
+      -  `EXP10-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP10-C.+Do+not+depend+on+the+order+of+evaluation+of+subexpressions+or+the+order+in+which+side+effects+take+place>`_
       -  | `Rule 13.5 example 1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_13_05_1.c>`_
          | `Rule 13.5 example 2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_13_05_2.c>`_
     * -  Rule 13.6
@@ -508,7 +508,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 15.6
       -  Required
       -  The body of an iteration-statement or a selection-statement shall be a compound-statement
-      -  `EXP19-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152259/>`_
+      -  `EXP19-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP19-C.+Use+braces+for+the+body+of+an+if%2C+for%2C+or+while+statement>`_
       -  `Rule 15.6 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_15_06.c>`_
     * -  Rule 15.7
       -  Required
@@ -523,7 +523,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 16.2
       -  Required
       -  A switch label shall only be used when the most closely-enclosing compound statement is the body of a switch statement
-      -  `MSC20-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152333/>`_
+      -  `MSC20-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC20-C.+Do+not+use+a+switch+statement+to+transfer+control+into+a+complex+block>`_
       -  `Rule 16.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_16_02.c>`_
     * -  Rule 16.3
       -  Required
@@ -553,12 +553,12 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 17.1
       -  Required
       -  The features of <stdarg.h> shall not be used
-      -  `ERR00-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152349/>`_
+      -  `ERR00-C <https://wiki.sei.cmu.edu/confluence/display/c/ERR00-C.+Adopt+and+implement+a+consistent+and+comprehensive+error-handling+policy>`_
       -  `Rule 17.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_17_01.c>`_
     * -  Rule 17.2
       -  Required
       -  Functions shall not call themselves, either directly or indirectly
-      -  `MEM05-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152078/>`_
+      -  `MEM05-C <https://wiki.sei.cmu.edu/confluence/display/c/MEM05-C.+Avoid+large+stack+allocations>`_
       -  `Rule 17.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_17_02.c>`_
     * -  Rule 17.3
       -  Mandatory
@@ -588,17 +588,17 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 18.1
       -  Required
       -  A pointer resulting from arithmetic on a pointer operand shall address an element of the same array as that pointer operand
-      -  `EXP08-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152126/>`_
+      -  `EXP08-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP08-C.+Ensure+pointer+arithmetic+is+used+correctly>`_
       -  `Rule 18.1 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_01.c>`_
     * -  Rule 18.2
       -  Required
       -  Subtraction between pointers shall only be applied to pointers that address elements of the same array
-      -  `EXP08-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152126/>`_
+      -  `EXP08-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP08-C.+Ensure+pointer+arithmetic+is+used+correctly>`_
       -  `Rule 18.2 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_02.c>`_
     * -  Rule 18.3
       -  Required
       -  The relational operators >, >=, < and <= shall not be applied to objects of pointer type except where they point into the same object
-      -  `EXP08-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152126/>`_
+      -  `EXP08-C <https://wiki.sei.cmu.edu/confluence/display/c/EXP08-C.+Ensure+pointer+arithmetic+is+used+correctly>`_
       -  `Rule 18.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_18_03.c>`_
     * -  Rule 18.5
       -  Advisory
@@ -639,7 +639,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 20.7
       -  Required
       -  Expressions resulting from the expansion of macro parameters shall be enclosed in parentheses
-      -  `PRE01-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152393/>`_
+      -  `PRE01-C <https://wiki.sei.cmu.edu/confluence/display/c/PRE01-C.+Use+parentheses+within+macros+around+parameter+names>`_
       -  `Rule 20.7 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_20_07.c>`_
     * -  Rule 20.8
       -  Required
@@ -684,7 +684,7 @@ severity and the equivlent rules from other standards for reference.
     * -  Rule 21.3
       -  Required
       -  The memory allocation and deallocation functions of <stdlib.h> shall not be used
-      -  `MSC24-C <https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=87152260/>`_
+      -  `MSC24-C <https://wiki.sei.cmu.edu/confluence/display/c/MSC24-C.+Do+not+use+deprecated+or+obsolescent+functions>`_
       -  `Rule 21.3 <https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_21_03.c>`_
     * -  Rule 21.4
       -  Required
