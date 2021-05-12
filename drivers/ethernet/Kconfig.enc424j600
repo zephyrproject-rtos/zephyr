@@ -1,6 +1,7 @@
 # ENC424J600 Ethernet driver configuration options
 
 # Copyright (c) 2019 PHYTEC Messtechnik GmbH
+# Copyright (c) 2021 Laird Connectivity
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_ENC424J600
@@ -33,5 +34,12 @@ config ETH_ENC424J600_TIMEOUT
 	  Given timeout in milliseconds. Maximum amount of time
 	  that the driver will wait from the IP stack to get
 	  a memory buffer before the Ethernet frame is dropped.
+
+config ETH_ENC424J600_DEBUG_UNKNOWN_INTERRUPT
+	bool "Debug unknown interrupts"
+	help
+	  Will stop the driver from responding to interrupts when an
+	  unknown interrupt has been detected. Useful for debugging the
+	  ethernet driver.
 
 endif
