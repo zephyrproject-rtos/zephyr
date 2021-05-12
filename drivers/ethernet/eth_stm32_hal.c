@@ -777,6 +777,7 @@ static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
+	bool is_first_init = false;
 
 	__ASSERT_NO_MSG(iface != NULL);
 
@@ -792,10 +793,7 @@ static void eth_iface_init(struct net_if *iface)
 	 */
 	if (dev_data->iface == NULL) {
 		dev_data->iface = iface;
-
-		/* Now that the iface is setup, we are safe to enable IRQs. */
-		__ASSERT_NO_MSG(DEV_CFG(dev)->config_func != NULL);
-		DEV_CFG(dev)->config_func();
+		is_first_init = true;
 	}
 
 	/* Register Ethernet MAC Address with the upper layer */
@@ -806,6 +804,12 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+
+	if (is_first_init) {
+		/* Now that the iface is setup, we are safe to enable IRQs. */
+		__ASSERT_NO_MSG(DEV_CFG(dev)->config_func != NULL);
+		DEV_CFG(dev)->config_func();
+	}
 }
 
 static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev)
