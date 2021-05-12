@@ -79,8 +79,9 @@ static inline size_t z_cbprintf_cxx_arg_size(T arg)
 static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, float arg)
 {
 	double d = (double)arg;
+	void *p = &d;
 
-	z_cbprintf_wcpy((int *)dst, (int *)&d, sizeof(d) / sizeof(int));
+	z_cbprintf_wcpy((int *)dst, (int *)p, sizeof(d) / sizeof(int));
 }
 
 static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, void *p)
