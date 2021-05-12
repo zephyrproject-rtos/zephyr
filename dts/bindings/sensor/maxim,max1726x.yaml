@@ -31,6 +31,12 @@ properties:
       required: true
       description: Battery Capacity in mAh (default 3000)
 
+    rsense-mohms:
+      type: int
+      required: false
+      default: 10
+      description: Value of Rsense resistor in milliohms (e.g. 5). It cannot be 0
+
     empty-voltage:
       type: int
       required: true

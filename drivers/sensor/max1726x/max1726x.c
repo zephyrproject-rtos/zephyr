@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(max1726x, CONFIG_SENSOR_LOG_LEVEL);
 #include "max1726x.h"
 
 #define DT_DRV_COMPAT maxim_max1726x
+#define FIX_POINT_COEFF 1000
 
 /**
  * @brief Read a register value
@@ -63,15 +64,62 @@ static int max1726x_reg_write(const struct device *dev, uint8_t reg_addr,
 }
 
 /**
+ * @brief Convert current in MAX1726X units to milliamps
+ *
+ * @param rsense_mohms Value of Rsense in milliohms
+ * @param val Value to convert (taken from a MAX1726X register)
+ * @return corresponding value in milliamps
+ */
+static int current_to_ma(unsigned int rsense_mohms, int16_t val)
+{
+	return (val * CURRENT_MEASUREMENT_RES) / rsense_mohms;
+}
+
+/**
+ * @brief Convert capacity in MAX1726X units to milliamps/hours
+ *
+ * @param rsense_mohms Value of Rsense in milliohms
+ * @param val Value to convert (taken from a MAX26X register)
+ * @return corresponding value in milliamps/hours
+ */
+static int capacity_to_mah(unsigned int rsense_mohms, int16_t val)
+{
+	int lsb_units, rem;
+
+	/* Get units for the LSB in mA */
+	lsb_units = CAPACITY_LSB_MULTIPLIER * FIX_POINT_COEFF / rsense_mohms;
+	/* Get remaining capacity in mA */
+	rem = val * lsb_units;
+
+	return rem;
+}
+
+/**
  * @brief Convert sensor value from millis
  *
  * @param val Where to store converted value in sensor_value format
  * @param val_millis Value in millis
  */
-static void convert_millis(struct sensor_value *val, int32_t val_millis)
+static void convert_fp(struct sensor_value *val, int32_t val_millis)
 {
-	val->val1 = val_millis / 1000;
-	val->val2 = (val_millis % 1000) * 1000;
+	val->val1 = val_millis / FIX_POINT_COEFF;
+	val->val2 = (val_millis % FIX_POINT_COEFF) * FIX_POINT_COEFF;
+}
+
+/**
+ * @brief Convert milliamps/hours in MAX1726X units
+ *
+ * @param rsense_mohms Value of Rsense in milliohms
+ * @param val Value to convert (taken from the MAX1726X DESIGN_CAP register)
+ * @return corresponding value in MAX1726X unit
+ */
+static int16_t mah_to_capacity(uint16_t rsense_mohms, uint16_t val)
+{
+	int cap;
+
+	cap = val * rsense_mohms / CAPACITY_LSB_MULTIPLIER;
+
+	return cap;
 }
 
 /**
@@ -150,11 +198,10 @@ static int max1726x_channel_get(const struct device *dev,
 		break;
 	case SENSOR_CHAN_GAUGE_AVG_CURRENT: {
 		int current;
-		/* Get avg current in nA */
-		current = data->avg_current * CURRENT_MULTIPLIER_NA;
-		/* Convert to mA */
-		valp->val1 = current / 1000000;
-		valp->val2 = current % 1000000;
+		/* Get avg current in mA */
+		current =
+			current_to_ma(config->rsense_mohms, data->avg_current);
+		convert_fp(valp, current);
 		break;
 	}
 	case SENSOR_CHAN_GAUGE_STATE_OF_CHARGE:
@@ -166,10 +213,12 @@ static int max1726x_channel_get(const struct device *dev,
 		valp->val2 = data->internal_temp % 256 * 1000000 / 256;
 		break;
 	case SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY:
-		convert_millis(valp, data->full_cap);
+		tmp = capacity_to_mah(config->rsense_mohms, data->full_cap);
+		convert_fp(valp, tmp);
 		break;
 	case SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY:
-		convert_millis(valp, data->remaining_cap);
+		tmp = capacity_to_mah(config->rsense_mohms, data->remaining_cap);
+		convert_fp(valp, tmp);
 		break;
 	case SENSOR_CHAN_GAUGE_TIME_TO_EMPTY:
 		/* Get time in ms */
@@ -178,7 +227,7 @@ static int max1726x_channel_get(const struct device *dev,
 			valp->val2 = 0;
 		} else {
 			tmp = data->time_to_empty * TIME_MULTIPLIER_MS;
-			convert_millis(valp, tmp);
+			convert_fp(valp, tmp);
 		}
 		break;
 	case SENSOR_CHAN_GAUGE_TIME_TO_FULL:
@@ -188,7 +237,7 @@ static int max1726x_channel_get(const struct device *dev,
 			valp->val2 = 0;
 		} else {
 			tmp = data->time_to_full * TIME_MULTIPLIER_MS;
-			convert_millis(valp, tmp);
+			convert_fp(valp, tmp);
 		}
 		break;
 	case SENSOR_CHAN_GAUGE_CYCLE_COUNT:
@@ -196,13 +245,14 @@ static int max1726x_channel_get(const struct device *dev,
 		valp->val2 = data->cycle_count % 100 * 10000;
 		break;
 	case SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY:
-		convert_millis(valp, data->design_cap);
+		tmp = capacity_to_mah(config->rsense_mohms, data->design_cap);
+		convert_fp(valp, tmp);
 		break;
 	case SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE:
-		convert_millis(valp, config->design_voltage);
+		convert_fp(valp, config->design_voltage);
 		break;
 	case SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE:
-		convert_millis(valp, config->desired_voltage);
+		convert_fp(valp, config->desired_voltage);
 		break;
 	case SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT:
 		valp->val1 = data->ichg_term;
@@ -364,7 +414,9 @@ static int max1726x_gauge_init(const struct device *dev)
 
 	/** STEP 2.1 --> OPTION 1 EZ Config (No INI file is needed) */
 	/* Write DesignCap */
-	max1726x_reg_write(dev, DESIGN_CAP, config->design_cap);
+	max1726x_reg_write(dev, DESIGN_CAP,
+			   mah_to_capacity(config->rsense_mohms,
+					  config->design_cap));
 
 	/* Write IChgTerm */
 	max1726x_reg_write(dev, ICHG_TERM, config->desired_charging_current);
@@ -423,6 +475,7 @@ static const struct sensor_driver_api max1726x_battery_driver_api = {
 		.desired_charging_current =                                    \
 			DT_INST_PROP(n, desired_charging_current),             \
 		.design_cap = DT_INST_PROP(n, design_cap),                     \
+		.rsense_mohms = DT_INST_PROP(n, rsense_mohms),                 \
 		.empty_voltage = DT_INST_PROP(n, empty_voltage),               \
 		.recovery_voltage = DT_INST_PROP(n, recovery_voltage),         \
 		.charge_voltage = DT_INST_PROP(n, charge_voltage),             \
