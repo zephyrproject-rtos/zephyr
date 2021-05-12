@@ -69,6 +69,7 @@
 	rx-pin = <8>;
 	rts-pin = <5>;
 	cts-pin = <7>;
+	hw-flow-control;
 };
 
 &i2c0 {

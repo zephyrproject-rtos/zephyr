@@ -98,6 +98,7 @@
 	rx-pin = <8>;
 	rts-pin = <5>;
 	cts-pin = <7>;
+	hw-flow-control;
 };
 
 &uart1 {
@@ -108,6 +109,7 @@
 	rx-pin = <16>;
 	rts-pin = <13>;
 	cts-pin = <15>;
+	hw-flow-control;
 	hl7800 {
 		compatible = "swir,hl7800";
 		status = "okay";
