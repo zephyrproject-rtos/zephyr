@@ -21,6 +21,7 @@ API Reference
    kernel/index.rst
    libc/index.rst
    logging/index.rst
+   memory_management/index.rst
    misc/index
    data_structures/index.rst
    modbus/index.rst
