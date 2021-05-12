@@ -88,8 +88,8 @@ void isr_handler(const void *param)
 #define TRIGGER_IRQ_DYN_LINE 5
 
 #else
-#define TEST_IRQ_DYN_LINE -1
-#define TRIGGER_IRQ_DYN_LINE -1
+#define TEST_IRQ_DYN_LINE 0
+#define TRIGGER_IRQ_DYN_LINE 0
 #endif
 
 #endif
@@ -97,7 +97,7 @@ void isr_handler(const void *param)
 static void init_dyn_interrupt(void)
 {
 	/* If we cannot get a dynamic interrupt, skip test. */
-	if (TEST_IRQ_DYN_LINE == -1) {
+	if (TEST_IRQ_DYN_LINE == 0) {
 		ztest_test_skip();
 	}
 
