@@ -21,6 +21,7 @@
 static char rx_buffer[OT_SHELL_BUFFER_SIZE];
 
 static const struct shell *shell_p;
+static bool is_shell_initialized;
 
 static int ot_console_cb(void *context, const char *format, va_list arg)
 {
@@ -44,6 +45,10 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 	size_t buf_len = OT_SHELL_BUFFER_SIZE;
 	size_t arg_len = 0;
 	int i;
+
+	if (!is_shell_initialized) {
+		return -ENOEXEC;
+	}
 
 	for (i = 1; i < argc; i++) {
 		if (arg_len) {
@@ -87,4 +92,5 @@ void platformShellInit(otInstance *aInstance)
 	}
 
 	otCliInit(aInstance, ot_console_cb, NULL);
+	is_shell_initialized = true;
 }
