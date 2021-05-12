@@ -268,14 +268,10 @@ __weak void _exit(int status)
 	}
 }
 
-static LIBC_DATA SYS_SEM_DEFINE(heap_sem, 1, 1);
-
 void *_sbrk(intptr_t count)
 {
 	void *ret, *ptr;
 
-	/* coverity[CHECKED_RETURN] */
-	sys_sem_take(&heap_sem, K_FOREVER);
 	ptr = ((char *)HEAP_BASE) + heap_sz;
 
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
@@ -284,9 +280,6 @@ void *_sbrk(intptr_t count)
 	} else {
 		ret = (void *)-1;
 	}
-
-	/* coverity[CHECKED_RETURN] */
-	sys_sem_give(&heap_sem);
 
 	return ret;
 }
