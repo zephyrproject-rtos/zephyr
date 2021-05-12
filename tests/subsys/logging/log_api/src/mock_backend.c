@@ -370,7 +370,7 @@ static void sync_hexdump(const struct log_backend *const backend,
 
 	zassert_equal(0, strcmp(metadata, exp->str), NULL);
 	zassert_equal(length, exp->data_len, NULL);
-	if (length > sizeof(exp->data)) {
+	if (length <= sizeof(exp->data)) {
 		zassert_equal(memcmp(data, exp->data, length), 0, NULL);
 	}
 }
