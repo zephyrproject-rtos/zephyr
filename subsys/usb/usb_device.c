@@ -2,6 +2,7 @@
  *  LPCUSB, an USB device driver for LPC microcontrollers
  *  Copyright (C) 2006 Bertrik Sikken (bertrik@sikken.nl)
  *  Copyright (c) 2016 Intel Corporation
+ *  Copyright (c) 2020 PHYTEC Messtechnik GmbH
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -64,9 +65,8 @@
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
 #include <usb/usb_device.h>
-#include <usb/usbstruct.h>
-#include <usb/usb_common.h>
 #include <usb_descriptor.h>
+#include <usb/class/usb_audio.h>
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
@@ -98,10 +98,6 @@ LOG_MODULE_REGISTER(usb_device);
 
 #define MAX_NUM_REQ_HANDLERS        4U
 #define MAX_STD_REQ_MSG_SIZE        8U
-
-/* Default USB control EP, always 0 and 0x80 */
-#define USB_CONTROL_OUT_EP0         0
-#define USB_CONTROL_IN_EP0          0x80
 
 /* Linker-defined symbols bound the USB descriptor structs */
 extern struct usb_cfg_data __usb_data_start[];
@@ -212,14 +208,15 @@ static uint8_t usb_get_alt_setting(uint8_t iface)
 static bool usb_handle_request(struct usb_setup_packet *setup,
 			       int32_t *len, uint8_t **data)
 {
-	uint32_t type = REQTYPE_GET_TYPE(setup->bmRequestType);
-	usb_request_handler handler = usb_dev.req_handlers[type];
+	uint32_t type = setup->RequestType.type;
+	usb_request_handler handler;
 
 	if (type >= MAX_NUM_REQ_HANDLERS) {
 		LOG_DBG("Error Incorrect iType %d", type);
 		return false;
 	}
 
+	handler = usb_dev.req_handlers[type];
 	if (handler == NULL) {
 		LOG_DBG("No handler for reqtype %d", type);
 		return false;
@@ -245,7 +242,7 @@ static void usb_data_to_host(void)
 		uint32_t chunk = usb_dev.data_buf_residue;
 
 		/*Always EP0 for control*/
-		usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf,
+		usb_write(USB_CONTROL_EP_IN, usb_dev.data_buf,
 			  usb_dev.data_buf_residue, &chunk);
 		usb_dev.data_buf += chunk;
 		usb_dev.data_buf_residue -= chunk;
@@ -269,7 +266,7 @@ static void usb_data_to_host(void)
 
 	} else {
 		usb_dev.zlp_flag = false;
-		usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0, NULL);
+		usb_dc_ep_write(USB_CONTROL_EP_IN, NULL, 0, NULL);
 	}
 }
 
@@ -290,7 +287,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 
 	LOG_DBG("ep 0x%02x, status 0x%02x", ep, ep_status);
 
-	if (ep == USB_CONTROL_OUT_EP0 && ep_status == USB_DC_EP_SETUP) {
+	if (ep == USB_CONTROL_EP_OUT && ep_status == USB_DC_EP_SETUP) {
 		/*
 		 * OUT transfer, Setup packet,
 		 * reset request message state machine
@@ -298,7 +295,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 		if (usb_dc_ep_read(ep, (uint8_t *)&setup_raw,
 				   sizeof(setup_raw), NULL) < 0) {
 			LOG_DBG("Read Setup Packet failed");
-			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+			usb_dc_ep_set_stall(USB_CONTROL_EP_IN);
 			return;
 		}
 
@@ -310,11 +307,10 @@ static void usb_handle_control_transfer(uint8_t ep,
 		setup->wLength = sys_le16_to_cpu(setup_raw.wLength);
 
 		if (setup->wLength > CONFIG_USB_REQUEST_BUFFER_SIZE) {
-			if (REQTYPE_GET_DIR(setup->bmRequestType)
-			    != REQTYPE_DIR_TO_HOST) {
+			if (usb_reqtype_is_to_device(setup)) {
 				LOG_ERR("Request buffer too small");
-				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
-				usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
+				usb_dc_ep_set_stall(USB_CONTROL_EP_IN);
+				usb_dc_ep_set_stall(USB_CONTROL_EP_OUT);
 				return;
 			}
 		}
@@ -324,9 +320,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 		usb_dev.data_buf_len = setup->wLength;
 		usb_dev.zlp_flag = false;
 
-		if (setup->wLength &&
-		    REQTYPE_GET_DIR(setup->bmRequestType)
-		    == REQTYPE_DIR_TO_DEVICE) {
+		if (setup->wLength && usb_reqtype_is_to_device(setup)) {
 			return;
 		}
 
@@ -335,7 +329,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 					&usb_dev.data_buf_len,
 					&usb_dev.data_buf)) {
 			LOG_DBG("usb_handle_request failed");
-			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+			usb_dc_ep_set_stall(USB_CONTROL_EP_IN);
 			return;
 		}
 
@@ -344,24 +338,24 @@ static void usb_handle_control_transfer(uint8_t ep,
 					       setup->wLength);
 		/* Send first part (possibly a zero-length status message) */
 		usb_data_to_host();
-	} else if (ep == USB_CONTROL_OUT_EP0) {
+	} else if (ep == USB_CONTROL_EP_OUT) {
 		/* OUT transfer, data or status packets */
 		if (usb_dev.data_buf_residue <= 0) {
 			/* absorb zero-length status message */
-			if (usb_dc_ep_read(USB_CONTROL_OUT_EP0,
+			if (usb_dc_ep_read(USB_CONTROL_EP_OUT,
 					   usb_dev.data_buf, 0, &chunk) < 0) {
 				LOG_DBG("Read DATA Packet failed");
-				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+				usb_dc_ep_set_stall(USB_CONTROL_EP_IN);
 			}
 			return;
 		}
 
-		if (usb_dc_ep_read(USB_CONTROL_OUT_EP0,
+		if (usb_dc_ep_read(USB_CONTROL_EP_OUT,
 				   usb_dev.data_buf,
 				   usb_dev.data_buf_residue, &chunk) < 0) {
 			LOG_DBG("Read DATA Packet failed");
-			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
-			usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
+			usb_dc_ep_set_stall(USB_CONTROL_EP_IN);
+			usb_dc_ep_set_stall(USB_CONTROL_EP_OUT);
 			return;
 		}
 
@@ -374,7 +368,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 						&usb_dev.data_buf_len,
 						&usb_dev.data_buf)) {
 				LOG_DBG("usb_handle_request1 failed");
-				usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
+				usb_dc_ep_set_stall(USB_CONTROL_EP_IN);
 				return;
 			}
 
@@ -382,7 +376,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 			LOG_DBG(">> usb_data_to_host(2)");
 			usb_data_to_host();
 		}
-	} else if (ep == USB_CONTROL_IN_EP0) {
+	} else if (ep == USB_CONTROL_EP_IN) {
 		/* Send more data if available */
 		if (usb_dev.data_buf_residue != 0 || usb_dev.zlp_flag == true) {
 			usb_data_to_host();
@@ -395,7 +389,7 @@ static void usb_handle_control_transfer(uint8_t ep,
 /*
  * @brief register a callback for handling requests
  *
- * @param [in] type       Type of request, e.g. REQTYPE_TYPE_STANDARD
+ * @param [in] type       Type of request, e.g. USB_REQTYPE_TYPE_STANDARD
  * @param [in] handler    Callback function pointer
  *
  * @return N/A
@@ -444,15 +438,15 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
 	/*Avoid compiler warning until this is used for something*/
 	ARG_UNUSED(lang_id);
 
-	type = GET_DESC_TYPE(type_index);
-	index = GET_DESC_INDEX(type_index);
+	type = USB_GET_DESCRIPTOR_TYPE(type_index);
+	index = USB_GET_DESCRIPTOR_INDEX(type_index);
 
 	/*
 	 * Invalid types of descriptors,
 	 * see USB Spec. Revision 2.0, 9.4.3 Get Descriptor
 	 */
-	if ((type == USB_INTERFACE_DESC) || (type == USB_ENDPOINT_DESC) ||
-	    (type > USB_OTHER_SPEED)) {
+	if ((type == USB_DESC_INTERFACE) || (type == USB_DESC_ENDPOINT) ||
+	    (type > USB_DESC_OTHER_SPEED)) {
 		return false;
 	}
 
@@ -475,7 +469,7 @@ static bool usb_get_descriptor(uint16_t type_index, uint16_t lang_id,
 		/* set data pointer */
 		*data = p;
 		/* get length from structure */
-		if (type == USB_CONFIGURATION_DESC) {
+		if (type == USB_DESC_CONFIGURATION) {
 			/* configuration descriptor is an
 			 * exception, length is at offset
 			 * 2 and 3
@@ -621,7 +615,7 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 	/* configure endpoints for this configuration/altsetting */
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
-		case USB_CONFIGURATION_DESC:
+		case USB_DESC_CONFIGURATION:
 			/* remember current configuration index */
 			cur_config = p[CONF_DESC_bConfigurationValue];
 			if (cur_config == config_index) {
@@ -630,13 +624,13 @@ static bool usb_set_configuration(uint8_t config_index, uint8_t alt_setting)
 
 			break;
 
-		case USB_INTERFACE_DESC:
+		case USB_DESC_INTERFACE:
 			/* remember current alternate setting */
 			cur_alt_setting =
 			    p[INTF_DESC_bAlternateSetting];
 			break;
 
-		case USB_ENDPOINT_DESC:
+		case USB_DESC_ENDPOINT:
 			if ((cur_config != config_index) ||
 			    (cur_alt_setting != alt_setting)) {
 				break;
@@ -681,7 +675,7 @@ static bool usb_set_interface(uint8_t iface, uint8_t alt_setting)
 
 	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
-		case USB_INTERFACE_DESC:
+		case USB_DESC_INTERFACE:
 			/* remember current alternate setting */
 			cur_alt_setting = p[INTF_DESC_bAlternateSetting];
 			cur_iface = p[INTF_DESC_bInterfaceNumber];
@@ -695,7 +689,7 @@ static bool usb_set_interface(uint8_t iface, uint8_t alt_setting)
 			LOG_DBG("Current iface %u alt setting %u",
 				cur_iface, cur_alt_setting);
 			break;
-		case USB_ENDPOINT_DESC:
+		case USB_DESC_ENDPOINT:
 			if (cur_iface == iface) {
 				ep = (struct usb_ep_descriptor *)p;
 				ret = usb_eps_reconfigure(ep, cur_alt_setting,
@@ -725,7 +719,7 @@ static bool usb_get_interface(struct usb_setup_packet *setup,
 	uint8_t cur_iface;
 
 	while (p[DESC_bLength] != 0U) {
-		if (p[DESC_bDescriptorType] == USB_INTERFACE_DESC) {
+		if (p[DESC_bDescriptorType] == USB_DESC_INTERFACE) {
 			cur_iface = p[INTF_DESC_bInterfaceNumber];
 			if (cur_iface == setup->wIndex) {
 				data[0] = usb_get_alt_setting(cur_iface);
@@ -771,45 +765,45 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 	uint8_t *data = *data_buf;
 
 	switch (setup->bRequest) {
-	case REQ_GET_STATUS:
-		LOG_DBG("REQ_GET_STATUS");
+	case USB_SREQ_GET_STATUS:
+		LOG_DBG("USB_SREQ_GET_STATUS");
 		/* bit 0: self-powered */
 		/* bit 1: remote wakeup */
 		data[0] = 0U;
 		data[1] = 0U;
 
 		if (IS_ENABLED(CONFIG_USB_SELF_POWERED)) {
-			data[0] |= DEVICE_STATUS_SELF_POWERED;
+			data[0] |= USB_GET_STATUS_SELF_POWERED;
 		}
 
 		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
 			data[0] |= (usb_dev.remote_wakeup ?
-				    DEVICE_STATUS_REMOTE_WAKEUP : 0);
+				    USB_GET_STATUS_REMOTE_WAKEUP : 0);
 		}
 
 		*len = 2;
 		break;
 
-	case REQ_SET_ADDRESS:
-		LOG_DBG("REQ_SET_ADDRESS, addr 0x%x", value);
+	case USB_SREQ_SET_ADDRESS:
+		LOG_DBG("USB_SREQ_SET_ADDRESS, addr 0x%x", value);
 		usb_dc_set_address(value);
 		break;
 
-	case REQ_GET_DESCRIPTOR:
-		LOG_DBG("REQ_GET_DESCRIPTOR");
+	case USB_SREQ_GET_DESCRIPTOR:
+		LOG_DBG("USB_SREQ_GET_DESCRIPTOR");
 		ret = usb_get_descriptor(value, index, len, data_buf);
 		break;
 
-	case REQ_GET_CONFIGURATION:
-		LOG_DBG("REQ_GET_CONFIGURATION");
+	case USB_SREQ_GET_CONFIGURATION:
+		LOG_DBG("USB_SREQ_GET_CONFIGURATION");
 		/* indicate if we are configured */
 		data[0] = usb_dev.configuration;
 		*len = 1;
 		break;
 
-	case REQ_SET_CONFIGURATION:
+	case USB_SREQ_SET_CONFIGURATION:
 		value &= 0xFF;
-		LOG_DBG("REQ_SET_CONFIGURATION, conf 0x%x", value);
+		LOG_DBG("USB_SREQ_SET_CONFIGURATION, conf 0x%x", value);
 		if (!usb_set_configuration(value, 0)) {
 			LOG_DBG("USB Set Configuration failed");
 			ret = false;
@@ -822,34 +816,34 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		}
 		break;
 
-	case REQ_CLEAR_FEATURE:
-		LOG_DBG("REQ_CLEAR_FEATURE");
+	case USB_SREQ_CLEAR_FEATURE:
+		LOG_DBG("USB_SREQ_CLEAR_FEATURE");
 		ret = false;
 
 		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-			if (value == FEA_REMOTE_WAKEUP) {
+			if (value == USB_SFS_REMOTE_WAKEUP) {
 				usb_dev.remote_wakeup = false;
 				ret = true;
 			}
 		}
 		break;
-	case REQ_SET_FEATURE:
-		LOG_DBG("REQ_SET_FEATURE");
+	case USB_SREQ_SET_FEATURE:
+		LOG_DBG("USB_SREQ_SET_FEATURE");
 		ret = false;
 
 		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-			if (value == FEA_REMOTE_WAKEUP) {
+			if (value == USB_SFS_REMOTE_WAKEUP) {
 				usb_dev.remote_wakeup = true;
 				ret = true;
 			}
 		}
 
-		if (value == FEA_TEST_MODE) {
-			/* put TEST_MODE code here */
+		if (value == USB_SFS_TEST_MODE) {
+			/* put USB_SFS_TEST_MODE code here */
 		}
 		break;
 
-	case REQ_SET_DESCRIPTOR:
+	case USB_SREQ_SET_DESCRIPTOR:
 		LOG_DBG("Device req 0x%02x not implemented", setup->bRequest);
 		ret = false;
 		break;
@@ -880,7 +874,7 @@ static bool is_interface_valid(uint8_t interface)
 
 	/* Search through descriptor for matching interface */
 	while (p[DESC_bLength] != 0U) {
-		if (p[DESC_bDescriptorType] == USB_CONFIGURATION_DESC) {
+		if (p[DESC_bDescriptorType] == USB_DESC_CONFIGURATION) {
 			cfg_descr = (const struct usb_cfg_descriptor *)p;
 			if (interface < cfg_descr->bNumInterfaces) {
 				return true;
@@ -915,23 +909,23 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 	}
 
 	switch (setup->bRequest) {
-	case REQ_GET_STATUS:
+	case USB_SREQ_GET_STATUS:
 		/* no bits specified */
 		data[0] = 0U;
 		data[1] = 0U;
 		*len = 2;
 		break;
 
-	case REQ_CLEAR_FEATURE:
-	case REQ_SET_FEATURE:
+	case USB_SREQ_CLEAR_FEATURE:
+	case USB_SREQ_SET_FEATURE:
 		/* not defined for interface */
 		return false;
 
-	case REQ_GET_INTERFACE:
+	case USB_SREQ_GET_INTERFACE:
 		return usb_get_interface(setup, len, data_buf);
 
-	case REQ_SET_INTERFACE:
-		LOG_DBG("REQ_SET_INTERFACE");
+	case USB_SREQ_SET_INTERFACE:
+		LOG_DBG("USB_SREQ_SET_INTERFACE");
 		usb_set_interface(setup->wIndex, setup->wValue);
 		*len = 0;
 		break;
@@ -1001,7 +995,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 	}
 
 	switch (setup->bRequest) {
-	case REQ_GET_STATUS:
+	case USB_SREQ_GET_STATUS:
 		/** This request is valid for Control Endpoints when
 		 * the device is not yet configured. For other
 		 * Endpoints the device must be configured.
@@ -1018,8 +1012,8 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 		}
 		return false;
 
-	case REQ_CLEAR_FEATURE:
-		if (setup->wValue == FEA_ENDPOINT_HALT) {
+	case USB_SREQ_CLEAR_FEATURE:
+		if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
 			/** This request is valid for Control Endpoints when
 			 * the device is not yet configured. For other
 			 * Endpoints the device must be configured.
@@ -1037,11 +1031,11 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 				break;
 			}
 		}
-		/* only ENDPOINT_HALT defined for endpoints */
+		/* only USB_SFS_ENDPOINT_HALT defined for endpoints */
 		return false;
 
-	case REQ_SET_FEATURE:
-		if (setup->wValue == FEA_ENDPOINT_HALT) {
+	case USB_SREQ_SET_FEATURE:
+		if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
 			/** This request is valid for Control Endpoints when
 			 * the device is not yet configured. For other
 			 * Endpoints the device must be configured.
@@ -1060,10 +1054,10 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 				break;
 			}
 		}
-		/* only ENDPOINT_HALT defined for endpoints */
+		/* only USB_SFS_ENDPOINT_HALT defined for endpoints */
 		return false;
 
-	case REQ_SYNCH_FRAME:
+	case USB_SREQ_SYNCH_FRAME:
 		/* For Synch Frame request the device must be configured */
 		if (is_device_configured()) {
 			/* Not supported, return false anyway */
@@ -1108,18 +1102,18 @@ static int usb_handle_standard_request(struct usb_setup_packet *setup,
 		return 0;
 	}
 
-	switch (REQTYPE_GET_RECIP(setup->bmRequestType)) {
-	case REQTYPE_RECIP_DEVICE:
+	switch (setup->RequestType.recipient) {
+	case USB_REQTYPE_RECIPIENT_DEVICE:
 		if (usb_handle_std_device_req(setup, len, data_buf) == false) {
 			rc = -EINVAL;
 		}
 		break;
-	case REQTYPE_RECIP_INTERFACE:
+	case USB_REQTYPE_RECIPIENT_INTERFACE:
 		if (usb_handle_std_interface_req(setup, len, data_buf) == false) {
 			rc = -EINVAL;
 		}
 		break;
-	case REQTYPE_RECIP_ENDPOINT:
+	case USB_REQTYPE_RECIPIENT_ENDPOINT:
 		if (usb_handle_std_endpoint_req(setup, len, data_buf) == false) {
 			rc = -EINVAL;
 		}
@@ -1280,10 +1274,10 @@ int usb_deconfig(void)
 	usb_register_descriptors(NULL);
 
 	/* unegister standard request handler */
-	usb_register_request_handler(REQTYPE_TYPE_STANDARD, NULL);
+	usb_register_request_handler(USB_REQTYPE_TYPE_STANDARD, NULL);
 
 	/* unregister class request handlers for each interface*/
-	usb_register_request_handler(REQTYPE_TYPE_CLASS, NULL);
+	usb_register_request_handler(USB_REQTYPE_TYPE_CLASS, NULL);
 
 	/* unregister class request handlers for each interface*/
 	usb_register_custom_req_handler(NULL);
@@ -1453,7 +1447,7 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 			 * The class does not actively engage in request
 			 * handling and therefore we can ignore return value.
 			 */
-			if (if_descr->bInterfaceClass == AUDIO_CLASS) {
+			if (if_descr->bInterfaceClass == USB_BCC_AUDIO) {
 				(void)iface->custom_handler(pSetup, len, data);
 			}
 		}
@@ -1514,14 +1508,14 @@ int usb_set_config(const uint8_t *device_descriptor)
 	usb_register_descriptors(device_descriptor);
 
 	/* register standard request handler */
-	usb_register_request_handler(REQTYPE_TYPE_STANDARD,
+	usb_register_request_handler(USB_REQTYPE_TYPE_STANDARD,
 				     usb_handle_standard_request);
 
 	/* register class request handlers for each interface*/
-	usb_register_request_handler(REQTYPE_TYPE_CLASS, class_handler);
+	usb_register_request_handler(USB_REQTYPE_TYPE_CLASS, class_handler);
 
 	/* register vendor request handler */
-	usb_register_request_handler(REQTYPE_TYPE_VENDOR, vendor_handler);
+	usb_register_request_handler(USB_REQTYPE_TYPE_VENDOR, vendor_handler);
 
 	/* register class request handlers for each interface*/
 	usb_register_custom_req_handler(custom_handler);
@@ -1569,26 +1563,26 @@ int usb_enable(usb_dc_status_callback status_cb)
 	ep0_cfg.ep_mps = USB_MAX_CTRL_MPS;
 	ep0_cfg.ep_type = USB_DC_EP_CONTROL;
 
-	ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
+	ep0_cfg.ep_addr = USB_CONTROL_EP_OUT;
 	ret = usb_dc_ep_configure(&ep0_cfg);
 	if (ret < 0) {
 		goto out;
 	}
 
-	ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
+	ep0_cfg.ep_addr = USB_CONTROL_EP_IN;
 	ret = usb_dc_ep_configure(&ep0_cfg);
 	if (ret < 0) {
 		goto out;
 	}
 
 	/* Register endpoint 0 handlers*/
-	ret = usb_dc_ep_set_callback(USB_CONTROL_OUT_EP0,
+	ret = usb_dc_ep_set_callback(USB_CONTROL_EP_OUT,
 				     usb_handle_control_transfer);
 	if (ret < 0) {
 		goto out;
 	}
 
-	ret = usb_dc_ep_set_callback(USB_CONTROL_IN_EP0,
+	ret = usb_dc_ep_set_callback(USB_CONTROL_EP_IN,
 				     usb_handle_control_transfer);
 	if (ret < 0) {
 		goto out;
@@ -1601,12 +1595,12 @@ int usb_enable(usb_dc_status_callback status_cb)
 	}
 
 	/* Enable control EP */
-	ret = usb_dc_ep_enable(USB_CONTROL_OUT_EP0);
+	ret = usb_dc_ep_enable(USB_CONTROL_EP_OUT);
 	if (ret < 0) {
 		goto out;
 	}
 
-	ret = usb_dc_ep_enable(USB_CONTROL_IN_EP0);
+	ret = usb_dc_ep_enable(USB_CONTROL_EP_IN);
 	if (ret < 0) {
 		goto out;
 	}
