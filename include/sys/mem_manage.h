@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_SYS_MEM_MANAGE_H
 
 #include <sys/util.h>
+#include <toolchain.h>
 
 /*
  * Caching mode definitions. These are mutually exclusive.
@@ -369,7 +370,11 @@ void k_mem_unmap(void *addr, size_t size);
 size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 			  uintptr_t addr, size_t size, size_t align);
 
-#ifdef CONFIG_DEMAND_PAGING
+/**
+ * @defgroup mem-demand-paging Demand Paging APIs
+ * @{
+ */
+
 /**
  * Evict a page-aligned virtual memory region to the backing store
  *
@@ -436,9 +441,7 @@ void k_mem_pin(void *addr, size_t size);
  * @param size Page-aligned data region size
  */
 void k_mem_unpin(void *addr, size_t size);
-#endif /* CONFIG_DEMAND_PAGING */
 
-#ifdef CONFIG_DEMAND_PAGING_STATS
 /**
  * Get the paging statistics since system startup
  *
@@ -449,7 +452,6 @@ void k_mem_unpin(void *addr, size_t size);
  */
 __syscall void k_mem_paging_stats_get(struct k_mem_paging_stats_t *stats);
 
-#ifdef CONFIG_DEMAND_PAGING_THREAD_STATS
 struct k_thread;
 /**
  * Get the paging statistics since system startup for a thread
@@ -463,9 +465,7 @@ struct k_thread;
 __syscall
 void k_mem_paging_thread_stats_get(struct k_thread *thread,
 				   struct k_mem_paging_stats_t *stats);
-#endif /* CONFIG_DEMAND_PAGING_THREAD_STATS */
 
-#ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
 /**
  * Get the eviction timing histogram
  *
@@ -498,11 +498,10 @@ __syscall void k_mem_paging_histogram_backing_store_page_in_get(
  */
 __syscall void k_mem_paging_histogram_backing_store_page_out_get(
 	struct k_mem_paging_histogram_t *hist);
-#endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
 #include <syscalls/mem_manage.h>
 
-#endif /* CONFIG_DEMAND_PAGING_STATS */
+/** @} */
 
 #ifdef __cplusplus
 }
