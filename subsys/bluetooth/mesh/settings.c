@@ -88,7 +88,8 @@ SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
 			      BIT(BT_MESH_SETTINGS_APP_KEYS_PENDING) |      \
 			      BIT(BT_MESH_SETTINGS_HB_PUB_PENDING)   |      \
 			      BIT(BT_MESH_SETTINGS_CFG_PENDING)      |      \
-			      BIT(BT_MESH_SETTINGS_MOD_PENDING))
+			      BIT(BT_MESH_SETTINGS_MOD_PENDING)      |      \
+			      BIT(BT_MESH_SETTINGS_VA_PENDING))
 
 void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 {
