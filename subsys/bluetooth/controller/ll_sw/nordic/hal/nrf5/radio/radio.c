@@ -582,9 +582,12 @@ static inline void sw_switch(uint8_t dir_curr, uint8_t dir_next,
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	} else {
 		/* RX */
+
+		/* Calculate delay with respect to current and next PHY. */
 		delay = HAL_RADIO_NS2US_CEIL(
-			hal_radio_rx_ready_delay_ns_get(phy_next, flags_next) -
-			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr));
+			hal_radio_rx_ready_delay_ns_get(phy_next, flags_next) +
+			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
+			4;
 
 		hal_radio_rxen_on_sw_switch(ppi);
 
