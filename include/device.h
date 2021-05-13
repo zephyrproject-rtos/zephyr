@@ -744,6 +744,34 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.handles = Z_DEVICE_HANDLE_NAME(node_id, dev_name),	\
 		Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)
 
+/* Construct objects that reference struct device. */
+#define Z_DEVICE_DEFINE_POST(node_id, dev_name, pm_control_fn, level,	\
+			     prio, ...)					\
+	Z_DEVICE_DEFINE_PM_ENTRY(node_id, dev_name, pm_control_fn,	\
+				 level, prio, __VA_ARGS__)
+
+/* If a device has power management, this macro defines a pointer to the given
+ * device in a special linker section. The section name includes initialization
+ * level and priority so that it can be sorted later by the linker. The result
+ * is a compile time sorted list of devices that have power management.
+ *
+ * The availability of power management is checked by evaluating the value of
+ * "__pm_control_fn", which evals to __pm_device_none (defined as 1) on devices
+ * that do not have power management.
+ */
+#if CONFIG_PM_DEVICE
+#define Z_DEVICE_DEFINE_PM_ENTRY(node_id, dev_name, pm_control_fn,	\
+				 level, prio, ...)			\
+	COND_CODE_1(_CONCAT(__, pm_control_fn), (),			\
+		    (static const Z_DECL_ALIGN(struct device *) const	\
+		     _CONCAT(__pm, DEVICE_NAME_GET(dev_name)) __used	\
+	__attribute__((__section__(".z_pm_device_" #level STRINGIFY(prio)"_"))) = \
+		     &DEVICE_NAME_GET(dev_name);))
+#else
+#define Z_DEVICE_DEFINE_PM_ENTRY(node_id, dev_name, pm_control_fn,	\
+				 level, prio, ...)
+#endif
+
 /* Like DEVICE_DEFINE but takes a node_id AND a dev_name, and trailing
  * dependency handles that come from outside devicetree.
  */
@@ -762,6 +790,8 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.data = (data_ptr),					\
 		Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)	\
 	};								\
+	Z_DEVICE_DEFINE_POST(node_id, dev_name, pm_control_fn, level,	\
+			     prio, __VA_ARGS__)				\
 	BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
 		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\

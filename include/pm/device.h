@@ -24,6 +24,16 @@ extern "C" {
 
 struct device;
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Utility macro used to check for device power-management availability
+ * in Z_DEVICE_DEFINE_PM_ENTRY
+ */
+#define __pm_device_none 1
+
+/** @endcond */
+
 /** @def PM_DEVICE_STATE_ACTIVE
  *
  * @brief device is in ACTIVE power state

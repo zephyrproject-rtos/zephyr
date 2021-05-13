@@ -37,6 +37,19 @@
 		__device_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+#if CONFIG_PM_DEVICE
+	SECTION_DATA_PROLOGUE(pm_devices,,)
+	{
+		__pm_device_start = .;
+		CREATE_OBJ_LEVEL(pm_device, PRE_KERNEL_1)
+		CREATE_OBJ_LEVEL(pm_device, PRE_KERNEL_2)
+		CREATE_OBJ_LEVEL(pm_device, POST_KERNEL)
+		CREATE_OBJ_LEVEL(pm_device, APPLICATION)
+		CREATE_OBJ_LEVEL(pm_device, SMP)
+		__pm_device_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 	SECTION_DATA_PROLOGUE(initshell,,)
 	{
 		/* link in shell initialization objects for all modules that
