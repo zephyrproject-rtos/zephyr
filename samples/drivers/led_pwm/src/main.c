@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, pwm_leds), okay)
 #define LED_PWM_NODE_ID		DT_INST(0, pwm_leds)
-#define LED_PWM_DEV_NAME	DT_INST_PROP_OR(0, label, "LED_PWM_0")
+#define LED_PWM_DEV_NAME	DEVICE_DT_NAME(LED_PWM_NODE_ID)
 #else
 #error "No LED PWM device found"
 #endif
