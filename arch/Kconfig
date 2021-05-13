@@ -743,8 +743,9 @@ config DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS
 	  gathering execution timing information for demand paging.
 
 	  This requires k_mem_paging_eviction_histogram_bounds[] and
-	  z_backing_store_histogram_bounds[] to define the upper bounds
-	  for each bin. See kernel/statistics.c for information.
+	  k_mem_paging_backing_store_histogram_bounds[] to define
+	  the upper bounds for each bin. See kernel/statistics.c for
+	  information.
 
 endif	# DEMAND_PAGING
 endif   # MMU

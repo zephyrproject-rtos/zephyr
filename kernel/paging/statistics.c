@@ -32,7 +32,8 @@ k_mem_paging_eviction_histogram_bounds[
 	CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
 
 extern unsigned long
-z_backing_store_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
+k_mem_paging_backing_store_histogram_bounds[
+	CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS];
 
 #else
 #define NS_TO_CYC(ns)		(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000000U * ns)
@@ -59,7 +60,8 @@ k_mem_paging_eviction_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM
  * (both page-in and page-out).
  */
 __weak unsigned long
-z_backing_store_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
+k_mem_paging_backing_store_histogram_bounds[
+	CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
 	NS_TO_CYC(10),
 	NS_TO_CYC(100),
 	NS_TO_CYC(125),
@@ -150,13 +152,13 @@ void z_paging_histogram_init(void)
 	memset(&z_paging_histogram_backing_store_page_in, 0,
 	       sizeof(z_paging_histogram_backing_store_page_in));
 	memcpy(z_paging_histogram_backing_store_page_in.bounds,
-	       z_backing_store_histogram_bounds,
+	       k_mem_paging_backing_store_histogram_bounds,
 	       sizeof(z_paging_histogram_backing_store_page_in.bounds));
 
 	memset(&z_paging_histogram_backing_store_page_out, 0,
 	       sizeof(z_paging_histogram_backing_store_page_out));
 	memcpy(z_paging_histogram_backing_store_page_out.bounds,
-	       z_backing_store_histogram_bounds,
+	       k_mem_paging_backing_store_histogram_bounds,
 	       sizeof(z_paging_histogram_backing_store_page_out.bounds));
 }
 
