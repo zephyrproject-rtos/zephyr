@@ -503,6 +503,40 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
 
 /** @} */
 
+/**
+ * Eviction algorithm APIs
+ *
+ * @defgroup mem-demand-paging-eviction Eviction Algorithm APIs
+ * @{
+ */
+
+/**
+ * Select a page frame for eviction
+ *
+ * The kernel will invoke this to choose a page frame to evict if there
+ * are no free page frames.
+ *
+ * This function will never be called before the initial
+ * k_mem_paging_eviction_init().
+ *
+ * This function is invoked with interrupts locked.
+ *
+ * @param [out] Whether the page to evict is dirty
+ * @return The page frame to evict
+ */
+struct z_page_frame *k_mem_paging_eviction_select(bool *dirty);
+
+/**
+ * Initialization function
+ *
+ * Called at POST_KERNEL to perform any necessary initialization tasks for the
+ * eviction algorithm. k_mem_paging_eviction_select() is guaranteed to never be
+ * called until this has returned, and this will only be called once.
+ */
+void k_mem_paging_eviction_init(void);
+
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif

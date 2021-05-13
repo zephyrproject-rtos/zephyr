@@ -430,7 +430,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 		bool dirty;
 		int ret;
 
-		pf = z_eviction_select(&dirty);
+		pf = k_mem_paging_eviction_select(&dirty);
 		__ASSERT(pf != NULL, "failed to get a page frame");
 		LOG_DBG("evicting %p at 0x%lx", pf->addr,
 			z_page_frame_to_phys(pf));
@@ -791,7 +791,7 @@ void z_mem_manage_init(void)
 	z_paging_histogram_init();
 #endif
 	z_backing_store_init();
-	z_eviction_init();
+	k_mem_paging_eviction_init();
 #endif
 #if __ASSERT_ON
 	page_frames_initialized = true;
@@ -1162,7 +1162,7 @@ static inline struct z_page_frame *do_eviction_select(bool *dirty)
 #endif /* CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS */
 #endif /* CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM */
 
-	pf = z_eviction_select(dirty);
+	pf = k_mem_paging_eviction_select(dirty);
 
 #ifdef CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM
 #ifdef CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS
@@ -1195,7 +1195,7 @@ static bool do_page_fault(void *addr, bool pin)
 
 	/*
 	 * TODO: Add performance accounting:
-	 * - z_eviction_select() metrics
+	 * - k_mem_paging_eviction_select() metrics
 	 *   * periodic timer execution time histogram (if implemented)
 	 */
 
