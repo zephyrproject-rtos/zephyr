@@ -243,14 +243,14 @@ extern "C" {
 	(_level <= Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
 
 #define Z_LOG_CONST_LEVEL_CHECK(_level)					    \
-	(IS_ENABLED(CONFIG_LOG) &&					    \
+	(					    \
 	(Z_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
 	||								    \
 	((IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) == false) &&		    \
 	(_level <= __log_level) &&					    \
 	(_level <= CONFIG_LOG_MAX_LEVEL)				    \
 	)								    \
-	))
+	)
 
 /*****************************************************************************/
 /****************** Defiinitions used by minimal logging *********************/
@@ -292,12 +292,12 @@ static inline char z_log_minimal_level_to_char(int level)
 /*****************************************************************************/
 /****************** Macros for standard logging ******************************/
 /*****************************************************************************/
+#if defined CONFIG_LOG_MINIMAL
+#define Z_LOG2(_level, _source, _dsource, ...) \
+		Z_LOG_TO_PRINTK(_level, __VA_ARGS__)
+#elif defined CONFIG_LOG
 #define Z_LOG2(_level, _source, _dsource, ...) do { \
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) { \
-		break; \
-	} \
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
-		Z_LOG_TO_PRINTK(_level, __VA_ARGS__); \
 		break; \
 	} \
 	\
@@ -325,6 +325,10 @@ static inline char z_log_minimal_level_to_char(int level)
 		z_log_printf_arg_checker(__VA_ARGS__); \
 	} \
 } while (false)
+#else
+#define Z_LOG2(_level, _source, _dsource, ...) \
+		z_log_printf_arg_checker(__VA_ARGS__)
+#endif
 
 #define Z_LOG(_level, ...) \
 	Z_LOG2(_level, __log_current_const_data, __log_current_dynamic_data, __VA_ARGS__)
@@ -340,6 +344,13 @@ static inline char z_log_minimal_level_to_char(int level)
 /*****************************************************************************/
 /****************** Macros for hexdump logging *******************************/
 /*****************************************************************************/
+#if defined CONFIG_LOG_MINIMAL
+#define Z_LOG_HEXDUMP2(_level, _source, _dsource, _data, _len, ...) do { \
+	Z_LOG_TO_PRINTK(_level, "%s", _str); \
+	z_log_minimal_hexdump_print(_level, \
+					(const char *)_data, _len); \
+} while (false)
+#elif defined CONFIG_LOG
 #define Z_LOG_HEXDUMP2(_level, _source, _dsource, _data, _len, ...) do { \
 	const char *_str = GET_ARG_N(1, __VA_ARGS__); \
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) {	\
@@ -349,12 +360,6 @@ static inline char z_log_minimal_level_to_char(int level)
 	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 						(_dsource)->filters : 0;\
 	\
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
-		Z_LOG_TO_PRINTK(_level, "%s", _str); \
-		z_log_minimal_hexdump_print(_level, \
-					    (const char *)_data, _len);\
-		break; \
-	} \
 	if (!LOG_CHECK_CTX_LVL_FILTER(is_user_context, _level, filters)) { \
 		break; \
 	} \
@@ -388,6 +393,9 @@ static inline char z_log_minimal_level_to_char(int level)
 		log_hexdump(_str, (const char *)_data, _len, src_level); \
 	} \
 } while (false)
+#else
+#define Z_LOG_HEXDUMP2(_level, _source, _dsource, _data, _len, ...) 
+#endif
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, ...) \
 	Z_LOG_HEXDUMP2(_level, \
@@ -468,11 +476,11 @@ enum log_strdup_action {
 	LOG_STRDUP_CHECK_EXEC/**< Duplicate RAM strings, if not dupl. before.*/
 };
 
+#if defined CONFIG_LOG_MINIMAL
+#define Z_LOG_PRINTK(...) \
+	z_log_minimal_printk(__VA_ARGS__)
+#elif defined CONFIG_LOG
 #define Z_LOG_PRINTK(...) do { \
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL) || !IS_ENABLED(CONFIG_LOG2)) { \
-		z_log_minimal_printk(__VA_ARGS__); \
-		break; \
-	} \
 	int _mode; \
 	if (0) {\
 		z_log_printf_arg_checker(__VA_ARGS__); \
@@ -481,6 +489,10 @@ enum log_strdup_action {
 			  CONFIG_LOG_DOMAIN_ID, NULL, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
+#else
+#define Z_LOG_PRINTK(...)
+#endif
+
 
 
 /** @brief Get name of the log source.
@@ -800,13 +812,13 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 		 __log_current_const_data, \
 		 __log_current_dynamic_data, \
 		 _str, _valist, _argnum, _strdup_action)
-
+		 
+#if defined CONFIG_LOG_MINIMAL
+#define __LOG_VA(_level, _source, _dsource, _str, _valist, _argnum, _strdup_action) \
+		 Z_LOG_TO_VPRINTK(_level, _str, _valist)
+#elif defined CONFIG_LOG
 #define __LOG_VA(_level, _source, _dsource, _str, _valist, _argnum, _strdup_action) do { \
 	if (!Z_LOG_CONST_LEVEL_CHECK(_level)) { \
-		break; \
-	} \
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL)) { \
-		Z_LOG_TO_VPRINTK(_level, _str, _valist); \
 		break; \
 	} \
 	\
@@ -834,6 +846,10 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 			_str, _valist, _argnum, \
 			_strdup_action); \
 } while (false)
+#else
+#define __LOG_VA(_level, _source, _dsource, _str, _valist, _argnum, _strdup_action)
+#endif
+
 
 /**
  * @brief Inline function to perform strdup, used in __LOG_INTERNAL_VA macro

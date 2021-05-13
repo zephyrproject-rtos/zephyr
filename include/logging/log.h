@@ -266,7 +266,9 @@ extern "C" {
 void z_log_printk(const char *fmt, va_list ap);
 static inline void log_printk(const char *fmt, va_list ap)
 {
+#ifdef CONFIG_LOG
 	z_log_printk(fmt, ap);
+#endif
 }
 
 /** @brief Copy transient string to a buffer from internal, logger pool.
@@ -289,11 +291,16 @@ static inline void log_printk(const char *fmt, va_list ap)
 char *z_log_strdup(const char *str);
 static inline char *log_strdup(const char *str)
 {
-	if (IS_ENABLED(CONFIG_LOG_MINIMAL) || IS_ENABLED(CONFIG_LOG2)) {
+#ifdef CONFIG_LOG_MINIMAL
+	return (char *)str;
+#elif CONFIG_LOG
+	if(IS_ENABLED(CONFIG_LOG2))
 		return (char *)str;
-	}
-
-	return z_log_strdup(str);
+	else
+		return z_log_strdup(str);
+#else
+	return NULL;
+#endif
 }
 
 #ifdef __cplusplus
