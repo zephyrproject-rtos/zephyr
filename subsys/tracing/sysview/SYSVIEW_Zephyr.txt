@@ -137,13 +137,13 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 124 k_work_poll_submit           work=%I, Timeout=%TimeOut
 125 k_work_poll_submit_to_queue  work_q=%I, work=%I, Timeout=%TimeOut
 126 k_work_queue_start           queue=%I
-127 k_work_reschedule            dwork=%I, Delay=%TimeOut
-128 k_work_reschedule_for_queue  queue=%I, dwork=%I, Delay=%TimeOut
-129 k_work_schedule              dwork=%I, Delay=%TimeOut
-130 k_work_reschedule_for_queue  queue=%I, dwork=%I, Delay=%TimeOut
-131 k_work_submit                work=%I
-132 k_work_submit_to_queue       queue=%I, work=%I
-133 k_work_queue_unplug          queue=%I
+127 k_work_reschedule            dwork=%I, Delay=%TimeOut | Returns %u
+128 k_work_reschedule_for_queue  queue=%I, dwork=%I, Delay=%TimeOut | Returns %u
+129 k_work_schedule              dwork=%I, Delay=%TimeOut | Returns %u
+130 k_work_reschedule_for_queue  queue=%I, dwork=%I, Delay=%TimeOut | Returns %u
+131 k_work_submit                work=%I | Returns %ErrCodePosix
+132 k_work_submit_to_queue       queue=%I, work=%I | Returns %ErrCodePosix
+133 k_work_queue_unplug          queue=%I | Returns %ErrCodePosix
 
 
 142 k_fifo_init                  fifo=%I
