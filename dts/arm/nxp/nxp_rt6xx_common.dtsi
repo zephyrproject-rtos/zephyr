@@ -214,6 +214,14 @@
 		status = "disabled";
 		label = "OS_TIMER";
 	};
+
+	rtc: rtc@30000 {
+		compatible = "nxp,lpc-rtc";
+		reg = <0x30000 0x1000>;
+		interrupts = <32 0>;
+		status = "disabled";
+		label = "RTC_0";
+	};
 };
 
 &nvic {
