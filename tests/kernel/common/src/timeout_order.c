@@ -41,11 +41,12 @@ static struct k_thread threads[NUM_TIMEOUTS];
  */
 
 /**
- * @brief Test timer functionalities
+ * @brief Test timeout ordering
  *
- * @details Test polling events with timers
+ * @details Timeouts, when expiring on the same tick, should be handled
+ * in the same order they were queued.
  *
- * @see k_timer_start(), k_poll_event_init()
+ * @see k_timer_start()
  */
 void test_timeout_order(void)
 {
@@ -74,26 +75,18 @@ void test_timeout_order(void)
 		k_timer_start(&timer[ii], K_MSEC(100), K_NO_WAIT);
 	}
 
-	static struct k_poll_event poll_events[NUM_TIMEOUTS];
+	/* Wait for all timers to fire */
+	k_msleep(125);
 
-	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
-		k_poll_event_init(&poll_events[ii], K_POLL_TYPE_SEM_AVAILABLE,
-				  K_POLL_MODE_NOTIFY_ONLY, &sem[ii]);
-	}
-
-	/* drop prio to get all poll events together */
-	k_thread_priority_set(k_current_get(), prio + 1);
-
-	zassert_equal(k_poll(poll_events, NUM_TIMEOUTS, K_MSEC(2000)), 0, "");
-
-	k_thread_priority_set(k_current_get(), prio - 1);
-
-	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
-		zassert_equal(poll_events[ii].state,
-			      K_POLL_STATE_SEM_AVAILABLE, "");
-	}
+	/* Check results */
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		zassert_equal(results[ii], ii, "");
+	}
+
+	/* Clean up */
+	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
+		k_timer_stop(&timer[ii]);
+		k_thread_join(&threads[ii], K_FOREVER);
 	}
 }
 
