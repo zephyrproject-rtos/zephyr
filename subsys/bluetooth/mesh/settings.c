@@ -100,7 +100,7 @@ void bt_mesh_settings_store_schedule(enum bt_mesh_settings_flag flag)
 		timeout_ms = 0;
 	} else if (atomic_test_bit(pending_flags,
 				   BT_MESH_SETTINGS_RPL_PENDING) &&
-		   (!(atomic_get(bt_mesh.flags) & GENERIC_PENDING_BITS) ||
+		   (!(atomic_get(pending_flags) & GENERIC_PENDING_BITS) ||
 		    (CONFIG_BT_MESH_RPL_STORE_TIMEOUT <
 		     CONFIG_BT_MESH_STORE_TIMEOUT))) {
 		timeout_ms = CONFIG_BT_MESH_RPL_STORE_TIMEOUT * MSEC_PER_SEC;
