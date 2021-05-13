@@ -22,7 +22,7 @@ manifest:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
     - name: recogni
-      url-base: https://github.com/recogni
+      url-base: git@github.com:recogni
 
   #
   # Please add items below based on alphabetical order
