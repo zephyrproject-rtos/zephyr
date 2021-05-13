@@ -20,7 +20,8 @@
 
 #ifdef CONFIG_BOARD_QEMU_X86
 unsigned long
-z_eviction_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
+k_mem_paging_eviction_histogram_bounds[
+	CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
 	10000,
 	20000,
 	30000,
