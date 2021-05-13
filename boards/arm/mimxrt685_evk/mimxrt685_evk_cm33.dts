@@ -114,6 +114,10 @@
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+};
+
 &flexcomm0 {
 	compatible = "nxp,lpc-usart";
 	status = "okay";
