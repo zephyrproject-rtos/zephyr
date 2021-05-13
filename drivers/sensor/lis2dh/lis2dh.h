@@ -193,12 +193,8 @@ struct lis2dh_config {
 	int (*bus_init)(const struct device *dev);
 	const union lis2dh_bus_cfg bus_cfg;
 #ifdef CONFIG_LIS2DH_TRIGGER
-	const char *irq1_dev_name;
-	gpio_pin_t irq1_pin;
-	gpio_dt_flags_t irq1_flags;
-	const char *irq2_dev_name;
-	gpio_pin_t irq2_pin;
-	gpio_dt_flags_t irq2_flags;
+	const struct gpio_dt_spec gpio_drdy;
+	const struct gpio_dt_spec gpio_int;
 #endif /* CONFIG_LIS2DH_TRIGGER */
 	bool is_lsm303agr_dev;
 	bool disc_pull_up;
@@ -227,8 +223,6 @@ struct lis2dh_data {
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	const struct device *dev;
-	const struct device *gpio_int1;
-	const struct device *gpio_int2;
 	struct gpio_callback gpio_int1_cb;
 	struct gpio_callback gpio_int2_cb;
 
