@@ -49,7 +49,7 @@ static void pm_work_handler(struct k_work *work)
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND,
 						  device_pm_callback, NULL);
 		} else {
-			goto fsm_out;
+			goto handler_out;
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPEND:
@@ -60,7 +60,7 @@ static void pm_work_handler(struct k_work *work)
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE,
 						  device_pm_callback, NULL);
 		} else {
-			goto fsm_out;
+			goto handler_out;
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPENDING:
@@ -69,13 +69,13 @@ static void pm_work_handler(struct k_work *work)
 		/* Do nothing: We are waiting for device_pm_callback() */
 		break;
 	default:
-		LOG_ERR("Invalid FSM state!!\n");
+		LOG_ERR("Invalid state!!\n");
 	}
 
 	__ASSERT(ret == 0, "Set Power state error");
 	return;
 
-fsm_out:
+handler_out:
 	/*
 	 * This function returns the number of woken threads on success. There
 	 * is nothing we can do with this information. Just ignoring it.
