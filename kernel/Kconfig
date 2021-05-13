@@ -339,6 +339,7 @@ config THREAD_NAME
 config THREAD_MAX_NAME_LEN
 	int "Max length of a thread name"
 	default 32
+	default 64 if ZTEST
 	range 8 128
 	depends on THREAD_NAME
 	help
