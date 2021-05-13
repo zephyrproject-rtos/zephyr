@@ -250,27 +250,22 @@ static inline void _ready_one_thread(_wait_q_t *wq)
 
 static inline void z_sched_lock(void)
 {
-#ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!arch_is_in_isr(), "");
 	__ASSERT(_current->base.sched_locked != 1U, "");
 
 	--_current->base.sched_locked;
 
 	compiler_barrier();
-
-#endif
 }
 
 static ALWAYS_INLINE void z_sched_unlock_no_reschedule(void)
 {
-#ifdef CONFIG_PREEMPT_ENABLED
 	__ASSERT(!arch_is_in_isr(), "");
 	__ASSERT(_current->base.sched_locked != 0U, "");
 
 	compiler_barrier();
 
 	++_current->base.sched_locked;
-#endif
 }
 
 static ALWAYS_INLINE bool z_is_thread_timeout_expired(struct k_thread *thread)

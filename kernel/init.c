@@ -259,7 +259,7 @@ static void init_idle_thread(int i)
 
 	z_setup_new_thread(thread, stack,
 			  CONFIG_IDLE_STACK_SIZE, idle, &_kernel.cpus[i],
-			  NULL, NULL, K_LOWEST_THREAD_PRIO, K_ESSENTIAL,
+			  NULL, NULL, K_IDLE_PRIO, K_ESSENTIAL,
 			  tname);
 	z_mark_thread_as_started(thread);
 
