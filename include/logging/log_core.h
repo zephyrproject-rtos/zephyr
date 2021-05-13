@@ -304,7 +304,8 @@ static inline char z_log_minimal_level_to_char(int level)
 	bool is_user_context = k_is_user_context(); \
 	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 						(_dsource)->filters : 0;\
-	if (!LOG_CHECK_CTX_LVL_FILTER(is_user_context, _level, filters)) { \
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
+	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
@@ -355,7 +356,8 @@ static inline char z_log_minimal_level_to_char(int level)
 					    (const char *)_data, _len);\
 		break; \
 	} \
-	if (!LOG_CHECK_CTX_LVL_FILTER(is_user_context, _level, filters)) { \
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
+	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
@@ -443,15 +445,12 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define LOG_FILTER_FIRST_BACKEND_SLOT_IDX 1
 
-#ifdef CONFIG_LOG_RUNTIME_FILTERING
-#define LOG_CHECK_CTX_LVL_FILTER(ctx, _level, _filter) \
-	(ctx || (_level <= LOG_RUNTIME_FILTER(_filter)))
-#define LOG_RUNTIME_FILTER(_filter) \
+/* Return aggregated (highest) level for all enabled backends, e.g. if there
+ * are 3 active backends, one backend is set to get INF logs from a module and
+ * two other backends are set for ERR, returned level is INF.
+ */
+#define Z_LOG_RUNTIME_FILTER(_filter) \
 	LOG_FILTER_SLOT_GET(&_filter, LOG_FILTER_AGGR_SLOT_IDX)
-#else
-#define LOG_CHECK_CTX_LVL_FILTER(ctx, _level, _filter) ((true) | _filter)
-#define LOG_RUNTIME_FILTER(_filter) LOG_LEVEL_DBG
-#endif
 
 /** @brief Log level value used to indicate log entry that should not be
  *	   formatted (raw string).
@@ -813,7 +812,8 @@ __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 	bool is_user_context = k_is_user_context(); \
 	uint32_t filters = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 						_dsource->filters : 0;\
-	if (!LOG_CHECK_CTX_LVL_FILTER(is_user_context, _level, filters)) { \
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && !is_user_context && \
+	    _level > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	if (IS_ENABLED(CONFIG_LOG2)) { \
