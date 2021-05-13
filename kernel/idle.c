@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  * Sets the kernel data structure idle field to either a positive value or
  * K_FOREVER.
  */
-static void pm_save_idle(void)
+static void pm_save_idle(unsigned int key)
 {
 #ifdef CONFIG_PM
 	int32_t ticks = z_get_next_timeout_expiry();
@@ -42,7 +42,7 @@ static void pm_save_idle(void)
 	 * the kernel's scheduling logic.
 	 */
 	if (pm_system_suspend(ticks) == PM_STATE_ACTIVE) {
-		k_cpu_idle();
+		k_cpu_atomic_idle(key);
 	}
 #endif
 }
@@ -67,6 +67,8 @@ void idle(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused3);
 
 	while (true) {
+		unsigned int key;
+
 		/* SMP systems without a working IPI can't
 		 * actual enter an idle state, because they
 		 * can't be notified of scheduler changes
@@ -87,12 +89,12 @@ void idle(void *unused1, void *unused2, void *unused3)
 		 * unmasked.  It does not take a spinlock or other
 		 * higher level construct.
 		 */
-		(void) arch_irq_lock();
+		key = arch_irq_lock();
 
 		if (IS_ENABLED(CONFIG_PM)) {
-			pm_save_idle();
+			pm_save_idle(key);
 		} else {
-			k_cpu_idle();
+			k_cpu_atomic_idle(key);
 		}
 
 		/* It is possible to (pathologically) configure the
