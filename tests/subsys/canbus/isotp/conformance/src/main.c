@@ -451,7 +451,7 @@ static void test_send_sf_fixed(void)
 		     filter_id);
 
 	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SIZE_SF,
-			 &rx_addr_fixed, &tx_addr_fixed, send_complette_cb,
+			 &tx_addr_fixed, &rx_addr_fixed, send_complette_cb,
 			 ISOTP_N_OK);
 	zassert_equal(ret, 0, "Send returned %d", ret);
 
