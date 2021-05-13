@@ -12,3 +12,4 @@ config I2S_TEST_SEPARATE_DEVICES
 	bool "Use two separate I2S ports for loopback"
 	help
 	  Use separate I2S ports for transmit and receive.
+	  e.g for mimxrt685_evk short JP7-2 to JP8-2
