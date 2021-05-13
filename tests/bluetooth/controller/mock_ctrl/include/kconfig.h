@@ -81,6 +81,52 @@
 
 #define CONFIG_BT_CTLR_LLCP_CONN 4
 
+/*
+ * Direction finding related Kconfig settings
+ */
+
+/* Direction finding non LE Features configs */
+#ifndef CONFIG_BT_CTLR_DF
+#define CONFIG_BT_CTLR_DF y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DF_CTE_TX
+#define CONFIG_BT_CTLR_DF_CTE_TX y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US
+#define CONFIG_BT_CTLR_DF_CTE_RX_SAMPLE_1US y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DF_ANT_SWITCH_1US
+#define CONFIG_BT_CTLR_DF_ANT_SWITCH_1US y
+#endif
+
+/* Direction finding LE Features configs */
+#ifndef CONFIG_BT_CTLR_DF_CONN_CTE_REQ
+#define CONFIG_BT_CTLR_DF_CONN_CTE_REQ y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DF_CONN_CTE_RSP
+#define CONFIG_BT_CTLR_DF_CONN_CTE_RSP y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DF_ANT_SWITCH_TX
+#define CONFIG_BT_CTLR_DF_ANT_SWITCH_TX y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DF_ANT_SWITCH_RX
+#define CONFIG_BT_CTLR_DF_ANT_SWITCH_RX y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DF_CTE_RX
+#define CONFIG_BT_CTLR_DF_CTE_RX y
+#endif
+
+#ifndef CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN
+#define CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN 39
+#endif
+
 /* Kconfig Cheats */
 #define CONFIG_BT_LOG_LEVEL 1
 #define CONFIG_BT_CTLR_COMPANY_ID 0x1234
