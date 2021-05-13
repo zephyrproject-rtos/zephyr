@@ -35,7 +35,8 @@ k_mem_paging_eviction_histogram_bounds[
 };
 
 unsigned long
-z_backing_store_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
+k_mem_paging_backing_store_histogram_bounds[
+	CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
 	10000,
 	50000,
 	100000,
