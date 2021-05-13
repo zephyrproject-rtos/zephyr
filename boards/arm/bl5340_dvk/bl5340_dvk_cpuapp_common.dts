@@ -79,6 +79,13 @@
 		reg = <0x76>;
 		label = "BME680";
 	};
+
+	dac0: mcp4725@60 {
+		compatible = "microchip,mcp4725";
+		reg = <0x60>;
+		label = "dac0";
+		#io-channel-cells = <1>;
+	};
 };
 
 &spi2 {
