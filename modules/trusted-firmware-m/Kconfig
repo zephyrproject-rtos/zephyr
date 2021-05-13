@@ -156,6 +156,16 @@ config TFM_MCUBOOT_IMAGE_NUMBER
 	  updated in one atomic operation. When this is 2, they are split and
 	  can be updated independently if dependency requirements are met.
 
+config CRYPTO_ENGINE_BUF_SIZE
+	hex "Size of heap for TF-M Crypto (Mbed TLS)"
+	default 0x2080
+	help
+	  Static buffer is used by TF-M Crypto (Mbed TLS) for dynamic memory
+	  allocation. This config option defines the size of static buffer. The
+	  default value is based on the default value in TF-M. Look at
+	  'config_default.cmake' in the trusted-firmware-m repository for details
+	  regarding this parameter.
+
 config TFM_PARTITION_PROTECTED_STORAGE
 	bool "Enable secure partition 'Protected Storage'"
 	default y

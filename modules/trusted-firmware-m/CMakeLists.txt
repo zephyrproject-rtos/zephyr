@@ -30,6 +30,7 @@ set(TFM_VALID_PARTITIONS
 # IPC: Build TFM IPC library. This library allows a non-secure application to
 #      interface to secure domain using IPC.
 # ISOLATION_LEVEL: The TF-M isolation level to use
+# TFM_CRYPTO_ENGINE_BUF_SIZE: Size of heap for TF-M Crypto (Mbed TLS)
 # REGRESSION_S: Boolean if TF-M build includes building the secure TF-M
 #               regression tests
 # REGRESSION_NS: Boolean if TF-M build includes building the non-secure
@@ -49,6 +50,7 @@ set(TFM_VALID_PARTITIONS
 #                        CMAKE_BUILD_TYPE Release
 #                        IPC
 #                        ISOLATION_LEVEL 2
+#                        CRYPTO_ENGINE_BUF_SIZE
 #                        REGRESSION_S
 #                        REGRESSION_NS
 #                        BL2
@@ -56,8 +58,8 @@ set(TFM_VALID_PARTITIONS
 #                        ENABLED_PARTITIONS TFM_PARTITION_PLATFORM TFM_PARTITION_CRYPTO)
 function(trusted_firmware_build)
   set(options IPC BL2 REGRESSION_S REGRESSION_NS)
-  set(oneValueArgs BINARY_DIR BOARD ISOLATION_LEVEL CMAKE_BUILD_TYPE BUILD_PROFILE
-    MCUBOOT_IMAGE_NUMBER PSA_TEST_SUITE)
+  set(oneValueArgs BINARY_DIR BOARD ISOLATION_LEVEL CRYPTO_ENGINE_BUF_SIZE
+    CMAKE_BUILD_TYPE BUILD_PROFILE MCUBOOT_IMAGE_NUMBER PSA_TEST_SUITE)
   set(multiValueArgs ENABLED_PARTITIONS)
   cmake_parse_arguments(TFM "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -75,6 +77,10 @@ function(trusted_firmware_build)
     set(TFM_IPC_ARG -DTFM_PSA_API=ON)
     # PSA API awareness for the Non-Secure application
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
+  endif()
+
+  if(TFM_CRYPTO_ENGINE_BUF_SIZE)
+    set(TFM_CRYPTO_ENGINE_BUF_SIZE_ARG -DCRYPTO_ENGINE_BUF_SIZE=${TFM_CRYPTO_ENGINE_BUF_SIZE})
   endif()
 
   if (TFM_REGRESSION_S)
@@ -182,6 +188,7 @@ function(trusted_firmware_build)
       ${MCUBOOT_IMAGE_NUM_ARG}
       ${PSA_TEST_ARG}
       ${TFM_CMAKE_ARGS}
+      ${TFM_CRYPTO_ENGINE_BUF_SIZE_ARG}
       -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
       -DMBEDCRYPTO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../../crypto/mbedtls/mbedtls
       -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mcuboot
@@ -280,6 +287,10 @@ if (CONFIG_BUILD_WITH_TFM)
   if (CONFIG_TFM_PROFILE)
     set(TFM_PROFILE_ARG BUILD_PROFILE ${CONFIG_TFM_PROFILE})
   endif()
+  if (CONFIG_CRYPTO_ENGINE_BUF_SIZE)
+  set(TFM_CRYPTO_ENGINE_BUF_SIZE CRYPTO_ENGINE_BUF_SIZE ${CONFIG_CRYPTO_ENGINE_BUF_SIZE})
+  endif()
+
   if (CONFIG_TFM_PSA_TEST_CRYPTO)
     set(TFM_PSA_TEST_ARG PSA_TEST_SUITE CRYPTO)
   elseif (CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE)
@@ -317,6 +328,7 @@ if (CONFIG_BUILD_WITH_TFM)
     BOARD ${CONFIG_TFM_BOARD}
     ${TFM_ISOLATION_LEVEL_ARG}
     ${TFM_PROFILE_ARG}
+    ${TFM_CRYPTO_ENGINE_BUF_SIZE}
     ${TFM_IMAGE_NUMBER_ARG}
     ${TFM_BL2_ARG}
     ${TFM_IPC_ARG}
