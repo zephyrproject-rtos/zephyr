@@ -206,6 +206,18 @@ void pm_create_device_list(void)
 }
 #endif /* defined(CONFIG_PM) */
 
+int pm_device_none(const struct device *dev, uint32_t ctrl_command,
+		   uint32_t *context, pm_device_cb cb, void *arg)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(ctrl_command);
+	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(arg);
+
+	return -ENOSYS;
+}
+
 const char *pm_device_state_str(uint32_t state)
 {
 	switch (state) {

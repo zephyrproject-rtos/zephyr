@@ -127,6 +127,19 @@ struct pm_device {
 #define PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT 0
 
 /**
+ * @brief Function to be used when devices do not provide power management.
+ *
+ * @param dev Not used
+ * @param ctrl_command Not used
+ * @param context Not used
+ * @param cb Not used
+ * @param arg Not used
+ * @return -ENOSYS
+ */
+int pm_device_none(const struct device *dev, uint32_t ctrl_command,
+		   uint32_t *context, pm_device_cb cb, void *arg);
+
+/**
  * @brief Get name of device PM state
  *
  * @param state State id which name should be returned
