@@ -155,6 +155,17 @@ void sys_port_trace_k_thread_sched_unlock(void)
 	TRACING_STRING("%s\n", __func__);
 }
 
+
+void sys_trace_k_thread_join_blocking(struct k_thread *thread, k_timeout_t timeout)
+{
+	TRACING_STRING("%s %p, timeout: %u\n", __func__, thread, (uint32_t)timeout.ticks);
+}
+
+void sys_trace_k_thread_join_exit(struct k_thread *thread, k_timeout_t timeout, int ret)
+{
+	TRACING_STRING("%s %p, timeout: %u\n", __func__, thread, (uint32_t)timeout.ticks);
+}
+
 void sys_trace_isr_enter(void)
 {
 	TRACING_STRING("%s\n", __func__);
@@ -174,6 +185,49 @@ void sys_trace_idle(void)
 {
 	TRACING_STRING("%s\n", __func__);
 }
+
+void sys_trace_k_condvar_broadcast_enter(struct k_condvar *condvar)
+{
+	TRACING_STRING("%s: %p\n", __func__, condvar);
+}
+
+void sys_trace_k_condvar_broadcast_exit(struct k_condvar *condvar, int ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, condvar);
+}
+
+void sys_trace_k_condvar_init(struct k_condvar *condvar, int ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, condvar);
+}
+
+void sys_trace_k_condvar_signal_enter(struct k_condvar *condvar)
+{
+	TRACING_STRING("%s: %p\n", __func__, condvar);
+}
+
+void sys_trace_k_condvar_signal_blocking(struct k_condvar *condvar)
+{
+	TRACING_STRING("%s: %p\n", __func__, condvar);
+}
+
+void sys_trace_k_condvar_signal_exit(struct k_condvar *condvar, int ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, condvar);
+}
+
+void sys_trace_k_condvar_wait_enter(struct k_condvar *condvar, struct k_mutex *mutex,
+				    k_timeout_t timeout)
+{
+	TRACING_STRING("%s: %p\n", __func__, condvar);
+}
+
+void sys_trace_k_condvar_wait_exit(struct k_condvar *condvar, struct k_mutex *mutex,
+				   k_timeout_t timeout, int ret)
+{
+	TRACING_STRING("%s: %p\n", __func__, condvar);
+}
+
 
 void sys_trace_k_sem_init(struct k_sem *sem, int ret)
 {
