@@ -155,6 +155,8 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 		}
 	}
 
+	__ASSERT((p_idx < arch_mem_domain_max_partitions_get()),
+		"no free partition slots available");
 	__ASSERT(p_idx < max_partitions,
 		 "no free partition slots available");
 
