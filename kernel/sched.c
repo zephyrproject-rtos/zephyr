@@ -53,12 +53,8 @@ static void end_thread(struct k_thread *thread);
 
 static inline int is_preempt(struct k_thread *thread)
 {
-#ifdef CONFIG_PREEMPT_ENABLED
 	/* explanation in kernel_struct.h */
 	return thread->base.preempt <= _PREEMPT_THRESHOLD;
-#else
-	return 0;
-#endif
 }
 
 static inline int is_metairq(struct k_thread *thread)
@@ -151,15 +147,6 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *thread,
 	 * switching to a metairq
 	 */
 	if (is_preempt(_current) || is_metairq(thread)) {
-		return true;
-	}
-
-	/* The idle threads can look "cooperative" if there are no
-	 * preemptible priorities (this is sort of an API glitch).
-	 * They must always be preemptible.
-	 */
-	if (!IS_ENABLED(CONFIG_PREEMPT_ENABLED) &&
-	    z_is_idle_thread_object(_current)) {
 		return true;
 	}
 
@@ -845,7 +832,6 @@ void k_sched_lock(void)
 
 void k_sched_unlock(void)
 {
-#ifdef CONFIG_PREEMPT_ENABLED
 	LOCKED(&sched_spinlock) {
 		__ASSERT(_current->base.sched_locked != 0U, "");
 		__ASSERT(!arch_is_in_isr(), "");
@@ -860,7 +846,6 @@ void k_sched_unlock(void)
 	SYS_PORT_TRACING_FUNC(k_thread, sched_unlock);
 
 	z_reschedule_unlocked();
-#endif
 }
 
 struct k_thread *z_swap_next_thread(void)
@@ -1201,20 +1186,16 @@ void z_impl_k_yield(void)
 
 	SYS_PORT_TRACING_FUNC(k_thread, yield);
 
-	if (!z_is_idle_thread_object(_current)) {
-		k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
-		if (!IS_ENABLED(CONFIG_SMP) ||
-			z_is_thread_queued(_current)) {
-			dequeue_thread(&_kernel.ready_q.runq,
-					_current);
-		}
-		queue_thread(&_kernel.ready_q.runq, _current);
-		update_cache(1);
-		z_swap(&sched_spinlock, key);
-	} else {
-		z_swap_unlocked();
+	if (!IS_ENABLED(CONFIG_SMP) ||
+	    z_is_thread_queued(_current)) {
+		dequeue_thread(&_kernel.ready_q.runq,
+			       _current);
 	}
+	queue_thread(&_kernel.ready_q.runq, _current);
+	update_cache(1);
+	z_swap(&sched_spinlock, key);
 }
 
 #ifdef CONFIG_USERSPACE
