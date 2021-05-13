@@ -28,6 +28,14 @@ LOG_MODULE_REGISTER(adc_stm32);
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <pinmux/pinmux_stm32.h>
 
+#if defined(CONFIG_SOC_SERIES_STM32F3X)
+#if defined(ADC1_V2_5)
+#define STM32F3X_ADC_V2_5
+#elif defined(ADC5_V1_1)
+#define STM32F3X_ADC_V1_1
+#endif
+#endif
+
 #if !defined(CONFIG_SOC_SERIES_STM32F0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32G0X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L0X) && \
@@ -75,7 +83,8 @@ static const uint32_t table_seq_len[] = {
 
 #define RES(n)		LL_ADC_RESOLUTION_##n##B
 static const uint32_t table_resolution[] = {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	defined(STM32F3X_ADC_V2_5)
 	RES(12),
 #elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	RES(6),
@@ -281,6 +290,7 @@ static void adc_stm32_start_conversion(const struct device *dev)
 	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(STM32F3X_ADC_V2_5) && \
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
 static void adc_stm32_calib(const struct device *dev)
 {
@@ -288,7 +298,7 @@ static void adc_stm32_calib(const struct device *dev)
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
 
-#if defined(CONFIG_SOC_SERIES_STM32F3X) || \
+#if defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
@@ -316,7 +326,8 @@ static int start_read(const struct device *dev,
 	int err;
 
 	switch (sequence->resolution) {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	defined(STM32F3X_ADC_V2_5)
 	case 12:
 		resolution = table_resolution[0];
 		break;
@@ -409,7 +420,8 @@ static int start_read(const struct device *dev,
 	LL_ADC_Enable(adc);
 	while (LL_ADC_IsActiveFlag_ADRDY(adc) != 1UL) {
 	}
-#elif !defined(CONFIG_SOC_SERIES_STM32F1X)
+#elif !defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(STM32F3X_ADC_V2_5)
 	LL_ADC_SetResolution(adc, resolution);
 #endif
 
@@ -418,6 +430,7 @@ static int start_read(const struct device *dev,
 	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(STM32F3X_ADC_V2_5) && \
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
 		adc_stm32_calib(dev);
 #else
@@ -427,7 +440,7 @@ static int start_read(const struct device *dev,
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
@@ -437,6 +450,9 @@ static int start_read(const struct device *dev,
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_EnableIT_EOC(adc);
 #elif defined(CONFIG_SOC_SERIES_STM32F1X)
+	LL_ADC_EnableIT_EOS(adc);
+#elif defined(STM32F3X_ADC_V2_5)
+	LL_ADC_Enable(adc);
 	LL_ADC_EnableIT_EOS(adc);
 #else
 	LL_ADC_EnableIT_EOCS(adc);
@@ -674,13 +690,14 @@ static int adc_stm32_init(const struct device *dev)
 	 * mode, and restore its calibration parameters if there are some
 	 * previously stored calibration parameters.
 	 */
+
 	LL_ADC_DisableDeepPowerDown(adc);
 #endif
 	/*
 	 * F3, L4, WB, G0 and G4 ADC modules need some time
 	 * to be stabilized before performing any enable or calibration actions.
 	 */
-#if defined(CONFIG_SOC_SERIES_STM32F3X) || \
+#if defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
@@ -695,7 +712,7 @@ static int adc_stm32_init(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 	LL_ADC_SetClock(adc, LL_ADC_CLOCK_SYNC_PCLK_DIV4);
-#elif defined(CONFIG_SOC_SERIES_STM32F3X) || \
+#elif defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G0X) || \
@@ -712,10 +729,11 @@ static int adc_stm32_init(const struct device *dev)
 	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(STM32F3X_ADC_V2_5) && \
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
 	/*
-	 * Calibration of F1 series has to be started after ADC Module is
-	 * enabled.
+	 * Calibration of F1 and F3 (ADC1_V2_5) series has to be started
+	 * after ADC Module is enabled.
 	 */
 	adc_stm32_calib(dev);
 #endif
@@ -741,7 +759,7 @@ static int adc_stm32_init(const struct device *dev)
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(STM32F3X_ADC_V1_1) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
@@ -795,8 +813,12 @@ static int adc_stm32_init(const struct device *dev)
 
 	config->irq_cfg_func();
 
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-	/* Calibration of F1 must starts after two cycles after ADON is set. */
+#if defined(CONFIG_SOC_SERIES_STM32F1X) || \
+	defined(STM32F3X_ADC_V2_5)
+	/*
+	 * Calibration of F1 and F3 (ADC1_V2_5) must starts after two cycles
+	 * after ADON is set.
+	 */
 	LL_ADC_StartCalibration(adc);
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif
