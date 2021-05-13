@@ -431,7 +431,10 @@ void test_mem_part_assert_add_overmax(void)
 	/* Add one more partition will trigger assert due to exceeding */
 	k_mem_domain_add_partition(&test_domain, &exceed_part);
 
-	/* should not reach here */
+	/* should not reach here but if it does clean up flag before
+	 * indicating failure
+	 */
+	need_recover_spinlock = false;
 	ztest_test_fail();
 }
 
