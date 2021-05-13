@@ -113,10 +113,12 @@
 
 #elif defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
-	defined(CONFIG_BOARD_BL654_DVK)
+	defined(CONFIG_BOARD_BL654_DVK)  || \
+	defined(CONFIG_BOARD_BL5340_DVK_CPUAPP)
 #include <hal/nrf_saadc.h>
  /* DAC output from MCP4725 pin 1
-  * ADC_1 input read from pin SIO_3
+  * On BL65x ADC_1 input is read from pin SIO_3
+  * On BL5340 ADC_1 input is read from pin SIO_5
   * Note external DAC MCP4725 is not populated on BL652_DVK, BL653_DVK and
   * BL654_DVK at factory
   */
@@ -150,7 +152,8 @@ static const struct adc_channel_cfg adc_ch_cfg = {
 
 #if defined(CONFIG_BOARD_BL652_DVK) || \
 	defined(CONFIG_BOARD_BL653_DVK) || \
-	defined(CONFIG_BOARD_BL654_DVK)
+	defined(CONFIG_BOARD_BL654_DVK) || \
+	defined(CONFIG_BOARD_BL5340_DVK_CPUAPP)
 	.input_positive   = ADC_1ST_CHANNEL_INPUT,
 #endif
 };
