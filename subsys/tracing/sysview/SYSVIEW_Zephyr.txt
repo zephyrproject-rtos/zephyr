@@ -165,3 +165,5 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 
 156 pm_system_suspend            ticks=%u | Returns %PowerState
 157 pm_device_request            dev=%I target_state=%DevicePowerState | Returns %u
+158 pm_device_enable             dev=%I
+159 pm_device_disable            dev=%I
