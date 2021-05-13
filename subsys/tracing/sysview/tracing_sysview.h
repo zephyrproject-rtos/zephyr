@@ -152,7 +152,9 @@ extern "C" {
 
 #define TID_PM_SUSPEND (124u + TID_OFFSET)
 #define TID_PM_DEVICE_REQUEST (125u + TID_OFFSET)
-/* latest ID is 125 */
+#define TID_PM_DEVICE_ENABLE (126u + TID_OFFSET)
+#define TID_PM_DEVICE_DISABLE (127u + TID_OFFSET)
+/* latest ID is 127 */
 
 void sys_trace_thread_info(struct k_thread *thread);
 
@@ -756,6 +758,15 @@ void sys_trace_k_thread_info(struct k_thread *thread);
 #define sys_port_trace_pm_device_request_exit(dev, ret) \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_REQUEST, (uint32_t)ret)
 
+#define sys_port_trace_pm_device_enable_enter(dev) \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_ENABLE, (uint32_t)(uintptr_t)dev)
+#define sys_port_trace_pm_device_enable_exit(dev) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_PM_DEVICE_ENABLE)
+
+#define sys_port_trace_pm_device_disable_enter(dev) \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_DEVICE_DISABLE, (uint32_t)(uintptr_t)dev)
+#define sys_port_trace_pm_device_disable_exit(dev) \
+	SEGGER_SYSVIEW_RecordEndCall(TID_PM_DEVICE_DISABLE)
 
 
 #ifdef __cplusplus

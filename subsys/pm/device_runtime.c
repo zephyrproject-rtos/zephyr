@@ -135,7 +135,6 @@ static int pm_device_request(const struct device *dev,
 
 	/* Return in case of Async request */
 	if (pm_flags & PM_DEVICE_ASYNC) {
-		SYS_PORT_TRACING_FUNC_EXIT(pm, device_request, dev, 0);
 		ret = 0;
 		goto out;
 	}
@@ -182,11 +181,13 @@ void pm_device_enable(const struct device *dev)
 {
 	k_spinlock_key_t key;
 
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_enable, dev);
 	if (k_is_pre_kernel()) {
 		dev->pm->dev = dev;
 		dev->pm->enable = true;
 		atomic_set(&dev->pm->state, PM_DEVICE_STATE_SUSPEND);
 		k_work_init_delayable(&dev->pm->work, pm_work_handler);
+		SYS_PORT_TRACING_FUNC_EXIT(pm, device_enable, dev);
 		return;
 	}
 
@@ -205,12 +206,14 @@ void pm_device_enable(const struct device *dev)
 		k_work_schedule(&dev->pm->work, K_NO_WAIT);
 	}
 	k_spin_unlock(&dev->pm->lock, key);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_enable, dev);
 }
 
 void pm_device_disable(const struct device *dev)
 {
 	k_spinlock_key_t key;
 
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_disable, dev);
 	__ASSERT(k_is_pre_kernel() == false, "Device should not be disabled "
 		 "before kernel is initialized");
 
@@ -219,4 +222,5 @@ void pm_device_disable(const struct device *dev)
 	/* Bring up the device before disabling the Idle PM */
 	k_work_schedule(&dev->pm->work, K_NO_WAIT);
 	k_spin_unlock(&dev->pm->lock, key);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_disable, dev);
 }
