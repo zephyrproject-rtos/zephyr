@@ -111,46 +111,46 @@
 #define FEAT_MIN_CHANN 0x00
 #endif
 
-#if defined(CONFIG_MISSING)
-#define FEAT_CTE_REQ 0x20000
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+#define FEAT_CONN_CTE_REQ 0x20000
 #else
-#define FEAT_CTE_REQ 0x00
+#define FEAT_CONN_CTE_REQ 0x00
+#endif
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+#define FEAT_CONN_CTE_RSP 0x40000
+#else
+#define FEAT_CONN_CTE_RSP 0x00
 #endif
 
 #if defined(CONFIG_MISSING)
-#define FEAT_CTE_RSP 0x40000
+#define FEAT_CONNECTIONLESS_CTE_TX 0x80000
 #else
-#define FEAT_CTE_RSP 0x00
+#define FEAT_CONNECTIONLESS_CTE_TX 0x00
 #endif
 
 #if defined(CONFIG_MISSING)
-#define FEAT_CTE_TX 0x80000
+#define FEAT_CONNECTIONLESS_CTE_RX 0x100000
 #else
-#define FEAT_CTE_TX 0x00
+#define FEAT_CONNECTIONLESS_CTE_RX 0x00
 #endif
 
-#if defined(CONFIG_MISSING)
-#define FEAT_CTE_RX 0x100000
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)
+#define FEAT_ANT_SWITCH_CTE_TX 0x200000
 #else
-#define FEAT_CTE_RX 0x00
+#define FEAT_ANT_SWITCH_CTE_TX 0x00
 #endif
 
-#if defined(CONFIG_MISSING)
-#define FEAT_ANT_SW_CTE_TX 0x200000
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
+#define FEAT_ANT_SWITCH_CTE_RX 0x400000
 #else
-#define FEAT_ANT_SW_CTE_TX 0x00
+#define FEAT_ANT_SWITCH_CTE_RX 0x00
 #endif
 
-#if defined(CONFIG_MISSING)
-#define FEAT_ANT_SW_CTE_RX 0x400000
+#if defined(CONFIG_BT_CTLR_DF_CTE_RX)
+#define FEAT_RX_CTE 0x800000
 #else
-#define FEAT_ANT_SW_CTE_RX 0x00
-#endif
-
-#if defined(CONFIG_MISSING)
-#define FEAT_TONE_EXT 0x800000
-#else
-#define FEAT_TONE_EXT 0x00
+#define FEAT_RX_CTE 0x00
 #endif
 
 #if defined(CONFIG_MISSING)
