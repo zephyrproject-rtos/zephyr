@@ -40,7 +40,7 @@ static void nru_periodic_update(struct k_timer *timer)
 	irq_unlock(key);
 }
 
-struct z_page_frame *z_eviction_select(bool *dirty_ptr)
+struct z_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 {
 	unsigned int last_prec = 4U;
 	struct z_page_frame *last_pf = NULL, *pf;
@@ -89,7 +89,7 @@ struct z_page_frame *z_eviction_select(bool *dirty_ptr)
 
 static K_TIMER_DEFINE(nru_timer, nru_periodic_update, NULL);
 
-void z_eviction_init(void)
+void k_mem_paging_eviction_init(void)
 {
 	k_timer_start(&nru_timer, K_NO_WAIT,
 		      K_MSEC(CONFIG_EVICTION_NRU_PERIOD));

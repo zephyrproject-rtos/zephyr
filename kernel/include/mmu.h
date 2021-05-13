@@ -231,34 +231,6 @@ extern size_t z_free_page_count;
 
 #ifdef CONFIG_DEMAND_PAGING
 /*
- * Eviction algorihm APIs
- */
-
-/**
- * Select a page frame for eviction
- *
- * The kernel will invoke this to choose a page frame to evict if there
- * are no free page frames.
- *
- * This function will never be called before the initial z_eviction_init().
- *
- * This function is invoked with interrupts locked.
- *
- * @param [out] Whether the page to evict is dirty
- * @return The page frame to evict
- */
-struct z_page_frame *z_eviction_select(bool *dirty);
-
-/**
- * Initialization function
- *
- * Called at POST_KERNEL to perform any necessary initialization tasks for the
- * eviction algorithm. z_eviction_select() is guaranteed to never be called
- * until this has returned, and this will only be called once.
- */
-void z_eviction_init(void);
-
-/*
  * Backing store APIs
  */
 
