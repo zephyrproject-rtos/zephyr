@@ -232,13 +232,9 @@ static const struct led_pwm_config led_pwm_config_##id = {	\
 								\
 static struct led_pwm_data led_pwm_data_##id;			\
 								\
-DEVICE_DEFINE(led_pwm_##id,					\
-		    DT_INST_PROP_OR(id, label, "LED_PWM_"#id),	\
-		    &led_pwm_init,				\
-		    led_pwm_pm_control,				\
-		    &led_pwm_data_##id,				\
-		    &led_pwm_config_##id,			\
-		    POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
-		    &led_pwm_api);
+DEVICE_DT_INST_DEFINE(id, &led_pwm_init, led_pwm_pm_control,	\
+		      &led_pwm_data_##id, &led_pwm_config_##id,	\
+		      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
+		      &led_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_PWM_DEVICE)
