@@ -93,9 +93,17 @@ void z_arm_init_arch_hw_at_boot(void)
 	}
 
 #if defined(CONFIG_CPU_CORTEX_M7)
-	/* Reset Cache settings */
-	SCB_CleanInvalidateDCache();
-	SCB_DisableDCache();
+	/* Reset D-Cache settings. If the D-Cache was enabled,
+	 * SCB_DisableDCache() takes care of cleaning and invalidating it.
+	 * If it was already disabled, just call SCB_InvalidateDCache() to
+	 * reset it to a known clean state.
+	 */
+	if (SCB->CCR & SCB_CCR_DC_Msk) {
+		SCB_DisableDCache();
+	} else {
+		SCB_InvalidateDCache();
+	}
+	/* Reset I-Cache settings. */
 	SCB_DisableICache();
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
