@@ -38,6 +38,11 @@ static int cmd_i2c_scan(const struct shell *shell,
 	const struct device *dev;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;
 
+	if (argc < 2) {
+		LOG_ERR("no I2C device informed.");
+		return -EINVAL;
+	}
+
 	dev = device_get_binding(argv[1]);
 
 	if (!dev) {
@@ -86,6 +91,11 @@ static int cmd_i2c_recover(const struct shell *shell,
 	const struct device *dev;
 	int err;
 
+	if (argc < 2) {
+		LOG_ERR("no I2C device informed.");
+		return -EINVAL;
+	}
+
 	dev = device_get_binding(argv[1]);
 	if (!dev) {
 		shell_error(shell, "I2C: Device driver %s not found.", argv[1]);
@@ -110,6 +120,11 @@ static int cmd_i2c_write(const struct shell *shell, size_t argc, char **argv)
 	int reg_addr;
 	int dev_addr;
 	int i;
+
+	if (argc < 2) {
+		LOG_ERR("no I2C device informed.");
+		return -EINVAL;
+	}
 
 	dev = device_get_binding(argv[1]);
 	if (!dev) {
@@ -146,6 +161,11 @@ static int cmd_i2c_write_byte(const struct shell *shell,
 	int dev_addr;
 	int out_byte;
 
+	if (argc < 2) {
+		LOG_ERR("no I2C device informed.");
+		return -EINVAL;
+	}
+
 	dev = device_get_binding(argv[1]);
 	if (!dev) {
 		shell_error(shell, "I2C: Device driver %s not found.",
@@ -172,6 +192,11 @@ static int cmd_i2c_read_byte(const struct shell *shell,
 	int reg_addr;
 	int dev_addr;
 	uint8_t out;
+
+	if (argc < 2) {
+		LOG_ERR("no I2C device informed.");
+		return -EINVAL;
+	}
 
 	dev = device_get_binding(argv[1]);
 	if (!dev) {
@@ -201,6 +226,11 @@ static int cmd_i2c_read(const struct shell *shell, size_t argc, char **argv)
 	int num_bytes;
 	int reg_addr;
 	int dev_addr;
+
+	if (argc < 2) {
+		LOG_ERR("no I2C device informed.");
+		return -EINVAL;
+	}
 
 	dev = device_get_binding(argv[1]);
 	if (!dev) {
