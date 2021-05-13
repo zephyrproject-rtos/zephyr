@@ -17,6 +17,9 @@ NamedType ErrCodeNetIO  *=%i 0=ESUCCESS -68=EINPROGRESS -69=EALREADY    -11=EWOU
 NamedType ErrCodeStream *=%i 0=ESUCCESS -74=ENOSR       -75=ENOSTR      -76=EPROTO       -77=EBADMSG         -78=ENODATA         -79=ETIME      -80=ENOMSG      -138=EILSEQ
 NamedType ErrCodeMsg    *=%i 0=ESUCCESS -11=EAGAIN      -80=ENOMSG
 
+NamedType PowerState *=%i 0=ACTIVE 1=RUNTIME_IDLE 2=SUSPEND_TO_IDLE 3=STANDBY 4=SUSPEND_TO_RAM 5=SUSPEND_TO_DISK 6=SOFT_OFF
+NamedType DevicePowerState *=%i 1=ACTIVE 2=LOW_POWER 3=SUSPEND 4=FORCE_SUSPEND 5=OFF 6=RESUMING 7=SUSPENDING
+
 #
 # Task States
 #
@@ -104,7 +107,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 98  k_thread_priority_set      thread=%t, priority=%u
 99  k_thread_wakeup
 100 k_thread_abort
-101 k_thread_start
+101 k_thread_start             thread=%t
 102 k_thread_suspend
 103 k_thread_resume
 104 k_thread_join
@@ -112,11 +115,11 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 106 k_thread_usermode_enter
 107 k_thread_foreach
 108 k_thread_foreach_unlocked
-155 k_thread_name_set           thread=%T
+155 k_thread_name_set           thread=%I
 
 109 k_condvar_init              condvar=%I
 110 k_condvar_signal            condvar=%I
-111 k_condvat_broadcast         condvar=%I
+111 k_condvar_broadcast         condvar=%I
 112 k_condvar_wait              condvar=%I
 
 
@@ -158,3 +161,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 152 k_lifo_put                   lifo=%I
 153 k_lifo_get                   lifo=%I, Timeout=%TimeOut
 154 k_lifo_alloc_put             lifo=%I, data=%I
+
+
+156 pm_system_suspend            ticks=%u | Returns %PowerState
+157 pm_device_request            dev=%I target_state=%DevicePowerState | Returns %u

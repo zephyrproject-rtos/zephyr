@@ -11,6 +11,17 @@
 #if defined CONFIG_PERCEPIO_TRACERECORDER
 #include "tracing_tracerecorder.h"
 
+/* Wait for those to be implemented by Tracealyzer */
+#define sys_port_trace_pm_system_suspend_enter(ticks)
+#define sys_port_trace_pm_system_suspend_exit(ticks, ret)
+#define sys_port_trace_pm_device_request_enter(dev, target_state)
+#define sys_port_trace_pm_device_request_exit(dev, ret)
+
+#define sys_port_trace_pm_device_enable_enter(dev)
+#define sys_port_trace_pm_device_enable_exit(dev)
+#define sys_port_trace_pm_device_disable_enter(dev)
+#define sys_port_trace_pm_device_disable_exit(dev)
+
 #elif defined CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
 

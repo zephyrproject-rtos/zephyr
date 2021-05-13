@@ -149,7 +149,10 @@ extern "C" {
 #define TID_LIFO_GET (121u + TID_OFFSET)
 #define TID_LIFO_ALLOC_PUT (122u + TID_OFFSET)
 
-/* latest ID is 123 */
+
+#define TID_PM_SUSPEND (124u + TID_OFFSET)
+#define TID_PM_DEVICE_REQUEST (125u + TID_OFFSET)
+/* latest ID is 125 */
 
 void sys_trace_thread_info(struct k_thread *thread);
 
@@ -181,7 +184,7 @@ void sys_trace_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_THREAD_JOIN, (int32_t)ret)
 
 #define sys_port_trace_k_thread_sleep_enter(timeout)                                               \
-	SEGGER_SYSVIEW_RecordU32(TID_SLEEP, (uint32_t)timeout.ticks)
+	SEGGER_SYSVIEW_RecordU32(TID_SLEEP, (uint32_t)k_ticks_to_ms_floor32(timeout.ticks))
 
 #define sys_port_trace_k_thread_sleep_exit(timeout, ret)                                           \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_SLEEP, (int32_t)ret)
@@ -228,8 +231,10 @@ void sys_trace_thread_info(struct k_thread *thread);
 
 #define sys_port_trace_k_thread_sched_unlock()
 
-#define sys_port_trace_k_thread_name_set(thread, ret) \
-	SEGGER_SYSVIEW_RecordU32(TID_THREAD_NAME_SET, (uint32_t)(uintptr_t)thread)
+#define sys_port_trace_k_thread_name_set(thread, ret) do { \
+		SEGGER_SYSVIEW_RecordU32(TID_THREAD_NAME_SET, (uint32_t)(uintptr_t)thread); \
+		sys_trace_thread_info(thread);	\
+	} while (0)
 
 #define sys_port_trace_k_thread_switched_out() sys_trace_k_thread_switched_out()
 
@@ -738,6 +743,20 @@ void sys_trace_k_thread_switched_in(void);
 void sys_trace_k_thread_ready(struct k_thread *thread);
 void sys_trace_k_thread_pend(struct k_thread *thread);
 void sys_trace_k_thread_info(struct k_thread *thread);
+
+
+
+#define sys_port_trace_pm_system_suspend_enter(ticks) \
+	SEGGER_SYSVIEW_RecordU32(TID_PM_SUSPEND, (uint32_t)ticks)
+#define sys_port_trace_pm_system_suspend_exit(ticks, ret) \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_SUSPEND, (uint32_t)ret)
+
+#define sys_port_trace_pm_device_request_enter(dev, target_state) \
+	SEGGER_SYSVIEW_RecordU32x2(TID_PM_DEVICE_REQUEST, (uint32_t)(uintptr_t)dev, target_state)
+#define sys_port_trace_pm_device_request_exit(dev, ret) \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_PM_DEVICE_REQUEST, (uint32_t)ret)
+
+
 
 #ifdef __cplusplus
 }
