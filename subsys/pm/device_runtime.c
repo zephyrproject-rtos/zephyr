@@ -87,18 +87,22 @@ static int pm_device_request(const struct device *dev,
 			     uint32_t target_state, uint32_t pm_flags)
 {
 	struct k_mutex request_mutex;
+	int ret;
 
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, target_state);
 	__ASSERT((target_state == PM_DEVICE_STATE_ACTIVE) ||
 			(target_state == PM_DEVICE_STATE_SUSPEND),
 			"Invalid device PM state requested");
 
 	if (target_state == PM_DEVICE_STATE_ACTIVE) {
 		if (atomic_inc(&dev->pm->usage) < 0) {
-			return 0;
+			ret = 0;
+			goto out;
 		}
 	} else {
 		if (atomic_dec(&dev->pm->usage) > 1) {
-			return 0;
+			ret = 0;
+			goto out;
 		}
 	}
 
@@ -123,15 +127,17 @@ static int pm_device_request(const struct device *dev,
 						  PM_DEVICE_STATE_SUSPEND,
 						  NULL, NULL);
 		}
-
-		return 0;
+		ret = 0;
+		goto out;
 	}
 
 	(void)k_work_schedule(&dev->pm->work, K_NO_WAIT);
 
 	/* Return in case of Async request */
 	if (pm_flags & PM_DEVICE_ASYNC) {
-		return 0;
+		SYS_PORT_TRACING_FUNC_EXIT(pm, device_request, dev, 0);
+		ret = 0;
+		goto out;
 	}
 
 	k_mutex_init(&request_mutex);
@@ -144,7 +150,10 @@ static int pm_device_request(const struct device *dev,
 	 * may not have been properly changed to the target_state or another
 	 * thread we check it here before returning.
 	 */
-	return target_state == atomic_get(&dev->pm->state) ? 0 : -EIO;
+	ret = target_state == atomic_get(&dev->pm->state) ? 0 : -EIO;
+out:
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_request, dev, ret);
+	return ret;
 }
 
 int pm_device_get(const struct device *dev)
