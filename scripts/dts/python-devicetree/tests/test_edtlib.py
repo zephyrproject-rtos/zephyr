@@ -498,6 +498,24 @@ def test_slice_errs(tmp_path):
                  dts_file,
                  f"'ranges' property in <Node /sub-1 in '{dts_file}'> has length 8, which is not evenly divisible by 24 (= 4*(<#address-cells> (= 2) + <#address-cells for parent> (= 1) + <#size-cells> (= 3))). Note that #*-cells properties come either from the parent node or from the controller (in the case of 'interrupts').")
 
+def test_bad_compatible(tmp_path):
+    # An invalid compatible should cause an error, even on a node with
+    # no binding.
+
+    dts_file = tmp_path / "error.dts"
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	foo {
+		compatible = "no, whitespace";
+	};
+};
+""",
+                 dts_file,
+                 r"node '/foo' compatible 'no, whitespace' must match this regular expression: '^[a-zA-Z][a-zA-Z0-9,+\-._]+$'")
+
 def verify_error(dts, dts_file, expected_err):
     # Verifies that parsing a file 'dts_file' with the contents 'dts'
     # (a string) raises an EDTError with the message 'expected_err'.
