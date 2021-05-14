@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BQ34110
+	bool "BQ34110 Fuel Gauge"
+	depends on I2C
+	help
+	  Enable I2C-based driver for BQ34110 Fuel Gauge.

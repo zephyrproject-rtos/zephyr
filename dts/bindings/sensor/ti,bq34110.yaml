@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2021 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Texas Instruments BQ34110 Fuel Gauge
+
+compatible: "ti,bq34110"
+
+include: i2c-device.yaml
+
+properties:
+    design-voltage:
+      type: int
+      required: true
+      description: Battery Design Voltage in mV
+
+    design-capacity:
+      type: int
+      required: true
+      description: Battery Design Capacity in mAh
+
+    taper-current:
+      type: int
+      required: true
+      description: Battery Taper Current in mAh
+
+    taper-voltage:
+      type: int
+      required: true
+      description: Battery Taper Voltage in mV

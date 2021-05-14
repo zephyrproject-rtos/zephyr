@@ -1,0 +1,9 @@
+sample:
+  description: Demonstration of the BQ34110 Fuel gauge Sensor driver
+  name: BQ34110 Sample
+tests:
+  sample.sensor.bq34110:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c gpio
+    platform_allow: frdm_k64f
