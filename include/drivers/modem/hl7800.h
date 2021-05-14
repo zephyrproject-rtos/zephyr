@@ -60,6 +60,10 @@ struct mdm_hl7800_apn {
 #define MDM_HL7800_OPERATOR_INDEX_SIZE 3
 #define MDM_HL7800_OPERATOR_INDEX_STRLEN (MDM_HL7800_OPERATOR_INDEX_SIZE - 1)
 
+#define MDM_HL7800_IMSI_MIN_STR_SIZE 15
+#define MDM_HL7800_IMSI_MAX_STR_SIZE 16
+#define MDM_HL7800_IMSI_MAX_STRLEN (MDM_HL7800_IMSI_MAX_STR_SIZE - 1)
+
 struct mdm_hl7800_site_survey {
 	uint32_t tower_id;
 	uint32_t cell_id;
@@ -214,6 +218,12 @@ char *mdm_hl7800_get_imei(void);
  *
  */
 char *mdm_hl7800_get_fw_version(void);
+
+/**
+ * @brief Get the IMSI
+ *
+ */
+char *mdm_hl7800_get_imsi(void);
 
 /**
  * @brief Update the Access Point Name in the modem.
