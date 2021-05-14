@@ -268,6 +268,8 @@ static void test_ibecc_error_inject_test_uc(void)
 }
 #endif
 
+void test_edac_dummy_api(void);
+
 void test_main(void)
 {
 #if defined(CONFIG_USERSPACE)
@@ -277,6 +279,7 @@ void test_main(void)
 	ztest_test_suite(ibecc,
 			 ztest_unit_test(test_ibecc_initialized),
 			 ztest_unit_test(test_ibecc_api),
+			 ztest_unit_test(test_edac_dummy_api),
 			 ztest_unit_test(test_ibecc_error_inject_api),
 			 ztest_unit_test(test_ibecc_error_inject_test_cor),
 			 ztest_unit_test(test_ibecc_error_inject_test_uc)
