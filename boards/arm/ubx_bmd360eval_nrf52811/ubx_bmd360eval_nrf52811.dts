@@ -9,7 +9,7 @@
 
 / {
 	model = "u-blox BMD-360-EVAL EVK nRF52811";
-	compatible = "u-blox, ubx_bmd360eval_nrf52811";
+	compatible = "u-blox,ubx-bmd360eval-nrf52811";
 
 	chosen {
 		zephyr,console = &uart0;
