@@ -11,7 +11,7 @@ The Bluetooth mesh shell interface provides access to most Bluetooth mesh featur
 Prerequisites
 *************
 
-The Bluetooth mesh shell subsystem depends on the :ref:`bluetooth_mesh_models_cfg_cli` and :ref:`bluetooth_mesh_models_health_cli` models.
+The Bluetooth mesh shell subsystem depends on the application to create the composition data and do the mesh initialization.
 
 Application
 ***********
@@ -125,7 +125,7 @@ General configuration
 ``mesh init``
 -------------
 
-	Initialize the mesh. This command must be run before any other mesh command.
+	Initialize the mesh shell. This command must be run before any other mesh command.
 
 
 ``mesh reset <addr>``
@@ -298,7 +298,7 @@ Provisioning
 Configuration Client model
 ==========================
 
-The Bluetooth mesh shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
+The Configuration Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_CFG_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
 
 The Configuration Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Configuration Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Configuration Client model targets the new node. The Configuration Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
@@ -583,7 +583,7 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 Health Client model
 ===================
 
-The Bluetooth mesh shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
+The Health Client model is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_HEALTH_CLI` configuration option. If included, the Bluetooth mesh shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
 
 The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
