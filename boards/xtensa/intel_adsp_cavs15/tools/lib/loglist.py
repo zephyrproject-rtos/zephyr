@@ -51,6 +51,6 @@ class Loglist:
         for pair in sorted(self.loglist):
             if self.debug:
                 # Add slot number when debug is enabled
-                print('[{}] : {}'.format(*pair), end='')
+                print('{{[{}] : {}}};  '.format(*pair), end='')
             else:
                 print('{}'.format(pair[1]), end='')
