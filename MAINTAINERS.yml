@@ -1411,6 +1411,30 @@ Espressif Platforms:
     labels:
         - "platform: ESP32"
 
+ITE Platforms:
+    status: maintained
+    maintainers:
+        - Dino-Li
+        - GTLin08
+        - RuibinChang
+    collaborators:
+        - Dino-Li
+        - GTLin08
+        - RuibinChang
+        - jackrosenthal
+        - keith-zephyr
+        - brockus-zephyr
+        - yperess
+        - sjg20
+    files:
+        - boards/riscv/it8xxx2_evb/
+        - drivers/*/*_ite*
+        - dts/bindings/*/*ite*
+        - dts/riscv/it8xxx2.dtsi
+        - soc/riscv/riscv-ite/
+    labels:
+        - "platform: ITE"
+
 Storage:
     status: maintained
     maintainers:
