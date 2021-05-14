@@ -1,4 +1,5 @@
 # Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2021 G-Technologies Sdn. Bhd.
 # SPDX-License-Identifier: Apache-2.0
 
 config MODEM_GSM_PPP
@@ -61,6 +62,14 @@ config GSM_PPP_AUTOSTART
 	  boot. Unselect this if you want to run application code before
 	  modem connects to network. See contents of "drivers/gsm_ppp.h"
 	  to get an idea of the API.
+
+config MODEM_GSM_REGISTER_TIMEOUT
+	int "Timeout for registering to cell tower"
+	default 60
+	help
+	  Before attaching to packet service, the cell tower registration is
+	  checked using AT+CREG. This setting dictates how much time in seconds
+	  we give the modem before giving up.
 
 config MODEM_GSM_ATTACH_TIMEOUT
 	int "Timeout for attaching to packet service"
