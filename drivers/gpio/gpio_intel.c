@@ -528,7 +528,29 @@ int gpio_intel_init(const struct device *dev)
 {
 	struct gpio_intel_data *data = dev->data;
 
+#ifdef CONFIG_SOC_APOLLO_LAKE
+	/*
+	 * On Apollo Lake, each GPIO controller has more than 32 pins.
+	 * But Zephyr API can only manipulate 32 pins per controller.
+	 * So the workaround is to divide each hardware GPIO controller
+	 * into 32-pin blocks so each block has a GPIO driver instance.
+	 * Compounding to the issue is that there cannot be two device
+	 * tree nodes with same register address. So another workaround
+	 * is to increment the register addresses by 1 for each block.
+	 * So when mapping the address, the lowest 8-bit needs to be
+	 * masked to get the actual hardware address. Hence the weird
+	 * code below.
+	 */
+
+	const struct gpio_intel_config *cfg = dev->config;
+
+	device_map(&data->reg_base,
+		   cfg->reg_base.phys_addr & ~0xFFU,
+		   cfg->reg_base.size,
+		   K_MEM_CACHE_NONE);
+#else
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE);
+#endif
 	data->pad_base = pad_base(dev);
 
 	__ASSERT(nr_isr_devs < GPIO_INTEL_NR_SUBDEVS, "too many subdevs");
