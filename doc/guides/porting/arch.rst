@@ -369,27 +369,6 @@ Cortex-M has the SYSTICK exception. Finally, ARCv2 has the timer0/1 device.
 Kernel timeouts are handled in the context of the system clock timer driver's
 interrupt handler.
 
-Tickless Idle
--------------
-
-The kernel has support for tickless idle. Tickless idle is the concept where no
-system clock timer interrupt is to be delivered to the CPU when the kernel is
-about to go idle and the closest timeout expiry is passed a certain threshold.
-When this condition happens, the system clock is reprogrammed far in the future
-instead of for a periodic tick. For this to work, the system clock timer driver
-must support it.
-
-Tickless idle is optional but strongly recommended to achieve low-power
-consumption.
-
-The kernel has built-in support for going into tickless idle.
-
-The system clock timer driver must implement some hooks to support tickless
-idle. See existing drivers for examples.
-
-The interrupt entry stub (:code:`_interrupt_enter`, :code:`_isr_wrapper`) needs
-to be adapted to handle exiting tickless idle. See examples in the code for
-existing architectures.
 
 Console Over Serial Line
 ========================
