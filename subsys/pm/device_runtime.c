@@ -39,13 +39,15 @@ static void pm_work_handler(struct k_work *work)
 					struct pm_device, work);
 	const struct device *dev = pm->dev;
 	int ret = 0;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&dev->pm->lock);
 
 	switch (atomic_get(&dev->pm->state)) {
 	case PM_DEVICE_STATE_ACTIVE:
-		if ((atomic_get(&dev->pm->usage) == 0) &&
-					dev->pm->enable) {
+		if ((dev->pm->usage == 0) && dev->pm->enable) {
 			atomic_set(&dev->pm->state,
-				   PM_DEVICE_STATE_SUSPENDING);
+					PM_DEVICE_STATE_SUSPENDING);
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND,
 						  device_pm_callback, NULL);
 		} else {
@@ -53,10 +55,9 @@ static void pm_work_handler(struct k_work *work)
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPEND:
-		if ((atomic_get(&dev->pm->usage) > 0) ||
-					!dev->pm->enable) {
+		if ((dev->pm->usage > 0) || !dev->pm->enable) {
 			atomic_set(&dev->pm->state,
-				   PM_DEVICE_STATE_RESUMING);
+					PM_DEVICE_STATE_RESUMING);
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE,
 						  device_pm_callback, NULL);
 		} else {
@@ -73,7 +74,7 @@ static void pm_work_handler(struct k_work *work)
 	}
 
 	__ASSERT(ret == 0, "Set Power state error");
-	return;
+	goto end;
 
 handler_out:
 	/*
@@ -81,32 +82,29 @@ handler_out:
 	 * is nothing we can do with this information. Just ignoring it.
 	 */
 	(void)k_condvar_broadcast(&dev->pm->condvar);
+end:
+	k_spin_unlock(&dev->pm->lock, key);
 }
 
 static int pm_device_request(const struct device *dev,
 			     uint32_t target_state, uint32_t pm_flags)
 {
+	int ret = 0;
+	k_spinlock_key_t key;
 	struct k_mutex request_mutex;
-	int ret;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, target_state);
 	__ASSERT((target_state == PM_DEVICE_STATE_ACTIVE) ||
 			(target_state == PM_DEVICE_STATE_SUSPEND),
 			"Invalid device PM state requested");
 
-	if (target_state == PM_DEVICE_STATE_ACTIVE) {
-		if (atomic_inc(&dev->pm->usage) < 0) {
-			ret = 0;
-			goto out;
-		}
-	} else {
-		if (atomic_dec(&dev->pm->usage) > 1) {
-			ret = 0;
-			goto out;
-		}
-	}
-
 	if (k_is_pre_kernel()) {
+		if (target_state == PM_DEVICE_STATE_ACTIVE) {
+			dev->pm->usage++;
+		} else {
+			dev->pm->usage--;
+		}
+
 		/* If we are being called before the kernel was initialized
 		 * we can assume that the system took care of initialized
 		 * devices properly. It means that all dependencies were
@@ -127,18 +125,36 @@ static int pm_device_request(const struct device *dev,
 						  PM_DEVICE_STATE_SUSPEND,
 						  NULL, NULL);
 		}
-		ret = 0;
 		goto out;
+	}
+
+	key = k_spin_lock(&dev->pm->lock);
+
+	if (!dev->pm->enable) {
+		ret = -ENOTSUP;
+		goto out_unlock;
+	}
+
+	if (target_state == PM_DEVICE_STATE_ACTIVE) {
+		dev->pm->usage++;
+		if (dev->pm->usage < 0) {
+			goto out_unlock;
+		}
+	} else {
+		dev->pm->usage--;
+		if (dev->pm->usage > 1) {
+			goto out_unlock;
+		}
 	}
 
 	(void)k_work_schedule(&dev->pm->work, K_NO_WAIT);
 
 	/* Return in case of Async request */
 	if (pm_flags & PM_DEVICE_ASYNC) {
-		ret = 0;
-		goto out;
+		goto out_unlock;
 	}
 
+	k_spin_unlock(&dev->pm->lock, key);
 	k_mutex_init(&request_mutex);
 	k_mutex_lock(&request_mutex, K_FOREVER);
 	(void)k_condvar_wait(&dev->pm->condvar, &request_mutex, K_FOREVER);
@@ -150,6 +166,10 @@ static int pm_device_request(const struct device *dev,
 	 * thread we check it here before returning.
 	 */
 	ret = target_state == atomic_get(&dev->pm->state) ? 0 : -EIO;
+	goto out;
+
+out_unlock:
+	k_spin_unlock(&dev->pm->lock, key);
 out:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_request, dev, ret);
 	return ret;
