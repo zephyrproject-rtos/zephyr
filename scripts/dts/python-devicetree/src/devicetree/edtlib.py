@@ -475,6 +475,30 @@ class EDT:
                         'in lowercase: ' +
                         ', '.join(repr(x) for x in spec.enum))
 
+        # Validate the contents of compatible properties.
+        # The regular expression comes from dt-schema.
+        compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
+        for node in self.nodes:
+            if 'compatible' not in node.props:
+                continue
+
+            compatibles = node.props['compatible'].val
+
+            # _check() runs after _init_compat2binding() has called
+            # _dt_compats(), which already converted every compatible
+            # property to a list of strings. So we know 'compatibles'
+            # is a list, but add an assert for future-proofing.
+            assert isinstance(compatibles, list)
+
+            for compat in compatibles:
+                # This is also just for future-proofing.
+                assert isinstance(compat, str)
+
+                if not re.match(compat_re, compat):
+                    _err(f"node '{node.path}' compatible '{compat}' "
+                         'must match this regular expression: '
+                         f"'{compat_re}'")
+
 class Node:
     """
     Represents a devicetree node, augmented with information from bindings, and
