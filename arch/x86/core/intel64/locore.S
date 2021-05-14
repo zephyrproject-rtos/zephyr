@@ -78,14 +78,40 @@
 	movq %rax, %cr0
 .endm
 
+/* The .locore section begins the page-aligned initialization region
+ * of low memory.  The first address is used as the architectural
+ * entry point for auxiliary CPUs being brought up (in real mode!)
+ * via a startup IPI.  It's is ALSO used by some loaders (well,
+ * ACRN...) who hard-coded the address by inspecting _start on a
+ * non-SMP build.
+ *
+ *               === OUTRAGEOUS HACK FOLLOWS ===
+ *
+ * Therefore it needs to start at OS entry with a 32 bit jump to the
+ * 32 bit entry point, and gets clobbered later (see the beginning of
+ * __start32) with NOP bytes such that the next CPU will fall through
+ * to the 16 bit SMP entry.
+ *
+ * We write out the JMP followed by 8 NOPs for simplicity.  No i386
+ * JMP encodes with more than 8 bytes, so we can come back later and
+ * scribble over it with 8 0x90 bytes (which is the 1-byte NOP) and be
+ * sure to get all of it without overwriting anything.
+ */
 .section .locore,"ax"
+.code32
+.globl __start
+__start:
+	jmp __start32
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
 
 #if CONFIG_MP_NUM_CPUS > 1
-
-	/*
-	 * APs are sent here on startup, in real mode. This
-	 * is first because we want it on a page boundary.
-	 */
 
 .code16
 .global x86_ap_start
@@ -133,13 +159,24 @@ unknown_loapic_id:
 #endif /* CONFIG_MP_NUM_CPUS > 1 */
 
 .code32
-.globl __start
-__start:
+.globl __start32
+__start32:
 	/*
 	 * kernel execution begins here in 32-bit mode, with flat-mode
 	 * descriptors in all segment registers, interrupts disabled.
-	 * first, let common code do things like detect multiboot info.
 	 */
+
+	/* See note above, re: OUTRAGEOUS HACK */
+	movl $__start, %ebp
+	movb $0x90, 0(%ebp)
+	movb $0x90, 1(%ebp)
+	movb $0x90, 2(%ebp)
+	movb $0x90, 3(%ebp)
+	movb $0x90, 4(%ebp)
+	movb $0x90, 5(%ebp)
+	movb $0x90, 6(%ebp)
+	movb $0x90, 7(%ebp)
+	wbinvd
 
 	lgdt gdt48
 	lidt idt48
