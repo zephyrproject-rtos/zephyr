@@ -717,8 +717,6 @@ config BT_MESH_HEALTH_CLI
 config BT_MESH_SHELL
 	bool "Enable Bluetooth mesh shell"
 	select SHELL
-	depends on BT_MESH_CFG_CLI
-	depends on BT_MESH_HEALTH_CLI
 	help
 	  Activate shell module that provides Bluetooth mesh commands to
 	  the console.
