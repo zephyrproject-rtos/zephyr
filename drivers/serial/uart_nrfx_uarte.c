@@ -490,9 +490,9 @@ static int wait_tx_ready(const struct device *dev)
 
 			irq_unlock(key);
 		}
-		if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-			k_msleep(1);
-		}
+#ifdef CONFIG_MULTITHREADING
+		k_msleep(1);
+#endif
 	} while (1);
 
 	return key;
