@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(coredump, CONFIG_KERNEL_LOG_LEVEL);
 #define FLASH_WRITE_SIZE	DT_PROP(FLASH_CONTROLLER, write_block_size)
 #define FLASH_BUF_SIZE		FLASH_WRITE_SIZE
 
-#define FLASH_PARTITION		FLASH_AREA_ID(coredump_partition)
+#define FLASH_PARTITION		FLASH_AREA(coredump_partition)
 
 #define HDR_VER			1
 
@@ -101,19 +101,17 @@ struct flash_hdr_t {
  */
 static int partition_open(void)
 {
-	int ret;
-
 	(void)k_sem_take(&flash_sem, K_FOREVER);
 
-	ret = flash_area_open(FLASH_PARTITION, &backend_ctx.flash_area);
-	if (ret != 0) {
+	backend_ctx.flash_area = FLASH_PARTITION;
+	if (backend_ctx.flash_area == NULL) {
 		LOG_ERR("Error opening flash partition for coredump!");
 
-		backend_ctx.flash_area = NULL;
 		k_sem_give(&flash_sem);
+		return -ENODEV;
 	}
 
-	return ret;
+	return 0;
 }
 
 /**
@@ -125,7 +123,6 @@ static void partition_close(void)
 		return;
 	}
 
-	flash_area_close(backend_ctx.flash_area);
 	backend_ctx.flash_area = NULL;
 
 	k_sem_give(&flash_sem);
