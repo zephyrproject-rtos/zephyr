@@ -63,7 +63,7 @@ void test_posix_realtime(void)
 	 * which may break, in which case follow the suggestion in the
 	 * comment above.
 	 */
-	k_usleep(1);
+	k_usleep(100);
 
 	ret = clock_gettime(CLOCK_MONOTONIC, &mts);
 	zassert_equal(ret, 0, "Fail to get monotonic clock");
