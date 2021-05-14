@@ -26,7 +26,7 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 static struct fs_mount_t lfs_storage_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &storage,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.storage_dev = (void *)FLASH_AREA(storage),
 	.mnt_point = "/lfs",
 };
 #endif /* PARTITION_NODE */
@@ -40,23 +40,20 @@ void main(void)
 		&lfs_storage_mnt
 #endif
 		;
-	unsigned int id = (uintptr_t)mp->storage_dev;
 	char fname[MAX_PATH_LEN];
 	struct fs_statvfs sbuf;
-	const struct flash_area *pfa;
+	const struct flash_area *pfa = FLASH_AREA(storage);
 	int rc;
 
 	snprintf(fname, sizeof(fname), "%s/boot_count", mp->mnt_point);
 
-	rc = flash_area_open(id, &pfa);
-	if (rc < 0) {
-		printk("FAIL: unable to find flash area %u: %d\n",
-		       id, rc);
+	if (pfa == NULL) {
+		printk("FAIL: Invalid flash area\n");
 		return;
 	}
 
-	printk("Area %u at 0x%x on %s for %u bytes\n",
-	       id, (unsigned int)pfa->fa_off, pfa->fa_dev->name,
+	printk("Area %p at 0x%x on %s for %u bytes\n",
+	       pfa, (unsigned int)pfa->fa_off, pfa->fa_dev->name,
 	       (unsigned int)pfa->fa_size);
 
 	/* Optional wipe flash contents */
@@ -73,8 +70,8 @@ void main(void)
 	!(FSTAB_ENTRY_DT_MOUNT_FLAGS(PARTITION_NODE) & FS_MOUNT_FLAG_AUTOMOUNT)
 	rc = fs_mount(mp);
 	if (rc < 0) {
-		printk("FAIL: mount id %u at %s: %d\n",
-		       (unsigned int)mp->storage_dev, mp->mnt_point,
+		printk("FAIL: mount %p at %s: %d\n",
+		       mp->storage_dev, mp->mnt_point,
 		       rc);
 		return;
 	}
