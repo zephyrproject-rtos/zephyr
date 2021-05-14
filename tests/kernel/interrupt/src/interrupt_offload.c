@@ -17,7 +17,11 @@ static K_THREAD_STACK_DEFINE(wq_stack, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 
+static struct k_sem sync_sem;
 static struct k_sem end_sem;
+static bool wait_for_end;
+static atomic_t submit_success;
+static atomic_t offload_job_cnt;
 
 /*
  * This global variable control if the priority of offload job
@@ -54,6 +58,7 @@ static void entry_offload_job(struct k_work *work)
 			"the offload did not run immediately.");
 	}
 
+	atomic_inc(&offload_job_cnt);
 	k_sem_give(&end_sem);
 }
 
@@ -61,16 +66,18 @@ static void entry_offload_job(struct k_work *work)
 void isr_handler(const void *param)
 {
 	struct k_work *work = ((struct interrupt_param *)param)->work;
-	int ret;
 
 	zassert_not_null(work, "kwork should not be NULL");
 
 	orig_t_keep_run = 0;
 
-	ret = k_work_submit_to_queue(&wq_queue, work);
-	zassert_true((ret == 0) || (ret == 1),
-			"kwork not sumbmitted or queued");
+	/* If the work is busy, we don't sumbit it. */
+	if (!k_work_busy_get(work)) {
+		zassert_equal(k_work_submit_to_queue(&wq_queue, work),
+				1, "kwork not sumbmitted or queued");
 
+		atomic_inc(&submit_success);
+	}
 }
 
 #if defined(CONFIG_DYNAMIC_INTERRUPTS)
@@ -125,46 +132,31 @@ static void trigger_offload_interrupt(const bool real_irq, void *work)
 
 static void t_running(void *p1, void *p2, void *p3)
 {
-	while (1) {
+	k_sem_give(&sync_sem);
+
+	while (wait_for_end == false) {
 		orig_t_keep_run = 1;
-		k_usleep(1);
+		k_usleep(150);
 	}
 }
 
-static void run_test_offload(int case_type, int real_irq)
+static void init_env(int real_irq)
 {
 	static bool wq_already_start;
-	int thread_prio = 1;
-
-	TC_PRINT("case %d\n", case_type);
 
 	/* semaphore used to sync the end */
+	k_sem_init(&sync_sem, 0, 1);
 	k_sem_init(&end_sem, 0, NUM_WORK);
 
-	if (offload_job_prio_higher) {
-		/* priority of offload job higher than thread */
-		thread_prio = 2;
-	} else {
-		/* priority of offload job lower than thread */
-		thread_prio = 0;
-	}
+	/* initialize global variables */
+	submit_success = 0;
+	offload_job_cnt = 0;
+	orig_t_keep_run = 0;
+	wait_for_end = false;
 
+	/* initialize the dynamic interrupt while using it */
 	if (real_irq && !vector_num) {
 		init_dyn_interrupt();
-	}
-
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-			(k_thread_entry_t)t_running,
-			NULL, NULL, NULL,
-			K_PRIO_PREEMPT(thread_prio),
-			K_INHERIT_PERMS, K_NO_WAIT);
-
-	/* start a work queue thread if not existing */
-	if (!wq_already_start) {
-		k_work_queue_start(&wq_queue, wq_stack, STACK_SIZE,
-		1, NULL);
-
-		wq_already_start = true;
 	}
 
 	/* initialize all the k_work */
@@ -172,8 +164,34 @@ static void run_test_offload(int case_type, int real_irq)
 		k_work_init(&offload_work[i], entry_offload_job);
 	}
 
+	/* start a work queue thread if not existing */
+	if (!wq_already_start) {
+		k_work_queue_start(&wq_queue, wq_stack, STACK_SIZE,
+		K_PRIO_PREEMPT(1), NULL);
+
+		wq_already_start = true;
+	}
+}
+
+static void run_test_offload(int case_type, int real_irq)
+{
+	int thread_prio = K_PRIO_PREEMPT(0);
+
+	/* initialize the global variables */
+	init_env(real_irq);
+
+	/* set priority of offload job higher than thread */
+	if (offload_job_prio_higher) {
+		thread_prio = K_PRIO_PREEMPT(2);
+	}
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			(k_thread_entry_t)t_running,
+			NULL, NULL, NULL, thread_prio,
+			K_INHERIT_PERMS, K_NO_WAIT);
+
 	/* wait for thread start */
-	k_usleep(10);
+	k_sem_take(&sync_sem, K_FOREVER);
 
 	for (int i = 0; i < NUM_WORK; i++) {
 
@@ -190,16 +208,18 @@ static void run_test_offload(int case_type, int real_irq)
 			ztest_test_fail();
 		}
 	}
-
 	/* wait for all offload job complete */
-	k_sem_take(&end_sem, K_FOREVER);
+	for (int i = 0; i < atomic_get(&submit_success); i++) {
+		k_sem_take(&end_sem, K_FOREVER);
+	}
 
-	k_usleep(1);
+	zassert_equal(submit_success, offload_job_cnt,
+			"submitted job unmatch offload");
 
-	zassert_equal(orig_t_keep_run, 1,
-			"offload job done, the original thread run");
+	/* notify the running thread to end */
+	wait_for_end = true;
 
-	k_thread_abort(tid);
+	k_thread_join(tid, K_FOREVER);
 }
 
 /**
