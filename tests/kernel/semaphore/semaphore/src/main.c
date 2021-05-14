@@ -988,7 +988,7 @@ void sem_multiple_take_and_timeouts_helper(void *p1, void *p2, void *p3)
  */
 void test_sem_multiple_take_and_timeouts(void)
 {
-	uint32_t timeout;
+	static uint32_t timeout;
 	size_t bytes_read;
 
 	k_sem_reset(&simple_sem);
@@ -1061,7 +1061,7 @@ void test_sem_multi_take_timeout_diff_sem(void)
 		{ SEC2MS(4), &simple_sem },
 	};
 
-	struct timeout_info retrieved_info;
+	static struct timeout_info retrieved_info;
 
 	k_sem_reset(&simple_sem);
 	k_sem_reset(&multiple_thread_sem);
