@@ -111,7 +111,7 @@ def read_hist(start_slot):
     # be a hardware bug).
     if start_slot == 0 and id0 < 0:
         if not reset_logged:
-            sys.stdout.write("===\n=== [ADSP Device Reset?]\n===\n")
+            sys.stdout.write("===\n=== [Invalid slot 0; ADSP Device Reset?]\n===\n")
             sys.stdout.flush()
         reset_logged = True
         time.sleep(1)
