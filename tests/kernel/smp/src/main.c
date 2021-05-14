@@ -751,38 +751,6 @@ static void t2_mutex_lock(void *p1, void *p2, void *p3)
 			_current->base.global_lock_count);
 }
 
-static void t2_mutex_lock_with_irq(void *p1, void *p2, void *p3)
-{
-	int key;
-
-	zassert_equal(_current->base.global_lock_count, 0,
-			"thread global lock cnt %d is incorrect",
-			_current->base.global_lock_count);
-
-	key = irq_lock();
-
-	k_mutex_lock((struct k_mutex *)p1, K_FOREVER);
-
-	zassert_equal(_current->base.global_lock_count, 1,
-			"thread global lock cnt %d is incorrect",
-			_current->base.global_lock_count);
-
-	k_mutex_unlock((struct k_mutex *)p1);
-
-	/**TESTPOINT: Though the irq has not been locked yet, but the
-	 * global_lock_cnt has been decreased during context switch.
-	 */
-	zassert_equal(_current->base.global_lock_count, 0,
-			"thread global lock cnt %d is incorrect",
-			_current->base.global_lock_count);
-
-	irq_unlock(key);
-
-	zassert_equal(_current->base.global_lock_count, 0,
-			"thread global lock cnt %d is incorrect",
-			_current->base.global_lock_count);
-}
-
 /**
  * @brief Test scenairo that a thread release the global lock
  *
@@ -805,42 +773,6 @@ void test_smp_release_global_lock(void)
 	tinfo[1].tid =
 	k_thread_create(&tthread[1], tstack[1], STACK_SIZE,
 		(k_thread_entry_t)t2_mutex_lock,
-			&smutex, NULL, NULL,
-			K_PRIO_PREEMPT(3),
-			K_INHERIT_PERMS, K_MSEC(1));
-
-	/* Hold one of the cpu to ensure context switch as we wanted
-	 * can happen in another cpu.
-	 */
-	k_busy_wait(20000);
-
-	k_thread_join(tinfo[1].tid, K_FOREVER);
-	k_thread_join(tinfo[0].tid, K_FOREVER);
-	cleanup_resources();
-}
-
-/**
- * @brief Test scenairo that a thread release the global lock
- *
- * @ingroup kernel_smp_tests
- *
- * @details Validate the scenario that make the internal APIs of SMP
- * z_smp_release_global_lock() to be called.
- */
-void test_smp_release_global_lock_irq(void)
-{
-	k_mutex_init(&smutex);
-
-	tinfo[0].tid =
-	k_thread_create(&tthread[0], tstack[0], STACK_SIZE,
-			(k_thread_entry_t)t1_mutex_lock,
-			&smutex, NULL, NULL,
-			K_PRIO_PREEMPT(5),
-			K_INHERIT_PERMS, K_NO_WAIT);
-
-	tinfo[1].tid =
-	k_thread_create(&tthread[1], tstack[1], STACK_SIZE,
-		(k_thread_entry_t)t2_mutex_lock_with_irq,
 			&smutex, NULL, NULL,
 			K_PRIO_PREEMPT(3),
 			K_INHERIT_PERMS, K_MSEC(1));
@@ -1037,7 +969,6 @@ void test_main(void)
 			 ztest_unit_test(test_fatal_on_smp),
 			 ztest_unit_test(test_workq_on_smp),
 			 ztest_unit_test(test_smp_release_global_lock),
-			 ztest_unit_test(test_smp_release_global_lock_irq),
 			 ztest_unit_test(test_inc_concurrency)
 			 );
 	ztest_run_test_suite(smp);
