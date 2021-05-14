@@ -116,3 +116,9 @@ arduino_serial: &lpuart2 {};
 &usb1 {
 	status = "okay";
 };
+
+&usdhc1 {
+	status = "okay";
+	cd-gpios = <&gpio1 23 GPIO_ACTIVE_LOW>;
+	no-1-8-v;
+};
