@@ -10,7 +10,7 @@
 
 / {
 	model = "u-blox BMD-340-EVAL EVK nRF52840";
-	compatible = "u-blox, ubx_bmd340eval_nrf52840";
+	compatible = "u-blox,ubx-bmd340eval-nrf52840";
 
 	chosen {
 		zephyr,console = &uart0;
