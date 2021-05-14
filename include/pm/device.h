@@ -112,7 +112,7 @@ struct pm_device {
 	/* Following are packed fields accessed with atomic bit operations. */
 	atomic_t atomic_flags;
 	/** Device usage count */
-	atomic_t usage;
+	uint32_t usage;
 	/** Device idle internal power state */
 	atomic_t state;
 	/** Work object for asynchronous calls */
