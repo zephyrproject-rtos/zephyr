@@ -23,10 +23,9 @@ int check_file_dir_exists(const char *fpath)
 void test_clear_flash(void)
 {
 	int rc;
-	const struct flash_area *fap;
+	const struct flash_area *fap = FLASH_AREA(storage);
 
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
-	zassert_equal(rc, 0, "Opening flash area for erase [%d]\n", rc);
+	zassert_true(fap != NULL, "Flash area pointer NULL");
 
 	rc = flash_area_erase(fap, 0, fap->fa_size);
 	zassert_equal(rc, 0, "Erasing flash area [%d]\n", rc);

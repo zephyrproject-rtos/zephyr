@@ -13,7 +13,7 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(small);
 struct fs_mount_t testfs_small_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &small,
-	.storage_dev = (void *)FLASH_AREA_ID(small),
+	.storage_dev = (void *)FLASH_AREA(small),
 	.mnt_point = TESTFS_MNT_POINT_SMALL,
 };
 
@@ -23,7 +23,7 @@ FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(medium, MEDIUM_IO_SIZE, MEDIUM_IO_SIZE,
 struct fs_mount_t testfs_medium_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &medium,
-	.storage_dev = (void *)FLASH_AREA_ID(medium),
+	.storage_dev = (void *)FLASH_AREA(medium),
 	.mnt_point = TESTFS_MNT_POINT_MEDIUM,
 };
 
@@ -45,7 +45,7 @@ static struct fs_littlefs large = {
 struct fs_mount_t testfs_large_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &large,
-	.storage_dev = (void *)FLASH_AREA_ID(large),
+	.storage_dev = (void *)FLASH_AREA(large),
 	.mnt_point = TESTFS_MNT_POINT_LARGE,
 };
 
@@ -53,26 +53,23 @@ struct fs_mount_t testfs_large_mnt = {
 
 int testfs_lfs_wipe_partition(const struct fs_mount_t *mp)
 {
-	unsigned int id = (uintptr_t)mp->storage_dev;
-	const struct flash_area *pfa;
-	int rc = flash_area_open(id, &pfa);
+	const struct flash_area *pfa = mp->storage_dev;
+	int rc;
 
-	if (rc < 0) {
-		TC_PRINT("Error accessing flash area %u [%d]\n",
-			 id, rc);
+	if (pfa == NULL) {
+		TC_PRINT("Error flash area is NULL\n");
 		return TC_FAIL;
 	}
 
 	TC_PRINT("Erasing %zu (0x%zx) bytes\n", pfa->fa_size, pfa->fa_size);
 	rc = flash_area_erase(pfa, 0, pfa->fa_size);
-	(void)flash_area_close(pfa);
 
 	if (rc < 0) {
-		TC_PRINT("Error wiping flash area %u [%d]\n",
-			 id, rc);
+		TC_PRINT("Error wiping flash area %p [%d]\n",
+			 pfa, rc);
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Wiped flash area %u for %s\n", id, mp->mnt_point);
+	TC_PRINT("Wiped flash area %p for %s\n", pfa, mp->mnt_point);
 	return TC_PASS;
 }

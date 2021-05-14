@@ -606,7 +606,6 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 {
 	int ret;
 	struct fs_littlefs *fs = mountp->fs_data;
-	unsigned int area_id = (uintptr_t)mountp->storage_dev;
 	const struct device *dev;
 
 	LOG_INF("LittleFS version %u.%u, disk version %u.%u",
@@ -622,14 +621,14 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	fs_lock(fs);
 
 	/* Open flash area */
-	ret = flash_area_open(area_id, &fs->area);
-	if ((ret < 0) || (fs->area == NULL)) {
-		LOG_ERR("can't open flash area %d", area_id);
+	if (mountp->storage_dev == NULL) {
+		LOG_ERR("flash area pointer is NULL");
 		ret = -ENODEV;
 		goto out;
 	}
-	LOG_DBG("FS area %u at 0x%x for %u bytes",
-		area_id, (uint32_t)fs->area->fa_off,
+	fs->area = mountp->storage_dev;
+	LOG_DBG("FS area %p at 0x%x for %u bytes",
+		fs->area, (uint32_t)fs->area->fa_off,
 		(uint32_t)fs->area->fa_size);
 
 	dev = fs->area->fa_dev;
@@ -778,7 +777,6 @@ static int littlefs_unmount(struct fs_mount_t *mountp)
 	fs_lock(fs);
 
 	lfs_unmount(&fs->lfs);
-	flash_area_close(fs->area);
 	fs->area = NULL;
 
 	fs_unlock(fs);
@@ -844,7 +842,7 @@ struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
 	.type = FS_LITTLEFS, \
 	.mnt_point = DT_INST_PROP(inst, mount_point), \
 	.fs_data = &fs_data_##inst, \
-	.storage_dev = (void *)DT_FIXED_PARTITION_ID(FS_PARTITION(inst)), \
+	.storage_dev = (void *)FLASH_AREA_NODE(DT_INST_PHANDLE_BY_IDX(inst, partition, 0)), \
 	.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)), \
 };
 

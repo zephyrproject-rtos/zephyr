@@ -32,15 +32,12 @@ static int setup_flash(struct fs_mount_t *mnt)
 {
 	int rc = 0;
 #if CONFIG_DISK_DRIVER_FLASH
-	unsigned int id;
 	const struct flash_area *pfa;
 
-	mnt->storage_dev = (void *)FLASH_AREA_ID(storage);
-	id = (uintptr_t)mnt->storage_dev;
+	pfa = mnt->storage_dev = (void *)FLASH_AREA(storage);
 
-	rc = flash_area_open(id, &pfa);
-	printk("Area %u at 0x%x on %s for %u bytes\n",
-	       id, (unsigned int)pfa->fa_off, pfa->fa_dev->name,
+	printk("Area %p at 0x%x on %s for %u bytes\n",
+	       pfa, (unsigned int)pfa->fa_off, pfa->fa_dev->name,
 	       (unsigned int)pfa->fa_size);
 
 	if (rc < 0 && IS_ENABLED(CONFIG_APP_WIPE_STORAGE)) {
@@ -49,9 +46,6 @@ static int setup_flash(struct fs_mount_t *mnt)
 		printk("%d\n", rc);
 	}
 
-	if (rc < 0) {
-		flash_area_close(pfa);
-	}
 #endif
 	return rc;
 }

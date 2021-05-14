@@ -92,7 +92,8 @@ enum {
  * @param type File system type
  * @param mnt_point Mount point directory name (ex: "/fatfs")
  * @param fs_data Pointer to file system specific data
- * @param storage_dev Pointer to backend storage device
+ * @param storage_dev Pointer to backend storage device or pointer to flash area object in case
+ *	  of LittleFS file system
  * @param mountp_len Length of Mount point string
  * @param fs Pointer to File system interface of the mount point
  * @param flags Mount flags
