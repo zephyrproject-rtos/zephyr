@@ -674,6 +674,15 @@ config KERNEL_VM_SIZE
 	  implement a notion of "high" memory in Zephyr to work around physical
 	  RAM size larger than the defined bounds of the virtual address space.
 
+config VM_RESERVED_PAGES
+	int "Size of kernel address space reserved in pages"
+	default 1
+	help
+	  Size of the address space reserved at the end of the kernel address
+	  space. By default the reserved size is one page which is used for scratch
+	  page. When system needs static fixed virtual to physical mapping such as
+	  fixed mmio mapping, then reserved address space can be changed and used.
+
 menuconfig DEMAND_PAGING
 	bool "Enable demand paging [EXPERIMENTAL]"
 	depends on ARCH_HAS_DEMAND_PAGING

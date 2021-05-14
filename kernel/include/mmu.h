@@ -221,7 +221,7 @@ extern size_t z_free_page_count;
 /* We reserve a virtual page as a scratch area for page-ins/outs at the end
  * of the address space
  */
-#define Z_VM_RESERVED	CONFIG_MMU_PAGE_SIZE
+#define Z_VM_RESERVED	(CONFIG_VM_RESERVED_PAGES * CONFIG_MMU_PAGE_SIZE)
 #define Z_SCRATCH_PAGE	((void *)((uintptr_t)CONFIG_KERNEL_VM_BASE + \
 				     (uintptr_t)CONFIG_KERNEL_VM_SIZE - \
 				     CONFIG_MMU_PAGE_SIZE))
