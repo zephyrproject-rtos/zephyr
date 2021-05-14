@@ -1893,6 +1893,9 @@ next_state:
 		do_close = true;
 		break;
 	case TCP_FIN_WAIT_1:
+		/* Acknowledge but drop any data */
+		conn_ack(conn, + len);
+
 		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			conn_ack(conn, + 1);
