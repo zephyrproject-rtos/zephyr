@@ -184,14 +184,20 @@ void pm_device_enable(const struct device *dev)
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_enable, dev);
 	if (k_is_pre_kernel()) {
 		dev->pm->dev = dev;
-		dev->pm->enable = true;
-		atomic_set(&dev->pm->state, PM_DEVICE_STATE_SUSPEND);
-		k_work_init_delayable(&dev->pm->work, pm_work_handler);
-		SYS_PORT_TRACING_FUNC_EXIT(pm, device_enable, dev);
-		return;
+		if (dev->pm_control != NULL) {
+			dev->pm->enable = true;
+			atomic_set(&dev->pm->state, PM_DEVICE_STATE_SUSPEND);
+			k_work_init_delayable(&dev->pm->work, pm_work_handler);
+		}
+		goto out;
 	}
 
 	key = k_spin_lock(&dev->pm->lock);
+	if (dev->pm_control == NULL) {
+		dev->pm->enable = false;
+		goto out_unlock;
+	}
+
 	dev->pm->enable = true;
 
 	/* During the driver init, device can set the
@@ -205,7 +211,10 @@ void pm_device_enable(const struct device *dev)
 	} else {
 		k_work_schedule(&dev->pm->work, K_NO_WAIT);
 	}
+
+out_unlock:
 	k_spin_unlock(&dev->pm->lock, key);
+out:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_enable, dev);
 }
 
@@ -218,9 +227,11 @@ void pm_device_disable(const struct device *dev)
 		 "before kernel is initialized");
 
 	key = k_spin_lock(&dev->pm->lock);
-	dev->pm->enable = false;
-	/* Bring up the device before disabling the Idle PM */
-	k_work_schedule(&dev->pm->work, K_NO_WAIT);
+	if (dev->pm->enable) {
+		dev->pm->enable = false;
+		/* Bring up the device before disabling the Idle PM */
+		k_work_schedule(&dev->pm->work, K_NO_WAIT);
+	}
 	k_spin_unlock(&dev->pm->lock, key);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_disable, dev);
 }
