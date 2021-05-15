@@ -21,7 +21,7 @@ jobs:
         cd ${{ env.repository_name }}
         git remote add upstream https://github.com/zephyrproject-rtos/zephyr.git
         git fetch upstream
-        git merge upstream/master
+        git merge upstream/main
         cd ../
       env:
         repository_name: zephyr
