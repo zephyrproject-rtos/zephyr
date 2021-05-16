@@ -10,6 +10,7 @@ supported:
   - adc
   - arduino_gpio
   - arduino_i2c
+  - arduino_serial
   - can
   - counter
   - dac

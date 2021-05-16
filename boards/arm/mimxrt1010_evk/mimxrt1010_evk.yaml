@@ -15,6 +15,7 @@ toolchain:
 ram: 32
 flash: 16384
 supported:
+  - arduino_serial
   - i2c
   - counter
   - usb_device
