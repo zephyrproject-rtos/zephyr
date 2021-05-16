@@ -11,6 +11,7 @@
 #include <string.h>
 #include <pm/pm.h>
 #include <pm/state.h>
+#include <tracing/tracing.h>
 #include "policy/pm_policy.h"
 
 #define PM_STATES_LEN (1 + PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
@@ -132,6 +133,7 @@ void pm_system_resume(void)
 	 */
 	if (!post_ops_done) {
 		post_ops_done = 1;
+		sys_trace_pm_power_state_exit(&z_power_state);
 		pm_power_state_exit_post_ops(z_power_state);
 		pm_state_notify(false);
 	}
@@ -154,6 +156,7 @@ void pm_power_state_force(struct pm_state_info info)
 	k_sched_lock();
 	pm_debug_start_timer();
 	/* Enter power state */
+	sys_trace_pm_power_state_set(&z_power_state);
 	pm_power_state_set(z_power_state);
 	pm_debug_stop_timer();
 
@@ -237,6 +240,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	pm_debug_start_timer();
 	/* Enter power state */
 	pm_state_notify(true);
+	sys_trace_pm_power_state_set(&z_power_state);
 	pm_power_state_set(z_power_state);
 	pm_debug_stop_timer();
 

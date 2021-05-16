@@ -7,8 +7,8 @@
 #include <zephyr.h>
 #include <kernel_structs.h>
 #include <kernel_internal.h>
+#include <pm/pm.h>
 #include <ctf_top.h>
-
 
 static void _get_thread_name(struct k_thread *thread,
 			     ctf_bounded_string_t *name)
@@ -294,4 +294,12 @@ void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer)
 
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result)
 {
+}
+
+void sys_trace_pm_power_state_set(const struct pm_state_info *info){
+	ctf_top_power_state_enter(info->state, info->substate_id);
+}
+
+void sys_trace_pm_power_state_exit(const struct pm_state_info *info){
+	ctf_top_power_state_exit(info->state, info->substate_id);
 }
