@@ -99,8 +99,9 @@ struct ticker_node {
 #define TICKER_USER_OP_TYPE_PRIORITY_SET 3
 #define TICKER_USER_OP_TYPE_START        4
 #define TICKER_USER_OP_TYPE_UPDATE       5
-#define TICKER_USER_OP_TYPE_STOP         6
-#define TICKER_USER_OP_TYPE_STOP_ABS     7
+#define TICKER_USER_OP_TYPE_YIELD_ABS    6
+#define TICKER_USER_OP_TYPE_STOP         7
+#define TICKER_USER_OP_TYPE_STOP_ABS     8
 
 /* Slot window re-schedule states */
 #define TICKER_RESCHEDULE_STATE_NONE     0
@@ -166,11 +167,11 @@ struct ticker_user_op_update {
 #endif
 };
 
-/* User operation data structure for stop opcode. Used for passing stop
- * requests with absolute tick to ticker_job
+/* User operation data structure for yield/stop opcode. Used for passing yield/
+ * stop requests with absolute tick to ticker_job
  */
-struct ticker_user_op_stop {
-	uint32_t ticks_at_stop;		/* Anchor ticks (absolute) */
+struct ticker_user_op_yield {
+	uint32_t ticks_at_yield;        /* Anchor ticks (absolute) */
 };
 
 /* User operation data structure for slot_get opcode. Used for passing request
@@ -205,7 +206,7 @@ struct ticker_user_op {
 	union {
 		struct ticker_user_op_start        start;
 		struct ticker_user_op_update       update;
-		struct ticker_user_op_stop         stop;
+		struct ticker_user_op_yield        yield;
 		struct ticker_user_op_slot_get     slot_get;
 		struct ticker_user_op_priority_set priority_set;
 	} params;			/* User operation parameters */
@@ -1279,11 +1280,12 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 					  uint32_t ticks_elapsed,
 					  uint8_t *insert_head)
 {
-	/* Remove ticker node from list */
-	ticker->ticks_to_expire = ticker_dequeue(instance, user_op->id);
-
 	/* Handle update of ticker by re-inserting it back. */
 	if (user_op->op == TICKER_USER_OP_TYPE_UPDATE) {
+		/* Remove ticker node from list */
+		ticker->ticks_to_expire = ticker_dequeue(instance, user_op->id);
+
+		/* Update node and insert back */
 		ticker_job_node_update(ticker, user_op, instance->ticks_current,
 				       ticks_elapsed, insert_head);
 
@@ -1292,33 +1294,42 @@ static inline void ticker_job_node_manage(struct ticker_instance *instance,
 		 */
 		ticker->req++;
 	} else {
-		/* Reset schedule status of node */
-		ticker->req = ticker->ack;
+		/* If stop/stop_abs requested, then dequeue node */
+		if (user_op->op != TICKER_USER_OP_TYPE_YIELD_ABS) {
+			/* Remove ticker node from list */
+			ticker->ticks_to_expire = ticker_dequeue(instance,
+								 user_op->id);
 
+			/* Reset schedule status of node */
+			ticker->req = ticker->ack;
+		}
+
+		/* If yield_abs/stop/stop_abs then adjust ticks_slot_previous */
 		if (instance->ticker_id_slot_previous == user_op->id) {
 			uint32_t ticks_current;
-			uint32_t ticks_at_stop;
+			uint32_t ticks_at_yield;
 			uint32_t ticks_used;
 
 			instance->ticker_id_slot_previous = TICKER_NULL;
 
-			if (user_op->op == TICKER_USER_OP_TYPE_STOP_ABS) {
-				ticks_at_stop =
-					user_op->params.stop.ticks_at_stop;
+			if ((user_op->op == TICKER_USER_OP_TYPE_YIELD_ABS) ||
+			    (user_op->op == TICKER_USER_OP_TYPE_STOP_ABS)) {
+				ticks_at_yield =
+					user_op->params.yield.ticks_at_yield;
 			} else {
-				ticks_at_stop = cntr_cnt_get();
+				ticks_at_yield = cntr_cnt_get();
 			}
 
 			ticks_current = instance->ticks_current;
-			if (!((ticks_at_stop - ticks_current) &
+			if (!((ticks_at_yield - ticks_current) &
 			      BIT(HAL_TICKER_CNTR_MSBIT))) {
 				ticks_used = ticks_elapsed +
-					ticker_ticks_diff_get(ticks_at_stop,
+					ticker_ticks_diff_get(ticks_at_yield,
 							      ticks_current);
 			} else {
 				ticks_used =
 					ticker_ticks_diff_get(ticks_current,
-							      ticks_at_stop);
+							      ticks_at_yield);
 				if (ticks_elapsed > ticks_used) {
 					ticks_used = ticks_elapsed -
 						     ticks_used;
@@ -1425,7 +1436,7 @@ static inline uint8_t ticker_job_list_manage(struct ticker_instance *instance,
 				continue;
 			}
 
-			/* Delete node, if not expired */
+			/* Delete or yield node, if not expired */
 			if (state == 1U) {
 				ticker_job_node_manage(instance, ticker,
 						       user_op, ticks_elapsed,
@@ -2809,6 +2820,61 @@ uint32_t ticker_update_ext(uint8_t instance_index, uint8_t user_id,
 }
 
 /**
+ * @brief Yield a ticker node with supplied absolute ticks reference
+ *
+ * @details Creates a new user operation of type TICKER_USER_OP_TYPE_YIELD_ABS
+ * and schedules the ticker_job.
+ *
+ * @param instance_index     Index of ticker instance
+ * @param user_id	     Ticker user id. Used for indexing user operations
+ *			     and mapping to mayfly caller id
+ * @param ticks_at_yield     Absolute tick count at ticker yield request
+ * @param fp_op_func	     Function pointer of user operation completion
+ *			     function
+ * @param op_context	     Context passed in operation completion call
+ *
+ * @return TICKER_STATUS_BUSY if stop was successful but not yet completed.
+ * TICKER_STATUS_FAILURE is returned if there are no more user operations
+ * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
+ * before exiting ticker_stop
+ */
+uint32_t ticker_yield_abs(uint8_t instance_index, uint8_t user_id,
+			  uint8_t ticker_id, uint32_t ticks_at_yield,
+			  ticker_op_func fp_op_func, void *op_context)
+{
+	struct ticker_instance *instance = &_instance[instance_index];
+	struct ticker_user_op *user_op;
+	struct ticker_user *user;
+	uint8_t last;
+
+	user = &instance->users[user_id];
+
+	last = user->last + 1;
+	if (last >= user->count_user_op) {
+		last = 0U;
+	}
+
+	if (last == user->first) {
+		return TICKER_STATUS_FAILURE;
+	}
+
+	user_op = &user->user_op[user->last];
+	user_op->op = TICKER_USER_OP_TYPE_YIELD_ABS;
+	user_op->id = ticker_id;
+	user_op->params.yield.ticks_at_yield = ticks_at_yield;
+	user_op->status = TICKER_STATUS_BUSY;
+	user_op->fp_op_func = fp_op_func;
+	user_op->op_context = op_context;
+
+	user->last = last;
+
+	instance->sched_cb(instance->caller_id_get_cb(user_id),
+			   TICKER_CALL_ID_JOB, 0, instance);
+
+	return user_op->status;
+}
+
+/**
  * @brief Stop a ticker node
  *
  * @details Creates a new user operation of type TICKER_USER_OP_TYPE_STOP and
@@ -2879,9 +2945,9 @@ uint32_t ticker_stop(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
  * available, and TICKER_STATUS_SUCCESS is returned if ticker_job gets to run
  * before exiting ticker_stop
  */
-uint32_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id, uint8_t ticker_id,
-		  uint32_t ticks_at_stop, ticker_op_func fp_op_func,
-		  void *op_context)
+uint32_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id,
+			 uint8_t ticker_id, uint32_t ticks_at_stop,
+			 ticker_op_func fp_op_func, void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
 	struct ticker_user_op *user_op;
@@ -2902,7 +2968,7 @@ uint32_t ticker_stop_abs(uint8_t instance_index, uint8_t user_id, uint8_t ticker
 	user_op = &user->user_op[user->last];
 	user_op->op = TICKER_USER_OP_TYPE_STOP_ABS;
 	user_op->id = ticker_id;
-	user_op->params.stop.ticks_at_stop = ticks_at_stop;
+	user_op->params.yield.ticks_at_yield = ticks_at_stop;
 	user_op->status = TICKER_STATUS_BUSY;
 	user_op->fp_op_func = fp_op_func;
 	user_op->op_context = op_context;
