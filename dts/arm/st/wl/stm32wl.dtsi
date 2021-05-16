@@ -151,6 +151,18 @@
 			};
 		};
 
+		lptim1: timers@40007c00 {
+			compatible = "st,stm32-lptim";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40007c00 0x400>;
+			interrupts = <39 0>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+			label = "LPTIM_1";
+		};
+
 		rtc: rtc@40002800 {
 			compatible = "st,stm32-rtc";
 			reg = <0x40002800 0x400>;
