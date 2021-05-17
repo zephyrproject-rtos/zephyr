@@ -558,7 +558,7 @@ int_conv:
 				break;
 			}
 		} else {
-			;
+			; /* Non-empty final else in if ... else if struct */
 		}
 		break;
 
@@ -589,7 +589,7 @@ int_conv:
 			   && (conv->length_mod != LENGTH_UPPER_L)) {
 			conv->invalid = true;
 		} else {
-			;
+			; /* Non-empty final else in if ... else if struct */
 		}
 
 		break;
@@ -807,7 +807,7 @@ static char *encode_uint(uint_value_type value,
 		} else if (radix == 16) {
 			conv->altform_0c = true;
 		} else {
-			;
+			; /* Non-empty final else in if ... else if struct */
 		}
 	}
 
@@ -885,7 +885,7 @@ static char *encode_float(double value,
 	} else if (conv->flag_space) {
 		*sign = ' ';
 	} else {
-		;
+		; /* Non-empty final else in if ... else if struct */
 	}
 
 	/* Extract the non-negative offset exponent and fraction.  Record
@@ -1401,7 +1401,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		} else if (conv->width_present) {
 			width = conv->width_value;
 		} else {
-			;
+			; /* Non-empty final else in if ... else if struct */
 		}
 
 		/* If dynamic precision is specified, process it, otherwise
@@ -1419,7 +1419,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		} else if (conv->prec_present) {
 			precision = conv->prec_value;
 		} else {
-			;
+			; /* Non-empty final else in if ... else if struct */
 		}
 
 		/* Reuse width and precision memory in conv for value
