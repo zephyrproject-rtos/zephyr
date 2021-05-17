@@ -61,11 +61,10 @@ void teardown(void)
 void test_nvs_init(void)
 {
 	int err;
-	const struct flash_area *fa;
+	const struct flash_area *fa = FLASH_AREA(storage);
 	struct flash_pages_info info;
 
-	err = flash_area_open(FLASH_AREA_ID(storage), &fa);
-	zassert_true(err == 0, "flash_area_open() fail: %d", err);
+	zassert_true(fa != NULL, "Flash area pointer NULL");
 
 	fs.offset = TEST_FLASH_AREA_STORAGE_OFFSET;
 	err = flash_get_page_info_by_offs(fa->fa_dev, fs.offset,
