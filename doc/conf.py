@@ -116,7 +116,10 @@ rst_epilog = """
 
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-html_theme_options = {"prev_next_buttons_location": None}
+html_theme_options = {
+    "logo_only": True,
+    "prev_next_buttons_location": None
+}
 html_title = "Zephyr Project Documentation"
 html_logo = "_static/images/logo.svg"
 html_favicon = "images/zp_favicon.png"
@@ -134,7 +137,6 @@ html_context = {
     "show_license": True,
     "docs_title": docs_title,
     "is_release": is_release,
-    "theme_logo_only": False,
     "current_version": version,
     "versions": (
         ("latest", "/"),
