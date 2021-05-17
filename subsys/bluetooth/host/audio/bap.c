@@ -235,6 +235,46 @@ static int bap_enable(struct bt_audio_chan *chan,
 	return bt_audio_ep_send(chan->conn, ep, buf);
 }
 
+static int bap_metadata(struct bt_audio_chan *chan,
+			uint8_t meta_count, struct bt_codec_data *meta)
+{
+	struct bt_audio_ep *ep = chan->ep;
+	struct net_buf_simple *buf;
+	struct bt_ascs_enable_op *req;
+	struct bt_audio_chan *tmp;
+	int err;
+
+	BT_DBG("chan %p", chan);
+
+	buf = bt_audio_ep_create_pdu(BT_ASCS_METADATA_OP);
+
+	req = net_buf_simple_add(buf, sizeof(*req));
+	req->num_ases = 0x01;
+
+	err = bt_audio_ep_metadata(ep, buf, meta_count, meta);
+	if (err) {
+		return err;
+	}
+
+	/* Include links as well */
+	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
+		/* Only group ASEs for the same connection */
+		if (tmp->conn == chan->conn) {
+			err = bt_audio_ep_metadata(tmp->ep, buf, meta_count,
+						   meta);
+			if (err) {
+				return err;
+			}
+			req->num_ases++;
+		} else {
+			/* Recurse for other connections */
+			bap_metadata(tmp, meta_count, meta);
+		}
+	}
+
+	return bt_audio_ep_send(chan->conn, ep, buf);
+}
+
 static int bap_start(struct bt_audio_chan *chan)
 {
 	struct bt_audio_ep *ep = chan->ep;
@@ -459,6 +499,7 @@ static struct bt_audio_capability_ops cap_ops = {
 	.reconfig	= bap_reconfig,
 	.qos		= bap_qos,
 	.enable		= bap_enable,
+	.metadata	= bap_metadata,
 	.start		= bap_start,
 	.disable	= bap_disable,
 	.stop		= bap_stop,

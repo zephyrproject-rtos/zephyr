@@ -1170,6 +1170,41 @@ int bt_audio_ep_enable(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 	return 0;
 }
 
+int bt_audio_ep_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
+			 uint8_t meta_count, struct bt_codec_data *meta)
+{
+	struct bt_ascs_metadata *req;
+
+	BT_DBG("ep %p buf %p metadata count %u", ep, buf, meta_count);
+
+	if (!ep) {
+		return -EINVAL;
+	}
+
+	switch (ep->status.state) {
+	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
+	case BT_ASCS_ASE_STATE_ENABLING:
+	/* or 0x04 (Streaming) */
+	case BT_ASCS_ASE_STATE_STREAMING:
+		break;
+	default:
+		BT_ERR("Invalid state: %s",
+		       bt_audio_ep_state_str(ep->status.state));
+		return -EINVAL;
+	}
+
+	BT_DBG("id 0x%02x", ep->status.id);
+
+	req = net_buf_simple_add(buf, sizeof(*req));
+	req->ase = ep->status.id;
+
+	req->len = buf->len;
+	codec_data_add(buf, "meta", meta_count, meta);
+	req->len = buf->len - req->len;
+
+	return 0;
+}
+
 int bt_audio_ep_start(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 {
 	BT_DBG("ep %p buf %p", ep, buf);
