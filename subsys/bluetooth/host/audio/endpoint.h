@@ -108,6 +108,9 @@ int bt_audio_ep_qos(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 int bt_audio_ep_enable(struct bt_audio_ep *ep, struct net_buf_simple *buf,
 		       uint8_t meta_count, struct bt_codec_data *meta);
 
+int bt_audio_ep_metadata(struct bt_audio_ep *ep, struct net_buf_simple *buf,
+			 uint8_t meta_count, struct bt_codec_data *meta);
+
 int bt_audio_ep_start(struct bt_audio_ep *ep, struct net_buf_simple *buf);
 
 int bt_audio_ep_disable(struct bt_audio_ep *ep, struct net_buf_simple *buf);
