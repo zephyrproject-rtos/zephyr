@@ -61,14 +61,6 @@ static void ibecc_write_reg32(const struct device *dev,
 }
 #endif
 
-static uint32_t ibecc_read_reg32(const struct device *dev, uint16_t reg)
-{
-	struct ibecc_data *data = dev->data;
-	mem_addr_t reg_addr = data->mchbar + reg;
-
-	return sys_read32(reg_addr);
-}
-
 static bool ibecc_enabled(const pcie_bdf_t bdf)
 {
 	return !!(pcie_conf_read(bdf, CAPID0_C_REG) & CAPID0_C_IBECC_ENABLED);
@@ -100,77 +92,6 @@ static void ibecc_errsts_clear(const pcie_bdf_t bdf)
 	}
 
 	pcie_conf_write(bdf, ERRSTS_REG, errsts);
-}
-
-static const char *get_ddr_type(uint8_t type)
-{
-	switch (type) {
-	case 0:
-		return "DDR4";
-	case 3:
-		return "LPDDR4";
-	default:
-		return "Unknown";
-	}
-}
-
-static const char *get_dimm_width(uint8_t type)
-{
-	switch (type) {
-	case 0:
-		return "X8";
-	case 1:
-		return "X16";
-	case 2:
-		return "X32";
-	default:
-		return "Unknown";
-	}
-}
-
-static void mchbar_regs_dump(const struct device *dev)
-{
-	uint32_t mad_inter_chan, chan_hash;
-
-	/* Memory configuration */
-
-	chan_hash = ibecc_read_reg32(dev, CHANNEL_HASH);
-	LOG_DBG("Channel hash %x", chan_hash);
-
-	mad_inter_chan = ibecc_read_reg32(dev, MAD_INTER_CHAN);
-	LOG_DBG("DDR memory type %s",
-	       get_ddr_type(INTER_CHAN_DDR_TYPE(mad_inter_chan)));
-
-	for (int ch = 0; ch < DRAM_MAX_CHANNELS; ch++) {
-		uint32_t intra_ch = ibecc_read_reg32(dev, MAD_INTRA_CH(ch));
-		uint32_t dimm_ch = ibecc_read_reg32(dev, MAD_DIMM_CH(ch));
-		uint64_t l_size = DIMM_L_SIZE(dimm_ch);
-		uint64_t s_size = DIMM_S_SIZE(dimm_ch);
-		uint8_t l_map = DIMM_L_MAP(intra_ch);
-
-		LOG_DBG("channel %d: l_size 0x%llx s_size 0x%llx l_map %d\n",
-			ch, l_size, s_size, l_map);
-
-		for (int d = 0; d < DRAM_MAX_DIMMS; d++) {
-			uint64_t size;
-			const char *type;
-
-			if ((d ^ l_map) != 0) {
-				type = get_dimm_width(DIMM_S_WIDTH(dimm_ch));
-				size = s_size;
-			} else {
-				type = get_dimm_width(DIMM_L_WIDTH(dimm_ch));
-				size = l_size;
-			}
-
-			if (size == 0) {
-				continue;
-			}
-
-			LOG_DBG("Channel %d DIMM %d size %llu GiB width %s",
-				ch, d, size >> 30, type);
-		}
-	}
 }
 
 static void parse_ecclog(const struct device *dev, const uint64_t ecclog,
@@ -361,8 +282,8 @@ int edac_ibecc_init(const struct device *dev)
 {
 	const pcie_bdf_t bdf = PCI_HOST_BRIDGE;
 	struct ibecc_data *data = dev->data;
-	uint64_t touud, tom, mchbar;
-	uint32_t tolud, conf_data;
+	uint64_t mchbar;
+	uint32_t conf_data;
 
 	LOG_INF("EDAC IBECC initialization");
 
@@ -413,26 +334,7 @@ int edac_ibecc_init(const struct device *dev)
 
 	mchbar &= MCHBAR_MASK;
 
-	/* TODO: Use 64 bit API when available */
-	touud = pcie_conf_read(bdf, TOUUD_REG);
-	touud |= (uint64_t)pcie_conf_read(bdf, TOUUD_REG + 1) << 32;
-	touud &= TOUUD_MASK;
-
-	/* TODO: Use 64 bit API when available */
-	tom = pcie_conf_read(bdf, TOM_REG);
-	tom |= (uint64_t)pcie_conf_read(bdf, TOM_REG + 1) << 32;
-	tom &= TOM_MASK;
-
-	tolud = pcie_conf_read(bdf, TOLUD_REG) & TOLUD_MASK;
-
 	device_map(&data->mchbar, mchbar, MCH_SIZE, K_MEM_CACHE_NONE);
-
-	LOG_DBG("MCHBAR\t%llx", mchbar);
-	LOG_DBG("TOUUD\t%llx", touud);
-	LOG_DBG("TOM\t%llx", tom);
-	LOG_DBG("TOLUD\t%x", tolud);
-
-	mchbar_regs_dump(dev);
 
 	/* Enable Host Bridge generated SERR event */
 	ibecc_errcmd_setup(bdf, true);
