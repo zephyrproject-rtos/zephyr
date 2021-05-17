@@ -11,4 +11,3 @@ API reference
 
 .. doxygengroup:: bt_mesh_msg
    :project: Zephyr
-   :members:

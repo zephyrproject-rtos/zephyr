@@ -133,4 +133,3 @@ API reference
 
 .. doxygengroup:: bt_mesh_prov
    :project: Zephyr
-   :members:
