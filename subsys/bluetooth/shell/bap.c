@@ -57,6 +57,9 @@ static struct lc3_preset {
 	LC3_PRESET("16_2_1",
 		   BT_CODEC_LC3_CONFIG_16_2,
 		   BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(40u, 2u, 10u, 40000u)),
+	LC3_PRESET("2_16_2_1",
+		   BT_CODEC_LC3_CONFIG_2_16_2,
+		   BT_CODEC_LC3_QOS_10_INOUT_UNFRAMED(80u, 2u, 10u, 40000u)),
 	LC3_PRESET("24_1_1",
 		   BT_CODEC_LC3_CONFIG_24_1,
 		   BT_CODEC_LC3_QOS_7_5_INOUT_UNFRAMED(45u, 2u, 8u, 40000u)),
@@ -523,6 +526,68 @@ static int cmd_enable(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+#define MAX_META_DATA \
+	(CONFIG_BT_CODEC_MAX_METADATA_COUNT * sizeof(struct bt_codec_data))
+
+static uint16_t strmeta(const char *name)
+{
+	if (!strcmp(name, "None")) {
+		return BT_CODEC_META_CONTEXT_NONE;
+	} else if (!strcmp(name, "Voice")) {
+		return BT_CODEC_META_CONTEXT_VOICE;
+	} else if (!strcmp(name, "Media")) {
+		return BT_CODEC_META_CONTEXT_MEDIA;
+	} else if (!strcmp(name, "Instruction")) {
+		return BT_CODEC_META_CONTEXT_INSTRUCTION;
+	} else if (!strcmp(name, "Attention")) {
+		return BT_CODEC_META_CONTEXT_ATTENTION;
+	} else if (!strcmp(name, "Alert")) {
+		return BT_CODEC_META_CONTEXT_ALERT;
+	} else if (!strcmp(name, "ManMachine")) {
+		return BT_CODEC_META_CONTEXT_MAN_MACHINE;
+	} else if (!strcmp(name, "Emergency")) {
+		return BT_CODEC_META_CONTEXT_EMERGENCY;
+	} else if (!strcmp(name, "Ringtone")) {
+		return BT_CODEC_META_CONTEXT_RINGTONE;
+	} else if (!strcmp(name, "TV")) {
+		return BT_CODEC_META_CONTEXT_TV;
+	}
+
+	return 0u;
+}
+
+static int cmd_metadata(const struct shell *shell, size_t argc, char *argv[])
+{
+	int err;
+
+	if (!default_chan) {
+		shell_error(shell, "Not connected");
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		uint16_t context;
+
+		context = strmeta(argv[1]);
+		if (context == 0) {
+			shell_error(shell, "Invalid context");
+			return -ENOEXEC;
+		}
+
+		sys_put_le16(context, default_preset->codec.meta[0].value);
+	}
+
+	err = bt_audio_chan_metadata(default_chan,
+				     default_preset->codec.meta_count,
+				     default_preset->codec.meta);
+	if (err) {
+		shell_error(shell, "Unable to set Channel metadata");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_start(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
@@ -852,7 +917,7 @@ static int lc3_release(struct bt_audio_chan *chan)
 
 static struct bt_codec lc3_codec = BT_CODEC_LC3(BT_CODEC_LC3_FREQ_ANY,
 						BT_CODEC_LC3_DURATION_ANY,
-						0x03, 30, 240, 1,
+						0x03, 30, 240, 2,
 						(BT_CODEC_META_CONTEXT_VOICE |
 						BT_CODEC_META_CONTEXT_MEDIA),
 						BT_CODEC_META_CONTEXT_ANY);
@@ -942,7 +1007,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 1) {
 		len = hex2bin(argv[1], strlen(argv[1]), data, sizeof(data));
 		if (len > default_chan->iso->qos->tx->sdu) {
-			shell_print(shell, "Unable to send: len %d > % MTU",
+			shell_print(shell, "Unable to send: len %d > %u MTU",
 				    len, default_chan->iso->qos->tx->sdu);
 			return -ENOEXEC;
 		}
@@ -979,6 +1044,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 		      "[preset] [interval] [framing] [latency] [pd] [sdu] [phy]"
 		      " [rtn]", cmd_qos, 1, 8),
 	SHELL_CMD_ARG(enable, NULL, NULL, cmd_enable, 1, 1),
+	SHELL_CMD_ARG(metadata, NULL, "[context]", cmd_metadata, 1, 1),
 	SHELL_CMD_ARG(start, NULL, NULL, cmd_start, 1, 0),
 	SHELL_CMD_ARG(disable, NULL, NULL, cmd_disable, 1, 0),
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
