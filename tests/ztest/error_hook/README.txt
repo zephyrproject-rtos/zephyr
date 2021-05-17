@@ -74,10 +74,6 @@ test_catch_fatal_error
   - start a thread to call k_oops() then catch the (expected) fatal error.
   - start a thread to call k_panel() then catch the (expected) fatal error.
 
-test_catch_assert_in_isr
-  - start a thread to enter ISR context by calling irq_offload(), then trigger
-    an assert fail then catch it.
-
 test_catch_z_oops
   - Pass illegal address by syscall, then inside the syscall handler, the
     Z_OOPS macro will trigger a fatal error that will get caught (as expected).
@@ -87,9 +83,9 @@ test_catch_z_oops
 Limitation of this usage
 ========================
 
-Trigger a fatal error in ISR context, that will cause problem due to
-the interrupt stack is already abnormal when we want to continue other
-test case, we do not recover it so far.
+Trigger a fatal error or catch an assert failure in ISR context, that will cause
+problem due to the interrupt stack is already abnormal when we want to continue
+other test case, we do not recover it so far.
 
 
 ---------------------------------------------------------------------------
@@ -170,13 +166,6 @@ E: Current thread: 0x114000 (unknown)
 Caught system error -- reason 3 1
 Fatal error expected as part of test case.
  PASS - test_catch_fatal_error
-===================================================================
-START - test_catch_assert_in_isr
-ASSERTION FAIL [a != ((void *)0)] @ WEST_TOPDIR/zephyr/tests/ztest/error_hook/src/main.c:41
-        parameter a should not be NULL!
-Caught assert failed
-Assert error expected as part of test case.
- PASS - test_catch_assert_in_isr
 ===================================================================
 START - test_catch_z_oops
 E: EAX: 0x00000000, EBX: 0x00000000, ECX: 0x00000000, EDX: 0x00000000

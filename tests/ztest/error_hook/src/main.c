@@ -17,9 +17,6 @@ static struct k_thread tdata;
 
 static ZTEST_BMEM int case_type;
 
-/* A semaphore using inside irq_offload */
-extern struct k_sem offload_sem;
-
 /* test case type */
 enum {
 	ZTEST_CATCH_FATAL_ACCESS,
@@ -127,14 +124,6 @@ static void trigger_fault_panic(void)
 	k_panic();
 }
 
-static void release_offload_sem(void)
-{
-	/* Semaphore used inside irq_offload needs to be
-	 * released after an assert or a fault has happened.
-	 */
-	k_sem_give(&offload_sem);
-}
-
 /* This is the fatal error hook that allows you to do actions after
  * the fatal error has occurred. This is optional; you can choose
  * to define the hook yourself. If not, the program will use the
@@ -176,9 +165,14 @@ void ztest_post_assert_fail_hook(void)
 	case ZTEST_CATCH_ASSERT_FAIL:
 		ztest_test_pass();
 		break;
+
+	/* Unfortunately, like the ZTEST_CATCH_FATAL_IN_ISR case,
+	 * try to capture an failed assert inside ISR context, is
+	 * also cannot be fully recovered by our framework, so
+	 * please don't use it this way.
+	 */
 	case ZTEST_CATCH_ASSERT_IN_ISR:
-		release_offload_sem();
-		ztest_test_pass();
+		zassert_true(false, NULL);
 		break;
 
 	default:
@@ -284,27 +278,6 @@ void test_catch_assert_fail(void)
 	ztest_test_fail();
 }
 
-/* a handler using by irq_offload  */
-static void tIsr_assert(const void *p)
-{
-	ztest_set_assert_valid(true);
-	trigger_assert_fail(NULL);
-}
-
-/**
- * @brief Test if an assert fail works in ISR context
- *
- * @details Valid the assert in ISR context works or not. If the assert
- * fail happened and the program enter assert_post_handler, that means
- * assert works as expected.
- */
-void test_catch_assert_in_isr(void)
-{
-	case_type = ZTEST_CATCH_ASSERT_IN_ISR;
-	irq_offload(tIsr_assert, NULL);
-}
-
-
 #if defined(CONFIG_USERSPACE)
 static void trigger_z_oops(void)
 {
@@ -341,15 +314,13 @@ void test_main(void)
 	ztest_test_suite(error_hook_tests,
 			 ztest_user_unit_test(test_catch_assert_fail),
 			 ztest_user_unit_test(test_catch_fatal_error),
-			 ztest_unit_test(test_catch_z_oops),
-			 ztest_unit_test(test_catch_assert_in_isr)
+			 ztest_unit_test(test_catch_z_oops)
 			 );
 	ztest_run_test_suite(error_hook_tests);
 #else
 	ztest_test_suite(error_hook_tests,
 			 ztest_unit_test(test_catch_fatal_error),
-			 ztest_unit_test(test_catch_assert_fail),
-			 ztest_unit_test(test_catch_assert_in_isr)
+			 ztest_unit_test(test_catch_assert_fail)
 			 );
 	ztest_run_test_suite(error_hook_tests);
 #endif
