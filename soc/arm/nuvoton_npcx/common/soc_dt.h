@@ -23,7 +23,7 @@
  */
 #define NPCX_DT_PROP_ENUM_OR(node_id, prop, default_value) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop), \
-		    (DT_ENUM_UPPER_TOKEN(node_id, prop)), (default_value))
+		    (DT_STRING_UPPER_TOKEN(node_id, prop)), (default_value))
 
 /**
  * @brief Like DT_INST_PROP_OR(), but expand parameters with
