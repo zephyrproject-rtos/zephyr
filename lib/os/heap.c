@@ -362,7 +362,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 		set_chunk_used(h, c, true);
 		return ptr;
 	} else {
-		;
+		; /* Non-empty final else in if ... else if struct */
 	}
 
 	/* Fallback: allocate and copy */
