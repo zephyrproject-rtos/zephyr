@@ -15,7 +15,8 @@ extern "C" {
 #endif
 
 /**
- * @defgroup pm_states Power Management states
+ * @defgroup pm_states Power Management States
+ * @ingroup power_management_api
  * @{
  */
 
