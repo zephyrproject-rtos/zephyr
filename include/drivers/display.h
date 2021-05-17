@@ -81,58 +81,31 @@ enum display_orientation {
 	DISPLAY_ORIENTATION_ROTATED_270,
 };
 
-/**
- * @struct display_capabilities
- * @brief Structure holding display capabilities
- *
- * @var uint16_t display_capabilities::x_resolution
- * Display resolution in the X direction
- *
- * @var uint16_t display_capabilities::y_resolution
- * Display resolution in the Y direction
- *
- * @var uint32_t display_capabilities::supported_pixel_formats
- * Bitwise or of pixel formats supported by the display
- *
- * @var uint32_t display_capabilities::screen_info
- * Information about display panel
- *
- * @var enum display_pixel_format display_capabilities::current_pixel_format
- * Currently active pixel format for the display
- *
- * @var enum display_orientation display_capabilities::current_orientation
- * Current display orientation
- */
+/** @brief Structure holding display capabilities. */
 struct display_capabilities {
+	/** Display resolution in the X direction */
 	uint16_t x_resolution;
+	/** Display resolution in the Y direction */
 	uint16_t y_resolution;
+	/** Bitwise or of pixel formats supported by the display */
 	uint32_t supported_pixel_formats;
+	/** Information about display panel */
 	uint32_t screen_info;
+	/** Currently active pixel format for the display */
 	enum display_pixel_format current_pixel_format;
+	/** Current display orientation */
 	enum display_orientation current_orientation;
 };
 
-/**
- * @struct display_buffer_descriptor
- * @brief Structure to describe display data buffer layout
- *
- * @var uint32_t display_buffer_descriptor::buf_size
- * Data buffer size in bytes
- *
- * @var uint16_t display_buffer_descriptor::width
- * Data buffer row width in pixels
- *
- * @var uint16_t display_buffer_descriptor::height
- * Data buffer column height in pixels
- *
- * @var uint16_t display_buffer_descriptor::pitch
- * Number of pixels between consecutive rows in the data buffer
- *
- */
+/** @brief Structure to describe display data buffer layout */
 struct display_buffer_descriptor {
+	/** Data buffer size in bytes */
 	uint32_t buf_size;
+	/** Data buffer row width in pixels */
 	uint16_t width;
+	/** Data buffer column height in pixels */
 	uint16_t height;
+	/** Number of pixels between consecutive rows in the data buffer */
 	uint16_t pitch;
 };
 
