@@ -595,6 +595,8 @@ static void ep_get_status_config(struct bt_audio_ep *ep,
 	cfg->latency = sys_cpu_to_le16(qos->latency);
 	sys_put_le24(qos->pd_min, cfg->pd_min);
 	sys_put_le24(qos->pd_max, cfg->pd_max);
+	sys_put_le24(BT_ASCS_PD_NO_PREF, cfg->prefer_pd_min);
+	sys_put_le24(BT_ASCS_PD_NO_PREF, cfg->prefer_pd_max);
 	cfg->codec.id = ep->codec.id;
 	cfg->codec.cid = sys_cpu_to_le16(ep->codec.cid);
 	cfg->codec.vid = sys_cpu_to_le16(ep->codec.vid);

@@ -72,6 +72,8 @@ struct bt_ascs_codec {
 	uint16_t vid;
 } __packed;
 
+#define BT_ASCS_PD_NO_PREF 0x00000000
+
 /* ASE_State = 0x01 (Codec Configured), defined in Table 4.7. */
 struct bt_ascs_ase_status_config {
 	uint8_t  framing;
@@ -80,6 +82,8 @@ struct bt_ascs_ase_status_config {
 	uint16_t latency;
 	uint8_t  pd_min[3];
 	uint8_t  pd_max[3];
+	uint8_t  prefer_pd_min[3];
+	uint8_t  prefer_pd_max[3];
 	struct bt_ascs_codec codec;
 	uint8_t  cc_len;
 	/* LTV-formatted Codec-Specific Configuration */
