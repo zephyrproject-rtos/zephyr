@@ -403,12 +403,9 @@ int settings_backend_init(void)
 	rc = settings_fcb_src(&config_init_settings_fcb);
 
 	if (rc != 0) {
-		rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+		fap = FLASH_AREA(storage);
 
-		if (rc == 0) {
-			rc = flash_area_erase(fap, 0, fap->fa_size);
-			flash_area_close(fap);
-		}
+		rc = flash_area_erase(fap, 0, fap->fa_size);
 
 		if (rc != 0) {
 			k_panic();

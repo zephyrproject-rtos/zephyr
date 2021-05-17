@@ -94,14 +94,14 @@ void test_prepare_storage(void)
 
 	if (prepared_mark[0] == ERASED_VAL) {
 		TC_PRINT("First run: erasing the storage\r\n");
-		err = flash_area_open(FLASH_AREA_ID(storage), &fa);
-		zassert_true(err == 0, "Can't open storage flash area");
+		fa = FLASH_AREA(storage);
+		zassert_true(fa != NULL, "FLash area pointer NULL");
 
 		err = flash_area_erase(fa, 0, fa->fa_size);
 		zassert_true(err == 0, "Can't erase storage flash area");
 
-		err = flash_area_open(FLASH_AREA_ID(image_0), &fa);
-		zassert_true(err == 0, "Can't open storage flash area");
+		fa = FLASH_AREA(image_0);
+		zassert_true(fa != NULL, "Flash area pointer NULL");
 
 		dev = fa->fa_dev;
 

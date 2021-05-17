@@ -30,13 +30,9 @@ LOG_MODULE_REGISTER(settings_basic_test);
 static void test_clear_settings(void)
 {
 #if IS_ENABLED(CONFIG_SETTINGS_FCB) || IS_ENABLED(CONFIG_SETTINGS_NVS)
-	const struct flash_area *fap;
-	int rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+	const struct flash_area *fap = FLASH_AREA(storage);
+	int rc = flash_area_erase(fap, 0, fap->fa_size);
 
-	if (rc == 0) {
-		rc = flash_area_erase(fap, 0, fap->fa_size);
-		flash_area_close(fap);
-	}
 	zassert_true(rc == 0, "clear settings failed");
 #endif
 #if IS_ENABLED(CONFIG_SETTINGS_FS)
@@ -46,7 +42,7 @@ static void test_clear_settings(void)
 	static struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &cstorage,
-	.storage_dev = (void *)FLASH_AREA_ID(storage),
+	.storage_dev = (void *)FLASH_AREA(storage),
 	.mnt_point = "/ff"
 };
 
