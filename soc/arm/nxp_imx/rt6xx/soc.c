@@ -155,6 +155,10 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM2);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_usart, okay)
+	CLOCK_AttachClk(kSFRO_to_FLEXCOMM4);
+#endif
+
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay)
 	CLOCK_AttachClk(kFFRO_to_FLEXCOMM5);
 #endif
