@@ -791,6 +791,12 @@ static void uart_stm32_isr(const struct device *dev)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	if (data->user_cb) {
+		data->user_cb(dev, data->user_data);
+	}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 #ifdef CONFIG_UART_ASYNC_API
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
@@ -820,12 +826,6 @@ static void uart_stm32_isr(const struct device *dev)
 	/* Clear errors */
 	uart_stm32_err_check(dev);
 #endif /* CONFIG_UART_ASYNC_API */
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	if (data->user_cb) {
-		data->user_cb(dev, data->user_data);
-	}
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 }
 
 #endif /* (CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) */
