@@ -9,4 +9,3 @@ API Reference
 
 .. doxygengroup:: bt_uuid
    :project: Zephyr
-   :members:

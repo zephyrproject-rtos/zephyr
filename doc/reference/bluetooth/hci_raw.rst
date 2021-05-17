@@ -17,4 +17,3 @@ API Reference
 
 .. doxygengroup:: hci_raw
    :project: Zephyr
-   :members:
