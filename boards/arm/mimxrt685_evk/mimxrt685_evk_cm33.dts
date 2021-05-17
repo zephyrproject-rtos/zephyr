@@ -139,6 +139,11 @@ arduino_i2c: &flexcomm2 {
 	};
 };
 
+arduino_serial: &flexcomm4 {
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+};
+
 arduino_spi: &flexcomm5 {
 	compatible = "nxp,lpc-spi";
 	status = "okay";

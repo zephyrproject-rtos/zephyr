@@ -192,6 +192,51 @@ static int mimxrt685_evk_pinmux_init(const struct device *dev)
 	IOPCTL_PinMuxSet(IOPCTL, 1U, 5U, port1_pin5_config);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_usart, okay) && CONFIG_SERIAL
+	/* USART4 RX,  TX */
+	uint32_t port0_pin29_config = (/* Pin is configured as FC4_TXD_SCL_MISO_WS */
+			IOPCTL_PIO_FUNC1 |
+			/* Disable pull-up / pull-down function */
+			IOPCTL_PIO_PUPD_DI |
+			/* Enable pull-down function */
+			IOPCTL_PIO_PULLDOWN_EN |
+			/* Disable input buffer function */
+			IOPCTL_PIO_INBUF_DI |
+			/* Normal mode */
+			IOPCTL_PIO_SLEW_RATE_NORMAL |
+			/* Normal drive */
+			IOPCTL_PIO_FULLDRIVE_DI |
+			/* Analog mux is disabled */
+			IOPCTL_PIO_ANAMUX_DI |
+			/* Pseudo Output Drain is disabled */
+			IOPCTL_PIO_PSEDRAIN_DI |
+			/* Input function is not inverted */
+			IOPCTL_PIO_INV_DI);
+	/* PORT0 PIN1 (coords: G2) is configured as FC4_TXD_SCL_MISO_WS  */
+	IOPCTL_PinMuxSet(IOPCTL, 0U, 29U, port0_pin29_config);
+
+	uint32_t port0_pin30_config = (/* Pin is configured as FC4_RXD_SDA_MOSI_DATA  */
+			IOPCTL_PIO_FUNC1 |
+			/* Disable pull-up / pull-down function */
+			IOPCTL_PIO_PUPD_DI |
+			/* Enable pull-down function */
+			IOPCTL_PIO_PULLDOWN_EN |
+			/* Enables input buffer function */
+			IOPCTL_PIO_INBUF_EN |
+			/* Normal mode */
+			IOPCTL_PIO_SLEW_RATE_NORMAL |
+			/* Normal drive */
+			IOPCTL_PIO_FULLDRIVE_DI |
+			/* Analog mux is disabled */
+			IOPCTL_PIO_ANAMUX_DI |
+			/* Pseudo Output Drain is disabled */
+			IOPCTL_PIO_PSEDRAIN_DI |
+			/* Input function is not inverted */
+			IOPCTL_PIO_INV_DI);
+	/* PORT0 PIN2 (coords: G4) is configured as FC4_RXD_SDA_MOSI_DATA */
+	IOPCTL_PinMuxSet(IOPCTL, 0U, 30U, port0_pin30_config);
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcomm5), okay) && CONFIG_SPI
 	uint32_t port1_pin3_config = (/* Pin is configured as FC5_SCK */
 		IOPCTL_PIO_FUNC1 |
