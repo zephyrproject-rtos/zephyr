@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2021 Seagate Technology LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +21,7 @@ LOG_MODULE_REGISTER(ws2812_spi);
 #include <drivers/spi.h>
 #include <sys/math_extras.h>
 #include <sys/util.h>
+#include <dt-bindings/led/led.h>
 
 /* spi-one-frame and spi-zero-frame in DT are for 8-bit frames. */
 #define SPI_FRAME_BITS 8
@@ -42,8 +44,6 @@ LOG_MODULE_REGISTER(ws2812_spi);
 #define SPI_OPER (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
 		  SPI_WORD_SET(SPI_FRAME_BITS) | SPI_LINES_SINGLE)
 
-#define BYTES_PER_PX(has_white) ((has_white) ? 32 : 24)
-
 struct ws2812_spi_data {
 	const struct device *spi;
 };
@@ -54,7 +54,8 @@ struct ws2812_spi_cfg {
 	size_t px_buf_size;
 	uint8_t one_frame;
 	uint8_t zero_frame;
-	bool has_white;
+	uint8_t num_colors;
+	const uint8_t *color_mapping;
 };
 
 static struct ws2812_spi_data *dev_data(const struct device *dev)
@@ -92,8 +93,7 @@ static inline bool num_pixels_ok(const struct ws2812_spi_cfg *cfg,
 	size_t nbytes;
 	bool overflow;
 
-	overflow = size_mul_overflow(num_pixels, BYTES_PER_PX(cfg->has_white),
-				     &nbytes);
+	overflow = size_mul_overflow(num_pixels, cfg->num_colors * 8, &nbytes);
 	return !overflow && (nbytes <= cfg->px_buf_size);
 }
 
@@ -132,19 +132,34 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	}
 
 	/*
-	 * Convert pixel data into SPI frames. Each frame has pixel
-	 * data in GRB on-wire format, with zeroed out white channel data
-	 * if applicable.
+	 * Convert pixel data into SPI frames. Each frame has pixel data
+	 * in color mapping on-wire format (e.g. GRB, GRBW, RGB, etc).
 	 */
 	for (i = 0; i < num_pixels; i++) {
-		ws2812_spi_ser(px_buf, pixels[i].g, one, zero);
-		ws2812_spi_ser(px_buf + 8, pixels[i].r, one, zero);
-		ws2812_spi_ser(px_buf + 16, pixels[i].b, one, zero);
-		if (cfg->has_white) {
-			ws2812_spi_ser(px_buf + 24, 0, one, zero);
-			px_buf += 32;
-		} else {
-			px_buf += 24;
+		uint8_t j;
+
+		for (j = 0; j < cfg->num_colors; j++) {
+			uint8_t pixel;
+
+			switch (cfg->color_mapping[j]) {
+			/* White channel is not supported by LED strip API. */
+			case LED_COLOR_ID_WHITE:
+				pixel = 0;
+				break;
+			case LED_COLOR_ID_RED:
+				pixel = pixels[i].r;
+				break;
+			case LED_COLOR_ID_GREEN:
+				pixel = pixels[i].g;
+				break;
+			case LED_COLOR_ID_BLUE:
+				pixel = pixels[i].b;
+				break;
+			default:
+				return -EINVAL;
+			}
+			ws2812_spi_ser(px_buf, pixel, one, zero);
+			px_buf += 8;
 		}
 	}
 
@@ -185,13 +200,25 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 #define WS2812_SPI_ZERO_FRAME(idx)\
 	(DT_INST_PROP(idx, spi_zero_frame))
 #define WS2812_SPI_BUFSZ(idx) \
-	(BYTES_PER_PX(WS2812_SPI_HAS_WHITE(idx)) * WS2812_SPI_NUM_PIXELS(idx))
+	(WS2812_NUM_COLORS(idx) * 8 * WS2812_SPI_NUM_PIXELS(idx))
+
+/*
+ * Retrieve the channel to color mapping (e.g. RGB, BGR, GRB, ...) from the
+ * "color-mapping" DT property.
+ */
+#define WS2812_COLOR_MAPPING(idx)					\
+static const uint8_t ws2812_spi_##idx##_color_mapping[] =		\
+	DT_INST_PROP(idx, color_mapping)
+
+#define WS2812_NUM_COLORS(idx) (DT_INST_PROP_LEN(idx, color_mapping))
 
 #define WS2812_SPI_DEVICE(idx)						\
 									\
 	static struct ws2812_spi_data ws2812_spi_##idx##_data;		\
 									\
 	static uint8_t ws2812_spi_##idx##_px_buf[WS2812_SPI_BUFSZ(idx)];	\
+									\
+	WS2812_COLOR_MAPPING(idx);					\
 									\
 	static const struct ws2812_spi_cfg ws2812_spi_##idx##_cfg = {	\
 		.spi_cfg = {						\
@@ -204,18 +231,36 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 		.px_buf_size = WS2812_SPI_BUFSZ(idx),			\
 		.one_frame = WS2812_SPI_ONE_FRAME(idx),		\
 		.zero_frame = WS2812_SPI_ZERO_FRAME(idx),		\
-		.has_white = WS2812_SPI_HAS_WHITE(idx),		\
+		.num_colors = WS2812_NUM_COLORS(idx),			\
+		.color_mapping = ws2812_spi_##idx##_color_mapping,	\
 	};								\
 									\
 	static int ws2812_spi_##idx##_init(const struct device *dev)	\
 	{								\
 		struct ws2812_spi_data *data = dev_data(dev);		\
+		const struct ws2812_spi_cfg *cfg = dev_cfg(dev);	\
+		uint8_t i;						\
 									\
 		data->spi = device_get_binding(WS2812_SPI_BUS(idx));	\
 		if (!data->spi) {					\
 			LOG_ERR("SPI device %s not found",		\
 				WS2812_SPI_BUS(idx));			\
 			return -ENODEV;				\
+		}							\
+									\
+		for (i = 0; i < cfg->num_colors; i++) {			\
+			switch (cfg->color_mapping[i]) {		\
+			case LED_COLOR_ID_WHITE:			\
+			case LED_COLOR_ID_RED:				\
+			case LED_COLOR_ID_GREEN:			\
+			case LED_COLOR_ID_BLUE:				\
+				break;					\
+			default:					\
+				LOG_ERR("%s: invalid channel to color mapping." \
+					"Check the color-mapping DT property",	\
+					dev->name);			\
+				return -EINVAL;				\
+			}						\
 		}							\
 									\
 		return 0;						\
