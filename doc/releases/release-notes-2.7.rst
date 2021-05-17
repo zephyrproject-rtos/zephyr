@@ -27,6 +27,12 @@ interface and listing all issues with the `bug label
 API Changes
 ***********
 
+Deprecated in this release
+
+* :c:macro:`DT_ENUM_TOKEN` and :c:macro:`DT_ENUM_UPPER_TOKEN`,
+  were deprecated in favor of utilizing
+  :c:macro:`DT_STRING_TOKEN` and :c:macro:`DT_STRING_UPPER_TOKEN`
+
 Changes in this release
 
 ==========================
