@@ -23,11 +23,10 @@ int flash_region_is_empty(uint32_t off, void *dst, uint32_t len)
 	uint8_t i;
 	uint8_t *u8dst;
 	int rc;
-	const struct flash_area *fap;
+	const struct flash_area *fap = FLASH_AREA(image_scratch);
 
-	rc = flash_area_open(FLASH_AREA_ID(image_scratch), &fap);
-	if (rc != 0) {
-		LOG_ERR("SPI flash area open failed!\n");
+	if (fap == NULL) {
+		LOG_ERR("SPI flash area pointer NULL!\n");
 		return -1;
 	}
 
@@ -39,12 +38,9 @@ int flash_region_is_empty(uint32_t off, void *dst, uint32_t len)
 
 	for (i = 0U, u8dst = (uint8_t *)dst; i < len; i++) {
 		if (u8dst[i] != 0xFF) {
-			flash_area_close(fap);
 			return 0;
 		}
 	}
-
-	flash_area_close(fap);
 
 	return 1;
 }
