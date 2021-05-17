@@ -779,7 +779,7 @@ static int sm_send_registration(bool send_obj_support_data,
 		}
 	}
 
-	ret = lwm2m_send_message(msg);
+	ret = lwm2m_send_message_async(msg);
 	if (ret < 0) {
 		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
@@ -929,7 +929,7 @@ static int sm_do_deregister(void)
 
 	LOG_INF("Deregister from '%s'", log_strdup(client.server_ep));
 
-	ret = lwm2m_send_message(msg);
+	ret = lwm2m_send_message_async(msg);
 	if (ret < 0) {
 		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;

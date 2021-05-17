@@ -77,8 +77,7 @@ struct lwm2m_ctx {
 	/** Private CoAP and networking structures */
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
-	struct k_work_delayable retransmit_work;
-	struct sys_mutex send_lock;
+	sys_slist_t pending_sends;
 
 	/** A pointer to currently processed request, for internal LwM2M engine
 	 *  use. The underlying type is ``struct lwm2m_message``, but since it's
