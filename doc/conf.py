@@ -176,6 +176,7 @@ breathe_domain_by_extension = {
     "c": "c",
 }
 breathe_show_enumvalue_initializer = True
+breathe_default_members = ("members", )
 
 cpp_id_attributes = [
     "__syscall",
