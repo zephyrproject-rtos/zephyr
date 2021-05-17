@@ -108,7 +108,6 @@ licensing, as described in :ref:`Zephyr_Licensing`.
    :maxdepth: 1
    :caption: Contents
 
-   Documentation Home <self>
    introduction/index.rst
    getting_started/index.rst
    contribute/index.rst
