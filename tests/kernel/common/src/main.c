@@ -154,7 +154,7 @@ void test_main(void)
 			 ztest_unit_test(test_bitarray_region_set_clear),
 			 ztest_unit_test(test_printk),
 			 ztest_1cpu_unit_test(test_timeout_order),
-			 ztest_1cpu_user_unit_test(test_clock_uptime),
+			 ztest_user_unit_test(test_clock_uptime),
 			 ztest_unit_test(test_clock_cycle),
 			 ztest_unit_test(test_version),
 			 ztest_unit_test(test_multilib),
