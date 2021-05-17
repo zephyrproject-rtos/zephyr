@@ -995,7 +995,7 @@ int bt_audio_ep_subscribe(struct bt_conn *conn, struct bt_audio_ep *ep)
 	ep->subscribe.disc_params = &ep->discover;
 	ep->subscribe.notify = ep_notify;
 	ep->subscribe.value = BT_GATT_CCC_NOTIFY;
-	atomic_set(ep->subscribe.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+	atomic_set_bit(ep->subscribe.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 	return bt_gatt_subscribe(conn, &ep->subscribe);
 }
@@ -1015,8 +1015,8 @@ void bt_audio_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		cp_subscribe[index].disc_params = &cp_disc[index];
 		cp_subscribe[index].notify = cp_notify;
 		cp_subscribe[index].value = BT_GATT_CCC_NOTIFY;
-		atomic_set(cp_subscribe[index].flags,
-			   BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+		atomic_set_bit(cp_subscribe[index].flags,
+			       BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 
 		bt_gatt_subscribe(conn, &cp_subscribe[index]);
 	}
