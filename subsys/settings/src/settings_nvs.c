@@ -272,9 +272,9 @@ int settings_backend_init(void)
 	struct flash_sector hw_flash_sector;
 	uint32_t sector_cnt = 1;
 
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fa);
-	if (rc) {
-		return rc;
+	fa = FLASH_AREA(storage);
+	if (fa == NULL) {
+		return -ENODEV;
 	}
 
 	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &sector_cnt,
