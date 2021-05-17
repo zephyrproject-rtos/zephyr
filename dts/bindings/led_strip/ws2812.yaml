@@ -27,9 +27,14 @@ properties:
     description: |
       The number of devices in the daisy-chain.
 
-  has-white-channel:
-    type: boolean
+  color-mapping:
+    type: array
+    required: true
     description: |
-      If true, the device has a white channel. This is not supported
-      by the led_strip.h API, so the white data on the wire will be
-      zero if set.
+      Channel to color mapping (or pixel order).
+
+      For example a GRB channel to color mapping would be
+
+         color-mapping = <LED_COLOR_ID_GREEN
+                          LED_COLOR_ID_RED
+                          LED_COLOR_ID_BLUE>;
