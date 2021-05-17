@@ -2631,6 +2631,15 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	if (data_ptr && data_len > 0) {
 		switch (obj_field->data_type) {
 
+		case LWM2M_RES_TYPE_STRING:
+			if (data_len < 2) {
+				/* no space for actual characters */
+				return -ENOENT;
+			}
+
+			/* ensure string buffers are always 0 terminated */
+			memset(data_ptr, 0, data_len);
+			data_len--;
 		case LWM2M_RES_TYPE_OPAQUE:
 			ret = lwm2m_write_handler_opaque(obj_inst, res,
 							 res_inst, msg,
@@ -2640,11 +2649,6 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			}
 
 			len = ret;
-			break;
-
-		case LWM2M_RES_TYPE_STRING:
-			engine_get_string(&msg->in, write_buf, write_buf_len);
-			len = strlen((char *)write_buf);
 			break;
 
 		case LWM2M_RES_TYPE_U64:
@@ -2727,7 +2731,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		return -ENOENT;
 	}
 
-	if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
+	if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE &&
+	    obj_field->data_type != LWM2M_RES_TYPE_STRING) {
 #if CONFIG_LWM2M_ENGINE_VALIDATION_BUFFER_SIZE > 0
 		if (res->validate_cb) {
 			ret = res->validate_cb(
