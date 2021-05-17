@@ -10,6 +10,14 @@
  * @brief Macros for declaring thread stacks
  */
 
+/**
+ * @brief Thread Stack APIs
+ * @ingroup kernel_apis
+ * @defgroup thread_stack_api Thread Stack APIs
+ * @{
+ * @}
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_THREAD_STACK_H
 #define ZEPHYR_INCLUDE_SYS_THREAD_STACK_H
 
@@ -107,7 +115,7 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define K_KERNEL_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
 
 /**
- * @addtogroup stack_apis
+ * @addtogroup thread_stack_api
  * @{
  */
 
@@ -364,7 +372,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
 
 /**
- * @addtogroup stack_apis
+ * @addtogroup thread_stack_api
  * @{
  */
 
