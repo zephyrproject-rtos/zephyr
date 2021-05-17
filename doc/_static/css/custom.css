@@ -171,6 +171,12 @@ hr,
     padding: 0 4px !important;
 }
 .rst-content dl:not(.docutils) .sig-param,
+.rst-content dl:not(.docutils).class dt > code,
+.rst-content dl:not(.docutils).function dt > code,
+.rst-content dl:not(.docutils).method dt > code {
+    padding: 0 4px !important;
+}
+.rst-content dl:not(.docutils) .sig-param,
 .rst-content dl:not(.docutils).class dt > .optional ~ em,
 .rst-content dl:not(.docutils).function dt > .optional ~ em,
 .rst-content dl:not(.docutils).method dt > .optional ~ em {
@@ -897,6 +903,14 @@ kbd, .kbd {
     background: var(--admonition-note-background-color) !important;
     border-top: none !important;
     border-left: none !important;
+}
+
+.rst-content dl:not(.docutils).c.var .pre {
+  padding-right: 4px;
+}
+
+.rst-content dl:not(.docutils).c.struct .property {
+  padding-right: 4px !important;
 }
 
 /* Misc tweaks */
