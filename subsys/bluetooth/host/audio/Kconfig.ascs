@@ -6,7 +6,7 @@
 #
 
 config BT_ASCS
-	bool "Audio Stream Control Service Support [d09r09]"
+	bool "Audio Stream Control Service Support [d09r12]"
 	depends on BT_PACS
 	default y
 	select BT_SMP_SC_PAIR_ONLY
