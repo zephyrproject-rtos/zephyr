@@ -786,8 +786,14 @@ CVE-2021
 
 CVE-2021-3320
 -------------------
+Mismatch between validation and handling of 802154 ACK frames, where
+ACK frames are considered during validation, but not during actual
+processing, leading to a type confusion.
 
-Under embargo until 2021-04-14
+- `CVE-2020-3320 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3320>`_
+
+- `PR31908 fix for master
+  <https://github.com/zephyrproject-rtos/zephyr/pull/31908>`_
 
 CVE-2021-3321
 -------------------
