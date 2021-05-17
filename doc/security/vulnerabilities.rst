@@ -470,6 +470,9 @@ Improper Input Frame Validation in ieee802154 Processing
 - `PR24971 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/24971>`_
 
+- `PR33451 fix for v1.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33451>`_
+
 CVE-2020-10066
 --------------
 
@@ -485,6 +488,9 @@ nullpointer dereference.
 
 - `PR24902 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/24902>`_
+
+- `PR25089 fix for v1.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/25089>`_
 
 CVE-2020-10067
 --------------
@@ -635,6 +641,9 @@ descriptor.
 - `PR25804 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/25804>`_
 
+- `PR27176 fix for v1.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/27176>`_
+
 CVE-2020-10136
 -------------------
 
@@ -660,6 +669,12 @@ characters long will cause a buffer overflow.
 
 - `PR25852 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/25852>`_
+
+- `PR28782 fix for v2.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/28782>`_
+
+- `PR33577 fix for v1.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33577>`_
 
 CVE-2020-13599
 --------------
@@ -706,6 +721,9 @@ Possible read out of bounds in dns read
 - `PR27774 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/27774>`_
 
+- `PR30503 fix for v1.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/30503>`_
+
 CVE-2020-13602
 --------------
 
@@ -722,6 +740,8 @@ infinite loop, resulting in a denial of service attack.
 - `PR26571 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/26571>`_
 
+- `PR33578 fix for v1.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33578>`_
 
 CVE-2020-13603
 --------------
