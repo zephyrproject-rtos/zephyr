@@ -302,6 +302,13 @@ Drivers and Sensors
 
 * Ethernet
 
+  * Added simulated PTP clock to e1000 Ethernet controller. This allows simple PTP
+    clock testing with Qemu.
+  * Separated PTP clock from gPTP support in mcux and gmac drivers. This allows
+    application to use PTP clock without enabling gPTP support.
+  * Converted clock control to use DEVICE_DT_GET in mcux driver.
+  * Changed to allow changing MAC address in gmac driver.
+
 * Flash
 
   * flash_write_protection_set() has been deprecated and will be removed in
@@ -341,6 +348,14 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
+  * Fixed various issues in IEEE 802.15.4 L2 driver.
+
+  * nrf5:
+
+    * Made HW Radio Capabilities runtime.
+    * Enabled CSMA-CA on serialized host.
+    * Changed driver to load EUI64 from UICR.
+
   * rf2xx:
 
     * Added support for tx mode direct.
@@ -361,6 +376,18 @@ Drivers and Sensors
 * LoRa
 
 * Modem
+
+  * Converted wncm14a2a, quectel-bg9x, hl7800 and ublox-sara-r4 drivers to use
+    new DT device macros.
+  * Changed GSM modem to optionally do a factory reset when booting.
+  * Added autostarting support to GSM modem.
+  * Added wait for RDY instead of polling AT in BG9X.
+  * Fixed PDP context management for BG9X.
+  * Added TLS offload support to ublox-sara-r4.
+  * Made reset pin optional in ublox-sara-r4.
+  * Fixed potential buffer overrun in hl7800.
+  * Fixed build errors on 64-bit platforms.
+  * Added support for dialup modem in PPP driver.
 
 * PECI
 
@@ -390,8 +417,132 @@ Drivers and Sensors
 
 * WiFi
 
+  * Converted eswifi and esp drivers to new DT device macros
+
+  * esp:
+
+    * Fixed hostname configuration.
+    * Removed POSIX API dependency.
+    * Renamed offloading driver from esp to esp_at.
+    * Added esp32 wifi driver support.
+
 Networking
 **********
+
+* CoAP:
+
+  * Fixed coap_find_options() to return 0 when options are empty.
+
+* DHCPv4:
+
+  * Fixed DHCPv4 dependency to network event management options.
+
+* DNS:
+
+  * Added locking to DNS library prevent concurrent access.
+  * Added 10ms delay when rescheduling query timeout handler in DNS. This allows
+    applications to run and handle the timeout gracefully.
+  * Added support for reconfiguring DNS resolver when DNS servers are changed.
+    This is supported by DHCPv4 and PPP.
+
+* HTTP:
+
+  * Added support for storing numeric HTTP error code in client API.
+
+* IPv4:
+
+  * Added IGMPv2 support to IPv4.
+  * Removed IPv4 multicast address check when selecting source address during TX.
+
+* LwM2M:
+
+  * Fixed query buffer size so that it is large enough to encode all query strings.
+  * Added data validation callback.
+  * Fixed Register/Update to use link_format writer.
+  * Added application/link-format content writer.
+  * Removed .well-known/core handling.
+  * Introduced attribute handling helper functions.
+  * Removed obsolete LWM2M_IPSO_TIMESTAMP_EXTENSIONS option.
+  * Added IPSO Buzzer, Push Button, On/Off Switch, Accelerometer, Pressure Sensor,
+    Humidity, Generic Sensor and Temperature object implementation to support
+    object model in version 1.1
+  * Unified reusable resources creation.
+  * Added support for object versioning.
+  * Changed to allow cancel-observe to match path.
+  * Made pmin and pmax attributes optional.
+  * Added API function to delete object instance.
+  * Fixed Registration Update send on object creation.
+  * Changed to only parse TLV from the first block.
+  * Changed to trigger registration update only when registered.
+
+* Misc:
+
+  * Added UDP packet sending support to net-shell.
+  * Fixed source network interface setting when sending and when there are
+    multiple network interfaces.
+  * Changed connection managed to ignore not used network interfaces.
+  * Added locking to network interface API function calls.
+  * Changed to allow application to disable IPv4 or IPv6 support for a network interface.
+  * Added support for virtual network interfaces.
+  * Added support for IPv4/v6 tunneling network interface.
+  * Added net events notification for PPP dead and running states.
+  * Added PPP LCP MRU option support.
+  * Added PPP IPCP IP and DNS address peer options support.
+  * Added support for network packet capturing and sending data to external system
+    for analysis.
+  * Enabled running without TX or RX threads. By default, one RX thread and
+    no TX thread is created. If userspace support is enabled, then one RX and one
+    TX thread are created. This improves the network transmit latency when a
+    packet is sent from application.
+  * Changed to push highest priority net_pkt directly to driver when sending and if
+    there is at least one TX thread.
+  * Changed to use k_fifo instead of k_work in RX and TX processing. This prevents
+    k_work from accessing already freed net_pkt struct. This also improves the latency
+    of network packets when the data is passed between different network threads.
+  * Changed to check network interface status when sending and return ENETDOWN to the
+    application if data cannot be sent.
+  * Fixed echo-server sample application and set netmask properly when VLAN is
+    enabled.
+
+* OpenThread:
+
+  * Added microseconds timer API support.
+  * Changed to switch radio off when stopping diagnostics.
+  * Enabled CSL delayed transmissions.
+  * Added CSL transmitter and receiver API support.
+  * Changed to init NCP after USB communication is established.
+  * Aligned with the new NCP API.
+  * Aligned with the new CLI API.
+  * Introduced new OpenThread options.
+  * Added Link Metrics API support.
+  * Selected ECDSA when SRP is enabled.
+  * Made child related options only visible on FTD.
+  * Changed OT shell not to execute OT commands when shell is not ready.
+
+* Socket:
+
+  * Added SO_PROTOCOL and SO_TYPE get socket option.
+  * Added MSG_WAITALL receive socket option flag.
+  * Added MSG_TRUNC socket option flag.
+  * Added support for close method for packet sockets.
+  * Added locking to socket API function calls.
+  * Added support for SO_BINDTODEVICE socket option.
+  * Added support for SO_SNDTIMEO socket option.
+  * Made NET_SOCKETS_POSIX_NAMES be on by default. This allows application to use
+    normal BSD socket API calls without adding the zsock prefix.
+  * Added sample application to use SO_TXTIME socket option.
+
+* TCP:
+
+  * Implemented ISN calculation according to RFC6528 in TCP. This is optional and
+    enabled by default, and can be disabled if needed.
+  * Removed legacy TCP stack support.
+  * Changed TCP to use private work queue in order not to block system work queue.
+
+* TLS:
+
+  * Fixed userspace access to TLS socket.
+  * Added socket option support for setting and getting DTLS handshake timeout.
 
 Bluetooth
 *********
