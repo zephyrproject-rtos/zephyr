@@ -535,6 +535,7 @@ a.internal:visited code.literal {
 .rst-content .admonition.seealso {
     background-color: var(--admonition-note-background-color);
     color: var(--admonition-note-color);
+    overflow: auto;
 }
 
 .rst-content .admonition.note .admonition-title,
@@ -548,6 +549,7 @@ a.internal:visited code.literal {
 .rst-content .admonition.warning {
     background-color: var(--admonition-attention-background-color);
     color: var(--admonition-attention-color);
+    overflow: auto;
 }
 
 .rst-content .admonition.attention .admonition-title,
@@ -560,6 +562,7 @@ a.internal:visited code.literal {
 .rst-content .admonition.danger {
     background-color: var(--admonition-danger-background-color);
     color: var(--admonition-danger-color);
+    overflow: auto;
 }
 
 .rst-content .admonition.danger .admonition-title {
@@ -571,6 +574,7 @@ a.internal:visited code.literal {
 .rst-content .admonition.important {
     background-color: var(--admonition-tip-background-color);
     color: var(--admonition-tip-color);
+    overflow: auto;
 }
 
 .rst-content .admonition.tip .admonition-title,
