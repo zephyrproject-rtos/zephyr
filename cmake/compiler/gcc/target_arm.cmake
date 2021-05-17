@@ -18,9 +18,10 @@ else()
   set(PRECISION_TOKEN sp-)
 endif()
 
-set(FPU_FOR_cortex-m4      fpv4-${PRECISION_TOKEN}d16)
-set(FPU_FOR_cortex-m7      fpv5-${PRECISION_TOKEN}d16)
-set(FPU_FOR_cortex-m33     fpv5-${PRECISION_TOKEN}d16)
+set(FPU_FOR_cortex-m4        fpv4-${PRECISION_TOKEN}d16)
+set(FPU_FOR_cortex-m7        fpv5-${PRECISION_TOKEN}d16)
+set(FPU_FOR_cortex-m33       fpv5-${PRECISION_TOKEN}d16)
+set(FPU_FOR_cortex-m33+nodsp fpv5-${PRECISION_TOKEN}d16)
 
 if(CONFIG_FPU)
   list(APPEND TOOLCHAIN_C_FLAGS   -mfpu=${FPU_FOR_${GCC_M_CPU}})
