@@ -36,7 +36,7 @@
 #include <spinlock.h>
 #include <fatal.h>
 #include <irq.h>
-#include <sys/thread_stack.h>
+#include <kernel/thread_stack.h>
 #include <app_memory/mem_domain.h>
 #include <sys/kobject.h>
 #include <kernel/thread.h>
