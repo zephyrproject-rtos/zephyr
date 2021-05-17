@@ -837,7 +837,7 @@ kbd, .kbd {
 .wy-menu.wy-menu-vertical {
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: calc(100% - 348px);
+    max-height: calc(100% - 243px);
 }
 @media screen and (max-width: 768px) {
     .wy-nav-side {
