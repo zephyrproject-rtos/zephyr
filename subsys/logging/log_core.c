@@ -137,6 +137,7 @@ uint32_t z_log_get_s_mask(const char *str, uint32_t nargs)
 			arm = false;
 			arg++;
 		} else {
+			; /* standard character, continue walk */
 		}
 	}
 
@@ -233,6 +234,11 @@ static void z_log_msg_post_finalize(void)
 			k_sem_give(&log_process_thread_sem);
 		}
 	} else {
+		/* No action needed. Message processing will be triggered by the
+		 * timeout or when number of upcoming messages exceeds the
+		 * threshold.
+		 */
+		;
 	}
 }
 
@@ -411,6 +417,7 @@ uint32_t log_count_args(const char *fmt)
 			args++;
 			prev = false;
 		} else {
+			; /* standard character, continue walk */
 		}
 		fmt++;
 	}
