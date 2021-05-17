@@ -723,6 +723,30 @@ infinite loop, resulting in a denial of service attack.
   <https://github.com/zephyrproject-rtos/zephyr/pull/26571>`_
 
 
+CVE-2020-13603
+--------------
+
+Possible overflow in mempool
+
+ * Zephyr offers pre-built 'malloc' wrapper function instead.
+ * The 'malloc' function is wrapper for the 'sys_mem_pool_alloc' function
+ * sys_mem_pool_alloc allocates 'size + WB_UP(sizeof(struct sys_mem_pool_block))' in an unsafe manner.
+ * Asking for very large size values leads to internal integer wrap-around.
+ * Integer wrap-around leads to successful allocation of very small memory.
+ * For example: calling malloc(0xffffffff) leads to successful allocation of 7 bytes.
+ * That leads to heap overflow.
+
+- `CVE-2020-13603 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13603>`_
+
+- `Zephyr project bug tracker ZEPSEC-111
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-111>`_
+
+- `PR31796 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/31796>`_
+
+- `PR32808 fix for v1.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/26571>`_
+
 CVE-2021
 ========
 
