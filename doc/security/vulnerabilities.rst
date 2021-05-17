@@ -473,6 +473,20 @@ Improper Input Frame Validation in ieee802154 Processing
 - `PR33451 fix for v1.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/33451>`_
 
+CVE-2020-10065
+--------------
+
+OOB Write after not validating user-supplied length (<= 0xffff) and
+copying to fixed-size buffer (default: 77 bytes) for HCI_ACL packets in
+bluetooth HCI over SPI driver.
+
+- `CVE-2020-10065 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10065>`_
+
+- `Zephyr project bug tracker ZEPSEC-66
+  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-66>`_
+
+- This issue has not been fixed.
+
 CVE-2020-10066
 --------------
 
