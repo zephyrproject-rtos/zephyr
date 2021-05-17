@@ -83,7 +83,7 @@ static int dummy_close(const struct device *dev)
 
 	/* Parent can be suspended */
 	if (parent) {
-		pm_device_put(parent);
+		pm_device_put_sync(parent);
 	}
 
 	return ret;
