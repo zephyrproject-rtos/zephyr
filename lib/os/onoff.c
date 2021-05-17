@@ -223,7 +223,7 @@ static int process_recheck(struct onoff_manager *mgr)
 		   && !sys_slist_is_empty(&mgr->clients)) {
 		evt = EVT_RESET;
 	} else {
-		;
+		; /* Non-empty final else in if ... else if struct */
 	}
 
 	return evt;
@@ -409,7 +409,7 @@ static void process_event(struct onoff_manager *mgr,
 			mgr->flags &= ~ONOFF_FLAG_RECHECK;
 			evt = EVT_RECHECK;
 		} else {
-			;
+			; /* Non-empty final else in if ... else if struct */
 		}
 
 		state = mgr->flags & ONOFF_STATE_MASK;
