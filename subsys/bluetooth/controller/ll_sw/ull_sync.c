@@ -439,7 +439,6 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	/* offs_adjust may be 1 only if sync setup by LL_PERIODIC_SYNC_IND */
 	sync_offset_us += (si->offs_adjust ? OFFS_ADJUST_US : 0U);
 	sync_offset_us -= PKT_AC_US(pdu->len, 0, lll->phy);
-	sync_offset_us -= EVENT_OVERHEAD_START_US;
 	sync_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_offset_us -= EVENT_JITTER_US;
 	sync_offset_us -= ready_delay_us;
@@ -461,12 +460,12 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 
 	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
 				sync->ull.ticks_prepare_to_start);
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
 		ticks_slot_overhead = 0U;
 	}
+	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			   (TICKER_ID_SCAN_SYNC_BASE + sync_handle),
