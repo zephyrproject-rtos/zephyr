@@ -192,11 +192,13 @@ static void test_advx_main(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Stop advertising...");
 	err = bt_le_adv_stop();
@@ -228,11 +230,13 @@ static void test_advx_main(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Removing connectable adv aux set...");
 	err = bt_le_ext_adv_delete(adv);
@@ -1017,11 +1021,13 @@ static void test_scanx_main(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	is_connected = false;
 	is_disconnected = false;
@@ -1038,11 +1044,13 @@ static void test_scanx_main(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Start scanning for a duration...");
 	is_scan_timeout = false;
@@ -1083,7 +1091,7 @@ static void test_scanx_main(void)
 
 	scan_param.timeout = 0;
 
-	printk("Start scanning...");
+	printk("Start scanning for Periodic Advertisements...");
 	is_periodic = false;
 	per_adv_evt_cnt_actual = 0;
 	per_adv_evt_cnt_expected = 3;
