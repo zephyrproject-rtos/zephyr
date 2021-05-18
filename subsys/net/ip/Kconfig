@@ -140,7 +140,7 @@ config NET_SHELL_DYN_CMD_COMPLETION
 
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
-	default 1 if USERSPACE
+	default 1 if USERSPACE || USB_DEVICE_NETWORK
 	default 0
 	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && USERSPACE
 	range 0 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8
