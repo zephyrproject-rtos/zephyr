@@ -4105,6 +4105,26 @@ static int gatt_exec_write(struct bt_conn *conn,
 			     sizeof(struct bt_att_exec_write_req));
 }
 
+static int gatt_cancel_encode(struct net_buf *buf, size_t len, void *user_data)
+{
+	struct bt_att_exec_write_req *req;
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->flags = BT_ATT_FLAG_CANCEL;
+
+	return 0;
+}
+
+static int gatt_cancel_all_writes(struct bt_conn *conn,
+			   struct bt_gatt_write_params *params)
+{
+	BT_DBG("");
+
+	return gatt_req_send(conn, gatt_write_rsp, params, gatt_cancel_encode,
+			     BT_ATT_OP_EXEC_WRITE_REQ,
+			     sizeof(struct bt_att_exec_write_req));
+}
+
 static void gatt_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
 				   const void *pdu, uint16_t length,
 				   void *user_data)
@@ -4112,6 +4132,7 @@ static void gatt_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
 	struct bt_gatt_write_params *params = user_data;
 	const struct bt_att_prepare_write_rsp *rsp = pdu;
 	size_t len;
+	bool data_valid;
 
 	BT_DBG("err 0x%02x", err);
 
@@ -4123,7 +4144,15 @@ static void gatt_prepare_write_rsp(struct bt_conn *conn, uint8_t err,
 
 	len = length - sizeof(*rsp);
 	if (len > params->length) {
-		params->func(conn, BT_ATT_ERR_INVALID_PDU, params);
+		BT_ERR("Incorrect length, canceling write");
+		gatt_cancel_all_writes(conn, params);
+		return;
+	}
+
+	data_valid = memcmp(params->data, rsp->value, len) == 0;
+	if (params->offset != rsp->offset || !data_valid) {
+		BT_ERR("Incorrect offset or data in response, canceling write");
+		gatt_cancel_all_writes(conn, params);
 		return;
 	}
 
