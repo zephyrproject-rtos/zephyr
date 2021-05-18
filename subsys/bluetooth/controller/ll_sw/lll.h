@@ -267,9 +267,15 @@ struct node_rx_ftr {
 			uint16_t conn_handle;
 		} param_adv_term;
 	};
-	void     *extra; /* Used as next pointer for extended PDU chaining, to
-			  * reserve node_rx for CSA#2 event generation etc.
-			  */
+	union {
+		void *extra;   /* Used as next pointer for extended PDU
+				* chaining, to reserve node_rx for CSA#2 event
+				* generation etc.
+				*/
+		void *aux_ptr;
+		uint8_t aux_phy;
+		uint8_t aux_sched;
+	};
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
 	uint8_t  rssi;
