@@ -83,6 +83,8 @@ features:
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | clock_control                       |
 +-----------+------------+-------------------------------------+
+| HWINFO    | on-chip    | Unique device serial number         |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
