@@ -73,20 +73,7 @@ class VndLookup:
         vnd2vendor = {
             None: GENERIC_OR_VENDOR_INDEPENDENT,
         }
-        with open(vendor_prefixes, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-
-                if not line or line.startswith('#'):
-                    # Comment or empty line.
-                    continue
-
-                # Other lines should be in this form:
-                #
-                # <vnd><TAB><vendor>
-                vnd_vendor = line.split('\t', 1)
-                assert len(vnd_vendor) == 2, line
-                vnd2vendor[vnd_vendor[0]] = vnd_vendor[1]
+        vnd2vendor.update(edtlib.load_vendor_prefixes_txt(vendor_prefixes))
 
         logger.info('found %d vendor prefixes in %s', len(vnd2vendor) - 1,
                     vendor_prefixes)
