@@ -173,6 +173,9 @@ set_compiler_property(PROPERTY security_fortify "")
 # Required C++ flags when using mwdt
 set_property(TARGET compiler-cpp PROPERTY required "")
 
+# Compiler flag for turning off thread-safe initialization of local statics
+set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe-statics")
+
 #################################
 # This section covers asm flags #
 #################################
