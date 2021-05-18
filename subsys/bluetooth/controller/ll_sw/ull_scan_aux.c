@@ -121,6 +121,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
 		lll = ftr->param;
 		aux = HDR_LLL2ULL(lll);
+		/* FIXME: pick the aux somehow */
 		scan = HDR_LLL2ULL(aux->rx_head->rx_ftr.param);
 		sync = (void *)scan;
 		scan = ull_scan_is_valid_get(scan);
@@ -268,14 +269,19 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	lll->chan = aux_ptr->chan_idx;
 	lll->phy = BIT(aux_ptr->phy);
 
-	aux_offset_us = ftr->radio_end_us - PKT_AC_US(pdu->len, 0, phy);
+	/* Determine the window size */
 	if (aux_ptr->offs_units) {
 		lll->window_size_us = 300U;
 	} else {
 		lll->window_size_us = 30U;
 	}
-	aux_offset_us += (uint32_t)aux_ptr->offs * lll->window_size_us;
 
+	/* Calculate the aux offset from start of the scan window */
+	aux_offset_us = (uint32_t)aux_ptr->offs * lll->window_size_us;
+	aux_offset_us += ftr->radio_end_us;
+	aux_offset_us -= PKT_AC_US(pdu->len, 0, phy);
+
+	/* Calculate the window widening that needs to be deducted */
 	if (aux_ptr->ca) {
 		window_widening_us = aux_offset_us / 2000U;
 	} else {

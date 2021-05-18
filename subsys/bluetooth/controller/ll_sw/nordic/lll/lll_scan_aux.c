@@ -175,6 +175,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
+	/* TODO: for passive scanning use complete_and_disable */
 	radio_switch_complete_and_tx(lll->phy, 0, lll->phy, 1);
 
 	/* TODO: skip filtering if AdvA was already found in previous PDU */
@@ -220,7 +221,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of Rx-ed PDU, extended scan to schedule auxiliary
-	 * channel chaining or to create periodic sync.
+	 * channel chaining, create connection or to create periodic sync.
 	 */
 	radio_tmr_end_capture();
 
