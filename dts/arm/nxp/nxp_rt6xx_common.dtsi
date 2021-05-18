@@ -66,6 +66,11 @@
 		#clock-cells = <1>;
 	};
 
+	uuid: uuid@2f50 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x2f50 0x10>;
+	};
+
 	gpio0: gpio@0 {
 		compatible = "nxp,lpc-gpio";
 		reg = <0x100000 0x4000>;
