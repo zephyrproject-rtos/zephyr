@@ -1,16 +1,14 @@
-Device tree binding vendor prefix registry. Keep this list in
-alphabetical order.
-
-This isn't an exhaustive list, but you should add new prefixes to it
-before using them to avoid name-space collisions.
-
-The contents of this file are parsed during documentation generation.
-Anything above the following line of '-' characters is ignored. Every
-non-empty line after that should contain a line in this format:
-
-<vendor-prefix><TAB><Full name of vendor>
-
---------------------------------------------------
+# Device tree binding vendor prefix registry. Keep this list in
+# alphabetical order.
+#
+# This isn't an exhaustive list, but you should add new prefixes to it
+# before using them to avoid name-space collisions.
+#
+# The contents of this file are parsed during documentation generation.
+# Anything that starts with a '#' is treated as a comment and ignored.
+# Non-empty lines should be in this format:
+#
+# <vendor-prefix><TAB><Full name of vendor>
 
 abb	ABB
 abilis	Abilis Systems
