@@ -142,6 +142,66 @@ void z_arm64_fpu_enter_exc(void)
 }
 
 /*
+ * Simulate some FPU store instructions.
+ *
+ * In many cases, the FPU trap is triggered by va_start() that copies
+ * the content of FP registers used for floating point argument passing
+ * into the va_list object in case there were actual float arguments from
+ * the caller. In practice this is almost never the case, especially if
+ * FPU access is disabled and we're trapped while in exception context.
+ * Rather than flushing the FPU context to its owner and enabling access
+ * just to let the corresponding STR instructions execute, we simply
+ * simulate them and leave the FPU access disabled. This also avoids the
+ * need for disabling interrupts in syscalls and IRQ handlers as well.
+ */
+static bool simulate_str_q_insn(z_arch_esf_t *esf)
+{
+	/*
+	 * Support only the "FP in exception" cases for now.
+	 * We know there is no saved FPU context to check nor any
+	 * userspace stack memory to validate in that case.
+	 */
+	if (arch_exception_depth() <= 1) {
+		return false;
+	}
+
+	uint32_t *pc = (uint32_t *)esf->elr;
+	/* The original (interrupted) sp is the top of the esf structure */
+	uintptr_t sp = (uintptr_t)esf + sizeof(*esf);
+
+	for (;;) {
+		uint32_t insn = *pc;
+
+		/*
+		 * We're looking for STR (immediate, SIMD&FP) of the form:
+		 *
+		 *  STR Q<n>, [SP, #<pimm>]
+		 *
+		 * where 0 <= <n> <= 7 and <pimm> is a 12-bits multiple of 16.
+		 */
+		if ((insn & 0xffc003f8) != 0x3d8003e0)
+			break;
+
+		uint32_t pimm = (insn >> 10) & 0xfff;
+
+		/* Zero the location as the above STR would have done */
+		*(__int128 *)(sp + pimm * 16) = 0;
+
+		/* move to the next instruction */
+		pc++;
+	}
+
+	/* did we do something? */
+	if (pc != (uint32_t *)esf->elr) {
+		/* resume execution past the simulated instructions */
+		esf->elr = (uintptr_t)pc;
+		return true;
+	}
+
+	return false;
+}
+
+/*
  * Process the FPU trap.
  *
  * This usually means that FP regs belong to another thread. Save them
@@ -158,6 +218,11 @@ void z_arm64_fpu_enter_exc(void)
 void z_arm64_fpu_trap(z_arch_esf_t *esf)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
+
+	/* check if a quick simulation can do it */
+	if (simulate_str_q_insn(esf)) {
+		return;
+	}
 
 	/* turn on FPU access */
 	write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN_NOTRAP);
