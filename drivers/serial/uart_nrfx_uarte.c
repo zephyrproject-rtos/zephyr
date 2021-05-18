@@ -878,6 +878,10 @@ static int uarte_nrfx_callback_set(const struct device *dev,
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
+	if (!data->async) {
+		return -ENOTSUP;
+	}
+
 	data->async->user_callback = callback;
 	data->async->user_data = user_data;
 
