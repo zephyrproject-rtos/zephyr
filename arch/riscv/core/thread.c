@@ -86,10 +86,14 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	/* Shared FP mode: enable FPU of threads with K_FP_REGS. */
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
 		stack_init->mstatus |= MSTATUS_FS_INIT;
 	}
 	stack_init->fp_state = 0;
+#elif defined(CONFIG_FPU)
+	/* Unshared FP mode: enable FPU of each thread. */
+	stack_init->mstatus |= MSTATUS_FS_INIT;
 #endif
 
 	stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
