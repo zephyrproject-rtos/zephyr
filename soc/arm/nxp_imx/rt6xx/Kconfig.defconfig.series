@@ -17,6 +17,12 @@ config NUM_IRQS
 config PM
 	select CODE_DATA_RELOCATION_SRAM
 
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/peripheral@50000000/spi@134000,1,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/peripheral@50000000/spi@134000,1)
+
 source "soc/arm/nxp_imx/rt6xx/Kconfig.defconfig.mimxrt6*"
 
 endif # SOC_SERIES_MIMXRT6XX
