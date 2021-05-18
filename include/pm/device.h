@@ -119,6 +119,8 @@ struct pm_device {
 	struct k_work_delayable work;
 	/** Event conditional var to listen to the sync request events */
 	struct k_condvar condvar;
+	/** Condvar mutex */
+	struct k_mutex condvar_lock;
 };
 
 /** Bit position in device_pm::atomic_flags that records whether the
