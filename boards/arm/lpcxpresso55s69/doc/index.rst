@@ -91,8 +91,11 @@ CPU0 is the only target that can run standalone.
 - *lpcxpresso55s69_ns* non-secure (NS) address space for CPU0
 - *lpcxpresso55s69_cpu1* CPU1 target, no security extensions
 
-NS target for CPU0 does not work correctly without a secure image enabling it.
-To enable it, run any of the ``tfm_integration`` samples.
+NS target for CPU0 does not work correctly without a secure image to configure
+the system, then hand execution over to the NS environment. To enable a secure
+image, run any of the ``tfm_integration`` samples. When using the NS target
+``CONFIG_BUILD_WITH_TFM`` is always enabled to ensure that a valid S image is
+included during the build process.
 
 CPU1 does not work without CPU0 enabling it.
 To enable it, run one of the following samples in ``subsys\ipc``:
@@ -276,15 +279,15 @@ see the following message in the terminal:
 Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
 ----------------------------------------------------------------------
 The TF-M integration samples can be run using the ``lpcxpresso55s69_ns`` target.
-To run we need to manually flash the resulting image (``tfm_merged.bin``) with a
-J-Link as follows (reset and erase are for recovering a locked core):
+To run we need to manually flash the resulting image (``tfm_merged.hex``) with
+a J-Link as follows (reset and erase are for recovering a locked core):
 
    .. code-block:: console
 
       JLinkExe -device lpc55s69 -if swd -speed 2000 -autoconnect 1
       J-Link>r
       J-Link>erase
-      J-Link>loadfile build/tfm_merged.bin
+      J-Link>loadfile build/tfm_merged.hex
 
 We need to reset the board manually after flashing the image to run this code.
 
