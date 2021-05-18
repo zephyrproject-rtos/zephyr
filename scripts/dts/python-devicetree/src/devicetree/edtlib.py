@@ -150,7 +150,8 @@ class EDT:
                  default_prop_types=True,
                  support_fixed_partitions_on_any_bus=True,
                  infer_binding_for_paths=None,
-                 err_on_deprecated_properties=False):
+                 err_on_deprecated_properties=False,
+                 vendor_prefixes=None):
         """EDT constructor.
 
         dts:
@@ -182,12 +183,18 @@ class EDT:
         err_on_deprecated_properties (default: False):
           If True and 'dts' has any deprecated properties set, raise an error.
 
+        vendor_prefixes (default: None):
+          A dict mapping vendor prefixes in compatible properties to their
+          descriptions. If given, compatibles in the form "manufacturer,device"
+          for which "manufacturer" is neither a key in the dict nor a specially
+          exempt set of grandfathered-in cases will cause warnings.
         """
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths = set(infer_binding_for_paths or [])
         self._err_on_deprecated_properties = bool(err_on_deprecated_properties)
+        self._vendor_prefixes = vendor_prefixes
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -507,6 +514,14 @@ class EDT:
             _err(f"node '{node.path}' compatible '{compat}' "
                  'must match this regular expression: '
                  f"'{compat_re}'")
+
+        if ',' in compat and self._vendor_prefixes is not None:
+            vendor = compat.split(',', 1)[0]
+            if vendor not in self._vendor_prefixes and \
+                   vendor not in _VENDOR_PREFIX_ALLOWED:
+                _LOG.warning(
+                    f"node '{node.path}' compatible '{compat}' "
+                    f"has unknown vendor prefix '{vendor}'")
 
         self._checked_compatibles.add(compat)
 
@@ -2797,3 +2812,14 @@ _DEFAULT_PROP_SPECS = {
     name: PropertySpec(name, _DEFAULT_PROP_BINDING)
     for name in _DEFAULT_PROP_TYPES
 }
+
+# A set of vendor prefixes which are grandfathered in by Linux,
+# and therefore by us as well.
+_VENDOR_PREFIX_ALLOWED = set([
+    "at25", "bm", "devbus", "dmacap", "dsa",
+    "exynos", "fsia", "fsib", "gpio-fan", "gpio-key", "gpio", "gpmc",
+    "hdmi", "i2c-gpio", "keypad", "m25p", "max8952", "max8997",
+    "max8998", "mpmc", "pinctrl-single", "#pinctrl-single", "PowerPC",
+    "pl022", "pxa-mmc", "rcar_sound", "rotary-encoder", "s5m8767",
+    "sdhci", "simple-audio-card", "st-plgpio", "st-spics", "ts",
+])
