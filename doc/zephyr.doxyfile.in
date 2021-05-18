@@ -51,7 +51,7 @@ PROJECT_BRIEF          = "A Scalable Open Source RTOS for IoT Embedded Devices"
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = "images/Zephyr-Kite-small.png"
+PROJECT_LOGO           = @ZEPHYR_BASE@/doc/images/Zephyr-Kite-small.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -754,7 +754,7 @@ WARN_LOGFILE           =
 
 # This MUST be kept in sync with DOXY_SOURCES in doc/CMakeLists.txt
 # for incremental (and faster) builds to work correctly.
-INPUT                  = custom-doxygen/mainpage.md \
+INPUT                  = @ZEPHYR_BASE@/doc/custom-doxygen/mainpage.md \
 			 @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
@@ -1072,7 +1072,7 @@ HTML_FILE_EXTENSION    = .html
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_HEADER            = custom-doxygen/header.html
+HTML_HEADER            = @ZEPHYR_BASE@/doc/custom-doxygen/header.html
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
 # generated HTML page. If the tag is left blank doxygen will generate a standard
@@ -1107,7 +1107,7 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = custom-doxygen/customdoxygen.css
+HTML_EXTRA_STYLESHEET  = @ZEPHYR_BASE@/doc/custom-doxygen/customdoxygen.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
