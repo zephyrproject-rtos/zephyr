@@ -3,285 +3,542 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+
+
+# DT_COMPAT_NORDIC_NRF_ACL := nordic,nrf-acl
 config HAS_HW_NRF_ACL
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_ACL))
 
+DT_COMPAT_NORDIC_NRF_ADC := nordic,nrf-adc
 config HAS_HW_NRF_ADC
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_ADC))
 
+# DT_COMPAT_NORDIC_NRF_BPROT := nordic,nrf-bprot
 config HAS_HW_NRF_BPROT
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_BPROT))
 
+DT_COMPAT_NORDIC_NRF_CC310 := nordic,nrf-cc310
 config HAS_HW_NRF_CC310
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_CC310))
 
+DT_COMPAT_NORDIC_NRF_CC312 := nordic,nrf-cc312
 config HAS_HW_NRF_CC312
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_CC312))
 
+# DT_COMPAT_NORDIC_NRF_CCM := nordic,nrf-ccm
 config HAS_HW_NRF_CCM
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_CCM))
 
+# DT_COMPAT_NORDIC_NRF_CCM_LFLEN_8BIT := nordic,nrf-CCM_LFLEN_8BIT
 config HAS_HW_NRF_CCM_LFLEN_8BIT
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_CCM_LFLEN_8BIT))
 
+DT_COMPAT_NORDIC_NRF_CLOCK := nordic,nrf-clock
 config HAS_HW_NRF_CLOCK
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_CLOCK))
 
+# DT_COMPAT_NORDIC_NRF_COMP := nordic,nrf-COMP
 config HAS_HW_NRF_COMP
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_COMP))
 
+DT_COMPAT_NORDIC_NRF_DPPIC := nordic,nrf-dppic
 config HAS_HW_NRF_DPPIC
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_DPPIC))
 
+DT_COMPAT_NORDIC_NRF_ECB := nordic,nrf-ecb
 config HAS_HW_NRF_ECB
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_ECB))
 
+DT_COMPAT_NORDIC_NRF_EGU := nordic,nrf-egu
+DT_NODELABEL_NORDIC_NRF_EGU0 := egu0
 config HAS_HW_NRF_EGU0
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_EGU0))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_EGU))
 
+DT_NODELABEL_NORDIC_NRF_EGU1 := egu1
 config HAS_HW_NRF_EGU1
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_EGU1))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_EGU))
 
+DT_NODELABEL_NORDIC_NRF_EGU2 := egu2
 config HAS_HW_NRF_EGU2
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_EGU2))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_EGU))
 
+DT_NODELABEL_NORDIC_NRF_EGU3 := egu3
 config HAS_HW_NRF_EGU3
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_EGU3))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_EGU))
 
+DT_NODELABEL_NORDIC_NRF_EGU4 := egu4
 config HAS_HW_NRF_EGU4
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_EGU4))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_EGU))
 
+DT_NODELABEL_NORDIC_NRF_EGU5 := egu5
 config HAS_HW_NRF_EGU5
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_EGU5))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_EGU))
 
+DT_COMPAT_NORDIC_NRF_GPIO := nordic,nrf-gpio
+DT_NODELABEL_NORDIC_NRF_GPIO0 := gpio0
 config HAS_HW_NRF_GPIO0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_GPIO0))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_GPIO))
 
+DT_NODELABEL_NORDIC_NRF_GPIO1 := gpio1
 config HAS_HW_NRF_GPIO1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_GPIO1))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_GPIO))
 
+DT_COMPAT_NORDIC_NRF_GPIOTE := nordic,nrf-gpiote
 config HAS_HW_NRF_GPIOTE
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_GPIOTE))
 
+DT_COMPAT_NORDIC_NRF_I2S := nordic,nrf-i2s
 config HAS_HW_NRF_I2S
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_I2S))
 
+DT_COMPAT_NORDIC_NRF_IPC := nordic,nrf-ipc
 config HAS_HW_NRF_IPC
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_IPC))
 
+# DT_COMPAT_NORDIC_NRF_LPCOMP := nordic,nrf-lpcomp
 config HAS_HW_NRF_LPCOMP
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_LPCOMP))
 
+# DT_COMPAT_NORDIC_NRF_MPU := nordic,nrf-mpu
 config HAS_HW_NRF_MPU
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_MPU))
 
+# DT_COMPAT_NORDIC_NRF_MWU := nordic,nrf-mwu
 config HAS_HW_NRF_MWU
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_MWU))
 
+# DT_COMPAT_NORDIC_NRF_NFCT := nordic,nrf-nfct
 config HAS_HW_NRF_NFCT
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NFCT))
 
 # NVMC supports partial erase
+# DT_COMPAT_NORDIC_NRF_NVMC_PE := nordic,nrf-NVMC_PE
 config HAS_HW_NRF_NVMC_PE
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_NVMC_PE))
 
+DT_COMPAT_NORDIC_NRF_PDM := nordic,nrf-pdm
 config HAS_HW_NRF_PDM
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PDM))
 
+# DT_COMPAT_NORDIC_NRF_POWER := nordic,nrf-power
 config HAS_HW_NRF_POWER
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_POWER))
 
+# DT_COMPAT_NORDIC_NRF_PPI := nordic,nrf-ppi
 config HAS_HW_NRF_PPI
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PPI))
 
+DT_COMPAT_NORDIC_NRF_PWM := nordic,nrf-pwm
+DT_NODELABEL_NORDIC_NRF_PWM0 := pwm0
 config HAS_HW_NRF_PWM0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_PWM0))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PWM))
 
+DT_NODELABEL_NORDIC_NRF_PWM1 := pwm1
 config HAS_HW_NRF_PWM1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_PWM1))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PWM))
 
+DT_NODELABEL_NORDIC_NRF_PWM2 := pwm2
 config HAS_HW_NRF_PWM2
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_PWM2))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PWM))
 
+DT_NODELABEL_NORDIC_NRF_PWM3 := pwm3
 config HAS_HW_NRF_PWM3
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_PWM3))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PWM))
 
+DT_COMPAT_NORDIC_NRF_QDEC := nordic,nrf-qdec
 config HAS_HW_NRF_QDEC
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_QDEC))
 
+DT_NODELABEL_NORDIC_NRF_QDEC0 := qdec0
 config HAS_HW_NRF_QDEC0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_QDEC0))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_QDEC))
 
+DT_NODELABEL_NORDIC_NRF_QDEC1 := qdec1
 config HAS_HW_NRF_QDEC1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_QDEC1))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_QDEC))
 
+DT_COMPAT_NORDIC_NRF_QSPI := nordic,nrf-qspi
 config HAS_HW_NRF_QSPI
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_QSPI))
 
+# DT_COMPAT_NORDIC_NRF_RADIO_BLE_2M := nordic,nrf-RADIO_BLE_2M
 config HAS_HW_NRF_RADIO_BLE_2M
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RADIO_BLE_2M))
 
+# DT_COMPAT_NORDIC_NRF_RADIO_TX_PWR_HIGH := nordic,nrf-RADIO_TX_PWR_HIGH
 config HAS_HW_NRF_RADIO_TX_PWR_HIGH
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RADIO_TX_PWR_HIGH))
 
+# DT_COMPAT_NORDIC_NRF_RADIO_BLE_CODED := nordic,nrf-RADIO_BLE_CODED
 config HAS_HW_NRF_RADIO_BLE_CODED
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RADIO_BLE_CODED))
 
+DT_COMPAT_NORDIC_NRF_RADIO_IEEE802154 := nordic,nrf-RADIO_IEEE8021544
 config HAS_HW_NRF_RADIO_IEEE802154
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RADIO_IEEE802154))
 
+# DT_COMPAT_NORDIC_NRF_RADIO_BLE_DF := nordic,nrf-RADIO_BLE_DF
 config HAS_HW_NRF_RADIO_BLE_DF
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RADIO_BLE_DF))
 
+DT_COMPAT_NORDIC_NRF_RNG := nordic,nrf-rng
 config HAS_HW_NRF_RNG
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RNG))
 
+DT_COMPAT_NORDIC_NRF_RTC := nordic,nrf-rtc
+DT_NODELABEL_NORDIC_NRF_RTC0 := rtc0
 config HAS_HW_NRF_RTC0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_RTC0))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RTC))
 
+DT_NODELABEL_NORDIC_NRF_RTC1 := rtc1
 config HAS_HW_NRF_RTC1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_RTC1))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RTC))
 
+DT_NODELABEL_NORDIC_NRF_RTC2 := rtc2
 config HAS_HW_NRF_RTC2
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_RTC2))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_RTC))
 
+DT_COMPAT_NORDIC_NRF_SAADC := nordic,nrf-saadc
 config HAS_HW_NRF_SAADC
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SAADC))
 
+DT_COMPAT_NORDIC_NRF_SPI := nordic,nrf-spi
+DT_NODELABEL_NORDIC_NRF_SPI0 := spi0
 config HAS_HW_NRF_SPI0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPI0))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPI))
 
+DT_NODELABEL_NORDIC_NRF_SPI1 := spi1
 config HAS_HW_NRF_SPI1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPI1))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPI))
 
+DT_NODELABEL_NORDIC_NRF_SPI2 := spi2
 config HAS_HW_NRF_SPI2
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPI2))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPI))
 
+DT_COMPAT_NORDIC_NRF_SPIM := nordic,nrf-spim
+DT_NODELABEL_NORDIC_NRF_SPIM0 := spi0
 config HAS_HW_NRF_SPIM0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPIM0))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
+DT_NODELABEL_NORDIC_NRF_SPIM1 := spi1
 config HAS_HW_NRF_SPIM1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPIM1))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
+DT_NODELABEL_NORDIC_NRF_SPIM2 := spi2
 config HAS_HW_NRF_SPIM2
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPIM2))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
+DT_NODELABEL_NORDIC_NRF_SPIM3 := spi3
 config HAS_HW_NRF_SPIM3
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPIM3))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
+DT_NODELABEL_NORDIC_NRF_SPIM4 := spi4
 config HAS_HW_NRF_SPIM4
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPIM4))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIM))
 
+DT_COMPAT_NORDIC_NRF_SPIS := nordic,nrf-spis
+DT_NODELABEL_NORDIC_NRF_SPIS0 := spi0
 config HAS_HW_NRF_SPIS0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPIS0))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
+DT_NODELABEL_NORDIC_NRF_SPIS1 := spi1
 config HAS_HW_NRF_SPIS1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPIS1))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
+DT_NODELABEL_NORDIC_NRF_SPIS2 := spi2
 config HAS_HW_NRF_SPIS2
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPIS2))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
+DT_NODELABEL_NORDIC_NRF_SPIS3 := spi3
 config HAS_HW_NRF_SPIS3
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SPIS3))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPIS))
 
+DT_COMPAT_NORDIC_NRF_SPU := nordic,nrf-spu
 config HAS_HW_NRF_SPU
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SPU))
 
+DT_COMPAT_NORDIC_NRF_SWI := nordic,nrf-swi
+DT_NODELABEL_NORDIC_NRF_SWI0 := swi0
 config HAS_HW_NRF_SWI0
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SWI0))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SWI))
 
+DT_NODELABEL_NORDIC_NRF_SWI1 := swi1
 config HAS_HW_NRF_SWI1
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SWI1))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SWI))
 
+DT_NODELABEL_NORDIC_NRF_SWI2 := swi2
 config HAS_HW_NRF_SWI2
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SWI2))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SWI))
 
+DT_NODELABEL_NORDIC_NRF_SWI3 := swi3
 config HAS_HW_NRF_SWI3
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SWI3))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SWI))
 
+DT_NODELABEL_NORDIC_NRF_SWI4 := swi4
 config HAS_HW_NRF_SWI4
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SWI4))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SWI))
 
+DT_NODELABEL_NORDIC_NRF_SWI5 := swi5
 config HAS_HW_NRF_SWI5
 	bool
+	# default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_SWI5))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_SWI))
 
+DT_COMPAT_NORDIC_NRF_TEMP := nordic,nrf-temp
 config HAS_HW_NRF_TEMP
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TEMP))
 
+DT_COMPAT_NORDIC_NRF_TIMER := nordic,nrf-timer
+DT_NODELABEL_NORDIC_NRF_TIMER0 := timer0
 config HAS_HW_NRF_TIMER0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TIMER0))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
+DT_NODELABEL_NORDIC_NRF_TIMER1 := timer1
 config HAS_HW_NRF_TIMER1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TIMER1))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
+DT_NODELABEL_NORDIC_NRF_TIMER2 := timer2
 config HAS_HW_NRF_TIMER2
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TIMER2))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
+DT_NODELABEL_NORDIC_NRF_TIMER3 := timer3
 config HAS_HW_NRF_TIMER3
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TIMER3))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
+DT_NODELABEL_NORDIC_NRF_TIMER4 := timer4
 config HAS_HW_NRF_TIMER4
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TIMER4))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TIMER))
 
+DT_COMPAT_NORDIC_NRF_TWI := nordic,nrf-twi
+DT_NODELABEL_NORDIC_NRF_TWI0 := i2c0
 config HAS_HW_NRF_TWI0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWI0))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWI))
 
+DT_NODELABEL_NORDIC_NRF_TWI1 := i2c1
 config HAS_HW_NRF_TWI1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWI1))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWI))
 
+DT_COMPAT_NORDIC_NRF_TWIM := nordic,nrf-twim
+DT_NODELABEL_NORDIC_NRF_TWIM0 := i2c0
 config HAS_HW_NRF_TWIM0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWIM0))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
+DT_NODELABEL_NORDIC_NRF_TWIM1 := i2c1
 config HAS_HW_NRF_TWIM1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWIM1))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
+DT_NODELABEL_NORDIC_NRF_TWIM2 := i2c2
 config HAS_HW_NRF_TWIM2
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWIM2))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
+DT_NODELABEL_NORDIC_NRF_TWIM3 := i2c3
 config HAS_HW_NRF_TWIM3
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWIM3))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWIM))
 
+DT_COMPAT_NORDIC_NRF_TWIS := nordic,nrf-twis
+DT_NODELABEL_NORDIC_NRF_TWIS0 := i2c0
 config HAS_HW_NRF_TWIS0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWIS0))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
+DT_NODELABEL_NORDIC_NRF_TWIS1 := i2c1
 config HAS_HW_NRF_TWIS1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWIS1))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
+DT_NODELABEL_NORDIC_NRF_TWIS2 := i2c2
 config HAS_HW_NRF_TWIS2
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWIS2))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
+DT_NODELABEL_NORDIC_NRF_TWIS3 := i2c3
 config HAS_HW_NRF_TWIS3
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_TWIS3))
+	# depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TWIS))
 
+DT_COMPAT_NORDIC_NRF_UART0 := nordic,nrf-uart
 config HAS_HW_NRF_UART0
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_UART0))
 
+DT_COMPAT_NORDIC_NRF_UARTE := nordic,nrf-uarte
+DT_NODELABEL_NORDIC_NRF_UARTE0 := uart0
 config HAS_HW_NRF_UARTE0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_UARTE0))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_UARTE))
 
+DT_NODELABEL_NORDIC_NRF_UARTE1 := uart1
 config HAS_HW_NRF_UARTE1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_UARTE1))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_UARTE))
 
+DT_NODELABEL_NORDIC_NRF_UARTE2 := uart2
 config HAS_HW_NRF_UARTE2
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_UARTE2))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_UARTE))
 
+DT_NODELABEL_NORDIC_NRF_UARTE3 := uart3
 config HAS_HW_NRF_UARTE3
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_UARTE3))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_UARTE))
 
+DT_COMPAT_NORDIC_NRF_USBD := nordic,nrf-usbd
 config HAS_HW_NRF_USBD
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBD))
 
+# DT_COMPAT_NORDIC_NRF_USBREG := nordic,nrf-usbreg
 config HAS_HW_NRF_USBREG
 	bool
+	# default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_USBREG))
 
+DT_COMPAT_NORDIC_NRF_WDT := nordic,nrf-watchdog
 config HAS_HW_NRF_WDT
 	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_WDT))
 
+DT_NODELABEL_NORDIC_NRF_WDT0 := wdt0
 config HAS_HW_NRF_WDT0
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_WDT0))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_WDT))
 
+DT_NODELABEL_NORDIC_NRF_WDT1 := wdt1
 config HAS_HW_NRF_WDT1
 	bool
+	default y if $(dt_nodelabel_enabled,$(DT_NODELABEL_NORDIC_NRF_WDT1))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_WDT))
 
 # Reserved HW peripherals
 config NRF_HW_TIMER0_RESERVED
