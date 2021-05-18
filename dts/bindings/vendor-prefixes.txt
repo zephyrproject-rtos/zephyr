@@ -149,6 +149,7 @@ excito	Excito
 ezchip	EZchip Semiconductor
 facebook	Facebook
 fairphone	Fairphone B.V.
+fanstel	Fanstel Corp.
 faraday	Faraday Technology Corporation
 fastrax	Fastrax Oy
 fcs	Fairchild Semiconductor
