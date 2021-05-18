@@ -102,8 +102,7 @@ Modifying Sample for Your Own Project
 
 It is recommended that you copy and modify one of the two TensorFlow
 samples when creating your own TensorFlow project. To build with
-TensorFlow, you must enable at least the below Kconfig options in
-your :file:`prj.conf` and set a flag in your :file:`CMakeLists.txt`.
+TensorFlow, you must enable the below Kconfig options in your :file:`prj.conf`.
 
 :file:`prj.conf`:
 
@@ -112,12 +111,6 @@ your :file:`prj.conf` and set a flag in your :file:`CMakeLists.txt`.
     CONFIG_CPLUSPLUS=y
     CONFIG_NEWLIB_LIBC=y
     CONFIG_TENSORFLOW_LITE_MICRO=y
-
-:file:`CMakeLists.txt`:
-
-.. code-block:: console
-
-    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fno-threadsafe-statics")
 
 Training
 ********
