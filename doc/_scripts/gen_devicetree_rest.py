@@ -22,10 +22,6 @@ from devicetree import edtlib
 
 import gen_helpers
 
-# A line of '-' characters in vendor-prefixes.txt that separates
-# the data from comments about it.
-VENDOR_PREFIXES_SEPARATOR = '-' * 50
-
 ZEPHYR_BASE = Path(__file__).parents[2]
 
 GENERIC_OR_VENDOR_INDEPENDENT = 'Generic or vendor-independent'
@@ -77,19 +73,20 @@ class VndLookup:
         vnd2vendor = {
             None: GENERIC_OR_VENDOR_INDEPENDENT,
         }
-        found_separator = False     # have we found the '-----' separator?
         with open(vendor_prefixes, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
-                if line and found_separator:
-                    # Every line after the separator should be in this form:
-                    #
-                    # <vnd><TAB><vendor>
-                    vnd_vendor = line.split('\t', 1)
-                    assert len(vnd_vendor) == 2, line
-                    vnd2vendor[vnd_vendor[0]] = vnd_vendor[1]
-                elif line.startswith(VENDOR_PREFIXES_SEPARATOR):
-                    found_separator = True
+
+                if not line or line.startswith('#'):
+                    # Comment or empty line.
+                    continue
+
+                # Other lines should be in this form:
+                #
+                # <vnd><TAB><vendor>
+                vnd_vendor = line.split('\t', 1)
+                assert len(vnd_vendor) == 2, line
+                vnd2vendor[vnd_vendor[0]] = vnd_vendor[1]
 
         logger.info('found %d vendor prefixes in %s', len(vnd2vendor) - 1,
                     vendor_prefixes)
