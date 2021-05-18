@@ -38,3 +38,15 @@ properties:
          color-mapping = <LED_COLOR_ID_GREEN
                           LED_COLOR_ID_RED
                           LED_COLOR_ID_BLUE>;
+
+  reset-delay:
+    type: int
+    required: false
+    default: 8
+    description: |
+      Minimum delay to wait (in microseconds) to make sure that the strip has
+      latched the signal. If omitted, a default value of 8 microseconds is used.
+      This default is good for the WS2812 controllers. Note that despite the
+      WS2812 datasheet states that a 50 microseconds delay is required, it seems
+      6 microseconds is enough. The default is set to 8 microseconds just to be
+      safe.
