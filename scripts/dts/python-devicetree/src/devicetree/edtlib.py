@@ -72,6 +72,7 @@ from copy import deepcopy
 import logging
 import os
 import re
+from typing import Set
 
 import yaml
 try:
@@ -476,8 +477,7 @@ class EDT:
                         ', '.join(repr(x) for x in spec.enum))
 
         # Validate the contents of compatible properties.
-        # The regular expression comes from dt-schema.
-        compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
+        self._checked_compatibles: Set[str] = set()
         for node in self.nodes:
             if 'compatible' not in node.props:
                 continue
@@ -494,10 +494,21 @@ class EDT:
                 # This is also just for future-proofing.
                 assert isinstance(compat, str)
 
-                if not re.match(compat_re, compat):
-                    _err(f"node '{node.path}' compatible '{compat}' "
-                         'must match this regular expression: '
-                         f"'{compat_re}'")
+                self._check_compatible(node, compat)
+        del self._checked_compatibles  # We have no need for this anymore.
+
+    def _check_compatible(self, node, compat):
+        if compat in self._checked_compatibles:
+            return
+
+        # The regular expression comes from dt-schema.
+        compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
+        if not re.match(compat_re, compat):
+            _err(f"node '{node.path}' compatible '{compat}' "
+                 'must match this regular expression: '
+                 f"'{compat_re}'")
+
+        self._checked_compatibles.add(compat)
 
 class Node:
     """
