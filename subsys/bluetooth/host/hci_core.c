@@ -2490,7 +2490,6 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 {
 #if defined(CONFIG_BT_ISO)
 	struct bt_hci_rp_le_read_buffer_size_v2 *rp = (void *)buf->data;
-	uint8_t max_num;
 
 	BT_DBG("status %u", rp->status);
 
@@ -2502,8 +2501,7 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->acl_max_num,
 		bt_dev.le.acl_mtu);
 
-	max_num = MIN(rp->acl_max_num, CONFIG_BT_CONN_TX_MAX);
-	k_sem_init(&bt_dev.le.acl_pkts, max_num, max_num);
+	k_sem_init(&bt_dev.le.acl_pkts, rp->acl_max_num, rp->acl_max_num);
 
 	bt_dev.le.iso_mtu = sys_le16_to_cpu(rp->iso_max_len);
 	if (!bt_dev.le.iso_mtu) {
@@ -2514,8 +2512,7 @@ static void read_buffer_size_v2_complete(struct net_buf *buf)
 	BT_DBG("ISO buffers: pkts %u mtu %u", rp->iso_max_num,
 		bt_dev.le.iso_mtu);
 
-	max_num = MIN(rp->iso_max_num, CONFIG_BT_ISO_TX_BUF_COUNT);
-	k_sem_init(&bt_dev.le.iso_pkts, max_num, max_num);
+	k_sem_init(&bt_dev.le.iso_pkts, rp->iso_max_num, rp->iso_max_num);
 #endif /* CONFIG_BT_ISO */
 }
 
