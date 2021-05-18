@@ -711,7 +711,7 @@ static void bt_vcs_client_init(void)
 int bt_vcs_discover(struct bt_conn *conn)
 {
 	static bool initialized;
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct vcs_instance *vcs_inst;
 
 	/*
 	 * This will initiate a discover procedure. The procedure will do the
@@ -726,7 +726,11 @@ int bt_vcs_discover(struct bt_conn *conn)
 	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
 		return -EINVAL;
-	} else if (vcs_inst->busy) {
+	}
+
+	vcs_inst = &vcs_insts[bt_conn_index(conn)];
+
+	if (vcs_inst->busy) {
 		return -EBUSY;
 	}
 
