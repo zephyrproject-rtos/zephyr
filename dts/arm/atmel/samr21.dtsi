@@ -29,12 +29,17 @@
 			#dma-cells = <2>;
 		};
 
-		portc: gpio@41004500 {
-			compatible = "atmel,sam0-gpio";
-			reg = <0x41004500 0x80>;
-			label = "PORTC";
-			gpio-controller;
-			#gpio-cells = <2>;
+		pinctrl@41004400 {
+			ranges = <0x41004400 0x41004400 0x180>;
+
+			portc: gpio@41004500 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41004500 0x80>;
+				label = "PORTC";
+				gpio-controller;
+				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
+			};
 		};
 
 		pinmux_c: pinmux@41004500 {
