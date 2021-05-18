@@ -23,6 +23,8 @@ set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 set(DEVICETREE_UNFIXED_H        ${PROJECT_BINARY_DIR}/include/generated/devicetree_unfixed.h)
 set(DEVICE_EXTERN_H             ${PROJECT_BINARY_DIR}/include/generated/device_extern.h)
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
+# A list of generally accepted vendor prefixes.
+set_ifndef(VENDOR_PREFIXES      ${ZEPHYR_BASE}/dts/bindings/vendor-prefixes.txt)
 
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
 
@@ -228,6 +230,7 @@ if(SUPPORTS_DTS)
   --device-header-out ${DEVICE_EXTERN_H}
   --dts-out ${ZEPHYR_DTS} # As a debugging aid
   --edt-pickle-out ${EDT_PICKLE}
+  --vendor-prefixes ${VENDOR_PREFIXES}
   ${EXTRA_GEN_DEFINES_ARGS}
   )
 
