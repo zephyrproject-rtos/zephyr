@@ -224,3 +224,22 @@ void pm_device_disable(const struct device *dev)
 	k_spin_unlock(&dev->pm->lock, key);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_disable, dev);
 }
+
+int pm_device_wait(const struct device *dev, k_timeout_t timeout)
+{
+	int ret = 0;
+
+	k_mutex_lock(&dev->pm->condvar_lock, K_FOREVER);
+	while ((k_work_delayable_is_pending(&dev->pm->work)) ||
+		(atomic_get(&dev->pm->state) == PM_DEVICE_STATE_SUSPENDING) ||
+		(atomic_get(&dev->pm->state) == PM_DEVICE_STATE_RESUMING)) {
+		ret = k_condvar_wait(&dev->pm->condvar, &dev->pm->condvar_lock,
+			       timeout);
+		if (ret != 0) {
+			break;
+		}
+	}
+	k_mutex_unlock(&dev->pm->condvar_lock);
+
+	return ret;
+}
