@@ -774,6 +774,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 {
 	struct lll_adv_sync *lll_sync;
 	uint32_t ticks_slot_overhead;
+	uint32_t ticks_slot_offset;
 	uint32_t volatile ret_cb;
 	struct pdu_adv *ter_pdu;
 	uint32_t interval_us;
@@ -790,19 +791,21 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	time_us = sync_time_get(sync, ter_pdu);
 
 	/* TODO: active_to_start feature port */
-	sync->ull.ticks_active_to_start = 0;
+	sync->ull.ticks_active_to_start = 0U;
 	sync->ull.ticks_prepare_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
 
+	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
+				sync->ull.ticks_prepare_to_start);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
-					  sync->ull.ticks_prepare_to_start);
+		ticks_slot_overhead = ticks_slot_offset;
 	} else {
-		ticks_slot_overhead = 0;
+		ticks_slot_overhead = 0U;
 	}
+	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	interval_us = (uint32_t)sync->interval * CONN_INT_UNIT_US;
 
@@ -811,7 +814,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_SYNC_BASE + sync_handle),
-			   ticks_anchor, 0,
+			   (ticks_anchor - ticks_slot_offset), 0U,
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us), TICKER_NULL_LAZY,
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
