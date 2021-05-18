@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
+#include "nrf_802154_const.h"
 
 #if defined(CONFIG_NRF_802154_SER_HOST)
 #include "nrf_802154_serialization_error.h"
@@ -654,6 +655,43 @@ static void nrf5_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
+static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
+{
+	nrf_802154_security_error_t err;
+	nrf_802154_key_t key;
+	uint8_t key_id_to_remove;
+
+	__ASSERT(mac_keys, "Invalid argument.");
+
+	/* Remove old invalid key assuming that its index is first_valid_key_id - 1.
+	 * TODO: This is Thread specific assumption, need to be changed when RD will provided
+	 * API for removing all keys or handling this internally.
+	 */
+	key_id_to_remove = mac_keys->key_index == 1 ? 0x80 : mac_keys->key_index - 1;
+
+	key.id.mode = mac_keys->key_id_mode;
+	key.id.p_key_id = &key_id_to_remove;
+
+	nrf_802154_security_key_remove(&key.id);
+
+	for (struct ieee802154_key *keys = mac_keys; keys->key_value; keys++) {
+		key.value.p_cleartext_key = keys->key_value;
+		key.id.mode = keys->key_id_mode;
+		key.id.p_key_id = &(keys->key_index);
+		key.type = NRF_802154_KEY_CLEARTEXT;
+		key.frame_counter = 0;
+		key.use_global_frame_counter = !(keys->frame_counter_per_key);
+
+		nrf_802154_security_key_remove(&key.id);
+		err = nrf_802154_security_key_store(&key);
+		__ASSERT(err == NRF_802154_SECURITY_ERROR_NONE ||
+				 err == NRF_802154_SECURITY_ERROR_ALREADY_PRESENT,
+			 "Storing key failed, err: %d", err);
+	};
+}
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
+
 static int nrf5_configure(const struct device *dev,
 			  enum ieee802154_config_type type,
 			  const struct ieee802154_config *config)
@@ -716,6 +754,17 @@ static int nrf5_configure(const struct device *dev,
 
 	case IEEE802154_CONFIG_EVENT_HANDLER:
 		nrf5_data.event_handler = config->event_handler;
+		break;
+
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
+	case IEEE802154_CONFIG_MAC_KEYS:
+		nrf5_config_mac_keys(config->mac_keys);
+		break;
+
+	case IEEE802154_CONFIG_FRAME_COUNTER:
+		nrf_802154_security_global_frame_counter_set(config->frame_counter);
+		break;
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
 
 	default:
 		return -EINVAL;
