@@ -810,6 +810,13 @@ integer underflow.
   <https://github.com/zephyrproject-rtos/zephyr/pull/33453>`_
 
 CVE-2021-3323
--------------------
+-------------
 
-Under embargo until 2021-04-14
+Integer Underflow in 6LoWPAN IPHC Header Uncompression
+
+- `CVE-2020-3323 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3323>`_
+
+- `Zephyr project bug tracker ZEPSEC-116
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-116>`_
+
+- This issue has not been fixed.
