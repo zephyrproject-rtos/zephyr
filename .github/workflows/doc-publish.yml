@@ -87,7 +87,6 @@ jobs:
       run: |
         echo "DOC_RELEASE=[$RELEASE]"
         if [ "$RELEASE" == "latest" ]; then
-           export
            echo "publish latest docs"
            aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/latest --delete
            echo "success sync of latest docs"
@@ -99,7 +98,11 @@ jobs:
            echo "success sync of rel docs"
         fi
         if [ -d doc/_build/doxygen/html ]; then
-           API_RELEASE=${RELEASE:1}
+           if [ "$RELEASE" == "latest" ]; then
+              API_RELEASE=latest
+           else
+              API_RELEASE=${RELEASE:1}
+           fi
            echo "publish doxygen to apidoc/${API_RELEASE}"
            aws s3 sync  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${API_RELEASE} --delete
            echo "success publish of doxygen"
