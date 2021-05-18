@@ -65,15 +65,3 @@ jobs:
       with:
         name: htmldocs.tar
         path: htmldocs.tar
-
-    - name: check-warns
-      run: |
-        if [ -s doc/_build/doc.warnings ]; then
-           docwarn=$(cat doc/_build/doc.warnings)
-           docwarn="${docwarn//'%'/'%25'}"
-           docwarn="${docwarn//$'\n'/'%0A'}"
-           docwarn="${docwarn//$'\r'/'%0D'}"
-           # We treat doc warnings as errors
-           echo "::error file=doc.warnings::$docwarn"
-           exit 1
-        fi

@@ -81,18 +81,6 @@ jobs:
         source zephyr-env.sh
         make DOC_TAG=${DOC_TAG} -C doc htmldocs
 
-    - name: check-warns
-      run: |
-        if [ -s doc/_build/doc.warnings ]; then
-           docwarn=$(cat doc/_build/doc.warnings)
-           docwarn="${docwarn//'%'/'%25'}"
-           docwarn="${docwarn//$'\n'/'%0A'}"
-           docwarn="${docwarn//$'\r'/'%0D'}"
-           # We treat doc warnings as errors
-           echo "::error file=doc.warnings::$docwarn"
-           exit 1
-        fi
-
     - name: Upload to AWS S3
       env:
         RELEASE: ${{ steps.tag.outputs.RELEASE }}
