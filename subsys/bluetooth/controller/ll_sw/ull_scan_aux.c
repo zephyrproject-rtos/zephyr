@@ -287,7 +287,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, 1);
 
-	aux_offset_us -= EVENT_OVERHEAD_START_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
 	aux_offset_us -= window_widening_us;
@@ -307,12 +306,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,
 				aux->ull.ticks_prepare_to_start);
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
 		ticks_slot_overhead = 0U;
 	}
+	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	/* TODO: unreserve the primary scan window ticks in ticker */
 
