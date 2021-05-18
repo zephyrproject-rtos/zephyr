@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2020, Bernhard Kraemer
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_TEENSY40 || BOARD_TEENSY41
+
+config BUILD_OUTPUT_HEX
+	bool
+	default y
+
+config BOARD
+	default "teensy40" if BOARD_TEENSY40
+	default "teensy41" if BOARD_TEENSY41
+
+choice CODE_LOCATION
+	default CODE_FLEXSPI
+endchoice
+
+config DISK_DRIVER_SDMMC
+	default y if DISK_DRIVERS
+
+endif # BOARD_TEENSY40 || BOARD_TEENSY41
