@@ -22,15 +22,10 @@
 	};
 
 	chosen {
+		zephyr,flash = &mx25um51345g;
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
-	};
-
-	flash0: flash@18000000 {
-		/* Octal flash MX25UM51345G */
-		reg = <0x18000000 DT_SIZE_K(65536)>;
 	};
 
 	gpio_keys {
