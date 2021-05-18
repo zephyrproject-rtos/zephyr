@@ -648,6 +648,7 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 				  uint32_t iso_interval_us)
 {
 	uint32_t ticks_slot_overhead;
+	uint32_t ticks_slot_offset;
 	uint32_t volatile ret_cb;
 	uint32_t slot_us;
 	uint32_t ret;
@@ -665,12 +666,14 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	adv_iso->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
 
+	ticks_slot_offset = MAX(adv_iso->ull.ticks_active_to_start,
+				adv_iso->ull.ticks_prepare_to_start);
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = MAX(adv_iso->ull.ticks_active_to_start,
-					  adv_iso->ull.ticks_prepare_to_start);
+		ticks_slot_overhead = ticks_slot_offset;
 	} else {
 		ticks_slot_overhead = 0U;
 	}
+	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	/* setup to use ISO create prepare function for first radio event */
 	mfy_lll_prepare.fp = lll_adv_iso_create_prepare;
@@ -678,7 +681,7 @@ static uint32_t ull_adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	ret_cb = TICKER_STATUS_BUSY;
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
-			   ticks_anchor, 0U,
+			   (ticks_anchor - ticks_slot_offset), 0U,
 			   HAL_TICKER_US_TO_TICKS(iso_interval_us),
 			   HAL_TICKER_REMAINDER(iso_interval_us),
 			   TICKER_NULL_LAZY,

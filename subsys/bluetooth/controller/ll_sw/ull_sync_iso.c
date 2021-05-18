@@ -359,7 +359,6 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 			      lll->window_size_event_us;
 	sync_iso_offset_us -= PDU_BIS_US(pdu->len, lll->enc, lll->phy,
 					 ftr->phy_flags);
-	sync_iso_offset_us -= EVENT_OVERHEAD_START_US;
 	sync_iso_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	sync_iso_offset_us -= EVENT_JITTER_US;
 	sync_iso_offset_us -= ready_delay_us;
@@ -380,12 +379,12 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 
 	ticks_slot_offset = MAX(sync_iso->ull.ticks_active_to_start,
 				sync_iso->ull.ticks_prepare_to_start);
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
 		ticks_slot_overhead = 0U;
 	}
+	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	/* setup to use ISO create prepare function until sync established */
 	mfy_lll_prepare.fp = lll_sync_iso_create_prepare;
