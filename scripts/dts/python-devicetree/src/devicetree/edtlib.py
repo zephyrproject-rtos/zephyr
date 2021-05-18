@@ -1976,6 +1976,31 @@ class PropertySpec:
 class EDTError(Exception):
     "Exception raised for devicetree- and binding-related errors"
 
+#
+# Public global functions
+#
+
+
+def load_vendor_prefixes_txt(vendor_prefixes):
+    """Load a vendor-prefixes.txt file and return a dict
+    representation mapping a vendor prefix to the vendor name.
+    """
+    vnd2vendor = {}
+    with open(vendor_prefixes, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+
+            if not line or line.startswith('#'):
+                # Comment or empty line.
+                continue
+
+            # Other lines should be in this form:
+            #
+            # <vnd><TAB><vendor>
+            vnd_vendor = line.split('\t', 1)
+            assert len(vnd_vendor) == 2, line
+            vnd2vendor[vnd_vendor[0]] = vnd_vendor[1]
+    return vnd2vendor
 
 #
 # Private global functions
