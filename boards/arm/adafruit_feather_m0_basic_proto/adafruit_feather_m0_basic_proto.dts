@@ -46,6 +46,8 @@
 	current-speed = <115200>;
 	rxpo = <3>;
 	txpo = <1>;
+
+	pinctrl-0 = <&pa11c_sercom0_pad3 &pa10c_sercom0_pad2>;
 };
 
 &sercom3 {

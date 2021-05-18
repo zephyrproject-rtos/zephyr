@@ -69,6 +69,8 @@
 	current-speed = <115200>;
 	rxpo = <3>;
 	txpo = <1>;
+
+	pinctrl-0 = <&pa25c_sercom3_pad3 &pa24c_sercom3_pad2>;
 };
 
 &sercom4 {
@@ -77,6 +79,8 @@
 	current-speed = <115200>;
 	rxpo = <1>;
 	txpo = <0>;
+
+	pinctrl-0 = <&pb9d_sercom4_pad1 &pb8d_sercom4_pad0>;
 };
 
 &flash0 {
