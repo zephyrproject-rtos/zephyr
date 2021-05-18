@@ -143,6 +143,7 @@
 /boards/posix/nrf52_bsim/                 @aescolar @wopu-ot
 /boards/riscv/                            @kgugala @pgielda
 /boards/riscv/rv32m1_vega/                @MaureenHelm
+/boards/riscv/beaglev_starlight_jh7100/   @rajnesh-kanwal
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve
@@ -377,6 +378,7 @@
 /dts/riscv/microsemi-miv.dtsi             @galak
 /dts/riscv/rv32m1*                        @MaureenHelm
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
+/dts/riscv/starfive/                      @rajnesh-kanwal
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/xilinx/                          @bbolen @stephanosio
