@@ -690,6 +690,15 @@ static int enc424j600_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Disable INTIE and setup interrupt logic */
+	enc424j600_write_sfru(dev, ENC424J600_SFR3_EIEL,
+			      ENC424J600_EIE_PKTIE | ENC424J600_EIE_LINKIE);
+
+	if (CONFIG_ETHERNET_LOG_LEVEL == LOG_LEVEL_DBG) {
+		enc424j600_read_sfru(dev, ENC424J600_SFR3_EIEL, &tmp);
+		LOG_DBG("EIE: 0x%04x", tmp);
+	}
+
 	/* Configure TX and RX buffer */
 	enc424j600_write_sfru(dev, ENC424J600_SFR0_ETXSTL,
 			      ENC424J600_TXSTART);
@@ -720,15 +729,6 @@ static int enc424j600_init(const struct device *dev)
 
 	enc424j600_init_filters(dev);
 	enc424j600_init_phy(dev);
-
-	/* Setup interrupt logic */
-	enc424j600_set_sfru(dev, ENC424J600_SFR3_EIEL,
-			    ENC424J600_EIE_PKTIE | ENC424J600_EIE_LINKIE);
-
-	if (CONFIG_ETHERNET_LOG_LEVEL == LOG_LEVEL_DBG) {
-		enc424j600_read_sfru(dev, ENC424J600_SFR3_EIEL, &tmp);
-		LOG_DBG("EIE: 0x%04x", tmp);
-	}
 
 	/* Enable Reception */
 	enc424j600_set_sfru(dev, ENC424J600_SFRX_ECON1L, ENC424J600_ECON1_RXEN);
