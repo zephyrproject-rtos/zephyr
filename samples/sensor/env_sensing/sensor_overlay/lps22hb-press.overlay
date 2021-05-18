@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2021 Intel Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_i2c {
+        lps22hb-press@5d {
+                compatible = "st,lps22hb-press";
+                reg = <0x5d>;
+                label = "LPS22HB";
+        };
+}

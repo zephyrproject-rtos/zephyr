@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2019, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&arduino_i2c {
+        status = "okay";
+        bme680@77 {
+                compatible = "bosch,bme680";
+                reg = <0x77>;
+                label = "BME680";
+        };
+};
