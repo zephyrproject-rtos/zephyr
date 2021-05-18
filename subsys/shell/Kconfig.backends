@@ -291,11 +291,21 @@ config SHELL_BACKEND_DUMMY
 	  Enable dummy backend which can be used to execute commands with no
 	  need for physical transport interface.
 
+if SHELL_BACKEND_DUMMY
+
 config SHELL_PROMPT_DUMMY
 	string "Displayed prompt name"
-	depends on SHELL_BACKEND_DUMMY
 	default "~$ "
 	help
 	  Displayed prompt name for DUMMY backend.
+
+config SHELL_BACKEND_DUMMY_BUF_SIZE
+	int "Size of dummy buffer size"
+	default 300
+	help
+	  This is size of output buffer that will be used by dummy backend, this limits number of
+	  characters that will be captured from command output.
+
+endif # SHELL_BACKEND_DUMMY
 
 endif # SHELL_BACKENDS
