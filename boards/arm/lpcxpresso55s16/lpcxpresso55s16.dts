@@ -10,6 +10,6 @@
 #include "lpcxpresso55s16_common.dtsi"
 
 / {
-	model = "NXP LPCXpresso55S16 board (non-secure)";
+	model = "NXP LPCXpresso55S16 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
 };
