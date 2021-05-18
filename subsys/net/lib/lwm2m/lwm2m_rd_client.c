@@ -362,8 +362,9 @@ static int do_update_reply_cb(const struct coap_packet *response,
 	LOG_ERR("Failed with code %u.%u. Retrying registration",
 		COAP_RESPONSE_CODE_CLASS(code),
 		COAP_RESPONSE_CODE_DETAIL(code));
-	set_sm_state(ENGINE_DO_REGISTRATION);
 
+	set_sm_state(ENGINE_DO_REGISTRATION);
+	client.event_cb(client.ctx, LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE);
 	return 0;
 }
 
