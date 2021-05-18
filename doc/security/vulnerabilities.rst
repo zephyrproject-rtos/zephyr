@@ -796,9 +796,18 @@ processing, leading to a type confusion.
   <https://github.com/zephyrproject-rtos/zephyr/pull/31908>`_
 
 CVE-2021-3321
--------------------
+-------------
 
-Under embargo until 2021-04-14
+Incomplete check of minimum IEEE 802154 fragment size leading to an
+integer underflow.
+
+- `CVE-2020-3321 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3321>`_
+
+- `Zephyr project bug tracker ZEPSEC-114
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-114>`_
+
+- `PR33453 fix for v2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33453>`_
 
 CVE-2021-3323
 -------------------
