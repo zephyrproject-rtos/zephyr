@@ -57,6 +57,11 @@ def main():
 
     setup_edtlib_logging()
 
+    if args.vendor_prefixes:
+        vendor_prefixes = edtlib.load_vendor_prefixes_txt(args.vendor_prefixes)
+    else:
+        vendor_prefixes = None
+
     try:
         edt = edtlib.EDT(args.dts, args.bindings_dirs,
                          # Suppress this warning if it's suppressed in dtc
@@ -65,7 +70,8 @@ def main():
                          default_prop_types=True,
                          infer_binding_for_paths=["/zephyr,user"],
                          err_on_deprecated_properties=
-                         args.err_on_deprecated_properties)
+                         args.err_on_deprecated_properties,
+                         vendor_prefixes=vendor_prefixes)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
@@ -209,6 +215,8 @@ def parse_args():
                         help="path to write device struct extern header to")
     parser.add_argument("--edt-pickle-out",
                         help="path to write pickled edtlib.EDT object to")
+    parser.add_argument("--vendor-prefixes",
+                        help="vendor-prefixes.txt path; used for validation")
     parser.add_argument("--err-on-deprecated-properties", action="store_true",
                         help="if set, deprecated property usage is an error")
 
