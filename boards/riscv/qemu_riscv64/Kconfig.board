@@ -6,3 +6,4 @@ config BOARD_QEMU_RISCV64
 	depends on SOC_RISCV_VIRT
 	select QEMU_TARGET
 	select 64BIT
+	select CPU_HAS_FPU_DOUBLE_PRECISION
