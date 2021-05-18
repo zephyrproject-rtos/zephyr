@@ -28,7 +28,7 @@ Support
 
 Zephyr supports both version: plain and doorbell. Ivshmem driver can be build
 by enabling :option:`CONFIG_IVSHMEM`. By default, this will expose the plain
-version. :option:`CONFIG_IVSHMEM_DOORBELL` needs no be enabled to get the
+version. :option:`CONFIG_IVSHMEM_DOORBELL` needs to be enabled to get the
 doorbell version.
 
 Because the doorbell version uses MSI-X vectors to support notification vectors,
