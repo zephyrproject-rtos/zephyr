@@ -32,6 +32,7 @@ static inline void device_pm_state_init(const struct device *dev)
 		.usage = ATOMIC_INIT(0),
 		.lock = {},
 		.condvar = Z_CONDVAR_INITIALIZER(dev->pm->condvar),
+		.condvar_lock = Z_MUTEX_INITIALIZER(dev->pm->condvar_lock),
 	};
 #endif /* CONFIG_PM_DEVICE */
 }
