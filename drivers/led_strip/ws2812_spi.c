@@ -27,14 +27,6 @@ LOG_MODULE_REGISTER(ws2812_spi);
 #define SPI_FRAME_BITS 8
 
 /*
- * Delay time to make sure the strip has latched a signal.
- *
- * Despite datasheet claims, a 6 microsecond delay is enough to reset
- * the strip. Delay for 8 usec just to be safe.
- */
-#define RESET_DELAY_USEC 8
-
-/*
  * SPI master configuration:
  *
  * - mode 0 (the default), 8 bit, MSB first (arbitrary), one-line SPI
@@ -56,6 +48,7 @@ struct ws2812_spi_cfg {
 	uint8_t zero_frame;
 	uint8_t num_colors;
 	const uint8_t *color_mapping;
+	uint16_t reset_delay;
 };
 
 static struct ws2812_spi_data *dev_data(const struct device *dev)
@@ -100,13 +93,13 @@ static inline bool num_pixels_ok(const struct ws2812_spi_cfg *cfg,
 /*
  * Latch current color values on strip and reset its state machines.
  */
-static inline void ws2812_reset_delay(void)
+static inline void ws2812_reset_delay(uint16_t delay)
 {
 	/*
 	 * TODO: swap out with k_usleep() once that can be trusted to
 	 * work reliably.
 	 */
-	k_busy_wait(RESET_DELAY_USEC);
+	k_busy_wait(delay);
 }
 
 static int ws2812_strip_update_rgb(const struct device *dev,
@@ -167,7 +160,7 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	 * Display the pixel data.
 	 */
 	rc = spi_write(dev_data(dev)->spi, &cfg->spi_cfg, &tx);
-	ws2812_reset_delay();
+	ws2812_reset_delay(cfg->reset_delay);
 
 	return rc;
 }
@@ -212,6 +205,9 @@ static const uint8_t ws2812_spi_##idx##_color_mapping[] =		\
 
 #define WS2812_NUM_COLORS(idx) (DT_INST_PROP_LEN(idx, color_mapping))
 
+/* Get the latch/reset delay from the "reset-delay" DT property. */
+#define WS2812_RESET_DELAY(idx) DT_INST_PROP(idx, reset_delay)
+
 #define WS2812_SPI_DEVICE(idx)						\
 									\
 	static struct ws2812_spi_data ws2812_spi_##idx##_data;		\
@@ -233,6 +229,7 @@ static const uint8_t ws2812_spi_##idx##_color_mapping[] =		\
 		.zero_frame = WS2812_SPI_ZERO_FRAME(idx),		\
 		.num_colors = WS2812_NUM_COLORS(idx),			\
 		.color_mapping = ws2812_spi_##idx##_color_mapping,	\
+		.reset_delay = WS2812_RESET_DELAY(idx),			\
 	};								\
 									\
 	static int ws2812_spi_##idx##_init(const struct device *dev)	\
