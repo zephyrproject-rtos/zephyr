@@ -1221,6 +1221,12 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 						       FILTER_IDX_NONE,
 					 dir_report);
 		if (err) {
+			/* Auxiliary PDU LLL scanning has been setup */
+			if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+			    (err == -EBUSY)) {
+				return 0;
+			}
+
 			return err;
 		}
 	}
@@ -1304,6 +1310,7 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 				uint8_t rl_idx, bool dir_report)
 {
 	struct node_rx_pdu *node_rx;
+	int err = 0;
 
 	node_rx = ull_pdu_rx_alloc_peek(3);
 	if (!node_rx) {
@@ -1358,6 +1365,13 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 				ftr->radio_end_us =
 					radio_tmr_end_get() -
 					radio_rx_chain_delay_get(lll->phy, 1);
+
+				ftr->aux_sched = lll_scan_aux_setup(lll,
+								    pdu_adv_rx,
+								    lll->phy);
+				if (ftr->aux_sched) {
+					err = -EBUSY;
+				}
 			}
 			break;
 		}
@@ -1387,5 +1401,5 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t rssi_ready,
 	ull_rx_put(node_rx->hdr.link, node_rx);
 	ull_rx_sched();
 
-	return 0;
+	return err;
 }
