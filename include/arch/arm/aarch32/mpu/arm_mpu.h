@@ -54,7 +54,7 @@ struct arm_mpu_config {
  * for Thread Stack, Stack Guards, etc.) are programmed during runtime, thus,
  * not kept here.
  */
-extern const struct arm_mpu_config mpu_config;
+extern  struct arm_mpu_config mpu_config;
 
 #endif /* _ASMLANGUAGE */
 
