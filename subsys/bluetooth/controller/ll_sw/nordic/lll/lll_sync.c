@@ -42,6 +42,7 @@ static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx(void *param);
+static uint32_t get_aux_offset(struct pdu_adv *pdu, uint8_t phy, uint8_t *is_done, uint8_t *chain_idx);
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
@@ -195,6 +196,15 @@ static int prepare_cb(struct lll_prepare_param *p)
 		radio_switch_complete_and_disable();
 	}
 
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+	if (cfg->is_enabled) {
+		radio_switch_complete_and_phy_end_b2b_rx(lll->phy, 0, lll->phy, 0);
+	} else
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+	{
+		radio_switch_complete_and_end_b2b_rx(lll->phy, 0, lll->phy, 0);
+	}
+
 	ticks_at_event = p->ticks_at_expire;
 	ull = HDR_LLL2ULL(lll);
 	ticks_at_event += lll_event_offset_get(ull);
@@ -205,12 +215,14 @@ static int prepare_cb(struct lll_prepare_param *p)
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
+	radio_tmr_ready_save(remainder_us);
+	radio_tmr_aa_save(0);
 	radio_tmr_aa_capture();
 
 	hcto = remainder_us +
-	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
-		 lll->window_widening_event_us) << 1) +
-	       lll->window_size_event_us;
+	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US + lll->window_widening_event_us)
+		<< 1) +
+	       lll->window_size_event_us + CTE_LEN_US(LLL_DF_MAX_CTE_LEN);
 	hcto += radio_rx_ready_delay_get(lll->phy, 1);
 	hcto += addr_us_get(lll->phy);
 	hcto += radio_rx_chain_delay_get(lll->phy, 1);
@@ -222,7 +234,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	radio_gpio_lna_setup();
 
-	radio_gpio_pa_lna_enable(remainder_us +
+	radio_gpio_pa_lna_enable(remainder_us + CTE_LEN_US(LLL_DF_MAX_CTE_LEN) +
 				 radio_rx_ready_delay_get(lll->phy, 1) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -280,11 +292,13 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 static void isr_rx(void *param)
 {
 	struct event_done_extra *e;
+	uint8_t is_event_done;
 	struct lll_sync *lll;
 	uint8_t rssi_ready;
 	uint8_t trx_done;
 	uint8_t trx_cnt;
 	uint8_t crc_ok;
+	uint32_t hcto;
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
@@ -300,6 +314,8 @@ static void isr_rx(void *param)
 
 	lll = param;
 
+	is_event_done = 1U;
+
 	/* No Rx */
 	trx_cnt = 0U;
 	if (!trx_done) {
@@ -308,12 +324,25 @@ static void isr_rx(void *param)
 		goto isr_rx_done;
 	}
 
+	/* Store  Access Address captured time to calculate drift of the ticker related with
+	 * the per. sync. The time should be stored for first received PDU in periodic train.
+	 *
+	 * Note: The AA captured time must be stored before setup of HCTO. It uses the same
+	 * TIMER->CC register.
+	 */
+	if (!radio_tmr_aa_restore()) {
+		radio_tmr_aa_save(radio_tmr_aa_get());
+		radio_tmr_ready_save(radio_tmr_ready_get());
+	}
+
 	/* Rx-ed */
 	trx_cnt = 1U;
 
 	/* Check CRC and generate Periodic Advertising Report */
 	if (crc_ok) {
-		struct node_rx_pdu *node_rx;
+		struct node_rx_pdu *node_rx = NULL;
+		uint8_t chan_idx = 0;
+		uint32_t offset_us;
 
 		node_rx = ull_pdu_rx_alloc_peek(3);
 		if (node_rx) {
@@ -325,12 +354,10 @@ static void isr_rx(void *param)
 
 			ftr = &(node_rx->hdr.rx_ftr);
 			ftr->param = lll;
-			ftr->rssi = (rssi_ready) ? radio_rssi_get() :
-						   BT_HCI_LE_RSSI_NOT_AVAILABLE;
+			ftr->rssi = (rssi_ready) ? radio_rssi_get() : BT_HCI_LE_RSSI_NOT_AVAILABLE;
 			ftr->ticks_anchor = radio_tmr_start_get();
-			ftr->radio_end_us = radio_tmr_end_get() -
-					    radio_rx_chain_delay_get(lll->phy,
-								     1);
+			ftr->radio_end_us =
+				radio_tmr_end_get() - radio_tx_chain_delay_get(lll->phy, 1);
 
 			ull_rx_put(node_rx->hdr.link, node_rx);
 
@@ -340,9 +367,50 @@ static void isr_rx(void *param)
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 			ull_rx_sched();
 		}
+
+		offset_us = get_aux_offset((struct pdu_adv *)node_rx->pdu, lll->phy, &is_event_done, &chan_idx);
+
+		if (!is_event_done) {
+			radio_phy_set(lll->phy, 1);
+			radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy << 1));
+
+			node_rx = ull_pdu_rx_alloc_peek(1);
+			LL_ASSERT(node_rx);
+
+			radio_pkt_rx_set(node_rx->pdu);
+
+			/* TODO: check if the hcto is correctly evaluated */
+			hcto = radio_tmr_tifs_base_get() + offset_us + 4 + 1;
+			hcto += radio_rx_ready_delay_get(lll->phy, 1);
+			hcto += lll->window_size_event_us;
+			/* Periodic sync PDU may have attached CTE. Even if it is not sampled,
+			 * it should consider as part of PDU.
+			 */
+			hcto += CTE_LEN_US(LLL_DF_MAX_CTE_LEN);
+			hcto += addr_us_get(lll->phy);
+
+			radio_tmr_hcto_configure(hcto);
+
+			radio_tmr_end_capture();
+
+			lll_chan_set(chan_idx);
+
+			radio_isr_set(isr_rx, lll);
+
+			radio_tmr_tifs_set(offset_us);
+
+#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
+			if (cfg->is_enabled) {
+				radio_switch_complete_and_phy_end_b2b_rx(lll->phy, 0, lll->phy, 0);
+			} else
+#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+			{
+				radio_switch_complete_and_end_b2b_rx(lll->phy, 0, lll->phy, 0);
+			}
+		}
 	}
 #if defined(CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC)
-	else {
+		else {
 		int err;
 
 		err = create_iq_report(lll, rssi_ready,
@@ -350,29 +418,36 @@ static void isr_rx(void *param)
 		if (!err) {
 			ull_rx_sched();
 		}
-	}
+			}
 #endif /* CONFIG_BT_CTLR_DF_SAMPLE_CTE_FOR_PDU_WITH_BAD_CRC */
 
 isr_rx_done:
-	/* Calculate and place the drift information in done event */
-	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	if (is_event_done) {
+		/* Calculate and place the drift information in done event */
+		e = ull_event_done_extra_get();
+		LL_ASSERT(e);
 
-	e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
-	e->trx_cnt = trx_cnt;
-	e->crc_valid = crc_ok;
+		e->type = EVENT_DONE_EXTRA_TYPE_SYNC;
+		e->trx_cnt = trx_cnt;
+		e->crc_valid = crc_ok;
 
-	e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
+		e->drift.preamble_to_addr_us = addr_us_get(lll->phy);
 
-	e->drift.start_to_address_actual_us = radio_tmr_aa_get() -
-					      radio_tmr_ready_get();
-	e->drift.window_widening_event_us = lll->window_widening_event_us;
+		/* The event is generated after receive of complete chain or in case last PDU has
+		 * wrong CRC. Time required to update ticker for periodic advertising was stored
+		 * when first PDU in periodic train was received. Due to that, actual address time
+		 * is computed from stored values.
+		 */
+		e->drift.start_to_address_actual_us =
+			radio_tmr_aa_restore() - radio_tmr_ready_restore();
+		e->drift.window_widening_event_us = lll->window_widening_event_us;
 
-	/* Reset window widening, as anchor point sync-ed */
-	lll->window_widening_event_us = 0U;
-	lll->window_size_event_us = 0U;
+		/* Reset window widening, as anchor point sync-ed */
+		lll->window_widening_event_us = 0U;
+		lll->window_size_event_us = 0U;
 
-	lll_isr_cleanup(param);
+		lll_isr_cleanup(param);
+	}
 }
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
@@ -423,3 +498,63 @@ static inline int create_iq_report(struct lll_sync *lll, uint8_t rssi_ready,
 	return 0;
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
+
+static uint32_t get_aux_offset(struct pdu_adv *pdu, uint8_t phy, uint8_t *is_done, uint8_t *chan_idx)
+{
+	struct pdu_adv_com_ext_adv *com_ext_hdr;
+	struct pdu_adv_ext_hdr *ext_hdr;
+	uint32_t cte_time_us = 0;
+	uint32_t offset_us;
+	uint32_t drift_us;
+	uint8_t *dptr;
+
+	com_ext_hdr = &pdu->adv_ext_ind;
+	/* check if pdu has aux_ptr */
+	if (com_ext_hdr->ext_hdr_len > 0) {
+		ext_hdr = &com_ext_hdr->ext_hdr;
+		dptr = ext_hdr->data;
+
+		LL_ASSERT(!ext_hdr->adv_addr);
+		LL_ASSERT(!ext_hdr->tgt_addr);
+
+		if (ext_hdr->cte_info) {
+			struct pdu_cte_info *cte = (void *)dptr;
+
+			cte_time_us = CTE_LEN_US(cte->time);
+			dptr += sizeof(struct pdu_cte_info);
+		}
+
+		LL_ASSERT(!ext_hdr->adi);
+
+		if (ext_hdr->aux_ptr) {
+			struct pdu_adv_aux_ptr *aux = (void *)dptr;
+
+			if (aux->offs_units) {
+				offset_us = aux->offs * OFFS_UNIT_300_US;
+			} else {
+				offset_us = aux->offs * OFFS_UNIT_30_US;
+			}
+
+			if (aux->ca) {
+				drift_us = offset_us / 2000U;
+			} else {
+				drift_us = offset_us / 20000U;
+			}
+
+			offset_us -= cte_time_us;
+			offset_us -= drift_us;
+			offset_us -= PKT_AC_US(pdu->len, 0, phy);
+			offset_us -= EVENT_JITTER_US;
+			/* offset not extended by radio_rx_ready_delay because in B2B Rx radio is
+			 * already running,
+			 */
+
+			*chan_idx = aux->chan_idx;
+			*is_done = 0U;
+		} else {
+			*is_done = 1U;
+		}
+	}
+
+	return offset_us;
+}
