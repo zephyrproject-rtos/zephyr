@@ -1,12 +1,13 @@
-# EVK BMD 345 board configuration
+# BMD-345-EVAL board configuration
 
+# Copyright (c) 2021 u-blox AG
 # Copyright (c) 2021 Linumiz
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_BMD_345_EVAL
+if BOARD_UBX_BMD345EVAL_NRF52840
 
 config BOARD
-	default "bmd_345_eval"
+	default "ubx_bmd345eval_nrf52840"
 
 if USB
 
@@ -21,4 +22,4 @@ endif # USB
 config BT_CTLR
 	default BT
 
-endif # BOARD_BMD_345_EVAL
+endif # BOARD_UBX_BMD345EVAL_NRF52840

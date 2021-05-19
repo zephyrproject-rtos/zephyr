@@ -130,7 +130,7 @@ static void rx(struct app_data *data)
 {
 	static uint8_t recv_buf[sizeof(txtime_str)];
 	struct sockaddr src;
-	socklen_t addr_len;
+	socklen_t addr_len = data->peer_addr_len;
 	ssize_t len = 0;
 
 	while (true) {

@@ -34,14 +34,14 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
 #endif
 
 
-#if (defined(CONFIG_UART_0_NRF_UARTE) &&         \
-     defined(CONFIG_UART_0_INTERRUPT_DRIVEN)) || \
-    (defined(CONFIG_UART_1_NRF_UARTE) &&         \
-     defined(CONFIG_UART_1_INTERRUPT_DRIVEN)) || \
-    (defined(CONFIG_UART_2_NRF_UARTE) &&         \
-     defined(CONFIG_UART_2_INTERRUPT_DRIVEN)) || \
-    (defined(CONFIG_UART_3_NRF_UARTE) &&         \
-     defined(CONFIG_UART_3_INTERRUPT_DRIVEN))
+#if	(defined(CONFIG_UART_0_NRF_UARTE) &&         \
+	 defined(CONFIG_UART_0_INTERRUPT_DRIVEN)) || \
+	(defined(CONFIG_UART_1_NRF_UARTE) &&         \
+	 defined(CONFIG_UART_1_INTERRUPT_DRIVEN)) || \
+	(defined(CONFIG_UART_2_NRF_UARTE) &&         \
+	 defined(CONFIG_UART_2_INTERRUPT_DRIVEN)) || \
+	(defined(CONFIG_UART_3_NRF_UARTE) &&         \
+	 defined(CONFIG_UART_3_INTERRUPT_DRIVEN))
 	#define UARTE_INTERRUPT_DRIVEN	1
 #endif
 
@@ -241,7 +241,7 @@ static void uarte_nrfx_isr_int(void *arg)
 #ifdef UARTE_INTERRUPT_DRIVEN
 		struct uarte_nrfx_data *data = get_dev_data(dev);
 
-		if (!data->int_driven)
+		if (!data->int_driven || data->int_driven->fifo_fill_lock == 0)
 #endif
 		{
 			nrf_uarte_int_disable(uarte,
@@ -514,16 +514,19 @@ static void uarte_enable(const struct device *dev, uint32_t mask)
 {
 #ifdef CONFIG_UART_ASYNC_API
 	struct uarte_nrfx_data *data = get_dev_data(dev);
-	bool disabled = data->async->low_power_mask == 0;
 
-	data->async->low_power_mask |= mask;
-	if (hw_rx_counting_enabled(data) && disabled) {
-		const nrfx_timer_t *timer = &get_dev_config(dev)->timer;
+	if (data->async) {
+		bool disabled = data->async->low_power_mask == 0;
 
-		nrfx_timer_enable(timer);
+		data->async->low_power_mask |= mask;
+		if (hw_rx_counting_enabled(data) && disabled) {
+			const nrfx_timer_t *timer = &get_dev_config(dev)->timer;
 
-		for (int i = 0; i < data->async->rx_flush_cnt; i++) {
-			nrfx_timer_increment(timer);
+			nrfx_timer_enable(timer);
+
+			for (int i = 0; i < data->async->rx_flush_cnt; i++) {
+				nrfx_timer_increment(timer);
+			}
 		}
 	}
 #endif
@@ -678,10 +681,9 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 	if (data->async->tx_size) {
 		irq_unlock(key);
 		return -EBUSY;
-	} else {
-		data->async->tx_size = len;
 	}
 
+	data->async->tx_size = len;
 	nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 
 	if (!is_tx_ready(dev)) {
@@ -835,7 +837,7 @@ static int uarte_nrfx_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	int key = irq_lock();
 
-	if ((data->async->rx_buf == NULL)) {
+	if (data->async->rx_buf == NULL) {
 		err = -EACCES;
 	} else if (data->async->rx_next_buf == NULL) {
 		data->async->rx_next_buf = buf;
@@ -934,6 +936,17 @@ static void rx_timeout(struct k_timer *timer)
 	 */
 	int32_t len = data->async->rx_total_byte_cnt
 		    - data->async->rx_total_user_byte_cnt;
+
+	if (!hw_rx_counting_enabled(data) &&
+	    (len < 0)) {
+		/* Prevent too low value of rx_cnt.cnt which may occur due to
+		 * latencies in handling of the RXRDY interrupt.
+		 * At this point, the number of received bytes is at least
+		 * equal to what was reported to the user.
+		 */
+		data->async->rx_cnt.cnt = data->async->rx_total_user_byte_cnt;
+		len = 0;
+	}
 
 	/* Check for current buffer being full.
 	 * if the UART receives characters before the the ENDRX is handled
@@ -1042,15 +1055,6 @@ static void endrx_isr(const struct device *dev)
 	}
 
 	data->async->rx_total_user_byte_cnt += rx_len;
-
-	if (!hw_rx_counting_enabled(data)) {
-		/* Prevent too low value of rx_cnt.cnt which may occur due to
-		 * latencies in handling of the RXRDY interrupt. Because whole
-		 * buffer was filled we can be sure that rx_total_user_byte_cnt
-		 * is current total number of received bytes.
-		 */
-		data->async->rx_cnt.cnt = data->async->rx_total_user_byte_cnt;
-	}
 
 	/* Only send the RX_RDY event if there is something to send */
 	if (rx_len > 0) {
@@ -1852,7 +1856,7 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 			while (!nrf_uarte_event_check(uarte,
 						      NRF_UARTE_EVENT_RXTO) &&
 			       !nrf_uarte_event_check(uarte,
-			                              NRF_UARTE_EVENT_ERROR)) {
+						      NRF_UARTE_EVENT_ERROR)) {
 				/* Busy wait for event to register */
 			}
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);

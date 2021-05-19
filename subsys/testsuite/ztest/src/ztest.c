@@ -354,9 +354,12 @@ static int run_test(struct unit_test *test)
 				(k_thread_entry_t) test_cb, (struct unit_test *)test,
 				NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY,
 				test->thread_options | K_INHERIT_PERMS,
-					K_NO_WAIT);
+					K_FOREVER);
 
-		k_thread_name_set(&ztest_thread, "ztest_thread");
+		if (test->name != NULL) {
+			k_thread_name_set(&ztest_thread, test->name);
+		}
+		k_thread_start(&ztest_thread);
 		k_thread_join(&ztest_thread, K_FOREVER);
 	} else {
 		test_result = 1;

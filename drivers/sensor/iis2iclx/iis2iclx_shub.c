@@ -46,9 +46,6 @@ LOG_MODULE_DECLARE(IIS2ICLX, CONFIG_SENSOR_LOG_LEVEL);
 #define IIS2ICLX_SHUB_SLVX_WRITE				0x0
 #define IIS2ICLX_SHUB_SLVX_READ				0x1
 
-static uint8_t num_ext_dev;
-static uint8_t shub_ext[IIS2ICLX_SHUB_MAX_NUM_SLVS];
-
 static int iis2iclx_shub_write_slave_reg(const struct device *dev,
 					uint8_t slv_addr, uint8_t slv_reg,
 					uint8_t *value, uint16_t len);
@@ -634,13 +631,14 @@ static int iis2iclx_shub_write_slave_reg(const struct device *dev,
  */
 static int iis2iclx_shub_set_data_channel(const struct device *dev)
 {
+	struct iis2iclx_data *data = dev->data;
 	const struct iis2iclx_config *cfg = dev->config;
 	uint8_t n, i, slv_cfg[6];
 	struct iis2iclx_shub_slist *sp;
 
 	/* Set data channel for slave devices */
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &iis2iclx_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &iis2iclx_shub_slist[data->shub_ext[n]];
 
 		i = n * 3;
 		slv_cfg[i] = (sp->ext_i2c_addr << 1) | IIS2ICLX_SHUB_SLVX_READ;
@@ -678,13 +676,14 @@ static int iis2iclx_shub_set_data_channel(const struct device *dev)
 	return 0;
 }
 
-int iis2iclx_shub_get_idx(enum sensor_channel type)
+int iis2iclx_shub_get_idx(const struct device *dev, enum sensor_channel type)
 {
 	uint8_t n;
 	struct iis2iclx_shub_slist *sp;
+	struct iis2iclx_data *data = dev->data;
 
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &iis2iclx_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &iis2iclx_shub_slist[data->shub_ext[n]];
 
 		if (sp->type == type)
 			return n;
@@ -703,8 +702,8 @@ int iis2iclx_shub_fetch_external_devs(const struct device *dev)
 	/* read data from external slave */
 	iis2iclx_shub_embedded_en(cfg, true);
 
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &iis2iclx_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &iis2iclx_shub_slist[data->shub_ext[n]];
 
 		if (iis2iclx_read_reg((stmdev_ctx_t *)&cfg->ctx, sp->sh_out_reg,
 				     data->ext_data[n], sp->out_data_len) < 0) {
@@ -723,17 +722,18 @@ int iis2iclx_shub_config(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
+	struct iis2iclx_data *data = dev->data;
 	struct iis2iclx_shub_slist *sp = NULL;
 	uint8_t n;
 
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &iis2iclx_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &iis2iclx_shub_slist[data->shub_ext[n]];
 
 		if (sp->type == chan)
 			break;
 	}
 
-	if (n == num_ext_dev) {
+	if (n == data->num_ext_dev) {
 		LOG_ERR("shub: chan not supported");
 		return -ENOTSUP;
 	}
@@ -751,9 +751,11 @@ int iis2iclx_shub_init(const struct device *dev)
 	uint8_t i, n = 0, regn;
 	uint8_t chip_id;
 	struct iis2iclx_shub_slist *sp;
+	struct iis2iclx_data *data = dev->data;
 
+	LOG_INF("shub: start sensorhub for %s", dev->name);
 	for (n = 0; n < ARRAY_SIZE(iis2iclx_shub_slist); n++) {
-		if (num_ext_dev >= IIS2ICLX_SHUB_MAX_NUM_SLVS)
+		if (data->num_ext_dev >= IIS2ICLX_SHUB_MAX_NUM_SLVS)
 			break;
 
 		chip_id = 0;
@@ -783,17 +785,18 @@ int iis2iclx_shub_init(const struct device *dev)
 		LOG_INF("shub: Ext Device Chip Id: 0x%02x", chip_id);
 		sp->ext_i2c_addr = sp->i2c_addr[i];
 
-		shub_ext[num_ext_dev++] = n;
+		data->shub_ext[data->num_ext_dev++] = n;
 	}
 
-	if (num_ext_dev == 0) {
+	LOG_DBG("shub: dev %s - num_ext_dev %d", dev->name, data->num_ext_dev);
+	if (data->num_ext_dev == 0) {
 		LOG_WRN("shub: no slave devices found");
 		return -ENOTSUP;
 	}
 
 	/* init external devices */
-	for (n = 0, regn = 0; n < num_ext_dev; n++) {
-		sp = &iis2iclx_shub_slist[shub_ext[n]];
+	for (n = 0, regn = 0; n < data->num_ext_dev; n++) {
+		sp = &iis2iclx_shub_slist[data->shub_ext[n]];
 		sp->sh_out_reg = IIS2ICLX_SHUB_DATA_OUT + regn;
 		regn += sp->out_data_len;
 		sp->dev_init(dev, sp->ext_i2c_addr);

@@ -58,13 +58,15 @@ void z_impl_z_log_msg2_runtime_vcreate(uint8_t domain_id, const void *source,
 				const char *fmt, va_list ap)
 {
 	int plen;
-	va_list ap2;
 
 	if (fmt) {
+		va_list ap2;
+
 		va_copy(ap2, ap);
 		plen = cbvprintf_package(NULL, Z_LOG_MSG2_ALIGN_OFFSET,
 					 fmt, ap2);
 		__ASSERT_NO_MSG(plen >= 0);
+		va_end(ap2);
 	} else {
 		plen = 0;
 	}

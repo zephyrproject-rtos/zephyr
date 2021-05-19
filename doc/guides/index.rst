@@ -11,7 +11,6 @@ User and Developer Guides
    bluetooth/index.rst
    build/index
    coding_guidelines/index
-   c_library
    ../README.rst
    documentation/index
    coccinelle.rst

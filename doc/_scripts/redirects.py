@@ -150,6 +150,7 @@ REDIRECTS = [
     ('guides/debugging/index', 'guides/flash_debug/index'),
     ('guides/debugging/probes', 'guides/flash_debug/probes'),
     ('guides/debugging/thread-analyzer', 'guides/flash_debug/thread-analyzer'),
+    ('guides/c_library', 'reference/libc/index'),
     ('guides/west/repo-tool', 'guides/west/basics'),
     ('introduction/introducing_zephyr', 'introduction/index'),
     ('kernel/kernel', 'reference/kernel/index'),

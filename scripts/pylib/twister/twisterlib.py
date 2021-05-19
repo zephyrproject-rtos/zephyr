@@ -4097,7 +4097,8 @@ class HardwareMap:
                                         id=d.serial_number,
                                         serial=persistent_map.get(d.device, d.device),
                                         product=d.product,
-                                        runner='unknown')
+                                        runner='unknown',
+                                        connected=True)
 
                 for runner, _ in self.runner_mapping.items():
                     products = self.runner_mapping.get(runner)
@@ -4166,7 +4167,8 @@ class HardwareMap:
                     'id': id,
                     'runner': runner,
                     'serial': serial,
-                    'product': product
+                    'product': product,
+                    'connected': _connected.connected
                 }
                 dl.append(d)
             with open(hwm_file, 'w') as yaml_file:

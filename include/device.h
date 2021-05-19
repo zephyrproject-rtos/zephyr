@@ -581,8 +581,8 @@ static inline int z_device_usable_check(const struct device *dev)
  * distinct error values that identify the reason if it cannot.
  *
  * @retval 0 if the device is usable.
- * @retval -ENODEV if the device has not been initialized, or the
- * initialization failed.
+ * @retval -ENODEV if the device has not been initialized, the device pointer
+ * is NULL or the initialization failed.
  * @retval other negative error codes to indicate additional conditions that
  * make the device unusable.
  */
@@ -606,7 +606,8 @@ static inline int z_impl_device_usable_check(const struct device *dev)
  * @param dev pointer to the device in question.
  *
  * @retval true if the device is ready for use.
- * @retval false if the device is not ready for use.
+ * @retval false if the device is not ready for use or if a NULL device pointer
+ * is passed as argument.
  */
 static inline bool device_is_ready(const struct device *dev)
 {

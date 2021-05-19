@@ -70,7 +70,7 @@ static bool should_suspend(const struct device *dev, uint32_t state)
 	}
 
 	rc = pm_device_state_get(dev, &current_state);
-	if ((rc != -ENOTSUP) && (rc != 0)) {
+	if ((rc != -ENOSYS) && (rc != 0)) {
 		LOG_DBG("Was not possible to get device %s state: %d",
 			dev->name, rc);
 		return true;
@@ -105,7 +105,7 @@ static int _pm_devices(uint32_t state)
 			 * in the right state.
 			 */
 			rc = pm_device_state_set(dev, state, NULL, NULL);
-			if ((rc != -ENOTSUP) && (rc != 0)) {
+			if ((rc != -ENOSYS) && (rc != 0)) {
 				LOG_DBG("%s did not enter %s state: %d",
 					dev->name, pm_device_state_str(state),
 					rc);

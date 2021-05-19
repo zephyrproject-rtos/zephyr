@@ -10,8 +10,8 @@ tests:
       regex:
         - "Device PM sample app start"
         - "parent resuming\\.\\."
-        - "child resuming\\.\\."
         - "Async wakeup request queued"
+        - "child resuming\\.\\."
         - "Dummy device resumed"
         - "child suspending\\.\\."
         - "parent suspending\\.\\."

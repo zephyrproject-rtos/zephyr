@@ -19,6 +19,7 @@ API Reference
    file_system/index.rst
    misc/formatted_output.rst
    kernel/index.rst
+   libc/index.rst
    logging/index.rst
    misc/index
    data_structures/index.rst

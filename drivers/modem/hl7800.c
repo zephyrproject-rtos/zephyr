@@ -313,6 +313,8 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 	"S00:255 S01:255 S03:255 S04:255 S05:255 S07:255 S08:255 S10:255\r\n"
 
 #define SETUP_GPRS_CONNECTION_CMD "AT+KCNXCFG=1,\"GPRS\",\"\",,,\"IPV4V6\""
+#define SET_RAT_M1_CMD "AT+KSRAT=0,1"
+#define SET_RAT_NB1_CMD "AT+KSRAT=1,1"
 
 #define MAX_PROFILE_LINE_LENGTH                                                \
 	MAX(sizeof(PROFILE_LINE_1), sizeof(PROFILE_LINE_2))
@@ -988,9 +990,9 @@ int32_t mdm_hl7800_update_rat(enum mdm_hl7800_radio_mode value)
 	ictx.last_socket_id = 0;
 
 	if (value == MDM_RAT_CAT_M1) {
-		SEND_AT_CMD_ONCE_EXPECT_OK("AT+KSRAT=0");
+		SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_M1_CMD);
 	} else { /* MDM_RAT_CAT_NB1 */
-		SEND_AT_CMD_ONCE_EXPECT_OK("AT+KSRAT=1");
+		SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_NB1_CMD);
 	}
 
 error:
@@ -3782,14 +3784,14 @@ reboot:
 	if (!ictx.configured) {
 #if CONFIG_MODEM_HL7800_RAT_M1
 		if (ictx.mdm_rat != MDM_RAT_CAT_M1) {
-			SEND_AT_CMD_ONCE_EXPECT_OK("AT+KSRAT=0");
+			SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_M1_CMD);
 			if (ret >= 0) {
 				goto reboot;
 			}
 		}
 #elif CONFIG_MODEM_HL7800_RAT_NB1
 		if (ictx.mdm_rat != MDM_RAT_CAT_NB1) {
-			SEND_AT_CMD_ONCE_EXPECT_OK("AT+KSRAT=1");
+			SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_NB1_CMD);
 			if (ret >= 0) {
 				goto reboot;
 			}

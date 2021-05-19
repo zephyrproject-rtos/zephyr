@@ -27,7 +27,7 @@ anytree
 intelhex
 
 # it's west
-west>=0.7.2
+west>=0.10.1
 
 # used for windows based 'menuconfig'
 # "win32" is used for 64-bit Windows as well

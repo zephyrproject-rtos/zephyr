@@ -7,11 +7,11 @@
 /**
  * @file
  *
- * @brief Zephyr testing suite
+ * @brief Zephyr Testsuite
  */
 
 /**
- * @brief Zephyr Tests
+ * @brief Zephyr Tests (ZTest)
  * @defgroup all_tests Zephyr Tests
  * @{
  * @}

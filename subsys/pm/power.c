@@ -12,6 +12,7 @@
 #include <pm/pm.h>
 #include <pm/state.h>
 #include "policy/pm_policy.h"
+#include <tracing/tracing.h>
 
 #define PM_STATES_LEN (1 + PM_STATE_SOFT_OFF - PM_STATE_ACTIVE)
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL
@@ -174,9 +175,11 @@ static enum pm_state _handle_device_abort(struct pm_state_info info)
 
 enum pm_state pm_system_suspend(int32_t ticks)
 {
+	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, ticks);
 	z_power_state = pm_policy_next_state(ticks);
 	if (z_power_state.state == PM_STATE_ACTIVE) {
 		LOG_DBG("No PM operations done.");
+		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, z_power_state.state);
 		return z_power_state.state;
 	}
 	post_ops_done = 0;
@@ -210,12 +213,17 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	case PM_STATE_STANDBY:
 		/* low power peripherals. */
 		if (pm_low_power_devices()) {
+			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
+					ticks, _handle_device_abort(z_power_state));
 			return _handle_device_abort(z_power_state);
-		}		break;
+		}
+		break;
 	case PM_STATE_SUSPEND_TO_RAM:
 		__fallthrough;
 	case PM_STATE_SUSPEND_TO_DISK:
 		if (pm_suspend_devices()) {
+			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend,
+					ticks, _handle_device_abort(z_power_state));
 			return _handle_device_abort(z_power_state);
 		}
 		break;
@@ -250,7 +258,7 @@ enum pm_state pm_system_suspend(int32_t ticks)
 	pm_log_debug_info(z_power_state.state);
 	pm_system_resume();
 	k_sched_unlock();
-
+	SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, z_power_state.state);
 	return z_power_state.state;
 }
 

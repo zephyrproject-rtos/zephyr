@@ -23,6 +23,7 @@ K_THREAD_STACK_DEFINE(service1_stack, STACK_SIZE);
 K_THREAD_STACK_DEFINE(service2_stack, STACK_SIZE);
 K_THREAD_STACK_DEFINE(client_stack, STACK_SIZE);
 K_SEM_DEFINE(service_sema, 2, 2);
+K_SEM_DEFINE(service_started, 0, 2);
 K_SEM_DEFINE(test_continue, 0, 1);
 struct k_thread service_manager;
 struct k_thread service1;
@@ -60,9 +61,11 @@ static void service_manager_entry(void *p1, void *p2, void *p3)
 			break;
 		case REGISTER_SERVICE1:
 			services[0] = (struct k_msgq *)data[1];
+			k_sem_give(&service_started);
 			break;
 		case REGISTER_SERVICE2:
 			services[1] = (struct k_msgq *)data[1];
+			k_sem_give(&service_started);
 			break;
 		case SERVICE_QUIT:
 			for (int i = 0; i < NUM_SERVICES; i++) {
@@ -183,6 +186,10 @@ static void client_entry(void *p1, void *p2, void *p3)
 		    sizeof(unsigned long) * 2, 2);
 	client_data[0] = QUERRY_SERVICE;
 	client_data[1] = (unsigned long)&client_msgq;
+
+	/* wait all services started */
+	k_sem_take(&service_started, K_FOREVER);
+	k_sem_take(&service_started, K_FOREVER);
 
 	/* query services */
 	k_msgq_put(&manager_q, client_data, K_NO_WAIT);
