@@ -453,11 +453,9 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	sync->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us +
-				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
-						 0, lll->phy) +
-				       EVENT_OVERHEAD_END_US);
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US + ready_delay_us +
+				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX, 0, lll->phy) +
+				       CTE_LEN_US(LLL_DF_MAX_CTE_LEN) + EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(sync->ull.ticks_active_to_start,
 				sync->ull.ticks_prepare_to_start);
