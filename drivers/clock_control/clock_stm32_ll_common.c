@@ -75,7 +75,7 @@
  */
 static void config_bus_clk_init(LL_UTILS_ClkInitTypeDef *clk_init)
 {
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_STM32WL55XX)
 	clk_init->CPU2CLKDivider = ahb_prescaler(STM32_CPU2_PRESCALER);
 #endif
 #if defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -545,7 +545,7 @@ int stm32_clock_control_init(const struct device *dev)
 	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
 #endif
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_STM32WL55XX)
 	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
 #endif
 #ifdef CONFIG_SOC_SERIES_STM32WBX
@@ -626,7 +626,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_STM32WL55XX)
 	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
 #endif
 #ifdef CONFIG_SOC_SERIES_STM32WBX
@@ -659,7 +659,7 @@ int stm32_clock_control_init(const struct device *dev)
 	!defined (CONFIG_SOC_SERIES_STM32G0X)
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);
 #endif /* CONFIG_SOC_SERIES_STM32F0X && CONFIG_SOC_SERIES_STM32G0X */
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32WLX)
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_STM32WL55XX)
 	LL_C2_RCC_SetAHBPrescaler(s_ClkInitStruct.CPU2CLKDivider);
 #endif
 #ifdef CONFIG_SOC_SERIES_STM32WBX

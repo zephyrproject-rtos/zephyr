@@ -10,4 +10,7 @@ choice
 config SOC_STM32WL55XX
 	bool "STM32WL55XX"
 
+config SOC_STM32WLE5XX
+	bool "STM32WLE5XX"
+
 endchoice
