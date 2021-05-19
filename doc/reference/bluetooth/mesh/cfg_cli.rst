@@ -24,4 +24,3 @@ API reference
 *************
 
 .. doxygengroup:: bt_mesh_cfg_cli
-   :project: Zephyr

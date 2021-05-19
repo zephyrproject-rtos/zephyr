@@ -257,4 +257,3 @@ API Reference
 *************
 
 .. doxygengroup:: fatal_apis
-   :project: Zephyr

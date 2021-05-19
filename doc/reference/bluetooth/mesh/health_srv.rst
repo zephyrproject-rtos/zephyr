@@ -49,7 +49,6 @@ API reference
 *************
 
 .. doxygengroup:: bt_mesh_health_srv
-   :project: Zephyr
 
 .. _bluetooth_mesh_health_faults:
 
@@ -59,4 +58,3 @@ Bluetooth Mesh Health Faults
 Fault values defined by the Bluetooth Mesh specification.
 
 .. doxygengroup:: bt_mesh_health_faults
-   :project: Zephyr

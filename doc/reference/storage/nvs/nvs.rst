@@ -126,10 +126,8 @@ API Reference
 The NVS subsystem APIs are provided by ``nvs.h``:
 
 .. doxygengroup:: nvs_data_structures
-   :project: Zephyr
 
 .. doxygengroup:: nvs_high_level_api
-   :project: Zephyr
 
 .. comment
    not documenting

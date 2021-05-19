@@ -376,4 +376,3 @@ API Reference
 *************
 
 .. doxygengroup:: can_interface
-   :project: Zephyr

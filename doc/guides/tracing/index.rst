@@ -25,7 +25,6 @@ format by overriding the macros declared
 in :zephyr_file:`include/tracing/tracing.h`.
 
 .. doxygengroup:: tracing_apis
-   :project: Zephyr
 
 Different formats, transports and host tools are avialable and supported in
 Zephyr.

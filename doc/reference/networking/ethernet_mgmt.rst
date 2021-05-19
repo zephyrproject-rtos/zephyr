@@ -31,4 +31,3 @@ API Reference
 *************
 
 .. doxygengroup:: ethernet_mgmt
-   :project: Zephyr
