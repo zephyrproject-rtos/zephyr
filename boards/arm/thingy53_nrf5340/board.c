@@ -39,8 +39,10 @@ LOG_MODULE_REGISTER(thingy53_board_init);
  * introduced in the board start up file. Below asserts ensure correct initialization order:
  * on board regulators, board init (this), sensors init.
  */
+#if !defined(CONFIG_TRUSTED_EXECUTION_SECURE)
 BUILD_ASSERT(CONFIG_THINGY53_INIT_PRIORITY > CONFIG_REGULATOR_FIXED_INIT_PRIORITY,
 	"CONFIG_THINGY53_INIT_PRIORITY must be higher than CONFIG_REGULATOR_FIXED_INIT_PRIORITY");
+#endif /* !CONFIG_TRUSTED_EXECUTION_SECURE */
 #if defined(CONFIG_SENSOR)
 BUILD_ASSERT(CONFIG_THINGY53_INIT_PRIORITY < CONFIG_SENSOR_INIT_PRIORITY,
 	"CONFIG_THINGY53_INIT_PRIORITY must be less than CONFIG_SENSOR_INIT_PRIORITY");
