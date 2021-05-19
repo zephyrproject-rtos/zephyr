@@ -372,6 +372,17 @@ def dt_node_int_prop(kconf, name, path, prop):
         return hex(_node_int_prop(node, prop))
 
 
+def dt_has_compat(kconf, _, compat):
+    """
+    This function takes a 'compat' and returns "y" if there are nodes with that
+    compat in the EDT otherwise we return "n"
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    return "y" if compat in edt.compat2nodes else "n"
+
+
 def dt_compat_enabled(kconf, _, compat):
     """
     This function takes a 'compat' and returns "y" if we find a status "okay"
@@ -454,6 +465,7 @@ def shields_list_contains(kconf, _, shield):
 #
 # See the kconfiglib documentation for more details.
 functions = {
+        "dt_has_compat": (dt_has_compat, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
