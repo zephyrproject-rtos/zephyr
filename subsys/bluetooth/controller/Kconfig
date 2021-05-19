@@ -198,6 +198,20 @@ config BT_CTLR_RX_BUFFERS
 	  connection interval and 2M PHY, maximum 18 packets with L2CAP payload
 	  size of 1 byte can be received.
 
+config BT_CTLR_ISO_RX_BUFFERS
+	int "Number of Isochronous Rx buffers"
+	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
+	default 8
+	range 1 30
+	help
+	  Set the number of Isochronous Rx PDUs to be buffered in the
+	  controller. Number of required RX buffers would worst-case be
+	  the number of RX nodes prepared in one ISO event for each
+	  active ISO group. This depends on the number of bursts in an
+	  ISO group and number of groups, and may need to be set lower
+	  that the theoretical maximum. Default of 8 is for supporting
+	  two groups of 4 payloads, e.g. 2 CIGs with 2 CISes of BN=2.
+
 config BT_CTLR_ISO_TX_BUFFERS
 	int "Number of Isochronous Tx buffers"
 	depends on BT_CTLR_ADV_ISO || BT_CTLR_CONN_ISO
@@ -215,6 +229,10 @@ config BT_CTLR_ISO_TX_BUFFER_SIZE
 	help
 	  Size of the Isochronous Tx buffers and the value returned in HCI LE
 	  Read Buffer Size V2 command response.
+
+config BT_CTLR_ISO_VENDOR_DATA_PATH
+	bool "Enable vendor-specific ISO data path"
+	depends on BT_CTLR_SYNC_ISO || BT_CTLR_CONN_ISO
 
 choice BT_CTLR_TX_PWR
 	prompt "Tx Power"

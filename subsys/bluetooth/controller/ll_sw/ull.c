@@ -1198,10 +1198,6 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_CIS_ESTABLISHED:
 #endif /* CONFIG_BT_CTLR_CONN_ISO */
 
-#if defined(CONFIG_BT_CTLR_ISO)
-	case NODE_RX_TYPE_ISO_PDU:
-#endif
-
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 	case NODE_RX_TYPE_SYNC_IQ_SAMPLE_REPORT:
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
@@ -2538,44 +2534,6 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	* CONFIG_BT_CTLR_SCAN_INDICATION ||
 	* CONFIG_BT_CONN
 	*/
-
-#if defined(CONFIG_BT_CTLR_ISO)
-	case NODE_RX_TYPE_ISO_PDU:
-	{
-		/* Remove from receive-queue; ULL has received this now */
-		(void)memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
-
-#if defined(CONFIG_BT_CTLR_CONN_ISO)
-		struct node_rx_pdu *rx_pdu = (struct node_rx_pdu *)rx;
-		struct ll_conn_iso_stream *cis =
-			ll_conn_iso_stream_get(rx_pdu->hdr.handle);
-		struct ll_iso_datapath *dp = cis->hdr.datapath_out;
-		isoal_sink_handle_t sink = dp->sink_hdl;
-
-		if (dp->path_id != BT_HCI_DATAPATH_ID_HCI) {
-			/* If vendor specific datapath pass to ISO AL here,
-			 * in case of HCI destination it will be passed in
-			 * HCI context.
-			 */
-			struct isoal_pdu_rx pckt_meta = {
-				.meta = &rx_pdu->hdr.rx_iso_meta,
-				.pdu  = (struct pdu_iso *) &rx_pdu->pdu[0]
-			};
-
-			/* Pass the ISO PDU through ISO-AL */
-			isoal_status_t err =
-				isoal_rx_pdu_recombine(sink, &pckt_meta);
-
-			LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
-		}
-#endif
-
-		/* Let ISO PDU start its long journey upwards */
-		ll_rx_put(link, rx);
-		ll_rx_sched();
-	}
-	break;
-#endif
 
 	default:
 	{

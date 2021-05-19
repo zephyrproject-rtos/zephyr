@@ -14,6 +14,7 @@
 #include "util/memq.h"
 #include "util/mem.h"
 #include "util/mfifo.h"
+#include "util/mayfly.h"
 
 #include "pdu.h"
 
@@ -60,7 +61,31 @@ static int init_reset(void);
 #if BT_CTLR_ISO_STREAMS
 static struct ll_iso_datapath datapath_pool[BT_CTLR_ISO_STREAMS];
 #endif
+
 static void *datapath_free;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+#define NODE_RX_HEADER_SIZE (offsetof(struct node_rx_pdu, pdu))
+/* ISO LL conformance tests require a PDU size of maximum 251 bytes + header */
+#define ISO_RX_BUFFER_SIZE (2 + 251)
+
+/* Declare the ISO rx node RXFIFO. This is a composite pool-backed MFIFO for
+ * rx_nodes. The declaration constructs the following data structures:
+ * - mfifo_iso_rx:    FIFO with pointers to PDU buffers
+ * - mem_iso_rx:      Backing data pool for PDU buffer elements
+ * - mem_link_iso_rx: Pool of memq_link_t elements
+ *
+ * Two extra links are reserved for use by the ll_iso_rx and ull_iso_rx memq.
+ */
+static RXFIFO_DEFINE(iso_rx, NODE_RX_HEADER_SIZE + ISO_RX_BUFFER_SIZE,
+			     CONFIG_BT_CTLR_ISO_RX_BUFFERS, 2);
+
+static MEMQ_DECLARE(ll_iso_rx);
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+static MEMQ_DECLARE(ull_iso_rx);
+static void iso_rx_demux(void *param);
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
+#endif /* CONFIG_BT_CTLR_SYNC_ISO) || CONFIG_BT_CTLR_CONN_ISO */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 static MFIFO_DEFINE(iso_tx, sizeof(struct lll_tx),
@@ -522,6 +547,182 @@ int ull_iso_reset(void)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+void *ull_iso_pdu_rx_alloc_peek(uint8_t count)
+{
+	if (count > MFIFO_AVAIL_COUNT_GET(iso_rx)) {
+		return NULL;
+	}
+
+	return MFIFO_DEQUEUE_PEEK(iso_rx);
+}
+
+void *ull_iso_pdu_rx_alloc(void)
+{
+	return MFIFO_DEQUEUE(iso_rx);
+}
+
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+void ull_iso_rx_put(memq_link_t *link, void *rx)
+{
+	/* Enqueue the Rx object */
+	memq_enqueue(link, rx, &memq_ull_iso_rx.tail);
+}
+
+void ull_iso_rx_sched(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, iso_rx_demux};
+
+	/* Kick the ULL (using the mayfly, tailchain it) */
+	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1, &mfy);
+}
+
+static void iso_rx_demux(void *param)
+{
+	struct ll_conn_iso_stream *cis;
+	struct ll_iso_datapath *dp;
+	struct node_rx_pdu *rx_pdu;
+	isoal_sink_handle_t sink;
+	struct node_rx_hdr *rx;
+	memq_link_t *link;
+
+	do {
+		link = memq_peek(memq_ull_iso_rx.head, memq_ull_iso_rx.tail,
+				 (void **)&rx);
+		if (link) {
+			/* Demux Rx objects */
+			switch (rx->type) {
+			case NODE_RX_TYPE_RELEASE:
+				(void)memq_dequeue(memq_ull_iso_rx.tail,
+						   &memq_ull_iso_rx.head, NULL);
+				ll_iso_rx_put(link, rx);
+				ll_rx_sched();
+				break;
+
+			case NODE_RX_TYPE_ISO_PDU:
+				/* Remove from receive-queue; ULL has received this now */
+				(void)memq_dequeue(memq_ull_iso_rx.tail, &memq_ull_iso_rx.head,
+						   NULL);
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
+				rx_pdu = (struct node_rx_pdu *)rx;
+				cis = ll_conn_iso_stream_get(rx_pdu->hdr.handle);
+				dp = cis->hdr.datapath_out;
+				sink = dp->sink_hdl;
+
+				if (dp->path_id != BT_HCI_DATAPATH_ID_HCI) {
+					/* If vendor specific datapath pass to ISO AL here,
+					 * in case of HCI destination it will be passed in
+					 * HCI context.
+					 */
+					struct isoal_pdu_rx pckt_meta = {
+						.meta = &rx_pdu->hdr.rx_iso_meta,
+						.pdu  = (struct pdu_iso *)&rx_pdu->pdu[0]
+					};
+
+					/* Pass the ISO PDU through ISO-AL */
+					const isoal_status_t err =
+						isoal_rx_pdu_recombine(sink, &pckt_meta);
+
+					LL_ASSERT(err == ISOAL_STATUS_OK); /* TODO handle err */
+				}
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
+
+				/* Let ISO PDU start its long journey upwards */
+				ll_iso_rx_put(link, rx);
+				ll_rx_sched();
+				break;
+
+			default:
+				LL_ASSERT(0);
+				break;
+			}
+		}
+	} while (link);
+}
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
+
+void ll_iso_rx_put(memq_link_t *link, void *rx)
+{
+	/* Enqueue the Rx object */
+	memq_enqueue(link, rx, &memq_ll_iso_rx.tail);
+}
+
+void *ll_iso_rx_get(void)
+{
+	struct node_rx_hdr *rx;
+	memq_link_t *link;
+
+	link = memq_peek(memq_ll_iso_rx.head, memq_ll_iso_rx.tail, (void **)&rx);
+	while (link) {
+		/* Do not send up buffers to Host thread that are
+		 * marked for release
+		 */
+		if (rx->type == NODE_RX_TYPE_RELEASE) {
+			(void)memq_dequeue(memq_ll_iso_rx.tail,
+						&memq_ll_iso_rx.head, NULL);
+			mem_release(link, &mem_link_iso_rx.free);
+			mem_release(rx, &mem_iso_rx.free);
+			RXFIFO_ALLOC(iso_rx, 1);
+
+			link = memq_peek(memq_ll_iso_rx.head, memq_ll_iso_rx.tail, (void **)&rx);
+			continue;
+		}
+		return rx;
+	}
+
+	return NULL;
+}
+
+void ll_iso_rx_dequeue(void)
+{
+	struct node_rx_hdr *rx = NULL;
+	memq_link_t *link;
+
+	link = memq_dequeue(memq_ll_iso_rx.tail, &memq_ll_iso_rx.head,
+			    (void **)&rx);
+	LL_ASSERT(link);
+
+	mem_release(link, &mem_link_iso_rx.free);
+
+	/* Handle object specific clean up */
+	switch (rx->type) {
+	case NODE_RX_TYPE_ISO_PDU:
+		break;
+	default:
+		LL_ASSERT(0);
+		break;
+	}
+}
+
+void ll_iso_rx_mem_release(void **node_rx)
+{
+	struct node_rx_hdr *rx;
+
+	rx = *node_rx;
+	while (rx) {
+		struct node_rx_hdr *rx_free;
+
+		rx_free = rx;
+		rx = rx->next;
+
+		switch (rx_free->type) {
+		case NODE_RX_TYPE_ISO_PDU:
+			mem_release(rx_free, &mem_iso_rx.free);
+			break;
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+	}
+
+	*node_rx = rx;
+
+	RXFIFO_ALLOC(iso_rx, UINT8_MAX);
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO) || CONFIG_BT_CTLR_CONN_ISO */
+
 void ull_iso_datapath_release(struct ll_iso_datapath *dp)
 {
 	mem_release(dp, &datapath_free);
@@ -529,6 +730,30 @@ void ull_iso_datapath_release(struct ll_iso_datapath *dp)
 
 static int init_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_SYNC_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+	memq_link_t *link;
+
+	RXFIFO_INIT(iso_rx);
+
+	/* Acquire a link to initialize ull rx memq */
+	link = mem_acquire(&mem_link_iso_rx.free);
+	LL_ASSERT(link);
+
+#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
+	/* Initialize ull rx memq */
+	MEMQ_INIT(ull_iso_rx, link);
+#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
+
+	/* Acquire a link to initialize ll_iso_rx memq */
+	link = mem_acquire(&mem_link_iso_rx.free);
+	LL_ASSERT(link);
+
+	/* Initialize ll_iso_rx memq */
+	MEMQ_INIT(ll_iso_rx, link);
+
+	RXFIFO_ALLOC(iso_rx, UINT8_MAX);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO) || CONFIG_BT_CTLR_CONN_ISO */
+
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
 	/* Initialize tx pool. */
 	mem_init(mem_iso_tx.pool, CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE,

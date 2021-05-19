@@ -263,7 +263,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	radio_crc_configure(PDU_CRC_POLYNOMIAL, sys_get_le24(crc_init));
 	lll_chan_set(data_chan_use);
 
-	node_rx = ull_pdu_rx_alloc_peek(1U);
+	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 	LL_ASSERT(node_rx);
 	radio_pkt_rx_set(node_rx->pdu);
 
@@ -437,7 +437,7 @@ static void isr_rx(void *param)
 		    lll->ctrl) {
 			lll->cssn_curr = lll->cssn_next;
 
-			node_rx = ull_pdu_rx_alloc_peek(1U);
+			node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 			LL_ASSERT(node_rx);
 
 			pdu = (void *)node_rx->pdu;
@@ -455,7 +455,7 @@ static void isr_rx(void *param)
 				}
 			}
 		} else {
-			node_rx = ull_pdu_rx_alloc_peek(3U);
+			node_rx = ull_iso_pdu_rx_alloc_peek(3U);
 			if (!node_rx) {
 				goto isr_rx_done;
 			}
@@ -480,7 +480,7 @@ static void isr_rx(void *param)
 		     (payload_index < lll->payload_head))) {
 			struct node_rx_iso_meta *iso_meta;
 
-			ull_pdu_rx_alloc();
+			ull_iso_pdu_rx_alloc();
 
 			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 			node_rx->hdr.handle = lll->stream_handle[bis_idx];
@@ -601,7 +601,7 @@ isr_rx_find_subevent:
 				node_rx = lll->payload[bis_idx][payload_tail];
 				lll->payload[bis_idx][payload_tail] = NULL;
 
-				ull_rx_put(node_rx->hdr.link, node_rx);
+				iso_rx_put(node_rx->hdr.link, node_rx);
 			}
 
 			payload_index = payload_tail + 1U;
@@ -615,7 +615,7 @@ isr_rx_find_subevent:
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	if (node_rx) {
-		ull_rx_sched();
+		iso_rx_sched();
 	}
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 
@@ -681,7 +681,7 @@ isr_rx_next_subevent:
 	}
 	lll_chan_set(data_chan_use);
 
-	node_rx = ull_pdu_rx_alloc_peek(1U);
+	node_rx = ull_iso_pdu_rx_alloc_peek(1U);
 	LL_ASSERT(node_rx);
 	radio_pkt_rx_set(node_rx->pdu);
 
