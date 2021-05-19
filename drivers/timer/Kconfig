@@ -83,7 +83,7 @@ config HPET_TIMER
 	depends on X86
 	select IOAPIC if X86
 	select LOAPIC if X86
-	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	select TICKLESS_CAPABLE
 	help
 	  This option selects High Precision Event Timer (HPET) as a
