@@ -921,6 +921,15 @@ class QEMUHandler(Handler):
             self.ignore_unexpected_eof = False
 
     @staticmethod
+    def _is_qemu_executable(qemu_binary):
+        cmd = [qemu_binary, "-h"]
+        try:
+            _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as _:
+            return False
+        return True
+
+    @staticmethod
     def _get_cpu_time(pid):
         """get process CPU time.
 
@@ -1075,6 +1084,12 @@ class QEMUHandler(Handler):
 
     def handle(self):
         self.results = {}
+        qemu_executable = self.instance.platform.filter_data.get("QEMU")
+        if not (qemu_executable and QEMUHandler._is_qemu_executable(qemu_executable)):
+            logger.debug(f"Test failed, QEMU binary {qemu_executable} is unexecutable")
+            self.set_state("failed", 0)
+            self.instance.reason  = f"QEMU is unexecutable"
+            return
         self.run = True
 
         # We pass this to QEMU which looks for fifos with .in and .out
@@ -2160,6 +2175,8 @@ class FilterBuilder(CMake):
         filter_data.update(self.defconfig)
         filter_data.update(self.cmake_cache)
 
+        self.platform.filter_data = filter_data
+
         edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
         if self.testcase and self.testcase.tc_filter:
             try:
@@ -2180,7 +2197,6 @@ class FilterBuilder(CMake):
             else:
                 return {os.path.join(self.platform.name, self.testcase.name): False}
         else:
-            self.platform.filter_data = filter_data
             return filter_data
 
 
