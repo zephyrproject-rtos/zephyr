@@ -49,7 +49,6 @@
 #include "ll_sw/lll_sync_iso.h"
 #include "ll_sw/lll_conn.h"
 #include "ll_sw/lll_conn_iso.h"
-
 #include "ll_sw/isoal.h"
 
 #include "ll_sw/ull_iso_types.h"
@@ -229,8 +228,29 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		struct node_rx_pdu *node_rx;
 		struct net_buf *buf;
+		bool iso_received;
 		uint8_t num_cmplt;
 		uint16_t handle;
+
+		iso_received = false;
+
+#if defined(CONFIG_BT_CTLR_ISO)
+		node_rx = ll_iso_rx_get();
+		if (node_rx) {
+			ll_iso_rx_dequeue();
+
+			/* Find out and store the class for this node */
+			node_rx->hdr.user_meta = hci_get_class(node_rx);
+
+			/* Send the rx node up to Host thread,
+			 * recv_thread()
+			 */
+			BT_DBG("ISO RX node enqueue");
+			k_fifo_put(&recv_fifo, node_rx);
+
+			iso_received = true;
+		}
+#endif /* CONFIG_BT_CTLR_ISO */
 
 		/* While there are completed rx nodes */
 		while ((num_cmplt = ll_rx_get((void *)&node_rx, &handle))) {
@@ -280,13 +300,14 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 				BT_DBG("RX node enqueue");
 				k_fifo_put(&recv_fifo, node_rx);
 			}
+		}
 
+		if (iso_received || node_rx) {
 			/* There may still be completed nodes, continue
 			 * pushing all those up to Host before waiting
 			 * for ULL mayfly
 			 */
 			continue;
-
 		}
 
 		BT_DBG("sem take...");
@@ -364,13 +385,24 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		isoal_status_t err;
 
 		stream = ull_sync_iso_stream_get(node_rx->hdr.handle);
-		isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
-		isoal_rx.pdu = (void *)node_rx->pdu;
-		err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
-		LL_ASSERT(err == ISOAL_STATUS_OK ||
-			  err == ISOAL_STATUS_ERR_SDU_ALLOC);
+
+		/* Check validity of the data path sink. FIXME: A channel disconnect race
+		 * may cause ISO data pending with without valid data path.
+		 */
+		if (stream && stream->dp && stream->dp->sink_hdl) {
+			isoal_rx.meta = &node_rx->hdr.rx_iso_meta;
+			isoal_rx.pdu = (void *)node_rx->pdu;
+			err = isoal_rx_pdu_recombine(stream->dp->sink_hdl, &isoal_rx);
+
+			LL_ASSERT(err == ISOAL_STATUS_OK ||
+				  err == ISOAL_STATUS_ERR_SDU_ALLOC);
+		}
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
-		break;
+
+		node_rx->hdr.next = NULL;
+		ll_iso_rx_mem_release((void **)&node_rx);
+
+		return buf;
 	}
 #endif /* CONFIG_BT_CTLR_ISO */
 
