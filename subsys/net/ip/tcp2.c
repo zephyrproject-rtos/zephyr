@@ -1624,6 +1624,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
 	uint8_t next = 0, fl = 0;
 	bool do_close = false;
+	bool connection_ok = false;
 	size_t tcp_options_len = th ? (th_off(th) - 5) * 4 : 0;
 	struct net_conn *conn_handler = NULL;
 	struct net_pkt *recv_pkt;
@@ -1761,11 +1762,19 @@ next_state:
 				}
 				conn_ack(conn, + len);
 			}
-			k_sem_give(&conn->connect_sem);
+
 			next = TCP_ESTABLISHED;
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
 			tcp_out(conn, ACK);
+
+			/* The connection semaphore is released *after*
+			 * we have changed the connection state. This way
+			 * the application can send data and it is queued
+			 * properly even if this thread is running in lower
+			 * priority.
+			 */
+			connection_ok = true;
 		}
 		break;
 	case TCP_ESTABLISHED:
@@ -1931,6 +1940,11 @@ next_state:
 		th = NULL;
 		conn_state(conn, next);
 		next = 0;
+
+		if (connection_ok) {
+			k_sem_give(&conn->connect_sem);
+		}
+
 		goto next_state;
 	}
 
