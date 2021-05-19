@@ -7,7 +7,6 @@ Sorry, Page Not Found
 
 .. image:: images/Zephyr-Kite-in-tree.png
    :align: right
-   :scale: 25%
 
 .. raw:: html
 
