@@ -136,6 +136,7 @@ helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
 helper_node_verify_func_t * const helper_node_verify[] = {
 	[NODE_PHY_UPDATE]  = helper_node_verify_phy_update,
 	[NODE_CONN_UPDATE] = helper_node_verify_conn_update,
+	[NODE_ENC_REFRESH] = helper_node_verify_enc_refresh,
 };
 
 /*

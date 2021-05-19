@@ -74,6 +74,8 @@ void helper_pdu_verify_pause_enc_req(const char *file, uint32_t line, struct pdu
 
 void helper_pdu_verify_pause_enc_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
+void helper_node_verify_enc_refresh(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param);
+
 void helper_pdu_verify_reject_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
 void helper_pdu_verify_reject_ext_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
@@ -129,7 +131,8 @@ typedef enum {
 
 typedef enum {
 	NODE_PHY_UPDATE,
-	NODE_CONN_UPDATE
+	NODE_CONN_UPDATE,
+	NODE_ENC_REFRESH,
 } helper_node_opcode_t;
 
 typedef void (helper_pdu_encode_func_t) (struct pdu_data *data, void *param);
