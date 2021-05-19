@@ -283,6 +283,7 @@ do { \
 	z_log_msg2_static_create((void *)_source, _desc, _msg->data, _data); \
 } while (0)
 
+#if CONFIG_LOG_SPEED
 #define Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, _level, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
@@ -299,6 +300,12 @@ do { \
 	} \
 	z_log_msg2_finalize(_msg, (void *)_source, _desc, NULL); \
 } while (0)
+#else
+/* Alternative empty macro created to speed up compilation when LOG_SPEED is
+ * disabled (default).
+ */
+#define Z_LOG_MSG2_SIMPLE_CREATE(...)
+#endif
 
 /* Macro handles case when local variable with log message string is created.It
  * replaces origing string literal with that variable.
