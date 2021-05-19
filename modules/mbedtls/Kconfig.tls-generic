@@ -354,4 +354,11 @@ config MBEDTLS_PK_WRITE_C
 	help
 	  Enable generic public key write functions.
 
+config MBEDTLS_HAVE_TIME_DATE
+	bool "Enable date/time validation in mbed TLS"
+	help
+	  System has time.h, time(), and an implementation for gmtime_r().
+	  There also need to be a valid time source in the system, as mbedTLS
+	  expects a valid date/time for certificate validation."
+
 endmenu
