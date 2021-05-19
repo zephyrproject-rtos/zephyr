@@ -723,6 +723,7 @@ static void mfy_iso_offset_get(void *param)
 		uint32_t volatile ret_cb;
 		uint32_t ticks_previous;
 		uint32_t ret;
+		bool success;
 
 		ticks_previous = ticks_current;
 
@@ -740,7 +741,8 @@ static void mfy_iso_offset_get(void *param)
 			}
 		}
 
-		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+		success = (ret_cb == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(success);
 
 		LL_ASSERT((ticks_current == ticks_previous) || retry--);
 
