@@ -7,4 +7,3 @@ API Reference
 **************
 
 .. doxygengroup:: bt_sdp
-   :project: Zephyr

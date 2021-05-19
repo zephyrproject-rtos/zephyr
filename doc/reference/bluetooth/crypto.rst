@@ -8,4 +8,3 @@ API Reference
 *************
 
 .. doxygengroup:: bt_crypto
-   :project: Zephyr

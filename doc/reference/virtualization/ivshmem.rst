@@ -42,4 +42,3 @@ API Reference
 *************
 
 .. doxygengroup:: ivshmem
-   :project: Zephyr

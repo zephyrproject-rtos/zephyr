@@ -15,4 +15,3 @@ API Reference
 *************
 
 .. doxygengroup:: queue_apis
-   :project: Zephyr

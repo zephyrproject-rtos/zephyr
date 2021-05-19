@@ -170,4 +170,3 @@ API Reference
 *************
 
 .. doxygengroup:: mqtt_socket
-   :project: Zephyr
