@@ -322,12 +322,12 @@ static struct {
 /* No. of node rx for LLL to ULL.
  * Reserve 3, 1 for adv data, 1 for scan response and 1 for empty PDU reception.
  */
-#define PDU_RX_CNT    (3 + BT_CTLR_ADV_EXT_RX_CNT + CONFIG_BT_CTLR_RX_BUFFERS)
+#define PDU_RX_CNT (3 + BT_CTLR_ADV_EXT_RX_CNT + CONFIG_BT_CTLR_RX_BUFFERS + 10)
 
 /* Part sum of LLL to ULL and ULL to LL/HCI thread node rx count.
  * Will be used below in allocating node rx pool.
  */
-#define RX_CNT        (PDU_RX_CNT + LL_PDU_RX_CNT)
+#define RX_CNT (PDU_RX_CNT + LL_PDU_RX_CNT)
 
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 
