@@ -17,6 +17,7 @@
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
+		usbd0 = &usb1;
 	};
 
 	chosen {
