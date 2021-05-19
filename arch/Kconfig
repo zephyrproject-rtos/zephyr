@@ -464,6 +464,9 @@ endmenu
 # Architecture Capabilities
 #
 
+config ARCH_HAS_SINGLE_THREAD_SUPPORT
+	bool
+
 config ARCH_HAS_TIMING_FUNCTIONS
 	bool
 
