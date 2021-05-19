@@ -82,6 +82,7 @@ extensions = [
     "sphinx_tabs.tabs",
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
+    "notfound.extension",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -202,6 +203,10 @@ html_redirect_pages = redirects.REDIRECTS
 
 warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
 warnings_filter_silent = False
+
+# -- Options for notfound.extension ---------------------------------------
+
+notfound_urls_prefix = f"/{version}/"
 
 # -- Linkcheck options ----------------------------------------------------
 
