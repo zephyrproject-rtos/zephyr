@@ -5002,6 +5002,11 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes,
  */
 void k_heap_free(struct k_heap *h, void *mem);
 
+/* Hand-calculated minimum heap sizes needed to return a successful
+ * 1-byte allocation.  See details in lib/os/heap.[ch]
+ */
+#define Z_HEAP_MIN_SIZE (sizeof(void *) > 4 ? 56 : 44)
+
 /**
  * @brief Define a static k_heap
  *
@@ -5009,15 +5014,20 @@ void k_heap_free(struct k_heap *h, void *mem);
  * k_heap of the requested size.  After kernel start, &name can be
  * used as if k_heap_init() had been called.
  *
+ * Note that this macro enforces a minimum size on the memory region
+ * to accommodate metadata requirements.  Very small heaps will be
+ * padded to fit.
+ *
  * @param name Symbol name for the struct k_heap object
  * @param bytes Size of memory region, in bytes
  */
 #define K_HEAP_DEFINE(name, bytes)				\
-	char __aligned(sizeof(void *)) kheap_##name[bytes];	\
+	char __aligned(8) /* CHUNK_UNIT */			\
+	     kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];		\
 	Z_STRUCT_SECTION_ITERABLE(k_heap, name) = {		\
 		.heap = {					\
 			.init_mem = kheap_##name,		\
-			.init_bytes = (bytes),			\
+			.init_bytes = MAX(bytes, Z_HEAP_MIN_SIZE), \
 		 },						\
 	}
 
