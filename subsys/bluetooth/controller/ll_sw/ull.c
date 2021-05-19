@@ -307,7 +307,14 @@ static struct k_sem *sem_recv;
  */
 static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 
-/* Declare done-event FIFO: mfifo_done.
+/* Declare done-event RXFIFO. This is a composite pool-backed MFIFO for rx_nodes.
+ * The declaration constructs the following data structures:
+ * - mfifo_done:    FIFO with pointers to struct node_rx_event_done
+ * - mem_done:      Backing data pool for struct node_rx_event_done elements
+ * - mem_link_done: Pool of memq_link_t elements
+ *
+ * An extra link may be reserved for use by the ull_done memq (EVENT_DONE_LINK_CNT).
+ *
  * Queue of pointers to struct node_rx_event_done.
  * The actual backing behind these pointers is mem_done.
  *
@@ -338,19 +345,8 @@ static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
 #define EVENT_DONE_MAX VENDOR_EVENT_DONE_MAX
 #endif
 
-static MFIFO_DEFINE(done, sizeof(struct node_rx_event_done *), EVENT_DONE_MAX);
-
-/* Backing storage for elements in mfifo_done */
-static struct {
-	void *free;
-	uint8_t pool[sizeof(struct node_rx_event_done) * EVENT_DONE_MAX];
-} mem_done;
-
-static struct {
-	void *free;
-	uint8_t pool[sizeof(memq_link_t) *
-		     (EVENT_DONE_MAX + EVENT_DONE_LINK_CNT)];
-} mem_link_done;
+static RXFIFO_DEFINE(done, sizeof(struct node_rx_event_done),
+		     EVENT_DONE_MAX, EVENT_DONE_LINK_CNT);
 
 /* Minimum number of node rx for ULL to LL/HCI thread per connection.
  * Increasing this by times the max. simultaneous connection count will permit
@@ -472,7 +468,6 @@ static void perform_lll_reset(void *param);
 static inline void *mark_set(void **m, void *param);
 static inline void *mark_unset(void **m, void *param);
 static inline void *mark_get(void *m);
-static inline void done_alloc(void);
 static inline void rx_alloc(uint8_t max);
 static void rx_demux(void *param);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
@@ -743,9 +738,6 @@ void ll_reset(void)
 
 	/* Re-initialize the prep mfifo */
 	MFIFO_INIT(prep);
-
-	/* Re-initialize the free done mfifo */
-	MFIFO_INIT(done);
 
 	/* Re-initialize the free rx mfifo */
 	MFIFO_INIT(pdu_rx_free);
@@ -2024,16 +2016,8 @@ static inline int init_reset(void)
 {
 	memq_link_t *link;
 
-	/* Initialize done pool. */
-	mem_init(mem_done.pool, sizeof(struct node_rx_event_done),
-		 EVENT_DONE_MAX, &mem_done.free);
-
-	/* Initialize done link pool. */
-	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_DONE_MAX +
-		 EVENT_DONE_LINK_CNT, &mem_link_done.free);
-
-	/* Allocate done buffers */
-	done_alloc();
+	/* Initialize and allocate done pool */
+	RXFIFO_INIT_ALLOC(done);
 
 	/* Initialize rx pool. */
 	mem_init(mem_pdu_rx.pool, (PDU_RX_NODE_POOL_ELEMENT_SIZE),
@@ -2134,51 +2118,6 @@ static inline void *mark_unset(void **m, void *param)
 static inline void *mark_get(void *m)
 {
 	return m;
-}
-
-/**
- * @brief Allocate buffers for done events
- */
-static inline void done_alloc(void)
-{
-	uint8_t idx;
-
-	/* mfifo_done is a queue of pointers */
-	while (MFIFO_ENQUEUE_IDX_GET(done, &idx)) {
-		memq_link_t *link;
-		struct node_rx_hdr *rx;
-
-		link = mem_acquire(&mem_link_done.free);
-		if (!link) {
-			break;
-		}
-
-		rx = mem_acquire(&mem_done.free);
-		if (!rx) {
-			mem_release(link, &mem_link_done.free);
-			break;
-		}
-
-		rx->link = link;
-
-		MFIFO_BY_IDX_ENQUEUE(done, idx, rx);
-	}
-}
-
-static inline void *done_release(memq_link_t *link,
-				 struct node_rx_event_done *done)
-{
-	uint8_t idx;
-
-	if (!MFIFO_ENQUEUE_IDX_GET(done, &idx)) {
-		return NULL;
-	}
-
-	done->hdr.link = link;
-
-	MFIFO_BY_IDX_ENQUEUE(done, idx, done);
-
-	return done;
 }
 
 static inline void rx_alloc(uint8_t max)
@@ -2749,9 +2688,9 @@ static inline void rx_demux_event_done(memq_link_t *link,
 		break;
 	}
 
-	/* release done */
+	/* Release done */
 	done->extra.type = 0U;
-	release = done_release(link, done);
+	release = RXFIFO_RELEASE(done, link, done);
 	LL_ASSERT(release == done);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
@@ -2771,4 +2710,56 @@ static inline void rx_demux_event_done(memq_link_t *link,
 static void disabled_cb(void *param)
 {
 	k_sem_give(param);
+}
+
+/**
+ * @brief   Support function for RXFIFO_ALLOC macro
+ * @details This function allocates up to 'max' number of MFIFO elements by
+ *          enqueuing pointers to memory elements with associated memq links.
+ */
+void ull_rxfifo_alloc(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m,
+		      void *mem_free, void *link_free, uint8_t max)
+{
+	uint8_t idx;
+
+	while ((max--) && mfifo_enqueue_idx_get(n, f, *l, &idx)) {
+		memq_link_t *link;
+		struct node_rx_hdr *rx;
+
+		link = mem_acquire(link_free);
+		if (!link) {
+			break;
+		}
+
+		rx = mem_acquire(mem_free);
+		if (!rx) {
+			mem_release(link, link_free);
+			break;
+		}
+
+		link->mem = NULL;
+		rx->link = link;
+
+		mfifo_by_idx_enqueue(m, s, idx, rx, l);
+	}
+}
+
+/**
+ * @brief   Support function for RXFIFO_RELEASE macro
+ * @details This function releases a node by returning it to the FIFO.
+ */
+void *ull_rxfifo_release(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m,
+			 memq_link_t *link, struct node_rx_hdr *rx)
+{
+	uint8_t idx;
+
+	if (!mfifo_enqueue_idx_get(n, f, *l, &idx)) {
+		return NULL;
+	}
+
+	rx->link = link;
+
+	mfifo_by_idx_enqueue(m, s, idx, rx, l);
+
+	return rx;
 }
