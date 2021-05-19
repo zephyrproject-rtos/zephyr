@@ -45,7 +45,10 @@ DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 #define HPET_COUNTER_CLK_PERIOD		(1000000000000000ULL)
 #endif
 
-#define MIN_DELAY 1000
+#ifndef HPET_CMP_MIN_DELAY
+/* Minimal delay for comparator before the next timer event */
+#define HPET_CMP_MIN_DELAY		(1000)
+#endif
 
 static __pinned_bss struct k_spinlock lock;
 static __pinned_bss unsigned int max_ticks;
@@ -90,7 +93,7 @@ static void hpet_isr(const void *arg)
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		uint32_t next = last_count + cyc_per_tick;
 
-		if ((int32_t)(next - now) < MIN_DELAY) {
+		if ((int32_t)(next - now) < HPET_CMP_MIN_DELAY) {
 			next += cyc_per_tick;
 		}
 		TIMER0_COMPARATOR_REG = next;
@@ -192,7 +195,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	cyc = (cyc / cyc_per_tick) * cyc_per_tick;
 	cyc += last_count;
 
-	if ((cyc - now) < MIN_DELAY) {
+	if ((cyc - now) < HPET_CMP_MIN_DELAY) {
 		cyc += cyc_per_tick;
 	}
 
