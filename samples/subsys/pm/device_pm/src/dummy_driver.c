@@ -15,7 +15,6 @@ static const struct device *parent;
 static int dummy_open(const struct device *dev)
 {
 	int ret;
-	struct k_mutex wait_mutex;
 
 	printk("open()\n");
 
@@ -32,10 +31,7 @@ static int dummy_open(const struct device *dev)
 
 	printk("Async wakeup request queued\n");
 
-	k_mutex_init(&wait_mutex);
-	k_mutex_lock(&wait_mutex, K_FOREVER);
-	(void) k_condvar_wait(&dev->pm->condvar, &wait_mutex, K_FOREVER);
-	k_mutex_unlock(&wait_mutex);
+	(void) pm_device_wait(dev, K_FOREVER);
 
 	if (atomic_get(&dev->pm->state) == PM_DEVICE_STATE_ACTIVE) {
 		printk("Dummy device resumed\n");
