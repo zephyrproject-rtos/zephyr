@@ -491,7 +491,7 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
-					 radio_rx_chain_delay_get(0, 0) -
+					 radio_rx_chain_delay_get(lll->phy, 1) -
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
@@ -628,7 +628,7 @@ static void isr_tx_connect_req(void *param)
 
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
-				 radio_tx_chain_delay_get(lll_aux->phy, 0) -
+				 radio_tx_chain_delay_get(lll_aux->phy, 1) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
