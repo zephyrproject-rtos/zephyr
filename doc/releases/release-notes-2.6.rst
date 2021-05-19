@@ -263,6 +263,8 @@ Boards & SoC Support
   * lpcxpresso55s16: Board renamed from lpcxpresso55s16_ns to
     lpcxpresso55s16 since the board does not have Trusted Firmware M
     (TF-M) support.
+  * lpcxpresso55s28: Removed lpcxpresso55s28_ns config since the board
+    does not have Trusted Firmware M (TF-M) support.
 
 * Added support for these following shields:
 
