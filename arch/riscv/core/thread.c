@@ -32,6 +32,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 {
 	struct __esf *stack_init;
 
+#ifdef CONFIG_RISCV_GLOBAL_POINTER
+	extern long __global_pointer$;
+#endif
+
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	const struct soc_esf soc_esf_init = {SOC_ESF_INIT};
 #endif
@@ -44,6 +48,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->a1 = (ulong_t)p1;
 	stack_init->a2 = (ulong_t)p2;
 	stack_init->a3 = (ulong_t)p3;
+
+#ifdef CONFIG_RISCV_GLOBAL_POINTER
+	stack_init->gp = (ulong_t)&__global_pointer$;
+#endif
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	stack_init->tp = (ulong_t)thread->tls;

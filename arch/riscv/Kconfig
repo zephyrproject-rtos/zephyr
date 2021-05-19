@@ -37,6 +37,12 @@ config INCLUDE_RESET_VECTOR
 	  Include the reset vector stub, which initializes the stack and
 	  prepares for running C code.
 
+config RISCV_GLOBAL_POINTER
+	bool "Enable global pointer support"
+	help
+	  This option enables RISC-V global pointer support in kernel.
+	  The '__global_pointer$' variable should be defined in Linker script.
+
 config RISCV_SOC_CONTEXT_SAVE
 	bool "Enable SOC-based context saving in IRQ handlers"
 	select RISCV_SOC_OFFSETS
