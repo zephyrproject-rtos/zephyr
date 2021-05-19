@@ -1,0 +1,24 @@
+# Copyright (c) 2021 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Telink B91 RF configuration options
+
+config IEEE802154_B91
+	bool "Telink B91 RF driver"
+	depends on SOC_RISCV_TELINK_B91
+	select RF_HAS_DRIVER
+	help
+	  Enable the B91 RF driver.
+
+config IEEE802154_B91_DRV_NAME
+	string "b91 IEEE 802.15.4 Driver's name"
+	default "IEEE802154_b91"
+	help
+	  This option sets the driver name
+
+config IEEE802154_B91_INIT_PRIO
+	int "Telink B91 IEEE 802.15.4 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
