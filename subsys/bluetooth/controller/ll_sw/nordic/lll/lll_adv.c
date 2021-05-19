@@ -1373,7 +1373,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->radio_end_us = radio_tmr_end_get() -
-				    radio_tx_chain_delay_get(0, 0);
+				    radio_rx_chain_delay_get(0, 0);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
