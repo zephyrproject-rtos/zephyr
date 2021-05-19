@@ -438,6 +438,11 @@ void helper_pdu_verify_pause_enc_rsp(const char *file, uint32_t line, struct pdu
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP, "Not a LL_PAUSE_ENC_RSP.\nCalled at %s:%d\n", file, line);
 }
 
+void helper_node_verify_enc_refresh(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param)
+{
+	zassert_equal(rx->hdr.type, NODE_RX_TYPE_ENC_REFRESH, "Not an ENC_REFRESH node.\nCalled at %s:%d\n", file, line);
+}
+
 void helper_pdu_verify_reject_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_reject_ind *p = param;

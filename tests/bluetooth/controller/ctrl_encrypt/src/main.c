@@ -1418,7 +1418,7 @@ void test_encryption_pause_mas_loc(void)
 	event_done(&conn);
 
 	/* There should be one host notification */
-	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_node(NODE_ENC_REFRESH, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -1580,7 +1580,7 @@ void test_encryption_pause_sla_rem(void)
 	event_done(&conn);
 
 	/* There should be a host notification */
-	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_node(NODE_ENC_REFRESH, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* Prepare */
