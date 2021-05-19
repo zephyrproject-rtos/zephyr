@@ -3,7 +3,10 @@
 
 choice LOG_MODE
 	prompt "Mode"
+	default LOG_MODE_MINIMAL if LOG_MINIMAL
 	default LOG_MODE_DEFERRED
+
+if !LOG_MINIMAL
 
 config LOG_MODE_DEFERRED
 	bool "Deferred logging"
@@ -41,6 +44,14 @@ config LOG_MODE_IMMEDIATE
 	  flawlessly in that mode because one log operation can be interrupted
 	  by another one in the higher priority context.
 
+config LOG_FRONTEND
+	bool "Frontend"
+	help
+	  When enabled, logs are redirected to a custom frontend instead
+	  of being processed by the logger. In this mode runtime filtering and
+	  multiple backends are not used.
+
+endif # LOG_MINIMAL
 
 config LOG_MODE_MINIMAL
 	bool "Minimal-footprint"
@@ -53,13 +64,6 @@ config LOG_MODE_MINIMAL
 	  but not runtime filtering. There are no timestamps, prefixes,
 	  colors, or asynchronous logging, and all messages are simply
 	  sent to printk().
-
-config LOG_FRONTEND
-	bool "Frontend"
-	help
-	  When enabled, logs are redirected to a custom frontend instead
-	  of being processed by the logger. In this mode runtime filtering and
-	  multiple backends are not used.
 
 endchoice
 
@@ -74,4 +78,6 @@ config LOG_IMMEDIATE
 config LOG_MINIMAL
 	bool
 	imply PRINTK
-	default y if LOG_MODE_MINIMAL
+	help
+	  Hidden option as a redirection to select LOG_MODE_MINIMAL as
+	  a choice cannot be "selected" or "implied".
