@@ -184,8 +184,17 @@ static void lp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	pdu = (struct pdu_data *) ntf->pdu;
 
 	if (ctx->data.enc.error == BT_HCI_ERR_SUCCESS) {
-		/* TODO(thoh): is this correct? */
-		pdu_encode_start_enc_rsp(pdu);
+		if (ctx->proc == PROC_ENCRYPTION_START) {
+			/* Encryption Change Event */
+			/* TODO(thoh): is this correct? */
+			pdu_encode_start_enc_rsp(pdu);
+		} else if (ctx->proc == PROC_ENCRYPTION_PAUSE) {
+			/* Encryption Key Refresh Complete Event */
+			ntf->hdr.type = NODE_RX_TYPE_ENC_REFRESH;
+		} else {
+			/* Should never happen */
+			LL_ASSERT(0);
+		}
 	} else {
 		pdu_encode_reject_ind(pdu, ctx->data.enc.error);
 	}
@@ -652,8 +661,17 @@ static void rp_enc_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ntf->hdr.handle = conn->lll.handle;
 	pdu = (struct pdu_data *) ntf->pdu;
 
-	/* TODO(thoh): is this correct? */
-	pdu_encode_start_enc_rsp(pdu);
+	if (ctx->proc == PROC_ENCRYPTION_START) {
+		/* Encryption Change Event */
+		/* TODO(thoh): is this correct? */
+		pdu_encode_start_enc_rsp(pdu);
+	} else if (ctx->proc == PROC_ENCRYPTION_PAUSE) {
+		/* Encryption Key Refresh Complete Event */
+		ntf->hdr.type = NODE_RX_TYPE_ENC_REFRESH;
+	} else {
+		/* Should never happen */
+		LL_ASSERT(0);
+	}
 
 	/* Enqueue notification towards LL */
 	ll_rx_put(ntf->hdr.link, ntf);
