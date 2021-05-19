@@ -285,6 +285,15 @@ void ull_cp_priv_pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *p
  * Encryption Start Procedure Helper
  */
 
+static int csrand_get(void *buf, size_t len)
+{
+	if (k_is_in_isr()) {
+		return lll_csrand_isr_get(buf, len);
+	} else {
+		return lll_csrand_get(buf, len);
+	}
+}
+
 void ull_cp_priv_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_enc_req *p;
@@ -298,8 +307,8 @@ void ull_cp_priv_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	p->ediv[0] = ctx->data.enc.ediv[0];
 	p->ediv[1] = ctx->data.enc.ediv[1];
 	/* TODO(thoh): Optimize getting random data */
-	lll_csrand_get(p->skdm, sizeof(p->skdm));
-	lll_csrand_get(p->ivm, sizeof(p->ivm));
+	csrand_get(p->skdm, sizeof(p->skdm));
+	csrand_get(p->ivm, sizeof(p->ivm));
 }
 
 void ull_cp_priv_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -326,8 +335,8 @@ void ull_cp_priv_pdu_encode_enc_rsp(struct pdu_data *pdu)
 
 	p = &pdu->llctrl.enc_rsp;
 	/* TODO(thoh): Optimize getting random data */
-	lll_csrand_get(p->skds, sizeof(p->skds));
-	lll_csrand_get(p->ivs, sizeof(p->ivs));
+	csrand_get(p->skds, sizeof(p->skds));
+	csrand_get(p->ivs, sizeof(p->ivs));
 }
 
 void ull_cp_priv_pdu_encode_start_enc_req(struct pdu_data *pdu)
