@@ -1149,8 +1149,8 @@ static void target_resolve(struct k_work *work)
 	if (twork->cb) {
 		mfy.fp = twork->cb;
 		mfy.param = (void *) ((unsigned int) j);
-		mayfly_enqueue(TICKER_USER_ID_THREAD,
-			       TICKER_USER_ID_LLL, 1, &mfy);
+		(void)mayfly_enqueue(TICKER_USER_ID_THREAD,
+				     TICKER_USER_ID_LLL, 1, &mfy);
 	}
 }
 
@@ -1219,8 +1219,8 @@ static void prpa_cache_resolve(struct k_work *work)
 	if (rwork->cb) {
 		mfy.fp = rwork->cb;
 		mfy.param = (void *) ((unsigned int) j);
-		mayfly_enqueue(TICKER_USER_ID_THREAD,
-			       TICKER_USER_ID_LLL, 1, &mfy);
+		(void)mayfly_enqueue(TICKER_USER_ID_THREAD,
+				     TICKER_USER_ID_LLL, 1, &mfy);
 	}
 }
 
