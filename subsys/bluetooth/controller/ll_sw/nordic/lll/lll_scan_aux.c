@@ -610,7 +610,7 @@ static void isr_tx_connect_req(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
 	hcto += radio_rx_chain_delay_get(lll_aux->phy, 1);
 	hcto += addr_us_get(lll_aux->phy);
-	hcto -= radio_tx_chain_delay_get(lll_aux->phy, 0);
+	hcto -= radio_tx_chain_delay_get(lll_aux->phy, 1);
 	radio_tmr_hcto_configure(hcto);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_SCAN_REQ_RSSI) ||
