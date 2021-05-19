@@ -384,7 +384,7 @@ static void isr_tx(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 + 1;
 	hcto += radio_rx_chain_delay_get(lll->phy_s, 1);
 	hcto += addr_us_get(lll->phy_s);
-	hcto -= radio_tx_chain_delay_get(lll->phy_s, 0);
+	hcto -= radio_tx_chain_delay_get(lll->phy_s, 1);
 	radio_tmr_hcto_configure(hcto);
 
 	/* capture end of CONNECT_IND PDU, used for calculating first
