@@ -327,6 +327,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *node_tx);
 uint8_t ll_rx_get(void **node_rx, uint16_t *handle);
 void ll_rx_dequeue(void);
 void ll_rx_mem_release(void **node_rx);
+void ll_iso_rx_mem_release(void **node_rx);
 
 /* Downstream - ISO Data */
 void *ll_iso_tx_mem_acquire(void);

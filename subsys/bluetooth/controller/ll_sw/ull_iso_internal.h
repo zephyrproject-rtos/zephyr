@@ -7,3 +7,6 @@
 int ull_iso_init(void);
 int ull_iso_reset(void);
 void ull_iso_datapath_release(struct ll_iso_datapath *dp);
+void ll_iso_rx_put(memq_link_t *link, void *rx);
+void *ll_iso_rx_get(void);
+void ll_iso_rx_dequeue(void);
