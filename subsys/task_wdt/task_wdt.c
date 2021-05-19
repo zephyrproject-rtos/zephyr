@@ -71,7 +71,7 @@ static void task_wdt_trigger(struct k_timer *timer_id)
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 	if (channel_id == TASK_WDT_BACKGROUND_CHANNEL) {
 		if (hw_wdt_dev) {
-			wdt_feed(hw_wdt_dev, 0);
+			wdt_feed(hw_wdt_dev, hw_wdt_channel);
 		}
 		return;
 	}
@@ -202,7 +202,7 @@ int task_wdt_feed(int channel_id)
 
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 	if (hw_wdt_dev) {
-		wdt_feed(hw_wdt_dev, 0);
+		wdt_feed(hw_wdt_dev, hw_wdt_channel);
 	}
 #endif
 
