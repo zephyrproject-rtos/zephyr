@@ -111,7 +111,7 @@ struct _thread_arch {
 		uint32_t mode;
 
 #if defined(CONFIG_ARM_STORE_EXC_RETURN)
-		__packed struct {
+		struct {
 			uint8_t mode_bits;
 			uint8_t mode_exc_return;
 			uint16_t mode_reserved2;
