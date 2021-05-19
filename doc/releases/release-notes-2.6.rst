@@ -260,6 +260,9 @@ Boards & SoC Support
   * cy8ckit_062_ble: Added board revision schema.
   * cy8ckit_062_wifi_bt: Refactored to configure by pinctrl.
   * cy8ckit_062_wifi_bt: Added support to SCB[uart] with interrupt.
+  * lpcxpresso55s16: Board renamed from lpcxpresso55s16_ns to
+    lpcxpresso55s16 since the board does not have Trusted Firmware M
+    (TF-M) support.
 
 * Added support for these following shields:
 
