@@ -99,7 +99,7 @@ config BT_TBS_MAX_CALLS
 config BT_TBS_BEARER_COUNT
 	int "How many bearer instances the device instantiates"
 	default 1
-	range 1 5
+	range 1 255
 	help
 	  Sets the number of TBS instances that are instantiated
 

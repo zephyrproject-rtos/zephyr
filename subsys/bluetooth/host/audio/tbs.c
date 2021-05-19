@@ -55,7 +55,7 @@ struct tbs_service_inst_t {
 	 * where we now are in a state where this isn't a 1-to-1 correlation
 	 * between TBS and the Telephone Bearers
 	 */
-	const struct bt_gatt_service_static *service_p;
+	struct bt_gatt_service *service_p;
 };
 
 struct gtbs_service_inst_t {
@@ -1707,24 +1707,25 @@ static void in_call_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_GATT_CCC(friendly_name_cfg_changed, \
 			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT)
 
-#define BT_TBS_SERVICE_DEFINITION(inst) \
+#define BT_TBS_SERVICE_DEFINITION(inst) {\
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_TBS), \
-	BT_TBS_CHR_PROVIDER_NAME(inst), \
-	BT_TBS_CHR_UCI(inst), \
-	BT_TBS_CHR_TECHNOLOGY(inst), \
-	BT_TBS_CHR_URI_LIST(inst), \
-	BT_TBS_CHR_SIGNAL_STRENGTH(inst), \
-	BT_TBS_CHR_SIGNAL_INTERVAL(inst), \
-	BT_TBS_CHR_CURRENT_CALLS(inst), \
-	BT_TBS_CHR_CCID(inst), \
-	BT_TBS_CHR_STATUS_FLAGS(inst), \
-	BT_TBS_CHR_INCOMING_URI(inst), \
-	BT_TBS_CHR_CALL_STATE(inst), \
-	BT_TBS_CHR_CONTROL_POINT(inst), \
-	BT_TBS_CHR_OPTIONAL_OPCODES(inst), \
-	BT_TBS_CHR_TERMINATE_REASON(inst), \
-	BT_TBS_CHR_INCOMING_CALL(inst), \
-	BT_TBS_CHR_FRIENDLY_NAME(inst)
+	BT_TBS_CHR_PROVIDER_NAME(&inst), \
+	BT_TBS_CHR_UCI(&inst), \
+	BT_TBS_CHR_TECHNOLOGY(&inst), \
+	BT_TBS_CHR_URI_LIST(&inst), \
+	BT_TBS_CHR_SIGNAL_STRENGTH(&inst), \
+	BT_TBS_CHR_SIGNAL_INTERVAL(&inst), \
+	BT_TBS_CHR_CURRENT_CALLS(&inst), \
+	BT_TBS_CHR_CCID(&inst), \
+	BT_TBS_CHR_STATUS_FLAGS(&inst), \
+	BT_TBS_CHR_INCOMING_URI(&inst), \
+	BT_TBS_CHR_CALL_STATE(&inst), \
+	BT_TBS_CHR_CONTROL_POINT(&inst), \
+	BT_TBS_CHR_OPTIONAL_OPCODES(&inst), \
+	BT_TBS_CHR_TERMINATE_REASON(&inst), \
+	BT_TBS_CHR_INCOMING_CALL(&inst), \
+	BT_TBS_CHR_FRIENDLY_NAME(&inst) \
+	}
 
 
 #define BT_GTBS_SERVICE_DEFINITION(inst) \
@@ -1747,27 +1748,18 @@ static void in_call_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_TBS_CHR_FRIENDLY_NAME(inst)
 
 /*
- * Defining these as extern make it possible to link code that otherwise would
+ * Defining this as extern make it possible to link code that otherwise would
  * give "unknown identifier" linking errors.
  */
 extern const struct bt_gatt_service_static gtbs_svc;
-extern const struct bt_gatt_service_static tbs_svc_1;
-extern const struct bt_gatt_service_static tbs_svc_2;
-extern const struct bt_gatt_service_static tbs_svc_3;
 
 /* TODO: Can we make the multiple service instance more generic? */
 #if CONFIG_BT_GTBS
 BT_GATT_SERVICE_DEFINE(gtbs_svc, BT_GTBS_SERVICE_DEFINITION(&gtbs_inst));
 #endif /* CONFIG_BT_GTBS */
-#if CONFIG_BT_TBS_SERVICE_COUNT > 0
-BT_GATT_SERVICE_DEFINE(tbs_svc_1, BT_TBS_SERVICE_DEFINITION(&svc_insts[0]));
-#if CONFIG_BT_TBS_SERVICE_COUNT > 1
-BT_GATT_SERVICE_DEFINE(tbs_svc_2, BT_TBS_SERVICE_DEFINITION(&svc_insts[1]));
-#if CONFIG_BT_TBS_SERVICE_COUNT > 2
-BT_GATT_SERVICE_DEFINE(tbs_svc_3, BT_TBS_SERVICE_DEFINITION(&svc_insts[2]));
-#endif /* CONFIG_BT_TBS_SERVICE_COUNT > 2 */
-#endif /* CONFIG_BT_TBS_SERVICE_COUNT > 1 */
-#endif /* CONFIG_BT_TBS_SERVICE_COUNT > 0 */
+
+BT_GATT_SERVICE_INSTANCE_DEFINE(tbs_service_list, svc_insts, CONFIG_BT_TBS_BEARER_COUNT,
+				BT_TBS_SERVICE_DEFINITION);
 
 static void signal_interval_timeout(struct k_work *work)
 {
@@ -1804,13 +1796,14 @@ static void signal_interval_timeout(struct k_work *work)
 
 static int bt_tbs_init(const struct device *unused)
 {
-	if (CONFIG_BT_TBS_SERVICE_COUNT > 0) {
-		svc_insts[0].service_p = &tbs_svc_1;
-		if (CONFIG_BT_TBS_SERVICE_COUNT > 1) {
-			svc_insts[1].service_p = &tbs_svc_2;
-			if (CONFIG_BT_TBS_SERVICE_COUNT > 2) {
-				svc_insts[2].service_p = &tbs_svc_3;
-			}
+	for (int i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+		int err;
+
+		svc_insts[i].service_p = &tbs_service_list[i];
+
+		err = bt_gatt_service_register(svc_insts[i].service_p);
+		if (err) {
+			BT_ERR("Could not register TBS[%d]: %d", i, err);
 		}
 	}
 
