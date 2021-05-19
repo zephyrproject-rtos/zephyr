@@ -484,7 +484,13 @@ static void enc424j600_rx_thread(struct enc424j600_runtime *context)
 			}
 		} else {
 			LOG_ERR("Unknown Interrupt, EIR: 0x%04x", eir);
-			continue;
+			/*
+			 * Terminate interrupt handling thread
+			 * only when debugging.
+			 */
+			if (CONFIG_ETHERNET_LOG_LEVEL == LOG_LEVEL_DBG) {
+				k_oops();
+			}
 		}
 
 		enc424j600_set_sfru(context->dev, ENC424J600_SFR3_EIEL,
