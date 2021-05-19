@@ -35,4 +35,3 @@ API Reference
 *************
 
 .. doxygengroup:: sys_notify_apis
-   :project: Zephyr

@@ -9,4 +9,3 @@ API Reference
 *************
 
 .. doxygengroup:: bt_hci_driver
-   :project: Zephyr

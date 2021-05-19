@@ -305,19 +305,15 @@ The Settings subsystem APIs are provided by ``settings.h``:
 API for general settings usage
 ==============================
 .. doxygengroup:: settings
-   :project: Zephyr
 
 API for key-name processing
 ===========================
 .. doxygengroup:: settings_name_proc
-   :project: Zephyr
 
 API for runtime settings manipulation
 =====================================
 .. doxygengroup:: settings_rt
-   :project: Zephyr
 
 API of backend interface
 ========================
 ..  doxygengroup:: settings_backend
-   :project: Zephyr

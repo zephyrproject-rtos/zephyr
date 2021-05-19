@@ -20,4 +20,3 @@ API Reference
 *************
 
 .. doxygengroup:: sntp
-   :project: Zephyr

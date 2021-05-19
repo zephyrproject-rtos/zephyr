@@ -842,49 +842,40 @@ Timing
 ======
 
 .. doxygengroup:: arch-timing
-   :project: Zephyr
 
 Threads
 =======
 
 .. doxygengroup:: arch-threads
-   :project: Zephyr
 
 .. doxygengroup:: arch-tls
-   :project: Zephyr
 
 Power Management
 ================
 
 .. doxygengroup:: arch-pm
-   :project: Zephyr
 
 Symmetric Multi-Processing
 ==========================
 
 .. doxygengroup:: arch-smp
-   :project: Zephyr
 
 Interrupts
 ==========
 
 .. doxygengroup:: arch-irq
-   :project: Zephyr
 
 Userspace
 =========
 
 .. doxygengroup:: arch-userspace
-   :project: Zephyr
 
 Memory Management
 =================
 
 .. doxygengroup:: arch-mmu
-   :project: Zephyr
 
 Miscellaneous Architecture APIs
 ===============================
 
 .. doxygengroup:: arch-misc
-   :project: Zephyr

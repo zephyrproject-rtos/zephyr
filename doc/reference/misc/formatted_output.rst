@@ -130,4 +130,3 @@ API Reference
 *************
 
 .. doxygengroup:: cbprintf_apis
-   :project: Zephyr

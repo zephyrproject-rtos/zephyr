@@ -20,4 +20,3 @@ API Reference
 *************
 
 .. doxygengroup:: hwinfo_interface
-   :project: Zephyr

@@ -155,10 +155,8 @@ BSD Sockets
 ===========
 
 .. doxygengroup:: bsd_sockets
-   :project: Zephyr
 
 TLS Credentials
 ===============
 
 .. doxygengroup:: tls_credentials
-   :project: Zephyr

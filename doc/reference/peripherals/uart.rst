@@ -10,4 +10,3 @@ API Reference
 *************
 
 .. doxygengroup:: uart_interface
-   :project: Zephyr

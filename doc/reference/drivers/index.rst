@@ -593,4 +593,3 @@ API Reference
 **************
 
 .. doxygengroup:: device_model
-   :project: Zephyr
