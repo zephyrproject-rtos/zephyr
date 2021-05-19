@@ -60,3 +60,6 @@ void radio_df_iq_data_packet_set(uint8_t *buffer, size_t len);
 uint32_t radio_df_iq_samples_amount_get(void);
 /* Get CTE status (CTEInfo) parsed by Radio from received PDU */
 uint8_t radio_df_cte_status_get(void);
+
+void radio_switch_complete_and_phy_end_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
+					      uint8_t phy_next, uint8_t flags_next);
