@@ -99,9 +99,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	ARG_UNUSED(codec_config_len);
 	ARG_UNUSED(codec_config);
 
-	isoal_sink_handle_t sink_hdl;
-	isoal_status_t err = 0;
-
 	if (path_id == BT_HCI_DATAPATH_ID_DISABLED) {
 		return 0;
 	}
@@ -110,11 +107,14 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TBD If the Host attempts to set a data path with a Connection Handle
+	/* Todo: If the Host attempts to set a data path with a Connection Handle
 	 * that does not exist or that is not for a CIS or a BIS, the Controller
 	 * shall return the error code Unknown Connection Identifier (0x02)
 	 */
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
+	isoal_sink_handle_t sink_hdl;
+	isoal_status_t err = 0;
+
 	struct ll_conn_iso_stream *cis = ll_conn_iso_stream_get(handle);
 	struct ll_conn_iso_group *cig;
 
@@ -186,7 +186,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	} else {
 		/* TBD call vendor specific function to set up ISO path */
 	}
-#endif
 
 	if (!err) {
 		dp->sink_hdl = sink_hdl;
@@ -194,6 +193,7 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	} else {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif
 
 	return 0;
 }
