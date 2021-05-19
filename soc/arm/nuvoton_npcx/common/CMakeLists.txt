@@ -17,11 +17,12 @@ if (NOT DEFINED CONFIG_NPCX_HEADER_ENABLE_FIRMWARE_CRC)
     set(NPCX_HEADER_FCRC "-nofcrc")
 endif()
 
-if (DEFINED CONFIG_NPCX_HEADER)
+if (DEFINED CONFIG_NPCX_IMAGE_OUTPUT_BIN)
+  set(NPCX_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}.npcx.bin)
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/ecst/ecst.py
-    -i ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
-    -o ${NPCX_IMAGE_FILE}
+    -i ${KERNEL_BIN_NAME}
+    -o ${NPCX_BIN_NAME}
     ${NPCX_HEADER_HCRC} ${NPCX_HEADER_FCRC}
     -chip ${CONFIG_NPCX_HEADER_CHIP}
     -flashsize ${CONFIG_NPCX_HEADER_FLASH_SIZE}
@@ -29,4 +30,16 @@ if (DEFINED CONFIG_NPCX_HEADER)
     -spimaxclk ${CONFIG_NPCX_HEADER_SPI_MAX_CLOCK}
     -spireadmode ${CONFIG_NPCX_HEADER_SPI_READ_MODE}
   )
+  if (DEFINED CONFIG_NPCX_IMAGE_OUTPUT_HEX)
+    set(NPCX_HEX_NAME ${CONFIG_KERNEL_BIN_NAME}.npcx.hex)
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag>
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_intarget>binary
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>ihex
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${NPCX_BIN_NAME}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${NPCX_HEX_NAME}
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    )
+  endif()
 endif()
