@@ -91,7 +91,6 @@ static int pm_device_request(const struct device *dev,
 {
 	int ret = 0;
 	k_spinlock_key_t key;
-	struct k_mutex request_mutex;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, target_state);
 	__ASSERT((target_state == PM_DEVICE_STATE_ACTIVE) ||
@@ -155,10 +154,7 @@ static int pm_device_request(const struct device *dev,
 	}
 
 	k_spin_unlock(&dev->pm->lock, key);
-	k_mutex_init(&request_mutex);
-	k_mutex_lock(&request_mutex, K_FOREVER);
-	(void)k_condvar_wait(&dev->pm->condvar, &request_mutex, K_FOREVER);
-	k_mutex_unlock(&request_mutex);
+	pm_device_wait(dev, K_FOREVER);
 
 	/*
 	 * dev->pm->state was set in device_pm_callback(). As the device
