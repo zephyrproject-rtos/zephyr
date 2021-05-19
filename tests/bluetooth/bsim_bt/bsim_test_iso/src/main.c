@@ -646,7 +646,7 @@ static void test_iso_recv_main(void)
 	uint8_t check_countdown = 3;
 
 	printk("Waiting for remote BIG terminate by checking for missing "
-	       "%u BIG Info report...", check_countdown);
+	       "%u BIG Info report...\n", check_countdown);
 	do {
 		is_sync_recv = false;
 		is_big_info = false;
