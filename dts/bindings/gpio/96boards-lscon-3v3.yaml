@@ -4,6 +4,6 @@
 description: |
     Represents GPIO pin nodes exposed on the 96Boards 3.3v low-speed header
 
-compatible: "96b-lscon-3v3"
+compatible: "linaro,96b-lscon-3v3"
 
 include: [gpio-nexus.yaml, base.yaml]

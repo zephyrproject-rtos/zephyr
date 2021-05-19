@@ -72,6 +72,7 @@ from copy import deepcopy
 import logging
 import os
 import re
+from typing import Set
 
 import yaml
 try:
@@ -149,7 +150,8 @@ class EDT:
                  default_prop_types=True,
                  support_fixed_partitions_on_any_bus=True,
                  infer_binding_for_paths=None,
-                 err_on_deprecated_properties=False):
+                 err_on_deprecated_properties=False,
+                 vendor_prefixes=None):
         """EDT constructor.
 
         dts:
@@ -181,12 +183,18 @@ class EDT:
         err_on_deprecated_properties (default: False):
           If True and 'dts' has any deprecated properties set, raise an error.
 
+        vendor_prefixes (default: None):
+          A dict mapping vendor prefixes in compatible properties to their
+          descriptions. If given, compatibles in the form "manufacturer,device"
+          for which "manufacturer" is neither a key in the dict nor a specially
+          exempt set of grandfathered-in cases will cause warnings.
         """
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
         self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
         self._infer_binding_for_paths = set(infer_binding_for_paths or [])
         self._err_on_deprecated_properties = bool(err_on_deprecated_properties)
+        self._vendor_prefixes = vendor_prefixes
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -474,6 +482,48 @@ class EDT:
                         f"'{spec.name}' that is only tokenizable "
                         'in lowercase: ' +
                         ', '.join(repr(x) for x in spec.enum))
+
+        # Validate the contents of compatible properties.
+        self._checked_compatibles: Set[str] = set()
+        for node in self.nodes:
+            if 'compatible' not in node.props:
+                continue
+
+            compatibles = node.props['compatible'].val
+
+            # _check() runs after _init_compat2binding() has called
+            # _dt_compats(), which already converted every compatible
+            # property to a list of strings. So we know 'compatibles'
+            # is a list, but add an assert for future-proofing.
+            assert isinstance(compatibles, list)
+
+            for compat in compatibles:
+                # This is also just for future-proofing.
+                assert isinstance(compat, str)
+
+                self._check_compatible(node, compat)
+        del self._checked_compatibles  # We have no need for this anymore.
+
+    def _check_compatible(self, node, compat):
+        if compat in self._checked_compatibles:
+            return
+
+        # The regular expression comes from dt-schema.
+        compat_re = r'^[a-zA-Z][a-zA-Z0-9,+\-._]+$'
+        if not re.match(compat_re, compat):
+            _err(f"node '{node.path}' compatible '{compat}' "
+                 'must match this regular expression: '
+                 f"'{compat_re}'")
+
+        if ',' in compat and self._vendor_prefixes is not None:
+            vendor = compat.split(',', 1)[0]
+            if vendor not in self._vendor_prefixes and \
+                   vendor not in _VENDOR_PREFIX_ALLOWED:
+                _LOG.warning(
+                    f"node '{node.path}' compatible '{compat}' "
+                    f"has unknown vendor prefix '{vendor}'")
+
+        self._checked_compatibles.add(compat)
 
 class Node:
     """
@@ -1941,6 +1991,31 @@ class PropertySpec:
 class EDTError(Exception):
     "Exception raised for devicetree- and binding-related errors"
 
+#
+# Public global functions
+#
+
+
+def load_vendor_prefixes_txt(vendor_prefixes):
+    """Load a vendor-prefixes.txt file and return a dict
+    representation mapping a vendor prefix to the vendor name.
+    """
+    vnd2vendor = {}
+    with open(vendor_prefixes, 'r') as f:
+        for line in f:
+            line = line.strip()
+
+            if not line or line.startswith('#'):
+                # Comment or empty line.
+                continue
+
+            # Other lines should be in this form:
+            #
+            # <vnd><TAB><vendor>
+            vnd_vendor = line.split('\t', 1)
+            assert len(vnd_vendor) == 2, line
+            vnd2vendor[vnd_vendor[0]] = vnd_vendor[1]
+    return vnd2vendor
 
 #
 # Private global functions
@@ -2737,3 +2812,14 @@ _DEFAULT_PROP_SPECS = {
     name: PropertySpec(name, _DEFAULT_PROP_BINDING)
     for name in _DEFAULT_PROP_TYPES
 }
+
+# A set of vendor prefixes which are grandfathered in by Linux,
+# and therefore by us as well.
+_VENDOR_PREFIX_ALLOWED = set([
+    "at25", "bm", "devbus", "dmacap", "dsa",
+    "exynos", "fsia", "fsib", "gpio-fan", "gpio-key", "gpio", "gpmc",
+    "hdmi", "i2c-gpio", "keypad", "m25p", "max8952", "max8997",
+    "max8998", "mpmc", "pinctrl-single", "#pinctrl-single", "PowerPC",
+    "pl022", "pxa-mmc", "rcar_sound", "rotary-encoder", "s5m8767",
+    "sdhci", "simple-audio-card", "st-plgpio", "st-spics", "ts",
+])

@@ -566,6 +566,14 @@ Build and Infrastructure
 * Devicetree
 
   - :c:macro:`DT_COMPAT_GET_ANY_STATUS_OKAY`: new macro
+  - the ``96b-lscon-3v3`` and ``96b-lscon-1v8`` :ref:`compatible properties
+    <dt-important-props>` now have ``linaro,`` vendor prefixes, i.e. they are
+    now respectively :dtcompatible:`linaro,96b-lscon-3v3` and
+    :dtcompatible:`linaro,96b-lscon-1v8`.
+
+    This change was made to bring Zephyr's devicetrees into compliance with an
+    upstream Linux regular expression used to validate compatible properties.
+    This regular expression requires a letter as the first character.
 
 * West
 
