@@ -9,6 +9,7 @@ import pathlib
 import pickle
 import platform
 import subprocess
+import sys
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
@@ -22,7 +23,10 @@ except ImportError:
     # to ignore in that case.
     MISSING_EDTLIB = True
 
-DEFAULT_BOSSAC_PORT = '/dev/ttyACM0'
+if platform.system() == 'Darwin':
+    DEFAULT_BOSSAC_PORT = None
+else:
+    DEFAULT_BOSSAC_PORT = '/dev/ttyACM0'
 DEFAULT_BOSSAC_SPEED = '115200'
 
 class BossacBinaryRunner(ZephyrBinaryRunner):
@@ -49,7 +53,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
                             help='path to bossac, default is bossac')
         parser.add_argument('--bossac-port', default=DEFAULT_BOSSAC_PORT,
                             help='serial port to use, default is ' +
-                            DEFAULT_BOSSAC_PORT)
+                            str(DEFAULT_BOSSAC_PORT))
         parser.add_argument('--speed', default=DEFAULT_BOSSAC_SPEED,
                             help='serial port speed to use, default is ' +
                             DEFAULT_BOSSAC_SPEED)
@@ -139,11 +143,16 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         return None
 
     def set_serial_config(self):
-        if platform.system() == 'Linux':
+        if platform.system() == 'Linux' or platform.system() == 'Darwin':
             self.require('stty')
+
+            # GNU coreutils uses a capital F flag for 'file'
+            flag = '-F' if platform.system() == 'Linux' else '-f'
+
             if self.is_extended_samba_protocol():
                 self.speed = '1200'
-            cmd_stty = ['stty', '-F', self.port, 'raw', 'ispeed', self.speed,
+
+            cmd_stty = ['stty', flag, self.port, 'raw', 'ispeed', self.speed,
                         'ospeed', self.speed, 'cs8', '-cstopb', 'ignpar',
                         'eol', '255', 'eof', '255']
             self.check_call(cmd_stty)
@@ -178,6 +187,61 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
         return cmd_flash
 
+    def get_darwin_serial_device_list(self):
+        """
+        Get a list of candidate serial ports on Darwin by querying the IOKit
+        registry.
+        """
+        import plistlib
+
+        ioreg_out = self.check_output(['ioreg', '-r', '-c', 'IOSerialBSDClient',
+                                       '-k', 'IOCalloutDevice', '-a'])
+        serial_ports = plistlib.loads(ioreg_out, fmt=plistlib.FMT_XML)
+
+        return [port["IOCalloutDevice"] for port in serial_ports]
+
+    def get_darwin_user_port_choice(self):
+        """
+        Ask the user to select the serial port from a set of candidate ports
+        retrieved from IOKit on Darwin.
+
+        Modelled on get_board_snr() in the nrfjprog runner.
+        """
+        devices = self.get_darwin_serial_device_list()
+
+        if len(devices) == 0:
+            raise RuntimeError('No candidate serial ports were found!')
+        elif len(devices) == 1:
+            print('Using only serial device on the system: ' + devices[0])
+            return devices[0]
+        elif not sys.stdin.isatty():
+            raise RuntimeError('Refusing to guess which serial port to use: '
+                               f'there are {len(devices)} available. '
+                               '(Interactive prompts disabled since standard '
+                               'input is not a terminal - please specify a '
+                               'port using --bossac-port instead)')
+
+        print('There are multiple serial ports available on this system:')
+
+        for i, device in enumerate(devices, 1):
+            print(f'    {i}. {device}')
+
+        p = f'Please select one (1-{len(devices)}, or EOF to exit): '
+
+        while True:
+            try:
+                value = input(p)
+            except EOFError:
+                sys.exit(0)
+            try:
+                value = int(value)
+            except ValueError:
+                continue
+            if 1 <= value <= len(devices):
+                break
+
+        return devices[value - 1]
+
     def do_run(self, command, **kwargs):
         if MISSING_EDTLIB:
             self.logger.warning(
@@ -187,6 +251,8 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         if platform.system() == 'Windows':
             msg = 'CAUTION: BOSSAC runner not support on Windows!'
             raise RuntimeError(msg)
+        elif platform.system() == 'Darwin' and self.port is None:
+            self.port = self.get_darwin_user_port_choice()
 
         self.require(self.bossac)
         self.set_serial_config()

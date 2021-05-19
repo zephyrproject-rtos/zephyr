@@ -51,7 +51,7 @@
 	};
 };
 
-&clk_hse{
+&clk_hse {
 	clock-frequency = <DT_FREQ_M(24)>;
 	status = "okay";
 };

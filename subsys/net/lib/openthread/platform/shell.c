@@ -21,13 +21,17 @@
 static char rx_buffer[OT_SHELL_BUFFER_SIZE];
 
 static const struct shell *shell_p;
+static bool is_shell_initialized;
 
-int otConsoleOutputCallback(void *aContext, const char *aFormat,
-			    va_list aArguments)
+static int ot_console_cb(void *context, const char *format, va_list arg)
 {
-	ARG_UNUSED(aContext);
+	ARG_UNUSED(context);
 
-	shell_vfprintf(shell_p, SHELL_NORMAL, aFormat, aArguments);
+	if (shell_p == NULL) {
+		return 0;
+	}
+
+	shell_vfprintf(shell_p, SHELL_NORMAL, format, arg);
 
 	return 0;
 }
@@ -41,6 +45,10 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 	size_t buf_len = OT_SHELL_BUFFER_SIZE;
 	size_t arg_len = 0;
 	int i;
+
+	if (!is_shell_initialized) {
+		return -ENOEXEC;
+	}
 
 	for (i = 1; i < argc; i++) {
 		if (arg_len) {
@@ -77,5 +85,12 @@ SHELL_CMD_ARG_REGISTER(ot, NULL, SHELL_HELP_OT, ot_cmd, 2, 255);
 
 void platformShellInit(otInstance *aInstance)
 {
-	otCliInit(aInstance, otConsoleOutputCallback, NULL);
+	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL)) {
+		shell_p = shell_backend_uart_get_ptr();
+	} else {
+		shell_p = NULL;
+	}
+
+	otCliInit(aInstance, ot_console_cb, NULL);
+	is_shell_initialized = true;
 }

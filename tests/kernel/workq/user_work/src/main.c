@@ -128,7 +128,7 @@ static void twork_submit(const void *data)
  *
  * @ingroup kernel_workqueue_tests
  *
- * @see k_work_q_user_start()
+ * @see k_work_user_queue_start()
  */
 static void test_work_user_queue_start_before_submit(void)
 {

@@ -42,7 +42,7 @@ manifest:
       path: modules/lib/civetweb
     - name: hal_espressif
       west-commands: west/west-commands.yml
-      revision: 90952df320f30c696ea73a22a0e50f20b8f94fd3
+      revision: 086d305202390589a206523c239e604718759402
       path: modules/hal/espressif
     - name: fatfs
       revision: 1d1fcc725aa1cb3c32f366e0c53d7490d0fe1109
@@ -88,7 +88,7 @@ manifest:
       revision: 31acbaa36e9e74ab88ac81e3d21e7f1d00a71136
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: pull/20/head
+      revision: 5765cb7f75a9973ae9232d438e361a9d7bbc49e7
       path: modules/crypto/mbedtls
     - name: mcuboot
       revision: 3ad36f82d5884c9792d6470b1e7f55011a03c4f1
@@ -112,7 +112,7 @@ manifest:
       revision: cdb9570901e87ab247aed0a96ccd8f94beee5834
       path: modules/lib/openthread
     - name: segger
-      revision: 38c79a447e4a47d413b4e8d34448316a5cece77c
+      revision: 2aa031c081426dcd0626185af45c40bd05811b68
       path: modules/debug/segger
     - name: sof
       revision: 52dc9c5ad8d0d2a5df0bb51ea30e54f8d7890639

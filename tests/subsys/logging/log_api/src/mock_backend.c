@@ -296,7 +296,9 @@ static void process(const struct log_backend *const backend,
 
 	data = log_msg2_get_package(&msg->log, &len);
 	len = cbpprintf(out, &s, data);
-	str[len] = '\0';
+	if (len > 0) {
+		str[len] = '\0';
+	}
 
 	zassert_equal(strcmp(str, exp->str), 0, "Got \"%s\", Expected:\"%s\"",
 			str, exp->str);
@@ -368,7 +370,7 @@ static void sync_hexdump(const struct log_backend *const backend,
 
 	zassert_equal(0, strcmp(metadata, exp->str), NULL);
 	zassert_equal(length, exp->data_len, NULL);
-	if (length > sizeof(exp->data)) {
+	if (length <= sizeof(exp->data)) {
 		zassert_equal(memcmp(data, exp->data, length), 0, NULL);
 	}
 }

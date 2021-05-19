@@ -257,8 +257,11 @@ static int cy8c95xx_init(const struct device *dev)
 		goto out;
 	}
 
-	i2c_reg_read_byte(cfg->i2c_master, cfg->i2c_slave_addr,
+	rc = i2c_reg_read_byte(cfg->i2c_master, cfg->i2c_slave_addr,
 			  CY8C95XX_REG_ID, &data);
+	if (rc) {
+		goto out;
+	}
 	LOG_DBG("cy8c95xx device ID %02X", data & 0xF0);
 	if ((data & 0xF0) != 0x20) {
 		LOG_WRN("driver only support [0-2] ports operations");

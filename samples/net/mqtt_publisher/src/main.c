@@ -67,7 +67,7 @@ static APP_DMEM sec_tag_t m_sec_tags[] = {
 #if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(CONFIG_NET_SOCKETS_OFFLOAD)
 		APP_CA_CERT_TAG,
 #endif
-#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+#if defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
 		APP_PSK_TAG,
 #endif
 };
@@ -85,7 +85,7 @@ static int tls_init(void)
 	}
 #endif
 
-#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+#if defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
 	err = tls_credential_add(APP_PSK_TAG, TLS_CREDENTIAL_PSK,
 				 client_psk, sizeof(client_psk));
 	if (err < 0) {

@@ -4,14 +4,14 @@ tests:
     arch_exclude: posix
     platform_exclude: twr_ke18f native_posix_64 nrf52_bsim
     tags: clib minimal_libc userspace
-  libraries.libc.newlib:
+  libraries.libc.newlib.mem_alloc:
     min_ram: 16
     extra_args: CONF_FILE=prj_newlib.conf
     arch_exclude: posix
     platform_exclude: twr_ke18f native_posix_64 nrf52_bsim
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     tags: clib newlib userspace
-  libraries.libc.newlibnano:
+  libraries.libc.newlib_nano.mem_alloc:
     extra_args: CONF_FILE=prj_newlibnano.conf
     filter: CONFIG_HAS_NEWLIB_LIBC_NANO
     tags: clib newlib userspace

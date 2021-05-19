@@ -49,7 +49,7 @@ static void pm_work_handler(struct k_work *work)
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND,
 						  device_pm_callback, NULL);
 		} else {
-			goto fsm_out;
+			goto handler_out;
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPEND:
@@ -60,7 +60,7 @@ static void pm_work_handler(struct k_work *work)
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE,
 						  device_pm_callback, NULL);
 		} else {
-			goto fsm_out;
+			goto handler_out;
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPENDING:
@@ -69,13 +69,13 @@ static void pm_work_handler(struct k_work *work)
 		/* Do nothing: We are waiting for device_pm_callback() */
 		break;
 	default:
-		LOG_ERR("Invalid FSM state!!\n");
+		LOG_ERR("Invalid state!!\n");
 	}
 
 	__ASSERT(ret == 0, "Set Power state error");
 	return;
 
-fsm_out:
+handler_out:
 	/*
 	 * This function returns the number of woken threads on success. There
 	 * is nothing we can do with this information. Just ignoring it.
@@ -87,18 +87,22 @@ static int pm_device_request(const struct device *dev,
 			     uint32_t target_state, uint32_t pm_flags)
 {
 	struct k_mutex request_mutex;
+	int ret;
 
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, target_state);
 	__ASSERT((target_state == PM_DEVICE_STATE_ACTIVE) ||
 			(target_state == PM_DEVICE_STATE_SUSPEND),
 			"Invalid device PM state requested");
 
 	if (target_state == PM_DEVICE_STATE_ACTIVE) {
 		if (atomic_inc(&dev->pm->usage) < 0) {
-			return 0;
+			ret = 0;
+			goto out;
 		}
 	} else {
 		if (atomic_dec(&dev->pm->usage) > 1) {
-			return 0;
+			ret = 0;
+			goto out;
 		}
 	}
 
@@ -123,15 +127,16 @@ static int pm_device_request(const struct device *dev,
 						  PM_DEVICE_STATE_SUSPEND,
 						  NULL, NULL);
 		}
-
-		return 0;
+		ret = 0;
+		goto out;
 	}
 
 	(void)k_work_schedule(&dev->pm->work, K_NO_WAIT);
 
 	/* Return in case of Async request */
 	if (pm_flags & PM_DEVICE_ASYNC) {
-		return 0;
+		ret = 0;
+		goto out;
 	}
 
 	k_mutex_init(&request_mutex);
@@ -144,7 +149,10 @@ static int pm_device_request(const struct device *dev,
 	 * may not have been properly changed to the target_state or another
 	 * thread we check it here before returning.
 	 */
-	return target_state == atomic_get(&dev->pm->state) ? 0 : -EIO;
+	ret = target_state == atomic_get(&dev->pm->state) ? 0 : -EIO;
+out:
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_request, dev, ret);
+	return ret;
 }
 
 int pm_device_get(const struct device *dev)
@@ -173,11 +181,13 @@ void pm_device_enable(const struct device *dev)
 {
 	k_spinlock_key_t key;
 
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_enable, dev);
 	if (k_is_pre_kernel()) {
 		dev->pm->dev = dev;
 		dev->pm->enable = true;
 		atomic_set(&dev->pm->state, PM_DEVICE_STATE_SUSPEND);
 		k_work_init_delayable(&dev->pm->work, pm_work_handler);
+		SYS_PORT_TRACING_FUNC_EXIT(pm, device_enable, dev);
 		return;
 	}
 
@@ -196,12 +206,14 @@ void pm_device_enable(const struct device *dev)
 		k_work_schedule(&dev->pm->work, K_NO_WAIT);
 	}
 	k_spin_unlock(&dev->pm->lock, key);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_enable, dev);
 }
 
 void pm_device_disable(const struct device *dev)
 {
 	k_spinlock_key_t key;
 
+	SYS_PORT_TRACING_FUNC_ENTER(pm, device_disable, dev);
 	__ASSERT(k_is_pre_kernel() == false, "Device should not be disabled "
 		 "before kernel is initialized");
 
@@ -210,4 +222,5 @@ void pm_device_disable(const struct device *dev)
 	/* Bring up the device before disabling the Idle PM */
 	k_work_schedule(&dev->pm->work, K_NO_WAIT);
 	k_spin_unlock(&dev->pm->lock, key);
+	SYS_PORT_TRACING_FUNC_EXIT(pm, device_disable, dev);
 }

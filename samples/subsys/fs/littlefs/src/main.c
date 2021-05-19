@@ -68,6 +68,9 @@ void main(void)
 
 	flash_area_close(pfa);
 
+	/* Do not mount if auto-mount has been enabled */
+#if !DT_NODE_EXISTS(PARTITION_NODE) ||						\
+	!(FSTAB_ENTRY_DT_MOUNT_FLAGS(PARTITION_NODE) & FS_MOUNT_FLAG_AUTOMOUNT)
 	rc = fs_mount(mp);
 	if (rc < 0) {
 		printk("FAIL: mount id %u at %s: %d\n",
@@ -76,6 +79,9 @@ void main(void)
 		return;
 	}
 	printk("%s mount: %d\n", mp->mnt_point, rc);
+#else
+	printk("%s automounted\n", mp->mnt_point);
+#endif
 
 	rc = fs_statvfs(mp->mnt_point, &sbuf);
 	if (rc < 0) {

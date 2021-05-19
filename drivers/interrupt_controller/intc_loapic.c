@@ -62,14 +62,19 @@
 #define LOPIC_SUSPEND_BITS_REQD (ROUND_UP((LOAPIC_IRQ_COUNT * LOPIC_SSPND_BITS_PER_IRQ), 32))
 #ifdef CONFIG_PM_DEVICE
 #include <pm/device.h>
+__pinned_bss
 uint32_t loapic_suspend_buf[LOPIC_SUSPEND_BITS_REQD / 32] = {0};
+
+__pinned_data
 static uint32_t loapic_device_power_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 #ifdef DEVICE_MMIO_IS_IN_RAM
+__pinned_bss
 mm_reg_t z_loapic_regs;
 #endif
 
+__pinned_func
 void send_eoi(void)
 {
 	x86_write_xapic(LOAPIC_EOI, 0);
@@ -80,7 +85,7 @@ void send_eoi(void)
  *
  * Called from early assembly layer (e.g., crt0.S).
  */
-
+__pinned_func
 void z_loapic_enable(unsigned char cpu_number)
 {
 	int32_t loApicMaxLvt; /* local APIC Max LVT */
@@ -186,7 +191,7 @@ void z_loapic_enable(unsigned char cpu_number)
  * The local APIC is initialized via z_loapic_enable() long before the
  * kernel runs through its device initializations, so this is unneeded.
  */
-
+__boot_func
 static int loapic_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
@@ -194,6 +199,7 @@ static int loapic_init(const struct device *unused)
 }
 
 
+__pinned_func
 uint32_t z_loapic_irq_base(void)
 {
 	return z_ioapic_num_rtes();
@@ -207,7 +213,7 @@ uint32_t z_loapic_irq_base(void)
  *
  * @return N/A
  */
-
+__boot_func
 void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 				  unsigned int vector /* vector to copy into the LVT */
 				  )
@@ -246,7 +252,7 @@ void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
  *
  * @return N/A
  */
-
+__pinned_func
 void z_loapic_irq_enable(unsigned int irq)
 {
 	unsigned int oldLevel;   /* previous interrupt lock level */
@@ -275,7 +281,7 @@ void z_loapic_irq_enable(unsigned int irq)
  *
  * @return N/A
  */
-
+__pinned_func
 void z_loapic_irq_disable(unsigned int irq)
 {
 	unsigned int oldLevel;   /* previous interrupt lock level */
@@ -322,6 +328,7 @@ void z_loapic_irq_disable(unsigned int irq)
  * @return The vector of the interrupt that is currently being processed, or -1
  * if no IRQ is being serviced.
  */
+__pinned_func
 int z_irq_controller_isr_vector_get(void)
 {
 	int pReg, block;
@@ -340,6 +347,7 @@ int z_irq_controller_isr_vector_get(void)
 }
 
 #ifdef CONFIG_PM_DEVICE
+__pinned_func
 static int loapic_suspend(const struct device *port)
 {
 	volatile uint32_t lvt; /* local vector table entry value */
@@ -368,6 +376,7 @@ static int loapic_suspend(const struct device *port)
 	return 0;
 }
 
+__pinned_func
 int loapic_resume(const struct device *port)
 {
 	int loapic_irq;
@@ -402,6 +411,7 @@ int loapic_resume(const struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
+__pinned_func
 static int loapic_device_ctrl(const struct device *port,
 			      uint32_t ctrl_command,
 			      uint32_t *context, pm_device_cb cb, void *arg)

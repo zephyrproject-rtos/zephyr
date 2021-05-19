@@ -153,7 +153,7 @@ void test_condvar_wait_forever_wake(void)
 
 	k_thread_create(&condvar_wake_tid, condvar_wake_stack, STACK_SIZE,
 			condvar_wake_task, &woken, NULL, NULL,
-			PRIO_WAKE, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+			PRIO_WAKE, K_USER | K_INHERIT_PERMS, K_MSEC(1));
 
 	/* giving time for the condvar_wake_task
 	 * and condvar_wait_wake_task to execute

@@ -67,21 +67,61 @@
 #define _NOCACHE_SECTION_NAME nocache
 #endif
 
+#if defined(CONFIG_LINKER_USE_BOOT_SECTION)
+#define BOOT_TEXT_SECTION_NAME		boot_text
+#define BOOT_BSS_SECTION_NAME		boot_bss
+#define BOOT_RODATA_SECTION_NAME	boot_rodata
+#define BOOT_DATA_SECTION_NAME		boot_data
+#define BOOT_NOINIT_SECTION_NAME	boot_noinit
+#endif
+
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define PINNED_TEXT_SECTION_NAME	pinned_text
+#define PINNED_BSS_SECTION_NAME		pinned_bss
+#define PINNED_RODATA_SECTION_NAME	pinned_rodata
+#define PINNED_DATA_SECTION_NAME	pinned_data
+#define PINNED_NOINIT_SECTION_NAME	pinned_noinit
+#endif
+
 /* Short section references for use in ASM files */
 #if defined(_ASMLANGUAGE)
 /* Various text section names */
 #define TEXT text
-#if defined(CONFIG_X86)
-#define TEXT_START text_start /* beginning of TEXT section */
-#else
-#define TEXT_START text /* beginning of TEXT section */
-#endif
 
 /* Various data type section names */
 #define BSS bss
 #define RODATA rodata
 #define DATA data
 #define NOINIT noinit
+
+#if defined(CONFIG_LINKER_USE_BOOT_SECTION)
+#define BOOT_TEXT			BOOT_TEXT_SECTION_NAME
+#define BOOT_BSS			BOOT_BSS_SECTION_NAME
+#define BOOT_RODATA			BOOT_RODATA_SECTION_NAME
+#define BOOT_DATA			BOOT_DATA_SECTION_NAME
+#define BOOT_NOINIT			BOOT_NOINIT_SECTION_NAME
+#else
+#define BOOT_TEXT			TEXT
+#define BOOT_BSS			BSS
+#define BOOT_RODATA			RODATA
+#define BOOT_DATA			DATA
+#define BOOT_NOINIT			NOINIT
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
+
+#if defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#define PINNED_TEXT			PINNED_TEXT_SECTION_NAME
+#define PINNED_BSS			PINNED_BSS_SECTION_NAME
+#define PINNED_RODATA			PINNED_RODATA_SECTION_NAME
+#define PINNED_DATA			PINNED_DATA_SECTION_NAME
+#define PINNED_NOINIT			PINNED_NOINIT_SECTION_NAME
+#else
+#define PINNED_TEXT			TEXT
+#define PINNED_BSS			BSS
+#define PINNED_RODATA			RODATA
+#define PINNED_DATA			DATA
+#define PINNED_NOINIT			NOINIT
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
+
 #endif /* _ASMLANGUAGE */
 
 #include <linker/section_tags.h>

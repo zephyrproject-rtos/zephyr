@@ -63,11 +63,13 @@ config OPENTHREAD_MAX_CHILDREN
 	int "The maximum number of children"
 	range 10 511
 	default 32
+	depends on OPENTHREAD_FTD
 
 config OPENTHREAD_MAX_IP_ADDR_PER_CHILD
 	int "The maximum number of IPv6 address registrations per child"
 	range 4 255
 	default 6
+	depends on OPENTHREAD_FTD
 
 config OPENTHREAD_CONFIG_PLATFORM_INFO
 	string "The platform-specific string to insert into the OpenThread version string"
@@ -87,9 +89,3 @@ config OPENTHREAD_CSL_SAMPLE_WINDOW
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 	int "CSL receiver wake up margin in units of 10 symbols"
 	default 3
-
-config OPENTHREAD_SRP_CLIENT
-	bool "Enable SRP Client support"
-
-config OPENTHREAD_SRP_SERVER
-	bool "Enable SRP Server support"

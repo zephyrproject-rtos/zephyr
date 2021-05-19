@@ -152,12 +152,13 @@ ARM64 arch:
     collaborators:
         - npitre
         - ioannisg
+        - povergoing
     files:
         - arch/arm64/
         - include/arch/arm64/
         - tests/arch/arm64/
-        - soc/arm64/qemu_cortex_a53/
-        - boards/arm64/qemu_cortex_a53/
+        - soc/arm64/
+        - boards/arm64/
         - dts/arm64/
     labels:
         - "area: ARM64"
@@ -1011,7 +1012,7 @@ MCU Manager:
 OSDP:
     status: orphaned
     collaborators:
-        - cbsiddharth
+        - sidcha
     files:
         - subsys/mgmt/osdp/
         - include/mgmt/osdp.h
@@ -1409,6 +1410,30 @@ Espressif Platforms:
         - dts/bindings/*/*esp32*
     labels:
         - "platform: ESP32"
+
+ITE Platforms:
+    status: maintained
+    maintainers:
+        - Dino-Li
+        - GTLin08
+        - RuibinChang
+    collaborators:
+        - Dino-Li
+        - GTLin08
+        - RuibinChang
+        - jackrosenthal
+        - keith-zephyr
+        - brockus-zephyr
+        - yperess
+        - sjg20
+    files:
+        - boards/riscv/it8xxx2_evb/
+        - drivers/*/*_ite*
+        - dts/bindings/*/*ite*
+        - dts/riscv/it8xxx2.dtsi
+        - soc/riscv/riscv-ite/
+    labels:
+        - "platform: ITE"
 
 Storage:
     status: maintained

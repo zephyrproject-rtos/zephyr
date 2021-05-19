@@ -202,6 +202,11 @@ static const uint32_t table_samp_time[] = {
 };
 #endif
 
+/* Bugfix for STM32G4 HAL */
+#if !defined(ADC_CHANNEL_TEMPSENSOR)
+#define ADC_CHANNEL_TEMPSENSOR ADC_CHANNEL_TEMPSENSOR_ADC1
+#endif
+
 /* External channels (maximum). */
 #define STM32_CHANNEL_COUNT		20
 
@@ -461,6 +466,10 @@ static int adc_stm32_read_async(const struct device *dev,
 
 static int adc_stm32_check_acq_time(uint16_t acq_time)
 {
+	if (acq_time == ADC_ACQ_TIME_MAX) {
+		return ARRAY_SIZE(acq_time_tbl) - 1;
+	}
+
 	for (int i = 0; i < 8; i++) {
 		if (acq_time == ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS,
 					     acq_time_tbl[i])) {
@@ -474,6 +483,20 @@ static int adc_stm32_check_acq_time(uint16_t acq_time)
 
 	LOG_ERR("Conversion time not supportted.");
 	return -EINVAL;
+}
+
+/*
+ * Enable internal voltage reference source
+ */
+static void adc_stm32_set_common_path(const struct device *dev)
+{
+	const struct adc_stm32_cfg *config =
+		(const struct adc_stm32_cfg *)dev->config;
+	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
+	(void) adc; /* Avoid 'unused variable' warning for some families */
+
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
+				LL_ADC_PATH_INTERNAL_TEMPSENSOR);
 }
 
 static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
@@ -542,6 +565,11 @@ static int adc_stm32_channel_setup(const struct device *dev,
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
 		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
+	}
+
+	if (channel_cfg->channel_id == ADC_CHANNEL_TEMPSENSOR ||
+		channel_cfg->channel_id == ADC_CHANNEL_VREFINT) {
+		adc_stm32_set_common_path(dev);
 	}
 
 	adc_stm32_setup_speed(dev, channel_cfg->channel_id,

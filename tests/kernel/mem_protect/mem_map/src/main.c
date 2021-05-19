@@ -383,7 +383,6 @@ void test_k_mem_map_exhaustion(void)
 		      "free memory should be %zu", free_mem_expected);
 
 	/* Now free all of them */
-	cnt = expected_cnt;
 	cnt = 0;
 	while (last_mapped != NULL) {
 		addr = last_mapped;

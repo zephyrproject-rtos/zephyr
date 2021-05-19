@@ -235,6 +235,36 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS zephyr-v2.3.0 *****
    Hello World! mimxrt685_evk_cm33
 
+Troubleshooting
+===============
+
+If the debug probe fails to connect with the following error, it's possible
+that the image in flash is interfering and causing this issue.
+
+.. code-block:: console
+
+   Remote debugging using :2331
+   Remote communication error.  Target disconnected.: Connection reset by peer.
+   "monitor" command not supported by this target.
+   "monitor" command not supported by this target.
+   You can't do that when your target is `exec'
+   (gdb) Could not connect to target.
+   Please check power, connection and settings.
+
+You can fix it by erasing and reprogramming the flash with the following
+steps:
+
+#. Set the SW5 DIP switches to ON-ON-ON to prevent booting from flash.
+
+#. Reset by pressing SW3
+
+#. Run ``west debug`` or ``west flash`` again with a known working Zephyr
+   application (example "Hello World").
+
+#. Set the SW5 DIP switches to ON-OFF-ON to boot from flash.
+
+#. Reset by pressing SW3
+
 .. _MIMXRT685-EVK Website:
    https://www.nxp.com/design/development-boards/i-mx-evaluation-and-development-boards/i-mx-rt600-evaluation-kit:MIMXRT685-EVK
 

@@ -180,6 +180,31 @@ config SRAM_OFFSET
 
 	  If unsure, leave at the default value 0.
 
+menu "Linker Sections"
+
+config LINKER_USE_BOOT_SECTION
+	bool "Enable Usage of Boot Linker Section"
+	help
+	  If enabled, the symbols which are needed for the boot process
+	  will be put into another linker section reserved for these
+	  symbols.
+
+	  Requires that boot sections exist in the architecture, SoC,
+	  board or custom linker script.
+
+config LINKER_USE_PINNED_SECTION
+	bool "Enable Usage of Pinned Linker Section"
+	help
+	  If enabled, the symbols which need to be pinned in memory
+	  will be put into another linker section reserved for pinned
+	  symbols. During boot, the corresponding memory will be marked
+	  as pinned.
+
+	  Requires that pinned sections exist in the architecture, SoC,
+	  board or custom linker script.
+
+endmenu # "Linker Sections"
+
 endmenu
 
 menu "Compiler Options"

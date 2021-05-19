@@ -225,7 +225,7 @@ struct ieee802154_config {
 		/** ``IEEE802154_CONFIG_CSL_RECEIVER`` */
 		struct {
 			uint32_t period;
-			uint8_t *addr;
+			const uint8_t *addr;
 		} csl_recv;
 
 		/** ``IEEE802154_CONFIG_CSL_RX_TIME`` */

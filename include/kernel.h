@@ -2950,6 +2950,7 @@ static inline bool k_work_is_pending(const struct k_work *work);
  * * @p queue is draining; or
  * * @p queue is plugged.
  * @retval -EINVAL if @p queue is null and the work item has never been run.
+ * @retval -ENODEV if @p queue has not been started.
  */
 int k_work_submit_to_queue(struct k_work_q *queue,
 			   struct k_work *work);
@@ -3228,6 +3229,12 @@ static inline k_ticks_t k_work_delayable_remaining_get(
  *
  * @retval 0 if work was already scheduled or submitted.
  * @retval 1 if work has been scheduled.
+ * @retval -EBUSY if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
+ * @retval -EINVAL if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
+ * @retval -ENODEV if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
  */
 int k_work_schedule_for_queue(struct k_work_q *queue,
 			       struct k_work_delayable *dwork,
@@ -3277,6 +3284,12 @@ extern int k_work_schedule(struct k_work_delayable *dwork,
  * * delay not @c K_NO_WAIT and work has been scheduled
  * @retval 2 if delay is @c K_NO_WAIT and work was running and has been queued
  * to the queue that was running it
+ * @retval -EBUSY if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
+ * @retval -EINVAL if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
+ * @retval -ENODEV if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
  */
 int k_work_reschedule_for_queue(struct k_work_q *queue,
 				 struct k_work_delayable *dwork,

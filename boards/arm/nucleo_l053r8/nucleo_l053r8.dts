@@ -43,10 +43,10 @@
 	};
 };
 
-&clk_hse{
-	status = "okay";
-	clock-frequency = <DT_FREQ_M(8)>;
+&clk_hse {
 	hse-bypass;
+	clock-frequency = <DT_FREQ_M(8)>; /* STLink 8MHz clock */
+	status = "okay";
 };
 
 &pll {
@@ -63,7 +63,6 @@
 	apb1-prescaler = <1>;
 	apb2-prescaler = <1>;
 };
-
 
 /* Due to limited available memory, don't enable gpiod and gpiof */
 /* (Test cases fail due to 'SRAM' region overflow) */

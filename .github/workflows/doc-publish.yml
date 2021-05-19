@@ -6,7 +6,7 @@ name: Doc build for Release or Daily
 # Either a daily based on schedule/cron or only on tag push
 on:
   schedule:
-    - cron:  '50 22 * * *'
+    - cron:  '50 1/3 * * *'
   push:
     paths:
       - 'VERSION'
@@ -81,25 +81,12 @@ jobs:
         source zephyr-env.sh
         make DOC_TAG=${DOC_TAG} -C doc htmldocs
 
-    - name: check-warns
-      run: |
-        if [ -s doc/_build/doc.warnings ]; then
-           docwarn=$(cat doc/_build/doc.warnings)
-           docwarn="${docwarn//'%'/'%25'}"
-           docwarn="${docwarn//$'\n'/'%0A'}"
-           docwarn="${docwarn//$'\r'/'%0D'}"
-           # We treat doc warnings as errors
-           echo "::error file=doc.warnings::$docwarn"
-           exit 1
-        fi
-
     - name: Upload to AWS S3
       env:
         RELEASE: ${{ steps.tag.outputs.RELEASE }}
       run: |
         echo "DOC_RELEASE=[$RELEASE]"
         if [ "$RELEASE" == "latest" ]; then
-           export
            echo "publish latest docs"
            aws s3 sync  --quiet doc/_build/html s3://docs.zephyrproject.org/latest --delete
            echo "success sync of latest docs"
@@ -111,7 +98,11 @@ jobs:
            echo "success sync of rel docs"
         fi
         if [ -d doc/_build/doxygen/html ]; then
-           API_RELEASE=${RELEASE:1}
+           if [ "$RELEASE" == "latest" ]; then
+              API_RELEASE=latest
+           else
+              API_RELEASE=${RELEASE:1}
+           fi
            echo "publish doxygen to apidoc/${API_RELEASE}"
            aws s3 sync  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${API_RELEASE} --delete
            echo "success publish of doxygen"

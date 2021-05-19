@@ -139,7 +139,7 @@ static const struct dac_driver_api mcp4725_driver_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(index, dac_mcp4725_init,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    NULL,					\
 			    &mcp4725_config_##index, POST_KERNEL,	\
 			    CONFIG_DAC_MCP4725_INIT_PRIORITY,		\

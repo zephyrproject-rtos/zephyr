@@ -9,3 +9,8 @@ tests:
   sample.net.ppp.gsm.modem:
     extra_configs:
       - CONFIG_TEST_RANDOM_GENERATOR=y
+  sample.net.ppp.gsm.modem.mux:
+    extra_configs:
+      - CONFIG_TEST_RANDOM_GENERATOR=y
+      - CONFIG_GSM_MUX=y
+      - CONFIG_UART_MUX=y

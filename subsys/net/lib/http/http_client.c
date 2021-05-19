@@ -169,6 +169,8 @@ static int on_status(struct http_parser *parser, const char *at, size_t length)
 	len = MIN(length, sizeof(req->internal.response.http_status) - 1);
 	memcpy(req->internal.response.http_status, at, len);
 	req->internal.response.http_status[len] = 0;
+	req->internal.response.http_status_code =
+		(uint16_t)parser->status_code;
 
 	NET_DBG("HTTP response status %d %s", parser->status_code,
 		log_strdup(req->internal.response.http_status));
@@ -176,8 +178,6 @@ static int on_status(struct http_parser *parser, const char *at, size_t length)
 	if (req->internal.response.http_cb &&
 	    req->internal.response.http_cb->on_status) {
 		req->internal.response.http_cb->on_status(parser, at, length);
-		req->internal.response.http_status_code =
-			(uint16_t)parser->status_code;
 	}
 
 	return 0;
