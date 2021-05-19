@@ -5070,8 +5070,9 @@ no_ext_hdr:
 	if (!data_status) {
 		uint8_t data_max_len;
 
-		data_max_len = ADV_REPORT_EVT_MAX_LEN - sizeof(*sep) -
-			       sizeof(*adv_info);
+		data_max_len = ADV_REPORT_EVT_MAX_LEN -
+			       sizeof(struct bt_hci_evt_le_meta_event) -
+			       sizeof(*sep) - sizeof(*adv_info);
 
 		/* if data cannot fit the event, mark it as incomplete */
 		if (data_len > data_max_len) {
@@ -5408,7 +5409,9 @@ no_ext_hdr:
 	if (!data_status) {
 		uint8_t data_max_len;
 
-		data_max_len = ADV_REPORT_EVT_MAX_LEN - sizeof(*sep);
+		data_max_len = ADV_REPORT_EVT_MAX_LEN -
+			       sizeof(struct bt_hci_evt_le_meta_event) -
+			       sizeof(*sep);
 
 		/* if data cannot fit the event, mark it as incomplete */
 		if (data_len > data_max_len) {
