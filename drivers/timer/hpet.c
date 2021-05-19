@@ -40,6 +40,11 @@ DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 #define TCONF_MODE32     BIT(8)
 #define TCONF_FSB_EN     BIT(14) /* FSB interrupt delivery enable */
 
+#ifndef HPET_COUNTER_CLK_PERIOD
+/* COUNTER_CLK_PERIOD (CLK_PERIOD_REG) is in femtoseconds (1e-15 sec) */
+#define HPET_COUNTER_CLK_PERIOD		(1000000000000000ULL)
+#endif
+
 #define MIN_DELAY 1000
 
 static __pinned_bss struct k_spinlock lock;
@@ -125,8 +130,7 @@ int sys_clock_driver_init(const struct device *dev)
 	set_timer0_irq(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 
-	/* CLK_PERIOD_REG is in femtoseconds (1e-15 sec) */
-	hz = (uint32_t)(1000000000000000ULL / CLK_PERIOD_REG);
+	hz = (uint32_t)(HPET_COUNTER_CLK_PERIOD / CLK_PERIOD_REG);
 	z_clock_hw_cycles_per_sec = hz;
 	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
