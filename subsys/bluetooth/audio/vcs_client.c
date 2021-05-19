@@ -586,8 +586,9 @@ static int vcs_client_common_vcs_cp(struct bt_conn *conn, uint8_t opcode)
 	int err;
 	struct vcs_instance *vcs_inst;
 
-	if (conn == NULL) {
-		return -ENOTCONN;
+	CHECKIF(conn == NULL) {
+		BT_DBG("NULL conn");
+		return -EINVAL;
 	}
 
 	vcs_inst = &vcs_insts[bt_conn_index(conn)];
@@ -722,8 +723,9 @@ int bt_vcs_discover(struct bt_conn *conn)
 	 * 5) When everything above have been discovered, the callback is called
 	 */
 
-	if (conn == NULL) {
-		return -ENOTCONN;
+	CHECKIF(conn == NULL) {
+		BT_DBG("NULL conn");
+		return -EINVAL;
 	} else if (vcs_inst->busy) {
 		return -EBUSY;
 	}
@@ -828,8 +830,9 @@ int bt_vcs_client_read_vol_state(struct bt_conn *conn)
 	int err;
 	struct vcs_instance *vcs_inst;
 
-	if (conn == NULL) {
-		return -ENOTCONN;
+	CHECKIF(conn == NULL) {
+		BT_DBG("NULL conn");
+		return -EINVAL;
 	}
 
 	vcs_inst = &vcs_insts[bt_conn_index(conn)];
@@ -859,8 +862,9 @@ int bt_vcs_client_read_flags(struct bt_conn *conn)
 	int err;
 	struct vcs_instance *vcs_inst;
 
-	if (conn == NULL) {
-		return -ENOTCONN;
+	CHECKIF(conn == NULL) {
+		BT_DBG("NULL conn");
+		return -EINVAL;
 	}
 
 	vcs_inst = &vcs_insts[bt_conn_index(conn)];
@@ -911,8 +915,9 @@ int bt_vcs_client_set_volume(struct bt_conn *conn, uint8_t volume)
 	int err;
 	struct vcs_instance *vcs_inst;
 
-	if (conn == NULL) {
-		return -ENOTCONN;
+	CHECKIF(conn == NULL) {
+		BT_DBG("NULL conn");
+		return -EINVAL;
 	}
 
 	vcs_inst = &vcs_insts[bt_conn_index(conn)];
