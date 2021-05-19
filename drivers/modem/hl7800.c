@@ -313,8 +313,12 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 	"S00:255 S01:255 S03:255 S04:255 S05:255 S07:255 S08:255 S10:255\r\n"
 
 #define SETUP_GPRS_CONNECTION_CMD "AT+KCNXCFG=1,\"GPRS\",\"\",,,\"IPV4V6\""
+#define SET_RAT_M1_CMD_LEGACY "AT+KSRAT=0"
+#define SET_RAT_NB1_CMD_LEGACY "AT+KSRAT=1"
 #define SET_RAT_M1_CMD "AT+KSRAT=0,1"
 #define SET_RAT_NB1_CMD "AT+KSRAT=1,1"
+#define NEW_RAT_CMD_MIN_VERSION "HL7800.4.5.4.0"
+#define HL7800_VERSION_FORMAT "HL7800.%zu.%zu.%zu.%zu"
 
 #define MAX_PROFILE_LINE_LENGTH                                                \
 	MAX(sizeof(PROFILE_LINE_1), sizeof(PROFILE_LINE_2))
@@ -509,6 +513,7 @@ struct hl7800_iface_ctx {
 	struct mdm_hl7800_apn mdm_apn;
 	bool mdm_startup_reporting_on;
 	int device_services_ind;
+	bool new_rat_cmd_support;
 
 	/* modem state */
 	bool allow_sleep;
@@ -990,9 +995,17 @@ int32_t mdm_hl7800_update_rat(enum mdm_hl7800_radio_mode value)
 	ictx.last_socket_id = 0;
 
 	if (value == MDM_RAT_CAT_M1) {
-		SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_M1_CMD);
+		if (ictx.new_rat_cmd_support) {
+			SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_M1_CMD);
+		} else {
+			SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_M1_CMD_LEGACY);
+		}
 	} else { /* MDM_RAT_CAT_NB1 */
-		SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_NB1_CMD);
+		if (ictx.new_rat_cmd_support) {
+			SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_NB1_CMD);
+		} else {
+			SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_NB1_CMD_LEGACY);
+		}
 	}
 
 error:
@@ -3725,6 +3738,54 @@ error:
 	return ret;
 }
 
+/**
+ * @brief  compares two version strings with any delimiter
+ *
+ * @param  *v1: version string 1
+ * @param  *v2: version string 2
+ *
+ * @retval 0 if equal, < 0 if v1 < v2, > 0 if v1 > v2.
+ */
+static int compare_versions(char *v1, const char *v2)
+{
+	int result = 0;
+	char *tail1;
+	char *tail2;
+	unsigned long ver1, ver2;
+
+	/* loop through each level of the version string */
+	while (result == 0) {
+		/* extract leading version numbers */
+		ver1 = strtoul(v1, &tail1, 10);
+		ver2 = strtoul(v2, &tail2, 10);
+
+		/* if numbers differ, then set the result */
+		if (ver1 < ver2)
+			result = -1;
+		else if (ver1 > ver2)
+			result = 1;
+		else {
+			/* if numbers are the same, go to next level */
+			v1 = tail1;
+			v2 = tail2;
+			/* if we reach the end of both, then they are identical */
+			if (*v1 == '\0' && *v2 == '\0')
+				break;
+			/* if we reach the end of one only, it is the smaller */
+			else if (*v1 == '\0')
+				result = -1;
+			else if (*v2 == '\0')
+				result = 1;
+			/*  not at end ... so far they match so keep going */
+			else {
+				v1++;
+				v2++;
+			}
+		}
+	}
+	return result;
+}
+
 static int modem_reset_and_configure(void)
 {
 	int ret = 0;
@@ -3769,8 +3830,16 @@ reboot:
 	/* turn on numeric error codes */
 	SEND_AT_CMD_EXPECT_OK("AT+CMEE=1");
 
-	/* query SIM ICCID */
-	SEND_AT_CMD_EXPECT_OK("AT+CCID?");
+	/* modem revision */
+	SEND_COMPLEX_AT_CMD("AT+CGMR");
+
+	/* determine RAT command support */
+	ret = compare_versions(ictx.mdm_revision, NEW_RAT_CMD_MIN_VERSION);
+	if (ret < 0) {
+		ictx.new_rat_cmd_support = false;
+	} else {
+		ictx.new_rat_cmd_support = true;
+	}
 
 	/* Query current Radio Access Technology (RAT) */
 	SEND_AT_CMD_EXPECT_OK("AT+KSRAT?");
@@ -3784,14 +3853,25 @@ reboot:
 	if (!ictx.configured) {
 #if CONFIG_MODEM_HL7800_RAT_M1
 		if (ictx.mdm_rat != MDM_RAT_CAT_M1) {
-			SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_M1_CMD);
+			if (ictx.new_rat_cmd_support) {
+				SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_M1_CMD);
+			} else {
+				SEND_AT_CMD_ONCE_EXPECT_OK(
+					SET_RAT_M1_CMD_LEGACY);
+			}
 			if (ret >= 0) {
 				goto reboot;
 			}
 		}
 #elif CONFIG_MODEM_HL7800_RAT_NB1
 		if (ictx.mdm_rat != MDM_RAT_CAT_NB1) {
-			SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_NB1_CMD);
+			if (ictx.new_rat_cmd_support) {
+				SEND_AT_CMD_ONCE_EXPECT_OK(SET_RAT_NB1_CMD);
+			} else {
+				SEND_AT_CMD_ONCE_EXPECT_OK(
+					SET_RAT_NB1_CMD_LEGACY);
+			}
+
 			if (ret >= 0) {
 				goto reboot;
 			}
@@ -3940,9 +4020,6 @@ reboot:
 
 	/* modem model */
 	SEND_COMPLEX_AT_CMD("AT+CGMM");
-
-	/* modem revision */
-	SEND_COMPLEX_AT_CMD("AT+CGMR");
 
 	/* query modem IMEI */
 	SEND_COMPLEX_AT_CMD("AT+CGSN");
