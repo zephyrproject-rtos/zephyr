@@ -100,6 +100,8 @@ The Zephyr stm32f746g_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash memory                        |
++-----------+------------+-------------------------------------+
 | ETHERNET  | on-chip    | Ethernet                            |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
@@ -112,7 +114,7 @@ The Zephyr stm32f746g_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| QSPI NOR  | on-chip    | flash                               |
+| QSPI NOR  | on-chip    | off-chip flash                      |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
