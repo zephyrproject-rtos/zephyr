@@ -439,8 +439,9 @@ static int aics_client_common_control(struct bt_conn *conn, uint8_t opcode, stru
 {
 	int err;
 
-	if (!conn) {
-		return -ENOTCONN;
+	CHECKIF(conn == NULL) {
+		BT_DBG("NULL conn");
+		return -EINVAL;
 	} else if (!inst->cli.control_handle) {
 		BT_DBG("Handle not set for opcode %u", opcode);
 		return -EINVAL;
@@ -688,9 +689,9 @@ int bt_aics_client_state_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -721,9 +722,9 @@ int bt_aics_client_gain_setting_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -754,9 +755,9 @@ int bt_aics_client_type_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -787,9 +788,9 @@ int bt_aics_client_status_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -840,9 +841,9 @@ int bt_aics_client_gain_set(struct bt_conn *conn, struct bt_aics *inst, int8_t g
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -878,9 +879,9 @@ int bt_aics_client_description_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -910,9 +911,9 @@ int bt_aics_client_description_get(struct bt_conn *conn, struct bt_aics *inst)
 int bt_aics_client_description_set(struct bt_conn *conn, struct bt_aics *inst,
 				   const char *description)
 {
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
