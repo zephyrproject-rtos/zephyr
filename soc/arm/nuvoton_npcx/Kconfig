@@ -20,6 +20,21 @@ menuconfig NPCX_HEADER
 
 if NPCX_HEADER
 
+config NPCX_IMAGE_OUTPUT_BIN
+	bool "Build npcx binary in BIN format"
+	default y
+	help
+	  Build a "raw" binary zephyr/zephyr.npcx.bin in the build directory.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config NPCX_IMAGE_OUTPUT_HEX
+	bool "Build npcx binary in HEX format"
+	depends on NPCX_IMAGE_OUTPUT_BIN
+	help
+	  Build an HEX binary zephyr/zephyr.npcx.hex in the build directory.
+	  This is generated from the npcx BIN image.
+	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
 config NPCX_HEADER_CHIP
 	string
 	default "npcx7m6" if SOC_NPCX7M6FB || SOC_NPCX7M6FC
