@@ -528,8 +528,8 @@ void test_memchr(void)
 void test_memcpy(void)
 {
 	/* make sure the buffer is word aligned */
-	uintptr_t mem_dest[3] = {0};
-	uintptr_t mem_src[3] = {0};
+	uintptr_t mem_dest[4] = {0};
+	uintptr_t mem_src[4] = {0};
 	unsigned char *mem_dest_tmp = NULL;
 	unsigned char *mem_src_tmp = NULL;
 
