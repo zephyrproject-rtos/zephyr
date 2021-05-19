@@ -166,10 +166,7 @@ doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE)}
 
 # -- Options for Breathe plugin -------------------------------------------
 
-breathe_projects = {
-    "Zephyr": str(doxyrunner_outdir / "xml"),
-    "doc-examples": str(doxyrunner_outdir / "xml"),
-}
+breathe_projects = {"Zephyr": str(doxyrunner_outdir / "xml")}
 breathe_default_project = "Zephyr"
 breathe_domain_by_extension = {
     "h": "c",
