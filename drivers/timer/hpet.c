@@ -50,10 +50,21 @@ DEVICE_MMIO_TOPLEVEL_STATIC(hpet_regs, DT_DRV_INST(0));
 #define HPET_CMP_MIN_DELAY		(1000)
 #endif
 
+#define MAX_TICKS			0x7FFFFFFFUL
+
 static __pinned_bss struct k_spinlock lock;
-static __pinned_bss unsigned int max_ticks;
-static __pinned_bss unsigned int cyc_per_tick;
 static __pinned_bss unsigned int last_count;
+
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+static __pinned_bss unsigned int cyc_per_tick;
+static __pinned_bss unsigned int max_ticks;
+#else
+#define cyc_per_tick			\
+	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+#define max_ticks			\
+	((MAX_TICKS - cyc_per_tick) / cyc_per_tick)
+#endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 __isr
 static void hpet_isr(const void *arg)
@@ -124,6 +135,8 @@ int sys_clock_driver_init(const struct device *dev)
 	uint32_t hz;
 
 	ARG_UNUSED(dev);
+	ARG_UNUSED(hz);
+	ARG_UNUSED(z_clock_hw_cycles_per_sec);
 
 	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
 
@@ -133,9 +146,13 @@ int sys_clock_driver_init(const struct device *dev)
 	set_timer0_irq(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 
+#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	hz = (uint32_t)(HPET_COUNTER_CLK_PERIOD / CLK_PERIOD_REG);
 	z_clock_hw_cycles_per_sec = hz;
 	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+	max_ticks = (MAX_TICKS - cyc_per_tick) / cyc_per_tick;
+#endif
 
 	/* Note: we set the legacy routing bit, because otherwise
 	 * nothing in Zephyr disables the PIT which then fires
@@ -148,7 +165,6 @@ int sys_clock_driver_init(const struct device *dev)
 	TIMER0_CONF_REG &= ~TCONF_FSB_EN;
 	TIMER0_CONF_REG |= TCONF_MODE32;
 
-	max_ticks = (0x7fffffff - cyc_per_tick) / cyc_per_tick;
 	last_count = MAIN_COUNTER_REG;
 
 	TIMER0_CONF_REG |= TCONF_INT_ENABLE;
