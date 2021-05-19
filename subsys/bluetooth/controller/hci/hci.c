@@ -4826,6 +4826,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 	uint8_t evt_type = 0U;
 	uint8_t *data = NULL;
 	uint8_t sec_phy = 0U;
+	uint8_t data_max_len;
 	uint8_t info_len;
 	int8_t rssi;
 
@@ -5065,21 +5066,22 @@ no_ext_hdr:
 	/* FIXME: move most of below into above loop to dispatch fragments of
 	 * data in HCI event.
 	 */
+	data_max_len = ADV_REPORT_EVT_MAX_LEN -
+		       sizeof(struct bt_hci_evt_le_meta_event) -
+		       sizeof(*sep) - sizeof(*adv_info);
 
 	/* If data complete */
 	if (!data_status) {
-		uint8_t data_max_len;
-
-		data_max_len = ADV_REPORT_EVT_MAX_LEN -
-			       sizeof(struct bt_hci_evt_le_meta_event) -
-			       sizeof(*sep) - sizeof(*adv_info);
-
-		/* if data cannot fit the event, mark it as incomplete */
+		/* Only copy data that fit the event buffer size,
+		 * mark it as incomplete
+		 */
 		if (data_len > data_max_len) {
 			data_len = data_max_len;
 			data_status =
 				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 		}
+
+	/* else, data incomplete */
 	} else {
 		/* Data incomplete and no more to come */
 		if (!(adv_addr ||
@@ -5094,6 +5096,11 @@ no_ext_hdr:
 			 */
 			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 			return;
+		}
+
+		/* Only copy data that fit the event buffer size */
+		if (data_len > data_max_len) {
+			data_len = data_max_len;
 		}
 	}
 
@@ -5249,10 +5256,11 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 	struct node_rx_pdu *node_rx_next;
 	uint8_t total_data_len = 0U;
 	uint8_t data_status = 0U;
+	uint8_t cte_type = 0U;
 	uint8_t data_len = 0U;
 	uint8_t *data = NULL;
+	uint8_t data_max_len;
 	int8_t rssi;
-	uint8_t cte_type = 0U;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_PER_ADVERTISING_REPORT)) {
@@ -5404,21 +5412,22 @@ no_ext_hdr:
 	/* FIXME: move most of below into above loop to dispatch fragments of
 	 * data in HCI event.
 	 */
+	data_max_len = ADV_REPORT_EVT_MAX_LEN -
+		       sizeof(struct bt_hci_evt_le_meta_event) -
+		       sizeof(*sep);
 
 	/* If data complete */
 	if (!data_status) {
-		uint8_t data_max_len;
-
-		data_max_len = ADV_REPORT_EVT_MAX_LEN -
-			       sizeof(struct bt_hci_evt_le_meta_event) -
-			       sizeof(*sep);
-
-		/* if data cannot fit the event, mark it as incomplete */
+		/* Only copy data that fit the event buffer size,
+		 * mark it as incomplete
+		 */
 		if (data_len > data_max_len) {
 			data_len = data_max_len;
 			data_status =
 				BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL;
 		}
+
+	/* else, data incomplete */
 	} else {
 		/* Data incomplete and no more to come */
 		if ((tx_pwr == BT_HCI_LE_ADV_TX_POWER_NO_PREF) && !data) {
@@ -5427,6 +5436,11 @@ no_ext_hdr:
 			 */
 			node_rx_extra_list_release(node_rx->hdr.rx_ftr.extra);
 			return;
+		}
+
+		/* Only copy data that fit the event buffer size */
+		if (data_len > data_max_len) {
+			data_len = data_max_len;
 		}
 	}
 
