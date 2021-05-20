@@ -32,6 +32,8 @@ extern "C" {
  * The device might be asynchronously suspended if runtime PM is enabled
  * when the device is not use.
  *
+ * @funcprops \pre_kernel_ok
+ *
  * @param dev Pointer to device structure of the specific device driver
  * the caller is interested in.
  */
@@ -42,6 +44,8 @@ void pm_device_enable(const struct device *dev);
  *
  * Called by a device driver to disable device runtime power management.
  * The device might be asynchronously resumed if runtime PM is disabled
+ *
+ * @funcprops \pre_kernel_ok
  *
  * @param dev Pointer to device structure of the specific device driver
  * the caller is interested in.
@@ -54,6 +58,8 @@ void pm_device_disable(const struct device *dev);
  * Called by a device driver to mark the device as being used.
  * This API will asynchronously bring the device to resume state
  * if it not already in active state.
+ *
+ * @funcprops \isr_ok, \pre_kernel_ok
  *
  * @param dev Pointer to device structure of the specific device driver
  * the caller is interested in.
@@ -85,6 +91,8 @@ int pm_device_get_sync(const struct device *dev);
  * Called by a device driver to mark the device as being released.
  * This API asynchronously put the device to suspend state if
  * it not already in suspended state.
+ *
+ * @funcprops \isr_ok, \pre_kernel_ok
  *
  * @param dev Pointer to device structure of the specific device driver
  * the caller is interested in.
