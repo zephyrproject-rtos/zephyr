@@ -388,7 +388,7 @@ static void lp_enc_st_wait_rx_start_enc_req(struct ll_conn *conn, struct proc_ct
 		tx_resume_data(conn);
 		/* Resume Rx data */
 		ull_conn_resume_rx_data(conn);
-		ctx->data.enc.error = pdu->llctrl.reject_ext_ind.error_code;
+		ctx->data.enc.error = (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND) ? pdu->llctrl.reject_ind.error_code : pdu->llctrl.reject_ext_ind.error_code;
 		lp_enc_complete(conn, ctx, evt, param);
 		break;
 	default:
@@ -552,6 +552,7 @@ void ull_cp_priv_lp_enc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct no
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_START_ENC_RSP, pdu);
 		break;
+	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
 		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_REJECT, pdu);
 		break;
