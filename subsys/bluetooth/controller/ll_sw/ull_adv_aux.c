@@ -854,11 +854,20 @@ uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 
 uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
 {
-	uint32_t slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	uint32_t ticks_slot_overhead;
+	struct lll_adv_aux *lll_aux;
+	struct pdu_adv *sec_pdu;
+	struct lll_adv *lll;
+	uint32_t adv_size;
+	uint32_t slot_us;
 
-	/* TODO: Calc AUX_ADV_IND slot_us */
-	slot_us += 1000;
+	/* Calculate the PDU Tx Time and hence the radio event length */
+	lll_aux = &aux->lll;
+	sec_pdu = lll_adv_aux_data_peek(lll_aux);
+	lll = lll_aux->adv;
+	adv_size = PDU_OVERHEAD_SIZE(lll->phy_s) + sec_pdu->len;
+	slot_us = BYTES2US(adv_size, lll->phy_s) + EVENT_OVERHEAD_START_US +
+		  EVENT_OVERHEAD_END_US;
 
 	/* TODO: active_to_start feature port */
 	aux->ull.ticks_active_to_start = 0;
