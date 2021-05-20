@@ -126,7 +126,7 @@ int sys_clock_driver_init(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 
 	/* CLK_PERIOD_REG is in femtoseconds (1e-15 sec) */
-	hz = (uint32_t)(1000000000000000ull / CLK_PERIOD_REG);
+	hz = (uint32_t)(1000000000000000ULL / CLK_PERIOD_REG);
 	z_clock_hw_cycles_per_sec = hz;
 	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
