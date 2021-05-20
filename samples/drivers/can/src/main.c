@@ -150,7 +150,7 @@ void state_change_work_handler(struct k_work *work)
 	if (current_state == CAN_BUS_OFF) {
 		printk("Recover from bus-off\n");
 
-		if (can_recover(can_dev, K_MSEC(100) != 0)) {
+		if (can_recover(can_dev, K_MSEC(100)) != 0) {
 			printk("Recovery timed out\n");
 		}
 	}
