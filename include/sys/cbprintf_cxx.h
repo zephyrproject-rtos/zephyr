@@ -61,11 +61,15 @@ static inline int z_cbprintf_cxx_is_pchar(T arg)
 /* C++ version for calculating argument size. */
 static inline size_t z_cbprintf_cxx_arg_size(float f)
 {
+	ARG_UNUSED(f);
+
 	return sizeof(double);
 }
 
 static inline size_t z_cbprintf_cxx_arg_size(void *p)
 {
+	ARG_UNUSED(p);
+
 	return sizeof(void *);
 }
 
@@ -136,38 +140,51 @@ static inline void z_cbprintf_cxx_store_arg(uint8_t *dst, T arg)
 /* C++ version for long double detection. */
 static inline int z_cbprintf_cxx_is_longdouble(long double arg)
 {
+	ARG_UNUSED(arg);
 	return 1;
 }
 
 template < typename T >
 static inline int z_cbprintf_cxx_is_longdouble(T arg)
 {
+	ARG_UNUSED(arg);
+
 	return 0;
 }
 
 /* C++ version for caluculating argument alignment. */
 static inline size_t z_cbprintf_cxx_alignment(float arg)
 {
+	ARG_UNUSED(arg);
+
 	return VA_STACK_ALIGN(double);
 }
 
 static inline size_t z_cbprintf_cxx_alignment(double arg)
 {
+	ARG_UNUSED(arg);
+
 	return VA_STACK_ALIGN(double);
 }
 
 static inline size_t z_cbprintf_cxx_alignment(long double arg)
 {
+	ARG_UNUSED(arg);
+
 	return VA_STACK_ALIGN(long double);
 }
 
 static inline size_t z_cbprintf_cxx_alignment(long long arg)
 {
+	ARG_UNUSED(arg);
+
 	return VA_STACK_ALIGN(long long);
 }
 
 static inline size_t z_cbprintf_cxx_alignment(unsigned long long arg)
 {
+	ARG_UNUSED(arg);
+
 	return VA_STACK_ALIGN(long long);
 }
 
