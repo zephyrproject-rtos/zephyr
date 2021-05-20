@@ -22,7 +22,7 @@
 
 	_kobject_rodata_area_start = .;
 
-	. += KOBJECT_RODATA_SZ;
+	. = . + KOBJECT_RODATA_SZ;
 
 	_kobject_rodata_area_end = .;
 #endif
