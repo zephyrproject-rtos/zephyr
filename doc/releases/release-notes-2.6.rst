@@ -316,6 +316,13 @@ Drivers and Sensors
 
 * CAN
 
+  * A driver for CAN-FD based on the Bosch M_CAN IP was added. The driver
+    currently supports STM32G4 series MCUs. Additional support for Microchip
+    SAM and NXP chips is in progress.
+
+  * The CAN ISO-TP subsystem was enhanced to allow padding and fixed
+    addressing.
+
 * Clock Control
 
   * On STM32 series, system clock configuration has been moved from Kconfig to DTS.
