@@ -78,7 +78,7 @@ static void iso_print_data(uint8_t *data, size_t data_len)
 			str_len += strlen(dots);
 		}
 
-		str_len += bin2hex(data + max_octets + (data_len - max_octets),
+		str_len += bin2hex(data + (data_len - MIN(max_octets, data_len - max_octets)),
 				   MIN(max_octets, data_len - max_octets),
 				   data_str + str_len,
 				   sizeof(data_str) - str_len);
