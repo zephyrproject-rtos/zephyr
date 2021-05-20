@@ -125,6 +125,11 @@ config HAS_HW_NRF_IPC
 	bool
 	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_IPC))
 
+DT_COMPAT_NORDIC_NRF_KMU := nordic,nrf-kmu
+config HAS_HW_NRF_KMU
+	bool
+	default y if $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_KMU))
+
 # DT_COMPAT_NORDIC_NRF_LPCOMP := nordic,nrf-lpcomp
 config HAS_HW_NRF_LPCOMP
 	bool
