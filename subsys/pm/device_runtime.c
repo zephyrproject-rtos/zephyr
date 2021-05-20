@@ -39,9 +39,8 @@ static void pm_work_handler(struct k_work *work)
 					struct pm_device, work);
 	const struct device *dev = pm->dev;
 	int ret = 0;
-	k_spinlock_key_t key;
 
-	key = k_spin_lock(&dev->pm->lock);
+	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
 
 	switch (atomic_get(&dev->pm->state)) {
 	case PM_DEVICE_STATE_ACTIVE:
@@ -83,14 +82,13 @@ handler_out:
 	 */
 	(void)k_condvar_broadcast(&dev->pm->condvar);
 end:
-	k_spin_unlock(&dev->pm->lock, key);
+	(void)k_mutex_unlock(&dev->pm->lock);
 }
 
 static int pm_device_request(const struct device *dev,
 			     uint32_t target_state, uint32_t pm_flags)
 {
 	int ret = 0;
-	k_spinlock_key_t key;
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, target_state);
 	__ASSERT((target_state == PM_DEVICE_STATE_ACTIVE) ||
@@ -127,7 +125,7 @@ static int pm_device_request(const struct device *dev,
 		goto out;
 	}
 
-	key = k_spin_lock(&dev->pm->lock);
+	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
 
 	if (!dev->pm->enable) {
 		ret = -ENOTSUP;
@@ -153,7 +151,7 @@ static int pm_device_request(const struct device *dev,
 		goto out_unlock;
 	}
 
-	k_spin_unlock(&dev->pm->lock, key);
+	(void)k_mutex_unlock(&dev->pm->lock);
 	pm_device_wait(dev, K_FOREVER);
 
 	/*
@@ -165,7 +163,7 @@ static int pm_device_request(const struct device *dev,
 	goto out;
 
 out_unlock:
-	k_spin_unlock(&dev->pm->lock, key);
+	(void)k_mutex_unlock(&dev->pm->lock);
 out:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_request, dev, ret);
 	return ret;
@@ -195,8 +193,6 @@ int pm_device_put_sync(const struct device *dev)
 
 void pm_device_enable(const struct device *dev)
 {
-	k_spinlock_key_t key;
-
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_enable, dev);
 	if (k_is_pre_kernel()) {
 		dev->pm->dev = dev;
@@ -208,7 +204,7 @@ void pm_device_enable(const struct device *dev)
 		goto out;
 	}
 
-	key = k_spin_lock(&dev->pm->lock);
+	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
 	if (dev->pm_control == NULL) {
 		dev->pm->enable = false;
 		goto out_unlock;
@@ -229,26 +225,24 @@ void pm_device_enable(const struct device *dev)
 	}
 
 out_unlock:
-	k_spin_unlock(&dev->pm->lock, key);
+	(void)k_mutex_unlock(&dev->pm->lock);
 out:
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_enable, dev);
 }
 
 void pm_device_disable(const struct device *dev)
 {
-	k_spinlock_key_t key;
-
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_disable, dev);
 	__ASSERT(k_is_pre_kernel() == false, "Device should not be disabled "
 		 "before kernel is initialized");
 
-	key = k_spin_lock(&dev->pm->lock);
+	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
 	if (dev->pm->enable) {
 		dev->pm->enable = false;
 		/* Bring up the device before disabling the Idle PM */
 		k_work_schedule(&dev->pm->work, K_NO_WAIT);
 	}
-	k_spin_unlock(&dev->pm->lock, key);
+	(void)k_mutex_unlock(&dev->pm->lock);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_disable, dev);
 }
 
@@ -256,17 +250,17 @@ int pm_device_wait(const struct device *dev, k_timeout_t timeout)
 {
 	int ret = 0;
 
-	k_mutex_lock(&dev->pm->condvar_lock, K_FOREVER);
+	k_mutex_lock(&dev->pm->lock, K_FOREVER);
 	while ((k_work_delayable_is_pending(&dev->pm->work)) ||
 		(atomic_get(&dev->pm->state) == PM_DEVICE_STATE_SUSPENDING) ||
 		(atomic_get(&dev->pm->state) == PM_DEVICE_STATE_RESUMING)) {
-		ret = k_condvar_wait(&dev->pm->condvar, &dev->pm->condvar_lock,
+		ret = k_condvar_wait(&dev->pm->condvar, &dev->pm->lock,
 			       timeout);
 		if (ret != 0) {
 			break;
 		}
 	}
-	k_mutex_unlock(&dev->pm->condvar_lock);
+	k_mutex_unlock(&dev->pm->lock);
 
 	return ret;
 }
