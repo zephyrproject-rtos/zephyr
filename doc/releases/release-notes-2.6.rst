@@ -674,6 +674,15 @@ Libraries / Subsystems
 
 * Storage
 
+* Task Watchdog
+
+  * This new subsystem was added with this release and allows supervision of
+    individual threads. It is based on a regularly updated kernel timer,
+    whose ISR is never actually called in regular system operation.
+
+    An existing hardware watchdog can be used as an optional fallback if the
+    task watchdog itself gets stuck.
+
 * Tracing
 
   * ``CONFIG_TRACING_CPU_STATS`` was removed in favor of
