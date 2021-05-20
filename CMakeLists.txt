@@ -1503,8 +1503,8 @@ if(CONFIG_OUTPUT_STAT)
     COMMAND $<TARGET_PROPERTY:bintools,readelf_command>
             $<TARGET_PROPERTY:bintools,readelf_flag>
             $<TARGET_PROPERTY:bintools,readelf_flag_headers>
-            $<TARGET_PROPERTY:bintools,readelf_flag_infile> ${KERNEL_ELF_NAME}
-            $<TARGET_PROPERTY:bintools,readelf_flag_outfile> ${KERNEL_STAT_NAME}
+            $<TARGET_PROPERTY:bintools,readelf_flag_infile>${KERNEL_ELF_NAME}
+            $<TARGET_PROPERTY:bintools,readelf_flag_outfile>${KERNEL_STAT_NAME}
             $<TARGET_PROPERTY:bintools,readelf_flag_final>
     )
   list(APPEND
