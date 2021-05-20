@@ -16,6 +16,11 @@ config USE_SEGGER_RTT
 
 if USE_SEGGER_RTT
 
+config SEGGER_RTT_CUSTOM_LOCKING
+	bool "Enable custom locking"
+	help
+	  Enable custom locking using a mutex.
+
 config SEGGER_RTT_MAX_NUM_UP_BUFFERS
 	int "Maximum number of up-buffers"
 	default 3
