@@ -180,7 +180,15 @@ void helper_pdu_encode_reject_ext_ind(struct pdu_data *pdu, void *param)
 	pdu->llctrl.reject_ext_ind.error_code = p->error_code;
 }
 
+void helper_pdu_encode_reject_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_reject_ind *p = param;
 
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, reject_ind) + sizeof(struct pdu_data_llctrl_reject_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
+	pdu->llctrl.reject_ind.error_code = p->error_code;
+}
 
 
 void helper_pdu_encode_phy_req(struct pdu_data *pdu, void *param)
