@@ -52,4 +52,6 @@ source "drivers/counter/Kconfig.xlnx"
 
 source "drivers/counter/Kconfig.esp32"
 
+source "drivers/counter/Kconfig.mcp7940n"
+
 endif # COUNTER
