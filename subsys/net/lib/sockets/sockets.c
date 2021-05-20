@@ -1129,12 +1129,6 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		timeout = K_NO_WAIT;
 	} else if (!sock_is_eof(ctx)) {
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
-
-		res = wait_data(ctx, &timeout);
-		if (res < 0) {
-			errno = -res;
-			return -1;
-		}
 	}
 
 	end = sys_clock_timeout_end_calc(timeout);
@@ -1148,11 +1142,12 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 			return 0;
 		}
 
-		res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
-		/* EAGAIN when timeout expired, EINTR when cancelled */
-		if (res && res != -EAGAIN && res != -EINTR) {
-			errno = -res;
-			return -1;
+		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			res = wait_data(ctx, &timeout);
+			if (res < 0) {
+				errno = -res;
+				return -1;
+			}
 		}
 
 		pkt = k_fifo_peek_head(&ctx->recv_q);
