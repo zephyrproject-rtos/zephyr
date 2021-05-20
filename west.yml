@@ -112,7 +112,7 @@ manifest:
       revision: 385e19da1ae15f27872c2543b97276a42f102ead
       path: modules/lib/openthread
     - name: segger
-      revision: 2aa031c081426dcd0626185af45c40bd05811b68
+      revision: 7d78f7121dc4c59396c12e60e34f3617bac5efcb
       path: modules/debug/segger
     - name: sof
       revision: 779f28ed465c03899c8a7d4aaf399856f4e51158
@@ -134,7 +134,7 @@ manifest:
       revision: a47e326ca772ddd14cc3b9d4ca30a9ab44ecca16
     - name: TraceRecorderSource
       path: modules/debug/TraceRecorder
-      revision: 41daf89c15ff841ed63fa882a916ec97089141ce
+      revision: d9889883abb4657d71e15ff055517a9b032f8212
     - name: hal_xtensa
       revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
       path: modules/hal/xtensa
