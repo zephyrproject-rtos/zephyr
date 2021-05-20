@@ -30,6 +30,8 @@ void helper_pdu_encode_pause_enc_rsp(struct pdu_data *pdu, void *param);
 
 void helper_pdu_encode_reject_ext_ind(struct pdu_data *pdu, void *param);
 
+void helper_pdu_encode_reject_ind(struct pdu_data *pdu, void *param);
+
 void helper_pdu_encode_phy_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_phy_rsp(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param);
