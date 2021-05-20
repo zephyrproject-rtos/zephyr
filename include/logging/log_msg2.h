@@ -176,11 +176,14 @@ enum z_log_msg2_mode {
 
 #define Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, _dlen) \
 { \
+	.valid = 0, \
+	.busy = 0, \
 	.type = Z_LOG_MSG2_LOG, \
 	.domain = _domain_id, \
 	.level = _level, \
 	.package_len = _plen, \
 	.data_len = _dlen, \
+	.reserved = 0, \
 }
 
 /* Messages are aligned to alignment required by cbprintf package. */
