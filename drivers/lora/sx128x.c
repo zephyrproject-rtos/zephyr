@@ -860,11 +860,24 @@ int sx1280_lora_send(const struct device *dev, uint8_t *data,
 	return 0;
 }
 
+void SetTxContinuousWave( void )
+{
+    WriteCommand( RADIO_SET_TXCONTINUOUSWAVE, 0, 0 );
+}
+
+int sx1280_lora_test_cw(const struct device *dev, uint32_t frequency,
+			int8_t tx_power,
+			uint16_t duration)
+{
+	SetTxContinuousWave(); // TODO: use parameters?
+	return 0;
+}
+
 static const struct lora_driver_api sx127x_lora_api = {
 	.config = sx12xx_lora_config,
 	.send = sx1280_lora_send,
 	.recv = sx12xx_lora_recv,
-	.test_cw = sx12xx_lora_test_cw,
+	.test_cw = sx1280_lora_test_cw,
 };
 
 DEVICE_DT_INST_DEFINE(0, &sx127x_lora_init, NULL, NULL,
