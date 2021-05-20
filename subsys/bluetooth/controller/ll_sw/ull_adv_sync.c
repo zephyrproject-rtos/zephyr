@@ -646,18 +646,26 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	struct lll_df_adv_cfg *df_cfg;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+	struct lll_adv_sync *lll_sync;
 	uint32_t ticks_slot_overhead;
 	uint32_t volatile ret_cb;
+	struct pdu_adv *ter_pdu;
 	uint32_t interval_us;
+	struct lll_adv *lll;
 	uint8_t sync_handle;
+	uint32_t adv_size;
 	uint32_t slot_us;
 	uint32_t ret;
 
 	ull_hdr_init(&sync->ull);
 
-	/* TODO: Calc AUX_SYNC_IND slot_us */
-	slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-	slot_us += 1000;
+	/* Calculate the PDU Tx Time and hence the radio event length */
+	lll_sync = &sync->lll;
+	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
+	lll = lll_sync->adv; /* or use &adv->lll, of adv parameter passed */
+	adv_size = PDU_OVERHEAD_SIZE(lll->phy_s) + ter_pdu->len;
+	slot_us = BYTES2US(adv_size, lll->phy_s) + EVENT_OVERHEAD_START_US +
+		  EVENT_OVERHEAD_END_US;
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	df_cfg = adv->df_cfg;

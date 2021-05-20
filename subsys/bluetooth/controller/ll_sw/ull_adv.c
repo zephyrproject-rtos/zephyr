@@ -1051,10 +1051,14 @@ uint8_t ll_adv_enable(uint8_t enable)
 		goto failure_cleanup;
 	}
 
+	/* Calculate the PDU Tx Time and hence the radio event length */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
-		/* FIXME: Calculate the slot_us */
-		slot_us += 1500;
+		uint32_t adv_size;
+
+		adv_size = PDU_OVERHEAD_SIZE(phy) + pdu_adv->len;
+		slot_us += BYTES2US(adv_size, phy) * adv_chn_cnt +
+			   EVENT_RX_TX_TURNAROUND(phy) * (adv_chn_cnt - 1);
 	} else
 #endif
 	{
@@ -1241,10 +1245,23 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 			aux = HDR_LLL2ULL(lll_aux);
 
-			/* schedule auxiliary PDU after primary channel PDUs */
+			/* Schedule auxiliary PDU after primary channel
+			 * PDUs.
+			 * Reduce the MAFS offset by the Event Overhead
+			 * so that actual radio air packet start as
+			 * close as possible after the MAFS gap.
+			 * Add 2 ticks offset as compensation towards
+			 * the +/- 1 tick ticker scheduling jitter due
+			 * to accumulation of remainder to maintain
+			 * average ticker interval.
+			 */
 			ticks_anchor_aux =
 				ticks_anchor + ticks_slot +
-				HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
+				HAL_TICKER_US_TO_TICKS(
+					MAX(EVENT_MAFS_US,
+					    EVENT_OVERHEAD_START_US) -
+					EVENT_OVERHEAD_START_US +
+					(EVENT_TICKER_RES_MARGIN_US << 1));
 
 			ticks_slot_overhead_aux = ull_adv_aux_evt_init(aux);
 
@@ -1256,10 +1273,24 @@ uint8_t ll_adv_enable(uint8_t enable)
 				const uint32_t ticks_slot_aux =
 					aux->ull.ticks_slot +
 					ticks_slot_overhead_aux;
+
+				/* Schedule periodic advertising PDU after
+				 * auxiliary PDUs.
+				 * Reduce the MAFS offset by the Event Overhead
+				 * so that actual radio air packet start as
+				 * close as possible after the MAFS gap.
+				 * Add 2 ticks offset as compensation towards
+				 * the +/- 1 tick ticker scheduling jitter due
+				 * to accumulation of remainder to maintain
+				 * average ticker interval.
+				 */
 				uint32_t ticks_anchor_sync =
-					ticks_anchor_aux +
-					ticks_slot_aux +
-					HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
+					ticks_anchor_aux + ticks_slot_aux +
+					HAL_TICKER_US_TO_TICKS(
+						MAX(EVENT_MAFS_US,
+						    EVENT_OVERHEAD_START_US) -
+						EVENT_OVERHEAD_START_US +
+						(EVENT_TICKER_RES_MARGIN_US << 1));
 
 				ret = ull_adv_sync_start(adv, sync,
 							 ticks_anchor_sync);
