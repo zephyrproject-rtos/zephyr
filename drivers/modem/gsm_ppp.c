@@ -29,7 +29,10 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_RECV_MAX_BUF                30
 #define GSM_RECV_BUF_SIZE               128
 #define GSM_ATTACH_RETRY_DELAY_MSEC     1000
-
+#define GSM_RSSI_RETRY_DELAY_MSEC       1000
+#define GSM_RSSI_RETRIES                10
+#define GSM_RSSI_INVALID                -1000
+#define GSM_RSSI_MAXVAL                 -46
 
 /* During the modem setup, we first create DLCI control channel and then
  * PPP and AT channels. Currently the modem does not create possible GNSS
@@ -65,9 +68,11 @@ static struct gsm_modem {
 	struct net_if *iface;
 
 	int attach_retries;
+	int rssi_retries;
 	bool mux_enabled : 1;
 	bool mux_setup_done : 1;
 	bool setup_done : 1;
+	bool attached : 1;
 } gsm;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
@@ -233,6 +238,34 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 #endif /* CONFIG_MODEM_SIM_NUMBERS */
 #endif /* CONFIG_MODEM_SHELL */
 
+/* Handler: +CSQ: <signal_power>[0],<qual>[1] */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
+{
+	/* Expected response is "+CSQ: <signal_power>,<qual>" */
+	if (argc) {
+		int rssi = atoi(argv[0]);
+
+		if (rssi == 31) {
+			rssi = GSM_RSSI_MAXVAL;
+		} else if (rssi >= 0 && rssi <= 31) {
+			/* FIXME: This value depends on the RAT */
+			rssi = -110 + ((rssi * 2) + 1);
+		} else {
+			rssi = GSM_RSSI_INVALID;
+		}
+
+		gsm.context.data_rssi = rssi;
+		LOG_INF("RSSI: %d", rssi);
+	}
+
+	k_sem_give(&gsm.sem_response);
+
+	return 0;
+}
+
+static const struct modem_cmd read_rssi_cmd =
+	MODEM_CMD("+CSQ:", on_cmd_atcmdinfo_rssi_csq, 2U, ",");
+
 static const struct setup_cmd setup_cmds[] = {
 	/* no echo */
 	SETUP_CMD_NOHANDLE("ATE0"),
@@ -353,6 +386,11 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 {
 	int ret;
 
+	/* If already attached, jump right to RSSI readout */
+	if (gsm->attached) {
+		goto attached;
+	}
+
 	/* If attach check failed, we should not redo every setup step */
 	if (gsm->attach_retries) {
 		goto attaching;
@@ -428,7 +466,38 @@ attaching:
 	}
 
 	/* Attached, clear retry counter */
+	gsm->attached = true;
 	gsm->attach_retries = 0;
+
+	LOG_DBG("modem attach returned %d, %s", ret, "read RSSI");
+
+	gsm->rssi_retries = GSM_RSSI_RETRIES;
+
+ attached:
+	/* Read connection quality (RSSI) */
+	ret = modem_cmd_send_nolock(&gsm->context.iface,
+				    &gsm->context.cmd_handler,
+				    &read_rssi_cmd, 1,
+				    "AT+CSQ",
+				    &gsm->sem_response,
+				    GSM_CMD_SETUP_TIMEOUT);
+	if (ret < 0) {
+		LOG_DBG("Not answer to RSSI readout, %s", "ignoring...");
+	}
+
+	if (gsm->context.data_rssi
+	    && gsm->context.data_rssi != GSM_RSSI_INVALID
+	    && gsm->context.data_rssi < GSM_RSSI_MAXVAL) {
+		LOG_INF("RSSI: %d", gsm->context.data_rssi);
+	} else {
+		LOG_DBG("Not valid RSSI, %s", "retrying...");
+
+		if (gsm->rssi_retries-- > 0) {
+			(void)k_work_reschedule(&gsm->gsm_configure_work,
+						K_MSEC(GSM_RSSI_RETRY_DELAY_MSEC));
+			return;
+		}
+	}
 
 	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
 
