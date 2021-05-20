@@ -28,7 +28,7 @@ import mmap
 # data, followed a 16 bit "ID" number, followed by a null-terminated
 # string in the final 60 bytes (or 60 non-null bytes of log data).
 # The DSP firmware will write sequential IDs into the buffer starting
-# from an ID of zero in the first slot, and wrapping at the end.
+# from an ID of '1' in the 0th slot, and wrapping at the end.
 
 MAP_SIZE = 8192
 SLOT_SIZE = 64
