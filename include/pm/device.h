@@ -105,7 +105,7 @@ struct pm_device {
 	/** Pointer to the device */
 	const struct device *dev;
 	/** Lock to synchronize the get/put operations */
-	struct k_spinlock lock;
+	struct k_mutex lock;
 	/* Following are packed fields protected by #lock. */
 	/** Device pm enable flag */
 	bool enable : 1;
@@ -119,8 +119,6 @@ struct pm_device {
 	struct k_work_delayable work;
 	/** Event conditional var to listen to the sync request events */
 	struct k_condvar condvar;
-	/** Condvar mutex */
-	struct k_mutex condvar_lock;
 };
 
 /** Bit position in device_pm::atomic_flags that records whether the
