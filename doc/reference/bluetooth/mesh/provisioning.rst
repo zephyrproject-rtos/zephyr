@@ -22,6 +22,13 @@ The Provisioning process
 All Bluetooth Mesh nodes must be provisioned before they can participate in a
 Bluetooth Mesh network. The Provisioning API provides all the functionality
 necessary for a device to become a provisioned mesh node.
+Provisioning is a five-step process, involving the following steps:
+
+* Beaconing
+* Invitation
+* Public key exchange
+* Authentication
+* Provisioning data transfer
 
 Beaconing
 =========
@@ -72,6 +79,17 @@ itself using the Health Server
 The Unprovisioned device automatically responds to the invite by presenting a
 list of its capabilities, including the supported Out of Band Authentication
 methods.
+
+Public key exchange
+===================
+
+Before the provisioning process can begin, the provisioner and the unprovisioned
+device exchange public keys, either in-band or Out of Band (OOB).
+
+In-band public key exchange is a part of the provisioning process. The Out
+of Band public key exchange is application-specific. For example,
+the unprovisioned device could provide its public key Out of Band by using
+a QR code printed on the device packaging.
 
 Authentication
 ==============
@@ -127,6 +145,24 @@ transfers the Provisioning data:
 Additionally, a device key is generated for the node. All this data is stored
 by the mesh stack, and the provisioning :c:member:`bt_mesh_prov.complete`
 callback gets called.
+
+Provisioning security
+*********************
+
+Depending on the choice of public key exchange mechanism and authentication method,
+the provisioning process can be secure or insecure.
+
+On May 24th 2021, ANSSI `disclosed <https://kb.cert.org/vuls/id/799380>`_
+a set of vulnerabilities in the Bluetooth Mesh Provisioning protocol that showcased
+how the low entropy provided by the Blink, Vibrate, Push, Twist and
+Input/Output numeric OOB methods could be exploited in impersonation and MITM
+attacks. In response, the Bluetooth SIG has reclassified these OOB methods as
+insecure in the Mesh Profile specification `erratum 16350 <https://www.bluetooth.org/docman/handlers/DownloadDoc.ashx?doc_id=516072>`_,
+as AuthValue may be brute forced in real time. To ensure secure provisioning, applications
+should use a static OOB value and OOB public key transfer.
+
+To provide the device's public key obtained via OOB,
+call :c:func:`bt_mesh_prov_remote_pub_key_set` on the provisioner side.
 
 API reference
 *************
