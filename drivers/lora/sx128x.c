@@ -11,6 +11,8 @@
 #include <zephyr.h>
 
 #include "sx12xx_common.h"
+#include "sx128x.h"
+#include "sx128x-radio.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(sx127x, CONFIG_LORA_LOG_LEVEL);
@@ -639,9 +641,228 @@ static int sx127x_lora_init(const struct device *dev)
 	return 0;
 }
 
+static int sx1280_transceive(uint8_t reg, bool write, void *data, size_t length)
+{
+	const struct spi_buf buf[2] = {
+		{
+			.buf = &reg,
+			.len = sizeof(reg)
+		},
+		{
+			.buf = data,
+			.len = length
+		}
+	};
+
+	struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf),
+	};
+
+	if (!write) {
+		const struct spi_buf_set rx = {
+			.buffers = buf,
+			.count = ARRAY_SIZE(buf)
+		};
+
+		return spi_transceive(dev_data.spi, &dev_data.spi_cfg, &tx, &rx);
+	}
+
+	return spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+}
+
+int sx1280_write(uint8_t reg_addr, uint8_t *data, uint8_t len)
+{
+	return sx1280_transceive(reg_addr | BIT(7), true, data, len);
+}
+
+void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
+{
+//     WaitOnBusy( ); // TODO
+
+//     if( RadioSpi != NULL )
+//     {
+        // RadioNss = 0; // TODO
+        // RadioSpi->write( ( uint8_t )command );
+        // for( uint16_t i = 0; i < size; i++ )
+        // {
+        //     RadioSpi->write( buffer[i] );
+        // }
+	int ret;
+
+	const struct spi_buf buf[3] = {
+		{
+			.buf = ( uint8_t ) &command, // TODO: might be wrong
+			.len = sizeof(command)
+		},
+		{
+			.buf = buffer,
+			.len = size
+		}
+	};
+
+	struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf),
+	};
+
+	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+
+	if (ret < 0) {
+		LOG_ERR("Unable to write command: 0x%x", ( uint8_t ) command);
+	}
+
+	// RadioNss = 1; // TODO
+//     }
+//     if( RadioUart != NULL )
+//     {
+//         RadioUart->putc( command );
+//         if( size > 0 )
+//         {
+//             RadioUart->putc( size );
+//             for( uint16_t i = 0; i < size; i++ )
+//             {
+//                 RadioUart->putc( buffer[i] );
+//             }
+//         }
+//     }
+
+//     if( command != RADIO_SET_SLEEP )
+//     {
+//         WaitOnBusy( ); // TODO
+//     }
+}
+
+void WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
+{
+//     WaitOnBusy( ); // TODO
+
+    	// GpioWrite( &SX1276.Spi.Nss, 0 ); // TODO
+
+
+	// RadioSpi->write( RADIO_WRITE_BUFFER );
+	int ret;
+
+	// ret = sx1280_write(addr, buffer, size);
+
+	const struct spi_buf buf[3] = {
+		{
+			.buf = RADIO_WRITE_BUFFER,
+			.len = sizeof(RADIO_WRITE_BUFFER)
+		},
+		{
+			.buf = &addr,
+			.len = sizeof(addr)
+		},
+		{
+			.buf = buffer,
+			.len = size
+		}
+	};
+
+	struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf),
+	};
+
+	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+
+	if (ret < 0) {
+		LOG_ERR("Unable to write address: 0x%x", addr);
+	}
+
+	// GpioWrite( &SX1276.Spi.Nss, 1 ); // TODO
+
+
+//     if( RadioSpi != NULL )
+//     {
+	// RadioNss = 0;
+	// RadioSpi->write( RADIO_WRITE_BUFFER );
+	// RadioSpi->write( offset );
+	// for( uint16_t i = 0; i < size; i++ )
+	// {
+	// 	RadioSpi->write( buffer[i] );
+	// }
+	// RadioNss = 1;
+//     }
+//     if( RadioUart != NULL )
+//     {
+//         RadioUart->putc( RADIO_WRITE_BUFFER );
+//         RadioUart->putc( offset );
+//         RadioUart->putc( size );
+//         for( uint16_t i = 0; i < size; i++ )
+//         {
+//             RadioUart->putc( buffer[i] );
+//         }
+//     }
+
+//     WaitOnBusy( );
+}
+
+void ClearIrqStatus( uint16_t irqMask )
+{
+    uint8_t buf[2];
+
+    buf[0] = ( uint8_t )( ( ( uint16_t )irqMask >> 8 ) & 0x00FF );
+    buf[1] = ( uint8_t )( ( uint16_t )irqMask & 0x00FF );
+    WriteCommand( RADIO_CLR_IRQSTATUS, buf, 2 );
+}
+
+void SetTx( TickTime_t timeout )
+{
+    uint8_t buf[3];
+    buf[0] = timeout.PeriodBase;
+    buf[1] = ( uint8_t )( ( timeout.PeriodBaseCount >> 8 ) & 0x00FF );
+    buf[2] = ( uint8_t )( timeout.PeriodBaseCount & 0x00FF );
+
+    ClearIrqStatus( IRQ_RADIO_ALL );
+
+    // If the radio is doing ranging operations, then apply the specific calls
+    // prior to SetTx
+    if( GetPacketType( true ) == PACKET_TYPE_RANGING )
+    {
+        SetRangingRole( RADIO_RANGING_ROLE_MASTER );
+    }
+    WriteCommand( RADIO_SET_TX, buf, 3 );
+//     OperatingMode = MODE_TX; // TODO
+}
+
+void SetPayload( uint8_t *buffer, uint8_t size, uint8_t offset )
+{
+    WriteBuffer( offset, buffer, size );
+}
+
+/*!
+ * \brief Represents the tick size available for Rx/Tx timeout operations
+ */
+typedef enum
+{
+    RADIO_TICK_SIZE_0015_US                 = 0x00,
+    RADIO_TICK_SIZE_0062_US                 = 0x01,
+    RADIO_TICK_SIZE_1000_US                 = 0x02,
+    RADIO_TICK_SIZE_4000_US                 = 0x03,
+}RadioTickSizes_t;
+
+void SendPayload( uint8_t *payload, uint8_t size, TickTime_t timeout, uint8_t offset )
+{
+    SetPayload( payload, size, offset );
+    SetTx( timeout );
+}
+
+int sx1280_lora_send(const struct device *dev, uint8_t *data,
+		     uint32_t data_len)
+{
+	SendPayload(data, data_len, (TickTime_t) { .PeriodBase = RADIO_TICK_SIZE_4000_US, .PeriodBaseCount = 1000 }, 0x00);
+	// Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
+
+	// Radio.Send(data, data_len);
+
+	return 0;
+}
+
 static const struct lora_driver_api sx127x_lora_api = {
 	.config = sx12xx_lora_config,
-	.send = sx12xx_lora_send,
+	.send = sx1280_lora_send,
 	.recv = sx12xx_lora_recv,
 	.test_cw = sx12xx_lora_test_cw,
 };
