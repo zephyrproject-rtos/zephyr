@@ -209,7 +209,16 @@ serial port:
 Flashing
 ========
 
-In order to flash the TLSR9518ADK80D board check the following resources:
+Use west flash command in order to flash the TLSR9518ADK80D board:
+
+.. code-block:: console
+
+   west flash --telink-tools-path=$TELINK_TOOLCHAIN_PATH
+
+Here, TELINK_TOOLCHAIN_PATH is a path to `Telink RISC-V Linux Toolchain`_.
+The toolchain contains tools for the board flashing as well.
+
+Refer for the following resources for more information about the board flashing:
 
 - `Burning and Debugging Tools for all Series`_
 - `Burning and Debugging Tools for TLSR9 Series`_
