@@ -9,19 +9,5 @@ project(tensorflow_magic_wand)
 set(NO_THREADSAFE_STATICS $<TARGET_PROPERTY:compiler-cpp,no_threadsafe_statics>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${NO_THREADSAFE_STATICS}>)
 
-target_sources(app PRIVATE
-  src/main_functions.h
-  src/constants.h
-  src/magic_wand_model_data.h
-  src/gesture_predictor.h
-  src/output_handler.h
-  src/assert.cc
-  src/accelerometer_handler.cc
-  src/accelerometer_handler.h
-  src/main.cc
-  src/main_functions.cc
-  src/magic_wand_model_data.cc
-  src/gesture_predictor.cc
-  src/output_handler.cc
-  boards/litex_vexriscv.overlay
-)
+file(GLOB app_sources src/*)
+target_sources(app PRIVATE ${app_sources} boards/litex_vexriscv.overlay)

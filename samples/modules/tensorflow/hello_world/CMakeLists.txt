@@ -9,15 +9,5 @@ project(tensorflow_hello_world)
 set(NO_THREADSAFE_STATICS $<TARGET_PROPERTY:compiler-cpp,no_threadsafe_statics>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${NO_THREADSAFE_STATICS}>)
 
-target_sources(app PRIVATE
-  src/assert.cc
-  src/main.c
-  src/main_functions.cc
-  src/constants.c
-  src/output_handler.cc
-  src/model.cc
-  src/model.h
-  src/output_handler.h
-  src/constants.h
-  src/main_functions.h
-)
+file(GLOB app_sources src/*)
+target_sources(app PRIVATE ${app_sources})
