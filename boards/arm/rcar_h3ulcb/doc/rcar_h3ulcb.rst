@@ -43,20 +43,21 @@ Supported Features
 
 Here is the current supported features when running Zephyr Project on the R-Car ULCB CR7:
 
-+-----------+------------------------------+
-| Interface | Driver/components            |
-+===========+==============================+
-| CLOCK     | clock_control                |
-+-----------+------------------------------+
-| GPIO      | gpio                         |
-+-----------+------------------------------+
-| GIC       | GIC 400 interrupt controller |
-+-----------+------------------------------+
++-----------+------------------------------+--------------------------------+
+| Interface | Driver/components            | Support level                  |
++===========+==============================+================================+
+| PINMUX    | pinmux                       |                                |
++-----------+------------------------------+--------------------------------+
+| CLOCK     | clock_control                |                                |
++-----------+------------------------------+--------------------------------+
+| GPIO      | gpio                         |                                |
++-----------+------------------------------+--------------------------------+
+| UART      | uart                         | serial port-polling            |
++-----------+------------------------------+--------------------------------+
 
 It's also currently possible to write on the ram console.
 
 More features will be supported soon.
-
 
 Connections and IOs
 ===================
@@ -80,6 +81,46 @@ Here are official IOs figures from eLinux for Kingfisher Infotainment board :
 `Kingfisher top view`_
 
 `Kingfisher bottom view`_
+
+GPIO :
+------
+
+By running Zephyr on H3ULCB, the software readable push button 'SW3' can be used as input, and the software contollable LED 'LED5' can be used as output.
+
+UART :
+------
+
+H3ULCB board is providing two serial ports, only one is commonly available on the board, however, the second one can be made available either by welding components or by plugging the board on a Kingfisher Infotainment daughter board.
+
+Here is information about these serial ports :
+
++--------------------+-------------------+--------------------+-----------+--------------------------------------+
+| Physical Interface | Physical Location | Software Interface | Converter | Further Information                  |
++====================+===================+====================+===========+======================================+
+| CN12 DEBUG SERIAL  | ULCB Board        | SCIF2              | FT232RQ   | Used by U-BOOT & Linux               |
++--------------------+-------------------+--------------------+-----------+--------------------------------------+
+| CN10 DEBUG SERIAL  | ULCB Board        | SCIF1              | CP2102    | Non-welded                           |
++--------------------+-------------------+--------------------+-----------+--------------------------------------+
+| CN04 DEBUG SERIAL  | Kingfisher        | SCIF1              |           | Secondary UART // Through ComExpress |
++--------------------+-------------------+--------------------+-----------+--------------------------------------+
+
+.. Note:: The Zephyr console output is assigned to SCIF1 (commonly used on Kingfisher daughter board) with settings 115200 8N1 without hardware flow control by default.
+
+Here is CN04 UART interface pinout (depending on your Kingfisher board version) :
+
++--------+----------+----------+
+| Signal | Pin KF03 | Pin KF04 |
++========+==========+==========+
+| RXD    | 3        | 4        |
++--------+----------+----------+
+| TXD    | 5        | 2        |
++--------+----------+----------+
+| RTS    | 4        | 1        |
++--------+----------+----------+
+| CTS    | 6        | 3        |
++--------+----------+----------+
+| GND    | 9        | 6        |
++--------+----------+----------+
 
 Programming and Debugging
 *************************
