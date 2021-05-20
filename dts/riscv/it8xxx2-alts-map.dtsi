@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2021 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+
+/ {
+	it8xxx2_alts_map {
+		compatible = "ite,it8xxx2-pinctrl-conf";
+
+		/* ADC alternate function */
+		pinctrl_adc0: adc0 {
+			pinctrls = <&pinmuxi 0 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc1: adc1 {
+			pinctrls = <&pinmuxi 1 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc2: adc2 {
+			pinctrls = <&pinmuxi 2 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc3: adc3 {
+			pinctrls = <&pinmuxi 3 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc4: adc4 {
+			pinctrls = <&pinmuxi 4 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc5: adc5 {
+			pinctrls = <&pinmuxi 5 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc6: adc6 {
+			pinctrls = <&pinmuxi 6 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_adc7: adc7 {
+			pinctrls = <&pinmuxi 7 IT8XXX2_PINMUX_FUNC_1>;
+		};
+
+	};
+};
