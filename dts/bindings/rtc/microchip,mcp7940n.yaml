@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2021 Laird Connectivity
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Microchip MCP7940N I2C RTC
+
+compatible: "microchip,mcp7940n"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  int-gpios:
+    type: phandle-array
+    required: false
+    description: |
