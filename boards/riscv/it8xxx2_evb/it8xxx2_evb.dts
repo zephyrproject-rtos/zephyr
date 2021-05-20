@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <it8xxx2.dtsi>
+#include <it8xxx2-alts-map.dtsi>
 
 / {
 	model = "IT8XXX2 EV-Board";

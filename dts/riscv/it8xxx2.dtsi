@@ -9,6 +9,7 @@
 #include <dt-bindings/interrupt-controller/ite-intc.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pinctrl/it8xxx2-pinctrl.h>
+#include "it8xxx2-alts-map.dtsi"
 
 / {
 	#address-cells = <1>;
@@ -55,6 +56,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC >;
 			func4_en_mask = <0        0        0        0
 					 0        0        0        0       >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxb: pinmux@f01618 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -68,6 +70,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC 0xf016f1>;
 			func4_en_mask = <0        0        0       0
 					 0        0        0       0x40    >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxc: pinmux@f01620 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -81,6 +84,7 @@
 					 NO_FUNC NO_FUNC  NO_FUNC 0xf016f6>;
 			func4_en_mask = <0       0        0       0
 					 0       0        0       0x80    >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxd: pinmux@f01628 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -94,6 +98,7 @@
 					 NO_FUNC NO_FUNC  NO_FUNC NO_FUNC>;
 			func4_en_mask = <0       0        0       0
 					 0       0        0       0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxe: pinmux@f01630 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -107,6 +112,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC NO_FUNC >;
 			func4_en_mask = <0x01     0        0       0
 					 0        0        0       0       >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxf: pinmux@f01638 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -120,6 +126,7 @@
 					 NO_FUNC NO_FUNC NO_FUNC  NO_FUNC >;
 			func4_en_mask = <0       0       0x20     0x20
 					 0       0       0        0       >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxg: pinmux@f01640 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -133,6 +140,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
 			func4_en_mask = <0        0        0        0
 					 0        0        0        0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxh: pinmux@f01648 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -146,6 +154,7 @@
 					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC>;
 			func4_en_mask = <0       0x04     0x08     0
 					 0       0        0        0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxi: pinmux@f01650 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -159,6 +168,7 @@
 					 NO_FUNC NO_FUNC  NO_FUNC  NO_FUNC >;
 			func4_en_mask = <0       0        0        0
 					 0       0        0        0       >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxj: pinmux@f01658 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -172,6 +182,7 @@
 					 NO_FUNC  NO_FUNC  NO_FUNC  NO_FUNC>;
 			func4_en_mask = <0        0        0        0
 					 0        0        0        0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxk: pinmux@f01690 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -185,6 +196,7 @@
 					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func4_en_mask = <0       0       0       0
 					 0       0       0       0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxl: pinmux@f01698 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -198,6 +210,7 @@
 					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func4_en_mask = <0       0       0       0
 					 0       0       0       0      >;
+			#pinctrl-cells = <2>;
 		};
 		pinmuxm: pinmux@f016a0 {
 			compatible = "ite,it8xxx2-pinmux";
@@ -211,6 +224,7 @@
 					 NO_FUNC NO_FUNC NO_FUNC NO_FUNC>;
 			func4_en_mask = <0       0       0       0
 					 0       0       0       0      >;
+			#pinctrl-cells = <2>;
 		};
 		sram0: memory@80100000 {
 			compatible = "mmio-sram";
@@ -559,6 +573,14 @@
 			status = "disabled";
 			label = "ADC_0";
 			#io-channel-cells = <1>;
+			pinctrl-0 = <&pinctrl_adc0   /* ADC0*/
+				     &pinctrl_adc1   /* ADC1*/
+				     &pinctrl_adc2   /* ADC2*/
+				     &pinctrl_adc3   /* ADC3*/
+				     &pinctrl_adc4   /* ADC4*/
+				     &pinctrl_adc5   /* ADC5*/
+				     &pinctrl_adc6   /* ADC6*/
+				     &pinctrl_adc7>; /* ADC7*/
 		};
 		i2c0: i2c@f01c40 {
 			compatible = "ite,it8xxx2-i2c";
