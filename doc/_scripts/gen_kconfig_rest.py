@@ -16,6 +16,7 @@ import collections
 from operator import attrgetter
 import os
 import pathlib
+import re
 import sys
 import textwrap
 
@@ -34,6 +35,10 @@ NO_MAX_WIDTH = """
     <style>.wy-nav-content { max-width: none; !important }</style>
 
 """
+
+def escape_inline_rst(text):
+    # Escape reStructuredText inline markup characters
+    return re.sub(r"(\*|_|`)", r"\\\1", text)
 
 def rst_link(sc):
     # Returns an RST link (string) for the symbol/choice 'sc', or the normal
@@ -394,7 +399,7 @@ def sym_table_rst(title, syms):
    :widths: auto
 
    * - Symbol name
-     - Help/prompt
+     - Prompt
 """
 
     for sym in sorted(syms, key=attrgetter("name")):
@@ -409,15 +414,9 @@ def sym_table_rst(title, syms):
 def sym_index_desc(sym):
     # Returns the description used for 'sym' on the index page
 
-    # Use the first help text, if available
-    for node in sym.nodes:
-        if node.help is not None:
-            return node.help.replace("\n", "\n       ")
-
-    # If there's no help, use the first prompt string
     for node in sym.nodes:
         if node.prompt:
-            return node.prompt[0]
+            return escape_inline_rst(node.prompt[0])
 
     # No help text or prompt
     return ""
@@ -547,7 +546,7 @@ def choice_header_rst(choice):
 def prompt_rst(sc):
     # Returns RST that lists the prompts of 'sc' (symbol or choice)
 
-    return "\n\n".join(f"*{node.prompt[0]}*"
+    return "\n\n".join(f"*{escape_inline_rst(node.prompt[0])}*"
                        for node in sc.nodes if node.prompt) \
            or "*(No prompt -- not directly user assignable.)*"
 
@@ -563,7 +562,8 @@ def help_rst(sc):
         if node.help is not None:
             rst += "Help\n" \
                    "====\n\n" \
-                   f"{node.help}\n\n"
+                   ".. code-block:: none\n\n" \
+                   f"{textwrap.indent(node.help, 4 * ' ')}\n\n"
 
     return rst
 
@@ -736,15 +736,13 @@ def kconfig_definition_rst(sc):
     if len(sc.nodes) > 1: heading += "s"
     rst = f"{heading}\n{len(heading)*'='}\n\n"
 
-    rst += ".. highlight:: kconfig"
-
     for node in sc.nodes:
         rst += "\n\n" \
                f"At ``{strip_module_path(node.filename)}:{node.linenr}``\n\n" \
                f"{include_path(node)}" \
                f"Menu path: {menu_path(node)}\n\n" \
-               ".. parsed-literal::\n\n" \
-               f"{textwrap.indent(node.custom_str(rst_link), 4*' ')}"
+               ".. code-block:: kconfig\n\n" \
+               f"{textwrap.indent(str(node), 4*' ')}"
 
         # Not the last node?
         if node is not sc.nodes[-1]:
