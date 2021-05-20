@@ -179,38 +179,43 @@ struct isoal_sink_config {
 	/* TODO add SDU and PDU max length etc. */
 };
 
+struct isoal_sink_session {
+	isoal_sink_sdu_alloc_cb  sdu_alloc;
+	isoal_sink_sdu_emit_cb   sdu_emit;
+	isoal_sink_sdu_write_cb  sdu_write;
+	struct isoal_sink_config param;
+	isoal_sdu_cnt_t          seqn;
+	uint16_t                 handle;
+	uint8_t                  pdus_per_sdu;
+	uint32_t                 latency_unframed;
+	uint32_t                 latency_framed;
+};
+
+struct isoal_sdu_production {
+	/* Permit atomic enable/disable of SDU production */
+	volatile isoal_production_mode_t  mode;
+	/* We are constructing an SDU from {<1 or =1 or >1} PDUs */
+	struct isoal_sdu_produced  sdu;
+	/* Bookkeeping */
+	isoal_pdu_cnt_t  prev_pdu_id : 39;
+	enum {
+		ISOAL_START,
+		ISOAL_CONTINUE,
+		ISOAL_ERR_SPOOL
+	} fsm;
+	uint8_t pdu_cnt;
+	uint8_t sdu_state;
+	isoal_sdu_len_t sdu_written;
+	isoal_sdu_len_t sdu_available;
+	isoal_sdu_status_t sdu_status;
+};
 
 struct isoal_sink {
 	/* Session-constant */
-	struct {
-		isoal_sink_sdu_alloc_cb  sdu_alloc;
-		isoal_sink_sdu_emit_cb   sdu_emit;
-		isoal_sink_sdu_write_cb  sdu_write;
-		struct isoal_sink_config param;
-		isoal_sdu_cnt_t          seqn;
-		uint16_t                 handle;
-		uint8_t                  pdus_per_sdu;
-	} session;
+	struct isoal_sink_session session;
 
 	/* State for SDU production */
-	struct {
-		/* Permit atomic enable/disable of SDU production */
-		volatile isoal_production_mode_t  mode;
-		/* We are constructing an SDU from {<1 or =1 or >1} PDUs */
-		struct isoal_sdu_produced  sdu;
-		/* Bookkeeping */
-		isoal_pdu_cnt_t  prev_pdu_id : 39;
-		enum {
-			ISOAL_START,
-			ISOAL_CONTINUE,
-			ISOAL_ERR_SPOOL
-		} fsm;
-		uint8_t pdu_cnt;
-		uint8_t sdu_state;
-		isoal_sdu_len_t sdu_written;
-		isoal_sdu_len_t sdu_available;
-		isoal_sdu_status_t sdu_status;
-	} sdu_production;
+	struct isoal_sdu_production sdu_production;
 };
 
 
@@ -218,14 +223,18 @@ isoal_status_t isoal_init(void);
 
 isoal_status_t isoal_reset(void);
 
-isoal_status_t isoal_sink_create(isoal_sink_handle_t *hdl,
-				 uint16_t handle,
+isoal_status_t isoal_sink_create(uint16_t handle,
+				 uint8_t  role,
 				 uint8_t  burst_number,
+				 uint8_t  flush_timeout,
 				 uint32_t sdu_interval,
 				 uint16_t iso_interval,
+				 uint32_t cis_sync_delay,
+				 uint32_t cig_sync_delay,
 				 isoal_sink_sdu_alloc_cb sdu_alloc,
 				 isoal_sink_sdu_emit_cb  sdu_emit,
-				 isoal_sink_sdu_write_cb  sdu_write);
+				 isoal_sink_sdu_write_cb  sdu_write,
+				 isoal_sink_handle_t *hdl);
 
 struct isoal_sink_config *isoal_get_sink_param_ref(isoal_sink_handle_t hdl);
 

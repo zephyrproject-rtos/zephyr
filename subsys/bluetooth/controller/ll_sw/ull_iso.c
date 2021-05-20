@@ -169,12 +169,24 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 	/* TODO dp->sync_delay    = controller_delay; ?*/
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO)
-	uint32_t sdu_interval;
+	uint8_t role;
 	uint8_t burst_number;
+	uint8_t flush_timeout;
+	uint32_t sdu_interval;
+	uint16_t iso_interval;
+	uint32_t cis_sync_delay;
+	uint32_t cig_sync_delay;
+
+	role = cig->lll.role;
+	iso_interval = cig->iso_interval;
+	cis_sync_delay = cis->sync_delay;
+	cig_sync_delay = cig->sync_delay;
 
 	if (path_dir == BT_HCI_DATAPATH_DIR_HOST_TO_CTLR) {
-		burst_number = cis->lll.tx.burst_number;
-		if (cig->lll.role) {
+		burst_number  = cis->lll.tx.burst_number;
+		flush_timeout = cis->lll.tx.flush_timeout;
+
+		if (role) {
 			/* peripheral */
 			sdu_interval = cig->p_sdu_interval;
 		} else {
@@ -183,8 +195,10 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		}
 		cis->datapath_in = dp;
 	} else {
-		burst_number = cis->lll.rx.burst_number;
-		if (cig->lll.role) {
+		burst_number =  cis->lll.rx.burst_number;
+		flush_timeout = cis->lll.rx.flush_timeout;
+
+		if (role) {
 			/* peripheral */
 			sdu_interval = cig->c_sdu_interval;
 		} else {
@@ -196,9 +210,12 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 	if (path_id == BT_HCI_DATAPATH_ID_HCI) {
 		/* Set up HCI data path */
-		err = isoal_sink_create(&sink_hdl, handle, burst_number, sdu_interval,
-					cig->iso_interval, sink_sdu_alloc_hci,
-					sink_sdu_emit_hci, sink_sdu_write_hci);
+		err = isoal_sink_create(handle, role,
+					burst_number, flush_timeout,
+					sdu_interval, iso_interval,
+					cis_sync_delay, cig_sync_delay,
+					sink_sdu_alloc_hci, sink_sdu_emit_hci, sink_sdu_write_hci,
+					&sink_hdl);
 	} else {
 		/* Set up vendor specific data path */
 		isoal_sink_sdu_alloc_cb sdu_alloc;
@@ -207,9 +224,12 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 
 		/* Request vendor sink callbacks for path */
 		if (ll_data_path_sink_create(dp, &sdu_alloc, &sdu_emit, &sdu_write)) {
-			err = isoal_sink_create(&sink_hdl, handle, burst_number,
-						sdu_interval, cig->iso_interval,
-						sdu_alloc, sdu_emit, sdu_write);
+			err = isoal_sink_create(handle, role,
+						burst_number, flush_timeout,
+						sdu_interval, iso_interval,
+						cis_sync_delay, cig_sync_delay,
+						sdu_alloc, sdu_emit, sdu_write,
+						&sink_hdl);
 		} else {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
@@ -222,7 +242,6 @@ uint8_t ll_setup_iso_path(uint16_t handle, uint8_t path_dir, uint8_t path_id,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 #endif
-
 	return 0;
 }
 
