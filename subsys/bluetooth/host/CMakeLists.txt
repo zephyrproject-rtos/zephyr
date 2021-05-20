@@ -77,6 +77,7 @@ if(CONFIG_BT_HCI_HOST)
   zephyr_library_sources_ifdef(
     CONFIG_BT_ISO
     iso.c
+    conn.c
     )
 
   if(CONFIG_BT_DF)
