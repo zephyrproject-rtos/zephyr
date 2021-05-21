@@ -17,7 +17,7 @@
  *
  * @param name name of the generated memory region
  * @param attr region attributes to use (rx, rw, ...)
- * @param node devicetree node with a <reg> property defining region location
+ * @param node devicetree node with a \<reg\> property defining region location
  *             and size.
  */
 #define DT_REGION_FROM_NODE_STATUS_OKAY(name, attr, node) \
