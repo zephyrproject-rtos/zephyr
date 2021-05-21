@@ -130,6 +130,22 @@
 		     &eth_txd1_pb13>;
 };
 
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Last sector of size 128KB at the end of 1MB flash is set
+		 * for storage.
+		 */
+		storage_partition: partition@e0000 {
+			label = "storage";
+			reg = <0x000e0000 0x00020000>;
+		};
+	};
+};
+
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac_out1_pa4>;
