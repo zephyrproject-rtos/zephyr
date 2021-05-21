@@ -73,6 +73,11 @@ def parse_args():
                         is not provided the environment will be checked for \
                         the ZEPHYR_BASE environment variable.")
 
+    parser.add_argument("-s", "--start-symbol", required=True,
+                        help="Symbol name of the section which contains the \
+                        devices. The symbol name must point to the first \
+                        device in that section.")
+
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1
@@ -145,7 +150,7 @@ class Device:
             else:
                 format += "Q"
                 size = 8
-            offset = self.ld_constants["DEVICE_STRUCT_HANDLES_OFFSET"]
+            offset = self.ld_constants["_DEVICE_STRUCT_HANDLES_OFFSET"]
             self.__handles = struct.unpack(format, data[offset:offset + size])[0]
         return self.__handles
 
@@ -172,7 +177,8 @@ def main():
     devices = []
     handles = []
     # Leading _ are stripped from the stored constant key
-    want_constants = set(["__device_start",
+
+    want_constants = set([args.start_symbol,
                           "_DEVICE_STRUCT_SIZEOF",
                           "_DEVICE_STRUCT_HANDLES_OFFSET"])
     ld_constants = dict()
@@ -181,7 +187,7 @@ def main():
         if isinstance(section, SymbolTableSection):
             for sym in section.iter_symbols():
                 if sym.name in want_constants:
-                    ld_constants[sym.name.lstrip("_")] = sym.entry.st_value
+                    ld_constants[sym.name] = sym.entry.st_value
                     continue
                 if sym.entry.st_info.type != 'STT_OBJECT':
                     continue
@@ -204,7 +210,7 @@ def main():
 
     devices = sorted(devices, key = lambda k: k.sym.entry.st_value)
 
-    device_start_addr = ld_constants["device_start"]
+    device_start_addr = ld_constants[args.start_symbol]
     device_size = 0
 
     assert len(devices) == len(handles), 'mismatch devices and handles'
