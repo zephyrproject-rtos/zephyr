@@ -273,6 +273,14 @@ config COMPILER_OPT
 	  and can be used to change compiler optimization, warning and error
 	  messages, and so on.
 
+config MISRA_SANE
+	bool "MISRA standards compliance features"
+	help
+	  Causes the source code to build in "MISRA" mode, which
+	  disallows some otherwise-permitted features of the C
+	  standard for safety reasons.  Specifically variable length
+	  arrays are not permitted (and gcc will enforce this).
+
 endmenu
 
 choice
@@ -598,14 +606,6 @@ config BOOTLOADER_BOSSA_ADAFRUIT_UF2
 	  0xf01669ef as the magic value to enter the bootloader.
 
 endchoice
-
-config MISRA_SANE
-	bool "MISRA standards compliance features"
-	help
-	  Causes the source code to build in "MISRA" mode, which
-	  disallows some otherwise-permitted features of the C
-	  standard for safety reasons.  Specifically variable length
-	  arrays are not permitted (and gcc will enforce this).
 
 endmenu
 
