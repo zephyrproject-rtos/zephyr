@@ -1,0 +1,37 @@
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC clock control node
+
+compatible: "microchip,xec-clock"
+
+include: base.yaml
+
+properties:
+    label:
+      required: true
+
+    reg:
+      required: true
+
+    pll-32k-src:
+      type: int
+      required: true
+      description: 32 KHz clock source for PLL
+
+    periph-32k-src:
+      type: int
+      required: true
+      description: 32 KHz clock source for peripherals
+
+    xtal-single-ended:
+      type: boolean
+      required: false
+      description: Use single ended crystal connection to XTAL2 only.
+
+    pin32k-vtr-off-crystal:
+      type: boolean
+      required: false
+      description: |
+        When 32 KHz pin input goes off switch to crystal instead of silicon
+        oscillator.
