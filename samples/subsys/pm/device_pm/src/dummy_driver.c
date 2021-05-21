@@ -33,7 +33,7 @@ static int dummy_open(const struct device *dev)
 
 	(void) pm_device_wait(dev, K_FOREVER);
 
-	if (atomic_get(&dev->pm->state) == PM_DEVICE_STATE_ACTIVE) {
+	if (dev->pm->state == PM_DEVICE_STATE_ACTIVE) {
 		printk("Dummy device resumed\n");
 		ret = 0;
 	} else {

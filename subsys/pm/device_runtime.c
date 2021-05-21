@@ -24,7 +24,9 @@ static void device_pm_callback(const struct device *dev,
 {
 	__ASSERT(retval == 0, "Device set power state failed");
 
-	atomic_set(&dev->pm->state, *state);
+	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
+	dev->pm->state = *state;
+	(void)k_mutex_unlock(&dev->pm->lock);
 
 	/*
 	 * This function returns the number of woken threads on success. There
@@ -42,11 +44,10 @@ static void pm_work_handler(struct k_work *work)
 
 	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
 
-	switch (atomic_get(&dev->pm->state)) {
+	switch (dev->pm->state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		if ((dev->pm->usage == 0) && dev->pm->enable) {
-			atomic_set(&dev->pm->state,
-					PM_DEVICE_STATE_SUSPENDING);
+			dev->pm->state = PM_DEVICE_STATE_SUSPENDING;
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND,
 						  device_pm_callback, NULL);
 		} else {
@@ -55,8 +56,7 @@ static void pm_work_handler(struct k_work *work)
 		break;
 	case PM_DEVICE_STATE_SUSPEND:
 		if ((dev->pm->usage > 0) || !dev->pm->enable) {
-			atomic_set(&dev->pm->state,
-					PM_DEVICE_STATE_RESUMING);
+			dev->pm->state = PM_DEVICE_STATE_RESUMING;
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE,
 						  device_pm_callback, NULL);
 		} else {
@@ -159,8 +159,8 @@ static int pm_device_request(const struct device *dev,
 	 * may not have been properly changed to the target_state or another
 	 * thread we check it here before returning.
 	 */
-	ret = target_state == atomic_get(&dev->pm->state) ? 0 : -EIO;
-	goto out;
+	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
+	ret = target_state == dev->pm->state ? 0 : -EIO;
 
 out_unlock:
 	(void)k_mutex_unlock(&dev->pm->lock);
@@ -198,7 +198,7 @@ void pm_device_enable(const struct device *dev)
 		dev->pm->dev = dev;
 		if (dev->pm_control != NULL) {
 			dev->pm->enable = true;
-			atomic_set(&dev->pm->state, PM_DEVICE_STATE_SUSPEND);
+			dev->pm->state = PM_DEVICE_STATE_SUSPEND;
 			k_work_init_delayable(&dev->pm->work, pm_work_handler);
 		}
 		goto out;
@@ -218,7 +218,7 @@ void pm_device_enable(const struct device *dev)
 	 */
 	if (!dev->pm->dev) {
 		dev->pm->dev = dev;
-		atomic_set(&dev->pm->state, PM_DEVICE_STATE_SUSPEND);
+		dev->pm->state = PM_DEVICE_STATE_SUSPEND;
 		k_work_init_delayable(&dev->pm->work, pm_work_handler);
 	} else {
 		k_work_schedule(&dev->pm->work, K_NO_WAIT);
@@ -252,8 +252,8 @@ int pm_device_wait(const struct device *dev, k_timeout_t timeout)
 
 	k_mutex_lock(&dev->pm->lock, K_FOREVER);
 	while ((k_work_delayable_is_pending(&dev->pm->work)) ||
-		(atomic_get(&dev->pm->state) == PM_DEVICE_STATE_SUSPENDING) ||
-		(atomic_get(&dev->pm->state) == PM_DEVICE_STATE_RESUMING)) {
+		(dev->pm->state == PM_DEVICE_STATE_SUSPENDING) ||
+		(dev->pm->state == PM_DEVICE_STATE_RESUMING)) {
 		ret = k_condvar_wait(&dev->pm->condvar, &dev->pm->lock,
 			       timeout);
 		if (ret != 0) {

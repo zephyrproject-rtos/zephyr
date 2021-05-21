@@ -114,7 +114,7 @@ struct pm_device {
 	/** Device usage count */
 	uint32_t usage;
 	/** Device idle internal power state */
-	atomic_t state;
+	uint8_t state;
 	/** Work object for asynchronous calls */
 	struct k_work_delayable work;
 	/** Event conditional var to listen to the sync request events */
