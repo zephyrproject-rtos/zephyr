@@ -135,6 +135,15 @@ latest data from the internal RAM buffer can be loaded into SystemView::
 .. _SEGGER SystemView: https://www.segger.com/products/development-tools/systemview/
 
 
+Recent versions of `SEGGER SystemView`_ come with an API translation table for
+Zephyr which is incomplete and does not match the current level of support
+available in Zephyr. To use the latest Zephyr API description table, copy the
+file available in the tree to your local configuration directory to override the
+builtin table::
+
+        # On Linux and MacOS
+        cp ZEPHYR_BASE/subsys/tracing/sysview/SYSVIEW_Zephyr.txt ~/.config/SEGGER/
+
 Transport Backends
 ******************
 
