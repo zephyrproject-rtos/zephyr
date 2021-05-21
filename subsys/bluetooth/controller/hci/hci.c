@@ -1604,6 +1604,43 @@ static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt,
 
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
+
+static uint8_t check_cconn_params(bool ext, uint16_t scan_interval,
+				  uint16_t scan_window,
+				  uint16_t conn_interval_max,
+				  uint16_t conn_latency,
+				  uint16_t supervision_timeout)
+{
+	if (scan_interval < 0x0004 || scan_window < 0x0004 ||
+	    (!ext && (scan_interval > 0x4000 || scan_window > 0x4000))) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if (conn_interval_max < 0x0006 || conn_interval_max > 0x0C80) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if (conn_latency > 0x01F3) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	if (supervision_timeout < 0x000A || supervision_timeout > 0x0C80) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/* sto * 10ms > (1 + lat) * ci * 1.25ms * 2
+	 * sto * 10 > (1 + lat) * ci * 2.5
+	 * sto * 2 > (1 + lat) * ci * 0.5
+	 * sto * 4 > (1 + lat) * ci
+	 */
+	if ((supervision_timeout << 2) <= ((1 + conn_latency) *
+					   conn_interval_max)) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	return 0;
+}
+
 static void le_create_connection(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_create_conn *cmd = (void *)buf->data;
@@ -1624,6 +1661,18 @@ static void le_create_connection(struct net_buf *buf, struct net_buf **evt)
 	conn_interval_max = sys_le16_to_cpu(cmd->conn_interval_max);
 	conn_latency = sys_le16_to_cpu(cmd->conn_latency);
 	supervision_timeout = sys_le16_to_cpu(cmd->supervision_timeout);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		status = check_cconn_params(false, scan_interval,
+					    scan_window,
+					    conn_interval_max,
+					    conn_latency,
+					    supervision_timeout);
+		if (status) {
+			*evt = cmd_status(status);
+			return;
+		}
+	}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	status = ll_create_connection(scan_interval, scan_window,
@@ -3222,7 +3271,7 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
-	/* TODO: add parameter checks */
+	/* TODO: add additional parameter checks */
 
 	filter_policy = cmd->filter_policy;
 	own_addr_type = cmd->own_addr_type;
@@ -3257,6 +3306,18 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 			conn_latency = sys_le16_to_cpu(p->conn_latency);
 			supervision_timeout =
 				sys_le16_to_cpu(p->supervision_timeout);
+
+			if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+				status = check_cconn_params(true, scan_interval,
+							    scan_window,
+							    conn_interval_max,
+							    conn_latency,
+							    supervision_timeout);
+				if (status) {
+					*evt = cmd_status(status);
+					return;
+				}
+			}
 
 			status = ll_create_connection(scan_interval,
 						      scan_window,
