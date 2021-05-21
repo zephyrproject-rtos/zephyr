@@ -894,6 +894,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->supervision_expire = 0;
 		conn->procedure_expire = 0;
 
+#if defined(CONFIG_BT_CTLR_LE_PING)
+		conn->apto_expire = 0U;
+		conn->appto_expire = 0U;
+#endif
+
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 		conn->own_addr_type = BT_ADDR_LE_NONE->type;
 		memcpy(conn->own_addr, BT_ADDR_LE_NONE->a.val, sizeof(conn->own_addr));
