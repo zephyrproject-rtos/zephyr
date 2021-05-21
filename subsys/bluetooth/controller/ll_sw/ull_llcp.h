@@ -8,10 +8,7 @@
  * and having to update all the dependencies
  */
 
-enum {
-	ULL_CP_CONNECTED,
-	ULL_CP_DISCONNECTED
-};
+enum { ULL_CP_CONNECTED, ULL_CP_DISCONNECTED };
 
 /**
  * @brief Initialize the LL Control Procedure system.
@@ -76,12 +73,14 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 /**
  * @brief Initiate a Encryption Start Procedure.
  */
-uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16]);
+uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2],
+				const uint8_t ltk[16]);
 
 /**
  * @brief Initiate a Encryption Pause Procedure.
  */
-uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16]);
+uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2],
+				const uint8_t ltk[16]);
 
 /**
  */
@@ -99,7 +98,8 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn);
 /**
  * @brief Initiate a Connection Parameter Request Procedure or Connection Update Procedure
  */
-uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max, uint16_t latency, uint16_t timeout);
+uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max,
+			   uint16_t latency, uint16_t timeout);
 
 /**
  * @brief Accept the remote device’s request to change connection parameters.
@@ -129,5 +129,5 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5]);
 /**
  * @brief Initiate a Data Length Update Procedure.
  */
-uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, uint16_t max_tx_time);
-
+uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
+				  uint16_t max_tx_time);
