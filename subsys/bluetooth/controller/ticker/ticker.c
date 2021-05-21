@@ -183,6 +183,10 @@ struct ticker_user_op_slot_get {
 #if defined(CONFIG_BT_TICKER_LAZY_GET)
 	uint16_t *lazy;
 #endif /* CONFIG_BT_TICKER_LAZY_GET */
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
+	ticker_op_match_func fp_match_op_func;
+	void *match_op_context;
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 };
 
 /* User operation data structure for priority_set opcode. Used for passing
@@ -351,27 +355,40 @@ static uint8_t ticker_by_slot_get(struct ticker_node *node, uint8_t ticker_id_he
 #endif /* CONFIG_BT_TICKER_LOW_LAT */
 
 /**
- * @brief Get next ticker with slot ticks
+ * @brief Get next ticker with slot ticks or match
  *
- * @details Gets the next ticker which has slot ticks specified and
- * return the ticker id and accumulated ticks until expiration. If no
- * ticker nodes have slot ticks, the next ticker node is returned.
- * If no head id is provided (TICKER_NULL) the first node is returned.
+ * @details Iterates ticker nodes from ticker_id_head. If no head id is provided
+ * (TICKER_NULL), iteration starts from the first node.
+ * Operation details:
+ *
+ * NORMAL MODE (!CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+ * - Gets the next ticker which has slot ticks specified and return the ticker
+ *   id and accumulated ticks until expiration.
+ * - If a matching function is provided, this function is called and node iteration
+ *   continues until match function returns true.
+ *
+ * SLOT AGNOSTIC MODE (CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+ * - Gets the next ticker node.
+ * - If a matching function is provided, this function is called and node iteration
+ *   continues until match function returns true.
  *
  * @param instance          Pointer to ticker instance
  * @param ticker_id_head    Pointer to id of first ticker node [in/out]
  * @param ticks_current     Pointer to current ticks count [in/out]
  * @param ticks_to_expire   Pointer to ticks to expire [in/out]
- *
+ * @param fp_match_op_func  Pointer to match function or NULL if unused
+ * @param match_op_context  Pointer to operation context passed to match
+ *                          function or NULL if unused
+ * @param lazy              Pointer to lazy variable to receive lazy_current
+ *                          of found ticker node
  * @internal
  */
 static void ticker_by_next_slot_get(struct ticker_instance *instance,
 				    uint8_t *ticker_id_head, uint32_t *ticks_current,
-#if defined(CONFIG_BT_TICKER_LAZY_GET)
-				    uint32_t *ticks_to_expire, uint16_t *lazy)
-#else /* !CONFIG_BT_TICKER_LAZY_GET */
-				    uint32_t *ticks_to_expire)
-#endif /* !CONFIG_BT_TICKER_LAZY_GET */
+				    uint32_t *ticks_to_expire,
+				    ticker_op_match_func fp_match_op_func,
+				    void *match_op_context,
+				    uint16_t *lazy)
 {
 	struct ticker_node *ticker;
 	struct ticker_node *node;
@@ -394,18 +411,44 @@ static void ticker_by_next_slot_get(struct ticker_instance *instance,
 		_ticker_id_head = ticker->next;
 	}
 
+	/* Find first ticker node with match or slot ticks */
+	while (_ticker_id_head != TICKER_NULL) {
+		ticker = &node[_ticker_id_head];
+
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
+		if (fp_match_op_func) {
+			uint32_t ticks_slot = 0;
+
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
-	/* Find first ticker node with slot ticks */
-	while ((_ticker_id_head != TICKER_NULL) &&
-	       ((ticker = &node[_ticker_id_head])->ticks_slot == 0U)) {
+			ticks_slot += ticker->ticks_slot;
+#endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+
+			/* Match node id */
+			if (fp_match_op_func(_ticker_id_head, ticks_slot,
+					     _ticks_to_expire +
+					     ticker->ticks_to_expire,
+					     match_op_context)) {
+				/* Match found */
+				break;
+			}
+		} else
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
+#if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+			if (ticker->ticks_slot) {
+				/* Matching not used and node has slot ticks */
+				break;
+#else
+			{
+				/* Matching not used and slot agnostic */
+				break;
+#endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+			}
+
 		/* Accumulate expire ticks */
 		_ticks_to_expire += ticker->ticks_to_expire;
 		_ticker_id_head = ticker->next;
 	}
-#else
-	/* TODO: Come up with different way to find/match the ticker */
-	LL_ASSERT(0);
-#endif
+
 	if (_ticker_id_head != TICKER_NULL) {
 		/* Add ticks for found ticker */
 		_ticks_to_expire += ticker->ticks_to_expire;
@@ -2154,11 +2197,17 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 		ticker_by_next_slot_get(instance,
 					uop->params.slot_get.ticker_id,
 					uop->params.slot_get.ticks_current,
-#if defined(CONFIG_BT_TICKER_LAZY_GET)
 					uop->params.slot_get.ticks_to_expire,
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
+					uop->params.slot_get.fp_match_op_func,
+					uop->params.slot_get.match_op_context,
+#else
+					NULL, NULL,
+#endif
+#if defined(CONFIG_BT_TICKER_LAZY_GET)
 					uop->params.slot_get.lazy);
 #else /* !CONFIG_BT_TICKER_LAZY_GET */
-					uop->params.slot_get.ticks_to_expire);
+					NULL);
 #endif /* !CONFIG_BT_TICKER_LAZY_GET */
 		__fallthrough;
 	case TICKER_USER_OP_TYPE_IDLE_GET:
@@ -2894,18 +2943,22 @@ uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
 			      uint32_t *ticks_to_expire,
 			      ticker_op_func fp_op_func, void *op_context)
 {
-#if defined(CONFIG_BT_TICKER_LAZY_GET)
+#if defined(CONFIG_BT_TICKER_LAZY_GET) || \
+	defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
 	return ticker_next_slot_get_ext(instance_index, user_id, ticker_id,
 					ticks_current, ticks_to_expire, NULL,
+					NULL, NULL,
 					fp_op_func, op_context);
 }
 
 uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
 				  uint8_t *ticker_id, uint32_t *ticks_current,
 				  uint32_t *ticks_to_expire, uint16_t *lazy,
+				  ticker_op_match_func fp_match_op_func,
+				  void *match_op_context,
 				  ticker_op_func fp_op_func, void *op_context)
 {
-#endif /* CONFIG_BT_TICKER_LAZY_GET */
+#endif /* CONFIG_BT_TICKER_LAZY_GET || CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 	struct ticker_instance *instance = &_instance[instance_index];
 	struct ticker_user_op *user_op;
 	struct ticker_user *user;
@@ -2931,6 +2984,10 @@ uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
 #if defined(CONFIG_BT_TICKER_LAZY_GET)
 	user_op->params.slot_get.lazy = lazy;
 #endif /* CONFIG_BT_TICKER_LAZY_GET */
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
+	user_op->params.slot_get.fp_match_op_func = fp_match_op_func;
+	user_op->params.slot_get.match_op_context = match_op_context;
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 	user_op->status = TICKER_STATUS_BUSY;
 	user_op->fp_op_func = fp_op_func;
 	user_op->op_context = op_context;

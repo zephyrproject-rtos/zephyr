@@ -46,6 +46,20 @@ static void after_mstr_offset_get(uint16_t conn_interval, uint32_t ticks_slot,
 				  uint32_t *win_offset_us);
 static void ticker_op_cb(uint32_t status, void *param);
 
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
+bool ticker_match_op_cb(uint8_t ticker_id, uint32_t ticks_slot,
+			uint32_t ticks_to_expire, void *op_context)
+{
+	ARG_UNUSED(ticks_slot);
+	ARG_UNUSED(ticks_to_expire);
+	ARG_UNUSED(op_context);
+
+	bool match = ticker_id >= TICKER_ID_CONN_BASE &&
+		     ticker_id <= TICKER_ID_CONN_LAST;
+	return match;
+}
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
+
 void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 				   uint32_t *ticks_anchor, uint32_t *us_offset)
 {
@@ -67,10 +81,20 @@ void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 		bool success;
 
 		ret_cb = TICKER_STATUS_BUSY;
+#if defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
+		ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR, user_id,
+					       &ticker_id, ticks_anchor,
+					       &ticks_to_expire,
+					       NULL, /* lazy */
+					       ticker_match_op_cb,
+					       NULL, /* match_op_context */
+					       ticker_op_cb, (void *)&ret_cb);
+#else
 		ret = ticker_next_slot_get(TICKER_INSTANCE_ID_CTLR, user_id,
 					   &ticker_id, ticks_anchor,
-					   &ticks_to_expire, ticker_op_cb,
-					   (void *)&ret_cb);
+					   &ticks_to_expire,
+					   ticker_op_cb, (void *)&ret_cb);
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
 				ticker_job_sched(TICKER_INSTANCE_ID_CTLR,
@@ -85,10 +109,12 @@ void ull_sched_after_mstr_slot_get(uint8_t user_id, uint32_t ticks_slot_abs,
 			break;
 		}
 
+#if !defined(CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH)
 		if ((ticker_id < TICKER_ID_CONN_BASE) ||
 		    (ticker_id > TICKER_ID_CONN_LAST)) {
 			continue;
 		}
+#endif /* CONFIG_BT_TICKER_NEXT_SLOT_GET_MATCH */
 
 		conn = ll_conn_get(ticker_id - TICKER_ID_CONN_BASE);
 		if (conn && !conn->lll.role) {

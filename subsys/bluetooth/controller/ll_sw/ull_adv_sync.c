@@ -925,6 +925,7 @@ static void mfy_sync_offset_get(void *param)
 					       TICKER_USER_ID_ULL_LOW,
 					       &id, &ticks_current,
 					       &ticks_to_expire, &lazy,
+					       NULL, NULL,
 					       ticker_op_cb, (void *)&ret_cb);
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
