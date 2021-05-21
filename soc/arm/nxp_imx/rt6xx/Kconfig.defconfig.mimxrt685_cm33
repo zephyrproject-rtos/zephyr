@@ -58,4 +58,8 @@ config COUNTER_MCUX_LPC_RTC
 	default y
 	depends on COUNTER
 
+config PWM_MCUX_SCTIMER
+	default y
+	depends on PWM
+
 endif # SOC_MIMXRT685S_CM33
