@@ -31,11 +31,6 @@
 #define MCHP_SAF_FLASH_CONSEC_READ_TIMEOUT 2U
 #define MCHP_SAF_FLASH_SUS_CHK_DELAY 0U
 
-/* Default SAF Map of eSPI TAG numbers to master numbers */
-#define MCHP_SAF_TAG_MAP0_DFLT 0x23221100
-#define MCHP_SAF_TAG_MAP1_DFLT 0x77677767
-#define MCHP_SAF_TAG_MAP2_DFLT 0x00000005
-
 /*
  * Default QMSPI clock divider and chip select timing.
  * QMSPI master clock is 48MHz AHB clock.
