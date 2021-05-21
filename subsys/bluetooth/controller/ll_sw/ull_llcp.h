@@ -84,6 +84,11 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16]);
 
 /**
+ * @brief Check if an encryption pause procedure is active.
+ */
+uint8_t ull_cp_encryption_paused(struct ll_conn *conn);
+
+/**
  */
 void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16]);
 
