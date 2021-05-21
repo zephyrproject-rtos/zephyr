@@ -36,10 +36,6 @@
 			compatible = "mmio-sram";
 		};
 
-		sram1: memory@21000000 {
-			compatible = "mmio-sram";
-		};
-
 		peripheral@50000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
