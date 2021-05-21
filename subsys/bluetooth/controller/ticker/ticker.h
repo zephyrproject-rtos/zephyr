@@ -103,6 +103,11 @@ typedef void (*ticker_timeout_func) (uint32_t ticks_at_expire, uint32_t remainde
  */
 typedef void (*ticker_op_func) (uint32_t status, void *op_context);
 
+/** \brief Timer operation match callback function type.
+ */
+typedef bool (*ticker_op_match_func) (uint8_t ticker_id, uint32_t ticks_slot,
+				      uint32_t ticks_to_expire, void *op_context);
+
 #if defined(CONFIG_BT_TICKER_EXT)
 struct ticker_ext {
 	uint32_t ticks_slot_window;/* Window in which the slot
@@ -158,6 +163,8 @@ uint32_t ticker_next_slot_get(uint8_t instance_index, uint8_t user_id,
 uint32_t ticker_next_slot_get_ext(uint8_t instance_index, uint8_t user_id,
 				  uint8_t *ticker_id, uint32_t *ticks_current,
 				  uint32_t *ticks_to_expire, uint16_t *lazy,
+				  ticker_op_match_func fp_op_match_func,
+				  void *match_op_context,
 				  ticker_op_func fp_op_func, void *op_context);
 uint32_t ticker_job_idle_get(uint8_t instance_index, uint8_t user_id,
 			  ticker_op_func fp_op_func, void *op_context);
