@@ -218,9 +218,7 @@ static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
 }
 
 SYS_DEVICE_DEFINE("arc_v2_irq_unit", arc_v2_irq_unit_init,
-		  arc_v2_irq_unit_device_ctrl, PRE_KERNEL_1,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+		  arc_v2_irq_unit_device_ctrl, PRE_KERNEL_1, 0);
 #else
-SYS_INIT(arc_v2_irq_unit_init, PRE_KERNEL_1,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(arc_v2_irq_unit_init, PRE_KERNEL_1, 0);
 #endif   /* CONFIG_PM_DEVICE */
