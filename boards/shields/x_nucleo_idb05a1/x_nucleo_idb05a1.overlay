@@ -5,7 +5,7 @@
  */
 
 &arduino_spi {
-	cs-gpios = <&arduino_header 16 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;	      /* D10 */
+	cs-gpios = <&arduino_header 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;	      /* A1 */
 
 	spbtle-rf@0 {
 		compatible = "zephyr,bt-hci-spi";
