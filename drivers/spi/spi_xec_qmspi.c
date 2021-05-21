@@ -15,6 +15,10 @@ LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 #include <drivers/spi.h>
 #include <soc.h>
 
+#if defined(CONFIG_SOC_SERIES_MEC172X)
+#define NREGS_SAVE 3U
+#endif
+
 /* Device constant configuration parameters */
 struct spi_qmspi_config {
 	struct qmspi_regs *regs;
@@ -31,7 +35,18 @@ struct spi_qmspi_config {
 /* Device run time data */
 struct spi_qmspi_data {
 	struct spi_context ctx;
+#if defined(CONFIG_SOC_SERIES_MEC172X)
+	uint32_t regctx[NREGS_SAVE];
+#endif
 };
+
+#if defined(CONFIG_SOC_SERIES_MEC172X)
+const uint16_t regctx_ofs_tbl[NREGS_SAVE] = {
+	MCHP_QMSPI_TAPS_OFS,
+	MCHP_QMSPI_TAPS_ADJ_OFS,
+	MCHP_QMSPI_TAPS_CTRL_OFS,
+};
+#endif
 
 static inline uint32_t descr_rd(struct qmspi_regs *regs, uint32_t did)
 {
@@ -607,6 +622,34 @@ static int qmspi_release(const struct device *dev,
 	return 0;
 }
 
+#if defined(CONFIG_SOC_SERIES_MEC172X)
+static int store_regctx(const struct device *dev)
+{
+	const struct spi_qmspi_config *cfg = dev->config;
+	struct spi_qmspi_data *data = dev->data;
+	uintptr_t qbase = (uintptr_t)(cfg->regs);
+
+	for (size_t i = 0; i < ARRAY_SIZE(regctx_ofs_tbl); i++) {
+		data->regctx[i] = REG32(qbase + regctx_ofs_tbl[i]);
+	}
+
+	return 0;
+}
+
+static int restore_regctx(const struct device *dev)
+{
+	const struct spi_qmspi_config *cfg = dev->config;
+	struct spi_qmspi_data *data = dev->data;
+	uintptr_t qbase = (uintptr_t)(cfg->regs);
+
+	for (size_t i = 0; i < ARRAY_SIZE(regctx_ofs_tbl); i++) {
+		REG32(qbase + regctx_ofs_tbl[i]) = data->regctx[i];
+	}
+
+	return 0;
+}
+#endif
+
 /*
  * Initialize QMSPI controller.
  * Disable sleep control.
@@ -622,6 +665,10 @@ static int qmspi_init(const struct device *dev)
 
 	mchp_pcr_periph_slp_ctrl(PCR_QMSPI, MCHP_PCR_SLEEP_DIS);
 
+#if defined(CONFIG_SOC_SERIES_MEC172X)
+	store_regctx(dev);
+#endif
+
 	regs->MODE = MCHP_QMSPI_M_SRST;
 
 	MCHP_GIRQ_CLR_EN(cfg->girq, cfg->girq_pos);
@@ -630,6 +677,9 @@ static int qmspi_init(const struct device *dev)
 	MCHP_GIRQ_BLK_CLREN(cfg->girq);
 	NVIC_ClearPendingIRQ(cfg->girq_nvic_direct);
 
+#if defined(CONFIG_SOC_SERIES_MEC172X)
+	restore_regctx(dev);
+#endif
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
@@ -671,7 +721,10 @@ static const struct spi_qmspi_config spi_qmspi_0_config = {
 
 static struct spi_qmspi_data spi_qmspi_0_dev_data = {
 	SPI_CONTEXT_INIT_LOCK(spi_qmspi_0_dev_data, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_qmspi_0_dev_data, ctx)
+	SPI_CONTEXT_INIT_SYNC(spi_qmspi_0_dev_data, ctx),
+#if defined(CONFIG_SOC_SERIES_MEC172X)
+	.regctx = { 0 }
+#endif
 };
 
 DEVICE_DT_INST_DEFINE(0,
