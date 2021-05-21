@@ -615,10 +615,6 @@ static inline bool device_is_ready(const struct device *dev)
 }
 
 /**
- * @}
- */
-
-/**
  * @brief Indicate that the device is in the middle of a transaction
  *
  * Called by a device driver to indicate that it is in the middle of a
