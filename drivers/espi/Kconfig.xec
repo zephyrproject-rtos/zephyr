@@ -29,13 +29,27 @@ config ESPI_PERIPHERAL_DEBUG_PORT_80
 config ESPI_PERIPHERAL_UART
 	default y
 
+if SOC_MEC1501_HSZ
 config ESPI_PERIPHERAL_UART_SOC_MAPPING
 	int "SoC port exposed as logical eSPI UART"
 	default 2
+	range 0 2
 	depends on ESPI_PERIPHERAL_UART
 	help
 	  This tells the driver to which SoC UART to direct the UART traffic
 	  send over eSPI from host.
+endif #SOC_MEC1501_HSZ
+
+if SOC_MEC172X_NSZ
+config ESPI_PERIPHERAL_UART_SOC_MAPPING
+	int "SoC port exposed as logical eSPI UART"
+	default 1
+	range 0 1
+	depends on ESPI_PERIPHERAL_UART
+	help
+	  This tells the driver to which SoC UART to direct the UART traffic
+	  send over eSPI from host.
+endif #SOC_MEC172X_NSZ
 
 config ESPI_OOB_BUFFER_SIZE
 	int "eSPI OOB channel buffer size in bytes"

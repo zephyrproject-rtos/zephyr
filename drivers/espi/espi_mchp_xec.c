@@ -859,10 +859,12 @@ static void config_sub_devices(const struct device *dev)
 		ESPI_EIO_BAR_REGS->EC_BAR_UART_1 = ESPI_XEC_UART0_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
 		break;
+#ifdef CONFIG_SOC_SERIES_MEC1501X
 	case 2:
 		ESPI_EIO_BAR_REGS->EC_BAR_UART_2 = ESPI_XEC_UART0_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
 		break;
+#endif
 	}
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
@@ -889,10 +891,14 @@ static void config_sub_devices(const struct device *dev)
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 	ESPI_EIO_BAR_REGS->EC_BAR_P80CAP_0 = ESPI_XEC_PORT80_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
-	PORT80_CAP0_REGS->ACTV = 1;
 	ESPI_EIO_BAR_REGS->EC_BAR_P80CAP_1 = ESPI_XEC_PORT81_BAR_ADDRESS |
 		MCHP_ESPI_IO_BAR_HOST_VALID;
+#if defined(CONFIG_SOC_SERIES_MEC1501X)
+	PORT80_CAP0_REGS->ACTV = 1;
 	PORT80_CAP1_REGS->ACTV = 1;
+#elif defined(CONFIG_SOC_SERIES_MEC172X)
+	P80BD_0_REGS->ACTV = 1;
+#endif
 #endif
 }
 
@@ -906,9 +912,11 @@ static void configure_sirq(void)
 	case ESPI_PERIPHERAL_UART_PORT1:
 		ESPI_SIRQ_REGS->UART_1_SIRQ = UART_DEFAULT_IRQ;
 		break;
+#ifdef CONFIG_SOC_SERIES_MEC1501X
 	case ESPI_PERIPHERAL_UART_PORT2:
 		ESPI_SIRQ_REGS->UART_2_SIRQ = UART_DEFAULT_IRQ;
 		break;
+#endif
 	}
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
@@ -1234,6 +1242,7 @@ static void ibf_kbc_isr(const struct device *dev)
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
+#if defined(CONFIG_SOC_SERIES_MEC1501X)
 static void port80_isr(const struct device *dev)
 {
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
@@ -1257,6 +1266,19 @@ static void port81_isr(const struct device *dev)
 	evt.evt_data = PORT80_CAP1_REGS->EC_DATA;
 	espi_send_callbacks(&data->callbacks, dev, evt);
 }
+#elif defined(CONFIG_SOC_SERIES_MEC172X)
+static void port80_isr(const struct device *dev)
+{
+	struct espi_xec_data *data = (struct espi_xec_data *)(dev->data);
+	struct espi_event evt = { ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		(ESPI_PERIPHERAL_INDEX_0 << 16) | ESPI_PERIPHERAL_DEBUG_PORT80,
+		ESPI_PERIPHERAL_NODATA
+	};
+
+	evt.evt_data = P80BD_0_REGS->EC_DA;
+	espi_send_callbacks(&data->callbacks, dev, evt);
+}
+#endif
 
 const struct espi_isr espi_bus_isr[] = {
 	{MCHP_ESPI_PC_GIRQ_VAL, espi_pc_isr},
@@ -1302,7 +1324,9 @@ const struct espi_isr peripherals_isr[] = {
 #endif
 	{MCHP_KBC_IBF_GIRQ, ibf_kbc_isr},
 	{MCHP_PORT80_DEBUG0_GIRQ_VAL, port80_isr},
+#ifdef CONFIG_SOC_SERIES_MEC1501X
 	{MCHP_PORT80_DEBUG1_GIRQ_VAL, port81_isr},
+#endif
 };
 
 static uint8_t bus_isr_cnt = sizeof(espi_bus_isr) / sizeof(struct espi_isr);
@@ -1525,8 +1549,12 @@ static int espi_xec_init(const struct device *dev)
 	MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_ACPI_EC_1_IBF_GIRQ;
 #endif
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
+#if defined(CONFIG_SOC_SERIES_MEC1501X)
 	MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_PORT80_DEBUG0_GIRQ_VAL |
 		MCHP_PORT80_DEBUG1_GIRQ_VAL;
+#elif defined(CONFIG_SOC_SERIES_MEC172X)
+	MCHP_GIRQ_ENSET(config->pc_girq_id) = MCHP_PORT80_DEBUG0_GIRQ_VAL;
+#endif
 #endif
 	/* Enable aggregated interrupt block for eSPI bus events */
 	MCHP_GIRQ_BLK_SETEN(config->bus_girq_id);
