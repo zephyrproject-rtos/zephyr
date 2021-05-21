@@ -769,6 +769,11 @@ struct bt_conn_cb {
 	 *  In case the err parameter is non-zero it means that the
 	 *  connection establishment failed.
 	 *
+	 *  @note If the connection was established from an advertising set then
+	 *        the advertising set cannot be restarted directly from this
+	 *        callback. Instead use the connected callback of the
+	 *        advertising set.
+	 *
 	 *  @param conn New connection object.
 	 *  @param err HCI error. Zero for success, non-zero otherwise.
 	 *
