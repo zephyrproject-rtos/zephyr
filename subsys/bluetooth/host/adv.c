@@ -1202,6 +1202,10 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 	struct bt_conn *conn = NULL;
 	int err;
 
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+		return -EALREADY;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
 		err = le_adv_start_add_conn(adv, &conn);
