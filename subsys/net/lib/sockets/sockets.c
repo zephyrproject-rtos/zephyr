@@ -117,8 +117,7 @@ static void zsock_received_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data);
 
-static inline int k_fifo_wait_non_empty(struct k_fifo *fifo,
-					k_timeout_t timeout)
+static int fifo_wait_non_empty(struct k_fifo *fifo, k_timeout_t timeout)
 {
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -1014,7 +1013,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	if (flags & ZSOCK_MSG_PEEK) {
 		int res;
 
-		res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
+		res = fifo_wait_non_empty(&ctx->recv_q, timeout);
 		/* EAGAIN when timeout expired, EINTR when cancelled */
 		if (res && res != -EAGAIN && res != -EINTR) {
 			errno = -res;
