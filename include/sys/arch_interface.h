@@ -913,7 +913,8 @@ size_t arch_icache_line_size_get(void);
 #include <timing/types.h>
 
 /**
- * @ingroup arch-interface timing_api
+ * @ingroup arch-timing
+ * @{
  */
 
 /**
@@ -1008,7 +1009,7 @@ uint64_t arch_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count);
  */
 uint32_t arch_timing_freq_get_mhz(void);
 
-/* @} */
+/** @} */
 
 #endif /* CONFIG_TIMING_FUNCTIONS */
 
