@@ -899,7 +899,7 @@ kbd, .kbd {
     padding-left: 0 !important;
 }
 
-.rst-content dl:not(.docutils) dl dt, dl:not(.docutils,.rst-other-versions) dt {
+.rst-content dl:not(.docutils) dl:not(.rst-other-versions) dt {
     background: var(--admonition-note-background-color) !important;
     border-top: none !important;
     border-left: none !important;
