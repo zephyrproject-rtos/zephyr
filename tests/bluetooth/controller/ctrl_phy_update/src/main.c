@@ -60,9 +60,7 @@ void test_phy_update_mas_loc(void)
 	struct pdu_data *pdu;
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -138,7 +136,8 @@ void test_phy_update_mas_loc(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_unsupp_feat(void)
@@ -147,13 +146,9 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
-		.type = PDU_DATA_LLCTRL_TYPE_PHY_REQ
-	};
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = { .type = PDU_DATA_LLCTRL_TYPE_PHY_REQ };
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -188,7 +183,8 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem(void)
@@ -198,9 +194,7 @@ void test_phy_update_mas_rem(void)
 	struct pdu_data *pdu;
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -265,7 +259,8 @@ void test_phy_update_mas_rem(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc(void)
@@ -275,11 +270,9 @@ void test_phy_update_sla_loc(void)
 	struct node_rx_pdu *ntf;
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
-	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = {0};
+	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -348,7 +341,8 @@ void test_phy_update_sla_loc(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_sla_rem(void)
@@ -357,11 +351,9 @@ void test_phy_update_sla_rem(void)
 	struct node_rx_pdu *ntf;
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
-	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = {0};
+	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -429,7 +421,8 @@ void test_phy_update_sla_rem(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_mas_loc_collision(void)
@@ -445,9 +438,7 @@ void test_phy_update_mas_loc_collision(void)
 		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
 	};
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -563,7 +554,8 @@ void test_phy_update_mas_loc_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_mas_rem_collision(void)
@@ -574,9 +566,7 @@ void test_phy_update_mas_rem_collision(void)
 	struct pdu_data *pdu;
 	uint16_t instant;
 
-	struct node_rx_pu pu = {
-		.status = BT_HCI_ERR_SUCCESS
-	};
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
@@ -708,7 +698,8 @@ void test_phy_update_mas_rem_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_phy_update_sla_loc_collision(void)
@@ -723,8 +714,8 @@ void test_phy_update_sla_loc_collision(void)
 		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
 	};
 
-	struct node_rx_pu pu = {0};
-	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = {0};
+	struct node_rx_pu pu = { 0 };
+	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = { 0 };
 
 	/* Role */
 	test_set_role(&conn, BT_HCI_ROLE_SLAVE);
@@ -820,23 +811,25 @@ void test_phy_update_sla_loc_collision(void)
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
-
 
 void test_main(void)
 {
-
-	ztest_test_suite(phy,
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc_unsupp_feat, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_sla_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_sla_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc_collision, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_mas_rem_collision, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_sla_loc_collision, setup, unit_test_noop)
-			);
+	ztest_test_suite(
+		phy, ztest_unit_test_setup_teardown(test_phy_update_mas_loc, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_mas_loc_unsupp_feat, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_mas_rem, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_sla_loc, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_sla_rem, setup, unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_mas_loc_collision, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_mas_rem_collision, setup,
+					       unit_test_noop),
+		ztest_unit_test_setup_teardown(test_phy_update_sla_loc_collision, setup,
+					       unit_test_noop));
 
 	ztest_run_test_suite(phy);
 }

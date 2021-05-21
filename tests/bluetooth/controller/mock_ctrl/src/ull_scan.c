@@ -18,12 +18,11 @@
 #include "ull_scan_types.h"
 #include "ull_scan_internal.h"
 
-
 #define BT_CTLR_SCAN_MAX 1
 static struct ll_scan_set ll_scan[BT_CTLR_SCAN_MAX];
 
-uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
-			uint8_t own_addr_type, uint8_t filter_policy)
+uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window, uint8_t own_addr_type,
+			   uint8_t filter_policy)
 {
 	struct ll_scan_set *scan;
 
@@ -75,8 +74,8 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	return 0;
 }
 
-void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
-			 uint16_t window, uint8_t filter_policy)
+void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval, uint16_t window,
+			 uint8_t filter_policy)
 {
 }
 

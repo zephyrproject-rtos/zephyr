@@ -46,7 +46,7 @@ void test_ctrl(void)
 {
 	struct ull_tx_q tx_q;
 	struct node_tx *node;
-	struct node_tx ctrl_nodes1[SIZE] = {0};
+	struct node_tx ctrl_nodes1[SIZE] = { 0 };
 
 	ull_tx_q_init(&tx_q);
 
@@ -75,7 +75,7 @@ void test_data(void)
 {
 	struct ull_tx_q tx_q;
 	struct node_tx *node;
-	struct node_tx nodes[SIZE] = {0};
+	struct node_tx nodes[SIZE] = { 0 };
 
 	ull_tx_q_init(&tx_q);
 
@@ -104,8 +104,8 @@ void test_ctrl_and_data_1(void)
 {
 	struct ull_tx_q tx_q;
 	struct node_tx *node;
-	struct node_tx ctrl_nodes1[SIZE] = {0};
-	struct node_tx data_nodes1[SIZE] = {0};
+	struct node_tx ctrl_nodes1[SIZE] = { 0 };
+	struct node_tx data_nodes1[SIZE] = { 0 };
 
 	ull_tx_q_init(&tx_q);
 
@@ -127,7 +127,6 @@ void test_ctrl_and_data_1(void)
 	/* Tx Queue shall be empty */
 	node = ull_tx_q_dequeue(&tx_q);
 	zassert_equal_ptr(node, NULL, "");
-
 }
 
 /*
@@ -141,9 +140,9 @@ void test_ctrl_and_data_2(void)
 {
 	struct ull_tx_q tx_q;
 	struct node_tx *node;
-	struct node_tx ctrl_nodes1[SIZE] = {0};
-	struct node_tx data_nodes1[SIZE] = {0};
-	struct node_tx data_nodes2[SIZE] = {0};
+	struct node_tx ctrl_nodes1[SIZE] = { 0 };
+	struct node_tx data_nodes1[SIZE] = { 0 };
+	struct node_tx data_nodes2[SIZE] = { 0 };
 
 	ull_tx_q_init(&tx_q);
 
@@ -187,10 +186,10 @@ void test_ctrl_and_data_3(void)
 {
 	struct ull_tx_q tx_q;
 	struct node_tx *node;
-	struct node_tx ctrl_nodes1[SIZE] = {0};
-	struct node_tx ctrl_nodes2[SIZE] = {0};
-	struct node_tx data_nodes1[SIZE] = {0};
-	struct node_tx data_nodes2[SIZE] = {0};
+	struct node_tx ctrl_nodes1[SIZE] = { 0 };
+	struct node_tx ctrl_nodes2[SIZE] = { 0 };
+	struct node_tx data_nodes1[SIZE] = { 0 };
+	struct node_tx data_nodes2[SIZE] = { 0 };
 
 	ull_tx_q_init(&tx_q);
 
@@ -243,10 +242,10 @@ void test_ctrl_and_data_4(void)
 {
 	struct ull_tx_q tx_q;
 	struct node_tx *node;
-	struct node_tx ctrl_nodes1[SIZE] = {0};
-	struct node_tx ctrl_nodes2[SIZE] = {0};
-	struct node_tx data_nodes1[SIZE] = {0};
-	struct node_tx data_nodes2[SIZE] = {0};
+	struct node_tx ctrl_nodes1[SIZE] = { 0 };
+	struct node_tx ctrl_nodes2[SIZE] = { 0 };
+	struct node_tx data_nodes1[SIZE] = { 0 };
+	struct node_tx data_nodes2[SIZE] = { 0 };
 
 	ull_tx_q_init(&tx_q);
 
@@ -310,12 +309,12 @@ void test_ctrl_and_data_5(void)
 {
 	struct ull_tx_q tx_q;
 	struct node_tx *node;
-	struct node_tx ctrl_nodes1[SIZE] = {0};
-	struct node_tx ctrl_nodes2[SIZE] = {0};
-	struct node_tx ctrl_nodes3[SIZE] = {0};
-	struct node_tx data_nodes1[SIZE] = {0};
-	struct node_tx data_nodes2[SIZE] = {0};
-	struct node_tx data_nodes3[SIZE] = {0};
+	struct node_tx ctrl_nodes1[SIZE] = { 0 };
+	struct node_tx ctrl_nodes2[SIZE] = { 0 };
+	struct node_tx ctrl_nodes3[SIZE] = { 0 };
+	struct node_tx data_nodes1[SIZE] = { 0 };
+	struct node_tx data_nodes2[SIZE] = { 0 };
+	struct node_tx data_nodes3[SIZE] = { 0 };
 
 	ull_tx_q_init(&tx_q);
 
@@ -382,19 +381,13 @@ void test_ctrl_and_data_5(void)
 	zassert_equal_ptr(node, NULL, "");
 }
 
-
-
 void test_main(void)
 {
-	ztest_test_suite(test,
-			 ztest_unit_test(test_init),
-			 ztest_unit_test(test_ctrl),
-			 ztest_unit_test(test_data),
-			 ztest_unit_test(test_ctrl_and_data_1),
+	ztest_test_suite(test, ztest_unit_test(test_init), ztest_unit_test(test_ctrl),
+			 ztest_unit_test(test_data), ztest_unit_test(test_ctrl_and_data_1),
 			 ztest_unit_test(test_ctrl_and_data_2),
 			 ztest_unit_test(test_ctrl_and_data_3),
 			 ztest_unit_test(test_ctrl_and_data_4),
-			 ztest_unit_test(test_ctrl_and_data_5)
-			 );
+			 ztest_unit_test(test_ctrl_and_data_5));
 	ztest_run_test_suite(test);
 }

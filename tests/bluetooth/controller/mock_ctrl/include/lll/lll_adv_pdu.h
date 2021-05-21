@@ -15,8 +15,7 @@ static inline void lll_adv_pdu_enqueue(struct lll_adv_pdu *pdu, uint8_t idx)
 
 struct pdu_adv *lll_adv_pdu_alloc(struct lll_adv_pdu *pdu, uint8_t *idx);
 
-static inline struct pdu_adv *lll_adv_data_alloc(struct lll_adv *lll,
-						 uint8_t *idx)
+static inline struct pdu_adv *lll_adv_data_alloc(struct lll_adv *lll, uint8_t *idx)
 {
 	return lll_adv_pdu_alloc(&lll->adv_data, idx);
 }
@@ -36,8 +35,7 @@ static inline struct pdu_adv *lll_adv_data_curr_get(struct lll_adv *lll)
 	return (void *)lll->adv_data.pdu[lll->adv_data.first];
 }
 
-static inline struct pdu_adv *lll_adv_scan_rsp_alloc(struct lll_adv *lll,
-						     uint8_t *idx)
+static inline struct pdu_adv *lll_adv_scan_rsp_alloc(struct lll_adv *lll, uint8_t *idx)
 {
 	return lll_adv_pdu_alloc(&lll->scan_rsp, idx);
 }
@@ -53,14 +51,12 @@ static inline struct pdu_adv *lll_adv_scan_rsp_peek(struct lll_adv *lll)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-static inline struct pdu_adv *lll_adv_aux_data_alloc(struct lll_adv_aux *lll,
-						     uint8_t *idx)
+static inline struct pdu_adv *lll_adv_aux_data_alloc(struct lll_adv_aux *lll, uint8_t *idx)
 {
 	return lll_adv_pdu_alloc(&lll->data, idx);
 }
 
-static inline void lll_adv_aux_data_enqueue(struct lll_adv_aux *lll,
-					    uint8_t idx)
+static inline void lll_adv_aux_data_enqueue(struct lll_adv_aux *lll, uint8_t idx)
 {
 	lll_adv_pdu_enqueue(&lll->data, idx);
 }
@@ -78,12 +74,10 @@ static inline struct pdu_adv *lll_adv_aux_data_curr_get(struct lll_adv_aux *lll)
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 int lll_adv_and_extra_data_release(struct lll_adv_pdu *pdu);
 
-struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu,
-						 void **extra_data,
+struct pdu_adv *lll_adv_pdu_and_extra_data_alloc(struct lll_adv_pdu *pdu, void **extra_data,
 						 uint8_t *idx);
 
-static inline struct pdu_adv *lll_adv_sync_data_alloc(struct lll_adv_sync *lll,
-						      void **extra_data,
+static inline struct pdu_adv *lll_adv_sync_data_alloc(struct lll_adv_sync *lll, void **extra_data,
 						      uint8_t *idx)
 {
 #if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
@@ -102,14 +96,12 @@ static inline void lll_adv_sync_data_release(struct lll_adv_sync *lll)
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
 }
 
-static inline void lll_adv_sync_data_enqueue(struct lll_adv_sync *lll,
-					     uint8_t idx)
+static inline void lll_adv_sync_data_enqueue(struct lll_adv_sync *lll, uint8_t idx)
 {
 	lll_adv_pdu_enqueue(&lll->data, idx);
 }
 
-static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll,
-						     void **extra_data)
+static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll, void **extra_data)
 {
 	uint8_t last = lll->data.last;
 
