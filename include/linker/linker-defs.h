@@ -336,10 +336,10 @@ extern char _nocache_ram_size[];
  * section, stored in RAM instead of FLASH.
  */
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-extern char _ramfunc_ram_start[];
-extern char _ramfunc_ram_end[];
-extern char _ramfunc_ram_size[];
-extern char _ramfunc_rom_start[];
+extern char __ramfunc_start[];
+extern char __ramfunc_end[];
+extern char __ramfunc_size[];
+extern char __ramfunc_load_start[];
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 
 /* Memory owned by the kernel. Memory region for thread privilege stack buffers,
