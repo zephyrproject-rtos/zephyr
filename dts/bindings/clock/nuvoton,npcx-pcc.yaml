@@ -11,6 +11,18 @@ properties:
     reg:
         required: true
 
+    ram-pd-depth:
+        required: false
+        type: int
+        enum:
+        - 12
+        - 15
+        description: |
+          Valid bit-depth of RAM block Power-Down control (RAM_PD) registers.
+          Each bit in RAM_PDn can power down the relevant RAM block by setting
+          itself to 1 for better power consumption and this valid bit-depth
+          varies in different NPCX series.
+
 clock-cells:
     - bus
     - ctl
