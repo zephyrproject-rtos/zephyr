@@ -116,6 +116,8 @@ source "drivers/sensor/ina23x/Kconfig"
 
 source "drivers/sensor/isl29035/Kconfig"
 
+source "drivers/sensor/ina219/Kconfig"
+
 source "drivers/sensor/ism330dhcx/Kconfig"
 
 source "drivers/sensor/lis2dh/Kconfig"
