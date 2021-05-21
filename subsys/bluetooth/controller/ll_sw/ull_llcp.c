@@ -449,6 +449,23 @@ uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], con
 	return BT_HCI_ERR_SUCCESS;
 }
 
+uint8_t ull_cp_encryption_paused(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = rr_peek(conn);
+	if (ctx && ctx->proc == PROC_ENCRYPTION_PAUSE) {
+		return 1;
+	}
+
+	ctx = lr_peek(conn);
+	if (ctx && ctx->proc == PROC_ENCRYPTION_PAUSE) {
+		return 1;
+	}
+
+	return 0;
+}
+
 uint8_t ull_cp_phy_update(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
