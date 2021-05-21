@@ -82,8 +82,8 @@ static const struct z_arm_mpu_partition static_regions[] = {
 #if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
 		{
 		/* Special RAM area for program text */
-		.start = (uint32_t)&_ramfunc_ram_start,
-		.size = (uint32_t)&_ramfunc_ram_size,
+		.start = (uint32_t)&__ramfunc_start,
+		.size = (uint32_t)&__ramfunc_size,
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
 		},
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
