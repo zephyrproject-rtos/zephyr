@@ -548,7 +548,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	switch (done->extra.mic_state) {
 	case LLL_CONN_MIC_NONE:
 #if defined(CONFIG_BT_CTLR_LE_PING)
-		if (lll->enc_rx || conn->pause_rx_data) {
+		if (lll->enc_rx || ull_cp_encryption_paused(conn)) {
 			uint16_t appto_reload_new;
 
 			/* check for change in apto */
