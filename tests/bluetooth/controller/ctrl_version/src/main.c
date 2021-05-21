@@ -106,7 +106,8 @@ void test_version_exchange_mas_loc(void)
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_version_exchange_mas_loc_2(void)
@@ -184,7 +185,8 @@ void test_version_exchange_mas_rem(void)
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -251,7 +253,8 @@ void test_version_exchange_mas_rem_2(void)
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 /* +-----+                     +-------+            +-----+
@@ -343,18 +346,23 @@ void test_version_exchange_mas_loc_twice(void)
 	ut_rx_q_is_empty();
 
 	/* Note that one context buffer is not freed for this test */
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM - 1, "Free CTX buffers %d",
+		      ctx_buffers_free());
 }
 
 void test_main(void)
 {
 	ztest_test_suite(version_exchange,
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc_2, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_rem, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_rem_2, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc_twice, setup, unit_test_noop)
-			);
+			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc_2, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_version_exchange_mas_rem, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_version_exchange_mas_rem_2, setup,
+							unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc_twice, setup,
+							unit_test_noop));
 
 	ztest_run_test_suite(version_exchange);
 }

@@ -35,7 +35,6 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-
 static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
 static struct proc_ctx *rr_dequeue(struct ll_conn *conn);
 static void rr_abort(struct ll_conn *conn);
@@ -159,7 +158,7 @@ static struct proc_ctx *rr_dequeue(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_get(&conn->llcp.remote.pend_proc_list);
+	ctx = (struct proc_ctx *)sys_slist_get(&conn->llcp.remote.pend_proc_list);
 	return ctx;
 }
 
@@ -167,7 +166,7 @@ struct proc_ctx *rr_peek(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
 	return ctx;
 }
 
@@ -200,7 +199,7 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 		rp_comm_rx(conn, ctx, rx);
 		break;
 	case PROC_CHAN_MAP_UPDATE:
-		rp_chmu_rx(conn, ctx,rx);
+		rp_chmu_rx(conn, ctx, rx);
 		break;
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_rx(conn, ctx, rx);
@@ -287,7 +286,8 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	switch (opcode) {
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
 		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
-		pdu_encode_reject_ext_ind(pdu, conn->llcp.remote.reject_opcode, BT_HCI_ERR_LL_PROC_COLLISION);
+		pdu_encode_reject_ext_ind(pdu, conn->llcp.remote.reject_opcode,
+					  BT_HCI_ERR_LL_PROC_COLLISION);
 		break;
 	default:
 		LL_ASSERT(0);
@@ -368,7 +368,7 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 
 	switch (evt) {
 	case RR_EVT_PREPARE:
-		if ((ctx = rr_peek(conn))){
+		if ((ctx = rr_peek(conn))) {
 			const enum proc_incompat incompat = rr_get_incompat(conn);
 			const bool slave = !!(conn->lll.role == BT_HCI_ROLE_SLAVE);
 			const bool master = !!(conn->lll.role == BT_HCI_ROLE_MASTER);
@@ -411,12 +411,12 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 				 */
 
 				/* Send reject */
-				struct node_rx_pdu *rx = (struct node_rx_pdu *) param;
-				struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+				struct node_rx_pdu *rx = (struct node_rx_pdu *)param;
+				struct pdu_data *pdu = (struct pdu_data *)rx->pdu;
 				conn->llcp.remote.reject_opcode = pdu->llctrl.opcode;
 				rr_act_reject(conn);
 			} else if (with_instant && incompat == INCOMPAT_RESERVED) {
-				 /* Protocol violation.
+				/* Protocol violation.
 				 * => Disconnect
 				 *
 				 */
@@ -545,7 +545,7 @@ void ull_cp_priv_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 	struct pdu_data *pdu;
 	uint8_t proc = PROC_UNKNOWN;
 
-	pdu = (struct pdu_data *) rx->pdu;
+	pdu = (struct pdu_data *)rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
@@ -656,7 +656,7 @@ void test_int_remote_pending_requests(void)
 	zassert_is_null(dequeue_ctx, NULL);
 
 	rr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *) sys_slist_peek_head(&conn.llcp.remote.pend_proc_list);
+	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.remote.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
 	peek_ctx = rr_peek(&conn);

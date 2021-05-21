@@ -15,13 +15,11 @@ void mayfly_enable(uint8_t caller_id, uint8_t callee_id, uint8_t enable)
 {
 }
 
-uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain,
-			struct mayfly *m)
+uint32_t mayfly_enqueue(uint8_t caller_id, uint8_t callee_id, uint8_t chain, struct mayfly *m)
 {
 	return 0;
 }
 
 void mayfly_run(uint8_t callee_id)
 {
-
 }

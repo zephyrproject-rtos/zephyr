@@ -75,7 +75,6 @@ struct llcp_enc {
 	 *	encryptedData = e(key, plaintextData)
 	 */
 	union {
-
 		/* 128-bit session key diversifier */
 		uint8_t skd[16];
 		struct {
@@ -157,7 +156,6 @@ struct proc_ctx {
 	struct {
 		uint8_t type;
 	} unknown_response;
-
 };
 
 /* Procedure Incompatibility */
@@ -280,7 +278,6 @@ static inline struct proc_ctx *create_remote_procedure(enum llcp_proc proc)
 	return ull_cp_priv_create_remote_procedure(proc);
 }
 
-
 /*
  * ULL -> LLL Interface
  */
@@ -311,7 +308,6 @@ static inline void tx_flush(struct ll_conn *conn)
 {
 	return ull_cp_priv_tx_flush(conn);
 }
-
 
 /*
  * LLCP Local Procedure Common
@@ -375,7 +371,6 @@ static inline void rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void 
 	return ull_cp_priv_rp_comm_run(conn, ctx, param);
 }
 
-
 /*
  * LLCP Local Procedure Encryption
  */
@@ -399,7 +394,6 @@ static inline void lp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *
 {
 	return ull_cp_priv_lp_enc_run(conn, ctx, param);
 }
-
 
 /*
  * LLCP Remote Procedure Encryption
@@ -439,7 +433,6 @@ static inline void rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *
 	return ull_cp_priv_rp_enc_run(conn, ctx, param);
 }
 
-
 /*
  * LLCP Local Procedure PHY Update
  */
@@ -463,7 +456,6 @@ static inline void lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 {
 	return ull_cp_priv_lp_pu_run(conn, ctx, param);
 }
-
 
 /*
  * LLCP Local Procedure Connection Update
@@ -760,78 +752,61 @@ static inline void pdu_encode_ping_rsp(struct pdu_data *pdu)
 /*
  * Unknown response helper
  */
-void ull_cp_priv_pdu_decode_unknown_rsp(struct proc_ctx *ctx,
-					struct pdu_data *pdu);
-static inline void pdu_decode_unknown_rsp(struct proc_ctx *ctx,
-					   struct pdu_data *pdu)
+void ull_cp_priv_pdu_decode_unknown_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+static inline void pdu_decode_unknown_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_decode_unknown_rsp(ctx, pdu);
 }
 
-void ull_cp_priv_ntf_encode_unknown_rsp(struct proc_ctx *ctx,
-					struct pdu_data *pdu);
+void ull_cp_priv_ntf_encode_unknown_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 
-static inline void ntf_encode_unknown_rsp(struct proc_ctx *ctx,
-					  struct pdu_data *pdu)
+static inline void ntf_encode_unknown_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 
 {
 	return ull_cp_priv_ntf_encode_unknown_rsp(ctx, pdu);
 }
 
-
 /*
  * Feature Exchange Procedure Helper
  */
-void ull_cp_priv_pdu_encode_feature_req(struct ll_conn *conn,
-					struct pdu_data *pdu);
+void ull_cp_priv_pdu_encode_feature_req(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void pdu_encode_feature_req(struct ll_conn *conn,
-					   struct pdu_data *pdu)
+static inline void pdu_encode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_feature_req(conn, pdu);
 }
 
-void ull_cp_priv_pdu_encode_feature_rsp(struct ll_conn *conn,
-					struct pdu_data *pdu);
+void ull_cp_priv_pdu_encode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void pdu_encode_feature_rsp(struct ll_conn *conn,
-					struct pdu_data *pdu)
+static inline void pdu_encode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_feature_rsp(conn, pdu);
 }
 
-void ull_cp_priv_ntf_encode_feature_rsp(struct ll_conn *conn,
-					struct pdu_data *pdu);
+void ull_cp_priv_ntf_encode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void ntf_encode_feature_rsp(struct ll_conn *conn,
-				    struct pdu_data *pdu)
+static inline void ntf_encode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_ntf_encode_feature_rsp(conn, pdu);
 }
 
-void ull_cp_priv_ntf_encode_feature_req(struct ll_conn *conn,
-					      struct pdu_data *pdu);
+void ull_cp_priv_ntf_encode_feature_req(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void ntf_encode_feature_req(struct ll_conn *conn,
-					  struct pdu_data *pdu)
+static inline void ntf_encode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_ntf_encode_feature_req(conn, pdu);
 }
 
-void ull_cp_priv_pdu_decode_feature_req(struct ll_conn *conn,
-					struct pdu_data *pdu);
+void ull_cp_priv_pdu_decode_feature_req(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void pdu_decode_feature_req(struct ll_conn *conn,
-					  struct pdu_data *pdu)
+static inline void pdu_decode_feature_req(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_decode_feature_req(conn, pdu);
 }
 
-void ull_cp_priv_pdu_decode_feature_rsp(struct ll_conn *conn,
-					struct pdu_data *pdu);
+void ull_cp_priv_pdu_decode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void pdu_decode_feature_rsp(struct ll_conn *conn,
-					  struct pdu_data *pdu)
+static inline void pdu_decode_feature_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_decode_feature_rsp(conn, pdu);
 }
@@ -876,7 +851,6 @@ static inline void pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data 
 {
 	return ull_cp_priv_pdu_decode_version_ind(conn, pdu);
 }
-
 
 /*
  * Encryption Start Procedure Helper
@@ -937,13 +911,14 @@ static inline void pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_cod
 	return ull_cp_priv_pdu_encode_reject_ind(pdu, error_code);
 }
 
-void ull_cp_priv_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code);
+void ull_cp_priv_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode,
+					   uint8_t error_code);
 
-static inline void pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code)
+static inline void pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode,
+					     uint8_t error_code)
 {
 	return ull_cp_priv_pdu_encode_reject_ext_ind(pdu, reject_opcode, error_code);
 }
-
 
 /*
  * PHY Update Procedure Helper
@@ -1081,11 +1056,9 @@ static inline void pdu_decode_length_rsp(struct ll_conn *conn, struct pdu_data *
 	return ull_cp_priv_pdu_decode_length_rsp(conn, pdu);
 }
 
-void ull_cp_priv_ntf_encode_length_change(struct ll_conn *conn,
-					struct pdu_data *pdu);
+void ull_cp_priv_ntf_encode_length_change(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void ntf_encode_length_change(struct ll_conn *conn,
-				    struct pdu_data *pdu)
+static inline void ntf_encode_length_change(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_ntf_encode_length_change(conn, pdu);
 }

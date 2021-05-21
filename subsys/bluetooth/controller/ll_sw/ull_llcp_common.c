@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <zephyr/types.h>
 
 #include <bluetooth/hci.h>
@@ -42,14 +41,12 @@
 #include "hal/debug.h"
 
 /* LLCP Local Procedure FSM states */
-enum {
-	LP_COMMON_STATE_IDLE,
-	LP_COMMON_STATE_WAIT_TX,
-	LP_COMMON_STATE_WAIT_TX_ACK,
-	LP_COMMON_STATE_WAIT_RX,
-	LP_COMMON_STATE_WAIT_NTF,
+enum { LP_COMMON_STATE_IDLE,
+       LP_COMMON_STATE_WAIT_TX,
+       LP_COMMON_STATE_WAIT_TX_ACK,
+       LP_COMMON_STATE_WAIT_RX,
+       LP_COMMON_STATE_WAIT_NTF,
 };
-
 
 /* LLCP Local Procedure Common FSM events */
 enum {
@@ -73,12 +70,11 @@ enum {
 };
 
 /* LLCP Remote Procedure Common FSM states */
-enum {
-	RP_COMMON_STATE_IDLE,
-	RP_COMMON_STATE_WAIT_RX,
-	RP_COMMON_STATE_WAIT_TX,
-	RP_COMMON_STATE_WAIT_TX_ACK,
-	RP_COMMON_STATE_WAIT_NTF,
+enum { RP_COMMON_STATE_IDLE,
+       RP_COMMON_STATE_WAIT_RX,
+       RP_COMMON_STATE_WAIT_TX,
+       RP_COMMON_STATE_WAIT_TX_ACK,
+       RP_COMMON_STATE_WAIT_NTF,
 };
 /* LLCP Remote Procedure Common FSM events */
 enum {
@@ -146,7 +142,8 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	tx_enqueue(conn, tx);
 }
 
-static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *ctx,
+					 struct pdu_data *pdu)
 {
 	switch (ctx->response_opcode) {
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
@@ -168,7 +165,8 @@ static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *
 	}
 }
 
-static void lp_comm_ntf_version_ind(struct ll_conn *conn,  struct proc_ctx *ctx, struct pdu_data *pdu)
+static void lp_comm_ntf_version_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+				    struct pdu_data *pdu)
 {
 	switch (ctx->response_opcode) {
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
@@ -180,7 +178,8 @@ static void lp_comm_ntf_version_ind(struct ll_conn *conn,  struct proc_ctx *ctx,
 	}
 }
 
-static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx,
+				      struct pdu_data *pdu)
 {
 	ntf_encode_length_change(conn, pdu);
 }
@@ -196,7 +195,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
-	pdu = (struct pdu_data *) ntf->pdu;
+	pdu = (struct pdu_data *)ntf->pdu;
 	switch (ctx->proc) {
 	case PROC_FEATURE_EXCHANGE:
 		lp_comm_ntf_feature_exchange(conn, ctx, pdu);
@@ -221,12 +220,11 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 {
 	switch (ctx->proc) {
 	case PROC_LE_PING:
-		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP || ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_PING_RSP) {
+		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP ||
+		    ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_PING_RSP) {
 			lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
-		}
-		else
-		{
+		} else {
 			/* Illegal response opcode */
 			LL_ASSERT(0);
 		}
@@ -402,7 +400,8 @@ static void lp_comm_st_wait_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	}
 }
 
-static void lp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
 {
 	switch (evt) {
 	case LP_COMMON_EVT_ACK:
@@ -468,7 +467,7 @@ static void lp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 {
 	switch (evt) {
 	case LP_COMMON_EVT_RESPONSE:
-		lp_comm_rx_decode(conn, ctx, (struct pdu_data *) param);
+		lp_comm_rx_decode(conn, ctx, (struct pdu_data *)param);
 		lp_comm_complete(conn, ctx, evt, param);
 		break;
 	default:
@@ -477,7 +476,8 @@ static void lp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	}
 }
 
-static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	/* TODO */
 	switch (evt) {
@@ -499,7 +499,8 @@ static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	}
 }
 
-static void lp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	switch (ctx->state) {
 	case LP_COMMON_STATE_IDLE:
@@ -634,7 +635,8 @@ static void rp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 	}
 }
 
-static void rp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+static void rp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx,
+				      struct pdu_data *pdu)
 {
 	ntf_encode_length_change(conn, pdu);
 }
@@ -650,7 +652,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
-	pdu = (struct pdu_data *) ntf->pdu;
+	pdu = (struct pdu_data *)ntf->pdu;
 	switch (ctx->proc) {
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_ntf_length_change(conn, ctx, pdu);
@@ -716,7 +718,8 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		   In effect, for this procedure, this is equivalent to RX of PDU
 		*/
 		/* So we inititate a chmap update procedure, but only if acting as central, just in case ... */
-		if (conn->lll.role == BT_HCI_ROLE_MASTER && ull_conn_lll_phy_active(conn, conn->llcp.muc.phys)) {
+		if (conn->lll.role == BT_HCI_ROLE_MASTER &&
+		    ull_conn_lll_phy_active(conn, conn->llcp.muc.phys)) {
 			uint8_t chmap[5];
 			ull_chan_map_get((uint8_t *const)chmap);
 			ull_cp_chan_map_update(conn, chmap);
@@ -755,7 +758,7 @@ static void rp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 {
 	switch (evt) {
 	case RP_COMMON_EVT_REQUEST:
-		rp_comm_rx_decode(conn, ctx, (struct pdu_data *) param);
+		rp_comm_rx_decode(conn, ctx, (struct pdu_data *)param);
 		rp_comm_send_rsp(conn, ctx, evt, param);
 		break;
 	default:
@@ -776,31 +779,30 @@ static void rp_comm_st_wait_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	}
 }
 
-static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
 {
 	switch (evt) {
 	case RP_COMMON_EVT_ACK:
 		switch (ctx->proc) {
-		case PROC_DATA_LENGTH_UPDATE:
-			{
-				// Apply changes in data lengths/times
-				uint8_t dle_changed = ull_dle_update_eff(conn);
-				// resume data tx
-				tx_resume_data(conn);
+		case PROC_DATA_LENGTH_UPDATE: {
+			// Apply changes in data lengths/times
+			uint8_t dle_changed = ull_dle_update_eff(conn);
+			// resume data tx
+			tx_resume_data(conn);
 
-				if (dle_changed && !ntf_alloc_is_available()) {
-					ctx->state = RP_COMMON_STATE_WAIT_NTF;
+			if (dle_changed && !ntf_alloc_is_available()) {
+				ctx->state = RP_COMMON_STATE_WAIT_NTF;
+			} else {
+				if (dle_changed) {
+					rp_comm_ntf(conn, ctx);
 				}
-				else {
-					if (dle_changed) {
-						rp_comm_ntf(conn, ctx);
-					}
-					// and complete
-					rr_complete(conn);
-					ctx->state = RP_COMMON_STATE_IDLE;
-				}
-				break;
+				// and complete
+				rr_complete(conn);
+				ctx->state = RP_COMMON_STATE_IDLE;
 			}
+			break;
+		}
 		default:
 			/* Ignore other procedures */
 			break;
@@ -810,16 +812,16 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 		/* Ignore other evts */
 		break;
 	}
-
-
 }
 
-static void rp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	/* TODO */
 }
 
-static void rp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	switch (ctx->state) {
 	case RP_COMMON_STATE_IDLE:

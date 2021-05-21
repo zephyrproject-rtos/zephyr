@@ -61,7 +61,6 @@ enum {
 	LR_EVT_DISCONNECT,
 };
 
-
 static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 {
 	if (ctx->done) {
@@ -92,7 +91,7 @@ static struct proc_ctx *lr_dequeue(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_get(&conn->llcp.local.pend_proc_list);
+	ctx = (struct proc_ctx *)sys_slist_get(&conn->llcp.local.pend_proc_list);
 	return ctx;
 }
 
@@ -100,7 +99,7 @@ struct proc_ctx *lr_peek(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
+	ctx = (struct proc_ctx *)sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
 	return ctx;
 }
 
@@ -413,7 +412,7 @@ void test_int_local_pending_requests(void)
 	zassert_is_null(dequeue_ctx, NULL);
 
 	lr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *) sys_slist_peek_head(&conn.llcp.local.pend_proc_list);
+	peek_ctx = (struct proc_ctx *)sys_slist_peek_head(&conn.llcp.local.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
 	peek_ctx = lr_peek(&conn);

@@ -45,10 +45,10 @@ struct mem_pool {
 	uint8_t *pool;
 };
 
-#define LLCTRL_PDU_SIZE		(offsetof(struct pdu_data, llctrl) + sizeof(struct pdu_data_llctrl))
-#define PROC_CTX_BUF_SIZE	WB_UP(sizeof(struct proc_ctx))
-#define TX_CTRL_BUF_SIZE	WB_UP(offsetof(struct node_tx, pdu) + LLCTRL_PDU_SIZE)
-#define NTF_BUF_SIZE		WB_UP(offsetof(struct node_rx_pdu, pdu) + LLCTRL_PDU_SIZE)
+#define LLCTRL_PDU_SIZE (offsetof(struct pdu_data, llctrl) + sizeof(struct pdu_data_llctrl))
+#define PROC_CTX_BUF_SIZE WB_UP(sizeof(struct proc_ctx))
+#define TX_CTRL_BUF_SIZE WB_UP(offsetof(struct node_tx, pdu) + LLCTRL_PDU_SIZE)
+#define NTF_BUF_SIZE WB_UP(offsetof(struct node_rx_pdu, pdu) + LLCTRL_PDU_SIZE)
 
 /* LLCP Allocations */
 
@@ -78,7 +78,7 @@ static struct proc_ctx *proc_ctx_acquire(void)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) mem_acquire(&mem_ctx.free);
+	ctx = (struct proc_ctx *)mem_acquire(&mem_ctx.free);
 	return ctx;
 }
 
@@ -96,7 +96,7 @@ struct node_tx *ull_cp_priv_tx_alloc(void)
 {
 	struct node_tx *tx;
 
-	tx = (struct node_tx *) mem_acquire(&mem_tx.free);
+	tx = (struct node_tx *)mem_acquire(&mem_tx.free);
 	return tx;
 }
 
@@ -158,7 +158,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	ctx->done = 0U;
 
 	/* Clear procedure data */
-	memset((void *) &ctx->data, 0, sizeof(ctx->data));
+	memset((void *)&ctx->data, 0, sizeof(ctx->data));
 
 	/* Initialize opcodes fields to  known values */
 	ctx->rx_opcode = ULL_LLCP_INVALID_OPCODE;
@@ -344,7 +344,7 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 {
 	struct proc_ctx *ctx;
 
-	if (conn->lll.role != BT_HCI_ROLE_SLAVE ) {
+	if (conn->lll.role != BT_HCI_ROLE_SLAVE) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -403,7 +403,8 @@ uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16])
+uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2],
+				const uint8_t ltk[16])
 {
 	struct proc_ctx *ctx;
 
@@ -426,7 +427,8 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16])
+uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2],
+				const uint8_t ltk[16])
 {
 	struct proc_ctx *ctx;
 
@@ -499,8 +501,7 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 	 * HCI requires at least 1 channel to be unknown but LL requires 2...
 	 * Figure out whom should be responsible for checking this.
 	 */
-	if ((chm[0] == 0) && (chm[1] == 0) && (chm[2] == 0) && (chm[3] == 0) &&
-	    (chm[4] == 0)) {
+	if ((chm[0] == 0) && (chm[1] == 0) && (chm[2] == 0) && (chm[3] == 0) && (chm[4] == 0)) {
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
@@ -525,7 +526,8 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, uint16_t max_tx_time)
+uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
+				  uint16_t max_tx_time)
 {
 	struct proc_ctx *ctx;
 
@@ -566,7 +568,8 @@ void ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 	}
 }
 
-uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max, uint16_t latency, uint16_t timeout)
+uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max,
+			   uint16_t latency, uint16_t timeout)
 {
 	struct proc_ctx *ctx;
 
@@ -588,7 +591,6 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 
 	return BT_HCI_ERR_SUCCESS;
 }
-
 
 uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 {
@@ -626,13 +628,16 @@ static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
 
 static bool pdu_is_unknown(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
-	return ((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) && (ctx->tx_opcode == pdu->llctrl.unknown_rsp.type));
+	return ((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) &&
+		(ctx->tx_opcode == pdu->llctrl.unknown_rsp.type));
 }
 
 static bool pdu_is_reject(struct pdu_data *pdu, struct proc_ctx *ctx)
 {
 	/* TODO(thoh): For LL_REJECT_IND check if the active procedure is supporting the PDU */
-	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) && (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) || (pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
+	return (((pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND) &&
+		 (ctx->tx_opcode == pdu->llctrl.reject_ext_ind.reject_opcode)) ||
+		(pdu->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_REJECT_IND));
 }
 
 static bool pdu_is_terminate(struct pdu_data *pdu)
@@ -662,21 +667,23 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 	struct pdu_data *pdu;
 	struct proc_ctx *ctx;
 
-	pdu = (struct pdu_data *) rx->pdu;
+	pdu = (struct pdu_data *)rx->pdu;
 
 	if (!pdu_is_terminate(pdu)) {
 		/* Process non LL_TERMINATE_IND PDU's as responses to active
 		 * procedures */
 
 		ctx = lr_peek(conn);
-		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
+		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) ||
+			    pdu_is_reject(pdu, ctx))) {
 			/* Response on local procedure */
 			lr_rx(conn, ctx, rx);
 			return;
 		}
 
 		ctx = rr_peek(conn);
-		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
+		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) ||
+			    pdu_is_reject(pdu, ctx))) {
 			/* Response on remote procedure */
 			rr_rx(conn, ctx, rx);
 			return;

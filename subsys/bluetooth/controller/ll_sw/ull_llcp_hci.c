@@ -42,7 +42,6 @@
 #include "lll_conn.h"
 #include "lll_filter.h"
 
-
 #include "ull_tx_queue.h"
 
 #include "ull_adv_types.h"
@@ -60,7 +59,6 @@
 
 #include "ull_llcp.h"
 #include "ull_llcp_features.h"
-
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp_hci
@@ -139,8 +137,6 @@ uint8_t ll_feature_req_send(uint16_t handle)
 	return ull_cp_feature_exchange(conn);
 }
 
-
-
 #if defined(CONFIG_BT_CTLR_PHY)
 uint8_t ll_phy_default_set(uint8_t tx, uint8_t rx)
 {
@@ -172,8 +168,6 @@ uint8_t ll_phy_get(uint16_t handle, uint8_t *tx, uint8_t *rx)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-
-
 uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 {
 	struct ll_conn *conn;
@@ -185,8 +179,7 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 	/* TODO: get correct info in conn structure
 	 *	if (conn->llcp_phy.disabled ||
 	 */
-	if (
-	    (!feature_phy_2m(conn) && !feature_phy_coded(conn))) {
+	if ((!feature_phy_2m(conn) && !feature_phy_coded(conn))) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
@@ -206,7 +199,6 @@ uint8_t ll_phy_req_send(uint16_t handle, uint8_t tx, uint8_t flags, uint8_t rx)
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
-
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_time)
 {
@@ -224,8 +216,8 @@ uint32_t ll_length_req_send(uint16_t handle, uint16_t tx_octets, uint16_t tx_tim
 	return ull_cp_data_length_update(conn, tx_octets, tx_time);
 }
 
-void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
-		       uint16_t *max_rx_octets, uint16_t *max_rx_time)
+void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time, uint16_t *max_rx_octets,
+		       uint16_t *max_rx_time)
 {
 #if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_PHY_CODED)
 	const uint8_t phy = PHY_CODED;
@@ -238,7 +230,6 @@ void ll_length_max_get(uint16_t *max_tx_octets, uint16_t *max_tx_time,
 	*max_tx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy);
 	*max_rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy);
 }
-
 
 void ll_length_default_get(uint16_t *max_tx_octets, uint16_t *max_tx_time)
 {
@@ -256,10 +247,7 @@ uint32_t ll_length_default_set(uint16_t max_tx_octets, uint16_t max_tx_time)
 	return 0;
 }
 
-
-
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
 
 uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 {
@@ -273,13 +261,12 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 	return ull_cp_terminate(conn, reason);
 }
 
-
 /*
  * EGON TODO: the use of cmd in the following function is unclear;
  * to be re-evaluated before merging into master
  */
 uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t interval_min,
-		    uint16_t interval_max, uint16_t latency, uint16_t timeout)
+		       uint16_t interval_max, uint16_t latency, uint16_t timeout)
 {
 	struct ll_conn *conn;
 
@@ -357,8 +344,6 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 	}
 }
 
-
-
 uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 {
 	struct ll_conn *conn;
@@ -375,8 +360,6 @@ uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 	 */
 	return BT_HCI_ERR_UNKNOWN_CMD;
 }
-
-
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 uint8_t ll_rssi_get(uint16_t handle, uint8_t *rssi)
@@ -400,8 +383,7 @@ uint8_t ll_rssi_get(uint16_t handle, uint8_t *rssi)
  * the following are only valid for slave configuration
  */
 #if defined(CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_PERIPHERAL)
-uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
-			    uint8_t const *const ltk)
+uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code, uint8_t const *const ltk)
 {
 	struct ll_conn *conn;
 
@@ -435,16 +417,15 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
-			  uint8_t filter_policy, uint8_t peer_addr_type,
-			  uint8_t const *const peer_addr, uint8_t own_addr_type,
-			  uint16_t interval, uint16_t latency, uint16_t timeout,
-			  uint8_t phy)
+uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window, uint8_t filter_policy,
+			     uint8_t peer_addr_type, uint8_t const *const peer_addr,
+			     uint8_t own_addr_type, uint16_t interval, uint16_t latency,
+			     uint16_t timeout, uint8_t phy)
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
-			  uint8_t filter_policy, uint8_t peer_addr_type,
-			  uint8_t const *const peer_addr, uint8_t own_addr_type,
-			  uint16_t interval, uint16_t latency, uint16_t timeout)
+uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window, uint8_t filter_policy,
+			     uint8_t peer_addr_type, uint8_t const *const peer_addr,
+			     uint8_t own_addr_type, uint16_t interval, uint16_t latency,
+			     uint16_t timeout)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
 	struct lll_conn *conn_lll;
@@ -546,8 +527,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 		conn_lll->link_tx_free = &conn_lll->link_tx;
 	}
 
-	memq_init(conn_lll->link_tx_free, &conn_lll->memq_tx.head,
-		  &conn_lll->memq_tx.tail);
+	memq_init(conn_lll->link_tx_free, &conn_lll->memq_tx.head, &conn_lll->memq_tx.tail);
 	conn_lll->link_tx_free = NULL;
 
 	conn_lll->packet_tx_head_len = 0;
@@ -601,12 +581,10 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn->connect_expire = 6U;
 	conn->supervision_expire = 0U;
 	conn_interval_us = (uint32_t)interval * CONN_INT_UNIT_US;
-	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U,
-							 conn_interval_us);
+	conn->supervision_reload = RADIO_CONN_EVENTS(timeout * 10000U, conn_interval_us);
 
 	conn->procedure_expire = 0U;
-	conn->procedure_reload = RADIO_CONN_EVENTS(40000000,
-						       conn_interval_us);
+	conn->procedure_reload = RADIO_CONN_EVENTS(40000000, conn_interval_us);
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	conn->apto_expire = 0U;
@@ -618,8 +596,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	 * TODO: "peer listens to" is greater than 30s due to latency
 	 */
 	conn->appto_reload = (conn->apto_reload > (conn_lll->latency + 6)) ?
-			     (conn->apto_reload - (conn_lll->latency + 6)) :
-			     conn->apto_reload;
+				     (conn->apto_reload - (conn_lll->latency + 6)) :
+				     conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	conn->llcp.fex.valid = 0U;
@@ -644,8 +622,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	ready_delay_us = lll_radio_tx_ready_delay_get(conn_lll->phy_tx,
-						      conn_lll->phy_flags);
+	ready_delay_us = lll_radio_tx_ready_delay_get(conn_lll->phy_tx, conn_lll->phy_flags);
 #else
 	ready_delay_us = lll_radio_tx_ready_delay_get(0, 0);
 #endif
@@ -658,14 +635,10 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 	/* TODO: active_to_start feature port */
 	conn->ull.ticks_active_to_start = 0U;
-	conn->ull.ticks_prepare_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	conn->ull.ticks_preempt_to_start =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	conn->ull.ticks_slot =
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us +
-				       328 + EVENT_IFS_US + 328);
+	conn->ull.ticks_prepare_to_start = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	conn->ull.ticks_preempt_to_start = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US + ready_delay_us +
+						      328 + EVENT_IFS_US + 328);
 
 	lll->conn = conn_lll;
 
@@ -680,13 +653,10 @@ conn_is_valid:
 	lll->rpa_gen = 0;
 	if (!filter_policy && ull_filter_lll_rl_enabled()) {
 		/* Look up the resolving list */
-		lll->rl_idx = ull_filter_rl_find(peer_addr_type, peer_addr,
-						 NULL);
+		lll->rl_idx = ull_filter_rl_find(peer_addr_type, peer_addr, NULL);
 	}
 
-	if (own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	    own_addr_type == BT_ADDR_LE_RANDOM_ID) {
-
+	if (own_addr_type == BT_ADDR_LE_PUBLIC_ID || own_addr_type == BT_ADDR_LE_RANDOM_ID) {
 		/* Generate RPAs if required */
 		ull_filter_rpa_update(false);
 		own_addr_type &= 0x1;
@@ -727,8 +697,7 @@ uint8_t ll_connect_enable(uint8_t is_coded_included)
 		return BT_HCI_ERR_HW_FAILURE;
 	}
 
-	if (!is_coded_included ||
-	    (scan->lll.phy & PHY_1M)) {
+	if (!is_coded_included || (scan->lll.phy & PHY_1M)) {
 		err = ull_scan_enable(scan);
 		if (err) {
 			return err;
@@ -747,7 +716,6 @@ uint8_t ll_connect_enable(uint8_t is_coded_included)
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-
 uint8_t ll_connect_disable(void **rx)
 {
 	struct ll_scan_set *scan_coded;
@@ -758,8 +726,7 @@ uint8_t ll_connect_disable(void **rx)
 
 	scan = ull_scan_is_enabled_get(SCAN_HANDLE_1M);
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
-	    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		scan_coded = ull_scan_is_enabled_get(SCAN_HANDLE_PHY_CODED);
 	} else {
 		scan_coded = NULL;
@@ -853,8 +820,8 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
-		     uint8_t const *const ediv, uint8_t const *const ltk)
+uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand, uint8_t const *const ediv,
+			uint8_t const *const ltk)
 {
 	struct ll_conn *conn;
 
@@ -877,8 +844,7 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
-uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
-		     uint8_t const min_used_chans)
+uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys, uint8_t const min_used_chans)
 {
 	struct ll_conn *conn;
 
@@ -924,7 +890,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 		return -EINVAL;
 	}
 
-	idx = ull_conn_mfifo_get_tx((void **) &lll_tx);
+	idx = ull_conn_mfifo_get_tx((void **)&lll_tx);
 	if (!lll_tx) {
 		return -ENOBUFS;
 	}
@@ -936,7 +902,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 
 	if (ull_ref_get(&conn->ull)) {
 		static memq_link_t link;
-		static struct mayfly mfy = {0, 0, &link, NULL, tx_demux};
+		static struct mayfly mfy = { 0, 0, &link, NULL, tx_demux };
 
 #if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
 		if (tx_cnt >= CONFIG_BT_CTLR_TX_BUFFERS) {
@@ -945,16 +911,14 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 			force_md_cnt = force_md_cnt_calc(&conn->lll, tx_rate);
 			previous = lll_conn_force_md_cnt_set(force_md_cnt);
 			if (previous != force_md_cnt) {
-				BT_INFO("force_md_cnt: old= %u, new= %u.",
-					previous, force_md_cnt);
+				BT_INFO("force_md_cnt: old= %u, new= %u.", previous, force_md_cnt);
 			}
 		}
 #endif /* CONFIG_BT_CTLR_FORCE_MD_AUTO */
 
 		mfy.param = conn;
 
-		mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH,
-			       0, &mfy);
+		mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_ULL_HIGH, 0, &mfy);
 
 #if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
 	} else {
@@ -976,8 +940,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 	cycle_stamp = k_cycle_get_32();
 	delta = k_cyc_to_ns_floor64(cycle_stamp - last_cycle_stamp);
 	if (delta > BT_CTLR_THROUGHPUT_PERIOD) {
-		BT_INFO("incoming Tx: count= %u, len= %u, rate= %u bps.",
-			tx_cnt, tx_len, tx_rate);
+		BT_INFO("incoming Tx: count= %u, len= %u, rate= %u bps.", tx_cnt, tx_len, tx_rate);
 
 		last_cycle_stamp = cycle_stamp;
 		tx_cnt = 0U;
@@ -1045,10 +1008,8 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 	mic_size = 0U;
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 
-	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) *
-			1000000UL / tx_rate;
-	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) +
-			PKT_DC_US(0U, 0U, phy) +
+	time_incoming = (LL_LENGTH_OCTETS_RX_MAX << 3) * 1000000UL / tx_rate;
+	time_outgoing = PKT_DC_US(LL_LENGTH_OCTETS_RX_MAX, mic_size, phy) + PKT_DC_US(0U, 0U, phy) +
 			(EVENT_IFS_US << 1);
 
 	force_md_cnt = 0U;
@@ -1058,12 +1019,10 @@ static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
 
 		delta = (time_incoming << 1) - time_outgoing;
 		time_keep_alive = (PKT_DC_US(0U, 0U, phy) + EVENT_IFS_US) << 1;
-		force_md_cnt = (delta + (time_keep_alive - 1)) /
-			       time_keep_alive;
+		force_md_cnt = (delta + (time_keep_alive - 1)) / time_keep_alive;
 		BT_DBG("Time: incoming= %u, expected outgoing= %u, delta= %u, "
 		       "keepalive= %u, force_md_cnt = %u.",
-		       time_incoming, time_outgoing, delta, time_keep_alive,
-		       force_md_cnt);
+		       time_incoming, time_outgoing, delta, time_keep_alive, force_md_cnt);
 	}
 
 	return force_md_cnt;
