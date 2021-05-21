@@ -795,6 +795,7 @@ if(CONFIG_HAS_DTS)
     --output-source dev_handles.c
     --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --zephyr-base ${ZEPHYR_BASE}
+    --start-symbol "$<TARGET_PROPERTY:linker,devices_start_symbol>"
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
