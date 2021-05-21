@@ -120,6 +120,7 @@ struct k_p4wq_initparam {
  * @param name Symbol name of the struct k_p4wq array that will be defined
  * @param n_threads Number of threads and work queues
  * @param stack_sz Requested stack size of each thread, in bytes
+ * @param flg Flags
  */
 #define K_P4WQ_ARRAY_DEFINE(name, n_threads, stack_sz, flg)		\
 	static K_THREAD_STACK_ARRAY_DEFINE(_p4stacks_##name,		\
