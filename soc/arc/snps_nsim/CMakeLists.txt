@@ -35,12 +35,15 @@ else()
 			       -Xmpy_option=qmpyh -Xshift_assist -Xbarrel_shifter
 			       -Xtimer0 -Xtimer1)
 
+  zephyr_ld_option_ifdef(CONFIG_SOC_NSIM_HS -Hlib=hs38_full)
+
   zephyr_compile_options_ifdef(CONFIG_SOC_NSIM_HS_SMP -arcv2hs -core2 -Xatomic
 			       -Xll64 -Xdiv_rem=radix4 -Xunaligned -Xcode_density
 			       -Xswap -Xbitscan -Xmpy_option=qmpyh -Xshift_assist
 			       -Xbarrel_shifter -Xfpud_div -Xfpu_mac -Xrtc
 			       -Xtimer0 -Xtimer1)
 
+  zephyr_ld_option_ifdef(CONFIG_SOC_NSIM_HS_SMP -Hlib=hs38_full)
 endif()
 
 zephyr_sources(
