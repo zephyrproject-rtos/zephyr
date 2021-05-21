@@ -47,7 +47,7 @@ If you'd prefer to run the scripts locally, use the following instructions.
 Use the following command to install the required dependencies:
 
 ```shell
-pip install -r requirements.txt
+pip install numpy==1.16.2 tensorflow==2.0.0-beta1
 ```
 
 There are two ways to train the model:
