@@ -295,14 +295,14 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
  * @details Reconfigures DNS context with new server list.
  *
  * @param ctx DNS context
- * @param dns_servers_str DNS server addresses using textual strings. The
+ * @param servers_str DNS server addresses using textual strings. The
  * array is NULL terminated. The port number can be given in the string.
  * Syntax for the server addresses with or without port numbers:
  *    IPv4        : 10.0.9.1
  *    IPv4 + port : 10.0.9.1:5353
  *    IPv6        : 2001:db8::22:42
  *    IPv6 + port : [2001:db8::22:42]:5353
- * @param dns_servers_sa DNS server addresses as struct sockaddr. The array
+ * @param servers_sa DNS server addresses as struct sockaddr. The array
  * is NULL terminated. Port numbers are optional in struct sockaddr, the
  * default will be used if set to 0.
  *
