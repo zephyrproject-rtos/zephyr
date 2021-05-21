@@ -92,6 +92,11 @@
 			label = "UART_2";
 		};
 
+		/* Valid bit-depth of RAM_PDn registers in npcx7 series */
+		pcc: clock-controller@4000d000 {
+			ram-pd-depth = <12>;
+		};
+
 		/* Wake-up input source mapping for GPIOs in npcx7 series */
 		gpio0: gpio@40081000 {
 			wui-maps = <&wui_io00 &wui_io01 &wui_io02 &wui_io03
