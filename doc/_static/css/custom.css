@@ -50,10 +50,6 @@ legend,
     max-width: 480px;
 }
 
-.rst-content div.figure img {
-    border: 1px solid var(--body-color);
-}
-
 p,
 article ul,
 article ol,
