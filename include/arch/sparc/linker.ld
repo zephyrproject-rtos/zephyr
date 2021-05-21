@@ -67,7 +67,8 @@ SECTIONS
 
     _image_rom_end = .;
 
-    __data_rom_start = .;
+    __data_region_load_start = .;
+    __data_region_start = .;
 
 
     SECTION_PROLOGUE(.plt,,)
@@ -84,7 +85,7 @@ SECTIONS
 	{
 		 . = ALIGN(8);
 		 _image_ram_start = .;
-		 __data_ram_start = .;
+		 __data_start = .;
 
 		 *(.data)
 		 *(.data.*)
@@ -96,7 +97,11 @@ SECTIONS
  */
 #include <snippets-rwdata.ld>
 
+		 __data_end = .;
+
 	}  GROUP_DATA_LINK_IN(REGION_DATA_VMA, REGION_DATA_LMA)
+    __data_size = __data_end - __data_start;
+    __data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 
@@ -110,7 +115,7 @@ SECTIONS
  */
 #include <snippets-data-sections.ld>
 
-    __data_ram_end = .;
+    __data_region_end = .;
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{

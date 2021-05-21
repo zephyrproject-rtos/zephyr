@@ -229,11 +229,13 @@ SECTIONS
 #include <linker/common-noinit.ld>
 #include <linker/cplusplus-ram.ld>
 
+    __data_region_start = .;
+
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
 		/* _image_ram_start = .; */
-		 __data_ram_start = .;
+		 __data_start = .;
 
 		 *(.data)
 		 *(".data.*")
@@ -260,10 +262,13 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-rwdata.ld>
+		 __data_end = .;
 
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	__data_size = __data_end - __data_start;
+	__data_load_start = LOADADDR(_DATA_SECTION_NAME);
 
-	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+	__data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
 #include <linker/kobject-data.ld>
@@ -278,7 +283,7 @@ SECTIONS
  */
 #include <snippets-data-sections.ld>
 
-    __data_ram_end = .;
+    __data_region_end = .;
 
     MPU_MIN_SIZE_ALIGN
 
