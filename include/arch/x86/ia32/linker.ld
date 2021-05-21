@@ -437,10 +437,12 @@ SECTIONS
 
 	MMU_PAGE_ALIGN_PERM
 
+
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 
-	__data_ram_start = .;
+	__data_region_start = .;
+	__data_start = .;
 
 	*(.data)
 	*(".data.*")
@@ -462,9 +464,13 @@ SECTIONS
 #endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 
 	. = ALIGN(4);
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	__data_end = .;
 
-	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	__data_size = __data_end - __data_start;
+	__data_load_start = LOADADDR(_DATA_SECTION_NAME);
+
+	__data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/cplusplus-ram.ld>
 
@@ -482,7 +488,7 @@ SECTIONS
 #include <snippets-data-sections.ld>
 
 	MMU_PAGE_ALIGN
-	__data_ram_end = .;
+	__data_region_end = .;
 
 	/* All unused memory also owned by the kernel for heaps */
 	__kernel_ram_end = KERNEL_BASE_ADDR + KERNEL_RAM_SIZE;
@@ -536,6 +542,6 @@ SECTIONS
  * to 3 extra bytes copied in next section (BSS). At run time, the XIP copy
  * is done first followed by clearing the BSS section.
  */
-__data_size = (__data_ram_end - __data_ram_start);
+__data_size = (__data_region_end - __data_region_start);
 __data_num_words = (__data_size + 3) >> 2;
 #endif
