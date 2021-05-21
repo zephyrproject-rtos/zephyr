@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <soc.h>
 #include <errno.h>
 #include <device.h>
 #include <drivers/pinmux.h>
-#include <soc.h>
 
 static const uint32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
 	(MCHP_GPIO_PORT_A_BITMAP),
@@ -36,6 +36,7 @@ static int pinmux_xec_set(const struct device *dev, uint32_t pin,
 		return -EINVAL;
 	}
 
+	/* Make sure input pad disable is cleared */
 	mask |= MCHP_GPIO_CTRL_BUFT_MASK | MCHP_GPIO_CTRL_MUX_MASK |
 		MCHP_GPIO_CTRL_INPAD_DIS_MASK;
 
