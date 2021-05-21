@@ -78,18 +78,6 @@ static struct bt_le_ext_adv *bt_adv_lookup_handle(uint8_t handle)
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-
-static void adv_id_check_connectable_func(struct bt_le_ext_adv *adv, void *data)
-{
-	struct bt_adv_id_check_data *check_data = data;
-
-	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
-	    atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE) &&
-	    check_data->id != adv->id) {
-		check_data->adv_enabled = true;
-	}
-}
-
 void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
 			   void *data)
 {
@@ -565,16 +553,7 @@ static uint8_t get_adv_channel_map(uint32_t options)
 static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
 				 struct bt_conn **out_conn)
 {
-	struct bt_adv_id_check_data check_data = {
-		.id = adv->id,
-		.adv_enabled = false
-	};
 	struct bt_conn *conn;
-
-	bt_le_ext_adv_foreach(adv_id_check_connectable_func, &check_data);
-	if (check_data.adv_enabled) {
-		return -ENOTSUP;
-	}
 
 	bt_dev.adv_conn_id = adv->id;
 

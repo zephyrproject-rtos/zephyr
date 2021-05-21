@@ -27,6 +27,11 @@
 #define LOG_MODULE_NAME bt_id
 #include "common/log.h"
 
+struct bt_adv_id_check_data {
+	uint8_t id;
+	bool adv_enabled;
+};
+
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_BROADCASTER)
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr)
 {
