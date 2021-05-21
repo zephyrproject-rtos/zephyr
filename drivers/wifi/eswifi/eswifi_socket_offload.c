@@ -632,7 +632,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 
 	ai->ai_family = AF_INET;
 	ai->ai_socktype = hints ? hints->ai_socktype : SOCK_STREAM;
-	ai->ai_protocol = ai->ai_socktype == SOCK_STREAM ? IPPROTO_UDP : IPPROTO_TCP;
+	ai->ai_protocol = ai->ai_socktype == SOCK_STREAM ? IPPROTO_TCP : IPPROTO_UDP;
 
 	ai_addr->sin_family = ai->ai_family;
 	ai_addr->sin_port = htons(port);
