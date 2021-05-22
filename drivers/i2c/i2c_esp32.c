@@ -33,11 +33,8 @@ LOG_MODULE_REGISTER(i2c_esp32);
 /* Number of bytes in hardware FIFO */
 #define I2C_ESP32_BUFFER_SIZE 32
 
-#define I2C_ESP32_TIMEOUT_MS 100
-#define I2C_ESP32_SPIN_THRESHOLD 600
-#define I2C_ESP32_YIELD_THRESHOLD (I2C_ESP32_SPIN_THRESHOLD / 2)
-#define I2C_ESP32_TIMEOUT \
-	((I2C_ESP32_YIELD_THRESHOLD) + (I2C_ESP32_SPIN_THRESHOLD))
+#define I2C_ESP32_TRANSFER_TIMEOUT_MS 100
+#define I2C_ESP32_TIMEOUT_USEC  1000
 
 enum i2c_esp32_opcodes {
 	I2C_ESP32_OP_RSTART,
@@ -276,32 +273,14 @@ static inline void i2c_esp32_reset_fifo(const struct i2c_esp32_config *config)
 	esp32_clear_mask32(I2C_TX_FIFO_RST | I2C_RX_FIFO_RST, reg);
 }
 
-static int i2c_esp32_spin_yield(int *counter)
+static int i2c_esp32_wait_timeout(uint32_t *counter)
 {
-	*counter = *counter + 1;
-
-	if (*counter > I2C_ESP32_TIMEOUT) {
-		return -ETIMEDOUT;
+	if (*counter == 0) {
+		return 1;
 	}
 
-	if (*counter > I2C_ESP32_SPIN_THRESHOLD) {
-		k_yield();
-	}
-
-	return 0;
-}
-
-static int i2c_esp32_transmit(const struct device *dev)
-{
-	const struct i2c_esp32_config *config = dev->config;
-	struct i2c_esp32_data *data = dev->data;
-
-	/* Start transmission and wait for the ISR to give the semaphore */
-	sys_set_bit(I2C_CTR_REG(config->index), I2C_TRANS_START_S);
-	if (k_sem_take(&data->fifo_sem, K_MSEC(I2C_ESP32_TIMEOUT_MS)) < 0) {
-		return -ETIMEDOUT;
-	}
-
+	(*counter)--;
+	k_busy_wait(1);
 	return 0;
 }
 
@@ -310,28 +289,25 @@ static int i2c_esp32_wait(const struct device *dev,
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = dev->data;
-	uint32_t status;
-	int counter = 0;
-	int ret;
+	uint32_t timeout = I2C_ESP32_TIMEOUT_USEC;
 
 	if (wait_cmd) {
 		while (!wait_cmd->done) {
-			ret = i2c_esp32_spin_yield(&counter);
-			if (ret < 0) {
-				return ret;
+			if (i2c_esp32_wait_timeout(&timeout)) {
+				return -ETIMEDOUT;
 			}
 		}
 	}
 
 	/* Wait for I2C bus to finish its business */
+	timeout = I2C_ESP32_TIMEOUT_USEC;
 	while (sys_read32(I2C_SR_REG(config->index)) & I2C_BUS_BUSY) {
-		ret = i2c_esp32_spin_yield(&counter);
-		if (ret < 0) {
-			return ret;
+		if (i2c_esp32_wait_timeout(&timeout)) {
+			return -ETIMEDOUT;
 		}
 	}
 
-	status = data->err_status;
+	uint32_t status = data->err_status;
 	if (status & (I2C_ARBITRATION_LOST_INT_RAW | I2C_ACK_ERR_INT_RAW)) {
 		data->err_status = 0;
 		return -EIO;
@@ -344,17 +320,18 @@ static int i2c_esp32_wait(const struct device *dev,
 	return 0;
 }
 
-static int i2c_esp32_transmit_wait(const struct device *dev,
-				   volatile struct i2c_esp32_cmd *wait_cmd)
+static int i2c_esp32_transmit(const struct device *dev, volatile struct i2c_esp32_cmd *wait_cmd)
 {
-	int ret;
+	const struct i2c_esp32_config *config = dev->config;
+	struct i2c_esp32_data *data = dev->data;
 
-	ret = i2c_esp32_transmit(dev);
-	if (!ret) {
-		return i2c_esp32_wait(dev, wait_cmd);
+	/* Start transmission and wait for the ISR to give the semaphore */
+	sys_set_bit(I2C_CTR_REG(config->index), I2C_TRANS_START_S);
+	if (k_sem_take(&data->fifo_sem, K_MSEC(I2C_ESP32_TRANSFER_TIMEOUT_MS)) < 0) {
+		return -ETIMEDOUT;
 	}
 
-	return ret;
+	return i2c_esp32_wait(dev, wait_cmd);
 }
 
 static volatile struct i2c_esp32_cmd *
@@ -453,7 +430,7 @@ static int i2c_esp32_read_msg(const struct device *dev, uint16_t addr,
 			};
 		}
 
-		ret = i2c_esp32_transmit_wait(dev, wait_cmd);
+		ret = i2c_esp32_transmit(dev, wait_cmd);
 		if (ret < 0) {
 			return ret;
 		}
@@ -501,7 +478,7 @@ static int i2c_esp32_write_msg(const struct device *dev, uint16_t addr,
 		};
 		msg.len -= to_send;
 
-		if (!msg.len && (msg.flags & I2C_MSG_STOP)) {
+		if (!msg.len || (msg.flags & I2C_MSG_STOP)) {
 			*cmd = (struct i2c_esp32_cmd) {
 				.opcode = I2C_ESP32_OP_STOP
 			};
@@ -511,7 +488,7 @@ static int i2c_esp32_write_msg(const struct device *dev, uint16_t addr,
 			};
 		}
 
-		ret = i2c_esp32_transmit_wait(dev, cmd);
+		ret = i2c_esp32_transmit(dev, cmd);
 		if (ret < 0) {
 			return ret;
 		}
