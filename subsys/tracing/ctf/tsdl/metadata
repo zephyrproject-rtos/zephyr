@@ -16,6 +16,16 @@ typealias enum : uint32_t {
 	SLEEP = 39
 } := call_id;
 
+typealias enum : uint8_t {
+	ACTIVE = 0,
+	RUNTIME_IDLE = 1,
+	SUSPEND_TO_IDLE = 2,
+	STANDBY = 3,
+	SUSPEND_TO_RAM = 4,
+	SUSPEND_TO_DISK = 5,
+	SOFT_OFF = 6
+} := power_state;
+
 struct event_header {
 	uint32_t timestamp;
 	uint8_t id;
@@ -285,3 +295,20 @@ event {
 	};
 };
 
+event {
+	name = power_state_enter;
+	id = 0x2E;
+	fields := struct {
+		power_state state;
+		uint8_t substate;
+	};
+};
+
+event {
+	name = power_state_exit;
+	id = 0x2F;
+	fields := struct {
+		power_state state;
+		uint8_t substate;
+	};
+};

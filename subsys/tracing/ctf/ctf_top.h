@@ -97,6 +97,8 @@ typedef enum {
 	CTF_EVENT_MUTEX_LOCK_EXIT = 0x2B,
 	CTF_EVENT_MUTEX_UNLOCK_ENTER = 0x2C,
 	CTF_EVENT_MUTEX_UNLOCK_EXIT = 0x2D,
+	CTF_EVENT_POWER_STATE_ENTER = 0x2E,
+	CTF_EVENT_POWER_STATE_EXIT = 0x2F,
 } ctf_event_t;
 
 typedef struct {
@@ -288,6 +290,16 @@ static inline void ctf_top_mutex_unlock_enter(uint32_t mutex_id)
 static inline void ctf_top_mutex_unlock_exit(uint32_t mutex_id, int32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_MUTEX_UNLOCK_EXIT), mutex_id);
+}
+
+static inline void ctf_top_power_state_enter(uint8_t state, uint8_t substate)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POWER_STATE_ENTER), state, substate);
+}
+
+static inline void ctf_top_power_state_exit(uint8_t state, uint8_t substate)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_POWER_STATE_EXIT), state, substate);
 }
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */

@@ -10,6 +10,7 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <init.h>
+#include <pm/pm.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -412,6 +413,8 @@ void sys_trace_k_timer_stop(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_blocking(struct k_timer *timer);
 void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result);
 
+void sys_trace_pm_power_state_set(const struct pm_state_info *info);
+void sys_trace_pm_power_state_exit(const struct pm_state_info *info);
 
 #ifdef __cplusplus
 }
