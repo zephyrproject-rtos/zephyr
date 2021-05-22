@@ -115,7 +115,7 @@ manifest:
       revision: 2aa031c081426dcd0626185af45c40bd05811b68
       path: modules/debug/segger
     - name: sof
-      revision: 52dc9c5ad8d0d2a5df0bb51ea30e54f8d7890639
+      revision: 779f28ed465c03899c8a7d4aaf399856f4e51158
       path: modules/audio/sof
     - name: tinycbor
       path: modules/lib/tinycbor
