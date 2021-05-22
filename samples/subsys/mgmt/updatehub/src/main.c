@@ -111,6 +111,7 @@ void main(void)
 	}
 
 #if defined(CONFIG_WIFI)
+	int nr_tries = 10;
 	struct net_if *iface = net_if_get_default();
 	static struct wifi_connect_req_params cnx_params = {
 		.ssid = CONFIG_UPDATEHUB_SAMPLE_WIFI_SSID,
@@ -124,11 +125,18 @@ void main(void)
 	cnx_params.ssid_length = strlen(CONFIG_UPDATEHUB_SAMPLE_WIFI_SSID);
 	cnx_params.psk_length = strlen(CONFIG_UPDATEHUB_SAMPLE_WIFI_PSK);
 
-	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
-		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
-		LOG_ERR("Error connecting to WiFi");
-		return;
+	/* Let's wait few seconds to allow wifi device be on-line */
+	while (nr_tries-- > 0) {
+		ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
+			       sizeof(struct wifi_connect_req_params));
+		if (ret == 0) {
+			break;
+		}
+
+		LOG_INF("Connect request failed %d. Waiting iface be up...", ret);
+		k_msleep(500);
 	}
+
 #elif defined(CONFIG_MODEM_GSM_PPP)
 	const struct device *uart_dev =
 		device_get_binding(CONFIG_MODEM_GSM_UART_NAME);
