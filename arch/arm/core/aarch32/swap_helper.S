@@ -28,7 +28,9 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_arm_svc)
 GTEXT(z_arm_pendsv)
 GTEXT(z_do_kernel_oops)
+#if defined(CONFIG_USERSPACE)
 GTEXT(z_arm_do_syscall)
+#endif
 
 GDATA(_kernel)
 
