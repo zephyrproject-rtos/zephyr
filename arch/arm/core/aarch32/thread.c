@@ -267,6 +267,11 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
+#if defined(CONFIG_CPU_CORTEX_R)
+	_current->arch.priv_stack_end =
+		_current->arch.priv_stack_start + CONFIG_PRIVILEGED_STACK_SIZE;
+#endif
+
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (uint32_t)_current->stack_info.start,
 			     _current->stack_info.size -
