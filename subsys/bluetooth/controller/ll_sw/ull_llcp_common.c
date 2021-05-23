@@ -95,58 +95,432 @@ enum {
 /*
  * LLCP Local Procedure Common FSM
  */
+static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx);
 
-static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
+static void le_ping_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void le_ping_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *pdu);
+static void feature_excange_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void feature_excange_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *pdu);
+static void min_used_chans_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void min_used_chans_on_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void min_used_chans_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void min_used_chans_complete(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void version_exchange_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void version_exchange_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void version_exchange_complete(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void terminate_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void terminate_on_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void terminate_complete(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void terminate_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void data_length_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+static void data_length_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+
+typedef void (*llcp_on_evt_transition_t)(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+
+struct llcp_lp_comon_fsm {
+	llcp_on_evt_transition_t on_run;
+	llcp_on_evt_transition_t on_response;
+	// llcp_on_evt_transition_t on_reject;
+	// llcp_on_evt_transition_t on_evt_unknown;
+	// llcp_on_evt_transition_t on_evt_collision;
+	llcp_on_evt_transition_t on_evt_ack;
+};
+
+static const struct llcp_lp_comon_fsm le_ping_fsm = {
+	.on_run = le_ping_on_run,
+	.on_response = le_ping_on_response,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm feature_exchange_fsm = {
+	.on_run = feature_excange_on_run,
+	.on_response = feature_excange_on_response,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm min_used_chans_fsm = {
+	.on_run = min_used_chans_on_run,
+	.on_response = min_used_chans_on_response,
+	.on_evt_ack = min_used_chans_on_ack,
+};
+
+static const struct llcp_lp_comon_fsm version_exchange_fsm = {
+	.on_run = version_exchange_on_run,
+	.on_response = version_exchange_on_response,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm encryption_start_fsm = {
+	.on_run = NULL,
+	.on_response = NULL,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm encryption_pause_fsm = {
+	.on_run = NULL,
+	.on_response = NULL,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm phy_update_fsm = {
+	.on_run = NULL,
+	.on_response = NULL,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm conn_update_fsm = {
+	.on_run = NULL,
+	.on_response = NULL,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm conn_param_req_fsm = {
+	.on_run = NULL,
+	.on_response = NULL,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm proc_terminate_fsm = {
+	.on_run = terminate_on_run,
+	.on_response = terminate_on_response,
+	.on_evt_ack = terminate_on_ack,
+};
+
+static const struct llcp_lp_comon_fsm chan_map_update_fsm = {
+	.on_run = NULL,
+	.on_response = NULL,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm data_length_update_fsm = {
+	.on_run = data_length_on_run,
+	.on_response = data_length_on_response,
+	.on_evt_ack = NULL,
+};
+
+static const struct llcp_lp_comon_fsm *llcp_fsm[] = {
+	[PROC_LE_PING] = &le_ping_fsm,
+	[PROC_FEATURE_EXCHANGE] = &feature_exchange_fsm,
+	[PROC_MIN_USED_CHANS] = &min_used_chans_fsm,
+	[PROC_VERSION_EXCHANGE] = &version_exchange_fsm,
+	[PROC_ENCRYPTION_START] = &encryption_start_fsm,
+	[PROC_ENCRYPTION_PAUSE] = &encryption_pause_fsm,
+	[PROC_PHY_UPDATE] = &phy_update_fsm,
+	[PROC_CONN_UPDATE] = &conn_update_fsm,
+	[PROC_CONN_PARAM_REQ] = &conn_param_req_fsm,
+	[PROC_TERMINATE] = &proc_terminate_fsm,
+	[PROC_CHAN_MAP_UPDATE] = &chan_map_update_fsm,
+	[PROC_DATA_LENGTH_UPDATE] = &data_length_update_fsm,
+};
+
+static void le_ping_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
-	struct node_tx *tx;
-	struct pdu_data *pdu;
+	if (ctx->pause || !tx_alloc_is_available()) {
+		ctx->state = LP_COMMON_STATE_WAIT_TX;
+	} else {
+		struct node_tx *tx;
+		struct pdu_data *pdu;
 
-	/* Allocate tx node */
-	tx = tx_alloc();
-	LL_ASSERT(tx);
+		/* Allocate tx node */
+		tx = tx_alloc();
+		LL_ASSERT(tx);
 
-	pdu = (struct pdu_data *)tx->pdu;
+		pdu = (struct pdu_data *)tx->pdu;
 
-	/* Encode LL Control PDU */
-	switch (ctx->proc) {
-	case PROC_LE_PING:
 		pdu_encode_ping_req(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
-		break;
-	case PROC_FEATURE_EXCHANGE:
+
+		ctx->state = LP_COMMON_STATE_WAIT_RX;
+
+		ctx->tx_opcode = pdu->llctrl.opcode;
+
+		/* Enqueue LL Control PDU towards LLL */
+		tx_enqueue(conn, tx);
+	}
+}
+
+static void le_ping_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP ||
+	    ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_PING_RSP) {
+		lr_complete(conn);
+		ctx->state = LP_COMMON_STATE_IDLE;
+	} else {
+		/* Illegal response opcode */
+		LL_ASSERT(0);
+	}
+}
+
+static void feature_excange_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	if (ctx->pause || !tx_alloc_is_available()) {
+		ctx->state = LP_COMMON_STATE_WAIT_TX;
+	} else {
+		struct node_tx *tx;
+		struct pdu_data *pdu;
+
+		/* Allocate tx node */
+		tx = tx_alloc();
+		LL_ASSERT(tx);
+
+		pdu = (struct pdu_data *)tx->pdu;
+
 		pdu_encode_feature_req(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
-		break;
-	case PROC_MIN_USED_CHANS:
+
+		conn->llcp.fex.sent = 1;
+		ctx->state = LP_COMMON_STATE_WAIT_RX;
+
+		ctx->tx_opcode = pdu->llctrl.opcode;
+
+		/* Enqueue LL Control PDU towards LLL */
+		tx_enqueue(conn, tx);
+	}
+}
+
+static void feature_excange_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *pdu)
+{
+	if (!ntf_alloc_is_available()) {
+		ctx->state = LP_COMMON_STATE_WAIT_NTF;
+	} else {
+		lp_comm_ntf(conn, ctx);
+		lr_complete(conn);
+		ctx->state = LP_COMMON_STATE_IDLE;
+	}
+}
+
+static void min_used_chans_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	if (ctx->pause || !tx_alloc_is_available()) {
+		ctx->state = LP_COMMON_STATE_WAIT_TX;
+	} else {
+		struct node_tx *tx;
+		struct pdu_data *pdu;
+
+		/* Allocate tx node */
+		tx = tx_alloc();
+		LL_ASSERT(tx);
+
+		pdu = (struct pdu_data *)tx->pdu;
+
 		pdu_encode_min_used_chans_ind(ctx, pdu);
 		ctx->tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
-		break;
-	case PROC_VERSION_EXCHANGE:
-		pdu_encode_version_ind(pdu);
-		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
-		break;
-	case PROC_TERMINATE:
+
+		ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
+
+		ctx->tx_opcode = pdu->llctrl.opcode;
+
+		/* Enqueue LL Control PDU towards LLL */
+		tx_enqueue(conn, tx);
+	}
+}
+
+static void min_used_chans_on_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	ctx->tx_ack = NULL;
+	min_used_chans_complete(conn, ctx, param);
+}
+
+static void min_used_chans_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	min_used_chans_complete(conn, ctx, param);
+}
+
+static void min_used_chans_complete(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	lr_complete(conn);
+	ctx->state = LP_COMMON_STATE_IDLE;
+}
+
+static void version_exchange_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	if (!conn->llcp.vex.sent) {
+		if (ctx->pause || !tx_alloc_is_available()) {
+			ctx->state = LP_COMMON_STATE_WAIT_TX;
+		} else {
+			struct node_tx *tx;
+			struct pdu_data *pdu;
+
+			/* Allocate tx node */
+			tx = tx_alloc();
+			LL_ASSERT(tx);
+
+			pdu = (struct pdu_data *)tx->pdu;
+
+			pdu_encode_version_ind(pdu);
+			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
+
+			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
+			conn->llcp.vex.sent = 1;
+			ctx->state = LP_COMMON_STATE_WAIT_RX;
+
+			ctx->tx_opcode = pdu->llctrl.opcode;
+
+			/* Enqueue LL Control PDU towards LLL */
+			tx_enqueue(conn, tx);
+		}
+	} else {
+		ctx->response_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
+		version_exchange_complete(conn, ctx,
+					  param); /* ToDo change to actual handler code */
+	}
+}
+
+static void version_exchange_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	version_exchange_complete(conn, ctx, param);
+}
+
+static void version_exchange_complete(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	if (!ntf_alloc_is_available()) {
+		ctx->state = LP_COMMON_STATE_WAIT_NTF;
+	} else {
+		lp_comm_ntf(conn, ctx);
+		lr_complete(conn);
+		ctx->state = LP_COMMON_STATE_IDLE;
+	}
+}
+
+static void terminate_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	if (ctx->pause || !tx_alloc_is_available()) {
+		ctx->state = LP_COMMON_STATE_WAIT_TX;
+	} else {
+		struct node_tx *tx;
+		struct pdu_data *pdu;
+
+		/* Allocate tx node */
+		tx = tx_alloc();
+		LL_ASSERT(tx);
+
+		pdu = (struct pdu_data *)tx->pdu;
+
 		pdu_encode_terminate_ind(ctx, pdu);
 		ctx->tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
-		break;
-	case PROC_DATA_LENGTH_UPDATE:
-		pdu_encode_length_req(conn, pdu);
-		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
-		break;
-	default:
-		/* Unknown procedure */
-		LL_ASSERT(0);
+
+		ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
+
+		ctx->tx_opcode = pdu->llctrl.opcode;
+
+		/* Enqueue LL Control PDU towards LLL */
+		tx_enqueue(conn, tx);
 	}
-
-	ctx->tx_opcode = pdu->llctrl.opcode;
-
-	/* Enqueue LL Control PDU towards LLL */
-	tx_enqueue(conn, tx);
 }
 
-static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+static void terminate_on_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	ctx->tx_ack = NULL;
+	terminate_complete(conn, ctx, param);
+}
+
+static void terminate_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	terminate_complete(conn, ctx, param);
+}
+
+static void terminate_complete(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	/* No notification */
+	lr_complete(conn);
+	ctx->state = LP_COMMON_STATE_IDLE;
+
+	/* Mark the connection for termination */
+	conn->terminate.reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+}
+
+static void data_length_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	switch (ctx->state) {
+	case LP_COMMON_STATE_IDLE:
+	case LP_COMMON_STATE_WAIT_TX:
+	case LP_COMMON_STATE_WAIT_NTF:
+		if (!ull_cp_remote_dle_pending(conn)) {
+			if (ctx->pause || !tx_alloc_is_available()) {
+				ctx->state = LP_COMMON_STATE_WAIT_TX;
+			} else {
+				struct node_tx *tx;
+				struct pdu_data *pdu;
+
+				/* Allocate tx node */
+				tx = tx_alloc();
+				LL_ASSERT(tx);
+
+				pdu = (struct pdu_data *)tx->pdu;
+
+				// Pause data tx, to ensure we can later (on RSP rx-ack) update DLE without
+				// conflicting with out-going LL Data PDUs
+				// See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
+				tx_pause_data(conn);
+
+				pdu_encode_length_req(conn, pdu);
+				ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+
+				ctx->state = LP_COMMON_STATE_WAIT_RX;
+
+				ctx->tx_opcode = pdu->llctrl.opcode;
+
+				/* Enqueue LL Control PDU towards LLL */
+				tx_enqueue(conn, tx);
+			}
+		} else {
+			// REQ was received from peer and RSP not yet sent
+			// lets piggy-back on RSP instead af sending REQ
+			// thus we can complete local req
+			lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+		}
+		break;
+	case LP_COMMON_STATE_WAIT_TX_ACK:
+		if (ntf_alloc_is_available()) {
+			lp_comm_ntf(conn, ctx);
+			lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+		}
+		break;
+	default:
+		LL_ASSERT(0);
+	}
+}
+
+static void data_length_on_response(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+{
+	if (ctx->response_opcode != PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) {
+		// Apply changes in data lengths/times
+		uint8_t dle_changed = ull_dle_update_eff(conn);
+
+		if (dle_changed && !ntf_alloc_is_available()) {
+			/* We need to generate NTF but no buffers avail, so go wait for one */
+			ctx->state = LP_COMMON_STATE_WAIT_NTF;
+		} else {
+			if (dle_changed) {
+				lp_comm_ntf(conn, ctx);
+
+				lr_complete(conn);
+				ctx->state = LP_COMMON_STATE_IDLE;
+			}
+		}
+	} else {
+		/* Peer does not accept DLU, so disable on current connection */
+		feature_unmask_features(conn, LL_FEAT_BIT_DLE);
+
+		lr_complete(conn);
+		ctx->state = LP_COMMON_STATE_IDLE;
+	}
+
+	if (!ull_cp_remote_dle_pending(conn)) {
+		// Resume data, but only if there is no remote procedure pending RSP
+		// in which case, the RSP tx-ACK will resume data
+		tx_resume_data(conn);
+	}
+}
+
+/* Old code */
+
+static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *ctx,
+					 struct pdu_data *pdu)
 {
 	switch (ctx->response_opcode) {
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
@@ -168,7 +542,8 @@ static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *
 	}
 }
 
-static void lp_comm_ntf_version_ind(struct ll_conn *conn,  struct proc_ctx *ctx, struct pdu_data *pdu)
+static void lp_comm_ntf_version_ind(struct ll_conn *conn, struct proc_ctx *ctx,
+				    struct pdu_data *pdu)
 {
 	switch (ctx->response_opcode) {
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
@@ -180,7 +555,8 @@ static void lp_comm_ntf_version_ind(struct ll_conn *conn,  struct proc_ctx *ctx,
 	}
 }
 
-static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx,
+				      struct pdu_data *pdu)
 {
 	ntf_encode_length_change(conn, pdu);
 }
@@ -196,7 +572,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
-	pdu = (struct pdu_data *) ntf->pdu;
+	pdu = (struct pdu_data *)ntf->pdu;
 	switch (ctx->proc) {
 	case PROC_FEATURE_EXCHANGE:
 		lp_comm_ntf_feature_exchange(conn, ctx, pdu);
@@ -217,160 +593,13 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_sched();
 }
 
-static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void exeucte_on_run(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	switch (ctx->proc) {
-	case PROC_LE_PING:
-		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP || ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_PING_RSP) {
-			lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
-		}
-		else
-		{
-			/* Illegal response opcode */
-			LL_ASSERT(0);
-		}
-		break;
-	case PROC_FEATURE_EXCHANGE:
-		if (!ntf_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_NTF;
-		} else {
-			lp_comm_ntf(conn, ctx);
-			lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
-		}
-		break;
-	case PROC_MIN_USED_CHANS:
-		lr_complete(conn);
-		ctx->state = LP_COMMON_STATE_IDLE;
-		break;
-	case PROC_VERSION_EXCHANGE:
-		if (!ntf_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_NTF;
-		} else {
-			lp_comm_ntf(conn, ctx);
-			lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
-		}
-		break;
-	case PROC_TERMINATE:
-		/* No notification */
-		lr_complete(conn);
-		ctx->state = LP_COMMON_STATE_IDLE;
+	LL_ASSERT(evt < PROC_UNKNOWN);
 
-		/* Mark the connection for termination */
-		conn->terminate.reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
-		break;
-	case PROC_DATA_LENGTH_UPDATE:
-		if (ctx->response_opcode != PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) {
-			// Apply changes in data lengths/times
-			uint8_t dle_changed = ull_dle_update_eff(conn);
-
-			if (dle_changed && !ntf_alloc_is_available()) {
-				// We need to generate NTF but no buffers avail, so go wait for one
-				ctx->state = LP_COMMON_STATE_WAIT_NTF;
-			} else {
-				if (dle_changed) {
-					lp_comm_ntf(conn, ctx);
-				}
-				lr_complete(conn);
-				ctx->state = LP_COMMON_STATE_IDLE;
-			}
-		} else {
-			// Peer does not accept DLU, so disable on current connection
-			feature_unmask_features(conn, LL_FEAT_BIT_DLE);
-
-			lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
-		}
-
-		if (!ull_cp_remote_dle_pending(conn)) {
-			// Resume data, but only if there is no remote procedure pending RSP
-			// in which case, the RSP tx-ACK will resume data
-			tx_resume_data(conn);
-		}
-		break;
-	default:
-		/* Unknown procedure */
-		LL_ASSERT(0);
-	}
-}
-
-static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
-{
-	switch (ctx->proc) {
-	case PROC_LE_PING:
-		if (ctx->pause || !tx_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_TX;
-		} else {
-			lp_comm_tx(conn, ctx);
-			ctx->state = LP_COMMON_STATE_WAIT_RX;
-		}
-		break;
-	case PROC_FEATURE_EXCHANGE:
-		if (ctx->pause || !tx_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_TX;
-		} else {
-			lp_comm_tx(conn, ctx);
-			conn->llcp.fex.sent = 1;
-			ctx->state = LP_COMMON_STATE_WAIT_RX;
-		}
-		break;
-	case PROC_MIN_USED_CHANS:
-		if (ctx->pause || !tx_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_TX;
-		} else {
-			lp_comm_tx(conn, ctx);
-			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
-		}
-		break;
-	case PROC_VERSION_EXCHANGE:
-		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
-		if (!conn->llcp.vex.sent) {
-			if (ctx->pause || !tx_alloc_is_available()) {
-				ctx->state = LP_COMMON_STATE_WAIT_TX;
-			} else {
-				lp_comm_tx(conn, ctx);
-				conn->llcp.vex.sent = 1;
-				ctx->state = LP_COMMON_STATE_WAIT_RX;
-			}
-		} else {
-			ctx->response_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
-			lp_comm_complete(conn, ctx, evt, param);
-		}
-		break;
-	case PROC_TERMINATE:
-		if (ctx->pause || !tx_alloc_is_available()) {
-			ctx->state = LP_COMMON_STATE_WAIT_TX;
-		} else {
-			lp_comm_tx(conn, ctx);
-			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
-		}
-		break;
-	case PROC_DATA_LENGTH_UPDATE:
-		if (!ull_cp_remote_dle_pending(conn)) {
-			if (ctx->pause || !tx_alloc_is_available()) {
-				ctx->state = LP_COMMON_STATE_WAIT_TX;
-			} else {
-				// Pause data tx, to ensure we can later (on RSP rx-ack) update DLE without
-				// conflicting with out-going LL Data PDUs
-				// See BT Core 5.2 Vol6: B-4.5.10 & B-5.1.9
-				tx_pause_data(conn);
-				lp_comm_tx(conn, ctx);
-				ctx->state = LP_COMMON_STATE_WAIT_RX;
-			}
-		} else {
-			// REQ was received from peer and RSP not yet sent
-			// lets piggy-back on RSP instead af sending REQ
-			// thus we can complete local req
-			lr_complete(conn);
-			ctx->state = LP_COMMON_STATE_IDLE;
-		}
-
-		break;
-	default:
-		/* Unknown procedure */
-		LL_ASSERT(0);
+	llcp_on_evt_transition_t on_run = llcp_fsm[ctx->proc]->on_run;
+	if (on_run) {
+		on_run(conn, ctx, param);
 	}
 }
 
@@ -381,7 +610,7 @@ static void lp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 		if (ctx->pause) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
-			lp_comm_send_req(conn, ctx, evt, param);
+			exeucte_on_run(conn, ctx, evt, param);
 		}
 		break;
 	default:
@@ -394,7 +623,7 @@ static void lp_comm_st_wait_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 {
 	switch (evt) {
 	case LP_COMMON_EVT_RUN:
-		lp_comm_send_req(conn, ctx, evt, param);
+		exeucte_on_run(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -402,29 +631,15 @@ static void lp_comm_st_wait_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	}
 }
 
-static void lp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
 {
-	switch (evt) {
-	case LP_COMMON_EVT_ACK:
-		switch (ctx->proc) {
-		case PROC_MIN_USED_CHANS:
-			ctx->tx_ack = NULL;
-			lp_comm_complete(conn, ctx, evt, param);
-			break;
-		case PROC_TERMINATE:
-			ctx->tx_ack = NULL;
-			lp_comm_complete(conn, ctx, evt, param);
-			break;
-		default:
-			/* Ignore for other procedures */
-			break;
-		}
-		break;
-	default:
-		/* Ignore other evts */
-		break;
+	LL_ASSERT(ctx->proc < PROC_UNKNOWN);
+
+	llcp_on_evt_transition_t on_evt_ack = llcp_fsm[ctx->proc]->on_evt_ack;
+	if (on_evt_ack) {
+		on_evt_ack(conn, ctx, param);
 	}
-	/* TODO */
 }
 
 static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -468,8 +683,13 @@ static void lp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 {
 	switch (evt) {
 	case LP_COMMON_EVT_RESPONSE:
-		lp_comm_rx_decode(conn, ctx, (struct pdu_data *) param);
-		lp_comm_complete(conn, ctx, evt, param);
+		lp_comm_rx_decode(conn, ctx, (struct pdu_data *)param);
+
+		llcp_on_evt_transition_t on_response = llcp_fsm[ctx->proc]->on_response;
+		if (on_response) {
+			on_response(conn, ctx, param);
+		}
+
 		break;
 	default:
 		/* Ignore other evts */
@@ -477,29 +697,21 @@ static void lp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	}
 }
 
-static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	/* TODO */
 	switch (evt) {
 	case LP_COMMON_EVT_RUN:
-		switch (ctx->proc) {
-		case PROC_DATA_LENGTH_UPDATE:
-			if (ntf_alloc_is_available()) {
-				lp_comm_ntf(conn, ctx);
-				lr_complete(conn);
-				ctx->state = LP_COMMON_STATE_IDLE;
-			}
-			break;
-		default:
-			break;
-		}
+		exeucte_on_run(conn, ctx, evt, param);
 		break;
 	default:
 		break;
 	}
 }
 
-static void lp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void lp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				void *param)
 {
 	switch (ctx->state) {
 	case LP_COMMON_STATE_IDLE:
@@ -544,8 +756,8 @@ void ull_cp_priv_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 }
 
 /*
- * LLCP Remote Procedure Common FSM
- */
+* LLCP Remote Procedure Common FSM
+*/
 static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	ctx->response_opcode = pdu->llctrl.opcode;
@@ -634,7 +846,8 @@ static void rp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 	}
 }
 
-static void rp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+static void rp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx,
+				      struct pdu_data *pdu)
 {
 	ntf_encode_length_change(conn, pdu);
 }
@@ -650,7 +863,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
-	pdu = (struct pdu_data *) ntf->pdu;
+	pdu = (struct pdu_data *)ntf->pdu;
 	switch (ctx->proc) {
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_ntf_length_change(conn, ctx, pdu);
@@ -702,21 +915,22 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			}
 		} else {
 			/* Protocol Error.
-			 *
-			 * A procedure already sent a LL_VERSION_IND and recieved a LL_VERSION_IND.
-			 */
+			*
+			* A procedure already sent a LL_VERSION_IND and recieved a LL_VERSION_IND.
+			*/
 			/* TODO */
 			LL_ASSERT(0);
 		}
 		break;
 	case PROC_MIN_USED_CHANS:
 		/* Spec says (5.2, Vol.6, Part B, Section 5.1.11):
-		     The procedure has completed when the Link Layer acknowledgment of the
-		     LL_MIN_USED_CHANNELS_IND PDU is sent or received.
-		   In effect, for this procedure, this is equivalent to RX of PDU
-		*/
+		The procedure has completed when the Link Layer acknowledgment of the
+		LL_MIN_USED_CHANNELS_IND PDU is sent or received.
+		In effect, for this procedure, this is equivalent to RX of PDU */
+
 		/* So we inititate a chmap update procedure, but only if acting as central, just in case ... */
-		if (conn->lll.role == BT_HCI_ROLE_MASTER && ull_conn_lll_phy_active(conn, conn->llcp.muc.phys)) {
+		if (conn->lll.role == BT_HCI_ROLE_MASTER &&
+		    ull_conn_lll_phy_active(conn, conn->llcp.muc.phys)) {
 			uint8_t chmap[5];
 			ull_chan_map_get((uint8_t *const)chmap);
 			ull_cp_chan_map_update(conn, chmap);
@@ -755,7 +969,7 @@ static void rp_comm_st_wait_rx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 {
 	switch (evt) {
 	case RP_COMMON_EVT_REQUEST:
-		rp_comm_rx_decode(conn, ctx, (struct pdu_data *) param);
+		rp_comm_rx_decode(conn, ctx, (struct pdu_data *)param);
 		rp_comm_send_rsp(conn, ctx, evt, param);
 		break;
 	default:
@@ -776,31 +990,30 @@ static void rp_comm_st_wait_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8
 	}
 }
 
-static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt,
+				   void *param)
 {
 	switch (evt) {
 	case RP_COMMON_EVT_ACK:
 		switch (ctx->proc) {
-		case PROC_DATA_LENGTH_UPDATE:
-			{
-				// Apply changes in data lengths/times
-				uint8_t dle_changed = ull_dle_update_eff(conn);
-				// resume data tx
-				tx_resume_data(conn);
+		case PROC_DATA_LENGTH_UPDATE: {
+			// Apply changes in data lengths/times
+			uint8_t dle_changed = ull_dle_update_eff(conn);
+			// resume data tx
+			tx_resume_data(conn);
 
-				if (dle_changed && !ntf_alloc_is_available()) {
-					ctx->state = RP_COMMON_STATE_WAIT_NTF;
+			if (dle_changed && !ntf_alloc_is_available()) {
+				ctx->state = RP_COMMON_STATE_WAIT_NTF;
+			} else {
+				if (dle_changed) {
+					rp_comm_ntf(conn, ctx);
 				}
-				else {
-					if (dle_changed) {
-						rp_comm_ntf(conn, ctx);
-					}
-					// and complete
-					rr_complete(conn);
-					ctx->state = RP_COMMON_STATE_IDLE;
-				}
-				break;
+				// and complete
+				rr_complete(conn);
+				ctx->state = RP_COMMON_STATE_IDLE;
 			}
+			break;
+		}
 		default:
 			/* Ignore other procedures */
 			break;
@@ -810,8 +1023,6 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 		/* Ignore other evts */
 		break;
 	}
-
-
 }
 
 static void rp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)

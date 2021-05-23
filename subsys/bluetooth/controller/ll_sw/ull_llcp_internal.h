@@ -6,7 +6,6 @@
 
 /* LLCP Procedure */
 enum llcp_proc {
-	PROC_UNKNOWN,
 	PROC_LE_PING,
 	PROC_FEATURE_EXCHANGE,
 	PROC_MIN_USED_CHANS,
@@ -18,7 +17,8 @@ enum llcp_proc {
 	PROC_CONN_PARAM_REQ,
 	PROC_TERMINATE,
 	PROC_CHAN_MAP_UPDATE,
-	PROC_DATA_LENGTH_UPDATE
+	PROC_DATA_LENGTH_UPDATE,
+	PROC_UNKNOWN,
 };
 
 struct llcp_enc {
@@ -158,6 +158,7 @@ struct proc_ctx {
 		uint8_t type;
 	} unknown_response;
 
+	struct llcp_lp_comon_fsm *fsm;
 };
 
 /* Procedure Incompatibility */
