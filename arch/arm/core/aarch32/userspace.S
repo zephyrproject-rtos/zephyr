@@ -59,11 +59,18 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     add r0, r0, r1
     /* Restore p1 from ip */
     mov r1, ip
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_CORTEX_R)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
     ldr ip, =CONFIG_PRIVILEGED_STACK_SIZE
     add r0, r0, ip
+#elif defined(CONFIG_CPU_CORTEX_R)
+    ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
+    ldr ip, =CONFIG_PRIVILEGED_STACK_SIZE
+    add r0, r0, ip
+
+    ldr ip, =_kernel
+    ldr ip, [ip, #_kernel_offset_to_current]
+    str r0, [ip, #_thread_offset_to_priv_stack_end] /* priv stack end */
 #endif
 
     /* store current stack pointer to ip
@@ -345,7 +352,6 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     pop {r0, r1}
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_CORTEX_R)
     /* setup privileged stack */
     ldr ip, =_kernel
     ldr ip, [ip, #_kernel_offset_to_current]
@@ -356,12 +362,16 @@ SECTION_FUNC(TEXT, z_arm_do_syscall)
     subs ip, #8
     str sp, [ip, #0]
     str lr, [ip, #4]
+#elif defined(CONFIG_CPU_CORTEX_R)
+    /* Store current LR at the beginning of the priv stack */
+    push {lr}
 #endif
 
-    /* switch to privileged stack */
-#if defined(CONFIG_CPU_CORTEX_R)
-    mov sp, ip
-#else
+#if !defined(CONFIG_CPU_CORTEX_R)
+    /*
+     * switch to privileged stack
+     * The stack switch happens on exception entry for Cortex-R
+     */
     msr PSP, ip
 #endif
 
@@ -444,7 +454,11 @@ dispatch_syscall:
     /* BAD SYSCALL path */
     /* fixup stack frame on the privileged stack, adding ssf */
     mov ip, sp
+#if defined(CONFIG_CPU_CORTEX_R)
+    push {r4,r5,ip}
+#else
     push {r4,r5,ip,lr}
+#endif
     b dispatch_syscall
 
 valid_syscall:
@@ -478,10 +492,14 @@ dispatch_syscall:
      * for same reasoning as above: we now disable external interrupts.
      */
     cpsid i
-#endif
 
     /* restore LR */
+    ldr lr, [sp,#12]
+#else
+    /* restore LR */
     ldr lr, [sp,#16]
+#endif
+
 #endif
 
 
@@ -528,14 +546,11 @@ dispatch_syscall:
     mov r0, ip
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) \
-    || defined(CONFIG_CPU_CORTEX_R)
     /* set stack back to unprivileged stack */
     ldr ip, [sp,#12]
 #endif
 
-#if defined(CONFIG_CPU_CORTEX_R)
-    mov sp, ip
-#else
+#if !defined(CONFIG_CPU_CORTEX_R)
     msr PSP, ip
 #endif
 
@@ -583,31 +598,6 @@ dispatch_syscall:
     isb
     pop {r0, r1}
 
-#if defined(CONFIG_CPU_CORTEX_R)
-    /*
-     * Re-load items from user stack that were save in swap_helper.S.  We
-     * don't need the values of R0-R3, so just adjust the stack pointer.  We
-     * do need the old r12 and lr values.
-     */
-    pop {r1} /* r1 = spsr_svc */
-    add sp, sp, #(4*4)
-    ldmia sp!, {r2-r3}
-
-    cps #MODE_SVC
-
-    /*
-     * Restore lr_svc stored into the SVC mode stack by the mode entry
-     * function. This ensures that the return address of the interrupted
-     * context is preserved in case of interrupt nesting.
-     */
-    pop {lr}
-
-    /* restore the spsr_svc register */
-    msr spsr_fsxc,r1
-    mov r12, r2
-    mov lr,  r3
-#endif
-
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
   /* Zero out volatile (caller-saved) registers so as to not leak state from
    * kernel mode. The C calling convention for the syscall handler will
@@ -653,6 +643,39 @@ dispatch_syscall:
 #endif
 
 #if defined(CONFIG_CPU_CORTEX_R)
+    /*
+     * The stack contains (from top)
+     * spsr lr lr_svc r12 r3 r2 r1 r0 lr sp r5 r4
+     * Unwind everything except the return state that will be used for rfeia.
+     */
+    add sp, sp, #(8*4)
+    ldmia sp!, {r12,lr}
+    pop {r2, r3}
+
+    cps #MODE_SVC
+
+    /*
+     * Restore lr_svc stored into the SVC mode stack by the mode entry
+     * function. This ensures that the return address of the interrupted
+     * context is preserved in case of interrupt nesting.
+     */
+    pop {lr}
+
+    /*
+     * Move the return state from the privileged stack to the service
+     * stack.  We need to put the user stack back in $sp, but we cannot
+     * trust the user stack.  Therefore, put the return state on the svc
+     * stack and return from there.
+     */
+    push {r2, r3}
+
+    /* Restore user stack pointer */
+    ldr r1, =_kernel
+    ldr r1, [r1, #_kernel_offset_to_current]
+    cps #MODE_SYS
+    ldr sp, [r1, #_thread_offset_to_sp_usr] /* sp_usr */
+    cps #MODE_SVC
+
     /* Zero out volatile (caller-saved) registers so as to not leak state from
      * kernel mode. The C calling convention for the syscall handler will
      * restore the others to original values.
@@ -661,12 +684,7 @@ dispatch_syscall:
     mov r2, #0
     mov r3, #0
 
-    /*
-     * return from SVC state to user state.  SRSDB was used to save state
-     * in swap_helper.S.  Change to sys mode so that we can recover those
-     * those values from the user stack
-     */
-    cps #MODE_SYS
+    /* return from SVC state to user state. */
     rfeia sp!
 #else
     bx ip
