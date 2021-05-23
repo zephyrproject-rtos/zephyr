@@ -615,6 +615,29 @@ valid_syscall_id:
  * @return N/A
  */
 SECTION_FUNC(TEXT, z_arm_svc)
+#if defined(CONFIG_USERSPACE)
+    /* Determine if incoming thread was in user context */
+    push {r0}
+    mrs r0, spsr
+    and r0, #MODE_MASK
+    cmp r0, #MODE_USR
+    bne svc_system_thread
+
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+
+    /* Save away user stack pointer */
+    cps #MODE_SYS
+    str sp, [r0, #_thread_offset_to_sp_usr] /* sp_usr */
+
+    /* Switch to privileged stack */
+    ldr sp, [r0, #_thread_offset_to_priv_stack_end] /* priv stack end */
+    cps #MODE_SVC
+
+svc_system_thread:
+    pop {r0}
+#endif
+
     /*
      * Switch to system mode to store r0-r3 to the process stack pointer.
      * Save r12 and the lr as we could be swapping in another process and
@@ -758,21 +781,8 @@ valid_syscall_id:
 
     add sp,sp,r3 /* un-do stack pointer alignment to double-word boundary */
 
-    /*
-     * We need to store the spsr_svc onto the user stack before going off to
-     * the system call dispatcher.  This is needed since the system call may
-     * call _swap() which will invoke another SVC, overwriting this register.
-     */
-    mrs r0, spsr
-
     /* Switch to system mode */
     cps #MODE_SYS
-
-    /*
-     * save spsr_svc to the user stack to be restored after the system call
-     * completes
-     */
-    push {r0}
 
     /*
      * Restore the nested level.  The thread that is doing the system call may
@@ -788,27 +798,26 @@ valid_syscall_id:
     /*
      * restore r0-r3 from stack since we've used them above during demux
      */
-    ldr r0, [sp, #4]
-    ldr r1, [sp, #8]
-    ldr r2, [sp, #12]
-    ldr r3, [sp, #16]
+    ldr r0, [sp, #0]
+    ldr r1, [sp, #4]
+    ldr r2, [sp, #8]
+    ldr r3, [sp, #12]
 
     /*
      * grab return address from USER/SYSTEM stack frame
      * (just past the SVC opcode)
      */
-    ldr r8, [sp, #24]
+    ldr r8, [sp, #20]
 
     /*
      * User stack left with:
      *
-     * sp+0:  spsr_svc
-     * sp+4:  r0
-     * sp+8:  r1
-     * sp+12: r2
-     * sp+16: r3
-     * sp+20: r12
-     * sp+24: LR_svc (address of opcode just following SVC opcode )
+     * sp:    r0
+     * sp+4:  r1
+     * sp+8:  r2
+     * sp+12: r3
+     * sp+16: r12
+     * sp+20: LR_svc (address of opcode just following SVC opcode )
      */
 
     /* branch to _arm_do_syscall.  We will not return here. */
