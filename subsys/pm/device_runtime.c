@@ -35,10 +35,8 @@ static void device_pm_callback(const struct device *dev,
 	(void)k_condvar_broadcast(&dev->pm->condvar);
 }
 
-static void pm_work_handler(struct k_work *work)
+static void pm_device_runtime_state_set(struct pm_device *pm)
 {
-	struct pm_device *pm = CONTAINER_OF(work,
-					struct pm_device, work);
 	const struct device *dev = pm->dev;
 	int ret = 0;
 
@@ -83,6 +81,14 @@ handler_out:
 	(void)k_condvar_broadcast(&dev->pm->condvar);
 end:
 	(void)k_mutex_unlock(&dev->pm->lock);
+}
+
+static void pm_work_handler(struct k_work *work)
+{
+	struct pm_device *pm = CONTAINER_OF(work,
+					struct pm_device, work);
+
+	pm_device_runtime_state_set(pm);
 }
 
 static int pm_device_request(const struct device *dev,
@@ -144,13 +150,14 @@ static int pm_device_request(const struct device *dev,
 		}
 	}
 
-	(void)k_work_schedule(&dev->pm->work, K_NO_WAIT);
 
 	/* Return in case of Async request */
 	if (pm_flags & PM_DEVICE_ASYNC) {
+		(void)k_work_schedule(&dev->pm->work, K_NO_WAIT);
 		goto out_unlock;
 	}
 
+	pm_device_runtime_state_set(dev->pm);
 	(void)k_mutex_unlock(&dev->pm->lock);
 	pm_device_wait(dev, K_FOREVER);
 
