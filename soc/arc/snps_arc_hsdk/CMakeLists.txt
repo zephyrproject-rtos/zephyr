@@ -11,10 +11,10 @@ if(COMPILER STREQUAL gcc)
   zephyr_cc_option_ifdef(CONFIG_FPU -mfpu=fpud_all)
 else()
   # MWDT compiler options
-  zephyr_cc_option(-arcv2hs -core2 -Xatomic -Xll64 -Xunaligned -Xcode_density
+  zephyr_compile_options(-arcv2hs -core2 -Xatomic -Xll64 -Xunaligned -Xcode_density
 		   -Xdiv_rem=radix4 -Xswap -Xbitscan -Xmpy_option=qmpyh
 		   -Xshift_assist -Xbarrel_shifter -Xtimer0 -Xtimer1 -Xrtc)
-  zephyr_cc_option_ifdef(CONFIG_FPU -Xfpu_mac -Xfpud_div)
+  zephyr_compile_options_ifdef(CONFIG_FPU -Xfpu_mac -Xfpud_div)
 
   zephyr_ld_options(-Hlib=hs38_full)
 endif()
