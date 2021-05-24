@@ -11,6 +11,9 @@ tests:
     platform_exclude: reel_board reel_board_v2 ubx_evkannab1_nrf52832
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: shield
+    harness: console
+    harness_config:
+      fixture: fixture_shield_adafruit_2_8_tft_touch_v2
   sample.display.waveshare_epaper_gdeh0213b1:
     platform_allow: nrf52840dk_nrf52840
     extra_args: SHIELD=waveshare_epaper_gdeh0213b1
