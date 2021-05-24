@@ -567,8 +567,8 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (channel_cfg->channel_id == ADC_CHANNEL_TEMPSENSOR ||
-		channel_cfg->channel_id == ADC_CHANNEL_VREFINT) {
+	if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_cfg->channel_id) ||
+		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_cfg->channel_id)) {
 		adc_stm32_set_common_path(dev);
 	}
 
