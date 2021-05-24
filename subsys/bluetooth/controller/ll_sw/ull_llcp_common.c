@@ -120,9 +120,6 @@ typedef void (*llcp_on_evt_transition_t)(struct ll_conn *conn, struct proc_ctx *
 struct llcp_lp_comon_fsm {
 	llcp_on_evt_transition_t on_run;
 	llcp_on_evt_transition_t on_response;
-	// llcp_on_evt_transition_t on_reject;
-	// llcp_on_evt_transition_t on_evt_unknown;
-	// llcp_on_evt_transition_t on_evt_collision;
 	llcp_on_evt_transition_t on_evt_ack;
 };
 
@@ -150,31 +147,7 @@ static const struct llcp_lp_comon_fsm version_exchange_fsm = {
 	.on_evt_ack = NULL,
 };
 
-static const struct llcp_lp_comon_fsm encryption_start_fsm = {
-	.on_run = NULL,
-	.on_response = NULL,
-	.on_evt_ack = NULL,
-};
-
-static const struct llcp_lp_comon_fsm encryption_pause_fsm = {
-	.on_run = NULL,
-	.on_response = NULL,
-	.on_evt_ack = NULL,
-};
-
-static const struct llcp_lp_comon_fsm phy_update_fsm = {
-	.on_run = NULL,
-	.on_response = NULL,
-	.on_evt_ack = NULL,
-};
-
-static const struct llcp_lp_comon_fsm conn_update_fsm = {
-	.on_run = NULL,
-	.on_response = NULL,
-	.on_evt_ack = NULL,
-};
-
-static const struct llcp_lp_comon_fsm conn_param_req_fsm = {
+static const struct llcp_lp_comon_fsm empty_fsm = {
 	.on_run = NULL,
 	.on_response = NULL,
 	.on_evt_ack = NULL,
@@ -184,12 +157,6 @@ static const struct llcp_lp_comon_fsm proc_terminate_fsm = {
 	.on_run = terminate_on_run,
 	.on_response = terminate_on_response,
 	.on_evt_ack = terminate_on_ack,
-};
-
-static const struct llcp_lp_comon_fsm chan_map_update_fsm = {
-	.on_run = NULL,
-	.on_response = NULL,
-	.on_evt_ack = NULL,
 };
 
 static const struct llcp_lp_comon_fsm data_length_update_fsm = {
@@ -203,27 +170,34 @@ static const struct llcp_lp_comon_fsm *llcp_fsm[] = {
 	[PROC_FEATURE_EXCHANGE] = &feature_exchange_fsm,
 	[PROC_MIN_USED_CHANS] = &min_used_chans_fsm,
 	[PROC_VERSION_EXCHANGE] = &version_exchange_fsm,
-	[PROC_ENCRYPTION_START] = &encryption_start_fsm,
-	[PROC_ENCRYPTION_PAUSE] = &encryption_pause_fsm,
-	[PROC_PHY_UPDATE] = &phy_update_fsm,
-	[PROC_CONN_UPDATE] = &conn_update_fsm,
-	[PROC_CONN_PARAM_REQ] = &conn_param_req_fsm,
+	[PROC_ENCRYPTION_START] = &empty_fsm,
+	[PROC_ENCRYPTION_PAUSE] = &empty_fsm,
+	[PROC_PHY_UPDATE] = &empty_fsm,
+	[PROC_CONN_UPDATE] = &empty_fsm,
+	[PROC_CONN_PARAM_REQ] = &empty_fsm,
 	[PROC_TERMINATE] = &proc_terminate_fsm,
-	[PROC_CHAN_MAP_UPDATE] = &chan_map_update_fsm,
+	[PROC_CHAN_MAP_UPDATE] = &empty_fsm,
 	[PROC_DATA_LENGTH_UPDATE] = &data_length_update_fsm,
 };
+
+static inline struct node_tx *prepare_tx_node(void)
+{
+	struct node_tx *tx;
+
+	/* Allocate tx node */
+	tx = tx_alloc();
+	LL_ASSERT(tx);
+
+	return tx;
+}
 
 static void le_ping_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	if (ctx->pause || !tx_alloc_is_available()) {
 		ctx->state = LP_COMMON_STATE_WAIT_TX;
 	} else {
-		struct node_tx *tx;
+		struct node_tx *tx = prepare_tx_node();
 		struct pdu_data *pdu;
-
-		/* Allocate tx node */
-		tx = tx_alloc();
-		LL_ASSERT(tx);
 
 		pdu = (struct pdu_data *)tx->pdu;
 
@@ -256,12 +230,8 @@ static void feature_excange_on_run(struct ll_conn *conn, struct proc_ctx *ctx, v
 	if (ctx->pause || !tx_alloc_is_available()) {
 		ctx->state = LP_COMMON_STATE_WAIT_TX;
 	} else {
-		struct node_tx *tx;
+		struct node_tx *tx = prepare_tx_node();
 		struct pdu_data *pdu;
-
-		/* Allocate tx node */
-		tx = tx_alloc();
-		LL_ASSERT(tx);
 
 		pdu = (struct pdu_data *)tx->pdu;
 
@@ -294,12 +264,8 @@ static void min_used_chans_on_run(struct ll_conn *conn, struct proc_ctx *ctx, vo
 	if (ctx->pause || !tx_alloc_is_available()) {
 		ctx->state = LP_COMMON_STATE_WAIT_TX;
 	} else {
-		struct node_tx *tx;
+		struct node_tx *tx = prepare_tx_node();
 		struct pdu_data *pdu;
-
-		/* Allocate tx node */
-		tx = tx_alloc();
-		LL_ASSERT(tx);
 
 		pdu = (struct pdu_data *)tx->pdu;
 
@@ -339,12 +305,8 @@ static void version_exchange_on_run(struct ll_conn *conn, struct proc_ctx *ctx, 
 		if (ctx->pause || !tx_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
-			struct node_tx *tx;
+			struct node_tx *tx = prepare_tx_node();
 			struct pdu_data *pdu;
-
-			/* Allocate tx node */
-			tx = tx_alloc();
-			LL_ASSERT(tx);
 
 			pdu = (struct pdu_data *)tx->pdu;
 
@@ -388,12 +350,8 @@ static void terminate_on_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 	if (ctx->pause || !tx_alloc_is_available()) {
 		ctx->state = LP_COMMON_STATE_WAIT_TX;
 	} else {
-		struct node_tx *tx;
+		struct node_tx *tx = prepare_tx_node();
 		struct pdu_data *pdu;
-
-		/* Allocate tx node */
-		tx = tx_alloc();
-		LL_ASSERT(tx);
 
 		pdu = (struct pdu_data *)tx->pdu;
 
@@ -593,7 +551,8 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_sched();
 }
 
-static void exeucte_on_run(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+static inline void exeucte_on_run(struct ll_conn *conn, struct proc_ctx *ctx,
+				  uint8_t evt, void *param)
 {
 	LL_ASSERT(evt < PROC_UNKNOWN);
 
@@ -720,7 +679,7 @@ static void lp_comm_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	case LP_COMMON_STATE_WAIT_TX:
 		lp_comm_st_wait_tx(conn, ctx, evt, param);
 		break;
-	case LP_COMMON_STATE_WAIT_TX_ACK:
+	case LP_COMMON_STATE_WAIT_TX_ACK: {
 		lp_comm_st_wait_tx_ack(conn, ctx, evt, param);
 		break;
 	case LP_COMMON_STATE_WAIT_RX:

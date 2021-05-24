@@ -64,108 +64,45 @@ enum {
 typedef void (*llcp_run_fsm_transition_t)(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
 struct llcp_lp_fsm {
 	llcp_run_fsm_transition_t on_run;
-	llcp_run_fsm_transition_t on_complete;
-	llcp_run_fsm_transition_t on_connect;
-	llcp_run_fsm_transition_t on_disconnect;
 };
 
-static const struct llcp_lp_fsm le_ping_fsm = {
+static const struct llcp_lp_fsm common_fsm = {
 	.on_run = lp_comm_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
-};
-
-static const struct llcp_lp_fsm feature_exchange_fsm = {
-	.on_run = lp_comm_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
-};
-
-static const struct llcp_lp_fsm min_used_chans_fsm = {
-	.on_run = lp_comm_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
-};
-
-static const struct llcp_lp_fsm version_exchange_fsm = {
-	.on_run = lp_comm_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
 };
 
 static const struct llcp_lp_fsm encryption_start_fsm = {
 	.on_run = lp_enc_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
 };
 
 static const struct llcp_lp_fsm encryption_pause_fsm = {
 	.on_run = lp_enc_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
 };
 
 static const struct llcp_lp_fsm phy_update_fsm = {
 	.on_run = lp_pu_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
 };
 
 static const struct llcp_lp_fsm conn_update_fsm = {
 	.on_run = lp_cu_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
 };
 
 static const struct llcp_lp_fsm conn_param_req_fsm = {
 	.on_run = lp_cu_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
-};
-
-static const struct llcp_lp_fsm proc_terminate_fsm = {
-	.on_run = lp_comm_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
-};
-
-static const struct llcp_lp_fsm chan_map_update_fsm = {
-	.on_run = lp_chmu_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
-};
-
-static const struct llcp_lp_fsm data_length_update_fsm = {
-	.on_run = lp_comm_run,
-	.on_complete = NULL,
-	.on_connect = NULL,
-	.on_disconnect = NULL,
 };
 
 static const struct llcp_lp_fsm *llcp_fsm[] = {
-	[PROC_LE_PING] = &le_ping_fsm,
-	[PROC_FEATURE_EXCHANGE] = &feature_exchange_fsm,
-	[PROC_MIN_USED_CHANS] = &min_used_chans_fsm,
-	[PROC_VERSION_EXCHANGE] = &version_exchange_fsm,
+	[PROC_LE_PING] = &common_fsm,
+	[PROC_FEATURE_EXCHANGE] = &common_fsm,
+	[PROC_MIN_USED_CHANS] = &common_fsm,
+	[PROC_VERSION_EXCHANGE] = &common_fsm,
 	[PROC_ENCRYPTION_START] = &encryption_start_fsm,
 	[PROC_ENCRYPTION_PAUSE] = &encryption_pause_fsm,
 	[PROC_PHY_UPDATE] = &phy_update_fsm,
 	[PROC_CONN_UPDATE] = &conn_update_fsm,
 	[PROC_CONN_PARAM_REQ] = &conn_param_req_fsm,
-	[PROC_TERMINATE] = &proc_terminate_fsm,
-	[PROC_CHAN_MAP_UPDATE] = &chan_map_update_fsm,
-	[PROC_DATA_LENGTH_UPDATE] = &data_length_update_fsm,
+	[PROC_TERMINATE] = &common_fsm,
+	[PROC_CHAN_MAP_UPDATE] = &common_fsm,
+	[PROC_DATA_LENGTH_UPDATE] = &common_fsm,
 };
 
 static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
