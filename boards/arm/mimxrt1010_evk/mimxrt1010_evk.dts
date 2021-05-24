@@ -18,7 +18,7 @@
 	};
 
 	chosen {
-		zephyr,sram = &dtcm;
+		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
