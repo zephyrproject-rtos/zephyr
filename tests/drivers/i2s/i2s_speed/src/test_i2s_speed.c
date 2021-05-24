@@ -45,7 +45,12 @@ static int16_t data_r[SAMPLE_NO] = {
 
 #define BLOCK_SIZE (2 * sizeof(data_l))
 
-K_MEM_SLAB_DEFINE(rx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS, 32);
+/*
+ * NUM_BLOCKS is the number of blocks used by the test. Some of the drivers,
+ * e.g. i2s_mcux_flexcomm, permanently keep ownership of a few RX buffers. Add a few more
+ * RX blocks to satisfy this requirement
+ */
+K_MEM_SLAB_DEFINE(rx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS + 2, 32);
 K_MEM_SLAB_DEFINE(tx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS, 32);
 
 static void fill_buf(int16_t *tx_block, int att)
