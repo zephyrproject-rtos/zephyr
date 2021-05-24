@@ -79,6 +79,8 @@ static inline int z_impl_sys_cache_data_all(int op)
 #if defined(CONFIG_CACHE_MANAGEMENT)
 	return cache_data_all(op);
 #endif
+	ARG_UNUSED(op);
+
 	return -ENOTSUP;
 }
 
@@ -88,6 +90,10 @@ static inline int z_impl_sys_cache_data_range(void *addr, size_t size, int op)
 #if defined(CONFIG_CACHE_MANAGEMENT)
 	return cache_data_range(addr, size, op);
 #endif
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
+	ARG_UNUSED(op);
+
 	return -ENOTSUP;
 }
 
@@ -97,6 +103,8 @@ static inline int z_impl_sys_cache_instr_all(int op)
 #if defined(CONFIG_CACHE_MANAGEMENT)
 	return cache_instr_all(op);
 #endif
+	ARG_UNUSED(op);
+
 	return -ENOTSUP;
 }
 
@@ -106,6 +114,10 @@ static inline int z_impl_sys_cache_instr_range(void *addr, size_t size, int op)
 #if defined(CONFIG_CACHE_MANAGEMENT)
 	return cache_instr_range(addr, size, op);
 #endif
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
+	ARG_UNUSED(op);
+
 	return -ENOTSUP;
 }
 
