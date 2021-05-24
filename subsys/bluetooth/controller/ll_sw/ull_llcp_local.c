@@ -61,6 +61,49 @@ enum {
 	LR_EVT_DISCONNECT,
 };
 
+typedef void (*llcp_run_fsm_transition_t)(struct ll_conn *conn, struct proc_ctx *ctx, void *param);
+struct llcp_lp_fsm {
+	llcp_run_fsm_transition_t on_run;
+};
+
+static const struct llcp_lp_fsm common_fsm = {
+	.on_run = lp_comm_run,
+};
+
+static const struct llcp_lp_fsm encryption_start_fsm = {
+	.on_run = lp_enc_run,
+};
+
+static const struct llcp_lp_fsm encryption_pause_fsm = {
+	.on_run = lp_enc_run,
+};
+
+static const struct llcp_lp_fsm phy_update_fsm = {
+	.on_run = lp_pu_run,
+};
+
+static const struct llcp_lp_fsm conn_update_fsm = {
+	.on_run = lp_cu_run,
+};
+
+static const struct llcp_lp_fsm conn_param_req_fsm = {
+	.on_run = lp_cu_run,
+};
+
+static const struct llcp_lp_fsm *llcp_fsm[] = {
+	[PROC_LE_PING] = &common_fsm,
+	[PROC_FEATURE_EXCHANGE] = &common_fsm,
+	[PROC_MIN_USED_CHANS] = &common_fsm,
+	[PROC_VERSION_EXCHANGE] = &common_fsm,
+	[PROC_ENCRYPTION_START] = &encryption_start_fsm,
+	[PROC_ENCRYPTION_PAUSE] = &encryption_pause_fsm,
+	[PROC_PHY_UPDATE] = &phy_update_fsm,
+	[PROC_CONN_UPDATE] = &conn_update_fsm,
+	[PROC_CONN_PARAM_REQ] = &conn_param_req_fsm,
+	[PROC_TERMINATE] = &common_fsm,
+	[PROC_CHAN_MAP_UPDATE] = &common_fsm,
+	[PROC_DATA_LENGTH_UPDATE] = &common_fsm,
+};
 
 static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 {
@@ -167,42 +210,12 @@ static void lr_act_run(struct ll_conn *conn)
 	struct proc_ctx *ctx;
 
 	ctx = lr_peek(conn);
+	LL_ASSERT(ctx->proc < PROC_UNKNOWN);
 
-	switch (ctx->proc) {
-	case PROC_LE_PING:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_FEATURE_EXCHANGE:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_MIN_USED_CHANS:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_VERSION_EXCHANGE:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_ENCRYPTION_START:
-	case PROC_ENCRYPTION_PAUSE:
-		lp_enc_run(conn, ctx, NULL);
-		break;
-	case PROC_PHY_UPDATE:
-		lp_pu_run(conn, ctx, NULL);
-		break;
-	case PROC_CONN_PARAM_REQ:
-		lp_cu_run(conn, ctx, NULL);
-		break;
-	case PROC_TERMINATE:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_CHAN_MAP_UPDATE:
-		lp_chmu_run(conn, ctx, NULL);
-		break;
-	case PROC_DATA_LENGTH_UPDATE:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	default:
-		/* Unknown procedure */
-		LL_ASSERT(0);
+	llcp_run_fsm_transition_t on_run = llcp_fsm[ctx->proc]->on_run;
+
+	if (on_run) {
+		on_run(conn, ctx, NULL);
 	}
 
 	lr_check_done(conn, ctx);
