@@ -81,7 +81,7 @@ const char *otype_to_str(enum k_objects otype)
 	}
 #else
 	ARG_UNUSED(otype);
-	return NULL;
+	ret = NULL;
 #endif
 	return ret;
 }
