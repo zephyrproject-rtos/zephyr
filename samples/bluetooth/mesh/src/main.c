@@ -151,16 +151,17 @@ static void onoff_timeout(struct k_work *work)
 
 /* Generic OnOff Server message handlers */
 
-static void gen_onoff_get(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int gen_onoff_get(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
 	onoff_status_send(model, ctx);
+	return 0;
 }
 
-static void gen_onoff_set_unack(struct bt_mesh_model *model,
-				struct bt_mesh_msg_ctx *ctx,
-				struct net_buf_simple *buf)
+static int gen_onoff_set_unack(struct bt_mesh_model *model,
+			       struct bt_mesh_msg_ctx *ctx,
+			       struct net_buf_simple *buf)
 {
 	uint8_t val = net_buf_simple_pull_u8(buf);
 	uint8_t tid = net_buf_simple_pull_u8(buf);
@@ -177,12 +178,12 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	 */
 	if (tid == onoff.tid && ctx->addr == onoff.src) {
 		/* Duplicate */
-		return;
+		return 0;
 	}
 
 	if (val == onoff.val) {
 		/* No change */
-		return;
+		return 0;
 	}
 
 	printk("set: %s delay: %d ms time: %d ms\n", onoff_str[val], delay,
@@ -197,28 +198,32 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	 * transition time stored, so it can be applied in the timeout.
 	 */
 	k_work_reschedule(&onoff.work, K_MSEC(delay));
+
+	return 0;
 }
 
-static void gen_onoff_set(struct bt_mesh_model *model,
-			  struct bt_mesh_msg_ctx *ctx,
-			  struct net_buf_simple *buf)
+static int gen_onoff_set(struct bt_mesh_model *model,
+			 struct bt_mesh_msg_ctx *ctx,
+			 struct net_buf_simple *buf)
 {
-	gen_onoff_set_unack(model, ctx, buf);
+	(void)gen_onoff_set_unack(model, ctx, buf);
 	onoff_status_send(model, ctx);
+
+	return 0;
 }
 
 static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
-	{ OP_ONOFF_GET, 0, gen_onoff_get },
-	{ OP_ONOFF_SET, 2, gen_onoff_set },
-	{ OP_ONOFF_SET_UNACK, 2, gen_onoff_set_unack },
+	{ OP_ONOFF_GET,       BT_MESH_LEN_EXACT(0), gen_onoff_get },
+	{ OP_ONOFF_SET,       BT_MESH_LEN_MIN(2),   gen_onoff_set },
+	{ OP_ONOFF_SET_UNACK, BT_MESH_LEN_MIN(2),   gen_onoff_set_unack },
 	BT_MESH_MODEL_OP_END,
 };
 
 /* Generic OnOff Client */
 
-static void gen_onoff_status(struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx,
-			     struct net_buf_simple *buf)
+static int gen_onoff_status(struct bt_mesh_model *model,
+			    struct bt_mesh_msg_ctx *ctx,
+			    struct net_buf_simple *buf)
 {
 	uint8_t present = net_buf_simple_pull_u8(buf);
 
@@ -229,14 +234,16 @@ static void gen_onoff_status(struct bt_mesh_model *model,
 
 		printk("OnOff status: %s -> %s: (%d ms)\n", onoff_str[present],
 		       onoff_str[target], remaining_time);
-		return;
+		return 0;
 	}
 
 	printk("OnOff status: %s\n", onoff_str[present]);
+
+	return 0;
 }
 
 static const struct bt_mesh_model_op gen_onoff_cli_op[] = {
-	{OP_ONOFF_STATUS, 1, gen_onoff_status},
+	{OP_ONOFF_STATUS, BT_MESH_LEN_MIN(1), gen_onoff_status},
 	BT_MESH_MODEL_OP_END,
 };
 
