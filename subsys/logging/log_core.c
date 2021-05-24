@@ -1159,7 +1159,7 @@ void log_generic_from_user(struct log_msg_ids src_level,
 	char buffer[CONFIG_LOG_STRDUP_MAX_STRING + 1];
 	union {
 		struct log_msg_ids structure;
-		uint32_t value;
+		uint32_t value = 0;
 	} src_level_union;
 
 	vsnprintk(buffer, sizeof(buffer), fmt, ap);
@@ -1244,7 +1244,7 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 {
 	union {
 		struct log_msg_ids structure;
-		uint32_t value;
+		uint32_t value = 0;
 	} src_level_union;
 
 	__ASSERT_NO_MSG(sizeof(src_level) <= sizeof(uint32_t));
