@@ -146,7 +146,7 @@ void test_malloc(void)
 	iptr = NULL;
 }
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0)
-void test_no_mem_malloc(void)
+__no_optimization void test_no_mem_malloc(void)
 {
 	int *iptr = NULL;
 
@@ -155,7 +155,7 @@ void test_no_mem_malloc(void)
 	free(iptr);
 	iptr = NULL;
 }
-void test_no_mem_realloc(void)
+__no_optimization void test_no_mem_realloc(void)
 {
 	char *ptr = NULL;
 	char *reloc_ptr = NULL;
@@ -237,7 +237,7 @@ void test_calloc(void)
 #define CALLOC_BUFLEN (200)
 static ZTEST_BMEM unsigned char zerobuf[CALLOC_BUFLEN];
 
-void test_calloc(void)
+__no_optimization void test_calloc(void)
 {
 	char *cptr = NULL;
 
