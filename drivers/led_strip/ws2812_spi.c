@@ -95,11 +95,7 @@ static inline bool num_pixels_ok(const struct ws2812_spi_cfg *cfg,
  */
 static inline void ws2812_reset_delay(uint16_t delay)
 {
-	/*
-	 * TODO: swap out with k_usleep() once that can be trusted to
-	 * work reliably.
-	 */
-	k_busy_wait(delay);
+	k_usleep(delay);
 }
 
 static int ws2812_strip_update_rgb(const struct device *dev,
