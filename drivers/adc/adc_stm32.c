@@ -787,6 +787,33 @@ static int adc_stm32_init(const struct device *dev)
 	LL_ADC_StartCalibration(adc);
 	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif
+
+#ifdef CONFIG_SOC_SERIES_STM32H7X
+	/*
+	 * To ensure linearity the factory calibration values
+	 * should be loaded on initialization.
+	 */
+	uint32_t channel_offset = 0U;
+	uint32_t linear_calib_buffer = 0U;
+
+	if (adc == ADC1) {
+		channel_offset = 0UL;
+	} else if (adc == ADC2) {
+		channel_offset = 8UL;
+	} else   /*Case ADC3*/ {
+		channel_offset = 16UL;
+	}
+	/* Read factory calibration factors */
+	for (uint32_t count = 0UL; count < ADC_LINEAR_CALIB_REG_COUNT; count++) {
+		linear_calib_buffer = *(uint32_t *)(
+			ADC_LINEAR_CALIB_REG_1_ADDR + channel_offset + count
+		);
+		LL_ADC_SetCalibrationLinearFactor(
+			adc, LL_ADC_CALIB_LINEARITY_WORD1 << count,
+			linear_calib_buffer
+		);
+	}
+#endif
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
