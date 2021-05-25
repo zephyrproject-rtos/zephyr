@@ -13,10 +13,6 @@ tests:
           type: multi_line
           regex:
             - "The version of the PSA Framework API is"
+            - "The minor version is"
             - "Connect success!"
-            - "Call success!"
-            - "TF-M IPC on .*"
-            - "The version of the PSA Framework API is"
-            - "Connect success!"
-            - "Call success!"
             - "TF-M IPC on .*"
