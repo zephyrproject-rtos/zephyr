@@ -1683,9 +1683,16 @@ static void l2cap_chan_tx_resume(struct bt_l2cap_le_chan *ch)
 
 static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
 {
-	struct bt_l2cap_chan *chan = user_data;
+	uint16_t cid = POINTER_TO_UINT(user_data);
+	struct bt_l2cap_chan *chan;
 
-	BT_DBG("conn %p chan %p", conn, chan);
+	BT_DBG("conn %p CID 0x%04x", conn, cid);
+
+	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);
+	if (!chan) {
+		/* Received SDU sent callback for disconnected channel */
+		return;
+	}
 
 	if (chan->ops->sent) {
 		chan->ops->sent(chan);
@@ -1696,9 +1703,16 @@ static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
 
 static void l2cap_chan_seg_sent(struct bt_conn *conn, void *user_data)
 {
-	struct bt_l2cap_chan *chan = user_data;
+	uint16_t cid = POINTER_TO_UINT(user_data);
+	struct bt_l2cap_chan *chan;
 
-	BT_DBG("conn %p chan %p", conn, chan);
+	BT_DBG("conn %p CID 0x%04x", conn, cid);
+
+	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);
+	if (!chan) {
+		/* Received segment sent callback for disconnected channel */
+		return;
+	}
 
 	l2cap_chan_tx_resume(BT_L2CAP_LE_CHAN(chan));
 }
@@ -1760,10 +1774,12 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch,
 	 */
 	if ((buf == seg || !buf->len) && ch->chan.ops->sent) {
 		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-				       l2cap_chan_sdu_sent, &ch->chan);
+				       l2cap_chan_sdu_sent,
+				       UINT_TO_POINTER(ch->tx.cid));
 	} else {
 		err = bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
-				       l2cap_chan_seg_sent, &ch->chan);
+				       l2cap_chan_seg_sent,
+				       UINT_TO_POINTER(ch->tx.cid));
 	}
 
 	if (err) {
