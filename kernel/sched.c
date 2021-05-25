@@ -573,7 +573,7 @@ static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
 #include <syscalls/k_thread_resume_mrsh.c>
 #endif
 
-static _wait_q_t *pended_on(struct k_thread *thread)
+static _wait_q_t *pended_on_thread(struct k_thread *thread)
 {
 	__ASSERT_NO_MSG(thread->base.pended_on);
 
@@ -632,7 +632,7 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 
 static inline void unpend_thread_no_timeout(struct k_thread *thread)
 {
-	_priq_wait_remove(&pended_on(thread)->waitq, thread);
+	_priq_wait_remove(&pended_on_thread(thread)->waitq, thread);
 	z_mark_thread_as_not_pending(thread);
 	thread->base.pended_on = NULL;
 }
