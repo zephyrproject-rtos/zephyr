@@ -73,8 +73,8 @@ def adjust_includes(
     def _adjust(m):
         directive, fpath = m.groups()
 
-        # ignore absolute paths or existing files
-        if fpath.startswith("/") or (dstpath / fpath).exists():
+        # ignore absolute paths
+        if fpath.startswith("/"):
             fpath_adj = fpath
         else:
             fpath_adj = Path(os.path.relpath(basepath / fpath, dstpath)).as_posix()
