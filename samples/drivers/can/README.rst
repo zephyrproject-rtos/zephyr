@@ -29,7 +29,7 @@ Integrated CAN controller
 For the NXP TWR-KE18F board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/CAN
+   :zephyr-app: samples/drivers/can
    :board: twr_ke18f
    :goals: build flash
 
@@ -40,10 +40,9 @@ For the nrf52dk_nrf52832 board combined with the DFRobot CAN bus V2.0 shield tha
 provides the MCP2515 CAN controller:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/CAN
+   :zephyr-app: samples/drivers/can
    :board: nrf52dk_nrf52832
    :shield: dfrobot_can_bus_v2_0
-   :conf: prj.mcp2515.conf
    :goals: build flash
 
 Sample output
