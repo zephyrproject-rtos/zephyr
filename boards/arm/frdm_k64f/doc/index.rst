@@ -80,6 +80,8 @@ The frdm_k64f board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| DAC       | on-chip    | dac                                 |
++-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 | ETHERNET  | on-chip    | ethernet                            |
@@ -97,6 +99,8 @@ The frdm_k64f board configuration supports the following hardware features:
 | CAN       | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -235,7 +239,7 @@ Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
 
 Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
-the `OpenSDA J-Link Generic Firmware for V3.2 Bootloader`_. Note that Segger
+the `OpenSDA J-Link Generic Firmware for V2.0 Bootloader`_. Note that Segger
 does provide an OpenSDA J-Link Board-Specific Firmware for this board, however
 it is not compatible with the DAPLink bootloader.
 
@@ -346,7 +350,7 @@ of pyocd commands:
    https://os.mbed.com/blog/entry/DAPLink-bootloader-update/
 
 .. _OpenSDA DAPLink FRDM-K64F Firmware:
-   https://www.nxp.com/assets/downloads/data/en/snippets-boot-code-headers-monitors/k20dx_frdmk64f_if_crc_legacy_0x5000.bin
+   https://www.nxp.com/downloads/en/snippets-boot-code-headers-monitors/k20dx_frdmk64f_if_crc_legacy_0x5000.bin
 
-.. _OpenSDA J-Link Generic Firmware for V3.2 Bootloader:
-   https://www.segger.com/downloads/jlink/OpenSDA_V3_2
+.. _OpenSDA J-Link Generic Firmware for V2.0 Bootloader:
+   https://www.segger.com/downloads/jlink/OpenSDA_V2
