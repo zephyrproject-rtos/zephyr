@@ -1227,8 +1227,11 @@ static int32_t z_tick_sleep(k_ticks_t ticks)
 	}
 
 	k_timeout_t timeout = Z_TIMEOUT_TICKS(ticks);
-
-	expected_wakeup_ticks = ticks + sys_clock_tick_get_32();
+	if (Z_TICK_ABS(ticks) <= 0) {
+		expected_wakeup_ticks = ticks + sys_clock_tick_get_32();
+	} else {
+		expected_wakeup_ticks = Z_TICK_ABS(ticks);
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
 
