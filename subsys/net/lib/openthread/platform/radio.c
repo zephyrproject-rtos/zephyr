@@ -958,12 +958,34 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode,
 	__ASSERT_NO_MSG(aPrevKey != NULL && aCurrKey != NULL &&
 			aNextKey != NULL);
 
+	uint8_t key_id_mode = aKeyIdMode >> 3;
+
+	struct ieee802154_key keys[] = {
+		{
+			.key_id_mode = key_id_mode,
+			.key_index = aKeyId == 1 ? 0x80 : aKeyId - 1,
+			.key_value = (uint8_t *)aPrevKey->m8,
+			.frame_counter_per_key = false,
+		},
+		{
+			.key_id_mode = key_id_mode,
+			.key_index = aKeyId,
+			.key_value = (uint8_t *)aCurrKey->m8,
+			.frame_counter_per_key = false,
+		},
+		{
+			.key_id_mode = key_id_mode,
+			.key_index = aKeyId == 0x80 ? 1 : aKeyId + 1,
+			.key_value = (uint8_t *)aNextKey->m8,
+			.frame_counter_per_key = false,
+		},
+		{
+			.key_value = NULL,
+		},
+	};
+
 	struct ieee802154_config config = {
-		.mac_keys.key_id_mode = aKeyIdMode,
-		.mac_keys.key_id = aKeyId,
-		.mac_keys.prev_key = (uint8_t *)aPrevKey->m8,
-		.mac_keys.curr_key = (uint8_t *)aCurrKey->m8,
-		.mac_keys.next_key = (uint8_t *)aNextKey->m8,
+		.mac_keys = keys
 	};
 
 	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_MAC_KEYS,
