@@ -99,6 +99,11 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	if (pm_cpu_on(cpu_mpid, (uint64_t)&__start)) {
 		printk("Failed to boot secondary CPU core %d (MPID:%#llx)\n",
 		       cpu_num, cpu_mpid);
+		/*
+		 * If pm_cpu_on failed on core cpu_mpid, Primary core also
+		 * should prepare for up next core
+		 */
+		arm64_cpu_boot_params.mpid = master_core_mpid;
 		return;
 	}
 
@@ -106,6 +111,8 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	while (arm64_cpu_boot_params.fn) {
 		wfe();
 	}
+	/* Prepare for up next core */
+	arm64_cpu_boot_params.mpid = master_core_mpid;
 	printk("Secondary CPU core %d (MPID:%#llx) is up\n", cpu_num, cpu_mpid);
 }
 
