@@ -170,6 +170,11 @@ Architectures
 
 * ARC
 
+  * Added new ARCv3 64bit ISA support and corresponding HS6x processor support
+  * Hardened SMP support
+  * Various minor fixes/improvements for ARC MWDT toolchain infrastructure
+  * Refactor of ARC Kconfig
+
 * ARM
 
   * AARCH32
@@ -236,6 +241,11 @@ Boards & SoC Support
   * Added Cypress PSoC-6 pinctrl support.
 
 * Changes for ARC boards:
+
+  * Added nSIM and QEMU simulation boards (nsim_hs6x and qemu_arc_hs6x)
+    with ARCv3 64bit HS6x processors
+  * Enabled MPU on qemu_arc_hs and qemu_arc_em boards
+  * Added cy8c95xx GPIO expander support to HSDK board
 
 * Added support for these ARM boards:
 
