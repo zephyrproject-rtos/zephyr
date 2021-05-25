@@ -440,7 +440,7 @@ Resume Device asynchronously API
 
 .. code-block:: c
 
-   int pm_device_get(const struct device *dev);
+   int pm_device_get_async(const struct device *dev);
 
 Marks the device as being used. This API will asynchronously
 bring the device to resume state if it was suspended. If the device
@@ -455,7 +455,7 @@ Resume Device synchronously API
 
 .. code-block:: c
 
-   int pm_device_get_sync(const struct device *dev);
+   int pm_device_get(const struct device *dev);
 
 Marks the device as being used. It will bring up or resume
 the device if it is in suspended state based on the device
@@ -467,7 +467,7 @@ Suspend Device asynchronously API
 
 .. code-block:: c
 
-   int pm_device_put(const struct device *dev);
+   int pm_device_put_async(const struct device *dev);
 
 Releases a device. This API asynchronously puts the device to suspend
 state if not already in suspend state if the usage count of this device
@@ -481,7 +481,7 @@ Suspend Device synchronously API
 
 .. code-block:: c
 
-   int pm_device_put_sync(const struct device *dev);
+   int pm_device_put(const struct device *dev);
 
 Marks the device as being released. It will put the device to
 suspended state if is is in active state based on the device

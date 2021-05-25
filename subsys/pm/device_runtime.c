@@ -178,24 +178,22 @@ out:
 
 int pm_device_get(const struct device *dev)
 {
-	return pm_device_request(dev,
-			PM_DEVICE_STATE_ACTIVE, PM_DEVICE_ASYNC);
+	return pm_device_request(dev, PM_DEVICE_STATE_ACTIVE, 0);
 }
 
-int pm_device_get_sync(const struct device *dev)
+int pm_device_get_async(const struct device *dev)
 {
-	return pm_device_request(dev, PM_DEVICE_STATE_ACTIVE, 0);
+	return pm_device_request(dev, PM_DEVICE_STATE_ACTIVE, PM_DEVICE_ASYNC);
 }
 
 int pm_device_put(const struct device *dev)
 {
-	return pm_device_request(dev,
-			PM_DEVICE_STATE_SUSPEND, PM_DEVICE_ASYNC);
+	return pm_device_request(dev, PM_DEVICE_STATE_SUSPEND, 0);
 }
 
-int pm_device_put_sync(const struct device *dev)
+int pm_device_put_async(const struct device *dev)
 {
-	return pm_device_request(dev, PM_DEVICE_STATE_SUSPEND, 0);
+	return pm_device_request(dev, PM_DEVICE_STATE_SUSPEND, PM_DEVICE_ASYNC);
 }
 
 void pm_device_enable(const struct device *dev)
