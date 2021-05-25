@@ -6,13 +6,13 @@ NXP MIMXRT1064-EVK
 Overview
 ********
 
-The i.MX RT1064 is the latest addition to the industry's first crossover
+The i.MX RT1064 adds to the industry's first crossover
 processor series and expands the i.MX RT series to three scalable families.
 The i.MX RT1064 doubles the On-Chip SRAM to 1MB while keeping pin-to-pin
-compatibility with i.MX RT1050. This new series introduces additional features
+compatibility with i.MX RT1050. This series introduces additional features
 ideal for real-time applications such as High-Speed GPIO, CAN-FD, and
 synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1064 runs on the
-Arm® Cortex-M7® core at 600 MHz.
+Arm® Cortex-M7® core up to 600 MHz.
 
 .. image:: ./mimxrt1064_evk.jpg
    :width: 600px
@@ -79,6 +79,7 @@ these references:
 - `i.MX RT1064 Reference Manual`_
 - `MIMXRT1064-EVK Website`_
 - `MIMXRT1064-EVK Quick Reference Guide`_
+- `MIMXRT1064-EVK User Guide`_
 - `MIMXRT1064-EVK Schematics`_
 
 Supported Features
@@ -96,9 +97,17 @@ features:
 +-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | display                             |
 +-----------+------------+-------------------------------------+
+| VIDEO     | on-chip    | video, using CSI                    |
++-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | QSPI flash                          |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 | SDHC      | on-chip    | disk access                         |
 +-----------+------------+-------------------------------------+
@@ -107,8 +116,13 @@ features:
 +-----------+------------+-------------------------------------+
 | ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
-| USB       | on-chip    | USB device controller               |
+| USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
+| DMA       | on-chip    | dma                                 |
++-----------+------------+-------------------------------------+
+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/mimxrt1064_evk/mimxrt1064_evk_defconfig``
@@ -245,8 +259,8 @@ board with the on-chip PLL to generate a 600 MHz core clock.
 Serial Port
 ===========
 
-The MIMXRT1064 SoC has eight UARTs. One is configured for the console and the
-remaining are not used.
+The MIMXRT1064 SoC has eight UARTs. ``LPUART1`` is configured for the console
+and the remaining are not used.
 
 Programming and Debugging
 *************************
@@ -263,15 +277,18 @@ however the :ref:`pyocd-debug-host-tools` do not yet support programming the
 external flashes on this board so you must reconfigure the board for one of the
 following debug probes instead.
 
-:ref:`jlink-external-debug-probe`
+.. _Using J-Link RT1064:
+
+Using J-Link
 ---------------------------------
 
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
 
-Attach a J-Link 20-pin connector to J21. Check that jumpers J47 and J48 are
-**off** (they are on by default when boards ship from the factory) to ensure
-SWD signals are disconnected from the OpenSDA microcontroller.
+There are two options: the onboard debug circuit can be updated with Segger
+J-Link firmware, or :ref:`jlink-external-debug-probe` can be attached to the
+EVK. See `Using J-Link with MIMXRT1060-EVK or MIMXRT1064-EVK`_ for more
+details.
 
 Configuring a Console
 =====================
@@ -327,11 +344,50 @@ should see the following message in the terminal:
    ***** Booting Zephyr OS v1.14.0-rc1 *****
    Hello World! mimxrt1064_evk
 
+Troubleshooting
+===============
+
+If the debug probe fails to connect with the following error, it's possible
+that the boot header in QSPI flash is invalid or corrupted. The boot header is
+configured by :option:`CONFIG_NXP_IMX_RT_BOOT_HEADER`.
+
+.. code-block:: console
+
+   Remote debugging using :2331
+   Remote communication error.  Target disconnected.: Connection reset by peer.
+   "monitor" command not supported by this target.
+   "monitor" command not supported by this target.
+   You can't do that when your target is `exec'
+   (gdb) Could not connect to target.
+   Please check power, connection and settings.
+
+You can fix it by erasing and reprogramming the QSPI flash with the following
+steps:
+
+#. Set the SW7 DIP switches to ON-OFF-ON-OFF to prevent booting from QSPI flash.
+
+#. Reset by pressing SW9
+
+#. Run ``west debug`` or ``west flash`` again with a known working Zephyr
+   application.
+
+#. Set the SW7 DIP switches to OFF-OFF-ON-OFF to boot from QSPI flash.
+
+#. Reset by pressing SW9
+
+If the west flash or debug commands fail, and the command hangs while executing
+runners.jlink, confirm the J-Link debug probe is configured, powered, and
+connected to the EVK properly.  See :ref:`Using J-Link RT1064` for more
+details.
+
 .. _MIMXRT1064-EVK Website:
    https://www.nxp.com/support/developer-resources/run-time-software/i.mx-developer-resources/mimxrt1064-evk-i.mx-rt1064-evaluation-kit:MIMXRT1064-EVK
 
 .. _MIMXRT1064-EVK Quick Reference Guide:
    https://www.nxp.com/webapp/Download?colCode=IMXRT1064QSG
+
+.. _MIMXRT1064-EVK User Guide:
+   https://www.nxp.com/docs/en/data-sheet/MIMXRT10601064EKBHUG.pdf
 
 .. _MIMXRT1064-EVK Schematics:
    https://www.nxp.com/webapp/Download?colCode=i.MXRT160EVKDS&Parent_nodeId=1537930933174731284155&Parent_pageType=product
@@ -344,3 +400,6 @@ should see the following message in the terminal:
 
 .. _i.MX RT1064 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMXRT1064RM
+
+.. _Using J-Link with MIMXRT1060-EVK or MIMXRT1064-EVK:
+   https://community.nxp.com/t5/i-MX-RT-Knowledge-Base/Using-J-Link-with-MIMXRT1060-EVK-or-MIMXRT1064-EVK/ta-p/1281149
