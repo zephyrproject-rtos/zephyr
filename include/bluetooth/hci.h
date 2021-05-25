@@ -2680,6 +2680,15 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
  */
 int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle);
 
+/** @brief Get advertising handle for an advertising set.
+ *
+ * @param adv Advertising set.
+ * @param adv_handle Place to store the advertising handle.
+ *
+ * @return 0 on success or negative error value on failure.
+ */
+int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle);
+
 /** @typedef bt_hci_vnd_evt_cb_t
   * @brief Callback type for vendor handling of HCI Vendor-Specific Events.
   *
