@@ -534,6 +534,11 @@ SECTIONS
 
 #include <linker/common-ram.ld>
 
+  .tm_clone_table :
+  {
+    *(.tm_clone_table)
+  } >sram0_seg :sram0_phdr
+
   .bss (NOLOAD) : ALIGN(8)
   {
     . = ALIGN (8);

@@ -130,7 +130,6 @@ SECTIONS
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
-		*(.eh_frame)
 #include <linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
