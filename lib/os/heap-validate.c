@@ -93,7 +93,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 * should be correct, and all chunk entries should point into
 	 * valid unused chunks.  Mark those chunks USED, temporarily.
 	 */
-	for (int b = 0; b <= bucket_idx(h, h->end_chunk); b++) {
+	for (int b = 0; b <= bucket_idx_max(h); b++) {
 		chunkid_t c0 = h->buckets[b].next;
 		uint32_t n = 0;
 
@@ -145,7 +145,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 	 * pass caught all the blocks and that they now show UNUSED.
 	 * Mark them USED.
 	 */
-	for (int b = 0; b <= bucket_idx(h, h->end_chunk); b++) {
+	for (int b = 0; b <= bucket_idx_max(h); b++) {
 		chunkid_t c0 = h->buckets[b].next;
 		int n = 0;
 
@@ -319,11 +319,11 @@ void sys_heap_stress(void *(*alloc_fn)(void *arg, size_t bytes),
  */
 void heap_print_info(struct z_heap *h, bool dump_chunks)
 {
-	int i, nb_buckets = bucket_idx(h, h->end_chunk) + 1;
+	int i, nb_buckets = bucket_idx_max(h) + 1;
 	size_t free_bytes, allocated_bytes, total, overhead;
 
 	printk("Heap at %p contains %d units in %d buckets\n\n",
-	       chunk_buf(h), h->end_chunk, nb_buckets);
+	       chunk_buf(h), h->end_chunk - chunk_size(h, 0), nb_buckets);
 
 	printk("  bucket#    min units        total      largest      largest\n"
 	       "             threshold       chunks      (units)      (bytes)\n"

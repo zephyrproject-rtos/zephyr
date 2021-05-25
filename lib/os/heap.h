@@ -242,6 +242,11 @@ static inline int bucket_idx(struct z_heap *h, chunksz_t sz)
 	return 31 - __builtin_clz(usable_sz);
 }
 
+static inline int bucket_idx_max(struct z_heap *h)
+{
+	return bucket_idx(h, h->end_chunk - chunk_size(h, 0));
+}
+
 static inline bool size_too_big(struct z_heap *h, size_t bytes)
 {
 	/*
