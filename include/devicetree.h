@@ -740,9 +740,9 @@
  *
  * Example usage:
  *
- *     DT_ENUM_TOKEN((DT_NODELABEL(n1), prop) // foo
- *     DT_ENUM_TOKEN((DT_NODELABEL(n2), prop) // FOO
- *     DT_ENUM_TOKEN((DT_NODELABEL(n3), prop) // 123_foo
+ *     DT_ENUM_TOKEN(DT_NODELABEL(n1), prop) // foo
+ *     DT_ENUM_TOKEN(DT_NODELABEL(n2), prop) // FOO
+ *     DT_ENUM_TOKEN(DT_NODELABEL(n3), prop) // 123_foo
  *
  * Notice how:
  *
