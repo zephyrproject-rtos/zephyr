@@ -94,7 +94,7 @@ void threadB_func(void *arg1, void *arg2, void *arg3)
  *    in favor of threadA. At this point the device should reflect these
  *    operations and be suspended.
  *
- * @see pm_device_get(), pm_device_put()
+ * @see pm_device_get_async(), pm_device_put_async()
  *
  * @ingroup power_tests
  */
@@ -144,7 +144,7 @@ void test_teardown(void)
  * @details
  *  - Just bring up and put down the device using the synchronous API.
  *
- * @see pm_device_get_sync(), pm_device_put_sync()
+ * @see pm_device_get_async(), pm_device_put()
  *
  * @ingroup power_tests
  */

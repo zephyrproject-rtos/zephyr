@@ -467,7 +467,7 @@ static int gpio_stm32_config(const struct device *dev,
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	/* Enable device clock before configuration (requires bank writes) */
 	if (data->power_state != PM_DEVICE_STATE_ACTIVE) {
-		err = pm_device_get_sync(dev);
+		err = pm_device_get(dev);
 		if (err < 0) {
 			return err;
 		}
@@ -488,7 +488,7 @@ static int gpio_stm32_config(const struct device *dev,
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	/* Release clock only if configuration doesn't require bank writes */
 	if ((flags & GPIO_OUTPUT) == 0) {
-		err = pm_device_put(dev);
+		err = pm_device_put_async(dev);
 		if (err < 0) {
 			return err;
 		}
