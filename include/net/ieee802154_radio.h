@@ -96,6 +96,14 @@ struct ieee802154_filter {
 /* @endcond */
 };
 
+struct ieee802154_key {
+	uint8_t *key_value;
+	uint32_t key_frame_counter;
+	bool frame_counter_per_key;
+	uint8_t key_id_mode;
+	uint8_t key_index;
+};
+
 /** IEEE802.15.4 Transmission mode. */
 enum ieee802154_tx_mode {
 	/** Transmit packet immediately, no CCA. */
@@ -203,14 +211,18 @@ struct ieee802154_config {
 		/** ``IEEE802154_CONFIG_EVENT_HANDLER`` */
 		ieee802154_event_cb_t event_handler;
 
-		/** ``IEEE802154_CONFIG_MAC_KEYS`` */
-		struct {
-			uint8_t key_id_mode;
-			uint8_t key_id;
-			uint8_t *prev_key;
-			uint8_t *curr_key;
-			uint8_t *next_key;
-		} mac_keys;
+		/** ``IEEE802154_CONFIG_MAC_KEYS``
+		 *  Pointer to an array containing a list of keys used
+		 *  for MAC encryption. Refer to secKeyIdLookupDescriptor and
+		 *  secKeyDescriptor in IEEE 802.15.4
+		 *
+		 *  key_value field points to a buffer containing the 16 byte
+		 *  key. The buffer is copied by the callee.
+		 *
+		 *  The variable length array is terminated by key_value field
+		 *  set to NULL.
+		 */
+		struct ieee802154_key *mac_keys;
 
 		/** ``IEEE802154_CONFIG_FRAME_COUNTER`` */
 		uint32_t frame_counter;
