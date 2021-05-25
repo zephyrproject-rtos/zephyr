@@ -565,11 +565,17 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
         # no need for another level.
         node_zephyr_base = root
         node_output_dir = root
+        node_workspace = root
         node_others = root
     else:
         node_zephyr_base = TreeNode('ZEPHYR_BASE', args.zephyrbase)
         node_output_dir = TreeNode('OUTPUT_DIR', args.output)
         node_others = TreeNode("/", "/")
+
+        if args.workspace:
+            node_workspace = TreeNode('WORKSPACE', args.workspace)
+        else:
+            node_workspace = node_others
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
@@ -593,8 +599,16 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
                     parent = node
                 node = TreeNode(name=str(part), identifier=cur, size=size, parent=parent)
 
-    zbase = Path(args.zephyrbase)
-    outd = Path(args.output)
+    # Mapping paths to tree nodes
+    path_node_map = [
+        [Path(args.zephyrbase), node_zephyr_base],
+        [Path(args.output), node_output_dir],
+    ]
+
+    if args.workspace:
+        path_node_map.append(
+            [Path(args.workspace), node_workspace]
+        )
 
     for name, sym in symbol_dict.items():
         for symbol in sym:
@@ -602,13 +616,16 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
             for file in symbol['mapped_files']:
                 path = Path(file, name)
                 if path.is_absolute():
-                    if zbase in path.parents:
-                        path = path.relative_to(zbase)
-                        dest_node = node_zephyr_base
-                    elif outd in path.parents:
-                        path = path.relative_to(outd)
-                        dest_node = node_output_dir
-                    else:
+                    has_node = False
+
+                    for one_path in path_node_map:
+                        if one_path[0] in path.parents:
+                            path = path.relative_to(one_path[0])
+                            dest_node = one_path[1]
+                            has_node = True
+                            break
+
+                    if not has_node:
                         dest_node = node_others
                 else:
                     dest_node = node_no_paths
@@ -631,6 +648,11 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
         if node_others.height != 0:
             # Only include "others" node if there is something.
             children.append(node_others)
+
+        if args.workspace:
+            node_workspace.size = sum_node_children_size(node_workspace)
+            if node_workspace.height != 0:
+                children.append(node_workspace)
 
         root.children = children
 
@@ -691,6 +713,8 @@ def parse_args():
                         help="Zephyr base path")
     parser.add_argument("-o", "--output", required=True,
                         help="Output path")
+    parser.add_argument("-w", "--workspace", default=None,
+                        help="Workspace path (Usually the same as WEST_TOPDIR)")
     parser.add_argument("target", choices=['rom', 'ram'])
     parser.add_argument("-d", "--depth", dest="depth",
                         type=int, default=None,
