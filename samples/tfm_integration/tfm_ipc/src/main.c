@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019,2020 Linaro Limited
+ * Copyright (c) 2019,2020, 2021 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@
  *       mean to test all possible combinations of
  *       input parameters and return values.
  */
-static void tfm_ipc_test_1001(void)
+static void tfm_ipc_test_01(void)
 {
 	uint32_t version;
 
@@ -40,11 +40,11 @@ static void tfm_ipc_test_1001(void)
  *
  * @return N/A
  */
-static void tfm_ipc_test_1002(void)
+static void tfm_ipc_test_02(void)
 {
 	uint32_t version;
 
-	version = psa_version(IPC_SERVICE_TEST_BASIC_SID);
+	version = psa_version(TFM_CRYPTO_SID);
 	if (version == PSA_VERSION_NONE) {
 		printk("RoT Service is not implemented or caller is not ");
 		printk("authorized to access it!\n");
@@ -60,130 +60,26 @@ static void tfm_ipc_test_1002(void)
  *
  * @return N/A
  */
-static void tfm_ipc_test_1003(void)
+static void tfm_ipc_test_03(void)
 {
 	psa_handle_t handle;
 
-	handle = psa_connect(IPC_SERVICE_TEST_BASIC_SID,
-			     IPC_SERVICE_TEST_BASIC_VERSION);
+	handle = psa_connect(TFM_CRYPTO_SID,
+			     TFM_CRYPTO_VERSION);
 	if (handle > 0) {
 		printk("Connect success!\n");
 	} else {
 		printk("The RoT Service has refused the connection!\n");
 		return;
 	}
-	psa_close(handle);
-}
-
-/**
- * Call a RoT Service.
- *
- * @return N/A
- */
-static void tfm_ipc_test_1004(void)
-{
-	char str1[] = "str1";
-	char str2[] = "str2";
-	char str3[128], str4[128];
-	struct psa_invec invecs[2] = { { str1, sizeof(str1) /
-					 sizeof(char) },
-				       { str2, sizeof(str2) /
-					 sizeof(char) } };
-	struct psa_outvec outvecs[2] = { { str3, sizeof(str3) /
-					   sizeof(char) },
-					 { str4, sizeof(str4) /
-					   sizeof(char) } };
-	psa_handle_t handle;
-	psa_status_t status;
-	uint32_t version;
-
-	version = psa_version(IPC_SERVICE_TEST_BASIC_SID);
-	printk("TFM service support version is %d.\n", version);
-	handle = psa_connect(IPC_SERVICE_TEST_BASIC_SID,
-			     IPC_SERVICE_TEST_BASIC_VERSION);
-	status = psa_call(handle, PSA_IPC_CALL, invecs, 2, outvecs, 2);
-	if (status >= 0) {
-		printk("psa_call is successful!\n");
-	} else {
-		printk("psa_call is failed!\n");
-		return;
-	}
-
-	printk("outvec1 is: %s\n", (char *)(outvecs[0].base));
-	printk("outvec2 is: %s\n", (char *)(outvecs[1].base));
-	psa_close(handle);
-}
-
-/**
- * \brief Call IPC_CLIENT_TEST_BASIC_SID RoT Service to run the IPC basic test.
- */
-static void tfm_ipc_test_1005(void)
-{
-	psa_handle_t handle;
-	psa_status_t status;
-	int test_result;
-	struct psa_outvec outvecs[1] = { { &test_result,
-					   sizeof(test_result) } };
-
-	handle = psa_connect(IPC_CLIENT_TEST_BASIC_SID,
-			     IPC_CLIENT_TEST_BASIC_VERSION);
-	if (handle > 0) {
-		printk("Connect success!\n");
-	} else {
-		printk("The RoT Service has refused the connection!\n");
-		return;
-	}
-
-	status = psa_call(handle, PSA_IPC_CALL, NULL, 0, outvecs, 1);
-	if (status >= 0) {
-		printk("Call success!\n");
-	} else {
-		printk("Call failed!\n");
-	}
-
-	psa_close(handle);
-}
-
-/**
- * \brief Call IPC_CLIENT_TEST_PSA_ACCESS_APP_MEM_SID RoT Service
- *  to run the IPC PSA access APP mem test.
- */
-static void tfm_ipc_test_1006(void)
-{
-	psa_handle_t handle;
-	psa_status_t status;
-	int test_result;
-	struct psa_outvec outvecs[1] = { { &test_result,
-					   sizeof(test_result) } };
-
-	handle = psa_connect(
-		IPC_CLIENT_TEST_PSA_ACCESS_APP_MEM_SID,
-		IPC_CLIENT_TEST_PSA_ACCESS_APP_MEM_VERSION);
-	if (handle > 0) {
-		printk("Connect success!\n");
-	} else {
-		printk("The RoT Service has refused the connection!\n");
-		return;
-	}
-
-	status = psa_call(handle, PSA_IPC_CALL, NULL, 0, outvecs, 1);
-	if (status >= 0) {
-		printk("Call success!\n");
-	} else {
-		printk("Call failed!\n");
-	}
-
 	psa_close(handle);
 }
 
 void main(void)
 {
-	tfm_ipc_test_1001();
-	tfm_ipc_test_1002();
-	tfm_ipc_test_1003();
-	tfm_ipc_test_1004();
-	tfm_ipc_test_1005();
-	tfm_ipc_test_1006();
+	tfm_ipc_test_01();
+	tfm_ipc_test_02();
+	tfm_ipc_test_03();
 
 	printk("TF-M IPC on %s\n", CONFIG_BOARD);
 
