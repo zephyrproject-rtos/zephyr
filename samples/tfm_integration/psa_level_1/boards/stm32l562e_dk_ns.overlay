@@ -5,7 +5,11 @@
  */
 
  /* This partition table should be used along with TFM configuration:
-  * - TFM_PSA_API=ON (IPC)
+  * - TEST_S=OFF (NO REGRESSION)
+  *
+  * In this configuration, TFM binary does not include tests.
+  * The partition sizes are compatible with the TF-M platform
+  * flash_layout.h.
   */
 
 / {
