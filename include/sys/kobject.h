@@ -204,7 +204,7 @@ __syscall void k_object_access_grant(const void *object,
  * @param object Address of kernel object
  * @param thread Thread to remove access to the object
  */
-void k_object_access_revoke(const void *object, struct k_thread *thread);
+static inline void k_object_access_revoke(const void *object, struct k_thread *thread);
 
 /**
  * @brief Release an object
@@ -234,7 +234,7 @@ __syscall void k_object_release(const void *object);
  *
  * @param object Address of kernel object
  */
-void k_object_access_all_grant(const void *object);
+static inline void k_object_access_all_grant(const void *object);
 
 /**
  * Allocate a kernel object of a designated type
