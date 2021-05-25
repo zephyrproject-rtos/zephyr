@@ -9,7 +9,8 @@
   * - TEST_S=OFF (NO REGRESSION)
   *
   * In this configuration, TFM binary does not include tests.
-  * The partition sizes are compatible with TF-M platform flash_layout.h.
+  * The partition sizes are compatible with the TF-M platform
+  * flash_layout.h.
   */
 
   / {
