@@ -231,9 +231,9 @@ static inline chunksz_t min_chunk_size(struct z_heap *h)
 	return bytes_to_chunksz(h, 1);
 }
 
-static inline size_t chunksz_to_bytes(struct z_heap *h, chunksz_t chunksz)
+static inline size_t chunksz_to_bytes(struct z_heap *h, chunksz_t chunksz_in)
 {
-	return chunksz * CHUNK_UNIT - chunk_header_bytes(h);
+	return chunksz_in * CHUNK_UNIT - chunk_header_bytes(h);
 }
 
 static inline int bucket_idx(struct z_heap *h, chunksz_t sz)
