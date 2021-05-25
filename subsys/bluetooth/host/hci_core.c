@@ -2079,6 +2079,18 @@ int bt_hci_get_conn_handle(const struct bt_conn *conn, uint16_t *conn_handle)
 	return 0;
 }
 
+#if defined(CONFIG_BT_EXT_ADV)
+int bt_hci_get_adv_handle(const struct bt_le_ext_adv *adv, uint8_t *adv_handle)
+{
+	if (!atomic_test_bit(adv->flags, BT_ADV_CREATED)) {
+		return -EINVAL;
+	}
+
+	*adv_handle = adv->handle;
+	return 0;
+}
+#endif /* CONFIG_BT_EXT_ADV */
+
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
 int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb)
 {
