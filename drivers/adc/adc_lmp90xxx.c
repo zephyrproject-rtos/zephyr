@@ -247,7 +247,7 @@ static int lmp90xxx_read_reg(const struct device *dev, uint8_t addr,
 static int lmp90xxx_read_reg8(const struct device *dev, uint8_t addr,
 			      uint8_t *val)
 {
-	return lmp90xxx_read_reg(dev, addr, val, sizeof(val));
+	return lmp90xxx_read_reg(dev, addr, val, sizeof(*val));
 }
 
 static int lmp90xxx_write_reg(const struct device *dev, uint8_t addr,
