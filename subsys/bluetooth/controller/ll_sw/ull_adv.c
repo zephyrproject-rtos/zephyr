@@ -16,6 +16,7 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/ticker.h"
+#include "hal/cntr.h"
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -1732,20 +1733,109 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 	return 0;
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint32_t ticker_update_rand(struct ll_adv_set *adv, uint32_t ticks_delay_window,
+				   uint32_t ticks_delay_window_offset,
+				   uint32_t ticks_adjust_minus)
+{
+	uint32_t random_delay;
+	uint32_t ret;
+
+	/* Get pseudo-random number in the range [0..ticks_delay_window].
+	 * Please note that using modulo of 2^32 samle space has an uneven
+	 * distribution, slightly favoring smaller values.
+	 */
+	lll_rand_isr_get(&random_delay, sizeof(random_delay));
+	random_delay %= ticks_delay_window;
+	random_delay += (ticks_delay_window_offset + 1);
+
+	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
+			    TICKER_USER_ID_ULL_HIGH,
+			    TICKER_ID_ADV_BASE + ull_adv_handle_get(adv),
+			    random_delay,
+			    ticks_adjust_minus, 0, 0, 0, 0,
+			    ticker_op_update_cb, adv);
+
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	adv->delay = random_delay;
+#endif
+	return random_delay;
+}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || \
+	defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 void ull_adv_done(struct node_rx_event_done *done)
 {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct lll_adv_aux *lll_aux;
 	struct node_rx_hdr *rx_hdr;
-	struct ll_adv_set *adv;
-	struct lll_adv *lll;
 	uint8_t handle;
 	uint32_t ret;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	struct ll_adv_set *adv;
+	struct lll_adv *lll;
 
 	/* Get reference to ULL context */
 	adv = CONTAINER_OF(done->param, struct ll_adv_set, ull);
 	lll = &adv->lll;
 
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	if (done->extra.result == DONE_COMPLETED) {
+		/* Event completed successfully */
+		adv->delay_remain = ULL_ADV_RANDOM_DELAY;
+	} else {
+		/* Event aborted or too late - try to re-schedule */
+		uint32_t ticks_elapsed;
+		uint32_t ticks_now;
+
+		const uint32_t prepare_overhead =
+			HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+		const uint32_t ticks_adv_airtime = adv->ticks_at_expire +
+			prepare_overhead;
+
+		ticks_elapsed = 0;
+
+		ticks_now = cntr_cnt_get();
+		if ((int32_t)(ticks_now - ticks_adv_airtime) > 0) {
+			ticks_elapsed = ticks_now - ticks_adv_airtime;
+		}
+
+		if (adv->delay_remain >= adv->delay + ticks_elapsed) {
+			/* The perturbation window is still open */
+			adv->delay_remain -= (adv->delay + ticks_elapsed);
+		} else {
+			adv->delay_remain = 0;
+		}
+
+		/* Check if we have enough time to re-schedule */
+		if (adv->delay_remain > prepare_overhead) {
+			uint32_t ticks_adjust_minus;
+
+			/* Get negative ticker adjustment needed to pull back ADV one
+			 * interval plus the randomized delay. This means that the ticker
+			 * will be updated to expire in time frame of now + start
+			 * overhead, until 10 ms window is exhausted.
+			 */
+			ticks_adjust_minus = HAL_TICKER_US_TO_TICKS(
+				(uint64_t)adv->interval * ADV_INT_UNIT_US) + adv->delay;
+
+			/* Apply random delay in range [prepare_overhead..delay_remain] */
+			ticker_update_rand(adv, adv->delay_remain - prepare_overhead,
+					   prepare_overhead, ticks_adjust_minus);
+
+			/* Score of the event was increased due to the result, but since
+			 * we're getting a another chance we'll set it back.
+			 */
+			adv->lll.hdr.score -= 1;
+		} else {
+			adv->delay_remain = ULL_ADV_RANDOM_DELAY;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (adv->max_events && (adv->event_counter >= adv->max_events)) {
 		adv->max_events = 0;
 
@@ -1791,8 +1881,9 @@ void ull_adv_done(struct node_rx_event_done *done)
 
 	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 		  (ret == TICKER_STATUS_BUSY));
-}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 					struct pdu_adv *pdu)
@@ -1971,6 +2062,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_prepare};
 	static struct lll_prepare_param p;
 	struct ll_adv_set *adv = param;
+	uint32_t random_delay;
 	struct lll_adv *lll;
 	uint32_t ret;
 	uint8_t ref;
@@ -1997,6 +2089,10 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
 				     TICKER_USER_ID_LLL, 0, &mfy);
 		LL_ASSERT(!ret);
+
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		adv->ticks_at_expire = ticks_at_expire;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	}
 
 	/* Apply adv random delay */
@@ -2004,22 +2100,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 	if (!lll->is_hdcd)
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		uint32_t random_delay;
-		uint32_t ret;
-
-		lll_rand_isr_get(&random_delay, sizeof(random_delay));
-		random_delay %= ULL_ADV_RANDOM_DELAY;
-		random_delay += 1;
-
-		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
-				    TICKER_USER_ID_ULL_HIGH,
-				    (TICKER_ID_ADV_BASE +
-				     ull_adv_handle_get(adv)),
-				    random_delay,
-				    0, 0, 0, 0, 0,
-				    ticker_op_update_cb, adv);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
+		/* Apply random delay in range [0..ULL_ADV_RANDOM_DELAY] */
+		random_delay = ticker_update_rand(adv, ULL_ADV_RANDOM_DELAY, 0, 0);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		adv->event_counter += (lazy + 1);
@@ -2581,6 +2663,9 @@ static void init_set(struct ll_adv_set *adv)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	adv->lll.chan_map = BT_LE_ADV_CHAN_MAP_ALL;
 	adv->lll.filter_policy = BT_LE_ADV_FP_NO_WHITELIST;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	adv->delay_remain = ULL_ADV_RANDOM_DELAY;
+#endif /* ONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	init_pdu(lll_adv_data_peek(&ll_adv[0].lll), PDU_ADV_TYPE_ADV_IND);
 	init_pdu(lll_adv_scan_rsp_peek(&ll_adv[0].lll), PDU_ADV_TYPE_SCAN_RSP);

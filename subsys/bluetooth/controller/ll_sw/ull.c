@@ -2484,13 +2484,16 @@ static inline void rx_demux_event_done(memq_link_t *link,
 		break;
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || \
+	defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	case EVENT_DONE_EXTRA_TYPE_ADV:
 		ull_adv_done(done);
 		break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 #endif /* CONFIG_BT_BROADCASTER */
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_OBSERVER)
 	case EVENT_DONE_EXTRA_TYPE_SCAN:
 		ull_scan_done(done);
@@ -2552,4 +2555,16 @@ static inline void rx_demux_event_done(memq_link_t *link,
 static void disabled_cb(void *param)
 {
 	k_sem_give(param);
+}
+
+struct event_done_extra *ull_done_extra_type_set(uint8_t type)
+{
+	struct event_done_extra *extra;
+
+	extra = ull_event_done_extra_get();
+	LL_ASSERT(extra);
+
+	extra->type = type;
+
+	return extra;
 }

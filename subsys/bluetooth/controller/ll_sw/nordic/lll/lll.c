@@ -344,7 +344,19 @@ int lll_done(void *param)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	lll_done_score(param, 0, 0); /* TODO */
+	struct event_done_extra *extra;
+	uint8_t result;
+
+	/* TODO: Pass from calling function */
+	result = DONE_COMPLETED;
+
+	lll_done_score(param, result);
+
+	extra = ull_event_done_extra_get();
+	LL_ASSERT(extra);
+
+	/* Set result in done extra data - type was set by the role */
+	extra->result = result;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Let ULL know about LLL event done */
