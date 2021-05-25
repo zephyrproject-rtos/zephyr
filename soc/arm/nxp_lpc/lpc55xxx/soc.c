@@ -50,8 +50,10 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Enable FRO HF(96MHz) output */
 	CLOCK_SetupFROClocking(96000000U);
 
+#if defined(CONFIG_SOC_FLASH_MCUX)
 	/*!< Set FLASH wait states for core */
 	CLOCK_SetFLASHAccessCyclesForFreq(96000000U);
+#endif
 
     /*!< Set up dividers */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false);
