@@ -13,12 +13,12 @@ static uint32_t device_power_state;
 
 static int dummy_open(const struct device *dev)
 {
-	return pm_device_get_sync(dev);
+	return pm_device_get(dev);
 }
 
 static int dummy_close(const struct device *dev)
 {
-	return pm_device_put_sync(dev);
+	return pm_device_put(dev);
 }
 
 static uint32_t dummy_get_power_state(const struct device *dev)

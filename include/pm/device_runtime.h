@@ -68,7 +68,7 @@ void pm_device_disable(const struct device *dev);
  * pm signal mechanism to know the completion of resume operation.
  * @retval Errno Negative errno code if failure.
  */
-int pm_device_get(const struct device *dev);
+int pm_device_get_async(const struct device *dev);
 
 /**
  * @brief Call device resume synchronously based on usage count
@@ -83,7 +83,7 @@ int pm_device_get(const struct device *dev);
  * @retval 0 If successful.
  * @retval Errno Negative errno code if failure.
  */
-int pm_device_get_sync(const struct device *dev);
+int pm_device_get(const struct device *dev);
 
 /**
  * @brief Call device suspend asynchronously based on usage count
@@ -101,7 +101,7 @@ int pm_device_get_sync(const struct device *dev);
  * signal mechanism to know the completion of suspend operation.
  * @retval Errno Negative errno code if failure.
  */
-int pm_device_put(const struct device *dev);
+int pm_device_put_async(const struct device *dev);
 
 /**
  * @brief Call device suspend synchronously based on usage count
@@ -116,14 +116,14 @@ int pm_device_put(const struct device *dev);
  * @retval 0 If successful.
  * @retval Errno Negative errno code if failure.
  */
-int pm_device_put_sync(const struct device *dev);
+int pm_device_put(const struct device *dev);
 
 /**
  * @brief Wait on a device to finish an operation.
  *
- * The calling thread blocks until the device finishes a @ref pm_device_put or
- * @ref pm_device_get operation. If there is no operation in progress
- * this function will return immediately.
+ * The calling thread blocks until the device finishes a
+ * @ref pm_device_put_async or @ref pm_device_get_async operation. If there is
+ * no operation in progress this function will return immediately.
  *
  * @param dev Pointer to device structure of the specific device driver
  * the caller is interested in.
@@ -138,9 +138,9 @@ int pm_device_wait(const struct device *dev, k_timeout_t timeout);
 static inline void pm_device_enable(const struct device *dev) { }
 static inline void pm_device_disable(const struct device *dev) { }
 static inline int pm_device_get(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_get_sync(const struct device *dev) { return -ENOSYS; }
+static inline int pm_device_get_async(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_put(const struct device *dev) { return -ENOSYS; }
-static inline int pm_device_put_sync(const struct device *dev) { return -ENOSYS; }
+static inline int pm_device_put_async(const struct device *dev) { return -ENOSYS; }
 static inline int pm_device_wait(const struct device *dev,
 		k_timeout_t timeout) { return -ENOSYS; }
 #endif
