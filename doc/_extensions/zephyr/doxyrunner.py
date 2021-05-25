@@ -174,11 +174,11 @@ def doxygen_input_has_changed(doxyfile: str, cache_dir: Path) -> bool:
     for file in input_files:
         path = Path(file)
         if path.is_file():
-            files[path] = path.stat().st_mtime_ns
+            files[path.as_posix()] = path.stat().st_mtime_ns
         else:
             for pattern in file_patterns:
                 for p_file in path.glob("**/" + pattern):
-                    files[p_file] = p_file.stat().st_mtime_ns
+                    files[p_file.as_posix()] = p_file.stat().st_mtime_ns
 
     # check if any file has changed
     dirty = True
