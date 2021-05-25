@@ -615,6 +615,11 @@ static int lmp90xxx_adc_read_channel(const struct device *dev,
 		do {
 			err = lmp90xxx_read_reg8(dev, LMP90XXX_REG_ADC_DONE,
 						&adc_done);
+			if (err) {
+				LOG_ERR("failed to read done (err %d)", err);
+				return err;
+			}
+
 			if (adc_done == 0xFFU) {
 				LOG_DBG("sleeping for 1 ms");
 				k_msleep(1);
