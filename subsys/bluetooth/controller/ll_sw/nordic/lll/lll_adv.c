@@ -45,6 +45,8 @@
 #include "lll_prof_internal.h"
 #include "lll_df_internal.h"
 
+#include "ull_internal.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv
 #include "common/log.h"
@@ -1209,14 +1211,9 @@ static void isr_done(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct event_done_extra *extra;
-
-	extra = ull_event_done_extra_get();
-	LL_ASSERT(extra);
-
-	extra->type = EVENT_DONE_EXTRA_TYPE_ADV;
-#endif  /* CONFIG_BT_CTLR_ADV_EXT */
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	ull_done_extra_type_set(EVENT_DONE_EXTRA_TYPE_ADV);
+#endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	lll_isr_cleanup(param);
 }
