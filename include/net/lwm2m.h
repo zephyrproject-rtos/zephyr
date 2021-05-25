@@ -78,6 +78,7 @@ struct lwm2m_ctx {
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	sys_slist_t pending_sends;
+	sys_slist_t observer;
 
 	/** A pointer to currently processed request, for internal LwM2M engine
 	 *  use. The underlying type is ``struct lwm2m_message``, but since it's
