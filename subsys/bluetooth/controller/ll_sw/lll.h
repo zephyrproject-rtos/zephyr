@@ -134,6 +134,12 @@ enum {
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
 
+enum done_result {
+	DONE_COMPLETED,
+	DONE_ABORTED,
+	DONE_LATE
+};
+
 struct ull_hdr {
 	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
 				* events
@@ -326,11 +332,11 @@ enum {
 	EVENT_DONE_EXTRA_TYPE_CONN,
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 #if defined(CONFIG_BT_BROADCASTER)
 	EVENT_DONE_EXTRA_TYPE_ADV,
 #endif /* CONFIG_BT_BROADCASTER */
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT || CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 #if defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -363,6 +369,9 @@ struct event_done_extra_drift {
 
 struct event_done_extra {
 	uint8_t type;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint8_t result;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	union {
 		struct {
 			uint16_t trx_cnt;
@@ -397,7 +406,7 @@ static inline void lll_hdr_init(void *lll, void *parent)
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 }
 
-void lll_done_score(void *param, uint8_t too_late, uint8_t aborted);
+void lll_done_score(void *param, uint8_t result);
 
 int lll_init(void);
 int lll_reset(void);
