@@ -69,6 +69,9 @@ struct eth_fake_context {
 		bool link_partner_status;
 		uint8_t additional_fragment_size : 2;
 	} ports[2];
+
+	/* TXTIME parameters */
+	bool txtime_statuses[NET_TC_TX_COUNT];
 };
 
 static struct eth_fake_context eth_fake_data;
@@ -101,7 +104,7 @@ static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
 	return ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
 		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET | ETHERNET_QAV |
 		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES |
-		ETHERNET_QBV | ETHERNET_QBU;
+		ETHERNET_QBV | ETHERNET_QBU | ETHERNET_TXTIME;
 }
 
 static int eth_fake_get_total_bandwidth(struct eth_fake_context *ctx)
@@ -160,6 +163,7 @@ static int eth_fake_set_config(const struct device *dev,
 	enum ethernet_qav_param_type qav_param_type;
 	enum ethernet_qbv_param_type qbv_param_type;
 	enum ethernet_qbu_param_type qbu_param_type;
+	enum ethernet_txtime_param_type txtime_param_type;
 	int queue_id, port_id;
 
 	switch (type) {
@@ -310,6 +314,24 @@ static int eth_fake_set_config(const struct device *dev,
 		}
 
 		break;
+	case ETHERNET_CONFIG_TYPE_TXTIME_PARAM:
+		queue_id = config->txtime_param.queue_id;
+		txtime_param_type = config->txtime_param.type;
+
+		if (queue_id < 0 || queue_id >= priority_queues_num) {
+			return -EINVAL;
+		}
+
+		switch (txtime_param_type) {
+		case ETHERNET_TXTIME_PARAM_TYPE_ENABLE_QUEUES:
+			ctx->txtime_statuses[queue_id] =
+				config->txtime_param.enable_txtime;
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		break;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		if (config->promisc_mode == ctx->promisc_mode) {
 			return -EALREADY;
@@ -335,6 +357,7 @@ static int eth_fake_get_config(const struct device *dev,
 	enum ethernet_qav_param_type qav_param_type;
 	enum ethernet_qbv_param_type qbv_param_type;
 	enum ethernet_qbu_param_type qbu_param_type;
+	enum ethernet_txtime_param_type txtime_param_type;
 	int queue_id, port_id;
 
 	switch (type) {
@@ -447,6 +470,24 @@ static int eth_fake_get_config(const struct device *dev,
 			memcpy(&config->qbu_param.frame_preempt_statuses,
 			     &ctx->ports[port_id].frame_preempt_statuses,
 			     sizeof(config->qbu_param.frame_preempt_statuses));
+			break;
+		default:
+			return -ENOTSUP;
+		}
+
+		break;
+	case ETHERNET_CONFIG_TYPE_TXTIME_PARAM:
+		queue_id = config->txtime_param.queue_id;
+		txtime_param_type = config->txtime_param.type;
+
+		if (queue_id < 0 || queue_id >= priority_queues_num) {
+			return -EINVAL;
+		}
+
+		switch (txtime_param_type) {
+		case ETHERNET_TXTIME_PARAM_TYPE_ENABLE_QUEUES:
+			config->txtime_param.enable_txtime =
+				ctx->txtime_statuses[queue_id];
 			break;
 		default:
 			return -ENOTSUP;
@@ -1233,6 +1274,90 @@ static void test_change_qbu_params(void)
 	}
 }
 
+static void test_change_txtime_params(void)
+{
+	struct net_if *iface = net_if_get_default();
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_fake_context *ctx = dev->data;
+	struct ethernet_req_params params;
+	int available_priority_queues;
+	int ret;
+	int i;
+
+	/* Try to get the number of the priority queues */
+	ret = net_mgmt(NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
+		       iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, 0, "could not get the number of priority queues");
+
+	available_priority_queues = params.priority_queues_num;
+
+	zassert_not_equal(available_priority_queues, 0,
+			  "returned no priority queues");
+	zassert_equal(available_priority_queues,
+		      ARRAY_SIZE(ctx->priority_queues),
+		      "an invalid number of priority queues returned");
+
+	net_if_up(iface);
+
+	/* Make sure we cannot enable txtime if the interface is up */
+	params.txtime_param.queue_id = 0;
+	params.txtime_param.type = ETHERNET_TXTIME_PARAM_TYPE_ENABLE_QUEUES;
+	params.txtime_param.enable_txtime = false;
+	ret = net_mgmt(NET_REQUEST_ETHERNET_SET_TXTIME_PARAM, iface,
+		       &params, sizeof(struct ethernet_req_params));
+
+	zassert_equal(ret, -EACCES, "could disable TXTIME for queue 0 (%d)",
+		      ret);
+
+	net_if_down(iface);
+
+	for (i = 0; i < available_priority_queues; ++i) {
+		/* Try to set correct params to a correct queue id */
+		params.txtime_param.queue_id = i;
+
+		/* Disable TXTIME for queue */
+		params.txtime_param.type = ETHERNET_TXTIME_PARAM_TYPE_ENABLE_QUEUES;
+		params.txtime_param.enable_txtime = false;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_TXTIME_PARAM,
+			       iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not disable TXTIME for queue %d (%d)",
+			      i, ret);
+
+		/* Invert it to make sure the read-back value is proper */
+		params.txtime_param.enable_txtime = true;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_TXTIME_PARAM, iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read txtime status (%d)", ret);
+
+		zassert_equal(false, params.txtime_param.enable_txtime,
+			      "txtime should be disabled");
+
+		/* Re-enable TXTIME for queue */
+		params.txtime_param.enable_txtime = true;
+		ret = net_mgmt(NET_REQUEST_ETHERNET_SET_TXTIME_PARAM, iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not enable txtime (%d)", ret);
+
+		/* Invert it to make sure the read-back value is proper */
+		params.txtime_param.enable_txtime = false;
+
+		ret = net_mgmt(NET_REQUEST_ETHERNET_GET_TXTIME_PARAM, iface,
+			       &params, sizeof(struct ethernet_req_params));
+
+		zassert_equal(ret, 0, "could not read txtime status (%d)", ret);
+
+		zassert_equal(true, params.txtime_param.enable_txtime,
+			      "txtime should be enabled");
+	}
+}
+
 static void test_change_promisc_mode(bool mode)
 {
 	struct net_if *iface = default_iface;
@@ -1288,6 +1413,7 @@ void test_main(void)
 			 ztest_unit_test(test_change_qav_params),
 			 ztest_unit_test(test_change_qbv_params),
 			 ztest_unit_test(test_change_qbu_params),
+			 ztest_unit_test(test_change_txtime_params),
 			 ztest_unit_test(test_change_promisc_mode_on),
 			 ztest_unit_test(test_change_to_same_promisc_mode),
 			 ztest_unit_test(test_change_promisc_mode_off));
