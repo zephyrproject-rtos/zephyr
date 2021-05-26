@@ -520,7 +520,7 @@ static ssize_t opcodes_supported_read(struct bt_conn *conn,
 	BT_DBG("Opcodes_supported read: %d (0x%08x)", opcodes, opcodes);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &opcodes, OPCODES_SUPPORTED_LEN);
+				 &opcodes, BT_MCS_OPCODES_SUPPORTED_LEN);
 }
 
 static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr,
@@ -947,7 +947,7 @@ void mpl_operations_supported_cb(uint32_t operations)
 	BT_DBG("Notifying opcodes supported: %d (0x%08x)", operations,
 	       operations);
 	notify(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &operations,
-	       OPCODES_SUPPORTED_LEN);
+	       BT_MCS_OPCODES_SUPPORTED_LEN);
 }
 
 void mpl_search_cb(uint8_t result_code)

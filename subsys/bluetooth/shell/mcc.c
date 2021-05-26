@@ -925,31 +925,31 @@ int cmd_mcc_set_scp_ioptest(const struct shell *shell, size_t argc,
 	case 8:
 	case 9:
 		/* 1, 8 and 9 have the same first SCI */
-		sci_1.type = MPL_SEARCH_TYPE_TRACK_NAME;
+		sci_1.type = BT_MCS_SEARCH_TYPE_TRACK_NAME;
 		strcpy(sci_1.param, "TSPX_Track_Name");
 		break;
 	case 2:
-		sci_1.type = MPL_SEARCH_TYPE_ARTIST_NAME;
+		sci_1.type = BT_MCS_SEARCH_TYPE_ARTIST_NAME;
 		strcpy(sci_1.param, "TSPX_Artist_Name");
 		break;
 	case 3:
-		sci_1.type = MPL_SEARCH_TYPE_ALBUM_NAME;
+		sci_1.type = BT_MCS_SEARCH_TYPE_ALBUM_NAME;
 		strcpy(sci_1.param, "TSPX_Album_Name");
 		break;
 	case 4:
-		sci_1.type = MPL_SEARCH_TYPE_GROUP_NAME;
+		sci_1.type = BT_MCS_SEARCH_TYPE_GROUP_NAME;
 		strcpy(sci_1.param, "TSPX_Group_Name");
 		break;
 	case 5:
-		sci_1.type = MPL_SEARCH_TYPE_EARLIEST_YEAR;
+		sci_1.type = BT_MCS_SEARCH_TYPE_EARLIEST_YEAR;
 		strcpy(sci_1.param, "TSPX_Earliest_Year");
 		break;
 	case 6:
-		sci_1.type = MPL_SEARCH_TYPE_LATEST_YEAR;
+		sci_1.type = BT_MCS_SEARCH_TYPE_LATEST_YEAR;
 		strcpy(sci_1.param, "TSPX_Latest_Year");
 		break;
 	case 7:
-		sci_1.type = MPL_SEARCH_TYPE_GENRE;
+		sci_1.type = BT_MCS_SEARCH_TYPE_GENRE;
 		strcpy(sci_1.param, "TSPX_Genre");
 		break;
 	default:
@@ -960,10 +960,10 @@ int cmd_mcc_set_scp_ioptest(const struct shell *shell, size_t argc,
 
 	switch (testround) {
 	case 8:
-		sci_2.type = MPL_SEARCH_TYPE_ONLY_TRACKS;
+		sci_2.type = BT_MCS_SEARCH_TYPE_ONLY_TRACKS;
 		break;
 	case 9:
-		sci_2.type = MPL_SEARCH_TYPE_ONLY_GROUPS;
+		sci_2.type = BT_MCS_SEARCH_TYPE_ONLY_GROUPS;
 		break;
 	}
 

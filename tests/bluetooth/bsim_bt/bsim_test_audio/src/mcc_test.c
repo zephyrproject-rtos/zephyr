@@ -630,17 +630,17 @@ static void test_cp_play(void)
 {
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_PLAY;
+	op.opcode = BT_MCS_OPC_PLAY;
 	op.use_param = false;
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PLAY operation failed\n");
 		return;
 	}
 
-	if (test_verify_media_state_wait_flags(MPL_MEDIA_STATE_PLAYING)) {
+	if (test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_PLAYING)) {
 		printk("PLAY operation succeeded\n");
 	}
 }
@@ -649,17 +649,17 @@ static void test_cp_pause(void)
 {
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_PAUSE;
+	op.opcode = BT_MCS_OPC_PAUSE;
 	op.use_param = false;
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PAUSE operation failed\n");
 		return;
 	}
 
-	if (test_verify_media_state_wait_flags(MPL_MEDIA_STATE_PAUSED)) {
+	if (test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_PAUSED)) {
 		printk("PAUSE operation succeeded\n");
 	}
 }
@@ -668,17 +668,17 @@ static void test_cp_fast_rewind(void)
 {
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_FAST_REWIND;
+	op.opcode = BT_MCS_OPC_FAST_REWIND;
 	op.use_param = false;
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FAST REWIND operation failed\n");
 		return;
 	}
 
-	if (test_verify_media_state_wait_flags(MPL_MEDIA_STATE_SEEKING)) {
+	if (test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_SEEKING)) {
 		printk("FAST REWIND operation succeeded\n");
 	}
 }
@@ -687,17 +687,17 @@ static void test_cp_fast_forward(void)
 {
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_FAST_FORWARD;
+	op.opcode = BT_MCS_OPC_FAST_FORWARD;
 	op.use_param = false;
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FAST FORWARD operation failed\n");
 		return;
 	}
 
-	if (test_verify_media_state_wait_flags(MPL_MEDIA_STATE_SEEKING)) {
+	if (test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_SEEKING)) {
 		printk("FAST FORWARD operation succeeded\n");
 	}
 }
@@ -706,18 +706,18 @@ static void test_cp_stop(void)
 {
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_STOP;
+	op.opcode = BT_MCS_OPC_STOP;
 	op.use_param = false;
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("STOP operation failed\n");
 		return;
 	}
 
 	/* There is no "STOPPED" state in the spec - STOP goes to PAUSED */
-	if (test_verify_media_state_wait_flags(MPL_MEDIA_STATE_PAUSED)) {
+	if (test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_PAUSED)) {
 		printk("STOP operation succeeded\n");
 	}
 }
@@ -742,13 +742,13 @@ static void test_cp_move_relative(void)
 	WAIT_FOR_FLAG(track_position_read);
 	uint32_t tmp_pos = g_pos;
 
-	op.opcode = MPL_OPC_MOVE_RELATIVE;
+	op.opcode = BT_MCS_OPC_MOVE_RELATIVE;
 	op.use_param = true;
 	op.param = 1000;  /* Position change, measured in 1/100 of a second */
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("MOVE RELATIVE operation failed\n");
 		return;
 	}
@@ -787,12 +787,12 @@ static void test_cp_prev_segment(void)
 	 * For now, we will settle for seeing that the opcodes are accepted.
 	 */
 
-	op.opcode = MPL_OPC_PREV_SEGMENT;
+	op.opcode = BT_MCS_OPC_PREV_SEGMENT;
 	op.use_param = false;
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PREV SEGMENT operation failed\n");
 		return;
 	}
@@ -804,12 +804,12 @@ static void test_cp_next_segment(void)
 {
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_NEXT_SEGMENT;
+	op.opcode = BT_MCS_OPC_NEXT_SEGMENT;
 	op.use_param = false;
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("NEXT SEGMENT operation failed\n");
 		return;
 	}
@@ -821,12 +821,12 @@ static void test_cp_first_segment(void)
 {
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_FIRST_SEGMENT;
+	op.opcode = BT_MCS_OPC_FIRST_SEGMENT;
 	op.use_param = false;
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FIRST SEGMENT operation failed\n");
 		return;
 	}
@@ -838,12 +838,12 @@ static void test_cp_last_segment(void)
 {
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_LAST_SEGMENT;
+	op.opcode = BT_MCS_OPC_LAST_SEGMENT;
 	op.use_param = false;
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("LAST SEGMENT operation failed\n");
 		return;
 	}
@@ -855,13 +855,13 @@ static void test_cp_goto_segment(void)
 {
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_GOTO_SEGMENT;
+	op.opcode = BT_MCS_OPC_GOTO_SEGMENT;
 	op.use_param = true;
 	op.param = 2;    /* Second segment - not the first, maybe not last */
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("GOTO SEGMENT operation failed\n");
 		return;
 	}
@@ -900,7 +900,7 @@ static void test_cp_prev_track(void)
 	 * current track object ID has changed.
 	 */
 
-	op.opcode = MPL_OPC_PREV_TRACK;
+	op.opcode = BT_MCS_OPC_PREV_TRACK;
 	op.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
@@ -908,7 +908,7 @@ static void test_cp_prev_track(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PREV TRACK operation failed\n");
 		return;
 	}
@@ -929,7 +929,7 @@ static void test_cp_next_track(void)
 	uint64_t object_id;
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_NEXT_TRACK;
+	op.opcode = BT_MCS_OPC_NEXT_TRACK;
 	op.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
@@ -937,7 +937,7 @@ static void test_cp_next_track(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("NEXT TRACK operation failed\n");
 		return;
 	}
@@ -957,7 +957,7 @@ static void test_cp_first_track(void)
 	uint64_t object_id;
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_FIRST_TRACK;
+	op.opcode = BT_MCS_OPC_FIRST_TRACK;
 	op.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
@@ -965,7 +965,7 @@ static void test_cp_first_track(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FIRST TRACK operation failed\n");
 		return;
 	}
@@ -985,7 +985,7 @@ static void test_cp_last_track(void)
 	uint64_t object_id;
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_LAST_TRACK;
+	op.opcode = BT_MCS_OPC_LAST_TRACK;
 	op.use_param = false;
 
 	test_read_current_track_object_id_wait_flags();
@@ -993,7 +993,7 @@ static void test_cp_last_track(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("LAST TRACK operation failed\n");
 		return;
 	}
@@ -1013,7 +1013,7 @@ static void test_cp_goto_track(void)
 	uint64_t object_id;
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_GOTO_TRACK;
+	op.opcode = BT_MCS_OPC_GOTO_TRACK;
 	op.use_param = true;
 	op.param = 2; /* Second track, not the first, maybe not the last */
 
@@ -1022,7 +1022,7 @@ static void test_cp_goto_track(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("GOTO TRACK operation failed\n");
 		return;
 	}
@@ -1068,7 +1068,7 @@ static void test_cp_prev_group(void)
 	 * current group object ID has changed.
 	 */
 
-	op.opcode = MPL_OPC_PREV_GROUP;
+	op.opcode = BT_MCS_OPC_PREV_GROUP;
 	op.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
@@ -1076,7 +1076,7 @@ static void test_cp_prev_group(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("PREV GROUP operation failed\n");
 		return;
 	}
@@ -1097,7 +1097,7 @@ static void test_cp_next_group(void)
 	uint64_t object_id;
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_NEXT_GROUP;
+	op.opcode = BT_MCS_OPC_NEXT_GROUP;
 	op.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
@@ -1105,7 +1105,7 @@ static void test_cp_next_group(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("NEXT GROUP operation failed\n");
 		return;
 	}
@@ -1125,7 +1125,7 @@ static void test_cp_first_group(void)
 	uint64_t object_id;
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_FIRST_GROUP;
+	op.opcode = BT_MCS_OPC_FIRST_GROUP;
 	op.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
@@ -1133,7 +1133,7 @@ static void test_cp_first_group(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("FIRST GROUP operation failed\n");
 		return;
 	}
@@ -1153,7 +1153,7 @@ static void test_cp_last_group(void)
 	uint64_t object_id;
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_LAST_GROUP;
+	op.opcode = BT_MCS_OPC_LAST_GROUP;
 	op.use_param = false;
 
 	test_read_current_group_object_id_wait_flags();
@@ -1161,7 +1161,7 @@ static void test_cp_last_group(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("LAST GROUP operation failed\n");
 		return;
 	}
@@ -1181,7 +1181,7 @@ static void test_cp_goto_group(void)
 	uint64_t object_id;
 	struct mpl_op_t op;
 
-	op.opcode = MPL_OPC_GOTO_GROUP;
+	op.opcode = BT_MCS_OPC_GOTO_GROUP;
 	op.use_param = true;
 	op.param = 2; /* Second group, not the first, maybe not the last */
 
@@ -1190,7 +1190,7 @@ static void test_cp_goto_group(void)
 
 	test_set_cp_wait_flags(op);
 
-	if (g_control_point_result != MPL_OPC_NTF_SUCCESS) {
+	if (g_control_point_result != BT_MCS_OPC_NTF_SUCCESS) {
 		FAIL("GOTO GROUP operation failed\n");
 		return;
 	}
@@ -1238,7 +1238,7 @@ static void test_scp(void)
 	 * so it makes no difference what we search for.  The result is the
 	 * same anyway.
 	 */
-	sci.type = MPL_SEARCH_TYPE_TRACK_NAME;
+	sci.type = BT_MCS_SEARCH_TYPE_TRACK_NAME;
 	strcpy(sci.param, "Some track name");
 	/* Length is length of type, plus length of param w/o termination */
 	sci.len = sizeof(sci.type) + strlen(sci.param);
@@ -1266,7 +1266,7 @@ static void test_scp(void)
 	WAIT_FOR_FLAG(search_control_point_set);
 	WAIT_FOR_FLAG(search_control_point_notified);
 
-	if (g_search_control_point_result != MPL_SCP_NTF_SUCCESS) {
+	if (g_search_control_point_result != BT_MCS_SCP_NTF_SUCCESS) {
 		FAIL("SEARCH operation failed\n");
 		return;
 	}
@@ -1601,10 +1601,10 @@ void test_main(void)
 
 	uint8_t playing_order;
 
-	if (g_playing_order != MPL_PLAYING_ORDER_SHUFFLE_ONCE) {
-		playing_order = MPL_PLAYING_ORDER_SHUFFLE_ONCE;
+	if (g_playing_order != BT_MCS_PLAYING_ORDER_SHUFFLE_ONCE) {
+		playing_order = BT_MCS_PLAYING_ORDER_SHUFFLE_ONCE;
 	} else {
-		playing_order = MPL_PLAYING_ORDER_SINGLE_ONCE;
+		playing_order = BT_MCS_PLAYING_ORDER_SINGLE_ONCE;
 	}
 
 	UNSET_FLAG(playing_order_set);
@@ -1664,7 +1664,7 @@ void test_main(void)
 	 */
 
 	/* It is assumed that the server starts the test in the paused state */
-	test_verify_media_state_wait_flags(MPL_MEDIA_STATE_PAUSED);
+	test_verify_media_state_wait_flags(BT_MCS_MEDIA_STATE_PAUSED);
 
 	/* The tests are ordered to ensure that each operation changes state */
 	test_cp_play();

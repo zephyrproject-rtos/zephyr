@@ -196,7 +196,7 @@ int cmd_mpl_playing_order_changed_cb(const struct shell *shell, size_t argc,
 int cmd_mpl_state_changed_cb(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
-	mpl_media_state_cb(MPL_MEDIA_STATE_SEEKING);
+	mpl_media_state_cb(BT_MCS_MEDIA_STATE_SEEKING);
 
 	return 0;
 }
