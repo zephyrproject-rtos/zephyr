@@ -328,12 +328,12 @@ endmenu
 # Implement the null pointer detection using either the Data Watchpoint and
 # Trace Unit and the Debug Monitor Exception, or the Memory Protection Unit.
 
-choice CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION
+choice NULL_POINTER_EXCEPTION_DETECTION
 	bool "Enable and use null-pointer exception"
 	# Disable this until https://github.com/zephyrproject-rtos/zephyr/issues/32984 is fixed
-	# default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && CPU_CORTEX_M_HAS_DWT
-	default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_MPU if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && ARM_MPU && !CPU_CORTEX_M_HAS_DWT
-	default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE
+	# default NULL_POINTER_EXCEPTION_DETECTION_DWT if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && CPU_CORTEX_M_HAS_DWT
+	default NULL_POINTER_EXCEPTION_DETECTION_MPU if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && ARM_MPU && !CPU_CORTEX_M_HAS_DWT
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE
 	help
 	  There are 2 implementations available, one based
 	  on DWT and the other based on MPU. Use this choice
@@ -341,13 +341,13 @@ choice CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION
 	  feature is disabled. In the test suite the feature
 	  is enabled and the DWT-based solution is preferred.
 
-config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE
+config NULL_POINTER_EXCEPTION_DETECTION_NONE
 	bool "Do not enable null pointer exception detection"
 	help
 	  Null pointer exception detection feature is not
 	  enabled.
 
-config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT
+config NULL_POINTER_EXCEPTION_DETECTION_DWT
 	bool "Use DWT for null pointer exception detection"
 	depends on CPU_CORTEX_M_HAS_DWT
 	depends on !TRUSTED_EXECUTION_NONSECURE
@@ -365,7 +365,7 @@ config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT
 	  for ARMv8-M).
 	  - Requires the Cortex-M core be in normal mode.
 
-config CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_MPU
+config NULL_POINTER_EXCEPTION_DETECTION_MPU
 	bool "Use MPU for null pointer exception detection"
 	depends on !TRUSTED_EXECUTION_NONSECURE
 	depends on ARM_MPU

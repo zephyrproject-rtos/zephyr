@@ -178,7 +178,7 @@ static bool memory_fault_recoverable(z_arch_esf_t *esf, bool synchronous)
 		uint32_t start = (uint32_t)exceptions[i].start & ~0x1U;
 		uint32_t end = (uint32_t)exceptions[i].end & ~0x1U;
 
-#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+#if defined(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
 	/* Non-synchronous exceptions (e.g. DebugMonitor) may have
 	 * allowed PC to continue to the next instruction.
 	 */
@@ -613,7 +613,7 @@ static void debug_monitor(z_arch_esf_t *esf, bool *recoverable)
 	PR_FAULT_INFO(
 		"***** Debug monitor exception *****");
 
-#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+#if defined(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
 	if (!z_arm_debug_monitor_event_error_check()) {
 		/* By default, all debug monitor exceptions that are not
 		 * treated as errors by z_arm_debug_event_error_check(),
