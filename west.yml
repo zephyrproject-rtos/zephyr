@@ -112,7 +112,7 @@ manifest:
       revision: 385e19da1ae15f27872c2543b97276a42f102ead
       path: modules/lib/openthread
     - name: segger
-      revision: 7d78f7121dc4c59396c12e60e34f3617bac5efcb
+      revision: 7cbc8446db9e09ed0ca4e60e48f38e2c330223fe
       path: modules/debug/segger
     - name: sof
       revision: 779f28ed465c03899c8a7d4aaf399856f4e51158
