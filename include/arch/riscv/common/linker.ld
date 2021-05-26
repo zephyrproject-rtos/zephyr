@@ -108,6 +108,15 @@ SECTIONS
 		KEEP(*(.vectors.*))
     } GROUP_LINK_IN(ROMABLE_REGION)
 
+    SECTION_PROLOGUE(rom_start,,)
+    {
+		. = ALIGN(16);
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_START ...).
+ */
+#include <snippets-rom-start.ld>
+    } GROUP_LINK_IN(ROMABLE_REGION)
+
     SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
     {
 		KEEP(*(.reset.*))
