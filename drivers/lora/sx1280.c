@@ -862,7 +862,7 @@ int sx1280_lora_send(const struct device *dev, uint8_t *data,
 	return 0;
 }
 
-void SetTxContinuousWave( void )
+void sx1280_SetTxContinuousWave( void )
 {
     WriteCommand( RADIO_SET_TXCONTINUOUSWAVE, 0, 0 );
 }
@@ -871,7 +871,7 @@ int sx1280_lora_test_cw(const struct device *dev, uint32_t frequency,
 			int8_t tx_power,
 			uint16_t duration)
 {
-	SetTxContinuousWave(); // TODO: use parameters?
+	sx1280_SetTxContinuousWave(); // TODO: use parameters?
 	return 0;
 }
 
