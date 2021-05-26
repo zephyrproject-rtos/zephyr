@@ -104,8 +104,7 @@ static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
 			    inst, description);
 	}
 }
-static void vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst, int err,
-			  int16_t offset)
+static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
 	if (err) {
 		shell_error(ctx_shell, "VOCS state get failed (%d) for inst %p",
@@ -115,8 +114,7 @@ static void vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst, int err,
 	}
 }
 
-static void vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
-			     int err, uint32_t location)
+static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -128,8 +126,8 @@ static void vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
 	}
 }
 
-static void vocs_description_cb(struct bt_conn *conn, struct bt_vocs *inst,
-				int err, char *description)
+static void vocs_description_cb(struct bt_vocs *inst, int err,
+				char *description)
 {
 	if (err) {
 		shell_error(ctx_shell,
