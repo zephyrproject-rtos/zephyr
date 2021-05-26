@@ -115,16 +115,25 @@ void pm_power_state_set(struct pm_state_info info)
 	}
 }
 
+/*
+ * Zephyr PM code expects us to enabled interrupts at post op exit. Zephyr used
+ * arch_irq_lock() which sets BASEPRI to a non-zero value masking all interrupts
+ * preventing wake. MCHP z_power_soc_(deep)_sleep sets PRIMASK=1 and BASEPRI=0
+ * allowing wake from any enabled interrupt and prevents the CPU from entering
+ * an ISR on wake except for faults. We re-enable interrupts by setting PRIMASK
+ * to 0.
+ */
 void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	switch (info.state) {
 	case PM_STATE_SUSPEND_TO_IDLE:
-		__enable_irq();
-		break;
 	case PM_STATE_SUSPEND_TO_RAM:
-		__enable_irq();
+		__set_PRIMASK(0);
+		__ISB();
 		break;
+
 	default:
+		irq_unlock(0);
 		break;
 	}
 }
