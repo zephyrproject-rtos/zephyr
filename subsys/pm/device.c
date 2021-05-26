@@ -15,8 +15,6 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
-typedef uint16_t device_idx_t;
-
 extern const struct device __device_start[];
 extern const struct device __device_end[];
 
@@ -26,7 +24,7 @@ extern const struct device __device_end[];
 static const struct device *pm_devices[CONFIG_PM_MAX_DEVICES];
 
 /* Number of devices successfully suspended. */
-static device_idx_t num_susp = 0;
+static size_t num_susp;
 
 static bool should_suspend(const struct device *dev, uint32_t state)
 {
@@ -106,7 +104,7 @@ int pm_force_suspend_devices(void)
 
 void pm_resume_devices(void)
 {
-	device_idx_t i;
+	size_t i;
 
 	for (i = 0; i < num_susp; i++) {
 		pm_device_state_set(pm_devices[i],
