@@ -306,8 +306,6 @@ Drivers and Sensors
 
 * ADC
 
-* Audio
-
 * Bluetooth
 
   * The Kconfig option ``CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME`` was removed.
@@ -333,11 +331,11 @@ Drivers and Sensors
 
 * Counter
 
-* Crypto
+   * Added support for ESP32 Counter
 
 * DAC
 
-* Debug
+   * Added support for Microchip MCP4725
 
 * Disk
 
@@ -345,15 +343,17 @@ Drivers and Sensors
 
 * Display
 
+  * Added support for ST7735R
+
 * DMA
 
   * Added support on STM32G0 and STM32H7
 
 * EEPROM
 
-* Entropy
-
 * ESPI
+
+  * Added support for Microchip eSPI SAF
 
 * Ethernet
 
@@ -401,11 +401,15 @@ Drivers and Sensors
 
 * Hardware Info
 
+  * Added support on Silicon Labs Gecko SoCs
+
 * I2C
 
   * Added support on STM32F2
 
 * I2S
+
+  * Added support for NXP LPC devices
 
 * IEEE 802.15.4
 
@@ -426,15 +430,14 @@ Drivers and Sensors
 
 * Interrupt Controller
 
-* IPM
-
-* Keyboard Scan
-
 * LED
 
-* LED Strip
+  * Add support for LED GPIO
+  * Added power management support for LED PWM
 
 * LoRa
+
+  * Added support for SX1272
 
 * Modem
 
@@ -450,15 +453,11 @@ Drivers and Sensors
   * Fixed build errors on 64-bit platforms.
   * Added support for dialup modem in PPP driver.
 
-* PECI
-
 * Pinmux
-
-* PS/2
 
 * PWM
 
-  * Added support on STM32F2 and  STM32L1
+  * Added support on STM32F2 and STM32L1
 
 * Sensor
 
@@ -479,8 +478,6 @@ Drivers and Sensors
 * USB
 
   * Added support on STM32H7
-
-* Video
 
 * Watchdog
 
