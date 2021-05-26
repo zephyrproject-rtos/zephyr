@@ -190,7 +190,7 @@ int bt_le_adv_set_enable_ext(struct bt_le_ext_adv *adv,
 int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		return bt_le_adv_set_enable_ext(adv, enable, NULL);
 	}
 
@@ -200,7 +200,7 @@ int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable)
 static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		if (param->peer &&
 		    !(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
 		    !(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
@@ -396,7 +396,7 @@ static int set_ad(struct bt_le_ext_adv *adv, const struct bt_ad *ad,
 		  size_t ad_len)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		return hci_set_ad_ext(adv, BT_HCI_OP_LE_SET_EXT_ADV_DATA,
 				      ad, ad_len);
 	}
@@ -408,7 +408,7 @@ static int set_sd(struct bt_le_ext_adv *adv, const struct bt_ad *sd,
 		  size_t sd_len)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		return hci_set_ad_ext(adv, BT_HCI_OP_LE_SET_EXT_SCAN_RSP_DATA,
 				      sd, sd_len);
 	}
@@ -990,7 +990,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		err = bt_le_adv_start_ext(adv, param, ad, ad_len, sd, sd_len);
 	} else {
 		err = bt_le_adv_start_legacy(adv, param, ad, ad_len, sd, sd_len);
@@ -1033,7 +1033,7 @@ int bt_le_adv_stop(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		err = bt_le_adv_set_enable_ext(adv, false, NULL);
 		if (err) {
 			return err;
@@ -1049,7 +1049,7 @@ int bt_le_adv_stop(void)
 
 #if defined(CONFIG_BT_OBSERVER)
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	      BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) &&
+	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) &&
 	    !IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY)) {
 		/* If scan is ongoing set back NRPA */
@@ -1302,7 +1302,7 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 	struct net_buf *buf;
 	int err;
 
-	if (!BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	if (!BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
 	}
 

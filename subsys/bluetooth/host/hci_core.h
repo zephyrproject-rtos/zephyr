@@ -61,6 +61,14 @@ enum {
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
 				 BIT(BT_DEV_PRESET_ID))
 
+#if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
+/* Check the feature bit for extended or legacy advertising commands */
+#define BT_DEV_FEAT_LE_EXT_ADV(feat) BT_FEAT_LE_EXT_ADV(feat)
+#else
+/* Always use extended advertising commands. */
+#define BT_DEV_FEAT_LE_EXT_ADV(feat)  1
+#endif
+
 enum {
 	/* Advertising set has been created in the host. */
 	BT_ADV_CREATED,
