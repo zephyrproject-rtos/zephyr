@@ -69,8 +69,7 @@ static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 	g_cb = true;
 }
 
-static void vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst, int err,
-			  int16_t offset)
+static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
 	if (err) {
 		FAIL("VOCS state cb err (%d)", err);
@@ -82,8 +81,7 @@ static void vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst, int err,
 	g_cb = true;
 }
 
-static void vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
-			     int err, uint32_t location)
+static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 {
 	if (err) {
 		FAIL("VOCS location cb err (%d)", err);
@@ -95,8 +93,8 @@ static void vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
 	g_cb = true;
 }
 
-static void vocs_description_cb(struct bt_conn *conn, struct bt_vocs *inst,
-				int err, char *description)
+static void vocs_description_cb(struct bt_vocs *inst, int err,
+				char *description)
 {
 	if (err) {
 		FAIL("VOCS description cb err (%d)", err);
@@ -114,7 +112,7 @@ static void vocs_description_cb(struct bt_conn *conn, struct bt_vocs *inst,
 	g_cb = true;
 }
 
-static void vocs_write_cb(struct bt_conn *conn, struct bt_vocs *inst, int err)
+static void vocs_write_cb(struct bt_vocs *inst, int err)
 {
 	if (err) {
 		FAIL("VOCS write failed (%d)\n", err);

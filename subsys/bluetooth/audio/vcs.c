@@ -675,11 +675,11 @@ int bt_vcs_vocs_state_get(struct bt_conn *conn, struct bt_vocs *inst)
 {
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_VOCS) &&
 	    conn && bt_vcs_client_valid_vocs_inst(conn, inst)) {
-		return bt_vocs_state_get(conn, inst);
+		return bt_vocs_state_get(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_VOCS) && !conn && valid_vocs_inst(inst)) {
-		return bt_vocs_state_get(NULL, inst);
+		return bt_vocs_state_get(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -689,11 +689,11 @@ int bt_vcs_vocs_location_get(struct bt_conn *conn, struct bt_vocs *inst)
 {
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_VOCS) &&
 	    conn && bt_vcs_client_valid_vocs_inst(conn, inst)) {
-		return bt_vocs_location_get(conn, inst);
+		return bt_vocs_location_get(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_VOCS) && !conn && valid_vocs_inst(inst)) {
-		return bt_vocs_location_get(NULL, inst);
+		return bt_vocs_location_get(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -704,11 +704,11 @@ int bt_vcs_vocs_location_set(struct bt_conn *conn, struct bt_vocs *inst,
 {
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_VOCS) &&
 	    conn && bt_vcs_client_valid_vocs_inst(conn, inst)) {
-		return bt_vocs_location_set(conn, inst, location);
+		return bt_vocs_location_set(inst, location);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_VOCS) && !conn && valid_vocs_inst(inst)) {
-		return bt_vocs_location_set(NULL, inst, location);
+		return bt_vocs_location_set(inst, location);
 	}
 
 	return -EOPNOTSUPP;
@@ -719,11 +719,11 @@ int bt_vcs_vocs_state_set(struct bt_conn *conn, struct bt_vocs *inst,
 {
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_VOCS) &&
 	    conn && bt_vcs_client_valid_vocs_inst(conn, inst)) {
-		return bt_vocs_state_set(conn, inst, offset);
+		return bt_vocs_state_set(inst, offset);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_VOCS) && !conn && valid_vocs_inst(inst)) {
-		return bt_vocs_state_set(NULL, inst, offset);
+		return bt_vocs_state_set(inst, offset);
 	}
 
 	return -EOPNOTSUPP;
@@ -733,11 +733,11 @@ int bt_vcs_vocs_description_get(struct bt_conn *conn, struct bt_vocs *inst)
 {
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_VOCS) &&
 	    conn && bt_vcs_client_valid_vocs_inst(conn, inst)) {
-		return bt_vocs_description_get(conn, inst);
+		return bt_vocs_description_get(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_VOCS) && !conn && valid_vocs_inst(inst)) {
-		return bt_vocs_description_get(NULL, inst);
+		return bt_vocs_description_get(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -748,11 +748,11 @@ int bt_vcs_vocs_description_set(struct bt_conn *conn, struct bt_vocs *inst,
 {
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_VOCS) &&
 	    conn && bt_vcs_client_valid_vocs_inst(conn, inst)) {
-		return bt_vocs_description_set(conn, inst, description);
+		return bt_vocs_description_set(inst, description);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_VOCS) && !conn && valid_vocs_inst(inst)) {
-		return bt_vocs_description_set(NULL, inst, description);
+		return bt_vocs_description_set(inst, description);
 	}
 
 	return -EOPNOTSUPP;
