@@ -893,6 +893,22 @@ Tests and Samples
 
      filter: dt_enabled_alias_with_parent_compat("led0", "gpio-leds")
 
+* Add a feature which handles pytest script in twister and provide an example.
+* Provide test excution time per ztest testcase.
+* Added and refined some testcases, most of them are negative testcases, to
+  improve the test code coverage:
+
+   * Testcases of x86's regular/direct interrupts and offload job from ISR.
+   * Testcases of SMP, and enabled SMP for existed testing of semaphore, condvar, etc.
+   * Testcases of memory protection, userspace and memory heap.
+   * Testcases of data structure include stack, queue, ringbuffer and rbtree.
+   * Testcases of IPC include pipe, poll, mailbox, message queue.
+   * Testcases of synchronization include mutex, semaphore, atomic operations.
+   * Testcases of scheduling and thread.
+   * Testcases of testing for arch_nop() and errno.
+   * Testcases of libc and posix API.
+   * Testcases of log and sensor subsystem.
+
 Issue Related Items
 *******************
 
