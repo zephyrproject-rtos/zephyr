@@ -296,6 +296,11 @@ Boards & SoC Support
 
 * Added support for these following shields:
 
+  * FTDI VM800C Embedded Video Engine Board
+  * Generic ST7735R Display Shield
+  * NXP FRDM-STBC-AGM01
+  * Semtech SX1272MB2DAS LoRa Shield
+
 Drivers and Sensors
 *******************
 
