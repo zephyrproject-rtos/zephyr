@@ -31,36 +31,36 @@ struct npcx_clk_cfg {
  * (Please refer Figure 58. for more information.)
  *
  * Suggestion:
- * - OSC_CLK > 50MHz, XF_RANGE should be 1, else 0.
+ * - OFMCLK > 50MHz, XF_RANGE should be 1, else 0.
  * - CORE_CLK > 50MHz, AHB6DIV should be 1, else 0.
  * - CORE_CLK > 50MHz, FIUDIV should be 1, else 0.
  */
 
-/* Target OSC_CLK freq */
-#define OSC_CLK   CONFIG_CLOCK_NPCX_OSC_CYCLES_PER_SEC
+/* Target OFMCLK freq */
+#define OFMCLK   CONFIG_CLOCK_NPCX_OSC_CYCLES_PER_SEC
 /* Core domain clock */
 #define CORE_CLK  CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 /* Low Frequency clock */
 #define LFCLK     32768
 /* Core clock prescaler */
-#define FPRED_VAL ((OSC_CLK / CORE_CLK) - 1)
+#define FPRED_VAL ((OFMCLK / CORE_CLK) - 1)
 
 /* FMUL clock */
-#if (OSC_CLK > 50000000)
-#define FMCLK (OSC_CLK / 2) /* FMUL clock = OSC_CLK/2 if OSC_CLK > 50MHz */
+#if (OFMCLK > 50000000)
+#define FMCLK (OFMCLK / 2) /* FMUL clock = OFMCLK/2 if OFMCLK > 50MHz */
 #else
-#define FMCLK OSC_CLK /* FMUL clock = OSC_CLK */
+#define FMCLK OFMCLK /* FMUL clock = OFMCLK */
 #endif
 
 /* APBs source clock */
-#define APBSRC_CLK OSC_CLK
-/* APB1 clock divider, default value (APB1 clock = OSC_CLK/4) */
+#define APBSRC_CLK OFMCLK
+/* APB1 clock divider, default value (APB1 clock = OFMCLK/4) */
 #define APB1DIV_VAL (CONFIG_CLOCK_NPCX_APB1_PRESCALER - 1)
-/* APB2 clock divider, default value (APB2 clock = OSC_CLK/8) */
+/* APB2 clock divider, default value (APB2 clock = OFMCLK/8) */
 #define APB2DIV_VAL (CONFIG_CLOCK_NPCX_APB2_PRESCALER - 1)
-/* APB3 clock divider, default value (APB3 clock = OSC_CLK/2) */
+/* APB3 clock divider, default value (APB3 clock = OFMCLK/2) */
 #define APB3DIV_VAL (CONFIG_CLOCK_NPCX_APB3_PRESCALER - 1)
-/* APB4 clock divider, default value (APB4 clock = OSC_CLK/6) */
+/* APB4 clock divider, default value (APB4 clock = OFMCLK/6) */
 #ifdef CONFIG_CLOCK_NPCX_APB4_PRESCALER
 #define APB4DIV_VAL (CONFIG_CLOCK_NPCX_APB4_PRESCALER - 1)
 #endif
@@ -83,42 +83,42 @@ struct npcx_clk_cfg {
 
 /*
  * Frequency multiplier M/N value definitions according to the requested
- * OSC_CLK (Unit:Hz).
+ * OFMCLK (Unit:Hz).
  */
-#if (OSC_CLK > 50000000)
-#define HFCGN_VAL    0x82 /* Set XF_RANGE as 1 if OSC_CLK > 50MHz */
+#if (OFMCLK > 50000000)
+#define HFCGN_VAL    0x82 /* Set XF_RANGE as 1 if OFMCLK > 50MHz */
 #else
 #define HFCGN_VAL    0x02
 #endif
-#if   (OSC_CLK == 100000000)
+#if   (OFMCLK == 100000000)
 #define HFCGMH_VAL   0x0B
 #define HFCGML_VAL   0xEC
-#elif (OSC_CLK == 96000000)
+#elif (OFMCLK == 96000000)
 #define HFCGMH_VAL   0x0B
 #define HFCGML_VAL   0x72
-#elif (OSC_CLK == 90000000)
+#elif (OFMCLK == 90000000)
 #define HFCGMH_VAL   0x0A
 #define HFCGML_VAL   0xBA
-#elif (OSC_CLK == 80000000)
+#elif (OFMCLK == 80000000)
 #define HFCGMH_VAL   0x09
 #define HFCGML_VAL   0x89
-#elif (OSC_CLK == 66000000)
+#elif (OFMCLK == 66000000)
 #define HFCGMH_VAL   0x07
 #define HFCGML_VAL   0xDE
-#elif (OSC_CLK == 50000000)
+#elif (OFMCLK == 50000000)
 #define HFCGMH_VAL   0x0B
 #define HFCGML_VAL   0xEC
-#elif (OSC_CLK == 48000000)
+#elif (OFMCLK == 48000000)
 #define HFCGMH_VAL   0x0B
 #define HFCGML_VAL   0x72
-#elif (OSC_CLK == 40000000)
+#elif (OFMCLK == 40000000)
 #define HFCGMH_VAL   0x09
 #define HFCGML_VAL   0x89
-#elif (OSC_CLK == 33000000)
+#elif (OFMCLK == 33000000)
 #define HFCGMH_VAL   0x07
 #define HFCGML_VAL   0xDE
 #else
-#error "Unsupported OSC_CLK Frequency"
+#error "Unsupported OFMCLK Frequency"
 #endif
 
 /**

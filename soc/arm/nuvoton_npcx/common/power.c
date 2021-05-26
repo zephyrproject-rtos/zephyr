@@ -25,7 +25,7 @@
  * +--------------------------------------------------------------------------+
  *
  * LFCLK - Low-Frequency Clock. Its frequency is fixed to 32kHz.
- * HFCLK - High-Frequency (PLL) Clock. Its frequency is configured to OSC_CLK.
+ * HFCLK - High-Frequency (PLL) Clock. Its frequency is configured to OFMCLK.
  *
  * Based on the follwoing criteria:
  *
