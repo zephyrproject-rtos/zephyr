@@ -14,11 +14,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Function to create device PM list
- */
-void pm_create_device_list(void);
-
-/**
  * @brief Function to suspend the devices in PM device list
  */
 int pm_suspend_devices(void);
