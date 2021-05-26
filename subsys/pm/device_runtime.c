@@ -24,9 +24,7 @@ static void device_pm_callback(const struct device *dev,
 {
 	__ASSERT(retval == 0, "Device set power state failed");
 
-	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
 	dev->pm->state = *state;
-	(void)k_mutex_unlock(&dev->pm->lock);
 
 	/*
 	 * This function returns the number of woken threads on success. There
@@ -39,8 +37,6 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 {
 	const struct device *dev = pm->dev;
 	int ret = 0;
-
-	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
 
 	switch (dev->pm->state) {
 	case PM_DEVICE_STATE_ACTIVE:
@@ -71,7 +67,7 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 	}
 
 	__ASSERT(ret == 0, "Set Power state error");
-	goto end;
+	return;
 
 handler_out:
 	/*
@@ -79,8 +75,6 @@ handler_out:
 	 * is nothing we can do with this information. Just ignoring it.
 	 */
 	(void)k_condvar_broadcast(&dev->pm->condvar);
-end:
-	(void)k_mutex_unlock(&dev->pm->lock);
 }
 
 static void pm_work_handler(struct k_work *work)
@@ -88,7 +82,9 @@ static void pm_work_handler(struct k_work *work)
 	struct pm_device *pm = CONTAINER_OF(work,
 					struct pm_device, work);
 
+	(void)k_mutex_lock(&pm->lock, K_FOREVER);
 	pm_device_runtime_state_set(pm);
+	(void)k_mutex_unlock(&pm->lock);
 }
 
 static int pm_device_request(const struct device *dev,
@@ -157,16 +153,23 @@ static int pm_device_request(const struct device *dev,
 		goto out_unlock;
 	}
 
+	while ((k_work_delayable_is_pending(&dev->pm->work)) ||
+		(dev->pm->state == PM_DEVICE_STATE_SUSPENDING) ||
+		(dev->pm->state == PM_DEVICE_STATE_RESUMING)) {
+		ret = k_condvar_wait(&dev->pm->condvar, &dev->pm->lock,
+			       K_FOREVER);
+		if (ret != 0) {
+			break;
+		}
+	}
+
 	pm_device_runtime_state_set(dev->pm);
-	(void)k_mutex_unlock(&dev->pm->lock);
-	pm_device_wait(dev, K_FOREVER);
 
 	/*
 	 * dev->pm->state was set in device_pm_callback(). As the device
 	 * may not have been properly changed to the target_state or another
 	 * thread we check it here before returning.
 	 */
-	(void)k_mutex_lock(&dev->pm->lock, K_FOREVER);
 	ret = target_state == dev->pm->state ? 0 : -EIO;
 
 out_unlock:
