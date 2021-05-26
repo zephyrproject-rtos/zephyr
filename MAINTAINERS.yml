@@ -135,6 +135,7 @@ ARM arch:
         - galak
         - MaureenHelm
         - stephanosio
+        - bbolen
     files:
         - arch/arm/aarch32/
         - arch/arm/common/
