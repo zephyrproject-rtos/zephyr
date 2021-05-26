@@ -101,6 +101,7 @@ static inline uint32_t uart_numicro_convert_parity(enum uart_config_parity parit
 	}
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_numicro_configure(const struct device *dev,
 				  const struct uart_config *cfg)
 {
@@ -145,6 +146,7 @@ static int uart_numicro_config_get(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 static int uart_numicro_init(const struct device *dev)
 {
@@ -178,8 +180,10 @@ static const struct uart_driver_api uart_numicro_driver_api = {
 	.poll_in          = uart_numicro_poll_in,
 	.poll_out         = uart_numicro_poll_out,
 	.err_check        = uart_numicro_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure        = uart_numicro_configure,
 	.config_get       = uart_numicro_config_get,
+#endif
 };
 
 #define NUMICRO_INIT(index)						\

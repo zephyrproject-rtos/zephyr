@@ -583,6 +583,7 @@ static inline bool uart_xlnx_ps_cfg2ll_hwctrl(
 	return true;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 /**
  * @brief Configures the UART device at run-time.
  *
@@ -639,6 +640,7 @@ static int uart_xlnx_ps_configure(const struct device *dev,
 
 	return 0;
 };
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 /**
  * @brief Converts a Mode Register bit mask to a parity configuration
@@ -787,6 +789,7 @@ static inline enum uart_config_flow_control uart_xlnx_ps_ll2cfg_hwctrl(
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 /**
  * @brief Returns the current configuration of the UART at run-time.
  *
@@ -824,6 +827,7 @@ static int uart_xlnx_ps_config_get(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
 
@@ -1147,8 +1151,10 @@ static void uart_xlnx_ps_isr(const struct device *dev)
 static const struct uart_driver_api uart_xlnx_ps_driver_api = {
 	.poll_in = uart_xlnx_ps_poll_in,
 	.poll_out = uart_xlnx_ps_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = uart_xlnx_ps_configure,
 	.config_get = uart_xlnx_ps_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_xlnx_ps_fifo_fill,
 	.fifo_read = uart_xlnx_ps_fifo_read,
