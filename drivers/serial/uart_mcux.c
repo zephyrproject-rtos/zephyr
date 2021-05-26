@@ -102,6 +102,7 @@ FSL_FEATURE_UART_HAS_STOP_BIT_CONFIG_SUPPORT
 	return 0;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_mcux_config_get(const struct device *dev,
 				struct uart_config *cfg)
 {
@@ -111,6 +112,7 @@ static int uart_mcux_config_get(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 static int uart_mcux_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -334,8 +336,10 @@ static const struct uart_driver_api uart_mcux_driver_api = {
 	.poll_in = uart_mcux_poll_in,
 	.poll_out = uart_mcux_poll_out,
 	.err_check = uart_mcux_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = uart_mcux_configure,
 	.config_get = uart_mcux_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_mcux_fifo_fill,
 	.fifo_read = uart_mcux_fifo_read,

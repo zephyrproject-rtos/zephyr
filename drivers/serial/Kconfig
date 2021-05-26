@@ -31,6 +31,21 @@ config SERIAL_SUPPORT_INTERRUPT
 	  This is an option to be enabled by individual serial driver
 	  to signal that the driver and hardware supports interrupts.
 
+config UART_USE_RUNTIME_CONFIGURE
+	bool "Enable runtime configuration for UART controllers"
+	default y
+	help
+	  Enable runtime configuration of UART controllers.
+	  This allows applications to call uart_configure() to
+	  configure the UART controllers at runtime, and calling
+	  uart_config_get() to retrieve configuration. If this is
+	  disabled, UART controllers rely on UART driver's
+	  initialization function to properly configure
+	  the controller.
+
+	  Say y if unsure. Disable this to reduce footprint for
+	  applications that do not require runtime UART configuration.
+
 config UART_ASYNC_API
 	bool "Enable new asynchronous UART API [EXPERIMENTAL]"
 	depends on SERIAL_SUPPORT_ASYNC

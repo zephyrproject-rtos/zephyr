@@ -161,6 +161,7 @@ static int uart_esp32_err_check(const struct device *dev)
 	return err;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_esp32_config_get(const struct device *dev,
 				 struct uart_config *cfg)
 {
@@ -186,6 +187,7 @@ static int uart_esp32_config_get(const struct device *dev,
 	}
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 static int uart_esp32_set_baudrate(const struct device *dev, int baudrate)
 {
@@ -441,8 +443,10 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 	.poll_in = uart_esp32_poll_in,
 	.poll_out = uart_esp32_poll_out,
 	.err_check = uart_esp32_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure =  uart_esp32_configure,
 	.config_get = uart_esp32_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_esp32_fifo_fill,
 	.fifo_read = uart_esp32_fifo_read,
