@@ -25,7 +25,7 @@ static bool host_present;
  */
 static void wait(void)
 {
-	if (k_is_in_isr()) {
+	if (!IS_ENABLED(CONFIG_MULTITHREADING) || k_is_in_isr()) {
 		if (IS_ENABLED(CONFIG_RTT_TX_RETRY_IN_INTERRUPT)) {
 			k_busy_wait(1000*CONFIG_RTT_TX_RETRY_DELAY_MS);
 		}
