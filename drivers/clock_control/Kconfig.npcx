@@ -15,7 +15,7 @@ config CLOCK_NPCX_OSC_CYCLES_PER_SEC
 	range 10000000 100000000
 	depends on SOC_FAMILY_NPCX
 	help
-	  Core Domain Clock (OSC_CLK) Generator PLL frequency,
+	  Core Domain Clock (OFMCLK) Generator PLL frequency,
 	  allowed values: From 10Mhz to 100Mhz.
 
 config CLOCK_NPCX_APB1_PRESCALER
@@ -25,7 +25,7 @@ config CLOCK_NPCX_APB1_PRESCALER
 	depends on SOC_FAMILY_NPCX
 	help
 	  This sets the APB1 prescaler which changes the frequency of APB1_CLK.
-	  APB1_CLK frequency = OSC_CLK / APB1_PRE. The APB1 prescaler allowed
+	  APB1_CLK frequency = OFMCLK / APB1_PRE. The APB1 prescaler allowed
 	  value is from 1 to 10.
 
 	  The generated frequency of APB1_CLK should comply with the following
@@ -42,7 +42,7 @@ config CLOCK_NPCX_APB2_PRESCALER
 	depends on SOC_FAMILY_NPCX
 	help
 	  This sets the APB2 prescaler which changes the frequency of APB2_CLK.
-	  APB2_CLK frequency = OSC_CLK / APB2_PRE. The APB2 prescaler allowed
+	  APB2_CLK frequency = OFMCLK / APB2_PRE. The APB2 prescaler allowed
 	  value is from 1 to 10.
 
 	  The generated frequency of APB2_CLK should comply with the following
@@ -59,7 +59,7 @@ config CLOCK_NPCX_APB3_PRESCALER
 	depends on SOC_FAMILY_NPCX
 	help
 	  This sets the APB3 prescaler which changes the frequency of APB3_CLK.
-	  APB3_CLK frequency = OSC_CLK / APB3_PRE. The APB3 prescaler allowed
+	  APB3_CLK frequency = OFMCLK / APB3_PRE. The APB3 prescaler allowed
 	  value is from 1 to 10.
 
 	  The generated frequency of APB3_CLK should comply with the following
@@ -77,7 +77,7 @@ config CLOCK_NPCX_APB4_PRESCALER
 	depends on SOC_SERIES_NPCX9
 	help
 	  This sets the APB4 prescaler which changes the frequency of APB4_CLK.
-	  APB4_CLK frequency = OSC_CLK / APB4_PRE. The APB4 prescaler allowed
+	  APB4_CLK frequency = OFMCLK / APB4_PRE. The APB4 prescaler allowed
 	  value is from 1 to 10. Please notice only npcx9 and later series
 	  support this feature.
 

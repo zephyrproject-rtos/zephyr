@@ -22,7 +22,7 @@ config CLOCK_CONTROL_NPCX
 	help
 	  Enable support for NPCX clock controller driver. The NPCX clock
 	  controller generates both Low-Frequency clock domain (32.768 KHz,
-	  i.e. LFCLK clock signal) and High-Frequency clock signals (OSC_CLK,
+	  i.e. LFCLK clock signal) and High-Frequency clock signals (OFMCLK,
 	  AHB6_CLK, APBn_CLK, and FMCLK) for the Core domain modules.
 
 config UART_NPCX

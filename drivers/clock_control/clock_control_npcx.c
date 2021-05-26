@@ -145,8 +145,8 @@ static struct clock_control_driver_api npcx_clock_control_api = {
 
 /* valid clock frequency check */
 BUILD_ASSERT(CORE_CLK <= MHZ(100) && CORE_CLK >= MHZ(4) &&
-	     OSC_CLK % CORE_CLK == 0 &&
-	     OSC_CLK / CORE_CLK <= 10,
+	     OFMCLK % CORE_CLK == 0 &&
+	     OFMCLK / CORE_CLK <= 10,
 	     "Invalid CORE_CLK setting");
 BUILD_ASSERT(CORE_CLK / (FIUDIV_VAL + 1) <= MHZ(50) &&
 	     CORE_CLK / (FIUDIV_VAL + 1) >= MHZ(4),
@@ -179,7 +179,7 @@ static int npcx_clock_control_init(const struct device *dev)
 	const uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;
 
 	/*
-	 * Resetting the OSC_CLK (even to the same value) will make the clock
+	 * Resetting the OFMCLK (even to the same value) will make the clock
 	 * unstable for a little which can affect peripheral communication like
 	 * eSPI. Skip this if not needed.
 	 */
@@ -187,7 +187,7 @@ static int npcx_clock_control_init(const struct device *dev)
 			|| inst_cdcg->HFCGMH != HFCGMH_VAL) {
 		/*
 		 * Configure frequency multiplier M/N values according to
-		 * the requested OSC_CLK (Unit:Hz).
+		 * the requested OFMCLK (Unit:Hz).
 		 */
 		inst_cdcg->HFCGN  = HFCGN_VAL;
 		inst_cdcg->HFCGML = HFCGML_VAL;
