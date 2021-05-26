@@ -239,6 +239,7 @@ struct net_pkt {
 	uint8_t ieee802154_lqi;  /* Link Quality Indicator */
 	uint8_t ieee802154_arb : 1; /* ACK Request Bit is set in the frame */
 	uint8_t ieee802154_ack_fpb : 1; /* Frame Pending Bit was set in the ACK */
+	uint8_t ieee802154_frame_retry : 1; /* The frame is being retransmitted. */
 #if defined(CONFIG_IEEE802154_2015)
 	uint8_t ieee802154_fv2015 : 1; /* Frame version is IEEE 802.15.4-2015 */
 	uint8_t ieee802154_ack_seb : 1; /* Security Enabled Bit was set in the ACK */
@@ -1005,6 +1006,17 @@ static inline void net_pkt_set_ieee802154_ack_fpb(struct net_pkt *pkt,
 						  bool fpb)
 {
 	pkt->ieee802154_ack_fpb = fpb;
+}
+
+static inline bool net_pkt_ieee802154_frame_retry(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_frame_retry;
+}
+
+static inline void net_pkt_set_ieee802154_frame_retry(struct net_pkt *pkt,
+						     bool frame_retry)
+{
+	pkt->ieee802154_frame_retry = frame_retry;
 }
 
 #if defined(CONFIG_IEEE802154_2015)
