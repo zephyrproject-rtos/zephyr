@@ -39,7 +39,11 @@ static struct bt_uuid_128 vnd_auth_uuid = BT_UUID_INIT_128(
 	0xf2, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
-static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+#define VND_MAX_LEN 20
+
+static uint8_t vnd_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r'};
+static uint8_t vnd_auth_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r'};
+static uint8_t vnd_wwr_value[VND_MAX_LEN + 1] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
 static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -56,11 +60,12 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	uint8_t *value = attr->user_data;
 
-	if (offset + len > sizeof(vnd_value)) {
+	if (offset + len > VND_MAX_LEN) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	memcpy(value + offset, buf, len);
+	value[offset + len] = 0;
 
 	return len;
 }
@@ -86,8 +91,8 @@ static void indicate_destroy(struct bt_gatt_indicate_params *params)
 	indicating = 0U;
 }
 
-#define MAX_DATA 74
-static uint8_t vnd_long_value[] = {
+#define VND_LONG_MAX_LEN 74
+static uint8_t vnd_long_value[VND_LONG_MAX_LEN + 1] = {
 		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '1',
 		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '2',
 		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '3',
@@ -95,16 +100,6 @@ static uint8_t vnd_long_value[] = {
 		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '5',
 		  'V', 'e', 'n', 'd', 'o', 'r', ' ', 'd', 'a', 't', 'a', '6',
 		  '.', ' ' };
-
-static ssize_t read_long_vnd(struct bt_conn *conn,
-			     const struct bt_gatt_attr *attr, void *buf,
-			     uint16_t len, uint16_t offset)
-{
-	const char *value = attr->user_data;
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(vnd_long_value));
-}
 
 static ssize_t write_long_vnd(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr, const void *buf,
@@ -116,11 +111,12 @@ static ssize_t write_long_vnd(struct bt_conn *conn,
 		return 0;
 	}
 
-	if (offset + len > sizeof(vnd_long_value)) {
+	if (offset + len > VND_LONG_MAX_LEN) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	memcpy(value + offset, buf, len);
+	value[offset + len] = 0;
 
 	return len;
 }
@@ -174,18 +170,19 @@ static ssize_t write_without_rsp_vnd(struct bt_conn *conn,
 {
 	uint8_t *value = attr->user_data;
 
-	/* Write request received. Reject it since this char only accepts
-	 * Write Commands.
-	 */
 	if (!(flags & BT_GATT_WRITE_FLAG_CMD)) {
+		/* Write Request received. Reject it since this Characteristic
+		 * only accepts Write Without Response.
+		 */
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	if (offset + len > sizeof(vnd_value)) {
+	if (offset + len > VND_MAX_LEN) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
 	memcpy(value + offset, buf, len);
+	value[offset + len] = 0;
 
 	return len;
 }
@@ -205,12 +202,12 @@ BT_GATT_SERVICE_DEFINE(vnd_svc,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
 			       BT_GATT_PERM_READ_AUTHEN |
 			       BT_GATT_PERM_WRITE_AUTHEN,
-			       read_vnd, write_vnd, vnd_value),
+			       read_vnd, write_vnd, vnd_auth_value),
 	BT_GATT_CHARACTERISTIC(&vnd_long_uuid.uuid, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_EXT_PROP,
 			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE |
 			       BT_GATT_PERM_PREPARE_WRITE,
-			       read_long_vnd, write_long_vnd, &vnd_long_value),
+			       read_vnd, write_long_vnd, &vnd_long_value),
 	BT_GATT_CEP(&vnd_long_cep),
 	BT_GATT_CHARACTERISTIC(&vnd_signed_uuid.uuid, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_WRITE | BT_GATT_CHRC_AUTH,
@@ -219,7 +216,7 @@ BT_GATT_SERVICE_DEFINE(vnd_svc,
 	BT_GATT_CHARACTERISTIC(&vnd_write_cmd_uuid.uuid,
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP,
 			       BT_GATT_PERM_WRITE, NULL,
-			       write_without_rsp_vnd, &vnd_value),
+			       write_without_rsp_vnd, &vnd_wwr_value),
 );
 
 static const struct bt_data ad[] = {
