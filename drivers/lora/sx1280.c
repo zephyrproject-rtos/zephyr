@@ -831,10 +831,11 @@ void SetTx( TickTime_t timeout )
 
     // If the radio is doing ranging operations, then apply the specific calls
     // prior to SetTx
-    if( GetPacketType( true ) == PACKET_TYPE_RANGING )
-    {
-        SetRangingRole( RADIO_RANGING_ROLE_MASTER );
-    }
+    // TODO
+//     if( GetPacketType( true ) == PACKET_TYPE_RANGING )
+//     {
+//         SetRangingRole( RADIO_RANGING_ROLE_MASTER );
+//     }
     WriteCommand( RADIO_SET_TX, buf, 3 );
 //     OperatingMode = MODE_TX; // TODO
 }
