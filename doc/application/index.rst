@@ -162,11 +162,25 @@ subdirectories which are not described here.
     package.
 
 
+Example standalone application
+******************************
+
+A reference standalone application contained in its own Git repository can be found in the `Example Application`_
+repository. It can be used as a reference on how to structure out-of-tree, Zephyr-based
+applications using the :ref:`T2 star topology <west-t2>`. It also demonstrates the out-of-tree use of features commonly used in applications such as:
+
+- Custom boards
+- Custom devicetree bindings
+- Custom drivers
+- Continuous Integration (CI) setup
+
 Creating an Application
 ***********************
 
 Follow these steps to create a new application directory. (Refer to
-:ref:`samples-and-demos` for existing applications provided as part of Zephyr.)
+the `Example Application`_ repository for a reference standalone application in its own Git repository
+or to :ref:`samples-and-demos` for existing applications provided as part of
+Zephyr.)
 
 #. Create an application directory on your workstation computer, outside of the
    Zephyr base directory.  Usually you'll want to create it somewhere under
@@ -1489,3 +1503,4 @@ project that demonstrates some of these features.
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
 .. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
 .. _using Chocolatey: https://chocolatey.org/packages/RapidEE
+.. _Example Application: https://github.com/zephyrproject-rtos/example-application
