@@ -597,7 +597,6 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 			work = CONTAINER_OF(node, struct k_work, node);
 			flag_set(&work->flags, K_WORK_RUNNING_BIT);
 			flag_clear(&work->flags, K_WORK_QUEUED_BIT);
-			handler = work->handler;
 		} else if (flag_test_and_clear(&queue->flags,
 					       K_WORK_QUEUE_DRAIN_BIT)) {
 			/* Not busy and draining: move threads waiting for
@@ -633,7 +632,8 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 
 		if (work != NULL) {
 			bool yield;
-
+			
+			handler = work->handler;
 			__ASSERT_NO_MSG(handler != NULL);
 			handler(work);
 
