@@ -1,0 +1,17 @@
+# Raspberry Pi (RP) MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2021 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RASPBERRY_PI
+	bool
+
+if SOC_FAMILY_RASPBERRY_PI
+config SOC_FAMILY
+	string
+	default "raspberrypi"
+
+source "soc/arm/raspberrypi/*/Kconfig.soc"
+
+endif # SOC_FAMILY_RASPBERRY_PI

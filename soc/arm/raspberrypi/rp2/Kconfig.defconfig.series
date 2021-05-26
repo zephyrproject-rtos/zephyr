@@ -1,0 +1,49 @@
+# Raspberry Pi RP20XX MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2021 Yonatan Schachter
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RP2XXX
+
+source "soc/arm/raspberrypi/rp2/Kconfig.defconfig.rp2*"
+
+config SOC_SERIES
+	default "rp2"
+
+config NUM_IRQS
+	default 26
+
+choice
+	prompt "Raspberry Pi flash type"
+
+config RP2_FLASH_W25Q080
+	bool "W25Q080"
+
+config RP2_FLASH_GENERIC_03H
+	bool "Generic 03H"
+
+config RP2_FLASH_IS25LP080
+	bool "IS25LP080"
+
+config RP2_FLASH_W25X10CL
+	bool "W25X10CL"
+
+endchoice
+
+config RP2_FLASH_BOOT_FILE
+	string
+	default "boot2_w25q080.S" if RP2_FLASH_W25Q080
+	default "boot2_generic_03h.S" if RP2_FLASH_GENERIC_03H
+	default "boot2_is25lp080.S" if RP2_FLASH_IS25LP080
+	default "boot2_w25x10cl.S" if RP2_FLASH_W25X10CL
+
+config UART_RASPBERRYPI
+        default y
+        depends on SERIAL
+
+config GPIO_RASPBERRYPI
+	default y
+	depends on GPIO
+
+endif # SOC_SERIES_RP2XXX

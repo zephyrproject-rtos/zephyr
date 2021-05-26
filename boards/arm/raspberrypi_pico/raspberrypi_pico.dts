@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2021 Yonatan Schachter
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <raspberrypi/rp2040.dtsi>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			label = "LED";
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+};
+
+&flash0 {
+	/* 2MB of flash minus the 0x100 used for
+	 * the second stage bootloader
+	 */
+	reg = <0x10000100 0x001fff00>;
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	tx-pin = <0>;
+	rx-pin = <1>;
+};
+
+&gpio0 {
+	status = "okay";
+};

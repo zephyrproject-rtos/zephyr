@@ -1,0 +1,12 @@
+identifier: raspberrypi_pico
+name: RaspberryPi-Pico
+type: mcu
+arch: arm
+flash: 2048
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - serial

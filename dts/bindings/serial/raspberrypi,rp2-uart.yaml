@@ -1,0 +1,22 @@
+description: Raspberry Pi UART
+
+compatible: "raspberrypi,rp2-uart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    tx-pin:
+      type: int
+      required: true
+      description: TX pin as a GPIO number
+
+    rx-pin:
+      type: int
+      required: true
+      description: RX pin as a GPIO number
