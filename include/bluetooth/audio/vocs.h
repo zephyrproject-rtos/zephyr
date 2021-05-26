@@ -120,8 +120,7 @@ int bt_vocs_register(struct bt_vocs *vocs,
  *                    For notifications, this will always be 0.
  * @param offset      The offset value.
  */
-typedef void (*bt_vocs_state_cb_t)(struct bt_vocs *inst, int err,
-				   int16_t offset);
+typedef void (*bt_vocs_state_cb)(struct bt_vocs *inst, int err, int16_t offset);
 
 /**
  * @brief Callback function for setting offset.
@@ -130,7 +129,7 @@ typedef void (*bt_vocs_state_cb_t)(struct bt_vocs *inst, int err,
  * @param err         Error value. 0 on success, GATT error on positive value
  *                    or errno on negative value.
  */
-typedef void (*bt_vocs_set_offset_cb_t)(struct bt_vocs *inst, int err);
+typedef void (*bt_vocs_set_offset_cb)(struct bt_vocs *inst, int err);
 
 /**
  * @brief Callback function for the location.
@@ -143,8 +142,8 @@ typedef void (*bt_vocs_set_offset_cb_t)(struct bt_vocs *inst, int err);
  *                     For notifications, this will always be 0.
  * @param location     The location value.
  */
-typedef void (*bt_vocs_location_cb_t)(struct bt_vocs *inst, int err,
-				      uint32_t location);
+typedef void (*bt_vocs_location_cb)(struct bt_vocs *inst, int err,
+				    uint32_t location);
 
 /**
  * @brief Callback function for the description.
@@ -157,8 +156,8 @@ typedef void (*bt_vocs_location_cb_t)(struct bt_vocs *inst, int err,
  *                     For notifications, this will always be 0.
  * @param description  The description as an UTF-8 encoded string.
  */
-typedef void (*bt_vocs_description_cb_t)(struct bt_vocs *inst, int err,
-					 char *description);
+typedef void (*bt_vocs_description_cb)(struct bt_vocs *inst, int err,
+				       char *description);
 
 /**
  * @brief Callback function for bt_vocs_discover.
@@ -172,17 +171,17 @@ typedef void (*bt_vocs_description_cb_t)(struct bt_vocs *inst, int err,
  *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  */
-typedef void (*bt_vocs_discover_cb_t)(struct bt_vocs *inst, int err);
+typedef void (*bt_vocs_discover_cb)(struct bt_vocs *inst, int err);
 
 struct bt_vocs_cb {
-	bt_vocs_state_cb_t              state;
-	bt_vocs_location_cb_t           location;
-	bt_vocs_description_cb_t        description;
+	bt_vocs_state_cb                state;
+	bt_vocs_location_cb             location;
+	bt_vocs_description_cb          description;
 
 #if defined(CONFIG_BT_VOCS_CLIENT)
 	/* Client only */
-	bt_vocs_discover_cb_t           discover;
-	bt_vocs_set_offset_cb_t         set_offset;
+	bt_vocs_discover_cb             discover;
+	bt_vocs_set_offset_cb           set_offset;
 #endif /* CONFIG_BT_VOCS_CLIENT */
 };
 
