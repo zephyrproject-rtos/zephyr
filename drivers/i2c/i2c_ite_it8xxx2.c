@@ -732,20 +732,28 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		LOG_ERR("Device message is NULL");
 		return -EINVAL;
 	}
-	/* Make sure we're in a good state to start */
-	if (i2c_bus_not_available(dev)) {
-		/* reset i2c port */
-		i2c_reset(dev, I2C_RC_NO_IDLE_FOR_START);
-		/*
-		 * After resetting I2C bus, if I2C bus is not available
-		 * (No external pull-up), drop the transaction.
-		 */
-		if (i2c_bus_not_available(dev)) {
-			return -EIO;
-		}
-	}
 
-	msgs->flags |= I2C_MSG_START;
+	/*
+	 * If the transaction of write to read is divided into two
+	 * transfers, the repeat start transfer uses this flag to
+	 * exclude checking bus busy.
+	 */
+	if (data->i2ccs == I2C_CH_NORMAL) {
+		/* Make sure we're in a good state to start */
+		if (i2c_bus_not_available(dev)) {
+			/* reset i2c port */
+			i2c_reset(dev, I2C_RC_NO_IDLE_FOR_START);
+			/*
+			 * After resetting I2C bus, if I2C bus is not available
+			 * (No external pull-up), drop the transaction.
+			 */
+			if (i2c_bus_not_available(dev)) {
+				return -EIO;
+			}
+		}
+
+		msgs->flags |= I2C_MSG_START;
+	}
 
 	for (int i = 0; i < num_msgs; i++) {
 
@@ -775,7 +783,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	}
 
 	/* reset i2c channel status */
-	if (data->err) {
+	if (data->err || (msgs->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
 
@@ -871,6 +879,7 @@ static int i2c_it8xxx2_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	error = i2c_it8xxx2_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
+	data->i2ccs = I2C_CH_NORMAL;
 
 	if (error) {
 		LOG_ERR("i2c: failure initializing");
