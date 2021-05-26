@@ -212,7 +212,7 @@ void mpsc_pbuf_put_word(struct mpsc_pbuf_buffer *buffer,
 
 		k_spin_unlock(&buffer->lock, key);
 
-		if (cont && dropped_item && valid_drop) {
+		if (cont && valid_drop) {
 			/* Notify about item being dropped. */
 			buffer->notify_drop(buffer, dropped_item);
 		}
