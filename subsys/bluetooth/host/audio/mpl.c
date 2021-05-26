@@ -22,7 +22,7 @@
 #define TRACK_STATUS_INVALID 0x00
 #define TRACK_STATUS_VALID 0x01
 
-#define PLAYBACK_SPEED_PARAM_DEFAULT MPL_PLAYBACK_SPEED_UNITY
+#define PLAYBACK_SPEED_PARAM_DEFAULT BT_MCS_PLAYBACK_SPEED_UNITY
 
 /* Temporary hardcoded setup for groups, tracks and segements */
 /* There is one parent group, which is the parent of a number of groups. */
@@ -248,12 +248,12 @@ static struct mpl_mediaplayer_t pl = {
 	.icon_uri		  = CONFIG_BT_MCS_ICON_URI,
 	.group			  = &group_1,
 	.track_pos		  = 0,
-	.state			  = MPL_MEDIA_STATE_PAUSED,
+	.state			  = BT_MCS_MEDIA_STATE_PAUSED,
 	.playback_speed_param	  = PLAYBACK_SPEED_PARAM_DEFAULT,
-	.seeking_speed_factor	  = MPL_SEEKING_SPEED_FACTOR_ZERO,
-	.playing_order		  = MPL_PLAYING_ORDER_INORDER_REPEAT,
-	.playing_orders_supported = MPL_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE | \
-				    MPL_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
+	.seeking_speed_factor	  = BT_MCS_SEEKING_SPEED_FACTOR_ZERO,
+	.playing_order		  = BT_MCS_PLAYING_ORDER_INORDER_REPEAT,
+	.playing_orders_supported = BT_MCS_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE |
+				    BT_MCS_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
 	.operations_supported	  = 0x001fffff, /* All opcodes */
 #ifdef CONFIG_BT_OTS
 	.search_results_id	  = 0,
@@ -388,7 +388,7 @@ static uint32_t setup_track_object(struct mpl_track_t *track)
 static uint32_t setup_group_object(struct mpl_group_t *group)
 {
 	struct mpl_track_t *track = group->track;
-	uint8_t type = MPL_GROUP_OBJECT_TRACK_TYPE;
+	uint8_t type = BT_MCS_GROUP_OBJECT_TRACK_TYPE;
 	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
 	int next_size = record_size;
 
@@ -426,7 +426,7 @@ static uint32_t setup_parent_group_object(struct mpl_group_t *group)
 	/* poinbter in the other direction, so it is not possible to go from */
 	/* the parent group to a group of tracks. */
 
-	uint8_t type = MPL_GROUP_OBJECT_GROUP_TYPE;
+	uint8_t type = BT_MCS_GROUP_OBJECT_GROUP_TYPE;
 	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
 	int next_size = record_size;
 
@@ -1414,21 +1414,21 @@ void inactive_state_operation_handler(struct mpl_op_t operation,
 		}
 	}
 	switch (operation.opcode) {
-	case MPL_OPC_PLAY: /* Fall-through - handle several cases identically */
-	case MPL_OPC_PAUSE:
-	case MPL_OPC_FAST_REWIND:
-	case MPL_OPC_FAST_FORWARD:
-	case MPL_OPC_STOP:
-	case MPL_OPC_MOVE_RELATIVE:
-	case MPL_OPC_PREV_SEGMENT:
-	case MPL_OPC_NEXT_SEGMENT:
-	case MPL_OPC_FIRST_SEGMENT:
-	case MPL_OPC_LAST_SEGMENT:
-	case MPL_OPC_GOTO_SEGMENT:
-		ntf.result_code = MPL_OPC_NTF_PLAYER_INACTIVE;
+	case BT_MCS_OPC_PLAY: /* Fall-through - handle several cases identically */
+	case BT_MCS_OPC_PAUSE:
+	case BT_MCS_OPC_FAST_REWIND:
+	case BT_MCS_OPC_FAST_FORWARD:
+	case BT_MCS_OPC_STOP:
+	case BT_MCS_OPC_MOVE_RELATIVE:
+	case BT_MCS_OPC_PREV_SEGMENT:
+	case BT_MCS_OPC_NEXT_SEGMENT:
+	case BT_MCS_OPC_FIRST_SEGMENT:
+	case BT_MCS_OPC_LAST_SEGMENT:
+	case BT_MCS_OPC_GOTO_SEGMENT:
+		ntf.result_code = BT_MCS_OPC_NTF_PLAYER_INACTIVE;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_TRACK:
+	case BT_MCS_OPC_PREV_TRACK:
 		if (do_prev_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -1439,24 +1439,24 @@ void inactive_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_TRACK:
+	case BT_MCS_OPC_NEXT_TRACK:
 		if (do_next_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
 		}
 		/* For next track, the position is kept if the track */
 		/* does not change */
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_TRACK:
+	case BT_MCS_OPC_FIRST_TRACK:
 		if (do_first_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -1466,12 +1466,12 @@ void inactive_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_TRACK:
+	case BT_MCS_OPC_LAST_TRACK:
 		if (do_last_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -1481,12 +1481,12 @@ void inactive_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_TRACK:
+	case BT_MCS_OPC_GOTO_TRACK:
 		if (operation.use_param) {
 			if (do_goto_track(&pl, operation.param)) {
 				pl.track_pos = 0;
@@ -1498,56 +1498,56 @@ void inactive_state_operation_handler(struct mpl_op_t operation,
 				pl.track_pos = 0;
 				mpl_track_position_cb(pl.track_pos);
 			}
-			pl.state = MPL_MEDIA_STATE_PAUSED;
+			pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 			mpl_media_state_cb(pl.state);
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_GROUP:
+	case BT_MCS_OPC_PREV_GROUP:
 		do_full_prev_group(&pl);
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_GROUP:
+	case BT_MCS_OPC_NEXT_GROUP:
 		do_full_next_group(&pl);
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_GROUP:
+	case BT_MCS_OPC_FIRST_GROUP:
 		do_full_first_group(&pl);
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_GROUP:
+	case BT_MCS_OPC_LAST_GROUP:
 		do_full_last_group(&pl);
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_GROUP:
+	case BT_MCS_OPC_GOTO_GROUP:
 		if (operation.use_param) {
 			do_full_goto_group(&pl, operation.param);
-			pl.state = MPL_MEDIA_STATE_PAUSED;
+			pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 			mpl_media_state_cb(pl.state);
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
 	default:
 		BT_DBG("Invalid operation: %d", operation.opcode);
-		ntf.result_code = MPL_OPC_NTF_NOT_SUPPORTED;
+		ntf.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
 		mpl_operation_cb(ntf);
 		break;
 	}
@@ -1563,44 +1563,44 @@ void playing_state_operation_handler(struct mpl_op_t operation,
 		}
 	}
 	switch (operation.opcode) {
-	case MPL_OPC_PLAY:
+	case BT_MCS_OPC_PLAY:
 		/* Continue playing - i.e. do nothing */
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PAUSE:
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+	case BT_MCS_OPC_PAUSE:
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FAST_REWIND:
+	case BT_MCS_OPC_FAST_REWIND:
 		/* We're in playing state, seeking speed must have been zero */
 		pl.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
-		pl.state = MPL_MEDIA_STATE_SEEKING;
+		pl.state = BT_MCS_MEDIA_STATE_SEEKING;
 		mpl_media_state_cb(pl.state);
 		mpl_seeking_speed_cb(pl.seeking_speed_factor);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FAST_FORWARD:
+	case BT_MCS_OPC_FAST_FORWARD:
 		/* We're in playing state, seeking speed must have been zero */
 		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
-		pl.state = MPL_MEDIA_STATE_SEEKING;
+		pl.state = BT_MCS_MEDIA_STATE_SEEKING;
 		mpl_media_state_cb(pl.state);
 		mpl_seeking_speed_cb(pl.seeking_speed_factor);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_STOP:
+	case BT_MCS_OPC_STOP:
 		pl.track_pos = 0;
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_MOVE_RELATIVE:
+	case BT_MCS_OPC_MOVE_RELATIVE:
 		if (operation.use_param) {
 			/* Keep within track - i.e. in the range 0 - duration */
 			if (operation.param >
@@ -1611,14 +1611,14 @@ void playing_state_operation_handler(struct mpl_op_t operation,
 			} else {
 				pl.track_pos += operation.param;
 			}
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_track_position_cb(pl.track_pos);
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_SEGMENT:
+	case BT_MCS_OPC_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than <margin> */
 		/* into the segment, otherwise go to start of segment */
 		if (pl.track_pos - PREV_MARGIN <
@@ -1627,31 +1627,31 @@ void playing_state_operation_handler(struct mpl_op_t operation,
 		}
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_SEGMENT:
+	case BT_MCS_OPC_NEXT_SEGMENT:
 		do_next_segment(&pl);
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_SEGMENT:
+	case BT_MCS_OPC_FIRST_SEGMENT:
 		do_first_segment(&pl);
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_SEGMENT:
+	case BT_MCS_OPC_LAST_SEGMENT:
 		do_last_segment(&pl);
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_SEGMENT:
+	case BT_MCS_OPC_GOTO_SEGMENT:
 		if (operation.use_param) {
 			if (operation.param != 0) {
 				do_goto_segment(&pl, operation.param);
@@ -1661,13 +1661,13 @@ void playing_state_operation_handler(struct mpl_op_t operation,
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shal stay the same, and the */
 			/* track position shall not change. */
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_TRACK:
+	case BT_MCS_OPC_PREV_TRACK:
 		if (do_prev_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -1678,20 +1678,20 @@ void playing_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_TRACK:
+	case BT_MCS_OPC_NEXT_TRACK:
 		if (do_next_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
 		}
 		/* For next track, the position is kept if the track */
 		/* does not change */
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_TRACK:
+	case BT_MCS_OPC_FIRST_TRACK:
 		if (do_first_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -1701,10 +1701,10 @@ void playing_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_TRACK:
+	case BT_MCS_OPC_LAST_TRACK:
 		if (do_last_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -1714,10 +1714,10 @@ void playing_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_TRACK:
+	case BT_MCS_OPC_GOTO_TRACK:
 		if (operation.use_param) {
 			if (do_goto_track(&pl, operation.param)) {
 				pl.track_pos = 0;
@@ -1729,44 +1729,44 @@ void playing_state_operation_handler(struct mpl_op_t operation,
 				pl.track_pos = 0;
 				mpl_track_position_cb(pl.track_pos);
 			}
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_GROUP:
+	case BT_MCS_OPC_PREV_GROUP:
 		do_full_prev_group(&pl);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_GROUP:
+	case BT_MCS_OPC_NEXT_GROUP:
 		do_full_next_group(&pl);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_GROUP:
+	case BT_MCS_OPC_FIRST_GROUP:
 		do_full_first_group(&pl);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_GROUP:
+	case BT_MCS_OPC_LAST_GROUP:
 		do_full_last_group(&pl);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_GROUP:
+	case BT_MCS_OPC_GOTO_GROUP:
 		if (operation.use_param) {
 			do_full_goto_group(&pl, operation.param);
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
 	default:
 		BT_DBG("Invalid operation: %d", operation.opcode);
-		ntf.result_code = MPL_OPC_NTF_NOT_SUPPORTED;
+		ntf.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
 		mpl_operation_cb(ntf);
 		break;
 	}
@@ -1782,44 +1782,44 @@ void paused_state_operation_handler(struct mpl_op_t operation,
 		}
 	}
 	switch (operation.opcode) {
-	case MPL_OPC_PLAY:
-		pl.state = MPL_MEDIA_STATE_PLAYING;
+	case BT_MCS_OPC_PLAY:
+		pl.state = BT_MCS_MEDIA_STATE_PLAYING;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PAUSE:
+	case BT_MCS_OPC_PAUSE:
 		/* No change */
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FAST_REWIND:
+	case BT_MCS_OPC_FAST_REWIND:
 		/* We're in paused state, seeking speed must have been zero */
 		pl.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
-		pl.state = MPL_MEDIA_STATE_SEEKING;
+		pl.state = BT_MCS_MEDIA_STATE_SEEKING;
 		mpl_media_state_cb(pl.state);
 		mpl_seeking_speed_cb(pl.seeking_speed_factor);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FAST_FORWARD:
+	case BT_MCS_OPC_FAST_FORWARD:
 		/* We're in paused state, seeking speed must have been zero */
 		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
-		pl.state = MPL_MEDIA_STATE_SEEKING;
+		pl.state = BT_MCS_MEDIA_STATE_SEEKING;
 		mpl_media_state_cb(pl.state);
 		mpl_seeking_speed_cb(pl.seeking_speed_factor);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_STOP:
+	case BT_MCS_OPC_STOP:
 		pl.track_pos = 0;
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_MOVE_RELATIVE:
+	case BT_MCS_OPC_MOVE_RELATIVE:
 		if (operation.use_param) {
 			/* Keep within track - i.e. in the range 0 - duration */
 			if (operation.param >
@@ -1830,14 +1830,14 @@ void paused_state_operation_handler(struct mpl_op_t operation,
 			} else {
 				pl.track_pos += operation.param;
 			}
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_track_position_cb(pl.track_pos);
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_SEGMENT:
+	case BT_MCS_OPC_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
 		/* into the segment, otherwise go to start of segment */
 		if (pl.track_pos - PREV_MARGIN <
@@ -1846,31 +1846,31 @@ void paused_state_operation_handler(struct mpl_op_t operation,
 		}
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_SEGMENT:
+	case BT_MCS_OPC_NEXT_SEGMENT:
 		do_next_segment(&pl);
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_SEGMENT:
+	case BT_MCS_OPC_FIRST_SEGMENT:
 		do_first_segment(&pl);
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_SEGMENT:
+	case BT_MCS_OPC_LAST_SEGMENT:
 		do_last_segment(&pl);
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_SEGMENT:
+	case BT_MCS_OPC_GOTO_SEGMENT:
 		if (operation.use_param) {
 			if (operation.param != 0) {
 				do_goto_segment(&pl, operation.param);
@@ -1880,13 +1880,13 @@ void paused_state_operation_handler(struct mpl_op_t operation,
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shal stay the same, and the */
 			/* track position shall not change. */
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_TRACK:
+	case BT_MCS_OPC_PREV_TRACK:
 		if (do_prev_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -1897,20 +1897,20 @@ void paused_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_TRACK:
+	case BT_MCS_OPC_NEXT_TRACK:
 		if (do_next_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
 		}
 		/* For next track, the position is kept if the track */
 		/* does not change */
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_TRACK:
+	case BT_MCS_OPC_FIRST_TRACK:
 		if (do_first_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -1920,10 +1920,10 @@ void paused_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_TRACK:
+	case BT_MCS_OPC_LAST_TRACK:
 		if (do_last_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -1933,10 +1933,10 @@ void paused_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_TRACK:
+	case BT_MCS_OPC_GOTO_TRACK:
 		if (operation.use_param) {
 			if (do_goto_track(&pl, operation.param)) {
 				pl.track_pos = 0;
@@ -1948,44 +1948,44 @@ void paused_state_operation_handler(struct mpl_op_t operation,
 				pl.track_pos = 0;
 				mpl_track_position_cb(pl.track_pos);
 			}
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_GROUP:
+	case BT_MCS_OPC_PREV_GROUP:
 		do_full_prev_group(&pl);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_GROUP:
+	case BT_MCS_OPC_NEXT_GROUP:
 		do_full_next_group(&pl);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_GROUP:
+	case BT_MCS_OPC_FIRST_GROUP:
 		do_full_first_group(&pl);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_GROUP:
+	case BT_MCS_OPC_LAST_GROUP:
 		do_full_last_group(&pl);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_GROUP:
+	case BT_MCS_OPC_GOTO_GROUP:
 		if (operation.use_param) {
 			do_full_goto_group(&pl, operation.param);
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
 	default:
 		BT_DBG("Invalid operation: %d", operation.opcode);
-		ntf.result_code = MPL_OPC_NTF_NOT_SUPPORTED;
+		ntf.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
 		mpl_operation_cb(ntf);
 		break;
 	}
@@ -2001,59 +2001,59 @@ void seeking_state_operation_handler(struct mpl_op_t operation,
 		}
 	}
 	switch (operation.opcode) {
-	case MPL_OPC_PLAY:
-		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MPL_MEDIA_STATE_PLAYING;
+	case BT_MCS_OPC_PLAY:
+		pl.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		pl.state = BT_MCS_MEDIA_STATE_PLAYING;
 		mpl_media_state_cb(pl.state);
 		mpl_seeking_speed_cb(pl.seeking_speed_factor);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PAUSE:
-		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_ZERO;
+	case BT_MCS_OPC_PAUSE:
+		pl.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
 		/* TODO: Set track and track position */
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
 		mpl_seeking_speed_cb(pl.seeking_speed_factor);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FAST_REWIND:
+	case BT_MCS_OPC_FAST_REWIND:
 		/* TODO: Here, and for FAST_FORWARD */
 		/* Decide on algorithm for muliple presses - add step (as */
 		/* now) or double/half? */
 		/* What about FR followed by FF? */
 		/* Currently, the seeking speed may also become	 zero */
 		/* Lowest value allowed by spec is -64, notify on change only */
-		if (pl.seeking_speed_factor >= -(MPL_SEEKING_SPEED_FACTOR_MAX \
+		if (pl.seeking_speed_factor >= -(BT_MCS_SEEKING_SPEED_FACTOR_MAX
 						 - MPL_SEEKING_SPEED_FACTOR_STEP)) {
 			pl.seeking_speed_factor -= MPL_SEEKING_SPEED_FACTOR_STEP;
 			mpl_seeking_speed_cb(pl.seeking_speed_factor);
 		}
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FAST_FORWARD:
+	case BT_MCS_OPC_FAST_FORWARD:
 		/* Highest value allowed by spec is 64, notify on change only */
-		if (pl.seeking_speed_factor <= (MPL_SEEKING_SPEED_FACTOR_MAX \
+		if (pl.seeking_speed_factor <= (BT_MCS_SEEKING_SPEED_FACTOR_MAX
 						- MPL_SEEKING_SPEED_FACTOR_STEP)) {
 			pl.seeking_speed_factor += MPL_SEEKING_SPEED_FACTOR_STEP;
 			mpl_seeking_speed_cb(pl.seeking_speed_factor);
 		}
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_STOP:
-		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_ZERO;
+	case BT_MCS_OPC_STOP:
+		pl.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
 		pl.track_pos = 0;
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
 		mpl_seeking_speed_cb(pl.seeking_speed_factor);
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_MOVE_RELATIVE:
+	case BT_MCS_OPC_MOVE_RELATIVE:
 		if (operation.use_param) {
 			/* Keep within track - i.e. in the range 0 - duration */
 			if (operation.param >
@@ -2064,14 +2064,14 @@ void seeking_state_operation_handler(struct mpl_op_t operation,
 			} else {
 				pl.track_pos += operation.param;
 			}
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_track_position_cb(pl.track_pos);
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_SEGMENT:
+	case BT_MCS_OPC_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
 		/* into the segment, otherwise go to start of segment */
 		if (pl.track_pos - PREV_MARGIN <
@@ -2080,31 +2080,31 @@ void seeking_state_operation_handler(struct mpl_op_t operation,
 		}
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_SEGMENT:
+	case BT_MCS_OPC_NEXT_SEGMENT:
 		do_next_segment(&pl);
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_SEGMENT:
+	case BT_MCS_OPC_FIRST_SEGMENT:
 		do_first_segment(&pl);
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_SEGMENT:
+	case BT_MCS_OPC_LAST_SEGMENT:
 		do_last_segment(&pl);
 		pl.track_pos = pl.group->track->segment->pos;
 		mpl_track_position_cb(pl.track_pos);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_SEGMENT:
+	case BT_MCS_OPC_GOTO_SEGMENT:
 		if (operation.use_param) {
 			if (operation.param != 0) {
 				do_goto_segment(&pl, operation.param);
@@ -2114,13 +2114,13 @@ void seeking_state_operation_handler(struct mpl_op_t operation,
 			/* If the argument to "goto segment" is zero, */
 			/* the segment shal stay the same, and the */
 			/* track position shall not change. */
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_TRACK:
+	case BT_MCS_OPC_PREV_TRACK:
 		if (do_prev_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -2131,26 +2131,26 @@ void seeking_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_TRACK:
+	case BT_MCS_OPC_NEXT_TRACK:
 		if (do_next_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
 		}
 		/* For next track, the position is kept if the track */
 		/* does not change */
-		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_TRACK:
+	case BT_MCS_OPC_FIRST_TRACK:
 		if (do_first_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -2160,13 +2160,13 @@ void seeking_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_TRACK:
+	case BT_MCS_OPC_LAST_TRACK:
 		if (do_last_track(&pl)) {
 			pl.track_pos = 0;
 			do_track_change_notifications(&pl);
@@ -2176,13 +2176,13 @@ void seeking_state_operation_handler(struct mpl_op_t operation,
 			pl.track_pos = 0;
 			mpl_track_position_cb(pl.track_pos);
 		}
-		pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_ZERO;
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_TRACK:
+	case BT_MCS_OPC_GOTO_TRACK:
 		if (operation.use_param) {
 			if (do_goto_track(&pl, operation.param)) {
 				pl.track_pos = 0;
@@ -2194,63 +2194,63 @@ void seeking_state_operation_handler(struct mpl_op_t operation,
 				pl.track_pos = 0;
 				mpl_track_position_cb(pl.track_pos);
 			}
-			pl.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_ZERO;
-			pl.state = MPL_MEDIA_STATE_PAUSED;
+			pl.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+			pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 			mpl_media_state_cb(pl.state);
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_PREV_GROUP:
+	case BT_MCS_OPC_PREV_GROUP:
 		do_full_prev_group(&pl);
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_NEXT_GROUP:
+	case BT_MCS_OPC_NEXT_GROUP:
 		do_full_next_group(&pl);
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_FIRST_GROUP:
+	case BT_MCS_OPC_FIRST_GROUP:
 		do_full_first_group(&pl);
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_LAST_GROUP:
+	case BT_MCS_OPC_LAST_GROUP:
 		do_full_last_group(&pl);
-		pl.state = MPL_MEDIA_STATE_PAUSED;
+		pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 		mpl_media_state_cb(pl.state);
-		ntf.result_code = MPL_OPC_NTF_SUCCESS;
+		ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		mpl_operation_cb(ntf);
 		break;
-	case MPL_OPC_GOTO_GROUP:
+	case BT_MCS_OPC_GOTO_GROUP:
 		if (operation.use_param) {
 			do_full_goto_group(&pl, operation.param);
-			pl.state = MPL_MEDIA_STATE_PAUSED;
+			pl.state = BT_MCS_MEDIA_STATE_PAUSED;
 			mpl_media_state_cb(pl.state);
-			ntf.result_code = MPL_OPC_NTF_SUCCESS;
+			ntf.result_code = BT_MCS_OPC_NTF_SUCCESS;
 		} else {
-			ntf.result_code = MPL_OPC_NTF_CANNOT_BE_COMPLETED;
+			ntf.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		mpl_operation_cb(ntf);
 		break;
 	default:
 		BT_DBG("Invalid operation: %d", operation.opcode);
-		ntf.result_code = MPL_OPC_NTF_NOT_SUPPORTED;
+		ntf.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
 		mpl_operation_cb(ntf);
 		break;
 	}
 }
 
-void (*operation_handlers[MPL_MEDIA_STATE_LAST])(struct mpl_op_t operation,
+void (*operation_handlers[BT_MCS_MEDIA_STATE_LAST])(struct mpl_op_t operation,
 						 struct mpl_op_ntf_t ntf) = {
 	inactive_state_operation_handler,
 	playing_state_operation_handler,
@@ -2459,7 +2459,7 @@ void mpl_operation_set(struct mpl_op_t operation)
 
 	BT_DBG("opcode: %d, param: %d", operation.opcode, operation.param);
 
-	if (pl.state < MPL_MEDIA_STATE_LAST) {
+	if (pl.state < BT_MCS_MEDIA_STATE_LAST) {
 		ntf.requested_opcode = operation.opcode;
 		operation_handlers[pl.state](operation, ntf);
 	} else {
@@ -2499,8 +2499,8 @@ static void parse_search(struct mpl_search_t search)
 			break;
 		}
 		sci.type = (uint8_t)search.search[index++];
-		if (sci.type <  MPL_SEARCH_TYPE_TRACK_NAME ||
-		    sci.type > MPL_SEARCH_TYPE_ONLY_GROUPS) {
+		if (sci.type <  BT_MCS_SEARCH_TYPE_TRACK_NAME ||
+		    sci.type > BT_MCS_SEARCH_TYPE_ONLY_GROUPS) {
 			search_failed = true;
 			break;
 		}
@@ -2517,11 +2517,11 @@ static void parse_search(struct mpl_search_t search)
 
 	if (search_failed) {
 		pl.search_results_id = 0;
-		mpl_search_cb(MPL_SCP_NTF_FAILURE);
+		mpl_search_cb(BT_MCS_SCP_NTF_FAILURE);
 	} else {
 		/* Use current group as search result for now */
 		pl.search_results_id = pl.group->id;
-		mpl_search_cb(MPL_SCP_NTF_SUCCESS);
+		mpl_search_cb(BT_MCS_SCP_NTF_SUCCESS);
 	}
 
 	mpl_search_results_id_cb(pl.search_results_id);
