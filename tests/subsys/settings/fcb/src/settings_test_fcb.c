@@ -183,11 +183,9 @@ struct flash_sector fcb_sectors[SETTINGS_TEST_FCB_FLASH_CNT] = {
 
 void config_wipe_fcb(struct flash_sector *fs, int cnt)
 {
-	const struct flash_area *fap;
+	const struct flash_area *fap = FLASH_AREA(storage);
 	int rc;
 	int i;
-
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
 
 	for (i = 0; i < cnt; i++) {
 		rc = flash_area_erase(fap, fs[i].fs_off, fs[i].fs_size);
@@ -343,12 +341,10 @@ int c3_handle_export(int (*cb)(const char *name,
 
 void tests_settings_check_target(void)
 {
-	const struct flash_area *fap;
-	int rc;
+	const struct flash_area *fap = FLASH_AREA(storage);
 	uint8_t wbs;
 
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
-	zassert_true(rc == 0, "Can't open storage flash area");
+	zassert_true(fap != NULL, "Flash area pointer NULL");
 
 	wbs = flash_area_align(fap);
 	zassert_true(wbs <= 16,

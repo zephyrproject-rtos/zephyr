@@ -28,8 +28,29 @@ void test_init_id(void)
 	/* Note: IMAGE_0, not IMAGE_1 as above */
 	ret = flash_img_init_id(&ctx_id, FLASH_AREA_ID(image_0));
 	zassert_true(ret == 0, "Flash img init id");
+}
 
-	zassert_equal(ctx_id.flash_area->fa_id, FLASH_AREA_ID(image_0),
+void test_init_area(void)
+{
+	struct flash_img_context ctx_no_id;
+	struct flash_img_context ctx_id;
+	int ret;
+
+	ret = flash_img_init(&ctx_no_id);
+	zassert_true(ret == 0, "Flash img init");
+
+	ret = flash_img_init_area(&ctx_id, FLASH_AREA(image_1));
+	zassert_true(ret == 0, "Flash img init area");
+
+	/* Verify that the default partition ID is IMAGE_1 */
+	zassert_equal(ctx_id.flash_area, ctx_no_id.flash_area,
+		      "Default partition is incorrect");
+
+	/* Note: IMAGE_0, not IMAGE_1 as above */
+	ret = flash_img_init_area(&ctx_id, FLASH_AREA(image_0));
+	zassert_true(ret == 0, "Flash img init area");
+
+	zassert_equal(ctx_id.flash_area, FLASH_AREA(image_0),
 		      "Partition ID is not set correctly");
 }
 
@@ -128,7 +149,7 @@ void test_check_flash(void)
 	struct flash_img_context ctx;
 	int ret;
 
-	ret = flash_img_init_id(&ctx, FLASH_AREA_ID(image_1));
+	ret = flash_img_init_area(&ctx, FLASH_AREA(image_1));
 	zassert_true(ret == 0, "Flash img init 1");
 	ret = flash_area_erase(ctx.flash_area, 0, ctx.flash_area->fa_size);
 	zassert_true(ret == 0, "Flash erase failure (%d)\n", ret);

@@ -38,9 +38,10 @@ int settings_fcb_src(struct settings_fcb *cf)
 
 	cf->cf_fcb.f_version = SETTINGS_FCB_VERS;
 	cf->cf_fcb.f_scratch_cnt = 1;
+	cf->cf_fcb.fap = FLASH_AREA(storage);
 
 	while (1) {
-		rc = fcb_init(FLASH_AREA_ID(storage), &cf->cf_fcb);
+		rc = fcb_init(-1, &cf->cf_fcb);
 		if (rc) {
 			return -EINVAL;
 		}
@@ -402,12 +403,9 @@ int settings_backend_init(void)
 	rc = settings_fcb_src(&config_init_settings_fcb);
 
 	if (rc != 0) {
-		rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
+		fap = FLASH_AREA(storage);
 
-		if (rc == 0) {
-			rc = flash_area_erase(fap, 0, fap->fa_size);
-			flash_area_close(fap);
-		}
+		rc = flash_area_erase(fap, 0, fap->fa_size);
 
 		if (rc != 0) {
 			k_panic();

@@ -272,9 +272,9 @@ int settings_backend_init(void)
 	struct flash_sector hw_flash_sector;
 	uint32_t sector_cnt = 1;
 
-	rc = flash_area_open(FLASH_AREA_ID(storage), &fa);
-	if (rc) {
-		return rc;
+	fa = FLASH_AREA(storage);
+	if (fa == NULL) {
+		return -ENODEV;
 	}
 
 	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &sector_cnt,
@@ -304,7 +304,7 @@ int settings_backend_init(void)
 	default_settings_nvs.cf_nvs.sector_size = nvs_sector_size;
 	default_settings_nvs.cf_nvs.sector_count = cnt;
 	default_settings_nvs.cf_nvs.offset = fa->fa_off;
-	default_settings_nvs.flash_dev_name = fa->fa_dev_name;
+	default_settings_nvs.flash_dev_name = fa->fa_dev->name;
 
 	rc = settings_nvs_backend_init(&default_settings_nvs);
 	if (rc) {
