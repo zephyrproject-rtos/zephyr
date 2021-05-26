@@ -53,8 +53,8 @@ bool z_arm_debug_monitor_event_error_check(void)
 /* The area (0x0 - <size>) monitored by DWT needs to be a power of 2,
  * so we add a build assert that catches it.
  */
-BUILD_ASSERT(!(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE &
-	(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1)),
+BUILD_ASSERT(!(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE &
+	(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1)),
 	"the size of the partition must be power of 2");
 
 static int z_arm_debug_enable_null_pointer_detection(const struct device *arg)
@@ -79,7 +79,7 @@ static int z_arm_debug_enable_null_pointer_detection(const struct device *arg)
 
 	/* Use comparators 0, 1, R/W access check */
 	DWT->COMP0 = 0;
-	DWT->COMP1 = CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1;
+	DWT->COMP1 = CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1;
 
 	DWT->FUNCTION0 =
 		((0x4 << DWT_FUNCTION_MATCH_Pos) & DWT_FUNCTION_MATCH_Msk)
@@ -112,7 +112,7 @@ static int z_arm_debug_enable_null_pointer_detection(const struct device *arg)
 
 	/* Set mask according to the desired size */
 	DWT->MASK0 = 32 - __builtin_clzl(
-		CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1);
+		CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1);
 #endif
 
 	return 0;

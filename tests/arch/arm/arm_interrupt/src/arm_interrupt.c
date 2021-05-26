@@ -481,7 +481,7 @@ void test_arm_user_interrupt(void)
 }
 #endif /* CONFIG_USERSPACE */
 
-#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION)
+#if defined(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION)
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 /* Avoid compiler optimizing null pointer de-referencing. */
@@ -511,7 +511,7 @@ void test_arm_null_pointer_exception(void)
 	TC_PRINT("Skipped\n");
 }
 
-#endif /* CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION */
+#endif /* CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION */
 
 /**
  * @}
