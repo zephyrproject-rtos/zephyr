@@ -17,8 +17,7 @@
 
 #include "tmp116.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(TMP116);
+LOG_MODULE_REGISTER(TMP116, CONFIG_SENSOR_LOG_LEVEL);
 
 static int tmp116_reg_read(const struct device *dev, uint8_t reg,
 			   uint16_t *val)
@@ -194,6 +193,6 @@ static int tmp116_init(const struct device *dev)
 	}; \
 	DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL,			\
 		&tmp116_data_##_num, &tmp116_config_##_num, POST_KERNEL, \
-		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api)
+		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP116);
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP116)
