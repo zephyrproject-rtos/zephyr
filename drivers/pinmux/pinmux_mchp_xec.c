@@ -36,7 +36,8 @@ static int pinmux_xec_set(const struct device *dev, uint32_t pin,
 		return -EINVAL;
 	}
 
-	mask |= MCHP_GPIO_CTRL_BUFT_MASK | MCHP_GPIO_CTRL_MUX_MASK;
+	mask |= MCHP_GPIO_CTRL_BUFT_MASK | MCHP_GPIO_CTRL_MUX_MASK |
+		MCHP_GPIO_CTRL_INPAD_DIS_MASK;
 
 	/* Check for open drain/push_pull setting */
 	if (func & MCHP_GPIO_CTRL_BUFT_OPENDRAIN) {
