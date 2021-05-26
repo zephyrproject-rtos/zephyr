@@ -236,6 +236,14 @@ Boards & SoC Support
   * STM32G03yxx, STM32G05yxx, STM32G070xx and STM32G0byxx
   * STM32G4x1, STM32G4x3 and STM32G484xE
   * STM32WL55xx
+  * Nuvoton npcx7m6fc, and npcx7m6fc
+  * Renesas RCar Gen3
+  * Silicon Labs EFR32FG13P
+  * ARM MPS3-AN547
+  * ARM FVP-AEMv8A
+  * ARM FVP-AEMv8R
+  * NXP LS1046A
+  * X86 Lakemont
 
 * Removed support for these SoC series:
 
@@ -257,23 +265,39 @@ Boards & SoC Support
 
 * Added support for these ARM boards:
 
+   * Actinius Icarus
+   * Actinius Icarus SoM
+   * Laird Connectivity BL654 Sensor Board
+   * Laird Connectivity Sentrius BT6x0 Sensor
+   * EFR32 Radio BRD4255A Board
    * MPS3-AN547
-
-* Added support for these ARM64 boards:
-
-   * fvp_base_revc_2xaemv8a
-   * fvp_baser_aemv8r
-   * nxp_ls1046ardb
-
-* Added support for these STM32 boards:
-
+   * RAK4631
+   * Renesas R-Car H3ULCB
    * Ronoth LoDev (based on AcSIP S76S / STM32L073)
+   * nRF9160 Thing Plus
    * ST Nucleo F030R8
    * ST Nucleo G0B1RE
    * ST Nucleo H753ZI
    * ST Nucleo L412RP-P
    * ST Nucleo WL55JC
    * ST STM32G071B Discovery
+   * Thingy:53
+   * u-blox EVK-BMD-30/35: BMD-300-EVAL, BMD-301-EVAL, and BMD-350-EVAL
+   * u-blox EVK-BMD-330: BMD-330-EVAL
+   * u-blox EVK-BMD-34/38: BMD-340-EVAL and BMD-341-EVAL
+   * u-blox EVK-BMD-34/38: BMD-345-EVAL
+   * u-blox EVK-BMD-360: BMD-360-EVAL
+   * u-blox EVK-BMD-34/48: BMD-380-EVAL
+   * u-blox EVK-ANNA-B11x
+   * u-blox EVK NINA-B11x
+   * u-blox EVK-NINA-B3
+   * u-blox EVK NINA-B40x
+
+* Added support for these ARM64 boards:
+
+   * fvp_base_revc_2xaemv8a
+   * fvp_baser_aemv8r
+   * nxp_ls1046ardb
 
 * Removed support for these ARM boards:
 
