@@ -350,19 +350,18 @@ void ull_slave_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
 		ticks_slot_overhead = 0U;
 	}
+	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 	conn_interval_us -= lll->slave.window_widening_periodic_us;
 
 	conn_offset_us = ftr->radio_end_us;
 	conn_offset_us += win_offset * CONN_INT_UNIT_US;
 	conn_offset_us += win_delay_us;
-	conn_offset_us -= EVENT_OVERHEAD_START_US;
 	conn_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	conn_offset_us -= EVENT_JITTER_US;
 	conn_offset_us -= ready_delay_us;

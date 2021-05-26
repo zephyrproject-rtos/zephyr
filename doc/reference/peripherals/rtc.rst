@@ -14,4 +14,3 @@ API Reference
 *************
 
 .. doxygengroup:: rtc_interface
-   :project: Zephyr

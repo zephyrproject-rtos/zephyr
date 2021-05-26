@@ -7,7 +7,7 @@ sample:
 tests:
   sample.sensor.fxos8700.hybrid:
     platform_allow: frdm_k64f hexiwear_k64 warp7_m4 frdm_kw41z
-                        rv32m1_vega_ri5cy twr_ke18f lpcxpresso55s16_ns
+                        rv32m1_vega_ri5cy twr_ke18f lpcxpresso55s16
                         mimxrt685_evk_cm33 frdm_k22f
     integration_platforms:
       - frdm_k64f

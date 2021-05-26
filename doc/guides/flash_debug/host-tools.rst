@@ -65,11 +65,17 @@ For these devices, the user should:
    automatically select the :option:`CONFIG_USE_DT_CODE_PARTITION` Kconfig
    option which instruct the build system to use these partitions for code
    relocation.  The board :file:`.defconfig` file should have
-   :option:`CONFIG_BOOTLOADER_BOSSA_ARDUINO` or the
-   :option:`CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2` Kconfig option set to ``y``
+   :option:`CONFIG_BOOTLOADER_BOSSA_ARDUINO` ,
+   :option:`CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2` or the
+   :option:`CONFIG_BOOTLOADER_BOSSA_LEGACY` Kconfig option set to ``y``
    to select the right compatible SAM-BA bootloader mode.
    These options can also be set in ``prj.conf`` or any other Kconfig fragment.
 3. Build and flash the SAM-BA bootloader on the device.
+
+.. note::
+
+    The :option:`CONFIG_BOOTLOADER_BOSSA_LEGACY` Kconfig option should be used
+    as last resource.  Try configure first with Devices without ROM bootloader.
 
 
 Typical flash layout and configuration
@@ -176,6 +182,7 @@ As a quick reference, see these three board documentation pages:
   - :ref:`sam4e_xpro` (ROM bootloader)
   - :ref:`adafruit_feather_m0_basic_proto` (Adafruit UF2 bootloader)
   - :ref:`arduino_nano_33_iot` (Arduino bootloader)
+  - :ref:`arduino_nano_33_ble` (Arduino legacy bootloader)
 
 .. _jlink-debug-host-tools:
 

@@ -10,7 +10,7 @@
 
 / {
 	model = "qemu_xtensa";
-	compatible = "xtensa, sample_controller";
+	compatible = "xtensa,sample-controller";
 
 	chosen {
 		zephyr,sram = &sram0;

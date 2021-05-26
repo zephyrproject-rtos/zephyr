@@ -546,4 +546,3 @@ API Reference
 **************
 
 .. doxygengroup:: workqueue_apis
-   :project: Zephyr

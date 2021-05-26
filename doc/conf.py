@@ -82,6 +82,8 @@ extensions = [
     "sphinx_tabs.tabs",
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
+    "notfound.extension",
+    "zephyr.external_content",
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -116,17 +118,20 @@ rst_epilog = """
 
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-html_theme_options = {"prev_next_buttons_location": None}
+html_theme_options = {
+    "logo_only": True,
+    "prev_next_buttons_location": None
+}
 html_title = "Zephyr Project Documentation"
-html_logo = "_static/images/logo.svg"
-html_favicon = "images/zp_favicon.png"
+html_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo.svg")
+html_favicon = str(ZEPHYR_BASE / "doc" / "images" / "zp_favicon.png")
 html_static_path = [str(ZEPHYR_BASE / "doc" / "_static")]
 html_last_updated_fmt = "%b %d, %Y"
 html_domain_indices = False
 html_split_index = True
 html_show_sourcelink = False
 html_show_sphinx = False
-html_search_scorer = "_static/js/scorer.js"
+html_search_scorer = str(ZEPHYR_BASE / "doc" / "_static" / "js" / "scorer.js")
 
 is_release = tags.has("release")  # pylint: disable=undefined-variable
 docs_title = "Docs / {}".format(version if is_release else "Latest")
@@ -134,7 +139,6 @@ html_context = {
     "show_license": True,
     "docs_title": docs_title,
     "is_release": is_release,
-    "theme_logo_only": False,
     "current_version": version,
     "versions": (
         ("latest", "/"),
@@ -166,17 +170,14 @@ doxyrunner_fmt_vars = {"ZEPHYR_BASE": str(ZEPHYR_BASE)}
 
 # -- Options for Breathe plugin -------------------------------------------
 
-breathe_projects = {
-    "Zephyr": str(doxyrunner_outdir / "xml"),
-    "doc-examples": str(doxyrunner_outdir / "xml"),
-}
+breathe_projects = {"Zephyr": str(doxyrunner_outdir / "xml")}
 breathe_default_project = "Zephyr"
 breathe_domain_by_extension = {
     "h": "c",
     "c": "c",
 }
-breathe_separate_member_pages = True
 breathe_show_enumvalue_initializer = True
+breathe_default_members = ("members", )
 
 cpp_id_attributes = [
     "__syscall",
@@ -201,6 +202,26 @@ html_redirect_pages = redirects.REDIRECTS
 warnings_filter_config = str(ZEPHYR_BASE / "doc" / "known-warnings.txt")
 warnings_filter_silent = False
 
+# -- Options for notfound.extension ---------------------------------------
+
+notfound_urls_prefix = f"/{version}/"
+
+# -- Options for zephyr.external_content ----------------------------------
+
+external_content_contents = [
+    (ZEPHYR_BASE / "doc", "[!_]*"),
+    (ZEPHYR_BASE, "boards/**/*.rst"),
+    (ZEPHYR_BASE, "boards/**/doc"),
+    (ZEPHYR_BASE, "samples/**/*.rst"),
+    (ZEPHYR_BASE, "samples/**/doc"),
+]
+external_content_keep = [
+    "reference/kconfig/*",
+    "reference/devicetree/bindings.rst",
+    "reference/devicetree/bindings/**/*",
+    "reference/devicetree/compatibles/**/*",
+]
+
 # -- Linkcheck options ----------------------------------------------------
 
 extlinks = {
@@ -216,7 +237,6 @@ linkcheck_anchors = False
 def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
-    app.add_js_file("js/custom.js")
     app.add_js_file("js/dark-mode-toggle.min.mjs", type="module")
 
     app.add_js_file("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")

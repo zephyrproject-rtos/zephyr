@@ -402,7 +402,7 @@ static inline int z_impl_dma_request_channel(const struct device *dev,
 			channel = i;
 			if (api->chan_filter &&
 			    !api->chan_filter(dev, channel, filter_param)) {
-				atomic_test_and_clear_bit(dma_ctx->atomic, channel);
+				atomic_clear_bit(dma_ctx->atomic, channel);
 				continue;
 			}
 			break;
@@ -434,7 +434,7 @@ static inline void z_impl_dma_release_channel(const struct device *dev,
 	}
 
 	if (channel < dma_ctx->dma_channels) {
-		atomic_test_and_clear_bit(dma_ctx->atomic, channel);
+		atomic_clear_bit(dma_ctx->atomic, channel);
 	}
 
 }

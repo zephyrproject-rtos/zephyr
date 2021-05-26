@@ -354,11 +354,6 @@ struct bt_hci_cmd_state_set {
 	bool val;
 };
 
-struct bt_adv_id_check_data {
-	uint8_t id;
-	bool adv_enabled;
-};
-
 /* Set command state related with the command buffer */
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       struct bt_hci_cmd_state_set *state,

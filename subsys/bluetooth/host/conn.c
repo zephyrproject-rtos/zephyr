@@ -1507,6 +1507,12 @@ struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 #endif /* CONFIG_BT_ISO */
 }
 
+void bt_conn_connected(struct bt_conn *conn)
+{
+	bt_l2cap_connected(conn);
+	notify_connected(conn);
+}
+
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
 	bt_conn_state_t old_state;
@@ -1557,9 +1563,6 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		}
 
 		sys_slist_init(&conn->channels);
-
-		bt_l2cap_connected(conn);
-		notify_connected(conn);
 
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 		    conn->role == BT_CONN_ROLE_SLAVE) {

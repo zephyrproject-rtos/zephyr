@@ -360,7 +360,10 @@ do { \
 	/* Store length in the header, set number of dumped strings to 0 */ \
 	if (_pbuf) { \
 		union z_cbprintf_hdr hdr = { \
-			.desc = {.len = (uint8_t)(_pkg_len / sizeof(int)) } \
+			.desc = { \
+				.len = (uint8_t)(_pkg_len / sizeof(int)), \
+				.str_cnt = 0, \
+			} \
 		}; \
 		*_len_loc = hdr; \
 	} \

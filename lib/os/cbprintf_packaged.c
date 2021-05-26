@@ -467,7 +467,7 @@ process_string:
 	}
 
 	/* Clear our buffer header. We made room for it initially. */
-	*(char **)buf0 = 0;
+	*(char **)buf0 = NULL;
 
 	/* Record end of argument list and number of appended strings. */
 	buf0[0] = (buf - buf0) / sizeof(int);

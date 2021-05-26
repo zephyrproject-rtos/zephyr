@@ -19,6 +19,10 @@
 		zephyr,sram-secure-partition = &sram0_s;
 		zephyr,sram-non-secure-partition = &sram0_ns;
 	};
+
+	aliases {
+		usbd0 = &usbd;
+	};
 };
 
 &usbd {

@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <sys/atomic.h>
 #include <shell/shell.h>
+#if defined(CONFIG_SHELL_BACKEND_DUMMY)
 #include <shell/shell_dummy.h>
+#endif
 #include "shell_ops.h"
 #include "shell_help.h"
 #include "shell_utils.h"

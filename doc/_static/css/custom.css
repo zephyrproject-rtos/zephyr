@@ -50,10 +50,6 @@ legend,
     max-width: 480px;
 }
 
-.rst-content div.figure img {
-    border: 1px solid var(--body-color);
-}
-
 p,
 article ul,
 article ol,
@@ -168,6 +164,12 @@ hr,
 .rst-content dl:not(.docutils).method dt > em {
     color: var(--code-literal-color) !important;
     font-style: normal !important;
+    padding: 0 4px !important;
+}
+.rst-content dl:not(.docutils) .sig-param,
+.rst-content dl:not(.docutils).class dt > code,
+.rst-content dl:not(.docutils).function dt > code,
+.rst-content dl:not(.docutils).method dt > code {
     padding: 0 4px !important;
 }
 .rst-content dl:not(.docutils) .sig-param,
@@ -529,6 +531,7 @@ a.internal:visited code.literal {
 .rst-content .admonition.seealso {
     background-color: var(--admonition-note-background-color);
     color: var(--admonition-note-color);
+    overflow: auto;
 }
 
 .rst-content .admonition.note .admonition-title,
@@ -542,6 +545,7 @@ a.internal:visited code.literal {
 .rst-content .admonition.warning {
     background-color: var(--admonition-attention-background-color);
     color: var(--admonition-attention-color);
+    overflow: auto;
 }
 
 .rst-content .admonition.attention .admonition-title,
@@ -554,6 +558,7 @@ a.internal:visited code.literal {
 .rst-content .admonition.danger {
     background-color: var(--admonition-danger-background-color);
     color: var(--admonition-danger-color);
+    overflow: auto;
 }
 
 .rst-content .admonition.danger .admonition-title {
@@ -565,6 +570,7 @@ a.internal:visited code.literal {
 .rst-content .admonition.important {
     background-color: var(--admonition-tip-background-color);
     color: var(--admonition-tip-color);
+    overflow: auto;
 }
 
 .rst-content .admonition.tip .admonition-title,
@@ -837,7 +843,7 @@ kbd, .kbd {
 .wy-menu.wy-menu-vertical {
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: calc(100% - 348px);
+    max-height: calc(100% - 243px);
 }
 @media screen and (max-width: 768px) {
     .wy-nav-side {
@@ -893,10 +899,18 @@ kbd, .kbd {
     padding-left: 0 !important;
 }
 
-.rst-content dl:not(.docutils) dl dt, dl:not(.docutils,.rst-other-versions) dt {
+.rst-content dl:not(.docutils) dl:not(.rst-other-versions) dt {
     background: var(--admonition-note-background-color) !important;
     border-top: none !important;
     border-left: none !important;
+}
+
+.rst-content dl:not(.docutils).c.var .pre {
+  padding-right: 4px;
+}
+
+.rst-content dl:not(.docutils).c.struct .property {
+  padding-right: 4px !important;
 }
 
 /* Misc tweaks */

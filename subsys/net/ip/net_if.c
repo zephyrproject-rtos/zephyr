@@ -3186,7 +3186,7 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	if (!net_ipv4_is_ll_addr(dst) && !net_ipv4_is_addr_mcast(dst)) {
+	if (!net_ipv4_is_ll_addr(dst)) {
 
 		/* If caller has supplied interface, then use that */
 		if (dst_iface) {

@@ -326,11 +326,13 @@ int z_arm_mpu_init(void)
 	arm_core_mpu_disable();
 
 #if defined(CONFIG_NOCACHE_MEMORY)
-	/* Clean and invalidate data cache if
+	/* Clean and invalidate data cache if it is enabled and
 	 * that was not already done at boot
 	 */
 #if !defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
-	SCB_CleanInvalidateDCache();
+	if (SCB->CCR & SCB_CCR_DC_Msk) {
+		SCB_CleanInvalidateDCache();
+	}
 #endif
 #endif /* CONFIG_NOCACHE_MEMORY */
 

@@ -23,7 +23,7 @@
 #include <linker-kobject-prebuilt-priv-stacks.h>
 #ifdef KOBJECT_PRIV_STACKS_ALIGN
 	. = ALIGN(KOBJECT_PRIV_STACKS_ALIGN);
-	. += KOBJECT_PRIV_STACKS_SZ;
+	. = . + KOBJECT_PRIV_STACKS_SZ;
 #endif
 #endif /* LINKER_ZEPHYR_PREBUILT */
 

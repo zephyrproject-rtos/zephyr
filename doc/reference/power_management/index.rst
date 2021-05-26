@@ -73,25 +73,18 @@ general power states with higher indexes will offer greater power savings and
 have higher wake latencies. Following is a thorough list of available states:
 
 .. doxygenenumvalue:: PM_STATE_ACTIVE
-   :project: Zephyr
 
 .. doxygenenumvalue:: PM_STATE_RUNTIME_IDLE
-   :project: Zephyr
 
 .. doxygenenumvalue:: PM_STATE_SUSPEND_TO_IDLE
-   :project: Zephyr
 
 .. doxygenenumvalue:: PM_STATE_STANDBY
-   :project: Zephyr
 
 .. doxygenenumvalue:: PM_STATE_SUSPEND_TO_RAM
-   :project: Zephyr
 
 .. doxygenenumvalue:: PM_STATE_SUSPEND_TO_DISK
-   :project: Zephyr
 
 .. doxygenenumvalue:: PM_STATE_SOFT_OFF
-   :project: Zephyr
 
 .. _pm_constraints:
 
@@ -106,13 +99,10 @@ lose context. Constraints can be set, released and checked using the
 follow APIs:
 
 .. doxygenfunction:: pm_constraint_set
-   :project: Zephyr
 
 .. doxygenfunction:: pm_constraint_release
-   :project: Zephyr
 
 .. doxygenfunction:: pm_constraint_get
-   :project: Zephyr
 
 Power Management Policies
 =========================
@@ -491,16 +481,13 @@ Power Management Hook Interface
 ===============================
 
 .. doxygengroup:: power_management_hook_interface
-   :project: Zephyr
 
 System Power Management APIs
 ============================
 
 .. doxygengroup:: system_power_management_api
-   :project: Zephyr
 
 Device Power Management APIs
 ============================
 
 .. doxygengroup:: device_power_management_api
-   :project: Zephyr

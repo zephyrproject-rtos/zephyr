@@ -286,6 +286,10 @@ static int lsm6dso_attr_set(const struct device *dev,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
+#if defined(CONFIG_LSM6DSO_SENSORHUB)
+	struct lsm6dso_data *data = dev->data;
+#endif /* CONFIG_LSM6DSO_SENSORHUB */
+
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return lsm6dso_accel_config(dev, chan, attr, val);
@@ -295,6 +299,11 @@ static int lsm6dso_attr_set(const struct device *dev,
 	case SENSOR_CHAN_MAGN_XYZ:
 	case SENSOR_CHAN_PRESS:
 	case SENSOR_CHAN_HUMIDITY:
+		if (!data->shub_inited) {
+			LOG_ERR("shub not inited.");
+			return -ENOTSUP;
+		}
+
 		return lsm6dso_shub_config(dev, chan, attr, val);
 #endif /* CONFIG_LSM6DSO_SENSORHUB */
 	default:
@@ -377,12 +386,13 @@ static int lsm6dso_sample_fetch_shub(const struct device *dev)
 static int lsm6dso_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
+#if defined(CONFIG_LSM6DSO_SENSORHUB)
+	struct lsm6dso_data *data = dev->data;
+#endif /* CONFIG_LSM6DSO_SENSORHUB */
+
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
 		lsm6dso_sample_fetch_accel(dev);
-#if defined(CONFIG_LSM6DSO_SENSORHUB)
-		lsm6dso_sample_fetch_shub(dev);
-#endif
 		break;
 	case SENSOR_CHAN_GYRO_XYZ:
 		lsm6dso_sample_fetch_gyro(dev);
@@ -399,7 +409,9 @@ static int lsm6dso_sample_fetch(const struct device *dev,
 		lsm6dso_sample_fetch_temp(dev);
 #endif
 #if defined(CONFIG_LSM6DSO_SENSORHUB)
-		lsm6dso_sample_fetch_shub(dev);
+		if (data->shub_inited) {
+			lsm6dso_sample_fetch_shub(dev);
+		}
 #endif
 		break;
 	default:
@@ -536,7 +548,7 @@ static inline int lsm6dso_magn_get_channel(enum sensor_channel chan,
 	int16_t sample[3];
 	int idx;
 
-	idx = lsm6dso_shub_get_idx(SENSOR_CHAN_MAGN_XYZ);
+	idx = lsm6dso_shub_get_idx(data->dev, SENSOR_CHAN_MAGN_XYZ);
 	if (idx < 0) {
 		LOG_DBG("external magn not supported");
 		return -ENOTSUP;
@@ -580,7 +592,7 @@ static inline void lsm6dso_hum_convert(struct sensor_value *val,
 	struct hts221_data *ht = &data->hts221;
 	int idx;
 
-	idx = lsm6dso_shub_get_idx(SENSOR_CHAN_HUMIDITY);
+	idx = lsm6dso_shub_get_idx(data->dev, SENSOR_CHAN_HUMIDITY);
 	if (idx < 0) {
 		LOG_DBG("external press/temp not supported");
 		return;
@@ -604,7 +616,7 @@ static inline void lsm6dso_press_convert(struct sensor_value *val,
 	int32_t raw_val;
 	int idx;
 
-	idx = lsm6dso_shub_get_idx(SENSOR_CHAN_PRESS);
+	idx = lsm6dso_shub_get_idx(data->dev, SENSOR_CHAN_PRESS);
 	if (idx < 0) {
 		LOG_DBG("external press/temp not supported");
 		return;
@@ -627,7 +639,7 @@ static inline void lsm6dso_temp_convert(struct sensor_value *val,
 	int16_t raw_val;
 	int idx;
 
-	idx = lsm6dso_shub_get_idx(SENSOR_CHAN_PRESS);
+	idx = lsm6dso_shub_get_idx(data->dev, SENSOR_CHAN_PRESS);
 	if (idx < 0) {
 		LOG_DBG("external press/temp not supported");
 		return;
@@ -671,18 +683,38 @@ static int lsm6dso_channel_get(const struct device *dev,
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
 	case SENSOR_CHAN_MAGN_XYZ:
+		if (!data->shub_inited) {
+			LOG_ERR("attr_set() shub not inited.");
+			return -ENOTSUP;
+		}
+
 		lsm6dso_magn_get_channel(chan, val, data);
 		break;
 
 	case SENSOR_CHAN_HUMIDITY:
+		if (!data->shub_inited) {
+			LOG_ERR("attr_set() shub not inited.");
+			return -ENOTSUP;
+		}
+
 		lsm6dso_hum_convert(val, data);
 		break;
 
 	case SENSOR_CHAN_PRESS:
+		if (!data->shub_inited) {
+			LOG_ERR("attr_set() shub not inited.");
+			return -ENOTSUP;
+		}
+
 		lsm6dso_press_convert(val, data);
 		break;
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
+		if (!data->shub_inited) {
+			LOG_ERR("attr_set() shub not inited.");
+			return -ENOTSUP;
+		}
+
 		lsm6dso_temp_convert(val, data);
 		break;
 #endif
@@ -774,6 +806,7 @@ static int lsm6dso_init(const struct device *dev)
 #endif
 	struct lsm6dso_data *data = dev->data;
 
+	LOG_INF("Initialize device %s", dev->name);
 	data->dev = dev;
 
 #ifdef CONFIG_LSM6DSO_TRIGGER
@@ -791,9 +824,10 @@ static int lsm6dso_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_LSM6DSO_SENSORHUB
+	data->shub_inited = true;
 	if (lsm6dso_shub_init(dev) < 0) {
-		LOG_DBG("failed to initialize external chip");
-		return -EIO;
+		LOG_INF("shub: no external chips found");
+		data->shub_inited = false;
 	}
 #endif
 

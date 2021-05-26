@@ -36,43 +36,19 @@ extern "C" {
  * @}
  */
 
-#if defined(CONFIG_COOP_ENABLED) && defined(CONFIG_PREEMPT_ENABLED)
-#define _NUM_COOP_PRIO (CONFIG_NUM_COOP_PRIORITIES)
-#define _NUM_PREEMPT_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + 1)
-#elif defined(CONFIG_COOP_ENABLED)
-#define _NUM_COOP_PRIO (CONFIG_NUM_COOP_PRIORITIES + 1)
-#define _NUM_PREEMPT_PRIO (0)
-#elif defined(CONFIG_PREEMPT_ENABLED)
-#define _NUM_COOP_PRIO (0)
-#define _NUM_PREEMPT_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + 1)
-#else
-#error "invalid configuration"
-#endif
-
-#define K_PRIO_COOP(x) (-(_NUM_COOP_PRIO - (x)))
-#define K_PRIO_PREEMPT(x) (x)
-
 #define K_ANY NULL
 #define K_END NULL
 
-#if defined(CONFIG_COOP_ENABLED) && defined(CONFIG_PREEMPT_ENABLED)
+#if CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES == 0
+#error Zero available thread priorities defined!
+#endif
+
+#define K_PRIO_COOP(x) (-(CONFIG_NUM_COOP_PRIORITIES - (x)))
+#define K_PRIO_PREEMPT(x) (x)
+
 #define K_HIGHEST_THREAD_PRIO (-CONFIG_NUM_COOP_PRIORITIES)
-#elif defined(CONFIG_COOP_ENABLED)
-#define K_HIGHEST_THREAD_PRIO (-CONFIG_NUM_COOP_PRIORITIES - 1)
-#elif defined(CONFIG_PREEMPT_ENABLED)
-#define K_HIGHEST_THREAD_PRIO 0
-#else
-#error "invalid configuration"
-#endif
-
-#ifdef CONFIG_PREEMPT_ENABLED
 #define K_LOWEST_THREAD_PRIO CONFIG_NUM_PREEMPT_PRIORITIES
-#else
-#define K_LOWEST_THREAD_PRIO -1
-#endif
-
 #define K_IDLE_PRIO K_LOWEST_THREAD_PRIO
-
 #define K_HIGHEST_APPLICATION_THREAD_PRIO (K_HIGHEST_THREAD_PRIO)
 #define K_LOWEST_APPLICATION_THREAD_PRIO (K_LOWEST_THREAD_PRIO - 1)
 
@@ -2553,7 +2529,7 @@ struct k_mutex {
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.owner = NULL, \
 	.lock_count = 0, \
-	.owner_orig_prio = K_LOWEST_THREAD_PRIO, \
+	.owner_orig_prio = K_LOWEST_APPLICATION_THREAD_PRIO, \
 	}
 
 /**
@@ -2950,6 +2926,7 @@ static inline bool k_work_is_pending(const struct k_work *work);
  * * @p queue is draining; or
  * * @p queue is plugged.
  * @retval -EINVAL if @p queue is null and the work item has never been run.
+ * @retval -ENODEV if @p queue has not been started.
  */
 int k_work_submit_to_queue(struct k_work_q *queue,
 			   struct k_work *work);
@@ -3228,6 +3205,12 @@ static inline k_ticks_t k_work_delayable_remaining_get(
  *
  * @retval 0 if work was already scheduled or submitted.
  * @retval 1 if work has been scheduled.
+ * @retval -EBUSY if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
+ * @retval -EINVAL if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
+ * @retval -ENODEV if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
  */
 int k_work_schedule_for_queue(struct k_work_q *queue,
 			       struct k_work_delayable *dwork,
@@ -3277,6 +3260,12 @@ extern int k_work_schedule(struct k_work_delayable *dwork,
  * * delay not @c K_NO_WAIT and work has been scheduled
  * @retval 2 if delay is @c K_NO_WAIT and work was running and has been queued
  * to the queue that was running it
+ * @retval -EBUSY if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
+ * @retval -EINVAL if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
+ * @retval -ENODEV if @p delay is @c K_NO_WAIT and
+ *         k_work_submit_to_queue() fails with this code.
  */
 int k_work_reschedule_for_queue(struct k_work_q *queue,
 				 struct k_work_delayable *dwork,
@@ -4989,6 +4978,11 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes,
  */
 void k_heap_free(struct k_heap *h, void *mem);
 
+/* Hand-calculated minimum heap sizes needed to return a successful
+ * 1-byte allocation.  See details in lib/os/heap.[ch]
+ */
+#define Z_HEAP_MIN_SIZE (sizeof(void *) > 4 ? 56 : 44)
+
 /**
  * @brief Define a static k_heap
  *
@@ -4996,15 +4990,20 @@ void k_heap_free(struct k_heap *h, void *mem);
  * k_heap of the requested size.  After kernel start, &name can be
  * used as if k_heap_init() had been called.
  *
+ * Note that this macro enforces a minimum size on the memory region
+ * to accommodate metadata requirements.  Very small heaps will be
+ * padded to fit.
+ *
  * @param name Symbol name for the struct k_heap object
  * @param bytes Size of memory region, in bytes
  */
 #define K_HEAP_DEFINE(name, bytes)				\
-	char __aligned(sizeof(void *)) kheap_##name[bytes];	\
+	char __aligned(8) /* CHUNK_UNIT */			\
+	     kheap_##name[MAX(bytes, Z_HEAP_MIN_SIZE)];		\
 	Z_STRUCT_SECTION_ITERABLE(k_heap, name) = {		\
 		.heap = {					\
 			.init_mem = kheap_##name,		\
-			.init_bytes = (bytes),			\
+			.init_bytes = MAX(bytes, Z_HEAP_MIN_SIZE), \
 		 },						\
 	}
 

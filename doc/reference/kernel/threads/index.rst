@@ -541,4 +541,5 @@ API Reference
 **************
 
 .. doxygengroup:: thread_apis
-   :project: Zephyr
+
+.. doxygengroup:: thread_stack_api

@@ -479,4 +479,3 @@ API Reference
 *************
 
 .. doxygengroup:: isr_apis
-   :project: Zephyr

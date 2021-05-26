@@ -108,8 +108,8 @@ static void basic_validate(struct log_msg2 *msg,
 	d = log_msg2_get_package(msg, &len);
 	if (str) {
 		rv = cbpprintf(out, &tbuf, d);
-		buf[rv] = '\0';
 		zassert_true(rv > 0, NULL);
+		buf[rv] = '\0';
 
 		rv = strncmp(buf, str, sizeof(buf));
 		zassert_equal(rv, 0, "expected:\n%s,\ngot:\n%s", str, buf);

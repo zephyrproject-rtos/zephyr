@@ -63,7 +63,6 @@ API Reference
 *************
 
 .. doxygengroup:: disk_access_interface
-   :project: Zephyr
 
 Disk Driver Configuration Options
 *********************************
@@ -76,4 +75,3 @@ Disk Driver Interface
 *********************
 
 .. doxygengroup:: disk_driver_interface
-   :project: Zephyr

@@ -18,4 +18,3 @@ API Reference
 *************
 
 .. doxygengroup:: gpio_interface
-   :project: Zephyr

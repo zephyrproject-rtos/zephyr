@@ -176,17 +176,17 @@ static int led_pwm_pm_set_state(const struct device *dev, uint32_t new_state)
 }
 
 static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
-			      void *context, pm_device_cb cb, void *arg)
+			      uint32_t *state, pm_device_cb cb, void *arg)
 {
 	int err;
 
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_GET:
-		err = led_pwm_pm_get_state(dev, context);
+		err = led_pwm_pm_get_state(dev, state);
 		break;
 
 	case PM_DEVICE_STATE_SET:
-		err = led_pwm_pm_set_state(dev, *((uint32_t *)context));
+		err = led_pwm_pm_set_state(dev, *state);
 		break;
 
 	default:
@@ -195,7 +195,7 @@ static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
 	}
 
 	if (cb) {
-		cb(dev, err, context, arg);
+		cb(dev, err, state, arg);
 	}
 
 	return err;
@@ -232,13 +232,9 @@ static const struct led_pwm_config led_pwm_config_##id = {	\
 								\
 static struct led_pwm_data led_pwm_data_##id;			\
 								\
-DEVICE_DEFINE(led_pwm_##id,					\
-		    DT_INST_PROP_OR(id, label, "LED_PWM_"#id),	\
-		    &led_pwm_init,				\
-		    led_pwm_pm_control,				\
-		    &led_pwm_data_##id,				\
-		    &led_pwm_config_##id,			\
-		    POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
-		    &led_pwm_api);
+DEVICE_DT_INST_DEFINE(id, &led_pwm_init, led_pwm_pm_control,	\
+		      &led_pwm_data_##id, &led_pwm_config_##id,	\
+		      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
+		      &led_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_PWM_DEVICE)

@@ -27,6 +27,11 @@
 #define LOG_MODULE_NAME bt_id
 #include "common/log.h"
 
+struct bt_adv_id_check_data {
+	uint8_t id;
+	bool adv_enabled;
+};
+
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_BROADCASTER)
 const bt_addr_le_t *bt_lookup_id_addr(uint8_t id, const bt_addr_le_t *addr)
 {
@@ -171,7 +176,9 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 		return err;
 	}
 
-	bt_addr_copy(&adv->random_addr.a, addr);
+	if (&adv->random_addr.a != addr) {
+		bt_addr_copy(&adv->random_addr.a, addr);
+	}
 	adv->random_addr.type = BT_ADDR_LE_RANDOM;
 	return 0;
 }
@@ -374,7 +381,6 @@ static void le_update_private_addr(void)
 	bool scan_enabled = false;
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN) &&
 	    !(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED))) {
 		bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE);
@@ -1538,10 +1544,9 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 			/* If active scan with NRPA is ongoing refresh NRPA */
 			if (!IS_ENABLED(CONFIG_BT_PRIVACY) &&
 			    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
-			    atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
-			    atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
+			    atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 				scan_enabled = true;
-				bt_le_scan_set_enable(false);
+				bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE);
 			}
 #endif /* defined(CONFIG_BT_OBSERVER) */
 			err = bt_id_set_adv_private_addr(adv);
@@ -1549,7 +1554,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 
 #if defined(CONFIG_BT_OBSERVER)
 			if (scan_enabled) {
-				bt_le_scan_set_enable(true);
+				bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
 			}
 #endif /* defined(CONFIG_BT_OBSERVER) */
 		} else {

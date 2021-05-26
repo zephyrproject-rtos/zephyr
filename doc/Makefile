@@ -4,7 +4,7 @@
 
 BUILDDIR ?= _build
 DOC_TAG ?= development
-SPHINXOPTS ?= -q
+SPHINXOPTS ?= -j auto
 KCONFIG_TURBO_MODE ?= 0
 
 # Documentation targets
@@ -23,7 +23,7 @@ htmldocs pdfdocs doxygen: configure
 .PHONY: configure
 configure:
 	cmake -GNinja -B${BUILDDIR} -S. -DDOC_TAG=${DOC_TAG} \
-		-DSPHINXOPTS=${SPHINXOPTS} \
+		-DSPHINXOPTS="${SPHINXOPTS}" \
 		-DKCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
 
 clean:

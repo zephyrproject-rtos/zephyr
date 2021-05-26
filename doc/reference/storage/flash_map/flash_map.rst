@@ -95,5 +95,3 @@ API Reference
 *************
 
 .. doxygengroup:: flash_area_api
-   :project: Zephyr
-   :members:

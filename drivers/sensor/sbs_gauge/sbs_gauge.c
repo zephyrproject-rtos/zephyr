@@ -108,6 +108,20 @@ static int sbs_gauge_channel_get(const struct device *dev,
 	return 0;
 }
 
+static const uint16_t all_channels[] = {
+	SENSOR_CHAN_GAUGE_VOLTAGE,
+	SENSOR_CHAN_GAUGE_AVG_CURRENT,
+	SENSOR_CHAN_GAUGE_TEMP,
+	SENSOR_CHAN_GAUGE_STATE_OF_CHARGE,
+	SENSOR_CHAN_GAUGE_FULL_CHARGE_CAPACITY,
+	SENSOR_CHAN_GAUGE_REMAINING_CHARGE_CAPACITY,
+	SENSOR_CHAN_GAUGE_NOM_AVAIL_CAPACITY,
+	SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY,
+	SENSOR_CHAN_GAUGE_TIME_TO_EMPTY,
+	SENSOR_CHAN_GAUGE_TIME_TO_FULL,
+	SENSOR_CHAN_GAUGE_CYCLE_COUNT
+};
+
 static int sbs_gauge_sample_fetch(const struct device *dev,
 			    enum sensor_channel chan)
 {
@@ -220,6 +234,16 @@ static int sbs_gauge_sample_fetch(const struct device *dev,
 		if (status < 0) {
 			LOG_ERR("Failed to read cycle count");
 		}
+		break;
+
+	case SENSOR_CHAN_ALL:
+		for (int i = 0; i < ARRAY_SIZE(all_channels); i++) {
+			status = sbs_gauge_sample_fetch(dev, all_channels[i]);
+			if (status != 0) {
+				break;
+			}
+		}
+
 		break;
 
 	default:

@@ -85,4 +85,3 @@ API documentation
 *****************
 
 .. doxygengroup:: thread_analyzer
-   :project: Zephyr

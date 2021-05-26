@@ -183,7 +183,7 @@ config OPENTHREAD_OTNS
 config OPENTHREAD_FULL_LOGS
 	bool "Enable OpenThread full logs"
 
-config OPENTHREAD_MLE_LINK_METRICS_ENABLE
+config OPENTHREAD_LINK_METRICS
 	bool "Enable Link Metrics support"
 
 config OPENTHREAD_SRP_CLIENT

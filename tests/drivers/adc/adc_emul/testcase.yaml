@@ -3,3 +3,4 @@ common:
 tests:
   drivers.adc.emul:
     depends_on: adc
+    platform_allow: native_posix

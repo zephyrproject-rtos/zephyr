@@ -43,7 +43,7 @@
 	};
 };
 
-&clk_hsi{
+&clk_hsi {
 	status = "okay";
 };
 

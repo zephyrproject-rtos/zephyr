@@ -63,20 +63,6 @@ config ISOTP_ENABLE_TX_PADDING
 	  Add padding bytes 0xCC (as recommended by Bosch) if the PDU payload
 	  does not fit exactly into the CAN frame.
 
-config ISOTP_WORKQUEUE_PRIO
-	int "Priority level of the RX and TX work queue"
-	default 2
-	help
-	  This value defines the priority level of the work queue thread that
-	  handles flow control, consecutive sending, receiving and callbacks.
-
-config ISOTP_WORKQ_STACK_SIZE
-	int "Work queue stack size"
-	default 256
-	help
-	  This value defines the stack size of the work queue thread that
-	  handles flow control, consecutive sending, receiving and callbacks.
-
 config ISOTP_RX_BUF_COUNT
 	int "Number of data buffers for receiving data"
 	default 4

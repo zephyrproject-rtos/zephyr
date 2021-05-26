@@ -165,6 +165,24 @@ static int prepare_cb(struct lll_prepare_param *p)
 		lll->slave.window_size_prepare_us;
 	lll->slave.window_size_prepare_us = 0;
 
+	/* Ensure that empty flag reflects the state of the Tx queue, as a
+	 * peripheral if this is the first connection event and as no prior PDU
+	 * is transmitted, an incorrect acknowledgment by peer should not
+	 * dequeue a PDU that has not been transmitted on air.
+	 */
+	if (!lll->empty) {
+		memq_link_t *link;
+
+		/* Check for any Tx PDU at the head of the queue */
+		link = memq_peek(lll->memq_tx.head, lll->memq_tx.tail, NULL);
+		if (!link) {
+			/* Update empty flag to reflect that no valid non-empty
+			 * PDU was transmitted prior to this connection event.
+			 */
+			lll->empty = 1U;
+		}
+	}
+
 	/* Start setting up Radio h/w */
 	radio_reset();
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)

@@ -39,6 +39,9 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 
 void wifi_connect(void)
 {
+	int nr_tries = 10;
+	int ret = 0;
+
 	net_mgmt_init_event_callback(&wifi_shell_mgmt_cb,
 				     wifi_mgmt_event_handler,
 				     NET_EVENT_WIFI_CONNECT_RESULT);
@@ -62,9 +65,16 @@ void wifi_connect(void)
 
 	LOG_INF("WIFI try connecting to %s...", CONFIG_TAGOIO_HTTP_WIFI_SSID);
 
-	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
-		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
-		return;
+	/* Let's wait few seconds to allow wifi device be on-line */
+	while (nr_tries-- > 0) {
+		ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &cnx_params,
+			       sizeof(struct wifi_connect_req_params));
+		if (ret == 0) {
+			break;
+		}
+
+		LOG_INF("Connect request failed %d. Waiting iface be up...", ret);
+		k_msleep(500);
 	}
 
 	while (connected == 0) {

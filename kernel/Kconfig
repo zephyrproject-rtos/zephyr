@@ -90,7 +90,11 @@ config PREEMPT_ENABLED
 
 config PRIORITY_CEILING
 	int "Priority inheritance ceiling"
-	default 0
+	default -127
+	help
+	  This defines the minimum priority value (i.e. the logically
+	  highest priority) that a thread will acquire as part of
+	  k_mutex priority inheritance.
 
 config NUM_METAIRQ_PRIORITIES
 	int "Number of very-high priority 'preemptor' threads"
@@ -339,6 +343,7 @@ config THREAD_NAME
 config THREAD_MAX_NAME_LEN
 	int "Max length of a thread name"
 	default 32
+	default 64 if ZTEST
 	range 8 128
 	depends on THREAD_NAME
 	help

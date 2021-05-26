@@ -49,6 +49,8 @@
 				compatible = "soc-nv-flash";
 				label = "FLASH_0";
 				reg = <0x00080000 0x80000>;
+
+				write-block-size = <16>;
 			};
 		};
 

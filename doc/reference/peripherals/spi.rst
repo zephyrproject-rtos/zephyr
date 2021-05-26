@@ -11,4 +11,3 @@ API Reference
 *************
 
 .. doxygengroup:: spi_interface
-   :project: Zephyr

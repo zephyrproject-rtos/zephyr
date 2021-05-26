@@ -892,6 +892,8 @@ void ll_rx_dequeue(void)
 		struct lll_adv_aux *lll_aux;
 
 		adv = ull_adv_set_get(rx->handle);
+		LL_ASSERT(adv);
+
 		lll_aux = adv->lll.aux;
 		if (lll_aux) {
 			struct ll_adv_aux_set *aux;

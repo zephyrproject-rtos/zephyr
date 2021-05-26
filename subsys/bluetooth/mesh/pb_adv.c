@@ -560,8 +560,6 @@ static void send_reliable(void)
 {
 	int i;
 
-	link.tx.start = k_uptime_get();
-
 	for (i = 0; i < ARRAY_SIZE(link.tx.buf); i++) {
 		struct net_buf *buf = link.tx.buf[i];
 
@@ -642,6 +640,7 @@ static int bearer_ctl_send(uint8_t op, const void *data, uint8_t data_len,
 	net_buf_add_mem(buf, data, data_len);
 
 	if (reliable) {
+		link.tx.start = k_uptime_get();
 		link.tx.buf[0] = buf;
 		send_reliable();
 	} else {
@@ -677,6 +676,7 @@ static int prov_send_adv(struct net_buf_simple *msg,
 	link.tx.buf[0] = start;
 	link.tx.cb = cb;
 	link.tx.cb_data = cb_data;
+	link.tx.start = k_uptime_get();
 
 	BT_DBG("xact_id: 0x%x len: %u", link.tx.id, msg->len);
 

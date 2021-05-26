@@ -20,12 +20,8 @@ that has implied:
 5. Writing the PC-side deserializer/parser,
 6. Writing custom ad-hoc tools for filtering and presentation.
 
-An application can use one of the existing formats or define a custom
-format by overriding the macros declared
-in :zephyr_file:`include/tracing/tracing.h`.
-
-.. doxygengroup:: tracing_apis
-   :project: Zephyr
+An application can use one of the existing formats or define a custom format by
+overriding the macros declared in :zephyr_file:`include/tracing/tracing.h`.
 
 Different formats, transports and host tools are avialable and supported in
 Zephyr.
@@ -135,6 +131,15 @@ latest data from the internal RAM buffer can be loaded into SystemView::
 
 .. _SEGGER SystemView: https://www.segger.com/products/development-tools/systemview/
 
+
+Recent versions of `SEGGER SystemView`_ come with an API translation table for
+Zephyr which is incomplete and does not match the current level of support
+available in Zephyr. To use the latest Zephyr API description table, copy the
+file available in the tree to your local configuration directory to override the
+builtin table::
+
+        # On Linux and MacOS
+        cp ZEPHYR_BASE/subsys/tracing/sysview/SYSVIEW_Zephyr.txt ~/.config/SEGGER/
 
 Transport Backends
 ******************
@@ -315,3 +320,94 @@ Locking may not be needed if multiple independent channels are available.
         E.g. native_posix or board with multi-channel DMA. Lock-free.
 
         ``emit(a ## b ## c, thread_id);``
+
+
+API
+***
+
+
+Common
+======
+
+.. doxygengroup:: tracing_apis
+
+Threads
+=======
+
+.. doxygengroup:: thread_tracing_apis
+
+
+Work Queues
+===========
+
+.. doxygengroup:: work_tracing_apis
+
+
+Poll
+====
+
+.. doxygengroup:: poll_tracing_apis
+
+Semaphore
+=========
+
+.. doxygengroup:: sem_tracing_apis
+
+Mutex
+=====
+
+.. doxygengroup:: mutex_tracing_apis
+
+Condition Variables
+===================
+
+.. doxygengroup:: condvar_tracing_apis
+
+Queues
+======
+
+.. doxygengroup:: queue_tracing_apis
+
+FIFO
+====
+
+.. doxygengroup:: fifo_tracing_apis
+
+LIFO
+====
+.. doxygengroup:: lifo_tracing_apis
+
+Stacks
+======
+
+.. doxygengroup:: stack_tracing_apis
+
+Message Queues
+==============
+
+.. doxygengroup:: msgq_tracing_apis
+
+Mailbox
+=======
+
+.. doxygengroup:: mbox_tracing_apis
+
+Pipes
+======
+
+.. doxygengroup:: pipe_tracing_apis
+
+Heaps
+=====
+
+.. doxygengroup:: heap_tracing_apis
+
+Memory Slabs
+============
+
+.. doxygengroup:: mslab_tracing_apis
+
+Timers
+======
+
+.. doxygengroup:: timer_tracing_apis

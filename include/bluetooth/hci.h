@@ -47,7 +47,9 @@ struct bt_hci_evt_hdr {
 #define BT_ACL_POINT_TO_POINT           0x00
 #define BT_ACL_BROADCAST                0x01
 
-#define bt_acl_handle(h)                ((h) & BIT_MASK(12))
+#define BT_ACL_HANDLE_MASK              BIT_MASK(12)
+
+#define bt_acl_handle(h)                ((h) & BT_ACL_HANDLE_MASK)
 #define bt_acl_flags(h)                 ((h) >> 12)
 #define bt_acl_flags_pb(f)              ((f) & BIT_MASK(2))
 #define bt_acl_flags_bc(f)              ((f) >> 2)

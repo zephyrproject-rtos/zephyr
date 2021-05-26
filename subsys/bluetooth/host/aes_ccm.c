@@ -186,9 +186,9 @@ static int ccm_crypt(const uint8_t key[16], const uint8_t nonce[13],
 	return 0;
 }
 
-int bt_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *enc_msg,
-		   size_t msg_len, const uint8_t *aad, size_t aad_len,
-		   uint8_t *out_msg, size_t mic_size)
+int bt_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13],
+		   const uint8_t *enc_data, size_t len, const uint8_t *aad,
+		   size_t aad_len, uint8_t *plaintext, size_t mic_size)
 {
 	uint8_t mic[16];
 
@@ -196,26 +196,26 @@ int bt_ccm_decrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *enc_
 		return -EINVAL;
 	}
 
-	ccm_crypt(key, nonce, enc_msg, out_msg, msg_len);
+	ccm_crypt(key, nonce, enc_data, plaintext, len);
 
-	ccm_auth(key, nonce, out_msg, msg_len, aad, aad_len, mic, mic_size);
+	ccm_auth(key, nonce, plaintext, len, aad, aad_len, mic, mic_size);
 
-	if (memcmp(mic, enc_msg + msg_len, mic_size)) {
+	if (memcmp(mic, enc_data + len, mic_size)) {
 		return -EBADMSG;
 	}
 
 	return 0;
 }
 
-int bt_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *msg,
-		   size_t msg_len, const uint8_t *aad, size_t aad_len,
-		   uint8_t *out_msg, size_t mic_size)
+int bt_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13],
+		   const uint8_t *plaintext, size_t len, const uint8_t *aad,
+		   size_t aad_len, uint8_t *enc_data, size_t mic_size)
 {
-	uint8_t *mic = out_msg + msg_len;
+	uint8_t *mic = enc_data + len;
 
 	BT_DBG("key %s", bt_hex(key, 16));
 	BT_DBG("nonce %s", bt_hex(nonce, 13));
-	BT_DBG("msg (len %zu) %s", msg_len, bt_hex(msg, msg_len));
+	BT_DBG("msg (len %zu) %s", len, bt_hex(plaintext, len));
 	BT_DBG("aad_len %zu mic_size %zu", aad_len, mic_size);
 
 	/* Unsupported AAD size */
@@ -223,9 +223,9 @@ int bt_ccm_encrypt(const uint8_t key[16], uint8_t nonce[13], const uint8_t *msg,
 		return -EINVAL;
 	}
 
-	ccm_auth(key, nonce, out_msg, msg_len, aad, aad_len, mic, mic_size);
+	ccm_auth(key, nonce, enc_data, len, aad, aad_len, mic, mic_size);
 
-	ccm_crypt(key, nonce, msg, out_msg, msg_len);
+	ccm_crypt(key, nonce, plaintext, enc_data, len);
 
 	return 0;
 }

@@ -422,9 +422,9 @@ int bt_vocs_client_state_get(struct bt_conn *conn, struct bt_vocs *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -457,9 +457,9 @@ int bt_vocs_client_state_get(struct bt_conn *conn, struct bt_vocs *inst)
 
 int bt_vocs_client_location_set(struct bt_conn *conn, struct bt_vocs *inst, uint32_t location)
 {
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -486,9 +486,9 @@ int bt_vocs_client_location_get(struct bt_conn *conn, struct bt_vocs *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -520,9 +520,9 @@ int bt_vocs_client_state_set(struct bt_conn *conn, struct bt_vocs *inst, int16_t
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -559,9 +559,9 @@ int bt_vocs_client_description_get(struct bt_conn *conn, struct bt_vocs *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -592,9 +592,9 @@ int bt_vocs_client_description_get(struct bt_conn *conn, struct bt_vocs *inst)
 int bt_vocs_client_description_set(struct bt_conn *conn, struct bt_vocs *inst,
 				   const char *description)
 {
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {

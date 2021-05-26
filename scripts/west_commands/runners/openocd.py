@@ -124,8 +124,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             self.do_flash_elf(**kwargs)
         elif command == 'flash':
             self.do_flash(**kwargs)
-        elif command == 'debug':
-            self.do_debug(**kwargs)
+        elif command in ('attach', 'debug'):
+            self.do_attach_debug(command, **kwargs)
         elif command == 'load':
             self.do_load(**kwargs)
         else:
@@ -194,7 +194,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                                        '-c', 'shutdown'])
         self.check_call(cmd)
 
-    def do_debug(self, **kwargs):
+    def do_attach_debug(self, command, **kwargs):
         if self.gdb_cmd is None:
             raise ValueError('Cannot debug; no gdb specified')
         if self.elf_name is None:
@@ -215,6 +215,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         gdb_cmd = (self.gdb_cmd + self.tui_arg +
                    ['-ex', 'target remote :{}'.format(self.gdb_port),
                     self.elf_name])
+        if command == 'debug':
+            gdb_cmd.extend(['-ex', 'load'])
         self.require(gdb_cmd[0])
         self.run_server_and_client(server_cmd, gdb_cmd)
 

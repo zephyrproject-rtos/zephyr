@@ -40,6 +40,42 @@ static void thread_alloc_heap(void *p1, void *p2, void *p3)
 
 /*test cases*/
 
+/* These need to be adjacent in BSS */
+volatile uint32_t heap_guard0;
+K_HEAP_DEFINE(tiny_heap, 1);
+volatile uint32_t heap_guard1;
+
+/** @brief Test a minimum-size static k_heap
+ *  @ingroup kernel_kheap_api_tests
+ *
+ * @details Create a minimum size (1-byte) static heap, verify that it
+ * works to allocate that byte at runtime and that it doesn't overflow
+ * its memory bounds.
+ */
+void test_k_heap_min_size(void)
+{
+	const uint32_t guard_bits = 0x5a5a5a5a;
+
+	/* Make sure static initialization didn't scribble on them */
+	zassert_true(heap_guard0 == 0 && heap_guard1 == 0,
+		     "static heap initialization overran buffer");
+
+	heap_guard0 = guard_bits;
+	heap_guard1 = guard_bits;
+
+	char *p0 = k_heap_alloc(&tiny_heap, 1, K_NO_WAIT);
+	char *p1 = k_heap_alloc(&tiny_heap, 1, K_NO_WAIT);
+
+	zassert_not_null(p0, "allocation failed");
+	zassert_is_null(p1, "second allocation unexpectedly succeeded");
+
+	*p0 = 0xff;
+	k_heap_free(&tiny_heap, p0);
+
+	zassert_equal(heap_guard0, guard_bits, "heap overran buffer");
+	zassert_equal(heap_guard1, guard_bits, "heap overran buffer");
+}
+
 /**
  * @brief Test to demonstrate k_heap_alloc() and k_heap_free() API usage
  *

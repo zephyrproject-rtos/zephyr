@@ -374,7 +374,7 @@ static int init_real_uart(const struct device *mux, const struct device *uart,
 		real_uart->mux = gsm_mux_create(mux);
 
 		LOG_DBG("Initializing UART %s and GSM mux %p",
-			real_uart->uart->name, real_uart->mux);
+			real_uart->uart->name, (void *)real_uart->mux);
 
 		if (!real_uart->mux) {
 			real_uart->uart = NULL;
@@ -826,7 +826,7 @@ int uart_mux_recv(const struct device *mux, struct gsm_dlci *dlci,
 	struct uart_mux_dev_data *dev_data = DEV_DATA(mux);
 	size_t wrote = 0;
 
-	LOG_DBG("%s: dlci %p data %p len %zd", mux->name, dlci,
+	LOG_DBG("%s: dlci %p data %p len %zd", mux->name, (void *)dlci,
 		data, len);
 
 	if (IS_ENABLED(CONFIG_UART_MUX_VERBOSE_DEBUG)) {

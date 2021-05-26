@@ -119,36 +119,6 @@ union log_msg2_generic {
 	struct log_msg2 log;
 };
 
-enum tracing_log_id {
-	TRACING_LOG_THREAD_SWITCHED_OUT,
-	TRACING_LOG_ISR_ENTER,
-	TRACING_LOG_ISR_EXIT,
-	TRACING_LOG_ISR_EXIT_TO_SCHEDULER,
-	TRACING_LOG_IDLE,
-
-	TRACING_LOG_SINGLE_WORD = TRACING_LOG_IDLE,
-
-	/* IDs using additional data */
-	TRACING_LOG_THREAD_SWITCHED_IN,
-	TRACING_LOG_THREAD_PRIO_SET,
-	TRACING_LOG_THREAD_CREATE,
-	TRACING_LOG_THREAD_ABORT,
-	TRACING_LOG_THREAD_SUSPEND,
-	TRACING_LOG_THREAD_RESUME,
-	TRACING_LOG_THREAD_READY,
-	TRACING_LOG_THREAD_PEND,
-	TRACING_LOG_THREAD_INFO,
-	TRACING_LOG_THREAD_NAME_SET,
-	TRACING_LOG_VOID,
-	TRACING_LOG_END_CALL,
-	TRACING_LOG_SEMAPHORE_INIT,
-	TRACING_LOG_SEMAPHORE_TAKE,
-	TRACING_LOG_SEMAPHORE_GIVE,
-	TRACING_LOG_MUTEX_INIT,
-	TRACING_LOG_MUTEX_LOCK,
-	TRACING_LOG_MUTEX_UNLOCK
-};
-
 /** @brief Method used for creating a log message.
  *
  * It is used for testing purposes to validate that expected mode was used.
@@ -176,11 +146,14 @@ enum z_log_msg2_mode {
 
 #define Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, _dlen) \
 { \
+	.valid = 0, \
+	.busy = 0, \
 	.type = Z_LOG_MSG2_LOG, \
 	.domain = _domain_id, \
 	.level = _level, \
 	.package_len = _plen, \
 	.data_len = _dlen, \
+	.reserved = 0, \
 }
 
 /* Messages are aligned to alignment required by cbprintf package. */
@@ -283,6 +256,7 @@ do { \
 	z_log_msg2_static_create((void *)_source, _desc, _msg->data, _data); \
 } while (0)
 
+#if CONFIG_LOG_SPEED
 #define Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, _level, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
@@ -299,6 +273,12 @@ do { \
 	} \
 	z_log_msg2_finalize(_msg, (void *)_source, _desc, NULL); \
 } while (0)
+#else
+/* Alternative empty macro created to speed up compilation when LOG_SPEED is
+ * disabled (default).
+ */
+#define Z_LOG_MSG2_SIMPLE_CREATE(...)
+#endif
 
 /* Macro handles case when local variable with log message string is created.It
  * replaces origing string literal with that variable.

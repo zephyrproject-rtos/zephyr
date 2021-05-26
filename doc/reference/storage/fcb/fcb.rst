@@ -72,9 +72,7 @@ The FCB subsystem APIs are provided by ``fcb.h``:
 Data structures
 ===============
 .. doxygengroup:: fcb_data_structures
-   :project: Zephyr
 
 API functions
 =============
 .. doxygengroup:: fcb_api
-   :project: Zephyr

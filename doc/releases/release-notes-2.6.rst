@@ -159,10 +159,21 @@ Stable API changes in this release
 Kernel
 ******
 
+* Added :c:func:`k_mem_unmap()` so anonymous memory mapped via :c:func:`k_mem_map()`
+  can be unmapped and virtual address reclaimed.
+
+* Added the ability to gather more statistics for demand paging, including execution
+  time histograms for eviction algorithms and backing stores.
+
 Architectures
 *************
 
 * ARC
+
+  * Added new ARCv3 64bit ISA support and corresponding HS6x processor support
+  * Hardened SMP support
+  * Various minor fixes/improvements for ARC MWDT toolchain infrastructure
+  * Refactor of ARC Kconfig
 
 * ARM
 
@@ -176,11 +187,45 @@ Architectures
 
   * AARCH64
 
+    * SMP support
+
+    * MMU dynamic mappings with page table sharing.
+
+    * Userspace (unprivileged) thread support.
+
+    * Standalone SMCCC support.
+
+    * XIP support.
+
+    * ARM64 is now a top-level standalone architecture.
+
+    * Support for Cortex-R82 and Armv8-R AArch64 MPU.
+
+    * Cache management support.
+
+    * Revamped boot code.
+
+    * Full FPU context switching.
+
 * POSIX
 
 * RISC-V
 
 * x86
+
+  * Added SoC configuration for Lakemont SoC.
+
+  * Removed kconfig ``CONFIG_CPU_MINUTEIA`` as there is no user of this option.
+
+  * Renamed kconfig ``CONFIG_SSE*`` to ``CONFIG_X86_SSE*``.
+
+  * Extended the pagetable generation script to allow specifying additional
+    memory mapping during build.
+
+  * x86-32
+
+    * Added support for kernel image to reside in virtual address space, allowing
+      code execution and data manipulation via virtual addresses.
 
 Boards & SoC Support
 ********************
@@ -193,11 +238,24 @@ Boards & SoC Support
 
 * Made these changes in other SoC series:
 
+  * Added Cypress PSoC-6 pinctrl support.
+
 * Changes for ARC boards:
+
+  * Added nSIM and QEMU simulation boards (nsim_hs6x and qemu_arc_hs6x)
+    with ARCv3 64bit HS6x processors
+  * Enabled MPU on qemu_arc_hs and qemu_arc_em boards
+  * Added cy8c95xx GPIO expander support to HSDK board
 
 * Added support for these ARM boards:
 
    * MPS3-AN547
+
+* Added support for these ARM64 boards:
+
+   * fvp_base_revc_2xaemv8a
+   * fvp_baser_aemv8r
+   * nxp_ls1046ardb
 
 * Removed support for these ARM boards:
 
@@ -205,6 +263,18 @@ Boards & SoC Support
    * Nordic nRF5340 PDK
 
 * Made these changes in other boards:
+
+  * cy8ckit_062_ble: Refactored to configure by pinctrl.
+  * cy8ckit_062_ble: Added support to SCB[uart] with interrupt.
+  * cy8ckit_062_ble: Added support to SCB[spi].
+  * cy8ckit_062_ble: Added board revision schema.
+  * cy8ckit_062_wifi_bt: Refactored to configure by pinctrl.
+  * cy8ckit_062_wifi_bt: Added support to SCB[uart] with interrupt.
+  * lpcxpresso55s16: Board renamed from lpcxpresso55s16_ns to
+    lpcxpresso55s16 since the board does not have Trusted Firmware M
+    (TF-M) support.
+  * lpcxpresso55s28: Removed lpcxpresso55s28_ns config since the board
+    does not have Trusted Firmware M (TF-M) support.
 
 * Added support for these following shields:
 
@@ -247,6 +317,13 @@ Drivers and Sensors
 
 * Ethernet
 
+  * Added simulated PTP clock to e1000 Ethernet controller. This allows simple PTP
+    clock testing with Qemu.
+  * Separated PTP clock from gPTP support in mcux and gmac drivers. This allows
+    application to use PTP clock without enabling gPTP support.
+  * Converted clock control to use DEVICE_DT_GET in mcux driver.
+  * Changed to allow changing MAC address in gmac driver.
+
 * Flash
 
   * flash_write_protection_set() has been deprecated and will be removed in
@@ -286,6 +363,21 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
+  * Fixed various issues in IEEE 802.15.4 L2 driver.
+
+  * nrf5:
+
+    * Made HW Radio Capabilities runtime.
+    * Enabled CSMA-CA on serialized host.
+    * Changed driver to load EUI64 from UICR.
+
+  * rf2xx:
+
+    * Added support for tx mode direct.
+    * Added support for tx mode CCA.
+    * Added support to enable promiscuous mode.
+    * Added support to enable pan coordinator mode.
+
 * Interrupt Controller
 
 * IPM
@@ -300,6 +392,18 @@ Drivers and Sensors
 
 * Modem
 
+  * Converted wncm14a2a, quectel-bg9x, hl7800 and ublox-sara-r4 drivers to use
+    new DT device macros.
+  * Changed GSM modem to optionally do a factory reset when booting.
+  * Added autostarting support to GSM modem.
+  * Added wait for RDY instead of polling AT in BG9X.
+  * Fixed PDP context management for BG9X.
+  * Added TLS offload support to ublox-sara-r4.
+  * Made reset pin optional in ublox-sara-r4.
+  * Fixed potential buffer overrun in hl7800.
+  * Fixed build errors on 64-bit platforms.
+  * Added support for dialup modem in PPP driver.
+
 * PECI
 
 * Pinmux
@@ -312,7 +416,11 @@ Drivers and Sensors
 
 * Serial
 
+  * Extended Cypress PSoC-6 SCB[uart] driver to support interrupts.
+
 * SPI
+
+  * Added Cypress PSoC-6 SCB[spi] driver.
 
 * Timer
 
@@ -324,8 +432,132 @@ Drivers and Sensors
 
 * WiFi
 
+  * Converted eswifi and esp drivers to new DT device macros
+
+  * esp:
+
+    * Fixed hostname configuration.
+    * Removed POSIX API dependency.
+    * Renamed offloading driver from esp to esp_at.
+    * Added esp32 wifi driver support.
+
 Networking
 **********
+
+* CoAP:
+
+  * Fixed coap_find_options() to return 0 when options are empty.
+
+* DHCPv4:
+
+  * Fixed DHCPv4 dependency to network event management options.
+
+* DNS:
+
+  * Added locking to DNS library prevent concurrent access.
+  * Added 10ms delay when rescheduling query timeout handler in DNS. This allows
+    applications to run and handle the timeout gracefully.
+  * Added support for reconfiguring DNS resolver when DNS servers are changed.
+    This is supported by DHCPv4 and PPP.
+
+* HTTP:
+
+  * Added support for storing numeric HTTP error code in client API.
+
+* IPv4:
+
+  * Added IGMPv2 support to IPv4.
+  * Removed IPv4 multicast address check when selecting source address during TX.
+
+* LwM2M:
+
+  * Fixed query buffer size so that it is large enough to encode all query strings.
+  * Added data validation callback.
+  * Fixed Register/Update to use link_format writer.
+  * Added application/link-format content writer.
+  * Removed .well-known/core handling.
+  * Introduced attribute handling helper functions.
+  * Removed obsolete LWM2M_IPSO_TIMESTAMP_EXTENSIONS option.
+  * Added IPSO Buzzer, Push Button, On/Off Switch, Accelerometer, Pressure Sensor,
+    Humidity, Generic Sensor and Temperature object implementation to support
+    object model in version 1.1
+  * Unified reusable resources creation.
+  * Added support for object versioning.
+  * Changed to allow cancel-observe to match path.
+  * Made pmin and pmax attributes optional.
+  * Added API function to delete object instance.
+  * Fixed Registration Update send on object creation.
+  * Changed to only parse TLV from the first block.
+  * Changed to trigger registration update only when registered.
+
+* Misc:
+
+  * Added UDP packet sending support to net-shell.
+  * Fixed source network interface setting when sending and when there are
+    multiple network interfaces.
+  * Changed connection managed to ignore not used network interfaces.
+  * Added locking to network interface API function calls.
+  * Changed to allow application to disable IPv4 or IPv6 support for a network interface.
+  * Added support for virtual network interfaces.
+  * Added support for IPv4/v6 tunneling network interface.
+  * Added net events notification for PPP dead and running states.
+  * Added PPP LCP MRU option support.
+  * Added PPP IPCP IP and DNS address peer options support.
+  * Added support for network packet capturing and sending data to external system
+    for analysis.
+  * Enabled running without TX or RX threads. By default, one RX thread and
+    no TX thread is created. If userspace support is enabled, then one RX and one
+    TX thread are created. This improves the network transmit latency when a
+    packet is sent from application.
+  * Changed to push highest priority net_pkt directly to driver when sending and if
+    there is at least one TX thread.
+  * Changed to use k_fifo instead of k_work in RX and TX processing. This prevents
+    k_work from accessing already freed net_pkt struct. This also improves the latency
+    of network packets when the data is passed between different network threads.
+  * Changed to check network interface status when sending and return ENETDOWN to the
+    application if data cannot be sent.
+  * Fixed echo-server sample application and set netmask properly when VLAN is
+    enabled.
+
+* OpenThread:
+
+  * Added microseconds timer API support.
+  * Changed to switch radio off when stopping diagnostics.
+  * Enabled CSL delayed transmissions.
+  * Added CSL transmitter and receiver API support.
+  * Changed to init NCP after USB communication is established.
+  * Aligned with the new NCP API.
+  * Aligned with the new CLI API.
+  * Introduced new OpenThread options.
+  * Added Link Metrics API support.
+  * Selected ECDSA when SRP is enabled.
+  * Made child related options only visible on FTD.
+  * Changed OT shell not to execute OT commands when shell is not ready.
+
+* Socket:
+
+  * Added SO_PROTOCOL and SO_TYPE get socket option.
+  * Added MSG_WAITALL receive socket option flag.
+  * Added MSG_TRUNC socket option flag.
+  * Added support for close method for packet sockets.
+  * Added locking to socket API function calls.
+  * Added support for SO_BINDTODEVICE socket option.
+  * Added support for SO_SNDTIMEO socket option.
+  * Made NET_SOCKETS_POSIX_NAMES be on by default. This allows application to use
+    normal BSD socket API calls without adding the zsock prefix.
+  * Added sample application to use SO_TXTIME socket option.
+
+* TCP:
+
+  * Implemented ISN calculation according to RFC6528 in TCP. This is optional and
+    enabled by default, and can be disabled if needed.
+  * Removed legacy TCP stack support.
+  * Changed TCP to use private work queue in order not to block system work queue.
+
+* TLS:
+
+  * Fixed userspace access to TLS socket.
+  * Added socket option support for setting and getting DTLS handshake timeout.
 
 Bluetooth
 *********
@@ -346,6 +578,21 @@ Build and Infrastructure
 * Devicetree
 
   - :c:macro:`DT_COMPAT_GET_ANY_STATUS_OKAY`: new macro
+  - the ``96b-lscon-3v3`` and ``96b-lscon-1v8`` :ref:`compatible properties
+    <dt-important-props>` now have ``linaro,`` vendor prefixes, i.e. they are
+    now respectively :dtcompatible:`linaro,96b-lscon-3v3` and
+    :dtcompatible:`linaro,96b-lscon-1v8`.
+
+    This change was made to bring Zephyr's devicetrees into compliance with an
+    upstream Linux regular expression used to validate compatible properties.
+    This regular expression requires a letter as the first character.
+
+* West
+
+  * Improve bossac runner.  Added legacy mode option into extended SAM-BA
+    bootloader selection.  This extends compatibility between Zephyr and
+    some Arduino IDE bootloaders.
+
 
 Libraries / Subsystems
 **********************
@@ -419,6 +666,11 @@ Trusted Firmware-m
    * BL5340 DVK
    * STM32L562E DK
 
+* NOTE: Trusted-Firmware-M can not currently be used with mbedtls 2.26.0 when
+  PSA APIs are enabled in mbedtls (``MBEDTLS_USE_PSA_CRYPTO`` and
+  ``MBEDTLS_PSA_CRYPTO_C``). If both TF-M and mbedtls are required, mbedtls
+  must be used without the PSA APIs. This will be resolved in a future
+  update to mbedtls.
 
 Documentation
 *************

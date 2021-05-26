@@ -81,7 +81,7 @@ const char *otype_to_str(enum k_objects otype)
 	}
 #else
 	ARG_UNUSED(otype);
-	return NULL;
+	ret = NULL;
 #endif
 	return ret;
 }
@@ -669,7 +669,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 		if (unlikely((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0U)) {
 			return -EINVAL;
 		}
-	} else if (init < _OBJ_INIT_TRUE) { /* _OBJ_INIT_FALSE case */
+	} else if (init == _OBJ_INIT_FALSE) { /* _OBJ_INIT_FALSE case */
 		/* Object MUST NOT be initialized */
 		if (unlikely((ko->flags & K_OBJ_FLAG_INITIALIZED) != 0U)) {
 			return -EADDRINUSE;

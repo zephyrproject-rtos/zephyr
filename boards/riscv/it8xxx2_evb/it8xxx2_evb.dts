@@ -9,7 +9,7 @@
 
 / {
 	model = "IT8XXX2 EV-Board";
-	compatible = "riscv, it8xxx2_evb";
+	compatible = "riscv,it8xxx2-evb";
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;

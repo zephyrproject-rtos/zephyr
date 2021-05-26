@@ -493,17 +493,45 @@ class PtableSet():
 
         self.map(phys_aligned_base, None, phys_aligned_size, flags, level)
 
+    def map_region(self, name, flags, virt_to_phys_offset, level=PT_LEVEL):
+        """Map a named region"""
+        if not isdef(name + "_start"):
+            # Region may not exists
+            return
+
+        region_start = syms[name + "_start"]
+        region_end = syms[name + "_end"]
+        region_size = region_end - region_start
+
+        region_start_phys = region_start
+
+        if virt_to_phys_offset is not None:
+            region_start_phys += virt_to_phys_offset
+
+        self.map(region_start_phys, region_start, region_size, flags, level)
+
     def set_region_perms(self, name, flags, level=PT_LEVEL):
         """Set access permissions for a named region that is already mapped
 
         The bounds of the region will be looked up in the symbol table
         with _start and _size suffixes. The physical address mapping
         is unchanged and this will not disturb any double-mapping."""
+        if not isdef(name + "_start"):
+            # Region may not exists
+            return
 
         # Doesn't matter if this is a virtual address, we have a
         # either dual mapping or it's the same as physical
         base = syms[name + "_start"]
-        size = syms[name + "_size"]
+
+        if isdef(name + "_size"):
+            size = syms[name + "_size"]
+        else:
+            region_end = syms[name + "_end"]
+            size = region_end - base
+
+        if size == 0:
+            return
 
         debug("change flags for %s at 0x%x (0x%x): %s" %
               (name, base, size, dump_flags(flags)))
@@ -799,6 +827,12 @@ def main():
         pt.map(syms["CONFIG_FLASH_BASE_ADDRESS"], None,
                syms["CONFIG_FLASH_SIZE"] * 1024, map_flags)
 
+    if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
+        pt.map_region("lnkr_boot", map_flags | ENTRY_RW, virt_to_phys_offset)
+
+    if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
+        pt.map_region("lnkr_pinned", map_flags | ENTRY_RW, virt_to_phys_offset)
+
     # Process extra mapping requests
     if args.map:
         map_extra_regions(pt)
@@ -813,13 +847,26 @@ def main():
         #   text/rodata from kernel text/rodata
         if isdef("CONFIG_GDBSTUB"):
             flags = FLAG_P | ENTRY_US | ENTRY_RW
-            pt.set_region_perms("_image_text", flags)
+
         else:
             flags = FLAG_P | ENTRY_US
-            pt.set_region_perms("_image_text", flags)
+
+        pt.set_region_perms("_image_text", flags)
+
+        if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
+            pt.set_region_perms("lnkr_boot_text", flags)
+
+        if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
+            pt.set_region_perms("lnkr_pinned_text", flags)
 
         flags = FLAG_P | ENTRY_US | ENTRY_XD
         pt.set_region_perms("_image_rodata", flags)
+
+        if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
+            pt.set_region_perms("lnkr_boot_rodata", flags)
+
+        if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
+            pt.set_region_perms("lnkr_pinned_rodata", flags)
 
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):
             # If GCOV is enabled, user mode must be able to write to its

@@ -26,4 +26,3 @@ API Reference
 *************
 
 .. doxygengroup:: net_capture
-   :project: Zephyr

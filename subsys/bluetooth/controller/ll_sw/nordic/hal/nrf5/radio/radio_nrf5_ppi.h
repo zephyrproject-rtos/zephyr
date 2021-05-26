@@ -379,10 +379,22 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
- * 2 adjacent PPIs (8 & 9) and 2 adjacent PPI groups are used for this wiring;
+ * 2 adjacent PPIs (9 & 10) and 2 adjacent PPI groups are used for this wiring;
  * <index> must be 0 or 1. <offset> must be a valid TIMER CC register offset.
  */
+#if defined(CONFIG_SOC_NRF52805)
+/* Because nRF52805 has limited number of programmable PPI channels,
+ * tIFS Trx SW switching on this SoC can be used only when pre-programmed
+ * PPI channels are also in use, i.e. when TIMER0 is the event timer.
+ */
+#if (EVENT_TIMER_ID == 0)
+#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 2
+#else
+#error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
+#endif
+#else /* -> !defined(CONFIG_SOC_NRF52805) */
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 9
+#endif
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
 	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + (index))
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(chan) \
@@ -398,12 +410,8 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * 2 adjacent PPI groups are used for this wiring. 'index' must be 0 or 1.
  */
 #if defined(CONFIG_SOC_NRF52805)
-/* Because nRF52805 has limited number of programmable PPI channels,
- * tIFS Trx SW switching on this SoC can be used only when pre-programmed
- * PPI channels are also in use, i.e. when TIMER0 is the event timer.
- */
 #if (EVENT_TIMER_ID == 0)
-#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI 2
+#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI 9
 #else
 #error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
 #endif
@@ -418,12 +426,12 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 /*Enable Radio at specific time-stamp:
  * wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to RADIO TASKS_TXEN/RXEN task.
- * 2 adjacent PPIs (11 & 12) are used for this wiring; <index> must be 0 or 1.
+ * 2 adjacent PPIs (12 & 13) are used for this wiring; <index> must be 0 or 1.
  * <offset> must be a valid TIMER CC register offset.
  */
 #if defined(CONFIG_SOC_NRF52805)
 #if (EVENT_TIMER_ID == 0)
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 3
+#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 4
 #else
 #error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
 #endif
