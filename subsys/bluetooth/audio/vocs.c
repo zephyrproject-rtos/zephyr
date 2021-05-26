@@ -37,7 +37,8 @@ static ssize_t read_offset_state(struct bt_conn *conn, const struct bt_gatt_attr
 	struct bt_vocs *inst = attr->user_data;
 
 	BT_DBG("offset %d, counter %u", inst->srv.state.offset, inst->srv.state.change_counter);
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.state, sizeof(inst->srv.state));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->srv.state,
+				 sizeof(inst->srv.state));
 }
 
 static void location_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -71,7 +72,7 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 					  sizeof(inst->srv.location));
 
 		if (inst->srv.cb && inst->srv.cb->location) {
-			inst->srv.cb->location(NULL, inst, 0, inst->srv.location);
+			inst->srv.cb->location(inst, 0, inst->srv.location);
 		}
 	}
 
@@ -147,7 +148,7 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 					  &inst->srv.state, sizeof(inst->srv.state));
 
 		if (inst->srv.cb && inst->srv.cb->state) {
-			inst->srv.cb->state(NULL, inst, 0, inst->srv.state.offset);
+			inst->srv.cb->state(inst, 0, inst->srv.state.offset);
 		}
 
 	}
@@ -188,7 +189,7 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 					  strlen(inst->srv.output_desc));
 
 		if (inst->srv.cb && inst->srv.cb->description) {
-			inst->srv.cb->description(NULL, inst, 0, inst->srv.output_desc);
+			inst->srv.cb->description(inst, 0, inst->srv.output_desc);
 		}
 	}
 
@@ -352,18 +353,18 @@ int bt_vocs_register(struct bt_vocs *vocs,
 
 #if defined(CONFIG_BT_VOCS) || defined(CONFIG_BT_VOCS_CLIENT)
 
-int bt_vocs_state_get(struct bt_conn *conn, struct bt_vocs *inst)
+int bt_vocs_state_get(struct bt_vocs *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && conn) {
-		return bt_vocs_client_state_get(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+		return bt_vocs_client_state_get(inst);
+	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->state) {
-			inst->srv.cb->state(NULL, inst, 0, inst->srv.state.offset);
+			inst->srv.cb->state(inst, 0, inst->srv.state.offset);
 		}
 		return 0;
 	}
@@ -371,18 +372,18 @@ int bt_vocs_state_get(struct bt_conn *conn, struct bt_vocs *inst)
 	return -ENOTSUP;
 }
 
-int bt_vocs_location_get(struct bt_conn *conn, struct bt_vocs *inst)
+int bt_vocs_location_get(struct bt_vocs *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && conn) {
-		return bt_vocs_client_location_get(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+		return bt_vocs_client_location_get(inst);
+	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->location) {
-			inst->srv.cb->location(NULL, inst, 0, inst->srv.location);
+			inst->srv.cb->location(inst, 0, inst->srv.location);
 		}
 		return 0;
 	}
@@ -390,16 +391,16 @@ int bt_vocs_location_get(struct bt_conn *conn, struct bt_vocs *inst)
 	return -ENOTSUP;
 }
 
-int bt_vocs_location_set(struct bt_conn *conn, struct bt_vocs *inst, uint32_t location)
+int bt_vocs_location_set(struct bt_vocs *inst, uint32_t location)
 {
 	CHECKIF(!inst) {
 		BT_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && conn) {
-		return bt_vocs_client_location_set(conn, inst, location);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+		return bt_vocs_client_location_set(inst, location);
+	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		int err;
 
@@ -413,16 +414,16 @@ int bt_vocs_location_set(struct bt_conn *conn, struct bt_vocs *inst, uint32_t lo
 	return -ENOTSUP;
 }
 
-int bt_vocs_state_set(struct bt_conn *conn, struct bt_vocs *inst, int16_t offset)
+int bt_vocs_state_set(struct bt_vocs *inst, int16_t offset)
 {
 	CHECKIF(!inst) {
 		BT_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && conn) {
-		return bt_vocs_client_state_set(conn, inst, offset);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+		return bt_vocs_client_state_set(inst, offset);
+	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		struct bt_vocs_control cp;
 		int err;
@@ -441,18 +442,18 @@ int bt_vocs_state_set(struct bt_conn *conn, struct bt_vocs *inst, int16_t offset
 	return -ENOTSUP;
 }
 
-int bt_vocs_description_get(struct bt_conn *conn, struct bt_vocs *inst)
+int bt_vocs_description_get(struct bt_vocs *inst)
 {
 	CHECKIF(!inst) {
 		BT_DBG("Null VOCS pointer");
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && conn) {
-		return bt_vocs_client_description_get(conn, inst);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+		return bt_vocs_client_description_get(inst);
+	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
 		if (inst->srv.cb && inst->srv.cb->description) {
-			inst->srv.cb->description(NULL, inst, 0, inst->srv.output_desc);
+			inst->srv.cb->description(inst, 0, inst->srv.output_desc);
 		}
 		return 0;
 	}
@@ -460,7 +461,7 @@ int bt_vocs_description_get(struct bt_conn *conn, struct bt_vocs *inst)
 	return -ENOTSUP;
 }
 
-int bt_vocs_description_set(struct bt_conn *conn, struct bt_vocs *inst, const char *description)
+int bt_vocs_description_set(struct bt_vocs *inst, const char *description)
 {
 	CHECKIF(!inst) {
 		BT_DBG("Null VOCS pointer");
@@ -472,9 +473,9 @@ int bt_vocs_description_set(struct bt_conn *conn, struct bt_vocs *inst, const ch
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && conn) {
-		return bt_vocs_client_description_set(conn, inst, description);
-	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !conn) {
+	if (IS_ENABLED(CONFIG_BT_VOCS_CLIENT) && inst->client_instance) {
+		return bt_vocs_client_description_set(inst, description);
+	} else if (IS_ENABLED(CONFIG_BT_VOCS) && !inst->client_instance) {
 		struct bt_gatt_attr attr;
 		int err;
 

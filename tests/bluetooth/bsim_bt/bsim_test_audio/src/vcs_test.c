@@ -73,8 +73,7 @@ static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 	}
 }
 
-static void vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst, int err,
-			  int16_t offset)
+static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
 	if (err) {
 		FAIL("VOCS state cb err (%d)", err);
@@ -82,14 +81,10 @@ static void vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst, int err,
 	}
 
 	g_vocs_offset = offset;
-
-	if (!conn) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
-			     int err, uint32_t location)
+static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 {
 	if (err) {
 		FAIL("VOCS location cb err (%d)", err);
@@ -97,14 +92,11 @@ static void vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
 	}
 
 	g_vocs_location = location;
-
-	if (!conn) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void vocs_description_cb(struct bt_conn *conn, struct bt_vocs *inst,
-				int err, char *description)
+static void vocs_description_cb(struct bt_vocs *inst, int err,
+				char *description)
 {
 	if (err) {
 		FAIL("VOCS description cb err (%d)", err);
@@ -113,10 +105,7 @@ static void vocs_description_cb(struct bt_conn *conn, struct bt_vocs *inst,
 
 	strncpy(g_vocs_desc, description, sizeof(g_vocs_desc) - 1);
 	g_vocs_desc[sizeof(g_vocs_desc) - 1] = '\0';
-
-	if (!conn) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
 static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,

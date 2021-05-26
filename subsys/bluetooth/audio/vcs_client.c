@@ -51,6 +51,7 @@ struct vcs_instance {
 	struct bt_vocs *vocs[CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST];
 	uint8_t aics_inst_cnt;
 	struct bt_aics *aics[CONFIG_BT_VCS_CLIENT_MAX_AICS_INST];
+	struct bt_conn *conn;
 };
 
 /* Callback functions */
@@ -58,6 +59,21 @@ static struct bt_vcs_cb *vcs_client_cb;
 
 static struct vcs_instance vcs_insts[CONFIG_BT_MAX_CONN];
 static int vcs_client_common_vcs_cp(struct bt_conn *conn, uint8_t opcode);
+
+static struct vcs_instance *lookup_vcs_by_vocs(const struct bt_vocs *vocs)
+{
+	__ASSERT(vocs != NULL, "VOCS pointer cannot be NULL");
+
+	for (int i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
+		for (int j = 0; j < ARRAY_SIZE(vcs_insts[i].vocs); j++) {
+			if (vcs_insts[i].vocs[j] == vocs) {
+				return &vcs_insts[i];
+			}
+		}
+	}
+
+	return NULL;
+}
 
 bool bt_vcs_client_valid_vocs_inst(struct bt_conn *conn, struct bt_vocs *vocs)
 {
@@ -634,20 +650,31 @@ static void aics_discover_cb(struct bt_conn *conn, struct bt_aics *inst,
 	}
 }
 
-static void vocs_discover_cb(struct bt_conn *conn, struct bt_vocs *inst,
-			     int err)
+static void vocs_discover_cb(struct bt_vocs *inst, int err)
 {
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct vcs_instance *vcs_inst = lookup_vcs_by_vocs(inst);
+
+	if (vcs_inst == NULL) {
+		BT_ERR("Could not lookup vcs_inst from vocs");
+
+		if (vcs_client_cb && vcs_client_cb->discover) {
+			vcs_client_cb->discover(vcs_inst->conn,
+						BT_GATT_ERR(BT_ATT_ERR_UNLIKELY),
+						0, 0);
+		}
+
+		return;
+	}
 
 	if (err == 0) {
 		/* Continue discovery of included services */
-		err = bt_gatt_discover(conn, &vcs_inst->discover_params);
+		err = bt_gatt_discover(vcs_inst->conn, &vcs_inst->discover_params);
 	}
 
 	if (err != 0) {
 		BT_DBG("Discover failed (err %d)", err);
 		if (vcs_client_cb && vcs_client_cb->discover) {
-			vcs_client_cb->discover(conn, err, 0, 0);
+			vcs_client_cb->discover(vcs_inst->conn, err, 0, 0);
 		}
 	}
 }
@@ -743,6 +770,7 @@ int bt_vcs_discover(struct bt_conn *conn)
 
 	memcpy(&vcs_inst->uuid, BT_UUID_VCS, sizeof(vcs_inst->uuid));
 
+	vcs_inst->conn = conn;
 	vcs_inst->discover_params.func = primary_discover_func;
 	vcs_inst->discover_params.uuid = &vcs_inst->uuid.uuid;
 	vcs_inst->discover_params.type = BT_GATT_DISCOVER_PRIMARY;

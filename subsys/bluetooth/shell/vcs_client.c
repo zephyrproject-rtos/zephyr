@@ -244,8 +244,7 @@ static void vcs_aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
 #endif /* CONFIG_BT_VCS_CLIENT_MAX_AICS_INST > 0 */
 
 #if CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST > 0
-static void vcs_vocs_set_offset_cb(struct bt_conn *conn, struct bt_vocs *inst,
-				   int err)
+static void vcs_vocs_set_offset_cb(struct bt_vocs *inst, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Set offset failed (%d) for inst %p",
@@ -255,8 +254,7 @@ static void vcs_vocs_set_offset_cb(struct bt_conn *conn, struct bt_vocs *inst,
 	}
 }
 
-static void vcs_vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst,
-			      int err, int16_t offset)
+static void vcs_vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "VOCS state get failed (%d) for inst %p",
@@ -266,8 +264,8 @@ static void vcs_vocs_state_cb(struct bt_conn *conn, struct bt_vocs *inst,
 	}
 }
 
-static void vcs_vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
-				 int err, uint32_t location)
+static void vcs_vocs_location_cb(struct bt_vocs *inst, int err,
+				 uint32_t location)
 {
 	if (err != 0) {
 		shell_error(ctx_shell,
@@ -279,8 +277,8 @@ static void vcs_vocs_location_cb(struct bt_conn *conn, struct bt_vocs *inst,
 	}
 }
 
-static void vcs_vocs_description_cb(struct bt_conn *conn, struct bt_vocs *inst,
-				    int err, char *description)
+static void vcs_vocs_description_cb(struct bt_vocs *inst, int err,
+				    char *description)
 {
 	if (err != 0) {
 		shell_error(ctx_shell,
