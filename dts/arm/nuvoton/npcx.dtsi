@@ -13,6 +13,7 @@
 #include <dt-bindings/pinctrl/npcx-pinctrl.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/sensor/npcx_tach.h>
+#include <freq.h>
 
 / {
 	cpus {

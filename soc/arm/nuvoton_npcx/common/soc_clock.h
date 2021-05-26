@@ -26,6 +26,26 @@ struct npcx_clk_cfg {
 	uint16_t bit:3;
 };
 
+/* Clock settings from pcc node */
+/* Target OFMCLK freq */
+#define OFMCLK DT_PROP(DT_NODELABEL(pcc), clock_frequency)
+/* Core clock prescaler */
+#define FPRED_VAL (DT_PROP(DT_NODELABEL(pcc), core_prescaler) - 1)
+/* APB1 clock divider */
+#define APB1DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb1_prescaler) - 1)
+/* APB2 clock divider */
+#define APB2DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb2_prescaler) - 1)
+/* APB3 clock divider */
+#define APB3DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb3_prescaler) - 1)
+/* APB4 clock divider if supported */
+#if DT_NODE_HAS_PROP(DT_NODELABEL(pcc), apb4_prescaler)
+#if defined(CONFIG_SOC_SERIES_NPCX9)
+#define APB4DIV_VAL (DT_PROP(DT_NODELABEL(pcc), apb4_prescaler) - 1)
+#else
+#error "APB4 clock divider is not supported but defined in pcc node!"
+#endif
+#endif
+
 /*
  * NPCX7 and later series clock tree macros:
  * (Please refer Figure 58. for more information.)
@@ -36,14 +56,10 @@ struct npcx_clk_cfg {
  * - CORE_CLK > 50MHz, FIUDIV should be 1, else 0.
  */
 
-/* Target OFMCLK freq */
-#define OFMCLK   CONFIG_CLOCK_NPCX_OSC_CYCLES_PER_SEC
 /* Core domain clock */
-#define CORE_CLK  CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#define CORE_CLK (OFMCLK / DT_PROP(DT_NODELABEL(pcc), core_prescaler))
 /* Low Frequency clock */
-#define LFCLK     32768
-/* Core clock prescaler */
-#define FPRED_VAL ((OFMCLK / CORE_CLK) - 1)
+#define LFCLK 32768
 
 /* FMUL clock */
 #if (OFMCLK > 50000000)
@@ -54,16 +70,6 @@ struct npcx_clk_cfg {
 
 /* APBs source clock */
 #define APBSRC_CLK OFMCLK
-/* APB1 clock divider, default value (APB1 clock = OFMCLK/4) */
-#define APB1DIV_VAL (CONFIG_CLOCK_NPCX_APB1_PRESCALER - 1)
-/* APB2 clock divider, default value (APB2 clock = OFMCLK/8) */
-#define APB2DIV_VAL (CONFIG_CLOCK_NPCX_APB2_PRESCALER - 1)
-/* APB3 clock divider, default value (APB3 clock = OFMCLK/2) */
-#define APB3DIV_VAL (CONFIG_CLOCK_NPCX_APB3_PRESCALER - 1)
-/* APB4 clock divider, default value (APB4 clock = OFMCLK/6) */
-#ifdef CONFIG_CLOCK_NPCX_APB4_PRESCALER
-#define APB4DIV_VAL (CONFIG_CLOCK_NPCX_APB4_PRESCALER - 1)
-#endif
 
 /* AHB6 clock */
 #if (CORE_CLK > 50000000)
