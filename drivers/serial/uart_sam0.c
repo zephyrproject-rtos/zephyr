@@ -401,6 +401,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 
 #endif
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_sam0_configure(const struct device *dev,
 			       const struct uart_config *new_cfg)
 {
@@ -513,6 +514,7 @@ static int uart_sam0_config_get(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 static int uart_sam0_init(const struct device *dev)
 {
@@ -1115,8 +1117,10 @@ static int uart_sam0_rx_disable(const struct device *dev)
 static const struct uart_driver_api uart_sam0_driver_api = {
 	.poll_in = uart_sam0_poll_in,
 	.poll_out = uart_sam0_poll_out,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = uart_sam0_configure,
 	.config_get = uart_sam0_config_get,
+#endif
 	.err_check = uart_sam0_err_check,
 #if CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_sam0_fifo_fill,

@@ -320,6 +320,7 @@ static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(uint32_t fc
 	return UART_CFG_FLOW_CTRL_NONE;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_stm32_configure(const struct device *dev,
 				const struct uart_config *cfg)
 {
@@ -425,6 +426,7 @@ static int uart_stm32_config_get(const struct device *dev,
 		uart_stm32_get_hwctrl(dev));
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 static int uart_stm32_poll_in(const struct device *dev, unsigned char *c)
 {
@@ -1290,8 +1292,10 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
 	.err_check = uart_stm32_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = uart_stm32_configure,
 	.config_get = uart_stm32_config_get,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_stm32_fifo_fill,
 	.fifo_read = uart_stm32_fifo_read,
