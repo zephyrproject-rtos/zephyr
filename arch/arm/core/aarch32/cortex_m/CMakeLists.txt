@@ -16,7 +16,7 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE __aeabi_read_tp.S)
 
-if(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+if(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
   zephyr_library_sources(debug.c)
 endif()
 

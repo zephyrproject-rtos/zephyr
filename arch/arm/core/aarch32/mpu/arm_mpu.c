@@ -353,7 +353,7 @@ int z_arm_mpu_init(void)
 	/* Program additional fixed flash region for null-pointer
 	 * dereferencing detection (debug feature)
 	 */
-#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_MPU)
+#if defined(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_MPU)
 #if (defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)) && \
 	(CONFIG_FLASH_BASE_ADDRESS > CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_PAGE_SIZE)
 #pragma message "Null-Pointer exception detection cannot be configured on un-mapped flash areas"
@@ -403,7 +403,7 @@ int z_arm_mpu_init(void)
 	static_regions_num++;
 
 #endif
-#endif /* CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_MPU */
+#endif /* CONFIG_NULL_POINTER_EXCEPTION_DETECTION_MPU */
 
 	/* Sanity check for number of regions in Cortex-M0+, M3, and M4. */
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
