@@ -77,6 +77,7 @@ static int tmp116_sample_fetch(const struct device *dev,
 {
 	struct tmp116_data *drv_data = dev->data;
 	uint16_t value;
+	uint16_t cfg_reg = 0;
 	int rc;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
@@ -84,6 +85,19 @@ static int tmp116_sample_fetch(const struct device *dev,
 
 	/* clear sensor values */
 	drv_data->sample = 0U;
+
+	/* Make sure that a data is available */
+	rc = tmp116_reg_read(dev, TMP116_REG_CFGR, &cfg_reg);
+	if (rc < 0) {
+		LOG_ERR("%s, Failed to read from CFGR register",
+			dev->name);
+		return rc;
+	}
+
+	if ((cfg_reg & TMP116_CFGR_DATA_READY) == 0) {
+		LOG_DBG("%s: no data ready", dev->name);
+		return -EBUSY;
+	}
 
 	/* Get the most recent temperature measurement */
 	rc = tmp116_reg_read(dev, TMP116_REG_TEMP, &value);
