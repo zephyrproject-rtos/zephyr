@@ -1,6 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
-find_program(CMAKE_LINKER     ${CROSS_COMPILE}ld      PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+if(DEFINED TOOLCHAIN_HOME)
+  # When Toolchain home is defined, then we are cross-compiling, so only look
+  # for linker in that path, else we are using host tools.
+  set(LD_SEARCH_PATH PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+endif()
+
+find_program(CMAKE_LINKER ${CROSS_COMPILE}ld.bfd ${LD_SEARCH_PATH})
+if(NOT CMAKE_LINKER)
+  find_program(CMAKE_LINKER ${CROSS_COMPILE}ld ${LD_SEARCH_PATH})
+endif()
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
@@ -82,9 +91,15 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
+  if(${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd")
+    # ld.bfd was found so let's explicitly use that for linking, see #32237
+    set(use_linker "-fuse-ld=bfd")
+  endif()
+
   target_link_libraries(
     ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
+    ${use_linker}
     ${TOPT}
     ${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
