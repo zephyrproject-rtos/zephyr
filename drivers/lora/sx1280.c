@@ -17,6 +17,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(sx127x, CONFIG_LORA_LOG_LEVEL);
 
+#define DT_DRV_COMPAT semtech_sx1280
+
 // #if DT_HAS_COMPAT_STATUS_OKAY(semtech_sx1272)
 
 // #include <sx1272/sx1272.h>
@@ -690,7 +692,7 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 
 //     if( RadioSpi != NULL )
 //     {
-	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
         // RadioSpi->write( ( uint8_t )command );
         // for( uint16_t i = 0; i < size; i++ )
         // {
@@ -720,7 +722,7 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 		LOG_ERR("Unable to write command: 0x%x", ( uint8_t ) command);
 	}
 
-	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
 //     }
 //     if( RadioUart != NULL )
 //     {
@@ -746,7 +748,7 @@ void WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
 //     WaitOnBusy( ); // TODO
 
     	// GpioWrite( &SX1276.Spi.Nss, 0 ); // TODO
-	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
 
 
 	// RadioSpi->write( RADIO_WRITE_BUFFER );
@@ -781,7 +783,7 @@ void WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
 	}
 
 	// GpioWrite( &SX1276.Spi.Nss, 1 ); // TODO
-	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
 
 
 //     if( RadioSpi != NULL )
