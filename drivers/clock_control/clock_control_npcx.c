@@ -79,7 +79,7 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 	case NPCX_CLOCK_BUS_APB3:
 		*rate = NPCX_APB_CLOCK(3);
 		break;
-#ifdef CONFIG_CLOCK_NPCX_APB4_PRESCALER
+#if defined(APB4DIV_VAL)
 	case NPCX_CLOCK_BUS_APB4:
 		*rate = NPCX_APB_CLOCK(4);
 		break;
@@ -166,7 +166,7 @@ BUILD_ASSERT(APBSRC_CLK / (APB3DIV_VAL + 1) <= MHZ(50) &&
 	     APBSRC_CLK / (APB3DIV_VAL + 1) >= KHZ(12500) &&
 	     (APB3DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB3_CLK setting");
-#ifdef CONFIG_CLOCK_NPCX_APB4_PRESCALER
+#if defined(APB4DIV_VAL)
 BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) <= MHZ(100) &&
 	     APBSRC_CLK / (APB4DIV_VAL + 1) >= MHZ(8) &&
 	     (APB4DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
@@ -204,7 +204,7 @@ static int npcx_clock_control_init(const struct device *dev)
 	inst_cdcg->HFCGP   = ((FPRED_VAL << 4) | AHB6DIV_VAL);
 	inst_cdcg->HFCBCD  = (FIUDIV_VAL << 4);
 	inst_cdcg->HFCBCD1 = (APB1DIV_VAL | (APB2DIV_VAL << 4));
-#ifdef CONFIG_CLOCK_NPCX_APB4_PRESCALER
+#if defined(APB4DIV_VAL)
 	inst_cdcg->HFCBCD2 = (APB3DIV_VAL | (APB4DIV_VAL << 4));
 #else
 	inst_cdcg->HFCBCD2 = APB3DIV_VAL;
