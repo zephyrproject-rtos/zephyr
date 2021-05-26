@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT atmel_sam_tc
+#define DT_DRV_COMPAT atmel_sam_tc_qdec
 
 /** @file
  * @brief Atmel SAM MCU family Quadrature Decoder (QDEC/TC) driver.
