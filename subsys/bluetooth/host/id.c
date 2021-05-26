@@ -146,7 +146,7 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 	int err;
 
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	      BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		return set_random_address(addr);
 	}
 
@@ -247,7 +247,7 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 	int err;
 
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	      BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		return bt_id_set_private_addr(adv->id);
 	}
 
@@ -373,7 +373,7 @@ static void le_update_private_addr(void)
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
 	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		bt_le_ext_adv_foreach(adv_update_rpa, NULL);
 	}
 
@@ -398,7 +398,7 @@ static void le_update_private_addr(void)
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
 	    !(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	      BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		adv = bt_le_adv_lookup_legacy();
 
 		if (adv &&
@@ -485,7 +485,7 @@ bool bt_id_scan_random_addr_check(void)
 
 	if (!IS_ENABLED(CONFIG_BT_BROADCASTER) ||
 	    (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	     BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+	     BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		/* Advertiser is not enabled or advertiser and scanner are using
 		 * a different random address.
 		 */
@@ -530,7 +530,7 @@ bool bt_id_adv_random_addr_check(const struct bt_le_adv_param *param)
 {
 	if (!IS_ENABLED(CONFIG_BT_OBSERVER) ||
 	    (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	     BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+	     BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		/* If scanner roles are not enabled or advertiser and scanner
 		 * are using a different random address.
 		 */
@@ -1412,7 +1412,7 @@ static bool is_adv_using_rand_addr(void)
 
 	if (!IS_ENABLED(CONFIG_BT_BROADCASTER) ||
 	    (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	     BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+	     BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		/* When advertising is not enabled or is using extended
 		 * advertising HCI commands then only the scanner uses the set
 		 * random address command.
@@ -1533,7 +1533,7 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 
 			*own_addr_type = id_addr->type;
 		} else if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-			     BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+			     BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 			/* In case advertising set random address is not
 			 * available we must handle the shared random address
 			 * problem.
