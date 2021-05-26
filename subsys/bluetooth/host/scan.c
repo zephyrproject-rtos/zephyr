@@ -112,7 +112,7 @@ static int bt_le_scan_set_enable_legacy(uint8_t enable)
 int bt_le_scan_set_enable(uint8_t enable)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		return set_le_ext_scan_enable(enable, 0);
 	}
 
@@ -257,7 +257,7 @@ static int start_passive_scan(bool fast_scan)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		struct bt_hci_ext_scan_phy scan;
 
 		scan.type = BT_HCI_LE_SCAN_PASSIVE;
@@ -1026,7 +1026,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 #endif /* defined(CONFIG_BT_WHITELIST) */
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 		struct bt_hci_ext_scan_phy param_1m;
 		struct bt_hci_ext_scan_phy param_coded;
 
