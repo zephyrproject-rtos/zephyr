@@ -283,14 +283,3 @@ int pm_notifier_unregister(struct pm_notifier *notifier)
 
 	return ret;
 }
-
-#if CONFIG_PM_DEVICE
-static int pm_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	pm_create_device_list();
-	return 0;
-}
-SYS_INIT(pm_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif /* CONFIG_PM_DEVICE */
