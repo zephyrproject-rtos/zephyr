@@ -1,0 +1,15 @@
+identifier: em_starterkit_em7d_normal
+name: EM Starterkit EM7D normal
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - xtools
+supported:
+  - i2c
+  - spi
+  - gpio
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
