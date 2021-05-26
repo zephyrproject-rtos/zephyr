@@ -23,7 +23,7 @@
  */
 bool z_arm_debug_monitor_event_error_check(void)
 {
-#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+#if defined(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
 	/* Assess whether this debug exception was triggered
 	 * as a result of a null pointer (R/W) dereferencing.
 	 */
@@ -44,11 +44,11 @@ bool z_arm_debug_monitor_event_error_check(void)
 		 */
 		return true;
 	}
-#endif /* CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT */
+#endif /* CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT */
 	return false;
 }
 
-#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
+#if defined(CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT)
 
 /* The area (0x0 - <size>) monitored by DWT needs to be a power of 2,
  * so we add a build assert that catches it.
@@ -121,4 +121,4 @@ static int z_arm_debug_enable_null_pointer_detection(const struct device *arg)
 SYS_INIT(z_arm_debug_enable_null_pointer_detection, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
-#endif /* CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_DWT */
+#endif /* CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT */
