@@ -1088,7 +1088,8 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    RODATA       Inside the rodata output section.
 #    ROM_START    Inside the first output section of the image. This option is
 #                 currently only available on ARM Cortex-M, ARM Cortex-R,
-#                 x86, ARC, and openisa_rv32m1.
+#                 x86, ARC, openisa_rv32m1, and RISC-V.
+#                 Note: On RISC-V the rom_start section will be after vector section.
 #    RAM_SECTIONS Inside the RAMABLE_REGION GROUP.
 #    SECTIONS     Near the end of the file. Don't use this when linking into
 #                 RAMABLE_REGION, use RAM_SECTIONS instead.
