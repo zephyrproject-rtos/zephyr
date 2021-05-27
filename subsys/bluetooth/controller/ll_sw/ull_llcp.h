@@ -148,3 +148,13 @@ const uint8_t *ull_cp_chan_map_update_pending(struct ll_conn *conn);
 uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets,
 				  uint16_t max_tx_time);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+/**
+ * @brief Initiate a CTE Request Procedure.
+ */
+uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_type);
+
+/**
+ * @brief Enable or disable response to CTE Request Procedure.
+ */
+void ull_cp_cte_rsp_enable(struct ll_conn *conn, bool enable, uint8_t max_cte_len,
+			   uint8_t cte_types);
