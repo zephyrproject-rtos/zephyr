@@ -10,10 +10,10 @@ tests:
     tags: cpp
   cpp.libcxx.exceptions:
     # FIXME: change when issue is resolved #32448
-    platform_allow: mps2_an385
+    platform_allow: mps2_an385 qemu_arc_em qemu_arc_hs qemu_cortex_m0 qemu_cortex_m3 qemu_cortex_r5 qemu_riscv32 qemu_x86 qemu_xtensa
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
-    timeout: 5
+    timeout: 30
     extra_configs:
         - CONFIG_EXCEPTIONS=y
