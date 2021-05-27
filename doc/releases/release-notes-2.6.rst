@@ -389,6 +389,12 @@ Boards & SoC Support
    * ARM V2M Musca-A
    * Nordic nRF5340 PDK
 
+* Removed support for these X86 boards:
+
+   * up_squared_32
+   * qemu_x86_coverage
+   * minnowboard
+
 * Made these changes in other boards:
 
   * cy8ckit_062_ble: Refactored to configure by pinctrl.
