@@ -18,7 +18,8 @@ enum llcp_proc {
 	PROC_CONN_PARAM_REQ,
 	PROC_TERMINATE,
 	PROC_CHAN_MAP_UPDATE,
-	PROC_DATA_LENGTH_UPDATE
+	PROC_DATA_LENGTH_UPDATE,
+	PROC_CTE_REQ,
 };
 
 #if defined (CONFIG_BT_CTLR_LE_ENC)
@@ -186,7 +187,13 @@ struct proc_ctx {
 			uint16_t instant;
 			uint8_t chm[5];
 		} chmu;
-
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+		/* Use by CTE Request Procedure */
+		struct {
+			uint8_t type:2;
+			uint8_t min_len:5;
+		} cte_req;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	} data;
 
 	struct {
