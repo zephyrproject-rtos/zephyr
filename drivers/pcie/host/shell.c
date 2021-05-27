@@ -24,13 +24,42 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 		data = pcie_conf_read(bdf, msi + PCIE_MSI_MCR);
 		shell_fprintf(shell, SHELL_NORMAL, "    MSI support%s%s\n",
 			      (data & PCIE_MSI_MCR_64) ? ", 64-bit" : "",
-			      (data & PCIE_MSI_MCR_EN) ? ", enabled" : "");
+			      (data & PCIE_MSI_MCR_EN) ?
+			      ", enabled" : ", disabled");
 	}
 
 	msi = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
 
 	if (msi) {
-		shell_fprintf(shell, SHELL_NORMAL, "    MSI-X support\n");
+		uint32_t offset, table_size;
+		uint8_t bir;
+
+		data = pcie_conf_read(bdf, msi + PCIE_MSIX_MCR);
+
+		table_size = ((data & PCIE_MSIX_MCR_TSIZE) >>
+			      PCIE_MSIX_MCR_TSIZE_SHIFT) + 1;
+
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "    MSI-X support%s table size %d\n",
+			      (data & PCIE_MSIX_MCR_EN) ?
+			      ", enabled" : ", disabled",
+			      table_size);
+
+		offset = pcie_conf_read(bdf, msi + PCIE_MSIX_TR);
+		bir = offset & PCIE_MSIX_TR_BIR;
+		offset &= PCIE_MSIX_TR_OFFSET;
+
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "\tTable offset 0x%x BAR %d\n",
+			      offset, bir);
+
+		offset = pcie_conf_read(bdf, msi + PCIE_MSIX_PBA);
+		bir = offset & PCIE_MSIX_PBA_BIR;
+		offset &= PCIE_MSIX_PBA_OFFSET;
+
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "\tPBA offset 0x%x BAR %d\n",
+			      offset, bir);
 	}
 #endif
 }
