@@ -1633,6 +1633,11 @@ static bool on_cmd_atcmdinfo_imsi(struct net_buf **buf, uint16_t len)
 				    *buf, 0, len);
 	ictx.mdm_imsi[out_len] = 0;
 
+	if (strstr(ictx.mdm_imsi, "ERROR") != NULL) {
+		LOG_ERR("Unable to read IMSI");
+		memset(ictx.mdm_imsi, 0, sizeof(ictx.mdm_imsi));
+	}
+
 	LOG_INF("IMSI: %s", log_strdup(ictx.mdm_imsi));
 done:
 	return true;
