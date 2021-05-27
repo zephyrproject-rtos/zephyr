@@ -1,0 +1,38 @@
+#Common fields for uart-rs485 controllers
+
+include: uart-controller.yaml
+
+properties:
+    rs485-enable:
+      type: int
+      required: true
+      description: Enable or disable rs485, 0 - disable , 1 - enable
+    transfer-mode:
+      type: int
+      required: true
+      description: Full / Half Duplex transfer mode
+    de-polarity:
+      type: int
+      required: true
+      description: Polarity for driver enable 0-Active Low,1-Active High
+    re-polarity:
+      type: int
+      required: true
+      description: Polarity for receiver enable 0-Active Low,1-Active High
+    de-assertion-time-ns:
+      type: int
+      required: true
+      description: De assertion time for driver enable signal in nanoseconds
+    de-deassertion-time-ns:
+      type: int
+      required: true
+      description: De-deassertion time for driver enable signal in nanoseconds
+    de-re-tat-ns:
+      type: int
+      required: true
+      description: Receiver enable /driver enable turnaround time in nanoseconds
+    re-de-tat-ns:
+      type: int
+      required: true
+      description: Driver enable/ receiver enable turnaround time in nanoseconds
+
