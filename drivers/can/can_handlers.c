@@ -19,17 +19,6 @@ static inline int z_vrfy_can_set_timing(const struct device *dev,
 }
 #include <syscalls/can_set_timing_mrsh.c>
 
-static inline int z_vrfy_can_set_bitrate(const struct device *dev,
-					 uint32_t bitrate)
-{
-
-	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_bitrate));
-
-	return z_impl_can_set_bitrate((const struct device *)dev,
-				      (uint32_t)bitrate);
-}
-#include <syscalls/can_set_bitrate_mrsh.c>
-
 static inline int z_vrfy_can_get_core_clock(const struct device *dev,
 					    uint32_t *rate)
 {
