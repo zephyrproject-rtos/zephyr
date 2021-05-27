@@ -423,26 +423,26 @@ static bool valid_aics_inst(struct bt_aics *aics)
 	return false;
 }
 
-int bt_vcs_get(struct bt_conn *conn, struct bt_vcs *service)
+int bt_vcs_included_get(struct bt_conn *conn, struct bt_vcs_included *included)
 {
 	if (conn != NULL) {
 		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_get(conn, service);
+			return bt_vcs_client_included_get(conn, included);
 		} else {
 			return -EOPNOTSUPP;
 		}
 	}
 
 #if defined(CONFIG_BT_VCS)
-	if (service == NULL) {
+	if (included == NULL) {
 		return -EINVAL;
 	}
 
-	service->vocs_cnt = ARRAY_SIZE(vcs_inst.vocs_insts);
-	service->vocs = vcs_inst.vocs_insts;
+	included->vocs_cnt = ARRAY_SIZE(vcs_inst.vocs_insts);
+	included->vocs = vcs_inst.vocs_insts;
 
-	service->aics_cnt = ARRAY_SIZE(vcs_inst.aics_insts);
-	service->aics = vcs_inst.aics_insts;
+	included->aics_cnt = ARRAY_SIZE(vcs_inst.aics_insts);
+	included->aics = vcs_inst.aics_insts;
 
 	return 0;
 #else

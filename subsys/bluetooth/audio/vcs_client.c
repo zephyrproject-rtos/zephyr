@@ -835,12 +835,13 @@ int bt_vcs_client_cb_register(struct bt_vcs_cb *cb)
 	return 0;
 }
 
-int bt_vcs_client_get(struct bt_conn *conn, struct bt_vcs *client)
+int bt_vcs_client_included_get(struct bt_conn *conn,
+			       struct bt_vcs_included *included)
 {
 	uint8_t conn_index;
 	struct vcs_instance *vcs_inst;
 
-	CHECKIF(!client || !conn) {
+	CHECKIF(!included || !conn) {
 		return -EINVAL;
 	}
 
@@ -848,11 +849,11 @@ int bt_vcs_client_get(struct bt_conn *conn, struct bt_vcs *client)
 
 	conn_index = bt_conn_index(conn);
 
-	client->vocs_cnt = vcs_inst->vocs_inst_cnt;
-	client->vocs = vcs_insts[conn_index].vocs;
+	included->vocs_cnt = vcs_inst->vocs_inst_cnt;
+	included->vocs = vcs_insts[conn_index].vocs;
 
-	client->aics_cnt = vcs_inst->aics_inst_cnt;
-	client->aics = vcs_insts[conn_index].aics;
+	included->aics_cnt = vcs_inst->aics_inst_cnt;
+	included->aics = vcs_insts[conn_index].aics;
 
 	return 0;
 }

@@ -18,7 +18,7 @@
 static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 
-static struct bt_vcs vcs;
+static struct bt_vcs_included vcs_included;
 static volatile bool g_bt_init;
 static volatile bool g_is_connected;
 static volatile bool g_mtu_exchanged;
@@ -312,7 +312,7 @@ static int test_aics(void)
 
 	printk("Getting AICS state\n");
 	g_cb = false;
-	err = bt_vcs_aics_state_get(g_conn, vcs.aics[0]);
+	err = bt_vcs_aics_state_get(g_conn, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
@@ -322,7 +322,7 @@ static int test_aics(void)
 
 	printk("Getting AICS gain setting\n");
 	g_cb = false;
-	err = bt_vcs_aics_gain_setting_get(g_conn, vcs.aics[0]);
+	err = bt_vcs_aics_gain_setting_get(g_conn, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
@@ -333,7 +333,7 @@ static int test_aics(void)
 	printk("Getting AICS input type\n");
 	expected_input_type = BT_AICS_INPUT_TYPE_DIGITAL;
 	g_cb = false;
-	err = bt_vcs_aics_type_get(g_conn, vcs.aics[0]);
+	err = bt_vcs_aics_type_get(g_conn, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS input type (err %d)\n", err);
 		return err;
@@ -344,7 +344,7 @@ static int test_aics(void)
 
 	printk("Getting AICS status\n");
 	g_cb = false;
-	err = bt_vcs_aics_status_get(g_conn, vcs.aics[0]);
+	err = bt_vcs_aics_status_get(g_conn, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
@@ -354,7 +354,7 @@ static int test_aics(void)
 
 	printk("Getting AICS description\n");
 	g_cb = false;
-	err = bt_vcs_aics_description_get(g_conn, vcs.aics[0]);
+	err = bt_vcs_aics_description_get(g_conn, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
@@ -365,7 +365,7 @@ static int test_aics(void)
 	printk("Setting AICS mute\n");
 	expected_input_mute = BT_AICS_STATE_MUTED;
 	g_write_complete = g_cb = false;
-	err = bt_vcs_aics_mute(g_conn, vcs.aics[0]);
+	err = bt_vcs_aics_mute(g_conn, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
@@ -377,7 +377,7 @@ static int test_aics(void)
 	printk("Setting AICS unmute\n");
 	expected_input_mute = BT_AICS_STATE_UNMUTED;
 	g_write_complete = g_cb = false;
-	err = bt_vcs_aics_unmute(g_conn, vcs.aics[0]);
+	err = bt_vcs_aics_unmute(g_conn, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
@@ -389,7 +389,7 @@ static int test_aics(void)
 	printk("Setting AICS auto mode\n");
 	expected_mode = BT_AICS_MODE_AUTO;
 	g_write_complete = g_cb = false;
-	err = bt_vcs_aics_automatic_gain_set(g_conn, vcs.aics[0]);
+	err = bt_vcs_aics_automatic_gain_set(g_conn, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
@@ -400,7 +400,7 @@ static int test_aics(void)
 	printk("Setting AICS manual mode\n");
 	expected_mode = BT_AICS_MODE_MANUAL;
 	g_write_complete = g_cb = false;
-	err = bt_vcs_aics_manual_gain_set(g_conn, vcs.aics[0]);
+	err = bt_vcs_aics_manual_gain_set(g_conn, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
@@ -411,7 +411,7 @@ static int test_aics(void)
 	printk("Setting AICS gain\n");
 	expected_gain = g_aics_gain_max - 1;
 	g_write_complete = g_cb = false;
-	err = bt_vcs_aics_gain_set(g_conn, vcs.aics[0], expected_gain);
+	err = bt_vcs_aics_gain_set(g_conn, vcs_included.aics[0], expected_gain);
 	if (err) {
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
@@ -424,7 +424,7 @@ static int test_aics(void)
 		sizeof(expected_aics_desc));
 	expected_aics_desc[sizeof(expected_aics_desc) - 1] = '\0';
 	g_cb = false;
-	err = bt_vcs_aics_description_set(g_conn, vcs.aics[0],
+	err = bt_vcs_aics_description_set(g_conn, vcs_included.aics[0],
 					  expected_aics_desc);
 	if (err) {
 		FAIL("Could not set AICS Description (err %d)\n", err);
@@ -460,7 +460,7 @@ static int test_vocs(void)
 
 	printk("Getting VOCS state\n");
 	g_cb = false;
-	err = bt_vcs_vocs_state_get(g_conn, vcs.vocs[0]);
+	err = bt_vcs_vocs_state_get(g_conn, vcs_included.vocs[0]);
 	if (err) {
 		FAIL("Could not get VOCS state (err %d)\n", err);
 		return err;
@@ -470,7 +470,7 @@ static int test_vocs(void)
 
 	printk("Getting VOCS location\n");
 	g_cb = false;
-	err = bt_vcs_vocs_location_get(g_conn, vcs.vocs[0]);
+	err = bt_vcs_vocs_location_get(g_conn, vcs_included.vocs[0]);
 	if (err) {
 		FAIL("Could not get VOCS location (err %d)\n", err);
 		return err;
@@ -480,7 +480,7 @@ static int test_vocs(void)
 
 	printk("Getting VOCS description\n");
 	g_cb = false;
-	err = bt_vcs_vocs_description_get(g_conn, vcs.vocs[0]);
+	err = bt_vcs_vocs_description_get(g_conn, vcs_included.vocs[0]);
 	if (err) {
 		FAIL("Could not get VOCS description (err %d)\n", err);
 		return err;
@@ -491,7 +491,8 @@ static int test_vocs(void)
 	printk("Setting VOCS location\n");
 	expected_location = g_vocs_location + 1;
 	g_cb = false;
-	err = bt_vcs_vocs_location_set(g_conn, vcs.vocs[0], expected_location);
+	err = bt_vcs_vocs_location_set(g_conn, vcs_included.vocs[0],
+				       expected_location);
 	if (err) {
 		FAIL("Could not set VOCS location (err %d)\n", err);
 		return err;
@@ -502,7 +503,7 @@ static int test_vocs(void)
 	printk("Setting VOCS state\n");
 	expected_offset = g_vocs_offset + 1;
 	g_write_complete = g_cb = false;
-	err = bt_vcs_vocs_state_set(g_conn, vcs.vocs[0], expected_offset);
+	err = bt_vcs_vocs_state_set(g_conn, vcs_included.vocs[0], expected_offset);
 	if (err) {
 		FAIL("Could not set VOCS state (err %d)\n", err);
 		return err;
@@ -515,7 +516,7 @@ static int test_vocs(void)
 		sizeof(expected_description));
 	expected_description[sizeof(expected_description) - 1] = '\0';
 	g_cb = false;
-	err = bt_vcs_vocs_description_set(g_conn, vcs.vocs[0],
+	err = bt_vcs_vocs_description_set(g_conn, vcs_included.vocs[0],
 					  expected_description);
 	if (err) {
 		FAIL("Could not set VOCS description (err %d)\n", err);
@@ -581,9 +582,9 @@ static void test_main(void)
 
 	WAIT_FOR(g_discovery_complete);
 
-	err = bt_vcs_get(g_conn, &vcs);
+	err = bt_vcs_included_get(g_conn, &vcs_included);
 	if (err) {
-		FAIL("Failed to get VCS context (err %d)\n", err);
+		FAIL("Failed to get VCS included services (err %d)\n", err);
 		return;
 	}
 
