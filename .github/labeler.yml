@@ -137,6 +137,11 @@
 "area: Shields":
   - "boards/shields/**"
   - "samples/shields/**"
+"area: Power Management":
+  - "subsys/pm/**/*"
+  - "include/pm/**/*"
+  - "tests/subsys/pm/**/*"
+  - "samples/subsys/pm/**/*"
 "platform: NXP":
   - "boards/arm/frdm*/**"
   - "boards/arm/hexiwear*/**"
