@@ -39,6 +39,9 @@ extern "C" {
 #define BT_VCS_ERR_INVALID_COUNTER             0x80
 #define BT_VCS_ERR_OP_NOT_SUPPORTED            0x81
 
+/** @brief Opaque Volume Control Service instance. */
+struct bt_vcs;
+
 /** Register structure for Volume Control Service */
 struct bt_vcs_register_param {
 	/** Register parameters for Volume Offset Control Services */
@@ -77,10 +80,11 @@ struct bt_vcs_included {
  * clients.
  *
  * @param param     Volume Control Service register parameters.
+ * @param[out] vcs  Pointer to the registered Volume Control Service.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcs_register(struct bt_vcs_register_param *param);
+int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs);
 
 /**
  * @brief Get Volume Control Service included services.
