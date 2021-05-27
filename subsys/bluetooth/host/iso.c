@@ -1136,7 +1136,16 @@ void bt_iso_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 		pkt_seq_no = sys_le16_to_cpu(hdr->sn);
 		iso_info(buf)->sn = pkt_seq_no;
 
-		/* TODO: Drop the packet if NOP? */
+		if (flags == BT_ISO_DATA_VALID) {
+			iso_info(buf)->flags = BT_ISO_FLAGS_VALID;
+		} else if (flags == BT_ISO_DATA_INVALID) {
+			iso_info(buf)->flags = BT_ISO_FLAGS_ERROR;
+		} else if (flags == BT_ISO_DATA_NOP) {
+			iso_info(buf)->flags = BT_ISO_FLAGS_LOST;
+		} else {
+			BT_WARN("Invalid ISO packet status flag: %u", flags);
+			iso_info(buf)->flags = 0;
+		}
 
 		BT_DBG("%s, len %u total %u flags 0x%02x timestamp %u",
 		       pb == BT_ISO_START ? "Start" : "Single", buf->len, len,
