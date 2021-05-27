@@ -54,6 +54,7 @@ if LIB_CPLUSPLUS
 
 config EXCEPTIONS
 	bool "Enable C++ exceptions support"
+	depends on !NIOS2 && !SPARC
 	help
 	  This option enables support of C++ exceptions.
 
