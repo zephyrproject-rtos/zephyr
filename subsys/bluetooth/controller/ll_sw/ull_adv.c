@@ -1064,9 +1064,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 		 */
 		conn->llcp_terminate.node_rx.hdr.link = link;
 #else
-		conn->llcp.fex.features_used = LL_FEAT;
-		conn->llcp.fex.features_peer = 0;
-		conn->llcp.vex.valid = 0;
+		/* Re-initialize the control procedure data structures */
+		ll_conn_init(conn);
+
 		conn->terminate.reason = 0;
 		/* NOTE: use allocated link for generating dedicated
 		 * terminate ind rx node
@@ -1122,9 +1122,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if (!defined(CONFIG_BT_LL_SW_SPLIT_LLCP_LEGACY))
 		/* Re-initialize the Tx Q */
 		ull_tx_q_init(&conn->tx_q);
-
-		/* Re-initialize the control procedure data structures */
-		ll_conn_init(conn);
 #else
 		conn->tx_head = conn->tx_ctrl = conn->tx_ctrl_last =
 		conn->tx_data = conn->tx_data_last = 0;
