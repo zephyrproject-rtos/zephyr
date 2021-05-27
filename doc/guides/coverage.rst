@@ -46,9 +46,7 @@ Steps to generate code coverage reports
 
 These steps will produce an HTML coverage report for a single application.
 
-1. Build the code with CONFIG_COVERAGE=y. Some boards like qemu_x86_coverage
-   automatically enable this, but for boards that do not you will need to
-   enable the configuration manually:
+1. Build the code with CONFIG_COVERAGE=y.
 
    .. zephyr-app-commands::
       :board: mps2_an385
