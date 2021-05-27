@@ -18,10 +18,7 @@ LOG_MODULE_DECLARE(power);
 extern const struct device __device_start[];
 extern const struct device __device_end[];
 
-/* Indexes into all_devices for devices that support pm,
- * in dependency order (later may depend on earlier).
- */
-static const struct device *pm_devices[CONFIG_PM_MAX_DEVICES];
+extern const struct device *__pm_device_slots_start[];
 
 /* Number of devices successfully suspended. */
 static size_t num_susp;
@@ -77,10 +74,8 @@ static int _pm_devices(uint32_t state)
 				return rc;
 			}
 
-			pm_devices[num_susp] = dev;
+			__pm_device_slots_start[num_susp] = dev;
 			num_susp++;
-			__ASSERT(num_susp < CONFIG_PM_MAX_DEVICES,
-				"Number of pm devices > CONFIG_PM_MAX_DEVICES");
 		}
 	}
 
@@ -107,7 +102,7 @@ void pm_resume_devices(void)
 	size_t i;
 
 	for (i = 0; i < num_susp; i++) {
-		pm_device_state_set(pm_devices[i],
+		pm_device_state_set(__pm_device_slots_start[i],
 				       PM_DEVICE_STATE_ACTIVE,
 				       NULL, NULL);
 	}

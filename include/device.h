@@ -692,11 +692,27 @@ int device_busy_check(const struct device *chk_dev);
 #define Z_DEVICE_EXTRA_HANDLES(...)				\
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
+/* If device power management is enabled, this macro defines a pointer to a
+ * device in the z_pm_device_slots region. When invoked for each device, this
+ * will effectively result in a device pointer array with the same size of the
+ * actual devices list. This is used internally by the device PM subsystem to
+ * keep track of suspended devices during system power transitions.
+ */
+#if CONFIG_PM_DEVICE
+#define Z_DEVICE_DEFINE_PM_SLOT(dev_name)				\
+	static const Z_DECL_ALIGN(struct device *)			\
+	_CONCAT(__pm_device_slot_, DEVICE_NAME_GET(dev_name)) __used	\
+	__attribute__((__section__(".z_pm_device_slots")));
+#else
+#define Z_DEVICE_DEFINE_PM_SLOT(dev_name)
+#endif
+
 /* Construct objects that are referenced from struct device.  These
  * include power management and dependency handles.
  */
 #define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
-	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
+	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)		\
+	Z_DEVICE_DEFINE_PM_SLOT(dev_name)
 
 
 /* Initial build provides a record that associates the device object
