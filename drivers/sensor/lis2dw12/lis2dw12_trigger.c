@@ -244,6 +244,7 @@ int lis2dw12_init_interrupt(const struct device *dev)
 
 	lis2dw12->dev = dev;
 
+	LOG_INF("%s: int-pin is on INT%d", dev->name, cfg->int_pin);
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	k_sem_init(&lis2dw12->gpio_sem, 0, K_SEM_MAX_LIMIT);
 
