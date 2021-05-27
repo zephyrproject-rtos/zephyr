@@ -1204,6 +1204,35 @@ static inline void ntf_encode_length_change(struct ll_conn *conn,
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+/*
+ * Constant Tone Request Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+static inline void pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_cte_req(ctx, pdu);
+}
+
+void ull_cp_priv_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
+static inline void ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	return ull_cp_priv_ntf_encode_cte_req(conn, pdu);
+}
+
+void ull_cp_priv_pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
+static inline void pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_cte_req(conn, pdu);
+}
+
+void ull_cp_priv_pdu_encode_cte_rsp(struct pdu_data *pdu);
+static inline void pdu_encode_cte_rsp(struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_cte_rsp(pdu);
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ll_conn *conn);
 bool lr_is_idle(struct ll_conn *conn);
