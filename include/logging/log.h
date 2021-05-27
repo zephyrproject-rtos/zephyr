@@ -439,6 +439,32 @@ static inline char *log_strdup(const char *str)
 #define LOG_LEVEL_SET(level) static const uint32_t __log_level __unused = \
 				Z_LOG_RESOLVED_LEVEL(level, 0)
 
+/*
+ * Eclipse CDT parser is sometimes confused by logging API code and freezes the
+ * whole IDE. Following lines hides LOG_x macros from CDT.
+ */
+#if defined(__CDT_PARSER__)
+#undef LOG_ERR
+#undef LOG_WRN
+#undef LOG_INF
+#undef LOG_DBG
+
+#undef LOG_HEXDUMP_ERR
+#undef LOG_HEXDUMP_WRN
+#undef LOG_HEXDUMP_INF
+#undef LOG_HEXDUMP_DBG
+
+#define LOG_ERR(...) (void) 0
+#define LOG_WRN(...) (void) 0
+#define LOG_DBG(...) (void) 0
+#define LOG_INF(...) (void) 0
+
+#define LOG_HEXDUMP_ERR(...) (void) 0
+#define LOG_HEXDUMP_WRN(...) (void) 0
+#define LOG_HEXDUMP_DBG(...) (void) 0
+#define LOG_HEXDUMP_INF(...) (void) 0
+#endif
+
 /**
  * @}
  */
