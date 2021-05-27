@@ -200,6 +200,10 @@ struct proc_ctx {
 		uint8_t type;
 	} unknown_response;
 
+	struct {
+		uint8_t reject_opcode;
+		uint8_t error_code;
+	} reject_ext_ind;
 };
 
 /* Procedure Incompatibility */
@@ -488,6 +492,8 @@ void llcp_pdu_encode_pause_enc_rsp(struct pdu_data *pdu);
 
 void llcp_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code);
 void llcp_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode, uint8_t error_code);
+void llcp_pdu_decode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+void llcp_ntf_encode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 /*
  * PHY Update Procedure Helper

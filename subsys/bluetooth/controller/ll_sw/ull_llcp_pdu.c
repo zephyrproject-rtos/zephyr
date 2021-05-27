@@ -417,6 +417,26 @@ void llcp_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_opcode,
 	pdu->llctrl.reject_ext_ind.error_code = error_code;
 }
 
+void llcp_pdu_decode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->reject_ext_ind.reject_opcode = pdu->llctrl.reject_ext_ind.reject_opcode;
+	ctx->reject_ext_ind.error_code = pdu->llctrl.reject_ext_ind.error_code;
+}
+
+void llcp_ntf_encode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_reject_ext_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, reject_ext_ind) +
+		   sizeof(struct pdu_data_llctrl_reject_ext_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
+
+	p = (void *)&pdu->llctrl.reject_ext_ind;
+	p->error_code = ctx->reject_ext_ind.error_code;
+	p->reject_opcode = ctx->reject_ext_ind.reject_opcode;
+}
+
 #ifdef CONFIG_BT_CTLR_PHY
 /*
  * PHY Update Procedure Helper
