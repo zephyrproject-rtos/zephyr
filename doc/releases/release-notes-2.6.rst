@@ -330,6 +330,12 @@ Drivers and Sensors
 
 * ADC
 
+  * Added support on TI CC32xx.
+  * Added support on ITE IT8xxx2.
+  * Added support for DMA and HW triggers in the MCUX ADC16 driver.
+  * Added ADC emulator.
+  * Moved definitions of ADC acquisition time macros so that those macros can be used in dts files.
+
 * Bluetooth
 
   * The Kconfig option ``CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME`` was removed.
@@ -481,7 +487,8 @@ Drivers and Sensors
 
 * PWM
 
-  * Added support on STM32F2 and STM32L1
+  * Added support on STM32F2 and STM32L1.
+  * Added support on Silicon Labs Gecko SoCs.
 
 * Sensor
 
