@@ -103,11 +103,6 @@ enum {
 /* Hardcoded instant delta +6 */
 #define PHY_UPDATE_INSTANT_DELTA  6
 
-/* statics to signal through generic interface of lp_pu_complete */
-static const uint8_t generate_ntf = 1U;
-static const uint8_t dont_generate_ntf = 0U;
-static uint8_t ntf;
-
 /* PHY preference order*/
 #define PHY_PREF_1 PHY_2M
 #define PHY_PREF_2 PHY_1M
@@ -209,24 +204,73 @@ static uint8_t pu_check_update_ind(struct ll_conn *conn, struct proc_ctx *ctx)
 
 static uint8_t pu_apply_phy_update(struct ll_conn *conn, struct proc_ctx *ctx)
 {
+	struct lll_conn *lll = &conn->lll;
+
 	if (ctx->data.pu.s_to_m_phy) {
-		if (conn->lll.role == BT_HCI_ROLE_SLAVE) {
-			conn->lll.phy_tx = ctx->data.pu.s_to_m_phy;
+		if (lll->role == BT_HCI_ROLE_SLAVE) {
+			lll->phy_tx = ctx->data.pu.s_to_m_phy;
 		} else {
-			conn->lll.phy_rx = ctx->data.pu.s_to_m_phy;
+			lll->phy_rx = ctx->data.pu.s_to_m_phy;
 		}
 	}
 
 	if (ctx->data.pu.m_to_s_phy) {
-		if (conn->lll.role == BT_HCI_ROLE_SLAVE) {
-			conn->lll.phy_rx = ctx->data.pu.m_to_s_phy;
+		if (lll->role == BT_HCI_ROLE_SLAVE) {
+			lll->phy_rx = ctx->data.pu.m_to_s_phy;
 		} else {
-			conn->lll.phy_tx = ctx->data.pu.m_to_s_phy;
+			lll->phy_tx = ctx->data.pu.m_to_s_phy;
 		}
 	}
 
 	return (ctx->data.pu.m_to_s_phy || ctx->data.pu.s_to_m_phy);
 }
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+static uint16_t pu_calc_eff_time(uint8_t max_octets, uint8_t phy, uint16_t default_time)
+{
+	uint16_t time = PKT_US(max_octets, phy);
+	uint16_t eff_time;
+
+	eff_time = MAX(PDU_DC_PAYLOAD_TIME_MIN, time);
+	eff_time = MIN(eff_time, default_time);
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	eff_time = MAX(eff_time, PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, phy));
+#endif
+
+	return eff_time;
+}
+
+static uint8_t pu_update_eff_times(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	struct lll_conn *lll = &conn->lll;
+	uint16_t eff_tx_time = lll->dle.eff.max_tx_time;
+	uint16_t eff_rx_time = lll->dle.eff.max_rx_time;
+
+	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_SLAVE)) ||
+		(ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_MASTER))) {
+			eff_tx_time = pu_calc_eff_time(lll->dle.eff.max_tx_octets,
+						    lll->phy_tx,
+						    lll->dle.local.max_tx_time);
+
+	}
+	if ((ctx->data.pu.s_to_m_phy && (lll->role == BT_HCI_ROLE_MASTER)) ||
+		(ctx->data.pu.m_to_s_phy && (lll->role == BT_HCI_ROLE_SLAVE))) {
+			eff_rx_time = pu_calc_eff_time(lll->dle.eff.max_rx_octets,
+							lll->phy_rx,
+							lll->dle.local.max_rx_time);
+
+	}
+
+	if ((eff_tx_time != lll->dle.eff.max_tx_time) || (eff_rx_time != lll->dle.eff.max_rx_time))
+	{
+		lll->dle.eff.max_tx_time = eff_tx_time;
+		lll->dle.eff.max_rx_time = eff_rx_time;
+		return 1;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 static inline void pu_set_preferred_phys(struct ll_conn *conn, struct proc_ctx *ctx)
 {
@@ -321,18 +365,48 @@ static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_sched();
 }
 
+static void pu_dle_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+
+	/* Allocate ntf node */
+	ntf = ntf_alloc();
+	LL_ASSERT(ntf);
+
+	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
+	ntf->hdr.handle = conn->lll.handle;
+	pdu = (struct pdu_data *)ntf->pdu;
+
+	ntf_encode_length_change(conn, pdu);
+
+	/* Enqueue notification towards LL */
+	ll_rx_put(ntf->hdr.link, ntf);
+	ll_rx_sched();
+}
+
 static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	const uint8_t ntf = *(uint8_t *)param;
-	// when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF buffer)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	#define NTF_DLE (ctx->data.pu.ntf_dle)
+#else
+	#define NTF_DLE 0
+#endif
+	const uint8_t ntf_count = ctx->data.pu.ntf_dle + NTF_DLE;
+	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF buffer) */
 	pu_reset_timing_restrict(conn);
 
-	if (ntf && !ntf_alloc_is_available()) {
+	if (ntf_count  && !ntf_alloc_num_available(ntf_count)) {
 		ctx->state = LP_PU_STATE_WAIT_NTF;
 	} else {
-		if (ntf) {
+		if (ctx->data.pu.ntf_pu) {
 			pu_ntf(conn, ctx);
 		}
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		if (ctx->data.pu.ntf_dle) {
+			pu_dle_ntf(conn, ctx);
+		}
+#endif
 		lr_complete(conn);
 		ctx->state = LP_PU_STATE_IDLE;
 	}
@@ -394,7 +468,8 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 		if (conn->lll.role == BT_HCI_ROLE_SLAVE && rr_get_collision(conn)) {
 			rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 			ctx->data.pu.error = BT_HCI_ERR_LL_PROC_COLLISION;
-			lp_pu_complete(conn, ctx, evt, (void*)&generate_ntf);
+			ctx->data.pu.ntf_pu = 1;
+			lp_pu_complete(conn, ctx, evt, param);
 		}
 		break;
 	case LP_PU_EVT_PHY_RSP:
@@ -416,7 +491,8 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 		 */
 		feature_unmask_features(conn, LL_FEAT_BIT_PHY_2M | LL_FEAT_BIT_PHY_CODED);
 		ctx->data.pu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
-		lp_pu_complete(conn, ctx, evt, (void*)&generate_ntf);
+		ctx->data.pu.ntf_pu = 1;
+		lp_pu_complete(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -480,8 +556,8 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 		} else {
 			rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 			ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
-			ntf = ctx->data.pu.host_initiated;
-			lp_pu_complete(conn, ctx, evt, (void*)&ntf);
+			ctx->data.pu.ntf_pu = ctx->data.pu.host_initiated;
+			lp_pu_complete(conn, ctx, evt, param);
 		}
 		tx_resume_data(conn);
 		break;
@@ -508,14 +584,15 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
 			rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
-			ntf = ctx->data.pu.host_initiated;
-			lp_pu_complete(conn, ctx, evt, (void*)&ntf);
+			ctx->data.pu.ntf_pu = ctx->data.pu.host_initiated;
+			lp_pu_complete(conn, ctx, evt, param);
 		}
 		break;
 	case LP_PU_EVT_REJECT:
 		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_LL_PROC_COLLISION;
-		lp_pu_complete(conn, ctx, evt, (void*)&generate_ntf);
+		ctx->data.pu.ntf_pu = 1;
+		lp_pu_complete(conn, ctx, evt, param);
 	default:
 		/* Ignore other evts */
 		break;
@@ -526,10 +603,15 @@ static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 {
 	if (is_instant_reached_or_passed(ctx->data.pu.instant, pu_event_counter(conn))) {
 		const uint8_t phy_changed = pu_apply_phy_update(conn, ctx);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		if (phy_changed) {
+			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
+		}
+#endif
 		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
-		ntf = phy_changed || ctx->data.pu.host_initiated;
-		lp_pu_complete(conn, ctx, evt, (void*)&ntf);
+		ctx->data.pu.ntf_pu = (phy_changed || ctx->data.pu.host_initiated);
+		lp_pu_complete(conn, ctx, evt, param);
 	}
 }
 
@@ -550,7 +632,7 @@ static void lp_pu_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 {
 	switch (evt) {
 	case LP_PU_EVT_RUN:
-		lp_pu_complete(conn, ctx, evt, (void*)&generate_ntf);
+		lp_pu_complete(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -668,17 +750,28 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	const uint8_t ntf = *(uint8_t *)param;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	#define NTF_DLE (ctx->data.pu.ntf_dle)
+#else
+	#define NTF_DLE 0
+#endif
+	const uint8_t ntf_count = ctx->data.pu.ntf_dle + NTF_DLE;
 	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF) */
 	pu_reset_timing_restrict(conn);
 
-	if (ntf && !ntf_alloc_is_available()) {
+	if ((ntf_count > 0) && !ntf_alloc_num_available(ntf_count)) {
 		ctx->state = RP_PU_STATE_WAIT_NTF;
 	} else {
-		if (ntf)
+		if (ctx->data.pu.ntf_pu)
 		{
 			pu_ntf(conn, ctx);
 		}
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		if (ctx->data.pu.ntf_dle)
+		{
+			pu_dle_ntf(conn, ctx);
+		}
+#endif
 		rr_complete(conn);
 		ctx->state = RP_PU_STATE_IDLE;
 	}
@@ -779,7 +872,7 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 				}
 				ctx->state = RP_PU_STATE_WAIT_INSTANT;
 			} else {
-				rp_pu_complete(conn, ctx, evt, (void*)&dont_generate_ntf);
+				rp_pu_complete(conn, ctx, evt, param);
 			}
 		}
 		tx_resume_data(conn);
@@ -810,10 +903,9 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
 		if (!end_procedure)
 		{
-
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
-			rp_pu_complete(conn, ctx, evt, (void*)&dont_generate_ntf);
+			rp_pu_complete(conn, ctx, evt, param);
 		}
 		break;
 	default:
@@ -827,9 +919,14 @@ static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	if (is_instant_reached_or_passed(ctx->data.pu.instant, pu_event_counter(conn))) {
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		const uint8_t phy_changed = pu_apply_phy_update(conn, ctx);
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		if (phy_changed) {
+			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
+		}
+#endif
 		/* if PHY settings changed we should generate NTF */
-		ntf = phy_changed;
-		rp_pu_complete(conn, ctx, evt, (void*)&ntf);
+		ctx->data.pu.ntf_pu = phy_changed;
+		rp_pu_complete(conn, ctx, evt, param);
 	}
 }
 
@@ -850,7 +947,7 @@ static void rp_pu_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 {
 	switch (evt) {
 	case RP_PU_EVT_RUN:
-		rp_pu_complete(conn, ctx, evt, (void*)&generate_ntf);
+		rp_pu_complete(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
