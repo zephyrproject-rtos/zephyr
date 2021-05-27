@@ -41,6 +41,23 @@ struct esp32_wifi_runtime {
 #endif
 };
 
+static void esp_wifi_event_task(void);
+
+K_MSGQ_DEFINE(esp_wifi_msgq, sizeof(system_event_t), 10, 4);
+K_THREAD_DEFINE(esp_wifi_event_tid, CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE,
+		esp_wifi_event_task, NULL, NULL, NULL, CONFIG_ESP32_WIFI_EVENT_TASK_PRIO, 0, 0);
+
+/* internal wifi library callback function */
+esp_err_t esp_event_send_internal(esp_event_base_t event_base,
+				  int32_t event_id,
+				  void *event_data,
+				  size_t event_data_size,
+				  uint32_t ticks_to_wait)
+{
+	k_msgq_put(&esp_wifi_msgq, (int32_t *)&event_id, K_FOREVER);
+	return ESP_OK;
+}
+
 static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)
 {
 	const int pkt_len = net_pkt_get_len(pkt);
@@ -92,18 +109,37 @@ pkt_unref:
 	return ESP_FAIL;
 }
 
-/* internally used by wifi hal layer */
-void esp_wifi_set_net_state(bool state)
+void esp_wifi_event_task(void)
 {
-	if (esp32_wifi_iface == NULL) {
-		LOG_ERR("network interface unavailable");
-		return;
-	}
+	int32_t event_id;
 
-	if (state) {
-		net_if_up(esp32_wifi_iface);
-	} else {
-		net_if_down(esp32_wifi_iface);
+	while (1) {
+		k_msgq_get(&esp_wifi_msgq, &event_id, K_FOREVER);
+
+		switch (event_id) {
+		case ESP32_WIFI_EVENT_STA_START:
+			LOG_INF("WIFI_EVENT_STA_START");
+			net_if_up(esp32_wifi_iface);
+			break;
+		case ESP32_WIFI_EVENT_STA_STOP:
+			LOG_INF("WIFI_EVENT_STA_STOP");
+			net_if_down(esp32_wifi_iface);
+			break;
+		case ESP32_WIFI_EVENT_STA_CONNECTED:
+			LOG_INF("WIFI_EVENT_STA_CONNECTED");
+			net_eth_carrier_on(esp32_wifi_iface);
+			break;
+		case ESP32_WIFI_EVENT_STA_DISCONNECTED:
+			LOG_INF("WIFI_EVENT_STA_DISCONNECTED");
+			net_eth_carrier_off(esp32_wifi_iface);
+
+			if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT)) {
+				esp_wifi_connect();
+			}
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -138,7 +174,6 @@ static struct net_stats_eth *eth_esp32_stats(const struct device *dev)
 static int eth_esp32_dev_init(const struct device *dev)
 {
 	esp_timer_init();
-	esp_event_init();
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
