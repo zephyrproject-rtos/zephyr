@@ -133,7 +133,6 @@ REDIRECTS = [
     ('boards/riscv/zedboard_pulpino/doc/zedboard_pulpino', 'boards/riscv/zedboard_pulpino/doc/index'),
     ('boards/x86/arduino_101/doc/board', 'boards/x86/arduino_101/doc/index'),
     ('boards/x86/galileo/doc/galileo', 'boards/x86/galileo/doc/index'),
-    ('boards/x86/minnowboard/doc/minnowboard', 'boards/x86/minnowboard/doc/index'),
     ('boards/x86/qemu_x86/doc/board', 'boards/x86/qemu_x86/doc/index'),
     ('boards/x86/tinytile/doc/board', 'boards/x86/tinytile/doc/index'),
     ('boards/x86/up_squared/doc/up_squared', 'boards/x86/up_squared/doc/index'),
