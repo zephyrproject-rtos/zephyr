@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 set -eE
 
+sudo apt-get install libdw1
+
 function cleanup()
 {
 	# Rename twister junit xml for use with junit-annotate-buildkite-plugin
