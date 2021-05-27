@@ -101,6 +101,8 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	case PROC_DATA_LENGTH_UPDATE:
 		return 0U;
 		break;
+	case PROC_CTE_REQ:
+		return 0U;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -217,6 +219,11 @@ void llcp_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *
 		llcp_rp_comm_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	case PROC_CTE_REQ:
+		llcp_rp_comm_rx(conn, ctx, rx);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -295,6 +302,11 @@ static void rr_act_run(struct ll_conn *conn)
 		llcp_rp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	case PROC_CTE_REQ:
+		llcp_rp_comm_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -618,6 +630,9 @@ void llcp_rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 		break;
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 		proc = PROC_DATA_LENGTH_UPDATE;
+		break;
+	case PDU_DATA_LLCTRL_TYPE_CTE_REQ:
+		proc = PROC_CTE_REQ;
 		break;
 	default:
 		/* Unknown opcode */
