@@ -452,6 +452,10 @@ Drivers and Sensors
 
 * Console
 
+  * Added ``UART_CONSOLE_INPUT_EXPIRED`` and ``UART_CONSOLE_INPUT_EXPIRED_TIMEOUT``
+    Kconfig options to notify the power management module that UART console is
+    in use now and forbid it to enter low-power states.
+
 * Counter
 
    * Added support for ESP32 Counter
