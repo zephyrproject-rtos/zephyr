@@ -839,6 +839,24 @@ Libraries / Subsystems
     ``NULL``. The macro is flagged as deprecated to make users aware of the
     change.
 
+  * Devices set as busy are no longer suspended by the system power management.
+
+  * The time necessary to exit a sleep state and return to the active state was
+    added in ``zephyr,power-state`` binding and accounted when the system
+    changes to a power state.
+
+  * Device runtime power management (PM), former IDLE runtime, was
+    completely overhauled.
+
+    * Multiple threads can wait an operation (:c:func:`pm_device_get_async` and
+      :c:func:`pm_device_put_async`) to finish.
+    * A new API :c:func:`pm_device_wait` was added so that drivers can easily
+      wait for an async request to finish.
+    * The API can be used in  :ref:`pre-kernel <api_term_pre-kernel-ok>` stages.
+    * Several concurrence issues related with atomics access and the usage
+      of the polling API have been fixed. Condition variables are now used to
+      handle notification.
+
 * Logging
 
   * Introduced logging v2 which allows logging any variable types (including
