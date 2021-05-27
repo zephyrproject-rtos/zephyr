@@ -4,7 +4,6 @@ common:
     - mps2_an385
 tests:
   cpp.libcxx:
-    platform_exclude: qemu_x86_coverage
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
