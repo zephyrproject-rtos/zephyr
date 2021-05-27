@@ -9,7 +9,7 @@
 
 static inline int z_vrfy_can_set_timing(const struct device *dev,
 					const struct can_timing *timing,
-					const struct can_timing *timing_data);
+					const struct can_timing *timing_data)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing));
 
