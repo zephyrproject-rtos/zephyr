@@ -110,6 +110,11 @@ bool ull_cp_priv_ntf_alloc_is_available(void)
 	return ll_pdu_rx_alloc_peek(1) != NULL;
 }
 
+bool ull_cp_priv_ntf_alloc_num_available(uint8_t count)
+{
+	return ll_pdu_rx_alloc_peek(count) != NULL;
+}
+
 struct node_rx_pdu *ull_cp_priv_ntf_alloc(void)
 {
 	return ll_pdu_rx_alloc();
