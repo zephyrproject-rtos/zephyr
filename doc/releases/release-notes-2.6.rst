@@ -46,9 +46,9 @@ API Changes
 * Added disconnect reason to the :c:func:`disconnected` callback of :c:struct:`bt_iso_chan_ops`.
 
 * Align error handling of :c:func:bt_l2cap_chan_send and
-  :c:func:bt_iso_chan_send so when an error occur the buffer is not unref.
+  :c:func:`bt_iso_chan_send` so when an error occur the buffer is not unref.
 
-* Added c:func:`lwm2m_engine_delete_obj_inst` function to the LwM2M library API.
+* Added :c:func:`lwm2m_engine_delete_obj_inst` function to the LwM2M library API.
 
 Deprecated in this release
 
