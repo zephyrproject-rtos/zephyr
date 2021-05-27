@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_UP_SQUARED || BOARD_UP_SQUARED_32
+if BOARD_UP_SQUARED
 
 config BOARD
-	default "up_squared_32" if BOARD_UP_SQUARED_32
 	default "up_squared"
 
 config MP_NUM_CPUS
@@ -30,4 +29,4 @@ config APIC_TIMER_TSC_N
 	default 249
 endif
 
-endif # BOARD_UP_SQUARED || BOARD_UP_SQUARED_32
+endif # BOARD_UP_SQUARED
