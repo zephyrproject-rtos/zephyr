@@ -37,6 +37,15 @@
 		__device_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+#if CONFIG_PM_DEVICE
+	SECTION_DATA_PROLOGUE(pm_device_slots, (NOLOAD),)
+	{
+		__pm_device_slots_start = .;
+		KEEP(*(".z_pm_device_slots"));
+		__pm_device_slots_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 	SECTION_DATA_PROLOGUE(initshell,,)
 	{
 		/* link in shell initialization objects for all modules that
