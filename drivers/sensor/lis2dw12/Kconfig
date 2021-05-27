@@ -52,20 +52,6 @@ config LIS2DW12_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
-choice
-	prompt "Sensor INT pin number"
-	default LIS2DW12_INT_PIN_1
-	help
-	  The number of LIS2DW12 int pin used to generate interrupt to cpu.
-	  Supported values are int1 or int2
-
-config LIS2DW12_INT_PIN_1
-	bool "int1"
-
-config LIS2DW12_INT_PIN_2
-	bool "int2"
-endchoice
-
 menuconfig LIS2DW12_PULSE
 	bool "Pulse detection"
 	help
