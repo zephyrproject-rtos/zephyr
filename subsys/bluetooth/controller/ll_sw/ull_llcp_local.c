@@ -151,6 +151,9 @@ void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	case PROC_DATA_LENGTH_UPDATE:
 		lp_comm_rx(conn, ctx, rx);
 		break;
+	case PROC_CTE_REQ:
+		lp_comm_rx(conn, ctx, rx);
+		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
@@ -235,6 +238,10 @@ static void lr_act_run(struct ll_conn *conn)
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
+		lp_comm_run(conn, ctx, NULL);
+		break;
+	case PROC_CTE_REQ:
+		/* 3rd partam null? */
 		lp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
