@@ -50,8 +50,11 @@ static void find_rsdp(void)
 	bda_seg = 0x040e + zero_page_base;
 	uint64_t *search = (void *)(long)(((int)*(uint16_t *)bda_seg) << 4);
 
-	/* Might be nothing there, check before we inspect */
-	if (search != NULL) {
+	/* Might be nothing there, check before we inspect.
+	 * Note that EBDA usually is in 0x80000 to 0x100000.
+	 */
+	if ((POINTER_TO_UINT(search) >= 0x80000UL) &&
+	    (POINTER_TO_UINT(search) < 0x100000UL)) {
 		for (int i = 0; i < 1024/8; i++) {
 			if (search[i] == ACPI_RSDP_SIGNATURE) {
 				rsdp = (void *)&search[i];
