@@ -621,11 +621,11 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			     conn->apto_reload;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
-	conn->llcp.fex.valid = 0U;
 	conn->master.terminate_ack = 0U;
 
-	conn->llcp.fex.features_used = LL_FEAT;
-	conn->llcp.fex.features_peer = 0;
+	/* Re-initialize the control procedure data structures */
+	ll_conn_init(conn);
+
 	conn->terminate.reason = 0U;
 
 	/* NOTE: use allocated link for generating dedicated
@@ -651,9 +651,6 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 	/* Re-initialize the Tx Q */
 	ull_tx_q_init(&conn->tx_q);
-
-	/* Re-initialize the control procedure data structures */
-	ll_conn_init(conn);
 
 	/* TODO: active_to_start feature port */
 	conn->ull.ticks_active_to_start = 0U;
