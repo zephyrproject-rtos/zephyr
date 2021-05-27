@@ -407,6 +407,34 @@ struct llcp_struct {
 		uint32_t ticks_anchor;
 	} conn_upd;
 
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+	/* @brief Constant Tone Extension configuration for CTE request control procedure. */
+	struct llcp_df_req_cfg {
+		/* Procedure may be active periodically, active state must be stored.
+		 * If procedure is active, request parameters update may not be issued.
+		 */
+		uint8_t is_enabled;
+		uint8_t cte_type;
+		/* Minimum requested CTE length in 8us units */
+		uint8_t min_cte_len;
+		uint16_t req_interval;
+	} cte_req;
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+	/* TODO (ppryga): Consided move of the type of structure to ull_df_types.h or
+	 * lll_df_types.h. To have single definition of the type and share it wish LLL.
+	 */
+	struct llcp_df_rsp_cfg {
+		uint8_t is_enabled;
+		uint8_t cte_types;
+		uint8_t max_cte_len;
+		uint8_t ant_sw_len;
+		/* TODO (ppryga): Update to use the same macro as in lll_df_types.h */
+		uint8_t ant_ids[CONFIG_BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
+	} cte_rsp;
+
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
 }; /* struct llcp_struct */
 
 struct ll_conn {
