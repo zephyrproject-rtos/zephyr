@@ -24,8 +24,11 @@ extern "C" {
 /* current segment/track instead to previous */
 #define PREV_MARGIN           500  /* 500 * 0.01 = 5 seconds */
 
-/* Increase/decrease in seeking sped for fast rewind/forward commands */
-#define MPL_SEEKING_SPEED_FACTOR_STEP  4
+/* Increase/decrease in seeking sped factor for fast rewind/forward commands
+ * Set this equal to the minimum speed factor, to ensure only valid speed factors
+ * are used when changing to/from zero
+ */
+#define MPL_SEEKING_SPEED_FACTOR_STEP  BT_MCS_SEEKING_SPEED_FACTOR_MIN
 
 
 /* Track segments */
