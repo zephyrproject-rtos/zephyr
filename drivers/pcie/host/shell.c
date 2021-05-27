@@ -46,15 +46,21 @@ static void show_bars(const struct shell *shell, pcie_bdf_t bdf)
 			continue;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "    bar %d: %s%s %x\n",
+		shell_fprintf(shell, SHELL_NORMAL, "    bar %d: %s%s",
 			      bar - PCIE_CONF_BAR0,
 			      PCIE_CONF_BAR_IO(data) ? "I/O" : "MEM",
-			      PCIE_CONF_BAR_64(data) ? ", 64-bit" : "",
-			      PCIE_CONF_BAR_ADDR(data));
+			      PCIE_CONF_BAR_64(data) ? ", 64-bit" : "");
+
+		shell_fprintf(shell, SHELL_NORMAL, " addr 0x");
 
 		if (PCIE_CONF_BAR_64(data)) {
 			++bar;
+			shell_fprintf(shell, SHELL_NORMAL, "%08x",
+				      pcie_conf_read(bdf, bar));
 		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "%08x\n",
+			      PCIE_CONF_BAR_ADDR(data));
 	}
 }
 
