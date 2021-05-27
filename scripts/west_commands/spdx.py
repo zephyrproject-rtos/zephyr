@@ -32,6 +32,8 @@ class ZephyrSpdx(WestCommand):
                 help=self.help,
                 description = self.description)
 
+        # If you update these options, make sure to keep the docs in
+        # doc/guides/west/zephyr-cmds.rst up to date.
         parser.add_argument('-i', '--init', action="store_true",
                 help="initialize CMake file-based API")
         parser.add_argument('-d', '--build-dir',
