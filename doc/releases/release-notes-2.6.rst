@@ -822,8 +822,16 @@ Libraries / Subsystems
     ``CONFIG_THREAD_RUNTIME_STATS`` which provides per thread statistics. The
     same functionality is also available when Thread analyzer is enabled with
     the runtime statistics enabled.
+  * Expanded and overhauled tracing hooks with more coverage and support for
+    tracing all kernel objects and basic power management operations.
+  * Added support for Percepio Tracealyzer, a commercial tracing tool which now
+    has built-in support for Zephyr. We now have the Percepio tracerecorder
+    integrated as a module.
+  * Expanded support for the new hooks in SEGGER Systemview and enhanced the
+    description file with support for all APIs.
 
 * Debug
+  * SEGGER Systemview and RTT SDK updated to version v3.30
 
 * OS
 
