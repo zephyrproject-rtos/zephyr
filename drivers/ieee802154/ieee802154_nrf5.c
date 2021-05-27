@@ -358,9 +358,15 @@ static int nrf5_set_txpower(const struct device *dev, int16_t dbm)
 
 static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 {
-	uint8_t ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
+	uint8_t ack_len;
 	struct net_pkt *ack_pkt;
 	int err = 0;
+
+	if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) || IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+		ack_len = nrf5_radio->ack_frame.psdu[0];
+	} else {
+		ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
+	}
 
 	ack_pkt = net_pkt_alloc_with_buffer(nrf5_radio->iface, ack_len,
 					    AF_UNSPEC, 0, K_NO_WAIT);
