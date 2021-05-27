@@ -104,17 +104,12 @@ LOG_MODULE_REGISTER(adc_lmp90xxx);
 #define LMP90XXX_DEFAULT_ODR 7
 
 /* Macro for checking if Data Ready Bar IRQ is in use */
-#define LMP90XXX_HAS_DRDYB(config) (config->drdyb_dev_name != NULL)
+#define LMP90XXX_HAS_DRDYB(config) (config->drdyb.port != NULL)
 
 struct lmp90xxx_config {
-	const char *spi_dev_name;
-	const char *spi_cs_dev_name;
-	gpio_pin_t spi_cs_pin;
-	gpio_dt_flags_t spi_cs_dt_flags;
+	const struct device *spi_dev;
 	struct spi_config spi_cfg;
-	const char *drdyb_dev_name;
-	gpio_pin_t drdyb_pin;
-	gpio_dt_flags_t drdyb_flags;
+	struct gpio_dt_spec drdyb;
 	uint8_t rtd_current;
 	uint8_t resolution;
 	uint8_t channels;
@@ -123,8 +118,6 @@ struct lmp90xxx_config {
 struct lmp90xxx_data {
 	struct adc_context ctx;
 	const struct device *dev;
-	const struct device *spi_dev;
-	struct spi_cs_control spi_cs;
 	struct gpio_callback drdyb_cb;
 	struct k_mutex ura_lock;
 	uint8_t ura;
@@ -231,7 +224,7 @@ static int lmp90xxx_read_reg(const struct device *dev, uint8_t addr,
 	rx.buffers = rx_buf;
 	rx.count = 2;
 
-	err = spi_transceive(data->spi_dev, &config->spi_cfg, &tx, &rx);
+	err = spi_transceive(config->spi_dev, &config->spi_cfg, &tx, &rx);
 	if (!err) {
 		data->ura = ura;
 	} else {
@@ -297,7 +290,7 @@ static int lmp90xxx_write_reg(const struct device *dev, uint8_t addr,
 	tx.buffers = tx_buf;
 	tx.count = i;
 
-	err = spi_write(data->spi_dev, &config->spi_cfg, &tx);
+	err = spi_write(config->spi_dev, &config->spi_cfg, &tx);
 	if (!err) {
 		data->ura = ura;
 	} else {
@@ -934,7 +927,6 @@ static int lmp90xxx_init(const struct device *dev)
 {
 	const struct lmp90xxx_config *config = dev->config;
 	struct lmp90xxx_data *data = dev->data;
-	const struct device *drdyb_dev;
 	k_tid_t tid;
 	int err;
 
@@ -950,24 +942,18 @@ static int lmp90xxx_init(const struct device *dev)
 	/* Force INST1 + UAB on first access */
 	data->ura = LMP90XXX_INVALID_URA;
 
-	data->spi_dev = device_get_binding(config->spi_dev_name);
-	if (!data->spi_dev) {
-		LOG_ERR("SPI master device '%s' not found",
-			config->spi_dev_name);
+	if (!device_is_ready(config->spi_dev)) {
+		LOG_ERR("SPI master device '%s' not ready",
+			config->spi_dev->name);
 		return -EINVAL;
 	}
 
-	if (config->spi_cs_dev_name) {
-		data->spi_cs.gpio_dev =
-			device_get_binding(config->spi_cs_dev_name);
-		if (!data->spi_cs.gpio_dev) {
-			LOG_ERR("SPI CS GPIO device '%s' not found",
-				config->spi_cs_dev_name);
+	if (config->spi_cfg.cs) {
+		if (!device_is_ready(config->spi_cfg.cs->gpio_dev)) {
+			LOG_ERR("SPI CS GPIO device '%s' not ready",
+				config->spi_cfg.cs->gpio_dev->name);
 			return -EINVAL;
 		}
-
-		data->spi_cs.gpio_pin = config->spi_cs_pin;
-		data->spi_cs.gpio_dt_flags = config->spi_cs_dt_flags;
 	}
 
 	err = lmp90xxx_soft_reset(dev);
@@ -1004,15 +990,7 @@ static int lmp90xxx_init(const struct device *dev)
 	}
 
 	if (LMP90XXX_HAS_DRDYB(config)) {
-		drdyb_dev = device_get_binding(config->drdyb_dev_name);
-		if (!drdyb_dev) {
-			LOG_ERR("DRDYB GPIO device '%s' not found",
-				config->drdyb_dev_name);
-			return -EINVAL;
-		}
-
-		err = gpio_pin_configure(drdyb_dev, config->drdyb_pin,
-					 GPIO_INPUT | config->drdyb_flags);
+		err = gpio_pin_configure_dt(&config->drdyb, GPIO_INPUT);
 		if (err) {
 			LOG_ERR("failed to configure DRDYB GPIO pin (err %d)",
 				err);
@@ -1020,9 +998,9 @@ static int lmp90xxx_init(const struct device *dev)
 		}
 
 		gpio_init_callback(&data->drdyb_cb, lmp90xxx_drdyb_callback,
-				   BIT(config->drdyb_pin));
+				   BIT(config->drdyb.pin));
 
-		err = gpio_add_callback(drdyb_dev, &data->drdyb_cb);
+		err = gpio_add_callback(config->drdyb.port, &data->drdyb_cb);
 		if (err) {
 			LOG_ERR("failed to add DRDYB callback (err %d)", err);
 			return -EINVAL;
@@ -1036,8 +1014,8 @@ static int lmp90xxx_init(const struct device *dev)
 			return err;
 		}
 
-		err = gpio_pin_interrupt_configure(drdyb_dev, config->drdyb_pin,
-						   GPIO_INT_EDGE_TO_ACTIVE);
+		err = gpio_pin_interrupt_configure_dt(&config->drdyb,
+						      GPIO_INT_EDGE_TO_ACTIVE);
 		if (err) {
 			LOG_ERR("failed to configure DRDBY interrupt (err %d)",
 				err);
@@ -1093,44 +1071,13 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 		ADC_CONTEXT_INIT_SYNC(lmp##t##_data_##n, ctx), \
 	}; \
 	static const struct lmp90xxx_config lmp##t##_config_##n = { \
-		.spi_dev_name = DT_BUS_LABEL(DT_INST_LMP90XXX(n, t)), \
-		.spi_cs_dev_name = UTIL_AND( \
-			DT_SPI_DEV_HAS_CS_GPIOS(DT_INST_LMP90XXX(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_LABEL(DT_INST_LMP90XXX(n, t)) \
-			), \
-		.spi_cs_pin = UTIL_AND( \
-			DT_SPI_DEV_HAS_CS_GPIOS(DT_INST_LMP90XXX(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_PIN(DT_INST_LMP90XXX(n, t)) \
-			), \
-		.spi_cs_dt_flags = UTIL_AND( \
-			DT_SPI_DEV_HAS_CS_GPIOS(DT_INST_LMP90XXX(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_FLAGS(DT_INST_LMP90XXX(n, t)) \
-			), \
-		.spi_cfg = { \
-			.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
-				     SPI_WORD_SET(8)), \
-			.frequency = DT_PROP(DT_INST_LMP90XXX(n, t), \
-					spi_max_frequency), \
-			.slave = DT_REG_ADDR(DT_INST_LMP90XXX(n, t)), \
-			.cs = &lmp##t##_data_##n.spi_cs, \
-		}, \
-		.drdyb_dev_name = UTIL_AND( \
-			DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), drdyb_gpios), \
-			DT_GPIO_LABEL(DT_INST_LMP90XXX(n, t), drdyb_gpios) \
-			), \
-		.drdyb_pin = UTIL_AND( \
-			DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), drdyb_gpios), \
-			DT_GPIO_PIN(DT_INST_LMP90XXX(n, t), drdyb_gpios) \
-			), \
-		.drdyb_flags = UTIL_AND( \
-			DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), drdyb_gpios), \
-			DT_GPIO_FLAGS(DT_INST_LMP90XXX(n, t), drdyb_gpios) \
-			), \
-		.rtd_current = UTIL_AND( \
-			DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), rtd_current), \
-			LMP90XXX_UAMPS_TO_RTD_CUR_SEL( \
-				DT_PROP(DT_INST_LMP90XXX(n, t), rtd_current)) \
-			), \
+		.spi_dev = DEVICE_DT_GET(DT_BUS(DT_INST_LMP90XXX(n, t))), \
+		.spi_cfg = SPI_CONFIG_DT(DT_INST_LMP90XXX(n, t), \
+					SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
+					SPI_WORD_SET(8), 0), \
+		.drdyb = GPIO_DT_SPEC_GET_OR(DT_INST_LMP90XXX(n, t), drdyb_gpios, {0}), \
+		.rtd_current = LMP90XXX_UAMPS_TO_RTD_CUR_SEL( \
+			DT_PROP_OR(DT_INST_LMP90XXX(n, t), rtd_current, 0)), \
 		.resolution = res, \
 		.channels = ch, \
 	}; \
