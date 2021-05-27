@@ -267,9 +267,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_gprs_network_registration)
 	 * 1 - registered, home network
 	 * 5 - registered, roaming
 	 */
-	if (argc > 1 && (atoi(argv[1]) == 1 || atoi(argv[1]) == 5)) {
+	int status = atoi(argv[1]);
+	if (argc > 1 && (status == 1 || status == 5)) {
 		gsm.gprs_registered = true;
-		LOG_INF("GPRS network registered.");
+		LOG_INF("GPRS network registered: %d.", status);
 	}
 
 	return 0;
@@ -282,9 +283,10 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_eps_network_registration)
 	 * 1 - registered, home network
 	 * 5 - registered, roaming
 	 */
-	if (argc > 1 && (atoi(argv[1]) == 1 || atoi(argv[1]) == 5)) {
+	int status = atoi(argv[1]);
+	if (argc > 1 && (status == 1 || status == 5)) {
 		gsm.eps_registered = true;
-		LOG_INF("EPS network registered.");
+		LOG_INF("EPS network registered: %d.", status);
 	}
 
 	return 0;
