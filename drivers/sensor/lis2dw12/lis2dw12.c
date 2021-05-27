@@ -378,9 +378,7 @@ const struct lis2dw12_device_config lis2dw12_cfg = {
 	.bus_name = DT_INST_BUS_LABEL(0),
 	.pm = CONFIG_LIS2DW12_POWER_MODE,
 #ifdef CONFIG_LIS2DW12_TRIGGER
-	.int_gpio_port = DT_INST_GPIO_LABEL(0, irq_gpios),
-	.int_gpio_pin = DT_INST_GPIO_PIN(0, irq_gpios),
-	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, irq_gpios),
+	.gpio_int = GPIO_DT_SPEC_INST_GET_OR(0, irq_gpios, {0}),
 	.int_pin = DT_INST_PROP(0, int_pin),
 
 #ifdef CONFIG_LIS2DW12_PULSE
