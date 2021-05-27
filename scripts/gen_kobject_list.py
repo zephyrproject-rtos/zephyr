@@ -6,7 +6,7 @@
 """
 Script to generate gperf tables of kernel object metadata
 
- User mode threads making system calls reference kernel objects by memory
+User mode threads making system calls reference kernel objects by memory
 address, as the kernel/driver APIs in Zephyr are the same for both user
 and supervisor contexts. It is necessary for the kernel to be able to
 validate accesses to kernel objects to make the following assertions:
@@ -57,16 +57,67 @@ import math
 import os
 import struct
 import json
+import ctypes
+import pathlib
 from distutils.version import LooseVersion
 
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+from elftools.dwarf.enums import DW_FORM_raw2name, ENUM_DW_FORM, ENUM_DW_TAG, ENUM_DW_AT
 
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
 from collections import OrderedDict
+
+DW_FORM_data2 = 0x05
+DW_FORM_data4 = 0x06
+DW_FORM_data8 = 0x07
+DW_FORM_data1 = 0x0b
+DW_FORM_data16 = 0x1e
+DW_FORM_exprloc = 0x18
+DW_FORM_block1 = 0x0a
+
+DW_FORMs = [DW_FORM_data1, DW_FORM_data2, DW_FORM_data4, DW_FORM_data8, DW_FORM_data16]
+
+libname = "/usr/lib/x86_64-linux-gnu/libdw.so.1"
+libdw = ctypes.CDLL(libname)
+
+DWARF_C_READ = 0
+
+class Dwarf_Op(ctypes.Structure):
+    _fields_ = [("atom", ctypes.c_uint8),
+                ("number", ctypes.c_uint64),
+                ("number2", ctypes.c_uint64),
+                ("offset", ctypes.c_uint64)
+                ]
+
+class Dwarf_Die(ctypes.Structure):
+    _fields_ = [("addr", ctypes.c_void_p),
+                ("cu", ctypes.c_void_p),
+                ("abbrev", ctypes.c_void_p),
+                ("padding__", ctypes.c_long)
+                ]
+
+class Dwarf_Attribute(ctypes.Structure):
+    _fields_ = [("code", ctypes.c_uint),
+                ("form", ctypes.c_uint),
+                ("valp", ctypes.POINTER(ctypes.c_char)),
+                ("cu", ctypes.c_void_p),
+                ]
+
+libdw.dwarf_begin.restype = ctypes.c_void_p
+libdw.dwarf_end.argtypes = [ctypes.c_void_p]
+libdw.dwarf_diename.restype = ctypes.c_char_p
+libdw.dwarf_diename.argtypes = [ctypes.POINTER(Dwarf_Die)]
+#libdw.dwarf_attr.restype = ctypes.POINTER(Dwarf_Attribute)
+libdw.dwarf_attr.argtypes = [ctypes.POINTER(Dwarf_Die), ctypes.c_uint, ctypes.POINTER(Dwarf_Attribute)]
+libdw.dwarf_dieoffset.argtypes = [ctypes.POINTER(Dwarf_Die)]
+libdw.dwarf_tag.argtypes = [ctypes.POINTER(Dwarf_Die)]
+libdw.dwarf_siblingof.argtypes = [ctypes.POINTER(Dwarf_Die), ctypes.POINTER(Dwarf_Die)]
+libdw.dwarf_child.argtypes = [ctypes.POINTER(Dwarf_Die), ctypes.POINTER(Dwarf_Die)]
+
 
 # Keys in this dictionary are structs which should be recognized as kernel
 # objects. Values are a tuple:
@@ -139,25 +190,25 @@ scr = os.path.basename(sys.argv[0])
 def debug(text):
     if not args.verbose:
         return
-    sys.stdout.write(scr + ": " + text + "\n")
+    sys.stdout.write(text + "\n")
 
 def error(text):
     sys.exit("%s ERROR: %s" % (scr, text))
 
 def debug_die(die, text):
-    lp_header = die.dwarfinfo.line_program_for_CU(die.cu).header
-    files = lp_header["file_entry"]
-    includes = lp_header["include_directory"]
+#    lp_header = die.dwarfinfo.line_program_for_CU(die.cu).header
+#    files = lp_header["file_entry"]
+#    includes = lp_header["include_directory"]
 
-    fileinfo = files[die.attributes["DW_AT_decl_file"].value - 1]
-    filename = fileinfo.name.decode("utf-8")
-    filedir = includes[fileinfo.dir_index - 1].decode("utf-8")
+#    fileinfo = files[die.attributes["DW_AT_decl_file"].value - 1]
+#    filename = fileinfo.name.decode("utf-8")
+#    filedir = includes[fileinfo.dir_index - 1].decode("utf-8")
 
-    path = os.path.join(filedir, filename)
-    lineno = die.attributes["DW_AT_decl_line"].value
+#    path = os.path.join(filedir, filename)
+#    lineno = die.attributes["DW_AT_decl_line"].value
 
-    debug(str(die))
-    debug("File '%s', line %d:" % (path, lineno))
+#    debug(str(die))
+#    debug("File '%s', line %d:" % (path, lineno))
     debug("    %s" % text)
 
 # -- ELF processing
@@ -173,6 +224,7 @@ stack_counter = 0
 # Global type environment. Populated by pass 1.
 type_env = {}
 extern_env = {}
+variables = []
 
 class KobjectInstance:
     def __init__(self, type_obj, addr):
@@ -343,6 +395,37 @@ class AggregateType:
 
 # --- helper functions for getting data from DIEs ---
 
+def get_attr_value(attr):
+
+    val = None
+
+    if attr.form == DW_FORM_data1:
+        val = attr.valp[0][0]
+    elif attr.form == DW_FORM_data2:
+        val = attr.valp[0][0] | attr.valp[1][0]<<8
+    elif attr.form == 0x13:
+        res = bytearray(4)
+        rptr = (ctypes.c_char * 4).from_buffer(res)
+        ctypes.memmove(rptr, attr.valp, 4)
+        val = int.from_bytes(res, byteorder='little')
+    else:
+        print("ATTR FORM 0x%x" % attr.form)
+
+    return val
+
+def fast_die_get_spec(die):
+    attr = Dwarf_Attribute()
+    if (libdw.dwarf_attr(die, ENUM_DW_AT['DW_AT_specification'], ctypes.byref(attr))):
+
+        spec_val = get_attr_value(attr)
+
+        # offset of the DW_TAG_variable for the extern declaration
+        offset = spec_val + die.cu_offset
+
+        return extern_env.get(offset)
+
+    return None
+
 def die_get_spec(die):
     if 'DW_AT_specification' not in die.attributes:
         return None
@@ -354,6 +437,13 @@ def die_get_spec(die):
 
     return extern_env.get(offset)
 
+
+def fast_die_get_name(die):
+    name = libdw.dwarf_diename(die)
+    if name:
+        return name.decode('utf-8')
+
+    return None
 
 def die_get_name(die):
     if 'DW_AT_name' not in die.attributes:
@@ -373,11 +463,73 @@ def die_get_type_offset(die):
     return die.attributes["DW_AT_type"].value + die.cu.cu_offset
 
 
+def fast_die_get_type_offset(die):
+    attr = Dwarf_Attribute()
+
+    if (libdw.dwarf_attr(die, ENUM_DW_AT['DW_AT_type'], ctypes.byref(attr)) == 0):
+        die = fast_die_get_spec(die)
+        if not die:
+            return None
+        libdw.dwarf_attr(die, ENUM_DW_AT['DW_AT_type'], ctypes.byref(attr))
+
+    val = get_attr_value(attr)
+    return val + die.cu_offset
+
+
 def die_get_byte_size(die):
     if 'DW_AT_byte_size' not in die.attributes:
         return 0
 
     return die.attributes["DW_AT_byte_size"].value
+
+
+def fast_analyze_die_struct(die, off):
+    name = fast_die_get_name(die) or "<anon>"
+    offset = die.offset
+
+    attr = Dwarf_Attribute()
+    if (libdw.dwarf_attr(die, ENUM_DW_AT['DW_AT_byte_size'], ctypes.byref(attr))):
+        size = get_attr_value(attr)
+    else:
+        size = 0
+
+    # Incomplete type
+    if not size:
+        return
+
+    if name in kobjects:
+        type_env[offset] = KobjectType(offset, name, size)
+    elif name in subsystems:
+        type_env[offset] = KobjectType(offset, name, size, api=True)
+    elif name in net_sockets:
+        type_env[offset] = KobjectType(offset, "NET_SOCKET", size)
+    else:
+        at = AggregateType(offset, name, size)
+        type_env[offset] = at
+
+        iter_die = Dwarf_Die()
+        iter_die.cu_offset = die.cu_offset
+        libdw.dwarf_child(die, ctypes.byref(iter_die))
+
+        while(1):
+            attr = Dwarf_Attribute()
+            tag = libdw.dwarf_tag(iter_die)
+            ret = libdw.dwarf_attr(iter_die, ENUM_DW_AT['DW_AT_data_member_location'], ctypes.byref(attr))
+
+            member_offset = get_attr_value(attr)
+
+            if tag == ENUM_DW_TAG['DW_TAG_member'] and ret:
+                child_type = fast_die_get_type_offset(iter_die)
+                cname = fast_die_get_name(iter_die) or "<anon>"
+                child_offset = libdw.dwarf_dieoffset(iter_die)
+                m = AggregateTypeMember(child_offset, cname, child_type,
+                                        member_offset)
+                at.add_member(m)
+
+            if (libdw.dwarf_siblingof(iter_die, ctypes.byref(iter_die)) != 0):
+                break
+ 
+        return
 
 
 def analyze_die_struct(die):
@@ -416,13 +568,13 @@ def analyze_die_struct(die):
         return
 
 
+
 def analyze_die_const(die):
-    type_offset = die_get_type_offset(die)
+    type_offset = fast_die_get_type_offset(die)
     if not type_offset:
         return
 
     type_env[die.offset] = ConstType(type_offset)
-
 
 def analyze_die_array(die):
     type_offset = die_get_type_offset(die)
@@ -461,9 +613,46 @@ def analyze_die_array(die):
     else:
         type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
 
+def fast_analyze_die_array(die, offset):
+    type_offset = fast_die_get_type_offset(die)
+    elements = []
+
+    iter_die = Dwarf_Die()
+    libdw.dwarf_child(die, ctypes.byref(iter_die))
+    while(1):
+        tag = libdw.dwarf_tag(iter_die)
+
+        if tag == ENUM_DW_TAG['DW_TAG_subrange_type']:
+            attr = Dwarf_Attribute()
+            ret = libdw.dwarf_attr(iter_die, ENUM_DW_AT['DW_AT_upper_bound'], ctypes.byref(attr))
+
+            if ret and attr.form in DW_FORMs:
+                val = 1 + get_attr_value(attr)
+
+                elements.append(val)
+            else:
+                ret = libdw.dwarf_attr(iter_die, ENUM_DW_AT['DW_AT_count'], ctypes.byref(attr))
+                if ret and attr.form in DW_FORMs:
+                    val = get_attr_value(attr)
+
+                    elements.append(val)
+
+        if (libdw.dwarf_siblingof(iter_die, ctypes.byref(iter_die)) != 0):
+            break
+
+    if not elements:
+        if type_offset in type_env.keys():
+            mt = type_env[type_offset]
+            if mt.has_kobject():
+                if isinstance(mt, KobjectType) and mt.name == STACK_TYPE:
+                    elements.append(1)
+                    type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+    else:
+        type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+
 
 def analyze_typedef(die):
-    type_offset = die_get_type_offset(die)
+    type_offset = fast_die_get_type_offset(die)
 
     if type_offset not in type_env.keys():
         return
@@ -502,8 +691,42 @@ def device_get_api_addr(elf, addr):
     offset = 8 if elf.elfclass == 32 else 16
     return addr_deref(elf, addr + offset)
 
+def process_die(pdie, offset):
+    die = Dwarf_Die()
 
-def find_kobjects(elf, syms):
+    # Make a copy so we have a unique die
+    ctypes.pointer(die)[0] = pdie
+
+    die.offset = libdw.dwarf_dieoffset(die)
+    die.cu_offset = offset
+    tag = libdw.dwarf_tag(die)
+
+    if tag == ENUM_DW_TAG['DW_TAG_structure_type']:
+        fast_analyze_die_struct(die, offset)
+    elif tag == ENUM_DW_TAG['DW_TAG_const_type']:
+        analyze_die_const(die)
+    elif tag == ENUM_DW_TAG['DW_TAG_array_type']:
+        fast_analyze_die_array(die, offset)
+    elif tag == ENUM_DW_TAG['DW_TAG_typedef']:
+        analyze_typedef(die)
+    elif tag == ENUM_DW_TAG['DW_TAG_variable']:
+        variables.append(die)
+
+def walk_die(die, offset):
+    die_iter = Dwarf_Die()
+
+    process_die(die, offset)
+
+    if (libdw.dwarf_child(die, ctypes.byref(die_iter)) != 0):
+        return
+
+    walk_die(die_iter, offset)
+
+    while (libdw.dwarf_siblingof(die_iter, ctypes.byref(die_iter)) == 0):
+        walk_die(die_iter, offset)
+
+
+def find_kobjects(elf, dwarf, syms):
     global thread_counter
     global sys_mutex_counter
     global futex_counter
@@ -517,26 +740,37 @@ def find_kobjects(elf, syms):
     user_stack_start = syms["z_user_stacks_start"]
     user_stack_end = syms["z_user_stacks_end"]
 
-    di = elf.get_dwarf_info()
-
-    variables = []
 
     # Step 1: collect all type information.
-    for CU in di.iter_CUs():
-        for die in CU.iter_DIEs():
+#    for CU in di.iter_CUs():
+#        for die in CU.iter_DIEs():
             # Unions are disregarded, kernel objects should never be union
             # members since the memory is not dedicated to that object and
             # could be something else
-            if die.tag == "DW_TAG_structure_type":
-                analyze_die_struct(die)
-            elif die.tag == "DW_TAG_const_type":
-                analyze_die_const(die)
-            elif die.tag == "DW_TAG_array_type":
-                analyze_die_array(die)
-            elif die.tag == "DW_TAG_typedef":
-                analyze_typedef(die)
-            elif die.tag == "DW_TAG_variable":
-                variables.append(die)
+
+    off = ctypes.c_ulonglong(0)
+    old_off = ctypes.c_ulonglong(0)
+    abbrev = ctypes.c_ulonglong()
+    hsize = ctypes.c_size_t()
+    addresssize = ctypes.c_uint8()
+    offsetsize = ctypes.c_uint8()
+
+    while (libdw.dwarf_nextcu(ctypes.c_void_p(dwarf),
+                             off,
+                             ctypes.byref(off),
+                             ctypes.byref(hsize),
+                             ctypes.byref(abbrev),
+                             ctypes.byref(addresssize),
+                             ctypes.byref(offsetsize)) == 0):
+
+        die = Dwarf_Die()
+
+        tmp = old_off.value + hsize.value
+
+        if (libdw.dwarf_offdie(ctypes.c_void_p(dwarf), ctypes.c_uint64(tmp), ctypes.byref(die))):
+            walk_die(die, old_off.value)
+
+        old_off.value = off.value
 
     # Step 2: filter type_env to only contain kernel objects, or structs
     # and arrays of kernel objects
@@ -553,7 +787,8 @@ def find_kobjects(elf, syms):
     all_objs = {}
 
     for die in variables:
-        name = die_get_name(die)
+        name = fast_die_get_name(die)
+
         if not name:
             continue
 
@@ -561,32 +796,42 @@ def find_kobjects(elf, syms):
             # Boot-time initialization function; not an actual device
             continue
 
-        type_offset = die_get_type_offset(die)
+        type_offset = fast_die_get_type_offset(die)
 
         # Is this a kernel object, or a structure containing kernel
         # objects?
         if type_offset not in type_env:
             continue
 
-        if "DW_AT_declaration" in die.attributes:
-            # Extern declaration, only used indirectly
+        attr = Dwarf_Attribute()
+
+        if (libdw.dwarf_attr(die, ENUM_DW_AT['DW_AT_declaration'], ctypes.byref(attr))):
             extern_env[die.offset] = die
             continue
 
-        if "DW_AT_location" not in die.attributes:
+        ret = libdw.dwarf_attr(die, ENUM_DW_AT['DW_AT_location'], ctypes.byref(attr))
+
+        if ret == 0:
             debug_die(die,
                       "No location information for object '%s'; possibly stack allocated"
                       % name)
             continue
 
-        loc = die.attributes["DW_AT_location"]
-        if loc.form != "DW_FORM_exprloc" and \
-           loc.form != "DW_FORM_block1":
+        if attr.form != DW_FORM_exprloc and attr.form != DW_FORM_block1:
             debug_die(die, "kernel object '%s' unexpected location format" %
                       name)
             continue
 
-        opcode = loc.value[0]
+        loc_p = ctypes.c_void_p()
+        nloc = ctypes.c_size_t()
+        ret = libdw.dwarf_getlocation(ctypes.byref(attr), ctypes.byref(loc_p), ctypes.byref(nloc))
+
+        Dwarf_Op_Array = Dwarf_Op * nloc.value
+
+        loc = Dwarf_Op_Array.from_address(loc_p.value)
+
+        opcode = loc[0].atom
+
         if opcode != DW_OP_addr:
 
             # Check if frame pointer offset DW_OP_fbreg
@@ -598,14 +843,7 @@ def find_kobjects(elf, syms):
                           (name, hex(opcode)))
             continue
 
-        if "CONFIG_64BIT" in syms:
-            addr = ((loc.value[1] << 0 ) | (loc.value[2] << 8)  |
-                    (loc.value[3] << 16) | (loc.value[4] << 24) |
-                    (loc.value[5] << 32) | (loc.value[6] << 40) |
-                    (loc.value[7] << 48) | (loc.value[8] << 56))
-        else:
-            addr = ((loc.value[1] << 0 ) | (loc.value[2] << 8)  |
-                    (loc.value[3] << 16) | (loc.value[4] << 24))
+        addr = loc[0].number
 
         if addr == 0:
             # Never linked; gc-sections deleted it
@@ -1005,9 +1243,12 @@ def main():
     if args.gperf_output:
         assert args.kernel, "--kernel ELF required for --gperf-output"
         elf = ELFFile(open(args.kernel, "rb"))
+        dwarf_fd = os.open(args.kernel, os.O_RDONLY)
+        dwarf = libdw.dwarf_begin(dwarf_fd, DWARF_C_READ)
         syms = get_symbols(elf)
         max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
-        objs = find_kobjects(elf, syms)
+        objs = find_kobjects(elf, dwarf, syms)
+        libdw.dwarf_end(dwarf)
         if not objs:
             sys.stderr.write("WARNING: zero kobject found in %s\n"
                              % args.kernel)
