@@ -69,6 +69,12 @@ such as a SysTick, RTC, counter, or GPIO. Depending on the power mode entered,
 only some SoC peripheral modules may be active and can be used as a wake up
 source.
 
+The following diagram describes system power management:
+
+.. image:: system-pm.svg
+   :align: center
+   :alt: System power management
+
 Some handful examples using different power management features:
 
 * :zephyr_file:`samples/boards/stm32/power_mgmt/blinky/`
