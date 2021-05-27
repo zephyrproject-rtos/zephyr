@@ -1,4 +1,4 @@
-# API Documentation   {#index}
+# API Documentation
 
 ## Introduction
 
