@@ -36,6 +36,8 @@ enum uart_line_ctrl {
 	UART_LINE_CTRL_DTR = BIT(2),
 	UART_LINE_CTRL_DCD = BIT(3),
 	UART_LINE_CTRL_DSR = BIT(4),
+	/* Enable/disable rs485 mode */
+	UART_LINE_CTRL_RS485 = BIT(5),
 };
 
 /**
