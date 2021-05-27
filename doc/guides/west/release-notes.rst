@@ -1,3 +1,5 @@
+.. _west-release-notes:
+
 West Release Notes
 ##################
 
