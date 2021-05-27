@@ -22,6 +22,7 @@ extern enum bst_result_t bst_result;
 #define AICS_DESC_SIZE 0
 #endif /* CONFIG_BT_AICS */
 
+static struct bt_vcs *vcs;
 static struct bt_vcs_included vcs_included;
 
 static volatile uint8_t g_volume;
@@ -497,7 +498,7 @@ static void test_standalone(void)
 
 	vcs_param.cb = &vcs_cb;
 
-	err = bt_vcs_register(&vcs_param);
+	err = bt_vcs_register(&vcs_param, &vcs);
 	if (err) {
 		FAIL("VCS register failed (err %d)\n", err);
 		return;
@@ -690,7 +691,7 @@ static void test_main(void)
 
 	vcs_param.cb = &vcs_cb;
 
-	err = bt_vcs_register(&vcs_param);
+	err = bt_vcs_register(&vcs_param, &vcs);
 	if (err) {
 		FAIL("VCS register failed (err %d)\n", err);
 		return;

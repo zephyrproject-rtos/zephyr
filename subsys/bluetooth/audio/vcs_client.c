@@ -21,46 +21,18 @@
 #include <bluetooth/audio/vcs.h>
 
 #include "vcs_internal.h"
-#include "aics_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_VCS_CLIENT)
 #define LOG_MODULE_NAME bt_vcs_client
 #include "common/log.h"
 
-struct vcs_instance {
-	struct vcs_state state;
-	uint8_t flags;
-
-	uint16_t start_handle;
-	uint16_t end_handle;
-	uint16_t state_handle;
-	uint16_t control_handle;
-	uint16_t flag_handle;
-	struct bt_gatt_subscribe_params state_sub_params;
-	struct bt_gatt_subscribe_params flag_sub_params;
-	bool cp_retried;
-
-	bool busy;
-	struct vcs_control_vol cp_val;
-	struct bt_gatt_write_params write_params;
-	struct bt_gatt_read_params read_params;
-	struct bt_gatt_discover_params discover_params;
-	struct bt_uuid_16 uuid;
-
-	uint8_t vocs_inst_cnt;
-	struct bt_vocs *vocs[CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST];
-	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_VCS_CLIENT_MAX_AICS_INST];
-	struct bt_conn *conn;
-};
-
 /* Callback functions */
 static struct bt_vcs_cb *vcs_client_cb;
 
-static struct vcs_instance vcs_insts[CONFIG_BT_MAX_CONN];
+static struct bt_vcs_client vcs_insts[CONFIG_BT_MAX_CONN];
 static int vcs_client_common_vcs_cp(struct bt_conn *conn, uint8_t opcode);
 
-static struct vcs_instance *lookup_vcs_by_vocs(const struct bt_vocs *vocs)
+static struct bt_vcs_client *lookup_vcs_by_vocs(const struct bt_vocs *vocs)
 {
 	__ASSERT(vocs != NULL, "VOCS pointer cannot be NULL");
 
@@ -126,7 +98,7 @@ static uint8_t vcs_client_notify_handler(struct bt_conn *conn,
 					 const void *data, uint16_t length)
 {
 	uint16_t handle = params->value_handle;
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 
 	if (data == NULL) {
 		return BT_GATT_ITER_CONTINUE;
@@ -159,7 +131,7 @@ static uint8_t vcs_client_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 					    const void *data, uint16_t length)
 {
 	int cb_err = err;
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 
 	vcs_inst->busy = false;
 
@@ -197,7 +169,7 @@ static uint8_t vcs_client_read_flag_cb(struct bt_conn *conn, uint8_t err,
 				       const void *data, uint16_t length)
 {
 	int cb_err = err;
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 
 	vcs_inst->busy = false;
 
@@ -278,7 +250,7 @@ static uint8_t internal_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 					  const void *data, uint16_t length)
 {
 	int cb_err = 0;
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 	uint8_t opcode = vcs_inst->cp_val.cp.opcode;
 
 
@@ -327,7 +299,7 @@ static uint8_t internal_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 static void vcs_client_write_vcs_cp_cb(struct bt_conn *conn, uint8_t err,
 				       struct bt_gatt_write_params *params)
 {
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 	uint8_t opcode = vcs_inst->cp_val.cp.opcode;
 	int cb_err = err;
 
@@ -373,7 +345,7 @@ static uint8_t vcs_discover_include_func(struct bt_conn *conn,
 	struct bt_gatt_include *include;
 	uint8_t inst_idx;
 	int err;
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 
 	if (attr == NULL) {
 		BT_DBG("Discover include complete for VCS: %u AICS and %u VOCS",
@@ -474,7 +446,7 @@ static uint8_t vcs_discover_func(struct bt_conn *conn,
 	int err = 0;
 	struct bt_gatt_chrc *chrc;
 	struct bt_gatt_subscribe_params *sub_params = NULL;
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 
 	if (attr == NULL) {
 		BT_DBG("Setup complete for VCS");
@@ -555,7 +527,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 				     struct bt_gatt_discover_params *params)
 {
 	struct bt_gatt_service_val *prim_service;
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 
 	if (attr == NULL) {
 		BT_DBG("Could not find a VCS instance on the server");
@@ -600,7 +572,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 static int vcs_client_common_vcs_cp(struct bt_conn *conn, uint8_t opcode)
 {
 	int err;
-	struct vcs_instance *vcs_inst;
+	struct bt_vcs_client *vcs_inst;
 
 	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
@@ -635,7 +607,7 @@ static int vcs_client_common_vcs_cp(struct bt_conn *conn, uint8_t opcode)
 static void aics_discover_cb(struct bt_conn *conn, struct bt_aics *inst,
 			     int err)
 {
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 
 	if (err == 0) {
 		/* Continue discovery of included services */
@@ -652,7 +624,7 @@ static void aics_discover_cb(struct bt_conn *conn, struct bt_aics *inst,
 
 static void vocs_discover_cb(struct bt_vocs *inst, int err)
 {
-	struct vcs_instance *vcs_inst = lookup_vcs_by_vocs(inst);
+	struct bt_vcs_client *vcs_inst = lookup_vcs_by_vocs(inst);
 
 	if (vcs_inst == NULL) {
 		BT_ERR("Could not lookup vcs_inst from vocs");
@@ -681,7 +653,7 @@ static void vocs_discover_cb(struct bt_vocs *inst, int err)
 
 static void vcs_client_reset(struct bt_conn *conn)
 {
-	struct vcs_instance *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs_client *vcs_inst = &vcs_insts[bt_conn_index(conn)];
 
 	memset(&vcs_inst->state, 0, sizeof(vcs_inst->state));
 	vcs_inst->flags = 0;
@@ -738,7 +710,7 @@ static void bt_vcs_client_init(void)
 int bt_vcs_discover(struct bt_conn *conn)
 {
 	static bool initialized;
-	struct vcs_instance *vcs_inst;
+	struct bt_vcs_client *vcs_inst;
 
 	/*
 	 * This will initiate a discover procedure. The procedure will do the
@@ -839,7 +811,7 @@ int bt_vcs_client_included_get(struct bt_conn *conn,
 			       struct bt_vcs_included *included)
 {
 	uint8_t conn_index;
-	struct vcs_instance *vcs_inst;
+	struct bt_vcs_client *vcs_inst;
 
 	CHECKIF(!included || !conn) {
 		return -EINVAL;
@@ -861,7 +833,7 @@ int bt_vcs_client_included_get(struct bt_conn *conn,
 int bt_vcs_client_read_vol_state(struct bt_conn *conn)
 {
 	int err;
-	struct vcs_instance *vcs_inst;
+	struct bt_vcs_client *vcs_inst;
 
 	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
@@ -893,7 +865,7 @@ int bt_vcs_client_read_vol_state(struct bt_conn *conn)
 int bt_vcs_client_read_flags(struct bt_conn *conn)
 {
 	int err;
-	struct vcs_instance *vcs_inst;
+	struct bt_vcs_client *vcs_inst;
 
 	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
@@ -946,7 +918,7 @@ int bt_vcs_client_unmute_vol_up(struct bt_conn *conn)
 int bt_vcs_client_set_volume(struct bt_conn *conn, uint8_t volume)
 {
 	int err;
-	struct vcs_instance *vcs_inst;
+	struct bt_vcs_client *vcs_inst;
 
 	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
