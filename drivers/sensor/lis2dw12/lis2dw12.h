@@ -77,17 +77,13 @@
  * struct lis2dw12_device_config - lis2dw12 hw configuration
  * @bus_name: Pointer to bus master identifier.
  * @pm: Power mode (lis2dh_powermode).
- * @int_gpio_port: Pointer to GPIO PORT identifier.
- * @int_gpio_pin: GPIO pin number connecter to sensor int pin.
  * @int_pin: Sensor int pin (int1/int2).
  */
 struct lis2dw12_device_config {
 	const char *bus_name;
 	lis2dw12_mode_t pm;
 #ifdef CONFIG_LIS2DW12_TRIGGER
-	const char *int_gpio_port;
-	uint8_t int_gpio_pin;
-	uint8_t int_gpio_flags;
+	struct gpio_dt_spec gpio_int;
 	uint8_t int_pin;
 #ifdef CONFIG_LIS2DW12_PULSE
 	uint8_t pulse_trigger;
@@ -113,8 +109,7 @@ struct lis2dw12_data {
 	stmdev_ctx_t *ctx;
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	const struct device *dev;
-	const struct device *gpio;
-	uint8_t gpio_pin;
+
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
 #ifdef CONFIG_LIS2DW12_PULSE
