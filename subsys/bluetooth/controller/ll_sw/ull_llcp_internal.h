@@ -136,6 +136,10 @@ struct proc_ctx {
 			uint8_t rx:3;
 			uint8_t flags:1;
 			uint8_t host_initiated:1;
+			uint8_t ntf_pu:1;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+			uint8_t ntf_dle:1;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 			uint8_t error;
 			uint16_t instant;
 			uint8_t m_to_s_phy;
@@ -263,6 +267,13 @@ bool ull_cp_priv_ntf_alloc_is_available(void);
 static inline bool ntf_alloc_is_available(void)
 {
 	return ull_cp_priv_ntf_alloc_is_available();
+}
+
+bool ull_cp_priv_ntf_alloc_num_available(uint8_t count);
+
+static inline bool ntf_alloc_num_available(uint8_t count)
+{
+	return ull_cp_priv_ntf_alloc_num_available(count);
 }
 
 struct node_rx_pdu *ull_cp_priv_ntf_alloc(void);
