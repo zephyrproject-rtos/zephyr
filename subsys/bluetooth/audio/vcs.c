@@ -34,18 +34,7 @@
 
 #define VALID_VCS_OPCODE(opcode) ((opcode) <= BT_VCS_OPCODE_MUTE)
 
-struct vcs_inst_t {
-	struct vcs_state state;
-	uint8_t flags;
-	struct bt_vcs_cb *cb;
-	uint8_t volume_step;
-
-	struct bt_gatt_service *service_p;
-	struct bt_vocs *vocs_insts[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT];
-	struct bt_aics *aics_insts[CONFIG_BT_VCS_AICS_INSTANCE_COUNT];
-};
-
-static struct vcs_inst_t vcs_inst = {
+static struct bt_vcs_server vcs_inst = {
 	.state.volume = 100,
 	.volume_step = 1,
 };
@@ -335,7 +324,7 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 }
 
 /****************************** PUBLIC API ******************************/
-int bt_vcs_register(struct bt_vcs_register_param *param)
+int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 {
 	int err;
 
@@ -365,6 +354,8 @@ int bt_vcs_register(struct bt_vcs_register_param *param)
 	}
 
 	vcs_inst.cb = param->cb;
+
+	*vcs = (struct bt_vcs *)&vcs_inst;
 
 	return err;
 }

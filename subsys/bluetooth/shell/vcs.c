@@ -16,6 +16,7 @@
 
 #include "bt.h"
 
+static struct bt_vcs *vcs;
 static struct bt_vcs_included vcs_included;
 
 static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume,
@@ -196,7 +197,7 @@ static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 
 	vcs_param.cb = &vcs_cbs;
 
-	result = bt_vcs_register(&vcs_param);
+	result = bt_vcs_register(&vcs_param, &vcs);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 		return result;

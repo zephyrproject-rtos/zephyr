@@ -36,6 +36,53 @@ struct vcs_control_vol {
 	uint8_t volume;
 } __packed;
 
+struct bt_vcs_client {
+	struct vcs_state state;
+	uint8_t flags;
+
+	uint16_t start_handle;
+	uint16_t end_handle;
+	uint16_t state_handle;
+	uint16_t control_handle;
+	uint16_t flag_handle;
+	struct bt_gatt_subscribe_params state_sub_params;
+	struct bt_gatt_subscribe_params flag_sub_params;
+	bool cp_retried;
+
+	bool busy;
+	struct vcs_control_vol cp_val;
+	struct bt_gatt_write_params write_params;
+	struct bt_gatt_read_params read_params;
+	struct bt_gatt_discover_params discover_params;
+	struct bt_uuid_16 uuid;
+
+	uint8_t vocs_inst_cnt;
+	struct bt_vocs *vocs[CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST];
+	uint8_t aics_inst_cnt;
+	struct bt_aics *aics[CONFIG_BT_VCS_CLIENT_MAX_AICS_INST];
+	struct bt_conn *conn;
+};
+
+struct bt_vcs_server {
+	struct vcs_state state;
+	uint8_t flags;
+	struct bt_vcs_cb *cb;
+	uint8_t volume_step;
+
+	struct bt_gatt_service *service_p;
+	struct bt_vocs *vocs_insts[CONFIG_BT_VCS_VOCS_INSTANCE_COUNT];
+	struct bt_aics *aics_insts[CONFIG_BT_VCS_AICS_INSTANCE_COUNT];
+};
+
+/* Struct used as a common type for the api */
+struct bt_vcs {
+	union {
+		struct bt_vcs_server srv;
+		struct bt_vcs_client cli;
+	};
+};
+
+
 int bt_vcs_client_included_get(struct bt_conn *conn,
 			       struct bt_vcs_included *included);
 int bt_vcs_client_read_vol_state(struct bt_conn *conn);
