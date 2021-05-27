@@ -563,9 +563,8 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 		   uint32_t dtls_timeout)
 {
 	struct tls_context *tls_ctx = ctx;
-	bool is_block = !((tls_ctx->flags & ZSOCK_MSG_DONTWAIT) ||
-			  (zsock_fcntl(tls_ctx->sock, F_GETFL, 0) &
-			   O_NONBLOCK));
+	int sock_flags = zsock_fcntl(tls_ctx->sock, F_GETFL, 0);
+	bool is_block;
 	int timeout = (dtls_timeout == 0U) ? -1 : dtls_timeout;
 	uint32_t entry_time = k_uptime_get_32();
 	socklen_t addrlen = sizeof(struct sockaddr);
@@ -575,6 +574,13 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
 	bool retry;
 	struct zsock_pollfd fds;
 	int flags = tls_ctx->flags & ~ZSOCK_MSG_TRUNC;
+
+	if (sock_flags == -1) {
+		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
+	}
+
+	is_block = !((tls_ctx->flags & ZSOCK_MSG_DONTWAIT) ||
+		     (sock_flags & O_NONBLOCK));
 
 	do {
 		retry = false;
@@ -1828,8 +1834,13 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 {
 	int ret;
 	bool repeat;
-	bool is_block = !((flags & ZSOCK_MSG_DONTWAIT) ||
-			  (zsock_fcntl(ctx->sock, F_GETFL, 0) & O_NONBLOCK));
+	int sock_flags = zsock_fcntl(ctx->sock, F_GETFL, 0);
+	bool is_block;
+
+	if (sock_flags == -1) {
+		ret = -errno;
+		goto error;
+	}
 
 	if (!ctx->is_initialized) {
 		ret = tls_mbedtls_init(ctx, true);
@@ -1837,6 +1848,8 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 			goto error;
 		}
 	}
+
+	is_block = !((flags & ZSOCK_MSG_DONTWAIT) || (sock_flags & O_NONBLOCK));
 
 	/* Loop to enable DTLS reconnection for servers without closing
 	 * a socket.
