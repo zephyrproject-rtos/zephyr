@@ -52,13 +52,13 @@ struct bt_vcs_register_param {
 };
 
 /**
- * @brief Volume Control Service service instance
+ * @brief Volume Control Service included services
  *
- * Used for to represent a Volume Control Service instance, for either a client
- * or a server. The instance pointers either represent local server instances,
- * or remote service instances.
+ * Used for to represent the Volume Control Service included service instances,
+ * for either a client or a server. The instance pointers either represent
+ * local server instances, or remote service instances.
  */
-struct bt_vcs {
+struct bt_vcs_included {
 	/** Number of Volume Offset Control Service instances */
 	uint8_t vocs_cnt;
 	/** Array of pointers to Volume Offset Control Service instances */
@@ -83,19 +83,19 @@ struct bt_vcs {
 int bt_vcs_register(struct bt_vcs_register_param *param);
 
 /**
- * @brief Get Volume Control Service service pointer.
+ * @brief Get Volume Control Service included services.
  *
  * Returns a pointer to a struct that contains information about the
- * Volume Control Service instance, such as pointers to the
+ * Volume Control Service included service instances, such as pointers to the
  * Volume Offset Control Service (Volume Offset Control Service) or
  * Audio Input Control Service (AICS) instances.
  *
  * @param conn          Connection to peer device, or NULL to get server value.
- * @param[out] service  Pointer to store the result in.
+ * @param[out] included Pointer to store the result in.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcs_get(struct bt_conn *conn, struct bt_vcs *service);
+int bt_vcs_included_get(struct bt_conn *conn, struct bt_vcs_included *included);
 
 /**
  * @brief Callback function for bt_vcs_discover.

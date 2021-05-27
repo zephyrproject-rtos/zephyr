@@ -36,7 +36,8 @@ struct vcs_control_vol {
 	uint8_t volume;
 } __packed;
 
-int bt_vcs_client_get(struct bt_conn *conn, struct bt_vcs *client);
+int bt_vcs_client_included_get(struct bt_conn *conn,
+			       struct bt_vcs_included *included);
 int bt_vcs_client_read_vol_state(struct bt_conn *conn);
 int bt_vcs_client_read_flags(struct bt_conn *conn);
 int bt_vcs_client_vol_down(struct bt_conn *conn);
