@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 #include <drivers/gpio.h>
 #include <device.h>
 #include <init.h>
+#include <fcntl.h>
 
 #include <net/net_if.h>
 #include <net/net_offload.h>
@@ -1670,6 +1671,9 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 
 		return offload_poll(fds, nfds, timeout);
 	}
+
+	case F_GETFL:
+		return 0;
 
 	default:
 		errno = EINVAL;
