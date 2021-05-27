@@ -124,8 +124,10 @@ x86_ap_start:
 
 	lgdt gdt48
 	lidt idt48
-	movw $1, %ax
-	lmsw %ax
+	movl %cr0, %eax
+	or $1, %eax
+	movl %eax, %cr0
+
 	jmpl $X86_KERNEL_CS_32, $1f
 .code32
 1:	movw $X86_KERNEL_DS_32, %ax
