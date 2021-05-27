@@ -119,6 +119,11 @@ Deprecated in this release
   ``pm_device_state_set`` and ``pm_device_state_get`` in order to align with
   the naming of other device PM APIs.
 
+* The runtime device power management (PM) APIs is now synchronous by default
+  and the asynchronous API has the **_async** sufix. This change aligns the API
+  with the convention used in Zephyr. The affected APIs are
+  :c:func:`pm_device_put` and :c:func:`pm_device_get`.
+
 * The following functions, macros, and structures related to the kernel
   work queue API:
 
