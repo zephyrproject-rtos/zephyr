@@ -11,7 +11,7 @@ there is no LICENSE file or way to put a LICENSE file there, so we describe the
 licensing in this document.
 
 .. _Apache 2.0 License:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE
+   https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 
 .. _GPLv2 License:
    https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/COPYING

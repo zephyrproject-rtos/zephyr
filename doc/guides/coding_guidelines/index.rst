@@ -883,7 +883,7 @@ Offensive terms do not create an inclusive community environment and therefore
 violate the Zephyr Project `Code of Conduct`_. This coding rule was inspired by
 a similar rule in `Linux`_.
 
-.. _Code of Conduct: https://github.com/zephyrproject-rtos/zephyr/blob/master/CODE_OF_CONDUCT.md
+.. _Code of Conduct: https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md
 .. _Linux: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=49decddd39e5f6132ccd7d9fdc3d7c470b0061bb
 
 Status

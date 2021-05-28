@@ -23,7 +23,7 @@ documentation](https://docs.zephyrproject.org/latest/boards/index.html).
 
 Zephyr is permissively licensed using the Apache 2.0 license (as found
 in the [project's GitHub LICENSE
-file](https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE).
+file](https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE).
 There are some imported or reused components of the Zephyr project that
 use other licensing, as described in [Licensing of Zephyr Project
 components](https://docs.zephyrproject.org/latest/LICENSING.html#zephyr-licensing).

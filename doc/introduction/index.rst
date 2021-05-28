@@ -31,7 +31,7 @@ imported or reused components of the Zephyr project that use other licensing,
 as described in :ref:`Zephyr_Licensing`.
 
 .. _Apache 2.0 license:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE
+   https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 
 .. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
 
