@@ -226,6 +226,8 @@ SECTIONS
 
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+#include <linker/cplusplus-ram.ld>
+
     __data_ram_end = .;
 
 	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
@@ -249,8 +251,6 @@ SECTIONS
         } GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 #include <linker/common-noinit.ld>
-
-#include <linker/cplusplus-ram.ld>
 
     /* Define linker symbols */
     _image_ram_end = .;
