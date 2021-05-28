@@ -7,6 +7,7 @@
 #include <arch/cpu.h>
 #include <errno.h>
 #include <stdio.h>
+#include <sys/__assert.h>
 #include <sys/stat.h>
 #include <linker/linker-defs.h>
 #include <sys/util.h>
@@ -95,11 +96,11 @@
 	#endif /* CONFIG_XTENSA */
 #endif
 
-#ifdef USE_MALLOC_PREPARE
 static int malloc_prepare(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
+#ifdef USE_MALLOC_PREPARE
 #ifdef CONFIG_MMU
 	max_heap_size = MIN(CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE,
 			    k_mem_free_get());
@@ -111,16 +112,27 @@ static int malloc_prepare(const struct device *unused)
 
 	}
 #endif /* CONFIG_MMU */
+
 #ifdef Z_MALLOC_PARTITION_EXISTS
 	z_malloc_partition.start = (uintptr_t)HEAP_BASE;
 	z_malloc_partition.size = (size_t)MAX_HEAP_SIZE;
 	z_malloc_partition.attr = K_MEM_PARTITION_P_RW_U_RW;
 #endif /* Z_MALLOC_PARTITION_EXISTS */
+#endif /* USE_MALLOC_PREPARE */
+
+	/*
+	 * Validate that the memory space available for the newlib heap is
+	 * greater than the minimum required size.
+	 */
+	__ASSERT(MAX_HEAP_SIZE >= CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE,
+		 "memory space available for newlib heap is less than the "
+		 "minimum required size specified by "
+		 "CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE");
+
 	return 0;
 }
 
 SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif /* USE_MALLOC_PREPARE */
 
 /* Current offset from HEAP_BASE of unused memory */
 LIBC_BSS static size_t heap_sz;
