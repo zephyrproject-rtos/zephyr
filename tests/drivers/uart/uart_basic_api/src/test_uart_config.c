@@ -46,7 +46,7 @@ static int test_configure(void)
 	/* Verify configure() - set device configuration using data in cfg */
 	int ret = uart_configure(uart_dev, &uart_cfg);
 
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOSYS) {
 		return TC_SKIP;
 	}
 
@@ -71,7 +71,7 @@ static int test_config_get(void)
 	/* 0 if successful, - error code otherwise */
 	int ret = uart_configure(uart_dev, &uart_cfg);
 
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOSYS) {
 		return TC_SKIP;
 	}
 
