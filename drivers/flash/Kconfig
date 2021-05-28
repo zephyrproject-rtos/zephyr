@@ -58,6 +58,22 @@ config FLASH_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
+config FLASH_PARTITION_DEVICE
+	bool "Enable flash partition devices"
+	default n
+	help
+	  The option enables flash partition devices that allow to define
+	  partitions over real flash devices.  This devices use the same
+	  flash API as real devices and can be used in their place.
+
+config FLASH_PARTITION_GENERATE_DEVICE_AT_STARTUP
+	bool "Initializes all flash partition devices at startup"
+	default n
+	depends on FLASH_PARTITION_DEVICE
+	help
+	  When this option is enabled, flash partition devices will be generated
+	  for every partition defined with of "fixed-partition" compatible DTS.
+
 source "drivers/flash/Kconfig.at45"
 
 source "drivers/flash/Kconfig.esp32"
