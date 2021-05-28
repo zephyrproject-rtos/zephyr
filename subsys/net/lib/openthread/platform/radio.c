@@ -1043,23 +1043,116 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 }
 
 #if defined(CONFIG_OPENTHREAD_LINK_METRICS)
+/**
+ * Header IE format - IEEE Std. 802.15.4-2015, 7.4.2.1 && 7.4.2.2
+ *
+ * +---------------------------------+----------------------+
+ * | Length    | Element ID | Type=0 |      Vendor OUI      |
+ * +-----------+------------+--------+----------------------+
+ * |           Bytes: 0-1            |          2-4         |
+ * +-----------+---------------------+----------------------+
+ * | Bits: 0-6 |    7-14    |   15   | IE_VENDOR_THREAD_OUI |
+ * +-----------+------------+--------+----------------------|
+ *
+ * Thread v1.2.1 Spec., 4.11.3.4.4.6
+ * +---------------------------------+-------------------+------------------+
+ * |                  Vendor Specific Information                           |
+ * +---------------------------------+-------------------+------------------+
+ * |                5                |         6         |   7 (optional)   |
+ * +---------------------------------+-------------------+------------------+
+ * | IE_VENDOR_THREAD_ACK_PROBING_ID | LINK_METRIC_TOKEN | LINK_METRIC_TOKEN|
+ * |---------------------------------|-------------------|------------------|
+ */
+static uint8_t set_vendor_ie_header_lm(bool lqi, bool link_margin, bool rssi, uint8_t *ie_header)
+{
+	/* Vendor-specific IE identifier */
+	const uint8_t ie_vendor_id = 0x00;
+	/* Thread Vendor-specific ACK Probing IE subtype ID */
+	const uint8_t ie_vendor_thread_ack_probing_id = 0x00;
+	/* Thread Vendor-specific IE OUI */
+	const uint32_t ie_vendor_thread_oui = 0xeab89b;
+	/* Thread Vendor-specific ACK Probing IE RSSI value placeholder */
+	const uint8_t ie_vendor_thread_rssi_token = 0x01;
+	/* Thread Vendor-specific ACK Probing IE Link margin value placeholder */
+	const uint8_t ie_vendor_thread_margin_token = 0x02;
+	/* Thread Vendor-specific ACK Probing IE LQI value placeholder */
+	const uint8_t ie_vendor_thread_lqi_token = 0x03;
+	const uint8_t ie_header_size = 2;
+	const uint8_t oui_size = 3;
+	const uint8_t sub_type = 1;
+	const uint8_t id_offset = 7;
+	const uint16_t id_mask = 0x00ff << id_offset;
+	const uint8_t type = 0x00;
+	const uint8_t type_offset = 7;
+	const uint8_t type_mask = 0x01 << type_offset;
+	const uint8_t length_mask = 0x7f;
+	uint8_t content_len;
+	uint16_t element_id = 0x0000;
+	uint8_t link_metrics_idx = 6;
+	uint8_t link_metrics_data_len = (uint8_t)lqi + (uint8_t)link_margin + (uint8_t)rssi;
+
+	__ASSERT(link_metrics_data_len <= 2, "Thread limits to 2 metrics at most");
+	__ASSERT(ie_header, "Invalid argument");
+
+	if (link_metrics_data_len == 0) {
+		return 0;
+	}
+
+	/* Set Element ID */
+	element_id = (((uint16_t)ie_vendor_id) << id_offset) & id_mask;
+	sys_put_le16(element_id, &ie_header[0]);
+
+	/* Set Length - number of octets in content field. */
+	content_len = oui_size + sub_type + link_metrics_data_len;
+	ie_header[0] = (ie_header[0] & ~length_mask) | (content_len & length_mask);
+
+	/* Set Type */
+	ie_header[1] = (ie_header[1] & ~type_mask) | (type & type_mask);
+
+	/* Set Vendor Oui */
+	sys_put_le24(ie_vendor_thread_oui, &ie_header[2]);
+
+	/* Set SubType */
+	ie_header[5] = ie_vendor_thread_ack_probing_id;
+
+	/* Set Link Metrics Tokens
+	 * TODO: Thread requires the order of requested metrics by the Link Metrics Initiator
+	 *       to be kept by the Link Metrics Subject in the ACKs.
+	 */
+	if (lqi) {
+		ie_header[link_metrics_idx++] = ie_vendor_thread_lqi_token;
+	}
+
+	if (link_margin) {
+		ie_header[link_metrics_idx++] = ie_vendor_thread_margin_token;
+	}
+
+	if (rssi) {
+		ie_header[link_metrics_idx++] = ie_vendor_thread_rssi_token;
+	}
+
+	return ie_header_size + content_len;
+}
+
 otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics aLinkMetrics,
 					  const otShortAddress aShortAddress,
 					  const otExtAddress *aExtAddress)
 {
 	int result;
+	uint8_t ie_header[OT_ACK_IE_MAX_SIZE];
+	uint16_t ie_header_len;
+	struct ieee802154_config config = {
+		.ack_ie.short_addr = aShortAddress,
+		.ack_ie.ext_addr = aExtAddress->m8,
+	};
 
 	ARG_UNUSED(aInstance);
 
-	struct ieee802154_config config = {
-		.enh_ack.lqi = aLinkMetrics.mLqi,
-		.enh_ack.link_margin = aLinkMetrics.mLinkMargin,
-		.enh_ack.rssi = aLinkMetrics.mRssi,
-		.enh_ack.short_addr = aShortAddress,
-		.enh_ack.ext_addr = aExtAddress->m8,
-	};
-
-	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_PROBING, &config);
+	ie_header_len = set_vendor_ie_header_lm(aLinkMetrics.mLqi, aLinkMetrics.mLinkMargin,
+						aLinkMetrics.mRssi, ie_header);
+	config.ack_ie.data = ie_header;
+	config.ack_ie.data_len = ie_header_len;
+	result = radio_api->configure(radio_dev, IEEE802154_CONFIG_ENH_ACK_HEADER_IE, &config);
 
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
 }
