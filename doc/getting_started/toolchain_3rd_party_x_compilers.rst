@@ -50,6 +50,14 @@ GNU ARM Embedded
       > echo %GNUARMEMB_TOOLCHAIN_PATH%
       C:\gnu_arm_embedded
 
+   .. warning::
+
+      On macOS, if you are having trouble with the suggested procedure, there is an unofficial package on brew that might help you.
+      Run ``brew install gcc-arm-embedded`` and configure the variables
+
+      - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``gnuarmemb``.
+      - Set :envvar:`GNUARMEMB_TOOLCHAIN_PATH` to the brew installation directory (something like ``/usr/local``)
+
 Intel oneApi Toolkits
 *********************
 
@@ -70,14 +78,6 @@ Intel oneApi Toolkits
    toolchain and might conflict with what Zephyr uses.
 
 #. Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``oneApi``.
-
-   .. warning::
-
-      On macOS, if you are having trouble with the suggested procedure, there is an unofficial package on brew that might help you.
-      Run ``brew install gcc-arm-embedded`` and configure the variables
-
-      - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``gnuarmemb``.
-      - Set :envvar:`GNUARMEMB_TOOLCHAIN_PATH` to the brew installation directory (something like ``/usr/local``)
 
 DesignWare ARC MetaWare Development Toolkit (MWDT)
 **************************************************
