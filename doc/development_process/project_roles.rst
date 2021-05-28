@@ -47,7 +47,7 @@ Contributors are granted the following rights and responsibilities:
 * Responsibility to provide constructive advice whenever participating in
   discussions and in the review of contributions.
 * Responsibility to follow the project’s code of conduct
-  (https://github.com/zephyrproject-rtos/zephyr/blob/master/CODE_OF_CONDUCT.md)
+  (https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md)
 
 Collaborator
 ++++++++++++
