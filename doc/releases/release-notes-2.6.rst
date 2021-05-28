@@ -859,6 +859,21 @@ Trusted Firmware-m
 Documentation
 *************
 
+* Documentation look and feel has been improved by using a new stylesheet.
+* Doxygen is now run by Sphinx using the ``doxyrunner`` custom extension. The
+  new extension centralizes multiple scattered workarounds that existed before
+  in a single place.
+* Doxygen now runs with ``WARN_AS_ERROR`` enabled.
+* Documentation known warnings are now filtered using a custom Sphinx extension:
+  ``warnings_filter``. This extension removes the need of post-processing
+  the Sphinx output and allows to use the ``-W`` option (treat warnings as
+  errors) which has been enabled by default.
+* External content, e.g. samples and boards documentation is now handled by
+  the ``external_content`` extension.
+* Sphinx is now run in parallel mode by default (``-j auto``).
+* The documentation helper ``Makefile`` has been moved from the repository root
+  to the ``doc`` folder.
+
 Tests and Samples
 *****************
 
