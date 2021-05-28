@@ -4849,7 +4849,12 @@ void bt_gatt_connected(struct bt_conn *conn)
 	 */
 	if (IS_ENABLED(CONFIG_BT_SMP) &&
 	    bt_conn_get_security(conn) < data.sec) {
-		bt_conn_set_security(conn, data.sec);
+		int err = bt_conn_set_security(conn, data.sec);
+
+		if (err) {
+			BT_WARN("Failed to set security for bonded peer (%d)",
+				err);
+		}
 	}
 
 #if defined(CONFIG_BT_GATT_CLIENT)
