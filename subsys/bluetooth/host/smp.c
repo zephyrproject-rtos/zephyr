@@ -4159,8 +4159,11 @@ static uint8_t smp_public_key_slave(struct bt_smp *smp)
 	uint8_t err;
 
 	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
-	    memcmp(smp->pkey, sc_public_key, 64) == 0) {
-		BT_WARN("Remote is using identical public key");
+	    memcmp(smp->pkey, sc_public_key, 32) == 0) {
+		/* Deny public key with identitcal X coordinate unless it is the
+		 * debug public key.
+		 */
+		BT_WARN("Remote public key rejected");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -4232,8 +4235,11 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    smp->chan.chan.conn->role == BT_HCI_ROLE_MASTER) {
 		if (!atomic_test_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY) &&
-		    memcmp(smp->pkey, sc_public_key, 64) == 0) {
-			BT_WARN("Remote is using identical public key");
+		    memcmp(smp->pkey, sc_public_key, 32) == 0) {
+			/* Deny public key with identitcal X coordinate unless
+			 * it is the debug public key.
+			 */
+			BT_WARN("Remote public key rejected");
 			return BT_SMP_ERR_UNSPECIFIED;
 		}
 
