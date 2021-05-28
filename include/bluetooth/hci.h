@@ -1576,6 +1576,25 @@ struct bt_hci_rp_le_set_conn_cte_tx_params {
 	uint16_t handle;
 } __packed;
 
+/* Interval between consecutive CTE request procedure starts in number of connection events. */
+#define BT_HCI_REQUEST_CTE_ONCE                0x0
+#define BT_HCI_REQUEST_CTE_INTERVAL_MIN        0x1
+#define BT_HCI_REQUEST_CTE_INTERVAL_MAX        0xFFFF
+
+#define BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE       BT_OP(BT_OGF_LE, 0x0056)
+struct bt_hci_cp_le_conn_cte_req_enable {
+	uint16_t handle;
+	uint8_t  enable;
+	uint8_t  cte_request_interval;
+	uint8_t  requested_cte_length;
+	uint8_t  requested_cte_type;
+} __packed;
+
+struct bt_hci_rp_le_conn_cte_req_enable {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
+
 #define BT_HCI_LE_1US_AOD_TX                    BIT(0)
 #define BT_HCI_LE_1US_AOD_RX                    BIT(1)
 #define BT_HCI_LE_1US_AOA_RX                    BIT(2)
