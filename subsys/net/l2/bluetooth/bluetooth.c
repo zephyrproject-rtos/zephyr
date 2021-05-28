@@ -611,12 +611,17 @@ static struct bt_conn_cb conn_callbacks = {
 
 static int net_bt_init(const struct device *dev)
 {
+	int err;
+
 	NET_DBG("dev %p driver_data %p", dev, dev->data);
 
 #if defined(CONFIG_NET_L2_BT_MGMT)
 	bt_conn_cb_register(&conn_callbacks);
 #endif
-	bt_l2cap_server_register(&server);
+	err = bt_l2cap_server_register(&server);
+	if (err) {
+		return err;
+	}
 
 	net_bt_shell_init();
 
