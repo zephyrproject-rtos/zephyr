@@ -23,7 +23,8 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 		data = pcie_conf_read(bdf, msi + PCIE_MSI_MCR);
 		shell_fprintf(shell, SHELL_NORMAL, "    MSI support%s%s\n",
 			      (data & PCIE_MSI_MCR_64) ? ", 64-bit" : "",
-			      (data & PCIE_MSI_MCR_EN) ? ", enabled" : "");
+			      (data & PCIE_MSI_MCR_EN) ?
+			      ", enabled" : ", disabled");
 	}
 
 	msi = pcie_get_cap(bdf, PCIE_MSIX_CAP_ID);
@@ -39,7 +40,8 @@ static void show_msi(const struct shell *shell, pcie_bdf_t bdf)
 
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "    MSI-X support%s table size %d\n",
-			      (data & PCIE_MSIX_MCR_EN) ? ", enabled" : "",
+			      (data & PCIE_MSIX_MCR_EN) ?
+			      ", enabled" : ", disabled",
 			      table_size);
 
 		offset = pcie_conf_read(bdf, msi + PCIE_MSIX_TR);
