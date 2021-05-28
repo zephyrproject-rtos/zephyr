@@ -38,14 +38,14 @@ static int lis2dw12_enable_int(const struct device *dev,
 		case SENSOR_TRIG_DATA_READY:
 			int_route.ctrl4_int1_pad_ctrl.int1_drdy = enable;
 			break;
-#ifdef CONFIG_LIS2DW12_PULSE
+#ifdef CONFIG_LIS2DW12_TAP
 		case SENSOR_TRIG_TAP:
 			int_route.ctrl4_int1_pad_ctrl.int1_single_tap = enable;
 			break;
 		case SENSOR_TRIG_DOUBLE_TAP:
 			int_route.ctrl4_int1_pad_ctrl.int1_tap = enable;
 			break;
-#endif /* CONFIG_LIS2DW12_PULSE */
+#endif /* CONFIG_LIS2DW12_TAP */
 		default:
 			LOG_ERR("Unsupported trigger interrupt route");
 			return -ENOTSUP;
@@ -98,7 +98,7 @@ int lis2dw12_trigger_set(const struct device *dev,
 		}
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_DATA_READY, state);
 		break;
-#ifdef CONFIG_LIS2DW12_PULSE
+#ifdef CONFIG_LIS2DW12_TAP
 	case SENSOR_TRIG_TAP:
 		lis2dw12->tap_handler = handler;
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_TAP, state);
@@ -107,7 +107,7 @@ int lis2dw12_trigger_set(const struct device *dev,
 		lis2dw12->double_tap_handler = handler;
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
 		break;
-#endif /* CONFIG_LIS2DW12_PULSE */
+#endif /* CONFIG_LIS2DW12_TAP */
 	default:
 		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
@@ -130,7 +130,7 @@ static int lis2dw12_handle_drdy_int(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_LIS2DW12_PULSE
+#ifdef CONFIG_LIS2DW12_TAP
 static int lis2dw12_handle_single_tap_int(const struct device *dev)
 {
 	struct lis2dw12_data *data = dev->data;
@@ -164,7 +164,7 @@ static int lis2dw12_handle_double_tap_int(const struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_LIS2DW12_PULSE */
+#endif /* CONFIG_LIS2DW12_TAP */
 
 /**
  * lis2dw12_handle_interrupt - handle the drdy event
@@ -181,14 +181,14 @@ static void lis2dw12_handle_interrupt(const struct device *dev)
 	if (sources.status_dup.drdy) {
 		lis2dw12_handle_drdy_int(dev);
 	}
-#ifdef CONFIG_LIS2DW12_PULSE
+#ifdef CONFIG_LIS2DW12_TAP
 	if (sources.status_dup.single_tap) {
 		lis2dw12_handle_single_tap_int(dev);
 	}
 	if (sources.status_dup.double_tap) {
 		lis2dw12_handle_double_tap_int(dev);
 	}
-#endif /* CONFIG_LIS2DW12_PULSE */
+#endif /* CONFIG_LIS2DW12_TAP */
 
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					GPIO_INT_EDGE_TO_ACTIVE);
@@ -233,6 +233,82 @@ static void lis2dw12_work_cb(struct k_work *work)
 	lis2dw12_handle_interrupt(lis2dw12->dev);
 }
 #endif /* CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD */
+
+#ifdef CONFIG_LIS2DW12_TAP
+static int lis2dw12_tap_init(const struct device *dev)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+
+	LOG_DBG("TAP: tap mode is %d", cfg->tap_mode);
+	if (lis2dw12_tap_mode_set(lis2dw12->ctx, cfg->tap_mode) < 0) {
+		LOG_ERR("Failed to select tap trigger mode");
+		return -EIO;
+	}
+
+	LOG_DBG("TAP: ths_x is %02x", cfg->tap_threshold[0]);
+	if (lis2dw12_tap_threshold_x_set(lis2dw12->ctx, cfg->tap_threshold[0]) < 0) {
+		LOG_ERR("Failed to set tap X axis threshold");
+		return -EIO;
+	}
+
+	LOG_DBG("TAP: ths_y is %02x", cfg->tap_threshold[1]);
+	if (lis2dw12_tap_threshold_y_set(lis2dw12->ctx, cfg->tap_threshold[1]) < 0) {
+		LOG_ERR("Failed to set tap Y axis threshold");
+		return -EIO;
+	}
+
+	LOG_DBG("TAP: ths_z is %02x", cfg->tap_threshold[2]);
+	if (lis2dw12_tap_threshold_z_set(lis2dw12->ctx, cfg->tap_threshold[2]) < 0) {
+		LOG_ERR("Failed to set tap Z axis threshold");
+		return -EIO;
+	}
+
+	if (cfg->tap_threshold[0] > 0) {
+		LOG_DBG("TAP: tap_x enabled");
+		if (lis2dw12_tap_detection_on_x_set(lis2dw12->ctx, 1) < 0) {
+			LOG_ERR("Failed to set tap detection on X axis");
+			return -EIO;
+		}
+	}
+
+	if (cfg->tap_threshold[1] > 0) {
+		LOG_DBG("TAP: tap_y enabled");
+		if (lis2dw12_tap_detection_on_y_set(lis2dw12->ctx, 1) < 0) {
+			LOG_ERR("Failed to set tap detection on Y axis");
+			return -EIO;
+		}
+	}
+
+	if (cfg->tap_threshold[2] > 0) {
+		LOG_DBG("TAP: tap_z enabled");
+		if (lis2dw12_tap_detection_on_z_set(lis2dw12->ctx, 1) < 0) {
+			LOG_ERR("Failed to set tap detection on Z axis");
+			return -EIO;
+		}
+	}
+
+	LOG_DBG("TAP: shock is %02x", cfg->tap_shock);
+	if (lis2dw12_tap_shock_set(lis2dw12->ctx, cfg->tap_shock) < 0) {
+		LOG_ERR("Failed to set tap shock duration");
+		return -EIO;
+	}
+
+	LOG_DBG("TAP: latency is %02x", cfg->tap_latency);
+	if (lis2dw12_tap_dur_set(lis2dw12->ctx, cfg->tap_latency) < 0) {
+		LOG_ERR("Failed to set tap latency");
+		return -EIO;
+	}
+
+	LOG_DBG("TAP: quiet time is %02x", cfg->tap_quiet);
+	if (lis2dw12_tap_quiet_set(lis2dw12->ctx, cfg->tap_quiet) < 0) {
+		LOG_ERR("Failed to set tap quiet time");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_LIS2DW12_TAP */
 
 int lis2dw12_init_interrupt(const struct device *dev)
 {
@@ -289,6 +365,13 @@ int lis2dw12_init_interrupt(const struct device *dev)
 	if (lis2dw12_int_notification_set(lis2dw12->ctx, LIS2DW12_INT_PULSED)) {
 		return -EIO;
 	}
+
+#ifdef CONFIG_LIS2DW12_TAP
+	ret = lis2dw12_tap_init(dev);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* CONFIG_LIS2DW12_TAP */
 
 	return gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
 					       GPIO_INT_EDGE_TO_ACTIVE);

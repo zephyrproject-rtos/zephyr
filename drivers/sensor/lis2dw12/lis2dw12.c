@@ -311,64 +311,6 @@ static int lis2dw12_init(const struct device *dev)
 		LOG_ERR("Failed to initialize interrupts");
 		return -EIO;
 	}
-
-#ifdef CONFIG_LIS2DW12_PULSE
-	if (lis2dw12_tap_mode_set(lis2dw12->ctx, cfg->pulse_trigger) < 0) {
-		LOG_ERR("Failed to select pulse trigger mode");
-		return -EIO;
-	}
-
-	if (lis2dw12_tap_threshold_x_set(lis2dw12->ctx,
-					 cfg->pulse_ths[0]) < 0) {
-		LOG_ERR("Failed to set tap X axis threshold");
-		return -EIO;
-	}
-
-	if (lis2dw12_tap_threshold_y_set(lis2dw12->ctx,
-					 cfg->pulse_ths[1]) < 0) {
-		LOG_ERR("Failed to set tap Y axis threshold");
-		return -EIO;
-	}
-
-	if (lis2dw12_tap_threshold_z_set(lis2dw12->ctx,
-					 cfg->pulse_ths[2]) < 0) {
-		LOG_ERR("Failed to set tap Z axis threshold");
-		return -EIO;
-	}
-
-	if (lis2dw12_tap_detection_on_x_set(lis2dw12->ctx,
-					    CONFIG_LIS2DW12_PULSE_X) < 0) {
-		LOG_ERR("Failed to set tap detection on X axis");
-		return -EIO;
-	}
-
-	if (lis2dw12_tap_detection_on_y_set(lis2dw12->ctx,
-					    CONFIG_LIS2DW12_PULSE_Y) < 0) {
-		LOG_ERR("Failed to set tap detection on Y axis");
-		return -EIO;
-	}
-
-	if (lis2dw12_tap_detection_on_z_set(lis2dw12->ctx,
-					    CONFIG_LIS2DW12_PULSE_Z) < 0) {
-		LOG_ERR("Failed to set tap detection on Z axis");
-		return -EIO;
-	}
-
-	if (lis2dw12_tap_shock_set(lis2dw12->ctx, cfg->pulse_shock) < 0) {
-		LOG_ERR("Failed to set tap shock duration");
-		return -EIO;
-	}
-
-	if (lis2dw12_tap_dur_set(lis2dw12->ctx, cfg->pulse_ltncy) < 0) {
-		LOG_ERR("Failed to set tap latency");
-		return -EIO;
-	}
-
-	if (lis2dw12_tap_quiet_set(lis2dw12->ctx, cfg->pulse_quiet) < 0) {
-		LOG_ERR("Failed to set tap quiet time");
-		return -EIO;
-	}
-#endif /* CONFIG_LIS2DW12_PULSE */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 
 	return 0;
@@ -381,19 +323,13 @@ const struct lis2dw12_device_config lis2dw12_cfg = {
 	.gpio_int = GPIO_DT_SPEC_INST_GET_OR(0, irq_gpios, {0}),
 	.int_pin = DT_INST_PROP(0, int_pin),
 
-#ifdef CONFIG_LIS2DW12_PULSE
-#if defined(CONFIG_LIS2DW12_ONLY_SINGLE)
-	.pulse_trigger = LIS2DW12_ONLY_SINGLE,
-#elif defined(CONFIG_LIS2DW12_SINGLE_DOUBLE)
-	.pulse_trigger = LIS2DW12_BOTH_SINGLE_DOUBLE,
-#endif
-	.pulse_ths[0] = CONFIG_LIS2DW12_PULSE_THSX,
-	.pulse_ths[1] = CONFIG_LIS2DW12_PULSE_THSY,
-	.pulse_ths[2] = CONFIG_LIS2DW12_PULSE_THSZ,
-	.pulse_shock = CONFIG_LIS2DW12_PULSE_SHOCK,
-	.pulse_ltncy = CONFIG_LIS2DW12_PULSE_LTNCY,
-	.pulse_quiet = CONFIG_LIS2DW12_PULSE_QUIET,
-#endif /* CONFIG_LIS2DW12_PULSE */
+#ifdef CONFIG_LIS2DW12_TAP
+	.tap_mode = DT_INST_PROP(0, tap_mode),
+	.tap_threshold = DT_INST_PROP(0, tap_threshold),
+	.tap_shock = DT_INST_PROP(0, tap_shock),
+	.tap_latency = DT_INST_PROP(0, tap_latency),
+	.tap_quiet = DT_INST_PROP(0, tap_quiet),
+#endif /* CONFIG_LIS2DW12_TAP */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 };
 
