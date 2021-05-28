@@ -328,6 +328,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 #endif /* CONFIG_USERSPACE */
 
 
+#ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_STACK_SENTINEL
 /* Check that the stack sentinel is still present
  *
@@ -359,9 +360,8 @@ void z_check_stack_sentinel(void)
 		z_except_reason(K_ERR_STACK_CHK_FAIL);
 	}
 }
-#endif
+#endif /* CONFIG_STACK_SENTINEL */
 
-#ifdef CONFIG_MULTITHREADING
 void z_impl_k_thread_start(struct k_thread *thread)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, start, thread);
