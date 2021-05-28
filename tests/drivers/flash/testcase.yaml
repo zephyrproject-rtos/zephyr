@@ -14,3 +14,7 @@ tests:
   drivers.flash.default:
     platform_allow: mimxrt1060_evk
     tags: mcux
+  drivers.flash.stm32:
+    filter: dt_compat_enabled("st,stm32-flash-controller") and
+       dt_compat_enabled_with_label("fixed-partitions", "storage_partition")
+    tags: drivers flash
