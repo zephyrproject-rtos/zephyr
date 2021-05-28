@@ -185,10 +185,12 @@ Architectures
   * AARCH32
 
     * Added support for null pointer dereferencing detection in Cortex-M.
-
-    * Added initial support for Arm v8.1-m and Cortex-M55
-
+    * Added initial support for Arm v8.1-m and Cortex-M55.
     * Added support for preempting threads while they are performing secure calls in Cortex-M.
+    * Added support for memory region generation by the linker based on device tree node information in Cortex-M.
+    * Cleaned up definitions of SoC-specific memory regions in the common Cortex-M linker script.
+    * Added support for clearing NXP MPU region configuration during Zephyr early boot stage.
+    * Disallowed fpu hard ABI when building Non-Secure applications with TF-M on Cortex-M33.
 
   * AARCH64
 
