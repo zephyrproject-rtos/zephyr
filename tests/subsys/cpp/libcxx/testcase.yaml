@@ -9,7 +9,6 @@ tests:
     min_flash: 54
     tags: cpp
   cpp.libcxx.exceptions:
-    arch_exclude: nios2
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
