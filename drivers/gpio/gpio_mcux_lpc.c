@@ -25,9 +25,6 @@
 #include <fsl_inputmux.h>
 #include <fsl_device_registers.h>
 
-#define PORT0_IDX 0u
-#define PORT1_IDX 1u
-
 #define PIN_TO_INPUT_MUX_CONNECTION(port, pin) \
 	((PINTSEL_PMUX_ID << PMUX_SHIFT) + (32 * port) + (pin))
 
@@ -359,7 +356,7 @@ static const struct gpio_driver_api gpio_mcux_lpc_driver_api = {
 
 static const clock_ip_name_t gpio_clock_names[] = GPIO_CLOCKS;
 
-#ifdef CONFIG_GPIO_MCUX_LPC_PORT0
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 static int lpc_gpio_0_init(const struct device *dev);
 
 static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port0_config = {
@@ -373,8 +370,8 @@ static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port0_config = {
 #else
 	.pinmux_base = IOCON,
 #endif
-	.port_no = PORT0_IDX,
-	.clock_ip_name = gpio_clock_names[0],
+	.port_no = DT_INST_PROP(0, port),
+	.clock_ip_name = gpio_clock_names[DT_INST_PROP(0, port)],
 };
 
 static struct gpio_mcux_lpc_data gpio_mcux_lpc_port0_data;
@@ -431,9 +428,9 @@ static int lpc_gpio_0_init(const struct device *dev)
 	return 0;
 }
 
-#endif /* CONFIG_GPIO_MCUX_LPC_PORT0 */
+#endif
 
-#ifdef CONFIG_GPIO_MCUX_LPC_PORT1
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 static int lpc_gpio_1_init(const struct device *dev);
 
 static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port1_config = {
@@ -447,8 +444,8 @@ static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port1_config = {
 #else
 	.pinmux_base = IOCON,
 #endif
-	.port_no = PORT1_IDX,
-	.clock_ip_name = gpio_clock_names[1],
+	.port_no = DT_INST_PROP(1, port),
+	.clock_ip_name = gpio_clock_names[DT_INST_PROP(1, port)],
 };
 
 static struct gpio_mcux_lpc_data gpio_mcux_lpc_port1_data;
@@ -505,4 +502,4 @@ static int lpc_gpio_1_init(const struct device *dev)
 	return 0;
 }
 
-#endif /* CONFIG_GPIO_MCUX_LPC_PORT1 */
+#endif
