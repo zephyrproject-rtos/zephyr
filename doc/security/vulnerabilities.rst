@@ -154,7 +154,7 @@ case.
 
 See NCC-ZEP-016
 
-This has been fixed in the below pull requests for master, branch from
+This has been fixed in the below pull requests for main, branch from
 v2.1.0, and branch from v2.2.0.
 
 - `CVE-2020-10022 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10022>`_
@@ -162,7 +162,7 @@ v2.1.0, and branch from v2.2.0.
 - `Zephyr project bug tracker ZEPSEC-28
   <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-28>`_
 
-- `PR24154 fix for master
+- `PR24154 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/24154>`_
 
 - `PR24065 fix for branch from v2.1.0
@@ -321,14 +321,14 @@ without the peer checking.
 
 See NCC-ZEP-018
 
-This has been fixed in a PR against Zephyr master.
+This has been fixed in a PR against Zephyr main.
 
 - `CVE-2020-10059 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10059>`_
 
 - `Zephyr project bug tracker ZEPSEC-36
   <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-36>`_
 
-- `PR24954 fix on master (to be fixed in v2.3.0)
+- `PR24954 fix on main (to be fixed in v2.3.0)
   <https://github.com/zephyrproject-rtos/zephyr/pull/24954>`_
 
 - `PR24954 fix v2.1.0
@@ -353,14 +353,14 @@ available.
 
 See NCC-ZEP-030
 
-This has been fixed in a PR against Zephyr master.
+This has been fixed in a PR against Zephyr main.
 
 - `CVE-2020-10060 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10060>`_
 
 - `Zephyr project bug tracker ZEPSEC-37
   <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-37>`_
 
-- `PR27865 fix on master (to be fixed in v2.4.0)
+- `PR27865 fix on main (to be fixed in v2.4.0)
   <https://github.com/zephyrproject-rtos/zephyr/pull/27865>`_
 
 - `PR27865 fix for v2.3.0
@@ -413,7 +413,7 @@ The MQTT packet header length can be 1 to 4 bytes. An off-by-one error
 in the code can result in this being interpreted as 5 bytes, which can
 cause an integer overflow, resulting in memory corruption.
 
-This has been fixed in master for v2.3.
+This has been fixed in main for v2.3.
 
 - `CVE-2020-10062 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10062>`_
 
@@ -436,14 +436,14 @@ Overflow
 A remote adversary with the ability to send arbitrary CoAP packets to
 be parsed by Zephyr is able to cause a denial of service.
 
-This has been fixed in master for v2.3.
+This has been fixed in main for v2.3.
 
 - `CVE-2020-10063 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10063>`_
 
 - `Zephyr project bug tracker ZEPSEC-55
   <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-55>`_
 
-- `PR24435 fix in master for v2.3
+- `PR24435 fix in main for v2.3
   <https://github.com/zephyrproject-rtos/zephyr/pull/24435>`_
 
 - `PR24531 fix for branch from v2.2
@@ -604,7 +604,7 @@ When calculating the packet length, arithmetic overflow can result in
 accepting a receive buffer larger than the available buffer space,
 resulting in user data being written beyond this buffer.
 
-This has been fixed in master for v2.3.
+This has been fixed in main for v2.3.
 
 - `CVE-2020-10070 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10070>`_
 
@@ -625,7 +625,7 @@ The Zephyr MQTT parsing code performs insufficient checking of the
 length field on publish messages, allowing a buffer overflow and
 potentially remote code execution. NCC-ZEP-031
 
-This has been fixed in master for v2.3.
+This has been fixed in main for v2.3.
 
 - `CVE-2020-10071 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10071>`_
 
@@ -792,7 +792,7 @@ processing, leading to a type confusion.
 
 - `CVE-2020-3320 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3320>`_
 
-- `PR31908 fix for master
+- `PR31908 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/31908>`_
 
 CVE-2021-3321
