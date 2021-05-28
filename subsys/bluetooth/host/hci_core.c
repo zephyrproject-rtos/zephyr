@@ -2769,6 +2769,11 @@ static int le_set_event_mask(void)
 		mask |= BT_EVT_MASK_LE_CONNECTIONLESS_IQ_REPORT;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_DF_CONNECTION_CTE_RX)) {
+		mask |= BT_EVT_MASK_LE_CONNECTION_IQ_REPORT;
+		mask |= BT_EVT_MASK_LE_CTE_REQUEST_FAILED;
+	}
+
 	sys_put_le64(mask, cp_mask->events);
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, buf, NULL);
 }
