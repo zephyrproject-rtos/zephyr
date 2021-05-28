@@ -57,7 +57,7 @@ struct lll_df_adv_cfg {
 #endif
 
 #define IQ_SAMPLE_TOTAL_CNT ((IQ_SAMPLE_REF_CNT) + (IQ_SAMPLE_SWITCH_CNT))
-#define IQ_SAMPLE_CNT  (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
+#define IQ_SAMPLE_CNT (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define RSSI_DBM_TO_DECI_DBM(x) (-(x) * 10)
 #define IQ_SHIFT_12_TO_8_BIT(x) ((x) >> 4)
@@ -115,4 +115,22 @@ struct lll_df_conn_rx_params {
 	uint8_t slot_durations : 2; /* One of possible values: 1 us, 2 us. */
 	uint8_t ant_sw_len : 7;
 	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
+};
+
+/* @brief Structure to store data required to prepare LE Connection IQ Report event or LE
+ * Connectionless IQ Report event.
+ *
+ * TODO (ppryga): use struct cte_conn_iq_report in connected mode. Members are exactly the same as
+ * members of node_rx_iq_report except hdr.
+ */
+struct cte_conn_iq_report {
+	struct pdu_cte_info cte_info;
+	uint8_t local_slot_durations;
+	uint8_t packet_status;
+	uint8_t sample_count;
+	uint8_t rssi_ant_id;
+	union {
+		uint8_t pdu[0] __aligned(4);
+		struct iq_sample sample[0];
+	};
 };
