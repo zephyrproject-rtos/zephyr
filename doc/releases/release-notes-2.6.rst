@@ -197,23 +197,14 @@ Architectures
   * AARCH64
 
     * SMP support
-
     * MMU dynamic mappings with page table sharing.
-
     * Userspace (unprivileged) thread support.
-
     * Standalone SMCCC support.
-
     * XIP support.
-
     * ARM64 is now a top-level standalone architecture.
-
     * Support for Cortex-R82 and Armv8-R AArch64 MPU.
-
     * Cache management support.
-
     * Revamped boot code.
-
     * Full FPU context switching.
 
 * POSIX
@@ -223,14 +214,10 @@ Architectures
 * x86
 
   * Added SoC configuration for Lakemont SoC.
-
   * Removed kconfig ``CONFIG_CPU_MINUTEIA`` as there is no user of this option.
-
   * Renamed kconfig ``CONFIG_SSE*`` to ``CONFIG_X86_SSE*``.
-
   * Extended the pagetable generation script to allow specifying additional
     memory mapping during build.
-
   * x86-32
 
     * Added support for kernel image to reside in virtual address space, allowing
