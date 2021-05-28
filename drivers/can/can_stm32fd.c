@@ -40,10 +40,19 @@ int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 
 void can_stm32fd_clock_enable(void)
 {
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PLL1Q);
+	__HAL_RCC_FDCAN_CLK_ENABLE();
+
+	if (!LL_RCC_PLL1Q_IsEnabled()) {
+		LOG_ERR("PLL1Q clock must be enabled!");
+	}
+#else
 	LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
 	__HAL_RCC_FDCAN_CLK_ENABLE();
 
 	FDCAN_CONFIG->CKDIV = CONFIG_CAN_STM32_CLOCK_DIVISOR >> 1;
+#endif
 }
 
 void can_stm32fd_register_state_change_isr(const struct device *dev,

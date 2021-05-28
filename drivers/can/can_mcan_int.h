@@ -1478,14 +1478,33 @@ struct can_mcan_reg {
 	volatile uint32_t ile;      /* Interrupt Line Enable */
 	uint32_t res3[8];           /* Reserved (8) */
 	volatile uint32_t rxgfc;    /* Global Filter Configuration */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	volatile uint32_t sidfc;     /* Standard ID Filter Configuration */
+	volatile uint32_t xidfc;     /* Extended ID Filter Configuration */
+	uint32_t res31;              /* Reserved (1) */
+#endif  /* CONFIG_SOC_SERIES_STM32H7X */
 	volatile uint32_t xidam;    /* Extended ID AND Mask */
 	volatile uint32_t hpms;     /* High Priority Message Status */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	volatile uint32_t ndat1;     /* New Data 1 */
+	volatile uint32_t ndat2;     /* New Data 2 */
+	volatile uint32_t rxf0c;     /* Rx FIFO 0 Configuration */
+#else
 	uint32_t res4;              /* Reserved (1) */
+#endif  /* CONFIG_SOC_SERIES_STM32H7X */
 	volatile uint32_t rxf0s;    /* Rx FIFO 0 Status */
 	volatile uint32_t rxf0a;    /* Rx FIFO 0 Acknowledge */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	volatile uint32_t rxbc;     /* Rx Buffer Configuration */
+	volatile uint32_t rxf1c;    /* Rx FIFO 1 Configuration */
+#endif  /* CONFIG_SOC_SERIES_STM32H7X */
 	volatile uint32_t rxf1s;    /* Rx FIFO 1 Status */
 	volatile uint32_t rxf1a;    /* Rx FIFO 1 Acknowledge */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	volatile uint32_t rxesc;    /* Rx Buffer/FIFO Element Size Configuration */
+#else
 	uint32_t res5[8];           /* Reserved (8) */
+#endif  /* CONFIG_SOC_SERIES_STM32H7X */
 	volatile uint32_t txbc;     /* Tx Buffer Configuration */
 	volatile uint32_t txfqs;    /* Tx FIFO/Queue Status */
 	volatile uint32_t txbrp;    /* Tx Buffer Request Pending */
@@ -1495,8 +1514,15 @@ struct can_mcan_reg {
 	volatile uint32_t txbcf;    /* Tx Buffer Cancellation Finished */
 	volatile uint32_t txbtie;   /* Tx Buffer Transmission Interrupt Enable */
 	volatile uint32_t txcbie;   /* Tx Buffer Cancellation Fi.Interrupt En. */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	uint32_t res5[2];           /* Reserved (2) */
+	volatile uint32_t txefc;   /* Tx Event FIFO Configuration */
+#endif  /* CONFIG_SOC_SERIES_STM32H7X */
 	volatile uint32_t txefs;    /* Tx Event FIFO Status */
 	volatile uint32_t txefa;    /* Tx Event FIFO Acknowledge */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	uint32_t res6;              /* Reserved (1) */
+#endif  /* CONFIG_SOC_SERIES_STM32H7X */
 };
 #else /* CONFIG_CAN_STM32FD */
 
