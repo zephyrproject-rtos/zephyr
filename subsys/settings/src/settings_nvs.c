@@ -269,24 +269,20 @@ int settings_backend_init(void)
 	uint16_t cnt = 0;
 	size_t nvs_sector_size, nvs_size = 0;
 	const struct flash_area *fa;
-	struct flash_sector hw_flash_sector;
-	uint32_t sector_cnt = 1;
+	struct flash_pages_info pi;
 
 	fa = FLASH_AREA(storage);
 	if (fa == NULL) {
 		return -ENODEV;
 	}
 
-	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &sector_cnt,
-				    &hw_flash_sector);
-	if (rc == -ENODEV) {
-		return rc;
-	} else if (rc != 0 && rc != -ENOMEM) {
-		k_panic();
-	}
+	rc = flash_area_get_page_info_by_offs(FLASH_AREA(storage), 0, &pi);
 
-	nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT *
-			  hw_flash_sector.fs_size;
+	if (rc < 0) {
+		k_panic();
+		return rc;
+	}
+	nvs_sector_size = CONFIG_SETTINGS_NVS_SECTOR_SIZE_MULT * pi.size;
 
 	if (nvs_sector_size > UINT16_MAX) {
 		return -EDOM;
