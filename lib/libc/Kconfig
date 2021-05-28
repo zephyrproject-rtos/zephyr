@@ -62,6 +62,16 @@ config NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE
 	  memory used will be the minimum of this value and the amount of
 	  free physical memory at kernel boot.
 
+config NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE
+	int "Newlib minimum required heap size"
+	default 2048 if NEWLIB_LIBC_NANO
+	default 8192 if !NEWLIB_LIBC_NANO
+	help
+	  Specifies the amount of memory space that must be available for the
+	  newlib heap. An assertion failure message will be displayed during
+	  initialization if the memory space available for the newlib heap is
+	  smaller than this value.
+
 config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	int "Newlib aligned heap size"
 	depends on MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
