@@ -141,7 +141,7 @@ static inline bool net_capture_is_enabled(const struct device *dev)
 #else
 	ARG_UNUSED(dev);
 
-	return -ENOTSUP;
+	return false;
 #endif
 }
 
