@@ -276,8 +276,9 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 				       const struct bt_df_per_adv_sync_cte_rx_param *params)
 {
 	struct bt_hci_cp_le_set_cl_cte_sampling_enable *cp;
+	struct bt_hci_rp_le_set_cl_cte_sampling_enable *rp;
 	struct bt_hci_cmd_state_set state;
-	struct net_buf *buf;
+	struct net_buf *buf, *rsp;
 	int err;
 
 	if (enable) {
@@ -300,14 +301,21 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 
 	bt_hci_cmd_state_set_init(buf, &state, sync->flags, BT_PER_ADV_SYNC_CTE_ENABLED, enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE, buf, &rsp);
 	if (err) {
 		return err;
 	}
 
-	sync->cte_type = (enable ? params->cte_type : 0);
+	rp = (void *)rsp->data;
+	if (sync->handle != sys_le16_to_cpu(rp->sync_handle)) {
+		err = -EIO;
+	} else {
+		sync->cte_type = (enable ? params->cte_type : 0);
+	}
 
-	return 0;
+	net_buf_unref(rsp);
+
+	return err;
 }
 
 void hci_df_prepare_connectionless_iq_report(struct net_buf *buf,
