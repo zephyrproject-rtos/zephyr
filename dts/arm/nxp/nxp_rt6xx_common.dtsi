@@ -73,6 +73,7 @@
 		label = "GPIO_0";
 		gpio-controller;
 		#gpio-cells = <2>;
+		port = <0>;
 	};
 
 	gpio1: gpio@1 {
@@ -82,6 +83,7 @@
 		label = "GPIO_1";
 		gpio-controller;
 		#gpio-cells = <2>;
+		port = <1>;
 	};
 
 	flexspi: spi@134000 {
