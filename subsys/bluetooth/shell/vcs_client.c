@@ -15,6 +15,7 @@
 
 #include "bt.h"
 
+static struct bt_vcs *vcs;
 static struct bt_vcs_included vcs_included;
 
 static void vcs_discover_cb(struct bt_conn *conn, int err, uint8_t vocs_count,
@@ -349,7 +350,7 @@ static int cmd_vcs_client_discover(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_discover(default_conn);
+	result = bt_vcs_discover(default_conn, &vcs);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}

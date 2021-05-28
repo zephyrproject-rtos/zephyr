@@ -18,6 +18,7 @@
 static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 
+static struct bt_vcs *vcs;
 static struct bt_vcs_included vcs_included;
 static volatile bool g_bt_init;
 static volatile bool g_is_connected;
@@ -575,7 +576,7 @@ static void test_main(void)
 
 	WAIT_FOR(g_mtu_exchanged);
 
-	err = bt_vcs_discover(g_conn);
+	err = bt_vcs_discover(g_conn, &vcs);
 	if (err) {
 		FAIL("Failed to discover VCS %d", err);
 	}
