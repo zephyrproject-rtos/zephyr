@@ -9,6 +9,7 @@ We are pleased to announce the release of Zephyr RTOS version 2.6.0.
 
 Major enhancements with this release include:
 
+* Logging subsystem overhauled
 * Added support for 64-bit ARCv3
 * Split ARM32 and ARM64, ARM64 is now a top-level architecture
 * Added initial support for Arm v8.1-m and Cortex-M55
@@ -791,6 +792,14 @@ Libraries / Subsystems
     change.
 
 * Logging
+
+  * Introduced logging v2 which allows logging any variable types (including
+    floating point variables). New version does not require transient string
+    duplication (``log_strdup()``). Legacy mode remains and is still the default
+    but user API is not changed and modes are interchangeable.
+    ``CONFIG_LOG2_MODE_DEFERRED`` or ``CONFIG_LOG2_MODE_IMMEDIATE`` enable
+    logging v2. Logging backend API is extended to support v2 and the most
+    popular backends (UART, shell) are updated.
 
 * LVGL
 
