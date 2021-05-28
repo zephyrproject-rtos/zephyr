@@ -472,7 +472,7 @@ void k_mem_paging_thread_stats_get(struct k_thread *thread,
  * This populates the timing histogram struct being passed in
  * as argument.
  *
- * @param[in,out] stats Timing histogram struct to be filled.
+ * @param[in,out] hist Timing histogram struct to be filled.
  */
 __syscall void k_mem_paging_histogram_eviction_get(
 	struct k_mem_paging_histogram_t *hist);
@@ -483,7 +483,7 @@ __syscall void k_mem_paging_histogram_eviction_get(
  * This populates the timing histogram struct being passed in
  * as argument.
  *
- * @param[in,out] stats Timing histogram struct to be filled.
+ * @param[in,out] hist Timing histogram struct to be filled.
  */
 __syscall void k_mem_paging_histogram_backing_store_page_in_get(
 	struct k_mem_paging_histogram_t *hist);
@@ -494,7 +494,7 @@ __syscall void k_mem_paging_histogram_backing_store_page_in_get(
  * This populates the timing histogram struct being passed in
  * as argument.
  *
- * @param[in,out] stats Timing histogram struct to be filled.
+ * @param[in,out] hist Timing histogram struct to be filled.
  */
 __syscall void k_mem_paging_histogram_backing_store_page_out_get(
 	struct k_mem_paging_histogram_t *hist);
@@ -521,7 +521,7 @@ __syscall void k_mem_paging_histogram_backing_store_page_out_get(
  *
  * This function is invoked with interrupts locked.
  *
- * @param [out] Whether the page to evict is dirty
+ * @param [out] dirty Whether the page to evict is dirty
  * @return The page frame to evict
  */
 struct z_page_frame *k_mem_paging_eviction_select(bool *dirty);
@@ -573,7 +573,7 @@ void k_mem_paging_eviction_init(void);
  *
  * This function is invoked with interrupts locked.
  *
- * @param addr Virtual address to obtain a storage location
+ * @param pf Virtual address to obtain a storage location
  * @param [out] location storage location token
  * @param page_fault Whether this request was for a page fault
  * @return 0 Success
