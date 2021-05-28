@@ -2590,6 +2590,7 @@ static void le_df_set_cl_cte_enable(struct net_buf *buf, struct net_buf **evt)
 static void le_df_set_cl_iq_sampling_enable(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_cl_cte_sampling_enable *cmd = (void *)buf->data;
+	struct bt_hci_rp_le_set_cl_cte_sampling_enable *rp;
 	uint16_t sync_handle;
 	uint8_t status;
 
@@ -2602,7 +2603,10 @@ static void le_df_set_cl_iq_sampling_enable(struct net_buf *buf, struct net_buf 
 						 cmd->switch_pattern_len,
 						 cmd->ant_ids);
 
-	*evt = cmd_complete_status(status);
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	rp->status = status;
+	rp->sync_handle = sys_cpu_to_le16(sync_handle);
 }
 
 static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
