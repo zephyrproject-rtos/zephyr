@@ -12,6 +12,7 @@ if (CONFIG_NRF_802154_RADIO_DRIVER)
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_clock_zephyr.c
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_gpiote_zephyr.c
       ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_irq_zephyr.c
+      ${CMAKE_CURRENT_SOURCE_DIR}/sl_opensource/platform/nrf_802154_temperature_zephyr.c
   )
 
   if (CONFIG_SOC_SERIES_NRF53X AND NOT CONFIG_NRF_802154_SL_OPENSOURCE)
