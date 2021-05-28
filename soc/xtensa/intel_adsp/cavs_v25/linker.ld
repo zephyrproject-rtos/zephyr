@@ -515,6 +515,11 @@ SECTIONS
 	_loader_storage_manifest_end = ABSOLUTE(.);
   } >ram :ram_phdr
 
+  .tm_clone_table :
+  {
+    *(.tm_clone_table)
+  } >ram :ram_phdr
+
   .bss (NOLOAD) : ALIGN(4096)
   {
     . = ALIGN(4096);
