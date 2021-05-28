@@ -7,6 +7,13 @@
 
 menu "Timer Drivers"
 
+config TIMER_USE_PM_DEVICE
+	bool
+	help
+	  This option must be selected by timer drivers that want to add support
+	  for device power management. When this option is enabled, the weak
+	  function "sys_clock_device_ctrl" is defined for this purpose.
+
 menuconfig APIC_TIMER
 	bool "New local APIC timer"
 	depends on X86
