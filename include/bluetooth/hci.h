@@ -1537,6 +1537,11 @@ struct bt_hci_cp_le_set_cl_cte_sampling_enable {
 	uint8_t  ant_ids[0];
 } __packed;
 
+struct bt_hci_rp_le_set_cl_cte_sampling_enable {
+	uint8_t  status;
+	uint16_t sync_handle;
+} __packed;
+
 #define BT_HCI_LE_AOA_CTE_RSP                   BIT(0)
 #define BT_HCI_LE_AOD_CTE_RSP_1US               BIT(1)
 #define BT_HCI_LE_AOD_CTE_RSP_2US               BIT(2)
