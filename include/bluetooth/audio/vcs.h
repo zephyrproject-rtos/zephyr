@@ -188,15 +188,17 @@ struct bt_vcs_cb {
  *
  * This will start a GATT discovery and setup handles and subscriptions.
  * This shall be called once before any other actions can be
- * executed for the peer device.
+ * executed for the peer device, and the @ref bt_vcs_discover_cb callback
+ * will notify when it is possible to start remote operations.
  *
  * This shall only be done as the client,
  *
- * @param conn    The connection to discover Volume Control Service for.
+ * @param conn     The connection to discover Volume Control Service for.
+ * @param[out] vcs Valid remote instance object on success.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_vcs_discover(struct bt_conn *conn);
+int bt_vcs_discover(struct bt_conn *conn, struct bt_vcs **vcs);
 
 /**
  * @brief Set the Volume Control Service volume step size.

@@ -707,10 +707,11 @@ static void bt_vcs_client_init(void)
 	}
 }
 
-int bt_vcs_discover(struct bt_conn *conn)
+int bt_vcs_discover(struct bt_conn *conn, struct bt_vcs **vcs)
 {
 	static bool initialized;
 	struct bt_vcs_client *vcs_inst;
+	int err;
 
 	/*
 	 * This will initiate a discover procedure. The procedure will do the
@@ -749,7 +750,11 @@ int bt_vcs_discover(struct bt_conn *conn)
 	vcs_inst->discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
 	vcs_inst->discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
 
-	return bt_gatt_discover(conn, &vcs_inst->discover_params);
+	err = bt_gatt_discover(conn, &vcs_inst->discover_params);
+	if (err == 0) {
+		*vcs = (struct bt_vcs *)&vcs_inst;
+	}
+	return err;
 }
 
 int bt_vcs_client_cb_register(struct bt_vcs_cb *cb)
