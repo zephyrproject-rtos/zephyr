@@ -9,6 +9,11 @@ We are pleased to announce the release of Zephyr RTOS version 2.6.0.
 
 Major enhancements with this release include:
 
+* Added support for 64-bit ARCv3
+* Split ARM32 and ARM64, ARM64 is now a top-level architecture
+* Added initial support for Arm v8.1-m and Cortex-M55
+* Removed legacy TCP stack support which was deprecated in 2.4
+
 The following sections provide detailed lists of changes by component.
 
 Security Vulnerability Related
