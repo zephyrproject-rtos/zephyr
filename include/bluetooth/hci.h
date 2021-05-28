@@ -1595,6 +1595,17 @@ struct bt_hci_rp_le_conn_cte_req_enable {
 	uint16_t handle;
 } __packed;
 
+#define BT_HCI_OP_LE_CONN_CTE_RSP_ENABLE       BT_OP(BT_OGF_LE, 0x0057)
+struct bt_hci_cp_le_conn_cte_rsp_enable {
+	uint16_t handle;
+	uint8_t  enable;
+} __packed;
+
+struct bt_hci_rp_le_conn_cte_rsp_enable {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
+
 #define BT_HCI_LE_1US_AOD_TX                    BIT(0)
 #define BT_HCI_LE_1US_AOD_RX                    BIT(1)
 #define BT_HCI_LE_1US_AOA_RX                    BIT(2)
