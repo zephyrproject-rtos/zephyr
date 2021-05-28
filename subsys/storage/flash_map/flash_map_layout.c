@@ -118,3 +118,105 @@ int flash_area_get_sectors(int idx, uint32_t *cnt, struct flash_sector *ret)
 
 	return flash_area_layout(idx, cnt, ret, get_sectors_cb, &data);
 }
+
+int flash_area_get_page_info_by_idx(const struct flash_area *fa, off_t idx,
+	struct flash_pages_info *pi)
+{
+	struct flash_pages_info lpi;
+	int ret;
+
+	if (idx < 0) {
+		return -EINVAL;
+	}
+
+	/* Get information for the base, which is the first page of flash area */
+	ret = flash_get_page_info_by_offs(fa->fa_dev, fa->fa_off, &lpi);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = flash_get_page_info_by_idx(fa->fa_dev, lpi.index + idx, &lpi);
+
+	if (ret < 0) {
+		return ret;
+	} else if (lpi.start_offset >= (fa->fa_off + fa->fa_size)) {
+		return -EINVAL;
+	}
+
+	pi->index = idx;
+	pi->start_offset = lpi.start_offset - fa->fa_off;
+	pi->size = lpi.size;
+
+	return 0;
+}
+
+int flash_area_get_page_info_by_offs(const struct flash_area *fa, off_t offset,
+	struct flash_pages_info *pi)
+{
+	struct flash_pages_info lpi;
+	int ret;
+	uint32_t base_index;
+
+	if (offset < 0 || offset >= fa->fa_size) {
+		return -EINVAL;
+	}
+
+	/* Get information for the base, which is the first page of flash area */
+	ret = flash_get_page_info_by_offs(fa->fa_dev, fa->fa_off, &lpi);
+	if (ret < 0) {
+		return ret;
+	}
+
+	base_index = lpi.index;
+
+	if ((lpi.start_offset - fa->fa_off) >= fa->fa_size) {
+		return -EINVAL;
+	}
+
+	ret = flash_get_page_info_by_offs(fa->fa_dev, fa->fa_off + offset, &lpi);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	pi->index = lpi.index - base_index;
+	pi->start_offset = lpi.start_offset - fa->fa_off;
+	pi->size = lpi.size;
+
+	return 0;
+}
+
+ssize_t flash_area_get_page_count(const struct flash_area *fa)
+{
+	struct flash_pages_info lpi;
+	off_t start;
+	int ret;
+
+	/* Get information for the base, which is the first page of flash area */
+	ret = flash_get_page_info_by_offs(fa->fa_dev, fa->fa_off, &lpi);
+	if (ret != 0) {
+		return ret;
+	}
+
+	start = lpi.index;
+	ret = flash_get_page_info_by_offs(fa->fa_dev, fa->fa_off + fa->fa_size - 1, &lpi);
+
+	return (ret < 0) ? ret : (lpi.index - start + 1);
+}
+
+int flash_area_get_next_page_info(const struct flash_area *fa, struct flash_pages_info *pi,
+	bool wrap)
+{
+	struct flash_pages_info lpi;
+	int ret;
+
+	ret = flash_area_get_page_info_by_idx(fa, pi->index + 1, &lpi);
+	if ((ret == -EINVAL) && (wrap == true)) {
+		ret = flash_area_get_page_info_by_idx(fa, 0, &lpi);
+	}
+
+	if (ret >= 0) {
+		*pi = lpi;
+	}
+	return ret;
+}

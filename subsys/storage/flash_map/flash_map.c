@@ -105,3 +105,4 @@ uint8_t flash_area_erased_val(const struct flash_area *fa)
 
 	return param->erase_value;
 }
+

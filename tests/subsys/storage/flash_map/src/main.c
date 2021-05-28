@@ -86,6 +86,200 @@ void test_flash_area_get_sectors(void)
 
 }
 
+void test_flash_area_page_info(void)
+{
+	const struct flash_area *fa0 = FLASH_AREA(image_1);
+	const struct flash_area *fa1 = FLASH_AREA(image_scratch);
+	const struct flash_area *fa2 = FLASH_AREA(storage);
+	struct flash_pages_info pi_dev;
+	struct flash_pages_info pi_fa;
+	struct flash_pages_info pi_fa1;
+	int ret, i;
+	ssize_t count, count1;
+	char val = flash_area_erased_val(fa1);
+	char test_start[] = "Hello world";
+	char test_end[] = "ByBye world";
+	char buffer[256];
+
+	/* Expect areas to be on the same device, and follow each other */
+	zassert_equal(fa0->fa_dev, fa1->fa_dev, "fa0 and fa1 not on the same device");
+	zassert_equal(fa1->fa_dev, fa2->fa_dev, "fa1 and fa2 not on the same device");
+	zassert_equal(fa1->fa_off, fa0->fa_off + fa0->fa_size, "fa0 is not adjacent to fa1");
+	zassert_equal(fa2->fa_off, fa1->fa_off + fa1->fa_size, "fa1 is not adjacent to fa2");
+
+	flash_area_erase(fa0, 0, fa0->fa_size);
+	flash_area_erase(fa1, 0, fa1->fa_size);
+	flash_area_erase(fa2, 0, fa2->fa_size);
+
+	/* Get page info for flash area and raw device */
+	ret = flash_get_page_info_by_offs(fa0->fa_dev, fa1->fa_off, &pi_dev);
+	zassert_true(ret == 0, "Failed to get flash area page info");
+	ret = flash_area_get_page_info_by_offs(fa1, 0, &pi_fa);
+	zassert_true(ret == 0, "Failed to get flash page info");
+
+	/* Write test pattern at the beginning of flash area */
+	ret = flash_area_write(fa1, pi_fa.start_offset, test_start, sizeof(test_start));
+	zassert_true(ret == 0, "Failed to write the test pattern");
+
+	/* Check if direct read from raw device confirms written data */
+	ret = flash_read(fa1->fa_dev, pi_dev.start_offset, buffer, sizeof(test_start));
+	zassert_true(ret == 0, "Failed to read the test pattern");
+	zassert_equal(0, memcmp(buffer, test_start, sizeof(test_start)), "Data does not match");
+
+	/* Check if not crossed to previous, raw, page */
+	ret = flash_read(fa1->fa_dev, pi_dev.start_offset - sizeof(test_start),  buffer,
+				sizeof(test_start));
+	zassert_true(ret == 0, "Failed to read previous page");
+	for (ret = 0, i = 0; i < sizeof(test_start); ++i) {
+		if (buffer[i] != val) {
+			ret = 1;
+			break;
+		}
+	}
+	zassert_equal(ret, 0, "Previous page has been overwritten");
+
+	/* Write test pattern at the end of flash area */
+	ret = flash_get_page_info_by_offs(fa1->fa_dev, fa1->fa_off + fa1->fa_size - 1, &pi_dev);
+	zassert_true(ret == 0, "Failed to get flash area page info");
+	ret = flash_area_get_page_info_by_offs(fa1, fa1->fa_size - 1, &pi_fa);
+	zassert_true(ret == 0, "Failed to get flash page info");
+
+	ret = flash_area_write(fa1, pi_fa.start_offset + pi_fa.size - sizeof(test_end), test_end,
+		sizeof(test_end));
+	zassert_true(ret == 0, "Failed to write the end test pattern");
+
+	/* Check if direct read from raw device confirms written data */
+	ret = flash_read(fa1->fa_dev, pi_dev.start_offset + pi_dev.size - sizeof(test_end), buffer,
+		sizeof(test_end));
+	zassert_true(ret == 0, "Failed to read test pattern");
+	zassert_equal(0, memcmp(buffer, test_end, sizeof(test_end)), "Data does not match");
+
+	/* Check if not crossed to page after the flash area, raw, page */
+	ret = flash_read(fa1->fa_dev, pi_dev.start_offset + pi_dev.size,  buffer, sizeof(test_end));
+	zassert_true(ret == 0, "Failed to read page after the flash area");
+	for (ret = 0, i = 0; i < sizeof(test_end); ++i) {
+		if (buffer[i] != val) {
+			ret = 1;
+			break;
+		}
+	}
+	zassert_equal(ret, 0, "Page following the flash area has been overwritten");
+
+	/* Test flash_area_get_page_by_info_idx */
+	memset(&pi_fa, 0xff, sizeof(pi_fa));
+	memset(&pi_fa1, 0xff, sizeof(pi_fa1));
+
+	/* Fail to get negative index */
+	ret = flash_area_get_page_info_by_idx(fa1, -1, &pi_fa);
+	zassert_equal(ret, -EINVAL, "Expected -EINVAL when index -1, got %d", ret);
+	/* Provided flash_pages_info should not get modified */
+	zassert_equal(0, memcmp(&pi_fa, &pi_fa1, sizeof(pi_fa)),
+		"Unexpected flash_pages_info modification");
+
+	/* Fail to get negative offset */
+	ret = flash_area_get_page_info_by_offs(fa1, -1, &pi_fa);
+	zassert_equal(ret, -EINVAL, "Expected -EINVAL to get offset  -1, got %d", ret);
+	/* Provided flash_pages_info should not get modified */
+	zassert_equal(0, memcmp(&pi_fa, &pi_fa1, sizeof(pi_fa)),
+		"Unexpected flash_pages_info modification");
+
+	/* Get first page info by index */
+	memset(&pi_fa, 0xff, sizeof(pi_fa));
+	ret = flash_area_get_page_info_by_idx(fa1, 0, &pi_fa);
+	zassert_equal(ret, 0, "Expected success to get index 0, got %d", ret);
+	ret = flash_get_page_info_by_offs(fa1->fa_dev, fa1->fa_off, &pi_dev);
+	zassert_true(ret == 0, "Failed to get flash area page info");
+	zassert_equal(pi_fa.index, 0, "Unexpected index value");
+	zassert_equal(pi_fa.size, pi_dev.size, "Unexpected size value");
+	zassert_equal(pi_fa.start_offset + fa1->fa_off, pi_dev.start_offset,
+		"Unexpected offset value");
+
+	/* Get first page info by offset */
+	memset(&pi_fa, 0xff, sizeof(pi_fa));
+	ret = flash_area_get_page_info_by_offs(fa1, 0, &pi_fa);
+	zassert_equal(ret, 0, "Expected success to get offset 0, got %d", ret);
+	ret = flash_get_page_info_by_offs(fa1->fa_dev, fa1->fa_off, &pi_dev);
+	zassert_true(ret == 0, "Failed to get flash area page info");
+	zassert_equal(pi_fa.index, 0, "Unexpected index value");
+	zassert_equal(pi_fa.size, pi_dev.size, "Unexpected size value");
+	zassert_equal(pi_fa.start_offset + fa1->fa_off, pi_dev.start_offset,
+		"Unexpected offset value");
+
+	/* Get number of pages */
+	ret = flash_area_get_page_info_by_offs(fa1, fa1->fa_size - 1, &pi_fa);
+	zassert_equal(ret, 0, "Expected success");
+	count = flash_area_get_page_count(fa1);
+	zassert_true(count > 0, "Expected page count > 0");
+	zassert_equal(count, pi_fa.index + 1, "Expected page count to be last page index + 1");
+	/* Check against flash API */
+	ret = flash_get_page_info_by_offs(fa1->fa_dev, fa1->fa_off, &pi_dev);
+	zassert_equal(ret, 0, "Expected success");
+	count1 = pi_dev.index;
+	ret = flash_get_page_info_by_offs(fa1->fa_dev, fa1->fa_off + fa1->fa_size - 1, &pi_dev);
+	zassert_equal(ret, 0, "Expected success");
+	zassert_equal(count, pi_dev.index + 1 - count1, "Expected count of pages to be equal");
+
+	/* Get last page by index */
+	ret = flash_area_get_page_info_by_idx(fa1, count - 1, &pi_fa);
+	zassert_equal(ret, 0, "Expected success");
+	zassert_equal(pi_fa.index, count - 1, "Expected page index to match requested");
+	zassert_equal(pi_fa.start_offset + pi_fa.size, fa1->fa_size,
+		"Last page offset + size does not match area size");
+
+	/* Get last page by offset */
+	ret = flash_area_get_page_info_by_offs(fa1, fa1->fa_size - 1, &pi_fa);
+	zassert_equal(ret, 0, "Expected success");
+	zassert_equal(pi_fa.index, count - 1, "Expected page index to match number of pages - 1");
+	zassert_equal(pi_fa.start_offset, fa1->fa_size - pi_fa.size,
+		"Last page offset does not match (area size - size of page)");
+
+	/* Get next page from 0 */
+	ret = flash_area_get_page_info_by_idx(fa1, 0, &pi_fa);
+	zassert_equal(ret, 0, "Expected success");
+	pi_fa1 = pi_fa;
+	ret = flash_area_get_next_page_info(fa1, &pi_fa1, false);
+	zassert_equal(ret, 0, "Expected success");
+	zassert_equal(pi_fa.index + 1, pi_fa1.index, "Should get next index");
+	zassert_equal(pi_fa.start_offset + pi_fa.size, pi_fa1.start_offset,
+		"Should get next page offset");
+
+	/* wrap == true should not affect pages different than last */
+	pi_fa1 = pi_fa;
+	ret = flash_area_get_next_page_info(fa1, &pi_fa1, true);
+	zassert_equal(ret, 0, "Expected success");
+	zassert_equal(pi_fa.index + 1, pi_fa1.index, "Should get next index");
+	zassert_equal(pi_fa.start_offset + pi_fa.size, pi_fa1.start_offset,
+		"Should get next page offset");
+
+	/* Get next page before last */
+	ret = flash_area_get_page_info_by_idx(fa1, count - 2, &pi_fa);
+	zassert_equal(ret, 0, "Expected success");
+	pi_fa1 = pi_fa;
+	ret = flash_area_get_next_page_info(fa1, &pi_fa1, false);
+	zassert_equal(ret, 0, "Expected success");
+	zassert_equal(pi_fa.index + 1, pi_fa1.index, "Should get next index");
+	zassert_equal(pi_fa.start_offset + pi_fa.size, pi_fa1.start_offset,
+		"Should get next page offset");
+
+	/* Get next page from last, no wrap */
+	ret = flash_area_get_page_info_by_idx(fa1, count - 1, &pi_fa);
+	zassert_equal(ret, 0, "Expected success");
+	pi_fa1 = pi_fa;
+	ret = flash_area_get_next_page_info(fa1, &pi_fa1, false);
+	zassert_equal(ret, -EINVAL, "Expected failure");
+	zassert_equal(memcmp(&pi_fa, &pi_fa1, sizeof(pi_fa)), 0,
+		"Structure should not get modified");
+
+	/* Get next page from last, wrap */
+	ret = flash_area_get_page_info_by_idx(fa1, count - 1, &pi_fa);
+	zassert_equal(ret, 0, "Expected success");
+	pi_fa1 = pi_fa;
+	ret = flash_area_get_next_page_info(fa1, &pi_fa1, true);
+	zassert_equal(ret, 0, "Expected success");
+	zassert_equal(pi_fa1.index, 0, "Expected first page");
+	zassert_equal(pi_fa1.start_offset, 0, "Expected first page offset");
+}
+
 void test_flash_area_check_int_sha256(void)
 {
 	/* echo $'0123456789abcdef\nfedcba98765432' > tst.sha
@@ -163,7 +357,8 @@ void test_main(void)
 	ztest_test_suite(test_flash_map,
 			 ztest_unit_test(test_flash_area_erased_val),
 			 ztest_unit_test(test_flash_area_get_sectors),
-			 ztest_unit_test(test_flash_area_check_int_sha256)
+			 ztest_unit_test(test_flash_area_check_int_sha256),
+			 ztest_unit_test(test_flash_area_page_info)
 			);
 	ztest_run_test_suite(test_flash_map);
 }

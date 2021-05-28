@@ -37,6 +37,8 @@
 #include <sys/types.h>
 #include <devicetree.h>
 #include <storage/flash_map_phase_out.h>
+#include <device.h>
+#include <drivers/flash.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -193,6 +195,63 @@ typedef void (*flash_area_cb_t)(const struct flash_area *fa,
  * @param user_data User supplied data
  */
 void flash_area_foreach(flash_area_cb_t user_cb, void *user_data);
+
+/**
+ * Get page info by page index within flash area
+ *
+ * @param[in] fa flash area object to get page info from;
+ * @param[in] idx index of flash page to obtain information for;
+ * @param[out] pi flash_pages_info structure pointer for obtained page information; the structure
+ *	       will not be modified in case of error.
+ *
+ * @return 0 on success;
+ *	   -EINVAL in case when @p idx is out of range or negative;
+ *	   other negative errno value depending on cause of error and subsystem that has failed.
+ */
+int flash_area_get_page_info_by_idx(const struct flash_area *fa, off_t idx,
+	struct flash_pages_info *pi);
+
+/**
+ * Get page info by offset within flash area
+ *
+ * @param[in] fa flash area object to get page info from;
+ * @param[in] offset the offset from the beginning of flash area, 0 based;
+ * @param[out] pi flash_pages_info structure pointer for obtained page information; the structure
+ *	       will not be modified in case of error.
+ *
+ * @return 0 on success;
+ *	   -EINVAL in case when @p offset is out of range or negative;
+ *	   other negative errno value depending on cause of error and subsystem that has failed.
+ */
+int flash_area_get_page_info_by_offs(const struct flash_area *fa, off_t offset,
+	struct flash_pages_info *pi);
+
+/**
+ * Get number of pages in flash area
+ *
+ * @param[in] fa flash area object to get page count for.
+ *
+ * @returns number of pages on success;
+ *	    negative errno value depending on cause of error and subsystem that has failed.
+ */
+ssize_t flash_area_get_page_count(const struct flash_area *fa);
+
+/**
+ * Get information on next page from the give one
+ *
+ * @param[in] fa flash area object to get page info from;
+ * @param[in,out] pi pointer to current page information that will be used to get the next page;
+ *		  the structure will be updated with information on next page on success, otherwise
+ *		  the structure is not modified;
+ * @param[in] wrap if false then attempting to get next page to the last page, in area, will cause
+ *	      -EINVAL error; if true then the first page will be returned.
+ *
+ * @return 0 on success;
+ *	   -EINVAL in case when page out of range of flash area would have been returned;
+ *	   other negative errno value depending on cause of error and subsystem that has failed.
+ */
+int flash_area_get_next_page_info(const struct flash_area *fa, struct flash_pages_info *pi,
+	bool wrap);
 
 /**
  * Get the value expected to be read when accessing any erased

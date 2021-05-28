@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2020 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/delete-node/ &storage_partition;
+
+&flash_sim0 {
+	/*
+	 * Sync with qemu_x86.dts on partitions to make sure
+	 * size is large enough and there are no overlaps.
+	 */
+
+	partitions {
+		scratch_partition: partition@31000 {
+			label = "image_scratch";
+
+			reg = <0x31000 DT_SIZE_K(32)>;
+		};
+		storage_partition: partition@39000 {
+			label = "storage";
+
+			reg = <0x39000 DT_SIZE_K(32)>;
+		};
+	};
+};
