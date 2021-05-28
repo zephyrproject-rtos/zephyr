@@ -2455,6 +2455,27 @@ struct bt_hci_evt_le_connectionless_iq_report {
 	struct bt_hci_le_iq_sample sample[0];
 } __packed;
 
+#define BT_HCI_EVT_LE_CONNECTION_IQ_REPORT      0x16
+struct bt_hci_evt_le_connection_iq_report {
+	uint16_t conn_handle;
+	uint8_t  rx_phy;
+	uint8_t  data_chan_idx;
+	int16_t  rssi;
+	uint8_t  rssi_ant_id;
+	uint8_t  cte_type;
+	uint8_t  slot_durations;
+	uint8_t  packet_status;
+	uint16_t conn_evt_counter;
+	uint8_t  sample_count;
+	struct bt_hci_le_iq_sample sample[0];
+} __packed;
+
+#define BT_HCI_EVT_LE_CTE_REQUEST_FAILED       0x17
+struct bt_hci_evt_le_cte_req_failed {
+	uint8_t  status;
+	uint16_t conn_handle;
+} __packed;
+
 #define BT_HCI_EVT_LE_PAST_RECEIVED                0x18
 struct bt_hci_evt_le_past_received {
 	uint8_t      status;
@@ -2644,6 +2665,8 @@ struct bt_hci_evt_le_biginfo_adv_report {
 #define BT_EVT_MASK_LE_SCAN_REQ_RECEIVED         BT_EVT_BIT(18)
 #define BT_EVT_MASK_LE_CHAN_SEL_ALGO             BT_EVT_BIT(19)
 #define BT_EVT_MASK_LE_CONNECTIONLESS_IQ_REPORT  BT_EVT_BIT(21)
+#define BT_EVT_MASK_LE_CONNECTION_IQ_REPORT      BT_EVT_BIT(22)
+#define BT_EVT_MASK_LE_CTE_REQUEST_FAILED        BT_EVT_BIT(23)
 #define BT_EVT_MASK_LE_PAST_RECEIVED             BT_EVT_BIT(23)
 #define BT_EVT_MASK_LE_CIS_ESTABLISHED           BT_EVT_BIT(24)
 #define BT_EVT_MASK_LE_CIS_REQ                   BT_EVT_BIT(25)
