@@ -543,4 +543,4 @@ Currently only the MCUboot bootloader is supported. See :ref:`mcuboot` for more
 information.
 
 .. _MCUmgr: https://github.com/apache/mynewt-mcumgr
-.. _MCUboot design: https://github.com/mcu-tools/mcuboot/blob/master/docs/design.md
+.. _MCUboot design: https://github.com/mcu-tools/mcuboot/blob/main/docs/design.md
