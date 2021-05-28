@@ -89,3 +89,7 @@ config OPENTHREAD_CSL_SAMPLE_WINDOW
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 	int "CSL receiver wake up margin in units of 10 symbols"
 	default 3
+
+config OPENTHREAD_MAC_SOFTWARE_TX_SECURITY_ENABLE
+	bool "Enable software transmission security logic"
+	default y if OPENTHREAD_THREAD_VERSION_1_2
