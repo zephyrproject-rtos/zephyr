@@ -201,8 +201,6 @@ static inline int net_capture_send(const struct device *dev,
  *
  * @param iface Network interface the packet is being sent
  * @param pkt The network packet that is sent
- *
- * @return 0 if ok, <0 if network packet capture failed
  */
 #if defined(CONFIG_NET_CAPTURE)
 void net_capture_pkt(struct net_if *iface, struct net_pkt *pkt);
