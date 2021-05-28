@@ -191,6 +191,8 @@ Architectures
     * Cleaned up definitions of SoC-specific memory regions in the common Cortex-M linker script.
     * Added support for clearing NXP MPU region configuration during Zephyr early boot stage.
     * Disallowed fpu hard ABI when building Non-Secure applications with TF-M on Cortex-M33.
+    * Enhanced register information dump in fault exceptions in Cortex-R.
+    * Fixed spurious interrupt handling in Cortex-R.
 
   * AARCH64
 
