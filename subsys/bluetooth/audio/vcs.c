@@ -28,16 +28,13 @@
 #if defined(CONFIG_BT_VCS)
 
 #define VOLUME_DOWN(current_vol) \
-	((uint8_t)MAX(0, (int)current_vol - vcs_inst.volume_step))
+	((uint8_t)MAX(0, (int)current_vol - vcs_inst.srv.volume_step))
 #define VOLUME_UP(current_vol) \
-	((uint8_t)MIN(UINT8_MAX, (int)current_vol + vcs_inst.volume_step))
+	((uint8_t)MIN(UINT8_MAX, (int)current_vol + vcs_inst.srv.volume_step))
 
 #define VALID_VCS_OPCODE(opcode) ((opcode) <= BT_VCS_OPCODE_MUTE)
 
-static struct bt_vcs_server vcs_inst = {
-	.state.volume = 100,
-	.volume_step = 1,
-};
+static struct bt_vcs vcs_inst;
 
 static void volume_state_cfg_changed(const struct bt_gatt_attr *attr,
 				     uint16_t value)
@@ -50,11 +47,11 @@ static ssize_t read_vol_state(struct bt_conn *conn,
 			      uint16_t len, uint16_t offset)
 {
 	BT_DBG("Volume %u, mute %u, counter %u",
-	       vcs_inst.state.volume, vcs_inst.state.mute,
-	       vcs_inst.state.change_counter);
+	       vcs_inst.srv.state.volume, vcs_inst.srv.state.mute,
+	       vcs_inst.srv.state.change_counter);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &vcs_inst.state, sizeof(vcs_inst.state));
+				 &vcs_inst.srv.state, sizeof(vcs_inst.srv.state));
 }
 
 static ssize_t write_vcs_control(struct bt_conn *conn,
@@ -92,71 +89,71 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 
 	BT_DBG("Opcode %u, counter %u", opcode, cp_val->cp.counter);
 
-	if (cp_val->cp.counter != vcs_inst.state.change_counter) {
+	if (cp_val->cp.counter != vcs_inst.srv.state.change_counter) {
 		return BT_GATT_ERR(BT_VCS_ERR_INVALID_COUNTER);
 	}
 
 	switch (opcode) {
 	case BT_VCS_OPCODE_REL_VOL_DOWN:
 		BT_DBG("Relative Volume Down (0x%x)", opcode);
-		if (vcs_inst.state.volume > 0) {
-			vcs_inst.state.volume = VOLUME_DOWN(vcs_inst.state.volume);
+		if (vcs_inst.srv.state.volume > 0) {
+			vcs_inst.srv.state.volume = VOLUME_DOWN(vcs_inst.srv.state.volume);
 			notify = true;
 		}
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_REL_VOL_UP:
 		BT_DBG("Relative Volume Up (0x%x)", opcode);
-		if (vcs_inst.state.volume != UINT8_MAX) {
-			vcs_inst.state.volume = VOLUME_UP(vcs_inst.state.volume);
+		if (vcs_inst.srv.state.volume != UINT8_MAX) {
+			vcs_inst.srv.state.volume = VOLUME_UP(vcs_inst.srv.state.volume);
 			notify = true;
 		}
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_UNMUTE_REL_VOL_DOWN:
 		BT_DBG("(Unmute) relative Volume Down (0x%x)", opcode);
-		if (vcs_inst.state.volume > 0) {
-			vcs_inst.state.volume = VOLUME_DOWN(vcs_inst.state.volume);
+		if (vcs_inst.srv.state.volume > 0) {
+			vcs_inst.srv.state.volume = VOLUME_DOWN(vcs_inst.srv.state.volume);
 			notify = true;
 		}
-		if (vcs_inst.state.mute) {
-			vcs_inst.state.mute = 0;
+		if (vcs_inst.srv.state.mute) {
+			vcs_inst.srv.state.mute = 0;
 			notify = true;
 		}
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_UNMUTE_REL_VOL_UP:
 		BT_DBG("(Unmute) relative Volume Up (0x%x)", opcode);
-		if (vcs_inst.state.volume != UINT8_MAX) {
-			vcs_inst.state.volume = VOLUME_UP(vcs_inst.state.volume);
+		if (vcs_inst.srv.state.volume != UINT8_MAX) {
+			vcs_inst.srv.state.volume = VOLUME_UP(vcs_inst.srv.state.volume);
 			notify = true;
 		}
-		if (vcs_inst.state.mute) {
-			vcs_inst.state.mute = 0;
+		if (vcs_inst.srv.state.mute) {
+			vcs_inst.srv.state.mute = 0;
 			notify = true;
 		}
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_SET_ABS_VOL:
 		BT_DBG("Set Absolute Volume (0x%x) %u",
-		       opcode, vcs_inst.state.volume);
-		if (vcs_inst.state.volume != cp_val->volume) {
-			vcs_inst.state.volume = cp_val->volume;
+		       opcode, vcs_inst.srv.state.volume);
+		if (vcs_inst.srv.state.volume != cp_val->volume) {
+			vcs_inst.srv.state.volume = cp_val->volume;
 			notify = true;
 		}
 		volume_change = true;
 		break;
 	case BT_VCS_OPCODE_UNMUTE:
 		BT_DBG("Unmute (0x%x)", opcode);
-		if (vcs_inst.state.mute) {
-			vcs_inst.state.mute = 0;
+		if (vcs_inst.srv.state.mute) {
+			vcs_inst.srv.state.mute = 0;
 			notify = true;
 		}
 		break;
 	case BT_VCS_OPCODE_MUTE:
 		BT_DBG("Mute (0x%x)", opcode);
-		if (vcs_inst.state.mute == 0) {
-			vcs_inst.state.mute = 1;
+		if (vcs_inst.srv.state.mute == 0) {
+			vcs_inst.srv.state.mute = 1;
 			notify = true;
 		}
 		break;
@@ -166,30 +163,30 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	}
 
 	if (notify) {
-		vcs_inst.state.change_counter++;
+		vcs_inst.srv.state.change_counter++;
 		BT_DBG("New state: volume %u, mute %u, counter %u",
-		       vcs_inst.state.volume, vcs_inst.state.mute,
-		       vcs_inst.state.change_counter);
+		       vcs_inst.srv.state.volume, vcs_inst.srv.state.mute,
+		       vcs_inst.srv.state.change_counter);
 
 		bt_gatt_notify_uuid(NULL, BT_UUID_VCS_STATE,
-				    vcs_inst.service_p->attrs,
-				    &vcs_inst.state, sizeof(vcs_inst.state));
+				    vcs_inst.srv.service_p->attrs,
+				    &vcs_inst.srv.state, sizeof(vcs_inst.srv.state));
 
-		if (vcs_inst.cb && vcs_inst.cb->state) {
-			vcs_inst.cb->state(conn, 0, vcs_inst.state.volume,
-					   vcs_inst.state.mute);
+		if (vcs_inst.srv.cb && vcs_inst.srv.cb->state) {
+			vcs_inst.srv.cb->state(conn, 0, vcs_inst.srv.state.volume,
+					   vcs_inst.srv.state.mute);
 		}
 	}
 
-	if (volume_change && !vcs_inst.flags) {
-		vcs_inst.flags = 1;
+	if (volume_change && !vcs_inst.srv.flags) {
+		vcs_inst.srv.flags = 1;
 
 		bt_gatt_notify_uuid(NULL, BT_UUID_VCS_FLAGS,
-				    vcs_inst.service_p->attrs,
-				    &vcs_inst.flags, sizeof(vcs_inst.flags));
+				    vcs_inst.srv.service_p->attrs,
+				    &vcs_inst.srv.flags, sizeof(vcs_inst.srv.flags));
 
-		if (vcs_inst.cb && vcs_inst.cb->flags) {
-			vcs_inst.cb->flags(conn, 0, vcs_inst.flags);
+		if (vcs_inst.srv.cb && vcs_inst.srv.cb->flags) {
+			vcs_inst.srv.cb->flags(conn, 0, vcs_inst.srv.flags);
 		}
 	}
 	return len;
@@ -203,9 +200,9 @@ static void flags_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 static ssize_t read_flags(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, uint16_t len, uint16_t offset)
 {
-	BT_DBG("0x%02x", vcs_inst.flags);
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &vcs_inst.flags,
-				 sizeof(vcs_inst.flags));
+	BT_DBG("0x%02x", vcs_inst.srv.flags);
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &vcs_inst.srv.flags,
+				 sizeof(vcs_inst.srv.flags));
 }
 
 #define DUMMY_INCLUDE(i, _) BT_GATT_INCLUDE_SERVICE(NULL),
@@ -248,15 +245,15 @@ static int prepare_vocs_inst(struct bt_vcs_register_param *param)
 		if (bt_uuid_cmp(vcs_attrs[i].uuid, BT_UUID_GATT_INCLUDE) == 0 &&
 		    !vcs_attrs[i].user_data) {
 
-			vcs_inst.vocs_insts[j] = bt_vocs_free_instance_get();
+			vcs_inst.srv.vocs_insts[j] = bt_vocs_free_instance_get();
 
-			if (vcs_inst.vocs_insts[j] == NULL) {
+			if (vcs_inst.srv.vocs_insts[j] == NULL) {
 				BT_ERR("Could not get free VOCS instances[%u]",
 				       j);
 				return -ENOMEM;
 			}
 
-			err = bt_vocs_register(vcs_inst.vocs_insts[j],
+			err = bt_vocs_register(vcs_inst.srv.vocs_insts[j],
 					       &param->vocs_param[j]);
 			if (err != 0) {
 				BT_DBG("Could not register VOCS instance[%u]: %d",
@@ -264,7 +261,7 @@ static int prepare_vocs_inst(struct bt_vcs_register_param *param)
 				return err;
 			}
 
-			vcs_attrs[i].user_data = bt_vocs_svc_decl_get(vcs_inst.vocs_insts[j]);
+			vcs_attrs[i].user_data = bt_vocs_svc_decl_get(vcs_inst.srv.vocs_insts[j]);
 			j++;
 
 			if (j == CONFIG_BT_VCS_VOCS_INSTANCE_COUNT) {
@@ -290,15 +287,15 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 	for (j = 0, i = 0; i < ARRAY_SIZE(vcs_attrs); i++) {
 		if (bt_uuid_cmp(vcs_attrs[i].uuid, BT_UUID_GATT_INCLUDE) == 0 &&
 		    !vcs_attrs[i].user_data) {
-			vcs_inst.aics_insts[j] = bt_aics_free_instance_get();
+			vcs_inst.srv.aics_insts[j] = bt_aics_free_instance_get();
 
-			if (vcs_inst.aics_insts[j] == NULL) {
+			if (vcs_inst.srv.aics_insts[j] == NULL) {
 				BT_ERR("Could not get free AICS instances[%u]",
 				       j);
 				return -ENOMEM;
 			}
 
-			err = bt_aics_register(vcs_inst.aics_insts[j],
+			err = bt_aics_register(vcs_inst.srv.aics_insts[j],
 					       &param->aics_param[j]);
 			if (err != 0) {
 				BT_DBG("Could not register AICS instance[%u]: %d",
@@ -306,7 +303,7 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 				return err;
 			}
 
-			vcs_attrs[i].user_data = bt_aics_svc_decl_get(vcs_inst.aics_insts[j]);
+			vcs_attrs[i].user_data = bt_aics_svc_decl_get(vcs_inst.srv.aics_insts[j]);
 			j++;
 
 			BT_DBG("AICS P %p", vcs_attrs[i].user_data);
@@ -346,16 +343,19 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 		}
 	}
 
-	vcs_inst.service_p = &vcs_svc;
+
+	vcs_inst.srv.state.volume = 100; /* Default value */
+	vcs_inst.srv.volume_step = 1; /* Default value */
+	vcs_inst.srv.service_p = &vcs_svc;
 
 	err = bt_gatt_service_register(&vcs_svc);
 	if (err != 0) {
 		BT_DBG("VCS service register failed: %d", err);
 	}
 
-	vcs_inst.cb = param->cb;
+	vcs_inst.srv.cb = param->cb;
 
-	*vcs = (struct bt_vcs *)&vcs_inst;
+	*vcs = &vcs_inst;
 
 	return err;
 }
@@ -387,8 +387,8 @@ static bool valid_vocs_inst(struct bt_vocs *vocs)
 	}
 
 #if defined(CONFIG_BT_VCS)
-	for (int i = 0; i < ARRAY_SIZE(vcs_inst.vocs_insts); i++) {
-		if (vcs_inst.vocs_insts[i] == vocs) {
+	for (int i = 0; i < ARRAY_SIZE(vcs_inst.srv.vocs_insts); i++) {
+		if (vcs_inst.srv.vocs_insts[i] == vocs) {
 			return true;
 		}
 	}
@@ -404,8 +404,8 @@ static bool valid_aics_inst(struct bt_aics *aics)
 	}
 
 #if defined(CONFIG_BT_VCS)
-	for (int i = 0; i < ARRAY_SIZE(vcs_inst.aics_insts); i++) {
-		if (vcs_inst.aics_insts[i] == aics) {
+	for (int i = 0; i < ARRAY_SIZE(vcs_inst.srv.aics_insts); i++) {
+		if (vcs_inst.srv.aics_insts[i] == aics) {
 			return true;
 		}
 	}
@@ -429,11 +429,11 @@ int bt_vcs_included_get(struct bt_conn *conn, struct bt_vcs_included *included)
 		return -EINVAL;
 	}
 
-	included->vocs_cnt = ARRAY_SIZE(vcs_inst.vocs_insts);
-	included->vocs = vcs_inst.vocs_insts;
+	included->vocs_cnt = ARRAY_SIZE(vcs_inst.srv.vocs_insts);
+	included->vocs = vcs_inst.srv.vocs_insts;
 
-	included->aics_cnt = ARRAY_SIZE(vcs_inst.aics_insts);
-	included->aics = vcs_inst.aics_insts;
+	included->aics_cnt = ARRAY_SIZE(vcs_inst.srv.aics_insts);
+	included->aics = vcs_inst.srv.aics_insts;
 
 	return 0;
 #else
@@ -445,7 +445,7 @@ int bt_vcs_vol_step_set(uint8_t volume_step)
 {
 #if defined(CONFIG_BT_VCS)
 	if (volume_step > 0) {
-		vcs_inst.volume_step = volume_step;
+		vcs_inst.srv.volume_step = volume_step;
 		return 0;
 	} else {
 		return -EINVAL;
@@ -466,9 +466,9 @@ int bt_vcs_vol_get(struct bt_conn *conn)
 	}
 
 #if defined(CONFIG_BT_VCS)
-	if (vcs_inst.cb && vcs_inst.cb->state) {
-		vcs_inst.cb->state(conn, 0, vcs_inst.state.volume,
-					vcs_inst.state.mute);
+	if (vcs_inst.srv.cb && vcs_inst.srv.cb->state) {
+		vcs_inst.srv.cb->state(conn, 0, vcs_inst.srv.state.volume,
+					vcs_inst.srv.state.mute);
 	}
 
 	return 0;
@@ -488,8 +488,8 @@ int bt_vcs_flags_get(struct bt_conn *conn)
 	}
 
 #if defined(CONFIG_BT_VCS)
-	if (vcs_inst.cb && vcs_inst.cb->flags) {
-		vcs_inst.cb->flags(conn, 0, vcs_inst.flags);
+	if (vcs_inst.srv.cb && vcs_inst.srv.cb->flags) {
+		vcs_inst.srv.cb->flags(conn, 0, vcs_inst.srv.flags);
 	}
 
 	return 0;
@@ -511,7 +511,7 @@ int bt_vcs_vol_down(struct bt_conn *conn)
 #if defined(CONFIG_BT_VCS)
 	const struct vcs_control cp = {
 		.opcode = BT_VCS_OPCODE_REL_VOL_DOWN,
-		.counter = vcs_inst.state.change_counter,
+		.counter = vcs_inst.srv.state.change_counter,
 	};
 	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
@@ -534,7 +534,7 @@ int bt_vcs_vol_up(struct bt_conn *conn)
 #if defined(CONFIG_BT_VCS)
 	const struct vcs_control cp = {
 		.opcode = BT_VCS_OPCODE_REL_VOL_UP,
-		.counter = vcs_inst.state.change_counter,
+		.counter = vcs_inst.srv.state.change_counter,
 	};
 	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
@@ -557,7 +557,7 @@ int bt_vcs_unmute_vol_down(struct bt_conn *conn)
 #if defined(CONFIG_BT_VCS)
 	const struct vcs_control cp = {
 		.opcode = BT_VCS_OPCODE_UNMUTE_REL_VOL_DOWN,
-		.counter = vcs_inst.state.change_counter,
+		.counter = vcs_inst.srv.state.change_counter,
 	};
 	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
@@ -580,7 +580,7 @@ int bt_vcs_unmute_vol_up(struct bt_conn *conn)
 #if defined(CONFIG_BT_VCS)
 	const struct vcs_control cp = {
 		.opcode = BT_VCS_OPCODE_UNMUTE_REL_VOL_UP,
-		.counter = vcs_inst.state.change_counter,
+		.counter = vcs_inst.srv.state.change_counter,
 	};
 	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
@@ -604,7 +604,7 @@ int bt_vcs_vol_set(struct bt_conn *conn, uint8_t volume)
 	const struct vcs_control_vol cp = {
 		.cp = {
 			.opcode = BT_VCS_OPCODE_SET_ABS_VOL,
-			.counter = vcs_inst.state.change_counter
+			.counter = vcs_inst.srv.state.change_counter
 		},
 		.volume = volume
 	};
@@ -629,7 +629,7 @@ int bt_vcs_unmute(struct bt_conn *conn)
 #if defined(CONFIG_BT_VCS)
 	const struct vcs_control cp = {
 		.opcode = BT_VCS_OPCODE_UNMUTE,
-		.counter = vcs_inst.state.change_counter,
+		.counter = vcs_inst.srv.state.change_counter,
 	};
 	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
@@ -652,7 +652,7 @@ int bt_vcs_mute(struct bt_conn *conn)
 #if defined(CONFIG_BT_VCS)
 	const struct vcs_control cp = {
 		.opcode = BT_VCS_OPCODE_MUTE,
-		.counter = vcs_inst.state.change_counter,
+		.counter = vcs_inst.srv.state.change_counter,
 	};
 	int err = write_vcs_control(NULL, NULL, &cp, sizeof(cp), 0, 0);
 
