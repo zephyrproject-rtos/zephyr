@@ -559,6 +559,13 @@ config BT_DF_CONNECTIONLESS_CTE_RX
 	  Enable support for reception and sampling of Constant Tone Extension
 	  in connectionless mode.
 
+config BT_DF_CONNECTION_CTE_RX
+	bool "Enable support for receive of CTE in connection mode"
+	depends on BT_DF
+	help
+	  Enable support for reception and sampling of Constant Tone Extension
+	  in connection mode.
+
 config BT_DEBUG_DF
 	bool "Bluetooth Direction Finding debug"
 	depends on BT_DF
