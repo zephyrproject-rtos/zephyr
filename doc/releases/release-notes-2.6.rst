@@ -656,6 +656,7 @@ Build and Infrastructure
 ************************
 
 * Improved support for additional toolchains:
+  * Support for the Intel oneApi toolchain.
 
 * Devicetree
 
