@@ -134,6 +134,9 @@ enum {
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
 
+/* Forward declaration data type to store CTE IQ samples report related data */
+struct cte_conn_iq_report;
+
 struct ull_hdr {
 	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
 				* events
@@ -261,7 +264,11 @@ struct node_rx_ftr {
 			uint16_t conn_handle;
 		} param_adv_term;
 	};
-	void     *extra;
+	union {
+		void *extra;
+		struct cte_conn_iq_report *iq_report;
+	};
+
 	uint32_t ticks_anchor;
 	uint32_t radio_end_us;
 	uint8_t  rssi;
