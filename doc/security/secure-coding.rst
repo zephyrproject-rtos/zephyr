@@ -26,7 +26,7 @@ This document covers guidelines for the `Zephyr Project`_, from a
 security perspective.  Many of the ideas contained herein are captured
 from other open source efforts.
 
-.. todo: Reference master document here
+.. todo: Reference main document here
 
 .. _Zephyr Project: https://www.zephyrproject.org/
 
