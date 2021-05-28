@@ -5,3 +5,7 @@ arch: x86
 toolchain:
   - zephyr
 ram: 8192
+testing:
+  ignore_tags:
+     - net
+     - bluetooth
