@@ -232,6 +232,94 @@ Architectures
     * Added support for kernel image to reside in virtual address space, allowing
       code execution and data manipulation via virtual addresses.
 
+Bluetooth
+*********
+
+* Audio
+
+  * Split up ISO handling from audio handling, and moved the latter to its
+    own directory.
+  * Added the Volume Offset Control Service and client.
+  * Added the Audio Input Control Service and client.
+  * Added the Volume Control Service and client.
+
+* Host
+
+  * Added basic support for Direction Finding.
+  * Added support for CTE connectionless transimission and reception over
+    periodic advertising.
+  * Refactored the HCI and ECC handling implementations.
+  * Stopped auto updating the device name in the adv data.
+  * Added support for logging security keys to be used by an air sniffer.
+  * Fixed a bonding issue where the local bond data was not being updated after
+    the remote device had removed it when the peer was not using the IRK stored
+    in the bonding information.
+  * Implemented the directory listing object to OTS.
+  * Added a function to access the ``bt_conn_iso`` object.
+  * Added a new configuration option for writeable device name.
+  * Added a new configuration option for minimum encryption key size.
+  * Added support for keypress notifications as an SMP responder.
+  * Added a new option, ``BT_LE_ADV_OPT_FORCE_NAME_IN_AD``, which forces the
+    device name to appear in the adv packet instead of the scan response.
+  * Added a security level check when sending a notification or indication.
+  * Added the ability to send HCI monitor traces over RTT.
+  * Refactored the Bluetooth buffer configuration for simplicity. See the
+    commit message of 6483e12a8ac4f495b28279a6b84014f633b0d374 for more info.
+  * Added support for concurrent advertising with multiple identities.
+  * Changed the logic to disable scanning before setting the random address.
+  * Fixed a crash where an ATT timeout occurred on a disconnected ATT channel.
+  * Changed the pairing procedure to fail pairing when both sides have the same
+    public key.
+  * Fixed an issue where GATT requests could deadlock the RX thread.
+  * Fixed an issue where a fixed passkey that was previously set could not be
+    cleared.
+  * Fixed an issue where callbacks for "security changed" and "pairing failed"
+    were not always called.
+  * Changed the pairing procedure to fail early if the remote device could not
+    reach the required security level.
+  * Fixed an issue where GATT notifications and Writes Without Response could
+    be sent out of order.
+  * Changed buffer ownership of ``bt_l2cap_chan_send``.
+    The application must now release the buffer for all returned errors.
+
+* Mesh
+
+  * Added CDB handle key refresh phase.
+  * Added the ability to perform replay checks on SeqAuth.
+  * Added the sending of a Link Close message when closing a link.
+  * Added a Proxy callback structure for Node ID enabling and disabling.
+  * Added a check for the response address in the Configuration Client.
+  * Introduced a new acknowledged messages API.
+  * Reworked the periodic publication timer and poll timeout scheduling logic.
+  * Added reporting configured ``LPNTimeout`` in ``cfg_srv``.
+  * Ensured that provisioning output count number is at least 1.
+  * Ensured to encrypt initial friend poll with friend credentials.
+  * Stopped resetting the PB ADV reliable timer on retransmission.
+
+* Bluetooth LE split software Controller
+
+  * Removed support for the nRF5340 PDK. Use the nRF5340 DK instead.
+  * Added basic support for Direction Finding.
+  * Added support for CTE connectionless transimission and reception over
+    periodic advertising.
+  * Added support for antenna switching in the context of Direction Finding.
+  * Added an invalid ACL data length check.
+  * Added basic support for the ISO Adaptation Layer.
+  * Added experimental support for Broadcast Isochronous Groups and Streams.
+  * Added partial experimental support for Connected Isochronous Groups and
+    Streams.
+  * Implemented extended connection creation and cancellation.
+  * Changed the policy to ignore connection requests from an already-connected
+    peer.
+  * Added a control procedure locking system.
+  * Added GPIO PA/LNA support for the Nordic nRF53x SoC series.
+  * Added FEM support for the nRF21540 IC.
+  * Added a new radio API to configure the CTE RX path.
+
+* HCI Driver
+
+  * Added support for the Espressif ESP32 platform.
+
 Boards & SoC Support
 ********************
 
