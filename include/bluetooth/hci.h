@@ -1568,7 +1568,7 @@ struct bt_hci_cp_le_set_conn_cte_tx_params {
 	uint16_t handle;
 	uint8_t  cte_types;
 	uint8_t  switch_pattern_len;
-	uint8_t  ant_id[0];
+	uint8_t  ant_ids[0];
 } __packed;
 
 struct bt_hci_rp_le_set_conn_cte_tx_params {
