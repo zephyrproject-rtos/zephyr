@@ -533,10 +533,18 @@ static void uarte_enable(const struct device *dev, uint32_t mask)
 	nrf_uarte_enable(get_uarte_instance(dev));
 }
 
+/* At this point we should have irq locked and any previous transfer completed.
+ * Transfer can be started, no need to wait for completion.
+ */
 static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
+#if CONFIG_PM_DEVICE
+	if (get_dev_data(dev)->pm_state != PM_DEVICE_STATE_ACTIVE) {
+		return;
+	}
+#endif
 	nrf_uarte_tx_buffer_set(uarte, buf, len);
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
@@ -1409,16 +1417,8 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 		key = wait_tx_ready(dev);
 	}
 
-	/* At this point we should have irq locked and any previous transfer
-	 * completed. Transfer can be started, no need to wait for completion.
-	 */
-#if CONFIG_PM_DEVICE
-	if (data->pm_state == PM_DEVICE_STATE_ACTIVE)
-#endif
-	{
-		data->char_out = c;
-		tx_start(dev, &data->char_out, 1);
-	}
+	data->char_out = c;
+	tx_start(dev, &data->char_out, 1);
 
 	irq_unlock(key);
 }
