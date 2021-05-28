@@ -1542,6 +1542,20 @@ struct bt_hci_rp_le_set_cl_cte_sampling_enable {
 	uint16_t sync_handle;
 } __packed;
 
+#define BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS BT_OP(BT_OGF_LE, 0x0054)
+struct bt_hci_cp_le_set_conn_cte_rx_params {
+	uint16_t handle;
+	uint8_t  sampling_enable;
+	uint8_t  slot_durations;
+	uint8_t  switch_pattern_len;
+	uint8_t  ant_ids[0];
+} __packed;
+
+struct bt_hci_rp_le_set_conn_cte_rx_params {
+	uint8_t  status;
+	uint16_t handle;
+} __packed;
+
 #define BT_HCI_LE_AOA_CTE_RSP                   BIT(0)
 #define BT_HCI_LE_AOD_CTE_RSP_1US               BIT(1)
 #define BT_HCI_LE_AOD_CTE_RSP_2US               BIT(2)
