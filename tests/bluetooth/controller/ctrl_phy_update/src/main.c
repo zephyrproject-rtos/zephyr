@@ -30,6 +30,7 @@
 
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
@@ -51,6 +52,18 @@ static void setup(void)
 	conn.lll.phy_tx_time = PHY_1M;
 	conn.lll.phy_rx = PHY_1M;
 	conn.lll.phy_tx = PHY_1M;
+
+	/* Init DLE data */
+	ull_conn_default_tx_octets_set(251);
+	ull_conn_default_tx_time_set(2120);
+	ull_dle_init(&conn, PHY_1M);
+	/* Emulate different remote numbers to trigger update of eff */
+	conn.lll.dle.remote.max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN*3;
+	conn.lll.dle.remote.max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN*3;
+	conn.lll.dle.remote.max_tx_time = PKT_US(conn.lll.dle.remote.max_tx_octets, PHY_1M);
+	conn.lll.dle.remote.max_rx_time = PKT_US(conn.lll.dle.remote.max_rx_octets, PHY_1M);
+	ull_dle_update_eff(&conn);
+
 }
 
 #define CHECK_PREF_PHY_STATE(_conn, _tx, _rx)\
@@ -85,6 +98,8 @@ void test_phy_update_mas_loc(void)
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M, .tx_phys = PHY_1M | PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
+							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
@@ -117,6 +132,9 @@ void test_phy_update_mas_loc(void)
 	/* Done */
 	event_done(&conn);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* Release Tx */
 	ull_cp_release_tx(tx);
 
@@ -129,6 +147,9 @@ void test_phy_update_mas_loc(void)
 
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
+
+	/* Check that data tx is no lonnger paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
 	event_done(&conn);
@@ -166,8 +187,9 @@ void test_phy_update_mas_loc(void)
 	/* Done */
 	event_done(&conn);
 
-	/* There should be one host notification */
+	/* There should be two host notifications, one pu and one dle */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -240,6 +262,8 @@ void test_phy_update_mas_rem(void)
 	struct pdu_data *pdu;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = 0, .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
+							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_1M)};
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
@@ -264,6 +288,9 @@ void test_phy_update_mas_rem(void)
 	/* Done */
 	event_done(&conn);
 
+	/* Check that data tx was paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* Prepare */
 	event_prepare(&conn);
 
@@ -276,6 +303,9 @@ void test_phy_update_mas_rem(void)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
@@ -310,6 +340,7 @@ void test_phy_update_mas_rem(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -326,6 +357,8 @@ void test_phy_update_sla_loc(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
+							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
@@ -356,6 +389,7 @@ void test_phy_update_sla_loc(void)
 
 	/* Done */
 	event_done(&conn);
+
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -399,6 +433,7 @@ void test_phy_update_sla_loc(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -416,6 +451,8 @@ void test_phy_update_sla_rem(void)
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M | PHY_CODED, .tx_phys = PHY_1M | PHY_2M | PHY_CODED};
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = 0, .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_1M),
+							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
@@ -437,11 +474,11 @@ void test_phy_update_sla_rem(void)
 	/* Rx */
 	lt_tx(LL_PHY_REQ, &conn, &req);
 
-	/* TX Ack */
-	event_tx_ack(&conn, tx);
-
 	/* Done */
 	event_done(&conn);
+
+	/* We received a REQ, so data tx should be paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
 
 	/* Prepare */
 	event_prepare(&conn);
@@ -454,8 +491,14 @@ void test_phy_update_sla_rem(void)
 	ind.instant = instant = event_counter(&conn) + 6;
 	lt_tx(LL_PHY_UPDATE_IND, &conn, &ind);
 
+	/* We are sending RSP, so data tx should be paused until after tx ack */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
+
+	/* Check that data tx is no longer paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Done */
 	event_done(&conn);
@@ -489,6 +532,7 @@ void test_phy_update_sla_rem(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -509,6 +553,8 @@ void test_phy_update_mas_loc_collision(void)
 	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M, .tx_phys = PHY_1M | PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 9, .m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_2M };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
+							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
 	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -542,11 +588,20 @@ void test_phy_update_mas_loc_collision(void)
 	/* Rx - emulate colliding PHY_REQ from peer */
 	lt_tx(LL_PHY_REQ, &conn, &req);
 
+	/* Check that data tx is paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
 
+	/* Check that data tx is not paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
+
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx is not paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -590,6 +645,9 @@ void test_phy_update_mas_loc_collision(void)
 	/* Done */
 	event_done(&conn);
 
+	/* Check that data tx is paused */
+	zassert_equal(conn.tx_q.pause_data, 1U, "Data tx is not paused");
+
 	/*** ***/
 
 	/* Prepare */
@@ -605,6 +663,9 @@ void test_phy_update_mas_loc_collision(void)
 
 	/* Done */
 	event_done(&conn);
+
+	/* Check that data tx is not paused */
+	zassert_equal(conn.tx_q.pause_data, 0U, "Data tx is paused");
 
 	/* Save Instant */
 	pdu = (struct pdu_data *)tx->pdu;
@@ -641,6 +702,7 @@ void test_phy_update_mas_loc_collision(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -660,6 +722,10 @@ void test_phy_update_mas_rem_collision(void)
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M, .tx_phys = PHY_1M | PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind_1 = { .instant = 7, .m_to_s_phy = 0, .s_to_m_phy = PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind_2 = { .instant = 14, .m_to_s_phy = PHY_2M, .s_to_m_phy = 0 };
+	struct pdu_data_llctrl_length_rsp length_ntf_1 = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
+							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_1M)};
+	struct pdu_data_llctrl_length_rsp length_ntf_2 = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
+							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M)};
 	uint16_t instant;
 
 	struct node_rx_pu pu = {
@@ -749,6 +815,7 @@ void test_phy_update_mas_rem_collision(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf_1);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -800,6 +867,7 @@ void test_phy_update_mas_rem_collision(void)
 
 	/* There should be one host notification */
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf_2);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -817,7 +885,8 @@ void test_phy_update_sla_loc_collision(void)
 	struct pdu_data_llctrl_phy_req req_slave = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
 	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7, .m_to_s_phy = PHY_2M, .s_to_m_phy = PHY_1M };
-//	struct pdu_data_llctrl_phy_upd_ind ind_2 = { .instant = 14, .m_to_s_phy = PHY_2M, .s_to_m_phy = 0 };
+	struct pdu_data_llctrl_length_rsp length_ntf = { 3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_2M),
+							3*PDU_DC_PAYLOAD_SIZE_MIN, PKT_US(3*PDU_DC_PAYLOAD_SIZE_MIN,PHY_1M)};
 	uint16_t instant;
 
 	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
@@ -922,6 +991,7 @@ void test_phy_update_sla_loc_collision(void)
 	/* There should be one host notification */
 	pu.status = BT_HCI_ERR_SUCCESS;
 	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
