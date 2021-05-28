@@ -819,6 +819,13 @@ Libraries / Subsystems
 
   * MCUmgr
 
+    * Fixed an issue with the file system management failing to
+      open files due to missing initializations of `fs_file_t` structures.
+    * Fixed an issue where multiple SMP commands sent one after the other would
+      corrupt CBOR payload.
+    * Fixed problem where mcumgr over shell would stall and wait for
+      retransmissions of frames.
+
   * updatehub
 
 * Settings
@@ -866,6 +873,11 @@ Libraries / Subsystems
 * LVGL
 
 * Shell
+
+  * Added ``CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE`` option that allows to set
+    size of the dummy backend buffer; changing this parameter allows to work
+    around issue, where output from command, shell that is gathered by the dummy
+    backend, gets cut to the size of buffer.
 
 * Storage
 
