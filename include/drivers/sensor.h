@@ -451,7 +451,7 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
  * driver.  It is currently up to the caller to ensure that the handler
  * does not overflow the stack.
  *
- * This API is not permitted for user threads.
+ * @funcprops \supervisor
  *
  * @param dev Pointer to the sensor device
  * @param trig The trigger to activate
