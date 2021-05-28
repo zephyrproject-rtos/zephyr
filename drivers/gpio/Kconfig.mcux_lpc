@@ -3,24 +3,8 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig GPIO_MCUX_LPC
+config GPIO_MCUX_LPC
 	bool "MCUX LPC GPIO driver"
 	depends on HAS_MCUX
 	help
 	  Enable the MCUX LPC pinmux driver.
-
-if GPIO_MCUX_LPC
-
-config GPIO_MCUX_LPC_PORT0
-	bool "Port 0"
-	depends on $(dt_nodelabel_enabled,pio0)
-	help
-	  Enable Port 0.
-
-config GPIO_MCUX_LPC_PORT1
-	bool "Port 1"
-	depends on $(dt_nodelabel_enabled,pio1)
-	help
-	  Enable Port 1.
-
-endif # GPIO_MCUX_LPC
