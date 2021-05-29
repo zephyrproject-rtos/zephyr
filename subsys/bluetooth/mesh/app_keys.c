@@ -460,7 +460,7 @@ int bt_mesh_keys_resolve(struct bt_mesh_msg_ctx *ctx,
 		}
 
 		if (ctx->app_idx == BT_MESH_KEY_DEV_REMOTE &&
-		    !bt_mesh_elem_find(ctx->addr)) {
+		    !bt_mesh_has_addr(ctx->addr)) {
 			struct bt_mesh_cdb_node *node;
 
 			if (!IS_ENABLED(CONFIG_BT_MESH_CDB)) {

@@ -472,7 +472,7 @@ static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
 
 	src = sys_get_be16(&buf->data[5]);
 
-	if (bt_mesh_elem_find(src)) {
+	if (bt_mesh_has_addr(src)) {
 		uint32_t seq;
 
 		if (FRIEND_ADV(buf)->app_idx != BT_MESH_KEY_UNUSED) {
@@ -1034,7 +1034,7 @@ init_friend:
 	       frnd->lpn, rx->ctx.recv_rssi, frnd->recv_delay, frnd->poll_to);
 
 	if (BT_MESH_ADDR_IS_UNICAST(frnd->clear.frnd) &&
-	    !bt_mesh_elem_find(frnd->clear.frnd)) {
+	    !bt_mesh_has_addr(frnd->clear.frnd)) {
 		clear_procedure_start(frnd);
 	}
 
@@ -1402,7 +1402,7 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
 	 * this rx function. These packets have already been added to the
 	 * queue, and should be ignored.
 	 */
-	if (bt_mesh_elem_find(rx->ctx.addr)) {
+	if (bt_mesh_has_addr(rx->ctx.addr)) {
 		return;
 	}
 
