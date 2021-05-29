@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites tests="10" failures="1" errors="1" time="0.0">
+	<testsuite name="Compliance" tests="10" errors="1" failures="1" skipped="1" time="0">
+		<testcase name="checkpatch" classname="Guidelines"/>
+		<testcase name="Kconfig" classname="Guidelines">
+			<failure message="Kconfig issues" type="failure">Kconfig.zephyr:17: '/Kconfig.shield.defconfig' not found (in 'source &quot;$(KCONFIG_BINARY_DIR)/Kconfig.shield.defconfig&quot;'). Check that environment variables are set correctly (e.g. $srctree, which is set to '/Users/budwandinger/Projects/nordic/budkoZephyr'). Also note that unset environment variables expand to the empty string.</failure>
+		</testcase>
+		<testcase name="Device tree" classname="Guidelines">
+			<error message="module 'testdtlib' has no attribute 'run'" type="error"/>
+		</testcase>
+		<testcase name="Codeowners" classname="Guidelines"/>
+		<testcase name="Nits" classname="Guidelines"/>
+		<testcase name="Documentation" classname="Guidelines"/>
+		<testcase name="Gitlint" classname="Guidelines"/>
+		<testcase name="pylint" classname="Guidelines"/>
+		<testcase name="License" classname="Guidelines">
+			<skipped message="scancode-toolkit not installed" type="skipped"/>
+		</testcase>
+		<testcase name="Identity/Emails" classname="Guidelines"/>
+	</testsuite>
+</testsuites>

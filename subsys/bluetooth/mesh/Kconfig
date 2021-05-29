@@ -168,6 +168,13 @@ config BT_MESH_PROXY_FILTER_SIZE
 
 endif # BT_CONN
 
+config BT_MESH_ACCESS_LAYER_MSG
+	bool "Enable direct Bluetooth message access layer messages"
+	help
+	  This option allows the applicaiton to directly access
+	  Bluetooth access layer messages without the need to
+	  instantiate Bluetooth mesh models.
+
 config BT_MESH_SELF_TEST
 	bool "Perform self-tests"
 	help
