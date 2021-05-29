@@ -48,6 +48,7 @@ struct mod_pub_val {
 
 static const struct bt_mesh_comp *dev_comp;
 static uint16_t dev_primary_addr;
+static void (*msg_cb)(uint32_t opcode, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
 					struct bt_mesh_elem *elem,
@@ -486,24 +487,67 @@ struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr)
 {
 	uint16_t index;
 
+	if (!BT_MESH_ADDR_IS_UNICAST(addr)) {
+		return NULL;
+	}
+
+	index = addr - dev_comp->elem[0].addr;
+	if (index >= dev_comp->elem_count) {
+		return NULL;
+	}
+
+	return &dev_comp->elem[index];
+}
+
+bool bt_mesh_has_addr(uint16_t addr)
+{
+	uint16_t index;
+
 	if (BT_MESH_ADDR_IS_UNICAST(addr)) {
-		index = (addr - dev_comp->elem[0].addr);
-		if (index < dev_comp->elem_count) {
-			return &dev_comp->elem[index];
-		} else {
-			return NULL;
-		}
+		return bt_mesh_elem_find(addr) != NULL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_ACCESS_LAYER_MSG) && msg_cb) {
+		return true;
 	}
 
 	for (index = 0; index < dev_comp->elem_count; index++) {
 		struct bt_mesh_elem *elem = &dev_comp->elem[index];
 
 		if (bt_mesh_elem_find_group(elem, addr)) {
-			return elem;
+			return true;
 		}
 	}
 
-	return NULL;
+	return false;
+}
+
+#if defined(CONFIG_BT_MESH_ACCESS_LAYER_MSG)
+void bt_mesh_msg_cb_set(void (*cb)(uint32_t opcode, struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf))
+{
+	msg_cb = cb;
+}
+#endif
+
+int bt_mesh_msg_send(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf, uint16_t src_addr,
+		const struct bt_mesh_send_cb *cb, void *cb_data)
+{
+	struct bt_mesh_net_tx tx = {
+		.ctx = ctx,
+		.src = src_addr,
+	};
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx.ctx->net_idx,
+	       tx.ctx->app_idx, tx.ctx->addr);
+	BT_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
+
+	if (!bt_mesh_is_provisioned()) {
+		BT_ERR("Local node is not yet provisioned");
+		return -EAGAIN;
+	}
+
+	return bt_mesh_trans_send(&tx, buf, cb, cb_data);
 }
 
 uint8_t bt_mesh_elem_count(void)
@@ -677,32 +721,22 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		(void)op->func(model, &rx->ctx, buf);
 		net_buf_simple_restore(buf, &state);
 	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_ACCESS_LAYER_MSG) && msg_cb) {
+		msg_cb(opcode, &rx->ctx, buf);
+	}
 }
 
 int bt_mesh_model_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-	struct bt_mesh_net_tx tx = {
-		.ctx = ctx,
-		.src = bt_mesh_model_elem(model)->addr,
-	};
-
-	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx.ctx->net_idx,
-	       tx.ctx->app_idx, tx.ctx->addr);
-	BT_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
-
-	if (!bt_mesh_is_provisioned()) {
-		BT_ERR("Local node is not yet provisioned");
-		return -EAGAIN;
-	}
-
-	if (!model_has_key(model, tx.ctx->app_idx)) {
-		BT_ERR("Model not bound to AppKey 0x%04x", tx.ctx->app_idx);
+	if (!model_has_key(model, ctx->app_idx)) {
+		BT_ERR("Model not bound to AppKey 0x%04x", ctx->app_idx);
 		return -EINVAL;
 	}
 
-	return bt_mesh_trans_send(&tx, msg, cb, cb_data);
+	return bt_mesh_msg_send(ctx, msg, bt_mesh_model_elem(model)->addr, cb, cb_data);
 }
 
 int bt_mesh_model_publish(struct bt_mesh_model *model)

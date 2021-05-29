@@ -499,7 +499,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
-	    bt_mesh_elem_find(tx->ctx->addr)) {
+	    bt_mesh_has_addr(tx->ctx->addr)) {
 		err = loopback(tx, buf->data, buf->len);
 
 		/* Local unicast messages should not go out to network */
@@ -599,7 +599,7 @@ static bool net_decrypt(struct bt_mesh_net_rx *rx, struct net_buf_simple *in,
 		return false;
 	}
 
-	if (bt_mesh_elem_find(rx->ctx.addr)) {
+	if (bt_mesh_has_addr(rx->ctx.addr)) {
 		BT_DBG("Dropping locally originated packet");
 		return false;
 	}
@@ -804,7 +804,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 	net_buf_simple_save(&buf, &state);
 
 	rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
-			  bt_mesh_elem_find(rx.ctx.recv_dst));
+			  bt_mesh_has_addr(rx.ctx.recv_dst));
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    net_if == BT_MESH_NET_IF_PROXY) {
