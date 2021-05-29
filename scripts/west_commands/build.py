@@ -7,6 +7,7 @@ import os
 import pathlib
 import shlex
 import sys
+import yaml
 
 from west import log
 from west.configuration import config
@@ -112,6 +113,9 @@ class Build(Forceable):
         group.add_argument('-t', '--target',
                            help='''run build system target TARGET
                            (try "-t usage")''')
+        group.add_argument('-T', '--test-item',
+                           help='''Build based on test data in testcase.yaml
+                           or sample.yaml''')
         group.add_argument('-o', '--build-opt', default=[], action='append',
                            help='''options to pass to the build tool
                            (make or ninja); may be given more than once''')
@@ -135,6 +139,9 @@ class Build(Forceable):
         # Store legacy -s option locally
         source_dir = self.args.source_dir
         self._parse_remainder(remainder)
+        # Parse testcase.yaml or sample.yaml files for additional options.
+        if self.args.test_item:
+            self._parse_test_item()
         if source_dir:
             if self.args.source_dir:
                 log.die("source directory specified twice:({} and {})".format(
@@ -207,6 +214,7 @@ class Build(Forceable):
     def _parse_remainder(self, remainder):
         self.args.source_dir = None
         self.args.cmake_opts = None
+
         try:
             # Only one source_dir is allowed, as the first positional arg
             if remainder[0] != _ARG_SEPARATOR:
@@ -220,6 +228,37 @@ class Build(Forceable):
                 self.args.cmake_opts = remainder
         except IndexError:
             return
+
+    def _parse_test_item(self):
+        for yp in ['sample.yaml', 'testcase.yaml']:
+            yf = os.path.join(self.args.source_dir, yp)
+            if not os.path.exists(yf):
+                continue
+            with open(yf, 'r') as stream:
+                try:
+                    y = yaml.safe_load(stream)
+                except yaml.YAMLError as exc:
+                    log.die(exc)
+            tests = y.get('tests')
+            if not tests:
+                continue
+            item = tests.get(self.args.test_item)
+            if not item:
+                continue
+
+            for data in ['extra_args', 'extra_configs']:
+                extra = item.get(data)
+                if not extra:
+                    continue
+                if isinstance(extra, str):
+                    arg_list = extra.split(" ")
+                else:
+                    arg_list = extra
+                args = ["-D{}".format(arg.replace('"', '')) for arg in arg_list]
+                if self.args.cmake_opts:
+                    self.args.cmake_opts.extend(args)
+                else:
+                    self.args.cmake_opts = args
 
     def _sanity_precheck(self):
         app = self.args.source_dir
