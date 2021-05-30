@@ -579,39 +579,42 @@ static int sx127x_antenna_configure(void)
 //     SetRegistersDefault( );
 // }
 
-static int sx127x_lora_init(const struct device *dev)
+static int sx1280_lora_init(const struct device *dev)
 {
-// #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-// 	static struct spi_cs_control spi_cs;
-// #endif
-// 	int ret;
-// 	uint8_t regval;
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	LOG_INF("test init cs");
+	static struct spi_cs_control spi_cs;
+#endif
+	int ret;
+	// uint8_t regval;
 
-// 	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
-// 	if (!dev_data.spi) {
-// 		LOG_ERR("Cannot get pointer to %s device",
-// 			DT_INST_BUS_LABEL(0));
-// 		return -EINVAL;
-// 	}
+	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
+	if (!dev_data.spi) {
+		LOG_ERR("Cannot get pointer to %s device",
+			DT_INST_BUS_LABEL(0));
+		return -EINVAL;
+	}
+	LOG_INF("test init 2");
 
-// 	dev_data.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-// 	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-// 	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
+	dev_data.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
+	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
+	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
 
-// #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-// 	spi_cs.gpio_dev = device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-// 	if (!spi_cs.gpio_dev) {
-// 		LOG_ERR("Cannot get pointer to %s device",
-// 			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-// 		return -EIO;
-// 	}
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	spi_cs.gpio_dev = device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+	if (!spi_cs.gpio_dev) {
+		LOG_ERR("Cannot get pointer to %s device",
+			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+		return -EIO;
+	}
 
-// 	spi_cs.gpio_pin = GPIO_CS_PIN;
-// 	spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
-// 	spi_cs.delay = 0U;
+	spi_cs.gpio_pin = GPIO_CS_PIN;
+	spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
+	spi_cs.delay = 0U;
 
-// 	dev_data.spi_cfg.cs = &spi_cs;
-// #endif
+	dev_data.spi_cfg.cs = &spi_cs;
+	LOG_INF("test init 3");
+#endif
 
 // 	ret = sx12xx_configure_pin(tcxo_power, GPIO_OUTPUT_INACTIVE);
 // 	if (ret) {
@@ -747,9 +750,11 @@ void WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
 {
 //     WaitOnBusy( ); // TODO
 
+	LOG_INF("test1.2");
     	// GpioWrite( &SX1276.Spi.Nss, 0 ); // TODO
 	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
 
+	LOG_INF("test2");
 
 	// RadioSpi->write( RADIO_WRITE_BUFFER );
 	int ret;
@@ -875,7 +880,7 @@ int sx1280_lora_test_cw(const struct device *dev, uint32_t frequency,
 	return 0;
 }
 
-int sx12xx_lora_config(const struct device *dev,
+int sx1280_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
 {
 	// Radio.SetChannel(config->frequency);
@@ -934,12 +939,12 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 }
 
 static const struct lora_driver_api sx127x_lora_api = {
-	.config = sx12xx_lora_config,
+	.config = sx1280_lora_config,
 	.send = sx1280_lora_send,
 	.recv = sx12xx_lora_recv,
 	.test_cw = sx1280_lora_test_cw,
 };
 
-DEVICE_DT_INST_DEFINE(0, &sx127x_lora_init, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0, &sx1280_lora_init, NULL, NULL,
 		      NULL, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
 		      &sx127x_lora_api);
