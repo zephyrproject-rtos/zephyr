@@ -880,9 +880,319 @@ int sx1280_lora_test_cw(const struct device *dev, uint32_t frequency,
 	return 0;
 }
 
+
+void sx1280_SetStandby( RadioStandbyModes_t standbyConfig )
+{
+    WriteCommand( RADIO_SET_STANDBY, ( uint8_t* )&standbyConfig, 1 );
+// TODO
+//     if( standbyConfig == STDBY_RC )
+//     {
+//         OperatingMode = MODE_STDBY_RC;
+//     }
+//     else
+//     {
+//         OperatingMode = MODE_STDBY_XOSC;
+//     }
+}
+
+void sx1280_SetRegulatorMode( RadioRegulatorModes_t mode )
+{
+    WriteCommand( RADIO_SET_REGULATORMODE, ( uint8_t* )&mode, 1 );
+}
+
+void sx1280_WriteRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
+{
+//     WaitOnBusy( ); // TODO
+
+	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+
+	int ret;
+
+	const struct spi_buf buf[3] = {
+		{
+			.buf = RADIO_WRITE_REGISTER,
+			.len = sizeof(RADIO_WRITE_REGISTER)
+		},
+		{
+			.buf = ( address & 0xFF00 ) >> 8,
+			.len = sizeof(address)
+		},
+		{
+			.buf = address & 0x00FF,
+			.len = sizeof(address)
+		},
+		{
+			.buf = buffer,
+			.len = size
+		}
+	};
+
+	struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf),
+	};
+
+	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+
+	if (ret < 0) {
+		LOG_ERR("Unable to write address: 0x%x", address);
+	}
+
+	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+
+//     WaitOnBusy( ); // TODO
+}
+
+void sx1280_WriteRegister( uint16_t address, uint8_t value )
+{
+    sx1280_WriteRegisterSPI( address, &value, 1 );
+}
+
+void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
+{
+//     WaitOnBusy( ); // TODO
+
+    	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+
+	int ret;
+
+	const struct spi_buf buf[3] = {
+		{
+			.buf = RADIO_READ_REGISTER,
+			.len = sizeof(RADIO_READ_REGISTER)
+		},
+		{
+			.buf = ( address & 0xFF00 ) >> 8,
+			.len = sizeof(address)
+		},
+		{
+			.buf = address & 0x00FF,
+			.len = sizeof(address)
+		},
+		{
+			.buf = 0,
+			.len = sizeof(0)
+		},
+		{
+			.buf = buffer,
+			.len = size
+		}
+	};
+
+	struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf),
+	};
+
+	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+
+	if (ret < 0) {
+		LOG_ERR("Unable to write address: 0x%x", address);
+	}
+
+	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+
+//     WaitOnBusy( ); // TODO
+}
+
+uint8_t sx1280_ReadRegister( uint16_t address )
+{
+    uint8_t data;
+
+    sx1280_ReadRegisterSPI( address, &data, 1 );
+    return data;
+}
+
+void sx1280_SetLNAGainSetting( const RadioLnaSettings_t lnaSetting )
+{
+    switch(lnaSetting)
+    {
+        case LNA_HIGH_SENSITIVITY_MODE:
+        {
+            sx1280_WriteRegister( REG_LNA_REGIME, sx1280_ReadRegister( REG_LNA_REGIME ) | MASK_LNA_REGIME );
+            break;
+        }
+        case LNA_LOW_POWER_MODE:
+        {
+            sx1280_WriteRegister( REG_LNA_REGIME, sx1280_ReadRegister( REG_LNA_REGIME ) & ~MASK_LNA_REGIME );
+            break;
+        }
+    }
+}
+
+void sx1280_SetPacketType( RadioPacketTypes_t packetType )
+{
+    // Save packet type internally to avoid questioning the radio
+//     this->PacketType = packetType; // TODO
+
+    WriteCommand( RADIO_SET_PACKETTYPE, ( uint8_t* )&packetType, 1 );
+}
+
+void sx1280_SetRfFrequency( uint32_t rfFrequency )
+{
+    uint8_t buf[3];
+    uint32_t freq = 0;
+
+    freq = ( uint32_t )( ( double )rfFrequency / ( double )FREQ_STEP );
+    buf[0] = ( uint8_t )( ( freq >> 16 ) & 0xFF );
+    buf[1] = ( uint8_t )( ( freq >> 8 ) & 0xFF );
+    buf[2] = ( uint8_t )( freq & 0xFF );
+    WriteCommand( RADIO_SET_RFFREQUENCY, buf, 3 );
+}
+
+void sx1280_SetBufferBaseAddresses( uint8_t txBaseAddress, uint8_t rxBaseAddress )
+{
+    uint8_t buf[2];
+
+    buf[0] = txBaseAddress;
+    buf[1] = rxBaseAddress;
+    WriteCommand( RADIO_SET_BUFFERBASEADDRESS, buf, 2 );
+}
+
+void sx1280_SetModulationParams( ModulationParams_t *modParams )
+{
+    uint8_t buf[3];
+
+    // Check if required configuration corresponds to the stored packet type
+    // If not, silently update radio packet type
+//     if( this->PacketType != modParams->PacketType ) // TODO
+//     {
+//         this->SetPacketType( modParams->PacketType );
+//     }
+
+    switch( modParams->PacketType )
+    {
+        case PACKET_TYPE_GFSK:
+            buf[0] = modParams->Params.Gfsk.BitrateBandwidth;
+            buf[1] = modParams->Params.Gfsk.ModulationIndex;
+            buf[2] = modParams->Params.Gfsk.ModulationShaping;
+            break;
+        case PACKET_TYPE_LORA:
+        case PACKET_TYPE_RANGING:
+            buf[0] = modParams->Params.LoRa.SpreadingFactor;
+            buf[1] = modParams->Params.LoRa.Bandwidth;
+            buf[2] = modParams->Params.LoRa.CodingRate;
+        //     this->LoRaBandwidth = modParams->Params.LoRa.Bandwidth; // TODO
+            break;
+        case PACKET_TYPE_FLRC:
+            buf[0] = modParams->Params.Flrc.BitrateBandwidth;
+            buf[1] = modParams->Params.Flrc.CodingRate;
+            buf[2] = modParams->Params.Flrc.ModulationShaping;
+            break;
+        case PACKET_TYPE_BLE:
+            buf[0] = modParams->Params.Ble.BitrateBandwidth;
+            buf[1] = modParams->Params.Ble.ModulationIndex;
+            buf[2] = modParams->Params.Ble.ModulationShaping;
+            break;
+        case PACKET_TYPE_NONE:
+            buf[0] = NULL;
+            buf[1] = NULL;
+            buf[2] = NULL;
+            break;
+    }
+    WriteCommand( RADIO_SET_MODULATIONPARAMS, buf, 3 );
+}
+
+void sx1280_SetPacketParams( PacketParams_t *packetParams )
+{
+    uint8_t buf[7];
+    // Check if required configuration corresponds to the stored packet type
+    // If not, silently update radio packet type
+//     if( this->PacketType != packetParams->PacketType ) // TODO
+//     {
+//         this->SetPacketType( packetParams->PacketType );
+//     }
+
+    switch( packetParams->PacketType )
+    {
+        case PACKET_TYPE_GFSK:
+            buf[0] = packetParams->Params.Gfsk.PreambleLength;
+            buf[1] = packetParams->Params.Gfsk.SyncWordLength;
+            buf[2] = packetParams->Params.Gfsk.SyncWordMatch;
+            buf[3] = packetParams->Params.Gfsk.HeaderType;
+            buf[4] = packetParams->Params.Gfsk.PayloadLength;
+            buf[5] = packetParams->Params.Gfsk.CrcLength;
+            buf[6] = packetParams->Params.Gfsk.Whitening;
+            break;
+        case PACKET_TYPE_LORA:
+        case PACKET_TYPE_RANGING:
+            buf[0] = packetParams->Params.LoRa.PreambleLength;
+            buf[1] = packetParams->Params.LoRa.HeaderType;
+            buf[2] = packetParams->Params.LoRa.PayloadLength;
+            buf[3] = packetParams->Params.LoRa.Crc;
+            buf[4] = packetParams->Params.LoRa.InvertIQ;
+            buf[5] = NULL;
+            buf[6] = NULL;
+            break;
+        case PACKET_TYPE_FLRC:
+            buf[0] = packetParams->Params.Flrc.PreambleLength;
+            buf[1] = packetParams->Params.Flrc.SyncWordLength;
+            buf[2] = packetParams->Params.Flrc.SyncWordMatch;
+            buf[3] = packetParams->Params.Flrc.HeaderType;
+            buf[4] = packetParams->Params.Flrc.PayloadLength;
+            buf[5] = packetParams->Params.Flrc.CrcLength;
+            buf[6] = packetParams->Params.Flrc.Whitening;
+            break;
+        case PACKET_TYPE_BLE:
+            buf[0] = packetParams->Params.Ble.ConnectionState;
+            buf[1] = packetParams->Params.Ble.CrcLength;
+            buf[2] = packetParams->Params.Ble.BleTestPayload;
+            buf[3] = packetParams->Params.Ble.Whitening;
+            buf[4] = NULL;
+            buf[5] = NULL;
+            buf[6] = NULL;
+            break;
+        case PACKET_TYPE_NONE:
+            buf[0] = NULL;
+            buf[1] = NULL;
+            buf[2] = NULL;
+            buf[3] = NULL;
+            buf[4] = NULL;
+            buf[5] = NULL;
+            buf[6] = NULL;
+            break;
+    }
+    WriteCommand( RADIO_SET_PACKETPARAMS, buf, 7 );
+}
+
+
 int sx1280_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
 {
+	sx1280_SetStandby(STDBY_RC);
+	// sx1280_SetRegulatorMode(); // TODO
+        sx1280_SetLNAGainSetting(LNA_LOW_POWER_MODE);
+
+	PacketParams_t PacketParams;
+	ModulationParams_t ModulationParams;
+
+        ModulationParams.PacketType = PACKET_TYPE_LORA;
+        PacketParams.PacketType     = PACKET_TYPE_LORA;
+
+        ModulationParams.Params.LoRa.SpreadingFactor = ( RadioLoRaSpreadingFactors_t )  config->datarate; // TODO
+        ModulationParams.Params.LoRa.Bandwidth       = ( RadioLoRaBandwidths_t )        config->bandwidth;
+        ModulationParams.Params.LoRa.CodingRate      = ( RadioLoRaCodingRates_t )       config->coding_rate;
+        PacketParams.Params.LoRa.PreambleLength      =                                  config->preamble_len;
+        // PacketParams.Params.LoRa.HeaderType          = ( RadioLoRaPacketLengthsModes_t )Eeprom.EepromData.DemoSettings.PacketParam2; // TODO
+        // PacketParams.Params.LoRa.PayloadLength       =                                  Eeprom.EepromData.DemoSettings.PacketParam3;
+        // PacketParams.Params.LoRa.Crc                 = ( RadioLoRaCrcModes_t )          Eeprom.EepromData.DemoSettings.PacketParam4;
+        // PacketParams.Params.LoRa.InvertIQ            = ( RadioLoRaIQModes_t )           Eeprom.EepromData.DemoSettings.PacketParam5;
+
+        sx1280_SetStandby( STDBY_RC );
+        sx1280_SetPacketType( ModulationParams.PacketType );
+        sx1280_SetRfFrequency( config->frequency );
+        sx1280_SetBufferBaseAddresses( 0x00, 0x00 );
+        sx1280_SetModulationParams( &ModulationParams );
+        sx1280_SetPacketParams( &PacketParams );
+        // only used in GFSK, FLRC (4 bytes max) and BLE mode
+        // SetSyncWord( 1, ( uint8_t[] ){ 0xDD, 0xA0, 0x96, 0x69, 0xDD } ); // TODO: non LORA
+        // only used in GFSK, FLRC
+        // uint8_t crcSeedLocal[2] = {0x45, 0x67}; // TODO
+        // SetCrcSeed( crcSeedLocal );
+        // SetCrcPolynomial( 0x0123 );
+        // SetTxParams( Eeprom.EepromData.DemoSettings.TxPower, RADIO_RAMP_20_US );
+        // SetPollingMode( );
+
 	// Radio.SetChannel(config->frequency);
 
 	// if (config->tx) {
