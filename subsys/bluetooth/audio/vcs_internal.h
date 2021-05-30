@@ -55,12 +55,12 @@ struct bt_vcs_client {
 	struct bt_gatt_read_params read_params;
 	struct bt_gatt_discover_params discover_params;
 	struct bt_uuid_16 uuid;
+	struct bt_conn *conn;
 
 	uint8_t vocs_inst_cnt;
 	struct bt_vocs *vocs[CONFIG_BT_VCS_CLIENT_MAX_VOCS_INST];
 	uint8_t aics_inst_cnt;
 	struct bt_aics *aics[CONFIG_BT_VCS_CLIENT_MAX_AICS_INST];
-	struct bt_conn *conn;
 };
 
 struct bt_vcs_server {
@@ -76,25 +76,25 @@ struct bt_vcs_server {
 
 /* Struct used as a common type for the api */
 struct bt_vcs {
+	bool client_instance;
 	union {
 		struct bt_vcs_server srv;
 		struct bt_vcs_client cli;
 	};
 };
 
-
-int bt_vcs_client_included_get(struct bt_conn *conn,
+int bt_vcs_client_included_get(struct bt_vcs *vcs,
 			       struct bt_vcs_included *included);
-int bt_vcs_client_read_vol_state(struct bt_conn *conn);
-int bt_vcs_client_read_flags(struct bt_conn *conn);
-int bt_vcs_client_vol_down(struct bt_conn *conn);
-int bt_vcs_client_vol_up(struct bt_conn *conn);
-int bt_vcs_client_unmute_vol_down(struct bt_conn *conn);
-int bt_vcs_client_unmute_vol_up(struct bt_conn *conn);
-int bt_vcs_client_set_volume(struct bt_conn *conn, uint8_t volume);
-int bt_vcs_client_unmute(struct bt_conn *conn);
-int bt_vcs_client_mute(struct bt_conn *conn);
+int bt_vcs_client_read_vol_state(struct bt_vcs *vcs);
+int bt_vcs_client_read_flags(struct bt_vcs *vcs);
+int bt_vcs_client_vol_down(struct bt_vcs *vcs);
+int bt_vcs_client_vol_up(struct bt_vcs *vcs);
+int bt_vcs_client_unmute_vol_down(struct bt_vcs *vcs);
+int bt_vcs_client_unmute_vol_up(struct bt_vcs *vcs);
+int bt_vcs_client_set_volume(struct bt_vcs *vcs, uint8_t volume);
+int bt_vcs_client_unmute(struct bt_vcs *vcs);
+int bt_vcs_client_mute(struct bt_vcs *vcs);
 
-bool bt_vcs_client_valid_vocs_inst(struct bt_conn *conn, struct bt_vocs *vocs);
-bool bt_vcs_client_valid_aics_inst(struct bt_conn *conn, struct bt_aics *aics);
+bool bt_vcs_client_valid_vocs_inst(struct bt_vcs *vcs, struct bt_vocs *vocs);
+bool bt_vcs_client_valid_aics_inst(struct bt_vcs *vcs, struct bt_aics *aics);
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCS_INTERNAL_*/
