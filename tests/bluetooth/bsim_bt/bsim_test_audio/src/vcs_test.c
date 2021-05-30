@@ -44,7 +44,7 @@ static volatile bool g_cb;
 static struct bt_conn *g_conn;
 static bool g_is_connected;
 
-static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume,
+static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume,
 			 uint8_t mute)
 {
 	if (err) {
@@ -54,13 +54,10 @@ static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume,
 
 	g_volume = volume;
 	g_mute = mute;
-
-	if (!conn) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_vcs *vcs, int err, uint8_t flags)
 {
 	if (err) {
 		FAIL("VCS flags cb err (%d)", err);
@@ -68,10 +65,7 @@ static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 	}
 
 	g_flags = flags;
-
-	if (!conn) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
 static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
@@ -241,7 +235,7 @@ static int test_aics_standalone(void)
 
 	printk("Deactivating AICS\n");
 	expected_aics_active = false;
-	err = bt_vcs_aics_deactivate(vcs_included.aics[0]);
+	err = bt_vcs_aics_deactivate(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not deactivate AICS (err %d)\n", err);
 		return err;
@@ -251,7 +245,7 @@ static int test_aics_standalone(void)
 
 	printk("Activating AICS\n");
 	expected_aics_active = true;
-	err = bt_vcs_aics_activate(vcs_included.aics[0]);
+	err = bt_vcs_aics_activate(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not activate AICS (err %d)\n", err);
 		return err;
@@ -261,7 +255,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS state\n");
 	g_cb = false;
-	err = bt_vcs_aics_state_get(NULL, vcs_included.aics[0]);
+	err = bt_vcs_aics_state_get(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
@@ -271,7 +265,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS gain setting\n");
 	g_cb = false;
-	err = bt_vcs_aics_gain_setting_get(NULL, vcs_included.aics[0]);
+	err = bt_vcs_aics_gain_setting_get(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
@@ -281,7 +275,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS input type\n");
 	expected_input_type = BT_AICS_INPUT_TYPE_DIGITAL;
-	err = bt_vcs_aics_type_get(NULL, vcs_included.aics[0]);
+	err = bt_vcs_aics_type_get(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS input type (err %d)\n", err);
 		return err;
@@ -292,7 +286,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS status\n");
 	g_cb = false;
-	err = bt_vcs_aics_status_get(NULL, vcs_included.aics[0]);
+	err = bt_vcs_aics_status_get(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
@@ -302,7 +296,7 @@ static int test_aics_standalone(void)
 
 	printk("Getting AICS description\n");
 	g_cb = false;
-	err = bt_vcs_aics_description_get(NULL, vcs_included.aics[0]);
+	err = bt_vcs_aics_description_get(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
@@ -312,7 +306,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS mute\n");
 	expected_input_mute = BT_AICS_STATE_MUTED;
-	err = bt_vcs_aics_mute(NULL, vcs_included.aics[0]);
+	err = bt_vcs_aics_mute(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
@@ -322,7 +316,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS unmute\n");
 	expected_input_mute = BT_AICS_STATE_UNMUTED;
-	err = bt_vcs_aics_unmute(NULL, vcs_included.aics[0]);
+	err = bt_vcs_aics_unmute(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
@@ -332,7 +326,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS auto mode\n");
 	expected_mode = BT_AICS_MODE_AUTO;
-	err = bt_vcs_aics_automatic_gain_set(NULL, vcs_included.aics[0]);
+	err = bt_vcs_aics_automatic_gain_set(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
@@ -342,7 +336,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS manual mode\n");
 	expected_mode = BT_AICS_MODE_MANUAL;
-	err = bt_vcs_aics_manual_gain_set(NULL, vcs_included.aics[0]);
+	err = bt_vcs_aics_manual_gain_set(vcs, vcs_included.aics[0]);
 	if (err) {
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
@@ -352,7 +346,7 @@ static int test_aics_standalone(void)
 
 	printk("Setting AICS gain\n");
 	expected_gain = g_aics_gain_max - 1;
-	err = bt_vcs_aics_gain_set(NULL, vcs_included.aics[0], expected_gain);
+	err = bt_vcs_aics_gain_set(vcs, vcs_included.aics[0], expected_gain);
 	if (err) {
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
@@ -365,7 +359,7 @@ static int test_aics_standalone(void)
 		sizeof(expected_aics_desc));
 	expected_aics_desc[sizeof(expected_aics_desc) - 1] = '\0';
 	g_cb = false;
-	err = bt_vcs_aics_description_set(NULL, vcs_included.aics[0],
+	err = bt_vcs_aics_description_set(vcs, vcs_included.aics[0],
 					  expected_aics_desc);
 	if (err) {
 		FAIL("Could not set AICS Description (err %d)\n", err);
@@ -387,7 +381,7 @@ static int test_vocs_standalone(void)
 
 	printk("Getting VOCS state\n");
 	g_cb = false;
-	err = bt_vcs_vocs_state_get(NULL, vcs_included.vocs[0]);
+	err = bt_vcs_vocs_state_get(vcs, vcs_included.vocs[0]);
 	if (err) {
 		FAIL("Could not get VOCS state (err %d)\n", err);
 		return err;
@@ -397,7 +391,7 @@ static int test_vocs_standalone(void)
 
 	printk("Getting VOCS location\n");
 	g_cb = false;
-	err = bt_vcs_vocs_location_get(NULL, vcs_included.vocs[0]);
+	err = bt_vcs_vocs_location_get(vcs, vcs_included.vocs[0]);
 	if (err) {
 		FAIL("Could not get VOCS location (err %d)\n", err);
 		return err;
@@ -407,7 +401,7 @@ static int test_vocs_standalone(void)
 
 	printk("Getting VOCS description\n");
 	g_cb = false;
-	err = bt_vcs_vocs_description_get(NULL, vcs_included.vocs[0]);
+	err = bt_vcs_vocs_description_get(vcs, vcs_included.vocs[0]);
 	if (err) {
 		FAIL("Could not get VOCS description (err %d)\n", err);
 		return err;
@@ -417,7 +411,8 @@ static int test_vocs_standalone(void)
 
 	printk("Setting VOCS location\n");
 	expected_location = g_vocs_location + 1;
-	err = bt_vcs_vocs_location_set(NULL, vcs_included.vocs[0], expected_location);
+	err = bt_vcs_vocs_location_set(vcs, vcs_included.vocs[0],
+				       expected_location);
 	if (err) {
 		FAIL("Could not set VOCS location (err %d)\n", err);
 		return err;
@@ -427,7 +422,7 @@ static int test_vocs_standalone(void)
 
 	printk("Setting VOCS state\n");
 	expected_offset = g_vocs_offset + 1;
-	err = bt_vcs_vocs_state_set(NULL, vcs_included.vocs[0], expected_offset);
+	err = bt_vcs_vocs_state_set(vcs, vcs_included.vocs[0], expected_offset);
 	if (err) {
 		FAIL("Could not set VOCS state (err %d)\n", err);
 		return err;
@@ -440,7 +435,7 @@ static int test_vocs_standalone(void)
 		sizeof(expected_description) - 1);
 	expected_description[sizeof(expected_description) - 1] = '\0';
 	g_cb = false;
-	err = bt_vcs_vocs_description_set(NULL, vcs_included.vocs[0],
+	err = bt_vcs_vocs_description_set(vcs, vcs_included.vocs[0],
 					  expected_description);
 	if (err) {
 		FAIL("Could not set VOCS description (err %d)\n", err);
@@ -504,7 +499,7 @@ static void test_standalone(void)
 		return;
 	}
 
-	err = bt_vcs_included_get(NULL, &vcs_included);
+	err = bt_vcs_included_get(vcs, &vcs_included);
 	if (err) {
 		FAIL("VCS included get failed (err %d)\n", err);
 		return;
@@ -523,7 +518,7 @@ static void test_standalone(void)
 
 	printk("Getting VCS volume state\n");
 	g_cb = false;
-	err = bt_vcs_vol_get(NULL);
+	err = bt_vcs_vol_get(vcs);
 	if (err) {
 		FAIL("Could not get VCS volume (err %d)\n", err);
 		return;
@@ -533,7 +528,7 @@ static void test_standalone(void)
 
 	printk("Getting VCS flags\n");
 	g_cb = false;
-	err = bt_vcs_flags_get(NULL);
+	err = bt_vcs_flags_get(vcs);
 	if (err) {
 		FAIL("Could not get VCS flags (err %d)\n", err);
 		return;
@@ -543,7 +538,7 @@ static void test_standalone(void)
 
 	printk("Downing VCS volume\n");
 	expected_volume = g_volume - volume_step;
-	err = bt_vcs_vol_down(NULL);
+	err = bt_vcs_vol_down(vcs);
 	if (err) {
 		FAIL("Could not get down VCS volume (err %d)\n", err);
 		return;
@@ -553,7 +548,7 @@ static void test_standalone(void)
 
 	printk("Upping VCS volume\n");
 	expected_volume = g_volume + volume_step;
-	err = bt_vcs_vol_up(NULL);
+	err = bt_vcs_vol_up(vcs);
 	if (err) {
 		FAIL("Could not up VCS volume (err %d)\n", err);
 		return;
@@ -563,7 +558,7 @@ static void test_standalone(void)
 
 	printk("Muting VCS\n");
 	expected_mute = 1;
-	err = bt_vcs_mute(NULL);
+	err = bt_vcs_mute(vcs);
 	if (err) {
 		FAIL("Could not mute VCS (err %d)\n", err);
 		return;
@@ -574,7 +569,7 @@ static void test_standalone(void)
 	printk("Downing and unmuting VCS\n");
 	expected_volume = g_volume - volume_step;
 	expected_mute = 0;
-	err = bt_vcs_unmute_vol_down(NULL);
+	err = bt_vcs_unmute_vol_down(vcs);
 	if (err) {
 		FAIL("Could not down and unmute VCS (err %d)\n", err);
 		return;
@@ -585,7 +580,7 @@ static void test_standalone(void)
 
 	printk("Muting VCS\n");
 	expected_mute = 1;
-	err = bt_vcs_mute(NULL);
+	err = bt_vcs_mute(vcs);
 	if (err) {
 		FAIL("Could not mute VCS (err %d)\n", err);
 		return;
@@ -596,7 +591,7 @@ static void test_standalone(void)
 	printk("Upping and unmuting VCS\n");
 	expected_volume = g_volume + volume_step;
 	expected_mute = 0;
-	err = bt_vcs_unmute_vol_up(NULL);
+	err = bt_vcs_unmute_vol_up(vcs);
 	if (err) {
 		FAIL("Could not up and unmute VCS (err %d)\n", err);
 		return;
@@ -607,7 +602,7 @@ static void test_standalone(void)
 
 	printk("Muting VCS\n");
 	expected_mute = 1;
-	err = bt_vcs_mute(NULL);
+	err = bt_vcs_mute(vcs);
 	if (err) {
 		FAIL("Could not mute VCS (err %d)\n", err);
 		return;
@@ -617,7 +612,7 @@ static void test_standalone(void)
 
 	printk("Unmuting VCS\n");
 	expected_mute = 0;
-	err = bt_vcs_unmute(NULL);
+	err = bt_vcs_unmute(vcs);
 	if (err) {
 		FAIL("Could not unmute VCS (err %d)\n", err);
 		return;
@@ -626,7 +621,7 @@ static void test_standalone(void)
 	printk("VCS volume unmuted\n");
 
 	expected_volume = g_volume - 5;
-	err = bt_vcs_vol_set(NULL, expected_volume);
+	err = bt_vcs_vol_set(vcs, expected_volume);
 	if (err) {
 		FAIL("Could not set VCS volume (err %d)\n", err);
 		return;
@@ -699,7 +694,7 @@ static void test_main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_vcs_included_get(NULL, &vcs_included);
+	err = bt_vcs_included_get(vcs, &vcs_included);
 	if (err) {
 		FAIL("VCS included get failed (err %d)\n", err);
 		return;
