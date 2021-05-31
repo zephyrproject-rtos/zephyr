@@ -93,6 +93,10 @@ static uint8_t per_adv_data2[] = {
 		8, BT_DATA_NAME_COMPLETE, 'Z', 'e', 'p', 'h', 'y', 'r', '1',
 	};
 
+static uint8_t per_adv_data3[] = {
+		0xFF, 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF,
+	};
+
 static bool volatile is_connected, is_disconnected;
 static bool volatile connection_to_test;
 
@@ -206,8 +210,7 @@ static void test_advx_main(void)
 	is_connected = false;
 	is_disconnected = false;
 
-	printk("Connectable extended advertising...");
-	printk("Create advertising set...");
+	printk("Create connectable extended advertising set...");
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, &adv_callbacks, &adv);
 	if (err) {
 		goto exit;
@@ -258,7 +261,7 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
-	printk("Create advertising set...");
+	printk("Create connectable advertising set...");
 	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_NAME, &adv_callbacks, &adv);
 	if (err) {
 		goto exit;
@@ -480,6 +483,16 @@ static void test_advx_main(void)
 	printk("Update periodic advertising data 2...");
 	err = ll_adv_sync_ad_data_set(handle, AD_OP, sizeof(per_adv_data2),
 				      (void *)per_adv_data2);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Update periodic advertising data 3...");
+	err = ll_adv_sync_ad_data_set(handle, AD_OP, sizeof(per_adv_data3),
+				      (void *)per_adv_data3);
 	if (err) {
 		goto exit;
 	}
@@ -1251,6 +1264,20 @@ static void test_scanx_main(void)
 
 	if ((sync_report_len != sizeof(per_adv_data2)) ||
 	    memcmp(sync_report_data, per_adv_data2, sizeof(per_adv_data2))) {
+		FAIL("Incorrect Periodic Advertising Report data.");
+	}
+
+	printk("Waiting for Periodic Advertising Report of %u bytes...",
+	       sizeof(per_adv_data3));
+	sync_report_len_prev = sync_report_len;
+	while (!is_sync_report || (sync_report_len == sync_report_len_prev)) {
+		is_sync_report = false;
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if ((sync_report_len != sizeof(per_adv_data3)) ||
+	    memcmp(sync_report_data, per_adv_data3, sizeof(per_adv_data3))) {
 		FAIL("Incorrect Periodic Advertising Report data.");
 	}
 
