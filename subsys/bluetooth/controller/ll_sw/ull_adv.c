@@ -393,11 +393,11 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 		/* Zero-init header flags */
 		if (is_pdu_type_changed) {
-			*(uint8_t *)&pri_hdr_prev = 0;
+			*(uint8_t *)&pri_hdr_prev = 0U;
 		} else {
-			*(uint8_t *)&pri_hdr_prev = *(uint8_t *)pri_hdr;
+			pri_hdr_prev = *pri_hdr;
 		}
-		*(uint8_t *)pri_hdr = 0;
+		*(uint8_t *)pri_hdr = 0U;
 
 		/* AdvA flag */
 		if (pri_hdr_prev.adv_addr) {
