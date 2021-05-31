@@ -30,6 +30,26 @@ properties:
         mandatory and if not present it defaults to 1 which is the
         configuration at power-up.
 
+    power-mode:
+      type: int
+      required: false
+      default: 0
+      description: |
+        Specify the sensor power mode. Default is power-up configuration.
+
+          0 # Low Power M1
+          1 # Low Power M2
+          2 # Low Power M3
+          3 # Low Power M4
+          4 # High Performance
+
+      enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+
     # tap and tap-tap configuration section
     # All default values are selected to match the power-up values.
     # tap and tap-tap events can be generated on INT1 only.
