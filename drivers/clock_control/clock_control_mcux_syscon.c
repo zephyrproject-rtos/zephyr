@@ -18,6 +18,14 @@ LOG_MODULE_REGISTER(clock_control);
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_CAN_MCUX_MCAN)
+	uint32_t clock_name = (uint32_t)sub_system;
+
+	if (clock_name == MCUX_MCAN_CLK) {
+		CLOCK_EnableClock(kCLOCK_Mcan);
+	}
+#endif /* defined(CONFIG_CAN_MCUX_MCAN) */
+
 	return 0;
 }
 
@@ -35,11 +43,15 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 #if defined(CONFIG_I2C_MCUX_FLEXCOMM) || \
 		defined(CONFIG_SPI_MCUX_FLEXCOMM) || \
 		defined(CONFIG_UART_MCUX_FLEXCOMM) || \
-		defined(CONFIG_COUNTER_MCUX_CTIMER)
+		defined(CONFIG_COUNTER_MCUX_CTIMER) || \
+		defined(CONFIG_CAN_MCUX_MCAN)
 
 	uint32_t clock_name = (uint32_t) sub_system;
 
 	switch (clock_name) {
+#if defined(CONFIG_I2C_MCUX_FLEXCOMM) || \
+		defined(CONFIG_SPI_MCUX_FLEXCOMM) || \
+		defined(CONFIG_UART_MCUX_FLEXCOMM)
 	case MCUX_FLEXCOMM0_CLK:
 		*rate = CLOCK_GetFlexCommClkFreq(0);
 		break;
@@ -84,6 +96,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		*rate = CLOCK_GetSdioClkFreq(1);
 		break;
 #endif
+#if defined(CONFIG_CAN_MCUX_MCAN)
+	case MCUX_MCAN_CLK:
+		*rate = CLOCK_GetMCanClkFreq();
+		break;
+#endif /* defined(CONFIG_CAN_MCUX_MCAN) */
 #if defined(CONFIG_COUNTER_MCUX_CTIMER)
 	case (MCUX_CTIMER0_CLK + MCUX_CTIMER_CLK_OFFSET):
 		*rate = CLOCK_GetCTimerClkFreq(0);
@@ -102,6 +119,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(
 		break;
 #endif
 	}
+#endif
 #endif
 
 	return 0;
