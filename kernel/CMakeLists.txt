@@ -18,6 +18,7 @@ target_link_libraries(kernel INTERFACE ${libkernel})
 else()
 
 list(APPEND kernel_files
+  main_weak.c
   banner.c
   device.c
   errno.c
