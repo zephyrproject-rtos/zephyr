@@ -15,7 +15,16 @@
 #include <drivers/gpio.h>
 #include <sys/util.h>
 #include <drivers/sensor.h>
+#include <stmemsc.h>
 #include "lis2dw12_reg.h"
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#include <drivers/i2c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
 /* Return ODR reg value based on data rate set */
 #define LIS2DW12_ODR_TO_REG(_odr) \
@@ -48,7 +57,15 @@
  * @int_pin: Sensor int pin (int1/int2).
  */
 struct lis2dw12_device_config {
-	const char *bus_name;
+	stmdev_ctx_t ctx;
+	union {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+		const struct stmemsc_cfg_i2c i2c;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		const struct stmemsc_cfg_spi spi;
+#endif
+	} stmemsc_cfg;
 	lis2dw12_mode_t pm;
 	uint8_t range;
 #ifdef CONFIG_LIS2DW12_TRIGGER
@@ -64,18 +81,13 @@ struct lis2dw12_device_config {
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 };
 
-/* sensor data forward declaration (member definition is below) */
-struct lis2dw12_data;
-
 /* sensor data */
 struct lis2dw12_data {
-	const struct device *bus;
 	int16_t acc[3];
 
 	 /* save sensitivity */
 	uint16_t gain;
 
-	stmdev_ctx_t *ctx;
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	const struct device *dev;
 
@@ -93,13 +105,7 @@ struct lis2dw12_data {
 	struct k_work work;
 #endif /* CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctrl;
-#endif
 };
-
-int lis2dw12_i2c_init(const struct device *dev);
-int lis2dw12_spi_init(const struct device *dev);
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
 int lis2dw12_init_interrupt(const struct device *dev);

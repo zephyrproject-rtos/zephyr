@@ -26,13 +26,12 @@ static int lis2dw12_enable_int(const struct device *dev,
 			       enum sensor_trigger_type type, int enable)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
-	struct lis2dw12_data *lis2dw12 = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2dw12_reg_t int_route;
 
 	if (cfg->int_pin == 1U) {
 		/* set interrupt for pin INT1 */
-		lis2dw12_pin_int1_route_get(lis2dw12->ctx,
-				&int_route.ctrl4_int1_pad_ctrl);
+		lis2dw12_pin_int1_route_get(ctx, &int_route.ctrl4_int1_pad_ctrl);
 
 		switch (type) {
 		case SENSOR_TRIG_DATA_READY:
@@ -51,12 +50,11 @@ static int lis2dw12_enable_int(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		return lis2dw12_pin_int1_route_set(lis2dw12->ctx,
+		return lis2dw12_pin_int1_route_set(ctx,
 				&int_route.ctrl4_int1_pad_ctrl);
 	} else {
 		/* set interrupt for pin INT2 */
-		lis2dw12_pin_int2_route_get(lis2dw12->ctx,
-					    &int_route.ctrl5_int2_pad_ctrl);
+		lis2dw12_pin_int2_route_get(ctx, &int_route.ctrl5_int2_pad_ctrl);
 
 		switch (type) {
 		case SENSOR_TRIG_DATA_READY:
@@ -67,7 +65,7 @@ static int lis2dw12_enable_int(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		return lis2dw12_pin_int2_route_set(lis2dw12->ctx,
+		return lis2dw12_pin_int2_route_set(ctx,
 				&int_route.ctrl5_int2_pad_ctrl);
 	}
 }
@@ -80,6 +78,7 @@ int lis2dw12_trigger_set(const struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	int16_t raw[3];
 	int state = (handler != NULL) ? PROPERTY_ENABLE : PROPERTY_DISABLE;
@@ -94,7 +93,7 @@ int lis2dw12_trigger_set(const struct device *dev,
 		lis2dw12->drdy_handler = handler;
 		if (state) {
 			/* dummy read: re-trigger interrupt */
-			lis2dw12_acceleration_raw_get(lis2dw12->ctx, raw);
+			lis2dw12_acceleration_raw_get(ctx, raw);
 		}
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_DATA_READY, state);
 		break;
@@ -172,11 +171,11 @@ static int lis2dw12_handle_double_tap_int(const struct device *dev)
  */
 static void lis2dw12_handle_interrupt(const struct device *dev)
 {
-	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2dw12_all_sources_t sources;
 
-	lis2dw12_all_sources_get(lis2dw12->ctx, &sources);
+	lis2dw12_all_sources_get(ctx, &sources);
 
 	if (sources.status_dup.drdy) {
 		lis2dw12_handle_drdy_int(dev);
@@ -238,35 +237,35 @@ static void lis2dw12_work_cb(struct k_work *work)
 static int lis2dw12_tap_init(const struct device *dev)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
-	struct lis2dw12_data *lis2dw12 = dev->data;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	LOG_DBG("TAP: tap mode is %d", cfg->tap_mode);
-	if (lis2dw12_tap_mode_set(lis2dw12->ctx, cfg->tap_mode) < 0) {
+	if (lis2dw12_tap_mode_set(ctx, cfg->tap_mode) < 0) {
 		LOG_ERR("Failed to select tap trigger mode");
 		return -EIO;
 	}
 
 	LOG_DBG("TAP: ths_x is %02x", cfg->tap_threshold[0]);
-	if (lis2dw12_tap_threshold_x_set(lis2dw12->ctx, cfg->tap_threshold[0]) < 0) {
+	if (lis2dw12_tap_threshold_x_set(ctx, cfg->tap_threshold[0]) < 0) {
 		LOG_ERR("Failed to set tap X axis threshold");
 		return -EIO;
 	}
 
 	LOG_DBG("TAP: ths_y is %02x", cfg->tap_threshold[1]);
-	if (lis2dw12_tap_threshold_y_set(lis2dw12->ctx, cfg->tap_threshold[1]) < 0) {
+	if (lis2dw12_tap_threshold_y_set(ctx, cfg->tap_threshold[1]) < 0) {
 		LOG_ERR("Failed to set tap Y axis threshold");
 		return -EIO;
 	}
 
 	LOG_DBG("TAP: ths_z is %02x", cfg->tap_threshold[2]);
-	if (lis2dw12_tap_threshold_z_set(lis2dw12->ctx, cfg->tap_threshold[2]) < 0) {
+	if (lis2dw12_tap_threshold_z_set(ctx, cfg->tap_threshold[2]) < 0) {
 		LOG_ERR("Failed to set tap Z axis threshold");
 		return -EIO;
 	}
 
 	if (cfg->tap_threshold[0] > 0) {
 		LOG_DBG("TAP: tap_x enabled");
-		if (lis2dw12_tap_detection_on_x_set(lis2dw12->ctx, 1) < 0) {
+		if (lis2dw12_tap_detection_on_x_set(ctx, 1) < 0) {
 			LOG_ERR("Failed to set tap detection on X axis");
 			return -EIO;
 		}
@@ -274,7 +273,7 @@ static int lis2dw12_tap_init(const struct device *dev)
 
 	if (cfg->tap_threshold[1] > 0) {
 		LOG_DBG("TAP: tap_y enabled");
-		if (lis2dw12_tap_detection_on_y_set(lis2dw12->ctx, 1) < 0) {
+		if (lis2dw12_tap_detection_on_y_set(ctx, 1) < 0) {
 			LOG_ERR("Failed to set tap detection on Y axis");
 			return -EIO;
 		}
@@ -282,26 +281,26 @@ static int lis2dw12_tap_init(const struct device *dev)
 
 	if (cfg->tap_threshold[2] > 0) {
 		LOG_DBG("TAP: tap_z enabled");
-		if (lis2dw12_tap_detection_on_z_set(lis2dw12->ctx, 1) < 0) {
+		if (lis2dw12_tap_detection_on_z_set(ctx, 1) < 0) {
 			LOG_ERR("Failed to set tap detection on Z axis");
 			return -EIO;
 		}
 	}
 
 	LOG_DBG("TAP: shock is %02x", cfg->tap_shock);
-	if (lis2dw12_tap_shock_set(lis2dw12->ctx, cfg->tap_shock) < 0) {
+	if (lis2dw12_tap_shock_set(ctx, cfg->tap_shock) < 0) {
 		LOG_ERR("Failed to set tap shock duration");
 		return -EIO;
 	}
 
 	LOG_DBG("TAP: latency is %02x", cfg->tap_latency);
-	if (lis2dw12_tap_dur_set(lis2dw12->ctx, cfg->tap_latency) < 0) {
+	if (lis2dw12_tap_dur_set(ctx, cfg->tap_latency) < 0) {
 		LOG_ERR("Failed to set tap latency");
 		return -EIO;
 	}
 
 	LOG_DBG("TAP: quiet time is %02x", cfg->tap_quiet);
-	if (lis2dw12_tap_quiet_set(lis2dw12->ctx, cfg->tap_quiet) < 0) {
+	if (lis2dw12_tap_quiet_set(ctx, cfg->tap_quiet) < 0) {
 		LOG_ERR("Failed to set tap quiet time");
 		return -EIO;
 	}
@@ -314,6 +313,7 @@ int lis2dw12_init_interrupt(const struct device *dev)
 {
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
@@ -362,7 +362,7 @@ int lis2dw12_init_interrupt(const struct device *dev)
 	}
 
 	/* enable interrupt on int1/int2 in pulse mode */
-	if (lis2dw12_int_notification_set(lis2dw12->ctx, LIS2DW12_INT_PULSED)) {
+	if (lis2dw12_int_notification_set(ctx, LIS2DW12_INT_PULSED)) {
 		return -EIO;
 	}
 
