@@ -240,6 +240,8 @@
 /drivers/modem/*gsm*                      @jukkar
 /drivers/modem/hl7800.c                   @rerickson1
 /drivers/modem/Kconfig.hl7800             @rerickson1
+/drivers/modem/Kconfig.ublox-sara-n310    @Jeff-H2
+/drivers/modem/ublox-sara-n310.c          @Jeff-H2
 /drivers/pcie/                            @dcpleung @nashif @jhedberg
 /drivers/peci/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/pinmux/*hsdk*                    @iriszzw
