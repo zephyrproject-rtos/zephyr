@@ -81,6 +81,7 @@ struct bt_vcs_included {
  *
  * @param      param  Volume Control Service register parameters.
  * @param[out] vcs    Pointer to the registered Volume Control Service.
+ *                    This will still be valid if the return value is -EALREADY.
  *
  * @return 0 if success, errno on failure.
  */
