@@ -47,17 +47,6 @@
 /* FS reg value from Full Scale */
 #define LIS2DW12_FS_TO_REG(_fs)	(30 - __builtin_clz(_fs))
 
-#if defined(CONFIG_LIS2DW12_ACCEL_RANGE_RUNTIME) || \
-	defined(CONFIG_LIS2DW12_ACCEL_RANGE_2G)
-	#define LIS2DW12_ACC_FS		LIS2DW12_2g
-#elif defined(CONFIG_LIS2DW12_ACCEL_RANGE_4G)
-	#define LIS2DW12_ACC_FS		LIS2DW12_4g
-#elif defined(CONFIG_LIS2DW12_ACCEL_RANGE_8G)
-	#define LIS2DW12_ACC_FS		LIS2DW12_8g
-#elif defined(CONFIG_LIS2DW12_ACCEL_RANGE_16G)
-	#define LIS2DW12_ACC_FS		LIS2DW12_16g
-#endif
-
 /* Acc Gain value in ug/LSB in High Perf mode */
 #define LIS2DW12_FS_2G_GAIN		244
 #define LIS2DW12_FS_4G_GAIN		488
@@ -82,6 +71,7 @@
 struct lis2dw12_device_config {
 	const char *bus_name;
 	lis2dw12_mode_t pm;
+	uint8_t range;
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	struct gpio_dt_spec gpio_int;
 	uint8_t int_pin;
