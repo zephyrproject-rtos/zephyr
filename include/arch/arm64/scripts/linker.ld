@@ -14,6 +14,7 @@
 #include <autoconf.h>
 #include <linker/sections.h>
 #include <devicetree.h>
+#include <linker/devicetree_reserved.h>
 
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
@@ -70,6 +71,8 @@ MEMORY
     SRAM      (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx) : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
+
+    DT_RESERVED_MEM_REGIONS()
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -314,4 +317,5 @@ SECTIONS
      * calculate this value here. */
     _flash_used = LOADADDR(.last_section) - _image_rom_start;
 
+    DT_RESERVED_MEM_SECTIONS()
 }
