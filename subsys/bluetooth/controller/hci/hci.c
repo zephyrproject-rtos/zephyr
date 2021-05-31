@@ -5358,12 +5358,12 @@ static void le_per_adv_sync_report(struct pdu_data *pdu_data,
 		       p->ext_hdr_len);
 
 		if (!p->ext_hdr_len) {
-			hdr_len = ptr - (uint8_t *)p;
+			hdr_len = PDU_AC_EXT_HEADER_SIZE_MIN;
 
 			goto no_ext_hdr;
 		}
 
-		ptr += sizeof(*h);
+		ptr = h->data;
 
 		/* No AdvA */
 		/* No TargetA */
