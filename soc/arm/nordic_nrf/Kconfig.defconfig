@@ -42,8 +42,10 @@ config GPIO
 	default y
 	depends on SPI
 
+# Switch the default mechanism for null-pointer dereference detection from
+# DWT-based to MPU-based.
 choice NULL_POINTER_EXCEPTION_DETECTION
-	default NULL_POINTER_EXCEPTION_DETECTION_DWT if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE && CPU_CORTEX_M_HAS_DWT
+	default NULL_POINTER_EXCEPTION_DETECTION_MPU if TEST_ARM_CORTEX_M && !ARM_NONSECURE_FIRMWARE
 endchoice
 
 endif # SOC_FAMILY_NRF
