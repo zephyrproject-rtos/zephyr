@@ -314,4 +314,9 @@ config HAS_MCUX_I2S
 	help
 	  Set if the I2S/SAI module is present on the Soc
 
+config HAS_MCUX_MCAN
+	bool
+	help
+	  Set if the MCAN module is present on the SoC.
+
 endif # HAS_MCUX
