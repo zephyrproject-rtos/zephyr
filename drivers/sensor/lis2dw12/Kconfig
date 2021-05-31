@@ -59,40 +59,4 @@ config LIS2DW12_TAP
 
 endif # LIS2DW12_TRIGGER
 
-choice
-	prompt "Accelerometer sampling frequency (ODR)"
-	default LIS2DW12_ODR_RUNTIME
-
-config LIS2DW12_ODR_RUNTIME
-	bool "Set at runtime (Default 100 Hz)"
-
-config LIS2DW12_ODR_1_6
-	bool "1.6 Hz"
-
-config LIS2DW12_ODR_12_5
-	bool "12.5 Hz"
-
-config LIS2DW12_ODR_25
-	bool "25 Hz"
-
-config LIS2DW12_ODR_50
-	bool "50 Hz"
-
-config LIS2DW12_ODR_100
-	bool "100 Hz"
-
-config LIS2DW12_ODR_200
-	bool "200 Hz"
-
-config LIS2DW12_ODR_400
-	bool "400 Hz"
-
-config LIS2DW12_ODR_800
-	bool "800 Hz"
-
-config LIS2DW12_ODR_1600
-	bool "1600 Hz"
-
-endchoice
-
 endif # LIS2DW12

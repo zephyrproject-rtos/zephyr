@@ -292,8 +292,9 @@ static int lis2dw12_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* set default odr and full scale for acc */
-	if (lis2dw12_data_rate_set(lis2dw12->ctx, LIS2DW12_DEFAULT_ODR) < 0) {
+	/* set default odr to 12.5Hz acc */
+	if (lis2dw12_set_odr(dev, 12) < 0) {
+		LOG_ERR("odr init error (12.5 Hz)");
 		return -EIO;
 	}
 
