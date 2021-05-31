@@ -18,3 +18,10 @@ config CAN_MAX_FILTER
 	range 1 64 if SOC_SERIES_IMX_RT
 	help
 	  Defines maximum number of concurrent active RX filters
+
+config CAN_MCUX_MCAN
+	bool "MCUX MCAN driver"
+	depends on HAS_MCUX_MCAN && CLOCK_CONTROL
+	select CAN_MCAN
+	help
+	  Enable support for mcux mcan driver.
