@@ -31,13 +31,12 @@ LOG_MODULE_REGISTER(LIS2DW12, CONFIG_SENSOR_LOG_LEVEL);
  * @dev: Pointer to instance of struct device (I2C or SPI)
  * @range: Full scale range (2, 4, 8 and 16 G)
  */
-static int lis2dw12_set_range(const struct device *dev, uint16_t range)
+static int lis2dw12_set_range(const struct device *dev, uint8_t fs)
 {
 	int err;
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
 	uint8_t shift_gain = 0U;
-	uint8_t fs = LIS2DW12_FS_TO_REG(range);
 
 	err = lis2dw12_full_scale_set(lis2dw12->ctx, fs);
 
@@ -48,8 +47,7 @@ static int lis2dw12_set_range(const struct device *dev, uint16_t range)
 	if (!err) {
 		/* save internally gain for optimization */
 		lis2dw12->gain =
-			LIS2DW12_FS_TO_GAIN(LIS2DW12_FS_TO_REG(range),
-					    shift_gain);
+			LIS2DW12_FS_TO_GAIN(fs, shift_gain);
 	}
 
 	return err;
@@ -146,7 +144,8 @@ static int lis2dw12_config(const struct device *dev, enum sensor_channel chan,
 {
 	switch (attr) {
 	case SENSOR_ATTR_FULL_SCALE:
-		return lis2dw12_set_range(dev, sensor_ms2_to_g(val));
+		return lis2dw12_set_range(dev,
+				LIS2DW12_FS_TO_REG(sensor_ms2_to_g(val)));
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return lis2dw12_set_odr(dev, val->val1);
 	default:
@@ -298,14 +297,11 @@ static int lis2dw12_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (lis2dw12_full_scale_set(lis2dw12->ctx, LIS2DW12_ACC_FS) < 0) {
+	LOG_DBG("range is %d", cfg->range);
+	if (lis2dw12_set_range(dev, LIS2DW12_FS_TO_REG(cfg->range)) < 0) {
+		LOG_ERR("range init error %d", cfg->range);
 		return -EIO;
 	}
-
-	lis2dw12->gain =
-		LIS2DW12_FS_TO_GAIN(LIS2DW12_ACC_FS,
-				    cfg->pm == LIS2DW12_CONT_LOW_PWR_12bit ?
-				    LIS2DW12_SHFT_GAIN_NOLP1 : 0);
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	if (lis2dw12_init_interrupt(dev) < 0) {
@@ -320,6 +316,7 @@ static int lis2dw12_init(const struct device *dev)
 const struct lis2dw12_device_config lis2dw12_cfg = {
 	.bus_name = DT_INST_BUS_LABEL(0),
 	.pm = DT_INST_PROP(0, power_mode),
+	.range = DT_INST_PROP(0, range),
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	.gpio_int = GPIO_DT_SPEC_INST_GET_OR(0, irq_gpios, {0}),
 	.int_pin = DT_INST_PROP(0, int_pin),

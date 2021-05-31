@@ -60,26 +60,6 @@ config LIS2DW12_TAP
 endif # LIS2DW12_TRIGGER
 
 choice
-	prompt "Accelerometer Full-scale range setting"
-	default LIS2DW12_ACCEL_RANGE_RUNTIME
-
-config LIS2DW12_ACCEL_RANGE_RUNTIME
-	bool "Set at runtime (Default 2G)"
-
-config LIS2DW12_ACCEL_RANGE_2G
-	bool "2G"
-
-config LIS2DW12_ACCEL_RANGE_4G
-	bool "4G"
-
-config LIS2DW12_ACCEL_RANGE_8G
-	bool "8G"
-
-config LIS2DW12_ACCEL_RANGE_16G
-	bool "16G"
-endchoice
-
-choice
 	prompt "Accelerometer sampling frequency (ODR)"
 	default LIS2DW12_ODR_RUNTIME
 
