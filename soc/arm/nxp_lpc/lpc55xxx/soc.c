@@ -175,6 +175,12 @@ DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 	CLOCK_AttachClk(kPLL0_DIV_to_FLEXCOMM7);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can0), nxp_lpc_mcan, okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCanClk, 1U, false);
+	CLOCK_AttachClk(kMCAN_DIV_to_MCAN);
+	RESET_PeripheralReset(kMCAN_RST_SHIFT_RSTn);
+#endif
+
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */
 }
 
