@@ -15,7 +15,7 @@
 #include "sx1280-radio.h"
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(sx127x, CONFIG_LORA_LOG_LEVEL);
+LOG_MODULE_REGISTER(sx1280, CONFIG_LORA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT semtech_sx1280
 
@@ -695,6 +695,7 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 
 //     if( RadioSpi != NULL )
 //     {
+	LOG_INF("writeCommand1");
 	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
         // RadioSpi->write( ( uint8_t )command );
         // for( uint16_t i = 0; i < size; i++ )
@@ -705,7 +706,7 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 
 	const struct spi_buf buf[3] = {
 		{
-			.buf = ( uint8_t ) &command, // TODO: might be wrong
+			.buf = ( uint8_t ) command, // TODO: might be wrong
 			.len = sizeof(command)
 		},
 		{
@@ -859,7 +860,9 @@ void SendPayload( uint8_t *payload, uint8_t size, TickTime_t timeout, uint8_t of
 int sx1280_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
+	LOG_INF("lora_send1");
 	SendPayload(data, data_len, (TickTime_t) { .PeriodBase = RADIO_TICK_SIZE_4000_US, .PeriodBaseCount = 1000 }, 0x00);
+	LOG_INF("lora_send2");
 	// Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
 
 	// Radio.Send(data, data_len);
@@ -1159,6 +1162,7 @@ void sx1280_SetPacketParams( PacketParams_t *packetParams )
 int sx1280_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
 {
+	LOG_INF("lora_config_1");
 	sx1280_SetStandby(STDBY_RC);
 	// sx1280_SetRegulatorMode(); // TODO
         sx1280_SetLNAGainSetting(LNA_LOW_POWER_MODE);
@@ -1184,6 +1188,7 @@ int sx1280_lora_config(const struct device *dev,
         sx1280_SetBufferBaseAddresses( 0x00, 0x00 );
         sx1280_SetModulationParams( &ModulationParams );
         sx1280_SetPacketParams( &PacketParams );
+	LOG_INF("lora_config_2");
         // only used in GFSK, FLRC (4 bytes max) and BLE mode
         // SetSyncWord( 1, ( uint8_t[] ){ 0xDD, 0xA0, 0x96, 0x69, 0xDD } ); // TODO: non LORA
         // only used in GFSK, FLRC
@@ -1211,7 +1216,7 @@ int sx1280_lora_config(const struct device *dev,
 	return 0;
 }
 
-int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
+int sx1280_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		     k_timeout_t timeout, int16_t *rssi, int8_t *snr)
 {
 	// int ret;
@@ -1251,7 +1256,7 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 static const struct lora_driver_api sx127x_lora_api = {
 	.config = sx1280_lora_config,
 	.send = sx1280_lora_send,
-	.recv = sx12xx_lora_recv,
+	.recv = sx1280_lora_recv,
 	.test_cw = sx1280_lora_test_cw,
 };
 
