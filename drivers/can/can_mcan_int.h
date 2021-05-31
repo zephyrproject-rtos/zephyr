@@ -1453,6 +1453,14 @@
 #define CAN_MCAN_TXEFA_EFAI          CAN_MCAN_TXEFA_EFAI_MSK
 #endif /* CONFIG_CAN_STM32FD */
 
+/***************  Bit definition for CAN_MCAN_MRBA register  *****************/
+#ifdef CONFIG_CAN_MCUX_MCAN
+/* Event FIFO Acknowledge Index */
+#define CAN_MCAN_MRBA_BA_POS         (16U)
+#define CAN_MCAN_MRBA_BA_MSK         (0xFFFFUL << CAN_MCAN_MRBA_BA_POS)
+#define CAN_MCAN_MRBA_BA             CAN_MCAN_MRBA_BA_MSK
+#endif /* CONFIG_CAN_MCUX_MCAN */
+
 #ifdef CONFIG_CAN_STM32FD
 struct can_mcan_reg {
 	volatile uint32_t crel;     /* Core Release Register */
@@ -1553,6 +1561,10 @@ struct can_mcan_reg {
 	volatile uint32_t txefc;    /* Tx Event FIFO Configuration */
 	volatile uint32_t txefs;    /* Tx Event FIFO Status */
 	volatile uint32_t txefa;    /* Tx Event FIFO Acknowledge */
+#ifdef CONFIG_CAN_MCUX_MCAN
+	volatile uint32_t res6[65]; /* Reserved (65) */
+	volatile uint32_t mrba;     /* Message RAM Base Address */
+#endif /* CONFIG_CAN_MCUX_MCAN */
 };
 
 #endif /* CONFIG_CAN_STM32FD */
