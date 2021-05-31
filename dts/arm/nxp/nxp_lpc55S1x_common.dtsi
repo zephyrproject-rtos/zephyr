@@ -215,6 +215,25 @@
 		status = "disabled";
 	};
 
+	can0: can@9d000 {
+		compatible = "nxp,lpc-mcan";
+		reg = <0x9d000 0x1000>;
+		interrupts = <43 0>, <44 0>;
+		clocks = <&syscon MCUX_MCAN_CLK>;
+		label = "CAN_0";
+		std-filter-elements = <128>;
+		ext-filter-elements = <64>;
+		rx-fifo0-elements = <64>;
+		rx-fifo1-elements = <64>;
+		rx-buffer-elements = <64>;
+		tx-buffer-elements = <32>;
+		sjw = <1>;
+		sample-point = <875>;
+		sjw-data = <1>;
+		sample-point-data = <875>;
+		status = "disabled";
+	};
+
 	hs_lspi: spi@9f000 {
 		compatible = "nxp,lpc-spi";
 		reg = <0x9f000 0x1000>;
