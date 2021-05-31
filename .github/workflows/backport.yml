@@ -5,7 +5,7 @@ on:
       - closed
       - labeled
     branches:
-      - master
+      - main
 
 jobs:
   backport:
