@@ -801,6 +801,11 @@ static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
 	/* Fill AdvData in tertiary PDU */
 	memmove(ter_dptr, ad_data, ad_len);
 
+	/* Early exit if no flags set */
+	if (!ter_com_hdr->ext_hdr_len) {
+		return 0;
+	}
+
 	/* Fill ACAD in tertiary PDU */
 	ter_dptr_prev -= acad_len_prev;
 	ter_dptr -= acad_len_prev;
