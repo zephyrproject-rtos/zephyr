@@ -1302,7 +1302,7 @@ static void cleanup_big(struct bt_iso_big *big)
 		struct bt_iso_chan *bis = big->bis[i];
 
 		if (bis->conn) {
-			bt_iso_cleanup(bis->conn);
+			bt_conn_unref(bis->conn);
 			bis->conn = NULL;
 		}
 	}
@@ -1342,6 +1342,7 @@ static int big_init_bis(struct bt_iso_big *big, bool broadcaster)
 		bis->conn = iso_new();
 
 		if (!bis->conn) {
+			BT_ERR("Unable to allocate BIS connection");
 			return -ENOMEM;
 		}
 
@@ -1585,7 +1586,6 @@ void hci_le_big_complete(struct net_buf *buf)
 
 		bis->conn->handle = sys_le16_to_cpu(evt->handle[i]);
 		bt_conn_set_state(bis->conn, BT_CONN_CONNECTED);
-		bt_conn_unref(bis->conn);
 	}
 }
 
@@ -1645,7 +1645,6 @@ void hci_le_big_sync_established(struct net_buf *buf)
 		bis->conn->handle = bis_handle;
 
 		bt_conn_set_state(bis->conn, BT_CONN_CONNECTED);
-		bt_conn_unref(bis->conn);
 	}
 
 	/* TODO: Deal with the rest of the fields in the event,
