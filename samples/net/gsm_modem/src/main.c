@@ -93,13 +93,13 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 int main(void)
 {
 	const struct device *uart_dev =
-				device_get_binding(CONFIG_MODEM_GSM_UART_NAME);
+				device_get_binding(DT_BUS_LABEL(DT_INST(0, gsm_ppp)));
 
 	gsm_dev = device_get_binding(GSM_MODEM_DEVICE_NAME);
 
 	LOG_INF("Board '%s' APN '%s' UART '%s' device %p (%s)",
 		CONFIG_BOARD, CONFIG_MODEM_GSM_APN,
-		CONFIG_MODEM_GSM_UART_NAME, uart_dev, GSM_MODEM_DEVICE_NAME);
+		DT_BUS_LABEL(DT_INST(0, gsm_ppp)), uart_dev, GSM_MODEM_DEVICE_NAME);
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler,
 				     NET_EVENT_L4_CONNECTED |

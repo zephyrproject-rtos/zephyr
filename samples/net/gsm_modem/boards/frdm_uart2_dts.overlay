@@ -6,4 +6,7 @@
 &uart2 {
 	status = "okay";
 	current-speed = <115200>;
+	gsm: gsm_modem {
+		compatible = "gsm,ppp";
+	};
 };
