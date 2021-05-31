@@ -9,6 +9,7 @@
 
 #include <inc/hw_types.h>
 #include <driverlib/prcm.h>
+#include <devicetree.h>
 
 /*
  * CMSIS IRQn_Type enum is broken relative to ARM GNU compiler.
@@ -34,7 +35,7 @@ typedef enum {
 } CMSIS_IRQn_Type;
 
 #define __CM4_REV        0
-#define __MPU_PRESENT                  0 /* Zephyr has no MPU support */
+#define __MPU_PRESENT                  1
 #define __NVIC_PRIO_BITS               NUM_IRQ_PRIO_BITS
 #define __Vendor_SysTickConfig         0 /* Default to standard SysTick */
 
