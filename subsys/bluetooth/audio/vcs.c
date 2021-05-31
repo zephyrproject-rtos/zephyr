@@ -359,7 +359,13 @@ static int prepare_aics_inst(struct bt_vcs_register_param *param)
 /****************************** PUBLIC API ******************************/
 int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 {
+	static bool registered;
 	int err;
+
+	if (registered) {
+		*vcs = &vcs_inst;
+		return -EALREADY;
+	}
 
 	vcs_svc = (struct bt_gatt_service)BT_GATT_SERVICE(vcs_attrs);
 
@@ -392,6 +398,7 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs)
 	vcs_inst.srv.cb = param->cb;
 
 	*vcs = &vcs_inst;
+	registered = true;
 
 	return err;
 }
