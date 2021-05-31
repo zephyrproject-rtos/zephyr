@@ -36,9 +36,10 @@ static int lis2dw12_set_range(const struct device *dev, uint8_t fs)
 	int err;
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t shift_gain = 0U;
 
-	err = lis2dw12_full_scale_set(lis2dw12->ctx, fs);
+	err = lis2dw12_full_scale_set(ctx, fs);
 
 	if (cfg->pm == LIS2DW12_CONT_LOW_PWR_12bit) {
 		shift_gain = LIS2DW12_SHFT_GAIN_NOLP1;
@@ -60,13 +61,13 @@ static int lis2dw12_set_range(const struct device *dev, uint8_t fs)
  */
 static int lis2dw12_set_odr(const struct device *dev, uint16_t odr)
 {
-	struct lis2dw12_data *lis2dw12 = dev->data;
+	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t val;
 
 	/* check if power off */
 	if (odr == 0U) {
-		return lis2dw12_data_rate_set(lis2dw12->ctx,
-					      LIS2DW12_XL_ODR_OFF);
+		return lis2dw12_data_rate_set(ctx, LIS2DW12_XL_ODR_OFF);
 	}
 
 	val =  LIS2DW12_ODR_TO_REG(odr);
@@ -75,7 +76,7 @@ static int lis2dw12_set_odr(const struct device *dev, uint16_t odr)
 		return -ENOTSUP;
 	}
 
-	return lis2dw12_data_rate_set(lis2dw12->ctx, val);
+	return lis2dw12_data_rate_set(ctx, val);
 }
 
 static inline void lis2dw12_convert(struct sensor_value *val, int raw_val,
@@ -180,11 +181,12 @@ static int lis2dw12_sample_fetch(const struct device *dev,
 {
 	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t shift;
 	int16_t buf[3];
 
 	/* fetch raw data sample */
-	if (lis2dw12_acceleration_raw_get(lis2dw12->ctx, buf) < 0) {
+	if (lis2dw12_acceleration_raw_get(ctx, buf) < 0) {
 		LOG_DBG("Failed to fetch raw data sample");
 		return -EIO;
 	}
@@ -212,31 +214,11 @@ static const struct sensor_driver_api lis2dw12_driver_api = {
 	.channel_get = lis2dw12_channel_get,
 };
 
-static int lis2dw12_init_interface(const struct device *dev)
-{
-	struct lis2dw12_data *lis2dw12 = dev->data;
-	const struct lis2dw12_device_config *cfg = dev->config;
-
-	lis2dw12->bus = device_get_binding(cfg->bus_name);
-	if (!lis2dw12->bus) {
-		LOG_DBG("master bus not found: %s", cfg->bus_name);
-		return -EINVAL;
-	}
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	lis2dw12_spi_init(dev);
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	lis2dw12_i2c_init(dev);
-#else
-#error "BUS MACRO NOT DEFINED IN DTS"
-#endif
-
-	return 0;
-}
-
-static int lis2dw12_set_power_mode(struct lis2dw12_data *lis2dw12,
+static int lis2dw12_set_power_mode(const struct device *dev,
 				    lis2dw12_mode_t pm)
 {
+	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t regval = LIS2DW12_CONT_LOW_PWR_12bit;
 
 	switch (pm) {
@@ -251,21 +233,17 @@ static int lis2dw12_set_power_mode(struct lis2dw12_data *lis2dw12,
 		break;
 	}
 
-	return lis2dw12_write_reg(lis2dw12->ctx, LIS2DW12_CTRL1, &regval, 1);
+	return lis2dw12_write_reg(ctx, LIS2DW12_CTRL1, &regval, 1);
 }
 
 static int lis2dw12_init(const struct device *dev)
 {
-	struct lis2dw12_data *lis2dw12 = dev->data;
 	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t wai;
 
-	if (lis2dw12_init_interface(dev)) {
-		return -EINVAL;
-	}
-
 	/* check chip ID */
-	if (lis2dw12_device_id_get(lis2dw12->ctx, &wai) < 0) {
+	if (lis2dw12_device_id_get(ctx, &wai) < 0) {
 		return -EIO;
 	}
 
@@ -275,20 +253,19 @@ static int lis2dw12_init(const struct device *dev)
 	}
 
 	/* reset device */
-	if (lis2dw12_reset_set(lis2dw12->ctx, PROPERTY_ENABLE) < 0) {
+	if (lis2dw12_reset_set(ctx, PROPERTY_ENABLE) < 0) {
 		return -EIO;
 	}
 
 	k_busy_wait(100);
 
-	if (lis2dw12_block_data_update_set(lis2dw12->ctx,
-					   PROPERTY_ENABLE) < 0) {
+	if (lis2dw12_block_data_update_set(ctx, PROPERTY_ENABLE) < 0) {
 		return -EIO;
 	}
 
 	/* set power mode */
 	LOG_DBG("power-mode is %d", cfg->pm);
-	if (lis2dw12_set_power_mode(lis2dw12, cfg->pm)) {
+	if (lis2dw12_set_power_mode(dev, cfg->pm)) {
 		return -EIO;
 	}
 
@@ -314,26 +291,112 @@ static int lis2dw12_init(const struct device *dev)
 	return 0;
 }
 
-const struct lis2dw12_device_config lis2dw12_cfg = {
-	.bus_name = DT_INST_BUS_LABEL(0),
-	.pm = DT_INST_PROP(0, power_mode),
-	.range = DT_INST_PROP(0, range),
-#ifdef CONFIG_LIS2DW12_TRIGGER
-	.gpio_int = GPIO_DT_SPEC_INST_GET_OR(0, irq_gpios, {0}),
-	.int_pin = DT_INST_PROP(0, int_pin),
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#warning "LIS2DW12 driver enabled without any devices"
+#endif
+
+/*
+ * Device creation macro, shared by LIS2DW12_DEFINE_SPI() and
+ * LIS2DW12_DEFINE_I2C().
+ */
+
+#define LIS2DW12_DEVICE_INIT(inst)					\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			    lis2dw12_init,				\
+			    NULL,					\
+			    &lis2dw12_data_##inst,			\
+			    &lis2dw12_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &lis2dw12_driver_api);
+
+/*
+ * Instantiation macros used when a device is on a SPI bus.
+ */
 
 #ifdef CONFIG_LIS2DW12_TAP
-	.tap_mode = DT_INST_PROP(0, tap_mode),
-	.tap_threshold = DT_INST_PROP(0, tap_threshold),
-	.tap_shock = DT_INST_PROP(0, tap_shock),
-	.tap_latency = DT_INST_PROP(0, tap_latency),
-	.tap_quiet = DT_INST_PROP(0, tap_quiet),
+#define LIS2DW12_CONFIG_TAP(inst)					\
+	.tap_mode = DT_INST_PROP(inst, tap_mode),			\
+	.tap_threshold = DT_INST_PROP(inst, tap_threshold),		\
+	.tap_shock = DT_INST_PROP(inst, tap_shock),			\
+	.tap_latency = DT_INST_PROP(inst, tap_latency),			\
+	.tap_quiet = DT_INST_PROP(inst, tap_quiet),
+#else
+#define LIS2DW12_CONFIG_TAP(inst)
 #endif /* CONFIG_LIS2DW12_TAP */
+
+#ifdef CONFIG_LIS2DW12_TRIGGER
+#define LIS2DW12_CFG_IRQ(inst) \
+	.gpio_int = GPIO_DT_SPEC_INST_GET(inst, irq_gpios),		\
+	.int_pin = DT_INST_PROP(inst, int_pin),
+#else
+#define LIS2DW12_CFG_IRQ(inst)
 #endif /* CONFIG_LIS2DW12_TRIGGER */
-};
 
-struct lis2dw12_data lis2dw12_data;
+#define LIS2DW12_SPI_OPERATION (SPI_WORD_SET(8) |			\
+				SPI_OP_MODE_MASTER |			\
+				SPI_MODE_CPOL |				\
+				SPI_MODE_CPHA)				\
 
-DEVICE_DT_INST_DEFINE(0, lis2dw12_init, NULL,
-	     &lis2dw12_data, &lis2dw12_cfg, POST_KERNEL,
-	     CONFIG_SENSOR_INIT_PRIORITY, &lis2dw12_driver_api);
+#define LIS2DW12_CONFIG_SPI(inst)					\
+	{								\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_spi_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_spi_write,	\
+			.handle =					\
+			   (void *)&lis2dw12_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg.spi = {					\
+			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
+			.spi_cfg = SPI_CONFIG_DT_INST(inst,		\
+					   LIS2DW12_SPI_OPERATION,	\
+					   0),				\
+		},							\
+		.pm = DT_INST_PROP(inst, power_mode),			\
+		.range = DT_INST_PROP(inst, range),			\
+		LIS2DW12_CONFIG_TAP(inst)				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+			(LIS2DW12_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Instantiation macros used when a device is on an I2C bus.
+ */
+
+#define LIS2DW12_CONFIG_I2C(inst)					\
+	{								\
+		.ctx = {						\
+			.read_reg =					\
+			   (stmdev_read_ptr) stmemsc_i2c_read,		\
+			.write_reg =					\
+			   (stmdev_write_ptr) stmemsc_i2c_write,	\
+			.handle =					\
+			   (void *)&lis2dw12_config_##inst.stmemsc_cfg,	\
+		},							\
+		.stmemsc_cfg.i2c = {					\
+			.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),	\
+			.i2c_slv_addr = DT_INST_REG_ADDR(inst),		\
+		},							\
+		.pm = DT_INST_PROP(inst, power_mode),			\
+		.range = DT_INST_PROP(inst, range),			\
+		LIS2DW12_CONFIG_TAP(inst)				\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),	\
+			(LIS2DW12_CFG_IRQ(inst)), ())			\
+	}
+
+/*
+ * Main instantiation macro. Use of COND_CODE_1() selects the right
+ * bus-specific macro at preprocessor time.
+ */
+
+#define LIS2DW12_DEFINE(inst)						\
+	static struct lis2dw12_data lis2dw12_data_##inst;		\
+	static const struct lis2dw12_device_config lis2dw12_config_##inst =	\
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
+		    (LIS2DW12_CONFIG_SPI(inst)),			\
+		    (LIS2DW12_CONFIG_I2C(inst)));			\
+	LIS2DW12_DEVICE_INIT(inst)
+
+DT_INST_FOREACH_STATUS_OKAY(LIS2DW12_DEFINE)
