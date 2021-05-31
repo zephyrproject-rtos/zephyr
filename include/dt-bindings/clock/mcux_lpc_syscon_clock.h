@@ -17,6 +17,7 @@
 #define MCUX_FLEXCOMM7_CLK		7
 #define MCUX_PMIC_I2C_CLK		16
 #define MCUX_HS_SPI_CLK		8
+#define MCUX_MCAN_CLK			9
 #define MCUX_USDHC1_CLK		9
 #define MCUX_USDHC2_CLK		10
 
