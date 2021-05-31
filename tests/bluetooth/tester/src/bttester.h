@@ -1236,6 +1236,7 @@ struct mesh_health_attention_set_cmd {
 	uint8_t attention;
 	uint8_t ack;
 } __packed;
+
 #define MESH_PROVISION_ADV		0x4A
 struct mesh_provision_adv_cmd {
 	uint8_t uuid[16];
@@ -1243,6 +1244,21 @@ struct mesh_provision_adv_cmd {
 	uint16_t address;
 	uint8_t attention_duration;
 	uint8_t net_key[16];
+} __packed;
+
+#define MESH_CFG_KRP_GET		0x4B
+struct mesh_cfg_krp_get_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t key_net_idx;
+} __packed;
+
+#define MESH_CFG_KRP_SET		0x4C
+struct mesh_cfg_krp_set_cmd {
+	uint16_t net_idx;
+	uint16_t address;
+	uint16_t key_net_idx;
+	uint8_t transition;
 } __packed;
 
 /* events */

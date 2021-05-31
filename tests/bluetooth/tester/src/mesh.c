@@ -144,6 +144,8 @@ static void supported_commands(uint8_t *data, uint16_t len)
 	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_GET);
 	net_buf_simple_add_u8(buf, MESH_HEALTH_ATTENTION_SET);
 	net_buf_simple_add_u8(buf, MESH_PROVISION_ADV);
+	net_buf_simple_add_u8(buf, MESH_CFG_KRP_GET);
+	net_buf_simple_add_u8(buf, MESH_CFG_KRP_SET);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
@@ -861,6 +863,64 @@ static void composition_data_get(uint8_t *data, uint16_t len)
 
 fail:
 	tester_rsp(BTP_SERVICE_ID_MESH, MESH_COMP_DATA_GET, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void config_krp_get(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_krp_get_cmd *cmd = (void *)data;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
+	uint8_t status;
+	uint8_t phase;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_krp_get(cmd->net_idx, cmd->address, cmd->key_net_idx, &status, &phase);
+
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	net_buf_simple_init(buf, 0);
+	net_buf_simple_add_u8(buf, status);
+	net_buf_simple_add_u8(buf, phase);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_GET, CONTROLLER_INDEX, buf->data, buf->len);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_GET, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void config_krp_set(uint8_t *data, uint16_t len)
+{
+	struct mesh_cfg_krp_set_cmd *cmd = (void *)data;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(2);
+	uint8_t status;
+	uint8_t phase;
+	int err;
+
+	LOG_DBG("");
+
+	err = bt_mesh_cfg_krp_set(cmd->net_idx, cmd->address, cmd->key_net_idx, cmd->transition,
+				  &status, &phase);
+	if (err) {
+		LOG_ERR("err %d", err);
+		goto fail;
+	}
+
+	net_buf_simple_init(buf, 0);
+	net_buf_simple_add_u8(buf, status);
+	net_buf_simple_add_u8(buf, phase);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_SET, CONTROLLER_INDEX, buf->data, buf->len);
+	return;
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_CFG_KRP_SET, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
@@ -2516,6 +2576,12 @@ void tester_handle_mesh(uint8_t opcode, uint8_t index, uint8_t *data, uint16_t l
 		break;
 	case MESH_PROVISION_ADV:
 		provision_adv(data, len);
+		break;
+	case MESH_CFG_KRP_GET:
+		config_krp_get(data, len);
+		break;
+	case MESH_CFG_KRP_SET:
+		config_krp_set(data, len);
 		break;
 #if defined(CONFIG_BT_TESTING)
 	case MESH_LPN_SUBSCRIBE:
