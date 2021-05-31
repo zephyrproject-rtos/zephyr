@@ -12,6 +12,7 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;
+		zephyr,canbus = &can0;
 	};
 
 	aliases{
@@ -129,6 +130,12 @@
 		label = "FXOS8700";
 		int1-gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&can0 {
+	status = "okay";
+	bus-speed = <125000>;
+	bus-speed-data = <1000000>;
 };
 
 &hs_lspi {
