@@ -51,7 +51,7 @@ extern void test_mmio_device_map(void);
  *
  * @ingroup kernel_device_tests
  *
- * @see device_get_binding(), device_busy_set(), device_busy_clear(),
+ * @see device_get_binding(), pm_device_busy_set(), pm_device_busy_clear(),
  * DEVICE_DEFINE()
  */
 void test_dummy_device(void)
@@ -66,8 +66,8 @@ void test_dummy_device(void)
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
 
-	device_busy_set(dev);
-	device_busy_clear(dev);
+	pm_device_busy_set(dev);
+	pm_device_busy_clear(dev);
 
 	/* device_get_binding() returns false for device object
 	 * with failed init.
@@ -283,8 +283,8 @@ static void test_enable_and_disable_automatic_runtime_pm(void)
  * enabled. It also checks if the device is in the middle of a transaction,
  * sets/clears busy status and validates status again.
  *
- * @see device_get_binding(), device_busy_set(), device_busy_clear(),
- * device_busy_check(), device_any_busy_check(),
+ * @see device_get_binding(), pm_device_busy_set(), pm_device_busy_clear(),
+ * pm_device_busy_check(), pm_device_any_busy_check(),
  * pm_device_state_set()
  */
 void test_dummy_device_pm(void)
@@ -296,22 +296,22 @@ void test_dummy_device_pm(void)
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
 
-	busy = device_any_busy_check();
+	busy = pm_device_any_busy_check();
 	zassert_true((busy == 0), NULL);
 
 	/* Set device state to BUSY*/
-	device_busy_set(dev);
+	pm_device_busy_set(dev);
 
-	busy = device_any_busy_check();
+	busy = pm_device_any_busy_check();
 	zassert_false((busy == 0), NULL);
 
-	busy = device_busy_check(dev);
+	busy = pm_device_busy_check(dev);
 	zassert_false((busy == 0), NULL);
 
 	/* Clear device BUSY state*/
-	device_busy_clear(dev);
+	pm_device_busy_clear(dev);
 
-	busy = device_busy_check(dev);
+	busy = pm_device_busy_check(dev);
 	zassert_true((busy == 0), NULL);
 
 	test_build_suspend_device_list();

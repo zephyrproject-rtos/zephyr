@@ -10,7 +10,6 @@
 #include <device.h>
 #include <pm/policy.h>
 
-#if defined(CONFIG_PM)
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
@@ -18,6 +17,7 @@ LOG_MODULE_DECLARE(power);
 extern const struct device __device_start[];
 extern const struct device __device_end[];
 
+#if defined(CONFIG_PM)
 extern const struct device *__pm_device_slots_start[];
 
 /* Number of devices successfully suspended. */
@@ -28,7 +28,7 @@ static bool should_suspend(const struct device *dev, enum pm_device_state state)
 	int rc;
 	enum pm_device_state current_state;
 
-	if (device_busy_check(dev) != 0) {
+	if (pm_device_busy_check(dev) != 0) {
 		return false;
 	}
 
@@ -148,4 +148,40 @@ int pm_device_state_get(const struct device *dev,
 
 	return dev->pm_control(dev, PM_DEVICE_STATE_GET,
 			       device_power_state);
+}
+
+int pm_device_any_busy_check(void)
+{
+	const struct device *dev = __device_start;
+
+	while (dev < __device_end) {
+		if (atomic_test_bit(&dev->pm->atomic_flags,
+				    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
+			return -EBUSY;
+		}
+		++dev;
+	}
+
+	return 0;
+}
+
+int pm_device_busy_check(const struct device *dev)
+{
+	if (atomic_test_bit(&dev->pm->atomic_flags,
+			    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
+		return -EBUSY;
+	}
+	return 0;
+}
+
+void pm_device_busy_set(const struct device *dev)
+{
+	atomic_set_bit(&dev->pm->atomic_flags,
+		       PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
+}
+
+void pm_device_busy_clear(const struct device *dev)
+{
+	atomic_clear_bit(&dev->pm->atomic_flags,
+			 PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT);
 }
