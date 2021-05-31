@@ -241,7 +241,7 @@ static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 		 * to transmit using the uart, hence we should no longer go
 		 * into standby.
 		 *
-		 * Instead of using device_busy_set(), which currently does
+		 * Instead of using pm_device_busy_set(), which currently does
 		 * not impact the PM policy, we specifically disable the
 		 * standby mode instead, since it is the power state that
 		 * would interfere with a transfer.
