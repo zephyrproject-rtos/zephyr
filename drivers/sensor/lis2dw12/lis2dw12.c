@@ -288,7 +288,8 @@ static int lis2dw12_init(const struct device *dev)
 	}
 
 	/* set power mode */
-	if (lis2dw12_set_power_mode(lis2dw12, CONFIG_LIS2DW12_POWER_MODE)) {
+	LOG_DBG("power-mode is %d", cfg->pm);
+	if (lis2dw12_set_power_mode(lis2dw12, cfg->pm)) {
 		return -EIO;
 	}
 
@@ -318,7 +319,7 @@ static int lis2dw12_init(const struct device *dev)
 
 const struct lis2dw12_device_config lis2dw12_cfg = {
 	.bus_name = DT_INST_BUS_LABEL(0),
-	.pm = CONFIG_LIS2DW12_POWER_MODE,
+	.pm = DT_INST_PROP(0, power_mode),
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	.gpio_int = GPIO_DT_SPEC_INST_GET_OR(0, irq_gpios, {0}),
 	.int_pin = DT_INST_PROP(0, int_pin),

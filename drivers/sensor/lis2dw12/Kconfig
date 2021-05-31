@@ -115,16 +115,4 @@ config LIS2DW12_ODR_1600
 
 endchoice
 
-config LIS2DW12_POWER_MODE
-	int "Sensor Power Modes"
-	range 0 4
-	default 0
-	help
-	  Specify the sensor power mode
-	  0: Low Power M1
-	  1: Low Power M2
-	  2: Low Power M3
-	  3: Low Power M4
-	  4: High Performance
-
 endif # LIS2DW12
