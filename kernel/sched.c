@@ -48,7 +48,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 struct k_spinlock sched_spinlock;
 
-static void update_cache(int);
+static void update_cache(int preempt_ok);
 static void end_thread(struct k_thread *thread);
 
 static inline int is_preempt(struct k_thread *thread)

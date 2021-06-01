@@ -22,7 +22,7 @@
 /* newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
  * idea how to make that happen, so lets put it right here.
  */
-size_t strnlen(const char *, size_t);
+size_t strnlen(const char *s, size_t maxlen);
 
 /* Provide typedefs used for signed and unsigned integral types
  * capable of holding all convertable integral values.
