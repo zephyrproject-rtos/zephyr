@@ -43,6 +43,8 @@ source "drivers/i2s/Kconfig"
 
 source "drivers/pwm/Kconfig"
 
+source "drivers/pinctrl/Kconfig"
+
 source "drivers/pinmux/Kconfig"
 
 source "drivers/adc/Kconfig"
