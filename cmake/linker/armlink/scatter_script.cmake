@@ -2,6 +2,151 @@ cmake_minimum_required(VERSION 3.17)
 
 set(SORT_TYPE_NAME Lexical)
 
+# This function post process the region for easier use.
+#
+# Tasks:
+# - Symbol translation using a steering file is configured.
+function(process_region)
+  cmake_parse_arguments(REGION "" "OBJECT" "" ${ARGN})
+
+  process_region_common(${ARGN})
+
+  get_property(empty GLOBAL PROPERTY ${REGION_OBJECT}_EMPTY)
+  if(NOT empty)
+    # For scatter files we move any system symbols into first non-empty load section.
+    get_parent(OBJECT ${REGION_OBJECT} PARENT parent TYPE SYSTEM)
+    get_property(symbols GLOBAL PROPERTY ${parent}_SYMBOLS)
+    set_property(GLOBAL APPEND PROPERTY ${REGION_OBJECT}_SYMBOLS ${symbols})
+    set_property(GLOBAL PROPERTY ${parent}_SYMBOLS)
+  endif()
+
+  get_property(sections GLOBAL PROPERTY ${REGION_OBJECT}_SECTION_LIST_ORDERED)
+  foreach(section ${sections})
+
+    get_property(name_clean GLOBAL PROPERTY ${section}_NAME_CLEAN)
+    get_property(noinput    GLOBAL PROPERTY ${section}_NOINPUT)
+    get_property(type       GLOBAL PROPERTY ${section}_TYPE)
+
+    get_property(indicies GLOBAL PROPERTY ${section}_SETTINGS_INDICIES)
+    list(LENGTH indicies length)
+    foreach(idx ${indicies})
+      set(steering_postfixes Base Limit)
+      get_property(symbols GLOBAL PROPERTY ${section}_SETTING_${idx}_SYMBOLS)
+      get_property(sort    GLOBAL PROPERTY ${section}_SETTING_${idx}_SORT)
+      get_property(offset  GLOBAL PROPERTY ${section}_SETTING_${idx}_OFFSET)
+      if(DEFINED offset)
+        foreach(symbol ${symbols})
+          list(POP_FRONT steering_postfixes postfix)
+          math(EXPR offset_dec "${offset}")
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
+            "Image$$${name_clean}_${offset_dec}$$${postfix}"
+          )
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+            "RESOLVE ${symbol} AS Image$$${name_clean}_${offset_dec}$$${postfix}\n"
+          )
+        endforeach()
+      elseif(sort)
+        foreach(symbol ${symbols})
+          list(POP_FRONT steering_postfixes postfix)
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
+            "Image$$${name_clean}_${idx}$$${postfix}"
+          )
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+            "RESOLVE ${symbol} AS Image$$${name_clean}_${idx}$$${postfix}\n"
+          )
+        endforeach()
+      elseif(DEFINED symbols AND ${length} EQUAL 1 AND noinput)
+        set(steering_postfixes Base Limit)
+        foreach(symbol ${symbols})
+          list(POP_FRONT steering_postfixes postfix)
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C
+            "Image$$${name_clean}$$${postfix}"
+          )
+          set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+            "RESOLVE ${symbol} AS Image$$${name_clean}$$${postfix}\n"
+          )
+        endforeach()
+      endif()
+    endforeach()
+
+    if("${type}" STREQUAL BSS)
+      set(ZI "$$ZI")
+    endif()
+
+    # Symbols translation here.
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Base")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name_clean}${ZI}$$Length")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Load$$${name_clean}${ZI}$$Base")
+
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+      "RESOLVE __${name_clean}_start AS Image$$${name_clean}${ZI}$$Base\n"
+      "RESOLVE __${name_clean}_load_start AS Load$$${name_clean}${ZI}$$Base\n"
+      "EXPORT  __${name_clean}_start AS __${name_clean}_start\n"
+    )
+
+    get_property(symbol_val GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_end)
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${symbol_val}${ZI}$$Limit")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${name_clean}_end AS Image$$${symbol_val}${ZI}$$Limit\n"
+      )
+
+    if("${symbol_val}" STREQUAL "${name_clean}")
+      set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${name_clean}_size AS Image$$${name_clean}${ZI}$$Length\n"
+      )
+    else()
+      create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __${name_clean}_size
+        EXPR "(ImageLimit(${symbol_val}${ZI}) - ImageBase(${name_clean}${ZI}))"
+      )
+    endif()
+    set(ZI)
+
+  endforeach()
+
+  get_property(groups GLOBAL PROPERTY ${REGION_OBJECT}_GROUP_LIST_ORDERED)
+  foreach(group ${groups})
+    get_property(name GLOBAL PROPERTY ${group}_NAME)
+    string(TOLOWER ${name} name)
+
+    get_objects(LIST sections OBJECT ${group} TYPE SECTION)
+    list(GET sections 0 section)
+    get_property(first_section_name GLOBAL PROPERTY ${section}_NAME_CLEAN)
+    list(POP_BACK sections section)
+    get_property(last_section_name GLOBAL PROPERTY ${section}_NAME_CLEAN)
+
+    # Symbols translation here.
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${first_section_name}$$Base")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Load$$${first_section_name}$$Base")
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${last_section_name}$$Limit")
+
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+      "RESOLVE __${name}_start AS Image$$${first_section_name}$$Base\n"
+      "EXPORT  __${name}_start AS __${name}_start\n"
+      "RESOLVE __${name}_load_start AS Load$$${first_section_name}$$Base\n"
+      "EXPORT  __${name}_load_start AS __${name}_load_start\n"
+    )
+
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+        "RESOLVE __${name}_end AS Image$$${last_section_name}$$Limit\n"
+      )
+
+    create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __${name}_size
+      EXPR "(ImageLimit(${last_section_name}) - ImageBase(${first_section_name}))"
+    )
+  endforeach()
+
+  get_property(symbols GLOBAL PROPERTY ${REGION_OBJECT}_SYMBOLS)
+  foreach(symbol ${symbols})
+    get_property(name GLOBAL PROPERTY ${symbol}_NAME)
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_C "Image$$${name}$$Base")
+
+    set_property(GLOBAL APPEND PROPERTY SYMBOL_STEERING_FILE
+      "RESOLVE ${name} AS Image$$${name}$$Base\n"
+    )
+  endforeach()
+
+endfunction()
+
 #
 # String functions - start
 #
@@ -230,6 +375,10 @@ function(section_to_string)
   set(TEMP "${TEMP}")
   # ToDo: add patterns here.
 
+  if("${type}" STREQUAL BSS)
+    set(ZI "$$ZI")
+  endif()
+
   set(TEMP "${TEMP}\n  }")
 
   set(${STRING_STRING} "${${STRING_STRING}}\n${TEMP}\n" PARENT_SCOPE)
@@ -268,3 +417,28 @@ function(symbol_to_string)
 endfunction()
 
 include(${CMAKE_CURRENT_LIST_DIR}/../linker_script_common.cmake)
+
+if(DEFINED STEERING_C)
+  get_property(symbols_c GLOBAL PROPERTY SYMBOL_STEERING_C)
+  file(WRITE ${STEERING_C}  "/* AUTO-GENERATED - Do not modify\n")
+  file(APPEND ${STEERING_C} " * AUTO-GENERATED - All changes will be lost\n")
+  file(APPEND ${STEERING_C} " */\n")
+  foreach(symbol ${symbols_c})
+    file(APPEND ${STEERING_C} "extern char ${symbol}[];\n")
+  endforeach()
+
+  file(APPEND ${STEERING_C} "\nint __armlink_symbol_steering(void) {\n")
+  file(APPEND ${STEERING_C} "\treturn\n")
+  foreach(symbol ${symbols_c})
+    file(APPEND ${STEERING_C} "\t\t${OPERAND} (int)${symbol}\n")
+    set(OPERAND "&")
+  endforeach()
+  file(APPEND ${STEERING_C} "\t;\n}\n")
+endif()
+
+if(DEFINED STEERING_FILE)
+  get_property(steering_content GLOBAL PROPERTY SYMBOL_STEERING_FILE)
+  file(WRITE ${STEERING_FILE}  "; AUTO-GENERATED - Do not modify\n")
+  file(APPEND ${STEERING_FILE} "; AUTO-GENERATED - All changes will be lost\n")
+  file(APPEND ${STEERING_FILE} ${steering_content})
+endif()
