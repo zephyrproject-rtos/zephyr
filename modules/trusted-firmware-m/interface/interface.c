@@ -9,6 +9,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/fpu.h>
 
 #include <tfm_ns_interface.h>
 
@@ -45,53 +46,17 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 	k_sched_lock();
 #endif
 
-#if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS) && defined(CONFIG_FPU_SHARING)
-	uint32_t fp_ctx_caller_saved[16];
-	uint32_t fp_ctx_callee_saved[16];
-	uint32_t fp_ctx_FPSCR;
-	bool context_saved = false;
-	uint32_t CONTROL = __get_CONTROL();
+#if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
+	struct fpu_ctx_full context_buffer;
 
-	if (CONTROL & CONTROL_FPCA_Msk) {
-		/* Store caller-saved and callee-saved FP registers. */
-		__asm__ volatile(
-			"vstmia %0, {s0-s15}\n"
-			"vstmia %1, {s16-s31}\n"
-			:: "r" (fp_ctx_caller_saved), "r" (fp_ctx_callee_saved) :
-		);
-
-		fp_ctx_FPSCR = __get_FPSCR();
-		context_saved = true;
-
-		/* Disable FPCA so no stacking of FP registers happens in TFM. */
-		__set_CONTROL(CONTROL & ~CONTROL_FPCA_Msk);
-
-		/* ISB is recommended after setting CONTROL. It's not needed
-		 * here though, since FPCA should have no impact on instruction
-		 * fetching.
-		 */
-	}
-#endif /* defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS) && defined(CONFIG_FPU_SHARING) */
+	z_arm_save_fp_context(&context_buffer);
+#endif
 
 	result = fn(arg0, arg1, arg2, arg3);
 
-#if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS) && defined(CONFIG_FPU_SHARING)
-	if (context_saved) {
-		/* Set FPCA first so it is set even if an interrupt happens
-		 * during restoration.
-		 */
-		__set_CONTROL(__get_CONTROL() | CONTROL_FPCA_Msk);
-
-		/* Restore FP state. */
-		__set_FPSCR(fp_ctx_FPSCR);
-
-		__asm__ volatile(
-			"vldmia %0, {s0-s15}\n"
-			"vldmia %1, {s16-s31}\n"
-			:: "r" (fp_ctx_caller_saved), "r" (fp_ctx_callee_saved) :
-		);
-	}
-#endif /* defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS) && defined(CONFIG_FPU_SHARING) */
+#if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
+	z_arm_restore_fp_context(&context_buffer);
+#endif
 
 #if !defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 	/* Unlock the scheduler, to allow the thread to be preempted. */
