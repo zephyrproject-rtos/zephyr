@@ -955,7 +955,7 @@ uint32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(src_id < log_sources_count(),
 		"Invalid log source id"));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(
-		(level <= LOG_LEVEL_DBG) && (level >= LOG_LEVEL_NONE),
+		(level <= LOG_LEVEL_DBG),
 		"Invalid log level"));
 
 	return z_impl_log_filter_set(NULL, domain_id, src_id, level);
