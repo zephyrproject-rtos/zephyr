@@ -28,6 +28,7 @@
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
+#include "ull_conn_llcp_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp_local
@@ -71,6 +72,11 @@ static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
 		LL_ASSERT(ctx_header == ctx);
 
 		lr_dequeue(conn);
+
+		if ((ctx->proc != PROC_CHAN_MAP_UPDATE) && (ctx->proc != PROC_CONN_UPDATE)) {
+			ull_conn_prt_clear(conn);
+		}
+
 		ull_cp_priv_proc_ctx_release(ctx);
 	}
 }
@@ -388,6 +394,7 @@ void ull_cp_priv_lr_abort(struct ll_conn *conn)
 	}
 
 	/* TODO(thoh): Whats missing here ??? */
+	ull_conn_prt_clear(conn);
 	rr_set_incompat(conn, 0U);
 	lr_set_state(conn, LR_STATE_IDLE);
 }
