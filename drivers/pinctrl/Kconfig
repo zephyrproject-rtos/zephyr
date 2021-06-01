@@ -1,0 +1,13 @@
+# pinctrl configuration options
+
+# Copyright (c) 2021 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PINCTRL
+	bool "Pin Controller driver"
+	help
+	  Enable pinctrl driver.
+
+if PINCTRL
+
+endif
