@@ -123,7 +123,7 @@ static const struct sensor_driver_api qdec_sam_driver_api = {
 };
 
 #define QDEC_SAM_INIT(n)						\
-	static const struct soc_gpio_pin pins_tc##n[] = ATMEL_SAM_DT_PINS(n); \
+	static const struct soc_gpio_pin pins_tc##n[] = ATMEL_SAM_DT_INST_PINS(n); \
 									\
 	static const struct qdec_sam_dev_cfg qdec##n##_sam_config = {	\
 		.regs = (Tc *)DT_INST_REG_ADDR(n),			\
