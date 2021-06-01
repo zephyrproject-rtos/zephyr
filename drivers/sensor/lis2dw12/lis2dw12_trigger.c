@@ -29,44 +29,47 @@ static int lis2dw12_enable_int(const struct device *dev,
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2dw12_reg_t int_route;
 
-	if (cfg->int_pin == 1U) {
-		/* set interrupt for pin INT1 */
-		lis2dw12_pin_int1_route_get(ctx, &int_route.ctrl4_int1_pad_ctrl);
-
-		switch (type) {
-		case SENSOR_TRIG_DATA_READY:
+	switch (type) {
+	case SENSOR_TRIG_DATA_READY:
+		if (cfg->int_pin == 1) {
+			/* set interrupt for pin INT1 */
+			lis2dw12_pin_int1_route_get(ctx,
+					&int_route.ctrl4_int1_pad_ctrl);
 			int_route.ctrl4_int1_pad_ctrl.int1_drdy = enable;
-			break;
-#ifdef CONFIG_LIS2DW12_TAP
-		case SENSOR_TRIG_TAP:
-			int_route.ctrl4_int1_pad_ctrl.int1_single_tap = enable;
-			break;
-		case SENSOR_TRIG_DOUBLE_TAP:
-			int_route.ctrl4_int1_pad_ctrl.int1_tap = enable;
-			break;
-#endif /* CONFIG_LIS2DW12_TAP */
-		default:
-			LOG_ERR("Unsupported trigger interrupt route");
-			return -ENOTSUP;
+
+			return lis2dw12_pin_int1_route_set(ctx,
+					&int_route.ctrl4_int1_pad_ctrl);
+		} else {
+			/* set interrupt for pin INT2 */
+			lis2dw12_pin_int2_route_get(ctx,
+					&int_route.ctrl5_int2_pad_ctrl);
+			int_route.ctrl5_int2_pad_ctrl.int2_drdy = enable;
+
+			return lis2dw12_pin_int2_route_set(ctx,
+					&int_route.ctrl5_int2_pad_ctrl);
 		}
+		break;
+#ifdef CONFIG_LIS2DW12_TAP
+	case SENSOR_TRIG_TAP:
+		/* set interrupt for pin INT1 */
+		lis2dw12_pin_int1_route_get(ctx,
+				&int_route.ctrl4_int1_pad_ctrl);
+		int_route.ctrl4_int1_pad_ctrl.int1_single_tap = enable;
 
 		return lis2dw12_pin_int1_route_set(ctx,
 				&int_route.ctrl4_int1_pad_ctrl);
-	} else {
-		/* set interrupt for pin INT2 */
-		lis2dw12_pin_int2_route_get(ctx, &int_route.ctrl5_int2_pad_ctrl);
+	case SENSOR_TRIG_DOUBLE_TAP:
+		/* set interrupt for pin INT1 */
+		lis2dw12_pin_int1_route_get(ctx,
+				&int_route.ctrl4_int1_pad_ctrl);
+		int_route.ctrl4_int1_pad_ctrl.int1_tap = enable;
 
-		switch (type) {
-		case SENSOR_TRIG_DATA_READY:
-			int_route.ctrl5_int2_pad_ctrl.int2_drdy = enable;
-			break;
-		default:
-			LOG_ERR("Unsupported trigger interrupt route");
-			return -ENOTSUP;
-		}
-
-		return lis2dw12_pin_int2_route_set(ctx,
-				&int_route.ctrl5_int2_pad_ctrl);
+		return lis2dw12_pin_int1_route_set(ctx,
+				&int_route.ctrl4_int1_pad_ctrl);
+#endif /* CONFIG_LIS2DW12_TAP */
+	default:
+		LOG_ERR("Unsupported trigger interrupt route %d", type);
+		return -ENOTSUP;
 	}
 }
 
