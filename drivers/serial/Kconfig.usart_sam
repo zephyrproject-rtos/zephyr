@@ -8,5 +8,6 @@ config USART_SAM
 	depends on SOC_FAMILY_SAM
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
 	help
 	  This option enables the USARTx driver for Atmel SAM MCUs.
