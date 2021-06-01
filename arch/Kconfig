@@ -846,6 +846,7 @@ menu "Floating Point Options"
 config FPU
 	bool "Enable floating point unit (FPU)"
 	depends on CPU_HAS_FPU
+	depends on !IS_SPM
 	help
 	  This option enables the hardware Floating Point Unit (FPU), in order to
 	  support using the floating point registers and instructions.
