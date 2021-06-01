@@ -144,6 +144,9 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	/* Enqueue LL Control PDU towards LLL */
 	tx_enqueue(conn, tx);
+
+	/* Update procedure timout. For TERMINATE supervision_timeout is used */
+	ull_conn_prt_reload(conn, (ctx->proc != PROC_TERMINATE)?conn->procedure_reload:conn->supervision_reload);
 }
 
 static void lp_comm_ntf_feature_exchange(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
