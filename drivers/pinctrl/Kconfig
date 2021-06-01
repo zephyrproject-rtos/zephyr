@@ -10,4 +10,10 @@ menuconfig PINCTRL
 
 if PINCTRL
 
+config PINCTRL_SAM
+	def_bool y
+	depends on SOC_FAMILY_SAM
+	help
+	  Enable Atmel SAM pinctrl driver.
+
 endif
