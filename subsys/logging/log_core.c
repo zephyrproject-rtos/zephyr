@@ -904,6 +904,13 @@ char *z_log_strdup(const char *str)
 	return dup->buf;
 }
 
+uint32_t log_get_strdup_pool_current_utilization(void)
+{
+	return IS_ENABLED(CONFIG_LOG_STRDUP_POOL_PROFILING) ?
+			log_strdup_in_use : 0;
+
+}
+
 uint32_t log_get_strdup_pool_utilization(void)
 {
 	return IS_ENABLED(CONFIG_LOG_STRDUP_POOL_PROFILING) ?
