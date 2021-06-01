@@ -102,13 +102,24 @@ int lis2dw12_trigger_set(const struct device *dev,
 		break;
 #ifdef CONFIG_LIS2DW12_TAP
 	case SENSOR_TRIG_TAP:
-		lis2dw12->tap_handler = handler;
-		return lis2dw12_enable_int(dev, SENSOR_TRIG_TAP, state);
-		break;
 	case SENSOR_TRIG_DOUBLE_TAP:
+		/* check if tap detection is enabled  */
+		if ((cfg->tap_threshold[0] == 0) &&
+		    (cfg->tap_threshold[1] == 0) &&
+		    (cfg->tap_threshold[2] == 0)) {
+			LOG_ERR("Unsupported sensor trigger");
+			return -ENOTSUP;
+		}
+
+		/* Set single TAP trigger  */
+		if (trig->type == SENSOR_TRIG_TAP) {
+			lis2dw12->tap_handler = handler;
+			return lis2dw12_enable_int(dev, SENSOR_TRIG_TAP, state);
+		}
+
+		/* Set double TAP trigger  */
 		lis2dw12->double_tap_handler = handler;
 		return lis2dw12_enable_int(dev, SENSOR_TRIG_DOUBLE_TAP, state);
-		break;
 #endif /* CONFIG_LIS2DW12_TAP */
 	default:
 		LOG_ERR("Unsupported sensor trigger");
