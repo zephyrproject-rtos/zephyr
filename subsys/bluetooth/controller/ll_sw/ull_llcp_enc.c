@@ -167,6 +167,9 @@ static struct node_tx *lp_enc_tx(struct ll_conn *conn, struct proc_ctx *ctx, uin
 	/* Enqueue LL Control PDU towards LLL */
 	tx_enqueue(conn, tx);
 
+	/* Update procedure timout */
+	ull_conn_prt_reload(conn, conn->procedure_reload);
+
 	return tx;
 }
 

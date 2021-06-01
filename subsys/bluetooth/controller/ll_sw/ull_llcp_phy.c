@@ -31,6 +31,7 @@
 #include "ull_llcp.h"
 #include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
+#include "ull_conn_llcp_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp_phy
@@ -341,6 +342,9 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 	/* Enqueue LL Control PDU towards LLL */
 	tx_enqueue(conn, tx);
+
+	/* Update procedure timout */
+	ull_conn_prt_reload(conn, conn->procedure_reload);
 }
 
 static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
@@ -551,6 +555,10 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 				/* master to slave tx phy changes so, apply timing restriction */
 				pu_set_timing_restrict(conn, ctx->data.pu.m_to_s_phy);
 			}
+
+			/* Since at least one phy will change, we clear procedure response timeout */
+			ull_conn_prt_clear(conn);
+
 			/* Now we should wait for instant */
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
@@ -581,6 +589,10 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 				/* If slave to master phy changes apply tx timing restriction */
 				pu_set_timing_restrict(conn, ctx->data.pu.s_to_m_phy);
 			}
+
+			/* Since at least one phy will change, we clear procedure response timeout */
+			ull_conn_prt_clear(conn);
+
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
 			rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
@@ -903,6 +915,9 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
 		if (!end_procedure)
 		{
+			/* Since at least one phy will change, we clear procedure response timeout */
+			ull_conn_prt_clear(conn);
+
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
 			rp_pu_complete(conn, ctx, evt, param);
