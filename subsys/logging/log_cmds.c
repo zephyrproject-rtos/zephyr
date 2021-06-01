@@ -376,10 +376,14 @@ static int cmd_log_strdup_utilization(const struct shell *shell,
 	#define CONFIG_LOG_STRDUP_MAX_STRING 0
 	#endif
 
+	uint32_t cur_cnt = log_get_strdup_pool_current_utilization();
 	uint32_t buf_cnt = log_get_strdup_pool_utilization();
 	uint32_t buf_size = log_get_strdup_longest_string();
 	uint32_t percent = CONFIG_LOG_STRDUP_BUF_COUNT ?
 			buf_cnt * 100U / CONFIG_LOG_STRDUP_BUF_COUNT : 0U;
+
+	shell_print(shell, "Current utilization of the buffer pool: %d.",
+		    cur_cnt);
 
 	shell_print(shell,
 		"Maximal utilization of the buffer pool: %d / %d (%d %%).",

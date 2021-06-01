@@ -717,6 +717,11 @@ bool log_is_strdup(const void *buf);
 void log_free(void *buf);
 
 /**
+ * @brief Get current number of allocated buffers for string duplicates.
+ */
+uint32_t log_get_strdup_pool_current_utilization(void);
+
+/**
  * @brief Get maximal number of simultaneously allocated buffers for string
  *	  duplicates.
  *
