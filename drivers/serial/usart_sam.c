@@ -20,13 +20,13 @@
 #include <init.h>
 #include <soc.h>
 #include <drivers/uart.h>
+#include <drivers/pinctrl.h>
 
 /* Device constant configuration parameters */
 struct usart_sam_dev_cfg {
 	Usart *regs;
 	uint32_t periph_id;
-	struct soc_gpio_pin pin_rx;
-	struct soc_gpio_pin pin_tx;
+	const struct pinctrl_config pincfg;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t	irq_config_func;
@@ -64,8 +64,7 @@ static int usart_sam_init(const struct device *dev)
 	soc_pmc_peripheral_enable(cfg->periph_id);
 
 	/* Connect pins to the peripheral */
-	soc_gpio_configure(&cfg->pin_rx);
-	soc_gpio_configure(&cfg->pin_tx);
+	pinctrl_set_pin_state(cfg->pincfg.states[0]);
 
 	/* Reset and disable USART */
 	usart->US_CR =   US_CR_RSTRX | US_CR_RSTTX
@@ -324,12 +323,13 @@ static const struct uart_driver_api usart_sam_driver_api = {
 };
 
 #define USART_SAM_DECLARE_CFG(n, IRQ_FUNC_INIT)				\
+	PINCTRL_DT_INST_CONFIG_DEFINE(n);				\
+									\
 	static const struct usart_sam_dev_cfg usart##n##_sam_config = {	\
 		.regs = (Usart *)DT_INST_REG_ADDR(n),			\
 		.periph_id = DT_INST_PROP(n, peripheral_id),		\
 									\
-		.pin_rx = ATMEL_SAM_DT_INST_PIN(n, 0),			\
-		.pin_tx = ATMEL_SAM_DT_INST_PIN(n, 1),			\
+		.pincfg = PINCTRL_DT_INST_CONFIG_NAME(n),		\
 									\
 		IRQ_FUNC_INIT						\
 	}
