@@ -86,6 +86,7 @@ syscall_template = """
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
 
 #ifdef __cplusplus
