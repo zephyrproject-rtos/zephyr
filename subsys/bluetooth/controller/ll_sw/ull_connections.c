@@ -191,6 +191,22 @@ void ull_conn_resume_rx_data(struct ll_conn *conn)
 	conn->pause_rx_data = 0U;
 }
 
+/**
+ * @brief Restart procedure timeout 'timer'
+ */
+void ull_conn_prt_reload(struct ll_conn *conn, uint16_t procedure_reload)
+{
+	conn->procedure_expire = procedure_reload;
+}
+
+/**
+ * @brief Clear procedure timeout 'timer'
+ */
+void ull_conn_prt_clear(struct ll_conn *conn)
+{
+	conn->procedure_expire = 0U;
+}
+
 /*
  * EGON: following 2 functions need to be removed when implementing tx/rx path
  * ll_rx_enqueue needs to be replaced with calls to ll_rx_put/ll_rx_sched
