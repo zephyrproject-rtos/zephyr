@@ -77,7 +77,7 @@ char *media_proxy_pl_player_name_get(void);
 uint64_t media_proxy_pl_icon_id_get(void);
 #endif /* CONFIG_BT_OTS */
 
-char *media_proxy_pl_icon_uri_get(void);
+char *media_proxy_pl_icon_url_get(void);
 
 void media_proxy_pl_track_changed_cb(void);
 
@@ -109,9 +109,9 @@ uint64_t media_proxy_pl_next_track_id_get(void);
 void media_proxy_pl_next_track_id_set(uint64_t id);
 void media_proxy_pl_next_track_id_cb(uint64_t id);
 
-uint64_t media_proxy_pl_group_id_get(void);
-void media_proxy_pl_group_id_set(uint64_t id);
-void media_proxy_pl_group_id_cb(uint64_t id);
+uint64_t media_proxy_pl_current_group_id_get(void);
+void media_proxy_pl_current_group_id_set(uint64_t id);
+void media_proxy_pl_current_group_id_cb(uint64_t id);
 
 uint64_t media_proxy_pl_parent_group_id_get(void);
 void media_proxy_pl_parent_group_id_cb(uint64_t id);

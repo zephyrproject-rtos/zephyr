@@ -39,7 +39,7 @@ struct mcs_instance_t {
 #ifdef CONFIG_BT_MCC_OTS
 	uint16_t icon_obj_id_handle;
 #endif /* CONFIG_BT_MCC_OTS */
-	uint16_t icon_uri_handle;
+	uint16_t icon_url_handle;
 	uint16_t track_changed_handle;
 	uint16_t track_title_handle;
 	uint16_t track_dur_handle;
@@ -230,12 +230,12 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-static uint8_t mcc_read_icon_uri_cb(struct bt_conn *conn, uint8_t err,
+static uint8_t mcc_read_icon_url_cb(struct bt_conn *conn, uint8_t err,
 				    struct bt_gatt_read_params *params,
 				    const void *data, uint16_t length)
 {
 	int cb_err = err;
-	char uri[CONFIG_BT_MCS_ICON_URI_MAX];
+	char url[CONFIG_BT_MCS_ICON_URL_MAX];
 
 	cur_mcs_inst->busy = false;
 	BT_DBG("err: 0x%02x, length: %d, data: %p", err, length, data);
@@ -243,17 +243,17 @@ static uint8_t mcc_read_icon_uri_cb(struct bt_conn *conn, uint8_t err,
 		BT_DBG("err: 0x%02x", err);
 	} else if (!data) {
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	} else if (length >= sizeof(uri)) {
+	} else if (length >= sizeof(url)) {
 		cb_err = BT_ATT_ERR_INSUFFICIENT_RESOURCES;
 	} else {
-		BT_HEXDUMP_DBG(data, length, "Icon URI");
-		memcpy(&uri, data, length);
-		uri[length] = '\0';
-		BT_DBG("Icon URI: %s", log_strdup(uri));
+		BT_HEXDUMP_DBG(data, length, "Icon URL");
+		memcpy(&url, data, length);
+		url[length] = '\0';
+		BT_DBG("Icon URL: %s", log_strdup(url));
 	}
 
-	if (mcc_cb && mcc_cb->icon_uri_read) {
-		mcc_cb->icon_uri_read(conn, cb_err, uri);
+	if (mcc_cb && mcc_cb->icon_url_read) {
+		mcc_cb->icon_url_read(conn, cb_err, url);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -1143,9 +1143,9 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			BT_DBG("Icon Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->icon_obj_id_handle = chrc->value_handle;
 #endif /* CONFIG_BT_MCC_OTS */
-		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_URI)) {
-			BT_DBG("Icon URI, UUID: %s", bt_uuid_str(chrc->uuid));
-			cur_mcs_inst->icon_uri_handle = chrc->value_handle;
+		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_ICON_URL)) {
+			BT_DBG("Icon URL, UUID: %s", bt_uuid_str(chrc->uuid));
+			cur_mcs_inst->icon_url_handle = chrc->value_handle;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_TRACK_CHANGED)) {
 			BT_DBG("Track Changed, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->track_changed_handle = chrc->value_handle;
@@ -1190,7 +1190,7 @@ static uint8_t discover_mcs_char_func(struct bt_conn *conn,
 			cur_mcs_inst->next_track_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->next_track_obj_sub_params;
 			sub_params->disc_params = &cur_mcs_inst->next_track_obj_sub_disc_params;
-		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_GROUP_OBJ_ID)) {
+		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID)) {
 			BT_DBG("Group Object, UUID: %s", bt_uuid_str(chrc->uuid));
 			cur_mcs_inst->current_group_obj_id_handle = chrc->value_handle;
 			sub_params = &cur_mcs_inst->current_group_obj_sub_params;
@@ -1470,7 +1470,7 @@ int bt_mcc_read_icon_obj_id(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-int bt_mcc_read_icon_uri(struct bt_conn *conn)
+int bt_mcc_read_icon_url(struct bt_conn *conn)
 {
 	int err;
 
@@ -1478,16 +1478,16 @@ int bt_mcc_read_icon_uri(struct bt_conn *conn)
 		return -ENOTCONN;
 	}
 
-	if (!cur_mcs_inst->icon_uri_handle) {
+	if (!cur_mcs_inst->icon_url_handle) {
 		BT_DBG("Handle not set");
 		return -EINVAL;
 	} else if (cur_mcs_inst->busy) {
 		return -EBUSY;
 	}
 
-	read_params.func = mcc_read_icon_uri_cb;
+	read_params.func = mcc_read_icon_url_cb;
 	read_params.handle_count = 1;
-	read_params.single.handle = cur_mcs_inst->icon_uri_handle;
+	read_params.single.handle = cur_mcs_inst->icon_url_handle;
 	read_params.single.offset = 0U;
 
 	err = bt_gatt_read(conn, &read_params);

@@ -168,10 +168,10 @@ int cmd_media_proxy_pl_next_track_id_changed_cb(const struct shell *shell, size_
 	return 0;
 }
 
-int cmd_media_proxy_pl_group_id_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_current_group_id_changed_cb(const struct shell *shell, size_t argc,
 				char *argv[])
 {
-	media_proxy_pl_group_id_cb(19);
+	media_proxy_pl_current_group_id_cb(19);
 
 	return 0;
 }
@@ -273,9 +273,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 	SHELL_CMD_ARG(next_track_id_changed_cb, NULL,
 		      "Send Next Track notification",
 		      cmd_media_proxy_pl_next_track_id_changed_cb, 1, 0),
-	SHELL_CMD_ARG(group_id_changed_cb, NULL,
+	SHELL_CMD_ARG(current_group_id_changed_cb, NULL,
 		      "Send Current Group notification",
-		      cmd_media_proxy_pl_group_id_changed_cb, 1, 0),
+		      cmd_media_proxy_pl_current_group_id_changed_cb, 1, 0),
 	SHELL_CMD_ARG(parent_group_id_changed_cb, NULL,
 		      "Send Parent Group notification",
 		      cmd_media_proxy_pl_parent_group_id_changed_cb, 1, 0),

@@ -91,14 +91,14 @@ static void mcc_icon_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-static void mcc_icon_uri_read_cb(struct bt_conn *conn, int err, char *uri)
+static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, char *url)
 {
 	if (err) {
-		shell_error(ctx_shell, "Icon URI read failed (%d)", err);
+		shell_error(ctx_shell, "Icon URL read failed (%d)", err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Icon URI: 0x%s", uri);
+	shell_print(ctx_shell, "Icon URL: 0x%s", url);
 }
 
 static void mcc_track_title_read_cb(struct bt_conn *conn, int err, char *title)
@@ -114,7 +114,7 @@ static void mcc_track_title_read_cb(struct bt_conn *conn, int err, char *title)
 static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
-		shell_error(ctx_shell, "Icon URI read failed (%d)", err);
+		shell_error(ctx_shell, "Icon URL read failed (%d)", err);
 		return;
 	}
 
@@ -538,7 +538,7 @@ int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 #ifdef CONFIG_BT_MCC_OTS
 	cb.icon_obj_id_read  = &mcc_icon_obj_id_read_cb;
 #endif /* CONFIG_BT_MCC_OTS */
-	cb.icon_uri_read     = &mcc_icon_uri_read_cb;
+	cb.icon_url_read     = &mcc_icon_url_read_cb;
 	cb.track_changed_ntf = &mcc_track_changed_ntf_cb;
 	cb.track_title_read  = &mcc_track_title_read_cb;
 	cb.track_dur_read    = &mcc_track_dur_read_cb;
@@ -634,11 +634,11 @@ int cmd_mcc_read_icon_obj_id(const struct shell *shell, size_t argc,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-int cmd_mcc_read_icon_uri(const struct shell *shell, size_t argc, char *argv[])
+int cmd_mcc_read_icon_url(const struct shell *shell, size_t argc, char *argv[])
 {
 	int result;
 
-	result = bt_mcc_read_icon_uri(default_conn);
+	result = bt_mcc_read_icon_url(default_conn);
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
 	}
@@ -1336,8 +1336,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcc_cmds,
 	SHELL_CMD_ARG(read_icon_obj_id, NULL, "Read Icon Object ID",
 		      cmd_mcc_read_icon_obj_id, 1, 0),
 #endif /* CONFIG_BT_MCC_OTS */
-	SHELL_CMD_ARG(read_icon_uri, NULL, "Read Icon URI",
-		      cmd_mcc_read_icon_uri, 1, 0),
+	SHELL_CMD_ARG(read_icon_url, NULL, "Read Icon URL",
+		      cmd_mcc_read_icon_url, 1, 0),
 	SHELL_CMD_ARG(read_track_title, NULL, "Read Track Title",
 		      cmd_mcc_read_track_title, 1, 0),
 	SHELL_CMD_ARG(read_track_duration, NULL, "Read Track Duration",
