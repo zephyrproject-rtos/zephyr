@@ -118,23 +118,6 @@ set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/_scripts/fix_tex.py)
 # Generated Kconfig .rst documents
 #
 
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.defconfig
-     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.defconfig\"\n"
-)
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc
-     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig.soc\"\n"
-)
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.shield.defconfig
-     "osource \"${ZEPHYR_BASE}/boards/shields/*/Kconfig.defconfig\"\n"
-)
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.shield
-     "osource \"${ZEPHYR_BASE}/boards/shields/*/Kconfig.shield\"\n"
-)
-file(WRITE ${KCONFIG_BINARY_DIR}/Kconfig.soc.arch
-     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/Kconfig\"\n"
-     "osource \"${ZEPHYR_BASE}/soc/$(ARCH)/*/Kconfig\"\n"
-)
-
 foreach(module_name ${ZEPHYR_MODULE_NAMES})
   zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
   list(APPEND
