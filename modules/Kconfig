@@ -17,7 +17,6 @@ source "modules/Kconfig.eos_s3"
 source "modules/Kconfig.imx"
 source "modules/Kconfig.infineon"
 source "modules/Kconfig.libmetal"
-source "modules/Kconfig.loramac-node"
 source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
 source "modules/Kconfig.nuvoton"
@@ -61,6 +60,9 @@ comment "Nanopb module not available."
 
 comment "Lz4 module not available."
 	depends on !ZEPHYR_LZ4_MODULE
+
+comment "loramac-node module not available."
+	depends on !ZEPHYR_LORAMAC_NODE_MODULE
 
 # This ensures that symbols are available in Kconfig for dependency checking
 # and referencing, while keeping the settings themselves unavailable when the

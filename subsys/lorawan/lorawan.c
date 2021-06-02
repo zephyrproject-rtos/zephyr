@@ -12,6 +12,7 @@
 #include "lw_priv.h"
 
 #include <LoRaMac.h>
+#include <Region.h>
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_LORAMAC_REGION_UNKNOWN),
 	     "Unknown region specified for LoRaWAN in Kconfig");
@@ -59,7 +60,6 @@ K_MUTEX_DEFINE(lorawan_send_mutex);
  */
 static enum lorawan_datarate default_datarate;
 static enum lorawan_datarate current_datarate;
-static uint8_t lorawan_conf_msg_tries = 1;
 static bool lorawan_adr_enable;
 
 static sys_slist_t dl_callbacks;
@@ -74,6 +74,11 @@ static LoRaMacEventInfoStatus_t last_mlme_indication_status;
 
 static uint8_t (*getBatteryLevelUser)(void);
 static void (*dr_change_cb)(enum lorawan_datarate dr);
+
+void BoardGetUniqueId(uint8_t *id)
+{
+	/* Do not change the default value */
+}
 
 static uint8_t getBatteryLevelLocal(void)
 {
@@ -205,6 +210,7 @@ static LoRaMacStatus_t lorawan_join_otaa(
 
 	mlme_req.Type = MLME_JOIN;
 	mlme_req.Req.Join.Datarate = default_datarate;
+	mlme_req.Req.Join.NetworkActivation = ACTIVATION_TYPE_OTAA;
 
 	mib_req.Type = MIB_DEV_EUI;
 	mib_req.Param.DevEui = join_cfg->dev_eui;
@@ -431,7 +437,13 @@ void lorawan_enable_adr(bool enable)
 
 int lorawan_set_conf_msg_tries(uint8_t tries)
 {
-	lorawan_conf_msg_tries = tries;
+	MibRequestConfirm_t mib_req;
+
+	mib_req.Type = MIB_CHANNELS_NB_TRANS;
+	mib_req.Param.ChannelsNbTrans = tries;
+	if (LoRaMacMibSetRequestConfirm(&mib_req) != LORAMAC_STATUS_OK) {
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -473,7 +485,6 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len, uint8_t flags)
 			mcpsReq.Req.Confirmed.fPort = port;
 			mcpsReq.Req.Confirmed.fBuffer = data;
 			mcpsReq.Req.Confirmed.fBufferSize = len;
-			mcpsReq.Req.Confirmed.NbTrials = lorawan_conf_msg_tries;
 			mcpsReq.Req.Confirmed.Datarate = current_datarate;
 		} else {
 			/* default message type */
@@ -577,7 +588,7 @@ static int lorawan_init(const struct device *dev)
 	macPrimitives.MacMlmeIndication = MlmeIndication;
 	macCallbacks.GetBatteryLevel = getBatteryLevelLocal;
 	macCallbacks.GetTemperatureLevel = NULL;
-	macCallbacks.NvmContextChange = NULL;
+	macCallbacks.NvmDataChange = NULL;
 	macCallbacks.MacProcessNotify = OnMacProcessNotify;
 
 	status = LoRaMacInitialization(&macPrimitives, &macCallbacks,
