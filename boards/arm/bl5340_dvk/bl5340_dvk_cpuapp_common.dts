@@ -64,7 +64,7 @@
 		compatible = "st,lis2dh";
 		label = "LIS3DH";
 		reg = <0x18>;
-		irq-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>, <&gpio0 24 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>, <&gpio0 24 GPIO_ACTIVE_HIGH>;
 	};
 
 	ft5336@38 {
