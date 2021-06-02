@@ -104,6 +104,9 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
 #endif
 
+#define Z_KERNEL_STACK_LEN(size) \
+	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
+
 /**
  * @brief Obtain an extern reference to a stack
  *
@@ -203,9 +206,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define K_KERNEL_PINNED_STACK_DEFINE(sym, size) \
 	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem)
 #endif
-
-#define Z_KERNEL_STACK_LEN(size) \
-	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
 
 /**
  * @def K_KERNEL_STACK_ARRAY_DEFINE
