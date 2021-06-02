@@ -14,6 +14,10 @@ Major enhancements with this release include:
 * Split ARM32 and ARM64, ARM64 is now a top-level architecture
 * Added initial support for Arm v8.1-m and Cortex-M55
 * Removed legacy TCP stack support which was deprecated in 2.4
+* Tracing subsystem overhaul including expansion for tracing points and
+  added support for Percepio Tracealyzer
+* Device runtime power management (PM), former IDLE runtime, was
+  completely overhauled.
 
 The following sections provide detailed lists of changes by component.
 
@@ -214,8 +218,6 @@ Architectures
     * Full FPU context switching.
 
 * POSIX
-
-* RISC-V
 
 * x86
 
@@ -745,17 +747,6 @@ Networking
 
   * Fixed userspace access to TLS socket.
   * Added socket option support for setting and getting DTLS handshake timeout.
-
-Bluetooth
-*********
-
-* Host
-
-* Mesh
-
-* BLE split software Controller
-
-* HCI Driver
 
 Build and Infrastructure
 ************************
