@@ -64,17 +64,17 @@ static ssize_t icon_id_read(struct bt_conn *conn,
 }
 #endif /* CONFIG_BT_OTS */
 
-static ssize_t icon_uri_read(struct bt_conn *conn,
+static ssize_t icon_url_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	char *uri = media_proxy_pl_icon_uri_get();
+	char *url = media_proxy_pl_icon_url_get();
 
-	BT_DBG("Icon URI read, offset: %d, len:%d, URI: %s", offset, len,
-	       log_strdup(uri));
+	BT_DBG("Icon URL read, offset: %d, len:%d, URL: %s", offset, len,
+	       log_strdup(url));
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, uri,
-				 strlen(uri));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, url,
+				 strlen(url));
 }
 
 static void track_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -334,18 +334,18 @@ static void next_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
-static ssize_t group_id_read(struct bt_conn *conn,
+static ssize_t current_group_id_read(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	uint64_t group_id = media_proxy_pl_group_id_get();
+	uint64_t group_id = media_proxy_pl_current_group_id_get();
 
-	BT_DBG_OBJ_ID("Group read: ", group_id);
+	BT_DBG_OBJ_ID("Current group read: ", group_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &group_id,
 				 BT_OTS_OBJ_ID_SIZE);
 }
 
-static ssize_t group_id_write(struct bt_conn *conn,
+static ssize_t current_group_id_write(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      const void *buf, uint16_t len, uint16_t offset,
 			      uint8_t flags)
@@ -367,16 +367,16 @@ static ssize_t group_id_write(struct bt_conn *conn,
 	if (IS_ENABLED(CONFIG_BT_DEBUG_MCS)) {
 		char str[BT_OTS_OBJ_ID_STR_LEN];
 		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		BT_DBG("Group ID write: offset: %d, len: %d, track ID: %s",
+		BT_DBG("Current group ID write: offset: %d, len: %d, track ID: %s",
 		       offset, len, log_strdup(str));
 	}
 
-	media_proxy_pl_group_id_set(id);
+	media_proxy_pl_current_group_id_set(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
 
-static void group_id_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+static void current_group_id_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	BT_DBG("value 0x%04x", value);
 }
@@ -635,14 +635,14 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 			       next_track_id_read, next_track_id_write, NULL), \
 	BT_GATT_CCC(next_track_id_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_GROUP_OBJ_ID, \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE | \
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP | \
 			       BT_GATT_CHRC_NOTIFY, \
 			       BT_GATT_PERM_READ_ENCRYPT | \
 			       BT_GATT_PERM_WRITE_ENCRYPT, \
-			       group_id_read, group_id_write, NULL), \
-	BT_GATT_CCC(group_id_cfg_changed, \
+			       current_group_id_read, current_group_id_write, NULL), \
+	BT_GATT_CCC(current_group_id_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, \
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY, \
@@ -683,9 +683,9 @@ static ssize_t content_ctrl_id_read(struct bt_conn *conn,
 	BT_GATT_CCC(player_name_cfg_changed, \
 		    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE_ENCRYPT), \
 	ICON_OBJ_ID_CHARACTERISTIC_IF_OTS \
-	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_URI, \
+	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_ICON_URL, \
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ_ENCRYPT, \
-			       icon_uri_read, NULL, NULL), \
+			       icon_url_read, NULL, NULL), \
 	BT_GATT_CHARACTERISTIC(BT_UUID_MCS_TRACK_CHANGED, \
 			       BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE, \
 			       NULL, NULL, NULL), \
@@ -910,16 +910,16 @@ void media_proxy_pl_next_track_id_cb(uint64_t id)
 	}
 }
 
-void media_proxy_pl_group_id_cb(uint64_t id)
+void media_proxy_pl_current_group_id_cb(uint64_t id)
 {
-	BT_DBG_OBJ_ID("Notifying group ID: ", id);
-	notify(BT_UUID_MCS_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
+	BT_DBG_OBJ_ID("Notifying current group ID: ", id);
+	notify(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
 
 void media_proxy_pl_parent_group_id_cb(uint64_t id)
 {
-	BT_DBG_OBJ_ID("Notifying group ID: ", id);
+	BT_DBG_OBJ_ID("Notifying parent group ID: ", id);
 	notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &id, BT_OTS_OBJ_ID_SIZE);
 }
 
