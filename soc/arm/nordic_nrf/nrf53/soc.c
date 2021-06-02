@@ -64,13 +64,42 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 #endif
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && \
-	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && \
-	defined(CONFIG_SOC_ENABLE_LFXO)
+	!defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#if defined(CONFIG_SOC_ENABLE_LFXO)
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS,
-				     NRF_OSCILLATORS_LFXO_CAP_6PF);
+		IS_ENABLED(CONFIG_SOC_LFXO_CAP_INT_6PF) ?
+			NRF_OSCILLATORS_LFXO_CAP_6PF :
+		IS_ENABLED(CONFIG_SOC_LFXO_CAP_INT_7PF) ?
+			NRF_OSCILLATORS_LFXO_CAP_7PF :
+		IS_ENABLED(CONFIG_SOC_LFXO_CAP_INT_9PF) ?
+			NRF_OSCILLATORS_LFXO_CAP_9PF :
+			NRF_OSCILLATORS_LFXO_CAP_EXTERNAL);
+	/* This can only be done from secure code. */
 	nrf_gpio_pin_mcu_select(PIN_XL1, NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
 	nrf_gpio_pin_mcu_select(PIN_XL2, NRF_GPIO_PIN_MCUSEL_PERIPHERAL);
 #endif
+#if defined(CONFIG_SOC_HFXO_CAP_INTERNAL)
+	/* This register is only accessible from secure code. */
+	uint32_t xosc32mtrim = NRF_FICR->XOSC32MTRIM;
+	/* As specified in the nRF5340 PS:
+	 * CAPVALUE = (((FICR->XOSC32MTRIM.SLOPE+56)*(CAPACITANCE*2-14))
+	 *            +((FICR->XOSC32MTRIM.OFFSET-8)<<4)+32)>>6;
+	 * where CAPACITANCE is the desired capacitor value in pF, holding any
+	 * value between 7.0 pF and 20.0 pF in 0.5 pF steps.
+	 */
+	uint32_t slope = (xosc32mtrim & FICR_XOSC32MTRIM_SLOPE_Msk)
+			 >> FICR_XOSC32MTRIM_SLOPE_Pos;
+	uint32_t offset = (xosc32mtrim & FICR_XOSC32MTRIM_OFFSET_Msk)
+			  >> FICR_XOSC32MTRIM_OFFSET_Pos;
+	uint32_t capvalue =
+		((slope + 56) * (CONFIG_SOC_HFXO_CAP_INT_VALUE_X2 - 14)
+		 + ((offset - 8) << 4) + 32) >> 6;
+
+	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, true, capvalue);
+#else
+	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
+#endif
+#endif /* defined(CONFIG_SOC_NRF5340_CPUAPP) && ... */
 
 #if defined(CONFIG_SOC_DCDC_NRF53X_APP)
 	nrf_regulators_dcdcen_set(NRF_REGULATORS, true);

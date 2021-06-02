@@ -132,6 +132,8 @@ config SOC_DCDC_NRF53X_HV
 	help
 	  Enable nRF53 series System on Chip High Voltage DC/DC converter.
 
+if !TRUSTED_EXECUTION_NONSECURE
+
 config SOC_ENABLE_LFXO
 	bool "Enable LFXO"
 	default y
@@ -141,6 +143,49 @@ config SOC_ENABLE_LFXO
 	  This option must be enabled if either application or network core is
 	  to use the LFXO. Otherwise, XL1 and XL2 pins will behave as regular
 	  GPIOs.
+
+choice SOC_LFXO_LOAD_CAPACITANCE
+	prompt "LFXO load capacitance"
+	depends on SOC_ENABLE_LFXO
+	default SOC_LFXO_CAP_INT_6PF
+
+config SOC_LFXO_CAP_EXTERNAL
+	bool "Use external load capacitors"
+
+config SOC_LFXO_CAP_INT_6PF
+	bool "6 pF internal load capacitance"
+
+config SOC_LFXO_CAP_INT_7PF
+	bool "7 pF internal load capacitance"
+
+config SOC_LFXO_CAP_INT_9PF
+	bool "9 pF internal load capacitance"
+
+endchoice
+
+choice SOC_HFXO_LOAD_CAPACITANCE
+	prompt "HFXO load capacitance"
+	default SOC_HFXO_CAP_EXTERNAL
+
+config SOC_HFXO_CAP_EXTERNAL
+	bool "Use external load capacitors"
+
+config SOC_HFXO_CAP_INTERNAL
+	bool "Use internal load capacitors"
+
+endchoice
+
+config SOC_HFXO_CAP_INT_VALUE_X2
+	int "Doubled value of HFXO internal load capacitors (in pF)"
+	depends on SOC_HFXO_CAP_INTERNAL
+	range 14 40
+	help
+	  Internal capacitors ranging from 7.0 pF to 20.0 pF in 0.5 pF steps
+	  can be enabled on pins XC1 and XC2. This option specifies doubled
+	  capacitance value for the two capacitors. Set it to 14 to get 7.0 pF
+	  for each capacitor, 15 to get 7.5 pF, and so on.
+
+endif # !TRUSTED_EXECUTION_NONSECURE
 
 endif # SOC_NRF5340_CPUAPP
 
