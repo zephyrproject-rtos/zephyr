@@ -416,6 +416,7 @@ macro(zephyr_library_named name)
   add_library(${name} STATIC "")
 
   zephyr_append_cmake_library(${name})
+  target_include_directories(${name} PRIVATE .)
 
   target_link_libraries(${name} PUBLIC zephyr_interface)
 endmacro()
