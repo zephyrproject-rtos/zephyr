@@ -451,6 +451,14 @@ def print_binding_page(binding, base_names, vnd_lookup, dup_compats,
     print_block(f'''\
     :orphan:
 
+    .. raw:: html
+
+        <!--
+        FIXME: do not limit page width until content uses another representation
+        format other than tables
+        -->
+        <style>.wy-nav-content {{ max-width: none; !important }}</style>
+
     {dtcompatible}
     .. _{binding_ref_target(binding)}:
 
