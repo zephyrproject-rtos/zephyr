@@ -196,7 +196,7 @@ endmacro()
 # link C++ libraries
 macro(toolchain_ld_cpp)
   zephyr_link_libraries(
-    -Hcppmw -Hcplus
+    -Hcplus
   )
 endmacro()
 
