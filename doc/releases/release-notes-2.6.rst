@@ -217,8 +217,6 @@ Architectures
     * Revamped boot code.
     * Full FPU context switching.
 
-* POSIX
-
 * x86
 
   * Added SoC configuration for Lakemont SoC.
@@ -484,6 +482,8 @@ Drivers and Sensors
 
 * EEPROM
 
+  * Added support for EEPROM emulated in flash.
+
 * ESPI
 
   * Added support for Microchip eSPI SAF
@@ -564,6 +564,9 @@ Drivers and Sensors
 
 * Interrupt Controller
 
+  * Moved shared interrupt controller configuration to be based
+    on devicetree.
+
 * LED
 
   * Add support for LED GPIO
@@ -587,8 +590,6 @@ Drivers and Sensors
   * Fixed build errors on 64-bit platforms.
   * Added support for dialup modem in PPP driver.
 
-* Pinmux
-
 * PWM
 
   * Added support on STM32F2 and STM32L1.
@@ -611,13 +612,18 @@ Drivers and Sensors
 
 * Timer
 
-  * Added CMT driver for Renesas R-Car platform
+  * Added x86 APIC TSC_DEADLINE driver.
+  * Added support for NXP MCUX OS Timer.
+  * Added support for Nuvoton NPCX system timer.
+  * Added CMT driver for Renesas R-Car platform.
 
 * USB
 
   * Added support on STM32H7
 
 * Watchdog
+
+  * Added support for TI CC32xx watchdog.
 
 * WiFi
 
@@ -826,13 +832,10 @@ Libraries / Subsystems
     * Fixed problem where mcumgr over shell would stall and wait for
       retransmissions of frames.
 
-  * updatehub
+* CMSIS subsystem
 
-* Settings
-
-* Random
-
-* POSIX subsystem
+  * Moved CMSIS portability layer headers to include/portability/cmsis_os.h
+    and include/portability/cmsis_os2.h
 
 * Power management
 
@@ -869,8 +872,6 @@ Libraries / Subsystems
     ``CONFIG_LOG2_MODE_DEFERRED`` or ``CONFIG_LOG2_MODE_IMMEDIATE`` enable
     logging v2. Logging backend API is extended to support v2 and the most
     popular backends (UART, shell) are updated.
-
-* LVGL
 
 * Shell
 
