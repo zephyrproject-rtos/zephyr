@@ -154,7 +154,7 @@ static ALWAYS_INLINE uint32_t sys_read32(mm_reg_t addr)
 static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
 	__asm__ volatile("btsl %1, %0"
-			 : "+m" (*(volatile uint32_t *) (addr))
+			 : "+m" (*(volatile uint8_t *) (addr))
 			 : "Ir" (bit)
 			 : "memory");
 }
@@ -162,7 +162,7 @@ static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit)
 static ALWAYS_INLINE void sys_clear_bit(mem_addr_t addr, unsigned int bit)
 {
 	__asm__ volatile("btrl %1, %0"
-			 : "+m" (*(volatile uint32_t *) (addr))
+			 : "+m" (*(volatile uint8_t *) (addr))
 			 : "Ir" (bit));
 }
 
@@ -172,7 +172,7 @@ static ALWAYS_INLINE int sys_test_bit(mem_addr_t addr, unsigned int bit)
 
 	__asm__ volatile("btl %2, %1;"
 			 "sbb %0, %0"
-			 : "=r" (ret), "+m" (*(volatile uint32_t *) (addr))
+			 : "=r" (ret), "+m" (*(volatile uint8_t *) (addr))
 			 : "Ir" (bit));
 
 	return ret;
@@ -185,7 +185,7 @@ static ALWAYS_INLINE int sys_test_and_set_bit(mem_addr_t addr,
 
 	__asm__ volatile("btsl %2, %1;"
 			 "sbb %0, %0"
-			 : "=r" (ret), "+m" (*(volatile uint32_t *) (addr))
+			 : "=r" (ret), "+m" (*(volatile uint8_t *) (addr))
 			 : "Ir" (bit));
 
 	return ret;
@@ -198,7 +198,7 @@ static ALWAYS_INLINE int sys_test_and_clear_bit(mem_addr_t addr,
 
 	__asm__ volatile("btrl %2, %1;"
 			 "sbb %0, %0"
-			 : "=r" (ret), "+m" (*(volatile uint32_t *) (addr))
+			 : "=r" (ret), "+m" (*(volatile uint8_t *) (addr))
 			 : "Ir" (bit));
 
 	return ret;
