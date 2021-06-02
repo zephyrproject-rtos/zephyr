@@ -70,7 +70,7 @@ struct mpl_mediaplayer_t {
 #if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 	uint64_t            icon_id;
 #endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
-	char                icon_uri[CONFIG_BT_MCS_ICON_URI_MAX];
+	char                icon_url[CONFIG_BT_MCS_ICON_URL_MAX];
 	struct mpl_group_t *group;
 	int32_t             track_pos;
 	uint8_t             state;

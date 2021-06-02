@@ -51,7 +51,7 @@ CREATE_FLAG(mcc_is_initialized);
 CREATE_FLAG(discovery_done);
 CREATE_FLAG(player_name_read);
 CREATE_FLAG(icon_object_id_read);
-CREATE_FLAG(icon_uri_read);
+CREATE_FLAG(icon_url_read);
 CREATE_FLAG(track_title_read);
 CREATE_FLAG(track_duration_read);
 CREATE_FLAG(track_position_read);
@@ -120,14 +120,14 @@ static void mcc_icon_obj_id_read_cb(struct bt_conn *conn, int err, uint64_t id)
 	SET_FLAG(icon_object_id_read);
 }
 
-static void mcc_icon_uri_read_cb(struct bt_conn *conn, int err, char *uri)
+static void mcc_icon_url_read_cb(struct bt_conn *conn, int err, char *url)
 {
 	if (err) {
-		FAIL("Icon URI read failed (%d)", err);
+		FAIL("Icon URL read failed (%d)", err);
 		return;
 	}
 
-	SET_FLAG(icon_uri_read);
+	SET_FLAG(icon_url_read);
 }
 
 static void mcc_track_title_read_cb(struct bt_conn *conn, int err, char *title)
@@ -471,7 +471,7 @@ int do_mcc_init(void)
 	mcc_cb.discover_mcs     = &mcc_discover_mcs_cb;
 	mcc_cb.player_name_read = &mcc_player_name_read_cb;
 	mcc_cb.icon_obj_id_read = &mcc_icon_obj_id_read_cb;
-	mcc_cb.icon_uri_read    = &mcc_icon_uri_read_cb;
+	mcc_cb.icon_url_read    = &mcc_icon_url_read_cb;
 	mcc_cb.track_title_read = &mcc_track_title_read_cb;
 	mcc_cb.track_dur_read   = &mcc_track_dur_read_cb;
 	mcc_cb.track_position_read = &mcc_track_position_read_cb;
@@ -1373,16 +1373,16 @@ void test_main(void)
 	WAIT_FOR_FLAG(object_read);
 	printk("Reading Icon Object succeeded\n");
 
-	/* Read icon uri *************************************************/
-	UNSET_FLAG(icon_uri_read);
-	err = bt_mcc_read_icon_uri(default_conn);
+	/* Read icon url *************************************************/
+	UNSET_FLAG(icon_url_read);
+	err = bt_mcc_read_icon_url(default_conn);
 	if (err) {
-		FAIL("Failed to read icon uri: %d", err);
+		FAIL("Failed to read icon url: %d", err);
 		return;
 	}
 
-	WAIT_FOR_FLAG(icon_uri_read);
-	printk("Icon URI read succeeded\n");
+	WAIT_FOR_FLAG(icon_url_read);
+	printk("Icon URL read succeeded\n");
 
 	/* Read track_title ******************************************/
 	UNSET_FLAG(track_title_read);
