@@ -157,6 +157,13 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 	ack_frame.mInfo.mRxInfo.mLqi = net_pkt_ieee802154_lqi(pkt);
 	ack_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi(pkt);
 
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
+
+	ack_frame.mInfo.mRxInfo.mTimestamp =
+		pkt_time->second * USEC_PER_SEC + pkt_time->nanosecond / NSEC_PER_USEC;
+#endif
+
 	return NET_OK;
 }
 
@@ -326,10 +333,10 @@ static void openthread_handle_received_frame(otInstance *instance,
 	recv_frame.mInfo.mRxInfo.mAckedWithFramePending = net_pkt_ieee802154_ack_fpb(pkt);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
-	struct net_ptp_time *time = net_pkt_timestamp(pkt);
+	struct net_ptp_time *pkt_time = net_pkt_timestamp(pkt);
 
 	recv_frame.mInfo.mRxInfo.mTimestamp =
-		time->second * USEC_PER_SEC + time->nanosecond / NSEC_PER_USEC;
+		pkt_time->second * USEC_PER_SEC + pkt_time->nanosecond / NSEC_PER_USEC;
 #endif
 
 #if defined(CONFIG_IEEE802154_2015)
