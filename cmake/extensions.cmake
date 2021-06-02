@@ -436,6 +436,17 @@ endmacro()
 # zephyr_library_amend()
 # zephyr_libray_add_sources(...)
 #
+# It is also possible to use generator expression when amending to Zephyr
+# libraries.
+#
+# For example, in case it is required to expose the Zephyr library's folder as
+# include path then the following is possible:
+# zephyr_library_amend()
+# zephyr_library_include_directories($<TARGET_PROPERTY:SOURCE_DIR>)
+#
+# See the CMake documentation for more target properties or generator
+# expressions.
+#
 macro(zephyr_library_amend)
   # This is a macro because we need to ensure the ZEPHYR_CURRENT_LIBRARY and
   # following zephyr_library_* calls are executed within the scope of the
