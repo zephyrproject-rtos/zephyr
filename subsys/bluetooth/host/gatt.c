@@ -1691,6 +1691,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 {
 	struct _bt_gatt_ccc *ccc = attr->user_data;
 	struct bt_gatt_ccc_cfg *cfg;
+	bool value_changed;
 	uint16_t value;
 
 	if (offset) {
@@ -1741,6 +1742,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		}
 	}
 
+	value_changed = cfg->value != value;
 	cfg->value = value;
 
 	BT_DBG("handle 0x%04x value %u", attr->handle, cfg->value);
@@ -1748,8 +1750,11 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	/* Update cfg if don't match */
 	if (cfg->value != ccc->value) {
 		gatt_ccc_changed(attr, ccc);
+	}
 
+	if (value_changed) {
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
+		/* Enqueue CCC store if value has changed for the connection */
 		gatt_ccc_conn_enqueue(conn);
 #endif
 	}
