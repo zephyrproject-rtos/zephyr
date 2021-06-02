@@ -403,6 +403,26 @@ static int cmd_log_strdup_utilization(const struct shell *shell,
 	return 0;
 }
 
+static int cmd_log_mem(const struct shell *shell, size_t argc, char **argv)
+{
+	uint32_t free;
+	uint32_t used;
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+	uint32_t max;
+#endif
+
+	free = log_msg_mem_get_free();
+	used = log_msg_mem_get_used();
+
+	shell_print(shell, "Blocks used:\t%d", used);
+	shell_print(shell, "Blocks free:\t%d", free);
+#ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
+	max = log_msg_mem_get_max_used();
+	shell_print(shell, "Blocks max:\t%d", max);
+#endif
+
+	return 0;
+}
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_backend,
 	SHELL_CMD_ARG(disable, &dsub_module_name,
@@ -459,6 +479,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_stat,
 	SHELL_COND_CMD_ARG(CONFIG_LOG_STRDUP_POOL_PROFILING, strdup_utilization,
 			NULL, "Get utilization of string duplicates pool",
 			cmd_log_strdup_utilization, 1, 0),
+	SHELL_CMD(mem, NULL, "Logger memory usage", cmd_log_mem),
 	SHELL_SUBCMD_SET_END
 );
 
