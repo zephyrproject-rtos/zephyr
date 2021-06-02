@@ -53,6 +53,23 @@ Install dependencies
 
 Next, you'll install some host dependencies using your package manager.
 
+The current minimum required version for the main dependencies are:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Tool
+     - Min. Version
+
+   * - `CMake <https://cmake.org/>`_
+     - 3.13.1
+
+   * - `Python <https://www.python.org/>`_
+     - 3.6
+
+   * - `Devicetree compiler <https://www.devicetree.org/>`_
+     - 1.4.6
+
 .. tabs::
 
    .. group-tab:: Ubuntu
@@ -68,33 +85,15 @@ Next, you'll install some host dependencies using your package manager.
               python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
               make gcc gcc-multilib g++-multilib libsdl2-dev
 
-      #. Verify the version of cmake that is installed on your system by entering::
+      #. Verify the versions of the main dependencies installed on your system by entering::
 
             cmake --version
+            python3 --version
+            dtc --version
 
-         The version must be 3.13.1 or later. If your version is older, complete the following
-         steps to add the `Kitware third-party apt repository <https://apt.kitware.com/>`__,
-         which contains an updated version of cmake.
-
-         a) Add the Kitware signing key:
-
-            .. code-block:: bash
-
-               wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
-
-         b) Add the Kitware apt repository for your OS release. For Ubuntu
-            18.04 LTS:
-
-            .. code-block:: bash
-
-               sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
-
-         c) Then install the updated version of cmake with ``apt``:
-
-            .. code-block:: bash
-
-               sudo apt update
-               sudo apt install cmake
+         Check those against the versions in the table in the beginning of this section.
+         Refer to the :ref:`installation_linux` page for additional information on updating
+         the dependencies manually.
 
    .. group-tab:: macOS
 
