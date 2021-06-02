@@ -2874,8 +2874,8 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 		wait_for_modem_data(buf, net_buf_frags_len(*buf),
 				    strlen(EOF_PATTERN));
 		if (!*buf) {
-			LOG_ERR("No EOF present");
-			goto rx_err;
+			LOG_WRN("No EOF present");
+			goto all_rx_data;
 		}
 	}
 
@@ -2885,8 +2885,7 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 	/* remove EOF pattern from buffer */
 	net_buf_remove(buf, strlen(EOF_PATTERN));
 	if (strcmp(eof, EOF_PATTERN)) {
-		LOG_ERR("Could not find EOF");
-		goto rx_err;
+		LOG_WRN("Could not find EOF [%s]", log_strdup(eof));
 	}
 
 	/* Make sure we have \r\nOK\r\n length in the buffer */
@@ -2894,16 +2893,16 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 		wait_for_modem_data(buf, net_buf_frags_len(*buf),
 				    strlen(OK_STRING) + 4);
 		if (!*buf) {
-			LOG_ERR("No OK present");
-			goto rx_err;
+			LOG_WRN("No OK present");
+			goto all_rx_data;
 		}
 	}
 
 	frag = NULL;
 	len = net_buf_findcrlf(*buf, &frag);
 	if (!frag) {
-		LOG_ERR("Unable to find OK start");
-		goto rx_err;
+		LOG_WRN("Unable to find OK start");
+		goto all_rx_data;
 	}
 	/* remove \r\n before OK */
 	net_buf_skipcrlf(buf);
@@ -2914,13 +2913,13 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 	/* remove the message from the buffer */
 	net_buf_remove(buf, strlen(OK_STRING));
 	if (strcmp(ok_resp, OK_STRING)) {
-		LOG_ERR("Could not find OK");
-		goto rx_err;
+		LOG_WRN("Could not find OK [%s]", log_strdup(ok_resp));
 	}
 
 	/* remove \r\n after OK */
 	net_buf_skipcrlf(buf);
 
+all_rx_data:
 	net_pkt_cursor_init(sock->recv_pkt);
 	net_pkt_set_overwrite(sock->recv_pkt, true);
 
