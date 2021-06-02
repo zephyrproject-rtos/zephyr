@@ -279,6 +279,13 @@ typedef struct {
 	uint8_t pmp_attr;
 } k_mem_partition_attr_t;
 
+struct scorpio_msi_vector {
+        unsigned int irq;
+        uint8_t vector;
+};
+
+typedef struct scorpio_msi_vector arch_msi_vector_t;
+
 void arch_irq_enable(unsigned int irq);
 void arch_irq_disable(unsigned int irq);
 int arch_irq_is_enabled(unsigned int irq);
