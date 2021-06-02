@@ -196,6 +196,13 @@ config BT_MCS_MAX_OBJ_SIZE
 	  This is used for the total memory pool buffer size from which memory
 	  is allocated when sending object content.
 
+config BT_DEBUG_MEDIA_PROXY
+	bool "Media Proxy debug"
+	depends on BT_AUDIO_DEBUG
+	help
+	  Use this option to enable Media Proxy debug logs for the
+	  Bluetooth Audio functionality.
+
 endif # BT_MCS || BT_MCC
 
 endif # BT_AUDIO
