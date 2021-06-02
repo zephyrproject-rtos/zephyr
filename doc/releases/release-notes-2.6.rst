@@ -327,7 +327,7 @@ Boards & SoC Support
   * STM32G4x1, STM32G4x3 and STM32G484xE
   * STM32WL55xx
   * Nuvoton npcx7m6fc, and npcx7m6fc
-  * Renesas RCar Gen3
+  * Renesas R-Car Gen3
   * Silicon Labs EFR32FG13P
   * ARM MPS3-AN547
   * ARM FVP-AEMv8A
@@ -452,6 +452,7 @@ Drivers and Sensors
   * On STM32 series, system clock configuration has been moved from Kconfig to DTS.
     Usage of existing Kconfig dedicated symbols (CONFIG_CLOCK_STM32_FOO) is now
     deprecated.
+  * Added clock control driver for Renesas R-Car platform
 
 * Console
 
@@ -528,6 +529,7 @@ Drivers and Sensors
     flags are now accepted by :c:func:`gpio_pin_interrupt_configure()`
     function only.
   * STM32 GPIO driver now supports clock gating using PM_DEVICE and PM_DEVICE_RUNTIME
+  * Added GPIO driver for Renesas R-Car platform
 
 * Hardware Info
 
@@ -597,6 +599,7 @@ Drivers and Sensors
 * Serial
 
   * Extended Cypress PSoC-6 SCB[uart] driver to support interrupts.
+  * Added UART driver for Renesas R-Car platform
 
 * SPI
 
@@ -605,6 +608,8 @@ Drivers and Sensors
     consumption in stop mode.
 
 * Timer
+
+  * Added CMT driver for Renesas R-Car platform
 
 * USB
 
