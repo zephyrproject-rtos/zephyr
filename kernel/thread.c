@@ -267,27 +267,24 @@ const char *k_thread_state_str(k_tid_t thread_id)
 	switch (thread_id->base.thread_state) {
 	case 0:
 		return "";
-		break;
 	case _THREAD_DUMMY:
 		return "dummy";
-		break;
 	case _THREAD_PENDING:
 		return "pending";
-		break;
 	case _THREAD_PRESTART:
 		return "prestart";
-		break;
 	case _THREAD_DEAD:
 		return "dead";
-		break;
 	case _THREAD_SUSPENDED:
 		return "suspended";
-		break;
 	case _THREAD_ABORTING:
 		return "aborting";
-		break;
 	case _THREAD_QUEUED:
 		return "queued";
+	default:
+	/* Add a break, some day when another case gets added at the end,
+	 * this bit of defensive programming will be useful
+	 */
 		break;
 	}
 	return "unknown";
