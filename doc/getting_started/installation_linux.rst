@@ -125,9 +125,9 @@ need one.
 CMake
 =====
 
-CMake version 3.13.1 or higher is required. Check what version you have by
-using ``cmake --version``. If you have an older version, there are several ways
-of obtaining a more recent one:
+A :ref:`recent CMake version <install-required-tools>` is required. Check what
+version you have by using ``cmake --version``. If you have an older version,
+there are several ways of obtaining a more recent one:
 
 * On Ubuntu, you can follow the instructions for adding the
   `kitware third-party apt repository <https://apt.kitware.com/>`_
@@ -187,16 +187,16 @@ versions.)
 DTC (Device Tree Compiler)
 ==========================
 
-A recent DTC version (1.4.6 or higher) is required. Check what version you
-have by using ``dtc --version``. If you have an older version, either install a
-more recent one by building from source, or use the one that is bundled in
-the :ref:`Zephyr SDK <zephyr_sdk>` by installing it.
+A :ref:`recent DTC version <install-required-tools>` is required. Check what
+version you have by using ``dtc --version``. If you have an older version,
+either install a more recent one by building from source, or use the one that is
+bundled in the :ref:`Zephyr SDK <zephyr_sdk>` by installing it.
 
 Python
 ======
 
-Python 3.6 or later is required. Check what version you have by using ``python3
---version``.
+A `modern Python 3 version <install-required-tools>` is required. Check what
+version you have by using ``python3 --version``.
 
 If you have an older version, you will need to install a more recent Python 3.
 You can build from source, or use a backport from your distribution's package
