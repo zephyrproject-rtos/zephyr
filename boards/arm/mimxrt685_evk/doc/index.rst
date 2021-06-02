@@ -180,11 +180,20 @@ configured by default to use the LPC-Link2.
 -----------------------------------------
 
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
-path.
+path. Install jumpers JP17, JP18 and JP19, to connect the SWD signals from onboard
+debug circuit.  These jumpers are installed by default.
 
 Follow the instructions in :ref:`lpclink2-jlink-onboard-debug-probe` to program
 the J-Link firmware. Please make sure you have the latest firmware for this
 board.
+
+:ref:`jlink-external-debug-probe`
+-----------------------------------------
+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
+path. Remove jumpers JP17, JP18 and JP19, to disconnect the SWD signals from onboard
+debug circuit.  These jumpers are installed by default. Connect the J-Link probe
+to J2 10-pin header.
 
 Configuring a Console
 =====================
