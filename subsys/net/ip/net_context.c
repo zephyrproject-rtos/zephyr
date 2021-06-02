@@ -1237,6 +1237,20 @@ static int get_context_sndtimeo(struct net_context *context,
 #endif
 }
 
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+static int get_context_keepalive(struct net_context *context,
+				void *value, size_t *len)
+{
+	*((uint32_t *)value) = context->options.keepalive;
+
+	if (len) {
+		*len = sizeof(uint32_t);
+	}
+
+	return 0;
+}
+#endif
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -2166,6 +2180,97 @@ static int set_context_proxy(struct net_context *context,
 #endif
 }
 
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+static int set_context_keep_idle(struct net_context *context,
+			     const void *value, size_t len)
+{
+	struct tcp *p = NULL;
+
+	if (len != sizeof(uint32_t)) {
+		return -EINVAL;
+	}
+	p = (struct tcp *)context->tcp;
+	p->keep_idle = *((uint32_t *)value);
+
+	return 0;
+}
+
+static int set_context_keep_intvl(struct net_context *context,
+			     const void *value, size_t len)
+{
+	struct tcp *p = NULL;
+
+	if (len != sizeof(uint32_t)) {
+		return -EINVAL;
+	}
+
+	p = (struct tcp *)context->tcp;
+	p->keep_intvl = *((uint32_t *)value);
+
+	return 0;
+}
+
+static int set_context_keep_cnt(struct net_context *context,
+			     const void *value, size_t len)
+{
+	struct tcp *p = NULL;
+
+	if (len != sizeof(uint32_t)) {
+		return -EINVAL;
+	}
+
+	p = (struct tcp *)context->tcp;
+	p->keep_cnt = *((uint32_t *)value);
+
+	return 0;
+}
+
+static int get_context_keep_idle(struct net_context *context,
+			      void *value, size_t *len)
+{
+	struct tcp *p = NULL;
+
+	p = (struct tcp *)context->tcp;
+	*((uint32_t *)value) = p->keep_idle;
+
+	if (len) {
+		*len = sizeof(uint32_t);
+	}
+
+	return 0;
+}
+
+static int get_context_keep_intvl(struct net_context *context,
+			      void *value, size_t *len)
+{
+	struct tcp *p = NULL;
+
+	p = (struct tcp *)context->tcp;
+	*((uint32_t *)value) = p->keep_intvl;
+
+	if (len) {
+		*len = sizeof(uint32_t);
+	}
+
+	return 0;
+}
+
+static int get_context_keep_cnt(struct net_context *context,
+			      void *value, size_t *len)
+{
+	struct tcp *p = NULL;
+
+	p = (struct tcp *)context->tcp;
+	*((uint32_t *)value) = p->keep_cnt;
+
+	if (len) {
+		*len = sizeof(uint32_t);
+	}
+
+	return 0;
+}
+#endif
+
 static int set_context_rcvtimeo(struct net_context *context,
 				const void *value, size_t len)
 {
@@ -2198,6 +2303,16 @@ static int set_context_sndtimeo(struct net_context *context,
 #endif
 }
 
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+static int set_context_keepalive(struct net_context *context,
+				const void *value, size_t len)
+{
+	context->options.keepalive = *(const int *)value ? true : false;
+
+	return 0;
+}
+#endif
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2228,6 +2343,46 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_SNDTIMEO:
 		ret = set_context_sndtimeo(context, value, len);
 		break;
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+	case NET_OPT_KEEPALIVE:
+		ret = set_context_keepalive(context, value, len);
+		break;
+#endif
+	}
+
+	k_mutex_unlock(&context->lock);
+
+	return ret;
+}
+
+int net_context_tcp_set_option(struct net_context *context,
+			   enum net_context_tcp_option option,
+			   const void *value, size_t len)
+{
+	int ret = 0;
+
+	NET_ASSERT(context);
+
+	if (!PART_OF_ARRAY(contexts, context)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&context->lock, K_FOREVER);
+
+	switch (option) {
+	case TCP_OPT_NODELAY:
+		break;
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+	case TCP_OPT_KEEPIDLE:
+		ret = set_context_keep_idle(context, value, len);
+		break;
+	case TCP_OPT_KEEPINTVL:
+		ret = set_context_keep_intvl(context, value, len);
+		break;
+	case TCP_OPT_KEEPCNT:
+		ret = set_context_keep_cnt(context, value, len);
+		break;
+#endif
 	}
 
 	k_mutex_unlock(&context->lock);
@@ -2265,6 +2420,46 @@ int net_context_get_option(struct net_context *context,
 	case NET_OPT_SNDTIMEO:
 		ret = get_context_sndtimeo(context, value, len);
 		break;
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+	case NET_OPT_KEEPALIVE:
+		ret = get_context_keepalive(context, value, len);
+		break;
+#endif
+	}
+
+	k_mutex_unlock(&context->lock);
+
+	return ret;
+}
+
+int net_context_tcp_get_option(struct net_context *context,
+			    enum net_context_tcp_option option,
+			    void *value, size_t *len)
+{
+	int ret = 0;
+
+	NET_ASSERT(context);
+
+	if (!PART_OF_ARRAY(contexts, context)) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&context->lock, K_FOREVER);
+
+	switch (option) {
+	case TCP_OPT_NODELAY:
+		break;
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+	case TCP_OPT_KEEPIDLE:
+		ret = get_context_keep_idle(context, value, len);
+		break;
+	case TCP_OPT_KEEPINTVL:
+		ret = get_context_keep_intvl(context, value, len);
+		break;
+	case TCP_OPT_KEEPCNT:
+		ret = get_context_keep_cnt(context, value, len);
+		break;
+#endif
 	}
 
 	k_mutex_unlock(&context->lock);

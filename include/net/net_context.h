@@ -313,6 +313,9 @@ __net_socket struct net_context {
 #if defined(CONFIG_NET_CONTEXT_SNDTIMEO)
 		k_timeout_t sndtimeo;
 #endif
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+		bool keepalive;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -1060,6 +1063,18 @@ enum net_context_option {
 	NET_OPT_SOCKS5		= 3,
 	NET_OPT_RCVTIMEO        = 4,
 	NET_OPT_SNDTIMEO        = 5,
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+	NET_OPT_KEEPALIVE		= 6,
+#endif
+};
+
+enum net_context_tcp_option {
+	TCP_OPT_NODELAY			= 1,
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+	TCP_OPT_KEEPIDLE		= 2,
+	TCP_OPT_KEEPINTVL		= 3,
+	TCP_OPT_KEEPCNT			= 4,
+#endif
 };
 
 /**
@@ -1077,6 +1092,20 @@ int net_context_set_option(struct net_context *context,
 			   const void *value, size_t len);
 
 /**
+ * @brief Set tcp connection option for this context.
+ *
+ * @param context The network context to use.
+ * @param option Option to set
+ * @param value Option value
+ * @param len Option length
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_context_tcp_set_option(struct net_context *context,
+			   enum net_context_tcp_option option,
+			   const void *value, size_t len);
+
+/**
  * @brief Get connection option value for this context.
  *
  * @param context The network context to use.
@@ -1089,6 +1118,20 @@ int net_context_set_option(struct net_context *context,
 int net_context_get_option(struct net_context *context,
 			   enum net_context_option option,
 			   void *value, size_t *len);
+
+/**
+ * @brief Get TCP connection option value for this context.
+ *
+ * @param context The network context to use.
+ * @param option Option to set
+ * @param value Option value
+ * @param len Option length (returned to caller)
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_context_tcp_get_option(struct net_context *context,
+			    enum net_context_tcp_option option,
+			    void *value, size_t *len);
 
 /**
  * @typedef net_context_cb_t

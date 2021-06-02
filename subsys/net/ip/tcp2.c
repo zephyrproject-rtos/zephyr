@@ -528,6 +528,9 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 	}
 
 	k_work_cancel_delayable(&conn->send_timer);
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+	k_work_cancel_delayable(&conn->keepalive_timer);
+#endif /*CONFIG_NET_TCP_KEEPALIVE */
 
 	{
 		struct net_pkt *pkt = tcp_slist(conn, &conn->send_queue, get,
@@ -1117,6 +1120,75 @@ static void tcp_fin_timeout(struct k_work *work)
 	net_context_unref(conn->context);
 }
 
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+static void tcp_send_keepalive_probe(struct k_work *work)
+{
+	struct tcp *conn = CONTAINER_OF(work, struct tcp, keepalive_timer);
+	struct net_pkt *pkt;
+	int ret = 0;
+
+	if (!(net_context_get_state(conn->context) & NET_CONTEXT_CONNECTED)) {
+		NET_DBG("conn: %p TCP connection not established", conn);
+		return;
+	}
+	if (!conn->context->options.keepalive) {
+		NET_DBG("conn: %p keepalive is not enabled", conn);
+		return;
+	}
+	conn->keep_cur++;
+	if (conn->keep_cur > conn->keep_cnt) {
+		NET_DBG("conn: %p keepalive failed to detect multiple times, close it", conn);
+		tcp_conn_unref(conn);
+		return;
+	}
+
+	NET_DBG("conn: %p keepalive probe", conn);
+	k_work_reschedule_for_queue(
+		&tcp_work_q, &conn->keepalive_timer,
+		K_SECONDS(conn->keep_intvl));
+
+	pkt = tcp_pkt_alloc(conn, sizeof(struct tcphdr));
+	if (!pkt) {
+		ret = -ENOBUFS;
+		goto out;
+	}
+
+	ret = ip_header_add(conn, pkt);
+	if (ret < 0) {
+		tcp_pkt_unref(pkt);
+		goto out;
+	}
+
+	ret = tcp_header_add(conn, pkt, ACK, conn->seq - 1);
+	if (ret < 0) {
+		tcp_pkt_unref(pkt);
+		goto out;
+	}
+
+	ret = tcp_finalize_pkt(pkt);
+	if (ret < 0) {
+		tcp_pkt_unref(pkt);
+		goto out;
+	}
+
+	NET_DBG("%s", log_strdup(tcp_th(pkt)));
+
+	if (tcp_send_cb) {
+		ret = tcp_send_cb(pkt);
+		goto out;
+	}
+
+	sys_slist_append(&conn->send_queue, &pkt->next);
+
+	if (tcp_send_process_no_lock(conn)) {
+		tcp_conn_unref(conn);
+	}
+
+out:
+	return;
+}
+#endif /*CONFIG_NET_TCP_KEEPALIVE */
+
 static void tcp_conn_ref(struct tcp *conn)
 {
 	int ref_count = atomic_inc(&conn->ref_count) + 1;
@@ -1172,6 +1244,12 @@ static struct tcp *tcp_conn_alloc(void)
 	k_work_init_delayable(&conn->fin_timer, tcp_fin_timeout);
 	k_work_init_delayable(&conn->send_data_timer, tcp_resend_data);
 	k_work_init_delayable(&conn->recv_queue_timer, tcp_cleanup_recv_queue);
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+	conn->keep_idle = CONFIG_NET_TCP_KEEPIDLE_DEFAULT;
+	conn->keep_intvl = CONFIG_NET_TCP_KEEPINTVL_DEFAULT;
+	conn->keep_cnt = CONFIG_NET_TCP_KEEPCNT_DEFAULT;
+	k_work_init_delayable(&conn->keepalive_timer, tcp_send_keepalive_probe);
+#endif /*CONFIG_NET_TCP_KEEPALIVE */
 
 	tcp_conn_ref(conn);
 
@@ -1728,6 +1806,13 @@ next_state:
 					      NET_CONTEXT_CONNECTED);
 
 			if (conn->accepted_conn) {
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+				conn->context->options.keepalive = \
+				conn->accepted_conn->context->options.keepalive;
+				conn->keep_idle = conn->accepted_conn->keep_idle;
+				conn->keep_intvl = conn->accepted_conn->keep_intvl;
+				conn->keep_cnt = conn->accepted_conn->keep_cnt;
+#endif
 				conn->accepted_conn->accept_cb(
 					conn->context,
 					&conn->accepted_conn->context->remote,
@@ -1737,6 +1822,15 @@ next_state:
 				/* Make sure the accept_cb is only called once.
 				 */
 				conn->accepted_conn = NULL;
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+				if (conn->context->options.keepalive) {
+					NET_DBG("conn: %p keepalive probe start", conn);
+					conn->keep_cur = 0;
+					k_work_reschedule_for_queue(
+						&tcp_work_q, &conn->keepalive_timer,
+						K_SECONDS(conn->keep_idle));
+				}
+#endif /*CONFIG_NET_TCP_KEEPALIVE */
 			}
 
 			if (len) {
@@ -1775,9 +1869,23 @@ next_state:
 			 * priority.
 			 */
 			connection_ok = true;
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+			if (conn->context->options.keepalive) {
+				NET_DBG("conn: %p keepalive probe start", conn);
+				conn->keep_cur = 0;
+				k_work_reschedule_for_queue(
+					&tcp_work_q, &conn->keepalive_timer,
+					K_SECONDS(conn->keep_idle));
+			}
+#endif /*CONFIG_NET_TCP_KEEPALIVE */
 		}
 		break;
 	case TCP_ESTABLISHED:
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+		if (th && net_tcp_seq_cmp(th_ack(th), conn->seq - 1) > 0) {
+			conn->keep_cur = 0;
+		}
+#endif /*CONFIG_NET_TCP_KEEPALIVE */
 		/* full-close */
 		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
 			if (net_tcp_seq_cmp(th_ack(th), conn->seq) > 0) {
@@ -1869,6 +1977,13 @@ next_state:
 				if (!tcp_data_received(conn, pkt, &len)) {
 					break;
 				}
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+				if (conn->context->options.keepalive) {
+					k_work_reschedule_for_queue(
+						&tcp_work_q, &conn->keepalive_timer,
+						K_SECONDS(conn->keep_idle));
+				}
+#endif /*CONFIG_NET_TCP_KEEPALIVE */
 			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
 				tcp_out(conn, ACK); /* peer has resent */
 
@@ -2141,6 +2256,14 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		/* We should not free the pkt if there was an error. It will be
 		 * freed in net_context.c:context_sendto()
 		 */
+#if IS_ENABLED(CONFIG_NET_TCP_KEEPALIVE)
+		if ((net_context_get_state(conn->context) & NET_CONTEXT_CONNECTED) &&
+			context->options.keepalive) {
+			k_work_reschedule_for_queue(
+				&tcp_work_q, &conn->keepalive_timer,
+				K_SECONDS(conn->keep_idle));
+		}
+#endif /*CONFIG_NET_TCP_KEEPALIVE */
 		tcp_pkt_unref(pkt);
 	}
 out:
