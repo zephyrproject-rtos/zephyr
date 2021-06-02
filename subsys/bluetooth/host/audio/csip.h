@@ -30,6 +30,12 @@
 #define BT_CSIP_SIRK_TYPE_ENCRYPTED             0x00
 #define BT_CSIP_SIRK_TYPE_PLAIN                 0x01
 
+#if defined(CONFIG_BT_CSIP)
+#define BT_CSIP_MAX_CSIS_INSTANCES CONFIG_BT_CSIP_MAX_CSIS_INSTANCES
+#else
+#define BT_CSIP_MAX_CSIS_INSTANCES 0
+#endif /* CONFIG_BT_CSIP */
+
 struct bt_csip_set_sirk_t {
 	uint8_t type;
 	uint8_t value[BT_CSIP_SET_SIRK_SIZE];
@@ -38,10 +44,13 @@ struct bt_csip_set_sirk_t {
 struct bt_csip_set_t {
 	struct bt_csip_set_sirk_t set_sirk;
 	uint8_t set_size;
+	uint8_t rank;
 };
 
-struct bt_csip_set_member_t {
+struct bt_csip_set_member {
+	struct bt_conn *conn;
 	bt_addr_le_t addr;
+	struct bt_csip_set_t sets[BT_CSIP_MAX_CSIS_INSTANCES];
 };
 
 typedef void (*bt_csip_discover_cb_t)(struct bt_conn *conn, int err,
