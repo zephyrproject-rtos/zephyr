@@ -514,6 +514,15 @@ endfunction()
 # constructor but must called explicitly on CMake libraries that do
 # not use a zephyr library constructor.
 function(zephyr_append_cmake_library library)
+  if(TARGET zephyr_prebuilt)
+    message(WARNING
+      "zephyr_library() or zephyr_library_named() called in Zephyr CMake "
+      "application mode. `${library}` will not be treated as a Zephyr library."
+      "To create a Zephyr library in Zephyr CMake kernel mode consider "
+      "creating a Zephyr module. See more here: "
+      "https://docs.zephyrproject.org/latest/guides/modules.html"
+    )
+  endif()
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_LIBS ${library})
 endfunction()
 
