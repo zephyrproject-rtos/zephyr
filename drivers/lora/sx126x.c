@@ -443,6 +443,11 @@ void SX126xWakeup(void)
 	dev_data.mode = MODE_STDBY_RC;
 }
 
+uint32_t SX126xGetDio1PinState(void)
+{
+	return gpio_pin_get(dev_data.dio1, GPIO_DIO1_PIN) > 0 ? 1U : 0U;
+}
+
 static void sx126x_dio1_irq_work_handler(struct k_work *work)
 {
 	LOG_DBG("Processing DIO1 interrupt");

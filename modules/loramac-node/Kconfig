@@ -4,16 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config HAS_SEMTECH_LORAMAC
-	bool "Semtech LoRaMac Stack"
-	help
-	  This option enables the use of Semtech's LoRaMac stack
-
-config HAS_SEMTECH_SOFT_SE
-	bool "Semtech Secure Element software implementation"
-	help
-	  This option enables the use of Semtech's Secure Element
-	  software implementation
+config ZEPHYR_LORAMAC_NODE_MODULE
+	bool
 
 config HAS_SEMTECH_RADIO_DRIVERS
 	bool "Semtech LoRa Radio Drivers"
@@ -31,3 +23,16 @@ config HAS_SEMTECH_SX1276
 config HAS_SEMTECH_SX126X
 	bool
 	depends on HAS_SEMTECH_RADIO_DRIVERS
+
+config HAS_SEMTECH_LORAMAC
+	bool "Semtech LoRaMac Stack"
+	depends on HAS_SEMTECH_RADIO_DRIVERS
+	help
+	  This option enables the use of Semtech's LoRaMac stack
+
+config HAS_SEMTECH_SOFT_SE
+	bool "Semtech Secure Element software implementation"
+	depends on HAS_SEMTECH_LORAMAC
+	help
+	  This option enables the use of Semtech's Secure Element
+	  software implementation
