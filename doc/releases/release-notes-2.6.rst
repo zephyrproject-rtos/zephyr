@@ -627,6 +627,7 @@ Drivers and Sensors
 * USB
 
   * Added support on STM32H7
+  * Added attached event delay to usb_dc_nrfx driver
 
 * Watchdog
 
@@ -760,6 +761,23 @@ Networking
 
   * Fixed userspace access to TLS socket.
   * Added socket option support for setting and getting DTLS handshake timeout.
+
+USB
+***
+
+* Reworked USB classes configuration. Various minor fixes in USB DFU class.
+
+* USB HID class
+
+  * Removed get_protocol/set_protocol from USB HID class API.
+  * Allowed boot interface Protocol Code to be set per device.
+  * Rework idle report implementation.
+
+* Samples
+
+  * Allowed to build USB Audio sampe for different platforms.
+  * Added SD card support to USB MSC sample.
+  * Reworked USB HID sample.
 
 Build and Infrastructure
 ************************
