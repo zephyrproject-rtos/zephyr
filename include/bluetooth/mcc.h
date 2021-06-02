@@ -61,14 +61,14 @@ typedef void (*bt_mcc_icon_obj_id_read_cb_t)(struct bt_conn *conn, int err,
 					     uint64_t id);
 #endif /* CONFIG_BT_OTC */
 
-/** @brief Callback function for mcc_read_icon_uri
+/** @brief Callback function for mcc_read_icon_url
  *
  * @param conn          The connection that was used to initialise MCC
  * @param err           Error value. 0 on success, GATT error or ERRNO on fail
- * @param icon_uri      The URI of the Icon
+ * @param icon_url      The URL of the Icon
  */
-typedef void (*bt_mcc_icon_uri_read_cb_t)(struct bt_conn *conn, int err,
-					  char *icon_uri);
+typedef void (*bt_mcc_icon_url_read_cb_t)(struct bt_conn *conn, int err,
+					  char *icon_url);
 
 /** @brief Callback function for track_changed
  *
@@ -394,7 +394,7 @@ struct bt_mcc_cb_t {
 #ifdef CONFIG_BT_OTC
 	bt_mcc_icon_obj_id_read_cb_t              icon_obj_id_read;
 #endif /* CONFIG_BT_OTC */
-	bt_mcc_icon_uri_read_cb_t                 icon_uri_read;
+	bt_mcc_icon_url_read_cb_t                 icon_url_read;
 	bt_mcc_track_changed_ntf_cb_t             track_changed_ntf;
 	bt_mcc_track_title_read_cb_t              track_title_read;
 	bt_mcc_track_dur_read_cb_t                track_dur_read;
@@ -466,8 +466,8 @@ int bt_mcc_read_player_name(struct bt_conn *conn);
 int bt_mcc_read_icon_obj_id(struct bt_conn *conn);
 #endif /* CONFIG_BT_OTC */
 
-/** @brief Read Icon Object URI */
-int bt_mcc_read_icon_uri(struct bt_conn *conn);
+/** @brief Read Icon Object URL */
+int bt_mcc_read_icon_url(struct bt_conn *conn);
 
 /** @brief Read Track Title */
 int bt_mcc_read_track_title(struct bt_conn *conn);

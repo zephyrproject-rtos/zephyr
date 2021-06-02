@@ -246,7 +246,7 @@ static struct mpl_group_t group_p = {
 
 static struct mpl_mediaplayer_t pl = {
 	.name			  = CONFIG_BT_MCS_MEDIA_PLAYER_NAME,
-	.icon_uri		  = CONFIG_BT_MCS_ICON_URI,
+	.icon_url		  = CONFIG_BT_MCS_ICON_URL,
 	.group			  = &group_1,
 	.track_pos		  = 0,
 	.state			  = BT_MCS_MEDIA_STATE_PAUSED,
@@ -1285,7 +1285,7 @@ void do_track_change_notifications(struct mpl_mediaplayer_t *pl)
 void do_group_change_notifications(struct mpl_mediaplayer_t *pl)
 {
 #ifdef CONFIG_BT_OTS
-	media_proxy_pl_group_id_cb(pl->group->id);
+	media_proxy_pl_current_group_id_cb(pl->group->id);
 #endif /* CONFIG_BT_OTS */
 }
 
@@ -2271,9 +2271,9 @@ uint64_t media_proxy_pl_icon_id_get(void)
 }
 #endif /* CONFIG_BT_OTS */
 
-char *media_proxy_pl_icon_uri_get(void)
+char *media_proxy_pl_icon_url_get(void)
 {
-	return pl.icon_uri;
+	return pl.icon_url;
 }
 
 char *media_proxy_pl_track_title_get(void)
@@ -2400,12 +2400,12 @@ void media_proxy_pl_next_track_id_set(uint64_t id)
 				  /* who set the track */
 }
 
-uint64_t media_proxy_pl_group_id_get(void)
+uint64_t media_proxy_pl_current_group_id_get(void)
 {
 	return pl.group->id;
 }
 
-void media_proxy_pl_group_id_set(uint64_t id)
+void media_proxy_pl_current_group_id_set(uint64_t id)
 {
 	BT_DBG_OBJ_ID("Group ID to set: ", id);
 	pl.group->id = id;
@@ -2566,7 +2566,7 @@ void media_proxy_pl_debug_dump_state(void)
 	BT_DBG("Icon ID: %s", log_strdup(t));
 #endif /* CONFIG_BT_OTS */
 
-	BT_DBG("Icon URI: %s", log_strdup(pl.icon_uri));
+	BT_DBG("Icon URL: %s", log_strdup(pl.icon_url));
 	BT_DBG("Track position: %d", pl.track_pos);
 	BT_DBG("Media state: %d", pl.state);
 	BT_DBG("Playback speed parameter: %d", pl.playback_speed_param);

@@ -1579,15 +1579,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MCS_ICON_OBJ_ID \
 	BT_UUID_DECLARE_16(BT_UUID_MCS_ICON_OBJ_ID_VAL)
-/** @def BT_UUID_MCS_ICON_URI_VAL
- *  @brief Media Icon URI value
+/** @def BT_UUID_MCS_ICON_URL_VAL
+ *  @brief Media Icon URL value
  */
-#define BT_UUID_MCS_ICON_URI_VAL 0x8fa2
-/** @def BT_UUID_MCS_ICON_URI
- *  @brief Media Icon URI
+#define BT_UUID_MCS_ICON_URL_VAL 0x8fa2
+/** @def BT_UUID_MCS_ICON_URL
+ *  @brief Media Icon URL
  */
-#define BT_UUID_MCS_ICON_URI \
-	BT_UUID_DECLARE_16(BT_UUID_MCS_ICON_URI_VAL)
+#define BT_UUID_MCS_ICON_URL \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_ICON_URL_VAL)
 /** @def BT_UUID_MCS_TRACK_CHANGED_VAL
  *  @brief Track Changed value
  */
@@ -1669,15 +1669,15 @@ struct bt_uuid_128 {
  */
 #define BT_UUID_MCS_NEXT_TRACK_OBJ_ID \
 	BT_UUID_DECLARE_16(BT_UUID_MCS_NEXT_TRACK_OBJ_ID_VAL)
-/** @def BT_UUID_MCS_GROUP_OBJ_ID_VAL
+/** @def BT_UUID_MCS_CURRENT_GROUP_OBJ_ID_VAL
  *  @brief Group Object ID value
  */
-#define BT_UUID_MCS_GROUP_OBJ_ID_VAL 0x8fad
-/** @def BT_UUID_MCS_GROUP_OBJ_ID
+#define BT_UUID_MCS_CURRENT_GROUP_OBJ_ID_VAL 0x8fad
+/** @def BT_UUID_MCS_CURRENT_GROUP_OBJ_ID
  *  @brief Group Object ID
  */
-#define BT_UUID_MCS_GROUP_OBJ_ID \
-	BT_UUID_DECLARE_16(BT_UUID_MCS_GROUP_OBJ_ID_VAL)
+#define BT_UUID_MCS_CURRENT_GROUP_OBJ_ID \
+	BT_UUID_DECLARE_16(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID_VAL)
 /** @def BT_UUID_MCS_PARENT_GROUP_OBJ_ID_VAL
  *  @brief Parent Group Object ID value
  */
