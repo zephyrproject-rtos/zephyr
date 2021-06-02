@@ -12,7 +12,6 @@ DT_COMPAT_SEMTECH_SX1262 := semtech,sx1262
 menuconfig LORA_SX12XX
 	bool "Semtech SX-series driver"
 	select HAS_SEMTECH_RADIO_DRIVERS
-	select HAS_SEMTECH_LORAMAC
 	depends on SPI
 	help
 	  Enable LoRa driver for Semtech SX12xx.

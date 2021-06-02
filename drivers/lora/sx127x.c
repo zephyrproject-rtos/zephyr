@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(sx127x, CONFIG_LORA_LOG_LEVEL);
 #define SX127xWriteBuffer SX1272WriteBuffer
 #define SX127xReadBuffer SX1272ReadBuffer
 #define SX127xSetRfTxPower SX1272SetRfTxPower
+#define SX127xGetDio1PinState SX1272GetDio1PinState
 #define SX127xInit SX1272Init
 #define SX127xGetStatus SX1272GetStatus
 #define SX127xSetModem SX1272SetModem
@@ -67,6 +68,7 @@ LOG_MODULE_REGISTER(sx127x, CONFIG_LORA_LOG_LEVEL);
 #define SX127xWriteBuffer SX1276WriteBuffer
 #define SX127xReadBuffer SX1276ReadBuffer
 #define SX127xSetRfTxPower SX1276SetRfTxPower
+#define SX127xGetDio1PinState SX1276GetDio1PinState
 #define SX127xInit SX1276Init
 #define SX127xGetStatus SX1276GetStatus
 #define SX127xSetModem SX1276SetModem
@@ -160,6 +162,9 @@ struct sx127x_dio {
 };
 
 /* Helper macro that UTIL_LISTIFY can use and produces an element with comma */
+#define SX127X_DIO_GPIO_LEN(inst) \
+	DT_INST_PROP_LEN(inst, dio_gpios)
+
 #define SX127X_DIO_GPIO_ELEM(idx, inst) \
 	{ \
 		DT_INST_GPIO_LABEL_BY_IDX(inst, dio_gpios, idx), \
@@ -168,7 +173,7 @@ struct sx127x_dio {
 	},
 
 #define SX127X_DIO_GPIO_INIT(n) \
-	UTIL_LISTIFY(DT_INST_PROP_LEN(n, dio_gpios), SX127X_DIO_GPIO_ELEM, n)
+	UTIL_LISTIFY(SX127X_DIO_GPIO_LEN(n), SX127X_DIO_GPIO_ELEM, n)
 
 static const struct sx127x_dio sx127x_dios[] = { SX127X_DIO_GPIO_INIT(0) };
 
@@ -427,7 +432,7 @@ int sx127x_write(uint8_t reg_addr, uint8_t *data, uint8_t len)
 	return sx127x_transceive(reg_addr | BIT(7), true, data, len);
 }
 
-void SX127xWriteBuffer(uint16_t addr, uint8_t *buffer, uint8_t size)
+void SX127xWriteBuffer(uint32_t addr, uint8_t *buffer, uint8_t size)
 {
 	int ret;
 
@@ -437,7 +442,7 @@ void SX127xWriteBuffer(uint16_t addr, uint8_t *buffer, uint8_t size)
 	}
 }
 
-void SX127xReadBuffer(uint16_t addr, uint8_t *buffer, uint8_t size)
+void SX127xReadBuffer(uint32_t addr, uint8_t *buffer, uint8_t size)
 {
 	int ret;
 
@@ -509,6 +514,17 @@ void SX127xSetRfTxPower(int8_t power)
 		LOG_ERR("Unable to write PA dac");
 		return;
 	}
+}
+
+uint32_t SX127xGetDio1PinState(void)
+{
+#if SX127X_DIO_GPIO_LEN(0) >= 2
+	if (gpio_pin_get(dev_data.dio_dev[1], sx127x_dios[1].pin) > 0) {
+		return 1U;
+	}
+#endif
+
+	return 0U;
 }
 
 /* Initialize Radio driver callbacks */
