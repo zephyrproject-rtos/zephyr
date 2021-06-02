@@ -476,6 +476,13 @@ Drivers and Sensors
 
   * Added support for ST7735R
 
+* Disk
+
+  * Moved disk drivers (``disk_access_*.c``) to ``drivers/disk`` and renamed
+    according to their function.
+  * Fixed CMD6 support in USDHC driver.
+  * Fixed clock frequency switching after initialization in ``sdmmc_spi.c`` driver.
+
 * DMA
 
   * Added support on STM32G0 and STM32H7
