@@ -155,6 +155,17 @@ struct bt_csip_cb_t {
 	bt_csip_release_cb_t              release;
 };
 
+/**
+ * @brief Check if advertising data indicates a set member
+ *
+ * @param set_sirk The SIRK of the set to check against
+ * @param data     The advertising data
+ *
+ * @return true if the advertising data indicates a set member, false otherwise
+ */
+bool bt_csip_is_set_member(uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE],
+			   struct bt_data *data);
+
 /** @brief Lock the set
  *
  *  Connect to and set the lock for all devices in a set.

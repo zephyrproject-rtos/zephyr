@@ -612,24 +612,32 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static bool is_set_member(struct bt_data *data)
+bool bt_csip_is_set_member(uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE],
+			   struct bt_data *data)
 {
-	uint8_t err;
-	uint32_t hash = sys_get_le24(data->data);
-	uint32_t prand = sys_get_le24(data->data + 3);
-	uint32_t calculated_hash;
+	if (data->type == BT_DATA_CSIS_RSI &&
+	    data->data_len == BT_CSIS_PSRI_SIZE) {
+		uint8_t err;
 
-	BT_DBG("hash: 0x%06x, prand 0x%06x", hash, prand);
-	err = bt_csis_sih(cur_set.set_sirk.value, prand, &calculated_hash);
-	if (err) {
-		return false;
+		uint32_t hash = sys_get_le24(data->data);
+		uint32_t prand = sys_get_le24(data->data + 3);
+		uint32_t calculated_hash;
+
+		BT_DBG("hash: 0x%06x, prand 0x%06x", hash, prand);
+		err = bt_csis_sih(set_sirk, prand, &calculated_hash);
+		if (err) {
+			return false;
+		}
+
+		calculated_hash &= 0xffffff;
+
+		BT_DBG("calculated_hash: 0x%06x, hash 0x%06x",
+		       calculated_hash, hash);
+
+		return calculated_hash == hash;
 	}
 
-	calculated_hash &= 0xffffff;
-
-	BT_DBG("calculated_hash: 0x%06x, hash 0x%06x", calculated_hash, hash);
-
-	return calculated_hash == hash;
+	return false;
 }
 
 static bool is_discovered(const bt_addr_le_t *addr)
@@ -644,43 +652,40 @@ static bool is_discovered(const bt_addr_le_t *addr)
 
 static bool csis_found(struct bt_data *data, void *user_data)
 {
-	bt_addr_le_t *addr = user_data;
-
-	if (data->type == BT_DATA_CSIS_RSI &&
-	    data->data_len == BT_CSIS_PSRI_SIZE) {
+	if (bt_csip_is_set_member(cur_set.set_sirk.value, data)) {
+		bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
 		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 		BT_DBG("Found CSIS advertiser with address %s",
 		       log_strdup(addr_str));
-		if (is_set_member(data)) {
-			if (is_discovered(addr)) {
-				BT_DBG("Set member already found");
-				return true;
-			}
-			memcpy(&set_member_addrs[members_found].addr,
-			       addr,
-			       sizeof(bt_addr_le_t));
 
-			members_found++;
-			BT_DBG("Found member (%u / %u)",
-			       members_found, cur_set.set_size);
-
-			if (members_found == cur_set.set_size) {
-				(void)k_work_cancel_delayable(&discover_members_timer);
-				bt_le_scan_stop();
-				busy = false;
-				cur_inst = NULL;
-				if (csip_cbs && csip_cbs->members) {
-					csip_cbs->members(0, cur_set.set_size,
-							  members_found);
-				}
-
-			}
-		} else {
-			BT_DBG("Not member of current set");
+		if (is_discovered(addr)) {
+			BT_DBG("Set member already found");
+			/* Stop parsing */
+			return false;
 		}
+
+		bt_addr_le_copy(&set_member_addrs[members_found].addr, addr);
+
+		members_found++;
+		BT_DBG("Found member (%u / %u)",
+			members_found, cur_set.set_size);
+
+		if (members_found == cur_set.set_size) {
+			(void)k_work_cancel_delayable(&discover_members_timer);
+			bt_le_scan_stop();
+			busy = false;
+			cur_inst = NULL;
+			if (csip_cbs && csip_cbs->members) {
+				csip_cbs->members(0, cur_set.set_size,
+						  members_found);
+			}
+		}
+		/* Stop parsing */
+		return false;
 	}
+	/* Continue parsing */
 	return true;
 }
 
