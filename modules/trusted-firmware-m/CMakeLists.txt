@@ -425,13 +425,21 @@ if (CONFIG_BUILD_WITH_TFM)
   set(NS_SIGNED_FILE ${CMAKE_BINARY_DIR}/zephyr_ns_signed.hex)
   set(S_SIGNED_FILE ${CMAKE_BINARY_DIR}/tfm_s_signed.hex)
 
+  if (CONFIG_TFM_REGRESSION_NS)
+    # Use the TF-M NS binary as the Non-Secure application firmware image
+    set(NS_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
+  else()
+    # Use the Zephyr binary as the Non-Secure application firmware image
+    set(NS_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
+  endif()
+
   if (NOT CONFIG_TFM_BL2)
     # Merge tfm_s and zephyr (NS) image to a single binary.
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
         -o ${MERGED_FILE}
         $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>
-        ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME}
+        ${NS_APP_FILE}
     )
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
@@ -440,12 +448,6 @@ if (CONFIG_BUILD_WITH_TFM)
 
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
     tfm_sign(sign_cmd NS TRUE ${S_NS_FILE} ${S_NS_SIGNED_FILE})
-
-    if (CONFIG_TFM_REGRESSION_NS)
-      set(NS_APP_FILE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE>)
-    else()
-      set(NS_APP_FILE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME})
-    endif()
 
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/mergehex.py
@@ -469,9 +471,9 @@ if (CONFIG_BUILD_WITH_TFM)
 
   else()
     if (CONFIG_TFM_REGRESSION_NS)
-      tfm_sign(sign_cmd_ns NS TRUE $<TARGET_PROPERTY:tfm,TFM_NS_HEX_FILE> ${NS_SIGNED_FILE})
+      tfm_sign(sign_cmd_ns NS TRUE ${NS_APP_FILE} ${NS_SIGNED_FILE})
     else()
-      tfm_sign(sign_cmd_ns NS FALSE ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_HEX_NAME} ${NS_SIGNED_FILE})
+      tfm_sign(sign_cmd_ns NS FALSE ${NS_APP_FILE} ${NS_SIGNED_FILE})
     endif()
 
     tfm_sign(sign_cmd_s S TRUE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE> ${S_SIGNED_FILE})
