@@ -604,7 +604,21 @@ Drivers and Sensors
 
 * Sensor
 
-  * Added support for STM32 internal (CPU) temperature sensor
+  * Added support for STM32 internal (CPU) temperature sensor.
+  * Refactored mulitple ST sensor drivers to use gpio_dt_spec macros and common
+    stmemc routines, support multiple instances, and configure ODR/range
+    properties in device tree.
+  * Added SBS 1.1 compliant fuel gauge driver.
+  * Added MAX17262 fuel gauge driver.
+  * Added BMP388 pressure sensor driver.
+  * Added Atmel SAM QDEC driver.
+  * Added TI FDC2X1X driver.
+  * Added support for MPU9250 to existing MPU6050 6-axis motion tracking driver.
+  * Refactored BME280 temperature/pressure sensor driver.
+  * Added BMI270 IMU driver.
+  * Added Nuvoton tachometer sensor driver.
+  * Added MAX6675 cold-junction-compensated K-thermocouple to digital
+    converter.
 
 * Serial
 
