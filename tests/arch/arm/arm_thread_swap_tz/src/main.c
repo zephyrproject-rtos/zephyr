@@ -54,10 +54,10 @@ static void work_func(struct k_work *work)
 	 */
 #ifdef CONFIG_CPU_HAS_FPU
 	uint32_t clobber_val[16] = {
-		0xdeadbeef, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
-		0xdeadbeef, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
-		0xdeadbeef, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
-		0xdeadbeef, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
+		0xdeadbee0, 0xdeadbee1, 0xdeadbee2, 0xdeadbee3,
+		0xdeadbee4, 0xdeadbee5, 0xdeadbee6, 0xdeadbee7,
+		0xdeadbee8, 0xdeadbee9, 0xdeadbeea, 0xdeadbeeb,
+		0xdeadbeec, 0xdeadbeed, 0xdeadbeee, 0xdeadbeef,
 	};
 
 	__asm__ volatile(
@@ -106,20 +106,27 @@ void test_thread_swap_tz(void)
 	 * a secure function.
 	 */
 #ifdef CONFIG_CPU_HAS_FPU
-	uint32_t test_val[16] = {
-		0x1a2b3c4d, 0x1a2b3c4d, 0x1a2b3c4d, 0x1a2b3c4d,
-		0x1a2b3c4d, 0x1a2b3c4d, 0x1a2b3c4d, 0x1a2b3c4d,
-		0x1a2b3c4d, 0x1a2b3c4d, 0x1a2b3c4d, 0x1a2b3c4d,
-		0x1a2b3c4d, 0x1a2b3c4d, 0x1a2b3c4d, 0x1a2b3c4d,
+	uint32_t test_val0[16] = {
+		0x1a2b3c40, 0x1a2b3c41, 0x1a2b3c42, 0x1a2b3c43,
+		0x1a2b3c44, 0x1a2b3c45, 0x1a2b3c46, 0x1a2b3c47,
+		0x1a2b3c48, 0x1a2b3c49, 0x1a2b3c4a, 0x1a2b3c4b,
+		0x1a2b3c4c, 0x1a2b3c4d, 0x1a2b3c4e, 0x1a2b3c4f,
+	};
+	uint32_t test_val1[16] = {
+		0x2b3c4d50, 0x2b3c4d51, 0x2b3c4d52, 0x2b3c4d53,
+		0x2b3c4d54, 0x2b3c4d55, 0x2b3c4d56, 0x2b3c4d57,
+		0x2b3c4d58, 0x2b3c4d59, 0x2b3c4d5a, 0x2b3c4d5b,
+		0x2b3c4d5c, 0x2b3c4d5d, 0x2b3c4d5e, 0x2b3c4d5f,
 	};
 	uint32_t test_val_res0[16];
 	uint32_t test_val_res1[16];
 
 	__asm__ volatile(
 		"vldmia %0, {s0-s15}\n"
-		"vldmia %0, {s16-s31}\n"
-		:: "r" (test_val) :
+		"vldmia %1, {s16-s31}\n"
+		:: "r" (test_val0), "r" (test_val1) :
 	);
+
 #endif /* CONFIG_CPU_HAS_FPU */
 
 	work_done = false;
@@ -134,8 +141,8 @@ void test_thread_swap_tz(void)
 	);
 
 	zassert_mem_equal(dummy_digest, dummy_digest_correct, HASH_LEN, NULL);
-	zassert_mem_equal(test_val, test_val_res0, sizeof(test_val), NULL);
-	zassert_mem_equal(test_val, test_val_res1, sizeof(test_val), NULL);
+	zassert_mem_equal(test_val0, test_val_res0, sizeof(test_val0), NULL);
+	zassert_mem_equal(test_val1, test_val_res1, sizeof(test_val1), NULL);
 #endif /* CONFIG_CPU_HAS_FPU */
 }
 
