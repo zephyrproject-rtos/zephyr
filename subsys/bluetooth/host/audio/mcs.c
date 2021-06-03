@@ -551,7 +551,7 @@ static ssize_t search_control_point_write(struct bt_conn *conn,
 	BT_DBG("Search length: %d", len);
 	BT_HEXDUMP_DBG(&search.search, search.len, "Search content");
 
-	media_proxy_sctrl_scp_set(search);
+	media_proxy_sctrl_search_set(search);
 
 	return len;
 }

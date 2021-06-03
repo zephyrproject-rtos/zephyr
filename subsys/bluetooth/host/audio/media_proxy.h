@@ -370,7 +370,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * @param search	The search to write
 	 */
-	void (*scp_set)(struct mpl_search_t search);
+	void (*search_set)(struct mpl_search_t search);
 
 	/**
 	 * @brief Read Search Results Object ID

@@ -2473,7 +2473,7 @@ static void parse_search(struct mpl_search_t search)
 	media_proxy_pl_search_results_id_cb(pl.search_results_id);
 }
 
-void scp_set(struct mpl_search_t search)
+void search_set(struct mpl_search_t search)
 {
 	if (search.len > SEARCH_LEN_MAX) {
 		BT_WARN("Search too long: %d", search.len);
@@ -2661,7 +2661,7 @@ int media_proxy_pl_init(void)
 	pl.calls.media_state_get              = media_state_get;
 	pl.calls.operation_set                = operation_set;
 #ifdef CONFIG_BT_OTS
-	pl.calls.scp_set                      = scp_set;
+	pl.calls.search_set                   = search_set;
 	pl.calls.search_results_id_get        = search_results_id_get;
 #endif /* CONFIG_BT_OTS */
 	pl.calls.content_ctrl_id_get          = content_ctrl_id_get;
