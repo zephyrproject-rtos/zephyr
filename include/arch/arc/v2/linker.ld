@@ -224,6 +224,16 @@ SECTIONS {
 	__kernel_ram_end = .;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
+#ifdef __MWDT_LINKER_CMD__
+/* mwdt requires _fstack, _estack which will be used in _stkchk.
+ * _stkchk is inserted by mwdt automatically, if _fstack, _estack is not
+ * set correctly, the  brk_s instruction will be called
+ * here, we use a trick to deceive the compiler.
+ */
+	_fstack = _image_ram_start;
+	_estack = .;
+#endif /* __MWDT_LINKER_CMD__ */
+
 	GROUP_END(RAMABLE_REGION)
 
 /* Located in generated directory. This file is populated by the
