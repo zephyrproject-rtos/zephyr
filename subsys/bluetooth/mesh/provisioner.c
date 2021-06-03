@@ -400,8 +400,11 @@ static void prov_dh_key_cb(const uint8_t dhkey[32])
 
 static void prov_dh_key_gen(void)
 {
-	uint8_t remote_pk_le[64], *remote_pk;
+	uint8_t remote_pk_le[64];
+	const uint8_t *remote_pk;
+	const uint8_t *local_pk;
 
+	local_pk = &bt_mesh_prov_link.conf_inputs[17];
 	remote_pk = &bt_mesh_prov_link.conf_inputs[81];
 
 	/* Copy remote key in little-endian for bt_dh_key_gen().
@@ -410,6 +413,12 @@ static void prov_dh_key_gen(void)
 	 */
 	sys_memcpy_swap(remote_pk_le, remote_pk, 32);
 	sys_memcpy_swap(&remote_pk_le[32], &remote_pk[32], 32);
+
+	if (!memcmp(local_pk, remote_pk, 64)) {
+		BT_ERR("Public keys are identical");
+		prov_fail(PROV_ERR_NVAL_FMT);
+		return;
+	}
 
 	if (bt_dh_key_gen(remote_pk_le, prov_dh_key_cb)) {
 		BT_ERR("Failed to generate DHKey");
