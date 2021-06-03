@@ -125,7 +125,7 @@ struct uarte_nrfx_data {
 #endif
 	atomic_val_t poll_out_lock;
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state;
+	enum pm_device_state pm_state;
 #endif
 	uint8_t char_out;
 	uint8_t rx_data;
@@ -1828,7 +1828,7 @@ static void wait_for_tx_stopped(const struct device *dev)
 
 
 static void uarte_nrfx_set_power_state(const struct device *dev,
-				       uint32_t new_state)
+				       enum pm_device_state new_state)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = get_dev_data(dev);
@@ -1918,12 +1918,12 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 
 static int uarte_nrfx_pm_control(const struct device *dev,
 				 uint32_t ctrl_command,
-				 uint32_t *state, pm_device_cb cb, void *arg)
+				 enum pm_device_state *state, pm_device_cb cb, void *arg)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *state;
+		enum pm_device_state new_state = *state;
 
 		if (new_state != data->pm_state) {
 			uarte_nrfx_set_power_state(dev, new_state);

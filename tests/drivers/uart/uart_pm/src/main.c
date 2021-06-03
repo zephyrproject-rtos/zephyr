@@ -17,7 +17,7 @@
 #define HAS_RX DT_NODE_HAS_PROP(DT_NODELABEL(LABEL), rx_pin)
 
 static const struct device *exp_dev;
-static uint32_t exp_state;
+static enum pm_device_state exp_state;
 static void *exp_arg;
 static volatile int callback_cnt;
 
@@ -120,14 +120,14 @@ static void communication_verify(const struct device *dev, bool active)
 }
 
 #define state_verify(dev, exp_state) do {\
-	uint32_t power_state; \
+	enum pm_device_state power_state; \
 	int err = pm_device_state_get(dev, &power_state); \
 	zassert_equal(err, 0, "Unexpected err: %d", err); \
 	zassert_equal(power_state, exp_state, NULL); \
 } while (0)
 
 static void pm_callback(const struct device *dev,
-			int status, uint32_t *state, void *arg)
+			int status, enum pm_device_state *state, void *arg)
 {
 	zassert_equal(dev, exp_dev, NULL);
 	zassert_equal(status, 0, NULL);
@@ -136,10 +136,11 @@ static void pm_callback(const struct device *dev,
 	callback_cnt++;
 }
 
-static void state_set(const struct device *dev, uint32_t state, int exp_err, bool cb)
+static void state_set(const struct device *dev, enum pm_device_state state,
+		      int exp_err, bool cb)
 {
 	int err;
-	uint32_t prev_state;
+	enum pm_device_state prev_state;
 
 	err = pm_device_state_get(dev, &prev_state);
 	zassert_equal(err, 0, "Unexpected err: %d", err);
@@ -158,7 +159,7 @@ static void state_set(const struct device *dev, uint32_t state, int exp_err, boo
 		zassert_equal(err, exp_err, "Unexpected err: %d", err);
 	}
 
-	uint32_t exp_state = err == 0 ? state : prev_state;
+	enum pm_device_state exp_state = err == 0 ? state : prev_state;
 
 	state_verify(dev, exp_state);
 }

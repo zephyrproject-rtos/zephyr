@@ -52,7 +52,7 @@ struct lis2mdl_data {
 	int16_t temp_sample;
 
 #ifdef CONFIG_PM_DEVICE
-	uint32_t power_state;
+	enum pm_device_state power_state;
 #endif
 
 	struct k_sem fetch_sem;

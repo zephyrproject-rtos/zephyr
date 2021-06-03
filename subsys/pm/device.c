@@ -23,10 +23,10 @@ extern const struct device *__pm_device_slots_start[];
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
-static bool should_suspend(const struct device *dev, uint32_t state)
+static bool should_suspend(const struct device *dev, enum pm_device_state state)
 {
 	int rc;
-	uint32_t current_state;
+	enum pm_device_state current_state;
 
 	if (device_busy_check(dev) != 0) {
 		return false;
@@ -111,7 +111,7 @@ void pm_resume_devices(void)
 }
 #endif /* defined(CONFIG_PM) */
 
-const char *pm_device_state_str(uint32_t state)
+const char *pm_device_state_str(enum pm_device_state state)
 {
 	switch (state) {
 	case PM_DEVICE_STATE_ACTIVE:
@@ -129,7 +129,8 @@ const char *pm_device_state_str(uint32_t state)
 	}
 }
 
-int pm_device_state_set(const struct device *dev, uint32_t device_power_state,
+int pm_device_state_set(const struct device *dev,
+			enum pm_device_state device_power_state,
 			pm_device_cb cb, void *arg)
 {
 	if (dev->pm_control == NULL) {
@@ -140,7 +141,8 @@ int pm_device_state_set(const struct device *dev, uint32_t device_power_state,
 			       &device_power_state, cb, arg);
 }
 
-int pm_device_state_get(const struct device *dev, uint32_t *device_power_state)
+int pm_device_state_get(const struct device *dev,
+			enum pm_device_state *device_power_state)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;

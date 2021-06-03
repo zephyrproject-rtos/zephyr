@@ -95,7 +95,7 @@ void main(void)
 
 #ifdef CONFIG_PM_DEVICE
 	/* Testing the power modes */
-	uint32_t p_state;
+	enum pm_device_state p_state;
 
 	p_state = PM_DEVICE_STATE_LOW_POWER;
 	pm_device_state_set(dev, p_state, pm_cb, NULL);
