@@ -264,9 +264,9 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 
 k_mutex_unlock_return:
-	k_sched_unlock();
-
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, 0);
+
+	k_sched_unlock();
 
 	return 0;
 }
