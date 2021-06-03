@@ -21,6 +21,10 @@
  */
 #define ESPI_XEC_VWIRE_SEND_TIMEOUT 100ul
 
+#define VW_MAX_GIRQS                2ul
+/* Missing HAL value */
+#define MEC_ESPI_MSVW08_SRC1_VAL    5ul
+
 /* 200ms */
 #define MAX_OOB_TIMEOUT             200ul
 /* 1s */
@@ -63,7 +67,7 @@ struct espi_isr {
 struct espi_xec_config {
 	uint32_t base_addr;
 	uint8_t bus_girq_id;
-	uint8_t vw_girq_id;
+	uint8_t vw_girq_ids[VW_MAX_GIRQS];
 	uint8_t pc_girq_id;
 };
 
@@ -1160,6 +1164,11 @@ static void vw_oob_rst_isr(const struct device *dev)
 	notify_host_warning(dev, ESPI_VWIRE_SIGNAL_OOB_RST_WARN);
 }
 
+static void vw_sus_pwrdn_ack_isr(const struct device *dev)
+{
+	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK);
+}
+
 static void vw_sus_slp_a_isr(const struct device *dev)
 {
 	notify_system_state(dev, ESPI_VWIRE_SIGNAL_SLP_A);
@@ -1256,6 +1265,7 @@ uint8_t vw_wires_int_en[] = {
 	ESPI_VWIRE_SIGNAL_HOST_RST_WARN,
 	ESPI_VWIRE_SIGNAL_SUS_WARN,
 	ESPI_VWIRE_SIGNAL_SUS_PWRDN_ACK,
+	ESPI_VWIRE_SIGNAL_DNX_WARN,
 };
 
 const struct espi_isr m2s_vwires_isr[] = {
@@ -1266,6 +1276,7 @@ const struct espi_isr m2s_vwires_isr[] = {
 	{MEC_ESPI_MSVW01_SRC2_VAL, vw_oob_rst_isr},
 	{MEC_ESPI_MSVW02_SRC0_VAL, vw_host_rst_warn_isr},
 	{MEC_ESPI_MSVW03_SRC0_VAL, vw_sus_warn_isr},
+	{MEC_ESPI_MSVW03_SRC1_VAL, vw_sus_pwrdn_ack_isr},
 	{MEC_ESPI_MSVW03_SRC3_VAL, vw_sus_slp_a_isr},
 };
 
@@ -1309,7 +1320,7 @@ static void espi_xec_vw_isr(const struct device *dev)
 	const struct espi_xec_config *config = dev->config;
 	uint32_t girq_result;
 
-	girq_result = MCHP_GIRQ_RESULT(config->vw_girq_id);
+	girq_result = MCHP_GIRQ_RESULT(config->vw_girq_ids[0]);
 
 	for (int i = 0; i < m2s_vwires_isr_cnt; i++) {
 		struct espi_isr entry = m2s_vwires_isr[i];
@@ -1321,8 +1332,38 @@ static void espi_xec_vw_isr(const struct device *dev)
 		}
 	}
 
-	REG32(MCHP_GIRQ_SRC_ADDR(config->vw_girq_id)) = girq_result;
+	REG32(MCHP_GIRQ_SRC_ADDR(config->vw_girq_ids[0])) = girq_result;
 }
+
+#if DT_INST_PROP_HAS_IDX(0, vw_girqs, 1)
+static void vw_sus_dnx_warn_isr(const struct device *dev)
+{
+	notify_system_state(dev, ESPI_VWIRE_SIGNAL_DNX_WARN);
+}
+
+const struct espi_isr m2s_vwires_ext_isr[] = {
+	{MEC_ESPI_MSVW08_SRC1_VAL, vw_sus_dnx_warn_isr}
+};
+
+static void espi_xec_vw_ext_isr(const struct device *dev)
+{
+	const struct espi_xec_config *config = dev->config;
+	uint32_t girq_result;
+
+	girq_result = MCHP_GIRQ_RESULT(config->vw_girq_ids[1]);
+	MCHP_GIRQ_SRC(config->vw_girq_ids[1]) = girq_result;
+
+	for (int i = 0; i < ARRAY_SIZE(m2s_vwires_ext_isr); i++) {
+		struct espi_isr entry = m2s_vwires_isr[i];
+
+		if (girq_result & entry.girq_bit) {
+			if (entry.the_isr != NULL) {
+				entry.the_isr(dev);
+			}
+		}
+	}
+}
+#endif
 
 static void espi_xec_periph_isr(const struct device *dev)
 {
@@ -1370,7 +1411,8 @@ static struct espi_xec_data espi_xec_data;
 static const struct espi_xec_config espi_xec_config = {
 	.base_addr = DT_INST_REG_ADDR(0),
 	.bus_girq_id = DT_INST_PROP(0, io_girq),
-	.vw_girq_id = DT_INST_PROP(0, vw_girq),
+	.vw_girq_ids[0] = DT_INST_PROP_BY_IDX(0, vw_girqs, 0),
+	.vw_girq_ids[1] = DT_INST_PROP_BY_IDX(0, vw_girqs, 1),
 	.pc_girq_id = DT_INST_PROP(0, pc_girq),
 };
 
@@ -1449,7 +1491,7 @@ static int espi_xec_init(const struct device *dev)
 	espi_init_flash(dev);
 #endif
 	/* Enable aggregated block interrupts for VWires */
-	MCHP_GIRQ_ENSET(config->vw_girq_id) = MEC_ESPI_MSVW00_SRC0_VAL |
+	MCHP_GIRQ_ENSET(config->vw_girq_ids[0]) = MEC_ESPI_MSVW00_SRC0_VAL |
 		MEC_ESPI_MSVW00_SRC1_VAL | MEC_ESPI_MSVW00_SRC2_VAL |
 		MEC_ESPI_MSVW01_SRC1_VAL | MEC_ESPI_MSVW01_SRC2_VAL |
 		MEC_ESPI_MSVW02_SRC0_VAL | MEC_ESPI_MSVW03_SRC0_VAL;
@@ -1478,7 +1520,7 @@ static int espi_xec_init(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 
 	/* Enable aggregated interrupt block for eSPI VWire events */
-	MCHP_GIRQ_BLK_SETEN(config->vw_girq_id);
+	MCHP_GIRQ_BLK_SETEN(config->vw_girq_ids[0]);
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),
 		    DT_INST_IRQ_BY_IDX(0, 1, priority),
 		    espi_xec_vw_isr,
@@ -1492,6 +1534,16 @@ static int espi_xec_init(const struct device *dev)
 		    espi_xec_periph_isr,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));
+
+#if DT_INST_PROP_HAS_IDX(0, vw_girqs, 1)
+	MCHP_GIRQ_ENSET(config->vw_girq_ids[1]) = MEC_ESPI_MSVW08_SRC1_VAL;
+	MCHP_GIRQ_BLK_SETEN(config->vw_girq_ids[1]);
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 3, irq),
+		    DT_INST_IRQ_BY_IDX(0, 3, priority),
+		    espi_xec_vw_ext_isr,
+		    DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQ_BY_IDX(0, 3, irq));
+#endif
 
 	return 0;
 }
