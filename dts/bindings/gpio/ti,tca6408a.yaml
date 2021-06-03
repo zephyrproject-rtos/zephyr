@@ -1,0 +1,18 @@
+# Copyright (c) 2020, Innoseis BV
+# SPDX-License-Identifier: Apache-2.0
+
+description: TCA6408a I2C GPIO expander
+
+compatible: "ti,tca6408a"
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+  ngpios:
+    const: 8
+
+gpio-cells:
+  - pin
+  - flags

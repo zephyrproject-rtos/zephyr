@@ -1,0 +1,16 @@
+# Copyright (c) 2020 Innoseis BV
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig GPIO_TCA6408A
+	bool "TCA6408A I2C GPIO expander driver"
+	depends on I2C
+	help
+		Enable TCA6408A GPIO expander driver
+
+
+if GPIO_TCA6408A
+	config GPIO_TCA6408A_INIT_PRIORITY
+	int "Initialization priority of TCA6408A driver"
+	default I2C_INIT_PRIORITY
+endif
