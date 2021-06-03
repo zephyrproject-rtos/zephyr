@@ -41,41 +41,41 @@ static struct bt_sdp_attribute a2dp_sink_attrs[] = {
 	BT_SDP_NEW_SERVICE,
 	BT_SDP_LIST(
 		BT_SDP_ATTR_SVCLASS_ID_LIST,
-		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3), //35 03
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 3),
 		BT_SDP_DATA_ELEM_LIST(
 		{
-			BT_SDP_TYPE_SIZE(BT_SDP_UUID16), //19
-			BT_SDP_ARRAY_16(BT_SDP_AUDIO_SINK_SVCLASS) //11 0B
+			BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+			BT_SDP_ARRAY_16(BT_SDP_AUDIO_SINK_SVCLASS)
 		},
 		)
 	),
 	BT_SDP_LIST(
 		BT_SDP_ATTR_PROTO_DESC_LIST,
-		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 16),//35 10
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 16),
 		BT_SDP_DATA_ELEM_LIST(
 		{
-			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),// 35 06
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
 			BT_SDP_DATA_ELEM_LIST(
 			{
-				BT_SDP_TYPE_SIZE(BT_SDP_UUID16), //19
-				BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP) // 01 00
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP)
 			},
 			{
-				BT_SDP_TYPE_SIZE(BT_SDP_UINT16), //09
-				BT_SDP_ARRAY_16(BT_UUID_AVDTP_VAL) // 00 19
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(BT_UUID_AVDTP_VAL)
 			},
 			)
 		},
 		{
-			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),// 35 06
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
 			BT_SDP_DATA_ELEM_LIST(
 			{
-				BT_SDP_TYPE_SIZE(BT_SDP_UUID16), //19
-				BT_SDP_ARRAY_16(BT_UUID_AVDTP_VAL) // 00 19
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_UUID_AVDTP_VAL)
 			},
 			{
-				BT_SDP_TYPE_SIZE(BT_SDP_UINT16), //09
-				BT_SDP_ARRAY_16(0X0100u) //AVDTP version: 01 00
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(0X0100u)
 			},
 			)
 		},
@@ -83,18 +83,18 @@ static struct bt_sdp_attribute a2dp_sink_attrs[] = {
 	),
 	BT_SDP_LIST(
 		BT_SDP_ATTR_PROFILE_DESC_LIST,
-		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 8), //35 08
+		BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 8),
 		BT_SDP_DATA_ELEM_LIST(
 		{
-			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6), //35 06
+			BT_SDP_TYPE_SIZE_VAR(BT_SDP_SEQ8, 6),
 			BT_SDP_DATA_ELEM_LIST(
 			{
-				BT_SDP_TYPE_SIZE(BT_SDP_UUID16), //19
-				BT_SDP_ARRAY_16(BT_SDP_ADVANCED_AUDIO_SVCLASS) //11 0d
+				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
+				BT_SDP_ARRAY_16(BT_SDP_ADVANCED_AUDIO_SVCLASS)
 			},
 			{
-				BT_SDP_TYPE_SIZE(BT_SDP_UINT16), //09
-				BT_SDP_ARRAY_16(0x0103U) //01 03
+				BT_SDP_TYPE_SIZE(BT_SDP_UINT16),
+				BT_SDP_ARRAY_16(0x0103U)
 			},
 			)
 		},
@@ -146,12 +146,12 @@ void sbc_stop_play(int err)
 void sbc_streamer_data(uint8_t *data, uint32_t length)
 {
 	if ((data != NULL) && (length != 0U)) {
-		if(0 == audio_start) {
+		if (audio_start == 0) {
 			return;
 		}
 		board_codec_media_play(data, length);
 	} else {
-		board_codec_media_play(a2dp_silence_data, sizeof (a2dp_silence_data));
+		board_codec_media_play(a2dp_silence_data, sizeof(a2dp_silence_data));
 	}
 }
 
@@ -175,6 +175,7 @@ void app_disconnected(struct bt_a2dp *a2dp)
 static void app_edgefast_a2dp_init(void)
 {
 	struct bt_a2dp_connect_cb connectCb;
+
 	connectCb.connected = app_connected;
 	connectCb.disconnected = app_disconnected;
 
@@ -211,7 +212,7 @@ static void bt_ready(int err)
 	if (err) {
 		printk("setting class of device failed\n");
 	}
-	
+
 	app_connect_init();
 
 	err = bt_br_set_connectable(true);
@@ -233,8 +234,8 @@ static void bt_ready(int err)
 void main(void)
 {
 	int err;
-	board_codec_init();
 
+	board_codec_init();
 	/* Initializate BT Host stack */
 	err = bt_enable(bt_ready);
 	if (err) {

@@ -167,8 +167,7 @@ void app_endpoint_configured(struct bt_a2dp_configure_result *result)
 
 void app_configured(int err)
 {
-	if (!err)
-	{
+	if (err) {
 		printk("configuring fail\r\n");
 	}
 }
@@ -211,23 +210,24 @@ static uint8_t app_sdp_a2sink_user(struct bt_conn *conn,
 			return BT_SDP_DISCOVER_UUID_CONTINUE;
 		}
 		if (param == BT_UUID_AVDTP_VAL) {
-			printk ("A2DP Service found. Connecting ...\n");
+			printk("A2DP Service found. Connecting ...\n");
 			default_a2dp = bt_a2dp_connect(default_conn);
-			if (NULL == default_a2dp) {
-				printk ("fail to connect a2dp\r\n");
+			if (default_a2dp == NULL) {
+				printk("fail to connect a2dp\r\n");
 			}
 			return BT_SDP_DISCOVER_UUID_STOP;
 		}
 		return BT_SDP_DISCOVER_UUID_CONTINUE;
-	} else {
-		printk("sdp fail callback\r\n");
-		return BT_SDP_DISCOVER_UUID_CONTINUE;
 	}
+
+	printk("sdp fail callback\r\n");
+	return BT_SDP_DISCOVER_UUID_CONTINUE;
 }
 
 void app_sdp_discover_a2dp_sink(void)
 {
 	int res;
+
 	res = bt_sdp_discover(default_conn, &discov_a2dp_sink);
 	if (res) {
 		printk("SDP discovery failed: result\r\n");
@@ -239,6 +239,7 @@ void app_sdp_discover_a2dp_sink(void)
 static void app_a2dp_init(void)
 {
 	struct bt_a2dp_connect_cb connect_cb;
+
 	connect_cb.connected = app_connected;
 	connect_cb.disconnected = app_disconnected;
 
@@ -271,4 +272,3 @@ void main(void)
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
 }
-
