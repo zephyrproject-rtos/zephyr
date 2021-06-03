@@ -30,6 +30,9 @@
 #define BT_CSIP_SIRK_TYPE_ENCRYPTED             0x00
 #define BT_CSIP_SIRK_TYPE_PLAIN                 0x01
 
+/* Recommended timer for member discovery */
+#define CSIP_DISCOVER_TIMER_VALUE               K_SECONDS(10)
+
 #if defined(CONFIG_BT_CSIP)
 #define BT_CSIP_MAX_CSIS_INSTANCES CONFIG_BT_CSIP_MAX_CSIS_INSTANCES
 #else
@@ -204,24 +207,34 @@ void bt_csip_register_cb(struct bt_csip_cb_t *cb);
  */
 int bt_csip_lock_get(struct bt_conn *conn, uint8_t inst_idx);
 
-/** @brief Lock a specific device and instance.
+/** @brief Lock an array of set members
  *
- * @param conn      Pointer to the connection to the device.
- * @param inst_idx  Index of the CSIS index of the peer device (as it may have
- *                  multiple CSIS instances).
+ * The members will be locked starting from lowest rank going up.
  *
- * @return Return 0 on success, or an ERRNO value on error.
+ * TODO: If locking fails, the already locked members will not be unlocked.
+ *
+ * @param members   Array of set members to lock.
+ * @param count     Number of set members in @p members.
+ * @param set       Pointer to the specified set, as a member may be part of
+ *                  multiple sets.
+ *
+ * @return Return 0 on success, or an errno value on error.
  */
-int bt_csip_lock(struct bt_conn *conn, uint8_t inst_idx);
+int bt_csip_lock(const struct bt_csip_set_member **members, uint8_t count,
+		 const struct bt_csip_set_t *set);
 
-/** @brief Release a specific device and instance.
+/** @brief Release an array of set members
  *
- * @param conn      Pointer to the connection to the device.
- * @param inst_idx  Index of the CSIS index of the peer device (as it may have
- *                  multiple CSIS instances).
+ * The members will be released starting from highest rank going down.
  *
- * @return Return 0 on success, or an ERRNO value on error.
+ * @param members   Array of set members to lock.
+ * @param count     Number of set members in @p members.
+ * @param set       Pointer to the specified set, as a member may be part of
+ *                  multiple sets.
+ *
+ * @return Return 0 on success, or an errno value on error.
  */
-int bt_csip_release(struct bt_conn *conn, uint8_t inst_idx);
+int bt_csip_release(const struct bt_csip_set_member **members, uint8_t count,
+		    const struct bt_csip_set_t *set);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIP_ */
