@@ -238,10 +238,15 @@ Option 2: :ref:`opensda-jlink-onboard-debug-probe`
 Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
 path.
 
-Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
-the `OpenSDA J-Link Generic Firmware for V2.0 Bootloader`_. Note that Segger
-does provide an OpenSDA J-Link Board-Specific Firmware for this board, however
-it is not compatible with the DAPLink bootloader.
+The version of J-Link firmware to program to the board depends on the version
+of the DAPLink bootloader. Refer to `OpenSDA Serial and Debug Adapter`_ for
+more details. On this page, change the pull-down menu for "Choose your board to
+start" to FRDM-K64F, and review the section "To update your board with OpenSDA
+applications". Note that Segger does provide an OpenSDA J-Link Board-Specific
+Firmware for this board, however it is not compatible with the DAPLink
+bootloader. After downloading the appropriate J-Link firmware, follow the
+instructions in :ref:`opensda-jlink-onboard-debug-probe` to program to the
+board.
 
 Add the arguments ``-DBOARD_FLASH_RUNNER=jlink`` and
 ``-DBOARD_DEBUG_RUNNER=jlink`` when you invoke ``west build`` to override the
@@ -352,5 +357,5 @@ of pyocd commands:
 .. _OpenSDA DAPLink FRDM-K64F Firmware:
    https://www.nxp.com/downloads/en/snippets-boot-code-headers-monitors/k20dx_frdmk64f_if_crc_legacy_0x5000.bin
 
-.. _OpenSDA J-Link Generic Firmware for V2.0 Bootloader:
-   https://www.segger.com/downloads/jlink/OpenSDA_V2
+.. _OpenSDA Serial and Debug Adapter:
+   https://www.nxp.com/design/microcontrollers-developer-resources/ides-for-kinetis-mcus/opensda-serial-and-debug-adapter:OPENSDA#FRDM-K64F
