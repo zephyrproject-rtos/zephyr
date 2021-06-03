@@ -167,9 +167,9 @@ uint32_t media_proxy_sctrl_operations_supported_get(void)
 }
 
 #ifdef CONFIG_BT_OTS
-void media_proxy_sctrl_scp_set(struct mpl_search_t search)
+void media_proxy_sctrl_search_set(struct mpl_search_t search)
 {
-	mprx.player.calls->scp_set(search);
+	mprx.player.calls->search_set(search);
 }
 
 uint64_t media_proxy_sctrl_search_results_id_get(void)
