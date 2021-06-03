@@ -2,6 +2,8 @@
 
 if(CONFIG_NEWLIB_LIBC)
   add_subdirectory(newlib)
+elseif(CONFIG_ARCMWDT_LIBC)
+  add_subdirectory(arcmwdt)
 else()
   add_subdirectory(minimal)
 endif()
