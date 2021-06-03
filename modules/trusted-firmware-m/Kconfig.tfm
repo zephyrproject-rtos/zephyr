@@ -169,9 +169,12 @@ config TFM_ITS_MAX_ASSET_SIZE
 config TFM_BL2
 	bool "Add MCUboot to TFM"
 	default y
+	depends on !NORDIC_SECURITY_BACKEND
 	help
 	  TFM is designed to run with MCUboot in a certain configuration.
 	  This config adds MCUboot to the build - built via TFM's build system.
+	  We currently do not support builds with MCUboot and TF-M if the
+	  Nordic Security backend is used.
 
 if TFM_BL2
 
