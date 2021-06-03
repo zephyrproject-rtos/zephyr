@@ -37,7 +37,7 @@ struct uart_cc13xx_cc26xx_data {
 	bool rx_constrained;
 #endif
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state;
+	enum pm_device_state pm_state;
 #endif
 };
 
@@ -401,7 +401,7 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 
 #ifdef CONFIG_PM_DEVICE
 static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
-					      uint32_t new_state)
+					      enum pm_device_state new_state)
 {
 	int ret = 0;
 
@@ -447,13 +447,13 @@ static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 
 static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
 					 uint32_t ctrl_command,
-					 uint32_t *state, pm_device_cb cb,
+					 enum pm_device_state *state, pm_device_cb cb,
 					 void *arg)
 {
 	int ret = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *state;
+		enum pm_device_state new_state = *state;
 
 		if (new_state != get_dev_data(dev)->pm_state) {
 			ret = uart_cc13xx_cc26xx_set_power_state(dev,

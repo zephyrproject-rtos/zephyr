@@ -150,7 +150,7 @@ struct fdc2x1x_data {
 	bool fdc221x;
 
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state;
+	enum pm_device_state pm_state;
 #endif
 
 #ifdef CONFIG_FDC2X1X_TRIGGER

@@ -42,7 +42,7 @@ struct gpio_dw_runtime {
 #endif
 	sys_slist_t callbacks;
 #ifdef CONFIG_PM_DEVICE
-	uint32_t device_power_state;
+	enum pm_device_state device_power_state;
 #endif
 };
 

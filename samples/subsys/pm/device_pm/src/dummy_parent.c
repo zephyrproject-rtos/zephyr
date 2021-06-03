@@ -9,7 +9,7 @@
 #include "dummy_parent.h"
 
 static uint32_t store_value;
-uint32_t parent_power_state;
+enum pm_device_state parent_power_state;
 
 static int dummy_transfer(const struct device *dev, uint32_t cmd,
 			  uint32_t *val)
@@ -25,7 +25,7 @@ static int dummy_transfer(const struct device *dev, uint32_t cmd,
 	return 0;
 }
 
-static uint32_t dummy_get_power_state(const struct device *dev)
+static enum pm_device_state dummy_get_power_state(const struct device *dev)
 {
 	return parent_power_state;
 }
@@ -48,7 +48,8 @@ static int dummy_resume_from_suspend(const struct device *dev)
 
 static int dummy_parent_pm_ctrl(const struct device *dev,
 				uint32_t ctrl_command,
-				uint32_t *state, pm_device_cb cb, void *arg)
+				enum pm_device_state *state, pm_device_cb cb,
+				void *arg)
 {
 	int ret = 0;
 
