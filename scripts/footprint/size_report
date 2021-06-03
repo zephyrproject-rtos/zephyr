@@ -557,7 +557,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
     """
     Generate a symbol tree for output.
     """
-    root = TreeNode('Symbols', ":")
+    root = TreeNode('Symbols', "root")
     node_no_paths = TreeNode('(no paths)', ":", parent=root)
 
     if Path(path_prefix) == Path(args.zephyrbase):
