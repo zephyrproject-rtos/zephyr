@@ -31,6 +31,13 @@ config NEWLIB_LIBC
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
 
+config ARCMWDT_LIBC
+	bool "ARC MWDT C library"
+	depends on !NATIVE_APPLICATION
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	help
+	  C library provided by ARC MWDT toolchain.
+
 config EXTERNAL_LIBC
 	bool "External C library"
 	help
