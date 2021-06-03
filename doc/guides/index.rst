@@ -29,4 +29,3 @@ User and Developer Guides
    west/index
    optimizations/index
    zephyr_cmake_package.rst
-   thread_local_storage.rst
