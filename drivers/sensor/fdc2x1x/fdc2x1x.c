@@ -489,7 +489,7 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
  * @return 0 in case of success, negative error code otherwise.
  */
 static int fdc2x1x_set_pm_state(const struct device *dev,
-				uint32_t pm_state)
+				enum pm_device_state pm_state)
 {
 	int ret;
 	struct fdc2x1x_data *data = dev->data;
@@ -543,21 +543,19 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 
 static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 				  uint32_t ctrl_command,
-				  uint32_t *state, pm_device_cb cb,
-				  void *arg)
+				  enum pm_device_state *state,
+				  pm_device_cb cb, void *arg)
 {
 	struct fdc2x1x_data *data = dev->data;
-	uint32_t new_state;
 	int ret = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		new_state = *state;
-		if (new_state != data->pm_state) {
-			switch (new_state) {
+		if (*state != data->pm_state) {
+			switch (*state) {
 			case PM_DEVICE_STATE_ACTIVE:
 			case PM_DEVICE_STATE_LOW_POWER:
 			case PM_DEVICE_STATE_OFF:
-				ret = fdc2x1x_set_pm_state(dev, new_state);
+				ret = fdc2x1x_set_pm_state(dev, *state);
 				break;
 			default:
 				LOG_ERR("PM state not supported");

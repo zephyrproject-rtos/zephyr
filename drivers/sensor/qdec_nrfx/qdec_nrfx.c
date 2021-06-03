@@ -25,7 +25,7 @@ struct qdec_nrfx_data {
 	int32_t                    acc;
 	sensor_trigger_handler_t data_ready_handler;
 #ifdef CONFIG_PM_DEVICE
-	uint32_t                    pm_state;
+	enum pm_device_state       pm_state;
 #endif
 };
 
@@ -218,7 +218,7 @@ static int qdec_nrfx_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 
 static int qdec_nrfx_pm_get_state(struct qdec_nrfx_data *data,
-				  uint32_t *state)
+				  enum pm_device_state *state)
 {
 	unsigned int key = irq_lock();
 	*state = data->pm_state;
@@ -228,9 +228,9 @@ static int qdec_nrfx_pm_get_state(struct qdec_nrfx_data *data,
 }
 
 static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
-				  uint32_t new_state)
+				  enum pm_device_state new_state)
 {
-	uint32_t old_state;
+	enum pm_device_state old_state;
 	unsigned int key;
 
 	key = irq_lock();
@@ -268,7 +268,7 @@ static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
 
 static int qdec_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				uint32_t *state, pm_device_cb cb, void *arg)
+				enum pm_device_state *state, pm_device_cb cb, void *arg)
 {
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 	int err;

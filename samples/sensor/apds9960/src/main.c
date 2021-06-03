@@ -77,7 +77,7 @@ void main(void)
 		       intensity.val1, pdata.val1);
 
 #ifdef CONFIG_PM_DEVICE
-		uint32_t p_state;
+		enum pm_device_state p_state;
 
 		p_state = PM_DEVICE_STATE_LOW_POWER;
 		pm_device_state_set(dev, p_state, NULL, NULL);

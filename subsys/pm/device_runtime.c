@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(power);
 #define PM_DEVICE_ASYNC         BIT(1)
 
 static void device_pm_callback(const struct device *dev,
-			       int retval, uint32_t *state, void *arg)
+			       int retval, enum pm_device_state *state, void *arg)
 {
 	__ASSERT(retval == 0, "Device set power state failed");
 

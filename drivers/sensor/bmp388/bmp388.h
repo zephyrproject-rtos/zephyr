@@ -164,7 +164,7 @@ struct bmp388_data {
 	struct bmp388_cal_data cal;
 
 #ifdef CONFIG_PM_DEVICE
-	uint32_t device_power_state;
+	enum pm_device_state device_power_state;
 #endif
 
 #if defined(CONFIG_BMP388_TRIGGER)

@@ -231,7 +231,7 @@ struct gpio_stm32_data {
 	sys_slist_t cb;
 #ifdef CONFIG_PM_DEVICE
 	/* device power state */
-	uint32_t power_state;
+	enum pm_device_state power_state;
 #endif
 };
 
