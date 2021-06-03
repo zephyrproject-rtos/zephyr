@@ -14,6 +14,7 @@ User and Developer Guides
    code-relocation.rst
    crypto/index
    flash_debug/index
+   debug_tools/index
    device_mgmt/index
    device_mgmt/dfu
    dts/index
@@ -25,7 +26,6 @@ User and Developer Guides
    portability/index.rst
    porting/index
    test/index
-   tracing/index
    west/index
    optimizations/index
    zephyr_cmake_package.rst
