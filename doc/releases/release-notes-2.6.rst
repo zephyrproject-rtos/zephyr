@@ -413,6 +413,11 @@ Boards & SoC Support
     (TF-M) support.
   * lpcxpresso55s28: Removed lpcxpresso55s28_ns config since the board
     does not have Trusted Firmware M (TF-M) support.
+  * mimxrt685_evk: Added support for octal SPI flash storage, LittleFS, I2S, OS
+    timer, and power management.
+  * mimxrt1060_evk: Added support for QSPI flash storage, LittleFS, and
+    mcuboot.
+  * mimxrt1064_evk: Added support for mcuboot.
 
 * Added support for these following shields:
 
