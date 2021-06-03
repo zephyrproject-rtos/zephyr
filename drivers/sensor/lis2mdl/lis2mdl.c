@@ -117,8 +117,9 @@ static void lis2mdl_channel_get_temp(const struct device *dev,
 {
 	struct lis2mdl_data *drv_data = dev->data;
 
-	val->val1 = drv_data->temp_sample / 100;
-	val->val2 = (drv_data->temp_sample % 100) * 10000;
+	/* formula is temp = 25 + (temp / 8) C */
+	val->val1 = 25  + drv_data->temp_sample / 8;
+	val->val2 = (drv_data->temp_sample % 8) * 1000000 / 8;
 }
 
 static int lis2mdl_channel_get(const struct device *dev,
@@ -266,7 +267,6 @@ static int lis2mdl_sample_fetch_temp(const struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
 	int16_t raw_temp;
-	int32_t temp;
 
 	/* fetch raw temperature sample */
 	if (lis2mdl_temperature_raw_get(lis2mdl->ctx, &raw_temp) < 0) {
@@ -274,9 +274,7 @@ static int lis2mdl_sample_fetch_temp(const struct device *dev)
 		return -EIO;
 	}
 
-	/* formula is temp = 25 + (temp / 8) C */
-	temp = (sys_le16_to_cpu(raw_temp) & 0x8FFF);
-	lis2mdl->temp_sample = 2500 + (temp * 100) / 8;
+	lis2mdl->temp_sample = (sys_le16_to_cpu(raw_temp));
 
 	return 0;
 }

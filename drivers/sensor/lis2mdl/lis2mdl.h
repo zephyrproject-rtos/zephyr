@@ -56,7 +56,7 @@ struct lis2mdl_data {
 	const struct device *bus;
 	uint16_t i2c_addr;
 	int16_t mag[3];
-	int32_t temp_sample;
+	int16_t temp_sample;
 
 	stmdev_ctx_t *ctx;
 
