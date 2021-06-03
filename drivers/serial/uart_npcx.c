@@ -41,7 +41,7 @@ struct uart_npcx_data {
 	void *user_data;
 #endif
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state;
+	enum pm_device_state pm_state;
 #endif
 };
 
@@ -442,7 +442,7 @@ static inline bool uart_npcx_device_is_transmitting(const struct device *dev)
 }
 
 static inline int uart_npcx_get_power_state(const struct device *dev,
-							uint32_t *state)
+					    enum pm_device_state *state)
 {
 	const struct uart_npcx_data *const data = DRV_DATA(dev);
 
@@ -451,7 +451,7 @@ static inline int uart_npcx_get_power_state(const struct device *dev,
 }
 
 static inline int uart_npcx_set_power_state(const struct device *dev,
-							uint32_t next_state)
+					    enum pm_device_state next_state)
 {
 	struct uart_npcx_data *const data = DRV_DATA(dev);
 
@@ -473,7 +473,7 @@ static inline int uart_npcx_set_power_state(const struct device *dev,
 
 /* Implements the device power management control functionality */
 static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
-				 uint32_t *state, pm_device_cb cb, void *arg)
+				 enum pm_device_state *state, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 

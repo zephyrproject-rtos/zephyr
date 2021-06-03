@@ -68,7 +68,7 @@ struct st7735r_data {
 	uint16_t x_offset;
 	uint16_t y_offset;
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state;
+	enum pm_device_state pm_state;
 #endif
 };
 
@@ -520,14 +520,15 @@ static int st7735r_enter_sleep(struct st7735r_data *data)
 }
 
 static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
-			      uint32_t *state, pm_device_cb cb, void *arg)
+			      enum pm_device_state *state,
+			      pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
 
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_SET:
-		if (*((uint32_t *)context) == PM_DEVICE_STATE_ACTIVE) {
+		if (*state == PM_DEVICE_STATE_ACTIVE) {
 			ret = st7735r_exit_sleep(data);
 			if (ret < 0) {
 				return ret;

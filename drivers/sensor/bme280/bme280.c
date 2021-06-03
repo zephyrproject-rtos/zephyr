@@ -57,7 +57,7 @@ struct bme280_data {
 	uint8_t chip_id;
 
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state; /* Current power state */
+	enum pm_device_state pm_state; /* Current power state */
 #endif
 };
 
@@ -391,7 +391,7 @@ static int bme280_chip_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
-		   uint32_t *state, pm_device_cb cb, void *arg)
+		   enum pm_device_state *state, pm_device_cb cb, void *arg)
 {
 	struct bme280_data *data = to_data(dev);
 
@@ -399,9 +399,7 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 
 	/* Set power state */
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_pm_state = *state;
-
-		if (new_pm_state != data->pm_state) {
+		if (*state != data->pm_state) {
 
 			/* Switching from OFF to any */
 			if (data->pm_state == PM_DEVICE_STATE_OFF) {

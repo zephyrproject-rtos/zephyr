@@ -1140,7 +1140,7 @@ static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 }
 
 static void uart_nrfx_set_power_state(const struct device *dev,
-				      uint32_t new_state)
+				      enum pm_device_state new_state)
 {
 	if (new_state == PM_DEVICE_STATE_ACTIVE) {
 		uart_nrfx_pins_enable(dev, true);
@@ -1160,12 +1160,12 @@ static void uart_nrfx_set_power_state(const struct device *dev,
 
 static int uart_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				uint32_t *state, pm_device_cb cb, void *arg)
+				enum pm_device_state *state, pm_device_cb cb, void *arg)
 {
-	static uint32_t current_state = PM_DEVICE_STATE_ACTIVE;
+	static enum pm_device_state current_state = PM_DEVICE_STATE_ACTIVE;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *state;
+		enum pm_device_state new_state = *state;
 
 		if (new_state != current_state) {
 			uart_nrfx_set_power_state(dev, new_state);
