@@ -52,9 +52,6 @@ struct st7789v_data {
 	uint16_t width;
 	uint16_t x_offset;
 	uint16_t y_offset;
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif
 };
 
 #ifdef CONFIG_ST7789V_RGB565
@@ -375,10 +372,6 @@ static int st7789v_init(const struct device *dev)
 	}
 #endif
 
-#ifdef CONFIG_PM_DEVICE
-	data->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
-
 	data->cmd_data_gpio = device_get_binding(
 			DT_INST_GPIO_LABEL(0, cmd_data_gpios));
 	if (data->cmd_data_gpio == NULL) {
@@ -418,16 +411,11 @@ static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
 	case DEVICE_PM_SET_POWER_STATE:
 		if (*state == PM_DEVICE_STATE_ACTIVE) {
 			st7789v_exit_sleep(data);
-			data->pm_state = PM_DEVICE_STATE_ACTIVE;
 			ret = 0;
 		} else {
 			st7789v_enter_sleep(data);
-			data->pm_state = PM_DEVICE_STATE_LOW_POWER;
 			ret = 0;
 		}
-		break;
-	case PM_DEVICE_STATE_GET:
-		*state = data->pm_state;
 		break;
 	default:
 		ret = -EINVAL;

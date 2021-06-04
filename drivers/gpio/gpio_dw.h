@@ -41,9 +41,6 @@ struct gpio_dw_runtime {
 	const struct device *clock;
 #endif
 	sys_slist_t callbacks;
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state device_power_state;
-#endif
 };
 
 #ifdef __cplusplus
