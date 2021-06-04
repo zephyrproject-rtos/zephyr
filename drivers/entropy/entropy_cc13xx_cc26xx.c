@@ -10,6 +10,7 @@
 #include <device.h>
 #include <drivers/entropy.h>
 #include <irq.h>
+#include <pm/pm.h>
 #include <pm/device.h>
 
 #include <sys/ring_buffer.h>

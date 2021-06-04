@@ -9,6 +9,7 @@
 #include <kernel.h>
 #include <drivers/i2c.h>
 #include <pm/device.h>
+#include <pm/pm.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
