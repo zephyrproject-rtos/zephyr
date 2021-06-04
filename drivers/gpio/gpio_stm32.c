@@ -605,7 +605,7 @@ static int gpio_stm32_set_power_state(const struct device *dev,
 
 static int gpio_stm32_pm_device_ctrl(const struct device *dev,
 				     uint32_t ctrl_command,
-				     enum pm_device_state *state, pm_device_cb cb, void *arg)
+				     enum pm_device_state *state)
 {
 	struct gpio_stm32_data *data = dev->data;
 	uint32_t new_state;
