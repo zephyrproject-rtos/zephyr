@@ -167,6 +167,17 @@ int boot_request_upgrade(int permanent)
 	return 0;
 }
 
+int boot_request_upgrade_multi(int image_index, int permanent)
+{
+	int rc;
+
+	rc = boot_set_pending_multi(image_index, permanent);
+	if (rc) {
+		return -EFAULT;
+	}
+	return 0;
+}
+
 bool boot_is_img_confirmed(void)
 {
 	const struct flash_area *fa;
@@ -191,6 +202,18 @@ int boot_write_img_confirmed(void)
 	int rc;
 
 	rc = boot_set_confirmed();
+	if (rc) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int boot_write_img_confirmed_multi(int image_index)
+{
+	int rc;
+
+	rc = boot_set_confirmed_multi(image_index);
 	if (rc) {
 		return -EIO;
 	}
