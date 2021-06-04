@@ -19,9 +19,6 @@ struct spi_nrfx_data {
 	const struct device *dev;
 	size_t chunk_len;
 	bool   busy;
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif
 };
 
 struct spi_nrfx_config {
@@ -276,10 +273,6 @@ static int init_spi(const struct device *dev)
 		return -EBUSY;
 	}
 
-#ifdef CONFIG_PM_DEVICE
-	dev_data->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
-
 	return 0;
 }
 
@@ -293,10 +286,11 @@ static int spi_nrfx_pm_control(const struct device *dev,
 	const struct spi_nrfx_config *config = get_dev_config(dev);
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state new_state = *state;
+		enum pm_device_state curr_state;
 
-		if (new_state != data->pm_state) {
-			switch (new_state) {
+		(void)pm_device_state_get(dev, &curr_state);
+		if (*state != curr_state) {
+			switch (*state) {
 			case PM_DEVICE_STATE_ACTIVE:
 				ret = init_spi(dev);
 				/* Force reconfiguration before next transfer */
@@ -306,7 +300,7 @@ static int spi_nrfx_pm_control(const struct device *dev,
 			case PM_DEVICE_STATE_LOW_POWER:
 			case PM_DEVICE_STATE_SUSPEND:
 			case PM_DEVICE_STATE_OFF:
-				if (data->pm_state == PM_DEVICE_STATE_ACTIVE) {
+				if (curr_state == PM_DEVICE_STATE_ACTIVE) {
 					nrfx_spi_uninit(&config->spi);
 				}
 				break;
@@ -314,13 +308,7 @@ static int spi_nrfx_pm_control(const struct device *dev,
 			default:
 				ret = -ENOTSUP;
 			}
-			if (!ret) {
-				data->pm_state = new_state;
-			}
 		}
-	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = data->pm_state;
 	}
 
 	return ret;
