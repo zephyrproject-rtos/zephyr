@@ -345,10 +345,6 @@ static int ioapic_device_ctrl(const struct device *dev,
 		*state = ioapic_device_power_state;
 	}
 
-	if (cb) {
-		cb(dev, ret, context, arg);
-	}
-
 	return ret;
 }
 

@@ -228,9 +228,6 @@ static int eth_mcux_device_pm_control(const struct device *dev,
 	}
 
 out:
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
 
 	return ret;
 }

@@ -69,7 +69,6 @@ static int dummy_parent_pm_ctrl(const struct device *dev,
 
 	}
 
-	cb(dev, ret, state, arg);
 	return ret;
 }
 

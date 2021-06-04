@@ -211,10 +211,6 @@ static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
 
 	arch_irq_unlock(key);
 
-	if (cb) {
-		cb(dev, ret, context, arg);
-	}
-
 	return ret;
 }
 

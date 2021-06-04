@@ -431,10 +431,6 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 		*state = data->pm_state;
 	}
 
-	/* Invoke callback if any */
-	if (cb)
-		cb(dev, ret, state, arg);
-
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
