@@ -402,9 +402,7 @@ void ull_dle_init(struct ll_conn *conn, uint8_t phy)
 		conn->lll.dle.update = 1;
 	}
 }
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 void ull_conn_default_tx_octets_set(uint16_t tx_octets)
 {
        default_tx_octets = tx_octets;
