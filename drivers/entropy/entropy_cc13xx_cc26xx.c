@@ -36,9 +36,6 @@ struct entropy_cc13xx_cc26xx_data {
 	Power_NotifyObj post_notify;
 	bool constrained;
 #endif
-#ifdef CONFIG_PM_DEVICE
-	enum device_pm_state pm_state;
-#endif
 };
 
 static inline struct entropy_cc13xx_cc26xx_data *
@@ -272,9 +269,11 @@ static int entropy_cc13xx_cc26xx_set_power_state(const struct device *dev,
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 	int ret = 0;
+	enum pm_device_state state;
 
-	if ((new_state == PM_DEVICE_STATE_ACTIVE) &&
-		(new_state != data->pm_state)) {
+	(void)pm_device_state_get(dev, &state);
+
+	if ((new_state == PM_DEVICE_STATE_ACTIVE) && (new_state != state)) {
 		Power_setDependency(PowerCC26XX_PERIPH_TRNG);
 		start_trng(data);
 	} else {
@@ -282,12 +281,11 @@ static int entropy_cc13xx_cc26xx_set_power_state(const struct device *dev,
 			new_state == PM_DEVICE_STATE_SUSPEND ||
 			new_state == PM_DEVICE_STATE_OFF);
 
-		if (data->pm_state == PM_DEVICE_STATE_ACTIVE) {
+		if (state == PM_DEVICE_STATE_ACTIVE) {
 			stop_trng(data);
 			Power_releaseDependency(PowerCC26XX_PERIPH_TRNG);
 		}
 	}
-	data->pm_state = new_state;
 
 	return ret;
 }
@@ -296,19 +294,15 @@ static int entropy_cc13xx_cc26xx_pm_control(const struct device *dev,
 					    uint32_t ctrl_command,
 					    enum pm_device_state *state)
 {
-	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 	int ret = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state new_state = *state;
+		enum pm_device_state curr_state;
 
-		if (new_state != data->pm_state) {
-			ret = entropy_cc13xx_cc26xx_set_power_state(dev,
-				new_state);
+		(void)pm_device_state_get(dev, &curr_state);
+		if (*state != curr_state) {
+			ret = entropy_cc13xx_cc26xx_set_power_state(dev, *state);
 		}
-	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = data->pm_state;
 	}
 
 	return ret;
@@ -318,10 +312,6 @@ static int entropy_cc13xx_cc26xx_pm_control(const struct device *dev,
 static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
-
-#ifdef CONFIG_PM_DEVICE
-	get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
 
 	/* Initialize driver data */
 	ring_buf_init(&data->pool, sizeof(data->data), data->data);
