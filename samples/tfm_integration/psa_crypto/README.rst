@@ -1,23 +1,22 @@
-.. _tfm_psa_level_1:
+.. _tfm_psa_crypto:
 
-TF-M PSA Level 1
+TF-M PSA crypto
 ################
 
 Overview
 ********
-This TF-M integration example demonstrates how to use certain TF-M features
-that are covered as part of the RTOS vendor requirements for a
+This TF-M integration example demonstrates how to use the PSA crypto API in
+Zephyr for cryptography. In addition, this example also demonstrates certain
+TF-M features that are covered as part of the RTOS vendor requirements for a
 `PSA Certified Level 1`_ product, such as secure storage for config data,
-initial attestation for device verification, and the PSA crypto API for
-cryptography.
+initial attestation for device verification.
 
 Trusted Firmware (TF-M) Platform Security Architecture (PSA) APIs
 are used for the secure processing environment, with Zephyr running in the
 non-secure processing environment.
 
 It uses **IPC Mode** for communication, where an IPC mechanism is inserted to
-handle secure TF-M API calls and responses. The OS-specific code to handle
-the IPC calls is in ``tfm_ipc.c``.
+handle secure TF-M API calls and responses.
 
 The sample prints test info to the console either as a single-thread or
 multi-thread application.
@@ -35,10 +34,10 @@ Demonstrates the following workflow:
 
 - Generate a persistent key: secp256r1 (usage: ecdsa-with-SHA256)
 - Display the public key based on the private key data above
-- Calculates the SHA256 hash of a payload
-- Signs the hash with the persistent key
-- Verifies the signature using the public key
-- Destroys the key
+- Calculate the SHA256 hash of a payload
+- Sign the hash with the persistent key
+- Verify the signature using the public key
+- Destroy the key
 
 ``psa_attestation.c``
 =====================
@@ -78,13 +77,13 @@ On MPS2+ AN521:
    .. code-block:: bash
 
       cd <ZEPHYR_ROOT>
-      west build -p -b mps2_an521_nonsecure samples/tfm_integration/psa_level_1
+      west build -p -b mps2_an521_nonsecure samples/tfm_integration/psa_crypto
 
    Using ``cmake`` and ``ninja``
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
       cmake -GNinja -DBOARD=mps2_an521_nonsecure ..
@@ -94,7 +93,7 @@ On MPS2+ AN521:
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
       cmake -DBOARD=mps2_an521_nonsecure ..
@@ -132,13 +131,13 @@ and run it in qemu via the ``run`` command.
    .. code-block:: bash
 
       cd <ZEPHYR_ROOT>
-      west build -p -b mps2_an521_nonsecure samples/tfm_integration/psa_level_1 -t run
+      west build -p -b mps2_an521_nonsecure samples/tfm_integration/psa_crypto -t run
 
    Using ``cmake`` and ``ninja``
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
       cmake -GNinja -DBOARD=mps2_an521_nonsecure ..
@@ -148,7 +147,7 @@ and run it in qemu via the ``run`` command.
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
       cmake -DBOARD=mps2_an521_nonsecure ..
@@ -161,7 +160,7 @@ Build Zephyr with a non-secure configuration:
 
    .. code-block:: bash
 
-      $ west build -p -b lpcxpresso55s69_ns samples/tfm_integration/psa_level_1/ --
+      $ west build -p -b lpcxpresso55s69_ns samples/tfm_integration/psa_crypto/ --
 
 Make sure your board is set up with :ref:`lpclink2-jlink-onboard-debug-probe`,
 since this isn't the debug interface boards ship with from the factory;
@@ -191,7 +190,7 @@ Build Zephyr with a non-secure configuration
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
       cmake -GNinja -DBOARD=nrf9160dk_nrf9160ns ..
@@ -223,7 +222,7 @@ Build Zephyr with a non-secure configuration
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
       cmake -GNinja -DBOARD=bl5340_dvk_cpuappns ..

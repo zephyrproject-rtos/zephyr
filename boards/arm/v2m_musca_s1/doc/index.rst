@@ -393,7 +393,7 @@ target. Please make sure all the requirements listed in the sample's
 description are met before building.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/tfm_integration/psa_level_1
+   :zephyr-app: samples/tfm_integration/psa_crypto
    :board: v2m_musca_s1_nonsecure
    :goals: build
 

@@ -34,7 +34,7 @@ Building and Running
 On Target
 =========
 
-Refer to :ref:`tfm_psa_level_1` for detailed instructions.
+Refer to :ref:`tfm_psa_crypto` for detailed instructions.
 
 Note that the board needs to be completely erased before programming the sample, as the flash area
 used might contain data from before. The board must also be erased between each time the sample is
