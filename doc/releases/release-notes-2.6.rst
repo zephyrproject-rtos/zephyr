@@ -18,6 +18,8 @@ Major enhancements with this release include:
   added support for Percepio Tracealyzer
 * Device runtime power management (PM), former IDLE runtime, was
   completely overhauled.
+* Added an example standalone Zephyr application in its own Git repository:
+  https://github.com/zephyrproject-rtos/example-application
 
 The following sections provide detailed lists of changes by component.
 
