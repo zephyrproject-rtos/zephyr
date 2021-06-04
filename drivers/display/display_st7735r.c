@@ -520,7 +520,7 @@ static int st7735r_enter_sleep(struct st7735r_data *data)
 }
 
 static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
-			      void *context, pm_device_cb cb, void *arg)
+			      uint32_t *state, pm_device_cb cb, void *arg)
 {
 	int ret = 0;
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
@@ -544,7 +544,7 @@ static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
 		break;
 
 	case PM_DEVICE_STATE_GET:
-		*((uint32_t *)context) = data->pm_state;
+		*state = data->pm_state;
 
 		break;
 
@@ -553,7 +553,7 @@ static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
 	}
 
 	if (cb != NULL) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 
 	return ret;

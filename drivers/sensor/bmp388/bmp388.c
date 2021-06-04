@@ -589,20 +589,20 @@ static uint32_t bmp388_get_power_state(const struct device *dev)
 static int bmp388_device_ctrl(
 	const struct device *dev,
 	uint32_t ctrl_command,
-	void *context,
+	uint32_t *state,
 	pm_device_cb cb,
 	void *arg)
 {
 	int ret = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		ret = bmp388_set_power_state(dev, *((uint32_t *)context));
+		ret = bmp388_set_power_state(dev, *state);
 	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
-		*((uint32_t *)context) = bmp388_get_power_state(dev);
+		*state = bmp388_get_power_state(dev);
 	}
 
 	if (cb) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 	return ret;
 }

@@ -391,7 +391,7 @@ static int bme280_chip_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
-				void *context, pm_device_cb cb, void *arg)
+		   uint32_t *state, pm_device_cb cb, void *arg)
 {
 	struct bme280_data *data = to_data(dev);
 
@@ -399,7 +399,7 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 
 	/* Set power state */
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_pm_state = *((const uint32_t *)context);
+		uint32_t new_pm_state = *state;
 
 		if (new_pm_state != data->pm_state) {
 
@@ -430,12 +430,12 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 	/* Get power state */
 	else {
 		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*((uint32_t *)context) = data->pm_state;
+		*state = data->pm_state;
 	}
 
 	/* Invoke callback if any */
 	if (cb)
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 
 	return ret;
 }
