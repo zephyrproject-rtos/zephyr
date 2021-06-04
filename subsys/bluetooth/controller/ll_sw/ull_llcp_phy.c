@@ -392,7 +392,7 @@ static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 #else
 	#define NTF_DLE 0
 #endif
-	const uint8_t ntf_count = ctx->data.pu.ntf_dle + NTF_DLE;
+	const uint8_t ntf_count = ctx->data.pu.ntf_pu + NTF_DLE;
 	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF buffer) */
 	pu_reset_timing_restrict(conn);
 
@@ -755,7 +755,7 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 #else
 	#define NTF_DLE 0
 #endif
-	const uint8_t ntf_count = ctx->data.pu.ntf_dle + NTF_DLE;
+	const uint8_t ntf_count = ctx->data.pu.ntf_pu + NTF_DLE;
 	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF) */
 	pu_reset_timing_restrict(conn);
 
