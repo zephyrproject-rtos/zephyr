@@ -492,6 +492,7 @@ void ull_cp_priv_pdu_decode_chan_map_update_ind(struct proc_ctx *ctx, struct pdu
 	memcpy(ctx->data.chmu.chm, pdu->llctrl.chan_map_ind.chm, sizeof(ctx->data.chmu.chm));
 }
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 /*
  * Data Length Update Procedure Helpers
 */
@@ -557,3 +558,5 @@ void ull_cp_priv_pdu_decode_length_rsp(struct ll_conn *conn,
 	conn->lll.dle.remote.max_rx_time = sys_le16_to_cpu(p->max_rx_time);
 	conn->lll.dle.remote.max_tx_time = sys_le16_to_cpu(p->max_tx_time);
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
