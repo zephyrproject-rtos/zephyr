@@ -1481,10 +1481,6 @@ static int uart_stm32_pm_control(const struct device *dev,
 		*state = data->pm_state;
 	}
 
-	if (cb) {
-		cb(dev, 0, state, arg);
-	}
-
 	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */

@@ -670,10 +670,6 @@ static int spi_flash_at45_pm_control(const struct device *dev,
 		*state = dev_data->pm_state;
 	}
 
-	if (cb) {
-		cb(dev, err, state, arg);
-	}
-
 	return err;
 }
 #endif /* IS_ENABLED(CONFIG_PM_DEVICE) */

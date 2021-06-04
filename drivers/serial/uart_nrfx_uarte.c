@@ -1933,10 +1933,6 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 		*state = data->pm_state;
 	}
 
-	if (cb) {
-		cb(dev, 0, state, arg);
-	}
-
 	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */

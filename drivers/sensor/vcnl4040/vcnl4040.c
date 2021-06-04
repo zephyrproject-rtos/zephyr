@@ -278,10 +278,6 @@ static int vcnl4040_device_ctrl(const struct device *dev,
 		*state = PM_DEVICE_STATE_ACTIVE;
 	}
 
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
-
 	return ret;
 }
 #endif

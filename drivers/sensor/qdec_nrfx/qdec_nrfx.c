@@ -289,10 +289,6 @@ static int qdec_nrfx_pm_control(const struct device *dev,
 		break;
 	}
 
-	if (cb) {
-		cb(dev, err, state, arg);
-	}
-
 	return err;
 }
 

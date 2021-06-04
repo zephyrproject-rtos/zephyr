@@ -429,10 +429,6 @@ static int loapic_device_ctrl(const struct device *port,
 		*state = loapic_device_power_state;
 	}
 
-	if (cb) {
-		cb(port, ret, state, arg);
-	}
-
 	return ret;
 }
 

@@ -196,10 +196,6 @@ static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
 		break;
 	}
 
-	if (cb) {
-		cb(dev, err, state, arg);
-	}
-
 	return err;
 }
 

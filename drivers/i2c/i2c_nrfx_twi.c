@@ -263,10 +263,6 @@ static int twi_nrfx_pm_control(const struct device *dev,
 		*state = get_dev_data(dev)->pm_state;
 	}
 
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
-
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */

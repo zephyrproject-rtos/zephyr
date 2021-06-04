@@ -626,10 +626,6 @@ static int gpio_stm32_pm_device_ctrl(const struct device *dev,
 
 	}
 
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
-
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */

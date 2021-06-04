@@ -566,10 +566,6 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 		*state = data->pm_state;
 	}
 
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
-
 	return ret;
 }
 #endif
