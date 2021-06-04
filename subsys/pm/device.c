@@ -66,7 +66,7 @@ static int _pm_devices(uint32_t state)
 			 * Don't bother the device if it is currently
 			 * in the right state.
 			 */
-			rc = pm_device_state_set(dev, state, NULL, NULL);
+			rc = pm_device_state_set(dev, state);
 			if ((rc != -ENOSYS) && (rc != 0)) {
 				LOG_DBG("%s did not enter %s state: %d",
 					dev->name, pm_device_state_str(state),
@@ -103,8 +103,7 @@ void pm_resume_devices(void)
 
 	for (i = 0; i < num_susp; i++) {
 		pm_device_state_set(__pm_device_slots_start[i],
-				       PM_DEVICE_STATE_ACTIVE,
-				       NULL, NULL);
+				    PM_DEVICE_STATE_ACTIVE);
 	}
 
 	num_susp = 0;
@@ -130,15 +129,14 @@ const char *pm_device_state_str(enum pm_device_state state)
 }
 
 int pm_device_state_set(const struct device *dev,
-			enum pm_device_state device_power_state,
-			pm_device_cb cb, void *arg)
+			enum pm_device_state device_power_state)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
 	return dev->pm_control(dev, PM_DEVICE_STATE_SET,
-			       &device_power_state, cb, arg);
+			       &device_power_state);
 }
 
 int pm_device_state_get(const struct device *dev,
@@ -149,5 +147,5 @@ int pm_device_state_get(const struct device *dev,
 	}
 
 	return dev->pm_control(dev, PM_DEVICE_STATE_GET,
-			       device_power_state, NULL, NULL);
+			       device_power_state);
 }

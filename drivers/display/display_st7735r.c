@@ -520,8 +520,7 @@ static int st7735r_enter_sleep(struct st7735r_data *data)
 }
 
 static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
-			      enum pm_device_state *state,
-			      pm_device_cb cb, void *arg)
+			      enum pm_device_state *state)
 {
 	int ret = 0;
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
