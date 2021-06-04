@@ -67,10 +67,6 @@ enum pm_device_state {
 /** Device PM get state control command. */
 #define PM_DEVICE_STATE_GET 1
 
-typedef void (*pm_device_cb)(const struct device *dev,
-			     int status, enum pm_device_state *state,
-			     void *arg);
-
 /**
  * @brief Device PM info
  */
@@ -114,15 +110,12 @@ const char *pm_device_state_str(enum pm_device_state state);
  * Note that devices may support just some of the device power states
  * @param dev Pointer to device structure of the driver instance.
  * @param device_power_state Device power state to be set
- * @param cb Callback function to notify device power status
- * @param arg Caller passed argument to callback function
  *
  * @retval 0 If successful in queuing the request or changing the state.
- * @retval Errno Negative errno code if failure. Callback will not be called.
+ * @retval Errno Negative errno code if failure.
  */
 int pm_device_state_set(const struct device *dev,
-			enum pm_device_state device_power_state,
-			pm_device_cb cb, void *arg);
+			enum pm_device_state device_power_state);
 
 /**
  * @brief Call the get power state function of a device

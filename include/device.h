@@ -362,8 +362,7 @@ struct device {
 #ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
 	int (*pm_control)(const struct device *dev, uint32_t command,
-			  enum pm_device_state *state, pm_device_cb cb,
-			  void *arg);
+			  enum pm_device_state *state);
 	/** Pointer to device instance power management data */
 	struct pm_device * const pm;
 #endif

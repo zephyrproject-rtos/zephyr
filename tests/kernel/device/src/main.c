@@ -317,7 +317,7 @@ void test_dummy_device_pm(void)
 	test_build_suspend_device_list();
 
 	/* Set device state to PM_DEVICE_STATE_ACTIVE */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE, NULL, NULL);
+	ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 	if (ret == -ENOSYS) {
 		TC_PRINT("Power management not supported on device");
 		ztest_test_skip();
@@ -334,8 +334,7 @@ void test_dummy_device_pm(void)
 			"Error power status");
 
 	/* Set device state to PM_DEVICE_STATE_FORCE_SUSPEND */
-	ret = pm_device_state_set(dev,
-		PM_DEVICE_STATE_FORCE_SUSPEND, NULL, NULL);
+	ret = pm_device_state_set(dev, PM_DEVICE_STATE_FORCE_SUSPEND);
 
 	zassert_true((ret == 0), "Unable to force suspend device");
 

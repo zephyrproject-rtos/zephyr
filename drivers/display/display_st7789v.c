@@ -409,7 +409,7 @@ static void st7789v_enter_sleep(struct st7789v_data *data)
 }
 
 static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
-				 enum pm_device_state *state, pm_device_cb cb, void *arg)
+				 enum pm_device_state *state)
 {
 	int ret = 0;
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
