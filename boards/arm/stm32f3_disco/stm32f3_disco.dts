@@ -187,3 +187,9 @@
 	pinctrl-0 = <&adc1_in1_pa0>;
 	status = "okay";
 };
+
+&dac1 {
+	status = "okay";
+	/* dac output pins(pa4,pa5,pa6) might conflict with spi1 pins */
+	pinctrl-0 = <&dac_out1_pa4>;
+};
