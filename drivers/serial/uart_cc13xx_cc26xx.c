@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <sys/__assert.h>
 #include <pm/device.h>
+#include <pm/pm.h>
 #include <drivers/uart.h>
 
 #include <driverlib/ioc.h>
