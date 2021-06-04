@@ -477,6 +477,7 @@ uint8_t ull_cp_encryption_paused(struct ll_conn *conn)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CTLR_PHY)
 uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8_t rx, uint8_t host_initiated)
 {
 	struct proc_ctx *ctx;
@@ -497,6 +498,7 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 
 	return BT_HCI_ERR_SUCCESS;
 }
+#endif /* CONFIG_BT_CTLR_PHY */
 
 uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 {

@@ -130,6 +130,7 @@ struct proc_ctx {
 		/* Used by Encryption Procedure */
 		struct llcp_enc enc;
 
+#if defined(CONFIG_BT_CTLR_PHY)
 		/* PHY Update */
 		struct {
 			uint8_t tx:3;
@@ -145,6 +146,7 @@ struct proc_ctx {
 			uint8_t m_to_s_phy;
 			uint8_t s_to_m_phy;
 		} pu;
+#endif /* CONFIG_BT_CTLR_PHY */
 
 		/* Connection Update & Connection Parameter Request */
 		struct {
@@ -457,6 +459,7 @@ static inline void rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *
 }
 
 
+#if defined(CONFIG_BT_CTLR_PHY)
 /*
  * LLCP Local Procedure PHY Update
  */
@@ -487,6 +490,7 @@ static inline void lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void
 {
 	return ull_cp_priv_lp_pu_tx_ack(conn, ctx, param);
 }
+#endif /* CONFIG_BT_CTLR_PHY */
 
 /*
  * LLCP Local Procedure Connection Update
@@ -529,6 +533,7 @@ static inline void lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void 
 	return ull_cp_priv_lp_chmu_run(conn, ctx, param);
 }
 
+#if defined(CONFIG_BT_CTLR_PHY)
 /*
  * LLCP Remote Procedure PHY Update
  */
@@ -559,6 +564,7 @@ static inline void rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void
 {
 	return ull_cp_priv_rp_pu_tx_ack(conn, ctx, param);
 }
+#endif /* CONFIG_BT_CTLR_PHY */
 
 /*
  * LLCP Remote Procedure Connection Update
