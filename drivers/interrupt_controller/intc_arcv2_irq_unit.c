@@ -194,8 +194,7 @@ static enum pm_device_state arc_v2_irq_unit_get_state(const struct device *dev)
  */
 static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
 				       uint32_t ctrl_command,
-				       enum pm_device_state *state,
-				       pm_device_cb cb, void *arg)
+				       enum pm_device_state *state)
 {
 	int ret = 0;
 	unsigned int key = arch_irq_lock();

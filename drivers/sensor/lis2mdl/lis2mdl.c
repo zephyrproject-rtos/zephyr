@@ -483,7 +483,7 @@ static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 }
 
 static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
-				enum pm_device_state *state, pm_device_cb cb, void *arg)
+				enum pm_device_state *state)
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
 	const struct lis2mdl_config *const config = dev->config;

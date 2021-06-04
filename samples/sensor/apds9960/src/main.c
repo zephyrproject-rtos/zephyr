@@ -80,11 +80,11 @@ void main(void)
 		enum pm_device_state p_state;
 
 		p_state = PM_DEVICE_STATE_LOW_POWER;
-		pm_device_state_set(dev, p_state, NULL, NULL);
+		pm_device_state_set(dev, p_state);
 		printk("set low power state for 2s\n");
 		k_sleep(K_MSEC(2000));
 		p_state = PM_DEVICE_STATE_ACTIVE;
-		pm_device_state_set(dev, p_state, NULL, NULL);
+		pm_device_state_set(dev, p_state);
 #endif
 	}
 }
