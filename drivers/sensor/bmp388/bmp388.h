@@ -163,7 +163,7 @@ struct bmp388_data {
 	uint8_t osr_temp;
 	struct bmp388_cal_data cal;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t device_power_state;
 #endif
 
