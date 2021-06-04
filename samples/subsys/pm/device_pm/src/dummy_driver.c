@@ -129,8 +129,6 @@ static int dummy_device_pm_ctrl(const struct device *dev,
 
 	}
 
-	cb(dev, ret, state, arg);
-
 	return ret;
 }
 

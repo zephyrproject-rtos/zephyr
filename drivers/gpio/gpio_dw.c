@@ -475,9 +475,6 @@ static int gpio_dw_device_ctrl(const struct device *port,
 		*state = gpio_dw_get_power_state(port);
 	}
 
-	if (cb) {
-		cb(port, ret, state, arg);
-	}
 	return ret;
 }
 

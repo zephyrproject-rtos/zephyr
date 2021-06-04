@@ -323,10 +323,6 @@ static int spi_nrfx_pm_control(const struct device *dev,
 		*state = data->pm_state;
 	}
 
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
-
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */

@@ -354,9 +354,6 @@ static int pwm_nrfx_pm_control(const struct device *dev,
 		int ret = 0;                                            \
 		ret = pwm_nrfx_pm_control(dev, ctrl_command, state,	\
 					   &current_state);		\
-		if (cb) {                                               \
-			cb(dev, ret, state, arg);                       \
-		}                                                       \
 		return ret;                                             \
 	}
 #else

@@ -269,10 +269,6 @@ static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
 		*state = get_dev_data(dev)->pm_state;
 	}
 
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
-
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
