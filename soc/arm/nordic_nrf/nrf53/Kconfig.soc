@@ -147,7 +147,7 @@ config SOC_ENABLE_LFXO
 choice SOC_LFXO_LOAD_CAPACITANCE
 	prompt "LFXO load capacitance"
 	depends on SOC_ENABLE_LFXO
-	default SOC_LFXO_CAP_INT_6PF
+	default SOC_LFXO_CAP_INT_7PF
 
 config SOC_LFXO_CAP_EXTERNAL
 	bool "Use external load capacitors"
