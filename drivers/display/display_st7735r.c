@@ -67,7 +67,7 @@ struct st7735r_data {
 	const struct device *reset_dev;
 	uint16_t x_offset;
 	uint16_t y_offset;
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	uint32_t pm_state;
 #endif
 };
@@ -475,7 +475,7 @@ static int st7735r_init(const struct device *dev)
 		}
 	}
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
@@ -513,7 +513,7 @@ static int st7735r_init(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+#ifdef CONFIG_PM_DEVICE
 static int st7735r_enter_sleep(struct st7735r_data *data)
 {
 	return st7735r_transmit(data, ST7735R_CMD_SLEEP_IN, NULL, 0);
@@ -558,7 +558,7 @@ static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
 
 	return ret;
 }
-#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct display_driver_api st7735r_api = {
 	.blanking_on = st7735r_blanking_on,
