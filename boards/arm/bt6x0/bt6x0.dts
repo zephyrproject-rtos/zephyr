@@ -141,6 +141,46 @@
 			label = "Digital Output 2";
 			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 		};
+
+		ain1sel: ain_1_current_measurement_selection {
+			label = "Analogue Input 1 Current/Voltage measurement select";
+			gpios = <&gpio_exp0 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		ain2sel: ain_2_current_measurement_selection {
+			label = "Analogue Input 2 Current/Voltage measurement select";
+			gpios = <&gpio_exp0 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		ain3sel: ain_3_current_measurement_selection {
+			label = "Analogue Input 3 Current/Voltage measurement select";
+			gpios = <&gpio_exp0 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		ain4sel: ain_4_current_measurement_selection {
+			label = "Analogue Input 4 Current/Voltage measurement select";
+			gpios = <&gpio_exp0 3 GPIO_ACTIVE_HIGH>;
+		};
+
+		aina0: analog_input_selection_0 {
+			label = "Analogue Input Mux 0";
+			gpios = <&gpio_exp0 4 GPIO_ACTIVE_HIGH>;
+		};
+
+		aina1: analog_input_selection_1 {
+			label = "Analogue Input Mux 1";
+			gpios = <&gpio_exp0 5 GPIO_ACTIVE_HIGH>;
+		};
+
+		aux1: aux_input_1 {
+			label = "Aux Input 1";
+			gpios = <&gpio_exp0 6 GPIO_ACTIVE_HIGH>;
+		};
+
+		aux2: aux_input_2 {
+			label = "Aux Input 2";
+			gpios = <&gpio_exp0 7 GPIO_ACTIVE_HIGH>;
+		};
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -206,6 +246,16 @@
 	status = "okay";
 	sda-pin = <26>;
 	scl-pin = <27>;
+
+	gpio_exp0: tca9538@70 {
+		compatible = "ti,tca9538";
+		reg = <0x70>;
+		label = "tca9538";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		nint-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+	};
 };
 
 &spi1 {
