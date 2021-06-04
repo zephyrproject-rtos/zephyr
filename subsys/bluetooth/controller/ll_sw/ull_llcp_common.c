@@ -131,10 +131,12 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx->tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		pdu_encode_length_req(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -180,10 +182,12 @@ static void lp_comm_ntf_version_ind(struct ll_conn *conn,  struct proc_ctx *ctx,
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void lp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	ntf_encode_length_change(conn, pdu);
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 {
@@ -204,9 +208,11 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_ntf_version_ind(conn, ctx, pdu);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		lp_comm_ntf_length_change(conn, ctx, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		LL_ASSERT(0);
 		break;
@@ -261,6 +267,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		/* Mark the connection for termination */
 		conn->terminate.reason = BT_HCI_ERR_LOCALHOST_TERM_CONN;
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		if (ctx->response_opcode != PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) {
 			/* Apply changes in data lengths/times */
@@ -291,6 +298,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			tx_resume_data(conn);
 		}
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -348,6 +356,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
 		}
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		if (!ull_cp_remote_dle_pending(conn)) {
 			if (ctx->pause || !tx_alloc_is_available()) {
@@ -371,6 +380,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		}
 
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -458,9 +468,11 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		/* No response expected */
 		LL_ASSERT(0);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
 		pdu_decode_length_rsp(conn, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown opcode */
 		LL_ASSERT(0);
@@ -486,6 +498,7 @@ static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	switch (evt) {
 	case LP_COMMON_EVT_RUN:
 		switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		case PROC_DATA_LENGTH_UPDATE:
 			if (ntf_alloc_is_available()) {
 				lp_comm_ntf(conn, ctx);
@@ -493,6 +506,7 @@ static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint
 				ctx->state = LP_COMMON_STATE_IDLE;
 			}
 			break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		default:
 			break;
 		}
@@ -570,6 +584,7 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 		pdu_decode_terminate_ind(ctx, pdu);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 		pdu_decode_length_req(conn, pdu);
 		/* On reception of REQ mark RSP open for local piggy-back
@@ -579,6 +594,7 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		 */
 		tx_pause_data(conn);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown opcode */
 		LL_ASSERT(0);
@@ -610,11 +626,13 @@ static void rp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		pdu_encode_version_ind(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		pdu_encode_length_rsp(conn, pdu);
 		ctx->tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -637,7 +655,7 @@ static void rp_comm_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t 
 		break;
 	}
 }
-
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void rp_comm_ntf_length_change(struct ll_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	ntf_encode_length_change(conn, pdu);
@@ -648,6 +666,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
 
+	ARG_UNUSED(pdu);
 	/* Allocate ntf node */
 	ntf = ntf_alloc();
 	LL_ASSERT(ntf);
@@ -656,9 +675,12 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ntf->hdr.handle = conn->lll.handle;
 	pdu = (struct pdu_data *) ntf->pdu;
 	switch (ctx->proc) {
+/* Note: the 'double' ifdef in case this switch case expands in the future and the function is re-instated */
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_ntf_length_change(conn, ctx, pdu);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		LL_ASSERT(0);
 		break;
@@ -668,6 +690,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	ll_rx_put(ntf->hdr.link, ntf);
 	ll_rx_sched();
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
@@ -738,6 +761,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		/* Mark the connection for termination */
 		conn->terminate.reason = ctx->data.term.error_code;
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		if (ctx->pause || !tx_alloc_is_available()) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
@@ -749,6 +773,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = RP_COMMON_STATE_WAIT_TX_ACK;
 		}
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -785,6 +810,7 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 	switch (evt) {
 	case RP_COMMON_EVT_ACK:
 		switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		case PROC_DATA_LENGTH_UPDATE:
 			{
 				/* Apply changes in data lengths/times */
@@ -803,6 +829,7 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 				}
 				break;
 			}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		default:
 			/* Ignore other procedures */
 			break;
