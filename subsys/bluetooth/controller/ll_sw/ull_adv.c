@@ -331,6 +331,10 @@ u8_t ll_adv_data_set(u8_t len, u8_t const *const data)
 	struct pdu_adv *pdu;
 	u8_t idx;
 
+	if (len > PDU_AC_SIZE_MAX) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
 	adv = ull_adv_set_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -381,6 +385,10 @@ u8_t ll_adv_scan_rsp_set(u8_t len, u8_t const *const data)
 	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
 	u8_t idx;
+
+	if (len > PDU_AC_SIZE_MAX) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	adv = ull_adv_set_get(handle);
 	if (!adv) {

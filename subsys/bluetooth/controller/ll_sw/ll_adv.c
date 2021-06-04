@@ -296,6 +296,10 @@ u8_t ll_adv_data_set(u8_t len, u8_t const *const data)
 	struct pdu_adv *pdu;
 	u8_t last;
 
+	if (len > PDU_AC_SIZE_MAX) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
 	/* Dont update data if directed or extended advertising. */
 	radio_adv_data = radio_adv_data_get();
 	prev = (struct pdu_adv *)&radio_adv_data->data[radio_adv_data->last][0];
@@ -351,6 +355,10 @@ u8_t ll_adv_scan_rsp_set(u8_t len, u8_t const *const data)
 	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
 	u8_t last;
+
+	if (len > PDU_AC_SIZE_MAX) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	/* use the last index in double buffer, */
 	radio_scan_data = radio_scan_data_get();
