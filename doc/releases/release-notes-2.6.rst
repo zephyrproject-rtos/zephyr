@@ -2,8 +2,8 @@
 
 .. _zephyr_2.6:
 
-Zephyr 2.6.0 (Working Draft)
-############################
+Zephyr 2.6.0
+############
 
 We are pleased to announce the release of Zephyr RTOS version 2.6.0.
 
@@ -1054,19 +1054,25 @@ Issue Related Items
 These GitHub issues were addressed since the previous 2.5.0 tagged
 release:
 
+* :github:`35962` - drivers using deprecated Kconfigs
+* :github:`35955` - Bluetooth: Controller: Regression in connection setup
+* :github:`35949` - can: mcan: sjw-data devicetree configuration is not written correctly
+* :github:`35941` - subsys: tracing: sysview: No SEGGER_SYSVIEW.h in path
+* :github:`35926` - Shell tab-completion with more than two levels of nested dynamic commands fails
+* :github:`35924` - Help with Configuring Custom GPIO Pins
+* :github:`35916` - drivers: TI cc13xx_cc26xx: build error when PM is enabled (serial, entropy, spi, i2c modules)
 * :github:`35911` - shield sample sensorhub does not produce and meaningful data
 * :github:`35910` - LIS2MDL reporting wrong temperature
 * :github:`35896` - frdm_k64f: build failure missing dt-bindings/clock/kinetis_sim.h: No such file or directory
+* :github:`35890` - Build system ignores explicit ZephyrBuildConfiguration_ROOT variable
 * :github:`35882` - Fixed width documentation makes DT bindings docs unreadable
 * :github:`35876` - Bluetooth: host: CCC store not correctly handled for multiple connections
 * :github:`35871` - LPS22HH sensor reporting wrong pressure data
-* :github:`35850` - the sample kernel/metairq_dispatch fails on nucleo_g474re
 * :github:`35840` - Bluetooth: host: L2CAP enhanced connection request conformance test issues
 * :github:`35838` - Bluetooth: ISO: BIG termination doesn't fully unref the connection
 * :github:`35826` - LORAWAN Compatibility with nrf52832 and sx1262
 * :github:`35813` - Zephyr Native Posix Build Uses Linux Build Machine Headers out of Sandbox
 * :github:`35812` - ESP32 Factory app partition is not bootable
-* :github:`35793` - kernel.scheduler.multiq: Failed since #35276 ("cooperative scheduling only" special cases removal)
 * :github:`35781` - Missing response parameter for HCI_LE_Set_Connectionless_IQ_Sampling_Enable HCI command
 * :github:`35772` - Support C++ exceptions on NIOS2
 * :github:`35764` - tests: kernel: threads: no multithreading: fails with CONFIG_STACK_SENTINEL=y
@@ -1252,6 +1258,7 @@ release:
 * :github:`35083` - dts: stm32mp1: SPI2 mixup with SAI2, SPI3 mixup with SAI3
 * :github:`35082` - intel_adsp_cavs15: All the testcases run failed on ADSP
 * :github:`35079` - acrn_ehl_crb: build warnings for old APIC_TIMER configs
+* :github:`35076` - acrn_ehl_crb does not work with CPUs >1
 * :github:`35075` - .west/config west.yml and zephyr versioning during project development
 * :github:`35073` - timer: cortex_m_systick: uptime drifting in tickless mode
 * :github:`35060` - tests/kernel/common: test_nop failed on ARMV7_M_ARMV8_M_MAINLINE
@@ -1475,6 +1482,7 @@ release:
 * :github:`33898` - intel_adsp_cavs15: running testcases failed tests/kernel/workq/work on adsp
 * :github:`33897` - Bluetooth: extended advertising can't restart after connection
 * :github:`33896` - Device tree: STM32L4 defines can1 node for chips which do not support CAN peripheral
+* :github:`33895` - Device tree: STM32L412 and STM32L422 are missing nodes
 * :github:`33890` - Continuous Integration check patch false warnings
 * :github:`33884` - CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE is way too long
 * :github:`33874` - twister: Add skip as error feature
@@ -1546,7 +1554,6 @@ release:
 * :github:`33765` - Regular loss of a few connection intervals
 * :github:`33761` - Documentation: K_WORK_DEFINE usage is not shown in workqueue doc
 * :github:`33754` - xtensa sys timer Interrupt bug？
-* :github:`33747` - time.nanosecond member of net_ptp_time struct is NOT updated by the gptp_event_capture() function in the gPTP demo on the RT1020EVK
 * :github:`33745` - ``west attach`` silently downgrades to ``debugserver`` for openocd runner
 * :github:`33729` - flash_write() in STM32L0 MCU throws hard fault
 * :github:`33727` - mec15xxevb_assy6853: multiple tests failed due to assertion failure at kernel/sched.c:841
@@ -1647,6 +1654,7 @@ release:
 * :github:`33280` - drivers: serial: nrf uarte: The application receives one more byte that was received over UART
 * :github:`33273` - The z_smp_reacquire_global_lock() internal API is not used any where inside zephyr code base
 * :github:`33269` - ILI9341 (ILI9XXX) set orientation function fails to update the display area correctly
+* :github:`33265` - Power Management Overhaul
 * :github:`33261` - gatt_notify too slow on Broadcast
 * :github:`33253` - STM32G4 with USB-C PD: Some pins cannot be used as input by default
 * :github:`33239` - lib/rbtree: Remove dead case in rb_remove()
@@ -1946,6 +1954,7 @@ release:
 * :github:`32270` - TCP connection stalls
 * :github:`32269` - shield: cmake: Shield conf is not loaded during build
 * :github:`32265` - STM32F4 stuck handling I2C interrupt
+* :github:`32261` - problem with CONFIG_STACK_SENTINEL
 * :github:`32260` - STM32 counter driver error in estimating alarm time
 * :github:`32258` - power mgmt: pm_devices: Get rid of z_pm_core_devices array
 * :github:`32257` - Common DFU partition enumeration API
@@ -2075,6 +2084,7 @@ release:
 * :github:`27692` - Allow to select between advertising packet/scan response for BT LE device name
 * :github:`27525` - Including STM32Cube's USB PD support to Zephyr
 * :github:`27484` - sanitycheck: Ease error interception from calling script
+* :github:`27415` - Decide if we keep a single thread support (CONFIG_MULTITHREADING=n) in Zephyr
 * :github:`27356` - deep review and redesign of API for work queue functionality
 * :github:`27203` - tests/subsys/storage/flash_map failure on twr_ke18f
 * :github:`27048` - Improve out-of-tree driver experience
@@ -2130,6 +2140,7 @@ release:
 * :github:`21489` - Allow to read any types during discovery
 * :github:`21484` - Option for safe k_thread_abort
 * :github:`21342` - z_arch_cpu_halt() should enter deep power-down where supported
+* :github:`21293` - adding timeout the I2C read/write functions for the stm32 port
 * :github:`21136` - ARC: Add support for reduced register file
 * :github:`21061` - Document where APIs can be called from using doxygen
 * :github:`21033` - Read out heap space used and unallocated
@@ -2146,9 +2157,11 @@ release:
 * :github:`18509` - Bluetooth:Mesh:Memory allocation is too large
 * :github:`18351` - logging: 32 bit float values don't work.
 * :github:`17991` - Cannot generate coverage reports on qemu_x86_64
+* :github:`17748` - stm32: clock-control: Remove usage of SystemCoreClock
 * :github:`17745` - stm32: Move clock configuration to device tree
 * :github:`17571` - mempool is expensive for cyclic use
 * :github:`17486` - nRF52: SPIM: Errata work-around status?
+* :github:`17375` - Add VREF, TEMPSENSOR, VBAT internal channels to the stm32 adc driver
 * :github:`17353` - Configuring with POSIX_API disables NET_SOCKETS_POSIX_NAMES
 * :github:`17314` - doc: add tutorial for using mbed TLS
 * :github:`16539` - include/ directory and header cleanup
@@ -2216,6 +2229,7 @@ release:
 * :github:`4569` - LoRa:  support LoRa
 * :github:`1418` - kconfig options need some cleanup and reorganisation
 * :github:`1415` - Problem with forcing new line in generated documentation.
+* :github:`1392` - No module named 'elftools'
 * :github:`3933` - LWM2M: Create application/link-format writer object to handle discovery formatting
 * :github:`3931` - LWM2M: Data Validation Callback
 * :github:`3723` - WiFi support for ESP32
