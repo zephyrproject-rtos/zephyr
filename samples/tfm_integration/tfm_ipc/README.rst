@@ -177,7 +177,7 @@ Build Zephyr with a non-secure configuration
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/tfm_ipc/
       rm -rf build
       mkdir build && cd build
       cmake -GNinja -DBOARD=nrf9160dk_nrf9160ns ..
@@ -209,7 +209,7 @@ Build Zephyr with a non-secure configuration
 
    .. code-block:: bash
 
-      cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_level_1/
+      cd <ZEPHYR_ROOT>/samples/tfm_integration/tfm_ipc/
       rm -rf build
       mkdir build && cd build
       cmake -GNinja -DBOARD=bl5340_dvk_cpuappns ..
