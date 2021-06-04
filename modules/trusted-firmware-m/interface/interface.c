@@ -87,7 +87,7 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 
 		__asm__ volatile(
 			"vldmia %0, {s0-s15}\n"
-			"vldmia %0, {s16-s31}\n"
+			"vldmia %1, {s16-s31}\n"
 			:: "r" (fp_ctx_caller_saved), "r" (fp_ctx_callee_saved) :
 		);
 	}
