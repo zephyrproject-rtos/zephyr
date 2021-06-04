@@ -105,11 +105,18 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("Channel %p disconnected", chan);
 }
 
+static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	LOG_WARN("Channel %p received %p len %zu", chan, buf, buf->len);
+	return -ENOTSUP;
+}
+
 static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.sent		= l2cap_sent,
 	.status		= l2cap_status,
 	.connected	= l2cap_connected,
 	.disconnected	= l2cap_disconnected,
+	.recv           = l2cap_recv,
 };
 
 static inline void l2cap_chan_init(struct bt_l2cap_le_chan *chan)
