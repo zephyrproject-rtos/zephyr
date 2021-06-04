@@ -19,20 +19,6 @@ LOG_MODULE_DECLARE(power);
 #define PM_DEVICE_SYNC          BIT(0)
 #define PM_DEVICE_ASYNC         BIT(1)
 
-static void device_pm_callback(const struct device *dev,
-			       int retval, enum pm_device_state *state, void *arg)
-{
-	__ASSERT(retval == 0, "Device set power state failed");
-
-	dev->pm->state = *state;
-
-	/*
-	 * This function returns the number of woken threads on success. There
-	 * is nothing we can do with this information. Just ignore it.
-	 */
-	(void)k_condvar_broadcast(&dev->pm->condvar);
-}
-
 static void pm_device_runtime_state_set(struct pm_device *pm)
 {
 	const struct device *dev = pm->dev;
@@ -43,33 +29,33 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 		if ((dev->pm->usage == 0) && dev->pm->enable) {
 			dev->pm->state = PM_DEVICE_STATE_SUSPENDING;
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND,
-						  device_pm_callback, NULL);
-		} else {
-			goto handler_out;
+						  NULL, NULL);
+			if (ret == 0) {
+				dev->pm->state = PM_DEVICE_STATE_SUSPEND;
+			}
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPEND:
 		if ((dev->pm->usage > 0) || !dev->pm->enable) {
 			dev->pm->state = PM_DEVICE_STATE_RESUMING;
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE,
-						  device_pm_callback, NULL);
-		} else {
-			goto handler_out;
+						  NULL, NULL);
+			if (ret == 0) {
+				dev->pm->state = PM_DEVICE_STATE_ACTIVE;
+			}
 		}
 		break;
 	case PM_DEVICE_STATE_SUSPENDING:
 		__fallthrough;
 	case PM_DEVICE_STATE_RESUMING:
-		/* Do nothing: We are waiting for device_pm_callback() */
+		/* Do nothing: We are waiting for resume/suspend to finish */
 		break;
 	default:
 		LOG_ERR("Invalid state!!\n");
 	}
 
 	__ASSERT(ret == 0, "Set Power state error");
-	return;
 
-handler_out:
 	/*
 	 * This function returns the number of woken threads on success. There
 	 * is nothing we can do with this information. Just ignoring it.
@@ -160,9 +146,9 @@ static int pm_device_request(const struct device *dev,
 	pm_device_runtime_state_set(dev->pm);
 
 	/*
-	 * dev->pm->state was set in device_pm_callback(). As the device
-	 * may not have been properly changed to the target_state or another
-	 * thread we check it here before returning.
+	 * dev->pm->state was set in pm_device_runtime_state_set(). As the
+	 * device may not have been properly changed to the target_state or
+	 * another thread we check it here before returning.
 	 */
 	ret = target_state == dev->pm->state ? 0 : -EIO;
 
