@@ -346,25 +346,27 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 	 */
 	if (Z_SYSCALL_VERIFY(num_events >= 0U)) {
 		ret = -EINVAL;
-		goto out;
+		return ret;
 	}
 	if (Z_SYSCALL_VERIFY_MSG(!u32_mul_overflow(num_events,
 						   sizeof(struct k_poll_event),
 						   &bounds),
 				 "num_events too large")) {
 		ret = -EINVAL;
-		goto out;
+		return ret;
 	}
 	events_copy = z_thread_malloc(bounds);
 	if (!events_copy) {
 		ret = -ENOMEM;
-		goto out;
+		return ret;
 	}
 
 	key = k_spin_lock(&lock);
 	if (Z_SYSCALL_MEMORY_WRITE(events, bounds)) {
 		k_spin_unlock(&lock, key);
-		goto oops_free;
+		k_free(events_copy);
+
+		Z_OOPS(1);
 	}
 	(void)memcpy(events_copy, events, bounds);
 	k_spin_unlock(&lock, key);
@@ -375,7 +377,8 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 
 		if (Z_SYSCALL_VERIFY(e->mode == K_POLL_MODE_NOTIFY_ONLY)) {
 			ret = -EINVAL;
-			goto out_free;
+			k_free(events_copy);
+			return ret;
 		}
 
 		switch (e->type) {
@@ -395,19 +398,16 @@ static inline int z_vrfy_k_poll(struct k_poll_event *events,
 			break;
 		default:
 			ret = -EINVAL;
-			goto out_free;
+			k_free(events_copy);
+			return ret;
 		}
 	}
 
 	ret = k_poll(events_copy, num_events, timeout);
 	(void)memcpy((void *)events, events_copy, bounds);
-out_free:
 	k_free(events_copy);
-out:
+
 	return ret;
-oops_free:
-	k_free(events_copy);
-	Z_OOPS(1);
 }
 #include <syscalls/k_poll_mrsh.c>
 #endif
