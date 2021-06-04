@@ -105,7 +105,7 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
 	}
 }
 
-int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_gatt_ots_l2cap *l2cap_ctx;
 
