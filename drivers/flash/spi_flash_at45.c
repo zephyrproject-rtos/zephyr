@@ -60,9 +60,6 @@ struct spi_flash_at45_data {
 	const struct device *spi;
 	struct spi_cs_control spi_cs;
 	struct k_sem lock;
-#if IS_ENABLED(CONFIG_PM_DEVICE)
-	enum pm_device_state pm_state;
-#endif
 };
 
 struct spi_flash_at45_config {
@@ -631,15 +628,15 @@ static int spi_flash_at45_pm_control(const struct device *dev,
 				     uint32_t ctrl_command,
 				     enum pm_device_state *state)
 {
-	struct spi_flash_at45_data *dev_data = get_dev_data(dev);
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
 	int err = 0;
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state new_state = *state;
+		enum pm_device_state curr_state;
 
-		if (new_state != dev_data->pm_state) {
-			switch (new_state) {
+		(void)pm_device_state_get(dev, &curr_state);
+		if (*state != curr_state) {
+			switch (*state) {
 			case PM_DEVICE_STATE_ACTIVE:
 				acquire(dev);
 				power_down_op(dev, CMD_EXIT_DPD,
@@ -661,12 +658,7 @@ static int spi_flash_at45_pm_control(const struct device *dev,
 			default:
 				return -ENOTSUP;
 			}
-
-			dev_data->pm_state = new_state;
 		}
-	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = dev_data->pm_state;
 	}
 
 	return err;
@@ -715,8 +707,6 @@ static const struct flash_driver_api spi_flash_at45_api = {
 	};								     \
 	static struct spi_flash_at45_data inst_##idx##_data = {		     \
 		.lock = Z_SEM_INITIALIZER(inst_##idx##_data.lock, 1, 1),     \
-		IF_ENABLED(CONFIG_PM_DEVICE, (		     \
-			.pm_state = PM_DEVICE_STATE_ACTIVE))		     \
 	};						\
 	INST_RESET_GPIO_SPEC(idx)				\
 	INST_WP_GPIO_SPEC(idx)					\

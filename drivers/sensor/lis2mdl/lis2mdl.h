@@ -50,11 +50,6 @@ struct lis2mdl_data {
 	const struct device *dev;
 	int16_t mag[3];
 	int16_t temp_sample;
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state power_state;
-#endif
-
 	struct k_sem fetch_sem;
 
 #ifdef CONFIG_LIS2MDL_TRIGGER
