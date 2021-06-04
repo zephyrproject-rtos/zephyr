@@ -92,7 +92,10 @@ int bmp388_trigger_set(
 	struct bmp388_data *data = DEV_DATA(dev);
 
 #ifdef CONFIG_PM_DEVICE
-	if (data->device_power_state != PM_DEVICE_STATE_ACTIVE) {
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
 		return -EBUSY;
 	}
 #endif

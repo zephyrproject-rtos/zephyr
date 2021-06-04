@@ -189,11 +189,12 @@ static int sgp40_channel_get(const struct device *dev,
 static int sgp40_set_power_state(const struct device *dev,
 				  enum pm_device_state power_state)
 {
-	struct sgp40_data *data = dev->data;
 	uint16_t cmd;
 	int rc;
+	enum pm_device_state state;
 
-	if (data->pm_state == power_state) {
+	(void)pm_device_state_get(dev, &state);
+	if (state == power_state) {
 		LOG_DBG("Device already in requested PM_STATE.");
 		return 0;
 	}
@@ -214,18 +215,6 @@ static int sgp40_set_power_state(const struct device *dev,
 		return rc;
 	}
 
-	data->pm_state = power_state;
-
-	return 0;
-}
-
-static uint32_t sgp40_get_power_state(const struct device *dev,
-		enum pm_device_state *state)
-{
-	struct sgp40_data *data = dev->data;
-
-	*state = data->pm_state;
-
 	return 0;
 }
 
@@ -237,8 +226,6 @@ static int sgp40_pm_ctrl(const struct device *dev,
 
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
 		rc = sgp40_set_power_state(dev, *state);
-	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
-		rc = sgp40_get_power_state(dev, state);
 	}
 
 	return rc;

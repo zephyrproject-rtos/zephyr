@@ -131,23 +131,32 @@ const char *pm_device_state_str(enum pm_device_state state)
 int pm_device_state_set(const struct device *dev,
 			enum pm_device_state device_power_state)
 {
+	int ret;
+
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
-	return dev->pm_control(dev, PM_DEVICE_STATE_SET,
-			       &device_power_state);
+	ret = dev->pm_control(dev, PM_DEVICE_STATE_SET, &device_power_state);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dev->pm->state = device_power_state;
+
+	return 0;
 }
 
 int pm_device_state_get(const struct device *dev,
-			enum pm_device_state *device_power_state)
+			enum pm_device_state *state)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
-	return dev->pm_control(dev, PM_DEVICE_STATE_GET,
-			       device_power_state);
+	*state = dev->pm->state;
+
+	return 0;
 }
 
 bool pm_device_is_any_busy(void)

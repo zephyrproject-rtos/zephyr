@@ -229,10 +229,6 @@ struct gpio_stm32_data {
 	const struct device *dev;
 	/* user ISR cb */
 	sys_slist_t cb;
-#ifdef CONFIG_PM_DEVICE
-	/* device power state */
-	enum pm_device_state power_state;
-#endif
 };
 
 /**

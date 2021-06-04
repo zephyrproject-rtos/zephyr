@@ -273,8 +273,6 @@ static int vcnl4040_device_ctrl(const struct device *dev,
 #endif
 		}
 
-	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
-		*state = PM_DEVICE_STATE_ACTIVE;
 	}
 
 	return ret;

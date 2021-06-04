@@ -121,20 +121,16 @@ int pm_device_state_set(const struct device *dev,
 			enum pm_device_state device_power_state);
 
 /**
- * @brief Call the get power state function of a device
+ * @brief Obtain the power state of a device.
  *
- * This function lets the caller know the current device
- * power state at any time. This state will be one of the defined
- * power states allowed for the devices in that system
- *
- * @param dev pointer to device structure of the driver instance.
- * @param device_power_state Device power state to be filled by the device
+ * @param dev Device instance.
+ * @param state Pointer where device power state will be stored.
  *
  * @retval 0 If successful.
- * @retval Errno Negative errno code if failure.
+ * @retval -ENOSYS If device does not implement power management.
  */
 int pm_device_state_get(const struct device *dev,
-			enum pm_device_state *device_power_state);
+			enum pm_device_state *state);
 
 #ifdef CONFIG_PM_DEVICE
 /**

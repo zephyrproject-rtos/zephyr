@@ -55,10 +55,6 @@ struct bme280_data {
 	int32_t t_fine;
 
 	uint8_t chip_id;
-
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state; /* Current power state */
-#endif
 };
 
 struct bme280_config {
@@ -199,8 +195,10 @@ static int bme280_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 #ifdef CONFIG_PM_DEVICE
+	enum pm_device_state state;
+	(void)pm_device_state_get(dev, &state);
 	/* Do not allow sample fetching from OFF state */
-	if (data->pm_state == PM_DEVICE_STATE_OFF)
+	if (state == PM_DEVICE_STATE_OFF)
 		return -EIO;
 #endif
 
@@ -407,10 +405,6 @@ static int bme280_chip_init(const struct device *dev)
 	/* Wait for the sensor to be ready */
 	k_sleep(K_MSEC(1));
 
-#ifdef CONFIG_PM_DEVICE
-	/* Set power state to ACTIVE */
-	data->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
 	LOG_DBG("\"%s\" OK", dev->name);
 	return 0;
 }
@@ -419,16 +413,17 @@ static int bme280_chip_init(const struct device *dev)
 int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 		   enum pm_device_state *state)
 {
-	struct bme280_data *data = to_data(dev);
-
 	int ret = 0;
 
 	/* Set power state */
 	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		if (*state != data->pm_state) {
+		enum pm_device_state curr_state;
+
+		pm_device_state_get(dev, &curr_state);
+		if (*state != curr_state) {
 
 			/* Switching from OFF to any */
-			if (data->pm_state == PM_DEVICE_STATE_OFF) {
+			if (curr_state == PM_DEVICE_STATE_OFF) {
 
 				/* Re-initialize the chip */
 				ret = bme280_chip_init(dev);
@@ -445,16 +440,7 @@ int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
 					LOG_DBG("CTRL_MEAS write failed: %d",
 						ret);
 			}
-
-			/* Store the new state */
-			if (!ret)
-				data->pm_state = *state;
 		}
-	}
-	/* Get power state */
-	else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = data->pm_state;
 	}
 
 	return ret;
