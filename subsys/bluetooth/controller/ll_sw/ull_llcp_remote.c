@@ -204,9 +204,11 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	case PROC_CHAN_MAP_UPDATE:
 		rp_chmu_rx(conn, ctx,rx);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_rx(conn, ctx, rx);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -217,9 +219,11 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 void ull_cp_priv_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_tx_ack(conn, ctx, tx);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		rp_pu_tx_ack(conn, ctx, tx);
@@ -270,9 +274,11 @@ static void rr_act_run(struct ll_conn *conn)
 	case PROC_CHAN_MAP_UPDATE:
 		rp_chmu_run(conn, ctx, NULL);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_run(conn, ctx, NULL);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);

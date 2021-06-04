@@ -213,9 +213,11 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_CHAN_MAP_UPDATE:
 		lp_chmu_init_proc(ctx);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		lp_comm_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -261,9 +263,11 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	case PROC_TERMINATE:
 		rp_comm_init_proc(ctx);
 		break;
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -554,6 +558,7 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 	return BT_HCI_ERR_SUCCESS;
 }
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, uint16_t max_tx_time)
 {
 	struct proc_ctx *ctx;
@@ -571,6 +576,7 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, 
 
 	return BT_HCI_ERR_SUCCESS;
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
 {
@@ -618,7 +624,7 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 	return BT_HCI_ERR_SUCCESS;
 }
 
-
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
@@ -627,6 +633,7 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 
 	return (ctx && ctx->proc == PROC_DATA_LENGTH_UPDATE);
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 void ull_cp_conn_param_req_reply(struct ll_conn *conn)
 {

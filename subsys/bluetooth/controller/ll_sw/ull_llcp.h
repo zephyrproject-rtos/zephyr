@@ -131,8 +131,10 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code);
  */
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5]);
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 /**
  * @brief Initiate a Data Length Update Procedure.
  */
 uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, uint16_t max_tx_time);
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 

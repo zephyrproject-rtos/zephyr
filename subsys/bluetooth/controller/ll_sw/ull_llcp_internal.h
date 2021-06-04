@@ -1094,6 +1094,8 @@ static inline void rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void 
 {
 	return ull_cp_priv_rp_chmu_run(conn, ctx, param);
 }
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 /*
  * Data Length Update Procedure Helper
  */
@@ -1133,6 +1135,7 @@ static inline void ntf_encode_length_change(struct ll_conn *conn,
 {
 	return ull_cp_priv_ntf_encode_length_change(conn, pdu);
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ll_conn *conn);
