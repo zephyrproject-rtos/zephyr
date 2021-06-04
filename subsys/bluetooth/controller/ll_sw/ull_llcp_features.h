@@ -57,7 +57,7 @@ static inline bool feature_le_ping(struct ll_conn *conn)
 
 static inline bool feature_dle(struct ll_conn *conn)
 {
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX)
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	return conn->llcp.fex.features_used & LL_FEAT_BIT_DLE;
 #else
 	return 0;
