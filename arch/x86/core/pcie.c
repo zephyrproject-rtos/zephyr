@@ -206,22 +206,19 @@ uint32_t pcie_msi_map(unsigned int irq,
 uint16_t pcie_msi_mdr(unsigned int irq,
 		      msi_vector_t *vector)
 {
-#ifdef CONFIG_PCIE_MSI_X
-	if ((vector != NULL) && (vector->msix)) {
-		return 0x4000U | vector->arch.vector;
+	uint16_t msg_data_reg = 0;
+
+#if !defined(CONFIG_INTEL_VTD_ICTL)
+	if (vector != NULL) {
+		msg_data_reg = vector->arch.vector;
+	} else {
+		/* edge triggered */
+		msg_data_reg = 0x4000U | Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 	}
 #endif
-
-	if (vector == NULL) {
-		/* edge triggered */
-		return 0x4000U | Z_IRQ_TO_INTERRUPT_VECTOR(irq);
-	}
-
-	/* VT-D requires it to be 0, so let's return 0 by default */
-	return 0;
+	return msg_data_reg;
 }
 
-#if defined(CONFIG_INTEL_VTD_ICTL) || defined(CONFIG_PCIE_MSI_X)
 
 static inline uint32_t _read_pcie_irq_data(pcie_bdf_t bdf)
 {
@@ -284,6 +281,17 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				return 0;
 			}
 
+#ifdef CONFIG_PCIE_MSI_X
+			if (!vectors[0].msix)
+#endif
+			{
+				if (prev_vector != -1) {
+					__ASSERT(prev_vector == (vectors[i].arch.vector - 1),
+						"Failed to obtain contiguous MSI vectors\n");
+					return 0;
+				}
+			}
+
 			prev_vector = vectors[i].arch.vector;
 		}
 	} else {
@@ -298,6 +306,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 				  const void *parameter,
 				  uint32_t flags)
 {
+	ARG_UNUSED(flags);
 #ifdef CONFIG_INTEL_VTD_ICTL
 	if (vector->arch.remap) {
 		if (!get_vtd()) {
@@ -308,11 +317,10 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 	}
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
-	z_x86_irq_connect_on_vector(vector->arch.irq, vector->arch.vector,
-				    routine, parameter, flags);
+	z_x86_connect_on_vector(vector->arch.vector,
+				    routine, parameter);
 
 	return true;
 }
 
-#endif /* CONFIG_INTEL_VTD_ICTL || CONFIG_PCIE_MSI_X */
 #endif /* CONFIG_PCIE_MSI */

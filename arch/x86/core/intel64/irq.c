@@ -80,6 +80,14 @@ int z_x86_allocate_vector(unsigned int priority, int prev_vector)
 	return -1;
 }
 
+void z_x86_connect_on_vector(uint8_t vector,
+				 void (*func)(const void *arg),
+				 const void *arg)
+{
+	x86_irq_funcs[vector - IV_IRQS] = func;
+	x86_irq_args[vector - IV_IRQS] = arg;
+}
+
 void z_x86_irq_connect_on_vector(unsigned int irq,
 				 uint8_t vector,
 				 void (*func)(const void *arg),
@@ -87,8 +95,7 @@ void z_x86_irq_connect_on_vector(unsigned int irq,
 {
 	_irq_to_interrupt_vector[irq] = vector;
 	z_irq_controller_irq_config(vector, irq, flags);
-	x86_irq_funcs[vector - IV_IRQS] = func;
-	x86_irq_args[vector - IV_IRQS] = arg;
+	z_x86_connect_on_vector(vector, func, arg);
 }
 
 /*
