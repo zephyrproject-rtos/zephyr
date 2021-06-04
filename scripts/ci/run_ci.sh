@@ -189,8 +189,14 @@ if [ -n "$main_ci" ]; then
 	# Possibly the only record of what exact version is being tested:
 	short_git_log='git log -n 5 --oneline --decorate --abbrev=12 '
 
-	# check what files have changed.
-	SC=`./scripts/ci/what_changed.py --commits ${commit_range}`
+	# check what files have changed for PRs or local runs.  If we are
+	# building for a commit than we always do a "Full Run".
+	if [ -n "${pull_request_nr}" -o -n "${local_run}"  ]; then
+		SC=`./scripts/ci/what_changed.py --commits ${commit_range}`
+	else
+		echo "Full Run"
+		SC="full"
+	fi
 
 	if [ -n "$pull_request_nr" ]; then
 		$short_git_log $remote/${branch}
@@ -198,9 +204,6 @@ if [ -n "$main_ci" ]; then
 		# different location
 # https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
 		git rebase $remote/${branch}
-	else
-		echo "Full Run"
-		SC="full"
 	fi
 	$short_git_log
 
