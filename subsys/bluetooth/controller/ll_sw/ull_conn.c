@@ -820,25 +820,19 @@ bool ull_conn_peer_connected(uint8_t own_addr_type, uint8_t *own_addr,
 
 void ull_conn_setup(memq_link_t *rx_link, struct node_rx_hdr *rx)
 {
-	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
 	struct node_rx_ftr *ftr;
 	struct lll_conn *lll;
 	struct ull_hdr *hdr;
-
-	/* Pass the node rx as mayfly function parameter */
-	mfy.param = rx;
 
 	/* Store the link in the node rx so that when done event is
 	 * processed it can be used to enqueue node rx towards LL context
 	 */
 	rx->link = rx_link;
 
-	ftr = &(rx->rx_ftr);
-
 	/* NOTE: LLL conn context SHALL be after lll_hdr in
 	 *       struct lll_adv and struct lll_scan.
 	 */
+	ftr = &(rx->rx_ftr);
 	lll = *((struct lll_conn **)((uint8_t *)ftr->param +
 				     sizeof(struct lll_hdr)));
 
@@ -847,23 +841,14 @@ void ull_conn_setup(memq_link_t *rx_link, struct node_rx_hdr *rx)
 	 */
 	hdr = HDR_LLL2ULL(ftr->param);
 	if (ull_ref_get(hdr)) {
-		uint32_t ret;
-
+		/* Setup connection in ULL disabled callback,
+		 * pass the node rx as disabled callback parameter.
+		 */
 		LL_ASSERT(!hdr->disabled_cb);
-		hdr->disabled_param = mfy.param;
+		hdr->disabled_param = rx;
 		hdr->disabled_cb = conn_setup_adv_scan_disabled_cb;
-
-		mfy.fp = lll_disable;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-				     TICKER_USER_ID_LLL, 0, &mfy);
-		LL_ASSERT(!ret);
 	} else {
-		uint32_t ret;
-
-		mfy.fp = conn_setup_adv_scan_disabled_cb;
-		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
-				     TICKER_USER_ID_ULL_HIGH, 0, &mfy);
-		LL_ASSERT(!ret);
+		conn_setup_adv_scan_disabled_cb(rx);
 	}
 }
 
@@ -1898,12 +1883,11 @@ static void conn_setup_adv_scan_disabled_cb(void *param)
 	struct node_rx_hdr *rx;
 	struct lll_conn *lll;
 
-	rx = param;
-	ftr = &(rx->rx_ftr);
-
 	/* NOTE: LLL conn context SHALL be after lll_hdr in
 	 *       struct lll_adv and struct lll_scan.
 	 */
+	rx = param;
+	ftr = &(rx->rx_ftr);
 	lll = *((struct lll_conn **)((uint8_t *)ftr->param +
 				     sizeof(struct lll_hdr)));
 	switch (lll->role) {
