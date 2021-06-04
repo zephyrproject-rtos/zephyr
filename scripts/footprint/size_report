@@ -711,6 +711,8 @@ def parse_args():
                         help="Zephyr ELF binary")
     parser.add_argument("-z", "--zephyrbase", required=True,
                         help="Zephyr base path")
+    parser.add_argument("-q", "--quiet", action="store_true",
+                        help="Do not output anything on the screen.")
     parser.add_argument("-o", "--output", required=True,
                         help="Output path")
     parser.add_argument("-w", "--workspace", default=None,
@@ -777,7 +779,8 @@ def main():
                 print("INFO: Unmapped symbol: {0}".format(sym))
 
         root = generate_any_tree(symbol_dict, symsize, common_path_prefix)
-        print_any_tree(root, symsize, args.depth)
+        if not args.quiet:
+            print_any_tree(root, symsize, args.depth)
 
         if args.json:
             exporter = DictExporter()
