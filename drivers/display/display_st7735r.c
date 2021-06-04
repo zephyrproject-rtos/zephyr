@@ -553,10 +553,6 @@ static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
 		ret = -EINVAL;
 	}
 
-	if (cb != NULL) {
-		cb(dev, ret, state, arg);
-	}
-
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */

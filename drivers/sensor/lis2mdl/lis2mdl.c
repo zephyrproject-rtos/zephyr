@@ -507,10 +507,6 @@ static int lis2mdl_pm_control(const struct device *dev, uint32_t ctrl_command,
 		status = -EINVAL;
 	}
 
-	if (cb) {
-		cb(dev, status, state, arg);
-	}
-
 	return status;
 }
 #endif /* CONFIG_PM_DEVICE */

@@ -600,9 +600,6 @@ static int bmp388_device_ctrl(
 		*state = bmp388_get_power_state(dev);
 	}
 
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */

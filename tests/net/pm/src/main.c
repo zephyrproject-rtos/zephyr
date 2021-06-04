@@ -42,9 +42,6 @@ static int fake_dev_pm_control(const struct device *dev, uint32_t command,
 	}
 
 out:
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
 
 	return ret;
 }

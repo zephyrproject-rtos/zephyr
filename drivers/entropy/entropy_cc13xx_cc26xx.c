@@ -312,10 +312,6 @@ static int entropy_cc13xx_cc26xx_pm_control(const struct device *dev,
 		*state = data->pm_state;
 	}
 
-	if (cb) {
-		cb(dev, ret, state, arg);
-	}
-
 	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
