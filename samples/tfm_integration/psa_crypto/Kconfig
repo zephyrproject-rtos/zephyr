@@ -26,12 +26,14 @@ choice
 config PRIVATE_KEY_STATIC
 	bool "Static"
 	help
-	  A static key value will be used for the private key.
+	  A static key value will be used for the elliptic curve 'secp256r1'
+	  private key.
 
 config PRIVATE_KEY_RANDOM
 	bool "Random"
 	help
-	  A randomly generated value will be used for the private key.
+	  A randomly generated value will be used for the elliptic curve
+	  'secp256r1' private key.
 
 endchoice
 
