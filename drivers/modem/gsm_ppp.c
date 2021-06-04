@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_RX_STACK_SIZE               CONFIG_MODEM_GSM_RX_STACK_SIZE
 #define GSM_RECV_MAX_BUF                30
 #define GSM_RECV_BUF_SIZE               128
-#define GSM_ATTACH_RETRY_DELAY_MSEC     1000
+#define GSM_REGISTER_RETRY_DELAY_MSEC   1000
 
 
 /* During the modem setup, we first create DLCI control channel and then
@@ -64,10 +64,11 @@ static struct gsm_modem {
 
 	struct net_if *iface;
 
-	int attach_retries;
+	int register_retries;
+	bool eps_registered : 1;
+	bool gprs_registered : 1;
 	bool mux_enabled : 1;
 	bool mux_setup_done : 1;
-	bool setup_done : 1;
 } gsm;
 
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
@@ -260,24 +261,44 @@ static const struct setup_cmd setup_cmds[] = {
 	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
 };
 
-MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_gprs_network_registration)
 {
-	int error = -EAGAIN;
-
-	/* Expected response is "+CGATT: 0|1" so simply look for '1' */
-	if (argc && atoi(argv[0]) == 1) {
-		error = 0;
-		LOG_INF("Attached to packet service!");
+	/* Expected response is "+CGREG: urc_enabled,status"
+	 * Status values:
+	 * 1 - registered, home network
+	 * 5 - registered, roaming
+	 */
+	int status = atoi(argv[1]);
+	if (argc > 1 && (status == 1 || status == 5)) {
+		gsm.gprs_registered = true;
+		LOG_INF("GPRS network registered: %d.", status);
 	}
-
-	modem_cmd_handler_set_error(data, error);
-	k_sem_give(&gsm.sem_response);
 
 	return 0;
 }
 
-static const struct modem_cmd check_attached_cmd =
-	MODEM_CMD("+CGATT:", on_cmd_atcmdinfo_attached, 1U, ",");
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_eps_network_registration)
+{
+	/* Expected response is "+CEREG: urc_enabled,status"
+	 * Status values:
+	 * 1 - registered, home network
+	 * 5 - registered, roaming
+	 */
+	int status = atoi(argv[1]);
+	if (argc > 1 && (status == 1 || status == 5)) {
+		gsm.eps_registered = true;
+		LOG_INF("EPS network registered: %d.", status);
+	}
+
+	return 0;
+}
+
+static struct setup_cmd check_registration_cmds[] = {
+	/* GPRS network registration. */
+	SETUP_CMD("AT+CGREG?", "+CGREG:", on_cmd_atcmdinfo_gprs_network_registration, 2U, ","),
+	/* EPS network registration. */
+	SETUP_CMD("AT+CEREG?", "+CEREG:", on_cmd_atcmdinfo_eps_network_registration, 2U, ","),
+};
 
 static const struct setup_cmd connect_cmds[] = {
 	/* connect to network */
@@ -353,9 +374,9 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 {
 	int ret;
 
-	/* If attach check failed, we should not redo every setup step */
-	if (gsm->attach_retries) {
-		goto attaching;
+	/* If registration check failed, we should not redo every setup step. */
+	if (gsm->register_retries) {
+		goto registering;
 	}
 
 	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
@@ -399,36 +420,35 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 		return;
 	}
 
-attaching:
-	/* Don't initialize PPP until we're attached to packet service */
-	ret = modem_cmd_send_nolock(&gsm->context.iface,
-				    &gsm->context.cmd_handler,
-				    &check_attached_cmd, 1,
-				    "AT+CGATT?",
-				    &gsm->sem_response,
-				    GSM_CMD_SETUP_TIMEOUT);
-	if (ret < 0) {
+registering:
+	/* Don't initialize PPP until we're registered in EPS/GPRS network. */
+	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface, &gsm->context.cmd_handler,
+						  check_registration_cmds,
+						  ARRAY_SIZE(check_registration_cmds),
+						  &gsm->sem_response, GSM_CMD_SETUP_TIMEOUT);
+
+	if (ret < 0 || !(gsm->gprs_registered || gsm->eps_registered)) {
 		/*
-		 * attach_retries not set        -> trigger N attach retries
-		 * attach_retries set            -> decrement and retry
-		 * attach_retries set, becomes 0 -> trigger full retry
+		 * register_retry not set        -> trigger 10 register retries
+		 * register_retry set            -> decrement and retry
+		 * register_retry set, becomes 0 -> trigger full retry
 		 */
-		if (!gsm->attach_retries) {
-			gsm->attach_retries = CONFIG_MODEM_GSM_ATTACH_TIMEOUT *
-				MSEC_PER_SEC / GSM_ATTACH_RETRY_DELAY_MSEC;
+		if (!gsm->register_retries) {
+			gsm->register_retries = CONFIG_MODEM_GSM_ATTACH_TIMEOUT * MSEC_PER_SEC /
+						GSM_REGISTER_RETRY_DELAY_MSEC;
 		} else {
-			gsm->attach_retries--;
+			gsm->register_retries--;
 		}
 
-		LOG_DBG("Not attached, %s", "retrying...");
+		LOG_DBG("Not registered, retrying...");
 
 		(void)k_work_reschedule(&gsm->gsm_configure_work,
-					K_MSEC(GSM_ATTACH_RETRY_DELAY_MSEC));
+					K_MSEC(GSM_REGISTER_RETRY_DELAY_MSEC));
 		return;
 	}
 
 	/* Attached, clear retry counter */
-	gsm->attach_retries = 0;
+	gsm->register_retries = 0;
 
 	LOG_DBG("modem setup returned %d, %s", ret, "enable PPP");
 
@@ -444,8 +464,6 @@ attaching:
 		(void)k_work_reschedule(&gsm->gsm_configure_work, K_SECONDS(1));
 		return;
 	}
-
-	gsm->setup_done = true;
 
 	set_ppp_carrier_on(gsm);
 
