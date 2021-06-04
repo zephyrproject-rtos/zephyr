@@ -238,7 +238,7 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 		(can->crel & CAN_MCAN_CREL_MON) >> CAN_MCAN_CREL_MON_POS,
 		(can->crel & CAN_MCAN_CREL_DAY) >> CAN_MCAN_CREL_DAY_POS);
 
-#ifndef CONFIG_CAN_STM32FD
+#ifndef CONFIG_CAN_STM32FD_LITE
 	can->sidfc = ((uint32_t)msg_ram->std_filt & CAN_MCAN_SIDFC_FLSSA_MSK) |
 		     (ARRAY_SIZE(msg_ram->std_filt) << CAN_MCAN_SIDFC_LSS_POS);
 	can->xidfc = ((uint32_t)msg_ram->ext_filt & CAN_MCAN_XIDFC_FLESA_MSK) |
@@ -291,7 +291,7 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 
 #endif
 
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 	can->rxgfc |= (CONFIG_CAN_MAX_STD_ID_FILTER << CAN_MCAN_RXGFC_LSS_POS) |
 		      (CONFIG_CAN_MAX_EXT_ID_FILTER << CAN_MCAN_RXGFC_LSE_POS) |
 		      (0x2 << CAN_MCAN_RXGFC_ANFS_POS) |
@@ -299,7 +299,7 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 #else
 	can->gfc |= (0x2 << CAN_MCAN_GFC_ANFE_POS) |
 		    (0x2 << CAN_MCAN_GFC_ANFS_POS);
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 	if (cfg->sample_point) {
 		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
@@ -356,7 +356,7 @@ int can_mcan_init(const struct device *dev, const struct can_mcan_config *cfg,
 		  CAN_MCAN_IE_RF0N | CAN_MCAN_IE_RF1N | CAN_MCAN_IE_RF0L |
 		  CAN_MCAN_IE_RF1L;
 
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 	can->ils = CAN_MCAN_ILS_RXFIFO0 | CAN_MCAN_ILS_RXFIFO1;
 #else
 	can->ils = CAN_MCAN_ILS_RF0N | CAN_MCAN_ILS_RF1N;
@@ -428,16 +428,20 @@ void can_mcan_line_0_isr(const struct can_mcan_config *cfg,
 {
 	struct can_mcan_reg *can = cfg->can;
 
+	LOG_DBG("%s: %s, %d", __func__, __FILE__, __LINE__);
+
 	do {
 		if (can->ir & (CAN_MCAN_IR_BO | CAN_MCAN_IR_EP |
 			       CAN_MCAN_IR_EW)) {
 			can->ir = CAN_MCAN_IR_BO | CAN_MCAN_IR_EP |
 				  CAN_MCAN_IR_EW;
+			LOG_DBG("%s: %s: state_change, %d", __func__, __FILE__, __LINE__);
 			can_mcan_state_change_handler(cfg, data);
 		}
 		/* TX event FIFO new entry */
 		if (can->ir & CAN_MCAN_IR_TEFN) {
 			can->ir = CAN_MCAN_IR_TEFN;
+			LOG_DBG("%s: %s: CAN_MCAN_IR_TEFN, %d", __func__, __FILE__, __LINE__);
 			can_mcan_tc_event_handler(can, msg_ram, data);
 		}
 
@@ -656,15 +660,23 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 		return CAN_TX_BUS_OFF;
 	}
 
+	LOG_DBG("%s: %s, %d", __func__, __FILE__, __LINE__);
+
 	ret = k_sem_take(&data->tx_sem, timeout);
 	if (ret != 0) {
 		return CAN_TIMEOUT;
 	}
 
+	LOG_DBG("%s: %s, %d", __func__, __FILE__, __LINE__);
+
 	__ASSERT_NO_MSG((can->txfqs & CAN_MCAN_TXFQS_TFQF) !=
 			CAN_MCAN_TXFQS_TFQF);
 
+	LOG_DBG("%s: %s, %d", __func__, __FILE__, __LINE__);
+
 	k_mutex_lock(&data->tx_mtx, K_FOREVER);
+
+	LOG_DBG("%s: %s, %d", __func__, __FILE__, __LINE__);
 
 	put_idx = ((can->txfqs & CAN_MCAN_TXFQS_TFQPI) >>
 		   CAN_MCAN_TXFQS_TFQPI_POS);
@@ -689,6 +701,8 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 		*dst = *src;
 	}
 
+	LOG_DBG("%s: %s, %d", __func__, __FILE__, __LINE__);
+
 	data->tx_fin_cb[put_idx] = callback;
 	data->tx_fin_cb_arg[put_idx] = callback_arg;
 
@@ -696,10 +710,14 @@ int can_mcan_send(const struct can_mcan_config *cfg,
 
 	k_mutex_unlock(&data->tx_mtx);
 
+	LOG_DBG("%s: %s, %d", __func__, __FILE__, __LINE__);
+
 	if (callback == NULL) {
 		LOG_DBG("Waiting for TX complete");
 		k_sem_take(&data->tx_fin_sem[put_idx], K_FOREVER);
 	}
+
+	LOG_INF("%s: %s, %d! Yay!", __func__, __FILE__, __LINE__);
 
 	return CAN_TX_OK;
 }

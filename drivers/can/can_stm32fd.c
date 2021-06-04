@@ -35,8 +35,13 @@ int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 
 	*rate = rate_tmp / CONFIG_CAN_STM32_CLOCK_DIVISOR;
 
+	LOG_DBG("%s: rate=%d", __func__, *rate);
+
 	return 0;
 }
+
+#define CLEAR_BIT(REG, BIT)   ((REG) &= ~(BIT))
+
 
 void can_stm32fd_clock_enable(void)
 {
@@ -47,6 +52,8 @@ void can_stm32fd_clock_enable(void)
 	if (!LL_RCC_PLL1Q_IsEnabled()) {
 		LOG_ERR("PLL1Q clock must be enabled!");
 	}
+
+	LOG_DBG("can_stm32fd_clock_enable");
 #else
 	LL_RCC_SetFDCANClockSource(LL_RCC_FDCAN_CLKSOURCE_PCLK1);
 	__HAL_RCC_FDCAN_CLK_ENABLE();
@@ -108,6 +115,8 @@ int can_stm32fd_send(const struct device *dev, const struct zcan_frame *frame,
 	const struct can_mcan_config *mcan_cfg = &cfg->mcan_cfg;
 	struct can_mcan_data *mcan_data = &DEV_DATA(dev)->mcan_data;
 	struct can_mcan_msg_sram *msg_ram = cfg->msg_sram;
+
+	LOG_DBG("%s:", __func__);
 
 	return can_mcan_send(mcan_cfg, mcan_data, msg_ram, frame, timeout,
 			     callback, callback_arg);

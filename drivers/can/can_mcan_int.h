@@ -307,7 +307,7 @@
 #define CAN_MCAN_TDCR_TDCO           CAN_MCAN_TDCR_TDCO_MSK
 
 /***************  Bit definition for CAN_MCAN_IR register  ********************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Rx FIFO 0 New Message */
 #define CAN_MCAN_IR_RF0N_POS         (0U)
 #define CAN_MCAN_IR_RF0N_MSK         (0x1UL << CAN_MCAN_IR_RF0N_POS)
@@ -405,7 +405,7 @@
 #define CAN_MCAN_IR_ARA_MSK          (0x1UL << CAN_MCAN_IR_ARA_POS)
 #define CAN_MCAN_IR_ARA              CAN_MCAN_IR_ARA_MSK
 
-#else /* CONFIG_CAN_STM32FD */
+#else /* CONFIG_CAN_STM32FD_LITE */
 
 /* Rx FIFO 0 New Message */
 #define CAN_MCAN_IR_RF0N_POS         (0U)
@@ -528,10 +528,10 @@
 #define CAN_MCAN_IR_ARA_MSK          (0x1UL << CAN_MCAN_IR_ARA_POS)
 #define CAN_MCAN_IR_ARA              CAN_MCAN_IR_ARA_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_IE register  ********************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Rx FIFO 0 New Message Enable */
 #define CAN_MCAN_IE_RF0N_POS        (0U)
 #define CAN_MCAN_IE_RF0N_MSK        (0x1UL << CAN_MCAN_IE_RF0N_POS)
@@ -629,7 +629,7 @@
 #define CAN_MCAN_IE_ARA_MSK         (0x1UL << CAN_MCAN_IE_ARA_POS)
 #define CAN_MCAN_IE_ARA             CAN_MCAN_IE_ARA_MSK
 
-#else /* CONFIG_CAN_STM32FD */
+#else /* CONFIG_CAN_STM32FD_LITE */
 
 /* Rx FIFO 0 New Message */
 #define CAN_MCAN_IE_RF0N_POS         (0U)
@@ -752,10 +752,10 @@
 #define CAN_MCAN_IE_ARA_MSK          (0x1UL << CAN_MCAN_IE_ARA_POS)
 #define CAN_MCAN_IE_ARA              CAN_MCAN_IE_ARA_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_ILS register  *******************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Rx FIFO 0 */
 #define CAN_MCAN_ILS_RXFIFO0_POS     (0U)
 #define CAN_MCAN_ILS_RXFIFO0_MSK     (0x1UL << CAN_MCAN_ILS_RXFIFO0_POS)
@@ -785,7 +785,7 @@
 #define CAN_MCAN_ILS_PERR_MSK        (0x1UL << CAN_MCAN_ILS_PERR_POS)
 #define CAN_MCAN_ILS_PERR            CAN_MCAN_ILS_PERR_MSK
 
-#else/* CONFIG_CAN_STM32FD */
+#else/* CONFIG_CAN_STM32FD_LITE */
 /* Rx FIFO 0 New Message */
 #define CAN_MCAN_ILS_RF0N_POS         (0U)
 #define CAN_MCAN_ILS_RF0N_MSK         (0x1UL << CAN_MCAN_ILS_RF0N_POS)
@@ -907,7 +907,7 @@
 #define CAN_MCAN_ILS_ARA_MSK          (0x1UL << CAN_MCAN_ILS_ARA_POS)
 #define CAN_MCAN_ILS_ARA              CAN_MCAN_IL_ARA_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_ILE register  *******************/
 /* Enable Interrupt Line 0 */
@@ -920,7 +920,7 @@
 #define CAN_MCAN_ILE_EINT1           CAN_MCAN_ILE_EINT1_MSK
 
 /***************  Bit definition for CAN_MCAN_RXGFC register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Reject Remote Frames Extended */
 #define CAN_MCAN_RXGFC_RRFE_POS      (0U)
 #define CAN_MCAN_RXGFC_RRFE_MSK      (0x1UL << CAN_MCAN_RXGFC_RRFE_POS)
@@ -954,7 +954,7 @@
 #define CAN_MCAN_RXGFC_LSE_MSK       (0xFUL << CAN_MCAN_RXGFC_LSE_POS)
 #define CAN_MCAN_RXGFC_LSE           CAN_MCAN_RXGFC_LSE_MSK
 
-#else /* CONFIG_CAN_STM32FD */
+#else /* CONFIG_CAN_STM32FD_LITE */
 
 /* Reject Remote Frames Extended */
 #define CAN_MCAN_GFC_RRFE_POS      (0U)
@@ -991,7 +991,7 @@
 #define CAN_MCAN_XIDFC_LSS_MSK      (0x7FUL << CAN_MCAN_XIDFC_LSS_POS)
 #define CAN_MCAN_XIDFC_LSS          CAN_MCAN_XIDFC_LSS_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_XIDAM register  *****************/
 /* Extended ID Mask */
@@ -1000,7 +1000,7 @@
 #define CAN_MCAN_XIDAM_EIDM          CAN_MCAN_XIDAM_EIDM_MSK
 
 /***************  Bit definition for CAN_MCAN_HPMS register  ******************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Buffer Index */
 #define CAN_MCAN_HPMS_BIDX_POS       (0U)
 #define CAN_MCAN_HPMS_BIDX_MSK       (0x7UL << CAN_MCAN_HPMS_BIDX_POS)
@@ -1018,7 +1018,7 @@
 #define CAN_MCAN_HPMS_FLST_MSK       (0x1UL << CAN_MCAN_HPMS_FLST_POS)
 #define CAN_MCAN_HPMS_FLST           CAN_MCAN_HPMS_FLST_MSK
 
-#else /* CONFIG_CAN_STM32FD */
+#else /* CONFIG_CAN_STM32FD_LITE */
 
 /* Buffer Index */
 #define CAN_MCAN_HPMS_BIDX_POS       (0U)
@@ -1037,7 +1037,7 @@
 #define CAN_MCAN_HPMS_FLST_MSK       (0x1UL << CAN_MCAN_HPMS_FLST_POS)
 #define CAN_MCAN_HPMS_FLST           CAN_MCAN_HPMS_FLST_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_RXF0C register  *****************/
 /* Rx FIFO 0 Start Address */
@@ -1058,7 +1058,7 @@
 #define CAN_MCAN_RXF0C_F0OM           CAN_MCAN_RXF0C_F0OM_MSK
 
 /***************  Bit definition for CAN_MCAN_RXF0S register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Rx FIFO 0 Fill Level */
 #define CAN_MCAN_RXF0S_F0FL_POS      (0U)
 #define CAN_MCAN_RXF0S_F0FL_MSK      (0xFUL << CAN_MCAN_RXF0S_F0FL_POS)
@@ -1080,7 +1080,7 @@
 #define CAN_MCAN_RXF0S_RF0L_MSK      (0x1UL << CAN_MCAN_RXF0S_RF0L_POS)
 #define CAN_MCAN_RXF0S_RF0L          CAN_MCAN_RXF0S_RF0L_MSK
 
-#else /* CONFIG_CAN_STM32FD */
+#else /* CONFIG_CAN_STM32FD_LITE */
 
 /* Rx FIFO 0 Fill Level */
 #define CAN_MCAN_RXF0S_F0FL_POS      (0U)
@@ -1105,7 +1105,7 @@
 #endif
 
 /***************  Bit definition for CAN_MCAN_RXF0A register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Rx FIFO 0 Acknowledge Index */
 #define CAN_MCAN_RXF0A_F0AI_POS      (0U)
 #define CAN_MCAN_RXF0A_F0AI_MSK      (0x7UL << CAN_MCAN_RXF0A_F0AI_POS)
@@ -1116,7 +1116,7 @@
 #define CAN_MCAN_RXF0A_F0AI_MSK      (0x3FUL << CAN_MCAN_RXF0A_F0AI_POS)
 #define CAN_MCAN_RXF0A_F0AI          CAN_MCAN_RXF0A_F0AI_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_RXBC register  ******************/
 /*  Rx Buffer Start Address */
@@ -1143,7 +1143,7 @@
 #define CAN_MCAN_RXF1C_F1OM           CAN_MCAN_RXF1C_F1OM_MSK
 
 /***************  Bit definition for CAN_MCAN_RXF1S register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Rx FIFO 1 Fill Level */
 #define CAN_MCAN_RXF1S_F1FL_POS      (0U)
 #define CAN_MCAN_RXF1S_F1FL_MSK      (0xFUL << CAN_MCAN_RXF1S_F1FL_POS)
@@ -1165,7 +1165,7 @@
 #define CAN_MCAN_RXF1S_RF1L_MSK      (0x1UL << CAN_MCAN_RXF1S_RF1L_POS)
 #define CAN_MCAN_RXF1S_RF1L          CAN_MCAN_RXF1S_RF1L_MSK
 
-#else /* CONFIG_CAN_STM32FD */
+#else /* CONFIG_CAN_STM32FD_LITE */
 
 /* Rx FIFO 1 Fill Level */
 #define CAN_MCAN_RXF1S_F1FL_POS      (0U)
@@ -1188,11 +1188,11 @@
 #define CAN_MCAN_RXF1S_RF1L_MSK      (0x1UL << CAN_MCAN_RXF1S_RF1L_POS)
 #define CAN_MCAN_RXF1S_RF1L          CAN_MCAN_RXF1S_RF1L_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_RXF1A register  *****************/
 /* Rx FIFO 1 Acknowledge Index */
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 #define CAN_MCAN_RXF1A_F1AI_POS      (0U)
 #define CAN_MCAN_RXF1A_F1AI_MSK      (0x7UL << CAN_MCAN_RXF1A_F1AI_POS)
 #define CAN_MCAN_RXF1A_F1AI          CAN_MCAN_RXF1A_F1AI_MSK
@@ -1200,7 +1200,7 @@
 #define CAN_MCAN_RXF1A_F1AI_POS      (0U)
 #define CAN_MCAN_RXF1A_F1AI_MSK      (0x3FUL << CAN_MCAN_RXF1A_F1AI_POS)
 #define CAN_MCAN_RXF1A_F1AI          CAN_MCAN_RXF1A_F1AI_MSK
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_RXESC register  *****************/
 /* Rx FIFO 0 Data Field Size */
@@ -1217,7 +1217,7 @@
 #define CAN_MCAN_RXESC_RBDS          CAN_MCAN_RXESC_RBDS_MSK
 
 /***************  Bit definition for CAN_MCAN_TXBC register  ******************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Tx FIFO/Queue Mode */
 #define CAN_MCAN_TXBC_TFQM_POS       (24U)
 #define CAN_MCAN_TXBC_TFQM_MSK       (0x1UL << CAN_MCAN_TXBC_TFQM_POS)
@@ -1240,10 +1240,10 @@
 #define CAN_MCAN_TXBC_TFQM_MSK       (0x3FUL << CAN_MCAN_TXBC_TFQM_POS)
 #define CAN_MCAN_TXBC_TFQM           CAN_MCAN_TXBC_TFQM_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_TXFQS register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Tx FIFO Free Level */
 #define CAN_MCAN_TXFQS_TFFL_POS      (0U)
 #define CAN_MCAN_TXFQS_TFFL_MSK      (0x7UL << CAN_MCAN_TXFQS_TFFL_POS)
@@ -1261,7 +1261,7 @@
 #define CAN_MCAN_TXFQS_TFQF_MSK      (0x1UL << CAN_MCAN_TXFQS_TFQF_POS)
 #define CAN_MCAN_TXFQS_TFQF          CAN_MCAN_TXFQS_TFQF_MSK
 
-#else /* CONFIG_CAN_STM32FD */
+#else /* CONFIG_CAN_STM32FD_LITE */
 
 /* Tx FIFO Free Level */
 #define CAN_MCAN_TXFQS_TFFL_POS      (0U)
@@ -1280,7 +1280,7 @@
 #define CAN_MCAN_TXFQS_TFQF_MSK      (0x1UL << CAN_MCAN_TXFQS_TFQF_POS)
 #define CAN_MCAN_TXFQS_TFQF          CAN_MCAN_TXFQS_TFQF_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_TXESC register  *****************/
 /* Tx Buffer Data Field Size */
@@ -1289,7 +1289,7 @@
 #define CAN_MCAN_TXESC_TBDS          CAN_MCAN_TXESC_TBDS_MSK
 
 /***************  Bit definition for CAN_MCAN_TXBRP register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Transmission Request Pending */
 #define CAN_MCAN_TXBRP_TRP_POS       (0U)
 #define CAN_MCAN_TXBRP_TRP_MSK       (0x7UL << CAN_MCAN_TXBRP_TRP_POS)
@@ -1299,10 +1299,10 @@
 #define CAN_MCAN_TXBRP_TRP_POS       (0U)
 #define CAN_MCAN_TXBRP_TRP_MSK       (0xFFFFFFFFUL << CAN_MCAN_TXBRP_TRP_POS)
 #define CAN_MCAN_TXBRP_TRP           CAN_MCAN_TXBRP_TRP_MSK
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_TXBAR register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Add Request */
 #define CAN_MCAN_TXBAR_AR_POS        (0U)
 #define CAN_MCAN_TXBAR_AR_MSK        (0x7UL << CAN_MCAN_TXBAR_AR_POS)
@@ -1312,10 +1312,10 @@
 #define CAN_MCAN_TXBAR_AR_POS        (0U)
 #define CAN_MCAN_TXBAR_AR_MSK        (0xFFFFFFFFUL << CAN_MCAN_TXBAR_AR_POS)
 #define CAN_MCAN_TXBAR_AR            CAN_MCAN_TXBAR_AR_MSK
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_TXBCR register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Cancellation Request */
 #define CAN_MCAN_TXBCR_CR_POS        (0U)
 #define CAN_MCAN_TXBCR_CR_MSK        (0x7UL << CAN_MCAN_TXBCR_CR_POS)
@@ -1325,10 +1325,10 @@
 #define CAN_MCAN_TXBCR_CR_POS        (0U)
 #define CAN_MCAN_TXBCR_CR_MSK        (0xFFFFFFFFUL << CAN_MCAN_TXBCR_CR_POS)
 #define CAN_MCAN_TXBCR_CR            CAN_MCAN_TXBCR_CR_MSK
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_TXBTO register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Transmission Occurred */
 #define CAN_MCAN_TXBTO_TO_POS        (0U)
 #define CAN_MCAN_TXBTO_TO_MSK        (0x7UL << CAN_MCAN_TXBTO_TO_POS)
@@ -1338,10 +1338,10 @@
 #define CAN_MCAN_TXBTO_TO_POS        (0U)
 #define CAN_MCAN_TXBTO_TO_MSK        (0xFFFFFFFFUL << CAN_MCAN_TXBTO_TO_POS)
 #define CAN_MCAN_TXBTO_TO            CAN_MCAN_TXBTO_TO_MSK
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_TXBCF register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Cancellation Finished */
 #define CAN_MCAN_TXBCF_CF_POS        (0U)
 #define CAN_MCAN_TXBCF_CF_MSK        (0x7UL << CAN_MCAN_TXBCF_CF_POS)
@@ -1351,10 +1351,10 @@
 #define CAN_MCAN_TXBCF_CF_POS        (0U)
 #define CAN_MCAN_TXBCF_CF_MSK        (0xFFFFFFFFUL << CAN_MCAN_TXBCF_CF_POS)
 #define CAN_MCAN_TXBCF_CF            CAN_MCAN_TXBCF_CF_MSK
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_TXBTIE register  ****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Transmission Interrupt Enable */
 #define CAN_MCAN_TXBTIE_TIE_POS      (0U)
 #define CAN_MCAN_TXBTIE_TIE_MSK      (0x7UL << CAN_MCAN_TXBTIE_TIE_POS)
@@ -1364,10 +1364,10 @@
 #define CAN_MCAN_TXBTIE_TIE_POS      (0U)
 #define CAN_MCAN_TXBTIE_TIE_MSK      (0xFFFFFFFFUL << CAN_MCAN_TXBTIE_TIE_POS)
 #define CAN_MCAN_TXBTIE_TIE          CAN_MCAN_TXBTIE_TIE_MSK
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_ TXBCIE register  ***************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Cancellation Finished Interrupt Enable */
 #define CAN_MCAN_TXBCIE_CFIE_POS     (0U)
 #define CAN_MCAN_TXBCIE_CFIE_MSK     (0x7UL << CAN_MCAN_TXBCIE_CFIE_POS)
@@ -1377,7 +1377,7 @@
 #define CAN_MCAN_TXBCIE_CFIE_POS     (0U)
 #define CAN_MCAN_TXBCIE_CFIE_MSK     (0xFFFFFFFFUL << CAN_MCAN_TXBCIE_CFIE_POS)
 #define CAN_MCAN_TXBCIE_CFIE         CAN_MCAN_TXBCIE_CFIE_MSK
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_TXEFC register  *****************/
 /* Event FIFO Watermark */
@@ -1394,7 +1394,7 @@
 #define CAN_MCAN_TXEFC_EFWM         CAN_MCAN_TXEFC_EFWM_POS
 
 /***************  Bit definition for CAN_MCAN_TXEFS register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Event FIFO Fill Level */
 #define CAN_MCAN_TXEFS_EFFL_POS      (0U)
 #define CAN_MCAN_TXEFS_EFFL_MSK      (0x7UL << CAN_MCAN_TXEFS_EFFL_POS)
@@ -1416,7 +1416,7 @@
 #define CAN_MCAN_TXEFS_TEFL_MSK      (0x1UL << CAN_MCAN_TXEFS_TEFL_POS)
 #define CAN_MCAN_TXEFS_TEFL          CAN_MCAN_TXEFS_TEFL_MSK
 
-#else /* CONFIG_CAN_STM32FD */
+#else /* CONFIG_CAN_STM32FD_LITE */
 /* Event FIFO Fill Level */
 #define CAN_MCAN_TXEFS_EFFL_POS      (0U)
 #define CAN_MCAN_TXEFS_EFFL_MSK      (0x3FUL << CAN_MCAN_TXEFS_EFFL_POS)
@@ -1438,10 +1438,10 @@
 #define CAN_MCAN_TXEFS_TEFL_MSK      (0x1UL << CAN_MCAN_TXEFS_TEFL_POS)
 #define CAN_MCAN_TXEFS_TEFL          CAN_MCAN_TXEFS_TEFL_MSK
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 /***************  Bit definition for CAN_MCAN_TXEFA register  *****************/
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 /* Event FIFO Acknowledge Index */
 #define CAN_MCAN_TXEFA_EFAI_POS      (0U)
 #define CAN_MCAN_TXEFA_EFAI_MSK      (0x3UL << CAN_MCAN_TXEFA_EFAI_POS)
@@ -1451,9 +1451,9 @@
 #define CAN_MCAN_TXEFA_EFAI_POS      (0U)
 #define CAN_MCAN_TXEFA_EFAI_MSK      (0x1FUL << CAN_MCAN_TXEFA_EFAI_POS)
 #define CAN_MCAN_TXEFA_EFAI          CAN_MCAN_TXEFA_EFAI_MSK
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
-#ifdef CONFIG_CAN_STM32FD
+#ifdef CONFIG_CAN_STM32FD_LITE
 struct can_mcan_reg {
 	volatile uint32_t crel;     /* Core Release Register */
 	volatile uint32_t endn;     /* Endian Register */
@@ -1524,7 +1524,7 @@ struct can_mcan_reg {
 	uint32_t res6;              /* Reserved (1) */
 #endif  /* CONFIG_SOC_SERIES_STM32H7X */
 };
-#else /* CONFIG_CAN_STM32FD */
+#else /* CONFIG_CAN_STM32FD_LITE */
 
 struct can_mcan_reg {
 	volatile uint32_t crel;     /* Core Release Register */
@@ -1579,8 +1579,11 @@ struct can_mcan_reg {
 	volatile uint32_t txefc;    /* Tx Event FIFO Configuration */
 	volatile uint32_t txefs;    /* Tx Event FIFO Status */
 	volatile uint32_t txefa;    /* Tx Event FIFO Acknowledge */
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	uint32_t res6;              /* Reserved (1) */
+#endif  /* CONFIG_SOC_SERIES_STM32H7X */
 };
 
-#endif /* CONFIG_CAN_STM32FD */
+#endif /* CONFIG_CAN_STM32FD_LITE */
 
 #endif /*ZEPHYR_DRIVERS_CAN_MCAN_INT_H_*/
