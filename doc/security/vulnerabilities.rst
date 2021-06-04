@@ -820,3 +820,8 @@ Integer Underflow in 6LoWPAN IPHC Header Uncompression
   <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-116>`_
 
 - This issue has not been fixed.
+
+CVE-2021-3581
+-------------
+
+Under embargo until 2021/09/04
