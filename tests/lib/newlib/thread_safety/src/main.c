@@ -25,7 +25,7 @@
 static struct k_thread tdata[THREAD_COUNT];
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_COUNT, STACK_SIZE);
 
-void malloc_thread(void *p1, void *p2, void *p3)
+static void malloc_thread(void *p1, void *p2, void *p3)
 {
 	static atomic_t count;
 	bool *aborted = p1;
@@ -62,7 +62,7 @@ void malloc_thread(void *p1, void *p2, void *p3)
  * This test calls the malloc() and free() functions from multiple threads to
  * verify that no corruption occurs in the newlib memory heap.
  */
-void test_malloc_thread_safety(void)
+static void test_malloc_thread_safety(void)
 {
 	int i;
 	k_tid_t tid[THREAD_COUNT];
