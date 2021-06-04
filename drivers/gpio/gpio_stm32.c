@@ -451,9 +451,6 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 static int gpio_stm32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	struct gpio_stm32_data *data = dev->data;
-#endif /* CONFIG_PM_DEVICE_RUNTIME */
 	int err = 0;
 	int pincfg;
 
@@ -466,8 +463,11 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
 	/* Enable device clock before configuration (requires bank writes) */
-	if (data->power_state != PM_DEVICE_STATE_ACTIVE) {
+	if (state != PM_DEVICE_STATE_ACTIVE) {
 		err = pm_device_get(dev);
 		if (err < 0) {
 			return err;
@@ -574,17 +574,9 @@ static const struct gpio_driver_api gpio_stm32_driver = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-static uint32_t gpio_stm32_get_power_state(const struct device *dev)
-{
-	struct gpio_stm32_data *data = dev->data;
-
-	return data->power_state;
-}
-
 static int gpio_stm32_set_power_state(const struct device *dev,
 					      enum pm_device_state new_state)
 {
-	struct gpio_stm32_data *data = dev->data;
 	int ret = 0;
 
 	if (new_state == PM_DEVICE_STATE_ACTIVE) {
@@ -599,8 +591,6 @@ static int gpio_stm32_set_power_state(const struct device *dev,
 		return ret;
 	}
 
-	data->power_state = new_state;
-
 	return 0;
 }
 
@@ -608,19 +598,16 @@ static int gpio_stm32_pm_device_ctrl(const struct device *dev,
 				     uint32_t ctrl_command,
 				     enum pm_device_state *state)
 {
-	struct gpio_stm32_data *data = dev->data;
-	uint32_t new_state;
 	int ret = 0;
 
 	switch (ctrl_command) {
 	case PM_DEVICE_STATE_SET:
-		new_state = *state;
-		if (new_state != data->power_state) {
-			ret = gpio_stm32_set_power_state(dev, new_state);
+		enum pm_device_state curr_state;
+
+		(void)pm_device_state_get(dev, &curr_state);
+		if (*state != curr_state) {
+			ret = gpio_stm32_set_power_state(dev, *state);
 		}
-		break;
-	case PM_DEVICE_STATE_GET:
-		*state = gpio_stm32_get_power_state(dev);
 		break;
 	default:
 		ret = -EINVAL;
@@ -657,14 +644,10 @@ static int gpio_stm32_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME
-	data->power_state = PM_DEVICE_STATE_OFF;
 	pm_device_enable(dev);
 
 	return 0;
 #else
-#ifdef CONFIG_PM_DEVICE
-	data->power_state = PM_DEVICE_STATE_ACTIVE;
-#endif
 	return gpio_stm32_clock_request(dev, true);
 #endif
 }
