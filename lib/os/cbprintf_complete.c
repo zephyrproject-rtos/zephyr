@@ -498,32 +498,18 @@ static inline const char *extract_length(struct conversion *conv,
 	return sp;
 }
 
-/* Extract a C99 conversion specifier.
+/* Additional helper function for the *extract_specifier() function below
  *
- * This is the character that identifies the representation of the converted
- * value.
+ * Disables conversion if necessary
  *
- * @param conv pointer to the conversion being defined.
+ * @param conv pointer to the conversion being defined
  *
- * @param sp pointer to the first character after the length element of a
- * conversion specification.
- *
- * @return a pointer the first character that follows the specifier.
+ * @return value of the variable named unsupported
  */
-static inline const char *extract_specifier(struct conversion *conv,
-					    const char *sp)
+static inline bool sint_uint_unsupported_handler(struct conversion *conv)
 {
-	bool unsupported = false;
+		bool unsupported = false;
 
-	conv->specifier = *sp++;
-
-	switch (conv->specifier) {
-	case SINT_CONV_CASES:
-		conv->specifier_cat = SPECIFIER_SINT;
-		goto int_conv;
-	case UINT_CONV_CASES:
-		conv->specifier_cat = SPECIFIER_UINT;
-int_conv:
 		/* L length specifier not acceptable */
 		if (conv->length_mod == LENGTH_UPPER_L) {
 			conv->invalid = true;
@@ -555,11 +541,46 @@ int_conv:
 				unsupported = sizeof(ptrdiff_t) > 4;
 				break;
 			default:
+				/* Add an empty default with break, this is a defensive
+				 * programming. Static analysis tool won't raise a violation
+				 * if default is empty, but has that comment.
+				 */
 				break;
 			}
 		} else {
 			;
 		}
+	return unsupported;
+}
+
+/* Extract a C99 conversion specifier.
+ *
+ * This is the character that identifies the representation of the converted
+ * value.
+ *
+ * @param conv pointer to the conversion being defined.
+ *
+ * @param sp pointer to the first character after the length element of a
+ * conversion specification.
+ *
+ * @return a pointer the first character that follows the specifier.
+ */
+static inline const char *extract_specifier(struct conversion *conv,
+					    const char *sp)
+{
+	bool unsupported = false;
+
+	conv->specifier = *sp++;
+
+	switch (conv->specifier) {
+	case SINT_CONV_CASES:
+		conv->specifier_cat = SPECIFIER_SINT;
+		unsupported = sint_uint_unsupported_handler(conv);
+		break;
+
+	case UINT_CONV_CASES:
+		conv->specifier_cat = SPECIFIER_UINT;
+		unsupported = sint_uint_unsupported_handler(conv);
 		break;
 
 	case FP_CONV_CASES:
@@ -1327,6 +1348,32 @@ static int outs(cbprintf_cb out,
 	return (int)count;
 }
 
+/* Helper function for the cbvprintf() function below
+ *
+ * Update pad0 values based on precision and converted length.
+ */
+void update_pad0_values(struct conversion *const conv, int precision,
+						const char *bps, const char *bpe)
+{
+	/* Note that a non-empty sign is not in the
+	 * converted sequence, but it does not affect the
+	 * padding size.
+	 */
+	if (precision >= 0) {
+		size_t len = bpe - bps;
+
+		/* Zero-padding flag is ignored for integer
+		 * conversions with precision.
+		 */
+		conv->flag_zero = false;
+
+		/* Set pad0_value to satisfy precision */
+		if (len < (size_t)precision) {
+			conv->pad0_value = precision - (int)len;
+		}
+	}
+}
+
 int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 {
 	char buf[CONVERTED_BUFLEN];
@@ -1611,25 +1658,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 		case 'X':
 			bps = encode_uint(value->uint, conv, buf, bpe);
 
-		prec_int_pad0:
-			/* Update pad0 values based on precision and converted
-			 * length.  Note that a non-empty sign is not in the
-			 * converted sequence, but it does not affect the
-			 * padding size.
-			 */
-			if (precision >= 0) {
-				size_t len = bpe - bps;
-
-				/* Zero-padding flag is ignored for integer
-				 * conversions with precision.
-				 */
-				conv->flag_zero = false;
-
-				/* Set pad0_value to satisfy precision */
-				if (len < (size_t)precision) {
-					conv->pad0_value = precision - (int)len;
-				}
-			}
+			update_pad0_values(conv, precision, bps, bpe);
 
 			break;
 		case 'p':
@@ -1645,7 +1674,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *fp, va_list ap)
 				conv->altform_0c = true;
 				conv->specifier = 'x';
 
-				goto prec_int_pad0;
+				update_pad0_values(conv, precision, bps, bpe);
 			}
 
 			bps = "(nil)";
