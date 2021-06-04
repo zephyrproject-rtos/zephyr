@@ -439,8 +439,6 @@ static int apds9960_device_ctrl(const struct device *dev,
 			}
 		}
 
-	} else if (ctrl_command == PM_DEVICE_STATE_GET) {
-		*state = PM_DEVICE_STATE_ACTIVE;
 	}
 
 	return ret;

@@ -691,8 +691,6 @@ static int bq274xx_enter_shutdown_mode(struct bq274xx_data *data)
 		return status;
 	}
 
-	data->pm_state = PM_DEVICE_STATE_OFF;
-
 	return 0;
 }
 
@@ -755,9 +753,6 @@ static int bq274xx_pm_control(const struct device *dev, uint32_t ctrl_command,
 			LOG_ERR("State to set is not implemented");
 			ret = -ENOTSUP;
 		}
-		break;
-	case PM_DEVICE_STATE_GET:
-		*state = data->pm_state;
 		break;
 	default:
 		ret = -EINVAL;

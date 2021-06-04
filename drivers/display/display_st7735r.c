@@ -63,9 +63,6 @@ struct st7735r_data {
 	const struct device *reset_dev;
 	uint16_t x_offset;
 	uint16_t y_offset;
-#ifdef CONFIG_PM_DEVICE
-	enum pm_device_state pm_state;
-#endif
 };
 
 static void st7735r_set_lcd_margins(struct st7735r_data *data,
@@ -462,10 +459,6 @@ static int st7735r_init(const struct device *dev)
 		}
 	}
 
-#ifdef CONFIG_PM_DEVICE
-	data->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
-
 	data->cmd_data_dev = device_get_binding(config->cmd_data.name);
 	if (data->cmd_data_dev == NULL) {
 		LOG_ERR("Could not get GPIO port for cmd/DATA port");
@@ -519,22 +512,14 @@ static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
 			if (ret < 0) {
 				return ret;
 			}
-			data->pm_state = PM_DEVICE_STATE_ACTIVE;
 		} else {
 			ret = st7735r_enter_sleep(data);
 			if (ret < 0) {
 				return ret;
 			}
-			data->pm_state = PM_DEVICE_STATE_LOW_POWER;
 		}
 
 		break;
-
-	case PM_DEVICE_STATE_GET:
-		*state = data->pm_state;
-
-		break;
-
 	default:
 		ret = -EINVAL;
 	}
