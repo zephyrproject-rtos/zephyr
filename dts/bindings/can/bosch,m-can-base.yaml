@@ -26,3 +26,7 @@ properties:
     tx-buffer-elements:
       type: int
       required: true
+
+    tx-event-fifo-elements:
+      type: int
+      required: true
