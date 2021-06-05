@@ -14,13 +14,14 @@ version 1 databases.
 import logging
 import math
 import struct
+from colorama import Fore
 
 from .log_parser import LogParser
 
 
 HEX_BYTES_IN_LINE = 16
 
-LOG_LEVELS = ['none', 'err', 'wrn', 'inf', 'dbg']
+LOG_LEVELS = [('none', Fore.WHITE), ('err', Fore.RED), ('wrn', Fore.YELLOW), ('inf', Fore.GREEN), ('dbg', Fore.BLUE)]
 
 # Need to keep sync with struct log_dict_output_msg_hdr in
 # include/logging/log_output_dict.h.
@@ -59,10 +60,10 @@ FMT_DROPPED_CNT = "H"
 logger = logging.getLogger("parser")
 
 
-def get_log_level_str(lvl):
+def get_log_level_str_color(lvl):
     """Convert numeric log level to string"""
     if lvl < 0 or lvl >= len(LOG_LEVELS):
-        return "unk"
+        return ("unk", Fore.WHITE)
 
     return LOG_LEVELS[lvl]
 
@@ -317,7 +318,7 @@ class LogParserV1(LogParser):
 
 
     @staticmethod
-    def print_hexdump(hex_data, prefix_len):
+    def print_hexdump(hex_data, prefix_len, color):
         """Print hex dump"""
         hex_vals = ""
         chr_vals = ""
@@ -333,14 +334,14 @@ class LogParserV1(LogParser):
                 chr_vals += " "
 
             elif chr_done == HEX_BYTES_IN_LINE:
-                print("%s%s|%s" % ((" " * prefix_len), hex_vals, chr_vals))
+                print(f"{color}%s%s|%s{Fore.RESET}" % ((" " * prefix_len), hex_vals, chr_vals))
                 hex_vals = ""
                 chr_vals = ""
                 chr_done = 0
 
         if len(chr_vals) > 0:
             hex_padding = "   " * (HEX_BYTES_IN_LINE - chr_done)
-            print("%s%s%s|%s" % ((" " * prefix_len), hex_vals, hex_padding, chr_vals))
+            print(f"{color}%s%s%s|%s{Fore.RESET}" % ((" " * prefix_len), hex_vals, hex_padding, chr_vals))
 
 
     def parse_one_normal_msg(self, logdata, offset):
@@ -358,7 +359,7 @@ class LogParserV1(LogParser):
         pkg_len = (log_desc >> 6) & int(math.pow(2, 10) - 1)
         data_len = (log_desc >> 16) & int(math.pow(2, 12) - 1)
 
-        level_str = get_log_level_str(level)
+        level_str, color = get_log_level_str_color(level)
         source_id_str = self.database.get_log_source_string(domain_id, source_id)
 
         # Skip over data to point to next message (save as return value)
@@ -411,11 +412,11 @@ class LogParserV1(LogParser):
             print("%s" % log_msg, end='')
         else:
             log_prefix = f"[{timestamp:>10}] <{level_str}> {source_id_str}: "
-            print("%s%s" % (log_prefix, log_msg))
+            print(f"{color}%s%s{Fore.RESET}" % (log_prefix, log_msg))
 
         if data_len > 0:
             # Has hexdump data
-            self.print_hexdump(extra_data, len(log_prefix))
+            self.print_hexdump(extra_data, len(log_prefix), color)
 
         # Point to next message
         return next_msg_offset
