@@ -309,6 +309,31 @@ config LOG_BACKEND_FS
 
 if LOG_BACKEND_FS
 
+config LOG_BACKEND_FS_OUTPUT_DICTIONARY
+	bool
+	depends on LOG2
+	select LOG_DICTIONARY_SUPPORT
+	help
+	  FS backend is in dictionary-based logging output mode.
+
+choice
+	prompt "FS Backend Output Mode"
+	default LOG_BACKEND_FS_OUTPUT_TEXT
+
+config LOG_BACKEND_FS_OUTPUT_TEXT
+	bool "Text"
+	help
+	  Output in text.
+
+config LOG_BACKEND_FS_OUTPUT_DICTIONARY_BIN
+	bool "Dictionary (binary)"
+	depends on LOG2
+	select LOG_BACKEND_FS_OUTPUT_DICTIONARY
+	help
+	  Dictionary-based logging output in binary.
+
+endchoice
+
 config LOG_BACKEND_FS_OVERWRITE
 	bool "Enable old log files overwrite"
 	default y
