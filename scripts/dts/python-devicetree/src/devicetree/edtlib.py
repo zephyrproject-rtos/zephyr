@@ -334,7 +334,7 @@ class EDT:
                 # representing the file)
                 raw = yaml.load(contents, Loader=_BindingLoader)
             except yaml.YAMLError as e:
-                _LOG.warning(
+                _err(
                         f"'{binding_path}' appears in binding directories "
                         f"but isn't valid YAML: {e}")
                 continue
