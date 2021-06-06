@@ -31,7 +31,10 @@ static const struct bt_data sd[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_OTS_VAL)),
 };
 
-static uint8_t objects[OBJ_POOL_SIZE][OBJ_MAX_SIZE];
+static struct {
+	uint8_t data[OBJ_MAX_SIZE];
+	char name[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
+} objects[OBJ_POOL_SIZE];
 static uint32_t obj_cnt;
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -118,7 +121,7 @@ static uint32_t ots_obj_read(struct bt_ots *ots, struct bt_conn *conn,
 		return 0;
 	}
 
-	*data = &objects[obj_index][offset];
+	*data = &objects[obj_index].data[offset];
 
 	/* Send even-indexed objects in 20 byte packets
 	 * to demonstrate fragmented transmission.
@@ -168,16 +171,17 @@ static int ots_init(void)
 	}
 
 	/* Prepare first object demo data and add it to the instance. */
-	for (uint32_t i = 0; i < sizeof(objects[0]); i++) {
-		objects[0][i] = i + 1;
+	for (uint32_t i = 0; i < sizeof(objects[0].data); i++) {
+		objects[0].data[i] = i + 1;
 	}
 
 	memset(&obj_init, 0, sizeof(obj_init));
-	obj_init.name = "first_object.txt";
+	strcpy(objects[0].name, "first_object.txt");
+	obj_init.name = objects[0].name;
 	obj_init.type.uuid.type = BT_UUID_TYPE_16;
 	obj_init.type.uuid_16.val = BT_UUID_OTS_TYPE_UNSPECIFIED_VAL;
-	obj_init.size.cur = sizeof(objects[0]);
-	obj_init.size.alloc = sizeof(objects[0]);
+	obj_init.size.cur = sizeof(objects[0].data);
+	obj_init.size.alloc = sizeof(objects[0].data);
 	BT_OTS_OBJ_SET_PROP_READ(obj_init.props);
 
 	err = bt_ots_obj_add(ots, &obj_init);
@@ -187,16 +191,17 @@ static int ots_init(void)
 	}
 
 	/* Prepare second object demo data and add it to the instance. */
-	for (uint32_t i = 0; i < sizeof(objects[1]); i++) {
-		objects[1][i] = i * 2;
+	for (uint32_t i = 0; i < sizeof(objects[1].data); i++) {
+		objects[1].data[i] = i * 2;
 	}
 
 	memset(&obj_init, 0, sizeof(obj_init));
-	obj_init.name = "second_object.gif";
+	strcpy(objects[1].name, "second_object.gif");
+	obj_init.name = objects[1].name;
 	obj_init.type.uuid.type = BT_UUID_TYPE_16;
 	obj_init.type.uuid_16.val = BT_UUID_OTS_TYPE_UNSPECIFIED_VAL;
-	obj_init.size.cur = sizeof(objects[1]);
-	obj_init.size.alloc = sizeof(objects[1]);
+	obj_init.size.cur = sizeof(objects[1].data);
+	obj_init.size.alloc = sizeof(objects[1].data);
 	BT_OTS_OBJ_SET_PROP_READ(obj_init.props);
 
 	err = bt_ots_obj_add(ots, &obj_init);

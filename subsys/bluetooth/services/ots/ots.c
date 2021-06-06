@@ -78,6 +78,31 @@ static ssize_t ots_obj_name_read(struct bt_conn *conn,
 				 strlen(ots->cur_obj->metadata.name));
 }
 
+ssize_t ots_obj_name_write(struct bt_conn *conn,
+			   const struct bt_gatt_attr *attr,
+			   const void *buf, uint16_t len,
+			   uint16_t offset, uint8_t flags)
+{
+	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
+
+	LOG_DBG("OTS Object Name GATT Write Operation");
+
+	if (!ots->cur_obj) {
+		LOG_DBG("No Current Object selected in OTS!");
+		return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
+	}
+
+	if (offset + len > CONFIG_BT_OTS_OBJ_MAX_NAME_LEN) {
+		LOG_DBG("Object name is too long!");
+		return BT_GATT_ERR(BT_GATT_OTS_WRITE_REQUEST_REJECTED);
+	}
+
+	memcpy(ots->cur_obj->metadata.name + offset, buf, len);
+	ots->cur_obj->metadata.name[offset + len] = '\0';
+
+	return len;
+}
+
 static ssize_t ots_obj_type_read(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
@@ -179,7 +204,7 @@ int bt_ots_obj_add(struct bt_ots *ots,
 
 	name_len = strlen(obj_init->name);
 
-	CHECKIF(name_len == 0 || name_len > BT_OTS_OBJ_MAX_NAME_LEN) {
+	CHECKIF(name_len == 0 || name_len > CONFIG_BT_OTS_OBJ_MAX_NAME_LEN) {
 		LOG_DBG("Invalid name length %zu", name_len);
 		return -EINVAL;
 	}
@@ -328,8 +353,9 @@ int bt_ots_init(struct bt_ots *ots,
 		BT_GATT_CHRC_READ, BT_GATT_PERM_READ,			\
 		ots_feature_read, NULL, &_ots),				\
 	BT_GATT_CHARACTERISTIC(BT_UUID_OTS_NAME,			\
-		BT_GATT_CHRC_READ, BT_GATT_PERM_READ,			\
-		ots_obj_name_read, NULL, &_ots),			\
+		BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,			\
+		BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,			\
+		ots_obj_name_read, ots_obj_name_write, &_ots),		\
 	BT_GATT_CHARACTERISTIC(BT_UUID_OTS_TYPE,			\
 		BT_GATT_CHRC_READ, BT_GATT_PERM_READ,			\
 		ots_obj_type_read, NULL, &_ots),			\
