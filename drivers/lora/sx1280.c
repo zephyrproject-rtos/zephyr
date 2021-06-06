@@ -695,8 +695,9 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 
 //     if( RadioSpi != NULL )
 //     {
-	LOG_INF("writeCommand1");
+	LOG_INF("wc1");
 	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+	LOG_INF("wc2");
         // RadioSpi->write( ( uint8_t )command );
         // for( uint16_t i = 0; i < size; i++ )
         // {
@@ -704,7 +705,7 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
         // }
 	int ret;
 
-	const struct spi_buf buf[3] = {
+	const struct spi_buf buf[2] = {
 		{
 			.buf = ( uint8_t ) command, // TODO: might be wrong
 			.len = sizeof(command)
@@ -721,12 +722,15 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 	};
 
 	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+	LOG_INF("wc3: %x", ret);
 
 	if (ret < 0) {
 		LOG_ERR("Unable to write command: 0x%x", ( uint8_t ) command);
 	}
 
-	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+	LOG_INF("wc3.1");
+	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+	LOG_INF("wc4");
 //     }
 //     if( RadioUart != NULL )
 //     {
@@ -907,6 +911,7 @@ void sx1280_WriteRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 {
 //     WaitOnBusy( ); // TODO
 
+	LOG_INF("wr1");
 	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
 
 	int ret;
@@ -941,7 +946,9 @@ void sx1280_WriteRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 		LOG_ERR("Unable to write address: 0x%x", address);
 	}
 
+	LOG_INF("wr_pre_cs_1");
 	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+	LOG_INF("wr_post_cs_1");
 
 //     WaitOnBusy( ); // TODO
 }
@@ -955,7 +962,9 @@ void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 {
 //     WaitOnBusy( ); // TODO
 
+	LOG_INF("rr_1");
     	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+	LOG_INF("rr_2");
 
 	int ret;
 
@@ -993,7 +1002,9 @@ void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 		LOG_ERR("Unable to write address: 0x%x", address);
 	}
 
-	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+	LOG_INF("rr_3");
+	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+	LOG_INF("rr_4");
 
 //     WaitOnBusy( ); // TODO
 }
@@ -1162,10 +1173,12 @@ void sx1280_SetPacketParams( PacketParams_t *packetParams )
 int sx1280_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
 {
-	LOG_INF("lora_config_1");
+	LOG_INF("config1");
 	sx1280_SetStandby(STDBY_RC);
+	LOG_INF("config2");
 	// sx1280_SetRegulatorMode(); // TODO
         sx1280_SetLNAGainSetting(LNA_LOW_POWER_MODE);
+	LOG_INF("config3");
 
 	PacketParams_t PacketParams;
 	ModulationParams_t ModulationParams;
@@ -1183,12 +1196,13 @@ int sx1280_lora_config(const struct device *dev,
         // PacketParams.Params.LoRa.InvertIQ            = ( RadioLoRaIQModes_t )           Eeprom.EepromData.DemoSettings.PacketParam5;
 
         sx1280_SetStandby( STDBY_RC );
+	LOG_INF("config4");
         sx1280_SetPacketType( ModulationParams.PacketType );
         sx1280_SetRfFrequency( config->frequency );
         sx1280_SetBufferBaseAddresses( 0x00, 0x00 );
         sx1280_SetModulationParams( &ModulationParams );
         sx1280_SetPacketParams( &PacketParams );
-	LOG_INF("lora_config_2");
+	LOG_INF("config9");
         // only used in GFSK, FLRC (4 bytes max) and BLE mode
         // SetSyncWord( 1, ( uint8_t[] ){ 0xDD, 0xA0, 0x96, 0x69, 0xDD } ); // TODO: non LORA
         // only used in GFSK, FLRC
