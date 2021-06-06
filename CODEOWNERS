@@ -564,6 +564,7 @@
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/coredump/                        @dcpleung
+/scripts/footprint/                       @nashif
 /scripts/kconfig/                         @ulfalizer
 /scripts/logging/dictionary/              @dcpleung
 /scripts/pylib/twister/expr_parser.py     @nashif
