@@ -717,7 +717,7 @@ def parse_args():
                         help="Output path")
     parser.add_argument("-w", "--workspace", default=None,
                         help="Workspace path (Usually the same as WEST_TOPDIR)")
-    parser.add_argument("target", choices=['rom', 'ram'])
+    parser.add_argument("target", choices=['rom', 'ram', 'all'])
     parser.add_argument("-d", "--depth", dest="depth",
                         type=int, default=None,
                         help="How deep should we go into the tree",
@@ -738,56 +738,64 @@ def main():
     init()
 
     assert os.path.exists(args.kernel), "{0} does not exist.".format(args.kernel)
+    if args.target == 'ram':
+        targets = ['ram']
+    elif args.target == 'rom':
+        targets = ['rom']
+    elif args.target == 'all':
+        targets = ['rom', 'ram']
 
-    elf = ELFFile(open(args.kernel, "rb"))
+    for t in targets:
 
-    assert elf.has_dwarf_info(), "ELF file has no DWARF information"
+        elf = ELFFile(open(args.kernel, "rb"))
 
-    set_global_machine_arch(elf.get_machine_arch())
+        assert elf.has_dwarf_info(), "ELF file has no DWARF information"
 
-    addr_ranges = get_section_ranges(elf)
+        set_global_machine_arch(elf.get_machine_arch())
 
-    symbols = get_symbols(elf, addr_ranges)
+        addr_ranges = get_section_ranges(elf)
 
-    for sym in symbols['unassigned'].values():
-        print("WARN: Symbol '{0}' is not in RAM or ROM".format(sym['name']))
+        symbols = get_symbols(elf, addr_ranges)
 
-    symbol_dict = None
-    if args.target == 'rom':
-        symbol_dict = symbols['rom']
-        symsize = addr_ranges['rom_total_size']
-        ranges = addr_ranges['rom']
-    elif args.target == 'ram':
-        symbol_dict = symbols['ram']
-        symsize = addr_ranges['ram_total_size']
-        ranges = addr_ranges['ram']
+        for sym in symbols['unassigned'].values():
+            print("WARN: Symbol '{0}' is not in RAM or ROM".format(sym['name']))
 
-    if symbol_dict is not None:
-        processed = {"mapped_symbols": set(),
-                     "mapped_addr": set(),
-                     "unmapped_symbols": set(symbol_dict.keys())}
-
-        do_simple_name_matching(elf, symbol_dict, processed)
-        mark_address_aliases(symbol_dict, processed)
-        do_address_range_matching(elf, symbol_dict, processed)
-        mark_address_aliases(symbol_dict, processed)
-        common_path_prefix = find_common_path_prefix(symbol_dict)
-        set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)
-
-        if args.verbose:
-            for sym in processed['unmapped_symbols']:
-                print("INFO: Unmapped symbol: {0}".format(sym))
-
-        root = generate_any_tree(symbol_dict, symsize, common_path_prefix)
-        if not args.quiet:
-            print_any_tree(root, symsize, args.depth)
+        symbol_dict = None
 
         if args.json:
+            jsonout = args.json
+        else:
+            jsonout = os.path.join(args.output, f'{t}.json')
+
+        symbol_dict = symbols[t]
+        symsize = addr_ranges[f'{t}_total_size']
+        ranges = addr_ranges[t]
+
+        if symbol_dict is not None:
+            processed = {"mapped_symbols": set(),
+                         "mapped_addr": set(),
+                         "unmapped_symbols": set(symbol_dict.keys())}
+
+            do_simple_name_matching(elf, symbol_dict, processed)
+            mark_address_aliases(symbol_dict, processed)
+            do_address_range_matching(elf, symbol_dict, processed)
+            mark_address_aliases(symbol_dict, processed)
+            common_path_prefix = find_common_path_prefix(symbol_dict)
+            set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)
+
+            if args.verbose:
+                for sym in processed['unmapped_symbols']:
+                    print("INFO: Unmapped symbol: {0}".format(sym))
+
+            root = generate_any_tree(symbol_dict, symsize, common_path_prefix)
+            if not args.quiet:
+                print_any_tree(root, symsize, args.depth)
+
             exporter = DictExporter()
             data = dict()
             data["symbols"] = exporter.export(root)
             data["total_size"] = symsize
-            with open(args.json, "w") as fp:
+            with open(jsonout, "w") as fp:
                 json.dump(data, fp, indent=4)
 
 
