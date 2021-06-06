@@ -44,7 +44,7 @@ static void dir_list_object_encode(struct bt_gatt_ots_object *obj,
 
 	/* Name length */
 	obj_name_len = strlen(obj->metadata.name);
-	__ASSERT(obj_name_len > 0 && obj_name_len <= BT_OTS_OBJ_MAX_NAME_LEN,
+	__ASSERT(obj_name_len > 0 && obj_name_len <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
 		 "Dir list object len is incorrect %zu", len);
 	net_buf_simple_add_u8(net_buf, obj_name_len);
 
@@ -220,9 +220,9 @@ void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
 
 	__ASSERT(*dir_list, "Could not assign Directory Listing Object");
 
-	__ASSERT(strlen(dir_list_obj_name) <= BT_OTS_OBJ_MAX_NAME_LEN,
-		 "BT_OTS_DIR_LIST_OBJ_NAME shall be less than %u octets",
-		 BT_OTS_OBJ_MAX_NAME_LEN);
+	__ASSERT(strlen(dir_list_obj_name) <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
+		 "BT_OTS_DIR_LIST_OBJ_NAME shall be less than or equal to %u octets",
+		 CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
 
 	err = bt_gatt_ots_obj_manager_obj_add(obj_manager, &dir_list_obj);
 
