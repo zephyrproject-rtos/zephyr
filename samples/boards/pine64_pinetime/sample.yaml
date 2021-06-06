@@ -1,6 +1,0 @@
-sample:
-  name: Pine64 PineTime board testing
-tests:
-  sample.board.pinetime_devkit0:
-    platform_allow: pinetime_devkit0
-    tags: samples board
