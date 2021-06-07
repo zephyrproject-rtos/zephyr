@@ -252,9 +252,11 @@ uint8_t ll_terminate_ind_send(uint16_t handle, uint8_t reason)
 }
 
 
-/*
- * EGON TODO: the use of cmd in the following function is unclear;
- * to be re-evaluated before merging into master
+/* cmd and status are used to select control procedure:
+ * cmd		status		CP
+ * 0		x		ull_cp_conn_update()
+ * 2		0		ull_cp_conn_param_req_reply()
+ * 2		!0		ull_cp_conn_param_req_neg_reply()
  */
 uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t interval_min,
 		    uint16_t interval_max, uint16_t latency, uint16_t timeout)
@@ -266,70 +268,21 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (!cmd) {
+	if (cmd == 0U) {
+		return ull_cp_conn_update(conn, interval_min, interval_max,
+					latency, timeout);
+	} else if (cmd == 2U) {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		if (feature_conn_param_req(conn)) {
-			cmd++;
-		} else if (conn->lll.role) {
-			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
-		}
-#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-		if (conn->lll.role) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-#endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-	}
-
-	if (!cmd) {
-		/*
-		 * EGON TODO: fill correct info in the connection structure
-		 * as for example:
-		 *		conn->llcp_cu.win_size = 1U;
-		 *		conn->llcp_cu.win_offset_us = 0U;
-		 *		conn->llcp_cu.interval = interval_max;
-		 *		conn->llcp_cu.latency = latency;
-		 *		conn->llcp_cu.timeout = timeout;
-		 *		conn->llcp_cu.state = LLCP_CUI_STATE_USE;
-		 *		conn->llcp_cu.cmd = 1U;
-		 */
-	} else {
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-		cmd--;
-
-		if (cmd) {
-			/*
-			 * EGON TODO: fill correct info in
-			 * the connection structure
-			 * as for example:
-			 *	conn->llcp_conn_param.status = status;
-			 *	conn->llcp_conn_param.state = cmd;
-			 *	conn->llcp_conn_param.cmd = 1U;
-			 */
+		if (status == 0U) {
+			ull_cp_conn_param_req_reply(conn);
 		} else {
-			/*
-			 * EGON TODO: fill correct info in
-			 * the connection structure
-			 * as for example:
-			 *  conn->llcp_conn_param.status = 0U;
-			 *  conn->llcp_conn_param.interval_min = interval_min;
-			 *  conn->llcp_conn_param.interval_max = interval_max;
-			 *  conn->llcp_conn_param.latency = latency;
-			 *  conn->llcp_conn_param.timeout = timeout;
-			 *  conn->llcp_conn_param.state = cmd;
-			 *  conn->llcp_conn_param.cmd = 1U;
-			 *  conn->llcp_conn_param.req++;
-			 */
+			ull_cp_conn_param_req_neg_reply(conn, status);
 		}
-
+		return BT_HCI_ERR_SUCCESS;
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		/* CPR feature not supported */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 #endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-	}
-
-	if (!cmd) {
-		/* replace with call to correct ll_conn procedure */
-		return BT_HCI_ERR_UNKNOWN_CMD;
 	} else {
 		return BT_HCI_ERR_UNKNOWN_CMD;
 	}
