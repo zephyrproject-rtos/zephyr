@@ -183,9 +183,11 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	}
 
 	switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		lp_comm_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		lp_comm_init_proc(ctx);
 		break;
@@ -236,9 +238,11 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	}
 
 	switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		rp_comm_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_init_proc(ctx);
 		break;
@@ -372,6 +376,7 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 	return BT_HCI_ERR_SUCCESS;
 }
 
+#if defined(CONFIG_BT_CTLR_LE_PING)
 uint8_t ull_cp_le_ping(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
@@ -385,7 +390,7 @@ uint8_t ull_cp_le_ping(struct ll_conn *conn)
 
 	return BT_HCI_ERR_SUCCESS;
 }
-
+#endif /* CONFIG_BT_CTLR_LE_PING */
 uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
