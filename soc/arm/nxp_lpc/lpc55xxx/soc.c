@@ -91,6 +91,12 @@ static ALWAYS_INLINE void clock_init(void)
 	RESET_PeripheralReset(kMAILBOX_RST_SHIFT_RSTn);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can0), nxp_lpc_mcan, okay)
+	CLOCK_SetClkDiv(kCLOCK_DivCanClk, 1U, false);
+	CLOCK_AttachClk(kMCAN_DIV_to_MCAN);
+	RESET_PeripheralReset(kMCAN_RST_SHIFT_RSTn);
+#endif
+
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */
 }
 

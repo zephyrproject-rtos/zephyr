@@ -181,6 +181,28 @@ static int lpcxpresso_55s16_pinmux_init(const struct device *dev)
 				  IOCON_PIO_OPENDRAIN_DI);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can0), nxp_lpc_mcan, okay) && CONFIG_CAN
+	/* CAN RXD, TXD */
+	uint32_t port1_pin22_config = (
+			IOCON_PIO_FUNC9 |
+			IOCON_PIO_MODE_INACT |
+			IOCON_PIO_INV_DI |
+			IOCON_PIO_DIGITAL_EN |
+			IOCON_PIO_SLEW_STANDARD |
+			IOCON_PIO_OPENDRAIN_DI
+			);
+	uint32_t port1_pin27_config = (
+			IOCON_PIO_FUNC9 |
+			IOCON_PIO_MODE_INACT |
+			IOCON_PIO_INV_DI |
+			IOCON_PIO_DIGITAL_EN |
+			IOCON_PIO_SLEW_STANDARD |
+			IOCON_PIO_OPENDRAIN_DI
+			);
+	pinmux_pin_set(port1, 22, port1_pin22_config);
+	pinmux_pin_set(port1, 27, port1_pin27_config);
+#endif
+
 	return 0;
 }
 

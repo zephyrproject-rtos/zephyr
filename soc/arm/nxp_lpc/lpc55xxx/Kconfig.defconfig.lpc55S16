@@ -24,4 +24,8 @@ config SOC_FLASH_MCUX
 	default y
 	depends on FLASH
 
+config CAN_MCUX_MCAN
+	default y
+	depends on CAN
+
 endif # SOC_LPC55S16
