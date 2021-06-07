@@ -171,14 +171,15 @@ void lll_df_conf_cte_tx_disable(void)
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 /* @brief Function initializes reception of Constant Tone Extension.
  *
- * @param[in] slot_duration     Switching and sampling slots duration (1us or 2us).
- * @param[in] ant_num           Number of antennas in switch pattern.
- * @param[in] ant_ids           Antenna identifiers that create switch pattern.
+ * @param slot_duration     Switching and sampling slots duration (1us or 2us).
+ * @param ant_num           Number of antennas in switch pattern.
+ * @param ant_ids           Antenna identifiers that create switch pattern.
+ * @param chan_idx          Channel used to receive PDU with CTE
  *
  * In case of AoA mode ant_num and ant_ids parameters are not used.
  */
-void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num,
-			       uint8_t *ant_ids)
+void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, uint8_t *ant_ids,
+			       uint8_t chan_idx)
 {
 	struct node_rx_iq_report *node_rx;
 
@@ -202,6 +203,7 @@ void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num,
 	LL_ASSERT(node_rx);
 
 	radio_df_iq_data_packet_set(node_rx->pdu, IQ_SAMPLE_TOTAL_CNT);
+	node_rx->chan_idx = chan_idx;
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
