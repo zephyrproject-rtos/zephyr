@@ -274,6 +274,38 @@ static void adc_stm32_start_conversion(const struct device *dev)
 #endif
 }
 
+static int adc_stm32_enable_and_wait_stabilisation(ADC_TypeDef *adc)
+{
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
+	/*
+	 * Enabling ADC modules in L4, WB, G0 and G4 series may fail if they are
+	 * still not stabilized, this will wait for a short time to ensure ADC
+	 * modules are properly enabled.
+	 */
+	uint32_t countTimeout = 0;
+
+	do {
+		if (LL_ADC_IsEnabled(adc) == 0UL) {
+			LL_ADC_Enable(adc);
+		}
+		countTimeout++;
+		if (countTimeout == 10) {
+			return -ETIMEDOUT;
+		}
+	} while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0);
+	LL_ADC_ClearFlag_ADRDY(adc);
+#else
+	if (LL_ADC_IsEnabled(adc) == 0UL) {
+		LL_ADC_Enable(adc);
+	}
+#endif
+	return 0;
+}
+
 static int start_read(const struct device *dev,
 		      const struct adc_sequence *sequence)
 {
@@ -377,6 +409,12 @@ static int start_read(const struct device *dev,
 	while (LL_ADC_IsActiveFlag_ADRDY(adc) != 1UL) {
 	}
 #elif !defined(CONFIG_SOC_SERIES_STM32F1X)
+	if (LL_ADC_IsEnabled(adc) == 0) {
+		err = adc_stm32_enable_and_wait_stabilisation(adc);
+		if (err) {
+			return err;
+		}
+	}
 	LL_ADC_SetResolution(adc, resolution);
 #endif
 
@@ -397,7 +435,13 @@ static int start_read(const struct device *dev,
 
 	adc_context_start_read(&data->ctx, sequence);
 
-	return adc_context_wait_for_completion(&data->ctx);
+	err = adc_context_wait_for_completion(&data->ctx);
+
+	if (LL_ADC_IsEnabled(adc)) {
+		LL_ADC_Disable(adc);
+	}
+
+	return err;
 }
 
 static void adc_context_start_sampling(struct adc_context *ctx)
@@ -744,30 +788,10 @@ static int adc_stm32_init(const struct device *dev)
 	}
 #endif
 
-	LL_ADC_Enable(adc);
-
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X) || \
-	defined(CONFIG_SOC_SERIES_STM32H7X)
-	/*
-	 * Enabling ADC modules in L4, WB, G0 and G4 series may fail if they are
-	 * still not stabilized, this will wait for a short time to ensure ADC
-	 * modules are properly enabled.
-	 */
-	uint32_t countTimeout = 0;
-
-	while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0) {
-		if (LL_ADC_IsEnabled(adc) == 0UL) {
-			LL_ADC_Enable(adc);
-			countTimeout++;
-			if (countTimeout == 10) {
-				return -ETIMEDOUT;
-			}
-		}
+	err = adc_stm32_enable_and_wait_stabilisation(adc);
+	if (err < 0) {
+		return err;
 	}
-#endif
 
 	config->irq_cfg_func();
 
