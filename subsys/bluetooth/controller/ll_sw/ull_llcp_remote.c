@@ -174,9 +174,11 @@ struct proc_ctx *rr_peek(struct ll_conn *conn)
 void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		rp_comm_rx(conn, ctx, rx);
 		break;
+#endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_rx(conn, ctx, rx);
 		break;
@@ -244,9 +246,11 @@ static void rr_act_run(struct ll_conn *conn)
 	ctx = rr_peek(conn);
 
 	switch (ctx->proc) {
+#if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
 		rp_comm_run(conn, ctx, NULL);
 		break;
+#endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_run(conn, ctx, NULL);
 		break;
