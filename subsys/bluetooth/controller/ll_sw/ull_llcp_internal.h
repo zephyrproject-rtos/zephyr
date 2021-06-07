@@ -776,6 +776,7 @@ static inline void rr_new(struct ll_conn *conn, struct node_rx_pdu *rx)
 	return ull_cp_priv_rr_new(conn, rx);
 }
 
+#if defined(CONFIG_BT_CTLR_LE_PING)
 /*
  * LE Ping Procedure Helper
  */
@@ -792,7 +793,7 @@ static inline void pdu_encode_ping_rsp(struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_ping_rsp(pdu);
 }
-
+#endif /* CONFIG_BT_CTLR_LE_PING */
 /*
  * Unknown response helper
  */
