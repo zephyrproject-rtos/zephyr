@@ -70,10 +70,12 @@ uint8_t ull_cp_version_exchange(struct ll_conn *conn);
  */
 uint8_t ull_cp_feature_exchange(struct ll_conn *conn);
 
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 /**
  * @brief Initiate a Minimum used channels Procedure.
  */
 uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_used_chans);
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 /**
  * @brief Initiate a Encryption Start Procedure.
