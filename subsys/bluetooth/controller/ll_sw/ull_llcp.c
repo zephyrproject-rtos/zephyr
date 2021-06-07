@@ -191,9 +191,11 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_FEATURE_EXCHANGE:
 		lp_comm_init_proc(ctx);
 		break;
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
 		lp_comm_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_init_proc(ctx);
 		break;
@@ -246,9 +248,11 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_init_proc(ctx);
 		break;
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
 		rp_comm_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PROC_VERSION_EXCHANGE:
 		rp_comm_init_proc(ctx);
 		break;
@@ -306,8 +310,10 @@ void ll_conn_init(struct ll_conn *conn)
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
 	memset(&conn->llcp.vex, 0, sizeof(conn->llcp.vex));
 
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	/* Reset the cached min used channels information (PROC_MIN_USED_CHANS) */
 	memset(&conn->llcp.muc, 0, sizeof(conn->llcp.muc));
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 	/* Reset the feature exchange fields */
 	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
@@ -355,6 +361,7 @@ void ull_cp_state_set(struct ll_conn *conn, uint8_t state)
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_used_chans)
 {
 	struct proc_ctx *ctx;
@@ -375,6 +382,7 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 
 	return BT_HCI_ERR_SUCCESS;
 }
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 uint8_t ull_cp_le_ping(struct ll_conn *conn)
