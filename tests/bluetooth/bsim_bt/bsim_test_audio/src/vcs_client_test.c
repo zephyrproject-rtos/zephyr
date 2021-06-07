@@ -123,8 +123,8 @@ static void vocs_write_cb(struct bt_vocs *inst, int err)
 	g_write_complete = true;
 }
 
-static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			  int8_t gain, uint8_t mute, uint8_t mode)
+static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
+			  uint8_t mute, uint8_t mode)
 {
 	if (err) {
 		FAIL("AICS state cb err (%d)", err);
@@ -138,9 +138,8 @@ static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	g_cb = true;
 }
 
-static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
-				 int err, uint8_t units, int8_t minimum,
-				 int8_t maximum)
+static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
+				 int8_t minimum, int8_t maximum)
 {
 	if (err) {
 		FAIL("AICS gain setting cb err (%d)", err);
@@ -154,8 +153,8 @@ static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
 	g_cb = true;
 }
 
-static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
-			       int err, uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err,
+			       uint8_t input_type)
 {
 	if (err) {
 		FAIL("AICS input type cb err (%d)", err);
@@ -167,8 +166,7 @@ static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
 	g_cb = true;
 }
 
-static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			   bool active)
+static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
 	if (err) {
 		FAIL("AICS status cb err (%d)", err);
@@ -180,8 +178,8 @@ static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	g_cb = true;
 }
 
-static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
-				int err, char *description)
+static void aics_description_cb(struct bt_aics *inst, int err,
+				char *description)
 {
 	if (err) {
 		FAIL("AICS description cb err (%d)", err);
@@ -199,7 +197,7 @@ static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
 	g_cb = true;
 }
 
-static void aics_write_cb(struct bt_conn *conn, struct bt_aics *inst, int err)
+static void aics_write_cb(struct bt_aics *inst, int err)
 {
 	if (err) {
 		FAIL("AICS write failed (%d)\n", err);

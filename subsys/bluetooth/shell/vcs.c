@@ -38,8 +38,8 @@ static void vcs_flags_cb(struct bt_vcs *vcs, int err, uint8_t flags)
 	}
 }
 
-static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			  int8_t gain, uint8_t mute, uint8_t mode)
+static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
+			  uint8_t mute, uint8_t mode)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -52,9 +52,8 @@ static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	}
 }
 
-static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
-				 int err, uint8_t units, int8_t minimum,
-				 int8_t maximum)
+static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
+				 int8_t minimum, int8_t maximum)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -67,8 +66,8 @@ static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
 	}
 }
 
-static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
-			       int err, uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err,
+			       uint8_t input_type)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -80,8 +79,7 @@ static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
 	}
 }
 
-static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			   bool active)
+static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -93,8 +91,8 @@ static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	}
 
 }
-static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
-				int err, char *description)
+static void aics_description_cb(struct bt_aics *inst, int err,
+				char *description)
 {
 	if (err) {
 		shell_error(ctx_shell,
