@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
 	     DT_NUM_INST_STATUS_OKAY(semtech_sx1262) <= 1,
-	     "Multiple SX12xx instances in DT");
+	     "Multiple SX126x instances in DT");
 
 #define HAVE_GPIO_CS		DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 #define HAVE_GPIO_ANTENNA_ENABLE			\
@@ -497,7 +497,7 @@ static int sx126x_lora_init(const struct device *dev)
 	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!dev_data.spi) {
 		LOG_ERR("Cannot get pointer to %s device",
-			    DT_INST_BUS_LABEL(0));
+			DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -536,5 +536,5 @@ static const struct lora_driver_api sx126x_lora_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, NULL, NULL,
-		    NULL, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
-		    &sx126x_lora_api);
+		      NULL, POST_KERNEL, CONFIG_LORA_INIT_PRIORITY,
+		      &sx126x_lora_api);
