@@ -175,9 +175,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	cfg = lll_df_sync_cfg_latest_get(&lll->df_cfg, NULL);
 
 	if (cfg->is_enabled) {
-		lll_df_conf_cte_rx_enable(cfg->slot_durations,
-					  cfg->ant_sw_len,
-					  cfg->ant_ids);
+		lll_df_conf_cte_rx_enable(cfg->slot_durations, cfg->ant_sw_len, cfg->ant_ids,
+					  data_chan_use);
 		cfg->cte_count = 0;
 	}
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */

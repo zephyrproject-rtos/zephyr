@@ -53,5 +53,5 @@ static inline uint8_t lll_df_sync_cfg_is_modified(struct lll_df_sync *df_cfg)
 }
 
 /* Enables CTE reception according to provided configuration */
-void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num,
-			       uint8_t *ant_ids);
+void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, uint8_t *ant_ids,
+			       uint8_t chan_idx);
