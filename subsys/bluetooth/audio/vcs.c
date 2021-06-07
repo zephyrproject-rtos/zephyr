@@ -828,11 +828,11 @@ int bt_vcs_aics_state_get(struct bt_vcs *vcs, struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_state_get(vcs->cli.conn, inst);
+		return bt_aics_state_get(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_state_get(NULL, inst);
+		return bt_aics_state_get(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -847,11 +847,11 @@ int bt_vcs_aics_gain_setting_get(struct bt_vcs *vcs, struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_gain_setting_get(vcs->cli.conn, inst);
+		return bt_aics_gain_setting_get(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_gain_setting_get(NULL, inst);
+		return bt_aics_gain_setting_get(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -866,11 +866,11 @@ int bt_vcs_aics_type_get(struct bt_vcs *vcs, struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_type_get(vcs->cli.conn, inst);
+		return bt_aics_type_get(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_type_get(NULL, inst);
+		return bt_aics_type_get(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -885,11 +885,11 @@ int bt_vcs_aics_status_get(struct bt_vcs *vcs, struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_status_get(vcs->cli.conn, inst);
+		return bt_aics_status_get(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_status_get(NULL, inst);
+		return bt_aics_status_get(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -904,11 +904,11 @@ int bt_vcs_aics_unmute(struct bt_vcs *vcs, struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_unmute(vcs->cli.conn, inst);
+		return bt_aics_unmute(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_unmute(NULL, inst);
+		return bt_aics_unmute(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -923,11 +923,11 @@ int bt_vcs_aics_mute(struct bt_vcs *vcs, struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_mute(vcs->cli.conn, inst);
+		return bt_aics_mute(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_mute(NULL, inst);
+		return bt_aics_mute(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -942,11 +942,11 @@ int bt_vcs_aics_manual_gain_set(struct bt_vcs *vcs, struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_manual_gain_set(vcs->cli.conn, inst);
+		return bt_aics_manual_gain_set(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_manual_gain_set(NULL, inst);
+		return bt_aics_manual_gain_set(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -961,11 +961,11 @@ int bt_vcs_aics_automatic_gain_set(struct bt_vcs *vcs, struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_automatic_gain_set(vcs->cli.conn, inst);
+		return bt_aics_automatic_gain_set(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_automatic_gain_set(NULL, inst);
+		return bt_aics_automatic_gain_set(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -981,11 +981,11 @@ int bt_vcs_aics_gain_set(struct bt_vcs *vcs, struct bt_aics *inst,
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_gain_set(vcs->cli.conn, inst, gain);
+		return bt_aics_gain_set(inst, gain);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_gain_set(NULL, inst, gain);
+		return bt_aics_gain_set(inst, gain);
 	}
 
 	return -EOPNOTSUPP;
@@ -1000,11 +1000,11 @@ int bt_vcs_aics_description_get(struct bt_vcs *vcs, struct bt_aics *inst)
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_description_get(vcs->cli.conn, inst);
+		return bt_aics_description_get(inst);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_description_get(NULL, inst);
+		return bt_aics_description_get(inst);
 	}
 
 	return -EOPNOTSUPP;
@@ -1020,11 +1020,11 @@ int bt_vcs_aics_description_set(struct bt_vcs *vcs, struct bt_aics *inst,
 
 	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT_AICS) &&
 	    bt_vcs_client_valid_aics_inst(vcs, inst)) {
-		return bt_aics_description_set(vcs->cli.conn, inst, description);
+		return bt_aics_description_set(inst, description);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_VCS_AICS) && valid_aics_inst(vcs, inst)) {
-		return bt_aics_description_set(NULL, inst, description);
+		return bt_aics_description_set(inst, description);
 	}
 
 	return -EOPNOTSUPP;

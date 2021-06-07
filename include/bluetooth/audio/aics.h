@@ -144,13 +144,11 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 /**
  * @brief Callback function for writes.
  *
- * @param conn         Connection to peer device, or NULL if local server write.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
  *                     or errno on negative value.
  */
-typedef void (*bt_aics_write_cb)(struct bt_conn *conn, struct bt_aics *inst,
-				 int err);
+typedef void (*bt_aics_write_cb)(struct bt_aics *inst, int err);
 
 /**
  * @brief Callback function for the input state.
@@ -158,7 +156,6 @@ typedef void (*bt_aics_write_cb)(struct bt_conn *conn, struct bt_aics *inst,
  * Called when the value is read,
  * or if the value is changed by either the server or client.
  *
- * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
  *                     or errno on negative value.
@@ -167,9 +164,8 @@ typedef void (*bt_aics_write_cb)(struct bt_conn *conn, struct bt_aics *inst,
  * @param mute         The mute value.
  * @param mode         The mode value.
  */
-typedef void (*bt_aics_state_cb)(struct bt_conn *conn, struct bt_aics *inst,
-				 int err, int8_t gain, uint8_t mute,
-				 uint8_t mode);
+typedef void (*bt_aics_state_cb)(struct bt_aics *inst, int err, int8_t gain,
+				 uint8_t mute, uint8_t mode);
 
 /**
  * @brief Callback function for the gain settings.
@@ -177,7 +173,6 @@ typedef void (*bt_aics_state_cb)(struct bt_conn *conn, struct bt_aics *inst,
  * Called when the value is read,
  * or if the value is changed by either the server or client.
  *
- * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
  *                     or errno on negative value.
@@ -187,8 +182,7 @@ typedef void (*bt_aics_state_cb)(struct bt_conn *conn, struct bt_aics *inst,
  * @param minimum      The minimum gain allowed for the gain setting.
  * @param maximum      The maximum gain allowed for the gain setting.
  */
-typedef void (*bt_aics_gain_setting_cb)(struct bt_conn *conn,
-					struct bt_aics *inst, int err,
+typedef void (*bt_aics_gain_setting_cb)(struct bt_aics *inst, int err,
 					uint8_t units, int8_t minimum,
 					int8_t maximum);
 
@@ -197,45 +191,39 @@ typedef void (*bt_aics_gain_setting_cb)(struct bt_conn *conn,
  *
  * Called when the value is read, or if the value is changed by either the server or client.
  *
- * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
  *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  * @param type   The input type.
  */
-typedef void (*bt_aics_type_cb)(struct bt_conn *conn, struct bt_aics *inst,
-				int err, uint8_t type);
+typedef void (*bt_aics_type_cb)(struct bt_aics *inst, int err, uint8_t type);
 
 /**
  * @brief Callback function for the input status.
  *
  * Called when the value is read, or if the value is changed by either the server or client.
  *
- * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
  *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  * @param active       Whether the instance is active or inactive.
  */
-typedef void (*bt_aics_status_cb)(struct bt_conn *conn, struct bt_aics *inst,
-				  int err, bool active);
+typedef void (*bt_aics_status_cb)(struct bt_aics *inst, int err, bool active);
 
 /**
  * @brief Callback function for the description.
  *
  * Called when the value is read, or if the value is changed by either the server or client.
  *
- * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
  *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  * @param description  The description as an UTF-8 encoded string (may have been clipped).
  */
-typedef void (*bt_aics_description_cb)(struct bt_conn *conn,
-				       struct bt_aics *inst, int err,
+typedef void (*bt_aics_description_cb)(struct bt_aics *inst, int err,
 				       char *description);
 
 /**
@@ -244,14 +232,12 @@ typedef void (*bt_aics_description_cb)(struct bt_conn *conn,
  * This callback will usually be overwritten by the primary service that
  * includes the Audio Input Control Service client.
  *
- * @param conn         Connection to peer device, or NULL if local server read.
  * @param inst         The instance pointer.
  * @param err          Error value. 0 on success, GATT error on positive value
  *                     or errno on negative value.
  *                     For notifications, this will always be 0.
  */
-typedef void (*bt_aics_discover_cb)(struct bt_conn *conn, struct bt_aics *inst,
-				    int err);
+typedef void (*bt_aics_discover_cb)(struct bt_aics *inst, int err);
 
 struct bt_aics_cb {
 	bt_aics_state_cb                 state;
@@ -314,116 +300,104 @@ int bt_aics_activate(struct bt_aics *inst);
 /**
  * @brief Read the Audio Input Control Service input state.
  *
- * @param conn          Connection to peer device, or NULL to read local server value.
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_state_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_aics_state_get(struct bt_aics *inst);
 
 /**
  * @brief Read the Audio Input Control Service gain settings.
  *
- * @param conn          Connection to peer device, or NULL to read local server value.
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_gain_setting_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_aics_gain_setting_get(struct bt_aics *inst);
 
 /**
  * @brief Read the Audio Input Control Service input type.
  *
- * @param conn          Connection to peer device, or NULL to read local server value.
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_type_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_aics_type_get(struct bt_aics *inst);
 
 /**
  * @brief Read the Audio Input Control Service input status.
  *
- * @param conn          Connection to peer device, or NULL to read local server value.
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_status_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_aics_status_get(struct bt_aics *inst);
 
 /**
  * @brief Unmute the Audio Input Control Service input.
  *
- * @param conn          Connection to peer device, or NULL to read local server value.
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_unmute(struct bt_conn *conn, struct bt_aics *inst);
+int bt_aics_unmute(struct bt_aics *inst);
 
 /**
  * @brief Mute the Audio Input Control Service input.
  *
- * @param conn          Connection to peer device, or NULL to read local server value.
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_mute(struct bt_conn *conn, struct bt_aics *inst);
+int bt_aics_mute(struct bt_aics *inst);
 
 /**
  * @brief Set input gain to manual.
  *
- * @param conn          Connection to peer device, or NULL to set local server value.
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_manual_gain_set(struct bt_conn *conn, struct bt_aics *inst);
+int bt_aics_manual_gain_set(struct bt_aics *inst);
 
 /**
  * @brief Set the input gain to automatic.
  *
- * @param conn          Connection to peer device, or NULL to set local server value.
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_automatic_gain_set(struct bt_conn *conn, struct bt_aics *inst);
+int bt_aics_automatic_gain_set(struct bt_aics *inst);
 
 /**
  * @brief Set the input gain.
  *
- * @param conn          Connection to peer device, or NULL to set local server value.
  * @param inst          The instance pointer.
  * @param gain          The gain to set (-128 to 127) in gain setting units
  *                      (see @ref bt_aics_gain_setting_cb).
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_gain_set(struct bt_conn *conn, struct bt_aics *inst, int8_t gain);
+int bt_aics_gain_set(struct bt_aics *inst, int8_t gain);
 
 /**
  * @brief Read the Audio Input Control Service description.
  *
- * @param conn          Connection to peer device, or NULL to read local server value.
  * @param inst          The instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_description_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_aics_description_get(struct bt_aics *inst);
 
 /**
  * @brief Set the Audio Input Control Service description.
  *
- * @param conn          Connection to peer device, or NULL to set local server value.
  * @param inst          The instance pointer.
  * @param description   The description as an UTF-8 encoded string.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_aics_description_set(struct bt_conn *conn, struct bt_aics *inst,
-			    const char *description);
+int bt_aics_description_set(struct bt_aics *inst, const char *description);
 
 /**
  * @brief Get a new Audio Input Control Service client instance.

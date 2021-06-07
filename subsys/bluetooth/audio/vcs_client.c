@@ -47,6 +47,21 @@ static struct bt_vcs *lookup_vcs_by_vocs(const struct bt_vocs *vocs)
 	return NULL;
 }
 
+static struct bt_vcs *lookup_vcs_by_aics(const struct bt_aics *aics)
+{
+	__ASSERT(aics != NULL, "aics pointer cannot be NULL");
+
+	for (int i = 0; i < ARRAY_SIZE(vcs_insts); i++) {
+		for (int j = 0; j < ARRAY_SIZE(vcs_insts[i].cli.aics); j++) {
+			if (vcs_insts[i].cli.aics[j] == aics) {
+				return &vcs_insts[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
 bool bt_vcs_client_valid_vocs_inst(struct bt_vcs *vcs, struct bt_vocs *vocs)
 {
 	if (vcs == NULL) {
@@ -609,14 +624,14 @@ static int vcs_client_common_vcs_cp(struct bt_vcs *vcs, uint8_t opcode)
 	return err;
 }
 
-static void aics_discover_cb(struct bt_conn *conn, struct bt_aics *inst,
-			     int err)
+static void aics_discover_cb(struct bt_aics *inst, int err)
 {
-	struct bt_vcs *vcs_inst = &vcs_insts[bt_conn_index(conn)];
+	struct bt_vcs *vcs_inst = lookup_vcs_by_aics(inst);
 
 	if (err == 0) {
 		/* Continue discovery of included services */
-		err = bt_gatt_discover(conn, &vcs_inst->cli.discover_params);
+		err = bt_gatt_discover(vcs_inst->cli.conn,
+				       &vcs_inst->cli.discover_params);
 	}
 
 	if (err != 0) {
