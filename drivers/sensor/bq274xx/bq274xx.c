@@ -737,25 +737,19 @@ static int bq274xx_pm_control(const struct device *dev, uint32_t ctrl_command,
 	int ret = 0;
 	struct bq274xx_data *data = dev->data;
 
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		if (*state == PM_DEVICE_STATE_OFF) {
-			ret = bq274xx_enter_shutdown_mode(data);
-			if (ret < 0) {
-				LOG_ERR("Unable to enter off state");
-			}
-		} else if (*state == PM_DEVICE_STATE_ACTIVE) {
-			ret = bq274xx_exit_shutdown_mode(dev);
-			if (ret < 0) {
-				LOG_ERR("Unable to enter active state");
-			}
-		} else {
-			LOG_ERR("State to set is not implemented");
-			ret = -ENOTSUP;
+	if (*state == PM_DEVICE_STATE_OFF) {
+		ret = bq274xx_enter_shutdown_mode(data);
+		if (ret < 0) {
+			LOG_ERR("Unable to enter off state");
 		}
-		break;
-	default:
-		ret = -EINVAL;
+	} else if (*state == PM_DEVICE_STATE_ACTIVE) {
+		ret = bq274xx_exit_shutdown_mode(dev);
+		if (ret < 0) {
+			LOG_ERR("Unable to enter active state");
+		}
+	} else {
+		LOG_ERR("State to set is not implemented");
+		ret = -ENOTSUP;
 	}
 
 	return ret;

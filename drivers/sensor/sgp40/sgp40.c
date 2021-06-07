@@ -222,13 +222,7 @@ static int sgp40_pm_ctrl(const struct device *dev,
 	uint32_t ctrl_command,
 	enum pm_device_state *state)
 {
-	int rc = 0;
-
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		rc = sgp40_set_power_state(dev, *state);
-	}
-
-	return rc;
+	return sgp40_set_power_state(dev, *state);
 }
 #endif /* CONFIG_PM_DEVICE */
 

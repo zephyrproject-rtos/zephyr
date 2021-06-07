@@ -28,24 +28,13 @@ static int dummy_parent_pm_ctrl(const struct device *dev,
 				uint32_t ctrl_command,
 				enum pm_device_state *state)
 {
-	int ret = 0;
-
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		if (*state == PM_DEVICE_STATE_ACTIVE) {
-			printk("parent resuming..\n");
-			return 0;
-		} else {
-			printk("parent suspending..\n");
-			return 0;
-		}
-		break;
-	default:
-		ret = -EINVAL;
-
+	if (*state == PM_DEVICE_STATE_ACTIVE) {
+		printk("parent resuming..\n");
+	} else {
+		printk("parent suspending..\n");
 	}
 
-	return ret;
+	return 0;
 }
 
 static const struct dummy_parent_api funcs = {
