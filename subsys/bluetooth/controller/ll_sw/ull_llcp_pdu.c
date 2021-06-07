@@ -183,10 +183,11 @@ void ull_cp_priv_pdu_decode_feature_rsp(struct ll_conn *conn,
 	conn->llcp.fex.features_peer = featureset;
 	conn->llcp.fex.valid = 1;
 }
+
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 /*
  * Minimum used channels Procedure Helpers
  */
-
 void ull_cp_priv_pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_min_used_chans_ind *p;
@@ -204,6 +205,7 @@ void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_
 	conn->llcp.muc.phys = pdu->llctrl.min_used_chans_ind.phys;
 	conn->llcp.muc.min_used_chans = pdu->llctrl.min_used_chans_ind.min_used_chans;
 }
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 /*
  * Termination Procedure Helper
