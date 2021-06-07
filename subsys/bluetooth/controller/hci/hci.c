@@ -2658,7 +2658,7 @@ static void le_df_connectionless_iq_report(struct pdu_data *pdu_rx,
 	sep->rssi_ant_id = iq_report->rssi_ant_id;
 	sep->cte_type = iq_report->cte_info.type;
 
-	sep->chan_idx = lll->data_chan_id;
+	sep->chan_idx = iq_report->chan_idx;
 	sep->per_evt_counter = sys_cpu_to_le16(lll->event_counter);
 
 	if (sep->cte_type == BT_HCI_LE_AOA_CTE) {

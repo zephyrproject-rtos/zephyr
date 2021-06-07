@@ -70,6 +70,7 @@ struct node_rx_iq_report {
 	uint8_t local_slot_durations;
 	uint8_t packet_status;
 	uint8_t rssi_ant_id;
+	uint8_t chan_idx;
 	union {
 		uint8_t pdu[0] __aligned(4);
 		struct iq_sample sample[0];
