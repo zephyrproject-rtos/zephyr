@@ -174,7 +174,7 @@ void ull_conn_mfifo_enqueue_tx(uint8_t idx)
 {
 	MFIFO_ENQUEUE(conn_tx, idx);
 }
-
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 /**
  * @brief Pause the data path of a rx queue.
  */
@@ -190,6 +190,7 @@ void ull_conn_resume_rx_data(struct ll_conn *conn)
 {
 	conn->pause_rx_data = 0U;
 }
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 /**
  * @brief Restart procedure timeout 'timer'

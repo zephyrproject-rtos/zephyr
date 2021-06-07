@@ -284,6 +284,7 @@ void ull_cp_priv_pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data *p
 	conn->llcp.vex.cached.sub_version_number = sys_le16_to_cpu(pdu->llctrl.version_ind.sub_version_number);
 }
 
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 /*
  * Encryption Start Procedure Helper
  */
@@ -369,6 +370,7 @@ void ull_cp_priv_pdu_encode_pause_enc_rsp(struct pdu_data *pdu)
 	pdu->len = offsetof(struct pdu_data_llctrl, pause_enc_rsp) + sizeof(struct pdu_data_llctrl_pause_enc_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
 }
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code)
 {
