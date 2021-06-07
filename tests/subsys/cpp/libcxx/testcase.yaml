@@ -3,14 +3,17 @@ common:
   integration_platforms:
     - mps2_an385
 tests:
-  cpp.libcxx:
+  cpp.libcxx.newlib:
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
-  cpp.libcxx.exceptions:
+    extra_configs:
+        - CONFIG_NEWLIB_LIBC_NANO=n
+        - CONFIG_EXCEPTIONS=y
+  cpp.libcxx.newlib_nano:
     toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
     timeout: 30
     extra_configs:
-        - CONFIG_EXCEPTIONS=y
+        - CONFIG_NEWLIB_LIBC_NANO=y
