@@ -198,32 +198,28 @@ static int eth_mcux_device_pm_control(const struct device *dev,
 		goto out;
 	}
 
-	if (command == PM_DEVICE_STATE_SET) {
-		if (*state == PM_DEVICE_STATE_SUSPEND) {
-			LOG_DBG("Suspending");
+	if (*state == PM_DEVICE_STATE_SUSPEND) {
+		LOG_DBG("Suspending");
 
-			ret = net_if_suspend(eth_ctx->iface);
-			if (ret == -EBUSY) {
-				goto out;
-			}
-
-			eth_mcux_phy_enter_reset(eth_ctx);
-			eth_mcux_phy_stop(eth_ctx);
-
-			ENET_Reset(eth_ctx->base);
-			ENET_Deinit(eth_ctx->base);
-			clock_control_off(eth_ctx->clock_dev,
-				(clock_control_subsys_t)eth_ctx->clock);
-		} else if (*state == PM_DEVICE_STATE_ACTIVE) {
-			LOG_DBG("Resuming");
-
-			clock_control_on(eth_ctx->clock_dev,
-				(clock_control_subsys_t)eth_ctx->clock);
-			eth_mcux_init(dev);
-			net_if_resume(eth_ctx->iface);
+		ret = net_if_suspend(eth_ctx->iface);
+		if (ret == -EBUSY) {
+			goto out;
 		}
-	} else {
-		return -EINVAL;
+
+		eth_mcux_phy_enter_reset(eth_ctx);
+		eth_mcux_phy_stop(eth_ctx);
+
+		ENET_Reset(eth_ctx->base);
+		ENET_Deinit(eth_ctx->base);
+		clock_control_off(eth_ctx->clock_dev,
+			(clock_control_subsys_t)eth_ctx->clock);
+	} else if (*state == PM_DEVICE_STATE_ACTIVE) {
+		LOG_DBG("Resuming");
+
+		clock_control_on(eth_ctx->clock_dev,
+			(clock_control_subsys_t)eth_ctx->clock);
+		eth_mcux_init(dev);
+		net_if_resume(eth_ctx->iface);
 	}
 
 out:

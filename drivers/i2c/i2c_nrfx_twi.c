@@ -221,33 +221,30 @@ static int twi_nrfx_pm_control(const struct device *dev,
 				enum pm_device_state *state)
 {
 	int ret = 0;
+	enum pm_device_state curr_state;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state curr_state;
-
-		(void)pm_device_state_get(dev, &curr_state);
-		if (*state != curr_state) {
-			switch (*state) {
-			case PM_DEVICE_STATE_ACTIVE:
-				init_twi(dev);
-				if (get_dev_data(dev)->dev_config) {
-					i2c_nrfx_twi_configure(
-						dev,
-						get_dev_data(dev)->dev_config);
-				}
-				break;
-
-			case PM_DEVICE_STATE_LOW_POWER:
-			case PM_DEVICE_STATE_SUSPEND:
-			case PM_DEVICE_STATE_OFF:
-				if (curr_state == PM_DEVICE_STATE_ACTIVE) {
-					nrfx_twi_uninit(&get_dev_config(dev)->twi);
-				}
-				break;
-
-			default:
-				ret = -ENOTSUP;
+	(void)pm_device_state_get(dev, &curr_state);
+	if (*state != curr_state) {
+		switch (*state) {
+		case PM_DEVICE_STATE_ACTIVE:
+			init_twi(dev);
+			if (get_dev_data(dev)->dev_config) {
+				i2c_nrfx_twi_configure(
+					dev,
+					get_dev_data(dev)->dev_config);
 			}
+			break;
+
+		case PM_DEVICE_STATE_LOW_POWER:
+		case PM_DEVICE_STATE_SUSPEND:
+		case PM_DEVICE_STATE_OFF:
+			if (curr_state == PM_DEVICE_STATE_ACTIVE) {
+				nrfx_twi_uninit(&get_dev_config(dev)->twi);
+			}
+			break;
+
+		default:
+			ret = -ENOTSUP;
 		}
 	}
 

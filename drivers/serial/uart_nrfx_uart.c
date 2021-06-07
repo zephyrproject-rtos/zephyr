@@ -1162,13 +1162,11 @@ static int uart_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
 				enum pm_device_state *state)
 {
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state current_state;
+	enum pm_device_state current_state;
 
-		(void)pm_device_state_get(dev, &current_state);
-		if (*state != current_state) {
-			uart_nrfx_set_power_state(dev, *state);
-		}
+	(void)pm_device_state_get(dev, &current_state);
+	if (*state != current_state) {
+		uart_nrfx_set_power_state(dev, *state);
 	}
 
 	return 0;
