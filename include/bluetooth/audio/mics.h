@@ -51,13 +51,13 @@ struct bt_mics_register_param {
 };
 
 /**
- * @brief Microphone Input Control Service instance
+ * @brief Microphone Input Control Service included services
  *
- * Used for to represent a Microphone Input Control Service, for either
- * a client or a server instance. The instance pointers either represent local
- * server instances, or remote service instances.
+ * Used for to represent the Microphone Input Control Service included service
+ * instances, for either a client or a server instance. The instance pointers
+ * either represent local server instances, or remote service instances.
  */
-struct bt_mics {
+struct bt_mics_included  {
 	/** Number of Audio Input Control Service instances */
 	uint8_t aics_cnt;
 	/** Array of pointers to Audio Input Control Service instances */
@@ -77,18 +77,19 @@ struct bt_mics {
 int bt_mics_register(struct bt_mics_register_param *param);
 
 /**
- * @brief Get Microphone Input Control Service pointer
+ * @brief Get Microphone Input Control Service included services
  *
  * Returns a pointer to a struct that contains information about the
- * Microphone Input Control Service instance, such as pointers to the
- * Audio Input Control Service instances.
+ * Microphone Input Control Service included services instances, such as
+ * pointers to the Audio Input Control Service instances.
  *
  * @param conn          Connection to peer device, or NULL to get server value.
- * @param[out] service  Pointer to store the result in.
+ * @param[out] included Pointer to store the result in.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mics_get(struct bt_conn *conn, struct bt_mics *service);
+int bt_mics_included_get(struct bt_conn *conn,
+			 struct bt_mics_included *included);
 
 /**
  * @brief Callback function for @ref bt_mics_discover.

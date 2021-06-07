@@ -16,7 +16,7 @@
 
 #include "bt.h"
 
-static struct bt_mics mics;
+static struct bt_mics_included mics_included;
 
 static void mics_discover_cb(struct bt_conn *conn, int err, uint8_t aics_count)
 {
@@ -26,7 +26,7 @@ static void mics_discover_cb(struct bt_conn *conn, int err, uint8_t aics_count)
 		shell_print(ctx_shell, "MICS discover done with %u AICS",
 			    aics_count);
 
-		if (bt_mics_get(conn, &mics) != 0) {
+		if (bt_mics_included_get(conn, &mics_included) != 0) {
 			shell_error(ctx_shell, "Could not get MICS context");
 		}
 	}
@@ -297,9 +297,9 @@ static int cmd_mics_client_aics_input_state_get(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -307,7 +307,7 @@ static int cmd_mics_client_aics_input_state_get(const struct shell *sh,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_state_get(default_conn, mics.aics[index]);
+	result = bt_mics_aics_state_get(default_conn, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -321,9 +321,9 @@ static int cmd_mics_client_aics_gain_setting_get(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -331,7 +331,7 @@ static int cmd_mics_client_aics_gain_setting_get(const struct shell *sh,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_gain_setting_get(default_conn, mics.aics[index]);
+	result = bt_mics_aics_gain_setting_get(default_conn, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -345,9 +345,9 @@ static int cmd_mics_client_aics_input_type_get(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -355,7 +355,7 @@ static int cmd_mics_client_aics_input_type_get(const struct shell *sh,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_type_get(default_conn, mics.aics[index]);
+	result = bt_mics_aics_type_get(default_conn, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -369,9 +369,9 @@ static int cmd_mics_client_aics_input_status_get(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -379,7 +379,7 @@ static int cmd_mics_client_aics_input_status_get(const struct shell *sh,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_status_get(default_conn, mics.aics[index]);
+	result = bt_mics_aics_status_get(default_conn, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -393,9 +393,9 @@ static int cmd_mics_client_aics_input_unmute(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -403,7 +403,7 @@ static int cmd_mics_client_aics_input_unmute(const struct shell *sh,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_unmute(default_conn, mics.aics[index]);
+	result = bt_mics_aics_unmute(default_conn, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -417,9 +417,9 @@ static int cmd_mics_client_aics_input_mute(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -427,7 +427,7 @@ static int cmd_mics_client_aics_input_mute(const struct shell *sh,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_mute(default_conn, mics.aics[index]);
+	result = bt_mics_aics_mute(default_conn, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -441,9 +441,9 @@ static int cmd_mics_client_aics_manual_input_gain_set(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -451,7 +451,7 @@ static int cmd_mics_client_aics_manual_input_gain_set(const struct shell *sh,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_manual_gain_set(default_conn, mics.aics[index]);
+	result = bt_mics_aics_manual_gain_set(default_conn, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -466,9 +466,9 @@ static int cmd_mics_client_aics_automatic_input_gain_set(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -477,7 +477,7 @@ static int cmd_mics_client_aics_automatic_input_gain_set(const struct shell *sh,
 	}
 
 	result = bt_mics_aics_automatic_gain_set(default_conn,
-						 mics.aics[index]);
+						 mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -492,9 +492,9 @@ static int cmd_mics_client_aics_gain_set(const struct shell *sh, size_t argc,
 	int index = strtol(argv[1], NULL, 0);
 	int gain = strtol(argv[2], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -508,7 +508,7 @@ static int cmd_mics_client_aics_gain_set(const struct shell *sh, size_t argc,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_gain_set(default_conn, mics.aics[index], gain);
+	result = bt_mics_aics_gain_set(default_conn, mics_included.aics[index], gain);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -522,9 +522,9 @@ static int cmd_mics_client_aics_input_description_get(const struct shell *sh,
 	int result;
 	int index = strtol(argv[1], NULL, 0);
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -532,7 +532,7 @@ static int cmd_mics_client_aics_input_description_get(const struct shell *sh,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_description_get(default_conn, mics.aics[index]);
+	result = bt_mics_aics_description_get(default_conn, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -547,9 +547,9 @@ static int cmd_mics_client_aics_input_description_set(const struct shell *sh,
 	int index = strtol(argv[1], NULL, 0);
 	char *description = argv[2];
 
-	if (index >= mics.aics_cnt) {
+	if (index >= mics_included.aics_cnt) {
 		shell_error(sh, "Index shall be less than %u, was %u",
-			    mics.aics_cnt, index);
+			    mics_included.aics_cnt, index);
 		return -ENOEXEC;
 	}
 
@@ -557,7 +557,7 @@ static int cmd_mics_client_aics_input_description_set(const struct shell *sh,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_aics_description_set(default_conn, mics.aics[index],
+	result = bt_mics_aics_description_set(default_conn, mics_included.aics[index],
 					      description);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
