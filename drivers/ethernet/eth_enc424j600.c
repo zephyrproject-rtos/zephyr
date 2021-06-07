@@ -450,8 +450,7 @@ static void enc424j600_rx_thread(struct enc424j600_runtime *context)
 	while (true) {
 		k_sem_take(&context->int_sem, K_FOREVER);
 
-		enc424j600_clear_sfru(context->dev, ENC424J600_SFR3_EIEL,
-				      ENC424J600_EIE_INTIE);
+		enc424j600_write_sbc(context->dev, ENC424J600_1BC_CLREIE);
 		enc424j600_read_sfru(context->dev, ENC424J600_SFRX_EIRL, &eir);
 		enc424j600_read_sfru(context->dev,
 				     ENC424J600_SFRX_ESTATL, &estat);
@@ -493,8 +492,7 @@ static void enc424j600_rx_thread(struct enc424j600_runtime *context)
 			}
 		}
 
-		enc424j600_set_sfru(context->dev, ENC424J600_SFR3_EIEL,
-				    ENC424J600_EIE_INTIE);
+		enc424j600_write_sbc(context->dev, ENC424J600_1BC_SETEIE);
 	}
 }
 
@@ -745,8 +743,7 @@ static int enc424j600_init(const struct device *dev)
 			K_PRIO_COOP(CONFIG_ETH_ENC424J600_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
 
-	enc424j600_set_sfru(dev, ENC424J600_SFR3_EIEL,
-				ENC424J600_EIE_INTIE);
+	enc424j600_write_sbc(dev, ENC424J600_1BC_SETEIE);
 
 	context->suspended = false;
 	LOG_INF("ENC424J600 Initialized");
