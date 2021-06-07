@@ -21,6 +21,7 @@ enum llcp_proc {
 	PROC_DATA_LENGTH_UPDATE
 };
 
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 struct llcp_enc {
 	uint8_t error;
 
@@ -84,6 +85,7 @@ struct llcp_enc {
 		};
 	};
 };
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 /* LLCP Procedure Context */
 struct proc_ctx {
@@ -129,8 +131,10 @@ struct proc_ctx {
 		} muc;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 		/* Used by Encryption Procedure */
 		struct llcp_enc enc;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		/* PHY Update */
@@ -397,6 +401,7 @@ static inline void rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void 
 }
 
 
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 /*
  * LLCP Local Procedure Encryption
  */
@@ -460,6 +465,7 @@ static inline void rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *
 	return ull_cp_priv_rp_enc_run(conn, ctx, param);
 }
 
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 /*
@@ -919,6 +925,7 @@ static inline void pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data 
 }
 
 
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 /*
  * Encryption Start Procedure Helper
  */
@@ -970,6 +977,7 @@ static inline void pdu_encode_pause_enc_rsp(struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_pause_enc_rsp(pdu);
 }
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 void ull_cp_priv_pdu_encode_reject_ind(struct pdu_data *pdu, uint8_t error_code);
 
