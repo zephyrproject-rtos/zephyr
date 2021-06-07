@@ -1,0 +1,10 @@
+# LTC4162 Battery Charger
+
+# Copyright (c) 2021 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config LTC4162
+	bool "LTC4163 battery charger"
+	depends on I2C
+	help
+	  Enable driver for LTC4162 I2C based charger

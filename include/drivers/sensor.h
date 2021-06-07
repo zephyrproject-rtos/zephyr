@@ -48,6 +48,36 @@ struct sensor_value {
 };
 
 /**
+ * @brief Charger Status
+ */
+enum charger_status {
+	CHARGER_STATUS_CHARGING,
+	CHARGER_STATUS_DISCHARGING,
+	CHARGER_STATUS_NOT_CHARGING,
+	CHARGER_STATUS_UNKNOWN,
+	CHARGER_STATUS_FULL,
+};
+
+/**
+ * @brief What algorithm is charger using
+ */
+enum charge_type {
+	CHARGER_CHARGE_TYPE_NONE,
+	CHARGER_CHARGE_TYPE_TRICKLE,
+	CHARGER_CHARGE_TYPE_FAST,
+};
+
+/**
+ * @brief Charger health
+ */
+enum charger_health {
+	CHARGER_HEALTH_UNKNOWN,
+	CHARGER_HEALTH_GOOD,
+	CHARGER_HEALTH_DEAD,
+	CHARGER_HEALTH_UNSPEC_FAILURE,
+};
+
+/**
  * @brief Sensor channels.
  */
 enum sensor_channel {
@@ -173,6 +203,29 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
 	/** Desired charging current in mA */
 	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
+
+	/** Charger type **/
+	SENSOR_CHAN_CHARGER_TYPE,
+	/** Charger Status **/
+	SENSOR_CHAN_CHARGER_STATUS,
+	/** Charger health **/
+	SENSOR_CHAN_CHARGER_HEALTH,
+	/** Charger input voltage **/
+	SENSOR_CHAN_CHARGER_INPUT_VOLTAGE,
+	/** Charger input current **/
+	SENSOR_CHAN_CHARGER_INPUT_CURRENT,
+	/** Charger constant charge current **/
+	SENSOR_CHAN_CHARGER_CONSTANT_CHARGE_CURRENT,
+	/** Charger constant charge current max **/
+	SENSOR_CHAN_CHARGER_CONSTANT_CHARGE_CURRENT_MAX,
+	/** Charger constant charge voltage **/
+	SENSOR_CHAN_CHARGER_CONSTANT_CHARGE_VOLTAGE,
+	/** Charger constant charge voltage max **/
+	SENSOR_CHAN_CHARGER_CONSTANT_CHARGE_VOLTAGE_MAX,
+	/** Charger input current limit **/
+	SENSOR_CHAN_CHARGER_INPUT_CURRENT_LIMIT,
+	/** Charger temperature **/
+	SENSOR_CHAN_CHARGER_TEMPERATURE,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,

@@ -1,0 +1,24 @@
+# Copyright (c) 2021 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Device LTC4162 I2C charger
+
+compatible: "adi,ltc4162"
+
+include: i2c-device.yaml
+
+properties:
+    rsnsb-micro-ohms:
+      type: int
+      required: true
+      description: Battery sense resistor in microohm.
+
+    rsnsi-micro-ohms:
+      type: int
+      required: true
+      description: Input sense resistor in microohm.
+
+    cell-count:
+      type: int
+      required: false
+      description: Number of battery cells.

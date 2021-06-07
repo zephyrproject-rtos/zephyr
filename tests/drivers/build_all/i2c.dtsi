@@ -449,6 +449,15 @@ test_i2c_lsm9ds0_mfd: lsm9ds0-mfd@3c {
 	irq-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_ltc4162: ltc4162@68 {
+	compatible = "adi,ltc4162";
+	reg = <0x68>;
+	label = "LTC4162";
+	rsnsb-micro-ohms = <10>;
+	rsnsi-micro-ohms = <10>;
+	cell-count = <2>;
+};
+
 test_i2c_stts751: stts751@3d {
 	compatible = "st,stts751";
 	label = "STTS751";

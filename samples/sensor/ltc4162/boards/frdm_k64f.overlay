@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2021 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	ltc4162@68 {
+		compatible = "adi,ltc4162";
+		reg = <0x68>;
+		label = "LTC4162";
+		rsnsb-micro-ohms = <10>;
+		rsnsi-micro-ohms = <10>;
+		cell-count = <2>;
+	};
+};
