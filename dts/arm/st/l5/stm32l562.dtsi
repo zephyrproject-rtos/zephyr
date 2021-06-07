@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2021 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l5/stm32l5.dtsi>
+
+/ {
+	soc {
+		aes: aes@420c0000 {
+			compatible = "st,stm32-aes";
+			reg = <0x420c0000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			interrupts = <93 0>;
+			status = "disabled";
+			label = "AES";
+		};
+	};
+};
