@@ -414,12 +414,10 @@ static int loapic_device_ctrl(const struct device *port,
 {
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		if (*state == PM_DEVICE_STATE_SUSPEND) {
-			ret = loapic_suspend(port);
-		} else if (*state == PM_DEVICE_STATE_ACTIVE) {
-			ret = loapic_resume(port);
-		}
+	if (*state == PM_DEVICE_STATE_SUSPEND) {
+		ret = loapic_suspend(port);
+	} else if (*state == PM_DEVICE_STATE_ACTIVE) {
+		ret = loapic_resume(port);
 	}
 
 	return ret;

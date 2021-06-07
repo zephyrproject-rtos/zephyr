@@ -23,18 +23,7 @@ static int dummy_device_pm_ctrl(const struct device *dev,
 				uint32_t ctrl_command,
 				enum pm_device_state *state)
 {
-	int ret;
-
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		ret = 0;
-		break;
-	default:
-		ret = -EINVAL;
-
-	}
-
-	return ret;
+	return 0;
 }
 
 static const struct dummy_driver_api funcs = {
