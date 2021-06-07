@@ -275,6 +275,7 @@
 /drivers/pwm/pwm_capture.c                @henrikbrixandersen
 /drivers/pwm/pwm_shell.c                  @henrikbrixandersen
 /drivers/pwm/*gecko*                      @sun681
+/drivers/pwm/*it8xxx2*                    @RuibinChang
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
@@ -471,6 +472,7 @@
 /include/dt-bindings/dma/stm32_dma.h      @cybertale
 /include/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
 /include/dt-bindings/pcie/                @dcpleung
+/include/dt-bindings/pwm/*it8xxx2*        @RuibinChang
 /include/dt-bindings/usb/usb.h            @galak
 /include/drivers/emul.h                   @sjg20
 /include/fs/                              @nashif @nvlsianpu @de-nordic
