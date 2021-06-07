@@ -447,7 +447,8 @@ int bt_mics_client_cb_register(struct bt_mics_cb *cb)
 	return 0;
 }
 
-int bt_mics_client_service_get(struct bt_conn *conn, struct bt_mics *service)
+int bt_mics_client_included_get(struct bt_conn *conn,
+					struct bt_mics_included *included)
 {
 	struct mics_instance *mics_inst;
 
@@ -455,14 +456,14 @@ int bt_mics_client_service_get(struct bt_conn *conn, struct bt_mics *service)
 		return -EINVAL;
 	}
 
-	CHECKIF(service == NULL) {
+	CHECKIF(included == NULL) {
 		return -EINVAL;
 	}
 
 	mics_inst = &mics_insts[bt_conn_index(conn)];
 
-	service->aics_cnt = mics_inst->aics_inst_cnt;
-	service->aics = mics_inst->aics;
+	included->aics_cnt = mics_inst->aics_inst_cnt;
+	included->aics = mics_inst->aics;
 
 	return 0;
 }

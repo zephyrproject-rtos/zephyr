@@ -223,23 +223,24 @@ static bool valid_aics_inst(struct bt_aics *aics)
 	return false;
 }
 
-int bt_mics_get(struct bt_conn *conn, struct bt_mics *service)
+int bt_mics_included_get(struct bt_conn *conn,
+			 struct bt_mics_included *included)
 {
-	CHECKIF(service == NULL) {
+	CHECKIF(included == NULL) {
 		BT_DBG("NULL service pointer");
 		return -EINVAL;
 	}
 
 #if defined(CONFIG_BT_MICS_CLIENT)
 	if (conn != NULL) {
-		return bt_mics_client_service_get(conn, service);
+		return bt_mics_client_included_get(conn, included);
 	}
 #endif /* CONFIG_BT_MICS_CLIENT */
 
 #if defined(CONFIG_BT_MICS)
 	if (conn == NULL) {
-		service->aics_cnt = ARRAY_SIZE(mics_inst.aics_insts);
-		service->aics = mics_inst.aics_insts;
+		included->aics_cnt = ARRAY_SIZE(mics_inst.aics_insts);
+		included->aics = mics_inst.aics_insts;
 
 		return 0;
 	}
