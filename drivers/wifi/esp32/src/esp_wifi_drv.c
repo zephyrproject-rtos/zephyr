@@ -44,8 +44,8 @@ struct esp32_wifi_runtime {
 static void esp_wifi_event_task(void);
 
 K_MSGQ_DEFINE(esp_wifi_msgq, sizeof(system_event_t), 10, 4);
-K_THREAD_DEFINE(esp_wifi_event_tid, CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE,
-		esp_wifi_event_task, NULL, NULL, NULL, CONFIG_ESP32_WIFI_EVENT_TASK_PRIO, 0, 0);
+K_THREAD_STACK_DEFINE(esp_wifi_event_stack, CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE);
+static struct k_thread esp_wifi_event_thread;
 
 /* internal wifi library callback function */
 esp_err_t esp_event_send_internal(esp_event_base_t event_base,
@@ -109,7 +109,7 @@ pkt_unref:
 	return ESP_FAIL;
 }
 
-void esp_wifi_event_task(void)
+static void esp_wifi_event_task(void)
 {
 	int32_t event_id;
 
@@ -174,6 +174,12 @@ static struct net_stats_eth *eth_esp32_stats(const struct device *dev)
 static int eth_esp32_dev_init(const struct device *dev)
 {
 	esp_timer_init();
+
+	k_thread_create(&esp_wifi_event_thread, esp_wifi_event_stack,
+			CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE,
+			(k_thread_entry_t)esp_wifi_event_task, NULL, NULL, NULL,
+			CONFIG_ESP32_WIFI_EVENT_TASK_PRIO, K_INHERIT_PERMS,
+			K_NO_WAIT);
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
