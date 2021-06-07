@@ -122,10 +122,12 @@ struct proc_ctx {
 	/* Procedure data */
 	union {
 		/* Used by Minimum Used Channels Procedure */
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 		struct {
 			uint8_t phys;
 			uint8_t min_used_chans;
 		} muc;
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 		/* Used by Encryption Procedure */
 		struct llcp_enc enc;
@@ -873,6 +875,7 @@ static inline void pdu_decode_feature_rsp(struct ll_conn *conn,
 	return ull_cp_priv_pdu_decode_feature_rsp(conn, pdu);
 }
 
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 /*
  * Minimum number of used channels Procedure Helper
  */
@@ -889,6 +892,7 @@ static inline void pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pd
 {
 	return ull_cp_priv_pdu_decode_min_used_chans_ind(conn, pdu);
 }
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 /*
  * Version Exchange Procedure Helper
