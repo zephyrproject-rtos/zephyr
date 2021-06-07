@@ -182,9 +182,11 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_rx(conn, ctx, rx);
 		break;
+#if defined (CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
 		rp_comm_rx(conn, ctx, rx);
 		break;
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PROC_VERSION_EXCHANGE:
 		rp_comm_rx(conn, ctx, rx);
 		break;
@@ -254,9 +256,11 @@ static void rr_act_run(struct ll_conn *conn)
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_run(conn, ctx, NULL);
 		break;
+#if defined (CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
 		rp_comm_run(conn, ctx, NULL);
 		break;
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PROC_VERSION_EXCHANGE:
 		rp_comm_run(conn, ctx, NULL);
 		break;

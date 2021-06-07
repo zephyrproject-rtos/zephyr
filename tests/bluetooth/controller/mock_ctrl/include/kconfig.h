@@ -51,6 +51,10 @@
 #define CONFIG_BT_CTLR_CONN_RSSI y
 #endif
 
+#ifndef CONFIG_BT_CTLR_MIN_USED_CHAN
+#define CONFIG_BT_CTLR_MIN_USED_CHAN y
+#endif
+
 #define CONFIG_BT_CTLR_LLCP_CONN 4
 
 /* Kconfig Cheats */
