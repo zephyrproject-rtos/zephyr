@@ -32,6 +32,21 @@ static struct bt_mics_cb *mics_client_cb;
 static struct bt_mics mics_insts[CONFIG_BT_MAX_CONN];
 static struct bt_uuid *mics_uuid = BT_UUID_MICS;
 
+static struct bt_mics *lookup_mics_by_aics(const struct bt_aics *aics)
+{
+	__ASSERT(aics != NULL, "AICS pointer cannot be NULL");
+
+	for (int i = 0; i < ARRAY_SIZE(mics_insts); i++) {
+		for (int j = 0; j < ARRAY_SIZE(mics_insts[i].cli.aics); j++) {
+			if (mics_insts[i].cli.aics[j] == aics) {
+				return &mics_insts[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
 bool bt_mics_client_valid_aics_inst(struct bt_mics *mics, struct bt_aics *aics)
 {
 	if (mics == NULL) {
@@ -134,14 +149,14 @@ static void mics_client_write_mics_mute_cb(struct bt_conn *conn, uint8_t err,
 	}
 }
 
-static void aics_discover_cb(struct bt_conn *conn, struct bt_aics *inst,
-			     int err)
+static void aics_discover_cb(struct bt_aics *inst, int err)
 {
-	struct bt_mics *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics *mics_inst = lookup_mics_by_aics(inst);
 
 	if (err == 0) {
 		/* Continue discovery of included services */
-		err = bt_gatt_discover(conn, &mics_inst->cli.discover_params);
+		err = bt_gatt_discover(mics_inst->cli.conn,
+				       &mics_inst->cli.discover_params);
 	}
 
 	if (err != 0) {

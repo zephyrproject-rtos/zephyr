@@ -44,8 +44,8 @@ static void mics_mute_cb(struct bt_mics *mics, int err, uint8_t mute)
 	g_cb = true;
 }
 
-static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			  int8_t gain, uint8_t mute, uint8_t mode)
+static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
+			  uint8_t mute, uint8_t mode)
 {
 	if (err != 0) {
 		FAIL("AICS state cb err (%d)", err);
@@ -55,15 +55,11 @@ static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	g_aics_gain = gain;
 	g_aics_input_mute = mute;
 	g_aics_mode = mode;
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
-				 int err, uint8_t units, int8_t minimum,
-				 int8_t maximum)
+static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
+				 int8_t minimum, int8_t maximum)
 {
 	if (err != 0) {
 		FAIL("AICS gain setting cb err (%d)", err);
@@ -73,14 +69,11 @@ static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
 	g_aics_units = units;
 	g_aics_gain_min = minimum;
 	g_aics_gain_max = maximum;
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
-			       int err, uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err,
+			       uint8_t input_type)
 {
 	if (err != 0) {
 		FAIL("AICS input type cb err (%d)", err);
@@ -88,14 +81,10 @@ static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
 	}
 
 	g_aics_input_type = input_type;
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			   bool active)
+static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
 	if (err != 0) {
 		FAIL("AICS status cb err (%d)", err);
@@ -103,14 +92,11 @@ static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	}
 
 	g_aics_active = active;
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
-				int err, char *description)
+static void aics_description_cb(struct bt_aics *inst, int err,
+				char *description)
 {
 	if (err != 0) {
 		FAIL("AICS description cb err (%d)", err);
@@ -120,10 +106,7 @@ static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
 
 	strncpy(g_aics_desc, description, sizeof(g_aics_desc) - 1);
 	g_aics_desc[sizeof(g_aics_desc) - 1] = '\0';
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
 static struct bt_mics_cb mics_cb = {
