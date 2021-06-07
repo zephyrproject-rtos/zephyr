@@ -739,51 +739,54 @@
  * (18xxh) PWM & SmartAuto Fan Control (PWM)
  *
  */
-#define C0CPRS			ECREG(EC_REG_BASE_ADDR + 0x1800)
-#define CTR			ECREG(EC_REG_BASE_ADDR + 0x1801)
-#define DCR0			ECREG(EC_REG_BASE_ADDR + 0x1802)
-#define DCR1			ECREG(EC_REG_BASE_ADDR + 0x1803)
-#define DCR2			ECREG(EC_REG_BASE_ADDR + 0x1804)
-#define DCR3			ECREG(EC_REG_BASE_ADDR + 0x1805)
-#define DCR4			ECREG(EC_REG_BASE_ADDR + 0x1806)
-#define DCR5			ECREG(EC_REG_BASE_ADDR + 0x1807)
-#define DCR6			ECREG(EC_REG_BASE_ADDR + 0x1808)
-#define DCR7			ECREG(EC_REG_BASE_ADDR + 0x1809)
-#define PWMPOL			ECREG(EC_REG_BASE_ADDR + 0x180A)
-#define PCFSR			ECREG(EC_REG_BASE_ADDR + 0x180B)
-#define PCSSGL			ECREG(EC_REG_BASE_ADDR + 0x180C)
-#define PCSSGH			ECREG(EC_REG_BASE_ADDR + 0x180D)
-#define CR256PCSSG		ECREG(EC_REG_BASE_ADDR + 0x180E)
-#define PCSGR			ECREG(EC_REG_BASE_ADDR + 0x180F)
-#define F1TLRR			ECREG(EC_REG_BASE_ADDR + 0x181E)
-#define F1TMRR			ECREG(EC_REG_BASE_ADDR + 0x181F)
-#define F2TLRR			ECREG(EC_REG_BASE_ADDR + 0x1820)
-#define F2TMRR			ECREG(EC_REG_BASE_ADDR + 0x1821)
-#define ZINTSCR			ECREG(EC_REG_BASE_ADDR + 0x1822)
-#define ZTIER			ECREG(EC_REG_BASE_ADDR + 0x1823)
-#define TSWCTLR			ECREG(EC_REG_BASE_ADDR + 0x1824)
-#define C4CPRS			ECREG(EC_REG_BASE_ADDR + 0x1827)
-#define C4MCPRS			ECREG(EC_REG_BASE_ADDR + 0x1828)
-#define C6CPRS			ECREG(EC_REG_BASE_ADDR + 0x182B)
-#define C6MCPRS			ECREG(EC_REG_BASE_ADDR + 0x182C)
-#define C7CPRS			ECREG(EC_REG_BASE_ADDR + 0x182D)
-#define C7MCPRS			ECREG(EC_REG_BASE_ADDR + 0x182E)
-#define CLK6MSEL		ECREG(EC_REG_BASE_ADDR + 0x1840)
-#define CTR1			ECREG(EC_REG_BASE_ADDR + 0x1841)
-#define CTR2			ECREG(EC_REG_BASE_ADDR + 0x1842)
-#define CTR3			ECREG(EC_REG_BASE_ADDR + 0x1843)
-#define PWM5TOCTRL		ECREG(EC_REG_BASE_ADDR + 0x1844)
-#define CFLRR			ECREG(EC_REG_BASE_ADDR + 0x1845)
-#define CFMRR			ECREG(EC_REG_BASE_ADDR + 0x1846)
-#define CFINTCTRL		ECREG(EC_REG_BASE_ADDR + 0x1847)
-#define TSWCTRL			ECREG(EC_REG_BASE_ADDR + 0x1848)
-#define PWMODENR		ECREG(EC_REG_BASE_ADDR + 0x1849)
-#define PWM0LHE			ECREG(EC_REG_BASE_ADDR + 0x1850)
-#define PWM0LCR1		ECREG(EC_REG_BASE_ADDR + 0x1851)
-#define PWM0LCR2		ECREG(EC_REG_BASE_ADDR + 0x1852)
-#define PWM1LHE			ECREG(EC_REG_BASE_ADDR + 0x1853)
-#define PWM1LCR1		ECREG(EC_REG_BASE_ADDR + 0x1854)
-#define PWM1LCR2		ECREG(EC_REG_BASE_ADDR + 0x1855)
+#ifndef __ASSEMBLER__
+struct pwm_it8xxx2_regs {
+	/* 0x000: Channel0 Clock Prescaler */
+	volatile uint8_t C0CPRS;
+	/* 0x001: Cycle Time0 */
+	volatile uint8_t CTR;
+	/* 0x002~0x00A: Reserved1 */
+	volatile uint8_t Reserved1[9];
+	/* 0x00B: Prescaler Clock Frequency Select */
+	volatile uint8_t PCFSR;
+	/* 0x00C~0x00F: Reserved2 */
+	volatile uint8_t Reserved2[4];
+	/* 0x010: Cycle Time1 MSB */
+	volatile uint8_t CTR1M;
+	/* 0x011~0x022: Reserved3 */
+	volatile uint8_t Reserved3[18];
+	/* 0x023: PWM Clock Control */
+	volatile uint8_t ZTIER;
+	/* 0x024~0x026: Reserved4 */
+	volatile uint8_t Reserved4[3];
+	/* 0x027: Channel4 Clock Prescaler */
+	volatile uint8_t C4CPRS;
+	/* 0x028: Channel4 Clock Prescaler MSB */
+	volatile uint8_t C4MCPRS;
+	/* 0x029~0x02A: Reserved5 */
+	volatile uint8_t Reserved5[2];
+	/* 0x02B: Channel6 Clock Prescaler */
+	volatile uint8_t C6CPRS;
+	/* 0x02C: Channel6 Clock Prescaler MSB */
+	volatile uint8_t C6MCPRS;
+	/* 0x02D: Channel7 Clock Prescaler */
+	volatile uint8_t C7CPRS;
+	/* 0x02E: Channel7 Clock Prescaler MSB */
+	volatile uint8_t C7MCPRS;
+	/* 0x02F~0x040: Reserved6 */
+	volatile uint8_t reserved6[18];
+	/* 0x041: Cycle Time1 */
+	volatile uint8_t CTR1;
+	/* 0x042: Cycle Time2 */
+	volatile uint8_t CTR2;
+	/* 0x043: Cycle Time3 */
+	volatile uint8_t CTR3;
+};
+#endif /* !__ASSEMBLER__ */
+
+/* PWM register fields */
+/* 0x023: PWM Clock Control */
+#define IT8XXX2_PWM_PCCE		BIT(1)
 
 /**
  *
