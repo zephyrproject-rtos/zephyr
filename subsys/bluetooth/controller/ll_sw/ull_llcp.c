@@ -199,10 +199,12 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_init_proc(ctx);
 		break;
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		lp_enc_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		lp_pu_init_proc(ctx);
@@ -256,10 +258,12 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	case PROC_VERSION_EXCHANGE:
 		rp_comm_init_proc(ctx);
 		break;
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		rp_enc_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		rp_pu_init_proc(ctx);
@@ -319,9 +323,11 @@ void ll_conn_init(struct ll_conn *conn)
 	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
 	conn->llcp.fex.features_used = LL_FEAT;
 
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 	/* Reset encryption related state */
 	conn->lll.enc_tx = 0U;
 	conn->lll.enc_rx = 0U;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	conn->lll.event_counter = 0;
 	lr_init(conn);
@@ -426,7 +432,7 @@ uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 
 	return BT_HCI_ERR_SUCCESS;
 }
-
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16])
 {
 	struct proc_ctx *ctx;
@@ -489,6 +495,7 @@ uint8_t ull_cp_encryption_paused(struct ll_conn *conn)
 
 	return 0;
 }
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8_t rx, uint8_t host_initiated)
@@ -593,6 +600,7 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, 
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined (CONFIG_BT_CTLR_LE_ENC)
 void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
 {
 	/* TODO(thoh): Call rp_enc to query if LTK request reply is allowed */
@@ -615,6 +623,7 @@ void ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 		rp_enc_ltk_req_neg_reply(conn, ctx);
 	}
 }
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t interval_max, uint16_t latency, uint16_t timeout)
 {
