@@ -222,7 +222,7 @@
 		espi0: espi@400f3400 {
 			compatible = "microchip,xec-espi";
 			reg = <0x400f3400 0x400>;
-			interrupts = <11 3>, <15 3>, <7 3>;
+			interrupts = <11 3>, <15 3>, <7 3>, <16 3>;
 			label = "ESPI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
