@@ -404,24 +404,15 @@ static void st7789v_enter_sleep(struct st7789v_data *data)
 static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
 				 enum pm_device_state *state)
 {
-	int ret = 0;
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 
-	switch (ctrl_command) {
-	case DEVICE_PM_SET_POWER_STATE:
-		if (*state == PM_DEVICE_STATE_ACTIVE) {
-			st7789v_exit_sleep(data);
-			ret = 0;
-		} else {
-			st7789v_enter_sleep(data);
-			ret = 0;
-		}
-		break;
-	default:
-		ret = -EINVAL;
+	if (*state == PM_DEVICE_STATE_ACTIVE) {
+		st7789v_exit_sleep(data);
+	} else {
+		st7789v_enter_sleep(data);
 	}
 
-	return ret;
+	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */
 

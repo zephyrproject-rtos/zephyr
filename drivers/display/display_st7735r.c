@@ -505,23 +505,16 @@ static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
 	int ret = 0;
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
 
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		if (*state == PM_DEVICE_STATE_ACTIVE) {
-			ret = st7735r_exit_sleep(data);
-			if (ret < 0) {
-				return ret;
-			}
-		} else {
-			ret = st7735r_enter_sleep(data);
-			if (ret < 0) {
-				return ret;
-			}
+	if (*state == PM_DEVICE_STATE_ACTIVE) {
+		ret = st7735r_exit_sleep(data);
+		if (ret < 0) {
+			return ret;
 		}
-
-		break;
-	default:
-		ret = -EINVAL;
+	} else {
+		ret = st7735r_enter_sleep(data);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return ret;
