@@ -53,10 +53,12 @@ void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx);
  */
 void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx);
 
+#if defined(CONFIG_BT_CTLR_LE_PING)
 /**
  * @brief Initiate a LE Ping Procedure.
  */
 uint8_t ull_cp_le_ping(struct ll_conn *conn);
+#endif /* CONFIG_BT_CTLR_LE_PING */
 
 /**
  * @brief Initiate a Version Exchange Procedure.

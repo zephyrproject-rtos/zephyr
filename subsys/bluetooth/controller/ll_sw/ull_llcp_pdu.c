@@ -43,6 +43,7 @@
  */
 #define FEAT_FILT_OCTET0 0xFFFFFFFFFFFFFF00
 
+#if defined(CONFIG_BT_CTLR_LE_PING)
 /*
  * LE Ping Procedure Helpers
  */
@@ -60,7 +61,7 @@ void ull_cp_priv_pdu_encode_ping_rsp(struct pdu_data *pdu)
 	pdu->len = offsetof(struct pdu_data_llctrl, ping_rsp) + sizeof(struct pdu_data_llctrl_ping_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
 }
-
+#endif /* CONFIG_BT_CTLR_LE_PING */
 /*
  * Unknown response helper
  */
