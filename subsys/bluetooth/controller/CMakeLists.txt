@@ -77,11 +77,14 @@ if(CONFIG_BT_LL_SW_SPLIT)
         CONFIG_BT_PHY_UPDATE
         ll_sw/ull_llcp_phy.c
         )
+      zephyr_library_sources_ifdef(
+        CONFIG_BT_CTLR_LE_ENC
+        ll_sw/ull_llcp_enc.c
+        )
       zephyr_library_sources(
         ll_sw/ull_tx_queue.c
         ll_sw/ull_llcp.c
         ll_sw/ull_llcp_common.c
-        ll_sw/ull_llcp_enc.c
         ll_sw/ull_llcp_local.c
         ll_sw/ull_llcp_pdu.c
         ll_sw/ull_llcp_conn_upd.c
