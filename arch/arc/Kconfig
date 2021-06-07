@@ -311,6 +311,31 @@ config ARC_NORMAL_FIRMWARE
 	  resources of the ARC processors, and, therefore, it shall avoid
 	  accessing them.
 
+config SECURESHIELD_BOARD
+	string
+	default "nsim_sem" if BOARD_NSIM
+	default "em_starterkit_em7d" if BOARD_EM_STARTERKIT
+	help
+	  The board name used for building secureshield. Building with secureshield uses
+	  the corresponding secure version of the board.
+
+config BUILD_WITH_SECURESHIELD
+	bool "Build with ARC Secureshield secure firmware"
+	depends on TRUSTED_EXECUTION_NONSECURE
+	depends on SECURESHIELD_BOARD != ""
+	depends on ARC_HAS_SECURE
+	help
+		When enabled, this option instructs the Zephyr build process to
+		additionally generate a secure firmware.
+
+config SECURESHIELD_IMAGE_PATH
+	string "Secureshield image path"
+	default "samples/boards/arc_secure_services"
+	depends on BUILD_WITH_SECURESHIELD
+	help
+		The path to find Secureshield image, customize this config to use user's
+		own secure program.
+
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU
 
