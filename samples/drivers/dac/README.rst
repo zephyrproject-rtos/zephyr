@@ -50,6 +50,17 @@ The sample can be built and executed for the
    :goals: build flash
    :compact:
 
+Building and Running for ST Disco F3
+=========================================
+The sample can be built and executed for the
+:ref:`stm32f3_disco_board` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: stm32f3_disco
+   :goals: build flash
+   :compact:
+
 Building and Running for ST Nucleo F429ZI
 =========================================
 The sample can be built and executed for the
