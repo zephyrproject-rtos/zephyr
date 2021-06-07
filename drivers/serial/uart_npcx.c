@@ -460,17 +460,7 @@ static inline int uart_npcx_set_power_state(const struct device *dev,
 static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
 				 enum pm_device_state *state)
 {
-	int ret = 0;
-
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		ret = uart_npcx_set_power_state(dev, *state);
-		break;
-	default:
-		ret = -EINVAL;
-	}
-
-	return ret;
+	return uart_npcx_set_power_state(dev, *state);
 }
 #endif /* CONFIG_PM_DEVICE */
 

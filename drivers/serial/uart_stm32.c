@@ -1463,13 +1463,11 @@ static int uart_stm32_pm_control(const struct device *dev,
 					 uint32_t ctrl_command,
 					 enum pm_device_state *state)
 {
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		enum pm_device_state curr_state;
+	enum pm_device_state curr_state;
 
-		(void)pm_device_state_get(dev, &curr_state);
-		if (*state != curr_state) {
-			uart_stm32_set_power_state(dev, *state);
-		}
+	(void)pm_device_state_get(dev, &curr_state);
+	if (*state != curr_state) {
+		uart_stm32_set_power_state(dev, *state);
 	}
 
 	return 0;

@@ -416,29 +416,26 @@ static int apds9960_device_ctrl(const struct device *dev,
 	struct apds9960_data *data = dev->data;
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		if (*state == PM_DEVICE_STATE_ACTIVE) {
-			if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-						APDS9960_ENABLE_REG,
-						APDS9960_ENABLE_PON,
-						APDS9960_ENABLE_PON)) {
-				ret = -EIO;
-			}
-
-		} else {
-
-			if (i2c_reg_update_byte(data->i2c, config->i2c_address,
+	if (*state == PM_DEVICE_STATE_ACTIVE) {
+		if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 					APDS9960_ENABLE_REG,
-					APDS9960_ENABLE_PON, 0)) {
-				ret = -EIO;
-			}
-
-			if (i2c_reg_write_byte(data->i2c, config->i2c_address,
-				       APDS9960_AICLEAR_REG, 0)) {
-				ret = -EIO;
-			}
+					APDS9960_ENABLE_PON,
+					APDS9960_ENABLE_PON)) {
+			ret = -EIO;
 		}
 
+	} else {
+
+		if (i2c_reg_update_byte(data->i2c, config->i2c_address,
+				APDS9960_ENABLE_REG,
+				APDS9960_ENABLE_PON, 0)) {
+			ret = -EIO;
+		}
+
+		if (i2c_reg_write_byte(data->i2c, config->i2c_address,
+				APDS9960_AICLEAR_REG, 0)) {
+			ret = -EIO;
+		}
 	}
 
 	return ret;

@@ -588,9 +588,7 @@ static int bmp388_device_ctrl(
 {
 	int ret = 0;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		ret = bmp388_set_power_state(dev, *state);
-	}
+	ret = bmp388_set_power_state(dev, *state);
 
 	return ret;
 }

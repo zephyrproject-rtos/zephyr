@@ -248,15 +248,7 @@ static int qdec_nrfx_pm_control(const struct device *dev,
 
 	LOG_DBG("");
 
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		err = qdec_nrfx_pm_set_state(data, *state);
-		break;
-
-	default:
-		err = -ENOTSUP;
-		break;
-	}
+	err = qdec_nrfx_pm_set_state(data, *state);
 
 	return err;
 }
