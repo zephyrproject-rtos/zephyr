@@ -18,7 +18,7 @@
 static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 
-static struct bt_mics mics;
+static struct bt_mics_included mics_included;
 static volatile bool g_bt_init;
 static volatile bool g_is_connected;
 static volatile bool g_mtu_exchanged;
@@ -239,7 +239,7 @@ static int test_aics(void)
 
 	printk("Getting AICS state\n");
 	g_cb = false;
-	err = bt_mics_aics_state_get(g_conn, mics.aics[0]);
+	err = bt_mics_aics_state_get(g_conn, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
@@ -249,7 +249,7 @@ static int test_aics(void)
 
 	printk("Getting AICS gain setting\n");
 	g_cb = false;
-	err = bt_mics_aics_gain_setting_get(g_conn, mics.aics[0]);
+	err = bt_mics_aics_gain_setting_get(g_conn, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
@@ -260,7 +260,7 @@ static int test_aics(void)
 	printk("Getting AICS input type\n");
 	expected_input_type = BT_AICS_INPUT_TYPE_DIGITAL;
 	g_cb = false;
-	err = bt_mics_aics_type_get(g_conn, mics.aics[0]);
+	err = bt_mics_aics_type_get(g_conn, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS input type (err %d)\n", err);
 		return err;
@@ -271,7 +271,7 @@ static int test_aics(void)
 
 	printk("Getting AICS status\n");
 	g_cb = false;
-	err = bt_mics_aics_status_get(g_conn, mics.aics[0]);
+	err = bt_mics_aics_status_get(g_conn, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
@@ -281,7 +281,7 @@ static int test_aics(void)
 
 	printk("Getting AICS description\n");
 	g_cb = false;
-	err = bt_mics_aics_description_get(g_conn, mics.aics[0]);
+	err = bt_mics_aics_description_get(g_conn, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
@@ -292,7 +292,7 @@ static int test_aics(void)
 	printk("Setting AICS mute\n");
 	expected_input_mute = BT_AICS_STATE_MUTED;
 	g_write_complete = g_cb = false;
-	err = bt_mics_aics_mute(g_conn, mics.aics[0]);
+	err = bt_mics_aics_mute(g_conn, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
@@ -304,7 +304,7 @@ static int test_aics(void)
 	printk("Setting AICS unmute\n");
 	expected_input_mute = BT_AICS_STATE_UNMUTED;
 	g_write_complete = g_cb = false;
-	err = bt_mics_aics_unmute(g_conn, mics.aics[0]);
+	err = bt_mics_aics_unmute(g_conn, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
@@ -316,7 +316,7 @@ static int test_aics(void)
 	printk("Setting AICS auto mode\n");
 	expected_mode = BT_AICS_MODE_AUTO;
 	g_write_complete = g_cb = false;
-	err = bt_mics_aics_automatic_gain_set(g_conn, mics.aics[0]);
+	err = bt_mics_aics_automatic_gain_set(g_conn, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
@@ -327,7 +327,7 @@ static int test_aics(void)
 	printk("Setting AICS manual mode\n");
 	expected_mode = BT_AICS_MODE_MANUAL;
 	g_write_complete = g_cb = false;
-	err = bt_mics_aics_manual_gain_set(g_conn, mics.aics[0]);
+	err = bt_mics_aics_manual_gain_set(g_conn, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
@@ -338,7 +338,7 @@ static int test_aics(void)
 	printk("Setting AICS gain\n");
 	expected_gain = g_aics_gain_max - 1;
 	g_write_complete = g_cb = false;
-	err = bt_mics_aics_gain_set(g_conn, mics.aics[0], expected_gain);
+	err = bt_mics_aics_gain_set(g_conn, mics_included.aics[0], expected_gain);
 	if (err != 0) {
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
@@ -351,7 +351,7 @@ static int test_aics(void)
 		sizeof(expected_aics_desc));
 	expected_aics_desc[sizeof(expected_aics_desc) - 1] = '\0';
 	g_cb = false;
-	err = bt_mics_aics_description_set(g_conn, mics.aics[0],
+	err = bt_mics_aics_description_set(g_conn, mics_included.aics[0],
 					   expected_aics_desc);
 	if (err != 0) {
 		FAIL("Could not set AICS Description (err %d)\n", err);
@@ -403,7 +403,7 @@ static void test_main(void)
 	}
 	WAIT_FOR(g_discovery_complete);
 
-	err = bt_mics_get(g_conn, &mics);
+	err = bt_mics_included_get(g_conn, &mics_included);
 	if (err != 0) {
 		FAIL("Failed to get MICS context (err %d)\n", err);
 		return;
