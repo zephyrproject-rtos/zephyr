@@ -145,19 +145,7 @@ static int led_pwm_pm_set_state(const struct device *dev,
 static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
 			      enum pm_device_state *state)
 {
-	int err;
-
-	switch (ctrl_command) {
-	case PM_DEVICE_STATE_SET:
-		err = led_pwm_pm_set_state(dev, *state);
-		break;
-
-	default:
-		err = -ENOTSUP;
-		break;
-	}
-
-	return err;
+	return led_pwm_pm_set_state(dev, *state);
 }
 
 #endif /* CONFIG_PM_DEVICE */

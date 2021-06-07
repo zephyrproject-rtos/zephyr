@@ -223,56 +223,52 @@ static int vcnl4040_device_ctrl(const struct device *dev,
 				enum pm_device_state *state)
 {
 	int ret = 0;
+	uint16_t ps_conf;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint16_t ps_conf;
+	ret = vcnl4040_read(dev, VCNL4040_REG_PS_CONF, &ps_conf);
+	if (ret < 0)
+		return ret;
+#ifdef CONFIG_VCNL4040_ENABLE_ALS
+	uint16_t als_conf;
 
-		ret = vcnl4040_read(dev, VCNL4040_REG_PS_CONF, &ps_conf);
+	ret = vcnl4040_read(dev, VCNL4040_REG_ALS_CONF, &als_conf);
+	if (ret < 0)
+		return ret;
+#endif
+	if (*state == PM_DEVICE_STATE_ACTIVE) {
+		/* Clear proximity shutdown */
+		ps_conf &= ~VCNL4040_PS_SD_MASK;
+
+		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
+					ps_conf);
 		if (ret < 0)
 			return ret;
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
-		uint16_t als_conf;
+		/* Clear als shutdown */
+		als_conf &= ~VCNL4040_ALS_SD_MASK;
 
-		ret = vcnl4040_read(dev, VCNL4040_REG_ALS_CONF, &als_conf);
+		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
+					als_conf);
 		if (ret < 0)
 			return ret;
 #endif
-		if (*state == PM_DEVICE_STATE_ACTIVE) {
-			/* Clear proximity shutdown */
-			ps_conf &= ~VCNL4040_PS_SD_MASK;
+	} else {
+		/* Set proximity shutdown bit 0 */
+		ps_conf |= VCNL4040_PS_SD_MASK;
 
-			ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
-					     ps_conf);
-			if (ret < 0)
-				return ret;
+		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
+					ps_conf);
+		if (ret < 0)
+			return ret;
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
-			/* Clear als shutdown */
-			als_conf &= ~VCNL4040_ALS_SD_MASK;
+		/* Clear als shutdown bit 0 */
+		als_conf |= VCNL4040_ALS_SD_MASK;
 
-			ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
-					     als_conf);
-			if (ret < 0)
-				return ret;
+		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
+					als_conf)
+		if (ret < 0)
+			return ret;
 #endif
-		} else {
-			/* Set proximity shutdown bit 0 */
-			ps_conf |= VCNL4040_PS_SD_MASK;
-
-			ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
-					     ps_conf);
-			if (ret < 0)
-				return ret;
-#ifdef CONFIG_VCNL4040_ENABLE_ALS
-			/* Clear als shutdown bit 0 */
-			als_conf |= VCNL4040_ALS_SD_MASK;
-
-			ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
-					     als_conf)
-			if (ret < 0)
-				return ret;
-#endif
-		}
-
 	}
 
 	return ret;
