@@ -1,7 +1,3 @@
-/** @file
- *  @brief Interactive Bluetooth Mesh shell application
- */
-
 /*
  * Copyright (c) 2017 Intel Corporation
  *

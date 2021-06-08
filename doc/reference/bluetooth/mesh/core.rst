@@ -1,10 +1,10 @@
 .. _bluetooth_mesh_core:
 
-Core API
-########
+Core
+####
 
-The Bluetooth Mesh Core API provides functionality for managing the general
-Bluetooth Mesh state.
+The core provides functionality for managing the general Bluetooth mesh
+state.
 
 Low Power Node
 **************

@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Access Layer APIs.
+ *  @brief Access layer APIs.
  */
 
 /*
@@ -25,8 +25,8 @@
 		       BT_MESH_ADDR_UNASSIGNED_ELT_) }
 
 /**
- * @brief Bluetooth Mesh Access Layer
- * @defgroup bt_mesh_access Bluetooth Mesh Access Layer
+ * @brief Access layer
+ * @defgroup bt_mesh_access Access layer
  * @ingroup bt_mesh
  * @{
  */

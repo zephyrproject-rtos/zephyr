@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Heartbeat API.
+ *  @brief Heartbeat APIs.
  */
 
 /*
@@ -13,8 +13,8 @@
 #include <sys/slist.h>
 
 /**
- * @brief Bluetooth Mesh
- * @defgroup bt_mesh_heartbeat Bluetooth Mesh Heartbeat
+ * @brief Heartbeat
+ * @defgroup bt_mesh_heartbeat Heartbeat
  * @ingroup bt_mesh
  * @{
  */
