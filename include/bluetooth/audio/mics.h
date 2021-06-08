@@ -75,6 +75,7 @@ struct bt_mics_included  {
  *
  * @param      param Pointer to an initialization structure.
  * @param[out] mics  Pointer to the registered Microphone Input Control Service.
+ *                   This will still be valid if the return value is -EALREADY.
  *
  * @return 0 if success, errno on failure.
  */
