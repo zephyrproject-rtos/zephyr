@@ -26,14 +26,8 @@
 #include "common/log.h"
 
 #if defined(CONFIG_BT_MICS)
-struct mics_instance {
-	uint8_t mute;
-	struct bt_mics_cb *cb;
-	struct bt_gatt_service *service_p;
-	struct bt_aics *aics_insts[CONFIG_BT_MICS_AICS_INSTANCE_COUNT];
-};
 
-static struct mics_instance mics_inst;
+static struct bt_mics_server mics_inst;
 
 static void mute_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
@@ -148,7 +142,8 @@ static int prepare_aics_inst(struct bt_mics_register_param *param)
 }
 
 /****************************** PUBLIC API ******************************/
-int bt_mics_register(struct bt_mics_register_param *param)
+int bt_mics_register(struct bt_mics_register_param *param,
+		     struct bt_mics **mics)
 {
 	int err;
 
@@ -167,6 +162,8 @@ int bt_mics_register(struct bt_mics_register_param *param)
 	}
 
 	mics_inst.cb = param->cb;
+
+	*mics = (struct bt_mics *)&mics_inst;
 
 	return err;
 }
