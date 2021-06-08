@@ -88,12 +88,12 @@ int bt_mics_register(struct bt_mics_register_param *param,
  * Microphone Input Control Service included services instances, such as
  * pointers to the Audio Input Control Service instances.
  *
- * @param conn          Connection to peer device, or NULL to get server value.
+ * @param      mics     Microphone Input Control Service instance pointer.
  * @param[out] included Pointer to store the result in.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mics_included_get(struct bt_conn *conn,
+int bt_mics_included_get(struct bt_mics *mics,
 			 struct bt_mics_included *included);
 
 /**
@@ -101,13 +101,12 @@ int bt_mics_included_get(struct bt_conn *conn,
  *
  * This callback is only used for the client.
  *
- * @param conn         The connection that was used to discover
- *                     Microphone Input Control Service.
+ * @param mics         Microphone Input Control Service instance pointer.
  * @param err          Error value. 0 on success, GATT error or errno on fail.
  * @param aics_count   Number of Audio Input Control Service instances on
  *                     peer device.
  */
-typedef void (*bt_mics_discover_cb)(struct bt_conn *conn, int err,
+typedef void (*bt_mics_discover_cb)(struct bt_mics *mics, int err,
 				    uint8_t aics_count);
 
 /**
@@ -116,21 +115,21 @@ typedef void (*bt_mics_discover_cb)(struct bt_conn *conn, int err,
  * Called when the value is read,
  * or if the value is changed by either the server or client.
  *
- * @param conn     Connection to peer device, or NULL if local server read.
+ * @param mics     Microphone Input Control Service instance pointer.
  * @param err      Error value. 0 on success, GATT error or errno on fail.
  *                 For notifications, this will always be 0.
  * @param mute     The mute setting of the Microphone Input Control Service.
  */
-typedef void (*bt_mics_mute_read_cb)(struct bt_conn *conn, int err,
+typedef void (*bt_mics_mute_read_cb)(struct bt_mics *mics, int err,
 				     uint8_t mute);
 
 /**
  * @brief Callback function for Microphone Input Control Service mute/unmute.
  *
- * @param conn      Connection to peer device, or NULL if local server read.
+ * @param mics      Microphone Input Control Service instance pointer.
  * @param err       Error value. 0 on success, GATT error or errno on fail.
  */
-typedef void (*bt_mics_mute_write_cb)(struct bt_conn *conn, int err);
+typedef void (*bt_mics_mute_write_cb)(struct bt_mics *mics, int err);
 
 struct bt_mics_cb {
 	bt_mics_mute_read_cb            mute;
@@ -165,20 +164,20 @@ int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics);
 /**
  * @brief Unmute the server.
  *
- * @param conn   Connection to peer device, or NULL to set local server value.
+ * @param mics  Microphone Input Control Service instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_unmute(struct bt_conn *conn);
+int bt_mics_unmute(struct bt_mics *mics);
 
 /**
  * @brief Mute the server.
  *
- * @param conn   Connection to peer device, or NULL to set local server value.
+ * @param mics  Microphone Input Control Service instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_mute(struct bt_conn *conn);
+int bt_mics_mute(struct bt_mics *mics);
 
 /**
  * @brief Disable the mute functionality.
@@ -186,142 +185,133 @@ int bt_mics_mute(struct bt_conn *conn);
  * Can be reenabled by called @ref bt_mics_mute or @ref bt_mics_unmute.
  * This can only be done as the server.
  *
+ * @param mics  Microphone Input Control Service instance pointer.
+ *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_mute_disable(void);
+int bt_mics_mute_disable(struct bt_mics *mics);
 
 /**
  * @brief Read the mute state of a Microphone Input Control Service.
  *
- * @param conn   Connection to peer device, or NULL to read local server value.
+ * @param mics  Microphone Input Control Service instance pointer.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_mute_get(struct bt_conn *conn);
+int bt_mics_mute_get(struct bt_mics *mics);
 
 /**
  * @brief Read the Audio Input Control Service input state.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to read local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_state_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_mics_aics_state_get(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Read the Audio Input Control Service gain settings.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to read local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_gain_setting_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_mics_aics_gain_setting_get(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Read the Audio Input Control Service input type.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to read local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_type_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_mics_aics_type_get(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Read the Audio Input Control Service input status.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to read local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_status_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_mics_aics_status_get(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Unmute the Audio Input Control Service input.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to set local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_unmute(struct bt_conn *conn, struct bt_aics *inst);
+int bt_mics_aics_unmute(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Mute the Audio Input Control Service input.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to set local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_mute(struct bt_conn *conn, struct bt_aics *inst);
+int bt_mics_aics_mute(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Set Audio Input Control Service gain mode to manual.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to set local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_manual_gain_set(struct bt_conn *conn, struct bt_aics *inst);
+int bt_mics_aics_manual_gain_set(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Set Audio Input Control Service gain mode to automatic.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to set local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_automatic_gain_set(struct bt_conn *conn, struct bt_aics *inst);
+int bt_mics_aics_automatic_gain_set(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Set Audio Input Control Service input gain.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to set local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  * @param gain          The gain in dB to set (-128 to 127).
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_gain_set(struct bt_conn *conn, struct bt_aics *inst,
+int bt_mics_aics_gain_set(struct bt_mics *mics, struct bt_aics *inst,
 			  int8_t gain);
 
 /**
  * @brief Read the Audio Input Control Service description.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to read local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_description_get(struct bt_conn *conn, struct bt_aics *inst);
+int bt_mics_aics_description_get(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Set the Audio Input Control Service description.
  *
- * @param conn          Connection to peer device,
- *                      or NULL to set local server value.
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  * @param description	 The description to set.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_aics_description_set(struct bt_conn *conn, struct bt_aics *inst,
+int bt_mics_aics_description_set(struct bt_mics *mics, struct bt_aics *inst,
 				 const char *description);
 
 /**
@@ -331,11 +321,12 @@ int bt_mics_aics_description_set(struct bt_conn *conn, struct bt_aics *inst,
  * the server to deactivate a Audio Input Control Service.
  * This can only be done as the server.
  *
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mics_aics_deactivate(struct bt_aics *inst);
+int bt_mics_aics_deactivate(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Activates a Audio Input Control Service instance.
@@ -345,11 +336,12 @@ int bt_mics_aics_deactivate(struct bt_aics *inst);
  * been deactivated with @ref bt_mics_aics_deactivate.
  * This can only be done as the server.
  *
+ * @param mics          Microphone Input Control Service instance pointer.
  * @param inst          Pointer to the Audio Input Control Service instance.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mics_aics_activate(struct bt_aics *inst);
+int bt_mics_aics_activate(struct bt_mics *mics, struct bt_aics *inst);
 
 /**
  * @brief Registers the callbacks used by Microphone Input Control Service client.
