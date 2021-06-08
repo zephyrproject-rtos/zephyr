@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Runtime Configuration APIs.
+ *  @brief Runtime configuration APIs.
  */
 
 /*
@@ -15,8 +15,8 @@
 #include <sys/types.h>
 
 /**
- * @brief Bluetooth Mesh Runtime Configuration API
- * @defgroup bt_mesh_cfg Bluetooth Mesh Runtime Configuration
+ * @brief Runtime Configuration
+ * @defgroup bt_mesh_cfg Runtime Configuration
  * @ingroup bt_mesh
  * @{
  */
@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-/** Bluetooth Mesh Feature states */
+/** Bluetooth mesh feature states */
 enum bt_mesh_feat_state {
 	/** Feature is supported, but disabled. */
 	BT_MESH_FEATURE_DISABLED,
@@ -207,8 +207,8 @@ int bt_mesh_friend_set(enum bt_mesh_feat_state friendship);
 enum bt_mesh_feat_state bt_mesh_friend_get(void);
 
 /**
- * @brief Bluetooth Mesh Subnet Configuration
- * @defgroup bt_mesh_cfg_subnet Bluetooth Mesh Subnet Configuration
+ * @brief Subnet Configuration
+ * @defgroup bt_mesh_cfg_subnet Subnet Configuration
  * @{
  */
 
@@ -369,8 +369,8 @@ ssize_t bt_mesh_subnets_get(uint16_t net_idxs[], size_t max, off_t skip);
  */
 
 /**
- * @brief Bluetooth Mesh Application Configuration
- * @defgroup bt_mesh_cfg_app Bluetooth Mesh Application Configuration
+ * @brief Application Configuration
+ * @defgroup bt_mesh_cfg_app Application Configuration
  * @{
  */
 

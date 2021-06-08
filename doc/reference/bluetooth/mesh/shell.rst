@@ -1,28 +1,28 @@
 .. _bluetooth_mesh_shell:
 
-Shell
-#####
+Bluetooth Mesh Shell
+####################
 
-The Bluetooth Mesh Shell subsystem provides a set of Bluetooth Mesh commands for the :ref:`shell_api` module.
-It allows for testing and exploring the Bluetooth Mesh API through an interactive interface, without having to write an application.
+The Bluetooth mesh shell subsystem provides a set of Bluetooth mesh shell commands for the :ref:`shell_api` module.
+It allows for testing and exploring the Bluetooth mesh API through an interactive interface, without having to write an application.
 
-The Bluetooth Mesh Shell interface provides access to most Bluetooth Mesh features, including provisioning, configuration, and message sending.
+The Bluetooth mesh shell interface provides access to most Bluetooth mesh features, including provisioning, configuration, and message sending.
 
 Prerequisites
 *************
 
-The Mesh Shell subsystem depends on the :ref:`bluetooth_mesh_models_cfg_cli` and :ref:`bluetooth_mesh_models_health_cli` models.
+The Bluetooth mesh shell subsystem depends on the :ref:`bluetooth_mesh_models_cfg_cli` and :ref:`bluetooth_mesh_models_health_cli` models.
 
-Mesh Shell application
-**********************
+Application
+***********
 
-The Mesh Shell subsystem is most easily used through the Mesh Shell application under ``tests/bluetooth/mesh_shell``.
-See :ref:`shell_api` for information on how to connect and interact with the shell application.
+The Bluetooth mesh shell subsystem is most easily used through the Bluetooth mesh shell application under ``tests/bluetooth/mesh_shell``.
+See :ref:`shell_api` for information on how to connect and interact with the Bluetooth mesh shell application.
 
 Basic usage
 ***********
 
-The Mesh Shell subsystem adds a single ``mesh`` command, which holds a set of sub-commands. Every time the device boots up, make sure to call ``mesh init`` before any of the other Mesh Shell commands can be called::
+The Bluetooth mesh shell subsystem adds a single ``mesh`` command, which holds a set of sub-commands. Every time the device boots up, make sure to call ``mesh init`` before any of the other Bluetooth mesh shell commands can be called::
 
 	uart:~$ mesh init
 
@@ -35,7 +35,7 @@ The simplest way to provision the device is through self-provisioning. To provis
 
 	uart:~$ mesh provision 0 0x0001
 
-Since all mesh shell nodes use the same values for the default network key, this can be done on multiple devices, as long as they're assigned non-overlapping unicast addresses. Alternatively, to provision the device into an existing network, the unprovisioned beacon can be enabled with ``mesh pb-adv on`` or ``mesh pb-gatt on``. The beacons can be picked up by an external provisioner, which can provision the node into its network.
+Since all mesh nodes use the same values for the default network key, this can be done on multiple devices, as long as they're assigned non-overlapping unicast addresses. Alternatively, to provision the device into an existing network, the unprovisioned beacon can be enabled with ``mesh pb-adv on`` or ``mesh pb-gatt on``. The beacons can be picked up by an external provisioner, which can provision the node into its network.
 
 Once the mesh node is part of a network, its transmission parameters can be controlled by the general configuration commands:
 
@@ -63,7 +63,7 @@ Next, since the device has no application keys by default, it's a good idea to a
 Message sending
 ===============
 
-With an application key added (see above), the mesh node's transition parameters are all valid, and the Mesh Shell can send raw mesh messages through the network.
+With an application key added (see above), the mesh node's transition parameters are all valid, and the Bluetooth mesh shell can send raw mesh messages through the network.
 
 For example, to send a Generic OnOff Set message, call::
 
@@ -81,12 +81,12 @@ With the destination address set to ``0xffff``, any other mesh nodes in the netw
 .. note::
 	To change the configuration of the device, the destination address must be set back to the local unicast address before issuing any configuration commands.
 
-Sending raw mesh packets is a good way to test model message handler implementations during development, as it can be done without having to implement the sending model. By default, only the reception of the model messages can be tested this way, as the Mesh Shell only includes the foundation models. To receive a packet in the Mesh Shell node, you have to add a model with a valid opcode handler list to the composition data in ``subsys/bluetooth/mesh/shell.c``, and print the incoming message to the shell in the handler callback.
+Sending raw mesh packets is a good way to test model message handler implementations during development, as it can be done without having to implement the sending model. By default, only the reception of the model messages can be tested this way, as the Bluetooth mesh shell only includes the foundation models. To receive a packet in the mesh node, you have to add a model with a valid opcode handler list to the composition data in ``subsys/bluetooth/mesh/shell.c``, and print the incoming message to the shell in the handler callback.
 
 Parameter formats
 *****************
 
-The Mesh Shell commands are parsed with a variety of formats:
+The Bluetooth mesh shell commands are parsed with a variety of formats:
 
 .. list-table:: Parameter formats
 	:widths: 1 4 2
@@ -105,19 +105,19 @@ The Mesh Shell commands are parsed with a variety of formats:
 	  - Boolean values are denoted in the API documentation as ``<val: on, off>``.
 	  - ``on``, ``off``, ``enabled``, ``disabled``, ``1``, ``0``
 
-Mesh Shell commands
-*******************
+Commands
+********
 
-The Mesh shell implements a large set of commands. Some of the commands accept parameters, which are mentioned in brackets after the command name. For example, ``mesh lpn <value: off, on>``. Mandatory parameters are marked with angle brackets (e.g. ``<NetKeyIndex>``), and optional parameters are marked with square brackets (e.g. ``[destination address]``).
+The Bluetooth mesh shell implements a large set of commands. Some of the commands accept parameters, which are mentioned in brackets after the command name. For example, ``mesh lpn <value: off, on>``. Mandatory parameters are marked with angle brackets (e.g. ``<NetKeyIndex>``), and optional parameters are marked with square brackets (e.g. ``[destination address]``).
 
-The Mesh Shell commands are divided into the following groups:
+The Bluetooth mesh shell commands are divided into the following groups:
 
 .. contents::
 	:depth: 1
 	:local:
 
 .. note::
-	Some commands depend on specific features being enabled in the compile time configuration of the application. Not all features are enabled by default. The list of available Mesh Shell commands can be shown in the shell by calling ``mesh`` without any arguments.
+	Some commands depend on specific features being enabled in the compile time configuration of the application. Not all features are enabled by default. The list of available Bluetooth mesh shell commands can be shown in the shell by calling ``mesh`` without any arguments.
 
 General configuration
 =====================
@@ -166,7 +166,7 @@ General configuration
 ``mesh netidx [NetIdx]``
 ------------------------
 
-	Get or set the message network index. The network index determines which network key is used to encrypt mesh packets that are sent with the shell, but has no effect on modules outside the shell's control. The network key must already be added to the device, either through provisioning or by a Config Client.
+	Get or set the message network index. The network index determines which network key is used to encrypt mesh packets that are sent with the shell, but has no effect on modules outside the shell's control. The network key must already be added to the device, either through provisioning or by a Configuration Client.
 
 	* ``NetIdx``: If present, sets the new network index. If omitted, the current network index is printed.
 
@@ -174,7 +174,7 @@ General configuration
 ``mesh appidx [AppIdx]``
 ------------------------
 
-	Get or set the message application index. The application index determines which application key is used to encrypt mesh packets that are sent with the shell, but has no effect on modules outside the shell's control. The application key must already be added to the device by a Config Client, and must be bound to the current network index.
+	Get or set the message application index. The application index determines which application key is used to encrypt mesh packets that are sent with the shell, but has no effect on modules outside the shell's control. The application key must already be added to the device by a Configuration Client, and must be bound to the current network index.
 
 	* ``AppIdx``: If present, sets the new application index. If omitted, the current application index is printed.
 
@@ -298,9 +298,9 @@ Provisioning
 Configuration Client model
 ==========================
 
-The Mesh Shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
+The Bluetooth mesh shell module instantiates a Configuration Client model for configuring itself and other nodes in the mesh network.
 
-The Configuration Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Mesh Shell node is provisioned, the Configuration Client model targets itself by default. When another node has been provisioned by the Mesh Shell, the Configuration Client model targets the new node. The Configuration Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
+The Configuration Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Configuration Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Configuration Client model targets the new node. The Configuration Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
 ``mesh timeout [timeout in seconds]``
 -------------------------------------
@@ -583,9 +583,9 @@ The Configuration Client uses the general messages parameters set by ``mesh dst`
 Health Client model
 ===================
 
-The Mesh Shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
+The Bluetooth mesh shell module instantiates a Health Client model for configuring itself and other nodes in the mesh network.
 
-The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Mesh Shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Mesh Shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
+The Health Client uses the general messages parameters set by ``mesh dst`` and ``mesh netidx`` to target specific nodes. When the Bluetooth mesh shell node is provisioned, the Health Client model targets itself by default. When another node has been provisioned by the Bluetooth mesh shell, the Health Client model targets the new node. The Health Client always sends messages using the Device key bound to the destination address, so it will only be able to configure itself and mesh nodes it provisioned.
 
 ``mesh fault-get <Company ID>``
 -------------------------------
@@ -695,7 +695,7 @@ Health Server model
 Configuration database
 ======================
 
-The Configuration database is an optional Mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_CDB` configuration option. The Configuration database is only available on provisioner devices, and allows them to store all information about the mesh network. To avoid conflicts, there should only be one mesh node in the network with the Configuration database enabled. This node is the Configurator, and is responsible for adding new nodes to the network and configuring them.
+The Configuration database is an optional mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_CDB` configuration option. The Configuration database is only available on provisioner devices, and allows them to store all information about the mesh network. To avoid conflicts, there should only be one mesh node in the network with the Configuration database enabled. This node is the Configurator, and is responsible for adding new nodes to the network and configuring them.
 
 ``mesh cdb-create [NetKey]``
 ----------------------------

@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Proxy APIs.
+ *  @brief Proxy APIs.
  */
 
 /*
@@ -11,8 +11,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_PROXY_H_
 
 /**
- * @brief Bluetooth Mesh Proxy
- * @defgroup bt_mesh_proxy Bluetooth Mesh Proxy
+ * @brief Proxy
+ * @defgroup bt_mesh_proxy Proxy
  * @ingroup bt_mesh
  * @{
  */

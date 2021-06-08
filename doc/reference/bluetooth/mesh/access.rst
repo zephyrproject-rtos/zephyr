@@ -1,11 +1,11 @@
 .. _bluetooth_mesh_access:
 
-Access
-######
+Access layer
+############
 
-The Bluetooth Mesh access layer is the application's interface to the mesh
-network. The access layer provides mechanisms for compartmentalizing the node
-behavior into elements and models, which are implemented by the application.
+The access layer is the application's interface to the Bluetooth mesh network.
+The access layer provides mechanisms for compartmentalizing the node behavior
+into elements and models, which are implemented by the application.
 
 Mesh models
 ***********
@@ -29,7 +29,7 @@ behavior in the `Bluetooth Mesh Model Specification
 not specified by the Bluetooth SIG are vendor models, and must be tied to a
 Company ID.
 
-Mesh Models have several parameters that can be configured either through
+Mesh models have several parameters that can be configured either through
 initialization of the mesh stack or with the
 :ref:`bluetooth_mesh_models_cfg_srv`:
 
@@ -103,7 +103,7 @@ current state.
 Extended models
 ===============
 
-The Bluetooth Mesh specification allows the Mesh models to extend each other.
+The Bluetooth mesh specification allows the mesh models to extend each other.
 When a model extends another, it inherits that model's functionality, and
 extension can be used to construct complex models out of simple ones,
 leveraging the existing model functionality to avoid defining new opcodes.

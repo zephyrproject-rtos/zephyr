@@ -1,17 +1,17 @@
-# Bluetooth Mesh configuration options
+# Bluetooth mesh configuration options
 
 # Copyright (c) 2017 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BT_MESH
-	bool "Bluetooth Mesh support"
+	bool "Bluetooth mesh support"
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
 	select BT_HOST_CCM
 	depends on BT_OBSERVER && BT_BROADCASTER
 	help
-	  This option enables Bluetooth Mesh support. The specific
+	  This option enables Bluetooth mesh support. The specific
 	  features that are available may depend on other features
 	  that have been enabled in the stack, such as GATT support.
 
@@ -682,19 +682,19 @@ config BT_MESH_HEALTH_CLI
 	  Enable support for the health client model.
 
 config BT_MESH_SHELL
-	bool "Enable Bluetooth Mesh shell"
+	bool "Enable Bluetooth mesh shell"
 	select SHELL
 	depends on BT_MESH_CFG_CLI
 	depends on BT_MESH_HEALTH_CLI
 	help
-	  Activate shell module that provides Bluetooth Mesh commands to
+	  Activate shell module that provides Bluetooth mesh commands to
 	  the console.
 
 config BT_MESH_MODEL_EXTENSIONS
 	bool "Support for Model extensions"
 	help
 	  Enable support for the model extension concept, allowing the Access
-	  layer to know about Mesh model relationships.
+	  layer to know about mesh model relationships.
 
 if BT_SETTINGS
 
@@ -766,55 +766,55 @@ config BT_MESH_DEBUG_NET
 	bool "Network layer debug"
 	help
 	  Use this option to enable Network layer debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_RPL
 	bool "Replay protection list debug"
 	help
 	  Use this option to enable Replay protection list debug logs
-	  for the Bluetooth Mesh functionality.
+	  for the Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_TRANS
 	bool "Transport layer debug"
 	help
 	  Use this option to enable Transport layer debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_BEACON
 	bool "Beacon debug"
 	help
 	  Use this option to enable Beacon-related debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_CRYPTO
 	bool "Crypto debug"
 	help
 	  Use this option to enable cryptographic debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_KEYS
 	bool "Key management debug"
 	help
 	  Use this option to enable key management debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_PROV
 	bool "Provisioning debug"
 	help
 	  Use this option to enable Provisioning debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_PROVISIONER
 	bool "Provisioner debug"
 	help
 	  Use this option to enable Provisioner debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_ACCESS
 	bool "Access layer debug"
 	help
 	  Use this option to enable Access layer and device composition
-	  related debug logs for Bluetooth Mesh.
+	  related debug logs for Bluetooth mesh.
 
 config BT_MESH_DEBUG_MODEL
 	bool "Foundation model debug"
@@ -826,19 +826,19 @@ config BT_MESH_DEBUG_ADV
 	bool "Advertising debug"
 	help
 	  Use this option to enable advertising debug logs for
-	  the Bluetooth Mesh functionality.
+	  the Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_LOW_POWER
 	bool "Low Power debug"
 	help
 	  Use this option to enable Low Power debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_FRIEND
 	bool "Friend debug"
 	help
 	  Use this option to enable Friend debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 config BT_MESH_DEBUG_PROXY
 	bool "Proxy debug"
@@ -862,7 +862,7 @@ config BT_MESH_DEBUG_CFG
 	bool "Configuration debug"
 	help
 	  Use this option to enable node configuration debug logs for the
-	  Bluetooth Mesh functionality.
+	  Bluetooth mesh functionality.
 
 endif # BT_MESH_DEBUG
 
