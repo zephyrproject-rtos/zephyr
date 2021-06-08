@@ -306,6 +306,9 @@ HALs
 Trusted Firmware-m
 ******************
 
+* Renamed psa_level_1 sample to psa_crypto. Extended the use of the PSA Cryptography
+  1.0 API in the sample code to demonstrate additional crypto functionality.
+* Added a new sample to showcase the PSA Protecter Storage service.
 
 Documentation
 *************
