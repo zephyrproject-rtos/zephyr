@@ -208,8 +208,8 @@ if [ -n "$main_ci" ]; then
 	$short_git_log
 
 	# cleanup
-	rm -f test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_main.txt
-	touch test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_main.txt
+	rm -f test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
+	touch test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
 
 	# In a pull-request see if we have changed any tests or board definitions
 	if [ -n "${pull_request_nr}" -o -n "${local_run}"  ]; then
@@ -218,19 +218,19 @@ if [ -n "$main_ci" ]; then
 
 	if [ "$SC" == "full" ]; then
 		# Save list of tests to be run
-		${twister} ${twister_options} --save-tests test_file_main.txt || exit 1
+		${twister} ${twister_options} --save-tests test_file_full.txt || exit 1
 	fi
 
 	# Remove headers from all files.  We insert it into test_file.txt explicitly
 	# so we treat all test_file*.txt files the same.
-	tail -n +2 test_file_main.txt > test_file_main_in.txt
+	tail -n +2 test_file_full.txt > test_file_full_in.txt
 	tail -n +2 test_file_archs.txt > test_file_archs_in.txt
 	tail -n +2 test_file_tests.txt > test_file_tests_in.txt
 	tail -n +2 test_file_boards.txt > test_file_boards_in.txt
 
 	echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" \
 		> test_file.txt
-	cat test_file_main_in.txt test_file_archs_in.txt test_file_tests_in.txt \
+	cat test_file_full_in.txt test_file_archs_in.txt test_file_tests_in.txt \
 		test_file_boards_in.txt >> test_file.txt
 
 	echo "+++ run twister"
