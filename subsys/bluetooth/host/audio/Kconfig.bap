@@ -6,7 +6,7 @@
 #
 
 config BT_BAP
-	bool "Basic Audio Profile Support [d09r13]"
+	bool "Basic Audio Profile Support [d09r17]"
 	select BT_GATT_AUTO_DISCOVER_CCC
 	default n
 	help
