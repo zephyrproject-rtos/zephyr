@@ -40,6 +40,8 @@ extern "C" {
 #define RESET_LOW_POWER_WAKE			BIT(7)
 #define RESET_CPU_LOCKUP			BIT(8)
 #define RESET_PARITY				BIT(9)
+#define RESET_PLL				BIT(10)
+#define RESET_CLOCK				BIT(11)
 
 /**
  * @brief Copy the device id to a buffer
