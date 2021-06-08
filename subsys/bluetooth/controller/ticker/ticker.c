@@ -404,10 +404,10 @@ static void ticker_by_next_slot_get(struct ticker_instance *instance,
 	}
 #else
 	/* TODO: Come up with different way to find/match the ticker */
-	LL_ASSERT(0);
 #endif
 	if (_ticker_id_head != TICKER_NULL) {
 		/* Add ticks for found ticker */
+		ticker = &node[_ticker_id_head];
 		_ticks_to_expire += ticker->ticks_to_expire;
 #if defined(CONFIG_BT_TICKER_LAZY_GET)
 		if (lazy) {

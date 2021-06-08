@@ -56,6 +56,7 @@ static void isr_tx_connect_req(void *param);
 static void isr_rx_connect_rsp(void *param);
 #endif /* CONFIG_BT_CENTRAL */
 static void isr_done(void *param);
+static void isr_done_too_late(void *param);
 
 #if defined(CONFIG_BT_CENTRAL)
 static inline bool isr_scan_init_check(struct lll_scan *lll,
@@ -235,22 +236,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
-	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
-	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_SCAN_AUX_BASE +
-				   ull_scan_aux_lll_handle_get(lll)),
-			     ticks_at_event)) {
-		radio_isr_set(isr_done, lll);
-		radio_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
-
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
-	}
+	lll_prepare_done(lll, (TICKER_ID_SCAN_AUX_BASE +
+			       ull_scan_aux_lll_handle_get(lll)),
+			 ticks_at_event, isr_done_too_late);
 
 	DEBUG_RADIO_START_O(1);
 
@@ -277,8 +265,6 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 */
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
-
-	lll_done(param);
 }
 
 static void isr_rx(void *param)
@@ -725,7 +711,14 @@ static void isr_done(void *param)
 		e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
 	}
 
+	HDR_RESULT_SET(param, DONE_COMPLETED);
 	lll_isr_cleanup(param);
+}
+
+static void isr_done_too_late(void *param)
+{
+	HDR_RESULT_SET(param, DONE_TOO_LATE);
+	isr_done(param);
 }
 
 #if defined(CONFIG_BT_CENTRAL)

@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-int lll_prepare_done(void *param);
-int lll_done(void *param);
+int lll_prepare_done(void *param, uint8_t ticker_id,
+		     uint32_t ticks_at_event, radio_isr_cb_t isr_abort);
+void lll_done(void *param, uint8_t reset, uint8_t result);
 bool lll_is_done(void *param);
 int lll_is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 void lll_abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -20,6 +21,7 @@ void lll_isr_tx_status_reset(void);
 void lll_isr_rx_status_reset(void);
 void lll_isr_status_reset(void);
 void lll_isr_abort(void *param);
+void lll_isr_abort_too_late(void *param);
 void lll_isr_done(void *param);
 void lll_isr_cleanup(void *param);
 void lll_isr_early_abort(void *param);

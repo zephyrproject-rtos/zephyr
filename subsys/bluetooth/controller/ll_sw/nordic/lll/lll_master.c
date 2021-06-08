@@ -200,21 +200,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ARG_UNUSED(remainder_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
-	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
-	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_CONN_BASE + lll->handle),
-			     ticks_at_event)) {
-		radio_isr_set(lll_isr_abort, lll);
-		radio_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
-
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
-	}
+	lll_prepare_done(lll, (TICKER_ID_CONN_BASE + lll->handle),
+			 ticks_at_event, lll_isr_abort_too_late);
 
 	DEBUG_RADIO_START_M(1);
 

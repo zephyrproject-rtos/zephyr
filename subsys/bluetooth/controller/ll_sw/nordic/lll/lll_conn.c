@@ -159,8 +159,6 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
 	lll->latency_prepare += (prepare_param->lazy + 1);
-
-	lll_done(param);
 }
 
 void lll_conn_isr_rx(void *param)
@@ -641,9 +639,9 @@ static void isr_done(void *param)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_PERIPHERAL)
-	if (trx_cnt) {
-		struct lll_conn *lll = param;
+	struct lll_conn *lll = param;
 
+	if (trx_cnt) {
 		if (lll->role) {
 			uint32_t preamble_to_addr_us;
 
@@ -666,6 +664,7 @@ static void isr_done(void *param)
 			lll->slave.window_size_event_us = 0;
 		}
 	}
+	HDR_RESULT_SET(lll, DONE_COMPLETED);
 #endif /* CONFIG_BT_PERIPHERAL */
 
 	lll_isr_cleanup(param);

@@ -134,6 +134,12 @@ enum {
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
 
+enum done_result {
+	DONE_COMPLETED,
+	DONE_ABORTED,
+	DONE_TOO_LATE
+};
+
 struct ull_hdr {
 	uint8_t volatile ref;  /* Number of ongoing (between Prepare and Done)
 				* events
@@ -163,6 +169,7 @@ struct ull_hdr {
 
 struct lll_hdr {
 	void *parent;
+	uint8_t result;
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	uint8_t score;
 	uint8_t latency;
@@ -170,6 +177,8 @@ struct lll_hdr {
 };
 
 #define HDR_LLL2ULL(p) (((struct lll_hdr *)(p))->parent)
+#define HDR_RESULT_SET(p, res) \
+	((struct lll_hdr *)(p))->result = res
 
 struct lll_prepare_param {
 	uint32_t ticks_at_expire;
@@ -363,6 +372,9 @@ struct event_done_extra_drift {
 
 struct event_done_extra {
 	uint8_t type;
+#if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	uint8_t result;
+#endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 	union {
 		struct {
 			uint16_t trx_cnt;
@@ -397,7 +409,7 @@ static inline void lll_hdr_init(void *lll, void *parent)
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 }
 
-void lll_done_score(void *param, uint8_t too_late, uint8_t aborted);
+void lll_done_score(void *param, uint8_t result);
 
 int lll_init(void);
 int lll_reset(void);

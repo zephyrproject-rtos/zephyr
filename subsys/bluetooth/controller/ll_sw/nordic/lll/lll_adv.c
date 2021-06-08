@@ -44,6 +44,8 @@
 #include "lll_prof_internal.h"
 #include "lll_df_internal.h"
 
+#include "ull_internal.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_lll_adv
 #include "common/log.h"
@@ -66,6 +68,7 @@ static void isr_tx(void *param);
 static void isr_rx(void *param);
 static void isr_done(void *param);
 static void isr_abort(void *param);
+static void isr_abort_too_late(void *param);
 static struct pdu_adv *chan_prepare(struct lll_adv *lll);
 
 static inline int isr_rx_pdu(struct lll_adv *lll,
@@ -829,22 +832,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	ARG_UNUSED(start_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
-	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
-	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_ADV_BASE +
-				   ull_adv_lll_handle_get(lll)),
-			     ticks_at_event)) {
-		radio_isr_set(isr_abort, lll);
-		radio_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
-
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
-	}
+	lll_prepare_done(lll, (TICKER_ID_ADV_BASE +
+			       ull_adv_lll_handle_get(lll)),
+			 ticks_at_event, isr_abort_too_late);
 
 	DEBUG_RADIO_START_A(1);
 
@@ -923,8 +913,6 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 */
 	err = lll_hfclock_off();
 	LL_ASSERT(err >= 0);
-
-	lll_done(param);
 }
 
 static void isr_tx(void *param)
@@ -1167,6 +1155,7 @@ static void isr_done(void *param)
 	extra->type = EVENT_DONE_EXTRA_TYPE_ADV;
 #endif  /* CONFIG_BT_CTLR_ADV_EXT */
 
+	HDR_RESULT_SET(lll, DONE_COMPLETED);
 	lll_isr_cleanup(param);
 }
 
@@ -1178,6 +1167,12 @@ static void isr_abort(void *param)
 	radio_filter_disable();
 
 	lll_isr_cleanup(param);
+}
+
+static void isr_abort_too_late(void *param)
+{
+	HDR_RESULT_SET(param, DONE_TOO_LATE);
+	isr_abort(param);
 }
 
 static struct pdu_adv *chan_prepare(struct lll_adv *lll)
@@ -1342,6 +1337,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 			return -ENOBUFS;
 		}
 
+		HDR_RESULT_SET(lll, DONE_COMPLETED);
 		radio_isr_set(isr_abort, lll);
 		radio_disable();
 
