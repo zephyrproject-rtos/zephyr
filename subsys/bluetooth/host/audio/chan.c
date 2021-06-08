@@ -705,8 +705,6 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
 
 static void chan_detach(struct bt_audio_chan *chan)
 {
-	int i;
-
 	BT_DBG("chan %p", chan);
 
 	bt_audio_ep_detach(chan->ep, chan);
@@ -714,12 +712,6 @@ static void chan_detach(struct bt_audio_chan *chan)
 	chan->conn = NULL;
 	chan->cap = NULL;
 	chan->codec = NULL;
-
-	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
-		if (enabling[i] == chan) {
-			enabling[i] = NULL;
-		}
-	}
 
 	bt_audio_chan_disconnect(chan);
 }
@@ -888,10 +880,19 @@ int bt_audio_chan_connect(struct bt_audio_chan *chan)
 
 int bt_audio_chan_disconnect(struct bt_audio_chan *chan)
 {
+	int i;
+
 	BT_DBG("chan %p iso %p", chan, chan->iso);
 
 	if (!chan) {
 		return -EINVAL;
+	}
+
+	/* Stop listening */
+	for (i = 0; i < ARRAY_SIZE(enabling); i++) {
+		if (enabling[i] == chan) {
+			enabling[i] = NULL;
+		}
 	}
 
 	if (!chan->iso || !chan->iso->conn) {
