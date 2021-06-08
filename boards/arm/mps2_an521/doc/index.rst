@@ -32,6 +32,28 @@ More information about the board can be found at the `MPS2 FPGA Website`_.
    system. It has been tested on actual hardware, but its primary purpose is
    for use with QEMU and unit tests for the ARM Cortex-M33.
 
+
+Zephyr board options
+====================
+
+The MPS2+ AN521 is a dual core SoC with Cortex-M33 architecture on both cores
+(CPU0 and CPU1). Zephyr provides support for building firmware
+images for both CPU0 and CPU1. For CPU0 supporting ARM Security Extensions
+both Secure and Non-Secure firmware images may be built.
+
+The BOARD options are summarized below:
+
++----------------------+-------------------------------------------------------+
+|   BOARD              | Description                                           |
++======================+=======================================================+
+| mps2_an521           | For building Secure (or Secure-only) firmware on CPU0 |
++----------------------+-------------------------------------------------------+
+| mps2_an521_nonsecure | For building Non-Secure firmware for CPU0             |
++----------------------+-------------------------------------------------------+
+| mps2_an521_remote    | For building firmware on CPU1                         |
++----------------------+-------------------------------------------------------+
+
+
 Hardware
 ********
 
@@ -39,7 +61,7 @@ ARM MPS2+ AN521 provides the following hardware components:
 
 
 
-- ARM Cortex-M33
+- Dual core ARM Cortex-M33
 - Soft Macro Model (SMM) implementation of SSE-200 subsystem
 - Memory
 
@@ -320,12 +342,75 @@ switches.
 Programming and Debugging
 *************************
 
-MPS2+ AN521 supports the v8m security extension, and by default boots to the
-secure state.
+MPS2+ AN521 (CPU0) supports the Armv8m Security Extension.
+Applications built for the mps2_an521 board by default
+boot in the Secure state.
 
-When building a secure/non-secure application, the secure application will
-have to set the idau/sau and mpc configuration to permit access from the
-non-secure application before jumping.
+MPS2+ AN521 (CPU1) does not support the Armv8m Security Extension.
+
+Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
+=============================================================================
+
+Applications on the MPS2+ AN521 (CPU0) may contain a Secure and a Non-Secure
+firmware image. The Secure image can be built using either Zephyr
+or `Trusted Firmware M`_ (TF-M). Non-Secure firmware images are always built
+using Zephyr. The two alternatives are described below.
+
+.. note::
+
+   By default the Secure image for the MPS2+ AN521 (CPU0) is built
+   using TF-M.
+
+Building the Secure firmware with TF-M
+--------------------------------------
+
+The process to build the Secure firmware image using TF-M and the Non-Secure
+firmware image using Zephyr requires the following steps:
+
+1. Build the Non-Secure Zephyr application
+   for MPS2+ AN521 (CPU0) using ``-DBOARD=mps2_an521_nonsecure``.
+   To invoke the building of TF-M the Zephyr build system requires the
+   Kconfig option ``BUILD_WITH_TFM`` to be enabled, which is done by
+   default when building Zephyr as a Non-Secure application.
+   The Zephyr build system will perform the following steps automatically:
+
+      * Build the Non-Secure firmware image as a regular Zephyr application
+      * Build a TF-M (secure) firmware image
+      * Merge the output image binaries together
+      * Optionally build a bootloader image (MCUboot)
+
+.. note::
+
+   Depending on the TF-M configuration, an application DTS overlay may be
+   required, to adjust the Non-Secure image Flash and SRAM starting address
+   and sizes.
+
+Building the Secure firmware using Zephyr
+-----------------------------------------
+
+The process to build the Secure and the Non-Secure firmware images
+using Zephyr requires the following steps:
+
+1. Build the Secure Zephyr application for MPS2+ AN521 (CPU0)
+   using ``-DBOARD=mps2_an521`` and
+   ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` and ``CONFIG_BUILD_WITH_TFM=n``
+   in the application project configuration file.
+2. Build the Non-Secure Zephyr application for MPS2+ AN521 (CPU0)
+   using ``-DBOARD=mps2_an521_nonsecure``.
+3. Merge the two binaries together.
+
+Building a Secure only application on MPS2+ AN521 (CPU0)
+========================================================
+
+Build the Zephyr app in the usual way (see :ref:`build_an_application`
+and :ref:`application_run`), using ``-DBOARD=mps2_an521`` for
+the firmware running on the MPS2+ AN521 (CPU0).
+
+When building a Secure/Non-Secure application for the MPS2+ AN521 (CPU0),
+the Secure application will have to set the SAU/IDAU configuration to allow
+Non-Secure access to all CPU resources utilized by the Non-Secure application
+firmware. SAU/IDAU configuration shall take place before jumping to the
+Non-Secure application.
 
 The following system components are required to be properly configured during the
 secure firmware:
@@ -336,6 +421,23 @@ secure firmware:
 
 For more details refer to `Corelink SSE-200 Subsystem`_.
 
+
+
+Building standalone applications on MPS2+ AN521 CPU1
+====================================================
+
+Applications may be built for the second Cortex-M33
+(remote) core of MPS2+ AN521. The core is referred to as CPU1.
+
+Build the Zephyr app in the usual way (see :ref:`build_an_application`
+and :ref:`application_run`), using ``-DBOARD=mps2_an521_remote`` for
+the firmware running on the MPS2+ AN521 (CPU1).
+
+The Zephyr build will automatically trigger building a minimal (empty)
+secure-only firmware for CPU0, which will be used to boot the remote
+core (CPU1).
+
+
 Flashing
 ========
 
@@ -344,17 +446,15 @@ MPS2+ AN521 provides:
 - A USB connection to the host computer, which exposes a Mass Storage
 - A Serial Port which is J10 on MPS2+ board
 
-Building a secure only application
-----------------------------------
-
-
-You can build applications in the usual way. Here is an example for
-the :ref:`hello_world` application.
+Build applications as described above.
+Here is an example for the :ref:`hello_world` application built as
+a secure-only application for CPU0.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: mps2_an521
    :goals: build
+
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
 
@@ -370,25 +470,6 @@ serial port:
 
    Hello World! mps2_an521
 
-Building a secure/non-secure with Trusted Firmware
---------------------------------------------------
-
-The process requires five steps:
-
-1. Build Trusted Firmware (tfm).
-2. Import it as a library to the Zephyr source folder.
-3. Build Zephyr with a non-secure configuration.
-4. Merge the two binaries together and sign them.
-5. Concatenate the bootloader with the signed image blob.
-
-To build tfm, refer to `Trusted Firmware M Guide`_. Follow the build steps
-for the AN521 target while replacing the platform with
-``-DTARGET_PLATFORM=AN521`` and the compiler (if required) with
-``-DCOMPILER=GNUARM``.
-
-Copy over tfm as a library to the Zephyr project source and create a shortcut
-for the secure veneers and necessary header files. All files are in the install
-folder after TF-M has been built.
 
 Uploading an application to MPS2+ AN521
 ---------------------------------------
@@ -438,7 +519,7 @@ serial port:
 .. _Cortex M33 Generic User Guide:
    http://infocenter.arm.com/help/topic/com.arm.doc.100235_0004_00_en/arm_cortex_m33_dgug_100235_0004_00_en.pdf
 
-.. _Trusted Firmware M Guide:
+.. _Trusted Firmware M:
    https://git.trustedfirmware.org/trusted-firmware-m.git/tree/docs/user_guides/tfm_build_instruction.rst
 
 .. _Corelink SSE-200 Subsystem:
