@@ -5,8 +5,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 rsource "Kconfig.tfm"
-
-if BUILD_WITH_TFM
 rsource "Kconfig.tfm.partitions"
 rsource "Kconfig.tfm.crypto_modules"
-endif
