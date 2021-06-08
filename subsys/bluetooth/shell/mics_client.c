@@ -19,7 +19,7 @@
 static struct bt_mics *mics;
 static struct bt_mics_included mics_included;
 
-static void mics_discover_cb(struct bt_conn *conn, int err, uint8_t aics_count)
+static void mics_discover_cb(struct bt_mics *mics, int err, uint8_t aics_count)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "MICS discover failed (%d)", err);
@@ -27,13 +27,13 @@ static void mics_discover_cb(struct bt_conn *conn, int err, uint8_t aics_count)
 		shell_print(ctx_shell, "MICS discover done with %u AICS",
 			    aics_count);
 
-		if (bt_mics_included_get(conn, &mics_included) != 0) {
+		if (bt_mics_included_get(mics, &mics_included) != 0) {
 			shell_error(ctx_shell, "Could not get MICS context");
 		}
 	}
 }
 
-static void mics_mute_write_cb(struct bt_conn *conn, int err)
+static void mics_mute_write_cb(struct bt_mics *mics, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Mute write failed (%d)", err);
@@ -43,7 +43,7 @@ static void mics_mute_write_cb(struct bt_conn *conn, int err)
 }
 
 
-static void mics_unmute_write_cb(struct bt_conn *conn, int err)
+static void mics_unmute_write_cb(struct bt_mics *mics, int err)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Unmute write failed (%d)", err);
@@ -112,7 +112,7 @@ static void mics_aics_automatic_mode_cb(struct bt_conn *conn,
 	}
 }
 
-static void mics_mute_cb(struct bt_conn *conn, int err, uint8_t mute)
+static void mics_mute_cb(struct bt_mics *mics, int err, uint8_t mute)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Mute get failed (%d)", err);
@@ -243,11 +243,11 @@ static int cmd_mics_client_mute_get(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_mute_get(default_conn);
+	result = bt_mics_mute_get(mics);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -261,11 +261,11 @@ static int cmd_mics_client_mute(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_mute(default_conn);
+	result = bt_mics_mute(mics);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -279,11 +279,11 @@ static int cmd_mics_client_unmute(const struct shell *sh, size_t argc,
 {
 	int result;
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_unmute(default_conn);
+	result = bt_mics_unmute(mics);
 
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -304,11 +304,11 @@ static int cmd_mics_client_aics_input_state_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_state_get(default_conn, mics_included.aics[index]);
+	result = bt_mics_aics_state_get(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -328,11 +328,11 @@ static int cmd_mics_client_aics_gain_setting_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_gain_setting_get(default_conn, mics_included.aics[index]);
+	result = bt_mics_aics_gain_setting_get(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -352,11 +352,11 @@ static int cmd_mics_client_aics_input_type_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_type_get(default_conn, mics_included.aics[index]);
+	result = bt_mics_aics_type_get(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -376,11 +376,11 @@ static int cmd_mics_client_aics_input_status_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_status_get(default_conn, mics_included.aics[index]);
+	result = bt_mics_aics_status_get(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -400,11 +400,11 @@ static int cmd_mics_client_aics_input_unmute(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_unmute(default_conn, mics_included.aics[index]);
+	result = bt_mics_aics_unmute(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -424,11 +424,11 @@ static int cmd_mics_client_aics_input_mute(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_mute(default_conn, mics_included.aics[index]);
+	result = bt_mics_aics_mute(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -448,11 +448,11 @@ static int cmd_mics_client_aics_manual_input_gain_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_manual_gain_set(default_conn, mics_included.aics[index]);
+	result = bt_mics_aics_manual_gain_set(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -473,11 +473,11 @@ static int cmd_mics_client_aics_automatic_input_gain_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_automatic_gain_set(default_conn,
+	result = bt_mics_aics_automatic_gain_set(mics,
 						 mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
@@ -505,11 +505,11 @@ static int cmd_mics_client_aics_gain_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_gain_set(default_conn, mics_included.aics[index], gain);
+	result = bt_mics_aics_gain_set(mics, mics_included.aics[index], gain);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -529,11 +529,11 @@ static int cmd_mics_client_aics_input_description_get(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_description_get(default_conn, mics_included.aics[index]);
+	result = bt_mics_aics_description_get(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -554,11 +554,11 @@ static int cmd_mics_client_aics_input_description_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	if (default_conn == NULL) {
-		return -ENOTCONN;
+	if (mics == NULL) {
+		return -ENOENT;
 	}
 
-	result = bt_mics_aics_description_set(default_conn, mics_included.aics[index],
+	result = bt_mics_aics_description_set(mics, mics_included.aics[index],
 					      description);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);

@@ -28,6 +28,7 @@ struct bt_mics_client {
 	struct bt_gatt_write_params write_params;
 	struct bt_gatt_read_params read_params;
 	struct bt_gatt_discover_params discover_params;
+	struct bt_conn *conn;
 
 	uint8_t aics_inst_cnt;
 	struct bt_aics *aics[CONFIG_BT_MICS_CLIENT_MAX_AICS_INST];
@@ -35,17 +36,18 @@ struct bt_mics_client {
 
 /* Struct used as a common type for the api */
 struct bt_mics {
+	bool client_instance;
 	union {
 		struct bt_mics_server srv;
 		struct bt_mics_client cli;
 	};
 };
 
-int bt_mics_client_included_get(struct bt_conn *conn,
+int bt_mics_client_included_get(struct bt_mics *mics,
 				struct bt_mics_included  *included);
-int bt_mics_client_mute_get(struct bt_conn *conn);
-int bt_mics_client_mute(struct bt_conn *conn);
-int bt_mics_client_unmute(struct bt_conn *conn);
-bool bt_mics_client_valid_aics_inst(struct bt_conn *conn, struct bt_aics *aics);
+int bt_mics_client_mute_get(struct bt_mics *mics);
+int bt_mics_client_mute(struct bt_mics *mics);
+int bt_mics_client_unmute(struct bt_mics *mics);
+bool bt_mics_client_valid_aics_inst(struct bt_mics *mics, struct bt_aics *aics);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICS_INTERNAL_ */
