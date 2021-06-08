@@ -149,16 +149,18 @@ struct bt_mics_cb {
  * @brief Discover Microphone Input Control Service
  *
  * This will start a GATT discovery and setup handles and subscriptions.
- * This shall be called once before any other actions can be executed for
- * the peer device.
+ * This shall be called once before any other actions can be executed for the
+ * peer device, and the @ref bt_mics_discover_cb callback will notify when it
+ * is possible to start remote operations.
  *
  * This shall only be done as the client.
  *
  * @param conn          The connection to initialize the profile for.
+ * @param[out] mics     Valid remote instance object on success.
  *
  * @return 0 on success, GATT error value on fail.
  */
-int bt_mics_discover(struct bt_conn *conn);
+int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics);
 
 /**
  * @brief Unmute the server.
