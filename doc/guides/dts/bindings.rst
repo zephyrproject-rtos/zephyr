@@ -1013,6 +1013,8 @@ gpio_dt_spec``, then use it like this:
 
    #include <drivers/gpio.h>
 
+   #define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
+
    const struct gpio_dt_spec signal =
            GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, signal_gpios);
 
