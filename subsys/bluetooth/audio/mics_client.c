@@ -348,10 +348,12 @@ static void mics_client_reset(struct bt_conn *conn)
 	(void)bt_gatt_unsubscribe(conn, &mics_inst->mute_sub_params);
 }
 
-int bt_mics_discover(struct bt_conn *conn)
+int bt_mics_discover(struct bt_conn *conn, struct bt_mics **mics)
 {
 	static bool initialized;
 	struct bt_mics_client *mics_inst;
+	int err;
+
 	/*
 	 * This will initiate a discover procedure. The procedure will do the
 	 * following sequence:
@@ -397,7 +399,12 @@ int bt_mics_discover(struct bt_conn *conn)
 
 	initialized = true;
 
-	return bt_gatt_discover(conn, &mics_inst->discover_params);
+	err = bt_gatt_discover(conn, &mics_inst->discover_params);
+	if (err == 0) {
+		*mics = (struct bt_mics *)&mics_inst;
+	}
+
+	return err;
 }
 
 int bt_mics_client_cb_register(struct bt_mics_cb *cb)

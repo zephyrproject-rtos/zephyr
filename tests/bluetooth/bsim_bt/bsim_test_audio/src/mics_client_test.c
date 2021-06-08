@@ -18,6 +18,7 @@
 static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 
+static struct bt_mics *mics;
 static struct bt_mics_included mics_included;
 static volatile bool g_bt_init;
 static volatile bool g_is_connected;
@@ -397,7 +398,7 @@ static void test_main(void)
 	}
 	WAIT_FOR(g_mtu_exchanged);
 
-	err = bt_mics_discover(g_conn);
+	err = bt_mics_discover(g_conn, &mics);
 	if (err != 0) {
 		FAIL("Failed to discover MICS %d", err);
 	}
