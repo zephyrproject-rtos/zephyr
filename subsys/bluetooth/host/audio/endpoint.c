@@ -480,6 +480,8 @@ void bt_audio_ep_set_status(struct bt_audio_ep *ep, struct net_buf_simple *buf)
 		case BT_ASCS_ASE_STATE_CONFIG:
 		 /* or 0x02 (QoS Configured) */
 		case BT_ASCS_ASE_STATE_QOS:
+		 /* or 0x06 (Releasing) */
+		case BT_ASCS_ASE_STATE_RELEASING:
 			break;
 		default:
 			BT_WARN("Invalid state transition: %s -> %s",
@@ -1327,6 +1329,14 @@ int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 }
 #endif /* CONFIG_BT_BAP */
 
+static void ep_reset(struct bt_audio_ep *ep)
+{
+	BT_DBG("ep %p", ep);
+
+	bt_audio_chan_reset(ep->chan);
+	memset(ep, 0, offsetof(struct bt_audio_ep, subscribe));
+}
+
 void bt_audio_ep_reset(struct bt_conn *conn)
 {
 	int i, index;
@@ -1338,17 +1348,13 @@ void bt_audio_ep_reset(struct bt_conn *conn)
 	for (i = 0; i < SNK_SIZE; i++) {
 		struct bt_audio_ep *ep = &snks[index][i];
 
-		bt_audio_chan_reset(ep->chan);
-
-		memset(ep, 0, sizeof(*ep));
+		ep_reset(ep);
 	}
 
 	for (i = 0; i < SRC_SIZE; i++) {
 		struct bt_audio_ep *ep = &srcs[index][i];
 
-		bt_audio_chan_reset(ep->chan);
-
-		memset(ep, 0, sizeof(*ep));
+		ep_reset(ep);
 	}
 }
 
