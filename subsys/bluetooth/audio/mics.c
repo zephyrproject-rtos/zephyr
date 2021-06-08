@@ -146,6 +146,12 @@ int bt_mics_register(struct bt_mics_register_param *param,
 		     struct bt_mics **mics)
 {
 	int err;
+	static bool registered;
+
+	if (registered) {
+		*mics = &mics_inst;
+		return -EALREADY;
+	}
 
 	__ASSERT(param, "MICS register parameter cannot be NULL");
 
@@ -164,6 +170,7 @@ int bt_mics_register(struct bt_mics_register_param *param,
 	mics_inst.srv.cb = param->cb;
 
 	*mics = &mics_inst;
+	registered = true;
 
 	return err;
 }
