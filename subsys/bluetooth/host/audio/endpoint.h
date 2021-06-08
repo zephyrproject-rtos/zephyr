@@ -24,8 +24,6 @@ struct bt_audio_ep {
 	uint8_t  cig;
 	uint8_t  cis;
 	struct bt_ascs_ase_status status;
-	struct bt_gatt_subscribe_params subscribe;
-	struct bt_gatt_discover_params discover;
 	struct bt_audio_capability *cap;
 	struct bt_audio_chan *chan;
 	struct bt_codec codec;
@@ -35,6 +33,8 @@ struct bt_audio_ep {
 	struct bt_iso_chan_io_qos iso_tx;
 	struct bt_iso_chan_io_qos iso_rx;
 	sys_slist_t cbs;
+	struct bt_gatt_subscribe_params subscribe;
+	struct bt_gatt_discover_params discover;
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)
