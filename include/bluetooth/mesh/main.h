@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Profile APIs.
+ *  @brief Bluetooth mesh Profile APIs.
  */
 
 /*
@@ -11,8 +11,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_
 
 /**
- * @brief Bluetooth Mesh Provisioning
- * @defgroup bt_mesh_prov Bluetooth Mesh Provisioning
+ * @brief Provisioning
+ * @defgroup bt_mesh_prov Provisioning
  * @ingroup bt_mesh
  * @{
  */
@@ -440,8 +440,8 @@ bool bt_mesh_is_provisioned(void);
  */
 
 /**
- * @brief Bluetooth Mesh
- * @defgroup bt_mesh Bluetooth Mesh
+ * @brief Bluetooth mesh
+ * @defgroup bt_mesh Bluetooth mesh
  * @ingroup bluetooth
  * @{
  */

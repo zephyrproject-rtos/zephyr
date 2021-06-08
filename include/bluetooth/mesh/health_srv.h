@@ -1,5 +1,5 @@
 /** @file
- *  @brief Bluetooth Mesh Health Server Model APIs.
+ *  @brief Health Server Model APIs.
  */
 
 /*
@@ -11,8 +11,8 @@
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_HEALTH_SRV_H_
 
 /**
- * @brief Bluetooth Mesh Health Server Model
- * @defgroup bt_mesh_health_srv Bluetooth Mesh Health Server Model
+ * @brief Health Server Model
+ * @defgroup bt_mesh_health_srv Health Server Model
  * @ingroup bt_mesh
  * @{
  */
