@@ -87,25 +87,48 @@ function on_complete() {
 	fi
 }
 
-function get_tests_to_run() {
-	./scripts/zephyr_module.py --twister-out module_tests.args
-	./scripts/ci/get_twister_opt.py --commits ${commit_range}
+function build_test_file() {
+	# cleanup
+	rm -f test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
+	touch test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
 
-	if [ -s modified_boards.args ]; then
-		${twister} ${twister_options} +modified_boards.args \
-			--save-tests test_file_boards.txt || exit 1
+	# In a pull-request see if we have changed any tests or board definitions
+	if [ -n "${pull_request_nr}" -o -n "${local_run}"  ]; then
+		./scripts/zephyr_module.py --twister-out module_tests.args
+		./scripts/ci/get_twister_opt.py --commits ${commit_range}
+
+		if [ -s modified_boards.args ]; then
+			${twister} ${twister_options} +modified_boards.args \
+				--save-tests test_file_boards.txt || exit 1
+		fi
+		if [ -s modified_tests.args ]; then
+			${twister} ${twister_options} +modified_tests.args \
+				--save-tests test_file_tests.txt || exit 1
+		fi
+		if [ -s modified_archs.args ]; then
+			${twister} ${twister_options} +modified_archs.args \
+				--save-tests test_file_archs.txt || exit 1
+		fi
+		rm -f modified_tests.args modified_boards.args modified_archs.args
 	fi
-	if [ -s modified_tests.args ]; then
-		${twister} ${twister_options} +modified_tests.args \
-			--save-tests test_file_tests.txt || exit 1
+
+	if [ "$SC" == "full" ]; then
+		# Save list of tests to be run
+		${twister} ${twister_options} --save-tests test_file_full.txt || exit 1
 	fi
-	if [ -s modified_archs.args ]; then
-		${twister} ${twister_options} +modified_archs.args \
-			--save-tests test_file_archs.txt || exit 1
-	fi
-	rm -f modified_tests.args modified_boards.args modified_archs.args
+
+	# Remove headers from all files.  We insert it into test_file.txt explicitly
+	# so we treat all test_file*.txt files the same.
+	tail -n +2 test_file_full.txt > test_file_full_in.txt
+	tail -n +2 test_file_archs.txt > test_file_archs_in.txt
+	tail -n +2 test_file_tests.txt > test_file_tests_in.txt
+	tail -n +2 test_file_boards.txt > test_file_boards_in.txt
+
+	echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" \
+		> test_file.txt
+	cat test_file_full_in.txt test_file_archs_in.txt test_file_tests_in.txt \
+		test_file_boards_in.txt >> test_file.txt
 }
-
 
 function west_setup() {
 	# West handling
@@ -207,31 +230,7 @@ if [ -n "$main_ci" ]; then
 	fi
 	$short_git_log
 
-	# cleanup
-	rm -f test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
-	touch test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
-
-	# In a pull-request see if we have changed any tests or board definitions
-	if [ -n "${pull_request_nr}" -o -n "${local_run}"  ]; then
-		get_tests_to_run
-	fi
-
-	if [ "$SC" == "full" ]; then
-		# Save list of tests to be run
-		${twister} ${twister_options} --save-tests test_file_full.txt || exit 1
-	fi
-
-	# Remove headers from all files.  We insert it into test_file.txt explicitly
-	# so we treat all test_file*.txt files the same.
-	tail -n +2 test_file_full.txt > test_file_full_in.txt
-	tail -n +2 test_file_archs.txt > test_file_archs_in.txt
-	tail -n +2 test_file_tests.txt > test_file_tests_in.txt
-	tail -n +2 test_file_boards.txt > test_file_boards_in.txt
-
-	echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" \
-		> test_file.txt
-	cat test_file_full_in.txt test_file_archs_in.txt test_file_tests_in.txt \
-		test_file_boards_in.txt >> test_file.txt
+	build_test_file
 
 	echo "+++ run twister"
 
