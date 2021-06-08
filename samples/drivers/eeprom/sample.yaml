@@ -18,3 +18,6 @@ tests:
     tags: eeprom shield
     depends_on: arduino_gpio arduino_i2c
     extra_args: SHIELD=x_nucleo_eeprma2
+    harness: console
+    harness_config:
+        fixture: fixture_shield_x_nucleo_eeprma2
