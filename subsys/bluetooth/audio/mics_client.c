@@ -20,31 +20,16 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio/mics.h>
 
+#include "mics_internal.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MICS_CLIENT)
 #define LOG_MODULE_NAME bt_mics_client
 #include "common/log.h"
 
-struct mics_instance {
-	uint16_t start_handle;
-	uint16_t end_handle;
-	uint16_t mute_handle;
-	struct bt_gatt_subscribe_params mute_sub_params;
-	struct bt_gatt_discover_params mute_sub_disc_params;
-
-	bool busy;
-	uint8_t mute_val_buf[1]; /* Mute value is a single octet */
-	struct bt_gatt_write_params write_params;
-	struct bt_gatt_read_params read_params;
-	struct bt_gatt_discover_params discover_params;
-
-	uint8_t aics_inst_cnt;
-	struct bt_aics *aics[CONFIG_BT_MICS_CLIENT_MAX_AICS_INST];
-};
-
 /* Callback functions */
 static struct bt_mics_cb *mics_client_cb;
 
-static struct mics_instance mics_insts[CONFIG_BT_MAX_CONN];
+static struct bt_mics_client mics_insts[CONFIG_BT_MAX_CONN];
 static struct bt_uuid *mics_uuid = BT_UUID_MICS;
 
 bool bt_mics_client_valid_aics_inst(struct bt_conn *conn, struct bt_aics *aics)
@@ -100,7 +85,7 @@ static uint8_t mics_client_read_mute_cb(struct bt_conn *conn, uint8_t err,
 {
 	uint8_t cb_err = err;
 	uint8_t *mute_val = NULL;
-	struct mics_instance *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics_client *mics_inst = &mics_insts[bt_conn_index(conn)];
 
 	mics_inst->busy = false;
 
@@ -127,7 +112,7 @@ static uint8_t mics_client_read_mute_cb(struct bt_conn *conn, uint8_t err,
 static void mics_client_write_mics_mute_cb(struct bt_conn *conn, uint8_t err,
 					   struct bt_gatt_write_params *params)
 {
-	struct mics_instance *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics_client *mics_inst = &mics_insts[bt_conn_index(conn)];
 	uint8_t mute_val = mics_inst->mute_val_buf[0];
 
 	BT_DBG("Write %s (0x%02X)", err ? "failed" : "successful", err);
@@ -151,7 +136,7 @@ static void mics_client_write_mics_mute_cb(struct bt_conn *conn, uint8_t err,
 static void aics_discover_cb(struct bt_conn *conn, struct bt_aics *inst,
 			     int err)
 {
-	struct mics_instance *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics_client *mics_inst = &mics_insts[bt_conn_index(conn)];
 
 	if (err == 0) {
 		/* Continue discovery of included services */
@@ -171,7 +156,7 @@ static uint8_t mics_discover_include_func(
 	struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	struct bt_gatt_discover_params *params)
 {
-	struct mics_instance *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics_client *mics_inst = &mics_insts[bt_conn_index(conn)];
 
 	if (attr == NULL) {
 		BT_DBG("Discover include complete for MICS: %u AICS",
@@ -233,7 +218,7 @@ static uint8_t mics_discover_func(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  struct bt_gatt_discover_params *params)
 {
-	struct mics_instance *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics_client *mics_inst = &mics_insts[bt_conn_index(conn)];
 
 	if (attr == NULL) {
 		int err = 0;
@@ -306,7 +291,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr,
 				     struct bt_gatt_discover_params *params)
 {
-	struct mics_instance *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics_client *mics_inst = &mics_insts[bt_conn_index(conn)];
 
 	if (attr == NULL) {
 		BT_DBG("Could not find a MICS instance on the server");
@@ -352,7 +337,7 @@ static uint8_t primary_discover_func(struct bt_conn *conn,
 
 static void mics_client_reset(struct bt_conn *conn)
 {
-	struct mics_instance *mics_inst = &mics_insts[bt_conn_index(conn)];
+	struct bt_mics_client *mics_inst = &mics_insts[bt_conn_index(conn)];
 
 	mics_inst->start_handle = 0;
 	mics_inst->end_handle = 0;
@@ -366,7 +351,7 @@ static void mics_client_reset(struct bt_conn *conn)
 int bt_mics_discover(struct bt_conn *conn)
 {
 	static bool initialized;
-	struct mics_instance *mics_inst;
+	struct bt_mics_client *mics_inst;
 	/*
 	 * This will initiate a discover procedure. The procedure will do the
 	 * following sequence:
@@ -450,7 +435,7 @@ int bt_mics_client_cb_register(struct bt_mics_cb *cb)
 int bt_mics_client_included_get(struct bt_conn *conn,
 					struct bt_mics_included *included)
 {
-	struct mics_instance *mics_inst;
+	struct bt_mics_client *mics_inst;
 
 	CHECKIF(conn == NULL) {
 		return -EINVAL;
@@ -471,7 +456,7 @@ int bt_mics_client_included_get(struct bt_conn *conn,
 int bt_mics_client_mute_get(struct bt_conn *conn)
 {
 	int err;
-	struct mics_instance *mics_inst;
+	struct bt_mics_client *mics_inst;
 
 	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
@@ -503,7 +488,7 @@ int bt_mics_client_mute_get(struct bt_conn *conn)
 int bt_mics_client_write_mute(struct bt_conn *conn, bool mute)
 {
 	int err;
-	struct mics_instance *mics_inst;
+	struct bt_mics_client *mics_inst;
 
 	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");

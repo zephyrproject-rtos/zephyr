@@ -16,6 +16,7 @@ extern enum bst_result_t bst_result;
 #define AICS_DESC_SIZE 0
 #endif /* CONFIG_BT_AICS */
 
+static struct bt_mics *mics;
 static struct bt_mics_included mics_included;
 
 static volatile uint8_t g_mute;
@@ -346,7 +347,7 @@ static void test_server_only(void)
 	}
 	mics_param.cb = &mics_cb;
 
-	err = bt_mics_register(&mics_param);
+	err = bt_mics_register(&mics_param, &mics);
 	if (err != 0) {
 		FAIL("MICS init failed (err %d)\n", err);
 		return;
@@ -440,7 +441,7 @@ static void test_main(void)
 	}
 	mics_param.cb = &mics_cb;
 
-	err = bt_mics_register(&mics_param);
+	err = bt_mics_register(&mics_param, &mics);
 	if (err != 0) {
 		FAIL("MICS init failed (err %d)\n", err);
 		return;

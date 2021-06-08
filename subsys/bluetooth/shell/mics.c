@@ -16,6 +16,7 @@
 
 #include "bt.h"
 
+static struct bt_mics *mics;
 static struct bt_mics_included mics_included;
 
 static void mics_mute_cb(struct bt_conn *conn, int err, uint8_t mute)
@@ -132,7 +133,7 @@ static int cmd_mics_param(const struct shell *sh, size_t argc, char **argv)
 
 	mics_param.cb = &mics_cbs;
 
-	result = bt_mics_register(&mics_param);
+	result = bt_mics_register(&mics_param, &mics);
 	if (result != 0) {
 		shell_error(sh, "MICS register failed: %d", result);
 		return result;
