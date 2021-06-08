@@ -19,7 +19,7 @@
 static struct bt_mics *mics;
 static struct bt_mics_included mics_included;
 
-static void mics_mute_cb(struct bt_conn *conn, int err, uint8_t mute)
+static void mics_mute_cb(struct bt_mics *mics, int err, uint8_t mute)
 {
 	if (err != 0) {
 		shell_error(ctx_shell, "Mute get failed (%d)", err);
@@ -185,7 +185,7 @@ static int cmd_mics_unmute(const struct shell *sh, size_t argc, char **argv)
 static int cmd_mics_mute_disable(const struct shell *sh, size_t argc,
 				 char **argv)
 {
-	int result = bt_mics_mute_disable();
+	int result = bt_mics_mute_disable(mics);
 
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
@@ -206,7 +206,7 @@ static int cmd_mics_aics_deactivate(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_mics_aics_deactivate(mics_included.aics[index]);
+	result = bt_mics_aics_deactivate(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -226,7 +226,7 @@ static int cmd_mics_aics_activate(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_mics_aics_activate(mics_included.aics[index]);
+	result = bt_mics_aics_activate(mics, mics_included.aics[index]);
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
