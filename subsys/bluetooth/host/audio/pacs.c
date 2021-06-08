@@ -18,6 +18,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
+#include "../conn_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_PACS)
 #define LOG_MODULE_NAME bt_pacs
