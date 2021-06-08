@@ -41,6 +41,9 @@ extern "C" {
 #define BT_MICS_MUTE_MUTED                         0x01
 #define BT_MICS_MUTE_DISABLED                      0x02
 
+/** @brief Opaque Microphone Input Control Service instance. */
+struct bt_mics;
+
 /** @brief Register parameters structure for Microphone Input Control Service */
 struct bt_mics_register_param {
 	/** Register parameter structure for Audio Input Control Services */
@@ -70,11 +73,13 @@ struct bt_mics_included  {
  * This will enable the service and make it discoverable by clients.
  * This can only be done as the server.
  *
- * @param param  Pointer to an initialization structure.
+ * @param      param Pointer to an initialization structure.
+ * @param[out] mics  Pointer to the registered Microphone Input Control Service.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mics_register(struct bt_mics_register_param *param);
+int bt_mics_register(struct bt_mics_register_param *param,
+		     struct bt_mics **mics);
 
 /**
  * @brief Get Microphone Input Control Service included services
