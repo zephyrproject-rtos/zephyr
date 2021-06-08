@@ -10,6 +10,10 @@ menuconfig HWINFO
 
 if HWINFO
 
+module = HWINFO
+module-str = HWINFO
+source "subsys/logging/Kconfig.template.log_config"
+
 config HWINFO_SHELL
 	bool "Enable HWINFO Shell"
 	default y
@@ -31,12 +35,19 @@ config HWINFO_NRF
 	help
 	  Enable Nordic NRF hwinfo driver.
 
+config HWINFO_MCUX_RCM
+	bool "NXP kinetis reset cause"
+	default y
+	depends on HAS_MCUX_RCM
+	help
+	  Enable NXP kinetis mcux RCM hwinfo driver.
+
 config HWINFO_MCUX_SIM
-	bool "NXP kinetis device ID"
+	bool "NXP kinetis SIM device ID"
 	default y
 	depends on HAS_MCUX_SIM
 	help
-	  Enable NXP kinetis mcux hwinfo driver.
+	  Enable NXP kinetis mcux SIM hwinfo driver.
 
 config HWINFO_MCUX_SYSCON
 	bool "NXP LPC device ID"
