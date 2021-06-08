@@ -16,6 +16,7 @@
 
 #include "bt.h"
 
+static struct bt_mics *mics;
 static struct bt_mics_included mics_included;
 
 static void mics_discover_cb(struct bt_conn *conn, int err, uint8_t aics_count)
@@ -229,7 +230,7 @@ static int cmd_mics_client_discover(const struct shell *sh, size_t argc,
 		return -ENOTCONN;
 	}
 
-	result = bt_mics_discover(default_conn);
+	result = bt_mics_discover(default_conn, &mics);
 	if (result != 0) {
 		shell_print(sh, "Fail: %d", result);
 	}
