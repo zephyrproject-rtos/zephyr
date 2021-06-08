@@ -70,10 +70,10 @@ static void process_sample(void)
 		sensor_log("Relative Humidity: %.1f%%\n", sensor_value_to_double(&hum));
 	}
 	if (IS_ENABLED(CONFIG_HAS_PRESSURE)) {
-		sensor_log("Pressure: %.2f kPa", sensor_value_to_double(&press));
+		sensor_log("Pressure: %.2f kPa\n", sensor_value_to_double(&press));
 	}
 	if (IS_ENABLED(CONFIG_HAS_GAS)) {
-		sensor_log("Gas: %.2f", sensor_value_to_double(&gas));
+		sensor_log("Gas: %.2f\n", sensor_value_to_double(&gas));
 	}
 }
 
@@ -86,40 +86,7 @@ static void handler_(const struct device *dev,
 
 void main(void)
 {
-
-#if defined(CONFIG_HTS221)
-	sensor_dev = DEVICE_DT_GET_ANY(st_hts221);
-#elif defined(CONFIG_TH02)
-	sensor_dev = DEVICE_DT_GET_ANY(hoperf_th02);
-#elif defined(CONFIG_BME280)
-	sensor_dev = DEVICE_DT_GET_ANY(bosch_bme280);
-#elif defined(CONFIG_TMP007)
-	sensor_dev = DEVICE_DT_GET_ANY(ti_tmp007);
-#elif defined(CONFIG_SHT3XD)
-	sensor_dev = DEVICE_DT_GET_ANY(sensirion_sht3xd);
-#elif defined(CONFIG_BME680)
-	sensor_dev = DEVICE_DT_GET_ANY(bosch_bme680);
-#elif defined(CONFIG_MCP9808)
-	sensor_dev = DEVICE_DT_GET_ANY(microchip_mcp9808);
-#elif defined(CONFIG_DPS310)
-	sensor_dev = DEVICE_DT_GET_ANY(infineon_dps310);
-#elif defined(CONFIG_TI_HDC)
-	sensor_dev = DEVICE_DT_GET_ANY(ti_hdc);
-#elif defined(CONFIG_MAX6675)
-	sensor_dev = DEVICE_DT_GET_ANY(maxim_max6675);
-#elif defined(CONFIG_LPS22HB)
-	sensor_dev = DEVICE_DT_GET_ANY(st_lps22hb_press);
-#elif defined(CONFIG_LPS22HH)
-	sensor_dev = DEVICE_DT_GET_ANY(st_lps22hh);
-#elif defined(CONFIG_ENS210)
-	sensor_dev = DEVICE_DT_GET_ANY(ams_ens210);
-#elif defined(CONFIG_DHT)
-	sensor_dev = DEVICE_DT_GET_ANY(aosong_dht);
-#elif defined(CONFIG_SI7006)
-	sensor_dev = DEVICE_DT_GET_ANY(silabs_si7006);
-#else
-#error Not defined
-#endif
+	sensor_dev = DEVICE_DT_GET(DT_NODELABEL(env_sensor));
 
 	if (sensor_dev == NULL) {
 		LOG_ERR("Could not get sensor device");

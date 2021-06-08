@@ -5,7 +5,7 @@
  */
 
 &arduino_i2c  {
-	th02@40 {
+	env_sensor: th02@40 {
 		compatible = "hoperf,th02";
 		reg = <0x40>;
 		label = "TH02";

@@ -9,7 +9,7 @@
  */
 
 &arduino_i2c {
-	DPS310@77 {
+	env_sensor: DPS310@77 {
 		status = "okay";
 		compatible = "infineon,dps310";
 		reg = <0x77>;

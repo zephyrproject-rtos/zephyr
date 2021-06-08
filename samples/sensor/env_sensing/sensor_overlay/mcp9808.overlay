@@ -5,7 +5,7 @@
  */
 
 &arduino_i2c  {
-	mcp9808@18 {
+	env_sensor: mcp9808@18 {
 		compatible = "microchip,mcp9808";
 		reg = <0x18>;
 		int-gpios = <&gpioc 16 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;

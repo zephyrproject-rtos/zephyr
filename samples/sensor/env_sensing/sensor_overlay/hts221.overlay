@@ -6,7 +6,7 @@
 
 &arduino_i2c {
 
-        hts221@5f {
+        env_sensor: hts221@5f {
                 compatible = "st,hts221";
                 reg = <0x5f>;
                 label = "HTS221";

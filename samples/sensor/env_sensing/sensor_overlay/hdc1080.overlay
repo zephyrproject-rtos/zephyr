@@ -6,7 +6,7 @@
 
 &arduino_i2c {
 
-	ti_hdc: ti_hdc@40 {
+	env_sensor: ti_hdc@40 {
 		compatible = "ti,hdc","ti,hdc1080";
 		reg = <0x40>;
 		label = "HDC1080";

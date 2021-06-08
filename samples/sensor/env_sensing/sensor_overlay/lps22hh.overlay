@@ -5,7 +5,7 @@
  */
 
 &arduino_i2c {
-        lps22hh@5d {
+        env_sensor: lps22hh@5d {
                 compatible = "st,lps22hh";
                 reg = <0x5d>;
                 drdy-gpios =  <&arduino_header 12 GPIO_ACTIVE_HIGH>; /* D6 */

@@ -5,7 +5,7 @@
  */
 
 &arduino_spi {
-	max6675@0 {
+	env_sensor: max6675@0 {
 		compatible = "maxim,max6675";
 		reg = <0>;
 		spi-max-frequency = <4300000>;

@@ -5,7 +5,7 @@
  */
 
 &arduino_i2c  { /* SDA PTE25, SCL PTE24, ALERT PTE26 */
-	sht3xd@44 {
+	env_sensor: sht3xd@44 {
 		compatible = "sensirion,sht3xd";
 		reg = <0x44>;
 		label = "SHT3XD";
