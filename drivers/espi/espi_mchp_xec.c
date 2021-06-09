@@ -23,7 +23,7 @@
 
 #define VW_MAX_GIRQS                2ul
 /* Missing HAL value */
-#define MEC_ESPI_MSVW08_SRC1_VAL    5ul
+#define MEC_ESPI_MSVW08_SRC1_VAL    BIT(5)
 
 /* 200ms */
 #define MAX_OOB_TIMEOUT             200ul
@@ -1114,6 +1114,10 @@ static void notify_host_warning(const struct device *dev,
 		espi_send_callbacks(&data->callbacks, dev, evt);
 	} else {
 		k_busy_wait(ESPI_XEC_VWIRE_ACK_DELAY);
+		/* Some flows are dependent on awareness of client's driver
+		 * about these warnings in such cases these automatic response
+		 * should not be enabled.
+		 */
 		switch (signal) {
 		case ESPI_VWIRE_SIGNAL_HOST_RST_WARN:
 			espi_xec_send_vwire(dev,
@@ -1126,6 +1130,10 @@ static void notify_host_warning(const struct device *dev,
 			break;
 		case ESPI_VWIRE_SIGNAL_OOB_RST_WARN:
 			espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_OOB_RST_ACK,
+					    status);
+			break;
+		case ESPI_VWIRE_SIGNAL_DNX_WARN:
+			espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_DNX_ACK,
 					    status);
 			break;
 		default:
@@ -1338,7 +1346,7 @@ static void espi_xec_vw_isr(const struct device *dev)
 #if DT_INST_PROP_HAS_IDX(0, vw_girqs, 1)
 static void vw_sus_dnx_warn_isr(const struct device *dev)
 {
-	notify_system_state(dev, ESPI_VWIRE_SIGNAL_DNX_WARN);
+	notify_host_warning(dev, ESPI_VWIRE_SIGNAL_DNX_WARN);
 }
 
 const struct espi_isr m2s_vwires_ext_isr[] = {
@@ -1354,7 +1362,7 @@ static void espi_xec_vw_ext_isr(const struct device *dev)
 	MCHP_GIRQ_SRC(config->vw_girq_ids[1]) = girq_result;
 
 	for (int i = 0; i < ARRAY_SIZE(m2s_vwires_ext_isr); i++) {
-		struct espi_isr entry = m2s_vwires_isr[i];
+		struct espi_isr entry = m2s_vwires_ext_isr[i];
 
 		if (girq_result & entry.girq_bit) {
 			if (entry.the_isr != NULL) {
