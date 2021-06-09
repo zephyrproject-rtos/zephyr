@@ -318,14 +318,14 @@ static int pwm_nrfx_set_power_state(enum pm_device_state new_state,
 }
 
 static int pwm_nrfx_pm_control(const struct device *dev,
-			       enum pm_device_state *state)
+			       enum pm_device_state state)
 {
 	int err = 0;
 	enum pm_device_state curr_state;
 
 	(void)pm_device_state_get(dev, &curr_state);
-	if (*state != current_state) {
-		err = pwm_nrfx_set_power_state(*state, current_state, dev);
+	if (state != current_state) {
+		err = pwm_nrfx_set_power_state(state, current_state, dev);
 	}
 
 	return err;
@@ -333,7 +333,7 @@ static int pwm_nrfx_pm_control(const struct device *dev,
 
 #define PWM_NRFX_PM_CONTROL(idx)					       \
 	static int pwm_##idx##_nrfx_pm_control(const struct device *dev,       \
-					       enum pm_device_state *state)    \
+					       enum pm_device_state state)     \
 	{								       \
 		return pwm_nrfx_pm_control(dev, state)			       \
 	}

@@ -410,13 +410,13 @@ static int bme280_chip_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-int bme280_pm_ctrl(const struct device *dev, enum pm_device_state *state)
+int bme280_pm_ctrl(const struct device *dev, enum pm_device_state state)
 {
 	int ret = 0;
 	enum pm_device_state curr_state;
 
 	pm_device_state_get(dev, &curr_state);
-	if (*state != curr_state) {
+	if (state != curr_state) {
 
 		/* Switching from OFF to any */
 		if (curr_state == PM_DEVICE_STATE_OFF) {
@@ -425,7 +425,7 @@ int bme280_pm_ctrl(const struct device *dev, enum pm_device_state *state)
 			ret = bme280_chip_init(dev);
 		}
 		/* Switching to OFF from any */
-		else if (*state == PM_DEVICE_STATE_OFF) {
+		else if (state == PM_DEVICE_STATE_OFF) {
 
 			/* Put the chip into sleep mode */
 			ret = bme280_reg_write(dev,

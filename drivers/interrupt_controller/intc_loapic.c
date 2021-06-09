@@ -409,13 +409,13 @@ int loapic_resume(const struct device *port)
 */
 __pinned_func
 static int loapic_device_ctrl(const struct device *port,
-			      enum pm_device_state *state)
+			      enum pm_device_state state)
 {
 	int ret = 0;
 
-	if (*state == PM_DEVICE_STATE_SUSPEND) {
+	if (state == PM_DEVICE_STATE_SUSPEND) {
 		ret = loapic_suspend(port);
-	} else if (*state == PM_DEVICE_STATE_ACTIVE) {
+	} else if (state == PM_DEVICE_STATE_ACTIVE) {
 		ret = loapic_resume(port);
 	}
 
