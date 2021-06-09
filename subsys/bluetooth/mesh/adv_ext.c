@@ -183,8 +183,7 @@ static void send_pending_adv(struct k_work *work)
 
 static void schedule_send(void)
 {
-	uint64_t timestamp = adv.timestamp;
-	int64_t delta;
+	uint8_t rand_delay = 0;
 
 	if (atomic_test_and_clear_bit(adv.flags, ADV_FLAG_PROXY)) {
 		bt_le_ext_adv_stop(adv.instance);
@@ -196,12 +195,8 @@ static void schedule_send(void)
 		return;
 	}
 
-	/* The controller will send the next advertisement immediately.
-	 * Introduce a delay here to avoid sending the next mesh packet closer
-	 * to the previous packet than what's permitted by the specification.
-	 */
-	delta = k_uptime_delta(&timestamp);
-	k_work_reschedule(&adv.work, K_MSEC(ADV_INT_FAST_MS - delta));
+	(void)bt_rand(&rand_delay, sizeof(rand_delay));
+	k_work_reschedule(&adv.work, K_MSEC(ADV_INT_FAST_MS + rand_delay % 30));
 }
 
 void bt_mesh_adv_update(void)

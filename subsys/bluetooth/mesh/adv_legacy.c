@@ -51,6 +51,7 @@ static inline void adv_send(struct net_buf *buf)
 	struct bt_le_adv_param param = {};
 	uint16_t duration, adv_int;
 	struct bt_data ad;
+	uint8_t rand_delay = 0;
 	int err;
 
 	adv_int = MAX(adv_int_min,
@@ -78,6 +79,9 @@ static inline void adv_send(struct net_buf *buf)
 	param.id = BT_ID_DEFAULT;
 	param.interval_min = BT_MESH_ADV_SCAN_UNIT(adv_int);
 	param.interval_max = param.interval_min;
+
+	(void)bt_rand(&rand_delay, sizeof(rand_delay));
+	k_sleep(K_MSEC(ADV_INT_FAST_MS + rand_delay % 30));
 
 	uint64_t time = k_uptime_get();
 
