@@ -72,7 +72,13 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length);
  *
  * This routine retrieves the flags that indicate why the device was reset.
  *
- * Multiple calls to this routine will return the same value, unless
+ * On some platforms the reset cause flags accumulate between successive resets
+ * and this routine may return multiple flags indicating all reset causes
+ * since the device was powered on. If you need to retrieve the cause only for
+ * the most recent reset call `hwinfo_clear_reset_cause` after calling this
+ * routine to clear the hardware flags before the next reset event.
+ *
+ * Successive calls to this routine will return the same value, unless
  * `hwinfo_clear_reset_cause` has been called.
  *
  * @retval zero if successful.
