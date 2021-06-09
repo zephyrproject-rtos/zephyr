@@ -411,6 +411,8 @@ uint8_t ull_cp_le_ping(struct ll_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
+
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
 uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
@@ -424,6 +426,7 @@ uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 
 	return BT_HCI_ERR_SUCCESS;
 }
+#endif /* CONFIG_BT_CENTRAL) || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
 
 uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 {
