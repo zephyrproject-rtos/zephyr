@@ -1,4 +1,4 @@
-# Copyright (c) -2021 Nordic Semiconductor (ASA)
+# Copyright (c) 2021 Nordic Semiconductor (ASA)
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig IPC_SERVICE
@@ -14,10 +14,18 @@ if IPC_SERVICE
 choice IPC_SERVICE_BACKEND
 	prompt "IPC Service backend"
 
-config IPC_SERVICE_BACKEND_XYZ
-	bool "Example backend"
+config IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
+	bool "RPMsg multiple instance backend"
+	select RPMSG_MULTI_INSTANCE
 
 endchoice
+
+if IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
+
+rsource "../ipc_service_backend/Kconfig.rpmsg_mi"
+
+endif # IPC_SERVICE_BACKEND_RPMSG_MULTI_INSTANCE
+
 
 config IPC_SERVICE_BACKEND_REG_PRIORITY
 	int "Initialization priority of modules registering IPC backend"
