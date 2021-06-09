@@ -462,6 +462,28 @@ int bt_mics_client_included_get(struct bt_mics *mics,
 	return 0;
 }
 
+int bt_mics_client_conn_get(const struct bt_mics *mics, struct bt_conn **conn)
+{
+	CHECKIF(mics == NULL) {
+		BT_DBG("NULL mics pointer");
+		return -EINVAL;
+	}
+
+	if (!mics->client_instance) {
+		BT_DBG("mics pointer shall be client instance");
+		return -EINVAL;
+	}
+
+	if (mics->cli.conn == NULL) {
+		BT_DBG("mics pointer not associated with a connection. "
+		       "Do discovery first");
+		return -ENOTCONN;
+	}
+
+	*conn = mics->cli.conn;
+	return 0;
+}
+
 int bt_mics_client_mute_get(struct bt_mics *mics)
 {
 	int err;

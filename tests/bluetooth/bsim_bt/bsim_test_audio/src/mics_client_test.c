@@ -371,6 +371,7 @@ static void test_main(void)
 	int err;
 	uint8_t expected_mute;
 	static struct bt_gatt_exchange_params mtu_params = { .func = mtu_cb };
+	struct bt_conn *cached_conn;
 
 	err = bt_enable(bt_ready);
 
@@ -407,6 +408,17 @@ static void test_main(void)
 	err = bt_mics_included_get(mics, &mics_included);
 	if (err != 0) {
 		FAIL("Failed to get MICS context (err %d)\n", err);
+		return;
+	}
+
+	printk("Getting MICS client conn\n");
+	err = bt_mics_client_conn_get(mics, &cached_conn);
+	if (err != 0) {
+		FAIL("Failed to get MICS client conn (err %d)\n", err);
+		return;
+	}
+	if (cached_conn != g_conn) {
+		FAIL("Cached conn was not the conn used to discover");
 		return;
 	}
 
