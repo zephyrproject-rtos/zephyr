@@ -273,13 +273,8 @@ Device Power Management Operations
 ==================================
 
 Zephyr RTOS power management subsystem provides a control function interface
-to device drivers to indicate power management operations to perform.
-The supported PM control commands are:
-
-* PM_DEVICE_STATE_SET
-* PM_DEVICE_STATE_GET
-
-Each device driver defines:
+to device drivers to indicate power management operations to perform. Each
+device driver defines:
 
 * The device's supported power states.
 * The device's supported transitions between power states.
@@ -330,20 +325,17 @@ Device Set Power State
 
 .. code-block:: c
 
-   int pm_device_state_set(const struct device *dev, uint32_t device_power_state, pm_device_cb cb, void *arg);
+   int pm_device_state_set(const struct device *dev, enum pm_device_state state);
 
 Calls the :c:func:`pm_control()` handler function implemented by the
-device driver with PM_DEVICE_STATE_SET command.
+device driver with the provided state.
 
 Device Get Power State
 ----------------------
 
 .. code-block:: c
 
-   int pm_device_state_get(const struct device *dev, uint32_t * device_power_state);
-
-Calls the :c:func:`pm_control()` handler function implemented by the
-device driver with PM_DEVICE_STATE_GET command.
+   int pm_device_state_get(const struct device *dev, enum pm_device_state *state);
 
 Busy Status Indication
 ======================
