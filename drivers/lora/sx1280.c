@@ -10,7 +10,7 @@
 #include <drivers/spi.h>
 #include <zephyr.h>
 
-// #include "sx12xx_common.h"
+#include "sx12xx_common.h"
 #include "sx1280.h"
 #include "sx1280-radio.h"
 
@@ -621,15 +621,15 @@ static int sx1280_lora_init(const struct device *dev)
 // 		return ret;
 // 	}
 
-// 	/* Setup Reset gpio and perform soft reset */
-// 	ret = sx12xx_configure_pin(reset, GPIO_OUTPUT_ACTIVE);
-// 	if (ret) {
-// 		return ret;
-// 	}
+	/* Setup Reset gpio and perform soft reset */
+	ret = sx12xx_configure_pin(reset, GPIO_OUTPUT_ACTIVE);
+	if (ret) {
+		return ret;
+	}
 
-// 	k_sleep(K_MSEC(100));
-// 	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
-// 	k_sleep(K_MSEC(100));
+	k_sleep(K_MSEC(100));
+	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
+	k_sleep(K_MSEC(100));
 
 // 	ret = sx127x_read(REG_VERSION, &regval, 1);
 // 	if (ret < 0) {
