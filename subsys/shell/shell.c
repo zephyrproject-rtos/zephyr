@@ -88,7 +88,7 @@ static inline void state_set(const struct shell *shell, enum shell_state state)
 {
 	shell->ctx->state = state;
 
-	if (state == SHELL_STATE_ACTIVE) {
+	if (state == SHELL_STATE_ACTIVE && !shell->ctx->bypass) {
 		cmd_buffer_clear(shell);
 		if (z_flag_print_noinit_get(shell)) {
 			z_shell_fprintf(shell, SHELL_WARNING, "%s",
@@ -940,6 +940,26 @@ static void state_collect(const struct shell *shell)
 	char data;
 
 	while (true) {
+		shell_bypass_cb_t bypass = shell->ctx->bypass;
+
+		if (bypass) {
+			uint8_t buf[16];
+
+			(void)shell->iface->api->read(shell->iface, buf,
+							sizeof(buf), &count);
+			if (count) {
+				bypass(shell, buf, count);
+				/* Check if bypass mode ended. */
+				if (!(volatile shell_bypass_cb_t *)shell->ctx->bypass) {
+					state_set(shell, SHELL_STATE_ACTIVE);
+				} else {
+					continue;
+				}
+			}
+
+			return;
+		}
+
 		(void)shell->iface->api->read(shell->iface, &data,
 					      sizeof(data), &count);
 		if (count == 0) {
@@ -1447,11 +1467,11 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	}
 
 	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
-	if (!z_flag_cmd_ctx_get(shell)) {
+	if (!z_flag_cmd_ctx_get(shell) && !shell->ctx->bypass) {
 		z_shell_cmd_line_erase(shell);
 	}
 	z_shell_vfprintf(shell, color, fmt, args);
-	if (!z_flag_cmd_ctx_get(shell)) {
+	if (!z_flag_cmd_ctx_get(shell) && !shell->ctx->bypass) {
 		z_shell_print_prompt_and_cmd(shell);
 	}
 	z_transport_buffer_flush(shell);
@@ -1625,6 +1645,11 @@ int shell_mode_delete_set(const struct shell *shell, bool val)
 	}
 
 	return (int)z_flag_mode_delete_set(shell, val);
+}
+
+void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
+{
+	sh->ctx->bypass = bypass;
 }
 
 static int cmd_help(const struct shell *shell, size_t argc, char **argv)

@@ -501,6 +501,16 @@ typedef void (*shell_transport_handler_t)(enum shell_transport_evt evt,
 
 typedef void (*shell_uninit_cb_t)(const struct shell *shell, int res);
 
+/** @brief Bypass callback.
+ *
+ * @param shell Shell instance.
+ * @param data  Raw data from transport.
+ * @param len   Data length.
+ */
+typedef void (*shell_bypass_cb_t)(const struct shell *shell,
+				  uint8_t *data,
+				  size_t len);
+
 struct shell_transport;
 
 /**
@@ -662,6 +672,9 @@ struct shell_ctx {
 	 * completed just before aborting shell thread.
 	 */
 	shell_uninit_cb_t uninit_cb;
+
+	/*!< When bypass is set, all incoming data is passed to the callback. */
+	shell_bypass_cb_t bypass;
 
 #if defined CONFIG_SHELL_GETOPT
 	/*!< getopt context for a shell backend. */
@@ -1043,6 +1056,16 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd);
  * @retval -EINVAL if invalid root command is provided.
  */
 int shell_set_root_cmd(const char *cmd);
+
+/** @brief Set bypass callback.
+ *
+ * Bypass callback is called whenever data is received. Shell is bypassed and
+ * data is passed directly to the callback. Use null to disable bypass functionality.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] bypass	Bypass callback or null to disable.
+ */
+void shell_set_bypass(const struct shell *shell, shell_bypass_cb_t bypass);
 
 /**
  * @brief Allow application to control text insert mode.
