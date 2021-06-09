@@ -119,7 +119,7 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		pdu_encode_feature_req(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 		break;
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
 		pdu_encode_min_used_chans_ind(ctx, pdu);
 		ctx->tx_ack = tx;
@@ -255,7 +255,7 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = LP_COMMON_STATE_IDLE;
 		}
 		break;
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined (CONFIG_BT_PERIPHERAL)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
 		lr_complete(conn);
 		ctx->state = LP_COMMON_STATE_IDLE;
@@ -470,10 +470,6 @@ static void lp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		pdu_decode_feature_rsp(conn, pdu);
 		break;
-	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
-	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
-		pdu_decode_feature_req(conn, pdu);
-		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 		/* No response expected */
@@ -594,8 +590,12 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 		/* ping_req has no data */
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
+#endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) && defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+#endif /* CONFIG_BT_CTLR_SLAVE_FEAT_REQ && CONFIG_BT_CENTRAL */
 		pdu_decode_feature_req(conn, pdu);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
