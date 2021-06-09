@@ -56,6 +56,10 @@ config BOARD_ENABLE_DCDC_HV
 	select SOC_DCDC_NRF53X_HV
 	default y
 
+config BOARD_ENABLE_128MHZ_APP
+	bool "Enable 128MHz speed in application core"
+	select SOC_CLOCK_128MHZ_NRF53X_APP
+
 choice BT_HCI_BUS_TYPE
 	default BT_RPMSG if BT
 endchoice
