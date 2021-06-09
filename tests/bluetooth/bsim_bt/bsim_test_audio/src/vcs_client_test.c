@@ -541,6 +541,7 @@ static void test_main(void)
 	static struct bt_gatt_exchange_params mtu_params =  {
 		.func = mtu_cb,
 	};
+	struct bt_conn *cached_conn;
 
 	err = bt_enable(bt_ready);
 
@@ -586,6 +587,17 @@ static void test_main(void)
 	err = bt_vcs_included_get(vcs, &vcs_included);
 	if (err) {
 		FAIL("Failed to get VCS included services (err %d)\n", err);
+		return;
+	}
+
+	printk("Getting VCS client conn\n");
+	err = bt_vcs_client_conn_get(vcs, &cached_conn);
+	if (err != 0) {
+		FAIL("Could not get VCS client conn (err %d)\n", err);
+		return;
+	}
+	if (cached_conn != g_conn) {
+		FAIL("Cached conn was not the conn used to discover");
 		return;
 	}
 
