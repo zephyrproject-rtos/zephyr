@@ -274,6 +274,13 @@ config BT_MESH_ADV_STACK_SIZE
 	  NOTE: This is an advanced setting and should not be changed unless
 	  absolutely necessary
 
+config BT_MESH_IV_UPDATE_SEQ_LIMIT
+	hex "Sequence number limit to start iv update"
+	default 0x800000
+	range 0x000001 0xFFFFFE
+	help
+	  This option specifies the sequence number value to start iv update.
+
 config BT_MESH_IVU_DIVIDER
 	int "Divider for IV Update state refresh timer"
 	default 4
