@@ -445,6 +445,18 @@ static int test_vocs(void)
 	uint32_t expected_location;
 	int16_t expected_offset;
 	char expected_description[VOCS_DESC_SIZE];
+	struct bt_conn *cached_conn;
+
+	printk("Getting VOCS client conn\n");
+	err = bt_vocs_client_conn_get(vcs.vocs[0], &cached_conn);
+	if (err != 0) {
+		FAIL("Could not get VOCS client conn (err %d)\n", err);
+		return err;
+	}
+	if (cached_conn != g_conn) {
+		FAIL("Cached conn was not the conn used to discover");
+		return -ENOTCONN;
+	}
 
 	printk("Getting VOCS state\n");
 	g_cb = false;
