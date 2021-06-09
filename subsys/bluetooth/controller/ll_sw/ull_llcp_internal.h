@@ -1034,20 +1034,6 @@ static inline void pdu_encode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu
 	return ull_cp_priv_pdu_encode_phy_req(ctx, pdu);
 }
 
-void ull_cp_priv_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu);
-
-static inline void pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_phy_rsp(conn, pdu);
-}
-
-void ull_cp_priv_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
-
-static inline void pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	return ull_cp_priv_pdu_encode_phy_update_ind(ctx, pdu);
-}
-
 void ull_cp_priv_pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 static inline void pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -1055,11 +1041,12 @@ static inline void pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu
 	return ull_cp_priv_pdu_decode_phy_req(ctx, pdu);
 }
 
-void ull_cp_priv_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+#if defined(CONFIG_BT_PERIPHERAL)
+void ull_cp_priv_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu);
 
-static inline void pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+static inline void pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
-	return ull_cp_priv_pdu_decode_phy_rsp(ctx, pdu);
+	return ull_cp_priv_pdu_encode_phy_rsp(conn, pdu);
 }
 
 void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
@@ -1068,6 +1055,23 @@ static inline void pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_da
 {
 	return ull_cp_priv_pdu_decode_phy_update_ind(ctx, pdu);
 }
+#endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CENTRAL)
+void ull_cp_priv_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_phy_update_ind(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_phy_rsp(ctx, pdu);
+}
+#endif /* CONFIG_BT_CENTRAL */
 
 /*
  * Connection Update Procedure Helper
