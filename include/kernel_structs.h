@@ -30,6 +30,10 @@
 #include <arch/structs.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define K_NUM_PRIORITIES \
 	(CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES + 1)
 
@@ -229,6 +233,10 @@ struct _timeout {
 	int32_t dticks;
 #endif
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _ASMLANGUAGE */
 
