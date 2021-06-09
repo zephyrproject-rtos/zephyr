@@ -13,6 +13,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio.h>
+#include "../conn_internal.h"  /* To avoid build errors on use of struct bt_conn" */
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_ENDPOINT)
 #define LOG_MODULE_NAME bt_audio_ep
