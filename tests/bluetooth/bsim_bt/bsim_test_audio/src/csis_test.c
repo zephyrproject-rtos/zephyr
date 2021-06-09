@@ -10,8 +10,6 @@
 
 static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
-static uint8_t expected_passes = 1;
-static uint8_t passes;
 static volatile bool g_locked;
 static uint8_t dyn_rank;
 static uint8_t sirk_read_req_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;

@@ -12,8 +12,6 @@
 
 static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
-static uint8_t expected_passes = 1;
-static uint8_t passes;
 static volatile bool bt_init;
 static volatile bool is_connected;
 static volatile bool discovery_complete;

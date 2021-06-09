@@ -8,8 +8,6 @@
 #include "common.h"
 
 extern enum bst_result_t bst_result;
-static uint8_t expected_passes = 1;
-static uint8_t passes;
 static volatile bool is_connected;
 static volatile bool discovered;
 static volatile bool sets_discovered;

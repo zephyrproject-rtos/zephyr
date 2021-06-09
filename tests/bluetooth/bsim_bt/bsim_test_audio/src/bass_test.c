@@ -9,8 +9,6 @@
 #include "common.h"
 
 extern enum bst_result_t bst_result;
-static uint8_t expected_passes = 1;
-static uint8_t passes;
 
 static volatile bool g_cb;
 static volatile bool g_pa_synced;
