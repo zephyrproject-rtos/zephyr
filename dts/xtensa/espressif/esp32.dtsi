@@ -87,7 +87,8 @@
 		uart0: uart@3ff40000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff40000 0x400>;
-			/* interrupts = <12>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			interrupts = <UART0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
 			label = "UART_0";
 			clocks = <&rtc ESP32_UART0_MODULE>;
 			status = "disabled";
@@ -96,7 +97,8 @@
 		uart1: uart@3ff50000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff50000 0x400>;
-			/* interrupts = <17>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			interrupts = <UART1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
 			label = "UART_1";
 			clocks = <&rtc ESP32_UART1_MODULE>;
 			status = "disabled";
@@ -105,7 +107,8 @@
 		uart2: uart@3ff6e000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x3ff6E000 0x400>;
-			/* interrupts = <18>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			interrupts = <UART2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
 			label = "UART_2";
 			clocks = <&rtc ESP32_UART2_MODULE>;
 			status = "disabled";
