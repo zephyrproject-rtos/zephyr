@@ -389,7 +389,7 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 	net_pkt_set_ieee802154_lqi(ack_pkt, nrf5_radio->ack_frame.lqi);
 	net_pkt_set_ieee802154_rssi(ack_pkt, nrf5_radio->ack_frame.rssi);
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP) && !defined(CONFIG_NRF_802154_SER_HOST)
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
 	struct net_ptp_time timestamp = {
 		.second = nrf5_radio->ack_frame.time / USEC_PER_SEC,
 		.nanosecond = (nrf5_radio->ack_frame.time % USEC_PER_SEC) * NSEC_PER_USEC
@@ -764,8 +764,21 @@ void nrf_802154_tx_ack_started(const uint8_t *data)
 				data[FRAME_PENDING_BYTE] & FRAME_PENDING_BIT;
 }
 
-void nrf_802154_transmitted_timestamp_raw(const uint8_t *frame, uint8_t *ack,
-				int8_t power, uint8_t lqi, uint32_t ack_time)
+#if defined(CONFIG_NRF_802154_SER_HOST)
+void nrf_802154_transmitted_raw(const uint8_t *frame, uint8_t *ack, int8_t power, uint8_t lqi)
+{
+	ARG_UNUSED(frame);
+
+	nrf5_data.tx_result = NRF_802154_TX_ERROR_NONE;
+	nrf5_data.ack_frame.psdu = ack;
+	nrf5_data.ack_frame.rssi = power;
+	nrf5_data.ack_frame.lqi = lqi;
+
+	k_sem_give(&nrf5_data.tx_wait);
+}
+#else
+void nrf_802154_transmitted_timestamp_raw(const uint8_t *frame, uint8_t *ack, int8_t power,
+					  uint8_t lqi, uint32_t ack_time)
 {
 	ARG_UNUSED(frame);
 	ARG_UNUSED(ack_time);
@@ -775,13 +788,14 @@ void nrf_802154_transmitted_timestamp_raw(const uint8_t *frame, uint8_t *ack,
 	nrf5_data.ack_frame.rssi = power;
 	nrf5_data.ack_frame.lqi = lqi;
 
-#if defined(CONFIG_NET_PKT_TIMESTAMP) && !defined(CONFIG_NRF_802154_SER_HOST)
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
 	nrf5_data.ack_frame.time =
 		nrf_802154_first_symbol_timestamp_get(ack_time, nrf5_data.ack_frame.psdu[0]);
 #endif
 
 	k_sem_give(&nrf5_data.tx_wait);
 }
+#endif
 
 void nrf_802154_transmit_failed(const uint8_t *frame,
 				nrf_802154_tx_error_t error)
