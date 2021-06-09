@@ -13,6 +13,7 @@ functionality by sending Constant Tone Extension with periodic advertising PDUs.
 Requirements
 ************
 
+* nRF5340DK board
 * nRF52833DK board with nRF52833 SOC
 * antenna matrix for AoD (optional)
 
@@ -35,6 +36,21 @@ To use Angle of Arrival mode only, build this application as follows:
    :goals: build flash
    :compact:
 
+To run the application on nRF5340DK there must be provided a child image aimed to
+run on network core. :zephyr_file:`samples/bluetooth/hci_rpmsg` sample application
+may be used for that purpose.
+
+To build :zephyr_file:`samples/bluetooth/hci_rpmsg` sample with direction finding
+support enabled:
+
+* create :zephyr_file:`samples/bluetooth/hci_rpmsg/boards/nrf5340dk_nrf5340_cpunet.overlay`
+  with the same content as :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/
+  boards/nrf52833dk_nrf52833.overlay`
+* create :zephyr_file:`samples/bluetooth/hci_rpmsg/boards/nrf5340dk_nrf5340_cpunet.conf`
+  file. Copy content of :zephyr_file:`samples/bluetooth/direction_finding_connectionless_tx/boards/
+  nrf52833dk_nrf52833.conf. Add CONFIG_BT_EXT_ADV=y configuration entry to enable extended size
+  of :code:`CONFIG_BT_BUF_CMD_TX_SIZE` config to support LE Set Extended Advertising Data command.
+
 See :ref:`bluetooth samples section <bluetooth-samples>` for common information
 about bluetooth samples.
 
@@ -53,6 +69,11 @@ patches during CTE transmission in AoD mode. At least two GPIOs must be provided
 to enable antenna switching. GPIOS are used by Radio peripheral in order following
 indices of :code:`dfegpio#-gpios` properties. The order is important because it
 affects mapping of antenna switch patterns to GPIOS (see `Antenna patterns`_).
+
+Antenna matrix configuration for nRF5340DK SOC is part of child image that is run
+on network core. When :zephyr_file:`samples/bluetooth/hci_rpmsg` is used as network
+core application, the antenna matrix configuration is stored in the :zephyr_file:`samples/
+bluetooth/hci_rpmsg/boards/nrf5340dk_nrf5340_cpunet.overlay`.
 
 Antenna patterns
 ****************
