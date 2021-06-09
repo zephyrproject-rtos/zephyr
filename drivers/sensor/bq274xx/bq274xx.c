@@ -624,10 +624,10 @@ static int bq274xx_gauge_configure(const struct device *dev)
 			return -EIO;
 		}
 
-		if (!(flags & 0x0010)) {
+		if (flags & 0x0010) {
 			k_msleep(BQ274XX_SUBCLASS_DELAY * 10);
 		}
-	} while ((flags & 0x0010));
+	} while (flags & 0x0010);
 
 	/* Seal the gauge */
 	status = bq274xx_control_reg_write(bq274xx, BQ274XX_CONTROL_SEALED);
