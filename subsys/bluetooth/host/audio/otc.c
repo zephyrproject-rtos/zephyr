@@ -18,6 +18,8 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/l2cap.h>
 
+#include "../conn_internal.h"  /* To avoid build errors on use of struct bt_conn" */
+
 #include "ots.h"
 #include "ots_internal.h"
 #include "otc.h"
