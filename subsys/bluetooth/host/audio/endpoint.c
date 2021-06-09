@@ -40,7 +40,8 @@ static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
 static struct bt_gatt_discover_params cp_disc[CONFIG_BT_MAX_CONN];
 #endif
 
-static void ep_iso_recv(struct bt_iso_chan *chan, struct net_buf *buf)
+static void ep_iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
+			struct net_buf *buf)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 
