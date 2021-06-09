@@ -128,6 +128,7 @@ uint8_t ll_apto_set(uint16_t handle, uint16_t apto)
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+#if defined(CONFIG_BT_CENTRAL) || defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ)
 uint8_t ll_feature_req_send(uint16_t handle)
 {
 	struct ll_conn *conn;
@@ -139,8 +140,7 @@ uint8_t ll_feature_req_send(uint16_t handle)
 
 	return ull_cp_feature_exchange(conn);
 }
-
-
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 uint8_t ll_phy_default_set(uint8_t tx, uint8_t rx)
