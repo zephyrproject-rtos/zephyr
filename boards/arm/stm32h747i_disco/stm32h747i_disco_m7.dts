@@ -80,6 +80,10 @@
 	status = "okay";
 };
 
+&spi5 {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -160,3 +164,5 @@
 		};
 	};
 };
+
+arduino_spi: &spi5 {};
