@@ -44,7 +44,7 @@
 #define LOOPBACK_BUF_SUB(buf) (*(struct bt_mesh_subnet **)net_buf_user_data(buf))
 
 /* Seq limit after IV Update is triggered */
-#define IV_UPDATE_SEQ_LIMIT 8000000
+#define IV_UPDATE_SEQ_LIMIT CONFIG_BT_MESH_IV_UPDATE_SEQ_LIMIT
 
 #define IVI(pdu)           ((pdu)[0] >> 7)
 #define NID(pdu)           ((pdu)[0] & 0x7f)
