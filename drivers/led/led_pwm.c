@@ -143,9 +143,9 @@ static int led_pwm_pm_set_state(const struct device *dev,
 }
 
 static int led_pwm_pm_control(const struct device *dev,
-			      enum pm_device_state *state)
+			      enum pm_device_state state)
 {
-	return led_pwm_pm_set_state(dev, *state);
+	return led_pwm_pm_set_state(dev, state);
 }
 
 #endif /* CONFIG_PM_DEVICE */

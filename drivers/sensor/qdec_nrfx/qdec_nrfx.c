@@ -240,14 +240,14 @@ static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
 }
 
 static int qdec_nrfx_pm_control(const struct device *dev,
-				enum pm_device_state *state)
+				enum pm_device_state state)
 {
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 	int err;
 
 	LOG_DBG("");
 
-	err = qdec_nrfx_pm_set_state(data, *state);
+	err = qdec_nrfx_pm_set_state(data, state);
 
 	return err;
 }

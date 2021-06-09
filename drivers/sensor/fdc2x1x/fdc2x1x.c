@@ -535,7 +535,7 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 }
 
 static int fdc2x1x_device_pm_ctrl(const struct device *dev,
-				  enum pm_device_state *state)
+				  enum pm_device_state state)
 {
 	struct fdc2x1x_data *data = dev->data;
 	int ret = 0;
@@ -543,12 +543,12 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 
 	(void)pm_device_state_get(dev, &curr_state);
 
-	if (*state != curr_state) {
-		switch (*state) {
+	if (state != curr_state) {
+		switch (state) {
 		case PM_DEVICE_STATE_ACTIVE:
 		case PM_DEVICE_STATE_LOW_POWER:
 		case PM_DEVICE_STATE_OFF:
-			ret = fdc2x1x_set_pm_state(dev, *state);
+			ret = fdc2x1x_set_pm_state(dev, state);
 			break;
 		default:
 			LOG_ERR("PM state not supported");

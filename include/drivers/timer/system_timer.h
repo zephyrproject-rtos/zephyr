@@ -47,7 +47,7 @@ extern int sys_clock_driver_init(const struct device *dev);
  * if undefined in the clock driver.
  */
 extern int clock_device_ctrl(const struct device *dev,
-			     enum pm_device_state *state);
+			     enum pm_device_state state);
 
 /**
  * @brief Set system clock timeout
