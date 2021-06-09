@@ -419,6 +419,13 @@ void ull_cp_priv_pdu_encode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	pdu->llctrl.phy_req.tx_phys = ctx->data.pu.tx;
 }
 
+void ull_cp_priv_pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.pu.rx = pdu->llctrl.phy_req.tx_phys;
+	ctx->data.pu.tx = pdu->llctrl.phy_req.rx_phys;
+}
+
+#if defined(CONFIG_BT_PERIPHERAL)
 void ull_cp_priv_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
@@ -427,7 +434,15 @@ void ull_cp_priv_pdu_encode_phy_rsp(struct ll_conn *conn, struct pdu_data *pdu)
 	pdu->llctrl.phy_rsp.rx_phys = conn->phy_pref_rx;
 	pdu->llctrl.phy_rsp.tx_phys = conn->phy_pref_tx;
 }
+void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+	ctx->data.pu.m_to_s_phy = pdu->llctrl.phy_upd_ind.m_to_s_phy;
+	ctx->data.pu.s_to_m_phy = pdu->llctrl.phy_upd_ind.s_to_m_phy;
+}
+#endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
 void ull_cp_priv_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
@@ -437,25 +452,12 @@ void ull_cp_priv_pdu_encode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data
 	pdu->llctrl.phy_upd_ind.m_to_s_phy = ctx->data.pu.m_to_s_phy;
 	pdu->llctrl.phy_upd_ind.s_to_m_phy = ctx->data.pu.s_to_m_phy;
 }
-
-void ull_cp_priv_pdu_decode_phy_req(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ctx->data.pu.rx = pdu->llctrl.phy_req.tx_phys;
-	ctx->data.pu.tx = pdu->llctrl.phy_req.rx_phys;
-}
-
 void ull_cp_priv_pdu_decode_phy_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	ctx->data.pu.rx = pdu->llctrl.phy_rsp.tx_phys;
 	ctx->data.pu.tx = pdu->llctrl.phy_rsp.rx_phys;
 }
-
-void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
-{
-	ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
-	ctx->data.pu.m_to_s_phy = pdu->llctrl.phy_upd_ind.m_to_s_phy;
-	ctx->data.pu.s_to_m_phy = pdu->llctrl.phy_upd_ind.s_to_m_phy;
-}
+#endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_PHY */
 
 /*
