@@ -98,6 +98,19 @@ int bt_mics_included_get(struct bt_mics *mics,
 			 struct bt_mics_included *included);
 
 /**
+ * @brief Get the connection pointer of a client instance
+ *
+ * Get the Bluetooth connection pointer of a Microphone Input Control Service
+ * client instance.
+ *
+ * @param mics    Microphone Input Control Service client instance pointer.
+ * @param conn    Connection pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_mics_client_conn_get(const struct bt_mics *mics, struct bt_conn **conn);
+
+/**
  * @brief Callback function for @ref bt_mics_discover.
  *
  * This callback is only used for the client.
