@@ -175,7 +175,6 @@ static int arc_v2_irq_unit_resume(const struct device *dev)
  * @return operation result
  */
 static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
-				       uint32_t ctrl_command,
 				       enum pm_device_state *state)
 {
 	int ret = 0;
