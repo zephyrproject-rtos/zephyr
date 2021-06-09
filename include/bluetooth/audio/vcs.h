@@ -103,6 +103,19 @@ int bt_vcs_register(struct bt_vcs_register_param *param, struct bt_vcs **vcs);
 int bt_vcs_included_get(struct bt_vcs *vcs, struct bt_vcs_included *included);
 
 /**
+ * @brief Get the connection pointer of a client instance
+ *
+ * Get the Bluetooth connection pointer of a Volume Control Service
+ * client instance.
+ *
+ * @param      vcs     Volume Control Service client instance pointer.
+ * @param[out] conn    Connection pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_vcs_client_conn_get(const struct bt_vcs *vcs, struct bt_conn **conn);
+
+/**
  * @brief Callback function for bt_vcs_discover.
  *
  * This callback is only used for the client.
