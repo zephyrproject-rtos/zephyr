@@ -62,11 +62,6 @@ enum pm_device_state {
 	PM_DEVICE_STATE_SUSPENDING,
 };
 
-/** Device PM set state control command. */
-#define PM_DEVICE_STATE_SET 0
-/** Device PM get state control command. */
-#define PM_DEVICE_STATE_GET 1
-
 /** @brief Device PM flags. */
 enum pm_device_flag {
 	/** Indicate if the device is busy or not. */

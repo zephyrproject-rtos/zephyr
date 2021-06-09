@@ -1922,7 +1922,6 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 }
 
 static int uarte_nrfx_pm_control(const struct device *dev,
-				 uint32_t ctrl_command,
 				 enum pm_device_state *state)
 {
 	enum pm_device_state curr_state;
