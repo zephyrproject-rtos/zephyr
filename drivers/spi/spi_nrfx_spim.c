@@ -325,7 +325,7 @@ static int init_spim(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int spim_nrfx_pm_control(const struct device *dev,
-				enum pm_device_state *state)
+				enum pm_device_state state)
 {
 	int ret = 0;
 	struct spi_nrfx_data *data = get_dev_data(dev);
@@ -333,8 +333,8 @@ static int spim_nrfx_pm_control(const struct device *dev,
 	enum pm_device_state curr_state;
 
 	(void)pm_device_state_get(dev, &curr_state);
-	if (*state != curr_state) {
-		switch (*state) {
+	if (state != curr_state) {
+		switch (state) {
 		case PM_DEVICE_STATE_ACTIVE:
 			ret = init_spim(dev);
 			/* Force reconfiguration before next transfer */

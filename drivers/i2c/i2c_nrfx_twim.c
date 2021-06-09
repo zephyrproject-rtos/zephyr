@@ -255,14 +255,14 @@ static int init_twim(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int twim_nrfx_pm_control(const struct device *dev,
-				enum pm_device_state *state)
+				enum pm_device_state state)
 {
 	int ret = 0;
 	enum pm_device_state curr_state;
 
 	(void)pm_device_state_get(dev, &curr_state);
-	if (*state != curr_state) {
-		switch (*state) {
+	if (state != curr_state) {
+		switch (state) {
 		case PM_DEVICE_STATE_ACTIVE:
 			init_twim(dev);
 			if (get_dev_data(dev)->dev_config) {

@@ -365,13 +365,13 @@ static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
 }
 
 static int i2c_cc13xx_cc26xx_pm_control(const struct device *dev,
-					enum pm_device_state *state)
+					enum pm_device_state state)
 {
 	int ret = 0;
 	enum pm_device_state curr_state;
 
 	(void)pm_device_state_get(dev, &curr_state);
-	if (*state != curr_state) {
+	if (state != curr_state) {
 		ret = i2c_cc13xx_cc26xx_set_power_state(dev,
 			new_state);
 	}
