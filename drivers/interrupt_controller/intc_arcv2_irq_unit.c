@@ -175,14 +175,14 @@ static int arc_v2_irq_unit_resume(const struct device *dev)
  * @return operation result
  */
 static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
-				       enum pm_device_state *state)
+				       enum pm_device_state state)
 {
 	int ret = 0;
 	unsigned int key = arch_irq_lock();
 
-	if (*state == PM_DEVICE_STATE_SUSPEND) {
+	if (state == PM_DEVICE_STATE_SUSPEND) {
 		ret = arc_v2_irq_unit_suspend(dev);
-	} else if (*state == PM_DEVICE_STATE_ACTIVE) {
+	} else if (state == PM_DEVICE_STATE_ACTIVE) {
 		ret = arc_v2_irq_unit_resume(dev);
 	}
 
