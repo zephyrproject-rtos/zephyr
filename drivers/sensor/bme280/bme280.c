@@ -410,8 +410,7 @@ static int bme280_chip_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
-		   enum pm_device_state *state)
+int bme280_pm_ctrl(const struct device *dev, enum pm_device_state *state)
 {
 	int ret = 0;
 	enum pm_device_state curr_state;

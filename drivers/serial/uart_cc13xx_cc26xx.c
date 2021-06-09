@@ -441,7 +441,6 @@ static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 }
 
 static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
-					 uint32_t ctrl_command,
 					 enum pm_device_state *state)
 {
 	int ret = 0;

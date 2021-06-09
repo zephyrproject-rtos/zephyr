@@ -46,7 +46,7 @@ extern int sys_clock_driver_init(const struct device *dev);
  * management.  It is a weak symbol that will be implemented as a noop
  * if undefined in the clock driver.
  */
-extern int clock_device_ctrl(const struct device *dev, uint32_t ctrl_command,
+extern int clock_device_ctrl(const struct device *dev,
 			     enum pm_device_state *state);
 
 /**

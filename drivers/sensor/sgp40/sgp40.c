@@ -218,9 +218,7 @@ static int sgp40_set_power_state(const struct device *dev,
 	return 0;
 }
 
-static int sgp40_pm_ctrl(const struct device *dev,
-	uint32_t ctrl_command,
-	enum pm_device_state *state)
+static int sgp40_pm_ctrl(const struct device *dev, enum pm_device_state *state)
 {
 	return sgp40_set_power_state(dev, *state);
 }
