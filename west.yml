@@ -134,7 +134,7 @@ manifest:
       revision: a47e326ca772ddd14cc3b9d4ca30a9ab44ecca16
     - name: TraceRecorderSource
       path: modules/debug/TraceRecorder
-      revision: d9889883abb4657d71e15ff055517a9b032f8212
+      revision: 5b5f8d7adbf0e93a09087e8f5708f0eebb8b25bf
     - name: hal_xtensa
       revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
       path: modules/hal/xtensa
