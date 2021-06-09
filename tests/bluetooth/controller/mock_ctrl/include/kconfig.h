@@ -59,6 +59,10 @@
 #define CONFIG_BT_CTLR_LE_PING y
 #endif
 
+#ifndef CONFIG_BT_CTLR_SLAVE_FEAT_REQ
+#define CONFIG_BT_CTLR_SLAVE_FEAT_REQ y
+#endif
+
 #ifndef CONFIG_BT_CTLR_CONN_RSSI
 #define CONFIG_BT_CTLR_CONN_RSSI y
 #endif
