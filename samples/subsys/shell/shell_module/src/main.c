@@ -222,6 +222,75 @@ static int cmd_logout(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
+{
+	static bool in_use;
+
+	if (bypass && in_use) {
+		shell_error(sh, "Sample supports setting bypass on single instance.");
+
+		return -EBUSY;
+	}
+
+	in_use = !in_use;
+	if (in_use) {
+		shell_print(sh, "Bypass started, press ctrl-x ctrl-q to escape");
+		in_use = true;
+	}
+
+	shell_set_bypass(sh, bypass);
+
+	return 0;
+}
+
+#define CHAR_1 0x18
+#define CHAR_2 0x11
+
+static void bypass_cb(const struct shell *sh, uint8_t *data, size_t len)
+{
+	static uint8_t tail;
+	bool escape = false;
+
+	/* Check if escape criteria is met. */
+	if (tail == CHAR_1 && data[0] == CHAR_2) {
+		escape = true;
+	} else {
+		for (int i = 0; i < (len - 1); i++) {
+			if (data[i] == CHAR_1 && data[i + 1] == CHAR_2) {
+				escape = true;
+				break;
+			}
+		}
+	}
+
+	if (escape) {
+		shell_print(sh, "Exit bypass");
+		set_bypass(sh, NULL);
+		tail = 0;
+		return;
+	}
+
+	/* Store last byte for escape sequence detection */
+	tail = data[len - 1];
+
+	/* Do the data processing. */
+	for (int i = 0; i < len; i++) {
+		shell_fprintf(sh, SHELL_INFO, "%02x ", data[i]);
+	}
+	shell_fprintf(sh, SHELL_INFO, "| ");
+
+	for (int i = 0; i < len; i++) {
+		shell_fprintf(sh, SHELL_INFO, "%c", data[i]);
+	}
+	shell_fprintf(sh, SHELL_INFO, "\n");
+
+}
+
+static int cmd_bypass(const struct shell *sh, size_t argc, char **argv)
+{
+	return set_bypass(sh, bypass_cb);
+}
+
 static int cmd_dict(const struct shell *shell, size_t argc, char **argv,
 		    void *data)
 {
@@ -250,6 +319,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
 SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
 
 SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
+
+SHELL_CMD_ARG_REGISTER(bypass, NULL, "Bypass shell", cmd_bypass, 1, 0);
 
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_START_OBSCURED, login, NULL,
 			    "<password>", cmd_login, 2, 0);
