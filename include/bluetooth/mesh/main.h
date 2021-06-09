@@ -105,6 +105,23 @@ struct bt_mesh_prov {
 	/** Out of Band information field. */
 	bt_mesh_prov_oob_info_t oob_info;
 
+	/** Pointer to Public Key in big-endian for OOB public key type support.
+	 *
+	 * Remember to enable @option{CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY}
+	 * when initializing this parameter.
+	 *
+	 * Must be used together with @ref bt_mesh_prov::private_key_be.
+	 */
+	const uint8_t *public_key_be;
+	/** Pointer to Private Key in big-endian for OOB public key type support.
+	 *
+	 * Remember to enable @option{CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY}
+	 * when initializing this parameter.
+	 *
+	 * Must be used together with @ref bt_mesh_prov::public_key_be.
+	 */
+	const uint8_t *private_key_be;
+
 	/** Static OOB value */
 	const uint8_t *static_val;
 	/** Static OOB value length */
