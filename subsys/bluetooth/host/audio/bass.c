@@ -388,7 +388,7 @@ static void bass_pa_sync_past(struct bt_conn *conn,
 	if (pa_interval == BASS_PA_INTERVAL_UNKNOWN) {
 		param.timeout = PA_SYNC_TIMEOUT / 10;
 	} else {
-		param.timeout = MIN(BT_GAP_PER_ADV_MAX_MAX_TIMEOUT,
+		param.timeout = MIN(BT_GAP_PER_ADV_MAX_TIMEOUT,
 				    MAX(100, pa_interval * PA_SYNC_RETRY_COUNT) / 10);
 	}
 
@@ -430,7 +430,7 @@ static void bass_pa_sync_no_past(struct bass_recv_state_internal_t *state,
 	if (pa_interval == BASS_PA_INTERVAL_UNKNOWN) {
 		param.timeout = PA_SYNC_TIMEOUT / 10;
 	} else {
-		param.timeout = MIN(BT_GAP_PER_ADV_MAX_MAX_TIMEOUT,
+		param.timeout = MIN(BT_GAP_PER_ADV_MAX_TIMEOUT,
 				    MAX(100, pa_interval * PA_SYNC_RETRY_COUNT) / 10);
 	}
 
