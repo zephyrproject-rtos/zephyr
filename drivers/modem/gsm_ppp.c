@@ -231,6 +231,71 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_iccid)
 	return 0;
 }
 #endif /* CONFIG_MODEM_SIM_NUMBERS */
+
+#if defined(CONFIG_MODEM_CELL_INFO)
+static int unquoted_atoi(const char *s, int base)
+{
+	if (*s == '"') {
+		s++;
+	}
+
+	return strtol(s, NULL, base);
+}
+
+/*
+ * Handler: +COPS: <mode>[0],<format>[1],<oper>[2]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
+{
+	if (argc >= 3) {
+		gsm.context.data_operator = unquoted_atoi(argv[2], 10);
+		LOG_INF("operator: %u",
+			gsm.context.data_operator);
+	}
+
+	return 0;
+}
+
+/*
+ * Handler: +CEREG: <n>[0],<stat>[1],<tac>[2],<ci>[3],<AcT>[4]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cereg)
+{
+	if (argc >= 4) {
+		gsm.context.data_lac = unquoted_atoi(argv[2], 16);
+		gsm.context.data_cellid = unquoted_atoi(argv[3], 16);
+		LOG_INF("lac: %u, cellid: %u",
+			gsm.context.data_lac,
+			gsm.context.data_cellid);
+	}
+
+	return 0;
+}
+
+static const struct setup_cmd query_cellinfo_cmds[] = {
+	SETUP_CMD_NOHANDLE("AT+CEREG=2"),
+	SETUP_CMD("AT+CEREG?", "", on_cmd_atcmdinfo_cereg, 5U, ","),
+	SETUP_CMD_NOHANDLE("AT+COPS=3,2"),
+	SETUP_CMD("AT+COPS?", "", on_cmd_atcmdinfo_cops, 3U, ","),
+};
+
+static int gsm_query_cellinfo(struct gsm_modem *gsm)
+{
+	int ret;
+
+	ret = modem_cmd_handler_setup_cmds_nolock(&gsm->context.iface,
+						  &gsm->context.cmd_handler,
+						  query_cellinfo_cmds,
+						  ARRAY_SIZE(query_cellinfo_cmds),
+						  &gsm->sem_response,
+						  GSM_CMD_SETUP_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("modem query for cell info returned %d", ret);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_MODEM_CELL_INFO */
 #endif /* CONFIG_MODEM_SHELL */
 
 static const struct setup_cmd setup_cmds[] = {
@@ -426,6 +491,10 @@ attaching:
 					K_MSEC(GSM_ATTACH_RETRY_DELAY_MSEC));
 		return;
 	}
+
+#if defined(CONFIG_MODEM_CELL_INFO)
+	(void)gsm_query_cellinfo(gsm);
+#endif
 
 	/* Attached, clear retry counter */
 	gsm->attach_retries = 0;
