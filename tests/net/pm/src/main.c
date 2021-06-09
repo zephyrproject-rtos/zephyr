@@ -21,7 +21,7 @@ struct fake_dev_context {
 	struct net_if *iface;
 };
 
-static int fake_dev_pm_control(const struct device *dev, uint32_t command,
+static int fake_dev_pm_control(const struct device *dev,
 			       enum pm_device_state *state)
 {
 	struct fake_dev_context *ctx = dev->data;

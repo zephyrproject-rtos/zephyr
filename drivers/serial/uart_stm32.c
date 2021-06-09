@@ -1460,8 +1460,7 @@ static int uart_stm32_set_power_state(const struct device *dev,
  * @return 0
  */
 static int uart_stm32_pm_control(const struct device *dev,
-					 uint32_t ctrl_command,
-					 enum pm_device_state *state)
+				 enum pm_device_state *state)
 {
 	enum pm_device_state curr_state;
 

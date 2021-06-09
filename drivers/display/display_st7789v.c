@@ -401,8 +401,8 @@ static void st7789v_enter_sleep(struct st7789v_data *data)
 	st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
 }
 
-static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
-				 enum pm_device_state *state)
+static int st7789v_pm_control(const struct device *dev,
+			      enum pm_device_state *state)
 {
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 
