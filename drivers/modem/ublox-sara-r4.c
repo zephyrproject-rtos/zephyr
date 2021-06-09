@@ -686,6 +686,54 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 }
 #endif
 
+#if defined(CONFIG_MODEM_CELL_INFO)
+static int unquoted_atoi(const char *s, int base)
+{
+	if (*s == '"') {
+		s++;
+	}
+
+	return strtol(s, NULL, base);
+}
+
+/*
+ * Handler: +COPS: <mode>[0],<format>[1],<oper>[2]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cops)
+{
+	if (argc >= 3) {
+		mctx.data_operator = unquoted_atoi(argv[2], 10);
+		LOG_INF("operator: %u",
+			mctx.data_operator);
+	}
+
+	return 0;
+}
+
+/*
+ * Handler: +CEREG: <n>[0],<stat>[1],<tac>[2],<ci>[3],<AcT>[4]
+ */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_cereg)
+{
+	if (argc >= 4) {
+		mctx.data_lac = unquoted_atoi(argv[2], 16);
+		mctx.data_cellid = unquoted_atoi(argv[3], 16);
+		LOG_INF("lac: %u, cellid: %u",
+			mctx.data_lac,
+			mctx.data_cellid);
+	}
+
+	return 0;
+}
+
+static const struct setup_cmd query_cellinfo_cmds[] = {
+	SETUP_CMD_NOHANDLE("AT+CEREG=2"),
+	SETUP_CMD("AT+CEREG?", "", on_cmd_atcmdinfo_cereg, 5U, ","),
+	SETUP_CMD_NOHANDLE("AT+COPS=3,2"),
+	SETUP_CMD("AT+COPS?", "", on_cmd_atcmdinfo_cops, 3U, ","),
+};
+#endif /* CONFIG_MODEM_CELL_INFO */
+
 /*
  * Modem Socket Command Handlers
  */
@@ -1008,6 +1056,19 @@ static void modem_rssi_query_work(struct k_work *work)
 		LOG_ERR("AT+C[E]SQ ret:%d", ret);
 	}
 
+#if defined(CONFIG_MODEM_CELL_INFO)
+	/* query cell info */
+	ret = modem_cmd_handler_setup_cmds_nolock(&mctx.iface,
+						  &mctx.cmd_handler,
+						  query_cellinfo_cmds,
+						  ARRAY_SIZE(query_cellinfo_cmds),
+						  &mdata.sem_response,
+						  MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("modem query for cell info returned %d", ret);
+	}
+#endif
+
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* re-start RSSI query work */
 	if (work) {
@@ -1037,6 +1098,19 @@ static void modem_rssi_query_work(struct k_work *work)
 	if (ret < 0) {
 		LOG_ERR("AT+C[E]SQ ret:%d", ret);
 	}
+
+#if defined(CONFIG_MODEM_CELL_INFO)
+	/* query cell info */
+	ret = modem_cmd_handler_setup_cmds_nolock(&mctx.iface,
+						  &mctx.cmd_handler,
+						  query_cellinfo_cmds,
+						  ARRAY_SIZE(query_cellinfo_cmds),
+						  &mdata.sem_response,
+						  MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_WRN("modem query for cell info returned %d", ret);
+	}
+#endif
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_RSSI_WORK)
 	/* re-start RSSI query work */
