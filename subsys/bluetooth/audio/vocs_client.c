@@ -634,6 +634,28 @@ struct bt_vocs *bt_vocs_client_free_instance_get(void)
 	return NULL;
 }
 
+int bt_vocs_client_conn_get(const struct bt_vocs *vocs, struct bt_conn **conn)
+{
+	CHECKIF(vocs == NULL) {
+		BT_DBG("NULL vocs pointer");
+		return -EINVAL;
+	}
+
+	if (!vocs->client_instance) {
+		BT_DBG("vocs pointer shall be client instance");
+		return -EINVAL;
+	}
+
+	if (vocs->cli.conn == NULL) {
+		BT_DBG("vocs pointer not associated with a connection. "
+		       "Do discovery first");
+		return -ENOTCONN;
+	}
+
+	*conn = vocs->cli.conn;
+	return 0;
+}
+
 static void vocs_client_reset(struct bt_vocs *inst, struct bt_conn *conn)
 {
 	memset(&inst->cli.state, 0, sizeof(inst->cli.state));
