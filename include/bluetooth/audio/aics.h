@@ -132,6 +132,19 @@ struct bt_aics *bt_aics_free_instance_get(void);
 void *bt_aics_svc_decl_get(struct bt_aics *aics);
 
 /**
+ * @brief Get the connection pointer of a client instance
+ *
+ * Get the Bluetooth connection pointer of a Audio Input Control Service
+ * client instance.
+ *
+ * @param aics    Audio Input Control Service client instance pointer.
+ * @param conn    Connection pointer.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_aics_client_conn_get(const struct bt_aics *aics, struct bt_conn **conn);
+
+/**
  * @brief Initialize the Audio Input Control Service instance.
  *
  * @param aics      Audio Input Control Service instance.
