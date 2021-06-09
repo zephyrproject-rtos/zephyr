@@ -246,17 +246,17 @@ static void discover_all(struct bt_conn *conn, struct bt_audio_capability *cap,
 	}
 }
 
-static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 {
 	static struct bt_audio_discover_params params;
 
 	if (!default_conn) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
 	if (params.func) {
-		shell_error(shell, "Discover in progress");
+		shell_error(sh, "Discover in progress");
 		return -ENOEXEC;
 	}
 
@@ -270,7 +270,7 @@ static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 			params.func = discover_cb;
 			params.type = BT_AUDIO_SOURCE;
 		} else {
-			shell_error(shell, "Unsupported type: %s", argv[1]);
+			shell_error(sh, "Unsupported type: %s", argv[1]);
 			return -ENOEXEC;
 		}
 	}
@@ -353,7 +353,7 @@ static void print_qos(struct bt_codec_qos *qos)
 		    qos->rtn, qos->latency, qos->pd);
 }
 
-static int cmd_preset(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct lc3_preset *preset;
 
@@ -362,13 +362,13 @@ static int cmd_preset(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 1) {
 		preset = set_preset(argc - 1, argv + 1);
 		if (!preset) {
-			shell_error(shell, "Unable to parse preset %s",
+			shell_error(sh, "Unable to parse preset %s",
 				    argv[1]);
 			return -ENOEXEC;
 		}
 	}
 
-	shell_print(shell, "%s", preset->name);
+	shell_print(sh, "%s", preset->name);
 
 	print_codec(&preset->codec);
 	print_qos(&preset->qos);
@@ -376,7 +376,7 @@ static int cmd_preset(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_config(const struct shell *sh, size_t argc, char *argv[])
 {
 	int32_t index, dir;
 	struct bt_audio_capability *cap = NULL;
@@ -385,13 +385,13 @@ static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
 	int i;
 
 	if (!default_conn) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
 	index = strtol(argv[2], NULL, 0);
 	if (index < 0) {
-		shell_error(shell, "Invalid index");
+		shell_error(sh, "Invalid index");
 		return -ENOEXEC;
 	}
 
@@ -402,12 +402,12 @@ static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
 		dir = BT_AUDIO_SOURCE;
 		ep = srcs[index];
 	} else {
-		shell_error(shell, "Unsupported type: %s", argv[1]);
+		shell_error(sh, "Unsupported type: %s", argv[1]);
 		return -ENOEXEC;
 	}
 
 	if (!ep) {
-		shell_error(shell, "Unable to find endpoint");
+		shell_error(sh, "Unable to find endpoint");
 		return -ENOEXEC;
 	}
 
@@ -416,7 +416,7 @@ static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 3) {
 		preset = set_preset(1, argv + 3);
 		if (!preset) {
-			shell_error(shell, "Unable to parse preset %s",
+			shell_error(sh, "Unable to parse preset %s",
 				    argv[4]);
 			return -ENOEXEC;
 		}
@@ -430,14 +430,14 @@ static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (!cap) {
-		shell_error(shell, "Unable to find matching capabilities");
+		shell_error(sh, "Unable to find matching capabilities");
 		return -ENOEXEC;
 	}
 
 	if (default_chan && default_chan->ep == ep) {
 		if (bt_audio_chan_reconfig(default_chan, cap,
 					   &preset->codec) < 0) {
-			shell_error(shell, "Unable reconfig channel");
+			shell_error(sh, "Unable reconfig channel");
 			return -ENOEXEC;
 		}
 	} else {
@@ -446,41 +446,41 @@ static int cmd_config(const struct shell *shell, size_t argc, char *argv[])
 		chan = bt_audio_chan_config(default_conn, ep, cap,
 					    &preset->codec);
 		if (!chan) {
-			shell_error(shell, "Unable to config channel");
+			shell_error(sh, "Unable to config channel");
 			return -ENOEXEC;
 		}
 	}
 
-	shell_print(shell, "ASE config: preset %s", preset->name);
+	shell_print(sh, "ASE config: preset %s", preset->name);
 
 	return 0;
 }
 
-static int cmd_release(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_release(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_chan) {
-		shell_print(shell, "Not connected");
+		shell_print(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
 	err = bt_audio_chan_release(default_chan, false);
 	if (err) {
-		shell_error(shell, "Unable to release Channel");
+		shell_error(sh, "Unable to release Channel");
 		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
-static int cmd_qos(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	struct lc3_preset *preset = NULL;
 
 	if (!default_chan) {
-		shell_print(shell, "Not connected");
+		shell_print(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -489,7 +489,7 @@ static int cmd_qos(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 1) {
 		preset = set_preset(argc - 1, argv + 1);
 		if (!preset) {
-			shell_error(shell, "Unable to parse preset %s",
+			shell_error(sh, "Unable to parse preset %s",
 				    argv[1]);
 			return -ENOEXEC;
 		}
@@ -497,21 +497,21 @@ static int cmd_qos(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_audio_chan_qos(default_chan, &preset->qos);
 	if (err) {
-		shell_error(shell, "Unable to setup QoS");
+		shell_error(sh, "Unable to setup QoS");
 		return -ENOEXEC;
 	}
 
-	shell_print(shell, "ASE config: preset %s", preset->name);
+	shell_print(sh, "ASE config: preset %s", preset->name);
 
 	return 0;
 }
 
-static int cmd_enable(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_chan) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -519,7 +519,7 @@ static int cmd_enable(const struct shell *shell, size_t argc, char *argv[])
 				   default_preset->codec.meta_count,
 				   default_preset->codec.meta);
 	if (err) {
-		shell_error(shell, "Unable to enable Channel");
+		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
 	}
 
@@ -556,12 +556,12 @@ static uint16_t strmeta(const char *name)
 	return 0u;
 }
 
-static int cmd_metadata(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_chan) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -570,7 +570,7 @@ static int cmd_metadata(const struct shell *shell, size_t argc, char *argv[])
 
 		context = strmeta(argv[1]);
 		if (context == 0) {
-			shell_error(shell, "Invalid context");
+			shell_error(sh, "Invalid context");
 			return -ENOEXEC;
 		}
 
@@ -581,78 +581,78 @@ static int cmd_metadata(const struct shell *shell, size_t argc, char *argv[])
 				     default_preset->codec.meta_count,
 				     default_preset->codec.meta);
 	if (err) {
-		shell_error(shell, "Unable to set Channel metadata");
+		shell_error(sh, "Unable to set Channel metadata");
 		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
-static int cmd_start(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_chan) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
 	err = bt_audio_chan_start(default_chan);
 	if (err) {
-		shell_error(shell, "Unable to start Channel");
+		shell_error(sh, "Unable to start Channel");
 		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
-static int cmd_disable(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_chan) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
 	err = bt_audio_chan_disable(default_chan);
 	if (err) {
-		shell_error(shell, "Unable to disable Channel");
+		shell_error(sh, "Unable to disable Channel");
 		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
-static int cmd_stop(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
 	if (!default_chan) {
-		shell_error(shell, "Not connected");
+		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
 
 	err = bt_audio_chan_stop(default_chan);
 	if (err) {
-		shell_error(shell, "Unable to start Channel");
+		shell_error(sh, "Unable to start Channel");
 		return -ENOEXEC;
 	}
 
 	return 0;
 }
 
-static int cmd_list(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 {
 	int i;
 
-	shell_print(shell, "Configured Channels:");
+	shell_print(sh, "Configured Channels:");
 
 	for (i = 0; i < ARRAY_SIZE(chans); i++) {
 		struct bt_audio_chan *chan = &chans[i];
 
 		if (chan->conn) {
-			shell_print(shell, "  %s#%u: chan %p dir 0x%02x "
+			shell_print(sh, "  %s#%u: chan %p dir 0x%02x "
 				    "state 0x%02x linked %s",
 				    chan == default_chan ? "*" : " ", i, chan,
 				    chan->cap->type, chan->state,
@@ -661,43 +661,43 @@ static int cmd_list(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 
-	shell_print(shell, "Sinks:");
+	shell_print(sh, "Sinks:");
 
 	for (i = 0; i < ARRAY_SIZE(snks); i++) {
 		struct bt_audio_ep *ep = snks[i];
 
 		if (ep) {
-			shell_print(shell, "  #%u: ep %p", i, ep);
+			shell_print(sh, "  #%u: ep %p", i, ep);
 		}
 	}
 
-	shell_print(shell, "Sources:");
+	shell_print(sh, "Sources:");
 
 	for (i = 0; i < ARRAY_SIZE(snks); i++) {
 		struct bt_audio_ep *ep = srcs[i];
 
 		if (ep) {
-			shell_print(shell, "  #%u: ep %p", i, ep);
+			shell_print(sh, "  #%u: ep %p", i, ep);
 		}
 	}
 
 	return 0;
 }
 
-static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_chan *chan;
 	int index;
 
 	index = strtol(argv[1], NULL, 0);
 	if (index < 0 || index > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid index");
+		shell_error(sh, "Invalid index");
 		return -ENOEXEC;
 	}
 
 	chan = &chans[index];
 	if (!chan->conn) {
-		shell_error(shell, "Invalid index");
+		shell_error(sh, "Invalid index");
 		return -ENOEXEC;
 	}
 
@@ -706,82 +706,82 @@ static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_link(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_link(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_chan *chan1, *chan2;
 	int index1, index2, err;
 
 	index1 = strtol(argv[1], NULL, 0);
 	if (index1 < 0 || index1 > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid index1");
+		shell_error(sh, "Invalid index1");
 		return -ENOEXEC;
 	}
 
 	index2 = strtol(argv[2], NULL, 0);
 	if (index2 < 0 || index2 > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid index2");
+		shell_error(sh, "Invalid index2");
 		return -ENOEXEC;
 	}
 
 	chan1 = &chans[index1 - 1];
 	if (!chan1->conn) {
-		shell_error(shell, "Invalid index1");
+		shell_error(sh, "Invalid index1");
 		return -ENOEXEC;
 	}
 
 	chan2 = &chans[index2 - 1];
 	if (!chan2->conn) {
-		shell_error(shell, "Invalid index2");
+		shell_error(sh, "Invalid index2");
 		return -ENOEXEC;
 	}
 
 	err = bt_audio_chan_link(chan1, chan2);
 	if (err) {
-		shell_error(shell, "Unable to bind: %d", err);
+		shell_error(sh, "Unable to bind: %d", err);
 		return -ENOEXEC;
 	}
 
-	shell_print(shell, "channnels %d:%d linked", index1, index2);
+	shell_print(sh, "channnels %d:%d linked", index1, index2);
 
 	return 0;
 }
 
-static int cmd_unlink(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_unlink(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_chan *chan1, *chan2;
 	int index1, index2, err;
 
 	index1 = strtol(argv[1], NULL, 0);
 	if (index1 < 0 || index1 > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid index1");
+		shell_error(sh, "Invalid index1");
 		return -ENOEXEC;
 	}
 
 	index2 = strtol(argv[2], NULL, 0);
 	if (index2 < 0 || index2 > ARRAY_SIZE(chans)) {
-		shell_error(shell, "Invalid index2");
+		shell_error(sh, "Invalid index2");
 		return -ENOEXEC;
 	}
 
 	chan1 = &chans[index1 - 1];
 	if (!chan1->conn) {
-		shell_error(shell, "Invalid index1");
+		shell_error(sh, "Invalid index1");
 		return -ENOEXEC;
 	}
 
 	chan2 = &chans[index2 - 1];
 	if (!chan2->conn) {
-		shell_error(shell, "Invalid index2");
+		shell_error(sh, "Invalid index2");
 		return -ENOEXEC;
 	}
 
 	err = bt_audio_chan_unlink(chan1, chan2);
 	if (err) {
-		shell_error(shell, "Unable to bind: %d", err);
+		shell_error(sh, "Unable to bind: %d", err);
 		return -ENOEXEC;
 	}
 
-	shell_print(shell, "ases %d:%d unbound", index1, index2);
+	shell_print(sh, "ases %d:%d unbound", index1, index2);
 
 	return 0;
 }
@@ -958,15 +958,15 @@ static struct bt_audio_capability caps[MAX_PAC] = {
 	},
 };
 
-static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err, i;
 
-	ctx_shell = shell;
+	ctx_shell = sh;
 
 	err = bt_enable(NULL);
 	if (err && err != -EALREADY) {
-		shell_error(shell, "Bluetooth init failed (err %d)", err);
+		shell_error(sh, "Bluetooth init failed (err %d)", err);
 		return err;
 	}
 
@@ -981,11 +981,11 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 
-	err = cmd_config(shell, argc, argv);
+	err = cmd_config(sh, argc, argv);
 	if (err) {
 		return err;
 	}
@@ -998,7 +998,7 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 #define DATA_MTU CONFIG_BT_ISO_TX_MTU
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, NULL);
 
-static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
 	static uint8_t data[DATA_MTU - BT_ISO_CHAN_SEND_RESERVE];
 	int ret, len;
@@ -1007,7 +1007,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 1) {
 		len = hex2bin(argv[1], strlen(argv[1]), data, sizeof(data));
 		if (len > default_chan->iso->qos->tx->sdu) {
-			shell_print(shell, "Unable to send: len %d > %u MTU",
+			shell_print(sh, "Unable to send: len %d > %u MTU",
 				    len, default_chan->iso->qos->tx->sdu);
 			return -ENOEXEC;
 		}
@@ -1022,12 +1022,12 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 	net_buf_add_mem(buf, data, len);
 	ret = bt_audio_chan_send(default_chan, buf);
 	if (ret < 0) {
-		shell_print(shell, "Unable to send: %d", -ret);
+		shell_print(sh, "Unable to send: %d", -ret);
 		net_buf_unref(buf);
 		return -ENOEXEC;
 	}
-	shell_print(shell, "Sending:");
-	shell_hexdump(shell, data, len);
+	shell_print(sh, "Sending:");
+	shell_hexdump(sh, data, len);
 
 	return 0;
 }
@@ -1061,13 +1061,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_SUBCMD_SET_END
 );
 
-static int cmd_bap(const struct shell *shell, size_t argc, char **argv)
+static int cmd_bap(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
-		shell_error(shell, "%s unknown parameter: %s",
+		shell_error(sh, "%s unknown parameter: %s",
 			    argv[0], argv[1]);
 	} else {
-		shell_error(shell, "%s Missing subcommand", argv[0]);
+		shell_error(sh, "%s Missing subcommand", argv[0]);
 	}
 
 	return -ENOEXEC;
