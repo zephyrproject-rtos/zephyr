@@ -5,6 +5,7 @@
  */
 
 #include <freq.h>
+#include <mem.h>
 
 / {
 	aliases {
