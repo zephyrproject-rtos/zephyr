@@ -702,6 +702,28 @@ struct bt_aics *bt_aics_client_free_instance_get(void)
 	return NULL;
 }
 
+int bt_aics_client_conn_get(const struct bt_aics *aics, struct bt_conn **conn)
+{
+	CHECKIF(aics == NULL) {
+		BT_DBG("NULL aics pointer");
+		return -EINVAL;
+	}
+
+	if (!aics->client_instance) {
+		BT_DBG("aics pointer shall be client instance");
+		return -EINVAL;
+	}
+
+	if (aics->cli.conn == NULL) {
+		BT_DBG("aics pointer not associated with a connection. "
+		       "Do discovery first");
+		return -ENOTCONN;
+	}
+
+	*conn = aics->cli.conn;
+	return 0;
+}
+
 int bt_aics_client_state_get(struct bt_aics *inst)
 {
 	int err;

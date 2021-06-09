@@ -235,6 +235,18 @@ static int test_aics(void)
 	uint8_t expected_mode;
 	uint8_t expected_input_type;
 	char expected_aics_desc[AICS_DESC_SIZE];
+	struct bt_conn *cached_conn;
+
+	printk("Getting AICS client conn\n");
+	err = bt_aics_client_conn_get(mics_included.aics[0], &cached_conn);
+	if (err != 0) {
+		FAIL("Could not get AICS client conn (err %d)\n", err);
+		return err;
+	}
+	if (cached_conn != g_conn) {
+		FAIL("Cached conn was not the conn used to discover");
+		return -ENOTCONN;
+	}
 
 	printk("Getting AICS state\n");
 	g_cb = false;
