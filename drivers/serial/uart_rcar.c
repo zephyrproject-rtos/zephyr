@@ -195,13 +195,12 @@ static int uart_rcar_configure(const struct device *dev,
 	reg_val &= ~(SCLSR_TO | SCLSR_ORER);
 	uart_rcar_write_16(config, SCLSR, reg_val);
 
-	/* Clock selection */
+	/* Select internal clock */
 	reg_val = uart_rcar_read_16(config, SCSCR);
-	reg_val &= ~(SCSCR_CKE1 | SCSCR_CKE0 | SCSCR_TIE | SCSCR_RIE |
-		     SCSCR_TE | SCSCR_RE | SCSCR_TOIE);
+	reg_val &= ~(SCSCR_CKE1 | SCSCR_CKE0);
 	uart_rcar_write_16(config, SCSCR, reg_val);
 
-	/* Serial Configuration (8N1) & Clock Source selection */
+	/* Serial Configuration (8N1) & Clock divider selection */
 	reg_val = uart_rcar_read_16(config, SCSMR);
 	reg_val &= ~(SCSMR_C_A | SCSMR_CHR | SCSMR_PE | SCSMR_O_E | SCSMR_STOP |
 		     SCSMR_CKS1 | SCSMR_CKS0);
@@ -216,7 +215,7 @@ static int uart_rcar_configure(const struct device *dev,
 		     SCFCR_MCE | SCFCR_TFRST | SCFCR_RFRST);
 	uart_rcar_write_16(config, SCFCR, reg_val);
 
-	/* Enable Transmit & Receive */
+	/* Enable Transmit & Receive + disable Interrupts */
 	reg_val = uart_rcar_read_16(config, SCSCR);
 	reg_val |= (SCSCR_TE | SCSCR_RE);
 	reg_val &= ~(SCSCR_TIE | SCSCR_RIE | SCSCR_TEIE | SCSCR_REIE |
