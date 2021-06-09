@@ -73,7 +73,9 @@
 
 static void tx_demux(void *param);
 
+#if defined(CONFIG_BT_CENTRAL)
 static inline void conn_release(struct ll_scan_set *scan);
+#endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
 static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate);
@@ -364,7 +366,7 @@ uint8_t ll_start_enc_req_send(uint16_t handle, uint8_t error_code,
 	return BT_HCI_ERR_UNKNOWN_CMD;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
-
+#if defined(CONFIG_BT_CENTRAL)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			  uint8_t filter_policy, uint8_t peer_addr_type,
@@ -803,6 +805,7 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 	}
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 uint8_t ll_set_min_used_chans(uint16_t handle, uint8_t const phys,
@@ -928,6 +931,7 @@ static void tx_demux(void *param)
 	ull_conn_tx_lll_enqueue(param, 1);
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 static inline void conn_release(struct ll_scan_set *scan)
 {
 	struct node_rx_pdu *cc;
@@ -952,6 +956,7 @@ static inline void conn_release(struct ll_scan_set *scan)
 	ll_conn_release(conn);
 	scan->lll.conn = NULL;
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
 static uint8_t force_md_cnt_calc(struct lll_conn *lll_conn, uint32_t tx_rate)
