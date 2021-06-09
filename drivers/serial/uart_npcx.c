@@ -457,8 +457,8 @@ static inline int uart_npcx_set_power_state(const struct device *dev,
 }
 
 /* Implements the device power management control functionality */
-static int uart_npcx_pm_control(const struct device *dev, uint32_t ctrl_command,
-				 enum pm_device_state *state)
+static int uart_npcx_pm_control(const struct device *dev,
+				enum pm_device_state *state)
 {
 	return uart_npcx_set_power_state(dev, *state);
 }
