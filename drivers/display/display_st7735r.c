@@ -499,7 +499,7 @@ static int st7735r_enter_sleep(struct st7735r_data *data)
 	return st7735r_transmit(data, ST7735R_CMD_SLEEP_IN, NULL, 0);
 }
 
-static int st7735r_pm_control(const struct device *dev, uint32_t ctrl_command,
+static int st7735r_pm_control(const struct device *dev,
 			      enum pm_device_state *state)
 {
 	int ret = 0;

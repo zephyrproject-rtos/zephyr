@@ -731,8 +731,8 @@ static int bq274xx_exit_shutdown_mode(const struct device *dev)
 	return 0;
 }
 
-static int bq274xx_pm_control(const struct device *dev, uint32_t ctrl_command,
-				  enum pm_device_state *state)
+static int bq274xx_pm_control(const struct device *dev,
+			      enum pm_device_state *state)
 {
 	int ret = 0;
 	struct bq274xx_data *data = dev->data;

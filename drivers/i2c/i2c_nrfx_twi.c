@@ -217,8 +217,7 @@ static int init_twi(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int twi_nrfx_pm_control(const struct device *dev,
-				uint32_t ctrl_command,
-				enum pm_device_state *state)
+			       enum pm_device_state *state)
 {
 	int ret = 0;
 	enum pm_device_state curr_state;
