@@ -137,7 +137,7 @@ int pm_device_state_set(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	ret = dev->pm_control(dev, PM_DEVICE_STATE_SET, &device_power_state);
+	ret = dev->pm_control(dev, &device_power_state);
 	if (ret < 0) {
 		return ret;
 	}

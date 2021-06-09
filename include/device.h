@@ -384,7 +384,7 @@ struct device {
 	const device_handle_t *const handles;
 #ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
-	int (*pm_control)(const struct device *dev, uint32_t command,
+	int (*pm_control)(const struct device *dev,
 			  enum pm_device_state *state);
 	/** Pointer to device instance power management data */
 	struct pm_device * const pm;

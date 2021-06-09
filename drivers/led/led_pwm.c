@@ -142,7 +142,7 @@ static int led_pwm_pm_set_state(const struct device *dev,
 	return 0;
 }
 
-static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
+static int led_pwm_pm_control(const struct device *dev,
 			      enum pm_device_state *state)
 {
 	return led_pwm_pm_set_state(dev, *state);
