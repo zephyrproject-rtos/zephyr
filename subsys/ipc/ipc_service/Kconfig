@@ -1,0 +1,32 @@
+# Copyright (c) -2021 Nordic Semiconductor (ASA)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IPC_SERVICE
+	bool "IPC service support multiple backends"
+	help
+	  Enables support for a service that can be shared by multiple
+	  users. Ability to work in different backends. The backend
+	  should be registered before application starts using
+	  the IPC Service.
+
+if IPC_SERVICE
+
+choice IPC_SERVICE_BACKEND
+	prompt "IPC Service backend"
+
+config IPC_SERVICE_BACKEND_XYZ
+	bool "Example backend"
+
+endchoice
+
+config IPC_SERVICE_BACKEND_REG_PRIORITY
+	int "Initialization priority of modules registering IPC backend"
+	default 46
+	help
+	  The backend must be registered before the endpoint register.
+
+module = IPC_SERVICE
+module-str = IPC service and backend
+source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+
+endif # IPC_SERVICE
