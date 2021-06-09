@@ -1159,13 +1159,13 @@ static void uart_nrfx_set_power_state(const struct device *dev,
 }
 
 static int uart_nrfx_pm_control(const struct device *dev,
-				enum pm_device_state *state)
+				enum pm_device_state state)
 {
 	enum pm_device_state current_state;
 
 	(void)pm_device_state_get(dev, &current_state);
-	if (*state != current_state) {
-		uart_nrfx_set_power_state(dev, *state);
+	if (state != current_state) {
+		uart_nrfx_set_power_state(dev, state);
 	}
 
 	return 0;

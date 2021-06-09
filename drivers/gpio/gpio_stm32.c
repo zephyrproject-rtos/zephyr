@@ -595,14 +595,14 @@ static int gpio_stm32_set_power_state(const struct device *dev,
 }
 
 static int gpio_stm32_pm_device_ctrl(const struct device *dev,
-				     enum pm_device_state *state)
+				     enum pm_device_state state)
 {
 	int ret = 0;
 	enum pm_device_state curr_state;
 
 	(void)pm_device_state_get(dev, &curr_state);
-	if (*state != curr_state) {
-		ret = gpio_stm32_set_power_state(dev, *state);
+	if (state != curr_state) {
+		ret = gpio_stm32_set_power_state(dev, state);
 	}
 
 	return ret;

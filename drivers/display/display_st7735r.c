@@ -500,12 +500,12 @@ static int st7735r_enter_sleep(struct st7735r_data *data)
 }
 
 static int st7735r_pm_control(const struct device *dev,
-			      enum pm_device_state *state)
+			      enum pm_device_state state)
 {
 	int ret = 0;
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
 
-	if (*state == PM_DEVICE_STATE_ACTIVE) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
 		ret = st7735r_exit_sleep(data);
 		if (ret < 0) {
 			return ret;
