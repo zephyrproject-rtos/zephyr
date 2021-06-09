@@ -579,81 +579,6 @@ static int sx127x_antenna_configure(void)
 //     SetRegistersDefault( );
 // }
 
-static int sx1280_lora_init(const struct device *dev)
-{
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	LOG_INF("test init cs");
-	static struct spi_cs_control spi_cs;
-#endif
-	int ret;
-	// uint8_t regval;
-
-	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!dev_data.spi) {
-		LOG_ERR("Cannot get pointer to %s device",
-			DT_INST_BUS_LABEL(0));
-		return -EINVAL;
-	}
-	LOG_INF("test init 2");
-
-	dev_data.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	spi_cs.gpio_dev = device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!spi_cs.gpio_dev) {
-		LOG_ERR("Cannot get pointer to %s device",
-			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-		return -EIO;
-	}
-
-	spi_cs.gpio_pin = GPIO_CS_PIN;
-	spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
-	spi_cs.delay = 0U;
-
-	dev_data.spi_cfg.cs = &spi_cs;
-	LOG_INF("test init 3");
-#endif
-
-// 	ret = sx12xx_configure_pin(tcxo_power, GPIO_OUTPUT_INACTIVE);
-// 	if (ret) {
-// 		return ret;
-// 	}
-
-	/* Setup Reset gpio and perform soft reset */
-	ret = sx12xx_configure_pin(reset, GPIO_OUTPUT_ACTIVE);
-	if (ret) {
-		return ret;
-	}
-
-	k_sleep(K_MSEC(100));
-	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
-	k_sleep(K_MSEC(100));
-
-// 	ret = sx127x_read(REG_VERSION, &regval, 1);
-// 	if (ret < 0) {
-// 		LOG_ERR("Unable to read version info");
-// 		return -EIO;
-// 	}
-
-// 	LOG_INF("SX127x version 0x%02x found", regval);
-
-// 	ret = sx127x_antenna_configure();
-// 	if (ret < 0) {
-// 		LOG_ERR("Unable to configure antenna");
-// 		return -EIO;
-// 	}
-
-// 	ret = sx12xx_init(dev);
-// 	if (ret < 0) {
-// 		LOG_ERR("Failed to initialize SX12xx common");
-// 		return ret;
-// 	}
-
-	return 0;
-}
-
 // static int sx1280_transceive(uint8_t reg, bool write, void *data, size_t length)
 // {
 // 	const struct spi_buf buf[2] = {
@@ -749,6 +674,54 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 //     {
 //         WaitOnBusy( ); // TODO
 //     }
+}
+
+
+void sx1280_ReadCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
+{
+//     WaitOnBusy( );
+
+	// RadioNss = 0;
+	const struct spi_buf buf[2] = {
+		{
+			.buf = &command,
+			.len = sizeof(command)
+		},
+		{
+			.buf = buffer,
+			.len = size
+		}
+	};
+
+	struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf),
+	};
+
+	const struct spi_buf_set rx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf)
+	};
+
+	return spi_transceive(dev_data.spi, &dev_data.spi_cfg, &tx, &rx);
+	// if( command == RADIO_GET_STATUS )
+	// {
+	// 	buffer[0] = RadioSpi->write( ( uint8_t )command );
+	// 	RadioSpi->write( 0 );
+	// 	RadioSpi->write( 0 );
+	// }
+	// else
+	// {
+	// 	RadioSpi->write( ( uint8_t )command );
+	// 	RadioSpi->write( 0 );
+	// 	for( uint16_t i = 0; i < size; i++ )
+	// 	{
+	// 		buffer[i] = RadioSpi->write( 0 );
+	// 	}
+	// }
+	// RadioNss = 1;
+
+//     WaitOnBusy( );
 }
 
 void WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
@@ -912,22 +885,27 @@ void sx1280_WriteRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 //     WaitOnBusy( ); // TODO
 
 	LOG_INF("wr1");
-	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
 
 	int ret;
 
-	const struct spi_buf buf[3] = {
+	uint8_t command = RADIO_WRITE_REGISTER;
+	uint8_t addr_l, addr_h;
+	addr_h = address >> 8;
+	addr_l = address & 0x00FF;
+
+	const struct spi_buf buf[4] = {
 		{
-			.buf = RADIO_WRITE_REGISTER,
-			.len = sizeof(RADIO_WRITE_REGISTER)
+			.buf = &command,
+			.len = 1
 		},
 		{
-			.buf = ( address & 0xFF00 ) >> 8,
-			.len = sizeof(address)
+			.buf = &addr_h,
+			.len = sizeof(addr_h)
 		},
 		{
-			.buf = address & 0x00FF,
-			.len = sizeof(address)
+			.buf = &addr_l,
+			.len = sizeof(addr_l)
 		},
 		{
 			.buf = buffer,
@@ -947,7 +925,7 @@ void sx1280_WriteRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 	}
 
 	LOG_INF("wr_pre_cs_1");
-	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
 	LOG_INF("wr_post_cs_1");
 
 //     WaitOnBusy( ); // TODO
@@ -963,40 +941,58 @@ void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 //     WaitOnBusy( ); // TODO
 
 	LOG_INF("rr_1");
-    	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+    	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
 	LOG_INF("rr_2");
 
 	int ret;
 
-	const struct spi_buf buf[3] = {
+	uint8_t command = RADIO_READ_REGISTER;
+	uint8_t addr_l, addr_h;
+	addr_h = address >> 8;
+	addr_l = address & 0x00FF;
+  	// address = ( address & 0xFF00 ) >> 8 + (address & 0x00FF) << 8;
+
+	const struct spi_buf buf[5] = {
 		{
-			.buf = RADIO_READ_REGISTER,
-			.len = sizeof(RADIO_READ_REGISTER)
+			.buf = &command,
+			.len = 1
 		},
 		{
-			.buf = ( address & 0xFF00 ) >> 8,
-			.len = sizeof(address)
+			.buf = &addr_h,
+			.len = sizeof(addr_h)
 		},
 		{
-			.buf = address & 0x00FF,
-			.len = sizeof(address)
+			.buf = &addr_l,
+			.len = sizeof(addr_l)
 		},
 		{
-			.buf = 0,
-			.len = sizeof(0)
+			.buf = &command,
+			.len = 1
 		},
 		{
 			.buf = buffer,
 			.len = size
-		}
+		},
 	};
+
+	// const struct spi_buf rxbuf[1] = {
+	// 	{
+	// 		.buf = buffer,
+	// 		.len = size
+	// 	},
+	// };
 
 	struct spi_buf_set tx = {
 		.buffers = buf,
 		.count = ARRAY_SIZE(buf),
 	};
 
-	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
+	struct spi_buf_set rx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf),
+	};
+
+	ret = spi_transceive(dev_data.spi, &dev_data.spi_cfg, &tx, &rx);
 
 	if (ret < 0) {
 		LOG_ERR("Unable to write address: 0x%x", address);
@@ -1015,6 +1011,156 @@ uint8_t sx1280_ReadRegister( uint16_t address )
 
     sx1280_ReadRegisterSPI( address, &data, 1 );
     return data;
+}
+
+RadioStatus_t sx1280_GetStatus( void )
+{
+    uint8_t stat = 0;
+    RadioStatus_t status;
+
+    sx1280_ReadCommand( RADIO_GET_STATUS, ( uint8_t * )&stat, 1 );
+    status.Value = stat;
+    return( status );
+}
+
+uint16_t sx1280_GetFirmwareVersion( void )
+{
+    return ( ( ( sx1280_ReadRegister( REG_LR_FIRMWARE_VERSION_MSB ) ) << 8 ) | ( sx1280_ReadRegister( REG_LR_FIRMWARE_VERSION_MSB + 1 ) ) );
+}
+
+/*!
+ * \brief Radio registers definition
+ *
+ */
+typedef struct
+{
+    uint16_t      Addr;                             //!< The address of the register
+    uint8_t       Value;                            //!< The value of the register
+}RadioRegisters_t;
+
+/*!
+ * \brief Radio hardware registers initialization definition
+ */
+#define RADIO_INIT_REGISTERS_VALUE  { }
+
+/*!
+ * \brief Radio hardware registers initialization
+ */
+const RadioRegisters_t RadioRegsInit[] = RADIO_INIT_REGISTERS_VALUE;
+
+void sx1280_SetRegistersDefault( void )
+{
+    for( int16_t i = 0; i < sizeof( RadioRegsInit ) / sizeof( RadioRegisters_t ); i++ )
+    {
+        WriteRegister( RadioRegsInit[i].Addr, RadioRegsInit[i].Value );
+    }
+}
+
+static int sx1280_lora_init(const struct device *dev)
+{
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	LOG_INF("test init cs");
+	static struct spi_cs_control spi_cs;
+#endif
+	int ret;
+	uint8_t regval;
+	RadioStatus_t status;
+
+	dev_data.spi = device_get_binding(DT_INST_BUS_LABEL(0));
+	if (!dev_data.spi) {
+		LOG_ERR("Cannot get pointer to %s device",
+			DT_INST_BUS_LABEL(0));
+		return -EINVAL;
+	}
+	LOG_INF("test init 2");
+
+	dev_data.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
+	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
+	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
+
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	spi_cs.gpio_dev = device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+	if (!spi_cs.gpio_dev) {
+		LOG_ERR("Cannot get pointer to %s device",
+			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+		return -EIO;
+	}
+
+	spi_cs.gpio_pin = GPIO_CS_PIN;
+	spi_cs.gpio_dt_flags = GPIO_CS_FLAGS;
+	spi_cs.delay = 0U;
+
+	dev_data.spi_cfg.cs = &spi_cs;
+	LOG_INF("test init 3");
+#endif
+
+// 	ret = sx12xx_configure_pin(tcxo_power, GPIO_OUTPUT_INACTIVE);
+// 	if (ret) {
+// 		return ret;
+// 	}
+
+	/* Setup Reset gpio and perform soft reset */
+	ret = sx12xx_configure_pin(reset, GPIO_OUTPUT_ACTIVE);
+	if (ret) {
+		return ret;
+	}
+
+	k_sleep(K_MSEC(100));
+	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
+	k_sleep(K_MSEC(100));
+
+	// regval = sx1280_GetFirmwareVersion();
+	// if (ret < 0) {
+	// 	LOG_ERR("Unable to read version info");
+	// 	return -EIO;
+	// }
+
+	// LOG_INF("SX1280 version 0x%02x found", regval);
+
+	// status = sx1280_GetStatus();
+	// LOG_INF("status: %x", status.Value);
+
+	sx1280_SetRegistersDefault();
+
+	// LOG_INF("regval-pre: %x", sx1280_ReadRegister( REG_MANUAL_GAIN_VALUE ));
+	// sx1280_WriteRegister( REG_MANUAL_GAIN_VALUE, 13 );
+	// LOG_INF("regval-post: %x", sx1280_ReadRegister( REG_MANUAL_GAIN_VALUE ));
+
+	//check there is a device out there, writes a register and reads back
+	uint8_t Regdata1, Regdata2;
+	Regdata1 = sx1280_ReadRegister(0x0908);               //low byte of frequency setting
+	sx1280_WriteRegister(0x0908, (Regdata1 + 1));
+	Regdata2 = sx1280_ReadRegister(0x0908);               //read changed value back
+	sx1280_WriteRegister(0x0908, Regdata1);             //restore register to original value
+	LOG_INF("data: %x -- %x", Regdata1, Regdata2);
+	if (Regdata2 == (Regdata1 + 1))
+	{
+		LOG_INF("true");
+	}
+	else
+	{
+		LOG_INF("false");
+	}
+
+	// CS = 0
+	// WriteRegister
+	// sx1280_ReadRegister
+	// cs = 1
+
+
+// 	ret = sx127x_antenna_configure();
+// 	if (ret < 0) {
+// 		LOG_ERR("Unable to configure antenna");
+// 		return -EIO;
+// 	}
+
+// 	ret = sx12xx_init(dev);
+// 	if (ret < 0) {
+// 		LOG_ERR("Failed to initialize SX12xx common");
+// 		return ret;
+// 	}
+
+	return 0;
 }
 
 void sx1280_SetLNAGainSetting( const RadioLnaSettings_t lnaSetting )
@@ -1173,37 +1319,39 @@ void sx1280_SetPacketParams( PacketParams_t *packetParams )
 int sx1280_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
 {
-	LOG_INF("config1");
-	sx1280_SetStandby(STDBY_RC);
-	LOG_INF("config2");
-	// sx1280_SetRegulatorMode(); // TODO
-        sx1280_SetLNAGainSetting(LNA_LOW_POWER_MODE);
-	LOG_INF("config3");
+	// LOG_INF("config1");
+	// sx1280_SetStandby(STDBY_RC);
+	// LOG_INF("config2");
+	// // sx1280_SetRegulatorMode(); // TODO
+	// LOG_INF("regval-pre: %x", sx1280_ReadRegister( REG_LNA_REGIME ));
+        // sx1280_SetLNAGainSetting(LNA_LOW_POWER_MODE);
+	// LOG_INF("regval-post: %x", sx1280_ReadRegister( REG_LNA_REGIME ));
+	// LOG_INF("config3");
 
-	PacketParams_t PacketParams;
-	ModulationParams_t ModulationParams;
+	// PacketParams_t PacketParams;
+	// ModulationParams_t ModulationParams;
 
-        ModulationParams.PacketType = PACKET_TYPE_LORA;
-        PacketParams.PacketType     = PACKET_TYPE_LORA;
+        // ModulationParams.PacketType = PACKET_TYPE_LORA;
+        // PacketParams.PacketType     = PACKET_TYPE_LORA;
 
-        ModulationParams.Params.LoRa.SpreadingFactor = ( RadioLoRaSpreadingFactors_t )  config->datarate; // TODO
-        ModulationParams.Params.LoRa.Bandwidth       = ( RadioLoRaBandwidths_t )        config->bandwidth;
-        ModulationParams.Params.LoRa.CodingRate      = ( RadioLoRaCodingRates_t )       config->coding_rate;
-        PacketParams.Params.LoRa.PreambleLength      =                                  config->preamble_len;
-        // PacketParams.Params.LoRa.HeaderType          = ( RadioLoRaPacketLengthsModes_t )Eeprom.EepromData.DemoSettings.PacketParam2; // TODO
-        // PacketParams.Params.LoRa.PayloadLength       =                                  Eeprom.EepromData.DemoSettings.PacketParam3;
-        // PacketParams.Params.LoRa.Crc                 = ( RadioLoRaCrcModes_t )          Eeprom.EepromData.DemoSettings.PacketParam4;
-        // PacketParams.Params.LoRa.InvertIQ            = ( RadioLoRaIQModes_t )           Eeprom.EepromData.DemoSettings.PacketParam5;
+        // ModulationParams.Params.LoRa.SpreadingFactor = ( RadioLoRaSpreadingFactors_t )  config->datarate; // TODO
+        // ModulationParams.Params.LoRa.Bandwidth       = ( RadioLoRaBandwidths_t )        config->bandwidth;
+        // ModulationParams.Params.LoRa.CodingRate      = ( RadioLoRaCodingRates_t )       config->coding_rate;
+        // PacketParams.Params.LoRa.PreambleLength      =                                  config->preamble_len;
+        // // PacketParams.Params.LoRa.HeaderType          = ( RadioLoRaPacketLengthsModes_t )Eeprom.EepromData.DemoSettings.PacketParam2; // TODO
+        // // PacketParams.Params.LoRa.PayloadLength       =                                  Eeprom.EepromData.DemoSettings.PacketParam3;
+        // // PacketParams.Params.LoRa.Crc                 = ( RadioLoRaCrcModes_t )          Eeprom.EepromData.DemoSettings.PacketParam4;
+        // // PacketParams.Params.LoRa.InvertIQ            = ( RadioLoRaIQModes_t )           Eeprom.EepromData.DemoSettings.PacketParam5;
 
-        sx1280_SetStandby( STDBY_RC );
-	LOG_INF("config4");
-        sx1280_SetPacketType( ModulationParams.PacketType );
-        sx1280_SetRfFrequency( config->frequency );
-        sx1280_SetBufferBaseAddresses( 0x00, 0x00 );
-        sx1280_SetModulationParams( &ModulationParams );
-        sx1280_SetPacketParams( &PacketParams );
-	LOG_INF("config9");
-        // only used in GFSK, FLRC (4 bytes max) and BLE mode
+        // sx1280_SetStandby( STDBY_RC );
+	// LOG_INF("config4");
+        // sx1280_SetPacketType( ModulationParams.PacketType );
+        // sx1280_SetRfFrequency( config->frequency );
+        // sx1280_SetBufferBaseAddresses( 0x00, 0x00 );
+        // sx1280_SetModulationParams( &ModulationParams );
+        // sx1280_SetPacketParams( &PacketParams );
+	// LOG_INF("config9");
+        // // only used in GFSK, FLRC (4 bytes max) and BLE mode
         // SetSyncWord( 1, ( uint8_t[] ){ 0xDD, 0xA0, 0x96, 0x69, 0xDD } ); // TODO: non LORA
         // only used in GFSK, FLRC
         // uint8_t crcSeedLocal[2] = {0x45, 0x67}; // TODO
