@@ -119,13 +119,13 @@ static void lp_comm_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 		pdu_encode_feature_req(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 		break;
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined (CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
 		pdu_encode_min_used_chans_ind(ctx, pdu);
 		ctx->tx_ack = tx;
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
 		pdu_encode_version_ind(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
@@ -255,12 +255,12 @@ static void lp_comm_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = LP_COMMON_STATE_IDLE;
 		}
 		break;
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined (CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
 		lr_complete(conn);
 		ctx->state = LP_COMMON_STATE_IDLE;
 		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
 		if (!ntf_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_NTF;
@@ -338,7 +338,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = LP_COMMON_STATE_WAIT_RX;
 		}
 		break;
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 	case PROC_MIN_USED_CHANS:
 		if (ctx->pause || !tx_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_TX;
@@ -347,7 +347,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			ctx->state = LP_COMMON_STATE_WAIT_TX_ACK;
 		}
 		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->llcp.vex.sent) {
@@ -435,12 +435,12 @@ static void lp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 	switch (evt) {
 	case LP_COMMON_EVT_ACK:
 		switch (ctx->proc) {
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_PERIPHERAL)
 		case PROC_MIN_USED_CHANS:
 			ctx->tx_ack = NULL;
 			lp_comm_complete(conn, ctx, evt, param);
 			break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_PERIPHERAL */
 		case PROC_TERMINATE:
 			ctx->tx_ack = NULL;
 			lp_comm_complete(conn, ctx, evt, param);
@@ -598,11 +598,11 @@ static void rp_comm_rx_decode(struct ll_conn *conn, struct proc_ctx *ctx, struct
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		pdu_decode_feature_req(conn, pdu);
 		break;
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 		pdu_decode_min_used_chans_ind(conn, pdu);
 		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		pdu_decode_version_ind(conn, pdu);
 		break;
@@ -765,7 +765,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			LL_ASSERT(0);
 		}
 		break;
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
+#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN) && defined(CONFIG_BT_CENTRAL)
 	case PROC_MIN_USED_CHANS:
 		/* Spec says (5.2, Vol.6, Part B, Section 5.1.11):
 		     The procedure has completed when the Link Layer acknowledgment of the
@@ -783,7 +783,7 @@ static void rp_comm_send_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 		rr_complete(conn);
 		ctx->state = RP_COMMON_STATE_IDLE;
 		break;
-#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
+#endif /* CONFIG_BT_CTLR_MIN_USED_CHAN && CONFIG_BT_CENTRAL */
 	case PROC_TERMINATE:
 		/* No response */
 		rr_complete(conn);

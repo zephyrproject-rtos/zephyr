@@ -912,19 +912,22 @@ static inline void pdu_decode_feature_rsp(struct ll_conn *conn,
 /*
  * Minimum number of used channels Procedure Helper
  */
+#if defined (CONFIG_BT_PERIPHERAL)
 void ull_cp_priv_pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 static inline void pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_min_used_chans_ind(ctx, pdu);
 }
-
+#endif /* CONFIG_BT_PERIPHERAL */
+#if defined (CONFIG_BT_CENTRAL)
 void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_data *pdu);
 
 static inline void pdu_decode_min_used_chans_ind(struct ll_conn *conn, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_decode_min_used_chans_ind(conn, pdu);
 }
+#endif /* CONFIG_BT_CENTRAL */
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 
 /*
