@@ -732,9 +732,7 @@ int bt_mesh_prov_remote_pub_key_set(const uint8_t public_key[64])
 		return -EALREADY;
 	}
 
-	/* Swap X and Y halves independently to big-endian */
-	memcpy(&bt_mesh_prov_link.conf_inputs[81], public_key, 32);
-	memcpy(&bt_mesh_prov_link.conf_inputs[81 + 32], &public_key[32], 32);
+	memcpy(&bt_mesh_prov_link.conf_inputs[81], public_key, 64);
 
 	return 0;
 }

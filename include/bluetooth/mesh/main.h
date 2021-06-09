@@ -291,7 +291,7 @@ int bt_mesh_input_number(uint32_t num);
 
 /** @brief Provide Device public key.
  *
- *  @param public_key Device public key.
+ *  @param public_key Device public key in big-endian.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
