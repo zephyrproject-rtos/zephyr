@@ -442,13 +442,13 @@ static inline int gpio_dw_resume_from_suspend_port(const struct device *port)
 * the *context may include IN data or/and OUT data
 */
 static int gpio_dw_device_ctrl(const struct device *port,
-			       enum pm_device_state *state)
+			       enum pm_device_state state)
 {
 	int ret = 0;
 
-	if (*state == PM_DEVICE_STATE_SUSPEND) {
+	if (state == PM_DEVICE_STATE_SUSPEND) {
 		ret = gpio_dw_suspend_port(port);
-	} else if (*state == PM_DEVICE_STATE_ACTIVE) {
+	} else if (state == PM_DEVICE_STATE_ACTIVE) {
 		ret = gpio_dw_resume_from_suspend_port(port);
 	}
 

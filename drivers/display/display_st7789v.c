@@ -402,11 +402,11 @@ static void st7789v_enter_sleep(struct st7789v_data *data)
 }
 
 static int st7789v_pm_control(const struct device *dev,
-			      enum pm_device_state *state)
+			      enum pm_device_state state)
 {
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 
-	if (*state == PM_DEVICE_STATE_ACTIVE) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
 		st7789v_exit_sleep(data);
 	} else {
 		st7789v_enter_sleep(data);

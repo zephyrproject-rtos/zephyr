@@ -185,7 +185,7 @@ static void eth_mcux_phy_enter_reset(struct eth_context *context);
 void eth_mcux_phy_stop(struct eth_context *context);
 
 static int eth_mcux_device_pm_control(const struct device *dev,
-				      enum pm_device_state *state)
+				      enum pm_device_state state)
 {
 	struct eth_context *eth_ctx = (struct eth_context *)dev->data;
 	int ret = 0;
@@ -197,7 +197,7 @@ static int eth_mcux_device_pm_control(const struct device *dev,
 		goto out;
 	}
 
-	if (*state == PM_DEVICE_STATE_SUSPEND) {
+	if (state == PM_DEVICE_STATE_SUSPEND) {
 		LOG_DBG("Suspending");
 
 		ret = net_if_suspend(eth_ctx->iface);
@@ -212,7 +212,7 @@ static int eth_mcux_device_pm_control(const struct device *dev,
 		ENET_Deinit(eth_ctx->base);
 		clock_control_off(eth_ctx->clock_dev,
 			(clock_control_subsys_t)eth_ctx->clock);
-	} else if (*state == PM_DEVICE_STATE_ACTIVE) {
+	} else if (state == PM_DEVICE_STATE_ACTIVE) {
 		LOG_DBG("Resuming");
 
 		clock_control_on(eth_ctx->clock_dev,

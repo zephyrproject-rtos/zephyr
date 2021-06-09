@@ -583,11 +583,11 @@ static int bmp388_set_power_state(const struct device *dev,
 
 static int bmp388_device_ctrl(
 	const struct device *dev,
-	enum pm_device_state *state)
+	enum pm_device_state state)
 {
 	int ret = 0;
 
-	ret = bmp388_set_power_state(dev, *state);
+	ret = bmp388_set_power_state(dev, state);
 
 	return ret;
 }
