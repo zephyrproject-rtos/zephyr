@@ -122,11 +122,13 @@ void ull_cp_priv_pdu_encode_feature_req(struct ll_conn *conn,
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, feature_req) +
 		sizeof(struct pdu_data_llctrl_feature_req);
-	if (conn->lll.role == BT_HCI_ROLE_MASTER) {
-		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
-	} else {
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
+
+#if defined(CONFIG_BT_CTLR_SLAVE_FEAT_REQ) && defined(CONFIG_BT_PERIPHERAL)
+	if (conn->lll.role == BT_HCI_ROLE_SLAVE) {
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
 	}
+#endif /* CONFIG_BT_CTLR_SLAVE_FEAT_REQ && CONFIG_BT_PERIPHERAL */
 
 	p = &pdu->llctrl.feature_req;
 	sys_put_le64(LL_FEAT, p->features);
