@@ -835,6 +835,28 @@ int bt_vcs_client_included_get(struct bt_vcs *vcs,
 	return 0;
 }
 
+int bt_vcs_client_conn_get(const struct bt_vcs *vcs, struct bt_conn **conn)
+{
+	CHECKIF(vcs == NULL) {
+		BT_DBG("NULL vcs pointer");
+		return -EINVAL;
+	}
+
+	if (!vcs->client_instance) {
+		BT_DBG("vcs pointer shall be client instance");
+		return -EINVAL;
+	}
+
+	if (vcs->cli.conn == NULL) {
+		BT_DBG("vcs pointer not associated with a connection. "
+		       "Do discovery first");
+		return -ENOTCONN;
+	}
+
+	*conn = vcs->cli.conn;
+	return 0;
+}
+
 int bt_vcs_client_read_vol_state(struct bt_vcs *vcs)
 {
 	int err;
