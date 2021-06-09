@@ -11,4 +11,9 @@ config SOC_RISCV_SIFIVE_FREEDOM
 	bool "SiFive Freedom SOC implementation"
 	select ATOMIC_OPERATIONS_C
 
+config SOC_RISCV_SIFIVE_FU540
+	bool "SiFive Freedom U540 SOC implementation"
+	select ATOMIC_OPERATIONS_C
+	select 64BIT
+
 endchoice
