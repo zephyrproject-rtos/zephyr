@@ -28,6 +28,13 @@ config BT_MESH_PROV_DEVICE
 	help
 	  Enable this option to allow the device to be provisioned into a mesh network.
 
+config BT_MESH_PROV_OOB_PUBLIC_KEY
+	bool "OOB Public key support"
+	select TINYCRYPT_ECC_DH
+	depends on BT_MESH_PROV_DEVICE
+	help
+	  Enable this option if public key is to be exchanged via Out of Band (OOB) technology.
+
 config BT_MESH_PB_ADV
 	bool "Provisioning support using the advertising bearer (PB-ADV)"
 	select BT_MESH_PROV

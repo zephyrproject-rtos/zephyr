@@ -73,6 +73,7 @@ enum {
 	WAIT_CONFIRM,           /* Wait for send confirm */
 	WAIT_AUTH,              /* Wait for auth response */
 	OOB_STATIC_KEY,         /* OOB Static Authentication */
+	WAIT_DH_KEY,            /* Wait for DH Key */
 
 	NUM_FLAGS,
 };
