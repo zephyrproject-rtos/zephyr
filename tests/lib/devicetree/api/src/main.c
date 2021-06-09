@@ -1576,8 +1576,6 @@ static void test_child_nodes_list(void)
 	zassert_equal(ARRAY_SIZE(vals_inst), 3, "");
 	zassert_equal(ARRAY_SIZE(vals_status_okay), 2, "");
 
-	zassert_false(strlen(STRINGIFY(TEST_PARENT)) == 0, "");
-
 	zassert_equal(vals[0].val, 0, "");
 	zassert_equal(vals[1].val, 1, "");
 	zassert_equal(vals[2].val, 2, "");
