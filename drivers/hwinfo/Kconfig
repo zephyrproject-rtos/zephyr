@@ -91,6 +91,7 @@ config HWINFO_GECKO
 	bool "GECKO hwinfo"
 	default y
 	depends on SOC_FAMILY_EXX32
+	select SOC_GECKO_RMU
 	help
 	  Enable Silabs GECKO hwinfo driver.
 
