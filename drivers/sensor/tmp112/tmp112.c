@@ -14,6 +14,7 @@
 #include <drivers/sensor.h>
 #include <sys/__assert.h>
 #include <logging/log.h>
+#include "tmp112.h"
 
 LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -30,16 +31,14 @@ LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 /* scale in micro degrees Celsius */
 #define TMP112_TEMP_SCALE		62500
 
-struct tmp112_data {
-	const struct device *i2c;
-	int16_t sample;
-};
-
-static int tmp112_reg_read(struct tmp112_data *drv_data,
+static int tmp112_reg_read(const struct device *dev,
 			   uint8_t reg, uint16_t *val)
 {
-	if (i2c_burst_read(drv_data->i2c, TMP112_I2C_ADDRESS,
-			   reg, (uint8_t *) val, 2) < 0) {
+
+	const struct tmp112_config *config = dev->config;
+
+	if (i2c_burst_read(config->bus, config->i2c_slv_addr,
+			   reg, (uint8_t *)val, 2) < 0) {
 		return -EIO;
 	}
 
@@ -48,29 +47,31 @@ static int tmp112_reg_read(struct tmp112_data *drv_data,
 	return 0;
 }
 
-static int tmp112_reg_write(struct tmp112_data *drv_data,
+static int tmp112_reg_write(const struct device *dev,
 			    uint8_t reg, uint16_t val)
 {
+	const struct tmp112_config *config = dev->config;
+
 	uint16_t val_be = sys_cpu_to_be16(val);
 
-	return i2c_burst_write(drv_data->i2c, TMP112_I2C_ADDRESS,
+	return i2c_burst_write(config->bus, config->i2c_slv_addr,
 			       reg, (uint8_t *)&val_be, 2);
 }
 
-static int tmp112_reg_update(struct tmp112_data *drv_data, uint8_t reg,
+static int tmp112_reg_update(const struct device *dev, uint8_t reg,
 			     uint16_t mask, uint16_t val)
 {
 	uint16_t old_val = 0U;
 	uint16_t new_val;
 
-	if (tmp112_reg_read(drv_data, reg, &old_val) < 0) {
+	if (tmp112_reg_read(dev, reg, &old_val) < 0) {
 		return -EIO;
 	}
 
 	new_val = old_val & ~mask;
 	new_val |= val & mask;
 
-	return tmp112_reg_write(drv_data, reg, new_val);
+	return tmp112_reg_write(dev, reg, new_val);
 }
 
 static int tmp112_attr_set(const struct device *dev,
@@ -78,7 +79,6 @@ static int tmp112_attr_set(const struct device *dev,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	struct tmp112_data *drv_data = dev->data;
 	int64_t value;
 	uint16_t cr;
 
@@ -98,8 +98,8 @@ static int tmp112_attr_set(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		if (tmp112_reg_update(drv_data, TMP112_REG_CONFIG,
-				      TMP112_EM_BIT, value) < 0) {
+		if (tmp112_reg_update(dev, TMP112_REG_CONFIG,
+		                      TMP112_EM_BIT, value) < 0) {
 			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
@@ -133,9 +133,9 @@ static int tmp112_attr_set(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		if (tmp112_reg_update(drv_data, TMP112_REG_CONFIG,
-				      TMP112_CR0_BIT | TMP112_CR1_BIT,
-				      value) < 0) {
+		if (tmp112_reg_update(dev, TMP112_REG_CONFIG,
+		                      TMP112_CR0_BIT | TMP112_CR1_BIT,
+		                      value) < 0) {
 			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
@@ -155,9 +155,10 @@ static int tmp112_sample_fetch(const struct device *dev,
 	struct tmp112_data *drv_data = dev->data;
 	uint16_t val;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
+	__ASSERT_NO_MSG(
+		chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
-	if (tmp112_reg_read(drv_data, TMP112_REG_TEMPERATURE, &val) < 0) {
+	if (tmp112_reg_read(dev, TMP112_REG_TEMPERATURE, &val) < 0) {
 		return -EIO;
 	}
 
@@ -197,18 +198,27 @@ static const struct sensor_driver_api tmp112_driver_api = {
 int tmp112_init(const struct device *dev)
 {
 	struct tmp112_data *drv_data = dev->data;
+	const struct tmp112_config *config = dev->config;
 
-	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (drv_data->i2c == NULL) {
-		LOG_DBG("Failed to get pointer to %s device!",
-			    DT_INST_BUS_LABEL(0));
+	if (!device_is_ready(config->bus)) {
+		LOG_ERR("device %s not ready!", config->bus->name);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-static struct tmp112_data tmp112_driver;
 
-DEVICE_DT_INST_DEFINE(0, tmp112_init, NULL, &tmp112_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tmp112_driver_api);
+
+#define TMP112_DEVICE_DEFINE(n)								 \
+	static struct tmp112_data tmp112_driver_##n;					 \
+	static const struct tmp112_config tmp112_cfg_##n = {				 \
+		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),					 \
+		.i2c_slv_addr = DT_INST_REG_ADDR(n),					 \
+	};										 \
+	DEVICE_DT_INST_DEFINE(n, tmp112_init, NULL, &tmp112_driver_##n,			 \
+			      &tmp112_cfg_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
+			      &tmp112_driver_api);					 \
+
+
+DT_INST_FOREACH_STATUS_OKAY(TMP112_DEVICE_DEFINE);
