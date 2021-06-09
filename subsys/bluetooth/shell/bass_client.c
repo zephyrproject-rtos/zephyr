@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
 #include "../host/audio/bass.h"
 #include "../host/hci_core.h"
 #include "bt.h"
