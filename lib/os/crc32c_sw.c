@@ -33,7 +33,7 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *data,
 
 	for (size_t i = 0; i < len; i++) {
 		crc = crc32c_table[(crc ^ data[i]) & 0x0F] ^ (crc >> 4);
-		crc = crc32c_table[(crc ^ (data[i] >> 4)) & 0x0F] ^ (crc >> 4);
+		crc = crc32c_table[(crc ^ ((uint32_t)data[i] >> 4)) & 0x0F] ^ (crc >> 4);
 	}
 
 	return last_pkt ? (crc ^ CRC32C_XOR_OUT) : crc;
