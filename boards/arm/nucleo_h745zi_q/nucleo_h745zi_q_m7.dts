@@ -42,6 +42,7 @@
 		led0 = &green_led;
 		pwm-led0 = &red_pwm_led;
 		sw0 = &user_button;
+		sramnocache = &sram3;
 	};
 };
 
