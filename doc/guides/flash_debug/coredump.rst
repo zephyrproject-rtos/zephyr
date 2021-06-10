@@ -23,7 +23,7 @@ Here are the options to enable output backends for core dump:
 
 Here are the choices regarding memory dump:
 
-* ``DEBUG_COREDUMP_MEMORY_DUMP_MIN```: only dumps the stack of the exception
+* ``DEBUG_COREDUMP_MEMORY_DUMP_MIN``: only dumps the stack of the exception
   thread, its thread struct, and some other bare minimal data to support
   walking the stack in debugger. Use this only if absolute minimum of data
   dump is desired.
