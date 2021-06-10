@@ -129,7 +129,7 @@ const char *pm_device_state_str(enum pm_device_state state)
 }
 
 int pm_device_state_set(const struct device *dev,
-			enum pm_device_state device_power_state)
+			enum pm_device_state state)
 {
 	int ret;
 
@@ -137,12 +137,12 @@ int pm_device_state_set(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	ret = dev->pm_control(dev, device_power_state);
+	ret = dev->pm_control(dev, state);
 	if (ret < 0) {
 		return ret;
 	}
 
-	dev->pm->state = device_power_state;
+	dev->pm->state = state;
 
 	return 0;
 }
