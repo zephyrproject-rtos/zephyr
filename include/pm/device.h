@@ -101,19 +101,21 @@ struct pm_device {
 const char *pm_device_state_str(enum pm_device_state state);
 
 /**
- * @brief Call the set power state function of a device
+ * @brief Set the power state of a device.
  *
- * Called by the application or power management service to let the device do
- * required operations when moving to the required power state
- * Note that devices may support just some of the device power states
- * @param dev Pointer to device structure of the driver instance.
- * @param device_power_state Device power state to be set
+ * This function calls the device PM control callback so that the device does
+ * the necessary operations to put the device into the given state.
  *
- * @retval 0 If successful in queuing the request or changing the state.
- * @retval Errno Negative errno code if failure.
+ * @note Some devices may not support all device power states.
+ *
+ * @param dev Device instance.
+ * @param state Device power state to be set.
+ *
+ * @retval 0 If successful.
+ * @retval Errno Negative errno code in case of failure.
  */
 int pm_device_state_set(const struct device *dev,
-			enum pm_device_state device_power_state);
+			enum pm_device_state state);
 
 /**
  * @brief Obtain the power state of a device.
