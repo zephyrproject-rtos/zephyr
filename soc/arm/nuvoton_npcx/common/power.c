@@ -165,7 +165,7 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 }
 
 /* Invoke when enter "Suspend/Low Power" mode. */
-void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info info)
 {
 	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power state %u", info.state);
@@ -194,7 +194,7 @@ void pm_power_state_set(struct pm_state_info info)
 }
 
 /* Handle soc specific activity after exiting "Suspend/Low Power" mode. */
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power state %u", info.state);

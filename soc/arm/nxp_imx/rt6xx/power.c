@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 	APP_DEEPSLEEP_RAM_APD, APP_DEEPSLEEP_RAM_PPD}))
 
 /* Invoke Low Power/System Off specific Tasks */
-void pm_power_state_set(struct pm_state_info info)
+__weak void pm_power_state_set(struct pm_state_info info)
 {
 	/* FIXME: When this function is entered the Kernel has disabled
 	 * interrupts using BASEPRI register. This is incorrect as it prevents
@@ -50,7 +50,7 @@ void pm_power_state_set(struct pm_state_info info)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void pm_power_state_exit_post_ops(struct pm_state_info info)
+__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	ARG_UNUSED(info);
 
