@@ -82,6 +82,14 @@ config USB_REQUEST_BUFFER_SIZE
 	default 1024 if USB_DEVICE_LOOPBACK
 	default 128
 
+config USB_MAX_ALT_SETTING
+	int "Size of the array where alternate settings are stored"
+	range 0 16
+	default 8
+	help
+	  Size of the array where alternate settings are stored.
+	  Should not be smaller than the number of interfaces.
+
 config USB_NUMOF_EP_WRITE_RETRIES
 	int "Number of endpoint write retries"
 	default 3
