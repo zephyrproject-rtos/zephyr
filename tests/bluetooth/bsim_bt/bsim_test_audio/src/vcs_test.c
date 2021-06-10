@@ -201,7 +201,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	g_is_connected = true;
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -674,8 +674,6 @@ static void test_main(void)
 		FAIL("VCS register failed (err %d)\n", err);
 		return;
 	}
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_vcs_included_get(vcs, &vcs_included);
 	if (err) {
