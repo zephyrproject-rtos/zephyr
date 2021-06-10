@@ -111,6 +111,7 @@
 
 	pwm12: pwm {
 		status = "okay";
+		st,prescaler = <10000>;
 		pinctrl-0 = <&tim12_ch1_pb14>;
 	};
 };
