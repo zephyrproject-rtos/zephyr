@@ -14,8 +14,6 @@
 
 #include "flash_stm32.h"
 
-#define STM32F7X_SECTOR_MASK		((uint32_t) 0xFFFFFF07)
-
 bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     uint32_t len,
 			     bool write)
@@ -87,7 +85,7 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 #endif /* CONFIG_FLASH_SIZE */
 #endif /* defined(FLASH_OPTCR_nDBANK) && FLASH_SECTOR_TOTAL == 24 */
 
-	regs->CR = (regs->CR & (CR_PSIZE_MASK | STM32F7X_SECTOR_MASK)) |
+	regs->CR = (regs->CR & ~(FLASH_CR_PSIZE | FLASH_CR_SNB)) |
 		   FLASH_PSIZE_BYTE |
 		   FLASH_CR_SER |
 		   (sector << FLASH_CR_SNB_Pos) |
