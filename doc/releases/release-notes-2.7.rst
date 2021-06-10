@@ -33,6 +33,7 @@ Changes in this release
 
 Removed APIs in this release
 
+* Removed support for the deprecated ``DEVICE_INIT`` and ``DEVICE_AND_API_INIT`` macros.
 
 ============================
 
