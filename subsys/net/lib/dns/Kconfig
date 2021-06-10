@@ -3,6 +3,7 @@
 
 config DNS_RESOLVER
 	bool "DNS resolver"
+	depends on NET_NATIVE
 	help
 	  This option enables the DNS client side support for Zephyr
 
