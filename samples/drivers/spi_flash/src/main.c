@@ -74,7 +74,7 @@ void main(void)
 
 	printf("\nTest 2: Flash write\n");
 
-	printf("Attempting to write %u bytes\n", len);
+	printf("Attempting to write %zu bytes\n", len);
 	rc = flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, expected, len);
 	if (rc != 0) {
 		printf("Flash write failed! %d\n", rc);
