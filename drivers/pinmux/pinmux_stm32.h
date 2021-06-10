@@ -176,9 +176,6 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 			   size_t list_size, uint32_t base);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
-/* common pinmux device name for all STM32 chips */
-#define STM32_PINMUX_NAME "stm32-pinmux"
-
 #ifdef __cplusplus
 }
 #endif
