@@ -1437,13 +1437,23 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 			continue;
 		}
 
-		/* An exception for AUDIO_CLASS is temporary and shall not be
-		 * considered as valid solution for other classes.
-		 */
-		if (iface->custom_handler &&
-		    (if_descr->bInterfaceNumber == (pSetup->wIndex & 0xFF) ||
-		     if_descr->bInterfaceClass == AUDIO_CLASS)) {
+		if (iface->custom_handler == NULL) {
+			continue;
+		}
+
+		if (if_descr->bInterfaceNumber == (pSetup->wIndex & 0xFF)) {
 			return iface->custom_handler(pSetup, len, data);
+		} else {
+			/*
+			 * Audio has several interfaces.  if_descr points to
+			 * the first interface, but the request may be for
+			 * subsequent ones, so forward each request to audio.
+			 * The class does not actively engage in request
+			 * handling and therefore we can ignore return value.
+			 */
+			if (if_descr->bInterfaceClass == AUDIO_CLASS) {
+				(void)iface->custom_handler(pSetup, len, data);
+			}
 		}
 	}
 
