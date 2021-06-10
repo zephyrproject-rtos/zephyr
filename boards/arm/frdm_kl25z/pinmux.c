@@ -38,12 +38,6 @@ static int frdm_kl25z_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
-	/* UART0 RX, TX */
-	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
-	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay) && CONFIG_I2C
 	/* I2C0 SCL, SDA */
 	pinmux_pin_set(porte,  24, PORT_PCR_MUX(kPORT_MuxAlt5)
