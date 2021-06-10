@@ -83,7 +83,7 @@
 			pwm {
 				compatible = "st,stm32-pwm";
 				status = "disabled";
-				st,prescaler = <10000>;
+				st,prescaler = <0>;
 				label = "PWM_6";
 				#pwm-cells = <3>;
 			};
