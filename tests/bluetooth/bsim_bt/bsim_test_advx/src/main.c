@@ -124,7 +124,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	is_disconnected = true;
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -177,10 +177,6 @@ static void test_advx_main(void)
 	if (err) {
 		goto exit;
 	}
-	printk("success.\n");
-
-	printk("Connection callbacks register...");
-	bt_conn_cb_register(&conn_callbacks);
 	printk("success.\n");
 
 	printk("Connectable advertising...");
@@ -1099,10 +1095,6 @@ static void test_scanx_main(void)
 
 	printk("Scan callbacks register...");
 	bt_le_scan_cb_register(&scan_callbacks);
-	printk("success.\n");
-
-	printk("Connection callbacks register...");
-	bt_conn_cb_register(&conn_callbacks);
 	printk("success.\n");
 
 	printk("Periodic Advertising callbacks register...");
