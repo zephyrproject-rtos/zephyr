@@ -24,7 +24,7 @@
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <sys/util.h>
 #include <drivers/gpio.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include "stm32_hsem.h"
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL

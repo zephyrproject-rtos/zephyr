@@ -11,7 +11,7 @@
 #include <drivers/pinmux.h>
 #include <sys/sys_io.h>
 
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 
 static const struct pin_config pinconf[] = {
 	/* RF_CTX_PA */
