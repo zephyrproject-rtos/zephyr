@@ -114,6 +114,7 @@
 
 	pwm3: pwm {
 		status = "okay";
+		st,prescaler = <10000>;
 		pinctrl-0 = <&tim3_ch1_pb4>;
 	};
 };
