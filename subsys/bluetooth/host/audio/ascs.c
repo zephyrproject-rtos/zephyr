@@ -769,23 +769,23 @@ static void ase_qos(struct bt_ascs_ase *ase, const struct bt_ascs_qos *qos)
 
 		BT_ERR("QoS failed: err %d", err);
 
-		memset(cqos, 0, sizeof(*cqos));
-
 		if (err == -ENOTSUP) {
-			if (!qos->interval) {
+			if (cqos->interval == 0) {
 				reason = BT_ASCS_REASON_INTERVAL;
-			} else if (qos->framing == 0xff) {
+			} else if (cqos->framing == 0xff) {
 				reason = BT_ASCS_REASON_FRAMING;
-			} else if (!qos->phy) {
+			} else if (cqos->phy == 0) {
 				reason = BT_ASCS_REASON_PHY;
-			} else if (qos->sdu == 0xffff) {
+			} else if (cqos->sdu == 0xffff) {
 				reason = BT_ASCS_REASON_SDU;
-			} else if (!qos->latency) {
+			} else if (cqos->latency == 0) {
 				reason = BT_ASCS_REASON_LATENCY;
-			} else if (!qos->pd) {
+			} else if (cqos->pd == 0) {
 				reason = BT_ASCS_REASON_PD;
 			}
 		}
+
+		memset(cqos, 0, sizeof(*cqos));
 
 		ascs_cp_rsp_add_errno(ASE_ID(ase), BT_ASCS_QOS_OP,
 				      err, reason);
