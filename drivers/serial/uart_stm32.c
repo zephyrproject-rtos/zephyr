@@ -21,7 +21,7 @@
 #include <init.h>
 #include <drivers/uart.h>
 #include <drivers/pinmux.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include <drivers/clock_control.h>
 
 #ifdef CONFIG_UART_ASYNC_API
