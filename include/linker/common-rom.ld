@@ -115,6 +115,10 @@
 	Z_ITERABLE_SECTION_ROM(bt_l2cap_br_fixed_chan, 4)
 #endif
 
+#if defined(CONFIG_BT_CONN)
+	Z_ITERABLE_SECTION_ROM(bt_conn_cb, 4)
+#endif
+
 	Z_ITERABLE_SECTION_ROM(bt_gatt_service_static, 4)
 
 #if defined(CONFIG_BT_MESH)
