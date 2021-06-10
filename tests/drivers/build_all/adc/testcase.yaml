@@ -1,8 +1,8 @@
 common:
   build_only: true
-  tags: drivers
+  tags: drivers adc
 tests:
-  drivers.adc.build:
-    min_ram: 32
-    depends_on: adc spi
-    platform_exclude: serpente
+  drivers.adc.spi.build:
+    platform_allow: native_posix
+    tags: adc_mcp302x adc_lmp90xxx
+    extra_args: "CONFIG_SPI=y CONFIG_ADC_MCP320X=y CONFIG_ADC_LMP90XXX=y"
