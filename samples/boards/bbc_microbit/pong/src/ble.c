@@ -271,7 +271,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static struct bt_conn_cb conn_callbacks = {
+BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
 };
@@ -533,8 +533,6 @@ void ble_init(void)
 	}
 
 	k_work_init_delayable(&ble_work, ble_timeout);
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	local_attr = &pong_svc.attrs[1];
 }

@@ -52,9 +52,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected (reason %u)\n", reason);
 }
 
-static struct bt_conn_cb conn_callbacks = {
-	.connected        = connected,
-	.disconnected     = disconnected,
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected,
+	.disconnected = disconnected,
 };
 
 static int ots_obj_created(struct bt_ots *ots, struct bt_conn *conn,
@@ -265,8 +265,6 @@ void main(void)
 	int err;
 
 	printk("Starting Bluetooth Peripheral OTS example\n");
-
-	bt_conn_cb_register(&conn_callbacks);
 
 	err = bt_enable(NULL);
 	if (err) {
