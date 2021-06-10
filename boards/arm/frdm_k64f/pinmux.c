@@ -38,26 +38,6 @@ static int frdm_k64f_pinmux_init(const struct device *dev)
 	__ASSERT_NO_MSG(device_is_ready(porte));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
-	/* UART0 RX, TX */
-	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) && CONFIG_SERIAL
-	/* UART2 RX, TX */
-	pinmux_pin_set(portd, 0, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay) && CONFIG_SERIAL
-	/* UART3 RX, TX */
-	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) && CONFIG_SPI
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAlt2));
