@@ -26,11 +26,8 @@ static bool idle_entered;
 
 static const struct device *dev;
 static struct dummy_driver_api *api;
-/*
- * Weak power hook functions. Used on systems that have not implemented
- * power management.
- */
-__weak void pm_power_state_set(struct pm_state_info info)
+
+void pm_power_state_set(struct pm_state_info info)
 {
 	/* at this point, notify_pm_state_entry() implemented in
 	 * this file has been called and set_pm should have been set
@@ -51,7 +48,7 @@ __weak void pm_power_state_set(struct pm_state_info info)
 		      "Entering low power state with a wrong parameter");
 }
 
-__weak void pm_power_state_exit_post_ops(struct pm_state_info info)
+void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
 	/* pm_system_suspend is entered with irq locked
 	 * unlock irq before leave pm_system_suspend
