@@ -932,6 +932,17 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
+/** @def BT_CONN_CB_DEFINE
+ *
+ *  @brief Register a callback structure for connection events.
+ *
+ *  @param _name Name of callback structure.
+ */
+#define BT_CONN_CB_DEFINE(_name)					\
+	static const Z_STRUCT_SECTION_ITERABLE(bt_conn_cb,		\
+						_CONCAT(bt_conn_cb,	\
+							_name))
+
 /** @brief Enable/disable bonding.
  *
  *  Set/clear the Bonding flag in the Authentication Requirements of

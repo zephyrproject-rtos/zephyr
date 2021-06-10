@@ -1196,6 +1196,12 @@ static void notify_connected(struct bt_conn *conn)
 		}
 	}
 
+	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->connected) {
+			cb->connected(conn, conn->err);
+		}
+	}
+
 	if (!conn->err) {
 		bt_gatt_connected(conn);
 	}
@@ -1206,6 +1212,12 @@ static void notify_disconnected(struct bt_conn *conn)
 	struct bt_conn_cb *cb;
 
 	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->disconnected) {
+			cb->disconnected(conn, conn->err);
+		}
+	}
+
+	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->disconnected) {
 			cb->disconnected(conn, conn->err);
 		}
@@ -1226,6 +1238,12 @@ void notify_remote_info(struct bt_conn *conn)
 	}
 
 	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->remote_info_available) {
+			cb->remote_info_available(conn, &remote_info);
+		}
+	}
+
+	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->remote_info_available) {
 			cb->remote_info_available(conn, &remote_info);
 		}
@@ -1255,6 +1273,14 @@ void notify_le_param_updated(struct bt_conn *conn)
 					     conn->le.timeout);
 		}
 	}
+
+	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_param_updated) {
+			cb->le_param_updated(conn, conn->le.interval,
+					     conn->le.latency,
+					     conn->le.timeout);
+		}
+	}
 }
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
@@ -1263,6 +1289,12 @@ void notify_le_data_len_updated(struct bt_conn *conn)
 	struct bt_conn_cb *cb;
 
 	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->le_data_len_updated) {
+			cb->le_data_len_updated(conn, &conn->le.data_len);
+		}
+	}
+
+	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->le_data_len_updated) {
 			cb->le_data_len_updated(conn, &conn->le.data_len);
 		}
@@ -1280,6 +1312,12 @@ void notify_le_phy_updated(struct bt_conn *conn)
 			cb->le_phy_updated(conn, &conn->le.phy);
 		}
 	}
+
+	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_phy_updated) {
+			cb->le_phy_updated(conn, &conn->le.phy);
+		}
+	}
 }
 #endif
 
@@ -1292,6 +1330,23 @@ bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 	}
 
 	for (cb = callback_list; cb; cb = cb->_next) {
+		if (!cb->le_param_req) {
+			continue;
+		}
+
+		if (!cb->le_param_req(conn, param)) {
+			return false;
+		}
+
+		/* The callback may modify the parameters so we need to
+		 * double-check that it returned valid parameters.
+		 */
+		if (!bt_le_conn_params_valid(param)) {
+			return false;
+		}
+	}
+
+	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (!cb->le_param_req) {
 			continue;
 		}
@@ -1734,6 +1789,12 @@ void bt_conn_identity_resolved(struct bt_conn *conn)
 			cb->identity_resolved(conn, rpa, &conn->le.dst);
 		}
 	}
+
+	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->identity_resolved) {
+			cb->identity_resolved(conn, rpa, &conn->le.dst);
+		}
+	}
 }
 
 int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
@@ -1833,6 +1894,13 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 			cb->security_changed(conn, conn->sec_level, err);
 		}
 	}
+
+	Z_STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->security_changed) {
+			cb->security_changed(conn, conn->sec_level, err);
+		}
+	}
+
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (!err && conn->sec_level >= BT_SECURITY_L2) {
 		if (conn->type == BT_CONN_TYPE_LE) {
