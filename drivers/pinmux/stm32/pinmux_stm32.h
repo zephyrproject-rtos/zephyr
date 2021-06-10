@@ -179,38 +179,6 @@ int stm32_dt_pinctrl_remap(const struct soc_gpio_pinctrl *pinctrl,
 /* common pinmux device name for all STM32 chips */
 #define STM32_PINMUX_NAME "stm32-pinmux"
 
-#ifdef CONFIG_SOC_SERIES_STM32F0X
-#include "pinmux_stm32f0.h"
-#elif CONFIG_SOC_SERIES_STM32F1X
-#include "pinmux_stm32f1.h"
-#elif CONFIG_SOC_SERIES_STM32F2X
-#include "pinmux_stm32f2.h"
-#elif CONFIG_SOC_SERIES_STM32F3X
-#include "pinmux_stm32f3.h"
-#elif CONFIG_SOC_SERIES_STM32F4X
-#include "pinmux_stm32f4.h"
-#elif CONFIG_SOC_SERIES_STM32F7X
-#include "pinmux_stm32f7.h"
-#elif CONFIG_SOC_SERIES_STM32H7X
-#include "pinmux_stm32h7.h"
-#elif CONFIG_SOC_SERIES_STM32G0X
-#include "pinmux_stm32g0.h"
-#elif CONFIG_SOC_SERIES_STM32G4X
-#include "pinmux_stm32g4x.h"
-#elif CONFIG_SOC_SERIES_STM32L0X
-#include "pinmux_stm32l0.h"
-#elif CONFIG_SOC_SERIES_STM32L1X
-#include "pinmux_stm32l1x.h"
-#elif CONFIG_SOC_SERIES_STM32L4X
-#include "pinmux_stm32l4x.h"
-#elif CONFIG_SOC_SERIES_STM32L5X
-#include "pinmux_stm32l5x.h"
-#elif CONFIG_SOC_SERIES_STM32MP1X
-#include "pinmux_stm32mp1x.h"
-#elif CONFIG_SOC_SERIES_STM32WBX
-#include "pinmux_stm32wbx.h"
-#endif
-
 #ifdef __cplusplus
 }
 #endif
