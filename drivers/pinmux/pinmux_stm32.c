@@ -21,7 +21,7 @@
 #include <drivers/pinmux.h>
 #include <gpio/gpio_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include <pm/device_runtime.h>
 
 #define GPIO_DEVICE(gpio_port)						\

@@ -9,7 +9,7 @@
 #define ZEPHYR_DRIVERS_CAN_STM32FD_H_
 
 #include "can_mcan.h"
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 
 #define DEV_DATA(dev) ((struct can_stm32fd_data *)(dev)->data)
 #define DEV_CFG(dev) ((const struct can_stm32fd_config *)(dev)->config)

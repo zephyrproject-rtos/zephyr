@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <drivers/pinmux.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include "i2c_ll_stm32.h"
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
