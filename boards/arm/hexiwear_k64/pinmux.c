@@ -62,18 +62,6 @@ static int hexiwear_k64_pinmux_init(const struct device *dev)
 					| PORT_PCR_ODE_MASK);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
-	/* UART0 RX, TX */
-	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay) && CONFIG_SERIAL
-	/* UART4 RX, TX - BLE */
-	pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(porte, 25, PORT_PCR_MUX(kPORT_MuxAlt3));
-#endif
-
 #if defined(CONFIG_MAX30101) && DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay)
 	const struct device *gpioa =
 	       device_get_binding(DT_LABEL(DT_NODELABEL(gpioa)));

@@ -46,12 +46,6 @@ static int twr_kv58f220m_pinmux_init(const struct device *dev)
 					| PORT_PCR_ODE_MASK);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
-	/* UART0 RX, TX */
-	pinmux_pin_set(portb, 0, PORT_PCR_MUX(kPORT_MuxAlt7));
-	pinmux_pin_set(portb, 1, PORT_PCR_MUX(kPORT_MuxAlt7));
-#endif
-
 	return 0;
 }
 
