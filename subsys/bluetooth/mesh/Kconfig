@@ -74,7 +74,7 @@ if BT_MESH_CDB
 
 config BT_MESH_CDB_NODE_COUNT
 	int "Maximum number of nodes in the database"
-	default 1
+	default 8
 	range 1 4096
 	help
 	  This option specifies how many nodes each network can at most
