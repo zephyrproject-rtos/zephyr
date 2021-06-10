@@ -54,13 +54,6 @@ endif # APIC_TIMER_TSC
 
 endif # APIC_TIMER
 
-config APIC_TIMER_IRQ_PRIORITY
-	int "Local APIC timer interrupt priority"
-	default 4
-	help
-	  This option specifies the interrupt priority used by the
-	  local APIC timer.
-
 config APIC_TSC_DEADLINE_TIMER
 	bool "Even newer APIC timer using TSC deadline mode"
 	depends on X86
@@ -76,6 +69,14 @@ config APIC_TSC_DEADLINE_TIMER
 	  logic). SMP-safe and very fast, this should be the obvious
 	  choice for any x86 device with invariant TSC and TSC
 	  deadline capability.
+
+config APIC_TIMER_IRQ_PRIORITY
+	int "Local APIC timer interrupt priority"
+	depends on APIC_TIMER || APIC_TSC_DEADLINE_TIMER
+	default 4
+	help
+	  This option specifies the interrupt priority used by the
+	  local APIC timer.
 
 config HPET_TIMER
 	bool "HPET timer"
