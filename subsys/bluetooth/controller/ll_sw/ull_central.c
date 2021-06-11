@@ -763,6 +763,7 @@ void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	uint32_t ticker_status;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
+	memq_link_t *link;
 	uint8_t chan_sel;
 
 	/* Get reference to Tx-ed CONNECT_IND PDU */
