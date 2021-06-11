@@ -15,7 +15,7 @@ properties:
     int-gpios:
       type: phandle-array
       required: true
-      description: ￼>
+      description: |
         Interrupt pin.
 
         This pin signals active low when produced by the controller. The
