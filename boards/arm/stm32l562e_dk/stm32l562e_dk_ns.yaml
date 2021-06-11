@@ -11,5 +11,7 @@ supported:
   - lsm6dso
   - lptim
   - dac
+  - spi
+  - arduino_spi
 ram: 192
 flash: 512
