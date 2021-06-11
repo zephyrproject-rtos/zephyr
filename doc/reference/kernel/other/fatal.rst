@@ -152,11 +152,6 @@ With GCC, the output resembles:
 	  BUILD_ASSERT(FOO == 2000,
 	  ^~~~~~~~~~~~~~~~
 
-BUILD_ASSERT_MSG()
-------------------
-
-This macro is identical to ``BUILD_ASSERT()``. Its use is deprecated.
-
 Kernel Oops
 ===========
 
