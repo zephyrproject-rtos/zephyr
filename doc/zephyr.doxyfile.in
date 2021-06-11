@@ -2008,7 +2008,6 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_USE_SWITCH" \
                          "NET_MGMT_DEFINE_REQUEST_HANDLER(x)=" \
                          "DEVICE_DEFINE()=" \
-                         "BUILD_ASSERT_MSG()=" \
                          "BUILD_ASSERT()=" \
                          "__deprecated=" \
                          "__packed=" \
