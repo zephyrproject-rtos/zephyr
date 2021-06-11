@@ -69,7 +69,6 @@ As an example, the sample application `smp_svr` uses the following components:
 * Command handlers:
     * Image management (`img_mgmt`)
     * File system management (`fs_mgmt`)
-    * Log management (`log_mgmt`)
     * OS management (`os_mgmt`)
 * Transfer/Transports protocols:
     * SMP/Bluetooth
@@ -79,7 +78,7 @@ yielding the following stack diagram:
 
 ```
 +----------+----------+----------+----------+
-| img_mgmt |  fs_mgmt | log_mgmt |  os_mgmt |
+| img_mgmt |  fs_mgmt |  os_mgmt |   ...    |
 +----------+----------+----------+----------+
 |                   mgmt                    |
 +---------------------+---------------------+
