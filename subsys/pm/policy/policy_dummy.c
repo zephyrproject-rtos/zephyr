@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <kernel.h>
 #include <pm/state.h>
-#include "pm_policy.h"
+#include <pm/policy.h>
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
