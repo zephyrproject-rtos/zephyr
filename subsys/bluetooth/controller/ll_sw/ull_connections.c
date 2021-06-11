@@ -80,22 +80,22 @@ static int empty_data_start_release(struct ll_conn *conn, struct node_tx *tx);
 
 #define CONN_TX_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
 				offsetof(struct pdu_data, lldata) + \
-				(CONFIG_BT_CTLR_TX_BUFFER_SIZE + \
+				(CONFIG_BT_BUF_ACL_TX_SIZE + \
 				BT_CTLR_USER_TX_BUFFER_OVERHEAD))
 
-static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_CTLR_TX_BUFFERS);
-static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),CONFIG_BT_CTLR_TX_BUFFERS);
+static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_BUF_ACL_TX_COUNT);
+static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),CONFIG_BT_BUF_ACL_TX_COUNT);
 
 
 static struct {
 	void *free;
-	uint8_t pool[CONN_TX_BUF_SIZE * CONFIG_BT_CTLR_TX_BUFFERS];
+	uint8_t pool[CONN_TX_BUF_SIZE * CONFIG_BT_BUF_ACL_TX_COUNT];
 } mem_conn_tx;
 
 /* TODO(thoh): What is the correct size for this pool ? */
 static struct {
 	void *free;
-	uint8_t pool[sizeof(memq_link_t) * CONFIG_BT_CTLR_TX_BUFFERS];
+	uint8_t pool[sizeof(memq_link_t) * CONFIG_BT_BUF_ACL_TX_COUNT];
 } mem_link_tx;
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -446,6 +446,15 @@ void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	struct node_rx_ftr *ftr;
 	struct lll_conn *lll;
 
+	/*
+	 * EGON Todo: this functions has changed in ull_conn.c;
+	 * we need to update
+	 */
+
+	/* Store the link in the node rx so that when done event is
+	 * processed it can be used to enqueue node rx towards LL context
+	 */
+	rx->link = link;
 	ftr = &(rx->rx_ftr);
 
 	lll = *((struct lll_conn **)((uint8_t *)ftr->param +
@@ -453,13 +462,13 @@ void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	switch (lll->role) {
 #if defined(CONFIG_BT_CENTRAL)
 	case 0:
-		ull_master_setup(link, rx, ftr, lll);
+		ull_master_setup(rx, ftr, lll);
 		break;
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	case 1:
-		ull_slave_setup(link, rx, ftr, lll);
+		ull_slave_setup(rx, ftr, lll);
 		break;
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -1114,12 +1123,12 @@ static int init_reset(void)
 		 sizeof(mem_conn.pool) / sizeof(struct ll_conn), &mem_conn.free);
 
 	/* Initialize tx pool. */
-	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONFIG_BT_CTLR_TX_BUFFERS,
+	mem_init(mem_conn_tx.pool, CONN_TX_BUF_SIZE, CONFIG_BT_BUF_ACL_TX_COUNT,
 		 &mem_conn_tx.free);
 
 	/* Initialize tx link pool. */
 	mem_init(mem_link_tx.pool, sizeof(memq_link_t),
-		 CONFIG_BT_CTLR_TX_BUFFERS, &mem_link_tx.free);
+		 CONFIG_BT_BUF_ACL_TX_COUNT, &mem_link_tx.free);
 
 	/* Initialize control procedure system. */
 	ull_cp_init();

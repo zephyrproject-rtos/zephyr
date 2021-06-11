@@ -29,6 +29,7 @@
 #include "lll_sync.h"
 #include "lll_conn.h"
 
+#define EVENT_DONE_MAX 3
 /* Backing storage for elements in mfifo_done */
 static struct {
 	void *free;
