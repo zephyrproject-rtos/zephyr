@@ -14,5 +14,7 @@ supported:
   - watchdog
   - dac
   - adc
+  - spi
+  - arduino_spi
 ram: 192
 flash: 512
