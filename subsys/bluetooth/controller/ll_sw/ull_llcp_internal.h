@@ -959,13 +959,16 @@ static inline void pdu_decode_version_ind(struct ll_conn *conn, struct pdu_data 
 /*
  * Encryption Start Procedure Helper
  */
+#if defined (CONFIG_BT_CENTRAL)
 void ull_cp_priv_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 static inline void pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_enc_req(ctx, pdu);
 }
+#endif /* CONFIG_BT_CENTRAL */
 
+#if defined (CONFIG_BT_PERIPHERAL)
 void ull_cp_priv_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 static inline void ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -986,6 +989,7 @@ static inline void pdu_encode_start_enc_req(struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_start_enc_req(pdu);
 }
+#endif /* CONFIG_BT_PERIPHERAL */
 
 void ull_cp_priv_pdu_encode_start_enc_rsp(struct pdu_data *pdu);
 
@@ -994,12 +998,14 @@ static inline void pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 	return ull_cp_priv_pdu_encode_start_enc_rsp(pdu);
 }
 
+#if defined (CONFIG_BT_CENTRAL)
 void ull_cp_priv_pdu_encode_pause_enc_req(struct pdu_data *pdu);
 
 static inline void pdu_encode_pause_enc_req(struct pdu_data *pdu)
 {
 	return ull_cp_priv_pdu_encode_pause_enc_req(pdu);
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 void ull_cp_priv_pdu_encode_pause_enc_rsp(struct pdu_data *pdu);
 

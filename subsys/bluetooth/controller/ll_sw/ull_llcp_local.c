@@ -129,12 +129,12 @@ void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_rx(conn, ctx, rx);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined (CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		lp_enc_rx(conn, ctx, rx);
 		break;
-#endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_CENTRAL */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		lp_pu_rx(conn, ctx, rx);
@@ -212,12 +212,12 @@ static void lr_act_run(struct ll_conn *conn)
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_run(conn, ctx, NULL);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined (CONFIG_BT_CTLR_LE_ENC) && defined(CONFIG_BT_CENTRAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		lp_enc_run(conn, ctx, NULL);
 		break;
-#endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_CENTRAL */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		lp_pu_run(conn, ctx, NULL);
