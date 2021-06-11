@@ -36,6 +36,8 @@ Removed APIs in this release
 * Removed support for the deprecated ``DEVICE_INIT`` and ``DEVICE_AND_API_INIT`` macros.
 * Removed support for the deprecated ``BUILD_ASSERT_MSG`` macro.
 * Removed support for the deprecated ``GET_ARG1``, ``GET_ARG2`` and ``GET_ARGS_LESS_1`` macros.
+* Removed support for the deprecated Kconfig ``PRINTK64`` option.
+* Removed support for the deprecated ``bt_set_id_addr`` function.
 
 ============================
 
