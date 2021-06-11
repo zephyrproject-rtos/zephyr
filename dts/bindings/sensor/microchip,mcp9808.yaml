@@ -23,7 +23,8 @@ properties:
       type: int
       required: false
       default: 3
-      description: Sensor resolution. Default is 0.0625C (0b11),
+      description: |
+        Sensor resolution. Default is 0.0625C (0b11),
         which is the power-up default.
       enum:
         - 0 # 0.5C
