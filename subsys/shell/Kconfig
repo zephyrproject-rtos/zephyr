@@ -203,6 +203,12 @@ config SHELL_CMDS_SELECT
 	  This option enables select command. It can be used to set new root
 	  command. Exit to main command tree is with alt+r.
 
+config SHELL_CMD_ROOT
+	string "Set a root command at init"
+	help
+	  This option sets a root command at shell init,
+	  and when exiting to main command tree with alt+r.
+
 config SHELL_LOG_BACKEND
 	bool "Enable shell log backend"
 	depends on LOG && !LOG_MINIMAL
