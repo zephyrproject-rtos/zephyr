@@ -678,6 +678,10 @@ void bt_iso_cleanup(struct bt_conn *conn)
 		bt_conn_unref(iso->acl);
 		iso->acl = NULL;
 
+		if (conn->role == BT_CONN_ROLE_SLAVE) {
+			return;
+		}
+
 		/* Check if conn is last of CIG */
 		for (i = 0; i < CONFIG_BT_ISO_MAX_CHAN; i++) {
 			if (conn == &iso_conns[i]) {
