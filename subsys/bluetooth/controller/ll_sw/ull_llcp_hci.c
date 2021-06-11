@@ -914,7 +914,7 @@ int ll_tx_mem_enqueue(uint16_t handle, void *tx)
 		static struct mayfly mfy = {0, 0, &link, NULL, tx_demux};
 
 #if defined(CONFIG_BT_CTLR_FORCE_MD_AUTO)
-		if (tx_cnt >= CONFIG_BT_CTLR_TX_BUFFERS) {
+		if (tx_cnt >= CONFIG_BT_BUF_ACL_TX_COUNT) {
 			uint8_t previous, force_md_cnt;
 
 			force_md_cnt = force_md_cnt_calc(&conn->lll, tx_rate);
