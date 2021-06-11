@@ -300,7 +300,7 @@ int lll_done(void *param)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
-	lll_done_score(param, 0, 0); /* TODO */
+	lll_done_score(param, 0); /* TODO */
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Let ULL know about LLL event done */

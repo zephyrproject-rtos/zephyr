@@ -227,22 +227,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
-#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
-	(EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
-	/* check if preempt to start has changed */
-	if (lll_preempt_calc(ull, (TICKER_ID_SCAN_SYNC_BASE +
-				   ull_sync_lll_handle_get(lll)),
-			     ticks_at_event)) {
-		radio_isr_set(lll_isr_abort, lll);
-		radio_disable();
-	} else
-#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	{
-		uint32_t ret;
-
-		ret = lll_prepare_done(lll);
-		LL_ASSERT(!ret);
-	}
+	lll_prepare_done(lll, (TICKER_ID_SCAN_SYNC_BASE +
+			       ull_sync_lll_handle_get(lll)),
+			 ticks_at_event, lll_isr_abort_too_late);
 
 	DEBUG_RADIO_START_O(1);
 	return 0;
@@ -273,8 +260,6 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	/* Accumulate the latency as event is aborted while being in pipeline */
 	lll = prepare_param->param;
 	lll->skip_prepare += (prepare_param->lazy + 1);
-
-	lll_done(param);
 }
 
 static void isr_rx(void *param)
@@ -372,6 +357,7 @@ isr_rx_done:
 	lll->window_widening_event_us = 0U;
 	lll->window_size_event_us = 0U;
 
+	HDR_RESULT_SET(param, DONE_COMPLETED);
 	lll_isr_cleanup(param);
 }
 

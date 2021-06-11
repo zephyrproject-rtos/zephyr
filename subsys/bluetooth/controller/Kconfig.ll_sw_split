@@ -573,6 +573,7 @@ config BT_TICKER_SLOT_AGNOSTIC
 config BT_CTLR_JIT_SCHEDULING
 	bool "Just-in-Time Scheduling"
 	select BT_TICKER_SLOT_AGNOSTIC
+	default y if !BT_TICKER_LOW_LAT && !BT_MESH
 	help
 	  This option enables the experimental 'Next Generation' scheduling
 	  feature, which eliminates priorities and collision resolving in the
