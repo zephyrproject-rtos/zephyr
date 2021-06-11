@@ -201,12 +201,12 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_init_proc(ctx);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined (CONFIG_BT_CTLR_LE_ENC) && defined (CONFIG_BT_CENTRAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		lp_enc_init_proc(ctx);
 		break;
-#endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_CENTRAL */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		lp_pu_init_proc(ctx);
@@ -262,12 +262,12 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	case PROC_VERSION_EXCHANGE:
 		rp_comm_init_proc(ctx);
 		break;
-#if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined (CONFIG_BT_CTLR_LE_ENC) && defined (CONFIG_BT_PERIPHERAL)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
 		rp_enc_init_proc(ctx);
 		break;
-#endif /* CONFIG_BT_CTLR_LE_ENC */
+#endif /* CONFIG_BT_CTLR_LE_ENC && CONFIG_BT_PERIPHERAL */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
 		rp_pu_init_proc(ctx);
@@ -300,7 +300,6 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 
 void ull_cp_init(void)
 {
-	/**/
 	mem_init(mem_ctx.pool, PROC_CTX_BUF_SIZE, PROC_CTX_BUF_NUM, &mem_ctx.free);
 	mem_init(mem_tx.pool, TX_CTRL_BUF_SIZE, TX_CTRL_BUF_NUM, &mem_tx.free);
 }
@@ -426,7 +425,7 @@ uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 
 	return BT_HCI_ERR_SUCCESS;
 }
-#endif /* CONFIG_BT_CENTRAL) || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
+#endif /* CONFIG_BT_CENTRAL || CONFIG_BT_CTLR_SLAVE_FEAT_REQ */
 
 uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 {
@@ -442,6 +441,7 @@ uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 	return BT_HCI_ERR_SUCCESS;
 }
 #if defined (CONFIG_BT_CTLR_LE_ENC)
+#if defined (CONFIG_BT_CENTRAL)
 uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], const uint8_t ediv[2], const uint8_t ltk[16])
 {
 	struct proc_ctx *ctx;
@@ -487,6 +487,7 @@ uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], con
 
 	return BT_HCI_ERR_SUCCESS;
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 uint8_t ull_cp_encryption_paused(struct ll_conn *conn)
 {

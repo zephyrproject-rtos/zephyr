@@ -314,6 +314,7 @@ static int csrand_get(void *buf, size_t len)
 	}
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 void ull_cp_priv_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_enc_req *p;
@@ -330,7 +331,9 @@ void ull_cp_priv_pdu_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 	csrand_get(p->skdm, sizeof(p->skdm));
 	csrand_get(p->ivm, sizeof(p->ivm));
 }
+#endif /* CONFIG_BT_CENTRAL */
 
+#if defined (CONFIG_BT_PERIPHERAL)
 void ull_cp_priv_ntf_encode_enc_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_enc_req *p;
@@ -365,6 +368,7 @@ void ull_cp_priv_pdu_encode_start_enc_req(struct pdu_data *pdu)
 	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_req) + sizeof(struct pdu_data_llctrl_start_enc_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 }
+#endif /* CONFIG_BT_PERIPHERAL */
 
 void ull_cp_priv_pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 {
@@ -373,12 +377,14 @@ void ull_cp_priv_pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
 }
 
+#if defined (CONFIG_BT_CENTRAL)
 void ull_cp_priv_pdu_encode_pause_enc_req(struct pdu_data *pdu)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, pause_enc_req) + sizeof(struct pdu_data_llctrl_pause_enc_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ;
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 void ull_cp_priv_pdu_encode_pause_enc_rsp(struct pdu_data *pdu)
 {
