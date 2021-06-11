@@ -18,18 +18,6 @@
 
 LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 
-#define TMP112_I2C_ADDRESS		DT_INST_REG_ADDR(0)
-
-#define TMP112_REG_TEMPERATURE		0x00
-#define TMP112_D0_BIT			BIT(0)
-
-#define TMP112_REG_CONFIG		0x01
-#define TMP112_EM_BIT			BIT(4)
-#define TMP112_CR0_BIT			BIT(6)
-#define TMP112_CR1_BIT			BIT(7)
-
-/* scale in micro degrees Celsius */
-#define TMP112_TEMP_SCALE		62500
 
 static int tmp112_reg_read(const struct device *dev,
 			   uint8_t reg, uint16_t *val)
@@ -58,20 +46,27 @@ static int tmp112_reg_write(const struct device *dev,
 			       reg, (uint8_t *)&val_be, 2);
 }
 
-static int tmp112_reg_update(const struct device *dev, uint8_t reg,
-			     uint16_t mask, uint16_t val)
+static uint16_t set_config_flags(const struct device *dev, uint16_t mask,
+				 uint16_t value)
 {
-	uint16_t old_val = 0U;
-	uint16_t new_val;
+	struct tmp112_data *data = dev->data;
 
-	if (tmp112_reg_read(dev, reg, &old_val) < 0) {
-		return -EIO;
+	return (data->config_reg & ~mask) | (value & mask);
+}
+
+static int tmp112_update_config(const struct device *dev, uint16_t mask,
+				uint16_t val)
+{
+	int rc;
+	struct tmp112_data *data = dev->data;
+	const uint16_t new_val = set_config_flags(dev, mask, val);
+
+	rc = tmp112_reg_write(dev, TMP112_REG_CONFIG, new_val);
+	if (rc == 0) {
+		data->config_reg = val;
 	}
 
-	new_val = old_val & ~mask;
-	new_val |= val & mask;
-
-	return tmp112_reg_write(dev, reg, new_val);
+	return rc;
 }
 
 static int tmp112_attr_set(const struct device *dev,
@@ -87,26 +82,26 @@ static int tmp112_attr_set(const struct device *dev,
 	}
 
 	switch (attr) {
+#if CONFIG_TMP112_FULL_SCALE_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
 		/* the sensor supports two ranges -55 to 128 and -55 to 150 */
 		/* the value contains the upper limit */
 		if (val->val1 == 128) {
 			value = 0x0000;
 		} else if (val->val1 == 150) {
-			value = TMP112_EM_BIT;
+			value = TMP112_CONFIG_EM;
 		} else {
 			return -ENOTSUP;
 		}
 
-		if (tmp112_reg_update(dev, TMP112_REG_CONFIG,
-		                      TMP112_EM_BIT, value) < 0) {
+		if (tmp112_update_config(dev, TMP112_CONFIG_EM, value) < 0) {
 			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
-
-		return 0;
-
+		break;
+#endif
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+#if CONFIG_TMP112_SAMPLING_FREQUENCY_RUNTIME
 		/* conversion rate in mHz */
 		cr = val->val1 * 1000 + val->val2 / 1000;
 
@@ -114,33 +109,32 @@ static int tmp112_attr_set(const struct device *dev,
 		/* conversion rate */
 		switch (cr) {
 		case 250:
-			value = 0x0000;
+			value = TMP112_CONV_RATE(TMP112_CONV_RATE_025);
 			break;
 
 		case 1000:
-			value = TMP112_CR0_BIT;
+			value = TMP112_CONV_RATE(TMP112_CONV_RATE_1000);
 			break;
 
 		case 4000:
-			value = TMP112_CR1_BIT;
+			value = TMP112_CONV_RATE(TMP112_CONV_RATE_4);
 			break;
 
 		case 8000:
-			value = TMP112_CR0_BIT | TMP112_CR1_BIT;
+			value = TMP112_CONV_RATE(TMP112_CONV_RATE_8);
 			break;
 
 		default:
 			return -ENOTSUP;
 		}
 
-		if (tmp112_reg_update(dev, TMP112_REG_CONFIG,
-		                      TMP112_CR0_BIT | TMP112_CR1_BIT,
-		                      value) < 0) {
+		if (tmp112_update_config(dev, TMP112_CONV_RATE_MASK, value) < 0) {
 			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
 
-		return 0;
+		break;
+#endif
 
 	default:
 		return -ENOTSUP;
@@ -162,10 +156,12 @@ static int tmp112_sample_fetch(const struct device *dev,
 		return -EIO;
 	}
 
-	if (val & TMP112_D0_BIT) {
-		drv_data->sample = arithmetic_shift_right((int16_t)val, 3);
+	if (val & TMP112_DATA_EXTENDED) {
+		drv_data->sample = arithmetic_shift_right((int16_t)val,
+							  TMP112_DATA_EXTENDED_SHIFT);
 	} else {
-		drv_data->sample = arithmetic_shift_right((int16_t)val, 4);
+		drv_data->sample = arithmetic_shift_right((int16_t)val,
+							  TMP112_DATA_NORMAL_SHIFT);
 	}
 
 	return 0;
@@ -205,7 +201,10 @@ int tmp112_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	return 0;
+	drv_data->config_reg = TMP112_CONV_RATE(config->cr) | TMP112_CONV_RES_MASK
+			       | (config->extended_mode ? TMP112_CONFIG_EM : 0);
+
+	return tmp112_update_config(dev, 0, 0);
 }
 
 
@@ -215,6 +214,8 @@ int tmp112_init(const struct device *dev)
 	static const struct tmp112_config tmp112_cfg_##n = {				 \
 		.bus = DEVICE_DT_GET(DT_INST_BUS(n)),					 \
 		.i2c_slv_addr = DT_INST_REG_ADDR(n),					 \
+		.cr = DT_ENUM_IDX(DT_DRV_INST(n), sampling_rate),			 \
+		.extended_mode = DT_ENUM_IDX(DT_DRV_INST(n), full_scale),		 \
 	};										 \
 	DEVICE_DT_INST_DEFINE(n, tmp112_init, NULL, &tmp112_driver_##n,			 \
 			      &tmp112_cfg_##n, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
