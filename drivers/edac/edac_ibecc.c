@@ -285,33 +285,23 @@ int edac_ibecc_init(const struct device *dev)
 	uint64_t mchbar;
 	uint32_t conf_data;
 
-	LOG_INF("EDAC IBECC initialization");
-
 	conf_data = pcie_conf_read(bdf, PCIE_CONF_ID);
 	switch (conf_data) {
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU5):
-		LOG_INF("SKU5");
-		break;
+		__fallthrough;
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU6):
-		LOG_INF("SKU6");
-		break;
+		__fallthrough;
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU7):
-		LOG_INF("SKU7");
-		break;
+		__fallthrough;
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU8):
-		LOG_INF("SKU8");
-		break;
+		__fallthrough;
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU9):
-		LOG_INF("SKU9");
-		break;
+		__fallthrough;
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU10):
-		LOG_INF("SKU10");
-		break;
+		__fallthrough;
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU11):
-		LOG_INF("SKU11");
-		break;
+		__fallthrough;
 	case PCIE_ID(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_SKU12):
-		LOG_INF("SKU12");
 		break;
 	default:
 		LOG_ERR("PCI Probe failed");
