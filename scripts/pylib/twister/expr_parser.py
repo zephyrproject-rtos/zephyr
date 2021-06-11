@@ -264,11 +264,12 @@ def ast_expr(ast, env, edt):
 
         return ast_handle_dt_enabled_alias_with_parent_compat(edt, alias,
                                                               compat)
-    elif ast[0] == "dt_compat_enabled_with_label":
-        compat = ast[1][0]
-        label = ast[1][1]
+    elif ast[0] == "dt_label_with_parent_compat_enabled":
+        compat = ast[1][1]
+        label = ast[1][0]
         node = edt.label2node.get(label)
-        return node is not None and node.status == 'okay' and node.matching_compat == compat
+        parent = node.parent
+        return parent is not None and parent.status == 'okay' and parent.matching_compat == compat
     elif ast[0] == "dt_chosen_enabled":
         chosen = ast[1][0]
         node = edt.chosen_node(chosen)
