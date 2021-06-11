@@ -38,6 +38,7 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+#if defined(CONFIG_BT_CENTRAL)
 /* LLCP Local Procedure Encryption FSM states */
 enum {
 	/* Start Procedure */
@@ -78,7 +79,9 @@ enum {
 	/* Response recieved */
 	LP_ENC_EVT_PAUSE_ENC_RSP,
 };
+#endif /* CONFIG_BT_CENTRAL */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 /* LLCP Remote Procedure Encryption FSM states */
 enum {
 	/* Start Procedure */
@@ -128,7 +131,9 @@ enum {
 	/* Response recieved */
 	RP_ENC_EVT_PAUSE_ENC_RSP,
 };
+#endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_CENTRAL)
 /*
  * LLCP Local Procedure Encryption FSM
  */
@@ -587,6 +592,9 @@ void ull_cp_priv_lp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *pa
 	lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_RUN, param);
 }
 
+#endif /* CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_PERIPHERAL)
 /*
  * LLCP Remote Procedure Encryption FSM
  */
@@ -1143,3 +1151,5 @@ void ull_cp_priv_rp_enc_run(struct ll_conn *conn, struct proc_ctx *ctx, void *pa
 {
 	rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_RUN, param);
 }
+#endif /* CONFIG_BT_PERIPHERAL */
+
