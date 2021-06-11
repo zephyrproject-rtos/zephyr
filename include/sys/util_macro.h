@@ -277,24 +277,6 @@ extern "C" {
  */
 #define GET_ARGS_LESS_N(N, ...) Z_GET_ARGS_LESS_##N(__VA_ARGS__)
 
-/** Expands to the first argument.
- *
- * @deprecated Use GET_ARG_N() instead.
- */
-#define GET_ARG1(...) GET_ARG_N(1, __VA_ARGS__)
-
-/** Expands to the second argument.
- *
- * @deprecated Use GET_ARG_N() instead.
- */
-#define GET_ARG2(...) __DEPRECATED GET_ARG_N(2, __VA_ARGS__)
-
-/** Expands to all arguments except the first one.
- *
- * @deprecated Use GET_ARGS_LESS_N() instead.
- */
-#define GET_ARGS_LESS_1(...) __DEPRECATED GET_ARGS_LESS_N(1, __VA_ARGS__)
-
 /**
  * @brief Like <tt>a || b</tt>, but does evaluation and
  * short-circuiting at C preprocessor time.
