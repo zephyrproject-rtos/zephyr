@@ -11,5 +11,4 @@ are described below:
 | `CONFIG_MCUMGR` | Enable the mcumgr management library. | n |
 | `CONFIG_MCUMGR_CMD_FS_MGMT` | Enable mcumgr handlers for file management | n |
 | `CONFIG_MCUMGR_CMD_IMG_MGMT` | Enable mcumgr handlers for image management | n |
-| `CONFIG_MCUMGR_CMD_LOG_MGMT` | Enable mcumgr handlers for log management | n |
 | `CONFIG_MCUMGR_CMD_OS_MGMT` | Enable mcumgr handlers for OS management | n |
