@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <string.h>
 #include <device.h>
-#include "policy/pm_policy.h"
+#include <pm/policy.h>
 
 #if defined(CONFIG_PM)
 #define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
