@@ -199,6 +199,10 @@ function(trusted_firmware_build)
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
+    DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
+  )
+  add_custom_command(
+    OUTPUT ${TFM_BINARY_DIR}/CMakeCache.txt
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}
       -DTFM_TOOLCHAIN_FILE=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/${TFM_TOOLCHAIN_FILE}
