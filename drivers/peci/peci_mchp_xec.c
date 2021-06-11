@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(peci_mchp_xec, CONFIG_PECI_LOG_LEVEL);
 #define PECI_FCS_LEN         2
 
 struct peci_xec_config {
-	PECI_Type *base;
+	struct peci_regs *base;
 	uint8_t irq_num;
 };
 
@@ -47,11 +47,11 @@ struct peci_xec_data {
 static struct peci_xec_data peci_data;
 
 static const struct peci_xec_config peci_xec_config = {
-	.base = (PECI_Type *) DT_INST_REG_ADDR(0),
+	.base = (struct peci_regs *) DT_INST_REG_ADDR(0),
 	.irq_num = DT_INST_IRQN(0),
 };
 
-static int check_bus_idle(PECI_Type *base)
+static int check_bus_idle(struct peci_regs *base)
 {
 	uint8_t delay_cnt = PECI_IDLE_TIMEOUT;
 
@@ -76,7 +76,7 @@ static int peci_xec_configure(const struct device *dev, uint32_t bitrate)
 	ARG_UNUSED(dev);
 
 	peci_data.bitrate = bitrate;
-	PECI_Type *base = peci_xec_config.base;
+	struct peci_regs *base = peci_xec_config.base;
 	uint16_t value;
 
 	/* Power down PECI interface */
@@ -98,7 +98,7 @@ static int peci_xec_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	int ret;
-	PECI_Type *base = peci_xec_config.base;
+	struct peci_regs *base = peci_xec_config.base;
 
 	/* Make sure no transaction is interrupted before disabling the HW */
 	ret = check_bus_idle(base);
@@ -118,7 +118,7 @@ static int peci_xec_disable(const struct device *dev)
 static int peci_xec_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
-	PECI_Type *base = peci_xec_config.base;
+	struct peci_regs *base = peci_xec_config.base;
 
 	base->CONTROL &= ~MCHP_PECI_CTRL_PD;
 
@@ -130,7 +130,7 @@ static int peci_xec_enable(const struct device *dev)
 
 static void peci_xec_bus_recovery(const struct device *dev, bool full_reset)
 {
-	PECI_Type *base = peci_xec_config.base;
+	struct peci_regs *base = peci_xec_config.base;
 
 	LOG_WRN("%s full_reset:%d", __func__, full_reset);
 	if (full_reset) {
@@ -153,7 +153,7 @@ static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 
 	struct peci_buf *tx_buf = &msg->tx_buffer;
 	struct peci_buf *rx_buf = &msg->rx_buffer;
-	PECI_Type *base = peci_xec_config.base;
+	struct peci_regs *base = peci_xec_config.base;
 
 	/* Check if FIFO is full */
 	if (base->STATUS2 & MCHP_PECI_STS2_WFF) {
@@ -227,7 +227,7 @@ static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 	uint8_t bytes_rcvd;
 	uint8_t wait_timeout_cnt;
 	struct peci_buf *rx_buf = &msg->rx_buffer;
-	PECI_Type *base = peci_xec_config.base;
+	struct peci_regs *base = peci_xec_config.base;
 
 	/* Attempt to read data from RX FIFO */
 	bytes_rcvd = 0;
@@ -279,7 +279,7 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 {
 	ARG_UNUSED(dev);
 	int ret;
-	PECI_Type *base = peci_xec_config.base;
+	struct peci_regs *base = peci_xec_config.base;
 	uint8_t err_val;
 
 	ret = peci_xec_write(dev, msg);
@@ -337,7 +337,7 @@ static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 static void peci_xec_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-	PECI_Type *base = peci_xec_config.base;
+	struct peci_regs *base = peci_xec_config.base;
 
 	MCHP_GIRQ_SRC(MCHP_PECI_GIRQ) = MCHP_PECI_GIRQ_VAL;
 
@@ -367,7 +367,7 @@ static int peci_xec_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	PECI_Type *base = peci_xec_config.base;
+	struct peci_regs *base = peci_xec_config.base;
 #ifdef CONFIG_PECI_INTERRUPT_DRIVEN
 	k_sem_init(&peci_data.tx_lock, 0, 1);
 #endif

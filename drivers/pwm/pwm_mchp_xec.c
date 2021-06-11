@@ -47,7 +47,7 @@ struct pwm_xec_config {
 };
 
 #define PWM_XEC_REG_BASE(_dev)				\
-	((PWM_Type *)			\
+	((struct pwm_regs *)			\
 	 ((const struct pwm_xec_config * const)		\
 	  _dev->config)->base_address)
 
@@ -237,7 +237,7 @@ static void xec_compute_and_set_parameters(const struct device *dev,
 					   uint32_t target_freq,
 					   uint32_t on, uint32_t off)
 {
-	PWM_Type *pwm_regs = PWM_XEC_REG_BASE(dev);
+	struct pwm_regs *pwm_regs = PWM_XEC_REG_BASE(dev);
 	bool compute_high, compute_low;
 	struct xec_params hc_params;
 	struct xec_params lc_params;
@@ -310,7 +310,7 @@ static int pwm_xec_pin_set(const struct device *dev, uint32_t pwm,
 			   uint32_t period_cycles, uint32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
-	PWM_Type *pwm_regs = PWM_XEC_REG_BASE(dev);
+	struct pwm_regs *regs = PWM_XEC_REG_BASE(dev);
 	uint32_t target_freq;
 	uint32_t on, off;
 
@@ -337,13 +337,13 @@ static int pwm_xec_pin_set(const struct device *dev, uint32_t pwm,
 	}
 
 	if ((pulse_cycles == 0U) && (period_cycles == 0U)) {
-		pwm_regs->CONFIG &= ~MCHP_PWM_CFG_ENABLE;
+		regs->CONFIG &= ~MCHP_PWM_CFG_ENABLE;
 	} else if ((pulse_cycles == 0U) && (period_cycles > 0U)) {
-		pwm_regs->COUNT_ON = 0;
-		pwm_regs->COUNT_OFF = 1;
+		regs->COUNT_ON = 0;
+		regs->COUNT_OFF = 1;
 	} else if ((pulse_cycles > 0U) && (period_cycles == 0U)) {
-		pwm_regs->COUNT_ON = 1;
-		pwm_regs->COUNT_OFF = 0;
+		regs->COUNT_ON = 1;
+		regs->COUNT_OFF = 0;
 	} else {
 		xec_compute_and_set_parameters(dev, target_freq, on, off);
 	}

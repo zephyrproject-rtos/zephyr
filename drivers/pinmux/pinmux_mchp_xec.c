@@ -19,7 +19,7 @@ static const uint32_t valid_ctrl_masks[NUM_MCHP_GPIO_PORTS] = {
 };
 
 struct pinmux_xec_config {
-	__IO uint32_t *pcr1_base;
+	volatile uint32_t *pcr1_base;
 	uint32_t port_num;
 };
 
@@ -27,7 +27,7 @@ static int pinmux_xec_set(const struct device *dev, uint32_t pin,
 			  uint32_t func)
 {
 	const struct pinmux_xec_config *config = dev->config;
-	__IO uint32_t *current_pcr1;
+	volatile uint32_t *current_pcr1;
 	uint32_t pcr1 = 0;
 	uint32_t mask = 0;
 
@@ -82,7 +82,7 @@ static int pinmux_xec_get(const struct device *dev, uint32_t pin,
 			  uint32_t *func)
 {
 	const struct pinmux_xec_config *config = dev->config;
-	__IO uint32_t *current_pcr1;
+	volatile uint32_t *current_pcr1;
 
 	/* Validate pin number in terms of current port */
 	if ((valid_ctrl_masks[config->port_num] & BIT(pin)) == 0) {

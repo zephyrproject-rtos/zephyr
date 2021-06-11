@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(ps2_mchp_xec);
 #define PS2_TIMEOUT 10000
 
 struct ps2_xec_config {
-	PS2_Type *base;
+	struct ps2_regs *base;
 	uint8_t girq_id;
 	uint8_t girq_bit;
 	uint8_t isr_nvic;
@@ -35,7 +35,7 @@ static int ps2_xec_configure(const struct device *dev,
 {
 	const struct ps2_xec_config *config = dev->config;
 	struct ps2_xec_data *data = dev->data;
-	PS2_Type *base = config->base;
+	struct ps2_regs *base = config->base;
 
 	uint8_t  __attribute__((unused)) dummy;
 
@@ -72,7 +72,7 @@ static int ps2_xec_write(const struct device *dev, uint8_t value)
 {
 	const struct ps2_xec_config *config = dev->config;
 	struct ps2_xec_data *data = dev->data;
-	PS2_Type *base = config->base;
+	struct ps2_regs *base = config->base;
 	int i = 0;
 
 	uint8_t  __attribute__((unused)) dummy;
@@ -121,7 +121,7 @@ static int ps2_xec_inhibit_interface(const struct device *dev)
 {
 	const struct ps2_xec_config *config = dev->config;
 	struct ps2_xec_data *data = dev->data;
-	PS2_Type *base = config->base;
+	struct ps2_regs *base = config->base;
 
 	if (k_sem_take(&data->tx_lock, K_MSEC(10)) != 0) {
 		return -EACCES;
@@ -140,7 +140,7 @@ static int ps2_xec_enable_interface(const struct device *dev)
 {
 	const struct ps2_xec_config *config = dev->config;
 	struct ps2_xec_data *data = dev->data;
-	PS2_Type *base = config->base;
+	struct ps2_regs *base = config->base;
 
 	MCHP_GIRQ_SRC(config->girq_id) = BIT(config->girq_bit);
 	base->CTRL = MCHP_PS2_CTRL_EN;
@@ -153,7 +153,7 @@ static void ps2_xec_isr(const struct device *dev)
 {
 	const struct ps2_xec_config *config = dev->config;
 	struct ps2_xec_data *data = dev->data;
-	PS2_Type *base = config->base;
+	struct ps2_regs *base = config->base;
 	uint32_t status;
 
 	MCHP_GIRQ_SRC(config->girq_id) = BIT(config->girq_bit);
@@ -191,7 +191,7 @@ static const struct ps2_driver_api ps2_xec_driver_api = {
 static int ps2_xec_init_0(const struct device *dev);
 
 static const struct ps2_xec_config ps2_xec_config_0 = {
-	.base = (PS2_Type *) DT_INST_REG_ADDR(0),
+	.base = (struct ps2_regs *) DT_INST_REG_ADDR(0),
 	.girq_id = DT_INST_PROP(0, girq),
 	.girq_bit = DT_INST_PROP(0, girq_bit),
 	.isr_nvic = DT_INST_IRQN(0),
@@ -229,7 +229,7 @@ static int ps2_xec_init_0(const struct device *dev)
 static int ps2_xec_init_1(const struct device *dev);
 
 static const struct ps2_xec_config ps2_xec_config_1 = {
-	.base = (PS2_Type *) DT_INST_REG_ADDR(1),
+	.base = (struct ps2_regs *) DT_INST_REG_ADDR(1),
 	.girq_id = DT_INST_PROP(1, girq),
 	.girq_bit = DT_INST_PROP(1, girq_bit),
 	.isr_nvic = DT_INST_IRQN(1),

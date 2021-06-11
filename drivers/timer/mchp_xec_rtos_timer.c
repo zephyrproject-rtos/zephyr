@@ -50,7 +50,7 @@ BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 #define TIMER_REGS	\
-	((RTMR_Type *) DT_INST_REG_ADDR(0))
+	((struct rtmr_regs *) DT_INST_REG_ADDR(0))
 
 /* Mask off bits[31:28] of 32-bit count */
 #define TIMER_MAX	0x0FFFFFFFUL
@@ -338,20 +338,22 @@ int sys_clock_driver_init(const struct device *dev)
 	irq_enable(RTMR_IRQn);
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-	uint32_t btmr_ctrl = B32TMR0_REGS->CTRL = (MCHP_BTMR_CTRL_ENABLE
-			  | MCHP_BTMR_CTRL_AUTO_RESTART
-			  | MCHP_BTMR_CTRL_COUNT_UP
-			  | (47UL << MCHP_BTMR_CTRL_PRESCALE_POS));
-	B32TMR0_REGS->CTRL = MCHP_BTMR_CTRL_SOFT_RESET;
-	B32TMR0_REGS->CTRL = btmr_ctrl;
-	B32TMR0_REGS->PRLD = 0xFFFFFFFFUL;
+	struct btmr_regs *btregs = (struct btmr_regs *)MCHP_B32TMR_ADDR(0);
+	uint32_t btmr_ctrl = btregs->CTRL =
+			(MCHP_BTMR_CTRL_ENABLE
+			 | MCHP_BTMR_CTRL_AUTO_RESTART
+			 | MCHP_BTMR_CTRL_COUNT_UP
+			 | (47UL << MCHP_BTMR_CTRL_PRESCALE_POS));
+	btregs->CTRL = MCHP_BTMR_CTRL_SOFT_RESET;
+	btregs->CTRL = btmr_ctrl;
+	btregs->PRLD = 0xFFFFFFFFUL;
 	btmr_ctrl |= MCHP_BTMR_CTRL_START;
 
 	timer_restart(cached_icr);
 	/* wait for Hibernation timer to load count register from preload */
 	while (TIMER_REGS->CNT == 0)
 		;
-	B32TMR0_REGS->CTRL = btmr_ctrl;
+	btregs->CTRL = btmr_ctrl;
 #else
 	timer_restart(cached_icr);
 #endif
@@ -377,10 +379,11 @@ void arch_busy_wait(uint32_t usec_to_wait)
 		return;
 	}
 
-	uint32_t start = B32TMR0_REGS->CNT;
+	struct btmr_regs *btregs = (struct btmr_regs *)MCHP_B32TMR_ADDR(0);
+	uint32_t start = btregs->CNT;
 
 	for (;;) {
-		uint32_t curr = B32TMR0_REGS->CNT;
+		uint32_t curr = btregs->CNT;
 
 		if ((curr - start) >= usec_to_wait) {
 			break;

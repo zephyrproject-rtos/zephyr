@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 
 /* Device constant configuration parameters */
 struct spi_qmspi_config {
-	QMSPI_Type *regs;
+	struct qmspi_regs *regs;
 	uint32_t cs_timing;
 	uint8_t girq;
 	uint8_t girq_pos;
@@ -33,7 +33,7 @@ struct spi_qmspi_data {
 	struct spi_context ctx;
 };
 
-static inline uint32_t descr_rd(QMSPI_Type *regs, uint32_t did)
+static inline uint32_t descr_rd(struct qmspi_regs *regs, uint32_t did)
 {
 	uintptr_t raddr = (uintptr_t)regs + MCHP_QMSPI_DESC0_OFS +
 			  ((did & MCHP_QMSPI_C_NEXT_DESCR_MASK0) << 2);
@@ -41,7 +41,7 @@ static inline uint32_t descr_rd(QMSPI_Type *regs, uint32_t did)
 	return REG32(raddr);
 }
 
-static inline void descr_wr(QMSPI_Type *regs, uint32_t did, uint32_t val)
+static inline void descr_wr(struct qmspi_regs *regs, uint32_t did, uint32_t val)
 {
 	uintptr_t raddr = (uintptr_t)regs + MCHP_QMSPI_DESC0_OFS +
 			  ((did & MCHP_QMSPI_C_NEXT_DESCR_MASK0) << 2);
@@ -49,12 +49,12 @@ static inline void descr_wr(QMSPI_Type *regs, uint32_t did, uint32_t val)
 	REG32(raddr) = val;
 }
 
-static inline void txb_wr8(QMSPI_Type *regs, uint8_t data8)
+static inline void txb_wr8(struct qmspi_regs *regs, uint8_t data8)
 {
 	REG8(&regs->TX_FIFO) = data8;
 }
 
-static inline uint8_t rxb_rd8(QMSPI_Type *regs)
+static inline uint8_t rxb_rd8(struct qmspi_regs *regs)
 {
 	return REG8(&regs->RX_FIFO);
 }
@@ -65,7 +65,7 @@ static inline uint8_t rxb_rd8(QMSPI_Type *regs)
  * mode register is defined as: 0=maximum divider of 256. Values 1 through
  * 255 divide 48MHz by that value.
  */
-static void qmspi_set_frequency(QMSPI_Type *regs, uint32_t freq_hz)
+static void qmspi_set_frequency(struct qmspi_regs *regs, uint32_t freq_hz)
 {
 	uint32_t div, qmode;
 
@@ -116,7 +116,7 @@ const uint8_t smode48_tbl[4] = {
 	0x04u, 0x02u, 0x05u, 0x03u
 };
 
-static void qmspi_set_signalling_mode(QMSPI_Type *regs, uint32_t smode)
+static void qmspi_set_signalling_mode(struct qmspi_regs *regs, uint32_t smode)
 {
 	const uint8_t *ptbl;
 	uint32_t m;
@@ -170,7 +170,7 @@ static int qmspi_configure(const struct device *dev,
 {
 	const struct spi_qmspi_config *cfg = dev->config;
 	struct spi_qmspi_data *data = dev->data;
-	QMSPI_Type *regs = cfg->regs;
+	struct qmspi_regs *regs = cfg->regs;
 	uint32_t smode;
 
 	if (spi_context_configured(&data->ctx, config)) {
@@ -237,7 +237,7 @@ static int qmspi_configure(const struct device *dev,
  * Quad mode: 4 bits per clock  -> IFM fiels = 1xb. Max 0x1fff clocks
  * QMSPI unit size set to bits.
  */
-static int qmspi_tx_dummy_clocks(QMSPI_Type *regs, uint32_t nclocks)
+static int qmspi_tx_dummy_clocks(struct qmspi_regs *regs, uint32_t nclocks)
 {
 	uint32_t descr, ifm, qstatus;
 
@@ -315,7 +315,7 @@ static uint32_t get_qunits(uint32_t qshift)
  * by the first descriptor field of the control register, the next descriptor
  * fields in each descriptor, and the descriptors last flag.
  */
-static int qmspi_descr_alloc(QMSPI_Type *regs, const struct spi_buf *txb,
+static int qmspi_descr_alloc(struct qmspi_regs *regs, const struct spi_buf *txb,
 			     int didx, bool is_tx)
 {
 	uint32_t descr, qshift, n, nu;
@@ -370,7 +370,7 @@ static int qmspi_descr_alloc(QMSPI_Type *regs, const struct spi_buf *txb,
 	return dn;
 }
 
-static int qmspi_tx(QMSPI_Type *regs, const struct spi_buf *tx_buf,
+static int qmspi_tx(struct qmspi_regs *regs, const struct spi_buf *tx_buf,
 		    bool close)
 {
 	const uint8_t *p = tx_buf->buf;
@@ -444,7 +444,7 @@ static int qmspi_tx(QMSPI_Type *regs, const struct spi_buf *tx_buf,
 	return 0;
 }
 
-static int qmspi_rx(QMSPI_Type *regs, const struct spi_buf *rx_buf,
+static int qmspi_rx(struct qmspi_regs *regs, const struct spi_buf *rx_buf,
 		    bool close)
 {
 	uint8_t *p = rx_buf->buf;
@@ -510,7 +510,7 @@ static int qmspi_transceive(const struct device *dev,
 {
 	const struct spi_qmspi_config *cfg = dev->config;
 	struct spi_qmspi_data *data = dev->data;
-	QMSPI_Type *regs = cfg->regs;
+	struct qmspi_regs *regs = cfg->regs;
 	const struct spi_buf *ptx;
 	const struct spi_buf *prx;
 	size_t nb;
@@ -594,7 +594,7 @@ static int qmspi_release(const struct device *dev,
 {
 	struct spi_qmspi_data *data = dev->data;
 	const struct spi_qmspi_config *cfg = dev->config;
-	QMSPI_Type *regs = cfg->regs;
+	struct qmspi_regs *regs = cfg->regs;
 
 	/* Force CS# to de-assert on next unit boundary */
 	regs->EXE = MCHP_QMSPI_EXE_STOP;
@@ -618,7 +618,7 @@ static int qmspi_init(const struct device *dev)
 {
 	const struct spi_qmspi_config *cfg = dev->config;
 	struct spi_qmspi_data *data = dev->data;
-	QMSPI_Type *regs = cfg->regs;
+	struct qmspi_regs *regs = cfg->regs;
 
 	mchp_pcr_periph_slp_ctrl(PCR_QMSPI, MCHP_PCR_SLEEP_DIS);
 
@@ -659,7 +659,7 @@ static const struct spi_driver_api spi_qmspi_driver_api = {
 #if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay)
 
 static const struct spi_qmspi_config spi_qmspi_0_config = {
-	.regs = (QMSPI_Type *)DT_INST_REG_ADDR(0),
+	.regs = (struct qmspi_regs *)DT_INST_REG_ADDR(0),
 	.cs_timing = XEC_QMSPI_0_CS_TIMING,
 	.girq = MCHP_QMSPI_GIRQ_NUM,
 	.girq_pos = MCHP_QMSPI_GIRQ_POS,

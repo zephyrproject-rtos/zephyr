@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(wdt_mchp_xec);
 #include <errno.h>
 
 #define WDT_XEC_REG_BASE						\
-	((WDT_Type *)(DT_INST_REG_ADDR(0)))
+	((struct wdt_regs *)(DT_INST_REG_ADDR(0)))
 
 struct wdt_xec_data {
 	wdt_callback_t cb;
@@ -26,7 +26,7 @@ struct wdt_xec_data {
 
 static int wdt_xec_setup(const struct device *dev, uint8_t options)
 {
-	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
+	struct wdt_regs *wdt_regs = WDT_XEC_REG_BASE;
 	struct wdt_xec_data *data = dev->data;
 
 	if (wdt_regs->CTRL & MCHP_WDT_CTRL_EN) {
@@ -58,7 +58,7 @@ static int wdt_xec_setup(const struct device *dev, uint8_t options)
 
 static int wdt_xec_disable(const struct device *dev)
 {
-	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
+	struct wdt_regs *wdt_regs = WDT_XEC_REG_BASE;
 	struct wdt_xec_data *data = dev->data;
 
 	if (!(wdt_regs->CTRL & MCHP_WDT_CTRL_EN)) {
@@ -76,7 +76,7 @@ static int wdt_xec_disable(const struct device *dev)
 static int wdt_xec_install_timeout(const struct device *dev,
 				   const struct wdt_timeout_cfg *config)
 {
-	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
+	struct wdt_regs *wdt_regs = WDT_XEC_REG_BASE;
 	struct wdt_xec_data *data = dev->data;
 
 	if (wdt_regs->CTRL & MCHP_WDT_CTRL_EN) {
@@ -119,7 +119,7 @@ static int wdt_xec_install_timeout(const struct device *dev,
 
 static int wdt_xec_feed(const struct device *dev, int channel_id)
 {
-	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
+	struct wdt_regs *wdt_regs = WDT_XEC_REG_BASE;
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(channel_id);
@@ -137,7 +137,7 @@ static int wdt_xec_feed(const struct device *dev, int channel_id)
 
 static void wdt_xec_isr(const struct device *dev)
 {
-	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
+	struct wdt_regs *wdt_regs = WDT_XEC_REG_BASE;
 	struct wdt_xec_data *data = dev->data;
 
 	LOG_DBG("WDT ISR");

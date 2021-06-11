@@ -23,7 +23,9 @@
 
 #define VW_MAX_GIRQS                2ul
 /* Missing HAL value */
+#ifndef MEC_ESPI_MSVW08_SRC1_VAL
 #define MEC_ESPI_MSVW08_SRC1_VAL    BIT(5)
+#endif
 
 /* 200ms */
 #define MAX_OOB_TIMEOUT             200ul
@@ -435,14 +437,16 @@ static int espi_xec_send_vwire(const struct device *dev,
 	}
 
 	if (signal_info.dir == ESPI_MASTER_TO_SLAVE) {
-		ESPI_MSVW_REG *reg = &(ESPI_M2S_VW_REGS->MSVW00) + xec_id;
+		struct espi_msvw_reg *reg =
+			&(ESPI_M2S_VW_REGS->MSVW00) + xec_id;
 		uint8_t *p8 = (uint8_t *)&reg->SRC;
 
 		*(p8 + (uintptr_t) src_id) = level;
 	}
 
 	if (signal_info.dir == ESPI_SLAVE_TO_MASTER) {
-		ESPI_SMVW_REG *reg = &(ESPI_S2M_VW_REGS->SMVW00) + xec_id;
+		struct espi_smvw_reg *reg =
+			&(ESPI_S2M_VW_REGS->SMVW00) + xec_id;
 		uint8_t *p8 = (uint8_t *)&reg->SRC;
 
 		*(p8 + (uintptr_t) src_id) = level;
@@ -473,12 +477,14 @@ static int espi_xec_receive_vwire(const struct device *dev,
 	}
 
 	if (signal_info.dir == ESPI_MASTER_TO_SLAVE) {
-		ESPI_MSVW_REG *reg = &(ESPI_M2S_VW_REGS->MSVW00) + xec_id;
+		struct espi_msvw_reg *reg =
+			&(ESPI_M2S_VW_REGS->MSVW00) + xec_id;
 		*level = ((reg->SRC >> (src_id << 3)) & 0x01ul);
 	}
 
 	if (signal_info.dir == ESPI_SLAVE_TO_MASTER) {
-		ESPI_SMVW_REG *reg = &(ESPI_S2M_VW_REGS->SMVW00) + xec_id;
+		struct espi_smvw_reg *reg =
+			&(ESPI_S2M_VW_REGS->SMVW00) + xec_id;
 		*level = ((reg->SRC >> (src_id << 3)) & 0x01ul);
 	}
 
@@ -984,7 +990,8 @@ static void espi_oob_down_isr(const struct device *dev)
 #ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
 		k_sem_give(&data->rx_lock);
 #else
-		evt.evt_details = ESPI_OOB_REGS->RX_LEN & MCHP_ESPI_OOB_RX_LEN_MASK;
+		evt.evt_details = ESPI_OOB_REGS->RX_LEN &
+				  MCHP_ESPI_OOB_RX_LEN_MASK;
 		espi_send_callbacks(&data->callbacks, dev, evt);
 #endif
 	}
@@ -1301,7 +1308,8 @@ const struct espi_isr peripherals_isr[] = {
 static uint8_t bus_isr_cnt = sizeof(espi_bus_isr) / sizeof(struct espi_isr);
 static uint8_t m2s_vwires_isr_cnt =
 	sizeof(m2s_vwires_isr) / sizeof(struct espi_isr);
-static uint8_t periph_isr_cnt = sizeof(peripherals_isr) / sizeof(struct espi_isr);
+static uint8_t periph_isr_cnt =
+	sizeof(peripherals_isr) / sizeof(struct espi_isr);
 
 static void espi_xec_bus_isr(const struct device *dev)
 {
@@ -1482,7 +1490,8 @@ static int espi_xec_init(const struct device *dev)
 		uint8_t signal = vw_wires_int_en[i];
 		struct xec_signal signal_info = vw_tbl[signal];
 		uint8_t xec_id = signal_info.xec_reg_idx;
-		ESPI_MSVW_REG *reg = &(ESPI_M2S_VW_REGS->MSVW00) + xec_id;
+		struct espi_msvw_reg *reg =
+			&(ESPI_M2S_VW_REGS->MSVW00) + xec_id;
 
 		mec_espi_msvw_irq_sel_set(reg, signal_info.bit,
 					  MSVW_IRQ_SEL_EDGE_BOTH);

@@ -57,8 +57,7 @@ struct kscan_xec_data {
 	K_KERNEL_STACK_MEMBER(thread_stack, TASK_STACK_SIZE);
 };
 
-static KSCAN_Type *base = (KSCAN_Type *)
-	(DT_INST_REG_ADDR(0));
+static struct kscan_regs *base = (struct kscan_regs *)(DT_INST_REG_ADDR(0));
 
 static struct kscan_xec_data kbd_data;
 
