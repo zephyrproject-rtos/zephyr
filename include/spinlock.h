@@ -114,16 +114,10 @@ typedef struct z_spinlock_key k_spinlock_key_t;
  * @return A key value that must be passed to k_spin_unlock() when the
  *         lock is released.
  */
-static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
+static ALWAYS_INLINE k_spinlock_key_t __k_spin_lock(struct k_spinlock *l)
 {
 	ARG_UNUSED(l);
 	k_spinlock_key_t k;
-
-	/* Note that we need to use the underlying arch-specific lock
-	 * implementation.  The "irq_lock()" API in SMP context is
-	 * actually a wrapper for a global spinlock!
-	 */
-	k.key = arch_irq_lock();
 
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock %p", l);
@@ -140,8 +134,32 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 #ifdef CONFIG_SPIN_VALIDATE
 	z_spin_lock_set_owner(l);
 #endif
+	k.key = 0;
+
 	return k;
 }
+
+static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
+{
+	return __k_spin_lock(l);
+}
+
+static ALWAYS_INLINE k_spinlock_key_t k_spin_lock_irqsave(struct k_spinlock *l)
+{
+	ARG_UNUSED(l);
+	k_spinlock_key_t k;
+
+	/* Note that we need to use the underlying arch-specific lock
+	 * implementation.  The "irq_lock()" API in SMP context is
+	 * actually a wrapper for a global spinlock!
+	 */
+	k.key = arch_irq_lock();
+
+	__k_spin_lock(l);
+
+	return k;
+}
+
 
 /**
  * @brief Unlock a spin lock
@@ -164,10 +182,11 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
  * @param key The value returned from k_spin_lock() when this lock was
  *        acquired
  */
-static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
+static ALWAYS_INLINE void __k_spin_unlock(struct k_spinlock *l,
 					k_spinlock_key_t key)
 {
 	ARG_UNUSED(l);
+	ARG_UNUSED(key);
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 #endif
@@ -182,8 +201,23 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 	 */
 	atomic_clear(&l->locked);
 #endif
+}
+
+static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
+					k_spinlock_key_t key)
+{
+	__k_spin_unlock(l, key);
+}
+
+static ALWAYS_INLINE void k_spin_unlock_irqrestore(struct k_spinlock *l,
+					k_spinlock_key_t key)
+{
+	__k_spin_unlock(l, key);
+
 	arch_irq_unlock(key.key);
 }
+
+
 
 /* Internal function: releases the lock, but leaves local interrupts
  * disabled
