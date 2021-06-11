@@ -134,3 +134,9 @@
 	pinctrl-0 = <&adc1_in13_pc4>;
 	status = "okay";
 };
+
+&spi3 {
+	pinctrl-0 = <&spi3_sck_pg9 &spi3_mosi_pb5 &spi3_miso_pb4>;
+	cs-gpios = <&gpioe 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
