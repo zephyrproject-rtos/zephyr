@@ -3812,7 +3812,9 @@ struct k_work_user {
 
 #define Z_WORK_USER_INITIALIZER(work_handler) \
 	{ \
+	._reserved = NULL, \
 	.handler = work_handler, \
+	.flags = 0 \
 	}
 
 /**
