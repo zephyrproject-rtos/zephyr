@@ -1048,11 +1048,6 @@ static int lwm2m_send_message(struct lwm2m_message *msg)
 	rc = send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
 
 	if (rc < 0) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			LOG_WRN("Failed to send packet, would block");
-			return -errno;
-		}
-
 		LOG_ERR("Failed to send packet, err %d", errno);
 		if (msg->type != COAP_TYPE_CON) {
 			lwm2m_reset_message(msg, true);
