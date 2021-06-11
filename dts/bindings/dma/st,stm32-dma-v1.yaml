@@ -88,7 +88,7 @@ properties:
     dma-offset:
       type: int
       required: false
-      description: >
+      description: |
         offset in the table of channels when mapping to a DMAMUX
         for 1st dma instance, offset is 0,
         for 2nd dma instance, offset is the nb of dma channels of the 1st dma,
