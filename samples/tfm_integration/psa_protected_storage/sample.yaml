@@ -21,5 +21,4 @@ common:
 
 tests:
   sample.tfm.protected_storage:
-    extra_args: "CONFIG_TEST=y"
-    tags: tfm ci_build
+    tags: tfm
