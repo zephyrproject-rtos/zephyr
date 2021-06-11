@@ -74,6 +74,9 @@ config USB_NRFX
 config USB_DEVICE_STACK
 	default USB
 
+config USB_NRFX_ATTACHED_EVENT_DELAY
+	default 700 if USB
+
 config I2C
 	default y
 
