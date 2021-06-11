@@ -40,4 +40,3 @@ shell_mgmt_register_group(void);
 #endif
 
 #endif /* H_SHELL_MGMT_ */
-

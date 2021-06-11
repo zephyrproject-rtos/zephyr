@@ -24,14 +24,14 @@
 
 TEST_SUITE(test_cborattr_suite)
 {
-    test_cborattr_decode1();
-    test_cborattr_decode_partial();
-    test_cborattr_decode_simple();
-    test_cborattr_decode_object();
-    test_cborattr_decode_int_array();
-    test_cborattr_decode_bool_array();
-    test_cborattr_decode_string_array();
-    test_cborattr_decode_object_array();
-    test_cborattr_decode_unnamed_array();
-    test_cborattr_decode_substring_key();
+	test_cborattr_decode1();
+	test_cborattr_decode_partial();
+	test_cborattr_decode_simple();
+	test_cborattr_decode_object();
+	test_cborattr_decode_int_array();
+	test_cborattr_decode_bool_array();
+	test_cborattr_decode_string_array();
+	test_cborattr_decode_object_array();
+	test_cborattr_decode_unnamed_array();
+	test_cborattr_decode_substring_key();
 }
