@@ -621,6 +621,47 @@
 			pin = <5>;
 			label = "PSL_OUT";
 		};
+
+		ps2_ctrl0: ps2@400b1000 {
+			compatible = "nuvoton,npcx-ps2-ctrl";
+			reg = <0x400b1000 0x1000>;
+			interrupts = <21 4>;
+			clocks = <&pcc NPCX_CLOCK_BUS_FREERUN NPCX_PWDWN_CTL1 3>;
+			label = "PS2_CTRL_0";
+
+			/* PS2 Channels - Please use them as PS2 node */
+			ps2_channel0: io_ps2_channel0 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x00>;
+				pinctrl-0 = <&alt3_ps2_0_sl>; /* PIN67.70 */
+				label = "PS2_CHANNEL_0";
+				status = "disabled";
+			};
+
+			ps2_channel1: io_ps2_channel1 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x01>;
+				pinctrl-0 = <&alt3_ps2_1_sl>; /* PIN62.63 */
+				label = "PS2_CHANNEL_1";
+				status = "disabled";
+			};
+
+			ps2_channel2: io_ps2_channel2 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x02>;
+				pinctrl-0 = <&alt3_ps2_2_sl>; /* PIN37.34 */
+				label = "PS2_CHANNEL_2";
+				status = "disabled";
+			};
+
+			ps2_channel3: io_ps2_channel3 {
+				compatible = "nuvoton,npcx-ps2-channel";
+				channel = <0x03>;
+				pinctrl-0 = <&altc_ps2_3_sl2>; /* PINA6.A7 */
+				label = "PS2_CHANNEL_3";
+				status = "disabled";
+			};
+		};
 	};
 };
 
