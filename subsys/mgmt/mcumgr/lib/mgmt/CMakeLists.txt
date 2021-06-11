@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-target_include_directories(MCUMGR INTERFACE 
+target_include_directories(MCUMGR INTERFACE
     include
 )
 

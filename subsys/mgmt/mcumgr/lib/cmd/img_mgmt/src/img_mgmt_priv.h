@@ -6,7 +6,7 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
@@ -29,13 +29,13 @@ extern "C" {
 /*
  * Response to list:
  * {
- *      "images":[ <version1>, <version2>]
+ *	"images":[ <version1>, <version2>]
  * }
  *
  *
  * Request to boot to version:
  * {
- *      "test":<version>
+ *	"test":<version>
  * }
  *
  *
@@ -43,38 +43,38 @@ extern "C" {
  * {
  *	"test":<version>,
  *	"main":<version>,
- *      "active":<version>
+ *	"active":<version>
  * }
  *
  *
  * Request to image upload:
  * {
- *      "off":<offset>,
- *      "len":<img_size>		inspected when off = 0
- *      "data":<base64encoded binary>
+ *	"off":<offset>,
+ *	"len":<img_size>		inspected when off = 0
+ *	"data":<base64encoded binary>
  * }
  *
  *
  * Response to upload:
  * {
- *      "off":<offset>
+ *	"off":<offset>
  * }
  *
  *
  * Request to image upload:
  * {
- *      "off":<offset>
- *	    "name":<filename>		inspected when off = 0
- *      "len":<file_size>		inspected when off = 0
- *      "data":<base64encoded binary>
+ *	"off":<offset>
+ *	"name":<filename>	inspected when off = 0
+ *	"len":<file_size>	inspected when off = 0
+ *	"data":<base64encoded binary>
  * }
  */
 
 struct mgmt_ctxt;
 
-int img_mgmt_core_erase(struct mgmt_ctxt *);
-int img_mgmt_core_list(struct mgmt_ctxt *);
-int img_mgmt_core_load(struct mgmt_ctxt *);
+int img_mgmt_core_erase(struct mgmt_ctxt *ctxt);
+int img_mgmt_core_list(struct mgmt_ctxt *ctxt);
+int img_mgmt_core_load(struct mgmt_ctxt *ctxt);
 int img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver);
 int img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash);
 int img_mgmt_state_read(struct mgmt_ctxt *ctxt);

@@ -98,7 +98,7 @@ yielding the following stack diagram:
 
 An mcumgr request or response consists of the following two components:
 * mcumgr header
-* CBOR key-value map 
+* CBOR key-value map
 
 How these two components are encoded and parsed depends on the transfer
 encoding used.
