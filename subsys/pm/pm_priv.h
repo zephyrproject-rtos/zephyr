@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2021 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_POWER_PM_POLICY_H_
-#define ZEPHYR_POWER_PM_POLICY_H_
+#ifndef ZEPHYR_SUBSYS_PM_PRIV_H_
+#define ZEPHYR_SUBSYS_PM_PRIV_H_
 
 #include <pm/pm.h>
 
@@ -33,14 +33,8 @@ int pm_force_suspend_devices(void);
  */
 void pm_resume_devices(void);
 
-/**
- * @brief Function to get the next PM state based on the ticks
- */
-struct pm_state_info pm_policy_next_state(int32_t ticks);
-
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ZEPHYR_POWER_PM_POLICY_H_ */
+#endif /* ZEPHYR_SUBSYS_PM_PRIV_H_ */

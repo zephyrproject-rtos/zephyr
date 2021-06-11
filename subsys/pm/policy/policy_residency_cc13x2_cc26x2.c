@@ -7,7 +7,8 @@
 #include <zephyr.h>
 #include <kernel.h>
 #include <sys/__assert.h>
-#include "pm_policy.h"
+#include <pm/pm.h>
+#include <pm/policy.h>
 
 #include <ti/devices/cc13x2_cc26x2/driverlib/sys_ctrl.h>
 
