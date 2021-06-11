@@ -39,7 +39,7 @@ properties:
     rsense-mohms:
       type: int
       required: true
-      description: >
+      description: |
         Value of Rsense resistor in milliohms (e.g. 5). It cannot be 0.
 
     v-empty:
