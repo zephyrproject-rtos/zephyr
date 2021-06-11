@@ -27,11 +27,11 @@ extern "C" {
 /**
  * Command IDs for file system management group.
  */
-#define FS_MGMT_ID_FILE     0
+#define FS_MGMT_ID_FILE	 0
 
 /**
  * @brief Registers the file system management command handler group.
- */ 
+ */
 void fs_mgmt_register_group(void);
 
 #ifdef __cplusplus

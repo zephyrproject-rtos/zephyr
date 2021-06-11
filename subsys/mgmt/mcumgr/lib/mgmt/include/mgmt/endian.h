@@ -40,9 +40,7 @@ extern "C" {
 /* Little endian. */
 
 #ifndef ntohs
-#define ntohs(x)   ((uint16_t)  \
-    ((((x) & 0xff00) >> 8) |    \
-     (((x) & 0x00ff) << 8)))
+#define ntohs(x) ((uint16_t) ((((x) & 0xff00) >> 8) | (((x) & 0x00ff) << 8)))
 #endif
 
 #ifndef htons

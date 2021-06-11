@@ -28,44 +28,42 @@
 int __attribute__((weak))
 log_mgmt_impl_get_log(int idx, struct log_mgmt_log *out_log)
 {
-    return MGMT_ERR_ENOTSUP;
+	return MGMT_ERR_ENOTSUP;
 }
 
 int __attribute__((weak))
 log_mgmt_impl_get_module(int idx, const char **out_module_name)
 {
-    return MGMT_ERR_ENOTSUP;
+	return MGMT_ERR_ENOTSUP;
 }
 
 int __attribute__((weak))
 log_mgmt_impl_get_level(int idx, const char **out_level_name)
 {
-    return MGMT_ERR_ENOTSUP;
+	return MGMT_ERR_ENOTSUP;
 }
 
 int __attribute__((weak))
 log_mgmt_impl_get_next_idx(uint32_t *out_idx)
 {
-    return MGMT_ERR_ENOTSUP;
+	return MGMT_ERR_ENOTSUP;
 }
 
 int __attribute__((weak))
-log_mgmt_impl_foreach_entry(const char *log_name,
-                            const struct log_mgmt_filter *filter,
-                            log_mgmt_foreach_entry_fn *cb,
-                            void *arg)
+log_mgmt_impl_foreach_entry(const char *log_name, const struct log_mgmt_filter *filter,
+			    log_mgmt_foreach_entry_fn *cb, void *arg)
 {
-    return MGMT_ERR_ENOTSUP;
+	return MGMT_ERR_ENOTSUP;
 }
 
 int __attribute__((weak))
 log_mgmt_impl_clear(const char *log_name)
 {
-    return MGMT_ERR_ENOTSUP;
+	return MGMT_ERR_ENOTSUP;
 }
 
 int __attribute__((weak))
 log_mgmt_impl_set_watermark(const struct log_mgmt_log *log, int index)
 {
-    return MGMT_ERR_ENOTSUP;
+	return MGMT_ERR_ENOTSUP;
 }

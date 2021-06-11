@@ -15,11 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
-target_include_directories(MCUMGR INTERFACE 
-    include
-)
+target_include_directories(MCUMGR INTERFACE include)
 
 zephyr_library_sources(
-    src/zephyr_fs_mgmt.c
-    src/fs_mgmt.c
+	src/zephyr_fs_mgmt.c
+	src/fs_mgmt.c
 )

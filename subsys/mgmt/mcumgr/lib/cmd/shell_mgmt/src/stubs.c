@@ -28,11 +28,11 @@
 int __attribute__((weak))
 shell_mgmt_impl_exec(const char *line)
 {
-    return MGMT_ERR_ENOTSUP;
+	return MGMT_ERR_ENOTSUP;
 }
 
-const char * __attribute__((weak))
+const char *__attribute__((weak))
 shell_mgmt_impl_get_output()
 {
-    return "";
+	return "";
 }

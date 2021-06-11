@@ -34,13 +34,13 @@ extern "C" {
  * @brief Represents a single value in a statistics group.
  */
 struct stat_mgmt_entry {
-    const char *name;
-    uint64_t value;
+	const char *name;
+	uint64_t value;
 };
 
 /**
  * @brief Registers the statistics management command handler group.
- */ 
+ */
 void stat_mgmt_register_group(void);
 
 #ifdef __cplusplus

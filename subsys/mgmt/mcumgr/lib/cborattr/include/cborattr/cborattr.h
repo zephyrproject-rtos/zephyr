@@ -40,128 +40,129 @@ extern "C" {
  * suitable for decoding a binary version of json.  Specifically, the
  * contents of the cbor contains pairs of attributes.  where the attribute
  * is a key/value pair.  keys are always text strings, but values can be
- * many different things (enumerated below) */
+ * many different things (enumerated below)
+ */
 
-typedef enum CborAttrType {
-    CborAttrIntegerType = 1,
-    CborAttrUnsignedIntegerType,
-    CborAttrByteStringType,
-    CborAttrTextStringType,
-    CborAttrBooleanType,
-    CborAttrHalfFloatType,
-    CborAttrFloatType,
-    CborAttrDoubleType,
-    CborAttrArrayType,
-    CborAttrObjectType,
-    CborAttrStructObjectType,
-    CborAttrNullType,
-} CborAttrType;
+enum CborAttrType {
+	CborAttrIntegerType = 1,
+	CborAttrUnsignedIntegerType,
+	CborAttrByteStringType,
+	CborAttrTextStringType,
+	CborAttrBooleanType,
+	CborAttrHalfFloatType,
+	CborAttrFloatType,
+	CborAttrDoubleType,
+	CborAttrArrayType,
+	CborAttrObjectType,
+	CborAttrStructObjectType,
+	CborAttrNullType,
+};
 
 struct cbor_attr_t;
 
 struct cbor_enum_t {
-    char *name;
-    long long int value;
+	char *name;
+	long long value;
 };
 
 struct cbor_array_t {
-    CborAttrType element_type;
-    union {
-        struct {
-            const struct cbor_attr_t *subtype;
-            char *base;
-            size_t stride;
-        } objects;
-        struct {
-            char **ptrs;
-            char *store;
-            int storelen;
-        } strings;
-        struct {
-            long long int *store;
-        } integers;
-        struct {
-            long long unsigned int *store;
-        } uintegers;
-        struct {
-            double *store;
-        } reals;
-        struct{
-            uint16_t *store;
-        } halffloats;
-        struct {
-            bool *store;
-        } booleans;
-    } arr;
-    int *count;
-    int maxlen;
+	enum CborAttrType element_type;
+	union {
+		struct {
+			const struct cbor_attr_t *subtype;
+			char *base;
+			size_t stride;
+		} objects;
+		struct {
+			char **ptrs;
+			char *store;
+			int storelen;
+		} strings;
+		struct {
+			long long *store;
+		} integers;
+		struct {
+			unsigned long long *store;
+		} uintegers;
+		struct {
+			double *store;
+		} reals;
+		struct{
+			uint16_t *store;
+		} halffloats;
+		struct {
+			bool *store;
+		} booleans;
+	} arr;
+	int *count;
+	int maxlen;
 };
 
 struct cbor_attr_t {
-    char *attribute;
-    CborAttrType type;
-    union {
-        long long int *integer;
-        long long unsigned int *uinteger;
-        uint16_t *halffloat;
-        double *real;
-        float *fval;
-        char *string;
-        bool *boolean;
-        struct byte_string {
-            uint8_t *data;
-            size_t *len;
-        } bytestring;
-        struct cbor_array_t array;
-        size_t offset;
-        struct cbor_attr_t *obj;
-    } addr;
-    union {
-        long long int integer;
-        double real;
-        bool boolean;
-        float fval;
-        uint16_t halffloat;
-    } dflt;
-    size_t len;
-    bool nodefault;
+	char *attribute;
+	enum CborAttrType type;
+	union {
+		long long *integer;
+		unsigned long long *uinteger;
+		uint16_t *halffloat;
+		double *real;
+		float *fval;
+		char *string;
+		bool *boolean;
+		struct byte_string {
+			uint8_t *data;
+			size_t *len;
+		} bytestring;
+		struct cbor_array_t array;
+		size_t offset;
+		struct cbor_attr_t *obj;
+	} addr;
+	union {
+		long long integer;
+		double real;
+		bool boolean;
+		float fval;
+		uint16_t halffloat;
+	} dflt;
+	size_t len;
+	bool nodefault;
 };
 
 #ifndef __ZEPHYR__
 /** An array value to be encoded as CBOR. */
 struct cbor_out_arr_val_t {
-    struct cbor_out_val_t *elems;
-    size_t len;
+	struct cbor_out_val_t *elems;
+	size_t len;
 };
 
 /** A single value to be encoded as CBOR. */
 struct cbor_out_val_t {
-    /** The type of data. */
-    CborAttrType type;
+	/** The type of data. */
+	enum CborAttrType type;
 
-    /** The data value. */
-    union {
-        long long int integer;
-        long long unsigned int uinteger;
-        double real;
-        float fval;
-        uint16_t halffloat;
-        const char *string;
-        bool boolean;
-        struct {
-            const uint8_t *data;
-            size_t len;
-        } bytestring;
-        struct cbor_out_arr_val_t array;
-        struct cbor_out_attr_t *obj; /* Terminated with a type=0 entry. */
-    };
+	/** The data value. */
+	union {
+		long long integer;
+		unsigned long long uinteger;
+		double real;
+		float fval;
+		uint16_t halffloat;
+		const char *string;
+		bool boolean;
+		struct {
+			const uint8_t *data;
+			size_t len;
+		} bytestring;
+		struct cbor_out_arr_val_t array;
+		struct cbor_out_attr_t *obj; /* Terminated with a type=0 entry. */
+	};
 };
 
 /** An object key-value pair to be encoded as CBOR. */
 struct cbor_out_attr_t {
-    const char *attribute;      /** The attribute name (key). */
-    struct cbor_out_val_t val;  /** The attribute value. */
-    bool omit;                  /** Attribute ignored if true. */
+	const char *attribute;	  /** The attribute name (key). */
+	struct cbor_out_val_t val;  /** The attribute value. */
+	bool omit;				  /** Attribute ignored if true. */
 };
 #endif
 
@@ -176,52 +177,51 @@ struct cbor_out_attr_t {
  * initializer defining the subobject type, and the address of an integer to
  * store the length in.
  */
-#define CBORATTR_STRUCT_OBJECT(s, f)        .addr.offset = offsetof(s, f)
-#define CBORATTR_STRUCT_ARRAY(a, e, n)                                  \
-    .addr.array.element_type = CborAttrStructObjectType,                \
-    .addr.array.arr.objects.subtype = e,                                \
-    .addr.array.arr.objects.base = (char*)a,                            \
-    .addr.array.arr.objects.stride = sizeof(a[0]),                      \
-    .addr.array.count = n,                                              \
-    .addr.array.maxlen = (int)(sizeof(a)/sizeof(a[0]))
+#define CBORATTR_STRUCT_OBJECT(s, f)		.addr.offset = offsetof(s, f)
+#define CBORATTR_STRUCT_ARRAY(a, e, n)							\
+	.addr.array.element_type = CborAttrStructObjectType,				\
+	.addr.array.arr.objects.subtype = e,						\
+	.addr.array.arr.objects.base = (char *)a,					\
+	.addr.array.arr.objects.stride = sizeof(a[0]),					\
+	.addr.array.count = n,								\
+	.addr.array.maxlen = ARRAY_SIZE(a)
 
 #define CBORATTR_ATTR_UNNAMED (char *)(-1)
 
-int cbor_read_object(struct CborValue *, const struct cbor_attr_t *);
-int cbor_read_array(struct CborValue *, const struct cbor_array_t *);
+int cbor_read_object(struct CborValue *val, const struct cbor_attr_t *attr);
+int cbor_read_array(struct CborValue *val, const struct cbor_array_t *arr);
 
 int cbor_read_flat_attrs(const uint8_t *data, int len,
-                         const struct cbor_attr_t *attrs);
+						 const struct cbor_attr_t *attrs);
 #ifdef MYNEWT
 int cbor_read_mbuf_attrs(struct os_mbuf *m, uint16_t off, uint16_t len,
-                         const struct cbor_attr_t *attrs);
+						 const struct cbor_attr_t *attrs);
 
 /**
  * @brief Encodes a CBOR representation of the specified key-value map.
  *
- * @param enc                   The CBOR encoder to write to.
- * @param attrs                 The key-value map to encode.
+ * @param enc				   The CBOR encoder to write to.
+ * @param attrs				 The key-value map to encode.
  *
- * @return                      0 on success; SYS_E[...] error on failure.
+ * @return					  0 on success; SYS_E[...] error on failure.
  */
 int cbor_write_object(struct CborEncoder *enc,
-                      const struct cbor_out_attr_t *attrs);
+					  const struct cbor_out_attr_t *attrs);
 
 /**
  * @brief Encodes a CBOR representation of the specified key-value map into an
  * msys mbuf chain.
  *
- * @param attrs                 The key-value map to encode.
- * @param out_om                On success, points to the populate mbuf chain.
+ * @param attrs				 The key-value map to encode.
+ * @param out_om				On success, points to the populate mbuf chain.
  *
- * @return                      0 on success; SYS_E[...] error on failure.
+ * @return					  0 on success; SYS_E[...] error on failure.
  */
 int cbor_write_object_msys(const struct cbor_out_attr_t *attrs,
-                           struct os_mbuf **out_om);
+						   struct os_mbuf **out_om);
 #endif
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* CBORATTR_H */
-

@@ -20,8 +20,8 @@
 /**
  * @file
  * @brief Declares implementation-specific functions required by log
- *        management.  The default stubs can be overridden with functions that
- *        are compatible with the host OS.
+ *		management.  The default stubs can be overridden with functions that
+ *		are compatible with the host OS.
  */
 
 #ifndef H_LOG_MGMT_IMPL_
@@ -36,90 +36,82 @@ struct log_mgmt_entry;
 struct log_mgmt_log;
 
 typedef int log_mgmt_foreach_entry_fn(struct log_mgmt_entry *entry,
-                                      void *arg);
+									  void *arg);
 
 /**
  * @brief Retrieves the log at the specified index.
  *
- * @param idx                   The index of the log to retrieve.
- * @param out_name              On success, the requested log gets written
- *                                   here.
+ * @param idx		The index of the log to retrieve.
+ * @param out_name	On success, the requested log gets written here.
  *
- * @return                      0 on success;
- *                              MGMT_ERR_ENOENT if no log with the specified
- *                                  index exists;
- *                              Other MGMT_ERR_[...] code on failure.
+ * @return	0 on success;
+ *		MGMT_ERR_ENOENT if no log with the specified index exists;
+ *		Other MGMT_ERR_[...] code on failure.
  */
 int log_mgmt_impl_get_log(int idx, struct log_mgmt_log *out_log);
 
 /**
  * @brief Retrieves the name of log module at the specified index.
  *
- * @param idx                   The index of the log module to retrieve.
- * @param out_name              On success, the requested module's name gets
- *                                  written here.
+ * @param idx		The index of the log module to retrieve.
+ * @param out_name	On success, the requested module's name gets written here.
  *
- * @return                      0 on success;
- *                              MGMT_ERR_ENOENT if no log module with the
- *                                  specified index exists;
- *                              Other MGMT_ERR_[...] code on failure.
+ * @return	0 on success;
+ *		MGMT_ERR_ENOENT if no log module with the specified index exists;
+ *		Other MGMT_ERR_[...] code on failure.
  */
 int log_mgmt_impl_get_module(int idx, const char **out_module_name);
 
 /**
  * @brief Retrieves the name of log level at the specified index.
  *
- * @param idx                   The index of the log level to retrieve.
- * @param out_name              On success, the requested level's name gets
- *                                  written here.
+ * @param idx		The index of the log level to retrieve.
+ * @param out_name	On success, the requested level's name gets written here.
  *
- * @return                      0 on success;
- *                              MGMT_ERR_ENOENT if no log level with the
- *                                  specified index exists;
- *                              Other MGMT_ERR_[...] code on failure.
+ * @return	0 on success;
+ *		MGMT_ERR_ENOENT if no log level with the specified index exists;
+ *		Other MGMT_ERR_[...] code on failure.
  */
 int log_mgmt_impl_get_level(int idx, const char **out_level_name);
 
 /**
  * @brief Retrieves the index that the next log entry will use.
  *
- * @param out_idx               On success, the next index gets written here.
+ * @param out_idx On success, the next index gets written here.
  *
- * @return                      0 on success; MGMT_ERR_[...] code on failure.
+ * @return0 on success; MGMT_ERR_[...] code on failure.
  */
 int log_mgmt_impl_get_next_idx(uint32_t *out_idx);
 
 /**
  * @brief Applies a function to every matching entry in the specified log.
  *
- * @param log_name              The name of the log to operate on.
- * @param filter                Specifies which log entries to operate on.
- * @param cb                    The callback to apply to each log entry.
- * @param arg                   An optional argument to pass to the callback.
+ * @param log_name	The name of the log to operate on.
+ * @param filter	Specifies which log entries to operate on.
+ * @param cb		The callback to apply to each log entry.
+ * @param arg		An optional argument to pass to the callback.
  *
- * @return                      0 on success; MGMT_ERR_[...] code on failure.
+ * @return 0 on success; MGMT_ERR_[...] code on failure.
  */
-int log_mgmt_impl_foreach_entry(const char *log_name,
-                                const struct log_mgmt_filter *filter,
-                                log_mgmt_foreach_entry_fn *cb,
-                                void *arg);
+int log_mgmt_impl_foreach_entry(const char *log_name, const struct log_mgmt_filter *filter,
+				log_mgmt_foreach_entry_fn *cb, void *arg);
 
 /**
  * @brief Clear the log with the specified name.
  *
- * @param log_name              The name of the log to clear.
+ * @param log_name The name of the log to clear.
  *
- * @return                      0 on success; MGMT_ERR_[...] code on failure.
+ * @return 0 on success; MGMT_ERR_[...] code on failure.
  */
 int log_mgmt_impl_clear(const char *log_name);
 
 /**
  * @brief set watermark for specified log index
  *
- * @param log                   Log pointer
- * @param index                 Log ndex
+ * @param log	Log pointer
+ * @param index	Log ndex
  *
- * @return                      0 on success, non-zero on failure
+ * @return 0 on success, non-zero on failure
  */
 int
 log_mgmt_impl_set_watermark(const struct log_mgmt_log *log, int index);

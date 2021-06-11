@@ -17,7 +17,7 @@ and can be used to provide some insight into how data is exchanged between the
 utility and the device under test.
 
 This repository (`mynewt-mcumgr`) implements an SMP server in **C**,
-and a new command-line SMP client called **mcumgr** was created at 
+and a new command-line SMP client called **mcumgr** was created at
 [apache/mynewt-mcumgr-cli](https://github.com/apache/mynewt-mcumgr-cli).
 
 ## SMP Frame Format

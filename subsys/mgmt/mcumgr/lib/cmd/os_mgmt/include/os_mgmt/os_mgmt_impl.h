@@ -20,8 +20,7 @@
 /**
  * @file
  * @brief Declares implementation-specific functions required by OS management.
- *        The default stubs can be overridden with functions that are
- *        compatible with the host OS.
+ *	  The default stubs can be overridden with functions that are compatible with the host OS.
  */
 
 #ifndef H_OS_MGMT_IMPL_
@@ -34,15 +33,14 @@ extern "C" {
 struct os_mgmt_task_info;
 
 /**
- * @brief Retrieves information about the specified task.  
+ * @brief Retrieves information about the specified task.
  *
- * @param idx                   The index of the task to query.
- * @param out_info              On success, the requested information gets
- *                                  written here.
+ * @param idx		The index of the task to query.
+ * @param out_info	On success, the requested information gets written here.
  *
- * @return                      0 on success;
- *                              MGMT_ERR_ENOENT if no such task exists;
- *                              Other MGMT_ERR_[...] code on failure.
+ * @return	0 on success;
+ *		MGMT_ERR_ENOENT if no such task exists;
+ *		Other MGMT_ERR_[...] code on failure.
  */
 int os_mgmt_impl_task_info(int idx, struct os_mgmt_task_info *out_info);
 
@@ -51,7 +49,7 @@ int os_mgmt_impl_task_info(int idx, struct os_mgmt_task_info *out_info);
  * delay before the reset occurs to allow time for the mgmt response to be
  * delivered.
  *
- * @return                      0 on success, MGMT_ERR_[...] code on failure.
+ * @return	0 on success, MGMT_ERR_[...] code on failure.
  */
 int os_mgmt_impl_reset(unsigned int delay_ms);
 
