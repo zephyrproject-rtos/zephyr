@@ -22,7 +22,7 @@
 
 			/* CCFG registers occupy the last 88 bytes of flash */
 			ti_ccfg_partition: partition@57fa8 {
-				label = "ti_ccfg";
+				label = "FLASH_CCFG";
 				reg = <0x57fa8 88>;
 			};
 		};
