@@ -34,6 +34,7 @@
 	sram1: memory@be800000 {
 		compatible = "mmio-sram";
 		reg = <0xbe800000 DT_SIZE_K(128)>;
+		label = "SRAM1";
 	};
 
 	soc {

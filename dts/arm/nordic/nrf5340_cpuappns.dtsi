@@ -39,6 +39,7 @@
 
 		sram1: memory@21000000 {
 			compatible = "mmio-sram";
+			label = "SRAM1";
 		};
 
 		peripheral@40000000 {

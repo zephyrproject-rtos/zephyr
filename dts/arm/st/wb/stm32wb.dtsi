@@ -35,11 +35,13 @@
 	sram1: memory@20030000 {
 		compatible = "mmio-sram";
 		reg = <0x20030000 0x2800>;
+		label = "SRAM1";
 	};
 
 	sram2: memory@20038000 {
 		compatible = "mmio-sram";
 		reg = <0x20038000 0x5000>;
+		label = "SRAM2";
 	};
 
 	clocks {

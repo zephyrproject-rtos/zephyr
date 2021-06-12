@@ -30,6 +30,7 @@
 		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0xFF300000 DT_SIZE_K(168)>;
+		label = "SRAM1";
 	};
 
 	soc {

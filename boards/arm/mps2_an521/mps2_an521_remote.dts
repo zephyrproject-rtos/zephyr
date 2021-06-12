@@ -82,6 +82,7 @@
 	sram1: memory@0 {
 		compatible = "mmio-sram";
 		reg = <0x0 DT_SIZE_M(4)>;
+		label = "SRAM1";
 	};
 
 	sram2_3: memory@28000000 {
