@@ -6,6 +6,8 @@
 
 #include <nrfx.h>
 #include <kernel.h>
+#include <soc/nrfx_coredep.h>
+
 
 void nrfx_isr(const void *irq_handler)
 {
@@ -14,7 +16,11 @@ void nrfx_isr(const void *irq_handler)
 
 void nrfx_busy_wait(uint32_t usec_to_wait)
 {
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 	k_busy_wait(usec_to_wait);
+#else
+	nrfx_coredep_delay_us(usec_to_wait); 
+#endif
 }
 
 char const *nrfx_error_string_get(nrfx_err_t code)
