@@ -52,6 +52,8 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
 #define UARTE_ANY_NONE_ASYNC 1
 #endif
 
+#define TIMEOUTS_AVAILABLE IS_ENABLED(CONFIG_SYS_CLOCK_EXISTS)
+
 /*
  * RX timeout is divided into time slabs, this define tells how many divisions
  * should be made. More divisions - higher timeout accuracy and processor usage.
@@ -69,9 +71,9 @@ struct uarte_async_cb {
 	const uint8_t *tx_buf;
 	volatile size_t tx_size;
 	uint8_t *pend_tx_buf;
-
+#if TIMEOUTS_AVAILABLE
 	struct k_timer tx_timeout_timer;
-
+#endif
 	uint8_t *rx_buf;
 	size_t rx_buf_len;
 	size_t rx_offset;
@@ -79,10 +81,12 @@ struct uarte_async_cb {
 	size_t rx_next_buf_len;
 	uint32_t rx_total_byte_cnt; /* Total number of bytes received */
 	uint32_t rx_total_user_byte_cnt; /* Total number of bytes passed to user */
+#if TIMEOUTS_AVAILABLE
 	int32_t rx_timeout; /* Timeout set by user */
 	int32_t rx_timeout_slab; /* rx_timeout divided by RX_TIMEOUT_DIV */
 	int32_t rx_timeout_left; /* Current time left until user callback */
 	struct k_timer rx_timeout_timer;
+#endif
 	union {
 		gppi_channel_t ppi;
 		uint32_t cnt;
@@ -93,9 +97,11 @@ struct uarte_async_cb {
 	uint8_t rx_flush_buffer[UARTE_HW_RX_FIFO_SIZE];
 	uint8_t rx_flush_cnt;
 	bool rx_enabled;
+#if TIMEOUTS_AVAILABLE
 	bool hw_rx_counting;
 	/* Flag to ensure that RX timeout won't be executed during ENDRX ISR */
 	volatile bool is_in_irq;
+#endif
 };
 #endif
 
@@ -499,14 +505,17 @@ static int wait_tx_ready(const struct device *dev)
 }
 
 #ifdef CONFIG_UART_ASYNC_API
-
 static inline bool hw_rx_counting_enabled(struct uarte_nrfx_data *data)
 {
+#if TIMEOUTS_AVAILABLE
 	if (IS_ENABLED(CONFIG_UARTE_NRF_HW_ASYNC)) {
 		return data->async->hw_rx_counting;
 	} else {
 		return false;
 	}
+#else
+	return false;
+#endif /* TIMEOUTS_AVAILABLE */
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
@@ -551,6 +560,7 @@ static void tx_start(const struct device *dev, const uint8_t *buf, size_t len)
 
 #ifdef CONFIG_UART_ASYNC_API
 
+#if TIMEOUTS_AVAILABLE
 static void timer_handler(nrf_timer_event_t event_type, void *p_context) { }
 static void rx_timeout(struct k_timer *timer);
 static void tx_timeout(struct k_timer *timer);
@@ -621,17 +631,20 @@ static int uarte_nrfx_rx_counting_init(const struct device *dev)
 
 	return 0;
 }
+#endif
 
 static int uarte_nrfx_init(const struct device *dev)
 {
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
+#if TIMEOUTS_AVAILABLE
 	int ret = uarte_nrfx_rx_counting_init(dev);
 
 	if (ret != 0) {
 		return ret;
 	}
+#endif
 
 	data->async->low_power_mask = UARTE_LOW_POWER_TX;
 	nrf_uarte_int_enable(uarte,
@@ -657,10 +670,12 @@ static int uarte_nrfx_init(const struct device *dev)
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 	}
 
+#if TIMEOUTS_AVAILABLE
 	k_timer_init(&data->async->rx_timeout_timer, rx_timeout, NULL);
 	k_timer_user_data_set(&data->async->rx_timeout_timer, data);
 	k_timer_init(&data->async->tx_timeout_timer, tx_timeout, NULL);
 	k_timer_user_data_set(&data->async->tx_timeout_timer, data);
+#endif
 
 	return 0;
 }
@@ -673,6 +688,11 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 	if (!nrfx_is_in_ram(buf)) {
+		return -ENOTSUP;
+	}
+
+	if (!TIMEOUTS_AVAILABLE && timeout != SYS_FOREVER_MS) {
+		LOG_ERR("Timeouts are not available without a system clock.");
 		return -ENOTSUP;
 	}
 
@@ -697,11 +717,14 @@ static int uarte_nrfx_tx(const struct device *dev, const uint8_t *buf,
 
 	irq_unlock(key);
 
+#if TIMEOUTS_AVAILABLE
 	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS
 	    && timeout != SYS_FOREVER_MS) {
 		k_timer_start(&data->async->tx_timeout_timer, K_MSEC(timeout),
 			      K_NO_WAIT);
 	}
+#endif
+
 	return 0;
 }
 
@@ -713,7 +736,11 @@ static int uarte_nrfx_tx_abort(const struct device *dev)
 	if (data->async->tx_buf == NULL) {
 		return -EFAULT;
 	}
+
+#if TIMEOUTS_AVAILABLE
 	k_timer_stop(&data->async->tx_timeout_timer);
+#endif
+
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
 
 	return 0;
@@ -778,11 +805,17 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		return -ENOTSUP;
 	}
 
+	if (!TIMEOUTS_AVAILABLE && timeout != SYS_FOREVER_MS) {
+		LOG_ERR("Timeouts are not available without a system clock.");
+		return -ENOTSUP;
+	}
+
+#if TIMEOUTS_AVAILABLE
 	data->async->rx_timeout = timeout;
 	data->async->rx_timeout_slab =
 		MAX(timeout / RX_TIMEOUT_DIV,
 		    NRFX_CEIL_DIV(1000, CONFIG_SYS_CLOCK_TICKS_PER_SEC));
-
+#endif
 	data->async->rx_buf = buf;
 	data->async->rx_buf_len = len;
 	data->async->rx_offset = 0;
@@ -879,7 +912,11 @@ static int uarte_nrfx_rx_disable(const struct device *dev)
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 	}
 
+
+#if TIMEOUTS_AVAILABLE
 	k_timer_stop(&data->async->rx_timeout_timer);
+#endif
+
 	data->async->rx_enabled = false;
 
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
@@ -887,6 +924,7 @@ static int uarte_nrfx_rx_disable(const struct device *dev)
 	return 0;
 }
 
+#if TIMEOUTS_AVAILABLE
 static void tx_timeout(struct k_timer *timer)
 {
 	struct uarte_nrfx_data *data = k_timer_user_data_get(timer);
@@ -986,6 +1024,7 @@ static void rx_timeout(struct k_timer *timer)
 			     NRF_UARTE_INT_ENDRX_MASK);
 
 }
+#endif
 
 #define UARTE_ERROR_FROM_MASK(mask)					\
 	((mask) & NRF_UARTE_ERROR_OVERRUN_MASK ? UART_ERROR_OVERRUN	\
@@ -1008,17 +1047,21 @@ static void error_isr(const struct device *dev)
 
 static void rxstarted_isr(const struct device *dev)
 {
-	struct uarte_nrfx_data *data = get_dev_data(dev);
 	struct uart_event evt = {
 		.type = UART_RX_BUF_REQUEST,
 	};
 	user_callback(dev, &evt);
+
+#if TIMEOUTS_AVAILABLE
+	struct uarte_nrfx_data *data = get_dev_data(dev);
 	if (data->async->rx_timeout != SYS_FOREVER_MS) {
 		data->async->rx_timeout_left = data->async->rx_timeout;
 		k_timer_start(&data->async->rx_timeout_timer,
 			      K_MSEC(data->async->rx_timeout_slab),
 			      K_MSEC(data->async->rx_timeout_slab));
 	}
+#endif
+
 }
 
 static void endrx_isr(const struct device *dev)
@@ -1026,12 +1069,14 @@ static void endrx_isr(const struct device *dev)
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
+#if TIMEOUTS_AVAILABLE
 	data->async->is_in_irq = true;
 
 	/* ensure rx timer is stopped - it will be restarted in RXSTARTED
 	 * handler if needed
 	 */
 	k_timer_stop(&data->async->rx_timeout_timer);
+#endif
 
 	/* this is the amount that the EasyDMA controller has copied into the
 	 * buffer
@@ -1062,7 +1107,9 @@ static void endrx_isr(const struct device *dev)
 	}
 
 	if (!data->async->rx_enabled) {
+#if TIMEOUTS_AVAILABLE
 		data->async->is_in_irq = false;
+#endif
 		return;
 	}
 
@@ -1097,7 +1144,9 @@ static void endrx_isr(const struct device *dev)
 
 	irq_unlock(key);
 
+#if TIMEOUTS_AVAILABLE
 	data->async->is_in_irq = false;
+#endif
 }
 
 /* Function for flushing internal RX fifo. Function can be called in case
@@ -1263,7 +1312,9 @@ static void txstopped_isr(const struct device *dev)
 		return;
 	}
 
+#if TIMEOUTS_AVAILABLE
 	k_timer_stop(&data->async->tx_timeout_timer);
+#endif
 
 	key = irq_lock();
 	size_t amount = (data->async->tx_amount >= 0) ?
@@ -1995,8 +2046,9 @@ static int uarte_nrfx_pm_control(const struct device *dev,
 #define UARTE_ASYNC(idx)						       \
 	IF_ENABLED(CONFIG_UART_##idx##_ASYNC,				       \
 		(struct uarte_async_cb uarte##idx##_async = {		       \
-			.hw_rx_counting =				       \
-				IS_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC),  \
+		IF_ENABLED(CONFIG_SYS_CLOCK_EXISTS,			       \
+			(.hw_rx_counting =				       \
+			IS_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC),))        \
 		}))
 
 #define UARTE_INT_DRIVEN(idx)						       \

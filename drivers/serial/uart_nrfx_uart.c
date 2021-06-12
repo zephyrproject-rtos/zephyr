@@ -11,6 +11,8 @@
 #include <drivers/uart.h>
 #include <hal/nrf_uart.h>
 #include <hal/nrf_gpio.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(uart_nrfx_uart, LOG_LEVEL_ERR);
 
 /*
  * Extract information from devicetree.
@@ -50,6 +52,8 @@ BUILD_ASSERT((PROP(hw_flow_control) && HW_FLOW_CONTROL_AVAILABLE) ||
 #define IRQN		DT_INST_IRQN(0)
 #define IRQ_PRIO	DT_INST_IRQ(0, priority)
 
+#define TIMEOUTS_AVAILABLE IS_ENABLED(CONFIG_SYS_CLOCK_EXISTS)
+
 static NRF_UART_Type *const uart0_addr = (NRF_UART_Type *)DT_INST_REG_ADDR(0);
 
 /* Device data structure */
@@ -73,17 +77,21 @@ static struct {
 	size_t rx_secondary_buffer_length;
 	volatile size_t rx_counter;
 	volatile size_t rx_offset;
+#if TIMEOUTS_AVAILABLE
 	int32_t rx_timeout;
 	struct k_timer rx_timeout_timer;
+#endif
 	bool rx_enabled;
 
 	bool tx_abort;
 	const uint8_t *volatile tx_buffer;
 	size_t tx_buffer_length;
 	volatile size_t tx_counter;
+#if TIMEOUTS_AVAILABLE
 #if HW_FLOW_CONTROL_AVAILABLE
 	int32_t tx_timeout;
 	struct k_timer tx_timeout_timer;
+#endif
 #endif
 } uart0_cb;
 #endif /* CONFIG_UART_0_ASYNC */
@@ -278,7 +286,7 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 				 */
 				k_msleep(1);
 			} else {
-				k_busy_wait(1000);
+				NRFX_DELAY_US(1000);
 			}
 			if (--safety_cnt == 0) {
 				break;
@@ -420,6 +428,11 @@ static int uart_nrfx_tx(const struct device *dev, const uint8_t *buf,
 			size_t len,
 			int32_t timeout)
 {
+	if (!TIMEOUTS_AVAILABLE && timeout != SYS_FOREVER_MS) {
+		LOG_ERR("Timeouts are not available without a system clock.");
+		return -ENOTSUP;
+	}
+
 	if (atomic_cas((atomic_t *) &uart0_cb.tx_buffer_length,
 		       (atomic_val_t) 0,
 		       (atomic_val_t) len) == false) {
@@ -427,8 +440,10 @@ static int uart_nrfx_tx(const struct device *dev, const uint8_t *buf,
 	}
 
 	uart0_cb.tx_buffer = buf;
-#if	HW_FLOW_CONTROL_AVAILABLE
+#if TIMEOUTS_AVAILABLE
+#if HW_FLOW_CONTROL_AVAILABLE
 	uart0_cb.tx_timeout = timeout;
+#endif
 #endif
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTTX);
@@ -446,10 +461,12 @@ static int uart_nrfx_tx_abort(const struct device *dev)
 	if (uart0_cb.tx_buffer_length == 0) {
 		return -EINVAL;
 	}
-#if	HW_FLOW_CONTROL_AVAILABLE
+#if TIMEOUTS_AVAILABLE
+#if HW_FLOW_CONTROL_AVAILABLE
 	if (uart0_cb.tx_timeout != SYS_FOREVER_MS) {
 		k_timer_stop(&uart0_cb.tx_timeout_timer);
 	}
+#endif
 #endif
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
 
@@ -476,6 +493,11 @@ static int uart_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		return -ENOTSUP;
 	}
 
+	if (!TIMEOUTS_AVAILABLE && timeout != SYS_FOREVER_MS) {
+		LOG_ERR("Timeouts are not available without a system clock.");
+		return -ENOTSUP;
+	}
+
 	if (uart0_cb.rx_buffer_length != 0) {
 		return -EBUSY;
 	}
@@ -485,7 +507,10 @@ static int uart_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	uart0_cb.rx_buffer_length = len;
 	uart0_cb.rx_counter = 0;
 	uart0_cb.rx_secondary_buffer_length = 0;
+
+#if TIMEOUTS_AVAILABLE
 	uart0_cb.rx_timeout = timeout;
+#endif
 
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_ERROR);
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXDRDY);
@@ -526,9 +551,12 @@ static int uart_nrfx_rx_disable(const struct device *dev)
 	}
 
 	uart0_cb.rx_enabled = 0;
+
+#if TIMEOUTS_AVAILABLE
 	if (uart0_cb.rx_timeout != SYS_FOREVER_MS) {
 		k_timer_stop(&uart0_cb.rx_timeout_timer);
 	}
+#endif
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPRX);
 
 	return 0;
@@ -596,6 +624,7 @@ static void rx_isr(const struct device *dev)
 		uart0_cb.rx_buffer[uart0_cb.rx_counter] =
 			nrf_uart_rxd_get(uart0_addr);
 		uart0_cb.rx_counter++;
+#if TIMEOUTS_AVAILABLE
 		if (uart0_cb.rx_timeout == 0) {
 			rx_rdy_evt(dev);
 		} else if (uart0_cb.rx_timeout != SYS_FOREVER_MS) {
@@ -603,12 +632,15 @@ static void rx_isr(const struct device *dev)
 				      K_MSEC(uart0_cb.rx_timeout),
 				      K_NO_WAIT);
 		}
+#endif
 	}
 
 	if (uart0_cb.rx_buffer_length == uart0_cb.rx_counter) {
+#if TIMEOUTS_AVAILABLE
 		if (uart0_cb.rx_timeout != SYS_FOREVER_MS) {
 			k_timer_stop(&uart0_cb.rx_timeout_timer);
 		}
+#endif
 		rx_rdy_evt(dev);
 
 		int key = irq_lock();
@@ -641,12 +673,14 @@ static void tx_isr(const struct device *dev)
 	uart0_cb.tx_counter++;
 	if (uart0_cb.tx_counter < uart0_cb.tx_buffer_length &&
 	    !uart0_cb.tx_abort) {
-#if	HW_FLOW_CONTROL_AVAILABLE
+#if TIMEOUTS_AVAILABLE
+#if HW_FLOW_CONTROL_AVAILABLE
 		if (uart0_cb.tx_timeout != SYS_FOREVER_MS) {
 			k_timer_start(&uart0_cb.tx_timeout_timer,
 				      K_MSEC(uart0_cb.tx_timeout),
 				      K_NO_WAIT);
 		}
+#endif
 #endif
 		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
 
@@ -654,11 +688,13 @@ static void tx_isr(const struct device *dev)
 
 		nrf_uart_txd_set(uart0_addr, txd);
 	} else {
-#if	HW_FLOW_CONTROL_AVAILABLE
+#if TIMEOUTS_AVAILABLE
+#if HW_FLOW_CONTROL_AVAILABLE
 
 		if (uart0_cb.tx_timeout != SYS_FOREVER_MS) {
 			k_timer_stop(&uart0_cb.tx_timeout_timer);
 		}
+#endif
 #endif
 		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
 		struct uart_event event = {
@@ -685,9 +721,11 @@ static void tx_isr(const struct device *dev)
 
 static void error_isr(const struct device *dev)
 {
+#if TIMEOUTS_AVAILABLE
 	if (uart0_cb.rx_timeout != SYS_FOREVER_MS) {
 		k_timer_stop(&uart0_cb.rx_timeout_timer);
 	}
+#endif
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_ERROR);
 
 	if (!uart0_cb.rx_enabled) {
@@ -755,6 +793,8 @@ void uart_nrfx_isr(const struct device *uart)
 	}
 }
 
+
+#if TIMEOUTS_AVAILABLE
 static void rx_timeout(struct k_timer *timer)
 {
 	rx_rdy_evt(DEVICE_DT_GET(DT_DRV_INST(0)));
@@ -776,6 +816,7 @@ static void tx_timeout(struct k_timer *timer)
 	uart0_cb.tx_counter = 0;
 	user_callback(DEVICE_DT_GET(DT_DRV_INST(0)), &evt);
 }
+#endif
 #endif
 
 #endif /* CONFIG_UART_0_ASYNC */
@@ -1050,9 +1091,11 @@ static int uart_nrfx_init(const struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_0_ASYNC
+#if TIMEOUTS_AVAILABLE
 	k_timer_init(&uart0_cb.rx_timeout_timer, rx_timeout, NULL);
 #if HW_FLOW_CONTROL_AVAILABLE
 	k_timer_init(&uart0_cb.tx_timeout_timer, tx_timeout, NULL);
+#endif
 #endif
 #endif
 	return 0;
