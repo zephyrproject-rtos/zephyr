@@ -34,6 +34,7 @@
 		itcm: memory@0 {
 			compatible = "arm,itcm";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "ITCM";
 		};
 
 		dtcm: memory@20000000 {
