@@ -85,8 +85,8 @@ _region_min_align = 4;
 
 MEMORY
     {
-    FLASH                 (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
-    SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+    FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
+    SRAM  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* TI CCFG Registers */
     LINKER_DT_REGION_FROM_NODE(FLASH_CCFG, rwx, DT_NODELABEL(ti_ccfg_partition))
     /* Data & Instruction Tightly Coupled Memory */
@@ -104,7 +104,7 @@ MEMORY
     LINKER_DT_REGION_FROM_NODE(SDRAM2, rw, DT_NODELABEL(sdram2))
     LINKER_DT_REGION_FROM_NODE(BACKUP_SRAM, rw, DT_NODELABEL(backup_sram))
     /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
+    IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
     }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
