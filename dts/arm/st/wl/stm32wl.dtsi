@@ -8,6 +8,7 @@
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/lora/sx126x.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <freq.h>
 
@@ -290,6 +291,15 @@
 			status = "disabled";
 			label = "SUBGHZSPI";
 			use-subghzspi-nss;
+
+			radio@0 {
+				compatible = "st,stm32wl-subghz-radio";
+				reg = <0>;
+				interrupts = <50 0>;
+				spi-max-frequency = <1000000>;
+				status = "disabled";
+				label = "subghz-radio";
+			};
 		};
 
 		adc1: adc@40012400 {
