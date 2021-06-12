@@ -258,6 +258,20 @@ CMSIS API layer:
     labels:
         - "area: Portability"
 
+CMSIS-DSP integration:
+    status: maintainer
+    maintainers:
+        - stephanosio
+    collaborators:
+        - galak
+        - ioannisg
+    files:
+        - modules/Kconfig.cmsis_dsp
+        - tests/benchmarks/cmsis_dsp/
+        - tests/lib/cmsis_dsp/
+    labels:
+        - "area: CMSIS-DSP"
+
 Common arch:
     status: orphaned
     collaborators:
