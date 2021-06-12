@@ -588,12 +588,7 @@ static int sm_send_bootstrap_registration(void)
 	LOG_DBG("Register ID with bootstrap server as '%s'",
 		log_strdup(query_buffer));
 
-	ret = lwm2m_send_message(msg);
-	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).",
-			    ret);
-		goto cleanup;
-	}
+	lwm2m_send_message_async(msg);
 
 	return 0;
 
