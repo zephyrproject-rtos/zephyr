@@ -44,7 +44,7 @@ manifest:
       revision: 23c1c1dd7a0c1cc9a399509d1819375847c95b97
       path: modules/hal/altera
     - name: hal_atmel
-      revision: d17b7dd92d209b20bc1e15431d068edc29bf438d
+      revision: 9f78f520f6cbb997e5b44fe8ab17dd5bf2448095
       path: modules/hal/atmel
     - name: hal_cypress
       revision: 81a059f21435bc7e315bccd720da5a9b615bbb50
