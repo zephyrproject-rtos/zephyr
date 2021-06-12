@@ -5,7 +5,7 @@
  */
 
 #include <CANopen.h>
-#include <canbus/canopen.h>
+#include <canopennode.h>
 
 struct canopen_leds_state {
 	CO_NMT_t *nmt;
@@ -37,7 +37,7 @@ static void canopen_leds_update(struct k_timer *timer_id)
 
 	red = LED_RED_ERROR(canopen_leds.nmt);
 
-#ifdef CONFIG_CANOPEN_LEDS_BICOLOR
+#ifdef CONFIG_CANOPENNODE_LEDS_BICOLOR
 	if (red && canopen_leds.red_cb) {
 		green = false;
 	}

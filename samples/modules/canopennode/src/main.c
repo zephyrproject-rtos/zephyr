@@ -8,7 +8,7 @@
 #include <drivers/gpio.h>
 #include <sys/reboot.h>
 #include <settings/settings.h>
-#include <canbus/canopen.h>
+#include <canopennode.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
 #include <logging/log.h>
@@ -206,9 +206,9 @@ void main(void)
 	uint16_t timeout;
 	uint32_t elapsed;
 	int64_t timestamp;
-#ifdef CONFIG_CANOPEN_STORAGE
+#ifdef CONFIG_CANOPENNODE_STORAGE
 	int ret;
-#endif /* CONFIG_CANOPEN_STORAGE */
+#endif /* CONFIG_CANOPENNODE_STORAGE */
 
 	can.dev = device_get_binding(CAN_INTERFACE);
 	if (!can.dev) {
@@ -216,7 +216,7 @@ void main(void)
 		return;
 	}
 
-#ifdef CONFIG_CANOPEN_STORAGE
+#ifdef CONFIG_CANOPENNODE_STORAGE
 	ret = settings_subsys_init();
 	if (ret) {
 		LOG_ERR("failed to initialize settings subsystem (err = %d)",
@@ -229,7 +229,7 @@ void main(void)
 		LOG_ERR("failed to load settings (err = %d)", ret);
 		return;
 	}
-#endif /* CONFIG_CANOPEN_STORAGE */
+#endif /* CONFIG_CANOPENNODE_STORAGE */
 
 	OD_powerOnCounter++;
 
@@ -246,15 +246,15 @@ void main(void)
 
 		LOG_INF("CANopen stack initialized");
 
-#ifdef CONFIG_CANOPEN_STORAGE
+#ifdef CONFIG_CANOPENNODE_STORAGE
 		canopen_storage_attach(CO->SDO[0], CO->em);
-#endif /* CONFIG_CANOPEN_STORAGE */
+#endif /* CONFIG_CANOPENNODE_STORAGE */
 
 		config_leds(CO->NMT);
 		CO_OD_configure(CO->SDO[0], OD_2102_buttonPressCounter,
 				odf_2102, NULL, 0U, 0U);
 
-		if (IS_ENABLED(CONFIG_CANOPEN_PROGRAM_DOWNLOAD)) {
+		if (IS_ENABLED(CONFIG_CANOPENNODE_PROGRAM_DOWNLOAD)) {
 			canopen_program_download_attach(CO->NMT, CO->SDO[0],
 							CO->em);
 		}
@@ -275,13 +275,13 @@ void main(void)
 				OD_buttonPressCounter = counter;
 				CO_UNLOCK_OD();
 
-#ifdef CONFIG_CANOPEN_STORAGE
+#ifdef CONFIG_CANOPENNODE_STORAGE
 				ret = canopen_storage_save(
 					CANOPEN_STORAGE_EEPROM);
 				if (ret) {
 					LOG_ERR("failed to save EEPROM");
 				}
-#endif /* CONFIG_CANOPEN_STORAGE */
+#endif /* CONFIG_CANOPENNODE_STORAGE */
 				/*
 				 * Try to sleep for as long as the
 				 * stack requested and calculate the

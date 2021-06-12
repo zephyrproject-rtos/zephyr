@@ -9,14 +9,14 @@
 #include <init.h>
 #include <sys/util.h>
 
-#include <canbus/canopen.h>
+#include <canopennode.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(canopen_driver);
 
 K_KERNEL_STACK_DEFINE(canopen_tx_workq_stack,
-		      CONFIG_CANOPEN_TX_WORKQUEUE_STACK_SIZE);
+		      CONFIG_CANOPENNODE_TX_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q canopen_tx_workq;
 
@@ -474,7 +474,7 @@ static int canopen_init(const struct device *dev)
 
 	k_work_queue_start(&canopen_tx_workq, canopen_tx_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(canopen_tx_workq_stack),
-			   CONFIG_CANOPEN_TX_WORKQUEUE_PRIORITY, NULL);
+			   CONFIG_CANOPENNODE_TX_WORKQUEUE_PRIORITY, NULL);
 
 	k_work_init(&canopen_tx_queue.work, canopen_tx_retry);
 

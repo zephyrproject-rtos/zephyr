@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /**
  * @defgroup CAN CAN BUS
  * @{
@@ -18,8 +17,8 @@
  * @{
  */
 
-#ifndef ZEPHYR_INCLUDE_CANOPEN_H_
-#define ZEPHYR_INCLUDE_CANOPEN_H_
+#ifndef ZEPHYR_MODULES_CANOPENNODE_CANOPENNODE_H_
+#define ZEPHYR_MODULES_CANOPENNODE_CANOPENNODE_H_
 
 #include <CANopen.h>
 #include <CO_Emergency.h>
@@ -153,4 +152,4 @@ void canopen_leds_program_download(bool in_progress);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_CANOPEN_H_ */
+#endif /* ZEPHYR_MODULES_CANOPENNODE_CANOPENNODE_H_ */
