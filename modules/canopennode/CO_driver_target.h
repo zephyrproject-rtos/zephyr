@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SUBSYS_CANBUS_CANOPEN_CO_DRIVER_H
-#define ZEPHYR_SUBSYS_CANBUS_CANOPEN_CO_DRIVER_H
+#ifndef ZEPHYR_MODULES_CANOPENNODE_CO_DRIVER_H
+#define ZEPHYR_MODULES_CANOPENNODE_CO_DRIVER_H
 
 /*
  * Zephyr RTOS CAN driver interface and configuration for CANopenNode
@@ -120,4 +120,4 @@ void canopen_od_unlock(void);
 }
 #endif
 
-#endif /* ZEPHYR_SUBSYS_CANBUS_CANOPEN_CO_DRIVER_H */
+#endif /* ZEPHYR_MODULES_CANOPENNODE_CO_DRIVER_H */
