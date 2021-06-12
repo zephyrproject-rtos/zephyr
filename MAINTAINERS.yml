@@ -231,6 +231,19 @@ Build system:
     labels:
         - "area: Build System"
 
+"C++":
+    status: maintained
+    maintainers:
+        - stephanosio
+    collaborators:
+        - alexanderwachter
+    files:
+        - subsys/cpp/
+        - tests/subsys/cpp/
+        - samples/subsys/cpp/
+    labels:
+        - "area: C++"
+
 C library:
     status: maintained
     maintainers:
