@@ -6,7 +6,7 @@
 
 #include <CANopen.h>
 
-#include <canbus/canopen.h>
+#include <canopennode.h>
 #include <dfu/flash_img.h>
 #include <dfu/mcuboot.h>
 #include <storage/flash_map.h>
@@ -101,7 +101,7 @@ static CO_SDO_abortCode_t canopen_odf_1f50(CO_ODF_arg_t *odf_arg)
 			return CO_SDO_AB_HW;
 		}
 		ctx.flash_status = FLASH_STATUS_IN_PROGRESS;
-		if (IS_ENABLED(CONFIG_CANOPEN_LEDS)) {
+		if (IS_ENABLED(CONFIG_CANOPENNODE_LEDS)) {
 			canopen_leds_program_download(true);
 		}
 		ctx.total = odf_arg->dataLengthTotal;

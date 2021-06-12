@@ -45,6 +45,6 @@ static void canopen_sync_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-K_THREAD_DEFINE(canopen_sync, CONFIG_CANOPEN_SYNC_THREAD_STACK_SIZE,
+K_THREAD_DEFINE(canopen_sync, CONFIG_CANOPENNODE_SYNC_THREAD_STACK_SIZE,
 		canopen_sync_thread, NULL, NULL, NULL,
-		CONFIG_CANOPEN_SYNC_THREAD_PRIORITY, 0, 1);
+		CONFIG_CANOPENNODE_SYNC_THREAD_PRIORITY, 0, 1);
