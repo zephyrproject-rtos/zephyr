@@ -28,9 +28,9 @@ if(CONFIG_CANOPENNODE)
     CO_driver.c
   )
 
-  zephyr_library_sources_ifdef(CONFIG_CANOPEN_SYNC_THREAD canopen_sync.c)
-  zephyr_library_sources_ifdef(CONFIG_CANOPEN_STORAGE canopen_storage.c)
-  zephyr_library_sources_ifdef(CONFIG_CANOPEN_LEDS canopen_leds.c)
-  zephyr_library_sources_ifdef(CONFIG_CANOPEN_PROGRAM_DOWNLOAD canopen_program.c)
+  zephyr_library_sources_ifdef(CONFIG_CANOPENNODE_SYNC_THREAD canopen_sync.c)
+  zephyr_library_sources_ifdef(CONFIG_CANOPENNODE_STORAGE canopen_storage.c)
+  zephyr_library_sources_ifdef(CONFIG_CANOPENNODE_LEDS canopen_leds.c)
+  zephyr_library_sources_ifdef(CONFIG_CANOPENNODE_PROGRAM_DOWNLOAD canopen_program.c)
 
 endif()
