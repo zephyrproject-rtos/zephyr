@@ -1,7 +1,7 @@
-.. _canopen-sample:
+.. _canopennode-sample:
 
-CANopen
-#######
+CANopenNode
+###########
 
 Overview
 ********

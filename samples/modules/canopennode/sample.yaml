@@ -1,5 +1,5 @@
 sample:
-  name: CANopen sample
+  name: CANopenNode sample
 common:
   tags: can canopen
   depends_on: can
@@ -10,11 +10,11 @@ common:
     regex:
       - "(.*)CANopen stack initialized"
 tests:
-  sample.subsys.canbus.canopen:
+  sample.modules.canopennode:
     tags: introduction
-  sample.subsys.canbus.canopen.program_download:
+  sample.modules.canopennode.program_download:
     build_only: true
     extra_configs:
       - CONFIG_BOOTLOADER_MCUBOOT=y
-  sample.subsys.canbus.canopen.no_storage:
+  sample.modules.canopennode.no_storage:
     extra_args: CONF_FILE=prj_no_storage.conf
