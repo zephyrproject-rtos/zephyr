@@ -1,22 +1,18 @@
-# CANopen configuration options
+# CANopenNode CANopen protocol stack configuration options
 
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig CANOPEN
-	bool "CANopen protocol support"
+config ZEPHYR_CANOPENNODE_MODULE
+	bool
+
+config CANOPENNODE
+	bool "CANopenNode support"
 	depends on CAN
-	select CANOPENNODE
 	help
-	  Enable CANopen (EN 50325-4) (CiA 301) protocol
-	  support. Support is provided by the 3rd party CANopenNode
-	  protocol stack.
+	  This option enables the CANopenNode library.
 
-if CANOPEN
-
-module = CANOPEN
-module-str = CANOPEN
-source "subsys/logging/Kconfig.template.log_config"
+if CANOPENNODE
 
 config CANOPEN_SDO_BUFFER_SIZE
 	int "CANopen SDO buffer size"
@@ -113,4 +109,4 @@ config CANOPEN_PROGRAM_DOWNLOAD
 	  Enable support for program download over CANopen according
 	  to the CiA 302-3 (draft) specification.
 
-endif # CANOPEN
+endif # CANOPENNODE
