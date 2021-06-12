@@ -232,7 +232,9 @@ Build system:
         - "area: Build System"
 
 C library:
-    status: orphaned
+    status: maintained
+    maintainers:
+         - stephanosio
     collaborators:
          - nashif
          - enjiamai
@@ -240,6 +242,7 @@ C library:
     files:
          - lib/libc/
          - tests/lib/c_lib/
+         - tests/lib/newlib/
     labels:
          - "area: C Library"
 
