@@ -50,5 +50,6 @@
 	dtcm: memory@20000000 {
 		compatible = "arm,dtcm";
 		reg = <0x20000000 DT_SIZE_K(128)>;
+		label = "DTCM";
 	};
 };
