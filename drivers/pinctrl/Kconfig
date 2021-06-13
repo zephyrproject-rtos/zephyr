@@ -1,0 +1,27 @@
+# HW Info driver configuration options
+
+# Copyright (c) 2021 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PINCTRL
+	bool "Pin Controller driver"
+	help
+	  Enable pinctrl driver.
+
+if PINCTRL
+
+config PINCTRL_STM32
+	bool "STM32 pinctrl"
+	default y
+	depends on SOC_FAMILY_STM32
+	help
+	  Enable STM32 pinctrl driver.
+
+config PINCTRL_SAM
+	bool "Atmel SAM device ID"
+	default y
+	depends on SOC_FAMILY_SAM
+	help
+	  Enable Atmel SAM pinctrl driver.
+
+endif

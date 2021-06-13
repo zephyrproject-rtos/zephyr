@@ -976,7 +976,7 @@ static void i2s0_sam_irq_config(void)
 		    DEVICE_DT_INST_GET(0), 0);
 }
 
-static const struct soc_gpio_pin i2s0_pins[] = ATMEL_SAM_DT_PINS(0);
+static const struct soc_gpio_pin i2s0_pins[] = ATMEL_SAM_DT_INST_PINS(0);
 
 static const struct i2s_sam_dev_cfg i2s0_sam_config = {
 	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(0, tx)),
