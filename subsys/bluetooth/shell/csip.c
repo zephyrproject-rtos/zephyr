@@ -289,7 +289,7 @@ static int cmd_csip_discover(const struct shell *shell, size_t argc,
 	}
 
 	shell_print(shell, "Discovering for member[%u]", member_index);
-	result = bt_csip_discover(set_members[member_index].conn, true);
+	result = bt_csip_discover(&set_members[member_index]);
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
 	}
