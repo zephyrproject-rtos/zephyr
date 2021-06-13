@@ -115,17 +115,6 @@ Release set members:
    <dbg> bt_csip.notify_func: Instance 0 lock was released
    Set released
 
-Disconnect set members:
-
-.. code-block:: console
-
-   uart:~$ csip disconnect
-   <dbg> bt_csip.bt_csip_disconnect: member 0
-   <dbg> bt_csip.bt_csip_disconnect: Disconnecting 34:13:e8:b3:7f:9e (public)
-   <dbg> bt_csip.bt_csip_disconnect: member 1
-   <dbg> bt_csip.bt_csip_disconnect: Disconnecting 34:02:86:03:86:c0 (public)
-
-
 Coordinated Set Member (Server)
 **********************************************
 The server on devices that are part of a set,

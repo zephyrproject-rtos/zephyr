@@ -412,18 +412,6 @@ static int cmd_csip_release_set(const struct shell *shell, size_t argc,
 	return result;
 }
 
-static int cmd_csip_disconnect(const struct shell *shell, size_t argc,
-				      char *argv[])
-{
-	int result;
-
-	result = bt_csip_disconnect();
-	if (result) {
-		shell_error(shell, "Fail: %d", result);
-	}
-	return result;
-}
-
 static int cmd_csip_lock_get(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
@@ -552,9 +540,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(csip_cmds,
 	SHELL_CMD_ARG(release_set, NULL,
 		      "Release set",
 		      cmd_csip_release_set, 1, 0),
-	SHELL_CMD_ARG(disconnect, NULL,
-		      "Release set",
-		      cmd_csip_disconnect, 1, 0),
 	SHELL_CMD_ARG(lock, NULL,
 		      "Lock specific member [member_index]",
 		      cmd_csip_lock, 1, 1),
