@@ -47,6 +47,18 @@
 			phys = <&usb_fs_phy>;
 			label= "USB";
 		};
+
+		can1: can@40006400 {
+			compatible = "st,stm32-can";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006400 0x400>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			status = "disabled";
+			label = "CAN_1";
+		};
 	};
 
 	usb_fs_phy: usbphy {
