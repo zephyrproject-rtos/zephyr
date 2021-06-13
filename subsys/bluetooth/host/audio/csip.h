@@ -184,13 +184,6 @@ int bt_csip_lock_set(void);
  */
 int bt_csip_release_set(void);
 
-/**
- * @brief Disconnect all connected set members
- *
- * @return int Return 0 on success, or an ERRNO value on error.
- */
-int bt_csip_disconnect(void);
-
 /** @brief Registers callbacks for CSIP.
  *
  *  @param cb   Pointer to the callback structure.
