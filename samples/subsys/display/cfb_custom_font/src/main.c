@@ -12,22 +12,20 @@
 #include "cfb_font_dice.h"
 
 #if defined(CONFIG_SSD1306)
-#define DISPLAY_NAME DT_LABEL(DT_INST(0, solomon_ssd1306fb))
+#define DISPLAY_NODE DT_INST(0, solomon_ssd1306fb)
 #elif defined(CONFIG_SSD16XX)
-#define DISPLAY_NAME DT_LABEL(DT_INST(0, solomon_ssd16xxfb))
+#define DISPLAY_NODE DT_INST(0, solomon_ssd16xxfb)
 #else
 #error Unsupported board
 #endif
 
-const struct device *display;
-
 void main(void)
 {
+	const struct device *display = DEVICE_DT_GET(DISPLAY_NODE);
 	int err;
 
-	display = device_get_binding(DISPLAY_NAME);
-	if (!display) {
-		printk("Could not get device binding for display device\n");
+	if (!device_is_ready(display)) {
+		printk("Display device not ready\n");
 	}
 
 	err = cfb_framebuffer_init(display);
