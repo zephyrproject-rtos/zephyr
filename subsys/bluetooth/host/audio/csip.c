@@ -63,7 +63,6 @@ struct csis_instance_t {
 };
 
 struct bt_csis_server {
-	bool locked_by_us;
 	uint8_t inst_count;
 	struct csis_instance_t csis_insts[CONFIG_BT_CSIP_MAX_CSIS_INSTANCES];
 	struct bt_csip_set_member set_member;
@@ -89,7 +88,6 @@ static struct bt_csip_cb_t *csip_cbs;
 static bt_csip_discover_cb_t init_cb;
 static bt_csip_discover_sets_cb_t discover_sets_cb;
 static struct bt_csis_server servers[CONFIG_BT_MAX_CONN];
-static struct bt_csip_set_member set_member_addrs[CONFIG_BT_MAX_CONN];
 
 static int read_set_sirk(struct bt_conn *conn, uint8_t inst_idx);
 static int csip_read_set_size(struct bt_conn *conn, uint8_t inst_idx,
@@ -98,12 +96,6 @@ static int csip_read_set_size(struct bt_conn *conn, uint8_t inst_idx,
 static uint8_t csip_discover_sets_read_set_sirk_cb(
 	struct bt_conn *conn, uint8_t err, struct bt_gatt_read_params *params,
 	const void *data, uint16_t length);
-static void csip_lock_set_write_lock_cb(struct bt_conn *conn, uint8_t err,
-	struct bt_gatt_write_params *params);
-static void csip_release_set_write_lock_cb(struct bt_conn *conn, uint8_t err,
-	struct bt_gatt_write_params *params);
-static void csip_lock_set_init_cb(struct bt_conn *conn, int err,
-				  uint8_t set_count);
 static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 				 uint16_t size_handle, uint16_t rank_handle);
 
@@ -200,22 +192,6 @@ static int sirk_decrypt(struct bt_conn *conn,
 	err = bt_csis_sdf(k, enc_sirk->value, out_sirk->value);
 
 	return err;
-}
-
-static int8_t lookup_index_by_sirk(struct bt_conn *conn,
-				   struct bt_csip_set_sirk_t *sirk)
-{
-	struct bt_csis_server *server = &servers[bt_conn_index(conn)];
-
-	for (int i = 0; i < CONFIG_BT_CSIP_MAX_CSIS_INSTANCES; i++) {
-		struct bt_csip_set_sirk_t *set_sirk = &server->set_member.sets[i].set_sirk;
-
-		if (memcmp(sirk->value, set_sirk->value, sizeof(set_sirk->value)) == 0) {
-			return i;
-		}
-	}
-
-	return -1;
 }
 
 static uint8_t sirk_notify_func(struct bt_conn *conn,
@@ -888,229 +864,6 @@ static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 	}
 }
 
-static void csip_disconnected(struct bt_conn *conn, uint8_t reason)
-{
-	struct bt_csis_server *server = &servers[bt_conn_index(conn)];
-
-	if (server->set_member.conn == conn) {
-		char addr[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-		BT_DBG("Disconnected: %s (reason %u)", log_strdup(addr),
-		       reason);
-	}
-}
-
-static struct bt_conn_cb csip_conn_callbacks = {
-	.disconnected = csip_disconnected,
-};
-
-static void csip_write_lowest_rank(void)
-{
-	uint8_t min_rank = 0xFF;
-	uint8_t min_idx;
-	struct bt_conn *min_conn = NULL;
-
-	cur_inst = NULL;
-
-	for (int i = 0; i < cur_set.set_size; i++) {
-		int8_t cur_idx = lookup_index_by_sirk(servers[i].set_member.conn,
-						      &cur_set.set_sirk);
-
-		if (cur_idx < 0) {
-			continue;
-		}
-		if (servers[i].csis_insts[cur_idx].rank < min_rank &&
-		    !servers[i].locked_by_us) {
-			min_rank = servers[i].csis_insts[cur_idx].rank;
-			min_idx = cur_idx;
-			min_conn = servers[i].set_member.conn;
-		}
-	}
-
-	if (min_conn) {
-		int err;
-
-		BT_DBG("Locking member with rank %u", min_rank);
-		/* Temporary disabled due to API changes */
-		// err = csip_write_set_lock(min_conn, min_idx, true,
-		// 			  csip_lock_set_write_lock_cb);
-		if (err) {
-			if (csip_cbs && csip_cbs->lock_set) {
-				csip_cbs->lock_set(err);
-			}
-		}
-	} else {
-		busy = false;
-		cur_inst = NULL;
-		if (csip_cbs && csip_cbs->lock_set) {
-			csip_cbs->lock_set(0);
-		}
-	}
-}
-
-static void csip_release_highest_rank(void)
-{
-	uint8_t max_rank = 0;
-	uint8_t max_idx;
-	struct bt_conn *max_conn = NULL;
-
-	cur_inst = NULL;
-
-	for (int i = 0; i < cur_set.set_size; i++) {
-		int8_t cur_idx = lookup_index_by_sirk(servers[i].set_member.conn,
-						      &cur_set.set_sirk);
-
-		if (cur_idx < 0) {
-			continue;
-		}
-		if (servers[i].csis_insts[cur_idx].rank > max_rank &&
-		    servers[i].locked_by_us) {
-			max_rank = servers[i].csis_insts[cur_idx].rank;
-			max_idx = cur_idx;
-			max_conn = servers[i].set_member.conn;
-		}
-	}
-
-	if (max_conn) {
-		BT_DBG("Releasing member with rank %u", max_rank);
-		// csip_write_set_lock(max_conn, max_idx, false,
-		// 		    csip_release_set_write_lock_cb);
-	} else {
-		busy = false;
-		cur_inst = NULL;
-		if (csip_cbs && csip_cbs->release_set) {
-			csip_cbs->release_set(0);
-		}
-	}
-}
-
-static void csip_release_set_write_lock_cb(struct bt_conn *conn, uint8_t err,
-					   struct bt_gatt_write_params *params)
-{
-	struct bt_csis_server *server = &servers[bt_conn_index(conn)];
-
-	if (err) {
-		busy = false;
-		cur_inst = NULL;
-		if (csip_cbs && csip_cbs->release_set) {
-			csip_cbs->release_set(err);
-		}
-		return;
-	}
-
-	server->locked_by_us = false;
-
-	csip_release_highest_rank();
-}
-
-static void csip_lock_set_write_lock_cb(struct bt_conn *conn, uint8_t err,
-					struct bt_gatt_write_params *params)
-{
-	struct bt_csis_server *server = &servers[bt_conn_index(conn)];
-
-	if (err) {
-		busy = false;
-		cur_inst = NULL;
-		BT_WARN("Could not lock set (%d)", err);
-		if (csip_cbs && csip_cbs->lock_set) {
-			csip_cbs->lock_set(err);
-		}
-		return;
-	}
-
-	server->locked_by_us = true;
-
-	csip_write_lowest_rank();
-}
-
-static bool csip_set_is_locked(void)
-{
-	for (int i = 0; i < cur_set.set_size; i++) {
-		int8_t cur_idx = lookup_index_by_sirk(servers[i].set_member.conn,
-						      &cur_set.set_sirk);
-
-		if (servers[i].csis_insts[cur_idx].set_lock ==
-			BT_CSIP_LOCK_VALUE) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static void csip_lock_set_discover_sets_cb(struct bt_conn *conn, int err,
-					   uint8_t set_count,
-					   struct bt_csip_set_t *sets)
-{
-	int cb_err;
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	if (err) {
-		busy = false;
-		cur_inst = NULL;
-		cb_err = err;
-		if (csip_cbs && csip_cbs->lock_set) {
-			csip_cbs->lock_set(cb_err);
-		}
-		return;
-	}
-
-	for (int i = 0; i < cur_set.set_size; i++) {
-		if (!servers[i].set_member.conn) {
-			bt_addr_le_to_str(&set_member_addrs[i].addr, addr,
-					  sizeof(addr));
-			BT_DBG("[%d]: Connecting to %s", i, log_strdup(addr));
-
-			cb_err = bt_conn_le_create(&set_member_addrs[i].addr,
-						   BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
-						   &servers[i].set_member.conn);
-
-			if (cb_err) {
-				busy = false;
-				cur_inst = NULL;
-				if (csip_cbs && csip_cbs->lock_set) {
-					csip_cbs->lock_set(cb_err);
-				}
-			}
-			return;
-		}
-	}
-
-	/* Else everything is connected, start locking sets by rank */
-
-	/* Make sure that the set is not locked */
-	if (csip_set_is_locked()) {
-		busy = false;
-		cur_inst = NULL;
-		cb_err = -EBUSY;
-		if (csip_cbs && csip_cbs->lock_set) {
-			csip_cbs->lock_set(cb_err);
-		}
-		return;
-	}
-
-	csip_write_lowest_rank();
-}
-
-static void csip_lock_set_init_cb(struct bt_conn *conn, int err,
-				  uint8_t set_count)
-{
-	BT_DBG("");
-	if (err || !conn) {
-		BT_DBG("Could not connect");
-	} else {
-		discover_sets_cb = csip_lock_set_discover_sets_cb;
-		/* Start reading values and call CB when done */
-		err = read_set_sirk(conn, 0);
-		if (err) {
-			if (csip_cbs && csip_cbs->lock_set) {
-				csip_cbs->lock_set(err);
-			}
-		}
-	}
-}
-
 static uint8_t csip_read_lock_cb(struct bt_conn *conn, uint8_t err,
 				 struct bt_gatt_read_params *params,
 				 const void *data, uint16_t length)
@@ -1372,7 +1125,6 @@ void bt_csip_register_cb(struct bt_csip_cb_t *cb)
 int bt_csip_discover(struct bt_conn *conn, bool subscribe)
 {
 	int err;
-	static bool conn_cb_registered;
 	struct bt_csis_server *server;
 
 	if (!conn) {
@@ -1381,19 +1133,11 @@ int bt_csip_discover(struct bt_conn *conn, bool subscribe)
 		return -EBUSY;
 	}
 
-	if (!conn_cb_registered) {
-		bt_conn_cb_register(&csip_conn_callbacks);
-		conn_cb_registered = true;
-	}
-
 	server = &servers[bt_conn_index(conn)];
 
 	memset(server, 0, sizeof(*server));
 
 	server->set_member.conn = conn;
-	memcpy(&set_member_addrs[bt_conn_index(conn)].addr,
-	       bt_conn_get_dst(conn),
-	       sizeof(bt_addr_le_t));
 	if (csip_cbs && csip_cbs->discover) {
 		err = init_discovery(server, subscribe, csip_cbs->discover);
 	} else {
@@ -1425,83 +1169,6 @@ int bt_csip_discover_sets(struct bt_conn *conn)
 		busy = true;
 	}
 	return err;
-}
-
-int bt_csip_lock_set(void)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-	bool fully_connected = true;
-
-	/* TODO: Check ranks of devices in sets for duplicates */
-
-	if (busy) {
-		return -EBUSY;
-	}
-
-	busy = true;
-
-	for (int i = 0; i < cur_set.set_size; i++) {
-		if (!servers[i].set_member.conn) {
-			int err;
-
-			bt_addr_le_to_str(&set_member_addrs[i].addr, addr,
-					  sizeof(addr));
-			BT_DBG("[%d]: Connecting to %s", i, log_strdup(addr));
-
-
-			err = bt_conn_le_create(&set_member_addrs[i].addr,
-						BT_CONN_LE_CREATE_CONN,
-						BT_LE_CONN_PARAM_DEFAULT,
-						&servers[i].set_member.conn);
-			if (err) {
-				return err;
-			}
-
-			fully_connected = false;
-			break;
-		}
-	}
-
-	if (fully_connected) {
-		/* Make sure that the set is not locked */
-		if (csip_set_is_locked()) {
-			busy = false;
-			return -EAGAIN;
-		}
-
-		csip_write_lowest_rank();
-	}
-
-	return 0;
-}
-
-int bt_csip_release_set(void)
-{
-	csip_release_highest_rank();
-	return 0;
-}
-
-int bt_csip_disconnect(void)
-{
-	int err;
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	for (int i = 0; i < cur_set.set_size; i++) {
-		BT_DBG("member %d", i);
-		if (servers[i].set_member.conn) {
-			bt_addr_le_to_str(&set_member_addrs[i].addr, addr,
-					  sizeof(addr));
-			BT_DBG("Disconnecting %s", log_strdup(addr));
-			err = bt_conn_disconnect(
-				servers[i].set_member.conn,
-				BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-			servers[i].set_member.conn = NULL;
-			if (err) {
-				return err;
-			}
-		}
-	}
-	return 0;
 }
 
 int bt_csip_lock_get(struct bt_conn *conn, uint8_t inst_idx)
