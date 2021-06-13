@@ -63,13 +63,11 @@ typedef void (*bt_csip_discover_cb_t)(struct bt_conn *conn, int err,
  * @brief Initialise the CSIP instance for a connection. This will do a
  * discovery on the device and prepare the instance for following commands.
  *
- * @param conn The connection to the device that has a CSIS instance
- * @param subscribe Bool to control whether or not to subscribe to
- *                  characteristics if possible
+ * @param member Pointer to a set member struct to store discovery results in
  *
  * @return int Return 0 on success, or an ERRNO value on error.
  */
-int bt_csip_discover(struct bt_conn *conn, bool subscribe);
+int bt_csip_discover(struct bt_csip_set_member *member);
 
 typedef void (*bt_csip_discover_sets_cb_t)(struct bt_conn *conn,
 					   int err, uint8_t set_count,
