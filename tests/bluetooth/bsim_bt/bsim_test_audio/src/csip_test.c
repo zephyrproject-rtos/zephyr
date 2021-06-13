@@ -250,7 +250,7 @@ static void test_main(void)
 	WAIT_FOR(is_connected);
 	connected_member_count++;
 
-	err = bt_csip_discover(set_members[0].conn, true);
+	err = bt_csip_discover(&set_members[0]);
 	if (err) {
 		FAIL("Failed to initialize CSIP for connection %d\n", err);
 		return;
@@ -308,7 +308,7 @@ static void test_main(void)
 
 		discovered = false;
 		printk("Doing discovery on member[%d]", i);
-		err = bt_csip_discover(set_members[i].conn, true);
+		err = bt_csip_discover(&set_members[i]);
 		if (err) {
 			FAIL("Failed to initialize CSIP for connection %d\n",
 			      err);
