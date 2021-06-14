@@ -41,8 +41,10 @@ typedef struct zsock_fd_set {
  * it may conflict with generic POSIX ``select()`` function).
  * @endrst
  */
-int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
-		 zsock_fd_set *exceptfds, struct zsock_timeval *timeout);
+__syscall int zsock_select(int nfds, zsock_fd_set *readfds,
+			   zsock_fd_set *writefds,
+			   zsock_fd_set *exceptfds,
+			   struct zsock_timeval *timeout);
 
 /** Number of file descriptors which can be added to zsock_fd_set */
 #define ZSOCK_FD_SETSIZE (sizeof(((zsock_fd_set *)0)->bitset) * 8)
@@ -141,6 +143,8 @@ static inline void FD_SET(int fd, zsock_fd_set *set)
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/socket_select.h>
 
 /**
  * @}
