@@ -333,8 +333,7 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 			    DEVICE_DT_INST_GET(n), 0);			\
 	}								\
 									\
-	static const struct soc_gpio_pin pins_twihs##n[] =		\
-		{ATMEL_SAM_DT_PIN(n, 0), ATMEL_SAM_DT_PIN(n, 1)};	\
+	static const struct soc_gpio_pin pins_twihs##n[] = ATMEL_SAM_DT_INST_PINS(n); \
 									\
 	static const struct i2c_sam_twihs_dev_cfg i2c##n##_sam_config = {\
 		.regs = (Twihs *)DT_INST_REG_ADDR(n),			\
