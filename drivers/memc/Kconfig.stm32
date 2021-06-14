@@ -1,9 +1,11 @@
 # Copyright (c) 2020 Teslabs Engineering S.L.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_ST_STM32_FMC := st,stm32-fmc
+
 config MEMC_STM32
 	bool "Enable STM32 Flexible Memory Controller (FMC)"
-	depends on SOC_SERIES_STM32H7X
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_FMC))
 	help
 	  Enable STM32 Flexible Memory Controller.
 
