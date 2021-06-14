@@ -27,16 +27,6 @@
 #include <drivers/i2c.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 
-union axis3bit16_t {
-	int16_t i16bit[3];
-	uint8_t u8bit[6];
-};
-
-union axis1bit16_t {
-	int16_t i16bit;
-	uint8_t u8bit[2];
-};
-
 #define LSM6DSO_EN_BIT					0x01
 #define LSM6DSO_DIS_BIT					0x00
 
