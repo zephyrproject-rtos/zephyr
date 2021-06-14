@@ -7,6 +7,13 @@ if BUILD_WITH_TFM
 
 if TFM_PARTITION_CRYPTO
 
+config TFM_CRYPTO_RNG_MODULE_ENABLED
+	bool "Enable random number generator crypto module"
+	default y
+	help
+	  Enables the random number generator  module within the crypto partition.
+	  Unset this option if 'psa_generate_random' is not used.
+
 config TFM_CRYPTO_KEY_MODULE_ENABLED
 	bool "Enable KEY crypto module"
 	default y
