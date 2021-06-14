@@ -181,3 +181,9 @@ int arch_irq_is_enabled(unsigned int irq)
 {
 	return (esprv_intc_get_interrupt_unmask() & (1 << irq));
 }
+
+ulong_t __soc_get_gp_initial_value(void)
+{
+	extern uint32_t __global_pointer$;
+	return (ulong_t)&__global_pointer$;
+}
