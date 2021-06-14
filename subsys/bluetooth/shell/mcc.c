@@ -634,54 +634,54 @@ int cmd_mcc_read_icon_obj_id(const struct shell *shell, size_t argc,
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-int cmd_mcc_read_icon_url(const struct shell *shell, size_t argc, char *argv[])
+int cmd_mcc_read_icon_url(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_icon_url(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_track_title(const struct shell *shell, size_t argc,
+int cmd_mcc_read_track_title(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_track_title(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_track_duration(const struct shell *shell, size_t argc,
+int cmd_mcc_read_track_duration(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_track_dur(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_track_position(const struct shell *shell, size_t argc,
+int cmd_mcc_read_track_position(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_track_position(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_set_track_position(const struct shell *shell, size_t argc,
+int cmd_mcc_set_track_position(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 	int result;
@@ -691,26 +691,26 @@ int cmd_mcc_set_track_position(const struct shell *shell, size_t argc,
 
 	result = bt_mcc_set_track_position(default_conn, pos);
 	if (result) {
-		shell_print(shell, "Fail: %d", result);
+		shell_print(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
 
-int cmd_mcc_read_playback_speed(const struct shell *shell, size_t argc,
+int cmd_mcc_read_playback_speed(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_playback_speed(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
 
-int cmd_mcc_set_playback_speed(const struct shell *shell, size_t argc,
+int cmd_mcc_set_playback_speed(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 	int result;
@@ -718,100 +718,100 @@ int cmd_mcc_set_playback_speed(const struct shell *shell, size_t argc,
 
 	result = bt_mcc_set_playback_speed(default_conn, speed);
 	if (result) {
-		shell_print(shell, "Fail: %d", result);
+		shell_print(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_seeking_speed(const struct shell *shell, size_t argc,
+int cmd_mcc_read_seeking_speed(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_seeking_speed(default_conn);
 	if (result) {
-		shell_print(shell, "Fail: %d", result);
+		shell_print(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
 
 #ifdef CONFIG_BT_MCC_OTS
-int cmd_mcc_read_track_segments_obj_id(const struct shell *shell,
+int cmd_mcc_read_track_segments_obj_id(const struct shell *sh,
 				       size_t argc, char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_segments_obj_id(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
 
-int cmd_mcc_read_current_track_obj_id(const struct shell *shell, size_t argc,
+int cmd_mcc_read_current_track_obj_id(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_current_track_obj_id(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_next_track_obj_id(const struct shell *shell, size_t argc,
+int cmd_mcc_read_next_track_obj_id(const struct shell *sh, size_t argc,
 				   char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_next_track_obj_id(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_current_group_obj_id(const struct shell *shell, size_t argc,
+int cmd_mcc_read_current_group_obj_id(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_current_group_obj_id(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_parent_group_obj_id(const struct shell *shell, size_t argc,
+int cmd_mcc_read_parent_group_obj_id(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_parent_group_obj_id(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-int cmd_mcc_read_playing_order(const struct shell *shell, size_t argc,
+int cmd_mcc_read_playing_order(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_playing_order(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_set_playing_order(const struct shell *shell, size_t argc,
+int cmd_mcc_set_playing_order(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 	int result;
@@ -819,36 +819,36 @@ int cmd_mcc_set_playing_order(const struct shell *shell, size_t argc,
 
 	result = bt_mcc_set_playing_order(default_conn, order);
 	if (result) {
-		shell_print(shell, "Fail: %d", result);
+		shell_print(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_playing_orders_supported(const struct shell *shell, size_t argc,
+int cmd_mcc_read_playing_orders_supported(const struct shell *sh, size_t argc,
 					  char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_playing_orders_supported(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_media_state(const struct shell *shell, size_t argc,
+int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_media_state(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_set_cp(const struct shell *shell, size_t argc, char *argv[])
+int cmd_mcc_set_cp(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	struct mpl_op_t op;
@@ -857,7 +857,7 @@ int cmd_mcc_set_cp(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 1) {
 		op.opcode = strtol(argv[1], NULL, 0);
 	} else {
-		shell_error(shell, "Invalid parameter");
+		shell_error(sh, "Invalid parameter");
 		return -ENOEXEC;
 	}
 
@@ -871,25 +871,25 @@ int cmd_mcc_set_cp(const struct shell *shell, size_t argc, char *argv[])
 
 	result = bt_mcc_set_cp(default_conn, op);
 	if (result) {
-		shell_print(shell, "Fail: %d", result);
+		shell_print(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_read_opcodes_supported(const struct shell *shell, size_t argc,
+int cmd_mcc_read_opcodes_supported(const struct shell *sh, size_t argc,
 				   char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_opcodes_supported(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
 #ifdef CONFIG_BT_MCC_OTS
-int cmd_mcc_set_scp_raw(const struct shell *shell, size_t argc, char *argv[])
+int cmd_mcc_set_scp_raw(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	struct mpl_search_t search;
@@ -900,12 +900,12 @@ int cmd_mcc_set_scp_raw(const struct shell *shell, size_t argc, char *argv[])
 
 	result = bt_mcc_set_scp(default_conn, search);
 	if (result) {
-		shell_print(shell, "Fail: %d", result);
+		shell_print(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_set_scp_ioptest(const struct shell *shell, size_t argc,
+int cmd_mcc_set_scp_ioptest(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	/* Implementation follows Media control service testspec 0.9.0r13 */
@@ -953,7 +953,7 @@ int cmd_mcc_set_scp_ioptest(const struct shell *shell, size_t argc,
 		strcpy(sci_1.param, "TSPX_Genre");
 		break;
 	default:
-		shell_error(shell, "Invalid parameter");
+		shell_error(sh, "Invalid parameter");
 		return -ENOEXEC;
 	}
 
@@ -993,19 +993,19 @@ int cmd_mcc_set_scp_ioptest(const struct shell *shell, size_t argc,
 		search.len += sizeof(sci_2.type);
 	}
 
-	shell_print(shell, "Search string: ");
-	shell_hexdump(shell, (uint8_t *)&search.search, search.len);
+	shell_print(sh, "Search string: ");
+	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
 
 	result = bt_mcc_set_scp(default_conn, search);
 	if (result) {
-		shell_print(shell, "Fail: %d", result);
+		shell_print(sh, "Fail: %d", result);
 	}
 
 	return result;
 }
 
 #if defined(CONFIG_BT_DEBUG_MCC) && defined(CONFIG_BT_TESTING)
-int cmd_mcc_test_set_scp_iop_invalid_type(const struct shell *shell,
+int cmd_mcc_test_set_scp_iop_invalid_type(const struct shell *sh,
 					  size_t argc, char *argv[])
 {
 	int result;
@@ -1016,18 +1016,18 @@ int cmd_mcc_test_set_scp_iop_invalid_type(const struct shell *shell,
 	search.search[2] = 't';  /* Anything */
 	search.len = 3;
 
-	shell_print(shell, "Search string: ");
-	shell_hexdump(shell, (uint8_t *)&search.search, search.len);
+	shell_print(sh, "Search string: ");
+	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
 
 	result = bt_mcc_set_scp(default_conn, search);
 	if (result) {
-		shell_print(shell, "Fail: %d", result);
+		shell_print(sh, "Fail: %d", result);
 	}
 
 	return result;
 }
 
-int cmd_mcc_test_set_scp_invalid_sci_len(const struct shell *shell,
+int cmd_mcc_test_set_scp_invalid_sci_len(const struct shell *sh,
 					 size_t argc, char *argv[])
 {
 	/* Reproduce a search that caused hard fault when sent from peer */
@@ -1041,69 +1041,69 @@ int cmd_mcc_test_set_scp_invalid_sci_len(const struct shell *shell,
 	search.len = 9;
 	memcpy(&search.search, offending_search, search.len);
 
-	shell_print(shell, "Search string: ");
-	shell_hexdump(shell, (uint8_t *)&search.search, search.len);
+	shell_print(sh, "Search string: ");
+	shell_hexdump(sh, (uint8_t *)&search.search, search.len);
 
 	result = bt_mcc_set_scp(default_conn, search);
 	if (result) {
-		shell_print(shell, "Fail: %d", result);
+		shell_print(sh, "Fail: %d", result);
 	}
 
 	return result;
 }
 #endif /* CONFIG_BT_DEBUG_MCC && CONFIG_BT_TESTING */
 
-int cmd_mcc_read_search_results_obj_id(const struct shell *shell, size_t argc,
+int cmd_mcc_read_search_results_obj_id(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_search_results_obj_id(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
-int cmd_mcc_read_content_control_id(const struct shell *shell, size_t argc,
+int cmd_mcc_read_content_control_id(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
 	int result;
 
 	result = bt_mcc_read_content_control_id(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
 
 #ifdef CONFIG_BT_MCC_OTS
-int cmd_mcc_otc_read_features(const struct shell *shell, size_t argc,
+int cmd_mcc_otc_read_features(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 	int result;
 
 	result = bt_otc_read_feature(default_conn, bt_mcc_otc_inst());
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_read(const struct shell *shell, size_t argc, char *argv[])
+int cmd_mcc_otc_read(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 
 	result = bt_otc_read(default_conn, bt_mcc_otc_inst());
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_read_metadata(const struct shell *shell, size_t argc,
+int cmd_mcc_otc_read_metadata(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
 	int result;
@@ -1111,12 +1111,12 @@ int cmd_mcc_otc_read_metadata(const struct shell *shell, size_t argc,
 	result = bt_otc_obj_metadata_read(default_conn, bt_mcc_otc_inst(),
 					  BT_OTC_METADATA_REQ_ALL);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_select(const struct shell *shell, size_t argc, char *argv[])
+int cmd_mcc_otc_select(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	uint64_t id;
@@ -1124,66 +1124,66 @@ int cmd_mcc_otc_select(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 1) {
 		id = strtol(argv[1], NULL, 0);
 	} else {
-		shell_error(shell, "Invalid parameter, requires the Object ID");
+		shell_error(sh, "Invalid parameter, requires the Object ID");
 		return -ENOEXEC;
 	}
 
 	result = bt_otc_select_id(default_conn, bt_mcc_otc_inst(), id);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_select_first(const struct shell *shell, size_t argc,
+int cmd_mcc_otc_select_first(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	int result;
 
 	result = bt_otc_select_first(default_conn, bt_mcc_otc_inst());
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_select_last(const struct shell *shell, size_t argc,
+int cmd_mcc_otc_select_last(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	int result;
 
 	result = bt_otc_select_last(default_conn, bt_mcc_otc_inst());
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_select_next(const struct shell *shell, size_t argc,
+int cmd_mcc_otc_select_next(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	int result;
 
 	result = bt_otc_select_next(default_conn, bt_mcc_otc_inst());
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_select_prev(const struct shell *shell, size_t argc,
+int cmd_mcc_otc_select_prev(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	int result;
 
 	result = bt_otc_select_prev(default_conn, bt_mcc_otc_inst());
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_read_icon_object(const struct shell *shell, size_t argc,
+int cmd_mcc_otc_read_icon_object(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
 	/* Assumes the Icon Object has already been selected by ID */
@@ -1192,12 +1192,12 @@ int cmd_mcc_otc_read_icon_object(const struct shell *shell, size_t argc,
 
 	result = bt_mcc_otc_read_icon_object(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_read_track_segments_object(const struct shell *shell,
+int cmd_mcc_otc_read_track_segments_object(const struct shell *sh,
 					   size_t argc, char *argv[])
 {
 	/* Assumes the Segment Object has already been selected by ID */
@@ -1206,12 +1206,12 @@ int cmd_mcc_otc_read_track_segments_object(const struct shell *shell,
 
 	result = bt_mcc_otc_read_track_segments_object(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_read_current_track_object(const struct shell *shell,
+int cmd_mcc_otc_read_current_track_object(const struct shell *sh,
 					  size_t argc, char *argv[])
 {
 	/* Assumes the Curent Track Object has already been selected by ID */
@@ -1220,12 +1220,12 @@ int cmd_mcc_otc_read_current_track_object(const struct shell *shell,
 
 	result = bt_mcc_otc_read_current_track_object(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_read_next_track_object(const struct shell *shell,
+int cmd_mcc_otc_read_next_track_object(const struct shell *sh,
 					  size_t argc, char *argv[])
 {
 	/* Assumes the Next Track Object has already been selected by ID */
@@ -1234,12 +1234,12 @@ int cmd_mcc_otc_read_next_track_object(const struct shell *shell,
 
 	result = bt_mcc_otc_read_next_track_object(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_read_current_group_object(const struct shell *shell,
+int cmd_mcc_otc_read_current_group_object(const struct shell *sh,
 					  size_t argc, char *argv[])
 {
 	/* Assumes the Current Group Object has already been selected by ID */
@@ -1248,12 +1248,12 @@ int cmd_mcc_otc_read_current_group_object(const struct shell *shell,
 
 	result = bt_mcc_otc_read_current_group_object(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_otc_read_parent_group_object(const struct shell *shell,
+int cmd_mcc_otc_read_parent_group_object(const struct shell *sh,
 					 size_t argc, char *argv[])
 {
 	/* Assumes the Parent Group Object has already been selected by ID */
@@ -1262,64 +1262,64 @@ int cmd_mcc_otc_read_parent_group_object(const struct shell *shell,
 
 	result = bt_mcc_otc_read_parent_group_object(default_conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_ots_select_first(const struct shell *shell, size_t argc,
+int cmd_mcc_ots_select_first(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	int result;
 
 	result = bt_otc_select_first(default_conn, 0);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_ots_select_last(const struct shell *shell, size_t argc,
+int cmd_mcc_ots_select_last(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	int result;
 
 	result = bt_otc_select_last(default_conn, 0);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_ots_select_next(const struct shell *shell, size_t argc,
+int cmd_mcc_ots_select_next(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	int result;
 
 	result = bt_otc_select_next(default_conn, 0);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-int cmd_mcc_ots_select_prev(const struct shell *shell, size_t argc,
+int cmd_mcc_ots_select_prev(const struct shell *sh, size_t argc,
 			    char *argv[])
 {
 	int result;
 
 	result = bt_otc_select_prev(default_conn, 0);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 #endif /* CONFIG_BT_MCC_OTS */
 
 
-static int cmd_mcc(const struct shell *shell, size_t argc, char **argv)
+static int cmd_mcc(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }

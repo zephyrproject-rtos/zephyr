@@ -29,7 +29,7 @@ extern "C" {
 #if defined(CONFIG_BT_MCS)
 
 #if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
-int cmd_media_proxy_pl_test_set_media_state(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_test_set_media_state(const struct shell *sh, size_t argc,
 				  char *argv[])
 {
 	uint8_t state = strtol(argv[1], NULL, 0);
@@ -40,7 +40,7 @@ int cmd_media_proxy_pl_test_set_media_state(const struct shell *shell, size_t ar
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_media_proxy_pl_test_unset_parent_group(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_test_unset_parent_group(const struct shell *sh, size_t argc,
 				    char *argv[])
 {
 	media_proxy_pl_test_unset_parent_group();
@@ -51,7 +51,7 @@ int cmd_media_proxy_pl_test_unset_parent_group(const struct shell *shell, size_t
 
 /* Interface to _local_ control point, for testing and debugging */
 /* TODO: Enable again after MCS/MPL/Media Proxy interface rework
- *int cmd_media_proxy_pl_test_set_operation(const struct shell *shell, size_t argc,
+ *int cmd_media_proxy_pl_test_set_operation(const struct shell *sh, size_t argc,
  *				char *argv[])
  *{
  *	struct mpl_op_t op;
@@ -60,7 +60,7 @@ int cmd_media_proxy_pl_test_unset_parent_group(const struct shell *shell, size_t
  *	if (argc > 1) {
  *		op.opcode = strtol(argv[1], NULL, 0);
  *	} else {
- *		shell_error(shell, "Invalid parameter");
+ *		shell_error(sh, "Invalid parameter");
  *		return -ENOEXEC;
  *	}
  *
@@ -80,7 +80,7 @@ int cmd_media_proxy_pl_test_unset_parent_group(const struct shell *shell, size_t
 #endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 
 #if defined(CONFIG_BT_DEBUG_MCS)
-int cmd_media_proxy_pl_debug_dump_state(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_debug_dump_state(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	media_proxy_pl_debug_dump_state();
@@ -89,23 +89,23 @@ int cmd_media_proxy_pl_debug_dump_state(const struct shell *shell, size_t argc,
 }
 #endif /* CONFIG_BT_DEBUG_MCS */
 
-int cmd_media_proxy_pl_init(const struct shell *shell, size_t argc, char *argv[])
+int cmd_media_proxy_pl_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (!ctx_shell) {
-		ctx_shell = shell;
+		ctx_shell = sh;
 	}
 
 	int err = media_proxy_pl_init();
 
 	if (err) {
-		shell_error(shell, "Could not init mpl");
+		shell_error(sh, "Could not init mpl");
 	}
 
 	return err;
 }
 
 
-int cmd_media_proxy_pl_track_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_track_changed_cb(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	media_proxy_pl_track_changed_cb();
@@ -113,7 +113,7 @@ int cmd_media_proxy_pl_track_changed_cb(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-int cmd_media_proxy_pl_title_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_title_changed_cb(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	media_proxy_pl_track_title_cb("Interlude #3");
@@ -121,7 +121,7 @@ int cmd_media_proxy_pl_title_changed_cb(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-int cmd_media_proxy_pl_duration_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_duration_changed_cb(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	media_proxy_pl_track_duration_cb(12000);
@@ -129,7 +129,7 @@ int cmd_media_proxy_pl_duration_changed_cb(const struct shell *shell, size_t arg
 	return 0;
 }
 
-int cmd_media_proxy_pl_position_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_position_changed_cb(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	media_proxy_pl_track_position_cb(2048);
@@ -137,7 +137,7 @@ int cmd_media_proxy_pl_position_changed_cb(const struct shell *shell, size_t arg
 	return 0;
 }
 
-int cmd_media_proxy_pl_playback_speed_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_playback_speed_changed_cb(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
 	media_proxy_pl_playback_speed_cb(96);
@@ -145,7 +145,7 @@ int cmd_media_proxy_pl_playback_speed_changed_cb(const struct shell *shell, size
 	return 0;
 }
 
-int cmd_media_proxy_pl_seeking_speed_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_seeking_speed_changed_cb(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
 	media_proxy_pl_seeking_speed_cb(4);
@@ -154,7 +154,7 @@ int cmd_media_proxy_pl_seeking_speed_changed_cb(const struct shell *shell, size_
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_media_proxy_pl_current_track_id_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_current_track_id_changed_cb(const struct shell *sh, size_t argc,
 					char *argv[])
 {
 	media_proxy_pl_current_track_id_cb(16);
@@ -162,7 +162,7 @@ int cmd_media_proxy_pl_current_track_id_changed_cb(const struct shell *shell, si
 	return 0;
 }
 
-int cmd_media_proxy_pl_next_track_id_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_next_track_id_changed_cb(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
 	media_proxy_pl_next_track_id_cb(17);
@@ -170,7 +170,7 @@ int cmd_media_proxy_pl_next_track_id_changed_cb(const struct shell *shell, size_
 	return 0;
 }
 
-int cmd_media_proxy_pl_current_group_id_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_current_group_id_changed_cb(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	media_proxy_pl_current_group_id_cb(19);
@@ -178,7 +178,7 @@ int cmd_media_proxy_pl_current_group_id_changed_cb(const struct shell *shell, si
 	return 0;
 }
 
-int cmd_media_proxy_pl_parent_group_id_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_parent_group_id_changed_cb(const struct shell *sh, size_t argc,
 				       char *argv[])
 {
 	media_proxy_pl_parent_group_id_cb(23);
@@ -187,7 +187,7 @@ int cmd_media_proxy_pl_parent_group_id_changed_cb(const struct shell *shell, siz
 }
 #endif /* CONFIG_BT_OTS */
 
-int cmd_media_proxy_pl_playing_order_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_playing_order_changed_cb(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
 	media_proxy_pl_playing_order_cb(1);
@@ -195,7 +195,7 @@ int cmd_media_proxy_pl_playing_order_changed_cb(const struct shell *shell, size_
 	return 0;
 }
 
-int cmd_media_proxy_pl_state_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_state_changed_cb(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
 	media_proxy_pl_media_state_cb(BT_MCS_MEDIA_STATE_SEEKING);
@@ -203,7 +203,7 @@ int cmd_media_proxy_pl_state_changed_cb(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-int cmd_media_proxy_pl_media_opcodes_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_media_opcodes_changed_cb(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
 	media_proxy_pl_operations_supported_cb(0x00aa55aa);
@@ -212,7 +212,7 @@ int cmd_media_proxy_pl_media_opcodes_changed_cb(const struct shell *shell, size_
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_media_proxy_pl_search_results_changed_cb(const struct shell *shell, size_t argc,
+int cmd_media_proxy_pl_search_results_changed_cb(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
 	media_proxy_pl_search_results_id_cb(19);
@@ -221,9 +221,9 @@ int cmd_media_proxy_pl_search_results_changed_cb(const struct shell *shell, size
 }
 #endif /* CONFIG_BT_OTS */
 
-static int cmd_mpl(const struct shell *shell, size_t argc, char **argv)
+static int cmd_mpl(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
