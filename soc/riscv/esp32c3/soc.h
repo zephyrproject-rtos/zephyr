@@ -41,6 +41,8 @@ extern STATUS esp32c3_rom_uart_tx_one_char(uint8_t chr);
 extern STATUS esp32c3_rom_uart_rx_one_char(uint8_t *chr);
 extern void esp32c3_rom_ets_set_user_start(uint32_t start);
 
+ulong_t __soc_get_gp_initial_value(void);
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* __SOC_H__ */
