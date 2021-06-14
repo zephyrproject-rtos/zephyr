@@ -1121,19 +1121,23 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	uint16_t psm, mtu, mps, credits, result = BT_L2CAP_LE_SUCCESS;
 	uint16_t scid, dcid[L2CAP_ECRED_CHAN_MAX];
 	int i = 0;
+	uint8_t req_cid_count;
 
 	/* set dcid to zeros here, in case of all connections refused error */
 	memset(dcid, 0, sizeof(dcid));
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small LE conn req packet size");
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
+		req_cid_count = 0;
 		goto response;
 	}
 
 	req = net_buf_pull_mem(buf, sizeof(*req));
+	req_cid_count = buf->len / sizeof(scid);
 
 	if (buf->len > sizeof(dcid)) {
 		BT_ERR("Too large LE conn req packet size");
+		req_cid_count = L2CAP_ECRED_CHAN_MAX;
 		result = BT_L2CAP_LE_ERR_INVALID_PARAMS;
 		goto response;
 	}
@@ -1194,7 +1198,8 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 
 response:
 	buf = l2cap_create_le_sig_pdu(buf, BT_L2CAP_ECRED_CONN_RSP, ident,
-				      sizeof(*rsp) + (sizeof(scid) * i));
+				      sizeof(*rsp) +
+				      (sizeof(scid) * req_cid_count));
 	if (!buf) {
 		return;
 	}
@@ -1207,16 +1212,8 @@ response:
 		rsp->credits = sys_cpu_to_le16(ch->rx.init_credits);
 	}
 	rsp->result = sys_cpu_to_le16(result);
-	if (ch) {
-		net_buf_add_mem(buf, dcid, sizeof(scid)*i);
-	} else {
-		/* Chan of Null value indicates that all connections
-		 * were rejected: dcid is all zeros, so we can copy
-		 * from it as much as scids were requested
-		 */
-		net_buf_add_mem(buf, dcid, sizeof(scid));
-	}
 
+	net_buf_add_mem(buf, dcid, sizeof(scid) * req_cid_count);
 
 	l2cap_send(conn, BT_L2CAP_CID_LE_SIG, buf);
 }
