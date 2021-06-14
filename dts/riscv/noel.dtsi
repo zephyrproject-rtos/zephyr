@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2020 Cobham Gaisler AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu@0 {
+			clock-frequency = <0>;
+			compatible = "gaisler,noelv", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv32imac";
+			hlic: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+		interrupt-parent = <&plic>;
+
+		plic: interrupt-controller@f8000000 {
+			riscv,max-priority = <7>;
+			riscv,ndev = <31>;
+			reg = <0xf8000000 0x00002000
+			       0xf8002000 0x001fe000
+			       0xf8200000 0x02000000>;
+			reg-names = "prio", "irq_en", "reg";
+			interrupts-extended = <
+				&hlic 11
+			>;
+			interrupt-controller;
+			compatible = "sifive,plic-1.0.0";
+			#interrupt-cells = < 0x02 >;
+		};
+
+		flash0: flash@c0000000 {
+			compatible = "soc-nv-flash";
+			reg = <0xC0000000 0x40000>;
+		};
+
+		ram0: memory@0 {
+			compatible = "mmio-sram";
+			reg = <0x00000000 0x400000>;
+		};
+
+		uart0: uart@fc001000 {
+			compatible = "gaisler,apbuart";
+			interrupts = <1>;
+			reg = <0xfc001000 0x100>;
+			label = "uart_0";
+			status = "disabled";
+			current-speed = <0>;
+			clock-frequency = <0>;
+		};
+	};
+};

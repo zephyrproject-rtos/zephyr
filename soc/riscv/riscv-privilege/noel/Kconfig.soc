@@ -1,0 +1,12 @@
+# Copyright (c) 2020 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "NOEL-V system implementation"
+	depends on SOC_SERIES_RISCV_NOEL
+
+config SOC_RISCV_NOEL
+	bool "NOEL-V system implementation"
+	select ATOMIC_OPERATIONS_C
+
+endchoice
