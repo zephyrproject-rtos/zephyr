@@ -254,7 +254,7 @@ config ESP32C3_SYS_TIMER
 	depends on SOC_ESP32C3
 	default y
 	help
-	  This option enables the system timer driver for the Espressif ESP32C3 
+	  This option enables the system timer driver for the Espressif ESP32C3
 	  and provides the standard "system clock driver" interface.
 
 config XTENSA_TIMER_ID

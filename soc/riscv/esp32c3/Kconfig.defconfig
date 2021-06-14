@@ -6,24 +6,24 @@
 if SOC_ESP32C3
 
 config SOC
-    default "esp32c3"
+	default "esp32c3"
 
 config NUM_IRQS
-    default 32
+	default 32
 
 config GEN_ISR_TABLES
-    default y
+	default y
 
 config GEN_SW_ISR_TABLE
-    default y
+	default y
 
 config GEN_IRQ_VECTOR_TABLE
-    default n
+	default n
 
 config XIP
-    default n
+	default n
 
 config ISR_STACK_SIZE
-    default 2048
+	default 2048
 
 endif

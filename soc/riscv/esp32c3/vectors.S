@@ -1,4 +1,4 @@
-/* Copyright 2020 Espressif Systems (Shanghai) PTE LTD 
+/* Copyright 2020 Espressif Systems (Shanghai) PTE LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */

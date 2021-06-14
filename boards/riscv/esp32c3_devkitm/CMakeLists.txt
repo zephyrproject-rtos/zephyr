@@ -44,6 +44,8 @@ if(CONFIG_BOOTLOADER_ESP_IDF)
       ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.elf)
   endif()
 
+	set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
+
   add_dependencies(app EspIdfBootloader EspPartitionTable)
 
   board_finalize_runner_args(esp32 "--esp-flash-bootloader=${espidf_build_dir}/bootloader/bootloader.bin")
