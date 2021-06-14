@@ -20,13 +20,13 @@
 #include <linker/sections.h>
 #include <sys/atomic.h>
 #include <sys/__assert.h>
-#include <sched_priq.h>
+#include <kernel/sched_priq.h>
 #include <sys/dlist.h>
 #include <sys/slist.h>
 #include <sys/sflist.h>
 #include <sys/util.h>
 #include <kernel_structs.h>
-#include <mempool_heap.h>
+#include <kernel/mempool_heap.h>
 #include <kernel_version.h>
 #include <syscall.h>
 #include <sys/printk.h>

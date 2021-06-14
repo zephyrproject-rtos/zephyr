@@ -6,7 +6,7 @@
 #include <kernel.h>
 #include <ksched.h>
 #include <spinlock.h>
-#include <sched_priq.h>
+#include <kernel/sched_priq.h>
 #include <wait_q.h>
 #include <kswap.h>
 #include <kernel_arch_func.h>
