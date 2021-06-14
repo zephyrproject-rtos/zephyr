@@ -7,12 +7,6 @@ include: i2c-device.yaml
 bus: ht16k33
 
 properties:
-    "#address-cells":
-      required: true
-      const: 1
-    "#size-cells":
-      required: true
-      const: 0
     label:
       required: true
     irq-gpios:
