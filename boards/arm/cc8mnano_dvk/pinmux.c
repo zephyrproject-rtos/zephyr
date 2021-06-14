@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <init.h>
+#include <fsl_iomuxc.h>
+
+static int cc8mnano_dvk_pinmux_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay)
+	IOMUXC_SetPinMux(IOMUXC_UART4_RXD_UART4_RX, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_UART4_RXD_UART4_RX,
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6U) |
+			    IOMUXC_SW_PAD_CTL_PAD_FSEL(2U));
+	IOMUXC_SetPinMux(IOMUXC_UART4_TXD_UART4_TX, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_UART4_TXD_UART4_TX,
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6U) |
+			    IOMUXC_SW_PAD_CTL_PAD_FSEL(2U));
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+	IOMUXC_SetPinMux(IOMUXC_SD2_RESET_B_GPIO2_IO19, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_SD2_RESET_B_GPIO2_IO19,
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6U) |
+			    IOMUXC_SW_PAD_CTL_PAD_FSEL(2U));
+	IOMUXC_SetPinMux(IOMUXC_SD2_WP_GPIO2_IO20, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_SD2_WP_GPIO2_IO20,
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6U) |
+			    IOMUXC_SW_PAD_CTL_PAD_FSEL(2U));
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+	IOMUXC_SetPinMux(IOMUXC_GPIO1_IO10_GPIO1_IO10, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO1_IO10_GPIO1_IO10,
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6U) |
+			    IOMUXC_SW_PAD_CTL_PAD_FSEL(2U));
+	IOMUXC_SetPinMux(IOMUXC_GPIO1_IO11_GPIO1_IO11, 0U);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO1_IO11_GPIO1_IO11,
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6U) |
+			    IOMUXC_SW_PAD_CTL_PAD_FSEL(2U));
+#endif
+
+	return 0;
+
+}
+
+SYS_INIT(cc8mnano_dvk_pinmux_init, PRE_KERNEL_1, 0);

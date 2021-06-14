@@ -108,6 +108,9 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				(CLOCK_GetRootPreDivider(kCLOCK_RootUart4)) /
 				(CLOCK_GetRootPostDivider(kCLOCK_RootUart4)) /
 				10;
+		if(CONFIG_SOC_SERIES_IMX8MN_M7){
+			*rate=24000000;			//24MHz oscillator is used for DVK
+			}
 		break;
 #endif
 

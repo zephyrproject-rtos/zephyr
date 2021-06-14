@@ -1,51 +1,209 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2016 Open-RnD Sp. z o.o.
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr.h>
 #include <device.h>
-#include <devicetree.h>
 #include <drivers/gpio.h>
+#include <sys/util.h>
+#include <sys/printk.h>
+#include <inttypes.h>
+#include <fsl_gpc.h>
 
-/* 1000 msec = 1 sec */
-#define SLEEP_TIME_MS   1000
 
-/* The devicetree node identifier for the "led0" alias. */
-#define LED0_NODE DT_ALIAS(led0)
+    gpc_lpm_config_t config;
+    
+static bool prev_state=false;
 
-#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
-#define LED0	DT_GPIO_LABEL(LED0_NODE, gpios)
-#define PIN	DT_GPIO_PIN(LED0_NODE, gpios)
-#define FLAGS	DT_GPIO_FLAGS(LED0_NODE, gpios)
+void my_work_handler(struct k_work *work)
+{
+	prev_state=!prev_state;
+	if(prev_state){
+        __DSB();
+        __ISB();
+        __WFI();
+		printk("Entered WAIT MODE iA\n");
+		GPC_EnterWaitMode(GPC, &config);
+	}
+	else{
+        __DSB();
+        __ISB();
+        __WFI();
+		printk("Entered STOP MODE iA\n");
+		GPC_EnterStopMode(GPC, &config);
+	}    
+}
+
+K_WORK_DEFINE(my_work, my_work_handler);
+
+void my_timer_handler(struct k_timer *dummy)
+{
+    k_work_submit(&my_work);
+}
+
+K_TIMER_DEFINE(my_timer, my_timer_handler, NULL);
+
+#define SLEEP_TIME_MS	7000
+
+/*
+ * Get button configuration from the devicetree sw0 alias.
+ *
+ * At least a GPIO device and pin number must be provided. The 'flags'
+ * cell is optional.
+ */
+
+#define SW0_NODE	DT_ALIAS(sw0)
+
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#define SW0_GPIO_LABEL	DT_GPIO_LABEL(SW0_NODE, gpios)
+#define SW0_GPIO_PIN	DT_GPIO_PIN(SW0_NODE, gpios)
+#define SW0_GPIO_FLAGS	(GPIO_INPUT | DT_GPIO_FLAGS(SW0_NODE, gpios))
 #else
-/* A build error here means your board isn't set up to blink an LED. */
-#error "Unsupported board: led0 devicetree alias is not defined"
-#define LED0	""
-#define PIN	0
-#define FLAGS	0
+#error "Unsupported board: sw0 devicetree alias is not defined"
+#define SW0_GPIO_LABEL	""
+#define SW0_GPIO_PIN	0
+#define SW0_GPIO_FLAGS	0
 #endif
+
+/* LED helpers, which use the led0 devicetree alias if it's available. */
+static const struct device *initialize_led(void);
+static void match_led_to_button(const struct device *button,
+				const struct device *led);
+
+static struct gpio_callback button_cb_data;
+
+void button_pressed(const struct device *dev, struct gpio_callback *cb,
+		    uint32_t pins)
+{
+	__enable_irq();
+	GPC->LPCR_M7 = GPC->LPCR_M7 & (~GPC_LPCR_M7_LPM0_MASK);
+	printk("Left LP state.\tButton pressed at %" PRIu32 "\n", k_cycle_get_32());
+}
 
 void main(void)
 {
-	const struct device *dev;
-	bool led_is_on = true;
+    config.enCpuClk              = false;
+    config.enFastWakeUp          = false;
+    config.enDsmMask             = false;
+    config.enWfiMask             = false;
+    config.enVirtualPGCPowerdown = true;
+    config.enVirtualPGCPowerup   = true;
+
+	//TimerInterruptSetup();
+		struct k_timer my_timer;
+	extern void my_expiry_function(struct k_timer *timer_id);
+
+	k_timer_init(&my_timer, my_timer_handler, NULL);
+	
+	k_timer_start(&my_timer, K_SECONDS(2), K_SECONDS(2));
+
+	#define APP_PowerUpSlot (5U)
+	#define APP_PowerDnSlot (6U)
+	
+  	GPC_Init(GPC, APP_PowerUpSlot, APP_PowerDnSlot);
+	GPC_EnableIRQ(GPC, GPIO2_Combined_16_31_IRQn);  //GPIO2_20 or SW2
+	
+
+    
+	const struct device *button;
+	const struct device *led;
 	int ret;
 
-	dev = device_get_binding(LED0);
-	if (dev == NULL) {
+	button = device_get_binding(SW0_GPIO_LABEL);
+	if (button == NULL) {
+		printk("Error: didn't find %s device\n", SW0_GPIO_LABEL);
 		return;
 	}
 
-	ret = gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
-	if (ret < 0) {
+	ret = gpio_pin_configure(button, SW0_GPIO_PIN, SW0_GPIO_FLAGS);
+	if (ret != 0) {
+		printk("Error %d: failed to configure %s pin %d\n",
+		       ret, SW0_GPIO_LABEL, SW0_GPIO_PIN);
 		return;
 	}
 
+	ret = gpio_pin_interrupt_configure(button,
+					   SW0_GPIO_PIN,
+					   GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret != 0) {
+		printk("Error %d: failed to configure interrupt on %s pin %d\n",
+			ret, SW0_GPIO_LABEL, SW0_GPIO_PIN);
+		return;
+	}
+
+	gpio_init_callback(&button_cb_data, button_pressed, BIT(SW0_GPIO_PIN));
+	gpio_add_callback(button, &button_cb_data);
+	printk("Set up button at %s pin %d\n", SW0_GPIO_LABEL, SW0_GPIO_PIN);
+
+	led = initialize_led();
+
+	printk("Press the button\n");
 	while (1) {
-		gpio_pin_set(dev, PIN, (int)led_is_on);
-		led_is_on = !led_is_on;
+	match_led_to_button(button, led);
+	//	printk("Entered power state iA\n");
 		k_msleep(SLEEP_TIME_MS);
 	}
 }
+
+/*
+ * The led0 devicetree alias is optional. If present, we'll use it
+ * to turn on the LED whenever the button is pressed.
+ */
+
+#define LED0_NODE	DT_ALIAS(led0)
+
+#if DT_NODE_HAS_STATUS(LED0_NODE, okay) && DT_NODE_HAS_PROP(LED0_NODE, gpios)
+#define LED0_GPIO_LABEL	DT_GPIO_LABEL(LED0_NODE, gpios)
+#define LED0_GPIO_PIN	DT_GPIO_PIN(LED0_NODE, gpios)
+#define LED0_GPIO_FLAGS	(GPIO_OUTPUT | DT_GPIO_FLAGS(LED0_NODE, gpios))
+#endif
+
+#ifdef LED0_GPIO_LABEL
+static const struct device *initialize_led(void)
+{
+	const struct device *led;
+	int ret;
+
+	led = device_get_binding(LED0_GPIO_LABEL);
+	if (led == NULL) {
+		printk("Didn't find LED device %s\n", LED0_GPIO_LABEL);
+		return NULL;
+	}
+
+	ret = gpio_pin_configure(led, LED0_GPIO_PIN, LED0_GPIO_FLAGS);
+	if (ret != 0) {
+		printk("Error %d: failed to configure LED device %s pin %d\n",
+		       ret, LED0_GPIO_LABEL, LED0_GPIO_PIN);
+		return NULL;
+	}
+
+	printk("Set up LED at %s pin %d\n", LED0_GPIO_LABEL, LED0_GPIO_PIN);
+
+	return led;
+}
+
+static void match_led_to_button(const struct device *button,
+				const struct device *led)
+{
+	bool val;
+
+	val = gpio_pin_get(button, SW0_GPIO_PIN);
+	gpio_pin_set(led, LED0_GPIO_PIN, val);
+}
+
+#else  /* !defined(LED0_GPIO_LABEL) */
+static const struct device *initialize_led(void)
+{
+	printk("No LED device was defined\n");
+	return NULL;
+}
+
+static void match_led_to_button(const struct device *button,
+				const struct device *led)
+{
+	return;
+}
+#endif	/* LED0_GPIO_LABEL */

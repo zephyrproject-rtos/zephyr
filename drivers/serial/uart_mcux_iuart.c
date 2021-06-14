@@ -236,7 +236,6 @@ static int mcux_iuart_init(const struct device *dev)
 	uart_config.enableTx = true;
 	uart_config.enableRx = true;
 	uart_config.baudRate_Bps = config->baud_rate;
-
 	UART_Init(config->base, &uart_config, clock_freq);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

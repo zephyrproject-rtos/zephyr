@@ -1,0 +1,9 @@
+# CC8MNANO DVK board
+
+# Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CC8MNANO_DVK
+	bool "Digi CC8M Nano DVK"
+	depends on SOC_SERIES_IMX8MN_M7
+	select SOC_PART_NUMBER_MIMX8MN6DVTJZ

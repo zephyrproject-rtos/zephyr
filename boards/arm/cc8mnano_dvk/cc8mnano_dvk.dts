@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8mn_m7.dtsi>
+
+/ {
+	model = "Digi CC8M Nano DVK board";
+	compatible = "nxp,cc8mnano_dvk";
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		uart-4 = &uart4;
+		sw0    = &user_switch_2;
+	};
+
+	chosen {
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpio2 19 GPIO_ACTIVE_LOW>;
+			label = "User LED3";
+		};
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+			label = "User LED2";
+		};
+	};
+	
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_switch_2: user_sw_2 {
+			gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
+			label = "User SW2";
+		};
+	};
+	
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10000000>;	
+		};
+	};	
+};
+
+&uart4 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&mub {
+	status = "okay";
+};

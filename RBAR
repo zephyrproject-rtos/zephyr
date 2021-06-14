@@ -1,0 +1,99 @@
+arch/arc/Kconfig:	  - the MPU-based stack guard
+arch/arc/Kconfig:	  prioritized over the MPU-based stack guard.
+arch/arm/core/aarch32/Kconfig:	  - the MPU-based stack guard
+arch/arm/core/aarch32/Kconfig:	  prioritized over the MPU-based stack guard. The developer
+arch/arm/core/aarch32/Kconfig:	  still has the option to manually select the MPU-based
+arch/arm/core/aarch32/cortex_m/Kconfig:	  MPU-based solution.
+arch/arm/core/aarch32/cortex_m/fault.c:	uint32_t sperr = SYSMPU->CESR & SYSMPU_CESR_SPERR_MASK;
+arch/arm/core/aarch32/cortex_m/fault.c:			STORE_xFAR(edr, SYSMPU->SP[i].EDR);
+arch/arm/core/aarch32/cortex_m/fault.c:			ear = SYSMPU->SP[i].EAR;
+arch/arm/core/aarch32/cortex_m/fault.c:				 * stack frame is on PSP. For NXP MPU-related
+arch/arm/core/aarch32/cortex_m/fault.c:		SYSMPU->CESR &= ~sperr;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu.c:	uint32_t type = MPU->TYPE;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu.c:	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu.c:	MPU->CTRL = 0;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu.c:		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos == 8,
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu.c:		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos ==
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	MPU->RBAR = (region_conf->base & MPU_RBAR_ADDR_Msk)
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	MPU->RASR = region_conf->attr.rasr | MPU_RASR_ENABLE_Msk;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	return MPU->RBAR & MPU_RBAR_ADDR_Msk;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	uint32_t rasr_size = (MPU->RASR & MPU_RASR_SIZE_Msk) >> MPU_RASR_SIZE_Pos;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	rasr = MPU->RASR;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	MPU->RNR = r_index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	rasr = MPU->RASR;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	MPU->RNR = r_index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	rbar = MPU->RBAR;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v7_internal.h:	rasr = MPU->RASR;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->MAIR0 =
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	return MPU->RBAR & MPU_RBAR_BASE_Msk;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->RBAR = (MPU->RBAR & (~MPU_RBAR_BASE_Msk))
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	return (MPU->RLAR & MPU_RLAR_LIMIT_Msk) | (~MPU_RLAR_LIMIT_Msk);
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->RLAR = (MPU->RLAR & (~MPU_RLAR_LIMIT_Msk))
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	attr->rbar = MPU->RBAR &
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	attr->mair_idx = (MPU->RLAR & MPU_RLAR_AttrIndx_Msk) >>
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	region_conf->base = (MPU->RBAR & MPU_RBAR_BASE_Msk);
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	region_conf->attr.r_limit = MPU->RLAR & MPU_RLAR_LIMIT_Msk;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	MPU->RNR = index;
+arch/arm/core/aarch32/cortex_m/mpu/arm_mpu_v8_internal.h:	return (MPU->RLAR & MPU_RLAR_EN_Msk) ? 1 : 0;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		__ASSERT(region_base == SYSMPU->WORD[index][0],
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:			 index, region_base, (uint32_t)SYSMPU->WORD[index][0]);
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		__ASSERT(region_end == SYSMPU->WORD[index][1],
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:			 index, region_end, (uint32_t)SYSMPU->WORD[index][1]);
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		SYSMPU->RGDAAC[index] = region_attr;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		SYSMPU->WORD[index][0] = region_base;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		SYSMPU->WORD[index][1] = region_end;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		SYSMPU->WORD[index][2] = region_attr;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		SYSMPU->WORD[index][3] = SYSMPU_WORD_VLD_MASK;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		    (uint32_t)SYSMPU->WORD[index][0],
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		    (uint32_t)SYSMPU->WORD[index][1],
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		    (uint32_t)SYSMPU->WORD[index][2],
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:		    (uint32_t)SYSMPU->WORD[index][3]);
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:			SYSMPU->WORD[i][0] = 0;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:			SYSMPU->WORD[i][1] = 0;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:			SYSMPU->WORD[i][2] = 0;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:			SYSMPU->WORD[i][3] = 0;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:	SYSMPU->CESR |= SYSMPU_CESR_VLD_MASK;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:	SYSMPU->CESR &= ~SYSMPU_CESR_VLD_MASK;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:	SYSMPU->CESR |=  SYSMPU_CESR_SPERR_MASK;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:	return SYSMPU->WORD[r_index][0];
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:	return (SYSMPU->WORD[r_index][1] + 1) - SYSMPU->WORD[r_index][0];
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:	return SYSMPU->WORD[r_index][3] & SYSMPU_WORD_VLD_MASK;
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:	r_addr_start = SYSMPU->WORD[r_index][0];
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:	r_addr_end = SYSMPU->WORD[r_index][1];
+arch/arm/core/aarch32/cortex_m/mpu/nxp_mpu.c:	uint32_t r_ap = SYSMPU->WORD[r_index][2];
+arch/arm/core/aarch32/cortex_m/scb.c:		((MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos);
+arch/arm/core/aarch32/userspace.S:    /* Note [when using MPU-based stack guarding]:
+boards/arm/mps2_an521/Kconfig.defconfig:# MPU-based null-pointer dereferencing detection cannot
+doc/reference/kernel/other/float.rst:MPU-based stack protection mechanism to properly configure the size of
+doc/reference/kernel/other/float.rst:When the MPU-based stack protection mechanism is not enabled, lazy stacking
+doc/reference/kernel/other/float.rst:is always active in the Zephyr application. When the MPU-based stack protection
+doc/reference/usermode/memory_domain.rst:  underlying hardware constraints. For example, many MPU-based systems require
+doc/releases/release-notes-1.12.rst:* :github:`7452` - nRF52, NXP kinetis, ARM Beetle and  STM MPU option appear for every MPU-equipped device
+doc/releases/release-notes-2.0.rst:* :github:`16360` - ARM: Implement configurable MPU-based stack overflow guards
+doc/releases/release-notes-2.0.rst:* :github:`14828` - ARM: MPU-based HW thread stack protection not working properly when building with CONFIG_FLOAT
+doc/releases/release-notes-2.4.rst:* :github:`26600` - net.util test is broken on MPU-enabled ARM platforms
+dts/bindings/sensor/invensense,mpu6050.yaml:description: MPU-6000 motion tracking device
+dts/bindings/sensor/invensense,mpu6050.yaml:# MPU-6000 is SPI or I2C.  MPU-6050 is I2C-only.  Driver does not
+dts/bindings/sensor/invensense,mpu9150.yaml:    InvenSense MPU-9150 Nine-Axis (Gyro + Accelerometer + Compass). See more
+include/net/socket.h: * However in Zephyr the file descriptor scope is global, and MPU-based systems
+samples/application_development/code_relocation/src/main.c:		MPU->RNR = index;
+samples/application_development/code_relocation/src/main.c:		if (MPU->RASR & MPU_RASR_XN_Msk) {
+samples/application_development/code_relocation/src/main.c:			MPU->RASR ^= MPU_RASR_XN_Msk;
+soc/arm/nxp_kinetis/k2x/soc.c:	temp_reg = SYSMPU->CESR;
+soc/arm/nxp_kinetis/k2x/soc.c:	SYSMPU->CESR = temp_reg;
+soc/arm/nxp_kinetis/k6x/soc.c:	temp_reg = SYSMPU->CESR;
+soc/arm/nxp_kinetis/k6x/soc.c:	SYSMPU->CESR = temp_reg;
+soc/arm/nxp_kinetis/k8x/soc.c:	temp_reg = SYSMPU->CESR;
+soc/arm/nxp_kinetis/k8x/soc.c:	SYSMPU->CESR = temp_reg;
+soc/arm/nxp_kinetis/ke1xf/soc.c:	temp_reg = SYSMPU->CESR;
+soc/arm/nxp_kinetis/ke1xf/soc.c:	SYSMPU->CESR = temp_reg;

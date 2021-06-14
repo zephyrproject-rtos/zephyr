@@ -5,3 +5,5 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(blinky)
 
 target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE src/timer_mod.c)
+#target_link_libraries(app PRIVATE src/timer_mod.h)
