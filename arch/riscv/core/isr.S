@@ -174,7 +174,7 @@
 #define STORE_CALLEE_SAVED(reg) \
 	DO_CALLEE_SAVED(RV_OP_STOREREG, reg)
 
-#define LOAD_CALLER_SAVED(reg) \
+#define LOAD_CALLEE_SAVED(reg) \
 	DO_CALLEE_SAVED(RV_OP_LOADREG, reg)
 
 #define DO_CALLER_SAVED(op) \
@@ -201,7 +201,7 @@
 	addi sp, sp, -__z_arch_esf_t_SIZEOF	;\
 	DO_CALLER_SAVED(RV_OP_STOREREG)		;
 
-#define LOAD_CALLEE_SAVED() \
+#define LOAD_CALLER_SAVED() \
 	DO_CALLER_SAVED(RV_OP_LOADREG)		;\
 	addi sp, sp, __z_arch_esf_t_SIZEOF	;
 
@@ -883,7 +883,7 @@ skip_callee_saved_reg:
 	RV_OP_LOADREG sp, _thread_offset_to_sp(t1)
 
 	/* Restore callee-saved registers of new thread */
-	LOAD_CALLER_SAVED(t1)
+	LOAD_CALLEE_SAVED(t1)
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Determine if we need to restore floating-point registers. */
@@ -967,7 +967,7 @@ skip_load_fp_caller_saved_resched:
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 	/* Restore caller-saved registers from thread stack */
-	LOAD_CALLEE_SAVED()
+	LOAD_CALLER_SAVED()
 
 	/* Call SOC_ERET to exit ISR */
 	SOC_ERET
@@ -1032,7 +1032,7 @@ skip_load_fp_caller_saved:
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 	/* Restore caller-saved registers from thread stack */
-	LOAD_CALLEE_SAVED()
+	LOAD_CALLER_SAVED()
 
 #ifdef CONFIG_PMP_STACK_GUARD
 	csrrw sp, mscratch, sp
