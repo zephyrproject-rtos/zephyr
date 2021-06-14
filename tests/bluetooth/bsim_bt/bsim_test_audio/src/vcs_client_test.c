@@ -448,7 +448,7 @@ static int test_vocs(void)
 	struct bt_conn *cached_conn;
 
 	printk("Getting VOCS client conn\n");
-	err = bt_vocs_client_conn_get(vcs.vocs[0], &cached_conn);
+	err = bt_vocs_client_conn_get(vcs_included.vocs[0], &cached_conn);
 	if (err != 0) {
 		FAIL("Could not get VOCS client conn (err %d)\n", err);
 		return err;
