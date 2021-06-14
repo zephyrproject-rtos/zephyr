@@ -22,7 +22,7 @@ Maintainer: Miguel Luis, Gregory Cristian and Matthieu Verdy
  * \remark These defines are used for computing the frequency divider to set the RF frequency
  */
 #define XTAL_FREQ                                   52000000
-#define FREQ_STEP                                   ( ( double )( XTAL_FREQ / pow( 2.0, 18.0 ) ) )
+#define FREQ_STEP                                   ( ( double )( XTAL_FREQ / ( 1 << 18 ) ) )
 
 /*!
  * \brief Compensation delay for SetAutoTx method in microseconds
