@@ -122,8 +122,6 @@
 	RV_OP_STOREREG temp, __z_arch_esf_t_mstatus_OFFSET(to_reg)	;\
 	RV_OP_LOADREG temp, __z_arch_esf_t_ra_OFFSET(from_reg)		;\
 	RV_OP_STOREREG temp, __z_arch_esf_t_ra_OFFSET(to_reg)		;\
-	RV_OP_LOADREG temp, __z_arch_esf_t_gp_OFFSET(from_reg)		;\
-	RV_OP_STOREREG temp, __z_arch_esf_t_gp_OFFSET(to_reg)		;\
 	RV_OP_LOADREG temp, __z_arch_esf_t_tp_OFFSET(from_reg)		;\
 	RV_OP_STOREREG temp, __z_arch_esf_t_tp_OFFSET(to_reg)		;\
 	RV_OP_LOADREG temp, __z_arch_esf_t_t0_OFFSET(from_reg)		;\
@@ -179,7 +177,6 @@
 
 #define DO_CALLER_SAVED(op) \
 	op ra, __z_arch_esf_t_ra_OFFSET(sp)		;\
-	op gp, __z_arch_esf_t_gp_OFFSET(sp)		;\
 	op tp, __z_arch_esf_t_tp_OFFSET(sp)		;\
 	op t0, __z_arch_esf_t_t0_OFFSET(sp)		;\
 	op t1, __z_arch_esf_t_t1_OFFSET(sp)		;\
