@@ -22,6 +22,12 @@
 #define BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN 0
 #endif
 
+#if defined(CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX)
+#define BT_CTLR_DF_PER_ADV_CTE_NUM_MAX CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX
+#else
+#define BT_CTLR_DF_PER_ADV_CTE_NUM_MAX 0
+#endif
+
 /* @brief Configuration of Constant Tone Extension for connectionless
  * transmission.
  */
