@@ -1376,7 +1376,7 @@ static inline int time_left(uint32_t start, uint32_t timeout)
 	return timeout - elapsed;
 }
 
-int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
+int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, k_timeout_t timeout)
 {
 	bool retry;
 	int ret = 0;
@@ -1387,18 +1387,10 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
 	const struct fd_op_vtable *vtable;
 	struct k_mutex *lock;
-	k_timeout_t timeout;
 	uint64_t end;
 	bool offload = false;
 	const struct fd_op_vtable *offl_vtable = NULL;
 	void *offl_ctx = NULL;
-
-	if (poll_timeout < 0) {
-		timeout = K_FOREVER;
-		poll_timeout = SYS_FOREVER_MS;
-	} else {
-		timeout = K_MSEC(poll_timeout);
-	}
 
 	end = sys_clock_timeout_end_calc(timeout);
 
@@ -1460,6 +1452,15 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	}
 
 	if (offload) {
+		int poll_timeout;
+
+		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+			poll_timeout = SYS_FOREVER_MS;
+		} else {
+			poll_timeout = k_ticks_to_ms_floor32(
+				sys_clock_timeout_end_calc(timeout));
+		}
+
 		return z_fdtable_call_ioctl(offl_vtable, offl_ctx,
 					    ZFD_IOCTL_POLL_OFFLOAD,
 					    fds, nfds, poll_timeout);
@@ -1550,6 +1551,19 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 	} while (retry);
 
 	return ret;
+}
+
+int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
+{
+	k_timeout_t timeout;
+
+	if (poll_timeout < 0) {
+		timeout = K_FOREVER;
+	} else {
+		timeout = K_MSEC(poll_timeout);
+	}
+
+	return zsock_poll_internal(fds, nfds, timeout);
 }
 
 #ifdef CONFIG_USERSPACE

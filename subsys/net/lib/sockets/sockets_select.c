@@ -8,6 +8,7 @@
 #include <syscall_handler.h>
 #include <sys/math_extras.h>
 #include <net/socket.h>
+#include "sockets_internal.h"
 
 /* Get size, in elements, of an array within a struct. */
 #define STRUCT_MEMBER_ARRAY_SIZE(type, field) ARRAY_SIZE(((type *)0)->field)
@@ -71,7 +72,8 @@ int z_impl_zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
 			zsock_fd_set *exceptfds, struct zsock_timeval *timeout)
 {
 	struct zsock_pollfd pfds[CONFIG_NET_SOCKETS_POLL_MAX];
-	int i, res, poll_timeout;
+	k_timeout_t poll_timeout;
+	int i, res;
 	int num_pfds = 0;
 	int num_selects = 0;
 	int fd_no = 0;
@@ -129,13 +131,14 @@ int z_impl_zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
 		} while (bit_mask != 0U);
 	}
 
-	poll_timeout = -1;
-	if (timeout != NULL) {
-		poll_timeout = timeout->tv_sec * 1000
-			       + timeout->tv_usec / 1000;
+	if (timeout == NULL) {
+		poll_timeout = K_FOREVER;
+	} else {
+		poll_timeout =
+			K_USEC(timeout->tv_sec * 1000000UL + timeout->tv_usec);
 	}
 
-	res = zsock_poll(pfds, num_pfds, poll_timeout);
+	res = zsock_poll_internal(pfds, num_pfds, poll_timeout);
 	if (res == -1) {
 		return -1;
 	}
