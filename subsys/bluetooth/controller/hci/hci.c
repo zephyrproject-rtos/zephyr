@@ -1170,7 +1170,8 @@ static void le_read_buffer_size(struct net_buf *buf, struct net_buf **evt)
 	rp->le_max_num = CONFIG_BT_BUF_ACL_TX_COUNT;
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO) || \
+	defined(CONFIG_BT_CTLR_CONN_ISO)
 static void le_read_buffer_size_v2(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_le_read_buffer_size_v2 *rp;
@@ -1181,10 +1182,17 @@ static void le_read_buffer_size_v2(struct net_buf *buf, struct net_buf **evt)
 
 	rp->acl_max_len = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_TX_SIZE);
 	rp->acl_max_num = CONFIG_BT_BUF_ACL_TX_COUNT;
+#if defined(CONFIG_BT_CTLR_ISO_TX_BUFFERS)
 	rp->iso_max_len = sys_cpu_to_le16(CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE);
 	rp->iso_max_num = CONFIG_BT_CTLR_ISO_TX_BUFFERS;
+#else /* !CONFIG_BT_CTLR_ISO_TX_BUFFERS */
+	rp->iso_max_len = 0;
+	rp->iso_max_num = 0;
+#endif /* !CONFIG_BT_CTLR_ISO_TX_BUFFERS */
 }
-#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO ||
+	* CONFIG_BT_CTLR_CONN_ISO
+	*/
 
 static void le_read_local_features(struct net_buf *buf, struct net_buf **evt)
 {
@@ -3448,11 +3456,14 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 		le_read_buffer_size(cmd, evt);
 		break;
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_CONN_ISO)
+#if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO) || \
+	defined(CONFIG_BT_CTLR_CONN_ISO)
 	case BT_OCF(BT_HCI_OP_LE_READ_BUFFER_SIZE_V2):
 		le_read_buffer_size_v2(cmd, evt);
 		break;
-#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
+#endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO ||
+	* CONFIG_BT_CTLR_CONN_ISO
+	*/
 
 	case BT_OCF(BT_HCI_OP_LE_READ_LOCAL_FEATURES):
 		le_read_local_features(cmd, evt);
