@@ -728,29 +728,30 @@ void sx1280_ReadCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size
 //     WaitOnBusy( );
 }
 
-void WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
+void sx1280_WriteBuffer( uint8_t offset, uint8_t *buffer, uint8_t size )
 {
 //     WaitOnBusy( ); // TODO
 
 	LOG_INF("test1.2");
     	// GpioWrite( &SX1276.Spi.Nss, 0 ); // TODO
-	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
 
 	LOG_INF("test2");
 
 	// RadioSpi->write( RADIO_WRITE_BUFFER );
 	int ret;
+	int8_t command = RADIO_WRITE_BUFFER;
 
 	// ret = sx1280_write(addr, buffer, size);
 
 	const struct spi_buf buf[3] = {
 		{
-			.buf = RADIO_WRITE_BUFFER,
-			.len = sizeof(RADIO_WRITE_BUFFER)
+			.buf = &command,
+			.len = 1
 		},
 		{
-			.buf = &addr,
-			.len = sizeof(addr)
+			.buf = &offset,
+			.len = sizeof(offset)
 		},
 		{
 			.buf = buffer,
@@ -766,34 +767,50 @@ void WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
 	ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
 
 	if (ret < 0) {
-		LOG_ERR("Unable to write address: 0x%x", addr);
+		LOG_ERR("Unable to write address: 0x%x", offset);
 	}
 
-	// GpioWrite( &SX1276.Spi.Nss, 1 ); // TODO
-	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 1); // TODO
+//     WaitOnBusy( );
+}
 
 
-//     if( RadioSpi != NULL )
-//     {
-	// RadioNss = 0;
-	// RadioSpi->write( RADIO_WRITE_BUFFER );
-	// RadioSpi->write( offset );
-	// for( uint16_t i = 0; i < size; i++ )
-	// {
-	// 	RadioSpi->write( buffer[i] );
-	// }
-	// RadioNss = 1;
-//     }
-//     if( RadioUart != NULL )
-//     {
-//         RadioUart->putc( RADIO_WRITE_BUFFER );
-//         RadioUart->putc( offset );
-//         RadioUart->putc( size );
-//         for( uint16_t i = 0; i < size; i++ )
-//         {
-//             RadioUart->putc( buffer[i] );
-//         }
-//     }
+void sx1280_ReadBuffer( uint8_t offset, uint8_t *buffer, uint8_t size )
+{
+//     WaitOnBusy( );
+
+	uint8_t dummyData = 0;
+	uint8_t command = RADIO_READ_BUFFER;
+
+	const struct spi_buf buf[3] = {
+		{
+			.buf = &command,
+			.len = 1
+		},
+		{
+			.buf = &offset,
+			.len = sizeof(offset)
+		},
+		{
+			.buf = &dummyData,
+			.len = 1
+		},
+		{
+			.buf = buffer,
+			.len = size
+		}
+	};
+
+	struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf),
+	};
+
+	const struct spi_buf_set rx = {
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf)
+	};
+
+	return spi_transceive(dev_data.spi, &dev_data.spi_cfg, &tx, &rx);
 
 //     WaitOnBusy( );
 }
@@ -829,7 +846,7 @@ void SetTx( TickTime_t timeout )
 
 void SetPayload( uint8_t *buffer, uint8_t size, uint8_t offset )
 {
-    WriteBuffer( offset, buffer, size );
+    sx1280_WriteBuffer( offset, buffer, size );
 }
 
 void SendPayload( uint8_t *payload, uint8_t size, TickTime_t timeout, uint8_t offset )
