@@ -235,18 +235,48 @@ void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
 
 void helper_pdu_encode_conn_param_req(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_conn_param_req *p = param;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_req) + sizeof(struct pdu_data_llctrl_conn_param_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
-	/* TODO(thoh): Fill in correct data */
+
+	pdu->llctrl.conn_param_req.interval_min = sys_cpu_to_le16(p->interval_min);
+	pdu->llctrl.conn_param_req.interval_max = sys_cpu_to_le16(p->interval_max);
+	pdu->llctrl.conn_param_req.latency = sys_cpu_to_le16(p->latency);
+	pdu->llctrl.conn_param_req.timeout = sys_cpu_to_le16(p->timeout);
+	pdu->llctrl.conn_param_req.preferred_periodicity = p->preferred_periodicity;
+	pdu->llctrl.conn_param_req.reference_conn_event_count =
+		sys_cpu_to_le16(p->reference_conn_event_count);
+	pdu->llctrl.conn_param_req.offset0 = sys_cpu_to_le16(p->offset0);
+	pdu->llctrl.conn_param_req.offset1 = sys_cpu_to_le16(p->offset1);
+	pdu->llctrl.conn_param_req.offset2 = sys_cpu_to_le16(p->offset2);
+	pdu->llctrl.conn_param_req.offset3 = sys_cpu_to_le16(p->offset3);
+	pdu->llctrl.conn_param_req.offset4 = sys_cpu_to_le16(p->offset4);
+	pdu->llctrl.conn_param_req.offset5 = sys_cpu_to_le16(p->offset5);
 }
 
 void helper_pdu_encode_conn_param_rsp(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_conn_param_rsp *p = param;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_rsp) + sizeof(struct pdu_data_llctrl_conn_param_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
-	/* TODO(thoh): Fill in correct data */
+
+	pdu->llctrl.conn_param_rsp.interval_min = sys_cpu_to_le16(p->interval_min);
+	pdu->llctrl.conn_param_rsp.interval_max = sys_cpu_to_le16(p->interval_max);
+	pdu->llctrl.conn_param_rsp.latency = sys_cpu_to_le16(p->latency);
+	pdu->llctrl.conn_param_rsp.timeout = sys_cpu_to_le16(p->timeout);
+	pdu->llctrl.conn_param_rsp.preferred_periodicity = p->preferred_periodicity;
+	pdu->llctrl.conn_param_rsp.reference_conn_event_count =
+		sys_cpu_to_le16(p->reference_conn_event_count);
+	pdu->llctrl.conn_param_rsp.offset0 = sys_cpu_to_le16(p->offset0);
+	pdu->llctrl.conn_param_rsp.offset1 = sys_cpu_to_le16(p->offset1);
+	pdu->llctrl.conn_param_rsp.offset2 = sys_cpu_to_le16(p->offset2);
+	pdu->llctrl.conn_param_rsp.offset3 = sys_cpu_to_le16(p->offset3);
+	pdu->llctrl.conn_param_rsp.offset4 = sys_cpu_to_le16(p->offset4);
+	pdu->llctrl.conn_param_rsp.offset5 = sys_cpu_to_le16(p->offset5);
 }
 
 void helper_pdu_encode_conn_update_ind(struct pdu_data *pdu, void *param)
@@ -256,8 +286,13 @@ void helper_pdu_encode_conn_update_ind(struct pdu_data *pdu, void *param)
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, conn_update_ind) + sizeof(struct pdu_data_llctrl_conn_update_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
+
+	pdu->llctrl.conn_update_ind.win_size = p->win_size;
+	pdu->llctrl.conn_update_ind.win_offset = sys_cpu_to_le16(p->win_offset);
+	pdu->llctrl.conn_update_ind.interval = sys_cpu_to_le16(p->interval);
+	pdu->llctrl.conn_update_ind.latency = sys_cpu_to_le16(p->latency);
+	pdu->llctrl.conn_update_ind.timeout = sys_cpu_to_le16(p->timeout);
 	pdu->llctrl.conn_update_ind.instant = sys_cpu_to_le16(p->instant);
-	/* TODO(thoh): Fill in correct data */
 }
 
 void helper_pdu_encode_terminate_ind(struct pdu_data *pdu, void *param)
@@ -529,26 +564,70 @@ void helper_pdu_verify_unknown_rsp(const char *file, uint32_t line, struct pdu_d
 
 void helper_pdu_verify_conn_param_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_conn_param_req *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, conn_param_req) + sizeof(struct pdu_data_llctrl_conn_param_req), "Wrong length.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ, "Not a LL_CONNECTION_PARAM_REQ.\nCalled at %s:%d\n", file, line);
-	/* TODO(thoh): Fill in correct data */
+
+	zassert_equal(pdu->llctrl.conn_param_req.interval_min, p->interval_min, "Interval_min mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.interval_max, p->interval_max, "Interval_max mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.latency, p->latency, "Latency mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.timeout, p->timeout, "Timeout mismatch.\nCalled at %s:%d\n", file, line);
+	/* TODO(tosk): figure out if or how to verify dynamic parameters
+	zassert_equal(pdu->llctrl.conn_param_req.preferred_periodicity, p->preferred_periodicity, "Preferred_periodicity mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.reference_conn_event_count, p->reference_conn_event_count, "Reference_conn_event_count mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.offset0, p->offset0, "Offset0 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.offset1, p->offset1, "Offset1 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.offset2, p->offset2, "Offset2 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.offset3, p->offset3, "Offset3 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.offset4, p->offset4, "Offset4 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_req.offset5, p->offset5, "Offset5 mismatch.\nCalled at %s:%d\n", file, line);
+	*/
 }
 
 void helper_pdu_verify_conn_param_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_conn_param_rsp *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, conn_param_rsp) + sizeof(struct pdu_data_llctrl_conn_param_rsp), "Wrong length.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP, "Not a LL_CONNECTION_PARAM_RSP.\nCalled at %s:%d\n", file, line);
-	/* TODO(thoh): Fill in correct data */
+
+	zassert_equal(pdu->llctrl.conn_param_rsp.interval_min, p->interval_min, "Interval_min mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.interval_max, p->interval_max, "Interval_max mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.latency, p->latency, "Latency mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.timeout, p->timeout, "Timeout mismatch.\nCalled at %s:%d\n", file, line);
+	/* TODO(tosk): figure out if or how to verify dynamic parameters
+	zassert_equal(pdu->llctrl.conn_param_rsp.preferred_periodicity, p->preferred_periodicity, "Preferred_periodicity mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.reference_conn_event_count, p->reference_conn_event_count, "Reference_conn_event_count mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.offset0, p->offset0, "Offset0 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.offset1, p->offset1, "Offset1 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.offset2, p->offset2, "Offset2 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.offset3, p->offset3, "Offset3 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.offset4, p->offset4, "Offset4 mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_param_rsp.offset5, p->offset5, "Offset5 mismatch.\nCalled at %s:%d\n", file, line);
+	*/
 }
 
 void helper_pdu_verify_conn_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
+	/* TODO(tosk): figure out if or how to handle dynamic parameters
+	struct pdu_data_llctrl_conn_update_ind *p = param;
+	*/
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, conn_update_ind) + sizeof(struct pdu_data_llctrl_conn_update_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND, "Not a LL_CONNECTION_UPDATE_IND.\nCalled at %s:%d\n", file, line);
-	/* TODO(thoh): Fill in correct data */
+
+	/* TODO(tosk): figure out if or how to verify dynamic parameters
+	zassert_equal(pdu->llctrl.conn_update_ind.win_size, p->win_size, "Win_size mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_update_ind.win_offset, p->win_offset, "Win_offset mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_update_ind.latency, p->latency, "Latency.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_update_ind.interval, p->interval, "Interval mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_update_ind.timeout, p->timeout, "Timeout mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.conn_update_ind.instant, p->instant, "Instant mismatch.\nCalled at %s:%d\n", file, line);
+	*/
 }
 
 void helper_node_verify_conn_update(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param)
@@ -604,4 +683,3 @@ void helper_pdu_verify_length_rsp(const char *file, uint32_t line, struct pdu_da
 	zassert_equal(pdu->llctrl.length_rsp.max_rx_time, p->max_rx_time, "max_rx_time mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.length_rsp.max_tx_time, p->max_tx_time, "max_tx_time mismatch.\nCalled at %s:%d\n", file, line);
 }
-
