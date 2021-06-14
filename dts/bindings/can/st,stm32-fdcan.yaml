@@ -14,3 +14,22 @@ properties:
 
         For example the can1 would be
            pinctrl-0 = <&fdcan1_rx_pa11 &fdcan1_tx_pa12>;
+
+    shared-irq-names:
+      type: string-array
+      required: false
+      description: |
+        Name of each shared-irq in shared-irqs.
+        Required if shared-irqs are used and interrupts are chosen by name.
+
+    shared-irqs:
+      type: phandle-array
+      required: false
+      description: |
+        To avoid interrupt conflicts shared-irq nodes can be referenced.
+        In case the referenced shared_irq phandles have status okay the driver
+        registers the isr with the shared_irq instance instead of connecting to
+        the irq.
+
+        Example for stm32g0 would be
+              shared-irqs = <&shared_irq21 &shared_irq22>;
