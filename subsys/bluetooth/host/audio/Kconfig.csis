@@ -23,6 +23,9 @@ config BT_CSIS_TEST_SAMPLE_DATA
 	help
 	  Enable the use of the sample data defined by the CSIS spec SIRK.
 	  This will use the sample SIRK, prand and LTK.
+
+	  WARNING: This option enables anyone to track and decrypt the SIRK
+	  (if encrypted) using public sample data.
 	  Should not be used for production builds.
 
 config BT_CSIS_SET_SIZE
@@ -81,6 +84,10 @@ config BT_CSIP_TEST_SAMPLE_DATA
 	help
 	  Enable the use of the sample data defined by the CSIS spec.
 	  This will use the sample SIRK, prand and LTK.
+
+	  WARNING: This option enables the client to use the sample data
+	  to locate members and decrypt the SIRK, and thus won't work
+	  with set members that are not using the sample data.
 	  Should not be used for production builds.
 
 config BT_CSIP_MAX_CSIS_INSTANCES

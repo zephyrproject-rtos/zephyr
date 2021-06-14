@@ -24,3 +24,17 @@ zephyr_library_sources_ifdef(CONFIG_BT_MCS media_proxy.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MCS mpl.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MCC mcc.c)
 zephyr_library_sources_ifdef(CONFIG_BT_OTC otc.c)
+
+if(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)
+  message(WARNING "CONFIG_BT_CSIS_TEST_SAMPLE_DATA is enabled.
+  Using the CSIS Test Sample Data will make the SIRK, the advertised value and
+  the LTK used to encrypt the SIRK constant and be public data from the CSIS
+  specification. Do not use in a production build."
+    )
+endif()
+if(CONFIG_BT_CSIP_TEST_SAMPLE_DATA)
+  message(WARNING "CONFIG_BT_CSIP_TEST_SAMPLE_DATA is enabled.
+  Using the CSIS Test Sample Data will make the client only work with set members
+  using the same sample data. Do not use in a production build."
+    )
+endif()
