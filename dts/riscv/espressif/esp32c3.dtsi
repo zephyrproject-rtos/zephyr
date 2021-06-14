@@ -24,7 +24,7 @@
 		ranges;
 		
 		sram0: memory@3fc7c000 {
-			compatible = "espressif,esp32c3";
+			compatible = "mmio-sram";
 			reg = <0x3fc7c000 0x50000>;
 		};
 	};
