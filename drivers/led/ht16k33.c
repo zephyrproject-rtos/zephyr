@@ -15,14 +15,11 @@
 #include <drivers/i2c.h>
 #include <kernel.h>
 #include <drivers/led.h>
-#include <sys/byteorder.h>
-#include <zephyr.h>
-
-#define LOG_LEVEL CONFIG_LED_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(ht16k33);
-
 #include <drivers/led/ht16k33.h>
+#include <sys/byteorder.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(ht16k33, CONFIG_LED_LOG_LEVEL);
 
 #include "led_context.h"
 
@@ -83,7 +80,8 @@ struct ht16k33_data {
 	uint8_t buffer[HT16K33_DISP_DATA_SIZE];
 #ifdef CONFIG_HT16K33_KEYSCAN
 	struct k_mutex lock;
-	const struct device *children[HT16K33_KEYSCAN_ROWS];
+	const struct device *child;
+	kscan_callback_t kscan_cb;
 	struct gpio_callback irq_cb;
 	struct k_thread irq_thread;
 	struct k_sem irq_sem;
@@ -123,7 +121,7 @@ static int ht16k33_led_blink(const struct device *dev, uint32_t led,
 		cmd |= HT16K33_OPT_BLINK_2HZ;
 	}
 
-	if (i2c_write(data->i2c, &cmd, 1, config->i2c_addr)) {
+	if (i2c_write(data->i2c, &cmd, sizeof(cmd), config->i2c_addr)) {
 		LOG_ERR("Setting HT16K33 blink frequency failed");
 		return -EIO;
 	}
@@ -150,7 +148,7 @@ static int ht16k33_led_set_brightness(const struct device *dev, uint32_t led,
 	dim = (value * (HT16K33_DIMMING_LEVELS - 1)) / dev_data->max_brightness;
 	cmd = HT16K33_CMD_DIMMING_SET | dim;
 
-	if (i2c_write(data->i2c, &cmd, 1, config->i2c_addr)) {
+	if (i2c_write(data->i2c, &cmd, sizeof(cmd), config->i2c_addr)) {
 		LOG_ERR("Setting HT16K33 brightness failed");
 		return -EIO;
 	}
@@ -206,35 +204,17 @@ static int ht16k33_led_off(const struct device *dev, uint32_t led)
 }
 
 #ifdef CONFIG_HT16K33_KEYSCAN
-uint32_t ht16k33_get_pending_int(const struct device *dev)
-{
-	const struct ht16k33_cfg *config = dev->config;
-	struct ht16k33_data *data = dev->data;
-	uint8_t cmd;
-	uint8_t flag;
-	int err;
-
-	cmd = HT16K33_CMD_INT_FLAG_ADDR;
-	err = i2c_write_read(data->i2c, config->i2c_addr, &cmd, sizeof(cmd),
-			     &flag, sizeof(flag));
-	if (err) {
-		LOG_ERR("Failed to read HT16K33 IRQ flag");
-		return 0;
-	}
-
-	return (flag ? 1 : 0);
-}
-
 static bool ht16k33_process_keyscan_data(const struct device *dev)
 {
 	const struct ht16k33_cfg *config = dev->config;
 	struct ht16k33_data *data = dev->data;
 	uint8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
 	bool pressed = false;
-	uint16_t row;
-	uint16_t new;
+	uint16_t state;
+	uint16_t changed;
+	int row;
+	int col;
 	int err;
-	int i;
 
 	err = i2c_burst_read(data->i2c, config->i2c_addr,
 			     HT16K33_CMD_KEY_DATA_ADDR, keys,
@@ -245,19 +225,28 @@ static bool ht16k33_process_keyscan_data(const struct device *dev)
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
-	for (i = 0; i < HT16K33_KEYSCAN_ROWS; i++) {
-		row = sys_get_le16(&keys[i * 2]);
-		if (row) {
+
+	for (row = 0; row < HT16K33_KEYSCAN_ROWS; row++) {
+		state = sys_get_le16(&keys[row * 2]);
+		changed = data->key_state[row] ^ state;
+		data->key_state[row] = state;
+
+		if (state) {
 			pressed = true;
-			new = data->key_state[i] ^ row;
-			new &= row;
-			if (data->children[i] && new) {
-				ht16k33_process_keyscan_row_data(
-					data->children[i], new);
+		}
+
+		if (data->kscan_cb == NULL) {
+			continue;
+		}
+
+		for (col = 0; col < HT16K33_KEYSCAN_COLS; col++) {
+			if (changed & BIT(col)) {
+				data->kscan_cb(data->child, row, col,
+					state & BIT(col));
 			}
 		}
-		data->key_state[i] = row;
 	}
+
 	k_mutex_unlock(&data->lock);
 
 	return pressed;
@@ -298,22 +287,15 @@ static void ht16k33_timer_callback(struct k_timer *timer)
 	k_sem_give(&data->irq_sem);
 }
 
-int ht16k33_register_keyscan_device(const struct device *parent,
-					   const struct device *child,
-					   uint8_t keyscan_idx)
+int ht16k33_register_keyscan_callback(const struct device *parent,
+				      const struct device *child,
+				      kscan_callback_t callback)
 {
 	struct ht16k33_data *data = parent->data;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
-
-	if (data->children[keyscan_idx]) {
-		k_mutex_unlock(&data->lock);
-		LOG_ERR("HT16K33 keyscan device %d already registered",
-			keyscan_idx);
-		return -EINVAL;
-	}
-
-	data->children[keyscan_idx] = child;
+	data->child = child;
+	data->kscan_cb = callback;
 	k_mutex_unlock(&data->lock);
 
 	return 0;
@@ -379,7 +361,6 @@ static int ht16k33_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_HT16K33_KEYSCAN
-	memset(&data->children, 0, sizeof(data->children));
 	k_mutex_init(&data->lock);
 	k_sem_init(&data->irq_sem, 0, 1);
 

@@ -219,7 +219,6 @@
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/gpio/                            @mnkp
-/drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
@@ -250,6 +249,7 @@
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
 /drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
+/drivers/kscan/*ht16k33*                  @henrikbrixandersen
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar-nordic
 /drivers/lora/                            @Mani-Sadhasivam
