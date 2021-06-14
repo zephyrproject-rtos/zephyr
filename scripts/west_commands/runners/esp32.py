@@ -24,7 +24,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         self.device = device
         self.boot_address = boot_address
         self.part_table_address = part_table_address
-        self.app_address = app_address        
+        self.app_address = app_address
         self.baud = baud
         self.flash_size = flash_size
         self.flash_freq = flash_freq
@@ -81,9 +81,9 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                                'esptool', 'esptool.py')
 
         return Esp32BinaryRunner(
-            cfg, args.esp_device, boot_address=args.esp_boot_address, 
+            cfg, args.esp_device, boot_address=args.esp_boot_address,
             part_table_address=args.esp_partition_table_address,
-            app_address=args.esp_app_address,baud=args.esp_baud_rate, 
+            app_address=args.esp_app_address,baud=args.esp_baud_rate,
             flash_size=args.esp_flash_size, flash_freq=args.esp_flash_freq,
             flash_mode=args.esp_flash_mode, espidf=espidf,
             bootloader_bin=args.esp_flash_bootloader,
@@ -107,7 +107,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             cmd_flash.extend([self.boot_address, self.bootloader_bin])
             cmd_flash.extend([self.part_table_address, self.partition_table_bin])
             cmd_flash.extend([self.app_address, bin_name])
-        else :             
+        else :
             cmd_flash.extend([self.boot_address, bin_name])
 
         self.logger.info("Flashing esp32 chip on {} ({}bps)".

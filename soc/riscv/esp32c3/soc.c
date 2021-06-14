@@ -38,16 +38,16 @@ void __attribute__((section(".iram1"))) __start(void)
 	extern uint32_t _bss_end;
 
 	/* Configure the global pointer register
-     * (This should be the first thing startup does, as any other piece of code could be
-     * relaxed by the linker to access something relative to __global_pointer$)
+	 * (This should be the first thing startup does, as any other piece of code could be
+	 * relaxed by the linker to access something relative to __global_pointer$)
 	 */
 	__asm__ __volatile__(".option push\n"
-			     ".option norelax\n"
-			     "la gp, __global_pointer$\n"
-			     ".option pop");
+						".option norelax\n"
+						"la gp, __global_pointer$\n"
+						".option pop");
 
-	__asm__ __volatile__("la t0, _esp32c3_vector_table \n"
-				 "csrw mtvec, t0 \n");
+	__asm__ __volatile__("la t0, _esp32c3_vector_table\n"
+						"csrw mtvec, t0\n");
 
 	/* Disable normal interrupts. */
 	csr_read_clear(mstatus, MSTATUS_MIE);
@@ -84,14 +84,18 @@ void __attribute__((section(".iram1"))) __start(void)
 #endif
 
 	/* Configure the Cache MMU size for instruction and rodata in flash. */
-	extern uint32_t esp32c3_rom_cache_set_idrom_mmu_size(uint32_t irom_size, uint32_t drom_size);
+	extern uint32_t esp32c3_rom_cache_set_idrom_mmu_size(uint32_t irom_size,
+			uint32_t drom_size);
+
 	extern int _rodata_reserved_start;
 	uint32_t rodata_reserved_start_align =
 		(uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
 	uint32_t cache_mmu_irom_size =
-		((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+		((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) *
+			sizeof(uint32_t);
 
-	esp32c3_rom_cache_set_idrom_mmu_size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
+	esp32c3_rom_cache_set_idrom_mmu_size(cache_mmu_irom_size,
+		CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 
 	/* set global esp32c3's INTC masking level */
 	esprv_intc_int_set_threshold(1);
@@ -133,16 +137,16 @@ void IRAM_ATTR esp_restart_noos(void)
 
 	/* Reset wifi/bluetooth/ethernet/sdio (bb/mac) */
 	SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-			  SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST | SYSTEM_BT_RST |
-				  SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST | SYSTEM_EMAC_RST |
-				  SYSTEM_MACPWR_RST | SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST |
-				  BLE_REG_REST_BIT | BLE_PWR_REG_REST_BIT | BLE_BB_REG_REST_BIT);
+			SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST | SYSTEM_BT_RST |
+			SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST | SYSTEM_EMAC_RST |
+			SYSTEM_MACPWR_RST | SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST |
+			BLE_REG_REST_BIT | BLE_PWR_REG_REST_BIT | BLE_BB_REG_REST_BIT);
 
 	REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
 	/* Reset timer/spi/uart */
 	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
-			  SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST);
+				SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST);
 	REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
 	/* Reset dma */
 	SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);

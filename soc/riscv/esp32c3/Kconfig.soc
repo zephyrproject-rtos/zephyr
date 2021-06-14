@@ -2,21 +2,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_ESP32C3
-    bool "ESP32C3"
-    select RISCV
-    select RISCV_SOC_INIT_GP_VALUE
+	bool "ESP32C3"
+	select RISCV
+	select RISCV_SOC_INIT_GP_VALUE
 
 config IDF_TARGET_ESP32C3
-    bool "ESP32C3 as target board"
-    default y
-    depends on SOC_ESP32C3
+	bool "ESP32C3 as target board"
+	default y
+	depends on SOC_ESP32C3
 
 config ESPTOOLPY_FLASHFREQ_80M
-    bool
-    default y
-    depends on SOC_ESP32C3
+	bool
+	default y
+	depends on SOC_ESP32C3
 
 config BOOTLOADER_ESP_IDF
-    bool "Use esp-idf 2nd stage bootloader"
-    default y
-    depends on SOC_ESP32C3
+	bool "Use esp-idf 2nd stage bootloader"
+	default y
+	depends on SOC_ESP32C3
