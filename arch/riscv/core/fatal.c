@@ -40,7 +40,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 		LOG_ERR("     a6: " PR_REG "    t6: " PR_REG, esf->a6, esf->t6);
 		LOG_ERR("     a7: " PR_REG, esf->a7);
 		LOG_ERR("         " NO_REG "    tp: " PR_REG, esf->tp);
-		LOG_ERR("     ra: " PR_REG "    gp: " PR_REG, esf->ra, esf->gp);
+		LOG_ERR("     ra: " PR_REG, esf->ra);
 		LOG_ERR("   mepc: " PR_REG, esf->mepc);
 		LOG_ERR("mstatus: " PR_REG, esf->mstatus);
 		LOG_ERR("");
