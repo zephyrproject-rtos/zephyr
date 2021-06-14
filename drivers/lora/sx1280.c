@@ -621,7 +621,7 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 //     if( RadioSpi != NULL )
 //     {
 	LOG_INF("wc1");
-	gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
+	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
 	LOG_INF("wc2");
         // RadioSpi->write( ( uint8_t )command );
         // for( uint16_t i = 0; i < size; i++ )
@@ -632,7 +632,7 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 
 	const struct spi_buf buf[2] = {
 		{
-			.buf = ( uint8_t ) command, // TODO: might be wrong
+			.buf = &command, // TODO: might be wrong
 			.len = sizeof(command)
 		},
 		{
@@ -680,12 +680,16 @@ void WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 void sx1280_ReadCommand( RadioCommands_t command, uint8_t *buffer, uint16_t size )
 {
 //     WaitOnBusy( );
-
+	uint8_t dummyData = 0;
 	// RadioNss = 0;
-	const struct spi_buf buf[2] = {
+	const struct spi_buf buf[3] = {
 		{
 			.buf = &command,
 			.len = sizeof(command)
+		},
+		{
+			.buf = &dummyData,
+			.len = 1
 		},
 		{
 			.buf = buffer,
@@ -946,11 +950,11 @@ void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 
 	int ret;
 
+	uint8_t dummyData = 0;
 	uint8_t command = RADIO_READ_REGISTER;
 	uint8_t addr_l, addr_h;
 	addr_h = address >> 8;
 	addr_l = address & 0x00FF;
-  	// address = ( address & 0xFF00 ) >> 8 + (address & 0x00FF) << 8;
 
 	const struct spi_buf buf[5] = {
 		{
@@ -966,7 +970,7 @@ void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 			.len = sizeof(addr_l)
 		},
 		{
-			.buf = &command,
+			.buf = &dummyData,
 			.len = 1
 		},
 		{
@@ -974,13 +978,6 @@ void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
 			.len = size
 		},
 	};
-
-	// const struct spi_buf rxbuf[1] = {
-	// 	{
-	// 		.buf = buffer,
-	// 		.len = size
-	// 	},
-	// };
 
 	struct spi_buf_set tx = {
 		.buffers = buf,
@@ -1126,21 +1123,8 @@ static int sx1280_lora_init(const struct device *dev)
 	// sx1280_WriteRegister( REG_MANUAL_GAIN_VALUE, 13 );
 	// LOG_INF("regval-post: %x", sx1280_ReadRegister( REG_MANUAL_GAIN_VALUE ));
 
-	//check there is a device out there, writes a register and reads back
-	uint8_t Regdata1, Regdata2;
-	Regdata1 = sx1280_ReadRegister(0x0908);               //low byte of frequency setting
-	sx1280_WriteRegister(0x0908, (Regdata1 + 1));
-	Regdata2 = sx1280_ReadRegister(0x0908);               //read changed value back
-	sx1280_WriteRegister(0x0908, Regdata1);             //restore register to original value
-	LOG_INF("data: %x -- %x", Regdata1, Regdata2);
-	if (Regdata2 == (Regdata1 + 1))
-	{
-		LOG_INF("true");
-	}
-	else
-	{
-		LOG_INF("false");
-	}
+	testReadWriteRegister();
+	testReadWriteCommand();
 
 	// CS = 0
 	// WriteRegister
@@ -1161,6 +1145,49 @@ static int sx1280_lora_init(const struct device *dev)
 // 	}
 
 	return 0;
+}
+
+void testReadWriteRegister() {
+	//check there is a device out there, writes a register and reads back
+	uint8_t Regdata1, Regdata2;
+	Regdata1 = sx1280_ReadRegister(0x0908);               //low byte of frequency setting
+	sx1280_WriteRegister(0x0908, (Regdata1 + 1));
+	Regdata2 = sx1280_ReadRegister(0x0908);               //read changed value back
+	sx1280_WriteRegister(0x0908, Regdata1);             //restore register to original value
+	LOG_INF("data: %x -- %x", Regdata1, Regdata2);
+	if (Regdata2 == (Regdata1 + 1))
+	{
+		LOG_INF("true");
+	}
+	else
+	{
+		LOG_INF("false");
+	}
+}
+
+RadioPacketTypes_t sx1280_GetPacketType()
+{
+	RadioPacketTypes_t packetType = PACKET_TYPE_NONE;
+	sx1280_ReadCommand( RADIO_GET_PACKETTYPE, ( uint8_t* )&packetType, 1 );
+	return packetType;
+}
+
+void testReadWriteCommand() {
+	RadioPacketTypes_t packetType1, packetType2, packetType3;
+	packetType1 = sx1280_GetPacketType();
+	sx1280_SetPacketType(PACKET_TYPE_LORA);
+	packetType2 = sx1280_GetPacketType();
+	sx1280_SetPacketType(packetType1);
+	packetType3 = sx1280_GetPacketType();
+	LOG_INF("packetTypes: %x -- %x -- %x", packetType1, packetType2, packetType3);
+	if (packetType2 == PACKET_TYPE_LORA && packetType1 == packetType3)
+	{
+		LOG_INF("true");
+	}
+	else
+	{
+		LOG_INF("false");
+	}
 }
 
 void sx1280_SetLNAGainSetting( const RadioLnaSettings_t lnaSetting )
