@@ -302,7 +302,7 @@ SECTIONS
     *(.rodata.*)
     _thread_local_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
-    . = ALIGN(4);  
+    . = ALIGN(4);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/common-rom.ld>
