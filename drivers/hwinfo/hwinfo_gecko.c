@@ -37,25 +37,35 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	uint32_t flags = 0;
 	uint32_t rmu_flags = RMU_ResetCauseGet();
 
+#ifdef RMU_RSTCAUSE_PORST
 	if (rmu_flags & RMU_RSTCAUSE_PORST) {
 		flags |= RESET_POR;
 	}
+#endif /* RMU_RSTCAUSE_PORST */
 
+#ifdef RMU_RSTCAUSE_EXTRST
 	if (rmu_flags & RMU_RSTCAUSE_EXTRST) {
 		flags |= RESET_PIN;
 	}
+#endif /* RMU_RSTCAUSE_EXTRST */
 
+#ifdef RMU_RSTCAUSE_SYSREQRST
 	if (rmu_flags & RMU_RSTCAUSE_SYSREQRST) {
 		flags |= RESET_SOFTWARE;
 	}
+#endif /* RMU_RSTCAUSE_SYSREQRST */
 
+#ifdef RMU_RSTCAUSE_LOCKUPRST
 	if (rmu_flags & RMU_RSTCAUSE_LOCKUPRST) {
 		flags |= RESET_CPU_LOCKUP;
 	}
+#endif /* RMU_RSTCAUSE_LOCKUPRST */
 
+#ifdef RMU_RSTCAUSE_WDOGRST
 	if (rmu_flags & RMU_RSTCAUSE_WDOGRST) {
 		flags |= RESET_WATCHDOG;
 	}
+#endif /* RMU_RSTCAUSE_WDOGRST */
 
 #ifdef RMU_RSTCAUSE_EM4WURST
 	if (rmu_flags & RMU_RSTCAUSE_EM4WURST) {
@@ -138,6 +148,9 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	}
 
 #endif /* defined(BU_PRESENT) && defined(_SILICON_LABS_32B_SERIES_0) */
+
+	/* To fix compiler warning when none of the above flags are defined */
+	ARG_UNUSED(rmu_flags);
 
 	*cause = flags;
 	return 0;
