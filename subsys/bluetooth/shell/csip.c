@@ -250,7 +250,7 @@ static void discover_members_timer_handler(struct k_work *work)
 	bt_le_scan_stop();
 }
 
-static int cmd_csip_init(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_csip_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	static bool initialized;
 
@@ -268,8 +268,7 @@ static int cmd_csip_init(const struct shell *shell, size_t argc, char *argv[])
 	}
 }
 
-static int cmd_csip_discover(const struct shell *shell, size_t argc,
-				    char *argv[])
+static int cmd_csip_discover(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	long member_index = 0;
@@ -278,27 +277,27 @@ static int cmd_csip_discover(const struct shell *shell, size_t argc,
 		member_index = strtol(argv[1], NULL, 0);
 
 		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
-			shell_error(shell, "Invalid member_index %u",
+			shell_error(sh, "Invalid member_index %u",
 				    member_index);
 			return -ENOEXEC;
 		}
 	}
 
 	if (!ctx_shell) {
-		ctx_shell = shell;
+		ctx_shell = sh;
 	}
 
-	shell_print(shell, "Discovering for member[%u]", member_index);
+	shell_print(sh, "Discovering for member[%u]", member_index);
 	result = bt_csip_discover(&set_members[member_index]);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 
 	return result;
 }
 
-static int cmd_csip_discover_sets(const struct shell *shell, size_t argc,
-					 char *argv[])
+static int cmd_csip_discover_sets(const struct shell *sh, size_t argc,
+				  char *argv[])
 {
 	int result;
 	long member_index = 0;
@@ -307,7 +306,7 @@ static int cmd_csip_discover_sets(const struct shell *shell, size_t argc,
 		member_index = strtol(argv[1], NULL, 0);
 
 		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
-			shell_error(shell, "Invalid member_index %u",
+			shell_error(sh, "Invalid member_index %u",
 				    member_index);
 			return -ENOEXEC;
 		}
@@ -315,20 +314,20 @@ static int cmd_csip_discover_sets(const struct shell *shell, size_t argc,
 
 	result = bt_csip_discover_sets(set_members[member_index].conn);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-static int cmd_csip_discover_members(const struct shell *shell,
-					    size_t argc, char *argv[])
+static int cmd_csip_discover_members(const struct shell *sh, size_t argc,
+				     char *argv[])
 {
 	int result;
 
 	cur_set = (struct bt_csip_set_t *)strtol(argv[1], NULL, 0);
 
 	if (cur_set == NULL) {
-		shell_error(shell, "NULL set");
+		shell_error(sh, "NULL set");
 		return -EINVAL;
 	}
 
@@ -337,7 +336,7 @@ static int cmd_csip_discover_members(const struct shell *shell,
 		 * TODO Handle case where set size is larger than
 		 * number of possible connections
 		 */
-		shell_error(shell,
+		shell_error(sh,
 			    "Set size (%u) larger than max connections (%u)",
 			    cur_set->set_size, CONFIG_BT_MAX_CONN);
 		return -EINVAL;
@@ -350,7 +349,7 @@ static int cmd_csip_discover_members(const struct shell *shell,
 	result = k_work_reschedule(&discover_members_timer,
 				   CSIP_DISCOVER_TIMER_VALUE);
 	if (result < 0) { /* Can return 0, 1 and 2 for success */
-		shell_error(shell,
+		shell_error(sh,
 			    "Could not schedule discover_members_timer %d",
 			    result);
 		return result;
@@ -358,20 +357,19 @@ static int cmd_csip_discover_members(const struct shell *shell,
 
 	result = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (result != 0) {
-		shell_error(shell, "Could not start scan: %d", result);
+		shell_error(sh, "Could not start scan: %d", result);
 	}
 
 	return result;
 }
 
-static int cmd_csip_lock_set(const struct shell *shell, size_t argc,
-				    char *argv[])
+static int cmd_csip_lock_set(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	int conn_count = 0;
 
 	if (cur_set == NULL) {
-		shell_error(shell, "No set selected");
+		shell_error(sh, "No set selected");
 		return -ENOEXEC;
 	}
 
@@ -383,19 +381,19 @@ static int cmd_csip_lock_set(const struct shell *shell, size_t argc,
 
 	result = bt_csip_lock(locked_members, conn_count, cur_set);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-static int cmd_csip_release_set(const struct shell *shell, size_t argc,
-				       char *argv[])
+static int cmd_csip_release_set(const struct shell *sh, size_t argc,
+				char *argv[])
 {
 	int result;
 	int conn_count = 0;
 
 	if (cur_set == NULL) {
-		shell_error(shell, "No set selected");
+		shell_error(sh, "No set selected");
 		return -ENOEXEC;
 	}
 
@@ -407,13 +405,12 @@ static int cmd_csip_release_set(const struct shell *shell, size_t argc,
 
 	result = bt_csip_release(locked_members, conn_count, cur_set);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 	return result;
 }
 
-static int cmd_csip_lock_get(const struct shell *shell, size_t argc,
-			     char *argv[])
+static int cmd_csip_lock_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	long idx = 0;
@@ -423,7 +420,7 @@ static int cmd_csip_lock_get(const struct shell *shell, size_t argc,
 		member_index = strtol(argv[1], NULL, 0);
 
 		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
-			shell_error(shell, "Invalid member_index %u",
+			shell_error(sh, "Invalid member_index %u",
 				    member_index);
 			return -ENOEXEC;
 		}
@@ -433,27 +430,27 @@ static int cmd_csip_lock_get(const struct shell *shell, size_t argc,
 		idx = strtol(argv[2], NULL, 0);
 
 		if (idx < 0 || idx > CONFIG_BT_CSIP_MAX_CSIS_INSTANCES) {
-			shell_error(shell, "Invalid index %u", idx);
+			shell_error(sh, "Invalid index %u", idx);
 			return -ENOEXEC;
 		}
 	}
 
 	result = bt_csip_lock_get(set_members[member_index].conn, (uint8_t)idx);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 
 	return result;
 }
 
-static int cmd_csip_lock(const struct shell *shell, size_t argc, char *argv[])
+static int cmd_csip_lock(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	long member_index = 0;
 	const struct bt_csip_set_member *lock_member[1];
 
 	if (cur_set == NULL) {
-		shell_error(shell, "No set selected");
+		shell_error(sh, "No set selected");
 		return -ENOEXEC;
 	}
 
@@ -461,7 +458,7 @@ static int cmd_csip_lock(const struct shell *shell, size_t argc, char *argv[])
 		member_index = strtol(argv[1], NULL, 0);
 
 		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
-			shell_error(shell, "Invalid member_index %u",
+			shell_error(sh, "Invalid member_index %u",
 				    member_index);
 			return -ENOEXEC;
 		}
@@ -471,21 +468,20 @@ static int cmd_csip_lock(const struct shell *shell, size_t argc, char *argv[])
 
 	result = bt_csip_lock(lock_member, 1, cur_set);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 
 	return result;
 }
 
-static int cmd_csip_release(const struct shell *shell, size_t argc,
-			    char *argv[])
+static int cmd_csip_release(const struct shell *sh, size_t argc, char *argv[])
 {
 	int result;
 	long member_index = 0;
 	const struct bt_csip_set_member *lock_member[1];
 
 	if (cur_set == NULL) {
-		shell_error(shell, "No set selected");
+		shell_error(sh, "No set selected");
 		return -ENOEXEC;
 	}
 
@@ -493,7 +489,7 @@ static int cmd_csip_release(const struct shell *shell, size_t argc,
 		member_index = strtol(argv[1], NULL, 0);
 
 		if (member_index < 0 || member_index > CONFIG_BT_MAX_CONN) {
-			shell_error(shell, "Invalid member_index %u",
+			shell_error(sh, "Invalid member_index %u",
 				    member_index);
 			return -ENOEXEC;
 		}
@@ -503,19 +499,19 @@ static int cmd_csip_release(const struct shell *shell, size_t argc,
 
 	result = bt_csip_release(lock_member, 1, cur_set);
 	if (result) {
-		shell_error(shell, "Fail: %d", result);
+		shell_error(sh, "Fail: %d", result);
 	}
 
 	return result;
 }
 
-static int cmd_csip(const struct shell *shell, size_t argc, char **argv)
+static int cmd_csip(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc > 1) {
-		shell_error(shell, "%s unknown parameter: %s",
+		shell_error(sh, "%s unknown parameter: %s",
 			    argv[0], argv[1]);
 	} else {
-		shell_error(shell, "%s Missing subcommand", argv[0]);
+		shell_error(sh, "%s Missing subcommand", argv[0]);
 	}
 
 	return -ENOEXEC;
