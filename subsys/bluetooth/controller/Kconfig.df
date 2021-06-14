@@ -146,6 +146,16 @@ config BT_CTLR_DF_INIT_ANT_SEL_GPIOS
 	  In such case application is responsible for appropriate GPIOs
 	  initialization.
 
+config BT_CTLR_DF_PER_ADV_CTE_NUM_MAX
+	int "Maximum number of transmitted PDUs with Constant Tone Extension in connectionless mode"
+	depends on BT_CTLR_DF_ADV_CTE_TX && BT_CTLR_ADV_PDU_LINK
+	range 1 16
+	default 1
+	help
+	  Maximum supported number of PDUs, that have Constant Tone Extension, transmitted in single
+	  periodic advertising chain. The range is taken from BT Core spec 5.1, Vol 4 Part E
+	  section 7.8.82 HCI_LE_Set_Connectionless_IQ_Sampling_Enable Max_Sampled_CTEs parameter.
+
 config BT_CTLR_DF_DEBUG_ENABLE
 	bool "Bluetooth Direction Finding debug support enable"
 	help
