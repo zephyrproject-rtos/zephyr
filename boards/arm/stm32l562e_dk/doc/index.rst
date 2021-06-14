@@ -170,6 +170,8 @@ The Zephyr stm32l562e_dk board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random Number Generator        |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | PWM                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -193,6 +195,7 @@ Default Zephyr Peripheral Mapping:
 - SPI_1 SCK/MISO/MOSI : PG2/PG3/PG4 (BT SPI bus)
 - USER_PB : PC13
 - LD10 : PG12
+- PWM_2_CH1 : PA0
 
 System Clock
 ------------
