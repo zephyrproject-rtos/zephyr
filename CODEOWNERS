@@ -640,6 +640,7 @@
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @joerchan @jhedberg @Vudentz
 /tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar @wopu-ot
+/tests/bluetooth/bsim_bt/bsim_test_audio/ @joerchan @jhedberg @Vudentz @aescolar @wopu-ot @Thalley @asbjornsabo
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin
