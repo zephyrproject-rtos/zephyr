@@ -23,6 +23,20 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 	return flash_stm32_range_exists(dev, offset, len);
 }
 
+static inline void flush_cache(FLASH_TypeDef *regs)
+{
+	if (regs->ACR & FLASH_ACR_ARTEN) {
+		regs->ACR &= ~FLASH_ACR_ARTEN;
+		/* Refernce manual:
+		 * The ART cache can be flushed only if the ART accelerator
+		 * is disabled (ARTEN = 0).
+		 */
+		regs->ACR |= FLASH_ACR_ARTRST;
+		regs->ACR &= ~FLASH_ACR_ARTRST;
+		regs->ACR |= FLASH_ACR_ARTEN;
+	}
+}
+
 static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
