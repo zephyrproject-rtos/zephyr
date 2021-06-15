@@ -472,7 +472,6 @@ static int nrf5_tx(const struct device *dev,
 	uint8_t payload_len = frag->len;
 	uint8_t *payload = frag->data;
 	bool ret = true;
-	int result;
 
 	LOG_DBG("%p (%u)", payload, payload_len);
 
@@ -544,20 +543,18 @@ static int nrf5_tx(const struct device *dev,
 		/* Handle ACK packet. */
 		return handle_ack(nrf5_radio);
 	case NRF_802154_TX_ERROR_NO_MEM:
-		result = -ENOBUFS;
+		return -ENOBUFS;
 	case NRF_802154_TX_ERROR_BUSY_CHANNEL:
-		result = -EBUSY;
+		return -EBUSY;
 	case NRF_802154_TX_ERROR_INVALID_ACK:
 	case NRF_802154_TX_ERROR_NO_ACK:
-		result = -ENOMSG;
+		return -ENOMSG;
 	case NRF_802154_TX_ERROR_ABORTED:
 	case NRF_802154_TX_ERROR_TIMESLOT_DENIED:
 	case NRF_802154_TX_ERROR_TIMESLOT_ENDED:
 	default:
-		result = -EIO;
+		return -EIO;
 	}
-
-	return result;
 }
 
 static uint64_t nrf5_get_time(const struct device *dev)
