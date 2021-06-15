@@ -138,6 +138,7 @@ struct myscreen_struct {
 	char str_buf[CONFIG_MICROBIT_DISPLAY_STR_MAX];
 };
 
+
 /* unique instance of this struct */
 static struct myscreen_struct myscreen;
 
@@ -235,7 +236,7 @@ static void prepare_next_frame(void)
 		} else if (offset >= scrollsteps) {
 			for (int y = 0; y < 5; y++) {
 				if (((img2->row[y]) >> (offset - scrollsteps)) & 1) {
-					frame |= 1 << (5 * y + x)
+					frame |= 1 << (5 * y + x);
 				}
 			}
 		}
@@ -244,11 +245,12 @@ static void prepare_next_frame(void)
 	myscreen.frame_available = true;
 }
 
-static void mb_display_worker(void)
+static void mb_display_worker(struct k_work *work)
 {
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	if (myscreen.frame_available) {
 		/* schedule the next one, then compute a new frame */
-		k_work_schedule(&myscreen.work, K_MSEC(myscreen.delay));
+		k_work_schedule(dwork, K_MSEC(myscreen.delay));
 		prepare_next_frame();
 	} else {
 		mb_display_deactivate();
@@ -307,7 +309,7 @@ static void start_animation(int duration)
 	/* start animation */
 	myscreen.frame_available = true; /* so we can start work */
 	if (duration != -1) {
-		mb_display_worker();
+		k_work_schedule(&myscreen.work, K_MSEC(0));
 	} else {
 		prepare_next_frame(); /* just once */
 	}
