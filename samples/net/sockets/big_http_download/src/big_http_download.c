@@ -138,6 +138,9 @@ void print_hex(const unsigned char *p, int len)
 void download(struct addrinfo *ai, bool is_tls)
 {
 	int sock;
+	struct timeval timeout = {
+		.tv_sec = 5
+	};
 
 	cur_bytes = 0U;
 
@@ -168,6 +171,11 @@ void download(struct addrinfo *ai, bool is_tls)
 	}
 #endif
 
+	CHECK(setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout,
+			 sizeof(timeout)));
+	CHECK(setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &timeout,
+			 sizeof(timeout)));
+
 	CHECK(connect(sock, ai->ai_addr, ai->ai_addrlen));
 	sendall(sock, "GET /", SSTRLEN("GET /"));
 	sendall(sock, uri_path, strlen(uri_path));
@@ -187,7 +195,12 @@ void download(struct addrinfo *ai, bool is_tls)
 		int len = recv(sock, response, sizeof(response) - 1, 0);
 
 		if (len < 0) {
-			printf("Error reading response\n");
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				printf("Timeout on reading response\n");
+			} else {
+				printf("Error reading response\n");
+			}
+
 			goto error;
 		}
 
