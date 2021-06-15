@@ -18,16 +18,6 @@ else()
 endif()
 find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
 
-# Convert to list as cmake Modules/*.cmake do it
-STRING(REGEX REPLACE " +" ";" PRINT_LIBGCC_ARGS "${CMAKE_C_FLAGS}")
-# This libgcc code is partially duplicated in compiler/*/target.cmake
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} "${PRINT_LIBGCC_ARGS}" --print-libgcc-file-name
-  OUTPUT_VARIABLE LIBGCC_FILE_NAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-assert_exists(LIBGCC_FILE_NAME)
-
 set(NOSTDINC "")
 
 # Note that NOSYSDEF_CFLAG may be an empty string, and
