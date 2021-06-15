@@ -23,7 +23,6 @@ config MICROBIT_DISPLAY_STR_MAX
 	  APIs.
 
 config MICROBIT_DISPLAY_TIMER
-<<<<<<< HEAD
 	int "NRFX Timer Instance for use with mb_display.cpp"
 	default 2
 	depends on MICROBIT_DISPLAY
@@ -37,19 +36,3 @@ config MICROBIT_DISPLAY_TIMER_PRIORITY
 	depends on MICROBIT_DISPLAY
 	help
 	  Dedicated NRFX Timer for Microbit Screen
-=======
-    int "NRFX Timer Instance for use with mb_display.cpp"
-    default 2
-	depends on MICROBIT_DISPLAY
-    help
-        Dedicated NRFX Timer for Microbit Screen
-        
-
-config MICROBIT_DISPLAY_TIMER_PRIORITY
-    int "NRFX Timer Interrupt priority"
-    default 1
-	depends on MICROBIT_DISPLAY
-	help
-        Dedicated NRFX Timer for Microbit Screen
-
->>>>>>> 1b333af04e (drivers: display: reimplementation of micro:bit display, compatible with V2)
