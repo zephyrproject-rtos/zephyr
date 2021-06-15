@@ -14,6 +14,7 @@ Requirements
 ************
 
 * nRF52833DK board with nRF52833 SOC
+* nRF52833DK board with nRF52820 SOC
 * antenna matrix for AoD (optional)
 
 Building and Running
