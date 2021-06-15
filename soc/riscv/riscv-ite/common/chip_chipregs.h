@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2020 ITE Corporation. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -672,6 +672,8 @@
 #define GPCRD5			ECREG(EC_REG_BASE_ADDR + 0x162D)
 #define GPCRE5			ECREG(EC_REG_BASE_ADDR + 0x1635)
 #define GPCRF3			ECREG(EC_REG_BASE_ADDR + 0x163B)
+#define GPCRF4			ECREG(EC_REG_BASE_ADDR + 0x163C)
+#define GPCRF5			ECREG(EC_REG_BASE_ADDR + 0x163D)
 #define GPCRH1			ECREG(EC_REG_BASE_ADDR + 0x1649)
 #define GPCRH2			ECREG(EC_REG_BASE_ADDR + 0x164A)
 #define GPCRI7			ECREG(EC_REG_BASE_ADDR + 0x1657)
@@ -1558,7 +1560,7 @@
 #define PECIHEN			BIT(3)
 #define CONCTRL			BIT(2)
 #define AWFCS_EN		BIT(1)
-#define START			BIT(0)
+#define PECISTART		BIT(0)
 #define HOCMDR			ECREG(EC_REG_BASE_ADDR + 0x2C02)
 #define HOTRADDR		ECREG(EC_REG_BASE_ADDR + 0x2C03)
 #define HOWRLR			ECREG(EC_REG_BASE_ADDR + 0x2C04)
@@ -1627,6 +1629,9 @@
 
 #define IT8XXX2_GPIO_GRC1       ECREG(IT8XXX2_GPIO_BASE + 0xF0)
 #define IT8XXX2_GPIO_GRC21      ECREG(IT8XXX2_GPIO_BASE + 0xE6)
+
+#define IT8XXX2_GPIO_GPCRP0     ECREG(IT8XXX2_GPIO2_BASE + 0x18)
+#define IT8XXX2_GPIO_GPCRP1     ECREG(IT8XXX2_GPIO2_BASE + 0x19)
 
 /* Analog to Digital Converter (ADC) */
 
