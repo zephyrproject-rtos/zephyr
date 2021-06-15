@@ -105,4 +105,28 @@
 			dma-requests = <73>;
 		};
 	};
+
+	shared_irq21: shared_irq21 {
+		compatible = "shared-irq";
+		interrupt-parent = <&nvic>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupts = <21 0>;
+		interrupt-names = "tim16_fdcan_it0";
+		#shared-irq-cells = <0>;
+		status = "disabled";
+		label = "SHARED_IRQ_21";
+	};
+
+	shared_irq22: shared_irq22 {
+		compatible = "shared-irq";
+		interrupt-parent = <&nvic>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupts = <22 0>;
+		interrupt-names = "tim17_fdcan_it1";
+		#shared-irq-cells = <0>;
+		status = "disabled";
+		label = "SHARED_IRQ_22";
+	};
 };
