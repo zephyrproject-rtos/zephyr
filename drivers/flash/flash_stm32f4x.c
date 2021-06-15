@@ -33,6 +33,30 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 	return flash_stm32_range_exists(dev, offset, len);
 }
 
+static inline void flush_cache(FLASH_TypeDef *regs)
+{
+	if (regs->ACR & FLASH_ACR_DCEN) {
+		regs->ACR &= ~FLASH_ACR_DCEN;
+		/* Datasheet: DCRST: Data cache reset
+		 * This bit can be written only when thes data cache is disabled
+		 */
+		regs->ACR |= FLASH_ACR_DCRST;
+		regs->ACR &= ~FLASH_ACR_DCRST;
+		regs->ACR |= FLASH_ACR_DCEN;
+	}
+
+	if (regs->ACR & FLASH_ACR_ICEN) {
+		regs->ACR &= ~FLASH_ACR_ICEN;
+		/* Datasheet: ICRST: Instruction cache reset :
+		 * This bit can be written only when the instruction cache
+		 * is disabled
+		 */
+		regs->ACR |= FLASH_ACR_ICRST;
+		regs->ACR &= ~FLASH_ACR_ICRST;
+		regs->ACR |= FLASH_ACR_ICEN;
+	}
+}
+
 static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -79,6 +103,13 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 	if (rc < 0) {
 		return rc;
 	}
+
+	/*
+	 * If an erase operation in Flash memory also concerns data
+	 * in the instruction cache, the user has to ensure that these data
+	 * are rewritten before they are accessed during code execution.
+	 */
+	flush_cache(regs);
 
 #if FLASH_SECTOR_TOTAL == 24
 	/*
