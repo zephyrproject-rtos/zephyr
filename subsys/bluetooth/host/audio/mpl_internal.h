@@ -95,6 +95,48 @@ void mpl_test_unset_parent_group(void);
 /* Force the media player into a given state */
 void mpl_test_media_state_set(uint8_t state);
 
+/* Trigger track changed callback */
+void mpl_test_track_changed_cb(void);
+
+/* Trigger title changed callback */
+void mpl_test_title_changed_cb(void);
+
+/* Trigger duration changed callback */
+void mpl_test_duration_changed_cb(void);
+
+/* Trigger position changed callback */
+void mpl_test_position_changed_cb(void);
+
+/* Trigger playback speed changed callback */
+void mpl_test_playback_speed_changed_cb(void);
+
+/* Trigger seeking speed changed callback */
+void mpl_test_seeking_speed_changed_cb(void);
+
+/* Trigger current track id changed callback */
+void mpl_test_current_track_id_changed_cb(void);
+
+/* Trigger next track id changed callback */
+void mpl_test_next_track_id_changed_cb(void);
+
+/* Trigger current group id changed callback */
+void mpl_test_current_group_id_changed_cb(void);
+
+/* Trigger parent group id changed callback */
+void mpl_test_parent_group_id_changed_cb(void);
+
+/* Trigger playinge order changed callback */
+void mpl_test_playing_order_changed_cb(void);
+
+/* Trigger media state changed callback */
+void mpl_test_media_state_changed_cb(void);
+
+/* Trigger operations supported changed callback */
+void mpl_test_operations_supported_changed_cb(void);
+
+/* Trigger search results changed callback */
+void mpl_test_search_results_changed_cb(void);
+
 /* Output the mediaplayer's state information */
 void mpl_debug_dump_state(void);
 
