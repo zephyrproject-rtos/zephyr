@@ -18,7 +18,8 @@ LOG_MODULE_REGISTER(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 /* Convert the range (8g, 4g, 2g) to the encoded FS register field value */
 #define RANGE2FS(x) (__builtin_ctz(x) - 1)
 
-int fxos8700_set_odr(const struct device *dev, const struct sensor_value *val)
+static int fxos8700_set_odr(const struct device *dev,
+		const struct sensor_value *val)
 {
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
