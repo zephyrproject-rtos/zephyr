@@ -194,6 +194,9 @@ do {                                                                    \
 #ifndef __attribute_const__
 #define __attribute_const__ __attribute__((__const__))
 #endif
+#ifndef __must_check
+#define __must_check __attribute__((warn_unused_result))
+#endif
 #define ARG_UNUSED(x) (void)(x)
 
 #define likely(x)   __builtin_expect((bool)!!(x), true)
