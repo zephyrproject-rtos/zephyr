@@ -515,15 +515,17 @@ static void lp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint
 	switch (evt) {
 	case LP_COMMON_EVT_RUN:
 		switch (ctx->proc) {
+		case PROC_FEATURE_EXCHANGE:
+		case PROC_VERSION_EXCHANGE:
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		case PROC_DATA_LENGTH_UPDATE:
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 			if (ntf_alloc_is_available()) {
 				lp_comm_ntf(conn, ctx);
 				lr_complete(conn);
 				ctx->state = LP_COMMON_STATE_IDLE;
 			}
 			break;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		default:
 			break;
 		}
@@ -875,7 +877,11 @@ static void rp_comm_st_wait_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, u
 
 static void rp_comm_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	/* TODO */
+	if (ntf_alloc_is_available()) {
+		rp_comm_ntf(conn, ctx);
+		rr_complete(conn);
+		ctx->state = RP_COMMON_STATE_IDLE;
+	}
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
