@@ -334,12 +334,12 @@ static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 
 static void rr_act_reject(struct ll_conn *conn)
 {
+	struct proc_ctx *ctx = rr_peek(conn);
+
+	LL_ASSERT(ctx != NULL);
 	if (!tx_alloc_is_available()) {
 		rr_set_state(conn, RR_STATE_REJECT);
 	} else {
-		struct proc_ctx *ctx = rr_peek(conn);
-
-		LL_ASSERT(ctx != NULL);
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
 
 		ctx->done = 1U;

@@ -323,6 +323,7 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	uint8_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
+	struct proc_ctx *ctx = NULL;
 
 	const uint8_t rand[] = {RAND};
 	const uint8_t ediv[] = {EDIV};
@@ -371,8 +372,8 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	CHECK_TX_PE_STATE(conn, RESUMED, UNENCRYPTED); /* Tx unenc. */
 
 	/* Steal all tx buffers */
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		tx = tx_alloc();
+	for (int i = 0U; i < EXTRA_TX_CTRL_BUF_NUM; i++) {
+		tx = tx_alloc_ptr();
 		zassert_not_null(tx, NULL);
 	}
 
@@ -1000,6 +1001,7 @@ void test_encryption_start_sla_rem_limited_memory(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
+	struct proc_ctx *ctx = NULL;
 
 	const uint8_t ltk[] = {LTK};
 	const uint8_t skd[] = {SKDM, SKDS};
@@ -1041,8 +1043,8 @@ void test_encryption_start_sla_rem_limited_memory(void)
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
 	/* Steal all tx buffers */
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		tx = tx_alloc();
+	for (int i = 0U; i < EXTRA_TX_CTRL_BUF_NUM; i++) {
+		tx = tx_alloc_ptr();
 		zassert_not_null(tx, NULL);
 	}
 

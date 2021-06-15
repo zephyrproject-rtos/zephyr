@@ -55,8 +55,12 @@ struct mem_pool {
 /* LLCP Allocations */
 
 /* TODO(thoh): Placeholder until Kconfig setting is made */
-#if !defined(TX_CTRL_BUF_NUM)
-#define TX_CTRL_BUF_NUM 1
+#if !defined(EXTRA_TX_CTRL_BUF_NUM)
+#define EXTRA_TX_CTRL_BUF_NUM 2
+#endif
+
+#if !defined(PER_CONN_TX_CTRL_BUF_NUM)
+#define PER_CONN_TX_CTRL_BUF_NUM 1
 #endif
 
 /* TODO(thoh): Placeholder until Kconfig setting is made */
@@ -64,18 +68,66 @@ struct mem_pool {
 #define PROC_CTX_BUF_NUM 1
 #endif
 
-/* TODO: Determine correct number of tx nodes */
-static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * TX_CTRL_BUF_NUM];
+/*
+Control Tx Buffer alloc considerations
+
+With no resource management the worst case need for tx ctrl buffers for a given connection is 4:
+an ongoing encryption procedure plus a possible rejection to a remote request as well as a local terminate
+So, if there are MAX_CONN x 4 ctrl tx buffers available for LLCP no resource management is needed
+
+With a queueing system however, the system worst case need could be as low as 1 tx buffer in total.
+With 1 tx buffer in total for LLCP, a conn/proc cannot however be guarantied a buffer as it could be in use (and possibly stuck)
+'in' another conn/proc. This seems to be a poor design for most cases.
+
+With 1 buffer per connection on the other hand, it can be guarantied that a conn/proc will not stall on acount
+of other connections, however, if there is only one per connection, and with the LLCP 'engine' tied to prepare/done
+the maximum throughput tx ctrl wise would be 1 PDU per connection event.
+
+For the encryption procedure this '1 PDU per event' limitation would mean that enc_req/enc_start PDUs on a peripheral
+and the enc_pause/enc_start PDUs on the central would be in subsequent conn. events and not the same conn. event
+The same would be the case for a remote vs local procedures, that only one tx PDU is possible per event, thus a
+procedure request (local or remote) would not nescesarily result in a tx PDU in the following conn. event,
+but could be delayed one event (or more, depending on the queueing paradigm)
+
+If a tx ctrl PDU gets 'stuck', because a connection needs re-tx'ing this has little impact re. tx buffer alloc
+as the connection is in a limbo anyhow as long as a PDU is not ack'ed.
+
+Having a tx ctrl buffer alloc mechanism allows having a per connection pre-alloc in combination with a cross conn/proc pool of 'extra'
+buffers. This could mean that in 'most cases' a procedure could allocate more than one tx buffer while still
+allowing the controller to be able to respond to remote request without delay, thus ensuring that any procedure on any connection
+can be handled at least on a per connection event basis.
+
+Implementing queueuing costs program memory (unknown amount) and data memory (order of PROC_CTX_BUF_NUM x 6 bytes),
+and this is to save in the order of SIMUL_TX_BUF_COUNT x MAX_CONN_LLCP x 42 bytes.
+
+Note: for the sample code below it is assumed that struct proc_ctx holds a conn reference - to optimize function headers
+
+*/
+#define TX_BUF_REQUESTQ_SIZE (PROC_CTX_BUF_NUM /* TBD */ )
+#if (TX_BUF_REQUESTQ_SIZE > 0)
+struct tx_buffer_requestq {
+	uint8_t idx_seq;
+	uint8_t idx[TX_BUF_REQUESTQ_SIZE];
+	struct proc_ctx *ctx[TX_BUF_REQUESTQ_SIZE];
+};
+static struct tx_buffer_requestq tx_bufferq = { 0 };
+#endif /* TX_BUF_REQUESTQ_SIZE > 0 */
+
+/* TODO: Determine 'correct' number of tx nodes */
+static uint8_t buffer_mem_tx[TX_CTRL_BUF_SIZE * (CONFIG_BT_CTLR_LLCP_CONN * PER_CONN_TX_CTRL_BUF_NUM + EXTRA_TX_CTRL_BUF_NUM)];
 static struct mem_pool mem_tx = { .pool = buffer_mem_tx };
 
-/* TODO: Determine correct number of ctx */
+#if (PER_CONN_TX_CTRL_BUF_NUM > 0)
+static uint8_t per_conn_tx_buffer_alloc[CONFIG_BT_CTLR_LLCP_CONN] = { 0 };
+#endif /* PER_CONN_TX_CTRL_BUF_NUM > 0 */
+
+/* TODO: Determine 'correct' number of ctx */
 static uint8_t buffer_mem_ctx[PROC_CTX_BUF_SIZE * PROC_CTX_BUF_NUM];
 static struct mem_pool mem_ctx = { .pool = buffer_mem_ctx };
 
 /*
  * LLCP Resource Management
  */
-
 static struct proc_ctx *proc_ctx_acquire(void)
 {
 	struct proc_ctx *ctx;
@@ -89,16 +141,100 @@ void ull_cp_priv_proc_ctx_release(struct proc_ctx *ctx)
 	mem_release(ctx, &mem_ctx.free);
 }
 
-bool ull_cp_priv_tx_alloc_is_available(void)
+void tx_bufferq_request(struct proc_ctx *ctx)
 {
-	return mem_tx.free != NULL;
+	/* get 'in line' for a tx buffer */
 }
 
-struct node_tx *ull_cp_priv_tx_alloc(void)
+void tx_bufferq_remove(struct proc_ctx *ctx)
 {
-	struct node_tx *tx;
+	/* remove ctx from queue */
+}
 
-	tx = (struct node_tx *) mem_acquire(&mem_tx.free);
+bool tx_bufferq_has_entry(struct proc_ctx *ctx)
+{
+	/* is ctx in the queue? */
+	return tx_bufferq.idx_seq; /* dummy code */
+}
+
+void tx_bufferq_unqueue(struct proc_ctx *ctx)
+{
+	if (tx_bufferq_has_entry(ctx)) {
+		tx_bufferq_remove(ctx);
+	}
+}
+
+bool tx_bufferq_empty(void)
+{
+	return false;
+}
+
+bool tx_bufferq_next_up(struct proc_ctx *ctx)
+{
+	/* Check if requester is next in line, if so allow */
+	/* This could be a simple fifo or it could be a more complex
+	   priority/merrit based mechanism across connections/procedures */
+	return true;
+}
+
+bool tx_bufferq_allow_request(struct proc_ctx *ctx)
+{
+	/* Check for queued up requests, if none just allow */
+	if (!tx_bufferq_empty()) {
+		/* Otherwise check, if this requester is next up */
+		if (!tx_bufferq_next_up(ctx)) {
+			/* Requester is not next 'in line', so queue up */
+			tx_bufferq_request(ctx);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool static_tx_buffer_available(struct proc_ctx *ctx)
+{
+#if (PER_CONN_TX_CTRL_BUF_NUM > 0)
+	/* Check to see if per connection pre-aloted tx buffer is available */
+
+	per_conn_tx_buffer_alloc[0]++; /* dummy code */
+#endif /* PER_CONN_TX_CTRL_BUF_NUM > 0 */
+	return false;
+}
+
+bool ull_cp_priv_tx_bufferq_alloc(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx **tx_alloc)
+{
+	bool tx_buffer_available = (mem_tx.free != NULL);
+
+	if (tx_buffer_available) {
+		/* There is at least one tx buffer available so we should check
+		 * if it is allowed for particular conn/ctx to allocate one
+		 */
+		if (!static_tx_buffer_available(ctx)) {
+			/* The conn already has spent its pre-aloted tx buffer(s), so we should consider the tx buffer request queue */
+			tx_buffer_available = tx_bufferq_allow_request(ctx);
+		}
+		if (tx_alloc && tx_buffer_available) {
+			/* If tx_peek 'requests', allocate, but first remove if queued */
+			tx_bufferq_unqueue(ctx);
+
+			*tx_alloc = (struct node_tx *)mem_acquire(&mem_tx.free);
+		}
+	}
+	return tx_buffer_available;
+}
+
+bool ull_cp_priv_tx_alloc_is_available(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	return ull_cp_priv_tx_bufferq_alloc(conn, ctx, NULL);
+}
+
+struct node_tx *ull_cp_priv_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	struct node_tx *tx = NULL;
+
+	ull_cp_priv_tx_bufferq_alloc(conn,ctx, &tx);
+
 	return tx;
 }
 
@@ -163,6 +299,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	ctx->collision = 0U;
 	ctx->pause = 0U;
 	ctx->done = 0U;
+	ctx->local = 0U;
 
 	/* Clear procedure data */
 	memset((void *) &ctx->data, 0, sizeof(ctx->data));
@@ -183,6 +320,8 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	if (!ctx) {
 		return NULL;
 	}
+
+	ctx->local = 1U;
 
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -302,7 +441,7 @@ void ull_cp_init(void)
 {
 	/**/
 	mem_init(mem_ctx.pool, PROC_CTX_BUF_SIZE, PROC_CTX_BUF_NUM, &mem_ctx.free);
-	mem_init(mem_tx.pool, TX_CTRL_BUF_SIZE, TX_CTRL_BUF_NUM, &mem_tx.free);
+	mem_init(mem_tx.pool, TX_CTRL_BUF_SIZE, EXTRA_TX_CTRL_BUF_NUM, &mem_tx.free);
 }
 
 void ll_conn_init(struct ll_conn *conn)
@@ -838,11 +977,13 @@ void test_int_mem_tx(void)
 {
 	bool peek;
 	struct node_tx *tx;
-	struct node_tx *txl[TX_CTRL_BUF_NUM];
+	struct node_tx *txl[EXTRA_TX_CTRL_BUF_NUM];
+	struct ll_conn *conn = NULL;
+	struct proc_ctx *ctx = NULL;
 
 	ull_cp_init();
 
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+	for (int i = 0U; i < EXTRA_TX_CTRL_BUF_NUM; i++) {
 		peek = tx_alloc_is_available();
 
 		/* The previous tx alloc peek should be valid */
@@ -865,11 +1006,11 @@ void test_int_mem_tx(void)
 	zassert_is_null(tx, NULL);
 
 	/* Release all */
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+	for (int i = 0U; i < EXTRA_TX_CTRL_BUF_NUM; i++) {
 		tx_release(txl[i]);
 	}
 
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+	for (int i = 0U; i < EXTRA_TX_CTRL_BUF_NUM; i++) {
 		peek = tx_alloc_is_available();
 
 		/* The previous tx alloc peek should be valid */
@@ -892,7 +1033,7 @@ void test_int_mem_tx(void)
 	zassert_is_null(tx, NULL);
 
 	/* Release all */
-	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+	for (int i = 0U; i < EXTRA_TX_CTRL_BUF_NUM; i++) {
 		tx_release(txl[i]);
 	}
 }

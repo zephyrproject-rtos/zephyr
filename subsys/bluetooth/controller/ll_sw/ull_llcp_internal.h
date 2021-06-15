@@ -115,6 +115,9 @@ struct proc_ctx {
 	/* TX node awaiting ack */
 	struct node_tx *tx_ack;
 
+	/* Procedure locally initiated */
+	uint8_t local;
+
 	/*
 	 * This flag is set to 1 when we are finished with the control
 	 * procedure and it is safe to release the context ctx
@@ -273,19 +276,12 @@ static inline bool is_instant_reached_or_passed(uint16_t instant, uint16_t event
 /*
  * LLCP Resource Management
  */
-bool ull_cp_priv_tx_alloc_is_available(void);
+bool ull_cp_priv_tx_alloc_is_available(struct ll_conn *conn, struct proc_ctx *ctx);
+#define tx_alloc_is_available() ull_cp_priv_tx_alloc_is_available(conn, ctx)
 
-static inline bool tx_alloc_is_available(void)
-{
-	return ull_cp_priv_tx_alloc_is_available();
-}
-
-struct node_tx *ull_cp_priv_tx_alloc(void);
-
-static inline struct node_tx *tx_alloc(void)
-{
-	return ull_cp_priv_tx_alloc();
-}
+struct node_tx *ull_cp_priv_tx_alloc(struct ll_conn *conn, struct proc_ctx *ctx);
+#define tx_alloc() ull_cp_priv_tx_alloc(conn, ctx)
+#define tx_alloc_ptr() ull_cp_priv_tx_alloc(&conn, ctx)
 
 bool ull_cp_priv_ntf_alloc_is_available(void);
 
