@@ -310,6 +310,21 @@ config LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
 	help
 	  Include support for LWM2M Firmware Update Object (ID 5)
 
+config LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT_MULTIPLE
+	bool "Support multiple firmware update objects [EXPERIMENTAL]"
+	depends on LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT
+	select EXPERIMENTAL
+	help
+	  Support multiple instances of LWM2M Firwmare Update Object (ID 5)
+
+config LWM2M_FIRMWARE_UPDATE_OBJ_INSTANCE_COUNT
+	int "Maximum # of LWM2M Firmware update object instances"
+	default 1
+	depends on LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT_MULTIPLE
+	help
+	  This setting establishes the total count of LWM2M Firmware update
+	  object instances available to the client.
+
 config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	bool "Firmware Update object pull support"
 	default y
