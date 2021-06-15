@@ -23,7 +23,7 @@ static int fxos8700_set_odr(const struct device *dev,
 {
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
-	int32_t dr = val->val1;
+	uint8_t dr;
 
 #ifdef CONFIG_FXOS8700_MODE_HYBRID
 	/* ODR is halved in hybrid mode */
@@ -68,7 +68,7 @@ static int fxos8700_set_odr(const struct device *dev,
 	}
 #endif
 
-	LOG_DBG("Set ODR to 0x%x", (uint8_t)dr);
+	LOG_DBG("Set ODR to 0x%x", dr);
 
 	/*
 	 * Modify FXOS8700_REG_CTRLREG1 can only occur when the device
@@ -83,7 +83,7 @@ static int fxos8700_set_odr(const struct device *dev,
 	return i2c_reg_update_byte(data->i2c, config->i2c_address,
 		FXOS8700_REG_CTRLREG1,
 		FXOS8700_CTRLREG1_DR_MASK | FXOS8700_CTRLREG1_ACTIVE_MASK,
-		(uint8_t)dr | FXOS8700_POWER_ACTIVE);
+		dr | FXOS8700_POWER_ACTIVE);
 }
 
 static int fxos8700_set_mt_ths(const struct device *dev,
