@@ -124,6 +124,11 @@
 #define IT8XXX2_IRQ_WU124       145
 #define IT8XXX2_IRQ_WU125       146
 #define IT8XXX2_IRQ_WU126       147
+/* Group 20 */
+#define IT8XXX2_IRQ_USBPD0      165
+#define IT8XXX2_IRQ_USBPD1      166
+/* Group 21 */
+#define IT8XXX2_IRQ_USBPD2      174
 /* Group 22 */
 #define IT8XXX2_IRQ_WU40        176
 #define IT8XXX2_IRQ_WU45        177
