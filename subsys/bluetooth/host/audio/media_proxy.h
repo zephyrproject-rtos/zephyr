@@ -415,24 +415,8 @@ int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls);
 /* Initialize player - TODO: Move to player header file */
 int media_proxy_pl_init(void);
 
-/* Various debug and special calls - TODO: Handle these */
-#ifdef CONFIG_BT_OTS
-#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
-	/* For  IOP testing - set current group to be it's own parent */
-	void media_proxy_pl_test_unset_parent_group(void);
-#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
-#endif /* CONFIG_BT_OTS */
-
-#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
-	void media_proxy_pl_test_media_state_set(uint8_t state);
-#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
-
-#if CONFIG_BT_DEBUG_MCS
-	/* Output the mediaplayer's state information */
-	void media_proxy_pl_debug_dump_state(void);
-#endif /* CONFIG_BT_DEBUG_MCS */
-
-	struct bt_ots *bt_mcs_get_ots(void);
+/* TODO: Find best location for this call, and move this one also */
+struct bt_ots *bt_mcs_get_ots(void);
 
 /* Callbacks from the player to the media proxy */
 

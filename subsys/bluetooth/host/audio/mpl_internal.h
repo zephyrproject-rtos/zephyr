@@ -87,6 +87,17 @@ struct mpl_mediaplayer_t {
 };
 
 
+/* Special calls for testing */
+
+/* For  IOP testing - set current group to be it's own parent */
+void mpl_test_unset_parent_group(void);
+
+/* Force the media player into a given state */
+void mpl_test_media_state_set(uint8_t state);
+
+/* Output the mediaplayer's state information */
+void mpl_debug_dump_state(void);
+
 #ifdef __cplusplus
 }
 #endif

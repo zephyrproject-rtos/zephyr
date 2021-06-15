@@ -1,7 +1,7 @@
 /*  Media player skeleton implementation */
 
 /*
- * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2019 - 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2361,7 +2361,7 @@ uint64_t parent_group_id_get(void)
 	return pl.group->parent->id;
 }
 #if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
-void media_proxy_pl_test_unset_parent_group(void)
+void mpl_test_unset_parent_group(void)
 {
 	BT_DBG("Setting current group to be it's own parent");
 	pl.group->parent = pl.group;
@@ -2392,7 +2392,7 @@ uint8_t media_state_get(void)
 }
 
 #if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
-void media_proxy_pl_test_media_state_set(uint8_t state)
+void mpl_test_media_state_set(uint8_t state)
 {
 	pl.state = state;
 	media_proxy_pl_media_state_cb(pl.state);
@@ -2496,7 +2496,7 @@ uint8_t content_ctrl_id_get(void)
 }
 
 #if CONFIG_BT_DEBUG_MCS
-void media_proxy_pl_debug_dump_state(void)
+void mpl_debug_dump_state(void)
 {
 #if CONFIG_BT_OTS
 	char t[BT_OTS_OBJ_ID_STR_LEN];

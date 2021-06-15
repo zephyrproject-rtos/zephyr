@@ -1,10 +1,10 @@
 /** @file
- *  @brief Media Player / Media control service shell implementation
+ *  @brief Media player shell
  *
  */
 
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020 - 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "bt.h"
 
 #include "../host/audio/media_proxy.h"
+#include "../host/audio/mpl_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MCS)
 #define LOG_MODULE_NAME bt_mpl_shell
@@ -29,21 +30,21 @@ extern "C" {
 #if defined(CONFIG_BT_MCS)
 
 #if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
-int cmd_media_proxy_pl_test_set_media_state(const struct shell *sh, size_t argc,
-				  char *argv[])
+int cmd_mpl_test_set_media_state(const struct shell *sh, size_t argc,
+				 char *argv[])
 {
 	uint8_t state = strtol(argv[1], NULL, 0);
 
-	media_proxy_pl_test_media_state_set(state);
+	mpl_test_media_state_set(state);
 
 	return 0;
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_media_proxy_pl_test_unset_parent_group(const struct shell *sh, size_t argc,
+int cmd_mpl_test_unset_parent_group(const struct shell *sh, size_t argc,
 				    char *argv[])
 {
-	media_proxy_pl_test_unset_parent_group();
+	mpl_test_unset_parent_group();
 
 	return 0;
 }
@@ -80,10 +81,10 @@ int cmd_media_proxy_pl_test_unset_parent_group(const struct shell *sh, size_t ar
 #endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 
 #if defined(CONFIG_BT_DEBUG_MCS)
-int cmd_media_proxy_pl_debug_dump_state(const struct shell *sh, size_t argc,
+int cmd_mpl_debug_dump_state(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
-	media_proxy_pl_debug_dump_state();
+	mpl_debug_dump_state();
 
 	return 0;
 }
@@ -232,11 +233,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 #if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
 	SHELL_CMD_ARG(test_set_media_state, NULL,
 		      "Set the media player state (test) <state>",
-		      cmd_media_proxy_pl_test_set_media_state, 2, 0),
+		      cmd_mpl_test_set_media_state, 2, 0),
 #if CONFIG_BT_OTS
 	SHELL_CMD_ARG(test_unset_parent_group, NULL,
 		      "Set current group to be its own parent (test)",
-		      cmd_media_proxy_pl_test_unset_parent_group, 1, 0),
+		      cmd_mpl_test_unset_parent_group, 1, 0),
 #endif /* CONFIG_BT_OTS */
 /* TODO: Reenable after MCS/MPL/MPLC rework
 	SHELL_CMD_ARG(test_set_operation, NULL,
@@ -247,7 +248,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 #if defined(CONFIG_BT_DEBUG_MCS)
 	SHELL_CMD_ARG(debug_dump_state, NULL,
 		      "Dump media player's state as debug output (debug)",
-		      cmd_media_proxy_pl_debug_dump_state, 1, 0),
+		      cmd_mpl_debug_dump_state, 1, 0),
 #endif /* CONFIG_BT_DEBUG_MCC */
 	SHELL_CMD_ARG(init, NULL,
 		      "Initialize media player",
