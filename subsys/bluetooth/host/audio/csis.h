@@ -48,6 +48,26 @@ struct bt_csis_cb_t {
 	uint8_t (*sirk_read_req)(struct bt_conn *conn);
 };
 
+/** @brief Get the service declaration attribute.
+ *
+ *  The first service attribute can be included in any other GATT service.
+ *
+ *  @return The first CSIS attribute instance.
+ */
+void *bt_csis_svc_decl_get(void);
+
+/**
+ * @brief Register the Coordinated Set Identification Service.
+ *
+ * This will register and enable the service and make it discoverable by
+ * clients.
+ *
+ * This shall only be done as a server.
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_csis_register(void);
+
 /**
  * @brief Print the sirk to the debug output
  */
