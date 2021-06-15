@@ -21,6 +21,8 @@
 
 #include "ll_sw/pdu.h"
 
+#include "radio_internal.h"
+
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 #if ((CONFIG_BT_CTLR_GPIO_PA_PIN) > 31)
 #define NRF_GPIO_PA     NRF_P1
@@ -490,19 +492,10 @@ void *radio_pkt_decrypt_get(void)
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 
-#define SW_SWITCH_PREV_RX             0
-#define SW_SWITCH_NEXT_RX             0
-#define SW_SWITCH_PREV_TX             1
-#define SW_SWITCH_NEXT_TX             1
-#define SW_SWITCH_PREV_PHY_1M         0
-#define SW_SWITCH_PREV_FLAGS_DONTCARE 0
-#define SW_SWITCH_NEXT_FLAGS_DONTCARE 0
-
 static uint8_t sw_tifs_toggle;
 
-static inline void sw_switch(uint8_t dir_curr, uint8_t dir_next,
-			     uint8_t phy_curr, uint8_t flags_curr,
-			     uint8_t phy_next, uint8_t flags_next)
+void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t flags_curr,
+	       uint8_t phy_next, uint8_t flags_next)
 {
 	uint8_t ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(sw_tifs_toggle);
 	uint8_t cc = SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle);
@@ -511,8 +504,8 @@ static inline void sw_switch(uint8_t dir_curr, uint8_t dir_next,
 	hal_radio_sw_switch_setup(cc, ppi, sw_tifs_toggle);
 
 	/* NOTE: As constants are passed to dir_curr and dir_next, the
-	 *       compiler should optimize out the redundant code path as
-	 *       this is an inline function.
+	 *       compiler should optimize out the redundant code path
+	 *       during the optimization.
 	 */
 	if (dir_next) {
 		/* TX */
@@ -649,9 +642,8 @@ void radio_switch_complete_and_rx(uint8_t phy_rx)
 	 *	 across nRF5x radios, sw_switch assumes the 1M chain delay for
 	 *       calculations.
 	 */
-	sw_switch(SW_SWITCH_PREV_TX, SW_SWITCH_NEXT_RX,
-		  SW_SWITCH_PREV_PHY_1M, SW_SWITCH_PREV_FLAGS_DONTCARE,
-		  phy_rx, SW_SWITCH_NEXT_FLAGS_DONTCARE);
+	sw_switch(SW_SWITCH_TX, SW_SWITCH_RX, SW_SWITCH_PHY_1M, SW_SWITCH_FLAGS_DONTCARE, phy_rx,
+		  SW_SWITCH_FLAGS_DONTCARE);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -666,8 +658,7 @@ void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx,
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk;
 
-	sw_switch(SW_SWITCH_PREV_RX, SW_SWITCH_NEXT_TX,
-		  phy_rx, flags_rx, phy_tx, flags_tx);
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -682,8 +673,7 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 			    RADIO_SHORTS_END_DISABLE_Msk;
 
-	sw_switch(SW_SWITCH_PREV_TX, SW_SWITCH_NEXT_TX,
-		  phy_curr, flags_curr, phy_next, flags_next);
+	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
