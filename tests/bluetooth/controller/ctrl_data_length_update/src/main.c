@@ -420,6 +420,13 @@ void test_data_length_update_sla_rem(void)
 	ull_conn_default_tx_time_set(1800);
 	ull_dle_init(&conn, PHY_1M);
 
+	/* Steal all ntf buffers, so as to check that the wait_ntf mechanism works */
+	while (ll_pdu_rx_alloc_peek(1)) {
+		ntf = ll_pdu_rx_alloc();
+		/* Make sure we use a correct type or the release won't work */
+		ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
+	}
+
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
@@ -436,6 +443,13 @@ void test_data_length_update_sla_rem(void)
 	/* TX Ack */
 	event_tx_ack(&conn, tx);
 
+	event_done(&conn);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf, so next cycle will generate NTF and complete procedure */
+	ull_cp_release_ntf(ntf);
+
+	event_prepare(&conn);
 	event_done(&conn);
 
 	ut_rx_pdu(LL_LENGTH_RSP, &ntf,  &length_ntf);
