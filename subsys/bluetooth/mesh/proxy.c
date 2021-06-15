@@ -956,6 +956,13 @@ bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 		bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));
 		if (err) {
 			BT_ERR("Failed to send proxy message (err %d)", err);
+
+			/* If segment_and_send() fails the buf_send_end() callback will
+			 * not be called, so we need to clear the user data (net_buf,
+			 * which is just opaque data to segment_and send) reference given
+			 * to segment_and_send() here.
+			 */
+			net_buf_unref(buf);
 			continue;
 		}
 
@@ -1004,6 +1011,7 @@ static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
 				  struct net_buf_simple *msg,
 				  bt_gatt_complete_func_t end, void *user_data)
 {
+	int err;
 	uint16_t mtu;
 
 	BT_DBG("conn %p type 0x%02x len %u: %s", (void *)conn, type, msg->len,
@@ -1017,18 +1025,30 @@ static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
 	}
 
 	net_buf_simple_push_u8(msg, PDU_HDR(SAR_FIRST, type));
-	proxy_send(conn, msg->data, mtu, NULL, NULL);
+	err = proxy_send(conn, msg->data, mtu, NULL, NULL);
+	if (err) {
+		return err;
+	}
+
 	net_buf_simple_pull(msg, mtu);
 
 	while (msg->len) {
 		if (msg->len + 1 < mtu) {
 			net_buf_simple_push_u8(msg, PDU_HDR(SAR_LAST, type));
-			proxy_send(conn, msg->data, msg->len, end, user_data);
+			err = proxy_send(conn, msg->data, msg->len, end, user_data);
+			if (err) {
+				return err;
+			}
+
 			break;
 		}
 
 		net_buf_simple_push_u8(msg, PDU_HDR(SAR_CONT, type));
-		proxy_send(conn, msg->data, mtu, NULL, NULL);
+		err = proxy_send(conn, msg->data, mtu, NULL, NULL);
+		if (err) {
+			return err;
+		}
+
 		net_buf_simple_pull(msg, mtu);
 	}
 
