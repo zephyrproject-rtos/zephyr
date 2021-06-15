@@ -1,7 +1,7 @@
 .. _tfm_integration-samples:
 
-TFM Integration Samples
-#######################
+TF-M Integration Samples
+########################
 
 .. toctree::
    :maxdepth: 1
@@ -43,7 +43,7 @@ supports firmware upgrade.
 
 The current TF-M implementation specifically targets TrustZone for ARMv8-M.
 
-Trusted Firmware M source code is available at
+Trusted Firmware-M source code is available at
 `git.trustedfirmware.org <https://git.trustedfirmware.org>`_, although a fork
 of this source code is maintained by the Zephyr Project as a module for
 convenience sake at
