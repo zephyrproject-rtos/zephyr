@@ -77,118 +77,104 @@ int cmd_media_proxy_pl_init(const struct shell *sh, size_t argc, char *argv[])
 }
 
 
-int cmd_media_proxy_pl_track_changed_cb(const struct shell *sh, size_t argc,
-			     char *argv[])
+int cmd_mpl_test_track_changed_cb(const struct shell *sh, size_t argc,
+				  char *argv[])
 {
-	media_proxy_pl_track_changed_cb();
-
+	mpl_test_track_changed_cb();
 	return 0;
 }
 
-int cmd_media_proxy_pl_title_changed_cb(const struct shell *sh, size_t argc,
-			     char *argv[])
+int cmd_mpl_test_title_changed_cb(const struct shell *sh, size_t argc,
+				  char *argv[])
 {
-	media_proxy_pl_track_title_cb("Interlude #3");
-
+	mpl_test_title_changed_cb();
 	return 0;
 }
 
-int cmd_media_proxy_pl_duration_changed_cb(const struct shell *sh, size_t argc,
-				char *argv[])
-{
-	media_proxy_pl_track_duration_cb(12000);
-
-	return 0;
-}
-
-int cmd_media_proxy_pl_position_changed_cb(const struct shell *sh, size_t argc,
-				char *argv[])
-{
-	media_proxy_pl_track_position_cb(2048);
-
-	return 0;
-}
-
-int cmd_media_proxy_pl_playback_speed_changed_cb(const struct shell *sh, size_t argc,
-				      char *argv[])
-{
-	media_proxy_pl_playback_speed_cb(96);
-
-	return 0;
-}
-
-int cmd_media_proxy_pl_seeking_speed_changed_cb(const struct shell *sh, size_t argc,
+int cmd_mpl_test_duration_changed_cb(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
-	media_proxy_pl_seeking_speed_cb(4);
+	mpl_test_duration_changed_cb();
+	return 0;
+}
 
+int cmd_mpl_test_position_changed_cb(const struct shell *sh, size_t argc,
+				     char *argv[])
+{
+	mpl_test_position_changed_cb();
+	return 0;
+}
+
+int cmd_mpl_test_playback_speed_changed_cb(const struct shell *sh, size_t argc,
+					   char *argv[])
+{
+	mpl_test_playback_speed_changed_cb();
+	return 0;
+}
+
+int cmd_mpl_test_seeking_speed_changed_cb(const struct shell *sh, size_t argc,
+					  char *argv[])
+{
+	mpl_test_seeking_speed_changed_cb();
 	return 0;
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_media_proxy_pl_current_track_id_changed_cb(const struct shell *sh, size_t argc,
-					char *argv[])
+int cmd_mpl_test_current_track_id_changed_cb(const struct shell *sh, size_t argc,
+					     char *argv[])
 {
-	media_proxy_pl_current_track_id_cb(16);
-
+	mpl_test_current_track_id_changed_cb();
 	return 0;
 }
 
-int cmd_media_proxy_pl_next_track_id_changed_cb(const struct shell *sh, size_t argc,
-				     char *argv[])
+int cmd_mpl_test_next_track_id_changed_cb(const struct shell *sh, size_t argc,
+					  char *argv[])
 {
-	media_proxy_pl_next_track_id_cb(17);
-
+	mpl_test_next_track_id_changed_cb();
 	return 0;
 }
 
-int cmd_media_proxy_pl_current_group_id_changed_cb(const struct shell *sh, size_t argc,
-				char *argv[])
+int cmd_mpl_test_current_group_id_changed_cb(const struct shell *sh, size_t argc,
+					     char *argv[])
 {
-	media_proxy_pl_current_group_id_cb(19);
-
+	mpl_test_current_group_id_changed_cb();
 	return 0;
 }
 
-int cmd_media_proxy_pl_parent_group_id_changed_cb(const struct shell *sh, size_t argc,
-				       char *argv[])
+int cmd_mpl_test_parent_group_id_changed_cb(const struct shell *sh, size_t argc,
+					    char *argv[])
 {
-	media_proxy_pl_parent_group_id_cb(23);
-
+	mpl_test_parent_group_id_changed_cb();
 	return 0;
 }
 #endif /* CONFIG_BT_OTS */
 
-int cmd_media_proxy_pl_playing_order_changed_cb(const struct shell *sh, size_t argc,
-				     char *argv[])
+int cmd_mpl_test_playing_order_changed_cb(const struct shell *sh, size_t argc,
+					  char *argv[])
 {
-	media_proxy_pl_playing_order_cb(1);
-
+	mpl_test_playing_order_changed_cb();
 	return 0;
 }
 
-int cmd_media_proxy_pl_state_changed_cb(const struct shell *sh, size_t argc,
-			     char *argv[])
+int cmd_mpl_test_state_changed_cb(const struct shell *sh, size_t argc,
+				  char *argv[])
 {
-	media_proxy_pl_media_state_cb(BT_MCS_MEDIA_STATE_SEEKING);
-
+	mpl_test_media_state_changed_cb();
 	return 0;
 }
 
-int cmd_media_proxy_pl_media_opcodes_changed_cb(const struct shell *sh, size_t argc,
-				     char *argv[])
+int cmd_mpl_test_media_operations_supported_changed_cb(const struct shell *sh, size_t argc,
+						       char *argv[])
 {
-	media_proxy_pl_operations_supported_cb(0x00aa55aa);
-
+	mpl_test_operations_supported_changed_cb();
 	return 0;
 }
 
 #ifdef CONFIG_BT_OTS
-int cmd_media_proxy_pl_search_results_changed_cb(const struct shell *sh, size_t argc,
-				      char *argv[])
+int cmd_mpl_test_search_results_changed_cb(const struct shell *sh, size_t argc,
+					   char *argv[])
 {
-	media_proxy_pl_search_results_id_cb(19);
-
+	mpl_test_search_results_changed_cb();
 	return 0;
 }
 #endif /* CONFIG_BT_OTS */
@@ -220,50 +206,50 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mpl_cmds,
 		      "Initialize media player",
 		      cmd_media_proxy_pl_init, 1, 0),
 	SHELL_CMD_ARG(track_changed_cb, NULL,
-		      "Send Track Changed notification",
-		      cmd_media_proxy_pl_track_changed_cb, 1, 0),
+		      "Trigger Track Changed callback (test)",
+		      cmd_mpl_test_track_changed_cb, 1, 0),
 	SHELL_CMD_ARG(title_changed_cb, NULL,
-		      "Send (fake) Track Title notification",
-		      cmd_media_proxy_pl_title_changed_cb, 1, 0),
+		      "Trigger Track Title callback (test)",
+		      cmd_mpl_test_title_changed_cb, 1, 0),
 	SHELL_CMD_ARG(duration_changed_cb, NULL,
-		      "Send Track Duration notification",
-		      cmd_media_proxy_pl_duration_changed_cb, 1, 0),
+		      "Trigger Track Duration callback (test)",
+		      cmd_mpl_test_duration_changed_cb, 1, 0),
 	SHELL_CMD_ARG(position_changed_cb, NULL,
-		      "Send Track Position notification",
-		      cmd_media_proxy_pl_position_changed_cb, 1, 0),
+		      "Trigger Track Position callback (test)",
+		      cmd_mpl_test_position_changed_cb, 1, 0),
 	SHELL_CMD_ARG(playback_speed_changed_cb, NULL,
-		      "Send Playback Speed notification",
-		      cmd_media_proxy_pl_playback_speed_changed_cb, 1, 0),
+		      "Trigger Playback Speed callback (test)",
+		      cmd_mpl_test_playback_speed_changed_cb, 1, 0),
 	SHELL_CMD_ARG(seeking_speed_changed_cb, NULL,
-		      "Send Seeking Speed notification",
-		      cmd_media_proxy_pl_seeking_speed_changed_cb, 1, 0),
+		      "Trigger Seeking Speed callback (test)",
+		      cmd_mpl_test_seeking_speed_changed_cb, 1, 0),
 #ifdef CONFIG_BT_OTS
 	SHELL_CMD_ARG(current_track_id_changed_cb, NULL,
-		      "Send Current Track notification",
-		      cmd_media_proxy_pl_current_track_id_changed_cb, 1, 0),
+		      "Trigger Current Track callback (test)",
+		      cmd_mpl_test_current_track_id_changed_cb, 1, 0),
 	SHELL_CMD_ARG(next_track_id_changed_cb, NULL,
-		      "Send Next Track notification",
-		      cmd_media_proxy_pl_next_track_id_changed_cb, 1, 0),
+		      "Trigger Next Track callback (test)",
+		      cmd_mpl_test_next_track_id_changed_cb, 1, 0),
 	SHELL_CMD_ARG(current_group_id_changed_cb, NULL,
-		      "Send Current Group notification",
-		      cmd_media_proxy_pl_current_group_id_changed_cb, 1, 0),
+		      "Trigger Current Group callback (test)",
+		      cmd_mpl_test_current_group_id_changed_cb, 1, 0),
 	SHELL_CMD_ARG(parent_group_id_changed_cb, NULL,
-		      "Send Parent Group notification",
-		      cmd_media_proxy_pl_parent_group_id_changed_cb, 1, 0),
+		      "Trigger Parent Group callback (test)",
+		      cmd_mpl_test_parent_group_id_changed_cb, 1, 0),
 #endif /* CONFIG_BT_OTS */
 	SHELL_CMD_ARG(playing_order_changed_cb, NULL,
-		      "Send Playing Order notification",
-		      cmd_media_proxy_pl_playing_order_changed_cb, 1, 0),
+		      "Trigger Playing Order callback (test)",
+		      cmd_mpl_test_playing_order_changed_cb, 1, 0),
 	SHELL_CMD_ARG(state_changed_cb, NULL,
-		      "Send Media State notification",
-		      cmd_media_proxy_pl_state_changed_cb, 1, 0),
-	SHELL_CMD_ARG(media_opcodes_changed_cb, NULL,
-		      "Send Supported Opcodes notfication",
-		      cmd_media_proxy_pl_media_opcodes_changed_cb, 1, 0),
+		      "Trigger Media State callback (test)",
+		      cmd_mpl_test_state_changed_cb, 1, 0),
+	SHELL_CMD_ARG(media_operations_changed_cb, NULL,
+		      "Trigger Operations Supported callback (test)",
+		      cmd_mpl_test_media_operations_supported_changed_cb, 1, 0),
 #ifdef CONFIG_BT_OTS
 	SHELL_CMD_ARG(search_results_changed_cb, NULL,
-		      "Send Search Results Object ID notification",
-		      cmd_media_proxy_pl_search_results_changed_cb, 1, 0),
+		      "Trigger Search Results Object ID callback (test)",
+		      cmd_mpl_test_search_results_changed_cb, 1, 0),
 #endif /* CONFIG_BT_OTS */
 	SHELL_SUBCMD_SET_END
 );
