@@ -1,13 +1,13 @@
 # Microbit display driver configuration options
 
 # Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2021 Peter Niebert <peter.niebert@univ-amu.fr>
 # SPDX-License-Identifier: Apache-2.0
 
 config MICROBIT_DISPLAY
 	bool "BBC micro:bit 5x5 LED Display support"
-	depends on BOARD_BBC_MICROBIT
+	depends on BOARD_BBC_MICROBIT || BOARD_BBC_MICROBIT_V2
 	depends on PRINTK
-	depends on GPIO
 	help
 	  Enable this to be able to display images and text on the 5x5
 	  LED matrix display on the BBC micro:bit.
@@ -21,3 +21,18 @@ config MICROBIT_DISPLAY_STR_MAX
 	  This value specifies the maximum length of strings that can
 	  be displayed using the mb_display_string() and mb_display_print()
 	  APIs.
+
+config MICROBIT_DISPLAY_TIMER
+	int "NRFX Timer Instance for use with mb_display.cpp"
+	default 2
+	depends on MICROBIT_DISPLAY
+	help
+	  Dedicated NRFX Timer for Microbit Screen
+
+
+config MICROBIT_DISPLAY_TIMER_PRIORITY
+	int "NRFX Timer Interrupt priority"
+	default 1
+	depends on MICROBIT_DISPLAY
+	help
+	  Dedicated NRFX Timer for Microbit Screen
