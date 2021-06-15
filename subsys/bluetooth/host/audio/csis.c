@@ -83,7 +83,7 @@ struct csis_instance_t {
 	bool adv_enabled;
 	struct k_work_delayable set_lock_timer;
 	bt_addr_le_t lock_client_addr;
-	const struct bt_gatt_service_static *service_p;
+	const struct bt_gatt_service *service_p;
 	struct csis_pending_notifications_t pend_notify[CONFIG_BT_MAX_PAIRED];
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	uint32_t age_counter;
@@ -97,7 +97,7 @@ struct csis_instance_t {
 };
 
 static struct csis_instance_t csis_inst;
-extern const struct bt_gatt_service_static csis_svc;
+static struct bt_gatt_service csis_svc;
 static bt_addr_le_t server_dummy_addr; /* 0'ed address */
 
 static bool is_last_client_to_write(struct bt_conn *conn)
@@ -766,15 +766,32 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 			BT_GATT_PERM_READ_ENCRYPT, \
 			read_rank, NULL, NULL) \
 
+static struct bt_gatt_attr csis_attrs[] = { BT_CSIS_SERVICE_DEFINITION };
+static struct bt_gatt_service csis_svc = BT_GATT_SERVICE(csis_attrs);
 
-BT_GATT_SERVICE_DEFINE(csis_svc, BT_CSIS_SERVICE_DEFINITION);
-
-static int bt_csis_init(const struct device *unused)
+/****************************** Public API ******************************/
+void *bt_csis_svc_decl_get(void)
 {
-	int res = 0;
+	return csis_attrs;
+}
+
+int bt_csis_register(void)
+{
+	static bool registered;
+	int err;
+
+	if (registered) {
+		return -EALREADY;
+	}
 
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_cb_register(&auth_callbacks);
+
+	err = bt_gatt_service_register(&csis_svc);
+	if (err != 0) {
+		BT_DBG("VCS service register failed: %d", err);
+		return err;
+	}
 
 	k_work_init_delayable(&csis_inst.set_lock_timer,
 			      set_lock_timer_handler);
@@ -792,10 +809,11 @@ static int bt_csis_init(const struct device *unused)
 
 		memcpy(csis_inst.set_sirk.value, test_sirk, sizeof(test_sirk));
 	} else {
-		res = generate_sirk(CONFIG_BT_CSIS_SET_SIRK_SEED,
-				csis_inst.set_sirk.value);
-		if (res) {
+		err = generate_sirk(CONFIG_BT_CSIS_SET_SIRK_SEED,
+					csis_inst.set_sirk.value);
+		if (err != 0) {
 			BT_DBG("Sirk generation failed for instance");
+			return err;
 		}
 	}
 
@@ -805,13 +823,10 @@ static int bt_csis_init(const struct device *unused)
 	k_work_init(&csis_inst.work, disconnect_adv);
 #endif /* CONFIG_BT_EXT_ADV */
 
-	return res;
+	registered = true;
+	return 0;
 }
 
-DEVICE_DEFINE(bt_csis, "bt_csis", &bt_csis_init, NULL, NULL, NULL,
-	      APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
-
-/****************************** Public API ******************************/
 void bt_csis_register_cb(struct bt_csis_cb_t *cb)
 {
 	csis_cbs = cb;
