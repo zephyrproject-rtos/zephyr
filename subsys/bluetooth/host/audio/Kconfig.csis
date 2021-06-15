@@ -56,6 +56,15 @@ config BT_CSIS_ENC_SIRK_SUPPORT
 	help
 	  Enables support encrypting the SIRK.
 
+config BT_CSIS_MAX_INSTANCE_COUNT
+	int "Coordinated Set Identification Service max instance count"
+	default 1
+	range 1 1 # TODO: Temporary restriction until API supports multiple instances
+	help
+	  This option sets the maximum number of instances of Coordinated Set
+	  Identification Services. If the service is declared as primary service
+	  then only a single instance is possible.
+
 ############### DEBUG ###############
 
 config BT_DEBUG_CSIS
