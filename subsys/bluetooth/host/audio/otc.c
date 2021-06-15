@@ -1367,7 +1367,7 @@ static int decode_record(struct net_buf_simple *buf,
 			return -EINVAL;
 		}
 
-		rec->metadata.type_uuid.u16.val =
+		rec->metadata.type_uuid.uuid_16.val =
 			net_buf_simple_pull_le16(buf);
 	}
 
