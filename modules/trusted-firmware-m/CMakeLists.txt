@@ -105,6 +105,10 @@ function(trusted_firmware_build)
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
   endif()
 
+  if(TFM_ISOLATION_LEVEL)
+    set(TFM_ISOLATION_LEVEL_ARG -DTFM_ISOLATION_LEVEL=${TFM_ISOLATION_LEVEL})
+  endif()
+
   if (TFM_REGRESSION_S)
     set(TFM_REGRESSION_S_ARG -DTEST_S=ON)
   endif()
