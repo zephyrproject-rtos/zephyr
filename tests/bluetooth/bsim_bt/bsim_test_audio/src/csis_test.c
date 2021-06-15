@@ -86,6 +86,12 @@ static void test_main(void)
 		return;
 	}
 
+	err = bt_csis_register();
+	if (err) {
+		FAIL("Could not register CSIS: %d", err);
+		return;
+	}
+
 	bt_conn_cb_register(&conn_callbacks);
 	bt_csis_register_cb(&csis_cbs);
 
@@ -107,6 +113,12 @@ static void test_force_release(void)
 
 	if (err) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	err = bt_csis_register();
+	if (err) {
+		FAIL("Could not register CSIS: %d", err);
 		return;
 	}
 

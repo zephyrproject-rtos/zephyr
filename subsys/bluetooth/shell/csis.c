@@ -59,6 +59,14 @@ struct bt_csis_cb_t csis_cbs = {
 
 static int cmd_csis_init(const struct shell *shell, size_t argc, char **argv)
 {
+	int err;
+
+	err = bt_csis_register();
+	if (err) {
+		shell_error(shell, "Could not register CSIS: %d", err);
+		return err;
+	}
+
 	bt_csis_register_cb(&csis_cbs);
 
 	return 0;
