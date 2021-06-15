@@ -2674,4 +2674,79 @@ void mpl_test_media_state_set(uint8_t state)
 	pl.state = state;
 	media_proxy_pl_media_state_cb(pl.state);
 }
+
+void mpl_test_track_changed_cb(void)
+{
+	media_proxy_pl_track_changed_cb();
+}
+
+void mpl_test_title_changed_cb(void)
+{
+	media_proxy_pl_track_title_cb(pl.group->track->title);
+}
+
+void mpl_test_duration_changed_cb(void)
+{
+	media_proxy_pl_track_duration_cb(pl.group->track->duration);
+}
+
+void mpl_test_position_changed_cb(void)
+{
+	media_proxy_pl_track_position_cb(pl.track_pos);
+}
+
+void mpl_test_playback_speed_changed_cb(void)
+{
+	media_proxy_pl_playback_speed_cb(pl.playback_speed_param);
+}
+
+void mpl_test_seeking_speed_changed_cb(void)
+{
+	media_proxy_pl_seeking_speed_cb(pl.seeking_speed_factor);
+}
+
+#ifdef CONFIG_BT_OTS
+void mpl_test_current_track_id_changed_cb(void)
+{
+	media_proxy_pl_current_track_id_cb(pl.group->track->id);
+}
+
+void mpl_test_next_track_id_changed_cb(void)
+{
+	media_proxy_pl_next_track_id_cb(pl.group->track->next->id);
+}
+
+void mpl_test_current_group_id_changed_cb(void)
+{
+	media_proxy_pl_current_group_id_cb(pl.group->id);
+}
+
+void mpl_test_parent_group_id_changed_cb(void)
+{
+	media_proxy_pl_parent_group_id_cb(pl.group->id);
+}
+#endif /* CONFIG_BT_OTS */
+
+void mpl_test_playing_order_changed_cb(void)
+{
+	media_proxy_pl_playing_order_cb(pl.playing_order);
+}
+
+void mpl_test_media_state_changed_cb(void)
+{
+	media_proxy_pl_media_state_cb(pl.playing_order);
+}
+
+void mpl_test_operations_supported_changed_cb(void)
+{
+	media_proxy_pl_operations_supported_cb(pl.operations_supported);
+}
+
+#ifdef CONFIG_BT_OTS
+void mpl_test_search_results_changed_cb(void)
+{
+	media_proxy_pl_search_cb(pl.search_results_id);
+}
+#endif /* CONFIG_BT_OTS */
+
 #endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
