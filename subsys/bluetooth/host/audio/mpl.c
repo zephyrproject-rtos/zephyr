@@ -2360,13 +2360,6 @@ uint64_t parent_group_id_get(void)
 {
 	return pl.group->parent->id;
 }
-#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
-void mpl_test_unset_parent_group(void)
-{
-	BT_DBG("Setting current group to be it's own parent");
-	pl.group->parent = pl.group;
-}
-#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 #endif /* CONFIG_BT_OTS */
 
 uint8_t playing_order_get(void)
@@ -2390,14 +2383,6 @@ uint8_t media_state_get(void)
 {
 	return pl.state;
 }
-
-#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING)
-void mpl_test_media_state_set(uint8_t state)
-{
-	pl.state = state;
-	media_proxy_pl_media_state_cb(pl.state);
-}
-#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
 
 void operation_set(struct mpl_op_t operation)
 {
@@ -2495,91 +2480,6 @@ uint8_t content_ctrl_id_get(void)
 	return pl.content_ctrl_id;
 }
 
-#if CONFIG_BT_DEBUG_MCS
-void mpl_debug_dump_state(void)
-{
-#if CONFIG_BT_OTS
-	char t[BT_OTS_OBJ_ID_STR_LEN];
-	struct mpl_group_t *group;
-	struct mpl_track_t *track;
-#endif /* CONFIG_BT_OTS */
-
-	BT_DBG("Mediaplayer name: %s", log_strdup(pl.name));
-
-#if CONFIG_BT_OTS
-	(void)bt_ots_obj_id_to_str(pl.icon_id, t, sizeof(t));
-	BT_DBG("Icon ID: %s", log_strdup(t));
-#endif /* CONFIG_BT_OTS */
-
-	BT_DBG("Icon URL: %s", log_strdup(pl.icon_url));
-	BT_DBG("Track position: %d", pl.track_pos);
-	BT_DBG("Media state: %d", pl.state);
-	BT_DBG("Playback speed parameter: %d", pl.playback_speed_param);
-	BT_DBG("Seeking speed factor: %d", pl.seeking_speed_factor);
-	BT_DBG("Playing order: %d", pl.playing_order);
-	BT_DBG("Playing orders supported: 0x%x", pl.playing_orders_supported);
-	BT_DBG("Operations supported: %d", pl.operations_supported);
-	BT_DBG("Content control ID: %d", pl.content_ctrl_id);
-
-#if CONFIG_BT_OTS
-	(void)bt_ots_obj_id_to_str(pl.group->id, t, sizeof(t));
-	BT_DBG("Current group: %s", log_strdup(t));
-
-	(void)bt_ots_obj_id_to_str(pl.group->parent->id, t, sizeof(t));
-	BT_DBG("Current group's parent: %s", log_strdup(t));
-
-	(void)bt_ots_obj_id_to_str(pl.group->track->id, t, sizeof(t));
-	BT_DBG("Current track: %s", log_strdup(t));
-
-	if (pl.group->track->next) {
-		(void)bt_ots_obj_id_to_str(pl.group->track->next->id, t,
-					   sizeof(t));
-		BT_DBG("Next track: %s", log_strdup(t));
-	} else {
-		BT_DBG("No next track");
-	}
-
-	if (pl.search_results_id) {
-		(void)bt_ots_obj_id_to_str(pl.search_results_id, t, sizeof(t));
-		BT_DBG("Search results: %s", log_strdup(t));
-	} else {
-		BT_DBG("No search results");
-	}
-
-	BT_DBG("Groups and tracks:");
-	group = pl.group;
-
-	while (group->prev != NULL) {
-		group = group->prev;
-	}
-
-	while (group) {
-		(void)bt_ots_obj_id_to_str(group->id, t, sizeof(t));
-		BT_DBG("Group: %s, %s", log_strdup(t),
-		       log_strdup(group->title));
-
-		(void)bt_ots_obj_id_to_str(group->parent->id, t, sizeof(t));
-		BT_DBG("\tParent: %s, %s", log_strdup(t),
-		       log_strdup(group->parent->title));
-
-		track = group->track;
-		while (track->prev != NULL) {
-			track = track->prev;
-		}
-
-		while (track) {
-			(void)bt_ots_obj_id_to_str(track->id, t, sizeof(t));
-			BT_DBG("\tTrack: %s, %s, duration: %d", log_strdup(t),
-			       log_strdup(track->title), track->duration);
-			track = track->next;
-		}
-
-		group = group->next;
-	}
-#endif /* CONFIG_BT_OTS */
-}
-#endif /* CONFIG_BT_DEBUG_MCS */
-
 int media_proxy_pl_init(void)
 {
 	static bool initialized;
@@ -2671,3 +2571,107 @@ int media_proxy_pl_init(void)
 	initialized = true;
 	return 0;
 }
+
+#if CONFIG_BT_DEBUG_MCS /* Special commands for debugging */
+
+void mpl_debug_dump_state(void)
+{
+#if CONFIG_BT_OTS
+	char t[BT_OTS_OBJ_ID_STR_LEN];
+	struct mpl_group_t *group;
+	struct mpl_track_t *track;
+#endif /* CONFIG_BT_OTS */
+
+	BT_DBG("Mediaplayer name: %s", log_strdup(pl.name));
+
+#if CONFIG_BT_OTS
+	(void)bt_ots_obj_id_to_str(pl.icon_id, t, sizeof(t));
+	BT_DBG("Icon ID: %s", log_strdup(t));
+#endif /* CONFIG_BT_OTS */
+
+	BT_DBG("Icon URL: %s", log_strdup(pl.icon_url));
+	BT_DBG("Track position: %d", pl.track_pos);
+	BT_DBG("Media state: %d", pl.state);
+	BT_DBG("Playback speed parameter: %d", pl.playback_speed_param);
+	BT_DBG("Seeking speed factor: %d", pl.seeking_speed_factor);
+	BT_DBG("Playing order: %d", pl.playing_order);
+	BT_DBG("Playing orders supported: 0x%x", pl.playing_orders_supported);
+	BT_DBG("Operations supported: %d", pl.operations_supported);
+	BT_DBG("Content control ID: %d", pl.content_ctrl_id);
+
+#if CONFIG_BT_OTS
+	(void)bt_ots_obj_id_to_str(pl.group->id, t, sizeof(t));
+	BT_DBG("Current group: %s", log_strdup(t));
+
+	(void)bt_ots_obj_id_to_str(pl.group->parent->id, t, sizeof(t));
+	BT_DBG("Current group's parent: %s", log_strdup(t));
+
+	(void)bt_ots_obj_id_to_str(pl.group->track->id, t, sizeof(t));
+	BT_DBG("Current track: %s", log_strdup(t));
+
+	if (pl.group->track->next) {
+		(void)bt_ots_obj_id_to_str(pl.group->track->next->id, t,
+					   sizeof(t));
+		BT_DBG("Next track: %s", log_strdup(t));
+	} else {
+		BT_DBG("No next track");
+	}
+
+	if (pl.search_results_id) {
+		(void)bt_ots_obj_id_to_str(pl.search_results_id, t, sizeof(t));
+		BT_DBG("Search results: %s", log_strdup(t));
+	} else {
+		BT_DBG("No search results");
+	}
+
+	BT_DBG("Groups and tracks:");
+	group = pl.group;
+
+	while (group->prev != NULL) {
+		group = group->prev;
+	}
+
+	while (group) {
+		(void)bt_ots_obj_id_to_str(group->id, t, sizeof(t));
+		BT_DBG("Group: %s, %s", log_strdup(t),
+		       log_strdup(group->title));
+
+		(void)bt_ots_obj_id_to_str(group->parent->id, t, sizeof(t));
+		BT_DBG("\tParent: %s, %s", log_strdup(t),
+		       log_strdup(group->parent->title));
+
+		track = group->track;
+		while (track->prev != NULL) {
+			track = track->prev;
+		}
+
+		while (track) {
+			(void)bt_ots_obj_id_to_str(track->id, t, sizeof(t));
+			BT_DBG("\tTrack: %s, %s, duration: %d", log_strdup(t),
+			       log_strdup(track->title), track->duration);
+			track = track->next;
+		}
+
+		group = group->next;
+	}
+#endif /* CONFIG_BT_OTS */
+}
+#endif /* CONFIG_BT_DEBUG_MCS */
+
+
+#if defined(CONFIG_BT_DEBUG_MCS) && defined(CONFIG_BT_TESTING) /* Special commands for testing */
+
+#if CONFIG_BT_OTS
+void mpl_test_unset_parent_group(void)
+{
+	BT_DBG("Setting current group to be it's own parent");
+	pl.group->parent = pl.group;
+}
+#endif /* CONFIG_BT_OTS */
+
+void mpl_test_media_state_set(uint8_t state)
+{
+	pl.state = state;
+	media_proxy_pl_media_state_cb(pl.state);
+}
+#endif /* CONFIG_BT_DEBUG_MCS && CONFIG_BT_TESTING */
