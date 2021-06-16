@@ -311,6 +311,7 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_NUMBER:
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
+	case JSON_TOK_NULL: // Accept null values
 		return 0;
 	default:
 		return -EINVAL;
@@ -424,6 +425,25 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	return type1 == type2;
 }
 
+static int check_null_type(enum json_tokens value_type, enum json_tokens descr_type)
+{
+	if(JSON_TOK_NULL != value_type) {
+		return 0;
+	}
+
+	switch (descr_type) {
+	case JSON_TOK_FALSE:
+	case JSON_TOK_TRUE:
+	case JSON_TOK_NUMBER:
+	case JSON_TOK_STRING:
+	case JSON_TOK_NULL:
+		// Leave values unchanged
+		return 1;
+	default:
+		return -EINVAL;
+	}
+}
+
 static int obj_parse(struct json_obj *obj,
 		     const struct json_obj_descr *descr, size_t descr_len,
 		     void *val);
@@ -436,8 +456,14 @@ static int decode_value(struct json_obj *obj,
 			struct token *value, void *field, void *val)
 {
 
-	if (!equivalent_types(value->type, descr->type)) {
+	if (value->type != JSON_TOK_NULL && !equivalent_types(value->type, descr->type)) {
 		return -EINVAL;
+	}
+	
+	int null_type = check_null_type(value->type, descr->type);
+	if(null_type) 
+	{
+		return null_type < 0 ? null_type : 0; // Return err or just ignore the current value
 	}
 
 	switch (descr->type) {
@@ -574,7 +600,9 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 				return ret;
 			}
 
-			decoded_fields |= 1<<i;
+			if(kv.value.type != JSON_TOK_NULL) {
+				decoded_fields |= 1<<i;
+			}
 			break;
 		}
 	}
