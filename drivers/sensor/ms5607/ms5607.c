@@ -325,17 +325,30 @@ static const struct sensor_driver_api ms5607_api_funcs = {
 	{								\
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
 		.tf = &ms5607_spi_transfer_function,			\
-		.spi_cfg =						\
+		.bus_cfg.spi_cfg =					\
 			SPI_CONFIG_DT_INST(inst,			\
 					   MS5607_SPI_OPERATION,	\
 					   0),				\
 	}
 
-/* Main instantiation macro */
+/* Initializes a struct ms5607_config for an instance on a I2C bus. */
+#define MS5607_CONFIG_I2C(inst)						\
+	{								\
+		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.tf = &ms5607_i2c_transfer_function,			\
+		.bus_cfg.i2c_addr = DT_INST_REG_ADDR(inst)		\
+	}
+
+/*
+ * Main instantiation macro, which selects the correct bus-specific
+ * instantiation macros for the instance.
+ */
 #define MS5607_DEFINE(inst)						\
 	static struct ms5607_data ms5607_data_##inst;			\
 	static const struct ms5607_config ms5607_config_##inst =	\
-				MS5607_CONFIG_SPI(inst);		\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+			    (MS5607_CONFIG_SPI(inst)),			\
+			    (MS5607_CONFIG_I2C(inst)));			\
 	DEVICE_DT_INST_DEFINE(inst,					\
 			ms5607_init,					\
 			NULL,						\

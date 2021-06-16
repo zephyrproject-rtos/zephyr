@@ -10,6 +10,9 @@
 #include <zephyr/types.h>
 #include <device.h>
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+#include <drivers/i2c.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <drivers/spi.h>
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
@@ -76,19 +79,25 @@ struct ms5607_transfer_function {
 	int (*read_adc)(const struct ms5607_config *cfg, uint32_t *val);
 };
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+extern const struct ms5607_transfer_function ms5607_i2c_transfer_function;
+#endif
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 extern const struct ms5607_transfer_function ms5607_spi_transfer_function;
-#else
-/* I2c Interface not implemented yet */
-BUILD_ASSERT(1, "I2c interface not implemented yet");
 #endif
 
 struct ms5607_config {
 	const struct device *bus;
 	const struct ms5607_transfer_function *tf;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_config spi_cfg;
+	union {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+		uint16_t i2c_addr;
 #endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+		struct spi_config spi_cfg;
+#endif
+	} bus_cfg;
 };
 
 struct ms5607_data {
