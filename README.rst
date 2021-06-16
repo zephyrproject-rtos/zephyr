@@ -84,4 +84,4 @@ Here's a quick summary of resources to help you find your way around:
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
 .. _Sample and Demo Code Examples: http://docs.zephyrproject.org/latest/samples/index.html
 .. _Security: http://docs.zephyrproject.org/latest/security/index.html
-.. _Asking for Help Tips: https://docs.zephyrproject.org/latest/guides/getting-help.html
+.. _Asking for Help Tips: https://docs.zephyrproject.org/latest/getting_started/index.html#asking-for-help
