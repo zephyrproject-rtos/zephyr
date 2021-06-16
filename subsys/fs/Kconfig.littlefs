@@ -68,66 +68,7 @@ config FS_LITTLEFS_BLOCK_CYCLES
 	  is moved to another block.  Set to a non-positive value to
 	  disable leveling.
 
-menuconfig FS_LITTLEFS_FC_MEM_POOL
-	bool "Enable flexible file cache sizes for littlefs (DEPRECATED)"
-	help
-	  littlefs requires a per-file buffer to cache data.  For
-	  applications that use the default configuration parameters a
-	  memory slab is reserved to support up to
-	  FS_LITTLE_FS_NUM_FILES blocks of FS_LITTLEFS_CACHE_SIZE bytes.
-
-	  When applications customize littlefs configurations and
-	  support different cache sizes for different partitions this
-	  preallocation is inadequate.
-
-	  This API is no longer approprate as the underlying storage solution
-	  has been deprecated.  Instead use FS_LITTLEFS_FC_HEAP_SIZE to
-	  configure the size of a heap used to allocate caches for open files.
-
-# This option deprecated in 2.5.0
-if FS_LITTLEFS_FC_MEM_POOL
-
-config FS_LITTLEFS_FC_MEM_POOL_MIN_SIZE
-	int "(DEPRECATED)"
-	default 16
-	help
-	  This API is no longer approprate as the underlying storage
-	  solution has been deprecated.  Instead use
-	  FS_LITTLEFS_FC_HEAP to configure the size of a heap used to
-	  allocate caches for open files.
-
-config FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE
-	int "Block size for littlefs file cache heap (DEPRECATED)"
-	default 1024
-	help
-	  A heap for file cache data is sized so that
-	  FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS allocations of size
-	  FS_LITTLEFS_MEM_POOL_MAX_SIZE can be active simultaneously.
-
-	  This option configures the size.
-
-	  This API is no longer approprate as the underlying storage solution
-	  has been deprecated.  Instead use FS_LITTLEFS_FC_HEAP to configure
-	  the size of a heap used to allocate caches for open files.
-
-config FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS
-	int "Number of maximum sized blocks in littlefs file cache heap (DEPRECATED)"
-	default 2
-	help
-	  A heap for file cache data is sized so that
-	  FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS allocations of size
-	  FS_LITTLEFS_MEM_POOL_MAX_SIZE can be active simultaneously.
-
-	  This option configures the total heap size based on the
-	  block size.
-
-	  This API is no longer approprate as the underlying storage solution
-	  has been deprecated.  Instead use FS_LITTLEFS_FC_HEAP to configure
-	  the size of a heap used to allocate caches for open files.
-
-endif # FS_LITTLEFS_FC_MEM_POOL
-
-endmenu # FS_LITTLEFS_FC_MEM_POOL
+endmenu
 
 config FS_LITTLEFS_FC_HEAP_SIZE
 	int "Enable flexible file cache sizes for littlefs"
@@ -146,9 +87,6 @@ config FS_LITTLEFS_FC_HEAP_SIZE
 
 	  If this option is set to a non-positive value the heap is sized to
 	  support up to FS_LITTLE_FS_NUM_FILES blocks of
-	  FS_LITTLEFS_CACHE_SIZE bytes.  Until FS_LITTLEFS_FC_MEM_POOL is
-	  removed presence of that option changes the default to support
-	  FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS allocations of size
-	  FS_LITTLEFS_MEM_POOL_MAX_SIZE
+	  FS_LITTLEFS_CACHE_SIZE bytes.
 
 endif # FILE_SYSTEM_LITTLEFS
