@@ -433,6 +433,24 @@ static inline void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_hand
  */
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr);
 
+/** @brief Find Attribute by UUID.
+ *
+ *  Find the attribute with the matching UUID.
+ *  To limit the search to a service set the attr to the service attributes and
+ *  the attr_count to the service attribute count .
+ *
+ *  @param attr        Pointer to an attribute that serves as the starting point
+ *                     for the search of a match for the UUID.
+ *                     Passing NULL will search the entire range.
+ *  @param attr_count  The number of attributes from the starting point to
+ *                     search for a match for the UUID.
+ *                     Set to 0 to search until the end.
+ *  @param uuid        UUID to match.
+ */
+struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr,
+					  uint16_t attr_count,
+					  const struct bt_uuid *uuid);
+
 /** @brief Get Attribute handle.
  *
  *  @param attr Attribute object.
