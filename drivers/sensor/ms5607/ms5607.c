@@ -71,12 +71,12 @@ static void ms5607_compensate(struct ms5607_data *data,
 			 (1ll << 15);
 }
 
-static int ms5607_read_prom(const struct ms5607_data *data, uint8_t cmd,
+static int ms5607_read_prom(const struct ms5607_config *config, uint8_t cmd,
 			    uint16_t *val)
 {
 	int err;
 
-	err = data->tf->read_prom(data, cmd, val);
+	err = config->tf->read_prom(config, cmd, val);
 	if (err < 0) {
 		LOG_ERR("Error reading prom");
 		return err;
@@ -85,7 +85,7 @@ static int ms5607_read_prom(const struct ms5607_data *data, uint8_t cmd,
 	return 0;
 }
 
-static int ms5607_get_measurement(const struct ms5607_data *data,
+static int ms5607_get_measurement(const struct ms5607_config *config,
 				  uint32_t *val,
 				  uint8_t cmd,
 				  uint8_t delay)
@@ -94,14 +94,14 @@ static int ms5607_get_measurement(const struct ms5607_data *data,
 
 	*val = 0U;
 
-	err = data->tf->start_conversion(data, cmd);
+	err = config->tf->start_conversion(config, cmd);
 	if (err < 0) {
 		return err;
 	}
 
 	k_msleep(delay);
 
-	err = data->tf->read_adc(data, val);
+	err = config->tf->read_adc(config, val);
 	if (err < 0) {
 		return err;
 	}
@@ -112,13 +112,14 @@ static int ms5607_get_measurement(const struct ms5607_data *data,
 static int ms5607_sample_fetch(const struct device *dev,
 			       enum sensor_channel channel)
 {
+	const struct ms5607_config *config = dev->config;
 	struct ms5607_data *data = dev->data;
 	int err;
 	uint32_t adc_pressure, adc_temperature;
 
 	__ASSERT_NO_MSG(channel == SENSOR_CHAN_ALL);
 
-	err = ms5607_get_measurement(data,
+	err = ms5607_get_measurement(config,
 				     &adc_pressure,
 				     data->pressure_conv_cmd,
 				     data->pressure_conv_delay);
@@ -126,7 +127,7 @@ static int ms5607_sample_fetch(const struct device *dev,
 		return err;
 	}
 
-	err = ms5607_get_measurement(data,
+	err = ms5607_get_measurement(config,
 				     &adc_temperature,
 				     data->temperature_conv_cmd,
 				     data->temperature_conv_delay);
@@ -224,10 +225,6 @@ static int ms5607_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static const struct ms5607_config ms5607_config = {
-	.ms5607_device_name = DT_INST_BUS_LABEL(0),
-};
-
 static int ms5607_init(const struct device *dev)
 {
 	const struct ms5607_config *const config = dev->config;
@@ -235,17 +232,10 @@ static int ms5607_init(const struct device *dev)
 	struct sensor_value val;
 	int err;
 
-	data->ms5607_device = device_get_binding(config->ms5607_device_name);
-	if (!data->ms5607_device) {
-		LOG_ERR("master not found: %s", config->ms5607_device_name);
-		return -EINVAL;
+	err = config->tf->bus_check(config);
+	if (err < 0) {
+		return err;
 	}
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	ms5607_spi_init(dev);
-#else
-	BUILD_ASSERT(1, "I2c interface not implemented yet");
-#endif
 
 	data->pressure = 0;
 	data->temperature = 0;
@@ -265,14 +255,14 @@ static int ms5607_init(const struct device *dev)
 		return err;
 	}
 
-	err = data->tf->reset(data);
+	err = config->tf->reset(config);
 	if (err < 0) {
 		return err;
 	}
 
 	k_sleep(K_MSEC(2));
 
-	err = ms5607_read_prom(data, MS5607_CMD_CONV_READ_OFF_T1,
+	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_OFF_T1,
 			       &data->off_t1);
 	if (err < 0) {
 		return err;
@@ -280,7 +270,7 @@ static int ms5607_init(const struct device *dev)
 
 	LOG_DBG("OFF_T1: %d", data->off_t1);
 
-	err = ms5607_read_prom(data, MS5607_CMD_CONV_READ_SENSE_T1,
+	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_SENSE_T1,
 			       &data->sens_t1);
 	if (err < 0) {
 		return err;
@@ -288,28 +278,28 @@ static int ms5607_init(const struct device *dev)
 
 	LOG_DBG("SENSE_T1: %d", data->sens_t1);
 
-	err = ms5607_read_prom(data, MS5607_CMD_CONV_READ_T_REF, &data->t_ref);
+	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_T_REF, &data->t_ref);
 	if (err < 0) {
 		return err;
 	}
 
 	LOG_DBG("T_REF: %d", data->t_ref);
 
-	err = ms5607_read_prom(data, MS5607_CMD_CONV_READ_TCO, &data->tco);
+	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_TCO, &data->tco);
 	if (err < 0) {
 		return err;
 	}
 
 	LOG_DBG("TCO: %d", data->tco);
 
-	err = ms5607_read_prom(data, MS5607_CMD_CONV_READ_TCS, &data->tcs);
+	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_TCS, &data->tcs);
 	if (err < 0) {
 		return err;
 	}
 
 	LOG_DBG("TCS: %d", data->tcs);
 
-	err = ms5607_read_prom(data, MS5607_CMD_CONV_READ_TEMPSENS,
+	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_TEMPSENS,
 			       &data->tempsens);
 	if (err < 0) {
 		return err;
@@ -326,13 +316,34 @@ static const struct sensor_driver_api ms5607_api_funcs = {
 	.channel_get = ms5607_channel_get,
 };
 
-static struct ms5607_data ms5607_data;
+#define MS5607_SPI_OPERATION (SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |	\
+			      SPI_MODE_CPOL | SPI_MODE_CPHA |		\
+			      SPI_TRANSFER_MSB | SPI_LINES_SINGLE)
 
-DEVICE_DT_INST_DEFINE(0,
-		    ms5607_init,
-		    NULL,
-		    &ms5607_data,
-		    &ms5607_config,
-		    POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY,
-		    &ms5607_api_funcs);
+/* Initializes a struct ms5607_config for an instance on a SPI bus. */
+#define MS5607_CONFIG_SPI(inst)						\
+	{								\
+		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),		\
+		.tf = &ms5607_spi_transfer_function,			\
+		.spi_cfg =						\
+			SPI_CONFIG_DT_INST(inst,			\
+					   MS5607_SPI_OPERATION,	\
+					   0),				\
+	}
+
+/* Main instantiation macro */
+#define MS5607_DEFINE(inst)						\
+	static struct ms5607_data ms5607_data_##inst;			\
+	static const struct ms5607_config ms5607_config_##inst =	\
+				MS5607_CONFIG_SPI(inst);		\
+	DEVICE_DT_INST_DEFINE(inst,					\
+			ms5607_init,					\
+			NULL,						\
+			&ms5607_data_##inst,				\
+			&ms5607_config_##inst,				\
+			POST_KERNEL,					\
+			CONFIG_SENSOR_INIT_PRIORITY,			\
+			&ms5607_api_funcs);
+
+/* Create the struct device for every status "okay" node in the devicetree. */
+DT_INST_FOREACH_STATUS_OKAY(MS5607_DEFINE)
