@@ -52,10 +52,23 @@
 
 #define PROV_NO_PDU            0xff
 
+#define PDU_LEN_INVITE         1
+#define PDU_LEN_CAPABILITIES   11
+#define PDU_LEN_START          5
+#define PDU_LEN_PUB_KEY        64
+#define PDU_LEN_INPUT_COMPLETE 0
+#define PDU_LEN_CONFIRM        16
+#define PDU_LEN_RANDOM         16
+#define PDU_LEN_DATA           33
+#define PDU_LEN_COMPLETE       0
+#define PDU_LEN_FAILED         1
+
+#define PDU_OP_LEN             1
+
 #define PROV_ALG_P256          0x00
 
 #define PROV_BUF(name, len) \
-	NET_BUF_SIMPLE_DEFINE(name, PROV_BEARER_BUF_HEADROOM + len)
+	NET_BUF_SIMPLE_DEFINE(name, PROV_BEARER_BUF_HEADROOM + PDU_OP_LEN + len)
 
 enum {
 	WAIT_PUB_KEY,           /* Waiting for local PubKey to be generated */
@@ -108,7 +121,14 @@ struct bt_mesh_prov_link {
 
 	uint8_t conf_salt[16];          /* ConfirmationSalt */
 	uint8_t conf_key[16];           /* ConfirmationKey */
-	uint8_t conf_inputs[145];       /* ConfirmationInputs */
+	/* ConfirmationInput fields: */
+	struct {
+		uint8_t invite[PDU_LEN_INVITE];
+		uint8_t capabilities[PDU_LEN_CAPABILITIES];
+		uint8_t start[PDU_LEN_START];
+		uint8_t pub_key_provisioner[PDU_LEN_PUB_KEY]; /* big-endian */
+		uint8_t pub_key_device[PDU_LEN_PUB_KEY]; /* big-endian */
+	} conf_inputs;
 	uint8_t prov_salt[16];          /* Provisioning Salt */
 };
 
