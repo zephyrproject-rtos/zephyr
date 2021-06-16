@@ -124,7 +124,6 @@ typedef void (*bt_mics_mute_read_cb)(struct bt_conn *conn, int err,
  *
  * @param conn      Connection to peer device, or NULL if local server read.
  * @param err       Error value. 0 on success, GATT error or errno on fail.
- * @param req_val   The requested mute value.
  */
 typedef void (*bt_mics_mute_write_cb)(struct bt_conn *conn, int err);
 
