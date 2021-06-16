@@ -51,6 +51,15 @@ config SDMMC_STM32
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.
 
+config EMMC_STM32
+	bool "STM32 eMMC driver"
+	depends on HAS_STM32CUBE
+	select USE_STM32_HAL_MMC
+	select USE_STM32_LL_SDMMC
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_EMMC))
+	help
+	  STM32 eMMC controller shim driver.
+
 module = SDMMC
 module-str = sdmmc
 source "subsys/logging/Kconfig.template.log_config"
