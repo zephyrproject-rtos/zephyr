@@ -2260,26 +2260,26 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 	struct notify_data data;
 
 	__ASSERT(params, "invalid parameters\n");
-	__ASSERT(params->attr, "invalid parameters\n");
+	__ASSERT(params->attr || params->uuid, "invalid parameters\n");
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
-	data.attr = params->attr;
-
 	if (conn && conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
+	data.attr = params->attr;
 	data.handle = bt_gatt_attr_get_handle(data.attr);
-	if (!data.handle) {
-		return -ENOENT;
-	}
 
 	/* Lookup UUID if it was given */
 	if (params->uuid) {
 		if (!gatt_find_by_uuid(&data, params->uuid)) {
+			return -ENOENT;
+		}
+	} else {
+		if (!data.handle) {
 			return -ENOENT;
 		}
 	}
@@ -2336,26 +2336,26 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	struct notify_data data;
 
 	__ASSERT(params, "invalid parameters\n");
-	__ASSERT(params->attr, "invalid parameters\n");
+	__ASSERT(params->attr || params->uuid, "invalid parameters\n");
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
-	data.attr = params->attr;
-
 	if (conn && conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
+	data.attr = params->attr;
 	data.handle = bt_gatt_attr_get_handle(data.attr);
-	if (!data.handle) {
-		return -ENOENT;
-	}
 
 	/* Lookup UUID if it was given */
 	if (params->uuid) {
 		if (!gatt_find_by_uuid(&data, params->uuid)) {
+			return -ENOENT;
+		}
+	} else {
+		if (!data.handle) {
 			return -ENOENT;
 		}
 	}
