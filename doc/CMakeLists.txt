@@ -75,8 +75,6 @@ function(add_doc_target name)
   add_custom_target(${name}-nodeps ${ARGN})
 endfunction()
 
-# Include version info
-include(${ZEPHYR_BASE}/cmake/version.cmake)
 # Process modules
 set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
 list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
