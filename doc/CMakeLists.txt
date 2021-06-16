@@ -63,14 +63,10 @@ endif()
 # Internal variables.
 set(ALLSPHINXOPTS  -d ${CMAKE_CURRENT_BINARY_DIR}/doctrees ${SPHINXOPTS})
 
-# the i18n builder cannot share the environment and doctrees with the others
-set(I18NSPHINXOPTS  ${SPHINXOPTS})
-
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
 set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/src)
-set(DOC_WARN ${CMAKE_CURRENT_BINARY_DIR}/doc.warnings)
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 
