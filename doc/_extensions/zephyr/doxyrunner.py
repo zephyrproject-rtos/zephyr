@@ -39,6 +39,7 @@ Configuration options
 """
 
 import filecmp
+import hashlib
 from pathlib import Path
 import pickle
 import re
@@ -57,6 +58,21 @@ __version__ = "0.1.0"
 
 logger = logging.getLogger(__name__)
 
+
+def hash_file(file: Path) -> str:
+    """Compute the hash (SHA256) of a file in text mode.
+
+    Args:
+        file: File to be hashed.
+
+    Returns:
+        Hash.
+    """
+
+    with open(file, encoding="utf-8") as f:
+        sha256 = hashlib.sha256(f.read().encode("utf-8"))
+
+    return sha256.hexdigest()
 
 def get_doxygen_option(doxyfile: str, option: str) -> List[str]:
     """Obtain the value of a Doxygen option.
@@ -169,16 +185,16 @@ def doxygen_input_has_changed(doxyfile: str, cache_dir: Path) -> bool:
     if not file_patterns:
         raise ValueError("No FILE_PATTERNS set in Doxyfile")
 
-    # build a dict of input files <-> current modification time
-    files = dict()
+    # build a set with input files hash
+    files = set()
     for file in input_files:
         path = Path(file)
         if path.is_file():
-            files[path.as_posix()] = path.stat().st_mtime_ns
+            files.add(hash_file(path))
         else:
             for pattern in file_patterns:
                 for p_file in path.glob("**/" + pattern):
-                    files[p_file.as_posix()] = p_file.stat().st_mtime_ns
+                    files.add(hash_file(p_file))
 
     # check if any file has changed
     dirty = True
