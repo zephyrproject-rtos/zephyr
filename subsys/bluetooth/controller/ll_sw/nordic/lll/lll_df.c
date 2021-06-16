@@ -9,6 +9,7 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+#include "util/mem.h"
 
 #include "hal/cpu.h"
 #include "hal/radio_df.h"
@@ -16,6 +17,9 @@
 #include "pdu.h"
 
 #include "lll.h"
+#include "lll_adv_types.h"
+#include "lll_adv.h"
+#include "lll_adv_pdu.h"
 #include "lll_df.h"
 #include "lll_df_types.h"
 #include "lll_df_internal.h"
@@ -26,13 +30,10 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-/* @brief Function performs common steps for initialization and reset
- * of Direction Finding LLL module.
- *
- * @return	Zero in case of success, other value in case of failure.
- */
 static int init_reset(void);
-
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+static void df_cte_tx_configure(const struct lll_df_adv_cfg *df_cfg);
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 /* @brief Function performs Direction Finding initialization
  *
  * @return	Zero in case of success, other value in case of failure.
@@ -65,43 +66,59 @@ uint8_t lll_df_ant_num_get(void)
 	return radio_df_ant_num_get();
 }
 
-/* @brief Function initializes transmission of Constant Tone Extension.
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+/* @brief Function enables transmission of Constant Tone Extension.
  *
- * @param[in] type      Type of CTE: AoA, AoD 1us, AoD 2us
- * @param[in] length    Duration of CTE in 8us units
- * @param[in] ant_num   Number of antennas in switch pattern
- * @param[in] ant_ids   Antenna identifiers that create switch pattern.
- *
- * @Note Pay attention that first two antenna identifiers in a switch
- * pattern has special purpose. First one is used in guard period, second
- * in reference period. Actual switching is processed from third antenna.
- *
- * In case of AoA mode ant_num and ant_ids parameters are not used.
+ * @param lll_sync        Pointer to LLL sync. object associated with
+ *                        periodic advertising event.
+ * @param pdu             Pointer to PDU that will be transmitted.
+ * @param[out] cte_len_us Pointer to store actual CTE length in [us]
  */
-void lll_df_conf_cte_tx_enable(uint8_t type, uint8_t length,
-			       uint8_t ant_num, uint8_t *ant_ids)
+void lll_df_cte_tx_enable(struct lll_adv_sync *lll_sync, const struct pdu_adv *pdu,
+			  uint32_t *cte_len_us)
 {
-	if (type == BT_HCI_LE_AOA_CTE) {
-		radio_df_mode_set_aoa();
-		radio_df_cte_tx_aoa_set(length);
-	}
-#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX) || \
-	defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_RX)
-	else {
-		radio_df_mode_set_aod();
+	if (pdu->adv_ext_ind.ext_hdr_len) {
+		const struct pdu_adv_ext_hdr *ext_hdr;
 
-		if (type == BT_HCI_LE_AOD_CTE_1US) {
-			radio_df_cte_tx_aod_2us_set(length);
+		ext_hdr = &pdu->adv_ext_ind.ext_hdr;
+
+		/* Check if particular extended PDU has cte_info. It is possible that
+		 * not all PDUs in a periodic advertising chain have CTE attached.
+		 * Nevertheless whole periodic advertising chain has the same CTE
+		 * configuration. Checking for existence of CTE configuration in lll_sync
+		 * is not enough.
+		 */
+		if (ext_hdr->cte_info) {
+			const struct lll_df_adv_cfg *df_cfg;
+
+			df_cfg = lll_adv_sync_extra_data_peek(lll_sync);
+			LL_ASSERT(df_cfg);
+
+			df_cte_tx_configure(df_cfg);
+
+			lll_sync->cte_started = 1U;
+			*cte_len_us = CTE_LEN_US(df_cfg->cte_length);
 		} else {
-			radio_df_cte_tx_aod_4us_set(length);
+			if (lll_sync->cte_started) {
+				lll_df_conf_cte_tx_disable();
+				lll_sync->cte_started = 0U;
+			}
+			*cte_len_us = 0U;
 		}
-
-		radio_df_ant_switching_pin_sel_cfg();
-		radio_df_ant_switch_pattern_clear();
-		radio_df_ant_switch_pattern_set(ant_ids, ant_num);
+	} else {
+		if (lll_sync->cte_started) {
+			lll_df_conf_cte_tx_disable();
+			lll_sync->cte_started = 0U;
+		}
+		*cte_len_us = 0U;
 	}
-#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX || CONFIG_BT_CTLR_DF_ANT_SWITCH_RX */
 }
+
+void lll_df_conf_cte_tx_disable(void)
+{
+	radio_df_reset();
+}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 struct lll_df_sync_cfg *lll_df_sync_cfg_alloc(struct lll_df_sync *df_cfg,
@@ -161,14 +178,7 @@ struct lll_df_sync_cfg *lll_df_sync_cfg_latest_get(struct lll_df_sync *df_cfg,
 
 	return &df_cfg->cfg[first];
 }
-#endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
-void lll_df_conf_cte_tx_disable(void)
-{
-	radio_df_reset();
-}
-
-#if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
 /* @brief Function initializes reception of Constant Tone Extension.
  *
  * @param slot_duration     Switching and sampling slots duration (1us or 2us).
@@ -207,7 +217,47 @@ void lll_df_conf_cte_rx_enable(uint8_t slot_duration, uint8_t ant_num, uint8_t *
 }
 #endif /* CONFIG_BT_CTLR_DF_SCAN_CTE_RX */
 
+/* @brief Function performs common steps for initialization and reset
+ * of Direction Finding LLL module.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
 static int init_reset(void)
 {
 	return 0;
 }
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+/* @brief Function initializes transmission of Constant Tone Extension.
+ *
+ * @param df_cfg    Pointer to direction finding configuration
+ *
+ * @Note Pay attention that first two antenna identifiers in a switch
+ * pattern df_cfg->ant_ids has special purpose. First one is used in guard period,
+ * second in reference period. Actual switching is processed from third antenna.
+ *
+ * In case of AoA mode df_ant_sw_len and df->ant_ids members are not used.
+ */
+static void df_cte_tx_configure(const struct lll_df_adv_cfg *df_cfg)
+{
+	if (df_cfg->cte_type == BT_HCI_LE_AOA_CTE) {
+		radio_df_mode_set_aoa();
+		radio_df_cte_tx_aoa_set(df_cfg->cte_length);
+	}
+#if defined(CONFIG_BT_CTLR_DF_ANT_SWITCH_TX)
+	else {
+		radio_df_mode_set_aod();
+
+		if (df_cfg->cte_type == BT_HCI_LE_AOD_CTE_1US) {
+			radio_df_cte_tx_aod_2us_set(df_cfg->cte_length);
+		} else {
+			radio_df_cte_tx_aod_4us_set(df_cfg->cte_length);
+		}
+
+		radio_df_ant_switching_pin_sel_cfg();
+		radio_df_ant_switch_pattern_clear();
+		radio_df_ant_switch_pattern_set(df_cfg->ant_ids, df_cfg->ant_sw_len);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ANT_SWITCH_TX */
+}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
