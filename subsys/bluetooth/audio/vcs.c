@@ -450,12 +450,9 @@ int bt_vcs_included_get(struct bt_vcs *vcs, struct bt_vcs_included *included)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_included_get(vcs, included);
-		} else {
-			return -EOPNOTSUPP;
-		}
+
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_included_get(vcs, included);
 	}
 
 #if defined(CONFIG_BT_VCS)
@@ -496,12 +493,8 @@ int bt_vcs_vol_get(struct bt_vcs *vcs)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_read_vol_state(vcs);
-		} else {
-			return -EOPNOTSUPP;
-		}
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_read_vol_state(vcs);
 	}
 
 #if defined(CONFIG_BT_VCS)
@@ -523,12 +516,8 @@ int bt_vcs_flags_get(struct bt_vcs *vcs)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_read_flags(vcs);
-		} else {
-			return -EOPNOTSUPP;
-		}
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_read_flags(vcs);
 	}
 
 #if defined(CONFIG_BT_VCS)
@@ -549,12 +538,8 @@ int bt_vcs_vol_down(struct bt_vcs *vcs)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_vol_down(vcs);
-		} else {
-			return -EOPNOTSUPP;
-		}
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_vol_down(vcs);
 	}
 
 #if defined(CONFIG_BT_VCS)
@@ -577,12 +562,8 @@ int bt_vcs_vol_up(struct bt_vcs *vcs)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_vol_up(vcs);
-		} else {
-			return -EOPNOTSUPP;
-		}
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_vol_up(vcs);
 	}
 
 #if defined(CONFIG_BT_VCS)
@@ -605,12 +586,8 @@ int bt_vcs_unmute_vol_down(struct bt_vcs *vcs)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_unmute_vol_down(vcs);
-		} else {
-			return -EOPNOTSUPP;
-		}
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_unmute_vol_down(vcs);
 	}
 
 #if defined(CONFIG_BT_VCS)
@@ -633,12 +610,8 @@ int bt_vcs_unmute_vol_up(struct bt_vcs *vcs)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_unmute_vol_up(vcs);
-		} else {
-			return -EOPNOTSUPP;
-		}
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_unmute_vol_up(vcs);
 	}
 
 #if defined(CONFIG_BT_VCS)
@@ -661,12 +634,8 @@ int bt_vcs_vol_set(struct bt_vcs *vcs, uint8_t volume)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_set_volume(vcs, volume);
-		} else {
-			return -EOPNOTSUPP;
-		}
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_set_volume(vcs, volume);
 	}
 
 #if defined(CONFIG_BT_VCS)
@@ -692,12 +661,8 @@ int bt_vcs_unmute(struct bt_vcs *vcs)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_unmute(vcs);
-		} else {
-			return -EOPNOTSUPP;
-		}
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_unmute(vcs);
 	}
 
 #if defined(CONFIG_BT_VCS)
@@ -720,12 +685,8 @@ int bt_vcs_mute(struct bt_vcs *vcs)
 		return -EINVAL;
 	}
 
-	if (vcs->client_instance) {
-		if (IS_ENABLED(CONFIG_BT_VCS_CLIENT)) {
-			return bt_vcs_client_mute(vcs);
-		} else {
-			return -EOPNOTSUPP;
-		}
+	if (IS_ENABLED(CONFIG_BT_VCS_CLIENT) && vcs->client_instance) {
+		return bt_vcs_client_mute(vcs);
 	}
 
 #if defined(CONFIG_BT_VCS)
