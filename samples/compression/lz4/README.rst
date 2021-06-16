@@ -12,7 +12,7 @@ compress & decompress the user data to the console.
 Building and Running
 ********************
 
-The sample can be built and executed on frdm_k64f as follows:
+The sample can be built and executed on nrf52840dk_nrf52840 as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/compression/lz4
