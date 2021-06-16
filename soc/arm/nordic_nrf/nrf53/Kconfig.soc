@@ -166,7 +166,16 @@ endchoice
 
 choice SOC_HFXO_LOAD_CAPACITANCE
 	prompt "HFXO load capacitance"
-	default SOC_HFXO_CAP_EXTERNAL
+	default SOC_HFXO_CAP_DEFAULT
+
+config SOC_HFXO_CAP_DEFAULT
+	bool "SoC default"
+	help
+	  When this option is used, the SoC initialization routine does not
+	  touch the XOSC32MCAPS register value, so the default setting for
+	  the SoC is in effect. Please note that this may not necessarily be
+	  the reset value (0) for the register, as the register can be set
+	  during the device trimming in the SystemInit() function.
 
 config SOC_HFXO_CAP_EXTERNAL
 	bool "Use external load capacitors"
