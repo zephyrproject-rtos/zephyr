@@ -359,7 +359,7 @@ struct media_proxy_pl_calls {
 	 * See the Media Control Service spec, or the
 	 * BT_MCS_OPC_SUP_* defines in the mcs.h file.
 	 *
-	 * @return The media player's supported operations orders
+	 * @return The media player's supported operations
 	 */
 	uint32_t (*operations_supported_get)(void);
 
