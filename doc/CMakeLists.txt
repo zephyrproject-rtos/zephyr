@@ -91,6 +91,12 @@ add_custom_target(
     ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
 )
 
+set_target_properties(
+  doxygen
+  PROPERTIES
+    ADDITIONAL_CLEAN_FILES "${DOXY_OUT}"
+)
+
 add_custom_target(
   pristine
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
@@ -203,6 +209,12 @@ add_doc_target(
   USES_TERMINAL
 )
 
+set_target_properties(
+  html html-nodeps
+  PROPERTIES
+    ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_HTML_DIR};${DOCS_DOCTREE_DIR}"
+)
+
 add_dependencies(html devicetree kconfig)
 
 #-------------------------------------------------------------------------------
@@ -225,6 +237,12 @@ add_doc_target(
     ${DOCS_LATEX_DIR}
   COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${DOCS_LATEX_DIR}/zephyr.tex
   USES_TERMINAL
+)
+
+set_target_properties(
+  latex latex-nodeps
+  PROPERTIES
+    ADDITIONAL_CLEAN_FILES "${DOCS_SRC_DIR};${DOCS_LATEX_DIR};${DOCS_DOCTREE_DIR}"
 )
 
 add_dependencies(latex kconfig devicetree)
