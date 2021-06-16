@@ -82,8 +82,6 @@ file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
-set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/src)
-
 #-------------------------------------------------------------------------------
 # Doxygen (standalone)
 
@@ -131,7 +129,7 @@ endforeach()
 
 add_custom_target(
   kconfig
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${RST_OUT}/reference/kconfig
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${DOCS_SRC_DIR}/reference/kconfig
   COMMAND ${CMAKE_COMMAND} -E env
   PYTHONPATH=${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}
   ZEPHYR_BASE=${ZEPHYR_BASE}
@@ -145,7 +143,7 @@ add_custom_target(
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
   ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} _scripts/gen_kconfig_rest.py ${RST_OUT}/reference/kconfig/
+    ${PYTHON_EXECUTABLE} _scripts/gen_kconfig_rest.py ${DOCS_SRC_DIR}/reference/kconfig/
       --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
@@ -157,7 +155,7 @@ add_custom_target(
 
   VERBATIM
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Running gen_kconfig_rest.py ${RST_OUT}/reference/kconfig/"
+  COMMENT "Running gen_kconfig_rest.py ${DOCS_SRC_DIR}/reference/kconfig/"
 )
 
 #
@@ -176,7 +174,7 @@ add_custom_target(
 # If not set, these are the default values for these variables:
 #
 # - DTS_ROOTS: ZEPHYR_BASE
-# - DTS_BINDINGS_RST_OUT: ${RST_OUT}/reference/devicetree
+# - DTS_BINDINGS_RST_OUT: ${DOCS_SRC_DIR}/reference/devicetree
 #
 
 set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
@@ -191,7 +189,7 @@ foreach(root ${DTS_ROOTS})
 endforeach()
 
 if(NOT DTS_BINDINGS_RST_OUT)
-  set(DTS_BINDINGS_RST_OUT ${RST_OUT}/reference/devicetree)
+  set(DTS_BINDINGS_RST_OUT ${DOCS_SRC_DIR}/reference/devicetree)
 endif()
 
 add_custom_target(
