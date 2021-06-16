@@ -928,9 +928,17 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 typedef void (*bt_gatt_complete_func_t) (struct bt_conn *conn, void *user_data);
 
 struct bt_gatt_notify_params {
-	/** Notification Attribute UUID type */
+	/** @brief Notification Attribute UUID type
+	 *
+	 *  Optional, use to search for an attribute with matching UUID when
+	 *  the attribute object pointer is not known.
+	 */
 	const struct bt_uuid *uuid;
-	/** Notification Attribute object*/
+	/** @brief Notification Attribute object
+	 *
+	 *  Optional if uuid is provided, in this case it will be used as start
+	 *  range to search for the attribute with the given UUID.
+	 */
 	const struct bt_gatt_attr *attr;
 	/** Notification Value data */
 	const void *data;
@@ -955,7 +963,7 @@ struct bt_gatt_notify_params {
  *  @option{CONFIG_BT_CONN_TX_MAX} option.
  *
  *  Alternatively it is possible to notify by UUID by setting it on the
- *  parameters, when using this method the attribute given is used as the
+ *  parameters, when using this method the attribute if provided is used as the
  *  start range when looking up for possible matches.
  *
  *  @param conn Connection object.
@@ -1068,9 +1076,17 @@ typedef void (*bt_gatt_indicate_params_destroy_t)(
 
 /** @brief GATT Indicate Value parameters */
 struct bt_gatt_indicate_params {
-	/** Notification Attribute UUID type */
+	/** @brief Indicate Attribute UUID type
+	 *
+	 *  Optional, use to search for an attribute with matching UUID when
+	 *  the attribute object pointer is not known.
+	 */
 	const struct bt_uuid *uuid;
-	/** Indicate Attribute object*/
+	/** @brief Indicate Attribute object
+	 *
+	 *  Optional if uuid is provided, in this case it will be used as start
+	 *  range to search for the attribute with the given UUID.
+	 */
 	const struct bt_gatt_attr *attr;
 	/** Indicate Value callback */
 	bt_gatt_indicate_func_t func;
@@ -1097,7 +1113,7 @@ struct bt_gatt_indicate_params {
  *  BT_GATT_CHARACTERISTIC.
  *
  *  Alternatively it is possible to indicate by UUID by setting it on the
- *  parameters, when using this method the attribute given is used as the
+ *  parameters, when using this method the attribute if provided is used as the
  *  start range when looking up for possible matches.
  *
  *  @note This procedure is asynchronous therefore the parameters need to
