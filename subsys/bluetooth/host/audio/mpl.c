@@ -2497,8 +2497,9 @@ int media_proxy_pl_init(void)
 	ret = bt_mcs_init(NULL);
 #endif /* CONFIG_BT_OTS */
 
-	if (ret) {
-		BT_ERR("Could not init MCS");
+	if (ret < 0) {
+		BT_ERR("Could not init MCS: %d", ret);
+		return ret;
 	}
 
 	/* Get a Content Control ID */
