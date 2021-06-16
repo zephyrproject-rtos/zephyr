@@ -36,12 +36,25 @@ struct flash_img_check {
 /**
  * @brief Initialize context needed for writing the image to the flash.
  *
- * @param ctx     context to be initialized
+ * This API call is deprecated and flash_img_init_area should be used instead.
+ *
+ * @param ctx	  context to be initialized
  * @param area_id flash area id of partition where the image should be written
  *
  * @return  0 on success, negative errno code on fail
  */
 int flash_img_init_id(struct flash_img_context *ctx, uint8_t area_id);
+
+/**
+ * @brief Initialize context needed for writing the image to the flash.
+ *
+ * @param ctx	context to be initialized
+ * @param fa	pointer to flash area objet representing the partition where the image should be
+ *		written.
+ *
+ * @return  0 on success, negative errno code on fail
+ */
+int flash_img_init_area(struct flash_img_context *ctx, const struct flash_area *fa);
 
 /**
  * @brief Initialize context needed for writing the image to the flash.
@@ -84,18 +97,16 @@ int flash_img_buffered_write(struct flash_img_context *ctx, const uint8_t *data,
 #if defined(CONFIG_IMG_ENABLE_IMAGE_CHECK)
 /**
  * @brief  Verify flash memory length bytes integrity from a flash area. The
- * start point is indicated by an offset value.
+ * start point is indicated by an offset value.  Flash area to check is pointed
+ * by ctx.flash_area.
  *
  * @param[in] ctx context.
  * @param[in] fic flash img check data.
- * @param[in] area_id flash area id of partition where the image should be
- * verified.
  *
  * @return  0 on success, negative errno code on fail
  */
 int flash_img_check(struct flash_img_context *ctx,
-		    const struct flash_img_check *fic,
-		    uint8_t area_id);
+		    const struct flash_img_check *fic);
 #endif
 
 #ifdef __cplusplus

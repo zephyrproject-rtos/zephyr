@@ -513,9 +513,9 @@ static void install_update_cb(void)
 #ifdef _STORAGE_SHA256_VERIFICATION
 		fic.match = ctx.hash;
 		fic.clen = ctx.downloaded_size;
+		ctx.flash_ctx.flash_area = FLASH_AREA(image_1);
 
-		if (flash_img_check(&ctx.flash_ctx, &fic,
-				    FLASH_AREA_ID(image_1))) {
+		if (flash_img_check(&ctx.flash_ctx, &fic)) {
 			LOG_ERR("Firmware - flash validation has failed");
 			ctx.code_status = UPDATEHUB_INSTALL_ERROR;
 			goto cleanup;
