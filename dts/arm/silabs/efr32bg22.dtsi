@@ -207,7 +207,6 @@
 	};
 };
 
-
 &nvic {
 	arm,num-irq-priority-bits = <4>;
 };
