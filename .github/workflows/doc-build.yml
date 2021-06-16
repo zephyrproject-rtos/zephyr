@@ -54,8 +54,7 @@ jobs:
 
     - name: build-docs
       run: |
-        source zephyr-env.sh
-        SPHINXOPTS="-q -W -j auto" make -C doc htmldocs
+        SPHINXOPTS="-q -W -j auto" make -C doc html
         tar cvf htmldocs.tar --directory=./doc/_build html
 
     - name: upload-build
