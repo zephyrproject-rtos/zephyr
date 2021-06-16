@@ -20,7 +20,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config KSCAN_INIT_PRIORITY
 	int "Keyboard scan driver init priority"
-	default 40
+	default 90
 	help
 	  Keyboard scan device driver initialization priority.
 
