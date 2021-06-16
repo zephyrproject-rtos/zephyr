@@ -446,6 +446,30 @@ test_i2c_hdc: hdc@3f {
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_hdc2010: hdc2010@40 {
+	compatible = "ti,hdc2010";
+	label = "HDC2010";
+	reg = <0x40>;
+};
+
+test_i2c_hdc2021: hdc2021@40 {
+	compatible = "ti,hdc2021";
+	label = "HDC2021";
+	reg = <0x40>;
+};
+
+test_i2c_hdc2022: hdc2022@40 {
+	compatible = "ti,hdc2022";
+	label = "HDC2022";
+	reg = <0x40>;
+};
+
+test_i2c_hdc2080: hdc2080@40 {
+	compatible = "ti,hdc2080";
+	label = "HDC2080";
+	reg = <0x40>;
+};
+
 test_i2c_lp3943: lp3943@40 {
 	compatible = "ti,lp3943";
 	label = "LP3943";
