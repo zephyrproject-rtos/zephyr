@@ -156,12 +156,12 @@ folder, here are the commands to generate the html content locally:
    cd _build
 
    # To generate HTML output, run ninja on the generated build system:
-   ninja htmldocs
+   ninja html
    # If you modify or add .rst files, run ninja again:
-   ninja htmldocs
+   ninja html
 
    # To generate PDF output, run ninja on the generated build system:
-   ninja pdfdocs
+   ninja pdf
 
 .. warning::
 
@@ -195,10 +195,10 @@ there:
    cd ~/zephyr/doc
 
    # To generate HTML output
-   make htmldocs
+   make html
 
    # To generate PDF output
-   make pdfdocs
+   make pdf
 
 Filtering expected warnings
 ***************************
@@ -236,7 +236,7 @@ or invoke make with the following target::
    cd ~/zephyr
 
    # To generate HTML output without detailed Kconfig
-   make htmldocs-fast
+   make html-fast
 
 
 .. _reStructuredText: http://sphinx-doc.org/rest.html
