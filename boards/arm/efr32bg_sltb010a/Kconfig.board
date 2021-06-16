@@ -1,0 +1,9 @@
+# EFR32BG SLTB010A board
+
+# Copyright (c) 2021, Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EFR32BG_SLTB010A
+	bool "SiLabs EFR32BG-SLTB010A (Thunderboard BG22)"
+	depends on SOC_SERIES_EFR32BG22
+	select SOC_PART_NUMBER_EFR32BG22C224F512IM40
