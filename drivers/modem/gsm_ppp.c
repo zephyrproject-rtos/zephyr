@@ -81,7 +81,7 @@ static void gsm_rx(struct gsm_modem *gsm)
 	LOG_DBG("starting");
 
 	while (true) {
-		k_sem_take(&gsm->gsm_data.rx_sem, K_FOREVER);
+		(void)k_sem_take(&gsm->gsm_data.rx_sem, K_FOREVER);
 
 		/* The handler will listen AT channel */
 		gsm->context.cmd_handler.process(&gsm->context.cmd_handler,
