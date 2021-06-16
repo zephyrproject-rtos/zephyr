@@ -79,7 +79,7 @@ static int tmp112_attr_set(const struct device *dev,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	int64_t value;
+	uint16_t value;
 	uint16_t cr;
 
 	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
