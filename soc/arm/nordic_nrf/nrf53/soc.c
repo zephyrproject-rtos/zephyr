@@ -96,7 +96,7 @@ static int nordicsemi_nrf53_init(const struct device *arg)
 		 + ((offset - 8) << 4) + 32) >> 6;
 
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, true, capvalue);
-#else
+#elif defined(CONFIG_SOC_HFXO_CAP_EXTERNAL)
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
 #endif
 #endif /* defined(CONFIG_SOC_NRF5340_CPUAPP) && ... */
