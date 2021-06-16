@@ -61,18 +61,21 @@ endif()
 # Internal variables.
 set(ALLSPHINXOPTS  -d ${CMAKE_CURRENT_BINARY_DIR}/doctrees ${SPHINXOPTS})
 
+set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/src)
+
+#-------------------------------------------------------------------------------
+# Doxygen (standalone)
+
+set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
-set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
-set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 
 add_custom_target(
   doxygen
-  COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Running ${DOXYGEN_EXECUTABLE}"
+  COMMAND
+    ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
 )
 
 add_custom_target(
