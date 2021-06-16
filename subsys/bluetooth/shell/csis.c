@@ -57,17 +57,48 @@ struct bt_csis_cb_t csis_cbs = {
 	.sirk_read_req = sirk_read_req_cb,
 };
 
-static int cmd_csis_init(const struct shell *shell, size_t argc, char **argv)
+static int cmd_csis_register(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
+	struct bt_csis_register_param param = {
+		.set_size = 2,
+		.rank = 1,
+		.lockable = true,
+		/* Using the CSIS test sample SIRK */
+		.set_sirk = { 0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
+			      0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45 },
+		.cb = &csis_cbs
+	};
 
-	err = bt_csis_register();
-	if (err) {
-		shell_error(shell, "Could not register CSIS: %d", err);
-		return err;
+	for (size_t argn = 1; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (strcmp(arg, "size") == 0) {
+			param.set_size = strtol(argv[++argn], NULL, 10);
+		} else if (strcmp(arg, "rank") == 0) {
+			param.rank = strtol(argv[++argn], NULL, 10);
+		} else if (strcmp(arg, "not-lockable") == 0) {
+			param.lockable = false;
+		} else if (strcmp(arg, "sirk") == 0) {
+			argn++;
+			size_t len = hex2bin(argv[argn], strlen(argv[argn]),
+					     param.set_sirk,
+					     sizeof(param.set_sirk));
+			if (len == 0) {
+				shell_error(sh, "Could not parse SIRK");
+				return -ENOEXEC;
+			}
+		} else {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
 	}
 
-	bt_csis_register_cb(&csis_cbs);
+	err = bt_csis_register(&param);
+	if (err) {
+		shell_error(sh, "Could not register CSIS: %d", err);
+		return err;
+	}
 
 	return 0;
 }
@@ -193,9 +224,10 @@ static int cmd_csis(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(csis_cmds,
-	SHELL_CMD_ARG(init, NULL,
-		      "Initialize the service and register callbacks",
-		      cmd_csis_init, 1, 0),
+	SHELL_CMD_ARG(register, NULL,
+		      "Initialize the service and register callbacks "
+		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
+		      cmd_csis_register, 1, 4),
 	SHELL_CMD_ARG(advertise, NULL,
 		      "Start/stop advertising CSIS PSRIs <on/off>",
 		      cmd_csis_advertise, 2, 0),

@@ -18,6 +18,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/buf.h>
 #include <sys/byteorder.h>
+#include <sys/check.h>
 #include "csis.h"
 #include "csip.h"
 #include "csis_crypto.h"
@@ -50,14 +51,6 @@
 #else
 #define SIRK_READ_PERM	(BT_GATT_PERM_READ_ENCRYPT)
 #endif
-
-/* 16-byte key used to generate SIRKs.
- * This key has to be the same for all devices in the set.
- */
-static uint8_t set_sirk_key_gen_key[16] = {
-	0x92, 0x5f, 0xcb, 0xcb, 0x8a, 0xa8, 0x96, 0xe9,
-	0x3e, 0x62, 0x01, 0x54, 0xf9, 0xad, 0xef, 0x54
-};
 
 static struct bt_csis_cb_t *csis_cbs;
 struct csis_pending_notifications_t {
@@ -194,22 +187,6 @@ static int sirk_encrypt(struct bt_conn *conn,
 	}
 
 	enc_sirk->type = BT_CSIP_SIRK_TYPE_ENCRYPTED;
-
-	return 0;
-}
-
-static int generate_sirk(uint32_t seed, uint8_t sirk_dest[16])
-{
-	int err;
-
-	/* r' = padding || r */
-	memcpy(sirk_dest, &seed, sizeof(seed));
-	memset(sirk_dest + sizeof(seed), 0, 16 - sizeof(seed));
-
-	err = bt_encrypt_le(set_sirk_key_gen_key, sirk_dest, sirk_dest);
-	if (err) {
-		return err;
-	}
 
 	return 0;
 }
@@ -782,7 +759,28 @@ void *bt_csis_svc_decl_get(void)
 	return csis_service_list[0].attrs;
 }
 
-int bt_csis_register(void)
+static bool valid_register_param(const struct bt_csis_register_param *param)
+{
+	if (param->lockable && param->rank == 0) {
+		BT_DBG("Rank cannot be 0 if service is lockable");
+		return false;
+	}
+
+	if (param->rank > 0 && param->rank > param->set_size) {
+		BT_DBG("Invalid rank: %u (shall be less than set_size: %u)",
+		       param->set_size, param->set_size);
+		return false;
+	}
+
+	if (param->set_size > 0 && param->set_size < 2) {
+		BT_DBG("Invalid set size: %u", param->set_size);
+		return false;
+	}
+
+	return true;
+}
+
+int bt_csis_register(const struct bt_csis_register_param *param)
 {
 	static bool registered;
 	int err;
@@ -791,20 +789,30 @@ int bt_csis_register(void)
 		return -EALREADY;
 	}
 
+	CHECKIF(param == NULL) {
+		BT_DBG("NULL param");
+		return -EINVAL;
+	}
+
+	CHECKIF(!valid_register_param(param)) {
+		BT_DBG("Invalid parameters");
+		return -EINVAL;
+	}
+
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_cb_register(&auth_callbacks);
 
 	err = bt_gatt_service_register(&csis_service_list[0]);
 	if (err != 0) {
-		BT_DBG("VCS service register failed: %d", err);
+		BT_DBG("CSIS service register failed: %d", err);
 		return err;
 	}
 
 	k_work_init_delayable(&csis_insts[0].set_lock_timer,
 			      set_lock_timer_handler);
 	csis_insts[0].service_p = &csis_service_list[0];
-	csis_insts[0].rank = CONFIG_BT_CSIS_SET_RANK;
-	csis_insts[0].set_size = CONFIG_BT_CSIS_SET_SIZE;
+	csis_insts[0].rank = param->rank;
+	csis_insts[0].set_size = param->set_size;
 	csis_insts[0].set_lock = BT_CSIP_RELEASE_VALUE;
 	csis_insts[0].set_sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 
@@ -815,13 +823,10 @@ int bt_csis_register(void)
 		};
 
 		memcpy(csis_insts[0].set_sirk.value, test_sirk, sizeof(test_sirk));
+		BT_DBG("CSIS SIRK was overwritten by sample data SIRK");
 	} else {
-		err = generate_sirk(CONFIG_BT_CSIS_SET_SIRK_SEED,
-					csis_insts[0].set_sirk.value);
-		if (err != 0) {
-			BT_DBG("Sirk generation failed for instance");
-			return err;
-		}
+		(void)memcpy(csis_insts[0].set_sirk.value, param->set_sirk,
+			     sizeof(csis_insts[0].set_sirk.value));
 	}
 
 #if defined(CONFIG_BT_EXT_ADV)
@@ -832,11 +837,6 @@ int bt_csis_register(void)
 
 	registered = true;
 	return 0;
-}
-
-void bt_csis_register_cb(struct bt_csis_cb_t *cb)
-{
-	csis_cbs = cb;
 }
 
 int bt_csis_advertise(bool enable)
@@ -910,16 +910,3 @@ void bt_csis_print_sirk(void)
 	BT_HEXDUMP_DBG(&csis_insts[0].set_sirk, sizeof(csis_insts[0].set_sirk),
 			"Set SIRK");
 }
-
-#if defined(CONFIG_BT_TESTING)
-int bt_csis_test_set_rank(uint8_t rank)
-{
-	if (rank > CONFIG_BT_CSIS_SET_SIZE) {
-		return -EINVAL;
-	}
-
-	csis_insts[0].rank = rank;
-
-	return 0;
-}
-#endif /* CONFIG_BT_TESTING */

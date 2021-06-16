@@ -12,6 +12,7 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <bluetooth/conn.h>
+#include "csip.h"
 
 #define BT_CSIS_PSRI_SIZE			6
 
@@ -48,6 +49,44 @@ struct bt_csis_cb_t {
 	uint8_t (*sirk_read_req)(struct bt_conn *conn);
 };
 
+/** Register structure for Coordinated Set Identification Service */
+struct bt_csis_register_param {
+	/**
+	 * @brief Size of the set.
+	 *
+	 * If set to 0, the set size characteric won't be initialized.
+	 * Otherwise shall be set to minimum 2.
+	 */
+	uint8_t set_size;
+
+	/**
+	 * @brief The unique Set Identity Resolving Key (SIRK)
+	 *
+	 * This shall be unique between different sets, and shall be the same
+	 * for each set member for each set.
+	 */
+	uint8_t set_sirk[BT_CSIP_SET_SIRK_SIZE];
+
+	/**
+	 * @brief Boolean to set whether the set is lockable by clients
+	 *
+	 * Setting this to false will disable the lock characteristic.
+	 */
+	bool lockable;
+
+	/**
+	 * @brief Rank of this device in this set.
+	 *
+	 * If the lockable parameter is set to true, this shall be > 0 and
+	 * <= to the set_size. If the lockable parameter is set to false, this
+	 * may be set to 0 to disable the rank characteristic.
+	 */
+	uint8_t rank;
+
+	/** Pointer to the callback structure. */
+	struct bt_csis_cb_t *cb;
+};
+
 /** @brief Get the service declaration attribute.
  *
  *  The first service attribute can be included in any other GATT service.
@@ -64,9 +103,11 @@ void *bt_csis_svc_decl_get(void);
  *
  * This shall only be done as a server.
  *
+ * @param param     Coordinated Set Identification Service register parameters.
+ *
  * @return 0 if success, errno on failure.
  */
-int bt_csis_register(void);
+int bt_csis_register(const struct bt_csis_register_param *param);
 
 /**
  * @brief Print the sirk to the debug output
@@ -93,18 +134,5 @@ int bt_csis_advertise(bool enable);
  *  @return 0 on success, GATT error on error.
  */
 int bt_csis_lock(bool lock, bool force);
-
-/** @brief Registers callbacks for CSIS.
- *
- *  @param cb   Pointer to the callback structure.
- */
-void bt_csis_register_cb(struct bt_csis_cb_t *cb);
-
-/**
- * @brief Test function to dynamically set rank during runtime.
- *
- * @param rank The rank to set.
- */
-int bt_csis_test_set_rank(uint8_t rank);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIS_ */
