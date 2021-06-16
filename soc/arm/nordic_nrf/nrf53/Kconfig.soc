@@ -166,7 +166,7 @@ endchoice
 
 choice SOC_HFXO_LOAD_CAPACITANCE
 	prompt "HFXO load capacitance"
-	default SOC_HFXO_CAP_EXTERNAL
+	default SOC_HFXO_CAP_INTERNAL
 
 config SOC_HFXO_CAP_EXTERNAL
 	bool "Use external load capacitors"
