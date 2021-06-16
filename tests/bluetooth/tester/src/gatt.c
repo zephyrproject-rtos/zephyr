@@ -1528,7 +1528,8 @@ static void read_multiple(uint8_t *data, uint16_t len)
 
 	read_params.func = read_cb;
 	read_params.handle_count = i;
-	read_params.handles = handles; /* not used in read func */
+	read_params.multiple.handles = handles; /* not used in read func */
+	read_params.multiple.variable = false;
 
 	/* TODO should be handled as user_data via CONTAINER_OF macro */
 	btp_opcode = GATT_READ_MULTIPLE;
