@@ -75,13 +75,6 @@ function(add_doc_target name)
   add_custom_target(${name}-nodeps ${ARGN})
 endfunction()
 
-# Process modules
-set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
-list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
-file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
-include(${ZEPHYR_BASE}/cmake/extensions.cmake)
-include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
-
 #-------------------------------------------------------------------------------
 # Doxygen (standalone)
 
@@ -102,15 +95,15 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
 )
 
-if(WIN32)
-  set(SEP $<SEMICOLON>)
-else()
-  set(SEP :)
-endif()
+#-------------------------------------------------------------------------------
+# kconfig
 
-#
-# Generated Kconfig .rst documents
-#
+set(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
+list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
+file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
+
+include(${ZEPHYR_BASE}/cmake/extensions.cmake)
+include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
 foreach(module_name ${ZEPHYR_MODULE_NAMES})
   zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
@@ -123,9 +116,17 @@ foreach(module_name ${ZEPHYR_MODULE_NAMES})
     list(APPEND
          ZEPHYR_KCONFIG_MODULES
          "ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG=${ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG}"
-  )
+    )
   endif()
 endforeach()
+
+if(WIN32)
+  set(SEP $<SEMICOLON>)
+else()
+  set(SEP :)
+endif()
+
+set(GEN_KCONFIG_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_kconfig_rest.py)
 
 add_custom_target(
   kconfig
@@ -143,7 +144,7 @@ add_custom_target(
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
   ${ZEPHYR_KCONFIG_MODULES}
-    ${PYTHON_EXECUTABLE} _scripts/gen_kconfig_rest.py ${DOCS_SRC_DIR}/reference/kconfig/
+    ${PYTHON_EXECUTABLE} ${GEN_KCONFIG_REST_SCRIPT} ${DOCS_SRC_DIR}/reference/kconfig/
       --separate-all-index
       --keep-module-paths
       --modules Architecture,arch,${ZEPHYR_BASE}/arch
@@ -154,9 +155,9 @@ add_custom_target(
                 "External Module,modules,${ZEPHYR_BASE}/modules"
 
   VERBATIM
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Running gen_kconfig_rest.py ${DOCS_SRC_DIR}/reference/kconfig/"
 )
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_KCONFIG_REST_SCRIPT})
 
 #
 # Generated devicetree .rst documents
