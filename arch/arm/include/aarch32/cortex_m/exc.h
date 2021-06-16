@@ -145,6 +145,19 @@ static ALWAYS_INLINE void z_arm_exc_setup(void)
 	 * SecureHardFault in a PE without the Main Extension.
 	 */
 #endif /* ARM_SECURE_FIRMWARE && !ARM_SECURE_BUSFAULT_HARDFAULT_NMI */
+
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SYSTICK) && \
+	!defined(CONFIG_CORTEX_M_SYSTICK)
+	/* SoC implements SysTick, but the system does not use it
+	 * as driver for system timing. However, the SysTick IRQ is
+	 * always enabled, so we must ensure the interrupt priority
+	 * is set to a level lower than the kernel interrupts (for
+	 * the assert mechanism to work properly) in case the SysTick
+	 * interrupt is accidentally raised.
+	 */
+	NVIC_SetPriority(SysTick_IRQn, _EXC_IRQ_DEFAULT_PRIO);
+#endif /* CPU_CORTEX_M_HAS_SYSTICK && ! CORTEX_M_SYSTICK */
+
 }
 
 /**
