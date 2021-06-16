@@ -48,19 +48,6 @@ file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
-if(NOT DEFINED SPHINX_OUTPUT_DIR)
-  set(SPHINX_OUTPUT_DIR_LATEX ${CMAKE_CURRENT_BINARY_DIR}/latex)
-  set(SPHINX_OUTPUT_DIR_PDF ${CMAKE_CURRENT_BINARY_DIR}/pdf)
-else()
-  # SPHINX_OUTPUT_DIR is used to specify exactly where HTML (or other
-  # outputs) are placed, so no /html, /latex, /pdf suffixes are needed.
-  set(SPHINX_OUTPUT_DIR_LATEX ${SPHINX_OUTPUT_DIR})
-  set(SPHINX_OUTPUT_DIR_PDF ${SPHINX_OUTPUT_DIR})
-endif()
-
-# Internal variables.
-set(ALLSPHINXOPTS  -d ${CMAKE_CURRENT_BINARY_DIR}/doctrees ${SPHINXOPTS})
-
 set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 #-------------------------------------------------------------------------------
@@ -88,8 +75,6 @@ if(WIN32)
 else()
   set(SEP :)
 endif()
-
-set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/_scripts/fix_tex.py)
 
 #
 # Generated Kconfig .rst documents
@@ -206,6 +191,7 @@ set(DOCS_DOCTREE_DIR ${CMAKE_CURRENT_BINARY_DIR}/doctrees)
 set(DOCS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(DOCS_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
 set(DOCS_HTML_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
+set(DOCS_LATEX_DIR ${CMAKE_CURRENT_BINARY_DIR}/latex)
 
 #-------------------------------------------------------------------------------
 # Functions
@@ -247,92 +233,37 @@ add_doc_target(
 
 add_dependencies(html devicetree kconfig)
 
-#
-# LaTEX section
-#
-set(SPHINX_BUILD_LATEX_COMMAND
-  ${CMAKE_COMMAND} -E env
-  ZEPHYR_BASE=${ZEPHYR_BASE}
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
-  ${SPHINXBUILD} -t ${DOC_TAG} -b latex -c ${CMAKE_CURRENT_LIST_DIR} -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT} ${SPHINX_OUTPUT_DIR_LATEX})
+#-------------------------------------------------------------------------------
+# pdf
 
-# The sphinx-latex target works similarly to sphinx-html, and carries
-# the same warnings.
-add_custom_target(
-  sphinx-latex
-  COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
-  COMMENT "Just re-generating LaTeX (USE WITH CAUTION)"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  USES_TERMINAL
-)
+set(FIX_TEX_SCRIPT ${ZEPHYR_BASE}/doc/_scripts/fix_tex.py)
 
-
-add_custom_command(
-  OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
-  COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
-  COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Generating LaTeX documentation"
-  USES_TERMINAL
-)
-
-add_custom_target(
+add_doc_target(
   latex
-  DEPENDS ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
+  COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV}
+  ${SPHINXBUILD}
+    -b latex
+    -c ${DOCS_CFG_DIR}
+    -d ${DOCS_DOCTREE_DIR}
+    -w ${DOCS_BUILD_DIR}/latex.log
+    -t ${DOC_TAG}
+    -t svgconvert
+    ${SPHINXOPTS}
+    ${DOCS_SRC_DIR}
+    ${DOCS_LATEX_DIR}
+  COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${DOCS_LATEX_DIR}/zephyr.tex
+  USES_TERMINAL
 )
-
-#
-# PDF section
-#
-if(NOT ${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
-
-add_custom_command(
-  OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.pdf
-  DEPENDS latexdocs ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
-  COMMAND ${CMAKE_COMMAND} -E env
-  LATEXOPTS="-halt-on-error -no-shell-escape"
-  ${LATEXMK} -quiet -pdf -dvi- -ps-
-  WORKING_DIRECTORY ${SPHINX_OUTPUT_DIR_LATEX}
-  COMMENT "Generating PDF documentation"
-)
-
-if(NOT DEFINED SPHINX_OUTPUT_DIR)
-# Although latexmk allows specifying output directory,
-# makeindex fails if one is specified.
-# Hence the need of this to copy the PDF file over.
-add_custom_command(
-  OUTPUT ${SPHINX_OUTPUT_DIR_PDF}/zephyr.pdf
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${SPHINX_OUTPUT_DIR_PDF}
-  COMMAND ${CMAKE_COMMAND} -E copy ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.pdf ${SPHINX_OUTPUT_DIR_PDF}/zephyr.pdf
-  DEPENDS ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.pdf
-)
-endif()
-
-add_custom_target(
-  pdf
-  DEPENDS ${SPHINX_OUTPUT_DIR_PDF}/zephyr.pdf
-)
-
-endif()
-
-#
-# Dependencies and final targets
-#
 
 add_dependencies(latex kconfig devicetree)
 
-add_custom_target(
-  latexdocs
-)
-add_dependencies(latexdocs latex)
+if(LATEX_PDFLATEX_FOUND AND LATEXMK)
+  add_custom_target(
+    pdf
+    COMMAND ${CMAKE_COMMAND} -E env LATEXOPTS="-halt-on-error -no-shell-escape"
+    ${LATEXMK} -quiet -pdf -dvi- -ps-
+    WORKING_DIRECTORY ${DOCS_LATEX_DIR}
+  )
 
-if(NOT ${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
-
-add_custom_target(
-  pdfdocs
-  DEPENDS latexdocs pdf
-)
-add_dependencies(pdfdocs pdf)
-
+  add_dependencies(pdf latex)
 endif()
