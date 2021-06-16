@@ -37,19 +37,6 @@ static K_MEM_SLAB_DEFINE(file_data_pool, sizeof(struct lfs_file_data),
 static K_MEM_SLAB_DEFINE(lfs_dir_pool, sizeof(struct lfs_dir),
 			 CONFIG_FS_LITTLEFS_NUM_DIRS, 4);
 
-/* If either filecache memory pool is customized by either the legacy
- * mem_pool or heap Kconfig options then we need to use a heap.
- * Otherwise we can use a fixed region.
- */
-#if defined(CONFIG_FS_LITTLEFS_FC_MEM_POOL)		\
-	|| ((CONFIG_FS_LITTLEFS_FC_HEAP_SIZE - 0) > 0)
-#define FC_ON_HEAP 1
-#else
-#define FC_ON_HEAP 0
-#endif
-
-#if FC_ON_HEAP
-
 /* Inferred overhead, in bytes, for each k_heap_aligned allocation for
  * the filecache heap.  This relates to the CHUNK_UNIT parameter in
  * the heap implementation, but that value is not visible outside the
@@ -57,59 +44,28 @@ static K_MEM_SLAB_DEFINE(lfs_dir_pool, sizeof(struct lfs_dir),
  */
 #define FC_HEAP_PER_ALLOC_OVERHEAD 24U
 
-/* If not explicitly customizing provide a default that's appropriate
- * based on other configuration options.
- */
-#ifndef CONFIG_FS_LITTLEFS_FC_MEM_POOL
-#define CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE CONFIG_FS_LITTLEFS_CACHE_SIZE
-#define CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS CONFIG_FS_LITTLEFS_NUM_FILES
-#endif
-
-/* If not explicitly customizing infer a default from the legacy
- * mem-pool configuration options.
- */
 #if (CONFIG_FS_LITTLEFS_FC_HEAP_SIZE - 0) <= 0
+/* Auto-generate heap size from cache size and number of files */
 #undef CONFIG_FS_LITTLEFS_FC_HEAP_SIZE
-#define CONFIG_FS_LITTLEFS_FC_HEAP_SIZE					\
-	((CONFIG_FS_LITTLEFS_FC_MEM_POOL_MAX_SIZE			\
-	  + FC_HEAP_PER_ALLOC_OVERHEAD)					\
-	 * CONFIG_FS_LITTLEFS_FC_MEM_POOL_NUM_BLOCKS)
+#define CONFIG_FS_LITTLEFS_FC_HEAP_SIZE						\
+	((CONFIG_FS_LITTLEFS_CACHE_SIZE + FC_HEAP_PER_ALLOC_OVERHEAD) *		\
+	CONFIG_FS_LITTLEFS_NUM_FILES)
 #endif /* CONFIG_FS_LITTLEFS_FC_HEAP_SIZE */
 
 static K_HEAP_DEFINE(file_cache_heap, CONFIG_FS_LITTLEFS_FC_HEAP_SIZE);
-
-#else /* FC_ON_HEAP */
-
-static K_MEM_SLAB_DEFINE(file_cache_slab, CONFIG_FS_LITTLEFS_CACHE_SIZE,
-			 CONFIG_FS_LITTLEFS_NUM_FILES, 4);
-
-#endif /* FC_ON_HEAP */
 
 static inline void *fc_allocate(size_t size)
 {
 	void *ret = NULL;
 
-#if FC_ON_HEAP
 	ret = k_heap_alloc(&file_cache_heap, size, K_NO_WAIT);
-#else
-	__ASSERT(size <= CONFIG_FS_LITTLEFS_CACHE_SIZE,
-		 "size %zu exceeds slab reservation", size);
-
-	if (k_mem_slab_alloc(&file_cache_slab, &ret, K_NO_WAIT) != 0) {
-		ret = NULL;
-	}
-#endif
 
 	return ret;
 }
 
 static inline void fc_release(void *buf)
 {
-#if FC_ON_HEAP
 	k_heap_free(&file_cache_heap, buf);
-#else /* FC_ON_HEAP */
-	k_mem_slab_free(&file_cache_slab, &buf);
-#endif /* FC_ON_HEAP */
 }
 
 static inline void fs_lock(struct fs_littlefs *fs)
