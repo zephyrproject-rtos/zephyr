@@ -10,6 +10,10 @@
 #include <zephyr/types.h>
 #include <device.h>
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <drivers/spi.h>
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
 #define MS5607_CMD_RESET 0x1E
 #define MS5607_CMD_CONV_P_256 0x40
 #define MS5607_CMD_CONV_P_512 0x42
@@ -61,20 +65,33 @@
 	#define MS5607_TEMP_OVER_DEFAULT 2048
 #endif
 
+/* Forward declaration */
+struct ms5607_config;
+
+struct ms5607_transfer_function {
+	int (*bus_check)(const struct ms5607_config *cfg);
+	int (*reset)(const struct ms5607_config *cfg);
+	int (*read_prom)(const struct ms5607_config *cfg, uint8_t cmd, uint16_t *val);
+	int (*start_conversion)(const struct ms5607_config *cfg, uint8_t cmd);
+	int (*read_adc)(const struct ms5607_config *cfg, uint32_t *val);
+};
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-int ms5607_spi_init(const struct device *dev);
+extern const struct ms5607_transfer_function ms5607_spi_transfer_function;
 #else
 /* I2c Interface not implemented yet */
 BUILD_ASSERT(1, "I2c interface not implemented yet");
 #endif
 
 struct ms5607_config {
-	char *ms5607_device_name;
+	const struct device *bus;
+	const struct ms5607_transfer_function *tf;
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	struct spi_config spi_cfg;
+#endif
 };
 
 struct ms5607_data {
-	const struct device *ms5607_device;
-	const struct ms5607_transfer_function *tf;
 	/* Calibration values */
 	uint16_t sens_t1;
 	uint16_t off_t1;
@@ -93,13 +110,6 @@ struct ms5607_data {
 
 	uint8_t pressure_conv_delay;
 	uint8_t temperature_conv_delay;
-};
-
-struct ms5607_transfer_function {
-	int (*reset)(const struct ms5607_data *data);
-	int (*read_prom)(const struct ms5607_data *data, uint8_t cmd, uint16_t *val);
-	int (*start_conversion)(const struct ms5607_data *data, uint8_t cmd);
-	int (*read_adc)(const struct ms5607_data *data, uint32_t *val);
 };
 
 #endif /* __SENSOR_MS607_H__*/
