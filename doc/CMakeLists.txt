@@ -7,21 +7,26 @@ set(NO_BOILERPLATE TRUE)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} ..)
 
 file(TO_CMAKE_PATH "${ZEPHYR_BASE}" ZEPHYR_BASE)
-
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
-include(${ZEPHYR_BASE}/cmake/python.cmake)
+#-------------------------------------------------------------------------------
+# Dependencies
+
 set(DOXYGEN_SKIP_DOT True)
 find_package(Doxygen REQUIRED)
-find_package(LATEX)
 
-find_program(
-  SPHINXBUILD
-  NAMES sphinx-build-3 sphinx-build
-  )
-if(${SPHINXBUILD} STREQUAL SPHINXBUILD-NOTFOUND)
-  message(FATAL_ERROR "The 'sphinx-build' command was not found. Make sure you have Sphinx installed.")
+find_program(SPHINXBUILD sphinx-build)
+if(NOT SPHINXBUILD)
+  message(FATAL_ERROR "The 'sphinx-build' command was not found")
 endif()
+
+find_package(LATEX COMPONENTS PDFLATEX)
+find_program(LATEXMK latexmk)
+if(NOT LATEX_PDFLATEX_FOUND OR NOT LATEXMK)
+  message(WARNING "LaTeX components not found. PDF build will not be available.")
+endif()
+
+include(${ZEPHYR_BASE}/cmake/python.cmake)
 
 # Find west to (optionally) process modules for Kconfig
 find_program(WEST west)
@@ -34,16 +39,6 @@ list(INSERT MODULE_EXT_ROOT 0 ${ZEPHYR_BASE})
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
-
-# Note that this won't force fatal error if latexmk is not found.
-# Not having LaTeX tools should not prevent people from generating HTML docs.
-find_program(
-  LATEXMK
-  latexmk
-  )
-if(${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
-  message(WARNING "The 'latexmk' command was not found. Targets to build PDF will not be available.")
-endif()
 
 if(NOT DEFINED SPHINXOPTS)
   set(SPHINXOPTS -j auto)
