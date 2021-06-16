@@ -1,23 +1,93 @@
 # Microbit display driver configuration options
 
 # Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# Copyright (c) 2021 Peter Niebert <peter.niebert@univ-amu.fr>
 # SPDX-License-Identifier: Apache-2.0
 
 config MICROBIT_DISPLAY
 	bool "BBC micro:bit 5x5 LED Display support"
-	depends on BOARD_BBC_MICROBIT
-	depends on PRINTK
-	depends on GPIO
+	depends on (BOARD_BBC_MICROBIT || BOARD_BBC_MICROBIT_V2)
 	help
 	  Enable this to be able to display images and text on the 5x5
 	  LED matrix display on the BBC micro:bit.
+
+if MICROBIT_DISPLAY
 
 config MICROBIT_DISPLAY_STR_MAX
 	int "Maximum length of strings that can be shown on the display"
 	range 3 255
 	default 40
-	depends on MICROBIT_DISPLAY
 	help
 	  This value specifies the maximum length of strings that can
 	  be displayed using the mb_display_string() and mb_display_print()
 	  APIs.
+
+config MICROBIT_DISPLAY_TIMER_PRIORITY
+	int "NRFX Timer Interrupt priority"
+	default 1
+	help
+		Priority of the refresh interrupt of the
+		LED matrix. Can probably be low as it is not
+		critical.
+
+
+
+choice MICROBIT_DISPLAY_TIMER
+		prompt "NRFX Hardware Timer"
+		default MICROBIT_DISPLAY_TIMER3
+		help
+			Select the hardware timer instance used by this driver.
+			Beware of conflicts with other drivers, e.g. for bluetooth.
+
+# make sure the chosen timer is activated
+
+config MICROBIT_DISPLAY_TIMER0
+		bool "TIMER0"
+		depends on HAS_HW_NRF_TIMER0
+		imply NRFX_TIMER0
+
+config MICROBIT_DISPLAY_TIMER1
+		bool "TIMER1"
+		depends on HAS_HW_NRF_TIMER1
+		imply NRFX_TIMER1
+
+config MICROBIT_DISPLAY_TIMER2
+		bool "TIMER2"
+		depends on HAS_HW_NRF_TIMER2
+		imply NRFX_TIMER2
+
+config MICROBIT_DISPLAY_TIMER3
+		bool "TIMER3"
+		depends on HAS_HW_NRF_TIMER3
+		imply NRFX_TIMER3
+
+config MICROBIT_DISPLAY_TIMER4
+		bool "TIMER4"
+		depends on HAS_HW_NRF_TIMER4
+		imply NRFX_TIMER4
+
+endchoice
+
+if MICROBIT_DISPLAY_TIMER0 && !NRFX_TIMER0
+	comment "Activate NRFX_TIMER0 to meet dependency"
+endif
+
+if MICROBIT_DISPLAY_TIMER1 && !NRFX_TIMER1
+	comment "Activate NRFX_TIMER1 to meet dependency"
+endif
+
+if MICROBIT_DISPLAY_TIMER2 && !NRFX_TIMER2
+	comment "Activate NRFX_TIMER2 to meet dependency"
+endif
+
+if MICROBIT_DISPLAY_TIMER3 && !NRFX_TIMER3
+	comment "Activate NRFX_TIMER3 to meet dependency"
+endif
+
+if MICROBIT_DISPLAY_TIMER4 && !NRFX_TIMER4
+	comment "Activate NRFX_TIMER4 to meet dependency"
+endif
+
+
+
+endif
