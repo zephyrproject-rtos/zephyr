@@ -49,13 +49,11 @@ include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
 if(NOT DEFINED SPHINX_OUTPUT_DIR)
-  set(SPHINX_OUTPUT_DIR_HTML ${CMAKE_CURRENT_BINARY_DIR}/html)
   set(SPHINX_OUTPUT_DIR_LATEX ${CMAKE_CURRENT_BINARY_DIR}/latex)
   set(SPHINX_OUTPUT_DIR_PDF ${CMAKE_CURRENT_BINARY_DIR}/pdf)
 else()
   # SPHINX_OUTPUT_DIR is used to specify exactly where HTML (or other
   # outputs) are placed, so no /html, /latex, /pdf suffixes are needed.
-  set(SPHINX_OUTPUT_DIR_HTML ${SPHINX_OUTPUT_DIR})
   set(SPHINX_OUTPUT_DIR_LATEX ${SPHINX_OUTPUT_DIR})
   set(SPHINX_OUTPUT_DIR_PDF ${SPHINX_OUTPUT_DIR})
 endif()
@@ -191,36 +189,60 @@ add_custom_target(
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DEVICETREE_REST_SCRIPT})
 
-#
-# HTML section
-#
-set(SPHINX_BUILD_HTML_COMMAND
-  ${CMAKE_COMMAND} -E env
+#-------------------------------------------------------------------------------
+# Environment & Paths
+
+set(SPHINX_ENV
   ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
   DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
-  ${SPHINXBUILD} -t ${DOC_TAG} -b html -c ${CMAKE_CURRENT_LIST_DIR} ${ALLSPHINXOPTS} ${RST_OUT} ${SPHINX_OUTPUT_DIR_HTML})
-
-# The sphinx-html target is provided as a convenience for incremental
-# re-builds of content files without regenerating the entire docs
-# pipeline. It can be significantly faster than re-running the full
-# HTML build, but it has no idea if Doxygen, Kconfig, etc. need to be
-# regenerated. Use with caution.
-add_custom_target(
-  sphinx-html
-  COMMAND ${SPHINX_BUILD_HTML_COMMAND}
-  COMMENT "Just re-generating HTML (USE WITH CAUTION)"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  USES_TERMINAL
 )
 
-add_custom_target(
+set(DOCS_CFG_DIR ${CMAKE_CURRENT_LIST_DIR})
+set(DOCS_DOCTREE_DIR ${CMAKE_CURRENT_BINARY_DIR}/doctrees)
+set(DOCS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(DOCS_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
+set(DOCS_HTML_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
+
+#-------------------------------------------------------------------------------
+# Functions
+
+# Create a custom doc target.
+#
+# This function has the same signature as `add_custom_target()`
+#
+# The function will create two targets for the doc build system.
+# - Target 1 named: `<name>`
+# - Target 2 named: `<name>-nodeps`
+#
+# Both targets will produce same result, but target 2 must have no dependencies.
+# This is useful to, e.g. re-run the Sphinx build without dependencies such as
+# devicetree or Kconfig generators.
+#
+function(add_doc_target name)
+  add_custom_target(${name} ${ARGN})
+  add_custom_target(${name}-nodeps ${ARGN})
+endfunction()
+
+#-------------------------------------------------------------------------------
+# html
+
+add_doc_target(
   html
-  COMMAND ${SPHINX_BUILD_HTML_COMMAND}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Generating HTML documentation with ${SPHINXBUILD} ${SPHINXOPTS}"
+  COMMAND ${CMAKE_COMMAND} -E env ${SPHINX_ENV}
+  ${SPHINXBUILD}
+    -b html
+    -c ${DOCS_CFG_DIR}
+    -d ${DOCS_DOCTREE_DIR}
+    -w ${DOCS_BUILD_DIR}/html.log
+    -t ${DOC_TAG}
+    ${SPHINXOPTS}
+    ${DOCS_SRC_DIR}
+    ${DOCS_HTML_DIR}
   USES_TERMINAL
 )
+
+add_dependencies(html devicetree kconfig)
 
 #
 # LaTEX section
@@ -294,12 +316,6 @@ endif()
 #
 # Dependencies and final targets
 #
-add_dependencies(html kconfig devicetree)
-
-add_custom_target(
-  htmldocs
-)
-add_dependencies(htmldocs html)
 
 add_dependencies(latex kconfig devicetree)
 
