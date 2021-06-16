@@ -37,9 +37,9 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
  * Kconfig option.
  *
  * When mapped to the Zephyr Device Power Management states:
- * * DEVICE_PM_ACTIVE_STATE covers both active and standby modes;
- * * DEVICE_PM_LOW_POWER_STATE, DEVICE_PM_SUSPEND_STATE, and
- *   DEVICE_PM_OFF_STATE all correspond to deep-power-down mode.
+ * * PM_DEVICE_STATE_ACTIVE covers both active and standby modes;
+ * * PM_DEVICE_STATE_LOW_POWER, PM_DEVICE_STATE_SUSPEND, and
+ *   PM_DEVICE_STATE_OFF all correspond to deep-power-down mode.
  */
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
@@ -80,8 +80,10 @@ struct spi_nor_config {
 	/* Expected JEDEC ID, from jedec-id property */
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 
-	/* Optional bits in SR to be cleared on startup */
-	uint8_t has_lock;
+#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL)
+	/* Optional support for entering 32-bit address mode. */
+	uint8_t enter_4byte_addr;
+#endif /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 
 #if defined(CONFIG_SPI_NOR_SFDP_DEVICETREE)
 	/* Length of BFP structure, in 32-bit words. */
@@ -93,6 +95,12 @@ struct spi_nor_config {
 	const struct jesd216_bfp *bfp;
 #endif /* CONFIG_SPI_NOR_SFDP_DEVICETREE */
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
+
+	/* Optional bits in SR to be cleared on startup.
+	 *
+	 * This information cannot be derived from SFDP.
+	 */
+	uint8_t has_lock;
 };
 
 /**
@@ -115,6 +123,16 @@ struct spi_nor_data {
 	 */
 	uint32_t ts_enter_dpd;
 #endif
+
+	/* Miscellaneous flags */
+
+	/* If set addressed operations should use 32-bit rather than
+	 * 24-bit addresses.
+	 *
+	 * This is ignored if the access parameter to a command
+	 * explicitly specifies 24-bit or 32-bit addressing.
+	 */
+	bool flag_access_32bit: 1;
 
 	/* Minimal SFDP stores no dynamic configuration.  Runtime and
 	 * devicetree store page size and erase_types; runtime also
@@ -247,49 +265,88 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 #endif /* DT_INST_NODE_HAS_PROP(0, has_dpd) */
 }
 
+/* Indicates that an access command includes bytes for the address.
+ * If not provided the opcode is not followed by address bytes.
+ */
+#define NOR_ACCESS_ADDRESSED BIT(0)
+
+/* Indicates that addressed access uses a 24-bit address regardless of
+ * spi_nor_data::flag_32bit_addr.
+ */
+#define NOR_ACCESS_24BIT_ADDR BIT(1)
+
+/* Indicates that addressed access uses a 32-bit address regardless of
+ * spi_nor_data::flag_32bit_addr.
+ */
+#define NOR_ACCESS_32BIT_ADDR BIT(2)
+
+/* Indicates that an access command is performing a write.  If not
+ * provided access is a read.
+ */
+#define NOR_ACCESS_WRITE BIT(7)
+
 /*
  * @brief Send an SPI command
  *
  * @param dev Device struct
  * @param opcode The command to send
- * @param is_addressed A flag to define if the command is addressed
+ * @param access flags that determine how the command is constructed.
+ *        See NOR_ACCESS_*.
  * @param addr The address to send
  * @param data The buffer to store or read the value
  * @param length The size of the buffer
- * @param is_write A flag to define if it's a read or a write command
  * @return 0 on success, negative errno code otherwise
  */
 static int spi_nor_access(const struct device *const dev,
-			  uint8_t opcode, bool is_addressed, off_t addr,
-			  void *data, size_t length, bool is_write)
+			  uint8_t opcode, unsigned int access,
+			  off_t addr, void *data, size_t length)
 {
 	struct spi_nor_data *const driver_data = dev->data;
-
-	uint8_t buf[4] = {
-		opcode,
-		(addr & 0xFF0000) >> 16,
-		(addr & 0xFF00) >> 8,
-		(addr & 0xFF),
-	};
-
+	bool is_addressed = (access & NOR_ACCESS_ADDRESSED) != 0U;
+	bool is_write = (access & NOR_ACCESS_WRITE) != 0U;
+	uint8_t buf[5] = { 0 };
 	struct spi_buf spi_buf[2] = {
 		{
 			.buf = buf,
-			.len = (is_addressed) ? 4 : 1,
+			.len = 1,
 		},
 		{
 			.buf = data,
 			.len = length
 		}
 	};
+
+	buf[0] = opcode;
+	if (is_addressed) {
+		bool access_24bit = (access & NOR_ACCESS_24BIT_ADDR) != 0;
+		bool access_32bit = (access & NOR_ACCESS_32BIT_ADDR) != 0;
+		bool use_32bit = (access_32bit
+				  || (!access_24bit
+				      && driver_data->flag_access_32bit));
+		union {
+			uint32_t u32;
+			uint8_t u8[4];
+		} addr32 = {
+			.u32 = sys_cpu_to_be32(addr),
+		};
+
+		if (use_32bit) {
+			memcpy(&buf[1], &addr32.u8[0], 4);
+			spi_buf[0].len += 4;
+		} else {
+			memcpy(&buf[1], &addr32.u8[1], 3);
+			spi_buf[0].len += 3;
+		}
+	};
+
 	const struct spi_buf_set tx_set = {
 		.buffers = spi_buf,
-		.count = (length) ? 2 : 1
+		.count = (length != 0) ? 2 : 1,
 	};
 
 	const struct spi_buf_set rx_set = {
 		.buffers = spi_buf,
-		.count = 2
+		.count = 2,
 	};
 
 	if (is_write) {
@@ -302,13 +359,14 @@ static int spi_nor_access(const struct device *const dev,
 }
 
 #define spi_nor_cmd_read(dev, opcode, dest, length) \
-	spi_nor_access(dev, opcode, false, 0, dest, length, false)
+	spi_nor_access(dev, opcode, 0, 0, dest, length)
 #define spi_nor_cmd_addr_read(dev, opcode, addr, dest, length) \
-	spi_nor_access(dev, opcode, true, addr, dest, length, false)
+	spi_nor_access(dev, opcode, NOR_ACCESS_ADDRESSED, addr, dest, length)
 #define spi_nor_cmd_write(dev, opcode) \
-	spi_nor_access(dev, opcode, false, 0, NULL, 0, true)
+	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE, 0, NULL, 0)
 #define spi_nor_cmd_addr_write(dev, opcode, addr, src, length) \
-	spi_nor_access(dev, opcode, true, addr, (void *)src, length, true)
+	spi_nor_access(dev, opcode, NOR_ACCESS_WRITE | NOR_ACCESS_ADDRESSED, \
+		       addr, (void *)src, length)
 
 /**
  * @brief Wait until the flash is ready
@@ -352,31 +410,13 @@ static int spi_nor_wait_until_ready(const struct device *dev)
 static int read_sfdp(const struct device *const dev,
 		     off_t addr, void *data, size_t length)
 {
-	struct spi_nor_data *const driver_data = dev->data;
-	uint8_t buf[] = {
-		JESD216_CMD_READ_SFDP,
-		addr >> 16,
-		addr >> 8,
-		addr,
-		0,		/* wait state */
-	};
-	struct spi_buf spi_buf[] = {
-		{
-			.buf = buf,
-			.len = sizeof(buf),
-		},
-		{
-			.buf = data,
-			.len = length,
-		}
-	};
-	const struct spi_buf_set buf_set = {
-		.buffers = spi_buf,
-		.count = ARRAY_SIZE(spi_buf),
-	};
-
-	return spi_transceive(driver_data->spi, &driver_data->spi_cfg,
-			      &buf_set, &buf_set);
+	/* READ_SFDP requires a 24-bit address followed by a single
+	 * byte for a wait state.  This is effected by using 32-bit
+	 * address by shifting the 24-bit address up 8 bits.
+	 */
+	return spi_nor_access(dev, JESD216_CMD_READ_SFDP,
+			      NOR_ACCESS_32BIT_ADDR | NOR_ACCESS_ADDRESSED,
+			      addr << 8, data, length);
 }
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
@@ -501,8 +541,8 @@ static int spi_nor_wrsr(const struct device *dev,
 	int ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
 
 	if (ret == 0) {
-		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, false, 0, &sr,
-				     sizeof(sr), true);
+		ret = spi_nor_access(dev, SPI_NOR_CMD_WRSR, NOR_ACCESS_WRITE, 0, &sr,
+				     sizeof(sr));
 		spi_nor_wait_until_ready(dev);
 	}
 
@@ -706,6 +746,67 @@ static int spi_nor_read_jedec_id(const struct device *dev,
 	return ret;
 }
 
+/* Put the device into the appropriate address mode, if supported.
+ *
+ * On successful return spi_nor_data::flag_access_32bit has been set
+ * (cleared) if the device is configured for 4-byte (3-byte) addresses
+ * for read, write, and erase commands.
+ *
+ * @param dev the device
+ *
+ * @param enter_4byte_addr the Enter 4-Byte Addressing bit set from
+ * DW16 of SFDP BFP.  A value of all zeros or all ones is interpreted
+ * as "not supported".
+ *
+ * @retval -ENOTSUP if 4-byte addressing is supported but not in a way
+ * that the driver can handle.
+ * @retval negative codes if the attempt was made and failed
+ * @retval 0 if the device is successfully left in 24-bit mode or
+ *         reconfigured to 32-bit mode.
+ */
+static int spi_nor_set_address_mode(const struct device *dev,
+				    uint8_t enter_4byte_addr)
+{
+	int ret = 0;
+
+	/* Do nothing if not provided (either no bits or all bits
+	 * set).
+	 */
+	if ((enter_4byte_addr == 0)
+	    || (enter_4byte_addr == 0xff)) {
+		return 0;
+	}
+
+	LOG_DBG("Checking enter-4byte-addr %02x", enter_4byte_addr);
+
+	/* This currently only supports command 0xB7 (Enter 4-Byte
+	 * Address Mode), with or without preceding WREN.
+	 */
+	if ((enter_4byte_addr & 0x03) == 0) {
+		return -ENOTSUP;
+	}
+
+	acquire_device(dev);
+
+	if ((enter_4byte_addr & 0x02) != 0) {
+		/* Enter after WREN. */
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+	}
+	if (ret == 0) {
+		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_4BA);
+	}
+
+	if (ret == 0) {
+		struct spi_nor_data *data = dev->data;
+
+		data->flag_access_32bit = true;
+	}
+
+	release_device(dev);
+
+	return ret;
+}
+
 #ifndef CONFIG_SPI_NOR_SFDP_MINIMAL
 
 static int spi_nor_process_bfp(const struct device *dev,
@@ -740,6 +841,21 @@ static int spi_nor_process_bfp(const struct device *dev,
 #endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 
 	LOG_DBG("Page size %u bytes", data->page_size);
+
+	/* If 4-byte addressing is supported, switch to it. */
+	if (jesd216_bfp_addrbytes(bfp) != JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_3B) {
+		struct jesd216_bfp_dw16 dw16;
+		int rc = 0;
+
+		if (jesd216_bfp_decode_dw16(php, bfp, &dw16) == 0) {
+			rc = spi_nor_set_address_mode(dev, dw16.enter_4ba);
+		}
+
+		if (rc != 0) {
+			LOG_ERR("Unable to enter 4-byte mode: %d\n", rc);
+			return rc;
+		}
+	}
 	return 0;
 }
 
@@ -899,9 +1015,7 @@ static int spi_nor_configure(const struct device *dev)
 {
 	struct spi_nor_data *data = dev->data;
 	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
-#ifndef CONFIG_SPI_NOR_SFDP_RUNTIME
 	const struct spi_nor_config *cfg = dev->config;
-#endif /* CONFIG_SPI_NOR_SFDP_RUNTIME */
 	int rc;
 
 	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
@@ -954,7 +1068,11 @@ static int spi_nor_configure(const struct device *dev)
 	}
 #endif
 
-	/* Check for block protect bits that need to be cleared. */
+	/* Check for block protect bits that need to be cleared.  This
+	 * information cannot be determined from SFDP content, so the
+	 * devicetree node property must be set correctly for any device
+	 * that powers up with block protect enabled.
+	 */
 	if (cfg->has_lock != 0) {
 		acquire_device(dev);
 
@@ -973,7 +1091,20 @@ static int spi_nor_configure(const struct device *dev)
 		release_device(dev);
 	}
 
-#ifndef CONFIG_SPI_NOR_SFDP_MINIMAL
+#ifdef CONFIG_SPI_NOR_SFDP_MINIMAL
+	/* For minimal we support some overrides from specific
+	 * devicertee properties.
+	 */
+	if (cfg->enter_4byte_addr != 0) {
+		rc = spi_nor_set_address_mode(dev, cfg->enter_4byte_addr);
+
+		if (rc != 0) {
+			LOG_ERR("Unable to enter 4-byte mode: %d\n", rc);
+			return -ENODEV;
+		}
+	}
+
+#else /* CONFIG_SPI_NOR_SFDP_MINIMAL */
 	/* For devicetree and runtime we need to process BFP data and
 	 * set up or validate page layout.
 	 */
@@ -1127,6 +1258,10 @@ static const struct spi_nor_config spi_nor_config_0 = {
 #if DT_INST_NODE_HAS_PROP(0, has_lock)
 	.has_lock = DT_INST_PROP(0, has_lock),
 #endif
+#if defined(CONFIG_SPI_NOR_SFDP_MINIMAL)		\
+	&& DT_INST_NODE_HAS_PROP(0, enter_4byte_addr)
+	.enter_4byte_addr = DT_INST_PROP(0, enter_4byte_addr),
+#endif
 #ifdef CONFIG_SPI_NOR_SFDP_DEVICETREE
 	.bfp_len = sizeof(bfp_data_0) / 4,
 	.bfp = (const struct jesd216_bfp *)bfp_data_0,
@@ -1137,7 +1272,7 @@ static const struct spi_nor_config spi_nor_config_0 = {
 
 static struct spi_nor_data spi_nor_data_0;
 
-DEVICE_DT_INST_DEFINE(0, &spi_nor_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &spi_nor_init, NULL,
 		 &spi_nor_data_0, &spi_nor_config_0,
 		 POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
 		 &spi_nor_api);

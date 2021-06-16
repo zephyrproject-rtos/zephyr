@@ -1010,7 +1010,7 @@ static const struct sdhc_spi_config sdhc_spi_cfg_0 = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, sdhc_spi_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, sdhc_spi_init, NULL,
 	&sdhc_spi_data_0, &sdhc_spi_cfg_0,
 	POST_KERNEL, CONFIG_SDMMC_INIT_PRIORITY, NULL);
 #endif

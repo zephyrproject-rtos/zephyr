@@ -66,7 +66,7 @@ struct bt_mesh_friend {
 
 	uint16_t sub_list[FRIEND_SUB_LIST_SIZE];
 
-	struct k_delayed_work timer;
+	struct k_work_delayable timer;
 
 	struct bt_mesh_friend_seg {
 		sys_slist_t queue;
@@ -88,7 +88,7 @@ struct bt_mesh_friend {
 		uint32_t start;                  /* Clear Procedure start */
 		uint16_t frnd;                   /* Previous Friend's address */
 		uint16_t repeat_sec;             /* Repeat timeout in seconds */
-		struct k_delayed_work timer;  /* Repeat timer */
+		struct k_work_delayable timer;   /* Repeat timer */
 	} clear;
 };
 
@@ -213,7 +213,7 @@ struct bt_mesh_net {
 	uint8_t default_ttl;
 
 	/* Timer to track duration in current IV Update state */
-	struct k_delayed_work ivu_timer;
+	struct k_work_delayable ivu_timer;
 
 	uint8_t dev_key[16];
 };

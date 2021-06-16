@@ -183,6 +183,14 @@ _idle_state_cleared:
 	 * interface function.
 	 */
 	cpsie i
+
+	/*
+	 * Skip calling the isr if it is a spurious interrupt.
+	 */
+	mov r1, #CONFIG_NUM_IRQS
+	lsl r1, r1, #3
+	cmp r0, r1
+	bge spurious_continue
 #endif /* !CONFIG_CPU_CORTEX_M */
 
 	ldr r1, =_sw_isr_table
@@ -193,6 +201,7 @@ _idle_state_cleared:
 	blx r3		/* call ISR */
 
 #if defined(CONFIG_CPU_CORTEX_R)
+spurious_continue:
 	/* Signal end-of-interrupt */
 	pop {r0, r1}
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)

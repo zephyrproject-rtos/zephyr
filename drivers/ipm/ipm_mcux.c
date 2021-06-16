@@ -174,7 +174,7 @@ static struct mcux_mailbox_data mcux_mailbox_0_data;
 
 DEVICE_DT_INST_DEFINE(0,
 		    &mcux_mailbox_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &mcux_mailbox_0_data, &mcux_mailbox_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &mcux_mailbox_driver_api);

@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NPCX9M6F_EVB
+
+config BOARD
+	default "npcx9m6f_evb"
+
+endif # BOARD_NPCX9M6F_EVB
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000

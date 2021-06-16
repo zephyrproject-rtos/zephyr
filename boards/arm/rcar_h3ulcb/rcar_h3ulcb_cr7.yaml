@@ -1,0 +1,8 @@
+identifier: rcar_h3ulcb_cr7
+name: Cortex r7 for Renesas H3ULCB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 768

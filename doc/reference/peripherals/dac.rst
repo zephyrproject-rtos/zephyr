@@ -19,4 +19,3 @@ API Reference
 *************
 
 .. doxygengroup:: dac_interface
-   :project: Zephyr

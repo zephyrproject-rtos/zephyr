@@ -590,7 +590,7 @@ static struct gpio_lpc11u6x_data gpio_lpc11u6x_data_##id;		\
 									\
 DEVICE_DT_DEFINE(DT_NODELABEL(gpio##id),				\
 		    &gpio_lpc11u6x_init,				\
-		    device_pm_control_nop,				\
+		    NULL,						\
 		    &gpio_lpc11u6x_data_##id,				\
 		    &gpio_lpc11u6x_config_##id,				\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\

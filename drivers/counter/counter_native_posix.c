@@ -149,5 +149,5 @@ static const struct counter_config_info ctr_config = {
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(DT_COUNTER_LABEL), ctr_init,
-		    device_pm_control_nop, NULL, &ctr_config, PRE_KERNEL_1,
+		    NULL, NULL, &ctr_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ctr_api);

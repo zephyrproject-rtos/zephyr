@@ -496,6 +496,8 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 	} else if (ret) {
 		LOG_ERR("Failed to configure endpoint 0x%02x", ep_cfg.ep_addr);
 		return false;
+	} else {
+		;
 	}
 
 	ret = usb_dc_ep_enable(ep_cfg.ep_addr);
@@ -504,6 +506,8 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 	} else if (ret) {
 		LOG_ERR("Failed to enable endpoint 0x%02x", ep_cfg.ep_addr);
 		return false;
+	} else {
+		;
 	}
 
 	usb_dev.configured = true;
@@ -540,6 +544,8 @@ static bool reset_endpoint(const struct usb_ep_descriptor *ep_desc)
 	} else if (ret) {
 		LOG_ERR("Failed to disable endpoint 0x%02x", ep_cfg.ep_addr);
 		return false;
+	} else {
+		;
 	}
 
 	return true;

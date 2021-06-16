@@ -85,4 +85,3 @@ state.
    (primarily no support for the monitor API).
 
 .. doxygengroup:: resource_mgmt_onoff_apis
-   :project: Zephyr

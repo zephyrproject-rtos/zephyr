@@ -126,6 +126,7 @@ struct rf2xx_context {
 	enum rf2xx_trx_model_t trx_model;
 	enum rf2xx_trx_state_trac_t trx_trac;
 
+	enum ieee802154_tx_mode tx_mode;
 	uint8_t mac_addr[8];
 	uint8_t pkt_lqi;
 	uint8_t pkt_ed;

@@ -10,6 +10,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/util.h"
 
 #include "hal/ticker.h"
 
@@ -21,6 +22,7 @@
 #include "lll/lll_vendor.h"
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
+#include "lll/lll_df_types.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 
@@ -85,6 +87,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	struct ll_scan_aux_set *aux;
 	uint32_t window_widening_us;
 	uint32_t ticks_slot_offset;
+	uint32_t ticks_aux_offset;
+	struct pdu_adv_ext_hdr *h;
 	struct ll_scan_set *scan;
 	struct ll_sync_set *sync;
 	struct lll_scan_aux *lll;
@@ -93,7 +97,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	uint32_t ready_delay_us;
 	uint32_t aux_offset_us;
 	uint32_t ticker_status;
-	struct pdu_adv_ext_hdr *h;
 	struct pdu_adv *pdu;
 	uint8_t aux_handle;
 	uint8_t *ptr;
@@ -285,7 +288,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, 1);
 
-	aux_offset_us -= EVENT_OVERHEAD_START_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
 	aux_offset_us -= window_widening_us;
@@ -305,14 +307,31 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	ticks_slot_offset = MAX(aux->ull.ticks_active_to_start,
 				aux->ull.ticks_prepare_to_start);
-
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
 		ticks_slot_overhead = 0U;
 	}
+	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
-	/* TODO: unreserve the primary scan window ticks in ticker */
+	ticks_aux_offset = HAL_TICKER_US_TO_TICKS(aux_offset_us);
+
+	/* Yield the primary scan window ticks in ticker */
+	if (scan) {
+		uint8_t handle;
+
+		handle = ull_scan_handle_get(scan);
+
+		ticker_status = ticker_yield_abs(TICKER_INSTANCE_ID_CTLR,
+						 TICKER_USER_ID_ULL_HIGH,
+						 (TICKER_ID_SCAN_BASE + handle),
+						 (ftr->ticks_anchor +
+						  ticks_aux_offset -
+						  ticks_slot_offset),
+						 NULL, NULL);
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY));
+	}
 
 	aux_handle = aux_handle_get(aux);
 
@@ -320,7 +339,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 				     TICKER_USER_ID_ULL_HIGH,
 				     TICKER_ID_SCAN_AUX_BASE + aux_handle,
 				     ftr->ticks_anchor - ticks_slot_offset,
-				     HAL_TICKER_US_TO_TICKS(aux_offset_us),
+				     ticks_aux_offset,
 				     TICKER_NULL_PERIOD,
 				     TICKER_NULL_REMAINDER,
 				     TICKER_NULL_LAZY,

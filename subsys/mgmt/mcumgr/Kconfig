@@ -134,6 +134,9 @@ config MCUMGR_CMD_SHELL_MGMT
 	  physical interfaces outside of the scope of the user.
 	  It is possible to use additional shell backends in coordination
 	  with this handler and they will not interfere.
+	  The SHELL_BACKEND_DUMMY_BUF_SIZE will affect how many characters
+	  will be returned from command output, if your output gets cut, then
+	  increase the value. Remember to set MCUMGR_BUF_SIZE accordingly.
 
 menuconfig MCUMGR_CMD_IMG_MGMT
 	bool "Enable mcumgr handlers for image management"
@@ -357,6 +360,8 @@ config MCUMGR_BUF_SIZE
 	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
 	  the following relation:
 	  MCUMGR_BUF_SIZE >= transport-specific-MTU + transport-overhead
+	  In case when MCUMGR_SMP_SHELL is enabled this value should be set to
+	  at least SHELL_BACKEND_DUMMY_BUF_SIZE + 32.
 
 config MCUMGR_BUF_USER_DATA_SIZE
 	int "Size of mcumgr buffer user data"

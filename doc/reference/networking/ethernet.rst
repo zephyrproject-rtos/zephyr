@@ -43,7 +43,5 @@ API Reference
 *************
 
 .. doxygengroup:: ethernet
-   :project: Zephyr
 
 .. doxygengroup:: ethernet_mii
-   :project: Zephyr

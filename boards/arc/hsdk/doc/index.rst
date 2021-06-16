@@ -8,7 +8,7 @@ Overview
 
 The DesignWare(R) ARC(R) HS Development Kit is a ready-to-use platform for
 rapid software development on the ARC HS3x family of processors. It supports
-single- and multi-core ARC HS34, HS36 and HS38 processors and offers a wide
+single-core and multi-core ARC HS34, HS36 and HS38 processors and offers a wide
 range of interfaces including Ethernet, WiFi, Bluetooth, USB, SDIO, I2C, SPI,
 UART, I2S, ADC, PWM and GPIO. A Vivante GPU is also contained in the ARC
 Development System SoC. This allows developers to build and debug complex
@@ -297,6 +297,56 @@ using the CREG_GPIO_MUX register (see Pinmux ). After a reset, all ports are con
 +-------+------------+-----------------+------------+
 | IO13  | gpio[15]   | -               | spi2_clk   |
 +-------+------------+-----------------+------------+
+
+I/O expander
+============
+
+The ARC HSDK board includes a CY8C9520A I/O expander from `Cypress CY8C9520A
+<https://www.cypress.com/file/37971/download>`__. The I/O
+expander offers additional GPIO signals and board control signals and can be accessed
+through the on-board I2C bus, we have implemented a basic driver for it.
+Tables below shows an overview of relevant I/O signals.
+
++------------+---------------------------------------------+
+| Pins       | Usage                                       |
++------------+---------------------------------------------+
+| port0_bit0 | RS9113 Bluetooth I2S RX enable (active low) |
++------------+---------------------------------------------+
+| port0_bit1 | mikroBUS Reset (active low)                 |
++------------+---------------------------------------------+
+| port0_bit2 | GPIO for Arduino AD0                        |
++------------+---------------------------------------------+
+| port0_bit3 | GPIO for Arduino AD1                        |
++------------+---------------------------------------------+
+| port0_bit4 | GPIO for Arduino AD2                        |
++------------+---------------------------------------------+
+| port0_bit5 | GPIO for Arduino AD3                        |
++------------+---------------------------------------------+
+| port1_bit4 | On-board user LED0                          |
++------------+---------------------------------------------+
+| port1_bit5 | On-board user LED1                          |
++------------+---------------------------------------------+
+| port1_bit6 | On-board user LED2                          |
++------------+---------------------------------------------+
+| port1_bit7 | On-board user LED3                          |
++------------+---------------------------------------------+
+
+On-board user LEDS
+==================
+
+The ARC HSDK includes 4 user LEDs(active high), which can be controlled through the I/O expander pins.
+
++-------+-----------------+
+| LEDs  | PINs            |
++-------+-----------------+
+| LED0  | GPX_port1_bit4  |
++-------+-----------------+
+| LED1  | GPX_port1_bit5  |
++-------+-----------------+
+| LED2  | GPX_port1_bit6  |
++-------+-----------------+
+| LED3  | GPX_port1_bit7  |
++-------+-----------------+
 
 For hardware feature details, refer to : `Designware HS Development Kit website
 <https://www.synopsys.com/dw/ipdir.php?ds=arc-hs-development-kit>`__.

@@ -53,7 +53,7 @@ static int vnd_spi_init(const struct device *dev)
 }
 
 #define VND_SPI_INIT(n)						\
-	DEVICE_DT_INST_DEFINE(n, &vnd_spi_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(n, &vnd_spi_init, NULL,			\
 			      NULL, NULL, POST_KERNEL,			\
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 			      &vnd_spi_api);

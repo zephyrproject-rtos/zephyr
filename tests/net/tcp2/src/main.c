@@ -1,4 +1,10 @@
-/* main.c - Application main entry point */
+/* main.c - Application main entry point
+ *
+ * This is a self-contained test for exercising the TCP2 protocol stack. Both
+ * the server and client side run on ths same device using a DUMMY interface
+ * as a loopback of the IP packets.
+ *
+ */
 
 /*
  * Copyright (c) 2020 Intel Corporation
@@ -179,7 +185,7 @@ static struct dummy_api net_tcp_if_api = {
 };
 
 NET_DEVICE_INIT(net_tcp_test, "net_tcp_test",
-		net_tcp_dev_init, device_pm_control_nop,
+		net_tcp_dev_init, NULL,
 		&net_tcp_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_tcp_if_api, DUMMY_L2,
@@ -432,7 +438,7 @@ static void test_presetup(void)
 {
 	struct net_if_addr *ifaddr;
 
-	iface = net_if_get_default();
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
 	if (!iface) {
 		zassert_true(false, "Interface not available");
 	}

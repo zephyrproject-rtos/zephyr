@@ -86,6 +86,13 @@ config NET_STATISTICS_MLD
 	help
 	  Keep track of MLD related statistics
 
+config NET_STATISTICS_IGMP
+	bool "Internet Group Management Protocol (IGMP) statistics"
+	depends on NET_IPV4_IGMP
+	default y
+	help
+	  Keep track of IGMP related statistics
+
 config NET_STATISTICS_PPP
 	bool "Point-to-point (PPP) statistics"
 	depends on NET_PPP

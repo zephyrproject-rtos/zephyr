@@ -1,0 +1,10 @@
+common:
+  tags: net igmp
+  depends_on: netif
+tests:
+  net.igmp:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.igmp.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y

@@ -207,7 +207,7 @@ static struct ipm_adsp_data ipm_adsp_data;
 
 DEVICE_DT_INST_DEFINE(0,
 		    &ipm_adsp_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &ipm_adsp_data, &ipm_adsp_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &ipm_adsp_driver_api);

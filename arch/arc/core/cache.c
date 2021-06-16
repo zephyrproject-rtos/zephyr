@@ -63,7 +63,7 @@ void arch_dcache_enable(void)
 
 static void arch_dcache_flush(void *start_addr_ptr, size_t size)
 {
-	size_t line_size = sys_dcache_line_size_get();
+	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	unsigned int key;
@@ -99,7 +99,7 @@ static void arch_dcache_flush(void *start_addr_ptr, size_t size)
 
 static void arch_dcache_invd(void *start_addr_ptr, size_t size)
 {
-	size_t line_size = sys_dcache_line_size_get();
+	size_t line_size = sys_cache_data_line_size_get();
 	uintptr_t start_addr = (uintptr_t)start_addr_ptr;
 	uintptr_t end_addr;
 	unsigned int key;

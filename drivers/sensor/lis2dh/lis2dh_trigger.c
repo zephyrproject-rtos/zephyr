@@ -21,22 +21,26 @@ LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 static inline void setup_int1(const struct device *dev,
 			      bool enable)
 {
-	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
 
-	gpio_pin_interrupt_configure(lis2dh->gpio_int1,
-				     cfg->irq1_pin,
-				     enable
-				     ? GPIO_INT_EDGE_TO_ACTIVE
-				     : GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
+					enable
+					? GPIO_INT_EDGE_TO_ACTIVE
+					: GPIO_INT_DISABLE);
 }
 
 static int lis2dh_trigger_drdy_set(const struct device *dev,
 				   enum sensor_channel chan,
 				   sensor_trigger_handler_t handler)
 {
+	const struct lis2dh_config *cfg = dev->config;
 	struct lis2dh_data *lis2dh = dev->data;
 	int status;
+
+	if (cfg->gpio_drdy.port == NULL) {
+		LOG_ERR("trigger_set DRDY int not supported");
+		return -ENOTSUP;
+	}
 
 	setup_int1(dev, false);
 
@@ -113,22 +117,26 @@ static int lis2dh_start_trigger_int1(const struct device *dev)
 static inline void setup_int2(const struct device *dev,
 			      bool enable)
 {
-	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
 
-	gpio_pin_interrupt_configure(lis2dh->gpio_int2,
-				     cfg->irq2_pin,
-				     enable
-				     ? GPIO_INT_EDGE_TO_ACTIVE
-				     : GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure_dt(&cfg->gpio_int,
+					enable
+					? GPIO_INT_EDGE_TO_ACTIVE
+					: GPIO_INT_DISABLE);
 }
 
 static int lis2dh_trigger_anym_set(const struct device *dev,
 				   sensor_trigger_handler_t handler)
 {
+	const struct lis2dh_config *cfg = dev->config;
 	struct lis2dh_data *lis2dh = dev->data;
 	int status;
 	uint8_t reg_val;
+
+	if (cfg->gpio_int.port == NULL) {
+		LOG_ERR("trigger_set AnyMotion int not supported");
+		return -ENOTSUP;
+	}
 
 	setup_int2(dev, false);
 
@@ -172,23 +180,10 @@ int lis2dh_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
-	struct lis2dh_data *lis2dh = dev->data;
-
 	if (trig->type == SENSOR_TRIG_DATA_READY &&
 	    trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
-		/* If irq_gpio is not configured in DT just return error */
-		if (!lis2dh->gpio_int1) {
-			LOG_ERR("DRDY (INT1) trigger not supported");
-			return -ENOTSUP;
-		}
-
 		return lis2dh_trigger_drdy_set(dev, trig->chan, handler);
 	} else if (trig->type == SENSOR_TRIG_DELTA) {
-		/* If irq_gpio is not configured in DT just return error */
-		if (!lis2dh->gpio_int2) {
-			LOG_ERR("AnyMotion (INT2) trigger not supported");
-			return -ENOTSUP;
-		}
 		return lis2dh_trigger_anym_set(dev, handler);
 	}
 
@@ -286,9 +281,10 @@ static void lis2dh_gpio_int2_callback(const struct device *dev,
 static void lis2dh_thread_cb(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
+	const struct lis2dh_config *cfg = dev->config;
 	int status;
 
-	if (lis2dh->gpio_int1 &&
+	if (cfg->gpio_drdy.port &&
 			unlikely(atomic_test_and_clear_bit(&lis2dh->trig_flags,
 			START_TRIG_INT1))) {
 		status = lis2dh_start_trigger_int1(dev);
@@ -299,7 +295,7 @@ static void lis2dh_thread_cb(const struct device *dev)
 		return;
 	}
 
-	if (lis2dh->gpio_int2 &&
+	if (cfg->gpio_int.port &&
 			unlikely(atomic_test_and_clear_bit(&lis2dh->trig_flags,
 			START_TRIG_INT2))) {
 		status = lis2dh_start_trigger_int2(dev);
@@ -310,7 +306,7 @@ static void lis2dh_thread_cb(const struct device *dev)
 		return;
 	}
 
-	if (lis2dh->gpio_int1 &&
+	if (cfg->gpio_drdy.port &&
 			atomic_test_and_clear_bit(&lis2dh->trig_flags,
 			TRIGGED_INT1)) {
 		struct sensor_trigger drdy_trigger = {
@@ -325,7 +321,7 @@ static void lis2dh_thread_cb(const struct device *dev)
 		return;
 	}
 
-	if (lis2dh->gpio_int2 &&
+	if (cfg->gpio_int.port &&
 			atomic_test_and_clear_bit(&lis2dh->trig_flags,
 			TRIGGED_INT2)) {
 		struct sensor_trigger anym_trigger = {
@@ -385,11 +381,16 @@ int lis2dh_init_interrupt(const struct device *dev)
 	 */
 
 	/* setup data ready gpio interrupt */
-	lis2dh->gpio_int1 = device_get_binding(cfg->irq1_dev_name);
-	if (lis2dh->gpio_int1 == NULL) {
-		LOG_INF("Cannot get pointer to irq1_dev_name");
+	if (!device_is_ready(cfg->gpio_drdy.port)) {
+		/* API may return false even when ptr is NULL */
+		if (cfg->gpio_drdy.port != NULL) {
+			LOG_ERR("device %s is not ready", cfg->gpio_drdy.port->name);
+			return -ENODEV;
+		}
+
+		LOG_DBG("gpio_drdy not defined in DT");
 		status = 0;
-		goto end;
+		goto check_gpio_int;
 	}
 
 	lis2dh->dev = dev;
@@ -407,56 +408,67 @@ int lis2dh_init_interrupt(const struct device *dev)
 #endif
 
 	/* data ready int1 gpio configuration */
-	status = gpio_pin_configure(lis2dh->gpio_int1, cfg->irq1_pin,
-				    GPIO_INPUT | cfg->irq1_flags);
+	status = gpio_pin_configure_dt(&cfg->gpio_drdy, GPIO_INPUT);
 	if (status < 0) {
-		LOG_ERR("Could not configure gpio %d", cfg->irq1_pin);
+		LOG_ERR("Could not configure %s.%02u",
+			cfg->gpio_drdy.port->name, cfg->gpio_drdy.pin);
 		return status;
 	}
 
 	gpio_init_callback(&lis2dh->gpio_int1_cb,
 			   lis2dh_gpio_int1_callback,
-			   BIT(cfg->irq1_pin));
+			   BIT(cfg->gpio_drdy.pin));
 
-	status = gpio_add_callback(lis2dh->gpio_int1, &lis2dh->gpio_int1_cb);
+	status = gpio_add_callback(cfg->gpio_drdy.port, &lis2dh->gpio_int1_cb);
 	if (status < 0) {
 		LOG_ERR("Could not add gpio int1 callback");
 		return status;
 	}
 
-	LOG_INF("int1 on %s.%02u", cfg->irq1_dev_name, cfg->irq1_pin);
+	LOG_INF("%s: int1 on %s.%02u", dev->name,
+				       cfg->gpio_drdy.port->name,
+				       cfg->gpio_drdy.pin);
 
+check_gpio_int:
 	/*
 	 * Setup INT2 (for Any Motion) if defined in DT
 	 */
+
 	/* setup any motion gpio interrupt */
-	lis2dh->gpio_int2 = device_get_binding(cfg->irq2_dev_name);
-	if (lis2dh->gpio_int2 == NULL) {
-		LOG_INF("Cannot get pointer to irq2_dev_name");
+	if (!device_is_ready(cfg->gpio_int.port)) {
+		/* API may return false even when ptr is NULL */
+		if (cfg->gpio_int.port != NULL) {
+			LOG_ERR("device %s is not ready", cfg->gpio_int.port->name);
+			return -ENODEV;
+		}
+
+		LOG_DBG("gpio_int not defined in DT");
 		status = 0;
 		goto end;
 	}
 
 	/* any motion int2 gpio configuration */
-	status = gpio_pin_configure(lis2dh->gpio_int2, cfg->irq2_pin,
-				    GPIO_INPUT | cfg->irq2_flags);
+	status = gpio_pin_configure_dt(&cfg->gpio_int, GPIO_INPUT);
 	if (status < 0) {
-		LOG_ERR("Could not configure gpio %d", cfg->irq2_pin);
+		LOG_ERR("Could not configure %s.%02u",
+			cfg->gpio_int.port->name, cfg->gpio_int.pin);
 		return status;
 	}
 
 	gpio_init_callback(&lis2dh->gpio_int2_cb,
 			   lis2dh_gpio_int2_callback,
-			   BIT(cfg->irq2_pin));
+			   BIT(cfg->gpio_int.pin));
 
 	/* callback is going to be enabled by trigger setting function */
-	status = gpio_add_callback(lis2dh->gpio_int2, &lis2dh->gpio_int2_cb);
+	status = gpio_add_callback(cfg->gpio_int.port, &lis2dh->gpio_int2_cb);
 	if (status < 0) {
 		LOG_ERR("Could not add gpio int2 callback (%d)", status);
 		return status;
 	}
 
-	LOG_INF("int2 on %s.%02u", cfg->irq2_dev_name, cfg->irq2_pin);
+	LOG_INF("%s: int2 on %s.%02u", dev->name,
+				       cfg->gpio_int.port->name,
+				       cfg->gpio_int.pin);
 
 	/* disable interrupt 2 in case of warm (re)boot */
 	status = lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_INT2_CFG, 0);

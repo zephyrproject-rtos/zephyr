@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(bosch_bmi160);
 #include <sys/byteorder.h>
 #include <bmi160.h>
 #include <device.h>
-#include <emul.h>
+#include <drivers/emul.h>
 #include <drivers/i2c.h>
 #include <drivers/i2c_emul.h>
 #include <drivers/spi.h>

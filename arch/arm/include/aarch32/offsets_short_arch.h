@@ -29,17 +29,24 @@
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
 #define _thread_offset_to_mode \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_mode_OFFSET)
+#endif
+
+#if defined(CONFIG_ARM_STORE_EXC_RETURN)
+#define _thread_offset_to_mode_exc_return \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_mode_exc_return_OFFSET)
+#endif
 
 #ifdef CONFIG_USERSPACE
 #define _thread_offset_to_priv_stack_start \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
-#endif
 #endif
 
 #if defined(CONFIG_THREAD_STACK_INFO)
 #define _thread_offset_to_stack_info_start \
 	(___thread_stack_info_t_start_OFFSET + ___thread_t_stack_info_OFFSET)
 #endif
+
+
 /* end - threads */
 
 #endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_OFFSETS_SHORT_ARCH_H_ */

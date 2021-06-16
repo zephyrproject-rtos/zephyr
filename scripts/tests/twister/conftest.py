@@ -13,6 +13,11 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/twister"))
 from twisterlib import TestSuite, TestInstance
 
+def new_get_toolchain(*args, **kwargs):
+    return 'zephyr'
+
+TestSuite.get_toolchain = new_get_toolchain
+
 @pytest.fixture(name='test_data')
 def _test_data():
     """ Pytest fixture to load the test data directory"""

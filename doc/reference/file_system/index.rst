@@ -61,4 +61,3 @@ API Reference
 *************
 
 .. doxygengroup:: file_system_api
-   :project: Zephyr

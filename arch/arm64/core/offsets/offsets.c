@@ -30,16 +30,15 @@
 #include <kernel_arch_data.h>
 #include <kernel_offsets.h>
 
-#ifdef CONFIG_USERSPACE
-GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
-#endif
+GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
 
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x19, x19_x20);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x21, x21_x22);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x23, x23_x24);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x25, x25_x26);
 GEN_NAMED_OFFSET_SYM(_callee_saved_t, x27, x27_x28);
-GEN_NAMED_OFFSET_SYM(_callee_saved_t, x29, x29_sp);
+GEN_NAMED_OFFSET_SYM(_callee_saved_t, x29, x29_sp_el0);
+GEN_NAMED_OFFSET_SYM(_callee_saved_t, sp_elx, sp_elx);
 
 GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
 

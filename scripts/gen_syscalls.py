@@ -86,6 +86,7 @@ syscall_template = """
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
 
 #ifdef __cplusplus
@@ -192,6 +193,12 @@ def wrapper_defs(func_name, func_type, args):
     invoke = ("arch_syscall_invoke%d(%s)"
               % (len(mrsh_args),
                  ", ".join(mrsh_args + [syscall_id])))
+
+    # Coverity does not understand syscall mechanism
+    # and will already complain when any function argument
+    # is not of exact size as uintptr_t. So tell Coverity
+    # to ignore this particular rule here.
+    wrap += "\t\t/* coverity[OVERRUN] */\n"
 
     if ret64:
         wrap += "\t\t" + "(void)%s;\n" % invoke

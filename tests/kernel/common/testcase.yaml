@@ -1,31 +1,29 @@
+common:
+  tags: kernel userspace
+  min_flash: 33
 tests:
   kernel.common:
-    tags: kernel userspace
     build_on_all: true
-    min_flash: 33
   kernel.common.tls:
-    tags: kernel userspace
-    min_flash: 33
     filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
     extra_configs:
       - CONFIG_THREAD_LOCAL_STORAGE=y
   kernel.common.misra:
-    tags: kernel userspace
-    min_flash: 33
     # Some configurations are known-incompliant and won't build
     filter: not ((CONFIG_I2C or CONFIG_SPI) and CONFIG_USERSPACE)
+    integration_platforms:
+      - native_posix
     extra_configs:
       - CONFIG_MISRA_SANE=y
   kernel.common.nano32:
     tags: kernel userspace
-    min_flash: 33
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y
       - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
+    platform_exclude: qemu_arc_hs6x
   kernel.common.nano64:
     tags: kernel userspace
-    min_flash: 33
     filter: not CONFIG_KERNEL_COHERENCE
     extra_configs:
       - CONFIG_CBPRINTF_NANO=y

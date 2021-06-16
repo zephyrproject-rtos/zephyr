@@ -100,7 +100,11 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 
 	lll = &scan->lll;
 
+	/* NOTE: Pass invalid interval value to not start scanning using this
+	 *       scan instance.
+	 */
 	if (!interval) {
+		/* Set PHY to 0 to not start scanning on this instance */
 		lll->phy = 0U;
 
 		return 0;
@@ -354,9 +358,10 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	uint32_t ticks_anchor;
 	uint32_t ret;
 
-	lll->chan = 0;
 	lll->init_addr_type = scan->own_addr_type;
 	ll_addr_get(lll->init_addr_type, lll->init_addr);
+	lll->chan = 0U;
+	lll->is_stop = 0U;
 
 	ull_hdr_init(&scan->ull);
 	lll_hdr_init(lll, scan);

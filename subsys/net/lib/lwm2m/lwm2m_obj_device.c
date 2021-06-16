@@ -185,6 +185,11 @@ int lwm2m_device_add_err(uint8_t error_code)
 		if (error_code_ri[i].res_inst_id == RES_INSTANCE_NOT_CREATED) {
 			break;
 		}
+
+		/* No duplicate error codes allowed */
+		if (*(uint8_t *)error_code_ri[i].data_ptr == error_code) {
+			return 0;
+		}
 	}
 
 	if (i >= DEVICE_ERROR_CODE_MAX) {

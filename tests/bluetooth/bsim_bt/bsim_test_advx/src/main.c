@@ -93,8 +93,12 @@ static uint8_t per_adv_data2[] = {
 		8, BT_DATA_NAME_COMPLETE, 'Z', 'e', 'p', 'h', 'y', 'r', '1',
 	};
 
-static struct bt_conn *default_conn;
+static uint8_t per_adv_data3[] = {
+		0xFF, 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF,
+	};
+
 static bool volatile is_connected, is_disconnected;
+static bool volatile connection_to_test;
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
@@ -102,13 +106,9 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 	printk("Connected.\n");
 
-	if (!default_conn) {
-		default_conn = conn;
-	}
-
 	is_connected = true;
 
-	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		printk("Disconnection failed (err %d).\n", err);
 	}
@@ -117,9 +117,6 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected.\n");
-
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
 
 	is_disconnected = true;
 }
@@ -195,11 +192,13 @@ static void test_advx_main(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Stop advertising...");
 	err = bt_le_adv_stop();
@@ -207,6 +206,46 @@ static void test_advx_main(void)
 		goto exit;
 	}
 	printk("success.\n");
+
+	k_sleep(K_MSEC(100));
+
+	is_connected = false;
+	is_disconnected = false;
+
+	printk("Create connectable extended advertising set...");
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN_NAME, &adv_callbacks, &adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Start advertising...");
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for connection...");
+	while (!is_connected) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Waiting for disconnect...");
+	while (!is_disconnected) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Removing connectable adv aux set...");
+	err = bt_le_ext_adv_delete(adv);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(1000));
 
 	printk("Starting non-connectable advertising...");
 	err = bt_le_adv_start(BT_LE_ADV_NCONN, ad, ARRAY_SIZE(ad), NULL, 0);
@@ -226,7 +265,7 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
-	printk("Create advertising set...");
+	printk("Create connectable advertising set...");
 	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_NAME, &adv_callbacks, &adv);
 	if (err) {
 		goto exit;
@@ -446,6 +485,26 @@ static void test_advx_main(void)
 	k_sleep(K_MSEC(400));
 
 	printk("Update periodic advertising data 2...");
+	err = ll_adv_sync_ad_data_set(handle, AD_OP, sizeof(per_adv_data2),
+				      (void *)per_adv_data2);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Update periodic advertising data 3...");
+	err = ll_adv_sync_ad_data_set(handle, AD_OP, sizeof(per_adv_data3),
+				      (void *)per_adv_data3);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Update periodic advertising back to data 2...");
 	err = ll_adv_sync_ad_data_set(handle, AD_OP, sizeof(per_adv_data2),
 				      (void *)per_adv_data2);
 	if (err) {
@@ -743,12 +802,12 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 {
 	printk("%s: type = 0x%x.\n", __func__, adv_type);
 
-	static bool connection_tested;
+	struct bt_conn *conn;
 
-	if (!connection_tested) {
+	if (connection_to_test) {
 		int err;
 
-		connection_tested = true;
+		connection_to_test = false;
 
 		err = bt_le_scan_stop();
 		if (err) {
@@ -758,9 +817,11 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 
 		err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
 					BT_LE_CONN_PARAM_DEFAULT,
-					(void *)&default_conn);
+					&conn);
 		if (err) {
 			printk("Create conn failed (err %d)\n", err);
+		} else {
+			bt_conn_unref(conn);
 		}
 	}
 }
@@ -947,6 +1008,8 @@ static void test_scanx_main(void)
 	bt_le_per_adv_sync_cb_register(&sync_cb);
 	printk("Success.\n");
 
+	connection_to_test = true;
+
 	printk("Start scanning...");
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
@@ -958,11 +1021,36 @@ static void test_scanx_main(void)
 	while (!is_connected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
 
 	printk("Waiting for disconnect...");
 	while (!is_disconnected) {
 		k_sleep(K_MSEC(100));
 	}
+	printk("success.\n");
+
+	is_connected = false;
+	is_disconnected = false;
+	connection_to_test = true;
+
+	printk("Start scanning...");
+	err = bt_le_scan_start(&scan_param, scan_cb);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting for connection...");
+	while (!is_connected) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
+
+	printk("Waiting for disconnect...");
+	while (!is_disconnected) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("success.\n");
 
 	printk("Start scanning for a duration...");
 	is_scan_timeout = false;
@@ -1003,7 +1091,7 @@ static void test_scanx_main(void)
 
 	scan_param.timeout = 0;
 
-	printk("Start scanning...");
+	printk("Start scanning for Periodic Advertisements...");
 	is_periodic = false;
 	per_adv_evt_cnt_actual = 0;
 	per_adv_evt_cnt_expected = 3;
@@ -1197,6 +1285,34 @@ static void test_scanx_main(void)
 		FAIL("Incorrect Periodic Advertising Report data.");
 	}
 
+	printk("Waiting for Periodic Advertising Report of %u bytes...",
+	       sizeof(per_adv_data3));
+	sync_report_len_prev = sync_report_len;
+	while (!is_sync_report || (sync_report_len == sync_report_len_prev)) {
+		is_sync_report = false;
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if ((sync_report_len != sizeof(per_adv_data3)) ||
+	    memcmp(sync_report_data, per_adv_data3, sizeof(per_adv_data3))) {
+		FAIL("Incorrect Periodic Advertising Report data.");
+	}
+
+	printk("Waiting for Periodic Advertising Report of %u bytes...",
+	       sizeof(per_adv_data1));
+	sync_report_len_prev = sync_report_len;
+	while (!is_sync_report || (sync_report_len == sync_report_len_prev)) {
+		is_sync_report = false;
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if ((sync_report_len != sizeof(per_adv_data2)) ||
+	    memcmp(sync_report_data, per_adv_data2, sizeof(per_adv_data2))) {
+		FAIL("Incorrect Periodic Advertising Report data.");
+	}
+
 	printk("Waiting for sync loss...");
 	while (!is_sync_lost) {
 		k_sleep(K_MSEC(100));
@@ -1256,7 +1372,7 @@ exit:
 
 static void test_advx_init(void)
 {
-	bst_ticker_set_next_tick_absolute(20e6);
+	bst_ticker_set_next_tick_absolute(30e6);
 	bst_result = In_progress;
 }
 

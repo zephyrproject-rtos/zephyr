@@ -12,14 +12,20 @@
 
 void test_main(void)
 {
-	const struct device *dev_i2s;
+	const struct device *dev_i2s_rx;
+	const struct device *dev_i2s_tx;
 
 	k_thread_access_grant(k_current_get(),
 			      &rx_0_mem_slab, &tx_0_mem_slab,
 			      &rx_1_mem_slab, &tx_1_mem_slab);
-	dev_i2s = device_get_binding(I2S_DEV_NAME);
-	if (dev_i2s != NULL) {
-		k_object_access_grant(dev_i2s, k_current_get());
+	dev_i2s_rx = device_get_binding(I2S_DEV_NAME_RX);
+	if (dev_i2s_rx != NULL) {
+		k_object_access_grant(dev_i2s_rx, k_current_get());
+	}
+
+	dev_i2s_tx = device_get_binding(I2S_DEV_NAME_TX);
+	if (dev_i2s_tx != NULL) {
+		k_object_access_grant(dev_i2s_tx, k_current_get());
 	}
 
 	ztest_test_suite(i2s_loopback_test,

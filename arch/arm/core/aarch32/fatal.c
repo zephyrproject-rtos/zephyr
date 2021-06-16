@@ -24,7 +24,7 @@ static void esf_dump(const z_arch_esf_t *esf)
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
 	LOG_ERR(" xpsr:  0x%08x", esf->basic.xpsr);
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	for (int i = 0; i < 16; i += 4) {
+	for (int i = 0; i < ARRAY_SIZE(esf->s); i += 4) {
 		LOG_ERR("s[%2d]:  0x%08x  s[%2d]:  0x%08x"
 			"  s[%2d]:  0x%08x  s[%2d]:  0x%08x",
 			i, (uint32_t)esf->s[i],

@@ -20,9 +20,4 @@
 #define ite_read(reg, reg_size) \
 			(*((volatile unsigned char *)(reg)))
 
-/* PINMUX config */
-#define IT8XXX2_PINMUX_IOF0		0x00
-#define IT8XXX2_PINMUX_IOF1		0x01
-#define IT8XXX2_PINMUX_PINS		128
-
 #endif /* __RISCV_ITE_SOC_H_ */

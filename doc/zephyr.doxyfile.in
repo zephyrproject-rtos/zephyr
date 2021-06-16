@@ -51,7 +51,7 @@ PROJECT_BRIEF          = "A Scalable Open Source RTOS for IoT Embedded Devices"
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will copy
 # the logo to the output directory.
 
-PROJECT_LOGO           = "images/Zephyr-Kite-small.png"
+PROJECT_LOGO           = @ZEPHYR_BASE@/doc/images/Zephyr-Kite-small.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) path
 # into which the generated documentation will be written. If a relative path is
@@ -202,7 +202,7 @@ INHERIT_DOCS           = YES
 # of the file/class/namespace that contains it.
 # The default value is: NO.
 
-SEPARATE_MEMBER_PAGES  = YES
+SEPARATE_MEMBER_PAGES  = NO
 
 # The TAB_SIZE tag can be used to set the number of spaces in a tab. Doxygen
 # uses this value to replace tabs by spaces in code fragments.
@@ -227,6 +227,15 @@ ALIASES += option{1}="\verbatim embed:rst:inline :option:`\1` \endverbatim"
 ALIASES += req{1}="\ref ZEPH_\1 \"ZEPH-\1\" "
 ALIASES += satisfy{1}="\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1"
 ALIASES += verify{1}="\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1"
+
+ALIASES += "funcprops=\par \"Function properties (list may not be complete)\""
+ALIASES += "reschedule=\htmlonly reschedule \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_reschedule`</verbatim> \endxmlonly"
+ALIASES += "sleep=\htmlonly sleep \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_sleep`</verbatim> \endxmlonly"
+ALIASES += "no_wait=\htmlonly no-wait \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_no-wait`</verbatim> \endxmlonly"
+ALIASES += "isr_ok=\htmlonly isr-ok \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_isr-ok`</verbatim> \endxmlonly"
+ALIASES += "pre_kernel_ok=\htmlonly pre-kernel-ok \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_pre-kernel-ok`</verbatim> \endxmlonly"
+ALIASES += "async=\htmlonly async \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_async`</verbatim> \endxmlonly"
+ALIASES += "supervisor=\htmlonly supervisor \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_supervisor`</verbatim> \endxmlonly"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
@@ -717,6 +726,12 @@ WARN_IF_DOC_ERROR      = YES
 
 WARN_NO_PARAMDOC       = NO
 
+# If the WARN_AS_ERROR tag is set to YES then doxygen will immediately stop when
+# a warning is encountered.
+# The default value is: NO.
+
+WARN_AS_ERROR          = YES
+
 # The WARN_FORMAT tag determines the format of the warning messages that doxygen
 # can produce. The string should contain the $file, $line, and $text tags, which
 # will be replaced by the file and line number from which the warning originated
@@ -745,7 +760,7 @@ WARN_LOGFILE           =
 
 # This MUST be kept in sync with DOXY_SOURCES in doc/CMakeLists.txt
 # for incremental (and faster) builds to work correctly.
-INPUT                  = custom-doxygen/mainpage.md \
+INPUT                  = @ZEPHYR_BASE@/doc/custom-doxygen/mainpage.md \
 			 @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
@@ -795,8 +810,8 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = @ZEPHYR_BASE@/include/cmsis_rtos_v1/cmsis_os.h \
-                         @ZEPHYR_BASE@/include/cmsis_rtos_v2/cmsis_os2.h \
+EXCLUDE                = @ZEPHYR_BASE@/include/portability/cmsis_os.h \
+                         @ZEPHYR_BASE@/include/portability/cmsis_os2.h \
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
@@ -1006,13 +1021,6 @@ VERBATIM_HEADERS       = YES
 
 ALPHABETICAL_INDEX     = YES
 
-# The COLS_IN_ALPHA_INDEX tag can be used to specify the number of columns in
-# which the alphabetical index list will be split.
-# Minimum value: 1, maximum value: 20, default value: 5.
-# This tag requires that the tag ALPHABETICAL_INDEX is set to YES.
-
-COLS_IN_ALPHA_INDEX    = 2
-
 # In case all classes in a project start with a common prefix, all classes will
 # be put under the same header in the alphabetical index. The IGNORE_PREFIX tag
 # can be used to specify a prefix (or a list of prefixes) that should be ignored
@@ -1063,7 +1071,7 @@ HTML_FILE_EXTENSION    = .html
 # of the possible markers and block names see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_HEADER            = custom-doxygen/header.html
+HTML_HEADER            = @ZEPHYR_BASE@/doc/custom-doxygen/header.html
 
 # The HTML_FOOTER tag can be used to specify a user-defined HTML footer for each
 # generated HTML page. If the tag is left blank doxygen will generate a standard
@@ -1098,7 +1106,7 @@ HTML_STYLESHEET        =
 # list). For an example see the documentation.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-HTML_EXTRA_STYLESHEET  = custom-doxygen/customdoxygen.css
+HTML_EXTRA_STYLESHEET  = @ZEPHYR_BASE@/doc/custom-doxygen/customdoxygen.css
 
 # The HTML_EXTRA_FILES tag can be used to specify one or more extra images or
 # other source files which should be copied to the HTML output directory. Note
@@ -1980,7 +1988,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_NET_UDP" \
                          "CONFIG_PM" \
                          "CONFIG_PM_DEVICE" \
-                         "CONFIG_PM_DEVICE_IDLE" \
+                         "CONFIG_PM_DEVICE_RUNTIME" \
                          "CONFIG_PWM_CAPTURE" \
                          "CONFIG_SCHED_CPU_MASK" \
                          "CONFIG_SCHED_DEADLINE" \
@@ -2000,7 +2008,6 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_USE_SWITCH" \
                          "NET_MGMT_DEFINE_REQUEST_HANDLER(x)=" \
                          "DEVICE_DEFINE()=" \
-                         "BUILD_ASSERT_MSG()=" \
                          "BUILD_ASSERT()=" \
                          "__deprecated=" \
                          "__packed=" \

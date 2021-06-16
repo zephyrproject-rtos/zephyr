@@ -37,3 +37,7 @@ properties:
       description: |
         Delay in nanoseconds from the chip select deassert to the next chip
         select assert. If not set, the minimum supported delay is used.
+
+    pinctrl-0:
+      type: phandles
+      required: true

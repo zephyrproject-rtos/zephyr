@@ -63,6 +63,8 @@ The current Zephyr stm32h747i_disco board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | flash memory                        |
++-----------+------------+-------------------------------------+
 | ETHERNET  | on-chip    | ethernet  (*)                       |
 +-----------+------------+-------------------------------------+
 | RNG       | on-chip    | True Random number generator        |

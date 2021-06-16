@@ -219,7 +219,12 @@ static void start_threads(void)
 		k_thread_create(&threads[i], &stacks[i][0], STACK_SIZE,
 				philosopher, INT_TO_POINTER(i), NULL, NULL,
 				prio, K_USER, K_FOREVER);
+#ifdef CONFIG_THREAD_NAME
+		char tname[CONFIG_THREAD_MAX_NAME_LEN];
 
+		snprintk(tname, CONFIG_THREAD_MAX_NAME_LEN, "Philosopher %d", i);
+		k_thread_name_set(&threads[i], tname);
+#endif /* CONFIG_THREAD_NAME */
 		k_object_access_grant(fork(i), &threads[i]);
 		k_object_access_grant(fork((i + 1) % NUM_PHIL), &threads[i]);
 

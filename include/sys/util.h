@@ -31,7 +31,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup sys-util Zephyr utilities
+ * @defgroup sys-util Utility Functions
  * @{
  */
 

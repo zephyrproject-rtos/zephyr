@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			label = "TEST_GPIO_1";
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			label = "TEST_I2C_CTLR";
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_sx1509b: sx1509b@0 {
+				compatible = "semtech,sx1509b";
+				label = "SX1509B";
+				reg = <0x0>;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				gpio-controller;
+			};
+
+			test_i2c_pcal6408a: pcal6408a@1 {
+				compatible = "nxp,pcal6408a";
+				label = "PCAL6408A";
+				reg = <0x1>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pca95xx: pca95xx@2 {
+				compatible = "nxp,pca95xx";
+				label = "PCA95XX";
+				reg = <0x2>;
+				/* has-pud; */
+				#gpio-cells = <2>;
+				gpio-controller;
+			};
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			label = "TEST_SPI_CTLR";
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices at spi.dtsi */
+			cs-gpios = <&test_gpio 0 0>;
+
+			test_spi_mcp23s17: mcp23s17@0 {
+				compatible = "microchip,mcp23s17";
+				label = "GPIO_E0";
+				spi-max-frequency = <0>;
+				reg = <0x0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+			};
+		};
+	};
+};

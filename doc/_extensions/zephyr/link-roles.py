@@ -24,7 +24,7 @@ def get_github_rev():
     if tag:
         return tag.decode("utf-8")
     else:
-        return 'master'
+        return 'main'
 
 
 def setup(app):

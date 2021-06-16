@@ -19,7 +19,7 @@ Licensing is very important to open source projects. It helps ensure the
 software continues to be available under the terms that the author desired.
 
 .. _Apache 2.0 license:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE
+   https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 
 .. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
 
@@ -168,7 +168,7 @@ on https://github.com and have Git tools available on your development system.
    are only available on Linux and macOS. On Windows, instead of running these
    tools yourself, you will need to rely on the Continuous Integration (CI)
    service ``buildkite``, which runs automatically on GitHub when you submit
-   your Pull Request (PR).  You can see any failure results in the Shippable
+   your Pull Request (PR).  You can see any failure results in the Buildkite
    details link near the end of the PR conversation list. See
    `Continuous Integration`_ for more information
 
@@ -213,55 +213,9 @@ Issues`_ in Github issues.
 
  .. _Continuous Integration:
 
-Continuous Integration (CI)
-***************************
 
-The Zephyr Project operates a Continuous Integration (CI) system that runs on
-every Pull Request (PR) in order to verify several aspects of the PR:
-
-* Git commit formatting
-* Coding Style
-* Twister builds for multiple architectures and boards
-* Documentation build to verify any doc changes
-
-CI is run both on the ``buildkite`` cloud service and Github Actions and it uses
-the same tools described in the `Contribution Tools`_ section.
-The CI results must be green indicating "All checks have passed" before
-the Pull Request can be merged.  CI is run when the PR is created, and
-again every time the PR is modified with a commit.
-
-The current status of the CI run can always be found at the bottom of the
-GitHub PR page, below the review status. Depending on the success or failure
-of the run you will see:
-
-* "All checks have passed"
-* "All checks have failed"
-
-In case of failure you can click on the "Details" link presented below the
-failure message in order to navigate to ``buildkite`` or ``Github Actions``
-and inspect the results.
-Once you click on the link you will be taken to the ``buildkite`` summary
-results page where a table with all the different builds will be shown. To see
-what build or test failed click on the row that contains the failed (i.e.
-non-green) build and then click on the "Tests" tab to see the console output
-messages indicating the failure.
-
-The `builds@lists.zephyrproject.org mailing list
-<https://lists.zephyrproject.org/g/builds>`_
-archives the CI (buildkite) nightly build results.
-
-Coding Guidelines
-*****************
-
-Beyond the :ref:`coding_style` that Zephyr enforces for all code that is
-submitted for inclusion, the project targets compliance with a series of
-coding guidelines. Refer to the :ref:`coding_guidelines` section of the
-documentation for additional details.
-
- .. _Contribution Tools:
-
-Contribution Tools and Git Setup
-********************************
+Tools and Git Setup
+*******************
 
 Signed-off-by
 =============
@@ -412,6 +366,22 @@ issues, you can add option --no-verify to the git push command.
 A more complete alternative to this is using check_compliance.py script from
 ci-tools repo.
 
+Other Guidelines
+****************
+
+Beyond the :ref:`coding_style` that Zephyr enforces for all code that is
+submitted for inclusion, the project targets compliance with a series of
+coding guidelines. Refer to the :ref:`coding_guidelines` section of the
+documentation for additional details.
+
+.. toctree::
+   :maxdepth: 1
+
+   coding_guidelines/index.rst
+   documentation/index.rst
+
+.. _Contribution Tools:
+
 .. _Contribution workflow:
 
 Contribution Workflow
@@ -463,14 +433,14 @@ workflow here:
      upstream https://github.com/zephyrproject-rtos/zephyr (fetch)
      upstream https://github.com/zephyrproject-rtos/zephyr (push)
 
-#. Create a topic branch (off of master) for your work (if you're addressing
+#. Create a topic branch (off of main) for your work (if you're addressing
    an issue, we suggest including the issue number in the branch name)::
 
-     git checkout master
+     git checkout main
      git checkout -b fix_comment_typo
 
    Some Zephyr subsystems do development work on a separate branch from
-   master so you may need to indicate this in your checkout::
+   main so you may need to indicate this in your checkout::
 
      git checkout -b fix_out_of_date_patch origin/net
 
@@ -512,9 +482,9 @@ workflow here:
    pull request for the appropriate branch. The title and message from your
    commit message should appear as well.
 
-#. If you're working on a subsystem branch that's not ``master``,
+#. If you're working on a subsystem branch that's not ``main``,
    you may need to change the intended branch for the pull request
-   here, for example, by changing the base branch from ``master`` to ``net``.
+   here, for example, by changing the base branch from ``main`` to ``net``.
 
 #. GitHub will assign one or more suggested reviewers (based on the
    CODEOWNERS file in the repo). If you are a project member, you can
@@ -526,9 +496,9 @@ workflow here:
 
 #. While you're waiting for your pull request to be accepted and merged, you
    can create another branch to work on another issue. (Be sure to make your
-   new branch off of master and not the previous branch.)::
+   new branch off of main and not the previous branch.)::
 
-     git checkout master
+     git checkout main
      git checkout -b fix_another_issue
 
    and use the same process described above to work on this new topic branch.
@@ -537,7 +507,7 @@ workflow here:
    commit(s) to fix review issues.  In your development repo::
 
      git fetch --all
-     git rebase --ignore-whitespace upstream/master
+     git rebase --ignore-whitespace upstream/main
 
    The ``--ignore-whitespace`` option stops ``git apply`` (called by rebase)
    from changing any whitespace. Continuing::
@@ -576,12 +546,6 @@ workflow here:
    Additional information about the CI system can be found in
    `Continuous Integration`_.
 
-Contributions to External Modules
-**********************************
-
-Follow the guidelines in the :ref:`modules` section for contributing
-:ref:`new modules <submitting_new_modules>` and
-submitting changes to :ref:`existing modules <changes_to_existing_module>`.
 
 Commit Guidelines
 *****************
@@ -627,7 +591,7 @@ The description body of the commit message must include:
 * **how** you know it works -- for example, which tests you ran.
 
 For examples of accepted commit messages, you can refer to the Zephyr GitHub
-`changelog <https://github.com/zephyrproject-rtos/zephyr/commits/master>`__.
+`changelog <https://github.com/zephyrproject-rtos/zephyr/commits/main>`__.
 
 Other Commit Expectations
 =========================
@@ -650,6 +614,7 @@ Other Commit Expectations
   added to the automated test suite. All new APIs MUST be documented and tested
   and tests MUST cover at least 80% of the added functionality using the code
   coverage tool and reporting provided by the project.
+
 
 Submitting Proposals
 ====================
@@ -683,7 +648,7 @@ cases where the file is an original to Zephyr, the commit message should
 include the following ("Original" is the assumption if no Origin tag is
 present)::
 
-    Origin: Original
+      Origin: Original
 
 In cases where the file is :ref:`imported from an external project
 <external-contributions>`, the commit message shall contain details regarding
@@ -692,19 +657,64 @@ commit for the file and the intended purpose.
 
 For example, a copy of a locally maintained import::
 
-    Origin: Contiki OS
-    License: BSD 3-Clause
-    URL: http://www.contiki-os.org/
-    commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
-    Purpose: Introduction of networking stack.
+      Origin: Contiki OS
+      License: BSD 3-Clause
+      URL: http://www.contiki-os.org/
+      commit: 853207acfdc6549b10eb3e44504b1a75ae1ad63a
+      Purpose: Introduction of networking stack.
 
 For example, a copy of an externally maintained import in a module repository::
 
-    Origin: Tiny Crypt
-    License: BSD 3-Clause
-    URL: https://github.com/01org/tinycrypt
-    commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
-    Purpose: Introduction of TinyCrypt
+      Origin: Tiny Crypt
+      License: BSD 3-Clause
+      URL: https://github.com/01org/tinycrypt
+      commit: 08ded7f21529c39e5133688ffb93a9d0c94e5c6e
+      Purpose: Introduction of TinyCrypt
+
+
+Continuous Integration (CI)
+***************************
+
+The Zephyr Project operates a Continuous Integration (CI) system that runs on
+every Pull Request (PR) in order to verify several aspects of the PR:
+
+* Git commit formatting
+* Coding Style
+* Twister builds for multiple architectures and boards
+* Documentation build to verify any doc changes
+
+CI is run both on the ``buildkite`` cloud service and Github Actions and it uses
+the same tools described in the `Contribution Tools`_ section.
+The CI results must be green indicating "All checks have passed" before
+the Pull Request can be merged.  CI is run when the PR is created, and
+again every time the PR is modified with a commit.
+
+The current status of the CI run can always be found at the bottom of the
+GitHub PR page, below the review status. Depending on the success or failure
+of the run you will see:
+
+* "All checks have passed"
+* "All checks have failed"
+
+In case of failure you can click on the "Details" link presented below the
+failure message in order to navigate to ``buildkite`` or ``Github Actions``
+and inspect the results.
+Once you click on the link you will be taken to the ``buildkite`` summary
+results page where a table with all the different builds will be shown. To see
+what build or test failed click on the row that contains the failed (i.e.
+non-green) build and then click on the "Tests" tab to see the console output
+messages indicating the failure.
+
+The `builds@lists.zephyrproject.org mailing list
+<https://lists.zephyrproject.org/g/builds>`_
+archives the CI (buildkite) nightly build results.
+
+Contributions to External Modules
+**********************************
+
+Follow the guidelines in the :ref:`modules` section for contributing
+:ref:`new modules <submitting_new_modules>` and
+submitting changes to :ref:`existing modules <changes_to_existing_module>`.
 
 Contributing External Components
 ********************************
@@ -713,30 +723,3 @@ Contributing External Components
    :maxdepth: 1
 
    external.rst
-
-Contribution Roles and Responsibilities
-***************************************
-
-.. toctree::
-   :maxdepth: 1
-
-   modifying_contributions.rst
-   project_roles.rst
-
-The Zephyr project defines a development process workflow using GitHub
-**Issues** to track feature, enhancement, and bug reports together with GitHub
-**Pull Requests** (PRs) for submitting and reviewing changes.  Zephyr
-community members work together to review these Issues and PRs, managing
-feature enhancements and quality improvements of Zephyr through its regular
-releases, as outlined in the
-`program management overview <https://wiki.zephyrproject.org/Program-Management>`_.
-
-We can only manage the volume of Issues and PRs, by requiring timely reviews,
-feedback, and responses from the community and contributors, both for initial
-submissions and for followup questions and clarifications.  Read about the
-project's :ref:`development processes and tools <dev-environment-and-tools>`
-and specifics about :ref:`review timelines <review_time>` to learn about the
-project's goals and guidelines for our active developer community.
-
-:ref:`project_roles` describes in detail the Zephyr project roles and associated permissions
-with respect to the development process workflow.

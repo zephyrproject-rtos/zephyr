@@ -37,7 +37,7 @@ void do_main(const struct device *dev)
 
 const struct device *sensor_search()
 {
-	static const char *const magn_sensor[] = { "bmm150", NULL };
+	static const char *const magn_sensor[] = { "BMM150", NULL };
 	const struct device *dev;
 	int i;
 

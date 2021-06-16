@@ -474,6 +474,11 @@ SECTIONS
     *(.cached .cached.*)
   } >ram :ram_phdr
 
+  .tm_clone_table SEGSTART_UNCACHED :
+  {
+    *(.tm_clone_table)
+  } >ram :ram_phdr
+
   . = ALIGN(4096);
 
   .bss SEGSTART_UNCACHED (NOLOAD) :

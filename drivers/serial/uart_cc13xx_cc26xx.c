@@ -9,7 +9,8 @@
 #include <device.h>
 #include <errno.h>
 #include <sys/__assert.h>
-#include <power/power.h>
+#include <pm/device.h>
+#include <pm/pm.h>
 #include <drivers/uart.h>
 
 #include <driverlib/ioc.h>
@@ -186,12 +187,14 @@ static int uart_cc13xx_cc26xx_configure(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_cc13xx_cc26xx_config_get(const struct device *dev,
 					 struct uart_config *cfg)
 {
 	*cfg = get_dev_data(dev)->uart_config;
 	return 0;
 }
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
@@ -402,7 +405,7 @@ static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 {
 	int ret = 0;
 
-	if ((new_state == DEVICE_PM_ACTIVE_STATE) &&
+	if ((new_state == PM_DEVICE_STATE_ACTIVE) &&
 		(new_state != get_dev_data(dev)->pm_state)) {
 		if (get_dev_conf(dev)->regs ==
 			DT_INST_REG_ADDR(0)) {
@@ -417,11 +420,11 @@ static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 			get_dev_data(dev)->pm_state = new_state;
 		}
 	} else {
-		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
-			new_state == DEVICE_PM_SUSPEND_STATE ||
-			new_state == DEVICE_PM_OFF_STATE);
+		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
+			new_state == PM_DEVICE_STATE_SUSPEND ||
+			new_state == PM_DEVICE_STATE_OFF);
 
-		if (get_dev_data(dev)->pm_state == DEVICE_PM_ACTIVE_STATE) {
+		if (get_dev_data(dev)->pm_state == PM_DEVICE_STATE_ACTIVE) {
 			UARTDisable(get_dev_conf(dev)->regs);
 			/*
 			 * Release power dependency - i.e. potentially power
@@ -444,25 +447,25 @@ static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 
 static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
 					 uint32_t ctrl_command,
-					 void *context, device_pm_cb cb,
+					 uint32_t *state, pm_device_cb cb,
 					 void *arg)
 {
 	int ret = 0;
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		uint32_t new_state = *((const uint32_t *)context);
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
+		uint32_t new_state = *state;
 
 		if (new_state != get_dev_data(dev)->pm_state) {
 			ret = uart_cc13xx_cc26xx_set_power_state(dev,
 				new_state);
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((uint32_t *)context) = get_dev_data(dev)->pm_state;
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
+		*state = get_dev_data(dev)->pm_state;
 	}
 
 	if (cb) {
-		cb(dev, ret, context, arg);
+		cb(dev, ret, state, arg);
 	}
 
 	return ret;
@@ -473,8 +476,10 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 	.poll_in = uart_cc13xx_cc26xx_poll_in,
 	.poll_out = uart_cc13xx_cc26xx_poll_out,
 	.err_check = uart_cc13xx_cc26xx_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure = uart_cc13xx_cc26xx_configure,
 	.config_get = uart_cc13xx_cc26xx_config_get,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_cc13xx_cc26xx_fifo_fill,
 	.fifo_read = uart_cc13xx_cc26xx_fifo_read,
@@ -581,7 +586,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 
 #define UART_CC13XX_CC26XX_INIT_PM_STATE				\
 	do {								\
-		get_dev_data(dev)->pm_state = DEVICE_PM_ACTIVE_STATE;	\
+		get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;	\
 	} while (0)
 #else
 #define UART_CC13XX_CC26XX_INIT_PM_STATE

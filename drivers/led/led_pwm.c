@@ -120,7 +120,7 @@ static int led_pwm_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 	struct led_pwm_data *data = DEV_DATA(dev);
 
-	data->pm_state = DEVICE_PM_ACTIVE_STATE;
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	return 0;
@@ -160,7 +160,7 @@ static int led_pwm_pm_set_state(const struct device *dev, uint32_t new_state)
 		const struct led_pwm *led_pwm = &config->led[i];
 
 		LOG_DBG("Switching PWM %p to state %" PRIu32, led_pwm->dev, new_state);
-		int err = device_set_power_state(led_pwm->dev, new_state, NULL, NULL);
+		int err = pm_device_state_set(led_pwm->dev, new_state, NULL, NULL);
 
 		if (err) {
 			LOG_ERR("Cannot switch PWM %p power state", led_pwm->dev);
@@ -176,17 +176,17 @@ static int led_pwm_pm_set_state(const struct device *dev, uint32_t new_state)
 }
 
 static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
-			      void *context, device_pm_cb cb, void *arg)
+			      uint32_t *state, pm_device_cb cb, void *arg)
 {
 	int err;
 
 	switch (ctrl_command) {
-	case DEVICE_PM_GET_POWER_STATE:
-		err = led_pwm_pm_get_state(dev, context);
+	case PM_DEVICE_STATE_GET:
+		err = led_pwm_pm_get_state(dev, state);
 		break;
 
-	case DEVICE_PM_SET_POWER_STATE:
-		err = led_pwm_pm_set_state(dev, *((uint32_t *)context));
+	case PM_DEVICE_STATE_SET:
+		err = led_pwm_pm_set_state(dev, *state);
 		break;
 
 	default:
@@ -195,7 +195,7 @@ static int led_pwm_pm_control(const struct device *dev, uint32_t ctrl_command,
 	}
 
 	if (cb) {
-		cb(dev, err, context, arg);
+		cb(dev, err, state, arg);
 	}
 
 	return err;
@@ -232,13 +232,9 @@ static const struct led_pwm_config led_pwm_config_##id = {	\
 								\
 static struct led_pwm_data led_pwm_data_##id;			\
 								\
-DEVICE_DEFINE(led_pwm_##id,					\
-		    DT_INST_PROP_OR(id, label, "LED_PWM_"#id),	\
-		    &led_pwm_init,				\
-		    led_pwm_pm_control,				\
-		    &led_pwm_data_##id,				\
-		    &led_pwm_config_##id,			\
-		    POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
-		    &led_pwm_api);
+DEVICE_DT_INST_DEFINE(id, &led_pwm_init, led_pwm_pm_control,	\
+		      &led_pwm_data_##id, &led_pwm_config_##id,	\
+		      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,	\
+		      &led_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LED_PWM_DEVICE)

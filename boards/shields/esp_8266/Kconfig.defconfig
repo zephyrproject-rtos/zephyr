@@ -7,13 +7,13 @@ if SHIELD_ESP_8266 || \
 
 if NETWORKING
 
-config WIFI_ESP
+config WIFI_ESP_AT
 	default y
 	depends on WIFI
 
 choice WIFI_ESP_AT_VERSION
 	default WIFI_ESP_AT_VERSION_1_7
-	depends on WIFI_ESP
+	depends on WIFI_ESP_AT
 endchoice
 
 orsource "boards/*.defconfig"

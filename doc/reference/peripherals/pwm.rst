@@ -11,4 +11,3 @@ API Reference
 *************
 
 .. doxygengroup:: pwm_interface
-   :project: Zephyr

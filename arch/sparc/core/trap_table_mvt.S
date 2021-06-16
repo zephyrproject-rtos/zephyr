@@ -52,7 +52,7 @@
 
 #define WOF_TRAP                TRAP(__sparc_trap_window_overflow)
 #define WUF_TRAP                TRAP(__sparc_trap_window_underflow)
-#define FLW_TRAP                BAD_TRAP
+#define FLW_TRAP                TRAP(__sparc_trap_flush_windows)
 #define INT_HANDLER             __sparc_trap_interrupt
 
 #ifdef CONFIG_IRQ_OFFLOAD

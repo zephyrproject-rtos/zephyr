@@ -29,4 +29,3 @@ API Reference
 *************
 
 .. doxygengroup:: kscan_interface
-   :project: Zephyr

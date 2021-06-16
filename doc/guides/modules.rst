@@ -771,6 +771,8 @@ Each project in the ``west list`` output is tested like this:
 - If neither of those checks succeed, the project is not considered a module,
   and is not added to :makevar:`ZEPHYR_MODULES`.
 
+.. _modules_without_west:
+
 Without West
 ------------
 

@@ -153,7 +153,7 @@ void test_condvar_wait_forever_wake(void)
 
 	k_thread_create(&condvar_wake_tid, condvar_wake_stack, STACK_SIZE,
 			condvar_wake_task, &woken, NULL, NULL,
-			PRIO_WAKE, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+			PRIO_WAKE, K_USER | K_INHERIT_PERMS, K_MSEC(1));
 
 	/* giving time for the condvar_wake_task
 	 * and condvar_wait_wake_task to execute
@@ -369,7 +369,7 @@ void test_multiple_condvar_wait_wake(void)
 	}
 
 	/* giving time for the other threads to execute */
-	k_yield();
+	k_msleep(10);
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i],
@@ -511,7 +511,7 @@ void inc_count(void *p1, void *p2, void *p3)
 		k_mutex_unlock(&test_mutex);
 
 		/* Sleep so threads can alternate on mutex lock */
-		k_sleep(K_MSEC(200));
+		k_sleep(K_MSEC(50));
 	}
 }
 
@@ -535,6 +535,9 @@ void _condvar_usecase(long multi)
 	int i;
 
 	count = 0;
+
+	/* Reinit mutex to prevent affection from previous testcases */
+	k_mutex_init(&test_mutex);
 
 	k_thread_create(&multiple_tid[0], multiple_stack[0], STACK_SIZE, watch_count,
 			INT_TO_POINTER(t1), NULL, NULL, K_PRIO_PREEMPT(10),
@@ -578,6 +581,7 @@ void test_main(void)
 				      &multiple_tid[i],
 				      &multiple_wake_tid[i],
 				      &multiple_stack[i],
+				      &multiple_condvar[i],
 				      &multiple_wake_stack[i]);
 	}
 	ztest_test_suite(test_condvar,

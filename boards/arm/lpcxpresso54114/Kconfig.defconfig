@@ -9,14 +9,4 @@ config BOARD
 	default "lpcxpresso54114_m4" if BOARD_LPCXPRESSO54114_M4
 	default "lpcxpresso54114_m0" if BOARD_LPCXPRESSO54114_M0
 
-if GPIO_MCUX_LPC
-
-config GPIO_MCUX_LPC_PORT0
-	default y
-
-config GPIO_MCUX_LPC_PORT1
-	default y
-
-endif # GPIO_MCUX_LPC
-
 endif # BOARD_LPCXPRESSO54114_M4 || BOARD_LPCXPRESSO54114_M0

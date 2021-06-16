@@ -28,6 +28,10 @@ config SPI_MCUX_FLEXCOMM
 	default y if HAS_MCUX_FLEXCOMM
 	depends on SPI
 
+config I2S_MCUX_FLEXCOMM
+	default y if HAS_MCUX_FLEXCOMM
+	depends on I2S
+
 config DMA_MCUX_LPC
 	default y
 	depends on DMA
@@ -35,5 +39,19 @@ config DMA_MCUX_LPC
 config CLOCK_CONTROL_MCUX_SYSCON
 	default y if HAS_MCUX_SYSCON
 	depends on CLOCK_CONTROL
+
+if MCUX_OS_TIMER
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+endif # MCUX_OS_TIMER
+
+if CORTEX_M_SYSTICK
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 250105263
+
+endif # CORTEX_M_SYSTICK
 
 endif # SOC_MIMXRT685S_CM33

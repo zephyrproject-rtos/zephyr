@@ -86,7 +86,7 @@ static const struct pinmux_driver_api pinmux_mcux_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &pinmux_mcux_lpc_init,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    NULL, &pinmux_mcux_lpc_port##n##_cfg,	\
 			    PRE_KERNEL_1,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\

@@ -9,32 +9,6 @@ config BOARD
 	default "stm32h747i_disco_m7" if BOARD_STM32H747I_DISCO_M7
 	default "stm32h747i_disco_m4" if BOARD_STM32H747I_DISCO_M4
 
-# clock configuration
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 400000000 if BOARD_STM32H747I_DISCO_M7
-	# SYS_CLOCK_M4 = SYS_CLOCK_M7 / CLOCK_STM32_HPRE
-	default 200000000 if BOARD_STM32H747I_DISCO_M4
-
-config CLOCK_STM32_D1CPRE
-	default 1
-
-config CLOCK_STM32_HPRE
-	# HCLK: 200MHz
-	default 2
-
-config CLOCK_STM32_D2PPRE1
-	# APBX: 100MHz
-	default 2
-
-config CLOCK_STM32_D2PPRE2
-	default 2
-
-config CLOCK_STM32_D1PPRE
-	default 2
-
-config CLOCK_STM32_D3PPRE
-	default 2
-
 config STM32H7_DUAL_CORE
 	default y
 

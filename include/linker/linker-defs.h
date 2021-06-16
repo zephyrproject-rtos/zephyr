@@ -116,8 +116,8 @@
  */
 #define CREATE_OBJ_LEVEL(object, level)				\
 		__##object##_##level##_start = .;		\
-		KEEP(*(SORT(.object##_##level[0-9]_*)));		\
-		KEEP(*(SORT(.object##_##level[1-9][0-9]_*)));
+		KEEP(*(SORT(.z_##object##_##level[0-9]_*)));		\
+		KEEP(*(SORT(.z_##object##_##level[1-9][0-9]_*)));
 
 /*
  * link in shell initialization objects for all modules that use shell and
@@ -316,6 +316,56 @@ extern char __tls_start[];
 extern char __tls_end[];
 extern char __tls_size[];
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
+
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+/* lnkr_boot_start[] and lnkr_boot_end[]
+ * must encapsulate all the boot sections.
+ */
+extern char lnkr_boot_start[];
+extern char lnkr_boot_end[];
+
+extern char lnkr_boot_text_start[];
+extern char lnkr_boot_text_end[];
+extern char lnkr_boot_text_size[];
+extern char lnkr_boot_data_start[];
+extern char lnkr_boot_data_end[];
+extern char lnkr_boot_data_size[];
+extern char lnkr_boot_rodata_start[];
+extern char lnkr_boot_rodata_end[];
+extern char lnkr_boot_rodata_size[];
+extern char lnkr_boot_bss_start[];
+extern char lnkr_boot_bss_end[];
+extern char lnkr_boot_bss_size[];
+extern char lnkr_boot_noinit_start[];
+extern char lnkr_boot_noinit_end[];
+extern char lnkr_boot_noinit_size[];
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
+
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+/* lnkr_pinned_start[] and lnkr_pinned_end[] must encapsulate
+ * all the pinned sections as these are used by
+ * the MMU code to mark the physical page frames with
+ * Z_PAGE_FRAME_PINNED.
+ */
+extern char lnkr_pinned_start[];
+extern char lnkr_pinned_end[];
+
+extern char lnkr_pinned_text_start[];
+extern char lnkr_pinned_text_end[];
+extern char lnkr_pinned_text_size[];
+extern char lnkr_pinned_data_start[];
+extern char lnkr_pinned_data_end[];
+extern char lnkr_pinned_data_size[];
+extern char lnkr_pinned_rodata_start[];
+extern char lnkr_pinned_rodata_end[];
+extern char lnkr_pinned_rodata_size[];
+extern char lnkr_pinned_bss_start[];
+extern char lnkr_pinned_bss_end[];
+extern char lnkr_pinned_bss_size[];
+extern char lnkr_pinned_noinit_start[];
+extern char lnkr_pinned_noinit_end[];
+extern char lnkr_pinned_noinit_size[];
+#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 #endif /* ! _ASMLANGUAGE */
 

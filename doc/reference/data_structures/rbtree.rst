@@ -119,4 +119,3 @@ Red/Black Tree API Reference
 --------------------------------
 
 .. doxygengroup:: rbtree_apis
-   :project: Zephyr

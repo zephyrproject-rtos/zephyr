@@ -91,6 +91,13 @@ static void dfll_init(void)
 	}
 }
 
+static void gclk_reset(void)
+{
+	GCLK->CTRLA.bit.SWRST = 1;
+	while (GCLK->SYNCBUSY.bit.SWRST) {
+	}
+}
+
 static void gclk_connect(uint8_t gclk, uint8_t src, uint8_t div)
 {
 	GCLK->GENCTRL[gclk].reg = GCLK_GENCTRL_SRC(src)
@@ -118,6 +125,7 @@ static int atmel_samd_init(const struct device *arg)
 	/* enable the Cortex M Cache Controller */
 	CMCC->CTRL.bit.CEN = 1;
 
+	gclk_reset();
 	osc32k_init();
 	dfll_init();
 	dpll_init(0, dfll_div * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);

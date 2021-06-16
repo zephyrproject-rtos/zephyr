@@ -69,8 +69,8 @@ arduino_serial: &uart1 {
 arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-gpios = <&gpio0 27 0>;
-	scl-gpios = <&gpio0 26 0>;
+	sda-pin = <27>;
+	scl-pin = <26>;
 };
 
 &spi2 {

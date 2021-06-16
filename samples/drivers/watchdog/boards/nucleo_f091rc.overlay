@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&rcc {
+	apb1-prescaler = <4>;
+};
+
 &wwdg {
 	status = "okay";
 };

@@ -207,33 +207,34 @@ static bool rand_alloc_choice(struct z_heap_stress_rec *sr)
 		return true;
 	} else if (sr->blocks_alloced >= sr->nblocks) {
 		return false;
+	} else {
+
+		/* The way this works is to scale the chance of choosing to
+		 * allocate vs. free such that it's even odds when the heap is
+		 * at the target percent, with linear tapering on the low
+		 * slope (i.e. we choose to always allocate with an empty
+		 * heap, allocate 50% of the time when the heap is exactly at
+		 * the target, and always free when above the target).  In
+		 * practice, the operations aren't quite symmetric (you can
+		 * always free, but your allocation might fail), and the units
+		 * aren't matched (we're doing math based on bytes allocated
+		 * and ignoring the overhead) but this is close enough.  And
+		 * yes, the math here is coarse (in units of percent), but
+		 * that's good enough and fits well inside 32 bit quantities.
+		 * (Note precision issue when heap size is above 40MB
+		 * though!).
+		 */
+		__ASSERT(sr->total_bytes < 0xffffffffU / 100, "too big for u32!");
+		uint32_t full_pct = (100 * sr->bytes_alloced) / sr->total_bytes;
+		uint32_t target = sr->target_percent ? sr->target_percent : 1;
+		uint32_t free_chance = 0xffffffffU;
+
+		if (full_pct < sr->target_percent) {
+			free_chance = full_pct * (0x80000000U / target);
+		}
+
+		return rand32() > free_chance;
 	}
-
-	/* The way this works is to scale the chance of choosing to
-	 * allocate vs. free such that it's even odds when the heap is
-	 * at the target percent, with linear tapering on the low
-	 * slope (i.e. we choose to always allocate with an empty
-	 * heap, allocate 50% of the time when the heap is exactly at
-	 * the target, and always free when above the target).  In
-	 * practice, the operations aren't quite symmetric (you can
-	 * always free, but your allocation might fail), and the units
-	 * aren't matched (we're doing math based on bytes allocated
-	 * and ignoring the overhead) but this is close enough.  And
-	 * yes, the math here is coarse (in units of percent), but
-	 * that's good enough and fits well inside 32 bit quantities.
-	 * (Note precision issue when heap size is above 40MB
-	 * though!).
-	 */
-	__ASSERT(sr->total_bytes < 0xffffffffU / 100, "too big for u32!");
-	uint32_t full_pct = (100 * sr->bytes_alloced) / sr->total_bytes;
-	uint32_t target = sr->target_percent ? sr->target_percent : 1;
-	uint32_t free_chance = 0xffffffffU;
-
-	if (full_pct < sr->target_percent) {
-		free_chance = full_pct * (0x80000000U / target);
-	}
-
-	return rand32() > free_chance;
 }
 
 /* Chooses a size of block to allocate, logarithmically favoring

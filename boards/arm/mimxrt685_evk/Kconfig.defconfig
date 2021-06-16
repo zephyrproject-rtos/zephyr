@@ -14,15 +14,15 @@ config XTAL_SYS_CLK_HZ
 config SYSOSC_SETTLING_US
 	default 260
 
-if GPIO_MCUX_LPC
+config FLASH_MCUX_FLEXSPI_MX25UM51345G
+	default y if FLASH
 
-config GPIO_MCUX_LPC_PORT0
-	default y
+config FLASH_MCUX_FLEXSPI_XIP
+	default y if FLASH
 
-config GPIO_MCUX_LPC_PORT1
-	default y
-
-endif # GPIO_MCUX_LPC
+choice FLASH_MCUX_FLEXSPI_XIP_MEM_TARGET
+	default FLASH_MCUX_FLEXSPI_XIP_MEM_SRAM
+endchoice
 
 config FXOS8700_DRDY_INT1
 	default y

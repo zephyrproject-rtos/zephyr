@@ -89,6 +89,8 @@ static __aligned(XCHAL_DCACHE_LINESIZE) union {
 	(*((volatile struct cpustart_rec *) \
 	   z_soc_uncached_ptr(&cpustart_mem.cpustart)))
 
+static uint32_t cpu_mask;
+
 /* Tiny assembly stub for calling z_mp_entry() on the auxiliary CPUs.
  * Mask interrupts, clear the register window state and set the stack
  * pointer.  This represents the minimum work required to run C code
@@ -111,6 +113,8 @@ __asm__(".align 4                   \n\t"
 	"  l32i  a1, a1, 0          \n\t"
 	"  call4 z_mp_entry         \n\t");
 BUILD_ASSERT(XCHAL_EXCM_LEVEL == 5);
+
+int cavs_idc_smp_init(const struct device *dev);
 
 void z_mp_entry(void)
 {
@@ -149,8 +153,12 @@ void z_mp_entry(void)
 
 #ifdef CONFIG_IPM_CAVS_IDC
 	/* Interrupt must be enabled while running on current core */
-	irq_enable(XTENSA_IRQ_NUMBER(DT_IRQN(DT_INST(0, intel_cavs_idc))));
+	irq_enable(DT_IRQN(DT_INST(0, intel_cavs_idc)));
 #endif /* CONFIG_IPM_CAVS_IDC */
+
+#ifdef CONFIG_SMP_BOOT_DELAY
+	cavs_idc_smp_init(NULL);
+#endif
 
 	start_rec.alive = 1;
 
@@ -166,6 +174,11 @@ void z_mp_entry(void)
 		k_cpu_idle();
 	}
 #endif
+}
+
+bool arch_cpu_active(int cpu_num)
+{
+	return !!(cpu_mask & BIT(cpu_num));
 }
 
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
@@ -195,6 +208,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	idc_reg = idc_read(IPC_IDCCTL, cpu_num);
 	idc_reg |= IPC_IDCCTL_IDCTBIE(0);
 	idc_write(IPC_IDCCTL, cpu_num, idc_reg);
+	/* FIXME: 8 is IRQ_BIT_LVL2_IDC / PLATFORM_IDC_INTERRUPT */
 	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
 		    CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
 
@@ -210,15 +224,27 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	idc_reg = idc_read(IPC_IDCCTL, cpu_num);
 	idc_reg &= ~IPC_IDCCTL_IDCTBIE(0);
 	idc_write(IPC_IDCCTL, cpu_num, idc_reg);
-	sys_clear_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
+	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x00 +
 		      CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
 
-	while (start_rec.alive == 0) {
-	}
+	k_busy_wait(100);
+
+#ifdef CONFIG_SMP_BOOT_DELAY
+	cavs_idc_smp_init(NULL);
+#endif
 
 	/* Clear done bit from responding the power up message */
 	idc_reg = idc_read(IPC_IDCIETC(cpu_num), 0) | IPC_IDCIETC_DONE;
 	idc_write(IPC_IDCIETC(cpu_num), 0, idc_reg);
+
+	while (!start_rec.alive)
+		;
+
+	/*
+	 * No locking needed as long as CPUs can only be powered on by the main
+	 * CPU and cannot be powered off
+	 */
+	cpu_mask |= BIT(cpu_num);
 }
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED

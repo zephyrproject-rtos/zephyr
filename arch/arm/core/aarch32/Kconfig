@@ -9,6 +9,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select HAS_CMSIS_CORE
 	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_SINGLE_THREAD_SUPPORT
 	select ARCH_HAS_THREAD_ABORT
 	select ARCH_HAS_TRUSTED_EXECUTION if ARM_TRUSTZONE_M
 	select ARCH_HAS_STACK_PROTECTION if (ARM_MPU && !ARMV6_M_ARMV8_M_BASELINE) || CPU_CORTEX_M_HAS_SPLIM
@@ -29,6 +30,7 @@ config CPU_CORTEX_R
 	select CPU_CORTEX
 	select HAS_CMSIS_CORE
 	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 
@@ -214,6 +216,24 @@ config ARM_NONSECURE_FIRMWARE
 	  resources of the Cortex-M MCU, and, therefore, it shall avoid
 	  accessing them.
 
+config ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	bool "Allow secure function calls to be preempted"
+	depends on ARM_NONSECURE_FIRMWARE
+	help
+	  When enabled, this option indicates that preemptible Zephyr
+	  threads performing secure function calls, are allowed to be
+	  preempted. When disabled, the option indicates that such
+	  threads many not be context-switched-out while doing a Secure
+	  function call.
+
+config ARM_STORE_EXC_RETURN
+	bool
+	default y if FPU_SHARING || ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
+	help
+	  Store the EXC_RETURN value when switching threads.
+	  This is needed when switching between threads that differ in either
+	  FPU usage or security domain.
+
 choice
 	prompt "Floating point ABI"
 	default FP_HARDABI
@@ -240,3 +260,5 @@ endchoice
 
 rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
+
+rsource "mpu/Kconfig"

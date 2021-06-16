@@ -486,7 +486,7 @@ static const struct display_driver_api ili9xxx_api = {
 	static struct ili9xxx_data ili9xxx_data_##n;                           \
 									       \
 	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init,                  \
-			    device_pm_control_nop, &ili9xxx_data_##n,          \
+			    NULL, &ili9xxx_data_##n,                           \
 			    &ili9xxx_config_##n, POST_KERNEL,                  \
 			    CONFIG_APPLICATION_INIT_PRIORITY, &ili9xxx_api);
 

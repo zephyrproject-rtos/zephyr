@@ -190,6 +190,6 @@ static const struct adxl345_dev_config adxl345_config = {
 	.i2c_addr = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, adxl345_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, adxl345_init, NULL,
 		    &adxl345_data, &adxl345_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);

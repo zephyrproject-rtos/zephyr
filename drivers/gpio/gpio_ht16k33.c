@@ -195,7 +195,7 @@ static const struct gpio_driver_api gpio_ht16k33_api = {
 									\
 	DEVICE_DT_INST_DEFINE(id,					\
 			    &gpio_ht16k33_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &gpio_ht16k33_##id##_data,			\
 			    &gpio_ht16k33_##id##_cfg, POST_KERNEL,	\
 			    CONFIG_GPIO_HT16K33_INIT_PRIORITY,		\

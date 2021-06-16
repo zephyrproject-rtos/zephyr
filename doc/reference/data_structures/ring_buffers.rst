@@ -413,4 +413,3 @@ API Reference
 The following ring buffer APIs are provided by :zephyr_file:`include/sys/ring_buffer.h`:
 
 .. doxygengroup:: ring_buffer_apis
-   :project: Zephyr

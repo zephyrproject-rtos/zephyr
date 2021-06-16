@@ -21,3 +21,6 @@ supported:
   - spi
   - watchdog
   - adc
+  - dma
+  - can
+  - canfd

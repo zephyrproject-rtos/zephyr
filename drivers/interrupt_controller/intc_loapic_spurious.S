@@ -14,6 +14,6 @@
 
 	GTEXT(z_loapic_spurious_handler)
 
-SECTION_FUNC(TEXT, z_loapic_spurious_handler)
+SECTION_FUNC(PINNED_TEXT, z_loapic_spurious_handler)
 	iret
 

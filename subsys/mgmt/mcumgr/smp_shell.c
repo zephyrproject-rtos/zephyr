@@ -137,19 +137,21 @@ void smp_shell_process(struct smp_shell_data *data)
 	struct net_buf *buf;
 	struct net_buf *nb;
 
-	buf = net_buf_get(&data->buf_ready, K_NO_WAIT);
-	if (!buf) {
-		return;
-	}
+	while (true) {
+		buf = net_buf_get(&data->buf_ready, K_NO_WAIT);
+		if (!buf) {
+			break;
+		}
 
-	nb = mcumgr_serial_process_frag(&smp_shell_rx_ctxt,
-					buf->data,
-					buf->len);
-	if (nb != NULL) {
-		zephyr_smp_rx_req(&smp_shell_transport, nb);
-	}
+		nb = mcumgr_serial_process_frag(&smp_shell_rx_ctxt,
+						buf->data,
+						buf->len);
+		if (nb != NULL) {
+			zephyr_smp_rx_req(&smp_shell_transport, nb);
+		}
 
-	net_buf_unref(buf);
+		net_buf_unref(buf);
+	}
 }
 
 static uint16_t smp_shell_get_mtu(const struct net_buf *nb)

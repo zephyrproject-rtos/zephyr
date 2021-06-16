@@ -329,7 +329,7 @@ harness: <string>
     simple as a loopback wiring or a complete hardware test setup for
     sensor and IO testing.
     Usually pertains to external dependency domains but can be anything such as
-    console, sensor, net, keyboard, or Bluetooth.
+    console, sensor, net, keyboard, Bluetooth or pytest.
 
 harness_config: <harness configuration options>
     Extra harness configuration options to be used to select a board and/or
@@ -369,6 +369,11 @@ harness_config: <harness configuration options>
 
         Only one fixture can be defined per testcase.
 
+    pytest_root: <pytest dirctory> (default pytest)
+        Specify a pytest directory which need to excute when test case begin to running,
+        default pytest directory name is pytest, after pytest finished, twister will
+        check if this case pass or fail according the pytest report.
+
     The following is an example yaml file with a few harness_config options.
 
     ::
@@ -389,6 +394,18 @@ harness_config: <harness configuration options>
            test:
              tags: sensors
              depends_on: i2c
+
+    The following is an example yaml file with pytest harness_config options,
+    default pytest_root name "pytest" will be used if pytest_root not specified.
+    please refer the example in samples/subsys/testsuite/pytest/.
+
+    ::
+
+        tests:
+          pytest.example:
+            harness: pytest
+            harness_config:
+              pytest_root: [pytest directory name]
 
 filter: <expression>
     Filter whether the testcase should be run by evaluating an expression
@@ -516,13 +533,13 @@ command to produce the hardware map::
 The generated hardware map file (map.yml) will have the list of connected
 devices, for example::
 
-  - available: true
+  - connected: true
     id: OSHW000032254e4500128002ab98002784d1000097969900
     platform: unknown
     product: DAPLink CMSIS-DAP
     runner: pyocd
     serial: /dev/cu.usbmodem146114202
-  - available: true
+  - connected: true
     id: 000683759358
     platform: unknown
     product: J-Link
@@ -535,13 +552,13 @@ values, in the above example both the platform names and the runners need to be
 replaced with the correct values corresponding to the connected hardware. In
 this example we are using a reel_board and an nrf52840dk_nrf52840::
 
-  - available: true
+  - connected: true
     id: OSHW000032254e4500128002ab98002784d1000097969900
     platform: reel_board
     product: DAPLink CMSIS-DAP
     runner: pyocd
     serial: /dev/cu.usbmodem146114202
-  - available: true
+  - connected: true
     id: 000683759358
     platform: nrf52840dk_nrf52840
     product: J-Link
@@ -578,8 +595,7 @@ map file.
 
 Fixtures are defined in the hardware map file as a list::
 
-      - available: true
-        connected: true
+      - connected: true
         fixtures:
           - gpio_loopback
         id: 0240000026334e450015400f5e0e000b4eb1000097969900
@@ -602,8 +618,7 @@ It may be useful to annotate board descriptions in the hardware map file
 with additional information.  Use the "notes" keyword to do this.  For
 example::
 
-    - available: true
-      connected: false
+    - connected: false
       fixtures:
         - gpio_loopback
       id: 000683290670
@@ -626,8 +641,7 @@ cases the detected ID is not the correct one to use, for example when
 using an external J-Link probe.  The "probe_id" keyword overrides the
 "id" keyword for this purpose.   For example::
 
-    - available: true
-      connected: false
+    - connected: false
       id: 0229000005d9ebc600000000000000000000000097969905
       platform: mimxrt1060_evk
       probe_id: 000609301751

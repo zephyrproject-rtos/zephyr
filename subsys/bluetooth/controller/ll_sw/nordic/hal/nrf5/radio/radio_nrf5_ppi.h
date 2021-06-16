@@ -286,6 +286,43 @@ static inline void hal_palna_ppi_setup(void)
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 /******************************************************************************/
+#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+static inline void hal_pa_ppi_setup(void)
+{
+	/* Nothing specific to PA with FEM to handle inside TRX chains */
+}
+
+static inline void hal_lna_ppi_setup(void)
+{
+	/* Nothing specific to LNA with FEM to handle inside TRX chains */
+}
+
+#define HAL_ENABLE_FEM_PPI  4
+#define HAL_DISABLE_FEM_PPI 5
+
+static inline void hal_fem_ppi_setup(void)
+{
+	nrf_ppi_channel_and_fork_endpoint_setup(
+		NRF_PPI,
+		HAL_ENABLE_FEM_PPI,
+		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[3]),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
+				CONFIG_BT_CTLR_PDN_GPIOTE_CHAN]),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
+				CONFIG_BT_CTLR_CSN_GPIOTE_CHAN]));
+	nrf_ppi_channel_and_fork_endpoint_setup(
+		NRF_PPI,
+		HAL_DISABLE_FEM_PPI,
+		(uint32_t)&(NRF_RADIO->EVENTS_DISABLED),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
+				CONFIG_BT_CTLR_PDN_GPIOTE_CHAN]),
+		(uint32_t)&(NRF_GPIOTE->TASKS_OUT[
+				CONFIG_BT_CTLR_CSN_GPIOTE_CHAN]));
+}
+
+#endif /* CONFIG_BT_CTLR_FEM_NRF21540 */
+
+/******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 /* PPI setup used for SW-based auto-switching during TIFS. */
 
@@ -332,22 +369,34 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_TASK_GROUP(index) \
-	(SW_SWITCH_TIMER_TASK_GROUP_BASE + index)
+	(SW_SWITCH_TIMER_TASK_GROUP_BASE + (index))
 
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_BASE + (index))
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
- * 2 adjacent PPIs (8 & 9) and 2 adjacent PPI groups are used for this wiring;
+ * 2 adjacent PPIs (9 & 10) and 2 adjacent PPI groups are used for this wiring;
  * <index> must be 0 or 1. <offset> must be a valid TIMER CC register offset.
  */
+#if defined(CONFIG_SOC_NRF52805)
+/* Because nRF52805 has limited number of programmable PPI channels,
+ * tIFS Trx SW switching on this SoC can be used only when pre-programmed
+ * PPI channels are also in use, i.e. when TIMER0 is the event timer.
+ */
+#if (EVENT_TIMER_ID == 0)
+#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 2
+#else
+#error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
+#endif
+#else /* -> !defined(CONFIG_SOC_NRF52805) */
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 9
+#endif
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
-	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + (index))
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(chan) \
 	NRF_PPI->CH[chan].EEP
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(cc_offset) \
@@ -361,12 +410,8 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * 2 adjacent PPI groups are used for this wiring. 'index' must be 0 or 1.
  */
 #if defined(CONFIG_SOC_NRF52805)
-/* Because nRF52805 has limited number of programmable PPI channels,
- * tIFS Trx SW switching on this SoC can be used only when pre-programmed
- * PPI channels are also in use, i.e. when TIMER0 is the event timer.
- */
 #if (EVENT_TIMER_ID == 0)
-#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI 2
+#define HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI 9
 #else
 #error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
 #endif
@@ -381,12 +426,12 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 /*Enable Radio at specific time-stamp:
  * wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to RADIO TASKS_TXEN/RXEN task.
- * 2 adjacent PPIs (11 & 12) are used for this wiring; <index> must be 0 or 1.
+ * 2 adjacent PPIs (12 & 13) are used for this wiring; <index> must be 0 or 1.
  * <offset> must be a valid TIMER CC register offset.
  */
 #if defined(CONFIG_SOC_NRF52805)
 #if (EVENT_TIMER_ID == 0)
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 3
+#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 4
 #else
 #error "tIFS Trx SW switch can be used on this SoC only with TIMER0 as the event timer"
 #endif
@@ -394,7 +439,7 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 12
 #endif
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + (index))
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(chan) \
 	NRF_PPI->CH[chan].EEP
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(cc_offset) \
@@ -442,6 +487,16 @@ static inline void hal_radio_txen_on_sw_switch(uint8_t ppi)
 		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX);
 }
 
+static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t ppi)
+{
+	/* NOTE: As independent PPI are used to trigger the Radio Tx task,
+	 *       double buffers implementation works for sw_switch using PPIs,
+	 *       simply reuse the hal_radio_txen_on_sw_switch() functon to set
+	 *	 the next PPIs task to be Radio Tx enable.
+	 */
+	hal_radio_txen_on_sw_switch(ppi);
+}
+
 static inline void hal_radio_rxen_on_sw_switch(uint8_t ppi)
 {
 	nrf_ppi_task_endpoint_setup(
@@ -476,14 +531,14 @@ static inline void hal_radio_sw_switch_cleanup(void)
  *  'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + (index))
 
 /* Wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to RADIO TASKS_TXEN/RXEN task.
  */
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE 17
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + (index))
 
 /* Cancel the SW switch timer running considering S8 timing:
  * wire the RADIO EVENTS_RATEBOOST event to SW_SWITCH_TIMER TASKS_CAPTURE task.
@@ -617,7 +672,8 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 	 BIT(HAL_TRIGGER_CRYPT_PPI) | \
 	 BIT(HAL_TRIGGER_AAR_PPI) | \
 	 HAL_USED_PPI_CHANNELS_2 | HAL_USED_PPI_CHANNELS_3 | \
-	 HAL_USED_PPI_CHANNELS_4 | HAL_USED_PPI_CHANNELS_5)
+	 HAL_USED_PPI_CHANNELS_4 | HAL_USED_PPI_CHANNELS_5 | \
+	 HAL_USED_PPI_CHANNELS_6)
 
 #if defined(HAL_TRIGGER_RATEOVERRIDE_PPI)
 #define HAL_USED_PPI_CHANNELS_2 \
@@ -653,6 +709,14 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 	 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI))
 #else
 #define HAL_USED_PPI_CHANNELS_5 0
+#endif
+
+#if defined(HAL_ENABLE_FEM_PPI)
+#define HAL_USED_PPI_CHANNELS_6 \
+	(BIT(HAL_ENABLE_FEM_PPI) | \
+	 BIT(HAL_DISABLE_FEM_PPI))
+#else
+#define HAL_USED_PPI_CHANNELS_6 0
 #endif
 
 BUILD_ASSERT(

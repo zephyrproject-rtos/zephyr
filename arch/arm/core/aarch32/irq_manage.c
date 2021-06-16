@@ -27,7 +27,7 @@
 #include <sw_isr_table.h>
 #include <irq.h>
 #include <tracing/tracing.h>
-#include <power/power.h>
+#include <pm/pm.h>
 
 extern void z_arm_reserved(void);
 

@@ -627,6 +627,11 @@ int coap_find_options(const struct coap_packet *cpkt, uint16_t code,
 	uint8_t num;
 	int r;
 
+	/* Check if there are options to parse */
+	if (cpkt->hdr_len == cpkt->max_len) {
+		return 0;
+	}
+
 	offset = cpkt->hdr_len;
 	opt_len = 0U;
 	delta = 0U;

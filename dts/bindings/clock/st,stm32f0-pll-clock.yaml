@@ -1,0 +1,40 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Main PLL node binding for STM32F0 and STM32F3 devices.
+
+  Takes one of clk_hse or clk_hsi as input clock.
+
+  Note: Some STM32F0 SoC variants (STM32072 for instance) may also support HSI48
+  as input clock. This case is not supported yet.
+
+  Frequency calculation for output clock is as follows:
+
+    f(PLLCLK) = f(PLLIN) x PLLMUL   --> SYSCLK (System Clock)
+
+    with, depending on the case:
+            If input_clk = clk_hse
+              f(PLLIN) = f(input_clk) / PREDIV
+            If input_clk = clk_hsi
+              On STM32F3, STM32F03x, STM32F05x, STM32F030x4, STM32F030x6 and STM32F030x8
+                f(PLLIN) = f(input_clk) / 2
+              On STM32F04x, STM32F07x, STM32F09x, STM32F070x6, STM32F070xB and STM32F030xC
+                f(PLLIN) = f(input_clk) / PREDIV
+
+  The PLL output frequency must be set in range 16-48MHz
+
+compatible: "st,stm32f0-pll-clock"
+
+include:
+  - name: st,stm32f105-pll-clock.yaml
+    property-blocklist:
+      - mul
+
+properties:
+    mul:
+      type: int
+      required: true
+      description: |
+          PLL multiplication factor for output clock
+          Valid range: 2 - 16

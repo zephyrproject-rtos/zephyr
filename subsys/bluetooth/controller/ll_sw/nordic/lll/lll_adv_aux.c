@@ -214,6 +214,13 @@ static int prepare_cb(struct lll_prepare_param *p)
 	pri_hdr = (void *)pri_com_hdr->ext_hdr_adv_data;
 	pri_dptr = pri_hdr->data;
 
+	/* NOTE: We shall be here in auxiliary PDU prepare due to
+	 * aux_ptr flag being set in the extended common header
+	 * flags. Hence, ext_hdr_len is non-zero, an explicit check
+	 * is not needed.
+	 */
+	LL_ASSERT(pri_com_hdr->ext_hdr_len);
+
 	/* traverse through adv_addr, if present */
 	if (pri_hdr->adv_addr) {
 		pri_dptr += BDADDR_SIZE;

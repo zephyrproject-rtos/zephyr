@@ -1,0 +1,8 @@
+tests:
+  # section.subsection
+  testing.drivers.sbs_gauge:
+    build_only: true
+    tags: test_framework
+    filter: dt_compat_enabled("sbs,sbs-gauge")
+    integration_platforms:
+      - nucleo_f070rb

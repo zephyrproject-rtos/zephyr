@@ -272,10 +272,14 @@ static void uart_nrfx_poll_out(const struct device *dev, unsigned char c)
 		while (atomic_cas((atomic_t *) lock,
 				  (atomic_val_t) 0,
 				  (atomic_val_t) 1) == false) {
-			/* k_sleep allows other threads to execute and finish
-			 * their transactions.
-			 */
-			k_msleep(1);
+			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+				/* k_sleep allows other threads to execute and finish
+				 * their transactions.
+				 */
+				k_msleep(1);
+			} else {
+				k_busy_wait(1000);
+			}
 			if (--safety_cnt == 0) {
 				break;
 			}
@@ -385,13 +389,14 @@ static int uart_nrfx_configure(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int uart_nrfx_config_get(const struct device *dev,
 				struct uart_config *cfg)
 {
 	*cfg = get_dev_data(dev)->uart_config;
 	return 0;
 }
-
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_0_ASYNC
 
@@ -1069,8 +1074,10 @@ static const struct uart_driver_api uart_nrfx_uart_driver_api = {
 	.poll_in          = uart_nrfx_poll_in,
 	.poll_out         = uart_nrfx_poll_out,
 	.err_check        = uart_nrfx_err_check,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	.configure        = uart_nrfx_configure,
 	.config_get       = uart_nrfx_config_get,
+#endif
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 	.fifo_fill        = uart_nrfx_fifo_fill,
 	.fifo_read        = uart_nrfx_fifo_read,
@@ -1136,7 +1143,7 @@ static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 static void uart_nrfx_set_power_state(const struct device *dev,
 				      uint32_t new_state)
 {
-	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+	if (new_state == PM_DEVICE_STATE_ACTIVE) {
 		uart_nrfx_pins_enable(dev, true);
 		nrf_uart_enable(uart0_addr);
 		if (RX_PIN_USED) {
@@ -1144,9 +1151,9 @@ static void uart_nrfx_set_power_state(const struct device *dev,
 					      NRF_UART_TASK_STARTRX);
 		}
 	} else {
-		__ASSERT_NO_MSG(new_state == DEVICE_PM_LOW_POWER_STATE ||
-				new_state == DEVICE_PM_SUSPEND_STATE ||
-				new_state == DEVICE_PM_OFF_STATE);
+		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
+				new_state == PM_DEVICE_STATE_SUSPEND ||
+				new_state == PM_DEVICE_STATE_OFF);
 		nrf_uart_disable(uart0_addr);
 		uart_nrfx_pins_enable(dev, false);
 	}
@@ -1154,24 +1161,24 @@ static void uart_nrfx_set_power_state(const struct device *dev,
 
 static int uart_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				uint32_t *state, pm_device_cb cb, void *arg)
 {
-	static uint32_t current_state = DEVICE_PM_ACTIVE_STATE;
+	static uint32_t current_state = PM_DEVICE_STATE_ACTIVE;
 
-	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
-		uint32_t new_state = *((const uint32_t *)context);
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
+		uint32_t new_state = *state;
 
 		if (new_state != current_state) {
 			uart_nrfx_set_power_state(dev, new_state);
 			current_state = new_state;
 		}
 	} else {
-		__ASSERT_NO_MSG(ctrl_command == DEVICE_PM_GET_POWER_STATE);
-		*((uint32_t *)context) = current_state;
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
+		*state = current_state;
 	}
 
 	if (cb) {
-		cb(dev, 0, context, arg);
+		cb(dev, 0, state, arg);
 	}
 
 	return 0;

@@ -25,6 +25,8 @@
 #define TMP116_DEVICE_ID		0x1116
 #define TMP117_DEVICE_ID		0x0117
 
+#define TMP116_CFGR_DATA_READY BIT(13)
+
 struct tmp116_data {
 	const struct device *i2c;
 	uint16_t sample;

@@ -10,3 +10,23 @@ include: base.yaml
 properties:
     reg:
       required: true
+
+    func3_gcr:
+        type: array
+        required: true
+
+    func3_en_mask:
+        type: array
+        required: true
+
+    func4_gcr:
+        type: array
+        required: true
+
+    func4_en_mask:
+        type: array
+        required: true
+
+pinctrl-cells:
+  - pin
+  - alt_func

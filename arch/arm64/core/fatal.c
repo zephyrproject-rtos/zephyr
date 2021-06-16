@@ -226,6 +226,8 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 
 			if (dump_far)
 				LOG_ERR("FAR_ELn: 0x%016llx", far);
+
+			LOG_ERR("TPIDRRO: 0x%016llx", read_tpidrro_el0());
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 			if (is_recoverable(esf, esr, far, elr))

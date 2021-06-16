@@ -307,7 +307,7 @@ static struct adc_xec_data adc_xec_dev_data_0 = {
 	ADC_CONTEXT_INIT_SYNC(adc_xec_dev_data_0, ctx),
 };
 
-DEVICE_DT_INST_DEFINE(0, adc_xec_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, adc_xec_init, NULL,
 		    &adc_xec_dev_data_0, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &adc_xec_api);

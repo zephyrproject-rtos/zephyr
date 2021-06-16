@@ -243,5 +243,5 @@ static int ivshmem_init(const struct device *dev)
 static struct ivshmem ivshmem_data;
 
 DEVICE_DEFINE(ivshmem, CONFIG_IVSHMEM_DEV_NAME,
-	      ivshmem_init, device_pm_control_nop, &ivshmem_data, NULL,
+	      ivshmem_init, NULL, &ivshmem_data, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ivshmem_api);

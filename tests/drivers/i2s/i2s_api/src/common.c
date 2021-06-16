@@ -10,7 +10,7 @@
 #include "i2s_api_test.h"
 
 /* The data_l represent a sine wave */
-int16_t data_l[SAMPLE_NO] = {
+ZTEST_DMEM int16_t data_l[SAMPLE_NO] = {
 	  6392,  12539,  18204,  23169,  27244,  30272,  32137,  32767,  32137,
 	 30272,  27244,  23169,  18204,  12539,   6392,      0,  -6393, -12540,
 	-18205, -23170, -27245, -30273, -32138, -32767, -32138, -30273, -27245,
@@ -18,7 +18,7 @@ int16_t data_l[SAMPLE_NO] = {
 };
 
 /* The data_r represent a sine wave with double the frequency of data_l */
-int16_t data_r[SAMPLE_NO] = {
+ZTEST_DMEM int16_t data_r[SAMPLE_NO] = {
 	 12539,  23169,  30272,  32767,  30272,  23169,  12539,      0, -12540,
 	-23170, -30273, -32767, -30273, -23170, -12540,     -1,  12539,  23169,
 	 30272,  32767,  30272,  23169,  12539,      0, -12540, -23170, -30273,

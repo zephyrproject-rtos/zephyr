@@ -649,7 +649,7 @@ static int ov7725_init_0(const struct device *dev)
 	return ov7725_init(dev);
 }
 
-DEVICE_DT_INST_DEFINE(0, &ov7725_init_0, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &ov7725_init_0, NULL,
 		    &ov7725_data_0, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &ov7725_driver_api);

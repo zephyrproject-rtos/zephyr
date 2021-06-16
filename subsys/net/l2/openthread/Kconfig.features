@@ -137,6 +137,12 @@ config OPENTHREAD_MTD_NETDIAG
 config OPENTHREAD_MULTIPLE_INSTANCE
 	bool "Enable OpenThread multiple instances"
 
+config OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT
+	bool "Enable neighbor discovery agent support"
+
+config OPENTHREAD_PING_SENDER
+	bool "Enable ping sender support"
+
 config OPENTHREAD_PLATFORM_UDP
 	bool "Enable platform UDP support"
 
@@ -162,6 +168,9 @@ config OPENTHREAD_SNTP_CLIENT
 config OPENTHREAD_TIME_SYNC
 	bool "Enable the time synchronization service feature"
 
+config OPENTHREAD_TREL
+	bool "Enable TREL radio link for Thread over Infrastructure feature"
+
 config OPENTHREAD_UDP_FORWARD
 	bool "Enable UDP forward support"
 
@@ -173,3 +182,14 @@ config OPENTHREAD_OTNS
 
 config OPENTHREAD_FULL_LOGS
 	bool "Enable OpenThread full logs"
+
+config OPENTHREAD_LINK_METRICS
+	bool "Enable Link Metrics support"
+
+config OPENTHREAD_SRP_CLIENT
+	bool "Enable SRP Client support"
+	select OPENTHREAD_ECDSA
+
+config OPENTHREAD_SRP_SERVER
+	bool "Enable SRP Server support"
+	select OPENTHREAD_ECDSA

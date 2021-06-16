@@ -219,9 +219,8 @@ static void test_log_fs_files_max(void)
 		}
 		if (strstr(ent.name, log_prefix) != NULL) {
 			++file_ctr;
+			test_mask |= 1 << atoi(&ent.name[strlen(log_prefix)]);
 		}
-
-		test_mask |= 1 << atoi(&ent.name[strlen(log_prefix)]);
 	}
 	(void)fs_closedir(&dir);
 	zassert_equal(file_ctr, CONFIG_LOG_BACKEND_FS_FILES_LIMIT,

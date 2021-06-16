@@ -75,6 +75,15 @@ config USB_NRFX_WORK_QUEUE_STACK_SIZE
 	  for handling the events from the USBD ISR, i.e. executing endpoint
 	  callbacks and providing proper notifications to the USB device stack.
 
+config USB_NRFX_ATTACHED_EVENT_DELAY
+	int "USBD attached event delay"
+	range 0 1000
+	default 0
+	depends on USB_NRFX
+	help
+	  Configurable attached event delay in milliseconds. Delay can be used
+	  to give USB Charging Controller time for initialization.
+
 config USB_KINETIS
 	bool "Kinetis USB Device Controller Driver"
 	select USB_DEVICE_DRIVER

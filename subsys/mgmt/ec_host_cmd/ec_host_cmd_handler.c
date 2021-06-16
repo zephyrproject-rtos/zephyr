@@ -5,7 +5,7 @@
  */
 
 #include <drivers/ec_host_cmd_periph.h>
-#include <ec_host_cmd.h>
+#include <mgmt/ec_host_cmd.h>
 #include <devicetree.h>
 #include <string.h>
 

@@ -130,6 +130,11 @@ endif # IEEE802154_UPIPE_RANDOM_MAC
 
 endif # IEEE802154_UPIPE
 
+config IEEE802154_2015
+	bool "Enable support for IEEE 802.15.4-2015 frames"
+	help
+	  Enable radio driver support for IEEE 802.15.4-2015 frames, including security handling of frames and ACKs.
+
 module = IEEE802154_DRIVER
 module-str = IEEE 802.15.4 driver
 module-help = Sets log level for IEEE 802.15.4 Device Drivers.

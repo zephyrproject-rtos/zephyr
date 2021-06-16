@@ -266,7 +266,7 @@ int gpio_psoc6_init(const struct device *dev)
 									\
 	static struct gpio_psoc6_runtime port_##n##_psoc6_runtime = { 0 }; \
 									\
-	DEVICE_DT_INST_DEFINE(n, gpio_psoc6_init, device_pm_control_nop, \
+	DEVICE_DT_INST_DEFINE(n, gpio_psoc6_init, NULL,			\
 			    &port_##n##_psoc6_runtime,			\
 			    &port_##n##_psoc6_config, POST_KERNEL,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

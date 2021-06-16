@@ -14,7 +14,7 @@
 #include <soc.h>
 #include <drivers/watchdog.h>
 #include <sys/printk.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 
 struct wdog_cmsdk_apb {
 	/* offset: 0x000 (r/w) watchdog load register */
@@ -201,7 +201,7 @@ static int wdog_cmsdk_apb_init(const struct device *dev)
 
 DEVICE_DT_INST_DEFINE(0,
 		    wdog_cmsdk_apb_init,
-		    device_pm_control_nop,
+		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wdog_cmsdk_apb_api);

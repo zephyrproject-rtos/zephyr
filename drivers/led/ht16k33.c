@@ -473,7 +473,7 @@ static const struct led_driver_api ht16k33_leds_api = {
 									\
 	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, NULL,			\
 			    &ht16k33_##id##_data,			\
 			    &ht16k33_##id##_cfg, POST_KERNEL,		\
 			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
@@ -493,7 +493,7 @@ static const struct led_driver_api ht16k33_leds_api = {
 									\
 	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, device_pm_control_nop,	\
+	DEVICE_DT_INST_DEFINE(id, &ht16k33_init, NULL,			\
 			    &ht16k33_##id##_data,			\
 			    &ht16k33_##id##_cfg, POST_KERNEL,		\
 			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)

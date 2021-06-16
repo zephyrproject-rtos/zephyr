@@ -20,6 +20,17 @@
 	};
 };
 
+&clk_hsi {
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(8)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
 	current-speed = <115200>;

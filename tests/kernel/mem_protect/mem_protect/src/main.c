@@ -76,6 +76,7 @@ void test_main(void)
 		ztest_unit_test(test_create_new_higher_prio_thread_from_user),
 		ztest_unit_test(test_create_new_invalid_prio_thread_from_user),
 		ztest_unit_test(test_mark_thread_exit_uninitialized),
+		ztest_unit_test(test_mem_part_assert_add_overmax),
 		ztest_user_unit_test(test_kobject_init_error),
 		ztest_unit_test(test_alloc_kobjects),
 		ztest_unit_test(test_thread_alloc_out_of_idx),

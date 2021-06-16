@@ -75,6 +75,9 @@ def find_arch2board_set_in(root, arches):
     boards = root / 'boards'
 
     for arch in arches:
+        if not (boards / arch).is_dir():
+            continue
+
         for maybe_board in (boards / arch).iterdir():
             if not maybe_board.is_dir():
                 continue

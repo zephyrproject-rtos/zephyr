@@ -28,6 +28,9 @@ static inline void z_shell_raw_fprintf(const struct shell_fprintf *const ctx,
 /* Macro to send VT100 commands. */
 #define Z_SHELL_VT100_CMD(_shell_, _cmd_)				\
 	do {								\
+		if (!IS_ENABLED(CONFIG_SHELL_VT100_COMMANDS))		\
+			break;						\
+									\
 		static const char cmd[] = _cmd_;			\
 		z_shell_raw_fprintf(_shell_->fprintf_ctx, "%s", cmd);	\
 	} while (0)

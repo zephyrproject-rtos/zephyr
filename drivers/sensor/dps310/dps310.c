@@ -732,7 +732,7 @@ static const struct dps310_cfg dps310_cfg_0 = {
 	.i2c_addr = DT_INST_REG_ADDR(0)
 };
 
-DEVICE_DT_INST_DEFINE(0, dps310_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, dps310_init, NULL,
 		    &dps310_data_0, &dps310_cfg_0, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &dps310_api_funcs);
 #endif
@@ -744,7 +744,7 @@ static const struct dps310_cfg dps310_cfg_1 = {
 	.i2c_addr = DT_INST_REG_ADDR(1)
 };
 
-DEVICE_DT_INST_DEFINE(1, dps310_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(1, dps310_init, NULL,
 		    &dps310_data_1, &dps310_cfg_1, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &dps310_api_funcs);
 #endif

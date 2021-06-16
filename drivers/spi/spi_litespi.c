@@ -177,7 +177,7 @@ static struct spi_driver_api spi_litespi_api = {
 	}; \
 	DEVICE_DT_INST_DEFINE(n, \
 			spi_litespi_init, \
-			device_pm_control_nop, \
+			NULL, \
 			&spi_litespi_data_##n, \
 			&spi_litespi_cfg_##n, \
 			POST_KERNEL, \

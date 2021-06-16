@@ -117,8 +117,7 @@ static void zsock_received_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data);
 
-static inline int k_fifo_wait_non_empty(struct k_fifo *fifo,
-					k_timeout_t timeout)
+static int fifo_wait_non_empty(struct k_fifo *fifo, k_timeout_t timeout)
 {
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -344,6 +343,10 @@ static void zsock_received_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data)
 {
+	if (ctx->cond.lock) {
+		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
+	}
+
 	NET_DBG("ctx=%p, pkt=%p, st=%d, user_data=%p", ctx, pkt, status,
 		user_data);
 
@@ -364,8 +367,7 @@ static void zsock_received_cb(struct net_context *ctx,
 			NET_DBG("Set EOF flag on pkt %p", last_pkt);
 		}
 
-		(void)k_condvar_signal(&ctx->cond.recv);
-		return;
+		goto unlock;
 	}
 
 	/* Normal packet */
@@ -378,6 +380,11 @@ static void zsock_received_cb(struct net_context *ctx,
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
 	k_fifo_put(&ctx->recv_q, pkt);
+
+unlock:
+	if (ctx->cond.lock) {
+		(void)k_mutex_unlock(ctx->cond.lock);
+	}
 
 	/* Let reader to wake if it was sleeping */
 	(void)k_condvar_signal(&ctx->cond.recv);
@@ -931,11 +938,11 @@ void net_socket_update_tc_rx_time(struct net_pkt *pkt, uint32_t end_tick)
 
 	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
 				    net_pkt_priority(pkt),
-				    net_pkt_timestamp(pkt)->nanosecond,
+				    net_pkt_create_time(pkt),
 				    end_tick);
 
-	if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
-		uint32_t val, prev = net_pkt_timestamp(pkt)->nanosecond;
+	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)) {
+		uint32_t val, prev = net_pkt_create_time(pkt);
 		int i;
 
 		for (i = 0; i < net_pkt_stats_tick_count(pkt); i++) {
@@ -964,15 +971,13 @@ static int wait_data(struct net_context *ctx, k_timeout_t *timeout)
 		 * lock at this point so skip it.
 		 */
 		NET_WARN("No lock pointer set for context %p", ctx);
+		return -EINVAL;
+	}
 
-	} else if (!k_fifo_peek_head(&ctx->recv_q)) {
-		int ret;
-
+	if (k_fifo_is_empty(&ctx->recv_q)) {
 		/* Wait for the data to arrive but without holding a lock */
-		ret = k_condvar_wait(&ctx->cond.recv, ctx->cond.lock, *timeout);
-		if (ret < 0) {
-			return ret;
-		}
+		return k_condvar_wait(&ctx->cond.recv, ctx->cond.lock,
+				      *timeout);
 	}
 
 	return 0;
@@ -1008,7 +1013,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	if (flags & ZSOCK_MSG_PEEK) {
 		int res;
 
-		res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
+		res = fifo_wait_non_empty(&ctx->recv_q, timeout);
 		/* EAGAIN when timeout expired, EINTR when cancelled */
 		if (res && res != -EAGAIN && res != -EINTR) {
 			errno = -res;
@@ -1123,12 +1128,6 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		timeout = K_NO_WAIT;
 	} else if (!sock_is_eof(ctx)) {
 		net_context_get_option(ctx, NET_OPT_RCVTIMEO, &timeout, NULL);
-
-		res = wait_data(ctx, &timeout);
-		if (res < 0) {
-			errno = -res;
-			return -1;
-		}
 	}
 
 	end = sys_clock_timeout_end_calc(timeout);
@@ -1142,11 +1141,12 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 			return 0;
 		}
 
-		res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
-		/* EAGAIN when timeout expired, EINTR when cancelled */
-		if (res && res != -EAGAIN && res != -EINTR) {
-			errno = -res;
-			return -1;
+		if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			res = wait_data(ctx, &timeout);
+			if (res < 0) {
+				errno = -res;
+				return -1;
+			}
 		}
 
 		pkt = k_fifo_peek_head(&ctx->recv_q);
@@ -1733,22 +1733,6 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
 				ret = net_context_set_option(ctx,
 							     NET_OPT_PRIORITY,
-							     optval, optlen);
-				if (ret < 0) {
-					errno = -ret;
-					return -1;
-				}
-
-				return 0;
-			}
-
-			break;
-
-		case SO_TIMESTAMPING:
-			/* Calculate TX network packet timings */
-			if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP)) {
-				ret = net_context_set_option(ctx,
-							     NET_OPT_TIMESTAMP,
 							     optval, optlen);
 				if (ret < 0) {
 					errno = -ret;

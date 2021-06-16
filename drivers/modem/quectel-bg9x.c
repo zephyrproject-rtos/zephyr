@@ -97,34 +97,6 @@ static inline int find_len(char *data)
 	return ATOI(buf, 0, "rx_buf");
 }
 
-/* Func: modem_at
- * Desc: Send "AT" command to the modem and wait for it to
- * respond. If the modem doesn't respond after some time, give
- * up and kill the driver.
- */
-static int modem_at(struct modem_context *mctx, struct modem_data *mdata)
-{
-	int counter = 0, ret = -1;
-
-	do {
-
-		/* Send "AT" command to the modem. */
-		ret = modem_cmd_send(&mctx->iface, &mctx->cmd_handler,
-				     NULL, 0, "AT", &mdata->sem_response,
-				     MDM_CMD_TIMEOUT);
-
-		/* Check the response from the Modem. */
-		if (ret < 0 && ret != -ETIMEDOUT) {
-			return ret;
-		}
-
-		counter++;
-		k_sleep(K_SECONDS(2));
-	} while (counter < MDM_MAX_AT_RETRIES && ret < 0);
-
-	return ret;
-}
-
 /* Func: on_cmd_sockread_common
  * Desc: Function to successfully read data from the modem on a given socket.
  */
@@ -443,6 +415,13 @@ MODEM_CMD_DEFINE(on_cmd_unsol_close)
 	return 0;
 }
 
+/* Handler: Modem initialization ready. */
+MODEM_CMD_DEFINE(on_cmd_unsol_rdy)
+{
+	k_sem_give(&mdata.sem_response);
+	return 0;
+}
+
 /* Func: send_socket_data
  * Desc: This function will send "binary" data over the socket object.
  */
@@ -605,7 +584,7 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t len,
 		return -1;
 	}
 
-	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%d", sock->sock_fd, len);
+	snprintk(sendbuf, sizeof(sendbuf), "AT+QIRD=%d,%zd", sock->sock_fd, len);
 
 	/* Socket read settings */
 	(void) memset(&sock_data, 0, sizeof(sock_data));
@@ -836,7 +815,7 @@ static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
 	ssize_t sent = 0;
 	int rc;
 
-	LOG_DBG("msg_iovlen:%d flags:%d", msg->msg_iovlen, flags);
+	LOG_DBG("msg_iovlen:%zd flags:%d", msg->msg_iovlen, flags);
 
 	for (int i = 0; i < msg->msg_iovlen; i++) {
 		const char *buf = msg->msg_iov[i].iov_base;
@@ -941,6 +920,7 @@ static const struct modem_cmd response_cmds[] = {
 static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+QIURC: \"recv\",",	   on_cmd_unsol_recv,  1U, ""),
 	MODEM_CMD("+QIURC: \"closed\",",   on_cmd_unsol_close, 1U, ""),
+	MODEM_CMD("RDY", on_cmd_unsol_rdy, 0U, ""),
 };
 
 /* Commands sent to the modem to set it up at boot time. */
@@ -1023,9 +1003,9 @@ restart:
 
 	/* Let the modem respond. */
 	LOG_INF("Waiting for modem to respond");
-	ret = modem_at(&mctx, &mdata);
+	ret = k_sem_take(&mdata.sem_response, MDM_MAX_BOOT_TIME);
 	if (ret < 0) {
-		LOG_ERR("MODEM WAIT LOOP ERROR: %d", ret);
+		LOG_ERR("Timeout waiting for RDY");
 		goto error;
 	}
 
@@ -1217,7 +1197,7 @@ error:
 }
 
 /* Register the device with the Networking stack. */
-NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, device_pm_control_nop,
+NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL,
 				  &mdata, NULL,
 				  CONFIG_MODEM_QUECTEL_BG9X_INIT_PRIORITY,
 				  &api_funcs, MDM_MAX_DATA_LENGTH);

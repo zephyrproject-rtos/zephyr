@@ -42,11 +42,11 @@
 				erase-block-size = <4096>;
 				write-block-size = <4>;
 			};
-	};
+		};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
 
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";

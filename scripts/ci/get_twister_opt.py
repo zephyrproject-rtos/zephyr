@@ -8,6 +8,7 @@ import re, os
 import sh
 import argparse
 import glob
+import yaml
 
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
@@ -87,6 +88,104 @@ def find_tests(files):
         with open("modified_tests.args", "w") as fp:
             fp.write("-T\n%s\n--all" %("\n-T\n".join(tests)))
 
+def _get_match_fn(globs, regexes):
+    # Constructs a single regex that tests for matches against the globs in
+    # 'globs' and the regexes in 'regexes'. Parts are joined with '|' (OR).
+    # Returns the search() method of the compiled regex.
+    #
+    # Returns None if there are neither globs nor regexes, which should be
+    # interpreted as no match.
+
+    if not (globs or regexes):
+        return None
+
+    regex = ""
+
+    if globs:
+        glob_regexes = []
+        for glob in globs:
+            # Construct a regex equivalent to the glob
+            glob_regex = glob.replace(".", "\\.").replace("*", "[^/]*") \
+                             .replace("?", "[^/]")
+
+            if not glob.endswith("/"):
+                # Require a full match for globs that don't end in /
+                glob_regex += "$"
+
+            glob_regexes.append(glob_regex)
+
+        # The glob regexes must anchor to the beginning of the path, since we
+        # return search(). (?:) is a non-capturing group.
+        regex += "^(?:{})".format("|".join(glob_regexes))
+
+    if regexes:
+        if regex:
+            regex += "|"
+        regex += "|".join(regexes)
+
+    return re.compile(regex).search
+
+class Tag:
+    """
+    Represents an entry for a tag in tags.yaml.
+
+    These attributes are available:
+
+    name:
+        List of GitHub labels for the area. Empty if the area has no 'labels'
+        key.
+
+    description:
+        Text from 'description' key, or None if the area has no 'description'
+        key
+    """
+    def _contains(self, path):
+        # Returns True if the area contains 'path', and False otherwise
+
+        return self._match_fn and self._match_fn(path) and not \
+            (self._exclude_match_fn and self._exclude_match_fn(path))
+
+    def __repr__(self):
+        return "<Tag {}>".format(self.name)
+
+def find_tags(files):
+
+    tag_cfg_file = os.path.join(repository_path, 'scripts', 'ci', 'tags.yaml')
+    with open(tag_cfg_file, 'r') as ymlfile:
+        tags_config = yaml.safe_load(ymlfile)
+
+    tags = {}
+    for t,x in tags_config.items():
+        tag = Tag()
+        tag.exclude = True
+        tag.name = t
+
+        # tag._match_fn(path) tests if the path matches files and/or
+        # files-regex
+        tag._match_fn = _get_match_fn(x.get("files"), x.get("files-regex"))
+
+        # Like tag._match_fn(path), but for files-exclude and
+        # files-regex-exclude
+        tag._exclude_match_fn = \
+            _get_match_fn(x.get("files-exclude"), x.get("files-regex-exclude"))
+
+        tags[tag.name] = tag
+
+    for f in files:
+        for t in tags.values():
+            if t._contains(f):
+                t.exclude = False
+
+    exclude_tags = set()
+    for t in tags.values():
+        if t.exclude:
+            exclude_tags.add(t.name)
+
+    if exclude_tags:
+        with open("modified_tags.args", "w") as fp:
+            fp.write("-e\n%s" %("\n-e\n".join(exclude_tags)))
+
+
 if __name__ == "__main__":
 
     args = parse_args()
@@ -101,3 +200,4 @@ if __name__ == "__main__":
     find_boards(files)
     find_archs(files)
     find_tests(files)
+    find_tags(files)

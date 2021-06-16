@@ -16,4 +16,3 @@ API Reference
 *************
 
 .. doxygengroup:: ip_4_6
-   :project: Zephyr

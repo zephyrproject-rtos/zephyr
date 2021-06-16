@@ -1,0 +1,5 @@
+tests:
+  cpp.main:
+    integration_platforms:
+      - mps2_an385
+    tags: cpp

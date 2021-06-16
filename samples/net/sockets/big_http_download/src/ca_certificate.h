@@ -15,7 +15,7 @@
 
 /* Let's Encrypt Authority X3 for https://www.7-zip.org */
 static const unsigned char ca_certificate[] = {
-#include "lets_encrypt_x3.der.inc"
+#include "lets-encrypt-r3.der.inc"
 };
 
 #endif /* __CA_CERTIFICATE_H__ */

@@ -158,7 +158,7 @@ static const struct imx_epit_config imx_epit_##idx##z_config = {	       \
 static struct imx_epit_data imx_epit_##idx##_data;			       \
 DEVICE_DT_INST_DEFINE(idx,						       \
 		    &imx_epit_config_func_##idx,			       \
-		    device_pm_control_nop,				       \
+		    NULL,						       \
 		    &imx_epit_##idx##_data, &imx_epit_##idx##z_config.info,    \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
 		    &imx_epit_driver_api);				       \

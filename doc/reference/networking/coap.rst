@@ -204,4 +204,3 @@ API Reference
 *************
 
 .. doxygengroup:: coap
-   :project: Zephyr

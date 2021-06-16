@@ -92,7 +92,6 @@ static void shell_uninit_cb(const struct shell *shell, int res)
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN)) {
 		/* connect uart to my handler */
 		uart_irq_callback_user_data_set(dev, direct_uart_callback, NULL);
-		uart_irq_tx_disable(dev);
 		uart_irq_rx_enable(dev);
 	} else {
 		k_timer_user_data_set(&uart_poll_timer, (void *)dev);

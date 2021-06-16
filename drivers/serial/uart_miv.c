@@ -295,9 +295,8 @@ static int uart_miv_irq_update(const struct device *dev)
 	return 1;
 }
 
-static void uart_miv_irq_handler(void *arg)
+static void uart_miv_irq_handler(const struct device *dev)
 {
-	const struct device *dev = (const struct device *)arg;
 	struct uart_miv_data *data = DEV_DATA(dev);
 
 	if (data->callback) {
@@ -329,7 +328,7 @@ void uart_miv_rx_thread(void *arg1, void *arg2, void *arg3)
 		if (uart->status & STATUS_RXFULL_MASK) {
 			uart_miv_irq_handler(dev);
 		}
-		k_sleep(delay);
+		k_sleep(K_USEC(delay));
 	}
 }
 
@@ -408,7 +407,7 @@ static const struct uart_miv_device_config uart_miv_dev_cfg_0 = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, uart_miv_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, uart_miv_init, NULL,
 		    &uart_miv_data_0, &uart_miv_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_miv_driver_api);

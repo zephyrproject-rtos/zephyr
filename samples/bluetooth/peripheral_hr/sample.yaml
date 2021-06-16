@@ -12,6 +12,6 @@ tests:
     build_only: true
   sample.bluetooth.peripheral_hr.frdm_kw41z_shield:
     harness: bluetooth
-    platform_allow: mimxrt1020_evk mimxrt1050_evk mimxrt1060_evk frdm_k64f
+    depends_on: arduino_serial
     tags: bluetooth
     extra_args: SHIELD=frdm_kw41z

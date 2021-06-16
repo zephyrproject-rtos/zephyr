@@ -47,6 +47,7 @@ struct bt_vocs_client {
 	struct bt_gatt_subscribe_params location_sub_params;
 	struct bt_gatt_subscribe_params desc_sub_params;
 	uint8_t subscribe_cnt;
+	bool cp_retried;
 
 	bool busy;
 	struct bt_vocs_control cp;
@@ -68,18 +69,19 @@ struct bt_vocs_server {
 };
 
 struct bt_vocs {
+	bool client_instance;
 	union {
 		struct bt_vocs_server srv;
 		struct bt_vocs_client cli;
 	};
 };
 
-int bt_vocs_client_state_get(struct bt_conn *conn, struct bt_vocs *inst);
-int bt_vocs_client_state_set(struct bt_conn *conn, struct bt_vocs *inst, int16_t offset);
-int bt_vocs_client_location_get(struct bt_conn *conn, struct bt_vocs *inst);
-int bt_vocs_client_location_set(struct bt_conn *conn, struct bt_vocs *inst, uint32_t location);
-int bt_vocs_client_description_get(struct bt_conn *conn, struct bt_vocs *inst);
-int bt_vocs_client_description_set(struct bt_conn *conn, struct bt_vocs *inst,
+int bt_vocs_client_state_get(struct bt_vocs *inst);
+int bt_vocs_client_state_set(struct bt_vocs *inst, int16_t offset);
+int bt_vocs_client_location_get(struct bt_vocs *inst);
+int bt_vocs_client_location_set(struct bt_vocs *inst, uint32_t location);
+int bt_vocs_client_description_get(struct bt_vocs *inst);
+int bt_vocs_client_description_set(struct bt_vocs *inst,
 				   const char *description);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VOCS_INTERNAL_ */

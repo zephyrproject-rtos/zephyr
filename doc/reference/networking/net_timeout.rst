@@ -59,4 +59,3 @@ API Reference
 *************
 
 .. doxygengroup:: net_timeout
-   :project: Zephyr

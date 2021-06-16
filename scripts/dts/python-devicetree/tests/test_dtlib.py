@@ -1538,30 +1538,30 @@ def test_prop_type():
 };
 """)
 
-    verify_type("empty", dtlib.TYPE_EMPTY)
-    verify_type("bytes1", dtlib.TYPE_BYTES)
-    verify_type("bytes2", dtlib.TYPE_BYTES)
-    verify_type("bytes3", dtlib.TYPE_BYTES)
-    verify_type("bytes4", dtlib.TYPE_BYTES)
-    verify_type("bytes5", dtlib.TYPE_BYTES)
-    verify_type("num", dtlib.TYPE_NUM)
-    verify_type("nums1", dtlib.TYPE_NUMS)
-    verify_type("nums2", dtlib.TYPE_NUMS)
-    verify_type("nums3", dtlib.TYPE_NUMS)
-    verify_type("nums4", dtlib.TYPE_NUMS)
-    verify_type("string", dtlib.TYPE_STRING)
-    verify_type("strings", dtlib.TYPE_STRINGS)
-    verify_type("phandle1", dtlib.TYPE_PHANDLE)
-    verify_type("phandle2", dtlib.TYPE_PHANDLE)
-    verify_type("phandles1", dtlib.TYPE_PHANDLES)
-    verify_type("phandles2", dtlib.TYPE_PHANDLES)
-    verify_type("phandle-and-nums-1", dtlib.TYPE_PHANDLES_AND_NUMS)
-    verify_type("phandle-and-nums-2", dtlib.TYPE_PHANDLES_AND_NUMS)
-    verify_type("phandle-and-nums-3", dtlib.TYPE_PHANDLES_AND_NUMS)
-    verify_type("path1", dtlib.TYPE_PATH)
-    verify_type("path2", dtlib.TYPE_PATH)
-    verify_type("compound1", dtlib.TYPE_COMPOUND)
-    verify_type("compound2", dtlib.TYPE_COMPOUND)
+    verify_type("empty", dtlib.Type.EMPTY)
+    verify_type("bytes1", dtlib.Type.BYTES)
+    verify_type("bytes2", dtlib.Type.BYTES)
+    verify_type("bytes3", dtlib.Type.BYTES)
+    verify_type("bytes4", dtlib.Type.BYTES)
+    verify_type("bytes5", dtlib.Type.BYTES)
+    verify_type("num", dtlib.Type.NUM)
+    verify_type("nums1", dtlib.Type.NUMS)
+    verify_type("nums2", dtlib.Type.NUMS)
+    verify_type("nums3", dtlib.Type.NUMS)
+    verify_type("nums4", dtlib.Type.NUMS)
+    verify_type("string", dtlib.Type.STRING)
+    verify_type("strings", dtlib.Type.STRINGS)
+    verify_type("phandle1", dtlib.Type.PHANDLE)
+    verify_type("phandle2", dtlib.Type.PHANDLE)
+    verify_type("phandles1", dtlib.Type.PHANDLES)
+    verify_type("phandles2", dtlib.Type.PHANDLES)
+    verify_type("phandle-and-nums-1", dtlib.Type.PHANDLES_AND_NUMS)
+    verify_type("phandle-and-nums-2", dtlib.Type.PHANDLES_AND_NUMS)
+    verify_type("phandle-and-nums-3", dtlib.Type.PHANDLES_AND_NUMS)
+    verify_type("path1", dtlib.Type.PATH)
+    verify_type("path2", dtlib.Type.PATH)
+    verify_type("compound1", dtlib.Type.COMPOUND)
+    verify_type("compound2", dtlib.Type.COMPOUND)
 
 def test_prop_type_casting():
     '''Test Property.to_{num,nums,string,strings,node}()'''
@@ -2077,7 +2077,7 @@ foo: / {
 def test_reprs():
     '''Test the __repr__() functions.'''
 
-    dt = parse("""
+    dts = """
 /dts-v1/;
 
 / {
@@ -2086,15 +2086,21 @@ def test_reprs():
 		y = < 1 >;
 	};
 };
-""",
-    include_path=("foo", "bar"))
+"""
 
-    assert re.fullmatch(r"DT\(filename='.*', include_path=\('foo', 'bar'\)\)",
+    dt = parse(dts, include_path=("foo", "bar"))
+
+    assert re.fullmatch(r"DT\(filename='.*', include_path=.'foo', 'bar'.\)",
                         repr(dt))
     assert re.fullmatch("<Property 'x' at '/' in '.*'>",
                         repr(dt.root.props["x"]))
     assert re.fullmatch("<Node /sub in '.*'>",
                         repr(dt.root.nodes["sub"]))
+
+    dt = parse(dts, include_path=iter(("foo", "bar")))
+
+    assert re.fullmatch(r"DT\(filename='.*', include_path=.'foo', 'bar'.\)",
+                        repr(dt))
 
 def test_names():
     '''Tests for node/property names.'''

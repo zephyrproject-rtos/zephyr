@@ -17,8 +17,7 @@
 
 #include "tmp116.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(TMP116);
+LOG_MODULE_REGISTER(TMP116, CONFIG_SENSOR_LOG_LEVEL);
 
 static int tmp116_reg_read(const struct device *dev, uint8_t reg,
 			   uint16_t *val)
@@ -78,6 +77,7 @@ static int tmp116_sample_fetch(const struct device *dev,
 {
 	struct tmp116_data *drv_data = dev->data;
 	uint16_t value;
+	uint16_t cfg_reg = 0;
 	int rc;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
@@ -85,6 +85,19 @@ static int tmp116_sample_fetch(const struct device *dev,
 
 	/* clear sensor values */
 	drv_data->sample = 0U;
+
+	/* Make sure that a data is available */
+	rc = tmp116_reg_read(dev, TMP116_REG_CFGR, &cfg_reg);
+	if (rc < 0) {
+		LOG_ERR("%s, Failed to read from CFGR register",
+			dev->name);
+		return rc;
+	}
+
+	if ((cfg_reg & TMP116_CFGR_DATA_READY) == 0) {
+		LOG_DBG("%s: no data ready", dev->name);
+		return -EBUSY;
+	}
 
 	/* Get the most recent temperature measurement */
 	rc = tmp116_reg_read(dev, TMP116_REG_TEMP, &value);
@@ -192,8 +205,8 @@ static int tmp116_init(const struct device *dev)
 		.i2c_addr = DT_INST_REG_ADDR(_num), \
 		.i2c_bus_label = DT_INST_BUS_LABEL(_num) \
 	}; \
-	DEVICE_DT_INST_DEFINE(_num, tmp116_init, device_pm_control_nop, \
+	DEVICE_DT_INST_DEFINE(_num, tmp116_init, NULL,			\
 		&tmp116_data_##_num, &tmp116_config_##_num, POST_KERNEL, \
-		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api)
+		CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP116);
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_TMP116)

@@ -52,7 +52,7 @@ static volatile unsigned int calc_pi_low_count;
 static volatile unsigned int calc_pi_high_count;
 
 /* Indicates that the load/store test exited */
-static bool test_exited;
+static volatile bool test_exited;
 
 /* Semaphore for signaling end of test */
 static K_SEM_DEFINE(test_exit_sem, 0, 1);

@@ -62,6 +62,9 @@ mapping:
           "repeat":
             type: int
             required: no
+          "pytest_root":
+            type: str
+            required: no
           "regex":
             type: seq
             required: no
@@ -186,6 +189,9 @@ mapping:
                 required: no
               "repeat":
                 type: int
+                required: no
+              "pytest_root":
+                type: str
                 required: no
               "regex":
                 type: seq

@@ -416,7 +416,6 @@ API Reference
 *************
 
 .. doxygengroup:: lwm2m_api
-   :project: Zephyr
 
 .. _LwM2M:
    https://www.omaspecworks.org/what-is-oma-specworks/iot/lightweight-m2m-lwm2m/

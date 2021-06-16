@@ -16,12 +16,8 @@
 #define LOG_MODULE_NAME bt_buf
 #include "common/log.h"
 
-NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
-			  BT_BUF_RX_SIZE, NULL);
-
 #if defined(CONFIG_BT_CONN)
-#define NUM_COMLETE_EVENT_SIZE BT_BUF_SIZE(\
-	sizeof(struct bt_hci_evt_hdr) +                                \
+#define NUM_COMLETE_EVENT_SIZE BT_BUF_EVT_SIZE(                        \
 	sizeof(struct bt_hci_cp_host_num_completed_packets) +          \
 	CONFIG_BT_MAX_CONN * sizeof(struct bt_hci_handle_count))
 /* Dedicated pool for HCI_Number_of_Completed_Packets. This event is always
@@ -32,16 +28,25 @@ NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 NET_BUF_POOL_FIXED_DEFINE(num_complete_pool, 1, NUM_COMLETE_EVENT_SIZE, NULL);
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_DISCARDABLE_BUF_COUNT)
-#define DISCARDABLE_EVENT_SIZE BT_BUF_SIZE(CONFIG_BT_DISCARDABLE_BUF_SIZE)
-NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_DISCARDABLE_BUF_COUNT,
-			  DISCARDABLE_EVENT_SIZE, NULL);
-#endif /* CONFIG_BT_DISCARDABLE_BUF_COUNT */
+#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
+NET_BUF_POOL_FIXED_DEFINE(discardable_pool, CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT,
+			  BT_BUF_EVT_SIZE(CONFIG_BT_BUF_EVT_DISCARDABLE_SIZE),
+			  NULL);
+#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-#define ACL_IN_SIZE BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_RX_MTU)
-NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BT_ACL_RX_COUNT, ACL_IN_SIZE,
+NET_BUF_POOL_DEFINE(acl_in_pool, CONFIG_BT_BUF_ACL_RX_COUNT,
+		    BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_RX_SIZE),
 		    sizeof(struct acl_data), bt_hci_host_num_completed_packets);
+
+NET_BUF_POOL_FIXED_DEFINE(evt_pool, CONFIG_BT_BUF_EVT_RX_COUNT,
+			  BT_BUF_EVT_RX_SIZE,
+			  NULL);
+#else
+#define BT_BUF_RX_COUNT MAX(CONFIG_BT_BUF_EVT_RX_COUNT, CONFIG_BT_BUF_ACL_RX_COUNT)
+NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, BT_BUF_RX_COUNT,
+			  BT_BUF_RX_SIZE,
+			  NULL);
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
@@ -57,7 +62,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	if (type == BT_BUF_EVT) {
-		buf = net_buf_alloc(&hci_rx_pool, timeout);
+		buf = net_buf_alloc(&evt_pool, timeout);
 	} else {
 		buf = net_buf_alloc(&acl_in_pool, timeout);
 	}
@@ -118,7 +123,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 	case BT_HCI_EVT_CMD_STATUS:
 		return bt_buf_get_cmd_complete(timeout);
 	default:
-#if defined(CONFIG_BT_DISCARDABLE_BUF_COUNT)
+#if defined(CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT)
 		if (discardable) {
 			struct net_buf *buf;
 
@@ -130,7 +135,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable,
 
 			return buf;
 		}
-#endif /* CONFIG_BT_DISCARDABLE_BUF_COUNT */
+#endif /* CONFIG_BT_BUF_EVT_DISCARDABLE_COUNT */
 
 		return bt_buf_get_rx(BT_BUF_EVT, timeout);
 	}

@@ -63,6 +63,26 @@
 	};
 };
 
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <20>;
+	div-r = <4>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(80)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
 &cpu0 {
 	cpu-power-states = <&stop0 &stop1 &stop2>;
 };
@@ -114,7 +134,6 @@
 		     &spi3_miso_pc11 &spi3_mosi_pc12>;
 	status = "okay";
 };
-
 
 &timers2 {
 	status = "okay";

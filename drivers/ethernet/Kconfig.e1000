@@ -22,3 +22,19 @@ config ETH_E1000_VERBOSE_DEBUG
 	help
 	  Enabling this will turn on the hexdump of the received and sent
 	  frames. Do not leave on for production.
+
+config ETH_E1000_PTP_CLOCK
+	bool "Enable PTP clock driver support [EXPERIMENTAL]"
+	depends on PTP_CLOCK
+	default y
+	help
+	  Enable PTP clock support. This is still a dummy that is only used
+	  for debugging and currently does not do any real PTP activities.
+
+config ETH_E1000_PTP_CLOCK_SRC_HZ
+	int "Frequency of the clock source for the PTP timer"
+	default 50000000
+	depends on ETH_E1000_PTP_CLOCK
+	help
+	  Set the frequency in Hz sourced to the PTP timer.
+	  If the value is set properly, the timer will be accurate.

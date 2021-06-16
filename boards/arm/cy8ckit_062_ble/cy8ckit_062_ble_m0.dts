@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Cypress
- * Copyright (c) 2020, ATL Electronics
+ * Copyright (c) 2020-2021, ATL Electronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 /dts-v1/;
 
 #include <cypress/psoc6_cm0.dtsi>
+#include "cy8ckit_062_ble_common.dtsi"
 
 / {
 	model = "Cypress PSoC6 BLE Pioneer Kit";
@@ -16,14 +17,11 @@
 	aliases {
 		sw0 = &user_bt;
 		led0 = &user_led;
-		uart-5 = &uart5;
 	};
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &uart5;
-		zephyr,shell-uart = &uart5;
 	};
 
 	leds {
@@ -53,7 +51,7 @@
 	status = "okay";
 };
 
-&uart5 {
+&spi6 {
 	status = "okay";
-	current-speed = <115200>;
+	interrupt-parent = <&intmux_ch16>;
 };

@@ -45,4 +45,3 @@ API Reference
 *************
 
 .. doxygengroup:: can_isotp
-   :project: Zephyr

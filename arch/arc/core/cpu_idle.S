@@ -16,6 +16,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
+#include <arch/arc/asm-compat/assembler.h>
 
 GTEXT(arch_cpu_idle)
 GTEXT(arch_cpu_atomic_idle)
@@ -36,11 +37,12 @@ SECTION_VAR(BSS, z_arc_cpu_sleep_mode)
 SECTION_FUNC(TEXT, arch_cpu_idle)
 
 #ifdef CONFIG_TRACING
-	push_s blink
+	PUSHR blink
 	jl    sys_trace_idle
-	pop_s blink
+	POPR blink
 #endif
 
+	/* z_arc_cpu_sleep_mode is 32 bit despite of platform bittnes */
 	ld r1, [z_arc_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
 	sleep r1
@@ -57,11 +59,12 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 
 #ifdef CONFIG_TRACING
-	push_s blink
+	PUSHR blink
 	jl    sys_trace_idle
-	pop_s blink
+	POPR blink
 #endif
 
+	/* z_arc_cpu_sleep_mode is 32 bit despite of platform bittnes */
 	ld r1, [z_arc_cpu_sleep_mode]
 	or r1, r1, (1 << 4) /* set IRQ-enabled bit */
 	sleep r1

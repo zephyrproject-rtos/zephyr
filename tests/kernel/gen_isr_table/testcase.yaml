@@ -5,7 +5,7 @@ tests:
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV6_M_ARMV8_M_BASELINE
     tags: kernel interrupt isr_table
     extra_configs:
-      - CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
   arch.interrupt.gen_isr_table.arm_mainline:
     arch_allow: arm
     platform_exclude: stmf103_mini nucleo_f103rb olimexino_stm32 stm32_min_dev_black
@@ -14,12 +14,12 @@ tests:
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV7_M_ARMV8_M_MAINLINE
     tags: kernel interrupt isr_table
     extra_configs:
-      - CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
   arch.interrupt.gen_isr_table.disabled:
     arch_allow: arm
     extra_configs:
       - CONFIG_GEN_ISR_TABLES=n
-      - CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
+      - CONFIG_NULL_POINTER_EXCEPTION_DETECTION_NONE=y
     tags: kernel interrupt isr_table
     build_only: true
   arch.interrupt.gen_isr_table.arc:

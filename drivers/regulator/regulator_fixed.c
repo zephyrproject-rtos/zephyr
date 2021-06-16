@@ -385,7 +385,7 @@ static const struct driver_config regulator_##id##_cfg = { \
 \
 static struct REG_DATA_TAG(id) regulator_##id##_data; \
 \
-DEVICE_DT_INST_DEFINE(id, REG_INIT(id), device_pm_control_nop, \
+DEVICE_DT_INST_DEFINE(id, REG_INIT(id), NULL,			       \
 		 &regulator_##id##_data, &regulator_##id##_cfg,	       \
 		 POST_KERNEL, CONFIG_REGULATOR_FIXED_INIT_PRIORITY,    \
 		 &REG_API(id));

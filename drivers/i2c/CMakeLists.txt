@@ -31,6 +31,7 @@ zephyr_library_sources_ifdef(CONFIG_I2C_SAM0		i2c_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_LITEX		i2c_litex.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NPCX		i2c_npcx_controller.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_NPCX		i2c_npcx_port.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_DW		i2c_dw.c)
 
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1
 	i2c_ll_stm32_v1.c
@@ -40,19 +41,6 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 	i2c_ll_stm32_v2.c
 	i2c_ll_stm32.c
 	)
-
-if(CONFIG_I2C_DW)
-  zephyr_library_sources(i2c_dw.c)
-  math(EXPR max_index "${CONFIG_I2C_DW_MAX_INSTANCES} - 1")
-  foreach(NUM RANGE 0 ${max_index})
-    math(EXPR NEXT_NUM "${NUM} + 1")
-    configure_file(
-      i2c_dw_port_x.h
-      ${PROJECT_BINARY_DIR}/include/generated/i2c_dw_port_${NUM}.h
-      @ONLY
-      )
-  endforeach(NUM)
-endif()
 
 zephyr_library_sources_ifdef(CONFIG_I2C_TEST		i2c_test.c)
 

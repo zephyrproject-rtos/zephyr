@@ -30,16 +30,12 @@ static inline bool ptr_in_rodata(const char *addr)
 #define RO_START 0
 #define RO_END 0
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM) || defined(CONFIG_X86) \
-	|| defined(CONFIG_RISCV) || defined(CONFIG_ARM64)
+	|| defined(CONFIG_RISCV) || defined(CONFIG_ARM64) \
+	|| defined(CONFIG_NIOS2)
 	extern char _image_rodata_start[];
 	extern char _image_rodata_end[];
 #define RO_START _image_rodata_start
 #define RO_END _image_rodata_end
-#elif defined(CONFIG_NIOS2) || defined(CONFIG_RISCV)
-	extern char _image_rom_start[];
-	extern char _image_rom_end[];
-#define RO_START _image_rom_start
-#define RO_END _image_rom_end
 #elif defined(CONFIG_XTENSA)
 	extern char _rodata_start[];
 	extern char _rodata_end[];
@@ -471,7 +467,7 @@ process_string:
 	}
 
 	/* Clear our buffer header. We made room for it initially. */
-	*(char **)buf0 = 0;
+	*(char **)buf0 = NULL;
 
 	/* Record end of argument list and number of appended strings. */
 	buf0[0] = (buf - buf0) / sizeof(int);

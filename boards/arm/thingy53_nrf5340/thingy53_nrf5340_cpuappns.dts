@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpuappns_qkaa.dtsi>
+#include "thingy53_nrf5340_common.dts"
+
+/ {
+	model = "Nordic Thingy53 NRF5340 Application";
+	compatible = "nordic,thingy53-nrf5340-cpuapp";
+
+	chosen {
+		zephyr,sram = &sram0_ns;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+
+	aliases {
+		usbd0 = &usbd;
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

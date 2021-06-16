@@ -16,6 +16,85 @@ static gpio_pin_config_t enet_gpio_config = {
 };
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+
+/*Drive Strength Field: R0(260 Ohm @ 3.3V, 150 Ohm@1.8V, 240 Ohm for DDR)
+ *Speed Field: medium(100MHz)
+ *Open Drain Enable Field: Open Drain Disabled
+ *Pull / Keep Enable Field: Pull/Keeper Enabled
+ *Pull / Keep Select Field: Pull
+ *Pull Up / Down Config. Field: 47K Ohm Pull Up
+ *Hyst. Enable Field: Hysteresis Enabled.
+ */
+
+static void mimxrt1020_evk_usdhc_pinmux(
+	uint16_t nusdhc, bool init,
+	uint32_t speed, uint32_t strength)
+{
+	uint32_t cmd_data = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
+				IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_PUE_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_PUS(1) |
+				IOMUXC_SW_PAD_CTL_PAD_DSE(strength);
+	uint32_t clk = IOMUXC_SW_PAD_CTL_PAD_SPEED(speed) |
+				IOMUXC_SW_PAD_CTL_PAD_SRE_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_HYS_MASK |
+				IOMUXC_SW_PAD_CTL_PAD_PUS(0) |
+				IOMUXC_SW_PAD_CTL_PAD_DSE(strength);
+
+	if (nusdhc == 0) {
+		if (init) {
+			IOMUXC_SetPinMux(/*SD_CD*/
+				IOMUXC_GPIO_SD_B0_06_USDHC1_CD_B,
+				0U);
+			IOMUXC_SetPinMux(
+				IOMUXC_GPIO_AD_B1_07_USDHC1_VSELECT,
+				0U);
+			IOMUXC_SetPinMux(
+				IOMUXC_GPIO_SD_B0_02_USDHC1_CMD,
+				0U);
+			IOMUXC_SetPinMux(
+				IOMUXC_GPIO_SD_B0_03_USDHC1_CLK,
+				0U);
+			IOMUXC_SetPinMux(
+				IOMUXC_GPIO_SD_B0_04_USDHC1_DATA0,
+				0U);
+			IOMUXC_SetPinMux(
+				IOMUXC_GPIO_SD_B0_05_USDHC1_DATA1,
+				0U);
+			IOMUXC_SetPinMux(
+				IOMUXC_GPIO_SD_B0_00_USDHC1_DATA2,
+				0U);
+			IOMUXC_SetPinMux(
+				IOMUXC_GPIO_SD_B0_01_USDHC1_DATA3,
+				0U);
+
+			IOMUXC_SetPinConfig(/*SD0_CD_SW*/
+				IOMUXC_GPIO_SD_B0_06_USDHC1_CD_B,
+				0x017089u);
+			IOMUXC_SetPinConfig(/*SD0_VSELECT*/
+				IOMUXC_GPIO_AD_B1_07_USDHC1_VSELECT,
+				0x0170A1u);
+		}
+
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_02_USDHC1_CMD,
+			cmd_data);
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_03_USDHC1_CLK,
+			clk);
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_04_USDHC1_DATA0,
+			cmd_data);
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_05_USDHC1_DATA1,
+			cmd_data);
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_00_USDHC1_DATA2,
+			cmd_data);
+		IOMUXC_SetPinConfig(IOMUXC_GPIO_SD_B0_01_USDHC1_DATA3,
+			cmd_data);
+	}
+}
+#endif
+
 static int mimxrt1020_evk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -142,6 +221,11 @@ static int mimxrt1020_evk_init(const struct device *dev)
 	/* pull up the ENET_INT before RESET. */
 	GPIO_WritePinOutput(GPIO1, 22, 1);
 	GPIO_WritePinOutput(GPIO1, 4, 0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_DISK_DRIVER_SDMMC
+	mimxrt1020_evk_usdhc_pinmux(0, true, 2, 1);
+	imxrt_usdhc_pinmux_cb_register(mimxrt1020_evk_usdhc_pinmux);
 #endif
 
 	return 0;

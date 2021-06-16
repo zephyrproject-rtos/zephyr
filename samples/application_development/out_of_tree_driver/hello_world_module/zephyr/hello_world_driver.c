@@ -43,6 +43,6 @@ static inline void z_vrfy_hello_world_print(const struct device *dev)
 
 
 DEVICE_DEFINE(hello_world, "CUSTOM_DRIVER",
-		    init, device_pm_control_nop, &data, NULL,
+		    init, NULL, &data, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &((struct hello_world_driver_api){ .print = print_impl }));

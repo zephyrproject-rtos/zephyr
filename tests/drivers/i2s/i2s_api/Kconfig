@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2021, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "I2S Loopback Test"
+
+source "Kconfig.zephyr"
+
+config I2S_TEST_SEPARATE_DEVICES
+	bool "Use two separate I2S ports for loopback"
+	help
+	  Use separate I2S ports for transmit and receive.

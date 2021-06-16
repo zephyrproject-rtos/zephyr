@@ -15,7 +15,6 @@ CRC
 =====
 
 .. doxygengroup:: crc
-   :project: Zephyr
 
 Structured Data APIs
 ********************
@@ -24,7 +23,6 @@ JSON
 ====
 
 .. doxygengroup:: json
-   :project: Zephyr
 
 JWT
 ===
@@ -36,4 +34,3 @@ this API is limited to creating the simplistic tokens needed to
 authenticate with the Google Core IoT infrastructure.
 
 .. doxygengroup:: jwt
-   :project: Zephyr

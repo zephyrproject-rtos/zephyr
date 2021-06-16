@@ -4,7 +4,10 @@ tests:
   sample.usb.audio.headphones_microphone:
     depends_on: usb_device
     tags: usb
-    platform_allow: nrf52840dk_nrf52840 nrf5340dk_nrf5340_cpuapp
+    filter: dt_alias_exists("usbd0")
+    integration_platforms:
+        - nrf52840dk_nrf52840
+        - nrf5340dk_nrf5340_cpuapp
     harness: console
     harness_config:
       type: multi_line

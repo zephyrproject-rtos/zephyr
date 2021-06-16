@@ -8,6 +8,8 @@
 #include <device.h>
 #include <init.h>
 #include <kernel.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/fpu.h>
 
 #include <tfm_ns_interface.h>
 
@@ -34,6 +36,7 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 		return (int32_t)TFM_ERROR_GENERIC;
 	}
 
+#if !defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 	/*
 	 * Prevent the thread from being preempted, while executing a Secure
 	 * function. This is required to prevent system crashes that could
@@ -41,11 +44,24 @@ int32_t tfm_ns_interface_dispatch(veneer_fn fn,
 	 * Secure call.
 	 */
 	k_sched_lock();
+#endif
+
+#if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
+	struct fpu_ctx_full context_buffer;
+
+	z_arm_save_fp_context(&context_buffer);
+#endif
 
 	result = fn(arg0, arg1, arg2, arg3);
 
+#if defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
+	z_arm_restore_fp_context(&context_buffer);
+#endif
+
+#if !defined(CONFIG_ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS)
 	/* Unlock the scheduler, to allow the thread to be preempted. */
 	k_sched_unlock();
+#endif
 
 	k_mutex_unlock(&tfm_mutex);
 

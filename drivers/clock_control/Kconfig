@@ -48,4 +48,6 @@ source "drivers/clock_control/Kconfig.esp32"
 
 source "drivers/clock_control/Kconfig.litex"
 
+source "drivers/clock_control/Kconfig.rcar"
+
 endif # CLOCK_CONTROL

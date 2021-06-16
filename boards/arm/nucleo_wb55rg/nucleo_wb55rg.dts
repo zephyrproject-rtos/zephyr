@@ -83,6 +83,24 @@
 	};
 };
 
+&clk_hse {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&clk_hse>;
+	clock-frequency = <DT_FREQ_M(32)>;
+	cpu1-prescaler = <1>;
+	cpu2-prescaler = <1>;
+	ahb4-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
 &cpu0 {
 	cpu-power-states = <&stop0 &stop1 &stop2>;
 };

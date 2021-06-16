@@ -229,6 +229,11 @@ static void socket_fault_cb(int error)
 /* force re-update with remote peer */
 void engine_trigger_update(bool update_objects)
 {
+	if (client.engine_state < ENGINE_REGISTRATION_SENT ||
+	    client.engine_state > ENGINE_UPDATE_SENT) {
+		return;
+	}
+
 	/* TODO: add locking? */
 	client.trigger_update = true;
 
@@ -583,12 +588,7 @@ static int sm_send_bootstrap_registration(void)
 	LOG_DBG("Register ID with bootstrap server as '%s'",
 		log_strdup(query_buffer));
 
-	ret = lwm2m_send_message(msg);
-	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).",
-			    ret);
-		goto cleanup;
-	}
+	lwm2m_send_message_async(msg);
 
 	return 0;
 
@@ -774,11 +774,7 @@ static int sm_send_registration(bool send_obj_support_data,
 		}
 	}
 
-	ret = lwm2m_send_message(msg);
-	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
-		goto cleanup;
-	}
+	lwm2m_send_message_async(msg);
 
 	/* log the registration attempt */
 	LOG_DBG("registration sent [%s]",
@@ -924,11 +920,7 @@ static int sm_do_deregister(void)
 
 	LOG_INF("Deregister from '%s'", log_strdup(client.server_ep));
 
-	ret = lwm2m_send_message(msg);
-	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
-		goto cleanup;
-	}
+	lwm2m_send_message_async(msg);
 
 	set_sm_state(ENGINE_DEREGISTER_SENT);
 	return 0;

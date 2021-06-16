@@ -170,7 +170,7 @@ Programming and Debugging
 *************************
 
 nRF5340 application core supports the Armv8-M Security Extension.
-Applications build for the nrf5340dk_nrf5340_cpuapp board by default
+Applications built for the nrf5340dk_nrf5340_cpuapp board by default
 boot in the Secure state.
 
 nRF5340 network core does not support the Armv8-M Security Extension.
@@ -188,7 +188,7 @@ images are always built using Zephyr. The two alternatives are described below.
 
 .. note::
 
-   By default the the Secure image for nRF5340 application core is built
+   By default the Secure image for nRF5340 application core is built
    using TF-M.
 
 

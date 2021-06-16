@@ -65,7 +65,7 @@ static const struct flash_parameters flash_sam0_parameters = {
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
 	.write_block_size = 1,
 #else
-	.write_block_size = FLASH_PAGE_SIZE,
+	.write_block_size = DT_PROP(DT_INST(0, soc_nv_flash), write_block_size),
 #endif
 	.erase_value = 0xff,
 };
@@ -466,6 +466,6 @@ static const struct flash_driver_api flash_sam0_api = {
 
 static struct flash_sam0_data flash_sam0_data_0;
 
-DEVICE_DT_INST_DEFINE(0, flash_sam0_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, flash_sam0_init, NULL,
 		    &flash_sam0_data_0, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_sam0_api);

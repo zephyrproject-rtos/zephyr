@@ -53,11 +53,30 @@ Install dependencies
 
 Next, you'll install some host dependencies using your package manager.
 
+The current minimum required version for the main dependencies are:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Tool
+     - Min. Version
+
+   * - `CMake <https://cmake.org/>`_
+     - 3.13.1
+
+   * - `Python <https://www.python.org/>`_
+     - 3.6
+
+   * - `Devicetree compiler <https://www.devicetree.org/>`_
+     - 1.4.6
+
 .. tabs::
 
    .. group-tab:: Ubuntu
 
-      #. Use ``apt`` to install dependencies:
+      .. _install_dependencies_ubuntu:
+
+      #. Use ``apt`` to install the required dependencies:
 
          .. code-block:: bash
 
@@ -66,35 +85,19 @@ Next, you'll install some host dependencies using your package manager.
               python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
               make gcc gcc-multilib g++-multilib libsdl2-dev
 
-      #. Verify the version of cmake installed on your system using::
+      #. Verify the versions of the main dependencies installed on your system by entering::
 
             cmake --version
+            python3 --version
+            dtc --version
 
-         If it's not version 3.13.1 or higher, follow these steps to
-         add the `Kitware third-party apt repository <https://apt.kitware.com/>`__
-         to get an updated version of cmake.
-
-         a) Add the Kitware signing key:
-
-            .. code-block:: bash
-
-               wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
-
-         b) Add the Kitware apt repository for your OS release. For Ubuntu
-            18.04 LTS:
-
-            .. code-block:: bash
-
-               sudo apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
-
-         c) Then install the updated cmake with ``apt``:
-
-            .. code-block:: bash
-
-               sudo apt update
-               sudo apt install cmake
+         Check those against the versions in the table in the beginning of this section.
+         Refer to the :ref:`installation_linux` page for additional information on updating
+         the dependencies manually.
 
    .. group-tab:: macOS
+
+      .. _install_dependencies_macos:
 
       #. Install `Homebrew <https://brew.sh/>`_:
 
@@ -102,7 +105,7 @@ Next, you'll install some host dependencies using your package manager.
 
             /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-      #. Use ``brew`` to install dependencies:
+      #. Use ``brew`` to install the required dependencies:
 
          .. code-block:: bash
 
@@ -130,27 +133,29 @@ Next, you'll install some host dependencies using your package manager.
 
       |p|
 
-      #. `Install chocolatey`_
+      .. _install_dependencies_windows:
 
-      #. Open an **Administrator** ``cmd.exe`` window: press the Windows key,
-         type "cmd.exe", right-click the result, and choose "Run as
-         Administrator".
+      #. `Install chocolatey`_.
 
-      #. Disable global confirmation to avoid having to confirm
+      #. Open a ``cmd.exe`` window as **Administrator**. To do so, press the Windows key,
+         type "cmd.exe", right-click the result, and choose :guilabel:`Run as
+         Administrator`.
+
+      #. Disable global confirmation to avoid having to confirm the
          installation of individual programs:
 
          .. code-block:: console
 
             choco feature enable -n allowGlobalConfirmation
 
-      #. Use ``choco`` to install dependencies:
+      #. Use ``choco`` to install the required dependencies:
 
          .. code-block:: console
 
             choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
             choco install ninja gperf python git
 
-      #. Open a new ``cmd.exe`` window **as a regular user** to continue.
+      #. Close the window and open a new ``cmd.exe`` window **as a regular user** to continue.
 
 .. _Chocolatey: https://chocolatey.org/
 .. _Install chocolatey: https://chocolatey.org/install
@@ -211,7 +216,7 @@ additional Python dependencies.
 
          .. code-block:: bash
 
-            pip3 install west
+            pip3 install -U west
 
       #. Get the Zephyr source code:
 
@@ -242,7 +247,7 @@ additional Python dependencies.
 
          .. code-block:: bash
 
-            pip3 install west
+            pip3 install -U west
 
       #. Get the Zephyr source code:
 
@@ -422,3 +427,48 @@ Here are some next steps for exploring Zephyr:
 * Check out :ref:`beyond-GSG` for additional setup alternatives and ideas
 * Discover :ref:`project-resources` for getting help from the Zephyr
   community
+
+.. _help:
+
+Asking for Help
+***************
+
+You can ask for help on a mailing list or on Slack. Please send bug reports and
+feature requests to GitHub.
+
+* **Mailing Lists**: users@lists.zephyrproject.org is usually the right list to
+  ask for help. `Search archives and sign up here`_.
+* **Slack**: Zephyr's workspace is https://zephyrproject.slack.com; you can
+  register with this `Slack invite`_.
+* **GitHub**: Use `GitHub issues`_ for bugs and feature requests.
+
+How to Ask
+==========
+
+.. important::
+
+   Please search this documentation and the mailing list archives first. Your
+   question may have an answer there.
+
+Don't just say "this isn't working" or ask "is this working?". Include as much
+detail as you can about:
+
+#. What you want to do
+#. What you tried (commands you typed, etc.)
+#. What happened (output of each command, etc.)
+
+Use Copy/Paste
+==============
+
+Please **copy/paste text** instead of taking a picture or a screenshot of it.
+Text includes source code, terminal commands, and their output.
+
+Doing this makes it easier for people to help you, and also helps other users
+search the archives.
+
+When copy/pasting more than 5 lines of text into Slack, create a `snippet`_.
+
+.. _Search archives and sign up here: https://lists.zephyrproject.org/g/users
+.. _Slack invite: https://tinyurl.com/y5glwylp
+.. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
+.. _snippet: https://get.slack.help/hc/en-us/articles/204145658-Create-a-snippet

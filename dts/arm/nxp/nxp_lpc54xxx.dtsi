@@ -102,6 +102,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			port = <0>;
 		};
 
 		gpio1: gpio@1 {
@@ -111,6 +112,7 @@
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			port = <1>;
 		};
 
 		mailbox0:mailbox@4008b000 {

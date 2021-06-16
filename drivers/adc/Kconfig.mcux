@@ -53,6 +53,28 @@ config ADC_MCUX_ADC16_VREF_ALTERNATE
 
 endchoice
 
+config ADC_MCUX_ADC16_ENABLE_EDMA
+	bool "Enable EDMA for adc driver"
+	depends on HAS_MCUX_ADC16 && HAS_MCUX_EDMA
+	help
+	  Enable the MCUX ADC16 driver.
+
+if ADC_MCUX_ADC16_ENABLE_EDMA
+
+config ADC_MCUX_ADC16_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	help
+	  Device driver initialization priority.
+
+config ADC_MCUX_ADC16_HW_TRIGGER
+	bool "ADC HW TRIGGER"
+	default y
+	help
+	  Support HW Trigger ADC
+
+endif # ADC_MCUX_ADC16_ENABLE_EDMA
+
 endif # ADC_MCUX_ADC16
 
 

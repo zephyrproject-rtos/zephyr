@@ -12,7 +12,7 @@ The Zephyr kernel supports multiple architectures, including:
  - ARC EM and HS
  - ARMv6-M, ARMv7-M, and ARMv8-M (Cortex-M)
  - ARMv7-A and ARMv8-A (Cortex-A, 32- and 64-bit)
- - ARMv7-R (Cortex-R)
+ - ARMv7-R, ARMv8-R (Cortex-R, 32- and 64-bit)
  - Intel x86 (32- and 64-bit)
  - NIOS II Gen 2
  - RISC-V (32- and 64-bit)
@@ -31,7 +31,7 @@ imported or reused components of the Zephyr project that use other licensing,
 as described in :ref:`Zephyr_Licensing`.
 
 .. _Apache 2.0 license:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE
+   https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 
 .. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
 

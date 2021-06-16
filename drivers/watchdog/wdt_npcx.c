@@ -53,6 +53,12 @@ LOG_MODULE_REGISTER(wdt_npcx, CONFIG_WDT_LOG_LEVEL);
  */
 #define NPCX_WDT_MIN_WND_TIME 100UL
 
+/* Timeout for reloading and restarting Timer 0. (Unit:ms) */
+#define NPCX_T0CSR_RST_TIMEOUT 2
+
+/* Timeout for stopping watchdog. (Unit:ms) */
+#define NPCX_WATCHDOG_STOP_TIMEOUT 1
+
 /* Device config */
 struct wdt_npcx_config {
 	/* wdt controller base address */
@@ -81,31 +87,47 @@ struct miwu_dev_callback miwu_cb;
 #define HAL_INSTANCE(dev) (struct twd_reg *)(DRV_CONFIG(dev)->base)
 
 /* WDT local inline functions */
-static inline void wdt_t0out_reload(const struct device *dev)
+static inline int wdt_t0out_reload(const struct device *dev)
 {
 	struct twd_reg *const inst = HAL_INSTANCE(dev);
-	unsigned int key;
+	uint64_t st;
 
-	key = irq_lock();
 	/* Reload and restart T0 timer */
 	inst->T0CSR = (inst->T0CSR & ~BIT(NPCX_T0CSR_WDRST_STS)) |
 		      BIT(NPCX_T0CSR_RST);
 	/* Wait for timer is loaded and restart */
-	while (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_RST))
-		;
-	irq_unlock(key);
+	st = k_uptime_get();
+	while (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_RST)) {
+		if (k_uptime_get() - st > NPCX_T0CSR_RST_TIMEOUT) {
+			/* RST bit is still set? */
+			if (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_RST)) {
+				LOG_ERR("Timeout: reload T0 timer!");
+				return -ETIMEDOUT;
+			}
+		}
+	}
+
+	return 0;
 }
 
-static inline void wdt_wait_stopped(const struct device *dev)
+static inline int wdt_wait_stopped(const struct device *dev)
 {
 	struct twd_reg *const inst = HAL_INSTANCE(dev);
-	unsigned int key;
+	uint64_t st;
 
-	key = irq_lock();
+	st = k_uptime_get();
 	/* If watchdog is still running? */
-	while (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_WD_RUN))
-		;
-	irq_unlock(key);
+	while (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_WD_RUN)) {
+		if (k_uptime_get() - st > NPCX_WATCHDOG_STOP_TIMEOUT) {
+			/* WD_RUN bit is still set? */
+			if (IS_BIT_SET(inst->T0CSR, NPCX_T0CSR_WD_RUN)) {
+				LOG_ERR("Timeout: stop watchdog timer!");
+				return -ETIMEDOUT;
+			}
+		}
+	}
+
+	return 0;
 }
 
 /* WDT local functions */
@@ -184,6 +206,7 @@ static int wdt_npcx_setup(const struct device *dev, uint8_t options)
 	struct twd_reg *const inst = HAL_INSTANCE(dev);
 	const struct wdt_npcx_config *const config = DRV_CONFIG(dev);
 	struct wdt_npcx_data *const data = DRV_DATA(dev);
+	int rv;
 
 	/* Disable irq of t0-out expired event first */
 	npcx_miwu_irq_disable(&config->t0out);
@@ -222,7 +245,7 @@ static int wdt_npcx_setup(const struct device *dev, uint8_t options)
 	LOG_DBG("WDT setup: TWDT0, WDCNT are %d, %d", inst->TWDT0, inst->WDCNT);
 
 	/* Reload and restart T0 timer */
-	wdt_t0out_reload(dev);
+	rv = wdt_t0out_reload(dev);
 
 	/* Configure t0 timer interrupt and its isr. */
 	wdt_config_t0out_interrupt(dev);
@@ -230,7 +253,7 @@ static int wdt_npcx_setup(const struct device *dev, uint8_t options)
 	/* Enable irq of t0-out expired event */
 	npcx_miwu_irq_enable(&config->t0out);
 
-	return 0;
+	return rv;
 }
 
 static int wdt_npcx_disable(const struct device *dev)
@@ -260,9 +283,7 @@ static int wdt_npcx_disable(const struct device *dev)
 	data->timeout_installed = false;
 
 	/* Wait for watchdof is stopped. */
-	wdt_wait_stopped(dev);
-
-	return 0;
+	return wdt_wait_stopped(dev);
 }
 
 static int wdt_npcx_feed(const struct device *dev, int channel_id)
@@ -276,9 +297,7 @@ static int wdt_npcx_feed(const struct device *dev, int channel_id)
 	data->last_watchdog_touch = k_uptime_get();
 
 	/* Reload and restart T0 timer */
-	wdt_t0out_reload(dev);
-
-	return 0;
+	return wdt_t0out_reload(dev);
 }
 
 /* WDT driver registration */
@@ -330,7 +349,7 @@ static const struct wdt_npcx_config wdt_npcx_cfg_0 = {
 
 static struct wdt_npcx_data wdt_npcx_data_0;
 
-DEVICE_DT_INST_DEFINE(0, wdt_npcx_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, wdt_npcx_init, NULL,
 			&wdt_npcx_data_0, &wdt_npcx_cfg_0,
 			PRE_KERNEL_1,
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

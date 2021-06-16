@@ -53,6 +53,7 @@
 #define CR0_PG		BIT(31)		/* enable paging */
 #define CR0_WP		BIT(16)		/* honor W bit even when supervisor */
 
+#define CR4_PSE		BIT(4)		/* Page size extension (4MB pages) */
 #define CR4_PAE		BIT(5)		/* enable PAE */
 #define CR4_OSFXSR	BIT(9)		/* enable SSE (OS FXSAVE/RSTOR) */
 

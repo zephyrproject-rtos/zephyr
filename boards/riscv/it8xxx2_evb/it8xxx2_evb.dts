@@ -6,10 +6,11 @@
 /dts-v1/;
 
 #include <it8xxx2.dtsi>
+#include <it8xxx2-alts-map.dtsi>
 
 / {
 	model = "IT8XXX2 EV-Board";
-	compatible = "riscv, it8xxx2_evb";
+	compatible = "riscv,it8xxx2-evb";
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
@@ -21,12 +22,6 @@
 	};
 };
 &adc0 {
-	status = "okay";
-};
-&gpiob {
-	status = "okay";
-};
-&gpiof {
 	status = "okay";
 };
 &i2c0 {

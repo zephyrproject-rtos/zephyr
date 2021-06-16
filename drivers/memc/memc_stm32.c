@@ -9,7 +9,7 @@
 #include <device.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(memc_stm32, CONFIG_MEMC_LOG_LEVEL);
@@ -58,5 +58,5 @@ static const struct memc_stm32_config config = {
 	.pinctrl_len = ARRAY_SIZE(pinctrl),
 };
 
-DEVICE_DT_INST_DEFINE(0, memc_stm32_init, device_pm_control_nop, NULL,
+DEVICE_DT_INST_DEFINE(0, memc_stm32_init, NULL, NULL,
 	      &config, POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);

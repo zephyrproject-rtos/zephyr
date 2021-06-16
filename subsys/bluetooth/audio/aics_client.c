@@ -16,6 +16,7 @@
 #include <init.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/l2cap.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/audio/aics.h>
@@ -86,7 +87,7 @@ uint8_t aics_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 			}
 		}
 	} else if (handle == inst->cli.desc_handle) {
-		char desc[MIN(CONFIG_BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
+		char desc[MIN(BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
 
 		/* Truncate if too large */
 		if (length > sizeof(desc) - 1) {
@@ -403,6 +404,12 @@ static void aics_client_write_aics_cp_cb(struct bt_conn *conn, uint8_t err,
 
 	BT_DBG("Inst %p: err: %d", inst, cb_err);
 
+	/* If the change counter is out of data when a write was attempted from
+	 * the application, we automatically initiate a read to get the newest
+	 * state and try again. Once the change counter has been read, we
+	 * restart the applications write request. If it fails
+	 * the second time, we return an error to the application.
+	 */
 	if (cb_err == BT_AICS_ERR_INVALID_COUNTER && inst->cli.cp_retried) {
 		cb_err = BT_ATT_ERR_UNLIKELY;
 	} else if (cb_err == BT_AICS_ERR_INVALID_COUNTER && inst->cli.state_handle) {
@@ -432,8 +439,9 @@ static int aics_client_common_control(struct bt_conn *conn, uint8_t opcode, stru
 {
 	int err;
 
-	if (!conn) {
-		return -ENOTCONN;
+	CHECKIF(conn == NULL) {
+		BT_DBG("NULL conn");
+		return -EINVAL;
 	} else if (!inst->cli.control_handle) {
 		BT_DBG("Handle not set for opcode %u", opcode);
 		return -EINVAL;
@@ -464,7 +472,7 @@ static uint8_t aics_client_read_desc_cb(struct bt_conn *conn, uint8_t err,
 					const void *data, uint16_t length)
 {
 	int cb_err = err;
-	char desc[MIN(CONFIG_BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
+	char desc[MIN(BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
 	struct bt_aics *inst = lookup_aics_by_handle(conn, params->single.handle);
 
 	memset(params, 0, sizeof(*params));
@@ -681,9 +689,9 @@ int bt_aics_client_state_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -714,9 +722,9 @@ int bt_aics_client_gain_setting_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -747,9 +755,9 @@ int bt_aics_client_type_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -780,9 +788,9 @@ int bt_aics_client_status_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -833,9 +841,9 @@ int bt_aics_client_gain_set(struct bt_conn *conn, struct bt_aics *inst, int8_t g
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -871,9 +879,9 @@ int bt_aics_client_description_get(struct bt_conn *conn, struct bt_aics *inst)
 {
 	int err;
 
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {
@@ -903,9 +911,9 @@ int bt_aics_client_description_get(struct bt_conn *conn, struct bt_aics *inst)
 int bt_aics_client_description_set(struct bt_conn *conn, struct bt_aics *inst,
 				   const char *description)
 {
-	CHECKIF(!conn) {
+	CHECKIF(conn == NULL) {
 		BT_DBG("NULL conn");
-		return -ENOTCONN;
+		return -EINVAL;
 	}
 
 	CHECKIF(!inst) {

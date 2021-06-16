@@ -46,16 +46,13 @@ LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 #define LSM6DSO_SHUB_SLVX_WRITE				0x0
 #define LSM6DSO_SHUB_SLVX_READ				0x1
 
-static uint8_t num_ext_dev;
-static uint8_t shub_ext[LSM6DSO_SHUB_MAX_NUM_SLVS];
-
-static int lsm6dso_shub_write_slave_reg(struct lsm6dso_data *data,
+static int lsm6dso_shub_write_slave_reg(const struct device *dev,
 					uint8_t slv_addr, uint8_t slv_reg,
 					uint8_t *value, uint16_t len);
-static int lsm6dso_shub_read_slave_reg(struct lsm6dso_data *data,
+static int lsm6dso_shub_read_slave_reg(const struct device *dev,
 				       uint8_t slv_addr, uint8_t slv_reg,
 				       uint8_t *value, uint16_t len);
-static void lsm6dso_shub_enable(struct lsm6dso_data *data, uint8_t enable);
+static void lsm6dso_shub_enable(const struct device *dev, uint8_t enable);
 
 /*
  * LIS2MDL magn device specific part
@@ -73,15 +70,16 @@ static void lsm6dso_shub_enable(struct lsm6dso_data *data, uint8_t enable);
 #define LIS2MDL_OFF_CANC		0x02
 #define LIS2MDL_SENSITIVITY		1500
 
-static int lsm6dso_lis2mdl_init(struct lsm6dso_data *data, uint8_t i2c_addr)
+static int lsm6dso_lis2mdl_init(const struct device *dev, uint8_t i2c_addr)
 {
+	struct lsm6dso_data *data = dev->data;
 	uint8_t mag_cfg[2];
 
 	data->magn_gain = LIS2MDL_SENSITIVITY;
 
 	/* sw reset device */
 	mag_cfg[0] = LIS2MDL_SW_RESET;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     LIS2MDL_CFG_REG_A, mag_cfg, 1);
 
 	k_sleep(K_MSEC(10)); /* turn-on time in ms */
@@ -89,7 +87,7 @@ static int lsm6dso_lis2mdl_init(struct lsm6dso_data *data, uint8_t i2c_addr)
 	/* configure mag */
 	mag_cfg[0] = LIS2MDL_ODR_10HZ;
 	mag_cfg[1] = LIS2MDL_OFF_CANC;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     LIS2MDL_CFG_REG_A, mag_cfg, 2);
 
 	return 0;
@@ -97,7 +95,7 @@ static int lsm6dso_lis2mdl_init(struct lsm6dso_data *data, uint8_t i2c_addr)
 
 static const uint16_t lis2mdl_map[] = {10, 20, 50, 100};
 
-static int lsm6dso_lis2mdl_odr_set(struct lsm6dso_data *data,
+static int lsm6dso_lis2mdl_odr_set(const struct device *dev,
 				   uint8_t i2c_addr, uint16_t freq)
 {
 	uint8_t odr, cfg;
@@ -114,21 +112,21 @@ static int lsm6dso_lis2mdl_odr_set(struct lsm6dso_data *data,
 	}
 
 	cfg = (odr << 2);
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     LIS2MDL_CFG_REG_A, &cfg, 1);
 
-	lsm6dso_shub_enable(data, 1);
+	lsm6dso_shub_enable(dev, 1);
 	return 0;
 }
 
-static int lsm6dso_lis2mdl_conf(struct lsm6dso_data *data, uint8_t i2c_addr,
+static int lsm6dso_lis2mdl_conf(const struct device *dev, uint8_t i2c_addr,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return lsm6dso_lis2mdl_odr_set(data, i2c_addr, val->val1);
+		return lsm6dso_lis2mdl_odr_set(dev, i2c_addr, val->val1);
 	default:
 		LOG_DBG("shub: LIS2MDL attribute not supported.");
 		return -ENOTSUP;
@@ -152,7 +150,7 @@ static int lsm6dso_lis2mdl_conf(struct lsm6dso_data *data, uint8_t i2c_addr,
 
 #define HTS221_REG_CONV_START		0x30
 
-static int lsmdso_hts221_read_conv_data(struct lsm6dso_data *data,
+static int lsmdso_hts221_read_conv_data(const struct device *dev,
 					uint8_t i2c_addr)
 {
 	uint8_t buf[16], i;
@@ -178,13 +176,13 @@ static int lsmdso_hts221_read_conv_data(struct lsm6dso_data *data,
 	return 0;
 }
 
-static int lsm6dso_hts221_init(struct lsm6dso_data *data, uint8_t i2c_addr)
+static int lsm6dso_hts221_init(const struct device *dev, uint8_t i2c_addr)
 {
 	uint8_t hum_cfg;
 
 	/* configure ODR and BDU */
 	hum_cfg = HTS221_ODR_1HZ | HTS221_BDU | HTS221_PD;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     HTS221_REG_CTRL1, &hum_cfg, 1);
 
 	return lsmdso_hts221_read_conv_data(data, i2c_addr);
@@ -192,7 +190,7 @@ static int lsm6dso_hts221_init(struct lsm6dso_data *data, uint8_t i2c_addr)
 
 static const uint16_t hts221_map[] = {0, 1, 7, 12};
 
-static int lsm6dso_hts221_odr_set(struct lsm6dso_data *data,
+static int lsm6dso_hts221_odr_set(const struct device *dev,
 				   uint8_t i2c_addr, uint16_t freq)
 {
 	uint8_t odr, cfg;
@@ -209,14 +207,14 @@ static int lsm6dso_hts221_odr_set(struct lsm6dso_data *data,
 	}
 
 	cfg = odr | HTS221_BDU | HTS221_PD;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     HTS221_REG_CTRL1, &cfg, 1);
 
-	lsm6dso_shub_enable(data, 1);
+	lsm6dso_shub_enable(dev, 1);
 	return 0;
 }
 
-static int lsm6dso_hts221_conf(struct lsm6dso_data *data, uint8_t i2c_addr,
+static int lsm6dso_hts221_conf(const struct device *dev, uint8_t i2c_addr,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
@@ -246,20 +244,20 @@ static int lsm6dso_hts221_conf(struct lsm6dso_data *data, uint8_t i2c_addr,
 #define LPS22HB_LPF_EN			0x08
 #define LPS22HB_BDU_EN			0x02
 
-static int lsm6dso_lps22hb_init(struct lsm6dso_data *data, uint8_t i2c_addr)
+static int lsm6dso_lps22hb_init(const struct device *dev, uint8_t i2c_addr)
 {
 	uint8_t baro_cfg[2];
 
 	/* sw reset device */
 	baro_cfg[0] = LPS22HB_SW_RESET;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     LPS22HB_CTRL_REG2, baro_cfg, 1);
 
 	k_sleep(K_MSEC(1)); /* turn-on time in ms */
 
 	/* configure device */
 	baro_cfg[0] = LPS22HB_ODR_10HZ | LPS22HB_LPF_EN | LPS22HB_BDU_EN;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     LPS22HB_CTRL_REG1, baro_cfg, 1);
 
 	return 0;
@@ -280,24 +278,24 @@ static int lsm6dso_lps22hb_init(struct lsm6dso_data *data, uint8_t i2c_addr)
 #define LPS22HH_LPF_EN			0x08
 #define LPS22HH_BDU_EN			0x02
 
-static int lsm6dso_lps22hh_init(struct lsm6dso_data *data, uint8_t i2c_addr)
+static int lsm6dso_lps22hh_init(const struct device *dev, uint8_t i2c_addr)
 {
 	uint8_t baro_cfg[2];
 
 	/* sw reset device */
 	baro_cfg[0] = LPS22HH_SW_RESET;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     LPS22HH_CTRL_REG2, baro_cfg, 1);
 
 	k_sleep(K_MSEC(100)); /* turn-on time in ms */
 
 	/* configure device */
 	baro_cfg[0] = LPS22HH_IF_ADD_INC;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     LPS22HH_CTRL_REG2, baro_cfg, 1);
 
 	baro_cfg[0] = LPS22HH_ODR_10HZ | LPS22HH_LPF_EN | LPS22HH_BDU_EN;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     LPS22HH_CTRL_REG1, baro_cfg, 1);
 
 	return 0;
@@ -305,7 +303,7 @@ static int lsm6dso_lps22hh_init(struct lsm6dso_data *data, uint8_t i2c_addr)
 
 static const uint16_t lps22hh_map[] = {0, 1, 10, 25, 50, 75, 100, 200};
 
-static int lsm6dso_lps22hh_odr_set(struct lsm6dso_data *data,
+static int lsm6dso_lps22hh_odr_set(const struct device *dev,
 				   uint8_t i2c_addr, uint16_t freq)
 {
 	uint8_t odr, cfg;
@@ -322,21 +320,21 @@ static int lsm6dso_lps22hh_odr_set(struct lsm6dso_data *data,
 	}
 
 	cfg = (odr << 4) | LPS22HH_LPF_EN | LPS22HH_BDU_EN;
-	lsm6dso_shub_write_slave_reg(data, i2c_addr,
+	lsm6dso_shub_write_slave_reg(dev, i2c_addr,
 				     LPS22HH_CTRL_REG1, &cfg, 1);
 
-	lsm6dso_shub_enable(data, 1);
+	lsm6dso_shub_enable(dev, 1);
 	return 0;
 }
 
-static int lsm6dso_lps22hh_conf(struct lsm6dso_data *data, uint8_t i2c_addr,
+static int lsm6dso_lps22hh_conf(const struct device *dev, uint8_t i2c_addr,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return lsm6dso_lps22hh_odr_set(data, i2c_addr, val->val1);
+		return lsm6dso_lps22hh_odr_set(dev, i2c_addr, val->val1);
 	default:
 		LOG_DBG("shub: LPS22HH attribute not supported.");
 		return -ENOTSUP;
@@ -356,8 +354,8 @@ static struct lsm6dso_shub_slist {
 	uint8_t out_data_addr;
 	uint8_t out_data_len;
 	uint8_t sh_out_reg;
-	int (*dev_init)(struct lsm6dso_data *data, uint8_t i2c_addr);
-	int (*dev_conf)(struct lsm6dso_data *data, uint8_t i2c_addr,
+	int (*dev_init)(const struct device *dev, uint8_t i2c_addr);
+	int (*dev_conf)(const struct device *dev, uint8_t i2c_addr,
 			enum sensor_channel chan, enum sensor_attribute attr,
 			const struct sensor_value *val);
 } lsm6dso_shub_slist[] = {
@@ -417,88 +415,94 @@ static struct lsm6dso_shub_slist {
 #endif /* CONFIG_LSM6DSO_EXT_LPS22HH */
 };
 
-static inline void lsm6dso_shub_wait_completed(struct lsm6dso_data *data)
+static inline void lsm6dso_shub_wait_completed(stmdev_ctx_t *ctx)
 {
-	uint16_t freq;
+	lsm6dso_status_master_t status;
 
-	freq = (data->accel_freq == 0) ? 26 : data->accel_freq;
-	k_msleep((2000U / freq) + 1);
+	do {
+		k_msleep(1);
+		lsm6dso_sh_status_get(ctx, &status);
+	} while (status.sens_hub_endop == 0);
 }
 
-static inline void lsm6dso_shub_embedded_en(struct lsm6dso_data *data, bool on)
+static inline void lsm6dso_shub_embedded_en(stmdev_ctx_t *ctx, bool on)
 {
 	if (on) {
-		(void) lsm6dso_mem_bank_set(&data->ctx, LSM6DSO_SENSOR_HUB_BANK);
+		(void) lsm6dso_mem_bank_set(ctx, LSM6DSO_SENSOR_HUB_BANK);
 	} else {
-		(void) lsm6dso_mem_bank_set(&data->ctx, LSM6DSO_USER_BANK);
+		(void) lsm6dso_mem_bank_set(ctx, LSM6DSO_USER_BANK);
 	}
 
 	k_busy_wait(150);
 }
 
-static int lsm6dso_shub_read_embedded_regs(struct lsm6dso_data *data,
+static int lsm6dso_shub_read_embedded_regs(stmdev_ctx_t *ctx,
 					   uint8_t reg_addr,
 					   uint8_t *value, int len)
 {
-	lsm6dso_shub_embedded_en(data, true);
+	lsm6dso_shub_embedded_en(ctx, true);
 
-	if (lsm6dso_read_reg(&data->ctx, reg_addr, value, len) < 0) {
+	if (lsm6dso_read_reg(ctx, reg_addr, value, len) < 0) {
 		LOG_DBG("shub: failed to read external reg: %02x", reg_addr);
-		lsm6dso_shub_embedded_en(data, false);
+		lsm6dso_shub_embedded_en(ctx, false);
 		return -EIO;
 	}
 
-	lsm6dso_shub_embedded_en(data, false);
+	lsm6dso_shub_embedded_en(ctx, false);
 
 	return 0;
 }
 
-static int lsm6dso_shub_write_embedded_regs(struct lsm6dso_data *data,
+static int lsm6dso_shub_write_embedded_regs(stmdev_ctx_t *ctx,
 					    uint8_t reg_addr,
 					    uint8_t *value, uint8_t len)
 {
-	lsm6dso_shub_embedded_en(data, true);
+	lsm6dso_shub_embedded_en(ctx, true);
 
-	if (lsm6dso_write_reg(&data->ctx, reg_addr, value, len) < 0) {
+	if (lsm6dso_write_reg(ctx, reg_addr, value, len) < 0) {
 		LOG_DBG("shub: failed to write external reg: %02x", reg_addr);
-		lsm6dso_shub_embedded_en(data, false);
+		lsm6dso_shub_embedded_en(ctx, false);
 		return -EIO;
 	}
 
-	lsm6dso_shub_embedded_en(data, false);
+	lsm6dso_shub_embedded_en(ctx, false);
 
 	return 0;
 }
 
-static void lsm6dso_shub_enable(struct lsm6dso_data *data, uint8_t enable)
+static void lsm6dso_shub_enable(const struct device *dev, uint8_t enable)
 {
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lsm6dso_data *data = dev->data;
+
 	/* Enable Accel @26hz */
 	if (!data->accel_freq) {
 		uint8_t odr = (enable) ? 2 : 0;
 
-		if (lsm6dso_xl_data_rate_set(&data->ctx, odr) < 0) {
+		if (lsm6dso_xl_data_rate_set(ctx, odr) < 0) {
 			LOG_DBG("shub: failed to set XL sampling rate");
 			return;
 		}
 	}
 
-	lsm6dso_shub_embedded_en(data, true);
+	lsm6dso_shub_embedded_en(ctx, true);
 
-	if (lsm6dso_sh_master_set(&data->ctx, enable) < 0) {
+	if (lsm6dso_sh_master_set(ctx, enable) < 0) {
 		LOG_DBG("shub: failed to set master on");
-		lsm6dso_shub_embedded_en(data, false);
+		lsm6dso_shub_embedded_en(ctx, false);
 		return;
 	}
 
-	lsm6dso_shub_embedded_en(data, false);
+	lsm6dso_shub_embedded_en(ctx, false);
 }
 
 /* must be called with master on */
-static int lsm6dso_shub_check_slv0_nack(struct lsm6dso_data *data)
+static int lsm6dso_shub_check_slv0_nack(stmdev_ctx_t *ctx)
 {
 	uint8_t status;
 
-	if (lsm6dso_shub_read_embedded_regs(data, LSM6DSO_SHUB_STATUS_MASTER,
+	if (lsm6dso_shub_read_embedded_regs(ctx, LSM6DSO_SHUB_STATUS_MASTER,
 					     &status, 1) < 0) {
 		LOG_DBG("shub: error reading embedded reg");
 		return -EIO;
@@ -515,51 +519,55 @@ static int lsm6dso_shub_check_slv0_nack(struct lsm6dso_data *data)
 /*
  * use SLV0 for generic read to slave device
  */
-static int lsm6dso_shub_read_slave_reg(struct lsm6dso_data *data,
+static int lsm6dso_shub_read_slave_reg(const struct device *dev,
 				       uint8_t slv_addr, uint8_t slv_reg,
 				       uint8_t *value, uint16_t len)
 {
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t slave[3];
 
 	slave[0] = (slv_addr << 1) | LSM6DSO_SHUB_SLVX_READ;
 	slave[1] = slv_reg;
 	slave[2] = (len & 0x7);
 
-	if (lsm6dso_shub_write_embedded_regs(data, LSM6DSO_SHUB_SLV0_ADDR,
+	if (lsm6dso_shub_write_embedded_regs(ctx, LSM6DSO_SHUB_SLV0_ADDR,
 					     slave, 3) < 0) {
 		LOG_DBG("shub: error writing embedded reg");
 		return -EIO;
 	}
 
 	/* turn SH on */
-	lsm6dso_shub_enable(data, 1);
-	lsm6dso_shub_wait_completed(data);
+	lsm6dso_shub_enable(dev, 1);
+	lsm6dso_shub_wait_completed(ctx);
 
 	/* read data from external slave */
-	lsm6dso_shub_embedded_en(data, true);
-	if (lsm6dso_read_reg(&data->ctx, LSM6DSO_SHUB_DATA_OUT,
+	lsm6dso_shub_embedded_en(ctx, true);
+	if (lsm6dso_read_reg(ctx, LSM6DSO_SHUB_DATA_OUT,
 			     value, len) < 0) {
 		LOG_DBG("shub: error reading sensor data");
 		return -EIO;
 	}
-	lsm6dso_shub_embedded_en(data, false);
+	lsm6dso_shub_embedded_en(ctx, false);
 
-	if (lsm6dso_shub_check_slv0_nack(data) < 0) {
-		lsm6dso_shub_enable(data, 0);
+	if (lsm6dso_shub_check_slv0_nack(ctx) < 0) {
+		lsm6dso_shub_enable(dev, 0);
 		return -EIO;
 	}
 
-	lsm6dso_shub_enable(data, 0);
+	lsm6dso_shub_enable(dev, 0);
 	return 0;
 }
 
 /*
  * use SLV0 to configure slave device
  */
-static int lsm6dso_shub_write_slave_reg(struct lsm6dso_data *data,
+static int lsm6dso_shub_write_slave_reg(const struct device *dev,
 					uint8_t slv_addr, uint8_t slv_reg,
 					uint8_t *value, uint16_t len)
 {
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t slv_cfg[3];
 	uint8_t cnt = 0U;
 
@@ -567,7 +575,7 @@ static int lsm6dso_shub_write_slave_reg(struct lsm6dso_data *data,
 		slv_cfg[0] = (slv_addr << 1) & ~LSM6DSO_SHUB_SLVX_READ;
 		slv_cfg[1] = slv_reg + cnt;
 
-		if (lsm6dso_shub_write_embedded_regs(data,
+		if (lsm6dso_shub_write_embedded_regs(ctx,
 						     LSM6DSO_SHUB_SLV0_ADDR,
 						     slv_cfg, 2) < 0) {
 			LOG_DBG("shub: error writing embedded reg");
@@ -575,7 +583,7 @@ static int lsm6dso_shub_write_slave_reg(struct lsm6dso_data *data,
 		}
 
 		slv_cfg[0] = value[cnt];
-		if (lsm6dso_shub_write_embedded_regs(data,
+		if (lsm6dso_shub_write_embedded_regs(ctx,
 					LSM6DSO_SHUB_SLV0_DATAWRITE,
 					slv_cfg, 1) < 0) {
 			LOG_DBG("shub: error writing embedded reg");
@@ -583,15 +591,15 @@ static int lsm6dso_shub_write_slave_reg(struct lsm6dso_data *data,
 		}
 
 		/* turn SH on */
-		lsm6dso_shub_enable(data, 1);
-		lsm6dso_shub_wait_completed(data);
+		lsm6dso_shub_enable(dev, 1);
+		lsm6dso_shub_wait_completed(ctx);
 
-		if (lsm6dso_shub_check_slv0_nack(data) < 0) {
-			lsm6dso_shub_enable(data, 0);
+		if (lsm6dso_shub_check_slv0_nack(ctx) < 0) {
+			lsm6dso_shub_enable(dev, 0);
 			return -EIO;
 		}
 
-		lsm6dso_shub_enable(data, 0);
+		lsm6dso_shub_enable(dev, 0);
 
 		cnt++;
 	}
@@ -600,7 +608,7 @@ static int lsm6dso_shub_write_slave_reg(struct lsm6dso_data *data,
 	slv_cfg[0] = 0x7;
 	slv_cfg[1] = 0x0;
 	slv_cfg[2] = 0x0;
-	if (lsm6dso_shub_write_embedded_regs(data, LSM6DSO_SHUB_SLV0_ADDR,
+	if (lsm6dso_shub_write_embedded_regs(ctx, LSM6DSO_SHUB_SLV0_ADDR,
 					     slv_cfg, 3) < 0) {
 		LOG_DBG("shub: error writing embedded reg");
 		return -EIO;
@@ -617,14 +625,17 @@ static int lsm6dso_shub_write_slave_reg(struct lsm6dso_data *data,
  *  - SLAVE 2: used as data read channel for external slave device #2
  *  - SLAVE 3: used for generic reads while data channel is enabled
  */
-static int lsm6dso_shub_set_data_channel(struct lsm6dso_data *data)
+static int lsm6dso_shub_set_data_channel(const struct device *dev)
 {
+	struct lsm6dso_data *data = dev->data;
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t n, i, slv_cfg[6];
 	struct lsm6dso_shub_slist *sp;
 
 	/* Set data channel for slave devices */
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
 		i = n * 3;
 		slv_cfg[i] = (sp->ext_i2c_addr << 1) | LSM6DSO_SHUB_SLVX_READ;
@@ -632,7 +643,7 @@ static int lsm6dso_shub_set_data_channel(struct lsm6dso_data *data)
 		slv_cfg[i + 2] = sp->out_data_len;
 	}
 
-	if (lsm6dso_shub_write_embedded_regs(data,
+	if (lsm6dso_shub_write_embedded_regs(ctx,
 					     LSM6DSO_SHUB_SLV1_ADDR,
 					     slv_cfg, n*3) < 0) {
 		LOG_DBG("shub: error writing embedded reg");
@@ -642,61 +653,66 @@ static int lsm6dso_shub_set_data_channel(struct lsm6dso_data *data)
 	/* Configure the master */
 	lsm6dso_aux_sens_on_t aux = LSM6DSO_SLV_0_1_2;
 
-	if (lsm6dso_sh_slave_connected_set(&data->ctx, aux) < 0) {
+	if (lsm6dso_sh_slave_connected_set(ctx, aux) < 0) {
 		LOG_DBG("shub: error setting aux sensors");
 		return -EIO;
 	}
 
 	lsm6dso_write_once_t wo = LSM6DSO_ONLY_FIRST_CYCLE;
 
-	if (lsm6dso_sh_write_mode_set(&data->ctx, wo) < 0) {
+	if (lsm6dso_sh_write_mode_set(ctx, wo) < 0) {
 		LOG_DBG("shub: error setting write once");
 		return -EIO;
 	}
 
 
 	/* turn SH on */
-	lsm6dso_shub_enable(data, 1);
-	lsm6dso_shub_wait_completed(data);
+	lsm6dso_shub_enable(dev, 1);
+	lsm6dso_shub_wait_completed(ctx);
 
 	return 0;
 }
 
-int lsm6dso_shub_get_idx(enum sensor_channel type)
+int lsm6dso_shub_get_idx(const struct device *dev, enum sensor_channel type)
 {
 	uint8_t n;
+	struct lsm6dso_data *data = dev->data;
 	struct lsm6dso_shub_slist *sp;
 
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
 		if (sp->type == type)
 			return n;
 	}
 
+	LOG_ERR("shub: dev %s type %d not supported", dev->name, type);
 	return -ENOTSUP;
 }
 
 int lsm6dso_shub_fetch_external_devs(const struct device *dev)
 {
 	uint8_t n;
+	const struct lsm6dso_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *data = dev->data;
 	struct lsm6dso_shub_slist *sp;
 
 	/* read data from external slave */
-	lsm6dso_shub_embedded_en(data, true);
+	lsm6dso_shub_embedded_en(ctx, true);
 
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
-		if (lsm6dso_read_reg(&data->ctx, sp->sh_out_reg,
+		if (lsm6dso_read_reg(ctx, sp->sh_out_reg,
 				     data->ext_data[n], sp->out_data_len) < 0) {
 			LOG_DBG("shub: failed to read sample");
+			lsm6dso_shub_embedded_en(ctx, false);
 			return -EIO;
 		}
 	}
 
-	lsm6dso_shub_embedded_en(data, false);
+	lsm6dso_shub_embedded_en(ctx, false);
 
 	return 0;
 }
@@ -709,15 +725,15 @@ int lsm6dso_shub_config(const struct device *dev, enum sensor_channel chan,
 	struct lsm6dso_shub_slist *sp = NULL;
 	uint8_t n;
 
-	for (n = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 
 		if (sp->type == chan)
 			break;
 	}
 
-	if (n == num_ext_dev) {
-		LOG_DBG("shub: chan not supported");
+	if (n == data->num_ext_dev) {
+		LOG_DBG("shub: %s chan %d not supported", dev->name, chan);
 		return -ENOTSUP;
 	}
 
@@ -726,7 +742,7 @@ int lsm6dso_shub_config(const struct device *dev, enum sensor_channel chan,
 		return -ENOTSUP;
 	}
 
-	return sp->dev_conf(data, sp->ext_i2c_addr, chan, attr, val);
+	return sp->dev_conf(dev, sp->ext_i2c_addr, chan, attr, val);
 }
 
 int lsm6dso_shub_init(const struct device *dev)
@@ -736,8 +752,9 @@ int lsm6dso_shub_init(const struct device *dev)
 	uint8_t chip_id;
 	struct lsm6dso_shub_slist *sp;
 
+	LOG_INF("shub: start sensorhub for %s", dev->name);
 	for (n = 0; n < ARRAY_SIZE(lsm6dso_shub_slist); n++) {
-		if (num_ext_dev >= LSM6DSO_SHUB_MAX_NUM_SLVS)
+		if (data->num_ext_dev >= LSM6DSO_SHUB_MAX_NUM_SLVS)
 			break;
 
 		chip_id = 0;
@@ -749,7 +766,7 @@ int lsm6dso_shub_init(const struct device *dev)
 		 * chip ID.
 		 */
 		for (i = 0U; i < ARRAY_SIZE(sp->i2c_addr); i++) {
-			if (lsm6dso_shub_read_slave_reg(data,
+			if (lsm6dso_shub_read_slave_reg(dev,
 							sp->i2c_addr[i],
 							sp->wai_addr,
 							&chip_id, 1) < 0) {
@@ -768,23 +785,24 @@ int lsm6dso_shub_init(const struct device *dev)
 		LOG_INF("shub: Ext Device Chip Id: %02x", chip_id);
 		sp->ext_i2c_addr = sp->i2c_addr[i];
 
-		shub_ext[num_ext_dev++] = n;
+		data->shub_ext[data->num_ext_dev++] = n;
 	}
 
-	if (num_ext_dev == 0) {
+	LOG_DBG("shub: dev %s - num_ext_dev %d", dev->name, data->num_ext_dev);
+	if (data->num_ext_dev == 0) {
 		LOG_ERR("shub: no slave devices found");
 		return -EINVAL;
 	}
 
 	/* init external devices */
-	for (n = 0, regn = 0; n < num_ext_dev; n++) {
-		sp = &lsm6dso_shub_slist[shub_ext[n]];
+	for (n = 0, regn = 0; n < data->num_ext_dev; n++) {
+		sp = &lsm6dso_shub_slist[data->shub_ext[n]];
 		sp->sh_out_reg = LSM6DSO_SHUB_DATA_OUT + regn;
 		regn += sp->out_data_len;
-		sp->dev_init(data, sp->ext_i2c_addr);
+		sp->dev_init(dev, sp->ext_i2c_addr);
 	}
 
-	lsm6dso_shub_set_data_channel(data);
+	lsm6dso_shub_set_data_channel(dev);
 
 	return 0;
 }

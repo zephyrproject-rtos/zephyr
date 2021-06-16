@@ -24,9 +24,7 @@ struct lll_scan {
 	uint8_t  filter_policy:2;
 	uint8_t  type:1;
 	uint8_t  init_addr_type:1;
-#if defined(CONFIG_BT_CENTRAL)
-	uint8_t  adv_addr_type:1;
-#endif /* CONFIG_BT_CENTRAL */
+	uint8_t  is_stop:1;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	uint16_t duration_reload;
@@ -34,6 +32,10 @@ struct lll_scan {
 	uint8_t  phy:3;
 	uint8_t  is_adv_ind:1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+#if defined(CONFIG_BT_CENTRAL)
+	uint8_t  adv_addr_type:1;
+#endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	uint8_t  rpa_gen:1;
@@ -63,6 +65,10 @@ struct lll_scan_aux {
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	int8_t tx_pwr_lvl;
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
+
+#if defined(CONFIG_BT_CENTRAL)
+	struct node_rx_pdu *node_conn_rx;
+#endif /* CONFIG_BT_CENTRAL */
 };
 
 int lll_scan_init(void);

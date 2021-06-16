@@ -22,7 +22,6 @@ API Reference
 *************
 
 .. doxygengroup:: net_offload
-   :project: Zephyr
 
 .. _net_socket_offloading:
 

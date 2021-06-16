@@ -311,29 +311,91 @@ struct uart_reg {
  * Multi-Input Wake-Up Unit (MIWU) device registers
  */
 
-/* MIWU multi-registers */
-#define NPCX_WKEDG_OFFSET(n)    (0x000 + ((n) * 2L) + ((n) < 5 ? 0 : 0x1E))
-#define NPCX_WKAEDG_OFFSET(n)   (0x001 + ((n) * 2L) + ((n) < 5 ? 0 : 0x1E))
-#define NPCX_WKPND_OFFSET(n)    (0x00A + ((n) * 4L) + ((n) < 5 ? 0 : 0x10))
-#define NPCX_WKPCL_OFFSET(n)    (0x00C + ((n) * 4L) + ((n) < 5 ? 0 : 0x10))
-#define NPCX_WKEN_OFFSET(n)     (0x01E + ((n) * 2L) + ((n) < 5 ? 0 : 0x12))
-#define NPCX_WKINEN_OFFSET(n)   (0x01F + ((n) * 2L) + ((n) < 5 ? 0 : 0x12))
-#define NPCX_WKMOD_OFFSET(n)    (0x070 + (n))
+/* MIWU internal inline functions for multi-registers */
+static inline uint32_t npcx_wkedg_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x000 + (group * 2ul) + (group < 5 ? 0 : 0x1e);
+	} else { /* NPCX9 and later series */
+		return 0x000 + group * 0x10UL;
+	}
+}
 
-#define NPCX_WKEDG(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKEDG_OFFSET(n)))
-#define NPCX_WKAEDG(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKAEDG_OFFSET(n)))
-#define NPCX_WKPND(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKPND_OFFSET(n)))
-#define NPCX_WKPCL(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKPCL_OFFSET(n)))
-#define NPCX_WKEN(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKEN_OFFSET(n)))
-#define NPCX_WKINEN(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKINEN_OFFSET(n)))
-#define NPCX_WKMOD(base, n) (*(volatile uint8_t *)(base + \
-						NPCX_WKMOD_OFFSET(n)))
+static inline uint32_t npcx_wkaedg_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x001 + (group * 2ul) + (group < 5 ? 0 : 0x1e);
+	} else { /* NPCX9 and later series */
+		return 0x001 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wkmod_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x070 + group;
+	} else { /* NPCX9 and later series */
+		return 0x002 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wkpnd_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x00a + (group * 4ul) + (group < 5 ? 0 : 0x10);
+	} else { /* NPCX9 and later series */
+		return 0x003 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wkpcl_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x00c + (group * 4ul) + (group < 5 ? 0 : 0x10);
+	} else { /* NPCX9 and later series */
+		return 0x004 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wken_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x01e + (group * 2ul) + (group < 5 ? 0 : 0x12);
+	} else { /* NPCX9 and later series */
+		return 0x005 + group * 0x10ul;
+	}
+}
+
+static inline uint32_t npcx_wkst_offset(uint32_t group)
+{
+	/* NPCX9 and later series only */
+	return 0x006 + group * 0x10ul;
+}
+
+static inline uint32_t npcx_wkinen_offset(uint32_t group)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7)) {
+		return 0x01f + (group * 2ul) + (group < 5 ? 0 : 0x12);
+	} else { /* NPCX9 and later series */
+		return 0x007 + group * 0x10ul;
+	}
+}
+
+/* Macro functions for MIWU multi-registers */
+#define NPCX_WKEDG(base, group) \
+	(*(volatile uint8_t *)(base +  npcx_wkedg_offset(group)))
+#define NPCX_WKAEDG(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkaedg_offset(group)))
+#define NPCX_WKPND(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkpnd_offset(group)))
+#define NPCX_WKPCL(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkpcl_offset(group)))
+#define NPCX_WKEN(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wken_offset(group)))
+#define NPCX_WKINEN(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkinen_offset(group)))
+#define NPCX_WKMOD(base, group) \
+	(*(volatile uint8_t *)(base + npcx_wkmod_offset(group)))
 
 /*
  * General-Purpose I/O (GPIO) device registers

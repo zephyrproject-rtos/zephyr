@@ -1,0 +1,20 @@
+name: Error numbers
+on:
+  pull_request:
+    paths:
+      - 'lib/libc/minimal/include/errno.h'
+
+jobs:
+  check-errno:
+    runs-on: ubuntu-latest
+    container:
+      image: zephyrprojectrtos/ci:v0.17.1
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Run errno.py
+        run: |
+          export ZEPHYR_BASE=${PWD}
+          ./scripts/ci/errno.py

@@ -477,7 +477,11 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	pri_com_hdr_prev = (void *)&pri_pdu_prev->adv_ext_ind;
 	pri_hdr = (void *)pri_com_hdr_prev->ext_hdr_adv_data;
-	pri_hdr_prev = *pri_hdr;
+	if (pri_com_hdr_prev->ext_hdr_len) {
+		pri_hdr_prev = *pri_hdr;
+	} else {
+		*(uint8_t *)&pri_hdr_prev = 0U;
+	}
 	pri_dptr_prev = pri_hdr->data;
 
 	/* Advertising data are not supported by scannable instances */
@@ -700,6 +704,11 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* No AdvData in primary channel PDU */
 	/* Fill AdvData in secondary PDU */
 	memmove(sec_dptr, ad_data, ad_len);
+
+	/* Early exit if no flags set */
+	if (!sec_com_hdr->ext_hdr_len) {
+		return 0;
+	}
 
 	/* No ACAD in primary channel PDU */
 	/* TODO: Fill ACAD in secondary channel PDU */
@@ -1060,6 +1069,7 @@ static void mfy_aux_offset_get(void *param)
 		uint32_t volatile ret_cb;
 		uint32_t ticks_previous;
 		uint32_t ret;
+		bool success;
 
 		ticks_previous = ticks_current;
 
@@ -1076,7 +1086,8 @@ static void mfy_aux_offset_get(void *param)
 			}
 		}
 
-		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+		success = (ret_cb == TICKER_STATUS_SUCCESS);
+		LL_ASSERT(success);
 
 		LL_ASSERT((ticks_current == ticks_previous) || retry--);
 

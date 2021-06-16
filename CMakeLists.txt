@@ -211,7 +211,7 @@ zephyr_compile_options($<TARGET_PROPERTY:compiler,no_common>)
 # @Intent: Set compiler specific flag for production of debug information
 zephyr_compile_options($<TARGET_PROPERTY:compiler,debug>)
 
-if($ENV{ZEPHYR_BUILD_COLOUR_DIAGNOSTIC})
+if(CONFIG_COMPILER_COLOR_DIAGNOSTICS)
 # @Intent: Set compiler specific flag for diagnostic messages
 zephyr_compile_options($<TARGET_PROPERTY:compiler,diagnostic>)
 endif()
@@ -348,6 +348,10 @@ endif()
 if(CONFIG_USERSPACE)
   set(APP_SMEM_ALIGNED_DEP app_smem_aligned_linker)
   set(APP_SMEM_UNALIGNED_DEP app_smem_unaligned_linker)
+endif()
+
+if(CONFIG_USERSPACE)
+  set(KOBJECT_LINKER_DEP kobject_linker)
 endif()
 
 get_property(TOPT GLOBAL PROPERTY TOPT)
@@ -696,27 +700,29 @@ add_subdirectory(kernel)
 get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
-  get_property(source_list  TARGET ${zephyr_lib} PROPERTY SOURCES)
   get_property(lib_type     TARGET ${zephyr_lib} PROPERTY TYPE)
-  get_property(lib_imported TARGET ${zephyr_lib} PROPERTY IMPORTED)
-
   # To prevent CMake failure when a driver is enabled, for example: REGULATOR=y
   # we disable any Zephyr libraries without sources and adds the `empty_file.c`.
   if(${lib_type} STREQUAL STATIC_LIBRARY
-     AND NOT ${lib_imported}
-     AND NOT source_list
      AND NOT ${zephyr_lib} STREQUAL app
   )
-    message(WARNING
-      "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
+    get_property(source_list  TARGET ${zephyr_lib} PROPERTY SOURCES)
+    get_property(lib_imported TARGET ${zephyr_lib} PROPERTY IMPORTED)
+    if(NOT source_list
+       AND NOT ${lib_imported}
     )
-    target_sources(${zephyr_lib} PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
-    set_property(TARGET ${zephyr_lib} PROPERTY EXCLUDE_FROM_ALL TRUE)
-    list(REMOVE_ITEM ZEPHYR_LIBS_PROPERTY ${zephyr_lib})
-  else()
-    # TODO: Could this become an INTERFACE property of zephyr_interface?
-    add_dependencies(${zephyr_lib} zephyr_generated_headers)
+      message(WARNING
+        "No SOURCES given to Zephyr library: ${zephyr_lib}\nExcluding target from build."
+      )
+      target_sources(${zephyr_lib} PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+      set_property(TARGET ${zephyr_lib} PROPERTY EXCLUDE_FROM_ALL TRUE)
+      list(REMOVE_ITEM ZEPHYR_LIBS_PROPERTY ${zephyr_lib})
+      continue()
+    endif()
   endif()
+
+  # TODO: Could this become an INTERFACE property of zephyr_interface?
+  add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
@@ -768,19 +774,21 @@ if(CONFIG_GEN_ISR_TABLES)
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
 endif()
 
-# dev_handles.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
-# gen_handles.py
-add_custom_command(
-  OUTPUT dev_handles.c
-  COMMAND
-  ${PYTHON_EXECUTABLE}
-  ${ZEPHYR_BASE}/scripts/gen_handles.py
-  --output-source dev_handles.c
-  --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-  --zephyr-base ${ZEPHYR_BASE}
-  DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
-  )
-set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
+if(CONFIG_HAS_DTS)
+  # dev_handles.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
+  # gen_handles.py
+  add_custom_command(
+    OUTPUT dev_handles.c
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/gen_handles.py
+    --output-source dev_handles.c
+    --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
+    --zephyr-base ${ZEPHYR_BASE}
+    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
+    )
+  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES dev_handles.c)
+endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)
   # @Intent: Linker script to relocate .text, data and .bss sections
@@ -845,6 +853,7 @@ if(CONFIG_USERSPACE)
     COMMAND
     ${GPERF}
     --output-file ${KOBJECT_HASH_OUTPUT_SRC_PRE}
+    --multiple-iterations 10
     ${KOBJECT_HASH_LIST}
     DEPENDS kobj_hash_list ${KOBJECT_HASH_LIST}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -1060,10 +1069,137 @@ if(CONFIG_USERSPACE)
     )
 endif()
 
+if(CONFIG_USERSPACE)
+  # This CONFIG_USERSPACE block is to create place holders to reserve space
+  # for the gperf generated structures for zephyr_prebuilt.elf.
+  # These place holders are there so that the placement of kobjects would be
+  # the same between linking zephyr_prebuilt.elf and zephyr.elf, as
+  # the gperf hash table is hashed on the addresses of kobjects.
+  # The placeholders are generated from app_smem_unaligned_prebuilt.elf.
+
+  set(KOBJECT_PREBUILT_HASH_LIST           kobject_prebuilt_hash.gperf)
+  set(KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE kobject_prebuilt_hash_preprocessed.c)
+  set(KOBJECT_PREBUILT_HASH_OUTPUT_SRC     kobject_prebuilt_hash.c)
+  set(KOBJECT_PREBUILT_HASH_OUTPUT_OBJ     kobject_prebuilt_hash.c.obj)
+
+  add_custom_command(
+    OUTPUT ${KOBJECT_PREBUILT_HASH_LIST}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${GEN_KOBJ_LIST}
+    --kernel $<TARGET_FILE:app_smem_unaligned_prebuilt>
+    --gperf-output ${KOBJECT_PREBUILT_HASH_LIST}
+    ${gen_kobject_list_include_args}
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+    DEPENDS
+    app_smem_unaligned_prebuilt
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  add_custom_target(
+    kobj_prebuilt_hash_list
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_PREBUILT_HASH_LIST}
+  )
+
+  add_custom_command(
+    OUTPUT ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
+    COMMAND
+    ${GPERF}
+    --output-file ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
+    --multiple-iterations 10
+    ${KOBJECT_PREBUILT_HASH_LIST}
+    DEPENDS kobj_prebuilt_hash_list ${KOBJECT_PREBUILT_HASH_LIST}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  add_custom_target(
+    kobj_prebuilt_hash_output_src_pre
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
+  )
+
+  add_custom_command(
+    OUTPUT ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${PROCESS_GPERF}
+    -i ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
+    -o ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
+    -p "struct z_object"
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+    DEPENDS kobj_prebuilt_hash_output_src_pre ${KOBJECT_PREBUILT_HASH_OUTPUT_SRC_PRE}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  add_custom_target(
+    kobj_prebuilt_hash_output_src
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
+  )
+
+  add_library(
+    kobj_prebuilt_hash_output_lib
+    STATIC ${CMAKE_CURRENT_BINARY_DIR}/${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
+    )
+
+  set_source_files_properties(${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
+    PROPERTIES COMPILE_FLAGS
+    "${NO_COVERAGE_FLAGS} -fno-function-sections -fno-data-sections")
+
+  set_source_files_properties(${KOBJECT_PREBUILT_HASH_OUTPUT_SRC}
+    PROPERTIES COMPILE_DEFINITIONS "${compile_definitions_interface}")
+
+  add_library(kobj_prebuilt_hash_output_lib_interface INTERFACE)
+
+  target_link_libraries(
+    kobj_prebuilt_hash_output_lib
+    kobj_prebuilt_hash_output_lib_interface
+  )
+
+  foreach(incl ${include_dir_in_interface})
+    target_include_directories(
+      kobj_prebuilt_hash_output_lib_interface
+      INTERFACE ${incl}
+    )
+  endforeach()
+
+  foreach(incl ${sys_include_dir_in_interface})
+    target_include_directories(
+      kobj_prebuilt_hash_output_lib_interface
+      SYSTEM INTERFACE ${incl}
+    )
+  endforeach()
+
+  set(
+    KOBJECT_PREBUILT_HASH_OUTPUT_OBJ_PATH
+    ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/kobj_prebuilt_hash_output_lib.dir/${KOBJECT_PREBUILT_HASH_OUTPUT_OBJ}
+  )
+
+  set(KOBJECT_LINKER_HEADER_DATA "${PROJECT_BINARY_DIR}/include/generated/linker-kobject-prebuilt-data.h")
+
+  add_custom_command(
+    OUTPUT ${KOBJECT_LINKER_HEADER_DATA}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/gen_kobject_placeholders.py
+    --object ${KOBJECT_PREBUILT_HASH_OUTPUT_OBJ_PATH}
+    --outdir ${PROJECT_BINARY_DIR}/include/generated
+    --datapct ${CONFIG_KOBJECT_DATA_AREA_RESERVE_EXTRA_PERCENT}
+    --rodata ${CONFIG_KOBJECT_RODATA_AREA_EXTRA_BYTES}
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+    DEPENDS
+    kobj_prebuilt_hash_output_lib
+    ${KOBJECT_PREBUILT_HASH_OUTPUT_OBJ_PATH}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+
+  add_custom_target(
+    ${KOBJECT_LINKER_DEP}
+    DEPENDS
+    ${KOBJECT_LINKER_HEADER_DATA}
+  )
+endif()
+
 configure_linker_script(
   linker_zephyr_prebuilt.cmd
   "-DLINKER_ZEPHYR_PREBUILT"
   ${APP_SMEM_ALIGNED_DEP}
+  ${KOBJECT_LINKER_DEP}
   ${CODE_RELOCATION_DEP}
   zephyr_generated_headers
   )
@@ -1389,6 +1525,24 @@ list(APPEND
   post_build_byproducts
   ${extra_post_build_byproducts}
   )
+
+if(CONFIG_LOG_DICTIONARY_SUPPORT)
+  set(LOG_DICT_DB_NAME ${PROJECT_BINARY_DIR}/log_dictionary.json)
+
+  list(APPEND
+    post_build_commands
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/logging/dictionary/database_gen.py
+    ${KERNEL_ELF_NAME}
+    ${LOG_DICT_DB_NAME}
+    --build ${BUILD_VERSION}
+    )
+  list(APPEND
+    post_build_byproducts
+    ${LOG_DICT_DB_NAME}
+    )
+endif()
 
 # Add post_build_commands to post-process the final .elf file produced by
 # either the ZEPHYR_PREBUILT_EXECUTABLE or the KERNEL_ELF executable

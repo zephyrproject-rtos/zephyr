@@ -5,9 +5,12 @@
  */
 
 #include <device.h>
+#include <drivers/gpio.h>
 #include <dt-bindings/pinctrl/npcx-pinctrl.h>
 #include <kernel.h>
 #include <soc.h>
+
+#include "soc_gpio.h"
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pimux_npcx, LOG_LEVEL_ERR);
@@ -106,6 +109,36 @@ void npcx_lvol_pads_configure(void)
 	}
 }
 
+void npcx_lvol_restore_io_pads(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
+		npcx_gpio_enable_io_pads(
+				npcx_get_gpio_dev(def_lvols[i].io_port),
+				def_lvols[i].io_bit);
+	}
+}
+
+void npcx_lvol_suspend_io_pads(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
+		npcx_gpio_disable_io_pads(
+				npcx_get_gpio_dev(def_lvols[i].io_port),
+				def_lvols[i].io_bit);
+	}
+}
+
+bool npcx_lvol_is_enabled(int port, int pin)
+{
+	for (int i = 0; i < ARRAY_SIZE(def_lvols); i++) {
+		if (def_lvols[i].io_port == port &&
+		    def_lvols[i].io_bit == pin) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void npcx_pinctrl_i2c_port_sel(int controller, int port)
 {
 	struct glue_reg *const inst_glue = HAL_GLUE_INST();
@@ -181,13 +214,12 @@ static int npcx_scfg_init(const struct device *dev)
 {
 	struct scfg_reg *inst_scfg = HAL_SFCG_INST();
 
-#if defined(CONFIG_SOC_SERIES_NPCX7)
 	/*
 	 * Set bit 7 of DEVCNT again for npcx7 series. Please see Errata
 	 * for more information. It will be fixed in next chip.
 	 */
-	inst_scfg->DEVCNT |= BIT(7);
-#endif
+	if (IS_ENABLED(CONFIG_SOC_SERIES_NPCX7))
+		inst_scfg->DEVCNT |= BIT(7);
 
 	/* Change all pads whose default functionality isn't IO to GPIO */
 	npcx_pinctrl_mux_configure(def_alts, ARRAY_SIZE(def_alts), 0);

@@ -55,10 +55,12 @@ def find_device_patch():
 def require_patch(program):
     assert program in [DFU_UTIL, TEST_EXE]
 
+os_path_isfile = os.path.isfile
+
 def os_path_isfile_patch(filename):
     if filename == RC_KERNEL_BIN:
         return True
-    return os.path.isfile(filename)
+    return os_path_isfile(filename)
 
 def id_fn(tc):
     return 'exe={},alt={},dfuse_config={},img={}'.format(*tc)
@@ -100,14 +102,13 @@ def get_flash_address_patch(args, bcfg):
     (None, TEST_ALT_INT, True, None, None),
 
 ], ids=id_fn)
-@patch('runners.core.BuildConfiguration._init',)
 @patch('runners.dfu.DfuUtilBinaryRunner.find_device',
        side_effect=find_device_patch)
 @patch('runners.core.ZephyrBinaryRunner.get_flash_address',
        side_effect=get_flash_address_patch)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
-def test_dfu_util_create(cc, req, gfa, find_device, bcfg, tc, runner_config):
+def test_dfu_util_create(cc, req, gfa, find_device, tc, runner_config, tmpdir):
     '''Test commands using a runner created from command line parameters.'''
     exe, alt, dfuse, modifiers, img = tc
     args = ['--pid', TEST_PID, '--alt', alt]
@@ -121,6 +122,11 @@ def test_dfu_util_create(cc, req, gfa, find_device, bcfg, tc, runner_config):
             args.extend(['--dfuse-modifiers', ''])
     if exe:
         args.extend(['--dfu-util', exe])
+
+    (tmpdir / 'zephyr').mkdir()
+    with open(os.fspath(tmpdir / 'zephyr' / '.config'), 'w') as f:
+        f.write('\n')
+    runner_config = runner_config._replace(build_dir=os.fspath(tmpdir))
 
     parser = argparse.ArgumentParser()
     DfuUtilBinaryRunner.add_parser(parser)

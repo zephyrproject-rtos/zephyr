@@ -54,26 +54,34 @@
 #define CLIENT_BUF_SIZE 65
 
 #if defined(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)
-#define ADV_OPT                                                                \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME | BT_LE_ADV_OPT_USE_IDENTITY)
+#define ADV_OPT_USE_IDENTITY BT_LE_ADV_OPT_USE_IDENTITY
 #else
-#define ADV_OPT                                                                \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
-	 BT_LE_ADV_OPT_ONE_TIME)
+#define ADV_OPT_USE_IDENTITY 0
 #endif
 
-static const struct bt_le_adv_param slow_adv_param = {
-	.options = ADV_OPT,
-	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,
-	.interval_max = BT_GAP_ADV_SLOW_INT_MAX,
-};
+#if defined(CONFIG_BT_MESH_PROXY_USE_DEVICE_NAME)
+#define ADV_OPT_USE_NAME BT_LE_ADV_OPT_USE_NAME
+#else
+#define ADV_OPT_USE_NAME 0
+#endif
 
-static const struct bt_le_adv_param fast_adv_param = {
-	.options = ADV_OPT,
-	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
-	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
-};
+#define ADV_OPT_PROV                                                           \
+	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
+	 BT_LE_ADV_OPT_USE_NAME)
+
+#define ADV_OPT_PROXY                                                          \
+	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE |                 \
+	 BT_LE_ADV_OPT_ONE_TIME | ADV_OPT_USE_IDENTITY |                       \
+	 ADV_OPT_USE_NAME)
+
+#define ADV_SLOW_INT                                                           \
+	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,                               \
+	.interval_max = BT_GAP_ADV_SLOW_INT_MAX
+
+#define ADV_FAST_INT                                                           \
+	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,                             \
+	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 static void proxy_send_beacons(struct k_work *work);
@@ -96,7 +104,7 @@ static struct bt_mesh_proxy_client {
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	struct k_work send_beacons;
 #endif
-	struct k_delayed_work    sar_timer;
+	struct k_work_delayable  sar_timer;
 	struct net_buf_simple    buf;
 } clients[CONFIG_BT_MAX_CONN] = {
 	[0 ... (CONFIG_BT_MAX_CONN - 1)] = {
@@ -106,8 +114,6 @@ static struct bt_mesh_proxy_client {
 	},
 };
 
-static sys_slist_t idle_waiters;
-static atomic_t pending_notifications;
 static uint8_t __noinit client_buf_data[CLIENT_BUF_SIZE * CONFIG_BT_MAX_CONN];
 
 /* Track which service is enabled */
@@ -132,15 +138,22 @@ static struct bt_mesh_proxy_client *find_client(struct bt_conn *conn)
 
 static void proxy_sar_timeout(struct k_work *work)
 {
-	struct bt_mesh_proxy_client *client;
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_mesh_proxy_client *client =
+		CONTAINER_OF(dwork, struct bt_mesh_proxy_client, sar_timer);
+
+	if (!client->conn) {
+		return;
+	}
+
+	if (!client->buf.len) {
+		BT_DBG("No pending Proxy SAR message");
+		return;
+	}
 
 	BT_WARN("Proxy SAR timeout");
 
-	client = CONTAINER_OF(work, struct bt_mesh_proxy_client, sar_timer);
-	if (client->conn) {
-		bt_conn_disconnect(client->conn,
-				   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	}
+	bt_conn_disconnect(client->conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
@@ -148,7 +161,8 @@ static void proxy_sar_timeout(struct k_work *work)
 static struct bt_mesh_subnet *beacon_sub;
 
 static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
-				  struct net_buf_simple *msg);
+				  struct net_buf_simple *msg,
+				  bt_gatt_complete_func_t end, void *user_data);
 
 static int filter_set(struct bt_mesh_proxy_client *client,
 		      struct net_buf_simple *buf)
@@ -264,7 +278,8 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 		return;
 	}
 
-	err = proxy_segment_and_send(client->conn, BT_MESH_PROXY_CONFIG, buf);
+	err = proxy_segment_and_send(client->conn, BT_MESH_PROXY_CONFIG, buf,
+					NULL, NULL);
 	if (err) {
 		BT_ERR("Failed to send proxy cfg message (err %d)", err);
 	}
@@ -339,7 +354,7 @@ static int beacon_send(struct bt_conn *conn, struct bt_mesh_subnet *sub)
 	net_buf_simple_reserve(&buf, 1);
 	bt_mesh_beacon_create(sub, &buf);
 
-	return proxy_segment_and_send(conn, BT_MESH_PROXY_BEACON, &buf);
+	return proxy_segment_and_send(conn, BT_MESH_PROXY_BEACON, &buf, NULL, NULL);
 }
 
 static int send_beacon_cb(struct bt_mesh_subnet *sub, void *cb_data)
@@ -501,7 +516,7 @@ static ssize_t proxy_recv(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		k_delayed_work_submit(&client->sar_timer, PROXY_SAR_TIMEOUT);
+		k_work_reschedule(&client->sar_timer, PROXY_SAR_TIMEOUT);
 		client->msg_type = PDU_TYPE(data);
 		net_buf_simple_add_mem(&client->buf, data + 1, len - 1);
 		break;
@@ -517,7 +532,7 @@ static ssize_t proxy_recv(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		k_delayed_work_submit(&client->sar_timer, PROXY_SAR_TIMEOUT);
+		k_work_reschedule(&client->sar_timer, PROXY_SAR_TIMEOUT);
 		net_buf_simple_add_mem(&client->buf, data + 1, len - 1);
 		break;
 
@@ -532,7 +547,10 @@ static ssize_t proxy_recv(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		k_delayed_work_cancel(&client->sar_timer);
+		/* If this fails, the work handler exits early, as there's no
+		 * active SAR buffer.
+		 */
+		(void)k_work_cancel_delayable(&client->sar_timer);
 		net_buf_simple_add_mem(&client->buf, data + 1, len - 1);
 		proxy_complete_pdu(client);
 		break;
@@ -592,7 +610,10 @@ static void proxy_disconnected(struct bt_conn *conn, uint8_t reason)
 				bt_mesh_pb_gatt_close(conn);
 			}
 
-			k_delayed_work_cancel(&client->sar_timer);
+			/* If this fails, the work handler exits early, as
+			 * there's no active connection.
+			 */
+			(void)k_work_cancel_delayable(&client->sar_timer);
 			bt_conn_unref(client->conn);
 			client->conn = NULL;
 			break;
@@ -892,10 +913,17 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 	return false;
 }
 
-bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst)
+static void buf_send_end(struct bt_conn *conn, void *user_data)
+{
+	struct net_buf *buf = user_data;
+
+	net_buf_unref(buf);
+}
+
+bool bt_mesh_proxy_relay(struct net_buf *buf, uint16_t dst)
 {
 	bool relayed = false;
-	int i;
+	int i, err;
 
 	BT_DBG("%u bytes to dst 0x%04x", buf->len, dst);
 
@@ -911,13 +939,33 @@ bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst)
 			continue;
 		}
 
+		if (client->filter_type == PROV) {
+			BT_ERR("Invalid PDU type for Proxy Client");
+			return -EINVAL;
+		}
+
 		/* Proxy PDU sending modifies the original buffer,
 		 * so we need to make a copy.
 		 */
 		net_buf_simple_reserve(&msg, 1);
 		net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
-		bt_mesh_proxy_send(client->conn, BT_MESH_PROXY_NET_PDU, &msg);
+		err = proxy_segment_and_send(client->conn, BT_MESH_PROXY_NET_PDU,
+					&msg, buf_send_end, net_buf_ref(buf));
+
+		bt_mesh_adv_send_start(0, err, BT_MESH_ADV(buf));
+		if (err) {
+			BT_ERR("Failed to send proxy message (err %d)", err);
+
+			/* If segment_and_send() fails the buf_send_end() callback will
+			 * not be called, so we need to clear the user data (net_buf,
+			 * which is just opaque data to segment_and send) reference given
+			 * to segment_and_send() here.
+			 */
+			net_buf_unref(buf);
+			continue;
+		}
+
 		relayed = true;
 	}
 
@@ -926,59 +974,44 @@ bool bt_mesh_proxy_relay(struct net_buf_simple *buf, uint16_t dst)
 
 #endif /* CONFIG_BT_MESH_GATT_PROXY */
 
-static void notify_complete(struct bt_conn *conn, void *user_data)
+static int proxy_send(struct bt_conn *conn,
+		      const void *data, uint16_t len,
+		      bt_gatt_complete_func_t end, void *user_data)
 {
-	sys_snode_t *n;
-
-	if (atomic_dec(&pending_notifications) > 1) {
-		return;
-	}
-
-	BT_DBG("");
-
-	while ((n = sys_slist_get(&idle_waiters))) {
-		CONTAINER_OF(n, struct bt_mesh_proxy_idle_cb, n)->cb();
-	}
-}
-
-static int proxy_send(struct bt_conn *conn, const void *data,
-		      uint16_t len)
-{
-	struct bt_gatt_notify_params params = {
-		.data = data,
-		.len = len,
-		.func = notify_complete,
-	};
-	int err;
-
+	const struct bt_gatt_attr *attr;
 	BT_DBG("%u bytes: %s", len, bt_hex(data, len));
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	if (gatt_svc == MESH_GATT_PROXY) {
-		params.attr = &proxy_attrs[3];
+		attr = &proxy_attrs[3];
 	}
 #endif
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	if (gatt_svc == MESH_GATT_PROV) {
-		params.attr = &prov_attrs[3];
+		attr = &prov_attrs[3];
 	}
 #endif
 
-	if (!params.attr) {
-		return 0;
+	if (!attr) {
+		return -ENOENT;
 	}
 
-	err = bt_gatt_notify_cb(conn, &params);
-	if (!err) {
-		atomic_inc(&pending_notifications);
-	}
+	struct bt_gatt_notify_params params = {
+		.data = data,
+		.len = len,
+		.attr = attr,
+		.user_data = user_data,
+		.func = end,
+	};
 
-	return err;
+	return bt_gatt_notify_cb(conn, &params);
 }
 
 static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
-				  struct net_buf_simple *msg)
+				  struct net_buf_simple *msg,
+				  bt_gatt_complete_func_t end, void *user_data)
 {
+	int err;
 	uint16_t mtu;
 
 	BT_DBG("conn %p type 0x%02x len %u: %s", (void *)conn, type, msg->len,
@@ -988,30 +1021,42 @@ static int proxy_segment_and_send(struct bt_conn *conn, uint8_t type,
 	mtu = bt_gatt_get_mtu(conn) - 3;
 	if (mtu > msg->len) {
 		net_buf_simple_push_u8(msg, PDU_HDR(SAR_COMPLETE, type));
-		return proxy_send(conn, msg->data, msg->len);
+		return proxy_send(conn, msg->data, msg->len, end, user_data);
 	}
 
 	net_buf_simple_push_u8(msg, PDU_HDR(SAR_FIRST, type));
-	proxy_send(conn, msg->data, mtu);
+	err = proxy_send(conn, msg->data, mtu, NULL, NULL);
+	if (err) {
+		return err;
+	}
+
 	net_buf_simple_pull(msg, mtu);
 
 	while (msg->len) {
 		if (msg->len + 1 < mtu) {
 			net_buf_simple_push_u8(msg, PDU_HDR(SAR_LAST, type));
-			proxy_send(conn, msg->data, msg->len);
+			err = proxy_send(conn, msg->data, msg->len, end, user_data);
+			if (err) {
+				return err;
+			}
+
 			break;
 		}
 
 		net_buf_simple_push_u8(msg, PDU_HDR(SAR_CONT, type));
-		proxy_send(conn, msg->data, mtu);
+		err = proxy_send(conn, msg->data, mtu, NULL, NULL);
+		if (err) {
+			return err;
+		}
+
 		net_buf_simple_pull(msg, mtu);
 	}
 
 	return 0;
 }
 
-int bt_mesh_proxy_send(struct bt_conn *conn, uint8_t type,
-		       struct net_buf_simple *msg)
+int bt_mesh_pb_gatt_send(struct bt_conn *conn, struct net_buf_simple *buf,
+			 bt_gatt_complete_func_t end, void *user_data)
 {
 	struct bt_mesh_proxy_client *client = find_client(conn);
 
@@ -1020,12 +1065,12 @@ int bt_mesh_proxy_send(struct bt_conn *conn, uint8_t type,
 		return -ENOTCONN;
 	}
 
-	if ((client->filter_type == PROV) != (type == BT_MESH_PROXY_PROV)) {
+	if (client->filter_type != PROV) {
 		BT_ERR("Invalid PDU type for Proxy Client");
 		return -EINVAL;
 	}
 
-	return proxy_segment_and_send(conn, type, msg);
+	return proxy_segment_and_send(conn, BT_MESH_PROXY_PROV, buf, end, user_data);
 }
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
@@ -1071,6 +1116,10 @@ static const struct bt_data net_id_ad[] = {
 
 static int node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 {
+	struct bt_le_adv_param fast_adv_param = {
+		.options = ADV_OPT_PROXY,
+		ADV_FAST_INT,
+	};
 	uint8_t tmp[16];
 	int err;
 
@@ -1107,6 +1156,10 @@ static int node_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 
 static int net_id_adv(struct bt_mesh_subnet *sub, int32_t duration)
 {
+	struct bt_le_adv_param slow_adv_param = {
+		.options = ADV_OPT_PROXY,
+		ADV_SLOW_INT,
+	};
 	int err;
 
 	BT_DBG("");
@@ -1248,48 +1301,30 @@ static int gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 #endif /* GATT_PROXY */
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
-static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
+static size_t gatt_prov_adv_create(struct bt_data prov_sd[1])
 {
 	const struct bt_mesh_prov *prov = bt_mesh_prov_get();
-	const char *name = bt_get_name();
-	size_t name_len = strlen(name);
-	size_t prov_sd_len = 0;
-	size_t sd_space = 31;
+	size_t uri_len;
 
 	memcpy(prov_svc_data + 2, prov->uuid, 16);
 	sys_put_be16(prov->oob_info, prov_svc_data + 18);
 
-	if (prov->uri) {
-		size_t uri_len = strlen(prov->uri);
-
-		if (uri_len > 29) {
-			/* There's no way to shorten an URI */
-			BT_WARN("Too long URI to fit advertising packet");
-		} else {
-			prov_sd[0].type = BT_DATA_URI;
-			prov_sd[0].data_len = uri_len;
-			prov_sd[0].data = prov->uri;
-			sd_space -= 2 + uri_len;
-			prov_sd_len++;
-		}
+	if (!prov->uri) {
+		return 0;
 	}
 
-	if (sd_space > 2 && name_len > 0) {
-		sd_space -= 2;
-
-		if (sd_space < name_len) {
-			prov_sd[prov_sd_len].type = BT_DATA_NAME_SHORTENED;
-			prov_sd[prov_sd_len].data_len = sd_space;
-		} else {
-			prov_sd[prov_sd_len].type = BT_DATA_NAME_COMPLETE;
-			prov_sd[prov_sd_len].data_len = name_len;
-		}
-
-		prov_sd[prov_sd_len].data = name;
-		prov_sd_len++;
+	uri_len = strlen(prov->uri);
+	if (uri_len > 29) {
+		/* There's no way to shorten an URI */
+		BT_WARN("Too long URI to fit advertising packet");
+		return 0;
 	}
 
-	return prov_sd_len;
+	prov_sd[0].type = BT_DATA_URI;
+	prov_sd[0].data_len = uri_len;
+	prov_sd[0].data = prov->uri;
+
+	return 1;
 }
 #endif /* CONFIG_BT_MESH_PB_GATT */
 
@@ -1303,13 +1338,22 @@ int bt_mesh_proxy_adv_start(void)
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	if (!bt_mesh_is_provisioned()) {
-		struct bt_data prov_sd[2];
+		struct bt_le_adv_param fast_adv_param = {
+			.options = ADV_OPT_PROV,
+			ADV_FAST_INT,
+		};
+		struct bt_data prov_sd[1];
 		size_t prov_sd_len;
 		int err;
 
 		prov_sd_len = gatt_prov_adv_create(prov_sd);
 
 		if (!prov_fast_adv) {
+			struct bt_le_adv_param slow_adv_param = {
+				.options = ADV_OPT_PROV,
+				ADV_SLOW_INT,
+			};
+
 			return bt_mesh_adv_start(&slow_adv_param,
 						 SYS_FOREVER_MS, prov_ad,
 						 ARRAY_SIZE(prov_ad), prov_sd,
@@ -1368,20 +1412,10 @@ int bt_mesh_proxy_init(void)
 		client->buf.size = CLIENT_BUF_SIZE;
 		client->buf.__buf = client_buf_data + (i * CLIENT_BUF_SIZE);
 
-		k_delayed_work_init(&client->sar_timer, proxy_sar_timeout);
+		k_work_init_delayable(&client->sar_timer, proxy_sar_timeout);
 	}
 
 	bt_conn_cb_register(&conn_callbacks);
 
 	return 0;
-}
-
-void bt_mesh_proxy_on_idle(struct bt_mesh_proxy_idle_cb *cb)
-{
-	if (!atomic_get(&pending_notifications)) {
-		cb->cb();
-		return;
-	}
-
-	sys_slist_append(&idle_waiters, &cb->n);
 }

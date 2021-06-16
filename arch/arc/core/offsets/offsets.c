@@ -58,9 +58,11 @@ GEN_OFFSET_SYM(_isf_t, r11);
 GEN_OFFSET_SYM(_isf_t, r12);
 GEN_OFFSET_SYM(_isf_t, r13);
 GEN_OFFSET_SYM(_isf_t, blink);
+#ifdef CONFIG_ARC_HAS_ZOL
 GEN_OFFSET_SYM(_isf_t, lp_end);
 GEN_OFFSET_SYM(_isf_t, lp_start);
 GEN_OFFSET_SYM(_isf_t, lp_count);
+#endif /* CONFIG_ARC_HAS_ZOL */
 #ifdef CONFIG_CODE_DENSITY
 GEN_OFFSET_SYM(_isf_t, ei_base);
 GEN_OFFSET_SYM(_isf_t, ldi_base);

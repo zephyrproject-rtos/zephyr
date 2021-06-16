@@ -14,5 +14,7 @@ supported:
   - counter
   - spi
   - i2c
+  - adc
+  - arduino_gpio
   - arduino_i2c
   - arduino_spi

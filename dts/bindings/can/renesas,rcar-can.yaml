@@ -1,0 +1,15 @@
+description: Renesas R-Car CAN controller
+
+compatible: "renesas,rcar-can"
+
+include: can-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    clocks:
+      required: true

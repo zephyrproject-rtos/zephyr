@@ -354,7 +354,7 @@ static struct display_driver_api ls0xx_driver_api = {
 	.set_orientation = ls0xx_set_orientation,
 };
 
-DEVICE_DT_INST_DEFINE(0, ls0xx_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, ls0xx_init, NULL,
 		      &ls0xx_driver, NULL,
 		      POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		      &ls0xx_driver_api);

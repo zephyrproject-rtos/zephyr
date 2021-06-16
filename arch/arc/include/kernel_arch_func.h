@@ -24,9 +24,7 @@
 
 #include <kernel_arch_data.h>
 
-#ifdef CONFIG_ISA_ARCV2
 #include <v2/irq.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {

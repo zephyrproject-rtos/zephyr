@@ -70,6 +70,7 @@ child-binding:
           - "medium-speed"
           - "high-speed"
           - "very-high-speed"
-          description: Pin speed. Default to low-speed. For few pins (PA11 and
+          description: |
+            Pin speed. Default to low-speed. For few pins (PA11 and
             PB3 depending on SoCs)hardware reset value could differ
             (very-high-speed). Carefully check reference manual for these pins.

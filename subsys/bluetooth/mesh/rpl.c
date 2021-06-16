@@ -45,10 +45,38 @@ static inline int rpl_idx(const struct bt_mesh_rpl *rpl)
 	return rpl - &replay_list[0];
 }
 
-static void schedule_rpl_store(struct bt_mesh_rpl *entry)
+static void clear_rpl(struct bt_mesh_rpl *rpl)
+{
+	int err;
+	char path[18];
+
+	if (!rpl->src) {
+		return;
+	}
+
+	snprintk(path, sizeof(path), "bt/mesh/RPL/%x", rpl->src);
+	err = settings_delete(path);
+	if (err) {
+		BT_ERR("Failed to clear RPL");
+	} else {
+		BT_DBG("Cleared RPL");
+	}
+
+	(void)memset(rpl, 0, sizeof(*rpl));
+	atomic_clear_bit(store, rpl_idx(rpl));
+}
+
+static void schedule_rpl_store(struct bt_mesh_rpl *entry, bool force)
 {
 	atomic_set_bit(store, rpl_idx(entry));
-	bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
+
+	if (force
+#ifdef CONFIG_BT_MESH_RPL_STORE_TIMEOUT
+	    || CONFIG_BT_MESH_RPL_STORE_TIMEOUT >= 0
+#endif
+	    ) {
+		bt_mesh_settings_store_schedule(BT_MESH_SETTINGS_RPL_PENDING);
+	}
 }
 
 static void schedule_rpl_clear(void)
@@ -71,7 +99,7 @@ void bt_mesh_rpl_update(struct bt_mesh_rpl *rpl,
 	rpl->old_iv = rx->old_iv;
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		schedule_rpl_store(rpl);
+		schedule_rpl_store(rpl, false);
 	}
 }
 
@@ -184,13 +212,17 @@ void bt_mesh_rpl_reset(void)
 
 		if (rpl->src) {
 			if (rpl->old_iv) {
-				(void)memset(rpl, 0, sizeof(*rpl));
+				if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+					clear_rpl(rpl);
+				} else {
+					(void)memset(rpl, 0, sizeof(*rpl));
+				}
 			} else {
 				rpl->old_iv = true;
-			}
 
-			if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-				schedule_rpl_store(rpl);
+				if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+					schedule_rpl_store(rpl, true);
+				}
 			}
 		}
 	}
@@ -254,6 +286,10 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 	char path[18];
 	int err;
 
+	if (!entry->src) {
+		return;
+	}
+
 	BT_DBG("src 0x%04x seq 0x%06x old_iv %u", entry->src, entry->seq,
 	       entry->old_iv);
 
@@ -270,27 +306,6 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 	}
 }
 
-static void clear_rpl(struct bt_mesh_rpl *rpl)
-{
-	int err;
-	char path[18];
-
-	if (!rpl->src) {
-		return;
-	}
-
-	snprintk(path, sizeof(path), "bt/mesh/RPL/%x", rpl->src);
-	err = settings_delete(path);
-	if (err) {
-		BT_ERR("Failed to clear RPL");
-	} else {
-		BT_DBG("Cleared RPL");
-	}
-
-	(void)memset(rpl, 0, sizeof(*rpl));
-	atomic_clear_bit(store, rpl_idx(rpl));
-}
-
 static void store_pending_rpl(struct bt_mesh_rpl *rpl)
 {
 	BT_DBG("");
@@ -300,15 +315,34 @@ static void store_pending_rpl(struct bt_mesh_rpl *rpl)
 	}
 }
 
-void bt_mesh_rpl_pending_store(void)
+void bt_mesh_rpl_pending_store(uint16_t addr)
 {
 	int i;
 
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS) ||
+	    (!BT_MESH_ADDR_IS_UNICAST(addr) &&
+	     addr != BT_MESH_ADDR_ALL_NODES)) {
+		return;
+	}
+
+	if (addr == BT_MESH_ADDR_ALL_NODES) {
+		bt_mesh_settings_store_cancel(BT_MESH_SETTINGS_RPL_PENDING);
+	}
+
 	for (i = 0; i < ARRAY_SIZE(replay_list); i++) {
+		if (addr != BT_MESH_ADDR_ALL_NODES &&
+		    addr != replay_list[i].src) {
+			continue;
+		}
+
 		if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
 			store_pending_rpl(&replay_list[i]);
 		} else {
 			clear_rpl(&replay_list[i]);
+		}
+
+		if (addr != BT_MESH_ADDR_ALL_NODES) {
+			break;
 		}
 	}
 }

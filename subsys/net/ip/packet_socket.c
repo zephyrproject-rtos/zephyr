@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(net_sockets_raw, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 {
+	sa_family_t orig_family;
+
 #if IS_ENABLED(CONFIG_NET_DSA)
 	/*
 	 * For DSA the master port is not supporting raw packets. Only the
@@ -46,7 +48,13 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt, uint8_t proto)
 	 * data part to be feed to non raw socket.
 	 */
 
+	orig_family = net_pkt_family(pkt);
+
 	net_pkt_set_family(pkt, AF_PACKET);
 
-	return net_conn_input(pkt, NULL, proto, NULL);
+	(void)net_conn_input(pkt, NULL, proto, NULL);
+
+	net_pkt_set_family(pkt, orig_family);
+
+	return NET_CONTINUE;
 }

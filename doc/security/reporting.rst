@@ -50,7 +50,7 @@ number of states according to this diagram:
 - Release: The PR has been included in a released version of Zephyr.
 
 - Public: The embargo period has ended.  The issue will be made
-  publically visible, the associated CVE updated, and the
+  publicly visible, the associated CVE updated, and the
   vulnerabilities page in the docs updated to include the detailed
   information.
 
@@ -185,4 +185,4 @@ security vulnerabilities before the embargo period ends:
   members.
 
 - As needed, release managers and maintainers may be invited to attend
-  additional security meetings to discuss vulnerabilties.
+  additional security meetings to discuss vulnerabilities.

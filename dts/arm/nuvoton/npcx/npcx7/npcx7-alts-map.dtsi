@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2020 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common pin-mux configurations in npcx family */
+#include <nuvoton/npcx/npcx-alts-map.dtsi>
+
+/* Specific pin-mux configurations in npcx7 series */
+/ {
+	npcx-alts-map {
+		compatible = "nuvoton,npcx-pinctrl-conf";
+
+		/* SCFG DEVALT 5 */
+		alt5_njen1_en: alt51-inv {
+			alts = <&scfg 0x05 0x1 1>;
+		};
+		alt5_njen0_en: alt52-inv {
+			alts = <&scfg 0x05 0x2 1>;
+		};
+
+		/* SCFG DEVALT 1 */
+		alt1_a20m_sl: alt11 {
+			alts = <&scfg 0x01 0x1 0>;
+		};
+
+		/* SCFG DEVALT A */
+		alta_uart2_sl: alta5 {
+			alts = <&scfg 0x0A 0x5 0>;
+		};
+		alta_uart1_sl1: alta7 {
+			alts = <&scfg 0x0A 0x7 0>;
+		};
+
+		/* SCFG DEVALT C */
+		altc_uart1_sl2: altc0 {
+			alts = <&scfg 0x0C 0x0 0>;
+		};
+
+		/* SCFG DEVALT E */
+		alte_wov_sl: alte0 {
+			alts = <&scfg 0x0E 0x0 0>;
+		};
+		alte_i2s_sl: alte1 {
+			alts = <&scfg 0x0E 0x1 0>;
+		};
+		alte_dmclk_fast: alte2 {
+			alts = <&scfg 0x0E 0x2 0>;
+		};
+	};
+};

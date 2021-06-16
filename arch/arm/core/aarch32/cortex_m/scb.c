@@ -19,6 +19,11 @@
 #include <sys/util.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 #include <linker/linker-defs.h>
+
+#if defined(CONFIG_CPU_HAS_NXP_MPU)
+#include <fsl_sysmpu.h>
+#endif
+
 /**
  *
  * @brief Reset the system
@@ -55,7 +60,21 @@ void z_arm_clear_arm_mpu_config(void)
 		ARM_MPU_ClrRegion(i);
 	}
 }
-#endif /* CONFIG_CPU_HAS_ARM_MPU */
+#elif CONFIG_CPU_HAS_NXP_MPU
+void z_arm_clear_arm_mpu_config(void)
+{
+	int i;
+
+	int num_regions = FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT;
+
+	SYSMPU_Enable(SYSMPU, false);
+
+	/* NXP MPU region 0 is reserved for the debugger */
+	for (i = 1; i < num_regions; i++) {
+		SYSMPU_RegionEnable(SYSMPU, i, false);
+	}
+}
+#endif /* CONFIG_CPU_HAS_NXP_MPU */
 
 #if defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
 /**
@@ -78,7 +97,7 @@ void z_arm_init_arch_hw_at_boot(void)
 
 	/* Initialize System Control Block components */
 
-#if defined(CONFIG_CPU_HAS_ARM_MPU)
+#if defined(CONFIG_CPU_HAS_ARM_MPU) || defined(CONFIG_CPU_HAS_NXP_MPU)
 	/* Clear MPU region configuration */
 	z_arm_clear_arm_mpu_config();
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
@@ -93,9 +112,17 @@ void z_arm_init_arch_hw_at_boot(void)
 	}
 
 #if defined(CONFIG_CPU_CORTEX_M7)
-	/* Reset Cache settings */
-	SCB_CleanInvalidateDCache();
-	SCB_DisableDCache();
+	/* Reset D-Cache settings. If the D-Cache was enabled,
+	 * SCB_DisableDCache() takes care of cleaning and invalidating it.
+	 * If it was already disabled, just call SCB_InvalidateDCache() to
+	 * reset it to a known clean state.
+	 */
+	if (SCB->CCR & SCB_CCR_DC_Msk) {
+		SCB_DisableDCache();
+	} else {
+		SCB_InvalidateDCache();
+	}
+	/* Reset I-Cache settings. */
 	SCB_DisableICache();
 #endif /* CONFIG_CPU_CORTEX_M7 */
 

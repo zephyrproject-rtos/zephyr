@@ -129,5 +129,5 @@ static const struct memc_stm32_sdram_config config = {
 	.banks_len = ARRAY_SIZE(bank_config),
 };
 
-DEVICE_DT_INST_DEFINE(0, memc_stm32_sdram_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, memc_stm32_sdram_init, NULL,
 	      NULL, &config, POST_KERNEL, CONFIG_MEMC_INIT_PRIORITY, NULL);

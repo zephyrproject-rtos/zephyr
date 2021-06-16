@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <wait_q.h>
@@ -14,10 +14,6 @@
 #include <ksched.h>
 #include <init.h>
 #include <sys/check.h>
-
-#ifdef CONFIG_OBJECT_TRACING
-struct k_mem_slab *_trace_list_k_mem_slab;
-#endif	/* CONFIG_OBJECT_TRACING */
 
 /**
  * @brief Initialize kernel memory slab subsystem.
@@ -66,7 +62,6 @@ static int init_mem_slab_module(const struct device *dev)
 		if (rc < 0) {
 			goto out;
 		}
-		SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
 		z_object_init(slab);
 	}
 
@@ -96,12 +91,12 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	if (rc < 0) {
 		goto out;
 	}
+
 	z_waitq_init(&slab->wait_q);
-	SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
-
 	z_object_init(slab);
-
 out:
+	SYS_PORT_TRACING_OBJ_INIT(k_mem_slab, slab, rc);
+
 	return rc;
 }
 
@@ -109,6 +104,8 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 	int result;
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, alloc, slab, timeout);
 
 	if (slab->free_list != NULL) {
 		/* take a free block */
@@ -121,18 +118,26 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 #endif
 
 		result = 0;
-	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT) ||
+		   !IS_ENABLED(CONFIG_MULTITHREADING)) {
 		/* don't wait for a free block to become available */
 		*mem = NULL;
 		result = -ENOMEM;
 	} else {
+		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mem_slab, alloc, slab, timeout);
+
 		/* wait for a free block or timeout */
 		result = z_pend_curr(&slab->lock, key, &slab->wait_q, timeout);
 		if (result == 0) {
 			*mem = _current->base.swap_data;
 		}
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, alloc, slab, timeout, result);
+
 		return result;
 	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, alloc, slab, timeout, result);
 
 	k_spin_unlock(&slab->lock, key);
 
@@ -143,10 +148,13 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 {
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 
-	if (slab->free_list == NULL) {
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mem_slab, free, slab);
+	if (slab->free_list == NULL && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct k_thread *pending_thread = z_unpend_first_thread(&slab->wait_q);
 
 		if (pending_thread != NULL) {
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
+
 			z_thread_return_value_set_with_data(pending_thread, 0, *mem);
 			z_ready_thread(pending_thread);
 			z_reschedule(&slab->lock, key);
@@ -156,5 +164,8 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 	**(char ***) mem = slab->free_list;
 	slab->free_list = *(char **) mem;
 	slab->num_used--;
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mem_slab, free, slab);
+
 	k_spin_unlock(&slab->lock, key);
 }

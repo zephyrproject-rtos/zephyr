@@ -19,7 +19,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <wait_q.h>
 #include <sys/dlist.h>
@@ -38,27 +38,6 @@
  */
 static struct k_spinlock lock;
 
-#ifdef CONFIG_OBJECT_TRACING
-
-struct k_sem *_trace_list_k_sem;
-
-/*
- * Complete initialization of statically defined semaphores.
- */
-static int init_sem_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	Z_STRUCT_SECTION_FOREACH(k_sem, sem) {
-		SYS_TRACING_OBJ_INIT(k_sem, sem);
-	}
-	return 0;
-}
-
-SYS_INIT(init_sem_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_OBJECT_TRACING */
-
 int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
@@ -66,21 +45,21 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	 * Limit cannot be zero and count cannot be greater than limit
 	 */
 	CHECKIF(limit == 0U || limit > K_SEM_MAX_LIMIT || initial_count > limit) {
+		SYS_PORT_TRACING_OBJ_FUNC(k_sem, init, sem, -EINVAL);
+
 		return -EINVAL;
 	}
 
 	sem->count = initial_count;
 	sem->limit = limit;
-	sys_trace_semaphore_init(sem);
+
+	SYS_PORT_TRACING_OBJ_FUNC(k_sem, init, sem, 0);
+
 	z_waitq_init(&sem->wait_q);
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&sem->poll_events);
 #endif
-
-	SYS_TRACING_OBJ_INIT(k_sem, sem);
-
 	z_object_init(sem);
-	sys_trace_end_call(SYS_TRACE_ID_SEMA_INIT);
 
 	return 0;
 }
@@ -109,7 +88,8 @@ void z_impl_k_sem_give(struct k_sem *sem)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	struct k_thread *thread;
 
-	sys_trace_semaphore_give(sem);
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
+
 	thread = z_unpend_first_thread(&sem->wait_q);
 
 	if (thread != NULL) {
@@ -121,7 +101,8 @@ void z_impl_k_sem_give(struct k_sem *sem)
 	}
 
 	z_reschedule(&lock, key);
-	sys_trace_end_call(SYS_TRACE_ID_SEMA_GIVE);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, give, sem);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -141,7 +122,8 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	sys_trace_semaphore_take(sem);
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, take, sem, timeout);
 
 	if (likely(sem->count > 0U)) {
 		sem->count--;
@@ -156,10 +138,13 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 		goto out;
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_sem, take, sem, timeout);
+
 	ret = z_pend_curr(&lock, key, &sem->wait_q, timeout);
 
 out:
-	sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_sem, take, sem, timeout, ret);
+
 	return ret;
 }
 
@@ -177,6 +162,9 @@ void z_impl_k_sem_reset(struct k_sem *sem)
 		z_ready_thread(thread);
 	}
 	sem->count = 0;
+
+	SYS_PORT_TRACING_OBJ_FUNC(k_sem, reset, sem);
+
 	handle_poll_events(sem);
 
 	z_reschedule(&lock, key);

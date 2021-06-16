@@ -300,7 +300,6 @@ Running tests
 =============
 
 .. doxygengroup:: ztest_test
-   :project: Zephyr
 
 Assertions
 ==========
@@ -320,7 +319,6 @@ Example output for a failed macro from
     Aborted at unit test function
 
 .. doxygengroup:: ztest_assert
-   :project: Zephyr
 
 Mocking
 =======
@@ -340,7 +338,6 @@ expect the values ``a=2`` and ``b=3``, and telling ``returns_int`` to return
    :linenos:
 
 .. doxygengroup:: ztest_mock
-   :project: Zephyr
 
 Customizing Test Output
 ***********************

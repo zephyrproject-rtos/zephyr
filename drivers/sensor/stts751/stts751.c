@@ -215,6 +215,6 @@ static const struct stts751_config stts751_config = {
 #endif
 };
 
-DEVICE_DT_INST_DEFINE(0, stts751_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, stts751_init, NULL,
 		    &stts751_data, &stts751_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &stts751_api_funcs);

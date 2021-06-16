@@ -24,12 +24,5 @@ CONFIG_PINMUX=y
 # GPIO Controller
 CONFIG_GPIO=y
 
-# Clock configuration
+# Enable Clocks
 CONFIG_CLOCK_CONTROL=y
-
-# Ideally, we would use HSI48, but this is not supported in
-# Zephyr. Use "basic" HSI (8 MHz).
-CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=8000000
-
-# SYSCLK selection
-CONFIG_CLOCK_STM32_SYSCLK_SRC_HSI=y

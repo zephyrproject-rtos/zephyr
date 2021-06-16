@@ -147,6 +147,7 @@
 };
 
 &spi0 {
+	status = "okay";
 	pinctrl-0 = <&SPI0_SCK_PTC16 &SPI0_SOUT_PTC17
 		     &SPI0_SIN_PTC18 &SPI0_PCS0_PTC19>;
 };

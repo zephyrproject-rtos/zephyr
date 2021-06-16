@@ -346,8 +346,7 @@ static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 			    DEVICE_DT_INST_GET(n), 0);			\
 	}								\
 									\
-	static const struct soc_gpio_pin pins_twi##n[] =		\
-		{ATMEL_SAM_DT_PIN(n, 0), ATMEL_SAM_DT_PIN(n, 1)};	\
+	static const struct soc_gpio_pin pins_twi##n[] = ATMEL_SAM_DT_INST_PINS(n); \
 									\
 	static const struct i2c_sam_twi_dev_cfg i2c##n##_sam_config = {	\
 		.regs = (Twi *)DT_INST_REG_ADDR(n),			\
@@ -362,7 +361,7 @@ static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 	static struct i2c_sam_twi_dev_data i2c##n##_sam_data;		\
 									\
 	DEVICE_DT_INST_DEFINE(n, &i2c_sam_twi_initialize,		\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
 			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
 			    &i2c_sam_twi_driver_api);

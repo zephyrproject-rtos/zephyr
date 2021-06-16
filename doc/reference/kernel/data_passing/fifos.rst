@@ -160,4 +160,3 @@ API Reference
 *************
 
 .. doxygengroup:: fifo_apis
-   :project: Zephyr

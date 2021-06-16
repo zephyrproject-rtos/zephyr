@@ -481,23 +481,23 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	.release = spi_sam_release,
 };
 
-#define SPI_SAM_DEFINE_CONFIG(n)				  \
-	static const struct spi_sam_config spi_sam_config_##n = { \
-		.regs = (Spi *)DT_INST_REG_ADDR(n),		  \
-		.periph_id = DT_INST_PROP(n, peripheral_id),	  \
-		.num_pins = ATMEL_SAM_DT_NUM_PINS(n),		  \
-		.pins = ATMEL_SAM_DT_PINS(n),			  \
+#define SPI_SAM_DEFINE_CONFIG(n)					\
+	static const struct spi_sam_config spi_sam_config_##n = {	\
+		.regs = (Spi *)DT_INST_REG_ADDR(n),			\
+		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.num_pins = ATMEL_SAM_DT_INST_NUM_PINS(n),		\
+		.pins = ATMEL_SAM_DT_INST_PINS(n),			\
 	}
 
-#define SPI_SAM_DEVICE_INIT(n)					       \
-	SPI_SAM_DEFINE_CONFIG(n);				       \
-	static struct spi_sam_data spi_sam_dev_data_##n = {	       \
-		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),      \
-		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),      \
-	};							       \
-	DEVICE_DT_INST_DEFINE(n, &spi_sam_init, device_pm_control_nop, \
-			      &spi_sam_dev_data_##n,		       \
-			      &spi_sam_config_##n, POST_KERNEL,	       \
-			      CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
+#define SPI_SAM_DEVICE_INIT(n)						\
+	SPI_SAM_DEFINE_CONFIG(n);					\
+	static struct spi_sam_data spi_sam_dev_data_##n = {		\
+		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),	\
+		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),	\
+	};								\
+	DEVICE_DT_INST_DEFINE(n, &spi_sam_init, NULL,			\
+			    &spi_sam_dev_data_##n,			\
+			    &spi_sam_config_##n, POST_KERNEL,		\
+			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)

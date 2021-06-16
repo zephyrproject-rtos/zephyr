@@ -327,8 +327,8 @@ static const struct uart_driver_api uart_sam_driver_api = {
 		.regs = (Uart *)DT_INST_REG_ADDR(n),			\
 		.periph_id = DT_INST_PROP(n, peripheral_id),		\
 									\
-		.pin_rx = ATMEL_SAM_DT_PIN(n, 0),			\
-		.pin_tx = ATMEL_SAM_DT_PIN(n, 1),			\
+		.pin_rx = ATMEL_SAM_DT_INST_PIN(n, 0),			\
+		.pin_tx = ATMEL_SAM_DT_INST_PIN(n, 1),			\
 									\
 		IRQ_FUNC_INIT						\
 	}
@@ -362,7 +362,7 @@ static const struct uart_driver_api uart_sam_driver_api = {
 	static const struct uart_sam_dev_cfg uart##n##_sam_config;	\
 									\
 	DEVICE_DT_INST_DEFINE(n, &uart_sam_init, 			\
-			    device_pm_control_nop, &uart##n##_sam_data,	\
+			    NULL, &uart##n##_sam_data,			\
 			    &uart##n##_sam_config, PRE_KERNEL_1,	\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &uart_sam_driver_api);			\

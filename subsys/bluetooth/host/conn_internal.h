@@ -187,7 +187,7 @@ struct bt_conn {
 	 * - Initiator connect create cancel.
 	 * - Connection cleanup.
 	 */
-	struct k_delayed_work	deferred_work;
+	struct k_work_delayable	deferred_work;
 
 	union {
 		struct bt_conn_le	le;
@@ -218,7 +218,13 @@ void bt_conn_reset_rx_state(struct bt_conn *conn);
 /* Process incoming data for a connection */
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 
-/* Send data over a connection */
+/* Send data over a connection
+ *
+ * Buffer ownership is transferred to stack in case of success.
+ *
+ * Calling this from RX thread is assumed to never fail so the return can be
+ * ignored.
+ */
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb, void *user_data);
 
@@ -314,6 +320,8 @@ struct bt_conn *bt_conn_lookup_state_le(uint8_t id, const bt_addr_le_t *peer,
 
 /* Set connection object in certain state and perform action related to state */
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
+
+void bt_conn_connected(struct bt_conn *conn);
 
 int bt_conn_le_conn_update(struct bt_conn *conn,
 			   const struct bt_le_conn_param *param);

@@ -113,8 +113,11 @@ static inline int npcx_itim_evt_enable(void)
 	while (!IS_BIT_SET(evt_tmr->ITCTS32, NPCX_ITCTSXX_ITEN)) {
 		if (npcx_itim_get_sys_cyc64() - cyc_start >
 						NPCX_ITIM_EN_TIMEOUT_CYCLES) {
-			LOG_ERR("Timeout: enabling EVT timer!");
-			return -ETIMEDOUT;
+			/* ITEN bit is still unset? */
+			if (!IS_BIT_SET(evt_tmr->ITCTS32, NPCX_ITCTSXX_ITEN)) {
+				LOG_ERR("Timeout: enabling EVT timer!");
+				return -ETIMEDOUT;
+			}
 		}
 	}
 

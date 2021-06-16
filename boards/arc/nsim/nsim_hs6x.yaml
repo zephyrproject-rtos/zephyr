@@ -1,0 +1,11 @@
+identifier: nsim_hs6x
+name: HS6x nSIM simulator
+type: mcu
+simulation: nsim
+arch: arc
+toolchain:
+  - cross-compile
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

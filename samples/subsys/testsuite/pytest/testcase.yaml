@@ -1,0 +1,5 @@
+tests:
+  sample.twister.pytest:
+    platform_allow: native_posix
+    harness: pytest
+    tags: testing pytest

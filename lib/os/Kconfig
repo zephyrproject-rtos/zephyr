@@ -46,11 +46,6 @@ config SYS_HEAP_ALLOC_LOOPS
 	  keeps the maximum runtime at a tight bound so that the heap
 	  is useful in locked or ISR contexts.
 
-config PRINTK64
-	bool "Enable 64 bit printk conversions (DEPRECATED)"
-	help
-	  Replace with CBPRINTF_FULL_INTEGRAL.
-
 config PRINTK_SYNC
 	bool "Serialize printk() calls"
 	default y if SMP && MP_NUM_CPUS > 1
@@ -74,6 +69,14 @@ config MPSC_CLEAR_ALLOCATED
 	help
 	  When enabled packet space is zeroed before returning from allocation.
 endif
+
+config REBOOT
+	bool "Reboot functionality"
+	select SYSTEM_CLOCK_DISABLE
+	help
+	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
+	  needed to perform a "safe" reboot (e.g. SYSTEM_CLOCK_DISABLE, to stop the
+	  system clock before issuing a reset).
 
 rsource "Kconfig.cbprintf"
 

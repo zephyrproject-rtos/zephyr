@@ -12,6 +12,30 @@
 
 	aliases {
 		uart-0 = &uart0;
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&cy8c95xx_port1 4 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&cy8c95xx_port1 5 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+		led2: led_2 {
+			gpios = <&cy8c95xx_port1 6 GPIO_ACTIVE_HIGH>;
+			label = "LED 2";
+		};
+		led3: led_3 {
+			gpios = <&cy8c95xx_port1 7 GPIO_ACTIVE_HIGH>;
+			label = "LED 3";
+		};
 	};
 
 	chosen {
@@ -19,7 +43,38 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &cy8c95xx_port0 2 0>,	/* A0 */
+			   <1 0 &cy8c95xx_port0 3 0>,	/* A1 */
+			   <2 0 &cy8c95xx_port0 4 0>,	/* A2 */
+			   <3 0 &cy8c95xx_port0 5 0>,	/* A3 */
+			   <4 0 &gpio0 18 0>,	/* A4 */
+			   <5 0 &gpio0 19 0>,	/* A5 */
+			   <6 0 &gpio0 23 0>,	/* D0 */
+			   <7 0 &gpio0 22 0>,	/* D1 */
+			   <8 0 &gpio0 16 0>,	/* D2 */
+			   <9 0 &gpio0 17 0>,	/* D3 */
+			   <10 0 &gpio0 11 0>,	/* D4 */
+			   <11 0 &gpio0 9 0>,	/* D5 */
+			   <12 0 &gpio0 21 0>,	/* D6 */
+			   <13 0 &gpio0 20 0>,	/* D7 */
+			   <14 0 &gpio0 10 0>,	/* D8 */
+			   <15 0 &gpio0 8 0>,	/* D9 */
+			   <16 0 &gpio0 12 0>,	/* D10 */
+			   <17 0 &gpio0 13 0>,	/* D11 */
+			   <18 0 &gpio0 14 0>,	/* D12 */
+			   <19 0 &gpio0 15 0>,	/* D13 */
+			   <20 0 &gpio0 18 0>,	/* D14 */
+			   <21 0 &gpio0 19 0>;	/* D15 */
+	};
 };
+
+arduino_spi: &spi2 {};
 
 &uart0 {
 	status = "okay";
@@ -44,18 +99,39 @@
 &spi2 {
 	status = "okay";
 	clock-frequency = <33333333>;
+};
 
-	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
-	ili9340@0 {
-		compatible = "ilitek,ili9340";
-		cmd-data-gpios = <&gpio0 21 0>;
-		reg = <0>;
-		spi-max-frequency = <12000000>;
-		label = "DISPLAY";
-		pwctrl1 = [1b 00];
-		vmctrl1 = [3f 3c];
-		vmctrl2 = [b7];
-		pgamctrl = [0f 2a 28 08 0e 08 54 a9 43 0a 0f 00 00 00 00];
-		ngamctrl = [00 15 17 07 11 06 2b 56 3c 05 10 0f 3f 3f 0f];
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	cy8c95xx: cy8c95xx@20 {
+		compatible = "cypress,cy8c95xx-gpio";
+		reg = <0x20>;
+		label = "cy8c95xx_gpio";
+
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cy8c95xx_port0: cy8c95xx_port@0 {
+			compatible = "cypress,cy8c95xx-gpio-port";
+			reg = <0x00>;
+			label = "cy8c95xx_port0";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			status = "okay";
+		};
+
+		cy8c95xx_port1: cy8c95xx_port@1 {
+			compatible = "cypress,cy8c95xx-gpio-port";
+			reg = <0x01>;
+			label = "cy8c95xx_port1";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			status = "okay";
+		};
 	};
 };

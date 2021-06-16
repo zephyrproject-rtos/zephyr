@@ -42,10 +42,28 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		boot_partition: partition@0 {
+			label = "sam-ba";
+			reg = <0x00000000 0x00010000>;
+			read-only;
+		};
+
 		code_partition: partition@10000 {
 			label = "code";
-			reg = <0x10000 0xf0000>;
+			reg = <0x00010000 0x000e8000>;
 			read-only;
+		};
+
+		/*
+		 * The flash starting at 0x000f8000 and ending at
+		 * 0x000fffff is reserved for use by the application.
+		 *
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@f8000 {
+			label = "storage";
+			reg = <0x000f8000 0x00008000>;
 		};
 	};
 };
@@ -69,14 +87,14 @@
 &i2c0 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-gpios = <&gpio0 31 0>;
-	scl-gpios = <&gpio0 2 0>;
+	sda-pin = <31>; //P0.31
+	scl-pin = <2>; //P0.02
 };
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-gpios = <&gpio0 14 0>;
-	scl-gpios = <&gpio0 15 0>;
+	sda-pin = <14>; //P0.14
+	scl-pin = <15>; //P0.15
 };
 // we use SPI2 because SPI1/0 shares conflicts with I2C1/0
 &spi2 {

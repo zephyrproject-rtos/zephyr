@@ -235,7 +235,7 @@ You will see output similar to the following:
    63      GEN_ABSOLUTE_SYM(__ISR_LIST_SIZEOF, sizeof(struct _isr_list));
    (gdb) b _PrepC
    Breakpoint 1 at 0xdf0: file /projects/zephyr/arch/nios2/core/prep_c.c, line 36.
-   (gdb) b _Cstart
+   (gdb) b z_cstart
    Breakpoint 2 at 0x1254: file /projects/zephyr/kernel/init.c, line 348.
    (gdb) c
    Continuing.

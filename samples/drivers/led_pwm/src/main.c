@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 
 #if DT_NODE_HAS_STATUS(DT_INST(0, pwm_leds), okay)
 #define LED_PWM_NODE_ID		DT_INST(0, pwm_leds)
-#define LED_PWM_DEV_NAME	DT_INST_PROP_OR(0, label, "LED_PWM_0")
+#define LED_PWM_DEV_NAME	DEVICE_DT_NAME(LED_PWM_NODE_ID)
 #else
 #error "No LED PWM device found"
 #endif
@@ -48,20 +48,20 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 
 	/* Turn LED on. */
 	err = led_on(led_pwm, led);
-	LOG_INF("  Turning on");
 	if (err < 0) {
 		LOG_ERR("err=%d", err);
 		return;
 	}
+	LOG_INF("  Turned on");
 	k_sleep(K_MSEC(1000));
 
 	/* Turn LED off. */
 	err = led_off(led_pwm, led);
-	LOG_INF("  Turning off");
 	if (err < 0) {
 		LOG_ERR("err=%d", err);
 		return;
 	}
+	LOG_INF("  Turned off");
 	k_sleep(K_MSEC(1000));
 
 	/* Increase LED brightness gradually up to the maximum level. */
@@ -77,30 +77,31 @@ static void run_led_test(const struct device *led_pwm, uint8_t led)
 	k_sleep(K_MSEC(1000));
 
 	/* Set LED blinking (on: 0.1 sec, off: 0.1 sec) */
-	LOG_INF("  Blinking on: 0.1 sec, off: 0.1 sec");
 	err = led_blink(led_pwm, led, 100, 100);
 	if (err < 0) {
 		LOG_ERR("err=%d", err);
 		return;
 	}
+	LOG_INF("  Blinking on: 0.1 sec, off: 0.1 sec");
 	k_sleep(K_MSEC(5000));
 
 	/* Enable LED blinking (on: 1 sec, off: 1 sec) */
-	LOG_INF("  Blinking on: 1 sec, off: 1 sec");
 	err = led_blink(led_pwm, led, 1000, 1000);
 	if (err < 0) {
 		LOG_ERR("err=%d", err);
-		return;
+		LOG_INF("  Cycle period not supported - on: 1 sec, off: 1 sec");
+	} else {
+		LOG_INF("  Blinking on: 1 sec, off: 1 sec");
 	}
 	k_sleep(K_MSEC(5000));
 
 	/* Turn LED off. */
-	LOG_INF("  Turning off");
 	err = led_off(led_pwm, led);
 	if (err < 0) {
 		LOG_ERR("err=%d", err);
 		return;
 	}
+	LOG_INF("  Turned off, loop end");
 }
 
 void main(void)

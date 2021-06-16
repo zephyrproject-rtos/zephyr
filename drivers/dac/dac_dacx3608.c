@@ -255,7 +255,7 @@ static const struct dac_driver_api dacx3608_driver_api = {
 		.resolution = res, \
 	}; \
 	DEVICE_DT_DEFINE(INST_DT_DACX3608(n, t), \
-				&dacx3608_init, device_pm_control_nop, \
+				&dacx3608_init, NULL, \
 				&dac##t##_data_##n, \
 				&dac##t##_config_##n, POST_KERNEL, \
 				CONFIG_DAC_DACX3608_INIT_PRIORITY, \

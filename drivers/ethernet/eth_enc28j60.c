@@ -847,7 +847,7 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 };
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
-		    eth_enc28j60_init, device_pm_control_nop,
+		    eth_enc28j60_init, NULL,
 		    &eth_enc28j60_0_runtime, &eth_enc28j60_0_config,
 		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 

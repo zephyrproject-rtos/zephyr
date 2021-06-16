@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2021, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi6 {
+	cs-gpios = <&gpio_prt12 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+		   <&gpio_prt13 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+	pinctrl-0 = <&p12_0_spi6_mosi &p12_1_spi6_miso &p12_2_spi6_clk>;
+};

@@ -36,7 +36,8 @@ class Loglist:
 
         if magic == MAGIC:
             id_num = read_bytes(slot[2:4])
-            logstr = slot[4:].decode(errors='replace')
+            before_first_zero = slot[4:].split(b'\x00')[0]
+            logstr = before_first_zero.decode(errors='replace')
             self.loglist.append((id_num, logstr))
 
     def parse(self):

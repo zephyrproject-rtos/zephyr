@@ -43,7 +43,6 @@ enum {
 	BT_DEV_INITIATING,
 
 	BT_DEV_RPA_VALID,
-	BT_DEV_RPA_TIMEOUT_SET,
 
 	BT_DEV_ID_PENDING,
 	BT_DEV_STORE_ID,
@@ -61,6 +60,14 @@ enum {
 /* Flags which should not be cleared upon HCI_Reset */
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
 				 BIT(BT_DEV_PRESET_ID))
+
+#if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
+/* Check the feature bit for extended or legacy advertising commands */
+#define BT_DEV_FEAT_LE_EXT_ADV(feat) BT_FEAT_LE_EXT_ADV(feat)
+#else
+/* Always use extended advertising commands. */
+#define BT_DEV_FEAT_LE_EXT_ADV(feat)  1
+#endif
 
 enum {
 	/* Advertising set has been created in the host. */
@@ -114,6 +121,10 @@ enum {
 	 * in the controller.
 	 */
 	BT_PER_ADV_CTE_ENABLED,
+	/* The device name has been forced to appear in the advertising data
+	 * instead of in the scan response data
+	 */
+	BT_ADV_FORCE_NAME_IN_AD,
 
 	BT_ADV_NUM_FLAGS,
 };
@@ -141,7 +152,6 @@ struct bt_le_ext_adv {
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 };
 
-
 enum {
 	/** Periodic Advertising Sync has been created in the host. */
 	BT_PER_ADV_SYNC_CREATED,
@@ -154,6 +164,11 @@ enum {
 
 	/** Periodic advertising is attempting sync sync */
 	BT_PER_ADV_SYNC_RECV_DISABLED,
+
+	/** Constant Tone Extension for Periodic Advertising has been enabled
+	 * in the controller.
+	 */
+	BT_PER_ADV_SYNC_CTE_ENABLED,
 
 	BT_PER_ADV_SYNC_NUM_FLAGS,
 };
@@ -176,6 +191,11 @@ struct bt_le_per_adv_sync {
 
 	/** Advertiser PHY */
 	uint8_t phy;
+
+#if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
+	/** Accepted CTE type */
+	uint8_t cte_type;
+#endif /* CONFIG_BT_DF_CONNECTIONLESS_CTE_RX */
 
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
@@ -240,6 +260,22 @@ struct bt_dev {
 #else
 	/* Pointer to reserved advertising set */
 	struct bt_le_ext_adv    *adv;
+#if (CONFIG_BT_ID_MAX > 1) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
+	/* When supporting multiple concurrent connectable advertising sets
+	 * with multiple identities, we need to know the identity of
+	 * the terminating advertising set to identify the connection object.
+	 * The identity of the advertising set is determined by its
+	 * advertising handle, which is part of the
+	 * LE Set Advertising Set Terminated event which is always sent
+	 * _after_ the LE Enhanced Connection complete event.
+	 * Therefore we need cache this event until its identity is known.
+	 */
+	struct {
+		bool valid;
+		struct bt_hci_evt_le_enh_conn_complete evt;
+	} cached_conn_complete[MIN(CONFIG_BT_MAX_CONN,
+				CONFIG_BT_EXT_ADV_MAX_ADV_SET)];
+#endif
 #endif
 	/* Current local Random Address */
 	bt_addr_le_t            random_addr;
@@ -298,7 +334,7 @@ struct bt_dev {
 	uint8_t			irk[CONFIG_BT_ID_MAX][16];
 
 	/* Work used for RPA rotation */
-	struct k_delayed_work rpa_update;
+	struct k_work_delayable rpa_update;
 #endif
 
 	/* Local Name */
@@ -324,11 +360,6 @@ struct bt_hci_cmd_state_set {
 	int bit;
 	/* Value to determine if enable or disable bit */
 	bool val;
-};
-
-struct bt_adv_id_check_data {
-	uint8_t id;
-	bool adv_enabled;
 };
 
 /* Set command state related with the command buffer */
@@ -382,6 +413,9 @@ void bt_hci_auth_complete(struct net_buf *buf);
 void bt_hci_evt_le_pkey_complete(struct net_buf *buf);
 void bt_hci_evt_le_dhkey_complete(struct net_buf *buf);
 
+/* Common HCI event handlers */
+void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt);
+
 /* Scan HCI event handlers */
 void bt_hci_le_adv_report(struct net_buf *buf);
 void bt_hci_le_scan_timeout(struct net_buf *buf);
@@ -390,6 +424,7 @@ void bt_hci_le_per_adv_sync_established(struct net_buf *buf);
 void bt_hci_le_per_adv_report(struct net_buf *buf);
 void bt_hci_le_per_adv_sync_lost(struct net_buf *buf);
 void bt_hci_le_biginfo_adv_report(struct net_buf *buf);
+void bt_hci_le_df_connectionless_iq_report(struct net_buf *buf);
 void bt_hci_le_past_received(struct net_buf *buf);
 
 /* Adv HCI event handlers */

@@ -6,14 +6,12 @@
 
 
  /* This partition table should be used along with TFM configuration:
+  * - TEST_S=OFF (NO REGRESSION)
   * - TFM_PSA_API=ON (IPC)
-  * - ISOLATION_LEVEL 2
-  * - TEST_S=ON (REGRESSION)
-  * - TEST_NS=ON (REGRESSION)
   *
-  * In this configuration, TFM binary includes tests. As a consequence,
-  * its size is bloated and it is not possible to set secondary partitions
-  * for secured or non secured images.
+  * In this configuration, TFM binary does not include tests.
+  * The partition sizes are compatible with the TF-M platform
+  * flash_layout.h.
   */
 
 / {
@@ -37,12 +35,12 @@
 		/* Secure image primary slot */
 		slot0_partition: partition@13000 {
 			label = "image-0";
-			reg = <0x00013000 0x00038000>;
+			reg = <0x00013000 0x0002D000>;
 		};
 		/* Non-secure image primary slot */
-		slot1_partition: partition@4b000 {
+		slot1_partition: partition@40000 {
 			label = "image-1";
-			reg = <0x0004B000 0x0002A000>;
+			reg = <0x00040000 0x00009000>;
 		};
 		/*
 		 * The flash starting at 0x7F000 and ending at

@@ -7,7 +7,7 @@
 #include "task_wdt/task_wdt.h"
 
 #include <drivers/watchdog.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <device.h>
 #include <errno.h>
 
@@ -71,7 +71,7 @@ static void task_wdt_trigger(struct k_timer *timer_id)
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 	if (channel_id == TASK_WDT_BACKGROUND_CHANNEL) {
 		if (hw_wdt_dev) {
-			wdt_feed(hw_wdt_dev, 0);
+			wdt_feed(hw_wdt_dev, hw_wdt_channel);
 		}
 		return;
 	}
@@ -131,7 +131,8 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 			if (!hw_wdt_started && hw_wdt_dev) {
 				/* also start fallback hw wdt */
-				wdt_setup(hw_wdt_dev, 0);
+				wdt_setup(hw_wdt_dev,
+					WDT_OPT_PAUSE_HALTED_BY_DBG);
 				hw_wdt_started = true;
 			}
 #endif
@@ -202,7 +203,7 @@ int task_wdt_feed(int channel_id)
 
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 	if (hw_wdt_dev) {
-		wdt_feed(hw_wdt_dev, 0);
+		wdt_feed(hw_wdt_dev, hw_wdt_channel);
 	}
 #endif
 

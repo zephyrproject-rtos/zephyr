@@ -167,6 +167,16 @@ enum uart_rx_stop_reason {
 	 * start time + data bits + parity + stop bits.
 	 */
 	UART_BREAK = (1 << 3),
+	/**
+	 * @brief Collision error
+	 *
+	 * This error is raised when transmitted data does not match
+	 * received data. Typically this is useful in scenarios where
+	 * the TX and RX lines maybe connected together such as
+	 * RS-485 half-duplex. This error is only valid on UARTs that
+	 * support collision checking.
+	 */
+	UART_ERROR_COLLISION = (1 << 4),
 };
 
 /** @brief UART TX event data. */
@@ -699,7 +709,7 @@ static inline void z_impl_uart_poll_out(const struct device *dev,
  * @param cfg UART configuration structure.
  *
  *
- * @retval -ENOTSUP If configuration is not supported by device.
+ * @retval -ENOSYS If configuration is not supported by device.
  *                  or driver does not support setting configuration in runtime.
  * @retval 0 If successful, negative errno code otherwise.
  */

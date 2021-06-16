@@ -127,7 +127,7 @@ static const unsigned char ca_certificate[] = {
 };
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 
-#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+#if defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
 /* Avoid leading zero in psk because there's a potential issue of mosquitto
  * that leading zero of psk will be skipped and it leads to TLS handshake
  * failure

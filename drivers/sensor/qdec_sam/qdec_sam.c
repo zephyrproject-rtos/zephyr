@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT atmel_sam_tc
+#define DT_DRV_COMPAT atmel_sam_tc_qdec
 
 /** @file
  * @brief Atmel SAM MCU family Quadrature Decoder (QDEC/TC) driver.
@@ -123,7 +123,7 @@ static const struct sensor_driver_api qdec_sam_driver_api = {
 };
 
 #define QDEC_SAM_INIT(n)						\
-	static const struct soc_gpio_pin pins_tc##n[] = ATMEL_SAM_DT_PINS(n); \
+	static const struct soc_gpio_pin pins_tc##n[] = ATMEL_SAM_DT_INST_PINS(n); \
 									\
 	static const struct qdec_sam_dev_cfg qdec##n##_sam_config = {	\
 		.regs = (Tc *)DT_INST_REG_ADDR(n),			\
@@ -134,7 +134,7 @@ static const struct sensor_driver_api qdec_sam_driver_api = {
 									\
 	static struct qdec_sam_dev_data qdec##n##_sam_data;		\
 									\
-	DEVICE_DT_INST_DEFINE(n, qdec_sam_initialize, device_pm_control_nop, \
+	DEVICE_DT_INST_DEFINE(n, qdec_sam_initialize, NULL,		\
 			    &qdec##n##_sam_data, &qdec##n##_sam_config, \
 			    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	\
 			    &qdec_sam_driver_api);

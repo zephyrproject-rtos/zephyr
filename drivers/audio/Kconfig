@@ -42,7 +42,7 @@ if AUDIO_DMIC
 
 config AUDIO_DMIC_INIT_PRIORITY
 	int "Init priority"
-	default 60
+	default 80
 	help
 	  Audio Digital Microphone device driver initialization priority.
 

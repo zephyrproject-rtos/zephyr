@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief GPIO pins macros for the Apollo Lake SoC
+ * @brief GPIO macros for the Apollo Lake SoC
  *
- * This header file is used to specify the GPIO pins for
+ * This header file is used to specify the GPIO pins and macros for
  * the Apollo Lake SoC.
  */
 
@@ -279,5 +279,30 @@
 #define APL_GPIO_LPC_AD3		8
 #define APL_GPIO_LPC_CLKRUNB		9
 #define APL_GPIO_LPC_FRAMEB		10
+
+#define GPIO_INTEL_NR_SUBDEVS		10
+
+#define REG_PAD_BASE_ADDR		0x000C
+#define REG_GPI_INT_EN_BASE		0x0110
+#define REG_PAD_HOST_SW_OWNER		0x0080
+
+#define GPIO_REG_BASE(reg_base) reg_base
+
+#define GPIO_PAD_BASE(reg_base) \
+	(sys_read32(reg_base + REG_PAD_BASE_ADDR))
+
+#define GPIO_PAD_OWNERSHIP(raw_pin, pin_offset) \
+	REG_PAD_OWNER_BASE + ((raw_pin >> 3) << 2)
+
+#define GPIO_OWNERSHIP_BIT(raw_pin) (raw_pin % 8)
+
+#define GPIO_RAW_PIN(pin, pin_offset) (pin_offset + pin)
+
+#define GPIO_INTERRUPT_BASE(cfg) \
+	((cfg->pin_offset >> 5) << 2)
+
+#define GPIO_BASE(cfg) 0
+
+#define PIN_OFFSET 8U
 
 #endif /* __SOC_GPIO_H_ */

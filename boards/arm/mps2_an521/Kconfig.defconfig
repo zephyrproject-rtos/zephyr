@@ -6,9 +6,9 @@ if BOARD_MPS2_AN521
 # MPU-based null-pointer dereferencing detection cannot
 # be applied as the (0x0 - 0x400) is unmapped but QEMU
 # will still permit bus access.
-choice CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION
+choice NULL_POINTER_EXCEPTION_DETECTION
 	bool
-	default CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION_DETECTION_NONE if QEMU_TARGET
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE if QEMU_TARGET
 endchoice
 
 config BOARD
@@ -17,10 +17,8 @@ config BOARD
 
 # By default, if we build for a Non-Secure version of the board,
 # force building with TF-M as the Secure Execution Environment.
-# Openamp samples assume the non-secure build is the remote
-# core image, so do not build with TF-M in this case.
 config BUILD_WITH_TFM
-	default y if TRUSTED_EXECUTION_NONSECURE && !OPENAMP
+	default y if TRUSTED_EXECUTION_NONSECURE
 
 
 if GPIO

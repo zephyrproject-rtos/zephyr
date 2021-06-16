@@ -39,7 +39,7 @@
 
 
 #include <zephyr.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <device.h>
 #include <string.h>
 #include <drivers/flash.h>
@@ -47,6 +47,9 @@
 #include <fs/nvs.h>
 
 static struct nvs_fs fs;
+
+#define STORAGE_NODE DT_NODE_BY_FIXED_PARTITION_LABEL(storage)
+#define FLASH_NODE DT_MTD_FROM_FIXED_PARTITION(STORAGE_NODE)
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME      100
@@ -68,25 +71,31 @@ void main(void)
 	uint8_t key[8], longarray[128];
 	uint32_t reboot_counter = 0U, reboot_counter_his;
 	struct flash_pages_info info;
+	const struct device *flash_dev;
 
 	/* define the nvs file system by settings with:
 	 *	sector_size equal to the pagesize,
 	 *	3 sectors
 	 *	starting at FLASH_AREA_OFFSET(storage)
 	 */
+	flash_dev = DEVICE_DT_GET(FLASH_NODE);
+	if (!device_is_ready(flash_dev)) {
+		printk("Flash device %s is not ready\n", flash_dev->name);
+		return;
+	}
 	fs.offset = FLASH_AREA_OFFSET(storage);
-	rc = flash_get_page_info_by_offs(
-		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL),
-		fs.offset, &info);
+	rc = flash_get_page_info_by_offs(flash_dev, fs.offset, &info);
 	if (rc) {
-		printk("Unable to get page info");
+		printk("Unable to get page info\n");
+		return;
 	}
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
 
-	rc = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	rc = nvs_init(&fs, flash_dev->name);
 	if (rc) {
 		printk("Flash Init failed\n");
+		return;
 	}
 
 	/* ADDRESS_ID is used to store an address, lets see if we can

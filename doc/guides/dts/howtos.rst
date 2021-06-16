@@ -5,6 +5,8 @@ Devicetree HOWTOs
 
 This page has step-by-step advice for getting things done with devicetree.
 
+.. tip:: See :ref:`dt-trouble` for troubleshooting advice.
+
 .. _get-devicetree-outputs:
 
 Get your devicetree and generated header
@@ -59,7 +61,7 @@ When writing Zephyr applications, you'll often want to get a driver-level
 For example, with this devicetree fragment, you might want the struct device
 for ``serial@40002000``:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
            soc {
@@ -153,8 +155,9 @@ creating the device, or the device's initialization function failed.
 Find a devicetree binding
 *************************
 
-Devicetree binding YAML files document what you can do with the nodes they
-describe, so it's critical to be able to find them for the nodes you are using.
+:ref:`dt-bindings` are YAML files which declare what you can do with the nodes
+they describe, so it's critical to be able to find them for the nodes you are
+using.
 
 If you don't have them already, :ref:`get-devicetree-outputs`. To find a node's
 binding, open the generated header file, which starts with a list of nodes in a
@@ -237,7 +240,7 @@ See :ref:`set-devicetree-overlays` for how to add an overlay to the build.
 Overlays can override node property values in multiple ways.
 For example, if your BOARD.dts contains this node:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
            soc {
@@ -465,7 +468,7 @@ using instance numbers. Do this after defining ``my_api_funcs``.
    	};								\
    	DEVICE_DT_INST_DEFINE(inst,					\
    			      my_dev_init_function,			\
-			      device_pm_control_nop,			\
+			      NULL,             			\
    			      &my_data_##inst,				\
    			      &my_cfg_##inst,				\
    			      MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
@@ -504,14 +507,14 @@ labels like ``mydevice0``, ``mydevice1``, etc. appropriately for the IP blocks
 your driver supports. The resulting devicetree usually looks something like
 this:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
    / {
            soc {
-                   mydevice0: dev@... {
+                   mydevice0: dev@0 {
                            compatible = "vnd,my-device";
                    };
-                   mydevice1: dev@... {
+                   mydevice1: dev@1 {
                            compatible = "vnd,my-device";
                    };
            };
@@ -542,7 +545,7 @@ devicetree to operate on specific device nodes:
 	static const struct my_dev_cfg my_cfg_##idx = { /* ... */ };	\
    	DEVICE_DT_DEFINE(MYDEV(idx),					\
    			my_dev_init_function,				\
-			device_pm_control_nop,				\
+			NULL,           				\
 			&my_data_##idx,					\
 			&my_cfg_##idx,					\
 			MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,	\
@@ -597,130 +600,3 @@ supporting a devicetree alias to specify the hardware specific portions, as is
 done in the :ref:`blinky-sample`. The application can then be configured in
 :ref:`BOARD.dts <devicetree-in-out-files>` files or via :ref:`devicetree
 overlays <use-dt-overlays>`.
-
-.. _dt-trouble:
-
-Troubleshoot devicetree issues
-******************************
-
-Here are some tips for fixing misbehaving devicetree code.
-
-Try again with a pristine build directory
-=========================================
-
-See :ref:`west-building-pristine` for examples, or just delete the build
-directory completely and retry.
-
-This is general advice which is especially applicable to debugging devicetree
-issues, because the outputs are created at CMake configuration time, and are
-not always regenerated when one of their inputs changes.
-
-Make sure <devicetree.h> is included
-====================================
-
-Unlike Kconfig symbols, the :file:`devicetree.h` header must be included
-explicitly.
-
-Many Zephyr header files rely on information from devicetree, so including some
-other API may transitively include :file:`devicetree.h`, but that's not
-guaranteed.
-
-.. _dt-use-the-right-names:
-
-Make sure you're using the right names
-======================================
-
-Remember that:
-
-- In C/C++, devicetree names must be lowercased and special characters must be
-  converted to underscores. Zephyr's generated devicetree header has DTS names
-  converted in this way into the C tokens used by the preprocessor-based
-  ``<devicetree.h>`` API.
-- In overlays, use devicetree node and property names the same way they
-  would appear in any DTS file. Zephyr overlays are just DTS fragments.
-
-For example, if you're trying to **get** the ``clock-frequency`` property of a
-node with path ``/soc/i2c@12340000`` in a C/C++ file:
-
-.. code-block:: c
-
-   /*
-    * foo.c: lowercase-and-underscores names
-    */
-
-   /* Don't do this: */
-   #define MY_CLOCK_FREQ DT_PROP(DT_PATH(soc, i2c@1234000), clock-frequency)
-   /*                                           ^               ^
-    *                                        @ should be _     - should be _  */
-
-   /* Do this instead: */
-   #define MY_CLOCK_FREQ DT_PROP(DT_PATH(soc, i2c_1234000), clock_frequency)
-   /*                                           ^               ^           */
-
-And if you're trying to **set** that property in a devicetree overlay:
-
-.. code-block:: DTS
-
-   /*
-    * foo.overlay: DTS names with special characters, etc.
-    */
-
-   /* Don't do this; you'll get devicetree errors. */
-   &{/soc/i2c_12340000/} {
-   	clock_frequency = <115200>;
-   };
-
-   /* Do this instead. Overlays are just DTS fragments. */
-   &{/soc/i2c@12340000/} {
-   	clock-frequency = <115200>;
-   };
-
-Validate properties
-===================
-
-If you're getting a compile error reading a node property, check your node
-identifier and property. For example, if you get a build error on a line that
-looks like this:
-
-.. code-block:: c
-
-   int baud_rate = DT_PROP(DT_NODELABEL(my_serial), current_speed);
-
-Try checking the node by adding this to the file and recompiling:
-
-.. code-block:: c
-
-   #if !DT_NODE_EXISTS(DT_NODELABEL(my_serial))
-   #error "whoops"
-   #endif
-
-If you see the "whoops" error message when you rebuild, the node identifier
-isn't referring to a valid node. :ref:`get-devicetree-outputs` and debug from
-there.
-
-Some hints for what to check next if you don't see the "whoops" error message:
-
-- did you :ref:`dt-use-the-right-names`?
-- does the :ref:`property exist <dt-checking-property-exists>`?
-- does the node have a :ref:`matching binding <dt-bindings>`?
-
-.. _missing-dt-binding:
-
-Check for missing bindings
-==========================
-
-If the build fails to :ref:`dts-find-binding` for a node, then either the
-node's ``compatible`` property is not defined, or its value has no matching
-binding. If the property is set, check for typos in its name. In a devicetree
-source file, ``compatible`` should look like ``"vnd,some-device"`` --
-:ref:`dt-use-the-right-names`.
-
-If your binding file is not under :file:`zephyr/dts`, you may need to set
-:ref:`DTS_ROOT <dts_root>`.
-
-Errors with DT_INST_() APIs
-===========================
-
-If you're using an API like :c:func:`DT_INST_PROP`, you must define
-``DT_DRV_COMPAT`` to the lowercase-and-underscores version of the compatible
-you are interested in. See :ref:`dt-create-devices-inst`.

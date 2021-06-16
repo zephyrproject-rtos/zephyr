@@ -25,4 +25,3 @@ API Reference
 *************
 
 .. doxygengroup:: ps2_interface
-   :project: Zephyr

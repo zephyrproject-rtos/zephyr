@@ -38,6 +38,5 @@ API Reference
 *************
 
 .. doxygengroup:: modbus
-   :project: Zephyr
 
 .. _`MODBUS Protocol Specifications`: https://www.modbus.org/specs.php

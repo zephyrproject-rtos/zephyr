@@ -93,5 +93,5 @@ static const struct flash_driver_api flash_ram_api = {
 };
 
 DEVICE_DEFINE(flash_ram_test, "ram_flash_test_drv", test_ram_flash_init,
-		device_pm_control_nop, NULL, NULL, POST_KERNEL,
+		NULL, NULL, NULL, POST_KERNEL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_ram_api);

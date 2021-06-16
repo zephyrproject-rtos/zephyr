@@ -1,0 +1,71 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Power Management"
+
+config SYS_POWER_MANAGEMENT
+	bool "System Power management"
+	select PM
+	help
+	  This option is deprecated. Please use CONFIG_PM instead.
+
+menuconfig PM
+	bool "System Power Management"
+	depends on SYS_CLOCK_EXISTS && !HAS_NO_SYS_PM
+	help
+	  This option enables the board to implement extra power management
+	  policies whenever the kernel becomes idle. The kernel informs the
+	  power management subsystem of the number of ticks until the next kernel
+	  timer is due to expire.
+
+if PM
+
+config PM_DEBUG
+	bool "System Power Management debug hooks"
+	help
+	  Enable System Power Management debugging hooks.
+
+source "subsys/pm/policy/Kconfig"
+
+module = PM
+module-str = System Power Management
+source "subsys/logging/Kconfig.template.log_config"
+
+
+endif # PM
+
+config HAS_NO_SYS_PM
+	bool
+	help
+	  This option blocks selection of PM.  It can be selected in SOC
+	  targets where system power management is not supported, for example
+	  on support core of a multi-core device where SoC power management is
+	  the responsibility of a different core.
+
+config PM_DEVICE
+	bool "Device power management"
+	help
+	  This option enables the device power management interface.  The
+	  interface consists of hook functions implemented by device drivers
+	  that get called by the power manager application when the system
+	  is going to suspend state or resuming from suspend state. This allows
+	  device drivers to do any necessary power management operations
+	  like turning off device clocks and peripherals. The device drivers
+	  may also save and restore states in these hook functions.
+
+config DEVICE_POWER_MANAGEMENT
+	bool "Device Power Management"
+	select PM_DEVICE
+	help
+	  This option is deprecated, please use CONFIG_PM_DEVICE instead.
+
+config PM_DEVICE_RUNTIME
+	bool "Runtime Device Power Management"
+	depends on PM_DEVICE
+	select POLL
+	help
+	  Enable Runtime Power Management to save power. With device runtime PM
+	  enabled, devices can be suspended or resumed based on the device
+	  usage even while the CPU or system is running.
+endmenu

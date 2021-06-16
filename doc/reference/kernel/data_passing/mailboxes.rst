@@ -635,4 +635,3 @@ API Reference
 *************
 
 .. doxygengroup:: mailbox_apis
-   :project: Zephyr

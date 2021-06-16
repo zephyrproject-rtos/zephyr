@@ -13,6 +13,6 @@ set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
 generate_inc_file_for_target(
     app
-    src/lets_encrypt_x3.der
-    ${gen_dir}/lets_encrypt_x3.der.inc
+    src/lets-encrypt-r3.der
+    ${gen_dir}/lets-encrypt-r3.der.inc
     )

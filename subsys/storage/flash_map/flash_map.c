@@ -80,7 +80,7 @@ void flash_area_close(const struct flash_area *fa)
 static inline bool is_in_flash_area_bounds(const struct flash_area *fa,
 					   off_t off, size_t len)
 {
-	return (off <= fa->fa_size && off + len <= fa->fa_size);
+	return (off >= 0) && ((off + len) <= fa->fa_size);
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)

@@ -231,7 +231,7 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 	static struct i2c_mcux_data i2c_mcux_data_ ## n;		\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			&i2c_mcux_init, device_pm_control_nop,		\
+			&i2c_mcux_init, NULL,				\
 			&i2c_mcux_data_ ## n,				\
 			&i2c_mcux_config_ ## n, POST_KERNEL,		\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\

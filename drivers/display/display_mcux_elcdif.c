@@ -258,7 +258,7 @@ static struct mcux_elcdif_data mcux_elcdif_data_1;
 
 DEVICE_DT_INST_DEFINE(0,
 		    &mcux_elcdif_init,
-		    device_pm_control_nop,
+		    NULL,
 		    &mcux_elcdif_data_1, &mcux_elcdif_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_elcdif_api);

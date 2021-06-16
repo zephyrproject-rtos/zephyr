@@ -119,36 +119,6 @@ union log_msg2_generic {
 	struct log_msg2 log;
 };
 
-enum tracing_log_id {
-	TRACING_LOG_THREAD_SWITCHED_OUT,
-	TRACING_LOG_ISR_ENTER,
-	TRACING_LOG_ISR_EXIT,
-	TRACING_LOG_ISR_EXIT_TO_SCHEDULER,
-	TRACING_LOG_IDLE,
-
-	TRACING_LOG_SINGLE_WORD = TRACING_LOG_IDLE,
-
-	/* IDs using additional data */
-	TRACING_LOG_THREAD_SWITCHED_IN,
-	TRACING_LOG_THREAD_PRIO_SET,
-	TRACING_LOG_THREAD_CREATE,
-	TRACING_LOG_THREAD_ABORT,
-	TRACING_LOG_THREAD_SUSPEND,
-	TRACING_LOG_THREAD_RESUME,
-	TRACING_LOG_THREAD_READY,
-	TRACING_LOG_THREAD_PEND,
-	TRACING_LOG_THREAD_INFO,
-	TRACING_LOG_THREAD_NAME_SET,
-	TRACING_LOG_VOID,
-	TRACING_LOG_END_CALL,
-	TRACING_LOG_SEMAPHORE_INIT,
-	TRACING_LOG_SEMAPHORE_TAKE,
-	TRACING_LOG_SEMAPHORE_GIVE,
-	TRACING_LOG_MUTEX_INIT,
-	TRACING_LOG_MUTEX_LOCK,
-	TRACING_LOG_MUTEX_UNLOCK
-};
-
 /** @brief Method used for creating a log message.
  *
  * It is used for testing purposes to validate that expected mode was used.
@@ -176,23 +146,25 @@ enum z_log_msg2_mode {
 
 #define Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, _dlen) \
 { \
+	.valid = 0, \
+	.busy = 0, \
 	.type = Z_LOG_MSG2_LOG, \
 	.domain = _domain_id, \
 	.level = _level, \
 	.package_len = _plen, \
 	.data_len = _dlen, \
+	.reserved = 0, \
 }
 
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG2_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
-
 
 #if CONFIG_LOG2_USE_VLA
 #define Z_LOG_MSG2_ON_STACK_ALLOC(ptr, len) \
 	long long _ll_buf[ceiling_fraction(len, sizeof(long long))]; \
 	long double _ld_buf[ceiling_fraction(len, sizeof(long double))]; \
 	ptr = (sizeof(long double) == Z_LOG_MSG2_ALIGNMENT) ? \
-			(void *)_ld_buf : (void *)_ll_buf; \
+			(struct log_msg2 *)_ld_buf : (struct log_msg2 *)_ll_buf; \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
 		/* During test fill with 0's to simplify message comparison */ \
 		memset(ptr, 0, len); \
@@ -215,15 +187,17 @@ enum z_log_msg2_mode {
 	long double _ld_buf128[128 / sizeof(long double)]; \
 	long double _ld_buf256[256 / sizeof(long double)]; \
 	if (sizeof(long double) == Z_LOG_MSG2_ALIGNMENT) { \
-		ptr = (len > 128) ? (void *)_ld_buf256 : \
-			((len > 64) ? (void *)_ld_buf128 : \
-			((len > 48) ? (void *)_ld_buf64 : \
-			((len > 32) ? (void *)_ld_buf48 : (void *)_ld_buf32)));\
+		ptr = (len > 128) ? (struct log_msg2 *)_ld_buf256 : \
+			((len > 64) ? (struct log_msg2 *)_ld_buf128 : \
+			((len > 48) ? (struct log_msg2 *)_ld_buf64 : \
+			((len > 32) ? (struct log_msg2 *)_ld_buf48 : \
+				      (struct log_msg2 *)_ld_buf32)));\
 	} else { \
-		ptr = (len > 128) ? (void *)_ll_buf256 : \
-			((len > 64) ? (void *)_ll_buf128 : \
-			((len > 48) ? (void *)_ll_buf64 : \
-			((len > 32) ? (void *)_ll_buf48 : (void *)_ll_buf32)));\
+		ptr = (len > 128) ? (struct log_msg2 *)_ll_buf256 : \
+			((len > 64) ? (struct log_msg2 *)_ll_buf128 : \
+			((len > 48) ? (struct log_msg2 *)_ll_buf64 : \
+			((len > 32) ? (struct log_msg2 *)_ll_buf48 : \
+				      (struct log_msg2 *)_ll_buf32)));\
 	} \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
 		/* During test fill with 0's to simplify message comparison */ \
@@ -254,7 +228,7 @@ enum z_log_msg2_mode {
 	} \
 	struct log_msg2_desc _desc = \
 		     Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
-			   _plen, _dlen); \
+			   (uint32_t)_plen, _dlen); \
 	z_log_msg2_finalize(_msg, _source, _desc, _data); \
 } while (0)
 
@@ -276,12 +250,13 @@ do { \
 	} \
 	struct log_msg2_desc _desc = \
 		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, \
-					   _plen, _dlen); \
+					   (uint32_t)_plen, _dlen); \
 	LOG_MSG2_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
 	z_log_msg2_static_create((void *)_source, _desc, _msg->data, _data); \
 } while (0)
 
+#if CONFIG_LOG_SPEED
 #define Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, _level, ...) do { \
 	int _plen; \
 	CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG2_ALIGN_OFFSET, \
@@ -289,7 +264,7 @@ do { \
 	size_t _msg_wlen = Z_LOG_MSG2_ALIGNED_WLEN(_plen, 0); \
 	struct log_msg2 *_msg = z_log_msg2_alloc(_msg_wlen); \
 	struct log_msg2_desc _desc = \
-		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, 0); \
+		Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, (uint32_t)_plen, 0); \
 	LOG_MSG2_DBG("creating message zero copy: package len: %d, msg: %p\n", \
 			_plen, _msg); \
 	if (_msg) { \
@@ -298,6 +273,12 @@ do { \
 	} \
 	z_log_msg2_finalize(_msg, (void *)_source, _desc, NULL); \
 } while (0)
+#else
+/* Alternative empty macro created to speed up compilation when LOG_SPEED is
+ * disabled (default).
+ */
+#define Z_LOG_MSG2_SIMPLE_CREATE(...)
+#endif
 
 /* Macro handles case when local variable with log message string is created.It
  * replaces origing string literal with that variable.
@@ -392,6 +373,23 @@ do {\
 				  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 	_mode = Z_LOG_MSG2_MODE_RUNTIME; \
 } while (0)
+#elif CONFIG_LOG2_MODE_IMMEDIATE /* CONFIG_LOG2_ALWAYS_RUNTIME */
+#define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
+			  _level, _data, _dlen, ...) \
+do { \
+	Z_LOG_MSG2_STR_VAR(_fmt, ##__VA_ARGS__); \
+	if (CBPRINTF_MUST_RUNTIME_PACKAGE(_cstr_cnt, __VA_ARGS__)) { \
+		LOG_MSG2_DBG("create runtime message\n");\
+		z_log_msg2_runtime_create(_domain_id, (void *)_source, \
+					  _level, (uint8_t *)_data, _dlen,\
+					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
+		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
+	} else {\
+		Z_LOG_MSG2_SYNC(_domain_id, _source, _level, \
+				_data, _dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
+		_mode = Z_LOG_MSG2_MODE_SYNC; \
+	} \
+} while (0)
 #else /* CONFIG_LOG2_ALWAYS_RUNTIME */
 #define Z_LOG_MSG2_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
@@ -403,10 +401,6 @@ do { \
 					  _level, (uint8_t *)_data, _dlen,\
 					  Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__));\
 		_mode = Z_LOG_MSG2_MODE_RUNTIME; \
-	} else if (IS_ENABLED(CONFIG_LOG2_MODE_IMMEDIATE)) {\
-		Z_LOG_MSG2_SYNC(_domain_id, _source, _level, \
-				_data, _dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG2_MODE_SYNC; \
 	} else if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0)) {\
 		LOG_MSG2_DBG("create zero-copy message\n");\
 		Z_LOG_MSG2_SIMPLE_CREATE(_domain_id, _source, \
@@ -424,15 +418,9 @@ do { \
 
 #define Z_LOG_MSG2_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
-do { \
-	if (BIT(_level) & LOG_FUNCTION_PREFIX_MASK) {\
-		Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, 1, _domain_id, _source, \
-				   _level, _data, _dlen, Z_LOG_STR(__VA_ARGS__));\
-	} else { \
-		Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, 0, _domain_id, _source, \
-				   _level, _data, _dlen, __VA_ARGS__); \
-	} \
-} while (0)
+	Z_LOG_MSG2_CREATE2(_try_0cpy, _mode, UTIL_CAT(Z_LOG_FUNC_PREFIX_, _level), \
+			   _domain_id, _source, _level, _data, _dlen, \
+			   Z_LOG_STR(_level, __VA_ARGS__))
 
 #define Z_TRACING_LOG_HDR_INIT(name, id) \
 	struct log_msg2_trace name = { \

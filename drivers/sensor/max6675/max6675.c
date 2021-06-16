@@ -136,7 +136,7 @@ static int max6675_init(const struct device *dev)
 			DT_INST_SPI_DEV_CS_GPIOS_FLAGS(n)),		       \
 	};								       \
 									       \
-	DEVICE_DT_INST_DEFINE(n, &max6675_init, device_pm_control_nop,	       \
+	DEVICE_DT_INST_DEFINE(n, &max6675_init, NULL,			       \
 			      &max6675_data_##n, &max6675_config_##n,	       \
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,	       \
 			      &max6675_api);

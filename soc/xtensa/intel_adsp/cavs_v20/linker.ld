@@ -440,7 +440,16 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
   } >ram :ram_phdr
+  .cached :
+  {
+    *(.cached .cached.*)
+  } >ram :ram_phdr
 #include <linker/common-ram.ld>
+
+  .tm_clone_table :
+  {
+    *(.tm_clone_table)
+  } >ram :ram_phdr
 
   .bss (NOLOAD) : ALIGN(4096)
   {

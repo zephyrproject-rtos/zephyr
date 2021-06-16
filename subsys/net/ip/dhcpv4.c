@@ -447,8 +447,6 @@ fail:
 
 static void dhcpv4_enter_selecting(struct net_if *iface)
 {
-	struct in_addr any = INADDR_ANY_INIT;
-
 	iface->config.dhcpv4.attempts = 0U;
 
 	iface->config.dhcpv4.lease_time = 0U;
@@ -457,8 +455,6 @@ static void dhcpv4_enter_selecting(struct net_if *iface)
 
 	iface->config.dhcpv4.server_id.s_addr = INADDR_ANY;
 	iface->config.dhcpv4.requested_ip.s_addr = INADDR_ANY;
-
-	net_if_ipv4_set_gw(iface, &any);
 
 	iface->config.dhcpv4.state = NET_DHCPV4_SELECTING;
 	NET_DBG("enter state=%s",
@@ -672,6 +668,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 	uint8_t cookie[4];
 	uint8_t length;
 	uint8_t type;
+	bool router_present = false;
 
 	if (net_pkt_read(pkt, cookie, sizeof(cookie)) ||
 	    memcmp(magic_cookie, cookie, sizeof(magic_cookie))) {
@@ -682,7 +679,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 	while (!net_pkt_read_u8(pkt, &type)) {
 		if (type == DHCPV4_OPTIONS_END) {
 			NET_DBG("options_end");
-			return true;
+			goto end;
 		}
 
 		if (net_pkt_read_u8(pkt, &length)) {
@@ -732,11 +729,12 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			NET_DBG("options_router: %s",
 				log_strdup(net_sprint_ipv4_addr(&router)));
 			net_if_ipv4_set_gw(iface, &router);
+			router_present = true;
+
 			break;
 		}
 #if defined(CONFIG_DNS_RESOLVER)
 		case DHCPV4_OPTIONS_DNS_SERVER: {
-			int i;
 			struct dns_resolve_context *ctx;
 			struct sockaddr_in dns;
 			const struct sockaddr *dns_servers[] = {
@@ -764,17 +762,8 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 			}
 
 			ctx = dns_resolve_get_default();
-			for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
-				if (!ctx->queries[i].cb) {
-					continue;
-				}
-
-				dns_resolve_cancel(ctx, ctx->queries[i].id);
-			}
-			dns_resolve_close(ctx);
-
 			dns.sin_family = AF_INET;
-			status = dns_resolve_init(ctx, NULL, dns_servers);
+			status = dns_resolve_reconfigure(ctx, NULL, dns_servers);
 			if (status < 0) {
 				NET_DBG("options_dns, failed to set "
 					"resolve address: %d", status);
@@ -886,6 +875,15 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 	/* Invalid case: Options without DHCPV4_OPTIONS_END. */
 	return false;
+
+end:
+	if (*msg_type == DHCPV4_MSG_TYPE_OFFER && !router_present) {
+		struct in_addr any = INADDR_ANY_INIT;
+
+		net_if_ipv4_set_gw(iface, &any);
+	}
+
+	return true;
 }
 
 static inline void dhcpv4_handle_msg_offer(struct net_if *iface)

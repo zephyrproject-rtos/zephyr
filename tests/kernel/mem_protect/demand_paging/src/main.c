@@ -20,7 +20,8 @@
 
 #ifdef CONFIG_BOARD_QEMU_X86
 unsigned long
-z_eviction_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
+k_mem_paging_eviction_histogram_bounds[
+	CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
 	10000,
 	20000,
 	30000,
@@ -34,7 +35,8 @@ z_eviction_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
 };
 
 unsigned long
-z_backing_store_histogram_bounds[CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
+k_mem_paging_backing_store_histogram_bounds[
+	CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM_NUM_BINS] = {
 	10000,
 	50000,
 	100000,
@@ -148,6 +150,10 @@ void test_touch_anon_pages(void)
 	print_paging_stats(&stats, "kernel");
 	zassert_not_equal(stats.eviction.dirty, 0UL,
 			  "there should be dirty pages being evicted.");
+
+#ifdef CONFIG_EVICTION_NRU
+	k_msleep(CONFIG_EVICTION_NRU_PERIOD * 2);
+#endif /* CONFIG_EVICTION_NRU */
 
 	/* There should be some clean pages to be evicted now,
 	 * since the arena is not modified.

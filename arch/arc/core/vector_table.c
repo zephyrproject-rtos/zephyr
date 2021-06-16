@@ -28,39 +28,40 @@
 #include "vector_table.h"
 
 struct vector_table {
-	uint32_t reset;
-	uint32_t memory_error;
-	uint32_t instruction_error;
-	uint32_t ev_machine_check;
-	uint32_t ev_tlb_miss_i;
-	uint32_t ev_tlb_miss_d;
-	uint32_t ev_prot_v;
-	uint32_t ev_privilege_v;
-	uint32_t ev_swi;
-	uint32_t ev_trap;
-	uint32_t ev_extension;
-	uint32_t ev_div_zero;
-	uint32_t ev_dc_error;
-	uint32_t ev_maligned;
-	uint32_t unused_1;
-	uint32_t unused_2;
+	uintptr_t reset;
+	uintptr_t memory_error;
+	uintptr_t instruction_error;
+	uintptr_t ev_machine_check;
+	uintptr_t ev_tlb_miss_i;
+	uintptr_t ev_tlb_miss_d;
+	uintptr_t ev_prot_v;
+	uintptr_t ev_privilege_v;
+	uintptr_t ev_swi;
+	uintptr_t ev_trap;
+	uintptr_t ev_extension;
+	uintptr_t ev_div_zero;
+	/* ev_dc_error is unused in ARCv3 and de-facto unused in ARCv2 as well */
+	uintptr_t ev_dc_error;
+	uintptr_t ev_maligned;
+	uintptr_t unused_1;
+	uintptr_t unused_2;
 };
 
 struct vector_table _VectorTable Z_GENERIC_SECTION(.exc_vector_table) = {
-	(uint32_t)__reset,
-	(uint32_t)__memory_error,
-	(uint32_t)__instruction_error,
-	(uint32_t)__ev_machine_check,
-	(uint32_t)__ev_tlb_miss_i,
-	(uint32_t)__ev_tlb_miss_d,
-	(uint32_t)__ev_prot_v,
-	(uint32_t)__ev_privilege_v,
-	(uint32_t)__ev_swi,
-	(uint32_t)__ev_trap,
-	(uint32_t)__ev_extension,
-	(uint32_t)__ev_div_zero,
-	(uint32_t)__ev_dc_error,
-	(uint32_t)__ev_maligned,
+	(uintptr_t)__reset,
+	(uintptr_t)__memory_error,
+	(uintptr_t)__instruction_error,
+	(uintptr_t)__ev_machine_check,
+	(uintptr_t)__ev_tlb_miss_i,
+	(uintptr_t)__ev_tlb_miss_d,
+	(uintptr_t)__ev_prot_v,
+	(uintptr_t)__ev_privilege_v,
+	(uintptr_t)__ev_swi,
+	(uintptr_t)__ev_trap,
+	(uintptr_t)__ev_extension,
+	(uintptr_t)__ev_div_zero,
+	(uintptr_t)__ev_dc_error,
+	(uintptr_t)__ev_maligned,
 	0,
 	0
 };

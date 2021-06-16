@@ -27,6 +27,7 @@
  */
 
 #include <init.h>
+#include <pm/device.h>
 #include <sys/device_mmio.h>
 #include <sys/util.h>
 
@@ -94,35 +95,10 @@ typedef int16_t device_handle_t;
 		      NULL, NULL, level, prio, NULL)
 
 /**
- * @def DEVICE_INIT
- *
- * @brief Invoke DEVICE_DEFINE() with no power management support (@p
- * pm_control_fn) and no API (@p api_ptr).
- */
-#define DEVICE_INIT(dev_name, drv_name, init_fn,			\
-		    data_ptr, cfg_ptr, level, prio)			\
-	__DEPRECATED_MACRO						\
-	DEVICE_DEFINE(dev_name, drv_name, init_fn, NULL,		\
-		      data_ptr, cfg_ptr, level, prio, NULL)
-
-/**
- * @def DEVICE_AND_API_INIT
- *
- * @brief Invoke DEVICE_DEFINE() with no power management support (@p
- * pm_control_fn).
- */
-#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
-			    data_ptr, cfg_ptr, level, prio, api_ptr)	\
-	__DEPRECATED_MACRO						\
-	DEVICE_DEFINE(dev_name, drv_name, init_fn,			\
-		      NULL,						\
-		      data_ptr, cfg_ptr, level, prio, api_ptr)
-
-/**
  * @def DEVICE_DEFINE
  *
  * @brief Create device object and set it up for boot time initialization,
- * with the option to device_pm_control. In case of Device Idle Power
+ * with the option to pm_control. In case of Device Idle Power
  * Management is enabled, make sure the device is in suspended state after
  * initialization.
  *
@@ -140,8 +116,8 @@ typedef int16_t device_handle_t;
  *
  * @param init_fn Address to the init function of the driver.
  *
- * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param pm_control_fn Pointer to pm_control function.
+ * Can be NULL if not implemented.
  *
  * @param data_ptr Pointer to the device's private data.
  *
@@ -198,8 +174,8 @@ typedef int16_t device_handle_t;
  *
  * @param init_fn Address to the init function of the driver.
  *
- * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param pm_control_fn Pointer to pm_control function.
+ * Can be NULL if not implemented.
  *
  * @param data_ptr Pointer to the device's private data.
  *
@@ -332,39 +308,6 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DECLARE(name) static const struct device DEVICE_NAME_GET(name)
 
-typedef void (*device_pm_cb)(const struct device *dev,
-			     int status, void *context, void *arg);
-
-/**
- * @brief Device PM info
- */
-struct device_pm {
-	/** Pointer to the device */
-	const struct device *dev;
-	/** Lock to synchronize the get/put operations */
-	struct k_sem lock;
-	/* Following are packed fields protected by #lock. */
-	/** Device pm enable flag */
-	bool enable : 1;
-	/* Following are packed fields accessed with atomic bit operations. */
-	atomic_t atomic_flags;
-	/** Device usage count */
-	atomic_t usage;
-	/** Device idle internal power state */
-	atomic_t fsm_state;
-	/** Work object for asynchronous calls */
-	struct k_work work;
-	/** Event object to listen to the sync request events */
-	struct k_poll_event event;
-	/** Signal to notify the Async API callers */
-	struct k_poll_signal signal;
-};
-
-/** Bit position in device_pm::atomic_flags that records whether the
- * device is busy.
- */
-#define DEVICE_PM_ATOMIC_FLAGS_BUSY_BIT 0
-
 /**
  * @brief Runtime device dynamic structure (in RAM) per driver instance
  *
@@ -390,7 +333,7 @@ struct device_state {
 
 #ifdef CONFIG_PM_DEVICE
 	/* Power management data */
-	struct device_pm pm;
+	struct pm_device pm;
 #endif /* CONFIG_PM_DEVICE */
 };
 
@@ -418,10 +361,10 @@ struct device {
 	const device_handle_t *const handles;
 #ifdef CONFIG_PM_DEVICE
 	/** Power Management function */
-	int (*device_pm_control)(const struct device *dev, uint32_t command,
-				 void *context, device_pm_cb cb, void *arg);
+	int (*pm_control)(const struct device *dev, uint32_t command,
+				 uint32_t *state, pm_device_cb cb, void *arg);
 	/** Pointer to device instance power management data */
-	struct device_pm * const pm;
+	struct pm_device * const pm;
 #endif
 };
 
@@ -613,8 +556,8 @@ static inline int z_device_usable_check(const struct device *dev)
  * distinct error values that identify the reason if it cannot.
  *
  * @retval 0 if the device is usable.
- * @retval -ENODEV if the device has not been initialized, or the
- * initialization failed.
+ * @retval -ENODEV if the device has not been initialized, the device pointer
+ * is NULL or the initialization failed.
  * @retval other negative error codes to indicate additional conditions that
  * make the device unusable.
  */
@@ -638,87 +581,13 @@ static inline int z_impl_device_usable_check(const struct device *dev)
  * @param dev pointer to the device in question.
  *
  * @retval true if the device is ready for use.
- * @retval false if the device is not ready for use.
+ * @retval false if the device is not ready for use or if a NULL device pointer
+ * is passed as argument.
  */
 static inline bool device_is_ready(const struct device *dev)
 {
 	return device_usable_check(dev) == 0;
 }
-
-/**
- * @}
- */
-
-/**
- * @brief Device Power Management APIs
- * @defgroup device_power_management_api Device Power Management APIs
- * @ingroup power_management_api
- * @{
- */
-
-#ifdef CONFIG_PM_DEVICE
-
-/** @def DEVICE_PM_ACTIVE_STATE
- *
- * @brief device is in ACTIVE power state
- *
- * @details Normal operation of the device. All device context is retained.
- */
-#define DEVICE_PM_ACTIVE_STATE          1
-
-/** @def DEVICE_PM_LOW_POWER_STATE
- *
- * @brief device is in LOW power state
- *
- * @details Device context is preserved by the HW and need not be
- * restored by the driver.
- */
-#define DEVICE_PM_LOW_POWER_STATE       2
-
-/** @def DEVICE_PM_SUSPEND_STATE
- *
- * @brief device is in SUSPEND power state
- *
- * @details Most device context is lost by the hardware.
- * Device drivers must save and restore or reinitialize any context
- * lost by the hardware
- */
-#define DEVICE_PM_SUSPEND_STATE         3
-
-/** @def DEVICE_PM_FORCE_SUSPEND_STATE
- *
- * @brief device is in force SUSPEND power state
- *
- * @details Driver puts the device in suspended state after
- * completing the ongoing transactions and will not process any
- * queued work or will not take any new requests for processing.
- * Most device context is lost by the hardware. Device drivers must
- * save and restore or reinitialize any context lost by the hardware.
- */
-#define DEVICE_PM_FORCE_SUSPEND_STATE	4
-
-/** @def DEVICE_PM_OFF_STATE
- *
- * @brief device is in OFF power state
- *
- * @details - Power has been fully removed from the device.
- * The device context is lost when this state is entered, so the OS
- * software will reinitialize the device when powering it back on
- */
-#define DEVICE_PM_OFF_STATE             5
-
-/* Constants defining support device power commands */
-#define DEVICE_PM_SET_POWER_STATE       1
-#define DEVICE_PM_GET_POWER_STATE       2
-
-#endif /* CONFIG_PM_DEVICE */
-
-/**
- * @brief Get name of device PM state
- *
- * @param state State id which name should be returned
- */
-const char *device_pm_state_str(uint32_t state);
 
 /**
  * @brief Indicate that the device is in the middle of a transaction
@@ -740,85 +609,6 @@ void device_busy_set(const struct device *dev);
 void device_busy_clear(const struct device *dev);
 
 #ifdef CONFIG_PM_DEVICE
-/*
- * Device PM functions
- */
-
-/**
- * @brief No-op function to initialize unimplemented hook
- *
- * This function should be used to initialize device hook
- * for which a device has no PM operations.
- *
- * @param unused_device Unused
- * @param unused_ctrl_command Unused
- * @param unused_context Unused
- * @param cb Unused
- * @param unused_arg Unused
- *
- * @retval -ENOTSUP for all operations.
- */
-int device_pm_control_nop(const struct device *unused_device,
-			  uint32_t unused_ctrl_command,
-			  void *unused_context,
-			  device_pm_cb cb,
-			  void *unused_arg);
-/**
- * @brief Call the set power state function of a device
- *
- * Called by the application or power management service to let the device do
- * required operations when moving to the required power state
- * Note that devices may support just some of the device power states
- * @param dev Pointer to device structure of the driver instance.
- * @param device_power_state Device power state to be set
- * @param cb Callback function to notify device power status
- * @param arg Caller passed argument to callback function
- *
- * @retval 0 If successful in queuing the request or changing the state.
- * @retval Errno Negative errno code if failure. Callback will not be called.
- */
-static inline int device_set_power_state(const struct device *dev,
-					 uint32_t device_power_state,
-					 device_pm_cb cb, void *arg)
-{
-	if (dev->device_pm_control) {
-		return dev->device_pm_control(dev,
-						 DEVICE_PM_SET_POWER_STATE,
-						 &device_power_state, cb, arg);
-	} else {
-		return device_pm_control_nop(dev,
-						 DEVICE_PM_SET_POWER_STATE,
-						 &device_power_state, cb, arg);
-	}
-}
-
-/**
- * @brief Call the get power state function of a device
- *
- * This function lets the caller know the current device
- * power state at any time. This state will be one of the defined
- * power states allowed for the devices in that system
- *
- * @param dev pointer to device structure of the driver instance.
- * @param device_power_state Device power state to be filled by the device
- *
- * @retval 0 If successful.
- * @retval Errno Negative errno code if failure.
- */
-static inline int device_get_power_state(const struct device *dev,
-					 uint32_t *device_power_state)
-{
-	if (dev->device_pm_control) {
-		return dev->device_pm_control(dev,
-						 DEVICE_PM_GET_POWER_STATE,
-						 device_power_state, NULL, NULL);
-	} else {
-		return device_pm_control_nop(dev,
-						 DEVICE_PM_GET_POWER_STATE,
-						 device_power_state, NULL, NULL);
-	}
-}
-
 /**
  * @brief Check if any device is in the middle of a transaction
  *
@@ -843,110 +633,6 @@ int device_any_busy_check(void);
  */
 int device_busy_check(const struct device *chk_dev);
 
-#ifdef CONFIG_PM_DEVICE_IDLE
-
-/* Device PM states */
-enum device_pm_state {
-	DEVICE_PM_STATE_ACTIVE = 1,
-	DEVICE_PM_STATE_SUSPENDED,
-	DEVICE_PM_STATE_SUSPENDING,
-	DEVICE_PM_STATE_RESUMING,
-};
-
-/**
- * @brief Enable device idle PM
- *
- * Called by a device driver to enable device idle power management.
- * The device might be asynchronously suspended if Idle PM is enabled
- * when the device is not use.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- */
-void device_pm_enable(const struct device *dev);
-
-/**
- * @brief Disable device idle PM
- *
- * Called by a device driver to disable device idle power management.
- * The device might be asynchronously resumed if Idle PM is disabled
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- */
-void device_pm_disable(const struct device *dev);
-
-/**
- * @brief Call device resume asynchronously based on usage count
- *
- * Called by a device driver to mark the device as being used.
- * This API will asynchronously bring the device to resume state
- * if it not already in active state.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 If successfully queued the Async request. If queued,
- * the caller need to wait on the poll event linked to device
- * pm signal mechanism to know the completion of resume operation.
- * @retval Errno Negative errno code if failure.
- */
-int device_pm_get(const struct device *dev);
-
-/**
- * @brief Call device resume synchronously based on usage count
- *
- * Called by a device driver to mark the device as being used. It
- * will bring up or resume the device if it is in suspended state
- * based on the device usage count. This call is blocked until the
- * device PM state is changed to resume.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 If successful.
- * @retval Errno Negative errno code if failure.
- */
-int device_pm_get_sync(const struct device *dev);
-
-/**
- * @brief Call device suspend asynchronously based on usage count
- *
- * Called by a device driver to mark the device as being released.
- * This API asynchronously put the device to suspend state if
- * it not already in suspended state.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 If successfully queued the Async request. If queued,
- * the caller need to wait on the poll event linked to device pm
- * signal mechanism to know the completion of suspend operation.
- * @retval Errno Negative errno code if failure.
- */
-int device_pm_put(const struct device *dev);
-
-/**
- * @brief Call device suspend synchronously based on usage count
- *
- * Called by a device driver to mark the device as being released. It
- * will put the device to suspended state if is is in active state
- * based on the device usage count. This call is blocked until the
- * device PM state is changed to resume.
- *
- * @param dev Pointer to device structure of the specific device driver
- * the caller is interested in.
- * @retval 0 If successful.
- * @retval Errno Negative errno code if failure.
- */
-int device_pm_put_sync(const struct device *dev);
-#else
-static inline void device_pm_enable(const struct device *dev) { }
-static inline void device_pm_disable(const struct device *dev) { }
-static inline int device_pm_get(const struct device *dev) { return -ENOTSUP; }
-static inline int device_pm_get_sync(const struct device *dev) { return -ENOTSUP; }
-static inline int device_pm_put(const struct device *dev) { return -ENOTSUP; }
-static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP; }
-#endif
-#else
-#define device_pm_control_nop(...) NULL
 #endif
 
 /**
@@ -981,11 +667,27 @@ static inline int device_pm_put_sync(const struct device *dev) { return -ENOTSUP
 #define Z_DEVICE_EXTRA_HANDLES(...)				\
 	FOR_EACH_NONEMPTY_TERM(IDENTITY, (,), __VA_ARGS__)
 
+/* If device power management is enabled, this macro defines a pointer to a
+ * device in the z_pm_device_slots region. When invoked for each device, this
+ * will effectively result in a device pointer array with the same size of the
+ * actual devices list. This is used internally by the device PM subsystem to
+ * keep track of suspended devices during system power transitions.
+ */
+#if CONFIG_PM_DEVICE
+#define Z_DEVICE_DEFINE_PM_SLOT(dev_name)				\
+	static const Z_DECL_ALIGN(struct device *)			\
+	_CONCAT(__pm_device_slot_, DEVICE_NAME_GET(dev_name)) __used	\
+	__attribute__((__section__(".z_pm_device_slots")));
+#else
+#define Z_DEVICE_DEFINE_PM_SLOT(dev_name)
+#endif
+
 /* Construct objects that are referenced from struct device.  These
  * include power management and dependency handles.
  */
 #define Z_DEVICE_DEFINE_PRE(node_id, dev_name, ...)			\
-	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)
+	Z_DEVICE_DEFINE_HANDLES(node_id, dev_name, __VA_ARGS__)		\
+	Z_DEVICE_DEFINE_PM_SLOT(dev_name)
 
 
 /* Initial build provides a record that associates the device object
@@ -1040,7 +742,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".device_" #level STRINGIFY(prio)"_"))) = { \
+	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
@@ -1055,7 +757,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 
 #ifdef CONFIG_PM_DEVICE
 #define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)		\
-	.device_pm_control = (pm_control_fn),				\
+	.pm_control = (pm_control_fn),				\
 	.pm = &Z_DEVICE_STATE_NAME(dev_name).pm,
 #else
 #define Z_DEVICE_DEFINE_PM_INIT(dev_name, pm_control_fn)

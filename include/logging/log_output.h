@@ -200,6 +200,14 @@ static inline void log_output_hostname_set(const struct log_output *output,
  */
 void log_output_timestamp_freq_set(uint32_t freq);
 
+/** @brief Convert timestamp of the message to us.
+ *
+ * @param timestamp Message timestamp
+ *
+ * @return Timestamp value in us.
+ */
+uint64_t log_output_timestamp_to_us(uint32_t timestamp);
+
 /**
  * @}
  */

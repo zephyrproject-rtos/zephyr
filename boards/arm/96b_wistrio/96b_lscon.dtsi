@@ -6,7 +6,7 @@
 
 / {
 	lscon_96b: connector {
-		compatible = "96b-lscon-3v3";
+		compatible = "linaro,96b-lscon-3v3";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;

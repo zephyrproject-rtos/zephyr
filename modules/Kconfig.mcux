@@ -246,6 +246,11 @@ config HAS_MCUX_PIT
 	help
 	  Set if the PIT module is present on the SoC.
 
+config HAS_MCUX_OS_TIMER
+	bool
+	help
+	  Set if the OS timer is used as a kernel timer on the SoC.
+
 config HAS_MCUX_ACMP
 	bool
 	help

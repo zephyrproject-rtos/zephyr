@@ -32,43 +32,76 @@ K_KERNEL_STACK_ARRAY_DEFINE(tx_stack, NET_TC_TX_COUNT,
 K_KERNEL_STACK_ARRAY_DEFINE(rx_stack, NET_TC_RX_COUNT,
 			    CONFIG_NET_RX_STACK_SIZE);
 
+#if NET_TC_TX_COUNT > 0
 static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
+#endif
+
+#if NET_TC_RX_COUNT > 0
 static struct net_traffic_class rx_classes[NET_TC_RX_COUNT];
+#endif
+
+#if NET_TC_RX_COUNT > 0 || NET_TC_TX_COUNT > 0
+static void submit_to_queue(struct k_fifo *queue, struct net_pkt *pkt)
+{
+	k_fifo_put(queue, pkt);
+}
+#endif
 
 bool net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt)
 {
+#if NET_TC_TX_COUNT > 0
 	net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
-	k_work_submit_to_queue(&tx_classes[tc].work_q, net_pkt_work(pkt));
-
+	submit_to_queue(&tx_classes[tc].fifo, pkt);
+#else
+	ARG_UNUSED(tc);
+	ARG_UNUSED(pkt);
+#endif
 	return true;
 }
 
 void net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt)
 {
+#if NET_TC_RX_COUNT > 0
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
 
-	k_work_submit_to_queue(&rx_classes[tc].work_q, net_pkt_work(pkt));
+	submit_to_queue(&rx_classes[tc].fifo, pkt);
+#else
+	ARG_UNUSED(tc);
+	ARG_UNUSED(pkt);
+#endif
 }
 
 int net_tx_priority2tc(enum net_priority prio)
 {
+#if NET_TC_TX_COUNT > 0
 	if (prio > NET_PRIORITY_NC) {
 		/* Use default value suggested in 802.1Q */
 		prio = NET_PRIORITY_BE;
 	}
 
 	return tx_prio2tc_map[prio];
+#else
+	ARG_UNUSED(prio);
+
+	return 0;
+#endif
 }
 
 int net_rx_priority2tc(enum net_priority prio)
 {
+#if NET_TC_RX_COUNT > 0
 	if (prio > NET_PRIORITY_NC) {
 		/* Use default value suggested in 802.1Q */
 		prio = NET_PRIORITY_BE;
 	}
 
 	return rx_prio2tc_map[prio];
+#else
+	ARG_UNUSED(prio);
+
+	return 0;
+#endif
 }
 
 
@@ -88,6 +121,7 @@ int net_rx_priority2tc(enum net_priority prio)
 
 #define PRIO_RX(i, _) (BASE_PRIO_RX - i),
 
+#if NET_TC_TX_COUNT > 0
 /* Convert traffic class to thread priority */
 static uint8_t tx_tc2thread(uint8_t tc)
 {
@@ -134,7 +168,9 @@ static uint8_t tx_tc2thread(uint8_t tc)
 
 	return thread_priorities[tc];
 }
+#endif
 
+#if NET_TC_RX_COUNT > 0
 /* Convert traffic class to thread priority */
 static uint8_t rx_tc2thread(uint8_t tc)
 {
@@ -149,11 +185,13 @@ static uint8_t rx_tc2thread(uint8_t tc)
 
 	return thread_priorities[tc];
 }
+#endif
 
 #if defined(CONFIG_NET_STATISTICS)
 /* Fixup the traffic class statistics so that "net stats" shell command will
  * print output correctly.
  */
+#if NET_TC_TX_COUNT > 0
 static void tc_tx_stats_priority_setup(struct net_if *iface)
 {
 	int i;
@@ -163,7 +201,9 @@ static void tc_tx_stats_priority_setup(struct net_if *iface)
 						  i);
 	}
 }
+#endif
 
+#if NET_TC_RX_COUNT > 0
 static void tc_rx_stats_priority_setup(struct net_if *iface)
 {
 	int i;
@@ -173,7 +213,9 @@ static void tc_rx_stats_priority_setup(struct net_if *iface)
 						  i);
 	}
 }
+#endif
 
+#if NET_TC_TX_COUNT > 0
 static void net_tc_tx_stats_priority_setup(struct net_if *iface,
 					   void *user_data)
 {
@@ -181,7 +223,9 @@ static void net_tc_tx_stats_priority_setup(struct net_if *iface,
 
 	tc_tx_stats_priority_setup(iface);
 }
+#endif
 
+#if NET_TC_RX_COUNT > 0
 static void net_tc_rx_stats_priority_setup(struct net_if *iface,
 					   void *user_data)
 {
@@ -190,16 +234,52 @@ static void net_tc_rx_stats_priority_setup(struct net_if *iface,
 	tc_rx_stats_priority_setup(iface);
 }
 #endif
+#endif
 
-/* Create workqueue for each traffic class we are using. All the network
- * traffic goes through these classes. There needs to be at least one traffic
- * class in the system.
+#if NET_TC_RX_COUNT > 0
+static void tc_rx_handler(struct k_fifo *fifo)
+{
+	struct net_pkt *pkt;
+
+	while (1) {
+		pkt = k_fifo_get(fifo, K_FOREVER);
+		if (pkt == NULL) {
+			continue;
+		}
+
+		net_process_rx_packet(pkt);
+	}
+}
+#endif
+
+#if NET_TC_TX_COUNT > 0
+static void tc_tx_handler(struct k_fifo *fifo)
+{
+	struct net_pkt *pkt;
+
+	while (1) {
+		pkt = k_fifo_get(fifo, K_FOREVER);
+		if (pkt == NULL) {
+			continue;
+		}
+
+		net_process_tx_packet(pkt);
+	}
+}
+#endif
+
+/* Create a fifo for each traffic class we are using. All the network
+ * traffic goes through these classes.
  */
 void net_tc_tx_init(void)
 {
+#if NET_TC_TX_COUNT == 0
+	NET_DBG("No %s thread created", "TX");
+	return;
+#else
 	int i;
 
-	BUILD_ASSERT(NET_TC_TX_COUNT > 0);
+	BUILD_ASSERT(NET_TC_TX_COUNT >= 0);
 
 #if defined(CONFIG_NET_STATISTICS)
 	net_if_foreach(net_tc_tx_stats_priority_setup, NULL);
@@ -208,6 +288,7 @@ void net_tc_tx_init(void)
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
 		uint8_t thread_priority;
 		int priority;
+		k_tid_t tid;
 
 		thread_priority = tx_tc2thread(i);
 
@@ -215,33 +296,48 @@ void net_tc_tx_init(void)
 			K_PRIO_COOP(thread_priority) :
 			K_PRIO_PREEMPT(thread_priority);
 
-		NET_DBG("[%d] Starting TX queue %p stack size %zd "
+		NET_DBG("[%d] Starting TX handler %p stack size %zd "
 			"prio %d %s(%d)", i,
-			&tx_classes[i].work_q,
+			&tx_classes[i].handler,
 			K_KERNEL_STACK_SIZEOF(tx_stack[i]),
 			thread_priority,
 			IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
 							"coop" : "preempt",
 			priority);
 
-		k_work_queue_start(&tx_classes[i].work_q, tx_stack[i],
-				   K_KERNEL_STACK_SIZEOF(tx_stack[i]), priority,
-				   NULL);
+		k_fifo_init(&tx_classes[i].fifo);
+
+		tid = k_thread_create(&tx_classes[i].handler, tx_stack[i],
+				      K_KERNEL_STACK_SIZEOF(tx_stack[i]),
+				      (k_thread_entry_t)tc_tx_handler,
+				      &tx_classes[i].fifo, NULL, NULL,
+				      priority, 0, K_FOREVER);
+		if (!tid) {
+			NET_ERR("Cannot create TC handler thread %d", i);
+			continue;
+		}
 
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			char name[MAX_NAME_LEN];
 
 			snprintk(name, sizeof(name), "tx_q[%d]", i);
-			k_thread_name_set(&tx_classes[i].work_q.thread, name);
+			k_thread_name_set(tid, name);
 		}
+
+		k_thread_start(tid);
 	}
+#endif
 }
 
 void net_tc_rx_init(void)
 {
+#if NET_TC_RX_COUNT == 0
+	NET_DBG("No %s thread created", "RX");
+	return;
+#else
 	int i;
 
-	BUILD_ASSERT(NET_TC_RX_COUNT > 0);
+	BUILD_ASSERT(NET_TC_RX_COUNT >= 0);
 
 #if defined(CONFIG_NET_STATISTICS)
 	net_if_foreach(net_tc_rx_stats_priority_setup, NULL);
@@ -250,6 +346,7 @@ void net_tc_rx_init(void)
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
 		uint8_t thread_priority;
 		int priority;
+		k_tid_t tid;
 
 		thread_priority = rx_tc2thread(i);
 
@@ -257,24 +354,35 @@ void net_tc_rx_init(void)
 			K_PRIO_COOP(thread_priority) :
 			K_PRIO_PREEMPT(thread_priority);
 
-		NET_DBG("[%d] Starting RX queue %p stack size %zd "
+		NET_DBG("[%d] Starting RX handler %p stack size %zd "
 			"prio %d %s(%d)", i,
-			&rx_classes[i].work_q,
+			&rx_classes[i].handler,
 			K_KERNEL_STACK_SIZEOF(rx_stack[i]),
 			thread_priority,
 			IS_ENABLED(CONFIG_NET_TC_THREAD_COOPERATIVE) ?
 							"coop" : "preempt",
 			priority);
 
-		k_work_queue_start(&rx_classes[i].work_q, rx_stack[i],
-				   K_KERNEL_STACK_SIZEOF(rx_stack[i]), priority,
-				   NULL);
+		k_fifo_init(&rx_classes[i].fifo);
+
+		tid = k_thread_create(&rx_classes[i].handler, rx_stack[i],
+				      K_KERNEL_STACK_SIZEOF(rx_stack[i]),
+				      (k_thread_entry_t)tc_rx_handler,
+				      &rx_classes[i].fifo, NULL, NULL,
+				      priority, 0, K_FOREVER);
+		if (!tid) {
+			NET_ERR("Cannot create TC handler thread %d", i);
+			continue;
+		}
 
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 			char name[MAX_NAME_LEN];
 
 			snprintk(name, sizeof(name), "rx_q[%d]", i);
-			k_thread_name_set(&rx_classes[i].work_q.thread, name);
+			k_thread_name_set(tid, name);
 		}
+
+		k_thread_start(tid);
 	}
+#endif
 }

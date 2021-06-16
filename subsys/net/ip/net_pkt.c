@@ -1182,10 +1182,18 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout)
 #endif
 {
 	struct net_pkt *pkt;
+	uint32_t create_time;
 	int ret;
 
 	if (k_is_in_isr()) {
 		timeout = K_NO_WAIT;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
+	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+		create_time = k_cycle_get_32();
+	} else {
+		ARG_UNUSED(create_time);
 	}
 
 	ret = k_mem_slab_alloc(slab, (void **)&pkt, timeout);
@@ -1222,17 +1230,7 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout)
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
 	    IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
-		struct net_ptp_time tp = {
-			/* Use the nanosecond field to temporarily
-			 * store the cycle count as it is a 32-bit
-			 * variable. The net_pkt timestamp field is used
-			 * to calculate how long it takes the packet to travel
-			 * between network device driver and application.
-			 */
-			.nanosecond = k_cycle_get_32(),
-		};
-
-		net_pkt_set_timestamp(pkt, &tp);
+		net_pkt_set_create_time(pkt, create_time);
 	}
 
 	net_pkt_set_vlan_tag(pkt, NET_VLAN_TAG_UNSPEC);

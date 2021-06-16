@@ -5,7 +5,7 @@
  */
 #include <zephyr.h>
 #include <init.h>
-#include <power/power.h>
+#include <pm/pm.h>
 
 #include <driverlib/pwr_ctrl.h>
 #include <driverlib/sys_ctrl.h>

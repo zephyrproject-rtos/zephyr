@@ -19,8 +19,8 @@ LOG_MODULE_REGISTER(board, CONFIG_LOG_DEFAULT_LEVEL);
 #if DT_NODE_HAS_STATUS(DAPLINK_QSPI_MUX_NODE, okay)
 int board_daplink_qspi_mux_select(enum board_daplink_qspi_mux_mode mode)
 {
-	const struct device *gpio;
-	gpio_flags_t flags;
+	struct gpio_dt_spec mux = GPIO_DT_SPEC_GET(DAPLINK_QSPI_MUX_NODE, mux_gpios);
+	gpio_flags_t flags = 0;
 	int err;
 
 	switch (mode) {
@@ -35,17 +35,12 @@ int board_daplink_qspi_mux_select(enum board_daplink_qspi_mux_mode mode)
 		return -EINVAL;
 	}
 
-	gpio = device_get_binding(DT_GPIO_LABEL(DAPLINK_QSPI_MUX_NODE,
-						mux_gpios));
-	if (!gpio) {
-		LOG_ERR("DAPLink QSPI MUX GPIO device '%s' not found",
-			DT_GPIO_LABEL(DAPLINK_QSPI_MUX_NODE, mux_gpios));
+	if (!device_is_ready(mux.port)) {
+		LOG_ERR("DAPLink QSPI MUX GPIO device not ready");
 		return -EINVAL;
 	}
 
-	err = gpio_config(gpio, DT_GPIO_PIN(DAPLINK_QSPI_MUX_NODE, mux_gpios),
-			  DT_GPIO_FLAGS(DAPLINK_QSPI_MUX_NODE, mux_gpios) |
-			  flags);
+	err = gpio_pin_configure_dt(&mux, flags);
 	if (err) {
 		LOG_ERR("failed to configure DAPLink QSPI MUX GPIO (err %d)",
 			err);

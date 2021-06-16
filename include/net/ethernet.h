@@ -28,6 +28,7 @@
 #include <sys/util.h>
 #include <net/net_if.h>
 #include <net/ethernet_vlan.h>
+#include <net/ptp_time.h>
 
 #if defined(CONFIG_NET_DSA)
 #include <net/dsa.h>
@@ -150,6 +151,15 @@ enum ethernet_hw_caps {
 	/** DSA switch */
 	ETHERNET_DSA_SLAVE_PORT	= BIT(15),
 	ETHERNET_DSA_MASTER_PORT	= BIT(16),
+
+	/** IEEE 802.1Qbv (scheduled traffic) supported */
+	ETHERNET_QBV			= BIT(17),
+
+	/** IEEE 802.1Qbu (frame preemption) supported */
+	ETHERNET_QBU			= BIT(18),
+
+	/** TXTIME supported */
+	ETHERNET_TXTIME			= BIT(19),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -160,9 +170,13 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_DUPLEX,
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
 	ETHERNET_CONFIG_TYPE_QAV_PARAM,
+	ETHERNET_CONFIG_TYPE_QBV_PARAM,
+	ETHERNET_CONFIG_TYPE_QBU_PARAM,
+	ETHERNET_CONFIG_TYPE_TXTIME_PARAM,
 	ETHERNET_CONFIG_TYPE_PROMISC_MODE,
 	ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM,
 	ETHERNET_CONFIG_TYPE_FILTER,
+	ETHERNET_CONFIG_TYPE_PORTS_NUM,
 };
 
 enum ethernet_qav_param_type {
@@ -196,6 +210,123 @@ struct ethernet_qav_param {
 
 /** @cond INTERNAL_HIDDEN */
 
+enum ethernet_qbv_param_type {
+	ETHERNET_QBV_PARAM_TYPE_STATUS,
+	ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST,
+	ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST_LEN,
+	ETHERNET_QBV_PARAM_TYPE_TIME,
+};
+
+enum ethernet_qbv_state_type {
+	ETHERNET_QBV_STATE_TYPE_ADMIN,
+	ETHERNET_QBV_STATE_TYPE_OPER,
+};
+
+enum ethernet_gate_state_operation {
+	ETHERNET_SET_GATE_STATE,
+	ETHERNET_SET_AND_HOLD_MAC_STATE,
+	ETHERNET_SET_AND_RELEASE_MAC_STATE,
+};
+
+/** @endcond */
+
+struct ethernet_qbv_param {
+	/** Port id */
+	int port_id;
+	/** Type of Qbv parameter */
+	enum ethernet_qbv_param_type type;
+	/** What state (Admin/Oper) parameters are these */
+	enum ethernet_qbv_state_type state;
+	union {
+		/** True if Qbv is enabled or not */
+		bool enabled;
+
+		struct {
+			/** True = open, False = closed */
+			bool gate_status[NET_TC_TX_COUNT];
+
+			/** GateState operation */
+			enum ethernet_gate_state_operation operation;
+
+			/** Time interval ticks (nanoseconds) */
+			uint32_t time_interval;
+
+			/** Gate control list row */
+			uint16_t row;
+		} gate_control;
+
+		/** Number of entries in gate control list */
+		uint32_t gate_control_list_len;
+
+		/* The time values are set in one go when type is set to
+		 * ETHERNET_QBV_PARAM_TYPE_TIME
+		 */
+		struct {
+			/** Base time */
+			struct net_ptp_extended_time base_time;
+
+			/** Cycle time */
+			struct net_ptp_time cycle_time;
+
+			/** Extension time (nanoseconds) */
+			uint32_t extension_time;
+		};
+	};
+};
+
+/** @cond INTERNAL_HIDDEN */
+
+enum ethernet_qbu_param_type {
+	ETHERNET_QBU_PARAM_TYPE_STATUS,
+	ETHERNET_QBU_PARAM_TYPE_RELEASE_ADVANCE,
+	ETHERNET_QBU_PARAM_TYPE_HOLD_ADVANCE,
+	ETHERNET_QBU_PARAM_TYPE_PREEMPTION_STATUS_TABLE,
+
+	/* Some preemption settings are from Qbr spec. */
+	ETHERNET_QBR_PARAM_TYPE_LINK_PARTNER_STATUS,
+	ETHERNET_QBR_PARAM_TYPE_ADDITIONAL_FRAGMENT_SIZE,
+};
+
+enum ethernet_qbu_preempt_status {
+	ETHERNET_QBU_STATUS_EXPRESS,
+	ETHERNET_QBU_STATUS_PREEMPTABLE
+} __packed;
+
+/** @endcond */
+
+struct ethernet_qbu_param {
+	/** Port id */
+	int port_id;
+	/** Type of Qbu parameter */
+	enum ethernet_qbu_param_type type;
+	union {
+		/** Hold advance (nanoseconds) */
+		uint32_t hold_advance;
+
+		/** Release advance (nanoseconds) */
+		uint32_t release_advance;
+
+		/** sequence of framePreemptionAdminStatus values.
+		 */
+		enum ethernet_qbu_preempt_status
+				frame_preempt_statuses[NET_TC_TX_COUNT];
+
+		/** True if Qbu is enabled or not */
+		bool enabled;
+
+		/** Link partner status (from Qbr) */
+		bool link_partner_status;
+
+		/** Additional fragment size (from Qbr). The minimum non-final
+		 * fragment size is (additional_fragment_size + 1) * 64 octets
+		 */
+		uint8_t additional_fragment_size : 2;
+	};
+};
+
+
+/** @cond INTERNAL_HIDDEN */
+
 enum ethernet_filter_type {
 	ETHERNET_FILTER_TYPE_SRC_MAC_ADDRESS,
 	ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
@@ -210,6 +341,23 @@ struct ethernet_filter {
 	struct net_eth_addr mac_address;
 	/** Set (true) or unset (false) the filter */
 	bool set;
+};
+
+/** @cond INTERNAL_HIDDEN */
+
+enum ethernet_txtime_param_type {
+	ETHERNET_TXTIME_PARAM_TYPE_ENABLE_QUEUES,
+};
+
+/** @endcond */
+
+struct ethernet_txtime_param {
+	/** Type of TXTIME parameter */
+	enum ethernet_txtime_param_type type;
+	/** Queue number for configuring TXTIME */
+	int queue_id;
+	/** Enable or disable TXTIME per queue */
+	bool enable_txtime;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -228,8 +376,12 @@ struct ethernet_config {
 		struct net_eth_addr mac_address;
 
 		struct ethernet_qav_param qav_param;
+		struct ethernet_qbv_param qbv_param;
+		struct ethernet_qbu_param qbu_param;
+		struct ethernet_txtime_param txtime_param;
 
 		int priority_queues_num;
+		int ports_num;
 
 		struct ethernet_filter filter;
 	};
@@ -684,8 +836,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param drv_name The name this instance of the driver exposes to
  * the system.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param pm_control_fn Pointer to pm_control function.
+ * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
  * configuration information for this instance of the driver.
@@ -708,8 +860,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Address to the init function of the driver.
- * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
+ * @param pm_control_fn Pointer to pm_control function.
+ * Can be NULL if not implemented.
  * @param data Pointer to the device's private data.
  * @param cfg The address to the structure containing the
  * configuration information for this instance of the driver.

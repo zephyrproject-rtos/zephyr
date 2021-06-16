@@ -93,6 +93,7 @@ def bit(pos):
 FLAG_P = bit(0)
 FLAG_RW = bit(1)
 FLAG_US = bit(2)
+FLAG_CD = bit(4)
 FLAG_SZ = bit(7)
 FLAG_G = bit(8)
 FLAG_XD = bit(63)
@@ -158,6 +159,9 @@ def dump_flags(flags):
 
     if flags & FLAG_SZ:
         ret += "SZ "
+
+    if flags & FLAG_CD:
+        ret += "CD "
 
     return ret.strip()
 
@@ -289,7 +293,7 @@ class Pdpt(MMUTable):
     addr_mask = 0x7FFFFFFFFFFFF000
     type_code = 'Q'
     num_entries = 512
-    supported_flags = INT_FLAGS | FLAG_SZ
+    supported_flags = INT_FLAGS | FLAG_SZ | FLAG_CD
 
 class PdptPAE(Pdpt):
     """Page directory pointer table for PAE"""
@@ -301,7 +305,7 @@ class Pd(MMUTable):
     addr_mask = 0xFFFFF000
     type_code = 'I'
     num_entries = 1024
-    supported_flags = INT_FLAGS | FLAG_SZ
+    supported_flags = INT_FLAGS | FLAG_SZ | FLAG_CD
 
 class PdXd(Pd):
     """Page directory for either PAE or IA-32e"""
@@ -316,7 +320,7 @@ class Pt(MMUTable):
     addr_mask = 0xFFFFF000
     type_code = 'I'
     num_entries = 1024
-    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G |
+    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_CD |
                        FLAG_IGNORED0 | FLAG_IGNORED1)
 
 class PtXd(Pt):
@@ -324,7 +328,7 @@ class PtXd(Pt):
     addr_mask = 0x07FFFFFFFFFFF000
     type_code = 'Q'
     num_entries = 512
-    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_XD |
+    supported_flags = (FLAG_P | FLAG_RW | FLAG_US | FLAG_G | FLAG_XD | FLAG_CD |
                        FLAG_IGNORED0 | FLAG_IGNORED1 | FLAG_IGNORED2)
 
 
@@ -428,7 +432,7 @@ class PtableSet():
 
     def reserve(self, virt_base, size, to_level=PT_LEVEL):
         """Reserve page table space with already aligned virt_base and size"""
-        debug("Reserving paging structures 0x%x (0x%x)" %
+        debug("Reserving paging structures for 0x%x (0x%x)" %
               (virt_base, size))
 
         align_check(virt_base, size)
@@ -454,15 +458,11 @@ class PtableSet():
 
         self.reserve(mem_start, mem_size, to_level)
 
-    def map(self, phys_base, virt_base, size, flags, level=PT_LEVEL, double_map=True):
+    def map(self, phys_base, virt_base, size, flags, level=PT_LEVEL):
         """Map an address range in the page tables provided access flags.
-
         If virt_base is None, identity mapping using phys_base is done.
-        If virt_base is not the same address as phys_base, the same memory
-        will be double mapped to the virt_base address if double_map == True;
-        or normal mapping to virt_base if double_map == False.
         """
-        skip_vm_map = virt_base is None or virt_base == phys_base
+        is_identity_map = virt_base is None or virt_base == phys_base
 
         if virt_base is None:
             virt_base = phys_base
@@ -475,53 +475,40 @@ class PtableSet():
         align_check(phys_base, size, scope)
         align_check(virt_base, size, scope)
         for paddr in range(phys_base, phys_base + size, scope):
-            if paddr == 0 and skip_vm_map:
-                # Never map the NULL page
-                #
-                # If skip_vm_map, the identify map of physical
-                # memory will be unmapped at boot. So the actual
-                # NULL page will not be mapped after that.
+            if is_identity_map and paddr == 0 and level == PT_LEVEL:
+                # Never map the NULL page at page table level.
                 continue
 
             vaddr = virt_base + (paddr - phys_base)
 
             self.map_page(vaddr, paddr, flags, False, level)
 
-        if skip_vm_map or not double_map:
+    def identity_map_unaligned(self, phys_base, size, flags, level=PT_LEVEL):
+        """Identity map a region of memory"""
+        scope = 1 << self.levels[level].addr_shift
+
+        phys_aligned_base = round_down(phys_base, scope)
+        phys_aligned_end = round_up(phys_base + size, scope)
+        phys_aligned_size = phys_aligned_end - phys_aligned_base
+
+        self.map(phys_aligned_base, None, phys_aligned_size, flags, level)
+
+    def map_region(self, name, flags, virt_to_phys_offset, level=PT_LEVEL):
+        """Map a named region"""
+        if not isdef(name + "_start"):
+            # Region may not exists
             return
 
-        # Find how much VM a top-level entry covers
-        scope = 1 << self.toplevel.addr_shift
-        debug("Double map %s entries with scope 0x%x" %
-              (self.toplevel.__class__.__name__, scope))
+        region_start = syms[name + "_start"]
+        region_end = syms[name + "_end"]
+        region_size = region_end - region_start
 
-        # Round bases down to the entry granularity
-        pd_virt_base = round_down(virt_base, scope)
-        pd_phys_base = round_down(phys_base, scope)
-        size = size + (phys_base - pd_phys_base)
+        region_start_phys = region_start
 
-        # The base addresses have to line up such that they can be mapped
-        # by the same second-level table
-        if phys_base - pd_phys_base != virt_base - pd_virt_base:
-            error("mis-aligned virtual 0x%x and physical base addresses 0x%x" %
-                  (virt_base, phys_base))
+        if virt_to_phys_offset is not None:
+            region_start_phys += virt_to_phys_offset
 
-        # Round size up to entry granularity
-        size = round_up(size, scope)
-
-        for offset in range(0, size, scope):
-            cur_virt = pd_virt_base + offset
-            cur_phys = pd_phys_base + offset
-
-            # Get the physical address of the second-level table that
-            # maps the current chunk of virtual memory
-            table_link_phys = self.toplevel.lookup(cur_virt)
-
-            debug("copy mappings 0x%x - 0x%x to 0x%x, using table 0x%x" %
-                  (cur_phys, cur_phys + scope - 1, cur_virt, table_link_phys))
-
-            # Link to the entry for the physical mapping (i.e. mirroring).
-            self.toplevel.map(cur_phys, table_link_phys, INT_FLAGS)
+        self.map(region_start_phys, region_start, region_size, flags, level)
 
     def set_region_perms(self, name, flags, level=PT_LEVEL):
         """Set access permissions for a named region that is already mapped
@@ -529,11 +516,22 @@ class PtableSet():
         The bounds of the region will be looked up in the symbol table
         with _start and _size suffixes. The physical address mapping
         is unchanged and this will not disturb any double-mapping."""
+        if not isdef(name + "_start"):
+            # Region may not exists
+            return
 
         # Doesn't matter if this is a virtual address, we have a
         # either dual mapping or it's the same as physical
         base = syms[name + "_start"]
-        size = syms[name + "_size"]
+
+        if isdef(name + "_size"):
+            size = syms[name + "_size"]
+        else:
+            region_end = syms[name + "_end"]
+            size = region_end - base
+
+        if size == 0:
+            return
 
         debug("change flags for %s at 0x%x (0x%x): %s" %
               (name, base, size, dump_flags(flags)))
@@ -610,12 +608,13 @@ def parse_args():
     parser.add_argument("--map", action='append',
                         help=textwrap.dedent('''\
                             Map extra memory:
-                            <physical address>,<size>[,<flags:LUWX>[,<virtual adderss>]]
+                            <physical address>,<size>[,<flags:LUWXD>[,<virtual adderss>]]
                             where flags can be empty or combination of:
                                 L - Large page (2MB or 4MB),
                                 U - Userspace accessible,
                                 W - Writable,
-                                X - Executable.
+                                X - Executable,
+                                D - Cache disabled.
                             Default is
                                 small (4KB) page,
                                 supervisor only,
@@ -625,7 +624,7 @@ def parse_args():
     parser.add_argument("-v", "--verbose", action="count",
                         help="Print extra debugging information")
     args = parser.parse_args()
-    if "VERBOSE" in os.environ and args.verbose == 0:
+    if "VERBOSE" in os.environ:
         args.verbose = 1
 
 
@@ -677,7 +676,7 @@ def map_extra_regions(pt):
             map_flags = elements[2]
 
             # Check for allowed flags
-            if not bool(re.match('^[LUWX]*$', map_flags)):
+            if not bool(re.match('^[LUWXD]*$', map_flags)):
                 error("Unrecognized flags: %s" % map_flags)
 
             flags = FLAG_P | ENTRY_XD
@@ -690,6 +689,8 @@ def map_extra_regions(pt):
             if 'L' in map_flags:
                 flags |=  FLAG_SZ
                 one_map['large_page'] = True
+            if 'D' in map_flags:
+                flags |= FLAG_CD
 
         one_map['flags'] = flags
 
@@ -716,7 +717,7 @@ def map_extra_regions(pt):
 
         # Reserve space in page table, and map the region
         pt.reserve_unaligned(virt, size, level)
-        pt.map(phys, virt, size, flags, level, double_map=False)
+        pt.map(phys, virt, size, flags, level)
 
 
 def main():
@@ -779,6 +780,10 @@ def main():
     debug("Zephyr image: 0x%x - 0x%x size 0x%x" %
           (image_base, image_base + image_size - 1, image_size))
 
+    if virt_to_phys_offset != 0:
+        debug("Physical address space: 0x%x - 0x%x size 0x%x" %
+              (sram_base, sram_base + sram_size - 1, sram_size))
+
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
 
     if image_size >= vm_size:
@@ -797,6 +802,17 @@ def main():
     # Map the zephyr image
     pt.map(image_base_phys, image_base, image_size, map_flags | ENTRY_RW)
 
+    if virt_to_phys_offset != 0:
+        # Need to identity map the physical address space
+        # as it is needed during early boot process.
+        # This will be unmapped once z_x86_mmu_init()
+        # is called.
+        # Note that this only does the identity mapping
+        # at the page directory level to minimize wasted space.
+        pt.reserve_unaligned(image_base_phys, image_size, to_level=PD_LEVEL)
+        pt.identity_map_unaligned(image_base_phys, image_size,
+                                  FLAG_P | FLAG_RW | FLAG_SZ, level=PD_LEVEL)
+
     if isdef("CONFIG_X86_64"):
         # 64-bit has a special region in the first 64K to bootstrap other CPUs
         # from real mode
@@ -810,6 +826,12 @@ def main():
         # Additionally identity-map all ROM as read-only
         pt.map(syms["CONFIG_FLASH_BASE_ADDRESS"], None,
                syms["CONFIG_FLASH_SIZE"] * 1024, map_flags)
+
+    if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
+        pt.map_region("lnkr_boot", map_flags | ENTRY_RW, virt_to_phys_offset)
+
+    if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
+        pt.map_region("lnkr_pinned", map_flags | ENTRY_RW, virt_to_phys_offset)
 
     # Process extra mapping requests
     if args.map:
@@ -825,13 +847,26 @@ def main():
         #   text/rodata from kernel text/rodata
         if isdef("CONFIG_GDBSTUB"):
             flags = FLAG_P | ENTRY_US | ENTRY_RW
-            pt.set_region_perms("_image_text", flags)
+
         else:
             flags = FLAG_P | ENTRY_US
-            pt.set_region_perms("_image_text", flags)
+
+        pt.set_region_perms("_image_text", flags)
+
+        if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
+            pt.set_region_perms("lnkr_boot_text", flags)
+
+        if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
+            pt.set_region_perms("lnkr_pinned_text", flags)
 
         flags = FLAG_P | ENTRY_US | ENTRY_XD
         pt.set_region_perms("_image_rodata", flags)
+
+        if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
+            pt.set_region_perms("lnkr_boot_rodata", flags)
+
+        if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
+            pt.set_region_perms("lnkr_pinned_rodata", flags)
 
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):
             # If GCOV is enabled, user mode must be able to write to its

@@ -1,0 +1,10 @@
+# Cypress SCB[SPI] configuration
+
+# Copyright (c) 2021 ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_PSOC6
+	bool "PSoC-6 MCU SCB spi driver"
+	depends on SOC_FAMILY_PSOC6
+	help
+	  This option enables the SCB[SPI] driver for PSoC-6 SoC family.

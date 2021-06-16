@@ -624,10 +624,10 @@ static int bq274xx_gauge_configure(const struct device *dev)
 			return -EIO;
 		}
 
-		if (!(flags & 0x0010)) {
+		if (flags & 0x0010) {
 			k_msleep(BQ274XX_SUBCLASS_DELAY * 10);
 		}
-	} while ((flags & 0x0010));
+	} while (flags & 0x0010);
 
 	/* Seal the gauge */
 	status = bq274xx_control_reg_write(bq274xx, BQ274XX_CONTROL_SEALED);
@@ -655,7 +655,7 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),   \
 	};                                                                     \
 									       \
-	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, device_pm_control_nop,\
+	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, NULL,                \
 			    &bq274xx_driver_##index,                           \
 			    &bq274xx_config_##index, POST_KERNEL,              \
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \

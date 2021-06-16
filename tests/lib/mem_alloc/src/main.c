@@ -146,7 +146,7 @@ void test_malloc(void)
 	iptr = NULL;
 }
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0)
-void test_no_mem_malloc(void)
+__no_optimization void test_no_mem_malloc(void)
 {
 	int *iptr = NULL;
 
@@ -155,7 +155,7 @@ void test_no_mem_malloc(void)
 	free(iptr);
 	iptr = NULL;
 }
-void test_no_mem_realloc(void)
+__no_optimization void test_no_mem_realloc(void)
 {
 	char *ptr = NULL;
 	char *reloc_ptr = NULL;
@@ -237,7 +237,7 @@ void test_calloc(void)
 #define CALLOC_BUFLEN (200)
 static ZTEST_BMEM unsigned char zerobuf[CALLOC_BUFLEN];
 
-void test_calloc(void)
+__no_optimization void test_calloc(void)
 {
 	char *cptr = NULL;
 
@@ -345,14 +345,12 @@ __no_optimization void test_memalloc_max(void)
 
 void test_main(void)
 {
-#if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0)
-#ifndef CONFIG_NEWLIB_LIBC
+#if defined(CONFIG_MINIMAL_LIBC) && CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE == 0
 	ztest_test_suite(test_c_lib_dynamic_memalloc,
 			 ztest_user_unit_test(test_no_mem_malloc),
 			 ztest_user_unit_test(test_no_mem_realloc)
 			 );
 	ztest_run_test_suite(test_c_lib_dynamic_memalloc);
-#endif
 #else
 	ztest_test_suite(test_c_lib_dynamic_memalloc,
 			 ztest_user_unit_test(test_malloc_align),

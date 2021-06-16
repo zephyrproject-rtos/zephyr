@@ -8,8 +8,7 @@
 #include <sys/printk.h>
 #include <shell/shell.h>
 #include <init.h>
-#include <debug/object_tracing.h>
-#include <power/reboot.h>
+#include <sys/reboot.h>
 #include <debug/stack.h>
 #include <string.h>
 #include <device.h>
@@ -221,6 +220,9 @@ static int cmd_kernel_reboot_warm(const struct shell *shell,
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+#if (CONFIG_KERNEL_SHELL_REBOOT_DELAY > 0)
+	k_sleep(K_MSEC(CONFIG_KERNEL_SHELL_REBOOT_DELAY));
+#endif
 	sys_reboot(SYS_REBOOT_WARM);
 	return 0;
 }
@@ -230,6 +232,9 @@ static int cmd_kernel_reboot_cold(const struct shell *shell,
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+#if (CONFIG_KERNEL_SHELL_REBOOT_DELAY > 0)
+	k_sleep(K_MSEC(CONFIG_KERNEL_SHELL_REBOOT_DELAY));
+#endif
 	sys_reboot(SYS_REBOOT_COLD);
 	return 0;
 }

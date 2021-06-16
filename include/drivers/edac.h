@@ -43,7 +43,8 @@ typedef int (*edac_api_notify_cb_set_f)(const struct device *dev,
 				      edac_notify_callback_f cb);
 
 /**
- * @defgroup edac Zephyr API
+ * @defgroup edac EDAC API
+ * @ingroup io_interfaces
  * @{
  */
 

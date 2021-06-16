@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
 
-#ifdef CONFIG_NRF_802154_SER_HOST
+#if defined(CONFIG_NRF_802154_SER_HOST)
 #include "nrf_802154_serialization_error.h"
 #endif
 
@@ -216,7 +216,8 @@ static void nrf5_get_capabilities_at_boot(void)
 		IEEE802154_HW_TX_RX_ACK |
 		IEEE802154_HW_ENERGY_SCAN |
 		((caps & NRF_802154_CAPABILITY_DELAYED_TX) ? IEEE802154_HW_TXTIME : 0UL) |
-		IEEE802154_HW_SLEEP_TO_TX;
+		IEEE802154_HW_SLEEP_TO_TX |
+		((caps & NRF_802154_CAPABILITY_SECURITY) ? IEEE802154_HW_TX_SEC : 0UL);
 }
 
 /* Radio device API */
@@ -358,9 +359,15 @@ static int nrf5_set_txpower(const struct device *dev, int16_t dbm)
 
 static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 {
-	uint8_t ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
+	uint8_t ack_len;
 	struct net_pkt *ack_pkt;
 	int err = 0;
+
+	if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) || IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+		ack_len = nrf5_radio->ack_frame.psdu[0];
+	} else {
+		ack_len = nrf5_radio->ack_frame.psdu[0] - NRF5_FCS_LENGTH;
+	}
 
 	ack_pkt = net_pkt_alloc_with_buffer(nrf5_radio->iface, ack_len,
 					    AF_UNSPEC, 0, K_NO_WAIT);
@@ -382,6 +389,15 @@ static int handle_ack(struct nrf5_802154_data *nrf5_radio)
 
 	net_pkt_set_ieee802154_lqi(ack_pkt, nrf5_radio->ack_frame.lqi);
 	net_pkt_set_ieee802154_rssi(ack_pkt, nrf5_radio->ack_frame.rssi);
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	struct net_ptp_time timestamp = {
+		.second = nrf5_radio->ack_frame.time / USEC_PER_SEC,
+		.nanosecond = (nrf5_radio->ack_frame.time % USEC_PER_SEC) * NSEC_PER_USEC
+	};
+
+	net_pkt_set_timestamp(ack_pkt, &timestamp);
+#endif
 
 	net_pkt_cursor_init(ack_pkt);
 
@@ -418,17 +434,34 @@ static bool nrf5_tx_at(struct net_pkt *pkt, bool cca)
 	uint32_t tx_at = net_pkt_txtime(pkt) / NSEC_PER_USEC;
 	bool ret;
 
-	ret = nrf_802154_transmit_raw_at(nrf5_data.tx_psdu,
-					 cca,
-					 tx_at - TXTIME_OFFSET_US,
-					 TXTIME_OFFSET_US,
-					 nrf_802154_channel_get());
+	if (net_pkt_ieee802154_frame_retry(pkt) == false) {
+		ret = nrf_802154_transmit_raw_at(nrf5_data.tx_psdu,
+						 cca,
+						 tx_at - TXTIME_OFFSET_US,
+						 TXTIME_OFFSET_US,
+						 nrf_802154_channel_get());
+	} else {
+		ret = nrf_802154_retransmit_raw_at(nrf5_data.tx_psdu,
+						   cca,
+						   tx_at - TXTIME_OFFSET_US,
+						   TXTIME_OFFSET_US,
+						   nrf_802154_channel_get());
+	}
 	if (nrf5_data.event_handler) {
 		LOG_WRN("TX_STARTED event will be triggered without delay");
 	}
 	return ret;
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
+
+static void nrf5_tx_csma_ca(struct net_pkt *pkt, uint8_t *payload)
+{
+	if (net_pkt_ieee802154_frame_retry(pkt) == false) {
+		nrf_802154_transmit_csma_ca_raw(payload);
+	} else {
+		nrf_802154_retransmit_csma_ca_raw(payload);
+	}
+}
 
 static int nrf5_tx(const struct device *dev,
 		   enum ieee802154_tx_mode mode,
@@ -456,7 +489,7 @@ static int nrf5_tx(const struct device *dev,
 		ret = nrf_802154_transmit_raw(nrf5_radio->tx_psdu, true);
 		break;
 	case IEEE802154_TX_MODE_CSMA_CA:
-		nrf_802154_transmit_csma_ca_raw(nrf5_radio->tx_psdu);
+		nrf5_tx_csma_ca(pkt, nrf5_radio->tx_psdu);
 		break;
 /* This function cannot be used in the serialized version yet. */
 #if defined(CONFIG_NET_PKT_TXTIME) && !defined(CONFIG_NRF_802154_SER_HOST)
@@ -487,6 +520,20 @@ static int nrf5_tx(const struct device *dev,
 
 	LOG_DBG("Result: %d", nrf5_data.tx_result);
 
+#if NRF_802154_ENCRYPTION_ENABLED
+	/*
+	 * When frame encryption by the radio driver is enabled, the frame stored in
+	 * the tx_psdu buffer is:
+	 * 1) authenticated and encrypted in place which causes that after an unsuccessful
+	 *    TX attempt, this frame must be propagated back to the upper layer for retransmission.
+	 *    The upper layer must ensure that the exact same secured frame is used for
+	 *    retransmission
+	 * 2) frame counters are updated in place and for keeping the link frame counter up to date,
+	 *    this information must be propagated back to the upper layer
+	 */
+	memcpy(payload, nrf5_radio->tx_psdu + 1, payload_len);
+#endif
+
 	switch (nrf5_radio->tx_result) {
 	case NRF_802154_TX_ERROR_NONE:
 		if (nrf5_radio->ack_frame.psdu == NULL) {
@@ -505,10 +552,16 @@ static int nrf5_tx(const struct device *dev,
 	case NRF_802154_TX_ERROR_ABORTED:
 	case NRF_802154_TX_ERROR_TIMESLOT_DENIED:
 	case NRF_802154_TX_ERROR_TIMESLOT_ENDED:
+	default:
 		return -EIO;
 	}
+}
 
-	return -EIO;
+static uint64_t nrf5_get_time(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return nrf_802154_time_get();
 }
 
 static int nrf5_start(const struct device *dev)
@@ -703,8 +756,10 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 	__ASSERT(false, "Not enough rx frames allocated for 15.4 driver");
 }
 
-void nrf_802154_receive_failed(nrf_802154_rx_error_t error)
+void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 {
+	ARG_UNUSED(id);
+
 	enum ieee802154_rx_fail_reason reason;
 
 	switch (error) {
@@ -740,12 +795,10 @@ void nrf_802154_tx_ack_started(const uint8_t *data)
 				data[FRAME_PENDING_BYTE] & FRAME_PENDING_BIT;
 }
 
-void nrf_802154_transmitted_raw(const uint8_t *frame, uint8_t *ack,
-				int8_t power, uint8_t lqi)
+#if defined(CONFIG_NRF_802154_SER_HOST)
+void nrf_802154_transmitted_raw(const uint8_t *frame, uint8_t *ack, int8_t power, uint8_t lqi)
 {
 	ARG_UNUSED(frame);
-	ARG_UNUSED(power);
-	ARG_UNUSED(lqi);
 
 	nrf5_data.tx_result = NRF_802154_TX_ERROR_NONE;
 	nrf5_data.ack_frame.psdu = ack;
@@ -754,6 +807,26 @@ void nrf_802154_transmitted_raw(const uint8_t *frame, uint8_t *ack,
 
 	k_sem_give(&nrf5_data.tx_wait);
 }
+#else
+void nrf_802154_transmitted_timestamp_raw(const uint8_t *frame, uint8_t *ack, int8_t power,
+					  uint8_t lqi, uint32_t ack_time)
+{
+	ARG_UNUSED(frame);
+	ARG_UNUSED(ack_time);
+
+	nrf5_data.tx_result = NRF_802154_TX_ERROR_NONE;
+	nrf5_data.ack_frame.psdu = ack;
+	nrf5_data.ack_frame.rssi = power;
+	nrf5_data.ack_frame.lqi = lqi;
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	nrf5_data.ack_frame.time =
+		nrf_802154_first_symbol_timestamp_get(ack_time, nrf5_data.ack_frame.psdu[0]);
+#endif
+
+	k_sem_give(&nrf5_data.tx_wait);
+}
+#endif
 
 void nrf_802154_transmit_failed(const uint8_t *frame,
 				nrf_802154_tx_error_t error)
@@ -803,7 +876,7 @@ void nrf_802154_energy_detection_failed(nrf_802154_ed_error_t error)
 	}
 }
 
-#ifdef CONFIG_NRF_802154_SER_HOST
+#if defined(CONFIG_NRF_802154_SER_HOST)
 void nrf_802154_serialization_error(const nrf_802154_ser_err_data_t *p_err)
 {
 	__ASSERT(false, "802.15.4 serialization error");
@@ -826,6 +899,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.stop = nrf5_stop,
 	.tx = nrf5_tx,
 	.ed_scan = nrf5_energy_scan_start,
+	.get_time = nrf5_get_time,
 	.configure = nrf5_configure,
 };
 
@@ -841,13 +915,13 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 
 #if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
 NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		nrf5_init, device_pm_control_nop, &nrf5_data, &nrf5_radio_cfg,
+		nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
 		CONFIG_IEEE802154_NRF5_INIT_PRIO,
 		&nrf5_radio_api, L2,
 		L2_CTX_TYPE, MTU);
 #else
 DEVICE_DEFINE(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		nrf5_init, device_pm_control_nop, &nrf5_data, &nrf5_radio_cfg,
+		nrf5_init, NULL, &nrf5_data, &nrf5_radio_cfg,
 		POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
 		&nrf5_radio_api);
 #endif

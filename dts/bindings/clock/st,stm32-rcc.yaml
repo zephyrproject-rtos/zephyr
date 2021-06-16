@@ -1,4 +1,40 @@
-description: STM32 RCC (Reset and Clock Controller)
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Reset and Clock controller node.
+  This node is in charge of system clock ('SYSCLK') source selection and controlling
+  clocks for AHB (Advanced High Performance) and APB (Advanced Peripheral) bus domains.
+
+  Configuring STM32 Reset and Clock controller node:
+
+  System clock source should be selected amongst the clock nodes available in "clocks"
+  node (typically 'clk_hse, clk_hsi', 'pll', ...).
+  As part of this node configuration, SYSCLK frequency should also be defined, using
+  "clock-frequency" property.
+  Last, bus clocks (typically HCLK, PCLK1, PCLK2) should be configured using matching
+  prescaler properties.
+  Here is an example of correctly configured rcc node:
+  &rcc {
+           clocks = <&pll>;  /* Set pll as SYSCLK source */
+           clock-frequency = <DT_FREQ_M(80)>; /* SYSCLK runs at 80MHz */
+           ahb-prescaler = <1>;
+           apb1-presacler = <1>;
+           apb2-presacler = <1>;
+  }
+
+  Specifying a gated clock:
+
+  To specify a gated clock, a peripheral should define a "clocks" property encoded
+  in the following way:
+  ... {
+           ...
+           clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000020>;
+           ...
+  }
+  After the phandle referring to rcc node, the first index specifies the registers of
+  the bus controlling the peripheral and the second index specifies the bit used to
+  control the peripheral clock in that bus register.
 
 compatible: "st,stm32-rcc"
 
@@ -10,6 +46,44 @@ properties:
 
     "#clock-cells":
       const: 2
+
+    clock-frequency:
+      required: false
+      type: int
+      description: |
+        default frequency in Hz for clock output
+
+    ahb-prescaler:
+      type: int
+      required: false
+      enum:
+        - 1
+      description: |
+          AHB prescaler. Sets a HCLK frequency (feeding Cortex-M Systick)
+          lower than SYSCLK frequency (actual core frequency).
+          Zephyr doesn't make a difference today between these two clocks.
+          Changing this prescaler is not allowed until it is made possible to
+          use them independently in Zephyr clock subsystem.
+
+    apb1-prescaler:
+      type: int
+      required: false
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+
+    apb2-prescaler:
+      type: int
+      required: false
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
 
 clock-cells:
   - bus

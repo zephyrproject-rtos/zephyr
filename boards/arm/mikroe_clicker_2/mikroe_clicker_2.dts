@@ -20,7 +20,6 @@
 		zephyr,ccm = &ccm0;
 	};
 
-
 	leds {
 		compatible = "gpio-leds";
 		ld1: led_1 {
@@ -53,6 +52,28 @@
 	};
 };
 
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <25>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
 &usart2 {
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
 	current-speed = <9600>;
@@ -80,7 +101,6 @@
 	status = "okay";
 };
 
-
 &spi2 {
 	pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	cs-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
@@ -107,7 +127,6 @@
 	status ="okay";
 	pinctrl-0 = <&adc1_in2_pa2 &adc1_in3_pa3>;
 };
-
 
 mikrobus_1_i2c: &i2c3 {};
 

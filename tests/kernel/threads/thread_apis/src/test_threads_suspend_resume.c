@@ -146,3 +146,30 @@ void test_threads_suspend_timeout(void)
 
 	k_thread_abort(tid);
 }
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Check resume an unsuspend thread
+ *
+ * @details Use k_thread_state_str() to get thread state.
+ * Resume an unsuspend thread will not change the thread state.
+ */
+void test_resume_unsuspend_thread(void)
+{
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry, NULL, NULL, NULL,
+				      0, K_USER, K_NO_WAIT);
+
+	/* Resume an unsuspend thread will not change the thread state. */
+	zassert_true(strcmp(k_thread_state_str(tid), "queued") == 0, NULL);
+	k_thread_resume(tid);
+	zassert_true(strcmp(k_thread_state_str(tid), "queued") == 0, NULL);
+
+	/* suspend created thread */
+	k_thread_suspend(tid);
+	zassert_true(strcmp(k_thread_state_str(tid), "suspended") == 0, NULL);
+	/* Resume an suspend thread will make it to be next eligible.*/
+	k_thread_resume(tid);
+	zassert_true(strcmp(k_thread_state_str(tid), "queued") == 0, NULL);
+	k_thread_abort(tid);
+}

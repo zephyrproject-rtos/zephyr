@@ -40,7 +40,7 @@ K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct k_thread mgmt_thread_data;
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
 static uint32_t global_event_mask;
-static sys_slist_t event_callbacks;
+static sys_slist_t event_callbacks = SYS_SLIST_STATIC_INIT(&event_callbacks);
 static int16_t in_event;
 static int16_t out_event;
 
@@ -377,9 +377,6 @@ int net_mgmt_event_wait_on_iface(struct net_if *iface,
 
 void net_mgmt_event_init(void)
 {
-	sys_slist_init(&event_callbacks);
-	global_event_mask = 0U;
-
 	in_event = -1;
 	out_event = -1;
 

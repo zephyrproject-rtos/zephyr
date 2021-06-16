@@ -17,6 +17,35 @@ int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx)
 	return length;
 }
 
+static struct log_msg *msg_from_fifo(const struct shell_log_backend *backend)
+{
+	struct shell_log_backend_msg msg;
+	int err;
+
+	err = k_msgq_get(backend->msgq, &msg, K_NO_WAIT);
+
+	return (err == 0) ? msg.msg : NULL;
+}
+
+/* Set fifo clean state (in case of deferred mode). */
+static void fifo_reset(const struct shell_log_backend *backend)
+{
+	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
+		mpsc_pbuf_init(backend->mpsc_buffer,
+			       backend->mpsc_buffer_config);
+		return;
+	}
+
+	/* Flush pending log messages without processing. */
+	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
+		struct log_msg *msg;
+
+		while ((msg = msg_from_fifo(backend)) != NULL) {
+			log_msg_put(msg);
+		}
+	}
+}
+
 void z_shell_log_backend_enable(const struct shell_log_backend *backend,
 				void *ctx, uint32_t init_log_level)
 {
@@ -31,36 +60,12 @@ void z_shell_log_backend_enable(const struct shell_log_backend *backend,
 		err = shell->iface->api->enable(shell->iface, true);
 	}
 
-	if (IS_ENABLED(CONFIG_LOG2_MODE_DEFERRED)) {
-		mpsc_pbuf_init(backend->mpsc_buffer,
-			       backend->mpsc_buffer_config);
-	}
-
 	if (err == 0) {
+		fifo_reset(backend);
 		log_backend_enable(backend->backend, ctx, init_log_level);
 		log_output_ctx_set(backend->log_output, ctx);
 		backend->control_block->dropped_cnt = 0;
 		backend->control_block->state = SHELL_LOG_BACKEND_ENABLED;
-	}
-}
-
-static struct log_msg *msg_from_fifo(const struct shell_log_backend *backend)
-{
-	struct shell_log_backend_msg msg;
-	int err;
-
-	err = k_msgq_get(backend->msgq, &msg, K_NO_WAIT);
-
-	return (err == 0) ? msg.msg : NULL;
-}
-
-static void fifo_flush(const struct shell_log_backend *backend)
-{
-	struct log_msg *msg;
-
-	/* Flush log messages. */
-	while ((msg = msg_from_fifo(backend)) != NULL) {
-		log_msg_put(msg);
 	}
 }
 
@@ -92,41 +97,41 @@ static void msg_to_fifo(const struct shell *shell,
 			struct log_msg *msg)
 {
 	int err;
+	bool cont;
 	struct shell_log_backend_msg t_msg = {
 		.msg = msg,
 		.timestamp = k_uptime_get_32()
 	};
 
-	err = k_msgq_put(shell->log_backend->msgq, &t_msg,
-			 K_MSEC(shell->log_backend->timeout));
+	do {
+		cont = false;
+		err = k_msgq_put(shell->log_backend->msgq, &t_msg,
+				 K_MSEC(shell->log_backend->timeout));
 
-	switch (err) {
-	case 0:
-		break;
-	case -EAGAIN:
-	case -ENOMSG:
-	{
-		flush_expired_messages(shell);
+		switch (err) {
+		case 0:
+			break;
+		case -EAGAIN:
+		case -ENOMSG:
+		{
+			/* Attempt to drop old message. */
+			flush_expired_messages(shell);
 
-		err = k_msgq_put(shell->log_backend->msgq, &msg, K_NO_WAIT);
-		if (err) {
-			/* Unexpected case as we just freed one element and
-			 * there is no other context that puts into the msgq.
-			 */
-			__ASSERT_NO_MSG(0);
+			/* Retry putting message. */
+			cont = true;
+
+			break;
 		}
-		break;
-	}
-	default:
-		/* Other errors are not expected. */
-		__ASSERT_NO_MSG(0);
-		break;
-	}
+		default:
+			/* Other errors are not expected. */
+			__ASSERT_NO_MSG(0);
+			break;
+		}
+	} while (cont);
 }
 
 void z_shell_log_backend_disable(const struct shell_log_backend *backend)
 {
-	fifo_flush(backend);
 	log_backend_disable(backend->backend);
 	backend->control_block->state = SHELL_LOG_BACKEND_DISABLED;
 }

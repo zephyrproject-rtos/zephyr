@@ -68,6 +68,14 @@
 	rdmsr
 	orl	$0x800, %eax
 	wrmsr
+#else
+	/* Enable Page Size Extensions (allowing 4MB pages).
+	 * This is ignored if PAE is enabled so no need to do
+	 * this above in PAE code.
+	 */
+	movl	%cr4, %eax
+	orl	$CR4_PSE, %eax
+	movl	%eax, %cr4
 #endif /* CONFIG_X86_PAE */
 
 	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
@@ -89,7 +97,7 @@ vm_enter:
 #endif /* CONFIG_X86_MMU */
 .endm
 
-SECTION_FUNC(TEXT_START, __start)
+SECTION_FUNC(BOOT_TEXT, __start)
 
 #include "../common.S"
 
@@ -243,6 +251,12 @@ __csSet:
 #endif /* Z_VM_KERNEL */
 
 	/* Clear BSS */
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+	call	z_bss_zero_boot
+#endif
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+	call	z_bss_zero_pinned
+#endif
 	call	z_bss_zero
 
 	/* load 32-bit operand size IDT */
@@ -276,14 +290,6 @@ z_x86_idt:
 
 
 #ifdef CONFIG_SET_GDT
-
-	/* GDT should be aligned on 8-byte boundary for best processor
-	 * performance, see Section 3.5.1 of IA architecture SW developer
-	 * manual, Vol 3.
-	 */
-
-	.balign 8
-
 	/*
 	 * The following 3 GDT entries implement the so-called "basic
 	 * flat model", i.e. a single code segment descriptor and a single
@@ -300,10 +306,17 @@ z_x86_idt:
 	 * and fails to set it.
 	 */
 
+SECTION_VAR(PINNED_RODATA, _gdt_rom)
 #ifndef CONFIG_GDT_DYNAMIC
 _gdt:
 #endif
-_gdt_rom:
+
+	/* GDT should be aligned on 8-byte boundary for best processor
+	 * performance, see Section 3.5.1 of IA architecture SW developer
+	 * manual, Vol 3.
+	 */
+
+	.balign 8
 
 	/* Entry 0 (selector=0x0000): The "NULL descriptor". The CPU never
 	 * actually looks at this entry, so we stuff 6-byte the pseudo

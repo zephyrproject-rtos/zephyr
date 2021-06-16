@@ -42,6 +42,27 @@
 	};
 };
 
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <10>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(80)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
 &lpuart1 {
 	pinctrl-0 = <&lpuart1_tx_pa2 &lpuart1_rx_pa3>;
 	current-speed = <115200>;
@@ -53,14 +74,14 @@
 	current-speed = <115200>;
 };
 
-&spi1 {
-	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
-			 &spi1_miso_pa6 &spi1_mosi_pa7>;
+&spi2 {
+	pinctrl-0 = <&spi2_nss_pb12 &spi2_sck_pb13
+			 &spi2_miso_pb14 &spi2_mosi_pb15>;
 	status = "okay";
 };
 
 &i2c1 {
-	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 };
@@ -75,6 +96,11 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in5_pa0>;
 	status = "okay";
 };
 

@@ -11,6 +11,11 @@ __weak void multiboot(void)
 	printk("MULTIBOOT: Not supported in this build.\n\n");
 }
 
+__weak void memmap(void)
+{
+	printk("MEMMAP: Not supported in this build.\n\n");
+}
+
 __weak void acpi(void)
 {
 	printk("ACPI: Not supported in this build.\n\n");

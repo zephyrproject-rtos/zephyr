@@ -111,7 +111,7 @@ static ALWAYS_INLINE void arch_cohere_stacks(struct k_thread *old_thread,
 	/* Dummy threads appear at system initialization, but don't
 	 * have stack_info data and will never be saved.  Ignore.
 	 */
-	if (old_thread->base.thread_state & _THREAD_DUMMY) {
+	if (!osz) {
 		return;
 	}
 

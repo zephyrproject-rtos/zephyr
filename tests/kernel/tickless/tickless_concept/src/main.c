@@ -5,7 +5,7 @@
  */
 
 #include <ztest.h>
-#include <power/power.h>
+#include <pm/pm.h>
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define NUM_THREAD 4
@@ -62,9 +62,11 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	k_sem_give(&sema);
 }
 /**
- * @addtogroup kernel_tickless_tests
+ * @defgroup  kernel_tickless_tests Tickless
+ * @ingroup all_tests
  * @{
  */
+
 
 /**
  * @brief Verify system clock with and without tickless idle

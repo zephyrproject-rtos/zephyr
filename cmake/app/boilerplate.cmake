@@ -36,6 +36,13 @@ cmake_policy(SET CMP0002 NEW)
 # CMP0079: "target_link_libraries() allows use with targets in other directories"
 cmake_policy(SET CMP0079 OLD)
 
+# Use the old CMake behaviour until we are updating the CMake 3.20 as minimum
+# required. This ensure that CMake >=3.20 will be consistent with older CMakes.
+# CMP0116: Ninja generators transform DEPFILE s from add_custom_command().
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.20)
+  cmake_policy(SET CMP0116 OLD)
+endif()
+
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
     BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
     FULL_DOCS  "Global list of all Zephyr CMake libs that should be linked in.
@@ -128,7 +135,17 @@ if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
 endif()
 
-find_package(ZephyrBuildConfiguration NAMES ZephyrBuild PATHS ${ZEPHYR_BASE}/../* QUIET NO_DEFAULT_PATH NO_POLICY_SCOPE)
+find_package(ZephyrBuildConfiguration
+  QUIET NO_POLICY_SCOPE
+  NAMES ZephyrBuild
+  PATHS ${ZEPHYR_BASE}/../*
+  NO_CMAKE_PATH
+  NO_CMAKE_ENVIRONMENT_PATH
+  NO_SYSTEM_ENVIRONMENT_PATH
+  NO_CMAKE_PACKAGE_REGISTRY
+  NO_CMAKE_SYSTEM_PATH
+  NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+)
 
 # Note any later project() resets PROJECT_SOURCE_DIR
 file(TO_CMAKE_PATH "${ZEPHYR_BASE}" PROJECT_SOURCE_DIR)
@@ -147,6 +164,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
+include(${ZEPHYR_BASE}/cmake/git.cmake)
 include(${ZEPHYR_BASE}/cmake/version.cmake)  # depends on hex.cmake
 
 #
@@ -155,7 +173,6 @@ include(${ZEPHYR_BASE}/cmake/version.cmake)  # depends on hex.cmake
 
 include(${ZEPHYR_BASE}/cmake/python.cmake)
 include(${ZEPHYR_BASE}/cmake/west.cmake)
-include(${ZEPHYR_BASE}/cmake/git.cmake)  # depends on version.cmake
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
 
 if(ZEPHYR_EXTRA_MODULES)

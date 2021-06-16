@@ -357,7 +357,7 @@
 
 		tc0: tc@4000C000 {
 			compatible = "atmel,sam-tc";
-			reg = <0x4000C000 0x100>;
+			reg = <0x4000c000 0x100>;
 			interrupts = <23 0
 				      24 0
 				      25 0>;

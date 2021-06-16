@@ -108,6 +108,15 @@ SECTIONS
 		KEEP(*(.vectors.*))
     } GROUP_LINK_IN(ROMABLE_REGION)
 
+    SECTION_PROLOGUE(rom_start,,)
+    {
+		. = ALIGN(16);
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_START ...).
+ */
+#include <snippets-rom-start.ld>
+    } GROUP_LINK_IN(ROMABLE_REGION)
+
     SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
     {
 		KEEP(*(.reset.*))
@@ -130,7 +139,6 @@ SECTIONS
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
-		*(.eh_frame)
 #include <linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -225,7 +233,7 @@ SECTIONS
 	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
-#include <linker/kobject.ld>
+#include <linker/kobject-data.ld>
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.

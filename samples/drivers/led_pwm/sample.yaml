@@ -7,17 +7,17 @@ tests:
     tags: LED
     depends_on: pwm
     platform_exclude: reel_board
-    timeout: 15
+    timeout: 20
     harness: console
     harness_config:
       type: multi_line
       ordered: true
       regex:
-        - "Found device LED_PWM_\\d+"
+        - "Found device \\S+"
         - "Testing LED \\d+"
-        - "Turning on"
-        - "Turning off"
+        - "Turned on"
+        - "Turned off"
         - "Increasing brightness gradually"
         - "Blinking on: 0.1 sec, off: 0.1 sec"
-        - "Blinking on: 1 sec, off: 1 sec"
-        - "Turning off"
+        - "(Blinking on: 1 sec, off: 1 sec|Cycle period not supported)"
+        - "Turned off, loop end"

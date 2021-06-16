@@ -808,7 +808,7 @@ static const struct eeprom_driver_api eeprom_emu_api = {
 	}; \
 	static struct eeprom_emu_data eeprom_emu_##n##_data; \
 	DEVICE_DT_INST_DEFINE(n, &eeprom_emu_init, \
-		device_pm_control_nop, &eeprom_emu_##n##_data, \
+		NULL, &eeprom_emu_##n##_data, \
 		&eeprom_emu_##n##_config, POST_KERNEL, \
 		CONFIG_EEPROM_EMULATOR_INIT_PRIORITY, &eeprom_emu_api); \
 

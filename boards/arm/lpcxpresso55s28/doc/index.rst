@@ -86,7 +86,6 @@ The default configuration file
 Currently available targets for this board are:
 
 - *lpcxpresso55s28* secure (S) address space
-- *lpcxpresso55s28_ns* non-secure (NS) address space
 
 Connections and IOs
 ===================
@@ -164,7 +163,7 @@ Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: lpcxpresso55s28_ns
+   :board: lpcxpresso55s28
    :goals: flash
 
 Open a serial terminal, reset the board (press the RESET button), and you should

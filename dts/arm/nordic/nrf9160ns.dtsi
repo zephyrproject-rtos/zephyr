@@ -18,7 +18,6 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			swo-ref-frequency = <32000000>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";

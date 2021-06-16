@@ -12,16 +12,11 @@
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
-#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
-#define LED0         DT_GPIO_LABEL(LED0_NODE, gpios)
-#define LED0_PIN     DT_GPIO_PIN(LED0_NODE, gpios)
-#define FLAGS        DT_GPIO_FLAGS(LED0_NODE, gpios)
-#else
+#if !DT_NODE_HAS_STATUS(LED0_NODE, okay)
 #error "BOARD does not define a debug LED"
-#define LED0         ""
-#define LED0_PIN     0
-#define FLAGS        0
 #endif
+
+static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET_OR(LED0_NODE, gpios, {0});
 
 #define SLEEP_TIME_MS                  (20)
 #define CNT_PER_SEC                    (1000 / SLEEP_TIME_MS)
@@ -36,18 +31,17 @@ void main(void)
 {
 	int ret, led_state;
 	uint32_t cnt = 0;
-	const struct device *dev;
 	struct osdp_cmd cmd;
 
-	dev = device_get_binding(LED0);
-	if (dev == NULL) {
-		printk("Failed to get LED0 binding\n");
+	if (!device_is_ready(led0.port)) {
+		printk("LED0 GPIO port %s is not ready\n", led0.port->name);
 		return;
 	}
 
-	ret = gpio_pin_configure(dev, LED0_PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
+	ret = gpio_pin_configure_dt(&led0, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
-		printk("Failed to configure gpio pin\n");
+		printk("Failed to configure gpio port %s pin %d\n",
+		       led0.port->name, led0.pin);
 		return;
 	}
 
@@ -60,7 +54,7 @@ void main(void)
 		if (osdp_pd_get_cmd(&cmd) == 0) {
 			cmd_handler(&cmd);
 		}
-		gpio_pin_set(dev, LED0_PIN, led_state);
+		gpio_pin_set(led0.port, led0.pin, led_state);
 		k_msleep(SLEEP_TIME_MS);
 		cnt++;
 	}

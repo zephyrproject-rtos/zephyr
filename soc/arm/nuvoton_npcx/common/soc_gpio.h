@@ -24,6 +24,22 @@ extern "C" {
  */
 const struct device *npcx_get_gpio_dev(int port);
 
+/**
+ * @brief Enable the connection between io pads and GPIO instance
+ *
+ * @param dev Pointer to device structure for the gpio driver instance.
+ * @param pin Pin number.
+ */
+void npcx_gpio_enable_io_pads(const struct device *dev, int pin);
+
+/**
+ * @brief Disable the connection between io pads and GPIO instance
+ *
+ * @param dev Pointer to device structure for the gpio driver instance.
+ * @param pin Pin number.
+ */
+void npcx_gpio_disable_io_pads(const struct device *dev, int pin);
+
 #ifdef __cplusplus
 }
 #endif

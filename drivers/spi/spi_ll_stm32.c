@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <dt-bindings/dma/stm32_dma.h>
 #include <drivers/dma.h>
 #endif
-#include <pinmux/stm32/pinmux_stm32.h>
+#include <pinmux/pinmux_stm32.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
@@ -931,7 +931,7 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_DMA_STATUS_SEM(id)						\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, device_pm_control_nop,	\
+DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, NULL,			\
 		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
 		    &api_funcs);					\

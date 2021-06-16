@@ -6,6 +6,7 @@ common:
     - mps2_an521
     - native_posix
   tags: cmsis_dsp
+  toolchain_exclude: llvm
 
 tests:
   libraries.cmsis_dsp.filtering:

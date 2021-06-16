@@ -13,7 +13,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <debug/object_tracing_common.h>
+
 #include <toolchain.h>
 #include <wait_q.h>
 #include <ksched.h>
@@ -55,27 +55,6 @@ void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 	return ret;
 }
 
-#ifdef CONFIG_OBJECT_TRACING
-
-struct k_queue *_trace_list_k_queue;
-
-/*
- * Complete initialization of statically defined queues.
- */
-static int init_queue_module(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	Z_STRUCT_SECTION_FOREACH(k_queue, queue) {
-		SYS_TRACING_OBJ_INIT(k_queue, queue);
-	}
-	return 0;
-}
-
-SYS_INIT(init_queue_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#endif /* CONFIG_OBJECT_TRACING */
-
 void z_impl_k_queue_init(struct k_queue *queue)
 {
 	sys_sflist_init(&queue->data_q);
@@ -85,7 +64,8 @@ void z_impl_k_queue_init(struct k_queue *queue)
 	sys_dlist_init(&queue->poll_events);
 #endif
 
-	SYS_TRACING_OBJ_INIT(k_queue, queue);
+	SYS_PORT_TRACING_OBJ_INIT(k_queue, queue);
+
 	z_object_init(queue);
 }
 
@@ -113,6 +93,8 @@ static inline void handle_poll_events(struct k_queue *queue, uint32_t state)
 
 void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 {
+	SYS_PORT_TRACING_OBJ_FUNC(k_queue, cancel_wait, queue);
+
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	struct k_thread *first_pending_thread;
 
@@ -141,14 +123,21 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	struct k_thread *first_pending_thread;
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, queue_insert, queue, alloc);
+
 	if (is_append) {
 		prev = sys_sflist_peek_tail(&queue->data_q);
 	}
 	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
 
 	if (first_pending_thread != NULL) {
+		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, queue_insert, queue, alloc, K_FOREVER);
+
 		prepare_thread_to_run(first_pending_thread, data);
 		z_reschedule(&queue->lock, key);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, queue_insert, queue, alloc, 0);
+
 		return 0;
 	}
 
@@ -159,6 +148,10 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 		anode = z_thread_malloc(sizeof(*anode));
 		if (anode == NULL) {
 			k_spin_unlock(&queue->lock, key);
+
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, queue_insert, queue, alloc,
+				-ENOMEM);
+
 			return -ENOMEM;
 		}
 		anode->data = data;
@@ -168,30 +161,53 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 		sys_sfnode_init(data, 0x0);
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, queue_insert, queue, alloc, K_FOREVER);
+
 	sys_sflist_insert(&queue->data_q, prev, data);
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 	z_reschedule(&queue->lock, key);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, queue_insert, queue, alloc, 0);
+
 	return 0;
 }
 
 void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 {
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, insert, queue);
+
 	(void)queue_insert(queue, prev, data, false, false);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, insert, queue);
 }
 
 void k_queue_append(struct k_queue *queue, void *data)
 {
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, append, queue);
+
 	(void)queue_insert(queue, NULL, data, false, true);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append, queue);
 }
 
 void k_queue_prepend(struct k_queue *queue, void *data)
 {
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, prepend, queue);
+
 	(void)queue_insert(queue, NULL, data, false, false);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, prepend, queue);
 }
 
 int32_t z_impl_k_queue_alloc_append(struct k_queue *queue, void *data)
 {
-	return queue_insert(queue, NULL, data, true, true);
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, alloc_append, queue);
+
+	int32_t ret = queue_insert(queue, NULL, data, true, true);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, alloc_append, queue, ret);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -206,8 +222,13 @@ static inline int32_t z_vrfy_k_queue_alloc_append(struct k_queue *queue,
 
 int32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 {
-	return queue_insert(queue, NULL, data, true, false);
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, alloc_prepend, queue);
 
+	int32_t ret = queue_insert(queue, NULL, data, true, false);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, alloc_prepend, queue, ret);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -222,8 +243,12 @@ static inline int32_t z_vrfy_k_queue_alloc_prepend(struct k_queue *queue,
 
 int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 {
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, append_list, queue);
+
 	/* invalid head or tail of list */
 	CHECKIF(head == NULL || tail == NULL) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append_list, queue, -EINVAL);
+
 		return -EINVAL;
 	}
 
@@ -244,6 +269,8 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 		sys_sflist_append_list(&queue->data_q, head, tail);
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append_list, queue, 0);
+
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 	z_reschedule(&queue->lock, key);
 	return 0;
@@ -253,8 +280,12 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 {
 	int ret;
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, merge_slist, queue);
+
 	/* list must not be empty */
 	CHECKIF(sys_slist_is_empty(list)) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, merge_slist, queue, -EINVAL);
+
 		return -EINVAL;
 	}
 
@@ -269,9 +300,13 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 	 */
 	ret = k_queue_append_list(queue, list->head, list->tail);
 	CHECKIF(ret != 0) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, merge_slist, queue, ret);
+
 		return ret;
 	}
 	sys_slist_init(list);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, merge_slist, queue, 0);
 
 	return 0;
 }
@@ -281,23 +316,86 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *data;
 
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, get, queue, timeout);
+
 	if (likely(!sys_sflist_is_empty(&queue->data_q))) {
 		sys_sfnode_t *node;
 
 		node = sys_sflist_get_not_empty(&queue->data_q);
 		data = z_queue_node_peek(node, true);
 		k_spin_unlock(&queue->lock, key);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, get, queue, timeout, data);
+
 		return data;
 	}
 
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, get, queue, timeout);
+
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&queue->lock, key);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, get, queue, timeout, NULL);
+
 		return NULL;
 	}
 
 	int ret = z_pend_curr(&queue->lock, key, &queue->wait_q, timeout);
 
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, get, queue, timeout,
+		(ret != 0) ? NULL : _current->base.swap_data);
+
 	return (ret != 0) ? NULL : _current->base.swap_data;
+}
+
+bool k_queue_remove(struct k_queue *queue, void *data)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, remove, queue);
+
+	bool ret = sys_sflist_find_and_remove(&queue->data_q, (sys_sfnode_t *)data);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, remove, queue, ret);
+
+	return ret;
+}
+
+bool k_queue_unique_append(struct k_queue *queue, void *data)
+{
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, unique_append, queue);
+
+	sys_sfnode_t *test;
+
+	SYS_SFLIST_FOR_EACH_NODE(&queue->data_q, test) {
+		if (test == (sys_sfnode_t *) data) {
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, unique_append, queue, false);
+
+			return false;
+		}
+	}
+
+	k_queue_append(queue, data);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, unique_append, queue, true);
+
+	return true;
+}
+
+void *z_impl_k_queue_peek_head(struct k_queue *queue)
+{
+	void *ret = z_queue_node_peek(sys_sflist_peek_head(&queue->data_q), false);
+
+	SYS_PORT_TRACING_OBJ_FUNC(k_queue, peek_head, queue, ret);
+
+	return ret;
+}
+
+void *z_impl_k_queue_peek_tail(struct k_queue *queue)
+{
+	void *ret = z_queue_node_peek(sys_sflist_peek_tail(&queue->data_q), false);
+
+	SYS_PORT_TRACING_OBJ_FUNC(k_queue, peek_tail, queue, ret);
+
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE

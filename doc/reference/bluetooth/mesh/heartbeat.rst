@@ -63,5 +63,3 @@ API reference
 **************
 
 .. doxygengroup:: bt_mesh_heartbeat
-   :project: Zephyr
-   :members:

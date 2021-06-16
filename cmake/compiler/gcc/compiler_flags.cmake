@@ -167,6 +167,10 @@ set_compiler_property(PROPERTY freestanding -ffreestanding)
 # Flag to enable debugging
 set_compiler_property(PROPERTY debug -g)
 
+# GCC 11 by default emits DWARF version 5 which cannot be parsed by
+# pyelftools. Can be removed once pyelftools supports v5.
+check_set_compiler_property(APPEND PROPERTY debug -gdwarf-4)
+
 set_compiler_property(PROPERTY no_common -fno-common)
 
 # GCC compiler flags for imacros. The specific header must be appended by user.
@@ -176,6 +180,9 @@ set_compiler_property(PROPERTY imacros -imacros)
 set_compiler_property(PROPERTY sanitize_address -fsanitize=address)
 
 set_compiler_property(PROPERTY sanitize_undefined -fsanitize=undefined)
+
+# GCC compiler flag for turning off thread-safe initialization of local statics
+set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics "-fno-threadsafe-statics")
 
 # Required ASM flags when using gcc
 set_property(TARGET asm PROPERTY required "-xassembler-with-cpp")

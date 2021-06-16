@@ -15,7 +15,7 @@ static volatile int expected_reason = -1;
 static volatile int run_esf_validation;
 static volatile int esf_validation_rv;
 static volatile uint32_t expected_msp;
-static K_THREAD_STACK_DEFINE(esf_collection_stack, 1024);
+static K_THREAD_STACK_DEFINE(esf_collection_stack, 2048);
 static struct k_thread esf_collection_thread;
 #define MAIN_PRIORITY 7
 #define PRIORITY 5
@@ -377,7 +377,21 @@ void test_arm_interrupt(void)
 	 * entry will make PSP descend below the limit and into the MPU guard
 	 * section (or beyond the address pointed by PSPLIM in ARMv8-M MCUs).
 	 */
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && \
+	defined(CONFIG_MPU_STACK_GUARD)
+#define FPU_STACK_EXTRA_SIZE 0x48
+	/* If an FP context is present, we should not set the PSP
+	 * too close to the end of the stack, because stacking of
+	 * the ESF might corrupt kernel memory, making it not
+	 * possible to continue the test execution.
+	 */
+	uint32_t fp_extra_size =
+		(__get_CONTROL() & CONTROL_FPCA_Msk) ?
+			FPU_STACK_EXTRA_SIZE : 0;
+	__set_PSP(_current->stack_info.start + 0x10 + fp_extra_size);
+#else
 	__set_PSP(_current->stack_info.start + 0x10);
+#endif
 
 	__enable_irq();
 	__DSB();
@@ -467,7 +481,7 @@ void test_arm_user_interrupt(void)
 }
 #endif /* CONFIG_USERSPACE */
 
-#if defined(CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION)
+#if defined(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION)
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 /* Avoid compiler optimizing null pointer de-referencing. */
@@ -497,7 +511,7 @@ void test_arm_null_pointer_exception(void)
 	TC_PRINT("Skipped\n");
 }
 
-#endif /* CONFIG_CORTEX_M_DEBUG_NULL_POINTER_EXCEPTION */
+#endif /* CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION */
 
 /**
  * @}

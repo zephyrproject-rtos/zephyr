@@ -13,6 +13,7 @@
 #include <hal/nrf_rtc.h>
 #include <hal/nrf_ccm.h>
 #include <hal/nrf_aar.h>
+#include <hal/nrf_gpiote.h>
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
@@ -28,7 +29,7 @@ static inline void hal_radio_nrf_ppi_channels_disable(uint32_t mask)
  * Enable Radio on Event Timer tick:
  * wire the EVENT_TIMER EVENTS_COMPARE[0] event to RADIO TASKS_TXEN/RXEN task.
  */
-#define HAL_RADIO_ENABLE_ON_TICK_PPI 0
+#define HAL_RADIO_ENABLE_ON_TICK_PPI 6
 #define HAL_RADIO_ENABLE_TX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
 #define HAL_RADIO_ENABLE_RX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
 
@@ -54,8 +55,7 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 		}
 	}
 
-	nrf_dppi_channels_enable(
-		NRF_DPPIC, BIT(HAL_RADIO_ENABLE_ON_TICK_PPI));
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(HAL_RADIO_ENABLE_ON_TICK_PPI));
 }
 
 /*******************************************************************************
@@ -63,7 +63,7 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
  * wire the RADIO EVENTS_ADDRESS event to the
  * EVENT_TIMER TASKS_CAPTURE[<address timer>] task.
  */
-#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 3
+#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 9
 
 static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
 {
@@ -78,7 +78,7 @@ static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
  * wire the EVENT_TIMER EVENTS_COMPARE[<HCTO timer>] event
  * to the RADIO TASKS_DISABLE task.
  */
-#define HAL_RADIO_DISABLE_ON_HCTO_PPI 4
+#define HAL_RADIO_DISABLE_ON_HCTO_PPI 10
 
 static inline void hal_radio_disable_on_hcto_ppi_config(void)
 {
@@ -93,7 +93,7 @@ static inline void hal_radio_disable_on_hcto_ppi_config(void)
  * wire the RADIO EVENTS_END event to the
  * EVENT_TIMER TASKS_CAPTURE[<radio end timer>] task.
  */
-#define HAL_RADIO_END_TIME_CAPTURE_PPI 5
+#define HAL_RADIO_END_TIME_CAPTURE_PPI 11
 
 static inline void hal_radio_end_time_capture_ppi_config(void)
 {
@@ -106,7 +106,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
  * Start event timer on RTC tick:
  * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
  */
-#define HAL_EVENT_TIMER_START_PPI 1
+#define HAL_EVENT_TIMER_START_PPI 7
 
 static inline void hal_event_timer_start_ppi_config(void)
 {
@@ -119,7 +119,7 @@ static inline void hal_event_timer_start_ppi_config(void)
  * wire the RADIO EVENTS_READY event to the
  * EVENT_TIMER TASKS_CAPTURE[<radio ready timer>] task.
  */
-#define HAL_RADIO_READY_TIME_CAPTURE_PPI 2
+#define HAL_RADIO_READY_TIME_CAPTURE_PPI 8
 
 static inline void hal_radio_ready_time_capture_ppi_config(void)
 {
@@ -149,7 +149,7 @@ static inline void hal_trigger_crypt_ppi_config(void)
  * Trigger automatic address resolution on Bit counter match:
  * wire the RADIO EVENTS_BCMATCH event to the AAR TASKS_START task.
  */
-#define HAL_TRIGGER_AAR_PPI 6
+#define HAL_TRIGGER_AAR_PPI 12
 
 static inline void hal_trigger_aar_ppi_config(void)
 {
@@ -169,6 +169,110 @@ static inline void hal_trigger_rateoverride_ppi_config(void)
 }
 
 /******************************************************************************/
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+
+#define HAL_ENABLE_PALNA_PPI 5
+
+#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+#define HAL_DISABLE_PALNA_PPI 4
+#else
+#define HAL_DISABLE_PALNA_PPI HAL_ENABLE_PALNA_PPI
+#endif
+
+static inline void hal_palna_ppi_setup(void)
+{
+	nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE2,
+			      HAL_ENABLE_PALNA_PPI);
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_DISABLED,
+			      HAL_DISABLE_PALNA_PPI);
+
+#if !defined(CONFIG_BT_CTLR_FEM_NRF21540)
+	nrf_gpiote_task_t task;
+
+	task = nrf_gpiote_out_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
+#endif
+}
+
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
+/******************************************************************************/
+#if defined(CONFIG_BT_CTLR_FEM_NRF21540)
+
+static inline void hal_pa_ppi_setup(void)
+{
+	nrf_gpiote_task_t task;
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
+	task = nrf_gpiote_clr_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
+	task = nrf_gpiote_set_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
+#else /* !CONFIG_BT_CTLR_GPIO_PA_POL_INV */
+	task = nrf_gpiote_set_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
+	task = nrf_gpiote_clr_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
+#endif /* !CONFIG_BT_CTLR_GPIO_PA_POL_INV */
+}
+
+static inline void hal_lna_ppi_setup(void)
+{
+	nrf_gpiote_task_t task;
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
+	task = nrf_gpiote_clr_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
+	task = nrf_gpiote_set_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
+#else /* !CONFIG_BT_CTLR_GPIO_LNA_POL_INV */
+	task = nrf_gpiote_set_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_PALNA_PPI);
+	task = nrf_gpiote_clr_task_get(CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_PALNA_PPI);
+#endif /* !CONFIG_BT_CTLR_GPIO_LNA_POL_INV */
+}
+
+#define HAL_ENABLE_FEM_PPI 3
+#define HAL_DISABLE_FEM_PPI HAL_DISABLE_PALNA_PPI
+
+static inline void hal_fem_ppi_setup(void)
+{
+	nrf_gpiote_task_t task;
+
+	nrf_timer_publish_set(EVENT_TIMER, NRF_TIMER_EVENT_COMPARE3,
+			      HAL_ENABLE_FEM_PPI);
+	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_DISABLED,
+			      HAL_DISABLE_FEM_PPI);
+
+#if defined(CONFIG_BT_CTLR_GPIO_PDN_POL_INV)
+	task = nrf_gpiote_clr_task_get(CONFIG_BT_CTLR_PDN_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
+	task = nrf_gpiote_set_task_get(CONFIG_BT_CTLR_PDN_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
+#else /* !CONFIG_BT_CTLR_GPIO_PDN_POL_INV */
+	task = nrf_gpiote_set_task_get(CONFIG_BT_CTLR_PDN_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
+	task = nrf_gpiote_clr_task_get(CONFIG_BT_CTLR_PDN_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
+#endif /* !CONFIG_BT_CTLR_GPIO_PDN_POL_INV */
+
+#if defined(CONFIG_BT_CTLR_GPIO_CSN_POL_INV)
+	task = nrf_gpiote_clr_task_get(CONFIG_BT_CTLR_CSN_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
+	task = nrf_gpiote_set_task_get(CONFIG_BT_CTLR_CSN_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
+#else /* !CONFIG_BT_CTLR_GPIO_CSN_POL_INV */
+	task = nrf_gpiote_set_task_get(CONFIG_BT_CTLR_CSN_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_ENABLE_FEM_PPI);
+	task = nrf_gpiote_clr_task_get(CONFIG_BT_CTLR_CSN_GPIOTE_CHAN);
+	nrf_gpiote_subscribe_set(NRF_GPIOTE, task, HAL_DISABLE_FEM_PPI);
+#endif /* !CONFIG_BT_CTLR_GPIO_CSN_POL_INV */
+}
+
+#endif /* CONFIG_BT_CTLR_FEM_NRF21540 */
+
+/******************************************************************************/
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 /* DPPI setup used for SW-based auto-switching during TIFS. */
 
@@ -185,35 +289,42 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_END, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
 	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
 				NRF_TIMER_TASK_CLEAR, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
+
+	/* NOTE: nRF5340 shares the DPPI channel being triggered by Radio End,
+	 *       for End time capture and sw_switch DPPI channel toggling, hence
+	 *       always need to capture End time.
+	 */
+	nrf_dppi_channels_enable(NRF_DPPIC,
+				 BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
 }
 
 /* The 2 adjacent PPI groups used for implementing SW_SWITCH_TIMER-based
  * auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_TASK_GROUP(index) \
-	(SW_SWITCH_TIMER_TASK_GROUP_BASE + index)
+	(SW_SWITCH_TIMER_TASK_GROUP_BASE + (index))
 
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_BASE + (index))
 
 /* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
  * SW_SWITCH_TIMER-based auto-switch for TIFS, when receiving on LE Coded
  * PHY. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
-	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + (index))
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
  * 2 adjacent PPIs (8 & 9) and 2 adjacent PPI groups are used for this wiring;
  * <index> must be 0 or 1. <offset> must be a valid TIMER CC register offset.
  */
-#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 8
+#define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE 14
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(index) \
-	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE + (index))
 
 #define HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(cc_offset) \
 	SW_SWITCH_TIMER->PUBLISH_COMPARE[cc_offset]
@@ -266,14 +377,14 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
  * We use the same PPI for the alternative SW Switch Timer compare
  * event.
  */
-#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 8
+#define HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE 14
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE + (index))
 
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE \
 	HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE
 #define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
-	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + index)
+	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + (index))
 
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(cc_offset) \
 	SW_SWITCH_TIMER->PUBLISH_COMPARE[cc_offset]
@@ -340,11 +451,8 @@ static inline void hal_radio_sw_switch_setup(
 	    HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_TASK;
 
 	/* We need to un-subscribe the other group from the PPI channel. */
-	if (ppi_group_index == 0) {
-		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(1)	= 0;
-	} else if (ppi_group_index == 1) {
-		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(0)	= 0;
-	}
+	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_TASK(
+		(ppi_group_index + 1) & 0x01) = 0;
 
 	/* Wire SW Switch timer event <compare_reg> to the
 	 * PPI[<radio_enable_ppi>] for enabling Radio. Do
@@ -359,6 +467,21 @@ static inline void hal_radio_sw_switch_setup(
 static inline void hal_radio_txen_on_sw_switch(uint8_t ppi)
 {
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, ppi);
+}
+
+static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t ppi)
+{
+	/* NOTE: Calling radio_tmr_start/radio_tmr_start_us/radio_tmr_start_now
+	 *       after the radio_switch_complete_and_b2b_tx() call would have
+	 *       changed the PPI channel to HAL_RADIO_ENABLE_ON_TICK_PPI as we
+	 *       cannot double buffer the subscribe buffer. Hence, lets have
+	 *       both DPPI channel enabled (other one was enabled by the DPPI
+	 *       group when the Radio End occurred) so that when both timer
+	 *       trigger one of the DPPI is correct in the radio tx
+	 *       subscription.
+	 */
+	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, ppi);
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(ppi));
 }
 
 static inline void hal_radio_rxen_on_sw_switch(uint8_t ppi)
@@ -416,7 +539,7 @@ static inline void hal_radio_sw_switch_coded_tx_config_set(uint8_t ppi_en,
 		HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK;
 
 	nrf_dppi_channels_enable(NRF_DPPIC,
-		BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
+				 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI));
 }
 
 static inline void hal_radio_sw_switch_coded_config_clear(uint8_t ppi_en,
@@ -525,7 +648,8 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
 	 BIT(HAL_TRIGGER_CRYPT_PPI) | \
 	 BIT(HAL_TRIGGER_AAR_PPI) | \
 	 HAL_USED_PPI_CHANNELS_2 | HAL_USED_PPI_CHANNELS_3 | \
-	 HAL_USED_PPI_CHANNELS_4 | HAL_USED_PPI_CHANNELS_5)
+	 HAL_USED_PPI_CHANNELS_4 | HAL_USED_PPI_CHANNELS_5 | \
+	 HAL_USED_PPI_CHANNELS_6)
 
 #if defined(HAL_TRIGGER_RATEOVERRIDE_PPI)
 #define HAL_USED_PPI_CHANNELS_2 \
@@ -561,6 +685,14 @@ static inline void hal_radio_group_task_disable_ppi_setup(void)
 	 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI))
 #else
 #define HAL_USED_PPI_CHANNELS_5 0
+#endif
+
+#if defined(HAL_ENABLE_FEM_PPI)
+#define HAL_USED_PPI_CHANNELS_6 \
+	(BIT(HAL_ENABLE_FEM_PPI) | \
+	 BIT(HAL_DISABLE_FEM_PPI))
+#else
+#define HAL_USED_PPI_CHANNELS_6 0
 #endif
 
 BUILD_ASSERT(

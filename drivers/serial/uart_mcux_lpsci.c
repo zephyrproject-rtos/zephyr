@@ -317,7 +317,7 @@ static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {	\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &mcux_lpsci_init,				\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &mcux_lpsci_##n##_data,			\
 			    &mcux_lpsci_##n##_config,			\
 			    PRE_KERNEL_1,				\

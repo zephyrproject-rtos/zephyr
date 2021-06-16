@@ -17,10 +17,12 @@ flash: 65536
 supported:
   - arduino_gpio
   - arduino_i2c
+  - arduino_serial
   - arduino_spi
   - counter
   - dma
   - gpio
   - hwinfo
   - i2c
+  - i2s
   - spi

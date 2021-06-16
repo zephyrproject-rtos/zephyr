@@ -327,7 +327,7 @@ static void ipcp_set_dns_servers(struct ppp_fsm *fsm)
 		(struct sockaddr *) &dns2,
 		NULL
 	};
-	int i, ret;
+	int ret;
 
 	if (!dns1.sin_addr.s_addr) {
 		return;
@@ -338,16 +338,7 @@ static void ipcp_set_dns_servers(struct ppp_fsm *fsm)
 	}
 
 	dnsctx = dns_resolve_get_default();
-	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
-		if (!dnsctx->queries[i].cb) {
-			continue;
-		}
-
-		dns_resolve_cancel(dnsctx, dnsctx->queries[i].id);
-	}
-	dns_resolve_close(dnsctx);
-
-	ret = dns_resolve_init(dnsctx, NULL, dns_servers);
+	ret = dns_resolve_reconfigure(dnsctx, NULL, dns_servers);
 	if (ret < 0) {
 		NET_ERR("Could not set DNS servers");
 		return;

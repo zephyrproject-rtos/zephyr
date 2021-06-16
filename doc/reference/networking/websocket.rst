@@ -75,4 +75,3 @@ API Reference
 *************
 
 .. doxygengroup:: websocket
-   :project: Zephyr

@@ -634,8 +634,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		 * but the listener might have a specific protocol set. This is ok
 		 * and let the packet pass this check in this case.
 		 */
-		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) ||
-		    IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
+		if ((IS_ENABLED(CONFIG_NET_SOCKETS_PACKET_DGRAM) ||
+		     IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) &&
+		    net_pkt_family(pkt) == AF_PACKET) {
 			if ((conn->proto != proto) && (proto != ETH_P_ALL) &&
 				(proto != IPPROTO_RAW)) {
 				continue;
@@ -775,8 +776,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		}
 	}
 
-	if ((is_mcast_pkt && mcast_pkt_delivered) || raw_pkt_delivered ||
-		raw_pkt_continue) {
+	if ((is_mcast_pkt && mcast_pkt_delivered) ||
+	    (net_pkt_family(pkt) == AF_PACKET && (raw_pkt_delivered ||
+						  raw_pkt_continue))) {
 		if (raw_pkt_continue) {
 			/* When there is open connection different than
 			 * AF_PACKET this packet shall be also handled in

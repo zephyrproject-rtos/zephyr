@@ -25,6 +25,22 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_ISO
   iso.c
   )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_VCS
+  vcs.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_VCS_CLIENT
+  vcs_client.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_MICS
+  mics.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_MICS_CLIENT
+  mics_client.c
+  )
 
 if(CONFIG_BT_CTLR AND CONFIG_BT_LL_SW_SPLIT)
   zephyr_library_sources(

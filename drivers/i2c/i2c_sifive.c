@@ -331,7 +331,7 @@ static struct i2c_driver_api i2c_sifive_api = {
 	}; \
 	DEVICE_DT_INST_DEFINE(n, \
 			    i2c_sifive_init, \
-			    device_pm_control_nop, \
+			    NULL, \
 			    NULL, \
 			    &i2c_sifive_cfg_##n, \
 			    POST_KERNEL, \

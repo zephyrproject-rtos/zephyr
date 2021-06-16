@@ -17,6 +17,7 @@ extern "C" {
 #include "ots_olcp_internal.h"
 
 /** Maximum size of the Directory Listing Object Record. Table 4.1 in the OTS spec. */
+#define DIR_LIST_OBJ_RECORD_MIN_SIZE       13
 #define DIR_LIST_OBJ_RECORD_MAX_SIZE       172
 #define DIR_LIST_MAX_SIZE (DIR_LIST_OBJ_RECORD_MAX_SIZE * CONFIG_BT_OTS_MAX_OBJ_CNT)
 

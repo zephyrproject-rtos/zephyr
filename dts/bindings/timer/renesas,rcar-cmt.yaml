@@ -1,0 +1,23 @@
+description: Renesas R-Car CMT timer
+
+compatible: "renesas,rcar-cmt"
+
+include: base.yaml
+
+properties:
+    label:
+      required: true
+
+    reg:
+      required: true
+
+    clock-frequency:
+      type: int
+      required: true
+      description: Clock frequency information for Timer operation
+
+    clocks:
+      required: true
+
+    interrupts:
+      required: true

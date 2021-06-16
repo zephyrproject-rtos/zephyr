@@ -15,10 +15,11 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		usbd0 = &usb1;
 	};
 
 	chosen {
-		zephyr,sram = &dtcm;
+		zephyr,sram = &ocram;
 		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;

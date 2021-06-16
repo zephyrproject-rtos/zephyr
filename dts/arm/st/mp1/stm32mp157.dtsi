@@ -172,9 +172,9 @@
 			label = "SPI_1";
 		};
 
-		spi2: spi@4400b000 {
+		spi2: spi@4000b000 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
-			reg = <0x4400b000 0x400>;
+			reg = <0x4000b000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x800>;
@@ -182,9 +182,9 @@
 			label = "SPI_2";
 		};
 
-		spi3: spi@4400c000 {
+		spi3: spi@4000c000 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
-			reg = <0x4400c000 0x400>;
+			reg = <0x4000c000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x1000>;

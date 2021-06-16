@@ -371,7 +371,7 @@ static void start_ble_rf(void)
 		LL_RCC_ReleaseBackupDomainReset();
 	}
 
-#ifdef CONFIG_CLOCK_STM32_LSE
+#if STM32_LSE_CLOCK
 	/* Select LSE clock */
 	LL_RCC_LSE_Enable();
 	while (!LL_RCC_LSE_IsReady()) {

@@ -789,7 +789,7 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 	static struct i2c_sam0_dev_data i2c_sam0_dev_data_##n;		\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    &i2c_sam0_initialize,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &i2c_sam0_dev_data_##n,			\
 			    &i2c_sam0_dev_config_##n, POST_KERNEL,	\
 			    CONFIG_I2C_INIT_PRIORITY,			\

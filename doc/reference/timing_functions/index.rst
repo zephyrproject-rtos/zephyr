@@ -78,4 +78,3 @@ API documentation
 *****************
 
 .. doxygengroup:: timing_api
-   :project: Zephyr

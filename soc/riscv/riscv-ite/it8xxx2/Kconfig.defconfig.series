@@ -18,7 +18,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 if ITE_IT8XXX2_INTC
 config NUM_IRQS
-	default 162
+	default 185
 
 config DYNAMIC_INTERRUPTS
 	default y

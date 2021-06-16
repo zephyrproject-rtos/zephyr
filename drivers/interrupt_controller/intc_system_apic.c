@@ -17,6 +17,7 @@
 #include <drivers/interrupt_controller/loapic.h>
 #include <drivers/interrupt_controller/sysapic.h>
 #include <irq.h>
+#include <linker/sections.h>
 
 #define IS_IOAPIC_IRQ(irq)  (irq < z_loapic_irq_base())
 #define HARDWARE_IRQ_LIMIT ((z_loapic_irq_base() + LOAPIC_IRQ_COUNT) - 1)
@@ -43,6 +44,7 @@
  * @param flags interrupt flags
  *
  */
+__boot_func
 void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
 				 uint32_t flags)
 {
@@ -72,6 +74,7 @@ void z_irq_controller_irq_config(unsigned int vector, unsigned int irq,
  *
  * @return N/A
  */
+__pinned_func
 void arch_irq_enable(unsigned int irq)
 {
 	if (IS_IOAPIC_IRQ(irq)) {
@@ -92,6 +95,7 @@ void arch_irq_enable(unsigned int irq)
  *
  * @return N/A
  */
+__pinned_func
 void arch_irq_disable(unsigned int irq)
 {
 	if (IS_IOAPIC_IRQ(irq)) {

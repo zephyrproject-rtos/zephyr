@@ -1,9 +1,27 @@
 # SPDX-License-Identifier: Apache-2.0
 
-find_program(CMAKE_LINKER     ${CROSS_COMPILE}ld      PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+if(DEFINED TOOLCHAIN_HOME)
+  # When Toolchain home is defined, then we are cross-compiling, so only look
+  # for linker in that path, else we are using host tools.
+  set(LD_SEARCH_PATH PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+endif()
+
+find_program(CMAKE_LINKER ${CROSS_COMPILE}ld.bfd ${LD_SEARCH_PATH})
+if(NOT CMAKE_LINKER)
+  find_program(CMAKE_LINKER ${CROSS_COMPILE}ld ${LD_SEARCH_PATH})
+endif()
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
+if(CONFIG_EXCEPTIONS)
+  # When building with C++ Exceptions, it is important that crtbegin and crtend
+  # are linked at specific locations.
+  # The location is so important that we cannot let this be controlled by normal
+  # link libraries, instead we must control the link command specifically as
+  # part of toolchain.
+  set(CMAKE_CXX_LINK_EXECUTABLE
+      "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> ${LIBGCC_DIR}/crtbegin.o <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${LIBGCC_DIR}/crtend.o")
+endif()
 
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
@@ -82,9 +100,15 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
+  if(${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd")
+    # ld.bfd was found so let's explicitly use that for linking, see #32237
+    set(use_linker "-fuse-ld=bfd")
+  endif()
+
   target_link_libraries(
     ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
+    ${use_linker}
     ${TOPT}
     ${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
     ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}

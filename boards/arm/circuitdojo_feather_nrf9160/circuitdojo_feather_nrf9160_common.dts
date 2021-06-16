@@ -41,6 +41,7 @@
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		led0 = &blue_led;
+		bootloader-led0 = &blue_led;
 		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 	};
@@ -108,13 +109,20 @@
 &i2c1 {
 	compatible = "nordic,nrf-twim";
 	status = "okay";
-	sda-gpios = <&gpio0 26 0>;
-	scl-gpios = <&gpio0 27 0>;
+	sda-pin = <26>;
+	scl-pin = <27>;
 
 	pcf85063a@51 {
-			compatible = "nxp,pcf85063a";
-			label = "PCF85063A";
-			reg = <0x51>;
+		compatible = "nxp,pcf85063a";
+		label = "PCF85063A";
+		reg = <0x51>;
+	};
+
+	lis2dh@18 {
+		compatible = "st,lis2dh";
+		label = "LIS2DH";
+		reg = <0x18>;
+		irq-gpios = <&gpio0 29 0>;
 	};
 
 };
@@ -127,22 +135,22 @@
 &spi3 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
-	sck-pin = <11>;
-	mosi-pin = <9>;
-	miso-pin = <28>;
-	cs-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
-	w25q16jv: w25q16jv@0 {
+	sck-pin = < 11 >;
+	mosi-pin = < 9 >;
+	miso-pin = < 28 >;
+	cs-gpios = < &gpio0 7 GPIO_ACTIVE_LOW >;
+	w25q32jv: w25q32jv@0 {
 		compatible = "jedec,spi-nor";
-		label = "W25Q16JV";
-		reg = <0>;
-		spi-max-frequency = <40000000>;
-		wp-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
-		hold-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
-		size = <0x1000000>;
+		label = "W25Q32JV";
+		reg = < 0 >;
+		spi-max-frequency = < 40000000 >;
+		wp-gpios = < &gpio0 8 GPIO_ACTIVE_LOW >;
+		hold-gpios = < &gpio0 10 GPIO_ACTIVE_LOW >;
+		size = < 0x2000000 >;
 		has-dpd;
-		t-enter-dpd = <4000>;
-		t-exit-dpd = <25000>;
-		jedec-id = [ef 40 15];
+		t-enter-dpd = < 3000 >;
+		t-exit-dpd = < 30000 >;
+		jedec-id = [ ef 40 16  ];
 	};
 };
 

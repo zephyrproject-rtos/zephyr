@@ -71,7 +71,7 @@ config ETH_MCUX_HW_ACCELERATION
 config PTP_CLOCK_MCUX
 	bool "MCUX PTP clock driver support"
 	default y
-	depends on PTP_CLOCK && NET_PKT_TIMESTAMP
+	depends on PTP_CLOCK || (NET_PKT_TIMESTAMP && NET_GPTP)
 	help
 	  Enable MCUX PTP clock support.
 

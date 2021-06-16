@@ -7,6 +7,7 @@
 #include <arch/cpu.h>
 #include <errno.h>
 #include <stdio.h>
+#include <sys/__assert.h>
 #include <sys/stat.h>
 #include <linker/linker-defs.h>
 #include <sys/util.h>
@@ -16,7 +17,9 @@
 #include <app_memory/app_memdomain.h>
 #include <init.h>
 #include <sys/sem.h>
+#include <sys/mutex.h>
 #include <sys/mem_manage.h>
+#include <sys/time.h>
 
 #define LIBC_BSS	K_APP_BMEM(z_libc_partition)
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
@@ -93,11 +96,11 @@
 	#endif /* CONFIG_XTENSA */
 #endif
 
-#ifdef USE_MALLOC_PREPARE
 static int malloc_prepare(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
+#ifdef USE_MALLOC_PREPARE
 #ifdef CONFIG_MMU
 	max_heap_size = MIN(CONFIG_NEWLIB_LIBC_MAX_MAPPED_REGION_SIZE,
 			    k_mem_free_get());
@@ -109,16 +112,27 @@ static int malloc_prepare(const struct device *unused)
 
 	}
 #endif /* CONFIG_MMU */
+
 #ifdef Z_MALLOC_PARTITION_EXISTS
 	z_malloc_partition.start = (uintptr_t)HEAP_BASE;
 	z_malloc_partition.size = (size_t)MAX_HEAP_SIZE;
 	z_malloc_partition.attr = K_MEM_PARTITION_P_RW_U_RW;
 #endif /* Z_MALLOC_PARTITION_EXISTS */
+#endif /* USE_MALLOC_PREPARE */
+
+	/*
+	 * Validate that the memory space available for the newlib heap is
+	 * greater than the minimum required size.
+	 */
+	__ASSERT(MAX_HEAP_SIZE >= CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE,
+		 "memory space available for newlib heap is less than the "
+		 "minimum required size specified by "
+		 "CONFIG_NEWLIB_LIBC_MIN_REQUIRED_HEAP_SIZE");
+
 	return 0;
 }
 
 SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-#endif /* USE_MALLOC_PREPARE */
 
 /* Current offset from HEAP_BASE of unused memory */
 LIBC_BSS static size_t heap_sz;
@@ -267,14 +281,10 @@ __weak void _exit(int status)
 	}
 }
 
-static LIBC_DATA SYS_SEM_DEFINE(heap_sem, 1, 1);
-
 void *_sbrk(intptr_t count)
 {
 	void *ret, *ptr;
 
-	/* coverity[CHECKED_RETURN] */
-	sys_sem_take(&heap_sem, K_FOREVER);
 	ptr = ((char *)HEAP_BASE) + heap_sz;
 
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
@@ -284,12 +294,21 @@ void *_sbrk(intptr_t count)
 		ret = (void *)-1;
 	}
 
-	/* coverity[CHECKED_RETURN] */
-	sys_sem_give(&heap_sem);
-
 	return ret;
 }
 __weak FUNC_ALIAS(_sbrk, sbrk, void *);
+
+static LIBC_DATA SYS_MUTEX_DEFINE(heap_mutex);
+
+void __malloc_lock(struct _reent *reent)
+{
+	sys_mutex_lock(&heap_mutex, K_FOREVER);
+}
+
+void __malloc_unlock(struct _reent *reent)
+{
+	sys_mutex_unlock(&heap_mutex);
+}
 
 __weak int *__errno(void)
 {
@@ -396,12 +415,7 @@ void *_sbrk_r(struct _reent *r, int count)
 }
 #endif /* CONFIG_XTENSA */
 
-struct timeval;
-
 int _gettimeofday(struct timeval *__tp, void *__tzp)
 {
-	ARG_UNUSED(__tp);
-	ARG_UNUSED(__tzp);
-
-	return -1;
+	return gettimeofday(__tp, __tzp);
 }

@@ -231,6 +231,7 @@ To run Zephyr Binary using J-Link create the following script in order to
 get the Program Counter and Stack Pointer from zephyr.bin.
 
 get-pc-sp.sh:
+
 .. code-block:: console
 
    #!/bin/sh
@@ -245,6 +246,7 @@ get-pc-sp.sh:
 
 
 Get the SP and PC from firmware binary: ``./get-pc-sp.sh zephyr.bin``
+
 .. code-block:: console
 
    pc=00900f01

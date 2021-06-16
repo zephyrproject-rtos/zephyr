@@ -87,7 +87,7 @@ on its behalf, it raises an interrupt. When a thread does an operation that is
 not handled by the serial flow of the software itself, it raises an exception.
 Both, interrupts and exceptions, pass control to a handler. The handler is
 known as an :abbr:`ISR (Interrupt Service Routine)` in the case of
-interrupts. The handler perform the work required the exception or the
+interrupts. The handler performs the work required by the exception or the
 interrupt.  For interrupts, that work is device-specific. For exceptions, it
 depends on the exception, but most often the core kernel itself is responsible
 for providing the handler.
@@ -369,27 +369,6 @@ Cortex-M has the SYSTICK exception. Finally, ARCv2 has the timer0/1 device.
 Kernel timeouts are handled in the context of the system clock timer driver's
 interrupt handler.
 
-Tickless Idle
--------------
-
-The kernel has support for tickless idle. Tickless idle is the concept where no
-system clock timer interrupt is to be delivered to the CPU when the kernel is
-about to go idle and the closest timeout expiry is passed a certain threshold.
-When this condition happens, the system clock is reprogrammed far in the future
-instead of for a periodic tick. For this to work, the system clock timer driver
-must support it.
-
-Tickless idle is optional but strongly recommended to achieve low-power
-consumption.
-
-The kernel has built-in support for going into tickless idle.
-
-The system clock timer driver must implement some hooks to support tickless
-idle. See existing drivers for examples.
-
-The interrupt entry stub (:code:`_interrupt_enter`, :code:`_isr_wrapper`) needs
-to be adapted to handle exiting tickless idle. See examples in the code for
-existing architectures.
 
 Console Over Serial Line
 ========================
@@ -411,6 +390,10 @@ instructions or in a lock-less manner in modern processors. Those are thus
 expected to be implemented as part of an architecture port.
 
 * Atomic operators.
+
+  * If instructions do exist for a given architecture, the implementation is
+    configured using the :option:`CONFIG_ATOMIC_OPERATIONS_ARCH` Kconfig
+    option.
 
   * If instructions do not exist for a given architecture,
     a generic version that wraps :c:func:`irq_lock` or :c:func:`irq_unlock`
@@ -859,49 +842,40 @@ Timing
 ======
 
 .. doxygengroup:: arch-timing
-   :project: Zephyr
 
 Threads
 =======
 
 .. doxygengroup:: arch-threads
-   :project: Zephyr
 
 .. doxygengroup:: arch-tls
-   :project: Zephyr
 
 Power Management
 ================
 
 .. doxygengroup:: arch-pm
-   :project: Zephyr
 
 Symmetric Multi-Processing
 ==========================
 
 .. doxygengroup:: arch-smp
-   :project: Zephyr
 
 Interrupts
 ==========
 
 .. doxygengroup:: arch-irq
-   :project: Zephyr
 
 Userspace
 =========
 
 .. doxygengroup:: arch-userspace
-   :project: Zephyr
 
 Memory Management
 =================
 
 .. doxygengroup:: arch-mmu
-   :project: Zephyr
 
 Miscellaneous Architecture APIs
 ===============================
 
 .. doxygengroup:: arch-misc
-   :project: Zephyr

@@ -246,10 +246,9 @@ void stack_sentinel_swap(void *p1, void *p2, void *p3)
 	/* Test that stack overflow check due to swap works */
 	blow_up_stack();
 	TC_PRINT("swapping...\n");
-	z_swap_unlocked();
+	z_swap_irqlock(key);
 	TC_ERROR("should never see this\n");
 	rv = TC_FAIL;
-	irq_unlock(key);
 }
 
 void stack_hw_overflow(void *p1, void *p2, void *p3)

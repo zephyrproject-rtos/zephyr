@@ -108,7 +108,7 @@ static const struct ipm_driver_api ipm_nrf_driver_api = {
 	.set_enabled = ipm_nrf_set_enabled
 };
 
-DEVICE_DT_INST_DEFINE(0, ipm_nrf_init, device_pm_control_nop, NULL, NULL,
+DEVICE_DT_INST_DEFINE(0, ipm_nrf_init, NULL, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &ipm_nrf_driver_api);
 
@@ -226,7 +226,7 @@ static const struct ipm_driver_api vipm_nrf_##_idx##_driver_api = {	\
 };									\
 									\
 DEVICE_DEFINE(vipm_nrf_##_idx, "IPM_"#_idx,				\
-		    vipm_nrf_init, device_pm_control_nop, NULL, NULL,	\
+		    vipm_nrf_init, NULL, NULL, NULL,			\
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 		    &vipm_nrf_##_idx##_driver_api)
 

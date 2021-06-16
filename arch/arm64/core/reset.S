@@ -49,6 +49,9 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	/* Custom plat prep_c init */
 	bl	z_arm64_el3_plat_prep_c
 
+	/* Set SP_EL1 */
+	msr     sp_el1, x24
+
 	b	out
 2:
 	/* Disable alignment fault checking */
@@ -58,6 +61,9 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 
 	/* Custom plat prep_c init */
 	bl	z_arm64_el2_plat_prep_c
+
+	/* Set SP_EL1 */
+	msr     sp_el1, x24
 
 	b	out
 1:
@@ -69,6 +75,9 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset_prep_c)
 	/* Custom plat prep_c init */
 	bl	z_arm64_el1_plat_prep_c
 
+	/* Set SP_EL1. We cannot use sp_el1 at EL1 */
+	msr     SPSel, #1
+	mov     sp, x24
 out:
 	isb
 
@@ -106,7 +115,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/* loop until our turn comes */
 1:	dmb	ld
-	ldr	x2, [x0]
+	ldr	x2, [x0, #BOOT_PARAM_MPID_OFFSET]
 	cmp	x1, x2
 	bne	1b
 

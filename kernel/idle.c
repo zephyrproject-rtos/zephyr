@@ -9,12 +9,11 @@
 #include <linker/sections.h>
 #include <drivers/timer/system_timer.h>
 #include <wait_q.h>
-#include <power/power.h>
+#include <pm/pm.h>
 #include <stdbool.h>
 #include <logging/log.h>
 #include <ksched.h>
-
-extern uint32_t z_timestamp_idle;
+#include <kswap.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -68,9 +67,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	z_timestamp_idle = k_cycle_get_32();
-#endif
+	__ASSERT_NO_MSG(_current->base.prio >= 0);
 
 	while (true) {
 		/* SMP systems without a working IPI can't
@@ -101,14 +98,21 @@ void idle(void *unused1, void *unused2, void *unused3)
 			k_cpu_idle();
 		}
 
-		/* It is possible to (pathologically) configure the
-		 * idle thread to have a non-preemptible priority.
-		 * You might think this is an API bug, but we actually
-		 * have a test that exercises this.  Handle the edge
-		 * case when that happens.
+#if !defined(CONFIG_PREEMPT_ENABLED)
+# if !defined(CONFIG_USE_SWITCH) || defined(CONFIG_SPARC)
+		/* A legacy mess: the idle thread is by definition
+		 * preemptible as far as the modern scheduler is
+		 * concerned, but older platforms use
+		 * CONFIG_PREEMPT_ENABLED=n as an optimization hint
+		 * that interrupt exit always returns to the
+		 * interrupted context.  So in that setup we need to
+		 * explicitly yield in the idle thread otherwise
+		 * nothing else will run once it starts.
 		 */
-		if (K_IDLE_PRIO < 0) {
-			k_yield();
+		if (_kernel.ready_q.cache != _current) {
+			z_swap_unlocked();
 		}
+# endif
+#endif
 	}
 }

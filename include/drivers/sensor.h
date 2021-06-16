@@ -451,7 +451,7 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
  * driver.  It is currently up to the caller to ensure that the handler
  * does not overflow the stack.
  *
- * This API is not permitted for user threads.
+ * @funcprops \supervisor
  *
  * @param dev Pointer to the sensor device
  * @param trig The trigger to activate
@@ -646,6 +646,18 @@ static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
 static inline double sensor_value_to_double(struct sensor_value *val)
 {
 	return (double)val->val1 + (double)val->val2 / 1000000;
+}
+
+/**
+ * @brief Helper function for converting double to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param inp The converted value.
+ */
+static inline void sensor_value_from_double(struct sensor_value *val, double inp)
+{
+	val->val1 = (int32_t) inp;
+	val->val2 = (int32_t)(inp * 1000000) % 1000000;
 }
 
 /**

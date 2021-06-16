@@ -42,18 +42,6 @@ config BT_EATT_MAX
 	help
 	  Number of Enhanced ATT bearers available.
 
-config BT_EATT_RX_MTU
-	int "Maximum supported Enhanced ATT MTU for incoming data"
-	default 70
-	range 70 519
-	depends on BT_EATT
-	help
-	  Maximum size incoming PDUs on EATT bearers, value shall include L2CAP
-	  headers and SDU length, maximum is limited to 512 bytes payload, which
-	  is the maximum size for a GATT attribute, plus 1 byte for ATT opcode.
-	  This option influences the stack buffer size and by that may also
-	  limit the outgoing MTU.
-
 config BT_EATT_SEC_LEVEL
 	int "Enhanced ATT bearer security level"
 	default 1
@@ -66,6 +54,24 @@ config BT_EATT_SEC_LEVEL
 	  Level 4 (BT_SECURITY_L4) = Secure connection required
 
 endif # BT_EATT
+
+config BT_GATT_AUTO_SEC_REQ
+	bool "Automatic security re-establishment request as a peripheral"
+	default y
+	depends on BT_SMP
+	help
+	  This option requests security re-establishment automatically whenever
+	  a reconnection to a GATT client is established and
+	  there are notifiable or indicatable characteristics for which security
+	  is required. This configuration option only applies to the peripheral
+	  role, which sends a Security Request for this purpose.
+	  When disabled, it is the application's responsibility to call
+	  bt_conn_set_security() to re-establish security prior to sending any
+	  notifications or indications on the characteristics that require
+	  security (unless the central does that first).
+	  This option has been introduced to avoid interoperability issues with
+	  commercially available central devices that react negatively to
+	  receiving a Security Request immediately after reconnection.
 
 config BT_GATT_SERVICE_CHANGED
 	bool "GATT Service Changed support"

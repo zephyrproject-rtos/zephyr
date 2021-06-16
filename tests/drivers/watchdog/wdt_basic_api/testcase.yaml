@@ -8,8 +8,6 @@ tests:
     depends_on: watchdog
     tags: drivers watchdog
     filter: dt_compat_enabled("st,stm32-window-watchdog")
-    extra_configs:
-      - CONFIG_CLOCK_STM32_APB1_PRESCALER=16
   drivers.watchdog.mec15xxevb_assy6853:
     depends_on: watchdog
     tags: drivers watchdog

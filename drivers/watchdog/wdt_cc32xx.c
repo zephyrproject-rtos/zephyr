@@ -189,7 +189,7 @@ static const struct wdt_driver_api wdt_cc32xx_api = {
 	};									 \
 										 \
 	DEVICE_DT_INST_DEFINE(index,						 \
-			      &wdt_cc32xx_init, device_pm_control_nop,		 \
+			      &wdt_cc32xx_init, NULL,				 \
 			      &wdt_cc32xx_data_##index, &wdt_cc32xx_cfg_##index, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	 \
 			      &wdt_cc32xx_api);

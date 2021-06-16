@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2021 IoT.bzh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/gen3/rcar_gen3_cr7.dtsi>

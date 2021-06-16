@@ -227,7 +227,7 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg,
 }
 
 static int i2s_cavs_configure(const struct device *dev, enum i2s_dir dir,
-			      struct i2s_config *i2s_cfg)
+			      const struct i2s_config *i2s_cfg)
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
@@ -642,6 +642,10 @@ static int i2s_cavs_trigger(const struct device *dev, enum i2s_dir dir,
 	unsigned int key;
 	int ret = 0;
 
+	if (dir == I2S_DIR_BOTH) {
+		return -ENOSYS;
+	}
+
 	strm = (dir == I2S_DIR_TX) ? &dev_data->tx : &dev_data->rx;
 
 	key = irq_lock();
@@ -872,7 +876,7 @@ static const struct i2s_driver_api i2s_cavs_driver_api = {
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			i2s_cavs_initialize, device_pm_control_nop,	\
+			i2s_cavs_initialize, NULL,			\
 			&i2s_cavs_data_##n,				\
 			&i2s_cavs_config_##n,				\
 			POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,		\

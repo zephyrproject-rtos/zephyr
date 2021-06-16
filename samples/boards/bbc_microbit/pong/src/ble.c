@@ -25,10 +25,10 @@
 
 #define APPEARANCE       0
 
-#define PONG_SVC_UUID	0x90, 0x6c, 0x55, 0x0f, 0xee, 0x6f, 0x4d, 0x0d, \
-			0xa1, 0x7e, 0x24, 0x4e, 0x38, 0xea, 0x4f, 0xf9
-#define PONG_CHR_UUID	0xdd, 0x94, 0xaf, 0xd7, 0xcd, 0x2c, 0x40, 0xc6, \
-			0xb5, 0x82, 0x6a, 0xc5, 0x1c, 0x8f, 0xbf, 0xab
+#define PONG_SVC_UUID \
+	BT_UUID_128_ENCODE(0xf94fea38, 0x4e24, 0x7ea1, 0x0d4d, 0x6fee0f556c90)
+#define PONG_CHR_UUID \
+	BT_UUID_128_ENCODE(0xabbf8f1c, 0xc56a, 0x82b5, 0xc640, 0x2ccdd7af94dd)
 
 static struct bt_uuid_128 pong_svc_uuid = BT_UUID_INIT_128(PONG_SVC_UUID);
 static struct bt_uuid_128 pong_chr_uuid = BT_UUID_INIT_128(PONG_CHR_UUID);
@@ -49,7 +49,7 @@ static uint16_t remote_handle;
 static bool remote_ready;
 static bool initiator;
 
-static struct k_delayed_work ble_work;
+static struct k_work_delayable ble_work;
 
 static bool connect_canceled;
 
@@ -251,7 +251,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	printk("Connected\n");
 	ble_state = BLE_CONNECTED;
 
-	k_delayed_work_submit(&ble_work, K_NO_WAIT);
+	k_work_reschedule(&ble_work, K_NO_WAIT);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -284,38 +284,40 @@ void ble_connect(void)
 	}
 
 	ble_state = BLE_SCAN_START;
-	k_delayed_work_submit(&ble_work, K_NO_WAIT);
+	k_work_reschedule(&ble_work, K_NO_WAIT);
 }
 
 void ble_cancel_connect(void)
 {
 	printk("ble_cancel_connect()\n");
 
-	k_delayed_work_cancel(&ble_work);
-
 	switch (ble_state) {
-	case BLE_DISCONNECTED:
-		break;
 	case BLE_SCAN_START:
 		ble_state = BLE_DISCONNECTED;
+		__fallthrough;
+	case BLE_DISCONNECTED:
+		/* If this fails, the handler will run without doing anything,
+		 * as the switch case for BLE_DISCONNECTED is empty.
+		 */
+		k_work_cancel_delayable(&ble_work);
 		break;
 	case BLE_SCAN:
 		connect_canceled = true;
-		k_delayed_work_submit(&ble_work, K_NO_WAIT);
+		k_work_reschedule(&ble_work, K_NO_WAIT);
 		break;
 	case BLE_ADV_START:
 		ble_state = BLE_DISCONNECTED;
 		break;
 	case BLE_ADVERTISING:
 		connect_canceled = true;
-		k_delayed_work_submit(&ble_work, K_NO_WAIT);
+		k_work_reschedule(&ble_work, K_NO_WAIT);
 		break;
 	case BLE_CONNECT_CREATE:
 		ble_state = BLE_CONNECT_CANCEL;
 		__fallthrough;
 	case BLE_CONNECTED:
 		connect_canceled = true;
-		k_delayed_work_submit(&ble_work, K_NO_WAIT);
+		k_work_reschedule(&ble_work, K_NO_WAIT);
 		break;
 	case BLE_CONNECT_CANCEL:
 		break;
@@ -354,7 +356,7 @@ static void create_conn(const bt_addr_le_t *addr)
 	}
 
 	ble_state = BLE_CONNECT_CREATE;
-	k_delayed_work_submit(&ble_work, SCAN_TIMEOUT);
+	k_work_reschedule(&ble_work, SCAN_TIMEOUT);
 }
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
@@ -449,20 +451,20 @@ static void ble_timeout(struct k_work *work)
 
 		printk("Started scanning for devices\n");
 		ble_state = BLE_SCAN;
-		k_delayed_work_submit(&ble_work, SCAN_TIMEOUT);
+		k_work_reschedule(&ble_work, SCAN_TIMEOUT);
 		break;
 	case BLE_CONNECT_CREATE:
 		printk("Connection attempt timed out\n");
 		bt_conn_disconnect(default_conn,
 				   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		ble_state = BLE_ADV_START;
-		k_delayed_work_submit(&ble_work, K_NO_WAIT);
+		k_work_reschedule(&ble_work, K_NO_WAIT);
 		break;
 	case BLE_SCAN:
 		printk("No devices found during scan\n");
 		bt_le_scan_stop();
 		ble_state = BLE_ADV_START;
-		k_delayed_work_submit(&ble_work, K_NO_WAIT);
+		k_work_reschedule(&ble_work, K_NO_WAIT);
 		break;
 	case BLE_ADV_START:
 		err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad),
@@ -474,13 +476,13 @@ static void ble_timeout(struct k_work *work)
 
 		printk("Advertising successfully started\n");
 		ble_state = BLE_ADVERTISING;
-		k_delayed_work_submit(&ble_work, K_MSEC(adv_timeout()));
+		k_work_reschedule(&ble_work, K_MSEC(adv_timeout()));
 		break;
 	case BLE_ADVERTISING:
 		printk("Timed out advertising\n");
 		bt_le_adv_stop();
 		ble_state = BLE_SCAN_START;
-		k_delayed_work_submit(&ble_work, K_NO_WAIT);
+		k_work_reschedule(&ble_work, K_NO_WAIT);
 		break;
 	case BLE_CONNECTED:
 		discov_param.uuid = &pong_svc_uuid.uuid;
@@ -530,7 +532,7 @@ void ble_init(void)
 		return;
 	}
 
-	k_delayed_work_init(&ble_work, ble_timeout);
+	k_work_init_delayable(&ble_work, ble_timeout);
 
 	bt_conn_cb_register(&conn_callbacks);
 

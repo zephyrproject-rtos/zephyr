@@ -301,7 +301,7 @@ static const struct dummy_api net_arp_if_api = {
 #endif
 
 NET_DEVICE_INIT(net_arp_test, "net_arp_test",
-		net_arp_dev_init, device_pm_control_nop,
+		net_arp_dev_init, NULL,
 		&net_arp_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_arp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
@@ -344,7 +344,7 @@ void test_arp(void)
 
 	net_arp_init();
 
-	iface = net_if_get_default();
+	iface = net_if_lookup_by_dev(DEVICE_GET(net_arp_test));
 
 	net_if_ipv4_set_gw(iface, &gw);
 	net_if_ipv4_set_netmask(iface, &netmask);

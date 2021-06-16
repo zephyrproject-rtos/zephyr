@@ -14,7 +14,6 @@
 #include <ztest.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <ztest_error_hook.h>
 
 /**
  *
@@ -729,43 +728,46 @@ void test_sprintf_string(void)
 		     "sprintf(%%s) of REALLY_LONG_STRING doesn't match!\n");
 }
 
+
 /**
  *
  * @brief Test print function
  *
- * @see fprintf(), printf().
+ * @see printf().
  *
  */
-
 void test_print(void)
 {
-	int ret, i = 3;
-	FILE *p = NULL;
+	int ret;
 
-	ret = fprintf(stdout,  "%d", i);
-	zassert_equal(ret, 1, "fprintf failed!");
+	ret = printf("%d\n", 3);
+	zassert_equal(ret, 2, "printf failed!");
 
-	ret = fprintf(p,  "%d", i);
-	zassert_not_equal(ret, 1, "fprintf failed!");
-
-	ret = fprintf(stdout,  "", i);
-	zassert_not_equal(ret, 1, "fprintf failed!");
-
-	ret = printf("%d", 3);
-	zassert_equal(ret, 1, "printf failed!");
-
-	ret = printf("", 3);
-	zassert_not_equal(ret, 1, "printf failed!");
+	ret = printf("");
+	zassert_equal(ret, 0, "printf failed!");
 }
 
-void test_null_fprint(void)
+/**
+ *
+ * @brief Test fprintf function
+ *
+ * @see fprintf().
+ *
+ */
+void test_fprintf(void)
 {
 	int ret, i = 3;
 
-	ztest_set_fault_valid(true);
-	ret = fprintf(NULL,  "%d", i);
-	zassert_not_equal(ret, 1, "fprintf failed!");
+	ret = fprintf(stdout, "%d\n", i);
+	zassert_equal(ret, 2, "fprintf failed!");
+
+	ret = fprintf(stdout, "");
+	zassert_equal(ret, 0, "fprintf failed!");
+
+	ret = fprintf(NULL, "%d", i);
+	zassert_equal(ret, EOF, "fprintf failed!");
 }
+
 
 /**
  *
@@ -789,28 +791,23 @@ void test_vfprintf(void)
 {
 	int ret;
 
-	ret = WriteFrmtd_vf(stdout,  "This %0-d", 3);
-	zassert_equal(ret, 6, "vfprintf \"This 3\" failed");
+	ret = WriteFrmtd_vf(stdout, "This %0-d\n", 3);
+	zassert_equal(ret, 7, "vfprintf \"This 3\" failed");
 
-	ret = WriteFrmtd_vf(stdout,  "%999999999999ed", 3);
-	zassert_equal(ret, 15, "vfprintf \"3\" failed");
+	ret = WriteFrmtd_vf(stdout,  "%9d\n", 3);
+	zassert_equal(ret, 10, "vfprintf \"3\" failed");
 
-	ret = WriteFrmtd_vf(stdout,  "", 3);
-	zassert_equal(ret, 0, "vfprintf \"3\" failed");
+	ret = WriteFrmtd_vf(stdout, "");
+	zassert_equal(ret, 0, "vfprintf \"\" failed");
 
-	ret = WriteFrmtd_vf(stdout,  "/%%/%c/", 'a');
-	zassert_equal(ret, 5, "vfprintf \'a\' failed");
+	ret = WriteFrmtd_vf(stdout, "/%%/%c/\n", 'a');
+	zassert_equal(ret, 6, "vfprintf \'a\' failed");
 
-	ret = WriteFrmtd_vf(stdout,  "11", 'a');
-	zassert_equal(ret, 2, "vfprintf \'a\' failed");
-}
-
-void test_null_vfprintf(void)
-{
-	int ret;
+	ret = WriteFrmtd_vf(stdout,  "11\n");
+	zassert_equal(ret, 3, "vfprintf \"11\" failed");
 
 	ret = WriteFrmtd_vf(NULL,  "This %d", 3);
-	zassert_not_equal(ret, 6, "vfprintf \"This 3\" failed");
+	zassert_equal(ret, EOF, "vfprintf \"This 3\" failed");
 }
 
 /**
@@ -835,20 +832,20 @@ void test_vprintf(void)
 {
 	int ret;
 
-	ret = WriteFrmtd_v("This %d", 3);
-	zassert_equal(ret, 6, "vprintf \"This 3\" failed");
+	ret = WriteFrmtd_v("This %d\n", 3);
+	zassert_equal(ret, 7, "vprintf \"This 3\" failed");
 
-	ret = WriteFrmtd_v("%999999999999ed", 3);
-	zassert_equal(ret, 15, "vprintf \"3\" failed");
+	ret = WriteFrmtd_v("%9d\n", 3);
+	zassert_equal(ret, 10, "vprintf \"3\" failed");
 
-	ret = WriteFrmtd_v("", 3);
+	ret = WriteFrmtd_v("");
 	zassert_equal(ret, 0, "vprintf \"3\" failed");
 
-	ret = WriteFrmtd_v("/%%/%c/", 'a');
-	zassert_equal(ret, 5, "vprintf \'a\' failed");
+	ret = WriteFrmtd_v("/%%/%c/\n", 'a');
+	zassert_equal(ret, 6, "vprintf \'a\' failed");
 
-	ret = WriteFrmtd_v("11", 'a');
-	zassert_equal(ret, 2, "vprintf \'a\' failed");
+	ret = WriteFrmtd_v("11\n");
+	zassert_equal(ret, 3, "vprintf \"11\" failed");
 }
 
 /**
@@ -857,20 +854,18 @@ void test_vprintf(void)
  *
  * @see fputs(), puts(), fputc(), putc().
  */
-
 void test_put(void)
 {
 	int ret;
-	FILE *p = NULL;
 
-	ret = fputs("This 3", stdout);
+	ret = fputs("This 3\n", stdout);
 	zassert_equal(ret, 0, "fputs \"This 3\" failed");
 
-	ret = fputs("This 3", stderr);
+	ret = fputs("This 3\n", stderr);
 	zassert_equal(ret, 0, "fputs \"This 3\" failed");
 
-	ret = fputs("This 3", p);
-	zassert_not_equal(ret, 0, "fputs \"This 3\" failed");
+	ret = fputs("This 3", NULL);
+	zassert_equal(ret, EOF, "fputs \"This 3\" failed");
 
 	ret = puts("This 3");
 	zassert_equal(ret, 0, "puts \"This 3\" failed");
@@ -878,23 +873,20 @@ void test_put(void)
 	ret = fputc('T', stdout);
 	zassert_equal(ret, 84, "fputc \'T\' failed");
 
-	ret = fputc('T', p);
-	zassert_not_equal(ret, 84, "fputc \'T\' failed");
+	ret = fputc('T', NULL);
+	zassert_equal(ret, EOF, "fputc \'T\' failed");
 
 	ret = putc('T', stdout);
 	zassert_equal(ret, 84, "putc \'T\' failed");
 
-	ret = putc('T', p);
-	zassert_not_equal(ret, 84, "putc \'T\' failed");
+	ret = putc('T', NULL);
+	zassert_equal(ret, EOF, "putc \'T\' failed");
 
 	ret = fputc('T', stderr);
 	zassert_equal(ret, 84, "fputc \'T\' failed");
 
 	ret = fputc('T', stdin);
-	zassert_not_equal(ret, 84, "fputc \'T\' failed");
-
-	ret = fputc('T', p);
-	zassert_not_equal(ret, 84, "fputc \'T\' failed");
+	zassert_equal(ret, EOF, "fputc to stdin");
 }
 
 /**
@@ -902,7 +894,6 @@ void test_put(void)
  * @brief Test fwrite function
  *
  */
-
 void test_fwrite(void)
 {
 	int ret;
@@ -914,37 +905,19 @@ void test_fwrite(void)
 	zassert_equal(ret, 0, "fwrite failed!");
 
 	ret = fwrite("This 3", 4, 4, stdout);
-	zassert_not_equal(ret, 0, "fwrite failed!");
+	zassert_equal(ret, 4, "fwrite failed!");
 
 	ret = fwrite("This 3", 4, 4, stdin);
 	zassert_equal(ret, 0, "fwrite failed!");
 }
 
-void test_fwrite_err_size(void)
-{
-	int ret;
-
-	ztest_set_fault_valid(true);
-	ret = fwrite("This 3", -1, 0, stdout);
-	zassert_equal(ret, 0, "fwrite failed!");
-}
-
-void test_fwrite_err_item(void)
-{
-	int ret;
-
-	ztest_set_fault_valid(true);
-	ret = fwrite("This 3", 0, -1, stdout);
-	zassert_equal(ret, 0, "fwrite failed!");
-}
-
-
 /**
  *
- * @brief Test stdout_hook_default function
+ * @brief Test stdout_hook_default() function
  *
+ * @details When CONFIG_STDOUT_CONSOLE=n the default
+ * stdout hook function _stdout_hook_default() returns EOF.
  */
-
 void test_EOF(void)
 {
 	int ret;
@@ -959,7 +932,6 @@ void test_EOF(void)
 	zassert_equal(ret, EOF, "puts \"This 3\" failed");
 
 	ret = WriteFrmtd_vf(stdout, "This %d", 3);
-	printk("%d\n", ret);
 	zassert_equal(ret, EOF, "vfprintf \"3\" failed");
 }
 
@@ -978,10 +950,11 @@ void test_main(void)
 {
 #ifndef CONFIG_STDOUT_CONSOLE
 	ztest_test_suite(test_sprintf,
-			ztest_user_unit_test(test_EOF));
+			 ztest_user_unit_test(test_EOF));
 	ztest_run_test_suite(test_sprintf);
 #else
 	ztest_test_suite(test_sprintf,
+			 ztest_unit_test(test_sprintf_misc),
 			 ztest_unit_test(test_sprintf_double),
 			 ztest_unit_test(test_sprintf_integer),
 			 ztest_unit_test(test_vsprintf),
@@ -989,15 +962,11 @@ void test_main(void)
 			 ztest_unit_test(test_sprintf_string),
 			 ztest_unit_test(test_snprintf),
 			 ztest_unit_test(test_print),
-			 ztest_unit_test(test_null_fprint),
+			 ztest_unit_test(test_fprintf),
 			 ztest_unit_test(test_vfprintf),
-			 ztest_unit_test(test_null_vfprintf),
 			 ztest_unit_test(test_vprintf),
 			 ztest_user_unit_test(test_put),
-			 ztest_user_unit_test(test_fwrite),
-			 ztest_user_unit_test(test_fwrite_err_size),
-			 ztest_user_unit_test(test_fwrite_err_item),
-			 ztest_unit_test(test_sprintf_misc));
+			 ztest_user_unit_test(test_fwrite));
 	ztest_run_test_suite(test_sprintf);
 #endif
 }

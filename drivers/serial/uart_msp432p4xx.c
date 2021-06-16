@@ -359,7 +359,7 @@ static const struct uart_driver_api uart_msp432p4xx_driver_api = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-			uart_msp432p4xx_init, device_pm_control_nop,
+			uart_msp432p4xx_init, NULL,
 			&uart_msp432p4xx_dev_data_0,
 			&uart_msp432p4xx_dev_cfg_0,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

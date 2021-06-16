@@ -209,7 +209,7 @@ static int qdec_nrfx_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 
-	data->pm_state = DEVICE_PM_ACTIVE_STATE;
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
 #endif
 
 	return 0;
@@ -218,7 +218,7 @@ static int qdec_nrfx_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 
 static int qdec_nrfx_pm_get_state(struct qdec_nrfx_data *data,
-				  uint32_t                 *state)
+				  uint32_t *state)
 {
 	unsigned int key = irq_lock();
 	*state = data->pm_state;
@@ -228,7 +228,7 @@ static int qdec_nrfx_pm_get_state(struct qdec_nrfx_data *data,
 }
 
 static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
-				  uint32_t                  new_state)
+				  uint32_t new_state)
 {
 	uint32_t old_state;
 	unsigned int key;
@@ -242,18 +242,18 @@ static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
 		return 0;
 	}
 
-	if (old_state == DEVICE_PM_ACTIVE_STATE) {
+	if (old_state == PM_DEVICE_STATE_ACTIVE) {
 		/* device must be suspended */
 		nrfx_qdec_disable();
 		qdec_nrfx_gpio_ctrl(false);
 	}
 
-	if (new_state == DEVICE_PM_OFF_STATE) {
+	if (new_state == PM_DEVICE_STATE_OFF) {
 		/* device must be uninitialized */
 		nrfx_qdec_uninit();
 	}
 
-	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+	if (new_state == PM_DEVICE_STATE_ACTIVE) {
 		qdec_nrfx_gpio_ctrl(true);
 		nrfx_qdec_enable();
 	}
@@ -268,7 +268,7 @@ static int qdec_nrfx_pm_set_state(struct qdec_nrfx_data *data,
 
 static int qdec_nrfx_pm_control(const struct device *dev,
 				uint32_t ctrl_command,
-				void *context, device_pm_cb cb, void *arg)
+				uint32_t *state, pm_device_cb cb, void *arg)
 {
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 	int err;
@@ -276,12 +276,12 @@ static int qdec_nrfx_pm_control(const struct device *dev,
 	LOG_DBG("");
 
 	switch (ctrl_command) {
-	case DEVICE_PM_GET_POWER_STATE:
-		err = qdec_nrfx_pm_get_state(data, context);
+	case PM_DEVICE_STATE_GET:
+		err = qdec_nrfx_pm_get_state(data, state);
 		break;
 
-	case DEVICE_PM_SET_POWER_STATE:
-		err = qdec_nrfx_pm_set_state(data, *((uint32_t *)context));
+	case PM_DEVICE_STATE_SET:
+		err = qdec_nrfx_pm_set_state(data, *state);
 		break;
 
 	default:
@@ -290,7 +290,7 @@ static int qdec_nrfx_pm_control(const struct device *dev,
 	}
 
 	if (cb) {
-		cb(dev, err, context, arg);
+		cb(dev, err, state, arg);
 	}
 
 	return err;

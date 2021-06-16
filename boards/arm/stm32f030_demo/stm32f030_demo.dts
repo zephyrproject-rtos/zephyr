@@ -32,6 +32,25 @@
 	};
 };
 
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	prediv = <1>;
+	mul = <6>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(48)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
 /* Due to limited available memory, don't enable gpioc,d,e,f */
 &gpioc {status = "disabled";};
 &gpiod {status = "disabled";};

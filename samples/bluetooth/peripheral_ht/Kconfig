@@ -3,7 +3,7 @@
 
 mainmenu "Bluetooth: Peripheral HT"
 
-if SOC_FAMILY_NRF
+if HAS_HW_NRF_TEMP
 
 config SENSOR
 	default y
@@ -11,6 +11,6 @@ config SENSOR
 config TEMP_NRF5
 	default y
 
-endif # SOC_FAMILY_NRF
+endif # HAS_HW_NRF_TEMP
 
 source "Kconfig.zephyr"

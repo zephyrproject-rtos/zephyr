@@ -5,6 +5,14 @@ tests:
     platform_exclude: qemu_x86_64 qemu_cortex_m0 m2gl025_miv
     filter: CONFIG_PRINTK and not CONFIG_SOC_FAMILY_STM32
     tags: benchmark
+    harness: console
+    harness_config:
+      type: one_line
+      record:
+        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
 
 # Cortex-M has 24bit systick, so default 1 TICK per seconds
 # is achievable only if frequency is below 0x00FFFFFF (around 16MHz)
@@ -16,3 +24,10 @@ tests:
     tags: benchmark
     extra_configs:
       - CONFIG_SYS_CLOCK_TICKS_PER_SEC=20
+    harness: console
+    harness_config:
+      type: one_line
+      record:
+        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"

@@ -145,9 +145,9 @@ void main(void)
 
 	printk("fujitsu FRAM example application\n");
 
-	spi = device_get_binding(DT_LABEL(DT_ALIAS(spi_1)));
-	if (!spi) {
-		printk("Could not find SPI driver\n");
+	spi = DEVICE_DT_GET(DT_ALIAS(spi_1));
+	if (!device_is_ready(spi)) {
+		printk("SPI device %s is not ready\n", spi->name);
 		return;
 	}
 

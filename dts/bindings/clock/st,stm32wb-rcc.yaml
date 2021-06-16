@@ -1,0 +1,67 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32WB Reset and Clock controller node.
+  For more description confere st,stm32-rcc.yaml
+
+compatible: "st,stm32wb-rcc"
+
+include:
+  - name: st,stm32-rcc.yaml
+    property-blocklist:
+      - ahb-prescaler
+
+properties:
+    cpu1-prescaler:
+      type: int
+      required: false
+      enum:
+        - 1
+      description: |
+          CPU1 prescaler. Sets a HCLK1 frequency (feeding Cortex-M Systick)
+          lower than SYSCLK frequency (actual core frequency).
+          Zephyr doesn't make a difference today between these two clocks.
+          Changing this prescaler is not allowed until it is made possible to
+          use them independently in Zephyr clock subsystem.
+          HCLK1 clocks CPU1, AHB1, AHB2, AHB3 and SRAM1.
+
+    cpu2-prescaler:
+      type: int
+      required: false
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
+        - 256
+        - 512
+      description: |
+          CPU2 prescaler. Sets HCLK2 frequency which clocks CPU2.
+          (A.K.A C2HPRE)
+
+    ahb4-prescaler:
+      type: int
+      required: false
+      enum:
+        - 1
+        - 2
+        - 4
+        - 8
+        - 16
+        - 32
+        - 64
+        - 128
+        - 256
+        - 512
+      description: |
+          HCLK4 shared prescaler (AHB4, Flash memory and SRAM2).
+          (A.K.A SHDHPRE)
+
+clock-cells:
+  - bus
+  - bits

@@ -153,7 +153,7 @@ static const struct clock_control_driver_api mcux_ccm_driver_api = {
 
 DEVICE_DT_INST_DEFINE(0,
 		    &mcux_ccm_init,
-		    device_pm_control_nop,
+		    NULL,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_ccm_driver_api);

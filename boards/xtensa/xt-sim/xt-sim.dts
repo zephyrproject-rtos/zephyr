@@ -9,7 +9,7 @@
 
 / {
 	model = "xt-sim";
-	compatible = "xtensa,sample_controller";
+	compatible = "xtensa,sample-controller";
 
 	chosen {
 		zephyr,sram = &sram0;

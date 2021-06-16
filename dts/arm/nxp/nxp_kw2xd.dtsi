@@ -169,6 +169,19 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+
+			SPI1_PCS0_PTB10: spi1_pcs0_ptb10 {
+				nxp,kinetis-port-pins = < 10 2 >;
+			};
+			SPI1_SCK_PTB11: spi1_sck_ptb11 {
+				nxp,kinetis-port-pins = < 11 2 >;
+			};
+			SPI1_SOUT_PTB16: spi1_sout_ptb16 {
+				nxp,kinetis-port-pins = < 16 2 >;
+			};
+			SPI1_SIN_PTB17: spi1_sin_ptb17 {
+				nxp,kinetis-port-pins = < 17 2 >;
+			};
 		};
 
 		portc: pinmux@4004b000 {
@@ -264,6 +277,9 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			pinctrl-0 = <&SPI1_PCS0_PTB10 &SPI1_SCK_PTB11
+				     &SPI1_SOUT_PTB16 &SPI1_SIN_PTB17>;
 
 			mcr20a@0 {
 				compatible = "nxp,mcr20a";

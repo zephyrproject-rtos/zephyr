@@ -150,6 +150,10 @@ static void msg_free(struct log_msg *msg)
 			log_free((void *)(str));
 		}
 	} else {
+		/* Message does not contain any arguments that might be a transient
+		 * string. No action required.
+		 */
+		;
 	}
 
 	if (msg->hdr.params.generic.ext == 1) {

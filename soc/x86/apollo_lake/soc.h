@@ -23,7 +23,7 @@
 #include <random/rand32.h>
 #endif
 
-#ifdef CONFIG_GPIO_INTEL_APL
+#ifdef CONFIG_GPIO_INTEL
 #include "soc_gpio.h"
 #endif
 

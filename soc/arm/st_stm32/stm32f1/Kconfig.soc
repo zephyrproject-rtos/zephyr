@@ -10,11 +10,9 @@ choice
 
 config SOC_STM32F100XB
 	bool "STM32F100XB"
-	select SOC_STM32F10X_DENSITY_DEVICE
 
 config SOC_STM32F100XE
 	bool "STM32F100XE"
-	select SOC_STM32F10X_DENSITY_DEVICE
 
 config SOC_STM32F103XE
 	bool "STM32F103XE"
@@ -41,6 +39,7 @@ endchoice
 config SOC_STM32F10X_DENSITY_DEVICE
 	bool
 	help
+	  STM32F101xx, STM32F102xx, STM32F103xx:
 	  * Low density Value line devices
 	  * Medium density Value line devices
 	  * High density Value line devices

@@ -5,14 +5,12 @@
  */
 
  /* This partition table should be used along with TFM configuration:
+  * - TEST_S=OFF (NO REGRESSION)
   * - TFM_PSA_API=ON (IPC)
-  * - ISOLATION_LEVEL 2
-  * - TEST_S=ON (REGRESSION)
-  * - TEST_NS=OFF (By default)
   *
-  * In this configuration, TFM binary includes tests. As a consequence,
-  * its size is bloated and it is not possible to set secondary partitions
-  * for secured or non secured images.
+  * In this configuration, TFM binary does not include tests.
+  * The partition sizes are compatible with the TF-M platform
+  * flash_layout.h.
   */
 
 / {

@@ -7,6 +7,7 @@
 #include <tracing/tracing.h>
 #include <arch/cpu.h>
 
+__pinned_func
 void arch_cpu_idle(void)
 {
 	sys_trace_idle();
@@ -15,6 +16,7 @@ void arch_cpu_idle(void)
 	    "hlt\n\t");
 }
 
+__pinned_func
 void arch_cpu_atomic_idle(unsigned int key)
 {
 	sys_trace_idle();

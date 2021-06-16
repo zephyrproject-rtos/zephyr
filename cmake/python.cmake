@@ -13,7 +13,7 @@ set(PYTHON_MINIMUM_REQUIRED 3.6)
 
 # We are using foreach here, instead of find_program(PYTHON_EXECUTABLE_SYSTEM_DEFAULT "python" "python3")
 # cause just using find_program directly could result in a python2.7 as python, and not finding a valid python3.
-foreach(PYTHON_PREFER ${PYTHON_PREFER} "python" "python3")
+foreach(PYTHON_PREFER ${PYTHON_PREFER} ${WEST_PYTHON} "python" "python3")
   find_program(PYTHON_PREFER_EXECUTABLE ${PYTHON_PREFER})
   if(PYTHON_PREFER_EXECUTABLE)
       execute_process (COMMAND "${PYTHON_PREFER_EXECUTABLE}" -c

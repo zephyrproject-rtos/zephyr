@@ -23,7 +23,7 @@
 static void start_scan(void);
 
 static struct bt_conn *default_conn;
-static struct k_delayed_work iso_send_work;
+static struct k_work_delayable iso_send_work;
 static struct bt_iso_chan iso_chan;
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, CONFIG_BT_ISO_TX_MTU, NULL);
 
@@ -67,7 +67,7 @@ static void iso_timer_timeout(struct k_work *work)
 		printk("Failed to send ISO data (%d)\n", ret);
 	}
 
-	k_delayed_work_submit(&iso_send_work, K_MSEC(1000));
+	k_work_schedule(&iso_send_work, K_MSEC(1000));
 
 	len_to_send++;
 	if (len_to_send > ARRAY_SIZE(buf_data)) {
@@ -130,13 +130,13 @@ static void iso_connected(struct bt_iso_chan *chan)
 	printk("ISO Channel %p connected\n", chan);
 
 	/* Start send timer */
-	k_delayed_work_submit(&iso_send_work, K_MSEC(0));
+	k_work_schedule(&iso_send_work, K_MSEC(0));
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
-	k_delayed_work_cancel(&iso_send_work);
+	k_work_cancel_delayable(&iso_send_work);
 }
 
 static struct bt_iso_chan_ops iso_ops = {
@@ -246,5 +246,5 @@ void main(void)
 
 	start_scan();
 
-	k_delayed_work_init(&iso_send_work, iso_timer_timeout);
+	k_work_init_delayable(&iso_send_work, iso_timer_timeout);
 }

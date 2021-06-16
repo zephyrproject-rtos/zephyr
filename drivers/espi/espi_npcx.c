@@ -109,7 +109,7 @@ struct npcx_vw_out_config {
 
 /*
  * eSPI VW input/Output signal configuration tables. Please refer
- * npcx7-espi-vws-map.dtsi device tree file for more detail.
+ * npcxn-espi-vws-map.dtsi device tree file for more detail.
  */
 static const struct npcx_vw_in_config vw_in_tbl[] = {
 	/* index 02h (In)  */
@@ -843,7 +843,7 @@ static const struct espi_npcx_config espi_npcx_config = {
 	.alts_list = espi_alts,
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_npcx_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &espi_npcx_init, NULL,
 		    &espi_npcx_data, &espi_npcx_config,
 		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
 		    &espi_npcx_driver_api);

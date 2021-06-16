@@ -15,6 +15,7 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
+#include <arch/arc/asm-compat/assembler.h>
 
 GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
@@ -43,8 +44,8 @@ GTEXT(__start)
  * @return N/A
  */
 
-SECTION_FUNC(TEXT,__reset)
-SECTION_FUNC(TEXT,__start)
+SECTION_SUBSEC_FUNC(TEXT,_reset_and__start,__reset)
+SECTION_SUBSEC_FUNC(TEXT,_reset_and__start,__start)
 	/* lock interrupts: will get unlocked when switch to main task
 	 * also make sure the processor in the correct status
 	 */
@@ -53,17 +54,6 @@ SECTION_FUNC(TEXT,__start)
 
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	sflag r0
-#endif
-
-#if defined(CONFIG_BOOT_TIME_MEASUREMENT) && defined(CONFIG_ARCV2_TIMER)
-	/*
-	 * ARCV2 timer (timer0) is a free run timer, let it start to count
-	 * here.
-	 */
-	mov_s r0, 0xffffffff
-	sr r0, [_ARC_V2_TMR0_LIMIT]
-	mov_s r0, 0
-	sr r0, [_ARC_V2_TMR0_COUNT]
 #endif
 	/* interrupt related init */
 #ifndef CONFIG_ARC_NORMAL_FIRMWARE
@@ -76,11 +66,11 @@ SECTION_FUNC(TEXT,__start)
 	/* set the vector table base early,
 	 * so that exception vectors can be handled.
 	 */
-	mov_s r0, _VectorTable
+	MOVR r0, _VectorTable
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	sr r0, [_ARC_V2_IRQ_VECT_BASE_S]
 #else
-	sr r0, [_ARC_V2_IRQ_VECT_BASE]
+	SRR r0, [_ARC_V2_IRQ_VECT_BASE]
 #endif
 
 	lr r0, [_ARC_V2_STATUS32]

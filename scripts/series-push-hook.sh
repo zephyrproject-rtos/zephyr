@@ -22,8 +22,8 @@ then
 	# Handle delete
 	:
 else
-	# At each (forced) push, examine all commits since $remote/master
-	base_commit=`git rev-parse $remote/master`
+	# At each (forced) push, examine all commits since $remote/main
+	base_commit=`git rev-parse $remote/main`
 	range="$base_commit..$local_sha"
 
 	echo "Perform check patch"

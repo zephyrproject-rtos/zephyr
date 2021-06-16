@@ -810,6 +810,6 @@ static int ism330dhcx_init(const struct device *dev)
 
 static struct ism330dhcx_data ism330dhcx_data;
 
-DEVICE_DT_INST_DEFINE(0, ism330dhcx_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, ism330dhcx_init, NULL,
 		    &ism330dhcx_data, &ism330dhcx_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &ism330dhcx_api_funcs);

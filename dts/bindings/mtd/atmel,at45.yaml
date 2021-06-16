@@ -62,3 +62,19 @@ properties:
       Time, in nanoseconds, needed by the chip to exit from the Deep Power-Down
       mode (or Ultra-Deep Power-Down mode when the "use-udpd" property is set)
       after the corresponding command is issued.
+
+  reset-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      The RESET pin of AT45 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+
+  wp-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      The WP pin of AT45 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.

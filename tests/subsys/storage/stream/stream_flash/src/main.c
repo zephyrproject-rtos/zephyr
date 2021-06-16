@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <ztest.h>
 #include <drivers/flash.h>
+#include <settings/settings.h>
 
 #include <storage/stream_flash.h>
 
@@ -34,6 +35,8 @@ static uint8_t *cb_buf;
 static size_t cb_len;
 static size_t cb_offset;
 static int cb_ret;
+
+static const char progress_key[] = "sf-test/progress";
 
 static uint8_t buf[BUF_LEN];
 static uint8_t read_buf[TESTBUF_SIZE];
@@ -192,6 +195,11 @@ static void test_stream_flash_buffered_write_unaligned(void)
 	rc = stream_flash_init(&ctx, fdev, buf, BUF_LEN, FLASH_BASE + BUF_LEN,
 			       0, stream_flash_callback);
 	zassert_equal(rc, 0, "expected success");
+
+	/* Trigger verification in callback */
+	cb_buf = buf;
+	cb_len = BUF_LEN - 1;
+	cb_offset = FLASH_BASE + BUF_LEN;
 
 	/* Test unaligned data size */
 	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN - 1, true);
@@ -456,6 +464,186 @@ static void test_stream_flash_buffered_write_whole_page(void)
 }
 #endif
 
+static size_t write_and_save_progress(size_t bytes, const char *save_key)
+{
+	int rc;
+	size_t bytes_written;
+
+	rc = stream_flash_buffered_write(&ctx, write_buf, bytes, true);
+	zassert_equal(rc, 0, "expected success");
+
+	bytes_written = stream_flash_bytes_written(&ctx);
+	zassert_true(bytes_written > 0, "expected bytes to be written");
+
+	if (save_key) {
+		rc = stream_flash_progress_save(&ctx, save_key);
+		zassert_equal(rc, 0, "expected success");
+	}
+
+	return bytes_written;
+}
+
+static void clear_all_progress(void)
+{
+	(void) settings_delete(progress_key);
+}
+
+static size_t load_progress(const char *load_key)
+{
+	int rc;
+
+	rc = stream_flash_progress_load(&ctx, progress_key);
+	zassert_equal(rc, 0, "expected success");
+
+	return stream_flash_bytes_written(&ctx);
+}
+
+static void test_stream_flash_progress_api(void)
+{
+	int rc;
+
+	clear_all_progress();
+	init_target();
+
+	/* Test save parameter validation */
+	rc = stream_flash_progress_save(NULL, progress_key);
+	zassert_true(rc < 0, "expected error since ctx is NULL");
+
+	rc = stream_flash_progress_save(&ctx, NULL);
+	zassert_true(rc < 0, "expected error since key is NULL");
+
+	rc = stream_flash_progress_save(&ctx, progress_key);
+	zassert_equal(rc, 0, "expected success");
+
+	(void) write_and_save_progress(BUF_LEN, progress_key);
+
+	/* Test load parameter validation */
+	rc = stream_flash_progress_load(NULL, progress_key);
+	zassert_true(rc < 0, "expected error since ctx is NULL");
+
+	rc = stream_flash_progress_load(&ctx, NULL);
+	zassert_true(rc < 0, "expected error since key is NULL");
+
+	rc = stream_flash_progress_load(&ctx, progress_key);
+	zassert_equal(rc, 0, "expected success");
+
+	/* Test clear parameter validation */
+	rc = stream_flash_progress_clear(NULL, progress_key);
+	zassert_true(rc < 0, "expected error since ctx is NULL");
+
+	rc = stream_flash_progress_clear(&ctx, NULL);
+	zassert_true(rc < 0, "expected error since key is NULL");
+
+	rc = stream_flash_progress_clear(&ctx, progress_key);
+	zassert_equal(rc, 0, "expected success");
+}
+
+static void test_stream_flash_progress_resume(void)
+{
+	int rc;
+	size_t bytes_written_old;
+	size_t bytes_written;
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	off_t erase_offset_old;
+	off_t erase_offset;
+#endif
+
+	clear_all_progress();
+	init_target();
+
+	bytes_written_old = stream_flash_bytes_written(&ctx);
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	erase_offset_old = ctx.last_erased_page_start_offset;
+#endif
+
+	/* Test load with zero bytes_written */
+	rc = stream_flash_progress_save(&ctx, progress_key);
+	zassert_equal(rc, 0, "expected success");
+
+	rc = stream_flash_progress_load(&ctx, progress_key);
+	zassert_equal(rc, 0, "expected success");
+
+	bytes_written = stream_flash_bytes_written(&ctx);
+	zassert_equal(bytes_written, bytes_written_old,
+		      "expected bytes_written to be unchanged");
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	erase_offset = ctx.last_erased_page_start_offset;
+	zassert_equal(erase_offset, erase_offset_old,
+		      "expected erase offset to be unchanged");
+#endif
+
+	clear_all_progress();
+	init_target();
+
+	/* Write some data and save the progress */
+	bytes_written_old = write_and_save_progress(page_size * 2,
+						    progress_key);
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	erase_offset_old = ctx.last_erased_page_start_offset;
+	zassert_true(erase_offset_old != 0, "expected pages to be erased");
+#endif
+
+	init_target();
+
+	/* Load the previous progress */
+	bytes_written = load_progress(progress_key);
+	zassert_equal(bytes_written, bytes_written_old,
+		      "expected bytes_written to be loaded");
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	zassert_equal(erase_offset_old, ctx.last_erased_page_start_offset,
+		      "expected last erased page offset to be loaded");
+#endif
+
+	/* Check that outdated progress does not overwrite current progress */
+	init_target();
+
+	(void) write_and_save_progress(BUF_LEN, progress_key);
+	bytes_written_old = write_and_save_progress(BUF_LEN, NULL);
+	bytes_written = load_progress(progress_key);
+	zassert_equal(bytes_written, bytes_written_old,
+		      "expected bytes_written to not be overwritten");
+}
+
+static void test_stream_flash_progress_clear(void)
+{
+	int rc;
+	size_t bytes_written_old;
+	size_t bytes_written;
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	off_t erase_offset_old;
+	off_t erase_offset;
+#endif
+
+	clear_all_progress();
+	init_target();
+
+	/* Test that progress is cleared. */
+	(void) write_and_save_progress(BUF_LEN, progress_key);
+
+	rc = stream_flash_progress_clear(&ctx, progress_key);
+	zassert_equal(rc, 0, "expected success");
+
+	init_target();
+
+	bytes_written_old = stream_flash_bytes_written(&ctx);
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	erase_offset_old = ctx.last_erased_page_start_offset;
+#endif
+
+	rc = stream_flash_progress_load(&ctx, progress_key);
+	zassert_equal(rc, 0, "expected success");
+
+	bytes_written = stream_flash_bytes_written(&ctx);
+	zassert_equal(bytes_written, bytes_written_old,
+		      "expected bytes_written to be unchanged");
+
+#ifdef CONFIG_STREAM_FLASH_ERASE
+	erase_offset = ctx.last_erased_page_start_offset;
+	zassert_equal(erase_offset, erase_offset_old,
+		      "expected erase offset to be unchanged");
+#endif
+}
+
 void test_main(void)
 {
 	fdev = device_get_binding(FLASH_NAME);
@@ -476,7 +664,10 @@ void test_main(void)
 	     ztest_unit_test(test_stream_flash_flush),
 	     ztest_unit_test(test_stream_flash_buffered_write_whole_page),
 	     ztest_unit_test(test_stream_flash_erase_page),
-	     ztest_unit_test(test_stream_flash_bytes_written)
+	     ztest_unit_test(test_stream_flash_bytes_written),
+	     ztest_unit_test(test_stream_flash_progress_api),
+	     ztest_unit_test(test_stream_flash_progress_resume),
+	     ztest_unit_test(test_stream_flash_progress_clear)
 	 );
 
 	ztest_run_test_suite(lib_stream_flash_test);

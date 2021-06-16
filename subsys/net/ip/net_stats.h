@@ -324,8 +324,28 @@ static inline void net_stats_update_ipv6_mld_drop(struct net_if *iface)
 #define net_stats_update_ipv6_mld_drop(iface)
 #endif /* CONFIG_NET_STATISTICS_MLD */
 
-#if (defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
-	defined(CONFIG_NET_PKT_TXTIME_STATS)) && defined(CONFIG_NET_STATISTICS)
+#if defined(CONFIG_NET_STATISTICS_IGMP) && defined(CONFIG_NET_NATIVE)
+static inline void net_stats_update_ipv4_igmp_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv4_igmp.recv++);
+}
+
+static inline void net_stats_update_ipv4_igmp_sent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv4_igmp.sent++);
+}
+
+static inline void net_stats_update_ipv4_igmp_drop(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.ipv4_igmp.drop++);
+}
+#else
+#define net_stats_update_ipv4_igmp_recv(iface)
+#define net_stats_update_ipv4_igmp_sent(iface)
+#define net_stats_update_ipv4_igmp_drop(iface)
+#endif /* CONFIG_NET_STATISTICS_IGMP */
+
+#if defined(CONFIG_NET_PKT_TXTIME_STATS) && defined(CONFIG_NET_STATISTICS)
 static inline void net_stats_update_tx_time(struct net_if *iface,
 					    uint32_t start_time,
 					    uint32_t end_time)
@@ -338,7 +358,7 @@ static inline void net_stats_update_tx_time(struct net_if *iface,
 }
 #else
 #define net_stats_update_tx_time(iface, start_time, end_time)
-#endif /* (TIMESTAMP || NET_PKT_TXTIME_STATS) && NET_STATISTICS */
+#endif /* NET_PKT_TXTIME_STATS && NET_STATISTICS */
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
 static inline void net_stats_update_tx_time_detail(struct net_if *iface,
@@ -371,7 +391,7 @@ static inline void net_stats_update_rx_time(struct net_if *iface,
 }
 #else
 #define net_stats_update_rx_time(iface, start_time, end_time)
-#endif /* NET_CONTEXT_TIMESTAMP && STATISTICS */
+#endif /* NET_PKT_RXTIME_STATS && STATISTICS */
 
 #if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
 static inline void net_stats_update_rx_time_detail(struct net_if *iface,
@@ -410,8 +430,7 @@ static inline void net_stats_update_tc_sent_priority(struct net_if *iface,
 	UPDATE_STAT(iface, stats.tc.sent[tc].priority = priority);
 }
 
-#if (defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
-	defined(CONFIG_NET_PKT_TXTIME_STATS)) && \
+#if defined(CONFIG_NET_PKT_TXTIME_STATS) && \
 	defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_NATIVE)
 static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 					       uint8_t priority,
@@ -429,7 +448,7 @@ static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 }
 #else
 #define net_stats_update_tc_tx_time(iface, tc, start_time, end_time)
-#endif /* (NET_CONTEXT_TIMESTAMP || NET_PKT_TXTIME_STATS) && NET_STATISTICS */
+#endif /* NET_PKT_TXTIME_STATS && NET_STATISTICS && NET_NATIVE */
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
 static inline void net_stats_update_tc_tx_time_detail(struct net_if *iface,
@@ -519,8 +538,7 @@ static inline void net_stats_update_tc_recv_priority(struct net_if *iface,
 #define net_stats_update_tc_recv_bytes(iface, tc, bytes)
 #define net_stats_update_tc_recv_priority(iface, tc, priority)
 
-#if (defined(CONFIG_NET_CONTEXT_TIMESTAMP) || \
-	defined(CONFIG_NET_PKT_TXTIME_STATS)) && \
+#if defined(CONFIG_NET_PKT_TXTIME_STATS) && \
 	defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_NATIVE)
 static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 					       uint8_t pkt_priority,
@@ -533,7 +551,7 @@ static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 }
 #else
 #define net_stats_update_tc_tx_time(iface, priority, start_time, end_time)
-#endif /* (NET_CONTEXT_TIMESTAMP || NET_PKT_TXTIME_STATS) && NET_STATISTICS */
+#endif /* NET_PKT_TXTIME_STATS && NET_STATISTICS && NET_NATIVE */
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
 static inline void net_stats_update_tc_tx_time_detail(struct net_if *iface,

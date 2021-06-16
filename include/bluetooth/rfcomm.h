@@ -74,7 +74,7 @@ typedef enum bt_rfcomm_role {
 /** @brief RFCOMM DLC structure. */
 struct bt_rfcomm_dlc {
 	/* Response Timeout eXpired (RTX) timer */
-	struct k_delayed_work      rtx_work;
+	struct k_work_delayable    rtx_work;
 
 	/* Queue for outgoing data */
 	struct k_fifo              tx_queue;

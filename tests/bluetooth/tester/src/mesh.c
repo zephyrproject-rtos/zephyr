@@ -343,6 +343,23 @@ static void prov_complete(uint16_t net_idx, uint16_t addr)
 		    NULL, 0);
 }
 
+static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
+			    uint8_t num_elem)
+{
+	struct mesh_prov_node_added_ev ev;
+
+	LOG_DBG("net_idx 0x%04x addr 0x%04x num_elem %d", net_idx, addr,
+		num_elem);
+
+	ev.net_idx = net_idx;
+	ev.addr = addr;
+	ev.num_elems = num_elem;
+	memcpy(&ev.uuid, uuid, sizeof(ev.uuid));
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_PROV_NODE_ADDED,
+		    CONTROLLER_INDEX, (void *)&ev, sizeof(ev));
+}
+
 static void prov_reset(void)
 {
 	LOG_DBG("");
@@ -366,6 +383,7 @@ static struct bt_mesh_prov prov = {
 	.link_open = link_open,
 	.link_close = link_close,
 	.complete = prov_complete,
+	.node_added = prov_node_added,
 	.reset = prov_reset,
 };
 

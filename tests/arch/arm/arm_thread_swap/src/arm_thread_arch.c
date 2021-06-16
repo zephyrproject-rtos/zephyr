@@ -25,6 +25,11 @@
 #define BASEPRI_MODIFIED_2 0x40
 #define SWAP_RETVAL        0x1234
 
+#ifndef EXC_RETURN_FTYPE
+/* bit [4] allocate stack for floating-point context: 0=done 1=skipped  */
+#define EXC_RETURN_FTYPE           (0x00000010UL)
+#endif
+
 extern void z_move_thread_to_end_of_prio_q(struct k_thread *thread);
 
 static struct k_thread alt_thread;
@@ -254,9 +259,9 @@ static void alt_thread_entry(void)
 		__get_CONTROL());
 
 	/* Verify that the _current_ (alt) thread is
-	 * initialized with mode.FPCA cleared
+	 * initialized with EXC_RETURN.Ftype set
 	 */
-	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
+	zassert_true((_current->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
 		"Alt thread FPCA flag not clear at initialization\n");
 #if defined(CONFIG_MPU_STACK_GUARD)
 	/* Alt thread is created with K_FP_REGS set, so we
@@ -276,8 +281,8 @@ static void alt_thread_entry(void)
 	zassert_true(__get_FPSCR() == 0,
 		"(Alt thread) FPSCR is not cleared at initialization: 0x%x\n", __get_FPSCR());
 
-	zassert_true((p_ztest_thread->arch.mode & CONTROL_FPCA_Msk) != 0,
-		"ztest thread mode FPCA flag not updated at swap-out: 0x%0x\n",
+	zassert_true((p_ztest_thread->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0,
+		"ztest thread mode Ftype flag not updated at swap-out: 0x%0x\n",
 		p_ztest_thread->arch.mode);
 
 	/* Verify that the main test thread (ztest) has stored the FP
@@ -447,8 +452,8 @@ void test_arm_thread_swap(void)
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* The main test thread is not (yet) actively using the FP registers */
-	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
-		"Thread FPCA flag not clear at initialization 0x%0x\n",
+	zassert_true((_current->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
+		"Thread Ftype flag not set at initialization 0x%0x\n",
 		_current->arch.mode);
 
 	/* Verify that the main test thread is initialized with FPCA cleared. */
@@ -476,8 +481,8 @@ void test_arm_thread_swap(void)
 	/* The main test thread is using the FP registers, but the .mode
 	 * flag is not updated until the next context switch.
 	 */
-	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
-		"Thread FPCA flag not clear at initialization\n");
+	zassert_true((_current->arch.mode_exc_return & EXC_RETURN_FTYPE) != 0,
+		"Thread Ftype flag not set at initialization\n");
 #if defined(CONFIG_MPU_STACK_GUARD)
 	zassert_true((_current->arch.mode &
 		Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) == 0,
@@ -700,8 +705,8 @@ void test_arm_thread_swap(void)
 	/* The main test thread is using the FP registers, and the .mode
 	 * flag and MPU GUARD flag are now updated.
 	 */
-	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) != 0,
-		"Thread FPCA flag not set after main returned back\n");
+	zassert_true((_current->arch.mode_exc_return & EXC_RETURN_FTYPE) == 0,
+		"Thread Ftype flag not cleared after main returned back\n");
 #if defined(CONFIG_MPU_STACK_GUARD)
 	zassert_true((_current->arch.mode &
 		Z_ARM_MODE_MPU_GUARD_FLOAT_Msk) != 0,

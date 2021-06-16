@@ -98,5 +98,8 @@ set_compiler_property(PROPERTY sanitize_address)
 
 set_compiler_property(PROPERTY sanitize_undefined)
 
+# Compiler flag for turning off thread-safe initialization of local statics
+set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
+
 # Required ASM flags when compiling
 set_property(TARGET asm PROPERTY required)

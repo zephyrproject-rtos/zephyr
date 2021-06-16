@@ -67,7 +67,13 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 				"\tIMSI:         %s\n"
 				"\tICCID:        %s\n"
 #endif
-				"\tRSSI:         %d\n", i,
+#if defined(CONFIG_MODEM_CELL_INFO)
+				"\tOperator:     %d\n"
+				"\tLAC:          %d\n"
+				"\tCellId:       %d\n"
+#endif
+				"\tRSSI:         %d\n",
+			       i,
 			       UART_DEV_NAME(mdm_ctx),
 			       mdm_ctx->data_manufacturer,
 			       mdm_ctx->data_model,
@@ -76,6 +82,11 @@ static int cmd_modem_list(const struct shell *shell, size_t argc,
 #if defined(CONFIG_MODEM_SIM_NUMBERS)
 			       mdm_ctx->data_imsi,
 			       mdm_ctx->data_iccid,
+#endif
+#if defined(CONFIG_MODEM_CELL_INFO)
+			       mdm_ctx->data_operator,
+			       mdm_ctx->data_lac,
+			       mdm_ctx->data_cellid,
 #endif
 			       mdm_ctx->data_rssi);
 		}

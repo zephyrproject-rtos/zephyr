@@ -225,7 +225,7 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    mcux_igpio_##n##_init,			\
-			    device_pm_control_nop,			\
+			    NULL,					\
 			    &mcux_igpio_##n##_data,			\
 			    &mcux_igpio_##n##_config,			\
 			    POST_KERNEL,				\

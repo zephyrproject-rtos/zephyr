@@ -322,6 +322,6 @@ static struct crypto_driver_api crypto_enc_funcs = {
 };
 
 DEVICE_DEFINE(crypto_tinycrypt, CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME,
-		    &tc_shim_init, device_pm_control_nop, NULL, NULL,
+		    &tc_shim_init, NULL, NULL, NULL,
 		    POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
 		    (void *)&crypto_enc_funcs);

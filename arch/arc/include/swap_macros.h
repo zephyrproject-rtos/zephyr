@@ -14,30 +14,31 @@
 #include <toolchain.h>
 #include <arch/cpu.h>
 #include <arch/arc/tool-compat.h>
+#include <arch/arc/asm-compat/assembler.h>
 
 #ifdef _ASMLANGUAGE
 
 /* save callee regs of current thread in r2 */
 .macro _save_callee_saved_regs
 
-	sub_s sp, sp, ___callee_saved_stack_t_SIZEOF
+	SUBR sp, sp, ___callee_saved_stack_t_SIZEOF
 
 	/* save regs on stack */
-	st_s r13, [sp, ___callee_saved_stack_t_r13_OFFSET]
-	st_s r14, [sp, ___callee_saved_stack_t_r14_OFFSET]
-	st_s r15, [sp, ___callee_saved_stack_t_r15_OFFSET]
-	st r16, [sp, ___callee_saved_stack_t_r16_OFFSET]
-	st r17, [sp, ___callee_saved_stack_t_r17_OFFSET]
-	st r18, [sp, ___callee_saved_stack_t_r18_OFFSET]
-	st r19, [sp, ___callee_saved_stack_t_r19_OFFSET]
-	st r20, [sp, ___callee_saved_stack_t_r20_OFFSET]
-	st r21, [sp, ___callee_saved_stack_t_r21_OFFSET]
-	st r22, [sp, ___callee_saved_stack_t_r22_OFFSET]
-	st r23, [sp, ___callee_saved_stack_t_r23_OFFSET]
-	st r24, [sp, ___callee_saved_stack_t_r24_OFFSET]
-	st r25, [sp, ___callee_saved_stack_t_r25_OFFSET]
-	st r26, [sp, ___callee_saved_stack_t_r26_OFFSET]
-	st fp,  [sp, ___callee_saved_stack_t_fp_OFFSET]
+	STR r13, sp, ___callee_saved_stack_t_r13_OFFSET
+	STR r14, sp, ___callee_saved_stack_t_r14_OFFSET
+	STR r15, sp, ___callee_saved_stack_t_r15_OFFSET
+	STR r16, sp, ___callee_saved_stack_t_r16_OFFSET
+	STR r17, sp, ___callee_saved_stack_t_r17_OFFSET
+	STR r18, sp, ___callee_saved_stack_t_r18_OFFSET
+	STR r19, sp, ___callee_saved_stack_t_r19_OFFSET
+	STR r20, sp, ___callee_saved_stack_t_r20_OFFSET
+	STR r21, sp, ___callee_saved_stack_t_r21_OFFSET
+	STR r22, sp, ___callee_saved_stack_t_r22_OFFSET
+	STR r23, sp, ___callee_saved_stack_t_r23_OFFSET
+	STR r24, sp, ___callee_saved_stack_t_r24_OFFSET
+	STR r25, sp, ___callee_saved_stack_t_r25_OFFSET
+	STR r26, sp, ___callee_saved_stack_t_r26_OFFSET
+	STR fp,  sp, ___callee_saved_stack_t_fp_OFFSET
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_HAS_SECURE
@@ -57,11 +58,11 @@
 	st_s r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
 #endif
 #endif
-	st r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
+	STR r30, sp, ___callee_saved_stack_t_r30_OFFSET
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
-	st r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
-	st r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
+	STR r58, sp, ___callee_saved_stack_t_r58_OFFSET
+	STR r59, sp, ___callee_saved_stack_t_r59_OFFSET
 #endif
 
 #ifdef CONFIG_FPU_SHARING
@@ -87,17 +88,17 @@
 #endif
 
 	/* save stack pointer in struct k_thread */
-	st sp, [r2, _thread_offset_to_sp]
+	STR sp, r2, _thread_offset_to_sp
 .endm
 
 /* load the callee regs of thread (in r2)*/
 .macro _load_callee_saved_regs
 	/* restore stack pointer from struct k_thread */
-	ld sp, [r2, _thread_offset_to_sp]
+	LDR sp, r2, _thread_offset_to_sp
 
 #ifdef CONFIG_ARC_HAS_ACCL_REGS
-	ld r58, [sp, ___callee_saved_stack_t_r58_OFFSET]
-	ld r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
+	LDR r58, sp, ___callee_saved_stack_t_r58_OFFSET
+	LDR r59, sp, ___callee_saved_stack_t_r59_OFFSET
 #endif
 
 #ifdef CONFIG_FPU_SHARING
@@ -142,30 +143,30 @@
 #endif
 #endif
 
-	ld_s r13, [sp, ___callee_saved_stack_t_r13_OFFSET]
-	ld_s r14, [sp, ___callee_saved_stack_t_r14_OFFSET]
-	ld_s r15, [sp, ___callee_saved_stack_t_r15_OFFSET]
-	ld r16, [sp, ___callee_saved_stack_t_r16_OFFSET]
-	ld r17, [sp, ___callee_saved_stack_t_r17_OFFSET]
-	ld r18, [sp, ___callee_saved_stack_t_r18_OFFSET]
-	ld r19, [sp, ___callee_saved_stack_t_r19_OFFSET]
-	ld r20, [sp, ___callee_saved_stack_t_r20_OFFSET]
-	ld r21, [sp, ___callee_saved_stack_t_r21_OFFSET]
-	ld r22, [sp, ___callee_saved_stack_t_r22_OFFSET]
-	ld r23, [sp, ___callee_saved_stack_t_r23_OFFSET]
-	ld r24, [sp, ___callee_saved_stack_t_r24_OFFSET]
-	ld r25, [sp, ___callee_saved_stack_t_r25_OFFSET]
-	ld r26, [sp, ___callee_saved_stack_t_r26_OFFSET]
-	ld fp,  [sp, ___callee_saved_stack_t_fp_OFFSET]
-	ld r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
+	LDR r13, sp, ___callee_saved_stack_t_r13_OFFSET
+	LDR r14, sp, ___callee_saved_stack_t_r14_OFFSET
+	LDR r15, sp, ___callee_saved_stack_t_r15_OFFSET
+	LDR r16, sp, ___callee_saved_stack_t_r16_OFFSET
+	LDR r17, sp, ___callee_saved_stack_t_r17_OFFSET
+	LDR r18, sp, ___callee_saved_stack_t_r18_OFFSET
+	LDR r19, sp, ___callee_saved_stack_t_r19_OFFSET
+	LDR r20, sp, ___callee_saved_stack_t_r20_OFFSET
+	LDR r21, sp, ___callee_saved_stack_t_r21_OFFSET
+	LDR r22, sp, ___callee_saved_stack_t_r22_OFFSET
+	LDR r23, sp, ___callee_saved_stack_t_r23_OFFSET
+	LDR r24, sp, ___callee_saved_stack_t_r24_OFFSET
+	LDR r25, sp, ___callee_saved_stack_t_r25_OFFSET
+	LDR r26, sp, ___callee_saved_stack_t_r26_OFFSET
+	LDR fp,  sp, ___callee_saved_stack_t_fp_OFFSET
+	LDR r30, sp, ___callee_saved_stack_t_r30_OFFSET
 
-	add_s sp, sp, ___callee_saved_stack_t_SIZEOF
+	ADDR sp, sp, ___callee_saved_stack_t_SIZEOF
 
 .endm
 
 /* discard callee regs */
 .macro _discard_callee_saved_regs
-	add_s sp, sp, ___callee_saved_stack_t_SIZEOF
+	ADDR sp, sp, ___callee_saved_stack_t_SIZEOF
 .endm
 
 /*
@@ -174,33 +175,35 @@
  */
 .macro _create_irq_stack_frame
 
-	sub_s sp, sp, ___isf_t_SIZEOF
+	SUBR sp, sp, ___isf_t_SIZEOF
 
-	st blink, [sp, ___isf_t_blink_OFFSET]
+	STR blink, sp, ___isf_t_blink_OFFSET
 
 	/* store these right away so we can use them if needed */
 
-	st_s r13, [sp, ___isf_t_r13_OFFSET]
-	st_s r12, [sp, ___isf_t_r12_OFFSET]
-	st   r11, [sp, ___isf_t_r11_OFFSET]
-	st   r10, [sp, ___isf_t_r10_OFFSET]
-	st   r9,  [sp, ___isf_t_r9_OFFSET]
-	st   r8,  [sp, ___isf_t_r8_OFFSET]
-	st   r7,  [sp, ___isf_t_r7_OFFSET]
-	st   r6,  [sp, ___isf_t_r6_OFFSET]
-	st   r5,  [sp, ___isf_t_r5_OFFSET]
-	st   r4,  [sp, ___isf_t_r4_OFFSET]
-	st_s r3,  [sp, ___isf_t_r3_OFFSET]
-	st_s r2,  [sp, ___isf_t_r2_OFFSET]
-	st_s r1,  [sp, ___isf_t_r1_OFFSET]
-	st_s r0,  [sp, ___isf_t_r0_OFFSET]
+	STR r13, sp, ___isf_t_r13_OFFSET
+	STR r12, sp, ___isf_t_r12_OFFSET
+	STR r11, sp, ___isf_t_r11_OFFSET
+	STR r10, sp, ___isf_t_r10_OFFSET
+	STR r9,  sp, ___isf_t_r9_OFFSET
+	STR r8,  sp, ___isf_t_r8_OFFSET
+	STR r7,  sp, ___isf_t_r7_OFFSET
+	STR r6,  sp, ___isf_t_r6_OFFSET
+	STR r5,  sp, ___isf_t_r5_OFFSET
+	STR r4,  sp, ___isf_t_r4_OFFSET
+	STR r3,  sp, ___isf_t_r3_OFFSET
+	STR r2,  sp, ___isf_t_r2_OFFSET
+	STR r1,  sp, ___isf_t_r1_OFFSET
+	STR r0,  sp, ___isf_t_r0_OFFSET
 
-	mov r0, lp_count
-	st_s r0, [sp, ___isf_t_lp_count_OFFSET]
-	lr r1, [_ARC_V2_LP_START]
-	lr r0, [_ARC_V2_LP_END]
-	st_s r1, [sp, ___isf_t_lp_start_OFFSET]
-	st_s r0, [sp, ___isf_t_lp_end_OFFSET]
+#ifdef CONFIG_ARC_HAS_ZOL
+	MOVR r0, lp_count
+	STR r0, sp, ___isf_t_lp_count_OFFSET
+	LRR r1, [_ARC_V2_LP_START]
+	LRR r0, [_ARC_V2_LP_END]
+	STR r1, sp, ___isf_t_lp_start_OFFSET
+	STR r0, sp, ___isf_t_lp_end_OFFSET
+#endif /* CONFIG_ARC_HAS_ZOL */
 
 #ifdef CONFIG_CODE_DENSITY
 	lr r1, [_ARC_V2_JLI_BASE]
@@ -219,7 +222,7 @@
  */
 .macro _pop_irq_stack_frame
 
-	ld blink, [sp, ___isf_t_blink_OFFSET]
+	LDR blink, sp, ___isf_t_blink_OFFSET
 
 #ifdef CONFIG_CODE_DENSITY
 	ld_s r1, [sp, ___isf_t_jli_base_OFFSET]
@@ -230,27 +233,29 @@
 	sr r2, [_ARC_V2_EI_BASE]
 #endif
 
-	ld_s r0, [sp, ___isf_t_lp_count_OFFSET]
-	mov lp_count, r0
-	ld_s r1, [sp, ___isf_t_lp_start_OFFSET]
-	ld_s r0, [sp, ___isf_t_lp_end_OFFSET]
-	sr r1, [_ARC_V2_LP_START]
-	sr r0, [_ARC_V2_LP_END]
+#ifdef CONFIG_ARC_HAS_ZOL
+	LDR r0, sp, ___isf_t_lp_count_OFFSET
+	MOVR lp_count, r0
+	LDR r1, sp, ___isf_t_lp_start_OFFSET
+	LDR r0, sp, ___isf_t_lp_end_OFFSET
+	SRR r1, [_ARC_V2_LP_START]
+	SRR r0, [_ARC_V2_LP_END]
+#endif /* CONFIG_ARC_HAS_ZOL */
 
-	ld_s r13, [sp, ___isf_t_r13_OFFSET]
-	ld_s r12, [sp, ___isf_t_r12_OFFSET]
-	ld   r11, [sp, ___isf_t_r11_OFFSET]
-	ld   r10, [sp, ___isf_t_r10_OFFSET]
-	ld   r9,  [sp, ___isf_t_r9_OFFSET]
-	ld   r8,  [sp, ___isf_t_r8_OFFSET]
-	ld   r7,  [sp, ___isf_t_r7_OFFSET]
-	ld   r6,  [sp, ___isf_t_r6_OFFSET]
-	ld   r5,  [sp, ___isf_t_r5_OFFSET]
-	ld   r4,  [sp, ___isf_t_r4_OFFSET]
-	ld_s r3,  [sp, ___isf_t_r3_OFFSET]
-	ld_s r2,  [sp, ___isf_t_r2_OFFSET]
-	ld_s r1,  [sp, ___isf_t_r1_OFFSET]
-	ld_s r0,  [sp, ___isf_t_r0_OFFSET]
+	LDR r13, sp, ___isf_t_r13_OFFSET
+	LDR r12, sp, ___isf_t_r12_OFFSET
+	LDR r11, sp, ___isf_t_r11_OFFSET
+	LDR r10, sp, ___isf_t_r10_OFFSET
+	LDR r9,  sp, ___isf_t_r9_OFFSET
+	LDR r8,  sp, ___isf_t_r8_OFFSET
+	LDR r7,  sp, ___isf_t_r7_OFFSET
+	LDR r6,  sp, ___isf_t_r6_OFFSET
+	LDR r5,  sp, ___isf_t_r5_OFFSET
+	LDR r4,  sp, ___isf_t_r4_OFFSET
+	LDR r3,  sp, ___isf_t_r3_OFFSET
+	LDR r2,  sp, ___isf_t_r2_OFFSET
+	LDR r1,  sp, ___isf_t_r1_OFFSET
+	LDR r0,  sp, ___isf_t_r0_OFFSET
 
 
 	/*
@@ -262,7 +267,7 @@
 	 * status32 differently depending on the execution context they are
 	 * running in (arch_switch(), firq or exception).
 	 */
-	add_s sp, sp, ___isf_t_SIZEOF
+	ADDR sp, sp, ___isf_t_SIZEOF
 
 .endm
 
@@ -307,7 +312,8 @@
 	ld.as MACRO_ARG(reg1), [_curr_cpu, MACRO_ARG(reg1)]
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
-	mov MACRO_ARG(reg1), _kernel
+	MOVR MACRO_ARG(reg1), _kernel
+	/* z_kernel.nested is 32 bit despite of platform bittnes */
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), _kernel_offset_to_nested]
 #endif
 	add MACRO_ARG(reg2), MACRO_ARG(reg2), 1
@@ -329,7 +335,8 @@
 	ld.as MACRO_ARG(reg1), [_curr_cpu, MACRO_ARG(reg1)]
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), ___cpu_t_nested_OFFSET]
 #else
-	mov MACRO_ARG(reg1), _kernel
+	MOVR MACRO_ARG(reg1), _kernel
+	/* z_kernel.nested is 32 bit despite of platform bittnes */
 	ld MACRO_ARG(reg2), [MACRO_ARG(reg1), _kernel_offset_to_nested]
 #endif
 	sub MACRO_ARG(reg2), MACRO_ARG(reg2), 1
@@ -374,21 +381,21 @@
 	ld.as MACRO_ARG(irq_sp), [_curr_cpu, MACRO_ARG(irq_sp)]
 	ld MACRO_ARG(irq_sp), [MACRO_ARG(irq_sp), ___cpu_t_irq_stack_OFFSET]
 #else
-	mov MACRO_ARG(irq_sp), _kernel
-	ld MACRO_ARG(irq_sp), [MACRO_ARG(irq_sp), _kernel_offset_to_irq_stack]
+	MOVR MACRO_ARG(irq_sp), _kernel
+	LDR MACRO_ARG(irq_sp), MACRO_ARG(irq_sp), _kernel_offset_to_irq_stack
 #endif
 .endm
 
 /* macro to push aux reg through reg */
 .macro PUSHAX, reg, aux
-	lr MACRO_ARG(reg), [MACRO_ARG(aux)]
-	st.a MACRO_ARG(reg), [sp, -4]
+	LRR MACRO_ARG(reg), [MACRO_ARG(aux)]
+	PUSHR MACRO_ARG(reg)
 .endm
 
 /* macro to pop aux reg through reg */
 .macro POPAX, reg, aux
-	ld.ab MACRO_ARG(reg), [sp, 4]
-	sr MACRO_ARG(reg), [MACRO_ARG(aux)]
+	POPR MACRO_ARG(reg)
+	SRR MACRO_ARG(reg), [MACRO_ARG(aux)]
 .endm
 
 
@@ -443,7 +450,7 @@
 	bl configure_mpu_thread
 	pop_s r2
 #endif
-
+	/* _thread_arch.relinquish_cause is 32 bit despite of platform bittnes */
 	ld r3, [r2, _thread_offset_to_relinquish_cause]
 .endm
 
@@ -479,10 +486,10 @@
 
 /* macro to get next switch handle in assembly */
 .macro _get_next_switch_handle
-	push_s r2
-	mov r0, sp
+	PUSHR r2
+	MOVR r0, sp
 	bl z_arch_get_next_switch_handle
-	pop_s  r2
+	POPR  r2
 .endm
 
 /* macro to disable stack checking in assembly, need a GPR
@@ -518,6 +525,19 @@
 	kflag MACRO_ARG(reg)
 #endif
 #endif
+.endm
+
+/*
+ * When we accessing bloated struct member we can exceed u9 operand in store
+ * instruction. So we can use _st32_huge_offset macro instead
+ */
+.macro _st32_huge_offset, d, s, off, temp
+	.if MACRO_ARG(off) > 255 || MACRO_ARG(off) < -256
+		ADDR MACRO_ARG(temp), MACRO_ARG(s), MACRO_ARG(off)
+		st MACRO_ARG(d), [MACRO_ARG(temp)]
+	.else
+		st MACRO_ARG(d), [MACRO_ARG(s), MACRO_ARG(off)]
+	.endif
 .endm
 
 #endif /* _ASMLANGUAGE */

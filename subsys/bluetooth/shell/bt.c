@@ -532,7 +532,7 @@ static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell, "PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
+	shell_print(ctx_shell, "BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
 		    "nse 0x%02x, interval 0x%04x (%u ms), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
 		    "max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
 		    "%sencrypted",
@@ -2097,6 +2097,13 @@ static int cmd_conn_update(const struct shell *shell, size_t argc, char *argv[])
 	struct bt_le_conn_param param;
 	int err;
 
+	if (default_conn == NULL) {
+		shell_error(shell,
+				"%s: at least, one connection is required",
+				shell->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
+
 	param.interval_min = strtoul(argv[1], NULL, 16);
 	param.interval_max = strtoul(argv[2], NULL, 16);
 	param.latency = strtoul(argv[3], NULL, 16);
@@ -2139,6 +2146,13 @@ static int cmd_conn_data_len_update(const struct shell *shell, size_t argc,
 	struct bt_conn_le_data_len_param param;
 	int err;
 
+	if (default_conn == NULL) {
+		shell_error(shell,
+				"%s: at least, one connection is required",
+				shell->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
+
 	param.tx_max_len = strtoul(argv[1], NULL, 10);
 
 	if (argc > 2) {
@@ -2178,6 +2192,13 @@ static int cmd_conn_phy_update(const struct shell *shell, size_t argc,
 {
 	struct bt_conn_le_phy_param param;
 	int err;
+
+	if (default_conn == NULL) {
+		shell_error(shell,
+				"%s: at least, one connection is required",
+				shell->ctx->active_cmd.syntax);
+		return -ENOEXEC;
+	}
 
 	param.pref_tx_phy = strtoul(argv[1], NULL, 16);
 	param.pref_rx_phy = param.pref_tx_phy;
@@ -2408,13 +2429,52 @@ static int cmd_bonds(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static const char *role_str(uint8_t role)
+{
+	switch (role) {
+	case BT_CONN_ROLE_MASTER:
+		return "Master";
+	case BT_CONN_ROLE_SLAVE:
+		return "Slave";
+	}
+
+	return "Unknown";
+}
+
 static void connection_info(struct bt_conn *conn, void *user_data)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	int *conn_count = user_data;
+	struct bt_conn_info info;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-	shell_print(ctx_shell, "Remote Identity: %s", addr);
+	if (bt_conn_get_info(conn, &info) < 0) {
+		shell_error(ctx_shell, "Unable to get info: conn %p", conn);
+		return;
+	}
+
+	switch (info.type) {
+#if defined(CONFIG_BT_BREDR)
+	case BT_CONN_TYPE_BR:
+		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
+		shell_print(ctx_shell, "#%u [BR][%s] %s", info.id,
+			    role_str(info.role), addr);
+		break;
+#endif
+	case BT_CONN_TYPE_LE:
+		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+		shell_print(ctx_shell, "#%u [LE][%s] %s: Interval %u latency %u"
+			    " timeout %u", info.id, role_str(info.role), addr,
+			    info.le.interval, info.le.latency, info.le.timeout);
+		break;
+#if defined(CONFIG_BT_ISO)
+	case BT_CONN_TYPE_ISO:
+		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+		shell_print(ctx_shell, "#%u [ISO][%s] %s", info.id,
+			    role_str(info.role), addr);
+		break;
+#endif
+	}
+
 	(*conn_count)++;
 }
 

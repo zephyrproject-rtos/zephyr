@@ -19,4 +19,3 @@ API Reference
 *************
 
 .. doxygengroup:: audio_dmic_interface
-   :project: Zephyr

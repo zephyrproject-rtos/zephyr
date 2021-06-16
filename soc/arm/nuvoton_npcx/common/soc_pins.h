@@ -18,9 +18,10 @@ extern "C" {
  * pin-muxing and its polarity to enable alternative functionality.
  */
 struct npcx_alt {
-	uint8_t group:4;
+	uint8_t group;
 	uint8_t bit:3;
 	uint8_t inverted:1;
+	uint8_t reserved:4;
 };
 
 /**
@@ -141,6 +142,31 @@ void npcx_pinctrl_psl_input_configure(void);
  * @return 1 is asserted, otherwise de-asserted.
  */
 bool npcx_pinctrl_psl_input_asserted(uint32_t i);
+
+/**
+ * @brief Restore all connections between IO pads that support low-voltage power
+ *        supply and GPIO hardware devices. This utility is used for solving a
+ *        leakage current issue found in npcx7 series. The npcx9 and later
+ *        series fixed the issue and needn't it.
+ */
+void npcx_lvol_restore_io_pads(void);
+
+/**
+ * @brief Disable all connections between IO pads that support low-voltage power
+ *        supply and GPIO hardware devices. This utility is used for solving a
+ *        leakage current issue found in npcx7 series. The npcx9 and later
+ *        series fixed the issue and needn't it.
+ */
+void npcx_lvol_suspend_io_pads(void);
+
+/**
+ * @brief Get the low-voltage power supply status of GPIO pads
+ *
+ * @param port port index of GPIO device
+ * @param pin pin of GPIO device
+ * @return 1 means the low-voltage power supply is enabled, otherwise disabled.
+ */
+bool npcx_lvol_is_enabled(int port, int pin);
 
 #ifdef __cplusplus
 }

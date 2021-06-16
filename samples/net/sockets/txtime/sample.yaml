@@ -1,0 +1,11 @@
+common:
+  harness: net
+  depends_on: netif
+  # We can only run this in platforms that support PTP clock and TXTIME
+  platform_allow: native_posix native_posix_64 qemu_x86 qemu_x86_64
+sample:
+  description: Socket SO_TXTIME sample
+  name: txtime-socket
+tests:
+  sample.net.sockets.txtime:
+    tags: net socket so_txtime tsn

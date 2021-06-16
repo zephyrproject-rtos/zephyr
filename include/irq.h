@@ -163,16 +163,17 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  *
  * Example usage:
  *
- * ISR_DIRECT_DECLARE(my_isr)
- * {
- *	bool done = do_stuff();
- *	ISR_DIRECT_PM(); <-- done after do_stuff() due to latency concerns
- *	if (!done) {
- *		return 0;  <-- Don't bother checking if we have to z_swap()
- *	}
- *	k_sem_give(some_sem);
- *	return 1;
- * }
+ *     ISR_DIRECT_DECLARE(my_isr)
+ *     {
+ *             bool done = do_stuff();
+ *             ISR_DIRECT_PM(); // done after do_stuff() due to latency concerns
+ *             if (!done) {
+ *                 return 0; // don't bother checking if we have to z_swap()
+ *             }
+ *
+ *             k_sem_give(some_sem);
+ *             return 1;
+ *      }
  *
  * @param name symbol name of the ISR
  */

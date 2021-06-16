@@ -16,6 +16,7 @@
 LOG_MODULE_REGISTER(mcp2515_can);
 
 #include "can_mcp2515.h"
+#include "can_utils.h"
 
 #define SP_IS_SET(inst) DT_INST_NODE_HAS_PROP(inst, sample_point) ||
 
@@ -335,8 +336,11 @@ static int mcp2515_set_timing(const struct device *dev,
 	/* CNF1; SJW<7:6> | BRP<5:0> */
 	__ASSERT(timing->prescaler > 0, "Prescaler should be bigger than zero");
 	uint8_t brp = timing->prescaler - 1;
-	const uint8_t sjw = (timing->sjw - 1) << 6;
-	uint8_t cnf1 = sjw | brp;
+	if (timing->sjw != CAN_SJW_NO_CHANGE) {
+		dev_data->sjw = (timing->sjw - 1) << 6;
+	}
+
+	uint8_t cnf1 = dev_data->sjw | brp;
 
 	/* CNF2; BTLMODE<7>|SAM<6>|PHSEG1<5:3>|PRSEG<2:0> */
 	const uint8_t btlmode = 1 << 7;
@@ -363,8 +367,7 @@ static int mcp2515_set_timing(const struct device *dev,
 	const uint8_t rx0_ctrl = BIT(6) | BIT(5) | BIT(2);
 	const uint8_t rx1_ctrl = BIT(6) | BIT(5);
 
-	__ASSERT((timing->sjw >= 1) && (timing->sjw <= 4),
-		 "1 <= SJW <= 4");
+	__ASSERT(timing->sjw <= 4, "1 <= SJW <= 4");
 	__ASSERT((timing->prop_seg >= 1) && (timing->prop_seg <= 8),
 		 "1 <= PROP <= 8");
 	__ASSERT((timing->phase_seg1 >= 1) && (timing->phase_seg1 <= 8),
@@ -563,24 +566,6 @@ static void mcp2515_register_state_change_isr(const struct device *dev,
 	dev_data->state_change_isr = isr;
 }
 
-static uint8_t mcp2515_filter_match(struct zcan_frame *msg,
-				 struct zcan_filter *filter)
-{
-	if (msg->id_type != filter->id_type) {
-		return 0;
-	}
-
-	if ((msg->rtr ^ filter->rtr) & filter->rtr_mask) {
-		return 0;
-	}
-
-	if ((msg->id ^ filter->id) & filter->id_mask) {
-		return 0;
-	}
-
-	return 1;
-}
-
 static void mcp2515_rx_filter(const struct device *dev,
 			      struct zcan_frame *msg)
 {
@@ -596,8 +581,8 @@ static void mcp2515_rx_filter(const struct device *dev,
 			continue; /* filter slot empty */
 		}
 
-		if (!mcp2515_filter_match(msg,
-					  &dev_data->filter[filter_idx])) {
+		if (!can_utils_filter_match(msg,
+					    &dev_data->filter[filter_idx])) {
 			continue; /* filter did not match */
 		}
 
@@ -970,7 +955,7 @@ static const struct mcp2515_config mcp2515_config_1 = {
 	.sample_point = DT_INST_PROP_OR(0, sample_point, 0)
 };
 
-DEVICE_DT_INST_DEFINE(0, &mcp2515_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, &mcp2515_init, NULL,
 		    &mcp2515_data_1, &mcp2515_config_1, POST_KERNEL,
 		    CONFIG_CAN_MCP2515_INIT_PRIORITY, &can_api_funcs);
 
@@ -1002,7 +987,7 @@ static int socket_can_init(const struct device *dev)
 }
 
 NET_DEVICE_INIT(socket_can_mcp2515_1, SOCKET_CAN_NAME_1, socket_can_init,
-		device_pm_control_nop, &socket_can_context_1, NULL,
+		NULL, &socket_can_context_1, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&socket_can_api,
 		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);

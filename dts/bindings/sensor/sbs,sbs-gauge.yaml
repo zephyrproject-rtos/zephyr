@@ -1,0 +1,5 @@
+description: SBS 1.1 compliant fuel gauge (http://www.sbs-forum.org/specs)
+
+compatible: "sbs,sbs-gauge"
+
+include: i2c-device.yaml

@@ -557,7 +557,7 @@ const struct spi_dw_config spi_dw_config_0 = {
 	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
 };
 
-DEVICE_DT_INST_DEFINE(0, spi_dw_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(0, spi_dw_init, NULL,
 		    &spi_dw_data_port_0, &spi_dw_config_0,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
@@ -620,7 +620,7 @@ static const struct spi_dw_config spi_dw_config_1 = {
 	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
 };
 
-DEVICE_DT_INST_DEFINE(1, spi_dw_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(1, spi_dw_init, NULL,
 		    &spi_dw_data_port_1, &spi_dw_config_1,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
@@ -683,7 +683,7 @@ static const struct spi_dw_config spi_dw_config_2 = {
 	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
 };
 
-DEVICE_DT_INST_DEFINE(2, spi_dw_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(2, spi_dw_init, NULL,
 		    &spi_dw_data_port_2, &spi_dw_config_2,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);
@@ -746,7 +746,7 @@ static const struct spi_dw_config spi_dw_config_3 = {
 	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
 };
 
-DEVICE_DT_INST_DEFINE(3, spi_dw_init, device_pm_control_nop,
+DEVICE_DT_INST_DEFINE(3, spi_dw_init, NULL,
 		    &spi_dw_data_port_3, &spi_dw_config_3,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &dw_spi_api);

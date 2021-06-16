@@ -110,8 +110,8 @@
 &i2c0 {
 	compatible = "nordic,nrf-twi";
 	status = "okay";
-	sda-gpios = <&gpio0 26 0>;
-	scl-gpios = <&gpio0 27 0>;
+	sda-pin = <26>;
+	scl-pin = <27>;
 
 	lis2dh12@18 {
 		compatible = "st,lis2dh12", "st,lis2dh";

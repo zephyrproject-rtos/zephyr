@@ -1,0 +1,38 @@
+# Copyright (c) 2018-2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel GPIO node
+
+compatible: "intel,gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    group-index:
+      type: int
+      description: Group number for this GPIO entry
+
+    interrupts:
+      required: true
+
+    ngpios:
+      required: true
+      description: Number of pins for this GPIO entry
+
+    pin-offset:
+      type: int
+      required: true
+      description: Pin offset of this GPIO entry
+
+    "#gpio-cells":
+      const: 2
+
+gpio-cells:
+  - pin
+  - flags

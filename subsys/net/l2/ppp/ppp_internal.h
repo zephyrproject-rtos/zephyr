@@ -101,6 +101,7 @@ int ppp_config_info_req(struct ppp_fsm *fsm,
 		.close = proto_close,					\
 	}
 
+void ppp_queue_pkt(struct net_pkt *pkt);
 const char *ppp_phase_str(enum ppp_phase phase);
 const char *ppp_state_str(enum ppp_state state);
 const char *ppp_proto2str(uint16_t proto);

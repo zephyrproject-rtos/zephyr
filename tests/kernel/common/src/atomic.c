@@ -10,6 +10,19 @@
 /* an example of the number of atomic bit in an array */
 #define NUM_FLAG_BITS 100
 
+/* set test_cycle 1000us * 20 = 20ms */
+#define TEST_CYCLE 20
+
+#define THREADS_NUM 2
+
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+
+static K_THREAD_STACK_ARRAY_DEFINE(stack, THREADS_NUM, STACK_SIZE);
+
+static struct k_thread thread[THREADS_NUM];
+
+atomic_t total_atomic;
+
 /**
  * @addtogroup kernel_common_tests
  * @{
@@ -266,6 +279,56 @@ void test_atomic(void)
 		zassert_true(!!atomic_test_bit(flag_bits, i) == !!(0),
 			"Failed to clear a single bit in an array of atomic variables");
 	}
+}
+
+/* This helper function will run more the one slice */
+void atomic_handler(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (int i = 0; i < TEST_CYCLE; i++) {
+		atomic_inc(&total_atomic);
+		/* Do 1000us busywait to longer the handler execute time */
+		k_busy_wait(1000);
+	}
+}
+
+/**
+ * @brief Verify atomic operation with threads
+ *
+ * @details Creat two preempt threads with equal priority to
+ * atomiclly access the same atomic value. Because these preempt
+ * threads are of equal priority, so enable time slice to make
+ * them scheduled. The thread will execute for some time.
+ * In this time, the two sub threads will be scheduled separately
+ * according to the time slice.
+ *
+ * @ingroup kernel_common_tests
+ */
+void test_threads_access_atomic(void)
+{
+	k_tid_t tid[THREADS_NUM];
+
+	/* enable time slice 1ms at priority 10 */
+	k_sched_time_slice_set(1, K_PRIO_PREEMPT(10));
+
+	for (int i = 0; i < THREADS_NUM; i++) {
+		tid[i] = k_thread_create(&thread[i], stack[i], STACK_SIZE,
+				atomic_handler, NULL, NULL, NULL,
+				K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+	}
+
+	for (int i = 0; i < THREADS_NUM; i++) {
+		k_thread_join(tid[i], K_FOREVER);
+	}
+
+	/* disable time slice */
+	k_sched_time_slice_set(0, K_PRIO_PREEMPT(10));
+
+	zassert_true(total_atomic == (TEST_CYCLE * THREADS_NUM),
+		"atomic counting failure");
 }
 /**
  * @}

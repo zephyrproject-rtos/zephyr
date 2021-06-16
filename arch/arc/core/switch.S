@@ -21,6 +21,7 @@
 #include <arch/cpu.h>
 #include <v2/irq.h>
 #include <swap_macros.h>
+#include <arch/arc/asm-compat/assembler.h>
 
 GTEXT(z_arc_switch)
 
@@ -60,17 +61,17 @@ SECTION_FUNC(TEXT, z_arc_switch)
 	 * get old_thread from r1
 	 */
 
-	sub r2, r1, ___thread_t_switch_handle_OFFSET
+	SUBR r2, r1, ___thread_t_switch_handle_OFFSET
 
-
-	st _CAUSE_COOP, [r2, _thread_offset_to_relinquish_cause]
+	/* _thread_arch.relinquish_cause is 32 bit despite of platform bittnes */
+	_st32_huge_offset _CAUSE_COOP, r2, _thread_offset_to_relinquish_cause, r3
 
 	/*
 	 * Save status32 and blink on the stack before the callee-saved registers.
 	 * This is the same layout as the start of an IRQ stack frame.
 	 */
-	lr r3, [_ARC_V2_STATUS32]
-	push_s r3
+	LRR r3, [_ARC_V2_STATUS32]
+	PUSHR r3
 
 #ifdef CONFIG_ARC_HAS_SECURE
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
@@ -81,7 +82,7 @@ SECTION_FUNC(TEXT, z_arc_switch)
 	push_s r3
 #endif
 
-	push_s blink
+	PUSHR blink
 
 	_store_old_thread_callee_regs
 
@@ -90,7 +91,7 @@ SECTION_FUNC(TEXT, z_arc_switch)
  */
 	_disable_stack_checking r3
 
-	mov_s r2, r0
+	MOVR r2, r0
 
 	_load_new_thread_callee_regs
 
@@ -104,22 +105,22 @@ SECTION_FUNC(TEXT, z_arc_switch)
 .align 4
 _switch_return_from_coop:
 
-	pop_s blink /* pc into blink */
+	POPR blink /* pc into blink */
 #ifdef CONFIG_ARC_HAS_SECURE
 	pop_s r3    /* pop SEC_STAT */
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	sflag r3
 #endif
 #endif
-	pop_s r3    /* status32 into r3 */
+	POPR r3    /* status32 into r3 */
 	kflag r3    /* write status32 */
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	push_s blink
+	PUSHR blink
 
 	bl z_thread_mark_switched_in
 
-	pop_s blink
+	POPR blink
 #endif
 	j_s [blink]
 
@@ -135,11 +136,11 @@ _switch_return_from_firq:
 	 * thread
 	 */
 
-	lr r3, [_ARC_V2_AUX_IRQ_ACT]
+	LRR r3, [_ARC_V2_AUX_IRQ_ACT]
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	or r3, r3, (1 << (ARC_N_IRQ_START_LEVEL - 1))
 #else
-	or r3, r3, (1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1))
+	ORR r3, r3, (1 << (CONFIG_NUM_IRQ_PRIO_LEVELS - 1))
 #endif
 
 #ifdef CONFIG_ARC_NORMAL_FIRMWARE
@@ -148,13 +149,13 @@ _switch_return_from_firq:
 	mov_s r6, ARC_S_CALL_AUX_WRITE
 	sjli SJLI_CALL_ARC_SECURE
 #else
-	sr r3, [_ARC_V2_AUX_IRQ_ACT]
+	SRR r3, [_ARC_V2_AUX_IRQ_ACT]
 #endif
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	push_s blink
+	PUSHR blink
 
 	bl z_thread_mark_switched_in
 
-	pop_s blink
+	POPR blink
 #endif
 	rtie

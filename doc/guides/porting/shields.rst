@@ -53,7 +53,7 @@ This should be done at two different level:
   :file:`BOARD.dts` should define a node alias for each connector interface.
   For example, for Arduino I2C:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
         #define arduino_i2c i2c1
 
@@ -64,7 +64,7 @@ This should be done at two different level:
 Note: With support of dtc v1.4.2, above will be replaced with the recently
 introduced overriding node element:
 
-.. code-block:: DTS
+.. code-block:: devicetree
 
         arduino_i2c:i2c1{};
 

@@ -221,4 +221,3 @@ API Reference
 *************
 
 .. doxygengroup:: msgq_apis
-   :project: Zephyr

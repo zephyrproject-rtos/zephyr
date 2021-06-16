@@ -193,6 +193,6 @@ void smp_timer_init(void)
 			+ CAVS_ICTL_INT_CPU_OFFSET(arch_curr_cpu()->id)
 			+ 0x04,
 		    22 + TIMER);
-	irq_enable(XTENSA_IRQ_NUMBER(TIMER_IRQ));
+	irq_enable(TIMER_IRQ);
 }
 #endif

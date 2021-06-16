@@ -13,8 +13,6 @@
 
 #include "flash_stm32.h"
 
-#define STM32F4X_SECTOR_MASK		((uint32_t) 0xFFFFFF07)
-
 bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     uint32_t len,
 			     bool write)
@@ -93,7 +91,7 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 	}
 #endif
 
-	regs->CR &= STM32F4X_SECTOR_MASK;
+	regs->CR &= ~FLASH_CR_SNB;
 	regs->CR |= FLASH_CR_SER | (sector << 3);
 	regs->CR |= FLASH_CR_STRT;
 

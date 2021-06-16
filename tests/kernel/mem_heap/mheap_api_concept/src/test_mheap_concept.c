@@ -14,7 +14,6 @@
 struct k_sem sync_sema;
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREAD_NUM, STACK_SIZE);
 static struct k_thread tdata[THREAD_NUM];
-static int thread_id;
 static void *block[BLK_NUM_MAX];
 
 /*test cases*/
@@ -54,7 +53,7 @@ void test_mheap_malloc_align4(void)
 
 static void tmheap_handler(void *p1, void *p2, void *p3)
 {
-	thread_id = POINTER_TO_INT(p1);
+	int thread_id = POINTER_TO_INT(p1);
 
 	block[thread_id] = k_malloc(BLOCK_SIZE);
 
@@ -75,6 +74,10 @@ static void tmheap_handler(void *p1, void *p2, void *p3)
  */
 void test_mheap_threadsafe(void)
 {
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		return;
+	}
+
 	k_tid_t tid[THREAD_NUM];
 
 	k_sem_init(&sync_sema, 0, THREAD_NUM);

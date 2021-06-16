@@ -319,7 +319,7 @@ static const struct uart_liteuart_device_config uart_liteuart_dev_cfg_0 = {
 
 DEVICE_DT_INST_DEFINE(0,
 		uart_liteuart_init,
-		device_pm_control_nop,
+		NULL,
 		&uart_liteuart_data_0, &uart_liteuart_dev_cfg_0,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		(void *)&uart_liteuart_driver_api);

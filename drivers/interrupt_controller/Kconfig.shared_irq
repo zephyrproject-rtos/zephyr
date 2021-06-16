@@ -9,15 +9,6 @@ menuconfig SHARED_IRQ
 	  Include shared interrupt support in system. Shared interrupt
 	  support is NOT required in most systems. If in doubt answer no.
 
-config SHARED_IRQ_NUM_CLIENTS
-	int "The number of clients per instance"
-	depends on SHARED_IRQ
-	default 5
-	help
-	  Configures the maximum number of clients allowed per shared
-	  instance of the shared interrupt driver. To conserve RAM set
-	  this value to the lowest practical value.
-
 config SHARED_IRQ_INIT_PRIORITY
 	int "Shared IRQ init priority"
 	depends on SHARED_IRQ
@@ -25,17 +16,3 @@ config SHARED_IRQ_INIT_PRIORITY
 	help
 	  Shared IRQ are initialized on POST_KERNEL init level. They
 	  have to be initialized before any device that uses them.
-
-config SHARED_IRQ_0
-	bool "Shared interrupt instance 0"
-	depends on SHARED_IRQ
-	help
-	  Provide an instance of the shared interrupt driver when system
-	  configuration requires that multiple devices share an interrupt.
-
-config SHARED_IRQ_1
-	bool "Shared interrupt instance 1"
-	depends on SHARED_IRQ
-	help
-	  Provide an instance of the shared interrupt driver when system
-	  configuration requires that multiple devices share an interrupt.

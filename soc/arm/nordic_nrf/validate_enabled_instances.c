@@ -21,8 +21,10 @@
  * In most Nordic SoCs, SPI and TWI peripherals with the same instance number
  * share certain resources and therefore cannot be used at the same time (in
  * nRF53 and nRF91 Series this limitation concerns UART peripherals as well).
- * In nRF52810 though, there are only single instances of these peripherals
- * and they are arranged in a different way, so this limitation does not apply.
+ *
+ * In some SoCs, like nRF52810, there are only single instances of
+ * these peripherals and they are arranged in a different way, so this
+ * limitation does not apply.
  *
  * The build assertions below check if conflicting peripheral instances are not
  * enabled simultaneously.
@@ -40,9 +42,18 @@
 	IF_ENABLED(CONFIG_SOC_SERIES_NRF91X, (", UARTE"#idx)) \
 	". Check nodes with status \"okay\" in zephyr.dts."
 
-#if !IS_ENABLED(CONFIG_SOC_NRF52810)
+#if (!IS_ENABLED(CONFIG_SOC_NRF52810) &&	\
+	!IS_ENABLED(CONFIG_SOC_NRF52805) &&	\
+	!IS_ENABLED(CONFIG_SOC_NRF52811))
 BUILD_ASSERT(CHECK(0), MSG(0));
 #endif
 BUILD_ASSERT(CHECK(1), MSG(1));
 BUILD_ASSERT(CHECK(2), MSG(2));
 BUILD_ASSERT(CHECK(3), MSG(3));
+
+#if IS_ENABLED(CONFIG_SOC_NRF52811)
+BUILD_ASSERT(!(SPI_ENABLED(1) && I2C_ENABLED(0)),
+	     "Only one of the following peripherals can be enabled: "
+	     "SPI1, SPIM1, SPIS1, TWI0, TWIM0, TWIS0. "
+	     "Check nodes with status \"okay\" in zephyr.dts.");
+#endif

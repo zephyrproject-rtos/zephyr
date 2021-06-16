@@ -55,10 +55,9 @@ config BT_OTS_OLCP_GO_TO_SUPPORT
 
 config BT_OTS_L2CAP_CHAN_RX_MTU
 	int "Size of RX MTU for Object Transfer Channel"
-	default BT_L2CAP_RX_MTU if BT_HCI_ACL_FLOW_CONTROL
-	default 23
-	range 23 BT_L2CAP_RX_MTU if BT_HCI_ACL_FLOW_CONTROL
-	range 23 BT_RX_BUF_LEN
+	# RX MTU will be truncated to account for the L2CAP PDU and SDU header.
+	default BT_BUF_ACL_RX_SIZE
+	range 21 BT_BUF_ACL_RX_SIZE
 
 module = BT_OTS
 module-str = BT_OTS

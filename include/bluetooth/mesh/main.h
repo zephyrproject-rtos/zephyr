@@ -105,6 +105,23 @@ struct bt_mesh_prov {
 	/** Out of Band information field. */
 	bt_mesh_prov_oob_info_t oob_info;
 
+	/** Pointer to Public Key in big-endian for OOB public key type support.
+	 *
+	 * Remember to enable @option{CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY}
+	 * when initializing this parameter.
+	 *
+	 * Must be used together with @ref bt_mesh_prov::private_key_be.
+	 */
+	const uint8_t *public_key_be;
+	/** Pointer to Private Key in big-endian for OOB public key type support.
+	 *
+	 * Remember to enable @option{CONFIG_BT_MESH_PROV_OOB_PUBLIC_KEY}
+	 * when initializing this parameter.
+	 *
+	 * Must be used together with @ref bt_mesh_prov::public_key_be.
+	 */
+	const uint8_t *private_key_be;
+
 	/** Static OOB value */
 	const uint8_t *static_val;
 	/** Static OOB value length */
@@ -274,7 +291,7 @@ int bt_mesh_input_number(uint32_t num);
 
 /** @brief Provide Device public key.
  *
- *  @param public_key Device public key.
+ *  @param public_key Device public key in big-endian.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
@@ -648,6 +665,19 @@ struct bt_mesh_friend_cb {
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_mesh_friend_terminate(uint16_t lpn_addr);
+
+/** @brief Store pending RPL entry(ies) in the persistent storage.
+ *
+ * This API allows the user to store pending RPL entry(ies) in the persistent
+ * storage without waiting for the timeout.
+ *
+ * @note When flash is used as the persistent storage, calling this API too
+ *       frequently may wear it out.
+ *
+ * @param addr Address of the node which RPL entry needs to be stored or
+ * @ref BT_MESH_ADDR_ALL_NODES to store all pending RPL entries.
+ */
+void bt_mesh_rpl_pending_store(uint16_t addr);
 
 #ifdef __cplusplus
 }

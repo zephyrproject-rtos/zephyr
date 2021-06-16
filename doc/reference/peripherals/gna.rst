@@ -20,4 +20,3 @@ API Reference
 *************
 
 .. doxygengroup:: gna_interface
-   :project: Zephyr

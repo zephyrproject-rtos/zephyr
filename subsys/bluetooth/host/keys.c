@@ -16,6 +16,7 @@
 #include <settings/settings.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/buf.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/hci.h>
 
@@ -24,6 +25,7 @@
 #include "common/log.h"
 
 #include "common/rpa.h"
+#include "conn_internal.h"
 #include "gatt_internal.h"
 #include "hci_core.h"
 #include "smp.h"
@@ -37,6 +39,38 @@ static struct bt_keys key_pool[CONFIG_BT_MAX_PAIRED];
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 static uint32_t aging_counter_val;
 static struct bt_keys *last_keys_updated;
+
+struct key_data {
+	bool in_use;
+	uint8_t id;
+};
+
+static void find_key_in_use(struct bt_conn *conn, void *data)
+{
+	struct key_data *kdata = data;
+	struct bt_keys *key;
+
+	if (conn->state == BT_CONN_CONNECTED) {
+		key = bt_keys_find_addr(conn->id, bt_conn_get_dst(conn));
+		if (key == NULL) {
+			return;
+		}
+		if (bt_addr_cmp(&key->addr.a, &key_pool[kdata->id].addr.a) == 0) {
+			kdata->in_use = true;
+			BT_DBG("Connected device %s is using key_pool[%d]",
+			       bt_addr_le_str(bt_conn_get_dst(conn)), kdata->id);
+		}
+	}
+}
+
+static bool key_is_in_use(uint8_t id)
+{
+	struct key_data kdata = { false, id };
+
+	bt_conn_foreach(BT_CONN_TYPE_ALL, find_key_in_use, &kdata);
+
+	return kdata.in_use;
+}
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 
 struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
@@ -53,7 +87,6 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 		if (keys->id == id && !bt_addr_le_cmp(&keys->addr, addr)) {
 			return keys;
 		}
-
 		if (first_free_slot == ARRAY_SIZE(key_pool) &&
 		    !bt_addr_le_cmp(&keys->addr, BT_ADDR_LE_ANY)) {
 			first_free_slot = i;
@@ -62,15 +95,25 @@ struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (first_free_slot == ARRAY_SIZE(key_pool)) {
-		struct bt_keys *oldest = &key_pool[0];
+		struct bt_keys *oldest = NULL;
 		bt_addr_le_t oldest_addr;
 
-		for (i = 1; i < ARRAY_SIZE(key_pool); i++) {
+		for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 			struct bt_keys *current = &key_pool[i];
+			bool key_in_use = (CONFIG_BT_MAX_CONN > 1) && key_is_in_use(i);
 
-			if (current->aging_counter < oldest->aging_counter) {
+			if (key_in_use) {
+				continue;
+			}
+
+			if ((oldest == NULL) || (current->aging_counter < oldest->aging_counter)) {
 				oldest = current;
 			}
+		}
+
+		if (oldest == NULL) {
+			BT_DBG("unable to create keys for %s", bt_addr_le_str(addr));
+			return NULL;
 		}
 
 		/* Use a copy as bt_unpair will clear the oldest key. */

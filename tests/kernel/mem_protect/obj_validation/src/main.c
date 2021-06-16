@@ -19,6 +19,8 @@ extern struct k_sem sem1;
 static struct k_sem semarray[SEM_ARRAY_SIZE];
 static struct k_sem *dyn_sem[SEM_ARRAY_SIZE];
 
+static struct k_mutex *test_dyn_mutex;
+
 K_SEM_DEFINE(sem1, 0, 1);
 static struct k_sem sem2;
 static char bad_sem[sizeof(struct k_sem)];
@@ -112,10 +114,83 @@ void test_generic_object(void)
 	}
 }
 
+/**
+ * @brief Test requestor thread will implicitly be assigned permission on the
+ * dynamically allocated object
+ *
+ * @details
+ * - Create kernel object semaphore, dynamically allocate it from the calling
+ *   thread's resource pool.
+ * - Check that object's address is in bounds of that memory pool.
+ * - Then check the requestor thread will implicitly be assigned permission on
+ *   the allocated object by using semaphore API k_sem_init()
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_object_alloc()
+ */
+void test_kobj_assign_perms_on_alloc_obj(void)
+{
+	static struct k_sem *test_dyn_sem;
+	struct k_thread *thread = _current;
+
+	uintptr_t start_addr, end_addr;
+	size_t size_heap = CONFIG_HEAP_MEM_POOL_SIZE;
+
+	/* dynamically allocate kernel object semaphore */
+	test_dyn_sem = k_object_alloc(K_OBJ_SEM);
+	zassert_not_null(test_dyn_sem, "Cannot allocate sem k_object");
+
+	start_addr = *((uintptr_t *)(void *)thread->resource_pool);
+	end_addr = start_addr + size_heap;
+
+	/* check semaphore initialized within thread's mem pool address space */
+	zassert_true(((uintptr_t)test_dyn_sem > start_addr) &&
+				 ((uintptr_t)test_dyn_sem < end_addr),
+				 "semaphore object not in bound of thread's memory pool");
+
+	/* try to init that object, thread should have permissions implicitly */
+	k_sem_init(test_dyn_sem, 1, 1);
+}
+
+/**
+ * @brief Test dynamically allocated kernel object release memory
+ *
+ * @details Dynamically allocated kernel objects whose access is controlled by
+ * the permission system will use object permission as a reference count.
+ * If no threads have access to an object, the object's memory released.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_object_alloc()
+ */
+void test_no_ref_dyn_kobj_release_mem(void)
+{
+	int ret;
+
+	/* dynamically allocate kernel object mutex */
+	test_dyn_mutex = k_object_alloc(K_OBJ_MUTEX);
+	zassert_not_null(test_dyn_mutex,
+					 "Can not allocate dynamic kernel object");
+
+	struct k_thread *thread = _current;
+
+	/* revoke access from the current thread */
+	k_object_access_revoke(test_dyn_mutex, thread);
+
+	/* check object was released, when no threads have access to it */
+	ret = z_object_validate(z_object_find(test_dyn_mutex), K_OBJ_MUTEX, 0);
+	zassert_true(ret == -EBADF, "Dynamic kernel object not released");
+}
+
 void test_main(void)
 {
 	k_thread_system_pool_assign(k_current_get());
+
 	ztest_test_suite(object_validation,
-			 ztest_unit_test(test_generic_object));
+			 ztest_unit_test(test_generic_object),
+			 ztest_unit_test(test_kobj_assign_perms_on_alloc_obj),
+			 ztest_unit_test(test_no_ref_dyn_kobj_release_mem)
+			 );
 	ztest_run_test_suite(object_validation);
 }

@@ -35,6 +35,25 @@ static inline void z_data_copy(void)
 	/* Do nothing */
 }
 #endif
+
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
+void z_bss_zero_boot(void);
+#else
+static inline void z_bss_zero_boot(void)
+{
+	/* Do nothing */
+}
+#endif
+
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+void z_bss_zero_pinned(void);
+#else
+static inline void z_bss_zero_pinned(void)
+{
+	/* Do nothing */
+}
+#endif
+
 FUNC_NORETURN void z_cstart(void);
 
 void z_device_state_init(void);
@@ -127,11 +146,6 @@ extern void z_early_boot_rand_get(uint8_t *buf, size_t length);
 extern int z_stack_adjust_initialized;
 #endif
 
-#ifdef CONFIG_BOOT_TIME_MEASUREMENT
-extern uint32_t z_timestamp_main; /* timestamp when main task starts */
-extern uint32_t z_timestamp_idle; /* timestamp when CPU goes idle */
-#endif
-
 extern struct k_thread z_main_thread;
 
 
@@ -198,9 +212,6 @@ void z_thread_mark_switched_out(void);
  * main thread, before POST_KERNEL tasks
  */
 void z_mem_manage_init(void);
-
-/* Workaround for build-time page table mapping of the kernel */
-void z_kernel_map_fixup(void);
 
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\

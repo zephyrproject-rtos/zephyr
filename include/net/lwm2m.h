@@ -77,8 +77,8 @@ struct lwm2m_ctx {
 	/** Private CoAP and networking structures */
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
-	struct k_work_delayable retransmit_work;
-	struct sys_mutex send_lock;
+	sys_slist_t pending_sends;
+	sys_slist_t observer;
 
 	/** A pointer to currently processed request, for internal LwM2M engine
 	 *  use. The underlying type is ``struct lwm2m_message``, but since it's
@@ -440,6 +440,17 @@ int lwm2m_engine_update_observer_max_period(char *pathstr, uint32_t period_s);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_create_obj_inst(char *pathstr);
+
+/**
+ * @brief Delete an LwM2M object instance.
+ *
+ * LwM2M clients use this function to delete LwM2M objects.
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst"
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_delete_obj_inst(char *pathstr);
 
 /**
  * @brief Set resource (instance) value (opaque buffer)

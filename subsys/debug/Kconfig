@@ -6,12 +6,6 @@
 
 menu "System Monitoring Options"
 
-config BOOT_TIME_MEASUREMENT
-	bool "Boot time measurements"
-	depends on ARCH_POSIX || ARM || X86
-	help
-	  This option enables the recording of timestamps during system boot.
-
 menuconfig THREAD_ANALYZER
 	bool "Enable Thread analyzer"
 	select INIT_STACKS
@@ -82,7 +76,7 @@ config THREAD_ANALYZER_AUTO_INTERVAL
 
 config THREAD_ANALYZER_AUTO_STACK_SIZE
 	int "Stack size for the periodic thread analysis thread"
-	default 512
+	default 1024
 
 endif # THREAD_ANALYZER_AUTO
 
@@ -145,6 +139,7 @@ config STACK_USAGE
 config STACK_SENTINEL
 	bool "Enable stack sentinel"
 	select THREAD_STACK_INFO
+	depends on MULTITHREADING
 	depends on !USERSPACE
 	help
 	  Store a magic value at the lowest addresses of a thread's stack.
@@ -222,6 +217,7 @@ config ASSERT_LEVEL
 config SPIN_VALIDATE
 	bool "Enable spinlock validation"
 	depends on ASSERT
+	depends on MULTITHREADING
 	depends on MP_NUM_CPUS <= 4
 	default y if !FLASH || FLASH_SIZE > 32
 	help
@@ -270,12 +266,6 @@ config ASSERT_NO_MSG_INFO
 	  necessary for tiny targets. It is recommended to disable message
 	  before disabling file info since the message can be found in the
 	  source using file info.
-
-config OBJECT_TRACING
-	bool "Kernel object tracing"
-	help
-	  This option enable the feature for tracing kernel objects. This option
-	  is for debug purposes and increases the memory footprint of the kernel.
 
 config OVERRIDE_FRAME_POINTER_DEFAULT
 	bool "Override compiler defaults for -fomit-frame-pointer"
