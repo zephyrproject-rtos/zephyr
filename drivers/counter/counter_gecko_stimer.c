@@ -54,7 +54,6 @@ struct counter_gecko_data {
 static sl_sleeptimer_timer_handle_t alarm_timer[STIMER_ALARM_NUM];
 static sl_sleeptimer_timer_handle_t top_timer;
 
-
 #ifdef CONFIG_SOC_GECKO_HAS_ERRATA_RTCC_E201
 #define ERRATA_RTCC_E201_MESSAGE					     \
 	"Errata RTCC_E201: In case RTCC prescaler != 1 the module does not " \
