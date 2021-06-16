@@ -130,6 +130,11 @@ typedef void (*bt_ready_cb_t)(int err);
  * Enable Bluetooth. Must be the called before any calls that
  * require communication with the local Bluetooth hardware.
  *
+ * When @option{CONFIG_BT_SETTINGS} has been enabled and the application is not
+ * managing identities of the stack itself then the application must call
+ * @ref settings_load() before the stack is fully enabled.
+ * See @ref bt_id_create() for more information.
+ *
  * @param cb Callback to notify completion or NULL to perform the
  * enabling synchronously.
  *
