@@ -509,12 +509,18 @@ static int arr_parse(struct json_obj *obj,
 {
 	ptrdiff_t elem_size = get_elem_size(elem_descr);
 	void *last_elem = (char *)field + elem_size * max_elements;
-	size_t *elements = (size_t *)((char *)val + elem_descr->offset);
+	size_t *elements = NULL;
 	struct token value;
+
+	if (val) {
+		elements = (size_t *)((char *)val + elem_descr->offset);
+	}
 
 	__ASSERT_NO_MSG(elem_size > 0);
 
-	*elements = 0;
+	if (elements) {
+		*elements = 0;
+	}
 
 	while (!arr_next(obj, &value)) {
 		if (value.type == JSON_TOK_LIST_END) {
@@ -525,11 +531,13 @@ static int arr_parse(struct json_obj *obj,
 			return -ENOSPC;
 		}
 
-		if (decode_value(obj, elem_descr, &value, field, val) < 0) {
+		if (decode_value(obj, elem_descr, &value, field, NULL) < 0) {
 			return -EINVAL;
 		}
 
-		(*elements)++;
+		if (elements) {
+			(*elements)++;
+		}
 		field = (char *)field + elem_size;
 	}
 
