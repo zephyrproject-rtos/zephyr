@@ -36,23 +36,10 @@
 #
 # All tags must have a 'files' and/or 'files-regex' key.
 
+# 1. Avoid putting include/ in entries as any include/ change we want
+#    to get test coverage as broad as possible.
+# 2. Keep tag entries sorted alphabetically
+
 kernel:
     files:
         - kernel/
-        - include/*.h
-        - include/app_memory/
-        - include/arch/
-        - include/power/
-        - include/sys/
-        - include/timing/
-        - include/zephyr/
-    files-exclude:
-        - include/ptp_clock.h
-
-ptp:
-    files:
-        - include/ptp_clock.h
-
-gptp:
-    files:
-        - include/ptp_clock.h
