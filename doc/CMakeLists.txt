@@ -39,6 +39,42 @@ include(${ZEPHYR_BASE}/cmake/python.cmake)
 # Find west to (optionally) process modules for Kconfig
 find_program(WEST west)
 
+#-------------------------------------------------------------------------------
+# Environment & Paths
+
+set(SPHINX_ENV
+  ZEPHYR_BASE=${ZEPHYR_BASE}
+  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
+  DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
+)
+
+set(DOCS_CFG_DIR ${CMAKE_CURRENT_LIST_DIR})
+set(DOCS_DOCTREE_DIR ${CMAKE_CURRENT_BINARY_DIR}/doctrees)
+set(DOCS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(DOCS_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
+set(DOCS_HTML_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
+set(DOCS_LATEX_DIR ${CMAKE_CURRENT_BINARY_DIR}/latex)
+
+#-------------------------------------------------------------------------------
+# Functions
+
+# Create a custom doc target.
+#
+# This function has the same signature as `add_custom_target()`
+#
+# The function will create two targets for the doc build system.
+# - Target 1 named: `<name>`
+# - Target 2 named: `<name>-nodeps`
+#
+# Both targets will produce same result, but target 2 must have no dependencies.
+# This is useful to, e.g. re-run the Sphinx build without dependencies such as
+# devicetree or Kconfig generators.
+#
+function(add_doc_target name)
+  add_custom_target(${name} ${ARGN})
+  add_custom_target(${name}-nodeps ${ARGN})
+endfunction()
+
 # Include version info
 include(${ZEPHYR_BASE}/cmake/version.cmake)
 # Process modules
@@ -176,42 +212,6 @@ add_custom_target(
 )
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DEVICETREE_REST_SCRIPT})
-
-#-------------------------------------------------------------------------------
-# Environment & Paths
-
-set(SPHINX_ENV
-  ZEPHYR_BASE=${ZEPHYR_BASE}
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
-)
-
-set(DOCS_CFG_DIR ${CMAKE_CURRENT_LIST_DIR})
-set(DOCS_DOCTREE_DIR ${CMAKE_CURRENT_BINARY_DIR}/doctrees)
-set(DOCS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(DOCS_SRC_DIR ${CMAKE_CURRENT_BINARY_DIR}/src)
-set(DOCS_HTML_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
-set(DOCS_LATEX_DIR ${CMAKE_CURRENT_BINARY_DIR}/latex)
-
-#-------------------------------------------------------------------------------
-# Functions
-
-# Create a custom doc target.
-#
-# This function has the same signature as `add_custom_target()`
-#
-# The function will create two targets for the doc build system.
-# - Target 1 named: `<name>`
-# - Target 2 named: `<name>-nodeps`
-#
-# Both targets will produce same result, but target 2 must have no dependencies.
-# This is useful to, e.g. re-run the Sphinx build without dependencies such as
-# devicetree or Kconfig generators.
-#
-function(add_doc_target name)
-  add_custom_target(${name} ${ARGN})
-  add_custom_target(${name}-nodeps ${ARGN})
-endfunction()
 
 #-------------------------------------------------------------------------------
 # html
