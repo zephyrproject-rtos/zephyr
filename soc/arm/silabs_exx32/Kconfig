@@ -134,6 +134,24 @@ choice SOC_GECKO_EMU_DCDC_MODE
 		bool "Bypass"
 endchoice
 
+config SOC_GECKO_DEV_INIT
+	bool
+	help
+	  Device initialization as per the sequence in simplicity studio.
+	  This is currently supported by efr32bg22 series.
+
+config COUNTER_GECKO_STIMER
+	bool
+	help
+	  Enable counter driver based on RTCC module for Silicon Labs Gecko
+	  chips.
+
+config CRYPTO_ACC_GECKO_TRNG
+	bool
+	help
+	  Enable Entropy driver based on CRYPTO_ACC module for Silicon Labs Gecko
+	  chips.
+
 config SOC_GECKO_CMU
 	bool
 	help
