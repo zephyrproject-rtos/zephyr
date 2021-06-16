@@ -114,6 +114,9 @@ static ALWAYS_INLINE void z_arm_exc_setup(void)
 	NVIC_SetPriority(MemoryManagement_IRQn, _EXC_FAULT_PRIO);
 	NVIC_SetPriority(BusFault_IRQn, _EXC_FAULT_PRIO);
 	NVIC_SetPriority(UsageFault_IRQn, _EXC_FAULT_PRIO);
+#if defined(CONFIG_CPU_CORTEX_M_HAS_DWT)
+	NVIC_SetPriority(DebugMonitor_IRQn, _EXC_FAULT_PRIO);
+#endif
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	NVIC_SetPriority(SecureFault_IRQn, _EXC_FAULT_PRIO);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
