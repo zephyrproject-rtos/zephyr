@@ -29,7 +29,7 @@ static int ms5607_spi_raw_cmd(const struct ms5607_config *config, uint8_t cmd)
 		.count = 1,
 	};
 
-	return spi_write(config->bus, &config->spi_cfg, &buf_set);
+	return spi_write(config->bus, &config->bus_cfg.spi_cfg, &buf_set);
 }
 
 static int ms5607_spi_reset(const struct ms5607_config *config)
@@ -80,7 +80,7 @@ static int ms5607_spi_read_prom(const struct ms5607_config *config, uint8_t cmd,
 	};
 
 	err = spi_transceive(config->bus,
-			     &config->spi_cfg,
+			     &config->bus_cfg.spi_cfg,
 			     &tx_buf_set,
 			     &rx_buf_set);
 	if (err < 0) {
@@ -131,7 +131,7 @@ static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val
 	};
 
 	err = spi_transceive(config->bus,
-			     &config->spi_cfg,
+			     &config->bus_cfg.spi_cfg,
 			     &tx_buf_set,
 			     &rx_buf_set);
 	if (err < 0) {
@@ -145,7 +145,7 @@ static int ms5607_spi_read_adc(const struct ms5607_config *config, uint32_t *val
 
 static int ms5607_spi_check(const struct ms5607_config *config)
 {
-	const struct spi_cs_control *cs = config->spi_cfg.cs;
+	const struct spi_cs_control *cs = config->bus_cfg.spi_cfg.cs;
 
 	if (!device_is_ready(config->bus)) {
 		LOG_DBG("SPI bus %s not ready", config->bus->name);
