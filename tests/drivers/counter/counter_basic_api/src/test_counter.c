@@ -83,7 +83,12 @@ static const struct device *devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
 #endif
+#ifdef CONFIG_COUNTER_GECKO_RTCC
 	DEVS_FOR_DT_COMPAT(silabs_gecko_rtcc)
+#endif
+#ifdef CONFIG_COUNTER_GECKO_STIMER
+	DEVS_FOR_DT_COMPAT(silabs_gecko_stimer)
+#endif
 	DEVS_FOR_DT_COMPAT(st_stm32_rtc)
 #ifdef CONFIG_COUNTER_MCUX_PIT
 	DEVS_FOR_DT_COMPAT(nxp_kinetis_pit)

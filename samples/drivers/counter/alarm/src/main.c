@@ -33,6 +33,10 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_MCUX_CTIMER)
 #define TIMER DT_NODELABEL(ctimer0)
+#elif defined(CONFIG_COUNTER_GECKO_RTCC)
+#define TIMER DT_NODELABEL(rtcc0))
+#elif defined(CONFIG_COUNTER_GECKO_STIMER)
+#define STIMER DT_NODELABEL(stimer0))
 #endif
 
 static void test_counter_interrupt_fn(const struct device *counter_dev,
@@ -74,7 +78,11 @@ static void test_counter_interrupt_fn(const struct device *counter_dev,
 
 void main(void)
 {
+#if defined(CONFIG_COUNTER_GECKO_STIMER)	
+	const struct device *counter_dev = DEVICE_DT_GET(STIMER);
+#else
 	const struct device *counter_dev = DEVICE_DT_GET(TIMER);
+#endif
 	int err;
 
 	printk("Counter alarm sample\n\n");
