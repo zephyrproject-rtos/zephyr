@@ -98,6 +98,9 @@ static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const z_arch_esf_t
  */
 static ALWAYS_INLINE void z_arm_exc_setup(void)
 {
+	/* PendSV is set to lowest priority, regardless of it being used.
+	 * This is done as the IRQ is always enabled.
+	 */
 	NVIC_SetPriority(PendSV_IRQn, _EXC_PENDSV_PRIO);
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_BASEPRI
