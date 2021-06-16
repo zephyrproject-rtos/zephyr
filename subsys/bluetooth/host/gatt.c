@@ -2254,6 +2254,21 @@ static bool gatt_find_by_uuid(struct notify_data *found,
 	return found->attr ? true : false;
 }
 
+struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr,
+					  uint16_t attr_count,
+					  const struct bt_uuid *uuid)
+{
+	struct bt_gatt_attr *found = NULL;
+	uint16_t start_handle = bt_gatt_attr_value_handle(attr);
+	uint16_t end_handle = start_handle && attr_count ?
+			      start_handle + attr_count : 0xffff;
+
+	bt_gatt_foreach_attr_type(start_handle, end_handle, uuid, NULL, 1,
+				  find_next, &found);
+
+	return found;
+}
+
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params)
 {
