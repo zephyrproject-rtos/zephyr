@@ -41,7 +41,6 @@ Configuration options
 import filecmp
 import hashlib
 from pathlib import Path
-import pickle
 import re
 import shlex
 import shutil
@@ -50,6 +49,7 @@ import tempfile
 from typing import List, Dict, Optional, Any
 
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.util import logging
 
 
@@ -165,12 +165,12 @@ def process_doxyfile(
     return content
 
 
-def doxygen_input_has_changed(doxyfile: str, cache_dir: Path) -> bool:
+def doxygen_input_has_changed(env: BuildEnvironment, doxyfile: str) -> bool:
     """Check if Doxygen input files have changed.
 
     Args:
+        env: Sphinx build environment instance.
         doxyfile: Doxyfile content.
-        cache_dir: Directory where cache file is located.
 
     Returns:
         True if changed, False otherwise.
@@ -186,30 +186,22 @@ def doxygen_input_has_changed(doxyfile: str, cache_dir: Path) -> bool:
         raise ValueError("No FILE_PATTERNS set in Doxyfile")
 
     # build a set with input files hash
-    files = set()
+    cache = set()
     for file in input_files:
         path = Path(file)
         if path.is_file():
-            files.add(hash_file(path))
+            cache.add(hash_file(path))
         else:
             for pattern in file_patterns:
                 for p_file in path.glob("**/" + pattern):
-                    files.add(hash_file(p_file))
+                    cache.add(hash_file(p_file))
 
     # check if any file has changed
-    dirty = True
-    files_cache_file = cache_dir / "doxygen.cache"
-    if files_cache_file.exists():
-        with open(files_cache_file, "rb") as f:
-            files_cache = pickle.load(f)
-        dirty = files != files_cache
-
-    if not dirty:
+    if hasattr(env, "doxyrunner_cache") and env.doxyrunner_cache == cache:
         return False
 
     # store current state
-    with open(files_cache_file, "wb") as f:
-        pickle.dump(files, f)
+    env.doxyrunner_cache = cache
 
     return True
 
@@ -313,7 +305,7 @@ def doxygen_build(app: Sphinx) -> None:
     )
 
     logger.info("Checking if Doxygen needs to be run...")
-    changed = doxygen_input_has_changed(doxyfile, outdir)
+    changed = doxygen_input_has_changed(app.env, doxyfile)
     if not changed:
         logger.info("Doxygen build will be skipped (no changes)!")
         return
