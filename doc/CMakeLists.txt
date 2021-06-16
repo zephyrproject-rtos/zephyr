@@ -10,6 +10,14 @@ file(TO_CMAKE_PATH "${ZEPHYR_BASE}" ZEPHYR_BASE)
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
 #-------------------------------------------------------------------------------
+# Options
+
+set(SPHINXOPTS "-j auto" CACHE STRING "Default Sphinx Options")
+set(DOC_TAG "development" CACHE STRING "Documentation tag")
+
+separate_arguments(SPHINXOPTS)
+
+#-------------------------------------------------------------------------------
 # Dependencies
 
 set(DOXYGEN_SKIP_DOT True)
@@ -40,12 +48,6 @@ file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
-if(NOT DEFINED SPHINXOPTS)
-  set(SPHINXOPTS -j auto)
-else()
-  separate_arguments(SPHINXOPTS)
-endif()
-
 if(NOT DEFINED SPHINX_OUTPUT_DIR)
   set(SPHINX_OUTPUT_DIR_HTML ${CMAKE_CURRENT_BINARY_DIR}/html)
   set(SPHINX_OUTPUT_DIR_LATEX ${CMAKE_CURRENT_BINARY_DIR}/latex)
@@ -56,10 +58,6 @@ else()
   set(SPHINX_OUTPUT_DIR_HTML ${SPHINX_OUTPUT_DIR})
   set(SPHINX_OUTPUT_DIR_LATEX ${SPHINX_OUTPUT_DIR})
   set(SPHINX_OUTPUT_DIR_PDF ${SPHINX_OUTPUT_DIR})
-endif()
-
-if(NOT DEFINED DOC_TAG)
-  set(DOC_TAG development)
 endif()
 
 # Internal variables.
