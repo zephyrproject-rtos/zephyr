@@ -93,14 +93,15 @@ function build_test_file() {
 	touch test_file_boards.txt test_file_tests.txt test_file_archs.txt test_file_full.txt
 
 	twister_exclude_tag_opt=""
-	if [ -s modified_tags.args ]; then
-		twister_exclude_tag_opt="+modified_tags.args"
-	fi
 
 	# In a pull-request see if we have changed any tests or board definitions
 	if [ -n "${pull_request_nr}" -o -n "${local_run}"  ]; then
 		./scripts/zephyr_module.py --twister-out module_tests.args
 		./scripts/ci/get_twister_opt.py --commits ${commit_range}
+
+		if [ -s modified_tags.args ]; then
+			twister_exclude_tag_opt="+modified_tags.args"
+		fi
 
 		if [ -s modified_boards.args ]; then
 			${twister} ${twister_options} ${twister_exclude_tag_opt} \
@@ -125,6 +126,8 @@ function build_test_file() {
 		${twister} ${twister_options} ${twister_exclude_tag_opt} \
 			--save-tests test_file_full.txt || exit 1
 	fi
+
+	rm -f modified_tags.args
 
 	# Remove headers from all files.  We insert it into test_file.txt explicitly
 	# so we treat all test_file*.txt files the same.
