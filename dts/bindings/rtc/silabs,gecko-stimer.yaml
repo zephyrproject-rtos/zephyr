@@ -1,0 +1,12 @@
+# Copyright (c) 2021, Sateesh Kotapati
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silabs Gecko Sleep Timer (Real-Time Counter)
+
+compatible: "silabs,gecko-stimer"
+
+include: rtc.yaml
+
+properties:
+    reg:
+      required: true
