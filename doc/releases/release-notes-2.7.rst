@@ -52,6 +52,12 @@ Removed APIs in this release
 Stable API changes in this release
 ==================================
 
+* Bluetooth
+
+  * Added :c:struct:`multiple` to the :c:struct:`bt_gatt_read_params` - this
+    structure contains two members: ``handles``, which was moved from
+    :c:struct:`bt_gatt_read_params`, and ``variable``.
+
 Kernel
 ******
 
