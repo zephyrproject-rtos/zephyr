@@ -14,6 +14,7 @@ message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
 set(SPHINXOPTS "-j auto" CACHE STRING "Default Sphinx Options")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
+set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
 
 separate_arguments(SPHINXOPTS)
 
@@ -159,52 +160,26 @@ add_custom_target(
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_KCONFIG_REST_SCRIPT})
 
-#
-# Generated devicetree .rst documents
-#
-# The devicetree bindings discovered in ${DTS_ROOTS} are parsed and
-# documentation for them is generated in the directory
-# ${DTS_BINDINGS_RST_OUT}.
-#
-# The CMake variable GEN_DEVICETREE_REST_ZEPHYR_DOCSET will
-# be passed to the script in the environment. This allows separating
-# the bindings documentation into a standalone Sphinx docset that
-# nonetheless can link to Zephyr documentation using intersphinx.
-# If empty, the variable has no effect on the script.
-#
-# If not set, these are the default values for these variables:
-#
-# - DTS_ROOTS: ZEPHYR_BASE
-# - DTS_BINDINGS_RST_OUT: ${DOCS_SRC_DIR}/reference/devicetree
-#
+#-------------------------------------------------------------------------------
+# devicetree
 
 set(GEN_DEVICETREE_REST_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/_scripts/gen_devicetree_rest.py)
-
-if(NOT DTS_ROOTS)
-  set(DTS_ROOTS ${ZEPHYR_BASE})
-endif()
 
 set(DTS_ROOT_ARGS)
 foreach(root ${DTS_ROOTS})
   list(APPEND DTS_ROOT_ARGS --dts-root ${root})
 endforeach()
 
-if(NOT DTS_BINDINGS_RST_OUT)
-  set(DTS_BINDINGS_RST_OUT ${DOCS_SRC_DIR}/reference/devicetree)
-endif()
-
 add_custom_target(
   devicetree
   COMMAND ${CMAKE_COMMAND} -E env
   PYTHONPATH=${ZEPHYR_BASE}/scripts/dts/python-devicetree/src${SEP}$ENV{PYTHONPATH}
   ZEPHYR_BASE=${ZEPHYR_BASE}
-  GEN_DEVICETREE_REST_ZEPHYR_DOCSET=${GEN_DEVICETREE_REST_ZEPHYR_DOCSET}
   ${PYTHON_EXECUTABLE} ${GEN_DEVICETREE_REST_SCRIPT}
     --vendor-prefixes ${ZEPHYR_BASE}/dts/bindings/vendor-prefixes.txt
-    ${DTS_ROOT_ARGS} ${DTS_BINDINGS_RST_OUT}
+    ${DTS_ROOT_ARGS}
+    ${DOCS_SRC_DIR}/reference/devicetree
   VERBATIM
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Running gen_devicetree_rest.py ${DTS_BINDINGS_RST_OUT}"
   USES_TERMINAL
 )
 
