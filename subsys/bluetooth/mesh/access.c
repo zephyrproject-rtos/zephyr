@@ -330,7 +330,7 @@ int bt_mesh_comp_register(const struct bt_mesh_comp *comp)
 	int err;
 
 	/* There must be at least one element */
-	if (!comp->elem_count) {
+	if (!comp || !comp->elem_count) {
 		return -EINVAL;
 	}
 
