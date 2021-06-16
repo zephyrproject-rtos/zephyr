@@ -1366,8 +1366,7 @@ struct bt_gatt_read_params {
 	/** Read attribute callback. */
 	bt_gatt_read_func_t func;
 	/** If equals to 1 single.handle and single.offset are used.
-	 *  If >1 Read Multiple Characteristic Values is performed and handles
-	 *  are used.
+	 *  If greater than 1 multiple.handles are used.
 	 *  If equals to 0 by_uuid is used for Read Using Characteristic UUID.
 	 */
 	size_t handle_count;
@@ -1378,8 +1377,23 @@ struct bt_gatt_read_params {
 			/** Attribute data offset. */
 			uint16_t offset;
 		} single;
-		/** Handles to read in Read Multiple Characteristic Values. */
-		uint16_t *handles;
+		struct {
+			/** Attribute handles to read with Read Multiple
+			 *  Characteristic Values.
+			 */
+			uint16_t *handles;
+			/** If true use Read Multiple Variable Length
+			 *  Characteristic Values procedure.
+			 *  The values of the set of attributes may be of
+			 *  variable or unknown length.
+			 *  If false use Read Multiple Characteristic Values
+			 *  procedure.
+			 *  The values of the set of attributes must be of a
+			 *  known fixed length, with the exception of the last
+			 *  value that can have a variable length.
+			 */
+			bool variable;
+		} multiple;
 		struct {
 			/** First requested handle number. */
 			uint16_t start_handle;
