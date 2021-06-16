@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <gigadevice-gd32vf103Xb.dtsi>
+
+/ {
+	model = "Sipeed Longan Nano";
+	compatible = "sipeed,longan_nano";
+
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_red: led_red {
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			label = "LED_R";
+		};
+		led_green: led_green {
+			gpios = <&gpioa 1 GPIO_ACTIVE_LOW>;
+			label = "LED_G";
+		};
+		led_blue: led_blue {
+			gpios = <&gpioa 2 GPIO_ACTIVE_LOW>;
+			label = "LED_B";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		button: button {
+			gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
+			label = "BUTTON";
+		};
+	};
+
+	aliases {
+		led0 = &led_red;
+		led1 = &led_green;
+		led2 = &led_blue;
+		sw0 = &button;
+	};
+};
+
+&usart0 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	status = "okay";
+};

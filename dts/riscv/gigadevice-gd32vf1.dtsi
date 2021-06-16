@@ -1,0 +1,180 @@
+/*
+ * Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/clock/gd32_clock.h>
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pwm/pwm.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "nuclei,bumblebee", "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imac";
+		};
+	};
+
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "gigadevice,gd32vf103-soc", "simple-bus";
+		ranges;
+
+		eclic: interrupt-controller@d2000000 {
+			#interrupt-cells = <2>;
+			compatible = "nuclei,eclic0";
+			interrupt-controller;
+			reg = <0xd2000000 0x0001
+			       0xd2000004 0x0001
+			       0xd2000400 0x1000>;
+			riscv,max-priority = <7>;
+			label = "GD32_ECLIC";
+		};
+
+		flash: flash-controller@40022000 {
+			compatible = "gigadevice,gd32-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40022000 0x400>;
+			interrupts = <3 0>;
+			interrupt-parent = <&eclic>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+
+				write-block-size = <2>;
+			};
+		};
+
+
+		rcu: rcu@40021000 {
+			compatible = "gigadevice,gd32-rcu";
+			#clock-cells = <2>;
+			reg = <0x40021000 0x400>;
+			label = "GD32_CLK_RCU";
+		};
+
+		pinctrl: pin-controller@40010800 {
+			compatible = "gigadevice,gd32-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40010800 0x1C00>;
+
+			gpioa: gpio@40010800 {
+				compatible = "gigadevice,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40010800 0x400>;
+				clocks = <&rcu GD32_CLOCK_BUS_APB2 0x00000002>;
+				label = "GPIOA";
+			};
+
+			gpiob: gpio@40010c00 {
+				compatible = "gigadevice,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40010c00 0x400>;
+				clocks = <&rcu GD32_CLOCK_BUS_APB2 0x00000003>;
+				label = "GPIOB";
+			};
+
+			gpioc: gpio@40011000 {
+				compatible = "gigadevice,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40011000 0x400>;
+				clocks = <&rcu GD32_CLOCK_BUS_APB2 0x00000004>;
+				label = "GPIOC";
+			};
+
+			gpiod: gpio@40011400 {
+				compatible = "gigadevice,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40011400 0x400>;
+				clocks = <&rcu GD32_CLOCK_BUS_APB2 0x00000005>;
+				label = "GPIOD";
+			};
+
+			gpioe: gpio@40011800 {
+				compatible = "gigadevice,gd32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40011800 0x400>;
+				clocks = <&rcu GD32_CLOCK_BUS_APB2 0x00000006>;
+				label = "GPIOE";
+			};
+		};
+
+		usart0: serial@40013800 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40013800 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB2 0x00004000>;
+			interrupts = <56 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		usart1: serial@40004400 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40004400 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB1 0x00020000>;
+			interrupts = <57 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		usart2: serial@40004800 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40004800 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB1 0x00040000>;
+			interrupts = <58 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		uart3: serial@40004c00 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40004c00 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB1 0x00080000>;
+			interrupts = <71 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_3";
+		};
+
+		uart4: serial@40005000 {
+			compatible = "gigadevice,gd32-usart", "gigadevice,gd32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcu GD32_CLOCK_BUS_APB1 0x00100000>;
+			interrupts = <72 0>;
+			interrupt-parent = <&eclic>;
+			status = "disabled";
+			label = "UART_4";
+		};
+	};
+
+};
+

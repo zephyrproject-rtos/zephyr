@@ -46,6 +46,13 @@ config LEON_IRQMP
 	help
 	  GRLIB IRQMP and IRQAMP
 
+config NUCLEI_ECLIC
+	bool "Extended Core Interrupt Controller (eclic)"
+	default y
+	depends on SOC_SERIES_RISCV_GIGADEVICE_GD32V
+	help
+	  Interrupt controller for Nuclei SoC core.
+
 source "drivers/interrupt_controller/Kconfig.multilevel"
 
 source "drivers/interrupt_controller/Kconfig.loapic"
@@ -67,5 +74,7 @@ source "drivers/interrupt_controller/Kconfig.gic"
 source "drivers/interrupt_controller/Kconfig.npcx"
 
 source "drivers/interrupt_controller/Kconfig.intel_vtd"
+
+source "drivers/interrupt_controller/Kconfig.gd32"
 
 endmenu

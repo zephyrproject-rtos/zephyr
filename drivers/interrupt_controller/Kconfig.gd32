@@ -1,0 +1,63 @@
+# GD32 EXTI configuration
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RISCV_GIGADEVICE_GD32V
+
+config EXTI_GD32
+	bool "External Interrupt/Event Controller (EXTI) Driver for GD32 family of MCUs"
+	default y if SOC_SERIES_RISCV_GIGADEVICE_GD32V
+	help
+	  Enable EXTI driver for GD32 line of MCUs
+
+config EXTI_GD32_EXTI0_IRQ_PRI
+	int "EXTI0 IRQ priority"
+	depends on EXTI_GD32
+	default 0
+	help
+	  IRQ priority of EXTI1:0 interrupt
+
+config EXTI_GD32_EXTI1_IRQ_PRI
+	int "EXTI1 IRQ priority"
+	depends on EXTI_GD32
+	default 0
+	help
+	  IRQ priority of EXTI1:0 interrupt
+
+config EXTI_GD32_EXTI2_IRQ_PRI
+	int "EXTI2 IRQ priority"
+	depends on EXTI_GD32
+	default 0
+	help
+	  IRQ priority of EXTI3 interrupt
+
+config EXTI_GD32_EXTI3_IRQ_PRI
+	int "EXTI3 IRQ priority"
+	depends on EXTI_GD32
+	default 0
+	help
+	  IRQ priority of EXTI3:2 interrupt
+
+config EXTI_GD32_EXTI4_IRQ_PRI
+	int "EXTI4 IRQ priority"
+	depends on EXTI_GD32
+	default 0
+	help
+	  IRQ priority of EXTI4 interrupt
+
+config EXTI_GD32_EXTI5_9_IRQ_PRI
+	int "EXTI5:9 IRQ priority"
+	depends on EXTI_GD32
+	default 0
+	help
+	  IRQ priority of EXTI5:9 interrupt
+
+config EXTI_GD32_EXTI10_15_IRQ_PRI
+	int "EXTI10:15 IRQ priority"
+	depends on EXTI_GD32
+	default 0
+	help
+	  IRQ priority of EXTI10:15 interrupt
+
+endif # SOC_FAMILY_GD32

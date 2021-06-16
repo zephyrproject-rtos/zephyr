@@ -214,6 +214,13 @@ config RISCV_MACHINE_TIMER
 	  This module implements a kernel device driver for the generic RISCV machine
 	  timer driver. It provides the standard "system clock driver" interfaces.
 
+config RISCV_MACHINE_TIMER_CLOCK_FREQUENCY
+	int "RISCV Machine Timer clock frequency"
+	default 0
+	help
+	  Set clock frequency for RISCV Machine Timer.
+	  The value set 0 to use same frequency as core clock.
+
 config RV32M1_LPTMR_TIMER
 	bool "RV32M1 LPTMR system timer driver"
 	default y

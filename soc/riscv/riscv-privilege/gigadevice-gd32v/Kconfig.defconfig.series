@@ -1,0 +1,54 @@
+# Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RISCV_GIGADEVICE_GD32V
+
+config KERNEL_ENTRY
+	default "__nuclei_start"
+
+config SOC_SERIES
+	default "gigadevice-gd32v"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768
+
+config COMPRESSED_ISA
+	default y
+
+config RISCV_HAS_CPU_IDLE
+	default y
+
+config HAS_FLASH_LOAD_OFFSET
+	default y
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,flash0@8000000)
+
+config FLASH_LOAD_OFFSET
+	default 0x0
+
+config PLIC
+	default n
+
+config NUCLEI_ECLIC
+	default y
+
+config NUM_IRQS
+	default 64
+
+config CLOCK_CONTROL_GD32
+	default y
+	depends on CLOCK_CONTROL
+
+config UART_GD32
+	default y
+	depends on SERIAL
+
+if GPIO
+
+config GPIO_GD32
+	default y
+
+endif # GPIO
+
+endif # SOC_SERIES_RISCV_GIGADEVICE_GD32V

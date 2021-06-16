@@ -1,0 +1,31 @@
+# Sipeed Longan Nano Lite board Configuration
+#
+# Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_SOC_SERIES_RISCV_GIGADEVICE_GD32V=y
+CONFIG_SOC_RISCV_GIGADEVICE_GD32VF103=y
+
+# 108MHz for system clock
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=108000000
+
+# 27MHz for machine timer
+CONFIG_RISCV_MACHINE_TIMER=y
+CONFIG_RISCV_MACHINE_TIMER_CLOCK_FREQUENCY=27000000
+
+CONFIG_RISCV_SOC_MCAUSE_EXCEPTION_MASK=0x7FF
+
+# enable uart driver
+CONFIG_SERIAL=y
+
+# enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# enable GPIO
+CONFIG_GPIO=y
+
+# clock configuration
+CONFIG_CLOCK_CONTROL=y
