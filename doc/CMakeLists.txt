@@ -6,25 +6,9 @@ project(Zephyr-Kernel-Doc LANGUAGES)
 set(NO_BOILERPLATE TRUE)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE} ..)
 
-# Find west to (optionally) process modules for Kconfig
-find_program(
-  WEST
-  west
-  )
-if(${WEST} STREQUAL WEST-NOTFOUND)
-  unset(WEST)
-endif()
-
 file(TO_CMAKE_PATH "${ZEPHYR_BASE}" ZEPHYR_BASE)
 
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
-if(DEFINED WEST)
-  execute_process(COMMAND west --version
-    OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE WEST_VERSION)
-  message(STATUS "West: ${WEST} (west --version: \"${WEST_VERSION}\")")
-else()
-  message(STATUS "West: not found")
-endif()
 
 include(${ZEPHYR_BASE}/cmake/python.cmake)
 set(DOXYGEN_SKIP_DOT True)
@@ -38,6 +22,9 @@ find_program(
 if(${SPHINXBUILD} STREQUAL SPHINXBUILD-NOTFOUND)
   message(FATAL_ERROR "The 'sphinx-build' command was not found. Make sure you have Sphinx installed.")
 endif()
+
+# Find west to (optionally) process modules for Kconfig
+find_program(WEST west)
 
 # Include version info
 include(${ZEPHYR_BASE}/cmake/version.cmake)
