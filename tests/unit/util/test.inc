@@ -143,6 +143,14 @@ void test_UTIL_AND(void)
 	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7, NULL);
 }
 
+void test_UTIL_DECR(void)
+{
+	zassert_equal(UTIL_DECR(ZERO), 0, NULL);
+	zassert_equal(UTIL_DECR(1), 0, NULL);
+	zassert_equal(UTIL_DECR(SEVEN), 6, NULL);
+	zassert_equal(UTIL_DECR(15), 14, NULL);
+}
+
 void test_IF_ENABLED(void)
 {
 	#define test_IF_ENABLED_FLAG_A 1
@@ -455,6 +463,7 @@ void test_cc(void)
 			 ztest_unit_test(test_COND_CODE_0),
 			 ztest_unit_test(test_UTIL_OR),
 			 ztest_unit_test(test_UTIL_AND),
+			 ztest_unit_test(test_UTIL_DECR),
 			 ztest_unit_test(test_IF_ENABLED),
 			 ztest_unit_test(test_UTIL_LISTIFY),
 			 ztest_unit_test(test_MACRO_MAP_CAT),
