@@ -288,6 +288,8 @@ static void pwm_nrfx_uninit(const struct device *dev)
 	const struct pwm_nrfx_config *config = dev->config;
 
 	nrfx_pwm_uninit(&config->pwm);
+
+	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
 }
 
 static int pwm_nrfx_set_power_state(uint32_t new_state,
