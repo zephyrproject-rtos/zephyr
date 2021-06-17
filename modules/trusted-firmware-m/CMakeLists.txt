@@ -12,6 +12,7 @@ set(TFM_VALID_PARTITIONS
   TFM_PARTITION_INITIAL_ATTESTATION
   TFM_PARTITION_PLATFORM
   TFM_PARTITION_AUDIT_LOG
+  TFM_PARTITION_EXAMPLE
   )
 
 # List of all crypto modules that can be enabled/disabled
@@ -253,6 +254,7 @@ if (CONFIG_BUILD_WITH_TFM)
 
   zephyr_include_directories(
     ${TFM_GENERATED_INCLUDES}
+    ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/secure_fw/partitions/example_partition
     )
 
   target_include_directories(tfm_api PRIVATE
