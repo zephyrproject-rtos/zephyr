@@ -30,7 +30,7 @@ int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	esp32c3_rom_intr_matrix_set(0,
+	esp_rom_intr_matrix_set(0,
 		ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE,
 		SYS_TIMER_CPU_IRQ);
 	IRQ_CONNECT(SYS_TIMER_CPU_IRQ, 0, sys_timer_isr, NULL, 0);
