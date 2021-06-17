@@ -32,7 +32,7 @@ struct bt_csis_server {
 	bool adv_enabled;
 	struct k_work_delayable set_lock_timer;
 	bt_addr_le_t lock_client_addr;
-	const struct bt_gatt_service *service_p;
+	struct bt_gatt_service *service_p;
 	struct csis_pending_notifications_t pend_notify[CONFIG_BT_MAX_PAIRED];
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	uint32_t age_counter;
