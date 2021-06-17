@@ -1,7 +1,7 @@
 .. _esp32c3_devkitm:
 
 ESP32-C3
-#####
+########
 
 Overview
 ********
@@ -71,9 +71,7 @@ machine without any other such converters.
 
 The baud rate of 921600bps is recommended.  If experiencing issues when
 flashing, try halving the value a few times (460800, 230400, 115200,
-etc).  It might be necessary to change the flash frequency or the flash
-mode; please refer to the `esptool documentation`_ for guidance on these
-settings.
+etc).
 
 All flashing options are now handled by the :ref:`west` tool, including flashing
 with custom options such as a different serial port.  The ``west`` tool supports

@@ -22,9 +22,8 @@
 
 #define ESP32C3_INTC_DEFAULT_PRIO 15
 
-extern void z_cstart(void);
+extern void _PrepC(void);
 extern void esprv_intc_int_set_threshold(int priority_threshold);
-extern void z_bss_zero(void);
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -50,9 +49,6 @@ void __attribute__((section(".iram1"))) __start(void)
 
 	/* Disable normal interrupts. */
 	csr_read_clear(mstatus, MSTATUS_MIE);
-
-	/* Zero out BSS */
-	z_bss_zero();
 
 #if !CONFIG_BOOTLOADER_ESP_IDF
 	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.
@@ -99,7 +95,7 @@ void __attribute__((section(".iram1"))) __start(void)
 	esprv_intc_int_set_threshold(1);
 
 	/* Start Zephyr */
-	z_cstart();
+	_PrepC();
 
 	CODE_UNREACHABLE;
 }
