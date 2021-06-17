@@ -87,7 +87,7 @@ config LWM2M_ENGINE_MAX_OBSERVER
 	  This value sets the maximum number of resources which can be
 	  added to the observe notification list.
 
-config LWM2M_ENGINE_NOTIFICATION_TIMEOUT_REGISTRATION_UPDATE
+config LWM2M_ENGINE_TIMEOUT_REG_UPDATE
 	bool "Enable Registration Update when Notification Timeout Occurs"
 	help
 	  Automatically trigger a Registration Update when Notification Timeout Occurs

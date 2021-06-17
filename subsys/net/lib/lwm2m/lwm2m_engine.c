@@ -4252,10 +4252,10 @@ static int32_t retransmit_request(struct lwm2m_ctx *client_ctx,
 
 static void notify_message_timeout_cb(struct lwm2m_message *msg)
 {
-	if (ext_notify_timeout_cb != NULL){
+	if (ext_notify_timeout_cb != NULL) {
 		ext_notify_timeout_cb(msg);
 	}
-#if defined(CONFIG_LWM2M_ENGINE_NOTIFICATION_TIMEOUT_REGISTRATION_UPDATE)
+#if defined(CONFIG_LWM2M_ENGINE_TIMEOUT_REG_UPDATE)
 	engine_trigger_update(false);
 #endif
 	LOG_ERR("Notify Message Timed Out : %p", msg);
