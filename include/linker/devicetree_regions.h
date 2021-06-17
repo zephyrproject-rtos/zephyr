@@ -35,25 +35,29 @@
 #define LINKER_DT_NODE_REGION_NAME(node_id) \
 	DT_PROP_OR(node_id, zephyr_memory_region, DT_NODE_PATH(node_id))
 
-/* Declare a memory region */
-#define _REGION_DECLARE(name, attr, node) name(attr) : \
-	ORIGIN = DT_REG_ADDR(node),		       \
-	LENGTH = DT_REG_SIZE(node)
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Declare a memory region
+ *
+ * @param node_id devicetree node identifier
+ * @param attr region attributes
+ */
+#define _REGION_DECLARE(node_id, attr)		    \
+	LINKER_DT_NODE_REGION_NAME(node_id)(attr) : \
+	ORIGIN = DT_REG_ADDR(node_id),		    \
+	LENGTH = DT_REG_SIZE(node_id)
+
+/** @endcond */
 
 /**
  * @brief Generate a linker memory region from a devicetree node
  *
- * If @p node_id refers to a node with status "okay", then this declares
- * a linker memory region named @p name with attributes from @p attr.
- *
- * Otherwise, it doesn't expand to anything.
- *
- * @param name name of the generated memory region
+ * @param node_id devicetree node identifier with a \<reg\> property defining
+ *                region location and size
  * @param attr region attributes to use (rx, rw, ...)
- * @param node_id devicetree node identifier with a \<reg\> property
- *                defining region location and size.
  */
-#define LINKER_DT_REGION_FROM_NODE(name, attr, node_id)		\
-	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),		\
-		    (_REGION_DECLARE(name, attr, node_id)),	\
+#define LINKER_DT_REGION_FROM_NODE(node_id, attr)      \
+	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay), \
+		    (_REGION_DECLARE(node_id, attr)),  \
 		    ())
