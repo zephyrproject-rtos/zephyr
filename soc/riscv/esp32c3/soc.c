@@ -24,6 +24,7 @@
 
 extern void z_cstart(void);
 extern void esprv_intc_int_set_threshold(int priority_threshold);
+extern void z_bss_zero(void);
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -34,8 +35,6 @@ void __attribute__((section(".iram1"))) __start(void)
 {
 	volatile uint32_t *wdt_rtc_protect = (uint32_t *)RTC_CNTL_WDTWPROTECT_REG;
 	volatile uint32_t *wdt_rtc_reg = (uint32_t *)RTC_CNTL_WDTCONFIG0_REG;
-	extern uint32_t _bss_start;
-	extern uint32_t _bss_end;
 
 	/* Configure the global pointer register
 	 * (This should be the first thing startup does, as any other piece of code could be
@@ -52,9 +51,8 @@ void __attribute__((section(".iram1"))) __start(void)
 	/* Disable normal interrupts. */
 	csr_read_clear(mstatus, MSTATUS_MIE);
 
-	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	(void)memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
-	__asm__ __volatile__("" : : "g"(&_bss_start) : "memory");
+	/* Zero out BSS */
+	z_bss_zero();
 
 #if !CONFIG_BOOTLOADER_ESP_IDF
 	/* The watchdog timer is enabled in the 1st stage (ROM) bootloader.
