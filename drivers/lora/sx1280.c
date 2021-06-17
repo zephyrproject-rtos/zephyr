@@ -155,26 +155,33 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1272) +
 #define SX127X_PACONFIG_MAX_POWER_SHIFT 4
 #endif
 
+// #define DIO0_NODE	DT_ALIAS(dio0)
+// #if !DT_NODE_HAS_STATUS(DIO0_NODE, okay)
+// #error "Unsupported board: sw0 devicetree alias is not defined"
+// #endif
+// static const struct gpio_dt_spec dio0 = GPIO_DT_SPEC_GET_OR(DIO0_NODE, gpios,
+// 							      {0});
+
 // extern DioIrqHandler *DioIrq[];
 
-struct sx127x_dio {
+struct sx1280_dio {
 	const char *port;
 	gpio_pin_t pin;
 	gpio_dt_flags_t flags;
 };
 
 /* Helper macro that UTIL_LISTIFY can use and produces an element with comma */
-#define SX127X_DIO_GPIO_ELEM(idx, inst) \
+#define SX1280_DIO_GPIO_ELEM(idx, inst) \
 	{ \
 		DT_INST_GPIO_LABEL_BY_IDX(inst, dio_gpios, idx), \
 		DT_INST_GPIO_PIN_BY_IDX(inst, dio_gpios, idx), \
 		DT_INST_GPIO_FLAGS_BY_IDX(inst, dio_gpios, idx), \
 	},
 
-// #define SX127X_DIO_GPIO_INIT(n) \
-// 	UTIL_LISTIFY(DT_INST_PROP_LEN(n, dio_gpios), SX127X_DIO_GPIO_ELEM, n)
+#define SX1280_DIO_GPIO_INIT(n) \
+	UTIL_LISTIFY(DT_INST_PROP_LEN(n, dio_gpios), SX1280_DIO_GPIO_ELEM, n)
 
-// static const struct sx127x_dio sx127x_dios[] = { SX127X_DIO_GPIO_INIT(0) };
+static const struct sx1280_dio sx1280_dios[] = { SX1280_DIO_GPIO_INIT(0) };
 
 // #define SX127X_MAX_DIO ARRAY_SIZE(sx127x_dios)
 
@@ -202,7 +209,7 @@ static struct sx127x_data {
 #endif
 	const struct device *spi;
 	struct spi_config spi_cfg;
-	// const struct device *dio_dev[SX127X_MAX_DIO];
+	const struct device *dio_dev[1];
 	// struct k_work dio_work[SX127X_MAX_DIO];
 } dev_data;
 
@@ -736,7 +743,7 @@ void sx1280_WriteBuffer( uint8_t offset, uint8_t *buffer, uint8_t size )
     	// GpioWrite( &SX1276.Spi.Nss, 0 ); // TODO
 	// gpio_pin_set(dev_data.spi, GPIO_CS_PIN, 0); // TODO
 
-	LOG_INF("test2");
+	LOG_INF("test2 %u", size);
 
 	// RadioSpi->write( RADIO_WRITE_BUFFER );
 	int ret;
@@ -815,7 +822,7 @@ void sx1280_ReadBuffer( uint8_t offset, uint8_t *buffer, uint8_t size )
 //     WaitOnBusy( );
 }
 
-void ClearIrqStatus( uint16_t irqMask )
+void sx1280_ClearIrqStatus( uint16_t irqMask )
 {
     uint8_t buf[2];
 
@@ -831,7 +838,7 @@ void SetTx( TickTime_t timeout )
     buf[1] = ( uint8_t )( ( timeout.PeriodBaseCount >> 8 ) & 0x00FF );
     buf[2] = ( uint8_t )( timeout.PeriodBaseCount & 0x00FF );
 
-    ClearIrqStatus( IRQ_RADIO_ALL );
+    sx1280_ClearIrqStatus( IRQ_RADIO_ALL );
 
     // If the radio is doing ranging operations, then apply the specific calls
     // prior to SetTx
@@ -849,9 +856,144 @@ void SetPayload( uint8_t *buffer, uint8_t size, uint8_t offset )
     sx1280_WriteBuffer( offset, buffer, size );
 }
 
+// static void sx1280_irq_callback(const struct device *dev,
+// 				struct gpio_callback *cb, uint32_t pins)
+// {
+// 	unsigned int i, pin;
+
+// 	pin = find_lsb_set(pins) - 1;
+
+// 	for (i = 0; i < SX127X_MAX_DIO; i++) {
+// 		if (dev == dev_data.dio_dev[i] &&
+// 		    pin == sx127x_dios[i].pin) {
+// 			k_work_submit(&dev_data.dio_work[i]);
+// 		}
+// 	}
+// }
+
+uint16_t sx1280_readIrqStatus()
+{
+  uint16_t temp;
+  uint8_t buffer[2];
+
+  sx1280_ReadCommand(RADIO_GET_IRQSTATUS, buffer, 2);
+  temp = ((buffer[0] << 8) + buffer[1]);
+  return temp;
+}
+
+void dio0_cb_func(const struct device *dev, struct gpio_callback *cb,
+		    uint32_t pins)
+{
+	printk("DIO interrupted at %" PRIu32 "\n", k_cycle_get_32());
+	if (sx1280_readIrqStatus() & IRQ_RX_TX_TIMEOUT )                        //check for timeout
+		{
+			LOG_INF("timeout");
+			return;
+		}
+		else
+		{
+			LOG_INF("no timeout");
+			return;
+		}
+}
+
+void sx1280_IoIrqInit()
+{
+	unsigned int i;
+	static struct gpio_callback dio0_callback;
+
+	int ret;
+	printk("init irq\n");
+
+	// if (!device_is_ready(sx1280_dios[0].port)) {
+	// 	printk("Error: button device is not ready\n");
+	// 	return;
+	// }
+	// printk("init irq1\n");
+
+	dev_data.dio_dev[0] = device_get_binding(sx1280_dios[0].port);
+	if (dev_data.dio_dev[0] == NULL) {
+		LOG_ERR("Cannot get pointer to %s device",
+			sx1280_dios[0].port);
+		return;
+	}
+
+
+	gpio_pin_configure(dev_data.dio_dev[0], sx1280_dios[0].pin,
+				GPIO_INPUT | GPIO_INT_DEBOUNCE
+				| sx1280_dios[0].flags);
+
+	gpio_init_callback(&dio0_callback,
+				dio0_cb_func,
+				BIT(sx1280_dios[0].pin));
+
+	if (gpio_add_callback(dev_data.dio_dev[0], &dio0_callback) < 0) {
+		LOG_ERR("Could not set gpio callback.");
+		return;
+	}
+	gpio_pin_interrupt_configure(dev_data.dio_dev[0],
+					sx1280_dios[0].pin,
+					GPIO_INT_EDGE_TO_ACTIVE);
+
+	// ret = gpio_pin_configure_dt(&sx1280_dios[0], GPIO_INPUT);
+	// if (ret != 0) {
+	// 	printk("Error %d: failed to configure pin %d\n",
+	// 	       ret, sx1280_dios[0].pin);
+	// 	return;
+	// }
+	// printk("init irq2\n");
+
+
+	// ret = gpio_pin_interrupt_configure_dt(&sx1280_dios[0],
+	// 				      GPIO_INT_EDGE_TO_ACTIVE);
+	// if (ret != 0) {
+	// 	printk("Error %d: failed to configure interrupt on pin %d\n",
+	// 		ret, sx1280_dios[0].pin);
+	// 	return;
+	// }
+	// printk("init irq3\n");
+
+	// gpio_init_callback(&dio0_callback, dio0_cb_func, BIT(sx1280_dios[0].pin));
+	// gpio_add_callback(sx1280_dios[0].port, &dio0_callback);
+	// printk("Set up button at pin %d\n", sx1280_dios[0].pin);
+
+	/* Setup DIO gpios */
+	// if (!irqHandlers[i]) {
+	// 	continue;
+	// }
+
+	// dev_data.dio_dev[i] = device_get_binding(sx127x_dios[i].port);
+	// if (dev_data.dio_dev[i] == NULL) {
+	// 	LOG_ERR("Cannot get pointer to %s device",
+	// 		sx127x_dios[i].port);
+	// 	return;
+	// }
+
+	// k_work_init(&dev_data.dio_work[i], sx127x_dio_work_handle);
+
+	// gpio_pin_configure(dev_data.dio_dev[i], sx127x_dios[i].pin,
+	// 			GPIO_INPUT | GPIO_INT_DEBOUNCE
+	// 			| sx127x_dios[i].flags);
+
+	// gpio_init_callback(&callbacks[i],
+	// 			sx127x_irq_callback,
+	// 			BIT(sx127x_dios[i].pin));
+
+	// if (gpio_add_callback(dev_data.dio_dev[i], &callbacks[i]) < 0) {
+	// 	LOG_ERR("Could not set gpio callback.");
+	// 	return;
+	// }
+	// gpio_pin_interrupt_configure(dev_data.dio_dev[i],
+	// 				sx127x_dios[i].pin,
+	// 				GPIO_INT_EDGE_TO_ACTIVE);
+
+}
+
+
 void SendPayload( uint8_t *payload, uint8_t size, TickTime_t timeout, uint8_t offset )
 {
     SetPayload( payload, size, offset );
+	sx1280_WriteRegister(REG_LR_PAYLOADLENGTH, size);                           //only seems to work for lora
     SetTx( timeout );
 }
 
@@ -859,7 +1001,7 @@ int sx1280_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
 	LOG_INF("lora_send1");
-	SendPayload(data, data_len, (TickTime_t) { .PeriodBase = RADIO_TICK_SIZE_4000_US, .PeriodBaseCount = 1000 }, 0x00);
+	SendPayload(data, data_len, (TickTime_t) { .PeriodBase = RADIO_TICK_SIZE_1000_US, .PeriodBaseCount = 10000 }, 0x00);
 	LOG_INF("lora_send2");
 	// Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
 
@@ -1145,6 +1287,8 @@ static int sx1280_lora_init(const struct device *dev)
 	testReadWriteRegister();
 	testReadWriteCommand();
 
+
+	sx1280_IoIrqInit();
 	// CS = 0
 	// WriteRegister
 	// sx1280_ReadRegister
@@ -1176,11 +1320,13 @@ void testReadWriteRegister() {
 	LOG_INF("data: %x -- %x", Regdata1, Regdata2);
 	if (Regdata2 == (Regdata1 + 1))
 	{
-		LOG_INF("true");
+		LOG_INF("Device found");
 	}
 	else
 	{
-		LOG_INF("false");
+		while (1) {
+			LOG_INF("No device found");
+		}
 	}
 }
 
@@ -1361,6 +1507,94 @@ void sx1280_SetPacketParams( PacketParams_t *packetParams )
     sx1280_WriteCommand( RADIO_SET_PACKETPARAMS, buf, 7 );
 }
 
+void sx1280_SetTxParams( int8_t power, RadioRampTimes_t rampTime )
+{
+    uint8_t buf[2];
+
+    // The power value to send on SPI/UART is in the range [0..31] and the
+    // physical output power is in the range [-18..13]dBm
+    buf[0] = power + 18;
+    buf[1] = ( uint8_t )rampTime;
+    sx1280_WriteCommand( RADIO_SET_TXPARAMS, buf, 2 );
+}
+
+
+void sx1280_SetDioIrqParams( uint16_t irqMask, uint16_t dio1Mask, uint16_t dio2Mask, uint16_t dio3Mask )
+{
+    uint8_t buf[8];
+
+    buf[0] = ( uint8_t )( ( irqMask >> 8 ) & 0x00FF );
+    buf[1] = ( uint8_t )( irqMask & 0x00FF );
+    buf[2] = ( uint8_t )( ( dio1Mask >> 8 ) & 0x00FF );
+    buf[3] = ( uint8_t )( dio1Mask & 0x00FF );
+    buf[4] = ( uint8_t )( ( dio2Mask >> 8 ) & 0x00FF );
+    buf[5] = ( uint8_t )( dio2Mask & 0x00FF );
+    buf[6] = ( uint8_t )( ( dio3Mask >> 8 ) & 0x00FF );
+    buf[7] = ( uint8_t )( dio3Mask & 0x00FF );
+    sx1280_WriteCommand( RADIO_SET_DIOIRQPARAMS, buf, 8 );
+}
+
+#define LTUNUSED(v) (void) (v)    //add LTUNUSED(variable); to avoid compiler warnings
+
+uint32_t sx1280_getFreqInt()
+{
+  //get the current set device frequency, return as long integer
+  uint8_t Msb = 0;
+  uint8_t Mid = 0;
+  uint8_t Lsb = 0;
+
+  uint32_t uinttemp;
+  float floattemp;
+
+  LTUNUSED(Msb);           //to prevent a compiler warning
+  LTUNUSED(Mid);           //to prevent a compiler warning
+  LTUNUSED(Lsb);           //to prevent a compiler warning
+
+//   if (savedPacketType == PACKET_TYPE_LORA)
+//   {
+  Msb = sx1280_ReadRegister(0x906);
+  Mid = sx1280_ReadRegister(0x907);
+  Lsb = sx1280_ReadRegister(0x908);
+//   }
+
+//   if (savedPacketType == PACKET_TYPE_FLRC)
+//   {
+//   Msb = readRegister(REG_FLRC_RFFrequency23_16);
+//   Mid = readRegister(REG_FLRC_RFFrequency15_8);
+//   Lsb = readRegister(REG_FLRC_RFFrequency7_0);
+//   }
+
+  floattemp = ((Msb * 0x10000ul) + (Mid * 0x100ul) + Lsb);
+  floattemp = ((floattemp * FREQ_STEP) / 1000000ul);
+  uinttemp = (uint32_t)(floattemp * 1000000);
+  return uinttemp;
+}
+
+
+void sx1280_printRegisters(uint16_t Start, uint16_t End)
+{
+  //prints the contents of SX1280 registers to serial monitor
+
+  uint16_t Loopv1, Loopv2, RegData;
+
+  printk("Reg    0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
+
+  for (Loopv1 = Start; Loopv1 <= End;)           //32 lines
+  {
+    printk("0x%X  ", Loopv1);
+    for (Loopv2 = 0; Loopv2 <= 15; Loopv2++)
+    {
+      RegData = sx1280_ReadRegister(Loopv1);
+      if (RegData < 0x10)
+      {
+        printk("0");
+      }
+      printk("%X ", RegData);                //print the register number
+      Loopv1++;
+    }
+    printk("\n");
+  }
+}
 
 int sx1280_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
@@ -1368,9 +1602,9 @@ int sx1280_lora_config(const struct device *dev,
 	LOG_INF("config1");
 	sx1280_SetStandby(STDBY_RC);
 	LOG_INF("config2");
-	// sx1280_SetRegulatorMode(); // TODO
+	sx1280_SetRegulatorMode(USE_LDO);
 	LOG_INF("regval-pre: %x", sx1280_ReadRegister( REG_LNA_REGIME ));
-        sx1280_SetLNAGainSetting(LNA_LOW_POWER_MODE);
+        sx1280_SetLNAGainSetting(LNA_HIGH_SENSITIVITY_MODE);
 	LOG_INF("regval-post: %x", sx1280_ReadRegister( REG_LNA_REGIME ));
 	LOG_INF("config3");
 
@@ -1380,14 +1614,14 @@ int sx1280_lora_config(const struct device *dev,
         ModulationParams.PacketType = PACKET_TYPE_LORA;
         PacketParams.PacketType     = PACKET_TYPE_LORA;
 
-        ModulationParams.Params.LoRa.SpreadingFactor = ( RadioLoRaSpreadingFactors_t )  config->datarate; // TODO
+        ModulationParams.Params.LoRa.SpreadingFactor = ( RadioLoRaSpreadingFactors_t )  config->datarate;
         ModulationParams.Params.LoRa.Bandwidth       = ( RadioLoRaBandwidths_t )        config->bandwidth;
         ModulationParams.Params.LoRa.CodingRate      = ( RadioLoRaCodingRates_t )       config->coding_rate;
         PacketParams.Params.LoRa.PreambleLength      =                                  config->preamble_len;
-        // PacketParams.Params.LoRa.HeaderType          = ( RadioLoRaPacketLengthsModes_t )Eeprom.EepromData.DemoSettings.PacketParam2; // TODO
-        // PacketParams.Params.LoRa.PayloadLength       =                                  Eeprom.EepromData.DemoSettings.PacketParam3;
-        // PacketParams.Params.LoRa.Crc                 = ( RadioLoRaCrcModes_t )          Eeprom.EepromData.DemoSettings.PacketParam4;
-        // PacketParams.Params.LoRa.InvertIQ            = ( RadioLoRaIQModes_t )           Eeprom.EepromData.DemoSettings.PacketParam5;
+        PacketParams.Params.LoRa.HeaderType          = LORA_PACKET_VARIABLE_LENGTH;
+        PacketParams.Params.LoRa.PayloadLength       = 255;
+        PacketParams.Params.LoRa.Crc                 = LORA_CRC_ON;
+        PacketParams.Params.LoRa.InvertIQ            = LORA_IQ_NORMAL;
 
         sx1280_SetStandby( STDBY_RC );
 	LOG_INF("config4");
@@ -1396,14 +1630,18 @@ int sx1280_lora_config(const struct device *dev,
         sx1280_SetBufferBaseAddresses( 0x00, 0x00 );
         sx1280_SetModulationParams( &ModulationParams );
         sx1280_SetPacketParams( &PacketParams );
-	LOG_INF("config9");
+	sx1280_SetDioIrqParams(IRQ_RADIO_ALL, (IRQ_TX_DONE + IRQ_RX_TX_TIMEOUT), 0, 0);
+
+	LOG_INF("config9 %u", sx1280_getFreqInt());
+	printk("config9 %u", sx1280_getFreqInt());
         // only used in GFSK, FLRC (4 bytes max) and BLE mode
         // SetSyncWord( 1, ( uint8_t[] ){ 0xDD, 0xA0, 0x96, 0x69, 0xDD } ); // TODO: non LORA
         // only used in GFSK, FLRC
         // uint8_t crcSeedLocal[2] = {0x45, 0x67}; // TODO
         // SetCrcSeed( crcSeedLocal );
         // SetCrcPolynomial( 0x0123 );
-        // SetTxParams( Eeprom.EepromData.DemoSettings.TxPower, RADIO_RAMP_20_US );
+        sx1280_SetTxParams( config->tx_power, RADIO_RAMP_02_US );
+	sx1280_printRegisters(0x900, 0x9FF);
         // SetPollingMode( );
 
 	// Radio.SetChannel(config->frequency);

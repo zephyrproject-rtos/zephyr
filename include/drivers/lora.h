@@ -19,12 +19,41 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_LORA_SX1280
+/*!
+ * \brief Represents the bandwidth values for LORA packet type
+ */
+enum lora_signal_bandwidth
+{
+    BW_0200                            = 0x34,
+    BW_0400                            = 0x26,
+    BW_0800                            = 0x18,
+    BW_1600                            = 0x0A,
+};
+#else
 enum lora_signal_bandwidth {
 	BW_125_KHZ = 0,
 	BW_250_KHZ,
 	BW_500_KHZ,
 };
+#endif
 
+#ifdef CONFIG_LORA_SX1280
+/*!
+ * \brief Represents the possible spreading factor values in LORA packet types
+ */
+enum lora_datarate
+{
+    SF_5                                = 0x50,
+    SF_6                                = 0x60,
+    SF_7                                = 0x70,
+    SF_8                                = 0x80,
+    SF_9                                = 0x90,
+    SF_10                               = 0xA0,
+    SF_11                               = 0xB0,
+    SF_12                               = 0xC0,
+};
+#else
 enum lora_datarate {
 	SF_6 = 6,
 	SF_7,
@@ -34,6 +63,7 @@ enum lora_datarate {
 	SF_11,
 	SF_12,
 };
+#endif
 
 enum lora_coding_rate {
 	CR_4_5 = 1,
