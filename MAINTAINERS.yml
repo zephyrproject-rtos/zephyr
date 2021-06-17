@@ -272,7 +272,7 @@ CMSIS API layer:
         - "area: Portability"
 
 CMSIS-DSP integration:
-    status: maintainer
+    status: maintained
     maintainers:
         - stephanosio
     collaborators:
