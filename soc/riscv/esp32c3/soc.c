@@ -78,7 +78,7 @@ void __attribute__((section(".iram1"))) __start(void)
 #endif
 
 	/* Configure the Cache MMU size for instruction and rodata in flash. */
-	extern uint32_t esp32c3_rom_cache_set_idrom_mmu_size(uint32_t irom_size,
+	extern uint32_t esp_rom_cache_set_idrom_mmu_size(uint32_t irom_size,
 			uint32_t drom_size);
 
 	extern int _rodata_reserved_start;
@@ -88,7 +88,7 @@ void __attribute__((section(".iram1"))) __start(void)
 		((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) *
 			sizeof(uint32_t);
 
-	esp32c3_rom_cache_set_idrom_mmu_size(cache_mmu_irom_size,
+	esp_rom_cache_set_idrom_mmu_size(cache_mmu_irom_size,
 		CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 
 	/* set global esp32c3's INTC masking level */
@@ -104,9 +104,9 @@ void __attribute__((section(".iram1"))) __start(void)
 int IRAM_ATTR arch_printk_char_out(int c)
 {
 	if (c == '\n') {
-		esp32c3_rom_uart_tx_one_char('\r');
+		esp_rom_uart_tx_one_char('\r');
 	}
-	esp32c3_rom_uart_tx_one_char(c);
+	esp_rom_uart_tx_one_char(c);
 	return 0;
 }
 
@@ -116,9 +116,9 @@ void IRAM_ATTR esp_restart_noos(void)
 	csr_read_clear(mstatus, MSTATUS_MIE);
 
 	/* Flush any data left in UART FIFOs */
-	esp32c3_rom_uart_tx_wait_idle(0);
-	esp32c3_rom_uart_tx_wait_idle(1);
-	esp32c3_rom_uart_tx_wait_idle(2);
+	esp_rom_uart_tx_wait_idle(0);
+	esp_rom_uart_tx_wait_idle(1);
+	esp_rom_uart_tx_wait_idle(2);
 
 	/* 2nd stage bootloader reconfigures SPI flash signals. */
 	/* Reset them to the defaults expected by ROM */
