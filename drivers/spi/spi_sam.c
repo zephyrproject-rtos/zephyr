@@ -481,6 +481,7 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	.release = spi_sam_release,
 };
 
+
 #define SPI_SAM_DEFINE_CONFIG(n)					\
 	static const struct spi_sam_config spi_sam_config_##n = {	\
 		.regs = (Spi *)DT_INST_REG_ADDR(n),			\
@@ -499,7 +500,5 @@ static const struct spi_driver_api spi_sam_driver_api = {
 			    &spi_sam_dev_data_##n,			\
 			    &spi_sam_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
-
-DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)
