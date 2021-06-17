@@ -24,11 +24,6 @@ static const struct device *get_eeprom_device(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_ALIAS(eeprom_0));
 
-	if (dev == NULL) {
-		printk("\nError: EEPROM with alias eeprom_0 not found.\n");
-		return NULL;
-	}
-
 	if (!device_is_ready(dev)) {
 		printk("\nError: Device \"%s\" is not ready; "
 		       "check the driver initialization logs for errors.\n",
