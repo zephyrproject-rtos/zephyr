@@ -132,6 +132,13 @@ static void test_nodelabel_props(void)
 	zassert_equal(DT_REG_ADDR(TEST_NODELABEL), 0xdeadbeef, "");
 	zassert_equal(DT_REG_SIZE(TEST_NODELABEL), 0x1000, "");
 	zassert_true(!strcmp(DT_LABEL(TEST_NODELABEL), "TEST_GPIO_1"), "");
+	zassert_equal(DT_NODE_NUM_NODELABELS(TEST_NODELABEL), 3, "");
+	zassert_true(!strcmp(STRINGIFY(DT_NODE_NODELABEL_BY_IDX(TEST_NODELABEL, 0)),
+			     "test_nodelabel"), "");
+	zassert_true(!strcmp(STRINGIFY(DT_NODE_NODELABEL_BY_IDX(TEST_NODELABEL, 1)),
+			     "TEST_NODELABEL_ALLCAPS"), "");
+	zassert_true(!strcmp(STRINGIFY(DT_NODE_NODELABEL_BY_IDX(TEST_NODELABEL, 2)),
+			     "test_gpio_1"), "");
 	zassert_equal(DT_PROP(TEST_NODELABEL, gpio_controller), 1, "");
 	zassert_equal(DT_PROP(TEST_NODELABEL, ngpios), 32, "");
 	zassert_true(!strcmp(DT_PROP(TEST_NODELABEL, status), "okay"), "");
