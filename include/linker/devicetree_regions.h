@@ -8,8 +8,8 @@
  */
 
 /* Declare a memory region */
-#define _REGION_DECLARE(name, attr, node) name(attr) : \
-	ORIGIN = DT_REG_ADDR(node),		       \
+#define _REGION_DECLARE(node, attr) DT_REGION_NAME(node)(attr) : \
+	ORIGIN = DT_REG_ADDR(node),				 \
 	LENGTH = DT_REG_SIZE(node)
 
 /**
@@ -24,3 +24,13 @@
 	COND_CODE_1(DT_NODE_HAS_STATUS(node, okay),	  \
 		    (_REGION_DECLARE(name, attr, node)),  \
 		    ())
+
+/**
+ * @brief Get a memory region name from a devicetree node
+ *
+ * @param node_id node identifier
+ * @retval unquoted node label
+ */
+#define DT_REGION_NAME(node_id)		  \
+	DT_NODE_NODELABEL_BY_IDX(node_id, \
+				 UTIL_DECR(DT_NODE_NUM_NODELABELS(node_id)))

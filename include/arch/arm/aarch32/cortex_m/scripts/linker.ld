@@ -389,7 +389,7 @@ GROUP_START(ITCM)
 		*(.itcm)
 		*(".itcm.*")
 		__itcm_end = .;
-	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
+	} GROUP_LINK_IN(DT_REGION_NAME(DT_CHOSEN(zephyr_itcm)) AT> ROMABLE_REGION)
 
 	__itcm_size = __itcm_end - __itcm_start;
 	__itcm_rom_start = LOADADDR(_ITCM_SECTION_NAME);
@@ -407,7 +407,7 @@ GROUP_START(DTCM)
 		*(.dtcm_bss)
 		*(".dtcm_bss.*")
 		__dtcm_bss_end = .;
-	} GROUP_LINK_IN(DTCM)
+	} GROUP_LINK_IN(DT_REGION_NAME(DT_CHOSEN(zephyr_dtcm)))
 
 	SECTION_PROLOGUE(_DTCM_NOINIT_SECTION_NAME, (NOLOAD),SUBALIGN(4))
 	{
@@ -415,7 +415,7 @@ GROUP_START(DTCM)
 		*(.dtcm_noinit)
 		*(".dtcm_noinit.*")
 		__dtcm_noinit_end = .;
-	} GROUP_LINK_IN(DTCM)
+	} GROUP_LINK_IN(DT_REGION_NAME(DT_CHOSEN(zephyr_dtcm)))
 
 	SECTION_PROLOGUE(_DTCM_DATA_SECTION_NAME,,SUBALIGN(4))
 	{
@@ -423,7 +423,7 @@ GROUP_START(DTCM)
 		*(.dtcm_data)
 		*(".dtcm_data.*")
 		__dtcm_data_end = .;
-	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
+	} GROUP_LINK_IN(DT_REGION_NAME(DT_CHOSEN(zephyr_dtcm)) AT> ROMABLE_REGION)
 
 	__dtcm_end = .;
 
