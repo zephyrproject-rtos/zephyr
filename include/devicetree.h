@@ -468,6 +468,48 @@
 #define DT_NODE_FULL_NAME(node_id) DT_CAT(node_id, _FULL_NAME)
 
 /**
+ * @brief Get the number of node labels a node was given
+ *
+ * Example devicetree fragment:
+ *
+ *     / {
+ *             soc {
+ *                     node1: node2: node3: my-node@12345678 { ... };
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *    DT_NODE_NUM_NODELABELS(DT_NODELABEL(node1)) // 3
+ *
+ * @param node_id node identifier
+ * @retval the number of labels given to the node
+ */
+#define DT_NODE_NUM_NODELABELS(node_id) DT_CAT(node_id, _NODELABEL_NUM)
+
+/**
+ * @brief Get the "idx"th node label of a node
+ *
+ * Example devicetree fragment:
+ *
+ *     / {
+ *             soc {
+ *                     node1: node2: node3: my-node@12345678 { ... };
+ *             };
+ *     };
+ *
+ * Example usage:
+ *
+ *    DT_NODE_NODELABEL_BY_IDX(DT_NODELABEL(node1), 0) // node1
+ *    DT_NODE_NODELABEL_BY_IDX(DT_NODELABEL(node1), 2) // node3
+ *
+ * @param node_id node identifier
+ * @param idx the index to get
+ * @retval the idx'th node label of the node
+ */
+#define DT_NODE_NODELABEL_BY_IDX(node_id, idx) DT_CAT3(node_id, _NODELABEL_IDX_, idx)
+
+/**
  * @brief Do node_id1 and node_id2 refer to the same node?
  *
  * Both "node_id1" and "node_id2" must be node identifiers for nodes
