@@ -138,6 +138,9 @@ static struct lwm2m_engine_obj *get_engine_obj(int obj_id);
 static struct lwm2m_engine_obj_inst *get_engine_obj_inst(int obj_id,
 							 int obj_inst_id);
 
+/* function pointer to indicate notification timeout to the application */
+static ext_notify_timeout_cb_t ext_notify_timeout_cb;
+
 /* Shared set of in-flight LwM2M messages */
 static struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
 
@@ -4247,6 +4250,17 @@ static int32_t retransmit_request(struct lwm2m_ctx *client_ctx,
 	return next_retransmission;
 }
 
+static void notify_message_timeout_cb(struct lwm2m_message *msg)
+{
+	if (ext_notify_timeout_cb != NULL){
+		ext_notify_timeout_cb(msg);
+	}
+#if defined(CONFIG_LWM2M_ENGINE_NOTIFICATION_TIMEOUT_REGISTRATION_UPDATE)
+	engine_trigger_update(false);
+#endif
+	LOG_ERR("Notify Message Timed Out : %p", msg);
+}
+
 static int notify_message_reply_cb(const struct coap_packet *response,
 				   struct coap_reply *reply,
 				   const struct sockaddr *from)
@@ -4324,6 +4338,7 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 	msg->token = obs->token;
 	msg->tkl = obs->tkl;
 	msg->reply_cb = notify_message_reply_cb;
+	msg->message_timeout_cb = notify_message_timeout_cb;
 	msg->out.out_cpkt = &msg->cpkt;
 
 	ret = lwm2m_init_message(msg);
@@ -4946,6 +4961,11 @@ static int lwm2m_engine_init(const struct device *dev)
 	LOG_DBG("LWM2M engine socket receive thread started");
 
 	return 0;
+}
+
+void lwm2m_engine_set_ext_notify_timeout_cb_fn(ext_notify_timeout_cb_t fnPtr)
+{
+	ext_notify_timeout_cb = fnPtr;
 }
 
 SYS_INIT(lwm2m_engine_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

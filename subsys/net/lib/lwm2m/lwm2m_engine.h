@@ -54,6 +54,12 @@
 typedef int (*udp_request_handler_cb_t)(struct coap_packet *request,
 					struct lwm2m_message *msg);
 
+/* Function Prototype definition for external notification timeout callback function */
+typedef void (*ext_notify_timeout_cb_t)(struct lwm2m_message *msg);
+
+/* Function to assign the function pointer for external notification */
+void lwm2m_engine_set_ext_notify_timeout_cb_fn(ext_notify_timeout_cb_t fnPtr);
+
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
 
 int lwm2m_notify_observer(uint16_t obj_id, uint16_t obj_inst_id, uint16_t res_id);
