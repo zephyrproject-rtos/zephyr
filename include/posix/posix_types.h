@@ -22,11 +22,11 @@ typedef unsigned long useconds_t;
 #endif
 
 /* time related attributes */
-#ifndef CONFIG_NEWLIB_LIBC
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCMWDT_LIBC)
 #ifndef __clockid_t_defined
 typedef uint32_t clockid_t;
 #endif
-#endif /*CONFIG_NEWLIB_LIBC */
+#endif /* !CONFIG_NEWLIB_LIBC && !CONFIG_ARCMWDT_LIBC */
 #ifndef __timer_t_defined
 typedef unsigned long timer_t;
 #endif
