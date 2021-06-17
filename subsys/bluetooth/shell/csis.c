@@ -19,9 +19,10 @@
 #include "bt.h"
 
 extern const struct shell *ctx_shell;
+static struct bt_csis *csis;
 static uint8_t sirk_read_rsp = BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT;
 
-static void locked_cb(struct bt_conn *conn, bool locked)
+static void locked_cb(struct bt_conn *conn, struct bt_csis *csis, bool locked)
 {
 	if (!conn) {
 		shell_error(ctx_shell, "Server %s the device",
@@ -36,7 +37,7 @@ static void locked_cb(struct bt_conn *conn, bool locked)
 	}
 }
 
-static uint8_t sirk_read_req_cb(struct bt_conn *conn)
+static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csis *csis)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
@@ -94,7 +95,7 @@ static int cmd_csis_register(const struct shell *sh, size_t argc, char **argv)
 		}
 	}
 
-	err = bt_csis_register(&param);
+	err = bt_csis_register(&param, &csis);
 	if (err) {
 		shell_error(sh, "Could not register CSIS: %d", err);
 		return err;
@@ -108,7 +109,7 @@ static int cmd_csis_advertise(const struct shell *shell, size_t argc,
 {
 	int err;
 	if (!strcmp(argv[1], "off")) {
-		err = bt_csis_advertise(false);
+		err = bt_csis_advertise(csis, false);
 		if (err) {
 			shell_error(shell, "Failed to stop advertising %d",
 				    err);
@@ -116,7 +117,7 @@ static int cmd_csis_advertise(const struct shell *shell, size_t argc,
 		}
 		shell_print(shell, "Advertising stopped");
 	} else if (!strcmp(argv[1], "on")) {
-		err = bt_csis_advertise(true);
+		err = bt_csis_advertise(csis, true);
 		if (err) {
 			shell_error(shell, "Failed to start advertising %d",
 				    err);
@@ -136,12 +137,12 @@ static int cmd_csis_update_psri(const struct shell *shell, size_t argc,
 {
 	int err;
 
-	if (bt_csis_advertise(false) != 0) {
+	if (bt_csis_advertise(csis, false) != 0) {
 		shell_error(shell,
 			    "Failed to stop advertising - psri not updated");
 		return -ENOEXEC;
 	}
-	err = bt_csis_advertise(true);
+	err = bt_csis_advertise(csis, true);
 	if (err != 0) {
 		shell_error(shell,
 			    "Failed to start advertising  - psri not updated");
@@ -156,14 +157,14 @@ static int cmd_csis_update_psri(const struct shell *shell, size_t argc,
 static int cmd_csis_print_sirk(const struct shell *shell, size_t argc,
 				      char *argv[])
 {
-	bt_csis_print_sirk();
+	bt_csis_print_sirk(csis);
 	return 0;
 }
 
 static int cmd_csis_lock(const struct shell *shell, size_t argc,
 				char *argv[])
 {
-	if (bt_csis_lock(true, false) != 0) {
+	if (bt_csis_lock(csis, true, false) != 0) {
 		shell_error(shell, "Failed to set lock");
 		return -ENOEXEC;
 	}
@@ -187,7 +188,7 @@ static int cmd_csis_release(const struct shell *shell, size_t argc,
 		}
 	}
 
-	if (bt_csis_lock(false, force) != 0) {
+	if (bt_csis_lock(csis, false, force) != 0) {
 		shell_error(shell, "Failed to release lock");
 		return -ENOEXEC;
 	}
