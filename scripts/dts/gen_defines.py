@@ -481,6 +481,7 @@ def write_child_functions(node):
     # Writes macro that are helpers that will call a macro/function
     # for each child node.
 
+    out_comment("Node's children:")
     out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
             " ".join(f"fn(DT_{child.z_path_id})" for child in
                 node.children.values()))
