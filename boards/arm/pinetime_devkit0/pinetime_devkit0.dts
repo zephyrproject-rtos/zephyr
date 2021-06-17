@@ -31,7 +31,6 @@
 		led2 = &blled2;	/* backlight high */
 		led3 = &statusled;	/* status led, may be not populated */
 		sw0 = &key_in;  /* key in */
-		sw1 = &key_out;  /* key out */
 	};
 
 	leds {
@@ -60,10 +59,11 @@
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Key in";
 		};
-		key_out: button_1 {
-			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
-			label = "Key out";
-		};
+	};
+	key_out {
+		compatible = "pine64,pinetime-key-out";
+		gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		label = "Key out";
 	};
 };
 
