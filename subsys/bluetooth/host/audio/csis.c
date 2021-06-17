@@ -284,7 +284,7 @@ static ssize_t read_set_sirk(struct bt_conn *conn,
 		uint8_t cb_rsp;
 
 		/* Ask higher layer for what SIRK to return, if any */
-		cb_rsp = csis_cbs->sirk_read_req(conn);
+		cb_rsp = csis_cbs->sirk_read_req(conn, &csis_insts[0]);
 
 		if (cb_rsp == BT_CSIS_READ_SIRK_REQ_RSP_ACCEPT) {
 			sirk = &csis_insts[0].srv.set_sirk;
@@ -416,7 +416,7 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 		if (csis_cbs && csis_cbs->lock_changed) {
 			bool locked = csis_insts[0].srv.set_lock == BT_CSIP_LOCK_VALUE;
 
-			csis_cbs->lock_changed(conn, locked);
+			csis_cbs->lock_changed(conn, &csis_insts[0], locked);
 		}
 	}
 	return len;
@@ -447,7 +447,7 @@ static void set_lock_timer_handler(struct k_work *work)
 	if (csis_cbs && csis_cbs->lock_changed) {
 		bool locked = csis_insts[0].srv.set_lock == BT_CSIP_LOCK_VALUE;
 
-		csis_cbs->lock_changed(NULL, locked);
+		csis_cbs->lock_changed(NULL, &csis_insts[0], locked);
 	}
 }
 
@@ -534,7 +534,7 @@ static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 		if (csis_cbs && csis_cbs->lock_changed) {
 			bool locked = csis_insts[0].srv.set_lock == BT_CSIP_LOCK_VALUE;
 
-			csis_cbs->lock_changed(conn, locked);
+			csis_cbs->lock_changed(conn, &csis_insts[0], locked);
 		}
 	}
 
@@ -723,9 +723,9 @@ BT_GATT_SERVICE_INSTANCE_DEFINE(csis_service_list, csis_insts,
 				BT_CSIS_SERVICE_DEFINITION);
 
 /****************************** Public API ******************************/
-void *bt_csis_svc_decl_get(void)
+void *bt_csis_svc_decl_get(const struct bt_csis *csis)
 {
-	return csis_service_list[0].attrs;
+	return csis->srv.service_p->attrs;
 }
 
 static bool valid_register_param(const struct bt_csis_register_param *param)
@@ -749,13 +749,15 @@ static bool valid_register_param(const struct bt_csis_register_param *param)
 	return true;
 }
 
-int bt_csis_register(const struct bt_csis_register_param *param)
+int bt_csis_register(const struct bt_csis_register_param *param,
+		     struct bt_csis **csis)
 {
-	static bool registered;
+	static uint8_t instance_cnt;
+	struct bt_csis *inst;
 	int err;
 
-	if (registered) {
-		return -EALREADY;
+	if (instance_cnt == ARRAY_SIZE(csis_insts)) {
+		return -ENOMEM;
 	}
 
 	CHECKIF(param == NULL) {
@@ -768,22 +770,25 @@ int bt_csis_register(const struct bt_csis_register_param *param)
 		return -EINVAL;
 	}
 
+	inst = &csis_insts[instance_cnt];
+	inst->srv.service_p = &csis_service_list[instance_cnt];
+	instance_cnt++;
+
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_cb_register(&auth_callbacks);
 
-	err = bt_gatt_service_register(&csis_service_list[0]);
+	err = bt_gatt_service_register(inst->srv.service_p);
 	if (err != 0) {
 		BT_DBG("CSIS service register failed: %d", err);
 		return err;
 	}
 
-	k_work_init_delayable(&csis_insts[0].srv.set_lock_timer,
+	k_work_init_delayable(&inst->srv.set_lock_timer,
 			      set_lock_timer_handler);
-	csis_insts[0].srv.service_p = &csis_service_list[0];
-	csis_insts[0].srv.rank = param->rank;
-	csis_insts[0].srv.set_size = param->set_size;
-	csis_insts[0].srv.set_lock = BT_CSIP_RELEASE_VALUE;
-	csis_insts[0].srv.set_sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
+	inst->srv.rank = param->rank;
+	inst->srv.set_size = param->set_size;
+	inst->srv.set_lock = BT_CSIP_RELEASE_VALUE;
+	inst->srv.set_sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 
 	if (IS_ENABLED(CONFIG_BT_CSIS_TEST_SAMPLE_DATA)) {
 		uint8_t test_sirk[] = {
@@ -791,30 +796,30 @@ int bt_csis_register(const struct bt_csis_register_param *param)
 			0x22, 0xfd, 0xa1, 0x21, 0x09, 0x7d, 0x7d, 0x45,
 		};
 
-		memcpy(csis_insts[0].srv.set_sirk.value, test_sirk,
+		memcpy(inst->srv.set_sirk.value, test_sirk,
 		       sizeof(test_sirk));
 		BT_DBG("CSIS SIRK was overwritten by sample data SIRK");
 	} else {
-		(void)memcpy(csis_insts[0].srv.set_sirk.value, param->set_sirk,
-			     sizeof(csis_insts[0].srv.set_sirk.value));
+		(void)memcpy(inst->srv.set_sirk.value, param->set_sirk,
+			     sizeof(inst->srv.set_sirk.value));
 	}
 
 #if defined(CONFIG_BT_EXT_ADV)
-	csis_insts[0].srv.adv_cb.sent = adv_timeout;
-	csis_insts[0].srv.adv_cb.connected = adv_connected;
-	k_work_init(&csis_insts[0].srv.work, disconnect_adv);
+	inst->srv.adv_cb.sent = adv_timeout;
+	inst->srv.adv_cb.connected = adv_connected;
+	k_work_init(&inst->srv.work, disconnect_adv);
 #endif /* CONFIG_BT_EXT_ADV */
 
-	registered = true;
+	*csis = inst;
 	return 0;
 }
 
-int bt_csis_advertise(bool enable)
+int bt_csis_advertise(struct bt_csis *csis, bool enable)
 {
 	int err;
 
 	if (enable) {
-		if (csis_insts[0].srv.adv_enabled) {
+		if (csis->srv.adv_enabled) {
 			return -EALREADY;
 		}
 
@@ -824,13 +829,13 @@ int bt_csis_advertise(bool enable)
 			BT_DBG("Could not start adv: %d", err);
 			return err;
 		}
-		csis_insts[0].srv.adv_enabled = true;
+		csis->srv.adv_enabled = true;
 	} else {
-		if (!csis_insts[0].srv.adv_enabled) {
+		if (!csis->srv.adv_enabled) {
 			return -EALREADY;
 		}
 #if defined(CONFIG_BT_EXT_ADV)
-		err = bt_le_ext_adv_stop(csis_insts[0].srv.adv);
+		err = bt_le_ext_adv_stop(csis->srv.adv);
 #else
 		err = bt_le_adv_stop();
 #endif /* CONFIG_BT_EXT_ADV */
@@ -839,13 +844,13 @@ int bt_csis_advertise(bool enable)
 			BT_DBG("Could not stop start adv: %d", err);
 			return err;
 		}
-		csis_insts[0].srv.adv_enabled = false;
+		csis->srv.adv_enabled = false;
 	}
 
 	return err;
 }
 
-int bt_csis_lock(bool lock, bool force)
+int bt_csis_lock(struct bt_csis *csis, bool lock, bool force)
 {
 	uint8_t lock_val;
 	int err = 0;
@@ -857,11 +862,11 @@ int bt_csis_lock(bool lock, bool force)
 	}
 
 	if (!lock && force) {
-		csis_insts[0].srv.set_lock = BT_CSIP_RELEASE_VALUE;
+		csis->srv.set_lock = BT_CSIP_RELEASE_VALUE;
 		notify_clients(NULL);
 
 		if (csis_cbs && csis_cbs->lock_changed) {
-			csis_cbs->lock_changed(NULL, false);
+			csis_cbs->lock_changed(NULL, &csis_insts[0], false);
 		}
 	} else {
 		err = write_set_lock(NULL, NULL, &lock_val,
@@ -875,9 +880,8 @@ int bt_csis_lock(bool lock, bool force)
 	}
 }
 
-void bt_csis_print_sirk(void)
+void bt_csis_print_sirk(const struct bt_csis *csis)
 {
-	BT_HEXDUMP_DBG(&csis_insts[0].srv.set_sirk,
-		       sizeof(csis_insts[0].srv.set_sirk),
+	BT_HEXDUMP_DBG(&csis->srv.set_sirk, sizeof(csis->srv.set_sirk),
 		       "Set SIRK");
 }

@@ -8,6 +8,7 @@
 
 #include "common.h"
 
+static struct bt_csis *csis;
 static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 static volatile bool g_locked;
@@ -45,13 +46,14 @@ static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
-static void csis_lock_changed_cb(struct bt_conn *conn, bool locked)
+static void csis_lock_changed_cb(struct bt_conn *conn, struct bt_csis *csis,
+				 bool locked)
 {
 	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");
 	g_locked = locked;
 }
 
-static uint8_t sirk_read_req_cb(struct bt_conn *conn)
+static uint8_t sirk_read_req_cb(struct bt_conn *conn, struct bt_csis *csis)
 {
 	return sirk_read_req_rsp;
 }
@@ -70,7 +72,7 @@ static void bt_ready(int err)
 
 	printk("Audio Server: Bluetooth initialized\n");
 
-	err = bt_csis_advertise(true);
+	err = bt_csis_advertise(csis, true);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 	}
@@ -95,7 +97,7 @@ static void test_main(void)
 
 	param.cb = &csis_cbs;
 
-	err = bt_csis_register(&param);
+	err = bt_csis_register(&param, &csis);
 	if (err) {
 		FAIL("Could not register CSIS: %d", err);
 		return;
@@ -117,7 +119,7 @@ static void test_force_release(void)
 
 	param.cb = &csis_cbs;
 
-	err = bt_csis_register(&param);
+	err = bt_csis_register(&param, &csis);
 	if (err) {
 		FAIL("Could not register CSIS: %d", err);
 		return;
@@ -128,7 +130,7 @@ static void test_force_release(void)
 
 	WAIT_FOR(g_locked);
 	printk("Force releasing set\n");
-	bt_csis_lock(false, true);
+	bt_csis_lock(csis, false, true);
 }
 
 static void test_csis_enc(void)

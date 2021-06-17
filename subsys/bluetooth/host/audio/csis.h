@@ -34,10 +34,12 @@ struct bt_csis_cb_t {
 	 *  @param conn    The connection to the client that changed the lock.
 	 *                 NULL if server changed it, either by calling
 	 *                 @ref csis_lock or by timeout.
+	 *  @param csis    Pointer to the Coordinated Set Identification Service.
 	 *  @param locked  Whether the lock was locked or released.
 	 *
 	 */
-	void (*lock_changed)(struct bt_conn *conn, bool locked);
+	void (*lock_changed)(struct bt_conn *conn, struct bt_csis *csis,
+			     bool locked);
 
 	/** @brief Request from a peer device to read the sirk.
 	 *
@@ -46,9 +48,10 @@ struct bt_csis_cb_t {
 	 *
 	 * @param conn The connection to the client that requested to read the
 	 *             SIRK.
+	 * @param csis Pointer to the Coordinated Set Identification Service.
 	 * @return A BT_CSIS_READ_SIRK_REQ_RSP_* response code.
 	 */
-	uint8_t (*sirk_read_req)(struct bt_conn *conn);
+	uint8_t (*sirk_read_req)(struct bt_conn *conn, struct bt_csis *csis);
 };
 
 /** Register structure for Coordinated Set Identification Service */
@@ -93,9 +96,11 @@ struct bt_csis_register_param {
  *
  *  The first service attribute can be included in any other GATT service.
  *
+ * @param csis   Pointer to the Coordinated Set Identification Service.
+ *
  *  @return The first CSIS attribute instance.
  */
-void *bt_csis_svc_decl_get(void);
+void *bt_csis_svc_decl_get(const struct bt_csis *csis);
 
 /**
  * @brief Register the Coordinated Set Identification Service.
@@ -105,36 +110,44 @@ void *bt_csis_svc_decl_get(void);
  *
  * This shall only be done as a server.
  *
- * @param param     Coordinated Set Identification Service register parameters.
+ * @param param      Coordinated Set Identification Service register parameters.
+ * @param[out] csis  Pointer to the registered Coordinated Set Identification
+ *                   Service.
  *
  * @return 0 if success, errno on failure.
  */
-int bt_csis_register(const struct bt_csis_register_param *param);
+int bt_csis_register(const struct bt_csis_register_param *param,
+		     struct bt_csis **csis);
 
 /**
  * @brief Print the sirk to the debug output
+ *
+ * @param csis   Pointer to the Coordinated Set Identification Service.
  */
-void bt_csis_print_sirk(void);
+void bt_csis_print_sirk(const struct bt_csis *csis);
 
 /**
  * @brief Starts advertising the PRSI value.
  *
  * This cannot be used with other connectable advertising sets.
  *
+ * @param csis          Pointer to the Coordinated Set Identification Service.
  * @param enable	If true start advertising, if false stop advertising
+ *
  * @return int		0 if on success, ERRNO on error.
  */
-int bt_csis_advertise(bool enable);
+int bt_csis_advertise(struct bt_csis *csis, bool enable);
 
 /** @brief Locks the sets on the server.
  *
- *  @param lock	   If true lock the set, if false release the set.
+ *  @param csis    Pointer to the Coordinated Set Identification Service.
+ *  @param lock    If true lock the set, if false release the set.
  *  @param force   This argument only have meaning when @p lock is false
  *                 (release) and will force release the lock, regardless of who
  *                 took the lock.
  *
  *  @return 0 on success, GATT error on error.
  */
-int bt_csis_lock(bool lock, bool force);
+int bt_csis_lock(struct bt_csis *csis, bool lock, bool force);
 
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIS_ */
