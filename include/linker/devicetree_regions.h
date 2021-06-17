@@ -15,14 +15,13 @@
 /**
  * @brief Generate a linker memory region from a devicetree node
  *
- * @param name name of the generated memory region
- * @param attr region attributes to use (rx, rw, ...)
  * @param node devicetree node with a \<reg\> property defining region location
  *             and size.
+ * @param attr region attributes to use (rx, rw, ...)
  */
-#define DT_REGION_FROM_NODE_STATUS_OKAY(name, attr, node) \
-	COND_CODE_1(DT_NODE_HAS_STATUS(node, okay),	  \
-		    (_REGION_DECLARE(name, attr, node)),  \
+#define DT_REGION_FROM_NODE_STATUS_OKAY(node, attr) \
+	COND_CODE_1(DT_NODE_HAS_STATUS(node, okay), \
+		    (_REGION_DECLARE(node, attr)),  \
 		    ())
 
 /**
