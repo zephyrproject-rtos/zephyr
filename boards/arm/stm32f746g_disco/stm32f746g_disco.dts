@@ -87,8 +87,8 @@
 };
 
 &spi2 {
-	pinctrl-0 = <&spi2_nss_pi0 &spi2_sck_pi1
-		     &spi2_miso_pb14 &spi2_mosi_pb15>;
+	pinctrl-0 = <&spi2_sck_pi1 &spi2_miso_pb14 &spi2_mosi_pb15>;
+	cs-gpios = <&gpioa 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
