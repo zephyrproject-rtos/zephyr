@@ -823,7 +823,7 @@ Libraries / Subsystems
     * Added c:func:`fs_dir_t_init` function for initialization of
       c:type:`fs_dir_t` objects.
 
-  * :option:`CONFIG_FS_LITTLEFS_FC_MEM_POOL` has been deprecated and
+  * ``CONFIG_FS_LITTLEFS_FC_MEM_POOL`` has been deprecated and
     should be replaced by :option:`CONFIG_FS_LITTLEFS_FC_HEAP_SIZE`.
 
 * Management
