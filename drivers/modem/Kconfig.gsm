@@ -78,6 +78,19 @@ config MODEM_GSM_MANUAL_MCCMNO
 	  the network provider and may need to be changed if auto is not
 	  selected.
 
+config MODEM_GSM_RSSI_POLLING_PERIOD
+	int "Configure RSSI polling period (in seconds)"
+	default 30
+	help
+	  This settings is used to configure the period of RSSI polling
+
+config MODEM_GSM_ENABLE_CESQ_RSSI
+	bool "Enable +CESQ RSSI measurement"
+	help
+	   If this is enabled, RSRP, RSCP and RXREL values are read from the
+	   modem with +CESQ. Otherwise only RSSI value is read with +CSQ
+	   from the modem.
+
 config MODEM_GSM_FACTORY_RESET_AT_BOOT
 	bool "Factory reset modem at boot"
 	help
