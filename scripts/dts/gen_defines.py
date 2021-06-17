@@ -118,6 +118,12 @@ def main():
                 out_dt_define(f"{node.z_path_id}_PARENT",
                               f"DT_{node.parent.z_path_id}")
 
+            out_comment("Node's node labels:")
+            out_dt_define(f"{node.z_path_id}_NODELABEL_NUM", len(node.labels))
+            for idx, label in enumerate(node.labels):
+                out_dt_define(f"{node.z_path_id}_NODELABEL_IDX_{idx}_EXISTS", 1)
+                out_dt_define(f"{node.z_path_id}_NODELABEL_IDX_{idx}", label)
+
             write_child_functions(node)
             write_child_functions_status_okay(node)
             write_dep_info(node)
