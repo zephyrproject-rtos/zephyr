@@ -25,6 +25,8 @@
 /** SIRK is available only via an OOB procedure */
 #define BT_CSIS_READ_SIRK_REQ_RSP_OOB_ONLY      0x03
 
+/** @brief Opaque Coordinated Set Identification Service instance. */
+struct bt_csis;
 
 struct bt_csis_cb_t {
 	/** @brief Callback whenever the lock changes on the server.
