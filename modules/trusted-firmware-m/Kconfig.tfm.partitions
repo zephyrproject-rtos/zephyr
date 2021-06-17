@@ -74,4 +74,14 @@ config TFM_PARTITION_AUDIT_LOG
 	  Note: the Audit Log service does not implement the IPC model
 	  interface so it may not be enabled together with IPC option.
 
+config TFM_PARTITION_EXAMPLE
+	bool "Enable example/custom partition"
+	help
+	  Setting this option will cause '-DTFM_PARTITION_EXAMPLE'
+	  to be passed to the TF-M build system. This config option enables an
+	  example/custom partition, which can be used as a starting point to write
+	  custom partitions in TF-M. Any dependencies between the various
+	  TFM_PARTITION_* options are handled by the build system in the
+	  trusted-firmware-m repository.
+
 endif # BUILD_WITH_TFM
