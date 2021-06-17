@@ -126,8 +126,6 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 					       size_t hdr_len)
 {
 	enum net_verdict verdict = NET_CONTINUE;
-	uint32_t src;
-	uint32_t dst;
 
 	/* Upper IP stack expects the link layer address to be in
 	 * big endian format so we must swap it here.
@@ -144,16 +142,6 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 			     net_pkt_lladdr_dst(pkt)->len);
 	}
 
-	/** Uncompress will drop the current fragment. Pkt ll src/dst address
-	 * will then be wrong and must be updated according to the new fragment.
-	 */
-	src = net_pkt_lladdr_src(pkt)->addr ?
-		net_pkt_lladdr_src(pkt)->addr -
-		(net_pkt_data(pkt) - hdr_len) : 0;
-	dst = net_pkt_lladdr_dst(pkt)->addr ?
-		net_pkt_lladdr_dst(pkt)->addr -
-		(net_pkt_data(pkt) - hdr_len) : 0;
-
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	verdict = ieee802154_reassemble(pkt);
 	if (verdict != NET_CONTINUE) {
@@ -166,10 +154,6 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 		goto out;
 	}
 #endif
-	net_pkt_lladdr_src(pkt)->addr = src ?
-		(net_pkt_data(pkt) - hdr_len) + src : NULL;
-	net_pkt_lladdr_dst(pkt)->addr = dst ?
-		(net_pkt_data(pkt) - hdr_len) + dst : NULL;
 
 	pkt_hexdump(RX_PKT_TITLE, pkt, true);
 out:
