@@ -38,7 +38,7 @@ config BT_CSIS_ENC_SIRK_SUPPORT
 config BT_CSIS_MAX_INSTANCE_COUNT
 	int "Coordinated Set Identification Service max instance count"
 	default 1
-	range 1 1 # TODO: Temporary restriction until API supports multiple instances
+	range 1 255
 	help
 	  This option sets the maximum number of instances of Coordinated Set
 	  Identification Services. If the service is declared as primary service
