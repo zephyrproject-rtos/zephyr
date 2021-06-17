@@ -1338,6 +1338,10 @@ static uint8_t att_read_mult_req(struct bt_att_chan *chan, struct net_buf *buf)
 	struct read_data data;
 	uint16_t handle;
 
+	if (!bt_gatt_change_aware(conn, true)) {
+		return BT_ATT_ERR_DB_OUT_OF_SYNC;
+	}
+
 	(void)memset(&data, 0, sizeof(data));
 
 	data.buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_MULT_RSP, 0);
@@ -1427,6 +1431,10 @@ static uint8_t att_read_mult_vl_req(struct bt_att_chan *chan, struct net_buf *bu
 	struct bt_conn *conn = chan->chan.chan.conn;
 	struct read_data data;
 	uint16_t handle;
+
+	if (!bt_gatt_change_aware(conn, true)) {
+		return BT_ATT_ERR_DB_OUT_OF_SYNC;
+	}
 
 	(void)memset(&data, 0, sizeof(data));
 
