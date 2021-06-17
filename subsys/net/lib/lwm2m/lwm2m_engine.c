@@ -139,7 +139,7 @@ static struct lwm2m_engine_obj_inst *get_engine_obj_inst(int obj_id,
 							 int obj_inst_id);
 
 /* function pointer to indicate notification timeout to the application */
-static ext_notify_timeout_cb_t ext_notify_timeout_cb = NULL;
+static ext_notify_timeout_cb_t ext_notify_timeout_cb;
 
 /* Shared set of in-flight LwM2M messages */
 static struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
@@ -4252,14 +4252,13 @@ static int32_t retransmit_request(struct lwm2m_ctx *client_ctx,
 
 static void notify_message_timeout_cb(struct lwm2m_message *msg)
 {
-	if (ext_notify_timeout_cb != NULL)
-	{
+	if (ext_notify_timeout_cb != NULL){
 		ext_notify_timeout_cb(msg);
 	}
 #if defined(CONFIG_LWM2M_ENGINE_NOTIFICATION_TIMEOUT_REGISTRATION_UPDATE)
 	engine_trigger_update(false);
 #endif
-	LOG_ERR("Notify Message Timed Out : %p",msg);
+	LOG_ERR("Notify Message Timed Out : %p", msg);
 }
 
 static int notify_message_reply_cb(const struct coap_packet *response,

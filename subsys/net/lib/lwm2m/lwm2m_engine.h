@@ -53,7 +53,7 @@
 /* Establish a request handler callback type */
 typedef int (*udp_request_handler_cb_t)(struct coap_packet *request,
 					struct lwm2m_message *msg);
-					
+
 /* Function Prototype definition for external notification timeout callback function */
 typedef void (*ext_notify_timeout_cb_t)(struct lwm2m_message *msg);
 
