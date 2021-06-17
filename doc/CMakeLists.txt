@@ -89,6 +89,7 @@ add_custom_target(
   doxygen
   COMMAND
     ${DOXYGEN_EXECUTABLE} ${DOXYFILE_OUT}
+  COMMENT "Running Doxygen..."
 )
 
 set_target_properties(
@@ -157,6 +158,7 @@ add_custom_target(
                 "External Module,modules,${ZEPHYR_BASE}/modules"
 
   VERBATIM
+  COMMENT "Generating Kconfig documentation..."
 )
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_KCONFIG_REST_SCRIPT})
@@ -182,6 +184,7 @@ add_custom_target(
     ${DOCS_SRC_DIR}/reference/devicetree
   VERBATIM
   USES_TERMINAL
+  COMMENT "Generating Devicetree bindings documentation..."
 )
 
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DEVICETREE_REST_SCRIPT})
@@ -202,6 +205,7 @@ add_doc_target(
     ${DOCS_SRC_DIR}
     ${DOCS_HTML_DIR}
   USES_TERMINAL
+  COMMENT "Running Sphinx HTML build..."
 )
 
 set_target_properties(
@@ -232,6 +236,7 @@ add_doc_target(
     ${DOCS_LATEX_DIR}
   COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${DOCS_LATEX_DIR}/zephyr.tex
   USES_TERMINAL
+  COMMENT "Running Sphinx LaTeX build..."
 )
 
 set_target_properties(
@@ -248,6 +253,7 @@ if(LATEX_PDFLATEX_FOUND AND LATEXMK)
     COMMAND ${CMAKE_COMMAND} -E env LATEXOPTS="-halt-on-error -no-shell-escape"
     ${LATEXMK} -quiet -pdf -dvi- -ps-
     WORKING_DIRECTORY ${DOCS_LATEX_DIR}
+    COMMENT "Building PDF file..."
   )
 
   add_dependencies(pdf latex)
