@@ -97,11 +97,6 @@ set_target_properties(
     ADDITIONAL_CLEAN_FILES "${DOXY_OUT}"
 )
 
-add_custom_target(
-  pristine
-  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
-)
-
 #-------------------------------------------------------------------------------
 # kconfig
 
@@ -257,3 +252,11 @@ if(LATEX_PDFLATEX_FOUND AND LATEXMK)
 
   add_dependencies(pdf latex)
 endif()
+
+#-------------------------------------------------------------------------------
+# others
+
+add_custom_target(
+  pristine
+  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
+)
