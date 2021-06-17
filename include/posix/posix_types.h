@@ -19,6 +19,7 @@ extern "C" {
 
 #ifndef __useconds_t_defined
 typedef unsigned long useconds_t;
+#define __useconds_t_defined
 #endif
 
 /* time related attributes */
