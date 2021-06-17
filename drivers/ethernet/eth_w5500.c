@@ -519,6 +519,7 @@ static int w5500_init(const struct device *dev)
 				     config->gpio_pin,
 				     GPIO_INT_EDGE_FALLING);
 
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	ctx->reset = device_get_binding((char *)config->reset_port);
 	if (!ctx->reset) {
 		LOG_ERR("GPIO port %s not found", config->reset_port);
@@ -533,6 +534,7 @@ static int w5500_init(const struct device *dev)
 
 	gpio_pin_set(ctx->reset, DT_INST_GPIO_PIN(0, reset_gpios), 0);
 	k_usleep(500);
+#endif
 
 	err = w5500_hw_reset(dev);
 	if (err) {
@@ -574,9 +576,11 @@ static const struct w5500_config w5500_0_config = {
 	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
 	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
 	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	.reset_port = DT_INST_GPIO_LABEL(0, reset_gpios),
 	.reset_pin = DT_INST_GPIO_PIN(0, reset_gpios),
 	.reset_flags = DT_INST_GPIO_FLAGS(0, reset_gpios),
+#endif
 	.spi_port = DT_INST_BUS_LABEL(0),
 	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
 	.spi_slave = DT_INST_REG_ADDR(0),
