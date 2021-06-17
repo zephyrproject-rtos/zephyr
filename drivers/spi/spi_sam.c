@@ -501,3 +501,5 @@ static const struct spi_driver_api spi_sam_driver_api = {
 			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)
+
+DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)
