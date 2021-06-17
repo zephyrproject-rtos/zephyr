@@ -65,6 +65,7 @@
 /* clang-format on */
 
 typedef void (*lwm2m_socket_fault_cb_t)(int error);
+typedef void (*lwm2m_notify_timeout_cb_t)(void);
 
 /**
  * @brief LwM2M context structure to maintain information for a single
@@ -124,6 +125,11 @@ struct lwm2m_ctx {
 	 *  callback in case of socket errors on receive.
 	 */
 	lwm2m_socket_fault_cb_t fault_cb;
+
+	/** Notify Timeout Callback. LwM2M processing thread will call this
+	 *  callback in case of notify timeout,
+	 */
+	lwm2m_notify_timeout_cb_t notify_timeout_cb;
 
 	/** Validation buffer. Used as a temporary buffer to decode the resource
 	 *  value before validation. On successful validation, its content is
@@ -1025,6 +1031,16 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
  */
 void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 			  lwm2m_ctx_event_cb_t event_cb);
+
+			  /**
+ * @brief Trigger a Registration Update of the LwM2M RD Client
+ *
+ * The RD client sits just above the LwM2M engine and performs the necessary
+ * actions to implement the "Registration interface".
+ * For more information see Section 5.3 "Client Registration Interface" of the
+ * LwM2M Technical Specification.
+ */
+void lwm2m_rd_client_update(void);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
 /**@}  */
