@@ -22,7 +22,18 @@ CPU and the following devices:
      :height: 546px
      :alt: ARM MPS3 AN547
 
-More information about the board can be found at the `MPS3 FPGA Website`_.
+This board configuration also supports using the `Corstone-300 FVP`_ to emulate
+a MPS3 AN547 hardware platform.
+
+The Corstone-300 FVP (Fixed Virtual Platform) is a complete simulation of the
+Arm system, including processor, memory and peripherals. It is a available free
+of charge for Linux and Windows systems. The FVP has been selected for
+simulation since it provides access to the Ethos-U55 NPU, which is unavailable
+in QEMU or other simulation platforms.
+
+To run the Fixed Virtual Platform simulation tool you must download "FVP model
+for the Corstone-300 MPS3" from Arm and install it on your host PC. This board
+has been tested with version 11.12.57 (Nov  2 2020).
 
 Hardware
 ********
@@ -174,6 +185,35 @@ serial port:
 
    Hello World! mps3_an547
 
+
+FVP Usage
+=========
+
+To run with the FVP, first set environment variable ``ARMFVP_BIN_PATH`` before
+using it. Then you can run it with ``west build -t run``.
+
+.. code-block:: bash
+
+   export ARMFVP_BIN_PATH=/path/to/fvp/directory
+   west build -t run
+
+
+QEMU Usage
+==========
+
+To run with QEMU instead of the default FVP, override the emulator selection
+at build time via:
+
+.. code-block:: bash
+
+   $ west build -b mps3_an547 samples/hello°world -DEMU_PLATFORM=qemu -t run
+
+
+Note, however, that the Ethos-U55 FPU is not available in QEMU. If you require
+the use of the FPU, please use the default FVP for device emulation.
+
+.. _Corstone-300 FVP:
+   https://developer.arm.com/tools-and-software/open-source-software/arm-platforms-software/arm-ecosystem-fvps
 
 .. _MPS3 FPGA Website:
    https://developer.arm.com/tools-and-software/development-boards/fpga-prototyping-boards/mps3
