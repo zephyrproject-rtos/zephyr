@@ -842,15 +842,16 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-		conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
-					       lll->phy_s);
-		conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
-					       lll->phy_s);
-#else
 		/* Use the default 1M packet max time */
 		conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 		conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		conn_lll->max_tx_time = MAX(conn_lll->max_tx_time,
+					    PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						   lll->phy_s));
+		conn_lll->max_rx_time = MAX(conn_lll->max_rx_time,
+					    PKT_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						   lll->phy_s));
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
