@@ -118,7 +118,7 @@ void ull_cp_conn_param_req_reply(struct ll_conn *conn);
 /**
  * @brief Reject the remote device’s request to change connection parameters.
  */
-void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn);
+void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code);
 
 /**
  * @brief Check if a remote data length update is in the works.
@@ -141,4 +141,3 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5]);
  */
 uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, uint16_t max_tx_time);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-

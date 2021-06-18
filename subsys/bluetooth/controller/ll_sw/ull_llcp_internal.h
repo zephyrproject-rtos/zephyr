@@ -154,10 +154,26 @@ struct proc_ctx {
 		} pu;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+		/* TODO(tosk): leave out some params below if !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		/* Connection Update & Connection Parameter Request */
 		struct {
 			uint8_t error;
+			uint8_t params_changed;
 			uint16_t instant;
+			uint8_t win_size;
+			uint16_t win_offset_us;
+			uint16_t interval_min;
+			uint16_t interval_max;
+			uint16_t latency;
+			uint16_t timeout;
+			uint8_t  preferred_periodicity;
+			uint16_t reference_conn_event_count;
+			uint16_t offset0;
+			uint16_t offset1;
+			uint16_t offset2;
+			uint16_t offset3;
+			uint16_t offset4;
+			uint16_t offset5;
 		} cu;
 
 		/* Use by ACL Termination Procedure */
@@ -172,6 +188,7 @@ struct proc_ctx {
 		} chmu;
 
 	} data;
+
 	struct {
 		uint8_t type;
 	} unknown_response;
@@ -805,6 +822,16 @@ static inline void pdu_encode_ping_rsp(struct pdu_data *pdu)
 /*
  * Unknown response helper
  */
+
+void ull_cp_priv_pdu_encode_unknown_rsp(struct proc_ctx *ctx,
+					struct pdu_data *pdu);
+static inline void pdu_encode_unknown_rsp(struct proc_ctx *ctx,
+					   struct pdu_data *pdu)
+{
+	ull_cp_priv_pdu_encode_unknown_rsp(ctx, pdu);
+}
+
+
 void ull_cp_priv_pdu_decode_unknown_rsp(struct proc_ctx *ctx,
 					struct pdu_data *pdu);
 static inline void pdu_decode_unknown_rsp(struct proc_ctx *ctx,
@@ -1046,28 +1073,42 @@ void ull_cp_priv_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data
 
 static inline void pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	return ull_cp_priv_pdu_encode_conn_param_req(ctx, pdu);
+	ull_cp_priv_pdu_encode_conn_param_req(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ull_cp_priv_pdu_decode_conn_param_req(ctx, pdu);
 }
 
 void ull_cp_priv_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 static inline void pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	return ull_cp_priv_pdu_encode_conn_param_rsp(ctx, pdu);
+	ull_cp_priv_pdu_encode_conn_param_rsp(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu);
+
+static inline void pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ull_cp_priv_pdu_decode_conn_param_rsp(ctx, pdu);
 }
 
 void ull_cp_priv_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 static inline void pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	return ull_cp_priv_pdu_encode_conn_update_ind(ctx, pdu);
+	ull_cp_priv_pdu_encode_conn_update_ind(ctx, pdu);
 }
 
 void ull_cp_priv_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 
 static inline void pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	return ull_cp_priv_pdu_decode_conn_update_ind(ctx, pdu);
+	ull_cp_priv_pdu_decode_conn_update_ind(ctx, pdu);
 }
 
 void ull_cp_priv_proc_ctx_release(struct proc_ctx *ctx);
