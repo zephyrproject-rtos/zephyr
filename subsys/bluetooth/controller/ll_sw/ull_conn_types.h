@@ -367,6 +367,12 @@ struct llcp_struct {
 		uint8_t reject_opcode;
 	} remote;
 
+	/* Prepare parameters */
+	struct {
+		uint32_t ticks_at_expire;
+		uint16_t lazy;
+	} prep;
+
 	/* Version Exchange Procedure State */
 	struct {
 		uint8_t sent;
@@ -397,34 +403,10 @@ struct llcp_struct {
 
 	/* EGON TODO: we'll need the next few structs eventually, Thomas and Szymon please comment on names etc. */
 	struct {
-		uint16_t instant;
 		uint16_t *pdu_win_offset;
 		uint32_t ticks_anchor;
 	} conn_upd;
 
-	struct {
-		uint8_t  cmd:1;
-		uint8_t  disabled:1;
-		uint8_t  status;
-		uint16_t interval_min;
-		uint16_t interval_max;
-		uint16_t latency;
-		uint16_t timeout;
-		uint8_t  preferred_periodicity;
-		uint16_t reference_conn_event_count;
-		uint16_t offset0;
-		uint16_t offset1;
-		uint16_t offset2;
-		uint16_t offset3;
-		uint16_t offset4;
-		uint16_t offset5;
-		uint16_t *pdu_win_offset0;
-		uint32_t ticks_ref;
-		uint32_t ticks_to_offset_next;
-	} conn_param;
-	struct {
-		uint32_t win_offset_us;
-	} cu;
 }; /* struct llcp_struct */
 
 struct ll_conn {

@@ -15,6 +15,11 @@ void ll_conn_release(struct ll_conn *conn);
 uint16_t ll_conn_handle_get(struct ll_conn *conn);
 struct ll_conn *ll_conn_get(uint16_t handle);
 struct ll_conn *ll_connected_get(uint16_t handle);
+uint16_t ull_conn_event_counter(struct ll_conn *conn);
+void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
+				uint8_t win_size, uint16_t win_offset_us,
+				uint16_t interval, uint16_t latency,
+				uint16_t timeout, uint16_t instant);
 int ull_conn_init(void);
 int ull_conn_reset(void);
 uint16_t ull_conn_default_tx_octets_get(void);

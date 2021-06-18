@@ -18,6 +18,7 @@
 
 #include "pdu.h"
 #include "ll.h"
+#include "ll_feat.h"
 #include "ll_settings.h"
 
 #include "lll.h"
@@ -26,12 +27,13 @@
 #include "ull_tx_queue.h"
 
 #include "ull_internal.h"
+#include "ull_conn_llcp_internal.h"
 #include "ull_conn_types.h"
 #include "ull_conn_llcp_internal.h"
 #include "ull_llcp.h"
+#include "ull_llcp_features.h"
 #include "ull_llcp_internal.h"
-
-#include "ll_feat.h"
+#include "ull_slave_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp
@@ -165,7 +167,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	/* Clear procedure data */
 	memset((void *) &ctx->data, 0, sizeof(ctx->data));
 
-	/* Initialize opcodes fields to  known values */
+	/* Initialize opcodes fields to known values */
 	ctx->rx_opcode = ULL_LLCP_INVALID_OPCODE;
 	ctx->tx_opcode = ULL_LLCP_INVALID_OPCODE;
 	ctx->response_opcode = ULL_LLCP_INVALID_OPCODE;
@@ -210,6 +212,7 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 		lp_pu_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
+	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		lp_cu_init_proc(ctx);
 		break;
@@ -227,6 +230,7 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
+		break;
 	}
 
 	return ctx;
@@ -269,6 +273,7 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 		rp_pu_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
+	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		rp_cu_init_proc(ctx);
 		break;
@@ -283,6 +288,7 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
+		break;
 	}
 
 	return ctx;
@@ -629,19 +635,52 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 {
 	struct proc_ctx *ctx;
 
-	/* TODO(thoh): Proper checks for role, parameters etc. */
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	if (feature_conn_param_req(conn)) {
+		ctx = create_local_procedure(PROC_CONN_PARAM_REQ);
+	} else if (conn->lll.role == BT_HCI_ROLE_MASTER) {
+		ctx = create_local_procedure(PROC_CONN_UPDATE);
+	} else {
+		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+	}
+#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	if (conn->lll.role == BT_HCI_ROLE_SLAVE) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+	ctx = create_local_procedure(PROC_CONN_UPDATE);
+#endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
-	/* TODO(thoh): Determine proper procedure:
-	 *	Role == Slave => CPR
-	 *	Role == Master:
-	 *		CPR in Peer Feats. => CPR
-	 *		CPR not in Peer Feats. => CU
-	 *		FEX not performed => CPR
-	 *	*/
-	ctx = create_local_procedure(PROC_CONN_PARAM_REQ);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	/* Store arguments in corresponding procedure context */
+	if (ctx->proc == PROC_CONN_UPDATE) {
+		ctx->data.cu.win_size = 1U;
+		ctx->data.cu.win_offset_us = 0U;
+		ctx->data.cu.interval_max = interval_max;
+		ctx->data.cu.latency = latency;
+		ctx->data.cu.timeout = timeout;
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	} else if (ctx->proc == PROC_CONN_PARAM_REQ) {
+		ctx->data.cu.interval_min = interval_min;
+		ctx->data.cu.interval_max = interval_max;
+		ctx->data.cu.latency = latency;
+		ctx->data.cu.timeout = timeout;
+
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+			(conn->lll.role == BT_HCI_ROLE_SLAVE)) {
+			uint16_t handle = ll_conn_handle_get(conn);
+
+			ull_slave_latency_cancel(conn, handle);
+		}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	} else {
+		LL_ASSERT(0);	/* Unknown procedure */
+	}
+
+	/* TODO(tosk): Check what to handle (ADV_SCHED) from this legacy fct. */
+	/* event_conn_upd_prep() (event_conn_upd_init()) */
 
 	lr_enqueue(conn, ctx);
 
@@ -669,12 +708,13 @@ void ull_cp_conn_param_req_reply(struct ll_conn *conn)
 	}
 }
 
-void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn)
+void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
 
 	ctx = rr_peek(conn);
 	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
+		ctx->data.cu.error = error_code;
 		rp_conn_param_req_neg_reply(conn, ctx);
 	}
 }

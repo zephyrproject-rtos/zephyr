@@ -27,6 +27,7 @@
 
 #include "lll.h"
 #include "lll_conn.h"
+#include "lll_clock.h"
 
 #include "ull_conn_llcp_internal.h"
 #include "ull_tx_queue.h"
@@ -63,6 +64,7 @@ static int init_reset(void);
 
 static void ticker_update_conn_op_cb(uint32_t status, void *param);
 static void ticker_op_stop_cb(uint32_t status, void *param);
+static void ticker_start_conn_op_cb(uint32_t status, void *param);
 
 static inline void disable(uint16_t handle);
 static void conn_cleanup(struct ll_conn *conn, uint8_t reason);
@@ -224,7 +226,231 @@ void ll_rx_enqueue(struct node_rx_pdu *rx)
 	sys_slist_append(&ut_rx_q, (sys_snode_t *) rx);
 }
 
+uint16_t ull_conn_event_counter(struct ll_conn *conn)
+{
+	struct lll_conn *lll;
+	uint16_t event_counter;
 
+	uint16_t lazy = conn->llcp.prep.lazy;
+
+	lll = &conn->lll;
+
+	/* Calculate current event counter */
+	event_counter = lll->event_counter + lll->latency_prepare + lazy;
+
+	return event_counter;
+}
+
+void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
+				uint8_t win_size, uint16_t win_offset_us,
+				uint16_t interval, uint16_t latency,
+				uint16_t timeout, uint16_t instant)
+{
+	struct lll_conn *lll;
+	uint32_t ticks_win_offset = 0U;
+	uint32_t ticks_slot_overhead;
+	uint16_t conn_interval_old;
+	uint16_t conn_interval_new;
+	uint32_t conn_interval_us;
+	uint8_t ticker_id_conn;
+	uint32_t ticker_status;
+	uint32_t periodic_us;
+	uint16_t latency_upd;
+	uint16_t instant_latency;
+	uint16_t event_counter;
+	uint16_t ticks_at_expire;
+
+	lll = &conn->lll;
+
+	/* Calculate current event counter */
+	event_counter = ull_conn_event_counter(conn);
+
+	instant_latency = (event_counter - instant) &
+			  0xFFFF;
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	if (!is_cu_proc) {
+		/* Stop procedure timeout */
+		conn->procedure_expire = 0U;
+	}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+	ticks_at_expire = conn->llcp.prep.ticks_at_expire;
+
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+	/* restore to normal prepare */
+	if (conn->ull.ticks_prepare_to_start & XON_BITMASK) {
+		uint32_t ticks_prepare_to_start =
+			MAX(conn->ull.ticks_active_to_start,
+			    conn->ull.ticks_preempt_to_start);
+
+		conn->ull.ticks_prepare_to_start &= ~XON_BITMASK;
+
+		ticks_at_expire -= (conn->ull.ticks_prepare_to_start -
+				    ticks_prepare_to_start);
+	}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+
+	/* compensate for instant_latency due to laziness */
+	conn_interval_old = instant_latency * lll->interval;
+	latency_upd = conn_interval_old / interval;
+	conn_interval_new = latency_upd * interval;
+	if (conn_interval_new > conn_interval_old) {
+		ticks_at_expire += HAL_TICKER_US_TO_TICKS(
+			(conn_interval_new - conn_interval_old) *
+			CONN_INT_UNIT_US);
+	} else {
+		ticks_at_expire -= HAL_TICKER_US_TO_TICKS(
+			(conn_interval_old - conn_interval_new) *
+			CONN_INT_UNIT_US);
+	}
+
+	lll->latency_prepare += conn->llcp.prep.lazy;
+	lll->latency_prepare -= (instant_latency - latency_upd);
+
+	/* calculate the offset */
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead =
+			MAX(conn->ull.ticks_active_to_start,
+			    conn->ull.ticks_prepare_to_start);
+	} else {
+		ticks_slot_overhead = 0U;
+	}
+
+	/* calculate the window widening and interval */
+	conn_interval_us = interval * CONN_INT_UNIT_US;
+	periodic_us = conn_interval_us;
+
+	switch (lll->role) {
+#if defined(CONFIG_BT_PERIPHERAL)
+	case BT_HCI_ROLE_SLAVE:
+		lll->slave.window_widening_prepare_us -=
+			lll->slave.window_widening_periodic_us *
+			instant_latency;
+
+		lll->slave.window_widening_periodic_us =
+			(((lll_clock_ppm_local_get() +
+			   lll_clock_ppm_get(conn->slave.sca)) *
+			  conn_interval_us) + (1000000U - 1U)) / 1000000U;
+		lll->slave.window_widening_max_us =
+			(conn_interval_us >> 1U) - EVENT_IFS_US;
+		lll->slave.window_size_prepare_us = win_size * CONN_INT_UNIT_US;
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		conn->slave.ticks_to_offset = 0U;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+		lll->slave.window_widening_prepare_us +=
+			lll->slave.window_widening_periodic_us * latency_upd;
+		if (lll->slave.window_widening_prepare_us >
+		    lll->slave.window_widening_max_us) {
+			lll->slave.window_widening_prepare_us =
+				lll->slave.window_widening_max_us;
+		}
+
+		ticks_at_expire -= HAL_TICKER_US_TO_TICKS(
+			lll->slave.window_widening_periodic_us * latency_upd);
+		ticks_win_offset = HAL_TICKER_US_TO_TICKS(
+			(win_offset_us / CONN_INT_UNIT_US) * CONN_INT_UNIT_US);
+		periodic_us -= lll->slave.window_widening_periodic_us;
+		break;
+#endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_CENTRAL)
+	case BT_HCI_ROLE_MASTER:
+		ticks_win_offset = HAL_TICKER_US_TO_TICKS(win_offset_us);
+
+		/* Workaround: Due to the missing remainder param in
+		 * ticker_start function for first interval; add a
+		 * tick so as to use the ceiled value.
+		 */
+		ticks_win_offset += 1U;
+		break;
+#endif /*CONFIG_BT_CENTRAL */
+	default:
+		LL_ASSERT(0);
+		break;
+	}
+
+	lll->interval = interval;
+	lll->latency = latency;
+
+	conn->supervision_reload =
+		RADIO_CONN_EVENTS((timeout * 10U * 1000U), conn_interval_us);
+	conn->procedure_reload =
+		RADIO_CONN_EVENTS((40U * 1000U * 1000U), conn_interval_us);
+
+#if defined(CONFIG_BT_CTLR_LE_PING)
+	/* APTO in no. of connection events */
+	conn->apto_reload = RADIO_CONN_EVENTS((30U * 1000U * 1000U),
+					      conn_interval_us);
+	/* Dispatch LE Ping PDU 6 connection events (that peer would
+	 * listen to) before 30s timeout
+	 * TODO: "peer listens to" is greater than 30s due to latency
+	 */
+	conn->appto_reload = (conn->apto_reload > (lll->latency + 6U)) ?
+			     (conn->apto_reload - (lll->latency + 6U)) :
+			     conn->apto_reload;
+#endif /* CONFIG_BT_CTLR_LE_PING */
+
+	if (is_cu_proc) {
+		conn->supervision_expire = 0U;
+	}
+
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* disable ticker job, in order to chain stop and start
+	 * to avoid RTC being stopped if no tickers active.
+	 */
+	uint32_t mayfly_was_enabled =
+		mayfly_is_enabled(TICKER_USER_ID_ULL_HIGH,
+				  TICKER_USER_ID_ULL_LOW);
+	mayfly_enable(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW,
+		      0U);
+#endif /* CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO */
+
+	/* start slave/master with new timings */
+	ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
+	ticker_status =	ticker_stop(TICKER_INSTANCE_ID_CTLR,
+				    TICKER_USER_ID_ULL_HIGH,
+				    ticker_id_conn,
+				    ticker_op_stop_cb,
+				    (void *)conn);
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		(ticker_status == TICKER_STATUS_BUSY));
+	ticker_status =
+		ticker_start(TICKER_INSTANCE_ID_CTLR,
+			TICKER_USER_ID_ULL_HIGH,
+			ticker_id_conn,
+			ticks_at_expire,
+			ticks_win_offset,
+			HAL_TICKER_US_TO_TICKS(periodic_us),
+			HAL_TICKER_REMAINDER(periodic_us),
+#if defined(CONFIG_BT_TICKER_LOW_LAT)
+			TICKER_NULL_LAZY,
+#else /* !CONFIG_BT_TICKER_LOW_LAT */
+			TICKER_LAZY_MUST_EXPIRE_KEEP,
+#endif /* CONFIG_BT_TICKER_LOW_LAT */
+			(ticks_slot_overhead + conn->ull.ticks_slot),
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CENTRAL)
+			lll->role == BT_HCI_ROLE_SLAVE ? ull_slave_ticker_cb :
+							 ull_master_ticker_cb,
+#elif defined(CONFIG_BT_PERIPHERAL)
+			ull_slave_ticker_cb,
+#else
+			ull_master_ticker_cb,
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_CENTRAL */
+			conn, ticker_start_conn_op_cb,
+			(void *)conn);
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		  (ticker_status == TICKER_STATUS_BUSY));
+
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* enable ticker job, if disabled in this function */
+	if (mayfly_was_enabled) {
+		mayfly_enable(TICKER_USER_ID_ULL_HIGH,
+			      TICKER_USER_ID_ULL_LOW, 1U);
+	}
+#endif /* CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO */
+}
 
 int ull_conn_init(void)
 {
@@ -537,11 +763,16 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	return 0;
 }
 
-
-
 int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 {
 	LL_ASSERT(conn->lll.handle != ULL_HANDLE_NOT_CONNECTED);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	conn->llcp.prep.ticks_at_expire = ticks_at_expire;
+#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	ARG_UNUSED(ticks_at_expire);
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+	conn->llcp.prep.lazy = lazy;
 
 	ull_cp_run(conn);
 
@@ -1182,6 +1413,16 @@ static void ticker_op_stop_cb(uint32_t status, void *param)
 	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 0,
 				&mfy);
 	LL_ASSERT(!retval);
+}
+
+static void ticker_start_conn_op_cb(uint32_t status, void *param)
+{
+	void *p;
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	p = ull_update_unmark(param);
+	LL_ASSERT(p == param);
 }
 
 static inline void disable(uint16_t handle)
