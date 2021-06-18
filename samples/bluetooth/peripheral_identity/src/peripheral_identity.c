@@ -163,6 +163,23 @@ static struct bt_conn_cb conn_callbacks = {
 #endif /* CONFIG_BT_SMP */
 };
 
+#if defined(CONFIG_BT_OBSERVER)
+#define BT_LE_SCAN_PASSIVE_ALLOW_DUPILCATES \
+		BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
+				 BT_LE_SCAN_OPT_NONE, \
+				 BT_GAP_SCAN_FAST_INTERVAL, \
+				 BT_GAP_SCAN_FAST_INTERVAL)
+
+static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
+			 struct net_buf_simple *ad)
+{
+	char addr_str[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
+}
+#endif /* CONFIG_BT_OBSERVER */
+
 int init_peripheral(void)
 {
 	size_t id_count;
@@ -181,6 +198,17 @@ int init_peripheral(void)
 #endif /* CONFIG_BT_SMP */
 
 	printk("Bluetooth initialized\n");
+
+#if defined(CONFIG_BT_OBSERVER)
+	printk("Start continuous passive scanning...");
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE_ALLOW_DUPILCATES,
+			       device_found);
+	if (err) {
+		printk("Scan start failed (%d).\n", err);
+		return err;
+	}
+	printk("success.\n");
+#endif /* CONFIG_BT_OBSERVER */
 
 	k_work_init(&work_adv_start, adv_start);
 	k_work_submit(&work_adv_start);
