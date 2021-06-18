@@ -140,6 +140,7 @@ void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 		lp_pu_rx(conn, ctx, rx);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
+	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		lp_cu_rx(conn, ctx, rx);
 		break;
@@ -154,6 +155,7 @@ void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
+		break;
 	}
 
 	lr_check_done(conn, ctx);
@@ -221,6 +223,7 @@ static void lr_act_run(struct ll_conn *conn)
 		lp_pu_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
+	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
 		lp_cu_run(conn, ctx, NULL);
 		break;
@@ -238,6 +241,7 @@ static void lr_act_run(struct ll_conn *conn)
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
+		break;
 	}
 
 	lr_check_done(conn, ctx);
