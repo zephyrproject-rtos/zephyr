@@ -642,12 +642,12 @@ static void isr_tx_connect_req(void *param)
 
 static void isr_rx_connect_rsp(void *param)
 {
-	struct node_rx_pdu *rx;
-	struct ll_scan_aux_set *aux;
-	struct lll_scan *lll;
-	struct ll_scan_set *scan;
 	struct lll_scan_aux *lll_aux;
+	struct ll_scan_aux_set *aux;
+	struct ll_scan_set *scan;
 	struct pdu_adv *pdu_rx;
+	struct node_rx_pdu *rx;
+	struct lll_scan *lll;
 	uint8_t trx_done;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
@@ -697,10 +697,24 @@ static void isr_rx_connect_rsp(void *param)
 		goto isr_rx_do_close;
 	}
 
+	/* Update the max Tx and Rx time; and connection PHY based on the
+	 * extended advertising PHY used to establish the connection.
+	 */
 #if defined(CONFIG_BT_CTLR_PHY)
-	lll->conn->phy_tx = lll_aux->phy;
-	lll->conn->phy_tx_time = lll_aux->phy;
-	lll->conn->phy_rx = lll_aux->phy;
+	struct lll_conn *conn_lll = lll->conn;
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	conn_lll->max_tx_time =
+		MAX(conn_lll->max_tx_time,
+		    PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, lll_aux->phy));
+	conn_lll->max_rx_time =
+		MAX(conn_lll->max_rx_time,
+		    PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, lll_aux->phy));
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH*/
+
+	conn_lll->phy_tx = lll_aux->phy;
+	conn_lll->phy_tx_time = lll_aux->phy;
+	conn_lll->phy_rx = lll_aux->phy;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 isr_rx_do_close:
