@@ -173,9 +173,22 @@ void ite_intc_irq_handler(const void *arg)
 uint8_t get_irq(void *arg)
 {
 	ARG_UNUSED(arg);
-	intc_irq = IVECT - IVECT_OFFSET_WITH_IRQ;
 
+	/* wait until two equal interrupt values are read */
+	do {
+		/* Read interrupt number from interrupt vector register */
+		intc_irq = IVECT;
+		/*
+		 * WORKAROUND: when the interrupt vector register (IVECT)
+		 * isn't latched in a load operation, we read it again to make
+		 * sure the value we got is the correct value.
+		 */
+	} while (intc_irq != IVECT);
+	/* determine interrupt number */
+	intc_irq -= IVECT_OFFSET_WITH_IRQ;
+	/* clear interrupt status */
 	ite_intc_isr_clear(intc_irq);
+	/* return interrupt number */
 	return intc_irq;
 }
 
