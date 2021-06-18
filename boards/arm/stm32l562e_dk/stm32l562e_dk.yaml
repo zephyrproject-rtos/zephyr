@@ -11,5 +11,6 @@ supported:
   - lsm6dso
   - lptim
   - pwm
+  - watchdog
 ram: 192
 flash: 512

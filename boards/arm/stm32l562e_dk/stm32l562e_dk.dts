@@ -44,3 +44,7 @@
 		st,prescaler = <10000>;
 	};
 };
+
+&iwdg {
+	status = "okay";
+};
