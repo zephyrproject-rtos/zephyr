@@ -607,7 +607,7 @@ static int spi_nor_write(const struct device *dev, off_t addr,
 		}
 	}
 
-	int ret2 = spi_nor_write_protection_set(dev, false);
+	int ret2 = spi_nor_write_protection_set(dev, true);
 
 	if (!ret) {
 		ret = ret2;
