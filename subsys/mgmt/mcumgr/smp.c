@@ -11,24 +11,8 @@
 #include "smp/smp.h"
 #include "mgmt/mcumgr/smp.h"
 
-static mgmt_alloc_rsp_fn zephyr_smp_alloc_rsp;
-static mgmt_trim_front_fn zephyr_smp_trim_front;
-static mgmt_reset_buf_fn zephyr_smp_reset_buf;
-static mgmt_write_at_fn zephyr_smp_write_at;
-static mgmt_init_reader_fn zephyr_smp_init_reader;
-static mgmt_init_writer_fn zephyr_smp_init_writer;
-static mgmt_free_buf_fn zephyr_smp_free_buf;
-static smp_tx_rsp_fn zephyr_smp_tx_rsp;
 
-static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg = {
-	.alloc_rsp = zephyr_smp_alloc_rsp,
-	.trim_front = zephyr_smp_trim_front,
-	.reset_buf = zephyr_smp_reset_buf,
-	.write_at = zephyr_smp_write_at,
-	.init_reader = zephyr_smp_init_reader,
-	.init_writer = zephyr_smp_init_writer,
-	.free_buf = zephyr_smp_free_buf,
-};
+static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg;
 
 void *
 zephyr_smp_alloc_rsp(const void *req, void *arg)
@@ -302,3 +286,13 @@ zephyr_smp_rx_req(struct zephyr_smp_transport *zst, struct net_buf *nb)
 	net_buf_put(&zst->zst_fifo, nb);
 	k_work_submit(&zst->zst_work);
 }
+
+static const struct mgmt_streamer_cfg zephyr_smp_cbor_cfg = {
+	.alloc_rsp = zephyr_smp_alloc_rsp,
+	.trim_front = zephyr_smp_trim_front,
+	.reset_buf = zephyr_smp_reset_buf,
+	.write_at = zephyr_smp_write_at,
+	.init_reader = zephyr_smp_init_reader,
+	.init_writer = zephyr_smp_init_writer,
+	.free_buf = zephyr_smp_free_buf,
+};

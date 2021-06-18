@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
+add_subdirectory(lib)
 zephyr_library()
 zephyr_library_sources(buf.c)
 zephyr_library_sources(smp.c)
