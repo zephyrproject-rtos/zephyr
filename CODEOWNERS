@@ -520,6 +520,7 @@
 /samples/drivers/can/                     @alexanderwachter
 /samples/drivers/clock_control_litex/     @mateusz-holenko @kgugala @pgielda
 /samples/drivers/display/                 @vanwinkeljan
+/samples/drivers/eeprom/                  @henrikbrixandersen
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/subsys/lorawan/                  @Mani-Sadhasivam
