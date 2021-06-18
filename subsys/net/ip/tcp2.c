@@ -1827,7 +1827,11 @@ next_state:
 			}
 
 			conn->send_data_total -= len_acked;
-			conn->unacked_len -= len_acked;
+			if (conn->unacked_len < len_acked) {
+				conn->unacked_len = 0;
+			} else {
+				conn->unacked_len -= len_acked;
+			}
 			conn_seq(conn, + len_acked);
 			net_stats_update_tcp_seg_recv(conn->iface);
 
