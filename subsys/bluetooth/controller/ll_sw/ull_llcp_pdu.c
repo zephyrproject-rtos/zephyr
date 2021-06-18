@@ -66,6 +66,16 @@ void ull_cp_priv_pdu_encode_ping_rsp(struct pdu_data *pdu)
  * Unknown response helper
  */
 
+void ull_cp_priv_pdu_encode_unknown_rsp(struct proc_ctx *ctx,
+					struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, unknown_rsp) + sizeof(struct pdu_data_llctrl_unknown_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP;
+
+	pdu->llctrl.unknown_rsp.type = ctx->unknown_response.type;
+}
+
 void ull_cp_priv_pdu_decode_unknown_rsp(struct proc_ctx *ctx,
 					struct pdu_data *pdu)
 {
@@ -447,16 +457,90 @@ void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data
  */
 void ull_cp_priv_pdu_encode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	struct pdu_data_llctrl_conn_param_req *p;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_req) + sizeof(struct pdu_data_llctrl_conn_param_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+
+	p = (void *)&pdu->llctrl.conn_param_req;
+	p->interval_min = sys_cpu_to_le16(ctx->data.cu.interval_min);
+	p->interval_max = sys_cpu_to_le16(ctx->data.cu.interval_max);
+	p->latency = sys_cpu_to_le16(ctx->data.cu.latency);
+	p->timeout = sys_cpu_to_le16(ctx->data.cu.timeout);
+	p->preferred_periodicity = ctx->data.cu.preferred_periodicity;
+	p->reference_conn_event_count =
+		sys_cpu_to_le16(ctx->data.cu.reference_conn_event_count);
+	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offset0);
+	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offset1);
+	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offset2);
+	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offset3);
+	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offset4);
+	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offset5);
 }
 
 void ull_cp_priv_pdu_encode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	struct pdu_data_llctrl_conn_param_req *p;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_rsp) + sizeof(struct pdu_data_llctrl_conn_param_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
+
+	p = (void *)&pdu->llctrl.conn_param_rsp;
+	p->interval_min = sys_cpu_to_le16(ctx->data.cu.interval_min);
+	p->interval_max = sys_cpu_to_le16(ctx->data.cu.interval_max);
+	p->latency = sys_cpu_to_le16(ctx->data.cu.latency);
+	p->timeout = sys_cpu_to_le16(ctx->data.cu.timeout);
+	p->preferred_periodicity = ctx->data.cu.preferred_periodicity;
+	p->reference_conn_event_count =
+		sys_cpu_to_le16(ctx->data.cu.reference_conn_event_count);
+	p->offset0 = sys_cpu_to_le16(ctx->data.cu.offset0);
+	p->offset1 = sys_cpu_to_le16(ctx->data.cu.offset1);
+	p->offset2 = sys_cpu_to_le16(ctx->data.cu.offset2);
+	p->offset3 = sys_cpu_to_le16(ctx->data.cu.offset3);
+	p->offset4 = sys_cpu_to_le16(ctx->data.cu.offset4);
+	p->offset5 = sys_cpu_to_le16(ctx->data.cu.offset5);
+}
+
+void ull_cp_priv_pdu_decode_conn_param_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_conn_param_req *p;
+
+	p = (void *)&pdu->llctrl.conn_param_req;
+	ctx->data.cu.interval_min = sys_le16_to_cpu(p->interval_min);
+	ctx->data.cu.interval_max = sys_le16_to_cpu(p->interval_max);
+	ctx->data.cu.latency = sys_le16_to_cpu(p->latency);
+	ctx->data.cu.timeout = sys_le16_to_cpu(p->timeout);
+	ctx->data.cu.preferred_periodicity = p->preferred_periodicity;
+	ctx->data.cu.reference_conn_event_count =
+				sys_le16_to_cpu(p->reference_conn_event_count);
+	ctx->data.cu.offset0 = sys_le16_to_cpu(p->offset0);
+	ctx->data.cu.offset1 = sys_le16_to_cpu(p->offset1);
+	ctx->data.cu.offset2 = sys_le16_to_cpu(p->offset2);
+	ctx->data.cu.offset3 = sys_le16_to_cpu(p->offset3);
+	ctx->data.cu.offset4 = sys_le16_to_cpu(p->offset4);
+	ctx->data.cu.offset5 = sys_le16_to_cpu(p->offset5);
+}
+
+void ull_cp_priv_pdu_decode_conn_param_rsp(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_conn_param_rsp *p;
+
+	p = (void *)&pdu->llctrl.conn_param_req;
+	ctx->data.cu.interval_min = sys_le16_to_cpu(p->interval_min);
+	ctx->data.cu.interval_max = sys_le16_to_cpu(p->interval_max);
+	ctx->data.cu.latency = sys_le16_to_cpu(p->latency);
+	ctx->data.cu.timeout = sys_le16_to_cpu(p->timeout);
+	ctx->data.cu.preferred_periodicity = p->preferred_periodicity;
+	ctx->data.cu.reference_conn_event_count =
+				sys_le16_to_cpu(p->reference_conn_event_count);
+	ctx->data.cu.offset0 = sys_le16_to_cpu(p->offset0);
+	ctx->data.cu.offset1 = sys_le16_to_cpu(p->offset1);
+	ctx->data.cu.offset2 = sys_le16_to_cpu(p->offset2);
+	ctx->data.cu.offset3 = sys_le16_to_cpu(p->offset3);
+	ctx->data.cu.offset4 = sys_le16_to_cpu(p->offset4);
+	ctx->data.cu.offset5 = sys_le16_to_cpu(p->offset5);
 }
 
 void ull_cp_priv_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
@@ -468,12 +552,25 @@ void ull_cp_priv_pdu_encode_conn_update_ind(struct proc_ctx *ctx, struct pdu_dat
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
 
 	p = (void *)&pdu->llctrl.conn_update_ind;
+	p->win_size = ctx->data.cu.win_size;
+	p->win_offset = sys_cpu_to_le16(ctx->data.cu.win_offset_us / CONN_INT_UNIT_US);
+	p->latency = sys_cpu_to_le16(ctx->data.cu.latency);
+	p->interval = sys_cpu_to_le16(ctx->data.cu.interval_max);
+	p->timeout = sys_cpu_to_le16(ctx->data.cu.timeout);
 	p->instant = sys_cpu_to_le16(ctx->data.cu.instant);
 }
 
 void ull_cp_priv_pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
 {
-	ctx->data.cu.instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
+	struct pdu_data_llctrl_conn_update_ind *p;
+
+	p = (void *)&pdu->llctrl.conn_update_ind;
+	ctx->data.cu.win_size = p->win_size;
+	ctx->data.cu.win_offset_us = sys_le16_to_cpu(p->win_offset * CONN_INT_UNIT_US);
+	ctx->data.cu.latency = sys_le16_to_cpu(p->latency);
+	ctx->data.cu.interval_max = sys_le16_to_cpu(p->interval);
+	ctx->data.cu.timeout = sys_le16_to_cpu(p->timeout);
+	ctx->data.cu.instant = sys_le16_to_cpu(p->instant);
 }
 
 /*
@@ -564,4 +661,3 @@ void ull_cp_priv_pdu_decode_length_rsp(struct ll_conn *conn,
 	conn->lll.dle.remote.max_tx_time = sys_le16_to_cpu(p->max_tx_time);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
