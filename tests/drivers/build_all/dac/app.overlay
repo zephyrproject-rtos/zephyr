@@ -24,6 +24,37 @@
 			status = "okay";
 		};
 
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			label = "TEST_I2C_CTLR";
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_dac43608: dac43608@1 {
+				compatible = "ti,dac43608";
+				reg = <0x1>;
+				label = "DAC43608";
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_dac53608: dac53608@2 {
+				compatible = "ti,dac53608";
+				reg = <0x2>;
+				label = "DAC53608";
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_mcp4725: mcp4725@60 {
+				compatible = "microchip,mcp4725";
+				reg = <0x60>;
+				label = "MCP4725";
+				#io-channel-cells = <1>;
+			};
+		};
+
 		test_spi: spi@33334444 {
 			#address-cells = <1>;
 			#size-cells = <0>;
