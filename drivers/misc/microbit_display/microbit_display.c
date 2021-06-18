@@ -25,8 +25,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-#include <display/mb_display_v2.h>
-#include "mb_font.h"
+#include <microbit_display.h>
+#include <mb_font.h>
 
 #include <nrfx_timer.h>
 #include <nrfx_ppi.h>

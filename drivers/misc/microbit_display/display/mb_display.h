@@ -1,17 +1,15 @@
-/** @file
- *  @brief BBC micro:bit legacy display APIs.
+/** SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2021 Peter Niebert <peter.niebert@univ-amu.fr>
+ *
+ * @brief BBC micro:bit legacy display APIs.
  *
  * This file is here for compatibility with the replacement
- * mb_display_v2.h for old projects. See mb_display_v2.h
+ * microbit_display.h for old projects. See microbit_display.h
  * for type and function definitions.
  *
  */
 
-/*
- * Copyright (c) 2017 Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
- */
 
 #ifndef ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_H_
 #define ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_H_
@@ -20,7 +18,7 @@
 extern "C" {
 #endif
 
-#include "mb_display_v2.h"
+#include "microbit_display.h"
 
 struct mb_display;
 

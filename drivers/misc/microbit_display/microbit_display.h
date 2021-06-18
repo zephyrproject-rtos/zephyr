@@ -11,7 +11,6 @@
 /**
  * @brief BBC micro:bit display APIs
  * @defgroup mb_display BBC micro:bit display APIs
- * @ingroup display_interfaces
  * @{
  */
 
