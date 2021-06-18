@@ -105,7 +105,7 @@
 			reg = <0x40021000 0x400>;
 		};
 
-		exti: interrupt-controller@4000F400 {
+		exti: interrupt-controller@4000f400 {
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
