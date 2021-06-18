@@ -155,7 +155,6 @@ endmenu # "Zephyr optimizations"
 
 config OPENTHREAD_SHELL
 	bool "Enable OpenThread shell"
-	depends on !OPENTHREAD_COPROCESSOR
 	depends on SHELL
 	default y
 
