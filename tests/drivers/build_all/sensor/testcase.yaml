@@ -1,17 +1,9 @@
 common:
-  tags: drivers
+  tags: drivers sensors
   platform_allow: native_posix
   build_only: true
 tests:
-  sensors.build.trigger_a_h:
-    extra_args: CONF_FILE=sensors_trigger_a_h.conf
-  sensors.build.trigger_i_z:
-    extra_args: CONF_FILE=sensors_trigger_i_z.conf
-  sensors.build.a_h:
-    extra_args: CONF_FILE=sensors_a_h.conf
-  sensors.build.i_z:
-    extra_args: CONF_FILE=sensors_i_z.conf
-  sensors.build.stmemsc:
-    extra_args: CONF_FILE=sensors_stmemsc.conf
-  sensors.build.stmemsc_trigger:
-    extra_args: CONF_FILE=sensors_stmemsc_trigger.conf
+  sensors.build.trigger:
+    extra_args: OVERLAY_CONFIG=sensors_trigger_own.conf
+  sensors.build:
+    tags: sensors
