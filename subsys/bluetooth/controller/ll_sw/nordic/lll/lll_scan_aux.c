@@ -16,6 +16,7 @@
 #include "hal/ticker.h"
 
 #include "util/memq.h"
+#include "util/mayfly.h"
 
 #include "pdu.h"
 
@@ -23,9 +24,10 @@
 #include "lll_vendor.h"
 #include "lll_clock.h"
 #include "lll_filter.h"
-#include "lll_conn.h"
 #include "lll_scan.h"
 #include "lll_scan_aux.h"
+#include "lll_conn.h"
+#include "lll_sched.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
@@ -244,6 +246,29 @@ static int prepare_cb(struct lll_prepare_param *p)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
 		uint32_t ret;
+
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+		/* calc end of group in us for the anchor where next connection
+		 * event to be placed.
+		 */
+		if (lll_scan->conn) {
+			static memq_link_t link;
+			static struct mayfly mfy_after_mstr_offset_get = {
+				0, 0, &link, NULL,
+				ull_sched_mfy_after_mstr_offset_get};
+
+			/* NOTE: LLL scan instance passed, as done when
+			 *       establishing legacy connections.
+			 */
+			p->param = lll_scan;
+			mfy_after_mstr_offset_get.param = p;
+
+			ret = mayfly_enqueue(TICKER_USER_ID_LLL,
+					     TICKER_USER_ID_ULL_LOW, 1,
+					     &mfy_after_mstr_offset_get);
+			LL_ASSERT(!ret);
+		}
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 		ret = lll_prepare_done(lll);
 		LL_ASSERT(!ret);
