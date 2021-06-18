@@ -116,6 +116,12 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  struct pdu_adv_adi *adi,
 				  uint8_t *pri_idx);
 
+/* helper to initialize extended advertising PDU */
+void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags);
+
+/* helper to add cte_info field to extended advertising header */
+uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info);
+
 /* helper function to calculate common ext adv payload header length and
  * adjust the data pointer.
  * NOTE: This function reverts the header data pointer if there is no

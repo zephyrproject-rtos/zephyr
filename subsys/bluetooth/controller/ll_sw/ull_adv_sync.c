@@ -65,7 +65,7 @@ static void ticker_op_cb(uint32_t status, void *param);
 static struct ll_adv_sync_set ll_adv_sync_pool[CONFIG_BT_CTLR_ADV_SYNC_SET];
 static void *adv_sync_free;
 
-static void adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
+void ull_adv_sync_pdu_init(struct pdu_adv *pdu, uint8_t ext_hdr_flags)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
 	struct pdu_adv_ext_hdr *ext_hdr;
@@ -263,8 +263,7 @@ static uint8_t adv_sync_pdu_ad_data_set(struct pdu_adv *pdu,
 	return 0;
 }
 
-static uint8_t adv_sync_pdu_cte_info_set(struct pdu_adv *pdu,
-					 const struct pdu_cte_info *cte_info)
+uint8_t ull_adv_sync_pdu_cte_info_set(struct pdu_adv *pdu, const struct pdu_cte_info *cte_info)
 {
 	struct pdu_adv_com_ext_adv *com_hdr;
 	struct pdu_adv_ext_hdr *ext_hdr;
@@ -370,7 +369,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		sync->is_started = 0U;
 
 		ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
-		adv_sync_pdu_init(ter_pdu, 0);
+		ull_adv_sync_pdu_init(ter_pdu, 0);
 	} else {
 		sync = HDR_LLL2ULL(lll_sync);
 	}
