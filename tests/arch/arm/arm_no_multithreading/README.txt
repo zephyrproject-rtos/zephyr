@@ -11,6 +11,7 @@ ARM Cortex-M targets. In detail the test verifies that
 - FPU state is reset (if applicable)
 - Interrupts are enabled when switching to main()
 - Interrupts may be registerd and serviced
+- Activating PendSV triggers a Reserved Exception error
 
 ---------------------------------------------------------------------------
 
@@ -38,8 +39,16 @@ or
 
 Sample Output:
 
-***  Booting Zephyr OS build zephyr-v2.3.0-1561-ge877a95387ae  ***
+*** Booting Zephyr OS build zephyr-v2.6.0-349-g032d10878792  ***
 ARM no-multithreading test
+E: ***** Reserved Exception ( -2) *****
+E: r0/a1:  0x0000001b  r1/a2:  0x000044d8  r2/a3:  0xe000ed00
+E: r3/a4:  0x10000000 r12/ip:  0x0000000a r14/lr:  0x00001473
+E:  xpsr:  0x61000000
+E: Faulting instruction address (r15/pc): 0x00001510
+E: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0
+E: Current thread: (nil) (unknown)
+Caught system error -- reason 0
 Available IRQ line: 25
 ARM no multithreading test successful
 ===================================================================
