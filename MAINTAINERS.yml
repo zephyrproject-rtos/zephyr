@@ -541,6 +541,7 @@ Documentation:
         - drivers/eeprom/
         - dts/bindings/mtd/*eeprom*
         - include/drivers/eeprom.h
+        - samples/drivers/eeprom/
         - tests/drivers/eeprom/
     labels:
         - "area: EEPROM"
