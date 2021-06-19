@@ -81,7 +81,7 @@ static const uint32_t sam_tc_input_freq_table[] = {
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 128,
 	32768,
 #elif defined(CONFIG_SOC_SERIES_SAM4L)
-	USEC_PER_SEC,
+	1024,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 2,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 8,
 	SOC_ATMEL_SAM_MCK_FREQ_HZ / 32,
