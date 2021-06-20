@@ -784,6 +784,14 @@
 			compatible = "mmio-sram";
 			reg = <0x202c0000 DT_SIZE_K(512)>;
 		};
+
+		pxp: pxp@40814000 {
+			compatible = "nxp,imx-pxp";
+			reg = <0x40814000 0x444>;
+			status = "disabled";
+			interrupts = <57 0>;
+			label = "PXP";
+		};
 	};
 };
 

@@ -278,6 +278,7 @@
 /drivers/pwm/*gecko*                      @sun681
 /drivers/pwm/*it8xxx2*                    @RuibinChang
 /drivers/sensor/                          @MaureenHelm
+/drivers/pxp/                             @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
 /drivers/sensor/hts*/                     @avisconti
@@ -436,6 +437,7 @@
 /include/drivers/led.h                    @Mani-Sadhasivam
 /include/drivers/led_strip.h              @mbolivar-nordic
 /include/drivers/sensor.h                 @MaureenHelm
+/include/drivers/pxp.h                    @MaureenHelm
 /include/drivers/spi.h                    @tbursztyka
 /include/drivers/lora.h                   @Mani-Sadhasivam
 /include/drivers/peci.h                   @albertofloyd @franciscomunoz @scottwcpg
@@ -544,6 +546,7 @@
 /samples/net/sockets/                     @rlubos @tbursztyka @pfalcon
 /samples/net/*civetweb*                   @Nukersson
 /samples/sensor/                          @MaureenHelm
+/samples/pxp/                             @MaureenHelm
 /samples/shields/                         @avisconti
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
 /samples/subsys/shell/                    @jakub-uC @nordic-krch

@@ -1,0 +1,18 @@
+# PXP driver configuration options
+
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# PXP Drivers
+#
+menuconfig PXP
+	bool "NXP PXP hardware support"
+	help
+	  Enable support for the PXP.
+
+if PXP
+
+source "drivers/pxp/Kconfig.mcux_pxp"
+
+endif # PXP

@@ -49,3 +49,7 @@
 		jedec-id = [9d 70 17];
 	};
 };
+
+&pxp {
+	status = "okay";
+};

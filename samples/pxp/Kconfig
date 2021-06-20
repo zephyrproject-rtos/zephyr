@@ -1,0 +1,18 @@
+# Config for pxp sample
+
+# Copyright (c) 2019 NXP Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Build which PXP sample"
+	default PXP_ROTATE_FLIP
+
+config PXP_ROTATE_FLIP
+	bool "PXP rotate & flip sample"
+
+config PXP_SCALER
+	bool "PXP scaler sample"
+
+endchoice
+
+source "Kconfig.zephyr"

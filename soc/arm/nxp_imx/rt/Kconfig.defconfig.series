@@ -132,6 +132,10 @@ config VIDEO_MCUX_CSI
 	default y if HAS_MCUX_CSI
 	depends on VIDEO
 
+config PXP_MCUX_PXP
+	default y if HAS_MCUX_PXP
+	depends on PXP
+
 config DMA_MCUX_EDMA
 	default y if HAS_MCUX_EDMA
 	depends on DMA
