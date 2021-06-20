@@ -6,7 +6,7 @@
 
 #include <autoconf.h>
 #include <toolchain.h>
-#include "riscv_encoding.h"
+#include <soc.h>
 
     .weak  eclic_msip_handler
     .weak  eclic_mtip_handler
@@ -166,7 +166,7 @@ vector_base:
 GTEXT(__nuclei_start)
 SECTION_FUNC(vectors, __nuclei_start)
     /* Disable Global Interrupt */
-    csrc CSR_MSTATUS, MSTATUS_MIE
+    csrc mstatus, MSTATUS_MIE
     /* Jump to logical address first to ensure correct operation of RAM region  */
     la      a0, __nuclei_start
     li      a1, 1
@@ -195,7 +195,7 @@ _start0800:
 
     /* Initial the CSR MTVEC for the Trap ane NMI base addr*/
     la t0, trap_entry
-    csrw CSR_MTVEC, t0
+    csrw mtvec, t0
 
 #ifdef __riscv_flen
     /* Enable FPU */

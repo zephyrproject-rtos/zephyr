@@ -11,8 +11,13 @@
 #ifndef __RISCV_GIGADEVICE_GD32V_SOC_H_
 #define __RISCV_GIGADEVICE_GD32V_SOC_H_
 
+#include <toolchain.h>
 #include <soc_common.h>
 #include <devicetree.h>
+#include <arch/riscv/csr.h>
+#ifndef _LINKER
+#include <riscv_encoding.h>
+#endif
 
 /* Timer configuration */
 #define RISCV_MTIME_BASE             (0xD1000000UL + 0)
@@ -23,7 +28,6 @@
 #define RISCV_RAM_SIZE               KB(DT_SRAM_SIZE)
 
 #ifndef _ASMLANGUAGE
-#include <toolchain.h>
 #include <gd32vf103.h>
 
 /**

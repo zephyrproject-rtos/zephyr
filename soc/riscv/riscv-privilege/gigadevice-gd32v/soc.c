@@ -7,7 +7,6 @@
 #include <soc.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "riscv_encoding.h"
 #include <init.h>
 
 static int _init(const struct device *dev)
@@ -15,7 +14,7 @@ static int _init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	/* Enable mcycle and minstret counter */
-	__asm__ ("csrsi " STRINGIFY(CSR_MCOUNTINHIBIT) ",0x5");
+	__asm__ ("csrsi mcountinhibit, 0x5");
 	return 0;
 }
 

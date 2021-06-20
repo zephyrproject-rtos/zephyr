@@ -12,6 +12,7 @@
 #include <arch/cpu.h>
 #include <init.h>
 #include <soc.h>
+#include <arch/riscv/csr.h>
 
 #include <sw_isr_table.h>
 
@@ -23,17 +24,17 @@ static inline void eclic_init(uint32_t num_irq)
 
 static inline void eclic_mode_enable(void)
 {
-	uint32_t mtvec_value = __RV_CSR_READ(CSR_MTVEC);
+	uint32_t mtvec_value = csr_read(mtvec);
 
 	mtvec_value = mtvec_value & 0xFFFFFFC0;
 	mtvec_value = mtvec_value | 0x00000003;
-	__RV_CSR_WRITE(CSR_MTVEC, mtvec_value);
+	csr_write(mtvec, mtvec_value);
 }
 
 static inline void eclic_global_interrupt_enable(void)
 {
 	/* set machine interrupt enable bit */
-	__RV_CSR_SET(CSR_MSTATUS, MSTATUS_MIE);
+	csr_set(mstatus, MSTATUS_MIE);
 }
 
 /**
