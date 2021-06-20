@@ -68,7 +68,7 @@ manifest:
       revision: b4d31f33238713a568e23618845702fadd67386f
       path: modules/hal/nuvoton
     - name: hal_nxp
-      revision: 9a52c50338dcec8ab938f91f62e829898e298d14
+      revision: 4b493d4346e841e786a8daa2eb2ee03cbe5cfd37
       path: modules/hal/nxp
     - name: hal_openisa
       revision: 40d049f69c50b58ea20473bee14cf93f518bf262
