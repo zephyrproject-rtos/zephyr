@@ -1,0 +1,11 @@
+# BeagleBoard BeagleConnect Freedom
+
+# Copyright (c) 2019 Brett Witherspoon
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BEAGLECONNECT_FREEDOM_CC1352R
+
+config BOARD
+	default "beagleconnect_freedom_cc1352r"
+
+endif # BOARD_BEAGLECONNECT_FREEDOM_CC1352R
