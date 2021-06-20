@@ -33,9 +33,6 @@ config SOC_PART_NUMBER
 config NUM_IRQS
 	default 80
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 48000000
-
 # Configure default device drivers. If a feature is supported by more than one
 # device driver the default configuration will be placed in the board defconfig
 # file.
