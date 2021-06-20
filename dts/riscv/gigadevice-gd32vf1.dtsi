@@ -73,6 +73,19 @@
 			label = "GD32_CLK_RCU";
 		};
 
+		afio: afio@40010000 {
+			compatible = "gigadevice,gd32-afio";
+			reg = <0x40010000 0x400>;
+			label = "GD32_AFIO";
+		};
+
+		exti: exti@40010400 {
+			compatible = "gigadevice,gd32-exti";
+			reg = <0x40010400 0x400>;
+			label = "GD32_EXTI";
+		};
+
+
 		pinctrl: pin-controller@40010800 {
 			compatible = "gigadevice,gd32-pinctrl";
 			#address-cells = <1>;

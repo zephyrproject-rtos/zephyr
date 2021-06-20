@@ -1,0 +1,9 @@
+description: GigaDevice GD32 family Alternate Functiona I/O
+
+compatible: "gigadevice,gd32-afio"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

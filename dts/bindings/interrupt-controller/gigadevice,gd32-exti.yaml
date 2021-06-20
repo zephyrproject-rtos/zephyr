@@ -1,0 +1,9 @@
+description: GigaDevice GD32 family External Interrupt Controller
+
+compatible: "gigadevice,gd32-exti"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
