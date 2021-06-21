@@ -263,10 +263,10 @@ static void simplelink_iface_init(struct net_if *iface)
 }
 
 static const struct net_wifi_mgmt_offload simplelink_api = {
-	.iface_api.init = simplelink_iface_init,
-	.scan		= simplelink_mgmt_scan,
-	.connect	= simplelink_mgmt_connect,
-	.disconnect	= simplelink_mgmt_disconnect,
+	.wifi_api.eth_api.iface_api.init = simplelink_iface_init,
+	.scan				 = simplelink_mgmt_scan,
+	.connect			 = simplelink_mgmt_connect,
+	.disconnect			 = simplelink_mgmt_disconnect,
 };
 
 static int simplelink_init(const struct device *dev)

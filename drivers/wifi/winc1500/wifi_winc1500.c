@@ -1101,12 +1101,12 @@ static void winc1500_iface_init(struct net_if *iface)
 }
 
 static const struct net_wifi_mgmt_offload winc1500_api = {
-	.iface_api.init = winc1500_iface_init,
-	.scan		= winc1500_mgmt_scan,
-	.connect	= winc1500_mgmt_connect,
-	.disconnect	= winc1500_mgmt_disconnect,
-	.ap_enable	= winc1500_mgmt_ap_enable,
-	.ap_disable	= winc1500_mgmt_ap_disable,
+	.wifi_api.eth_api.iface_api.init = winc1500_iface_init,
+	.scan				 = winc1500_mgmt_scan,
+	.connect			 = winc1500_mgmt_connect,
+	.disconnect			 = winc1500_mgmt_disconnect,
+	.ap_enable			 = winc1500_mgmt_ap_enable,
+	.ap_disable			 = winc1500_mgmt_ap_disable,
 };
 
 static int winc1500_init(const struct device *dev)
