@@ -111,6 +111,8 @@ static inline bool ctrl_is_unexpected(struct ll_conn *conn, uint8_t opcode);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+static inline void cpr_mutex_check_and_give(struct ll_conn *conn);
+static inline void cpr_mutex_give(void);
 static inline void event_conn_param_prep(struct ll_conn *conn,
 					 uint16_t event_counter,
 					 uint32_t ticks_at_expire);
@@ -203,14 +205,6 @@ static uint8_t default_phy_rx;
 
 static struct ll_conn conn_pool[CONFIG_BT_MAX_CONN];
 static void *conn_free;
-
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-/* Connection context pointer used as CPR mutex to serialize connection
- * parameter requests procedures across simulataneous connections so that
- * offsets exchanged to the peer does not get changed.
- */
-static struct ll_conn *conn_upd_curr;
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 struct ll_conn *ll_conn_acquire(void)
 {
@@ -769,7 +763,7 @@ int ull_conn_reset(void)
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	/* Reset CPR mutex */
-	conn_upd_curr = NULL;
+	cpr_mutex_give();
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	err = init_reset();
@@ -1994,9 +1988,7 @@ static void conn_cleanup(struct ll_conn *conn, uint8_t reason)
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	/* Reset CPR mutex */
-	if (conn == conn_upd_curr) {
-		conn_upd_curr = NULL;
-	}
+	cpr_mutex_check_and_give(conn);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	/* Only termination structure is populated here in ULL context
@@ -2441,6 +2433,43 @@ static bool is_enc_req_pause_tx(struct ll_conn *conn)
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+/* Connection context pointer used as CPR mutex to serialize connection
+ * parameter requests procedures across simulataneous connections so that
+ * offsets exchanged to the peer do not get changed.
+ */
+static struct ll_conn *conn_upd_curr;
+
+static inline void cpr_mutex_check_and_take(struct ll_conn *conn)
+{
+	if (!conn_upd_curr) {
+		conn_upd_curr = conn;
+	}
+}
+
+static inline void cpr_mutex_take(struct ll_conn *conn)
+{
+	conn_upd_curr = conn;
+}
+
+static inline bool cpr_mutex_is_taken(struct ll_conn *conn)
+{
+	return conn_upd_curr && (conn_upd_curr != conn);
+}
+
+static inline void cpr_mutex_check_and_give(struct ll_conn *conn)
+{
+	if (conn == conn_upd_curr) {
+		conn_upd_curr = NULL;
+	}
+}
+
+static inline void cpr_mutex_give(void)
+{
+	conn_upd_curr = NULL;
+}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 static inline void event_conn_upd_init(struct ll_conn *conn,
 				       uint16_t event_counter,
 				       uint32_t ticks_at_expire,
@@ -2548,7 +2577,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
 
 			/* Reset CPR mutex */
-			conn_upd_curr = NULL;
+			cpr_mutex_give();
 
 			/* enqueue control PDU */
 			pdu_ctrl_tx =
@@ -2598,9 +2627,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		/* Set CPR mutex */
-		if (!conn_upd_curr) {
-			conn_upd_curr = conn;
-		}
+		cpr_mutex_check_and_take(conn);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 		(void)ll_pdu_rx_alloc();
@@ -2663,9 +2690,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		}
 
 		/* Reset CPR mutex */
-		if (conn_upd_curr == conn) {
-			conn_upd_curr = NULL;
-		}
+		cpr_mutex_check_and_give(conn);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 		lll = &conn->lll;
@@ -3343,7 +3368,7 @@ static inline void event_conn_param_req(struct ll_conn *conn,
 	p->offset5 = sys_cpu_to_le16(0xffff);
 
 	/* Set CPR mutex */
-	conn_upd_curr = conn;
+	cpr_mutex_take(conn);
 
 	/* Start Procedure Timeout (TODO: this shall not replace
 	 * terminate procedure).
@@ -3427,7 +3452,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
 
 		/* Reset CPR mutex */
-		conn_upd_curr = NULL;
+		cpr_mutex_give();
 
 		return;
 	}
@@ -3557,7 +3582,7 @@ static inline void event_conn_param_prep(struct ll_conn *conn,
 					 uint32_t ticks_at_expire)
 {
 	/* Defer new CPR if another in progress across active connections */
-	if (conn_upd_curr && (conn_upd_curr != conn)) {
+	if (cpr_mutex_is_taken(conn)) {
 		return;
 	}
 
@@ -4267,9 +4292,7 @@ static uint8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	/* Set CPR mutex, if only not already set. As a master the mutex shall
 	 * be set, but a slave we accept it as new 'set' of mutex.
 	 */
-	if (!conn_upd_curr) {
-		conn_upd_curr = conn;
-	}
+	cpr_mutex_check_and_take(conn);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	conn->llcp_cu.win_size = pdu->llctrl.conn_update_ind.win_size;
@@ -4813,7 +4836,7 @@ static inline int reject_ind_conn_upd_recv(struct ll_conn *conn,
 
 	if (conn->llcp_conn_param.state == LLCP_CPR_STATE_RSP_WAIT) {
 		/* Reset CPR mutex */
-		conn_upd_curr = NULL;
+		cpr_mutex_give();
 
 		/* Procedure complete */
 		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
@@ -6224,7 +6247,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		/* check CUI/CPR mutex for other connections having CPR in
 		 * progress.
 		 */
-		if (conn_upd_curr && (conn_upd_curr != conn)) {
+		if (cpr_mutex_is_taken(conn)) {
 			/* Unsupported LL Parameter Value */
 			nack = reject_ext_ind_send(conn, *rx,
 					PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
@@ -6371,9 +6394,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn->llcp_conn_param.ack--;
 
 				/* Set CPR mutex */
-				if (!conn_upd_curr) {
-					conn_upd_curr = conn;
-				}
+				cpr_mutex_check_and_take(conn);
 			}
 		} else if ((conn->llcp_conn_param.req ==
 			    conn->llcp_conn_param.ack) ||
@@ -6458,9 +6479,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			conn->llcp_conn_param.ack--;
 
 			/* Set CPR mutex */
-			if (!conn_upd_curr) {
-				conn_upd_curr = conn;
-			}
+			cpr_mutex_check_and_take(conn);
 		} else {
 			/* Ignore duplicate request as peripheral is busy
 			 * processing the previously initiated connection
@@ -6623,7 +6642,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			}
 
 			/* Reset CPR mutex */
-			conn_upd_curr = NULL;
+			cpr_mutex_give();
 
 			/* Procedure complete */
 			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
