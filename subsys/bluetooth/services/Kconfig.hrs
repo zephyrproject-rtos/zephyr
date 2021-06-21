@@ -6,6 +6,27 @@
 menuconfig BT_HRS
 	bool "Enable GATT Heart Rate service"
 
+if BT_HRS
+
+choice
+	prompt "Default permissions used for HRS characteristics"
+	default BT_HRS_DEFAULT_PERM_RW
+	help
+	  Default permissions for HRS characteristic attributes
+	  used when no permission is set for the report.
+	  Used also for boot reports.
+
+config BT_HRS_DEFAULT_PERM_RW
+	bool "Read and write allowed"
+
+config BT_HRS_DEFAULT_PERM_RW_ENCRYPT
+	bool "Require encryption for access"
+
+config BT_HRS_DEFAULT_PERM_RW_AUTHEN
+	bool "Require encryption and authentication for access"
+
+endchoice
+
 config BT_HRS_LOG_LEVEL
 	int "Heart Rate service log level"
 	depends on LOG
@@ -20,3 +41,5 @@ config BT_HRS_LOG_LEVEL
 	  2 WARNING, write LOG_WRN in addition to previous level
 	  3 INFO, write LOG_INF in addition to previous levels
 	  4 DEBUG, write LOG_DBG in addition to previous levels
+
+endif # BT_HRS
