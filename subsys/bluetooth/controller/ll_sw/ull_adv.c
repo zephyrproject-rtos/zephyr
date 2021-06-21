@@ -1098,6 +1098,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			}
 
 			slot_us += (BYTES2US(adv_size, phy) + EVENT_IFS_MAX_US
+				  + scan_req_us + 2 * EVENT_IFS_MAX_US + scan_rsp_us
 				  + rx_to_us + rxtx_turn_us) * (adv_chn_cnt-1)
 				  + BYTES2US(adv_size, phy) + EVENT_IFS_MAX_US;
 		}
