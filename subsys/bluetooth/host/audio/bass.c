@@ -47,7 +47,6 @@ struct bass_recv_state_internal_t {
 	uint8_t broadcast_code[BASS_BROADCAST_CODE_SIZE];
 	uint16_t pa_interval;
 	bool broadcast_code_received;
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	struct bt_le_per_adv_sync *pa_sync;
 	bool pa_sync_pending;
 	struct k_work_delayable pa_timer;
@@ -56,7 +55,6 @@ struct bass_recv_state_internal_t {
 	bool big_encrypted;
 	uint16_t iso_interval;
 	struct bt_iso_big *big;
-#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 };
 
 struct bass_inst_t {
@@ -72,7 +70,6 @@ static struct bt_bass_cb_t *bass_cbs;
 
 static int bis_sync(struct bass_recv_state_internal_t *state);
 
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 /* TODO: Integrate the following with the bt_audio (audio.h) API */
 static void iso_recv(struct bt_iso_chan *chan,
 		     const struct bt_iso_recv_info *info,
@@ -102,7 +99,6 @@ static struct bt_iso_chan bis_iso_chan = {
 	.ops = &iso_ops,
 	.qos = &bis_iso_qos,
 };
-#endif /* CONFIG_BT_BASS_AUTO_SYNC */
 
 /**
  * @brief Returns whether a value's bits is a subset of another value's bits
@@ -313,7 +309,6 @@ static struct bass_recv_state_internal_t *bass_lookup_src_id(uint8_t src_id)
 	return NULL;
 }
 
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 static struct bass_recv_state_internal_t *bass_lookup_pa_sync(
 	struct bt_le_per_adv_sync *sync)
 {
@@ -507,11 +502,8 @@ static void pa_timer_handler(struct k_work *work)
 	bass_notify_receive_state(recv_state);
 }
 
-#endif /* CONFIG_BT_BASS_AUTO_SYNC */
-
 static int bis_sync(struct bass_recv_state_internal_t *state)
 {
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	int err;
 	struct bt_iso_big_sync_param param;
 	struct bt_iso_chan *bis_channels[1] = { &bis_iso_chan };
@@ -569,15 +561,11 @@ static int bis_sync(struct bass_recv_state_internal_t *state)
 	/* We could start a timer for BIG sync but there is no way to let the
 	 * client know if it has timed out, so it doesn't really matter.
 	 */
-#else
-	/* TODO: Send request to app */
-#endif /* CONFIG_BT_BASS_AUTO_SYNC */
 	return 0;
 }
 
 static int bis_sync_cancel(struct bass_recv_state_internal_t *state)
 {
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	int err;
 
 	if (!state->big) {
@@ -590,9 +578,6 @@ static int bis_sync_cancel(struct bass_recv_state_internal_t *state)
 	}
 
 	state->big = NULL;
-#else
-	/* TODO: Send request to app */
-#endif /* CONFIG_BT_BASS_AUTO_SYNC */
 	return 0;
 }
 
@@ -600,7 +585,6 @@ static void bass_pa_sync_past(struct bt_conn *conn,
 			      struct bass_recv_state_internal_t *state)
 {
 	struct bt_bass_recv_state *recv_state = &state->state;
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	int err;
 	struct bt_le_per_adv_sync_transfer_param param = { 0 };
 
@@ -615,20 +599,11 @@ static void bass_pa_sync_past(struct bt_conn *conn,
 	}
 
 	(void)k_work_reschedule(&state->pa_timer, K_MSEC(param.timeout * 10));
-#else
-	if (bass_cbs && bass_cbs->past_req) {
-		bass_cbs->past_req(recv_state, conn);
-	} else {
-		BT_WARN("PAST not possible");
-		recv_state->pa_sync_state = BASS_PA_STATE_FAILED;
-	}
-#endif /* CONFIG_BT_BASS_AUTO_SYNC */
 }
 
 static void bass_pa_sync_no_past(struct bass_recv_state_internal_t *state)
 {
 	struct bt_bass_recv_state *recv_state = &state->state;
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	int err;
 	struct bt_le_per_adv_sync_param param = { 0 };
 
@@ -656,20 +631,11 @@ static void bass_pa_sync_no_past(struct bass_recv_state_internal_t *state)
 		(void)k_work_reschedule(&state->pa_timer,
 					K_MSEC(param.timeout * 10));
 	}
-#else
-	if (bass_cbs && bass_cbs->pa_sync_req) {
-		bass_cbs->pa_sync_req(recv_state, state->pa_interval);
-	} else {
-		BT_WARN("PA sync not possible");
-		recv_state->pa_sync_state = BASS_PA_STATE_FAILED;
-	}
-#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 }
 
 static void bass_pa_sync_cancel(struct bass_recv_state_internal_t *state)
 {
 	struct bt_bass_recv_state *recv_state = &state->state;
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	int err;
 
 	(void)k_work_cancel_delayable(&state->pa_timer);
@@ -685,13 +651,6 @@ static void bass_pa_sync_cancel(struct bass_recv_state_internal_t *state)
 		state->pa_sync = NULL;
 		recv_state->pa_sync_state = BASS_PA_STATE_NOT_SYNCED;
 	}
-#else
-	if (bass_cbs && bass_cbs->pa_sync_term_req) {
-		bass_cbs->pa_sync_term_req(recv_state);
-	} else {
-		BT_WARN("PA sync terminate not possible");
-	}
-#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 }
 
 static void bass_pa_sync(struct bt_conn *conn, struct bass_recv_state_internal_t *state,
@@ -1029,11 +988,9 @@ static int bass_broadcast_code(struct net_buf_simple *buf)
 
 	internal_state->broadcast_code_received = true;
 
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	if (!internal_state->biginfo_received) {
 		return 0;
 	}
-#endif /* CONFIG_BT_BASS_AUTO_SYNC */
 
 	BT_DBG("Syncing to BIS");
 
@@ -1069,7 +1026,6 @@ static int bass_rem_src(struct net_buf_simple *buf)
 	/* Terminate PA sync */
 	bass_pa_sync(NULL /* unused */, internal_state, false); /* delete syncs */
 
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	int err;
 
 	/* Check if successful */
@@ -1083,7 +1039,6 @@ static int bass_rem_src(struct net_buf_simple *buf)
 		BT_WARN("Could not terminate BIG %d", err);
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
-#endif /* CONFIG_BT_BASS_AUTO_SYNC */
 
 	BT_DBG("Index %u: Removed source with ID 0x%02x", internal_state->index, src_id);
 
@@ -1091,11 +1046,9 @@ static int bass_rem_src(struct net_buf_simple *buf)
 	memset(&internal_state->state, 0, sizeof(internal_state->state));
 	memset(internal_state->broadcast_code, 0, sizeof(internal_state->broadcast_code));
 	internal_state->pa_interval = 0;
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	internal_state->big_encrypted = 0;
 	internal_state->iso_interval = 0;
 	internal_state->biginfo_received = false;
-#endif /* CONFIG_BT_BASS_AUTO_SYNC */
 
 	bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE, internal_state->attr,
 			    NULL, 0);
@@ -1270,13 +1223,11 @@ static int bt_bass_init(const struct device *unused)
 #endif /* CONFIG_BT_BASS_RECV_STATE_COUNT > 2 */
 #endif /* CONFIG_BT_BASS_RECV_STATE_COUNT > 1 */
 
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
 	for (int i = 0; i < ARRAY_SIZE(bass_inst.recv_states); i++) {
 		k_work_init_delayable(&bass_inst.recv_states[i].pa_timer,
 				      pa_timer_handler);
 	}
-#endif
 	return 0;
 }
 
@@ -1289,6 +1240,7 @@ void bt_bass_register_cb(struct bt_bass_cb_t *cb)
 	bass_cbs = cb;
 }
 
+#if defined(CONFIG_BT_TESTING)
 int bt_bass_set_synced(uint8_t src_id, uint8_t pa_sync_state,
 		       uint32_t bis_synced[CONFIG_BT_BASS_MAX_SUBGROUPS],
 		       uint8_t encrypt_state)
@@ -1296,12 +1248,6 @@ int bt_bass_set_synced(uint8_t src_id, uint8_t pa_sync_state,
 	struct bass_recv_state_internal_t *recv_state =
 		bass_lookup_src_id(src_id);
 	bool notify = false;
-
-	/* Only allow setting the sync if AUTO_SYNC is off, but keep enabled for testing */
-	if (IS_ENABLED(CONFIG_BT_BASS_AUTO_SYNC) &&
-	    !IS_ENABLED(CONFIG_BT_TESTING)) {
-		return -EACCES;
-	}
 
 	if (!recv_state) {
 		return -EINVAL;
@@ -1354,7 +1300,7 @@ int bt_bass_set_synced(uint8_t src_id, uint8_t pa_sync_state,
 
 	return 0;
 }
-
+#endif
 
 int bt_bass_remove_source(uint8_t src_id)
 {
