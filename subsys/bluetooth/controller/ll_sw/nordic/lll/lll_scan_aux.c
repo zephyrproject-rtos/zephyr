@@ -54,6 +54,7 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 #if defined(CONFIG_BT_CENTRAL)
 static void isr_tx_connect_req(void *param);
 static void isr_rx_connect_rsp(void *param);
+static void isr_early_abort(void *param);
 #endif /* CONFIG_BT_CENTRAL */
 static void isr_done(void *param);
 
@@ -137,7 +138,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		     (lll_scan->conn &&
 		      (lll_scan->conn->master.initiated ||
 		       lll_scan->conn->master.cancelled)))) {
-		radio_isr_set(lll_isr_early_abort, lll);
+		radio_isr_set(isr_early_abort, lll);
 		radio_disable();
 
 		return 0;
@@ -723,6 +724,18 @@ isr_rx_do_close:
 
 	radio_isr_set(isr_done, lll_aux);
 	radio_disable();
+}
+
+static void isr_early_abort(void *param)
+{
+	struct event_done_extra *e;
+
+	e = ull_event_done_extra_get();
+	LL_ASSERT(e);
+
+	e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
+
+	lll_isr_early_abort(param);
 }
 #endif /* CONFIG_BT_CENTRAL */
 
