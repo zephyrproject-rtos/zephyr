@@ -62,7 +62,6 @@ struct bt_bass_recv_state {
 };
 
 struct bt_bass_cb_t {
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	void (*pa_synced)(struct bt_bass_recv_state *recv_state,
 			  const struct bt_le_per_adv_sync_synced_info *info);
 	void (*pa_term)(struct bt_bass_recv_state *recv_state,
@@ -72,13 +71,6 @@ struct bt_bass_cb_t {
 			struct net_buf_simple *buf);
 	void (*biginfo)(struct bt_bass_recv_state *recv_state,
 			const struct bt_iso_biginfo *biginfo);
-#else
-	void (*pa_sync_req)(struct bt_bass_recv_state *recv_state,
-			    uint16_t pa_interval);
-	void (*past_req)(struct bt_bass_recv_state *recv_state,
-			 struct bt_conn *conn);
-	void (*pa_sync_term_req)(struct bt_bass_recv_state *recv_state);
-#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 };
 
 /**
