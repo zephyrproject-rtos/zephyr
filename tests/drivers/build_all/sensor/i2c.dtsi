@@ -549,9 +549,9 @@ test_i2c_max17055: max17055@49 {
 	v-empty = <3300>;
 };
 
-test_i2c_max17262: max17262@36 {
-	compatible = "maxim,max17262";
-	label = "MAX17262";
+test_i2c_max1726x: max1726x@36 {
+	compatible = "maxim,max1726x";
+	label = "MAX1726X";
 	reg = <0x36>;
 	design-voltage = <3600>;
 	desired-voltage = <3600>;

@@ -4,4 +4,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_MAX17262 max17262.c)
+zephyr_library_sources_ifdef(CONFIG_MAX1726X max1726x.c)
