@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,6 @@
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll_clock.h"
 #include "lll/lll_vendor.h"
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
@@ -47,10 +46,6 @@ static int init_reset(void);
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
-				  uint8_t **dptr);
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 static void mfy_aux_offset_get(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
@@ -441,6 +436,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	struct pdu_adv_ext_hdr *sec_hdr, sec_hdr_prev;
 	struct pdu_adv *pri_pdu, *pri_pdu_prev;
 	struct pdu_adv *sec_pdu_prev, *sec_pdu;
+	struct pdu_adv_sync_info *sync_info;
 	uint8_t *pri_dptr, *pri_dptr_prev;
 	uint8_t *sec_dptr, *sec_dptr_prev;
 	uint8_t pri_len, sec_len_prev;
@@ -611,16 +607,30 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	/* No SyncInfo flag in primary channel PDU */
 	/* Add/Remove SyncInfo flag in secondary channel PDU */
-	if ((sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_SYNC_INFO) ||
-	    (!(sec_hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_SYNC_INFO) &&
-	     sec_hdr_prev.sync_info)) {
+	if (sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_SYNC_INFO) {
 		sec_hdr->sync_info = 1;
-	}
-	if (sec_hdr_prev.sync_info) {
-		sec_dptr_prev += sizeof(struct pdu_adv_sync_info);
-	}
-	if (sec_hdr->sync_info) {
-		sec_dptr += sizeof(struct pdu_adv_sync_info);
+		sync_info = NULL;
+
+		/* return the size of sync info structure */
+		*(uint8_t *)value = sizeof(*sync_info);
+		value = (uint8_t *)value + 1;
+
+		/* return the pointer to sync info struct inside the PDU
+		 * buffer
+		 */
+		memcpy(value, &sec_dptr, sizeof(sec_dptr));
+		value = (uint8_t *)value + sizeof(sec_dptr);
+
+		sec_dptr += sizeof(*sync_info);
+	} else if (!(sec_hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_SYNC_INFO) &&
+		   sec_hdr_prev.sync_info) {
+		sec_hdr->sync_info = 1;
+		sync_info = (void *)sec_dptr_prev;
+
+		sec_dptr_prev += sizeof(*sync_info);
+		sec_dptr += sizeof(*sync_info);
+	} else {
+		sync_info = NULL;
 	}
 
 	/* Tx Power flag */
@@ -724,10 +734,15 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* No SyncInfo in primary channel PDU */
 	/* Fill SyncInfo in secondary channel PDU */
 	if (sec_hdr_prev.sync_info) {
-		sec_dptr_prev -= sizeof(struct pdu_adv_sync_info);
+		sec_dptr_prev -= sizeof(*sync_info);
 	}
+
 	if (sec_hdr->sync_info) {
-		sync_info_fill(lll->sync, &sec_dptr);
+		sec_dptr -= sizeof(*sync_info);
+	}
+
+	if (sync_info) {
+		memmove(sec_dptr, sync_info, sizeof(*sync_info));
 	}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
@@ -1015,37 +1030,6 @@ inline uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux)
 	return mem_index_get(aux, ll_adv_aux_pool,
 			     sizeof(struct ll_adv_aux_set));
 }
-
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-static inline void sync_info_fill(struct lll_adv_sync *lll_sync,
-				  uint8_t **dptr)
-{
-	struct ll_adv_sync_set *sync;
-	struct pdu_adv_sync_info *si;
-
-	*dptr -= sizeof(*si);
-	si = (void *)*dptr;
-
-	/* NOTE: sync offset and offset unit filled by secondary prepare */
-	si->offs_units = 0U;
-	/* If sync_info is part of ADV PDU the offs_adjust field
-	 * is always set to 0.
-	 */
-	si->offs_adjust = 0U;
-	si->offs = 0U;
-
-	sync = HDR_LLL2ULL(lll_sync);
-	si->interval = sys_cpu_to_le16(sync->interval);
-	memcpy(si->sca_chm, lll_sync->data_chan_map,
-	       sizeof(si->sca_chm));
-	si->sca_chm[4] &= 0x1f;
-	si->sca_chm[4] |= lll_clock_sca_local_get() << 5;
-	memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
-	memcpy(si->crc_init, lll_sync->crc_init, sizeof(si->crc_init));
-
-	si->evt_cntr = 0U; /* NOTE: Filled by secondary prepare */
-}
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 static void mfy_aux_offset_get(void *param)
 {
