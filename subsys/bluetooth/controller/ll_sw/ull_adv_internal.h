@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,39 +111,6 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 				  struct pdu_adv_adi *adi,
 				  uint8_t *pri_idx);
 
-/* helper function to release periodic advertising instance */
-void ull_adv_sync_release(struct ll_adv_sync_set *sync);
-
-/* helper function to allocate new PDU data for AUX_SYNC_IND and return
- * previous and new PDU for further processing.
- */
-uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
-			       uint16_t hdr_add_fields,
-			       uint16_t hdr_rem_fields,
-			       struct ull_adv_ext_hdr_data *hdr_data,
-			       struct pdu_adv **ter_pdu_prev,
-			       struct pdu_adv **ter_pdu_new,
-			       void **extra_data_prev,
-			       void **extra_data_new,
-			       uint8_t *ter_idx);
-
-/* helper function to set/clear common extended header format fields
- * for AUX_SYNC_IND PDU.
- */
-uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
-				   struct pdu_adv *ter_pdu_prev,
-				   struct pdu_adv *ter_pdu,
-				   uint16_t hdr_add_fields,
-				   uint16_t hdr_rem_fields,
-				   struct ull_adv_ext_hdr_data *hdr_data);
-
-/* helper function to update extra_data field */
-void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
-				       void *extra_data_new,
-				       uint16_t hdr_add_fields,
-				       uint16_t hdr_rem_fields,
-				       void *data);
-
 /* helper function to calculate common ext adv payload header length and
  * adjust the data pointer.
  * NOTE: This function reverts the header data pointer if there is no
@@ -184,9 +151,46 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
 			    uint32_t ticks_anchor);
 
+/* helper function to release periodic advertising instance */
+void ull_adv_sync_release(struct ll_adv_sync_set *sync);
+
+/* helper function to fill initial value of sync_info structure */
+void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
+			    struct pdu_adv_sync_info *si);
+
 /* helper function to update periodic advertising event length */
 void ull_adv_sync_update(struct ll_adv_sync_set *sync, uint32_t slot_plus_us,
 			 uint32_t slot_minus_us);
+
+/* helper function to allocate new PDU data for AUX_SYNC_IND and return
+ * previous and new PDU for further processing.
+ */
+uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
+			       uint16_t hdr_add_fields,
+			       uint16_t hdr_rem_fields,
+			       struct ull_adv_ext_hdr_data *hdr_data,
+			       struct pdu_adv **ter_pdu_prev,
+			       struct pdu_adv **ter_pdu_new,
+			       void **extra_data_prev,
+			       void **extra_data_new,
+			       uint8_t *ter_idx);
+
+/* helper function to set/clear common extended header format fields
+ * for AUX_SYNC_IND PDU.
+ */
+uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
+				   struct pdu_adv *ter_pdu_prev,
+				   struct pdu_adv *ter_pdu,
+				   uint16_t hdr_add_fields,
+				   uint16_t hdr_rem_fields,
+				   struct ull_adv_ext_hdr_data *hdr_data);
+
+/* helper function to update extra_data field */
+void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
+				       void *extra_data_new,
+				       uint16_t hdr_add_fields,
+				       uint16_t hdr_rem_fields,
+				       void *data);
 
 /* helper function to schedule a mayfly to get sync offset */
 void ull_adv_sync_offset_get(struct ll_adv_set *adv);
