@@ -596,6 +596,31 @@ int arch_mem_domain_max_partitions_get(void)
 	return PMP_MAX_DYNAMIC_REGION;
 }
 
+int arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				  uint32_t partition_id)
+{
+	sys_dnode_t *node, *next_node;
+	struct k_thread *thread;
+	struct k_mem_partition *partition;
+	int ret = 0, ret2;
+
+	partition = &domain->partitions[partition_id];
+
+	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
+		thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
+
+		ret2 = z_riscv_pmp_add_dynamic(thread,
+			(ulong_t) partition->start,
+			(ulong_t) partition->size, partition->attr.pmp_attr);
+		ARG_UNUSED(ret2);
+		CHECKIF(ret2 != 0) {
+			ret = ret2;
+		}
+	}
+
+	return ret;
+}
+
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				     uint32_t partition_id)
 {
@@ -704,31 +729,6 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 			continue;
 		}
 		pcount++;
-
-		ret2 = z_riscv_pmp_add_dynamic(thread,
-			(ulong_t) partition->start,
-			(ulong_t) partition->size, partition->attr.pmp_attr);
-		ARG_UNUSED(ret2);
-		CHECKIF(ret2 != 0) {
-			ret = ret2;
-		}
-	}
-
-	return ret;
-}
-
-int arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				  uint32_t partition_id)
-{
-	sys_dnode_t *node, *next_node;
-	struct k_thread *thread;
-	struct k_mem_partition *partition;
-	int ret = 0, ret2;
-
-	partition = &domain->partitions[partition_id];
-
-	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
-		thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
 
 		ret2 = z_riscv_pmp_add_dynamic(thread,
 			(ulong_t) partition->start,
