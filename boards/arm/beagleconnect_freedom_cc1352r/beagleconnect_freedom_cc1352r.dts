@@ -19,8 +19,8 @@
 #define BTN_GPIO_FLAGS (GPIO_ACTIVE_LOW | GPIO_PULL_UP)
 
 / {
-	model = "TI CC1352R1 LaunchXL";
-	compatible = "ti,launchxl-cc1352r1";
+	model = "BeagleConnect Freedom";
+	compatible = "beagleboard,beagleconnect freedon";
 
 	aliases {
 		led0 = &led0;
