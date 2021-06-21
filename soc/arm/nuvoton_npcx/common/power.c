@@ -52,6 +52,7 @@
 #include <soc.h>
 
 #include "soc_host.h"
+#include "soc_power.h"
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -127,6 +128,11 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 	/* Turn on eSPI/LPC host access wake-up interrupt. */
 	if (IS_ENABLED(CONFIG_ESPI_NPCX)) {
 		npcx_host_enable_access_interrupt();
+	}
+
+	/* Turn on UART RX wake-up interrupt. */
+	if (IS_ENABLED(CONFIG_UART_NPCX)) {
+		npcx_uart_enable_access_interrupt();
 	}
 
 	/*
