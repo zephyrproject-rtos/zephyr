@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "pdu.h"
 
 #include "lll.h"
+#include "lll_clock.h"
 #include "lll/lll_vendor.h"
 #include "lll/lll_adv_types.h"
 #include "lll_adv.h"
@@ -525,6 +526,8 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	}
 
 	if (adv->is_enabled && !sync->is_started) {
+		struct pdu_adv_sync_info *sync_info;
+		uint8_t value[1 + sizeof(sync_info)];
 		uint32_t ticks_slot_overhead_aux;
 		struct lll_adv_aux *lll_aux;
 		struct ll_adv_aux_set *aux;
@@ -537,10 +540,17 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		/* Add sync_info into auxiliary PDU */
 		err = ull_adv_aux_hdr_set_clear(adv,
 						ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-						0, NULL, NULL, &pri_idx);
+						0, value, NULL, &pri_idx);
 		if (err) {
 			return err;
 		}
+
+		/* First byte in the length-value encoded parameter is size of
+		 * sync_info structure, followed by pointer to sync_info in the
+		 * PDU.
+		 */
+		memcpy(&sync_info, &value[1], sizeof(sync_info));
+		ull_adv_sync_info_fill(sync, sync_info);
 
 		if (lll_aux) {
 			/* FIXME: Find absolute ticks until after auxiliary PDU
@@ -693,6 +703,34 @@ void ull_adv_sync_release(struct ll_adv_sync_set *sync)
 {
 	lll_adv_sync_data_release(&sync->lll);
 	sync_release(sync);
+}
+
+void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
+			    struct pdu_adv_sync_info *si)
+{
+	struct lll_adv_sync *lll_sync;
+
+	/* NOTE: sync offset and offset unit filled by secondary prepare.
+	 *
+	 * If sync_info is part of ADV PDU the offs_adjust field
+	 * is always set to 0.
+	 */
+	si->offs_units = 0U;
+	si->offs_adjust = 0U;
+	si->offs = 0U;
+
+	/* Fill the interval, channel map, access address and CRC init */
+	si->interval = sys_cpu_to_le16(sync->interval);
+	lll_sync = &sync->lll;
+	memcpy(si->sca_chm, lll_sync->data_chan_map,
+	       sizeof(si->sca_chm));
+	si->sca_chm[4] &= 0x1f;
+	si->sca_chm[4] |= lll_clock_sca_local_get() << 5;
+	memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
+	memcpy(si->crc_init, lll_sync->crc_init, sizeof(si->crc_init));
+
+	/* NOTE: Filled by secondary prepare */
+	si->evt_cntr = 0U;
 }
 
 void ull_adv_sync_offset_get(struct ll_adv_set *adv)

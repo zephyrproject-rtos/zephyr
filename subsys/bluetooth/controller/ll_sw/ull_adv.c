@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2021 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -10,6 +10,7 @@
 #include <zephyr.h>
 #include <soc.h>
 #include <bluetooth/hci.h>
+#include <sys/byteorder.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -1208,14 +1209,24 @@ uint8_t ll_adv_enable(uint8_t enable)
 		if (lll->sync) {
 			sync = HDR_LLL2ULL(lll->sync);
 			if (sync->is_enabled && !sync->is_started) {
+				struct pdu_adv_sync_info *sync_info;
+				uint8_t value[1 + sizeof(sync_info)];
 				uint8_t err;
 
 				err = ull_adv_aux_hdr_set_clear(adv,
 					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-					0, NULL, NULL, &pri_idx);
+					0, value, NULL, &pri_idx);
 				if (err) {
 					return err;
 				}
+
+				/* First byte in the length-value encoded
+				 * parameter is size of sync_info structure,
+				 * followed by pointer to sync_info in the
+				 * PDU.
+				 */
+				memcpy(&sync_info, &value[1], sizeof(sync_info));
+				ull_adv_sync_info_fill(sync, sync_info);
 			} else {
 				/* Do not start periodic advertising */
 				sync = NULL;
