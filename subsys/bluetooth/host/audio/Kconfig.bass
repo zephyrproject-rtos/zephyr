@@ -29,13 +29,6 @@ config BT_BASS_RECV_STATE_COUNT
 	  server. Each characteristic may hold information to sync to a
 	  periodic advertise or a broadcast isochronous stream.
 
-config BT_BASS_AUTO_SYNC
-	bool "Broadcast Audio Scan Service Automatic Periodic Advertising Sync"
-	default y
-	help
-	  Lets BASS perform automatic periodic advertising sync when receiving
-	  sync information from a client.
-
 config BT_BASS_MAX_METADATA_LEN
 	int "Broadcast Audio Scan Service Maximum Metadata Length"
 	default 32

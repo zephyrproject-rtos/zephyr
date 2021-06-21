@@ -18,7 +18,6 @@
 #include "../host/audio/bass.h"
 #include "bt.h"
 
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 static void pa_synced(struct bt_bass_recv_state *recv_state,
 		      const struct bt_le_per_adv_sync_synced_info *info)
 {
@@ -49,38 +48,11 @@ static void pa_recv(struct bt_bass_recv_state *recv_state,
 		    info->rssi, info->cte_type, buf->len, hex);
 
 }
-#else
-static void pa_sync_req(struct bt_bass_recv_state *recv_state, uint16_t pa_interval)
-{
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(&recv_state->addr, le_addr, sizeof(le_addr));
-	shell_print(ctx_shell,
-		    "Request to PA sync to: receive state %p, device %s, adv_sid %u, interval %u",
-		    recv_state, le_addr, recv_state->adv_sid, pa_interval);
-
-	/* TODO: Establish PA sync */
-}
-
-static void pa_sync_term_req(struct bt_bass_recv_state *recv_state)
-{
-	shell_print(ctx_shell,
-		    "Request to terminate PA sync to receive_state %p",
-		    recv_state);
-
-	/* TODO: Terminate PA sync */
-}
-#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 
 static struct bt_bass_cb_t cbs = {
-#if defined(CONFIG_BT_BASS_AUTO_SYNC)
 	.pa_synced = pa_synced,
 	.pa_term = pa_term,
 	.pa_recv = pa_recv
-#else
-	.pa_sync_req = pa_sync_req,
-	.pa_sync_term_req = pa_sync_term_req
-#endif /* defined(CONFIG_BT_BASS_AUTO_SYNC) */
 };
 
 static int cmd_bass_init(const struct shell *shell, size_t argc, char **argv)
