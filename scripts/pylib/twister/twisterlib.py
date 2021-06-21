@@ -2497,11 +2497,18 @@ class ProjectBuilder(FilterBuilder):
             else:
                 if self.instance.name in res['filter'] and res['filter'][self.instance.name]:
                     logger.debug("filtering %s" % self.instance.name)
-                    self.instance.status = "skipped"
-                    self.instance.reason = "filter"
-                    results.skipped_runtime += 1
-                    for case in self.instance.testcase.cases:
-                        self.instance.results.update({case: 'SKIP'})
+                    if self.suite.integration and self.instance.platform.name in self.instance.testcase.integration_platforms:
+                        self.instance.status = "error"
+                        self.instance.reason = "Filtered but is one of the integration platforms"
+                        results.error += 1
+                        for case in self.instance.testcase.cases:
+                            self.instance.results.update({case: 'BLOCK'})
+                    else:
+                        self.instance.status = "skipped"
+                        self.instance.reason = "filter"
+                        results.skipped_runtime += 1
+                        for case in self.instance.testcase.cases:
+                            self.instance.results.update({case: 'SKIP'})
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
