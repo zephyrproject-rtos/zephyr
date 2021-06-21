@@ -50,51 +50,6 @@
 #define PMP_CFG_CSR_NUM_FOR_STACK_GUARD	2
 #endif /* CONFIG_PMP_STACK_GUARD */
 
-#ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
-#ifdef CONFIG_USERSPACE
-#ifdef CONFIG_PMP_STACK_GUARD
-/*
- * 1 for interrupt stack guard: None
- * 1 for core state: R
- * 1 for program and read only data: RX
- * 1 for user thread stack: RW
- */
-#define PMP_REGION_NUM_FOR_U_THREAD	4
-#else /* CONFIG_PMP_STACK_GUARD */
-/*
- * 1 for core state: R
- * 1 for program and read only data: RX
- * 1 for user thread stack: RW
- */
-#define PMP_REGION_NUM_FOR_U_THREAD	3
-#endif /* CONFIG_PMP_STACK_GUARD */
-#define PMP_MAX_DYNAMIC_REGION	(CONFIG_PMP_SLOT - PMP_REGION_NUM_FOR_U_THREAD)
-#endif /* CONFIG_USERSPACE */
-
-#else /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-
-#ifdef CONFIG_USERSPACE
-#ifdef CONFIG_PMP_STACK_GUARD
-/*
- * 1 for interrupt stack guard: None
- * 1 for core state: R
- * 2 for program and read only data: RX
- * 2 for user thread stack: RW
- */
-#define PMP_REGION_NUM_FOR_U_THREAD	6
-#else /* CONFIG_PMP_STACK_GUARD */
-/*
- * 1 for core state: R
- * 2 for program and read only data: RX
- * 2 for user thread stack: RW
- */
-#define PMP_REGION_NUM_FOR_U_THREAD	5
-#endif /* CONFIG_PMP_STACK_GUARD */
-#define PMP_MAX_DYNAMIC_REGION	((CONFIG_PMP_SLOT - \
-				PMP_REGION_NUM_FOR_U_THREAD) >> 1)
-#endif /* CONFIG_USERSPACE */
-#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-
 /*
  * The following structure defines the list of registers that need to be
  * saved/restored when a cooperative context switch occurs.
