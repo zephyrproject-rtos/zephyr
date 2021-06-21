@@ -207,6 +207,7 @@ static void run_test_functions(struct unit_test *test)
 }
 
 #ifndef KERNEL
+/* parasoft suppress item MISRAC2012-RULE_21_4-b "setjmp using in test code" */
 #include <setjmp.h>
 #include <signal.h>
 #include <string.h>
