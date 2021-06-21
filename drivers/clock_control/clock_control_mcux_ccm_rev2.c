@@ -72,6 +72,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		clock_root = kCLOCK_Root_Can1 + instance;
 		break;
 #endif
+
+#ifdef CONFIG_COUNTER_MCUX_GPT
+	case IMX_CCM_GPT_CLK:
+		clock_root = kCLOCK_Root_Gpt1 + instance;
+		break;
+#endif
 	default:
 		return -EINVAL;
 	}
