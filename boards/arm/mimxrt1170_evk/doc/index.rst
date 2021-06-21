@@ -98,6 +98,8 @@ features:
 +-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | flexcan                             |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -110,7 +112,7 @@ Other hardware features are not currently supported by the port.
 Connections and I/Os
 ====================
 
-The MIMXRT1170 SoC has four pairs of pinmux/gpio controllers.
+The MIMXRT1170 SoC has six pairs of pinmux/gpio controllers.
 
 +---------------+-----------------+---------------------------+
 | Name          | Function        | Usage                     |
@@ -123,7 +125,10 @@ The MIMXRT1170 SoC has four pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_25    | LPUART1_RX      | UART Console              |
 +---------------+-----------------+---------------------------+
-
+| GPIO_LPSR_00  | CAN3_TX         | flexcan                   |
++---------------+-----------------+---------------------------+
+| GPIO_LPSR_01  | CAN3_RX         | flexcan                   |
++---------------+-----------------+---------------------------+
 
 System Clock
 ============
