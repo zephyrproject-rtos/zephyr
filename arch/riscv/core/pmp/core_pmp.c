@@ -21,10 +21,32 @@ LOG_MODULE_REGISTER(mpu);
 #endif
 
 #if defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
-#define PMP_REGION_TYPE_DEFAULT	PMP_REGION_NAPOT
+# define PMP_REGION_TYPE_DEFAULT	PMP_REGION_NAPOT
+# define PMP_USED_ENTRY_DEFAULT		1 /* NAPOT region use 1 PMP entry */
 #else /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-#define PMP_REGION_TYPE_DEFAULT	PMP_REGION_TOR
+# define PMP_REGION_TYPE_DEFAULT	PMP_REGION_TOR
+# define PMP_USED_ENTRY_DEFAULT		2 /* TOR region use 2 PMP entry */
 #endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+
+#ifdef CONFIG_USERSPACE
+/*
+ * Define the used PMP regions before memory domain/partition.
+ *
+ * Already used PMP regions:
+ *   1. 0/1 entry for interrupt stack guard: None
+ *   2. 1   entry for MCU state: R
+ *   3. 1/2 entry for program and read only data: RX
+ *   4. 1/2 entry for user thread stack: RW
+ */
+#define PMP_REGION_NUM_FOR_U_THREAD	( \
+	(IS_ENABLED(CONFIG_PMP_STACK_GUARD) ? 1 : 0) + \
+	 1 + (2 * PMP_USED_ENTRY_DEFAULT))
+
+#define PMP_MAX_DYNAMIC_REGION		( \
+	(CONFIG_PMP_SLOT - PMP_REGION_NUM_FOR_U_THREAD) \
+	/ PMP_USED_ENTRY_DEFAULT)
+
+#endif /* CONFIG_USERSPACE */
 
 enum pmp_region_type {
 	PMP_REGION_NA4,
