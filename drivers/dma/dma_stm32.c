@@ -462,14 +462,12 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 					config->dest_data_size;
 	}
 
-#if defined(CONFIG_DMA_STM32_V2) || defined(CONFIG_DMAMUX_STM32)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dmamux)
 	/*
 	 * the with dma V2 and dma mux,
 	 * the request ID is stored in the dma_slot
 	 */
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_STM32F030XC)
 	DMA_InitStruct.PeriphRequest = config->dma_slot;
-#endif
 #endif
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
