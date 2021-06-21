@@ -821,6 +821,174 @@ Integer Underflow in 6LoWPAN IPHC Header Uncompression
 
 - This issue has not been fixed.
 
+CVE-2021-3430
+-------------
+
+Assertion reachable with repeated LL_CONNECTION_PARAM_REQ.
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3430 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3430>`_
+
+- `Zephyr project bug tracker GHSA-46h3-hjcq-2jjr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-46h3-hjcq-2jjr>`_
+
+- `PR 33272 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33272>`_
+
+- `PR 33369 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33369>`_
+
+- `PR 33759 fix for 1.14.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33759>`_
+
+CVE-2021-3431
+-------------
+
+BT: Assertion failure on repeated LL_FEATURE_REQ
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3431 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3431>`_
+
+- `Zephyr project bug tracker GHSA-7548-5m6f-mqv9
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-7548-5m6f-mqv9>`_
+
+- `PR 33340 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33340>`_
+
+- `PR 33369 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33369>`_
+
+CVE-2021-3432
+-------------
+
+Invalid interval in CONNECT_IND leads to Division by Zero
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3432 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3432>`_
+
+- `Zephyr project bug tracker GHSA-7364-p4wc-8mj4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-7364-p4wc-8mj4>`_
+
+- `PR 33278 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33278>`_
+
+- `PR 33369 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33369>`_
+
+CVE-2021-3433
+-------------
+
+BT: Invalid channel map in CONNECT_IND results to Deadlock
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3433 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3433>`_
+
+- `Zephyr project bug tracker GHSA-3c2f-w4v6-qxrp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3c2f-w4v6-qxrp>`_
+
+- `PR 33278 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33278>`_
+
+- `PR 33369 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33369>`_
+
+CVE-2021-3434
+-------------
+
+L2CAP: Stack based buffer overflow in le_ecred_conn_req()
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3434 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3434>`_
+
+- `Zephyr project bug tracker GHSA-8w87-6rfp-cfrm
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-8w87-6rfp-cfrm>`_
+
+- `PR 33305 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33305>`_
+
+- `PR 33419 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33419>`_
+
+- `PR 33418 fix for 1.14.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33418>`_
+
+CVE-2021-3435
+-------------
+
+L2CAP: Information leakage in le_ecred_conn_req()
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3435 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3435>`_
+
+- `Zephyr project bug tracker GHSA-xhg3-gvj6-4rqh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-xhg3-gvj6-4rqh>`_
+
+- `PR 33305 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33305>`_
+
+- `PR 33419 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33419>`_
+
+- `PR 33418 fix for 1.14.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33418>`_
+
+CVE-2021-3454
+-------------
+
+Truncated L2CAP K-frame causes assertion failure
+
+For example, sending L2CAP K-frame where SDU length field is truncated
+to only one byte, causes assertion failure in previous releases of
+Zephyr. This has been fixed in master by commit 0ba9437 but has not
+yet been backported to older release branches.
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3454 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3454>`_
+
+- `Zephyr project bug tracker GHSA-fx88-6c29-vrp3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fx88-6c29-vrp3>`_
+
+- `PR 32588 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/32588>`_
+
+- `PR 33513 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33513>`_
+
+- `PR 33514 fix for 2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/33514>`_
+
+CVE-2021-3455
+-------------
+
+Disconnecting L2CAP channel right after invalid ATT request leads freeze
+
+When Central device connects to peripheral and creates L2CAP
+connection for Enhanced ATT, sending some invalid ATT request and
+disconnecting immediately causes freeze.
+
+This has been fixed in main for v2.6.0
+
+- `CVE-2021-3455 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-3455>`_
+
+- `Zephyr project bug tracker GHSA-7g38-3x9v-v7vp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-7g38-3x9v-v7vp>`_
+
+- `PR 35597 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/35597>`_
+
+- `PR 36104 fix for 2.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/36104>`_
+
+- `PR 36105 fix for 2.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/36105>`_
+
 CVE-2021-3581
 -------------
 
