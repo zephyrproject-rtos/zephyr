@@ -18,5 +18,12 @@
 			label = "GMAC";
 			status = "disabled";
 		};
+
+		mdio: mdio@42000800 {
+			compatible = "atmel,sam-mdio";
+			reg = <0x42000800 0x400>;
+			label = "MDIO";
+			status = "disabled";
+		};
 	};
 };

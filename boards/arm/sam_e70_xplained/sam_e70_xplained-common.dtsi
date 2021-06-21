@@ -85,6 +85,17 @@
 
 &gmac {
 	status = "okay";
+
+	phy: phy {
+		compatible = "phy,mii";
+		status = "okay";
+		address = <0>;
+		mdio = <&mdio>;
+	};
+};
+
+&mdio {
+	status = "okay";
 };
 
 &pwm0 {

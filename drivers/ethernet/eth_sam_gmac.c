@@ -32,13 +32,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <sys/util.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <net/phy.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <drivers/i2c.h>
 #include <soc.h>
-#include "phy_sam_gmac.h"
 #include "eth_sam_gmac_priv.h"
 
 #include "eth.h"
@@ -1089,7 +1089,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	}
 
 	/* Set Network Control Register to its default value, clear stats. */
-	gmac->GMAC_NCR = GMAC_NCR_CLRSTAT;
+	gmac->GMAC_NCR = GMAC_NCR_CLRSTAT | GMAC_NCR_MPE;
 
 	/* Disable all interrupts */
 	gmac->GMAC_IDR = UINT32_MAX;
@@ -1156,14 +1156,15 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val)
 	return 0;
 }
 
-static void link_configure(Gmac *gmac, uint32_t flags)
+static void link_configure(Gmac *gmac, bool full_duplex, bool speed_100M)
 {
 	uint32_t val;
 
 	val = gmac->GMAC_NCFGR;
 
 	val &= ~(GMAC_NCFGR_FD | GMAC_NCFGR_SPD);
-	val |= flags & (GMAC_NCFGR_FD | GMAC_NCFGR_SPD);
+	val |= (full_duplex) ? GMAC_NCFGR_FD : 0;
+	val |= (speed_100M) ?  GMAC_NCFGR_SPD : 0;
 
 	gmac->GMAC_NCFGR = val;
 
@@ -1815,47 +1816,35 @@ static void generate_mac(uint8_t mac_addr[6])
 #endif
 }
 
-static void monitor_work_handler(struct k_work *work)
+static void phy_link_state_changed(const struct device *pdev,
+					struct phy_link_state *state,
+					void *user_data)
 {
-	struct eth_sam_dev_data *const dev_data =
-		CONTAINER_OF(work, struct eth_sam_dev_data, monitor_work);
-	const struct device *dev = net_if_get_device(dev_data->iface);
+	const struct device *dev = (struct device *) user_data;
+	struct eth_sam_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
-	bool link_status;
-	uint32_t link_config;
-	int result;
+	bool is_up;
 
-	/* Poll PHY link status */
-	link_status = phy_sam_gmac_link_status_get(&cfg->phy);
+	is_up = state->is_up;
 
-	if (link_status && !dev_data->link_up) {
+	if (is_up && !dev_data->link_up) {
 		LOG_INF("Link up");
 
 		/* Announce link up status */
 		dev_data->link_up = true;
 		net_eth_carrier_on(dev_data->iface);
 
-		/* PHY auto-negotiate link parameters */
-		result = phy_sam_gmac_auto_negotiate(&cfg->phy, &link_config);
-		if (result < 0) {
-			LOG_ERR("ETH PHY auto-negotiate sequence failed");
-			goto finally;
-		}
-
-		/* Set up link parameters */
-		link_configure(cfg->regs, link_config);
-	} else if (!link_status && dev_data->link_up) {
+		/* Set up link */
+		link_configure(cfg->regs,
+				PHY_LINK_IS_FULL_DUPLEX(state->speed),
+				PHY_LINK_IS_SPEED_100M(state->speed));
+	} else if (!is_up && dev_data->link_up) {
 		LOG_INF("Link down");
 
 		/* Announce link down status */
 		dev_data->link_up = false;
 		net_eth_carrier_off(dev_data->iface);
 	}
-
-finally:
-	/* Submit delayed work */
-	k_work_reschedule(&dev_data->monitor_work,
-			  K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
 }
 
 static void eth0_iface_init(struct net_if *iface)
@@ -1963,18 +1952,13 @@ static void eth0_iface_init(struct net_if *iface)
 
 #endif
 #endif
+	if (device_is_ready(cfg->phy_dev)) {
+		phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed,
+					(void *)dev);
 
-	/* PHY initialize */
-	result = phy_sam_gmac_init(&cfg->phy);
-	if (result < 0) {
-		LOG_ERR("ETH PHY Initialization Error");
-		return;
+	} else {
+		LOG_ERR("PHY device not ready");
 	}
-
-	/* Initialise monitor */
-	k_work_init_delayable(&dev_data->monitor_work, monitor_work_handler);
-	k_work_reschedule(&dev_data->monitor_work,
-			  K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
 
 	/* Do not start the interface until PHY link is up */
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
@@ -2225,11 +2209,16 @@ static const struct eth_sam_dev_cfg eth0_config = {
 	.pin_list_size = ARRAY_SIZE(pins_eth0),
 #endif
 	.config_func = eth0_irq_config,
-	.phy = {GMAC, CONFIG_ETH_SAM_GMAC_PHY_ADDR},
+#if DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(0), phy))
+	.phy_dev = DEVICE_DT_GET(DT_CHILD(DT_DRV_INST(0), phy))
+#else
+#error "No PHY driver specified"
+#endif
 };
 
 static struct eth_sam_dev_data eth0_data = {
 #if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
+
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 #endif
 	.queue_list = {

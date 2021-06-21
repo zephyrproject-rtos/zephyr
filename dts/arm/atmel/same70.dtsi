@@ -355,6 +355,13 @@
 				     &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
 		};
 
+		mdio: mdio@40050088 {
+			compatible = "atmel,sam-mdio";
+			reg = <0x40050088 0x4000>;
+			label = "MDIO";
+			status = "disabled";
+		};
+
 		tc0: tc@4000C000 {
 			compatible = "atmel,sam-tc";
 			reg = <0x4000c000 0x100>;

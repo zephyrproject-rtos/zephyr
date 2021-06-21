@@ -2,16 +2,12 @@
 
 zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
 
-zephyr_sources_ifdef(CONFIG_ETH_SAM_GMAC
-	eth_sam_gmac.c
-	phy_sam_gmac.c
-	)
-
 zephyr_sources_ifdef(CONFIG_ETH_GECKO
 	eth_gecko.c
 	phy_gecko.c
 	)
 
+zephyr_sources_ifdef(CONFIG_ETH_SAM_GMAC	eth_sam_gmac.c )
 zephyr_sources_ifdef(CONFIG_ETH_STELLARIS	 eth_stellaris.c)
 zephyr_sources_ifdef(CONFIG_ETH_E1000		   eth_e1000.c)
 zephyr_sources_ifdef(CONFIG_ETH_ENC28J60	 eth_enc28j60.c)
@@ -35,3 +31,5 @@ if(CONFIG_ETH_NATIVE_POSIX)
 		eth_native_posix_adapt.c
 		)
 endif()
+
+add_subdirectory(phy)

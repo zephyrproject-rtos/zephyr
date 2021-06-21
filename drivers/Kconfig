@@ -115,4 +115,6 @@ source "drivers/disk/Kconfig"
 
 source "drivers/cache/Kconfig"
 
+source "drivers/mdio/Kconfig"
+
 endmenu

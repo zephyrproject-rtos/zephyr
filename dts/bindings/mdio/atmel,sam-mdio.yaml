@@ -1,0 +1,12 @@
+# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM Family MDIO Driver node
+
+compatible: "atmel,sam-mdio"
+
+include: mdio-controller.yaml
+
+properties:
+    reg:
+      required: true

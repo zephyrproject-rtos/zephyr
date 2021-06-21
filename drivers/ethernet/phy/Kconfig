@@ -1,0 +1,47 @@
+# Ethernet PHY drivers configuration options
+
+# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Ethernet PHY Drivers"
+	depends on NET_L2_ETHERNET
+
+module = PHY
+module-dep = LOG
+module-str = Log level for Ethernet PHY driver
+module-help = Sets log level for Ethernet PHY Device Drivers.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config PHY_INIT_PRIORITY
+	int "Ethernet PHY driver init priority"
+	default 80
+	help
+	  Ethernet PHY device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+config PHY_GENERIC_MII
+	bool "Generic MII PHY Driver"
+	default y
+	depends on MDIO
+	help
+	  This is a generic MII PHY interface that communicates with the PHY
+	  using the MDIO bus.
+
+config PHY_AUTONEG_TIMEOUT_MS
+	int "Auto-negotiation timeout value in milliseconds"
+	default 4000
+	help
+		Maximum duration of auto-negotiation sequence in milliseconds
+		before the process fails
+
+config PHY_MONITOR_PERIOD
+	int "Monitor task execution period"
+	default 500
+	help
+		Monitor task execution period in milliseconds. The monitor task is
+		periodically executed to detect and report any changes in the
+		PHY link status to the operating system.
+
+endmenu # "Ethernet PHY Drivers"

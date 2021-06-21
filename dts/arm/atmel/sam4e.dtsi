@@ -167,6 +167,13 @@
 				     &pd9a_gmac_gmdio>;
 		};
 
+		mdio: mdio@40034000 {
+			compatible = "atmel,sam-mdio";
+			reg = <0x40034000 0x4000>;
+			label = "MDIO";
+			status = "disabled";
+		};
+
 		pinctrl@400e0e00 {
 			compatible = "atmel,sam-pinctrl";
 			#address-cells = <1>;

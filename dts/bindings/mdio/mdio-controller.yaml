@@ -1,0 +1,22 @@
+# Copyright (c) 2021 IP-Logix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MDIO controllers
+
+include: base.yaml
+
+bus: mdio
+
+properties:
+    label:
+      required: true
+    protocol:
+      required: false
+      type: string
+      description:
+        MDIO protocol.
+      enum:
+        - "clause 22"
+        - "clause 45"
+        - "micrel SMI"
+      default: "clause 22"
