@@ -16,3 +16,4 @@ ram: 256
 flash: 16384
 supported:
   - gpio
+  - counter

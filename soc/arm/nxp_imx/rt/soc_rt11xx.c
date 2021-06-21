@@ -334,6 +334,12 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Lpspi1, &rootCfg);
 #endif
 
+#ifdef CONFIG_COUNTER_MCUX_GPT
+	rootCfg.mux = kCLOCK_GPT1_ClockRoot_MuxOscRc48MDiv2;
+	rootCfg.div = 1;
+	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
+#endif
+
 	/* Keep core clock ungated during WFI */
 	CCM->GPR_PRIVATE1_SET = 0x1;
 	/* Keep the system clock running so SYSTICK can wake up the system from
