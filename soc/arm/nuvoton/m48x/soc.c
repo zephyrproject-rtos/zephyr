@@ -8,7 +8,7 @@
 #include <init.h>
 #include <kernel.h>
 
-void z_platform_init(void)
+void z_arm_platform_init(void)
 {
 	SYS_UnlockReg();
 
