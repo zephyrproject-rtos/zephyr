@@ -12,6 +12,8 @@
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_H_
 
+#include <net/ethernet.h>
+
 enum wifi_security_type {
 	WIFI_SECURITY_TYPE_NONE = 0,
 	WIFI_SECURITY_TYPE_PSK,
@@ -23,5 +25,11 @@ enum wifi_security_type {
 
 #define WIFI_CHANNEL_MAX 14
 #define WIFI_CHANNEL_ANY 255
+
+struct wifi_api {
+	struct ethernet_api eth_api;
+
+	/* Any WiFi specific functionality can be added here. */
+};
 
 #endif /* ZEPHYR_INCLUDE_NET_WIFI_H_ */

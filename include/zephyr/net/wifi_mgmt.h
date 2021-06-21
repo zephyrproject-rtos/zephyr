@@ -123,7 +123,7 @@ struct net_wifi_mgmt_offload {
 	 * net_if_api structure. So we make current structure pointer
 	 * that can be casted to a net_if_api structure pointer.
 	 */
-	struct net_if_api iface_api;
+	struct wifi_api wifi_api;
 
 	/* cb parameter is the cb that should be called for each
 	 * result by the driver. The wifi mgmt part will take care of
@@ -141,14 +141,10 @@ struct net_wifi_mgmt_offload {
 /* Make sure that the network interface API is properly setup inside
  * Wifi mgmt offload API struct (it is the first one).
  */
-BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, iface_api) == 0);
-
-#ifdef CONFIG_WIFI_OFFLOAD
+BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, wifi_api) == 0);
 
 void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
 void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
-
-#endif /* CONFIG_WIFI_OFFLOAD */
 
 #ifdef __cplusplus
 }
