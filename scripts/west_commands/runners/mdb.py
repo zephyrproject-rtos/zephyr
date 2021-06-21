@@ -90,9 +90,14 @@ def mdb_do_run(mdb_runner, command):
         mdb_run = ['-OKN']
 
     if mdb_runner.cores == 1:
-        # single core's mdb command is different with multicores
-        mdb_cmd = ([commander] + mdb_basic_options + mdb_target +
-                   mdb_run + [mdb_runner.elf_name])
+        # only when cores is 1 that the target supports secureshield tee
+        if mdb_runner.build_conf.getboolean('CONFIG_BUILD_WITH_SECURESHIELD'):
+            mdb_cmd = ([commander] + mdb_basic_options + mdb_target + ['-cmd=download %s'%mdb_runner.elf_name] +
+                mdb_run + [path.join(mdb_runner.build_dir, 'secureshield', 'zephyr', 'zephyr.elf')])
+        else:
+            # single core's mdb command is different with multicores
+            mdb_cmd = ([commander] + mdb_basic_options + mdb_target +
+                       mdb_run + [mdb_runner.elf_name])
     elif 1 < mdb_runner.cores <= 4:
         mdb_multifiles = '-multifiles='
         for i in range(mdb_runner.cores):
