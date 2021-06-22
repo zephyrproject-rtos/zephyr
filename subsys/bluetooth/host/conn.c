@@ -2058,44 +2058,6 @@ static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	return 0;
 }
 
-int bt_conn_le_param_update(struct bt_conn *conn,
-			    const struct bt_le_conn_param *param)
-{
-	BT_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
-	       conn->le.features[0], param->interval_min,
-	       param->interval_max, param->latency, param->timeout);
-
-	/* Check if there's a need to update conn params */
-	if (conn->le.interval >= param->interval_min &&
-	    conn->le.interval <= param->interval_max &&
-	    conn->le.latency == param->latency &&
-	    conn->le.timeout == param->timeout) {
-		atomic_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
-		return -EALREADY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    conn->role == BT_CONN_ROLE_MASTER) {
-		return send_conn_le_param_update(conn, param);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		/* if slave conn param update timer expired just send request */
-		if (atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE)) {
-			return send_conn_le_param_update(conn, param);
-		}
-
-		/* store new conn params to be used by update timer */
-		conn->le.interval_min = param->interval_min;
-		conn->le.interval_max = param->interval_max;
-		conn->le.pending_latency = param->latency;
-		conn->le.pending_timeout = param->timeout;
-		atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
-	}
-
-	return 0;
-}
-
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	/* Disconnection is initiated by us, so auto connection shall
@@ -2172,6 +2134,44 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+int bt_conn_le_param_update(struct bt_conn *conn,
+			    const struct bt_le_conn_param *param)
+{
+	BT_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
+	       conn->le.features[0], param->interval_min,
+	       param->interval_max, param->latency, param->timeout);
+
+	/* Check if there's a need to update conn params */
+	if (conn->le.interval >= param->interval_min &&
+	    conn->le.interval <= param->interval_max &&
+	    conn->le.latency == param->latency &&
+	    conn->le.timeout == param->timeout) {
+		atomic_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
+		return -EALREADY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+	    conn->role == BT_CONN_ROLE_MASTER) {
+		return send_conn_le_param_update(conn, param);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+		/* if slave conn param update timer expired just send request */
+		if (atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE)) {
+			return send_conn_le_param_update(conn, param);
+		}
+
+		/* store new conn params to be used by update timer */
+		conn->le.interval_min = param->interval_min;
+		conn->le.interval_max = param->interval_max;
+		conn->le.pending_latency = param->latency;
+		conn->le.pending_timeout = param->timeout;
+		atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
+	}
+
+	return 0;
+}
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 int bt_conn_le_data_len_update(struct bt_conn *conn,
