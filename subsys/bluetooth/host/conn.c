@@ -466,11 +466,6 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 	return conn;
 }
 
-static struct bt_conn *acl_conn_new(void)
-{
-	return bt_conn_new(acl_conns, ARRAY_SIZE(acl_conns));
-}
-
 void bt_conn_reset_rx_state(struct bt_conn *conn)
 {
 	if (!conn->rx) {
@@ -1423,6 +1418,11 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+static struct bt_conn *acl_conn_new(void)
+{
+	return bt_conn_new(acl_conns, ARRAY_SIZE(acl_conns));
+}
 
 #if defined(CONFIG_BT_BREDR)
 void bt_sco_cleanup(struct bt_conn *sco_conn)
