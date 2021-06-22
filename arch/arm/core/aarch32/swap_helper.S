@@ -130,7 +130,7 @@ out_fp_endif:
     cpsid i
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
-    msr BASEPRI, r0
+    msr BASEPRI_MAX, r0
     isb /* Make the effect of disabling interrupts be realized immediately */
 #elif defined(CONFIG_ARMV7_R)
     /*
