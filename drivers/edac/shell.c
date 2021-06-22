@@ -363,6 +363,7 @@ static int cmd_ecc_error_clear(const struct shell *shell, size_t argc,
 			       char **argv)
 {
 	const struct device *dev;
+	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
 	if (dev == NULL) {
@@ -370,7 +371,12 @@ static int cmd_ecc_error_clear(const struct shell *shell, size_t argc,
 		return -ENODEV;
 	}
 
-	edac_ecc_error_log_clear(dev);
+	err = edac_ecc_error_log_clear(dev);
+	if (err != 0) {
+		shell_error(shell, "Error clear ecc error log (err %d)",
+			    err);
+		return err;
+	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "ECC Error Log cleared\n");
 
@@ -411,6 +417,7 @@ static int cmd_parity_error_clear(const struct shell *shell, size_t argc,
 				  char **argv)
 {
 	const struct device *dev;
+	int err;
 
 	dev = device_get_binding(DEVICE_NAME);
 	if (dev == NULL) {
@@ -418,7 +425,12 @@ static int cmd_parity_error_clear(const struct shell *shell, size_t argc,
 		return -ENODEV;
 	}
 
-	edac_parity_error_log_clear(dev);
+	err = edac_parity_error_log_clear(dev);
+	if (err != 0) {
+		shell_error(shell, "Error clear parity error log (err %d)",
+			    err);
+		return err;
+	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "Parity Error Log cleared\n");
 
