@@ -411,6 +411,88 @@ static void test_advx_main(void)
 
 	k_sleep(K_MSEC(1000));
 
+	printk("Re-enable advertising using extended commands (max_events)...");
+	is_sent = false;
+	num_sent_actual = 0;
+	num_sent_expected = 3;
+	ext_adv_param.timeout = 0;
+	ext_adv_param.num_events = 3;
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(100));
+
+	printk("Re-enabling...");
+	handle = 0x0000;
+	err = ll_adv_enable(handle, 1,
+			    ext_adv_param.timeout,
+			    ext_adv_param.num_events);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting...");
+	while (!is_sent) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if (num_sent_actual != num_sent_expected) {
+		FAIL("Num sent actual = %u, expected = %u\n", num_sent_actual,
+		     num_sent_expected);
+	}
+
+	k_sleep(K_MSEC(1000));
+
+	printk("Re-enable advertising using extended commands (duration)...");
+	is_sent = false;
+	num_sent_actual = 0;
+	num_sent_expected = 4;      /* 4 advertising events of (100 ms +
+				     * random_delay of upto 10 ms) transmit in
+				     * the range of 400 to 440 ms
+				     */
+	ext_adv_param.timeout = 50; /* Check there is atmost 4 advertising
+				     * events in a timeout of 500 ms
+				     */
+	ext_adv_param.num_events = 0;
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	/* Delay 100 ms, and the test should verify that re-enabling still
+	 * results in correct num of events.
+	 */
+	k_sleep(K_MSEC(100));
+
+	printk("Re-enabling...");
+	handle = 0x0000;
+	err = ll_adv_enable(handle, 1,
+			    ext_adv_param.timeout,
+			    ext_adv_param.num_events);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting...");
+	while (!is_sent) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if (num_sent_actual != num_sent_expected) {
+		FAIL("Num sent actual = %u, expected = %u\n", num_sent_actual,
+		     num_sent_expected);
+	}
+
+	k_sleep(K_MSEC(1000));
+
 	printk("Start advertising using extended commands (disable)...");
 	ext_adv_param.timeout = 0;
 	ext_adv_param.num_events = 5;
