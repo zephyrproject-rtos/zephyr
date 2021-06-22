@@ -162,7 +162,8 @@ static const struct flash_driver_api flash_sim_api;
 
 static const struct flash_parameters flash_sim_parameters = {
 	.write_block_size = FLASH_SIMULATOR_PROG_UNIT,
-	.erase_value = FLASH_SIMULATOR_ERASE_VALUE
+	.erase_value = FLASH_SIMULATOR_ERASE_VALUE,
+	.flags = 0,
 };
 
 static int flash_range_is_valid(const struct device *dev, off_t offset,
@@ -353,6 +354,29 @@ static void flash_sim_page_layout(const struct device *dev,
 }
 #endif
 
+static ssize_t flash_sim_get_page_count(const struct device *dev)
+{
+	return FLASH_SIMULATOR_PAGE_COUNT;
+}
+
+static ssize_t flash_sim_get_size(const struct device *dev)
+{
+	return FLASH_SIMULATOR_FLASH_SIZE;
+}
+
+static int flash_sim_get_page_info(const struct device *dev, off_t offset,
+		struct flash_page_info *fpi)
+{
+	if (offset < 0 || offset > FLASH_SIMULATOR_FLASH_SIZE) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(FLASH_SIMULATOR_ERASE_UNIT - 1);
+	fpi->size = FLASH_SIMULATOR_ERASE_UNIT;
+
+	return 0;
+}
+
 static const struct flash_parameters *
 flash_sim_get_parameters(const struct device *dev)
 {
@@ -366,6 +390,9 @@ static const struct flash_driver_api flash_sim_api = {
 	.write = flash_sim_write,
 	.erase = flash_sim_erase,
 	.get_parameters = flash_sim_get_parameters,
+	.get_page_info = flash_sim_get_page_info,
+	.get_page_count = flash_sim_get_page_count,
+	.get_size = flash_sim_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sim_page_layout,
 #endif
