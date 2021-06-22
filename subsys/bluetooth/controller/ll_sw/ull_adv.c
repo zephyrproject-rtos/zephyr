@@ -76,6 +76,9 @@ static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void adv_max_events_duration_set(struct ll_adv_set *adv,
+					uint16_t duration,
+					uint8_t max_ext_adv_evts);
 static void ticker_op_aux_stop_cb(uint32_t status, void *param);
 static void ticker_op_ext_stop_cb(uint32_t status, void *param);
 static void ext_disabled_cb(void *param);
@@ -734,6 +737,75 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 	adv = is_disabled_get(handle);
 	if (!adv) {
+		/* Bluetooth Specification v5.0 Vol 2 Part E Section 7.8.9
+		 * Enabling advertising when it is already enabled can cause the
+		 * random address to change. As the current implementation does
+		 * does not update RPAs on every advertising enable, only on
+		 * `rpa_timeout_ms` timeout, we are not going to implement the
+		 * "can cause the random address to change" for legacy
+		 * advertisements.
+		 */
+
+		/* If HCI LE Set Extended Advertising Enable command is sent
+		 * again for an advertising set while that set is enabled, the
+		 * timer used for duration and the number of events counter are
+		 * reset and any change to the random address shall take effect.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_ENABLE_STRICT) ||
+		    IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+			if (ll_adv_cmds_is_ext()) {
+				enum node_rx_type volatile *type;
+
+				adv = ull_adv_is_enabled_get(handle);
+				if (!adv) {
+					/* This should not be happening as
+					 * is_disabled_get failed.
+					 */
+					return BT_HCI_ERR_CMD_DISALLOWED;
+				}
+
+				if (!adv->lll.node_rx_adv_term) {
+					/* This should not be happening,
+					 * adv->is_enabled would be 0 if
+					 * node_rx_adv_term is released back to
+					 * pool.
+					 */
+					return BT_HCI_ERR_CMD_DISALLOWED;
+				}
+
+				/* Check advertising not terminated */
+				type = &adv->lll.node_rx_adv_term->type;
+				if (*type == NODE_RX_TYPE_NONE) {
+					/* Reset event counter, update duration,
+					 * and max events
+					 */
+					adv_max_events_duration_set(adv,
+						duration, max_ext_adv_evts);
+				}
+
+				/* Check the counter reset did not race with
+				 * advertising terminated.
+				 */
+				if (*type != NODE_RX_TYPE_NONE) {
+					/* Race with advertising terminated */
+					return BT_HCI_ERR_CMD_DISALLOWED;
+				}
+
+				/* FIXME: change random address in the primary
+				 *        or auxiliary PDU as necessary.
+				 */
+			}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+			return 0;
+		}
+
+		/* Fail on being strict as a legacy controller, valid only under
+		 * Bluetooth Specification v4.x.
+		 * Bluetooth Specification v5.0 and above shall not fail to
+		 * enable already enabled advertising.
+		 */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -1100,16 +1172,16 @@ uint8_t ll_adv_enable(uint8_t enable)
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
+		node_rx_adv_term->hdr.type = NODE_RX_TYPE_NONE;
+
 		node_rx_adv_term->hdr.link = (void *)link_adv_term;
 		adv->lll.node_rx_adv_term = (void *)node_rx_adv_term;
+
+		adv_max_events_duration_set(adv, duration, max_ext_adv_evts);
 	}
 
 	const uint8_t phy = lll->phy_p;
 
-	adv->event_counter = 0;
-	adv->max_events = max_ext_adv_evts;
-	adv->ticks_remain_duration = HAL_TICKER_US_TO_TICKS((uint64_t)duration *
-							    10000);
 #else
 	/* Legacy ADV only supports LE_1M PHY */
 	const uint8_t phy = PHY_1M;
@@ -2189,6 +2261,16 @@ static void conn_release(struct ll_adv_set *adv)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void adv_max_events_duration_set(struct ll_adv_set *adv,
+					uint16_t duration,
+					uint8_t max_ext_adv_evts)
+{
+	adv->event_counter = 0;
+	adv->max_events = max_ext_adv_evts;
+	adv->ticks_remain_duration =
+		HAL_TICKER_US_TO_TICKS((uint64_t)duration * 10 * USEC_PER_MSEC);
+}
+
 static void ticker_op_aux_stop_cb(uint32_t status, void *param)
 {
 	uint8_t handle;
@@ -2253,6 +2335,14 @@ static inline uint8_t disable(uint8_t handle)
 
 	adv = ull_adv_is_enabled_get(handle);
 	if (!adv) {
+		/* Bluetooth Specification v5.0 Vol 2 Part E Section 7.8.9
+		 * Disabling advertising when it is already disabled has no
+		 * effect.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_ENABLE_STRICT)) {
+			return 0;
+		}
+
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
