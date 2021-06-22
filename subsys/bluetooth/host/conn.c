@@ -1904,90 +1904,6 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 	return &conn->le.dst;
 }
 
-int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
-{
-	info->type = conn->type;
-	info->role = conn->role;
-	info->id = conn->id;
-
-	switch (conn->type) {
-	case BT_CONN_TYPE_LE:
-		info->le.dst = &conn->le.dst;
-		info->le.src = &bt_dev.id_addr[conn->id];
-		if (conn->role == BT_HCI_ROLE_MASTER) {
-			info->le.local = &conn->le.init_addr;
-			info->le.remote = &conn->le.resp_addr;
-		} else {
-			info->le.local = &conn->le.resp_addr;
-			info->le.remote = &conn->le.init_addr;
-		}
-		info->le.interval = conn->le.interval;
-		info->le.latency = conn->le.latency;
-		info->le.timeout = conn->le.timeout;
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
-		info->le.phy = &conn->le.phy;
-#endif
-#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-		info->le.data_len = &conn->le.data_len;
-#endif
-		return 0;
-#if defined(CONFIG_BT_BREDR)
-	case BT_CONN_TYPE_BR:
-		info->br.dst = &conn->br.dst;
-		return 0;
-#endif
-#if defined(CONFIG_BT_ISO)
-	case BT_CONN_TYPE_ISO:
-		if (!conn->iso.is_bis) {
-			info->le.dst = &conn->iso.acl->le.dst;
-			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
-		} else {
-			info->le.src = BT_ADDR_LE_NONE;
-			info->le.dst = BT_ADDR_LE_NONE;
-		}
-		return 0;
-#endif
-	}
-
-	return -EINVAL;
-}
-
-int bt_conn_get_remote_info(struct bt_conn *conn,
-			    struct bt_conn_remote_info *remote_info)
-{
-	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH) ||
-	    (IS_ENABLED(CONFIG_BT_REMOTE_VERSION) &&
-	     !atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO))) {
-		return -EBUSY;
-	}
-
-	remote_info->type = conn->type;
-#if defined(CONFIG_BT_REMOTE_VERSION)
-	/* The conn->rv values will be just zeroes if the operation failed */
-	remote_info->version = conn->rv.version;
-	remote_info->manufacturer = conn->rv.manufacturer;
-	remote_info->subversion = conn->rv.subversion;
-#else
-	remote_info->version = 0;
-	remote_info->manufacturer = 0;
-	remote_info->subversion = 0;
-#endif
-
-	switch (conn->type) {
-	case BT_CONN_TYPE_LE:
-		remote_info->le.features = conn->le.features;
-		return 0;
-#if defined(CONFIG_BT_BREDR)
-	case BT_CONN_TYPE_BR:
-		/* TODO: Make sure the HCI commands to read br features and
-		*  extended features has finished. */
-		return -ENOTSUP;
-#endif
-	default:
-		return -EINVAL;
-	}
-}
-
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	int err;
@@ -2080,6 +1996,90 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
+{
+	info->type = conn->type;
+	info->role = conn->role;
+	info->id = conn->id;
+
+	switch (conn->type) {
+	case BT_CONN_TYPE_LE:
+		info->le.dst = &conn->le.dst;
+		info->le.src = &bt_dev.id_addr[conn->id];
+		if (conn->role == BT_HCI_ROLE_MASTER) {
+			info->le.local = &conn->le.init_addr;
+			info->le.remote = &conn->le.resp_addr;
+		} else {
+			info->le.local = &conn->le.resp_addr;
+			info->le.remote = &conn->le.init_addr;
+		}
+		info->le.interval = conn->le.interval;
+		info->le.latency = conn->le.latency;
+		info->le.timeout = conn->le.timeout;
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+		info->le.phy = &conn->le.phy;
+#endif
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+		info->le.data_len = &conn->le.data_len;
+#endif
+		return 0;
+#if defined(CONFIG_BT_BREDR)
+	case BT_CONN_TYPE_BR:
+		info->br.dst = &conn->br.dst;
+		return 0;
+#endif
+#if defined(CONFIG_BT_ISO)
+	case BT_CONN_TYPE_ISO:
+		if (!conn->iso.is_bis) {
+			info->le.dst = &conn->iso.acl->le.dst;
+			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
+		} else {
+			info->le.src = BT_ADDR_LE_NONE;
+			info->le.dst = BT_ADDR_LE_NONE;
+		}
+		return 0;
+#endif
+	}
+
+	return -EINVAL;
+}
+
+int bt_conn_get_remote_info(struct bt_conn *conn,
+			    struct bt_conn_remote_info *remote_info)
+{
+	if (!atomic_test_bit(conn->flags, BT_CONN_AUTO_FEATURE_EXCH) ||
+	    (IS_ENABLED(CONFIG_BT_REMOTE_VERSION) &&
+	     !atomic_test_bit(conn->flags, BT_CONN_AUTO_VERSION_INFO))) {
+		return -EBUSY;
+	}
+
+	remote_info->type = conn->type;
+#if defined(CONFIG_BT_REMOTE_VERSION)
+	/* The conn->rv values will be just zeroes if the operation failed */
+	remote_info->version = conn->rv.version;
+	remote_info->manufacturer = conn->rv.manufacturer;
+	remote_info->subversion = conn->rv.subversion;
+#else
+	remote_info->version = 0;
+	remote_info->manufacturer = 0;
+	remote_info->subversion = 0;
+#endif
+
+	switch (conn->type) {
+	case BT_CONN_TYPE_LE:
+		remote_info->le.features = conn->le.features;
+		return 0;
+#if defined(CONFIG_BT_BREDR)
+	case BT_CONN_TYPE_BR:
+		/* TODO: Make sure the HCI commands to read br features and
+		*  extended features has finished. */
+		return -ENOTSUP;
+#endif
+	default:
+		return -EINVAL;
+	}
+}
 
 /* Read Transmit Power Level HCI command */
 static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
