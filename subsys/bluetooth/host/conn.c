@@ -83,6 +83,7 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
 static void deferred_work(struct k_work *work);
+static void tx_complete_work(struct k_work *work);
 #endif /* CONFIG_BT_CONN */
 
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
@@ -334,16 +335,6 @@ static void tx_notify(struct bt_conn *conn)
 		 */
 		cb(conn, user_data);
 	}
-}
-
-static void tx_complete_work(struct k_work *work)
-{
-	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
-					   tx_complete_work);
-
-	BT_DBG("conn %p", conn);
-
-	tx_notify(conn);
 }
 
 struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
@@ -1324,6 +1315,16 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+static void tx_complete_work(struct k_work *work)
+{
+	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
+					   tx_complete_work);
+
+	BT_DBG("conn %p", conn);
+
+	tx_notify(conn);
+}
 
 static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
 {
