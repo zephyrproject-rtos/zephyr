@@ -459,6 +459,59 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_info_cmds,
 
 /* Memory operation commands */
 
+static int memory_read(const struct shell *sh, mem_addr_t addr, uint8_t width)
+{
+	uint64_t value;
+	int err = 0;
+
+	switch (width) {
+	case 8:
+		value = sys_read8(addr);
+		break;
+	case 16:
+		value = sys_read16(addr);
+		break;
+	case 32:
+		value = sys_read32(addr);
+		break;
+	default:
+		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+		err = -EINVAL;
+		break;
+	}
+
+	if (err == 0) {
+		shell_fprintf(sh, SHELL_NORMAL, "Read value 0x%lx\n", value);
+	}
+
+	return err;
+}
+
+static int memory_write(const struct shell *sh, mem_addr_t addr,
+			uint8_t width, uint64_t value)
+{
+	int err = 0;
+
+	switch (width) {
+	case 8:
+		sys_write8(value, addr);
+		break;
+	case 16:
+		sys_write16(value, addr);
+		break;
+	case 32:
+		sys_write32(value, addr);
+		break;
+	default:
+		shell_fprintf(sh, SHELL_NORMAL, "Incorrect data width\n");
+		err = -EINVAL;
+		break;
+	}
+
+	return err;
+}
+
+/* The syntax of the command is similar to busybox's devmem */
 static int cmd_mem(const struct shell *shell, size_t argc, char **argv)
 {
 	uint64_t value = 0;
@@ -484,25 +537,7 @@ static int cmd_mem(const struct shell *shell, size_t argc, char **argv)
 	shell_fprintf(shell, SHELL_NORMAL, "Using data width %d\n", width);
 
 	if (argc <= 3) {
-		switch (width) {
-		case 8:
-			value = sys_read8(addr);
-			break;
-		case 16:
-			value = sys_read16(addr);
-			break;
-		case 32:
-			value = sys_read32(addr);
-			break;
-		default:
-			shell_fprintf(shell, SHELL_NORMAL,
-				      "Incorrect data width\n");
-			return -EINVAL;
-		}
-
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "Read value 0x%lx\n", value);
-		return 0;
+		return memory_read(shell, addr, width);
 	}
 
 	/* If there are more then 3 arguments, that means we are going to write
@@ -513,23 +548,7 @@ static int cmd_mem(const struct shell *shell, size_t argc, char **argv)
 
 	shell_fprintf(shell, SHELL_NORMAL, "Writing value 0x%lx\n", value);
 
-	switch (width) {
-	case 8:
-		sys_write8(value, addr);
-		break;
-	case 16:
-		sys_write16(value, addr);
-		break;
-	case 32:
-		sys_write32(value, addr);
-		break;
-	default:
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "Incorrect data width\n");
-		return -EINVAL;
-	}
-
-	return 0;
+	return memory_write(shell, addr, width, value);
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_edac_cmds,
