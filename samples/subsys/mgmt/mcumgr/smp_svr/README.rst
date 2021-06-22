@@ -263,6 +263,39 @@ The general sequence of a DFU process is as follows:
 * Reset the device remotely using :file:`mcumgr`
 * Confirm the uploaded image using :file:`mcumgr` (optional)
 
+Slot to image mapping and selection
+===================================
+
+Currently the mcumgr supports 4 images of which first two are mapped into
+primary and secondary slot. Default upload is performed to "image-1", which
+is slot-0, and the application is always running from "image-0", that is slot-1.
+
+The mcumgr make be provided optional `-e -n <image>` parameter to the `image upload`
+command; the parameter will select image to upload where 0 means default image
+and is equivalent to not providing the parameter at all.
+
+For clarity, here is DTS label to slot to `<image>` translation table:
+
+    +-----------+--------+------------+
+    | DTS label | Slot   | -n <image> |
+    +===========+========+============+
+    | "image-0" | slot-0 |     1      |
+    +-----------+--------+------------+
+    | "image-1" | slot-1 |     0, 1   +
+    +-----------+--------+------------+
+    | "image-2" |        |     2      +
+    +-----------+--------+------------+
+    | "image-3" |        |     3      +
+    +-----------+--------+------------+
+
+.. note::
+
+   The `-e` option actually means "no erase", and is provided to the mcumgr
+   to prevent it from sending erase command to target, before updating image.
+   The options is always needed when `-n` is used for image selection,
+   as the erase command is hardcoded to erase slot-1 ("image-1"),
+   regardless of which slot is uploaded at the time.
+
 Upload the signed image
 =======================
 
