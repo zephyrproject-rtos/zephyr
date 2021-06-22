@@ -2504,6 +2504,37 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_UPDATE, buf, NULL);
 }
 
+uint8_t bt_conn_index(struct bt_conn *conn)
+{
+	ptrdiff_t index;
+
+	switch (conn->type) {
+#if defined(CONFIG_BT_ISO)
+	case BT_CONN_TYPE_ISO:
+		index = conn - iso_conns;
+		__ASSERT(0 <= index && index < ARRAY_SIZE(iso_conns),
+			"Invalid bt_conn pointer");
+		break;
+#endif
+#if defined(CONFIG_BT_BREDR)
+	case BT_CONN_TYPE_SCO:
+		index = conn - sco_conns;
+		__ASSERT(0 <= index && index < ARRAY_SIZE(sco_conns),
+			"Invalid bt_conn pointer");
+		break;
+#endif
+	default:
+		index = conn - acl_conns;
+		__ASSERT(0 <= index && index < ARRAY_SIZE(acl_conns),
+			 "Invalid bt_conn pointer");
+		break;
+	}
+
+	return (uint8_t)index;
+}
+
+/* Group Connected BT_CONN only in this */
+#if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve,
 						  k_timeout_t timeout,
@@ -2582,38 +2613,6 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 
 	return buf;
 }
-
-uint8_t bt_conn_index(struct bt_conn *conn)
-{
-	ptrdiff_t index;
-
-	switch (conn->type) {
-#if defined(CONFIG_BT_ISO)
-	case BT_CONN_TYPE_ISO:
-		index = conn - iso_conns;
-		__ASSERT(0 <= index && index < ARRAY_SIZE(iso_conns),
-			"Invalid bt_conn pointer");
-		break;
-#endif
-#if defined(CONFIG_BT_BREDR)
-	case BT_CONN_TYPE_SCO:
-		index = conn - sco_conns;
-		__ASSERT(0 <= index && index < ARRAY_SIZE(sco_conns),
-			"Invalid bt_conn pointer");
-		break;
-#endif
-	default:
-		index = conn - acl_conns;
-		__ASSERT(0 <= index && index < ARRAY_SIZE(acl_conns),
-			 "Invalid bt_conn pointer");
-		break;
-	}
-
-	return (uint8_t)index;
-}
-
-/* Group Connected BT_CONN only in this */
-#if defined(CONFIG_BT_CONN)
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
