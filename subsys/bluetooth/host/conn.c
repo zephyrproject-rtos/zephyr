@@ -2481,29 +2481,6 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 #endif /* !defined(CONFIG_BT_WHITELIST) */
 #endif /* CONFIG_BT_CENTRAL */
 
-int bt_conn_le_conn_update(struct bt_conn *conn,
-			   const struct bt_le_conn_param *param)
-{
-	struct hci_cp_le_conn_update *conn_update;
-	struct net_buf *buf;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_UPDATE,
-				sizeof(*conn_update));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	conn_update = net_buf_add(buf, sizeof(*conn_update));
-	(void)memset(conn_update, 0, sizeof(*conn_update));
-	conn_update->handle = sys_cpu_to_le16(conn->handle);
-	conn_update->conn_interval_min = sys_cpu_to_le16(param->interval_min);
-	conn_update->conn_interval_max = sys_cpu_to_le16(param->interval_max);
-	conn_update->conn_latency = sys_cpu_to_le16(param->latency);
-	conn_update->supervision_timeout = sys_cpu_to_le16(param->timeout);
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_UPDATE, buf, NULL);
-}
-
 uint8_t bt_conn_index(struct bt_conn *conn)
 {
 	ptrdiff_t index;
@@ -2535,6 +2512,29 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+int bt_conn_le_conn_update(struct bt_conn *conn,
+			   const struct bt_le_conn_param *param)
+{
+	struct hci_cp_le_conn_update *conn_update;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CONN_UPDATE,
+				sizeof(*conn_update));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	conn_update = net_buf_add(buf, sizeof(*conn_update));
+	(void)memset(conn_update, 0, sizeof(*conn_update));
+	conn_update->handle = sys_cpu_to_le16(conn->handle);
+	conn_update->conn_interval_min = sys_cpu_to_le16(param->interval_min);
+	conn_update->conn_interval_max = sys_cpu_to_le16(param->interval_max);
+	conn_update->conn_latency = sys_cpu_to_le16(param->latency);
+	conn_update->supervision_timeout = sys_cpu_to_le16(param->timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_UPDATE, buf, NULL);
+}
+
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve,
 						  k_timeout_t timeout,
