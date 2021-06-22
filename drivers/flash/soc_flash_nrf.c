@@ -60,6 +60,7 @@ static const struct flash_parameters flash_nrf_parameters = {
 	.write_block_size = 4,
 #endif
 	.erase_value = 0xff,
+	.flags = 0,
 };
 
 #if defined(CONFIG_MULTITHREADING)
@@ -261,6 +262,32 @@ static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 	return ret;
 }
 
+static ssize_t flash_nrf_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return nrfx_nvmc_flash_page_count_get();
+}
+
+static int flash_nrf_get_page_info(const struct device *dev, off_t off, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	size_t page_size = nrfx_nvmc_flash_page_size_get();
+
+	fpi->size = page_size;
+	fpi->offset = off & ~(page_size - 1);
+
+	return 0;
+}
+
+static ssize_t flash_nrf_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return  nrfx_nvmc_flash_size_get();
+}
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static struct flash_pages_layout dev_layout;
 
@@ -271,6 +298,8 @@ static void flash_nrf_pages_layout(const struct device *dev,
 	*layout = &dev_layout;
 	*layout_size = 1;
 }
+
+
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 static const struct flash_parameters *
@@ -286,6 +315,9 @@ static const struct flash_driver_api flash_nrf_api = {
 	.write = flash_nrf_write,
 	.erase = flash_nrf_erase,
 	.get_parameters = flash_nrf_get_parameters,
+	.get_page_info = flash_nrf_get_page_info,
+	.get_page_count = flash_nrf_get_page_count,
+	.get_size = flash_nrf_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_nrf_pages_layout,
 #endif
