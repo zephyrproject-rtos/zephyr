@@ -27,5 +27,7 @@
 #define EVENT_RX_TO_US(phy) ((((((phy)&0x03) + 4)<<3)/BIT((((phy)&0x3)>>1))) + \
 				  EVENT_RX_JITTER_US(phy))
 
-/* TODO - fix up numbers re. HW */
-#define EVENT_RX_TX_TURNAROUND(phy)  ((phy) == 1?100:((phy) == 2 ? 80:900))
+/* Using conservative turnaround time, considering slowest CPU timings that is
+ * required to meet tIFS of 150 us.
+ */
+#define EVENT_RX_TX_TURNAROUND(phy)   150
