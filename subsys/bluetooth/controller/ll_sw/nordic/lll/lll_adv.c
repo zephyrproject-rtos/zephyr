@@ -507,12 +507,35 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 		uint8_t pdu_idx;
 		void *p;
 
-		if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &pdu_free_idx)) {
-			return NULL;
-		}
-
 		pdu_idx = first;
+		p = pdu->pdu[pdu_idx];
 		ed = pdu->extra_data[pdu_idx];
+
+		do {
+			void *next;
+
+			/* Store partial list in current data index if there is
+			 * no free slot in mfifo. It can be released on next
+			 * switch attempt (on next event).
+			 */
+			if (!MFIFO_ENQUEUE_IDX_GET(pdu_free, &pdu_free_idx)) {
+				pdu->pdu[pdu_idx] = p;
+				return NULL;
+			}
+
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+			next = lll_adv_pdu_linked_next_get(p);
+#else
+			next = NULL;
+#endif
+
+			MFIFO_BY_IDX_ENQUEUE(pdu_free, pdu_free_idx, p);
+			k_sem_give(&sem_pdu_free);
+
+			p = next;
+		} while (p);
+
+		pdu->pdu[pdu_idx] = NULL;
 
 		if (ed && (!MFIFO_ENQUEUE_IDX_GET(extra_data_free,
 						  &ed_free_idx))) {
@@ -530,11 +553,7 @@ struct pdu_adv *lll_adv_pdu_and_extra_data_latest_get(struct lll_adv_pdu *pdu,
 		pdu->first = first;
 		*is_modified = 1U;
 
-		p = pdu->pdu[pdu_idx];
 		pdu->pdu[pdu_idx] = NULL;
-
-		MFIFO_BY_IDX_ENQUEUE(pdu_free, pdu_free_idx, p);
-		k_sem_give(&sem_pdu_free);
 
 		if (ed) {
 			pdu->extra_data[pdu_idx] = NULL;
