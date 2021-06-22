@@ -74,7 +74,8 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 
 	err = edac_ecc_error_log_get(dev, &error);
 	if (err != 0) {
-		shell_error(shell, "Error getting ecc error log");
+		shell_error(shell, "Error getting ecc error log (err %d)",
+			    err);
 		return err;
 	}
 
@@ -86,7 +87,8 @@ static int cmd_edac_info(const struct shell *shell, size_t argc, char **argv)
 
 	err = edac_parity_error_log_get(dev, &error);
 	if (err != 0) {
-		shell_error(shell, "Error getting parity error log");
+		shell_error(shell, "Error getting parity error log (err %d)",
+			    err);
 		return err;
 	}
 
@@ -123,7 +125,8 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 
 		err = edac_inject_get_param1(dev, &addr);
 		if (err != 0) {
-			shell_error(shell, "Error getting address");
+			shell_error(shell, "Error getting address (err %d)",
+				    err);
 			return err;
 		}
 
@@ -137,7 +140,8 @@ static int cmd_inject_addr(const struct shell *shell, size_t argc, char **argv)
 
 		err = edac_inject_set_param1(dev, value);
 		if (err != 0) {
-			shell_error(shell, "Error setting address");
+			shell_error(shell, "Error setting address (err %d)",
+				    err);
 			return err;
 		}
 	}
@@ -168,7 +172,7 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 
 		err = edac_inject_get_param2(dev, &mask);
 		if (err != 0) {
-			shell_error(shell, "Error getting mask");
+			shell_error(shell, "Error getting mask (err %d)", err);
 			return err;
 		}
 
@@ -182,7 +186,7 @@ static int cmd_inject_mask(const struct shell *shell, size_t argc, char **argv)
 
 		err = edac_inject_set_param2(dev, value);
 		if (err != 0) {
-			shell_error(shell, "Error setting mask");
+			shell_error(shell, "Error setting mask (err %d)", err);
 			return err;
 		}
 	}
@@ -251,7 +255,7 @@ static int cmd_inject_error_type_show(const struct shell *shell, size_t argc,
 
 	err = edac_inject_get_error_type(dev, &error_type);
 	if (err != 0) {
-		shell_error(shell, "Error getting error type");
+		shell_error(shell, "Error getting error type (err %d)", err);
 		return err;
 	}
 
@@ -346,7 +350,7 @@ static int cmd_ecc_error_show(const struct shell *shell, size_t argc,
 
 	err = edac_ecc_error_log_get(dev, &error);
 	if (err != 0) {
-		shell_error(shell, "Error getting error log");
+		shell_error(shell, "Error getting error log (err %d)", err);
 		return err;
 	}
 
@@ -404,7 +408,8 @@ static int cmd_parity_error_show(const struct shell *shell, size_t argc,
 
 	err = edac_parity_error_log_get(dev, &error);
 	if (err != 0) {
-		shell_error(shell, "Error getting parity error log");
+		shell_error(shell, "Error getting parity error log (err %d)",
+			    err);
 		return err;
 	}
 
