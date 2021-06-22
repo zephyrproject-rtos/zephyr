@@ -2717,6 +2717,8 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 	return (uint8_t)index;
 }
 
+/* Group Connected BT_CONN only in this */
+#if defined(CONFIG_BT_CONN)
 struct bt_conn *bt_conn_lookup_index(uint8_t index)
 {
 	if (index >= ARRAY_SIZE(acl_conns)) {
@@ -2767,3 +2769,5 @@ int bt_conn_init(void)
 
 	return 0;
 }
+
+#endif /* CONFIG_BT_CONN */
