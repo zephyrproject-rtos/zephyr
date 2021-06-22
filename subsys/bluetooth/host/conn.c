@@ -1409,48 +1409,6 @@ void bt_conn_process_tx(struct bt_conn *conn)
 	}
 }
 
-bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
-{
-	struct bt_conn *conn = bt_conn_lookup_addr_le(id, peer);
-
-	if (conn) {
-		/* Connection object already exists.
-		 * If the connection state is not "disconnected",then the
-		 * connection was created but has not yet been disconnected.
-		 * If the connection state is "disconnected" then the connection
-		 * still has valid references. The last reference of the stack
-		 * is released after the disconnected callback.
-		 */
-		BT_WARN("Found valid connection in %s state",
-			state2str(conn->state));
-		bt_conn_unref(conn);
-		return true;
-	}
-
-	return false;
-}
-
-struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
-{
-	struct bt_conn *conn = acl_conn_new();
-
-	if (!conn) {
-		return NULL;
-	}
-
-	conn->id = id;
-	bt_addr_le_copy(&conn->le.dst, peer);
-#if defined(CONFIG_BT_SMP)
-	conn->sec_level = BT_SECURITY_L1;
-	conn->required_sec_level = BT_SECURITY_L1;
-#endif /* CONFIG_BT_SMP */
-	conn->type = BT_CONN_TYPE_LE;
-	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
-	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
-
-	return conn;
-}
-
 static void process_unack_tx(struct bt_conn *conn)
 {
 	/* Return any unacknowledged packets */
@@ -1911,6 +1869,48 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
+{
+	struct bt_conn *conn = bt_conn_lookup_addr_le(id, peer);
+
+	if (conn) {
+		/* Connection object already exists.
+		 * If the connection state is not "disconnected",then the
+		 * connection was created but has not yet been disconnected.
+		 * If the connection state is "disconnected" then the connection
+		 * still has valid references. The last reference of the stack
+		 * is released after the disconnected callback.
+		 */
+		BT_WARN("Found valid connection in %s state",
+			state2str(conn->state));
+		bt_conn_unref(conn);
+		return true;
+	}
+
+	return false;
+}
+
+struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
+{
+	struct bt_conn *conn = acl_conn_new();
+
+	if (!conn) {
+		return NULL;
+	}
+
+	conn->id = id;
+	bt_addr_le_copy(&conn->le.dst, peer);
+#if defined(CONFIG_BT_SMP)
+	conn->sec_level = BT_SECURITY_L1;
+	conn->required_sec_level = BT_SECURITY_L1;
+#endif /* CONFIG_BT_SMP */
+	conn->type = BT_CONN_TYPE_LE;
+	conn->le.interval_min = BT_GAP_INIT_CONN_INT_MIN;
+	conn->le.interval_max = BT_GAP_INIT_CONN_INT_MAX;
+
+	return conn;
+}
 
 bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 			     const bt_addr_le_t *peer)
