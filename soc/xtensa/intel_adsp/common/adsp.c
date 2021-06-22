@@ -33,12 +33,11 @@ static void prepare_host_windows(void)
 			 HP_SRAM_WIN0_SIZE - SRAM_REG_FW_END);
 
 	/* window3, for trace
-	 * zeroed by trace initialization
+	 * initialized in trace_out.c
 	 */
 	sys_write32((HP_SRAM_WIN3_SIZE | 0x7), DMWLO(3));
 	sys_write32((HP_SRAM_WIN3_BASE | DMWBA_READONLY | DMWBA_ENABLE),
 		    DMWBA(3));
-	memset((void *)HP_SRAM_WIN3_BASE, 0, HP_SRAM_WIN3_SIZE);
 	SOC_DCACHE_FLUSH((void *)HP_SRAM_WIN3_BASE, HP_SRAM_WIN3_SIZE);
 }
 
@@ -49,5 +48,8 @@ static int adsp_init(const struct device *dev)
 	return 0;
 }
 
-/* Init after IPM initialization and before logging (uses memory windows) */
-SYS_INIT(adsp_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/* Note priority zero: this is required for trace output to appear to
+ * the host (we can log to the buffer earlier, but the host needs our
+ * registers to see it), so we want it done FIRST.
+ */
+SYS_INIT(adsp_init, PRE_KERNEL_1, 0);
