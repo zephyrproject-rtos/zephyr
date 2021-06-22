@@ -17,11 +17,6 @@
 #include <drivers/sensor.h>
 #include "lis2dw12_reg.h"
 
-union axis3bit16_t {
-	int16_t i16bit[3];
-	uint8_t u8bit[6];
-};
-
 #if defined(CONFIG_LIS2DW12_ODR_1_6)
 	#define LIS2DW12_DEFAULT_ODR	LIS2DW12_XL_ODR_1Hz6_LP_ONLY
 #elif defined(CONFIG_LIS2DW12_ODR_12_5)

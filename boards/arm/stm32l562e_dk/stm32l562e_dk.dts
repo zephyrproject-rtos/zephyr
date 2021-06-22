@@ -38,3 +38,13 @@
 &lptim1 {
 	status = "okay";
 };
+
+&timers2 {
+	pwm {
+		st,prescaler = <10000>;
+	};
+};
+
+&iwdg {
+	status = "okay";
+};

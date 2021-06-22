@@ -1,4 +1,4 @@
-description: Holtek HT16K33 LED driver with keyscan
+description: Holtek HT16K33 keyscan
 
 compatible: "holtek,ht16k33-keyscan"
 
@@ -7,11 +7,5 @@ include: base.yaml
 on-bus: ht16k33
 
 properties:
-    reg:
-      required: true
     label:
       required: true
-
-gpio-cells:
-  - pin
-  - flags

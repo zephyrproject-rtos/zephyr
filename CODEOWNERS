@@ -219,7 +219,6 @@
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*nrf*                      @nvlsianpu
 /drivers/gpio/                            @mnkp
-/drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*eos_s3*                    @wtatarski @kowalewskijan @kgugala
@@ -250,6 +249,7 @@
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
 /drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
+/drivers/kscan/*ht16k33*                  @henrikbrixandersen
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar-nordic
 /drivers/lora/                            @Mani-Sadhasivam
@@ -330,6 +330,8 @@
 /drivers/watchdog/*sifive*                @katsuster
 /drivers/watchdog/wdt_handlers.c          @dcpleung @nashif
 /drivers/watchdog/*cc32xx*                @pavlohamov
+/drivers/watchdog/wdt_ite_it8xxx2.c       @RuibinChang
+/drivers/watchdog/Kconfig.it8xxx2         @RuibinChang
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/esp_at/                     @mniestroj
 /drivers/wifi/eswifi/                     @loicpoulain @nandojve
@@ -518,6 +520,7 @@
 /samples/drivers/can/                     @alexanderwachter
 /samples/drivers/clock_control_litex/     @mateusz-holenko @kgugala @pgielda
 /samples/drivers/display/                 @vanwinkeljan
+/samples/drivers/eeprom/                  @henrikbrixandersen
 /samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/subsys/lorawan/                  @Mani-Sadhasivam

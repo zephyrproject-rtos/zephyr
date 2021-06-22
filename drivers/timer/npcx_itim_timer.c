@@ -271,6 +271,7 @@ int sys_clock_driver_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	int ret;
+	uint32_t sys_tmr_rate;
 	const struct device *const clk_dev =
 					device_get_binding(NPCX_CLK_CTRL_NAME);
 
@@ -282,6 +283,23 @@ int sys_clock_driver_init(const struct device *dev)
 			LOG_ERR("Turn on timer %d clock failed.", i);
 			return ret;
 		}
+	}
+
+	/*
+	 * In npcx series, we use ITIM64 as system kernel timer. Its source
+	 * clock frequency must equal to CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC.
+	 */
+	ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t *)
+			&itim_clk_cfg[1], &sys_tmr_rate);
+	if (ret < 0) {
+		LOG_ERR("Get ITIM64 clock rate failed %d", ret);
+		return ret;
+	}
+
+	if (sys_tmr_rate != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
+		LOG_ERR("CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC doesn't match "
+			"ITIM64 clock frequency %d", sys_tmr_rate);
+		return -EINVAL;
 	}
 
 	/*

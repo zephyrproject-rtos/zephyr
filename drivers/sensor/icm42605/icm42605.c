@@ -421,10 +421,12 @@ static int icm42605_init(const struct device *dev)
 	drv_data->accel_sensitivity_shift = 14 - 3;
 	drv_data->gyro_sensitivity_x10 = icm42605_gyro_sensitivity_x10[3];
 
+#ifdef CONFIG_ICM42605_TRIGGER
 	if (icm42605_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupts.");
 		return -EIO;
 	}
+#endif
 
 	LOG_DBG("Initialize interrupt done");
 
@@ -432,7 +434,9 @@ static int icm42605_init(const struct device *dev)
 }
 
 static const struct sensor_driver_api icm42605_driver_api = {
+#ifdef CONFIG_ICM42605_TRIGGER
 	.trigger_set = icm42605_trigger_set,
+#endif
 	.sample_fetch = icm42605_sample_fetch,
 	.channel_get = icm42605_channel_get,
 	.attr_set = icm42605_attr_set,
