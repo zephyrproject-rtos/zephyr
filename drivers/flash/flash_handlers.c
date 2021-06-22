@@ -28,6 +28,30 @@ static inline int z_vrfy_flash_write(const struct device *dev, off_t offset,
 }
 #include <syscalls/flash_write_mrsh.c>
 
+static inline int z_vrfy_flash_get_page_info(const struct device *dev, off_t offset,
+				      struct flash_page_info *fpi)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, get_page_info));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(fpi, sizeof(*fpi)));
+	return z_impl_flash_get_page_info((const struct device *)dev, offset,
+					  (struct flash_page_info *)fpi);
+}
+#include <syscalls/flash_get_page_info_mrsh.c>
+
+static ssize_t z_vrfy_flash_get_page_count(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, get_page_count));
+	return z_impl_flash_get_page_count((const struct device *)dev);
+}
+#include <syscalls/flash_get_page_count_mrsh.c>
+
+static ssize_t z_vrfy_flash_get_size(const struct device *dev)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, get_size));
+	return z_impl_flash_get_size((const struct device *)dev);
+}
+#include <syscalls/flash_get_size_mrsh.c>
+
 static inline size_t z_vrfy_flash_get_write_block_size(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_FLASH));
@@ -66,13 +90,6 @@ static inline int z_vrfy_flash_get_page_info_by_idx(const struct device *dev,
 						 (struct flash_pages_info *)info);
 }
 #include <syscalls/flash_get_page_info_by_idx_mrsh.c>
-
-static inline size_t z_vrfy_flash_get_page_count(const struct device *dev)
-{
-	Z_OOPS(Z_SYSCALL_DRIVER_FLASH(dev, page_layout));
-	return z_impl_flash_get_page_count((const struct device *)dev);
-}
-#include <syscalls/flash_get_page_count_mrsh.c>
 
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
