@@ -7,33 +7,41 @@
 #include <drivers/ps2.h>
 #include <syscall_handler.h>
 
-Z_SYSCALL_HANDLER(ps2_config, dev, callback_isr)
+static inline int z_vrfy_ps2_config(const struct device *dev,
+				    ps2_callback_t callback_isr)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PS2(dev, config));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback_isr == 0,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback_isr == NULL,
 				    "callback not be set from user mode"));
-	return z_impl_ps2_config((const struct device *)dev, callback_isr);
+	return z_impl_ps2_config(dev, callback_isr);
 }
+#include <syscalls/ps2_config_mrsh.c>
 
-Z_SYSCALL_HANDLER(ps2_write, dev, value)
+static inline int z_vrfy_ps2_write(const struct device *dev, uint8_t value)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PS2(dev, write));
-	return z_impl_ps2_write((const struct device *)dev, value);
+	return z_impl_ps2_write(dev, value);
 }
+#include <syscalls/ps2_write_mrsh.c>
 
-Z_SYSCALL_HANDLER(ps2_read, dev, value)
+static inline int z_vrfy_ps2_read(const struct device *dev, uint8_t *value)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_PS2(dev, read));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(value, sizeof(uint8_t)));
-	return z_impl_ps2_read((const struct device *)dev, (uint32_t *)value);
+	return z_impl_ps2_read(dev, (uint32_t *)value);
 }
+#include <syscalls/ps2_read_mrsh.c>
 
-Z_SYSCALL_HANDLER(ps2_enable_callback)
+static inline int z_vrfy_ps2_enable_callback(const struct device *dev)
 {
-	return z_impl_ps2_enable_callback((const struct device *)dev);
+	Z_OOPS(Z_SYSCALL_DRIVER_PS2(dev, enable_callback));
+	return z_impl_ps2_enable_callback(dev);
 }
+#include <syscalls/ps2_enable_callback_mrsh.c>
 
-Z_SYSCALL_HANDLER(ps2_disable_callback, dev)
+static inline int z_vrfy_ps2_disable_callback(const struct device *dev)
 {
-	return z_impl_ps2_disable_callback((const struct device *)dev);
+	Z_OOPS(Z_SYSCALL_DRIVER_PS2(dev, disable_callback));
+	return z_impl_ps2_disable_callback(dev);
 }
+#include <syscalls/ps2_disable_callback_mrsh.c>
