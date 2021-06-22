@@ -1060,6 +1060,11 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 	LOG_INF("Stop LWM2M Client: %s", log_strdup(client.ep_name));
 }
 
+void lwm2m_rd_client_update(void)
+{
+	engine_trigger_update(false);
+}
+
 static int lwm2m_rd_client_init(const struct device *dev)
 {
 	return lwm2m_engine_add_service(lwm2m_rd_client_service,
