@@ -720,197 +720,6 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn)
 
 #endif /* CONFIG_BT_BREDR */
 
-#if defined(CONFIG_BT_SMP)
-void bt_conn_identity_resolved(struct bt_conn *conn)
-{
-	const bt_addr_le_t *rpa;
-	struct bt_conn_cb *cb;
-
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		rpa = &conn->le.resp_addr;
-	} else {
-		rpa = &conn->le.init_addr;
-	}
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->identity_resolved) {
-			cb->identity_resolved(conn, rpa, &conn->le.dst);
-		}
-	}
-}
-
-int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
-				uint8_t ediv[2], const uint8_t *ltk, size_t len)
-{
-	struct bt_hci_cp_le_start_encryption *cp;
-	struct net_buf *buf;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	cp->handle = sys_cpu_to_le16(conn->handle);
-	memcpy(&cp->rand, rand, sizeof(cp->rand));
-	memcpy(&cp->ediv, ediv, sizeof(cp->ediv));
-
-	memcpy(cp->ltk, ltk, len);
-	if (len < sizeof(cp->ltk)) {
-		(void)memset(cp->ltk + len, 0, sizeof(cp->ltk) - len);
-	}
-
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
-}
-#endif /* CONFIG_BT_SMP */
-
-#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
-uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
-{
-	if (!conn->encrypt) {
-		return 0;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_BREDR) &&
-	    conn->type == BT_CONN_TYPE_BR) {
-		struct bt_hci_cp_read_encryption_key_size *cp;
-		struct bt_hci_rp_read_encryption_key_size *rp;
-		struct net_buf *buf;
-		struct net_buf *rsp;
-		uint8_t key_size;
-
-		buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
-					sizeof(*cp));
-		if (!buf) {
-			return 0;
-		}
-
-		cp = net_buf_add(buf, sizeof(*cp));
-		cp->handle = sys_cpu_to_le16(conn->handle);
-
-		if (bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
-					buf, &rsp)) {
-			return 0;
-		}
-
-		rp = (void *)rsp->data;
-
-		key_size = rp->status ? 0 : rp->key_size;
-
-		net_buf_unref(rsp);
-
-		return key_size;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SMP)) {
-		return conn->le.keys ? conn->le.keys->enc_size : 0;
-	}
-
-	return 0;
-}
-
-static void reset_pairing(struct bt_conn *conn)
-{
-#if defined(CONFIG_BT_BREDR)
-	if (conn->type == BT_CONN_TYPE_BR) {
-		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
-		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
-		atomic_clear_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
-	}
-#endif /* CONFIG_BT_BREDR */
-
-	/* Reset required security level to current operational */
-	conn->required_sec_level = conn->sec_level;
-}
-
-void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
-			      enum bt_security_err err)
-{
-	struct bt_conn_cb *cb;
-
-	reset_pairing(conn);
-	bt_l2cap_security_changed(conn, hci_err);
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->security_changed) {
-			cb->security_changed(conn, conn->sec_level, err);
-		}
-	}
-#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-	if (!err && conn->sec_level >= BT_SECURITY_L2) {
-		if (conn->type == BT_CONN_TYPE_LE) {
-			bt_keys_update_usage(conn->id, bt_conn_get_dst(conn));
-		}
-
-#if defined(CONFIG_BT_BREDR)
-		if (conn->type == BT_CONN_TYPE_BR) {
-			bt_keys_link_key_update_usage(&conn->br.dst);
-		}
-#endif /* CONFIG_BT_BREDR */
-
-	}
-#endif
-}
-
-static int start_security(struct bt_conn *conn)
-{
-	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
-		return bt_ssp_start_security(conn);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SMP)) {
-		return bt_smp_start_security(conn);
-	}
-
-	return -EINVAL;
-}
-
-int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
-{
-	int err;
-
-	if (conn->state != BT_CONN_CONNECTED) {
-		return -ENOTCONN;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY)) {
-		sec = BT_SECURITY_L4;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
-		sec = BT_SECURITY_L3;
-	}
-
-	/* nothing to do */
-	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
-		return 0;
-	}
-
-	atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR,
-			  sec & BT_SECURITY_FORCE_PAIR);
-	conn->required_sec_level = sec & ~BT_SECURITY_FORCE_PAIR;
-
-	err = start_security(conn);
-
-	/* reset required security level in case of error */
-	if (err) {
-		conn->required_sec_level = conn->sec_level;
-	}
-
-	return err;
-}
-
-bt_security_t bt_conn_get_security(struct bt_conn *conn)
-{
-	return conn->sec_level;
-}
-#else
-bt_security_t bt_conn_get_security(struct bt_conn *conn)
-{
-	return BT_SECURITY_L1;
-}
-#endif /* CONFIG_BT_SMP */
-
 void bt_conn_reset_rx_state(struct bt_conn *conn)
 {
 	if (!conn->rx) {
@@ -1863,6 +1672,197 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+#if defined(CONFIG_BT_SMP)
+void bt_conn_identity_resolved(struct bt_conn *conn)
+{
+	const bt_addr_le_t *rpa;
+	struct bt_conn_cb *cb;
+
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		rpa = &conn->le.resp_addr;
+	} else {
+		rpa = &conn->le.init_addr;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->identity_resolved) {
+			cb->identity_resolved(conn, rpa, &conn->le.dst);
+		}
+	}
+}
+
+int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
+				uint8_t ediv[2], const uint8_t *ltk, size_t len)
+{
+	struct bt_hci_cp_le_start_encryption *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_START_ENCRYPTION, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	memcpy(&cp->rand, rand, sizeof(cp->rand));
+	memcpy(&cp->ediv, ediv, sizeof(cp->ediv));
+
+	memcpy(cp->ltk, ltk, len);
+	if (len < sizeof(cp->ltk)) {
+		(void)memset(cp->ltk + len, 0, sizeof(cp->ltk) - len);
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_START_ENCRYPTION, buf, NULL);
+}
+#endif /* CONFIG_BT_SMP */
+
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
+uint8_t bt_conn_enc_key_size(struct bt_conn *conn)
+{
+	if (!conn->encrypt) {
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BREDR) &&
+	    conn->type == BT_CONN_TYPE_BR) {
+		struct bt_hci_cp_read_encryption_key_size *cp;
+		struct bt_hci_rp_read_encryption_key_size *rp;
+		struct net_buf *buf;
+		struct net_buf *rsp;
+		uint8_t key_size;
+
+		buf = bt_hci_cmd_create(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
+					sizeof(*cp));
+		if (!buf) {
+			return 0;
+		}
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		cp->handle = sys_cpu_to_le16(conn->handle);
+
+		if (bt_hci_cmd_send_sync(BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE,
+					buf, &rsp)) {
+			return 0;
+		}
+
+		rp = (void *)rsp->data;
+
+		key_size = rp->status ? 0 : rp->key_size;
+
+		net_buf_unref(rsp);
+
+		return key_size;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		return conn->le.keys ? conn->le.keys->enc_size : 0;
+	}
+
+	return 0;
+}
+
+static void reset_pairing(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_BREDR)
+	if (conn->type == BT_CONN_TYPE_BR) {
+		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
+	}
+#endif /* CONFIG_BT_BREDR */
+
+	/* Reset required security level to current operational */
+	conn->required_sec_level = conn->sec_level;
+}
+
+void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
+			      enum bt_security_err err)
+{
+	struct bt_conn_cb *cb;
+
+	reset_pairing(conn);
+	bt_l2cap_security_changed(conn, hci_err);
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->security_changed) {
+			cb->security_changed(conn, conn->sec_level, err);
+		}
+	}
+#if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
+	if (!err && conn->sec_level >= BT_SECURITY_L2) {
+		if (conn->type == BT_CONN_TYPE_LE) {
+			bt_keys_update_usage(conn->id, bt_conn_get_dst(conn));
+		}
+
+#if defined(CONFIG_BT_BREDR)
+		if (conn->type == BT_CONN_TYPE_BR) {
+			bt_keys_link_key_update_usage(&conn->br.dst);
+		}
+#endif /* CONFIG_BT_BREDR */
+
+	}
+#endif
+}
+
+static int start_security(struct bt_conn *conn)
+{
+	if (IS_ENABLED(CONFIG_BT_BREDR) && conn->type == BT_CONN_TYPE_BR) {
+		return bt_ssp_start_security(conn);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		return bt_smp_start_security(conn);
+	}
+
+	return -EINVAL;
+}
+
+int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
+{
+	int err;
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP_SC_ONLY)) {
+		sec = BT_SECURITY_L4;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
+		sec = BT_SECURITY_L3;
+	}
+
+	/* nothing to do */
+	if (conn->sec_level >= sec || conn->required_sec_level >= sec) {
+		return 0;
+	}
+
+	atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR,
+			  sec & BT_SECURITY_FORCE_PAIR);
+	conn->required_sec_level = sec & ~BT_SECURITY_FORCE_PAIR;
+
+	err = start_security(conn);
+
+	/* reset required security level in case of error */
+	if (err) {
+		conn->required_sec_level = conn->sec_level;
+	}
+
+	return err;
+}
+
+bt_security_t bt_conn_get_security(struct bt_conn *conn)
+{
+	return conn->sec_level;
+}
+#else
+bt_security_t bt_conn_get_security(struct bt_conn *conn)
+{
+	return BT_SECURITY_L1;
+}
+#endif /* CONFIG_BT_SMP */
 
 void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
