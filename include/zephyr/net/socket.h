@@ -138,6 +138,7 @@ struct zsock_pollfd {
  */
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MIN 8
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MAX 9
+
 /** Socket option for preventing certificates from being copied to the mbedTLS
  *  heap if possible. The option is only effective for DER certificates and is
  *  ignored for PEM certificates.
@@ -163,6 +164,13 @@ struct zsock_pollfd {
  *  This option accepts any value.
  */
 #define TLS_SESSION_CACHE_PURGE 13
+
+/** Socket option to set DTLS Connection ID to be used for the DTLS session.
+ *  The option accepts an byte array, holding the CID to use.
+ *  Setting an empty CID (option length set to 0) indicates that the socket is
+ *  willing to handle CID from a peer, but does not specify its own CID.
+ */
+#define TLS_DTLS_CONNECTION_ID 14
 
 /** @} */
 

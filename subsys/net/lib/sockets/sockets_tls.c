@@ -60,6 +60,8 @@ LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define ALPN_MAX_PROTOCOLS 0
 #endif /* CONFIG_NET_SOCKETS_TLS_MAX_APP_PROTOCOLS */
 
+#define DTLS_CONNECTION_ID_DISABLED -1
+
 static const struct socket_op_vtable tls_sock_fd_op_vtable;
 
 #ifndef MBEDTLS_ERR_SSL_PEER_VERIFY_FAILED
@@ -170,6 +172,16 @@ __net_socket struct tls_context {
 		/* DTLS handshake timeout */
 		uint32_t dtls_handshake_timeout_min;
 		uint32_t dtls_handshake_timeout_max;
+
+		struct {
+			/** The CID value to use. */
+			uint8_t value[MBEDTLS_SSL_CID_IN_LEN_MAX];
+
+			/** The CID length. -1 indicates that CID extension is
+			 *  disabled.
+			 */
+			int len;
+		} dtls_cid;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 	} options;
 
@@ -407,6 +419,7 @@ static struct tls_context *tls_alloc(void)
 			MBEDTLS_SSL_DTLS_TIMEOUT_DFL_MIN;
 		tls->options.dtls_handshake_timeout_max =
 			MBEDTLS_SSL_DTLS_TIMEOUT_DFL_MAX;
+		tls->options.dtls_cid.len = DTLS_CONNECTION_ID_DISABLED;
 #endif
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 		mbedtls_x509_crt_init(&tls->ca_chain);
@@ -1210,6 +1223,18 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 				context->options.dtls_handshake_timeout_min,
 				context->options.dtls_handshake_timeout_max);
 
+#if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+		if (context->options.dtls_cid.len != DTLS_CONNECTION_ID_DISABLED) {
+			ret = mbedtls_ssl_conf_cid(
+					&context->config,
+					context->options.dtls_cid.len,
+					MBEDTLS_SSL_UNEXPECTED_CID_IGNORE);
+			if (ret != 0) {
+				return -EINVAL;
+			}
+		}
+#endif /* CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID */
+
 		/* Configure cookie for DTLS server */
 		if (role == MBEDTLS_SSL_IS_SERVER) {
 			ret = mbedtls_ssl_cookie_setup(&context->cookie,
@@ -1291,6 +1316,19 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		 */
 		return -ENOMEM;
 	}
+
+#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS) && defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+	if (type == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+		if (context->options.dtls_cid.len != DTLS_CONNECTION_ID_DISABLED) {
+			ret = mbedtls_ssl_set_cid(&context->ssl, true,
+						  context->options.dtls_cid.value,
+						  context->options.dtls_cid.len);
+			if (ret != 0) {
+				return -EINVAL;
+			}
+		}
+	}
+#endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS && CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID */
 
 	context->is_initialized = true;
 
@@ -1531,6 +1569,27 @@ static int tls_opt_dtls_handshake_timeout_set(struct tls_context *context,
 			context->options.dtls_handshake_timeout_max);
 
 	return 0;
+}
+
+static int tls_opt_dtls_connection_id_set(struct tls_context *context,
+					  const void *optval, socklen_t optlen)
+{
+#if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+	if (optlen > 0 && optval == NULL) {
+		return -EINVAL;
+	}
+
+	if (optlen > sizeof(context->options.dtls_cid.value)) {
+		return -EINVAL;
+	}
+
+	context->options.dtls_cid.len = optlen;
+	memcpy(context->options.dtls_cid.value, optval, optlen);
+
+	return 0;
+#else
+	return -ENOPROTOOPT;
+#endif /* CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID */
 }
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
@@ -2851,6 +2910,10 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 	case TLS_DTLS_HANDSHAKE_TIMEOUT_MAX:
 		err = tls_opt_dtls_handshake_timeout_set(ctx, optval,
 							 optlen, true);
+		break;
+
+	case TLS_DTLS_CONNECTION_ID:
+		err = tls_opt_dtls_connection_id_set(ctx, optval, optlen);
 		break;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
