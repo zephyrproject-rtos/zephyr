@@ -1563,6 +1563,11 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	status = ll_scan_enable(cmd->enable);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+	/* NOTE: As filter duplicates is implemented here in HCI source code,
+	 *       enabling of already enabled scanning shall succeed after
+	 *       updates to filter duplicates is handled in the above
+	 *       statements. Refer to BT Spec v5.0 Vol 2 Part E Section 7.8.11.
+	 */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SCAN_ENABLE_STRICT) &&
 	    (status == BT_HCI_ERR_CMD_DISALLOWED)) {
 		status = BT_HCI_ERR_SUCCESS;
@@ -3193,6 +3198,11 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 
 	status = ll_scan_enable(cmd->enable, cmd->duration, cmd->period);
 
+	/* NOTE: As filter duplicates is implemented here in HCI source code,
+	 *       enabling of already enabled scanning shall succeed after
+	 *       updates to filter duplicates is handled in the above
+	 *       statements. Refer to BT Spec v5.0 Vol 2 Part E Section 7.8.11.
+	 */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SCAN_ENABLE_STRICT) &&
 	    (status == BT_HCI_ERR_CMD_DISALLOWED)) {
 		status = BT_HCI_ERR_SUCCESS;
