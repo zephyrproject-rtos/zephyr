@@ -911,12 +911,6 @@ bt_security_t bt_conn_get_security(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_SMP */
 
-void bt_conn_cb_register(struct bt_conn_cb *cb)
-{
-	cb->_next = callback_list;
-	callback_list = cb;
-}
-
 void bt_conn_reset_rx_state(struct bt_conn *conn)
 {
 	if (!conn->rx) {
@@ -1869,6 +1863,12 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+void bt_conn_cb_register(struct bt_conn_cb *cb)
+{
+	cb->_next = callback_list;
+	callback_list = cb;
+}
 
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 {
