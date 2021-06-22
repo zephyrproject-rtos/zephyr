@@ -1720,86 +1720,6 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 	return NULL;
 }
 
-bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
-			     const bt_addr_le_t *peer)
-{
-	if (id != conn->id) {
-		return false;
-	}
-
-	/* Check against conn dst address as it may be the identity address */
-	if (!bt_addr_le_cmp(peer, &conn->le.dst)) {
-		return true;
-	}
-
-	/* Check against initial connection address */
-	if (conn->role == BT_HCI_ROLE_MASTER) {
-		return bt_addr_le_cmp(peer, &conn->le.resp_addr) == 0;
-	}
-
-	return bt_addr_le_cmp(peer, &conn->le.init_addr) == 0;
-}
-
-struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
-		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
-
-		if (!conn) {
-			continue;
-		}
-
-		if (conn->type != BT_CONN_TYPE_LE) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		if (!bt_conn_is_peer_addr_le(conn, id, peer)) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		return conn;
-	}
-
-	return NULL;
-}
-
-struct bt_conn *bt_conn_lookup_state_le(uint8_t id, const bt_addr_le_t *peer,
-					const bt_conn_state_t state)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
-		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
-
-		if (!conn) {
-			continue;
-		}
-
-		if (conn->type != BT_CONN_TYPE_LE) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		if (peer && !bt_conn_is_peer_addr_le(conn, id, peer)) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		if (!(conn->state == state && conn->id == id)) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		return conn;
-	}
-
-	return NULL;
-}
-
 void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
 		     void *data)
 {
@@ -1991,6 +1911,86 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
+			     const bt_addr_le_t *peer)
+{
+	if (id != conn->id) {
+		return false;
+	}
+
+	/* Check against conn dst address as it may be the identity address */
+	if (!bt_addr_le_cmp(peer, &conn->le.dst)) {
+		return true;
+	}
+
+	/* Check against initial connection address */
+	if (conn->role == BT_HCI_ROLE_MASTER) {
+		return bt_addr_le_cmp(peer, &conn->le.resp_addr) == 0;
+	}
+
+	return bt_addr_le_cmp(peer, &conn->le.init_addr) == 0;
+}
+
+struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
+		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
+
+		if (!conn) {
+			continue;
+		}
+
+		if (conn->type != BT_CONN_TYPE_LE) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		if (!bt_conn_is_peer_addr_le(conn, id, peer)) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		return conn;
+	}
+
+	return NULL;
+}
+
+struct bt_conn *bt_conn_lookup_state_le(uint8_t id, const bt_addr_le_t *peer,
+					const bt_conn_state_t state)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
+		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
+
+		if (!conn) {
+			continue;
+		}
+
+		if (conn->type != BT_CONN_TYPE_LE) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		if (peer && !bt_conn_is_peer_addr_le(conn, id, peer)) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		if (!(conn->state == state && conn->id == id)) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		return conn;
+	}
+
+	return NULL;
+}
 
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
 {
