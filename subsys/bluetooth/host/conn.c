@@ -2195,6 +2195,38 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	}
 }
 
+uint8_t bt_conn_index(struct bt_conn *conn)
+{
+	ptrdiff_t index;
+
+	switch (conn->type) {
+#if defined(CONFIG_BT_ISO)
+	case BT_CONN_TYPE_ISO:
+		index = conn - iso_conns;
+		__ASSERT(index >= 0 && index < ARRAY_SIZE(iso_conns),
+			"Invalid bt_conn pointer");
+		break;
+#endif
+#if defined(CONFIG_BT_BREDR)
+	case BT_CONN_TYPE_SCO:
+		index = conn - sco_conns;
+		__ASSERT(index >= 0 && index < ARRAY_SIZE(sco_conns),
+			"Invalid bt_conn pointer");
+		break;
+#endif
+	default:
+		index = conn - acl_conns;
+		__ASSERT(index >= 0 && index < ARRAY_SIZE(acl_conns),
+			 "Invalid bt_conn pointer");
+		break;
+	}
+
+	return (uint8_t)index;
+}
+
+/* Group Connected BT_CONN only in this */
+#if defined(CONFIG_BT_CONN)
+
 #if defined(CONFIG_BT_CENTRAL)
 static void bt_conn_set_param_le(struct bt_conn *conn,
 				 const struct bt_le_conn_param *param)
@@ -2481,37 +2513,6 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 #endif /* !defined(CONFIG_BT_WHITELIST) */
 #endif /* CONFIG_BT_CENTRAL */
 
-uint8_t bt_conn_index(struct bt_conn *conn)
-{
-	ptrdiff_t index;
-
-	switch (conn->type) {
-#if defined(CONFIG_BT_ISO)
-	case BT_CONN_TYPE_ISO:
-		index = conn - iso_conns;
-		__ASSERT(0 <= index && index < ARRAY_SIZE(iso_conns),
-			"Invalid bt_conn pointer");
-		break;
-#endif
-#if defined(CONFIG_BT_BREDR)
-	case BT_CONN_TYPE_SCO:
-		index = conn - sco_conns;
-		__ASSERT(0 <= index && index < ARRAY_SIZE(sco_conns),
-			"Invalid bt_conn pointer");
-		break;
-#endif
-	default:
-		index = conn - acl_conns;
-		__ASSERT(0 <= index && index < ARRAY_SIZE(acl_conns),
-			 "Invalid bt_conn pointer");
-		break;
-	}
-
-	return (uint8_t)index;
-}
-
-/* Group Connected BT_CONN only in this */
-#if defined(CONFIG_BT_CONN)
 int bt_conn_le_conn_update(struct bt_conn *conn,
 			   const struct bt_le_conn_param *param)
 {
