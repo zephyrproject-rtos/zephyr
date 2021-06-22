@@ -12,6 +12,7 @@
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
 #include "bluetooth/addr.h"
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include "app_conf.h"
 #include "stm32_wpan_common.h"

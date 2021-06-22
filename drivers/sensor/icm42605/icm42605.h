@@ -58,9 +58,11 @@ struct icm42605_data {
 	struct sensor_trigger double_tap_trigger;
 	sensor_trigger_handler_t double_tap_handler;
 
+#ifdef CONFIG_ICM42605_TRIGGER
 	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ICM42605_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	struct k_sem gpio_sem;
+#endif
 
 	struct spi_cs_control spi_cs;
 	struct spi_config spi_cfg;

@@ -155,7 +155,6 @@ endmenu # "Zephyr optimizations"
 
 config OPENTHREAD_SHELL
 	bool "Enable OpenThread shell"
-	depends on !OPENTHREAD_COPROCESSOR
 	depends on SHELL
 	default y
 
@@ -221,6 +220,8 @@ config OPENTHREAD_COPROCESSOR
 	help
 	  Enable Co-Processor in OpenThread stack.
 
+if OPENTHREAD_COPROCESSOR
+
 choice
 	prompt "OpenThread Co-Processor type"
 	help
@@ -231,8 +232,6 @@ config OPENTHREAD_COPROCESSOR_NCP
 config OPENTHREAD_COPROCESSOR_RCP
 	bool "RCP - Radio Co-Processor"
 endchoice
-
-if OPENTHREAD_COPROCESSOR
 
 config OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME
 	string "UART device to use for Co-Processor SPINEL"

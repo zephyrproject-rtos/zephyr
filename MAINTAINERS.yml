@@ -272,7 +272,7 @@ CMSIS API layer:
         - "area: Portability"
 
 CMSIS-DSP integration:
-    status: maintainer
+    status: maintained
     maintainers:
         - stephanosio
     collaborators:
@@ -541,6 +541,7 @@ Documentation:
         - drivers/eeprom/
         - dts/bindings/mtd/*eeprom*
         - include/drivers/eeprom.h
+        - samples/drivers/eeprom/
         - tests/drivers/eeprom/
     labels:
         - "area: EEPROM"

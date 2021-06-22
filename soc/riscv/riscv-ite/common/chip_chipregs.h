@@ -1122,30 +1122,81 @@
  * (1Fxxh) External Timer & External Watchdog (ETWD)
  *
  */
-#define ETWCFG			ECREG(EC_REG_BASE_ADDR + 0x1F01)
-#define EWDKEYEN		BIT(5)
-#define EWDSRC			BIT(4)
-#define LEWDCNTL		BIT(3)
-#define LET1CNTL		BIT(2)
-#define LET1PS			BIT(1)
-#define LETWCFG			BIT(0)
-#define ET1PSR			ECREG(EC_REG_BASE_ADDR + 0x1F02)
-#define ET1CNTLHR		ECREG(EC_REG_BASE_ADDR + 0x1F03)
-#define ET1CNTLLR		ECREG(EC_REG_BASE_ADDR + 0x1F04)
-#define ETWCTRL			ECREG(EC_REG_BASE_ADDR + 0x1F05)
-#define EWDSCEN			BIT(5)
-#define EWDSCMS			BIT(4)
-#define ET2TC			BIT(3)
-#define ET2RST			BIT(2)
-#define ET1TC			BIT(1)
-#define ET1RST			BIT(0)
-#define EWDCNTLR		ECREG(EC_REG_BASE_ADDR + 0x1F06)
-#define EWDKEYR			ECREG(EC_REG_BASE_ADDR + 0x1F07)
-#define EWDCNTHR		ECREG(EC_REG_BASE_ADDR + 0x1F09)
-#define ET2PSR			ECREG(EC_REG_BASE_ADDR + 0x1F0A)
-#define ET2CNTLHR		ECREG(EC_REG_BASE_ADDR + 0x1F0B)
-#define ET2CNTLLR		ECREG(EC_REG_BASE_ADDR + 0x1F0C)
-#define ET2CNTLH2R		ECREG(EC_REG_BASE_ADDR + 0x1F0E)
+#ifndef __ASSEMBLER__
+struct wdt_it8xxx2_regs {
+	/* 0x000: Reserved1 */
+	volatile uint8_t reserved1;
+	/* 0x001: External Timer1/WDT Configuration */
+	volatile uint8_t ETWCFG;
+	/* 0x002: External Timer1 Prescaler */
+	volatile uint8_t ET1PSR;
+	/* 0x003: External Timer1 Counter High Byte */
+	volatile uint8_t ET1CNTLHR;
+	/* 0x004: External Timer1 Counter Low Byte */
+	volatile uint8_t ET1CNTLLR;
+	/* 0x005: External Timer1/WDT Control */
+	volatile uint8_t ETWCTRL;
+	/* 0x006: External WDT Counter Low Byte */
+	volatile uint8_t EWDCNTLR;
+	/* 0x007: External WDT Key */
+	volatile uint8_t EWDKEYR;
+	/* 0x008: Reserved2 */
+	volatile uint8_t reserved2;
+	/* 0x009: External WDT Counter High Byte */
+	volatile uint8_t EWDCNTHR;
+	/* 0x00A: External Timer2 Prescaler */
+	volatile uint8_t ET2PSR;
+	/* 0x00B: External Timer2 Counter High Byte */
+	volatile uint8_t ET2CNTLHR;
+	/* 0x00C: External Timer2 Counter Low Byte */
+	volatile uint8_t ET2CNTLLR;
+	/* 0x00D: Reserved3 */
+	volatile uint8_t reserved3;
+	/* 0x00E: External Timer2 Counter High Byte2 */
+	volatile uint8_t ET2CNTLH2R;
+	/* 0x00F~0x03F: Reserved4 */
+	volatile uint8_t reserved4[49];
+	/* 0x040: External Timer1 Counter Observation Low Byte */
+	volatile uint8_t ET1CNTOLR;
+	/* 0x041: External Timer1 Counter Observation High Byte */
+	volatile uint8_t ET1CNTOHR;
+	/* 0x042~0x043: Reserved5 */
+	volatile uint8_t reserved5[2];
+	/* 0x044: External Timer1 Counter Observation Low Byte */
+	volatile uint8_t ET2CNTOLR;
+	/* 0x045: External Timer1 Counter Observation High Byte */
+	volatile uint8_t ET2CNTOHR;
+	/* 0x046: External Timer1 Counter Observation High Byte2 */
+	volatile uint8_t ET2CNTOH2R;
+	/* 0x047~0x05F: Reserved6 */
+	volatile uint8_t reserved6[25];
+	/* 0x060: External WDT Counter Observation Low Byte */
+	volatile uint8_t EWDCNTOLR;
+	/* 0x061: External WDT Counter Observation High Byte */
+	volatile uint8_t EWDCNTOHR;
+};
+#endif /* !__ASSEMBLER__ */
+
+/* WDT register fields */
+/* 0x001: External Timer1/WDT Configuration */
+#define IT8XXX2_WDT_EWDKEYEN		BIT(5)
+#define IT8XXX2_WDT_EWDSRC		BIT(4)
+#define IT8XXX2_WDT_LEWDCNTL		BIT(3)
+#define IT8XXX2_WDT_LET1CNTL		BIT(2)
+#define IT8XXX2_WDT_LET1PS		BIT(1)
+#define IT8XXX2_WDT_LETWCFG		BIT(0)
+/* 0x002: External Timer1 Prescaler */
+#define IT8XXX2_WDT_ETPS_32P768_KHZ	0x00
+#define IT8XXX2_WDT_ETPS_1P024_KHZ	0x01
+#define IT8XXX2_WDT_ETPS_32_HZ		0x02
+/* 0x005: External Timer1/WDT Control */
+#define IT8XXX2_WDT_EWDSCEN		BIT(5)
+#define IT8XXX2_WDT_EWDSCMS		BIT(4)
+#define IT8XXX2_WDT_ET2TC		BIT(3)
+#define IT8XXX2_WDT_ET2RST		BIT(2)
+#define IT8XXX2_WDT_ET1TC		BIT(1)
+#define IT8XXX2_WDT_ET1RST		BIT(0)
+
 #define ET3CTRL			ECREG(EC_REG_BASE_ADDR + 0x1F10)
 #define ET3PSR			ECREG(EC_REG_BASE_ADDR + 0x1F11)
 #define ET3CNTLLR		ECREG(EC_REG_BASE_ADDR + 0x1F14)
@@ -1752,22 +1803,6 @@ struct adc_it8xxx2_regs {
 #define IT83XX_I2C_CMD_ADDL(base)	ECREG(base+0x26)
 #define IT83XX_I2C_RAMH2A(base)		ECREG(base+0x50)
 #define IT83XX_I2C_CMD_ADDH2(base)	ECREG(base+0x52)
-
-/* --- External Timer and Watchdog (ETWD) --- */
-#define IT83XX_ETWD_BASE  0x00F01F00
-
-#define IT83XX_ETWD_ETWCFG           ECREG(IT83XX_ETWD_BASE + 0x01)
-#define IT83XX_ETWD_ET1PSR           ECREG(IT83XX_ETWD_BASE + 0x02)
-#define IT83XX_ETWD_ET1CNTLHR        ECREG(IT83XX_ETWD_BASE + 0x03)
-#define IT83XX_ETWD_ET1CNTLLR        ECREG(IT83XX_ETWD_BASE + 0x04)
-#define IT83XX_ETWD_ETWCTRL          ECREG(IT83XX_ETWD_BASE + 0x05)
-#define IT83XX_ETWD_EWDCNTLLR        ECREG(IT83XX_ETWD_BASE + 0x06)
-#define IT83XX_ETWD_EWDKEYR          ECREG(IT83XX_ETWD_BASE + 0x07)
-#define IT83XX_ETWD_EWDCNTLHR        ECREG(IT83XX_ETWD_BASE + 0x09)
-#define IT83XX_ETWD_ETXCTRL(n)       ECREG(IT83XX_ETWD_BASE + 0x10 + (n << 3))
-#define IT83XX_ETWD_ETXPSR(n)        ECREG(IT83XX_ETWD_BASE + 0x11 + (n << 3))
-#define IT83XX_ETWD_ETXCNTLR(n)      ECREG_u32(IT83XX_ETWD_BASE + 0x14 + (n << 3))
-#define IT83XX_ETWD_ETXCNTOR(n)      ECREG_u32(IT83XX_ETWD_BASE + 0x48 + (n << 2))
 
 /* --- General Control (GCTRL) --- */
 #define IT83XX_GCTRL_BASE 0x00F02000

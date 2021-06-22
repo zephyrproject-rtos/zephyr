@@ -106,7 +106,7 @@ static int mcux_lpadc_start_read(const struct device *dev,
 #else
 	/* If FSL_FEATURE_LPADC_HAS_CMDL_MODE is not defined
 	   only 12/13 bit resolution is supported. */
-	if (sequence->resolution != 12 || sequence->resolution != 13) {
+	if (sequence->resolution != 12 && sequence->resolution != 13) {
 		LOG_ERR("Unsupported resolution %d", sequence->resolution);
 		return -ENOTSUP;
 	}

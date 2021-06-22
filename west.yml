@@ -69,7 +69,7 @@ manifest:
       revision: be39d4eebeddac6e18e9c0c3ba1b31ad1e82eaed
       path: modules/hal/silabs
     - name: hal_st
-      revision: b52fdbf4b62439be9fab9bb4bae9690a42d2fb14
+      revision: 575de9d461aa6f430cf62c58a053675377e700f3
       path: modules/hal/st
     - name: hal_stm32
       revision: f8ff8d25aa0a9e65948040c7b47ec67f3fa300df
@@ -106,7 +106,7 @@ manifest:
       revision: 6010f0523cbc75f551d9256cf782f173177acdef
       path: modules/lib/open-amp
     - name: loramac-node
-      revision: 0a5dfdbc00d6c8bd1ea3acb76941521d09aa3eff
+      revision: 12019623bbad9eb54fe51066847a7cbd4b4eac57
       path: modules/lib/loramac-node
     - name: openthread
       revision: f460532d4afa5d49feba241e5dc31c56123d31a8
@@ -134,7 +134,7 @@ manifest:
       revision: a47e326ca772ddd14cc3b9d4ca30a9ab44ecca16
     - name: TraceRecorderSource
       path: modules/debug/TraceRecorder
-      revision: d9889883abb4657d71e15ff055517a9b032f8212
+      revision: 5b5f8d7adbf0e93a09087e8f5708f0eebb8b25bf
     - name: hal_xtensa
       revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
       path: modules/hal/xtensa
