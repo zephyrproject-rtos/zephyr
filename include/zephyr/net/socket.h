@@ -140,6 +140,7 @@ struct zsock_pollfd {
  */
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MIN 8
 #define TLS_DTLS_HANDSHAKE_TIMEOUT_MAX 9
+
 /** Socket option for preventing certificates from being copied to the mbedTLS
  *  heap if possible. The option is only effective for DER certificates and is
  *  ignored for PEM certificates.
@@ -165,7 +166,40 @@ struct zsock_pollfd {
  *  This option accepts any value.
  */
 #define TLS_SESSION_CACHE_PURGE 13
-
+/** Write-only socket option to control DTLS CID.
+ *  The option accepts an integer, indicating the setting.
+ *  Accepted vaules for the option are: 0, 1 and 2.
+ *  Effective when set before connecting to the socket.
+ *  - 0 - DTLS CID will be disabled.
+ *  - 1 - DTLS CID will be enabled, and a 0 length CID value to be sent to the
+ *        peer.
+ *  - 2 - DTLS CID will be enabled, and the most recent value set with
+ *        TLS_DTLS_CID_VALUE will be sent to the peer. Otherwise, a random value
+ *        will be used.
+ */
+#define TLS_DTLS_CID 14
+/** Read-only socket option to get DTLS CID status.
+ *  The option accepts a pointer to an integer, indicating the setting upon
+ *  return.
+ *  Returned vaules for the option are:
+ *  - 0 - DTLS CID is disabled.
+ *  - 1 - DTLS CID is received on the downlink.
+ *  - 2 - DTLS CID is sent to the uplink.
+ *  - 3 - DTLS CID is used in both directions.
+ */
+#define TLS_DTLS_CID_STATUS 15
+/** Socket option to set or get the value of the DTLS connection ID to be
+ *  used for the DTLS session.
+ *  The option accepts a byte array, holding the CID value.
+ */
+#define TLS_DTLS_CID_VALUE 16
+/** Read-only socket option to get the value of the DTLS connection ID
+ *  received from the peer.
+ *  The option accepts a pointer to a byte array, holding the CID value upon
+ *  return. The optlen returned will be 0 if the peer did not provide a
+ *  connection ID, otherwise will contain the length of the CID value.
+ */
+#define TLS_DTLS_PEER_CID_VALUE 17
 /** @} */
 
 /* Valid values for TLS_PEER_VERIFY option */
@@ -184,6 +218,17 @@ struct zsock_pollfd {
 /* Valid values for TLS_SESSION_CACHE option */
 #define TLS_SESSION_CACHE_DISABLED 0 /**< Disable TLS session caching. */
 #define TLS_SESSION_CACHE_ENABLED 1 /**< Enable TLS session caching. */
+
+/* Valid values for TLS_DTLS_CID option */
+#define TLS_DTLS_CID_DISABLED		0
+#define TLS_DTLS_CID_SUPPORTED		1
+#define TLS_DTLS_CID_ENABLED		2
+
+/* Valid values for TLS_DTLS_CID_STATUS option */
+#define TLS_DTLS_CID_STATUS_DISABLED		0
+#define TLS_DTLS_CID_STATUS_DOWNLINK		1
+#define TLS_DTLS_CID_STATUS_UPLINK		2
+#define TLS_DTLS_CID_STATUS_BIDIRECTIONAL	3
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
