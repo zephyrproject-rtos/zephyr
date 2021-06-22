@@ -2096,24 +2096,6 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	return 0;
 }
 
-#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-int bt_conn_le_data_len_update(struct bt_conn *conn,
-			       const struct bt_conn_le_data_len_param *param)
-{
-	if (conn->le.data_len.tx_max_len == param->tx_max_len &&
-	    conn->le.data_len.tx_max_time == param->tx_max_time) {
-		return -EALREADY;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
-	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_DATA_LEN_COMPLETE)) {
-		return -EAGAIN;
-	}
-
-	return bt_le_set_data_len(conn, param->tx_max_len, param->tx_max_time);
-}
-#endif
-
 int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	/* Disconnection is initiated by us, so auto connection shall
@@ -2190,6 +2172,24 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+int bt_conn_le_data_len_update(struct bt_conn *conn,
+			       const struct bt_conn_le_data_len_param *param)
+{
+	if (conn->le.data_len.tx_max_len == param->tx_max_len &&
+	    conn->le.data_len.tx_max_time == param->tx_max_time) {
+		return -EALREADY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_DATA_LEN_COMPLETE)) {
+		return -EAGAIN;
+	}
+
+	return bt_le_set_data_len(conn, param->tx_max_len, param->tx_max_time);
+}
+#endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 int bt_conn_le_phy_update(struct bt_conn *conn,
