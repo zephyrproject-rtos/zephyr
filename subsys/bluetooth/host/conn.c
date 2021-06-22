@@ -75,6 +75,8 @@ static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 K_FIFO_DEFINE(free_tx);
 
 #if defined(CONFIG_BT_BREDR)
+static int bt_hci_connect_br_cancel(struct bt_conn *conn);
+
 static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_BREDR */
 
@@ -468,257 +470,6 @@ static struct bt_conn *acl_conn_new(void)
 {
 	return bt_conn_new(acl_conns, ARRAY_SIZE(acl_conns));
 }
-
-#if defined(CONFIG_BT_BREDR)
-void bt_sco_cleanup(struct bt_conn *sco_conn)
-{
-	bt_conn_unref(sco_conn->sco.acl);
-	sco_conn->sco.acl = NULL;
-	bt_conn_unref(sco_conn);
-}
-
-static struct bt_conn *sco_conn_new(void)
-{
-	return bt_conn_new(sco_conns, ARRAY_SIZE(sco_conns));
-}
-
-struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
-				  const struct bt_br_conn_param *param)
-{
-	struct bt_hci_cp_connect *cp;
-	struct bt_conn *conn;
-	struct net_buf *buf;
-
-	conn = bt_conn_lookup_addr_br(peer);
-	if (conn) {
-		switch (conn->state) {
-		case BT_CONN_CONNECT:
-		case BT_CONN_CONNECTED:
-			return conn;
-		default:
-			bt_conn_unref(conn);
-			return NULL;
-		}
-	}
-
-	conn = bt_conn_add_br(peer);
-	if (!conn) {
-		return NULL;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT, sizeof(*cp));
-	if (!buf) {
-		bt_conn_unref(conn);
-		return NULL;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-
-	(void)memset(cp, 0, sizeof(*cp));
-
-	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
-	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
-	cp->pscan_rep_mode = 0x02; /* R2 */
-	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
-	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
-
-	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
-		bt_conn_unref(conn);
-		return NULL;
-	}
-
-	bt_conn_set_state(conn, BT_CONN_CONNECT);
-	conn->role = BT_CONN_ROLE_MASTER;
-
-	return conn;
-}
-
-struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
-{
-	struct bt_hci_cp_setup_sync_conn *cp;
-	struct bt_conn *sco_conn;
-	struct net_buf *buf;
-	int link_type;
-
-	sco_conn = bt_conn_lookup_addr_sco(peer);
-	if (sco_conn) {
-		switch (sco_conn->state) {
-		case BT_CONN_CONNECT:
-		case BT_CONN_CONNECTED:
-			return sco_conn;
-		default:
-			bt_conn_unref(sco_conn);
-			return NULL;
-		}
-	}
-
-	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
-		link_type = BT_HCI_ESCO;
-	} else {
-		link_type = BT_HCI_SCO;
-	}
-
-	sco_conn = bt_conn_add_sco(peer, link_type);
-	if (!sco_conn) {
-		return NULL;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_SETUP_SYNC_CONN, sizeof(*cp));
-	if (!buf) {
-		bt_sco_cleanup(sco_conn);
-		return NULL;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-
-	(void)memset(cp, 0, sizeof(*cp));
-
-	BT_ERR("handle : %x", sco_conn->sco.acl->handle);
-
-	cp->handle = sco_conn->sco.acl->handle;
-	cp->pkt_type = sco_conn->sco.pkt_type;
-	cp->tx_bandwidth = 0x00001f40;
-	cp->rx_bandwidth = 0x00001f40;
-	cp->max_latency = 0x0007;
-	cp->retrans_effort = 0x01;
-	cp->content_format = BT_VOICE_CVSD_16BIT;
-
-	if (bt_hci_cmd_send_sync(BT_HCI_OP_SETUP_SYNC_CONN, buf,
-				 NULL) < 0) {
-		bt_sco_cleanup(sco_conn);
-		return NULL;
-	}
-
-	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
-
-	return sco_conn;
-}
-
-struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
-		struct bt_conn *conn = bt_conn_ref(&sco_conns[i]);
-
-		if (!conn) {
-			continue;
-		}
-
-		if (conn->type != BT_CONN_TYPE_SCO) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		if (bt_addr_cmp(peer, &conn->sco.acl->br.dst) != 0) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		return conn;
-	}
-
-	return NULL;
-}
-
-struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
-		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
-
-		if (!conn) {
-			continue;
-		}
-
-		if (conn->type != BT_CONN_TYPE_BR) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		if (bt_addr_cmp(peer, &conn->br.dst) != 0) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		return conn;
-	}
-
-	return NULL;
-}
-
-struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
-{
-	struct bt_conn *sco_conn = sco_conn_new();
-
-	if (!sco_conn) {
-		return NULL;
-	}
-
-	sco_conn->sco.acl = bt_conn_lookup_addr_br(peer);
-	sco_conn->type = BT_CONN_TYPE_SCO;
-
-	if (link_type == BT_HCI_SCO) {
-		if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
-			sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
-						  ESCO_PKT_MASK);
-		} else {
-			sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
-						  SCO_PKT_MASK);
-		}
-	} else if (link_type == BT_HCI_ESCO) {
-		sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
-					  ~EDR_ESCO_PKT_MASK);
-	}
-
-	return sco_conn;
-}
-
-struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
-{
-	struct bt_conn *conn = acl_conn_new();
-
-	if (!conn) {
-		return NULL;
-	}
-
-	bt_addr_copy(&conn->br.dst, peer);
-	conn->type = BT_CONN_TYPE_BR;
-
-	return conn;
-}
-
-static int bt_hci_connect_br_cancel(struct bt_conn *conn)
-{
-	struct bt_hci_cp_connect_cancel *cp;
-	struct bt_hci_rp_connect_cancel *rp;
-	struct net_buf *buf, *rsp;
-	int err;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT_CANCEL, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, buf, &rsp);
-	if (err) {
-		return err;
-	}
-
-	rp = (void *)rsp->data;
-
-	err = rp->status ? -EIO : 0;
-
-	net_buf_unref(rsp);
-
-	return err;
-}
-
-#endif /* CONFIG_BT_BREDR */
 
 void bt_conn_reset_rx_state(struct bt_conn *conn)
 {
@@ -1672,6 +1423,257 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+#if defined(CONFIG_BT_BREDR)
+void bt_sco_cleanup(struct bt_conn *sco_conn)
+{
+	bt_conn_unref(sco_conn->sco.acl);
+	sco_conn->sco.acl = NULL;
+	bt_conn_unref(sco_conn);
+}
+
+static struct bt_conn *sco_conn_new(void)
+{
+	return bt_conn_new(sco_conns, ARRAY_SIZE(sco_conns));
+}
+
+struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
+				  const struct bt_br_conn_param *param)
+{
+	struct bt_hci_cp_connect *cp;
+	struct bt_conn *conn;
+	struct net_buf *buf;
+
+	conn = bt_conn_lookup_addr_br(peer);
+	if (conn) {
+		switch (conn->state) {
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return conn;
+		default:
+			bt_conn_unref(conn);
+			return NULL;
+		}
+	}
+
+	conn = bt_conn_add_br(peer);
+	if (!conn) {
+		return NULL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT, sizeof(*cp));
+	if (!buf) {
+		bt_conn_unref(conn);
+		return NULL;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	(void)memset(cp, 0, sizeof(*cp));
+
+	memcpy(&cp->bdaddr, peer, sizeof(cp->bdaddr));
+	cp->packet_type = sys_cpu_to_le16(0xcc18); /* DM1 DH1 DM3 DH5 DM5 DH5 */
+	cp->pscan_rep_mode = 0x02; /* R2 */
+	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
+	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
+
+	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
+		bt_conn_unref(conn);
+		return NULL;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
+	conn->role = BT_CONN_ROLE_MASTER;
+
+	return conn;
+}
+
+struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
+{
+	struct bt_hci_cp_setup_sync_conn *cp;
+	struct bt_conn *sco_conn;
+	struct net_buf *buf;
+	int link_type;
+
+	sco_conn = bt_conn_lookup_addr_sco(peer);
+	if (sco_conn) {
+		switch (sco_conn->state) {
+		case BT_CONN_CONNECT:
+		case BT_CONN_CONNECTED:
+			return sco_conn;
+		default:
+			bt_conn_unref(sco_conn);
+			return NULL;
+		}
+	}
+
+	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
+		link_type = BT_HCI_ESCO;
+	} else {
+		link_type = BT_HCI_SCO;
+	}
+
+	sco_conn = bt_conn_add_sco(peer, link_type);
+	if (!sco_conn) {
+		return NULL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_SETUP_SYNC_CONN, sizeof(*cp));
+	if (!buf) {
+		bt_sco_cleanup(sco_conn);
+		return NULL;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	(void)memset(cp, 0, sizeof(*cp));
+
+	BT_ERR("handle : %x", sco_conn->sco.acl->handle);
+
+	cp->handle = sco_conn->sco.acl->handle;
+	cp->pkt_type = sco_conn->sco.pkt_type;
+	cp->tx_bandwidth = 0x00001f40;
+	cp->rx_bandwidth = 0x00001f40;
+	cp->max_latency = 0x0007;
+	cp->retrans_effort = 0x01;
+	cp->content_format = BT_VOICE_CVSD_16BIT;
+
+	if (bt_hci_cmd_send_sync(BT_HCI_OP_SETUP_SYNC_CONN, buf,
+				 NULL) < 0) {
+		bt_sco_cleanup(sco_conn);
+		return NULL;
+	}
+
+	bt_conn_set_state(sco_conn, BT_CONN_CONNECT);
+
+	return sco_conn;
+}
+
+struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
+		struct bt_conn *conn = bt_conn_ref(&sco_conns[i]);
+
+		if (!conn) {
+			continue;
+		}
+
+		if (conn->type != BT_CONN_TYPE_SCO) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		if (bt_addr_cmp(peer, &conn->sco.acl->br.dst) != 0) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		return conn;
+	}
+
+	return NULL;
+}
+
+struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
+		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
+
+		if (!conn) {
+			continue;
+		}
+
+		if (conn->type != BT_CONN_TYPE_BR) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		if (bt_addr_cmp(peer, &conn->br.dst) != 0) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		return conn;
+	}
+
+	return NULL;
+}
+
+struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
+{
+	struct bt_conn *sco_conn = sco_conn_new();
+
+	if (!sco_conn) {
+		return NULL;
+	}
+
+	sco_conn->sco.acl = bt_conn_lookup_addr_br(peer);
+	sco_conn->type = BT_CONN_TYPE_SCO;
+
+	if (link_type == BT_HCI_SCO) {
+		if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
+			sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
+						  ESCO_PKT_MASK);
+		} else {
+			sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
+						  SCO_PKT_MASK);
+		}
+	} else if (link_type == BT_HCI_ESCO) {
+		sco_conn->sco.pkt_type = (bt_dev.br.esco_pkt_type &
+					  ~EDR_ESCO_PKT_MASK);
+	}
+
+	return sco_conn;
+}
+
+struct bt_conn *bt_conn_add_br(const bt_addr_t *peer)
+{
+	struct bt_conn *conn = acl_conn_new();
+
+	if (!conn) {
+		return NULL;
+	}
+
+	bt_addr_copy(&conn->br.dst, peer);
+	conn->type = BT_CONN_TYPE_BR;
+
+	return conn;
+}
+
+static int bt_hci_connect_br_cancel(struct bt_conn *conn)
+{
+	struct bt_hci_cp_connect_cancel *cp;
+	struct bt_hci_rp_connect_cancel *rp;
+	struct net_buf *buf, *rsp;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_CONNECT_CANCEL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+
+	err = rp->status ? -EIO : 0;
+
+	net_buf_unref(rsp);
+
+	return err;
+}
+
+#endif /* CONFIG_BT_BREDR */
 
 #if defined(CONFIG_BT_SMP)
 void bt_conn_identity_resolved(struct bt_conn *conn)
