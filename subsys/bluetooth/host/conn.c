@@ -80,6 +80,11 @@ static int bt_hci_connect_br_cancel(struct bt_conn *conn);
 static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_BREDR */
 
+/* Group Connected BT_CONN only in this */
+#if defined(CONFIG_BT_CONN)
+static void deferred_work(struct k_work *work);
+#endif /* CONFIG_BT_CONN */
+
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_BREDR)
@@ -341,107 +346,6 @@ static void tx_complete_work(struct k_work *work)
 	tx_notify(conn);
 }
 
-static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
-{
-#if defined(CONFIG_BT_ISO)
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(iso_conns); i++) {
-		struct bt_conn *iso_conn = bt_conn_ref(&iso_conns[i]);
-
-		if (!iso_conn) {
-			continue;
-		}
-
-		if (iso_conn == conn) {
-			return iso_conn;
-		}
-
-		if (bt_conn_iso(iso_conn)->acl == conn) {
-			return iso_conn;
-		}
-
-		bt_conn_unref(iso_conn);
-	}
-#endif /* CONFIG_BT_ISO */
-	return NULL;
-}
-
-static void deferred_work(struct k_work *work)
-{
-	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn, deferred_work);
-	const struct bt_le_conn_param *param;
-
-	BT_DBG("conn %p", conn);
-
-	if (conn->state == BT_CONN_DISCONNECTED) {
-		if (IS_ENABLED(CONFIG_BT_ISO)) {
-			struct bt_conn *iso;
-
-			/* Disconnect all ISO channels associated
-			 * with ACL conn.
-			 */
-			iso = conn_lookup_iso(conn);
-			while (iso) {
-				iso->err = conn->err;
-
-				bt_iso_disconnected(iso);
-				bt_conn_unref(iso);
-
-				/* Stop if only ISO was Disconnected */
-				if (conn->type == BT_CONN_TYPE_ISO) {
-					return;
-				}
-				iso = conn_lookup_iso(conn);
-			}
-		}
-
-		bt_l2cap_disconnected(conn);
-		notify_disconnected(conn);
-
-		/* Release the reference we took for the very first
-		 * state transition.
-		 */
-		bt_conn_unref(conn);
-		return;
-	}
-
-	if (conn->type != BT_CONN_TYPE_LE) {
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-	    conn->role == BT_CONN_ROLE_MASTER) {
-		/* we don't call bt_conn_disconnect as it would also clear
-		 * auto connect flag if it was set, instead just cancel
-		 * connection directly
-		 */
-		bt_le_create_conn_cancel();
-		return;
-	}
-
-	/* if application set own params use those, otherwise use defaults. */
-	if (atomic_test_and_clear_bit(conn->flags,
-				      BT_CONN_SLAVE_PARAM_SET)) {
-		param = BT_LE_CONN_PARAM(conn->le.interval_min,
-					 conn->le.interval_max,
-					 conn->le.pending_latency,
-					 conn->le.pending_timeout);
-		send_conn_le_param_update(conn, param);
-	} else if (IS_ENABLED(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)) {
-#if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
-		param = BT_LE_CONN_PARAM(
-				CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
-				CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
-				CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY,
-				CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
-		send_conn_le_param_update(conn, param);
-#endif
-	}
-
-	atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE);
-}
-
 struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 {
 	struct bt_conn *conn = NULL;
@@ -460,8 +364,10 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 
 	(void)memset(conn, 0, offsetof(struct bt_conn, ref));
 
+#if defined(CONFIG_BT_CONN)
 	k_work_init_delayable(&conn->deferred_work, deferred_work);
 	k_work_init(&conn->tx_complete_work, tx_complete_work);
+#endif /* CONFIG_BT_CONN */
 
 	return conn;
 }
@@ -1418,6 +1324,107 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+static struct bt_conn *conn_lookup_iso(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_ISO)
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(iso_conns); i++) {
+		struct bt_conn *iso_conn = bt_conn_ref(&iso_conns[i]);
+
+		if (!iso_conn) {
+			continue;
+		}
+
+		if (iso_conn == conn) {
+			return iso_conn;
+		}
+
+		if (bt_conn_iso(iso_conn)->acl == conn) {
+			return iso_conn;
+		}
+
+		bt_conn_unref(iso_conn);
+	}
+#endif /* CONFIG_BT_ISO */
+	return NULL;
+}
+
+static void deferred_work(struct k_work *work)
+{
+	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn, deferred_work);
+	const struct bt_le_conn_param *param;
+
+	BT_DBG("conn %p", conn);
+
+	if (conn->state == BT_CONN_DISCONNECTED) {
+		if (IS_ENABLED(CONFIG_BT_ISO)) {
+			struct bt_conn *iso;
+
+			/* Disconnect all ISO channels associated
+			 * with ACL conn.
+			 */
+			iso = conn_lookup_iso(conn);
+			while (iso) {
+				iso->err = conn->err;
+
+				bt_iso_disconnected(iso);
+				bt_conn_unref(iso);
+
+				/* Stop if only ISO was Disconnected */
+				if (conn->type == BT_CONN_TYPE_ISO) {
+					return;
+				}
+				iso = conn_lookup_iso(conn);
+			}
+		}
+
+		bt_l2cap_disconnected(conn);
+		notify_disconnected(conn);
+
+		/* Release the reference we took for the very first
+		 * state transition.
+		 */
+		bt_conn_unref(conn);
+		return;
+	}
+
+	if (conn->type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+	    conn->role == BT_CONN_ROLE_MASTER) {
+		/* we don't call bt_conn_disconnect as it would also clear
+		 * auto connect flag if it was set, instead just cancel
+		 * connection directly
+		 */
+		bt_le_create_conn_cancel();
+		return;
+	}
+
+	/* if application set own params use those, otherwise use defaults. */
+	if (atomic_test_and_clear_bit(conn->flags,
+				      BT_CONN_SLAVE_PARAM_SET)) {
+		param = BT_LE_CONN_PARAM(conn->le.interval_min,
+					 conn->le.interval_max,
+					 conn->le.pending_latency,
+					 conn->le.pending_timeout);
+		send_conn_le_param_update(conn, param);
+	} else if (IS_ENABLED(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)) {
+#if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
+		param = BT_LE_CONN_PARAM(
+				CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
+				CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
+				CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY,
+				CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
+		send_conn_le_param_update(conn, param);
+#endif
+	}
+
+	atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE);
+}
 
 static struct bt_conn *acl_conn_new(void)
 {
