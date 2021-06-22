@@ -1988,60 +1988,6 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
 	}
 }
 
-/* Read Transmit Power Level HCI command */
-static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
-				      int8_t *tx_power_level)
-{
-	int err;
-	struct bt_hci_rp_read_tx_power_level *rp;
-	struct net_buf *rsp;
-	struct bt_hci_cp_read_tx_power_level *cp;
-	struct net_buf *buf;
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_READ_TX_POWER_LEVEL, sizeof(*cp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	cp->type = type;
-	cp->handle = sys_cpu_to_le16(conn->handle);
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_TX_POWER_LEVEL, buf, &rsp);
-	if (err) {
-		return err;
-	}
-
-	rp = (void *) rsp->data;
-	*tx_power_level = rp->tx_power_level;
-	net_buf_unref(rsp);
-
-	return 0;
-}
-
-int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
-				  struct bt_conn_le_tx_power *tx_power_level)
-{
-	int err;
-
-	if (tx_power_level->phy != 0) {
-		/* Extend the implementation when LE Enhanced Read Transmit
-		 * Power Level HCI command is available for use.
-		 */
-		return -ENOTSUP;
-	}
-
-	err = bt_conn_get_tx_power_level(conn, BT_TX_POWER_LEVEL_CURRENT,
-					 &tx_power_level->current_level);
-	if (err) {
-		return err;
-	}
-
-	err = bt_conn_get_tx_power_level(conn, BT_TX_POWER_LEVEL_MAX,
-					 &tx_power_level->max_level);
-	return err;
-}
-
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	int err;
@@ -2134,6 +2080,60 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+/* Read Transmit Power Level HCI command */
+static int bt_conn_get_tx_power_level(struct bt_conn *conn, uint8_t type,
+				      int8_t *tx_power_level)
+{
+	int err;
+	struct bt_hci_rp_read_tx_power_level *rp;
+	struct net_buf *rsp;
+	struct bt_hci_cp_read_tx_power_level *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_READ_TX_POWER_LEVEL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->type = type;
+	cp->handle = sys_cpu_to_le16(conn->handle);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_TX_POWER_LEVEL, buf, &rsp);
+	if (err) {
+		return err;
+	}
+
+	rp = (void *) rsp->data;
+	*tx_power_level = rp->tx_power_level;
+	net_buf_unref(rsp);
+
+	return 0;
+}
+
+int bt_conn_le_get_tx_power_level(struct bt_conn *conn,
+				  struct bt_conn_le_tx_power *tx_power_level)
+{
+	int err;
+
+	if (tx_power_level->phy != 0) {
+		/* Extend the implementation when LE Enhanced Read Transmit
+		 * Power Level HCI command is available for use.
+		 */
+		return -ENOTSUP;
+	}
+
+	err = bt_conn_get_tx_power_level(conn, BT_TX_POWER_LEVEL_CURRENT,
+					 &tx_power_level->current_level);
+	if (err) {
+		return err;
+	}
+
+	err = bt_conn_get_tx_power_level(conn, BT_TX_POWER_LEVEL_MAX,
+					 &tx_power_level->max_level);
+	return err;
+}
 
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)
