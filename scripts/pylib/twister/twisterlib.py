@@ -84,6 +84,23 @@ logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 
+def terminate_proc(proc):
+    # encapsulate terminate functionality so we do it consistently where ever
+    # we might want to terminate the proc.  We need try_kill_process_by_pid
+    # because of both how newer ninja (1.6.0 or greater) and .NET / renode
+    # work.  Newer ninja's don't seem to pass SIGTERM down to the children
+    # so we need to use try_kill_process_by_pid.
+    for child in psutil.Process(proc.pid).children(recursive=True):
+        try:
+            os.kill(child.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    proc.terminate()
+    # sleep for a while before attempting to kill
+    time.sleep(0.5)
+    proc.kill()
+
+
 class ExecutionCounter(object):
     def __init__(self, total=0):
         self._done = Value('i', 0)
@@ -448,20 +465,7 @@ class BinaryHandler(Handler):
                 pass
 
     def terminate(self, proc):
-        # encapsulate terminate functionality so we do it consistently where ever
-        # we might want to terminate the proc.  We need try_kill_process_by_pid
-        # because of both how newer ninja (1.6.0 or greater) and .NET / renode
-        # work.  Newer ninja's don't seem to pass SIGTERM down to the children
-        # so we need to use try_kill_process_by_pid.
-        for child in psutil.Process(proc.pid).children(recursive=True):
-            try:
-                os.kill(child.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-        proc.terminate()
-        # sleep for a while before attempting to kill
-        time.sleep(0.5)
-        proc.kill()
+        terminate_proc(proc)
         self.terminated = True
 
     def _output_reader(self, proc):
