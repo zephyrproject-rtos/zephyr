@@ -1899,11 +1899,6 @@ void bt_conn_unref(struct bt_conn *conn)
 	}
 }
 
-const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
-{
-	return &conn->le.dst;
-}
-
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	int err;
@@ -1996,6 +1991,11 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn)
+{
+	return &conn->le.dst;
+}
 
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
