@@ -226,73 +226,6 @@ void notify_le_phy_updated(struct bt_conn *conn)
 }
 #endif
 
-bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
-{
-	struct bt_conn_cb *cb;
-
-	if (!bt_le_conn_params_valid(param)) {
-		return false;
-	}
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (!cb->le_param_req) {
-			continue;
-		}
-
-		if (!cb->le_param_req(conn, param)) {
-			return false;
-		}
-
-		/* The callback may modify the parameters so we need to
-		 * double-check that it returned valid parameters.
-		 */
-		if (!bt_le_conn_params_valid(param)) {
-			return false;
-		}
-	}
-
-	/* Default to accepting if there's no app callback */
-	return true;
-}
-
-static int send_conn_le_param_update(struct bt_conn *conn,
-				const struct bt_le_conn_param *param)
-{
-	BT_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
-	       conn->le.features[0], param->interval_min,
-	       param->interval_max, param->latency, param->timeout);
-
-	/* Proceed only if connection parameters contains valid values*/
-	if (!bt_le_conn_params_valid(param)) {
-		return -EINVAL;
-	}
-
-	/* Use LE connection parameter request if both local and remote support
-	 * it; or if local role is master then use LE connection update.
-	 */
-	if ((BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features) &&
-	     BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features) &&
-	     !atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_L2CAP)) ||
-	     (conn->role == BT_HCI_ROLE_MASTER)) {
-		int rc;
-
-		rc = bt_conn_le_conn_update(conn, param);
-
-		/* store those in case of fallback to L2CAP */
-		if (rc == 0) {
-			conn->le.pending_latency = param->latency;
-			conn->le.pending_timeout = param->timeout;
-		}
-
-		return rc;
-	}
-
-	/* If remote master does not support LL Connection Parameters Request
-	 * Procedure
-	 */
-	return bt_l2cap_update_conn_param(conn, param);
-}
-
 static void tx_free(struct bt_conn_tx *tx)
 {
 	tx->cb = NULL;
@@ -1315,6 +1248,73 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
+{
+	struct bt_conn_cb *cb;
+
+	if (!bt_le_conn_params_valid(param)) {
+		return false;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (!cb->le_param_req) {
+			continue;
+		}
+
+		if (!cb->le_param_req(conn, param)) {
+			return false;
+		}
+
+		/* The callback may modify the parameters so we need to
+		 * double-check that it returned valid parameters.
+		 */
+		if (!bt_le_conn_params_valid(param)) {
+			return false;
+		}
+	}
+
+	/* Default to accepting if there's no app callback */
+	return true;
+}
+
+static int send_conn_le_param_update(struct bt_conn *conn,
+				const struct bt_le_conn_param *param)
+{
+	BT_DBG("conn %p features 0x%02x params (%d-%d %d %d)", conn,
+	       conn->le.features[0], param->interval_min,
+	       param->interval_max, param->latency, param->timeout);
+
+	/* Proceed only if connection parameters contains valid values*/
+	if (!bt_le_conn_params_valid(param)) {
+		return -EINVAL;
+	}
+
+	/* Use LE connection parameter request if both local and remote support
+	 * it; or if local role is master then use LE connection update.
+	 */
+	if ((BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features) &&
+	     BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features) &&
+	     !atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_L2CAP)) ||
+	     (conn->role == BT_HCI_ROLE_MASTER)) {
+		int rc;
+
+		rc = bt_conn_le_conn_update(conn, param);
+
+		/* store those in case of fallback to L2CAP */
+		if (rc == 0) {
+			conn->le.pending_latency = param->latency;
+			conn->le.pending_timeout = param->timeout;
+		}
+
+		return rc;
+	}
+
+	/* If remote master does not support LL Connection Parameters Request
+	 * Procedure
+	 */
+	return bt_l2cap_update_conn_param(conn, param);
+}
 
 static void tx_complete_work(struct k_work *work)
 {
