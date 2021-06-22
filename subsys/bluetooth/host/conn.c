@@ -84,6 +84,7 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #if defined(CONFIG_BT_CONN)
 static void deferred_work(struct k_work *work);
 static void tx_complete_work(struct k_work *work);
+static void notify_connected(struct bt_conn *conn);
 #endif /* CONFIG_BT_CONN */
 
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
@@ -128,103 +129,6 @@ static inline const char *state2str(bt_conn_state_t state)
 		return "(unknown)";
 	}
 }
-
-static void notify_connected(struct bt_conn *conn)
-{
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->connected) {
-			cb->connected(conn, conn->err);
-		}
-	}
-
-	if (!conn->err) {
-		bt_gatt_connected(conn);
-	}
-}
-
-static void notify_disconnected(struct bt_conn *conn)
-{
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->disconnected) {
-			cb->disconnected(conn, conn->err);
-		}
-	}
-}
-
-#if defined(CONFIG_BT_REMOTE_INFO)
-void notify_remote_info(struct bt_conn *conn)
-{
-	struct bt_conn_remote_info remote_info;
-	struct bt_conn_cb *cb;
-	int err;
-
-	err = bt_conn_get_remote_info(conn, &remote_info);
-	if (err) {
-		BT_DBG("Notify remote info failed %d", err);
-		return;
-	}
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->remote_info_available) {
-			cb->remote_info_available(conn, &remote_info);
-		}
-	}
-}
-#endif /* defined(CONFIG_BT_REMOTE_INFO) */
-
-void notify_le_param_updated(struct bt_conn *conn)
-{
-	struct bt_conn_cb *cb;
-
-	/* If new connection parameters meet requirement of pending
-	 * parameters don't send slave conn param request anymore on timeout
-	 */
-	if (atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET) &&
-	    conn->le.interval >= conn->le.interval_min &&
-	    conn->le.interval <= conn->le.interval_max &&
-	    conn->le.latency == conn->le.pending_latency &&
-	    conn->le.timeout == conn->le.pending_timeout) {
-		atomic_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
-	}
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->le_param_updated) {
-			cb->le_param_updated(conn, conn->le.interval,
-					     conn->le.latency,
-					     conn->le.timeout);
-		}
-	}
-}
-
-#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-void notify_le_data_len_updated(struct bt_conn *conn)
-{
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->le_data_len_updated) {
-			cb->le_data_len_updated(conn, &conn->le.data_len);
-		}
-	}
-}
-#endif
-
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
-void notify_le_phy_updated(struct bt_conn *conn)
-{
-	struct bt_conn_cb *cb;
-
-	for (cb = callback_list; cb; cb = cb->_next) {
-		if (cb->le_phy_updated) {
-			cb->le_phy_updated(conn, &conn->le.phy);
-		}
-	}
-}
-#endif
 
 static void tx_free(struct bt_conn_tx *tx)
 {
@@ -1248,6 +1152,103 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+static void notify_connected(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->connected) {
+			cb->connected(conn, conn->err);
+		}
+	}
+
+	if (!conn->err) {
+		bt_gatt_connected(conn);
+	}
+}
+
+static void notify_disconnected(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->disconnected) {
+			cb->disconnected(conn, conn->err);
+		}
+	}
+}
+
+#if defined(CONFIG_BT_REMOTE_INFO)
+void notify_remote_info(struct bt_conn *conn)
+{
+	struct bt_conn_remote_info remote_info;
+	struct bt_conn_cb *cb;
+	int err;
+
+	err = bt_conn_get_remote_info(conn, &remote_info);
+	if (err) {
+		BT_DBG("Notify remote info failed %d", err);
+		return;
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->remote_info_available) {
+			cb->remote_info_available(conn, &remote_info);
+		}
+	}
+}
+#endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
+void notify_le_param_updated(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	/* If new connection parameters meet requirement of pending
+	 * parameters don't send slave conn param request anymore on timeout
+	 */
+	if (atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET) &&
+	    conn->le.interval >= conn->le.interval_min &&
+	    conn->le.interval <= conn->le.interval_max &&
+	    conn->le.latency == conn->le.pending_latency &&
+	    conn->le.timeout == conn->le.pending_timeout) {
+		atomic_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
+	}
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->le_param_updated) {
+			cb->le_param_updated(conn, conn->le.interval,
+					     conn->le.latency,
+					     conn->le.timeout);
+		}
+	}
+}
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+void notify_le_data_len_updated(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->le_data_len_updated) {
+			cb->le_data_len_updated(conn, &conn->le.data_len);
+		}
+	}
+}
+#endif
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+void notify_le_phy_updated(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->le_phy_updated) {
+			cb->le_phy_updated(conn, &conn->le.phy);
+		}
+	}
+}
+#endif
 
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
