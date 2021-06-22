@@ -54,7 +54,6 @@ struct mpl_op_ntf_t {
 	uint8_t result_code;
 };
 
-#if defined(CONFIG_BT_OTS) || defined(CONFIG_BT_OTC)
 /** @brief Search control item */
 struct mpl_sci_t {
 	uint8_t len;                     /* Length of type and parameter */
@@ -67,7 +66,6 @@ struct mpl_search_t {
 	uint8_t len;
 	char    search[SEARCH_LEN_MAX]; /* Concatenated search control items */
 };	                                /* - (type, length, param) */
-#endif /* CONFIG_BT_OTS || CONFIG_BT_OTC */
 
 
 /* PUBLIC API FOR PLAYERS */
