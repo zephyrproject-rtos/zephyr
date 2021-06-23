@@ -243,6 +243,7 @@ extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
 
 #define PCIE_CONF_TYPE		3U
 
+#define PCIE_CONF_MULTIFUNCTION(w)	(((w) & 0x00800000U) != 0U)
 #define PCIE_CONF_TYPE_BRIDGE(w)	(((w) & 0x007F0000U) != 0U)
 
 /*
@@ -262,6 +263,7 @@ extern uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id);
 #define PCIE_CONF_BAR_MEM(w)		(((w) & 0x00000001U) != 0x00000001U)
 #define PCIE_CONF_BAR_64(w)		(((w) & 0x00000006U) == 0x00000004U)
 #define PCIE_CONF_BAR_ADDR(w)		((w) & ~0xfUL)
+#define PCIE_CONF_BAR_IO_ADDR(w)	((w) & ~0x3UL)
 #define PCIE_CONF_BAR_FLAGS(w)		((w) & 0xfUL)
 #define PCIE_CONF_BAR_NONE		0U
 
