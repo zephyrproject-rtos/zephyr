@@ -25,8 +25,8 @@ on QEMU (qemu_x86) as follows:
    :goals: run
    :compact:
 
-Sample Output
-=============
+Sample Output on qemu_x86
+=========================
 
 .. code-block:: console
 
@@ -53,8 +53,8 @@ show the following results.
    :goals: run
    :compact:
 
-Sample Output
-=============
+Sample Output on qemu_x86_64
+============================
 
 .. code-block:: console
 
