@@ -104,8 +104,13 @@
 
 		flash_reserved: flash@9D800 {
 			compatible = "soc-nv-flash";
-			reg = <0x9D800 DT_SIZE_K(10)>;
+			reg = <0x9D800 DT_SIZE_K(9)>;
 			status = "disabled";
+		};
+
+		uuid: flash@9FC70 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x9FC70 0x10>;
 		};
 
 		boot_rom: flash@3000000 {
