@@ -146,7 +146,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x3ff53000 0x1000>;
-			/* interrupts = <8>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			interrupts = <I2C_EXT0_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
 			label = "I2C_0";
 			clocks = <&rtc ESP32_I2C_EXT0_MODULE>;
 			status = "disabled";
@@ -157,7 +158,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x3ff67000 0x1000>;
-			/* interrupts = <9>; - FIXME: Enable interrupts when interrupt-controller got supported in device tree */
+			interrupts = <I2C_EXT1_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
 			label = "I2C_1";
 			clocks = <&rtc ESP32_I2C_EXT1_MODULE>;
 			status = "disabled";
