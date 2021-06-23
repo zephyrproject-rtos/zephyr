@@ -81,6 +81,14 @@ enum sensor_channel {
 	SENSOR_CHAN_AMBIENT_TEMP,
 	/** Pressure in kilopascal. */
 	SENSOR_CHAN_PRESS,
+	/** Yaw/Heading angle in degrees */
+	SENSOR_CHAN_YAW,
+	/** Pitch angle in degrees */
+	SENSOR_CHAN_PITCH,
+	/** Roll angle in degrees */
+	SENSOR_CHAN_ROLL,
+	/** Yaw, pitch and roll andles in degrees */
+	SENSOR_CHAN_YRP,
 	/**
 	 * Proximity.  Adimensional.  A value of 1 indicates that an
 	 * object is close.
