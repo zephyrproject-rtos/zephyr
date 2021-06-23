@@ -14,4 +14,6 @@ module = fpga
 module-str = fpga
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/fpga/Kconfig.eos_s3"
+
 endif # FPGA
