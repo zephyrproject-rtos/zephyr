@@ -9,6 +9,7 @@
 #include <drivers/i2c.h>
 #include <init.h>
 #include <drivers/sensor.h>
+#include <drivers/sensor/bq274xx.h>
 #include <sys/__assert.h>
 #include <string.h>
 #include <sys/byteorder.h>
@@ -142,6 +143,11 @@ static int bq274xx_channel_get(const struct device *dev,
 	float int_temp;
 
 	switch (chan) {
+	case SENSOR_CHAN_BQ274XX_STATUS:
+		val->val1 = bq274xx->flags;
+		val->val2 = 0;
+		break;
+
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
 		val->val1 = ((bq274xx->voltage / 1000));
 		val->val2 = ((bq274xx->voltage % 1000) * 1000U);
@@ -230,6 +236,15 @@ static int bq274xx_sample_fetch(const struct device *dev,
 #endif
 
 	switch (chan) {
+	case SENSOR_CHAN_BQ274XX_STATUS:
+		status = bq274xx_command_reg_read(
+			bq274xx, BQ274XX_COMMAND_FLAGS, &bq274xx->flags);
+		if (status < 0) {
+			LOG_ERR("Failed to read flags");
+			return -EIO;
+		}
+		break;
+
 	case SENSOR_CHAN_GAUGE_VOLTAGE:
 		status = bq274xx_command_reg_read(
 			bq274xx, BQ274XX_COMMAND_VOLTAGE, &bq274xx->voltage);
