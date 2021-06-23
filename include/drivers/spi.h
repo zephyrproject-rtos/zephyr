@@ -298,6 +298,60 @@ struct spi_config {
 #endif
 
 /**
+ * @brief Complete SPI DT information
+ *
+ * @param bus is the SPI bus
+ * @param config is the slave specific configuration
+ */
+struct spi_dt_spec {
+	const struct device *bus;
+	struct spi_config config;
+};
+
+#ifndef __cplusplus
+/**
+ * @brief Structure initializer for spi_dt_spec from devicetree
+ *
+ * This helper macro expands to a static initializer for a <tt>struct
+ * spi_dt_spec</tt> by reading the relevant bus, frequency, slave, and cs
+ * data from the devicetree.
+ *
+ * Important: multiple fields are automatically constructed by this macro
+ * which must be checked before use. @ref spi_is_ready performs the required
+ * @ref device_is_ready checks.
+ *
+ * This macro is not available in C++.
+ *
+ * @param node_id Devicetree node identifier for the SPI device whose
+ *                struct spi_dt_spec to create an initializer for
+ * @param operation_ the desired @p operation field in the struct spi_config
+ * @param delay_ the desired @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define SPI_DT_SPEC_GET(node_id, operation_, delay_)		     \
+	{							     \
+		.bus = DEVICE_DT_GET(DT_BUS(node_id)),		     \
+		.config = SPI_CONFIG_DT(node_id, operation_, delay_) \
+	}
+
+/**
+ * @brief Structure initializer for spi_dt_spec from devicetree instance
+ *
+ * This is equivalent to
+ * <tt>SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)</tt>.
+ *
+ * This macro is not available in C++.
+ *
+ * @param inst Devicetree instance number
+ * @param operation_ the desired @p operation field in the struct spi_config
+ * @param delay_ the desired @p delay field in the struct spi_config's
+ *               spi_cs_control, if there is one
+ */
+#define SPI_DT_SPEC_INST_GET(inst, operation_, delay_) \
+	SPI_DT_SPEC_GET(DT_DRV_INST(inst), operation_, delay_)
+#endif
+
+/**
  * @brief SPI buffer structure
  *
  * @param buf is a valid pointer on a data buffer, or NULL otherwise.
@@ -362,6 +416,28 @@ __subsystem struct spi_driver_api {
 #endif /* CONFIG_SPI_ASYNC */
 	spi_api_release release;
 };
+
+/**
+ * @brief Validate that SPI bus is ready.
+ *
+ * @param spec SPI specification from devicetree
+ *
+ * @retval true if the SPI bus is ready for use.
+ * @retval false if the SPI bus is not ready for use.
+ */
+static inline bool spi_is_ready(const struct spi_dt_spec *spec)
+{
+	/* Validate bus is ready */
+	if (!device_is_ready(spec->bus)) {
+		return false;
+	}
+	/* Validate CS gpio port is ready, if it is used */
+	if (spec->config.cs &&
+	    !device_is_ready(spec->config.cs->gpio_dev)) {
+		return false;
+	}
+	return true;
+}
 
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
