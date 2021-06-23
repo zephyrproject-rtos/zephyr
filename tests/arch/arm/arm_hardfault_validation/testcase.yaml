@@ -1,0 +1,5 @@
+tests:
+  arch.interrupt.arm.hardfault_validation:
+    filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+    arch_allow: arm
+    tags: arm
