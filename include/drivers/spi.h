@@ -474,6 +474,28 @@ static inline int z_impl_spi_transceive(const struct device *dev,
 }
 
 /**
+ * @brief Read/write data from an SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_transceive(spec->bus, &spec->config, tx_bufs, rx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param tx_bufs Buffer array where data to be sent originates from,
+ *        or NULL if none.
+ * @param rx_bufs Buffer array where data to be read will be written to,
+ *        or NULL if none.
+ *
+ * @retval a value from spi_transceive()
+ */
+static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs)
+{
+	return spi_transceive(spec->bus, &spec->config, tx_bufs, rx_bufs);
+}
+
+/**
  * @brief Read the specified amount of data from the SPI driver.
  *
  * Note: This function is synchronous.
@@ -496,6 +518,24 @@ static inline int spi_read(const struct device *dev,
 }
 
 /**
+ * @brief Read data from a SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_read(spec->bus, &spec->config, rx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param rx_bufs Buffer array where data to be read will be written to.
+ *
+ * @retval a value from spi_read()
+ */
+static inline int spi_read_dt(const struct spi_dt_spec *spec,
+			      const struct spi_buf_set *rx_bufs)
+{
+	return spi_read(spec->bus, &spec->config, rx_bufs);
+}
+
+/**
  * @brief Write the specified amount of data from the SPI driver.
  *
  * Note: This function is synchronous.
@@ -515,6 +555,24 @@ static inline int spi_write(const struct device *dev,
 			    const struct spi_buf_set *tx_bufs)
 {
 	return spi_transceive(dev, config, tx_bufs, NULL);
+}
+
+/**
+ * @brief Write data to a SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_write(spec->bus, &spec->config, tx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param tx_bufs Buffer array where data to be sent originates from.
+ *
+ * @retval a value from spi_write()
+ */
+static inline int spi_write_dt(const struct spi_dt_spec *spec,
+			       const struct spi_buf_set *tx_bufs)
+{
+	return spi_write(spec->bus, &spec->config, tx_bufs);
 }
 
 /* Doxygen defines this so documentation is generated. */
