@@ -72,5 +72,5 @@ Sample Output
    thread_b: Hello World from cpu 1 on qemu_x86_64!
 
    <repeats endlessly>
-   
+
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
