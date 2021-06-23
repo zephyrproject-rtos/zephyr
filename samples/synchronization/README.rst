@@ -43,7 +43,7 @@ Sample Output on qemu_x86
 
    <repeats endlessly>
 
-And, if the board was selected qemu_x86_64, this demonstration would 
+And, if the board was selected qemu_x86_64, this demonstration would
 show the following results.
 
 .. zephyr-app-commands::
