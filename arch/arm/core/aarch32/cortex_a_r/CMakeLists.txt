@@ -13,3 +13,5 @@ zephyr_library_sources(
   stacks.c
   tcm.c
   )
+
+zephyr_library_sources_ifdef(CONFIG_USERSPACE thread.c)
