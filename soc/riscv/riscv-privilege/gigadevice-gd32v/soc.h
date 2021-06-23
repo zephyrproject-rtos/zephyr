@@ -22,18 +22,6 @@
 #define RISCV_RAM_BASE               DT_SRAM_BASE_ADDRESS
 #define RISCV_RAM_SIZE               KB(DT_SRAM_SIZE)
 
-#define GD32_PORTA 'A'
-#define GD32_PORTB 'B'
-#define GD32_PORTC 'C'
-#define GD32_PORTD 'D'
-#define GD32_PORTE 'E'
-#define GD32_PORTF 'F'
-#define GD32_PORTG 'G'
-#define GD32_PORTH 'H'
-#define GD32_PORTI 'I'
-#define GD32_PORTJ 'J'
-#define GD32_PORTK 'K'
-
 #ifndef _ASMLANGUAGE
 #include <toolchain.h>
 #include <gd32vf103.h>

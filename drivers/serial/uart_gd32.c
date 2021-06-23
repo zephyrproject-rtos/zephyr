@@ -683,8 +683,8 @@ static int uart_gd32_init(const struct device *dev)
 	/* TODO make configurable with pinctrl */
 	clock_control_on(DEVICE_DT_GET(DT_NODELABEL(rcu)), (void *)&GD32_PCLK_EN_GPIOA);
 	clock_control_on(DEVICE_DT_GET(DT_NODELABEL(rcu)), (void *)&GD32_PCLK_EN_USART0);
-	gpio_init(GPIOA, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_9);
-	gpio_init(GPIOA, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_10);
+	gpio_gd32_configure(DEVICE_DT_GET(DT_NODELABEL(gpioa)), 9, GD32_CNF_AF_PP | GD32_MODE_OUTPUT_MAX_50, 0);
+	gpio_gd32_configure(DEVICE_DT_GET(DT_NODELABEL(gpioa)), 10, GD32_CNF_IN_FLOAT | GD32_MODE_OUTPUT_MAX_50, 0);
 
 	/* TX/RX direction */
 	usart_transmit_config(regs, USART_TRANSMIT_ENABLE);

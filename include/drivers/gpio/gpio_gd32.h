@@ -55,6 +55,7 @@
 
 #define AFIO_EXTI_PORT_MASK     ((uint8_t)0x70)
 #define AFIO_EXTI_SOURCE_FIELDS ((uint8_t)0x04U) /*!< select AFIO exti source registers */
+#define AFIO_EXTI_SOURCE_MASK   ((uint8_t)0x03U)
 
 /**
  * @brief configuration of GPIO device
@@ -91,12 +92,5 @@ struct gpio_gd32_data {
  */
 int gpio_gd32_configure(const struct device *dev, int pin, int conf, int altf);
 
-/**
- * @brief Enable / disable GPIO port clock.
- *
- * @param dev GPIO port device pointer
- * @param on boolean for on/off clock request
- */
-int gpio_gd32_clock_request(const struct device *dev, bool on);
 
 #endif /* ZEPHYR_DRIVERS_GPIO_GPIO_GD32_H_ */
