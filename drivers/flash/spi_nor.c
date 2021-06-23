@@ -66,6 +66,9 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 /* Build-time data associated with the device. */
 struct spi_nor_config {
+	/* Devicetree SPI configuration */
+	struct spi_dt_spec spi;
+
 	/* Runtime SFDP stores no static configuration. */
 
 #ifndef CONFIG_SPI_NOR_SFDP_RUNTIME
@@ -105,18 +108,10 @@ struct spi_nor_config {
 
 /**
  * struct spi_nor_data - Structure for defining the SPI NOR access
- * @spi: The SPI device
- * @spi_cfg: The SPI configuration
- * @cs_ctrl: The GPIO pin used to emulate the SPI CS if required
  * @sem: The semaphore to access to the flash
  */
 struct spi_nor_data {
 	struct k_sem sem;
-	const struct device *spi;
-	struct spi_config spi_cfg;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctrl;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 #if DT_INST_NODE_HAS_PROP(0, has_dpd)
 	/* Low 32-bits of uptime counter at which device last entered
 	 * deep power-down.
@@ -301,6 +296,7 @@ static int spi_nor_access(const struct device *const dev,
 			  uint8_t opcode, unsigned int access,
 			  off_t addr, void *data, size_t length)
 {
+	const struct spi_nor_config *const driver_cfg = dev->config;
 	struct spi_nor_data *const driver_data = dev->data;
 	bool is_addressed = (access & NOR_ACCESS_ADDRESSED) != 0U;
 	bool is_write = (access & NOR_ACCESS_WRITE) != 0U;
@@ -350,12 +346,10 @@ static int spi_nor_access(const struct device *const dev,
 	};
 
 	if (is_write) {
-		return spi_write(driver_data->spi,
-			&driver_data->spi_cfg, &tx_set);
+		return spi_write_dt(&driver_cfg->spi, &tx_set);
 	}
 
-	return spi_transceive(driver_data->spi,
-		&driver_data->spi_cfg, &tx_set, &rx_set);
+	return spi_transceive_dt(&driver_cfg->spi, &tx_set, &rx_set);
 }
 
 #define spi_nor_cmd_read(dev, opcode, dest, length) \
@@ -1013,33 +1007,14 @@ static int setup_pages_layout(const struct device *dev)
  */
 static int spi_nor_configure(const struct device *dev)
 {
-	struct spi_nor_data *data = dev->data;
-	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 	const struct spi_nor_config *cfg = dev->config;
+	uint8_t jedec_id[SPI_NOR_MAX_ID_LEN];
 	int rc;
 
-	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!data->spi) {
-		return -EINVAL;
-	}
-
-	data->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.slave = DT_INST_REG_ADDR(0);
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	data->cs_ctrl.gpio_dev =
-		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	if (!data->cs_ctrl.gpio_dev) {
+	/* Validate bus and CS is ready */
+	if (!spi_is_ready(&cfg->spi)) {
 		return -ENODEV;
 	}
-
-	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	data->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	data->cs_ctrl.delay = CONFIG_SPI_NOR_CS_WAIT_DELAY;
-
-	data->spi_cfg.cs = &data->cs_ctrl;
-#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 	/* Might be in DPD if system restarted without power cycle. */
 	exit_dpd(dev);
@@ -1242,6 +1217,8 @@ BUILD_ASSERT(DT_INST_PROP(0, has_lock) == (DT_INST_PROP(0, has_lock) & 0xFF),
 #endif
 
 static const struct spi_nor_config spi_nor_config_0 = {
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8),
+				    CONFIG_SPI_NOR_CS_WAIT_DELAY),
 #if !defined(CONFIG_SPI_NOR_SFDP_RUNTIME)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
