@@ -1,0 +1,55 @@
+#
+# Copyright (c) 2021 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  drivers.flash.api:
+    tags: driver flash_api
+    platform_exclude:           \
+        hexiwear_kw40z          \
+        nucleo_h745zi_q_m4      \
+        stm32h747i_disco_m4
+  drivers.flash.api.userspace:
+    tags: driver flash_api userspace
+    extra_configs:
+      - CONFIG_USERSPACE=y
+    platform_exclude:           \
+        hexiwear_kw40z          \
+        nucleo_h745zi_q_m4      \
+        stm32h747i_disco_m4
+  # Just trick twister into building other flash drivers; they are not really used here but
+  # other flash tests require definition of flash partitions to work or attaching flash
+  # simulator, so there is not a test case that at least checks, in an easy way, whether
+  # the drivers still compile.
+  drivers.flash.api.build_only:
+    tags: driver flash_api
+    build_only: true
+    platform_allow:             \
+        altera_max10            \
+        atsamd20_xpro           \
+        disco_l475_iot1         \
+        efm32gg_slwstk6121a     \
+        esp32                   \
+        intel_s1000_crb         \
+        lpcxpresso54114_m4      \
+        lpcxpresso55s28         \
+        mimxrt1064_evk          \
+        nrf52840dk_nrf52840     \
+        nrf9160dk_nrf9160       \
+        nucleo_h723zg           \
+        nucleo_g431rb           \
+        nucleo_g474re           \
+        nucleo_wb55rg           \
+        rv32m1_vega_zero_riscy  \
+        sam_e70_xplained        \
+        sam4e_xpro              \
+        stm32f3_disco           \
+        stm32f4_disco           \
+        stm32f411e_disco        \
+        stm32f412g_disco        \
+        stm32f429i_disc1        \
+        stm32f746g_disco        \
+        stm32h747i_disco_m7     \
+        stm32g0316_disco        \
+        stm32l1_disco
