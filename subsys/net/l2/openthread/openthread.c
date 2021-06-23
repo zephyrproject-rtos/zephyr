@@ -455,6 +455,8 @@ static int openthread_init(struct net_if *iface)
 
 	ll_addr = net_if_get_link_addr(iface);
 
+	openthread_api_mutex_lock(ot_context);
+
 	otSysInit(0, NULL);
 
 	ot_context->instance = otInstanceInitSingle();
@@ -482,6 +484,8 @@ static int openthread_init(struct net_if *iface)
 			NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_MADDR_ADD);
 		net_mgmt_add_event_callback(&ip6_addr_cb);
 	}
+
+	openthread_api_mutex_unlock(ot_context);
 
 	ot_tid = k_thread_create(&ot_thread_data, ot_stack_area,
 				 K_KERNEL_STACK_SIZEOF(ot_stack_area),
