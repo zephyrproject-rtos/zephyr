@@ -29,6 +29,9 @@ manifest:
   projects:
     - name: fatfs
       path: modules/fs/fatfs
+    - name: littlefs
+      path: 9e4498d1c73009acd84bb36036ee5e2869112a6c
+      path: modules/fs/littlefs
     - name: mbedtls
       revision: 53044168b43f06ec5654b906a2cdd260bf477edd
       path: modules/crypto/mbedtls
