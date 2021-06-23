@@ -15,7 +15,7 @@
 #include <gd32vf103_gpio.h>
 #include <gd32vf103_exti.h>
 #include <drivers/gpio.h>
-#include <drivers/clock_control.h>
+#include <drivers/clock_control/gd32_clock_control.h>
 #include <dt-bindings/clock/gd32_clock.h>
 #include <drivers/pinmux.h>
 #include <sys/util.h>
@@ -159,7 +159,7 @@ int gpio_gd32_clock_request(const struct device *dev, bool on)
 	__ASSERT_NO_MSG(dev != NULL);
 
 	/* enable clock for subsystem */
-	const struct device *clk = DEVICE_DT_GET(GD32_CLOCK_CONTROL_NODE);
+	const struct device *clk = DEVICE_DT_GET(DT_NODELABEL(rcu));
 
 	if (on) {
 		ret = clock_control_on(clk,
@@ -479,13 +479,9 @@ static int gpio_gd32_afio_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	const struct device *clk = DEVICE_DT_GET(GD32_CLOCK_CONTROL_NODE);
-	struct gd32_pclken pclken = {
-		.bus = GD32_CLOCK_BUS_APB2,
-		.enr = RCU_AF,
-	};
+	const struct device *clk = DEVICE_DT_GET(DT_NODELABEL(rcu));
 
-	clock_control_on(clk, &pclken);
+	clock_control_on(clk, (void *)&GD32_PCLK_EN_AF);
 
 #if defined(CONFIG_GPIO_GD32_SWJ_NONJTRST)
 	gpio_pin_remap_config(GPIO_SWJ_NONJTRST_REMAP, ENABLE)
@@ -493,7 +489,7 @@ static int gpio_gd32_afio_init(const struct device *dev)
 	gpio_pin_remap_config(GPIO_SWJ_DISABLE_REMAP, ENABLE)
 #endif
 
-	clock_control_off(clk, &pclken);
+	clock_control_off(clk, (void *)&GD32_PCLK_EN_AF);
 
 	return 0;
 }

@@ -39,16 +39,8 @@
 #include <gd32vf103.h>
 #include <core_feature_timer.h>
 
-/* common clock control device name for all GD32 chips */
-#define GD32_CLOCK_CONTROL_NODE DT_NODELABEL(rcu)
-
 #define IS_UART_HWFLOW_INSTANCE(base) (base == USART0 || base == USART1 || base == USART2)
 #define IS_UART_LIN_INSTANCE(base) (base == USART0 || base == USART1 || base == USART2)
-
-struct gd32_pclken {
-	uint32_t bus;
-	uint32_t enr;
-};
 
 /**
  * @brief structure to convey pinctrl information for stm32 soc

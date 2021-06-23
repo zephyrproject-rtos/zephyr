@@ -22,7 +22,7 @@
 #include <init.h>
 #include <drivers/uart.h>
 #include <drivers/pinmux.h>
-#include <drivers/clock_control.h>
+#include <drivers/clock_control/gd32_clock_control.h>
 
 
 #include <linker/sections.h>
@@ -462,7 +462,7 @@ static int uart_gd32_err_check(const struct device *dev)
 static inline void __uart_gd32_get_clock(const struct device *dev)
 {
 	struct uart_gd32_data *data = DEV_DATA(dev);
-	const struct device *clk = DEVICE_DT_GET(GD32_CLOCK_CONTROL_NODE);
+	const struct device *clk = DEVICE_DT_GET(DT_NODELABEL(rcu));
 
 	data->clock = clk;
 }
@@ -678,11 +678,11 @@ static int uart_gd32_init(const struct device *dev)
 		return -EIO;
 	}
 
-	usart_deinit(regs);
+	usart_disable(regs);
 
 	/* TODO make configurable with pinctrl */
-	rcu_periph_clock_enable(RCU_GPIOA);
-	rcu_periph_clock_enable(RCU_USART0);
+	clock_control_on(DEVICE_DT_GET(DT_NODELABEL(rcu)), (void *)&GD32_PCLK_EN_GPIOA);
+	clock_control_on(DEVICE_DT_GET(DT_NODELABEL(rcu)), (void *)&GD32_PCLK_EN_USART0);
 	gpio_init(GPIOA, GPIO_MODE_AF_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_9);
 	gpio_init(GPIOA, GPIO_MODE_IN_FLOATING, GPIO_OSPEED_50MHZ, GPIO_PIN_10);
 
