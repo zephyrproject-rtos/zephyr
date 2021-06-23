@@ -1411,7 +1411,6 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 
 int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
-	struct bt_rfcomm_hdr *hdr;
 	uint8_t fcs, cr;
 
 	if (!buf) {
@@ -1428,23 +1427,20 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		return -EMSGSIZE;
 	}
 
+	/* length */
 	if (buf->len > BT_RFCOMM_MAX_LEN_8) {
-		uint16_t *len;
-
 		/* Length is 2 byte */
-		hdr = net_buf_push(buf, sizeof(*hdr) + 1);
-		len = (uint16_t *)&hdr->length;
-		*len = BT_RFCOMM_SET_LEN_16(sys_cpu_to_le16(buf->len -
-							    sizeof(*hdr) - 1));
+		net_buf_push_le16(buf, BT_RFCOMM_SET_LEN_16(buf->len));
 	} else {
-		hdr = net_buf_push(buf, sizeof(*hdr));
-		hdr->length = BT_RFCOMM_SET_LEN_8(buf->len - sizeof(*hdr));
+		net_buf_push_u8(buf, BT_RFCOMM_SET_LEN_8(buf->len));
 	}
 
+	/* control */
+	net_buf_push_u8(buf, BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH,
+					BT_RFCOMM_PF_UIH_NO_CREDIT));
+	/* address */
 	cr = BT_RFCOMM_UIH_CR(dlc->session->role);
-	hdr->address = BT_RFCOMM_SET_ADDR(dlc->dlci, cr);
-	hdr->control = BT_RFCOMM_SET_CTRL(BT_RFCOMM_UIH,
-					  BT_RFCOMM_PF_UIH_NO_CREDIT);
+	net_buf_push_u8(buf, BT_RFCOMM_SET_ADDR(dlc->dlci, cr));
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
