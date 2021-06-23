@@ -119,4 +119,6 @@ source "drivers/syscon/Kconfig"
 
 source "drivers/bbram/Kconfig"
 
+source "drivers/fpga/Kconfig"
+
 endmenu
