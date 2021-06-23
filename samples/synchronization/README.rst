@@ -30,17 +30,47 @@ Sample Output
 
 .. code-block:: console
 
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
-   threadA: Hello World!
-   threadB: Hello World!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
+   thread_a: Hello World from cpu 0 on qemu_x86!
+   thread_b: Hello World from cpu 0 on qemu_x86!
 
    <repeats endlessly>
 
+Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
+
+And, if the board was selected qemu_x86_64, this demonstration would show the 
+following results.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: qemu_x86_64
+   :goals: run
+   :compact:
+
+Sample Output
+=============
+
+.. code-block:: console
+
+   thread_a: Hello World from cpu 0 on qemu_x86_64!
+   thread_b: Hello World from cpu 1 on qemu_x86_64!
+   thread_a: Hello World from cpu 0 on qemu_x86_64!
+   thread_b: Hello World from cpu 1 on qemu_x86_64!
+   thread_a: Hello World from cpu 0 on qemu_x86_64!
+   thread_b: Hello World from cpu 1 on qemu_x86_64!
+   thread_a: Hello World from cpu 0 on qemu_x86_64!
+   thread_b: Hello World from cpu 1 on qemu_x86_64!
+   thread_a: Hello World from cpu 0 on qemu_x86_64!
+   thread_b: Hello World from cpu 1 on qemu_x86_64!
+
+   <repeats endlessly>
+   
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.
