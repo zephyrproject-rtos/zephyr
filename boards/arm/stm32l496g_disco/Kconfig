@@ -1,0 +1,10 @@
+#  Copyright (c) 2021 STMicroelectronics
+#  SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32L496G_DISCO
+
+module = BOARD_STM32L496G_DISCO
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BOARD_STM32L496G_DISCO

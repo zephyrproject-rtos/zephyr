@@ -134,3 +134,8 @@
 		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
 	status = "okay";
 };
+
+&adc1 {
+	pinctrl-0 = < &adc1_in2_pc1>;
+	status = "okay";
+};
