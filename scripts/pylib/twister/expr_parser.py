@@ -268,7 +268,10 @@ def ast_expr(ast, env, edt):
         compat = ast[1][1]
         label = ast[1][0]
         node = edt.label2node.get(label)
-        parent = node.parent
+        if node is not None:
+            parent = node.parent
+        else:
+            return False
         return parent is not None and parent.status == 'okay' and parent.matching_compat == compat
     elif ast[0] == "dt_chosen_enabled":
         chosen = ast[1][0]
