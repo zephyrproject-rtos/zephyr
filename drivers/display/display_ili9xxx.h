@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2020 Teslabs Engineering S.L.
+ * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 #include <sys/util.h>
 
 /* Commands/registers. */
+#define ILI9XXX_SWRESET 0x01
 #define ILI9XXX_SLPOUT 0x11
 #define ILI9XXX_DINVON 0x21
 #define ILI9XXX_GAMSET 0x26
