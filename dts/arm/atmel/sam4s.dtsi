@@ -186,6 +186,30 @@
 				#atmel,pin-cells = <2>;
 			};
 		};
+
+		tc0: tc@40010000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40010000 0x100>;
+			interrupts = <23 0
+				      24 0
+				      25 0>;
+			peripheral-id = <23 24 25>;
+			status = "disabled";
+			label = "TC0";
+			pinctrl-0 = <>;
+		};
+
+		tc1: tc@40014000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40014000 0x100>;
+			interrupts = <26 0
+				      27 0
+				      28 0>;
+			peripheral-id = <26 27 28>;
+			status = "disabled";
+			label = "TC1";
+			pinctrl-0 = <>;
+		};
 	};
 };
 

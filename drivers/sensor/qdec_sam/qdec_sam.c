@@ -45,7 +45,7 @@ static int qdec_sam_fetch(const struct device *dev, enum sensor_channel chan)
 	const struct qdec_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct qdec_sam_dev_data *const dev_data = DEV_DATA(dev);
 	Tc *const tc = dev_cfg->regs;
-	TcChannel *tc_ch0 = &tc->TC_CHANNEL[0];
+	TcChannel *tc_ch0 = &tc->TcChannel[0];
 
 	/* Read position register content */
 	dev_data->position = tc_ch0->TC_CV;
@@ -70,7 +70,7 @@ static int qdec_sam_get(const struct device *dev, enum sensor_channel chan,
 
 static void qdec_sam_start(Tc *const tc)
 {
-	TcChannel *tc_ch0 = &tc->TC_CHANNEL[0];
+	TcChannel *tc_ch0 = &tc->TcChannel[0];
 
 	/* Enable Channel 0 Clock and reset counter*/
 	tc_ch0->TC_CCR =  TC_CCR_CLKEN
@@ -81,7 +81,7 @@ static void qdec_sam_configure(const struct device *dev)
 {
 	const struct qdec_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	Tc *const tc = dev_cfg->regs;
-	TcChannel *tc_ch0 = &tc->TC_CHANNEL[0];
+	TcChannel *tc_ch0 = &tc->TcChannel[0];
 
 	/* Clock, Trigger Edge, Trigger and Mode Selection */
 	tc_ch0->TC_CMR =  TC_CMR_TCCLKS_XC0
