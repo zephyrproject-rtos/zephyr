@@ -276,7 +276,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	}
 
 	if (conn->rx->len < sizeof(uint16_t)) {
-		/* Still not enough data recieved to retrieve the L2CAP header
+		/* Still not enough data received to retrieve the L2CAP header
 		 * length field.
 		 */
 		return;
