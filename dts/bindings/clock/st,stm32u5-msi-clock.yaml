@@ -1,0 +1,37 @@
+# Copyright (c) 2021, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32U5 Multi Speed Internal Clock
+
+compatible: "st,stm32u5-msi-clock"
+
+include:
+  - name: st,stm32-msi-clock.yaml
+    property-blocklist:
+      - msi-range
+
+properties:
+
+    msi-range:
+      default: 4
+      required: true
+      type: int
+      description: |
+        MSI clock ranges
+      enum:
+        - 0 # range 0 around 48 MHz
+        - 1 # range 1 around 24 MHz
+        - 2 # range 2 around 16 MHz
+        - 3 # range 3 around 12 MHz
+        - 4 # range 4 around 4 MHz (reset value)
+        - 5 # range 5 around 2 MHz
+        - 6 # range 6 around 1.33 MHz
+        - 7 # range 7 around 1 MHz
+        - 8 # range 8 around 3.072 MHz
+        - 9 # range 9 around 1.536 MHz
+        - 10 # range 10 around 1.024 MHz
+        - 11 # range 11 around 768 KHz
+        - 12 # range 12 around 400 KHz
+        - 13 # range 13 around 200 KHz
+        - 14 # range 14 around 133 KHz
+        - 15 # range 14 around 100 KHz
