@@ -38,6 +38,17 @@ static ALWAYS_INLINE bool arch_is_in_isr(void)
 	return (_kernel.cpus[0].nested != 0U);
 }
 
+#if defined(CONFIG_USERSPACE)
+/*
+ * This function is used by privileged code to determine if the thread
+ * associated with the stack frame is in user mode.
+ */
+static ALWAYS_INLINE bool z_arm_preempted_thread_in_user_mode(const z_arch_esf_t *esf)
+{
+	return ((esf->basic.xpsr & CPSR_M_Msk) == CPSR_M_USR);
+}
+#endif
+
 /**
  * @brief Setup system exceptions
  *
