@@ -21,6 +21,8 @@
  * this config will be used at initial time
  */
 struct gpio_ite_cfg {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	/* gpio port data register (bit mapping to pin) */
 	uintptr_t reg_gpdr;
 	/* gpio port control register (byte mapping to pin) */
@@ -29,7 +31,6 @@ struct gpio_ite_cfg {
 	uintptr_t reg_gpdmr;
 	/* gpio port output type register (bit mapping to pin) */
 	uintptr_t reg_gpotr;
-	uint8_t ngpios;
 	/* gpio's irq */
 	uint8_t gpio_irq[8];
 };
@@ -235,11 +236,6 @@ static int gpio_ite_configure(const struct device *dev,
 	volatile uint8_t *reg_gpotr = (uint8_t *)gpio_config->reg_gpotr;
 	uint8_t mask = BIT(pin);
 
-	if (pin >= gpio_config->ngpios) {
-		printk("Invalid GPIO pin! (%s%d)\n", dev->name, pin);
-		return -EINVAL;
-	}
-
 	/*
 	 * Select open drain first, so that we don't glitch the signal
 	 * when changing the line to an output.
@@ -436,11 +432,14 @@ static int gpio_ite_init(const struct device *dev)
 #define GPIO_ITE_DEV_CFG_DATA(inst)                                \
 static struct gpio_ite_data gpio_ite_data_##inst;                  \
 static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
+	.common = {                                                \
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(   \
+		DT_INST_PROP(inst, ngpios))                        \
+	},                                                         \
 	.reg_gpdr = DT_INST_REG_ADDR_BY_IDX(inst, 0),              \
 	.reg_gpcr = DT_INST_REG_ADDR_BY_IDX(inst, 1),              \
 	.reg_gpdmr = DT_INST_REG_ADDR_BY_IDX(inst, 2),             \
 	.reg_gpotr = DT_INST_REG_ADDR_BY_IDX(inst, 3),             \
-	.ngpios = DT_PROP(DT_INST(inst, ite_it8xxx2_gpio), ngpios),\
 	.gpio_irq[0] = DT_INST_IRQ_BY_IDX(inst, 0, irq),           \
 	.gpio_irq[1] = DT_INST_IRQ_BY_IDX(inst, 1, irq),           \
 	.gpio_irq[2] = DT_INST_IRQ_BY_IDX(inst, 2, irq),           \
