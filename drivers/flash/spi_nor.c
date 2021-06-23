@@ -256,7 +256,7 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
  */
 int spi_nor_access(const struct device *const dev, uint8_t opcode,
 		   bool is_addressed, off_t addr, void *data, size_t length,
-		   bool is_write)
+		   bool is_write, bool rx_dummy_byte)
 {
 	struct spi_nor_data *const driver_data = dev->data;
 
@@ -277,6 +277,14 @@ int spi_nor_access(const struct device *const dev, uint8_t opcode,
 			.len = length
 		}
 	};
+
+	/* Some read commands require shifting in a dummy byte before the actual
+	 * payload is shifted in
+	 */
+	if (rx_dummy_byte) {
+		spi_buf[0].len++;
+	}
+
 	const struct spi_buf_set tx_set = {
 		.buffers = spi_buf,
 		.count = (length) ? 2 : 1
@@ -289,11 +297,11 @@ int spi_nor_access(const struct device *const dev, uint8_t opcode,
 
 	if (is_write) {
 		return spi_write(driver_data->spi,
-			&driver_data->spi_cfg, &tx_set);
+				 &driver_data->spi_cfg, &tx_set);
 	}
 
 	return spi_transceive(driver_data->spi,
-		&driver_data->spi_cfg, &tx_set, &rx_set);
+			      &driver_data->spi_cfg, &tx_set, &rx_set);
 }
 
 #if defined(CONFIG_SPI_NOR_SFDP_RUNTIME) || defined(CONFIG_FLASH_JESD216_API)

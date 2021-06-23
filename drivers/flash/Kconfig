@@ -32,6 +32,12 @@ config FLASH_JESD216_API
 	  allowing runtime determination of serial flash parameters
 	  for flash drivers that expose this capability.
 
+config SPI_NOR_EXTRAS_GD25Q64C
+	bool "Provide API to read One Time Program registers of NOR flash"
+	depends on SPI_NOR
+	help
+	  Enable extra functionality for the GD25Q64C SPI NOR IC.
+
 menuconfig FLASH
 	bool "Flash hardware support"
 	help
