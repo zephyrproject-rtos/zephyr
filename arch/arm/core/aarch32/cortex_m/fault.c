@@ -686,9 +686,14 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 
 	if ((SCB->HFSR & SCB_HFSR_VECTTBL_Msk) != 0) {
 		PR_EXC("  Bus fault on vector table read");
+	} else if ((SCB->HFSR & SCB_HFSR_DEBUGEVT_Msk) != 0) {
+		PR_EXC("  Debug event");
 	} else if ((SCB->HFSR & SCB_HFSR_FORCED_Msk) != 0) {
 		PR_EXC("  Fault escalation (see below)");
-		if (SCB_MMFSR != 0) {
+		if (z_arm_is_synchronous_svc(esf)) {
+			PR_EXC("ARCH_EXCEPT with reason %x\n", esf->basic.r0);
+			reason = esf->basic.r0;
+		} else if (SCB_MMFSR != 0) {
 			reason = mem_manage_fault(esf, 1, recoverable);
 		} else if (SCB_BFSR != 0) {
 			reason = bus_fault(esf, 1, recoverable);
@@ -699,10 +704,13 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 			secure_fault(esf);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 		} else {
-			;
+			__ASSERT(0,
+			"Fault escalation without FSR info");
 		}
 	} else {
-		;
+		__ASSERT(0,
+		"HardFault without HFSR info"
+		" Shall never occur");
 	}
 #else
 #error Unknown ARM architecture
