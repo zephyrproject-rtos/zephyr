@@ -1060,6 +1060,38 @@ void bt_conn_unref(struct bt_conn *conn)
 	}
 }
 
+uint8_t bt_conn_index(struct bt_conn *conn)
+{
+	ptrdiff_t index;
+
+	switch (conn->type) {
+#if defined(CONFIG_BT_ISO)
+	case BT_CONN_TYPE_ISO:
+		index = conn - iso_conns;
+		__ASSERT(index >= 0 && index < ARRAY_SIZE(iso_conns),
+			"Invalid bt_conn pointer");
+		break;
+#endif
+#if defined(CONFIG_BT_BREDR)
+	case BT_CONN_TYPE_SCO:
+		index = conn - sco_conns;
+		__ASSERT(index >= 0 && index < ARRAY_SIZE(sco_conns),
+			"Invalid bt_conn pointer");
+		break;
+#endif
+	default:
+		index = conn - acl_conns;
+		__ASSERT(index >= 0 && index < ARRAY_SIZE(acl_conns),
+			 "Invalid bt_conn pointer");
+		break;
+	}
+
+	return (uint8_t)index;
+}
+
+/* Group Connected BT_CONN only in this */
+#if defined(CONFIG_BT_CONN)
+
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
 	int err;
@@ -1120,38 +1152,6 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 		return -ENOTCONN;
 	}
 }
-
-uint8_t bt_conn_index(struct bt_conn *conn)
-{
-	ptrdiff_t index;
-
-	switch (conn->type) {
-#if defined(CONFIG_BT_ISO)
-	case BT_CONN_TYPE_ISO:
-		index = conn - iso_conns;
-		__ASSERT(index >= 0 && index < ARRAY_SIZE(iso_conns),
-			"Invalid bt_conn pointer");
-		break;
-#endif
-#if defined(CONFIG_BT_BREDR)
-	case BT_CONN_TYPE_SCO:
-		index = conn - sco_conns;
-		__ASSERT(index >= 0 && index < ARRAY_SIZE(sco_conns),
-			"Invalid bt_conn pointer");
-		break;
-#endif
-	default:
-		index = conn - acl_conns;
-		__ASSERT(index >= 0 && index < ARRAY_SIZE(acl_conns),
-			 "Invalid bt_conn pointer");
-		break;
-	}
-
-	return (uint8_t)index;
-}
-
-/* Group Connected BT_CONN only in this */
-#if defined(CONFIG_BT_CONN)
 
 static void notify_connected(struct bt_conn *conn)
 {

@@ -319,7 +319,11 @@ void bt_iso_connected(struct bt_conn *conn)
 
 	if (bt_iso_setup_data_path(conn)) {
 		BT_ERR("Unable to setup data path");
-		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		if (conn->iso.is_bis && IS_ENABLED(CONFIG_BT_CONN)) {
+			bt_conn_disconnect(conn,
+					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		}
+		/* TODO: Handle BIG terminate for BIS */
 		return;
 	}
 
