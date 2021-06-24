@@ -21,3 +21,11 @@ properties:
       type: int
       required: true
       description: Ordinal identifying the port
+
+    pinctrl-0:
+      type: phandle
+      required: true
+
+    pinctrl-1:
+      type: phandle
+      required: true
