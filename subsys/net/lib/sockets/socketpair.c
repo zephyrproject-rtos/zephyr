@@ -53,10 +53,10 @@ __net_socket struct spair {
 	uint32_t flags; /**< status and option bits */
 	struct k_sem sem; /**< semaphore for exclusive structure access */
 	struct k_pipe recv_q; /**< receive queue of local endpoint */
-	/** indicates write of local @a recv_q occurred */
-	struct k_poll_signal write_signal;
-	/** indicates read of local @a recv_q occurred */
-	struct k_poll_signal read_signal;
+	/** indicates local @a recv_q isn't empty */
+	struct k_poll_signal readable;
+	/** indicates local @a recv_q isn't full */
+	struct k_poll_signal writeable;
 	/** buffer for @a recv_q recv_q */
 	uint8_t buf[CONFIG_NET_SOCKETPAIR_BUFFER_SIZE];
 };
@@ -145,10 +145,10 @@ static inline void swap32(uint32_t *a, uint32_t *b)
  * when one endpoint is closed:
  * -# T1 is blocked reading from A and T2 closes B
  *    T1 waits on A's write signal. T2 triggers the remote
- *    @ref spair.write_signal
+ *    @ref spair.readable
  * -# T1 is blocked writing to A and T2 closes B
  *    T1 is waits on B's read signal. T2 triggers the local
- *    @ref spair.read_signal.
+ *    @ref spair.writeable.
  *
  * If the remote endpoint is already closed, the former operation does not
  * take place. Otherwise, the @ref spair.remote of the local endpoint is
@@ -177,7 +177,7 @@ static void spair_delete(struct spair *spair)
 			if (res == 0) {
 				have_remote_sem = true;
 				remote->remote = -1;
-				res = k_poll_signal_raise(&remote->write_signal,
+				res = k_poll_signal_raise(&remote->readable,
 					SPAIR_SIG_CANCEL);
 				__ASSERT(res == 0,
 					"k_poll_signal_raise() failed: %d",
@@ -188,7 +188,7 @@ static void spair_delete(struct spair *spair)
 
 	spair->remote = -1;
 
-	res = k_poll_signal_raise(&spair->read_signal, SPAIR_SIG_CANCEL);
+	res = k_poll_signal_raise(&spair->writeable, SPAIR_SIG_CANCEL);
 	__ASSERT(res == 0, "k_poll_signal_raise() failed: %d", res);
 
 	/* ensure no private information is released to the memory pool */
@@ -242,11 +242,11 @@ static struct spair *spair_new(void)
 
 	k_sem_init(&spair->sem, 1, 1);
 	k_pipe_init(&spair->recv_q, spair->buf, sizeof(spair->buf));
-	k_poll_signal_init(&spair->write_signal);
-	k_poll_signal_init(&spair->read_signal);
+	k_poll_signal_init(&spair->readable);
+	k_poll_signal_init(&spair->writeable);
 
 	/* A new socket is always writeable after creation */
-	res = k_poll_signal_raise(&spair->read_signal, SPAIR_SIG_DATA);
+	res = k_poll_signal_raise(&spair->writeable, SPAIR_SIG_DATA);
 	__ASSERT(res == 0, "k_poll_signal_raise() failed: %d", res);
 
 	spair->remote = z_reserve_fd();
@@ -367,7 +367,7 @@ out:
  *
  * Such a blocking write will suspend execution of the current thread until
  * one of two possible results is received on the @em remote
- * @ref spair.read_signal:
+ * @ref spair.writeable:
  *
  * 1) @ref SPAIR_SIG_DATA - data has been read from the @em remote
  *    @ref spair.pipe. Thus, allowing more data to be written.
@@ -471,7 +471,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 				K_POLL_EVENT_INITIALIZER(
 					K_POLL_TYPE_SIGNAL,
 					K_POLL_MODE_NOTIFY_ONLY,
-					&remote->read_signal),
+					&remote->writeable),
 			};
 
 			k_sem_give(&remote->sem);
@@ -503,7 +503,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 
 			have_remote_sem = true;
 
-			k_poll_signal_check(&remote->read_signal, &signaled,
+			k_poll_signal_check(&remote->writeable, &signaled,
 					    &result);
 			if (!signaled) {
 				continue;
@@ -538,10 +538,10 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 	__ASSERT(res == 0, "k_pipe_put() failed: %d", res);
 
 	if (spair_write_avail(spair) == 0) {
-		k_poll_signal_reset(&remote->read_signal);
+		k_poll_signal_reset(&remote->writeable);
 	}
 
-	res = k_poll_signal_raise(&remote->write_signal, SPAIR_SIG_DATA);
+	res = k_poll_signal_raise(&remote->readable, SPAIR_SIG_DATA);
 	__ASSERT(res == 0, "k_poll_signal_raise() failed: %d", res);
 
 	res = bytes_written;
@@ -575,7 +575,7 @@ out:
  *
  * Such a blocking read will suspend execution of the current thread until
  * one of two possible results is received on the @em local
- * @ref spair.write_signal:
+ * @ref spair.readable:
  *
  * -# @ref SPAIR_SIG_DATA - data has been written to the @em local
  *    @ref spair.pipe. Thus, allowing more data to be read.
@@ -660,7 +660,7 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 				K_POLL_EVENT_INITIALIZER(
 					K_POLL_TYPE_SIGNAL,
 					K_POLL_MODE_NOTIFY_ONLY,
-					&spair->write_signal
+					&spair->readable
 				),
 			};
 
@@ -675,7 +675,7 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 
 			have_local_sem = true;
 
-			k_poll_signal_check(&spair->write_signal, &signaled,
+			k_poll_signal_check(&spair->readable, &signaled,
 					    &result);
 			if (!signaled) {
 				continue;
@@ -710,11 +710,11 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 	__ASSERT(res == 0, "k_pipe_get() failed: %d", res);
 
 	if (spair_read_avail(spair) == 0 && !sock_is_eof(spair)) {
-		k_poll_signal_reset(&spair->write_signal);
+		k_poll_signal_reset(&spair->readable);
 	}
 
 	if (is_connected) {
-		res = k_poll_signal_raise(&spair->read_signal, SPAIR_SIG_DATA);
+		res = k_poll_signal_raise(&spair->writeable, SPAIR_SIG_DATA);
 		__ASSERT(res == 0, "k_poll_signal_raise() failed: %d", res);
 	}
 
@@ -753,7 +753,7 @@ static int zsock_poll_prepare_ctx(struct spair *const spair,
 		}
 
 		/* Wait until data has been written to the local end */
-		(*pev)->obj = &spair->write_signal;
+		(*pev)->obj = &spair->readable;
 	}
 
 	if (pfd->events & ZSOCK_POLLOUT) {
@@ -782,8 +782,8 @@ static int zsock_poll_prepare_ctx(struct spair *const spair,
 
 		have_remote_sem = true;
 
-		/* Wait until data has been read from the remote end */
-		(*pev)->obj = &remote->read_signal;
+		/* Wait until the recv queue on the remote end is no longer full */
+		(*pev)->obj = &remote->writeable;
 	}
 
 	(*pev)->type = K_POLL_TYPE_SIGNAL;
@@ -839,7 +839,7 @@ static int zsock_poll_update_ctx(struct spair *const spair,
 
 		/* check to see if op was canceled */
 		signaled = false;
-		k_poll_signal_check(&remote->read_signal, &signaled, &result);
+		k_poll_signal_check(&remote->writeable, &signaled, &result);
 		if (signaled) {
 			/* Cannot be SPAIR_SIG_DATA, because
 			 * spair_write_avail() would have
@@ -866,7 +866,7 @@ pollout_done:
 
 		/* check to see if op was canceled */
 		signaled = false;
-		k_poll_signal_check(&spair->write_signal, &signaled, &result);
+		k_poll_signal_check(&spair->readable, &signaled, &result);
 		if (signaled) {
 			/* Cannot be SPAIR_SIG_DATA, because
 			 * spair_read_avail() would have
