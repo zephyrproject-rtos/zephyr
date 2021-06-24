@@ -24,9 +24,9 @@ struct spi_esp32_config {
 	int frequency;
 	int duty_cycle;
 	int input_delay_ns;
+	int irq_source;
 
 	clock_control_subsys_t clock_subsys;
-	void (*irq_config_func)(const struct device *dev);
 
 	struct {
 		int miso_s;
@@ -41,11 +41,6 @@ struct spi_esp32_config {
 		int sclk;
 		int csel;
 	} pins;
-
-	struct {
-		int source;
-		int line;
-	} irq;
 };
 
 struct spi_esp32_data {
@@ -55,6 +50,7 @@ struct spi_esp32_data {
 	spi_hal_dev_config_t dev_config;
 	spi_hal_trans_config_t trans_config;
 	uint8_t dfs;
+	int irq_line;
 };
 
 #endif /* ZEPHYR_DRIVERS_SPI_ESP32_SPIM_H_ */
