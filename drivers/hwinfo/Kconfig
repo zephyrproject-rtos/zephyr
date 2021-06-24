@@ -38,12 +38,12 @@ config HWINFO_MCUX_SIM
 	help
 	  Enable NXP kinetis mcux hwinfo driver.
 
-config HWINFO_MCUX_SYSCON
-	bool "NXP LPC device ID"
+config HWINFO_IMXRT_6XX
+	bool "NXP i.mx RT6xx device ID"
 	default y
-	depends on HAS_MCUX_SYSCON
+	depends on SOC_SERIES_IMX_RT6XX
 	help
-	  Enable NXP LPC mcux hwinfo driver.
+	  Enable NXP i.mx RT-6xx hwinfo driver.
 
 config HWINFO_IMXRT
 	bool "NXP i.mx RT device ID"

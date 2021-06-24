@@ -3,7 +3,7 @@
 
 description: NXP LPC 128-bit Unique identifier
 
-compatible: "nxp,lpc-uid"
+compatible: "nxp,imx-rt6xx-uid"
 
 include: base.yaml
 

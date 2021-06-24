@@ -67,7 +67,7 @@
 	};
 
 	uuid: uuid@2f50 {
-		compatible = "nxp,lpc-uid";
+		compatible = "nxp,imx-rt6xx-uid";
 		reg = <0x2f50 0x10>;
 	};
 

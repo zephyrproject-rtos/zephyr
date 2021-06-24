@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_lpc_uid
+#define DT_DRV_COMPAT nxp_imx_rt6xx_uid
 
 #include <drivers/hwinfo.h>
 #include <string.h>
