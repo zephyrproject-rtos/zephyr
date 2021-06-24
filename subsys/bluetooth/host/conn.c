@@ -831,6 +831,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			break;
 		}
 
+#if defined(CONFIG_BT_CONN)
 		sys_slist_init(&conn->channels);
 
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
@@ -838,9 +839,15 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			k_work_schedule(&conn->deferred_work,
 					CONN_UPDATE_TIMEOUT);
 		}
+#endif /* CONFIG_BT_CONN */
 
 		break;
 	case BT_CONN_DISCONNECTED:
+		if (conn->type == BT_CONN_TYPE_ISO) {
+			break;
+		}
+
+#if defined(CONFIG_BT_CONN)
 		if (conn->type == BT_CONN_TYPE_SCO) {
 			/* TODO: Notify sco disconnected */
 			bt_conn_unref(conn);
@@ -916,6 +923,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			break;
 		}
 		break;
+#endif /* CONFIG_BT_CONN */
 	case BT_CONN_CONNECT_AUTO:
 		break;
 	case BT_CONN_CONNECT_ADV:
