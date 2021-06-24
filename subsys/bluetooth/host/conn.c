@@ -761,12 +761,6 @@ struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
 	return NULL;
 }
 
-void bt_conn_connected(struct bt_conn *conn)
-{
-	bt_l2cap_connected(conn);
-	notify_connected(conn);
-}
-
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
 	bt_conn_state_t old_state;
@@ -1102,6 +1096,12 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
+void bt_conn_connected(struct bt_conn *conn)
+{
+	bt_l2cap_connected(conn);
+	notify_connected(conn);
+}
 
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
