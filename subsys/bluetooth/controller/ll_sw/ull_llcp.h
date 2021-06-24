@@ -133,7 +133,12 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code);
 /**
  * @brief Initiate a Channel Map Update Procedure.
  */
-uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5]);
+uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5]);
+
+/**
+ * @brief Check if Channel Map Update Procedure is pending
+ */
+const uint8_t *ull_cp_chan_map_update_pending(struct ll_conn *conn);
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 /**
