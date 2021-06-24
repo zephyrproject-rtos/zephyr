@@ -279,6 +279,9 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	case PROC_TERMINATE:
 		rp_comm_init_proc(ctx);
 		break;
+	case PROC_CHAN_MAP_UPDATE:
+		rp_chmu_init_proc(ctx);
+		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_init_proc(ctx);
