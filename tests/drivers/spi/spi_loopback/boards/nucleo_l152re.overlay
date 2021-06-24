@@ -5,8 +5,8 @@
  */
 
 &spi1 {
-	dmas = <&dmamux1 0 11 0x20440
-		&dmamux1 7 10 0x20480>;
+	dmas = <&dma1 3 0x20440
+		&dma1 2 0x20480>;
 	dma-names = "tx", "rx";
 };
 
@@ -14,10 +14,8 @@
 	status = "okay";
 };
 
-&dma2 {
-	status = "okay";
-};
-
-&dmamux1 {
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
+		     &spi1_miso_pa6 &spi1_mosi_pa7>;
 	status = "okay";
 };

@@ -44,14 +44,14 @@ struct dma_stm32_config {
 	struct dma_stm32_stream *streams;
 };
 
-#if defined(CONFIG_DMAMUX_STM32) || defined(CONFIG_DMA_STM32_V2)
+#if !defined(CONFIG_DMA_STM32_V1)
 /* from DTS the dma stream id is in range 1..<dma-requests> */
 /* so decrease to set range from 0 from now on */
 #define STREAM_OFFSET 1
 #else
 /* from DTS the dma stream id is in range 0..<dma-requests>-1 */
 #define STREAM_OFFSET 0
-#endif /* CONFIG_DMAMUX_STM32 || CONFIG_DMA_STM32_V2 */
+#endif /* ! CONFIG_DMA_STM32_V1 */
 
 uint32_t dma_stm32_id_to_stream(uint32_t id);
 #if !defined(CONFIG_DMAMUX_STM32)
