@@ -216,6 +216,7 @@ static void spair_delete(struct spair *spair)
 static struct spair *spair_new(void)
 {
 	struct spair *spair;
+	int res;
 
 #ifdef CONFIG_USERSPACE
 	struct z_object *zo = z_dynamic_object_create(sizeof(*spair));
@@ -243,6 +244,10 @@ static struct spair *spair_new(void)
 	k_pipe_init(&spair->recv_q, spair->buf, sizeof(spair->buf));
 	k_poll_signal_init(&spair->write_signal);
 	k_poll_signal_init(&spair->read_signal);
+
+	/* A new socket is always writeable after creation */
+	res = k_poll_signal_raise(&spair->read_signal, SPAIR_SIG_DATA);
+	__ASSERT(res == 0, "k_poll_signal_raise() failed: %d", res);
 
 	spair->remote = z_reserve_fd();
 	if (spair->remote == -1) {
@@ -532,6 +537,10 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 			 &bytes_written, 1, K_NO_WAIT);
 	__ASSERT(res == 0, "k_pipe_put() failed: %d", res);
 
+	if (spair_write_avail(spair) == 0) {
+		k_poll_signal_reset(&remote->read_signal);
+	}
+
 	res = k_poll_signal_raise(&remote->write_signal, SPAIR_SIG_DATA);
 	__ASSERT(res == 0, "k_poll_signal_raise() failed: %d", res);
 
@@ -700,6 +709,10 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 			 1, K_NO_WAIT);
 	__ASSERT(res == 0, "k_pipe_get() failed: %d", res);
 
+	if (spair_read_avail(spair) == 0 && !sock_is_eof(spair)) {
+		k_poll_signal_reset(&spair->write_signal);
+	}
+
 	if (is_connected) {
 		res = k_poll_signal_raise(&spair->read_signal, SPAIR_SIG_DATA);
 		__ASSERT(res == 0, "k_poll_signal_raise() failed: %d", res);
@@ -776,7 +789,6 @@ static int zsock_poll_prepare_ctx(struct spair *const spair,
 	(*pev)->type = K_POLL_TYPE_SIGNAL;
 	(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
 	(*pev)->state = K_POLL_STATE_NOT_READY;
-	k_poll_signal_reset((*pev)->obj);
 
 	(*pev)++;
 
