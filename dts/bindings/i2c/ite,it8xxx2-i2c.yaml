@@ -21,3 +21,13 @@ properties:
       type: int
       required: true
       description: Ordinal identifying the port
+
+    pinctrl-0:
+      type: phandle
+      required: true
+      description: Configuration of I2C clock pinmux controller
+
+    pinctrl-1:
+      type: phandle
+      required: true
+      description: Configuration of I2C data pinmux controller
