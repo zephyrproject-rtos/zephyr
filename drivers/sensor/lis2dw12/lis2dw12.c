@@ -241,10 +241,13 @@ static int lis2dw12_init(const struct device *dev)
 	const struct lis2dw12_device_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t wai;
+	int ret;
 
 	/* check chip ID */
-	if (lis2dw12_device_id_get(ctx, &wai) < 0) {
-		return -EIO;
+	ret = lis2dw12_device_id_get(ctx, &wai);
+	if (ret < 0) {
+		LOG_ERR("Not able to read dev id");
+		return ret;
 	}
 
 	if (wai != LIS2DW12_ID) {
@@ -253,14 +256,17 @@ static int lis2dw12_init(const struct device *dev)
 	}
 
 	/* reset device */
-	if (lis2dw12_reset_set(ctx, PROPERTY_ENABLE) < 0) {
-		return -EIO;
+	ret = lis2dw12_reset_set(ctx, PROPERTY_ENABLE);
+	if (ret < 0) {
+		return ret;
 	}
 
 	k_busy_wait(100);
 
-	if (lis2dw12_block_data_update_set(ctx, PROPERTY_ENABLE) < 0) {
-		return -EIO;
+	ret = lis2dw12_block_data_update_set(ctx, PROPERTY_ENABLE);
+	if (ret < 0) {
+		LOG_ERR("Not able to set BDU");
+		return ret;
 	}
 
 	/* set power mode */
@@ -270,15 +276,17 @@ static int lis2dw12_init(const struct device *dev)
 	}
 
 	/* set default odr to 12.5Hz acc */
-	if (lis2dw12_set_odr(dev, 12) < 0) {
+	ret = lis2dw12_set_odr(dev, 12);
+	if (ret < 0) {
 		LOG_ERR("odr init error (12.5 Hz)");
-		return -EIO;
+		return ret;
 	}
 
 	LOG_DBG("range is %d", cfg->range);
-	if (lis2dw12_set_range(dev, LIS2DW12_FS_TO_REG(cfg->range)) < 0) {
+	ret = lis2dw12_set_range(dev, LIS2DW12_FS_TO_REG(cfg->range));
+	if (ret < 0) {
 		LOG_ERR("range init error %d", cfg->range);
-		return -EIO;
+		return ret;
 	}
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
