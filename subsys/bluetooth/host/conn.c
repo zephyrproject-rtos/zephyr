@@ -211,21 +211,10 @@ void bt_conn_reset_rx_state(struct bt_conn *conn)
 	conn->rx = NULL;
 }
 
-void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
+			uint8_t flags)
 {
 	uint16_t acl_total_len;
-	/* Make sure we notify any pending TX callbacks before processing
-	 * new data for this connection.
-	 */
-	tx_notify(conn);
-
-	BT_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
-
-	if (IS_ENABLED(CONFIG_BT_ISO) &&
-	    conn->type == BT_CONN_TYPE_ISO) {
-		bt_iso_recv(conn, buf, flags);
-		return;
-	}
 
 	/* Check packet boundary flags */
 	switch (flags) {
@@ -303,6 +292,26 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 
 	BT_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
 	bt_l2cap_recv(conn, buf);
+}
+
+void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+{
+	/* Make sure we notify any pending TX callbacks before processing
+	 * new data for this connection.
+	 */
+	tx_notify(conn);
+
+	BT_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
+
+	if (IS_ENABLED(CONFIG_BT_ISO) &&
+	    conn->type == BT_CONN_TYPE_ISO) {
+		bt_iso_recv(conn, buf, flags);
+		return;
+	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
+		bt_acl_recv(conn, buf, flags);
+	} else {
+		__ASSERT(false, "Invalid connection type %u", conn->type);
+	}
 }
 
 static struct bt_conn_tx *conn_tx_alloc(void)
