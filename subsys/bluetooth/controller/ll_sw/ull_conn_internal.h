@@ -13,7 +13,6 @@ uint16_t ll_conn_free_count_get(void);
 void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx);
 int ull_conn_init(void);
 int ull_conn_reset(void);
-void ull_conn_chan_map_set(uint8_t *chan_map);
 uint16_t ull_conn_default_tx_octets_get(void);
 uint16_t ull_conn_default_tx_time_get(void);
 uint8_t ull_conn_default_phy_tx_get(void);
