@@ -43,7 +43,6 @@ enum {
 	LP_CHMU_STATE_IDLE,
 	LP_CHMU_STATE_WAIT_TX_CHAN_MAP_IND,
 	LP_CHMU_STATE_WAIT_INSTANT,
-	LP_CHMU_STATE_WAIT_NTF,
 };
 
 /* LLCP Local Procedure Channel Map Update FSM events */
@@ -57,7 +56,6 @@ enum {
 	RP_CHMU_STATE_IDLE,
 	RP_CHMU_STATE_WAIT_RX_CHAN_MAP_IND,
 	RP_CHMU_STATE_WAIT_INSTANT,
-	RP_CHMU_STATE_WAIT_NTF,
 };
 
 /* LLCP Remote Procedure Channel Map Update FSM events */
@@ -102,22 +100,11 @@ static void lp_chmu_tx(struct ll_conn *conn, struct proc_ctx *ctx)
 	tx_enqueue(conn, tx);
 }
 
-static void lp_chmu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	/* TODO do we need any notification about instant? */
-}
-
 static void lp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	ull_conn_chan_map_set(conn, ctx->data.chmu.chm);
-
-	if (!ntf_alloc_is_available()) {
-		ctx->state = LP_CHMU_STATE_WAIT_NTF;
-	} else {
-		lp_chmu_ntf(conn, ctx);
-		lr_complete(conn);
-		ctx->state = LP_CHMU_STATE_IDLE;
-	}
+	lr_complete(conn);
+	ctx->state = LP_CHMU_STATE_IDLE;
 }
 
 static void lp_chmu_send_channel_map_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -182,18 +169,6 @@ static void lp_chmu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, 
 	}
 }
 
-static void lp_chmu_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
-{
-	switch (evt) {
-	case LP_CHMU_EVT_RUN:
-		lp_chmu_complete(conn, ctx, evt, param);
-		break;
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
-
 static void lp_chmu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
@@ -205,9 +180,6 @@ static void lp_chmu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		break;
 	case LP_CHMU_STATE_WAIT_INSTANT:
 		lp_chmu_st_wait_instant(conn, ctx, evt, param);
-		break;
-	case LP_CHMU_STATE_WAIT_NTF:
-		lp_chmu_st_wait_ntf(conn, ctx, evt, param);
 		break;
 	default:
 		/* Unknown state */
@@ -238,25 +210,11 @@ static uint16_t rp_event_counter(struct ll_conn *conn)
 	return lll->event_counter + lll->latency_prepare;
 }
 
-static void rp_chmu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
-{
-	/* TODO
-	 * Do we need to send any notification about this?
-	 * There is no in HCI..
-	 */
-}
-
 static void rp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	ull_conn_chan_map_set(conn, ctx->data.chmu.chm);
-
-	if (!ntf_alloc_is_available()) {
-		ctx->state = RP_CHMU_STATE_WAIT_NTF;
-	} else {
-		rp_chmu_ntf(conn, ctx);
-		rr_complete(conn);
-		ctx->state = RP_CHMU_STATE_IDLE;
-	}
+	rr_complete(conn);
+	ctx->state = RP_CHMU_STATE_IDLE;
 }
 
 static void rp_chmu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -305,18 +263,6 @@ static void rp_chmu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, 
 	}
 }
 
-static void rp_chmu_st_wait_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
-{
-	switch (evt) {
-	case RP_CHMU_EVT_RUN:
-		rp_chmu_complete(conn, ctx, evt, param);
-		break;
-	default:
-		/* Ignore other evts */
-		break;
-	}
-}
-
 static void rp_chmu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
 	switch (ctx->state) {
@@ -328,9 +274,6 @@ static void rp_chmu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint
 		break;
 	case RP_CHMU_STATE_WAIT_INSTANT:
 		rp_chmu_st_wait_instant(conn, ctx, evt, param);
-		break;
-	case RP_CHMU_STATE_WAIT_NTF:
-		rp_chmu_st_wait_ntf(conn, ctx, evt, param);
 		break;
 	default:
 		/* Unknown state */
