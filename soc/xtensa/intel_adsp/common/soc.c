@@ -227,6 +227,19 @@ static inline void soc_set_power_and_clock(void)
 
 static int soc_init(const struct device *dev)
 {
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	/* On cAVS 1.8+, we must demand ownership of the timestamping
+	 * and clock generator registers.  Lacking the former will
+	 * prevent wall clock timer interrupts from arriving, even
+	 * though the device itself is operational.
+	 */
+	sys_write32(GENO_MDIVOSEL | GENO_DIOPTOSEL, DSP_INIT_GENO);
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
+		    DSP_INIT_LPGPDMA(0));
+	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG,
+		    DSP_INIT_LPGPDMA(1));
+#endif
+
 	soc_set_power_and_clock();
 	return 0;
 }
