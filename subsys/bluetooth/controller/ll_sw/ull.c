@@ -2008,7 +2008,7 @@ static inline void rx_alloc(uint8_t max)
 		max = mem_link_rx.quota_pdu;
 	}
 
-	while ((max--) && MFIFO_ENQUEUE_IDX_GET(pdu_rx_free, &idx)) {
+	while (max && MFIFO_ENQUEUE_IDX_GET(pdu_rx_free, &idx)) {
 		memq_link_t *link;
 		struct node_rx_hdr *rx;
 
@@ -2028,6 +2028,8 @@ static inline void rx_alloc(uint8_t max)
 		MFIFO_BY_IDX_ENQUEUE(pdu_rx_free, idx, rx);
 
 		ll_rx_link_inc_quota(-1);
+
+		max--;
 	}
 
 #if defined(CONFIG_BT_CONN)
