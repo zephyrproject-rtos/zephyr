@@ -52,8 +52,7 @@ LOG_MODULE_REGISTER(hawkbit);
 #define SLOT1_SIZE FLASH_AREA_SIZE(image_1)
 #define HTTP_HEADER_CONTENT_TYPE_JSON "application/json;charset=UTF-8"
 
-#if ((CONFIG_HAWKBIT_POLL_INTERVAL > 1)	\
-	&& (CONFIG_HAWKBIT_POLL_INTERVAL < 43200))
+#if ((CONFIG_HAWKBIT_POLL_INTERVAL > 1) && (CONFIG_HAWKBIT_POLL_INTERVAL < 43200))
 static uint32_t poll_sleep = (CONFIG_HAWKBIT_POLL_INTERVAL * 60 * MSEC_PER_SEC);
 #else
 static uint32_t poll_sleep = (300 * MSEC_PER_SEC);
@@ -357,8 +356,7 @@ static int hawkbit_device_acid_update(int32_t new_value)
 {
 	int ret;
 
-	ret = nvs_write(&fs, ADDRESS_ID, &new_value,
-			sizeof(new_value));
+	ret = nvs_write(&fs, ADDRESS_ID, &new_value, sizeof(new_value));
 	if (ret < 0) {
 		LOG_ERR("Failed to write device id");
 		return -EIO;
@@ -380,8 +378,8 @@ static void hawkbit_update_sleep(struct hawkbit_ctl_res *hawkbit_res)
 		LOG_ERR("Invalid poll sleep: %s", sleep);
 	} else {
 		sleep_time = hawkbit_time2sec(sleep);
-		if (sleep_time > 0 && poll_sleep !=
-		    (MSEC_PER_SEC * sleep_time)) {
+		if (sleep_time > 0 &&
+		    poll_sleep != (MSEC_PER_SEC * sleep_time)) {
 			LOG_DBG("New poll sleep %d seconds", sleep_time);
 			poll_sleep = sleep_time * MSEC_PER_SEC;
 		}
@@ -482,8 +480,7 @@ static int hawkbit_find_deployment_base(struct hawkbit_ctl_res *res,
  */
 static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 				    int32_t *json_action_id,
-				    char *download_http,
-				    int32_t *file_size)
+				    char *download_http, int32_t *file_size)
 {
 	int32_t size;
 	char *endptr;
@@ -562,8 +559,7 @@ static int hawkbit_parse_deployment(struct hawkbit_dep_res *res,
 
 static void hawkbit_dump_base(struct hawkbit_ctl_res *r)
 {
-	LOG_DBG("config.polling.sleep=%s",
-		log_strdup(r->config.polling.sleep));
+	LOG_DBG("config.polling.sleep=%s", log_strdup(r->config.polling.sleep));
 	LOG_DBG("_links.deploymentBase.href=%s",
 		log_strdup(r->_links.deploymentBase.href));
 	LOG_DBG("_links.configData.href=%s",
@@ -584,8 +580,7 @@ static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
 	LOG_DBG("chunks[0].part=%s", log_strdup(c->part));
 	LOG_DBG("chunks[0].name=%s", log_strdup(c->name));
 	LOG_DBG("chunks[0].version=%s", log_strdup(c->version));
-	LOG_DBG("chunks[0].artifacts[0].filename=%s",
-		log_strdup(a->filename));
+	LOG_DBG("chunks[0].artifacts[0].filename=%s", log_strdup(a->filename));
 	LOG_DBG("chunks[0].artifacts[0].hashes.sha1=%s",
 		log_strdup(a->hashes.sha1));
 	LOG_DBG("chunks[0].artifacts[0].hashes.md5=%s",
@@ -593,8 +588,7 @@ static void hawkbit_dump_deployment(struct hawkbit_dep_res *d)
 	LOG_DBG("chunks[0].artifacts[0].hashes.sha256=%s",
 		log_strdup(a->hashes.sha256));
 	LOG_DBG("chunks[0].size=%d", a->size);
-	LOG_DBG("download-http=%s",
-		log_strdup(l->download_http.href));
+	LOG_DBG("download-http=%s", log_strdup(l->download_http.href));
 	LOG_DBG("md5sum =%s", log_strdup(l->md5sum_http.href));
 }
 
@@ -663,8 +657,7 @@ static int enum_for_http_req_string(char *userdata)
 }
 
 static void response_cb(struct http_response *rsp,
-			enum http_final_call final_data,
-			void *userdata)
+			enum http_final_call final_data, void *userdata)
 {
 	static size_t body_len;
 	int ret, type, downloaded;
@@ -702,25 +695,23 @@ static void response_cb(struct http_response *rsp,
 			}
 
 			strncat(hb_context.response_data, body_data,
-					rsp->data_len);
+				rsp->data_len);
 		}
 
 		if (final_data == HTTP_DATA_FINAL) {
 			if (hb_context.dl.http_content_size != body_len) {
 				LOG_ERR("HTTP response len mismatch");
-				hb_context.code_status =
-					HAWKBIT_METADATA_ERROR;
+				hb_context.code_status = HAWKBIT_METADATA_ERROR;
 			}
 
 			hb_context.response_data[body_len] = '\0';
-			ret = json_obj_parse(hb_context.response_data,
-					     body_len, json_ctl_res_descr,
+			ret = json_obj_parse(hb_context.response_data, body_len,
+					     json_ctl_res_descr,
 					     ARRAY_SIZE(json_ctl_res_descr),
 					     &hawkbit_results.base);
 			if (ret < 0) {
 				LOG_ERR("JSON parse error");
-				hb_context.code_status =
-					HAWKBIT_METADATA_ERROR;
+				hb_context.code_status = HAWKBIT_METADATA_ERROR;
 			}
 
 			body_len = 0;
@@ -771,19 +762,17 @@ static void response_cb(struct http_response *rsp,
 		if (final_data == HTTP_DATA_FINAL) {
 			if (hb_context.dl.http_content_size != body_len) {
 				LOG_ERR("HTTP response len mismatch");
-				hb_context.code_status =
-					HAWKBIT_METADATA_ERROR;
+				hb_context.code_status = HAWKBIT_METADATA_ERROR;
 			}
 
 			hb_context.response_data[body_len] = '\0';
-			ret = json_obj_parse(hb_context.response_data,
-					     body_len, json_dep_res_descr,
+			ret = json_obj_parse(hb_context.response_data, body_len,
+					     json_dep_res_descr,
 					     ARRAY_SIZE(json_dep_res_descr),
 					     &hawkbit_results.dep);
 			if (ret < 0) {
 				LOG_ERR("DeploymentBase JSON parse error");
-				hb_context.code_status =
-					HAWKBIT_METADATA_ERROR;
+				hb_context.code_status = HAWKBIT_METADATA_ERROR;
 			}
 
 			body_len = 0;
@@ -815,8 +804,8 @@ static void response_cb(struct http_response *rsp,
 		}
 
 		if (body_data != NULL) {
-			ret = flash_img_buffered_write(&hb_context.flash_ctx,
-				body_data, body_len,
+			ret = flash_img_buffered_write(
+				&hb_context.flash_ctx, body_data, body_len,
 				final_data == HTTP_DATA_FINAL);
 			if (ret < 0) {
 				LOG_ERR("flash write error");
