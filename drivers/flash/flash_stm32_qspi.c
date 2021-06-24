@@ -17,7 +17,6 @@
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <drivers/flash.h>
-#include <dt-bindings/dma/stm32_dma.h>
 #include <drivers/dma.h>
 #include <drivers/dma/dma_stm32.h>
 

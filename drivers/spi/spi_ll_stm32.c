@@ -18,7 +18,6 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <drivers/spi.h>
 #include <toolchain.h>
 #ifdef CONFIG_SPI_STM32_DMA
-#include <dt-bindings/dma/stm32_dma.h>
 #include <drivers/dma/dma_stm32.h>
 #include <drivers/dma.h>
 #endif
