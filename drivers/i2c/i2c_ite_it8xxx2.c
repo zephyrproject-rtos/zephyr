@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT ite_it8xxx2_i2c
 
 #include <drivers/i2c.h>
+#include <drivers/pinmux.h>
 #include <errno.h>
 #include <logging/log.h>
 		LOG_MODULE_REGISTER(i2c_ite_it8xxx2);
@@ -19,6 +20,19 @@
 #define DEV_DATA(dev) \
 		((struct i2c_it8xxx2_data * const)(dev)->data)
 
+#define DEV_CLK_PINMUX(idx)     DEVICE_DT_GET(DT_PHANDLE \
+	(DT_NODELABEL(pinctrl_i2c_clk##idx), pinctrls))
+#define DEV_DATA_PINMUX(idx)    DEVICE_DT_GET(DT_PHANDLE \
+	(DT_NODELABEL(pinctrl_i2c_data##idx), pinctrls))
+#define DEV_CLK_PIN(idx)        DT_PHA(DT_PHANDLE_BY_IDX \
+	(DT_DRV_INST(idx), pinctrl_0, 0), pinctrls, pin)
+#define DEV_DATA_PIN(idx)       DT_PHA(DT_PHANDLE_BY_IDX \
+	(DT_DRV_INST(idx), pinctrl_1, 0), pinctrls, pin)
+#define DEV_CLK_ALT_FUNC(idx)   DT_PHA(DT_PHANDLE_BY_IDX \
+	(DT_DRV_INST(idx), pinctrl_0, 0), pinctrls, alt_func)
+#define DEV_DATA_ALT_FUNC(idx)  DT_PHA(DT_PHANDLE_BY_IDX \
+	(DT_DRV_INST(idx), pinctrl_1, 0), pinctrls, alt_func)
+
 #define I2C_STANDARD_PORT_COUNT 3
 /* Default PLL frequency. */
 #define PLL_CLOCK 48000000
@@ -29,6 +43,15 @@ struct i2c_it8xxx2_config {
 	uint8_t *base;
 	uint8_t i2c_irq_base;
 	uint8_t port;
+	/* Pinmux control group */
+	const struct device *clk_pinctrls;
+	const struct device *data_pinctrls;
+	/* GPIO pin */
+	uint8_t clk_pin;
+	uint8_t data_pin;
+	/* Alternate function */
+	uint8_t clk_alt_fun;
+	uint8_t data_alt_fun;
 };
 
 enum i2c_ch_status {
@@ -905,6 +928,11 @@ static int i2c_it8xxx2_init(const struct device *dev)
 		return error;
 	}
 
+	/* The pin is set to I2C alternate function of clock */
+	pinmux_pin_set(config->clk_pinctrls, config->clk_pin, config->clk_alt_fun);
+	/* The pin is set to I2C alternate function of data */
+	pinmux_pin_set(config->data_pinctrls, config->data_pin, config->data_alt_fun);
+
 	return 0;
 }
 
@@ -922,6 +950,12 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 		.bitrate = DT_INST_PROP(idx, clock_frequency),                 \
 		.i2c_irq_base = DT_INST_IRQN(idx),                             \
 		.port = DT_INST_PROP(idx, port_num),                           \
+		.clk_pinctrls = DEV_CLK_PINMUX(idx),                           \
+		.data_pinctrls = DEV_DATA_PINMUX(idx),                         \
+		.clk_pin = DEV_CLK_PIN(idx),                                   \
+		.data_pin = DEV_DATA_PIN(idx),                                 \
+		.clk_alt_fun = DEV_CLK_ALT_FUNC(idx),                          \
+		.data_alt_fun = DEV_DATA_ALT_FUNC(idx)                         \
 	};                                                                     \
 	\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##idx;	               \
