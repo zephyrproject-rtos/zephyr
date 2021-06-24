@@ -290,11 +290,10 @@ uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t in
 	}
 }
 
-
-
 uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 {
 	struct ll_conn *conn;
+	const uint8_t *pending_chm;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
@@ -302,14 +301,23 @@ uint8_t ll_chm_get(uint16_t handle, uint8_t *chm)
 	}
 
 	/*
-	 * EGON TODO: copy channelmap in connection structure, as:
-	 *	memcpy(chm, conn->lll.data_chan_map,
-	 *	       sizeof(conn->lll.data_chan_map));
+	 * Core Spec 5.2 Vol4: 7.8.20:
+	 * The HCI_LE_Read_Channel_Map command returns the current Channel_Map
+	 * for the specified Connection_Handle. The returned value indicates the state of
+	 * the Channel_Map specified by the last transmitted or received Channel_Map
+	 * (in a CONNECT_IND or LL_CHANNEL_MAP_IND message) for the specified
+	 * Connection_Handle, regardless of whether the Master has received an
+	 * acknowledgment
 	 */
-	return BT_HCI_ERR_UNKNOWN_CMD;
+	pending_chm = ull_cp_chan_map_update_pending(conn);
+	if (pending_chm) {
+		memcpy(chm, pending_chm, sizeof(conn->lll.data_chan_map));
+	} else {
+		memcpy(chm, conn->lll.data_chan_map, sizeof(conn->lll.data_chan_map));
+	}
+
+	return BT_HCI_ERR_SUCCESS;
 }
-
-
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 uint8_t ll_rssi_get(uint16_t handle, uint8_t *rssi)
@@ -762,6 +770,21 @@ uint8_t ll_connect_disable(void **rx)
 uint8_t ll_chm_update(uint8_t const *const chm)
 {
 	uint16_t handle;
+	uint8_t count;
+
+	/* RFU bits */
+	if (chm[4] & 0xE0) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/*
+	 * HCI requires at least 1 channel to be unknown but LL requires at
+	 * least 2...
+	 */
+	count = util_ones_count_get(chm, 5);
+	if (count < 2) {
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
 
 	ull_chan_map_set(chm);
 
@@ -770,16 +793,20 @@ uint8_t ll_chm_update(uint8_t const *const chm)
 		struct ll_conn *conn;
 
 		conn = ll_connected_get(handle);
-		if (!conn || conn->lll.role) {
+		if (!conn || (conn->lll.role == BT_HCI_ROLE_SLAVE)) {
 			continue;
 		}
 
 		/*
 		 * initiate procedure for updating peer channel map
+		 *
+		 * TODO should we check error here (could happen if out of
+		 * free context)?
 		 */
+		ull_cp_chan_map_update(conn, chm);
 	}
 
-	return BT_HCI_ERR_UNKNOWN_CMD;
+	return BT_HCI_ERR_SUCCESS;
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)

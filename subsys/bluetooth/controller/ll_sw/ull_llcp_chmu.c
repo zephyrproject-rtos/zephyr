@@ -27,12 +27,16 @@
 #include "ull_conn_types.h"
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
+#include "ull_conn_llcp_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp_chmu
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
+
+/* Hardcoded instant delta +6 */
+#define CHMU_INSTANT_DELTA  6U
 
 /* LLCP Local Procedure Channel Map Update FSM states */
 enum {
@@ -64,12 +68,6 @@ enum {
 	/* Indication received */
 	RP_CHMU_EVT_RX_CHAN_MAP_IND,
 };
-
-/*
- * ULL -> LL Interface
- */
-
-extern void ll_rx_enqueue(struct node_rx_pdu *rx);
 
 /*
  * LLCP Local Procedure Channel Map Update FSM
@@ -111,6 +109,8 @@ static void lp_chmu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 static void lp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
+	ull_conn_chan_map_set(conn, ctx->data.chmu.chm);
+
 	if (!ntf_alloc_is_available()) {
 		ctx->state = LP_CHMU_STATE_WAIT_NTF;
 	} else {
@@ -127,8 +127,8 @@ static void lp_chmu_send_channel_map_update_ind(struct ll_conn *conn, struct pro
 	} else {
 		rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
 
-		/* TODO Hardcoded instant delta + 6 */
-		ctx->data.chmu.instant = lp_event_counter(conn) + 6;
+		/* TODO Hardcoded instant delta */
+		ctx->data.chmu.instant = lp_event_counter(conn) + CHMU_INSTANT_DELTA;
 
 		lp_chmu_tx(conn, ctx);
 
@@ -248,6 +248,8 @@ static void rp_chmu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 
 static void rp_chmu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
+	ull_conn_chan_map_set(conn, ctx->data.chmu.chm);
+
 	if (!ntf_alloc_is_available()) {
 		ctx->state = RP_CHMU_STATE_WAIT_NTF;
 	} else {

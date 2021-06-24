@@ -1092,6 +1092,14 @@ int ull_conn_reset(void)
 	return 0;
 }
 
+void ull_conn_chan_map_set(struct ll_conn *conn, const uint8_t chm[5])
+{
+	struct lll_conn *lll = &conn->lll;
+
+	memcpy(lll->data_chan_map, chm, sizeof(lll->data_chan_map));
+	lll->data_chan_count = util_ones_count_get(lll->data_chan_map, sizeof(lll->data_chan_map));
+}
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static inline void dle_max_time_get(struct ll_conn *conn,
 				    uint16_t *max_rx_time, uint16_t *max_tx_time)

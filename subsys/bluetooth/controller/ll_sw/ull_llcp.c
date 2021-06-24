@@ -554,7 +554,7 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
+uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
 {
 	struct proc_ctx *ctx;
 
@@ -562,34 +562,33 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TODO
-	 * HCI requires at least 1 channel to be unknown but LL requires 2...
-	 * Figure out whom should be responsible for checking this.
-	 */
-	if ((chm[0] == 0) && (chm[1] == 0) && (chm[2] == 0) && (chm[3] == 0) &&
-	    (chm[4] == 0)) {
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
-
-	/* RFU bits */
-	if (chm[4] & 0xE0) {
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
-
 	ctx = create_local_procedure(PROC_CHAN_MAP_UPDATE);
-
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* TODO
-	 * Should probably be stored in conn when integrated with LL
-	 */
 	memcpy(ctx->data.chmu.chm, chm, sizeof(ctx->data.chmu.chm));
 
 	lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
+}
+
+const uint8_t *ull_cp_chan_map_update_pending(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	if (conn->lll.role == BT_HCI_ROLE_MASTER) {
+		ctx = lr_peek(conn);
+	} else {
+		ctx = rr_peek(conn);
+	}
+
+	if (ctx && ctx->proc == PROC_CHAN_MAP_UPDATE) {
+		return ctx->data.chmu.chm;
+	}
+
+	return NULL;
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
