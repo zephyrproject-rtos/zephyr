@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018-2020 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright (c) 2020 Teslabs Engineering S.L.
+ * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -870,5 +871,9 @@ typedef void *lv_obj_user_data_t;
 #endif
 
 #define LV_USE_WIN IS_ENABLED(CONFIG_LVGL_USE_WIN)
+
+#ifdef CONFIG_LVGL_USE_USER_CONFIG
+#include CONFIG_LVGL_USER_CONFIG_FILE
+#endif
 
 #endif /* ZEPHYR_LIB_GUI_LVGL_LV_CONF_H_ */

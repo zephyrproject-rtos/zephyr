@@ -1,5 +1,6 @@
 # Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
 # Copyright (c) 2020 Teslabs Engineering S.L.
+# Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig LVGL
@@ -20,6 +21,22 @@ config APP_LINK_WITH_LVGL
 	  Add LVGL header files to the 'app' include path. It may be
 	  disabled if the include paths for LVGL are causing aliasing
 	  issues for 'app'.
+
+config LVGL_USE_USER_CONFIG
+	bool "Use user config file"
+	help
+	  Include a custom preferences file (lv_conf_user.h by default; see
+	  LVGL_USER_CONFIG_FILE).  In the file, you can set the preferences
+	  that cannot be set using Kconfig (e.g. custom fonts).
+
+config LVGL_USER_CONFIG_FILE
+	string "User config file name"
+	default "lv_conf_user.h"
+	depends on LVGL_USE_USER_CONFIG
+	help
+	  This file should be located in the root folder of the project,
+	  or in any folder, the path to which is registered in root
+	  CMakeLists.txt using the macro zephyr_include_directories()
 
 rsource "Kconfig.graphical"
 rsource "Kconfig.memory"
