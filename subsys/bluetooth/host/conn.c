@@ -438,7 +438,7 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 	struct bt_conn_tx *tx = tx_data(buf)->tx;
 	uint32_t *pending_no_cb;
 	unsigned int key;
-	int err;
+	int err = 0;
 
 	BT_DBG("conn %p buf %p len %u flags 0x%02x", conn, buf, buf->len,
 	       flags);
@@ -471,8 +471,10 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, uint8_t flags,
 
 	if (IS_ENABLED(CONFIG_BT_ISO) && conn->type == BT_CONN_TYPE_ISO) {
 		err = send_iso(conn, buf, flags);
-	} else {
+	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
 		err = send_acl(conn, buf, flags);
+	} else {
+		__ASSERT(false, "Invalid connection type %u", conn->type);
 	}
 
 	if (err) {
