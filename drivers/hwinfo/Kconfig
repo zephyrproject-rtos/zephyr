@@ -41,7 +41,7 @@ config HWINFO_MCUX_SIM
 config HWINFO_MCUX_SYSCON
 	bool "NXP LPC device ID"
 	default y
-	depends on HAS_MCUX_SYSCON
+	depends on HAS_MCUX_SYSCON && !SOC_SERIES_LPC54XXX
 	help
 	  Enable NXP LPC mcux hwinfo driver.
 
