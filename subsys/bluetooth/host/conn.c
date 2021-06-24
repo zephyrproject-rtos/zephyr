@@ -39,15 +39,23 @@
 #include "gatt_internal.h"
 #include "iso_internal.h"
 
-/* Peripheral timeout to initialize Connection Parameter Update procedure */
-#define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
-
 struct tx_meta {
 	struct bt_conn_tx *tx;
 };
 
 #define tx_data(buf) ((struct tx_meta *)net_buf_user_data(buf))
+K_FIFO_DEFINE(free_tx);
 
+/* Group Connected BT_CONN only in this */
+#if defined(CONFIG_BT_CONN)
+/* Peripheral timeout to initialize Connection Parameter Update procedure */
+#define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
+
+static void deferred_work(struct k_work *work);
+static void tx_complete_work(struct k_work *work);
+static void notify_connected(struct bt_conn *conn);
+
+static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    sizeof(struct tx_meta), NULL);
@@ -71,21 +79,12 @@ const struct bt_conn_auth_cb *bt_auth;
 static struct bt_conn_cb *callback_list;
 
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
-K_FIFO_DEFINE(free_tx);
 
 #if defined(CONFIG_BT_BREDR)
 static int bt_hci_connect_br_cancel(struct bt_conn *conn);
 
 static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #endif /* CONFIG_BT_BREDR */
-
-/* Group Connected BT_CONN only in this */
-#if defined(CONFIG_BT_CONN)
-static void deferred_work(struct k_work *work);
-static void tx_complete_work(struct k_work *work);
-static void notify_connected(struct bt_conn *conn);
-
-static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 #endif /* CONFIG_BT_CONN */
 
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
