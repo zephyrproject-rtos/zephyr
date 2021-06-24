@@ -25,7 +25,6 @@
 #include <drivers/clock_control.h>
 
 #ifdef CONFIG_UART_ASYNC_API
-#include <dt-bindings/dma/stm32_dma.h>
 #include <drivers/dma/dma_stm32.h>
 #include <drivers/dma.h>
 #endif
