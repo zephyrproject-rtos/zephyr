@@ -68,7 +68,6 @@ NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT,
 const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
-static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
@@ -85,6 +84,8 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 static void deferred_work(struct k_work *work);
 static void tx_complete_work(struct k_work *work);
 static void notify_connected(struct bt_conn *conn);
+
+static struct bt_conn acl_conns[CONFIG_BT_MAX_CONN];
 #endif /* CONFIG_BT_CONN */
 
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
@@ -650,6 +651,7 @@ int bt_conn_prepare_events(struct k_poll_event events[])
 	k_poll_event_init(&events[ev_count++], K_POLL_TYPE_SIGNAL,
 			  K_POLL_MODE_NOTIFY_ONLY, &conn_change);
 
+#if defined(CONFIG_BT_CONN)
 	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
 		conn = &acl_conns[i];
 
@@ -657,6 +659,7 @@ int bt_conn_prepare_events(struct k_poll_event events[])
 			ev_count++;
 		}
 	}
+#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_ISO)
 	for (i = 0; i < ARRAY_SIZE(iso_conns); i++) {
@@ -939,10 +942,12 @@ struct bt_conn *bt_conn_lookup_handle(uint16_t handle)
 {
 	struct bt_conn *conn;
 
+#if defined(CONFIG_BT_CONN)
 	conn = conn_lookup_handle(acl_conns, ARRAY_SIZE(acl_conns), handle);
 	if (conn) {
 		return conn;
 	}
+#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_ISO)
 	conn = conn_lookup_handle(iso_conns, ARRAY_SIZE(iso_conns), handle);
@@ -966,6 +971,7 @@ void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
 {
 	int i;
 
+#if defined(CONFIG_BT_CONN)
 	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
 		struct bt_conn *conn = bt_conn_ref(&acl_conns[i]);
 
@@ -995,6 +1001,7 @@ void bt_conn_foreach(int type, void (*func)(struct bt_conn *conn, void *data),
 		}
 	}
 #endif /* defined(CONFIG_BT_BREDR) */
+#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_ISO)
 	if (type & BT_CONN_TYPE_ISO) {
@@ -1062,7 +1069,7 @@ void bt_conn_unref(struct bt_conn *conn)
 
 uint8_t bt_conn_index(struct bt_conn *conn)
 {
-	ptrdiff_t index;
+	ptrdiff_t index = 0;
 
 	switch (conn->type) {
 #if defined(CONFIG_BT_ISO)
@@ -1080,9 +1087,13 @@ uint8_t bt_conn_index(struct bt_conn *conn)
 		break;
 #endif
 	default:
+#if defined(CONFIG_BT_CONN)
 		index = conn - acl_conns;
 		__ASSERT(index >= 0 && index < ARRAY_SIZE(acl_conns),
 			 "Invalid bt_conn pointer");
+#else
+		__ASSERT(false, "Invalid connection type %u", conn->type);
+#endif /* CONFIG_BT_CONN */
 		break;
 	}
 
