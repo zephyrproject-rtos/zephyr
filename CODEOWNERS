@@ -479,7 +479,6 @@
 /include/display/                         @vanwinkeljan
 /include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
-/include/dt-bindings/dma/stm32_dma.h      @cybertale
 /include/dt-bindings/ethernet/xlnx_gem.h  @ibirnbaum
 /include/dt-bindings/pcie/                @dcpleung
 /include/dt-bindings/pwm/*it8xxx2*        @RuibinChang

@@ -9,7 +9,7 @@
 #include <string.h>
 #include <drivers/dma.h>
 #include <drivers/i2s.h>
-#include <dt-bindings/dma/stm32_dma.h>
+#include <drivers/dma/dma_stm32.h>
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_spi.h>
