@@ -34,6 +34,7 @@ uint8_t ull_conn_default_phy_tx_get(void);
 uint8_t ull_conn_default_phy_rx_get(void);
 void ull_conn_default_phy_tx_set(uint8_t tx);
 void ull_conn_default_phy_rx_set(uint8_t rx);
+void ull_conn_chan_map_set(struct ll_conn *conn, const uint8_t chm[5]);
 void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx);
 int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx);
 int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy);
