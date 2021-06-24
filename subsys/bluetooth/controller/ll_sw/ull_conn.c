@@ -4056,12 +4056,12 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 			rx->hdr.link->mem = conn->llcp_rx;
 			conn->llcp_rx = rx;
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 			/* reserve rx node for DLE event generation */
-			rx = ll_pdu_rx_alloc();
-			rx->hdr.link->mem = conn->llcp_rx;
-			conn->llcp_rx = rx;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+			if (IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH)) {
+				rx = ll_pdu_rx_alloc();
+				rx->hdr.link->mem = conn->llcp_rx;
+				conn->llcp_rx = rx;
+			}
 		}
 
 		/* place the phy update ind packet as next in
@@ -4146,8 +4146,11 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 			/* enqueue rx node towards Thread */
 			ll_rx_put(rx->hdr.link, rx);
 
+			/* Release rx node that was reserved for Data Length
+			 * notification.
+			 */
 			if (IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH)) {
-				/* get the DLE rx node reserved for ULL->LL */
+				/* Get the DLE rx node reserved for ULL->LL */
 				rx = conn->llcp_rx;
 				LL_ASSERT(rx && rx->hdr.link);
 				conn->llcp_rx = rx->hdr.link->mem;
