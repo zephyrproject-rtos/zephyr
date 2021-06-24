@@ -41,7 +41,7 @@ void helloLoop(const char *my_name,
 	const char *tname;
 	uint8_t cpu;
 	struct k_thread *current_thread;
-
+	
 	while (1) {
 		/* take my semaphore */
 		k_sem_take(my_sem, K_FOREVER);
@@ -55,10 +55,10 @@ void helloLoop(const char *my_name,
 #endif
 		/* say "hello" */
 		if (tname == NULL) {
-			printk("%s: Hello World from cpu %d on %s!\n",
+			printk("%s: Hello World from cpu(%d) on %s!\n",
 				my_name, cpu, CONFIG_BOARD);
 		} else {
-			printk("%s: Hello World from cpu %d on %s!\n",
+			printk("%s: Hello World from cpu(%d) on %s!\n",
 				tname, cpu, CONFIG_BOARD);
 		}
 
@@ -125,6 +125,10 @@ void main(void)
 #if PIN_THREADS
 	k_thread_cpu_mask_clear(&threadB_data);
 	k_thread_cpu_mask_enable(&threadB_data, 1);
+#endif
+
+#if CONFIG_SMP
+	printk("Your target board (%s) supports symmetric multi-processing.\n", CONFIG_BOARD);
 #endif
 
 	k_thread_start(&threadA_data);
