@@ -326,6 +326,8 @@ static void hrs_notify(void)
 
 void main(void)
 {
+	struct bt_gatt_attr *vnd_ind_attr;
+	char str[BT_UUID_STR_LEN];
 	int err;
 
 	err = bt_enable(NULL);
@@ -339,6 +341,11 @@ void main(void)
 	bt_gatt_cb_register(&gatt_callbacks);
 	bt_conn_cb_register(&conn_callbacks);
 	bt_conn_auth_cb_register(&auth_cb_display);
+
+	vnd_ind_attr = bt_gatt_find_by_uuid(vnd_svc.attrs, vnd_svc.attr_count,
+					    &vnd_enc_uuid.uuid);
+	bt_uuid_to_str(&vnd_enc_uuid.uuid, str, sizeof(str));
+	printk("Indicate VND attr %p (UUID %s)\n", vnd_ind_attr, str);
 
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
@@ -356,12 +363,12 @@ void main(void)
 		bas_notify();
 
 		/* Vendor indication simulation */
-		if (simulate_vnd) {
+		if (simulate_vnd && vnd_ind_attr) {
 			if (indicating) {
 				continue;
 			}
 
-			ind_params.attr = &vnd_svc.attrs[2];
+			ind_params.attr = vnd_ind_attr;
 			ind_params.func = indicate_cb;
 			ind_params.destroy = indicate_destroy;
 			ind_params.data = &indicating;

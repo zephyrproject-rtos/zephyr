@@ -1906,6 +1906,9 @@ void arch_reserved_pages_update(void)
 		case X86_MEMMAP_ENTRY_DEFECTIVE:
 			__fallthrough;
 		default:
+			/* If any of three above cases satisfied, exit switch
+			 * and mark page reserved
+			 */
 			break;
 		}
 

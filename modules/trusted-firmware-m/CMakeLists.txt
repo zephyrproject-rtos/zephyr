@@ -1,5 +1,5 @@
 # Copyright (c) 2019, 2020 Linaro
-# Copyright (c) 2020, Nordic Semiconductor ASA
+# Copyright (c) 2020, 2021 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -27,113 +27,80 @@ set(TFM_CRYPTO_MODULES
   CRYPTO_KEY_DERIVATION_MODULE
   )
 
-# Adds trusted-firmware-m as an external project.
-# Also creates a target called 'tfm_api'
-# which can be linked into the app.
-#
-# When called from a Zephyr module, the following input values can be provided
-# to configure the TF-M build:
-#
-# BINARY_DIR: The location where the build outputs will be written
-# BOARD: The string identifying the board target for TF-M (AN521, etc.)
-# CMAKE_BUILD_TYPE: The TF-M build type to use, (Debug, Release, etc.)
-# PSA_TEST_SUITE: A PSA test suite to add, choose one of
-#                 PROTECTED_STORAGE/INTERNAL_TRUSTED_STORAGE/STORAGE/CRYPTO/
-#                 INITIAL_ATTESTATION
-# IPC: Build TFM IPC library. This library allows a non-secure application to
-#      interface to secure domain using IPC.
-# ISOLATION_LEVEL: The TF-M isolation level to use
-# REGRESSION_S: Boolean if TF-M build includes building the secure TF-M
-#               regression tests
-# REGRESSION_NS: Boolean if TF-M build includes building the non-secure
-#                TF-M regression tests
-# BL2: Boolean if the TF-M build uses MCUboot. Default: True
-# ENABLED_PARTITIONS: List of TFM partitions to enable.
-# CMAKE_ARGS: Additional CMake flags to be used when building TF-M
-#             This is a list of flags, such as
-#             `CMAKE_ARGS -DARG0=val0 -DARG1=val1`
-#              or a generator expression, such as:
-#             `CMAKE_ARGS $<TARGET_PROPERTY:target,property>
-#
-# Example usage:
-#
-# trusted_firmware_build(BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
-#                        BOARD ${TFM_TARGET_PLATFORM}
-#                        CMAKE_BUILD_TYPE Release
-#                        IPC
-#                        ISOLATION_LEVEL 2
-#                        REGRESSION_S
-#                        REGRESSION_NS
-#                        BL2
-#                        BUILD_PROFILE profile_small
-#                        ENABLED_PARTITIONS TFM_PARTITION_PLATFORM TFM_PARTITION_CRYPTO
-#                        ENABLED_CRYPTO_MODULES CRYPTO_KEY_MODULE CRYPTO_MAC_MODULE
-#                        )
-function(trusted_firmware_build)
-  set(options IPC BL2 REGRESSION_S REGRESSION_NS)
-  set(oneValueArgs BINARY_DIR BOARD ISOLATION_LEVEL CMAKE_BUILD_TYPE BUILD_PROFILE
-    MCUBOOT_IMAGE_NUMBER PSA_TEST_SUITE)
-  set(multiValueArgs ENABLED_PARTITIONS CMAKE_ARGS ENABLED_CRYPTO_MODULES)
-  cmake_parse_arguments(TFM "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  foreach(partition ${TFM_VALID_PARTITIONS})
-    list(FIND TFM_ENABLED_PARTITIONS ${partition} idx)
-    if (idx EQUAL -1)
-      set(val "OFF")
-    else()
-      set(val "ON")
-    endif()
-    list(APPEND TFM_PARTITIONS_ARGS -D${partition}=${val})
-  endforeach()
-
-  foreach(module ${TFM_CRYPTO_MODULES})
-    list(FIND TFM_ENABLED_CRYPTO_MODULES ${module} idx)
-    if (idx EQUAL -1)
-      set(val "TRUE") # Module is not enabled, set DISABLED option to TRUE
-    else()
-      set(val "FALSE") # Module is enabled, set DISABLED option to FALSE
-    endif()
-    list(APPEND
-      TFM_DISABLED_MODULES_ARGS
-      -D${module}_DISABLED=${val}
-      )
-  endforeach()
-
-  if(TFM_IPC)
-    set(TFM_IPC_ARG -DTFM_PSA_API=ON)
+if (CONFIG_BUILD_WITH_TFM)
+  if (CONFIG_TFM_IPC)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_PSA_API=ON)
     # PSA API awareness for the Non-Secure application
     target_compile_definitions(app PRIVATE "TFM_PSA_API")
   endif()
-
-  if(TFM_ISOLATION_LEVEL)
-    set(TFM_ISOLATION_LEVEL_ARG -DTFM_ISOLATION_LEVEL=${TFM_ISOLATION_LEVEL})
+  if (CONFIG_TFM_REGRESSION_S)
+    list(APPEND TFM_CMAKE_ARGS -DTEST_S=ON)
   endif()
-
-  if (TFM_REGRESSION_S)
-    set(TFM_REGRESSION_S_ARG -DTEST_S=ON)
+  if (CONFIG_TFM_REGRESSION_NS)
+    list(APPEND TFM_CMAKE_ARGS -DTEST_NS=ON)
   endif()
-
-  if (TFM_REGRESSION_NS)
-    set(TFM_REGRESSION_NS_ARG -DTEST_NS=ON)
-  endif()
-
-  if(DEFINED TFM_CMAKE_BUILD_TYPE)
-    set(TFM_CMAKE_BUILD_TYPE_ARG -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE})
+  if (CONFIG_TFM_BL2)
+    list(APPEND TFM_CMAKE_ARGS -DBL2=TRUE)
   else()
-    set(TFM_CMAKE_BUILD_TYPE_ARG -DCMAKE_BUILD_TYPE=RelWithDebInfo)
+    list(APPEND TFM_CMAKE_ARGS -DBL2=FALSE)
+  endif()
+  if (CONFIG_TFM_ISOLATION_LEVEL)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_ISOLATION_LEVEL=${CONFIG_TFM_ISOLATION_LEVEL})
+  endif()
+  if (CONFIG_TFM_PROFILE)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_PROFILE=${CONFIG_TFM_PROFILE})
+  endif()
+  if (CONFIG_TFM_PSA_TEST_CRYPTO)
+    set(TFM_PSA_TEST_SUITE CRYPTO)
+  elseif (CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE)
+    set(TFM_PSA_TEST_SUITE PROTECTED_STORAGE)
+  elseif (CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE)
+    set(TFM_PSA_TEST_SUITE INTERNAL_TRUSTED_STORAGE)
+  elseif (CONFIG_TFM_PSA_TEST_STORAGE)
+    set(TFM_PSA_TEST_SUITE STORAGE)
+  elseif (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION)
+    set(TFM_PSA_TEST_SUITE INITIAL_ATTESTATION)
+  endif()
+  if (DEFINED TFM_PSA_TEST_SUITE)
+    list(APPEND TFM_CMAKE_ARGS -DTEST_PSA_API=${TFM_PSA_TEST_SUITE})
+  endif()
+  if (CONFIG_TFM_CMAKE_BUILD_TYPE_RELEASE)
+    set(TFM_CMAKE_BUILD_TYPE "Release")
+  elseif (CONFIG_TFM_CMAKE_BUILD_TYPE_MINSIZEREL)
+    set(TFM_CMAKE_BUILD_TYPE "MinSizeRel")
+  elseif (CONFIG_TFM_CMAKE_BUILD_TYPE_DEBUG)
+    set(TFM_CMAKE_BUILD_TYPE "Debug")
+  else ()
+    set(TFM_CMAKE_BUILD_TYPE "RelWithDebInfo")
+  endif()
+  if (DEFINED CONFIG_TFM_MCUBOOT_IMAGE_NUMBER)
+    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_NUMBER=${CONFIG_TFM_MCUBOOT_IMAGE_NUMBER})
   endif()
 
-  if(DEFINED TFM_BUILD_PROFILE)
-    set(TFM_PROFILE_ARG -DTFM_PROFILE=${TFM_BUILD_PROFILE})
-  endif()
+  # Enable TFM partitions as specified in Kconfig
+  foreach(partition ${TFM_VALID_PARTITIONS})
+    if (CONFIG_${partition})
+      # list(APPEND TFM_ENABLED_PARTITIONS_ARG ${partition})
+      set(val "ON")
+    else()
+      set(val "OFF")
+    endif()
+    list(APPEND TFM_CMAKE_ARGS -D${partition}=${val})
+  endforeach()
 
-  if(DEFINED TFM_MCUBOOT_IMAGE_NUMBER)
-    set(MCUBOOT_IMAGE_NUM_ARG -DMCUBOOT_IMAGE_NUMBER=${TFM_MCUBOOT_IMAGE_NUMBER})
-  endif()
+  # Enable TFM crypto modules as specified in Kconfig
+  foreach(module ${TFM_CRYPTO_MODULES})
+    if (CONFIG_TFM_${module}_ENABLED)
+      # list(APPEND TFM_ENABLED_CRYPTO_MODULES_ARG ${module})
+      set(val "FALSE")
+    else()
+      set(val "TRUE")
+    endif()
+    list(APPEND TFM_CMAKE_ARGS -D${module}_DISABLED=${val})
+  endforeach()
 
-  if(DEFINED TFM_PSA_TEST_SUITE)
-    set(PSA_TEST_ARG -DTEST_PSA_API=${TFM_PSA_TEST_SUITE})
-  endif()
+  set(TFM_BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
 
   set(VENEERS_FILE ${TFM_BINARY_DIR}/secure_fw/s_veneers.o)
   set(TFM_API_NS_PATH ${TFM_BINARY_DIR}/app/libtfm_api_ns.a)
@@ -151,7 +118,7 @@ function(trusted_firmware_build)
     set(PSA_TEST_COMBINE_FILE ${TFM_BINARY_DIR}/app/psa_api_tests/dev_apis/${COMBINE_DIR_${TFM_PSA_TEST_SUITE}}/test_combine.a)
   endif()
 
-  if(TFM_BL2)
+  if(CONFIG_TFM_BL2)
     set(BL2_BIN_FILE ${TFM_BINARY_DIR}/bin/bl2.bin)
     set(BL2_HEX_FILE ${TFM_BINARY_DIR}/bin/bl2.hex)
   endif()
@@ -212,22 +179,14 @@ function(trusted_firmware_build)
       -DTFM_TOOLCHAIN_FILE=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/${TFM_TOOLCHAIN_FILE}
       -DTFM_PLATFORM=${TFM_BOARD}
       -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
-      ${TFM_CMAKE_BUILD_TYPE_ARG}
-      -DBL2=${TFM_BL2}
-      ${TFM_IPC_ARG}
-      ${TFM_ISOLATION_LEVEL_ARG}
-      ${TFM_REGRESSION_S_ARG}
-      ${TFM_REGRESSION_NS_ARG}
-      ${TFM_PROFILE_ARG}
-      ${MCUBOOT_IMAGE_NUM_ARG}
-      ${PSA_TEST_ARG}
+      -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE}
+      -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
       ${TFM_CMAKE_ARGS}
+      $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
       -DTFM_TEST_REPO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/tf-m-tests
       -DMBEDCRYPTO_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../../crypto/mbedtls/mbedtls
       -DMCUBOOT_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/../tfm-mcuboot
       -DPSA_ARCH_TESTS_PATH=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/psa-arch-tests
-      ${TFM_PARTITIONS_ARGS}
-      ${TFM_DISABLED_MODULES_ARGS}
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m
     WORKING_DIRECTORY ${TFM_BINARY_DIR}
     COMMAND_EXPAND_LISTS
@@ -250,7 +209,7 @@ function(trusted_firmware_build)
 
   # Set BL2 (MCUboot) executable file paths as target properties on 'tfm'
   # These files are produced by the TFM build system.
-  if(TFM_BL2)
+  if(CONFIG_TFM_BL2)
     set_target_properties(tfm PROPERTIES
       BL2_BIN_FILE ${BL2_BIN_FILE}
       BL2_HEX_FILE ${BL2_HEX_FILE}
@@ -300,82 +259,6 @@ function(trusted_firmware_build)
 
   # To ensure that generated include files are created before they are used.
   add_dependencies(zephyr_interface tfm)
-endfunction()
-
-if (CONFIG_BUILD_WITH_TFM)
-  if (CONFIG_TFM_IPC)
-    set(TFM_IPC_ARG IPC)
-  endif()
-  if (CONFIG_TFM_REGRESSION_S)
-    set(TFM_REGRESSION_S_ARG REGRESSION_S)
-  endif()
-  if (CONFIG_TFM_REGRESSION_NS)
-    set(TFM_REGRESSION_NS_ARG REGRESSION_NS)
-  endif()
-  if (CONFIG_TFM_BL2)
-    set(TFM_BL2_ARG BL2)
-  endif()
-  if (CONFIG_TFM_ISOLATION_LEVEL)
-    set(TFM_ISOLATION_LEVEL_ARG ISOLATION_LEVEL ${CONFIG_TFM_ISOLATION_LEVEL})
-  endif()
-  if (CONFIG_TFM_PROFILE)
-    set(TFM_PROFILE_ARG BUILD_PROFILE ${CONFIG_TFM_PROFILE})
-  endif()
-  if (CONFIG_TFM_PSA_TEST_CRYPTO)
-    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE CRYPTO)
-  elseif (CONFIG_TFM_PSA_TEST_PROTECTED_STORAGE)
-    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE PROTECTED_STORAGE)
-  elseif (CONFIG_TFM_PSA_TEST_INTERNAL_TRUSTED_STORAGE)
-    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE INTERNAL_TRUSTED_STORAGE)
-  elseif (CONFIG_TFM_PSA_TEST_STORAGE)
-    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE STORAGE)
-  elseif (CONFIG_TFM_PSA_TEST_INITIAL_ATTESTATION)
-    set(TFM_PSA_TEST_ARG PSA_TEST_SUITE INITIAL_ATTESTATION)
-  endif()
-  if (CONFIG_TFM_CMAKE_BUILD_TYPE_RELEASE)
-    set(TFM_CMAKE_BUILD_TYPE "Release")
-  elseif (CONFIG_TFM_CMAKE_BUILD_TYPE_MINSIZEREL)
-    set(TFM_CMAKE_BUILD_TYPE "MinSizeRel")
-  elseif (CONFIG_TFM_CMAKE_BUILD_TYPE_DEBUG)
-    set(TFM_CMAKE_BUILD_TYPE "Debug")
-  elseif (CONFIG_TFM_CMAKE_BUILD_TYPE_RELWITHDEBINFO)
-    set(TFM_CMAKE_BUILD_TYPE "RelWithDebInfo")
-  endif()
-  if (DEFINED CONFIG_TFM_MCUBOOT_IMAGE_NUMBER)
-    set(TFM_IMAGE_NUMBER_ARG
-        MCUBOOT_IMAGE_NUMBER ${CONFIG_TFM_MCUBOOT_IMAGE_NUMBER})
-  endif()
-
-  # Enable TFM partitions as specified in Kconfig
-  foreach(partition ${TFM_VALID_PARTITIONS})
-    if (CONFIG_${partition})
-      list(APPEND TFM_ENABLED_PARTITIONS_ARG ${partition})
-    endif()
-  endforeach()
-
-  # Enable TFM crypto modules as specified in Kconfig
-  foreach(module ${TFM_CRYPTO_MODULES})
-    if (CONFIG_TFM_${module}_ENABLED)
-      list(APPEND TFM_ENABLED_CRYPTO_MODULES_ARG ${module})
-    endif()
-  endforeach()
-
-  trusted_firmware_build(
-    BINARY_DIR ${CMAKE_BINARY_DIR}/tfm
-    BOARD ${CONFIG_TFM_BOARD}
-    ${TFM_ISOLATION_LEVEL_ARG}
-    ${TFM_PROFILE_ARG}
-    ${TFM_IMAGE_NUMBER_ARG}
-    ${TFM_BL2_ARG}
-    ${TFM_IPC_ARG}
-    ${TFM_REGRESSION_S_ARG}
-    ${TFM_REGRESSION_NS_ARG}
-    CMAKE_ARGS $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
-    ENABLED_PARTITIONS ${TFM_ENABLED_PARTITIONS_ARG}
-    ENABLED_CRYPTO_MODULES ${TFM_ENABLED_CRYPTO_MODULES_ARG}
-    ${TFM_PSA_TEST_ARG}
-    CMAKE_BUILD_TYPE ${TFM_CMAKE_BUILD_TYPE}
-  )
 
   # Set default image versions if not defined elsewhere
   if (NOT DEFINED TFM_IMAGE_VERSION_S)

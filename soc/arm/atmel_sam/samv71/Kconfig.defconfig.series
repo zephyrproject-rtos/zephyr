@@ -38,9 +38,6 @@ config NUM_IRQS
 	default 74 if SOC_ATMEL_SAMV71_REVB
 	default 71
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 300000000
-
 # Configure default device drivers. If a feature is supported by more than one
 # device driver the default configuration will be placed in the board defconfig
 # file.

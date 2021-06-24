@@ -58,6 +58,9 @@ Architectures
 
   * AARCH32
 
+     * Added support for FPU in QEMU for Cortex-M, allowing to build and execute
+       tests in CI with FPU and FPU_SHARING options enabled.
+
 
   * AARCH64
 

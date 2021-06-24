@@ -433,6 +433,24 @@ static inline void bt_gatt_foreach_attr(uint16_t start_handle, uint16_t end_hand
  */
 struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr);
 
+/** @brief Find Attribute by UUID.
+ *
+ *  Find the attribute with the matching UUID.
+ *  To limit the search to a service set the attr to the service attributes and
+ *  the attr_count to the service attribute count .
+ *
+ *  @param attr        Pointer to an attribute that serves as the starting point
+ *                     for the search of a match for the UUID.
+ *                     Passing NULL will search the entire range.
+ *  @param attr_count  The number of attributes from the starting point to
+ *                     search for a match for the UUID.
+ *                     Set to 0 to search until the end.
+ *  @param uuid        UUID to match.
+ */
+struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr,
+					  uint16_t attr_count,
+					  const struct bt_uuid *uuid);
+
 /** @brief Get Attribute handle.
  *
  *  @param attr Attribute object.
@@ -928,9 +946,17 @@ ssize_t bt_gatt_attr_read_cpf(struct bt_conn *conn,
 typedef void (*bt_gatt_complete_func_t) (struct bt_conn *conn, void *user_data);
 
 struct bt_gatt_notify_params {
-	/** Notification Attribute UUID type */
+	/** @brief Notification Attribute UUID type
+	 *
+	 *  Optional, use to search for an attribute with matching UUID when
+	 *  the attribute object pointer is not known.
+	 */
 	const struct bt_uuid *uuid;
-	/** Notification Attribute object*/
+	/** @brief Notification Attribute object
+	 *
+	 *  Optional if uuid is provided, in this case it will be used as start
+	 *  range to search for the attribute with the given UUID.
+	 */
 	const struct bt_gatt_attr *attr;
 	/** Notification Value data */
 	const void *data;
@@ -955,7 +981,7 @@ struct bt_gatt_notify_params {
  *  @option{CONFIG_BT_CONN_TX_MAX} option.
  *
  *  Alternatively it is possible to notify by UUID by setting it on the
- *  parameters, when using this method the attribute given is used as the
+ *  parameters, when using this method the attribute if provided is used as the
  *  start range when looking up for possible matches.
  *
  *  @param conn Connection object.
@@ -1068,9 +1094,17 @@ typedef void (*bt_gatt_indicate_params_destroy_t)(
 
 /** @brief GATT Indicate Value parameters */
 struct bt_gatt_indicate_params {
-	/** Notification Attribute UUID type */
+	/** @brief Indicate Attribute UUID type
+	 *
+	 *  Optional, use to search for an attribute with matching UUID when
+	 *  the attribute object pointer is not known.
+	 */
 	const struct bt_uuid *uuid;
-	/** Indicate Attribute object*/
+	/** @brief Indicate Attribute object
+	 *
+	 *  Optional if uuid is provided, in this case it will be used as start
+	 *  range to search for the attribute with the given UUID.
+	 */
 	const struct bt_gatt_attr *attr;
 	/** Indicate Value callback */
 	bt_gatt_indicate_func_t func;
@@ -1097,7 +1131,7 @@ struct bt_gatt_indicate_params {
  *  BT_GATT_CHARACTERISTIC.
  *
  *  Alternatively it is possible to indicate by UUID by setting it on the
- *  parameters, when using this method the attribute given is used as the
+ *  parameters, when using this method the attribute if provided is used as the
  *  start range when looking up for possible matches.
  *
  *  @note This procedure is asynchronous therefore the parameters need to
