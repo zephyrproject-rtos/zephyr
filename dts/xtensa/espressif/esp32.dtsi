@@ -194,6 +194,8 @@
 		spi2: spi@3ff64000 {
 			compatible = "espressif,esp32-spi";
 			reg = <0x3ff64000 DT_SIZE_K(4)>;
+			interrupts = <SPI2_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
 			label = "SPI_2";
 			clocks = <&rtc ESP32_SPI2_MODULE>;
 			status = "disabled";
@@ -202,6 +204,8 @@
 		spi3: spi@3ff65000 {
 			compatible = "espressif,esp32-spi";
 			reg = <0x3ff65000 DT_SIZE_K(4)>;
+			interrupts = <SPI3_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
 			label = "SPI_3";
 			clocks = <&rtc ESP32_SPI3_MODULE>;
 			status = "disabled";
