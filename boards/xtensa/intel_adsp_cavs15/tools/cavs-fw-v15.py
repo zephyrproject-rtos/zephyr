@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 # Copyright(c) 2021 Intel Corporation. All rights reserved.
-
 import ctypes
 import mmap
 import os
