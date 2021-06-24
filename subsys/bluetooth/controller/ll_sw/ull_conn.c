@@ -4086,6 +4086,21 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct node_rx_pdu *rx;
 		uint8_t old_tx, old_rx;
 
+		/* Acquire additional rx node for Data length notification as
+		 * a peripheral.
+		 */
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		    IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH) &&
+		    conn->lll.role) {
+			rx = ll_pdu_rx_alloc();
+			if (!rx) {
+				return;
+			}
+
+			rx->hdr.link->mem = conn->llcp_rx;
+			conn->llcp_rx = rx;
+		}
+
 #if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_CTLR_LE_ENC)
 		if (conn->lll.role && (conn->slave.llcp_type != LLCP_NONE)) {
 			/* Local peripheral initiated PHY update completed while
@@ -5496,23 +5511,27 @@ static inline uint8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	conn->llcp.phy_upd_ind.instant = instant;
 	conn->llcp.phy_upd_ind.initiate = 0U;
 
+	/* Reserve the Rx-ed PHY Update Indication PDU in the connection
+	 * context, by appending to the LLCP node rx list. We do not mark it
+	 * for release in ULL, i.e., by returning *rx as NULL.
+	 * PHY Update notification to HCI layer will use node rx from this
+	 * list when at the instant.
+	 * If data length update is supported in the Controller, then, at the
+	 * instant we attempt to acquire an additional free node rx for Data
+	 * Length Update notification.
+	 */
 	link->mem = conn->llcp_rx;
 	(*rx)->hdr.link = link;
 	conn->llcp_rx = *rx;
 	*rx = NULL;
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	/* reserve rx node for DLE event generation */
-	struct node_rx_pdu *rx_dle = ll_pdu_rx_alloc();
-
-	LL_ASSERT(rx_dle);
-	rx_dle->hdr.link->mem = conn->llcp_rx;
-	conn->llcp_rx = rx_dle;
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-
+	/* Transition to PHY Update Ind received state and  wait for the
+	 * instant.
+	 */
 	conn->llcp_type = LLCP_PHY_UPD;
 	conn->llcp_ack -= 2U;
 
+	/* Enforce packet timing restrictions until the instant */
 	if (conn->llcp.phy_upd_ind.tx) {
 		conn->lll.phy_tx_time = conn->llcp.phy_upd_ind.tx;
 	}
