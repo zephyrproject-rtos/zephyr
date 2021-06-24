@@ -526,7 +526,11 @@ static inline uint16_t conn_mtu(struct bt_conn *conn)
 		return bt_dev.le.iso_mtu;
 	}
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_CONN)
 	return bt_dev.le.acl_mtu;
+#else
+	return 0;
+#endif /* CONFIG_BT_CONN */
 }
 
 static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
