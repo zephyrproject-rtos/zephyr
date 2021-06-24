@@ -85,7 +85,7 @@ static uint8_t mics_client_read_mute_cb(struct bt_conn *conn, uint8_t err,
 					const void *data, uint16_t length)
 {
 	uint8_t cb_err = err;
-	uint8_t *mute_val = NULL;
+	uint8_t mute_val = 0;
 	struct bt_mics *mics_inst = &mics_insts[bt_conn_index(conn)];
 
 	mics_inst->cli.busy = false;
@@ -93,18 +93,18 @@ static uint8_t mics_client_read_mute_cb(struct bt_conn *conn, uint8_t err,
 	if (err > 0) {
 		BT_DBG("err: 0x%02X", err);
 	} else if (data != NULL) {
-		if (length == sizeof(*mute_val)) {
-			mute_val = (uint8_t *)data;
-			BT_DBG("Mute %u", *mute_val);
+		if (length == sizeof(mute_val)) {
+			mute_val = ((uint8_t *)data)[0];
+			BT_DBG("Mute %u", mute_val);
 		} else {
 			BT_DBG("Invalid length %u (expected %zu)",
-			       length, sizeof(*mute_val));
+			       length, sizeof(mute_val));
 			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
 		}
 	}
 
 	if (mics_client_cb != NULL && mics_client_cb->mute != NULL) {
-		mics_client_cb->mute(mics_inst, cb_err, *mute_val);
+		mics_client_cb->mute(mics_inst, cb_err, mute_val);
 	}
 
 	return BT_GATT_ITER_STOP;
