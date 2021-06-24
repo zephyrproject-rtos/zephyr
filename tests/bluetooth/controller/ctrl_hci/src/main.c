@@ -439,26 +439,39 @@ void test_hci_chmap(void)
 {
 	uint16_t conn_handle;
 	uint64_t err;
-
 	uint8_t chmap[5];
+	uint8_t chmap_zero[5] = { };
+	uint8_t chmap_test[5] = {0x42, 0x00, 0x42, 0x00, 0x00};
+
+	err = ll_chm_update(chmap_zero);
+	zassert_equal(err, BT_HCI_ERR_INVALID_PARAM, "Errorcode %d", err);
 
 	conn_handle = ll_conn_handle_get(conn_from_pool);
 
-	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
-	/* Connect */
+	test_set_role(conn_from_pool, BT_HCI_ROLE_SLAVE);
 	ull_cp_state_set(conn_from_pool, ULL_CP_CONNECTED);
 
-	err = ll_chm_update(chmap);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD, NULL);
-
-
-	test_set_role(conn_from_pool, BT_HCI_ROLE_SLAVE);
 	err = ll_chm_get(conn_handle+1, chmap);
 	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CONN_ID, "Errorcode %d", err);
 
 	err = ll_chm_get(conn_handle, chmap);
-	zassert_equal(err, BT_HCI_ERR_UNKNOWN_CMD, "Errorcode %d", err);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
+	/* TODO test should initialize conn with default map */
+	zassert_mem_equal(chmap, chmap_zero, sizeof(chmap), "Channel map invalid");
 
+	test_set_role(conn_from_pool, BT_HCI_ROLE_MASTER);
+
+	err = ll_chm_get(conn_handle, chmap);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
+	/* TODO test should initialize conn with default map */
+	zassert_mem_equal(chmap, chmap_zero, sizeof(chmap), "Channel map invalid");
+
+	err = ll_chm_update(chmap_test);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
+
+	err = ll_chm_get(conn_handle, chmap);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, "Errorcode %d", err);
+	zassert_mem_equal(chmap, chmap_test, sizeof(chmap), "Channel map invalid");
 }
 
 void test_hci_rssi(void)
