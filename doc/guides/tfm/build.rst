@@ -1,3 +1,5 @@
+.. _tfm_build_system:
+
 TF-M Build System
 #################
 
