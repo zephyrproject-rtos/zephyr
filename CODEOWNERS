@@ -249,7 +249,9 @@
 /drivers/ipm/ipm_nrfx_ipc.c               @masz-nordic @ioannisg
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
-/drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
+/drivers/kscan/                           @VenkatKotakonda @franciscomunoz @scottwcpg
+/drivers/kscan/*xec*                      @franciscomunoz @scottwcpg
+/drivers/kscan/*ft5336*                   @MaureenHelm
 /drivers/kscan/*ht16k33*                  @henrikbrixandersen
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar-nordic
@@ -264,7 +266,8 @@
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*it8xxx2*                 @ite
 /drivers/pm_cpu_ops/                      @carlocaione
-/drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
+/drivers/ps2/                             @franciscomunoz @scottwcpg
+/drivers/ps2/*xec*                        @franciscomunoz @scottwcpg
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
 /drivers/pwm/*sam0*                       @nzmichaelh
 /drivers/pwm/*stm32*                      @gmarull
