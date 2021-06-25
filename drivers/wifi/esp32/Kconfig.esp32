@@ -3,7 +3,6 @@
 menuconfig WIFI_ESP32
 	bool "ESP32 SoC WiFi support"
 	select THREAD_CUSTOM_DATA
-	select DYNAMIC_INTERRUPTS
 	help
 	  Enable ESP32 SoC WiFi support.
 
