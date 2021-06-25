@@ -108,7 +108,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		struct net_buf *buf;
 
-		if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
+		if (IS_ENABLED(CONFIG_BT_MESH_GATT_SERVER)) {
 			buf = net_buf_get(&bt_mesh_adv_queue, K_NO_WAIT);
 			while (!buf) {
 
