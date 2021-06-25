@@ -40,6 +40,30 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 		flash_stm32_range_exists(dev, offset, len);
 }
 
+static inline void flush_cache(FLASH_TypeDef *regs)
+{
+	if (regs->ACR & FLASH_ACR_DCEN) {
+		regs->ACR &= ~FLASH_ACR_DCEN;
+		/* Datasheet: DCRST: Data cache reset
+		 * This bit can be written only when thes data cache is disabled
+		 */
+		regs->ACR |= FLASH_ACR_DCRST;
+		regs->ACR &= ~FLASH_ACR_DCRST;
+		regs->ACR |= FLASH_ACR_DCEN;
+	}
+
+	if (regs->ACR & FLASH_ACR_ICEN) {
+		regs->ACR &= ~FLASH_ACR_ICEN;
+		/* Datasheet: ICRST: Instruction cache reset :
+		 * This bit can be written only when the instruction cache
+		 * is disabled
+		 */
+		regs->ACR |= FLASH_ACR_ICRST;
+		regs->ACR &= ~FLASH_ACR_ICRST;
+		regs->ACR |= FLASH_ACR_ICEN;
+	}
+}
+
 /*
  * STM32L4xx devices can have up to 512 2K pages on two 256x2K pages banks
  *
@@ -162,6 +186,8 @@ static int erase_page(const struct device *dev, unsigned int page)
 	if (rc < 0) {
 		return rc;
 	}
+
+	flush_cache(regs);
 
 	/* Set the PER bit and select the page you wish to erase */
 	regs->CR |= FLASH_CR_PER;
