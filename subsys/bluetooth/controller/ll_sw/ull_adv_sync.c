@@ -50,13 +50,6 @@ static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
 
-static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
-				      struct pdu_adv *ter_pdu_prev,
-				      struct pdu_adv *ter_pdu,
-				      uint16_t hdr_add_fields,
-				      uint16_t hdr_rem_fields,
-				      void *data);
-
 static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
 static inline void sync_info_offset_fill(struct pdu_adv_sync_info *si,
@@ -830,154 +823,6 @@ uint8_t ull_adv_sync_pdu_set_clear(struct lll_adv_sync *lll_sync,
 				   uint16_t hdr_rem_fields,
 				   struct adv_pdu_field_data *data)
 {
-	int err;
-
-	err = adv_sync_hdr_set_clear(lll_sync, ter_pdu_prev, ter_pdu,
-				     hdr_add_fields, hdr_rem_fields,
-				     (data ? data->field_data : NULL));
-
-	return err;
-}
-
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-/* @brief Set or clear fields in extended advertising header and store
- *        extra_data if requested.
- *
- * @param[in]  extra_data_prev  Pointer to previous content of extra_data.
- * @param[in]  hdr_add_fields   Flag with information which fields add.
- * @param[in]  hdr_rem_fields   Flag with information which fields remove.
- * @param[in]  data             Pointer to data to be stored in extra_data.
- *                              Content depends on the data depends on
- *                              @p hdr_add_fields.
- *
- * @Note
- * @p data depends on the flag provided by @p hdr_add_fields.
- * Information about content of value may be found in description of
- * @ref ull_adv_sync_pdu_set_clear.
- *
- * @return Zero in case of success, other value in case of failure.
- */
-void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
-				       void *extra_data_new,
-				       uint16_t hdr_add_fields,
-				       uint16_t hdr_rem_fields,
-				       void *data)
-{
-	/* Currently only CTE enable requires extra_data. Due to that fact
-	 * CTE additional data are just copied to extra_data memory.
-	 */
-	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
-		memcpy(extra_data_new, data, sizeof(struct lll_df_adv_cfg));
-	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
-		   extra_data_prev) {
-		memmove(extra_data_new, extra_data_prev,
-			sizeof(struct lll_df_adv_cfg));
-	}
-}
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
-
-static int init_reset(void)
-{
-	/* Initialize adv sync pool. */
-	mem_init(ll_adv_sync_pool, sizeof(struct ll_adv_sync_set),
-		 sizeof(ll_adv_sync_pool) / sizeof(struct ll_adv_sync_set),
-		 &adv_sync_free);
-
-	return 0;
-}
-
-static inline struct ll_adv_sync_set *sync_acquire(void)
-{
-	return mem_acquire(&adv_sync_free);
-}
-
-static inline void sync_release(struct ll_adv_sync_set *sync)
-{
-	mem_release(sync, &adv_sync_free);
-}
-
-static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
-{
-	return mem_index_get(sync, ll_adv_sync_pool,
-			     sizeof(struct ll_adv_sync_set));
-}
-
-static uint8_t sync_stop(struct ll_adv_sync_set *sync)
-{
-	uint8_t sync_handle;
-	int err;
-
-	sync_handle = sync_handle_get(sync);
-
-	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_SYNC_BASE + sync_handle,
-					sync, &sync->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
-	if (err) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	return 0;
-}
-
-static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
-				  struct ll_adv_set *adv, uint8_t enable)
-{
-	uint8_t pri_idx;
-	uint8_t err;
-
-	/* Remove sync_info from auxiliary PDU */
-	err = ull_adv_aux_hdr_set_clear(adv, 0,
-					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
-					NULL, NULL, &pri_idx);
-	if (err) {
-		return err;
-	}
-
-	lll_adv_data_enqueue(&adv->lll, pri_idx);
-
-	if (sync->is_started) {
-		/* TODO: we removed sync info, but if sync_stop() fails, what do
-		 * we do?
-		 */
-		err = sync_stop(sync);
-		if (err) {
-			return err;
-		}
-
-		sync->is_started = 0U;
-	}
-
-	if (!enable) {
-		sync->is_enabled = 0U;
-	}
-
-	return 0U;
-}
-
-/* @brief Set or clear fields in extended advertising header.
- *
- * @param[in]  adv              Advertising set.
- * @param[in]  hdr_add_fields   Flag with information which fields add.
- * @param[in]  hdr_rem_fields   Flag with information which fields remove.
- * @param[in]  value            Pointer to data to be added to header.
- *                              Content depends on the value of
- *                              @p hdr_add_fields.
- * @param[out] ter_idx          Index of new PDU.
- *
- * @Note
- * @p value depends on the flag provided by @p hdr_add_fields.
- * Information about content of value may be found in description of
- * @ref ull_adv_sync_pdu_set_clear.
- *
- * @return Zero in case of success, other value in case of failure.
- */
-static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
-				      struct pdu_adv *ter_pdu_prev,
-				      struct pdu_adv *ter_pdu,
-				      uint16_t hdr_add_fields,
-				      uint16_t hdr_rem_fields,
-				      void *value)
-{
 	struct pdu_adv_com_ext_adv *ter_com_hdr, *ter_com_hdr_prev;
 	struct pdu_adv_ext_hdr *ter_hdr, ter_hdr_prev;
 	uint8_t *ter_dptr, *ter_dptr_prev;
@@ -990,6 +835,9 @@ static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
 	uint8_t cte_info;
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	uint8_t ad_len;
+	void *value;
+
+	value = data ? data->field_data : NULL;
 
 	/* Get common pointers from reference to previous tertiary PDU data */
 	ter_com_hdr_prev = (void *)&ter_pdu_prev->adv_ext_ind;
@@ -1173,6 +1021,121 @@ static uint8_t adv_sync_hdr_set_clear(struct lll_adv_sync *lll_sync,
 	/* No AdvA in AUX_SYNC_IND */
 
 	return 0;
+}
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+/* @brief Set or clear fields in extended advertising header and store
+ *        extra_data if requested.
+ *
+ * @param[in]  extra_data_prev  Pointer to previous content of extra_data.
+ * @param[in]  hdr_add_fields   Flag with information which fields add.
+ * @param[in]  hdr_rem_fields   Flag with information which fields remove.
+ * @param[in]  data             Pointer to data to be stored in extra_data.
+ *                              Content depends on the data depends on
+ *                              @p hdr_add_fields.
+ *
+ * @Note
+ * @p data depends on the flag provided by @p hdr_add_fields.
+ * Information about content of value may be found in description of
+ * @ref ull_adv_sync_pdu_set_clear.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+void ull_adv_sync_extra_data_set_clear(void *extra_data_prev,
+				       void *extra_data_new,
+				       uint16_t hdr_add_fields,
+				       uint16_t hdr_rem_fields,
+				       void *data)
+{
+	/* Currently only CTE enable requires extra_data. Due to that fact
+	 * CTE additional data are just copied to extra_data memory.
+	 */
+	if (hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) {
+		memcpy(extra_data_new, data, sizeof(struct lll_df_adv_cfg));
+	} else if (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
+		   extra_data_prev) {
+		memmove(extra_data_new, extra_data_prev,
+			sizeof(struct lll_df_adv_cfg));
+	}
+}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+static int init_reset(void)
+{
+	/* Initialize adv sync pool. */
+	mem_init(ll_adv_sync_pool, sizeof(struct ll_adv_sync_set),
+		 sizeof(ll_adv_sync_pool) / sizeof(struct ll_adv_sync_set),
+		 &adv_sync_free);
+
+	return 0;
+}
+
+static inline struct ll_adv_sync_set *sync_acquire(void)
+{
+	return mem_acquire(&adv_sync_free);
+}
+
+static inline void sync_release(struct ll_adv_sync_set *sync)
+{
+	mem_release(sync, &adv_sync_free);
+}
+
+static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync)
+{
+	return mem_index_get(sync, ll_adv_sync_pool,
+			     sizeof(struct ll_adv_sync_set));
+}
+
+static uint8_t sync_stop(struct ll_adv_sync_set *sync)
+{
+	uint8_t sync_handle;
+	int err;
+
+	sync_handle = sync_handle_get(sync);
+
+	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_SYNC_BASE + sync_handle,
+					sync, &sync->lll);
+	LL_ASSERT(err == 0 || err == -EALREADY);
+	if (err) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	return 0;
+}
+
+static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
+				  struct ll_adv_set *adv, uint8_t enable)
+{
+	uint8_t pri_idx;
+	uint8_t err;
+
+	/* Remove sync_info from auxiliary PDU */
+	err = ull_adv_aux_hdr_set_clear(adv, 0,
+					ULL_ADV_PDU_HDR_FIELD_SYNC_INFO,
+					NULL, NULL, &pri_idx);
+	if (err) {
+		return err;
+	}
+
+	lll_adv_data_enqueue(&adv->lll, pri_idx);
+
+	if (sync->is_started) {
+		/* TODO: we removed sync info, but if sync_stop() fails, what do
+		 * we do?
+		 */
+		err = sync_stop(sync);
+		if (err) {
+			return err;
+		}
+
+		sync->is_started = 0U;
+	}
+
+	if (!enable) {
+		sync->is_enabled = 0U;
+	}
+
+	return 0U;
 }
 
 static void mfy_sync_offset_get(void *param)
