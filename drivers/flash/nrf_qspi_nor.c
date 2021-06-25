@@ -50,8 +50,9 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 					 quad_enable_requirements))
 
 BUILD_ASSERT(((INST_0_QER == JESD216_DW15_QER_NONE)
-	      || (INST_0_QER == JESD216_DW15_QER_S1B6)),
-	     "Driver only supports NONE or S1B6 for quad-enable-requirements");
+	      || (INST_0_QER == JESD216_DW15_QER_S1B6)
+          || (INST_0_QER == JESD216_DW15_QER_S2B1v6)),
+	     "Driver only supports NONE, S1B6, or S2B1v6 for quad-enable-requirements");
 
 #if NRF52_ERRATA_122_PRESENT
 #include <hal/nrf_gpio.h>
@@ -507,6 +508,23 @@ static int qspi_rdsr(const struct device *dev)
 	return (ret < 0) ? ret : sr;
 }
 
+/* RDSR2 wrapper.  Negative value is error. */
+static int qspi_rdsr2(const struct device *dev)
+{
+	uint8_t sr = -1;
+	const struct qspi_buf sr_buf = {
+		.buf = &sr,
+		.len = sizeof(sr),
+	};
+	struct qspi_cmd cmd = {
+		.op_code = SPI_NOR_CMD_RDSR2,
+		.rx_buf = &sr_buf,
+	};
+	int ret = qspi_send_cmd(dev, &cmd, false);
+
+	return (ret < 0) ? ret : sr;
+}
+
 /* Wait until RDSR confirms write is not in progress. */
 static int qspi_wait_while_writing(const struct device *dev)
 {
@@ -661,59 +679,104 @@ static int qspi_nrfx_configure(const struct device *dev)
 	nrfx_err_t res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
 	int ret = qspi_get_zephyr_ret_code(res);
 
-	if ((ret == 0)
-	    && (INST_0_QER != JESD216_DW15_QER_NONE)) {
-		/* Set QE to match transfer mode.  If not using quad
-		 * it's OK to leave QE set, but doing so prevents use
-		 * of WP#/RESET#/HOLD# which might be useful.
-		 *
-		 * Note build assert above ensures QER is S1B6.  Other
-		 * options require more logic.
-		 */
+	if (ret == 0) {
+        /* Set QE to match transfer mode.  If not using quad
+        * it's OK to leave QE set, but doing so prevents use
+        * of WP#/RESET#/HOLD# which might be useful.
+        *
+        * Note build assert above ensures QER is S1B6 or S2B1v6.  Other
+        * options require more logic.
+        */
 
-		ret = qspi_rdsr(dev);
-		if (ret < 0) {
-			LOG_ERR("RDSR failed: %d", ret);
-			return ret;
-		}
+	    if (INST_0_QER == JESD216_DW15_QER_S1B6) {
+            ret = qspi_rdsr(dev);
+            if (ret < 0) {
+                LOG_ERR("RDSR failed: %d", ret);
+                return ret;
+            }
 
-		uint8_t sr = (uint8_t)ret;
-		bool qe_value =
-			(qspi_write_is_quad(QSPIconfig.prot_if.writeoc))
-			|| (qspi_read_is_quad(QSPIconfig.prot_if.readoc));
-		const uint8_t qe_mask = BIT(6); /* only S1B6 */
-		bool qe_state = ((sr & qe_mask) != 0U);
+            uint8_t sr = (uint8_t)ret;
+            bool qe_value =
+                (qspi_write_is_quad(QSPIconfig.prot_if.writeoc))
+                || (qspi_read_is_quad(QSPIconfig.prot_if.readoc));
+            const uint8_t qe_mask = BIT(6); /* only S1B6 */
+            bool qe_state = ((sr & qe_mask) != 0U);
 
-		LOG_DBG("RDSR %02x QE %d need %d: %s", sr, qe_state, qe_value,
-			(qe_state != qe_value) ? "updating" : "no-change");
+            LOG_DBG("RDSR %02x QE %d need %d: %s", sr, qe_state, qe_value,
+                (qe_state != qe_value) ? "updating" : "no-change");
 
-		ret = 0;
-		if (qe_state != qe_value) {
-			const struct qspi_buf sr_buf = {
-				.buf = &sr,
-				.len = sizeof(sr),
-			};
-			struct qspi_cmd cmd = {
-				.op_code = SPI_NOR_CMD_WRSR,
-				.tx_buf = &sr_buf,
-			};
+            ret = 0;
+            if (qe_state != qe_value) {
+                const struct qspi_buf sr_buf = {
+                    .buf = &sr,
+                    .len = sizeof(sr),
+                };
+                struct qspi_cmd cmd = {
+                    .op_code = SPI_NOR_CMD_WRSR,
+                    .tx_buf = &sr_buf,
+                };
 
-			sr ^= qe_mask;
-			ret = qspi_send_cmd(dev, &cmd, true);
+                sr ^= qe_mask;
+                ret = qspi_send_cmd(dev, &cmd, true);
 
-			/* Writing SR can take some time, and further
-			 * commands sent while it's happening can be
-			 * corrupted.  Wait.
-			 */
-			if (ret == 0) {
-				ret = qspi_wait_while_writing(dev);
-			}
-		}
+                /* Writing SR can take some time, and further
+                * commands sent while it's happening can be
+                * corrupted.  Wait.
+                */
+                if (ret == 0) {
+                    ret = qspi_wait_while_writing(dev);
+                }
+            }
 
-		if (ret < 0) {
-			LOG_ERR("QE %s failed: %d", qe_value ? "set" : "clear",
-				ret);
-		}
+            if (ret < 0) {
+                LOG_ERR("QE %s failed: %d", qe_value ? "set" : "clear",
+                    ret);
+            }
+        } else if (INST_0_QER == JESD216_DW15_QER_S2B1v6) {
+            ret = qspi_rdsr2(dev);
+            if (ret < 0) {
+                LOG_ERR("RDSR2 failed: %d", ret);
+                return ret;
+            }
+            
+            uint8_t sr = (uint8_t)ret;
+            bool qe_value =
+                (qspi_write_is_quad(QSPIconfig.prot_if.writeoc))
+                || (qspi_read_is_quad(QSPIconfig.prot_if.readoc));
+            const uint8_t qe_mask = BIT(1); /* only S2B1v6 */
+            bool qe_state = ((sr & qe_mask) != 0U);
+
+            LOG_DBG("RDSR2 %02x QE %d need %d: %s", sr, qe_state, qe_value,
+                (qe_state != qe_value) ? "updating" : "no-change");
+
+            ret = 0;
+            if (qe_state != qe_value) {
+                const struct qspi_buf sr_buf = {
+                    .buf = &sr,
+                    .len = sizeof(sr),
+                };
+                struct qspi_cmd cmd = {
+                    .op_code = SPI_NOR_CMD_WRSR2,
+                    .tx_buf = &sr_buf,
+                };
+
+                sr ^= qe_mask;
+                ret = qspi_send_cmd(dev, &cmd, true);
+
+                /* Writing SR can take some time, and further
+                * commands sent while it's happening can be
+                * corrupted.  Wait.
+                */
+                if (ret == 0) {
+                    ret = qspi_wait_while_writing(dev);
+                }
+            }
+            
+            if (ret < 0) {
+                LOG_ERR("QE %s failed: %d", qe_value ? "set" : "clear",
+                    ret);
+            }
+        }
 	}
 
 	return ret;
