@@ -154,6 +154,18 @@ test_i2c_mpu9150: mpu9150@16 {
 	reg = <0x16>;
 };
 
+test_i2c_ina219: ina219@40 {
+	compatible = "ti,ina219";
+	label = "INA219";
+	reg = <0x40>;
+	brng = <0>;
+	pg = <0>;
+	sadc = <13>;
+	badc = <13>;
+	shunt-milliohm = <100>;
+	lsb-microamp = <10>;
+};
+
 test_i2c_isl29035: isl29035@17 {
 	compatible = "isil,isl29035";
 	label = "ISL29035";
