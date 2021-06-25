@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_L2_ETHERNET_MGMT ethernet_mgmt.c)
 if(CONFIG_NET_NATIVE)
 zephyr_library_sources_ifdef(CONFIG_NET_ARP              arp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS_ETHERNET ethernet_stats.c)
+zephyr_library_sources_ifdef(CONFIG_NET_ETHERNET_BRIDGE bridge.c)
 
 if(CONFIG_NET_GPTP)
   add_subdirectory(gptp)
