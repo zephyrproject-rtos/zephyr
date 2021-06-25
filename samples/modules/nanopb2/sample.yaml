@@ -1,0 +1,14 @@
+sample:
+  description: Nanopb sample2, with a person proto
+    buffer
+  name: Person nanopb2
+common:
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - ""
+tests:
+  sample.modules.nanopb2:
+    tags: samples nanopb2
+
