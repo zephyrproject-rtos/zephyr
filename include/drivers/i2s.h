@@ -200,7 +200,7 @@ typedef uint8_t i2s_opt_t;
 #define I2S_OPT_PINGPONG                    BIT(6)
 
 /**
- * @brief I2C Direction
+ * @brief I2S Direction
  */
 enum i2s_dir {
 	/** Receive data */
