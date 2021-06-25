@@ -272,8 +272,7 @@ int sys_clock_driver_init(const struct device *dev)
 	ARG_UNUSED(dev);
 	int ret;
 	uint32_t sys_tmr_rate;
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 
 	/* Turn on all itim module clocks used for counting */
 	for (int i = 0; i < ARRAY_SIZE(itim_clk_cfg); i++) {
