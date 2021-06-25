@@ -76,4 +76,19 @@ endif # NET_ARP
 source "subsys/net/l2/ethernet/gptp/Kconfig"
 source "subsys/net/l2/ethernet/lldp/Kconfig"
 
+config NET_ETHERNET_BRIDGE
+	bool "Ethernet Bridging support"
+	select NET_PROMISCUOUS_MODE
+	help
+	  Enables Ethernet bridging where packets can be transparently
+	  forwarded across interfaces registered to a bridge.
+
+if NET_ETHERNET_BRIDGE
+module = NET_ETHERNET_BRIDGE
+module-dep = NET_LOG
+module-str = Log level for Ethernet Bridging
+module-help = Enables Ethernet Bridge code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_ETHERNET_BRIDGE
+
 endif # NET_L2_ETHERNET
