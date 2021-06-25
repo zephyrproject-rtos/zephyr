@@ -331,3 +331,28 @@ exceptions they **cannot use** any kernel functionality. Additionally, since the
 interrupt priority level is equal to processor fault priority level, faults occurring
 in ZLI ISRs will escalate to HardFault and will not be handled in the same way as regular
 processor faults. Developers need to be aware of this limitation.
+
+CPU Idling
+==========
+
+The Cortex-M architecture port implements both k_cpu_idle()
+and k_cpu_atomic_idle(). The implementation is present in
+:file:`arch/arm/core/aarch32/cpu_idle.S`.
+
+In both implementations, the processor
+will attempt to put the core to low power mode.
+In k_cpu_idle() the processor ends up executing WFI (Wait For Interrupt)
+instruction, while in k_cpu_atomic_idle() the processor will
+execute a WFE (Wait For Event) instruction.
+
+When using the CPU idling API in Cortex-M it is important to note the
+following:
+
+* Both k_cpu_idle() and k_cpu_atomic_idle() are *assumed* to be invoked
+  with interrupts locked. This is taken care of by the kernel if the APIs
+  are called by the idle thread.
+* After waking up from low power mode, both functions will *restore*
+  interrupts unconditionally, that is, regardless of the interrupt lock
+  status before the CPU idle API was called.
+
+The Zephyr CPU Idling mechanism is detailed in :ref:`cpu_idle`.
