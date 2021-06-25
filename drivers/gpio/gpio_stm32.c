@@ -288,7 +288,8 @@ static void gpio_stm32_set_exti_source(int port, int pin)
 #elif CONFIG_SOC_SERIES_STM32MP1X
 	LL_EXTI_SetEXTISource(port, line);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	LL_EXTI_SetEXTISource(port, line);
 #else
 	LL_SYSCFG_SetEXTISource(port, line);
@@ -306,7 +307,8 @@ static int gpio_stm32_get_exti_source(int pin)
 #elif CONFIG_SOC_SERIES_STM32MP1X
 	port = LL_EXTI_GetEXTISource(line);
 #elif defined(CONFIG_SOC_SERIES_STM32G0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
 	port = LL_EXTI_GetEXTISource(line);
 #else
 	port = LL_SYSCFG_GetEXTISource(line);
