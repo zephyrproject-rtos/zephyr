@@ -30,6 +30,7 @@
 #include "foundation.h"
 #include "access.h"
 #include "proxy.h"
+#include "proxy_msg.h"
 
 /* Mesh Profile 1.0 Section 6.6:
  * "The timeout for the SAR transfer is 20 seconds. When the timeout

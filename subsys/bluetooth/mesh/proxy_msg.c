@@ -30,6 +30,7 @@
 #include "foundation.h"
 #include "access.h"
 #include "proxy.h"
+#include "proxy_msg.h"
 
 #define PDU_SAR(data)      (data[0] >> 6)
 
