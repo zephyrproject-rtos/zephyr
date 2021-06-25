@@ -35,11 +35,40 @@ The features include the following:
 System requirements
 *******************
 
-
 Build Environment Setup
 =======================
 
-Retrieve required submodules to build this port. This might take a while for the first time:
+Some variables must be exported into the environment prior to building this port.
+Find more information at :ref:`env_vars` on how to keep this settings saved in you environment.
+
+.. note::
+
+   In case of manual toolchain installation, set :file:`ESPRESSIF_TOOLCHAIN_PATH` accordingly.
+   Otherwise, set toolchain path as below. If necessary.
+
+On Linux and macOS:
+
+.. code-block:: console
+
+   export ZEPHYR_TOOLCHAIN_VARIANT="espressif"
+   export ESPRESSIF_TOOLCHAIN_PATH="${HOME}/.espressif/tools/riscv32-esp-elf/1.24.0.123_64eb9ff-8.4.0/riscv32-esp-elf"
+   export PATH=$PATH:$ESPRESSIF_TOOLCHAIN_PATH/bin
+
+On Windows:
+
+.. code-block:: console
+
+  # on CMD:
+  set ESPRESSIF_TOOLCHAIN_PATH=%USERPROFILE%\.espressif\tools\riscv32-esp-elf\1.24.0.123_64eb9ff-8.4.0\riscv32-esp-elf
+  set ZEPHYR_TOOLCHAIN_VARIANT=espressif
+  set PATH=%PATH%;%ESPRESSIF_TOOLCHAIN_PATH%\bin
+
+  # on PowerShell
+  $env:ESPRESSIF_TOOLCHAIN_PATH="$env:USERPROFILE\.espressif\tools\riscv32-esp-elf\1.24.0.123_64eb9ff-8.4.0\riscv32-esp-elf"
+  $env:ZEPHYR_TOOLCHAIN_VARIANT="espressif"
+  $env:Path += "$env:ESPRESSIF_TOOLCHAIN_PATH\bin"
+
+Finally, retrieve required submodules to build this port. This might take a while for the first time:
 
 .. code-block:: console
 
