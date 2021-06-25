@@ -21,6 +21,7 @@ static struct sx12xx_data {
 	struct k_sem data_sem;
 	struct k_sem tx_sem;
 	RadioEvents_t events;
+	struct lora_modem_config tx_cfg;
 	uint8_t *rx_buf;
 	uint8_t rx_len;
 	int8_t snr;
@@ -70,6 +71,9 @@ static void sx12xx_ev_tx_done(void)
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
+	uint32_t air_time;
+	int rc;
+
 	/* Clear any previous state */
 	k_sem_take(&dev_data.tx_sem, K_NO_WAIT);
 
@@ -77,8 +81,28 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 
 	Radio.Send(data, data_len);
 
-	/* Wait for transmission to complete */
-	return k_sem_take(&dev_data.tx_sem, K_FOREVER);
+	/* Calculate expected airtime of the packet */
+	air_time = Radio.TimeOnAir(MODEM_LORA,
+				   dev_data.tx_cfg.bandwidth,
+				   dev_data.tx_cfg.datarate,
+				   dev_data.tx_cfg.coding_rate,
+				   dev_data.tx_cfg.preamble_len,
+				   0, data_len, true);
+	LOG_DBG("Expected airtime of %d bytes = %dms", data_len, air_time);
+
+	/* Wait for the packet to finish transmitting.
+	 * The additional wiggle room is provided to ensure that
+	 * we are actually detecting a failed transmission, instead of
+	 * some minor timing variation between modem and driver.
+	 */
+	air_time += (air_time >> 3) + 1;
+	rc = k_sem_take(&dev_data.tx_sem, K_MSEC(air_time));
+	if (rc < 0) {
+		LOG_ERR("Packet transmission failed!");
+		/* Put radio back to sleep */
+		Radio.Sleep();
+	}
+	return rc;
 }
 
 int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
@@ -126,6 +150,9 @@ int sx12xx_lora_config(const struct device *dev,
 	Radio.SetChannel(config->frequency);
 
 	if (config->tx) {
+		/* Store TX config locally for airtime calculations */
+		memcpy(&dev_data.tx_cfg, config, sizeof(dev_data.tx_cfg));
+		/* Configure radio driver */
 		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
 				  config->bandwidth, config->datarate,
 				  config->coding_rate, config->preamble_len,
