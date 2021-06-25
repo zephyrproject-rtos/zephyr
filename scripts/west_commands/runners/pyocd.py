@@ -6,6 +6,7 @@
 
 import os
 from os import path
+from platform import uname
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
@@ -23,7 +24,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
                  flash_format=None,
-                 board_id=None, daparg=None, frequency=None, tool_opt=None):
+                 board_id=None, daparg=None, frequency=None, 
+                 tool_opt=None, wsl_py_path='py.exe'):
         super().__init__(cfg)
 
         default = path.join(cfg.board_dir, 'support', 'pyocd.yaml')
@@ -34,7 +36,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
 
         self.target_args = ['-t', target]
-        self.pyocd = pyocd
+        self.pyocd = [pyocd]
+        self.wsl_py_path = wsl_py_path
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
         self.erase = erase
         self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
@@ -114,6 +117,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--tool-opt',
                             help='''Additional options for pyocd Commander,
                             e.g. \'--script=user.py\' ''')
+        parser.add_argument('--wsl-py-path', default='py.exe', 
+                            help='path to windows python executable for WSL if not py.exe')
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -128,7 +133,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
             board_id=args.board_id, daparg=args.daparg,
             frequency=args.frequency,
-            tool_opt=args.tool_opt)
+            tool_opt=args.tool_opt, 
+            wsl_py_path=args.wsl_py_path)
 
         daparg = os.environ.get('PYOCD_DAPARG')
         if not ret.daparg_args and daparg:
@@ -142,7 +148,12 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         return ['-p', str(self.gdb_port), '-T', str(self.telnet_port)]
 
     def do_run(self, command, **kwargs):
-        self.require(self.pyocd)
+        # if running in WSL, call py.exe to run pyOCD in Windows 
+        # most debuggers are not accessible directly in WSL, but 
+        # the pyOCD server is still accessible to gdb inside WSL 
+        if 'Microsoft' in uname().release: 
+            self.pyocd = [self.wsl_py_path, '-m'] + self.pyocd
+        self.require(self.pyocd[0])
         if command == 'flash':
             self.flash(**kwargs)
         else:
@@ -161,13 +172,23 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             fformat_args = ['--format', 'elf']
         else:
             fname = self.elf_name
-        if not os.path.isfile(fname):
+        if fname is None:
+            raise ValueError(
+                'No {} file provided. '.format(self.flash_format))
+        elif not os.path.isfile(fname):
             raise ValueError(
                 'Cannot flash; ({}) file not found. '.format(fname))
 
+        # If running in WSL, the path needs to be a windows path 
+        # Convert to relative path first so the drive mount point 
+        # does not need to be converted 
+        if 'Microsoft' in uname().release: 
+            fname = os.path.relpath(fname)
+            fname = fname.replace('/', '\\')
+
         erase_method = 'chip' if self.erase else 'sector'
 
-        cmd = ([self.pyocd] +
+        cmd = (self.pyocd +
                ['flash'] +
                self.pyocd_config_args +
                ['-e', erase_method] +
@@ -189,7 +210,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                          format(self.gdb_port))
 
     def debug_debugserver(self, command, **kwargs):
-        server_cmd = ([self.pyocd] +
+        server_cmd = (self.pyocd +
                       ['gdbserver'] +
                       self.daparg_args +
                       self.port_args() +
