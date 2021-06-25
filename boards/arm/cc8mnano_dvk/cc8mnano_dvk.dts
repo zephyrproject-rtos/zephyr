@@ -53,10 +53,31 @@
 	power-states {
 		idle: idle {
 			compatible = "zephyr,power-state";
-			power-state-name = "runtime-idle";
-			min-residency-us = <10000000>;	
+			power-state-name = "suspend-to-idle";
+			substate-id = <1>;
+			min-residency-us = <100>;	//1msec
 		};
-	};	
+		deep: deep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <1000000>;	//100msec	
+		};
+		idle_long: idle_long {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			substate-id = <2>;
+			min-residency-us = <200>;	//10msec
+		};
+	};		
+};
+
+&cpu0 {
+	cpu-power-states = <&deep>;
+};
+
+&gpt1 {
+	status="disabled";
+	gptfreq = <1000000>;
 };
 
 &uart4 {

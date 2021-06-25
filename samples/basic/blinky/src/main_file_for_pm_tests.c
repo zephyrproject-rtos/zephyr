@@ -14,9 +14,7 @@
 #include <power/power_state.h>
 #include <power/power.h>
 #include <soc_power.h>
-//#include <fsl_gpt.h>
-#include <drivers/counter.h>
-//#include "timer_mod.h"
+
 
 #define SLEEP_TIME_MS	7000
 /*
@@ -236,52 +234,6 @@ void button_pressed(const struct device *dev, struct gpio_callback *cb,
 	k_usleep(100);
 }
 
-
-#define MYTIMER DT_LABEL(DT_NODELABEL(gpt1))
- struct counter_alarm_cfg alarm_cfg;
- 	const struct device *led;
- 	
- 	
- static void test_counter_interrupt_fn(const struct device *counter_dev,
-				      uint8_t chan_id, uint32_t ticks,
-				      void *user_data)
-{
-	static bool led_state=0;
-	struct counter_alarm_cfg *config = user_data;
-	uint32_t now_ticks;
-	uint64_t now_usec;
-	int now_sec;
-	int err;
-
-	err = counter_get_value(counter_dev, &now_ticks);
-	if (err) {
-		printk("Failed to read counter value (err %d)", err);
-		return;
-	}
-
-	now_usec = counter_ticks_to_us(counter_dev, now_ticks);
-	now_sec = (int)(now_usec / USEC_PER_SEC);
-
-	printk("!!! Alarm !!!\n");
-	printk("Now: %u\n", now_sec);
-
-	/* Set a new alarm with a double length duration */
-	config->ticks = config->ticks ;
-	err = counter_set_channel_alarm(counter_dev, 0,
-					user_data);
-	if (err != 0) {
-		printk("New alarm could not be set\n");
-	}
-	gpio_pin_set(led, LED0_GPIO_PIN, led_state);
-	if(led_state){
-	led_state=0;
-	}
-	else{
-	led_state=1;
-	}	
-}
-
- 
 void main(void)
 {
    
@@ -290,6 +242,8 @@ void main(void)
 	led = initialize_led();
 	
 	gpio_pin_set(led, LED0_GPIO_PIN, 1);
+	
+
 		
 	while(1){
 		pm_notifier_register(&notifier);
@@ -305,50 +259,7 @@ void main(void)
 	}
 #else
 
-
-#define DELAY 3000000
-
-	#define __IO   			volatile
-	#define MUBSR (*(volatile uint32_t*)0x302D0000)	
-	uint32_t status_reg=0;
-
-	int err;
-	const struct device *counter_dev;
-	counter_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpt1)));
-	if (counter_dev == NULL) {
-		printk("Counter Device not found\n");
-		return;
-	}
-	counter_start(counter_dev);
-	alarm_cfg.flags = 0;
-	alarm_cfg.ticks = counter_us_to_ticks(counter_dev, DELAY);
-	alarm_cfg.callback = test_counter_interrupt_fn;
-	alarm_cfg.user_data = &alarm_cfg;
-
-	err = counter_set_channel_alarm(counter_dev, 0,
-					&alarm_cfg);
-
-	printk("Set alarm in %u sec (%u ticks)\n",
-	       (uint32_t)(counter_ticks_to_us(counter_dev,
-					   alarm_cfg.ticks) / USEC_PER_SEC),
-	       alarm_cfg.ticks);
-	 
-	led = initialize_led();
-	gpio_pin_set(led, LED0_GPIO_PIN, 1);
-	      
-  	while (1) {
-	  	status_reg=MUBSR;
-		printk("Main:iA Timer will run Reg =x%4x \tfreq=x%4x\n",status_reg,CLOCK_GetFreq(kCLOCK_IpgClk));
-		k_msleep(1000);
-	}
-
-	TimerInterruptSetup();
-	
-	while (1) {
-		//match_led_to_button(button, led);
-		printk("Main:iA Timer will run\n");
-		k_msleep(1000);
-	}
+	//TimerInterruptSetup();
 		struct k_timer my_timer;
 	extern void my_expiry_function(struct k_timer *timer_id);
 
@@ -374,7 +285,7 @@ void main(void)
 	soc_config_lpm(GPIO2_Combined_16_31_IRQn);
     
 	const struct device *button;
-	
+	const struct device *led;
 	int ret;
 
 	button = device_get_binding(SW0_GPIO_LABEL);

@@ -12,7 +12,7 @@
 #include <sys/printk.h>
 #include <inttypes.h>
 
-#define SLEEP_TIME_MS	1
+#define SLEEP_TIME_MS	300
 
 /*
  * Get button configuration from the devicetree sw0 alias.
@@ -85,6 +85,7 @@ void main(void)
 	while (1) {
 		match_led_to_button(button, led);
 		k_msleep(SLEEP_TIME_MS);
+		printk("Press the button\n");
 	}
 }
 

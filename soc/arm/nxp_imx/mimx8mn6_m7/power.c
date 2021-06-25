@@ -10,6 +10,8 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
+
+
 /* Invoke Low Power/System Off specific Tasks */
 void pm_power_state_set(struct pm_state_info info)
 {
@@ -20,11 +22,7 @@ void pm_power_state_set(struct pm_state_info info)
 	 * by ARM.
 	 */
 
-	/* Set PRIMASK */
-	__disable_irq();
-	/* Set BASEPRI to 0 */
-	irq_unlock(0);
-	
+	 
     gpc_lpm_config_t config;
     config.enCpuClk              = false;
     config.enFastWakeUp          = false;
@@ -32,24 +30,41 @@ void pm_power_state_set(struct pm_state_info info)
     config.enWfiMask             = false;
     config.enVirtualPGCPowerdown = true;
     config.enVirtualPGCPowerup   = true;
-	
+    
+    
 	switch (info.state) {
+	case PM_STATE_SUSPEND_TO_IDLE:
 	case PM_STATE_RUNTIME_IDLE:
-		printk("Entered power state iA\n");
+		//printk("\tPM: Entered WAIT mode iA\n");
+		__disable_irq();
+		irq_unlock(0);
 		GPC_EnterWaitMode(GPC, &config);
 		break;
+	case PM_STATE_SUSPEND_TO_RAM:
+		//printk("\tPM: Entered SUSPEND mode iA\n");
+		__disable_irq();
+		irq_unlock(0);
+		GPC_EnterWaitMode(GPC, &config);
+		break;
+	case PM_STATE_ACTIVE:
+		//printk("\tPM: Waking up\n");
+		GPC->LPCR_M7 = GPC->LPCR_M7 & (~GPC_LPCR_M7_LPM0_MASK);
+		__enable_irq();
 	default:
-		LOG_DBG("Unsupported power state %u", info.state);
+		//printk("\tPM: Unsupported power state %u", info.state);
 		break;
 	}
+
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
 void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
+
+	//printk("\tPM: Exit ops called iA\n");
 	ARG_UNUSED(info);
 
 	/* Clear PRIMASK */
-	__enable_irq();
 	GPC->LPCR_M7 = GPC->LPCR_M7 & (~GPC_LPCR_M7_LPM0_MASK);
+	__enable_irq();
 }

@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 choice
-prompt "i.MX8MN M7 Selection"
-depends on SOC_SERIES_IMX8MN_M7
+	prompt "i.MX8MN M7 Selection"
+	depends on SOC_SERIES_IMX8MN_M7
 
 config SOC_MIMX8MN6
 	bool "SOC_MIMX8MN6"
@@ -13,6 +13,7 @@ config SOC_MIMX8MN6
 	select HAS_MCUX_CCM
 	select HAS_MCUX_RDC
 	select HAS_MCUX_IGPIO
+	select HAS_MCUX_GPT
 
 endchoice
 
@@ -28,5 +29,12 @@ config SOC_PART_NUMBER_IMX8MN_M7
 	  This string holds the full part number of the SoC. It is a hidden option
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
+
+config IMX8MNANO_PM
+	bool "MIMX8MN Power Management"	  
+	help
+ 	 Enable IMX8MNANO dedicated low power INT based operation. Kernel is stopped for this option. 
+ 	 Inherited from MCUXpresso SDK. An INT is needed to configure and initialize the low power mode.
+ 	 Wakeup call needs to be implemented inside the used ISR.
 
 endif # SOC_SERIES_IMX8MN_M7

@@ -50,11 +50,16 @@ static void SOC_RdcInit(void)
     periphConfig.periph = kRDC_Periph_UART4;
     RDC_SetPeriphAccessConfig(RDC, &periphConfig);
     
-    periphConfig.periph = kRDC_Periph_GPIO2;
-//  	RDC_SetPeriphAccessConfig(RDC, &periphConfig);
-#if defined(FLASH_TARGET)
-    CLOCK_EnableClock(kCLOCK_Qspi);
-#endif
+	#ifdef CONFIG_GPIO_MCUX_IGPIO
+		#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+			periphConfig.periph = kRDC_Periph_GPIO1;
+ 			//RDC_SetPeriphAccessConfig(RDC, &periphConfig);
+		#endif
+		#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+			periphConfig.periph = kRDC_Periph_GPIO2;
+ 			//RDC_SetPeriphAccessConfig(RDC, &periphConfig);
+		#endif
+	#endif
 
 }
 
@@ -64,7 +69,7 @@ static void SOC_GPCInit(void)
 	#define APP_PowerDnSlot (6U)
 	
   	GPC_Init(GPC, APP_PowerUpSlot, APP_PowerDnSlot);
-	GPC_EnableIRQ(GPC, GPIO2_Combined_16_31_IRQn);  //GPIO2_20 or SW2
+	//GPC_EnableIRQ(GPC, GPIO2_Combined_16_31_IRQn);  //GPIO2_20 or SW2
 
 }
 
@@ -109,14 +114,12 @@ static void SOC_ClockInit(void)
     CLOCK_SetRootDivider(kCLOCK_RootAhb, 1U, 1U);
     CLOCK_SetRootMux(kCLOCK_RootAhb, kCLOCK_AhbRootmuxOsc24M); 
 
-    CLOCK_SetRootDivider(kCLOCK_RootAudioAhb, 1U, 1U);                    
-    CLOCK_SetRootMux(kCLOCK_RootAudioAhb, kCLOCK_AudioAhbRootmuxOsc24M); 
-
-
-    CLOCK_SetRootMux(kCLOCK_RootUart4, kCLOCK_UartRootmuxOsc24M); 
-    CLOCK_SetRootDivider(kCLOCK_RootUart4, 1U, 1U);                    
+	/* inherited from SDK, but NOT needed for Zephyr */
+    //CLOCK_SetRootDivider(kCLOCK_RootAudioAhb, 1U, 1U);                    
+    //CLOCK_SetRootMux(kCLOCK_RootAudioAhb, kCLOCK_AudioAhbRootmuxOsc24M);                    
 
     CLOCK_EnableClock(kCLOCK_Rdc); /* Enable RDC clock */
+    
     /* The purpose to enable the following modules clock is to make sure the M4 core could work normally when A53 core
      * enters the low power status.*/
     CLOCK_EnableClock(kCLOCK_Sim_display);
@@ -131,10 +134,38 @@ static void SOC_ClockInit(void)
     /* Update core clock */
     SystemCoreClockUpdate();
 
+
+    CLOCK_SetRootMux(kCLOCK_RootUart4, kCLOCK_UartRootmuxOsc24M); 
+    CLOCK_SetRootDivider(kCLOCK_RootUart4, 1U, 1U); 
 	CLOCK_EnableClock(kCLOCK_Uart4);
-	CLOCK_EnableClock(kCLOCK_Gpio1);
-	CLOCK_EnableClock(kCLOCK_Gpio2);
 	
+	#ifdef CONFIG_GPIO_MCUX_IGPIO
+		#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+			CLOCK_EnableClock(kCLOCK_Gpio1);
+		#endif
+		#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+			CLOCK_EnableClock(kCLOCK_Gpio2);
+		#endif
+	#endif
+	
+	/************************************************************************/
+	/*This part does NOT work with standby from linux. Linux never wakes up*/
+	/*	
+	#ifdef DT_NODE_HAS_STATUS(DT_NODELABEL(gpt1), okay)
+		CLOCK_SetRootDivider(kCLOCK_RootIpg, 1U, 1U);
+	    CLOCK_SetRootMux(kCLOCK_RootIpg, 0);	//NOT defined in SDK but MUX0 is OSC24 for ALL IPs
+		CLOCK_EnableClock(kCLOCK_Gpt1);
+	#endif
+	
+	#ifdef DT_NODE_HAS_STATUS(DT_NODELABEL(gpt2), okay)
+		CLOCK_SetRootDivider(kCLOCK_RootIpg, 1U, 1U);
+	    CLOCK_SetRootMux(kCLOCK_RootIpg, 0);	//NOT defined in SDK but MUX0 is OSC24 for ALL IPs
+		CLOCK_EnableClock(kCLOCK_Gpt2);
+	#endif
+	*/	
+	#if defined(FLASH_TARGET)
+		CLOCK_EnableClock(kCLOCK_Qspi);
+	#endif
     /*
      * In order to wakeup M7 from LPM, all PLLCTRLs need to be set to "NeededRun"
      */
@@ -245,6 +276,10 @@ void SoC_InitMemory(void)
 
 static int nxp_mimx8mn6_init(const struct device *arg)
 {
+
+#define ServiceFlagAddr SRC->GPR9
+#define ServiceBusy (0x5555U)
+#define ServiceIdle (0x0U)
 	ARG_UNUSED(arg);
 
 	SoC_InitMemory();
@@ -255,9 +290,12 @@ static int nxp_mimx8mn6_init(const struct device *arg)
 	/* SoC specific Clock settings */
 	SOC_ClockInit();
 	
+	#ifdef CONFIG_PM 
 	/* SoC specific PM functions*/
 	SOC_GPCInit();
+	#endif
 	
+	//ServiceFlagAddr = ServiceBusy;
 	return 0;
 }
 

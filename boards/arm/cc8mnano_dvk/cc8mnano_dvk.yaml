@@ -8,8 +8,8 @@ identifier: cc8mnano_dvk
 name: Digi CC8M Nano DVK
 type: mcu
 arch: arm
-ram: 32
-flash: 32
+ram: 256
+flash: 256
 toolchain:
   - zephyr
   - gnuarmemb
@@ -18,3 +18,6 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+supported:
+  - gpio
+  - pm

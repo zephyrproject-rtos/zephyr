@@ -134,7 +134,11 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_COUNTER_MCUX_GPT
 	case IMX_CCM_GPT_CLK:
+		#ifdef CONFIG_SOC_SERIES_IMX8MN_M7
+			*rate=24000000;			//24MHz oscillator is used for DVK
+		#else
 		*rate = CLOCK_GetFreq(kCLOCK_PerClk);
+		#endif
 		break;
 #endif
 

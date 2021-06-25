@@ -11,3 +11,8 @@ zephyr_sources(
 zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
+
+zephyr_sources_ifdef(CONFIG_IMX8MNANO_PM
+  soc_power.c
+  )
+    
