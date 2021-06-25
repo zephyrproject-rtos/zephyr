@@ -85,13 +85,16 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 
 	ret = k_sem_take(&dev_data.data_sem, timeout);
 	if (ret < 0) {
-		LOG_ERR("Receive timeout!");
+		LOG_INF("Receive timeout");
+		/* Manually transition to sleep mode on timeout */
+		Radio.Sleep();
 		return ret;
 	}
 
 	/* Only copy the bytes that can fit the buffer, drop the rest */
-	if (dev_data.rx_len > size)
+	if (dev_data.rx_len > size) {
 		dev_data.rx_len = size;
+	}
 
 	/*
 	 * FIXME: We are copying the global buffer here, so it might get
