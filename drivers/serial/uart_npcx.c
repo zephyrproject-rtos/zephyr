@@ -548,7 +548,6 @@ NPCX_UART_IRQ_CONFIG_FUNC(inst)
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_UART_INIT)
 
-#ifdef CONFIG_PM_DEVICE
 #define ENABLE_MIWU_CRIN_IRQ(inst)                                             \
 	npcx_miwu_irq_get_and_clear_pending(&uart_npcx_cfg_##inst.uart_rx_wui);\
 	npcx_miwu_irq_enable(&uart_npcx_cfg_##inst.uart_rx_wui);
@@ -565,4 +564,3 @@ void npcx_uart_disable_access_interrupt(void)
 {
 	DT_INST_FOREACH_STATUS_OKAY(DISABLE_MIWU_CRIN_IRQ)
 }
-#endif /* CONFIG_PM_DEVICE */
