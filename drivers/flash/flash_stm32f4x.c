@@ -60,6 +60,9 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+#if defined(FLASH_OPTCR_DB1M)
+	bool dcache_enabled = false;
+#endif /* FLASH_OPTCR_DB*/
 	uint32_t tmp;
 	int rc;
 
@@ -73,6 +76,17 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 		return rc;
 	}
 
+#if defined(FLASH_OPTCR_DB1M)
+	/*
+	 * Disable the data cache to avoid the silicon errata ES0206 Rev 16 2.2.12:
+	 * "Data cache might be corrupted during Flash memory read-while-write operation"
+	 */
+	if (regs->ACR & FLASH_ACR_DCEN) {
+		dcache_enabled = true;
+		regs->ACR &= (~FLASH_ACR_DCEN);
+	}
+#endif /* FLASH_OPTCR_DB1M */
+
 	regs->CR &= CR_PSIZE_MASK;
 	regs->CR |= FLASH_PSIZE_BYTE;
 	regs->CR |= FLASH_CR_PG;
@@ -84,6 +98,15 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	regs->CR &= (~FLASH_CR_PG);
+
+#if defined(FLASH_OPTCR_DB1M)
+	/* Reset/enable the data cache if previously enabled */
+	if (dcache_enabled) {
+		regs->ACR |= FLASH_ACR_DCRST;
+		regs->ACR &= (~FLASH_ACR_DCRST);
+		regs->ACR |= FLASH_ACR_DCEN;
+	}
+#endif /* FLASH_OPTCR_DB1M */
 
 	return rc;
 }
