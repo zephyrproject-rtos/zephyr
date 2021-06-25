@@ -182,7 +182,7 @@ static int i2c_bus_not_available(const struct device *dev)
 	return 0;
 }
 
-static void i2c_reset(const struct device *dev, int cause)
+static void i2c_reset(const struct device *dev)
 {
 	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
 	uint8_t *base = config->base;
@@ -197,7 +197,6 @@ static void i2c_reset(const struct device *dev, int cause)
 		/* State reset and hardware reset */
 		IT83XX_I2C_CTR(base) = E_STS_AND_HW_RST;
 	}
-	printk("I2C ch%d reset cause %d\n", config->port, cause);
 }
 
 /*
@@ -742,7 +741,9 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		/* Make sure we're in a good state to start */
 		if (i2c_bus_not_available(dev)) {
 			/* reset i2c port */
-			i2c_reset(dev, I2C_RC_NO_IDLE_FOR_START);
+			i2c_reset(dev);
+			printk("I2C ch%d reset cause %d\n", config->port,
+			       I2C_RC_NO_IDLE_FOR_START);
 			/*
 			 * After resetting I2C bus, if I2C bus is not available
 			 * (No external pull-up), drop the transaction.
@@ -776,7 +777,9 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		if (res != 0) {
 			data->err = ETIMEDOUT;
 			/* reset i2c port */
-			i2c_reset(dev, I2C_RC_TIMEOUT);
+			i2c_reset(dev);
+			printk("I2C ch%d:0x%X reset cause %d\n",
+			       config->port, data->addr_16bit, I2C_RC_TIMEOUT);
 			/* If this message is sent fail, drop the transaction. */
 			break;
 		}
