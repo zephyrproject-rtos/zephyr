@@ -103,11 +103,18 @@ if BT_CONN
 # Virtual option enabled whenever any Proxy protocol is needed
 config BT_MESH_PROXY
 	bool
+
+config BT_MESH_GATT
+	bool
+
+config BT_MESH_GATT_SERVER
+	bool
+	select BT_MESH_GATT
 	select BT_GATT_DYNAMIC_DB
 
 config BT_MESH_PB_GATT
 	bool "Provisioning support using GATT (PB-GATT)"
-	select BT_MESH_PROXY
+	select BT_MESH_GATT_SERVER
 	select BT_MESH_PROV
 	help
 	  Enable this option to allow the device to be provisioned over
@@ -115,6 +122,7 @@ config BT_MESH_PB_GATT
 
 config BT_MESH_GATT_PROXY
 	bool "GATT Proxy Service support"
+	select BT_MESH_GATT_SERVER
 	select BT_MESH_PROXY
 	help
 	  This option enables support for the Mesh GATT Proxy Service,
@@ -141,22 +149,22 @@ config BT_MESH_NODE_ID_TIMEOUT
 	  be the appropriate value as well, so just leaving this as the
 	  default is the safest option.
 
-config BT_MESH_PROXY_FILTER_SIZE
-	int "Maximum number of filter entries per Proxy Client"
-	default 3 if BT_MESH_GATT_PROXY
-	default 1
-	range 1 32767
-	depends on BT_MESH_PROXY
-	help
-	  This option specifies how many Proxy Filter entries the local
-	  node supports.
-
 config BT_MESH_PROXY_USE_DEVICE_NAME
 	bool "Include Bluetooth device name in scan response"
 	depends on BT_MESH_GATT_PROXY
 	help
 	  This option includes GAP device name in scan response when
 	  the GATT Proxy feature is enabled.
+
+config BT_MESH_PROXY_FILTER_SIZE
+	int "Maximum number of filter entries per Proxy Client"
+	default 3 if BT_MESH_GATT_PROXY
+	default 1
+	range 1 32767
+	depends on BT_MESH_GATT_SERVER
+	help
+	  This option specifies how many Proxy Filter entries the local
+	  node supports.
 
 endif # BT_CONN
 
@@ -834,7 +842,7 @@ config BT_MESH_DEBUG_FRIEND
 
 config BT_MESH_DEBUG_PROXY
 	bool "Proxy debug"
-	depends on BT_MESH_PROXY
+	depends on BT_MESH_GATT
 	help
 	  Use this option to enable Proxy protocol debug logs.
 

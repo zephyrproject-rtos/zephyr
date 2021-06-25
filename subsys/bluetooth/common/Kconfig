@@ -50,7 +50,7 @@ config BT_BUF_ACL_RX_SIZE
 	default 200 if BT_BREDR
 	# Mesh Proxy Recommended: 64 Pkey + 2 Bytes Mesh header.
 	# Overhead: ATT Write command Header (3) in an L2CAP PDU (4).
-	default 73 if BT_MESH_PROXY
+	default 73 if BT_MESH_GATT
 	default 70 if BT_EATT
 	default 69 if BT_SMP
 	default 27
