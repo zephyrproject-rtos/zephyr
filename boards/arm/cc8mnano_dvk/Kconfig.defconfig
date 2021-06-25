@@ -1,6 +1,6 @@
 # CC8MNANO DVK board defconfig
 
-# Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# Copyright (c) 2021, Waseem Hassan
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_CC8MNANO_DVK

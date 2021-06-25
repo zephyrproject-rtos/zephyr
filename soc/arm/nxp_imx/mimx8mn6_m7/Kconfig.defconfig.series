@@ -1,6 +1,6 @@
 # i.MX8MN M7 SoC series defconfig
 
-# Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# Copyright (c) 2021, Waseem Hassan
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_IMX8MN_M7

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# Copyright (c) 2021, Waseem Hassan
 #
 # SPDX-License-Identifier: Apache-2.0
 #

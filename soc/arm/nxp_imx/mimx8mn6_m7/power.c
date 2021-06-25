@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright (c) 2021, Waseem Hassan
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,7 +44,7 @@ void pm_power_state_set(struct pm_state_info info)
 		//printk("\tPM: Entered SUSPEND mode iA\n");
 		__disable_irq();
 		irq_unlock(0);
-		GPC_EnterWaitMode(GPC, &config);
+		GPC_EnterStopMode(GPC, &config);
 		break;
 	case PM_STATE_ACTIVE:
 		//printk("\tPM: Waking up\n");
