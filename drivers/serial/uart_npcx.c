@@ -357,8 +357,7 @@ static int uart_npcx_init(const struct device *dev)
 	const struct uart_npcx_config *const config = DRV_CONFIG(dev);
 	struct uart_npcx_data *const data = DRV_DATA(dev);
 	struct uart_reg *const inst = HAL_INSTANCE(dev);
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	uint32_t uart_rate;
 	int ret;
 
