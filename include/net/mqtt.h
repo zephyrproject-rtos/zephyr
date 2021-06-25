@@ -374,6 +374,10 @@ enum mqtt_transport_type {
 	MQTT_TRANSPORT_SECURE_WEBSOCKET,
 #endif
 #endif /* CONFIG_MQTT_LIB_WEBSOCKET */
+#if defined(CONFIG_MQTT_LIB_CUSTOM_TRANSPORT)
+	/** Use custom transport for MQTT connection. */
+	MQTT_TRANSPORT_CUSTOM,
+#endif /* CONFIG_MQTT_LIB_CUSTOM_TRANSPORT */
 
 	/** Shall not be used as a transport type.
 	 *  Indicator of maximum transport types possible.
@@ -423,6 +427,11 @@ struct mqtt_transport {
 		int32_t timeout;
 	} websocket;
 #endif
+
+#if defined(CONFIG_MQTT_LIB_CUSTOM_TRANSPORT)
+	/** User defined data for custom transport for MQTT. */
+	void *custom_transport_data;
+#endif /* CONFIG_MQTT_LIB_CUSTOM_TRANSPORT */
 
 #if defined(CONFIG_SOCKS)
 	struct {
