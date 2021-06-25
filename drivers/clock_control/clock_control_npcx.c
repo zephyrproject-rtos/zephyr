@@ -109,8 +109,7 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 #if defined(CONFIG_PM)
 void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
 {
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	struct pmc_reg *const inst_pmc = HAL_PMC_INST(clk_dev);
 	/* Configure that ec enters system sleep mode if receiving 'wfi' */
 	uint8_t pm_flags = BIT(NPCX_PMCSR_IDLE);
@@ -128,8 +127,7 @@ void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
 
 void npcx_clock_control_turn_off_system_sleep(void)
 {
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	struct pmc_reg *const inst_pmc = HAL_PMC_INST(clk_dev);
 
 	inst_pmc->PMCSR = 0;

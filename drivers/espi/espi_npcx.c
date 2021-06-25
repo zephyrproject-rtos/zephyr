@@ -853,7 +853,7 @@ static int espi_npcx_init(const struct device *dev)
 	const struct espi_npcx_config *const config = DRV_CONFIG(dev);
 	struct espi_npcx_data *const data = DRV_DATA(dev);
 	struct espi_reg *const inst = HAL_INSTANCE(dev);
-	const struct device *clk_dev = device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int i, ret;
 
 	/* Turn on eSPI device clock first */
