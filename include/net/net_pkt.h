@@ -181,9 +181,16 @@ struct net_pkt {
 					* segment.
 					*/
 #endif
+
 	uint8_t captured : 1; /* Set to 1 if this packet is already being
 			       * captured
 			       */
+
+	uint8_t l2_bridged : 1; /* set to 1 if this packet comes from a bridge
+				 * and already contains its L2 header to be
+				 * preserved. Useful only if
+				 * defined(CONFIG_NET_ETHERNET_BRIDGE).
+				 */
 
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
@@ -347,6 +354,18 @@ static inline bool net_pkt_is_captured(struct net_pkt *pkt)
 static inline void net_pkt_set_captured(struct net_pkt *pkt, bool is_captured)
 {
 	pkt->captured = is_captured;
+}
+
+static inline bool net_pkt_is_l2_bridged(struct net_pkt *pkt)
+{
+	return IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE) ? !!(pkt->l2_bridged) : 0;
+}
+
+static inline void net_pkt_set_l2_bridged(struct net_pkt *pkt, bool is_l2_bridged)
+{
+	if (IS_ENABLED(CONFIG_NET_ETHERNET_BRIDGE)) {
+		pkt->l2_bridged = is_l2_bridged;
+	}
 }
 
 static inline uint8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)

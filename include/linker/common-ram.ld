@@ -5,7 +5,8 @@
 #define NETWORK_RAM_SECTIONS \
 	Z_ITERABLE_SECTION_RAM(net_if, 4) \
 	Z_ITERABLE_SECTION_RAM(net_if_dev, 4) \
-	Z_ITERABLE_SECTION_RAM(net_l2, 4)
+	Z_ITERABLE_SECTION_RAM(net_l2, 4) \
+	Z_ITERABLE_SECTION_RAM(eth_bridge, 4)
 #endif
 #endif /* NETWORKING */
 
