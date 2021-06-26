@@ -357,6 +357,22 @@ following:
 
 The Zephyr CPU Idling mechanism is detailed in :ref:`cpu_idle`.
 
+CMSIS
+*****
+
+Cortex-M CMSIS headers are hosted in a standalone module repository:
+`zephyrproject-rtos/cmsis <https://github.com/zephyrproject-rtos/cmsis>`_.
+
+:kconfig:`CONFIG_CPU_CORTEX_M` selects :kconfig:`CONFIG_HAS_CMSIS_CORE` to signify that
+CMSIS headers are available for all supported Cortex-M variants.
+
+Testing
+*******
+
+A list of unit tests for the Cortex-M porting and miscellaneous features
+is present in :file:`tests/arch/arm/`. The tests suites are continuously
+extended and new test suites are added, in an effort to increase the coverage
+of the Cortex-M architecture support in Zephyr.
 
 QEMU
 ****
@@ -392,3 +408,10 @@ these targets emulate.
 +---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
 | TrustZone-M                     | N                  | N                  | N              | Y               | N              |
 +---------------------------------+--------------------+--------------------+----------------+-----------------+----------------+
+
+Maintainers & Collaborators
+***************************
+
+The status of the Arm Cortex-M architecture port in Zephyr is: *maintained*.
+The updated list of maintainers and collaborators for Cortex-M can be found
+in :file:`MAINTAINERS.yml`.
