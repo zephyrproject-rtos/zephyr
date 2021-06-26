@@ -1,5 +1,7 @@
-# Copyright (c) 2019 Brett Witherspoon
+# Copyright (c) 2020 Erik Larson
 #
 # SPDX-License-Identifier: Apache-2.0
 
-include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+board_set_flasher_ifnset(misc-flasher)
+
+board_finalize_runner_args(misc-flasher ${BOARD_DIR}/support/cc2538-bsl.py)
