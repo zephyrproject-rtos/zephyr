@@ -18,16 +18,18 @@ Zephyr Project Documentation
    **Welcome to the Zephyr Project's documentation
    for the main tree under development** (version |version|).
 
-Use the version selection menu on the left to view
-documentation for a specific version of Zephyr.
+.. only:: html
 
-For information about the changes and additions for releases, please
-consult the published :ref:`zephyr_release_notes` documentation.
+   Use the version selection menu on the left to view
+   documentation for a specific version of Zephyr.
 
-The Zephyr OS is provided under the `Apache 2.0 license`_ (as found in
-the LICENSE file in the project's `GitHub repo`_).  The Zephyr OS also
-imports or reuses packages, scripts, and other files that use other
-licensing, as described in :ref:`Zephyr_Licensing`.
+   For information about the changes and additions for releases, please
+   consult the published :ref:`zephyr_release_notes` documentation.
+
+   The Zephyr OS is provided under the `Apache 2.0 license`_ (as found in
+   the LICENSE file in the project's `GitHub repo`_).  The Zephyr OS also
+   imports or reuses packages, scripts, and other files that use other
+   licensing, as described in :ref:`Zephyr_Licensing`.
 
 .. _Apache 2.0 license:
    https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
@@ -126,6 +128,8 @@ licensing, as described in :ref:`Zephyr_Licensing`.
    Indices and Tables
    ******************
 
-* :ref:`glossary`
+.. only:: html
 
-* :ref:`genindex`
+   * :ref:`glossary`
+
+   * :ref:`genindex`
