@@ -34,6 +34,9 @@ struct tftpc {
 
 /* @brief This function gets "file" from the remote server.
  *
+ * If the file is successfully received its size will be returned in
+ * `client->user_buf_size` parameter.
+ *
  * @param server      Control Block that represents the remote server.
  * @param client      Client Buffer Information.
  * @param remote_file Name of the remote file to get.

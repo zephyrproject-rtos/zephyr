@@ -5,51 +5,40 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(tftp_client, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 
-/* Public / Internal TFTP header file. */
+#include <stddef.h>
 #include <net/tftp.h>
 #include "tftp_client.h"
 
+#define ADDRLEN(sock) \
+	(((struct sockaddr *)sock)->sa_family == AF_INET ? \
+		sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6))
+
 /* TFTP Global Buffer. */
 static uint8_t   tftpc_buffer[TFTPC_MAX_BUF_SIZE];
-static uint32_t  tftpc_buffer_size;
-
-/* TFTP Request block number property. */
-static uint32_t  tftpc_block_no;
-static uint32_t  tftpc_index;
 
 /* Global mutex to protect critical resources. */
 K_MUTEX_DEFINE(tftpc_lock);
 
-/* Name: make_request
- * Description: This function takes in a given list of parameters and
- * returns a read request packet. This packet can be sent
+/*
+ * Prepare the read request as required by RFC1350. This packet can be sent
  * out directly to the TFTP server.
  */
-static uint32_t make_request(const char *remote_file, const char *mode,
-			  uint8_t request_type)
+static size_t make_request(uint8_t *buf, int request,
+			   const char *remote_file, const char *mode)
 {
-	uint32_t      req_size;
+	char *ptr = (char *)buf;
 	const char def_mode[] = "octet";
 
-	/* Populate the read request with the provided params. Note that this
-	 * is created per RFC1350.
-	 */
+	/* Fill in the Request Type. */
+	sys_put_be16(request, ptr);
+	ptr += 2;
 
-	/* Fill in the Request Type. Also keep tabs on the request size. */
-	sys_put_be16(request_type, tftpc_buffer);
-	req_size = 2;
-
-	/* Copy in the name of the remote file - the file we need to get
-	 * from the server. Add an upper bound to ensure no buffers overflow.
-	 */
-	strncpy(tftpc_buffer + req_size, remote_file, TFTP_MAX_FILENAME_SIZE);
-	req_size += strlen(remote_file);
-
-	/* Fill in 0. */
-	tftpc_buffer[req_size] = 0x0;
-	req_size++;
+	/* Copy the name of the remote file. */
+	strncpy(ptr, remote_file, TFTP_MAX_FILENAME_SIZE);
+	ptr += strlen(remote_file);
+	*ptr++ = '\0';
 
 	/* Default to "Octet" if mode not specified. */
 	if (mode == NULL) {
@@ -57,24 +46,21 @@ static uint32_t make_request(const char *remote_file, const char *mode,
 	}
 
 	/* Copy the mode of operation. */
-	strncpy(tftpc_buffer + req_size, mode, TFTP_MAX_MODE_SIZE);
-	req_size += strlen(mode);
+	strncpy(ptr, mode, TFTP_MAX_MODE_SIZE);
+	ptr += strlen(mode);
+	*ptr++ = '\0';
 
-	/* Fill in 0. */
-	tftpc_buffer[req_size] = 0x0;
-	req_size++;
-
-	return req_size;
+	return ptr - (char *)buf;
 }
 
-/* Name: send_err
- * Description: This function sends an Error report to the TFTP Server.
+/*
+ * Send an Error Message to the TFTP Server.
  */
-static inline int send_err(int sock, int err_code, char *err_string)
+static inline int send_err(int sock, int err_code, char *err_msg)
 {
 	uint32_t req_size;
 
-	LOG_ERR("Client Error. Sending code: %d(%s)", err_code, err_string);
+	LOG_DBG("Client sending error code: %d", err_code);
 
 	/* Fill in the "Err" Opcode and the actual error code. */
 	sys_put_be16(ERROR_OPCODE, tftpc_buffer);
@@ -82,166 +68,102 @@ static inline int send_err(int sock, int err_code, char *err_string)
 	req_size = 4;
 
 	/* Copy the Error String. */
-	strcpy(tftpc_buffer + req_size, err_string);
-	req_size += strlen(err_string);
+	if (err_msg != NULL) {
+		strcpy(tftpc_buffer + req_size, err_msg);
+		req_size += strlen(err_msg);
+	}
 
 	/* Send Error to server. */
 	return send(sock, tftpc_buffer, req_size, 0);
 }
 
-/* Name: tftpc_recv_data
- * Description: This function tries to get data from the TFTP Server
- * (either response or data). Times out eventually.
+/*
+ * Send an Ack Message to the TFTP Server.
  */
-static int tftpc_recv_data(int sock)
+static inline int send_ack(int sock, struct tftphdr_ack *ackhdr)
 {
-	int           stat;
-	struct pollfd fds;
+	LOG_DBG("Client acking block number: %d", ntohs(ackhdr->block));
 
-	/* Setup FDS. */
-	fds.fd     = sock;
-	fds.events = ZSOCK_POLLIN;
+	send(sock, ackhdr, sizeof(struct tftphdr_ack), 0);
 
-	/* Enable poll on this socket. Wait for the specified number
-	 * of milliseconds before exiting the call.
-	 */
-	stat = poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
-	if (stat > 0) {
-		/* Receive data from the TFTP Server. */
-		stat = recv(sock, tftpc_buffer, TFTPC_MAX_BUF_SIZE, 0);
-
-		/* Store the amount of data received in the global variable. */
-		tftpc_buffer_size = stat;
-	}
-
-	return stat;
+	return 0;
 }
 
-/* Name: tftpc_process_resp
- * Description: This function will process the data received from the
- * TFTP Server (a file or part of the file) and place it in the user buffer.
- * Return Value: This function will return one of the following values,
- * -> TFTPC_DUPLICATE_DATA: If the block is already received by the client.
- * -> TFTPC_BUFFER_OVERFLOW: If the data is more than the user provided buffer.
- * -> TFTPC_DATA_RX_SUCCESS: data received but their is more to come.
- * -> TFTPC_SUCCESS: Block received successfully and no more data is coming.
- */
-static int tftpc_process_resp(int sock, struct tftpc *client)
+static int tftp_send_request(int sock, struct sockaddr *server_addr,
+		int request, const char *remote_file, const char *mode)
 {
-	uint16_t    block_no;
-
-	/* Get the block number as received in the packet. */
-	block_no = sys_get_be16(tftpc_buffer + 2);
-	if (tftpc_block_no > block_no) {
-		LOG_DBG("Duplicate block received: %d", block_no);
-		LOG_DBG("Client waiting for Block Number: %d", tftpc_block_no);
-
-		send_ack(sock, block_no);
-
-		/* Duplicate block received. */
-		return TFTPC_DUPLICATE_DATA;
-	}
-
-	/* Valid block number received. */
-	LOG_DBG("Block Number: %d received", tftpc_block_no);
-
-	/* Only copy block if the user buffer has enough space. */
-	if (RECV_DATA_SIZE() > (client->user_buf_size - tftpc_index)) {
-		send_err(sock, 0x3, "Buffer Overflow");
-		return TFTPC_BUFFER_OVERFLOW;
-	}
-
-	/* Perform the actual copy and update the index. */
-	memcpy(client->user_buf + tftpc_index,
-	       tftpc_buffer + TFTP_HEADER_SIZE, RECV_DATA_SIZE());
-	tftpc_index += RECV_DATA_SIZE();
-
-	/* "block" of data received. */
-	send_ack(sock, block_no);
-	tftpc_block_no++;
-
-	/* For RFC1350, the block size will always be 512.
-	 * -> If block_size == 512, the transfer is still in progress.
-	 * -> If block_size < 512, we will conclude the transfer.
-	 */
-	return (RECV_DATA_SIZE() == TFTP_BLOCK_SIZE) ? TFTP_BLOCK_SIZE :
-		TFTPC_SUCCESS;
-}
-
-/* Name: tftp_send_request
- * Description: This function sends out a request to the TFTP Server
- * (Read / Write) and waits for a response. Once we get some response
- * from the server, it is interpreted and ensured to be correct.
- * If not, we keep on poking the server for data until we eventually
- * give up.
- * Return Value: This function will return the "opcode" received from
- * the remote server, i.e.
- * -> ERROR_OPCODE: If the remote server responded with "Error" or if
- *    the client was unable to send / receive anything from the server.
- * -> DATA_OPCODE:  If the remote server responded with "Data".
- * -> ACK_OPCODE:   If the remote server responded with "Ack".
- */
-static int tftp_send_request(int sock, uint8_t request,
-			     const char *remote_file, const char *mode)
-{
-	uint8_t    retx_cnt = 0;
-	uint32_t   req_size;
+	int tx_count = 0;
+	size_t req_size;
+	int ret;
 
 	/* Create TFTP Request. */
-	req_size = make_request(remote_file, mode, request);
+	req_size = make_request(tftpc_buffer, request, remote_file, mode);
 
-send_req:
+	do {
+		tx_count++;
 
-	/* Send this request to the server. */
-	if (send(sock, tftpc_buffer, req_size, 0)) {
-		if (tftpc_recv_data(sock)) {
-			return sys_get_be16(tftpc_buffer);
+		LOG_DBG("Sending TFTP request %d file %s", request,
+			log_strdup(remote_file));
+
+		/* Send the request to the server */
+		ret = sendto(sock, tftpc_buffer, req_size, 0, server_addr,
+			     ADDRLEN(server_addr));
+		if (ret < 0) {
+			break;
 		}
-	}
 
-	/* No of times we had to re-tx this "request". */
-	retx_cnt++;
+		/* Poll for the response */
+		struct pollfd fds = {
+			.fd     = sock,
+			.events = ZSOCK_POLLIN,
+		};
 
-	/* Log this out. */
-	LOG_DBG("Unable to get data from the TFTP Server.");
-	LOG_DBG("no_of_retransmists = %d", retx_cnt);
+		ret = poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT);
+		if (ret <= 0) {
+			LOG_DBG("Failed to get data from the TFTP Server"
+				", req. no. %d", tx_count);
+			continue;
+		}
 
-	/* Are we retransmitting? */
-	if (retx_cnt < TFTP_REQ_RETX) {
-		LOG_DBG("Are we re-transmitting: YES");
-		goto send_req;
-	}
+		/* Receive data from the TFTP Server. */
+		struct sockaddr from_addr;
+		socklen_t from_addr_len = sizeof(from_addr);
 
-	LOG_DBG("Are we re-transmitting: NO");
-	return ERROR_OPCODE;
+		ret = recvfrom(sock, tftpc_buffer, TFTPC_MAX_BUF_SIZE, 0,
+				&from_addr, &from_addr_len);
+		if (ret < TFTP_HEADER_SIZE) {
+			req_size = make_request(tftpc_buffer, request,
+						remote_file, mode);
+			continue;
+		}
+
+		/* Limit communication to the specific address:port */
+		connect(sock, &from_addr, from_addr_len);
+
+		break;
+
+	} while (tx_count <= TFTP_REQ_RETX);
+
+	return ret;
 }
 
-/* Name: tftp_get
- * Description: This function gets "file" from the remote server.
- */
-int tftp_get(struct sockaddr *server, struct tftpc *client,
+int tftp_get(struct sockaddr *server_addr, struct tftpc *client,
 	     const char *remote_file, const char *mode)
 {
+	int sock;
+	uint32_t tftpc_block_no = 1;
+	uint32_t tftpc_index = 0;
+	int tx_count = 0;
+	struct tftphdr_ack ackhdr = {
+		.opcode = htons(ACK_OPCODE),
+		.block = htons(1)
+	};
+	int rcv_size;
+	int ret;
 
-	int32_t   stat     = TFTPC_UNKNOWN_FAILURE;
-	uint8_t    retx_cnt = 0;
-	int32_t   sock;
-
-	/* Re-init the global "block number" variable. */
-	tftpc_block_no = 1;
-	tftpc_index    = 0;
-
-	/* Create Socket for TFTP (IPv4 / UDP) */
-	sock = socket(server->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	sock = socket(server_addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create UDP socket (IPv4): %d", errno);
-		return -errno;
-	}
-
-	/* Connect with the address.  */
-	stat = connect(sock, server, sizeof(struct sockaddr_in6));
-	if (stat < 0) {
-		LOG_ERR("Cannot connect to UDP remote (IPv4): %d", errno);
 		return -errno;
 	}
 
@@ -249,48 +171,84 @@ int tftp_get(struct sockaddr *server, struct tftpc *client,
 	k_mutex_lock(&tftpc_lock, K_FOREVER);
 
 	/* Send out the request to the TFTP Server. */
-	stat = tftp_send_request(sock, READ_REQUEST, remote_file, mode);
-	if (stat == ERROR_OPCODE) {
-		LOG_ERR("Server responded with error.");
-		return TFTPC_REMOTE_ERROR;
-	}
+	ret = tftp_send_request(sock, server_addr, READ_REQUEST, remote_file, mode);
+	rcv_size = ret;
 
-process_resp:
+	while (rcv_size >= TFTP_HEADER_SIZE && rcv_size <= TFTPC_MAX_BUF_SIZE) {
+		/* Process server response. */
 
-	/* Process server response. */
-	stat = tftpc_process_resp(sock, client);
-	if (stat == TFTPC_BUFFER_OVERFLOW ||
-	    stat == TFTPC_SUCCESS) {
-		goto req_done;
-	}
+		uint16_t opcode = sys_get_be16(tftpc_buffer);
+		uint16_t block_no = sys_get_be16(tftpc_buffer + 2);
 
-tftpc_recv:
+		LOG_DBG("Received data: opcode %u, block no %u, size %d",
+			opcode, block_no, rcv_size);
 
-	/* More data is available - Read (or we read a duplicate). */
-	stat = tftpc_recv_data(sock);
-	if (stat <= 0) {
-		/* No response from server. */
-		LOG_DBG("Server response timeout.");
-
-		/* Retries exhausted ? */
-		if (++retx_cnt >= TFTP_REQ_RETX) {
-			LOG_ERR("No more retransmits available. Exiting");
-			return TFTPC_RETRIES_EXHAUSTED;
+		if (opcode != DATA_OPCODE) {
+			LOG_ERR("Server responded with invalid opcode.");
+			ret = TFTPC_REMOTE_ERROR;
+			break;
 		}
 
-		/* Start Retransmission. */
-		LOG_DBG("Starting Re-transmission.");
-		send_ack(sock, tftpc_block_no);
-		goto tftpc_recv;
+		if (block_no == tftpc_block_no) {
+			uint32_t data_size = rcv_size - TFTP_HEADER_SIZE;
+
+			tftpc_block_no++;
+			ackhdr.block = htons(block_no);
+			tx_count = 0;
+
+			/* Only copy block if user buffer has enough space */
+			if (data_size > (client->user_buf_size - tftpc_index)) {
+				LOG_ERR("User buffer is full.");
+				send_err(sock, TFTP_ERROR_DISK_FULL, NULL);
+				ret = TFTPC_BUFFER_OVERFLOW;
+				break;
+			}
+
+			/* Perform the actual copy and update the index. */
+			memcpy(client->user_buf + tftpc_index,
+				tftpc_buffer + TFTP_HEADER_SIZE, data_size);
+			tftpc_index += data_size;
+
+			/* Per RFC1350, the end of a transfer is marked
+			 * by datagram size < TFTPC_MAX_BUF_SIZE.
+			 */
+			if (rcv_size < TFTPC_MAX_BUF_SIZE) {
+				ret = send_ack(sock, &ackhdr);
+				client->user_buf_size = tftpc_index;
+				break;
+			}
+		}
+
+		/* Poll for the response */
+		struct pollfd fds = {
+			.fd     = sock,
+			.events = ZSOCK_POLLIN,
+		};
+
+		do {
+			if (tx_count > TFTP_REQ_RETX) {
+				LOG_ERR("No more retransmits. Exiting");
+				ret = TFTPC_RETRIES_EXHAUSTED;
+				goto req_abort;
+			}
+
+			/* Send ACK to the TFTP Server */
+			send_ack(sock, &ackhdr);
+			tx_count++;
+
+		} while (poll(&fds, 1, CONFIG_TFTPC_REQUEST_TIMEOUT) <= 0);
+
+		/* Receive data from the TFTP Server. */
+		ret = recv(sock, tftpc_buffer, TFTPC_MAX_BUF_SIZE, 0);
+		rcv_size = ret;
 	}
 
-	/* Received response from the server. */
-	LOG_DBG("Received data of size: %d", stat);
-	goto process_resp;
+	if (!(rcv_size >= TFTP_HEADER_SIZE && rcv_size <= TFTPC_MAX_BUF_SIZE)) {
+		ret = TFTPC_REMOTE_ERROR;
+	}
 
-req_done:
-	/* Clean up. */
+req_abort:
 	k_mutex_unlock(&tftpc_lock);
 	close(sock);
-	return stat;
+	return ret;
 }
