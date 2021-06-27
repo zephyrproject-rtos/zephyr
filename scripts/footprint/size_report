@@ -557,7 +557,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
     """
     Generate a symbol tree for output.
     """
-    root = TreeNode('Symbols', "root")
+    root = TreeNode('Root', "root")
     node_no_paths = TreeNode('(no paths)', ":", parent=root)
 
     if Path(path_prefix) == Path(args.zephyrbase):
@@ -656,13 +656,12 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
 
         root.children = children
 
-    # Root node doesn't have sum of symbol size. So sum them up.
-    root.size = sum_node_children_size(root)
+    root.size = total_size
 
     # Need to account for code and data where there are not emitted
     # symbols associated with them.
     node_hidden_syms = TreeNode('(hidden)', "(hidden)", parent=root)
-    node_hidden_syms.size = total_size - root.size
+    node_hidden_syms.size = root.size - sum_node_children_size(root)
 
     return root
 
