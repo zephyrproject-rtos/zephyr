@@ -25,10 +25,6 @@
 #ifndef _ASMLANGUAGE
 #include <toolchain.h>
 #include <gd32vf103.h>
-#include <core_feature_timer.h>
-
-#define IS_UART_HWFLOW_INSTANCE(base) (base == USART0 || base == USART1 || base == USART2)
-#define IS_UART_LIN_INSTANCE(base) (base == USART0 || base == USART1 || base == USART2)
 
 /**
  * @brief structure to convey pinctrl information for stm32 soc
