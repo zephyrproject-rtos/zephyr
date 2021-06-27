@@ -12,8 +12,6 @@
 #include <kernel.h>
 #include <device.h>
 #include <soc.h>
-#include <gd32vf103_gpio.h>
-#include <gd32vf103_exti.h>
 #include <drivers/gpio.h>
 #include <drivers/clock_control/gd32_clock_control.h>
 #include <dt-bindings/clock/gd32_clock.h>
@@ -26,17 +24,97 @@
 
 #include "gpio_utils.h"
 
-#define GD32_PORTA 'A'
-#define GD32_PORTB 'B'
-#define GD32_PORTC 'C'
-#define GD32_PORTD 'D'
-#define GD32_PORTE 'E'
-#define GD32_PORTF 'F'
-#define GD32_PORTG 'G'
-#define GD32_PORTH 'H'
-#define GD32_PORTI 'I'
-#define GD32_PORTJ 'J'
-#define GD32_PORTK 'K'
+
+struct gd32_gpio {
+	volatile uint32_t CTL0;
+	volatile uint32_t CTL1;
+	volatile uint32_t ISTAT;
+	volatile uint32_t OCTL;
+	volatile uint32_t BOP;
+	volatile uint32_t BC;
+	volatile uint32_t LOCK;
+};
+
+struct gd32_afio {
+	volatile uint32_t EC;
+	volatile uint32_t PCF0;
+	volatile uint32_t EXTISS0;
+	volatile uint32_t EXTISS1;
+	volatile uint32_t EXTISS2;
+	volatile uint32_t EXTISS3;
+	volatile uint32_t PCF1;
+};
+
+#define DEV_CONFIG(x) ((const struct gpio_gd32_config *)(x->config))
+#define GPIO_DEV ((volatile struct gd32_gpio *)(DEV_CONFIG(dev)->base))
+
+#define AFIO ((volatile struct gd32_afio *)(AFIO_BASE))
+
+/* GPIO mode values set */
+#define GPIO_MODE_SET(n, mode)           ((uint32_t)((uint32_t)(mode) << (4U * (n))))
+#define GPIO_MODE_MASK(n)                (0xFU << (4U * (n)))
+
+
+/* GPIO mode definitions */
+#define GPIO_MODE_AIN                    ((uint8_t)0x00U)               /*!< analog input mode */
+#define GPIO_MODE_IN_FLOATING            ((uint8_t)0x04U)               /*!< floating input mode */
+#define GPIO_MODE_IPD                    ((uint8_t)0x28U)               /*!< pull-down input mode */
+#define GPIO_MODE_IPU                    ((uint8_t)0x48U)               /*!< pull-up input mode */
+#define GPIO_MODE_OUT_OD                 ((uint8_t)0x14U)               /*!< GPIO output with open-drain */
+#define GPIO_MODE_OUT_PP                 ((uint8_t)0x10U)               /*!< GPIO output with push-pull */
+#define GPIO_MODE_AF_OD                  ((uint8_t)0x1CU)               /*!< AFIO output with open-drain */
+#define GPIO_MODE_AF_PP                  ((uint8_t)0x18U)               /*!< AFIO output with push-pull */
+
+/* GPIO output max speed value */
+#define GPIO_OSPEED_10MHZ                ((uint8_t)0x01U)               /*!< output max speed 10MHz */
+#define GPIO_OSPEED_2MHZ                 ((uint8_t)0x02U)               /*!< output max speed 2MHz */
+#define GPIO_OSPEED_50MHZ                ((uint8_t)0x03U)               /*!< output max speed 50MHz */
+
+#define GPIO_PIN_SOURCE(x) ((uint8_t)x)
+
+static void pin_init(const struct device *dev, uint32_t mode, uint32_t speed, uint32_t pin)
+{
+	uint16_t i;
+	uint32_t temp_mode = 0U;
+	uint32_t reg = 0U;
+
+	/* GPIO mode configuration */
+	temp_mode = (mode & 0x0FU);
+
+	/* GPIO speed configuration */
+	if (mode & 0x10U) {
+		/* output mode max speed:10MHz,2MHz,50MHz */
+		temp_mode |= (uint32_t) speed;
+	}
+
+	/* configure the eight low port pins with GPIO_CTL0 */
+	for (i = 0U; i < 16U; i++) {
+		if (BIT(i) & pin) {
+			reg = i < 8U ? GPIO_DEV->CTL0 : GPIO_DEV->CTL1;
+
+			/* clear the specified pin mode bits */
+			reg &= ~GPIO_MODE_MASK(i % 8U);
+			/* set the specified pin mode bits */
+			reg |= GPIO_MODE_SET(i % 8U, temp_mode);
+
+			/* set IPD or IPU */
+			if (GPIO_MODE_IPD == mode) {
+				/* reset the corresponding OCTL bit */
+				GPIO_DEV->BC = (BIT(i) & pin);
+			} else {
+				/* set the corresponding OCTL bit */
+				if (GPIO_MODE_IPU == mode) {
+					GPIO_DEV->BOP = (BIT(i) & pin);
+				}
+			}
+			if (i < 8U) {
+				GPIO_DEV->CTL0 = reg;
+			} else {
+				GPIO_DEV->CTL1 = reg;
+			}
+		}
+	}
+}
 
 /**
  * @brief Common GPIO driver for GD32 MCUs.
@@ -55,7 +133,7 @@ static void gpio_gd32_isr(int line, void *arg)
 /**
  * @brief Common gpio flags to custom flags
  */
-static int gpio_gd32_flags_to_conf(int flags, int *pincfg)
+static int flags_to_conf(int flags, int *pincfg)
 {
 
 	if ((flags & GPIO_OUTPUT) != 0) {
@@ -90,7 +168,7 @@ static int gpio_gd32_flags_to_conf(int flags, int *pincfg)
 /**
  * @brief Translate pin to pinval that the LL library needs
  */
-static inline uint32_t gd32_pinval_get(int pin)
+static uint32_t pinval_get(int pin)
 {
 	uint32_t pinval;
 
@@ -103,10 +181,7 @@ static inline uint32_t gd32_pinval_get(int pin)
  */
 int gpio_gd32_configure(const struct device *dev, int pin, int conf, int altf)
 {
-	const struct gpio_gd32_config *cfg = dev->config;
-	uint32_t gpio = (uint32_t)cfg->base;
-
-	int pin_ll = gd32_pinval_get(pin);
+	int pin_ll = pinval_get(pin);
 
 
 	ARG_UNUSED(altf);
@@ -118,16 +193,16 @@ int gpio_gd32_configure(const struct device *dev, int pin, int conf, int altf)
 		temp = conf & (GD32_CNF_IN_MASK << GD32_CNF_IN_SHIFT);
 
 		if (temp == GD32_CNF_IN_ANALOG) {
-			gpio_init(gpio, GPIO_MODE_AIN, 0, pin_ll);
+			pin_init(dev, GPIO_MODE_AIN, 0, pin_ll);
 		} else if (temp == GD32_CNF_IN_FLOAT) {
-			gpio_init(gpio, GPIO_MODE_IN_FLOATING, 0, pin_ll);
+			pin_init(dev, GPIO_MODE_IN_FLOATING, 0, pin_ll);
 		} else {
 			temp = conf & (GD32_PUPD_MASK << GD32_PUPD_SHIFT);
 
 			if (temp == GD32_PUPD_PULL_UP) {
-				gpio_init(gpio, GPIO_MODE_IPU, 0, pin_ll);
+				pin_init(dev, GPIO_MODE_IPU, 0, pin_ll);
 			} else {
-				gpio_init(gpio, GPIO_MODE_IPD, 0, pin_ll);
+				pin_init(dev, GPIO_MODE_IPD, 0, pin_ll);
 			}
 		}
 
@@ -147,13 +222,13 @@ int gpio_gd32_configure(const struct device *dev, int pin, int conf, int altf)
 		temp = conf & (GD32_CNF_OUT_MASK << GD32_CNF_OUT_SHIFT);
 
 		if (temp == GD32_CNF_AF_PP) {
-			gpio_init(gpio, GPIO_MODE_AF_PP, max_hz, pin_ll);
+			pin_init(dev, GPIO_MODE_AF_PP, max_hz, pin_ll);
 		} else if (temp == GD32_CNF_AF_OD) {
-			gpio_init(gpio, GPIO_MODE_AF_OD, max_hz, pin_ll);
+			pin_init(dev, GPIO_MODE_AF_OD, max_hz, pin_ll);
 		} else if (temp == GD32_CNF_OUT_PP) {
-			gpio_init(gpio, GPIO_MODE_OUT_PP, max_hz, pin_ll);
+			pin_init(dev, GPIO_MODE_OUT_PP, max_hz, pin_ll);
 		} else {
-			gpio_init(gpio, GPIO_MODE_OUT_OD, max_hz, pin_ll);
+			pin_init(dev, GPIO_MODE_OUT_OD, max_hz, pin_ll);
 		}
 	}
 
@@ -163,7 +238,7 @@ int gpio_gd32_configure(const struct device *dev, int pin, int conf, int altf)
 /**
  * @brief GPIO port clock handling
  */
-static int gpio_gd32_clock_request(const struct device *dev, bool on)
+static int clock_request(const struct device *dev, bool on)
 {
 	const struct gpio_gd32_config *cfg = dev->config;
 	int ret = 0;
@@ -189,54 +264,18 @@ static int gpio_gd32_clock_request(const struct device *dev, bool on)
 }
 
 
-static void gpio_gd32_set_exti_source(int port, int pin)
-{
-	uint32_t source = 0U;
-
-	source = ((uint32_t) 0x0FU)
-		 << (AFIO_EXTI_SOURCE_FIELDS * (pin & AFIO_EXTI_SOURCE_MASK));
-
-	/* select EXTI sources */
-	if (GPIO_PIN_SOURCE_4 > pin) {
-		/* select EXTI0/EXTI1/EXTI2/EXTI3 */
-		AFIO_EXTISS0 &= ~source;
-		AFIO_EXTISS0 |= (((uint32_t) port)
-				 << (AFIO_EXTI_SOURCE_FIELDS
-				     * (pin & AFIO_EXTI_SOURCE_MASK)));
-	} else if (GPIO_PIN_SOURCE_8 > pin) {
-		/* select EXTI4/EXTI5/EXTI6/EXTI7 */
-		AFIO_EXTISS1 &= ~source;
-		AFIO_EXTISS1 |= (((uint32_t) port)
-				 << (AFIO_EXTI_SOURCE_FIELDS
-				     * (pin & AFIO_EXTI_SOURCE_MASK)));
-	} else if (GPIO_PIN_SOURCE_12 > pin) {
-		/* select EXTI8/EXTI9/EXTI10/EXTI11 */
-		AFIO_EXTISS2 &= ~source;
-		AFIO_EXTISS2 |= (((uint32_t) port)
-				 << (AFIO_EXTI_SOURCE_FIELDS
-				     * (pin & AFIO_EXTI_SOURCE_MASK)));
-	} else {
-		/* select EXTI12/EXTI13/EXTI14/EXTI15 */
-		AFIO_EXTISS3 &= ~source;
-		AFIO_EXTISS3 |= (((uint32_t) port)
-				 << (AFIO_EXTI_SOURCE_FIELDS
-				     * (pin & AFIO_EXTI_SOURCE_MASK)));
-	}
-
-}
-
-static int gpio_gd32_get_exti_source(int pin)
+static int get_exti_source(int pin)
 {
 	int port;
 
-	if (pin < GPIO_PIN_SOURCE_4) {
-		port = ((AFIO_EXTISS0 & AFIO_EXTI_PORT_MASK) >> AFIO_EXTI_SOURCE_FIELDS);
-	} else if (pin < GPIO_PIN_SOURCE_8) {
-		port = ((AFIO_EXTISS1 & AFIO_EXTI_PORT_MASK) >> AFIO_EXTI_SOURCE_FIELDS);
-	} else if (pin < GPIO_PIN_SOURCE_12) {
-		port = ((AFIO_EXTISS2 & AFIO_EXTI_PORT_MASK) >> AFIO_EXTI_SOURCE_FIELDS);
+	if (pin < GPIO_PIN_SOURCE(4)) {
+		port = ((AFIO->EXTISS0 & AFIO_EXTI_PORT_MASK) >> AFIO_EXTI_SOURCE_FIELDS);
+	} else if (pin < GPIO_PIN_SOURCE(8)) {
+		port = ((AFIO->EXTISS1 & AFIO_EXTI_PORT_MASK) >> AFIO_EXTI_SOURCE_FIELDS);
+	} else if (pin < GPIO_PIN_SOURCE(12)) {
+		port = ((AFIO->EXTISS2 & AFIO_EXTI_PORT_MASK) >> AFIO_EXTI_SOURCE_FIELDS);
 	} else {
-		port = ((AFIO_EXTISS3 & AFIO_EXTI_PORT_MASK) >> AFIO_EXTI_SOURCE_FIELDS);
+		port = ((AFIO->EXTISS3 & AFIO_EXTI_PORT_MASK) >> AFIO_EXTI_SOURCE_FIELDS);
 	}
 
 	return port;
@@ -245,21 +284,46 @@ static int gpio_gd32_get_exti_source(int pin)
 /**
  * @brief Enable EXTI of the specific line
  */
-static int gpio_gd32_enable_int(int port, int pin)
+static int enable_interrupt(int port, int pin)
 {
+	uint32_t source = 0U;
 
-	gpio_gd32_set_exti_source(port, pin);
+	source = ((uint32_t) 0x0FU)
+		 << (AFIO_EXTI_SOURCE_FIELDS * (pin & AFIO_EXTI_SOURCE_MASK));
+
+	/* select EXTI sources */
+	if (GPIO_PIN_SOURCE(4) > pin) {
+		/* select EXTI0/EXTI1/EXTI2/EXTI3 */
+		AFIO->EXTISS0 &= ~source;
+		AFIO->EXTISS0 |= (((uint32_t) port)
+				  << (AFIO_EXTI_SOURCE_FIELDS
+				      * (pin & AFIO_EXTI_SOURCE_MASK)));
+	} else if (GPIO_PIN_SOURCE(8) > pin) {
+		/* select EXTI4/EXTI5/EXTI6/EXTI7 */
+		AFIO->EXTISS1 &= ~source;
+		AFIO->EXTISS1 |= (((uint32_t) port)
+				  << (AFIO_EXTI_SOURCE_FIELDS
+				      * (pin & AFIO_EXTI_SOURCE_MASK)));
+	} else if (GPIO_PIN_SOURCE(12) > pin) {
+		/* select EXTI8/EXTI9/EXTI10/EXTI11 */
+		AFIO->EXTISS2 &= ~source;
+		AFIO->EXTISS2 |= (((uint32_t) port)
+				  << (AFIO_EXTI_SOURCE_FIELDS
+				      * (pin & AFIO_EXTI_SOURCE_MASK)));
+	} else {
+		/* select EXTI12/EXTI13/EXTI14/EXTI15 */
+		AFIO->EXTISS3 &= ~source;
+		AFIO->EXTISS3 |= (((uint32_t) port)
+				  << (AFIO_EXTI_SOURCE_FIELDS
+				      * (pin & AFIO_EXTI_SOURCE_MASK)));
+	}
 
 	return 0;
 }
 
 static int gpio_gd32_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	const struct gpio_gd32_config *cfg = dev->config;
-	uint32_t gpio = (uint32_t)cfg->base;
-
-	*value = gpio_input_port_get(gpio);
-
+	*value = GPIO_DEV->ISTAT;
 	return 0;
 }
 
@@ -267,12 +331,10 @@ static int gpio_gd32_port_set_masked_raw(const struct device *dev,
 					 gpio_port_pins_t mask,
 					 gpio_port_value_t value)
 {
-	const struct gpio_gd32_config *cfg = dev->config;
-	uint32_t gpio = (uint32_t)cfg->base;
 	uint32_t port_value;
 
-	port_value = gpio_output_port_get(gpio);
-	gpio_port_write(gpio, (port_value & ~mask) | (mask & value));
+	port_value = GPIO_DEV->OCTL;
+	GPIO_DEV->OCTL = ((port_value & ~mask) | (mask & value));
 
 	return 0;
 }
@@ -280,33 +342,21 @@ static int gpio_gd32_port_set_masked_raw(const struct device *dev,
 static int gpio_gd32_port_set_bits_raw(const struct device *dev,
 				       gpio_port_pins_t pins)
 {
-	const struct gpio_gd32_config *cfg = dev->config;
-	uint32_t gpio = (uint32_t)cfg->base;
-
-	gpio_bit_set(gpio, pins);
-
+	GPIO_DEV->BOP = pins;
 	return 0;
 }
 
 static int gpio_gd32_port_clear_bits_raw(const struct device *dev,
 					 gpio_port_pins_t pins)
 {
-	const struct gpio_gd32_config *cfg = dev->config;
-	uint32_t gpio = (uint32_t)cfg->base;
-
-	gpio_bit_reset(gpio, pins);
-
+	GPIO_DEV->BC = pins;
 	return 0;
 }
 
 static int gpio_gd32_port_toggle_bits(const struct device *dev,
 				      gpio_port_pins_t pins)
 {
-	const struct gpio_gd32_config *cfg = dev->config;
-	uint32_t gpio = (uint32_t)cfg->base;
-
-	gpio_bit_set(gpio, gpio_output_port_get(gpio) ^ pins);
-
+	GPIO_DEV->OCTL = (GPIO_DEV->OCTL ^ pins);
 	return 0;
 }
 
@@ -322,7 +372,7 @@ static int gpio_gd32_pin_configure(const struct device *dev,
 	/* figure out if we can map the requested GPIO
 	 * configuration
 	 */
-	err = gpio_gd32_flags_to_conf(flags, &pincfg);
+	err = flags_to_conf(flags, &pincfg);
 	if (err != 0) {
 		goto exit;
 	}
@@ -350,7 +400,7 @@ static int gpio_gd32_pin_interrupt_configure(const struct device *dev,
 	if (false) {
 		/* Never reaching here. To suppress unused warning. */
 		gpio_gd32_enable_int(0, 0);
-		gpio_gd32_get_exti_source(0);
+		get_exti_source(0);
 		gpio_gd32_isr(0, 0);
 	}
 	return -ENOTSUP;
@@ -363,7 +413,7 @@ static int gpio_gd32_pin_interrupt_configure(const struct device *dev,
 	int err = 0;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		if (gpio_gd32_get_exti_source(pin) == cfg->port) {
+		if (get_exti_source(pin) == cfg->port) {
 			gd32_exti_disable(DEVICE_DT_GET(DT_NODELABEL(exti)), pin);
 			gd32_exti_unset_callback(DEVICE_DT_GET(DT_NODELABEL(exti)), pin);
 			gd32_exti_trigger(DEVICE_DT_GET(DT_NODELABEL(exti)), pin, GD32_EXTI_TRIG_NONE);
@@ -383,7 +433,7 @@ static int gpio_gd32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	gpio_gd32_enable_int(cfg->port, pin);
+	enable_interrupt(cfg->port, pin);
 
 	switch (trig) {
 	case GPIO_INT_TRIG_LOW:
@@ -442,8 +492,20 @@ static int gpio_gd32_init(const struct device *dev)
 
 	data->dev = dev;
 
-	return gpio_gd32_clock_request(dev, true);
+	return clock_request(dev, true);
 }
+
+#define GD32_PORTA 'A'
+#define GD32_PORTB 'B'
+#define GD32_PORTC 'C'
+#define GD32_PORTD 'D'
+#define GD32_PORTE 'E'
+#define GD32_PORTF 'F'
+#define GD32_PORTG 'G'
+#define GD32_PORTH 'H'
+#define GD32_PORTI 'I'
+#define GD32_PORTJ 'J'
+#define GD32_PORTK 'K'
 
 #define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port, __cenr, __bus) \
 	static const struct gpio_gd32_config gpio_gd32_cfg_## __suffix = {     \
