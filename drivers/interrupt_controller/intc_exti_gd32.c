@@ -19,7 +19,16 @@
 #include <sys/__assert.h>
 #include <drivers/interrupt_controller/exti_gd32.h>
 
-#include "gd32vf103_exti.h"
+struct gd32_exti {
+	volatile uint32_t INTEN;
+	volatile uint32_t EVEN;
+	volatile uint32_t RTEN;
+	volatile uint32_t FTEN;
+	volatile uint32_t SWIEV;
+	volatile uint32_t PD;
+};
+
+#define EXTI ((volatile struct gd32_exti *)(EXTI_BASE))
 
 const IRQn_Type exti_irq_table[] = {
 	EXTI0_IRQn, EXTI1_IRQn, EXTI2_IRQn, EXTI3_IRQn,
@@ -40,27 +49,6 @@ struct gd32_exti_data {
 	struct __exti_cb cb[ARRAY_SIZE(exti_irq_table)];
 };
 
-static void exti_set_rising_trigger(exti_line_enum linex)
-{
-	EXTI_RTEN |= (uint32_t) linex;
-}
-
-static void exti_reset_rising_trigger(exti_line_enum linex)
-{
-	EXTI_RTEN &= ~(uint32_t) linex;
-}
-
-static void exti_set_falling_trigger(exti_line_enum linex)
-{
-	EXTI_FTEN |= (uint32_t) linex;
-}
-
-static void exti_reset_falling_trigger(exti_line_enum linex)
-{
-	EXTI_FTEN &= ~(uint32_t) linex;
-}
-
-
 static void gd32_exti_enable_(const struct device *dev, int line)
 {
 	int irqnum = 0;
@@ -76,7 +64,7 @@ static void gd32_exti_enable_(const struct device *dev, int line)
 	}
 
 	/* Enable requested line interrupt */
-	exti_interrupt_enable(1 << line);
+	EXTI->INTEN |= BIT(line);
 
 	/* Enable exti irq interrupt */
 	irq_enable(irqnum);
@@ -85,7 +73,7 @@ static void gd32_exti_enable_(const struct device *dev, int line)
 static void gd32_exti_disable_(const struct device *dev, int line)
 {
 	if (line < 32) {
-		exti_interrupt_disable(1 << line);
+		EXTI->INTEN = BIT(line);
 	} else {
 		__ASSERT_NO_MSG(line);
 	}
@@ -101,7 +89,7 @@ static inline int gd32_exti_is_pending(int line)
 	int ret = 0;
 
 	if (line < 32) {
-		ret = exti_interrupt_flag_get(1 << line);
+		ret = ((EXTI->PD & BIT(line)) && (EXTI->INTEN & BIT(line))) ? 1 : 0;
 	} else {
 		__ASSERT_NO_MSG(line);
 	}
@@ -116,7 +104,7 @@ static inline int gd32_exti_is_pending(int line)
 static inline void gd32_exti_clear_pending(int line)
 {
 	if (line < 32) {
-		exti_interrupt_flag_clear(1 << line);
+		EXTI->PD = BIT(line);
 	} else {
 		__ASSERT_NO_MSG(line);
 	}
@@ -131,20 +119,20 @@ static void gd32_exti_trigger_(const struct device *dev, int line, int trigger)
 
 	switch (trigger) {
 	case GD32_EXTI_TRIG_NONE:
-		exti_reset_rising_trigger(1 << line);
-		exti_reset_falling_trigger(1 << line);
+		EXTI->RTEN &= BIT(line);
+		EXTI->FTEN &= BIT(line);
 		break;
 	case GD32_EXTI_TRIG_RISING:
-		exti_set_rising_trigger(1 << line);
-		exti_reset_falling_trigger(1 << line);
+		EXTI->RTEN |= BIT(line);
+		EXTI->FTEN &= BIT(line);
 		break;
 	case GD32_EXTI_TRIG_FALLING:
-		exti_reset_rising_trigger(1 << line);
-		exti_set_falling_trigger(1 << line);
+		EXTI->RTEN &= BIT(line);
+		EXTI->FTEN |= BIT(line);
 		break;
 	case GD32_EXTI_TRIG_BOTH:
-		exti_set_rising_trigger(1 << line);
-		exti_set_falling_trigger(1 << line);
+		EXTI->RTEN |= BIT(line);
+		EXTI->FTEN |= BIT(line);
 		break;
 	default:
 		__ASSERT_NO_MSG(trigger);
