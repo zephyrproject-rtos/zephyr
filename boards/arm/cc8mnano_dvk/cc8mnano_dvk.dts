@@ -14,7 +14,6 @@
 
 	aliases {
 		led0 = &red_led;
-		led1 = &green_led;
 		uart-4 = &uart4;
 		sw0    = &user_switch_2;
 	};
@@ -33,15 +32,7 @@
 			label = "User LED3";
 		};
 	};
-	
-	leds {
-		compatible = "gpio-leds";
-		green_led: led_1 {
-			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
-			label = "User LED2";
-		};
-	};
-	
+		
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_switch_2: user_sw_2 {
@@ -56,5 +47,9 @@
 &uart4 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&gpio2 {
+	status = "okay";
 };
 
