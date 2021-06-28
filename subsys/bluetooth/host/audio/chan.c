@@ -8,6 +8,7 @@
 
 #include <zephyr.h>
 #include <sys/byteorder.h>
+#include <sys/check.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
@@ -26,6 +27,8 @@
 #if defined(CONFIG_BT_BAP)
 
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
+/* static reference for the BIS channels for each BIG */
+static struct bt_iso_chan *big_bis[BROADCAST_CNT][BROADCAST_SRC_CNT];
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
 			struct bt_audio_ep *ep, struct bt_audio_capability *cap,
@@ -274,15 +277,19 @@ int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos)
 		return -EINVAL;
 	}
 
+	CHECKIF(bt_audio_ep_is_broadcast(chan->ep)) {
+		return -EINVAL;
+	}
+
 	switch (chan->ep->status.state) {
 	/* Valid only if ASE_State field = 0x01 (Codec Configured) */
 	case BT_ASCS_ASE_STATE_CONFIG:
-	 /* or 0x02 (QoS Configured) */
+	/* or 0x02 (QoS Configured) */
 	case BT_ASCS_ASE_STATE_QOS:
 		break;
 	default:
 		BT_ERR("Invalid state: %s",
-		       bt_audio_ep_state_str(chan->ep->status.state));
+		bt_audio_ep_state_str(chan->ep->status.state));
 		return -EBADMSG;
 	}
 
@@ -756,7 +763,7 @@ void bt_audio_chan_set_state_debug(struct bt_audio_chan *chan, uint8_t state,
 		return;
 	}
 
-	if (state == BT_AUDIO_CHAN_IDLE && chan->conn) {
+	if (state == BT_AUDIO_CHAN_IDLE) {
 		chan_detach(chan);
 	}
 
@@ -765,7 +772,7 @@ void bt_audio_chan_set_state_debug(struct bt_audio_chan *chan, uint8_t state,
 #else
 void bt_audio_chan_set_state(struct bt_audio_chan *chan, uint8_t state)
 {
-	if (state == BT_AUDIO_CHAN_IDLE && chan->conn) {
+	if (state == BT_AUDIO_CHAN_IDLE) {
 		chan_detach(chan);
 	}
 
@@ -937,6 +944,164 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf)
 void bt_audio_chan_cb_register(struct bt_audio_chan *chan, struct bt_audio_chan_ops *ops)
 {
 	chan->ops = ops;
+}
+
+static int bt_audio_broadcaster_setup_chan(uint8_t index,
+					   struct bt_audio_chan *chan,
+					   struct bt_codec *codec,
+					   struct bt_codec_qos *qos)
+{
+	struct bt_audio_ep *ep;
+	int err;
+
+	if (chan->state != BT_AUDIO_CHAN_IDLE) {
+		BT_DBG("Channel %p not idle", chan);
+		return -EALREADY;
+	}
+
+	ep = bt_audio_ep_broadcaster_new(index, BT_AUDIO_SOURCE);
+	if (ep == NULL) {
+		BT_DBG("Could not allocate new broadcast endpoint");
+		return -ENOMEM;
+	}
+
+	chan_attach(NULL, chan, ep, NULL, codec);
+	chan->qos = qos;
+	err = codec_qos_to_iso_qos(chan->iso->qos, qos);
+	if (err) {
+		BT_ERR("Unable to convert codec QoS to ISO QoS");
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
+				struct bt_codec *codec,
+				struct bt_codec_qos *qos)
+{
+	const struct bt_data ad[] = {
+		BT_DATA_BYTES(BT_DATA_UUID16_ALL,
+				BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL))
+	};
+	struct bt_iso_chan **bis_channels = NULL;
+	struct bt_audio_chan *tmp;
+	uint8_t bis_count = 0;
+	uint8_t index;
+	int err;
+
+	/* TODO: The API currently only requires a bt_audio_chan object from
+	 * the user. We could modify the API such that the extended (and
+	 * periodic advertising enabled) advertiser was provided by the user as
+	 * well (similar to the ISO API), or even provide the BIG.
+	 *
+	 * The caveat of that type of API, instead of this, where we, the stack,
+	 * control the advertiser, is that the user will be able to change the
+	 * advertising data (thus making the broadcaster non-functional in
+	 * terms of BAP compliance), or even stop the advertiser without
+	 * stopping the BIG (which also goes against the BAP specification).
+	 */
+
+	CHECKIF(chan == NULL) {
+		BT_DBG("chan is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(codec == NULL) {
+		BT_DBG("codec is NULL");
+		return -EINVAL;
+	}
+
+	for (index = 0; index < ARRAY_SIZE(big_bis); index++) {
+		if (big_bis[index][0] == NULL) { /* Find free entry */
+			bis_channels = big_bis[index];
+			break;
+		}
+	}
+
+	if (bis_channels == NULL) {
+		BT_DBG("Could not allocate any more broadcasters");
+		return -ENOMEM;
+	}
+
+	err = bt_audio_broadcaster_setup_chan(index, chan, codec, qos);
+	if (err != 0) {
+		BT_DBG("Failed to setup chan %p: %d", chan, err);
+		return err;
+	}
+
+	bis_channels[bis_count++] = &chan->ep->iso;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
+		err = bt_audio_broadcaster_setup_chan(index, tmp, codec, qos);
+		if (err != 0) {
+			BT_DBG("Failed to setup chan %p: %d", chan, err);
+			/* TODO: Cleanup already setup channels */
+			return err;
+		}
+
+		bis_channels[bis_count++] = &tmp->ep->iso;
+	}
+
+	/* Create a non-connectable non-scannable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL,
+				   &chan->ep->adv);
+	if (err != 0) {
+		BT_DBG("Failed to create advertising set (err %d)", err);
+		/* TODO: cleanup */
+		return err;
+	}
+
+	/* Set periodic advertising parameters */
+	err = bt_le_per_adv_set_param(chan->ep->adv, BT_LE_PER_ADV_DEFAULT);
+	if (err != 0) {
+		BT_DBG("Failed to set periodic advertising parameters (err %d)",
+		       err);
+		/* TODO: cleanup */
+		return err;
+	}
+
+	/* TODO: If updating the API to have a user-supplied advertiser, we
+	 * should simply add the data here, instead of changing all of it.
+	 * Similar, if the application changes the data, we should ensure
+	 * that the audio advertising data is still present, similar to how
+	 * the GAP device name is added.
+	 */
+	err = bt_le_ext_adv_set_data(chan->ep->adv, ad, ARRAY_SIZE(ad), NULL,
+				     0);
+	if (err != 0) {
+		BT_DBG("Failed to set extended advertising data (err %d)", err);
+		/* TODO: cleanup */
+		return err;
+	}
+
+	/* TODO: encode BASE and set basic audio announcement in PA data */
+
+	/* Enable Periodic Advertising */
+	err = bt_le_per_adv_start(chan->ep->adv);
+	if (err != 0) {
+		BT_DBG("Failed to enable periodic advertising (err %d)", err);
+		/* TODO: cleanup */
+		return err;
+	}
+
+	/* Start extended advertising */
+	err = bt_le_ext_adv_start(chan->ep->adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		BT_DBG("Failed to start extended advertising (err %d)", err);
+		/* TODO: cleanup */
+		return err;
+	}
+
+	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_CONFIGURED);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
+		tmp->ep->adv = chan->ep->adv; /* Sync adv reference */
+
+		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_CONFIGURED);
+	}
+
+	return 0;
 }
 
 #endif /* CONFIG_BT_BAP */
