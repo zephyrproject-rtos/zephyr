@@ -789,7 +789,7 @@ static sys_slist_t domain_list;
  * This function provides the default configuration mechanism for the Memory
  * Management Unit (MMU).
  */
-void z_arm64_mmu_init(bool is_primary_core)
+void z_arm64_mm_init(bool is_primary_core)
 {
 	unsigned int flags = 0U;
 

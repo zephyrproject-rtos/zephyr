@@ -130,11 +130,13 @@ static void region_init(const uint32_t index,
 /*
  * @brief MPU default configuration
  *
- * This function provides the default configuration mechanism for the Memory
- * Protection Unit (MPU).
+ * This function here provides the default configuration mechanism
+ * for the Memory Protection Unit (MPU).
  */
-static int arm_mpu_init(const struct device *arg)
+void z_arm64_mm_init(bool is_primary_core)
 {
+	/* This param is only for compatibility with the MMU init */
+	ARG_UNUSED(is_primary_core);
 	uint64_t val;
 	uint32_t r_index;
 
@@ -148,7 +150,7 @@ static int arm_mpu_init(const struct device *arg)
 	if ((val != ID_AA64MMFR0_PMSA_EN) &&
 	    (val != ID_AA64MMFR0_PMSA_VMSA_EN)) {
 		__ASSERT(0, "MPU not supported!\n");
-		return -1;
+		return;
 	}
 
 	if (mpu_config.num_regions > get_num_regions()) {
@@ -162,7 +164,7 @@ static int arm_mpu_init(const struct device *arg)
 			 "Request to configure: %u regions (supported: %u)\n",
 			 mpu_config.num_regions,
 			 get_num_regions());
-		return -1;
+		return;
 	}
 
 	LOG_DBG("total region count: %d", get_num_regions());
@@ -181,9 +183,4 @@ static int arm_mpu_init(const struct device *arg)
 	static_regions_num = mpu_config.num_regions;
 
 	arm_core_mpu_enable();
-
-	return 0;
 }
-
-SYS_INIT(arm_mpu_init, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
