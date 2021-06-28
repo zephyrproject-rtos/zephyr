@@ -13,3 +13,10 @@ config SOC_FVP_AEMV8R_AARCH64
 	select GIC_SINGLE_SECURITY_STATE
 
 endchoice
+
+config SOC_FVP_AEMV8R_EL2_INIT
+	bool "ARM FVP AEMv8R EL2 Initialization"
+	default n
+	help
+	  Initialize MPIDR_EL1 in z_arm64_el2_plat_init. It's necessary
+	  when zephyr brings up secondary core without TB-R support.
