@@ -1024,7 +1024,7 @@ struct getopt_state *shell_getopt_state_get(const struct shell *shell);
  *
  * @param[in] shell	Pointer to the shell instance.
  *			It can be NULL when the
- *			@option{CONFIG_SHELL_BACKEND_DUMMY} option is enabled.
+ *			@kconfig{CONFIG_SHELL_BACKEND_DUMMY} option is enabled.
  * @param[in] cmd	Command to be executed.
  *
  * @return		Result of the execution
