@@ -11,4 +11,3 @@ config SOC_SERIES_IMX8MN_M7
 	select CPU_HAS_FPU
 	help
 	  Enable support for i.MX8MN M7 MCU series
-s

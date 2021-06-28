@@ -16,4 +16,3 @@ config NUM_IRQS
 source "soc/arm/nxp_imx/mimx8mn6_m7/Kconfig.defconfig.mimx8mn6_m7"
 
 endif # SOC_SERIES_IMX8MN_M7
-
