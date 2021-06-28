@@ -80,6 +80,7 @@ extensions = [
     "sphinx_tabs.tabs",
     "zephyr.warnings_filter",
     "zephyr.doxyrunner",
+    "zephyr.vcs_link",
     "notfound.extension",
     "zephyr.external_content",
 ]
@@ -149,6 +150,7 @@ html_context = {
         ("2.3.0", "/2.3.0/"),
         ("1.14.1", "/1.14.1/"),
     ),
+    "display_vcs_link": True,
 }
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -220,6 +222,21 @@ warnings_filter_silent = False
 # -- Options for notfound.extension ---------------------------------------
 
 notfound_urls_prefix = f"/{version}/" if is_release else "/latest/"
+
+# -- Options for zephyr.vcs_link ------------------------------------------
+
+vcs_link_version = f"v{version}" if is_release else "main"
+vcs_link_base_url = f"https://github.com/zephyrproject-rtos/zephyr/blob/{vcs_link_version}"
+vcs_link_prefixes = {
+    "samples/.*": "",
+    "boards/.*": "",
+    ".*": "doc",
+}
+vcs_link_exclude = [
+    "reference/kconfig.*",
+    "reference/devicetree/bindings.*",
+    "reference/devicetree/compatibles.*",
+]
 
 # -- Options for zephyr.external_content ----------------------------------
 
