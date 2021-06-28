@@ -244,6 +244,19 @@ struct media_player;
 struct media_proxy_ctrl_cbs {
 
 	/**
+	 * @brief Media Player Instance callback
+	 *
+	 * Called when the local Media Player instance is registered or read (TODO).
+	 * Also called if the local player instance is already registered when
+	 * the controller is registered.
+	 * Provides the controller with the pointer to the local player instance.
+	 *
+	 * @param player   Media player instance pointer
+	 * @param err      Error value. 0 on success, or errno on negative value.
+	 */
+	void (*local_player_instance)(struct media_player *player, int err);
+
+	/**
 	 * @brief Media Player Name callback
 	 *
 	 * Called when the Media Player Name is read or changed
