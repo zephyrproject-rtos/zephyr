@@ -1,13 +1,24 @@
 .. _autopts-linux:
 
-AutoPTS on Linux with nRF52 board
-##################################
+AutoPTS on Linux
+################
 
 Overview
 ========
 
 This tutorial shows how to setup AutoPTS client on Linux with AutoPTS server running on Windows 10
-virtual machine. Tutorial covers only nrf52840dk. Tested with Ubuntu 20.4 and Linux Mint 20.4.
+virtual machine. Tested with Ubuntu 20.4 and Linux Mint 20.4.
+
+Supported methods to test zephyr bluetooth host:
+
+- Testing Zephyr Host Stack on QEMU
+
+- Testing Zephyr Host Stack on native posix
+
+- Testing Zephyr combined (controller + host) build on Real hardware (such as nRF52)
+
+For running with QEMU or native posix, please visit:
+   https://docs.zephyrproject.org/latest/guides/bluetooth/bluetooth-tools.html?highlight=hci_uart#running-on-qemu-and-native-posix
 
 Setup Linux
 ===========================
@@ -92,8 +103,8 @@ Install udev rules, which allow you to flash most Zephyr boards as a regular use
     sudo cp ~/zephyr-sdk-<your_version>/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
     sudo udevadm control --reload
 
-Install nrftools
-=================
+Install nrftools (only required in the actual hardware test mode)
+=================================================================
 
 Download latest nrftools (version >= 10.12.1) from site
 https://www.nordicsemi.com/Software-and-tools/Development-Tools/nRF-Command-Line-Tools/Download.
@@ -262,8 +273,8 @@ Write anywhere in the file following line:
 
 just replace 0x0a12 with Vendor number and 0x0001 with ProdID number you found earlier.
 
-Connect devices
-================
+Connect devices (only required in the actual hardware test mode)
+================================================================
 
 .. image:: devices_1.png
    :height: 400
@@ -275,8 +286,8 @@ Connect devices
    :width: 500
    :align: center
 
-Flash board
-============
+Flash board (only required in the actual hardware test mode)
+============================================================
 
 On Linux, go to ~/zephyrproject. There should be already ~/zephyrproject/build
 directory. Flash board:
@@ -344,12 +355,36 @@ Server and client by default will run on localhost address. Run server:
    :width: 700
    :align: center
 
-Run client:
+Testing Zephyr Host Stack on QEMU:
+
+.. code-block::
+
+    # A Bluetooth controller needs to be mounted.
+    # For running with HCI UART, please visit: https://docs.zephyrproject.org/latest/samples/bluetooth/hci_uart/README.html#bluetooth-hci-uart
+
+    python ./autoptsclient-zephyr.py "C:\Users\USER_NAME\Documents\Profile Tuning Suite\PTS_PROJECT\PTS_PROJECT.pqw6" \
+    	~/zephyrproject/build/zephyr/zephyr.elf -i SERVER_IP -l LOCAL_IP
+
+
+Testing Zephyr Host Stack on native posix:
+
+.. code-block::
+
+    # A Bluetooth controller needs to be mounted.
+    # For running with HCI UART, please visit: https://docs.zephyrproject.org/latest/samples/bluetooth/hci_uart/README.html#bluetooth-hci-uart
+
+    west build -b native_posix zephyr/tests/bluetooth/tester/ -DOVERLAY_CONFIG=overlay-native.conf
+
+    sudo python ./autoptsclient-zephyr.py "C:\Users\USER_NAME\Documents\Profile Tuning Suite\PTS_PROJECT\PTS_PROJECT.pqw6" \
+    	~/zephyrproject/build/zephyr/zephyr.exe -i SERVER_IP -l LOCAL_IP --hci 0
+
+
+Testing Zephyr combined (controller + host) build on nRF52:
 
 .. code-block::
 
     python ./autoptsclient-zephyr.py zephyr-master ~/zephyrproject/build/zephyr/zephyr.elf -t /dev/ACM0 \
-    -b nrf52 -l 192.168.2.1 -i 192.168.2.2.
+    	-b nrf52 -l 192.168.2.1 -i 192.168.2.2
 
 .. image:: autoptsclient_run_2.png
    :height: 100
