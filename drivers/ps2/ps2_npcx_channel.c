@@ -32,58 +32,48 @@ struct ps2_npcx_ch_config {
 	const struct npcx_alt *alts_list;
 	/* Indicate the channel's number of the PS/2 channel device */
 	uint8_t channel_id;
-};
-
-/* Driver data */
-struct ps2_npcx_ch_data {
 	const struct device *ps2_ctrl;
 };
 
 /* Driver convenience defines */
 #define DRV_CONFIG(dev) ((const struct ps2_npcx_ch_config *)(dev)->config)
 
-#define DRV_DATA(dev) ((struct ps2_npcx_ch_data *)(dev)->data)
-
 /* PS/2 api functions */
 static int ps2_npcx_ch_configure(const struct device *dev,
 				 ps2_callback_t callback_isr)
 {
 	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
-	struct ps2_npcx_ch_data *const data = DRV_DATA(dev);
 	int ret;
 
-	ret = ps2_npcx_ctrl_configure(data->ps2_ctrl, config->channel_id,
+	ret = ps2_npcx_ctrl_configure(config->ps2_ctrl, config->channel_id,
 				      callback_isr);
 	if (ret != 0)
 		return ret;
 
-	return ps2_npcx_ctrl_enable_interface(data->ps2_ctrl,
+	return ps2_npcx_ctrl_enable_interface(config->ps2_ctrl,
 					      config->channel_id, 1);
 }
 
 static int ps2_npcx_ch_write(const struct device *dev, uint8_t value)
 {
 	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
-	struct ps2_npcx_ch_data *const data = DRV_DATA(dev);
 
-	return ps2_npcx_ctrl_write(data->ps2_ctrl, config->channel_id, value);
+	return ps2_npcx_ctrl_write(config->ps2_ctrl, config->channel_id, value);
 }
 
 static int ps2_npcx_ch_enable_interface(const struct device *dev)
 {
 	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
-	struct ps2_npcx_ch_data *const data = DRV_DATA(dev);
 
-	return ps2_npcx_ctrl_enable_interface(data->ps2_ctrl,
+	return ps2_npcx_ctrl_enable_interface(config->ps2_ctrl,
 					      config->channel_id, 1);
 }
 
 static int ps2_npcx_ch_inhibit_interface(const struct device *dev)
 {
 	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
-	struct ps2_npcx_ch_data *const data = DRV_DATA(dev);
 
-	return ps2_npcx_ctrl_enable_interface(data->ps2_ctrl,
+	return ps2_npcx_ctrl_enable_interface(config->ps2_ctrl,
 					      config->channel_id, 0);
 }
 
@@ -91,6 +81,11 @@ static int ps2_npcx_ch_inhibit_interface(const struct device *dev)
 static int ps2_npcx_channel_init(const struct device *dev)
 {
 	const struct ps2_npcx_ch_config *const config = DRV_CONFIG(dev);
+
+	if (!device_is_ready(config->ps2_ctrl)) {
+		LOG_ERR("%s device not ready", config->ps2_ctrl->name);
+		return -ENODEV;
+	}
 
 	/* Configure pin-mux for PS/2 device */
 	npcx_pinctrl_mux_configure(config->alts_list, config->alts_size, 1);
@@ -107,21 +102,7 @@ static const struct ps2_driver_api ps2_channel_npcx_driver_api = {
 };
 
 /* PS/2 channel initialization macro functions */
-#define NPCX_PS2_CHANNEL_INIT_FUNC(inst) _CONCAT(ps2_npcx_channel_init_, inst)
-#define NPCX_PS2_CHANNEL_INIT_FUNC_DECL(inst)                                  \
-	static int ps2_npcx_channel_init_##inst(const struct device *dev)
-
-#define NPCX_PS2_CHANNEL_INIT_FUNC_IMPL(inst)                                  \
-	static int ps2_npcx_channel_init_##inst(const struct device *dev)      \
-	{                                                                      \
-		struct ps2_npcx_ch_data *const data = DRV_DATA(dev);           \
-									       \
-		data->ps2_ctrl = device_get_binding(DT_INST_BUS_LABEL(inst));  \
-		return ps2_npcx_channel_init(dev);                             \
-	}
-
 #define NPCX_PS2_CHANNEL_INIT(inst)                                            \
-	NPCX_PS2_CHANNEL_INIT_FUNC_DECL(inst);                                 \
 									       \
 	static const struct npcx_alt ps2_channel_alts##inst[] =                \
 		NPCX_DT_ALT_ITEMS_LIST(inst);                                  \
@@ -130,17 +111,13 @@ static const struct ps2_driver_api ps2_channel_npcx_driver_api = {
 		.channel_id = DT_INST_PROP(inst, channel),                     \
 		.alts_size = ARRAY_SIZE(ps2_channel_alts##inst),               \
 		.alts_list = ps2_channel_alts##inst,                           \
+		.ps2_ctrl = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),       \
 	};                                                                     \
 									       \
-	static struct ps2_npcx_ch_data ps2_npcx_ch_data_##inst;                \
-									       \
-	DEVICE_DT_INST_DEFINE(inst, NPCX_PS2_CHANNEL_INIT_FUNC(inst), NULL,    \
-			      &ps2_npcx_ch_data_##inst,                        \
+	DEVICE_DT_INST_DEFINE(inst, ps2_npcx_channel_init, NULL, NULL,         \
 			      &ps2_npcx_ch_cfg_##inst, POST_KERNEL,            \
 			      CONFIG_PS2_CHANNEL_INIT_PRIORITY,                \
-			      &ps2_channel_npcx_driver_api);                   \
-									       \
-	NPCX_PS2_CHANNEL_INIT_FUNC_IMPL(inst)
+			      &ps2_channel_npcx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NPCX_PS2_CHANNEL_INIT)
 
