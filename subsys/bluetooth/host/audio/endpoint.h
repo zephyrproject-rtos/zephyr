@@ -35,6 +35,9 @@ struct bt_audio_ep {
 	sys_slist_t cbs;
 	struct bt_gatt_subscribe_params subscribe;
 	struct bt_gatt_discover_params discover;
+
+	/* Broadcast fields */
+	struct bt_le_ext_adv *adv;
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)
@@ -121,3 +124,6 @@ int bt_audio_ep_release(struct bt_audio_ep *ep, struct net_buf_simple *buf);
 
 int bt_audio_ep_send(struct bt_conn *conn, struct bt_audio_ep *ep,
 		     struct net_buf_simple *buf);
+
+struct bt_audio_ep *bt_audio_ep_broadcaster_new(uint8_t index, uint8_t dir);
+bool bt_audio_ep_is_broadcast(const struct bt_audio_ep *ep);
