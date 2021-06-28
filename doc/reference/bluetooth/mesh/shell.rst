@@ -695,7 +695,7 @@ Health Server model
 Configuration database
 ======================
 
-The Configuration database is an optional Mesh subsystem that can be enabled through the :option:`CONFIG_BT_MESH_CDB` configuration option. The Configuration database is only available on provisioner devices, and allows them to store all information about the mesh network. To avoid conflicts, there should only be one mesh node in the network with the Configuration database enabled. This node is the Configurator, and is responsible for adding new nodes to the network and configuring them.
+The Configuration database is an optional Mesh subsystem that can be enabled through the :kconfig:`CONFIG_BT_MESH_CDB` configuration option. The Configuration database is only available on provisioner devices, and allows them to store all information about the mesh network. To avoid conflicts, there should only be one mesh node in the network with the Configuration database enabled. This node is the Configurator, and is responsible for adding new nodes to the network and configuring them.
 
 ``mesh cdb-create [NetKey]``
 ----------------------------

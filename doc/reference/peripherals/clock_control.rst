@@ -14,7 +14,7 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_CLOCK_CONTROL`
+* :kconfig:`CONFIG_CLOCK_CONTROL`
 
 API Reference
 *************

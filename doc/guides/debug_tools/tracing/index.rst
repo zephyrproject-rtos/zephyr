@@ -89,7 +89,7 @@ internally and statically at compile-time in the bottom-layer.
 
 
 The CTF top layer is enabled using the configuration option
-:option:`CONFIG_TRACING_CTF` and can be used with the different transport
+:kconfig:`CONFIG_TRACING_CTF` and can be used with the different transport
 backends both in synchronous and asynchronous modes.
 
 
@@ -105,7 +105,7 @@ transports, for example UART or using snapshot mode (both still not
 supported in Zephyr).
 
 To enable tracing support with `SEGGER SystemView`_ add the configuration option
-:option:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
+:kconfig:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
 it to *y*. For example, this can be added to the
 :ref:`synchronization_sample` to visualize fast switching between threads.
 SystemView can also be used for post-mortem tracing, which can be enabled with
