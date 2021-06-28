@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2021, Waseem Hassan
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: cc8mnano_dvk
+name: Digi CC8M Nano DVK
+type: mcu
+arch: arm
+ram: 256
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pm
