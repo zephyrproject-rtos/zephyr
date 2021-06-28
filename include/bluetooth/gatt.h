@@ -345,11 +345,11 @@ void bt_gatt_cb_register(struct bt_gatt_cb *cb);
  *  macros such as BT_GATT_PRIMARY_SERVICE, BT_GATT_CHARACTERISTIC,
  *  BT_GATT_DESCRIPTOR, etc.
  *
- *  When using @option{CONFIG_BT_SETTINGS} then all services that should have
+ *  When using @kconfig{CONFIG_BT_SETTINGS} then all services that should have
  *  bond configuration loaded, i.e. CCC values, must be registered before
  *  calling @ref settings_load.
  *
- *  When using @option{CONFIG_BT_GATT_CACHING} and @option{CONFIG_BT_SETTINGS}
+ *  When using @kconfig{CONFIG_BT_GATT_CACHING} and @kconfig{CONFIG_BT_SETTINGS}
  *  then all services that should be included in the GATT Database Hash
  *  calculation should be added before calling @ref settings_load.
  *  All services registered after settings_load will trigger a new database hash
@@ -978,7 +978,7 @@ struct bt_gatt_notify_params {
  *  When called from the System Workqueue context this API will not wait for
  *  resources for the callback but instead return an error.
  *  The number of pending callbacks can be increased with the
- *  @option{CONFIG_BT_CONN_TX_MAX} option.
+ *  @kconfig{CONFIG_BT_CONN_TX_MAX} option.
  *
  *  Alternatively it is possible to notify by UUID by setting it on the
  *  parameters, when using this method the attribute if provided is used as the
@@ -1464,7 +1464,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  When called from the System Workqueue context this API will not wait for
  *  resources for the callback but instead return an error.
  *  The number of pending callbacks can be increased with the
- *  @option{CONFIG_BT_CONN_TX_MAX} option.
+ *  @kconfig{CONFIG_BT_CONN_TX_MAX} option.
 
  *
  *  @note By using a callback it also disable the internal flow control
