@@ -538,7 +538,7 @@ struct media_proxy_ctrl_cbs {
 };
 
 /**
- * @brief Register a controller with the mplc
+ * @brief Register a controller with the media_proxy
  *
  * @param ctrl_cbs   Callbacks to the controller
  *
