@@ -10,16 +10,37 @@ config BT_BAP
 	select BT_GATT_AUTO_DISCOVER_CCC
 	default n
 	help
-	  This option enables support for Basic Audio Profile.
+	  This option enables support for Basic Audio Profile (BAP).
 
 if BT_BAP
+config BT_BAP_BROADCAST_SRC_COUNT
+	int "Basic Audio Broadcaster source count"
+	depends on BT_ISO_BROADCAST
+	default 1
+	range 0 BT_ISO_MAX_BIG
+	help
+	  This option sets the number of broadcast sources to support.
+	  One broadcast source can send multiple streams
+	  (up to BT_BAP_BROADCAST_SRC_STREAM_COUNT per broadcast source).
+
+
+config BT_BAP_BROADCAST_SRC_STREAM_COUNT
+	int "Basic Audio Broadcast Source Stream count"
+	depends on BT_ISO_BROADCAST
+	default 1
+	range 0 BT_ISO_MAX_CHAN
+	help
+	  This option sets the maximum number of streams per broadcast source
+	  to support.
+
 config BT_BAP_PAC_COUNT
 	int "Basic Audio Profile PAC count"
 	default 2
-	range 1 4
+	range 1 4 if BT_BAP_BROADCAST_SRC_STREAM_COUNT = 0
+	range 0 4
 	help
 	  This option enables caching a number of Published Audio Capabilities
-	  for Basic Audio Profile on a per connection basis.
+	  (PAC) for Basic Audio Profile on a per connection basis.
 
 config BT_BAP_ASE_SNK_COUNT
 	int "Basic Audio Profile ASE Sink count"

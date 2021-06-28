@@ -26,6 +26,8 @@
 #define MAX_ASE (CONFIG_BT_BAP_ASE_SNK_COUNT + CONFIG_BT_BAP_ASE_SRC_COUNT)
 
 static struct bt_audio_chan chans[MAX_PAC];
+static struct bt_audio_chan broadcast_chans[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
+static uint64_t broadcast_chan_index_bits;
 static struct bt_audio_capability *rcaps[2][CONFIG_BT_BAP_PAC_COUNT];
 static struct bt_audio_ep *snks[CONFIG_BT_BAP_ASE_SNK_COUNT];
 static struct bt_audio_ep *srcs[CONFIG_BT_BAP_ASE_SNK_COUNT];
@@ -958,6 +960,46 @@ static struct bt_audio_capability caps[MAX_PAC] = {
 	},
 };
 
+static int cmd_create_broadcast(const struct shell *sh, size_t argc,
+				char *argv[])
+{
+	struct lc3_preset *preset;
+	int err;
+	struct bt_audio_chan *free_chan;
+	int i;
+
+	/* TODO: Support multiple channels for the broadcaster */
+	for (i = 0; i < ARRAY_SIZE(broadcast_chans); i++) {
+		if ((BIT(i) & broadcast_chan_index_bits) == 0) {
+			free_chan = &broadcast_chans[i];
+			break;
+		}
+	}
+
+	preset = default_preset;
+
+	if (argc > 1) {
+		preset = set_preset(1, &argv[1]);
+		if (!preset) {
+			shell_error(sh, "Unable to parse preset %s", argv[1]);
+			return -ENOEXEC;
+		}
+	}
+
+	err = bt_audio_broadcaster_create(free_chan, &preset->codec,
+					  &preset->qos);
+	if (err != 0) {
+		shell_error(sh, "Unable to create broadcaster: %d", err);
+		return err;
+	}
+
+	broadcast_chan_index_bits |= BIT(i);
+
+	shell_print(sh, "Broadcaster created: preset %s", preset->name);
+
+	return 0;
+}
+
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err, i;
@@ -1040,6 +1082,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(config, NULL,
 		      "<direction: sink, source> <index> [codec] [preset]",
 		      cmd_config, 3, 2),
+	SHELL_CMD_ARG(create_broadcast, NULL, "[codec] [preset]",
+		      cmd_create_broadcast, 1, 2),
 	SHELL_CMD_ARG(qos, NULL,
 		      "[preset] [interval] [framing] [latency] [pd] [sdu] [phy]"
 		      " [rtn]", cmd_qos, 1, 8),

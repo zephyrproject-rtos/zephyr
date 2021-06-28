@@ -22,18 +22,11 @@
 #include "endpoint.h"
 #include "chan.h"
 
-#if defined(CONFIG_BT_BAP)
-#define SNK_SIZE CONFIG_BT_BAP_ASE_SNK_COUNT
-#define SRC_SIZE CONFIG_BT_BAP_ASE_SRC_COUNT
-#else
-#define SNK_SIZE 0
-#define SRC_SIZE 0
-#endif
-
 #define EP_ISO(_iso) CONTAINER_OF(_iso, struct bt_audio_ep, iso)
 
 static struct bt_audio_ep snks[CONFIG_BT_MAX_CONN][SNK_SIZE];
 static struct bt_audio_ep srcs[CONFIG_BT_MAX_CONN][SRC_SIZE];
+static struct bt_audio_ep broadcast_srcs[BROADCAST_CNT][BROADCAST_SRC_CNT];
 
 #if defined(CONFIG_BT_BAP)
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
@@ -57,6 +50,11 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 	struct bt_audio_ep *ep = EP_ISO(chan);
 
 	BT_DBG("chan %p ep %p", chan, ep);
+
+	if (bt_audio_ep_is_broadcast(ep)) {
+		/* TODO: */
+		return;
+	}
 
 	if (ep->status.state != BT_ASCS_ASE_STATE_ENABLING) {
 		return;
@@ -84,6 +82,11 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	struct bt_audio_ep *ep = EP_ISO(chan);
 
 	BT_DBG("chan %p ep %p reason 0x%02x", chan, ep, reason);
+
+	if (bt_audio_ep_is_broadcast(ep)) {
+		/* TODO: */
+		return;
+	}
 
 	if (ep->type != BT_AUDIO_EP_LOCAL) {
 		return;
@@ -203,6 +206,42 @@ struct bt_audio_ep *bt_audio_ep_new(struct bt_conn *conn, uint8_t dir,
 
 		if (!ep->handle) {
 			bt_audio_ep_init(ep, BT_AUDIO_EP_REMOTE, handle, 0x00);
+			return ep;
+		}
+	}
+
+	return NULL;
+}
+
+struct bt_audio_ep *bt_audio_ep_broadcaster_new(uint8_t index, uint8_t dir)
+{
+	int i, size;
+	struct bt_audio_ep *cache = NULL;
+
+	switch (dir) {
+	case BT_AUDIO_SINK:
+		/* TODO: Add broadcast sink support */
+		break;
+	case BT_AUDIO_SOURCE:
+		cache = broadcast_srcs[index];
+		size = ARRAY_SIZE(broadcast_srcs[index]);
+		break;
+	default:
+		return NULL;
+	}
+
+	__ASSERT(cache != NULL, "cache is NULL");
+
+	/* Find unallocated endpoint */
+	for (i = 0; i < size; i++) {
+		struct bt_audio_ep *ep = &cache[i];
+
+		/* If ep->chan is NULL the endpoint is unallocated */
+		if (ep->chan == NULL) {
+			/* Initialize - It is up to the caller to allocate the
+			 * channel pointer.
+			 */
+			bt_audio_ep_init(ep, BT_AUDIO_EP_LOCAL, 0, 0x00);
 			return ep;
 		}
 	}
@@ -1356,6 +1395,19 @@ void bt_audio_ep_reset(struct bt_conn *conn)
 
 		ep_reset(ep);
 	}
+}
+
+bool bt_audio_ep_is_broadcast(const struct bt_audio_ep *ep)
+{
+	/* TODO: Support checking for broadcast sinks */
+#if BROADCAST_CNT > 0
+	for (int i = 0; i < ARRAY_SIZE(broadcast_srcs); i++) {
+		if (PART_OF_ARRAY(broadcast_srcs[i], ep)) {
+			return true;
+		}
+	}
+#endif /* BROADCAST_CNT > 0 */
+	return false;
 }
 
 void bt_audio_ep_attach(struct bt_audio_ep *ep, struct bt_audio_chan *chan)

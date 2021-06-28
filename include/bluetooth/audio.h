@@ -16,6 +16,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/iso.h>
 #include <bluetooth/lc3.h>
+#include <bluetooth/gatt.h>
 
 /**
  * @brief Bluetooth Audio
@@ -307,7 +308,11 @@ enum {
 
 /** @brief Codec QoS structure. */
 struct bt_codec_qos {
-	/** QoS direction */
+	/** QoS direction
+	 *
+	 *  This shall be set to BT_CODEC_QOS_OUT for broadcast sources, and
+	 *  shall be set to BT_CODEC_QOS_IN for broadcast sinks.
+	 */
 	uint8_t  dir;
 	/** QoS Frame Interval */
 	uint32_t interval;
@@ -354,7 +359,10 @@ struct bt_audio_chan {
 	uint8_t  state;
 };
 
-/** @brief Capability operations structure. */
+/** @brief Capability operations structure.
+ *
+ *  These are only used for unicast channels.
+ */
 struct bt_audio_capability_ops {
 	/** @brief Capability config callback
 	 *
@@ -660,6 +668,8 @@ struct bt_audio_chan *bt_audio_chan_config(struct bt_conn *conn,
  *  This procedure is used by a client to reconfigure a channel using the
  *  a different local capability and/or codec configuration.
  *
+ *  This can only be done for unicast and broadcast source channels.
+ *
  *  @param chan Channel object being reconfigured
  *  @param cap Local Audio Capability being reconfigured
  *  @param codec Codec configuration
@@ -673,7 +683,7 @@ int bt_audio_chan_reconfig(struct bt_audio_chan *chan,
 /** @brief Configure Audio Channel QoS
  *
  *  This procedure is used by a client to configure the Quality of Service of
- *  a channel.
+ *  a channel. This shall only be used to configure a unicast channel.
  *
  *  @param chan Channel object
  *  @param qos Quality of Service configuration
@@ -685,6 +695,9 @@ int bt_audio_chan_qos(struct bt_audio_chan *chan, struct bt_codec_qos *qos);
 /** @brief Enable Audio Channel
  *
  *  This procedure is used by a client to enable a channel.
+ *
+ *  This shall only be called for unicast channels, as broadcast channels will
+ *  always be enabled once created.
  *
  *  @param chan Channel object
  *  @param meta_count Number of metadata entries
@@ -712,6 +725,9 @@ int bt_audio_chan_metadata(struct bt_audio_chan *chan,
  *
  *  This procedure is used by a client to disable a channel.
  *
+ *  This shall only be called for unicast channels, as broadcast channels will
+ *  always be enabled once created.
+ *
  *  @param chan Channel object
  *
  *  @return 0 in case of success or negative value in case of error.
@@ -722,6 +738,9 @@ int bt_audio_chan_disable(struct bt_audio_chan *chan);
  *
  *  This procedure is used by a client to make a channel start streaming.
  *
+ *  This shall only be called for unicast and broadcast source channels, as
+ *  broadcast sinks will always be started once synchronized.
+ *
  *  @param chan Channel object
  *
  *  @return 0 in case of success or negative value in case of error.
@@ -731,6 +750,9 @@ int bt_audio_chan_start(struct bt_audio_chan *chan);
 /** @brief Stop Audio Channel
  *
  *  This procedure is used by a client to make a channel stop streaming.
+ *
+ *  This shall only be called for unicast and broadcast source channels, as
+ *  broadcast sinks will always be started once synchronized.
  *
  *  @param chan Channel object
  *
@@ -788,6 +810,31 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
  *  @return Bytes sent in case of success or negative value in case of error.
  */
 int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf);
+
+/** @brief Create audio broadcaster.
+ *
+ *  Create a new audio broadcaster with one or more audio channels. To create a
+ *  broadcaster with multiple channels, the channels must be linked with
+ *  bt_audio_chan_link.
+ *
+ *  The broadcaster will be visible for scanners once this has been called, and
+ *  the device will advertise audio announcements.
+ *
+ *  No audio data can be sent until bt_audio_chan_start has been called.
+ *  No audio information (BIGInfo) will be visible to scanners
+ *  (see bt_le_per_adv_sync_cb) until bt_audio_chan_start has been called.
+ *  Starting any one channel for a broadcaster will start all the others
+ *  supplied to this function.
+ *
+ *  @param chan        Channel object being used for the broadcaster.
+ *  @param codec       Codec configuration.
+ *  @param qos         Quality of Service configuration
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
+				struct bt_codec *codec,
+				struct bt_codec_qos *qos);
 
 /** @} */
 
