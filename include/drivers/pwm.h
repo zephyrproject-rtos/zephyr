@@ -82,7 +82,7 @@ typedef int (*pwm_pin_set_t)(const struct device *dev, uint32_t pwm,
  *
  * @note The callback handler will be called in interrupt context.
  *
- * @note @option{CONFIG_PWM_CAPTURE} must be selected to enable PWM capture
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected to enable PWM capture
  * support.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -192,7 +192,7 @@ static inline int z_impl_pwm_pin_set_cycles(const struct device *dev,
  * pwm_pin_capture_cycles(), @a pwm_pin_capture_usec(), or @a
  * pwm_pin_capture_nsec()) can be used instead.
  *
- * @note @option{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -231,7 +231,7 @@ static inline int pwm_pin_configure_capture(const struct device *dev,
  * The PWM pin must be configured using @a pwm_pin_configure_capture() prior to
  * calling this function.
  *
- * @note @option{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -263,7 +263,7 @@ static inline int z_impl_pwm_pin_enable_capture(const struct device *dev,
  * @brief Disable PWM period/pulse width capture for a single PWM input.
  *
  *
- * @note @option{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -299,7 +299,7 @@ static inline int z_impl_pwm_pin_disable_capture(const struct device *dev,
  * capture result to the caller. The function is blocking until either the PWM
  * capture is completed or a timeout occurs.
  *
- * @note @option{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -490,7 +490,7 @@ static inline int pwm_pin_cycles_to_nsec(const struct device *dev, uint32_t pwm,
  * function is blocking until either the PWM capture is completed or a timeout
  * occurs.
  *
- * @note @option{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
  * @param dev Pointer to the device structure for the driver instance.
@@ -546,7 +546,7 @@ static inline int pwm_pin_capture_usec(const struct device *dev, uint32_t pwm,
  * function is blocking until either the PWM capture is completed or a timeout
  * occurs.
  *
- * @note @option{CONFIG_PWM_CAPTURE} must be selected for this function to be
+ * @note @kconfig{CONFIG_PWM_CAPTURE} must be selected for this function to be
  * available.
  *
  * @param dev Pointer to the device structure for the driver instance.
