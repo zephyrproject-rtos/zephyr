@@ -244,3 +244,4 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_IGPIO_INIT)
+
