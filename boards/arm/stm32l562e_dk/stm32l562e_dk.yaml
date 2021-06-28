@@ -12,5 +12,6 @@ supported:
   - lptim
   - pwm
   - watchdog
+  - dac
 ram: 192
 flash: 512
