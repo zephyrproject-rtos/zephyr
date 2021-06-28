@@ -329,8 +329,13 @@ static int ps2_npcx_ctrl_init(const struct device *dev)
 	const struct ps2_npcx_ctrl_config *const config = DRV_CONFIG(dev);
 	struct ps2_npcx_ctrl_data *const data = DRV_DATA(dev);
 	struct ps2_reg *const inst = HAL_PS2_INSTANCE(dev);
-	const struct device *clk_dev = device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int ret;
+
+	if (!device_is_ready(clk_dev)) {
+		LOG_ERR("%s device not ready", clk_dev->name);
+		return -ENODEV;
+	}
 
 	/* Turn on PS/2 controller device clock */
 	ret = clock_control_on(clk_dev,
