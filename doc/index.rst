@@ -11,7 +11,7 @@ Zephyr Project Documentation
    Welcome to the Zephyr Project's documentation for version |version|.
 
    Documentation for the latest (main) development branch of Zephyr
-   can be found at https://docs.zephyrproject.org/
+   can be found at https://docs.zephyrproject.org/ test
 
 .. only:: (development or daily)
 
