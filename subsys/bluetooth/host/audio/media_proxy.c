@@ -15,7 +15,7 @@
 
 
 /* Media player */
-struct player {
+struct media_player {
 	struct media_proxy_pl_calls *calls;
 	bool   registered;
 };
@@ -34,13 +34,13 @@ struct mprx {
 	/* Controller using the synchronous interface - i.e. a remote controller via
 	 * the media control service
 	 */
-	struct scontroller sctrlr;
+	struct scontroller   sctrlr;
 
 	/* Controller using the callback interface - i.e. upper layer */
-	struct controller  ctrlr;
+	struct controller    ctrlr;
 
 	/* The local media player */
-	struct player      local_player;
+	struct media_player  local_player;
 };
 
 static struct mprx mprx = { 0 };
