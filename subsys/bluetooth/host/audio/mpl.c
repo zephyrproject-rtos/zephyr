@@ -2567,7 +2567,11 @@ int media_proxy_pl_init(void)
 #endif /* CONFIG_BT_OTS */
 	pl.calls.content_ctrl_id_get          = content_ctrl_id_get;
 
-	media_proxy_pl_register(&pl.calls);
+	ret = media_proxy_pl_register(&pl.calls);
+	if (ret < 0) {
+		BT_ERR("Unable to register player");
+		return ret;
+	}
 
 	initialized = true;
 	return 0;

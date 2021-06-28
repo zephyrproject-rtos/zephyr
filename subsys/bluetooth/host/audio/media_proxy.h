@@ -1271,6 +1271,8 @@ struct media_proxy_pl_calls {
  * supplied media_proxy_pl_calls structure.
  *
  * @param pl_calls	Function pointers to the media player's calls
+ *
+ * @return 0 if success, errno on failure
  */
 int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls);
 

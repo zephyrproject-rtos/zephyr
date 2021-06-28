@@ -17,6 +17,7 @@
 /* Media player */
 struct player {
 	struct media_proxy_pl_calls *calls;
+	bool   registered;
 };
 
 /* Synchronous controller - controller using the synchronous API */
@@ -787,7 +788,18 @@ uint8_t media_proxy_ctrl_content_ctrl_id_get(struct media_player *player)
 
 int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls)
 {
+	if (pl_calls == NULL) {
+		BT_DBG("NULL calls");
+		return -EINVAL;
+	}
+
+	if (mprx.local_player.registered) {
+		BT_DBG("Player already registered");
+		return -EALREADY;
+	}
+
 	mprx.local_player.calls = pl_calls;
+	mprx.local_player.registered = true;
 	return 0;
 };
 
