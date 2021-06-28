@@ -37,7 +37,7 @@ In order to use MCUboot with Zephyr you need to take the following into account:
 1. You will need to define the flash partitions required by MCUboot; see
    :ref:`flash_map_api` for details.
 2. Your application's :file:`.conf` file needs to enable the
-   :option:`CONFIG_BOOTLOADER_MCUBOOT` Kconfig option in order for Zephyr to
+   :kconfig:`CONFIG_BOOTLOADER_MCUBOOT` Kconfig option in order for Zephyr to
    be built in an MCUboot-compatible manner
 3. You need to build and flash MCUboot itself on your device
 4. You might need to take precautions to avoid mass erasing the flash and also

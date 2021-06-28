@@ -106,9 +106,9 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_ATOMIC_OPERATIONS_BUILTIN`
-* :option:`CONFIG_ATOMIC_OPERATIONS_ARCH`
-* :option:`CONFIG_ATOMIC_OPERATIONS_C`
+* :kconfig:`CONFIG_ATOMIC_OPERATIONS_BUILTIN`
+* :kconfig:`CONFIG_ATOMIC_OPERATIONS_ARCH`
+* :kconfig:`CONFIG_ATOMIC_OPERATIONS_C`
 
 API Reference
 *************
