@@ -11,5 +11,10 @@
      <li><a href="{{ doc.link|e }}">{{ doc.title }}</a> &raquo;</li>
   {% endfor %}
   <li>{{ title }}</li>
-  <dark-mode-toggle id="dark-mode-toggle" appearance="toggle" permanent="true"/>
+
 {% endblock %}
+{%- block breadcrumbs_aside %}
+  <li class="wy-breadcrumbs-aside">
+    <dark-mode-toggle id="dark-mode-toggle" appearance="toggle" permanent="true"/>
+  </li>
+{%- endblock %}
