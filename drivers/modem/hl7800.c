@@ -2823,7 +2823,8 @@ static void sock_read(struct net_buf **buf, uint16_t len)
 		/* wait for \n to be RXd.  \r was already RXd. */
 		wait_for_modem_data(buf, 0, 1);
 	}
-	net_buf_skipcrlf(buf);
+	/* remove \r\n */
+	net_buf_remove(buf, 2);
 	if (!*buf) {
 		wait_for_modem_data(buf, 0, sock->rx_size);
 	}
