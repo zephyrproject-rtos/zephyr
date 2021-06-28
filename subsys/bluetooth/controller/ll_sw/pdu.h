@@ -81,18 +81,20 @@
 /* Link Layer header size of BIS PDU. Assumes pdu_bis is packed */
 #define PDU_BIS_LL_HEADER_SIZE (offsetof(struct pdu_bis, payload))
 
+/* Event Active Clock Jitter */
+#define EVENT_CLOCK_JITTER_US   2
 /* Event interframe timings */
 #define EVENT_IFS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
-#define EVENT_IFS_MAX_US        (EVENT_IFS_US + 2)
+#define EVENT_IFS_MAX_US        (EVENT_IFS_US + EVENT_CLOCK_JITTER_US)
 /* Controller will layout extended adv with minimum separation */
 #define EVENT_MAFS_US           300
 /* Standard allows 2 us timing uncertainty inside the event */
-#define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + 2)
+#define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + EVENT_CLOCK_JITTER_US)
 /* Minimum Subevent Space timings */
 #define EVENT_MSS_US            150
 /* Standard allows 2 us timing uncertainty inside the event */
-#define EVENT_MSS_MAX_US        (EVENT_MSS_US + 2)
+#define EVENT_MSS_MAX_US        (EVENT_MSS_US + EVENT_CLOCK_JITTER_US)
 
 /* Offset Units field encoding */
 #define OFFS_UNIT_30_US         30
