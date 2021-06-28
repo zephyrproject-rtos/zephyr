@@ -112,7 +112,7 @@
 		gpio0: gpio@f0003000 {
 			compatible = "snps,designware-gpio";
 			reg = <0xf0003000 0x1000>;
-			bits = <24>;
+			ngpios = <24>;
 			label = "GPIO_0";
 			interrupt-parent = <&idu_intc>;
 
