@@ -44,6 +44,7 @@ static uint32_t g_operations_supported;
 static uint8_t  g_search_control_point_result;
 
 CREATE_FLAG(ble_is_initialized);
+CREATE_FLAG(local_player_instance);
 CREATE_FLAG(player_name_read);
 CREATE_FLAG(icon_object_id_read);
 CREATE_FLAG(icon_url_read);
@@ -69,6 +70,17 @@ CREATE_FLAG(search_flag);
 
 static struct media_proxy_ctrl_cbs cbs;
 static struct media_player *plr; /* TODO: Use the player pointer */
+
+static void local_player_instance_cb(struct media_player *player, int err)
+{
+	if (err) {
+		FAIL("Local player instance failed (%d)", err);
+		return;
+	}
+
+	plr = player;
+	SET_FLAG(local_player_instance);
+}
 
 static void player_name_cb(struct media_player *plr, int err, char *name)
 {
@@ -307,6 +319,7 @@ int do_media_init(void)
 	}
 
 	/* Set up the callback structure */
+	cbs.local_player_instance    = local_player_instance_cb;
 	cbs.player_name              = player_name_cb;
 	cbs.icon_id                  = icon_id_cb;
 	cbs.icon_url                 = icon_url_cb;
@@ -1082,7 +1095,8 @@ void test_media_controller_standalone(void)
 
 	/* Initialize media  ********************************************/
 	do_media_init();
-	printk("media init succeeded\n");
+	WAIT_FOR_FLAG(local_player_instance);
+	printk("media init and local player instance succeeded\n");
 
 	/* Read media player name ******************************************/
 	UNSET_FLAG(player_name_read);

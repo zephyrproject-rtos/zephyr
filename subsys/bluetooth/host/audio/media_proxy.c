@@ -207,6 +207,12 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
 {
 	mprx.ctrlr.cbs = ctrl_cbs;
 
+	if (mprx.local_player.registered) {
+		if (mprx.ctrlr.cbs->local_player_instance) {
+			mprx.ctrlr.cbs->local_player_instance(&mprx.local_player, 0);
+		}
+	}
+
 	/* TODO: Return error code if too many controllers registered */
 	return 0;
 };
@@ -800,6 +806,11 @@ int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls)
 
 	mprx.local_player.calls = pl_calls;
 	mprx.local_player.registered = true;
+
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->local_player_instance) {
+		mprx.ctrlr.cbs->local_player_instance(&mprx.local_player, 0);
+	}
+
 	return 0;
 };
 
