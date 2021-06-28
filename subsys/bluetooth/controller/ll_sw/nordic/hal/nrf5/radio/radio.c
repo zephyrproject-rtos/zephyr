@@ -587,7 +587,7 @@ static inline void sw_switch(uint8_t dir_curr, uint8_t dir_next,
 		delay = HAL_RADIO_NS2US_CEIL(
 			hal_radio_rx_ready_delay_ns_get(phy_next, flags_next) +
 			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
-			4;
+			(EVENT_CLOCK_JITTER_US << 1);
 
 		hal_radio_rxen_on_sw_switch(ppi);
 
