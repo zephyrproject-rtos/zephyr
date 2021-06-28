@@ -925,6 +925,11 @@ static int tcp_send_data(struct tcp *conn)
 	len = MIN3(conn->send_data_total - conn->unacked_len,
 		   conn->send_win - conn->unacked_len,
 		   conn_mss(conn));
+	if (len == 0) {
+		NET_DBG("conn: %p no data to send", conn);
+		ret = -ENODATA;
+		goto out;
+	}
 
 	pkt = tcp_pkt_alloc(conn, len);
 	if (!pkt) {
@@ -1070,6 +1075,9 @@ static void tcp_resend_data(struct k_work *work)
 
 			goto out;
 		}
+	} else if (ret == -ENODATA) {
+		conn->data_mode = TCP_DATA_MODE_SEND;
+		goto out;
 	}
 
 	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
