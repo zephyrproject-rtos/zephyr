@@ -99,17 +99,16 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 extern void platformShellInit(otInstance *aInstance);
 
-K_SEM_DEFINE(ot_sem, 0, 1);
-
 K_KERNEL_STACK_DEFINE(ot_stack_area, OT_STACK_SIZE);
-static struct k_thread ot_thread_data;
-static k_tid_t ot_tid;
+
 static struct net_linkaddr *ll_addr;
 static otStateChangedCallback state_changed_cb;
 
 k_tid_t openthread_thread_id_get(void)
 {
-	return ot_tid;
+	struct openthread_context *ot_context = openthread_get_default_context();
+
+	return ot_context ? (k_tid_t)&ot_context->work_q.thread : 0;
 }
 
 #ifdef CONFIG_NET_MGMT_EVENT
@@ -153,12 +152,16 @@ void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 
 void otTaskletsSignalPending(otInstance *instance)
 {
-	k_sem_give(&ot_sem);
+	struct openthread_context *ot_context = openthread_get_default_context();
+
+	if (ot_context) {
+		k_work_submit_to_queue(&ot_context->work_q, &ot_context->api_work);
+	}
 }
 
 void otSysEventSignalPending(void)
 {
-	k_sem_give(&ot_sem);
+	otTaskletsSignalPending(NULL);
 }
 
 static void ot_state_changed_handler(uint32_t flags, void *context)
@@ -276,23 +279,20 @@ static void ot_joiner_start_handler(otError error, void *context)
 	}
 }
 
-static void openthread_process(void *context, void *arg2, void *arg3)
+static void openthread_process(struct k_work *work)
 {
-	struct openthread_context *ot_context = context;
+	struct openthread_context *ot_context
+		= CONTAINER_OF(work, struct openthread_context, api_work);
 
-	while (1) {
-		openthread_api_mutex_lock(ot_context);
+	openthread_api_mutex_lock(ot_context);
 
-		while (otTaskletsArePending(ot_context->instance)) {
-			otTaskletsProcess(ot_context->instance);
-		}
-
-		otSysProcessDrivers(ot_context->instance);
-
-		openthread_api_mutex_unlock(ot_context);
-
-		k_sem_take(&ot_sem, K_FOREVER);
+	while (otTaskletsArePending(ot_context->instance)) {
+		otTaskletsProcess(ot_context->instance);
 	}
+
+	otSysProcessDrivers(ot_context->instance);
+
+	openthread_api_mutex_unlock(ot_context);
 }
 
 static enum net_verdict openthread_recv(struct net_if *iface,
@@ -449,9 +449,15 @@ static int openthread_init(struct net_if *iface)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
+	struct k_work_queue_config q_cfg = {
+		.name = "openthread",
+		.no_yield = true,
+	};
+
 	NET_DBG("openthread_init");
 
 	k_mutex_init(&ot_context->api_lock);
+	k_work_init(&ot_context->api_work, openthread_process);
 
 	ll_addr = net_if_get_link_addr(iface);
 
@@ -487,11 +493,11 @@ static int openthread_init(struct net_if *iface)
 
 	openthread_api_mutex_unlock(ot_context);
 
-	ot_tid = k_thread_create(&ot_thread_data, ot_stack_area,
-				 K_KERNEL_STACK_SIZEOF(ot_stack_area),
-				 openthread_process, ot_context, NULL, NULL,
-				 OT_PRIORITY, 0, K_NO_WAIT);
-	k_thread_name_set(&ot_thread_data, "openthread");
+	k_work_queue_start(&ot_context->work_q, ot_stack_area,
+			   K_KERNEL_STACK_SIZEOF(ot_stack_area),
+			   OT_PRIORITY, &q_cfg);
+
+	(void)k_work_submit_to_queue(&ot_context->work_q, &ot_context->api_work);
 
 	return 0;
 }
