@@ -51,6 +51,8 @@ static const uint64_t cpu_node_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(cpus), CPU_REG_ID)
 };
 
+extern void z_arm64_mm_init(bool is_primary_core);
+
 /* Called from Zephyr initialization */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
@@ -121,7 +123,7 @@ void z_arm64_secondary_start(void)
 	/* Initialize tpidrro_el0 with our struct _cpu instance address */
 	write_tpidrro_el0((uintptr_t)&_kernel.cpus[cpu_num]);
 
-	z_arm64_mmu_init(false);
+	z_arm64_mm_init(false);
 
 #ifdef CONFIG_SMP
 	arm_gic_secondary_init();
