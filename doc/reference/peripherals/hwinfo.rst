@@ -19,7 +19,7 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_HWINFO`
+* :kconfig:`CONFIG_HWINFO`
 
 API Reference
 *************

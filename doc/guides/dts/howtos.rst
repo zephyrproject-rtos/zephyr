@@ -355,8 +355,8 @@ compatibles) supported by the driver.
 
 .. note::
 
-  Historically, Zephyr has used Kconfig options like :option:`CONFIG_I2C_0` and
-  :option:`CONFIG_I2C_1` to enable driver support for individual devices of
+  Historically, Zephyr has used Kconfig options like :kconfig:`CONFIG_I2C_0` and
+  :kconfig:`CONFIG_I2C_1` to enable driver support for individual devices of
   some type. For example, if ``CONFIG_I2C_1=y``, the SoC's I2C peripheral
   driver would create a ``struct device`` for "I2C bus controller number 1".
 

@@ -4,7 +4,7 @@
 Generates an alphabetical index of Kconfig symbols with links in index.rst, and
 a separate CONFIG_FOO.rst file for each Kconfig symbol.
 
-The generated symbol pages can be referenced in RST as :option:`foo`, and the
+The generated symbol pages can be referenced in RST as :kconfig:`foo`, and the
 generated index page as `configuration options`_.
 
 Optionally, the documentation can be split up based on where symbols are
@@ -51,13 +51,13 @@ def rst_link(sc):
         if sc.nodes:
             # The "\ " avoids RST issues for !CONFIG_FOO -- see
             # http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#character-level-inline-markup
-            return fr"\ :option:`{sc.name} <CONFIG_{sc.name}>`"
+            return fr"\ :kconfig:`{sc.name} <CONFIG_{sc.name}>`"
 
     elif isinstance(sc, kconfiglib.Choice):
         # Choices appear as dependencies of choice symbols.
         #
-        # Use a :ref: instead of an :option:. With an :option:, we'd have to have
-        # an '.. option::' in the choice reference page as well. That would make
+        # Use a :ref: instead of an :kconfig:. With an :kconfig:, we'd have to have
+        # an '.. kconfig::' in the choice reference page as well. That would make
         # the internal choice ID show up in the documentation.
         #
         # Note that the first pair of <...> is non-syntactic here. We just display
@@ -404,7 +404,7 @@ def sym_table_rst(title, syms):
 
     for sym in sorted(syms, key=attrgetter("name")):
         rst += f"""\
-   * - :option:`CONFIG_{sym.name}`
+   * - :kconfig:`CONFIG_{sym.name}`
      - {sym_index_desc(sym)}
 """
 
@@ -485,7 +485,7 @@ def write_dummy_syms_page():
 
     rst = ":orphan:\n\nDummy symbols page for turbo mode.\n\n"
     for sym in kconf.unique_defined_syms:
-        rst += f".. option:: CONFIG_{sym.name}\n"
+        rst += f".. kconfig:: CONFIG_{sym.name}\n"
 
     write_if_updated("dummy-syms.rst", rst)
 
@@ -527,7 +527,7 @@ def sym_header_rst(sym):
     #   to be poorly documented at the moment.
     return ":orphan:\n\n" \
            f".. title:: {sym.name}\n\n" \
-           f".. option:: CONFIG_{sym.name}\n\n" \
+           f".. kconfig:: CONFIG_{sym.name}\n\n" \
            f"{prompt_rst(sym)}\n\n" \
            f"Type: ``{kconfiglib.TYPE_TO_STR[sym.type]}``\n\n"
 
