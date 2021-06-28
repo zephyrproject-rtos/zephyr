@@ -91,4 +91,21 @@ module-help = Enables Ethernet Bridge code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_ETHERNET_BRIDGE
 
+config NET_ETHERNET_BRIDGE_SHELL
+	bool "Ethernet Bridging management shell"
+	depends on NET_ETHERNET_BRIDGE
+	select SHELL
+	help
+	  Enables shell utility to manage bridge configuration interactively.
+
+config NET_ETHERNET_BRIDGE_DEFAULT
+	bool "Declare one bridge instance for shell usage"
+	depends on NET_ETHERNET_BRIDGE_SHELL
+	default y
+	help
+	  If the bridge shell is the sole user of the bridge code then
+	  it needs at least one bridge instance to be useful.
+	  Say y if this is the case. If you only want to inspect
+	  existing bridge instances then say n.
+
 endif # NET_L2_ETHERNET
