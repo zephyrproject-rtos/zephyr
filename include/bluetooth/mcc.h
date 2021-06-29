@@ -430,10 +430,9 @@ struct bt_mcc_cb_t {
 
 /** @brief Initialize Media Control Client
  *
- * @param conn  The connection to initialize for
  * @param cb    Callbacks to be used
  */
-int bt_mcc_init(struct bt_conn *conn, struct bt_mcc_cb_t *cb);
+int bt_mcc_init(struct bt_mcc_cb_t *cb);
 
 
 /** @brief Discover Media Control Service
