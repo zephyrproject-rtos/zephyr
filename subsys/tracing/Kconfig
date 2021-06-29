@@ -137,7 +137,7 @@ config TRACING_BACKEND_UART
 
 config TRACING_BACKEND_USB
 	bool "Enable USB backend"
-	depends on USB
+	depends on USB_DEVICE_STACK
 	depends on TRACING_ASYNC
 	help
 	  Use USB to output tracing data.
