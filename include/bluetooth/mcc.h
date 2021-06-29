@@ -26,14 +26,6 @@ extern "C" {
 
 /**** Callback functions ******************************************************/
 
-/** @brief Callback function for mcc_init
- *
- * @param conn          The connection that was used to initialise MCC
- * @param err           Error value. 0 on success, ERRNO on fail
- */
-typedef void (*bt_mcc_init_cb_t)(struct bt_conn *conn, int err);
-
-
 /** @brief Callback function for mcc_discover_mcs
  *
  * @param conn          The connection that was used to initialise MCC
@@ -388,7 +380,6 @@ typedef void (*bt_mcc_otc_read_parent_group_object_cb_t)(struct bt_conn *conn, i
 
 /** @brief Callback function structure */
 struct bt_mcc_cb_t {
-	bt_mcc_init_cb_t                          init;
 	bt_mcc_discover_mcs_cb_t                  discover_mcs;
 	bt_mcc_player_name_read_cb_t              player_name_read;
 #ifdef CONFIG_BT_OTC

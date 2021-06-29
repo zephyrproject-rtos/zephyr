@@ -44,16 +44,6 @@ static struct object_ids_t obj_ids;
 #endif /* CONFIG_BT_MCC_OTS */
 
 
-static void mcc_init_cb(struct bt_conn *conn, int err)
-{
-	if (err) {
-		shell_error(ctx_shell, "MCC init failed (%d)", err);
-		return;
-	}
-
-	shell_print(ctx_shell, "MCC init complete");
-}
-
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {
 	if (err) {
@@ -532,7 +522,6 @@ int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	/* Set up the callbacks */
-	cb.init              = &mcc_init_cb;
 	cb.discover_mcs      = &mcc_discover_mcs_cb;
 	cb.player_name_read  = &mcc_player_name_read_cb;
 #ifdef CONFIG_BT_MCC_OTS

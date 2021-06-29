@@ -47,7 +47,6 @@ static uint8_t g_search_control_point_result;
 
 CREATE_FLAG(ble_is_initialized);
 CREATE_FLAG(ble_link_is_ready);
-CREATE_FLAG(mcc_is_initialized);
 CREATE_FLAG(discovery_done);
 CREATE_FLAG(player_name_read);
 CREATE_FLAG(icon_object_id_read);
@@ -78,16 +77,6 @@ CREATE_FLAG(object_selected);
 CREATE_FLAG(metadata_read);
 CREATE_FLAG(object_read);
 
-
-static void mcc_init_cb(struct bt_conn *conn, int err)
-{
-	if (err) {
-		FAIL("MCC init failed (%d)\n", err);
-		return;
-	}
-
-	SET_FLAG(mcc_is_initialized);
-}
 
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {
@@ -467,7 +456,6 @@ static void mcc_otc_read_parent_group_object_cb(struct bt_conn *conn, int err,
 int do_mcc_init(void)
 {
 	/* Set up the callbacks */
-	mcc_cb.init             = &mcc_init_cb;
 	mcc_cb.discover_mcs     = &mcc_discover_mcs_cb;
 	mcc_cb.player_name_read = &mcc_player_name_read_cb;
 	mcc_cb.icon_obj_id_read = &mcc_icon_obj_id_read_cb;
@@ -1324,10 +1312,12 @@ void test_main(void)
 	printk("Connected: %s\n", addr);
 
 	/* Initialize MCC  ********************************************/
-	UNSET_FLAG(mcc_is_initialized);
-	do_mcc_init();
-	WAIT_FOR_FLAG(mcc_is_initialized);
-	printk("MCC init succeeded\n");
+	err = do_mcc_init();
+	if (err) {
+		FAIL("Could not initialize MCC (err %d\n)", err);
+	} else {
+		printk("MCC init succeeded\n");
+	}
 
 	/* Discover MCS, subscribe to notifications *******************/
 	UNSET_FLAG(discovery_done);
