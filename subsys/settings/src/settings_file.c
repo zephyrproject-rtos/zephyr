@@ -509,6 +509,7 @@ int settings_backend_init(void)
 		.cf_name = CONFIG_SETTINGS_FS_FILE,
 		.cf_maxlines = CONFIG_SETTINGS_FS_MAX_LINES
 	};
+	struct fs_dirent entry;
 	int rc;
 
 
@@ -527,14 +528,10 @@ int settings_backend_init(void)
 	/*
 	 * Must be called after root FS has been initialized.
 	 */
-	rc = fs_mkdir(CONFIG_SETTINGS_FS_DIR);
-
-	/*
-	 * The following lines mask the file exist error.
-	 */
-	if (rc == -EEXIST) {
-		rc = 0;
+	rc = fs_stat(CONFIG_SETTINGS_FS_DIR, &entry);
+	/* If directory doesn't exist, create it */
+	if (rc == -ENOENT) {
+		rc = fs_mkdir(CONFIG_SETTINGS_FS_DIR);
 	}
-
 	return rc;
 }
