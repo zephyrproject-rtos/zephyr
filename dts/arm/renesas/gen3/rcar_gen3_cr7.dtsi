@@ -65,6 +65,11 @@
 			label = "gpio6";
 		};
 
+		pfc: pin-controller@e6060000 {
+			compatible = "renesas,rcar-pinmux";
+			reg = <0xe6060000 0x508>;
+		};
+
 		cmt0: timer@e60f0500 {
 			compatible = "renesas,rcar-cmt";
 			interrupt-parent = <&gic>;
