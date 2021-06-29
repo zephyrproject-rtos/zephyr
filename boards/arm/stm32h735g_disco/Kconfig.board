@@ -1,0 +1,8 @@
+# STM32H735G Discovery board configuration
+
+# Copyright (c) 2021 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32H735G_DISCO
+	bool "STM32H735G Discovery Development Board"
+	depends on SOC_STM32H735XX
