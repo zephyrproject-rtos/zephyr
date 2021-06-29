@@ -86,19 +86,33 @@ arduino_spi: &spi2 {};
 	interrupts = <56 1>;
 };
 
+&creg_gpio {
+	status = "okay";
+};
+
 &spi0 {
 	status = "okay";
 	clock-frequency = <33333333>;
+	cs-gpios = <&creg_gpio 0 GPIO_ACTIVE_HIGH>,
+			   <&creg_gpio 1 GPIO_ACTIVE_HIGH>,
+			   <&creg_gpio 2 GPIO_ACTIVE_HIGH>,
+			   <&creg_gpio 3 GPIO_ACTIVE_HIGH>;
 };
 
 &spi1 {
 	status = "okay";
 	clock-frequency = <33333333>;
+	cs-gpios = <&creg_gpio 4 GPIO_ACTIVE_HIGH>,
+			   <&creg_gpio 5 GPIO_ACTIVE_HIGH>,
+			   <&creg_gpio 6 GPIO_ACTIVE_HIGH>;
 };
 
 &spi2 {
 	status = "okay";
 	clock-frequency = <33333333>;
+	cs-gpios = <&creg_gpio 8 GPIO_ACTIVE_HIGH>,
+			   <&creg_gpio 9 GPIO_ACTIVE_HIGH>,
+			   <&creg_gpio 10 GPIO_ACTIVE_HIGH>;
 };
 
 &i2c0 {
