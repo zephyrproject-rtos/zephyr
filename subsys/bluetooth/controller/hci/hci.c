@@ -5021,7 +5021,7 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			       sys_le16_to_cpu(si->interval),
 			       (si->sca_chm[4] >> 5),
 			       si->sca_chm[0], si->sca_chm[1], si->sca_chm[2],
-			       si->sca_chm[3], (si->sca_chm[4] & 0x3F),
+			       si->sca_chm[3], (si->sca_chm[4] & 0x1F),
 			       sys_le32_to_cpu(si->aa),
 			       si->crc_init[0], si->crc_init[1],
 			       si->crc_init[2], sys_le16_to_cpu(si->evt_cntr));
