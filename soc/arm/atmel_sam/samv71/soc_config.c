@@ -53,6 +53,11 @@ static int atmel_samv71_config(const struct device *dev)
 	while (!((PMC->PMC_SR) & PMC_SR_PCKRDY3)) {
 		;
 	}
+	/* Enable TDO/TRACESWO function on PB5 pin */
+	MATRIX->CCFG_SYSIO &= ~CCFG_SYSIO_SYSIO5;
+#else
+	/* Disable TDO/TRACESWO function on PB5 pin */
+	MATRIX->CCFG_SYSIO |= CCFG_SYSIO_SYSIO5;
 #endif
 
 	return 0;
