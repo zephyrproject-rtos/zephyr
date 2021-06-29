@@ -1,0 +1,42 @@
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+description: INTEL PSE UART
+
+compatible: "intel,pse-uart"
+
+include: uart-controller.yaml
+
+properties:
+    reg:
+      type: array
+      description: mmio register space
+      required: true
+
+    interrupts:
+      type: array
+      description: required interrupts
+      required: true
+
+    current-speed:
+       type: int
+       required: true
+       description: Initial baud rate setting for UART
+
+    pinctrl-\d+:
+      type: array
+      description: pinmux information for RX, TX, CTS, RTS
+      required: false
+
+    hw_flow_control:
+      type : array
+      description: hardware flow control setting
+      required: true
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      required: true
+
+...

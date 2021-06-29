@@ -1,0 +1,9 @@
+menuconfig UART_SEDI
+	depends on SEDI
+	bool "PSE UART driver"
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the PSE UART driver.
+	  This driver is simply a shim driver based on the UART driver
+	  provided by the PSE BSP.
