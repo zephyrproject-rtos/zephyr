@@ -122,6 +122,21 @@
 			status = "disabled";
 		};
 
+		creg_gpio: creg_gpio@f00014b0 {
+			compatible = "snps,creg-gpio";
+			reg = <0xf00014b0 0x4>;
+			ngpios = <12>;
+			label = "CREG_GPIO";
+			bit_per_gpio = <2>;
+			off_val = <0>;
+			on_val = <2>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			status = "disabled";
+		};
+
 		i2c0: i2c@f0023000 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
