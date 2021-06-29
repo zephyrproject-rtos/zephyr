@@ -14,6 +14,15 @@ config SOC_FVP_AEMV8R_AARCH64
 
 endchoice
 
+config SOC_FVP_AEMV8R_SIMULATE_CPU_PM
+	bool "Simulate CPU Power Management for FVP_BaseR_AEMv8R"
+	default n
+	help
+	  It simulates the cpu power management function for
+	  FVP_BaseR_AEMv8R. When zephyr kernel try to bring up secondary
+	  core through pm_cpu_on(), it always succeeds because
+	  it indeed bring up secondary core successfully.
+
 config SOC_FVP_AEMV8R_EL2_INIT
 	bool "ARM FVP AEMv8R EL2 Initialization"
 	default n
