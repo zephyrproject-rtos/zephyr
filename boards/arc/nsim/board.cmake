@@ -1,6 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 set(EMU_PLATFORM nsim)
 
+if(${CONFIG_BUILD_WITH_SECURESHIELD})
+board_set_flasher_ifnset(mdb-nsim)
+board_set_debugger_ifnset(mdb-nsim)
+endif()
+
 if(NOT CONFIG_SOC_NSIM_HS_SMP)
 board_set_flasher_ifnset(arc-nsim)
 board_set_debugger_ifnset(arc-nsim)
