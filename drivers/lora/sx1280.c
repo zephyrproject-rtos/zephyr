@@ -688,9 +688,7 @@ void sx1280_ReadCommand( RadioCommands_t command, void *buffer, uint16_t size )
 {
 //     WaitOnBusy( );
 	int ret;
-	uint8_t dummyData = 0xBE;
-	uint8_t buffer1 = 0xEF;
-	uint8_t buffer2 = 0xAA;
+	uint8_t dummyData[size + 1];
 	// RadioNss = 0;
 	printk("size: %u\n", size);
 	printk("command size: %u\n", sizeof(command));
@@ -700,7 +698,7 @@ void sx1280_ReadCommand( RadioCommands_t command, void *buffer, uint16_t size )
 			.len = 1
 		},
 		{
-			.buf = NULL,
+			.buf = &dummyData,
 			.len = size + 1
 		}
 	};
