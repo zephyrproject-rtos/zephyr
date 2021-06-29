@@ -426,8 +426,8 @@ void lll_conn_isr_tx(void *param)
 	LL_ASSERT(!radio_is_ready());
 
 	/* +/- 2us active clock jitter, +1 us hcto compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + 4 +
-		RANGE_DELAY_US + 1;
+	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
+	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US + 1;
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_chain_delay_get(lll->phy_rx, 1);
 	hcto += addr_us_get(lll->phy_rx);
@@ -454,12 +454,14 @@ void lll_conn_isr_tx(void *param)
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	radio_gpio_lna_setup();
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US -
+				 (EVENT_CLOCK_JITTER_US << 1) -
 				 radio_tx_chain_delay_get(lll->phy_tx,
 							  lll->phy_flags) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US -
+				 (EVENT_CLOCK_JITTER_US << 1) -
 				 radio_tx_chain_delay_get(0, 0) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
