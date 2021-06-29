@@ -1,0 +1,20 @@
+# Copyright (c) 2021 IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas R-Car pinmux node
+
+compatible: "renesas,rcar-pinmux"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+child-binding:
+  description: |
+     This binding gives a base representation of the R-Car pins configuration
+  properties:
+    renesas,rcar-pins:
+      type: array
+      required: true
