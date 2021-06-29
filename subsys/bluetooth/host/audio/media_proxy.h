@@ -33,6 +33,7 @@
 
 #include <stdbool.h>
 #include <zephyr/types.h>
+#include <bluetooth/bluetooth.h>
 
 #include "mcs.h"
 
@@ -255,6 +256,19 @@ struct media_proxy_ctrl_cbs {
 	 * @param err      Error value. 0 on success, or errno on negative value.
 	 */
 	void (*local_player_instance)(struct media_player *player, int err);
+
+	/**
+	 * @brief Discover Player Instance callback
+	 *
+	 * Called when a remote player instance has been discovered.
+	 * The instance has been discovered, and will be accessed, using Bluetooth,
+	 * via media control client and a remote media control service.
+	 *
+	 * @param player   Instance pointer to the remote player
+	 * @param err      Error value. 0 on success, GATT error on positive value
+	 *                 or errno on negative value.
+	 */
+	void (*discover_player)(struct media_player *player, int err);
 
 	/**
 	 * @brief Media Player Name callback
@@ -558,6 +572,25 @@ struct media_proxy_ctrl_cbs {
  * @return 0 if success, errno on failure
  */
 int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs);
+
+/**
+ * @brief Discover a remote media player
+ *
+ * Discover a remote media player instance.
+ * The remote player instance will be discovered, and accessed, using Bluetooth,
+ * via the media control client and a remote media control service.
+ * This call will start a GATT discovery of the Media Control Service on the peer,
+ * and setup handles and subscriptions.
+ *
+ * This shall be called once before any other actions can be executed for the
+ * remote player. The remote player instance will be returned in the
+ * discover_player() callback.
+ *
+ * @param conn   The connection to do discovery for
+ *
+ * @return 0 if success, errno on failure
+ */
+int media_proxy_ctrl_discover_player(struct bt_conn *conn);
 
 /**
  * @brief Read Media Player Name
