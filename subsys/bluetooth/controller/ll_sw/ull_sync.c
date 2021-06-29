@@ -383,8 +383,13 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	}
 
 	lll = &sync->lll;
+
+	/* Copy channel map from sca_chm field in sync_info structure, and
+	 * clear the SCA bits.
+	 */
 	memcpy(lll->data_chan_map, si->sca_chm, sizeof(lll->data_chan_map));
-	lll->data_chan_map[4] &= ~0xE0;
+	lll->data_chan_map[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &=
+		~PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK;
 	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
 						   sizeof(lll->data_chan_map));
 	if (lll->data_chan_count < 2) {
@@ -397,7 +402,13 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 	lll->event_counter = si->evt_cntr;
 	lll->phy = aux->lll.phy;
 
-	sca = si->sca_chm[4] >> 5;
+	/* Extract the SCA value from the sca_chm field of the sync_info
+	 * structure.
+	 */
+	sca = (si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
+	       PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
+	      PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS;
+
 	interval = sys_le16_to_cpu(si->interval);
 	interval_us = interval * CONN_INT_UNIT_US;
 

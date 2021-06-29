@@ -5019,9 +5019,13 @@ static void le_ext_adv_report(struct pdu_data *pdu_data,
 			       sys_le16_to_cpu(si->offs),
 			       si->offs_units,
 			       sys_le16_to_cpu(si->interval),
-			       (si->sca_chm[4] >> 5),
+			       ((si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
+				 PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK) >>
+				PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS),
 			       si->sca_chm[0], si->sca_chm[1], si->sca_chm[2],
-			       si->sca_chm[3], (si->sca_chm[4] & 0x1F),
+			       si->sca_chm[3],
+			       (si->sca_chm[PDU_SYNC_INFO_SCA_CHM_SCA_BYTE_OFFSET] &
+				~PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK),
 			       sys_le32_to_cpu(si->aa),
 			       si->crc_init[0], si->crc_init[1],
 			       si->crc_init[2], sys_le16_to_cpu(si->evt_cntr));
