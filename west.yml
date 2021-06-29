@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: hal_intel
+      url-base: https://github.com/intel/
 
   #
   # Please add items below based on alphabetical order
@@ -34,6 +36,10 @@ manifest:
     - name: hal_altera
       revision: 23c1c1dd7a0c1cc9a399509d1819375847c95b97
       path: modules/hal/altera
+    - name: hal-intel
+      path: modules/hal/intel
+      revision: 5b686a41d717a64fbfef637c4639459adf09832e
+      remote: hal_intel
     - name: canopennode
       path: modules/lib/canopennode
       revision: 468d350028a975b96563e58344de48281a0ab371

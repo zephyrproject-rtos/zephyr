@@ -1,0 +1,40 @@
+# Copyright (c) 2021 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_INTEL
+	bool
+
+menu "intel hal drivers"
+	depends on HAS_INTEL
+
+config INTEL_DMA
+	bool "Enable DMA driver"
+
+config INTEL_UART
+	bool "Enable UART driver"
+
+config INTEL_TGPIO
+	bool "Enable Time-Aware GPIO driver"
+
+endmenu
+
+config HAS_SEDI
+	bool
+
+menuconfig SEDI
+	bool "SEDI driver support"
+	depends on HAS_SEDI
+	help
+	  automatically set when either of SEDI_LIBRARY is selected.
+
+if HAS_SEDI
+
+config SEDI_LIBRARY
+	bool "Enable SEDI drivers using external library"
+	select SEDI
+	help
+	  This option enables SEDI device drivers. These drivers are actually shim
+	  drivers based on drivers provided by SEDI BSP. The BSP provides a static
+	  library (libsedi) which implements several drivers for peripherals
+
+endif
