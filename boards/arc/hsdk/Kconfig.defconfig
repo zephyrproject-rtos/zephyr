@@ -39,6 +39,9 @@ config SPI_DW_ARC_AUX_REGS
 config SPI_DW_ACCESS_WORD_ONLY
 	default y
 
+config GPIO_SNPS_CREG
+	default y
+
 endif # SPI_DW
 
 endif # SPI
