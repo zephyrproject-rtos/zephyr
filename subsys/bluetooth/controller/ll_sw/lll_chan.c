@@ -292,30 +292,32 @@ static uint8_t chan_d(uint8_t n)
 void lll_chan_sel_2_ut(void)
 {
 	uint8_t chan_map_1[] = {0xFF, 0xFF, 0xFF, 0xFF, 0x1F};
+	uint8_t const chan_map_1_37_used = 37U;
 	uint8_t chan_map_2[] = {0x00, 0x06, 0xE0, 0x00, 0x1E};
+	uint8_t const chan_map_2_9_used = 9U;
+	uint16_t const chan_id = 0x305F;
 	uint8_t m;
 
-	m = lll_chan_sel_2(0, 0x305F, chan_map_1, 37);
+	m = lll_chan_sel_2(0, chan_id, chan_map_1, chan_map_1_37_used);
 	LL_ASSERT(m == 25U);
 
-	m = lll_chan_sel_2(1, 0x305F, chan_map_1, 37);
+	m = lll_chan_sel_2(1, chan_id, chan_map_1, chan_map_1_37_used);
 	LL_ASSERT(m == 20U);
 
-	m = lll_chan_sel_2(2, 0x305F, chan_map_1, 37);
+	m = lll_chan_sel_2(2, chan_id, chan_map_1, chan_map_1_37_used);
 	LL_ASSERT(m == 6U);
 
-	m = lll_chan_sel_2(3, 0x305F, chan_map_1, 37);
+	m = lll_chan_sel_2(3, chan_id, chan_map_1, chan_map_1_37_used);
 	LL_ASSERT(m == 21U);
 
-	m = lll_chan_sel_2(6, 0x305F, chan_map_2, 9);
+	m = lll_chan_sel_2(6, chan_id, chan_map_2, chan_map_2_9_used);
 	LL_ASSERT(m == 23U);
 
-	m = lll_chan_sel_2(7, 0x305F, chan_map_2, 9);
+	m = lll_chan_sel_2(7, chan_id, chan_map_2, chan_map_2_9_used);
 	LL_ASSERT(m == 9U);
 
-	m = lll_chan_sel_2(8, 0x305F, chan_map_2, 9);
+	m = lll_chan_sel_2(8, chan_id, chan_map_2, chan_map_2_9_used);
 	LL_ASSERT(m == 34U);
-
 
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
@@ -325,172 +327,163 @@ void lll_chan_sel_2_ut(void)
 	uint16_t prn_s;
 
 	/* BIS subevent 2, event counter 0, test prnSubEvent_se */
-	prn_s = 56857 ^ 0x305F;
+	prn_s = 56857 ^ chan_id;
 	prn_subevent_lu = prn_s;
-	prn_subevent_se = chan_prn_subevent_se(0x305F, &prn_subevent_lu);
+	prn_subevent_se = chan_prn_subevent_se(chan_id, &prn_subevent_lu);
 	LL_ASSERT(prn_subevent_se == 11710);
 
 	/* BIS subevent 3, event counter 0 */
-	prn_subevent_se = chan_prn_subevent_se(0x305F, &prn_subevent_lu);
+	prn_subevent_se = chan_prn_subevent_se(chan_id, &prn_subevent_lu);
 	LL_ASSERT(prn_subevent_se == 16649);
 
 	/* BIS subevent 4, event counter 0 */
-	prn_subevent_se = chan_prn_subevent_se(0x305F, &prn_subevent_lu);
+	prn_subevent_se = chan_prn_subevent_se(chan_id, &prn_subevent_lu);
 	LL_ASSERT(prn_subevent_se == 38198);
 
-
-
 	/* BIS subevent 1, event counter 0 */
-	m = lll_chan_iso_event(0, 0x305F, chan_map_1, 37, &prn_s, &remap_idx);
-	LL_ASSERT((prn_s ^ 0x305F) == 56857);
+	m = lll_chan_iso_event(0, chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
+	LL_ASSERT((prn_s ^ chan_id) == 56857);
 	LL_ASSERT(m == 25U);
 	LL_ASSERT(remap_idx == 25U);
 
 	/* BIS subvent 2 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 1U);
 	LL_ASSERT(m == 1U);
 
 	/* BIS subvent 3 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 16U);
 	LL_ASSERT(m == 16U);
 
 	/* BIS subvent 4 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 36U);
 	LL_ASSERT(m == 36U);
 
-
 	/* BIS subevent 1, event counter 1 */
-	m = lll_chan_iso_event(1, 0x305F, chan_map_1, 37, &prn_s, &remap_idx);
-	LL_ASSERT((prn_s ^ 0x305F) == 1685);
+	m = lll_chan_iso_event(1, chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
+	LL_ASSERT((prn_s ^ chan_id) == 1685);
 	LL_ASSERT(m == 20U);
 	LL_ASSERT(remap_idx == 20U);
 
 	/* BIS subvent 2 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 36U);
 	LL_ASSERT(m == 36U);
 
 	/* BIS subvent 3 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 12U);
 	LL_ASSERT(m == 12U);
 
 	/* BIS subvent 4 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 34U);
 	LL_ASSERT(m == 34U);
 
-
 	/* BIS subevent 1, event counter 2 */
-	m = lll_chan_iso_event(2, 0x305F, chan_map_1, 37, &prn_s, &remap_idx);
-	LL_ASSERT((prn_s ^ 0x305F) == 38301);
+	m = lll_chan_iso_event(2, chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
+	LL_ASSERT((prn_s ^ chan_id) == 38301);
 	LL_ASSERT(m == 6U);
 	LL_ASSERT(remap_idx == 6U);
 
 	/* BIS subvent 2 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 18U);
 	LL_ASSERT(m == 18U);
 
 	/* BIS subvent 3 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 32U);
 	LL_ASSERT(m == 32U);
 
 	/* BIS subvent 4 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 21U);
 	LL_ASSERT(m == 21U);
 
-
 	/* BIS subevent 1, event counter 3 */
-	m = lll_chan_iso_event(3, 0x305F, chan_map_1, 37, &prn_s, &remap_idx);
-	LL_ASSERT((prn_s ^ 0x305F) == 27475);
+	m = lll_chan_iso_event(3, chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
+	LL_ASSERT((prn_s ^ chan_id) == 27475);
 	LL_ASSERT(m == 21U);
 	LL_ASSERT(remap_idx == 21U);
 
 	/* BIS subvent 2 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 4U);
 	LL_ASSERT(m == 4U);
 
 	/* BIS subvent 3 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 22U);
 	LL_ASSERT(m == 22U);
 
 	/* BIS subvent 4 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_1, 37, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 8U);
 	LL_ASSERT(m == 8U);
 
-
-
 	/* BIS subevent 1, event counter 6 */
-	m = lll_chan_iso_event(6, 0x305F, chan_map_2, 9, &prn_s, &remap_idx);
-	LL_ASSERT((prn_s ^ 0x305F) == 10975);
+	m = lll_chan_iso_event(6, chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
+	LL_ASSERT((prn_s ^ chan_id) == 10975);
 	LL_ASSERT(remap_idx == 4U);
 	LL_ASSERT(m == 23U);
 
 	/* BIS subvent 2 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_2, 9, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 7U);
 	LL_ASSERT(m == 35U);
 
 	/* BIS subvent 3 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_2, 9, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 2U);
 	LL_ASSERT(m == 21U);
 
 	/* BIS subvent 4 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_2, 9, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 8U);
 	LL_ASSERT(m == 36U);
 
-
 	/* BIS subevent 1, event counter 7 */
-	m = lll_chan_iso_event(7, 0x305F, chan_map_2, 9, &prn_s, &remap_idx);
-	LL_ASSERT((prn_s ^ 0x305F) == 5490);
+	m = lll_chan_iso_event(7, chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
+	LL_ASSERT((prn_s ^ chan_id) == 5490);
 	LL_ASSERT(remap_idx == 0U);
 	LL_ASSERT(m == 9U);
 
 	/* BIS subvent 2 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_2, 9, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 3U);
 	LL_ASSERT(m == 22U);
 
 	/* BIS subvent 3 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_2, 9, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 8U);
 	LL_ASSERT(m == 36U);
 
 	/* BIS subvent 4 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_2, 9, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 5U);
 	LL_ASSERT(m == 33U);
 
-
 	/* BIS subevent 1, event counter 8 */
-	m = lll_chan_iso_event(8, 0x305F, chan_map_2, 9, &prn_s, &remap_idx);
-	LL_ASSERT((prn_s ^ 0x305F) == 46970);
+	m = lll_chan_iso_event(8, chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
+	LL_ASSERT((prn_s ^ chan_id) == 46970);
 	LL_ASSERT(remap_idx == 6U);
 	LL_ASSERT(m == 34U);
 
 	/* BIS subvent 2 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_2, 9, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 0U);
 	LL_ASSERT(m == 9U);
 
 	/* BIS subvent 3 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_2, 9, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 5U);
 	LL_ASSERT(m == 33U);
 
 	/* BIS subvent 4 */
-	m = lll_chan_iso_subevent(0x305F, chan_map_2, 9, &prn_s, &remap_idx);
+	m = lll_chan_iso_subevent(chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT(remap_idx == 1U);
 	LL_ASSERT(m == 10U);
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO */
