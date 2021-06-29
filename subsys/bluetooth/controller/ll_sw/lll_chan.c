@@ -29,6 +29,9 @@ static uint8_t chan_d(uint8_t n);
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 
 #if defined(CONFIG_BT_CONN)
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.2
+ * Channel Selection algorithm #1
+ */
 uint8_t lll_chan_sel_1(uint8_t *chan_use, uint8_t hop, uint16_t latency, uint8_t *chan_map,
 		    uint8_t chan_count)
 {
@@ -52,6 +55,9 @@ uint8_t lll_chan_sel_1(uint8_t *chan_use, uint8_t hop, uint16_t latency, uint8_t
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3.2
+ * Inputs and basic components
+ */
 uint16_t lll_chan_id(uint8_t *access_addr)
 {
 	uint16_t aa_ls = ((uint16_t)access_addr[1] << 8) | access_addr[0];
@@ -60,6 +66,10 @@ uint16_t lll_chan_id(uint8_t *access_addr)
 	return aa_ms ^ aa_ls;
 }
 
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
+ * Channel Selection algorithm #2, and Section 4.5.8.3.1 Overview
+ * Below interface is used for ACL connections.
+ */
 uint8_t lll_chan_sel_2(uint16_t counter, uint16_t chan_id, uint8_t *chan_map,
 		    uint8_t chan_count)
 {
@@ -83,6 +93,11 @@ uint8_t lll_chan_sel_2(uint16_t counter, uint16_t chan_id, uint8_t *chan_map,
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
+ * Channel Selection algorithm #2, and Section 4.5.8.3.1 Overview
+ *
+ * Below interface is used for ISO first subevent.
+ */
 uint8_t lll_chan_iso_event(uint16_t counter, uint16_t chan_id,
 			   uint8_t *chan_map, uint8_t chan_count,
 			   uint16_t *prn_s, uint16_t *remap_idx)
@@ -105,6 +120,11 @@ uint8_t lll_chan_iso_event(uint16_t counter, uint16_t chan_id,
 	return chan_idx;
 }
 
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
+ * Channel Selection algorithm #2, and Section 4.5.8.3.1 Overview
+ *
+ * Below interface is used for ISO next subevent.
+ */
 uint8_t lll_chan_iso_subevent(uint16_t chan_id, uint8_t *chan_map,
 			      uint8_t chan_count, uint16_t *prn_subevent_lu,
 			      uint16_t *remap_idx)
@@ -117,6 +137,10 @@ uint8_t lll_chan_iso_subevent(uint16_t chan_id, uint8_t *chan_map,
 	prn_subevent_se = chan_prn_subevent_se(chan_id, prn_subevent_lu);
 
 	d = chan_d(chan_count);
+
+	/* Sub-expression to get natural number (N - 2d + 1) to be used in the
+	 * calculation of d.
+	 */
 	if ((chan_count + 1) > (d << 1)) {
 		x = (chan_count + 1) - (d << 1);
 	} else {
@@ -138,6 +162,10 @@ uint8_t lll_chan_iso_subevent(uint16_t chan_id, uint8_t *chan_map,
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
+ * Channel Selection algorithm #2, and Section 4.5.8.3.4 Event mapping to used
+ * channel index
+ */
 static uint8_t chan_sel_remap(uint8_t *chan_map, uint8_t chan_index)
 {
 	uint8_t chan_next;
@@ -175,6 +203,9 @@ static uint8_t chan_sel_remap(uint8_t *chan_map, uint8_t chan_index)
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
 /* Attribution:
  * http://graphics.stanford.edu/%7Eseander/bithacks.html#ReverseByteWith32Bits
+ */
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3.2
+ * Inputs and basic components, for below operations
  */
 static uint8_t chan_rev_8(uint8_t b)
 {
@@ -220,6 +251,13 @@ static uint16_t chan_prn_e(uint16_t counter, uint16_t chan_id)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO) || defined(CONFIG_BT_CTLR_SYNC_ISO)
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
+ * Channel Selection algorithm #2, and Section 4.5.8.3.4 Event mapping to used
+ * channel index
+ *
+ * Below function is used in the context of next subevent, return remapping
+ * index.
+ */
 static uint8_t chan_sel_remap_index(uint8_t *chan_map, uint8_t chan_index)
 {
 	uint8_t octet_count;
@@ -251,6 +289,10 @@ static uint8_t chan_sel_remap_index(uint8_t *chan_map, uint8_t chan_index)
 	return 0;
 }
 
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
+ * Channel Selection algorithm #2, and Section 4.5.8.3.5 Subevent pseudo-random
+ * number generation
+ */
 static uint16_t chan_prn_subevent_se(uint16_t chan_id,
 				     uint16_t *prn_subevent_lu)
 {
@@ -268,27 +310,41 @@ static uint16_t chan_prn_subevent_se(uint16_t chan_id,
 	return prn_subevent_se;
 }
 
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
+ * Channel Selection algorithm #2, and Section 4.5.8.3.6 Subevent mapping to
+ * used channel index
+ */
 static uint8_t chan_d(uint8_t n)
 {
 	uint8_t x, y;
 
+	/* Sub-expression to get natural number (N - 5) to be used in the
+	 * calculation of d.
+	 */
 	if (n > 5) {
 		x = n - 5;
 	} else {
 		x = 0;
 	}
 
+	/* Sub-expression to get natural number ((N - 10) / 2) to be used in the
+	 * calculation of d.
+	 */
 	if (n > 10) {
 		y = (n - 10) >> 1;
 	} else {
 		y = 0;
 	}
 
+	/* Calculate d using the above sub expressions */
 	return MAX(1, MAX(MIN(3, x), MIN(11, y)));
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_SYNC_ISO */
 
 #if defined(CONFIG_BT_CTLR_TEST)
+/* Refer to Bluetooth Specification v5.2 Vol 6, Part C, Section 3 LE Channel
+ * Selection algorithm #2 sample data
+ */
 void lll_chan_sel_2_ut(void)
 {
 	uint8_t chan_map_1[] = {0xFF, 0xFF, 0xFF, 0xFF, 0x1F};
@@ -298,6 +354,8 @@ void lll_chan_sel_2_ut(void)
 	uint16_t const chan_id = 0x305F;
 	uint8_t m;
 
+	/* Tests when ISO not supported */
+	/* Section 3.1 Sample Data 1 (37 used channels) */
 	m = lll_chan_sel_2(0, chan_id, chan_map_1, chan_map_1_37_used);
 	LL_ASSERT(m == 25U);
 
@@ -310,6 +368,7 @@ void lll_chan_sel_2_ut(void)
 	m = lll_chan_sel_2(3, chan_id, chan_map_1, chan_map_1_37_used);
 	LL_ASSERT(m == 21U);
 
+	/* Section 3.1 Sample Data 2 (9 used channels) */
 	m = lll_chan_sel_2(6, chan_id, chan_map_2, chan_map_2_9_used);
 	LL_ASSERT(m == 23U);
 
@@ -340,6 +399,7 @@ void lll_chan_sel_2_ut(void)
 	prn_subevent_se = chan_prn_subevent_se(chan_id, &prn_subevent_lu);
 	LL_ASSERT(prn_subevent_se == 38198);
 
+	/* Section 3.1 Sample Data 1 (37 used channels) */
 	/* BIS subevent 1, event counter 0 */
 	m = lll_chan_iso_event(0, chan_id, chan_map_1, chan_map_1_37_used, &prn_s, &remap_idx);
 	LL_ASSERT((prn_s ^ chan_id) == 56857);
@@ -424,6 +484,7 @@ void lll_chan_sel_2_ut(void)
 	LL_ASSERT(remap_idx == 8U);
 	LL_ASSERT(m == 8U);
 
+	/* Section 3.1 Sample Data 2 (9 used channels) */
 	/* BIS subevent 1, event counter 6 */
 	m = lll_chan_iso_event(6, chan_id, chan_map_2, chan_map_2_9_used, &prn_s, &remap_idx);
 	LL_ASSERT((prn_s ^ chan_id) == 10975);
