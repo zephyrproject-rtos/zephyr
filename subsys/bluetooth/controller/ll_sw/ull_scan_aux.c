@@ -277,10 +277,14 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 	aux_offset_us += (uint32_t)aux_ptr->offs * lll->window_size_us;
 
+	/* CA field contains the clock accuracy of the advertiser;
+	 * 0 - 51 ppm to 500 ppm
+	 * 1 - 0 ppm to 50 ppm
+	 */
 	if (aux_ptr->ca) {
-		window_widening_us = aux_offset_us / 2000U;
-	} else {
 		window_widening_us = aux_offset_us / 20000U;
+	} else {
+		window_widening_us = aux_offset_us / 2000U;
 	}
 
 	lll->window_size_us += (EVENT_TICKER_RES_MARGIN_US +
