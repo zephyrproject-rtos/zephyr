@@ -1353,7 +1353,7 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 }
 
 
-int bt_mcc_init(struct bt_conn *conn, struct bt_mcc_cb_t *cb)
+int bt_mcc_init(struct bt_mcc_cb_t *cb)
 {
 	mcc_cb = cb;
 

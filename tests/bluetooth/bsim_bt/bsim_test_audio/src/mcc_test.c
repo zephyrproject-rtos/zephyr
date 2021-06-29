@@ -492,7 +492,7 @@ int do_mcc_init(void)
 	mcc_cb.otc_parent_group_object   = &mcc_otc_read_parent_group_object_cb;
 
 	/* Initialize the module */
-	return bt_mcc_init(default_conn, &mcc_cb);
+	return bt_mcc_init(&mcc_cb);
 }
 
 /* Callback after Bluetoot initialization attempt */

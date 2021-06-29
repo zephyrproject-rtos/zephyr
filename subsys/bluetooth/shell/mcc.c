@@ -568,7 +568,7 @@ int cmd_mcc_init(const struct shell *shell, size_t argc, char **argv)
 #endif /* CONFIG_BT_MCC_OTS */
 
 	/* Initialize the module */
-	result = bt_mcc_init(default_conn, &cb);
+	result = bt_mcc_init(&cb);
 
 	if (result) {
 		shell_error(shell, "Fail: %d", result);
