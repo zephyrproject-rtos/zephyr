@@ -6,5 +6,5 @@
 #
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_FXOS8700 fxos8700.c)
+zephyr_library_sources(fxos8700.c)
 zephyr_library_sources_ifdef(CONFIG_FXOS8700_TRIGGER fxos8700_trigger.c)
