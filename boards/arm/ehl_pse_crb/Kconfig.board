@@ -1,0 +1,10 @@
+# Kconfig - INTEL EHL CRB board configuration
+#
+# Copyright (c) 2021 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_EHL_PSE_CRB
+	bool "Intel EHL CRB board"
+	depends on SOC_ELKHART_LAKE_PSE
+	select SEDI_LIBRARY

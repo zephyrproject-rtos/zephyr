@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+
+identifier: ehl_pse_crb
+name: Intel Programmable Service Engine
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2021 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <intel/elkhart_lake_pse.dtsi>
+
+/ {
+	model = "INTEL PSE";
+	compatible = "intel,pse";
+
+	chosen {
+		zephyr,flash = &l2sram_ro;
+		zephyr,sram = &l2sram_rw;
+		zephyr,iccm = &iccm;
+		zephyr,dccm = &dccm;
+		zephyr,aonrf = &aon_rf;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart2 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart3 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart4 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart5 {
+	current-speed = <115200>;
+	status = "okay";
+};
