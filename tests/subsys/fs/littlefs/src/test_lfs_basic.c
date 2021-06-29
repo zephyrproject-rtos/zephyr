@@ -62,10 +62,23 @@ static int clean_statvfs(const struct fs_mount_t *mp)
 		 stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
 	zassert_equal(stat.f_bsize, 16,
 		      "bsize fail");
+#ifdef CONFIG_SCORPIO_FLASH
+    /* 
+     * Scorpio emulates flash using 512 byte blocks vs 4k blocks. 
+     * 512 blocksize * 128 blocks == 64k
+     * Silly that this is hardcoded.
+     */
+	zassert_equal(stat.f_frsize, 512,
+		      "frsize fail");
+	zassert_equal(stat.f_blocks, 128,
+		      "blocks fail");
+#else
+    /* 4k blocksize * 16 blocks == 64k */
 	zassert_equal(stat.f_frsize, 4096,
 		      "frsize fail");
 	zassert_equal(stat.f_blocks, 16,
 		      "blocks fail");
+#endif
 	zassert_equal(stat.f_bfree, stat.f_blocks - 2U,
 		      "bfree fail");
 
