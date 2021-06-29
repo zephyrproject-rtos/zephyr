@@ -24,7 +24,11 @@
 #define ROMABLE_REGION FLASH
 #define RAMABLE_REGION SRAM
 #else
+#ifdef CONFIG_SOC_ELKHART_LAKE_PSE
+#define ROMABLE_REGION L2SRAM_RO
+#else
 #define ROMABLE_REGION SRAM
+#endif
 #define RAMABLE_REGION SRAM
 #endif
 
@@ -134,6 +138,10 @@ SECTIONS
 
     SECTION_PROLOGUE(rom_start,,)
 	{
+#if defined(CONFIG_SOC_ELKHART_LAKE_PSE)
+        MPU_ALIGN(_ram_ro_end - _ram_ro_start);
+        _ram_ro_start = .;
+#endif
 
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...). This typically contains the vector
@@ -141,7 +149,14 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
 
+#if defined(CONFIG_SOC_ELKHART_LAKE_PSE) && (CONFIG_FLASH_SIZE > 0)
+        MPU_ALIGN(_ram_ro_end - _ram_ro_start);
+        _ram_ro_end = .;
+        . = _ram_ro_end;
+        } GROUP_LINK_IN(RAMABLE_REGION) =0xDEADBEEF
+#else
 	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
 
@@ -224,6 +239,11 @@ SECTIONS
 	 * usually 4k aligned.
 	 */
 	. = ALIGN(4);
+#if defined(CONFIG_SOC_ELKHART_LAKE_PSE) && (CONFIG_FLASH_SIZE <= 0)
+        MPU_ALIGN(_ram_ro_end - _ram_ro_start);
+        _ram_ro_end = .;
+        . = _ram_ro_end;
+#endif
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/cplusplus-rom.ld>

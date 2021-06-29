@@ -1,0 +1,37 @@
+# Kconfig - PSE platform configuration options
+
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_ELKHART_LAKE_PSE
+
+config SOC
+	default "elkhart_lake_pse"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 106
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 32768
+
+config XIP
+	bool
+
+config BUILD_OUTPUT_BIN
+	bool
+
+config BOOTLOADER_SRAM_SIZE
+	default 0
+
+if TRACING_CTF
+config TRACING_CTF_BOTTOM_SHMEM
+	bool
+	default y
+endif
+endif

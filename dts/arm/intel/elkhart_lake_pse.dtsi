@@ -1,0 +1,140 @@
+/*
+ * Copyright (c) 2021 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+		};
+	};
+
+	l2sram_ro: memory@60000000{
+		device_type = "memory";
+		compatible = "mmio-sram";
+		label = "l2sram_ro";
+		reg = <0x60000000 0x80000>;
+	};
+
+	l2sram_rw: memory@60080000{
+		device_type = "memory";
+		compatible = "mmio-sram";
+		label = "l2sram_rw";
+		reg = <0x60080000 0x80000>;
+	};
+
+	iccm: memory@0{
+		device_type = "memory";
+		compatible = "mmio-sram";
+		label = "iccm";
+		reg = <0 0x00040000>;
+	};
+
+	dccm: memory@20040000{
+		device_type = "memory";
+		compatible = "mmio-sram";
+		label = "dccm";
+		reg = <0x20040000 0x00020000>;
+	};
+
+	aon_rf: memory@70000000{
+		device_type = "memory";
+		compatible = "mmio-sram";
+		label = "aonrf";
+		reg = <0x70000000 0x10000>;
+	};
+
+	uart0: uart@48200000 {
+		compatible = "intel,pse-uart";
+		reg = <0x48200000 0x1000>;
+		interrupts = <38 2>;
+		peripheral-id = <0>;
+		label = "UART_0";
+		current-speed = <115200>;
+		interrupt-parent = <&nvic>;
+		hw_flow_control = <0>;
+		status = "disabled";
+	};
+
+	uart1: uart@48202000 {
+		compatible = "intel,pse-uart";
+		reg = <0x48202000 0x1000>;
+		interrupt-parent = <&nvic>;
+		interrupts = <39 2>;
+		peripheral-id = <1>;
+		label = "UART_1";
+		current-speed = <115200>;
+		hw_flow_control = <0>;
+		status = "disabled";
+	};
+
+	uart2: uart@48204000 {
+		compatible = "intel,pse-uart";
+		reg = <0x48204000 0x1000>;
+		interrupts = <40 2>;
+		peripheral-id = <2>;
+		label = "UART_2";
+		current-speed = <115200>;
+		hw_flow_control = <0>;
+		interrupt-parent = <&nvic>;
+		status = "okay";
+	};
+
+	uart3: uart@48206000 {
+		compatible = "intel,pse-uart";
+		reg = <0x48206000 0x1000>;
+		interrupts = <41 2>;
+		peripheral-id = <3>;
+		label = "UART_3";
+		current-speed = <115200>;
+		interrupt-parent = <&nvic>;
+		hw_flow_control = <0>;
+		status = "disabled";
+	};
+
+	uart4: uart@48208000 {
+		compatible = "intel,pse-uart";
+		reg = <0x48208000 0x1000>;
+		interrupts = <42 2>;
+		peripheral-id = <4>;
+		label = "UART_4";
+		current-speed = <115200>;
+		interrupt-parent = <&nvic>;
+		hw_flow_control = <0>;
+		status = "disabled";
+	};
+
+	uart5: uart@4820a000 {
+		compatible = "intel,pse-uart";
+		reg = <0x4820a000 0x1000>;
+		interrupts = <43 2>;
+		peripheral-id = <5>;
+		label = "UART_5";
+		current-speed = <115200>;
+		interrupt-parent = <&nvic>;
+		hw_flow_control = <0>;
+		status = "disabled";
+	};
+
+
+	hpet: hpet@40A00000 {
+		label = "HPET";
+		compatible = "intel,hpet";
+		interrupt-parent = <&nvic>;
+		reg = <0x40A00000 0x400>;
+		interrupts = <19 2>;
+		status = "okay";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

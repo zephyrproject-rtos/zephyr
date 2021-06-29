@@ -1,0 +1,182 @@
+# Kconfig - PSE platform configuration options
+
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_ELKHART_LAKE_PSE
+	bool "INTEL PSE"
+	select ARM
+	select CPU_CORTEX_M7
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select HAS_SEDI
+	select CPU_HAS_ARM_MPU
+	select HAS_CMSIS_CORE
+	select HAS_SYS_POWER_STATE_SLEEP_1
+	select HAS_SYS_POWER_STATE_SLEEP_2
+	select HAS_SYS_POWER_STATE_SLEEP_3
+	select HAS_SYS_POWER_STATE_DEEP_SLEEP_2
+	select HAS_SYS_POWER_STATE_DEEP_SLEEP_3
+	select CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+if SOC_ELKHART_LAKE_PSE
+config ICCM_MEMORY_BASE_ADDRESS
+	hex
+	prompt "ICCM base address"
+	default $(dt_node_reg_addr_hex,/memory@0)
+	range 0 0x00060000
+	help
+	  Set PSE ICCM memory base address
+
+config ICCM_MEMORY_SIZE
+	hex
+	prompt "ICCM memory size"
+	default $(dt_node_reg_size_hex,/memory@0)
+	range 0 0x00060000
+	help
+	  Set PSE ICCM memory size
+
+config DCCM_MEMORY_BASE_ADDRESS
+	hex
+	prompt "DCCM base address"
+	default $(dt_node_reg_addr_hex,/memory@20040000)
+	range 0x20000000 0x20060000
+	help
+	  Set PSE DCCM memory base address
+
+config DCCM_MEMORY_SIZE
+	hex
+	prompt "DCCM memory size"
+	default $(dt_node_reg_size_hex,/memory@20040000)
+	range 0 0x00060000
+	help
+	  Set PSE DCCM memory size
+
+config L2SRAM_RO_MEMORY_BASE_ADDRESS
+	hex
+	prompt "L2SRAM RO base address"
+	default $(dt_node_reg_addr_hex,/memory@60000000)
+	range 0x60000000 0x60080000
+	help
+	  Set PSE L2SRAM RO memory base address
+
+config L2SRAM_RO_MEMORY_SIZE
+	hex
+	prompt "L2SRAM RO memory size"
+	default $(dt_node_reg_size_hex,/memory@60000000)
+	range 0 0x80000
+	help
+	  Set PSE L2SRAM RO memory size
+
+config L2SRAM_RW_MEMORY_BASE_ADDRESS
+	hex
+	prompt "L2SRAM RW base address"
+	default $(dt_node_reg_addr_hex,/memory@60080000)
+	range 0x60080000 0x60100000
+	help
+	  Set PSE L2SRAM RW memory base address
+
+config L2SRAM_RW_MEMORY_SIZE
+	hex
+	prompt "L2SRAM RW memory size"
+	default $(dt_node_reg_size_hex,/memory@60080000)
+	range 0 0x80000
+	help
+	  Set PSE L2SRAM RW memory size
+
+config AONRF_MEMORY_BASE_ADDRESS
+	hex
+	prompt "AONRF base address"
+	default $(dt_node_reg_addr_hex,/memory@70000000)
+	range 0x70000000 0x70010000
+	help
+	  Set PSE AONRF memory base address
+
+config AONRF_MEMORY_SIZE
+	hex
+	prompt "AONRF memory size"
+	default $(dt_node_reg_size_hex,/memory@70000000)
+	range 0 0x10000
+	help
+	  Set PSE AONRF memory size
+
+config EN_L2SRAM_RELOCATION_MEM
+	bool
+	prompt "Enable L2SRAM as relocation memory"
+	help
+	  Set L2SRAM as relocation memory
+
+config EN_MPU_L2SRAM_MEM_ACCESS
+	bool
+	prompt "Enable MPU L2SRAM memory access"
+	default y
+	help
+	  Enable MPU L2SRAM memory access
+
+config EN_MPU_ICCM_MEM_ACCESS
+	bool
+	prompt "Enable MPU ICCM memory access"
+	default y
+	help
+	  Enable MPU ICCM memory access
+
+config EN_MPU_DCCM_MEM_ACCESS
+	bool
+	prompt "Enable MPU DCCM memory access"
+	default y
+	help
+	  Enable MPU DCCM memory access
+
+config MPU_LOG_LEVEL
+	int
+	prompt "Config MPU log Level"
+	default 0
+	help
+	  Set MPU log Level
+
+config CACHE_DISABLE
+	bool "Disable L1 I/D caches"
+	help
+	  This configure option is to temporarily disable L1 I/D caches
+
+config FPGA_GBE_RGMII_PHY_RX
+	bool "Init GBE_RGMII_PHY_RX trunk clocks on FPGA"
+	help
+	  This configure option is to gate/ungate GBE_RGMII_PHY_RX
+	  trunk clocks on FPGA, set to y only when GBE AOB PHY daughter
+	  board is connected.
+
+config ENABLE_SOC_NMI
+	bool "Enable SOC NMI handling"
+	select RUNTIME_NMI
+	help
+	  This configuraiton option enables SOC NMI handling.
+
+config SOC_TEMP_LOG_LEVEL
+	int "Enable log level for SOC temp config"
+	default 0
+	help
+	  This configure log level for SOC.
+
+config MAP_MPU_UNUSED_REGION
+	bool "config unused memory under MPU"
+	help
+	  This configure unused memory under MPU.
+
+config DISABLE_SOC_PM_INIT
+	bool "Configure not to do PM init in soc init"
+	help
+	  This configure option is to temporarily disable PM init.
+
+config CLOCK_SOURCE_DOWNSCALED
+	bool "PSE HPET timer/rtc frequency downscale"
+	help
+	  there is a frequency division of the main frequency of HPET/RTC.
+
+config CLK_SCALE
+	depends on PSE_CLOCK_SOURCE_DOWNSCALED
+	int "Frequency division coefficient of HPET/RTC timer's frequency"
+	default 5
+
+endif # SOC_ELKHART_LAKE_PSE
