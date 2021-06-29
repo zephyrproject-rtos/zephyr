@@ -179,6 +179,8 @@ struct can_rcar_cfg {
 	uint8_t phase_seg1;
 	uint8_t phase_seg2;
 	uint16_t sample_point;
+	const struct rcar_pin *pin_list;
+	uint8_t pin_list_size;
 };
 
 struct can_rcar_tx_cb {
@@ -863,6 +865,8 @@ static int can_rcar_init(const struct device *dev)
 	data->state = CAN_ERROR_ACTIVE;
 	data->state_change_isr = NULL;
 
+	pinmux_rcar_set_pingroup(config->pin_list, config->pin_list_size);
+
 	/* reset the registers */
 	ret = clock_control_off(config->clock_dev,
 				(clock_control_subsys_t *)&config->mod_clk);
@@ -1012,6 +1016,7 @@ static const struct can_driver_api can_rcar_driver_api = {
 /* Device Instantiation */
 #define CAN_RCAR_INIT(n)							\
 	static void can_rcar_##n##_init(const struct device *dev);		\
+	static const struct rcar_pin pins_can##n[] = RCAR_DT_INST_PINS(n);      \
 	static const struct can_rcar_cfg can_rcar_cfg_##n = {			\
 		.reg_addr = DT_INST_REG_ADDR(n),				\
 		.reg_size = DT_INST_REG_SIZE(n),				\
@@ -1032,6 +1037,8 @@ static const struct can_driver_api can_rcar_driver_api = {
 		.phase_seg1 = DT_INST_PROP_OR(n, phase_seg1, 0),		\
 		.phase_seg2 = DT_INST_PROP_OR(n, phase_seg2, 0),		\
 		.sample_point = DT_INST_PROP_OR(n, sample_point, 0),		\
+		.pin_list = pins_can##n,                                        \
+		.pin_list_size = ARRAY_SIZE(pins_can##n),		        \
 	};									\
 	static struct can_rcar_data can_rcar_data_##n;				\
 										\
