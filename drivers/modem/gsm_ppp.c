@@ -715,7 +715,7 @@ attaching:
 	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
 		/* Re-use the original iface for AT channel */
 		ret = modem_iface_uart_init_dev(&gsm->context.iface,
-						gsm->at_dev->name);
+						gsm->at_dev);
 		if (ret < 0) {
 			LOG_DBG("iface %suart error %d", "AT ", ret);
 		} else {
@@ -899,7 +899,7 @@ static void mux_setup(struct k_work *work)
 		 * to the modem.
 		 */
 		ret = modem_iface_uart_init_dev(&gsm->context.iface,
-						gsm->ppp_dev->name);
+						gsm->ppp_dev);
 		if (ret < 0) {
 			LOG_DBG("iface %suart error %d", "PPP ", ret);
 			gsm->mux_enabled = false;
@@ -980,7 +980,7 @@ void gsm_ppp_start(const struct device *dev)
 
 	/* Re-init underlying UART comms */
 	int r = modem_iface_uart_init_dev(&gsm->context.iface,
-					  CONFIG_MODEM_GSM_UART_NAME);
+				device_get_binding(CONFIG_MODEM_GSM_UART_NAME));
 	if (r) {
 		LOG_ERR("modem_iface_uart_init returned %d", r);
 		return;
@@ -1057,7 +1057,7 @@ static int gsm_init(const struct device *dev)
 	gsm->gsm_data.rx_rb_buf_len = sizeof(gsm->gsm_rx_rb_buf);
 
 	r = modem_iface_uart_init(&gsm->context.iface, &gsm->gsm_data,
-				  CONFIG_MODEM_GSM_UART_NAME);
+				device_get_binding(CONFIG_MODEM_GSM_UART_NAME));
 	if (r < 0) {
 		LOG_DBG("iface uart error %d", r);
 		return r;
