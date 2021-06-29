@@ -69,6 +69,12 @@ MEMORY {
 #ifdef DCCM_START
 	DCCM  (rw)  : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE
 #endif
+#ifdef XCCM_START
+	XCCM  (rw)  : ORIGIN = XCCM_START, 	LENGTH = XCCM_SIZE
+#endif
+#ifdef YCCM_START
+	YCCM  (rw)  : ORIGIN = YCCM_START,  LENGTH = YCCM_SIZE
+#endif
 	/* Used by and documented in include/linker/intlist.ld */
 	IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -93,6 +99,8 @@ SECTIONS {
 	. = ALIGN(4);
 #include <linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
+	
+#include "embarc_mli.ld"
 
 	_image_text_end = .;
 	_image_rodata_start = .;
