@@ -26,7 +26,13 @@
 
 static struct media_proxy_ctrl_cbs cbs;
 
-static struct media_player *local_player; /* TODO: Use the player pointer */
+/* Media player instances - the local player, the remote player and
+ * the current player (pointing to either the local or the remote)
+ *
+ * TODO: Add command to select player, ensure that the player pointer is used
+ */
+static struct media_player *local_player;
+static struct media_player *remote_player;
 static struct media_player *current_player;
 
 static void local_player_instance_cb(struct media_player *plr, int err)
@@ -42,6 +48,20 @@ static void local_player_instance_cb(struct media_player *plr, int err)
 	if (!current_player) {
 		current_player = local_player;
 	}
+}
+
+static void discover_player_cb(struct media_player *plr, int err)
+{
+	if (err) {
+		shell_error(ctx_shell, "Discover player failed (%d)", err);
+		return;
+	}
+
+	remote_player = plr;
+	shell_print(ctx_shell, "Discovered player instance: %p", remote_player);
+
+	/* Assuming that since discovery was called, the remote player is wanted */
+	current_player = remote_player;
 }
 
 static void player_name_cb(struct media_player *plr, int err, char *name)
@@ -316,6 +336,7 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	/* Set up the callback structure */
+	cbs.discover_player          = discover_player_cb;
 	cbs.local_player_instance    = local_player_instance_cb;
 	cbs.player_name              = player_name_cb;
 	cbs.icon_id                  = icon_id_cb;
@@ -351,6 +372,19 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 
 	return err;
 }
+
+#ifdef CONFIG_BT_MCC
+static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = media_proxy_ctrl_discover_player(default_conn);
+
+	if (err) {
+		shell_error(ctx_shell, "Discover player failed (%d)", err);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_MCC */
 
 static int cmd_media_read_player_name(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -670,6 +704,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(media_cmds,
 	SHELL_CMD_ARG(init, NULL,
 		      "Initialize media player",
 		      cmd_media_init, 1, 0),
+#ifdef CONFIG_BT_MCC
+	SHELL_CMD_ARG(discover_player, NULL, "Discover remote media player",
+		      cmd_media_discover_player, 1, 0),
+#endif /* CONFIG_BT_MCC */
 	SHELL_CMD_ARG(read_player_name, NULL, "Read Media Player Name",
 		      cmd_media_read_player_name, 1, 0),
 #ifdef CONFIG_BT_OTS

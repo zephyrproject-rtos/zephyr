@@ -8,6 +8,7 @@
 
 #include "media_proxy.h"
 #include "media_proxy_internal.h"
+#include <bluetooth/mcc.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_MEDIA_PROXY)
 #define LOG_MODULE_NAME media_proxy
@@ -17,6 +18,7 @@
 /* Media player */
 struct media_player {
 	struct media_proxy_pl_calls *calls;
+	struct bt_conn *conn;  /* TODO: Treat local and remote player differently */
 	bool   registered;
 };
 
@@ -41,9 +43,15 @@ struct mprx {
 
 	/* The local media player */
 	struct media_player  local_player;
+
+	/* Remote media player - to have a player instance for the user, accessed via MCC */
+	struct media_player  remote_player;
 };
 
 static struct mprx mprx = { 0 };
+#ifdef CONFIG_BT_MCC
+static struct bt_mcc_cb_t mcc_cbs;
+#endif /* CONFIG_BT_MCC */
 
 /* Synchronous controller calls ***********************************************/
 
@@ -201,6 +209,27 @@ uint8_t media_proxy_sctrl_content_ctrl_id_get(void)
 	return mprx.local_player.calls->content_ctrl_id_get();
 }
 
+
+/* Media control client callbacks *********************************************/
+
+#ifdef CONFIG_BT_MCC
+static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
+{
+	if (err) {
+		BT_ERR("Discovery failed (%d)", err);
+	}
+
+	BT_DBG("Disovered player");
+
+	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->discover_player) {
+		mprx.ctrlr.cbs->discover_player(&mprx.remote_player, err);
+	} else {
+		BT_DBG("No callback");
+	}
+}
+#endif /* CONFIG_BT_MCC */
+
+
 /* Asynchronous controller calls **********************************************/
 
 int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
@@ -216,6 +245,34 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
 	/* TODO: Return error code if too many controllers registered */
 	return 0;
 };
+
+#ifdef CONFIG_BT_MCC
+int media_proxy_ctrl_discover_player(struct bt_conn *conn)
+{
+	int err;
+
+	/* Initialize MCC */
+	mcc_cbs.discover_mcs      = mcc_discover_mcs_cb;
+
+	err = bt_mcc_init(&mcc_cbs);
+	if (err) {
+		BT_ERR("Failed to initialize MCC");
+		return err;
+	}
+
+	/* Start discovery of remote MCS, subscribe to notifications */
+	err = bt_mcc_discover_mcs(conn, 1);
+	if (err) {
+		BT_ERR("Discovery failed");
+		return err;
+	}
+
+	mprx.remote_player.conn = conn;
+	mprx.remote_player.registered = true;  /* TODO: Do MCC init and "registration" at startup */
+
+	return 0;
+}
+#endif /* CONFIG_BT_MCC	*/
 
 int media_proxy_ctrl_player_name_get(struct media_player *player)
 {
