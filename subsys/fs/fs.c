@@ -499,7 +499,9 @@ int fs_mkdir(const char *abs_path)
 	}
 
 	rc = mp->fs->mkdir(mp, abs_path);
-	if (rc < 0) {
+	if (rc == -EEXIST) {
+		LOG_ERR("directory already exists (%d)", rc);
+	} else if (rc < 0) {
 		LOG_ERR("failed to create directory (%d)", rc);
 	}
 
@@ -601,7 +603,9 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	}
 
 	rc = mp->fs->stat(mp, abs_path, entry);
-	if (rc < 0) {
+	if (rc == -ENOENT) {
+		/* File doesn't exist, which is a valid stat response */
+	} else if (rc < 0) {
 		LOG_ERR("failed get file or dir stat (%d)", rc);
 	}
 	return rc;
