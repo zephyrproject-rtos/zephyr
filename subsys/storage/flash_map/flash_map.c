@@ -126,13 +126,10 @@ static int flash_area_layout(int idx, uint32_t *cnt, void *ret,
 flash_page_cb cb, struct layout_data *cb_data)
 {
 	const struct device *flash_dev;
-
-	cb_data->area_idx = idx;
-
 	const struct flash_area *fa;
+	int rc = flash_area_open(idx, &fa);
 
-	fa = get_flash_area_from_id(idx);
-	if (fa == NULL) {
+	if (rc < 0 || fa == NULL) {
 		return -EINVAL;
 	}
 
@@ -146,6 +143,7 @@ flash_page_cb cb, struct layout_data *cb_data)
 	cb_data->status = 0;
 
 	flash_dev = device_get_binding(fa->fa_dev_name);
+	flash_area_close(fa);
 	if (flash_dev == NULL) {
 		return -ENODEV;
 	}
