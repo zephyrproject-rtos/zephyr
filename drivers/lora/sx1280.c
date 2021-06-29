@@ -398,66 +398,6 @@ void SX127xReset(void)
 
 // }
 
-static int sx127x_transceive(uint8_t reg, bool write, void *data, size_t length)
-{
-	const struct spi_buf buf[2] = {
-		{
-			.buf = &reg,
-			.len = sizeof(reg)
-		},
-		{
-			.buf = data,
-			.len = length
-		}
-	};
-
-	struct spi_buf_set tx = {
-		.buffers = buf,
-		.count = ARRAY_SIZE(buf),
-	};
-
-	if (!write) {
-		const struct spi_buf_set rx = {
-			.buffers = buf,
-			.count = ARRAY_SIZE(buf)
-		};
-
-		return spi_transceive(dev_data.spi, &dev_data.spi_cfg, &tx, &rx);
-	}
-
-	return spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
-}
-
-int sx127x_read(uint8_t reg_addr, uint8_t *data, uint8_t len)
-{
-	return sx127x_transceive(reg_addr, false, data, len);
-}
-
-int sx127x_write(uint8_t reg_addr, uint8_t *data, uint8_t len)
-{
-	return sx127x_transceive(reg_addr | BIT(7), true, data, len);
-}
-
-void SX127xWriteBuffer(uint16_t addr, uint8_t *buffer, uint8_t size)
-{
-	int ret;
-
-	ret = sx127x_write(addr, buffer, size);
-	if (ret < 0) {
-		LOG_ERR("Unable to write address: 0x%x", addr);
-	}
-}
-
-void SX127xReadBuffer(uint16_t addr, uint8_t *buffer, uint8_t size)
-{
-	int ret;
-
-	ret = sx127x_read(addr, buffer, size);
-	if (ret < 0) {
-		LOG_ERR("Unable to read address: 0x%x", addr);
-	}
-}
-
 // void SX127xSetRfTxPower(int8_t power)
 // {
 // 	int ret;
@@ -639,7 +579,7 @@ void sx1280_WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t siz
 
 	const struct spi_buf buf[2] = {
 		{
-			.buf = &command, // TODO: might be wrong
+			.buf = &command,
 			.len = sizeof(command)
 		},
 		{
@@ -684,29 +624,22 @@ void sx1280_WriteCommand( RadioCommands_t command, uint8_t *buffer, uint16_t siz
 }
 
 
-void sx1280_ReadCommand( RadioCommands_t command, void *buffer, uint16_t size )
+void sx1280_ReadCommand( RadioCommands_t command, void *buffer, size_t size )
 {
 //     WaitOnBusy( );
 	int ret;
-	uint8_t dummyData[size + 1];
+	uint8_t dummyData = 0;
 	// RadioNss = 0;
 	printk("size: %u\n", size);
 	printk("command size: %u\n", sizeof(command));
-	const struct spi_buf buf[2] = {
+	const struct spi_buf buf[3] = {
 		{
 			.buf = &command,
 			.len = 1
 		},
 		{
 			.buf = &dummyData,
-			.len = size + 1
-		}
-	};
-
-	const struct spi_buf rxbuf[2] = {
-		{
-			.buf = NULL,
-			.len = 2
+			.len = 1
 		},
 		{
 			.buf = buffer,
@@ -720,8 +653,8 @@ void sx1280_ReadCommand( RadioCommands_t command, void *buffer, uint16_t size )
 	};
 
 	const struct spi_buf_set rx = {
-		.buffers = rxbuf,
-		.count = ARRAY_SIZE(rxbuf)
+		.buffers = buf,
+		.count = ARRAY_SIZE(buf)
 	};
 
 	// ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
@@ -803,7 +736,7 @@ void sx1280_ReadBuffer( uint8_t offset, uint8_t *buffer, uint8_t size )
 	uint8_t dummyData = 0;
 	uint8_t command = RADIO_READ_BUFFER;
 
-	const struct spi_buf buf[3] = {
+	const struct spi_buf buf[4] = {
 		{
 			.buf = &command,
 			.len = 1
@@ -892,11 +825,10 @@ uint16_t sx1280_readIrqStatus()
   uint8_t buffer[2] = { 0xDE, 0xAD };
 
   sx1280_ReadCommand(RADIO_GET_IRQSTATUS, &buffer, 2);
-  k_sleep(K_MSEC(1000));
-  printk("buffers: %x %x\n", buffer[0], buffer[1]);
+//   printk("buffers: %x %x\n", buffer[0], buffer[1]);
 //   LOG_INF("%x %x\n", &buffer[0], &buffer[1]);
   temp = ((buffer[0] << 8) + buffer[1]);
-  printk("buffers shifted: %x\n", temp);
+//   printk("buffers shifted: %x\n", temp);
   return temp;
 }
 
@@ -1063,7 +995,7 @@ void sx1280_SetRegulatorMode( RadioRegulatorModes_t mode )
     sx1280_WriteCommand( RADIO_SET_REGULATORMODE, ( uint8_t* )&mode, 1 );
 }
 
-void sx1280_WriteRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
+void sx1280_WriteRegisterSPI( uint16_t address, uint8_t *buffer, size_t size )
 {
 //     WaitOnBusy( ); // TODO
 
@@ -1119,7 +1051,7 @@ void sx1280_WriteRegister( uint16_t address, uint8_t value )
     sx1280_WriteRegisterSPI( address, &value, 1 );
 }
 
-void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, uint16_t size )
+void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, size_t size )
 {
 //     WaitOnBusy( ); // TODO
 
@@ -1343,12 +1275,12 @@ void testReadWriteRegister() {
 	// printk("data: %x -- %x\n", Regdata1, Regdata2);
 	if (Regdata2 == (Regdata1 + 1))
 	{
-		// printk("Device found\n");
+		printk("Device found\n");
 	}
 	else
 	{
 		while (1) {
-			// printk("No device found\n");
+			printk("No device found\n");
 		}
 	}
 }
