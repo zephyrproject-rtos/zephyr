@@ -12,16 +12,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
+#include <zephyr.h>
 #include "mli_types.h"
 
 #include "cifar10_ref_inout.h"
 #include "cifar10_model.h"
-#include "examples_aux.h"
-#include "tests_aux.h"
+#include "../../auxiliary/examples_aux.h"
+#include "../../auxiliary/tests_aux.h"
 
 #if defined (__GNUC__) && !defined (__CCAC__)
-extern int start_init(void);
 #endif // if defined (__GNUC__) && !defined (__CCAC__)
 // Root to referenc IR vectors for comparison
 // pass "./ir_idx_12_chw_small" or "./ir_idx_12_chw_big" for debug (regarding to used modelCHW and HWC layout accordingly)
@@ -44,11 +43,6 @@ char param[EXAMPLE_MAX_MODE][256];// emulation argv for GNU toolchain
 int main(int argc, char ** argv ) {
 #if defined (__GNUC__) && !defined (__CCAC__)
 //ARC GNU tools
-    if (0 != start_init() ){
-        printf("ERROR: init proccesor\n");
-        //Error init proccesor;
-        return 1;
-    }
 //fill mode and param from cmd line script before use
 
 #else
@@ -62,7 +56,11 @@ int main(int argc, char ** argv ) {
         }
     }        
 #endif // if defined (__GNUC__) && !defined (__CCAC__)
-   
+//please change mode=1,2,3 manually
+mode=1;                                           
+strcpy(param[0],"dummy_for_check");
+strcpy(param[1],"small_test_base/tests.idx");
+strcpy(param[2],"small_test_base/labels.idx");    
     //checking that variables are set
     if(mode == 0){
         printf("ERROR: mode not set up\n");
@@ -115,7 +113,6 @@ int main(int argc, char ** argv ) {
         out_path[0] = 0;
         strcat(out_path, param[1]);
         strcat(out_path, kOutFilePostfix);
-
         model_run_idx_base_to_idx_out(param[1], out_path,
                 cifar10_cf_net_input, cifar10_cf_net_output,
                 cifar10_preprocessing, cifar10_cf_net,

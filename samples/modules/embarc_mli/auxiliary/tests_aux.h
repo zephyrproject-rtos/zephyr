@@ -16,8 +16,9 @@
  */
 
 #include <stdint.h>
-
 #include "mli_api.h"
+#define _lr __builtin_arc_lr
+#define _sr __builtin_arc_sr
 
 #ifdef __cplusplus
 extern "C" {

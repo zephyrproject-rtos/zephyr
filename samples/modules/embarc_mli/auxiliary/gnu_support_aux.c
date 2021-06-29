@@ -10,6 +10,10 @@
 #ifndef _ARC
 
 #include <stdint.h>
+#define _Interrupt __attribute__((interrupt("ilink")))
+#define _lr __builtin_arc_lr
+#define _sr __builtin_arc_sr
+#define _Uncached volatile
 
 unsigned int __JLI_TABLE__[1];
 
