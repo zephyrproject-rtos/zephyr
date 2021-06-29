@@ -630,8 +630,8 @@ void sx1280_ReadCommand( RadioCommands_t command, void *buffer, size_t size )
 	int ret;
 	uint8_t dummyData = 0;
 	// RadioNss = 0;
-	printk("size: %u\n", size);
-	printk("command size: %u\n", sizeof(command));
+	// printk("size: %u\n", size);
+	// printk("command size: %u\n", sizeof(command));
 	const struct spi_buf buf[3] = {
 		{
 			.buf = &command,
@@ -659,7 +659,7 @@ void sx1280_ReadCommand( RadioCommands_t command, void *buffer, size_t size )
 
 	// ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
 	ret = spi_transceive(dev_data.spi, &dev_data.spi_cfg, &tx, &rx);
-	printk("ret: %d\n", ret);
+	printk("ret: %d\n", ret); // This printk fixes spi_transceive sending too few bytes
 	if (ret < 0) {
 		LOG_ERR("Unable to write command: 0x%x", ( uint8_t ) command);
 	}
