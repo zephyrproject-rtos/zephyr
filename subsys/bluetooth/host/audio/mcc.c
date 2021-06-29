@@ -1357,10 +1357,6 @@ int bt_mcc_init(struct bt_conn *conn, struct bt_mcc_cb_t *cb)
 {
 	mcc_cb = cb;
 
-	if (mcc_cb && mcc_cb->init) {
-		mcc_cb->init(conn, 0);
-	}
-
 #ifdef CONFIG_BT_MCC_OTS
 	/* Set up the callbacks from OTC */
 	/* TODO: Have one single content callback. */
