@@ -83,6 +83,10 @@ SECTIONS {
 
 #include <linker/rel-sections.ld>
 
+#ifdef CONFIG_EMBARC_MLI
+#include "linker/../../modules/embarc_mli/embarc_mli.ld"
+#endif
+
 	GROUP_START(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(1024)) {
@@ -212,6 +216,8 @@ SECTIONS {
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 	GROUP_END(RAMABLE_REGION)
+
+
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
