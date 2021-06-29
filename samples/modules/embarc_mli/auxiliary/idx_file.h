@@ -1,11 +1,11 @@
 /*
-* Copyright 2019-2020, Synopsys, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD-3-Clause license found in
-* the LICENSE file in the root directory of this source tree.
-*
-*/
+ * Copyright 2019-2020, Synopsys, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-3-Clause license found in
+ * the LICENSE file in the root directory of this source tree.
+ *
+ */
 
 #ifndef _IDX_FILE_H
 #define _IDX_FILE_H
@@ -22,47 +22,40 @@
 extern "C" {
 #endif
 
-
 /** @enum IDX file format data codes */
 typedef enum {
-    IDX_DT_UBYTE_1B  = 0x08,        /**< Unsigned byte (uint8_t) */
-    IDX_DT_BYTE_1B   = 0x09,        /**< Signed byte (int8_t) */
-    IDX_DT_SHORT_2B  = 0x0B,        /**< Signed short (int16_t) */
-    IDX_DT_INT_4B    = 0x0C,        /**< Signed int (int32_t) */
-    IDX_DT_FLOAT_4B  = 0x0D,        /**< 32bit float  (float) */
-    IDX_DT_DOUBLE_8B = 0x0E         /**< double precision float (double) */
+	IDX_DT_UBYTE_1B = 0x08, /**< Unsigned byte (uint8_t) */
+	IDX_DT_BYTE_1B = 0x09, /**< Signed byte (int8_t) */
+	IDX_DT_SHORT_2B = 0x0B, /**< Signed short (int16_t) */
+	IDX_DT_INT_4B = 0x0C, /**< Signed int (int32_t) */
+	IDX_DT_FLOAT_4B = 0x0D, /**< 32bit float  (float) */
+	IDX_DT_DOUBLE_8B = 0x0E /**< double precision float (double) */
 } tIdxDataType;
-
 
 /** @enum Function Return codes  */
 typedef enum {
-    IDX_ERR_NONE = 0x0,        /**< No error occurred */
-    IDX_ERR_FILE_ACC,          /**< File Access Error */
-    IDX_ERR_INCORR_HEAD,       /**< Incorrect header of file */
-    IDX_ERR_INCORR_FILE,       /**< Header/file content mismatch */
-    IDX_ERR_INCORR_FUNC_INPUT, /**< Function aruments error */
-    IDX_ERR_NOT_ENOUGH_MEM     /**< Not enough memory for reading/transform */
+	IDX_ERR_NONE = 0x0, /**< No error occurred */
+	IDX_ERR_FILE_ACC, /**< File Access Error */
+	IDX_ERR_INCORR_HEAD, /**< Incorrect header of file */
+	IDX_ERR_INCORR_FILE, /**< Header/file content mismatch */
+	IDX_ERR_INCORR_FUNC_INPUT, /**< Function aruments error */
+	IDX_ERR_NOT_ENOUGH_MEM /**< Not enough memory for reading/transform */
 } tIdxRetVal;
-
 
 /** @struct IDX file descriptor  */
 typedef struct {
-    uint32_t num_elements;    /**< Number of elements (depending in operation type) */
-    uint8_t num_dim;          /**< Number of array dimensions */
-    tIdxDataType data_type;   /**< Basic element data type */
+	uint32_t num_elements; /**< Number of elements (depending in operation type) */
+	uint8_t num_dim; /**< Number of array dimensions */
+	tIdxDataType data_type; /**< Basic element data type */
 
-    FILE *opened_file;        /**< File descriptor.
-                                   Must be opened binary for reading or writing (depends on target operation) */
+	FILE *opened_file;
+/**< File descriptor. Must be opened binary for reading or writing (depends on target operation)*/
 } tIdxDescr;
 
-
-//======================================================
-//
-// Functions for complete reading/writing ,
-// including file manipulation
-//
-//=======================================================
-
+/*
+ * Functions for complete reading/writing ,
+ * including file manipulation
+ */
 
 /** @brief Read data from IDX file completely
  *
@@ -80,14 +73,10 @@ typedef struct {
  *
  *
  * @return Operation status code (tIdxRetVal)
-  */
-tIdxRetVal idx_file_read_completely(
-        const char *path_,
-        void *data_,
-        uint32_t *data_sz_,
-        uint32_t *shape_,
-        uint32_t *shape_dims_,
-        tIdxDataType *el_type_);
+ */
+tIdxRetVal idx_file_read_completely(const char *path_, void *data_, uint32_t *data_sz_,
+				    uint32_t *shape_, uint32_t *shape_dims_,
+				    tIdxDataType *el_type_);
 
 /**
  * @brief Write data to IDX file completely
@@ -103,20 +92,13 @@ tIdxRetVal idx_file_read_completely(
  *
  *
  * @return Operation status code (tIdxRetVal)
-  */
-tIdxRetVal idx_file_write_completely(
-        const char *path_,
-        void *data_,
-        uint32_t *shape_,
-        uint32_t shape_sz_,
-        tIdxDataType el_type);
+ */
+tIdxRetVal idx_file_write_completely(const char *path_, void *data_, uint32_t *shape_,
+				     uint32_t shape_sz_, tIdxDataType el_type);
 
-
-//======================================================
-//
-// Functions for manual reading/writing
-//
-//=======================================================
+/* -------------------------------------------------------------------------- */
+/*                    Functions for manual reading/writing                    */
+/* -------------------------------------------------------------------------- */
 
 /**
  * @brief Define basic element size of type_
@@ -124,7 +106,7 @@ tIdxRetVal idx_file_write_completely(
  * @param[in] type_ - IDX file data type
  *
  * @return Size of basic element in bytes. Returns 0 if type is unknown.
-  */
+ */
 uint8_t data_elem_size(tIdxDataType type_);
 
 /**
@@ -135,7 +117,7 @@ uint8_t data_elem_size(tIdxDataType type_);
  * @param[in] descr_ - Descriptor of IDX file with correctly opened file (user responsibility)
  *
  * @return Operation status code (tIdxRetVal)
-  */
+ */
 tIdxRetVal idx_file_check_and_get_info(tIdxDescr *descr_);
 
 /**
@@ -150,7 +132,7 @@ tIdxRetVal idx_file_check_and_get_info(tIdxDescr *descr_);
  * @param[in] shape_ - Pointer to array with shape. If not NULL - will be filled according to IDX file header
  *
  * @return Operation status code (tIdxRetVal)
-  */
+ */
 tIdxRetVal idx_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_);
 
 /**
@@ -165,7 +147,7 @@ tIdxRetVal idx_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_);
  * @param[in] data_ - Pointer to array for writing
  *
  * @return Operation status code (tIdxRetVal)
-  */
+ */
 tIdxRetVal idx_file_write_data(tIdxDescr *descr_, const void *data_);
 
 /**
@@ -178,14 +160,11 @@ tIdxRetVal idx_file_write_data(tIdxDescr *descr_, const void *data_);
  * @param[in] shape_ - Pointer to array with shape.
  *
  * @return Operation status code (tIdxRetVal)
-  */
+ */
 tIdxRetVal idx_file_write_header(const tIdxDescr *descr_, const uint32_t *shape_);
-
 
 #ifdef __cplusplus
 }
 #endif
 
-
-
-#endif // _IDX_FILE_H
+#endif /* _IDX_FILE_H */

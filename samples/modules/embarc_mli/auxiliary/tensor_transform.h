@@ -1,11 +1,11 @@
 /*
-* Copyright 2019-2020, Synopsys, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD-3-Clause license found in
-* the LICENSE file in the root directory of this source tree.
-*
-*/
+ * Copyright 2019-2020, Synopsys, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-3-Clause license found in
+ * the LICENSE file in the root directory of this source tree.
+ *
+ */
 
 #ifndef _TENSOR_TRANSFORM_H_
 #define _TENSOR_TRANSFORM_H_
@@ -15,8 +15,7 @@
  */
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include "mli_types.h"
@@ -33,11 +32,8 @@ extern "C"
  *                  valid element type and number of fractional bytes.
  *
  * @return Operation status code (MLI_Types.h)
-  */
-mli_status mli_hlp_float_to_fx_tensor(
-        const float *src,
-        uint32_t  src_size,
-        mli_tensor *dst);
+ */
+mli_status mli_hlp_float_to_fx_tensor(const float *src, uint32_t src_size, mli_tensor *dst);
 
 /**
  * @brief Transform data of MLI FX tensor to float array
@@ -50,14 +46,11 @@ mli_status mli_hlp_float_to_fx_tensor(
  * @param[in] dst_size - number of elements in output array.
  *
  * @return Operation status code (MLI_Types.h)
-  */
-mli_status mli_hlp_fx_tensor_to_float(
-        const mli_tensor *src,
-        float *dst,
-        uint32_t  dst_size);
+ */
+mli_status mli_hlp_fx_tensor_to_float(const mli_tensor *src, float *dst, uint32_t dst_size);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //_TENSOR_TRANSFORM_H_
+#endif /*_TENSOR_TRANSFORM_H_ */
