@@ -14,7 +14,7 @@
 #define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 K_THREAD_STACK_EXTERN(tstack);
-extern K_THREAD_STACK_ARRAY_DEFINE(tstacks, MAX_NUM_THREAD, STACK_SIZE);
+K_THREAD_STACK_ARRAY_EXTERN(tstacks, MAX_NUM_THREAD, STACK_SIZE);
 extern struct k_thread user_thread;
 extern struct k_sem user_sem;
 
