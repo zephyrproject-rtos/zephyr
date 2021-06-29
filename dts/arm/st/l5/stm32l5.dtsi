@@ -476,6 +476,26 @@
 				#pwm-cells = <3>;
 			};
 		};
+
+		adc1: adc@42028000 {
+			compatible = "st,stm32-adc";
+			reg = <0x42028000 0x100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
+			interrupts = <37 0>;
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
+		};
+
+		adc2: adc@42028100 {
+			compatible = "st,stm32-adc";
+			reg = <0x42028100 0x100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
+			interrupts = <37 0>;
+			status = "disabled";
+			label = "ADC_2";
+			#io-channel-cells = <1>;
+		};
 	};
 };
 
