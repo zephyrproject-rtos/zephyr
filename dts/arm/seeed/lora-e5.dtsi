@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2021 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wl/stm32wle5Xc.dtsi>
+#include <st/wl/stm32wle5jcix-pinctrl.dtsi>
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(32)>;
+	hse-bypass;
+};
+
+&clk_lse {
+	clock-frequency = <32768>;
+};

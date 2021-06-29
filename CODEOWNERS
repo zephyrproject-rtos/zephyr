@@ -359,6 +359,7 @@
 /dts/arm64/armv8-r.dtsi                   @povergoing
 /dts/arm64/nxp/                           @JiafeiPan
 /dts/arm/quicklogic/                      @wtatarski @kowalewskijan @kgugala
+/dts/arm/seeed/                           @str4t0m
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
