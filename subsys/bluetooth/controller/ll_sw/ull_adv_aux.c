@@ -245,9 +245,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		sr_pdu->type = PDU_ADV_TYPE_AUX_SCAN_RSP;
 		sr_pdu->len = 0;
 
-		lll_adv_scan_rsp_enqueue(&adv->lll, idx);
-
-		return 0;
+		goto sr_data_set_did_update;
 	}
 
 	/* Update scan response PDU fields. */
@@ -305,6 +303,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	/* Finish PDU */
 	sr_pdu->len = sr_dptr - &sr_pdu->payload[0];
 
+sr_data_set_did_update:
 	/* Trigger DID update */
 	err = ull_adv_aux_hdr_set_clear(adv, 0, 0, NULL, sr_adi, &pri_idx);
 	if (err) {
