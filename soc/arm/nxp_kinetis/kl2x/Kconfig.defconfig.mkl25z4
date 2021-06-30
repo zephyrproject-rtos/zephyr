@@ -41,6 +41,6 @@ config SOC_FLASH_MCUX
 
 config USB_KINETIS
 	default y
-	depends on USB
+	depends on USB_DEVICE_DRIVER
 
 endif # SOC_MKL25Z
