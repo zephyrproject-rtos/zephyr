@@ -44,6 +44,8 @@ Removed APIs in this release
 * Removed support for the deprecated ``GET_ARG1``, ``GET_ARG2`` and ``GET_ARGS_LESS_1`` macros.
 * Removed support for the deprecated Kconfig ``PRINTK64`` option.
 * Removed support for the deprecated ``bt_set_id_addr`` function.
+* Removed support for the Kconfig ``USB`` option. Option ``USB_DEVICE_STACK``
+  is sufficient to enable USB device support.
 
 ============================
 
