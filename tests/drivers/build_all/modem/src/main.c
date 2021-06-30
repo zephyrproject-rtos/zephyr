@@ -27,3 +27,11 @@ void main(void)
 DEVICE_DT_DEFINE(DT_INST(0, vnd_gpio), NULL, NULL, NULL, NULL,
 		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 #endif
+
+#if DT_NODE_EXISTS(DT_INST(0, vnd_serial))
+/* Fake serial device, needed for building drivers that use DEVICE_DT_GET()
+ * to access serial bus.
+ */
+DEVICE_DT_DEFINE(DT_INST(0, vnd_serial), NULL, NULL, NULL, NULL,
+		 POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+#endif
