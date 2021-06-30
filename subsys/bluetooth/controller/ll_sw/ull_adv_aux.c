@@ -48,6 +48,8 @@ static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
 static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			     struct pdu_adv *pdu_scan);
+static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
+			       struct pdu_adv *pdu_scan);
 static void mfy_aux_offset_get(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
@@ -132,6 +134,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 	if (adv->is_enabled) {
 		struct ll_adv_aux_set *aux;
+		struct pdu_adv *pdu;
+		uint8_t tmp_idx;
 
 		aux = HDR_LLL2ULL(adv->lll.aux);
 		if (!aux->is_started) {
@@ -163,6 +167,15 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 			aux->is_started = 1;
 		}
+
+		/* Update primary channel reservation */
+		pdu = lll_adv_data_alloc(&adv->lll, &tmp_idx);
+		err = ull_adv_time_update(adv, pdu, NULL);
+		if (err) {
+			return err;
+		}
+
+		ARG_UNUSED(tmp_idx);
 	}
 
 	lll_adv_data_enqueue(&adv->lll, pri_idx);
@@ -310,6 +323,8 @@ sr_data_set_did_update:
 		return err;
 	}
 
+	/* NOTE: No update to primary channel PDU time reservation  */
+
 	lll_adv_data_enqueue(&adv->lll, pri_idx);
 	lll_adv_scan_rsp_enqueue(&adv->lll, idx);
 
@@ -442,6 +457,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	uint8_t *sec_dptr, *sec_dptr_prev;
 	uint8_t pri_len, sec_len_prev;
 	struct lll_adv_aux *lll_aux;
+	struct ll_adv_aux_set *aux;
 	struct lll_adv *lll;
 	uint8_t is_aux_new;
 	uint8_t *ad_data;
@@ -501,8 +517,6 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* Get the reference to aux instance */
 	lll_aux = lll->aux;
 	if (!lll_aux) {
-		struct ll_adv_aux_set *aux;
-
 		aux = ull_adv_aux_acquire(lll);
 		if (!aux) {
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
@@ -512,6 +526,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 		is_aux_new = 1U;
 	} else {
+		aux = HDR_LLL2ULL(lll_aux);
 		is_aux_new = 0U;
 	}
 
@@ -823,6 +838,18 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
 	}
 
+	/* Update auxiliary channel event time reservation */
+	if (aux->is_started) {
+		struct pdu_adv *pdu_scan;
+		uint8_t err;
+
+		pdu_scan = lll_adv_scan_rsp_peek(lll);
+		err = aux_time_update(aux, sec_pdu, pdu_scan);
+		if (err) {
+			return err;
+		}
+	}
+
 	lll_adv_aux_data_enqueue(lll_aux, sec_idx);
 
 	return 0;
@@ -1077,6 +1104,45 @@ static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 	}
 
 	return time_us;
+}
+
+static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
+			       struct pdu_adv *pdu_scan)
+{
+	uint32_t volatile ret_cb;
+	uint32_t ticks_minus;
+	uint32_t ticks_plus;
+	uint32_t time_ticks;
+	uint16_t time_us;
+	uint32_t ret;
+
+	time_us = aux_time_get(aux, pdu, pdu_scan);
+	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
+	if (aux->ull.ticks_slot > time_ticks) {
+		ticks_minus = aux->ull.ticks_slot - time_ticks;
+		ticks_plus = 0U;
+	} else if (aux->ull.ticks_slot < time_ticks) {
+		ticks_minus = 0U;
+		ticks_plus = time_ticks - aux->ull.ticks_slot;
+	} else {
+		return 0;
+	}
+
+	ret_cb = TICKER_STATUS_BUSY;
+	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
+			    TICKER_USER_ID_THREAD,
+			    (TICKER_ID_ADV_AUX_BASE +
+			     ull_adv_aux_handle_get(aux)),
+			    0, 0, ticks_plus, ticks_minus, 0, 0,
+			    ull_ticker_status_give, (void *)&ret_cb);
+	ret = ull_ticker_status_take(ret, &ret_cb);
+	if (ret != TICKER_STATUS_SUCCESS) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	aux->ull.ticks_slot = time_ticks;
+
+	return 0;
 }
 
 static void mfy_aux_offset_get(void *param)
