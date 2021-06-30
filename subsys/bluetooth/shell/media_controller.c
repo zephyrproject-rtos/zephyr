@@ -67,11 +67,11 @@ static void discover_player_cb(struct media_player *plr, int err)
 static void player_name_cb(struct media_player *plr, int err, char *name)
 {
 	if (err) {
-		shell_error(ctx_shell, "Player name failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Player name failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Player name: %s", name);
+	shell_print(ctx_shell, "Player: %p, Player name: %s", plr, name);
 }
 
 static void icon_id_cb(struct media_player *plr, int err, uint64_t id)
@@ -79,82 +79,82 @@ static void icon_id_cb(struct media_player *plr, int err, uint64_t id)
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Icon ID failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Icon ID failed (%d)", plr, err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Icon Object ID: %s", str);
+	shell_print(ctx_shell, "Player: %p, Icon Object ID: %s", plr, str);
 }
 
 static void icon_url_cb(struct media_player *plr, int err, char *url)
 {
 	if (err) {
-		shell_error(ctx_shell, "Icon URL failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Icon URL failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Icon URL: %s", url);
+	shell_print(ctx_shell, "Player: %p, Icon URL: %s", plr, url);
 }
 
 static void track_changed_cb(struct media_player *plr, int err)
 {
 	if (err) {
-		shell_error(ctx_shell, "Track change failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Track change failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track changed");
+	shell_print(ctx_shell, "Player: %p, Track changed", plr);
 }
 
 static void track_title_cb(struct media_player *plr, int err, char *title)
 {
 	if (err) {
-		shell_error(ctx_shell, "Track title failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Track title failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track title: %s", title);
+	shell_print(ctx_shell, "Player: %p, Track title: %s", plr, title);
 }
 
 static void track_duration_cb(struct media_player *plr, int err, int32_t duration)
 {
 	if (err) {
-		shell_error(ctx_shell, "Track duration failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Track duration failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track duration: %d", duration);
+	shell_print(ctx_shell, "Player: %p, Track duration: %d", plr, duration);
 }
 
 static void track_position_cb(struct media_player *plr, int err, int32_t position)
 {
 	if (err) {
-		shell_error(ctx_shell, "Track position failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Track position failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Track Position: %d", position);
+	shell_print(ctx_shell, "Player: %p, Track Position: %d", plr, position);
 }
 
 static void playback_speed_cb(struct media_player *plr, int err, int8_t speed)
 {
 	if (err) {
-		shell_error(ctx_shell, "Playback speed failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Playback speed failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Playback speed: %d", speed);
+	shell_print(ctx_shell, "Player: %p, Playback speed: %d", plr, speed);
 }
 
 static void seeking_speed_cb(struct media_player *plr, int err, int8_t speed)
 {
 	if (err) {
-		shell_error(ctx_shell, "Seeking speed failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Seeking speed failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Seeking speed: %d", speed);
+	shell_print(ctx_shell, "Player: %p, Seeking speed: %d", plr, speed);
 }
 
 #ifdef CONFIG_BT_OTS
@@ -163,12 +163,12 @@ static void track_segments_id_cb(struct media_player *plr, int err, uint64_t id)
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Track segments ID failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Track segments ID failed (%d)", plr, err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Track Segments Object ID: %s", str);
+	shell_print(ctx_shell, "Player: %p, Track Segments Object ID: %s", plr, str);
 }
 
 static void current_track_id_cb(struct media_player *plr, int err, uint64_t id)
@@ -176,12 +176,12 @@ static void current_track_id_cb(struct media_player *plr, int err, uint64_t id)
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Current track ID failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Current track ID failed (%d)", plr, err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Track Object ID: %s", str);
+	shell_print(ctx_shell, "Player: %p, Current Track Object ID: %s", plr, str);
 }
 
 static void next_track_id_cb(struct media_player *plr, int err, uint64_t id)
@@ -189,15 +189,15 @@ static void next_track_id_cb(struct media_player *plr, int err, uint64_t id)
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Next track ID failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Next track ID failed (%d)", plr, err);
 		return;
 	}
 
 	if (id == MPL_NO_TRACK_ID) {
-		shell_print(ctx_shell, "Next Track Object ID is empty");
+		shell_print(ctx_shell, "Player: %p, Next Track Object ID is empty");
 	} else {
 		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-		shell_print(ctx_shell, "Next Track Object ID: %s", str);
+		shell_print(ctx_shell, "Player: %p, Next Track Object ID: %s", plr, str);
 	}
 }
 
@@ -206,12 +206,12 @@ static void current_group_id_cb(struct media_player *plr, int err, uint64_t id)
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Current group ID failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Current group ID failed (%d)", plr, err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Current Group Object ID: %s", str);
+	shell_print(ctx_shell, "Player: %p, Current Group Object ID: %s", plr, str);
 }
 
 static void parent_group_id_cb(struct media_player *plr, int err, uint64_t id)
@@ -219,66 +219,67 @@ static void parent_group_id_cb(struct media_player *plr, int err, uint64_t id)
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Parent group ID failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Parent group ID failed (%d)", plr, err);
 		return;
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Parent Group Object ID: %s", str);
+	shell_print(ctx_shell, "Player: %p, Parent Group Object ID: %s", plr, str);
 }
 #endif /* CONFIG_BT_OTS */
 
 static void playing_order_cb(struct media_player *plr, int err, uint8_t order)
 {
 	if (err) {
-		shell_error(ctx_shell, "Playing order failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Playing order failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Playing order: %u", order);
+	shell_print(ctx_shell, "Player: %p, Playing order: %u", plr, order);
 }
 
 static void playing_orders_supported_cb(struct media_player *plr, int err, uint16_t orders)
 {
 	if (err) {
-		shell_error(ctx_shell, "Playing orders supported failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Playing orders supported failed (%d)",
+			    plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Playing orders supported: %u", orders);
+	shell_print(ctx_shell, "Player: %p, Playing orders supported: %u", plr, orders);
 	/* TODO: Parse bitmap and output list of playing orders */
 }
 
 static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 {
 	if (err) {
-		shell_error(ctx_shell, "Media state failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Media state failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Media State: %u", state);
+	shell_print(ctx_shell, "Player: %p, Media State: %u", plr, state);
 	/* TODO: Parse state and output state name (e.g. "Playing") */
 }
 
 static void operation_cb(struct media_player *plr, int err, struct mpl_op_ntf_t op_ntf)
 {
 	if (err) {
-		shell_error(ctx_shell, "Operation failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Operation failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Operation: %u, result: %u",
-		    op_ntf.requested_opcode, op_ntf.result_code);
+	shell_print(ctx_shell, "Player: %p, Operation: %u, result: %u",
+		    plr, op_ntf.requested_opcode, op_ntf.result_code);
 }
 
 static void operations_supported_cb(struct media_player *plr, int err, uint32_t operations)
 {
 	if (err) {
-		shell_error(ctx_shell, "Operations supported failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Operations supported failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Operations supported: %u", operations);
+	shell_print(ctx_shell, "Player: %p, Operations supported: %u", plr, operations);
 	/* TODO: Parse bitmap and output list of operations */
 }
 
@@ -286,12 +287,11 @@ static void operations_supported_cb(struct media_player *plr, int err, uint32_t 
 static void search_cb(struct media_player *plr, int err, uint8_t result_code)
 {
 	if (err) {
-		shell_error(ctx_shell, "Search failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Search failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Search result code: %u",
-		    result_code);
+	shell_print(ctx_shell, "Player: %p, Search result code: %u", plr, result_code);
 }
 
 static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
@@ -299,27 +299,27 @@ static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
 	char str[BT_OTS_OBJ_ID_STR_LEN];
 
 	if (err) {
-		shell_error(ctx_shell, "Search results ID failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Search results ID failed (%d)", plr, err);
 		return;
 	}
 
 	if (id == 0) {
-		shell_print(ctx_shell, "Search result not avilable");
+		shell_print(ctx_shell, "Player: %p, Search result not avilable");
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
-	shell_print(ctx_shell, "Search Results Object ID: %s", str);
+	shell_print(ctx_shell, "Player: %p, Search Results Object ID: %s", plr, str);
 }
 #endif /* CONFIG_BT_OTS */
 
 static void content_ctrl_id_cb(struct media_player *plr, int err, uint8_t ccid)
 {
 	if (err) {
-		shell_error(ctx_shell, "Content control ID failed (%d)", err);
+		shell_error(ctx_shell, "Player: %p, Content control ID failed (%d)", plr, err);
 		return;
 	}
 
-	shell_print(ctx_shell, "Content Control ID: %u", ccid);
+	shell_print(ctx_shell, "Player: %p, Content Control ID: %u", plr, ccid);
 }
 
 int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
