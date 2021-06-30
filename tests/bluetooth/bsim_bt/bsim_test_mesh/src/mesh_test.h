@@ -50,6 +50,15 @@
 		}                                                              \
 	} while (0)
 
+#define ASSERT_TRUE(cond, ...)                                                 \
+	do {                                                                   \
+		if (!cond) {                                                   \
+			bst_result = Failed;                                   \
+			bs_trace_error_time_line(                              \
+				#cond "is false.", ##__VA_ARGS__);             \
+		}                                                              \
+	} while (0)
+
 struct bt_mesh_test_cfg {
 	uint16_t addr;
 	uint8_t dev_key[16];

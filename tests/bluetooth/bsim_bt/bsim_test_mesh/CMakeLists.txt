@@ -18,6 +18,7 @@ target_sources(app PRIVATE
 	src/test_transport.c
 	src/test_friendship.c
 	src/test_provision.c
+	src/test_beacon.c
 )
 
 zephyr_include_directories(
