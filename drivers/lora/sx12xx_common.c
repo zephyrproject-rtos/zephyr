@@ -18,7 +18,7 @@
 LOG_MODULE_REGISTER(sx12xx_common, CONFIG_LORA_LOG_LEVEL);
 
 static struct sx12xx_data {
-	struct k_sem data_sem;
+	struct k_poll_signal *operation_done;
 	RadioEvents_t events;
 	uint8_t *rx_buf;
 	uint8_t rx_len;
@@ -26,7 +26,7 @@ static struct sx12xx_data {
 	int16_t rssi;
 } dev_data;
 
-int __sx12xx_configure_pin(const struct device * *dev, const char *controller,
+int __sx12xx_configure_pin(const struct device **dev, const char *controller,
 			   gpio_pin_t pin, gpio_flags_t flags)
 {
 	int err;
@@ -57,7 +57,9 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 	dev_data.rssi = rssi;
 	dev_data.snr = snr;
 
-	k_sem_give(&dev_data.data_sem);
+	if (dev_data.operation_done) {
+		k_poll_signal_raise(dev_data.operation_done, 0);
+	}
 }
 
 static void sx12xx_ev_tx_done(void)
@@ -78,15 +80,24 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		     k_timeout_t timeout, int16_t *rssi, int8_t *snr)
 {
+	struct k_poll_signal done = K_POLL_SIGNAL_INITIALIZER(done);
+	struct k_poll_event evt = K_POLL_EVENT_INITIALIZER(
+		K_POLL_TYPE_SIGNAL,
+		K_POLL_MODE_NOTIFY_ONLY,
+		&done);
 	int ret;
+
+	/* Store operation signal */
+	dev_data.operation_done = &done;
 
 	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
 	Radio.Rx(0);
 
-	ret = k_sem_take(&dev_data.data_sem, timeout);
+	ret = k_poll(&evt, 1, timeout);
 	if (ret < 0) {
 		LOG_INF("Receive timeout");
 		/* Manually transition to sleep mode on timeout */
+		dev_data.operation_done = NULL;
 		Radio.Sleep();
 		return ret;
 	}
@@ -145,8 +156,6 @@ int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 
 int sx12xx_init(const struct device *dev)
 {
-	k_sem_init(&dev_data.data_sem, 0, K_SEM_MAX_LIMIT);
-
 	dev_data.events.TxDone = sx12xx_ev_tx_done;
 	dev_data.events.RxDone = sx12xx_ev_rx_done;
 	Radio.Init(&dev_data.events);
