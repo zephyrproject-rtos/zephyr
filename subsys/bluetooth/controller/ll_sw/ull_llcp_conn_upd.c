@@ -80,6 +80,7 @@ enum {
 	RP_CU_STATE_WAIT_RX_CONN_PARAM_REQ,
 	RP_CU_STATE_WAIT_NTF_CONN_PARAM_REQ,
 	RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY,
+	RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY_CONTINUE,
 	RP_CU_STATE_WAIT_TX_REJECT_EXT_IND,
 	RP_CU_STATE_WAIT_TX_CONN_PARAM_RSP,
 	RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND,
@@ -694,6 +695,23 @@ static void rp_cu_state_wait_conn_param_req_reply(struct ll_conn *conn, struct p
 {
 	switch (evt) {
 	case RP_CU_EVT_CONN_PARAM_REQ_REPLY:
+		/* Continue procedure in next prepare run */
+		ctx->state = RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY_CONTINUE;
+		break;
+	case RP_CU_EVT_CONN_PARAM_REQ_NEG_REPLY:
+		/* Send reject in next prepare run */
+		ctx->state = RP_CU_STATE_WAIT_TX_REJECT_EXT_IND;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_cu_state_wait_conn_param_req_reply_continue(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
+{
+	switch (evt) {
+	case RP_CU_EVT_RUN:
 		if (conn->lll.role == BT_HCI_ROLE_MASTER) {
 			rp_cu_send_conn_update_ind(conn, ctx, evt, param);
 		} else if (conn->lll.role == BT_HCI_ROLE_SLAVE) {
@@ -702,9 +720,6 @@ static void rp_cu_state_wait_conn_param_req_reply(struct ll_conn *conn, struct p
 			/* Unknown role */
 			LL_ASSERT(0);
 		}
-		break;
-	case RP_CU_EVT_CONN_PARAM_REQ_NEG_REPLY:
-		rp_cu_send_reject_ext_ind(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -836,6 +851,9 @@ static void rp_cu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 		break;
 	case RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY:
 		rp_cu_state_wait_conn_param_req_reply(conn, ctx, evt, param);
+		break;
+	case RP_CU_STATE_WAIT_CONN_PARAM_REQ_REPLY_CONTINUE:
+		rp_cu_state_wait_conn_param_req_reply_continue(conn, ctx, evt, param);
 		break;
 	case RP_CU_STATE_WAIT_TX_REJECT_EXT_IND:
 		rp_cu_state_wait_tx_reject_ext_ind(conn, ctx, evt, param);
