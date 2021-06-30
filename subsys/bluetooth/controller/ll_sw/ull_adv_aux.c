@@ -46,6 +46,8 @@ static int init_reset(void);
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
+static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
+			     struct pdu_adv *pdu_scan);
 static void mfy_aux_offset_get(void *param);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
@@ -847,6 +849,12 @@ void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s)
 }
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+inline uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux)
+{
+	return mem_index_get(aux, ll_adv_aux_pool,
+			     sizeof(struct ll_adv_aux_set));
+}
+
 uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 {
 	return ull_adv_aux_handle_get((void *)lll->hdr.parent);
@@ -856,18 +864,17 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
 {
 	uint32_t ticks_slot_overhead;
 	struct lll_adv_aux *lll_aux;
-	struct pdu_adv *sec_pdu;
+	struct pdu_adv *pdu_scan;
+	struct pdu_adv *pdu;
 	struct lll_adv *lll;
-	uint32_t adv_size;
-	uint32_t slot_us;
+	uint32_t time_us;
 
 	/* Calculate the PDU Tx Time and hence the radio event length */
 	lll_aux = &aux->lll;
-	sec_pdu = lll_adv_aux_data_peek(lll_aux);
 	lll = lll_aux->adv;
-	adv_size = PDU_OVERHEAD_SIZE(lll->phy_s) + sec_pdu->len;
-	slot_us = BYTES2US(adv_size, lll->phy_s) + EVENT_OVERHEAD_START_US +
-		  EVENT_OVERHEAD_END_US;
+	pdu = lll_adv_aux_data_peek(lll_aux);
+	pdu_scan = lll_adv_scan_rsp_peek(lll);
+	time_us = aux_time_get(aux, pdu, pdu_scan);
 
 	/* TODO: active_to_start feature port */
 	aux->ull.ticks_active_to_start = 0;
@@ -875,7 +882,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	aux->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = MAX(aux->ull.ticks_active_to_start,
@@ -1034,10 +1041,43 @@ static inline void aux_release(struct ll_adv_aux_set *aux)
 	mem_release(aux, &adv_aux_free);
 }
 
-inline uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux)
+static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
+			     struct pdu_adv *pdu_scan)
 {
-	return mem_index_get(aux, ll_adv_aux_pool,
-			     sizeof(struct ll_adv_aux_set));
+	struct lll_adv_aux *lll_aux;
+	struct lll_adv *lll;
+	uint32_t adv_size;
+	uint16_t time_us;
+
+	lll_aux = &aux->lll;
+	lll = lll_aux->adv;
+	adv_size = PDU_OVERHEAD_SIZE(lll->phy_s) + pdu->len;
+	time_us = BYTES2US(adv_size, lll->phy_s) + EVENT_OVERHEAD_START_US +
+		  EVENT_OVERHEAD_END_US;
+
+	if (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) {
+		const uint16_t conn_req_us =
+			BYTES2US((PDU_OVERHEAD_SIZE(lll->phy_s) +
+				 INITA_SIZE + ADVA_SIZE + LLDATA_SIZE),
+				 lll->phy_s);
+		const uint8_t conn_rsp_us =
+			BYTES2US((PDU_OVERHEAD_SIZE(lll->phy_s) +
+				  PDU_AC_EXT_HEADER_SIZE_MIN +
+				  ADVA_SIZE + TARGETA_SIZE), lll->phy_s);
+
+		time_us += EVENT_IFS_MAX_US * 2 + conn_req_us + conn_rsp_us;
+	} else if (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) {
+		const uint8_t scan_req_us  =
+			BYTES2US((PDU_OVERHEAD_SIZE(lll->phy_s) +
+				 SCANA_SIZE + ADVA_SIZE), lll->phy_s);
+		const uint16_t scan_rsp_us =
+			BYTES2US((PDU_OVERHEAD_SIZE(lll->phy_s) +
+				 ADVA_SIZE + pdu_scan->len), lll->phy_s);
+
+		time_us += EVENT_IFS_MAX_US * 2 + scan_req_us + scan_rsp_us;
+	}
+
+	return time_us;
 }
 
 static void mfy_aux_offset_get(void *param)
