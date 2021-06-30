@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+# Properties for Power Management (PM)
+
+properties:
+    wakeup-source:
+      required: false
+      type: boolean
+      description: |
+        Property to identify that a device can be used as wake up source.
+
+        When this property is provided a specific flag is set into the
+        device that tells the system that the device is capable of
+        wake up the system.
+
+        Wake up capable devices are disabled (interruptions will not wake up
+        the system) by default but they can be enabled at runtime if necessary.

@@ -226,9 +226,11 @@ def load_base_binding():
     # nodes from node-specific properties.
 
     base_yaml = ZEPHYR_BASE / 'dts' / 'bindings' / 'base' / 'base.yaml'
+    base_includes = {"pm.yaml": os.fspath(ZEPHYR_BASE / 'dts' / 'bindings' / 'base'/ 'pm.yaml')}
+
     if not base_yaml.is_file():
         sys.exit(f'Expected to find base.yaml at {base_yaml}')
-    return edtlib.Binding(os.fspath(base_yaml), {}, require_compatible=False,
+    return edtlib.Binding(os.fspath(base_yaml), base_includes, require_compatible=False,
                           require_description=False)
 
 def dump_content(bindings, base_binding, vnd_lookup, out_dir):
