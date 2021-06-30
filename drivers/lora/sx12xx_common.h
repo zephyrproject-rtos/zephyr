@@ -28,6 +28,9 @@ int __sx12xx_configure_pin(const struct device * *dev, const char *controller,
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len);
 
+int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
+			   uint32_t data_len, struct k_poll_signal *async);
+
 int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		     k_timeout_t timeout, int16_t *rssi, int8_t *snr);
 
