@@ -1,0 +1,17 @@
+sample:
+  description: PSA Custom Service sample
+  name: PSA Custom Service
+tests:
+    sample.psa_custom_service:
+        tags: introduction tfm psa custom service
+        platform_allow: mps2_an521_nonsecure lpcxpresso55s69_ns nrf5340dk_nrf5340_cpuappns
+          nrf9160dk_nrf9160ns nucleo_l552ze_q_ns v2m_musca_s1_nonsecure stm32l562e_dk_ns
+          bl5340_dvk_cpuappns
+        harness: console
+        harness_config:
+          type: multi_line
+          regex:
+            - "app: Hashing the message"
+            - "\\[Example partition\\] Calculating SHA-256 hash!"
+            - "\\[Example partition\\] Done!"
+            - "app: Size of SHA-256 hash is 32 bytes"
