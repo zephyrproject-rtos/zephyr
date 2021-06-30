@@ -12,16 +12,6 @@ config BOARD
 config I2C
 	default y
 
-if USB
-
-config USB_NRFX
-	default y
-
-config USB_DEVICE_STACK
-	default y
-
-endif # USB
-
 config BT_CTLR
 	default y
 	depends on BT
