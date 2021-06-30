@@ -1,0 +1,35 @@
+# Kconfig - PSE HPET timer driver configuration options
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config PSE_HPET_TIMER
+	bool "PSE HPET timer"
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	select TICKLESS_KERNEL
+	select TICKLESS_CAPABLE
+	help
+	  This option selects High Precision Event Timer (HPET) as a
+	  system timer.
+
+if PSE_HPET_TIMER
+config HPET_TIMER_BASE_ADDRESS
+	hex "HPET Base Address"
+	default 0x40a00000
+	help
+	  This options specifies the base address of the HPET timer device.
+
+config HPET_TIMER_IRQ
+	int "HPET Timer IRQ"
+	default 20
+	help
+	  This option specifies the IRQ used by the HPET timer.
+
+config HPET_TIMER_IRQ_PRIORITY
+	int "HPET Timer IRQ Priority"
+	default 4
+	help
+	  This option specifies the IRQ priority used by the HPET timer.
+
+endif #PSE_HPET_TIMER

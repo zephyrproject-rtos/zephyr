@@ -398,4 +398,5 @@ config MCUX_OS_TIMER
 	  This module implements a kernel device driver for the NXP OS
 	  event timer and provides the standard "system clock driver" interfaces.
 
+source "drivers/timer/Kconfig.pse"
 endmenu
