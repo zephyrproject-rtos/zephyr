@@ -466,7 +466,7 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
 	uint16_t latency_upd;
 	uint16_t instant_latency;
 	uint16_t event_counter;
-	uint16_t ticks_at_expire;
+	uint32_t ticks_at_expire;
 
 	lll = &conn->lll;
 
