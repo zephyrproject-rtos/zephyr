@@ -124,7 +124,7 @@ html_theme_options = {
 }
 html_title = "Zephyr Project Documentation"
 html_logo = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "logo.svg")
-html_favicon = str(ZEPHYR_BASE / "doc" / "images" / "zp_favicon.png")
+html_favicon = str(ZEPHYR_BASE / "doc" / "_static" / "images" / "favicon.png")
 html_static_path = [str(ZEPHYR_BASE / "doc" / "_static")]
 html_last_updated_fmt = "%b %d, %Y"
 html_domain_indices = False
