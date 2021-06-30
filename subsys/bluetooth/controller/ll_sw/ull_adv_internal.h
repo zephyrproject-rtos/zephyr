@@ -150,21 +150,20 @@ void ull_adv_aux_ptr_fill(uint8_t **dptr, uint8_t phy_s);
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 
+/* helper function to release periodic advertising instance */
+void ull_adv_sync_release(struct ll_adv_sync_set *sync);
+
+/* helper function to update periodic advertising event time reservation */
+uint8_t ull_adv_sync_time_update(struct ll_adv_sync_set *sync);
+
 /* helper function to start periodic advertising */
 uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
 			    uint32_t ticks_anchor);
 
-/* helper function to release periodic advertising instance */
-void ull_adv_sync_release(struct ll_adv_sync_set *sync);
-
 /* helper function to fill initial value of sync_info structure */
 void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
 			    struct pdu_adv_sync_info *si);
-
-/* helper function to update periodic advertising event length */
-void ull_adv_sync_update(struct ll_adv_sync_set *sync, uint32_t slot_plus_us,
-			 uint32_t slot_minus_us);
 
 /* helper function to allocate new PDU data for AUX_SYNC_IND and return
  * previous and new PDU for further processing.
