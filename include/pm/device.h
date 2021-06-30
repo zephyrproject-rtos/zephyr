@@ -100,6 +100,18 @@ struct pm_device {
 #define PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT 0
 
 /**
+ * Bit position in device_pm::atomic_flags that records whether or not
+ * the device is wakeup capable.
+ */
+#define PM_DEVICE_ATOMIC_FLAGS_WS_CAPABLE_BIT 1U
+
+/**
+ * Bit position in device_pm::atomic_flags that records whether or not
+ * the device is being used as a wakeup source.
+ */
+#define PM_DEVICE_ATOMIC_FLAGS_WS_ENABLED_BIT 2U
+
+/**
  * @brief Get name of device PM state
  *
  * @param state State id which name should be returned
@@ -142,6 +154,42 @@ int pm_device_state_get(const struct device *dev,
 
 /** Alias for legacy use of device_pm_control_nop */
 #define device_pm_control_nop __DEPRECATED_MACRO NULL
+
+/**
+ * @brief Enable a power management wakeup source
+ *
+ * Enable a wakeup source. This will keep the current device active when the
+ * system is suspended, allowing it to be used to wake up the system.
+ *
+ * @param dev device object to enable.
+ * @param enable @c true to enable or @c false to disable
+ *
+ * @return @c true if the wakeup source was successfully enabled,
+ *         @c false otherwise.
+ */
+bool pm_device_wakeup_enable(struct device *dev, bool enable);
+
+/**
+ * @brief Check if a power management wakeup source is enabled
+ *
+ * Checks if a wake up source is enabled.
+ *
+ * @param dev device object to check.
+ *
+ * @return @c true if the wakeup source is enabled,
+ *         @c false otherwise.
+ */
+bool pm_device_wakeup_is_enabled(const struct device *dev);
+
+/**
+ * @brief Check if a device is wake up capable
+ *
+ * @param dev device object check.
+ *
+ * @return @c true if the device is wake up capable,
+ *         @c false otherwise.
+ */
+bool pm_device_wakeup_capable(const struct device *dev);
 
 /** @} */
 
