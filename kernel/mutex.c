@@ -230,7 +230,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	 * If we are the owner and count is greater than 1, then decrement
 	 * the count and return and keep current thread as the owner.
 	 */
-	if (mutex->lock_count - 1U != 0U) {
+	if (mutex->lock_count > 1U) {
 		mutex->lock_count--;
 		goto k_mutex_unlock_return;
 	}
