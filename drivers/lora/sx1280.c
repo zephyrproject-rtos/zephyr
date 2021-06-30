@@ -164,6 +164,8 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1272) +
 
 // extern DioIrqHandler *DioIrq[];
 
+bool mode_rx = false;
+
 struct sx1280_dio {
 	const char *port;
 	gpio_pin_t pin;
@@ -835,17 +837,71 @@ uint16_t sx1280_readIrqStatus()
 void dio0_cb_func(const struct device *dev, struct gpio_callback *cb,
 		    uint32_t pins)
 {
+	// uint16_t irqStatus;
+	// uint8_t buffer[2];
+	// uint8_t _RXPacketL;
+
+	// if (mode_rx) {
+
+	// } else {
+	// 	sx1280_SetStandby(MODE_STDBY_RC);                                                   //ensure to stop further packet reception
+
+	// 	irqStatus = sx1280_readIrqStatus();
+
+	// 	if ( (irqStatus & IRQ_HEADER_ERROR) | (irqStatus & IRQ_CRC_ERROR) | (irqStatus & IRQ_RX_TX_TIMEOUT ) ) //check if any of the preceding IRQs is set
+	// 	{
+	// 		printk("rx error");
+	// 		return 0;                          //packet is errored somewhere so return 0
+	// 	}
+
+	// 	sx1280_ReadCommand(RADIO_GET_RXBUFFERSTATUS, buffer, 2);
+	// 	_RXPacketL = buffer[0];
+
+	// 	if (_RXPacketL > size)               //check passed buffer is big enough for packet
+	// 	{
+	// 	_RXPacketL = size;                 //truncate packet if not enough space
+	// 	}
+
+	// 	RXstart = buffer[1];
+
+	// 	RXend = RXstart + _RXPacketL;
+
+	// 	checkBusy();
+
+	// 	#ifdef USE_SPI_TRANSACTION           //to use SPI_TRANSACTION enable define at beginning of CPP file
+	// 	SPI.beginTransaction(SPISettings(LTspeedMaximum, LTdataOrder, LTdataMode));
+	// 	#endif
+
+	// 	digitalWrite(_NSS, LOW);             //start the burst read
+	// 	SPI.transfer(RADIO_READ_BUFFER);
+	// 	SPI.transfer(RXstart);
+	// 	SPI.transfer(0xFF);
+
+	// 	for (index = RXstart; index < RXend; index++)
+	// 	{
+	// 	regdata = SPI.transfer(0);
+	// 	rxbuffer[index] = regdata;
+	// 	}
+
+	// 	digitalWrite(_NSS, HIGH);
+
+	// 	#ifdef USE_SPI_TRANSACTION
+	// 	SPI.endTransaction();
+	// 	#endif
+
+	// 	return _RXPacketL;
+	// }
 	// printk("DIO interrupted at %" PRIu32 "\n", k_cycle_get_32());
 	if (sx1280_readIrqStatus() & IRQ_RX_TX_TIMEOUT )                        //check for timeout
-		{
-			printk("timeout\n");
-			return;
-		}
-		else
-		{
-			printk("no timeout\n");
-			return;
-		}
+	{
+		printk("timeout\n");
+		return;
+	}
+	else
+	{
+		printk("no timeout\n");
+		return;
+	}
 }
 
 void sx1280_IoIrqInit()
@@ -1587,8 +1643,7 @@ int sx1280_lora_config(const struct device *dev,
         sx1280_SetPacketParams( &PacketParams );
 	sx1280_SetDioIrqParams(IRQ_RADIO_ALL, (IRQ_TX_DONE + IRQ_RX_TX_TIMEOUT), 0, 0);
 
-	// printk("config9 %u\n", sx1280_getFreqInt());
-	// printk("config9 %u\n", sx1280_getFreqInt());
+	printk("frequency: %u\n", sx1280_getFreqInt());
         // only used in GFSK, FLRC (4 bytes max) and BLE mode
         // SetSyncWord( 1, ( uint8_t[] ){ 0xDD, 0xA0, 0x96, 0x69, 0xDD } ); // TODO: non LORA
         // only used in GFSK, FLRC
@@ -1655,19 +1710,82 @@ void sx1280_GetRxBufferStatus( uint8_t *rxPayloadLength, uint8_t *rxStartBufferP
     *rxStartBufferPointer = status[1];
 }
 
+
+void sx1280_setRx(TickTime_t timeout)
+{
+	sx1280_ClearIrqStatus( IRQ_RADIO_ALL );
+
+	uint8_t buf[3];
+	buf[0] = timeout.PeriodBase;
+	buf[1] = ( uint8_t )( ( timeout.PeriodBaseCount >> 8 ) & 0x00FF );
+	buf[2] = ( uint8_t )( timeout.PeriodBaseCount & 0x00FF );
+	sx1280_WriteCommand( RADIO_SET_RX, buf, 3 );
+}
+
 int sx1280_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		     k_timeout_t timeout, int16_t *rssi, int8_t *snr)
 {
+	uint8_t offset;
+	uint16_t irqStatus;
+	uint8_t buffer[2];
+	uint8_t _RXPacketL;
+	uint8_t index, RXstart, RXend;
 
-   uint8_t offset;
+	sx1280_SetDioIrqParams(IRQ_RADIO_ALL, (IRQ_RX_DONE + IRQ_RX_TX_TIMEOUT), 0, 0);
+	sx1280_setRx((TickTime_t) { .PeriodBase = RADIO_TICK_SIZE_1000_US, .PeriodBaseCount = 10000 });
 
-    sx1280_GetRxBufferStatus( &size, &offset );
+	while (!gpio_pin_get(dev_data.dio_dev[0], sx1280_dios[0].pin)) {
+		printk("wainting for DIO1\n");
+		k_sleep(K_MSEC(50));
+	}                                         //Wait for DIO1 to go high
+
+	sx1280_SetStandby(MODE_STDBY_RC);                                                   //ensure to stop further packet reception
+
+	irqStatus = sx1280_readIrqStatus();
+
+	if ( (irqStatus & IRQ_HEADER_ERROR) | (irqStatus & IRQ_CRC_ERROR) | (irqStatus & IRQ_RX_TX_TIMEOUT ) ) //check if any of the preceding IRQs is set
+	{
+		printk("rx error");
+		return 0;                          //packet is errored somewhere so return 0
+	}
+
+	sx1280_ReadCommand(RADIO_GET_RXBUFFERSTATUS, buffer, 2);
+	_RXPacketL = buffer[0];
+
+	if (_RXPacketL > size)               //check passed buffer is big enough for packet
+	{
+	_RXPacketL = size;                 //truncate packet if not enough space
+	}
+
+	RXstart = buffer[1];
+
+	RXend = RXstart + _RXPacketL;
+
+	// checkBusy();
+
+	// digitalWrite(_NSS, LOW);             //start the burst read
+	// SPI.transfer(RADIO_READ_BUFFER);
+	// SPI.transfer(RXstart);
+	// SPI.transfer(0xFF);
+
+	// for (index = RXstart; index < RXend; index++)
+	// {
+	// regdata = SPI.transfer(0);
+	// rxbuffer[index] = regdata;
+	// }
+
+	// digitalWrite(_NSS, HIGH);
+
+
+
+
+	// sx1280_GetRxBufferStatus( &size, &offset );
 //     if( size > maxSize )
 //     {
 //         return 1;
 //     }
-    sx1280_ReadBuffer( offset, data, size );
-    return 0;
+	sx1280_ReadBuffer( RXstart, data, size );
+	return _RXPacketL;
 }
 	// int ret;
 
