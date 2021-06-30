@@ -11,11 +11,13 @@ extern struct bst_test_list *
 test_transport_install(struct bst_test_list *tests);
 struct bst_test_list *test_friendship_install(struct bst_test_list *tests);
 struct bst_test_list *test_provision_install(struct bst_test_list *tests);
+struct bst_test_list *test_beacon_install(struct bst_test_list *tests);
 
 bst_test_install_t test_installers[] = {
 	test_transport_install,
 	test_friendship_install,
 	test_provision_install,
+	test_beacon_install,
 	NULL
 };
 
