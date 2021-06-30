@@ -25,6 +25,11 @@
 #define __MPU_PRESENT  CONFIG_CPU_HAS_ARM_MPU
 
 #include "reg/mec172x_regs.h"
+#include "reg/mec_ecia.h"
+#include "reg/mec_ecs.h"
+#include "reg/mec_gpio.h"
+#include "reg/mec_pcr.h"
+#include "reg/mec_vbat.h"
 
 #include <sys/util.h>
 
