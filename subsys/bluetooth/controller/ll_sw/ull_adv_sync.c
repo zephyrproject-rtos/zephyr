@@ -50,6 +50,8 @@ static inline void sync_release(struct ll_adv_sync_set *sync);
 static inline uint16_t sync_handle_get(struct ll_adv_sync_set *sync);
 static inline uint8_t sync_remove(struct ll_adv_sync_set *sync,
 				  struct ll_adv_set *adv, uint8_t enable);
+static uint16_t sync_time_get(struct ll_adv_sync_set *sync,
+			      struct pdu_adv *pdu);
 
 static void mfy_sync_offset_get(void *param);
 static inline struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
@@ -643,18 +645,13 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 			    struct ll_adv_sync_set *sync,
 			    uint32_t ticks_anchor)
 {
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	struct lll_df_adv_cfg *df_cfg;
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 	struct lll_adv_sync *lll_sync;
 	uint32_t ticks_slot_overhead;
 	uint32_t volatile ret_cb;
 	struct pdu_adv *ter_pdu;
 	uint32_t interval_us;
-	struct lll_adv *lll;
 	uint8_t sync_handle;
-	uint32_t adv_size;
-	uint32_t slot_us;
+	uint32_t time_us;
 	uint32_t ret;
 
 	ull_hdr_init(&sync->ull);
@@ -662,17 +659,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 	/* Calculate the PDU Tx Time and hence the radio event length */
 	lll_sync = &sync->lll;
 	ter_pdu = lll_adv_sync_data_peek(lll_sync, NULL);
-	lll = lll_sync->adv; /* or use &adv->lll, of adv parameter passed */
-	adv_size = PDU_OVERHEAD_SIZE(lll->phy_s) + ter_pdu->len;
-	slot_us = BYTES2US(adv_size, lll->phy_s) + EVENT_OVERHEAD_START_US +
-		  EVENT_OVERHEAD_END_US;
-
-#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
-	df_cfg = adv->df_cfg;
-	if (df_cfg && df_cfg->is_enabled) {
-		slot_us += CTE_LEN_US(df_cfg->cte_length);
-	}
-#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+	time_us = sync_time_get(sync, ter_pdu);
 
 	/* TODO: active_to_start feature port */
 	sync->ull.ticks_active_to_start = 0;
@@ -680,7 +667,7 @@ uint32_t ull_adv_sync_start(struct ll_adv_set *adv,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	sync->ull.ticks_preempt_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+	sync->ull.ticks_slot = HAL_TICKER_US_TO_TICKS(time_us);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = MAX(sync->ull.ticks_active_to_start,
@@ -838,6 +825,32 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 	*ter_pdu_new = pdu_new;
 
 	return 0;
+}
+
+static uint16_t sync_time_get(struct ll_adv_sync_set *sync,
+			      struct pdu_adv *pdu)
+{
+	struct lll_adv_sync *lll_sync;
+	struct lll_adv *lll;
+	uint32_t adv_size;
+	uint32_t time_us;
+
+	lll_sync = &sync->lll;
+	lll = lll_sync->adv; /* or use &adv->lll, of adv parameter passed */
+	adv_size = PDU_OVERHEAD_SIZE(lll->phy_s) + pdu->len;
+	time_us = BYTES2US(adv_size, lll->phy_s) + EVENT_OVERHEAD_START_US +
+		  EVENT_OVERHEAD_END_US;
+
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	struct ll_adv_set *adv = HDR_LLL2ULL(lll);
+	struct lll_df_adv_cfg *df_cfg = adv->df_cfg;
+
+	if (df_cfg && df_cfg->is_enabled) {
+		time_us += CTE_LEN_US(df_cfg->cte_length);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+
+	return time_us;
 }
 
 /* @brief Set or clear fields in extended advertising header and store
