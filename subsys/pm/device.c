@@ -206,3 +206,35 @@ void pm_device_busy_clear(const struct device *dev)
 {
 	atomic_clear_bit(&dev->pm->flags, PM_DEVICE_FLAG_BUSY);
 }
+
+bool pm_device_wakeup_enable(struct device *dev, bool enable)
+{
+	atomic_val_t flags, new_flags;
+
+	flags =	 atomic_get(&dev->pm->flags);
+
+	if ((flags & BIT(PM_DEVICE_FLAGS_WS_CAPABLE)) == 0U) {
+		return false;
+	}
+
+	if (enable) {
+		new_flags = flags |
+			BIT(PM_DEVICE_FLAGS_WS_ENABLED);
+	} else {
+		new_flags = flags & ~BIT(PM_DEVICE_FLAGS_WS_ENABLED);
+	}
+
+	return atomic_cas(&dev->pm->flags, flags, new_flags);
+}
+
+bool pm_device_wakeup_is_enabled(const struct device *dev)
+{
+	return atomic_test_bit(&dev->pm->flags,
+			       PM_DEVICE_FLAGS_WS_ENABLED);
+}
+
+bool pm_device_wakeup_is_capable(const struct device *dev)
+{
+	return atomic_test_bit(&dev->pm->flags,
+			       PM_DEVICE_FLAGS_WS_CAPABLE);
+}
