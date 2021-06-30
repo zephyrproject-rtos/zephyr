@@ -130,7 +130,7 @@ endif # CODE_FLEXSPI2
 
 config USB_DC_NXP_EHCI
 	default y
-	depends on USB
+	depends on USB_DEVICE_DRIVER
 
 config VIDEO_MCUX_CSI
 	default y if HAS_MCUX_CSI

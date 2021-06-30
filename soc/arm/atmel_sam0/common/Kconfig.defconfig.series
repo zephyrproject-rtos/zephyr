@@ -39,16 +39,16 @@ config UART_SAM0
 	default SERIAL
 
 config USB_DC_SAM0
-	default USB
+	default USB_DEVICE_DRIVER
 
 config WDT_SAM0
 	default WATCHDOG
 
-if USB
+if USB_DEVICE_DRIVER
 
 config HEAP_MEM_POOL_SIZE
 	default 1024
 
-endif # USB
+endif # USB_DEVICE_DRIVER
 
 endif # SOC_FAMILY_SAM0
