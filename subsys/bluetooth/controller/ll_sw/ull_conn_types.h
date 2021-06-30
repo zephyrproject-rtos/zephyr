@@ -453,6 +453,9 @@ struct ll_conn {
 #endif /* CONFIG_BT_CENTRAL */
 	};
 
+	/* Cancel the prepare in the instant a Connection Update takes place */
+	uint8_t cancel_prepare:1;
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Pause Rx data PDU's */
 	uint8_t pause_rx_data:1;
