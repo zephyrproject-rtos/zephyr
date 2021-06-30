@@ -128,6 +128,7 @@ def get_doxygen_option(doxyfile: str, option: str) -> List[str]:
 def process_doxyfile(
     doxyfile: str,
     outdir: Path,
+    silent: bool,
     fmt: bool = False,
     fmt_pattern: Optional[str] = None,
     fmt_vars: Optional[Dict[str, str]] = None,
@@ -135,12 +136,13 @@ def process_doxyfile(
     """Process Doxyfile.
 
     Notes:
-        OUTPUT_DIRECTORY and WARN_FORMAT are overridden to satisfy extension
-        operation needs.
+        OUTPUT_DIRECTORY, WARN_FORMAT and QUIET are overridden to satisfy
+        extension operation needs.
 
     Args:
         doxyfile: Path to the Doxyfile.
         outdir: Output directory of the Doxygen build.
+        silent: If Doxygen should be run in quiet mode or not.
         fmt: If Doxyfile should be formatted.
         fmt_pattern: Format pattern.
         fmt_vars: Format variables.
@@ -162,6 +164,13 @@ def process_doxyfile(
     content = re.sub(
         r"^\s*WARN_FORMAT\s*=.*$",
         'WARN_FORMAT="$file:$line: $text"',
+        content,
+        flags=re.MULTILINE,
+    )
+
+    content = re.sub(
+        r"^\s*QUIET\s*=.*$",
+        "QUIET=" + "YES" if silent else "NO",
         content,
         flags=re.MULTILINE,
     )
@@ -336,6 +345,7 @@ def doxygen_build(app: Sphinx) -> None:
     doxyfile = process_doxyfile(
         app.config.doxyrunner_doxyfile,
         tmp_outdir,
+        app.config.doxyrunner_silent,
         app.config.doxyrunner_fmt,
         app.config.doxyrunner_fmt_pattern,
         app.config.doxyrunner_fmt_vars,
@@ -367,7 +377,7 @@ def setup(app: Sphinx) -> Dict[str, Any]:
     app.add_config_value("doxyrunner_fmt", False, "env")
     app.add_config_value("doxyrunner_fmt_vars", {}, "env")
     app.add_config_value("doxyrunner_fmt_pattern", "@{}@", "env")
-    app.add_config_value("doxyrunner_silent", False, "")
+    app.add_config_value("doxyrunner_silent", True, "")
 
     app.connect("builder-inited", doxygen_build)
 
