@@ -44,6 +44,10 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 					struct pdu_adv *pdu);
 
+/* Helper to update primary channel advertising event time reservation */
+uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
+			    struct pdu_adv *pdu_scan);
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 
 /* Below are BT Spec v5.2, Vol 6, Part B Section 2.3.4 Table 2.12 defined */
