@@ -373,6 +373,56 @@ int cmd_media_init(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_media_set_player(const struct shell *sh, size_t argc, char *argv[])
+{
+	if (!strcmp(argv[1], "local")) {
+		if (local_player) {
+			current_player = local_player;
+			shell_print(ctx_shell, "Current player set to local player: %p",
+				    current_player);
+			return 0;
+		}
+
+		shell_print(ctx_shell, "No local player");
+		return -EOPNOTSUPP;
+
+	} else if (!strcmp(argv[1], "remote")) {
+		if (remote_player) {
+			current_player = remote_player;
+			shell_print(ctx_shell, "Current player set to remote player: %p",
+				    current_player);
+			return 0;
+		}
+
+		shell_print(ctx_shell, "No remote player");
+		return -EOPNOTSUPP;
+
+	} else {
+		shell_error(ctx_shell, "Input argument must be either \"local\" or \"remote\"");
+		return -EINVAL;
+	}
+}
+
+static int cmd_media_show_players(const struct shell *sh, size_t argc, char *argv[])
+{
+	shell_print(ctx_shell, "Local player: %p", local_player);
+	shell_print(ctx_shell, "Remote player: %p", remote_player);
+
+	if (current_player == NULL) {
+		shell_print(ctx_shell, "Current player is not set");
+	} else if (current_player == local_player) {
+		shell_print(ctx_shell, "Current player is set to local player: %p",
+			    current_player);
+	} else if (current_player == remote_player) {
+		shell_print(ctx_shell, "Current player is set to remote player: %p",
+			    current_player);
+	} else {
+		shell_print(ctx_shell, "Current player is not set to valid player");
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_BT_MCC
 static int cmd_media_discover_player(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -704,6 +754,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(media_cmds,
 	SHELL_CMD_ARG(init, NULL,
 		      "Initialize media player",
 		      cmd_media_init, 1, 0),
+	SHELL_CMD_ARG(set_player, NULL, "Set current player [local || remote]",
+		      cmd_media_set_player, 2, 0),
+	SHELL_CMD_ARG(show_players, NULL, "Show local, remote and current player",
+		      cmd_media_show_players, 1, 0),
 #ifdef CONFIG_BT_MCC
 	SHELL_CMD_ARG(discover_player, NULL, "Discover remote media player",
 		      cmd_media_discover_player, 1, 0),
