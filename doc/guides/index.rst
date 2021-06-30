@@ -9,7 +9,7 @@ User and Developer Guides
    beyond-GSG.rst
    arch/index.rst
    bluetooth/index.rst
-   ../README.rst
+   docs/index.rst
    coccinelle.rst
    code-relocation.rst
    crypto/index
