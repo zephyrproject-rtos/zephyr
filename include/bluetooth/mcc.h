@@ -77,6 +77,7 @@ typedef void (*bt_mcc_track_changed_ntf_cb_t)(struct bt_conn *conn, int err);
  *
  * @param conn          The connection that was used to initialise MCC
  * @param err           Error value. 0 on success, GATT error or ERRNO on fail
+ * @param title         The title of the track
  */
 typedef void (*bt_mcc_track_title_read_cb_t)(struct bt_conn *conn, int err,
 					     char *title);
@@ -189,7 +190,7 @@ typedef void (*bt_mcc_parent_group_obj_id_read_cb_t)(struct bt_conn *conn,
  * @param order         The playback order
  */
 typedef void (*bt_mcc_playing_order_read_cb_t)(struct bt_conn *conn, int err,
-					       uint8_t speed);
+					       uint8_t order);
 
 /** @brief Callback function for mcc_set_playing_order
  *
@@ -204,7 +205,7 @@ typedef void (*bt_mcc_playing_order_set_cb_t)(struct bt_conn *conn, int err,
  *
  * @param conn          The connection that was used to initialise MCC
  * @param err           Error value. 0 on success, GATT error or ERRNO on fail
- * @param order         The playback orders supported (bitmap)
+ * @param orders        The playback orders supported (bitmap)
  */
 typedef void (*bt_mcc_playing_orders_supported_read_cb_t)(struct bt_conn *conn,
 						     int err, uint16_t orders);
@@ -213,7 +214,7 @@ typedef void (*bt_mcc_playing_orders_supported_read_cb_t)(struct bt_conn *conn,
  *
  * @param conn          The connection that was used to initialise MCC
  * @param err           Error value. 0 on success, GATT error or ERRNO on fail
- * @param order         The Media State
+ * @param state         The Media State
  */
 typedef void (*bt_mcc_media_state_read_cb_t)(struct bt_conn *conn, int err,
 					     uint8_t state);
@@ -222,7 +223,7 @@ typedef void (*bt_mcc_media_state_read_cb_t)(struct bt_conn *conn, int err,
  *
  * @param conn          The connection that was used to initialise MCC
  * @param err           Error value. 0 on success, GATT error or ERRNO on fail
- * @param pos           The operation written (or attempted to write)
+ * @param op            The operation written (or attempted to write)
  */
 typedef void (*bt_mcc_cp_set_cb_t)(struct bt_conn *conn, int err,
 				   struct mpl_op_t op);
