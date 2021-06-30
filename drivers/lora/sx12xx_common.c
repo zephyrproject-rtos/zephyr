@@ -142,16 +142,47 @@ static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 
 static void sx12xx_ev_tx_done(void)
 {
+	struct k_poll_signal *sig = dev_data.operation_done;
+
 	modem_release(&dev_data);
+
+	/* Raise signal if provided */
+	if (sig) {
+		k_poll_signal_raise(sig, 0);
+	}
 }
 
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
-	/* Ensure available, decremented by sx12xx_ev_tx_done */
+	struct k_poll_signal done = K_POLL_SIGNAL_INITIALIZER(done);
+	struct k_poll_event evt = K_POLL_EVENT_INITIALIZER(
+		K_POLL_TYPE_SIGNAL,
+		K_POLL_MODE_NOTIFY_ONLY,
+		&done);
+	int ret;
+
+	ret = sx12xx_lora_send_async(dev, data, data_len, &done);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Wait for transmission to complete */
+	k_poll(&evt, 1, K_FOREVER);
+
+	return 0;
+}
+
+int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
+			   uint32_t data_len, struct k_poll_signal *async)
+{
+	/* Ensure available, freed by sx12xx_ev_tx_done */
 	if (!modem_acquire(&dev_data)) {
 		return -EBUSY;
 	}
+
+	/* Store signal */
+	dev_data.operation_done = async;
 
 	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
 

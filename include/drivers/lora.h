@@ -71,6 +71,16 @@ typedef int (*lora_api_send)(const struct device *dev,
 			     uint8_t *data, uint32_t data_len);
 
 /**
+ * @typedef lora_api_send_async()
+ * @brief Callback API for sending data asynchronously over LoRa
+ *
+ * @see lora_send_async() for argument descriptions.
+ */
+typedef int (*lora_api_send_async)(const struct device *dev,
+				   uint8_t *data, uint32_t data_len,
+				   struct k_poll_signal *async);
+
+/**
  * @typedef lora_api_recv()
  * @brief Callback API for receiving data over LoRa
  *
@@ -91,8 +101,9 @@ typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
 
 struct lora_driver_api {
 	lora_api_config config;
-	lora_api_send	send;
-	lora_api_recv	recv;
+	lora_api_send send;
+	lora_api_send_async send_async;
+	lora_api_recv recv;
 	lora_api_test_cw test_cw;
 };
 
@@ -116,7 +127,7 @@ static inline int lora_config(const struct device *dev,
 /**
  * @brief Send data over LoRa
  *
- * @note This is a non-blocking call.
+ * @note This blocks until transmission is complete.
  *
  * @param dev       LoRa device
  * @param data      Data to be sent
@@ -130,6 +141,30 @@ static inline int lora_send(const struct device *dev,
 		(const struct lora_driver_api *)dev->api;
 
 	return api->send(dev, data, data_len);
+}
+
+/**
+ * @brief Asynchronously send data over LoRa
+ *
+ * @note This returns immediately after starting transmission, and locks
+ *       the LoRa modem until the transmission completes.
+ *
+ * @param dev       LoRa device
+ * @param data      Data to be sent
+ * @param data_len  Length of the data to be sent
+ * @param async A pointer to a valid and ready to be signaled
+ *        struct k_poll_signal. (Note: if NULL this function will not
+ *        notify the end of the transmission).
+ * @return 0 on success, negative on error
+ */
+static inline int lora_send_async(const struct device *dev,
+				  uint8_t *data, uint32_t data_len,
+				  struct k_poll_signal *async)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	return api->send_async(dev, data, data_len, async);
 }
 
 /**
