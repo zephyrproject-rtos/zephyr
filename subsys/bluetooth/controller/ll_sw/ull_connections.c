@@ -658,6 +658,9 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc,
 			      TICKER_USER_ID_ULL_LOW, 1U);
 	}
 #endif /* CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO */
+
+	/* Signal that the prepare needs to be canceled */
+	conn->cancel_prepare = 1U;
 }
 
 #if defined(XXX_THIS_IS_OLD_XXX)
@@ -1411,6 +1414,15 @@ int ull_conn_llcp(struct ll_conn *conn, uint32_t ticks_at_expire, uint16_t lazy)
 
 	ull_cp_run(conn);
 
+	if (conn->cancel_prepare) {
+		/* Reset signal */
+		conn->cancel_prepare = 0U;
+
+		/* Cancel prepare */
+		return -ECANCELED;
+	}
+
+	/* Continue prepare */
 	return 0;
 }
 
