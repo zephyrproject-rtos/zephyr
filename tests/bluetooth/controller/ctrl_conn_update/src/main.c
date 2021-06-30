@@ -1048,8 +1048,8 @@ void test_conn_update_mas_rem_reject(void)
 
 	/* Done */
 	event_done(&conn);
-	/* Note that context is not released for this test */
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /* Slave-initiated Connection Parameters Request procedure.
@@ -2008,8 +2008,8 @@ void test_conn_update_sla_rem_reject(void)
 
 	/* Done */
 	event_done(&conn);
-	/* Note that for this test the context is not released */
-	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM-1, "Free CTX buffers %d", ctx_buffers_free());
+
+	zassert_equal(ctx_buffers_free(), PROC_CTX_BUF_NUM, "Free CTX buffers %d", ctx_buffers_free());
 }
 
 /*
