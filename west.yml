@@ -37,10 +37,6 @@ manifest:
     - name: edtt
       revision: 7dd56fc100d79cc45c33d43e7401d1803e26f6e7
       path: tools/edtt
-    - name: hal_espressif
-      west-commands: west/west-commands.yml
-      revision: 16e010175a663b92aee453c1a6f45b59acfa1372
-      path: modules/hal/espressif
     - name: fatfs
       revision: 1d1fcc725aa1cb3c32f366e0c53d7490d0fe1109
       path: modules/fs/fatfs
@@ -57,6 +53,8 @@ manifest:
       revision: a5d7cb9e6676b08b15ac5b0c54a98514d8bc257c
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
+      revision: c21d252a2188fcb60d52dceb6b018a9f4a371817
+      path: modules/hal/espressif
     - name: hal_infineon
       revision: f1fa8241f8786198ba41155413243de36ed878a5
       path: modules/hal/infineon
