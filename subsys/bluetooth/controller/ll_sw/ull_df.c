@@ -320,17 +320,6 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 			return err;
 		}
 
-		if (sync->is_started) {
-			/* If CTE is disabled when advertising is pending,
-			 * decrease advertising event length
-			 */
-			ull_adv_sync_update(sync, 0, df_cfg->cte_length);
-			/* ToDo decrease number of chain PDUs in pending
-			 * advertising if there are added empty chain PDUs
-			 * to sent requested number of CTEs in a chain
-			 */
-		}
-
 		df_cfg->is_enabled = 0U;
 	} else {
 		struct pdu_cte_info cte_info;
@@ -365,18 +354,14 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 			return err;
 		}
 
-		if (sync->is_started) {
-			/* If CTE is enabled when advertising is pending,
-			 * increase advertising event length
-			 */
-			ull_adv_sync_update(sync, df_cfg->cte_length, 0);
-			/* ToDo increase number of chain PDUs in pending
-			 * advertising if requested more CTEs than available
-			 * PDU with advertising data.
-			 */
-		}
-
 		df_cfg->is_enabled = 1U;
+	}
+
+	if (sync->is_started) {
+		err = ull_adv_sync_time_update(sync);
+		if (err) {
+			return err;
+		}
 	}
 
 	lll_adv_sync_data_enqueue(adv->lll.sync, ter_idx);
