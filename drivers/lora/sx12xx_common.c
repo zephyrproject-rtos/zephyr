@@ -22,14 +22,18 @@
 
 LOG_MODULE_REGISTER(sx12xx_common, CONFIG_LORA_LOG_LEVEL);
 
+struct sx12xx_rx_params {
+	uint8_t *buf;
+	uint8_t *size;
+	int16_t *rssi;
+	int8_t *snr;
+};
+
 static struct sx12xx_data {
 	struct k_poll_signal *operation_done;
 	RadioEvents_t events;
 	atomic_t modem_usage;
-	uint8_t *rx_buf;
-	uint8_t rx_len;
-	int8_t snr;
-	int16_t rssi;
+	struct sx12xx_rx_params rx_params;
 } dev_data;
 
 int __sx12xx_configure_pin(const struct device **dev, const char *controller,
@@ -94,16 +98,46 @@ static bool modem_release(struct sx12xx_data *data)
 static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 			      int8_t snr)
 {
-	dev_data.rx_buf = payload;
-	dev_data.rx_len = size;
-	dev_data.rssi = rssi;
-	dev_data.snr = snr;
+	struct k_poll_signal *sig = dev_data.operation_done;
 
-	modem_release(&dev_data);
-
-	if (dev_data.operation_done) {
-		k_poll_signal_raise(dev_data.operation_done, 0);
+	/* Manually release the modem instead of just calling modem_release
+	 * as we need to perform cleanup operations while still ensuring
+	 * others can't use the modem.
+	 */
+	if (!atomic_cas(&dev_data.modem_usage, STATE_BUSY, STATE_CLEANUP)) {
+		return;
 	}
+	/* We can make two observations here:
+	 *  1. lora_recv hasn't already exited due to a timeout.
+	 *         (modem_release would have been successfully called)
+	 *  2. If the k_poll in lora_recv times out before we raise the signal,
+	 *     but while this code is running, it will block on the
+	 *     signal again.
+	 * This lets us guarantee that the operation_done signal and pointers
+	 * in rx_params are always valid in this function.
+	 */
+
+	/* Store actual size */
+	if (size < *dev_data.rx_params.size) {
+		*dev_data.rx_params.size = size;
+	}
+	/* Copy received data to output buffer */
+	memcpy(dev_data.rx_params.buf, payload,
+	       *dev_data.rx_params.size);
+	/* Output RSSI and SNR */
+	if (dev_data.rx_params.rssi) {
+		*dev_data.rx_params.rssi = rssi;
+	}
+	if (dev_data.rx_params.snr) {
+		*dev_data.rx_params.snr = snr;
+	}
+	/* Put radio back into sleep mode */
+	Radio.Sleep();
+	/* Completely release modem */
+	dev_data.operation_done = NULL;
+	atomic_clear(&dev_data.modem_usage);
+	/* Notify caller RX is complete */
+	k_poll_signal_raise(sig, 0);
 }
 
 static void sx12xx_ev_tx_done(void)
@@ -143,38 +177,32 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 
 	/* Store operation signal */
 	dev_data.operation_done = &done;
+	/* Set data output location */
+	dev_data.rx_params.buf = data;
+	dev_data.rx_params.size = &size;
+	dev_data.rx_params.rssi = rssi;
+	dev_data.rx_params.snr = snr;
 
 	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
 	Radio.Rx(0);
 
 	ret = k_poll(&evt, 1, timeout);
 	if (ret < 0) {
+		if (!modem_release(&dev_data)) {
+			/* Releasing the modem failed, which means that
+			 * the RX callback is currently running. Wait until
+			 * the RX callback finishes and we get our packet.
+			 */
+			k_poll(&evt, 1, K_FOREVER);
+
+			/* We did receive a packet */
+			return size;
+		}
 		LOG_INF("Receive timeout");
-		modem_release(&dev_data);
 		return ret;
 	}
 
-	/* Only copy the bytes that can fit the buffer, drop the rest */
-	if (dev_data.rx_len > size) {
-		dev_data.rx_len = size;
-	}
-
-	/*
-	 * FIXME: We are copying the global buffer here, so it might get
-	 * overwritten inbetween when a new packet comes in. Use some
-	 * wise method to fix this!
-	 */
-	memcpy(data, dev_data.rx_buf, dev_data.rx_len);
-
-	if (rssi != NULL) {
-		*rssi = dev_data.rssi;
-	}
-
-	if (snr != NULL) {
-		*snr = dev_data.snr;
-	}
-
-	return dev_data.rx_len;
+	return size;
 }
 
 int sx12xx_lora_config(const struct device *dev,
