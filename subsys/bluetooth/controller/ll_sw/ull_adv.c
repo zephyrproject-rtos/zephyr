@@ -62,8 +62,6 @@ static int init_reset(void);
 static inline struct ll_adv_set *is_disabled_get(uint8_t handle);
 static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 			     uint8_t adv_chn_cnt, uint8_t phy);
-static uint8_t adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
-			       struct pdu_adv *pdu_scan);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, uint8_t force, void *param);
 static void ticker_op_update_cb(uint32_t status, void *param);
@@ -1578,7 +1576,7 @@ uint8_t ull_adv_data_set(struct ll_adv_set *adv, uint8_t len,
 		lll = &adv->lll;
 		pdu_scan = lll_adv_scan_rsp_peek(lll);
 
-		err = adv_time_update(adv, pdu, pdu_scan);
+		err = ull_adv_time_update(adv, pdu, pdu_scan);
 		if (err) {
 			return err;
 		}
@@ -1623,7 +1621,7 @@ uint8_t ull_scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 
 		if ((pdu_adv_scan->type == PDU_ADV_TYPE_ADV_IND) ||
 		    (pdu_adv_scan->type == PDU_ADV_TYPE_SCAN_IND)) {
-			err = adv_time_update(adv, pdu_adv_scan, pdu);
+			err = ull_adv_time_update(adv, pdu_adv_scan, pdu);
 			if (err) {
 				return err;
 			}
@@ -1731,6 +1729,51 @@ const uint8_t *ull_adv_pdu_update_addrs(struct ll_adv_set *adv,
 	return adv_addr;
 }
 
+uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
+			    struct pdu_adv *pdu_scan)
+{
+	uint32_t volatile ret_cb;
+	uint32_t ticks_minus;
+	uint32_t ticks_plus;
+	struct lll_adv *lll;
+	uint32_t time_ticks;
+	uint16_t time_us;
+	uint8_t chan_map;
+	uint8_t chan_cnt;
+	uint32_t ret;
+
+	lll = &adv->lll;
+	chan_map = lll->chan_map;
+	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
+	time_us = adv_time_get(pdu, pdu_scan, chan_cnt, PHY_1M);
+	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
+	if (adv->ull.ticks_slot > time_ticks) {
+		ticks_minus = adv->ull.ticks_slot - time_ticks;
+		ticks_plus = 0U;
+	} else if (adv->ull.ticks_slot < time_ticks) {
+		ticks_minus = 0U;
+		ticks_plus = time_ticks - adv->ull.ticks_slot;
+	} else {
+		return 0;
+	}
+
+	ret_cb = TICKER_STATUS_BUSY;
+	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
+			    TICKER_USER_ID_THREAD,
+			    (TICKER_ID_ADV_BASE +
+			     ull_adv_handle_get(adv)),
+			    0, 0, ticks_plus, ticks_minus, 0, 0,
+			    ull_ticker_status_give, (void *)&ret_cb);
+	ret = ull_ticker_status_take(ret, &ret_cb);
+	if (ret != TICKER_STATUS_SUCCESS) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	adv->ull.ticks_slot = time_ticks;
+
+	return 0;
+}
+
 static int init_reset(void)
 {
 	uint8_t handle;
@@ -1823,51 +1866,6 @@ static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 	}
 
 	return time_us;
-}
-
-static uint8_t adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
-			       struct pdu_adv *pdu_scan)
-{
-	uint32_t volatile ret_cb;
-	uint32_t ticks_minus;
-	uint32_t ticks_plus;
-	struct lll_adv *lll;
-	uint32_t time_ticks;
-	uint16_t time_us;
-	uint8_t chan_map;
-	uint8_t chan_cnt;
-	uint32_t ret;
-
-	lll = &adv->lll;
-	chan_map = lll->chan_map;
-	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
-	time_us = adv_time_get(pdu, pdu_scan, chan_cnt, PHY_1M);
-	time_ticks = HAL_TICKER_US_TO_TICKS(time_us);
-	if (adv->ull.ticks_slot > time_ticks) {
-		ticks_minus = adv->ull.ticks_slot - time_ticks;
-		ticks_plus = 0U;
-	} else if (adv->ull.ticks_slot < time_ticks) {
-		ticks_minus = 0U;
-		ticks_plus = time_ticks - adv->ull.ticks_slot;
-	} else {
-		return 0;
-	}
-
-	ret_cb = TICKER_STATUS_BUSY;
-	ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
-			    TICKER_USER_ID_THREAD,
-			    (TICKER_ID_ADV_BASE +
-			     ull_adv_handle_get(adv)),
-			    0, 0, ticks_plus, ticks_minus, 0, 0,
-			    ull_ticker_status_give, (void *)&ret_cb);
-	ret = ull_ticker_status_take(ret, &ret_cb);
-	if (ret != TICKER_STATUS_SUCCESS) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	adv->ull.ticks_slot = time_ticks;
-
-	return 0;
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
