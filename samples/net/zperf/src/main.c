@@ -13,7 +13,7 @@
 
 void main(void)
 {
-#if defined(CONFIG_USB)
+#if defined(CONFIG_USB_DEVICE_STACK)
 	int ret;
 
 	ret = usb_enable(NULL);
@@ -22,5 +22,5 @@ void main(void)
 	}
 
 	(void)net_config_init_app(NULL, "Initializing network");
-#endif /* CONFIG_USB */
+#endif /* CONFIG_USB_DEVICE_STACK */
 }
