@@ -11,4 +11,10 @@ zephyr_include_directories_ifdef(
 zephyr_sources_ifdef(
   CONFIG_GETOPT
   getopt.c
+  getopt_common.c
+)
+
+zephyr_sources_ifdef(
+  CONFIG_GETOPT_LONG
+  getopt_long.c
 )
