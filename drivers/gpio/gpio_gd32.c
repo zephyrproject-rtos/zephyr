@@ -87,7 +87,6 @@ static void pin_init(const struct device *dev, uint32_t mode, uint32_t speed, ui
 		temp_mode |= (uint32_t) speed;
 	}
 
-	/* configure the eight low port pins with GPIO_CTL0 */
 	for (i = 0U; i < 16U; i++) {
 		if (BIT(i) & pin) {
 			reg = i < 8U ? GPIO_DEV->CTL0 : GPIO_DEV->CTL1;
@@ -136,11 +135,19 @@ static void gpio_gd32_isr(int line, void *arg)
 static int flags_to_conf(int flags, int *pincfg)
 {
 
-	if ((flags & GPIO_OUTPUT) != 0) {
+	if ((flags & GPIO_OUTPUT) && (flags & GPIO_INPUT)) {
+		/* Pin can't set both OUTPUT and INPUT */
+		return -ENOTSUP;
+	} else if ((flags & GPIO_OUTPUT) != 0) {
 		/* Output only or Output/Input */
 
-		if (flags & GPIO_LINE_OPEN_DRAIN) {
-			*pincfg = GPIO_MODE_OUT_OD | GPIO_OSPEED_50MHZ;
+		if ((flags & GPIO_SINGLE_ENDED) != 0) {
+			if (flags & GPIO_LINE_OPEN_DRAIN) {
+				*pincfg = GPIO_MODE_OUT_OD | GPIO_OSPEED_50MHZ;
+			} else {
+				/* Output can't be open source */
+				return -ENOTSUP;
+			}
 		} else {
 			*pincfg = GPIO_MODE_OUT_PP | GPIO_OSPEED_50MHZ;
 		}
