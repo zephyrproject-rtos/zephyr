@@ -284,7 +284,7 @@ static int get_exti_source(int pin)
 /**
  * @brief Enable EXTI of the specific line
  */
-static int enable_interrupt(int port, int pin)
+static int set_exti_source(int port, int pin)
 {
 	uint32_t source = 0U;
 
@@ -433,7 +433,7 @@ static int gpio_gd32_pin_interrupt_configure(const struct device *dev,
 		goto exit;
 	}
 
-	enable_interrupt(cfg->port, pin);
+	set_exti_source(cfg->port, pin);
 
 	switch (trig) {
 	case GPIO_INT_TRIG_LOW:
