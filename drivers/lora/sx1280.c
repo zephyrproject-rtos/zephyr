@@ -630,7 +630,6 @@ void sx1280_ReadCommand( RadioCommands_t command, void *buffer, size_t size )
 {
 //     WaitOnBusy( );
 	int ret;
-	uint8_t dummyData = 0;
 	// RadioNss = 0;
 	// printk("size: %u\n", size);
 	// printk("command size: %u\n", sizeof(command));
@@ -735,7 +734,6 @@ void sx1280_ReadBuffer( uint8_t offset, uint8_t *buffer, uint8_t size )
 {
 //     WaitOnBusy( );
 
-	uint8_t dummyData = 0;
 	uint8_t command = RADIO_READ_BUFFER;
 
 	const struct spi_buf buf[4] = {
@@ -748,7 +746,7 @@ void sx1280_ReadBuffer( uint8_t offset, uint8_t *buffer, uint8_t size )
 			.len = sizeof(offset)
 		},
 		{
-			.buf = &dummyData,
+			.buf = NULL,
 			.len = 1
 		},
 		{
@@ -1079,7 +1077,6 @@ void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, size_t size )
 
 	int ret;
 
-	uint8_t dummyData = 0;
 	uint8_t command = RADIO_READ_REGISTER;
 	uint8_t addr_l, addr_h;
 	addr_h = address >> 8;
@@ -1099,7 +1096,7 @@ void sx1280_ReadRegisterSPI( uint16_t address, uint8_t *buffer, size_t size )
 			.len = sizeof(addr_l)
 		},
 		{
-			.buf = &dummyData,
+			.buf = NULL,
 			.len = 1
 		},
 		{
