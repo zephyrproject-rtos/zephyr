@@ -24,51 +24,10 @@
 
 LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 
-/* STM32F0: maximum erase time of 40ms for a 2K sector */
-#if defined(CONFIG_SOC_SERIES_STM32F0X)
-#define STM32_FLASH_MAX_ERASE_TIME	40
-/* STM32F3: maximum erase time of 40ms for a 2K sector */
-#elif defined(CONFIG_SOC_SERIES_STM32F1X)
-#define STM32_FLASH_MAX_ERASE_TIME	40
-/* STM32F2: maximum erase time of 4s for a 128K sector */
-#elif defined(CONFIG_SOC_SERIES_STM32F2X)
-#define STM32_FLASH_MAX_ERASE_TIME	4000
-/* STM32F3: maximum erase time of 40ms for a 2K sector */
-#elif defined(CONFIG_SOC_SERIES_STM32F3X)
-#define STM32_FLASH_MAX_ERASE_TIME	40
-/* STM32F4: maximum erase time of 4s for a 128K sector */
-#elif defined(CONFIG_SOC_SERIES_STM32F4X)
-#define STM32_FLASH_MAX_ERASE_TIME	4000
-/* STM32F7: maximum erase time of 4s for a 256K sector */
-#elif defined(CONFIG_SOC_SERIES_STM32F7X)
-#define STM32_FLASH_MAX_ERASE_TIME	4000
-/* STM32L0: maximum erase time of 3.2ms for a 128B page */
-#elif defined(CONFIG_SOC_SERIES_STM32L0X)
-#define STM32_FLASH_MAX_ERASE_TIME	4
-/* STM32L1: maximum erase time of 3.94ms for a 128B half-page */
-#elif defined(CONFIG_SOC_SERIES_STM32L1X)
-#define STM32_FLASH_MAX_ERASE_TIME	4
-/* STM32L4: maximum erase time of 24.47ms for a 2K sector */
-#elif defined(CONFIG_SOC_SERIES_STM32L4X)
-#define STM32_FLASH_MAX_ERASE_TIME	25
-/* STM32WL: maximum erase time of 24.5ms for a 2K sector */
-#elif defined(CONFIG_SOC_SERIES_STM32WLX)
-#define STM32_FLASH_MAX_ERASE_TIME	25
-/* STM32WB: maximum erase time of 24.5ms for a 4K sector */
-#elif defined(CONFIG_SOC_SERIES_STM32WBX)
-#define STM32_FLASH_MAX_ERASE_TIME	25
-#elif defined(CONFIG_SOC_SERIES_STM32G0X)
-/* STM32G0: maximum erase time of 40ms for a 2K sector */
-#define STM32_FLASH_MAX_ERASE_TIME	40
-/* STM32G4: maximum erase time of 24.47ms for a 2K sector */
-#elif defined(CONFIG_SOC_SERIES_STM32G4X)
-#define STM32_FLASH_MAX_ERASE_TIME	25
-#endif
-
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
-#define STM32_FLASH_TIMEOUT	(2 * STM32_FLASH_MAX_ERASE_TIME)
+#define STM32_FLASH_TIMEOUT	(2 * DT_PROP(DT_INST(0, soc_nv_flash), max_erase_time))
 
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
