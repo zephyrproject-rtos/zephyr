@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-add_library(base_module base_module.c)
+add_library(base_module OBJECT base_module.c)
 target_include_directories(base_module PUBLIC
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
   ../include
   )
 
-add_library(boot_module boot_module.c)
+add_library(boot_module OBJECT boot_module.c)
 target_include_directories(boot_module PUBLIC
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
   ../include
@@ -32,6 +32,9 @@ target_include_directories(bootloader PUBLIC
   ./
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/common/include
+  ${PROJECT_BINARY_DIR}/include/generated
+  ${ZEPHYR_BASE}/include
   )
 
 # TODO: pre-process linker script. How do we use toplevel infrastructure ??
@@ -62,7 +65,13 @@ if(CONFIG_RESET_VECTOR_IN_BOOTLOADER)
   set_source_files_properties(${ARCH_DIR}/${ARCH}/core/startup/reset-vector.S PROPERTIES COMPILE_FLAGS -DBOOTLOADER)
 endif()
 
-target_compile_options(bootloader PUBLIC -fno-inline-functions -mlongcalls -mtext-section-literals -imacros${CMAKE_BINARY_DIR}/zephyr/include/generated/autoconf.h)
+target_compile_options(bootloader PUBLIC
+  -fno-inline-functions
+  -mlongcalls
+  -mtext-section-literals
+  -imacros${CMAKE_BINARY_DIR}/zephyr/include/generated/autoconf.h
+  -D__SIZEOF_LONG__=4
+)
 
 target_link_libraries(bootloader PUBLIC -Wl,--no-check-sections -ucall_user_start -Wl,-static -nostdlib)
 target_link_libraries(bootloader PRIVATE -T${CMAKE_BINARY_DIR}/zephyr/${bootloader_linker_script}.ld)
