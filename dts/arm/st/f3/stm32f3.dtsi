@@ -85,6 +85,8 @@
 
 				write-block-size = <2>;
 				erase-block-size = <2048>;
+				/* maximum erase time for a 2K sector */
+				max-erase-time = <40>;
 			};
 		};
 
