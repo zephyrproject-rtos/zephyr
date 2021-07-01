@@ -3,7 +3,7 @@
 Bluetooth Isochronous Channels
 ##############################
 
-The Bluetooth Isochronous channels :option:`CONFIG_BT_ISO` is a feature
+The Bluetooth Isochronous channels :kconfig:`CONFIG_BT_ISO` is a feature
 introduced in Bluetooth 5.2 core specification. It can be used to create streams
 (e.g. audio) using either Connected Isochronous Stream (CIS) or Broadcast
 Isochronous Stream (BIS).
