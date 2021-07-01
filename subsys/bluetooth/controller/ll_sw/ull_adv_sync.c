@@ -375,6 +375,11 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		sync = HDR_LLL2ULL(lll_sync);
 	}
 
+	/* Periodic Advertising is already started */
+	if (sync->is_started) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
 	sync->interval = interval;
 
 	err = ull_adv_sync_pdu_alloc(adv, 0, 0, NULL, &pdu_prev, &pdu,
