@@ -149,6 +149,7 @@ static int on_url(struct http_parser *parser, const char *at, size_t length)
 	struct http_request *req = CONTAINER_OF(parser,
 						struct http_request,
 						internal.parser);
+
 	print_header_field(length, at);
 
 	if (req->internal.response.http_cb &&
@@ -208,7 +209,7 @@ static int on_header_field(struct http_parser *parser, const char *at,
 	return 0;
 }
 
-#define MAX_NUM_DIGITS	16
+#define MAX_NUM_DIGITS  16
 
 static int on_header_value(struct http_parser *parser, const char *at,
 			   size_t length)
@@ -603,7 +604,7 @@ int http_client_req(int sock, struct http_request *req,
 					     HTTP_CRLF, NULL);
 		} else {
 			ret = http_send_data(sock, send_buf, send_buf_max_len,
-				     &send_buf_pos, HTTP_CRLF, NULL);
+					     &send_buf_pos, HTTP_CRLF, NULL);
 		}
 
 		if (ret < 0) {
