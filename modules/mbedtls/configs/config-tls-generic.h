@@ -475,6 +475,10 @@
 #define MBEDTLS_SSL_ENCRYPT_THEN_MAC
 #endif
 
+#if defined(CONFIG_MBEDTLS_SSL_DTLS_CONNECTION_ID)
+#define MBEDTLS_SSL_DTLS_CONNECTION_ID
+#endif
+
 /* User config file */
 
 #if defined(CONFIG_MBEDTLS_USER_CONFIG_FILE)
