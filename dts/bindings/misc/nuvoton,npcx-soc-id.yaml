@@ -1,0 +1,27 @@
+# Copyright (c) 2021 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX soc ID node
+
+compatible: "nuvoton,npcx-soc-id"
+
+properties:
+    family-id:
+        type: int
+        required: true
+        description: NPCX family ID
+
+    chip-id:
+        type: int
+        required: true
+        description: NPCX chip ID
+
+    device-id:
+        type: int
+        required: true
+        description: NPCX device ID
+
+    revision-reg:
+        type: array
+        required: true
+        description: NPCX revision register address & length in byte
