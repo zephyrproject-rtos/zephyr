@@ -31,11 +31,6 @@ Zephyr Project Documentation
    imports or reuses packages, scripts, and other files that use other
    licensing, as described in :ref:`Zephyr_Licensing`.
 
-.. _Apache 2.0 license:
-   https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
-
-.. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
-
 
 .. raw:: html
 
@@ -130,6 +125,11 @@ Zephyr Project Documentation
 
 .. only:: html
 
+   * :ref:`configuration_options`
    * :ref:`glossary`
-
    * :ref:`genindex`
+
+.. _Apache 2.0 license:
+   https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
+
+.. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr

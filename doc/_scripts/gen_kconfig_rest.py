@@ -446,7 +446,10 @@ def index_header(title, link, desc_path):
                      f"'{desc_path}': {e}")
 
     return f"""\
+:orphan:
+
 .. _{link}:
+
 
 {title}
 {len(title)*'='}
