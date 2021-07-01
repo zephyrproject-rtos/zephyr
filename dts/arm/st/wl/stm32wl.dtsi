@@ -281,7 +281,7 @@
 		};
 
 		subghzspi: spi@58010000 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			compatible = "st,stm32-spi-subghz", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x58010000 0x400>;
@@ -289,6 +289,7 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000001>;
 			status = "disabled";
 			label = "SUBGHZSPI";
+			use-subghzspi-nss;
 		};
 
 		adc1: adc@40012400 {
