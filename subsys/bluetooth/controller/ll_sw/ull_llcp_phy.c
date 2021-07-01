@@ -317,7 +317,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = tx_alloc();
+	tx = llcp_tx_alloc();
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -326,11 +326,11 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	switch (opcode) {
 	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
 		pu_set_preferred_phys(conn, ctx);
-		pdu_encode_phy_req(ctx, pdu);
+		llcp_pdu_encode_phy_req(ctx, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 		pu_prep_update_ind(conn,ctx);
-		pdu_encode_phy_update_ind(ctx, pdu);
+		llcp_pdu_encode_phy_update_ind(ctx, pdu);
 		break;
 	default:
 		LL_ASSERT(0);
@@ -341,7 +341,7 @@ static void lp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	ctx->tx_opcode = pdu->llctrl.opcode;
 
 	/* Enqueue LL Control PDU towards LLL */
-	tx_enqueue(conn, tx);
+	llcp_tx_enqueue(conn, tx);
 
 	/* Update procedure timout */
 	ull_conn_prt_reload(conn, conn->procedure_reload);
@@ -353,7 +353,7 @@ static void pu_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct node_rx_pu *pdu;
 
 	/* Allocate ntf node */
-	ntf = ntf_alloc();
+	ntf = llcp_ntf_alloc();
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
@@ -375,14 +375,14 @@ static void pu_dle_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	struct pdu_data *pdu;
 
 	/* Allocate ntf node */
-	ntf = ntf_alloc();
+	ntf = llcp_ntf_alloc();
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	ntf->hdr.handle = conn->lll.handle;
 	pdu = (struct pdu_data *)ntf->pdu;
 
-	ntf_encode_length_change(conn, pdu);
+	llcp_ntf_encode_length_change(conn, pdu);
 
 	/* Enqueue notification towards LL */
 	ll_rx_put(ntf->hdr.link, ntf);
@@ -400,7 +400,7 @@ static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF buffer) */
 	pu_reset_timing_restrict(conn);
 
-	if (ntf_count  && !ntf_alloc_num_available(ntf_count)) {
+	if (ntf_count  && !llcp_ntf_alloc_num_available(ntf_count)) {
 		ctx->state = LP_PU_STATE_WAIT_NTF;
 	} else {
 		if (ctx->data.pu.ntf_pu) {
@@ -411,26 +411,26 @@ static void lp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 			pu_dle_ntf(conn, ctx);
 		}
 #endif
-		lr_complete(conn);
+		llcp_lr_complete(conn);
 		ctx->state = LP_PU_STATE_IDLE;
 	}
 }
 
 static void lp_pu_send_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!tx_alloc_is_available() || rr_get_collision(conn)) {
+	if (!llcp_tx_alloc_is_available() || llcp_rr_get_collision(conn)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_REQ;
 	} else {
-		rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
+		llcp_rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
 		lp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_REQ);
-		tx_pause_data(conn);
+		llcp_tx_pause_data(conn);
 		ctx->state = LP_PU_STATE_WAIT_TX_ACK_PHY_REQ;
 	}
 }
 
 static void lp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		ctx->data.pu.instant = pu_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
@@ -469,27 +469,27 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx,
 {
 	switch (evt) {
 	case LP_PU_EVT_RUN:
-		if (conn->lll.role == BT_HCI_ROLE_SLAVE && rr_get_collision(conn)) {
-			rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+		if (conn->lll.role == BT_HCI_ROLE_SLAVE && llcp_rr_get_collision(conn)) {
+			llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 			ctx->data.pu.error = BT_HCI_ERR_LL_PROC_COLLISION;
 			ctx->data.pu.ntf_pu = 1;
 			lp_pu_complete(conn, ctx, evt, param);
 		}
 		break;
 	case LP_PU_EVT_PHY_RSP:
-		rr_set_incompat(conn, INCOMPAT_RESERVED);
+		llcp_rr_set_incompat(conn, INCOMPAT_RESERVED);
 		/* 'Prefer' the phys from the REQ */
 		uint8_t tx_pref = ctx->data.pu.tx;
 		uint8_t rx_pref = ctx->data.pu.rx;
-		pdu_decode_phy_rsp(ctx, (struct pdu_data *)param);
+		llcp_pdu_decode_phy_rsp(ctx, (struct pdu_data *)param);
 		/* Pause data tx */
-		tx_pause_data(conn);
+		llcp_tx_pause_data(conn);
 		/* Combine with the 'Prefered' phys */
 		pu_combine_phys(conn, ctx, tx_pref, rx_pref);
 		lp_pu_send_phy_update_ind(conn, ctx, evt, param);
 		break;
 	case LP_PU_EVT_UNKNOWN:
-		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		/* Unsupported in peer, so disable locally for this connection
 		 * Peer does not accept PHY UPDATE, so disable non 1M phys on current connection
 		 */
@@ -523,7 +523,7 @@ static void lp_pu_st_wait_tx_ack_phy_req(struct ll_conn *conn, struct proc_ctx *
 			/* Unknown role */
 			LL_ASSERT(0);
 		}
-		tx_resume_data(conn);
+		llcp_tx_resume_data(conn);
 		break;
 	default:
 		/* Ignore other evts */
@@ -562,12 +562,12 @@ static void lp_pu_st_wait_tx_ack_phy_update_ind(struct ll_conn *conn, struct pro
 			/* Now we should wait for instant */
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
-			rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+			llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 			ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 			ctx->data.pu.ntf_pu = ctx->data.pu.host_initiated;
 			lp_pu_complete(conn, ctx, evt, param);
 		}
-		tx_resume_data(conn);
+		llcp_tx_resume_data(conn);
 		break;
 	default:
 		/* Ignore other evts */
@@ -580,7 +580,7 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 	switch (evt) {
 	case LP_PU_EVT_PHY_UPDATE_IND:
 		LL_ASSERT(conn->lll.role == BT_HCI_ROLE_SLAVE);
-		pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
+		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
 		if (!end_procedure)
 		{
@@ -595,13 +595,13 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 
 			ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		} else {
-			rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+			llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 			ctx->data.pu.ntf_pu = ctx->data.pu.host_initiated;
 			lp_pu_complete(conn, ctx, evt, param);
 		}
 		break;
 	case LP_PU_EVT_REJECT:
-		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_LL_PROC_COLLISION;
 		ctx->data.pu.ntf_pu = 1;
 		lp_pu_complete(conn, ctx, evt, param);
@@ -620,7 +620,7 @@ static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
 		}
 #endif
-		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		ctx->data.pu.ntf_pu = (phy_changed || ctx->data.pu.host_initiated);
 		lp_pu_complete(conn, ctx, evt, param);
@@ -688,7 +688,7 @@ static void lp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	}
 }
 
-void ull_cp_priv_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void llcp_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
 
@@ -711,17 +711,17 @@ void ull_cp_priv_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct nod
 	}
 }
 
-void ull_cp_priv_lp_pu_init_proc(struct proc_ctx *ctx)
+void llcp_lp_pu_init_proc(struct proc_ctx *ctx)
 {
 	ctx->state = LP_PU_STATE_IDLE;
 }
 
-void ull_cp_priv_lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+void llcp_lp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_RUN, param);
 }
 
-void ull_cp_priv_lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+void llcp_lp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_ACK, param);
 }
@@ -735,7 +735,7 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	struct pdu_data *pdu;
 
 	/* Allocate tx node */
-	tx = tx_alloc();
+	tx = llcp_tx_alloc();
 	LL_ASSERT(tx);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -743,11 +743,11 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	/* Encode LL Control PDU */
 	switch (opcode) {
 	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
-		pdu_encode_phy_rsp(conn, pdu);
+		llcp_pdu_encode_phy_rsp(conn, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 		pu_prep_update_ind(conn,ctx);
-		pdu_encode_phy_update_ind(ctx, pdu);
+		llcp_pdu_encode_phy_update_ind(ctx, pdu);
 		break;
 	default:
 		LL_ASSERT(0);
@@ -757,7 +757,7 @@ static void rp_pu_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
 	ctx->tx_opcode = pdu->llctrl.opcode;
 
 	/* Enqueue LL Control PDU towards LLL */
-	tx_enqueue(conn, tx);
+	llcp_tx_enqueue(conn, tx);
 }
 
 static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
@@ -771,7 +771,7 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 	/* when complete reset timing restrictions - idempotent (so no problem if we need to wait for NTF) */
 	pu_reset_timing_restrict(conn);
 
-	if ((ntf_count > 0) && !ntf_alloc_num_available(ntf_count)) {
+	if ((ntf_count > 0) && !llcp_ntf_alloc_num_available(ntf_count)) {
 		ctx->state = RP_PU_STATE_WAIT_NTF;
 	} else {
 		if (ctx->data.pu.ntf_pu)
@@ -784,14 +784,14 @@ static void rp_pu_complete(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t e
 			pu_dle_ntf(conn, ctx);
 		}
 #endif
-		rr_complete(conn);
+		llcp_rr_complete(conn);
 		ctx->state = RP_PU_STATE_IDLE;
 	}
 }
 
 static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
 	} else {
 		ctx->data.pu.instant = pu_event_counter(conn) + PHY_UPDATE_INSTANT_DELTA;
@@ -803,7 +803,7 @@ static void rp_pu_send_phy_update_ind(struct ll_conn *conn, struct proc_ctx *ctx
 
 static void rp_pu_send_phy_rsp(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	if (!tx_alloc_is_available()) {
+	if (!llcp_tx_alloc_is_available()) {
 		ctx->state = RP_PU_STATE_WAIT_TX_PHY_RSP;
 	} else {
 		rp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_RSP);
@@ -827,10 +827,10 @@ static void rp_pu_st_idle(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t ev
 
 static void rp_pu_st_wait_rx_phy_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t evt, void *param)
 {
-	pdu_decode_phy_req(ctx, (struct pdu_data *)param);
+	llcp_pdu_decode_phy_req(ctx, (struct pdu_data *)param);
 	/* Combine with the 'Prefered' the phys in conn->phy_pref_?x */
 	pu_combine_phys(conn,ctx, conn->phy_pref_tx, conn->phy_pref_rx);
-	tx_pause_data(conn);
+	llcp_tx_pause_data(conn);
 	switch (evt) {
 	case RP_PU_EVT_PHY_REQ:
 		switch (conn->lll.role) {
@@ -887,7 +887,7 @@ static void rp_pu_st_wait_tx_ack_phy(struct ll_conn *conn, struct proc_ctx *ctx,
 				rp_pu_complete(conn, ctx, evt, param);
 			}
 		}
-		tx_resume_data(conn);
+		llcp_tx_resume_data(conn);
 		break;
 	default:
 		/* Ignore other evts */
@@ -911,7 +911,7 @@ static void rp_pu_st_wait_rx_phy_update_ind(struct ll_conn *conn, struct proc_ct
 {
 	switch (evt) {
 	case RP_PU_EVT_PHY_UPDATE_IND:
-		pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
+		llcp_pdu_decode_phy_update_ind(ctx, (struct pdu_data *)param);
 		const uint8_t end_procedure = pu_check_update_ind(conn, ctx);
 		if (!end_procedure)
 		{
@@ -1007,7 +1007,7 @@ static void rp_pu_execute_fsm(struct ll_conn *conn, struct proc_ctx *ctx, uint8_
 	}
 }
 
-void ull_cp_priv_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+void llcp_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
 
@@ -1024,17 +1024,17 @@ void ull_cp_priv_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct nod
 	}
 }
 
-void ull_cp_priv_rp_pu_init_proc(struct proc_ctx *ctx)
+void llcp_rp_pu_init_proc(struct proc_ctx *ctx)
 {
 	ctx->state = RP_PU_STATE_IDLE;
 }
 
-void ull_cp_priv_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+void llcp_rp_pu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	rp_pu_execute_fsm(conn, ctx, RP_PU_EVT_RUN, param);
 }
 
-void ull_cp_priv_rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
+void llcp_rp_pu_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	rp_pu_execute_fsm(conn, ctx, RP_PU_EVT_ACK, param);
 }
