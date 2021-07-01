@@ -13,13 +13,23 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bsim_test_mesh)
 
 target_sources(app PRIVATE
-	src/main.c
-	src/mesh_test.c
-	src/test_transport.c
-	src/test_friendship.c
-	src/test_provision.c
-	src/test_beacon.c
+ src/main.c
+ src/mesh_test.c
 )
+
+if(CONFIG_SETTINGS)
+ target_sources(app PRIVATE
+  src/settings_test_backend.c
+  src/test_persistence.c
+ )
+else()
+ target_sources(app PRIVATE
+  src/test_transport.c
+  src/test_friendship.c
+  src/test_provision.c
+  src/test_beacon.c
+ )
+endif()
 
 zephyr_include_directories(
   $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
