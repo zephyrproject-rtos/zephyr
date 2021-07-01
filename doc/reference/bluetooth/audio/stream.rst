@@ -9,18 +9,18 @@ audio streams.
 Unicast
 *******
 
-Unicast topology :option:`CONFIG_BT_AUDIO_UNICAST` uses Isochronous Channels
-:option:`CONFIG_BT_ISO` to establish a point-to-point connection.
+Unicast topology :kconfig:`CONFIG_BT_AUDIO_UNICAST` uses Isochronous Channels
+:kconfig:`CONFIG_BT_ISO` to establish a point-to-point connection.
 
 Unicast depends in two services, Published Audio Capabilities Service (PACS)
-:option:`CONFIG_BT_PACS` which exposes the audio codec capabilities and Audio
-Stream Control Service (ASCS) :option:`CONFIG_BT_ASCS` that exposes Audio
+:kconfig:`CONFIG_BT_PACS` which exposes the audio codec capabilities and Audio
+Stream Control Service (ASCS) :kconfig:`CONFIG_BT_ASCS` that exposes Audio
 Stream Endpoints (ASE) which can be used to configure audio streams.
 
 Shell
 *****
 
-Basic Audio Profile (BAP) :option:`CONFIG_BT_BAP` shell module implements
+Basic Audio Profile (BAP) :kconfig:`CONFIG_BT_BAP` shell module implements
 commands corresponding to the procedures available in the BAP specification.
 TODO: Add link to BAP specification.
 
