@@ -83,6 +83,17 @@ The sample can be built and executed for the
    :goals: build flash
    :compact:
 
+Building and Running for ST Nucleo L552ZE Q
+===========================================
+The sample can be built and executed for the
+:ref:`nucleo_l552ze_q_board` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: nucleo_l552ze_q
+   :goals: build flash
+   :compact:
+
 Building and Running for NXP TWR-KE18F
 ======================================
 The sample can be built and executed for the :ref:`twr_ke18f` as
