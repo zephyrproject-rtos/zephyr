@@ -367,16 +367,38 @@ static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	return spi_stm32_get_err(spi);
 }
 
-static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
-			       int status)
+static void spi_stm32_cs_control(const struct device *dev, bool on)
 {
+	struct spi_stm32_data *data = dev->data;
+
+	spi_context_cs_control(&data->ctx, on);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	const struct spi_stm32_config *cfg = dev->config;
+
+	if (cfg->use_subghzspi_nss) {
+		if (on) {
+			LL_PWR_SelectSUBGHZSPI_NSS();
+		} else {
+			LL_PWR_UnselectSUBGHZSPI_NSS();
+		}
+	}
+#endif
+}
+
+static void spi_stm32_complete(const struct device *dev, int status)
+{
+	const struct spi_stm32_config *cfg = dev->config;
+	SPI_TypeDef *spi = cfg->spi;
 #ifdef CONFIG_SPI_STM32_INTERRUPT
+	struct spi_stm32_data *data = dev->data;
+
 	ll_func_disable_int_tx_empty(spi);
 	ll_func_disable_int_rx_not_empty(spi);
 	ll_func_disable_int_errors(spi);
 #endif
 
-	spi_context_cs_control(&data->ctx, false);
+	spi_stm32_cs_control(dev, false);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
@@ -412,7 +434,7 @@ static void spi_stm32_isr(const struct device *dev)
 
 	err = spi_stm32_get_err(spi);
 	if (err) {
-		spi_stm32_complete(data, spi, err);
+		spi_stm32_complete(dev, err);
 		return;
 	}
 
@@ -421,7 +443,7 @@ static void spi_stm32_isr(const struct device *dev)
 	}
 
 	if (err || !spi_stm32_transfer_ongoing(data)) {
-		spi_stm32_complete(data, spi, err);
+		spi_stm32_complete(dev, err);
 	}
 }
 #endif
@@ -606,7 +628,7 @@ static int transceive(const struct device *dev,
 	LL_SPI_Enable(spi);
 
 	/* This is turned off in spi_stm32_complete(). */
-	spi_context_cs_control(&data->ctx, true);
+	spi_stm32_cs_control(dev, true);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	ll_func_enable_int_errors(spi);
@@ -623,7 +645,7 @@ static int transceive(const struct device *dev,
 		ret = spi_stm32_shift_frames(spi, data);
 	} while (!ret && spi_stm32_transfer_ongoing(data));
 
-	spi_stm32_complete(data, spi, ret);
+	spi_stm32_complete(dev, ret);
 
 #ifdef CONFIG_SPI_SLAVE
 	if (spi_context_is_slave(&data->ctx) && !ret) {
@@ -695,7 +717,7 @@ static int transceive_dma(const struct device *dev,
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	/* This is turned off in spi_stm32_complete(). */
-	spi_context_cs_control(&data->ctx, true);
+	spi_stm32_cs_control(dev, true);
 
 	LL_SPI_Enable(spi);
 
@@ -752,7 +774,7 @@ static int transceive_dma(const struct device *dev,
 	dma_stop(data->dma_rx.dma_dev, data->dma_rx.channel);
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.channel);
 
-	spi_stm32_complete(data, spi, ret);
+	spi_stm32_complete(dev, ret);
 
 	spi_context_release(&data->ctx, ret);
 
@@ -906,6 +928,14 @@ static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 #define SPI_DMA_STATUS_SEM(id)
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+#define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
+	.use_subghzspi_nss = DT_INST_PROP_OR(				\
+			id, use_subghzspi_nss, false),
+#else
+#define STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)
+#endif
+
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
 									\
@@ -921,6 +951,7 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 	.pinctrl_list = spi_pins_##id,					\
 	.pinctrl_list_size = ARRAY_SIZE(spi_pins_##id),			\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
+	STM32_SPI_USE_SUBGHZSPI_NSS_CONFIG(id)				\
 };									\
 									\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
