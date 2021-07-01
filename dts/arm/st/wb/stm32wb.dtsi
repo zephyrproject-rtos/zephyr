@@ -110,6 +110,8 @@
 
 				write-block-size = <8>;
 				erase-block-size = <4096>;
+				/* maximum erase time(ms) for a 4K sector */
+				max-erase-time = <25>;
 			};
 		};
 

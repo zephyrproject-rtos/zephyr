@@ -99,6 +99,8 @@
 				label = "FLASH_STM32";
 
 				write-block-size = <4>;
+				/* maximum erase time(ms) for a 128B page */
+				max-erase-time = <4>;
 			};
 		};
 
