@@ -84,17 +84,17 @@ static struct proc_ctx *proc_ctx_acquire(void)
 	return ctx;
 }
 
-void ull_cp_priv_proc_ctx_release(struct proc_ctx *ctx)
+void llcp_proc_ctx_release(struct proc_ctx *ctx)
 {
 	mem_release(ctx, &mem_ctx.free);
 }
 
-bool ull_cp_priv_tx_alloc_is_available(void)
+bool llcp_tx_alloc_is_available(void)
 {
 	return mem_tx.free != NULL;
 }
 
-struct node_tx *ull_cp_priv_tx_alloc(void)
+struct node_tx *llcp_tx_alloc(void)
 {
 	struct node_tx *tx;
 
@@ -107,17 +107,17 @@ static void tx_release(struct node_tx *tx)
 	mem_release(tx, &mem_tx.free);
 }
 
-bool ull_cp_priv_ntf_alloc_is_available(void)
+bool llcp_ntf_alloc_is_available(void)
 {
 	return ll_pdu_rx_alloc_peek(1) != NULL;
 }
 
-bool ull_cp_priv_ntf_alloc_num_available(uint8_t count)
+bool llcp_ntf_alloc_num_available(uint8_t count)
 {
 	return ll_pdu_rx_alloc_peek(count) != NULL;
 }
 
-struct node_rx_pdu *ull_cp_priv_ntf_alloc(void)
+struct node_rx_pdu *llcp_ntf_alloc(void)
 {
 	return ll_pdu_rx_alloc();
 }
@@ -126,22 +126,22 @@ struct node_rx_pdu *ull_cp_priv_ntf_alloc(void)
  * ULL -> LLL Interface
  */
 
-void ull_cp_priv_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
+void llcp_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 {
 	ull_tx_q_enqueue_ctrl(&conn->tx_q, tx);
 }
 
-void ull_cp_priv_tx_pause_data(struct ll_conn *conn)
+void llcp_tx_pause_data(struct ll_conn *conn)
 {
 	ull_tx_q_pause_data(&conn->tx_q);
 }
 
-void ull_cp_priv_tx_resume_data(struct ll_conn *conn)
+void llcp_tx_resume_data(struct ll_conn *conn)
 {
 	ull_tx_q_resume_data(&conn->tx_q);
 }
 
-void ull_cp_priv_tx_flush(struct ll_conn *conn)
+void llcp_tx_flush(struct ll_conn *conn)
 {
 	/* TODO(thoh): do something here to flush the TX Q */
 }
@@ -175,7 +175,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	return ctx;
 }
 
-struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
+struct proc_ctx *llcp_create_local_procedure(enum llcp_proc proc)
 {
 	struct proc_ctx *ctx;
 
@@ -187,44 +187,44 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
-		lp_comm_init_proc(ctx);
+		llcp_lp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		lp_comm_init_proc(ctx);
+		llcp_lp_comm_init_proc(ctx);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
-		lp_comm_init_proc(ctx);
+		llcp_lp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PROC_VERSION_EXCHANGE:
-		lp_comm_init_proc(ctx);
+		llcp_lp_comm_init_proc(ctx);
 		break;
 #if defined (CONFIG_BT_CTLR_LE_ENC)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
-		lp_enc_init_proc(ctx);
+		llcp_lp_enc_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
-		lp_pu_init_proc(ctx);
+		llcp_lp_pu_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
 	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
-		lp_cu_init_proc(ctx);
+		llcp_lp_cu_init_proc(ctx);
 		break;
 	case PROC_TERMINATE:
-		lp_comm_init_proc(ctx);
+		llcp_lp_comm_init_proc(ctx);
 		break;
 	case PROC_CHAN_MAP_UPDATE:
-		lp_chmu_init_proc(ctx);
+		llcp_lp_chmu_init_proc(ctx);
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		lp_comm_init_proc(ctx);
+		llcp_lp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
@@ -236,7 +236,7 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	return ctx;
 }
 
-struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
+struct proc_ctx *llcp_create_remote_procedure(enum llcp_proc proc)
 {
 	struct proc_ctx *ctx;
 
@@ -248,41 +248,41 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	switch (ctx->proc) {
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PROC_LE_PING:
-		rp_comm_init_proc(ctx);
+		llcp_rp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 	case PROC_FEATURE_EXCHANGE:
-		rp_comm_init_proc(ctx);
+		llcp_rp_comm_init_proc(ctx);
 		break;
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PROC_MIN_USED_CHANS:
-		rp_comm_init_proc(ctx);
+		llcp_rp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_MIN_USED_CHAN */
 	case PROC_VERSION_EXCHANGE:
-		rp_comm_init_proc(ctx);
+		llcp_rp_comm_init_proc(ctx);
 		break;
 #if defined (CONFIG_BT_CTLR_LE_ENC)
 	case PROC_ENCRYPTION_START:
 	case PROC_ENCRYPTION_PAUSE:
-		rp_enc_init_proc(ctx);
+		llcp_rp_enc_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 #ifdef CONFIG_BT_CTLR_PHY
 	case PROC_PHY_UPDATE:
-		rp_pu_init_proc(ctx);
+		llcp_rp_pu_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
 	case PROC_CONN_UPDATE:
 	case PROC_CONN_PARAM_REQ:
-		rp_cu_init_proc(ctx);
+		llcp_rp_cu_init_proc(ctx);
 		break;
 	case PROC_TERMINATE:
-		rp_comm_init_proc(ctx);
+		llcp_rp_comm_init_proc(ctx);
 		break;
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		rp_comm_init_proc(ctx);
+		llcp_rp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 	default:
@@ -308,11 +308,11 @@ void ull_cp_init(void)
 void ll_conn_init(struct ll_conn *conn)
 {
 	/* Reset local request fsm */
-	lr_init(conn);
+	llcp_lr_init(conn);
 	sys_slist_init(&conn->llcp.local.pend_proc_list);
 
 	/* Reset remote request fsm */
-	rr_init(conn);
+	llcp_rr_init(conn);
 	sys_slist_init(&conn->llcp.remote.pend_proc_list);
 	conn->llcp.remote.incompat = INCOMPAT_NO_COLLISION;
 	conn->llcp.remote.collision = 0U;
@@ -336,8 +336,8 @@ void ll_conn_init(struct ll_conn *conn)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	conn->lll.event_counter = 0;
-	lr_init(conn);
-	rr_init(conn);
+	llcp_lr_init(conn);
+	llcp_rr_init(conn);
 }
 
 void ull_cp_release_tx(struct node_tx *tx)
@@ -353,20 +353,20 @@ void ull_cp_release_ntf(struct node_rx_pdu *ntf)
 
 void ull_cp_run(struct ll_conn *conn)
 {
-	rr_run(conn);
-	lr_run(conn);
+	llcp_rr_run(conn);
+	llcp_lr_run(conn);
 }
 
 void ull_cp_state_set(struct ll_conn *conn, uint8_t state)
 {
 	switch (state) {
 	case ULL_CP_CONNECTED:
-		rr_connect(conn);
-		lr_connect(conn);
+		llcp_rr_connect(conn);
+		llcp_lr_connect(conn);
 		break;
 	case ULL_CP_DISCONNECTED:
-		rr_disconnect(conn);
-		lr_disconnect(conn);
+		llcp_rr_disconnect(conn);
+		llcp_lr_disconnect(conn);
 		break;
 	default:
 		break;
@@ -382,7 +382,7 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ctx = create_local_procedure(PROC_MIN_USED_CHANS);
+	ctx = llcp_create_local_procedure(PROC_MIN_USED_CHANS);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -390,7 +390,7 @@ uint8_t ull_cp_min_used_chans(struct ll_conn *conn, uint8_t phys, uint8_t min_us
 	ctx->data.muc.phys = phys;
 	ctx->data.muc.min_used_chans = min_used_chans;
 
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -401,12 +401,12 @@ uint8_t ull_cp_le_ping(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = create_local_procedure(PROC_LE_PING);
+	ctx = llcp_create_local_procedure(PROC_LE_PING);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -415,12 +415,12 @@ uint8_t ull_cp_feature_exchange(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = create_local_procedure(PROC_FEATURE_EXCHANGE);
+	ctx = llcp_create_local_procedure(PROC_FEATURE_EXCHANGE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -429,12 +429,12 @@ uint8_t ull_cp_version_exchange(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = create_local_procedure(PROC_VERSION_EXCHANGE);
+	ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -445,7 +445,7 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 
 	/* TODO(thoh): Proper checks for role, parameters etc. */
 
-	ctx = create_local_procedure(PROC_ENCRYPTION_START);
+	ctx = llcp_create_local_procedure(PROC_ENCRYPTION_START);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -457,7 +457,7 @@ uint8_t ull_cp_encryption_start(struct ll_conn *conn, const uint8_t rand[8], con
 	memcpy(ctx->data.enc.ltk, ltk, sizeof(ctx->data.enc.ltk));
 
 	/* Enqueue request */
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -468,7 +468,7 @@ uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], con
 
 	/* TODO(thoh): Proper checks for role, parameters etc. */
 
-	ctx = create_local_procedure(PROC_ENCRYPTION_PAUSE);
+	ctx = llcp_create_local_procedure(PROC_ENCRYPTION_PAUSE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -480,7 +480,7 @@ uint8_t ull_cp_encryption_pause(struct ll_conn *conn, const uint8_t rand[8], con
 	memcpy(ctx->data.enc.ltk, ltk, sizeof(ctx->data.enc.ltk));
 
 	/* Enqueue request */
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -489,12 +489,12 @@ uint8_t ull_cp_encryption_paused(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = rr_peek(conn);
+	ctx = llcp_rr_peek(conn);
 	if (ctx && ctx->proc == PROC_ENCRYPTION_PAUSE) {
 		return 1;
 	}
 
-	ctx = lr_peek(conn);
+	ctx = llcp_lr_peek(conn);
 	if (ctx && ctx->proc == PROC_ENCRYPTION_PAUSE) {
 		return 1;
 	}
@@ -510,7 +510,7 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 
 	/* TODO(thoh): Proper checks for role, parameters etc. */
 
-	ctx = create_local_procedure(PROC_PHY_UPDATE);
+	ctx = llcp_create_local_procedure(PROC_PHY_UPDATE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -520,7 +520,7 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 	ctx->data.pu.rx = rx;
 	ctx->data.pu.host_initiated = host_initiated;
 
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -530,9 +530,9 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
 
-	lr_abort(conn);
+	llcp_lr_abort(conn);
 
-	ctx = create_local_procedure(PROC_TERMINATE);
+	ctx = llcp_create_local_procedure(PROC_TERMINATE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -543,7 +543,7 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 	 * Termination procedure may be initiated at any time, even if other
 	 * LLCP is active.
 	 */
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -570,7 +570,7 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
-	ctx = create_local_procedure(PROC_CHAN_MAP_UPDATE);
+	ctx = llcp_create_local_procedure(PROC_CHAN_MAP_UPDATE);
 
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -581,7 +581,7 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, uint8_t chm[5])
 	 */
 	memcpy(ctx->data.chmu.chm, chm, sizeof(ctx->data.chmu.chm));
 
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -591,7 +591,7 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, 
 {
 	struct proc_ctx *ctx;
 
-	ctx = create_local_procedure(PROC_DATA_LENGTH_UPDATE);
+	ctx = llcp_create_local_procedure(PROC_DATA_LENGTH_UPDATE);
 
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -600,7 +600,7 @@ uint8_t ull_cp_data_length_update(struct ll_conn *conn, uint16_t max_tx_octets, 
 	/* Apply update to local */
 	ull_dle_local_tx_update(conn, max_tx_octets, max_tx_time);
 
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -612,10 +612,10 @@ void ull_cp_ltk_req_reply(struct ll_conn *conn, const uint8_t ltk[16])
 	/* TODO(thoh): Call rp_enc to query if LTK request reply is allowed */
 	struct proc_ctx *ctx;
 
-	ctx = rr_peek(conn);
+	ctx = llcp_rr_peek(conn);
 	if (ctx && (ctx->proc == PROC_ENCRYPTION_START || ctx->proc == PROC_ENCRYPTION_PAUSE)) {
 		memcpy(ctx->data.enc.ltk, ltk, sizeof(ctx->data.enc.ltk));
-		rp_enc_ltk_req_reply(conn, ctx);
+		llcp_rp_enc_ltk_req_reply(conn, ctx);
 	}
 }
 
@@ -624,9 +624,9 @@ void ull_cp_ltk_req_neq_reply(struct ll_conn *conn)
 	/* TODO(thoh): Call rp_enc to query if LTK negative request reply is allowed */
 	struct proc_ctx *ctx;
 
-	ctx = rr_peek(conn);
+	ctx = llcp_rr_peek(conn);
 	if (ctx && (ctx->proc == PROC_ENCRYPTION_START || ctx->proc == PROC_ENCRYPTION_PAUSE)) {
-		rp_enc_ltk_req_neg_reply(conn, ctx);
+		llcp_rp_enc_ltk_req_neg_reply(conn, ctx);
 	}
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -637,9 +637,9 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	if (feature_conn_param_req(conn)) {
-		ctx = create_local_procedure(PROC_CONN_PARAM_REQ);
+		ctx = llcp_create_local_procedure(PROC_CONN_PARAM_REQ);
 	} else if (conn->lll.role == BT_HCI_ROLE_MASTER) {
-		ctx = create_local_procedure(PROC_CONN_UPDATE);
+		ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
 	} else {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
@@ -647,7 +647,7 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 	if (conn->lll.role == BT_HCI_ROLE_SLAVE) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
-	ctx = create_local_procedure(PROC_CONN_UPDATE);
+	ctx = llcp_create_local_procedure(PROC_CONN_UPDATE);
 #endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	if (!ctx) {
@@ -682,7 +682,7 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 	/* TODO(tosk): Check what to handle (ADV_SCHED) from this legacy fct. */
 	/* event_conn_upd_prep() (event_conn_upd_init()) */
 
-	lr_enqueue(conn, ctx);
+	llcp_lr_enqueue(conn, ctx);
 
 	return BT_HCI_ERR_SUCCESS;
 }
@@ -692,7 +692,7 @@ uint8_t ull_cp_remote_dle_pending(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = rr_peek(conn);
+	ctx = llcp_rr_peek(conn);
 
 	return (ctx && ctx->proc == PROC_DATA_LENGTH_UPDATE);
 }
@@ -702,9 +702,9 @@ void ull_cp_conn_param_req_reply(struct ll_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = rr_peek(conn);
+	ctx = llcp_rr_peek(conn);
 	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
-		rp_conn_param_req_reply(conn, ctx);
+		llcp_rp_conn_param_req_reply(conn, ctx);
 	}
 }
 
@@ -712,10 +712,10 @@ void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
 
-	ctx = rr_peek(conn);
+	ctx = llcp_rr_peek(conn);
 	if (ctx && ctx->proc == PROC_CONN_PARAM_REQ) {
 		ctx->data.cu.error = error_code;
-		rp_conn_param_req_neg_reply(conn, ctx);
+		llcp_rp_conn_param_req_neg_reply(conn, ctx);
 	}
 }
 
@@ -744,16 +744,16 @@ void ull_cp_tx_ack(struct ll_conn *conn, struct node_tx *tx)
 {
 	struct proc_ctx *ctx;
 
-	ctx = lr_peek(conn);
+	ctx = llcp_lr_peek(conn);
 	if (ctx && ctx->tx_ack == tx) {
 		/* TX ack re. local request */
-		lr_tx_ack(conn, ctx, tx);
+		llcp_lr_tx_ack(conn, ctx, tx);
 	}
 
-	ctx = rr_peek(conn);
+	ctx = llcp_rr_peek(conn);
 	if (ctx && ctx->tx_ack == tx) {
 		/* TX ack re. remote response */
-		rr_tx_ack(conn, ctx, tx);
+		llcp_rr_tx_ack(conn, ctx, tx);
 	}
 }
 
@@ -768,23 +768,23 @@ void ull_cp_rx(struct ll_conn *conn, struct node_rx_pdu *rx)
 		/* Process non LL_TERMINATE_IND PDU's as responses to active
 		 * procedures */
 
-		ctx = lr_peek(conn);
+		ctx = llcp_lr_peek(conn);
 		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
 			/* Response on local procedure */
-			lr_rx(conn, ctx, rx);
+			llcp_lr_rx(conn, ctx, rx);
 			return;
 		}
 
-		ctx = rr_peek(conn);
+		ctx = llcp_rr_peek(conn);
 		if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
 			/* Response on remote procedure */
-			rr_rx(conn, ctx, rx);
+			llcp_rr_rx(conn, ctx, rx);
 			return;
 		}
 	}
 
 	/* New remote request */
-	rr_new(conn, rx);
+	llcp_rr_new(conn, rx);
 }
 
 #ifdef ZTEST_UNITTEST
@@ -824,7 +824,7 @@ void test_int_mem_proc_ctx(void)
 	/* The last acquire should fail */
 	zassert_is_null(ctx2, NULL);
 
-	proc_ctx_release(ctx1);
+	llcp_proc_ctx_release(ctx1);
 	nr_of_free_ctx = ctx_buffers_free();
 	zassert_equal(nr_of_free_ctx, 1, NULL);
 
@@ -843,23 +843,23 @@ void test_int_mem_tx(void)
 	ull_cp_init();
 
 	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		peek = tx_alloc_is_available();
+		peek = llcp_tx_alloc_is_available();
 
 		/* The previous tx alloc peek should be valid */
 		zassert_true(peek, NULL);
 
-		txl[i] = tx_alloc();
+		txl[i] = llcp_tx_alloc();
 
 		/* The previous alloc should be valid */
 		zassert_not_null(txl[i], NULL);
 	}
 
-	peek = tx_alloc_is_available();
+	peek = llcp_tx_alloc_is_available();
 
 	/* The last tx alloc peek should fail */
 	zassert_false(peek, NULL);
 
-	tx = tx_alloc();
+	tx = llcp_tx_alloc();
 
 	/* The last tx alloc should fail */
 	zassert_is_null(tx, NULL);
@@ -870,23 +870,23 @@ void test_int_mem_tx(void)
 	}
 
 	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
-		peek = tx_alloc_is_available();
+		peek = llcp_tx_alloc_is_available();
 
 		/* The previous tx alloc peek should be valid */
 		zassert_true(peek, NULL);
 
-		txl[i] = tx_alloc();
+		txl[i] = llcp_tx_alloc();
 
 		/* The previous alloc should be valid */
 		zassert_not_null(txl[i], NULL);
 	}
 
-	peek = tx_alloc_is_available();
+	peek = llcp_tx_alloc_is_available();
 
 	/* The last tx alloc peek should fail */
 	zassert_false(peek, NULL);
 
-	tx = tx_alloc();
+	tx = llcp_tx_alloc();
 
 	/* The last tx alloc should fail */
 	zassert_is_null(tx, NULL);
