@@ -36,10 +36,14 @@ extern enum bst_result_t bst_result;
 static const struct bt_mesh_test_cfg tx_cfg = {
 	.addr = 0x0001,
 	.dev_key = { 0x01 },
+	.net_idx = 0x03,
+	.net_key = { 0x03 }
 };
 static const struct bt_mesh_test_cfg rx_cfg = {
 	.addr = 0x0002,
 	.dev_key = { 0x02 },
+	.net_idx = 0x03,
+	.net_key = { 0x03 }
 };
 
 static int expected_send_err;
@@ -93,7 +97,7 @@ static void test_tx_unicast(void)
 {
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_send(rx_cfg.addr, test_vector[i].len,
@@ -110,7 +114,7 @@ static void test_tx_group(void)
 {
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_send(GROUP_ADDR, test_vector[i].len,
@@ -128,7 +132,7 @@ static void test_tx_va(void)
 	uint16_t virtual_addr;
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	err = bt_mesh_va_add(test_va_uuid, &virtual_addr);
 	ASSERT_OK(err, "Virtual addr add failed (err %d)", err);
@@ -148,7 +152,7 @@ static void test_tx_loopback(void)
 {
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		bt_mesh_test_recv(test_vector[i].len, cfg->addr, K_NO_WAIT);
@@ -175,15 +179,16 @@ static void test_tx_unknown_app(void)
 	uint8_t app_key[16] = { 0xba, 0xd0, 0x11, 0x22};
 	uint8_t status = 0;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
-	ASSERT_OK(bt_mesh_cfg_app_key_add(0, cfg->addr, 0, 1, app_key, &status),
+	ASSERT_OK(bt_mesh_cfg_app_key_add(cfg->net_idx, cfg->addr, cfg->net_idx, 1,
+						app_key, &status),
 		  "Failed adding additional appkey");
 	if (status) {
 		FAIL("App key add status: 0x%02x", status);
 	}
 
-	ASSERT_OK(bt_mesh_cfg_mod_app_bind(0, cfg->addr, cfg->addr, 1,
+	ASSERT_OK(bt_mesh_cfg_mod_app_bind(cfg->net_idx, cfg->addr, cfg->addr, 1,
 					   TEST_MOD_ID, &status),
 		  "Failed binding additional appkey");
 	if (status) {
@@ -212,9 +217,9 @@ static void test_tx_loopback_group(void)
 	uint8_t status;
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
-	err = bt_mesh_cfg_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
+	err = bt_mesh_cfg_mod_sub_add(cfg->net_idx, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
 	ASSERT_OK(err || status, "Mod sub add failed (err %d, status %u)",
 		  err, status);
@@ -247,7 +252,7 @@ static void test_tx_loopback_group(void)
  */
 static void test_tx_seg_block(void)
 {
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 
 	ASSERT_OK(bt_mesh_test_send(rx_cfg.addr, 20, 0, K_NO_WAIT));
@@ -274,7 +279,7 @@ static void test_tx_seg_concurrent(void)
 	struct k_sem sem;
 
 	k_sem_init(&sem, 0, 1);
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	ASSERT_OK(bt_mesh_test_send_async(rx_cfg.addr, 20, 0, &async_send_cb, &sem));
 
@@ -302,7 +307,7 @@ static void test_tx_seg_ivu(void)
 
 	k_sem_init(&sem, 0, 1);
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	/* Enable IV update test mode to override IV update timers */
 	bt_mesh_iv_update_test(true);
@@ -347,7 +352,7 @@ static void test_tx_seg_fail(void)
 	struct k_sem sem;
 
 	k_sem_init(&sem, 0, 1);
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	expected_send_err = -ETIMEDOUT;
 	ASSERT_OK(bt_mesh_test_send_async(0x0fff, 20, 0, &async_send_cb, &sem));
@@ -364,7 +369,7 @@ static void test_rx_unicast(void)
 {
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		err = bt_mesh_test_recv(test_vector[i].len, cfg->addr,
@@ -382,9 +387,9 @@ static void test_rx_group(void)
 	uint8_t status;
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
-	err = bt_mesh_cfg_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
+	err = bt_mesh_cfg_mod_sub_add(cfg->net_idx, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
 	ASSERT_OK(err || status, "Mod sub add failed (err %d, status %u)",
 		  err, status);
@@ -406,9 +411,9 @@ static void test_rx_va(void)
 	uint8_t status;
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
-	err = bt_mesh_cfg_mod_sub_va_add(0, cfg->addr, cfg->addr, test_va_uuid,
+	err = bt_mesh_cfg_mod_sub_va_add(cfg->net_idx, cfg->addr, cfg->addr, test_va_uuid,
 					 TEST_MOD_ID, &virtual_addr, &status);
 	ASSERT_OK(err || status, "Sub add failed (err %d, status %u)", err,
 		  status);
@@ -429,7 +434,7 @@ static void test_rx_none(void)
 	struct bt_mesh_test_msg msg;
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	err = bt_mesh_test_recv_msg(&msg, K_SECONDS(60));
 	if (!err) {
@@ -443,7 +448,7 @@ static void test_rx_none(void)
  */
 static void test_rx_seg_block(void)
 {
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	ASSERT_OK(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
 	ASSERT_OK(bt_mesh_test_recv(20, cfg->addr, K_SECONDS(2)), "RX fail");
@@ -459,10 +464,10 @@ static void test_rx_seg_concurrent(void)
 	uint8_t status;
 	int err;
 
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	/* Subscribe to group addr */
-	err = bt_mesh_cfg_mod_sub_add(0, cfg->addr, cfg->addr, GROUP_ADDR,
+	err = bt_mesh_cfg_mod_sub_add(cfg->net_idx, cfg->addr, cfg->addr, GROUP_ADDR,
 				      TEST_MOD_ID, &status);
 	ASSERT_OK(err || status, "Mod sub add failed (err %d, status %u)",
 		  err, status);
@@ -481,7 +486,7 @@ static void test_rx_seg_concurrent(void)
  */
 static void test_rx_seg_ivu(void)
 {
-	bt_mesh_test_setup();
+	bt_mesh_test_setup(true);
 
 	ASSERT_OK(bt_mesh_test_recv(255, cfg->addr, K_SECONDS(5)), "RX fail");
 	ASSERT_OK(bt_mesh_test_recv(255, cfg->addr, K_SECONDS(5)), "RX fail");

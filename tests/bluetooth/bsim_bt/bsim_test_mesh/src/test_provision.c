@@ -51,7 +51,7 @@ static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
 }
 
 extern const struct bt_mesh_comp comp;
-extern const uint8_t test_net_key[16];
+static const uint8_t test_net_key[16] = {0x01};
 static const uint8_t dev_key[16] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 static const uint8_t dev_uuid[16] = { 0x6c, 0x69, 0x6e, 0x67, 0x61, 0x6f };
 static struct bt_mesh_prov prov = {
@@ -65,6 +65,13 @@ static void bt_mesh_device_setup(void)
 {
 	int err;
 
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		err = mount_settings_area();
+		if (err) {
+			FAIL("Cannot mount settings file system (err %d)", err);
+		}
+	}
+
 	err = bt_enable(NULL);
 	if (err) {
 		FAIL("Bluetooth init failed (err %d)", err);
@@ -77,6 +84,10 @@ static void bt_mesh_device_setup(void)
 	if (err) {
 		FAIL("Initializing mesh failed (err %d)", err);
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
 	}
 }
 

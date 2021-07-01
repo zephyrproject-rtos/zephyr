@@ -22,6 +22,24 @@ static K_QUEUE_DEFINE(recv);
 struct bt_mesh_test_stats test_stats;
 struct bt_mesh_msg_ctx test_send_ctx;
 
+/* mounting info */
+#if IS_ENABLED(CONFIG_SETTINGS)
+static FATFS fat_fs;
+static struct fs_mount_t fatfs_mnt = {
+	.type = FS_FATFS,
+	.mnt_point = "/RAM:",
+	.fs_data = &fat_fs,
+};
+
+int mount_settings_area(void)
+{
+	int err = fs_mount(&fatfs_mnt);
+
+	LOG_INF("Mount point creation status: %i", err);
+	return err;
+}
+#endif
+
 static void msg_rx(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 		   struct net_buf_simple *buf)
 {
@@ -92,7 +110,6 @@ const struct bt_mesh_comp comp = {
 	.elem_count = ARRAY_SIZE(elems),
 };
 
-const uint8_t test_net_key[16] = { 1, 2, 3 };
 const uint8_t test_app_key[16] = { 4, 5, 6 };
 const uint8_t test_va_uuid[16] = "Mesh Label UUID";
 
@@ -110,31 +127,41 @@ static void bt_enabled(void)
 		return;
 	}
 
-	err = bt_mesh_provision(test_net_key, 0, 0, 0, cfg->addr, cfg->dev_key);
-	if (err) {
-		FAIL("Provisioning failed (err %d)", err);
-		return;
+	LOG_INF("Mesh initialized");
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
 	}
 
-	LOG_INF("Mesh initialized");
+	if (!cfg) {
+		FAIL("No configuration is provided");
+	}
+
+	if (!bt_mesh_is_provisioned()) {
+		err = bt_mesh_provision(cfg->net_key, cfg->net_idx, 0, 0, cfg->addr, cfg->dev_key);
+		if (err) {
+			FAIL("Provisioning failed (err %d)", err);
+			return;
+		}
+	}
 
 	/* Self configure */
 
-	err = bt_mesh_cfg_app_key_add(0, cfg->addr, 0, 0, test_app_key,
+	err = bt_mesh_cfg_app_key_add(cfg->net_idx, cfg->addr, cfg->net_idx, 0, test_app_key,
 				      &status);
 	if (err || status) {
 		FAIL("AppKey add failed (err %d, status %u)", err, status);
 		return;
 	}
 
-	err = bt_mesh_cfg_mod_app_bind(0, cfg->addr, cfg->addr, 0, TEST_MOD_ID,
+	err = bt_mesh_cfg_mod_app_bind(cfg->net_idx, cfg->addr, cfg->addr, 0, TEST_MOD_ID,
 				       &status);
 	if (err || status) {
 		FAIL("Mod app bind failed (err %d, status %u)", err, status);
 		return;
 	}
 
-	err = bt_mesh_cfg_net_transmit_set(0, cfg->addr,
+	err = bt_mesh_cfg_net_transmit_set(cfg->net_idx, cfg->addr,
 					   BT_MESH_TRANSMIT(2, 20), &status);
 	if (err || status != BT_MESH_TRANSMIT(2, 20)) {
 		FAIL("Net transmit set failed (err %d, status %u)", err,
@@ -143,13 +170,20 @@ static void bt_enabled(void)
 	}
 }
 
-void bt_mesh_test_setup(void)
+void bt_mesh_test_setup(bool mount_fs)
 {
 	int err;
 
-	test_model = &models[2];
+	if (IS_ENABLED(CONFIG_SETTINGS) && mount_fs) {
+		err = mount_settings_area();
+		if (err) {
+			FAIL("Cannot mount settings file system (err %d)", err);
+		}
+	}
 
+	test_model = &models[2];
 	err = bt_enable(NULL);
+
 	if (err) {
 		FAIL("Bluetooth init failed (err %d)", err);
 		return;
@@ -274,6 +308,7 @@ int bt_mesh_test_send_async(uint16_t addr, size_t len,
 	test_send_ctx.addr = addr;
 	test_send_ctx.send_rel = (flags & FORCE_SEGMENTATION);
 	test_send_ctx.send_ttl = BT_MESH_TTL_DEFAULT;
+	test_send_ctx.net_idx = cfg->net_idx;
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, TEST_MSG_OP, BT_MESH_TX_SDU_MAX);
 	bt_mesh_model_msg_init(&buf, TEST_MSG_OP);
