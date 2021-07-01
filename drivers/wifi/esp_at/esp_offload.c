@@ -376,7 +376,10 @@ static int esp_sendto(struct net_pkt *pkt,
 	}
 
 	if (esp_socket_type(sock) == SOCK_STREAM) {
-		if (!esp_socket_connected(sock)) {
+		atomic_val_t flags = esp_socket_flags(sock);
+
+		if (!(flags & ESP_SOCK_CONNECTED) ||
+		     (flags & ESP_SOCK_CLOSE_PENDING)) {
 			return -ENOTCONN;
 		}
 	} else {
