@@ -361,4 +361,12 @@ config MBEDTLS_HAVE_TIME_DATE
 	  There also need to be a valid time source in the system, as mbedTLS
 	  expects a valid date/time for certificate validation."
 
+config MBEDTLS_SSL_DTLS_CONNECTION_ID
+	bool "Enable DTLS Connection ID extension"
+	depends on MBEDTLS_DTLS
+	help
+	  Enable support for the DTLS Connection ID extension
+	  which allows to identify DTLS connections across changes
+	  in the underlying transport.
+
 endmenu
