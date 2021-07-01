@@ -290,32 +290,67 @@ out:
 	return ret;
 }
 
+static bool esp_socket_can_send(struct esp_socket *sock)
+{
+	atomic_val_t flags = esp_socket_flags(sock);
+
+	if ((flags & ESP_SOCK_CONNECTED) && !(flags & ESP_SOCK_CLOSE_PENDING)) {
+		return true;
+	}
+
+	return false;
+}
+
+static int esp_socket_send_one_pkt(struct esp_socket *sock)
+{
+	struct net_context *context = sock->context;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = k_fifo_get(&sock->tx_fifo, K_NO_WAIT);
+	if (!pkt) {
+		return -ENOMSG;
+	}
+
+	if (!esp_socket_can_send(sock)) {
+		goto pkt_unref;
+	}
+
+	ret = _sock_send(sock, pkt);
+	if (ret < 0) {
+		LOG_ERR("Failed to send data: link %d, ret %d",
+			sock->link_id, ret);
+
+		/*
+		 * If this is stream data, then we should stop pushing anything
+		 * more to this socket, as there will be a hole in the data
+		 * stream, which application layer is not expecting.
+		 */
+		if (esp_socket_type(sock) == SOCK_STREAM) {
+			if (!esp_socket_flags_test_and_set(sock,
+						ESP_SOCK_CLOSE_PENDING)) {
+				esp_socket_work_submit(sock, &sock->close_work);
+			}
+		}
+	} else if (context->send_cb) {
+		context->send_cb(context, ret, context->user_data);
+	}
+
+pkt_unref:
+	net_pkt_unref(pkt);
+
+	return 0;
+}
+
 void esp_send_work(struct k_work *work)
 {
 	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
 					       send_work);
-	struct net_context *context = sock->context;
-	struct net_pkt *pkt;
-	int ret = 0;
+	int err;
 
-	while (true) {
-		pkt = k_fifo_get(&sock->tx_fifo, K_NO_WAIT);
-		if (!pkt) {
-			break;
-		}
-
-		ret = _sock_send(sock, pkt);
-		if (ret < 0) {
-			LOG_ERR("Failed to send data: link %d, ret %d",
-				sock->link_id, ret);
-		}
-
-		if (context->send_cb) {
-			context->send_cb(context, ret, context->user_data);
-		}
-
-		net_pkt_unref(pkt);
-	}
+	do {
+		err = esp_socket_send_one_pkt(sock);
+	} while (err != -ENOMSG);
 }
 
 static int esp_sendto(struct net_pkt *pkt,
