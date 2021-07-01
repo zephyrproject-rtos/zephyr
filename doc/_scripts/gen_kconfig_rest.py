@@ -528,9 +528,12 @@ def sym_header_rst(sym):
     #
     # - '.. title::' sets the title of the document (e.g. <title>). This seems
     #   to be poorly documented at the moment.
+    l = len(f"CONFIG_{sym.name}")
     return ":orphan:\n\n" \
-           f".. title:: {sym.name}\n\n" \
+           f".. title:: CONFIG_{sym.name}\n\n" \
            f".. kconfig:: CONFIG_{sym.name}\n\n" \
+           f"CONFIG_{sym.name}\n" \
+           f"{'#' * l}\n\n" \
            f"{prompt_rst(sym)}\n\n" \
            f"Type: ``{kconfiglib.TYPE_TO_STR[sym.type]}``\n\n"
 
