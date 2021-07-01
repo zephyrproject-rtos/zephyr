@@ -1,0 +1,5 @@
+description: Apollo3 flash controller
+
+compatible: "ambiq,apollo3-flash-controller"
+
+include: flash-controller.yaml
