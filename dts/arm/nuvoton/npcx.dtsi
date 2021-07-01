@@ -622,6 +622,11 @@
 			label = "PSL_OUT";
 		};
 	};
+
+	soc-id {
+		compatible = "nuvoton,npcx-soc-id";
+		family-id = <0x20>;
+	};
 };
 
 &nvic {
