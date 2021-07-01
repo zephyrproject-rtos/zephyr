@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(dma_sam_xdmac);
 struct sam_xdmac_channel_cfg {
 	void *user_data;
 	dma_callback_t callback;
+	uint32_t data_size;
 };
 
 /* Device constant configuration parameters */
@@ -207,6 +208,7 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 	burst_size = find_msb_set(cfg->source_burst_length) - 1;
 	LOG_DBG("burst_size=%d", burst_size);
 	data_size = find_msb_set(cfg->source_data_size) - 1;
+	dev_data->dma_channels[channel].data_size = data_size;
 	LOG_DBG("data_size=%d", data_size);
 
 	switch (cfg->channel_direction) {
@@ -267,6 +269,19 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 	ret = sam_xdmac_transfer_configure(dev, channel, &transfer_cfg);
 
 	return ret;
+}
+
+static int sam_xdmac_transfer_reload(const struct device *dev, uint32_t channel,
+				     uint32_t src, uint32_t dst, size_t size)
+{
+	struct sam_xdmac_dev_data *const dev_data = DEV_DATA(dev);
+	struct sam_xdmac_transfer_config transfer_cfg = {
+		.sa = src,
+		.da = dst,
+		.ublen = size >> dev_data->dma_channels[channel].data_size,
+	};
+
+	return sam_xdmac_transfer_configure(dev, channel, &transfer_cfg);
 }
 
 int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
@@ -341,6 +356,7 @@ static int sam_xdmac_initialize(const struct device *dev)
 
 static const struct dma_driver_api sam_xdmac_driver_api = {
 	.config = sam_xdmac_config,
+	.reload = sam_xdmac_transfer_reload,
 	.start = sam_xdmac_transfer_start,
 	.stop = sam_xdmac_transfer_stop,
 };
