@@ -223,4 +223,9 @@
 				     &altf_adc11_sl>; /* ADC11 - PINC7 */
 		};
 	};
+
+	soc-id {
+		chip-id = <0x09>;
+		revision-reg = <0x0000FFFC 4>;
+	};
 };
