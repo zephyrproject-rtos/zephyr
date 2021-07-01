@@ -408,27 +408,41 @@ static void http_client_init_parser(struct http_parser *parser,
 	settings->on_url = on_url;
 }
 
-static int http_wait_data(int sock, struct http_request *req)
+static int http_wait_data(int sock, struct http_request *req, int32_t timeout)
 {
 	int total_received = 0;
 	size_t offset = 0;
 	int received, ret;
+	struct pollfd poll_fd;
+
+	poll_fd.fd = sock;
+	poll_fd.events = POLLIN;
 
 	do {
-		received = recv(sock, req->internal.response.recv_buf + offset,
-				req->internal.response.recv_buf_len - offset,
-				0);
-		if (received == 0) {
-			/* Connection closed */
-			LOG_DBG("Connection closed");
-			ret = total_received;
-			break;
-		} else if (received < 0) {
-			/* Socket error */
-			LOG_DBG("Connection error (%d)", errno);
+		ret = poll(&poll_fd, 1, timeout);
+		if (ret < 0) {
+			LOG_ERR("Socket poll err (%d)", errno);
 			ret = -errno;
 			break;
-		} else {
+		} else if (ret == 0) {
+			LOG_ERR("Socket poll timeout");
+			break;
+		} else if (poll_fd.revents & POLLIN) {
+			received = recv(sock, req->internal.response.recv_buf + offset,
+					req->internal.response.recv_buf_len - offset,
+					0);
+			if (received == 0) {
+				/* Connection closed */
+				LOG_DBG("Connection closed");
+				ret = total_received;
+				break;
+			} else if (received < 0) {
+				/* Socket error */
+				LOG_ERR("Connection error (%d)", errno);
+				ret = -errno;
+				break;
+			}
+
 			req->internal.response.data_len += received;
 
 			(void)http_parser_execute(
@@ -436,20 +450,19 @@ static int http_wait_data(int sock, struct http_request *req)
 				&req->internal.parser_settings,
 				req->internal.response.recv_buf + offset,
 				received);
+
+			total_received += received;
+			offset += received;
+
+			if (offset >= req->internal.response.recv_buf_len) {
+				offset = 0;
+			}
+
+			if (req->internal.response.message_complete) {
+				ret = total_received;
+				break;
+			}
 		}
-
-		total_received += received;
-		offset += received;
-
-		if (offset >= req->internal.response.recv_buf_len) {
-			offset = 0;
-		}
-
-		if (req->internal.response.message_complete) {
-			ret = total_received;
-			break;
-		}
-
 	} while (true);
 
 	return ret;
@@ -660,7 +673,7 @@ int http_client_req(int sock, struct http_request *req,
 	}
 
 	/* Request is sent, now wait data to be received */
-	total_recv = http_wait_data(sock, req);
+	total_recv = http_wait_data(sock, req, timeout);
 	if (total_recv < 0) {
 		NET_DBG("Wait data failure (%d)", total_recv);
 	} else {
