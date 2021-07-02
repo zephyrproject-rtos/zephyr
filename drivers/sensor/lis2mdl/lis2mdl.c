@@ -444,12 +444,12 @@ static int lis2mdl_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 		const struct lis2mdl_config *const config,
-		enum pm_device_state new_state)
+		enum pm_device_state state)
 {
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	int status = 0;
 
-	if (new_state == PM_DEVICE_STATE_ACTIVE) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
 		if (config->single_mode) {
 			status = lis2mdl_operating_mode_set(ctx,
 						LIS2MDL_SINGLE_TRIGGER);
@@ -462,9 +462,6 @@ static int lis2mdl_set_power_state(struct lis2mdl_data *lis2mdl,
 		}
 		LOG_DBG("State changed to active");
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-				new_state == PM_DEVICE_STATE_SUSPEND ||
-				new_state == PM_DEVICE_STATE_OFF);
 		status = lis2mdl_operating_mode_set(ctx, LIS2MDL_POWER_DOWN);
 		if (status) {
 			LOG_ERR("Power down failed");
@@ -480,15 +477,8 @@ static int lis2mdl_pm_control(const struct device *dev,
 {
 	struct lis2mdl_data *lis2mdl = dev->data;
 	const struct lis2mdl_config *const config = dev->config;
-	int status = 0;
-	enum pm_device_state curr_state;
 
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		status = lis2mdl_set_power_state(lis2mdl, config, state);
-	}
-
-	return status;
+	return lis2mdl_set_power_state(lis2mdl, config, state);
 }
 #endif /* CONFIG_PM_DEVICE */
 

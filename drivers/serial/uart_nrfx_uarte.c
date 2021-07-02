@@ -1832,14 +1832,14 @@ static void wait_for_tx_stopped(const struct device *dev)
 
 
 static void uarte_nrfx_set_power_state(const struct device *dev,
-				       enum pm_device_state new_state)
+				       enum pm_device_state state)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 #if defined(CONFIG_UART_ASYNC_API) || defined(UARTE_INTERRUPT_DRIVEN)
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 #endif
 
-	if (new_state == PM_DEVICE_STATE_ACTIVE) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
 		uarte_nrfx_pins_enable(dev, true);
 		nrf_uarte_enable(uarte);
 
@@ -1864,20 +1864,6 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 #endif
 		}
 	} else {
-		enum pm_device_state state;
-
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-				new_state == PM_DEVICE_STATE_SUSPEND ||
-				new_state == PM_DEVICE_STATE_OFF);
-
-		/* if pm is already not active, driver will stay indefinitely
-		 * in while loop waiting for event NRF_UARTE_EVENT_RXTO
-		 */
-		(void)pm_device_state_get(dev, &state);
-		if (state != PM_DEVICE_STATE_ACTIVE) {
-			return;
-		}
-
 		/* Disabling UART requires stopping RX, but stop RX event is
 		 * only sent after each RX if async UART API is used.
 		 */
@@ -1924,12 +1910,7 @@ static void uarte_nrfx_set_power_state(const struct device *dev,
 static int uarte_nrfx_pm_control(const struct device *dev,
 				 enum pm_device_state state)
 {
-	enum pm_device_state curr_state;
-
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		uarte_nrfx_set_power_state(dev, state);
-	}
+	uarte_nrfx_set_power_state(dev, state);
 
 	return 0;
 }
