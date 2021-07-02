@@ -74,11 +74,14 @@ static struct bt_gatt_read_params read_params;
 static struct bt_gatt_discover_params discover_params;
 static struct csis_instance_t *cur_inst;
 static bool busy;
-static const struct bt_csip_set_member **active_members;
-static const struct bt_csip_set_t *active_set;
-static uint8_t active_members_count;
-static uint8_t active_members_handled;
-static uint8_t active_members_restored;
+
+static struct active_members {
+	const struct bt_csip_set_member **members;
+	const struct bt_csip_set_t *set;
+	uint8_t members_count;
+	uint8_t members_handled;
+	uint8_t members_restored;
+} active;
 
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
@@ -97,11 +100,7 @@ static void discover_sets_resume(struct bt_conn *conn, uint16_t sirk_handle,
 
 static void active_members_reset(void)
 {
-	active_members = NULL;
-	active_set = NULL;
-	active_members_count = 0;
-	active_members_handled = 0;
-	active_members_restored = 0;
+	(void)memset(&active, 0, sizeof(active));
 }
 
 static struct csis_instance_t *lookup_instance_by_handle(struct bt_conn *conn,
@@ -914,10 +913,10 @@ static struct csis_instance_t *get_next_inst_lower_rank(uint8_t rank,
 {
 	struct csis_instance_t *next = NULL;
 
-	for (int i = 0; i < active_members_count; i++) {
+	for (int i = 0; i < active.members_count; i++) {
 		struct csis_instance_t *inst;
 
-		inst = lookup_instance_by_set(active_members[i], set);
+		inst = lookup_instance_by_set(active.members[i], set);
 
 		__ASSERT(inst != NULL, "CSIS instance was NULL");
 
@@ -938,10 +937,10 @@ static struct csis_instance_t *get_next_inst_higher_rank(uint8_t rank,
 {
 	struct csis_instance_t *next = NULL;
 
-	for (int i = 0; i < active_members_count; i++) {
+	for (int i = 0; i < active.members_count; i++) {
 		struct csis_instance_t *inst;
 
-		inst = lookup_instance_by_set(active_members[i], set);
+		inst = lookup_instance_by_set(active.members[i], set);
 
 		__ASSERT(inst != NULL, "CSIS instance was NULL");
 
@@ -971,14 +970,14 @@ static void csip_write_restore_cb(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 
-	active_members_restored++;
+	active.members_restored++;
 	BT_DBG("Restored %u/%u members",
-	       active_members_restored, active_members_handled);
+	       active.members_restored, active.members_handled);
 
-	if (active_members_restored < active_members_handled) {
+	if (active.members_restored < active.members_handled) {
 		int csip_err;
 
-		cur_inst = get_next_inst_lower_rank(cur_inst->rank, active_set);
+		cur_inst = get_next_inst_lower_rank(cur_inst->rank, active.set);
 
 		csip_err = csip_write_set_lock(cur_inst, false,
 					       csip_write_restore_cb);
@@ -986,7 +985,7 @@ static void csip_write_restore_cb(struct bt_conn *conn, uint8_t err,
 			busy = true;
 		} else {
 			BT_DBG("Failed to release next member[%u]: %d",
-			       active_members_handled, csip_err);
+			       active.members_handled, csip_err);
 
 			active_members_reset();
 			if (csip_cbs && csip_cbs->release_set) {
@@ -1008,12 +1007,12 @@ static void csip_write_lock_cb(struct bt_conn *conn, uint8_t err,
 
 	if (err) {
 		BT_DBG("Could not lock (0x%X)", err);
-		if (active_members_handled > 0) {
+		if (active.members_handled > 0) {
 			int csip_err;
 
-			active_members_restored = 0;
+			active.members_restored = 0;
 			cur_inst = get_next_inst_lower_rank(cur_inst->rank,
-							    active_set);
+							    active.set);
 
 			csip_err = csip_write_set_lock(cur_inst, false,
 						       csip_write_restore_cb);
@@ -1034,16 +1033,16 @@ static void csip_write_lock_cb(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 
-	active_members_handled++;
+	active.members_handled++;
 	BT_DBG("Locked %u/%u members",
-	       active_members_handled, active_members_count);
+	       active.members_handled, active.members_count);
 
-	if (active_members_handled < active_members_count) {
+	if (active.members_handled < active.members_count) {
 		int csip_err;
 		struct csis_instance_t *prev_inst = cur_inst;
 
 		cur_inst = get_next_inst_higher_rank(cur_inst->rank,
-						     active_set);
+						     active.set);
 
 		csip_err = csip_write_set_lock(cur_inst, true,
 					       csip_write_lock_cb);
@@ -1051,9 +1050,9 @@ static void csip_write_lock_cb(struct bt_conn *conn, uint8_t err,
 			busy = true;
 		} else {
 			BT_DBG("Failed to lock next member[%u]: %d",
-			       active_members_handled, csip_err);
+			       active.members_handled, csip_err);
 
-			active_members_restored = 0;
+			active.members_restored = 0;
 
 			csip_err = csip_write_set_lock(prev_inst, false,
 						       csip_write_restore_cb);
@@ -1088,14 +1087,14 @@ static void csip_write_release_cb(struct bt_conn *conn, uint8_t err,
 		return;
 	}
 
-	active_members_handled++;
+	active.members_handled++;
 	BT_DBG("Released %u/%u members",
-	       active_members_handled, active_members_count);
+	       active.members_handled, active.members_count);
 
-	if (active_members_handled < active_members_count) {
+	if (active.members_handled < active.members_count) {
 		int csip_err;
 
-		cur_inst = get_next_inst_lower_rank(cur_inst->rank, active_set);
+		cur_inst = get_next_inst_lower_rank(cur_inst->rank, active.set);
 
 		csip_err = csip_write_set_lock(cur_inst, false,
 					       csip_write_release_cb);
@@ -1103,7 +1102,7 @@ static void csip_write_release_cb(struct bt_conn *conn, uint8_t err,
 			busy = true;
 		} else {
 			BT_DBG("Failed to release next member[%u]: %d",
-			       active_members_handled, csip_err);
+			       active.members_handled, csip_err);
 
 			active_members_reset();
 			if (csip_cbs && csip_cbs->release_set) {
@@ -1303,9 +1302,9 @@ int bt_csip_lock(const struct bt_csip_set_member **members, uint8_t count,
 	err = csip_write_set_lock(cur_inst, true, csip_write_lock_cb);
 	if (err == 0) {
 		busy = true;
-		active_members = members;
-		active_members_count = count;
-		active_set = set;
+		active.members = members;
+		active.members_count = count;
+		active.set = set;
 	}
 
 	return err;
@@ -1332,9 +1331,9 @@ int bt_csip_release(const struct bt_csip_set_member **members, uint8_t count,
 	err = csip_write_set_lock(cur_inst, false, csip_write_release_cb);
 	if (err == 0) {
 		busy = true;
-		active_members = members;
-		active_members_count = count;
-		active_set = set;
+		active.members = members;
+		active.members_count = count;
+		active.set = set;
 	}
 
 	return err;
