@@ -197,7 +197,6 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 
 	/* Make sure we're in a good state so slave recognises the Start */
 	i2c_set_scl(context, 1);
-	flags |= I2C_MSG_STOP;
 
 	do {
 		/* Stop flag from previous message? */
@@ -236,6 +235,16 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 			/* Read */
 			while (buf < buf_end) {
 				*buf++ = i2c_read_byte(context);
+				if (buf - msgs->buf == 1 &&
+					(flags & I2C_MSG_RECV_LEN)) {
+					if (*msgs->buf <= 0) {
+						i2c_write_bit(context, 1);
+						result = -EPROTO;
+						goto finish;
+					}
+					msgs->len = *msgs->buf;
+					buf_end = buf + msgs->len;
+				}
 				/* ACK the byte, except for the last one */
 				i2c_write_bit(context, buf == buf_end);
 			}

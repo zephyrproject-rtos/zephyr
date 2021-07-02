@@ -89,6 +89,12 @@ extern "C" {
  * @note Not all SoC I2C implementations support this feature. */
 #define I2C_MSG_ADDR_10_BITS		BIT(3)
 
+/** First received byte is the length of the response.
+ *
+ * @note Not all SoC I2C implementations support this feature.
+ */
+#define I2C_MSG_RECV_LEN		BIT(4)
+
 /**
  * @brief One I2C Message.
  *
