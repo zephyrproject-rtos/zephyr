@@ -1,0 +1,30 @@
+# Xen hypervisor console via UART setup
+#
+# Copyright (c) 2021 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config UART_XEN_HVC
+	bool "Xen hypervisor console UART Driver"
+	select SERIAL_HAS_DRIVER
+	depends on BOARD_XENVM
+	default y
+	help
+	  Enable Xen hypervisor console driver.
+
+config XEN_HVC_INIT_PRIORITY
+	int "Xen hypervisor console init priority"
+	depends on UART_XEN_HVC
+	default 55
+	help
+	  Set init priority for Xen HVC, should be inited before UART
+	  console driver (HVC gets inited on PRE_KERNEL_1 stage).
+
+config XEN_EARLY_CONSOLEIO
+	bool "Early printk/stdout through console_io Xen interface"
+	depends on BOARD_XENVM
+	default n
+	help
+	  Enable setting of console_io symbol hook for stdout and printk.
+	  Log output will become available on PRE_KERNEL_1 stage. Requires
+	  Xen, compiled with CONFIG_DEBUG flag.
