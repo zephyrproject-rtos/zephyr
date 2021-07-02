@@ -14,9 +14,27 @@
 #include <stm32wbxx_ll_pwr.h>
 #include <stm32wbxx_ll_rcc.h>
 #include <clock_control/clock_stm32_ll_common.h>
+#include "stm32_hsem.h"
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
+
+/*
+ * @brief Switch the system clock on HSI
+ * @param none
+ * @retval none
+ */
+static void switch_on_hsi(void)
+{
+	LL_RCC_HSI_Enable();
+	while (!LL_RCC_HSI_IsReady()) {
+	}
+
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+	LL_RCC_SetSMPSClockSource(LL_RCC_SMPS_CLKSOURCE_HSI);
+	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
+	}
+}
 
 /* Invoke Low Power/System Off specific Tasks */
 void pm_power_state_set(struct pm_state_info info)
@@ -26,12 +44,28 @@ void pm_power_state_set(struct pm_state_info info)
 		return;
 	}
 
+	/* Implementation of STM32 AN5289 algorithm to enter/exit lowpower */
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_WAIT_FOREVER);
+	if (!LL_HSEM_1StepLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID)) {
+		if (LL_PWR_IsActiveFlag_C2DS()) {
+			/* Release ENTRY_STOP_MODE semaphore */
+			LL_HSEM_ReleaseLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID, 0);
+
+			/* The switch on HSI before entering Stop Mode is required */
+			switch_on_hsi();
+		}
+	} else {
+		/* The switch on HSI before entering Stop Mode is required */
+		switch_on_hsi();
+	}
+
 	switch (info.substate_id) {
 	case 1: /* this corresponds to the STOP0 mode: */
 		/* ensure HSI is the wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
 		/* enter STOP0 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP0);
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 		LL_LPM_EnableDeepSleep();
 		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
@@ -41,6 +75,7 @@ void pm_power_state_set(struct pm_state_info info)
 		LL_RCC_SetClkAfterWakeFromStop(LL_RCC_STOP_WAKEUPCLOCK_HSI);
 		/* enter STOP1 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP1);
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 		LL_LPM_EnableDeepSleep();
 		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
@@ -53,11 +88,14 @@ void pm_power_state_set(struct pm_state_info info)
 #endif /* PWR_CR1_RRSTP */
 		/* enter STOP2 mode */
 		LL_PWR_SetPowerMode(LL_PWR_MODE_STOP2);
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 		LL_LPM_EnableDeepSleep();
 		/* enter SLEEP mode : WFE or WFI */
 		k_cpu_idle();
 		break;
 	default:
+		/* Release RCC semaphore */
+		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 		LOG_DBG("Unsupported power substate-id %u", info.substate_id);
 		break;
 	}
@@ -66,6 +104,11 @@ void pm_power_state_set(struct pm_state_info info)
 /* Handle SOC specific activity after Low Power Mode Exit */
 void pm_power_state_exit_post_ops(struct pm_state_info info)
 {
+	/* Implementation of STM32 AN5289 algorithm to enter/exit lowpower */
+	/* Release ENTRY_STOP_MODE semaphore */
+	LL_HSEM_ReleaseLock(HSEM, CFG_HW_ENTRY_STOP_MODE_SEMID, 0);
+	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_WAIT_FOREVER);
+
 	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
 		LOG_DBG("Unsupported power state %u", info.state);
 	} else {
@@ -86,6 +129,9 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 		/* need to restore the clock */
 		stm32_clock_control_init(NULL);
 	}
+
+	/* Release RCC semaphore */
+	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
 	/*
 	 * System is now in active mode.
