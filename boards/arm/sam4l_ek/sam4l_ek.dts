@@ -83,3 +83,7 @@
 
 	hs-master-code = <0>;
 };
+
+zephyr_udc0: &usbc {
+	status = "okay";
+};
