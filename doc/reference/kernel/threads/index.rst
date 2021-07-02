@@ -47,7 +47,7 @@ A thread has the following key properties:
   By default, threads run in supervisor mode and allow access to
   privileged CPU instructions, the entire memory address space, and
   peripherals. User mode threads have a reduced set of privileges.
-  This depends on the :option:`CONFIG_USERSPACE` option. See :ref:`usermode_api`.
+  This depends on the :kconfig:`CONFIG_USERSPACE` option. See :ref:`usermode_api`.
 
 .. _lifecycle_v2:
 
@@ -246,13 +246,13 @@ has been started. Thus it is possible for a preemptible thread to become
 a cooperative thread, and vice versa, by changing its priority.
 
 The kernel supports a virtually unlimited number of thread priority levels.
-The configuration options :option:`CONFIG_NUM_COOP_PRIORITIES` and
-:option:`CONFIG_NUM_PREEMPT_PRIORITIES` specify the number of priority
+The configuration options :kconfig:`CONFIG_NUM_COOP_PRIORITIES` and
+:kconfig:`CONFIG_NUM_PREEMPT_PRIORITIES` specify the number of priority
 levels for each class of thread, resulting in the following usable priority
 ranges:
 
-* cooperative threads: (-:option:`CONFIG_NUM_COOP_PRIORITIES`) to -1
-* preemptive threads: 0 to (:option:`CONFIG_NUM_PREEMPT_PRIORITIES` - 1)
+* cooperative threads: (-:kconfig:`CONFIG_NUM_COOP_PRIORITIES`) to -1
+* preemptive threads: 0 to (:kconfig:`CONFIG_NUM_PREEMPT_PRIORITIES` - 1)
 
 .. image:: priorities.svg
    :align: center
@@ -301,12 +301,12 @@ The following thread options are supported.
     of this register when scheduling the thread.
 
 :c:macro:`K_USER`
-    If :option:`CONFIG_USERSPACE` is enabled, this thread will be created in
+    If :kconfig:`CONFIG_USERSPACE` is enabled, this thread will be created in
     user mode and will have reduced privileges. See :ref:`usermode_api`. Otherwise
     this flag does nothing.
 
 :c:macro:`K_INHERIT_PERMS`
-    If :option:`CONFIG_USERSPACE` is enabled, this thread will inherit all
+    If :kconfig:`CONFIG_USERSPACE` is enabled, this thread will inherit all
     kernel object permissions that the parent thread had, except the parent
     thread object.  See :ref:`usermode_api`.
 
@@ -325,7 +325,7 @@ it chooses. The default custom data value for a thread is zero.
    within a single shared kernel interrupt handling context.
 
 By default, thread custom data support is disabled. The configuration option
-:option:`CONFIG_THREAD_CUSTOM_DATA` can be used to enable support.
+:kconfig:`CONFIG_THREAD_CUSTOM_DATA` can be used to enable support.
 
 The :c:func:`k_thread_custom_data_set` and
 :c:func:`k_thread_custom_data_get` functions are used to write and read
@@ -431,7 +431,7 @@ The following code has the same effect as the code segment above.
 User Mode Constraints
 ---------------------
 
-This section only applies if :option:`CONFIG_USERSPACE` is enabled, and a user
+This section only applies if :kconfig:`CONFIG_USERSPACE` is enabled, and a user
 thread tries to create a new thread. The :c:func:`k_thread_create` API is
 still used, but there are additional constraints which must be met or the
 calling thread will be terminated:
@@ -457,7 +457,7 @@ calling thread will be terminated:
 Dropping Permissions
 ====================
 
-If :option:`CONFIG_USERSPACE` is enabled, a thread running in supervisor mode
+If :kconfig:`CONFIG_USERSPACE` is enabled, a thread running in supervisor mode
 may perform a one-way transition to user mode using the
 :c:func:`k_thread_user_mode_enter` API. This is a one-way operation which
 will reset and zero the thread's stack memory. The thread will be marked
@@ -492,13 +492,13 @@ Runtime Statistics
 ******************
 
 Thread runtime statistics can be gathered and retrieved if
-:option:`CONFIG_THREAD_RUNTIME_STATS` is enabled, for example, total number of
+:kconfig:`CONFIG_THREAD_RUNTIME_STATS` is enabled, for example, total number of
 execution cycles of a thread.
 
 By default, the runtime statistics are gathered using the default kernel
 timer. For some architectures, SoCs or boards, there are timers with higher
 resolution available via timing functions. Using of these timers can be
-enabled via :option:`CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS`.
+enabled via :kconfig:`CONFIG_THREAD_RUNTIME_STATS_USE_TIMING_FUNCTIONS`.
 
 Here is an example:
 
@@ -524,16 +524,16 @@ Configuration Options
 
 Related configuration options:
 
-* :option:`CONFIG_MAIN_THREAD_PRIORITY`
-* :option:`CONFIG_MAIN_STACK_SIZE`
-* :option:`CONFIG_IDLE_STACK_SIZE`
-* :option:`CONFIG_THREAD_CUSTOM_DATA`
-* :option:`CONFIG_NUM_COOP_PRIORITIES`
-* :option:`CONFIG_NUM_PREEMPT_PRIORITIES`
-* :option:`CONFIG_TIMESLICING`
-* :option:`CONFIG_TIMESLICE_SIZE`
-* :option:`CONFIG_TIMESLICE_PRIORITY`
-* :option:`CONFIG_USERSPACE`
+* :kconfig:`CONFIG_MAIN_THREAD_PRIORITY`
+* :kconfig:`CONFIG_MAIN_STACK_SIZE`
+* :kconfig:`CONFIG_IDLE_STACK_SIZE`
+* :kconfig:`CONFIG_THREAD_CUSTOM_DATA`
+* :kconfig:`CONFIG_NUM_COOP_PRIORITIES`
+* :kconfig:`CONFIG_NUM_PREEMPT_PRIORITIES`
+* :kconfig:`CONFIG_TIMESLICING`
+* :kconfig:`CONFIG_TIMESLICE_SIZE`
+* :kconfig:`CONFIG_TIMESLICE_PRIORITY`
+* :kconfig:`CONFIG_USERSPACE`
 
 
 

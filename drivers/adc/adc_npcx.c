@@ -333,8 +333,7 @@ static int adc_npcx_init(const struct device *dev)
 	const struct adc_npcx_config *const config = DRV_CONFIG(dev);
 	struct adc_npcx_data *const data = DRV_DATA(dev);
 	struct adc_reg *const inst = HAL_INSTANCE(dev);
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int prescaler = 0, ret;
 
 	/* Save ADC device in data */

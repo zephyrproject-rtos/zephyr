@@ -313,12 +313,12 @@ do_update:
 		bt_mesh_friend_sec_update(BT_MESH_KEY_ANY);
 	}
 
+	bt_mesh_subnet_foreach(bt_mesh_beacon_update);
+
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
 		bt_mesh_proxy_beacon_send(NULL);
 	}
-
-	bt_mesh_subnet_foreach(bt_mesh_beacon_update);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
 		bt_mesh_cdb_iv_update(iv_index, iv_update);

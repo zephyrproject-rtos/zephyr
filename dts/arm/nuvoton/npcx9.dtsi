@@ -115,9 +115,15 @@
 			label = "UART_4";
 		};
 
-		/* Valid bit-depth of RAM_PDn registers in npcx9 series */
+		/* Default clock and power settings in npcx9 series */
 		pcc: clock-controller@4000d000 {
-			ram-pd-depth = <15>;
+			clock-frequency = <DT_FREQ_M(90)>; /* OFMCLK runs at 90MHz */
+			core-prescaler = <6>; /* CORE_CLK runs at 15MHz */
+			apb1-prescaler = <6>; /* APB1_CLK runs at 15MHz */
+			apb2-prescaler = <6>; /* APB2_CLK runs at 15MHz */
+			apb3-prescaler = <6>; /* APB3_CLK runs at 15MHz */
+			apb4-prescaler = <6>; /* APB4_CLK runs at 15MHz */
+			ram-pd-depth = <15>; /* Valid bit-depth of RAM_PDn reg */
 		};
 
 		/* Wake-up input source mapping for GPIOs in npcx9 series */

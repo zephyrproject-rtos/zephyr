@@ -16,6 +16,7 @@ extern enum bst_result_t bst_result;
 #define AICS_DESC_SIZE 0
 #endif /* CONFIG_BT_AICS */
 
+static struct bt_mics *mics;
 static struct bt_mics_included mics_included;
 
 static volatile uint8_t g_mute;
@@ -32,7 +33,7 @@ static volatile bool g_cb;
 static struct bt_conn *g_conn;
 static bool g_is_connected;
 
-static void mics_mute_cb(struct bt_conn *conn, int err, uint8_t mute)
+static void mics_mute_cb(struct bt_mics *mics, int err, uint8_t mute)
 {
 	if (err != 0) {
 		FAIL("MICS mute cb err (%d)", err);
@@ -40,14 +41,11 @@ static void mics_mute_cb(struct bt_conn *conn, int err, uint8_t mute)
 	}
 
 	g_mute = mute;
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			  int8_t gain, uint8_t mute, uint8_t mode)
+static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
+			  uint8_t mute, uint8_t mode)
 {
 	if (err != 0) {
 		FAIL("AICS state cb err (%d)", err);
@@ -57,15 +55,11 @@ static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	g_aics_gain = gain;
 	g_aics_input_mute = mute;
 	g_aics_mode = mode;
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
-				 int err, uint8_t units, int8_t minimum,
-				 int8_t maximum)
+static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
+				 int8_t minimum, int8_t maximum)
 {
 	if (err != 0) {
 		FAIL("AICS gain setting cb err (%d)", err);
@@ -75,14 +69,11 @@ static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
 	g_aics_units = units;
 	g_aics_gain_min = minimum;
 	g_aics_gain_max = maximum;
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
-			       int err, uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err,
+			       uint8_t input_type)
 {
 	if (err != 0) {
 		FAIL("AICS input type cb err (%d)", err);
@@ -90,14 +81,10 @@ static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
 	}
 
 	g_aics_input_type = input_type;
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			   bool active)
+static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
 	if (err != 0) {
 		FAIL("AICS status cb err (%d)", err);
@@ -105,14 +92,11 @@ static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	}
 
 	g_aics_active = active;
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
-static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
-				int err, char *description)
+static void aics_description_cb(struct bt_aics *inst, int err,
+				char *description)
 {
 	if (err != 0) {
 		FAIL("AICS description cb err (%d)", err);
@@ -122,10 +106,7 @@ static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
 
 	strncpy(g_aics_desc, description, sizeof(g_aics_desc) - 1);
 	g_aics_desc[sizeof(g_aics_desc) - 1] = '\0';
-
-	if (conn == NULL) {
-		g_cb = true;
-	}
+	g_cb = true;
 }
 
 static struct bt_mics_cb mics_cb = {
@@ -173,7 +154,7 @@ static int test_aics_server_only(void)
 
 	printk("Deactivating AICS\n");
 	expected_aics_active = false;
-	err = bt_mics_aics_deactivate(mics_included.aics[0]);
+	err = bt_mics_aics_deactivate(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not deactivate AICS (err %d)\n", err);
 		return err;
@@ -183,7 +164,7 @@ static int test_aics_server_only(void)
 
 	printk("Activating AICS\n");
 	expected_aics_active = true;
-	err = bt_mics_aics_activate(mics_included.aics[0]);
+	err = bt_mics_aics_activate(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not activate AICS (err %d)\n", err);
 		return err;
@@ -193,7 +174,7 @@ static int test_aics_server_only(void)
 
 	printk("Getting AICS state\n");
 	g_cb = false;
-	err = bt_mics_aics_state_get(NULL, mics_included.aics[0]);
+	err = bt_mics_aics_state_get(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS state (err %d)\n", err);
 		return err;
@@ -203,7 +184,7 @@ static int test_aics_server_only(void)
 
 	printk("Getting AICS gain setting\n");
 	g_cb = false;
-	err = bt_mics_aics_gain_setting_get(NULL, mics_included.aics[0]);
+	err = bt_mics_aics_gain_setting_get(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS gain setting (err %d)\n", err);
 		return err;
@@ -214,7 +195,7 @@ static int test_aics_server_only(void)
 	printk("Getting AICS input type\n");
 	g_cb = false;
 	expected_input_type = BT_AICS_INPUT_TYPE_DIGITAL;
-	err = bt_mics_aics_type_get(NULL, mics_included.aics[0]);
+	err = bt_mics_aics_type_get(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS input type (err %d)\n", err);
 		return err;
@@ -225,7 +206,7 @@ static int test_aics_server_only(void)
 
 	printk("Getting AICS status\n");
 	g_cb = false;
-	err = bt_mics_aics_status_get(NULL, mics_included.aics[0]);
+	err = bt_mics_aics_status_get(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS status (err %d)\n", err);
 		return err;
@@ -235,7 +216,7 @@ static int test_aics_server_only(void)
 
 	printk("Getting AICS description\n");
 	g_cb = false;
-	err = bt_mics_aics_description_get(NULL, mics_included.aics[0]);
+	err = bt_mics_aics_description_get(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not get AICS description (err %d)\n", err);
 		return err;
@@ -246,7 +227,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS mute\n");
 	g_cb = false;
 	expected_input_mute = BT_AICS_STATE_MUTED;
-	err = bt_mics_aics_mute(NULL, mics_included.aics[0]);
+	err = bt_mics_aics_mute(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS mute (err %d)\n", err);
 		return err;
@@ -257,7 +238,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS unmute\n");
 	g_cb = false;
 	expected_input_mute = BT_AICS_STATE_UNMUTED;
-	err = bt_mics_aics_unmute(NULL, mics_included.aics[0]);
+	err = bt_mics_aics_unmute(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS unmute (err %d)\n", err);
 		return err;
@@ -268,7 +249,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS auto mode\n");
 	g_cb = false;
 	expected_mode = BT_AICS_MODE_AUTO;
-	err = bt_mics_aics_automatic_gain_set(NULL, mics_included.aics[0]);
+	err = bt_mics_aics_automatic_gain_set(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS auto mode (err %d)\n", err);
 		return err;
@@ -279,7 +260,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS manual mode\n");
 	g_cb = false;
 	expected_mode = BT_AICS_MODE_MANUAL;
-	err = bt_mics_aics_manual_gain_set(NULL, mics_included.aics[0]);
+	err = bt_mics_aics_manual_gain_set(mics, mics_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not set AICS manual mode (err %d)\n", err);
 		return err;
@@ -290,7 +271,7 @@ static int test_aics_server_only(void)
 	printk("Setting AICS gain\n");
 	g_cb = false;
 	expected_gain = g_aics_gain_max - 1;
-	err = bt_mics_aics_gain_set(NULL, mics_included.aics[0], expected_gain);
+	err = bt_mics_aics_gain_set(mics, mics_included.aics[0], expected_gain);
 	if (err != 0) {
 		FAIL("Could not set AICS gain (err %d)\n", err);
 		return err;
@@ -303,7 +284,7 @@ static int test_aics_server_only(void)
 	strncpy(expected_aics_desc, "New Input Description",
 		sizeof(expected_aics_desc));
 	expected_aics_desc[sizeof(expected_aics_desc) - 1] = '\0';
-	err = bt_mics_aics_description_set(NULL, mics_included.aics[0], expected_aics_desc);
+	err = bt_mics_aics_description_set(mics, mics_included.aics[0], expected_aics_desc);
 	if (err != 0) {
 		FAIL("Could not set AICS Description (err %d)\n", err);
 		return err;
@@ -346,13 +327,13 @@ static void test_server_only(void)
 	}
 	mics_param.cb = &mics_cb;
 
-	err = bt_mics_register(&mics_param);
+	err = bt_mics_register(&mics_param, &mics);
 	if (err != 0) {
 		FAIL("MICS init failed (err %d)\n", err);
 		return;
 	}
 
-	err = bt_mics_included_get(NULL, &mics_included);
+	err = bt_mics_included_get(mics, &mics_included);
 	if (err != 0) {
 		FAIL("MICS get failed (err %d)\n", err);
 		return;
@@ -362,7 +343,7 @@ static void test_server_only(void)
 
 	printk("Getting MICS mute\n");
 	g_cb = false;
-	err = bt_mics_mute_get(NULL);
+	err = bt_mics_mute_get(mics);
 	if (err != 0) {
 		FAIL("Could not get MICS mute (err %d)\n", err);
 		return;
@@ -372,7 +353,7 @@ static void test_server_only(void)
 
 	printk("Setting MICS mute\n");
 	expected_mute = BT_MICS_MUTE_MUTED;
-	err = bt_mics_mute(NULL);
+	err = bt_mics_mute(mics);
 	if (err != 0) {
 		FAIL("MICS mute failed (err %d)\n", err);
 		return;
@@ -382,7 +363,7 @@ static void test_server_only(void)
 
 	printk("Setting MICS unmute\n");
 	expected_mute = BT_MICS_MUTE_UNMUTED;
-	err = bt_mics_unmute(NULL);
+	err = bt_mics_unmute(mics);
 	if (err != 0) {
 		FAIL("MICS unmute failed (err %d)\n", err);
 		return;
@@ -392,7 +373,7 @@ static void test_server_only(void)
 
 	printk("Setting MICS disable\n");
 	expected_mute = BT_MICS_MUTE_DISABLED;
-	err = bt_mics_mute_disable();
+	err = bt_mics_mute_disable(mics);
 	if (err != 0) {
 		FAIL("MICS disable failed (err %d)\n", err);
 		return;
@@ -440,7 +421,7 @@ static void test_main(void)
 	}
 	mics_param.cb = &mics_cb;
 
-	err = bt_mics_register(&mics_param);
+	err = bt_mics_register(&mics_param, &mics);
 	if (err != 0) {
 		FAIL("MICS init failed (err %d)\n", err);
 		return;
@@ -448,7 +429,7 @@ static void test_main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_mics_included_get(NULL, &mics_included);
+	err = bt_mics_included_get(mics, &mics_included);
 	if (err != 0) {
 		FAIL("MICS get failed (err %d)\n", err);
 		return;

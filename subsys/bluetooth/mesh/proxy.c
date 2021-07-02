@@ -978,7 +978,7 @@ static int proxy_send(struct bt_conn *conn,
 		      const void *data, uint16_t len,
 		      bt_gatt_complete_func_t end, void *user_data)
 {
-	const struct bt_gatt_attr *attr;
+	const struct bt_gatt_attr *attr = NULL;
 	BT_DBG("%u bytes: %s", len, bt_hex(data, len));
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)

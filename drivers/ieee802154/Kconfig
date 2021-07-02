@@ -135,6 +135,18 @@ config IEEE802154_2015
 	help
 	  Enable radio driver support for IEEE 802.15.4-2015 frames, including security handling of frames and ACKs.
 
+config IEEE802154_DELAY_TRX_ACC
+	int "Clock accuracy for delayed operations"
+	default 20
+	help
+	  Accuracy of the clock used for scheduling radio delayed operations (delayed transmission
+	  or delayed reception), in ppm.
+
+config IEEE802154_CSL_ENDPOINT
+	bool "Enable support for CSL Endpoint"
+	help
+	  Enable support for CSL Endpoint with delayed reception handling and CSL IE injection.
+
 module = IEEE802154_DRIVER
 module-str = IEEE 802.15.4 driver
 module-help = Sets log level for IEEE 802.15.4 Device Drivers.

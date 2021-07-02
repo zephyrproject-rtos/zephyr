@@ -1,0 +1,81 @@
+# Microchip MEC172XNSZ MCU
+
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MEC172X_NSZ
+
+config SOC
+	default "mec172xnsz"
+
+config UART_NS16550
+	default y
+	depends on SERIAL
+
+config PINMUX_XEC
+	default y
+	depends on PINMUX
+
+config GPIO
+	default y
+
+config ADC_XEC
+	default y
+	depends on ADC
+
+config GPIO_XEC
+	default y
+	depends on GPIO
+
+config I2C_XEC
+	default y
+	depends on I2C
+
+config ESPI_XEC
+	default y
+	depends on ESPI
+
+config COUNTER_XEC
+	default y
+	depends on COUNTER
+
+config PS2_XEC
+	default y
+	depends on PS2
+
+config PWM_XEC
+	default y
+	depends on PWM
+
+config KSCAN_XEC
+	default y
+	depends on KSCAN
+
+config PECI_XEC
+	default y
+	depends on PECI
+
+config SPI_XEC_QMSPI
+	default y
+	depends on SPI
+
+config WDT_XEC
+	default n
+	depends on WATCHDOG
+
+if SOC_POWER_MANAGEMENT
+
+config PM
+	default y if SYS_CLOCK_EXISTS
+	help
+	  Enable the kernel handles extra power management policies whenever
+	  system enters idle state.
+
+config PM_DEVICE
+	default n
+	help
+	  Enable device power management support.
+
+endif # SOC_POWER_MANAGEMENT
+
+endif # SOC_MEC172X_NSZ

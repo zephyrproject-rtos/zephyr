@@ -35,25 +35,26 @@
 #define ACK_OPCODE               0x4
 #define ERROR_OPCODE             0x5
 
-#define RECV_DATA_SIZE()         (tftpc_buffer_size - TFTP_HEADER_SIZE)
+/* Error Codes */
 
-/* Name: send_ack
- * Description: This function sends an Ack to the TFTP
- * Server (in response to the data sent by the
- * Server).
- */
-static inline int send_ack(int sock, int block)
-{
-	uint8_t tmp[4];
+/** Not defined, see error message (if any). */
+#define TFTP_ERROR_UNDEF               0
+/** File not found. */
+#define TFTP_ERROR_NO_FILE             1
+/** Access violation. */
+#define TFTP_ERROR_ACCESS              2
+/** Disk full or allocation exceeded. */
+#define TFTP_ERROR_DISK_FULL           3
+/** Illegal TFTP operation. */
+#define TFTP_ERROR_ILLEGAL_OP          4
+/** Unknown transfer ID. */
+#define TFTP_ERROR_UNKNOWN_TRANSFER_ID 5
+/** File already exists. */
+#define TFTP_ERROR_FILE_EXISTS         6
+/** No such user. */
+#define TFTP_ERROR_NO_USER             7
 
-	LOG_INF("Client acking Block Number: %d", block);
-
-	/* Fill in the "Ack" Opcode and the block no. */
-	sys_put_be16(ACK_OPCODE, tmp);
-	sys_put_be16(block, tmp + 2);
-
-	/* Lets send this request buffer out. Size of request
-	 * buffer is 4 bytes.
-	 */
-	return send(sock, tmp, 4, 0);
-}
+struct tftphdr_ack {
+	uint16_t opcode;
+	uint16_t block;
+};

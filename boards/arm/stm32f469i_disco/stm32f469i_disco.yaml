@@ -13,5 +13,7 @@ supported:
   - counter
   - i2c
   - spi
+  - arduino_spi
   - gpio
+  - arduino_gpio
   - usb_device

@@ -7,8 +7,8 @@ tests:
       mimxrt1050_evk_qspi mimxrt1020_evk mimxrt1015_evk mimxrt1060_evk
       mimxrt1050_evk mimxrt1060_evk_hyperflash nucleo_f207zg
     depends_on: usb_device
-    filter: dt_compat_enabled_with_label("fixed-partitions", "slot0_partition") and
-            dt_compat_enabled_with_label("fixed-partitions", "slot1_partition") and
+    filter: dt_label_with_parent_compat_enabled("slot0_partition", "fixed-partitions") and
+            dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions") and
             dt_chosen_enabled("zephyr,flash-controller") and
             CONFIG_FLASH_HAS_DRIVER_ENABLED
     tags: usb

@@ -105,7 +105,7 @@ def mdb_do_run(mdb_runner, command):
                          ('-prop=download=2' if i > 0 else '')] +
                          mdb_basic_options + mdb_target + [mdb_runner.elf_name])
             mdb_runner.check_call(mdb_sub_cmd)
-            mdb_multifiles += (',core{}'.format(i) if i > 0 else 'core{}'.format(i))
+            mdb_multifiles += ('core{}'.format(mdb_runner.cores-1-i) if i == 0 else ',core{}'.format(mdb_runner.cores-1-i))
 
         # to enable multi-core aware mode for use with the MetaWare debugger,
         # need to set the NSIM_MULTICORE environment variable to a non-zero value

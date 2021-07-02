@@ -79,7 +79,7 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 	case NPCX_CLOCK_BUS_APB3:
 		*rate = NPCX_APB_CLOCK(3);
 		break;
-#ifdef CONFIG_CLOCK_NPCX_APB4_PRESCALER
+#if defined(APB4DIV_VAL)
 	case NPCX_CLOCK_BUS_APB4:
 		*rate = NPCX_APB_CLOCK(4);
 		break;
@@ -109,8 +109,7 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 #if defined(CONFIG_PM)
 void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
 {
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	struct pmc_reg *const inst_pmc = HAL_PMC_INST(clk_dev);
 	/* Configure that ec enters system sleep mode if receiving 'wfi' */
 	uint8_t pm_flags = BIT(NPCX_PMCSR_IDLE);
@@ -128,8 +127,7 @@ void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
 
 void npcx_clock_control_turn_off_system_sleep(void)
 {
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	struct pmc_reg *const inst_pmc = HAL_PMC_INST(clk_dev);
 
 	inst_pmc->PMCSR = 0;
@@ -145,8 +143,8 @@ static struct clock_control_driver_api npcx_clock_control_api = {
 
 /* valid clock frequency check */
 BUILD_ASSERT(CORE_CLK <= MHZ(100) && CORE_CLK >= MHZ(4) &&
-	     OSC_CLK % CORE_CLK == 0 &&
-	     OSC_CLK / CORE_CLK <= 10,
+	     OFMCLK % CORE_CLK == 0 &&
+	     OFMCLK / CORE_CLK <= 10,
 	     "Invalid CORE_CLK setting");
 BUILD_ASSERT(CORE_CLK / (FIUDIV_VAL + 1) <= MHZ(50) &&
 	     CORE_CLK / (FIUDIV_VAL + 1) >= MHZ(4),
@@ -166,7 +164,7 @@ BUILD_ASSERT(APBSRC_CLK / (APB3DIV_VAL + 1) <= MHZ(50) &&
 	     APBSRC_CLK / (APB3DIV_VAL + 1) >= KHZ(12500) &&
 	     (APB3DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
 	     "Invalid APB3_CLK setting");
-#ifdef CONFIG_CLOCK_NPCX_APB4_PRESCALER
+#if defined(APB4DIV_VAL)
 BUILD_ASSERT(APBSRC_CLK / (APB4DIV_VAL + 1) <= MHZ(100) &&
 	     APBSRC_CLK / (APB4DIV_VAL + 1) >= MHZ(8) &&
 	     (APB4DIV_VAL + 1) % (FPRED_VAL + 1) == 0,
@@ -179,7 +177,7 @@ static int npcx_clock_control_init(const struct device *dev)
 	const uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;
 
 	/*
-	 * Resetting the OSC_CLK (even to the same value) will make the clock
+	 * Resetting the OFMCLK (even to the same value) will make the clock
 	 * unstable for a little which can affect peripheral communication like
 	 * eSPI. Skip this if not needed.
 	 */
@@ -187,7 +185,7 @@ static int npcx_clock_control_init(const struct device *dev)
 			|| inst_cdcg->HFCGMH != HFCGMH_VAL) {
 		/*
 		 * Configure frequency multiplier M/N values according to
-		 * the requested OSC_CLK (Unit:Hz).
+		 * the requested OFMCLK (Unit:Hz).
 		 */
 		inst_cdcg->HFCGN  = HFCGN_VAL;
 		inst_cdcg->HFCGML = HFCGML_VAL;
@@ -204,7 +202,7 @@ static int npcx_clock_control_init(const struct device *dev)
 	inst_cdcg->HFCGP   = ((FPRED_VAL << 4) | AHB6DIV_VAL);
 	inst_cdcg->HFCBCD  = (FIUDIV_VAL << 4);
 	inst_cdcg->HFCBCD1 = (APB1DIV_VAL | (APB2DIV_VAL << 4));
-#ifdef CONFIG_CLOCK_NPCX_APB4_PRESCALER
+#if defined(APB4DIV_VAL)
 	inst_cdcg->HFCBCD2 = (APB3DIV_VAL | (APB4DIV_VAL << 4));
 #else
 	inst_cdcg->HFCBCD2 = APB3DIV_VAL;

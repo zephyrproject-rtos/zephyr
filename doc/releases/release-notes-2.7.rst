@@ -58,6 +58,9 @@ Architectures
 
   * AARCH32
 
+     * Added support for FPU in QEMU for Cortex-M, allowing to build and execute
+       tests in CI with FPU and FPU_SHARING options enabled.
+
 
   * AARCH64
 
@@ -318,6 +321,9 @@ Trusted Firmware-m
 Documentation
 *************
 
+* Kconfig options need to be referenced using the ``:kconfig:`` Sphinx role.
+  Previous to this change, ``:option:`` was used for this purpose.
+* Doxygen alias ``@config{}`` has been deprecated in favor of ``@kconfig{}``.
 
 Tests and Samples
 *****************

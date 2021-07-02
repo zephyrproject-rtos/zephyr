@@ -16,6 +16,10 @@ typedef unsigned int mode_t;
 #if !defined(__ssize_t_defined)
 #define __ssize_t_defined
 
+/* parasoft suppress item MISRAC2012-RULE_20_4-a item MISRAC2012-RULE_20_4-b
+ * "Trick compiler to make sure the type of ssize_t won't be
+ * unsigned long. View details in commit b889120"
+ */
 #define unsigned signed
 typedef __SIZE_TYPE__ ssize_t;
 #undef unsigned

@@ -69,7 +69,8 @@ enum ieee802154_filter_type {
 
 enum ieee802154_event {
 	IEEE802154_EVENT_TX_STARTED, /* Data transmission started */
-	IEEE802154_EVENT_RX_FAILED   /* Data reception failed */
+	IEEE802154_EVENT_RX_FAILED, /* Data reception failed */
+	IEEE802154_EVENT_SLEEP, /* Sleep pending */
 };
 
 enum ieee802154_rx_fail_reason {
@@ -168,11 +169,45 @@ enum ieee802154_config_type {
 	/** Sets the current MAC frame counter value for radios supporting transmit security. */
 	IEEE802154_CONFIG_FRAME_COUNTER,
 
-	/** Configure a radio reception slot */
+	/** Configure a radio reception slot. This can be used for any scheduler reception, e.g.:
+	 *  Zigbee GP device, CSL, TSCH, etc.
+	 *
+	 *  In order to configure a CSL receiver the upper layer should combine several
+	 *  configuration options in the following way:
+	 *    1. Use ``IEEE802154_CONFIG_ENH_ACK_HEADER_IE`` once to inform the radio driver of the
+	 *  short and extended addresses of the peer to which it should inject CSL IEs.
+	 *    2. Use ``IEEE802154_CONFIG_CSL_RX_TIME`` periodically, before each use of
+	 *  ``IEEE802154_CONFIG_CSL_PERIOD`` setting parameters of the nearest CSL RX window, and
+	 *  before each use of IEEE_CONFIG_RX_SLOT setting parameters of the following (not the
+	 *  nearest one) CSL RX window, to allow the radio driver to calculate the proper CSL Phase
+	 *  to the nearest CSL window to inject in the CSL IEs for both transmitted data and ack
+	 *  frames.
+	 *    3. Use ``IEEE802154_CONFIG_CSL_PERIOD`` on each value change to update the current CSL
+	 *  period value which will be injected in the CSL IEs together with the CSL Phase based on
+	 *  ``IEEE802154_CONFIG_CSL_RX_TIME``.
+	 *    4. Use ``IEEE802154_CONFIG_RX_SLOT`` periodically to schedule the immediate receive
+	 *  window earlier enough before the expected window start time, taking into account
+	 *  possible clock drifts and scheduling uncertainties.
+	 *
+	 *  This diagram shows the usage of the four options over time:
+	 *        Start CSL                                  Schedule CSL window
+	 *
+	 *    ENH_ACK_HEADER_IE                        CSL_RX_TIME (following window)
+	 *         |                                        |
+	 *         | CSL_RX_TIME (nearest window)           | RX_SLOT (nearest window)
+	 *         |    |                                   |   |
+	 *         |    | CSL_PERIOD                        |   |
+	 *         |    |    |                              |   |
+	 *         v    v    v                              v   v
+	 *    ----------------------------------------------------------[ CSL window ]-----+
+	 *                                            ^                                    |
+	 *                                            |                                    |
+	 *                                            +--------------------- loop ---------+
+	 */
 	IEEE802154_CONFIG_RX_SLOT,
 
-	/** Enable CSL receiver (Endpoint) */
-	IEEE802154_CONFIG_CSL_RECEIVER,
+	/** Configure CSL receiver (Endpoint) period */
+	IEEE802154_CONFIG_CSL_PERIOD,
 
 	/** Configure the next CSL receive window center, in units of microseconds,
 	 *  based on the radio time.
@@ -235,11 +270,8 @@ struct ieee802154_config {
 			uint32_t duration;
 		} rx_slot;
 
-		/** ``IEEE802154_CONFIG_CSL_RECEIVER`` */
-		struct {
-			uint32_t period;
-			const uint8_t *addr;
-		} csl_recv;
+		/** ``IEEE802154_CONFIG_CSL_PERIOD`` */
+		uint32_t csl_period;
 
 		/** ``IEEE802154_CONFIG_CSL_RX_TIME`` */
 		uint32_t csl_rx_time;
@@ -315,11 +347,11 @@ struct ieee802154_radio_api {
 	uint64_t (*get_time)(const struct device *dev);
 
 	/** Get the current accuracy, in units of ± ppm, of the clock used for
-	 *  scheduling CSL transmissions or receive windows.
+	 *  scheduling delayed receive or transmit radio operations.
 	 *  Note: Implementations may optimize this value based on operational
 	 *  conditions (i.e.: temperature).
 	 */
-	uint8_t (*get_csl_acc)(const struct device *dev);
+	uint8_t (*get_sch_acc)(const struct device *dev);
 };
 
 /* Make sure that the network interface API is properly setup inside

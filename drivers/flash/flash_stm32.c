@@ -51,6 +51,9 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 /* STM32L4: maximum erase time of 24.47ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #define STM32_FLASH_MAX_ERASE_TIME	25
+/* STM32WL: maximum erase time of 24.5ms for a 2K sector */
+#elif defined(CONFIG_SOC_SERIES_STM32WLX)
+#define STM32_FLASH_MAX_ERASE_TIME	25
 /* STM32WB: maximum erase time of 24.5ms for a 4K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
 #define STM32_FLASH_MAX_ERASE_TIME	25

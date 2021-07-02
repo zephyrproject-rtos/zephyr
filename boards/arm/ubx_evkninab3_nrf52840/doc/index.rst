@@ -95,9 +95,9 @@ Connections and IOs
 LED
 ---
 
-* LED1 (red) = P0.13
+* LED0 (red) = P0.13
+* LED1 (green) = P0.25
 * LED2 (blue) = P1.00
-* LED3 (green) = P0.25
 
 Push buttons
 ------------

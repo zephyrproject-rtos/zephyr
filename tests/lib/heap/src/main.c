@@ -11,7 +11,7 @@
  * platform, with workarounds.
  */
 
-#if defined(CONFIG_BOARD_MPS2_AN521)
+#if defined(CONFIG_SOC_MPS2_AN521) && defined(CONFIG_QEMU_TARGET)
 /* mps2_an521 blows up if allowed to link into large area, even though
  * the link is successful and it claims the memory is there.  We get
  * hard faults on boot in qemu before entry to cstart() once MEMSZ is
@@ -38,6 +38,7 @@
 
 #define BIG_HEAP_SZ MIN(256 * 1024, MEMSZ / 3)
 #define SMALL_HEAP_SZ MIN(BIG_HEAP_SZ, 2048)
+#define SOLO_FREE_HEADER_HEAP_SZ (64)
 #define SCRATCH_SZ (sizeof(heapmem) / 2)
 
 /* The test memory.  Make them pointer arrays for robust alignment
@@ -204,6 +205,36 @@ static void test_big_heap(void)
 	log_result(BIG_HEAP_SZ, &result);
 }
 
+/* Test a heap with a solo free header.  A solo free header can exist
+ * only on a heap with 64 bit CPU (or chunk_header_bytes() == 8).
+ * With 64 bytes heap and 1 byte allocation on a big heap, we get:
+ *
+ *   0   1   2   3   4   5   6   7
+ * | h | h | b | b | c | 1 | s | f |
+ *
+ * where
+ * - h: chunk0 header
+ * - b: buckets in chunk0
+ * - c: chunk header for the first allocation
+ * - 1: chunk mem
+ * - s: solo free header
+ * - f: end marker / footer
+ */
+static void test_solo_free_header(void)
+{
+	struct sys_heap heap;
+
+	TC_PRINT("Testing solo free header in a heap\n");
+
+	sys_heap_init(&heap, heapmem, SOLO_FREE_HEADER_HEAP_SZ);
+	if (sizeof(void *) > 4U) {
+		sys_heap_alloc(&heap, 1);
+		zassert_true(sys_heap_validate(&heap), "");
+	} else {
+		ztest_test_skip();
+	}
+}
+
 /* Simple clobber detection */
 void realloc_fill_block(uint8_t *p, size_t sz)
 {
@@ -329,7 +360,8 @@ void test_main(void)
 			 ztest_unit_test(test_realloc),
 			 ztest_unit_test(test_small_heap),
 			 ztest_unit_test(test_fragmentation),
-			 ztest_unit_test(test_big_heap)
+			 ztest_unit_test(test_big_heap),
+			 ztest_unit_test(test_solo_free_header)
 			 );
 
 	ztest_run_test_suite(lib_heap_test);

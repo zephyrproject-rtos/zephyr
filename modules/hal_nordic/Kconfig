@@ -43,6 +43,10 @@ config NRF_802154_MULTIPROTOCOL_SUPPORT
 	  in the driver, this option must be enabled. Otherwise, the driver
 	  assumes that access to the radio peripheral is granted indefinitely.
 
+config NRF_802154_ENCRYPTION
+	bool "nRF 802.15.4 AES-CCM* authentication & encryption"
+	depends on !CRYPTO_NRF_ECB
+
 choice NRF_802154_CCA_MODE
 	prompt "nRF IEEE 802.15.4 CCA mode"
 	default NRF_802154_CCA_MODE_ED
