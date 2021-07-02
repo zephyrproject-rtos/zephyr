@@ -119,13 +119,6 @@ static int led_pwm_pm_set_state(const struct device *dev,
 				enum pm_device_state new_state)
 {
 	const struct led_pwm_config *config = DEV_CFG(dev);
-	enum pm_device_state curr_state;
-
-	(void)pm_device_state_get(dev, &curr_state);
-
-	if (curr_state == new_state) {
-		return 0;
-	}
 
 	/* switch all underlying PWM devices to the new state */
 	for (size_t i = 0; i < config->num_leds; i++) {
