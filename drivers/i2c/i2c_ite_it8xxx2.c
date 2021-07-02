@@ -41,6 +41,7 @@ enum i2c_ch_status {
 struct i2c_it8xxx2_data {
 	enum i2c_ch_status i2ccs;
 	struct i2c_msg *msgs;
+	struct k_mutex mutex;
 	struct k_sem device_sync_sem;
 	/* Index into output data */
 	size_t widx;
@@ -732,6 +733,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		return -EINVAL;
 	}
 
+	/* Lock mutex of i2c controller */
+	k_mutex_lock(&data->mutex, K_FOREVER);
 	/*
 	 * If the transaction of write to read is divided into two
 	 * transfers, the repeat start transfer uses this flag to
@@ -749,6 +752,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			 * (No external pull-up), drop the transaction.
 			 */
 			if (i2c_bus_not_available(dev)) {
+				/* Unlock mutex of i2c controller */
+				k_mutex_unlock(&data->mutex);
 				return -EIO;
 			}
 		}
@@ -796,6 +801,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (data->err || (msgs->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+	/* Unlock mutex of i2c controller */
+	k_mutex_unlock(&data->mutex);
 
 	return data->err;
 }
@@ -821,6 +828,8 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	uint32_t bitrate_cfg, offset = 0;
 	int error;
 
+	/* Initialize mutex and semaphore */
+	k_mutex_init(&data->mutex);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	switch ((uint32_t)base) {
