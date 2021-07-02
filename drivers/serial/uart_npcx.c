@@ -442,7 +442,7 @@ static inline int uart_npcx_set_power_state(const struct device *dev,
 					    enum pm_device_state next_state)
 {
 	/* If next device power state is LOW or SUSPEND power state */
-	if (next_state == PM_DEVICE_STATE_SUSPEND) {
+	if (next_state == PM_DEVICE_STATE_SUSPENDED) {
 		/*
 		 * If uart device is busy with transmitting, the driver will
 		 * stay in while loop and wait for the transaction is completed.

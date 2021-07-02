@@ -197,7 +197,7 @@ static int eth_mcux_device_pm_control(const struct device *dev,
 		goto out;
 	}
 
-	if (state == PM_DEVICE_STATE_SUSPEND) {
+	if (state == PM_DEVICE_STATE_SUSPENDED) {
 		LOG_DBG("Suspending");
 
 		ret = net_if_suspend(eth_ctx->iface);
