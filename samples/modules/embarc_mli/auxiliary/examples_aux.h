@@ -1,11 +1,11 @@
 /*
-* Copyright 2019-2020, Synopsys, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD-3-Clause license found in
-* the LICENSE file in the root directory of this source tree.
-*
-*/
+ * Copyright 2019-2020, Synopsys, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD-3-Clause license found in
+ * the LICENSE file in the root directory of this source tree.
+ *
+ */
 
 #ifndef _EXAMPLES_AUX_H_
 #define _EXAMPLES_AUX_H_
@@ -25,24 +25,19 @@
 extern "C" {
 #endif
 
-//==================================================
-//
-//      Data types
-//
-//==================================================
+/* -------------------------------------------------------------------------- */
+/*                                 Data types                                 */
+/* -------------------------------------------------------------------------- */
 
 /** @typedef Common interface for external data preprocessing function */
 typedef void (*preproc_func_t)(const void *, mli_tensor *);
 
 /** @typedef Common interface for classifier inference function */
-typedef void (*model_inference_t)(const char*);
+typedef void (*model_inference_t)(const char *);
 
-
-//==================================================
-//
-//      Functions
-//
-//==================================================
+/* -------------------------------------------------------------------------- */
+/*                                  Functions                                 */
+/* -------------------------------------------------------------------------- */
 
 /** @brief Run preprocessor and inference function once for provided inputs
  *
@@ -60,16 +55,10 @@ typedef void (*model_inference_t)(const char*);
  * @param[in] inf_param - Parameter for passing to the inference function
  *
  * @return Operation status code (tests_aux.h)
-  */
-test_status model_run_single_in(
-        const void * data_in,
-        const float * ref_out,
-        mli_tensor * model_input,
-        mli_tensor * model_output,
-        preproc_func_t preprocess,
-        model_inference_t inference,
-        const char * inf_param);
-
+ */
+test_status model_run_single_in(const void *data_in, const float *ref_out, mli_tensor *model_input,
+				mli_tensor *model_output, preproc_func_t preprocess,
+				model_inference_t inference, const char *inf_param);
 
 /** @brief Run preprocessor and inference function in cycle for all input dataset with accuracy calculation
  *
@@ -87,16 +76,11 @@ test_status model_run_single_in(
  * @param[in] inf_param - Parameter for passing to the inference function
  *
  * @return Operation status code (tests_aux.h)
-  */
-test_status model_run_acc_on_idx_base(
-        const char * input_idx_path,
-        const char * labels_idx_path,
-        mli_tensor * model_input,
-        mli_tensor * model_output,
-        preproc_func_t preprocess,
-        model_inference_t inference,
-        const char * inf_param);
-
+ */
+test_status model_run_acc_on_idx_base(const char *input_idx_path, const char *labels_idx_path,
+				      mli_tensor *model_input, mli_tensor *model_output,
+				      preproc_func_t preprocess, model_inference_t inference,
+				      const char *inf_param);
 
 /** @brief Run preprocessor and inference function in cycle for all input dataset. Outputs result to the IDX file
  *
@@ -114,19 +98,14 @@ test_status model_run_acc_on_idx_base(
  * @param[in] inf_param - Parameter for passing to the inference function
  *
  * @return Operation status code (tests_aux.h)
-  */
-test_status model_run_idx_base_to_idx_out(
-        const char * input_idx_path,
-        const char * output_idx_path,
-        mli_tensor * model_input,
-        mli_tensor * model_output,
-        preproc_func_t preprocess,
-        model_inference_t inference,
-        const char * inf_param);
-
+ */
+test_status model_run_idx_base_to_idx_out(const char *input_idx_path, const char *output_idx_path,
+					  mli_tensor *model_input, mli_tensor *model_output,
+					  preproc_func_t preprocess, model_inference_t inference,
+					  const char *inf_param);
 
 #ifdef __cplusplus
 } /* end extern "C" */
 #endif
 
-#endif // _EXAMPLES_AUX_H_
+#endif /* _EXAMPLES_AUX_H_ */
