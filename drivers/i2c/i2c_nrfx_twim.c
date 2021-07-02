@@ -268,7 +268,6 @@ static int twim_nrfx_pm_control(const struct device *dev,
 		}
 		break;
 
-	case PM_DEVICE_STATE_LOW_POWER:
 	case PM_DEVICE_STATE_SUSPEND:
 	case PM_DEVICE_STATE_OFF:
 		nrfx_twim_uninit(&get_dev_config(dev)->twim);

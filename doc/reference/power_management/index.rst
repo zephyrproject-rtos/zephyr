@@ -244,10 +244,6 @@ The four device power states:
 
    Normal operation of the device. All device context is retained.
 
-:code:`PM_DEVICE_STATE_LOW_POWER`
-
-   Device context is preserved by the HW and need not be restored by the driver.
-
 :code:`PM_DEVICE_STATE_SUSPEND`
 
    Most device context is lost by the hardware. Device drivers must save and

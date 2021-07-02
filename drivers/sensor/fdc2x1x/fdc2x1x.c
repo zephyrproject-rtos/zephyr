@@ -506,7 +506,7 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 		}
 
 		break;
-	case PM_DEVICE_STATE_LOW_POWER:
+	case PM_DEVICE_STATE_SUSPEND:
 		if (curr_state == PM_DEVICE_STATE_OFF) {
 			ret = fdc2x1x_set_shutdown(dev, false);
 			if (ret) {
@@ -542,7 +542,6 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 
 	switch (state) {
 	case PM_DEVICE_STATE_ACTIVE:
-	case PM_DEVICE_STATE_LOW_POWER:
 	case PM_DEVICE_STATE_OFF:
 		ret = fdc2x1x_set_pm_state(dev, state);
 		break;
