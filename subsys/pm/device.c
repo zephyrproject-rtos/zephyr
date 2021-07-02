@@ -137,6 +137,32 @@ int pm_device_state_set(const struct device *dev,
 		return -ENOSYS;
 	}
 
+	switch (state) {
+	case PM_DEVICE_STATE_SUSPEND:
+		if ((dev->pm->state == PM_DEVICE_STATE_SUSPEND) ||
+		    (dev->pm->state == PM_DEVICE_STATE_SUSPENDING)) {
+			return -EALREADY;
+		}
+		break;
+	case PM_DEVICE_STATE_ACTIVE:
+		if ((dev->pm->state == PM_DEVICE_STATE_ACTIVE) ||
+		    (dev->pm->state == PM_DEVICE_STATE_RESUMING)) {
+			return -EALREADY;
+		}
+		break;
+	case PM_DEVICE_STATE_FORCE_SUSPEND:
+		__fallthrough;
+	case PM_DEVICE_STATE_LOW_POWER:
+		__fallthrough;
+	case PM_DEVICE_STATE_OFF:
+		if (dev->pm->state == state) {
+			return -EALREADY;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
 	ret = dev->pm_control(dev, state);
 	if (ret < 0) {
 		return ret;
