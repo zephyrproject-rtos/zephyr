@@ -661,6 +661,12 @@ static int qspi_nrfx_configure(const struct device *dev)
 	nrfx_err_t res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev_data);
 	int ret = qspi_get_zephyr_ret_code(res);
 
+#if DT_INST_NODE_HAS_PROP(0, rx_delay)
+	if (ret == 0 && !nrf53_errata_121()) {
+		nrf_qspi_iftiming_set(NRF_QSPI, DT_INST_PROP(0, rx_delay));
+	}
+#endif
+
 	if ((ret == 0)
 	    && (INST_0_QER != JESD216_DW15_QER_NONE)) {
 		/* Set QE to match transfer mode.  If not using quad

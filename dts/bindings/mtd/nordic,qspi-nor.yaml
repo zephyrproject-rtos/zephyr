@@ -74,6 +74,13 @@ properties:
       Number of clock cycles CSn must be asserted before it can go low
       again, specified in nanoseconds.
 
+  rx-delay:
+    type: int
+    required: false
+    description: |
+      Number of clock cycles from the rising edge of the SPI clock
+      until the input serial data is sampled.
+
   cpha:
     type: boolean
     required: false
