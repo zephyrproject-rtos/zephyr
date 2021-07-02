@@ -601,13 +601,80 @@ done:
 	return err;
 }
 
+static int bt_audio_chan_broadcast_release(struct bt_audio_chan *chan)
+{
+	int err;
+	struct bt_audio_chan *tmp;
+
+	/* Stop periodic advertising */
+	err = bt_le_per_adv_stop(chan->ep->adv);
+	if (err != 0) {
+		BT_DBG("Failed to stop periodic advertising (err %d)", err);
+		return err;
+	}
+
+	/* Stop extended advertising */
+	err = bt_le_ext_adv_stop(chan->ep->adv);
+	if (err != 0) {
+		BT_DBG("Failed to stop extended advertising (err %d)", err);
+		return err;
+	}
+
+	/* Delete extended advertising set */
+	err = bt_le_ext_adv_delete(chan->ep->adv);
+	if (err != 0) {
+		BT_DBG("Failed to delete extended advertising set (err %d)", err);
+		return err;
+	}
+
+	/* Reset the BIS'es */
+	for (int i = 0; i < ARRAY_SIZE(big_bis); i++) {
+		for (int j = 0; j < ARRAY_SIZE(big_bis[i]); j++) {
+			if (big_bis[i][j] == &chan->ep->iso) {
+				memset(big_bis[i], 0, sizeof(big_bis[i]));
+				break;
+			}
+		}
+	}
+
+	chan->ep->adv = NULL;
+	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
+		tmp->ep->adv = NULL;
+		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_IDLE);
+	}
+
+	return 0;
+}
+
 int bt_audio_chan_release(struct bt_audio_chan *chan, bool cache)
 {
 	int err;
 
 	BT_DBG("chan %p cache %s", chan, cache ? "true" : "false");
 
-	if (!chan || !chan->ep || !chan->cap || !chan->cap->ops) {
+	CHECKIF(!chan || !chan->ep) {
+		BT_DBG("Invalid channel");
+		return -EINVAL;
+	}
+
+	if (chan->state == BT_AUDIO_CHAN_IDLE) {
+		BT_DBG("Audio channel is idle");
+		return -EALREADY;
+	}
+
+	if (bt_audio_ep_is_broadcast(chan->ep)) {
+		if (chan->state != BT_AUDIO_CHAN_CONFIGURED) {
+			BT_DBG("Broadcast must be stopped before release");
+			return -EBADMSG;
+		}
+
+		return bt_audio_chan_broadcast_release(chan);
+	}
+
+	CHECKIF(!chan->cap || !chan->cap->ops) {
+		BT_DBG("Capability or capability ops is NULL");
 		return -EINVAL;
 	}
 
@@ -730,6 +797,8 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
 
 static void chan_detach(struct bt_audio_chan *chan)
 {
+	const bool is_broadcast = bt_audio_ep_is_broadcast(chan->ep);
+
 	BT_DBG("chan %p", chan);
 
 	bt_audio_ep_detach(chan->ep, chan);
@@ -738,7 +807,9 @@ static void chan_detach(struct bt_audio_chan *chan)
 	chan->cap = NULL;
 	chan->codec = NULL;
 
-	bt_audio_chan_disconnect(chan);
+	if (!is_broadcast) {
+		bt_audio_chan_disconnect(chan);
+	}
 }
 
 #if defined(CONFIG_BT_AUDIO_DEBUG_CHAN)
