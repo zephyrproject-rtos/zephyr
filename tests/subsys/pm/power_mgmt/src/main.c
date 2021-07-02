@@ -181,7 +181,7 @@ void test_power_state_notification(void)
 
 	api->close(dev);
 	pm_device_state_get(dev, &device_power_state);
-	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPEND, NULL);
+	zassert_equal(device_power_state, PM_DEVICE_STATE_SUSPENDED, NULL);
 	/* reopen device as it will be closed in teardown */
 	api->open(dev);
 }

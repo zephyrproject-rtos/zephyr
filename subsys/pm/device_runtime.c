@@ -27,13 +27,13 @@ static void pm_device_runtime_state_set(struct pm_device *pm)
 	switch (dev->pm->state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		if ((dev->pm->usage == 0) && dev->pm->enable) {
-			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND);
+			ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 			if (ret == 0) {
-				dev->pm->state = PM_DEVICE_STATE_SUSPEND;
+				dev->pm->state = PM_DEVICE_STATE_SUSPENDED;
 			}
 		}
 		break;
-	case PM_DEVICE_STATE_SUSPEND:
+	case PM_DEVICE_STATE_SUSPENDED:
 		if ((dev->pm->usage > 0) || !dev->pm->enable) {
 			ret = pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 			if (ret == 0) {
@@ -77,7 +77,7 @@ static int pm_device_request(const struct device *dev,
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_request, dev, target_state);
 
 	__ASSERT((target_state == PM_DEVICE_STATE_ACTIVE) ||
-			(target_state == PM_DEVICE_STATE_SUSPEND),
+			(target_state == PM_DEVICE_STATE_SUSPENDED),
 			"Invalid device PM state requested");
 
 	if (k_is_pre_kernel()) {
@@ -101,7 +101,7 @@ static int pm_device_request(const struct device *dev,
 		if (dev->pm->usage == 1) {
 			(void)pm_device_state_set(dev, PM_DEVICE_STATE_ACTIVE);
 		} else if (dev->pm->usage == 0) {
-			(void)pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND);
+			(void)pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 		}
 		goto out;
 	}
@@ -164,12 +164,12 @@ int pm_device_get_async(const struct device *dev)
 
 int pm_device_put(const struct device *dev)
 {
-	return pm_device_request(dev, PM_DEVICE_STATE_SUSPEND, 0);
+	return pm_device_request(dev, PM_DEVICE_STATE_SUSPENDED, 0);
 }
 
 int pm_device_put_async(const struct device *dev)
 {
-	return pm_device_request(dev, PM_DEVICE_STATE_SUSPEND, PM_DEVICE_ASYNC);
+	return pm_device_request(dev, PM_DEVICE_STATE_SUSPENDED, PM_DEVICE_ASYNC);
 }
 
 void pm_device_enable(const struct device *dev)
@@ -179,7 +179,7 @@ void pm_device_enable(const struct device *dev)
 		dev->pm->dev = dev;
 		if (dev->pm_control != NULL) {
 			dev->pm->enable = true;
-			dev->pm->state = PM_DEVICE_STATE_SUSPEND;
+			dev->pm->state = PM_DEVICE_STATE_SUSPENDED;
 			k_work_init_delayable(&dev->pm->work, pm_work_handler);
 		}
 		goto out;
@@ -199,7 +199,7 @@ void pm_device_enable(const struct device *dev)
 	 */
 	if (!dev->pm->dev) {
 		dev->pm->dev = dev;
-		dev->pm->state = PM_DEVICE_STATE_SUSPEND;
+		dev->pm->state = PM_DEVICE_STATE_SUSPENDED;
 		k_work_init_delayable(&dev->pm->work, pm_work_handler);
 	} else {
 		k_work_schedule(&dev->pm->work, K_NO_WAIT);

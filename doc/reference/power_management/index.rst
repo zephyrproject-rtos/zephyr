@@ -244,7 +244,7 @@ The four device power states:
 
    Normal operation of the device. All device context is retained.
 
-:code:`PM_DEVICE_STATE_SUSPEND`
+:code:`PM_DEVICE_STATE_SUSPENDED`
 
    Most device context is lost by the hardware. Device drivers must save and
    restore or reinitialize any context lost by the hardware.
@@ -252,12 +252,12 @@ The four device power states:
 :code:`PM_DEVICE_STATE_SUSPENDING`
 
    Device is currently transitioning from :c:macro:`PM_DEVICE_STATE_ACTIVE` to
-   :c:macro:`PM_DEVICE_STATE_SUSPEND`.
+   :c:macro:`PM_DEVICE_STATE_SUSPENDED`.
 
 :code:`PM_DEVICE_STATE_RESUMING`
 
-   Device is currently transitioning from :c:macro:`PM_DEVICE_STATE_SUSPEND` to
-   :c:macro:`PM_DEVICE_STATE_ACTIVE`.
+   Device is currently transitioning from :c:macro:`PM_DEVICE_STATE_SUSPENDED`
+   to :c:macro:`PM_DEVICE_STATE_ACTIVE`.
 
 :code:`PM_DEVICE_STATE_OFF`
 
