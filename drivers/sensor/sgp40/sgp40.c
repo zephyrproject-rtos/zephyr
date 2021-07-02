@@ -191,13 +191,6 @@ static int sgp40_set_power_state(const struct device *dev,
 {
 	uint16_t cmd;
 	int rc;
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-	if (state == power_state) {
-		LOG_DBG("Device already in requested PM_STATE.");
-		return 0;
-	}
 
 	if (power_state == PM_DEVICE_STATE_ACTIVE) {
 		/* activate the hotplate by sending a measure command */
