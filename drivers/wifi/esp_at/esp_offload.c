@@ -242,6 +242,9 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 		goto out;
 	}
 
+	/* Reset semaphore that will be released by 'SEND OK' or 'SEND FAIL' */
+	k_sem_reset(&dev->sem_response);
+
 	/* Wait for '>' */
 	ret = k_sem_take(&dev->sem_tx_ready, K_MSEC(5000));
 	if (ret < 0) {
@@ -258,7 +261,6 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 	}
 
 	/* Wait for 'SEND OK' or 'SEND FAIL' */
-	k_sem_reset(&dev->sem_response);
 	ret = k_sem_take(&dev->sem_response, ESP_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_DBG("No send response");
