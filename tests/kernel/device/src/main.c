@@ -332,17 +332,6 @@ void test_dummy_device_pm(void)
 			"Unable to get active state to device");
 	zassert_true((device_power_state == PM_DEVICE_STATE_ACTIVE),
 			"Error power status");
-
-	/* Set device state to PM_DEVICE_STATE_FORCE_SUSPEND */
-	ret = pm_device_state_set(dev, PM_DEVICE_STATE_FORCE_SUSPEND);
-
-	zassert_true((ret == 0), "Unable to force suspend device");
-
-	ret = pm_device_state_get(dev, &device_power_state);
-	zassert_true((ret == 0),
-			"Unable to get suspend state to device");
-	zassert_true((device_power_state == PM_DEVICE_STATE_ACTIVE),
-			"Error power status");
 }
 #else
 static void test_enable_and_disable_automatic_runtime_pm(void)
