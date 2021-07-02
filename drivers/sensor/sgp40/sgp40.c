@@ -195,7 +195,7 @@ static int sgp40_set_power_state(const struct device *dev,
 	if (power_state == PM_DEVICE_STATE_ACTIVE) {
 		/* activate the hotplate by sending a measure command */
 		cmd = SGP40_CMD_MEASURE_RAW;
-	} else if (power_state == PM_DEVICE_STATE_SUSPEND) {
+	} else if (power_state == PM_DEVICE_STATE_SUSPENDED) {
 		cmd = SGP40_CMD_HEATER_OFF;
 	} else {
 		LOG_DBG("Power state not implemented.");

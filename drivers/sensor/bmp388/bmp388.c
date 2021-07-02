@@ -556,7 +556,7 @@ static int bmp388_set_power_state(const struct device *dev,
 
 	if (state == PM_DEVICE_STATE_ACTIVE) {
 		reg_val = BMP388_PWR_CTRL_MODE_NORMAL;
-	} else if ((state == PM_DEVICE_STATE_SUSPEND) ||
+	} else if ((state == PM_DEVICE_STATE_SUSPENDED) ||
 		   (state == PM_DEVICE_STATE_OFF)) {
 		reg_val = BMP388_PWR_CTRL_MODE_SLEEP;
 	} else {
