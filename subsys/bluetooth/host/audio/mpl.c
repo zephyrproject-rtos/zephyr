@@ -2276,7 +2276,11 @@ int8_t playback_speed_get(void)
 
 void playback_speed_set(int8_t speed)
 {
-	pl.playback_speed_param = speed;
+	/* Set new speed parameter and notify, if different from current */
+	if (speed != pl.playback_speed_param) {
+		pl.playback_speed_param = speed;
+		media_proxy_pl_playback_speed_cb(pl.playback_speed_param);
+	}
 }
 
 int8_t seeking_speed_get(void)
@@ -2352,8 +2356,10 @@ uint64_t current_group_id_get(void)
 
 void current_group_id_set(uint64_t id)
 {
+	/* TODO: Actually change the group to the given group */
 	BT_DBG_OBJ_ID("Group ID to set: ", id);
 	pl.group->id = id;
+	media_proxy_pl_current_group_id_cb(pl.group->id);
 }
 
 uint64_t parent_group_id_get(void)
@@ -2369,8 +2375,11 @@ uint8_t playing_order_get(void)
 
 void playing_order_set(uint8_t order)
 {
-	if (BIT(order - 1) & pl.playing_orders_supported) {
-		pl.playing_order = order;
+	if (order != pl.playing_order) {
+		if (BIT(order - 1) & pl.playing_orders_supported) {
+			pl.playing_order = order;
+			media_proxy_pl_playing_order_cb(pl.playing_order);
+		}
 	}
 }
 
