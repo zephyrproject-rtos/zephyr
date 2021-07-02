@@ -19,11 +19,6 @@ extern "C" {
 int pm_suspend_devices(void);
 
 /**
- * @brief Function to put the devices in PM device list in low power state
- */
-int pm_low_power_devices(void);
-
-/**
  * @brief Function to resume the devices in PM device list
  */
 void pm_resume_devices(void);
