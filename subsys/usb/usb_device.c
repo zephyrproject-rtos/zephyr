@@ -306,22 +306,30 @@ static void usb_handle_control_transfer(uint8_t ep,
 		setup->wIndex = sys_le16_to_cpu(setup_raw.wIndex);
 		setup->wLength = sys_le16_to_cpu(setup_raw.wLength);
 
-		if (setup->wLength > CONFIG_USB_REQUEST_BUFFER_SIZE) {
-			if (usb_reqtype_is_to_device(setup)) {
+		usb_dev.data_buf = usb_dev.req_data;
+		usb_dev.zlp_flag = false;
+		/*
+		 * Set length to 0 as a precaution so that no trouble
+		 * happens if control request handler does not check the
+		 * request values sufficiently.
+		 */
+		usb_dev.data_buf_len = 0;
+		usb_dev.data_buf_residue = 0;
+
+		if (usb_reqtype_is_to_device(setup)) {
+			if (setup->wLength > CONFIG_USB_REQUEST_BUFFER_SIZE) {
 				LOG_ERR("Request buffer too small");
 				usb_dc_ep_set_stall(USB_CONTROL_EP_IN);
 				usb_dc_ep_set_stall(USB_CONTROL_EP_OUT);
 				return;
 			}
-		}
 
-		usb_dev.data_buf = usb_dev.req_data;
-		usb_dev.data_buf_residue = setup->wLength;
-		usb_dev.data_buf_len = setup->wLength;
-		usb_dev.zlp_flag = false;
-
-		if (setup->wLength && usb_reqtype_is_to_device(setup)) {
-			return;
+			if (setup->wLength) {
+				/* Continue with data OUT stage */
+				usb_dev.data_buf_len = setup->wLength;
+				usb_dev.data_buf_residue = setup->wLength;
+				return;
+			}
 		}
 
 		/* Ask installed handler to process request */
