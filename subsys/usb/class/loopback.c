@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(usb_loopback);
 #define LOOPBACK_IN_EP_IDX		1
 
 static uint8_t loopback_buf[1024];
+BUILD_ASSERT(sizeof(loopback_buf) == CONFIG_USB_REQUEST_BUFFER_SIZE);
 
 /* usb.rst config structure start */
 struct usb_loopback_config {
@@ -135,6 +136,12 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 	if (usb_reqtype_is_to_device(setup) &&
 	    setup->bRequest == 0x5b) {
 		LOG_DBG("Host-to-Device, data %p", *data);
+		/*
+		 * Copy request data in loopback_buf buffer and reuse
+		 * it later in control device-to-host transfer.
+		 */
+		memcpy(loopback_buf, *data,
+		       MIN(sizeof(loopback_buf), setup->wLength));
 		return 0;
 	}
 
@@ -142,6 +149,8 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 	    (setup->bRequest == 0x5c)) {
 		LOG_DBG("Device-to-Host, wLength %d, data %p",
 			setup->wLength, *data);
+		*data = loopback_buf;
+		*len = MIN(sizeof(loopback_buf), setup->wLength);
 		return 0;
 	}
 
