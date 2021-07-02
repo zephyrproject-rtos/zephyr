@@ -1140,9 +1140,9 @@ static void uart_nrfx_pins_enable(const struct device *dev, bool enable)
 }
 
 static void uart_nrfx_set_power_state(const struct device *dev,
-				      enum pm_device_state new_state)
+				      enum pm_device_state state)
 {
-	if (new_state == PM_DEVICE_STATE_ACTIVE) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
 		uart_nrfx_pins_enable(dev, true);
 		nrf_uart_enable(uart0_addr);
 		if (RX_PIN_USED) {
@@ -1150,9 +1150,6 @@ static void uart_nrfx_set_power_state(const struct device *dev,
 					      NRF_UART_TASK_STARTRX);
 		}
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-				new_state == PM_DEVICE_STATE_SUSPEND ||
-				new_state == PM_DEVICE_STATE_OFF);
 		nrf_uart_disable(uart0_addr);
 		uart_nrfx_pins_enable(dev, false);
 	}
@@ -1161,12 +1158,7 @@ static void uart_nrfx_set_power_state(const struct device *dev,
 static int uart_nrfx_pm_control(const struct device *dev,
 				enum pm_device_state state)
 {
-	enum pm_device_state current_state;
-
-	(void)pm_device_state_get(dev, &current_state);
-	if (state != current_state) {
-		uart_nrfx_set_power_state(dev, state);
-	}
+	uart_nrfx_set_power_state(dev, state);
 
 	return 0;
 }
