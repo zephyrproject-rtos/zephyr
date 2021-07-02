@@ -1,0 +1,30 @@
+# Copyright (c) 2021 Vossloh
+# SPDX-License-Identifier: Apache-2.0
+
+# STM32 M24C16 EEPROM
+
+description: ST M24C16 I2C EEPROM
+
+compatible: "st,m24c16-eeprom"
+
+include: eeprom-base.yaml
+
+properties:
+    size:
+      required: true
+    pagesize:
+      type: int
+      required: true
+      description: EEPROM page size in bytes
+    address-width:
+      type: int
+      required: true
+      description: EEPROM address width in bits
+    timeout:
+      type: int
+      required: true
+      description: EEPROM write cycle timeout in milliseconds
+    wc-gpios:
+      type: phandle-array
+      required: false
+      description: EEPROM Write Control pin.
