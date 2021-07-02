@@ -283,28 +283,22 @@ static int spi_nrfx_pm_control(const struct device *dev,
 	int ret = 0;
 	struct spi_nrfx_data *data = get_dev_data(dev);
 	const struct spi_nrfx_config *config = get_dev_config(dev);
-	enum pm_device_state curr_state;
 
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		switch (state) {
-		case PM_DEVICE_STATE_ACTIVE:
-			ret = init_spi(dev);
-			/* Force reconfiguration before next transfer */
-			data->ctx.config = NULL;
-			break;
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
+		ret = init_spi(dev);
+		/* Force reconfiguration before next transfer */
+		data->ctx.config = NULL;
+		break;
 
-		case PM_DEVICE_STATE_LOW_POWER:
-		case PM_DEVICE_STATE_SUSPEND:
-		case PM_DEVICE_STATE_OFF:
-			if (curr_state == PM_DEVICE_STATE_ACTIVE) {
-				nrfx_spi_uninit(&config->spi);
-			}
-			break;
+	case PM_DEVICE_STATE_LOW_POWER:
+	case PM_DEVICE_STATE_SUSPEND:
+	case PM_DEVICE_STATE_OFF:
+		nrfx_spi_uninit(&config->spi);
+		break;
 
-		default:
-			ret = -ENOTSUP;
-		}
+	default:
+		ret = -ENOTSUP;
 	}
 
 	return ret;

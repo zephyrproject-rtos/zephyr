@@ -628,36 +628,29 @@ static int spi_flash_at45_pm_control(const struct device *dev,
 				     enum pm_device_state state)
 {
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
-	int err = 0;
-	enum pm_device_state curr_state;
 
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		switch (state) {
-		case PM_DEVICE_STATE_ACTIVE:
-			acquire(dev);
-			power_down_op(dev, CMD_EXIT_DPD,
-					dev_config->t_exit_dpd);
-			release(dev);
-			break;
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
+		acquire(dev);
+		power_down_op(dev, CMD_EXIT_DPD, dev_config->t_exit_dpd);
+		release(dev);
+		break;
 
-		case PM_DEVICE_STATE_LOW_POWER:
-		case PM_DEVICE_STATE_SUSPEND:
-		case PM_DEVICE_STATE_OFF:
-			acquire(dev);
-			power_down_op(dev,
-				dev_config->use_udpd ? CMD_ENTER_UDPD
-							: CMD_ENTER_DPD,
-				dev_config->t_enter_dpd);
-			release(dev);
-			break;
+	case PM_DEVICE_STATE_LOW_POWER:
+	case PM_DEVICE_STATE_SUSPEND:
+	case PM_DEVICE_STATE_OFF:
+		acquire(dev);
+		power_down_op(dev,
+			dev_config->use_udpd ? CMD_ENTER_UDPD : CMD_ENTER_DPD,
+			dev_config->t_enter_dpd);
+		release(dev);
+		break;
 
-		default:
-			return -ENOTSUP;
-		}
+	default:
+		return -ENOTSUP;
 	}
 
-	return err;
+	return 0;
 }
 #endif /* IS_ENABLED(CONFIG_PM_DEVICE) */
 
