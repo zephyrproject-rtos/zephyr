@@ -71,6 +71,31 @@ uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	return reg;
 }
 
+uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
+{
+	unsigned int reg = PCIE_CONF_EXT_CAPPTR; /* Start at end of the PCI configuration space */
+	uint32_t data;
+
+	while (reg) {
+		data = pcie_conf_read(bdf, reg);
+		if (!data || data == 0xffffffff) {
+			return 0;
+		}
+
+		if (PCIE_CONF_EXT_CAP_ID(data) == cap_id) {
+			break;
+		}
+
+		reg = PCIE_CONF_EXT_CAP_NEXT(data) >> 2;
+
+		if (reg < PCIE_CONF_EXT_CAPPTR) {
+			return 0;
+		}
+	}
+
+	return reg;
+}
+
 bool pcie_get_mbar(pcie_bdf_t bdf,
 		   unsigned int bar_index,
 		   struct pcie_mbar *mbar)
