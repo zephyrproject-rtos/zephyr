@@ -16,9 +16,10 @@
 
 #include "bt.h"
 
+static struct bt_vcs *vcs;
 static struct bt_vcs_included vcs_included;
 
-static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume,
+static void vcs_state_cb(struct bt_vcs *vcs, int err, uint8_t volume,
 			 uint8_t mute)
 {
 	if (err) {
@@ -28,7 +29,7 @@ static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume,
 	}
 }
 
-static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
+static void vcs_flags_cb(struct bt_vcs *vcs, int err, uint8_t flags)
 {
 	if (err) {
 		shell_error(ctx_shell, "VCS flags get failed (%d)", err);
@@ -37,8 +38,8 @@ static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 	}
 }
 
-static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			  int8_t gain, uint8_t mute, uint8_t mode)
+static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
+			  uint8_t mute, uint8_t mode)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -51,9 +52,8 @@ static void aics_state_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	}
 }
 
-static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
-				 int err, uint8_t units, int8_t minimum,
-				 int8_t maximum)
+static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
+				 int8_t minimum, int8_t maximum)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -66,8 +66,8 @@ static void aics_gain_setting_cb(struct bt_conn *conn, struct bt_aics *inst,
 	}
 }
 
-static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
-			       int err, uint8_t input_type)
+static void aics_input_type_cb(struct bt_aics *inst, int err,
+			       uint8_t input_type)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -79,8 +79,7 @@ static void aics_input_type_cb(struct bt_conn *conn, struct bt_aics *inst,
 	}
 }
 
-static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
-			   bool active)
+static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -92,8 +91,8 @@ static void aics_status_cb(struct bt_conn *conn, struct bt_aics *inst, int err,
 	}
 
 }
-static void aics_description_cb(struct bt_conn *conn, struct bt_aics *inst,
-				int err, char *description)
+static void aics_description_cb(struct bt_aics *inst, int err,
+				char *description)
 {
 	if (err) {
 		shell_error(ctx_shell,
@@ -196,13 +195,13 @@ static int cmd_vcs_init(const struct shell *sh, size_t argc, char **argv)
 
 	vcs_param.cb = &vcs_cbs;
 
-	result = bt_vcs_register(&vcs_param);
+	result = bt_vcs_register(&vcs_param, &vcs);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 		return result;
 	}
 
-	result = bt_vcs_included_get(NULL, &vcs_included);
+	result = bt_vcs_included_get(vcs, &vcs_included);
 	if (result != 0) {
 		shell_error(sh, "Failed to get included services: %d", result);
 		return result;
@@ -234,7 +233,7 @@ static int cmd_vcs_volume_step(const struct shell *sh, size_t argc,
 static int cmd_vcs_state_get(const struct shell *sh, size_t argc,
 			     char **argv)
 {
-	int result = bt_vcs_vol_get(NULL);
+	int result = bt_vcs_vol_get(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -246,7 +245,7 @@ static int cmd_vcs_state_get(const struct shell *sh, size_t argc,
 static int cmd_vcs_flags_get(const struct shell *sh, size_t argc,
 			     char **argv)
 {
-	int result = bt_vcs_flags_get(NULL);
+	int result = bt_vcs_flags_get(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -258,7 +257,7 @@ static int cmd_vcs_flags_get(const struct shell *sh, size_t argc,
 static int cmd_vcs_volume_down(const struct shell *sh, size_t argc,
 			       char **argv)
 {
-	int result = bt_vcs_vol_down(NULL);
+	int result = bt_vcs_vol_down(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -271,7 +270,7 @@ static int cmd_vcs_volume_up(const struct shell *sh, size_t argc,
 			     char **argv)
 
 {
-	int result = bt_vcs_vol_up(NULL);
+	int result = bt_vcs_vol_up(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -283,7 +282,7 @@ static int cmd_vcs_volume_up(const struct shell *sh, size_t argc,
 static int cmd_vcs_unmute_volume_down(const struct shell *sh, size_t argc,
 				      char **argv)
 {
-	int result = bt_vcs_unmute_vol_down(NULL);
+	int result = bt_vcs_unmute_vol_down(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -295,7 +294,7 @@ static int cmd_vcs_unmute_volume_down(const struct shell *sh, size_t argc,
 static int cmd_vcs_unmute_volume_up(const struct shell *sh, size_t argc,
 				    char **argv)
 {
-	int result = bt_vcs_unmute_vol_up(NULL);
+	int result = bt_vcs_unmute_vol_up(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -316,7 +315,7 @@ static int cmd_vcs_volume_set(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	result = bt_vcs_vol_set(NULL, volume);
+	result = bt_vcs_vol_set(vcs, volume);
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
 	}
@@ -326,7 +325,7 @@ static int cmd_vcs_volume_set(const struct shell *sh, size_t argc,
 
 static int cmd_vcs_unmute(const struct shell *sh, size_t argc, char **argv)
 {
-	int result = bt_vcs_unmute(NULL);
+	int result = bt_vcs_unmute(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);
@@ -337,7 +336,7 @@ static int cmd_vcs_unmute(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_vcs_mute(const struct shell *sh, size_t argc, char **argv)
 {
-	int result = bt_vcs_mute(NULL);
+	int result = bt_vcs_mute(vcs);
 
 	if (result) {
 		shell_print(sh, "Fail: %d", result);

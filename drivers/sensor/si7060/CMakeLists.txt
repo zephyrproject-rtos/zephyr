@@ -2,4 +2,4 @@
 
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_SI7060 si7060.c)
+zephyr_library_sources(si7060.c)

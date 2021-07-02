@@ -255,8 +255,18 @@
  *       ULL_HIGH operations queue elements are required to buffer the
  *       requested ticker operations.
  */
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_ADV_EXT) && \
+	defined(CONFIG_BT_CTLR_PHY_CODED)
+#define TICKER_USER_ULL_HIGH_OPS (4 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
+				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
+#else /* !CONFIG_BT_CENTRAL || !CONFIG_BT_CTLR_ADV_EXT ||
+       * !CONFIG_BT_CTLR_PHY_CODED
+       */
 #define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
 				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
+#endif /* !CONFIG_BT_CENTRAL || !CONFIG_BT_CTLR_ADV_EXT ||
+	* !CONFIG_BT_CTLR_PHY_CODED
+	*/
 
 #define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
 
@@ -313,11 +323,20 @@ static struct {
  * Increasing this by times the max. simultaneous connection count will permit
  * simultaneous parallel PHY update or Connection Update procedures amongst
  * active connections.
+ * Minimum node rx of 2 that can be reserved happens when local central
+ * initiated PHY Update reserves 2 node rx, one for PHY update complete and
+ * another for Data Length Update complete notification. Otherwise, a
+ * peripheral only needs 1 additional node rx to generate Data Length Update
+ * complete when PHY Update completes; node rx for PHY update complete is
+ * reserved as the received PHY Update Ind PDU.
  */
-#if defined(CONFIG_BT_CTLR_PHY) && defined(CONFIG_BT_CTLR_DATA_LENGTH)
-#define LL_PDU_RX_CNT 3
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_PHY) && \
+	defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#define LL_PDU_RX_CNT (2 * (CONFIG_BT_CTLR_LLCP_CONN))
+#elif defined(CONFIG_BT_CONN)
+#define LL_PDU_RX_CNT (CONFIG_BT_CTLR_LLCP_CONN)
 #else
-#define LL_PDU_RX_CNT 2
+#define LL_PDU_RX_CNT 0
 #endif
 
 /* No. of node rx for LLL to ULL.
@@ -1998,7 +2017,7 @@ static inline void rx_alloc(uint8_t max)
 		max = mem_link_rx.quota_pdu;
 	}
 
-	while ((max--) && MFIFO_ENQUEUE_IDX_GET(pdu_rx_free, &idx)) {
+	while (max && MFIFO_ENQUEUE_IDX_GET(pdu_rx_free, &idx)) {
 		memq_link_t *link;
 		struct node_rx_hdr *rx;
 
@@ -2018,6 +2037,8 @@ static inline void rx_alloc(uint8_t max)
 		MFIFO_BY_IDX_ENQUEUE(pdu_rx_free, idx, rx);
 
 		ll_rx_link_inc_quota(-1);
+
+		max--;
 	}
 
 #if defined(CONFIG_BT_CONN)

@@ -20,7 +20,7 @@ connection. Once a connection is established it is possible to
 synchronously interact with Zephyr. Note that currently it is not
 possible to asynchronously send commands to the target.
 
-Enable this feature with the :option:`CONFIG_GDBSTUB` option.
+Enable this feature with the :kconfig:`CONFIG_GDBSTUB` option.
 
 Features
 ********

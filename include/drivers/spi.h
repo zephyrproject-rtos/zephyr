@@ -449,7 +449,7 @@ static inline int spi_write(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -486,7 +486,7 @@ static inline int spi_transceive_async(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance
@@ -516,7 +516,7 @@ static inline int spi_read_async(const struct device *dev,
  *
  * @note This function is asynchronous.
  *
- * @note This function is available only if @option{CONFIG_SPI_ASYNC}
+ * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * is selected.
  *
  * @param dev Pointer to the device structure for the driver instance

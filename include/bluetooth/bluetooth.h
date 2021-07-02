@@ -130,7 +130,7 @@ typedef void (*bt_ready_cb_t)(int err);
  * Enable Bluetooth. Must be the called before any calls that
  * require communication with the local Bluetooth hardware.
  *
- * When @option{CONFIG_BT_SETTINGS} has been enabled and the application is not
+ * When @kconfig{CONFIG_BT_SETTINGS} has been enabled and the application is not
  * managing identities of the stack itself then the application must call
  * @ref settings_load() before the stack is fully enabled.
  * See @ref bt_id_create() for more information.
@@ -223,7 +223,7 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  *             generate a random IRK for the identity and copy it back
  *             to the parameter upon return from this function (in case
  *             the parameter was non-NULL). If privacy
- *             @option{CONFIG_BT_PRIVACY} is not enabled this parameter must
+ *             @kconfig{CONFIG_BT_PRIVACY} is not enabled this parameter must
  *             be NULL.
  *
  * @return Identity identifier (>= 0) in case of success, or a negative
@@ -257,7 +257,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk);
  *             generate a random IRK for the identity and copy it back
  *             to the parameter upon return from this function (in case
  *             the parameter was non-NULL). If privacy
- *             @option{CONFIG_BT_PRIVACY} is not enabled this parameter must
+ *             @kconfig{CONFIG_BT_PRIVACY} is not enabled this parameter must
  *             be NULL.
  *
  * @return Identity identifier (>= 0) in case of success, or a negative
@@ -337,7 +337,7 @@ enum {
 	 * Advertise as connectable. If not connectable then the type of
 	 * advertising is determined by providing scan response data.
 	 * The advertiser address is determined by the type of advertising
-	 * and/or enabling privacy @option{CONFIG_BT_PRIVACY}.
+	 * and/or enabling privacy @kconfig{CONFIG_BT_PRIVACY}.
 	 */
 	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
 
@@ -523,7 +523,7 @@ struct bt_le_adv_param {
 	/**
 	 * @brief Local identity.
 	 *
-	 * @note When extended advertising @option{CONFIG_BT_EXT_ADV} is not
+	 * @note When extended advertising @kconfig{CONFIG_BT_EXT_ADV} is not
 	 *       enabled or not supported by the controller it is not possible
 	 *       to scan and advertise simultaneously using two different
 	 *       random addresses.
@@ -887,8 +887,8 @@ struct bt_le_ext_adv_start_param {
 	 * this parameters must be set to a non-zero value less than or equal
 	 * to the maximum of @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
 	 *
-	 * If privacy @option{CONFIG_BT_PRIVACY} is enabled then the timeout
-	 * must be less than @option{CONFIG_BT_RPA_TIMEOUT}.
+	 * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled then the timeout
+	 * must be less than @kconfig{CONFIG_BT_RPA_TIMEOUT}.
 	 */
 	uint16_t timeout;
 	/**
@@ -1792,11 +1792,11 @@ struct bt_le_scan_cb {
  * the specified callback.
  *
  * @note The LE scanner by default does not use the Identity Address of the
- *       local device when @option{CONFIG_BT_PRIVACY} is disabled. This is to
+ *       local device when @kconfig{CONFIG_BT_PRIVACY} is disabled. This is to
  *       prevent the active scanner from disclosing the identity information
  *       when requesting additional information from advertisers.
  *       In order to enable directed advertiser reports then
- *       @option{CONFIG_BT_SCAN_WITH_IDENTITY} must be enabled.
+ *       @kconfig{CONFIG_BT_SCAN_WITH_IDENTITY} must be enabled.
  *
  * @param param Scan parameters.
  * @param cb Callback to notify scan results. May be NULL if callback
@@ -1939,16 +1939,16 @@ struct bt_le_oob {
  * This function allows to get local information that are useful for
  * Out of Band pairing or connection creation.
  *
- * If privacy @option{CONFIG_BT_PRIVACY} is enabled this will result in
+ * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled this will result in
  * generating new Resolvable Private Address (RPA) that is valid for
- * @option{CONFIG_BT_RPA_TIMEOUT} seconds. This address will be used for
+ * @kconfig{CONFIG_BT_RPA_TIMEOUT} seconds. This address will be used for
  * advertising started by @ref bt_le_adv_start, active scanning and
  * connection creation.
  *
  * @note If privacy is enabled the RPA cannot be refreshed in the following
  *       cases:
  *       - Creating a connection in progress, wait for the connected callback.
- *      In addition when extended advertising @option{CONFIG_BT_EXT_ADV} is
+ *      In addition when extended advertising @kconfig{CONFIG_BT_EXT_ADV} is
  *      not enabled or not supported by the controller:
  *       - Advertiser is enabled using a Random Static Identity Address for a
  *         different local identity.
@@ -1969,9 +1969,9 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
  * This function allows to get local information that are useful for
  * Out of Band pairing or connection creation.
  *
- * If privacy @option{CONFIG_BT_PRIVACY} is enabled this will result in
+ * If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled this will result in
  * generating new Resolvable Private Address (RPA) that is valid for
- * @option{CONFIG_BT_RPA_TIMEOUT} seconds. This address will be used by the
+ * @kconfig{CONFIG_BT_RPA_TIMEOUT} seconds. This address will be used by the
  * advertising set.
  *
  * @note When generating OOB information for multiple advertising set all

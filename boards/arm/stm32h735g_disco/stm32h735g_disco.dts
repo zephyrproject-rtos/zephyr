@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2021 SILA Embedded Solutions GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h735Xg.dtsi>
+#include <st/h7/stm32h735igkx-pinctrl.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32H735G DISCOVERY board";
+	compatible = "st,stm32h735g-disco";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_1 {
+			gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+		green_led: led_2 {
+			gpios = <&gpioc 3 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		sw0 = &user_button;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <110>;
+	div-p = <1>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(550)>;
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pf7 &uart7_rx_pf6>;
+	current-speed = <115200>;
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pf14 &i2c4_sda_pf15>;
+};
+
+&mac {
+	pinctrl-0 = <&eth_mdc_pc1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_mdio_pa2
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pb11
+		     &eth_txd0_pb12
+		     &eth_txd1_pb13>;
+};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8
+		     &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10
+		     &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12
+		     &sdmmc1_cmd_pd2>;
+	cd-gpios = <&gpiof 5 GPIO_ACTIVE_LOW>;
+};

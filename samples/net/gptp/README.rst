@@ -122,7 +122,7 @@ If Zephyr syncs properly with gptp daemon, then this is printed:
 
 By default gPTP in Zephyr will not print any gPTP debug messages to console.
 One can enable debug prints by setting
-:option:`CONFIG_NET_GPTP_LOG_LEVEL_DBG` in the config file.
+:kconfig:`CONFIG_NET_GPTP_LOG_LEVEL_DBG` in the config file.
 
 For native_posix board, use ``linuxptp`` project as that supports
 software timestamping.
@@ -146,7 +146,7 @@ it according to your needs.
 Multiport Setup
 ===============
 
-If you set :option:`CONFIG_NET_GPTP_NUM_PORTS` larger than 1, then gPTP sample
+If you set :kconfig:`CONFIG_NET_GPTP_NUM_PORTS` larger than 1, then gPTP sample
 will create multiple TSN ports. This configuration is currently only supported
 in native_posix board.
 

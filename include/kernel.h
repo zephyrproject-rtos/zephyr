@@ -107,7 +107,7 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
  * @param user_cb Pointer to the user callback function.
  * @param user_data Pointer to user data.
  *
- * @note @option{CONFIG_THREAD_MONITOR} must be set for this function
+ * @note @kconfig{CONFIG_THREAD_MONITOR} must be set for this function
  * to be effective.
  * @note This API uses @ref k_spin_lock to protect the _kernel.threads
  * list which means creation of new threads and terminations of existing
@@ -126,7 +126,7 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * @param user_cb Pointer to the user callback function.
  * @param user_data Pointer to user data.
  *
- * @note @option{CONFIG_THREAD_MONITOR} must be set for this function
+ * @note @kconfig{CONFIG_THREAD_MONITOR} must be set for this function
  * to be effective.
  * @note This API uses @ref k_spin_lock only when accessing the _kernel.threads
  * queue elements. It unlocks it during user callback function processing.
@@ -176,7 +176,7 @@ extern void k_thread_foreach_unlocked(
  * This option indicates that the thread uses the CPU's floating point
  * registers. This instructs the kernel to take additional steps to save
  * and restore the contents of these registers when scheduling the thread.
- * No effect if @option{CONFIG_FPU_SHARING} is not enabled.
+ * No effect if @kconfig{CONFIG_FPU_SHARING} is not enabled.
  */
 #define K_FP_REGS (BIT(1))
 #endif
@@ -195,7 +195,7 @@ extern void k_thread_foreach_unlocked(
  * @details
  * Indicates that the thread being created should inherit all kernel object
  * permissions from the thread that created it. No effect if
- * @option{CONFIG_USERSPACE} is not enabled.
+ * @kconfig{CONFIG_USERSPACE} is not enabled.
  */
 #define K_INHERIT_PERMS (BIT(3))
 
@@ -346,7 +346,7 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
  *
  * Some hardware may prevent inspection of a stack buffer currently in use.
  * If this API is called from supervisor mode, on the currently running thread,
- * on a platform which selects @option{CONFIG_NO_UNUSED_STACK_INSPECTION}, an
+ * on a platform which selects @kconfig{CONFIG_NO_UNUSED_STACK_INSPECTION}, an
  * error will be generated.
  *
  * @param thread Thread to inspect stack information
@@ -435,7 +435,7 @@ static inline int32_t k_msleep(int32_t ms)
  *
  * This function is unlikely to work as expected without kernel tuning.
  * In particular, because the lower bound on the duration of a sleep is
- * the duration of a tick, @option{CONFIG_SYS_CLOCK_TICKS_PER_SEC} must be
+ * the duration of a tick, @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} must be
  * adjusted to achieve the resolution desired. The implications of doing
  * this must be understood before attempting to use k_usleep(). Use with
  * caution.
@@ -723,7 +723,7 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * above this call, which is simply input to the priority selection
  * logic.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread A thread on which to set the deadline
@@ -740,7 +740,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
  * After this returns, the thread will no longer be schedulable on any
  * CPUs.  The thread must not be currently runnable.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -754,7 +754,7 @@ int k_thread_cpu_mask_clear(k_tid_t thread);
  * After this returns, the thread will be schedulable on any CPU.  The
  * thread must not be currently runnable.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -767,7 +767,7 @@ int k_thread_cpu_mask_enable_all(k_tid_t thread);
  *
  * The thread must not be currently runnable.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -781,7 +781,7 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  *
  * The thread must not be currently runnable.
  *
- * @note You should enable @option{CONFIG_SCHED_DEADLINE} in your project
+ * @note You should enable @kconfig{CONFIG_SCHED_DEADLINE} in your project
  * configuration.
  *
  * @param thread Thread to operate upon
@@ -978,7 +978,7 @@ __syscall void *k_thread_custom_data_get(void);
 /**
  * @brief Set current thread name
  *
- * Set the name of the thread to be used when @option{CONFIG_THREAD_MONITOR}
+ * Set the name of the thread to be used when @kconfig{CONFIG_THREAD_MONITOR}
  * is enabled for tracing and debugging.
  *
  * @param thread Thread to set name, or NULL to set the current thread
@@ -1522,7 +1522,7 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
  * @brief Get system uptime, in system ticks.
  *
  * This routine returns the elapsed time since the system booted, in
- * ticks (c.f. @option{CONFIG_SYS_CLOCK_TICKS_PER_SEC}), which is the
+ * ticks (c.f. @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC}), which is the
  * fundamental unit of resolution of kernel timekeeping.
  *
  * @return Current uptime in ticks.
@@ -1538,7 +1538,7 @@ __syscall int64_t k_uptime_ticks(void);
  * @note
  *    While this function returns time in milliseconds, it does
  *    not mean it has millisecond resolution. The actual resolution depends on
- *    @option{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option.
+ *    @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option.
  *
  * @return Current uptime in milliseconds.
  */
@@ -1562,7 +1562,7 @@ static inline int64_t k_uptime_get(void)
  * @note
  *    While this function returns time in milliseconds, it does
  *    not mean it has millisecond resolution. The actual resolution depends on
- *    @option{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option
+ *    @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} config option
  *
  * @return The low 32 bits of the current uptime, in milliseconds.
  */

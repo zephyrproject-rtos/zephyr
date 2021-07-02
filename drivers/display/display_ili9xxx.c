@@ -2,7 +2,7 @@
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2020 Teslabs Engineering S.L.
- *
+ * Copyright (c) 2021 Krivorot Oleg <krivorot.oleg@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -411,6 +411,16 @@ static int ili9xxx_init(const struct device *dev)
 
 	ili9xxx_hw_reset(dev);
 
+	r = ili9xxx_transmit(dev, ILI9XXX_SWRESET, NULL, 0);
+	if (r < 0) {
+		LOG_ERR("Error transmit command Software Reset (%d)", r);
+		return r;
+	}
+
+	k_sleep(K_MSEC(ILI9XXX_RESET_WAIT_TIME));
+
+	ili9xxx_display_blanking_on(dev);
+
 	r = ili9xxx_configure(dev);
 	if (r < 0) {
 		LOG_ERR("Could not configure display (%d)", r);
@@ -496,6 +506,11 @@ static const struct display_driver_api ili9xxx_api = {
 #ifdef CONFIG_ILI9340
 #include "display_ili9340.h"
 DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9340);
+#endif
+
+#ifdef CONFIG_ILI9341
+#include "display_ili9341.h"
+DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9341);
 #endif
 
 #ifdef CONFIG_ILI9488

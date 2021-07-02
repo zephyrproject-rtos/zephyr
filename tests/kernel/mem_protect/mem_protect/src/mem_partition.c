@@ -7,9 +7,12 @@
 #include <kernel.h>
 #include "mem_protect.h"
 
-static K_APP_DMEM(ztest_mem_partition) int var = 1356;
-static K_APP_BMEM(ztest_mem_partition) int zeroed_var = 20420;
-static K_APP_BMEM(ztest_mem_partition) int bss_var;
+/* Add volatile to disable pre-calculation in compile stage in some
+ * toolchain, such as arcmwdt toolchain.
+ */
+static volatile K_APP_DMEM(ztest_mem_partition) int var = 1356;
+static volatile K_APP_BMEM(ztest_mem_partition) int zeroed_var = 20420;
+static volatile K_APP_BMEM(ztest_mem_partition) int bss_var;
 
 /**
  * @brief Test assigning global data and BSS variables to memory partitions

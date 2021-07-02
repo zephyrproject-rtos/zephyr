@@ -204,6 +204,13 @@ config BT_MESH_MODEL_GROUP_COUNT
 	  This option specifies how many group addresses each model can
 	  at most be subscribed to.
 
+config BT_MESH_MODEL_VND_MSG_CID_FORCE
+	bool "Force vendor model to use the corresponding CID field message"
+	default y
+	help
+	  This option forces vendor model to use messages for the
+	  corresponding CID field.
+
 config BT_MESH_LABEL_COUNT
 	int "Maximum number of Label UUIDs used for Virtual Addresses"
 	default 1

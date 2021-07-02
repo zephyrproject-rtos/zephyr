@@ -111,7 +111,7 @@
 		gpio0: gpio@80c00 {
 			compatible = "snps,designware-gpio";
 			reg = <0x00080c00 0x400>;
-			bits = <32>;
+			ngpios = <32>;
 			label = "GPIO";
 			interrupts = <3 1 0>;
 			interrupt-parent = <&dw_intc>;

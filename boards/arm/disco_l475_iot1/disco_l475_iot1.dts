@@ -142,6 +142,7 @@
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	cs-gpios = <&gpioa 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
@@ -177,7 +178,6 @@
 };
 
 &flash0 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
@@ -273,12 +273,12 @@
 
 			slot1_partition: partition@0 {
 				label = "image-1";
-				reg = <0x00000000 0x000D8000>;
+				reg = <0x00000000 0x000d8000>;
 				};
 
-			storage_partition: partition@D8000 {
+			storage_partition: partition@d8000 {
 				label = "storage";
-				reg = <0x000D8000 DT_SIZE_M(7)>;
+				reg = <0x000d8000 DT_SIZE_M(7)>;
 			};
 		};
 	};

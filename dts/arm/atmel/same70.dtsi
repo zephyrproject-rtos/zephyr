@@ -355,7 +355,7 @@
 				     &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
 		};
 
-		tc0: tc@4000C000 {
+		tc0: tc@4000c000 {
 			compatible = "atmel,sam-tc";
 			reg = <0x4000c000 0x100>;
 			interrupts = <23 0

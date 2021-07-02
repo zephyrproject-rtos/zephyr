@@ -97,6 +97,8 @@ The Zephyr stm32f429i_disc1 board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| FMC       | on-chip    | memc (SDRAM)                        |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 

@@ -112,7 +112,7 @@
 #define STATUS_UNSPECIFIED                 0x10
 #define STATUS_INVALID_BINDING             0x11
 
-void bt_mesh_cfg_reset(void);
+void bt_mesh_model_reset(void);
 
 void bt_mesh_attention(struct bt_mesh_model *model, uint8_t time);
 

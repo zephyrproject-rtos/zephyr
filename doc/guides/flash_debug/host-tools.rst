@@ -47,7 +47,7 @@ For these devices, the user should:
 1. Define flash partitions required to accommodate the bootloader and
    application image; see :ref:`flash_map_api` for details.
 2. Have board :file:`.defconfig` file with the
-   :option:`CONFIG_USE_DT_CODE_PARTITION` Kconfig option set to ``y`` to
+   :kconfig:`CONFIG_USE_DT_CODE_PARTITION` Kconfig option set to ``y`` to
    instruct the build system to use these partitions for code relocation.
    This option can also be set in ``prj.conf`` or any other Kconfig fragment.
 3. Build and flash the SAM-BA bootloader on the device.
@@ -61,20 +61,20 @@ For these devices, the user should:
 1. Define flash partitions required to accommodate the bootloader and
    application image; see :ref:`flash_map_api` for details.
 2. Have board :file:`.defconfig` file with the
-   :option:`CONFIG_BOOTLOADER_BOSSA` Kconfig option set to ``y``.  This will
-   automatically select the :option:`CONFIG_USE_DT_CODE_PARTITION` Kconfig
+   :kconfig:`CONFIG_BOOTLOADER_BOSSA` Kconfig option set to ``y``.  This will
+   automatically select the :kconfig:`CONFIG_USE_DT_CODE_PARTITION` Kconfig
    option which instruct the build system to use these partitions for code
    relocation.  The board :file:`.defconfig` file should have
-   :option:`CONFIG_BOOTLOADER_BOSSA_ARDUINO` ,
-   :option:`CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2` or the
-   :option:`CONFIG_BOOTLOADER_BOSSA_LEGACY` Kconfig option set to ``y``
+   :kconfig:`CONFIG_BOOTLOADER_BOSSA_ARDUINO` ,
+   :kconfig:`CONFIG_BOOTLOADER_BOSSA_ADAFRUIT_UF2` or the
+   :kconfig:`CONFIG_BOOTLOADER_BOSSA_LEGACY` Kconfig option set to ``y``
    to select the right compatible SAM-BA bootloader mode.
    These options can also be set in ``prj.conf`` or any other Kconfig fragment.
 3. Build and flash the SAM-BA bootloader on the device.
 
 .. note::
 
-    The :option:`CONFIG_BOOTLOADER_BOSSA_LEGACY` Kconfig option should be used
+    The :kconfig:`CONFIG_BOOTLOADER_BOSSA_LEGACY` Kconfig option should be used
     as last resource.  Try configure first with Devices without ROM bootloader.
 
 

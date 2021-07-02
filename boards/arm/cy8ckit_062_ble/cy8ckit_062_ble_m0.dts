@@ -47,6 +47,22 @@
 	interrupt-parent = <&intmux_ch20>;
 };
 
+&gpio_prt5 {
+	status = "okay";
+};
+
+&gpio_prt6 {
+	status = "okay";
+};
+
+&gpio_prt9 {
+	status = "okay";
+};
+
+&gpio_prt12 {
+	status = "okay";
+};
+
 &gpio_prt13 {
 	status = "okay";
 };
@@ -55,3 +71,5 @@
 	status = "okay";
 	interrupt-parent = <&intmux_ch16>;
 };
+
+arduino_spi: &spi6 {};

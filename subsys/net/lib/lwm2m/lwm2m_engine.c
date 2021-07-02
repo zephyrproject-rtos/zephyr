@@ -2299,7 +2299,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	}
 
 	loop_max = res->res_inst_count;
-	if (loop_max > 1) {
+	if (res->multi_res_inst) {
 		/* search for valid resource instances */
 		for (i = 0; i < loop_max; i++) {
 			if (res->res_instances[i].res_inst_id !=
@@ -2427,7 +2427,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		}
 	}
 
-	if (res->res_inst_count > 1) {
+	if (res->multi_res_inst) {
 		engine_put_end_ri(&msg->out, &msg->path);
 		msg->path.res_inst_id = res_inst_id_tmp;
 	}
@@ -4247,6 +4247,19 @@ static int32_t retransmit_request(struct lwm2m_ctx *client_ctx,
 	return next_retransmission;
 }
 
+static void notify_message_timeout_cb(struct lwm2m_message *msg)
+{
+	if (msg->ctx != NULL) {
+		struct lwm2m_ctx *client_ctx = msg->ctx;
+
+		if (client_ctx->notify_timeout_cb != NULL) {
+			client_ctx->notify_timeout_cb();
+		}
+	}
+
+	LOG_ERR("Notify Message Timed Out : %p", msg);
+}
+
 static int notify_message_reply_cb(const struct coap_packet *response,
 				   struct coap_reply *reply,
 				   const struct sockaddr *from)
@@ -4324,6 +4337,7 @@ static int generate_notify_message(struct lwm2m_ctx *ctx,
 	msg->token = obs->token;
 	msg->tkl = obs->tkl;
 	msg->reply_cb = notify_message_reply_cb;
+	msg->message_timeout_cb = notify_message_timeout_cb;
 	msg->out.out_cpkt = &msg->cpkt;
 
 	ret = lwm2m_init_message(msg);

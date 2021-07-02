@@ -36,5 +36,30 @@
 			pinctrls = <&pinmuxi 7 IT8XXX2_PINMUX_FUNC_1>;
 		};
 
+		/* PWM alternate function */
+		pinctrl_pwm0: pwm0 {
+			pinctrls = <&pinmuxa 0 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_pwm1: pwm1 {
+			pinctrls = <&pinmuxa 1 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_pwm2: pwm2 {
+			pinctrls = <&pinmuxa 2 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_pwm3: pwm3 {
+			pinctrls = <&pinmuxa 3 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_pwm4: pwm4 {
+			pinctrls = <&pinmuxa 4 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_pwm5: pwm5 {
+			pinctrls = <&pinmuxa 5 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_pwm6: pwm6 {
+			pinctrls = <&pinmuxa 6 IT8XXX2_PINMUX_FUNC_1>;
+		};
+		pinctrl_pwm7: pwm7 {
+			pinctrls = <&pinmuxa 7 IT8XXX2_PINMUX_FUNC_1>;
+		};
 	};
 };

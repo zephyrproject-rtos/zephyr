@@ -1,5 +1,5 @@
 common:
-  tags: prf
+  tags: cbprintf
   type: unit
 
 tests:

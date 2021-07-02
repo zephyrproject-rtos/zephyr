@@ -124,3 +124,8 @@
 		pinctrl-0 = <&tim2_ch1_pa0>;
 	};
 };
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+};

@@ -11,3 +11,14 @@ config SOC_IT8XXX2
 	select ATOMIC_OPERATIONS_C
 
 endchoice
+
+choice
+	prompt "Clock source for PLL reference clock"
+
+config SOC_IT8XXX2_INT_32K
+	bool "Use the +/-2.3% internal clock generator"
+
+config SOC_IT8XXX2_EXT_32K
+	bool "Use external 32.768 kHz clock source"
+
+endchoice

@@ -2442,7 +2442,7 @@ static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 	}
 }
 
-void bt_mesh_cfg_reset(void)
+void bt_mesh_model_reset(void)
 {
 	bt_mesh_model_foreach(mod_reset, NULL);
 }

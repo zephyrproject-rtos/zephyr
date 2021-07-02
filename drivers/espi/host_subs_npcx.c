@@ -979,8 +979,7 @@ int npcx_host_init_subs_core_domain(const struct device *host_bus_dev,
 {
 	struct mswc_reg *const inst_mswc = host_sub_cfg.inst_mswc;
 	struct shm_reg *const inst_shm = host_sub_cfg.inst_shm;
-	const struct device *const clk_dev =
-					device_get_binding(NPCX_CLK_CTRL_NAME);
+	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	int i;
 	uint8_t shm_sts;
 

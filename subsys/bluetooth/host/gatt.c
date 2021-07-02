@@ -99,11 +99,11 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	char value[CONFIG_BT_DEVICE_NAME_MAX] = {};
 
-	if (offset) {
+	if (offset >= sizeof(value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len >= sizeof(value)) {
+	if (offset + len >= sizeof(value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -2254,32 +2254,47 @@ static bool gatt_find_by_uuid(struct notify_data *found,
 	return found->attr ? true : false;
 }
 
+struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr,
+					  uint16_t attr_count,
+					  const struct bt_uuid *uuid)
+{
+	struct bt_gatt_attr *found = NULL;
+	uint16_t start_handle = bt_gatt_attr_value_handle(attr);
+	uint16_t end_handle = start_handle && attr_count ?
+			      start_handle + attr_count : 0xffff;
+
+	bt_gatt_foreach_attr_type(start_handle, end_handle, uuid, NULL, 1,
+				  find_next, &found);
+
+	return found;
+}
+
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params)
 {
 	struct notify_data data;
 
 	__ASSERT(params, "invalid parameters\n");
-	__ASSERT(params->attr, "invalid parameters\n");
+	__ASSERT(params->attr || params->uuid, "invalid parameters\n");
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
-	data.attr = params->attr;
-
 	if (conn && conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
+	data.attr = params->attr;
 	data.handle = bt_gatt_attr_get_handle(data.attr);
-	if (!data.handle) {
-		return -ENOENT;
-	}
 
 	/* Lookup UUID if it was given */
 	if (params->uuid) {
 		if (!gatt_find_by_uuid(&data, params->uuid)) {
+			return -ENOENT;
+		}
+	} else {
+		if (!data.handle) {
 			return -ENOENT;
 		}
 	}
@@ -2336,26 +2351,26 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	struct notify_data data;
 
 	__ASSERT(params, "invalid parameters\n");
-	__ASSERT(params->attr, "invalid parameters\n");
+	__ASSERT(params->attr || params->uuid, "invalid parameters\n");
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
 	}
 
-	data.attr = params->attr;
-
 	if (conn && conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
+	data.attr = params->attr;
 	data.handle = bt_gatt_attr_get_handle(data.attr);
-	if (!data.handle) {
-		return -ENOENT;
-	}
 
 	/* Lookup UUID if it was given */
 	if (params->uuid) {
 		if (!gatt_find_by_uuid(&data, params->uuid)) {
+			return -ENOENT;
+		}
+	} else {
+		if (!data.handle) {
 			return -ENOENT;
 		}
 	}
