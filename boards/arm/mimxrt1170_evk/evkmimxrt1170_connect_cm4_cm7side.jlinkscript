@@ -1,0 +1,416 @@
+/*
+ * Copyright 2019-2020 NXP
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+void SDRAM_WaitIpCmdDone()
+{
+    unsigned int reg;
+    do
+    {
+        reg = MEM_ReadU32(0x400D403C);
+    }while((reg & 0x3) == 0);
+
+    MEM_WriteU32(0x400D403C, 0x00000003);    // clear IPCMDERR and IPCMDDONE bits
+}
+
+void InitSysPll2Pfd1()
+{
+    unsigned int val;
+    unsigned int stable;
+
+    // ANADIG_PLL_PLL_528_PFD
+    val = MEM_ReadU32(0x40C84270);
+    if (((val & 0x8000) != 0) || (((val & 0x3F00) >> 8) != 16))
+    {
+        stable = val & 0x4000;
+
+        val |= 0x8000;
+        MEM_WriteU32(0x40C84270, val);
+
+        val = MEM_ReadU32(0x40C84270);
+        val &= ~0x3F00;
+        val |= 16 << 8;
+        MEM_WriteU32(0x40C84270, val);
+
+        val = MEM_ReadU32(0x40C84250);
+        val ^= 0x4;
+        MEM_WriteU32(0x40C84250, val);
+
+        val = MEM_ReadU32(0x40C84270);
+        val &= ~0x8000;
+        MEM_WriteU32(0x40C84270, val);
+        do
+        {
+            val = MEM_ReadU32(0x40C84270) & 0x4000;
+        } while (val == stable);
+    }
+    else
+    {
+        Report("syspll2 pfd1 has been initialized already");
+        val &= ~0x8000;
+        MEM_WriteU32(0x40C84270, val);
+    }
+}
+
+void InitSysPll2()
+{
+    unsigned int val;
+
+    // ANADIG_PLL_PLL_528_CTRL
+    val = MEM_ReadU32(0x40C84240);
+    if (val & 0x800000)
+    {
+        // SysPll2 has been initialized
+        val &= ~0x40000000;
+        MEM_WriteU32(0x40C84240, val);
+        Report("syspll2 has been initialized already");
+        return;
+    }
+
+    val = MEM_ReadU32(0x40C84270);
+    val |= 0x80808080;
+    MEM_WriteU32(0x40C84270, val);
+
+    val = MEM_ReadU32(0x40C84240);
+    val &= ~(0x802000);
+    val |= 0x40000000;
+    MEM_WriteU32(0x40C84240, val);
+    
+    // ANADIG_PLL_PLL_528_MFN
+    MEM_WriteU32(0x40C84280, 0);
+    // ANADIG_PLL_PLL_528_MFI
+    MEM_WriteU32(0x40C84290, 22);
+    // ANADIG_PLL_PLL_528_MFD
+    MEM_WriteU32(0x40C842A0, 0x0FFFFFFF);
+
+    // ANADIG_PLL_PLL_528_CTRL
+    MEM_WriteU32(0x40C84240, 0x8 | 0x40000000);
+    SYS_Sleep(30);
+
+    // ANADIG_PLL_PLL_528_CTRL
+    val = MEM_ReadU32(0x40C84240);
+    val |= 0x800000 | 0x800;
+    MEM_WriteU32(0x40C84240, val);
+    SYS_Sleep(250);
+
+    val = MEM_ReadU32(0x40C84240);
+    val &= ~0x800;
+    MEM_WriteU32(0x40C84240, val);
+
+    do
+    {
+        val = MEM_ReadU32(0x40C84240);
+    } while ((val & 0x20000000) == 0);
+
+    val |= 0x2000;
+    MEM_WriteU32(0x40C84240, val);
+
+    val &= ~0x40000000;
+    MEM_WriteU32(0x40C84240, val);
+}
+
+
+void SetSemcClock()
+{
+    unsigned int reg;
+    unsigned int val;
+
+    InitSysPll2();
+    InitSysPll2Pfd1();
+
+    // Set SEMC root clock
+    reg = 0x40CC0200;
+    // Use sys pll2 pfd1 divided by 3: 198Mhz
+    val = 0x602;
+    MEM_WriteU32(reg, val);
+}
+
+void SDRAMInit()
+{
+    // Config IOMUX
+    MEM_WriteU32(0x400E8010, 0x00000000);
+    MEM_WriteU32(0x400E8014, 0x00000000);
+    MEM_WriteU32(0x400E8018, 0x00000000);
+    MEM_WriteU32(0x400E801C, 0x00000000);
+    MEM_WriteU32(0x400E8020, 0x00000000);
+    MEM_WriteU32(0x400E8024, 0x00000000);
+    MEM_WriteU32(0x400E8028, 0x00000000);
+    MEM_WriteU32(0x400E802C, 0x00000000);
+    MEM_WriteU32(0x400E8030, 0x00000000);
+    MEM_WriteU32(0x400E8034, 0x00000000);
+    MEM_WriteU32(0x400E8038, 0x00000000);
+    MEM_WriteU32(0x400E803C, 0x00000000);
+    MEM_WriteU32(0x400E8040, 0x00000000);
+    MEM_WriteU32(0x400E8044, 0x00000000);
+    MEM_WriteU32(0x400E8048, 0x00000000);
+    MEM_WriteU32(0x400E804C, 0x00000000);
+    MEM_WriteU32(0x400E8050, 0x00000000);
+    MEM_WriteU32(0x400E8054, 0x00000000);
+    MEM_WriteU32(0x400E8058, 0x00000000);
+    MEM_WriteU32(0x400E805C, 0x00000000);
+    MEM_WriteU32(0x400E8060, 0x00000000);
+    MEM_WriteU32(0x400E8064, 0x00000000);
+    MEM_WriteU32(0x400E8068, 0x00000000);
+    MEM_WriteU32(0x400E806C, 0x00000000);
+    MEM_WriteU32(0x400E8070, 0x00000000);
+    MEM_WriteU32(0x400E8074, 0x00000000);
+    MEM_WriteU32(0x400E8078, 0x00000000);
+    MEM_WriteU32(0x400E807C, 0x00000000);
+    MEM_WriteU32(0x400E8080, 0x00000000);
+    MEM_WriteU32(0x400E8084, 0x00000000);
+    MEM_WriteU32(0x400E8088, 0x00000000);
+    MEM_WriteU32(0x400E808C, 0x00000000);
+    MEM_WriteU32(0x400E8090, 0x00000000);
+    MEM_WriteU32(0x400E8094, 0x00000000);
+    MEM_WriteU32(0x400E8098, 0x00000000);
+    MEM_WriteU32(0x400E809C, 0x00000000);
+    MEM_WriteU32(0x400E80A0, 0x00000000);
+    MEM_WriteU32(0x400E80A4, 0x00000000);
+    MEM_WriteU32(0x400E80A8, 0x00000000);
+    MEM_WriteU32(0x400E80AC, 0x00000010); // EMC_39, DQS PIN, enable SION
+    MEM_WriteU32(0x400E80B0, 0x00000000);
+    MEM_WriteU32(0x400E80B4, 0x00000000);
+    MEM_WriteU32(0x400E80B8, 0x00000000);
+    MEM_WriteU32(0x400E80BC, 0x00000000);
+    MEM_WriteU32(0x400E80C0, 0x00000000);
+    MEM_WriteU32(0x400E80C4, 0x00000000);
+    MEM_WriteU32(0x400E80C8, 0x00000000);
+    MEM_WriteU32(0x400E80CC, 0x00000000);
+    MEM_WriteU32(0x400E80D0, 0x00000000);
+    MEM_WriteU32(0x400E80D4, 0x00000000);
+    MEM_WriteU32(0x400E80D8, 0x00000000);
+    MEM_WriteU32(0x400E80DC, 0x00000000);
+    MEM_WriteU32(0x400E80E0, 0x00000000);
+    MEM_WriteU32(0x400E80E4, 0x00000000);
+    MEM_WriteU32(0x400E80E8, 0x00000000);
+    MEM_WriteU32(0x400E80EC, 0x00000000);
+    MEM_WriteU32(0x400E80F0, 0x00000000);
+    MEM_WriteU32(0x400E80F4, 0x00000000);
+    MEM_WriteU32(0x400E80F8, 0x00000000);
+    MEM_WriteU32(0x400E80FC, 0x00000000);
+    MEM_WriteU32(0x400E8100, 0x00000000);
+    MEM_WriteU32(0x400E8104, 0x00000000);
+    MEM_WriteU32(0x400E8108, 0x00000000);
+
+    // PAD ctrl
+    // PDRV = 1b (normal); PULL = 10b (PD)
+    MEM_WriteU32(0x400E8254, 0x00000008);
+    MEM_WriteU32(0x400E8258, 0x00000008);
+    MEM_WriteU32(0x400E825C, 0x00000008);
+    MEM_WriteU32(0x400E8260, 0x00000008);
+    MEM_WriteU32(0x400E8264, 0x00000008);
+    MEM_WriteU32(0x400E8268, 0x00000008);
+    MEM_WriteU32(0x400E826C, 0x00000008);
+    MEM_WriteU32(0x400E8270, 0x00000008);
+    MEM_WriteU32(0x400E8274, 0x00000008);
+    MEM_WriteU32(0x400E8278, 0x00000008);
+    MEM_WriteU32(0x400E827C, 0x00000008);
+    MEM_WriteU32(0x400E8280, 0x00000008);
+    MEM_WriteU32(0x400E8284, 0x00000008);
+    MEM_WriteU32(0x400E8288, 0x00000008);
+    MEM_WriteU32(0x400E828C, 0x00000008);
+    MEM_WriteU32(0x400E8290, 0x00000008);
+    MEM_WriteU32(0x400E8294, 0x00000008);
+    MEM_WriteU32(0x400E8298, 0x00000008);
+    MEM_WriteU32(0x400E829C, 0x00000008);
+    MEM_WriteU32(0x400E82A0, 0x00000008);
+    MEM_WriteU32(0x400E82A4, 0x00000008);
+    MEM_WriteU32(0x400E82A8, 0x00000008);
+    MEM_WriteU32(0x400E82AC, 0x00000008);
+    MEM_WriteU32(0x400E82B0, 0x00000008);
+    MEM_WriteU32(0x400E82B4, 0x00000008);
+    MEM_WriteU32(0x400E82B8, 0x00000008);
+    MEM_WriteU32(0x400E82BC, 0x00000008);
+    MEM_WriteU32(0x400E82C0, 0x00000008);
+    MEM_WriteU32(0x400E82C4, 0x00000008);
+    MEM_WriteU32(0x400E82C8, 0x00000008);
+    MEM_WriteU32(0x400E82CC, 0x00000008);
+    MEM_WriteU32(0x400E82D0, 0x00000008);
+    MEM_WriteU32(0x400E82D4, 0x00000008);
+    MEM_WriteU32(0x400E82D8, 0x00000008);
+    MEM_WriteU32(0x400E82DC, 0x00000008);
+    MEM_WriteU32(0x400E82E0, 0x00000008);
+    MEM_WriteU32(0x400E82E4, 0x00000008);
+    MEM_WriteU32(0x400E82E8, 0x00000008);
+    MEM_WriteU32(0x400E82EC, 0x00000008);
+    MEM_WriteU32(0x400E82F0, 0x00000008);
+    MEM_WriteU32(0x400E82F4, 0x00000008);
+    MEM_WriteU32(0x400E82F8, 0x00000008);
+    MEM_WriteU32(0x400E82FC, 0x00000008);
+    MEM_WriteU32(0x400E8300, 0x00000008);
+    MEM_WriteU32(0x400E8304, 0x00000008);
+    MEM_WriteU32(0x400E8308, 0x00000008);
+    MEM_WriteU32(0x400E830C, 0x00000008);
+    MEM_WriteU32(0x400E8310, 0x00000008);
+    MEM_WriteU32(0x400E8314, 0x00000008);
+    MEM_WriteU32(0x400E8318, 0x00000008);
+    MEM_WriteU32(0x400E831C, 0x00000008);
+    MEM_WriteU32(0x400E8320, 0x00000008);
+    MEM_WriteU32(0x400E8324, 0x00000008);
+    MEM_WriteU32(0x400E8328, 0x00000008);
+    MEM_WriteU32(0x400E832C, 0x00000008);
+    MEM_WriteU32(0x400E8330, 0x00000008);
+    MEM_WriteU32(0x400E8334, 0x00000008);
+    MEM_WriteU32(0x400E8338, 0x00000008);
+    MEM_WriteU32(0x400E833C, 0x00000008);
+    MEM_WriteU32(0x400E8400, 0x00000008);
+    MEM_WriteU32(0x400E8404, 0x00000008);
+    MEM_WriteU32(0x400E8408, 0x00000008);
+    MEM_WriteU32(0x400E840C, 0x00000008);
+
+    // Config SDR Controller Registers/
+    MEM_WriteU32(0x400d4000, 0x10000004); // MCR
+    MEM_WriteU32(0x400d4008, 0x00000081); // BMCR0
+    MEM_WriteU32(0x400d400C, 0x00000081); // BMCR1
+    MEM_WriteU32(0x400d4010, 0x8000001D); // BR0, 64MB
+
+    MEM_WriteU32(0x400d4040, 0x00000F32); // SDRAMCR0, 32bit
+    MEM_WriteU32(0x400d4044, 0x00772A22); // SDRAMCR1
+    MEM_WriteU32(0x400d4048, 0x00010A0D); // SDRAMCR2
+    MEM_WriteU32(0x400d404C, 0x21210408); // SDRAMCR3
+
+    MEM_WriteU32(0x400d4090, 0x80000000); // IPCR0
+    MEM_WriteU32(0x400d4094, 0x00000002); // IPCR1
+    MEM_WriteU32(0x400d4098, 0x00000000); // IPCR2
+
+    MEM_WriteU32(0x400d409C, 0xA55A000F); // IPCMD, SD_CC_IPREA
+    SDRAM_WaitIpCmdDone();
+    MEM_WriteU32(0x400d409C, 0xA55A000C); // SD_CC_IAF
+    SDRAM_WaitIpCmdDone();
+    MEM_WriteU32(0x400d409C, 0xA55A000C); // SD_CC_IAF
+    SDRAM_WaitIpCmdDone();
+    MEM_WriteU32(0x400d40A0, 0x00000033); // IPTXDAT
+    MEM_WriteU32(0x400d409C, 0xA55A000A); // SD_CC_IMS
+    SDRAM_WaitIpCmdDone();
+
+    MEM_WriteU32(0x400d4150, 0x00000017); // DCCR
+    MEM_WriteU32(0x400d404C, 0x21210409); // enable sdram self refresh after initialization done.
+
+    Report("SDRAM init done");
+}
+
+void RestoreFlexRAM()
+{
+    unsigned int base;
+    unsigned int value;
+
+    base = 0x400E4000;
+
+    value = MEM_ReadU32(base + 0x44);
+    value &= ~(0xFFFF);
+    value |= 0xFFAA;
+    MEM_WriteU32(base + 0x44, value);
+
+    value = MEM_ReadU32(base + 0x48);
+    value &= ~(0xFFFF);
+    value |= 0xFFAA;
+    MEM_WriteU32(base + 0x48, value);
+
+    value = MEM_ReadU32(base + 0x40);
+    value &= ~(0xFF << 8);
+    value |= 0x7 | (0xAA << 8);
+    MEM_WriteU32(base + 0x40, value);
+    Report("FlexRAM configuration is restored");
+}    
+
+void ReleaseCM4(void) {
+    MEM_WriteU32(0x40C04000, 1);
+    Report("CM4 is released");
+}
+
+void CM7VectReset(void) {
+    MEM_WriteU32(0xE000ED0C, 0x5FA0001);
+    SYS_Sleep(10);
+    Report("CM7 Vector Reset");
+}
+
+void CM7SrcReset(void) {
+    unsigned int t;
+
+    /* Issue M7 reset */
+    MEM_WriteU32(0x40c042a4, 1);
+
+    /* Check M7 reset status */
+    t = MEM_ReadU32(0x40c042b0);
+    t &= 0x1;
+    while (t)
+    {
+        t = MEM_ReadU32(0x40c042b0);
+        t &= 0x1;
+    }
+    SYS_Sleep(10);
+    Report("CM7 SRC reset");
+}
+
+void ResetCM7(void) {
+    CM7SrcReset();
+}
+
+void ResetDisplayMix()
+{
+    unsigned int t;
+
+    /* Issue DISPLAYMIX reset */
+    MEM_WriteU32(0x40c04224, 1);
+
+    /* Check DISPLAYMIX reset status */
+    t = MEM_ReadU32(0x40c04230);
+    t &= 0x1;
+    while (t)
+    {
+        t = MEM_ReadU32(0x40c04230);
+        t &= 0x1;
+    }
+    SYS_Sleep(10);
+    Report("DISPLAYMIX SRC reset");
+}
+
+void ResetPeripherals()
+{
+    ResetDisplayMix();
+}
+
+void InitTarget(void) {
+    CPU = CORTEX_M7;
+    // Manually configure AP
+    JLINK_CORESIGHT_AddAP(0, CORESIGHT_AHB_AP); // First AP is a AHB-AP
+    JLINK_CORESIGHT_AddAP(1, CORESIGHT_AHB_AP);
+    JLINK_CORESIGHT_AddAP(2, CORESIGHT_APB_AP);
+    CORESIGHT_IndexAHBAPToUse = 0;
+
+    // Dummy read
+    JLINK_CORESIGHT_ReadAP(JLINK_CORESIGHT_AP_REG_IDR);
+    SYS_Sleep(10);
+
+    // Disable system reset caused by sysrstreq from each core
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x40C04004);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_DATA, 0xF << 10);
+}
+
+void ResetTarget(void) {
+    unsigned int r;
+    ResetPeripherals();
+    ResetCM7();
+    r = JLINK_TARGET_IsHalted();
+    if (r == 0)
+        r = JLINK_TARGET_Halt();
+    r = JLINK_TARGET_IsHalted();
+    if (r == 0)
+        Report("CM7 is halted");
+}
+
+void SetupTarget(void) {
+    RestoreFlexRAM();
+    SetSemcClock();
+    SDRAMInit();
+}
+
+void AfterResetTarget(void) {
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_ADDR, 0x40C04004);
+    JLINK_CORESIGHT_WriteAP(JLINK_CORESIGHT_AP_REG_DATA, 0xF << 10);
+    RestoreFlexRAM();
+    SetSemcClock();
+    SDRAMInit();
+}
