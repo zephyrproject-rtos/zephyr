@@ -136,13 +136,15 @@ config DMA_MCUX_EDMA
 	default y if HAS_MCUX_EDMA
 	depends on DMA
 
+DT_CHOSEN_Z_DTCM := zephyr,dtcm
+
 choice SEGGER_RTT_SECTION
-	default SEGGER_RTT_SECTION_DTCM if HAS_MCUX_SEMC
+	default SEGGER_RTT_SECTION_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
 	depends on USE_SEGGER_RTT
 endchoice
 
 choice SEGGER_SYSVIEW_SECTION
-	default SEGGER_SYSVIEW_SECTION_DTCM if HAS_MCUX_SEMC
+	default SEGGER_SYSVIEW_SECTION_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
 	depends on SEGGER_SYSTEMVIEW
 endchoice
 
