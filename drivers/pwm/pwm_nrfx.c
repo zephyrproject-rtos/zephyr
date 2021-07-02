@@ -292,13 +292,12 @@ static void pwm_nrfx_uninit(const struct device *dev)
 	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
 }
 
-static int pwm_nrfx_set_power_state(enum pm_device_state new_state,
-				    enum pm_device_state current_state,
+static int pwm_nrfx_set_power_state(enum pm_device_state state,
 				    const struct device *dev)
 {
 	int err = 0;
 
-	switch (new_state) {
+	switch (state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		err = pwm_nrfx_init(dev);
 		break;
@@ -306,9 +305,7 @@ static int pwm_nrfx_set_power_state(enum pm_device_state new_state,
 	case PM_DEVICE_STATE_SUSPEND:
 	case PM_DEVICE_STATE_FORCE_SUSPEND:
 	case PM_DEVICE_STATE_OFF:
-		if (current_state == PM_DEVICE_STATE_ACTIVE) {
-			pwm_nrfx_uninit(dev);
-		}
+		pwm_nrfx_uninit(dev);
 		break;
 	default:
 		__ASSERT_NO_MSG(false);
@@ -320,15 +317,7 @@ static int pwm_nrfx_set_power_state(enum pm_device_state new_state,
 static int pwm_nrfx_pm_control(const struct device *dev,
 			       enum pm_device_state state)
 {
-	int err = 0;
-	enum pm_device_state curr_state;
-
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != current_state) {
-		err = pwm_nrfx_set_power_state(state, current_state, dev);
-	}
-
-	return err;
+	return pwm_nrfx_set_power_state(state, dev);
 }
 
 #define PWM_NRFX_PM_CONTROL(idx)					       \

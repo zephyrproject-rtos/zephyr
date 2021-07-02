@@ -398,16 +398,12 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 
 #ifdef CONFIG_PM_DEVICE
 static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
-					      enum pm_device_state new_state)
+					      enum pm_device_state state)
 {
 	int ret = 0;
-	enum pm_device_state state;
 
-	(void)pm_device_state_get(dev, &state);
-
-	if ((new_state == PM_DEVICE_STATE_ACTIVE) && (new_state != state)) {
-		if (get_dev_conf(dev)->regs ==
-			DT_INST_REG_ADDR(0)) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		if (get_dev_conf(dev)->regs == DT_INST_REG_ADDR(0)) {
 			Power_setDependency(PowerCC26XX_PERIPH_UART0);
 		} else {
 			Power_setDependency(PowerCC26X2_PERIPH_UART1);
@@ -416,24 +412,16 @@ static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 		ret = uart_cc13xx_cc26xx_configure(dev,
 			&get_dev_data(dev)->uart_config);
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-			new_state == PM_DEVICE_STATE_SUSPEND ||
-			new_state == PM_DEVICE_STATE_OFF);
-
-		if (state == PM_DEVICE_STATE_ACTIVE) {
-			UARTDisable(get_dev_conf(dev)->regs);
-			/*
-			 * Release power dependency - i.e. potentially power
-			 * down serial domain.
-			 */
-			if (get_dev_conf(dev)->regs ==
-			    DT_INST_REG_ADDR(0)) {
-				Power_releaseDependency(
-					PowerCC26XX_PERIPH_UART0);
-			} else {
-				Power_releaseDependency(
-					PowerCC26X2_PERIPH_UART1);
-			}
+		UARTDisable(get_dev_conf(dev)->regs);
+		/*
+		 * Release power dependency - i.e. potentially power
+		 * down serial domain.
+		 */
+		if (get_dev_conf(dev)->regs ==
+			DT_INST_REG_ADDR(0)) {
+			Power_releaseDependency(PowerCC26XX_PERIPH_UART0);
+		} else {
+			Power_releaseDependency(PowerCC26X2_PERIPH_UART1);
 		}
 	}
 
@@ -443,15 +431,7 @@ static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
 static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
 					 enum pm_device_state state)
 {
-	int ret = 0;
-	enum pm_device_state curr_state;
-
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		ret = uart_cc13xx_cc26xx_set_power_state(dev, state);
-	}
-
-	return ret;
+	return uart_cc13xx_cc26xx_set_power_state(dev, state);
 }
 #endif /* CONFIG_PM_DEVICE */
 
