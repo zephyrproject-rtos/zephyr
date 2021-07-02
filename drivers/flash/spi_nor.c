@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
  *
  * When mapped to the Zephyr Device Power Management states:
  * * PM_DEVICE_STATE_ACTIVE covers both active and standby modes;
- * * PM_DEVICE_STATE_SUSPEND, and PM_DEVICE_STATE_OFF all correspond to
+ * * PM_DEVICE_STATE_SUSPENDED, and PM_DEVICE_STATE_OFF all correspond to
  *   deep-power-down mode.
  */
 

@@ -301,7 +301,7 @@ static int pwm_nrfx_set_power_state(enum pm_device_state state,
 	case PM_DEVICE_STATE_ACTIVE:
 		err = pwm_nrfx_init(dev);
 		break;
-	case PM_DEVICE_STATE_SUSPEND:
+	case PM_DEVICE_STATE_SUSPENDED:
 	case PM_DEVICE_STATE_OFF:
 		pwm_nrfx_uninit(dev);
 		break;

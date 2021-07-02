@@ -506,7 +506,7 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 		}
 
 		break;
-	case PM_DEVICE_STATE_SUSPEND:
+	case PM_DEVICE_STATE_SUSPENDED:
 		if (curr_state == PM_DEVICE_STATE_OFF) {
 			ret = fdc2x1x_set_shutdown(dev, false);
 			if (ret) {

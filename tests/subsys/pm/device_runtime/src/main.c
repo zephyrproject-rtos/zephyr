@@ -48,7 +48,7 @@ void threadA_func(void *arg1, void *arg2, void *arg3)
 	/* At this point threadB should have put the device and
 	 * the current state should be SUSPENDED.
 	 */
-	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPEND, "Wrong state");
+	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPENDED, "Wrong state");
 
 	k_sem_take(&sem, K_FOREVER);
 
@@ -81,7 +81,7 @@ void threadB_func(void *arg1, void *arg2, void *arg3)
 	zassert_true(ret == 0, "Fail to wait transaction");
 
 	/* Check the state */
-	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPEND, "Wrong state");
+	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPENDED, "Wrong state");
 }
 
 /*
@@ -135,7 +135,7 @@ void test_teardown(void)
 	ret = api->close_sync(dev);
 	zassert_true(ret == 0, "Fail to suspend device");
 
-	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPEND, "Wrong state");
+	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPENDED, "Wrong state");
 }
 
 /*
@@ -161,7 +161,7 @@ void test_sync(void)
 	ret = api->close_sync(dev);
 	zassert_true(ret == 0, "Fail to suspend device");
 
-	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPEND, "Wrong state");
+	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPENDED, "Wrong state");
 }
 
 /*
@@ -186,7 +186,7 @@ void test_multiple_times(void)
 		ret = api->close_sync(dev);
 		zassert_true(ret == 0, "Fail to suspend device");
 
-		zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPEND, "Wrong state");
+		zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPENDED, "Wrong state");
 	}
 
 	/* Now do all requests for get and then all for put*/
@@ -204,7 +204,7 @@ void test_multiple_times(void)
 	zassert_true(ret == 0, "Fail to wait transaction");
 
 	/* Check the state */
-	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPEND, "Wrong state");
+	zassert_true(dev->pm->state == PM_DEVICE_STATE_SUSPENDED, "Wrong state");
 
 	/* Finally off by one to keep the device active*/
 	for (i = 0; i < MAX_TIMES; i++) {

@@ -5532,7 +5532,7 @@ static int cmd_net_suspend(const struct shell *shell, size_t argc,
 
 		dev = net_if_get_device(iface);
 
-		ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPEND);
+		ret = pm_device_state_set(dev, PM_DEVICE_STATE_SUSPENDED);
 		if (ret != 0) {
 			PR_INFO("Iface could not be suspended: ");
 
