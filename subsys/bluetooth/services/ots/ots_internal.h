@@ -49,6 +49,8 @@ enum bt_gatt_ots_object_state_type {
 	BT_GATT_OTS_OBJECT_IDLE_STATE,
 
 	BT_GATT_OTS_OBJECT_READ_OP_STATE,
+
+	BT_GATT_OTS_OBJECT_WRITE_OP_STATE,
 };
 
 struct bt_gatt_ots_object_state {
@@ -58,6 +60,10 @@ struct bt_gatt_ots_object_state {
 			struct bt_gatt_ots_oacp_read_params oacp_params;
 			uint32_t sent_len;
 		} read_op;
+		struct bt_gatt_ots_object_write_op {
+			struct bt_gatt_ots_oacp_write_params oacp_params;
+			uint32_t recv_len;
+		} write_op;
 	};
 };
 
