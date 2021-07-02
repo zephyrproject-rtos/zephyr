@@ -69,6 +69,7 @@
 /soc/posix/                               @aescolar @daor-oti
 /soc/riscv/                               @kgugala @pgielda
 /soc/riscv/openisa*/                      @MaureenHelm
+/soc/riscv/riscv-privilege/andes_v5/      @cwshu @Teng-Shih-Wei
 /soc/x86/                                 @dcpleung @nashif @jenmwms @aasthagr
 /arch/xtensa/                             @dcpleung @andyross @nashif
 /soc/xtensa/                              @dcpleung @andyross @nashif
@@ -145,6 +146,7 @@
 /boards/riscv/                            @kgugala @pgielda
 /boards/riscv/rv32m1_vega/                @MaureenHelm
 /boards/riscv/beaglev_starlight_jh7100/   @rajnesh-kanwal
+/boards/riscv/adp_xc7k_ae350/             @cwshu @Teng-Shih-Wei
 /boards/shields/                          @erwango
 /boards/shields/atmel_rf2xx/              @nandojve
 /boards/shields/esp_8266/                 @nandojve
@@ -185,6 +187,7 @@
 /drivers/*/*native_posix*                 @aescolar @daor-oti
 /drivers/*/*lpc11u6x*                     @mbittan @simonguinot
 /drivers/*/*npcx*                         @MulinChao @WealianLiao @ChiHuaL
+/drivers/*/*andes*                        @cwshu @Teng-Shih-Wei
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/bbram/*                          @yperess @sjg20 @jackrosenthal
@@ -410,6 +413,7 @@
 /dts/riscv/rv32m1*                        @MaureenHelm
 /dts/riscv/riscv32-litex-vexriscv.dtsi    @mateusz-holenko @kgugala @pgielda
 /dts/riscv/starfive/                      @rajnesh-kanwal
+/dts/riscv/andes_v5*                      @cwshu @Teng-Shih-Wei
 /dts/arm/armv*m.dtsi                      @galak @ioannisg
 /dts/arm/armv7-r.dtsi                     @bbolen @stephanosio
 /dts/arm/xilinx/                          @bbolen @stephanosio
@@ -437,6 +441,7 @@
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
+/dts/bindings/*/andes*                    @cwshu @Teng-Shih-Wei
 /dts/bindings/pm_cpu_ops/*                @carlocaione
 /dts/bindings/ethernet/*gem.yaml          @ibirnbaum
 /dts/posix/                               @aescolar @vanwinkeljan @daor-oti
