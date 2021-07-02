@@ -147,7 +147,7 @@ void bt_ots_dir_list_obj_remove(struct bt_ots_dir_list *dir_list, void *obj_mana
 void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manager,
 			      struct bt_gatt_ots_object *cur_obj);
 void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager);
-int bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, uint8_t **data,
+size_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void **data,
 				uint32_t len, uint32_t offset);
 
 #ifdef __cplusplus

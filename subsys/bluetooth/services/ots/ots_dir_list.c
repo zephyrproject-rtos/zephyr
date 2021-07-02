@@ -241,7 +241,7 @@ void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
 	dir_list_encode(*dir_list, obj_manager);
 }
 
-int bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, uint8_t **data,
+size_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void **data,
 				uint32_t len, uint32_t offset)
 {
 	if (offset >= dir_list->net_buf.len) {

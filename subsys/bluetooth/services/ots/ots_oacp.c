@@ -180,7 +180,7 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			      struct bt_conn *conn)
 {
 	int err;
-	uint8_t *obj_chunk;
+	void *obj_chunk;
 	uint32_t offset;
 	uint32_t len;
 	struct bt_ots *ots;
