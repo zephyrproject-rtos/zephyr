@@ -354,15 +354,6 @@ int media_proxy_ctrl_track_position_set(struct media_player *player, int32_t pos
 		return -EOPNOTSUPP;
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position) {
-		mprx.ctrlr.cbs->track_position(player, 0, position);
-		/* To discuss: Returning the set value gives the same behaviour as for */
-		/* the client.  An alternative is to read the value, and return that. */
-		/* But that may be different, if the MPL did not accept the value. */
-	} else {
-		BT_DBG("No callback");
-	}
-
 	/* TODO: Check for errors and return error code in case of errors */
 	return 0;
 }
@@ -397,12 +388,6 @@ int media_proxy_ctrl_playback_speed_set(struct media_player *player, int8_t spee
 	} else {
 		BT_DBG("No call");
 		return -EOPNOTSUPP;
-	}
-
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed) {
-		mprx.ctrlr.cbs->playback_speed(player, 0, speed);
-	} else {
-		BT_DBG("No callback");
 	}
 
 	/* TODO: Check for errors and return error code in case of errors */
@@ -484,12 +469,6 @@ int media_proxy_ctrl_current_track_id_set(struct media_player *player, uint64_t 
 		return -EOPNOTSUPP;
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_track_id) {
-		mprx.ctrlr.cbs->current_track_id(player, 0, id);
-	} else {
-		BT_DBG("No callback");
-	}
-
 	/* TODO: Check for errors and return error code in case of errors */
 	return 0;
 }
@@ -526,12 +505,6 @@ int media_proxy_ctrl_next_track_id_set(struct media_player *player, uint64_t id)
 		return -EOPNOTSUPP;
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->next_track_id) {
-		mprx.ctrlr.cbs->next_track_id(player, 0, id);
-	} else {
-		BT_DBG("No callback");
-	}
-
 	/* TODO: Check for errors and return error code in case of errors */
 	return 0;
 }
@@ -566,12 +539,6 @@ int media_proxy_ctrl_current_group_id_set(struct media_player *player, uint64_t 
 	} else {
 		BT_DBG("No call");
 		return -EOPNOTSUPP;
-	}
-
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_group_id) {
-		mprx.ctrlr.cbs->current_group_id(player, 0, id);
-	} else {
-		BT_DBG("No callback");
 	}
 
 	/* TODO: Check for errors and return error code in case of errors */
@@ -631,12 +598,6 @@ int media_proxy_ctrl_playing_order_set(struct media_player *player, uint8_t orde
 		return -EOPNOTSUPP;
 	}
 
-	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order) {
-		mprx.ctrlr.cbs->playing_order(player, 0, order);
-	} else {
-		BT_DBG("No callback");
-	}
-
 	/* TODO: Check for errors and return error code in case of errors */
 	return 0;
 }
@@ -687,13 +648,6 @@ int media_proxy_ctrl_operation_set(struct media_player *player, struct mpl_op_t 
 {
 	/* TODO: Use provided player */
 
-	/* TODO:
-	 * A control point write may lead to two callbacks, one for the write,
-	 * (if write with response) and one for the notification.
-	 * For now, the media_proxy API has only a single callback, so make no
-	 * callback for the write, wait for the notification
-	 */
-
 	/* TODO: Check for errors and return error code in case of errors */
 	if (mprx.local_player.calls->operation_set) {
 		mprx.local_player.calls->operation_set(operation);
@@ -729,13 +683,6 @@ int media_proxy_ctrl_operations_supported_get(struct media_player *player)
 int media_proxy_ctrl_search_set(struct media_player *player, struct mpl_search_t search)
 {
 	/* TODO: Use provided player */
-
-	/* TODO:
-	 * A search control point write may lead to two callbacks, one for the write,
-	 * (if write with response) and one for the notification.
-	 * For now, the media_proxy API has only a single callback, so make no
-	 * callback for the write, wait for the notification
-	 */
 
 	/* TODO: Check for errors and return error code in case of errors */
 	if (mprx.local_player.calls->search_set) {
