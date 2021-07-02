@@ -59,6 +59,12 @@ static void test_main(void)
 
 	k_sleep(K_SECONDS(10));
 
+	err = bt_audio_chan_release(&broadcast_chans[0], false);
+	if (err != 0) {
+		FAIL("Unable to release broadcast channels: %d", err);
+		return;
+	}
+
 	PASS("Broadcaster passed\n");
 }
 
