@@ -199,7 +199,7 @@ int mdm_receiver_sleep(struct mdm_receiver_context *ctx)
 {
 	uart_irq_rx_disable(ctx->uart_dev);
 #ifdef CONFIG_PM_DEVICE
-	pm_device_state_set(ctx->uart_dev, PM_DEVICE_STATE_SUSPEND);
+	pm_device_state_set(ctx->uart_dev, PM_DEVICE_STATE_SUSPENDED);
 #endif
 	return 0;
 }

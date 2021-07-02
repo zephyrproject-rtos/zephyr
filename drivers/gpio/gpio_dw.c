@@ -446,7 +446,7 @@ static int gpio_dw_device_ctrl(const struct device *port,
 {
 	int ret = 0;
 
-	if (state == PM_DEVICE_STATE_SUSPEND) {
+	if (state == PM_DEVICE_STATE_SUSPENDED) {
 		ret = gpio_dw_suspend_port(port);
 	} else if (state == PM_DEVICE_STATE_ACTIVE) {
 		ret = gpio_dw_resume_from_suspend_port(port);

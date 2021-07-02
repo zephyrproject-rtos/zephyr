@@ -41,7 +41,7 @@ enum pm_device_state {
 	 * @note
 	 *     Device context may be lost.
 	 */
-	PM_DEVICE_STATE_SUSPEND,
+	PM_DEVICE_STATE_SUSPENDED,
 	/**
 	 * Device is suspended (forced).
 	 *
