@@ -291,7 +291,6 @@ static int spi_nrfx_pm_control(const struct device *dev,
 		data->ctx.config = NULL;
 		break;
 
-	case PM_DEVICE_STATE_LOW_POWER:
 	case PM_DEVICE_STATE_SUSPEND:
 	case PM_DEVICE_STATE_OFF:
 		nrfx_spi_uninit(&config->spi);
