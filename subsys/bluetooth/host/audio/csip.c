@@ -261,7 +261,7 @@ static uint8_t size_notify_func(struct bt_conn *conn,
 				struct bt_gatt_subscribe_params *params,
 				const void *data, uint16_t length)
 {
-	uint8_t size;
+	uint8_t set_size;
 	uint16_t handle = params->value_handle;
 	struct csis_instance_t *csis_inst;
 
@@ -275,17 +275,17 @@ static uint8_t size_notify_func(struct bt_conn *conn,
 	csis_inst = lookup_instance_by_handle(conn, handle);
 
 	if (csis_inst) {
-		if (length == sizeof(size)) {
+		if (length == sizeof(set_size)) {
 			struct bt_csis_server *server;
 			struct bt_csip_set_t *set;
 
 			server = &servers[bt_conn_index(conn)];
 			set = &server->set_member->sets[csis_inst->idx];
 
-			memcpy(&size, data, length);
+			memcpy(&set_size, data, length);
 			BT_DBG("Set size updated from %u to %u",
-			       set->set_size, size);
-			set->set_size = size;
+			       set->set_size, set_size);
+			set->set_size = set_size;
 			/* TODO: Notify app */
 		} else {
 			BT_DBG("Invalid length %u", length);
