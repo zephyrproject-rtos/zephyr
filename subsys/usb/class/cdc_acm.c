@@ -208,13 +208,13 @@ static const struct uart_driver_api cdc_acm_driver_api;
 /**
  * @brief Handler called for Class requests not handled by the USB stack.
  *
- * @param pSetup    Information about the request to execute.
+ * @param setup     Information about the request to execute.
  * @param len       Size of the buffer.
  * @param data      Buffer containing the request result.
  *
  * @return  0 on success, negative errno code on fail.
  */
-int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
+int cdc_acm_class_handle_req(struct usb_setup_packet *setup,
 			     int32_t *len, uint8_t **data)
 {
 	struct cdc_acm_dev_data_t *dev_data;
@@ -223,56 +223,59 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 	uint32_t new_rate;
 
 	common = usb_get_dev_data_by_iface(&cdc_acm_data_devlist,
-					   (uint8_t)pSetup->wIndex);
+					   (uint8_t)setup->wIndex);
 	if (common == NULL) {
 		LOG_WRN("Device data not found for interface %u",
-			pSetup->wIndex);
+			setup->wIndex);
 		return -ENODEV;
 	}
 
 	dev_data = CONTAINER_OF(common, struct cdc_acm_dev_data_t, common);
 
-	switch (pSetup->bRequest) {
-	case SET_LINE_CODING:
-		rate = sys_le32_to_cpu(dev_data->line_coding.dwDTERate);
-		memcpy(&dev_data->line_coding,
-		       *data, sizeof(dev_data->line_coding));
-		new_rate = sys_le32_to_cpu(dev_data->line_coding.dwDTERate);
-		LOG_DBG("CDC_SET_LINE_CODING %d %d %d %d",
-			new_rate,
-			dev_data->line_coding.bCharFormat,
-			dev_data->line_coding.bParityType,
-			dev_data->line_coding.bDataBits);
+	if (usb_reqtype_is_to_device(setup)) {
+		switch (setup->bRequest) {
+		case SET_LINE_CODING:
+			rate = sys_le32_to_cpu(dev_data->line_coding.dwDTERate);
+			memcpy(&dev_data->line_coding, *data,
+			       sizeof(dev_data->line_coding));
+			new_rate = sys_le32_to_cpu(dev_data->line_coding.dwDTERate);
+			LOG_DBG("CDC_SET_LINE_CODING %d %d %d %d",
+				new_rate,
+				dev_data->line_coding.bCharFormat,
+				dev_data->line_coding.bParityType,
+				dev_data->line_coding.bDataBits);
 #if defined(CONFIG_CDC_ACM_DTE_RATE_CALLBACK_SUPPORT)
-		if (rate != new_rate && dev_data->rate_cb != NULL) {
-			dev_data->rate_cb(common->dev, new_rate);
-		}
+			if (rate != new_rate && dev_data->rate_cb != NULL) {
+				dev_data->rate_cb(common->dev, new_rate);
+			}
 #endif
-		break;
+			return 0;
 
-	case SET_CONTROL_LINE_STATE:
-		dev_data->line_state = (uint8_t)pSetup->wValue;
-		LOG_DBG("CDC_SET_CONTROL_LINE_STATE 0x%x",
-			dev_data->line_state);
-		break;
+		case SET_CONTROL_LINE_STATE:
+			dev_data->line_state = (uint8_t)setup->wValue;
+			LOG_DBG("CDC_SET_CONTROL_LINE_STATE 0x%x",
+				dev_data->line_state);
+			return 0;
 
-	case GET_LINE_CODING:
-		*data = (uint8_t *)(&dev_data->line_coding);
-		*len = sizeof(dev_data->line_coding);
-		LOG_DBG("CDC_GET_LINE_CODING %d %d %d %d",
-			sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
-			dev_data->line_coding.bCharFormat,
-			dev_data->line_coding.bParityType,
-			dev_data->line_coding.bDataBits);
-		break;
-
-	default:
-		LOG_DBG("CDC ACM request 0x%x, value 0x%x",
-			pSetup->bRequest, pSetup->wValue);
-		return -EINVAL;
+		default:
+			break;
+		}
+	} else {
+		if (setup->bRequest == GET_LINE_CODING) {
+			*data = (uint8_t *)(&dev_data->line_coding);
+			*len = sizeof(dev_data->line_coding);
+			LOG_DBG("CDC_GET_LINE_CODING %d %d %d %d",
+				sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
+				dev_data->line_coding.bCharFormat,
+				dev_data->line_coding.bParityType,
+				dev_data->line_coding.bDataBits);
+			return 0;
+		}
 	}
 
-	return 0;
+	LOG_DBG("CDC ACM bmRequestType 0x%02x bRequest 0x%02x unsupported",
+		setup->bmRequestType, setup->bRequest);
+	return -ENOTSUP;
 }
 
 static void cdc_acm_write_cb(uint8_t ep, int size, void *priv)
