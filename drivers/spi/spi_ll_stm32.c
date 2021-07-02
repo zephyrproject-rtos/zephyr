@@ -817,6 +817,10 @@ static int spi_stm32_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_PM_DEVICE
+	data->pm_state = PM_DEVICE_STATE_ACTIVE;
+#endif
+
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	cfg->irq_config(dev);
 #endif
@@ -838,6 +842,77 @@ static int spi_stm32_init(const struct device *dev)
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int spi_stm32_set_power_state(const struct device *dev,
+					      uint32_t new_state)
+{
+	const struct spi_stm32_config *cfg = DEV_CFG(dev);
+	struct spi_stm32_data *data = DEV_DATA(dev);
+	SPI_TypeDef *spi = cfg->spi;
+
+	/* setting a low power mode */
+	if (new_state != PM_DEVICE_STATE_ACTIVE) {
+#ifdef SPI_SR_FTLVL
+		/* 1. Wait until FTLVL[1:0] = 00 (no more data to transmit) */
+		while (LL_SPI_GetTxFIFOLevel(spi) > 0) {
+		}
+#endif
+		/* 2. Wait until BSY=0 (the last data frame is processed) */
+		while (ll_func_spi_is_busy(spi)) {
+			/* NOP */
+		}
+		/* 3. Disable the SPI (SPE=0) */
+		LL_SPI_Disable(spi);
+#ifdef SPI_SR_FRLVL
+		/* 4. Read data until FRLVL[1:0] = 00 (read all the received data)
+		 * We wait until all data is read
+		 */
+		while (LL_SPI_GetRxFIFOLevel(spi) > 0) {
+		}
+#endif
+	} else if (new_state == PM_DEVICE_STATE_ACTIVE) {
+		LL_SPI_Enable(spi);
+	}
+	data->pm_state = new_state;
+	/* UartInstance returning to active mode has nothing special to do */
+	return 0;
+}
+
+/**
+ * @brief disable the UART channel
+ *
+ * This routine is called to put the device in low power mode.
+ *
+ * @param dev UART device struct
+ *
+ * @return 0
+ */
+static int spi_stm32_pm_control(const struct device *dev,
+					 uint32_t ctrl_command,
+					 uint32_t *state, pm_device_cb cb,
+					 void *arg)
+{
+	struct spi_stm32_data *data = DEV_DATA(dev);
+
+	if (ctrl_command == PM_DEVICE_STATE_SET) {
+		uint32_t new_state = *state;
+
+		if (new_state != data->pm_state) {
+			spi_stm32_set_power_state(dev, new_state);
+		}
+	} else {
+		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
+		*state = data->pm_state;
+	}
+
+	if (cb) {
+		cb(dev, 0, state, arg);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
@@ -931,7 +1006,7 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_DMA_STATUS_SEM(id)						\
 };									\
 									\
-DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, NULL,			\
+DEVICE_DT_INST_DEFINE(id, &spi_stm32_init, &spi_stm32_pm_control,	\
 		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
 		    &api_funcs);					\
