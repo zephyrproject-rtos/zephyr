@@ -763,12 +763,14 @@ int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls)
 
 /* Player callbacks ********************************/
 
+/* All callbacks here must come from the local player - mprx.local_player */
+
 void media_proxy_pl_track_changed_cb(void)
 {
 	mprx.sctrlr.cbs->track_changed();
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_changed) {
-		mprx.ctrlr.cbs->track_changed(NULL, 0);
+		mprx.ctrlr.cbs->track_changed(&mprx.local_player, 0);
 	} else {
 		BT_DBG("No ctrlr track changed callback");
 	}
@@ -779,7 +781,7 @@ void media_proxy_pl_track_title_cb(char *title)
 	mprx.sctrlr.cbs->track_title(title);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_title) {
-		mprx.ctrlr.cbs->track_title(NULL, 0, title);
+		mprx.ctrlr.cbs->track_title(&mprx.local_player, 0, title);
 	} else {
 		BT_DBG("No ctrlr track title callback");
 	}
@@ -790,7 +792,7 @@ void media_proxy_pl_track_duration_cb(int32_t duration)
 	mprx.sctrlr.cbs->track_duration(duration);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_duration) {
-		mprx.ctrlr.cbs->track_duration(NULL, 0, duration);
+		mprx.ctrlr.cbs->track_duration(&mprx.local_player, 0, duration);
 	} else {
 		BT_DBG("No ctrlr track duration callback");
 	}
@@ -801,7 +803,7 @@ void media_proxy_pl_track_position_cb(int32_t position)
 	mprx.sctrlr.cbs->track_position(position);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->track_position) {
-		mprx.ctrlr.cbs->track_position(NULL, 0, position);
+		mprx.ctrlr.cbs->track_position(&mprx.local_player, 0, position);
 	} else {
 		BT_DBG("No ctrlr track position callback");
 	}
@@ -812,7 +814,7 @@ void media_proxy_pl_playback_speed_cb(int8_t speed)
 	mprx.sctrlr.cbs->playback_speed(speed);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playback_speed) {
-		mprx.ctrlr.cbs->playback_speed(NULL, 0, speed);
+		mprx.ctrlr.cbs->playback_speed(&mprx.local_player, 0, speed);
 	} else {
 		BT_DBG("No ctrlr playback speed callback");
 	}
@@ -823,7 +825,7 @@ void media_proxy_pl_seeking_speed_cb(int8_t speed)
 	mprx.sctrlr.cbs->seeking_speed(speed);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->seeking_speed) {
-		mprx.ctrlr.cbs->seeking_speed(NULL, 0, speed);
+		mprx.ctrlr.cbs->seeking_speed(&mprx.local_player, 0, speed);
 	} else {
 		BT_DBG("No ctrlr seeking speed callback");
 	}
@@ -835,7 +837,7 @@ void media_proxy_pl_current_track_id_cb(uint64_t id)
 	mprx.sctrlr.cbs->current_track_id(id);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_track_id) {
-		mprx.ctrlr.cbs->current_track_id(NULL, 0, id);
+		mprx.ctrlr.cbs->current_track_id(&mprx.local_player, 0, id);
 	} else {
 		BT_DBG("No ctrlr current track id callback");
 	}
@@ -846,7 +848,7 @@ void media_proxy_pl_next_track_id_cb(uint64_t id)
 	mprx.sctrlr.cbs->next_track_id(id);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->next_track_id) {
-		mprx.ctrlr.cbs->next_track_id(NULL, 0, id);
+		mprx.ctrlr.cbs->next_track_id(&mprx.local_player, 0, id);
 	} else {
 		BT_DBG("No ctrlr next track id callback");
 	}
@@ -857,7 +859,7 @@ void media_proxy_pl_current_group_id_cb(uint64_t id)
 	mprx.sctrlr.cbs->current_group_id(id);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->current_group_id) {
-		mprx.ctrlr.cbs->current_group_id(NULL, 0, id);
+		mprx.ctrlr.cbs->current_group_id(&mprx.local_player, 0, id);
 	} else {
 		BT_DBG("No ctrlr current group id callback");
 	}
@@ -868,7 +870,7 @@ void media_proxy_pl_parent_group_id_cb(uint64_t id)
 	mprx.sctrlr.cbs->parent_group_id(id);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->parent_group_id) {
-		mprx.ctrlr.cbs->parent_group_id(NULL, 0, id);
+		mprx.ctrlr.cbs->parent_group_id(&mprx.local_player, 0, id);
 	} else {
 		BT_DBG("No ctrlr parent group id callback");
 	}
@@ -880,7 +882,7 @@ void media_proxy_pl_playing_order_cb(uint8_t order)
 	mprx.sctrlr.cbs->playing_order(order);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->playing_order) {
-		mprx.ctrlr.cbs->playing_order(NULL, 0, order);
+		mprx.ctrlr.cbs->playing_order(&mprx.local_player, 0, order);
 	} else {
 		BT_DBG("No ctrlr playing order callback");
 	}
@@ -891,7 +893,7 @@ void media_proxy_pl_media_state_cb(uint8_t state)
 	mprx.sctrlr.cbs->media_state(state);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->media_state) {
-		mprx.ctrlr.cbs->media_state(NULL, 0, state);
+		mprx.ctrlr.cbs->media_state(&mprx.local_player, 0, state);
 	} else {
 		BT_DBG("No ctrlr media state callback");
 	}
@@ -902,7 +904,7 @@ void media_proxy_pl_operation_cb(struct mpl_op_ntf_t op_ntf)
 	mprx.sctrlr.cbs->operation(op_ntf);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->operation) {
-		mprx.ctrlr.cbs->operation(NULL, 0, op_ntf);
+		mprx.ctrlr.cbs->operation(&mprx.local_player, 0, op_ntf);
 	} else {
 		BT_DBG("No ctrlr operations callback");
 	}
@@ -913,7 +915,7 @@ void media_proxy_pl_operations_supported_cb(uint32_t operations)
 	mprx.sctrlr.cbs->operations_supported(operations);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->operations_supported) {
-		mprx.ctrlr.cbs->operations_supported(NULL, 0, operations);
+		mprx.ctrlr.cbs->operations_supported(&mprx.local_player, 0, operations);
 	} else {
 		BT_DBG("No ctrlr operations supported callback");
 	}
@@ -925,7 +927,7 @@ void media_proxy_pl_search_cb(uint8_t result_code)
 	mprx.sctrlr.cbs->search(result_code);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search) {
-		mprx.ctrlr.cbs->search(NULL, 0, result_code);
+		mprx.ctrlr.cbs->search(&mprx.local_player, 0, result_code);
 	} else {
 		BT_DBG("No ctrlr search callback");
 	}
@@ -936,7 +938,7 @@ void media_proxy_pl_search_results_id_cb(uint64_t id)
 	mprx.sctrlr.cbs->search_results_id(id);
 
 	if (mprx.ctrlr.cbs && mprx.ctrlr.cbs->search_results_id) {
-		mprx.ctrlr.cbs->search_results_id(NULL, 0, id);
+		mprx.ctrlr.cbs->search_results_id(&mprx.local_player, 0, id);
 	} else {
 		BT_DBG("No ctrlr search results id callback");
 	}
