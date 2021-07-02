@@ -112,7 +112,9 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @param state Device power state to be set.
  *
  * @retval 0 If successful.
- * @retval Errno Negative errno code in case of failure.
+ * @retval -ENOTSUP If requested state is not supported.
+ * @retval -EALREADY If device is already at (or transitioning to) the requested
+ *         state.
  */
 int pm_device_state_set(const struct device *dev,
 			enum pm_device_state state);
