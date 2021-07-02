@@ -204,19 +204,20 @@ static int ecm_class_handler(struct usb_setup_packet *setup, int32_t *len,
 	}
 
 	if (setup->bmRequestType != USB_CDC_ECM_REQ_TYPE) {
-		LOG_WRN("Unhandled req_type 0x%x", setup->bmRequestType);
+		/*
+		 * Only host-to-device, type class, recipient interface
+		 * requests are accepted.
+		 */
+		return -EINVAL;
+	}
+
+	if (setup->bRequest == USB_CDC_SET_ETH_PKT_FILTER) {
+		LOG_INF("Set Interface %u Packet Filter 0x%04x not supported",
+			setup->wIndex, setup->wValue);
 		return 0;
 	}
 
-	switch (setup->bRequest) {
-	case USB_CDC_SET_ETH_PKT_FILTER:
-		LOG_DBG("intf 0x%x filter 0x%x", setup->wIndex, setup->wValue);
-		break;
-	default:
-		break;
-	}
-
-	return 0;
+	return -ENOTSUP;
 }
 
 /* Retrieve expected pkt size from ethernet/ip header */
