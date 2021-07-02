@@ -84,7 +84,7 @@ static int _pm_devices(uint32_t state)
 
 int pm_suspend_devices(void)
 {
-	return _pm_devices(PM_DEVICE_STATE_SUSPEND);
+	return _pm_devices(PM_DEVICE_STATE_SUSPENDED);
 }
 
 void pm_resume_devices(void)
@@ -105,8 +105,8 @@ const char *pm_device_state_str(enum pm_device_state state)
 	switch (state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		return "active";
-	case PM_DEVICE_STATE_SUSPEND:
-		return "suspend";
+	case PM_DEVICE_STATE_SUSPENDED:
+		return "suspended";
 	case PM_DEVICE_STATE_OFF:
 		return "off";
 	default:
@@ -124,8 +124,8 @@ int pm_device_state_set(const struct device *dev,
 	}
 
 	switch (state) {
-	case PM_DEVICE_STATE_SUSPEND:
-		if ((dev->pm->state == PM_DEVICE_STATE_SUSPEND) ||
+	case PM_DEVICE_STATE_SUSPENDED:
+		if ((dev->pm->state == PM_DEVICE_STATE_SUSPENDED) ||
 		    (dev->pm->state == PM_DEVICE_STATE_SUSPENDING)) {
 			return -EALREADY;
 		}
