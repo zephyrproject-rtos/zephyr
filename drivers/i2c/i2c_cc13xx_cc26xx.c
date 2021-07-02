@@ -327,14 +327,11 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 
 #ifdef CONFIG_PM_DEVICE
 static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
-					     enum pm_device_state new_state)
+					     enum pm_device_state state)
 {
 	int ret = 0;
-	enum pm_device_state state;
 
-	(void)pm_device_state_get(dev, &state);
-
-	if ((new_state == PM_DEVICE_STATE_ACTIVE) && (new_state != state) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
 		Power_setDependency(PowerCC26XX_PERIPH_I2C0);
 		IOCPinTypeI2c(get_dev_config(dev)->base,
 			get_dev_config(dev)->sda_pin,
@@ -345,20 +342,14 @@ static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
 			I2CMasterIntEnable(get_dev_config(dev)->base);
 		}
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-			new_state == PM_DEVICE_STATE_SUSPEND ||
-			new_state == PM_DEVICE_STATE_OFF);
-
-		if (state == PM_DEVICE_STATE_ACTIVE) {
-			I2CMasterIntDisable(get_dev_config(dev)->base);
-			I2CMasterDisable(get_dev_config(dev)->base);
-			/* Reset pin type to default GPIO configuration */
-			IOCPortConfigureSet(get_dev_config(dev)->scl_pin,
-				IOC_PORT_GPIO, IOC_STD_OUTPUT);
-			IOCPortConfigureSet(get_dev_config(dev)->sda_pin,
-				IOC_PORT_GPIO, IOC_STD_OUTPUT);
-			Power_releaseDependency(PowerCC26XX_PERIPH_I2C0);
-		}
+		I2CMasterIntDisable(get_dev_config(dev)->base);
+		I2CMasterDisable(get_dev_config(dev)->base);
+		/* Reset pin type to default GPIO configuration */
+		IOCPortConfigureSet(get_dev_config(dev)->scl_pin,
+			IOC_PORT_GPIO, IOC_STD_OUTPUT);
+		IOCPortConfigureSet(get_dev_config(dev)->sda_pin,
+			IOC_PORT_GPIO, IOC_STD_OUTPUT);
+		Power_releaseDependency(PowerCC26XX_PERIPH_I2C0);
 	}
 
 	return ret;
@@ -367,16 +358,7 @@ static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
 static int i2c_cc13xx_cc26xx_pm_control(const struct device *dev,
 					enum pm_device_state state)
 {
-	int ret = 0;
-	enum pm_device_state curr_state;
-
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		ret = i2c_cc13xx_cc26xx_set_power_state(dev,
-			new_state);
-	}
-
-	return ret;
+	return i2c_cc13xx_cc26xx_set_power_state(dev, state);
 }
 #endif /* CONFIG_PM_DEVICE */
 

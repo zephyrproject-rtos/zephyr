@@ -1423,12 +1423,12 @@ static int uart_stm32_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int uart_stm32_set_power_state(const struct device *dev,
-					      enum pm_device_state new_state)
+				      enum pm_device_state state)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	/* setting a low power mode */
-	if (new_state != PM_DEVICE_STATE_ACTIVE) {
+	if (state != PM_DEVICE_STATE_ACTIVE) {
 #ifdef USART_ISR_BUSY
 		/* Make sure that no USART transfer is on-going */
 		while (LL_USART_IsActiveFlag_BUSY(UartInstance) == 1) {
@@ -1462,12 +1462,7 @@ static int uart_stm32_set_power_state(const struct device *dev,
 static int uart_stm32_pm_control(const struct device *dev,
 				 enum pm_device_state state)
 {
-	enum pm_device_state curr_state;
-
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		uart_stm32_set_power_state(dev, state);
-	}
+	uart_stm32_set_power_state(dev, state);
 
 	return 0;
 }

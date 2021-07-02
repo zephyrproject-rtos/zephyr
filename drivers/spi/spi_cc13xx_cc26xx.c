@@ -209,56 +209,33 @@ static int spi_cc13xx_cc26xx_release(const struct device *dev,
 
 #ifdef CONFIG_PM_DEVICE
 static int spi_cc13xx_cc26xx_set_power_state(const struct device *dev,
-					     enum pm_device_state new_state)
+					     enum pm_device_state state)
 {
-	int ret = 0;
-	enum pm_device_state state;
-
-	(void)pm_device_state_get(dev, &state);
-
-	if ((new_state == PM_DEVICE_STATE_ACTIVE) && (new_state != state)) {
-		if (get_dev_config(dev)->base ==
-			DT_INST_REG_ADDR(0)) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		if (get_dev_config(dev)->base == DT_INST_REG_ADDR(0)) {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI0);
 		} else {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI1);
 		}
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-			new_state == PM_DEVICE_STATE_SUSPEND ||
-			new_state == PM_DEVICE_STATE_OFF);
-
-		if (state == PM_DEVICE_STATE_ACTIVE) {
-			SSIDisable(get_dev_config(dev)->base);
-			/*
-			 * Release power dependency
-			 */
-			if (get_dev_config(dev)->base ==
-				DT_INST_REG_ADDR(0)) {
-				Power_releaseDependency(
-					PowerCC26XX_PERIPH_SSI0);
-			} else {
-				Power_releaseDependency(
-					PowerCC26XX_PERIPH_SSI1);
-			}
+		SSIDisable(get_dev_config(dev)->base);
+		/*
+		 * Release power dependency
+		 */
+		if (get_dev_config(dev)->base == DT_INST_REG_ADDR(0)) {
+			Power_releaseDependency(PowerCC26XX_PERIPH_SSI0);
+		} else {
+			Power_releaseDependency(PowerCC26XX_PERIPH_SSI1);
 		}
 	}
 
-	return ret;
+	return 0;
 }
 
 static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
 					enum pm_device_state state)
 {
-	int ret = 0;
-	enum pm_device_state curr_state;
-
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		ret = spi_cc13xx_cc26xx_set_power_state(dev, state);
-	}
-
-	return ret;
+	return spi_cc13xx_cc26xx_set_power_state(dev, state);
 }
 #endif /* CONFIG_PM_DEVICE */
 

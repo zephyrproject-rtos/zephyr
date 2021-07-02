@@ -258,32 +258,24 @@ static int twim_nrfx_pm_control(const struct device *dev,
 				enum pm_device_state state)
 {
 	int ret = 0;
-	enum pm_device_state curr_state;
 
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		switch (state) {
-		case PM_DEVICE_STATE_ACTIVE:
-			init_twim(dev);
-			if (get_dev_data(dev)->dev_config) {
-				i2c_nrfx_twim_configure(
-					dev,
-					get_dev_data(dev)->dev_config);
-			}
-			break;
-
-		case PM_DEVICE_STATE_LOW_POWER:
-		case PM_DEVICE_STATE_SUSPEND:
-		case PM_DEVICE_STATE_OFF:
-			if (curr_state != PM_DEVICE_STATE_ACTIVE) {
-				break;
-			}
-			nrfx_twim_uninit(&get_dev_config(dev)->twim);
-			break;
-
-		default:
-			ret = -ENOTSUP;
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
+		init_twim(dev);
+		if (get_dev_data(dev)->dev_config) {
+			i2c_nrfx_twim_configure(dev,
+						get_dev_data(dev)->dev_config);
 		}
+		break;
+
+	case PM_DEVICE_STATE_LOW_POWER:
+	case PM_DEVICE_STATE_SUSPEND:
+	case PM_DEVICE_STATE_OFF:
+		nrfx_twim_uninit(&get_dev_config(dev)->twim);
+		break;
+
+	default:
+		ret = -ENOTSUP;
 	}
 
 	return ret;

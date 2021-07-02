@@ -265,43 +265,25 @@ static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
 
 #ifdef CONFIG_PM_DEVICE
 static int entropy_cc13xx_cc26xx_set_power_state(const struct device *dev,
-						 enum pm_device_state new_state)
+						 enum pm_device_state state)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
-	int ret = 0;
-	enum pm_device_state state;
 
-	(void)pm_device_state_get(dev, &state);
-
-	if ((new_state == PM_DEVICE_STATE_ACTIVE) && (new_state != state)) {
+	if (state == PM_DEVICE_STATE_ACTIVE) {
 		Power_setDependency(PowerCC26XX_PERIPH_TRNG);
 		start_trng(data);
 	} else {
-		__ASSERT_NO_MSG(new_state == PM_DEVICE_STATE_LOW_POWER ||
-			new_state == PM_DEVICE_STATE_SUSPEND ||
-			new_state == PM_DEVICE_STATE_OFF);
-
-		if (state == PM_DEVICE_STATE_ACTIVE) {
-			stop_trng(data);
-			Power_releaseDependency(PowerCC26XX_PERIPH_TRNG);
-		}
+		stop_trng(data);
+		Power_releaseDependency(PowerCC26XX_PERIPH_TRNG);
 	}
 
-	return ret;
+	return 0;
 }
 
 static int entropy_cc13xx_cc26xx_pm_control(const struct device *dev,
 					    enum pm_device_state state)
 {
-	int ret = 0;
-	enum pm_device_state curr_state;
-
-	(void)pm_device_state_get(dev, &curr_state);
-	if (state != curr_state) {
-		ret = entropy_cc13xx_cc26xx_set_power_state(dev, state);
-	}
-
-	return ret;
+	return entropy_cc13xx_cc26xx_set_power_state(dev, state);
 }
 #endif /* CONFIG_PM_DEVICE */
 
