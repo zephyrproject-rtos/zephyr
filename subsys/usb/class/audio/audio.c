@@ -500,7 +500,7 @@ static struct usb_audio_dev_data *get_audio_dev_data_by_iface(uint8_t interface)
  * This function handles feature unit mute control request.
  *
  * @param audio_dev_data USB audio device data.
- * @param pSetup	 Information about the executed request.
+ * @param setup          Information about the executed request.
  * @param len		 Size of the buffer.
  * @param data		 Buffer containing the request result.
  * @param evt		 Feature Unit Event info.
@@ -510,32 +510,34 @@ static struct usb_audio_dev_data *get_audio_dev_data_by_iface(uint8_t interface)
  * @return 0 if succesfulf, negative errno otherwise.
  */
 static int handle_fu_mute_req(struct usb_audio_dev_data *audio_dev_data,
-			      struct usb_setup_packet *pSetup,
+			      struct usb_setup_packet *setup,
 			      int32_t *len, uint8_t **data,
 			      struct usb_audio_fu_evt *evt,
 			      uint8_t device)
 {
-	uint8_t ch = (pSetup->wValue) & 0xFF;
+	uint8_t ch = (setup->wValue) & 0xFF;
 	uint8_t ch_cnt = audio_dev_data->ch_cnt[device];
 	uint8_t *controls = audio_dev_data->controls[device];
 	uint8_t *control_val = &controls[POS(MUTE, ch, ch_cnt)];
 
-	/* Check if *len has valid value */
-	if (*len != LEN(1, MUTE)) {
-		return -EINVAL;
-	}
+	if (usb_reqtype_is_to_device(setup)) {
+		/* Check if *len has valid value */
+		if (*len != LEN(1, MUTE)) {
+			return -EINVAL;
+		}
 
-	switch (pSetup->bRequest) {
-	case USB_AUDIO_SET_CUR:
-		evt->val = control_val;
-		evt->val_len = *len;
-		memcpy(control_val, *data, *len);
-		return 0;
-	case USB_AUDIO_GET_CUR:
-		*data = control_val;
-		return 0;
-	default:
-		break;
+		if (setup->bRequest == USB_AUDIO_SET_CUR) {
+			evt->val = control_val;
+			evt->val_len = *len;
+			memcpy(control_val, *data, *len);
+			return 0;
+		}
+	} else {
+		if (setup->bRequest == USB_AUDIO_GET_CUR) {
+			*data = control_val;
+			*len = LEN(1, MUTE);
+			return 0;
+		}
 	}
 
 	return -EINVAL;
@@ -600,7 +602,8 @@ static int handle_feature_unit_req(struct usb_audio_dev_data *audio_dev_data,
 
 	/* Inform the app */
 	if (audio_dev_data->ops && audio_dev_data->ops->feature_update_cb) {
-		if (pSetup->bRequest == USB_AUDIO_SET_CUR) {
+		if (usb_reqtype_is_to_device(pSetup) &&
+		    pSetup->bRequest == USB_AUDIO_SET_CUR) {
 			evt.cs = cs;
 			evt.channel = ch;
 			evt.dir = get_fu_dir(fu);
@@ -691,7 +694,8 @@ static int audio_custom_handler(struct usb_setup_packet *pSetup, int32_t *len,
 
 	uint8_t iface = (pSetup->wIndex) & 0xFF;
 
-	if (pSetup->RequestType.recipient != USB_REQTYPE_RECIPIENT_INTERFACE) {
+	if (pSetup->RequestType.recipient != USB_REQTYPE_RECIPIENT_INTERFACE ||
+	    usb_reqtype_is_to_host(pSetup)) {
 		return -EINVAL;
 	}
 
