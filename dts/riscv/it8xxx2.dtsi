@@ -603,6 +603,7 @@
 			status = "disabled";
 			label = "I2C_0";
 			port-num = <0>;
+			gpio-dev = <&gpiob>;
 			pinctrl-0 = <&pinctrl_i2c_clk0>;  /* GPB3 */
 			pinctrl-1 = <&pinctrl_i2c_data0>; /* GPB4 */
 		};
@@ -616,6 +617,7 @@
 			status = "disabled";
 			label = "I2C_1";
 			port-num = <1>;
+			gpio-dev = <&gpioc>;
 			pinctrl-0 = <&pinctrl_i2c_clk1>;  /* GPC1 */
 			pinctrl-1 = <&pinctrl_i2c_data1>; /* GPC2 */
 		};
@@ -629,6 +631,7 @@
 			status = "disabled";
 			label = "I2C_2";
 			port-num = <2>;
+			gpio-dev = <&gpiof>;
 			pinctrl-0 = <&pinctrl_i2c_clk2>;  /* GPF6 */
 			pinctrl-1 = <&pinctrl_i2c_data2>; /* GPF7 */
 		};
@@ -642,6 +645,7 @@
 			status = "disabled";
 			label = "I2C_3";
 			port-num = <3>;
+			gpio-dev = <&gpioh>;
 			pinctrl-0 = <&pinctrl_i2c_clk3>;  /* GPH1 */
 			pinctrl-1 = <&pinctrl_i2c_data3>; /* GPH2 */
 		};
@@ -655,6 +659,7 @@
 			status = "disabled";
 			label = "I2C_4";
 			port-num = <4>;
+			gpio-dev = <&gpioe>;
 			pinctrl-0 = <&pinctrl_i2c_clk4>;  /* GPE0 */
 			pinctrl-1 = <&pinctrl_i2c_data4>; /* GPE7 */
 		};
@@ -668,6 +673,7 @@
 			status = "disabled";
 			label = "I2C_5";
 			port-num = <5>;
+			gpio-dev = <&gpioa>;
 			pinctrl-0 = <&pinctrl_i2c_clk5>;  /* GPA4 */
 			pinctrl-1 = <&pinctrl_i2c_data5>; /* GPA5 */
 		};
