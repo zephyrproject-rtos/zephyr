@@ -42,6 +42,7 @@ enum display_pixel_format {
 	PIXEL_FORMAT_ARGB_8888		= BIT(3),
 	PIXEL_FORMAT_RGB_565		= BIT(4),
 	PIXEL_FORMAT_BGR_565		= BIT(5),
+	PIXEL_FORMAT_RGBx_111		= BIT(6), /* 3bpp + 1 dummy */
 };
 
 enum display_screen_info {
