@@ -18,8 +18,12 @@
 LOG_MODULE_REGISTER(sx12xx_common, CONFIG_LORA_LOG_LEVEL);
 
 static struct sx12xx_data {
+	const struct device *dev;
 	struct k_sem data_sem;
+	struct k_sem tx_sem;
 	RadioEvents_t events;
+	struct lora_modem_config tx_cfg;
+	lora_recv_cb rx_cb;
 	uint8_t *rx_buf;
 	uint8_t rx_len;
 	int8_t snr;
@@ -50,29 +54,69 @@ int __sx12xx_configure_pin(const struct device * *dev, const char *controller,
 static void sx12xx_ev_rx_done(uint8_t *payload, uint16_t size, int16_t rssi,
 			      int8_t snr)
 {
-	Radio.Sleep();
+	/* Asynchronous reception */
+	if (dev_data.rx_cb) {
+		/* Run user callback */
+		dev_data.rx_cb(dev_data.dev, payload, size, rssi, snr);
+		/* If the callback didn't cancel RX, start the radio again */
+		if (dev_data.rx_cb) {
+			Radio.Rx(0);
+		}
+	}
+	/* Synchronous reception */
+	else {
+		Radio.Sleep();
 
-	dev_data.rx_buf = payload;
-	dev_data.rx_len = size;
-	dev_data.rssi = rssi;
-	dev_data.snr = snr;
+		dev_data.rx_buf = payload;
+		dev_data.rx_len = size;
+		dev_data.rssi = rssi;
+		dev_data.snr = snr;
 
-	k_sem_give(&dev_data.data_sem);
+		k_sem_give(&dev_data.data_sem);
+	}
 }
 
 static void sx12xx_ev_tx_done(void)
 {
 	Radio.Sleep();
+	k_sem_give(&dev_data.tx_sem);
 }
 
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
+	uint32_t air_time;
+	int rc;
+
+	/* Clear any previous state */
+	k_sem_take(&dev_data.tx_sem, K_NO_WAIT);
+
 	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
 
 	Radio.Send(data, data_len);
 
-	return 0;
+	/* Calculate expected airtime of the packet */
+	air_time = Radio.TimeOnAir(MODEM_LORA,
+				   dev_data.tx_cfg.bandwidth,
+				   dev_data.tx_cfg.datarate,
+				   dev_data.tx_cfg.coding_rate,
+				   dev_data.tx_cfg.preamble_len,
+				   0, data_len, true);
+	LOG_DBG("Expected airtime of %d bytes = %dms", data_len, air_time);
+
+	/* Wait for the packet to finish transmitting.
+	 * The additional wiggle room is provided to ensure that
+	 * we are actually detecting a failed transmission, instead of
+	 * some minor timing variation between modem and driver.
+	 */
+	air_time += (air_time >> 3) + 1;
+	rc = k_sem_take(&dev_data.tx_sem, K_MSEC(air_time));
+	if (rc < 0) {
+		LOG_ERR("Packet transmission failed!");
+		/* Put radio back to sleep */
+		Radio.Sleep();
+	}
+	return rc;
 }
 
 int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
@@ -80,18 +124,26 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 {
 	int ret;
 
+	/* Validate asynchronous RX not in progress */
+	if (dev_data.rx_cb) {
+		return -EINVAL;
+	}
+
 	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
 	Radio.Rx(0);
 
 	ret = k_sem_take(&dev_data.data_sem, timeout);
 	if (ret < 0) {
-		LOG_ERR("Receive timeout!");
+		LOG_INF("Receive timeout");
+		/* Manually transition to sleep mode on timeout */
+		Radio.Sleep();
 		return ret;
 	}
 
 	/* Only copy the bytes that can fit the buffer, drop the rest */
-	if (dev_data.rx_len > size)
+	if (dev_data.rx_len > size) {
 		dev_data.rx_len = size;
+	}
 
 	/*
 	 * FIXME: We are copying the global buffer here, so it might get
@@ -111,12 +163,42 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	return dev_data.rx_len;
 }
 
+int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb)
+{
+	/* Handle RX cancel */
+	if (!cb) {
+		if (dev_data.rx_cb) {
+			/* Put radio to sleep */
+			Radio.Sleep();
+			dev_data.rx_cb = NULL;
+		}
+		return 0;
+	}
+
+	/* Handle reception already running */
+	if (dev_data.rx_cb) {
+		dev_data.rx_cb = cb;
+		return 0;
+	}
+
+	/* Store the callback */
+	dev_data.rx_cb = cb;
+
+	/* Enable the radio */
+	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
+	Radio.Rx(0);
+	return 0;
+}
+
 int sx12xx_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
 {
 	Radio.SetChannel(config->frequency);
 
 	if (config->tx) {
+		/* Store TX config locally for airtime calculations */
+		memcpy(&dev_data.tx_cfg, config, sizeof(dev_data.tx_cfg));
+		/* Configure radio driver */
 		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
 				  config->bandwidth, config->datarate,
 				  config->coding_rate, config->preamble_len,
@@ -142,7 +224,10 @@ int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 
 int sx12xx_init(const struct device *dev)
 {
+	dev_data.dev = dev;
+
 	k_sem_init(&dev_data.data_sem, 0, K_SEM_MAX_LIMIT);
+	k_sem_init(&dev_data.tx_sem, 0, 1);
 
 	dev_data.events.TxDone = sx12xx_ev_tx_done;
 	dev_data.events.RxDone = sx12xx_ev_rx_done;
