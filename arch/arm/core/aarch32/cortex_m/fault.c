@@ -632,6 +632,25 @@ static void debug_monitor(z_arch_esf_t *esf, bool *recoverable)
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
+static inline bool z_arm_is_synchronous_svc(z_arch_esf_t *esf)
+{
+	uint16_t *ret_addr = (uint16_t *)esf->basic.pc;
+	/* SVC is a 16-bit instruction. On a synchronous SVC
+	 * escalated to Hard Fault, the return address is the
+	 * next instruction, i.e. after the SVC.
+	 */
+#define _SVC_OPCODE 0xDF00
+
+	uint16_t fault_insn = *(ret_addr - 1);
+
+	if (((fault_insn & 0xff00) == _SVC_OPCODE) &&
+		((fault_insn & 0x00ff) == _SVC_CALL_RUNTIME_EXCEPT)) {
+		return true;
+	}
+#undef _SVC_OPCODE
+	return false;
+}
+
 /**
  *
  * @brief Dump hard fault information
@@ -655,21 +674,11 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 	 * priority. We handle the case of Kernel OOPS and Stack
 	 * Fail here.
 	 */
-	uint16_t *ret_addr = (uint16_t *)esf->basic.pc;
-	/* SVC is a 16-bit instruction. On a synchronous SVC
-	 * escalated to Hard Fault, the return address is the
-	 * next instruction, i.e. after the SVC.
-	 */
-#define _SVC_OPCODE 0xDF00
-
-	uint16_t fault_insn = *(ret_addr - 1);
-	if (((fault_insn & 0xff00) == _SVC_OPCODE) &&
-		((fault_insn & 0x00ff) == _SVC_CALL_RUNTIME_EXCEPT)) {
+	if (z_arm_is_synchronous_svc(esf)) {
 
 		PR_EXC("ARCH_EXCEPT with reason %x\n", esf->basic.r0);
 		reason = esf->basic.r0;
 	}
-#undef _SVC_OPCODE
 
 	*recoverable = memory_fault_recoverable(esf, true);
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -677,9 +686,14 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 
 	if ((SCB->HFSR & SCB_HFSR_VECTTBL_Msk) != 0) {
 		PR_EXC("  Bus fault on vector table read");
+	} else if ((SCB->HFSR & SCB_HFSR_DEBUGEVT_Msk) != 0) {
+		PR_EXC("  Debug event");
 	} else if ((SCB->HFSR & SCB_HFSR_FORCED_Msk) != 0) {
 		PR_EXC("  Fault escalation (see below)");
-		if (SCB_MMFSR != 0) {
+		if (z_arm_is_synchronous_svc(esf)) {
+			PR_EXC("ARCH_EXCEPT with reason %x\n", esf->basic.r0);
+			reason = esf->basic.r0;
+		} else if (SCB_MMFSR != 0) {
 			reason = mem_manage_fault(esf, 1, recoverable);
 		} else if (SCB_BFSR != 0) {
 			reason = bus_fault(esf, 1, recoverable);
@@ -690,10 +704,13 @@ static uint32_t hard_fault(z_arch_esf_t *esf, bool *recoverable)
 			secure_fault(esf);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 		} else {
-			;
+			__ASSERT(0,
+			"Fault escalation without FSR info");
 		}
 	} else {
-		;
+		__ASSERT(0,
+		"HardFault without HFSR info"
+		" Shall never occur");
 	}
 #else
 #error Unknown ARM architecture

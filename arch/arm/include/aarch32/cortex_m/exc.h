@@ -85,6 +85,9 @@ static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
  */
 static ALWAYS_INLINE void z_arm_exc_setup(void)
 {
+	/* PendSV is set to lowest priority, regardless of it being used.
+	 * This is done as the IRQ is always enabled.
+	 */
 	NVIC_SetPriority(PendSV_IRQn, _EXC_PENDSV_PRIO);
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_BASEPRI
@@ -98,6 +101,9 @@ static ALWAYS_INLINE void z_arm_exc_setup(void)
 	NVIC_SetPriority(MemoryManagement_IRQn, _EXC_FAULT_PRIO);
 	NVIC_SetPriority(BusFault_IRQn, _EXC_FAULT_PRIO);
 	NVIC_SetPriority(UsageFault_IRQn, _EXC_FAULT_PRIO);
+#if defined(CONFIG_CPU_CORTEX_M_HAS_DWT)
+	NVIC_SetPriority(DebugMonitor_IRQn, _EXC_FAULT_PRIO);
+#endif
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	NVIC_SetPriority(SecureFault_IRQn, _EXC_FAULT_PRIO);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
@@ -129,6 +135,19 @@ static ALWAYS_INLINE void z_arm_exc_setup(void)
 	 * SecureHardFault in a PE without the Main Extension.
 	 */
 #endif /* ARM_SECURE_FIRMWARE && !ARM_SECURE_BUSFAULT_HARDFAULT_NMI */
+
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SYSTICK) && \
+	!defined(CONFIG_CORTEX_M_SYSTICK)
+	/* SoC implements SysTick, but the system does not use it
+	 * as driver for system timing. However, the SysTick IRQ is
+	 * always enabled, so we must ensure the interrupt priority
+	 * is set to a level lower than the kernel interrupts (for
+	 * the assert mechanism to work properly) in case the SysTick
+	 * interrupt is accidentally raised.
+	 */
+	NVIC_SetPriority(SysTick_IRQn, _EXC_IRQ_DEFAULT_PRIO);
+#endif /* CPU_CORTEX_M_HAS_SYSTICK && ! CORTEX_M_SYSTICK */
+
 }
 
 /**

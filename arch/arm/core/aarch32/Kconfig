@@ -132,8 +132,8 @@ config RUNTIME_NMI
 config PLATFORM_SPECIFIC_INIT
 	bool "Enable platform (SOC) specific startup hook"
 	help
-	  The platform specific initialization code (z_platform_init) is executed
-	  at the beginning of the startup code (__start).
+	  The platform specific initialization code (z_arm_platform_init) is
+	  executed at the beginning of the startup code (__start).
 
 config FAULT_DUMP
 	int "Fault dump level"

@@ -192,7 +192,7 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 
     /* Lock PendSV while reprogramming PSP and PSPLIM */
     mov r0, #_EXC_PENDSV_PRIO_MASK
-    msr BASEPRI, r0
+    msr BASEPRI_MAX, r0
     isb
 
     /* Set PSPLIM to guard the thread's user stack. */
@@ -456,7 +456,7 @@ dispatch_syscall:
 
     /* Lock PendSV while reprogramming PSP and PSPLIM */
     mov r3, #_EXC_PENDSV_PRIO_MASK
-    msr BASEPRI, r3
+    msr BASEPRI_MAX, r3
     isb
 
     /* Set PSPLIM to guard the thread's user stack. */
