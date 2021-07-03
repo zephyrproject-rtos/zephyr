@@ -11,13 +11,16 @@ external organization. Several of these are available.
 GNU ARM Embedded
 ****************
 
+   .. warning::
+
+      Do not install the toolchain into a path with spaces.
+
 #. Download and install a `GNU ARM Embedded`_ build for your operating system
    and extract it on your file system.
 
    .. warning::
 
-      Do not install the toolchain into a path with spaces. On
-      Windows, we'll assume you install into the directory
+      On Windows, we'll assume you install into the directory
       :file:`C:\\gnu_arm_embedded`.
 
    .. warning::
@@ -44,7 +47,7 @@ GNU ARM Embedded
       $ echo $GNUARMEMB_TOOLCHAIN_PATH
       /home/you/Downloads/gnu_arm_embedded
 
-      # Windows
+      # Windows:
       > echo %ZEPHYR_TOOLCHAIN_VARIANT%
       gnuarmemb
       > echo %GNUARMEMB_TOOLCHAIN_PATH%
@@ -58,17 +61,21 @@ GNU ARM Embedded
       - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``gnuarmemb``.
       - Set :envvar:`GNUARMEMB_TOOLCHAIN_PATH` to the brew installation directory (something like ``/usr/local``)
 
-Intel oneApi Toolkits
+Intel oneAPI Toolkit
 *********************
 
 #. Download `Intel oneAPI Base Toolkit
    <https://software.intel.com/content/www/us/en/develop/tools/oneapi/all-toolkits.html>`_
 
-#. Assuming the toolkit is installed in ``/opt/intel/oneApi``, set environment
+#. Assuming the toolkit is installed in ``/opt/intel/oneapi``, set environment
    using::
 
+        # Linux, macOS:
         export ONEAPI_TOOLCHAIN_PATH=/opt/intel/oneapi
         source $ONEAPI_TOOLCHAIN_PATH/compiler/latest/env/vars.sh
+
+        # Windows:
+        > set ONEAPI_TOOLCHAIN_PATH=C:\Users\Intel\oneAPI
 
    To setup the complete oneApi environment, use::
 
@@ -77,7 +84,7 @@ Intel oneApi Toolkits
    The above will also change the python environment to the one used by the
    toolchain and might conflict with what Zephyr uses.
 
-#. Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``oneApi``.
+#. Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``oneapi``.
 
 DesignWare ARC MetaWare Development Toolkit (MWDT)
 **************************************************
@@ -106,7 +113,7 @@ DesignWare ARC MetaWare Development Toolkit (MWDT)
       $ echo $ARCMWDT_TOOLCHAIN_PATH
       /home/you/ARC/MWDT_2019.12/
 
-      # Windows
+      # Windows:
       > echo %ZEPHYR_TOOLCHAIN_VARIANT%
       arcmwdt
       > echo %ARCMWDT_TOOLCHAIN_PATH%
