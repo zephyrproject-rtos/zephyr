@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT ite_it8xxx2_i2c
 
+#include <drivers/gpio.h>
 #include <drivers/i2c.h>
 #include <drivers/pinmux.h>
 #include <errno.h>
@@ -52,6 +53,8 @@ struct i2c_it8xxx2_config {
 	/* Alternate function */
 	uint8_t clk_alt_fun;
 	uint8_t data_alt_fun;
+	/* GPIO handle */
+	const struct device *gpio_dev;
 };
 
 enum i2c_ch_status {
@@ -766,8 +769,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (data->i2ccs == I2C_CH_NORMAL) {
 		/* Make sure we're in a good state to start */
 		if (i2c_bus_not_available(dev)) {
-			/* reset i2c port */
-			i2c_reset(dev);
+			/* Recovery I2C bus */
+			i2c_recover_bus(dev);
 			printk("I2C ch%d reset cause %d\n", config->port,
 			       I2C_RC_NO_IDLE_FOR_START);
 			/*
@@ -936,9 +939,64 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	return 0;
 }
 
+static int i2c_it8xxx2_recover_bus(const struct device *dev)
+{
+	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
+	int i;
+
+	/* Set clock of I2C as GPIO pin */
+	pinmux_pin_input_enable(config->clk_pinctrls, config->clk_pin,
+				PINMUX_OUTPUT_ENABLED);
+	/* Set data of I2C as GPIO pin */
+	pinmux_pin_input_enable(config->data_pinctrls, config->data_pin,
+				PINMUX_OUTPUT_ENABLED);
+
+	gpio_pin_set(config->gpio_dev, config->clk_pin, 1);
+	gpio_pin_set(config->gpio_dev, config->data_pin, 1);
+	k_msleep(1);
+
+	/* Start condition */
+	gpio_pin_set(config->gpio_dev, config->data_pin, 0);
+	k_msleep(1);
+	gpio_pin_set(config->gpio_dev, config->clk_pin, 0);
+	k_msleep(1);
+
+	/* 9 cycles of SCL with SDA held high */
+	for (i = 0; i < 9; i++) {
+		gpio_pin_set(config->gpio_dev, config->data_pin, 1);
+		gpio_pin_set(config->gpio_dev, config->clk_pin, 1);
+		k_msleep(1);
+		gpio_pin_set(config->gpio_dev, config->clk_pin, 0);
+		k_msleep(1);
+	}
+	gpio_pin_set(config->gpio_dev, config->data_pin, 0);
+	k_msleep(1);
+
+	/* Stop condition */
+	gpio_pin_set(config->gpio_dev, config->clk_pin, 1);
+	k_msleep(1);
+	gpio_pin_set(config->gpio_dev, config->data_pin, 1);
+	k_msleep(1);
+
+	/* Set GPIO back to I2C alternate function of clock */
+	pinmux_pin_set(config->clk_pinctrls, config->clk_pin,
+		       config->clk_alt_fun);
+	/* Set GPIO back to I2C alternate function of data */
+	pinmux_pin_set(config->data_pinctrls, config->data_pin,
+		       config->data_alt_fun);
+
+	/* reset i2c port */
+	i2c_reset(dev);
+	printk("I2C ch%d reset cause %d\n", config->port,
+	       I2C_RC_NO_IDLE_FOR_START);
+
+	return 0;
+}
+
 static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 	.configure = i2c_it8xxx2_configure,
 	.transfer = i2c_it8xxx2_transfer,
+	.recover_bus = i2c_it8xxx2_recover_bus,
 };
 
 #define I2C_ITE_IT8XXX2_INIT(idx)                                              \
@@ -955,7 +1013,8 @@ static const struct i2c_driver_api i2c_it8xxx2_driver_api = {
 		.clk_pin = DEV_CLK_PIN(idx),                                   \
 		.data_pin = DEV_DATA_PIN(idx),                                 \
 		.clk_alt_fun = DEV_CLK_ALT_FUNC(idx),                          \
-		.data_alt_fun = DEV_DATA_ALT_FUNC(idx)                         \
+		.data_alt_fun = DEV_DATA_ALT_FUNC(idx),                        \
+		.gpio_dev = DEVICE_DT_GET(DT_INST_PHANDLE(idx, gpio_dev)),     \
 	};                                                                     \
 	\
 	static struct i2c_it8xxx2_data i2c_it8xxx2_data_##idx;	               \

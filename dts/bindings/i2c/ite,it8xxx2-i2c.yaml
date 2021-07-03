@@ -22,6 +22,11 @@ properties:
       required: true
       description: Ordinal identifying the port
 
+    gpio-dev:
+        type: phandle
+        required: true
+        description: Get the handle of the GPIO device
+
     pinctrl-0:
       type: phandle
       required: true
