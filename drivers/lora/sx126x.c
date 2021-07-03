@@ -19,7 +19,8 @@
 LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1261) +
-	     DT_NUM_INST_STATUS_OKAY(semtech_sx1262) <= 1,
+	     DT_NUM_INST_STATUS_OKAY(semtech_sx1262) +
+	     DT_NUM_INST_STATUS_OKAY(st_stm32wl_subghz_radio) <= 1,
 	     "Multiple SX126x instances in DT");
 
 #define DIO2_TX_ENABLE DT_INST_PROP(0, dio2_tx_enable)
