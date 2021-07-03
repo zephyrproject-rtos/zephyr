@@ -901,23 +901,23 @@ static int rndis_class_handler(struct usb_setup_packet *setup, int32_t *len,
 		return -ENODEV;
 	}
 
-	if (setup->bRequest == CDC_SEND_ENC_CMD &&
-	    usb_reqtype_is_to_device(setup)) {
-		/*
-		 * Instead of handling here, queue
-		 * handle_encapsulated_cmd(*data, *len);
-		 */
-		queue_encapsulated_cmd(*data, *len);
-	} else if (setup->bRequest == CDC_GET_ENC_RSP &&
-		   usb_reqtype_is_to_host(setup)) {
-		handle_encapsulated_rsp(data, len);
+	if (usb_reqtype_is_to_device(setup)) {
+		if (setup->bRequest == CDC_SEND_ENC_CMD) {
+			/*
+			 * Instead of handling here, queue
+			 * handle_encapsulated_cmd(*data, *len);
+			 */
+			return queue_encapsulated_cmd(*data, *len);
+		}
 	} else {
-		*len = 0; /* FIXME! */
-		LOG_WRN("Unknown USB packet req 0x%x type 0x%x",
-			setup->bRequest, setup->bmRequestType);
+		if (setup->bRequest == CDC_GET_ENC_RSP) {
+			return handle_encapsulated_rsp(data, len);
+		}
 	}
 
-	return 0;
+	LOG_WRN("Unknown USB packet req 0x%x type 0x%x",
+		setup->bRequest, setup->bmRequestType);
+	return -ENOTSUP;
 }
 
 static void cmd_thread(void)
