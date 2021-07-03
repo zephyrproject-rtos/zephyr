@@ -208,7 +208,8 @@
 #endif
 #define BT_CTLR_MAX_CONN        CONFIG_BT_MAX_CONN
 #if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CENTRAL)
-#define BT_CTLR_ADV_EXT_RX_CNT  1
+/* FIXME: needs more due to lll scheduling */
+#define BT_CTLR_ADV_EXT_RX_CNT  16
 #else
 #define BT_CTLR_ADV_EXT_RX_CNT  0
 #endif
@@ -2291,6 +2292,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 	case NODE_RX_TYPE_EXT_AUX_REPORT:
+	case NODE_RX_TYPE_EXT_AUX_REPORT_LLL:
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	case NODE_RX_TYPE_SYNC_REPORT:
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX)
@@ -2299,6 +2301,13 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #endif /* CONFIG_BT_CTLR_SYNC_PERIODIC */
 	{
 		struct pdu_adv *adv;
+
+//		static const char *xxx[] = {
+//			[NODE_RX_TYPE_EXT_1M_REPORT] = "1m",
+//			[NODE_RX_TYPE_EXT_CODED_REPORT] = "co",
+//			[NODE_RX_TYPE_EXT_AUX_REPORT] = "au",
+//			[NODE_RX_TYPE_SYNC_REPORT] = "sy",
+//		};
 
 		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 
@@ -2309,6 +2318,9 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 			break;
 		}
 
+//		printk("aux %s %p\n", xxx[rx->type], ftr->extra);
+
+		/* Schedule AUX only if not scheduled from LLL */
 		ull_scan_aux_setup(link, rx);
 	}
 	break;

@@ -74,7 +74,9 @@ static void           *isr_cb_param;
 void isr_radio(void)
 {
 	if (radio_has_disabled()) {
+//		NRF_P1->OUTSET = 1 << 4;
 		isr_cb(isr_cb_param);
+//		NRF_P1->OUTCLR = 1 << 4;
 	}
 }
 
@@ -137,6 +139,43 @@ void radio_setup(void)
 #endif /* CONFIG_BT_CTLR_GPIO_CSN_PIN */
 
 	hal_radio_ram_prio_setup();
+
+	NRF_P1->DIRSET = 1 << 4;
+	NRF_P1->OUTCLR = 1 << 4;
+	NRF_P1->DIRSET = 1 << 5;
+	NRF_P1->OUTCLR = 1 << 5;
+	NRF_P1->DIRSET = 1 << 6;
+	NRF_P1->OUTCLR = 1 << 6;
+	NRF_P1->DIRSET = 1 << 7;
+	NRF_P1->OUTCLR = 1 << 7;
+
+//	NRF_GPIOTE->CONFIG[6] =
+//		(GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos) |
+//		(7 << GPIOTE_CONFIG_PSEL_Pos) |
+//		(1 << GPIOTE_CONFIG_PORT_Pos);
+//	NRF_GPIOTE->TASKS_CLR[6] = 1;
+
+	NRF_P1->DIRSET = 1 << 8;
+	NRF_P1->OUTCLR = 1 << 8;
+	NRF_GPIOTE->CONFIG[7] =
+		(GPIOTE_CONFIG_MODE_Task << GPIOTE_CONFIG_MODE_Pos) |
+		(8 << GPIOTE_CONFIG_PSEL_Pos) |
+		(1 << GPIOTE_CONFIG_PORT_Pos);
+	NRF_GPIOTE->TASKS_CLR[7] = 1;
+
+	NRF_PPI->FORK[20].TEP = (uint32_t)&(NRF_GPIOTE->TASKS_SET[7]);
+	NRF_PPI->FORK[21].TEP = (uint32_t)&(NRF_GPIOTE->TASKS_SET[7]);
+
+	NRF_PPI->CH[16].EEP = (uint32_t)&(NRF_RADIO->EVENTS_READY);
+	NRF_PPI->CH[16].TEP = (uint32_t)&(NRF_GPIOTE->TASKS_CLR[7]);
+	NRF_PPI->CH[17].EEP = (uint32_t)&(NRF_RADIO->EVENTS_ADDRESS);
+	NRF_PPI->CH[17].TEP = (uint32_t)&(NRF_GPIOTE->TASKS_SET[7]);
+	NRF_PPI->CH[18].EEP = (uint32_t)&(NRF_RADIO->EVENTS_END);
+	NRF_PPI->CH[18].TEP = (uint32_t)&(NRF_GPIOTE->TASKS_CLR[7]);
+	NRF_PPI->CH[19].EEP = (uint32_t)&(NRF_RADIO->EVENTS_DISABLED);
+	NRF_PPI->CH[19].TEP = (uint32_t)&(NRF_GPIOTE->TASKS_CLR[7]);
+	NRF_PPI->CHENSET = PPI_CHEN_CH16_Msk | PPI_CHEN_CH17_Msk |
+			   PPI_CHEN_CH18_Msk | PPI_CHEN_CH19_Msk;
 }
 
 void radio_reset(void)

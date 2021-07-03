@@ -60,6 +60,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define BT_ASSERT(cond)                          \
 	do {                                     \
 		if (!(cond)) {                   \
+			NRF_P1->OUTSET = 1 << 6; \
+			NRF_PPI->CHENCLR = PPI_CHEN_CH16_Msk | PPI_CHEN_CH17_Msk | PPI_CHEN_CH18_Msk | PPI_CHEN_CH19_Msk; \
 			BT_ASSERT_PRINT(cond);   \
 			BT_ASSERT_DIE();         \
 		}                                \

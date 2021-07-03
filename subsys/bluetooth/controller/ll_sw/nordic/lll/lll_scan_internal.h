@@ -14,3 +14,6 @@ bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
 
 bool lll_scan_tgta_check(struct lll_scan *lll, bool init, uint8_t addr_type,
 			 uint8_t *addr, uint8_t rl_idx, bool *dir_report);
+
+struct node_rx_pdu *lll_scan_aux_setup(struct lll_scan *lll,
+				       struct pdu_adv *pdu, uint8_t pdu_phy);
