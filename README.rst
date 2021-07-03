@@ -27,13 +27,14 @@ Intel x86, ARC, Nios II, Tensilica Xtensa, and RISC-V, and a large number of
 
 .. below included in doc/introduction/introduction.rst
 
-.. start_include_here
 
 Getting Started
 ***************
 
 Welcome to Zephyr! See the `Introduction to Zephyr`_ for a high-level overview,
 and the documentation's `Getting Started Guide`_ to start developing.
+
+.. start_include_here
 
 Community Support
 *****************
