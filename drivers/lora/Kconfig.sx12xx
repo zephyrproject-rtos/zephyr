@@ -8,6 +8,7 @@ DT_COMPAT_SEMTECH_SX1272 := semtech,sx1272
 DT_COMPAT_SEMTECH_SX1276 := semtech,sx1276
 DT_COMPAT_SEMTECH_SX1261 := semtech,sx1261
 DT_COMPAT_SEMTECH_SX1262 := semtech,sx1262
+DT_COMPAT_ST_STM32WL_SUBGHZ_RADIO := st,stm32wl-subghz-radio
 
 menuconfig LORA_SX12XX
 	bool "Semtech SX-series driver"
@@ -24,6 +25,7 @@ choice
 	default LORA_SX127X if $(dt_compat_enabled,$(DT_COMPAT_SEMTECH_SX1276))
 	default LORA_SX126X if $(dt_compat_enabled,$(DT_COMPAT_SEMTECH_SX1261))
 	default LORA_SX126X if $(dt_compat_enabled,$(DT_COMPAT_SEMTECH_SX1262))
+	default LORA_STM32WL_SUBGHZ_RADIO if $(dt_compat_enabled,$(DT_COMPAT_ST_STM32WL_SUBGHZ_RADIO))
 	help
 	  Select the LoRa modem used on your board. The default value
 	  is discovered from the device tree and should be correct for
@@ -41,6 +43,12 @@ config LORA_SX126X
 	select HAS_SEMTECH_SX126X
 	help
 	  Enable LoRa driver for Semtech SX1261 and SX1262.
+
+config LORA_STM32WL_SUBGHZ_RADIO
+	bool "STM32WL SUBGHZ radio driver"
+	select HAS_SEMTECH_SX126X
+	help
+	  Enable LoRa driver for STM32WL SUBGHZ radio.
 
 endchoice
 

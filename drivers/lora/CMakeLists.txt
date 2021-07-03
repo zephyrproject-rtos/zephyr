@@ -13,5 +13,10 @@ zephyr_library_sources_ifdef(CONFIG_LORA_SHELL shell.c)
 zephyr_library_sources_ifdef(CONFIG_HAS_SEMTECH_RADIO_DRIVERS hal_common.c)
 zephyr_library_sources_ifdef(CONFIG_HAS_SEMTECH_RADIO_DRIVERS sx12xx_common.c)
 zephyr_library_sources_ifdef(CONFIG_LORA_SX127X sx127x.c)
-zephyr_library_sources_ifdef(CONFIG_LORA_SX126X sx126x.c)
+
+if (CONFIG_LORA_SX126X OR CONFIG_LORA_STM32WL_SUBGHZ_RADIO)
+	zephyr_library_sources(sx126x.c)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_LORA_SX126X sx126x_standalone.c)
+zephyr_library_sources_ifdef(CONFIG_LORA_STM32WL_SUBGHZ_RADIO sx126x_stm32wl.c)
