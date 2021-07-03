@@ -12,7 +12,18 @@
 	model = "esp32c3_devkitm";
 	compatible = "espressif,esp32c3";
 
+	aliases {
+		uart-0 = &uart0;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
 };
