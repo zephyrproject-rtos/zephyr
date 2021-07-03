@@ -83,6 +83,7 @@ struct bq274xx_data {
 #ifdef CONFIG_BQ274XX_LAZY_CONFIGURE
 	bool lazy_loaded;
 #endif
+	uint16_t flags;
 	uint16_t voltage;
 	int16_t avg_current;
 	int16_t stdby_current;
