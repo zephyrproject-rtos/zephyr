@@ -382,6 +382,9 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	 *  Linear Feedback Shift Register
 	 */
 	 LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLLSAI1);
+#elif CONFIG_SOC_SERIES_STM32WLX || CONFIG_SOC_SERIES_STM32G0X
+	LL_RCC_PLL_EnableDomain_RNG();
+	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLL);
 #elif defined(RCC_CR2_HSI48ON) || defined(RCC_CR_HSI48ON) \
 	|| defined(RCC_CRRCR_HSI48ON)
 
