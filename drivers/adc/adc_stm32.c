@@ -428,6 +428,68 @@ static int start_read(const struct device *dev,
 	LL_ADC_SetResolution(adc, resolution);
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+	switch (sequence->oversampling) {
+	case 0:
+		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_DISABLE);
+		break;
+	case 1:
+		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_2,
+						    LL_ADC_OVS_SHIFT_RIGHT_1);
+		break;
+	case 2:
+		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_4,
+						    LL_ADC_OVS_SHIFT_RIGHT_2);
+		break;
+	case 3:
+		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_8,
+						    LL_ADC_OVS_SHIFT_RIGHT_3);
+		break;
+	case 4:
+		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_16,
+						    LL_ADC_OVS_SHIFT_RIGHT_4);
+		break;
+	case 5:
+		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_32,
+						    LL_ADC_OVS_SHIFT_RIGHT_5);
+		break;
+	case 6:
+		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_64,
+						    LL_ADC_OVS_SHIFT_RIGHT_6);
+		break;
+	case 7:
+		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_128,
+						    LL_ADC_OVS_SHIFT_RIGHT_7);
+		break;
+	case 8:
+		LL_ADC_SetOverSamplingScope(adc, LL_ADC_OVS_GRP_REGULAR_CONTINUED);
+		LL_ADC_ConfigOverSamplingRatioShift(adc, LL_ADC_OVS_RATIO_256,
+						    LL_ADC_OVS_SHIFT_RIGHT_8);
+		break;
+	default:
+		LOG_ERR("Invalid oversampling");
+		return -EINVAL;
+	}
+#else
+	if (sequence->oversampling) {
+		LOG_ERR("Oversampling not supported");
+		return -ENOTSUP;
+	}
+#endif
+
 	if (sequence->calibrate) {
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
