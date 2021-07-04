@@ -549,17 +549,18 @@ static int adc_stm32_check_acq_time(uint16_t acq_time)
 }
 
 /*
- * Enable internal voltage reference source
+ * Enable internal channel source
  */
-static void adc_stm32_set_common_path(const struct device *dev)
+static void adc_stm32_set_common_path(const struct device *dev, uint32_t PathInternal)
 {
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 	(void) adc; /* Avoid 'unused variable' warning for some families */
 
-	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
-				LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	/* Do not remove existing paths */
+	PathInternal |= LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc));
+	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc), PathInternal);
 }
 
 static void adc_stm32_setup_speed(const struct device *dev, uint8_t id,
@@ -630,9 +631,10 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if ((__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_cfg->channel_id) ||
-		(__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_cfg->channel_id)) {
-		adc_stm32_set_common_path(dev);
+	if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_TEMPSENSOR) == channel_cfg->channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_TEMPSENSOR);
+	} else if (__LL_ADC_CHANNEL_TO_DECIMAL_NB(ADC_CHANNEL_VREFINT) == channel_cfg->channel_id) {
+		adc_stm32_set_common_path(dev, LL_ADC_PATH_INTERNAL_VREFINT);
 	}
 
 	adc_stm32_setup_speed(dev, channel_cfg->channel_id,
