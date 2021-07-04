@@ -106,24 +106,24 @@ static void st7789v_reset_display(struct st7789v_data *data)
 	gpio_pin_set(data->reset_gpio, ST7789V_RESET_PIN, 0);
 	k_sleep(K_MSEC(20));
 #else
-	st7789v_transmit(p_st7789v, ST7789V_CMD_SW_RESET, NULL, 0);
+	st7789v_transmit(data, ST7789V_CMD_SW_RESET, NULL, 0);
 	k_sleep(K_MSEC(5));
 #endif
 }
 
 static int st7789v_blanking_on(const struct device *dev)
 {
-	struct st7789v_data *driver = (struct st7789v_data *)dev->data;
+	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 
-	st7789v_transmit(driver, ST7789V_CMD_DISP_OFF, NULL, 0);
+	st7789v_transmit(data, ST7789V_CMD_DISP_OFF, NULL, 0);
 	return 0;
 }
 
 static int st7789v_blanking_off(const struct device *dev)
 {
-	struct st7789v_data *driver = (struct st7789v_data *)dev->data;
+	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 
-	st7789v_transmit(driver, ST7789V_CMD_DISP_ON, NULL, 0);
+	st7789v_transmit(data, ST7789V_CMD_DISP_ON, NULL, 0);
 	return 0;
 }
 
@@ -261,74 +261,74 @@ static int st7789v_set_orientation(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static void st7789v_lcd_init(struct st7789v_data *p_st7789v)
+static void st7789v_lcd_init(struct st7789v_data *data)
 {
 	uint8_t tmp;
 
-	st7789v_set_lcd_margins(p_st7789v, p_st7789v->x_offset,
-				p_st7789v->y_offset);
+	st7789v_set_lcd_margins(data, data->x_offset,
+				data->y_offset);
 
-	st7789v_transmit(p_st7789v, ST7789V_CMD_CMD2EN, st7789v_cmd2en_param,
+	st7789v_transmit(data, ST7789V_CMD_CMD2EN, st7789v_cmd2en_param,
 			 sizeof(st7789v_cmd2en_param));
 
-	st7789v_transmit(p_st7789v, ST7789V_CMD_PORCTRL, st7789v_porch_param,
+	st7789v_transmit(data, ST7789V_CMD_PORCTRL, st7789v_porch_param,
 			 sizeof(st7789v_porch_param));
 
 	/* Digital Gamma Enable, default disabled */
 	tmp = 0x00;
-	st7789v_transmit(p_st7789v, ST7789V_CMD_DGMEN, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_DGMEN, &tmp, 1);
 
 	/* Frame Rate Control in Normal Mode, default value */
 	tmp = 0x0f;
-	st7789v_transmit(p_st7789v, ST7789V_CMD_FRCTRL2, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_FRCTRL2, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, gctrl);
-	st7789v_transmit(p_st7789v, ST7789V_CMD_GCTRL, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_GCTRL, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, vcom);
-	st7789v_transmit(p_st7789v, ST7789V_CMD_VCOMS, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_VCOMS, &tmp, 1);
 
 #if (DT_INST_NODE_HAS_PROP(0, vrhs) && \
 	DT_INST_NODE_HAS_PROP(0, vdvs))
 	tmp = 0x01;
-	st7789v_transmit(p_st7789v, ST7789V_CMD_VDVVRHEN, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_VDVVRHEN, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, vrhs);
-	st7789v_transmit(p_st7789v, ST7789V_CMD_VRH, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_VRH, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, vdvs);
-	st7789v_transmit(p_st7789v, ST7789V_CMD_VDS, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_VDS, &tmp, 1);
 #endif
 
-	st7789v_transmit(p_st7789v, ST7789V_CMD_PWCTRL1, st7789v_pwctrl1_param,
+	st7789v_transmit(data, ST7789V_CMD_PWCTRL1, st7789v_pwctrl1_param,
 			 sizeof(st7789v_pwctrl1_param));
 
 	/* Memory Data Access Control */
 	tmp = DT_INST_PROP(0, mdac);
-	st7789v_transmit(p_st7789v, ST7789V_CMD_MADCTL, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_MADCTL, &tmp, 1);
 
 	/* Interface Pixel Format */
 	tmp = DT_INST_PROP(0, colmod);
-	st7789v_transmit(p_st7789v, ST7789V_CMD_COLMOD, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_COLMOD, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, lcm);
-	st7789v_transmit(p_st7789v, ST7789V_CMD_LCMCTRL, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_LCMCTRL, &tmp, 1);
 
 	tmp = DT_INST_PROP(0, gamma);
-	st7789v_transmit(p_st7789v, ST7789V_CMD_GAMSET, &tmp, 1);
+	st7789v_transmit(data, ST7789V_CMD_GAMSET, &tmp, 1);
 
-	st7789v_transmit(p_st7789v, ST7789V_CMD_INV_ON, NULL, 0);
+	st7789v_transmit(data, ST7789V_CMD_INV_ON, NULL, 0);
 
-	st7789v_transmit(p_st7789v, ST7789V_CMD_PVGAMCTRL, st7789v_pvgam_param,
+	st7789v_transmit(data, ST7789V_CMD_PVGAMCTRL, st7789v_pvgam_param,
 			 sizeof(st7789v_pvgam_param));
 
-	st7789v_transmit(p_st7789v, ST7789V_CMD_NVGAMCTRL, st7789v_nvgam_param,
+	st7789v_transmit(data, ST7789V_CMD_NVGAMCTRL, st7789v_nvgam_param,
 			 sizeof(st7789v_nvgam_param));
 
-	st7789v_transmit(p_st7789v, ST7789V_CMD_RAMCTRL, st7789v_ram_param,
+	st7789v_transmit(data, ST7789V_CMD_RAMCTRL, st7789v_ram_param,
 			 sizeof(st7789v_ram_param));
 
-	st7789v_transmit(p_st7789v, ST7789V_CMD_RGBCTRL, st7789v_rgb_param,
+	st7789v_transmit(data, ST7789V_CMD_RGBCTRL, st7789v_rgb_param,
 			 sizeof(st7789v_rgb_param));
 }
 
