@@ -22,13 +22,9 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(display_st7789v);
 
-#define ST7789V_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
-#define ST7789V_CMD_DATA_PIN	DT_INST_GPIO_PIN(0, cmd_data_gpios)
-#define ST7789V_CMD_DATA_FLAGS	DT_INST_GPIO_FLAGS(0, cmd_data_gpios)
-#define ST7789V_RESET_PIN	DT_INST_GPIO_PIN(0, reset_gpios)
-#define ST7789V_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
-
 struct st7789v_config {
+	struct gpio_dt_spec reset_gpio;
+	struct gpio_dt_spec cmd_data_gpio;
 	uint16_t height;
 	uint16_t width;
 	uint8_t vcom;
@@ -56,11 +52,6 @@ struct st7789v_data {
 	struct spi_cs_control cs_ctrl;
 #endif
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	const struct device *reset_gpio;
-#endif
-	const struct device *cmd_data_gpio;
-
 	uint16_t x_offset;
 	uint16_t y_offset;
 #ifdef CONFIG_PM_DEVICE
@@ -85,9 +76,9 @@ static void st7789v_set_lcd_margins(const struct device *dev,
 
 static void st7789v_set_cmd(const struct device *dev, int is_cmd)
 {
-	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
 
-	gpio_pin_set(data->cmd_data_gpio, ST7789V_CMD_DATA_PIN, is_cmd);
+	gpio_pin_set_dt(&config->cmd_data_gpio, is_cmd);
 }
 
 static void st7789v_transmit(const struct device *dev, uint8_t cmd,
@@ -119,19 +110,19 @@ static void st7789v_exit_sleep(const struct device *dev)
 
 static void st7789v_reset_display(const struct device *dev)
 {
-	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
 
 	LOG_DBG("Resetting display");
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	k_sleep(K_MSEC(1));
-	gpio_pin_set(data->reset_gpio, ST7789V_RESET_PIN, 1);
-	k_sleep(K_MSEC(6));
-	gpio_pin_set(data->reset_gpio, ST7789V_RESET_PIN, 0);
-	k_sleep(K_MSEC(20));
-#else
-	st7789v_transmit(p_st7789v, ST7789V_CMD_SW_RESET, NULL, 0);
-	k_sleep(K_MSEC(5));
-#endif
+	if (config->reset_gpio.port != NULL) {
+		k_sleep(K_MSEC(1));
+		gpio_pin_set_dt(&config->reset_gpio, 1);
+		k_sleep(K_MSEC(6));
+		gpio_pin_set_dt(&config->reset_gpio, 0);
+		k_sleep(K_MSEC(20));
+	} else {
+		st7789v_transmit(dev, ST7789V_CMD_SW_RESET, NULL, 0);
+		k_sleep(K_MSEC(5));
+	}
 }
 
 static int st7789v_blanking_on(const struct device *dev)
@@ -348,6 +339,7 @@ static void st7789v_lcd_init(const struct device *dev)
 static int st7789v_init(const struct device *dev)
 {
 	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
 
 	data->spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (data->spi_dev == NULL) {
@@ -371,29 +363,24 @@ static int st7789v_init(const struct device *dev)
 	data->spi_config.cs = NULL;
 #endif
 
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	data->reset_gpio = device_get_binding(
-			DT_INST_GPIO_LABEL(0, reset_gpios));
-	if (data->reset_gpio == NULL) {
-		LOG_ERR("Could not get GPIO port for display reset");
-		return -EPERM;
+	if (config->reset_gpio.port != NULL) {
+		if (!device_is_ready(config->reset_gpio.port)) {
+			LOG_ERR("GPIO port for display reset is not ready");
+			return -ENODEV;
+		}
+
+		if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE)) {
+			LOG_ERR("Couldn't configure reset pin");
+			return -EIO;
+		}
 	}
 
-	if (gpio_pin_configure(data->reset_gpio, ST7789V_RESET_PIN,
-			       GPIO_OUTPUT_INACTIVE | ST7789V_RESET_FLAGS)) {
-		LOG_ERR("Couldn't configure reset pin");
-		return -EIO;
+	if (!device_is_ready(config->cmd_data_gpio.port)) {
+		LOG_ERR("GPIO port for cmd/DATA port is not ready");
+		return -ENODEV;
 	}
-#endif
 
-	data->cmd_data_gpio = device_get_binding(
-		DT_INST_GPIO_LABEL(0, cmd_data_gpios));
-	if (data->cmd_data_gpio == NULL) {
-		LOG_ERR("Could not get GPIO port for cmd/DATA port");
-		return -EPERM;
-	}
-	if (gpio_pin_configure(data->cmd_data_gpio, ST7789V_CMD_DATA_PIN,
-			       GPIO_OUTPUT | ST7789V_CMD_DATA_FLAGS)) {
+	if (gpio_pin_configure_dt(&config->cmd_data_gpio, GPIO_OUTPUT)) {
 		LOG_ERR("Couldn't configure cmd/DATA pin");
 		return -EIO;
 	}
@@ -461,6 +448,8 @@ static const struct display_driver_api st7789v_api = {
 };
 
 const static struct st7789v_config st7789v_config = {
+	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
+	.cmd_data_gpio = GPIO_DT_SPEC_INST_GET(0, cmd_data_gpios),
 	.width = DT_INST_PROP(0, width),
 	.height = DT_INST_PROP(0, height),
 	.vcom = DT_INST_PROP(0, vcom),
