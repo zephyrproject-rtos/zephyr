@@ -23,6 +23,7 @@
 LOG_MODULE_REGISTER(display_st7789v);
 
 struct st7789v_config {
+	struct spi_dt_spec spi;
 	struct gpio_dt_spec reset_gpio;
 	struct gpio_dt_spec cmd_data_gpio;
 	uint16_t height;
@@ -46,12 +47,6 @@ struct st7789v_config {
 };
 
 struct st7789v_data {
-	const struct device *spi_dev;
-	struct spi_config spi_config;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control cs_ctrl;
-#endif
-
 	uint16_t x_offset;
 	uint16_t y_offset;
 #ifdef CONFIG_PM_DEVICE
@@ -84,21 +79,21 @@ static void st7789v_set_cmd(const struct device *dev, int is_cmd)
 static void st7789v_transmit(const struct device *dev, uint8_t cmd,
 			     const uint8_t *tx_data, size_t tx_count)
 {
-	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
 
 	{
 		const struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
 		const struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
 		st7789v_set_cmd(dev, 1);
-		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+		spi_write_dt(&config->spi, &tx_bufs);
 	}
 	if (tx_data != NULL) {
 		const struct spi_buf tx_buf = { .buf = (void *)tx_data, .len = tx_count };
 		const struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
 		st7789v_set_cmd(dev, 0);
-		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+		spi_write_dt(&config->spi, &tx_bufs);
 	}
 }
 
@@ -170,7 +165,7 @@ static int st7789v_write(const struct device *dev,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	struct st7789v_data *data = dev->data;
+	const struct st7789v_config *config = dev->config;
 	const uint8_t *write_data_start = (uint8_t *) buf;
 	struct spi_buf tx_buf;
 	struct spi_buf_set tx_bufs;
@@ -205,7 +200,7 @@ static int st7789v_write(const struct device *dev,
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
 		tx_buf.buf = (void *)write_data_start;
 		tx_buf.len = desc->width * ST7789V_PIXEL_SIZE * write_h;
-		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+		spi_write_dt(&config->spi, &tx_bufs);
 		write_data_start += (desc->pitch * ST7789V_PIXEL_SIZE);
 	}
 
@@ -338,30 +333,12 @@ static void st7789v_lcd_init(const struct device *dev)
 
 static int st7789v_init(const struct device *dev)
 {
-	struct st7789v_data *data = dev->data;
 	const struct st7789v_config *config = dev->config;
 
-	data->spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (data->spi_dev == NULL) {
-		LOG_ERR("Could not get SPI device for LCD");
-		return -EPERM;
+	if (!spi_is_ready(&config->spi)) {
+		LOG_ERR("SPI device for LCD is not ready");
+		return -ENODEV;
 	}
-
-	data->spi_config.frequency =
-		DT_INST_PROP(0, spi_max_frequency);
-	data->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	data->spi_config.slave = DT_INST_REG_ADDR(0);
-
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	data->cs_ctrl.gpio_dev = device_get_binding(
-			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
-	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
-	data->cs_ctrl.gpio_dt_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
-	data->cs_ctrl.delay = 0U;
-	data->spi_config.cs = &(data->cs_ctrl);
-#else
-	data->spi_config.cs = NULL;
-#endif
 
 	if (config->reset_gpio.port != NULL) {
 		if (!device_is_ready(config->reset_gpio.port)) {
@@ -448,6 +425,7 @@ static const struct display_driver_api st7789v_api = {
 };
 
 const static struct st7789v_config st7789v_config = {
+	.spi = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),
 	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(0, reset_gpios, { 0 }),
 	.cmd_data_gpio = GPIO_DT_SPEC_INST_GET(0, cmd_data_gpios),
 	.width = DT_INST_PROP(0, width),
