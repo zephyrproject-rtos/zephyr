@@ -131,6 +131,10 @@
 	status = "okay";
 };
 
+&aes {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };
