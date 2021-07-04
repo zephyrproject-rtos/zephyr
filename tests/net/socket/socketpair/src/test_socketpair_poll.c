@@ -341,3 +341,127 @@ void test_socketpair_poll_delayed_data(void)
 	close(sv[0]);
 	close(sv[1]);
 }
+
+/*
+ * Verify that POLLIN is correctly signalled
+ *   - right after socket creation, POLLIN should not be reported
+ *   - after data is written to a remote socket, POLLIN should be reported, even
+ *     if the poll was called after the data was written
+ *   - after reading data from a remote socket, POLLIN shouldn't be reported
+ */
+void test_socketpair_poll_signalling_POLLIN(void)
+{
+	int sv[2] = {-1, -1};
+	int res;
+	char c;
+	int64_t timestamp, delta;
+
+	struct pollfd fds[1];
+
+	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
+	zassert_not_equal(res, -1, "socketpair failed: %d", errno);
+
+	memset(fds, 0, sizeof(fds));
+	fds[0].fd = sv[1];
+	fds[0].events |= POLLIN;
+	res = poll(fds, 1, 0);
+	zassert_not_equal(res, -1, "poll failed: %d", errno);
+	zassert_equal(res, 0, "poll: expected: 0 actual: %d", res);
+	zassert_not_equal(fds[0].revents & POLLIN, POLLIN, "POLLIN set");
+
+	res = write(sv[0], "x", 1);
+	zassert_equal(res, 1, "write failed: %d", res);
+
+	timestamp = k_uptime_get();
+
+	memset(fds, 0, sizeof(fds));
+	fds[0].fd = sv[1];
+	fds[0].events |= POLLIN;
+	res = poll(fds, 1, 1000);
+	zassert_not_equal(res, -1, "poll failed: %d", errno);
+	zassert_equal(res, 1, "poll: expected: 1 actual: %d", res);
+	zassert_not_equal(fds[0].revents & POLLIN, 0, "POLLIN not set");
+
+	delta = k_uptime_delta(&timestamp);
+	zassert_true(delta < 100, "poll did not exit immediately");
+
+	res = read(sv[1], &c, 1);
+	zassert_equal(res, 1, "read failed: %d", res);
+
+	memset(fds, 0, sizeof(fds));
+	fds[0].fd = sv[1];
+	fds[0].events |= POLLIN;
+	res = poll(fds, 1, 0);
+	zassert_not_equal(res, -1, "poll failed: %d", errno);
+	zassert_equal(res, 0, "poll: expected: 0 actual: %d", res);
+	zassert_not_equal(fds[0].revents & POLLIN, POLLIN, "POLLIN set");
+
+	close(sv[0]);
+	close(sv[1]);
+}
+
+/*
+ * Verify that POLLOUT is correctly signalled
+ *   - right after socket creation, POLLOUT should be reported
+ *   - after remote buffer is filled up, POLLOUT shouldn't be reported
+ *   - after reading data from a remote socket, POLLOUT should be reported
+ *     again
+ */
+void test_socketpair_poll_signalling_POLLOUT(void)
+{
+	int sv[2] = {-1, -1};
+	int res;
+	char c;
+	int64_t timestamp, delta;
+
+	struct pollfd fds[1];
+
+	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
+	zassert_not_equal(res, -1, "socketpair failed: %d", errno);
+
+	timestamp = k_uptime_get();
+
+	memset(fds, 0, sizeof(fds));
+	fds[0].fd = sv[0];
+	fds[0].events |= POLLOUT;
+	res = poll(fds, 1, 1000);
+	zassert_not_equal(res, -1, "poll failed: %d", errno);
+	zassert_equal(res, 1, "poll: expected: 1 actual: %d", res);
+	zassert_not_equal(fds[0].revents & POLLOUT, 0, "POLLOUT not set");
+
+	delta = k_uptime_delta(&timestamp);
+	zassert_true(delta < 100, "poll did not exit immediately");
+
+	/* Fill up the remote buffer */
+	for (size_t i = 0; i < CONFIG_NET_SOCKETPAIR_BUFFER_SIZE; ++i) {
+		res = write(sv[0], "x", 1);
+		zassert_equal(res, 1, "write failed: %d", res);
+	}
+
+	memset(fds, 0, sizeof(fds));
+	fds[0].fd = sv[0];
+	fds[0].events |= POLLOUT;
+	res = poll(fds, 1, 0);
+	zassert_not_equal(res, -1, "poll failed: %d", errno);
+	zassert_equal(res, 0, "poll: expected: 0 actual: %d", res);
+	zassert_not_equal(fds[0].revents & POLLOUT, POLLOUT, "POLLOUT is set");
+
+	res = read(sv[1], &c, 1);
+	zassert_equal(res, 1, "read failed: %d", res);
+
+	timestamp = k_uptime_get();
+
+	memset(fds, 0, sizeof(fds));
+	fds[0].fd = sv[0];
+	fds[0].events |= POLLOUT;
+	res = poll(fds, 1, 1000);
+	zassert_not_equal(res, -1, "poll failed: %d", errno);
+	zassert_equal(res, 1, "poll: expected: 1 actual: %d", res);
+	zassert_not_equal(fds[0].revents & POLLOUT, 0, "POLLOUT not set");
+
+	delta = k_uptime_delta(&timestamp);
+	zassert_true(delta < 100, "poll did not exit immediately");
+
+	close(sv[0]);
+	close(sv[1]);
+}
