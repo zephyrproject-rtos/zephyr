@@ -212,6 +212,10 @@ static const uint8_t msos1_compatid_descriptor[] = {
 int custom_handle_req(struct usb_setup_packet *pSetup,
 		      int32_t *len, uint8_t **data)
 {
+	if (usb_reqtype_is_to_device(pSetup)) {
+		return -ENOTSUP;
+	}
+
 	if (USB_GET_DESCRIPTOR_TYPE(pSetup->wValue) == USB_DESC_STRING &&
 	    USB_GET_DESCRIPTOR_INDEX(pSetup->wValue) == 0xEE) {
 		*data = (uint8_t *)(&msos1_string_descriptor);
@@ -238,6 +242,10 @@ int custom_handle_req(struct usb_setup_packet *pSetup,
 int vendor_handle_req(struct usb_setup_packet *pSetup,
 		      int32_t *len, uint8_t **data)
 {
+	if (usb_reqtype_is_to_device(pSetup)) {
+		return -ENOTSUP;
+	}
+
 	/* Get Allowed origins request */
 	if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x01) {
 		*data = (uint8_t *)(&webusb_allowed_origins);
