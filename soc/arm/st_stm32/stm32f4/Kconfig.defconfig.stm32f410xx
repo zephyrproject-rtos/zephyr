@@ -8,7 +8,4 @@ if SOC_STM32F410RX
 config SOC
 	default "stm32f410rx"
 
-config NUM_IRQS
-	default 97
-
 endif # SOC_STM32F410RX

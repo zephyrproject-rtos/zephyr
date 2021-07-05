@@ -8,17 +8,11 @@ if SOC_STM32F407XE
 config SOC
 	default "stm32f407xx"
 
-config NUM_IRQS
-	default 82
-
 endif # SOC_STM32F407XE
 
 if SOC_STM32F407XG
 
 config SOC
 	default "stm32f407xx"
-
-config NUM_IRQS
-	default 82
 
 endif # SOC_STM32F407XG

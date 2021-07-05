@@ -196,6 +196,8 @@ class EDT:
 
         self._init_compat2binding()
         self._init_nodes()
+        self.InterruptControllers = []
+        self.GpioControllers = []
         self._init_graph()
         self._init_luts()
 
@@ -1176,6 +1178,11 @@ class Node:
             interrupt.controller = self.edt._node2enode[controller_node]
             interrupt.data = self._named_cells(interrupt.controller, data,
                                                "interrupt")
+            interrupt_ctl = InterruptController()
+            interrupt_ctl.node = interrupt.controller
+
+            if interrupt.controller not in self.edt.InterruptControllers:
+                self.edt.InterruptControllers.append(interrupt.controller)
 
             self.interrupts.append(interrupt)
 
@@ -1263,6 +1270,41 @@ class Node:
 
         return OrderedDict(zip(cell_names, data_list))
 
+class Controller(Node):
+    """
+    """
+
+    def is_interrupt_controller(self):
+        node = self._node
+
+        if node in self.edt.InterruptControllers:
+        	return True
+        else:
+            return False
+
+    def is_gpio_controller(self):
+        node = self._node
+
+        if node in self.edt.GpioControllers:
+        	return True
+        else:
+            return False
+
+    def get
+
+class GpioController(Controller):
+    """
+    """
+
+    def gpio_controller_function(self):
+        return True
+
+class InterruptController(Controller):
+    """
+    """
+
+    def interrupt_controller_function(self):
+        return False
 
 class Register:
     """
@@ -1335,6 +1377,11 @@ class ControllerAndData:
         fields.append("data: {}".format(self.data))
 
         return "<ControllerAndData, {}>".format(", ".join(fields))
+
+    @property
+    def type(self):
+        "See the class docstring"
+        return self.data
 
 
 class PinCtrl:
@@ -1467,6 +1514,36 @@ class Property:
 
         return "<Property, {}>".format(", ".join(fields))
 
+class Controller:
+    """
+
+    """
+
+    def __init__(self, spec, val, node):
+        self.val = val
+        self.spec = spec
+        self.node = node
+
+    @property
+    def type(self):
+        "See the class docstring"
+        return self.spec.name
+
+    @property
+    def description(self):
+        "See the class docstring"
+        return self.spec.description.strip()
+
+    def __repr__(self):
+        fields = ["name: " + self.name,
+                  # repr() to deal with lists
+                  "type: " + self.type,
+                  "value: " + repr(self.val)]
+
+        if self.enum_index is not None:
+            fields.append("enum index: {}".format(self.enum_index))
+
+        return "<Property, {}>".format(", ".join(fields))
 
 class Binding:
     """

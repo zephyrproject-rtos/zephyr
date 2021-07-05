@@ -12,4 +12,7 @@ source "soc/arm/st_stm32/stm32f4/Kconfig.defconfig.stm32f4*"
 config SOC_SERIES
 	default "stm32f4"
 
+config NUM_IRQS
+	default $(dt_irq_highest_number,nvic)
+
 endif # SOC_SERIES_STM32F4X

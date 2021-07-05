@@ -95,7 +95,13 @@
 			compatible = "st,stm32-exti";
 			interrupt-controller;
 			#interrupt-cells = <1>;
-			reg = <0x40013c00 0x400>;
+			reg = <0x40013C00 0x400>;
+			interrupts = <6 0>, <7 0>, <8 0>, <9 0>, <10 0>, <23 0>,
+				     <40 0>, <41 0>, <42 0>, <1 0>, <2 0>, <3 0>;
+			interrupt-names = "EXTI0", "EXTI1", "EXTI2", "EXTI3",
+					  "EXTI4", "EXTI9_5", "EXTI15_10",
+					  "RTC_Alarm", "OTG_FS_WKUP", "PVD",
+					  "TAMP_STAMP", "RTC_WKUP";
 		};
 
 		pinctrl: pin-controller@40020000 {
