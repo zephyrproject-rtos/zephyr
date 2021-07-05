@@ -409,15 +409,15 @@ int loapic_resume(const struct device *port)
 */
 __pinned_func
 static int loapic_device_ctrl(const struct device *dev,
-			      enum pm_device_state state)
+			      enum pm_device_action action)
 {
 	int ret = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_SUSPENDED:
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
 		ret = loapic_suspend(dev);
 		break;
-	case PM_DEVICE_STATE_ACTIVE:
+	case PM_DEVICE_ACTION_RESUME:
 		ret = loapic_resume(dev);
 		break;
 	default:

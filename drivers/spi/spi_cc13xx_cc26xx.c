@@ -209,17 +209,17 @@ static int spi_cc13xx_cc26xx_release(const struct device *dev,
 
 #ifdef CONFIG_PM_DEVICE
 static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
-					enum pm_device_state state)
+					enum pm_device_action action)
 {
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		if (get_dev_config(dev)->base == DT_INST_REG_ADDR(0)) {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI0);
 		} else {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI1);
 		}
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		SSIDisable(get_dev_config(dev)->base);
 		/*
 		 * Release power dependency
