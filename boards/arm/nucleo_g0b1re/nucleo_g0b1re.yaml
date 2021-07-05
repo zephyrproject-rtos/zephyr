@@ -18,3 +18,5 @@ supported:
   - spi
   - nvs
   - dma
+  - can
+  - canfd

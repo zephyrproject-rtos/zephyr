@@ -5,6 +5,7 @@
 
 menuconfig SHARED_IRQ
 	bool "Shared interrupt driver"
+	default $(dt_compat_enabled,shared-irq)
 	help
 	  Include shared interrupt support in system. Shared interrupt
 	  support is NOT required in most systems. If in doubt answer no.

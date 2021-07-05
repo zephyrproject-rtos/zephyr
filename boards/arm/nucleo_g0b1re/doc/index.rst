@@ -96,6 +96,8 @@ The Zephyr nucleo_g0b1re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | CAN 2.0 and CAN FD compliant        |
++-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
 | COUNTER   | on-chip    | rtc                                 |
@@ -131,6 +133,7 @@ Default Zephyr Peripheral Mapping:
 - I2C2 SCL/SDA : PA11/PA12
 - SPI1 NSS/SCK/MISO/MOSI : PB0/PA5/PA6/PA7 (Arduino SPI)
 - SPI2 NSS/SCK/MISO/MOSI : PB12/PB13/PB14/PB15
+- CAN1 TX/RX : PA11/PA12
 - USER_PB   : PC13
 - LD4       : PA5
 - PWM       : PA6
