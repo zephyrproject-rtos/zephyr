@@ -174,6 +174,8 @@ The Zephyr stm32l562e_dk board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | DAC       | on-chip    | DAC Controller                      |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | ADC Controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -199,6 +201,7 @@ Default Zephyr Peripheral Mapping:
 - LD10 : PG12
 - PWM_2_CH1 : PA0
 - DAC1 : PA4
+- ADC1 : PC4
 
 System Clock
 ------------
