@@ -6,7 +6,7 @@
 """
 Script to generate gperf tables of kernel object metadata
 
-User mode threads making system calls reference kernel objects by memory
+ User mode threads making system calls reference kernel objects by memory
 address, as the kernel/driver APIs in Zephyr are the same for both user
 and supervisor contexts. It is necessary for the kernel to be able to
 validate accesses to kernel objects to make the following assertions:
