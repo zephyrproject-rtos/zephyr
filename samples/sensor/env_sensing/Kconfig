@@ -1,0 +1,163 @@
+# Copyright (c) 2021 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Select Display"
+	default SAMPLE_DISPLAY_NONE
+
+config SAMPLE_DISPLAY_NONE
+	bool "No Display"
+
+config SAMPLE_DISPLAY_GROVE
+	bool "Grove LCD Display"
+	select GROVE_LCD_RGB
+	select DISPLAY
+
+config SAMPLE_DISPLAY_LVGL
+	bool "LVGL Display"
+	select LVGL
+	select DISPLAY
+	select LVGL_USE_LABEL
+	select LVGL_USE_CONT
+	select LVGL_USE_BTN
+	select LVGL_FONT_MONTSERRAT_14
+	select LVGL_FONT_MONTSERRAT_16
+	select LVGL_FONT_MONTSERRAT_18
+	select LVGL_FONT_MONTSERRAT_22
+	select LVGL_USE_IMG
+	select LVGL_USE_LINEMETER
+	select LVGL_USE_PAGE
+
+endchoice
+
+
+if LVGL
+config HEAP_MEM_POOL_SIZE
+	default 16384
+
+config MAIN_STACK_SIZE
+	default 2048
+
+endif
+
+if GROVE_LCD_RGB
+config GROVE_LCD_RGB_I2C_MASTER_DEV_NAME
+	default "I2C_0"
+
+endif
+
+
+config HAS_TEMPERATURE
+	bool
+
+config HAS_HUMIDITY
+	bool
+
+config HAS_PRESSURE
+	bool
+
+config HAS_GAS
+	bool
+
+config SAMPLE_SENSOR_TRIGGER
+	bool "Enable Trigger"
+
+choice
+	prompt "Select Sensor"
+	default SAMPLE_SENSOR_BME680
+
+config SAMPLE_SENSOR_BME680
+	bool "BME680"
+	select BME680
+	select HAS_TEMPERATURE
+	select HAS_HUMIDITY
+	select HAS_PRESSURE
+	select HAS_GAS
+
+config SAMPLE_SENSOR_TH02
+	bool "TH02"
+	select TH02
+	select HAS_TEMPERATURE
+
+config SAMPLE_SENSOR_SI7006
+	bool "SI7006"
+	select SI7006
+	select HAS_TEMPERATURE
+	select HAS_HUMIDITY
+
+config SAMPLE_SENSOR_DHT
+	bool "DHT"
+	select DHT
+	select GPIO
+	select HAS_TEMPERATURE
+	select HAS_HUMIDITY
+
+config SAMPLE_SENSOR_LPS22HB
+	bool "LPS22HB"
+	select LPS22HB
+	select HAS_TEMPERATURE
+	select HAS_PRESSURE
+
+config SAMPLE_SENSOR_LPS22HH
+	bool "LPS22HH"
+	select LPS22HH
+	select HAS_TEMPERATURE
+	select HAS_PRESSURE
+
+config SAMPLE_SENSOR_MS5837
+	bool "MS5837"
+	select MS5837
+	select HAS_TEMPERATURE
+	select HAS_PRESSURE
+
+config SAMPLE_SENSOR_HDC1080
+	bool "HDC1080"
+	select TI_HDC
+	select HAS_TEMPERATURE
+	select HAS_HUMIDITY
+
+config SAMPLE_SENSOR_ENS210
+	bool "ENS210"
+	select ENS210
+	select HAS_TEMPERATURE
+	select HAS_HUMIDITY
+
+config SAMPLE_SENSOR_DPS310
+	bool "DPS310"
+	select DPS310
+	select HAS_TEMPERATURE
+
+config SAMPLE_SENSOR_MCP9808
+	bool "MCP9808"
+	select MCP9808
+	select HAS_TEMPERATURE
+	select HAS_HUMIDITY
+
+config SAMPLE_SENSOR_HTS221
+	bool "HTS221"
+	select HTS221
+	select HAS_TEMPERATURE
+	select HAS_HUMIDITY
+
+config SAMPLE_SENSOR_BME280
+	bool "BME 280"
+	select BME280
+	select HAS_TEMPERATURE
+	select HAS_HUMIDITY
+	select HAS_PRESSURE
+
+config SAMPLE_SENSOR_TMP007
+	bool "TMP007"
+	select TMP007
+	select HAS_TEMPERATURE
+
+config SAMPLE_SENSOR_SHT3XD
+	bool "SHT3XD"
+	select SHT3XD
+	select HAS_HUMIDITY
+	select SHT3XD_TRIGGER if SAMPLE_SENSOR_TRIGGER
+
+endchoice
+
+
+source "Kconfig.zephyr"

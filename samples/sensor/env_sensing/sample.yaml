@@ -1,0 +1,15 @@
+sample:
+  name: Environmnt Sensing Application
+tests:
+  sample.sensor.env_sensing:
+    harness: console
+    tags: sensors
+    depends_on: arduino_i2c
+    integration_platforms:
+      - frdm_k64f
+    harness_config:
+        type: multi_line
+        ordered: yes
+        regex:
+            - "Temperature: (.*)"
+            - "Relative Humidity: (.*)"

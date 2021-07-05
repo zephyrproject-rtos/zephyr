@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.13.1)
+
+if(DEFINED SENSOR)
+  set(DTC_OVERLAY_FILE sensor_overlay/${SENSOR}.overlay)
+else()
+  set(DTC_OVERLAY_FILE sensor_overlay/bme680.overlay)
+endif()
+
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(env_sensing)
+
+
+FILE(GLOB app_sources src/main.c)
+
+target_sources(app PRIVATE ${app_sources})
+target_sources_ifdef(CONFIG_SAMPLE_DISPLAY_GROVE app PRIVATE src/grove_lcd.c)
+target_sources_ifdef(CONFIG_SAMPLE_DISPLAY_LVGL app PRIVATE src/lvgl.c)
