@@ -26,9 +26,12 @@
 
 #if defined(CONFIG_BT_BAP)
 
+struct bt_audio_broadcaster {
+	struct bt_iso_chan *bis[BROADCAST_SRC_CNT];
+};
+
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
-/* static reference for the BIS channels for each BIG */
-static struct bt_iso_chan *big_bis[BROADCAST_CNT][BROADCAST_SRC_CNT];
+static struct bt_audio_broadcaster broadcasters[BROADCAST_CNT];
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
 			struct bt_audio_ep *ep, struct bt_audio_capability *cap,
@@ -628,10 +631,10 @@ static int bt_audio_chan_broadcast_release(struct bt_audio_chan *chan)
 	}
 
 	/* Reset the BIS'es */
-	for (int i = 0; i < ARRAY_SIZE(big_bis); i++) {
-		for (int j = 0; j < ARRAY_SIZE(big_bis[i]); j++) {
-			if (big_bis[i][j] == &chan->ep->iso) {
-				memset(big_bis[i], 0, sizeof(big_bis[i]));
+	for (int i = 0; i < ARRAY_SIZE(broadcasters); i++) {
+		for (int j = 0; j < ARRAY_SIZE(broadcasters[i].bis); j++) {
+			if (broadcasters[i].bis[j] == &chan->ep->iso) {
+				memset(&broadcasters[i], 0, sizeof(broadcasters[i]));
 				break;
 			}
 		}
@@ -1101,9 +1104,10 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 		return -EINVAL;
 	}
 
-	for (index = 0; index < ARRAY_SIZE(big_bis); index++) {
-		if (big_bis[index][0] == NULL) { /* Find free entry */
-			bis_channels = big_bis[index];
+
+	for (index = 0; index < ARRAY_SIZE(broadcasters); index++) {
+		if (broadcasters[index].bis[0] == NULL) { /* Find free entry */
+			bis_channels = broadcasters[index].bis;
 			break;
 		}
 	}
