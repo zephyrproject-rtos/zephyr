@@ -71,6 +71,14 @@ int riscv_plic_get_irq(void);
 #endif
 
 #if CONFIG_ITE_IT8XXX2_INTC
+/*
+ * Save current interrupt state of soc-level into ier_setting[] with
+ * disabling interrupt.
+ */
+void ite_intc_save_and_disable_interrupts(void);
+/* Restore interrupt state of soc-level from ier_setting[], use with care. */
+void ite_intc_restore_interrupts(void);
+
 extern void ite_intc_irq_enable(unsigned int irq);
 extern void ite_intc_irq_disable(unsigned int irq);
 extern uint8_t ite_intc_get_irq_num(void);
@@ -79,6 +87,10 @@ extern void ite_intc_irq_priority_set(unsigned int irq,
 			unsigned int prio, unsigned int flags);
 extern void ite_intc_isr_clear(unsigned int irq);
 #endif /* CONFIG_ITE_IT8XXX2_INTC */
+
+#ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
+void timer_5ms_one_shot(void);
+#endif
 
 #endif /* !_ASMLANGUAGE */
 

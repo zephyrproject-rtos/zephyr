@@ -12,6 +12,15 @@ config SOC_IT8XXX2
 
 endchoice
 
+config SOC_IT8XXX2_PLL_FLASH_48M
+	bool "Flash frequency is 48MHz"
+	default y
+	help
+	  Change frequency of PLL, CPU, and flash to 48MHz during initialization.
+
+	  Set n to use the default settings.
+	  (PLL and CPU run at 48MHz, flash frequency is 16MHz)
+
 choice
 	prompt "Clock source for PLL reference clock"
 
