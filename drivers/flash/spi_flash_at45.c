@@ -625,18 +625,18 @@ static int spi_flash_at45_init(const struct device *dev)
 
 #if IS_ENABLED(CONFIG_PM_DEVICE)
 static int spi_flash_at45_pm_control(const struct device *dev,
-				     enum pm_device_state state)
+				     enum pm_device_action action)
 {
 	const struct spi_flash_at45_config *dev_config = get_dev_config(dev);
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		acquire(dev);
 		power_down_op(dev, CMD_EXIT_DPD, dev_config->t_exit_dpd);
 		release(dev);
 		break;
 
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		acquire(dev);
 		power_down_op(dev,
 			dev_config->use_udpd ? CMD_ENTER_UDPD : CMD_ENTER_DPD,

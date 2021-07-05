@@ -410,16 +410,16 @@ static int bme280_chip_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-int bme280_pm_ctrl(const struct device *dev, enum pm_device_state state)
+int bme280_pm_ctrl(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		/* Re-initialize the chip */
 		ret = bme280_chip_init(dev);
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		/* Put the chip into sleep mode */
 		ret = bme280_reg_write(dev,
 			BME280_REG_CTRL_MEAS,

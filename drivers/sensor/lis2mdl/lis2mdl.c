@@ -443,14 +443,14 @@ static int lis2mdl_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int lis2mdl_pm_control(const struct device *dev,
-			      enum pm_device_state state)
+			      enum pm_device_action action)
 {
 	const struct lis2mdl_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	int status = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		if (config->single_mode) {
 			status = lis2mdl_operating_mode_set(ctx,
 						LIS2MDL_SINGLE_TRIGGER);
@@ -463,7 +463,7 @@ static int lis2mdl_pm_control(const struct device *dev,
 		}
 		LOG_DBG("State changed to active");
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		status = lis2mdl_operating_mode_set(ctx, LIS2MDL_POWER_DOWN);
 		if (status) {
 			LOG_ERR("Power down failed");

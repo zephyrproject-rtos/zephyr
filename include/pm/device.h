@@ -70,6 +70,16 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_COUNT
 };
 
+/** @brief Device PM actions. */
+enum pm_device_action {
+	/** Suspend. */
+	PM_DEVICE_ACTION_SUSPEND,
+	/** Resume. */
+	PM_DEVICE_ACTION_RESUME,
+	/** Turn off. */
+	PM_DEVICE_ACTION_TURN_OFF,
+};
+
 /**
  * @brief Device PM info
  */
@@ -97,14 +107,14 @@ struct pm_device {
  * @brief Device power management control function callback.
  *
  * @param dev Device instance.
- * @param state Requested state.
+ * @param action Requested action.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP If the requested state is not supported.
+ * @retval -ENOTSUP If the requested action is not supported.
  * @retval Errno Other negative errno on failure.
  */
 typedef int (*pm_device_control_callback_t)(const struct device *dev,
-					    enum pm_device_state state);
+					    enum pm_device_action action);
 
 /**
  * @brief Get name of device PM state

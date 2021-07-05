@@ -1423,13 +1423,13 @@ static int uart_stm32_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int uart_stm32_pm_control(const struct device *dev,
-				 enum pm_device_state state)
+				 enum pm_device_action action)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	/* setting a low power mode */
-	switch (state) {
-	case PM_DEVICE_STATE_SUSPENDED:
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
 #ifdef USART_ISR_BUSY
 		/* Make sure that no USART transfer is on-going */
 		while (LL_USART_IsActiveFlag_BUSY(UartInstance) == 1) {

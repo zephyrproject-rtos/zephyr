@@ -495,16 +495,16 @@ static int st7735r_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int st7735r_pm_control(const struct device *dev,
-			      enum pm_device_state state)
+			      enum pm_device_action action)
 {
 	int ret = 0;
 	struct st7735r_data *data = (struct st7735r_data *)dev->data;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		ret = st7735r_exit_sleep(data);
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		ret = st7735r_transmit(data, ST7735R_CMD_SLEEP_IN, NULL, 0);
 		break;
 	default:
