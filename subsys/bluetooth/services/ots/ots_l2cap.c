@@ -26,9 +26,9 @@ LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
  */
 #define BT_GATT_OTS_L2CAP_PSM	0x0025
 
-/* Maximum size of outgoing data. */
-#define OT_TX_MTU 256
-NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, 1, BT_L2CAP_SDU_BUF_SIZE(OT_TX_MTU),
+
+NET_BUF_POOL_FIXED_DEFINE(ot_chan_tx_pool, 1,
+			  BT_L2CAP_SDU_BUF_SIZE(CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU),
 			  NULL);
 
 /* List of Object Transfer Channels. */
@@ -41,7 +41,7 @@ static int ots_l2cap_send(struct bt_gatt_ots_l2cap *l2cap_ctx)
 	uint32_t len;
 
 	/* Calculate maximum length of data chunk. */
-	len = MIN(l2cap_ctx->ot_chan.tx.mtu, OT_TX_MTU);
+	len = MIN(l2cap_ctx->ot_chan.tx.mtu, CONFIG_BT_OTS_L2CAP_CHAN_TX_MTU);
 	len = MIN(len, l2cap_ctx->tx.len - l2cap_ctx->tx.len_sent);
 
 	/* Prepare buffer for sending. */
@@ -105,11 +105,18 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("Channel %p disconnected", chan);
 }
 
+static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+{
+	LOG_WARN("Channel %p received %p len %zu", chan, buf, buf->len);
+	return -ENOTSUP;
+}
+
 static const struct bt_l2cap_chan_ops l2cap_ops = {
 	.sent		= l2cap_sent,
 	.status		= l2cap_status,
 	.connected	= l2cap_connected,
 	.disconnected	= l2cap_disconnected,
+	.recv           = l2cap_recv,
 };
 
 static inline void l2cap_chan_init(struct bt_l2cap_le_chan *chan)

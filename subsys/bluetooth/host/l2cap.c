@@ -994,6 +994,11 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 		return le_err_to_result(err);
 	}
 
+	if (!(*chan)->ops->recv) {
+		BT_ERR("Mandatory callback 'recv' missing");
+		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
+	}
+
 	(*chan)->required_sec_level = server->sec_level;
 
 	if (!l2cap_chan_add(conn, *chan, l2cap_chan_destroy)) {
