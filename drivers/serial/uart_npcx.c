@@ -439,11 +439,11 @@ static inline bool uart_npcx_device_is_transmitting(const struct device *dev)
 }
 
 static inline int uart_npcx_pm_control(const struct device *dev,
-				       enum pm_device_state state)
+				       enum pm_device_action action)
 {
 	/* If next device power state is SUSPEND power state */
-	switch (state) {
-	case PM_DEVICE_STATE_SUSPENDED:
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
 		/*
 		 * If uart device is busy with transmitting, the driver will
 		 * stay in while loop and wait for the transaction is completed.

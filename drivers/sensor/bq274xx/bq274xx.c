@@ -732,16 +732,16 @@ static int bq274xx_exit_shutdown_mode(const struct device *dev)
 }
 
 static int bq274xx_pm_control(const struct device *dev,
-			      enum pm_device_state state)
+			      enum pm_device_action action)
 {
 	int ret;
 	struct bq274xx_data *data = dev->data;
 
-	switch (state) {
-	case PM_DEVICE_STATE_OFF:
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_OFF:
 		ret = bq274xx_enter_shutdown_mode(data);
 		break;
-	case PM_DEVICE_STATE_ACTIVE:
+	case PM_DEVICE_ACTION_RESUME:
 		ret = bq274xx_exit_shutdown_mode(dev);
 		break;
 	default:

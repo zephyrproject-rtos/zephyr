@@ -398,12 +398,12 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 
 #ifdef CONFIG_PM_DEVICE
 static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
-					 enum pm_device_state state)
+					 enum pm_device_action action)
 {
 	int ret = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		if (get_dev_conf(dev)->regs == DT_INST_REG_ADDR(0)) {
 			Power_setDependency(PowerCC26XX_PERIPH_UART0);
 		} else {
@@ -413,7 +413,7 @@ static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
 		ret = uart_cc13xx_cc26xx_configure(dev,
 			&get_dev_data(dev)->uart_config);
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		UARTDisable(get_dev_conf(dev)->regs);
 		/*
 		 * Release power dependency - i.e. potentially power

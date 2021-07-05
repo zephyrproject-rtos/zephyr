@@ -397,16 +397,16 @@ static int st7789v_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int st7789v_pm_control(const struct device *dev,
-			      enum pm_device_state state)
+			      enum pm_device_action action)
 {
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 	int ret = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		st7789v_exit_sleep(data);
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		ret = st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
 		break;
 	default:
