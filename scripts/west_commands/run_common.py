@@ -142,6 +142,10 @@ def add_parser_common(command, parser_adder=None, parser=None):
     group.add_argument(
         '--openocd-search', metavar='DIR',
         help='path to add to openocd search path, if applicable')
+    group.add_argument('--qemu', help='path to qemu')
+    group.add_argument(
+        '--qemu-flags',
+        help='Qemu flags needed to boot image')
 
     return parser
 
@@ -366,7 +370,9 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
                         output_file('bin'),
                         config('gdb'),
                         config('openocd'),
-                        config('openocd_search'))
+                        config('openocd_search'),
+                        config('qemu'),
+                        config('qemu_flags'))
 
 def dump_traceback():
     # Save the current exception to a file and return its path.

@@ -261,6 +261,8 @@ class RunnerConfig(NamedTuple):
     gdb: Optional[str] = None   # path to a usable gdb
     openocd: Optional[str] = None  # path to a usable openocd
     openocd_search: Optional[str] = None  # add this to openocd search path
+    qemu: Optional[str] = None  # path to a usable qemu
+    qemu_flags: Optional[str] = None  # qemu flags
 
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']

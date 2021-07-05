@@ -335,6 +335,10 @@ elseif(DEFINED QEMU_KERNEL_OPTION)
   string(CONFIGURE "${QEMU_KERNEL_OPTION}" QEMU_KERNEL_OPTION)
 endif()
 
+board_runner_args(qemu "--kernel=${KERNEL_ELF_NAME}")
+
+board_finalize_runner_args(qemu)
+
 foreach(target ${qemu_targets})
   add_custom_target(${target}
     ${PRE_QEMU_COMMANDS}

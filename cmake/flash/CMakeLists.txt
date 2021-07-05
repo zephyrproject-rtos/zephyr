@@ -57,6 +57,12 @@ function(runners_yaml_append_config)
   if(OPENOCD_DEFAULT_PATH)
     runners_yaml_append("  openocd_search: ${OPENOCD_DEFAULT_PATH}")
   endif()
+  if(QEMU)
+    runners_yaml_append("  qemu: ${QEMU}")
+  endif()
+  if(QEMU_FLAGS)
+    runners_yaml_append("  qemu_flags: ${QEMU_FLAGS_${ARCH}};${QEMU_FLAGS};${QEMU_EXTRA_FLAGS};${MORE_FLAGS_FOR_${target}};${QEMU_SMP_FLAGS}")
+  endif()
   runners_yaml_append("")
 endfunction()
 
@@ -141,7 +147,7 @@ foreach(target flash debug debugserver attach)
   elseif(target STREQUAL debugserver)
     set(comment "Debugging ${BOARD}")
     if(EMU_PLATFORM)
-      # cmake/qemu/CMakeLists.txt will add a debugserver target for
+      # cmake/emu/*.cmake will add a debugserver target for
       # emulation platforms, so we don't add one here
       continue()
     endif()
