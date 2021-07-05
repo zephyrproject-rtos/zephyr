@@ -124,6 +124,16 @@
 
 &cpu0 {
 	clock-frequency = <120000000>;
+	cpu-power-states = <&idle &stop>;
+};
+
+&idle {
+	min-residency-us = <1>;
+};
+
+&stop {
+	min-residency-us = <20000>;
+	exit-latency-us = <13>;
 };
 
 &sim {
