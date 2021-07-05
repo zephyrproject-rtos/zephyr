@@ -264,26 +264,25 @@ static int post_notify_fxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_PM_DEVICE
-static int entropy_cc13xx_cc26xx_set_power_state(const struct device *dev,
-						 enum pm_device_state state)
-{
-	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
-
-	if (state == PM_DEVICE_STATE_ACTIVE) {
-		Power_setDependency(PowerCC26XX_PERIPH_TRNG);
-		start_trng(data);
-	} else {
-		stop_trng(data);
-		Power_releaseDependency(PowerCC26XX_PERIPH_TRNG);
-	}
-
-	return 0;
-}
-
 static int entropy_cc13xx_cc26xx_pm_control(const struct device *dev,
 					    enum pm_device_state state)
 {
-	return entropy_cc13xx_cc26xx_set_power_state(dev, state);
+	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
+
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
+		Power_setDependency(PowerCC26XX_PERIPH_TRNG);
+		start_trng(data);
+		break;
+	case PM_DEVICE_STATE_SUSPENDED:
+		stop_trng(data);
+		Power_releaseDependency(PowerCC26XX_PERIPH_TRNG);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */
 

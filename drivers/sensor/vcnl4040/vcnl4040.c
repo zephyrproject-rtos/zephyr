@@ -234,7 +234,8 @@ static int vcnl4040_device_ctrl(const struct device *dev,
 	if (ret < 0)
 		return ret;
 #endif
-	if (state == PM_DEVICE_STATE_ACTIVE) {
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
 		/* Clear proximity shutdown */
 		ps_conf &= ~VCNL4040_PS_SD_MASK;
 
@@ -251,7 +252,8 @@ static int vcnl4040_device_ctrl(const struct device *dev,
 		if (ret < 0)
 			return ret;
 #endif
-	} else {
+		break;
+	case PM_DEVICE_STATE_SUSPENDED:
 		/* Set proximity shutdown bit 0 */
 		ps_conf |= VCNL4040_PS_SD_MASK;
 
@@ -268,6 +270,9 @@ static int vcnl4040_device_ctrl(const struct device *dev,
 		if (ret < 0)
 			return ret;
 #endif
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	return ret;

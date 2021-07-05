@@ -408,15 +408,20 @@ int loapic_resume(const struct device *port)
 * the *context may include IN data or/and OUT data
 */
 __pinned_func
-static int loapic_device_ctrl(const struct device *port,
+static int loapic_device_ctrl(const struct device *dev,
 			      enum pm_device_state state)
 {
 	int ret = 0;
 
-	if (state == PM_DEVICE_STATE_SUSPENDED) {
-		ret = loapic_suspend(port);
-	} else if (state == PM_DEVICE_STATE_ACTIVE) {
-		ret = loapic_resume(port);
+	switch (state) {
+	case PM_DEVICE_STATE_SUSPENDED:
+		ret = loapic_suspend(dev);
+		break;
+	case PM_DEVICE_STATE_ACTIVE:
+		ret = loapic_resume(dev);
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	return ret;
