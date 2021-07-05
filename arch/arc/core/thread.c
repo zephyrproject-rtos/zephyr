@@ -197,8 +197,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 void *z_arch_get_next_switch_handle(struct k_thread **old_thread)
 {
 	*old_thread =  _current;
-
+#ifdef CONFIG_MULTITHREADING
 	return z_get_next_switch_handle(*old_thread);
+#else
+	return NULL;
+#endif
 }
 
 #ifdef CONFIG_USERSPACE

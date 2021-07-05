@@ -262,6 +262,7 @@ config ARC_HAS_SECURE
 	bool "ARC has SecureShield"
 	depends on ISA_ARCV2
 	select CPU_HAS_TEE
+	select ARCH_HAS_SINGLE_THREAD_SUPPORT
 	select ARCH_HAS_TRUSTED_EXECUTION
 	help
 	  This option is enabled when ARC core supports secure mode
