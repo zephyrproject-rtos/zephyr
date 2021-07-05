@@ -259,47 +259,36 @@ static bool write(uint8_t *buf, uint16_t size)
  *
  * @return  0 on success, negative errno code on fail.
  */
-static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
+static int mass_storage_class_handle_req(struct usb_setup_packet *setup,
 					 int32_t *len, uint8_t **data)
 {
-	if (pSetup->wIndex != mass_cfg.if0.bInterfaceNumber ||
-	    pSetup->wValue != 0) {
-		LOG_WRN("Invalid setup parameters");
+	if (setup->wIndex != mass_cfg.if0.bInterfaceNumber ||
+	    setup->wValue != 0) {
+		LOG_ERR("Invalid setup parameters");
 		return -EINVAL;
 	}
 
-	switch (pSetup->bRequest) {
-	case MSC_REQUEST_RESET:
-		LOG_DBG("MSC_REQUEST_RESET");
-
-		if (pSetup->wLength) {
-			LOG_WRN("Invalid length");
-			return -EINVAL;
+	if (usb_reqtype_is_to_device(setup)) {
+		if (setup->bRequest == MSC_REQUEST_RESET &&
+		    setup->wLength == 0) {
+			LOG_DBG("MSC_REQUEST_RESET");
+			msd_state_machine_reset();
+			return 0;
 		}
-
-		msd_state_machine_reset();
-		break;
-
-	case MSC_REQUEST_GET_MAX_LUN:
-		LOG_DBG("MSC_REQUEST_GET_MAX_LUN");
-
-		if (pSetup->wLength != 1) {
-			LOG_WRN("Invalid length");
-			return -EINVAL;
+	} else {
+		if (setup->bRequest == MSC_REQUEST_GET_MAX_LUN &&
+		    setup->wLength == 1) {
+			LOG_DBG("MSC_REQUEST_GET_MAX_LUN");
+			max_lun_count = 0U;
+			*data = (uint8_t *)(&max_lun_count);
+			*len = 1;
+			return 0;
 		}
-
-		max_lun_count = 0U;
-		*data = (uint8_t *)(&max_lun_count);
-		*len = 1;
-		break;
-
-	default:
-		LOG_WRN("Unknown request 0x%02x, value 0x%02x",
-			pSetup->bRequest, pSetup->wValue);
-		return -EINVAL;
 	}
 
-	return 0;
+	LOG_WRN("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
+		setup->bmRequestType, setup->bRequest);
+	return -ENOTSUP;
 }
 
 static void testUnitReady(void)
