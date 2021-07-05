@@ -65,3 +65,8 @@
 	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 };
+
+&adc1 {
+	pinctrl-0 = <&adc1_in1_pc0>;
+	status = "okay";
+};
