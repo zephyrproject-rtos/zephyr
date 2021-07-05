@@ -27,7 +27,7 @@ static volatile uint8_t *const reg_status[] = {
 	&ISR20, &ISR21, &ISR22, &ISR23
 };
 
-static volatile uint8_t *const reg_enable[] = {
+volatile uint8_t *const reg_enable[] = {
 	&IER0, &IER1, &IER2, &IER3,
 	&IER4, &IER5, &IER6, &IER7,
 	&IER8, &IER9, &IER10, &IER11,
