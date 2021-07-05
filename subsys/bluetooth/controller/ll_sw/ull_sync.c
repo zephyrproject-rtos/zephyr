@@ -409,9 +409,9 @@ void ull_sync_setup(struct ll_scan_set *scan, struct ll_scan_aux_set *aux,
 		  interval_us) + (1000000 - 1)) / 1000000U;
 	lll->window_widening_max_us = (interval_us >> 1) - EVENT_IFS_US;
 	if (si->offs_units) {
-		lll->window_size_event_us = 300U;
+		lll->window_size_event_us = OFFS_UNIT_300_US;
 	} else {
-		lll->window_size_event_us = 30U;
+		lll->window_size_event_us = OFFS_UNIT_30_US;
 	}
 
 	sync_handle = ull_sync_handle_get(sync);
