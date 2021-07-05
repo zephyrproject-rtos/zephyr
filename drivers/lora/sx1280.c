@@ -212,7 +212,7 @@ static struct sx127x_data {
 	const struct device *spi;
 	struct spi_config spi_cfg;
 	const struct device *dio_dev[1];
-	// struct k_work dio_work[SX127X_MAX_DIO];
+	struct k_work dio_work[1];
 } dev_data;
 
 static int8_t clamp_int8(int8_t x, int8_t min, int8_t max)
@@ -660,6 +660,11 @@ void sx1280_ReadCommand( RadioCommands_t command, void *buffer, size_t size )
 
 	// ret = spi_write(dev_data.spi, &dev_data.spi_cfg, &tx);
 	ret = spi_transceive(dev_data.spi, &dev_data.spi_cfg, &tx, &rx);
+	// k_sleep(K_MSEC(1000));
+	// for (size_t i = 0; i < 100000; i++)
+	// {
+	// }
+
 	// printk("ret: %d\n", ret); // This printk fixes spi_transceive sending too few bytes
 	if (ret < 0) {
 		LOG_ERR("Unable to write command: 0x%x", ( uint8_t ) command);
@@ -821,15 +826,29 @@ void sx1280_SetPayload( uint8_t *buffer, uint8_t size, uint8_t offset )
 
 uint16_t sx1280_readIrqStatus()
 {
-  uint16_t temp;
-  uint8_t buffer[2];
+	uint16_t temp;
+	uint8_t buffer[2];
 
-  sx1280_ReadCommand(RADIO_GET_IRQSTATUS, &buffer, 2);
-//   printk("buffers: %x %x\n", buffer[0], buffer[1]);
-//   LOG_INF("%x %x\n", &buffer[0], &buffer[1]);
-  temp = ((buffer[0] << 8) + buffer[1]);
-//   printk("buffers shifted: %x\n", temp);
-  return temp;
+	sx1280_ReadCommand(RADIO_GET_IRQSTATUS, &buffer, 2);
+	// printk("buffers: %x %x\n", buffer[0], buffer[1]);
+	// LOG_INF("%x %x\n", &buffer[0], &buffer[1]);
+	temp = ((buffer[0] << 8) + buffer[1]);
+	// printk("buffers shifted: %x\n", temp);
+	return temp;
+}
+
+static void sx127x_dio_work_handle(struct k_work *work)
+{
+	if (sx1280_readIrqStatus() & IRQ_RX_TX_TIMEOUT )                        //check for timeout
+	{
+		LOG_INF("timeout\n");
+		return;
+	}
+	else
+	{
+		LOG_INF("no timeout\n");
+		return;
+	}
 }
 
 void dio0_cb_func(const struct device *dev, struct gpio_callback *cb,
@@ -890,16 +909,7 @@ void dio0_cb_func(const struct device *dev, struct gpio_callback *cb,
 	// 	return _RXPacketL;
 	// }
 	// printk("DIO interrupted at %" PRIu32 "\n", k_cycle_get_32());
-	if (sx1280_readIrqStatus() & IRQ_RX_TX_TIMEOUT )                        //check for timeout
-	{
-		LOG_INF("timeout\n");
-		return;
-	}
-	else
-	{
-		LOG_INF("no timeout\n");
-		return;
-	}
+	k_work_submit(&dev_data.dio_work[0]);
 }
 
 void sx1280_IoIrqInit()
@@ -923,21 +933,23 @@ void sx1280_IoIrqInit()
 		return;
 	}
 
+	k_work_init(&dev_data.dio_work[0], sx127x_dio_work_handle);
+
 	gpio_pin_configure(dev_data.dio_dev[0], sx1280_dios[0].pin,
 				GPIO_INPUT | GPIO_INT_DEBOUNCE
 				| sx1280_dios[0].flags);
 
-	// gpio_init_callback(&dio0_callback,
-	// 			dio0_cb_func,
-	// 			BIT(sx1280_dios[0].pin));
+	gpio_init_callback(&dio0_callback,
+				dio0_cb_func,
+				BIT(sx1280_dios[0].pin));
 
-	// if (gpio_add_callback(dev_data.dio_dev[0], &dio0_callback) < 0) {
-	// 	LOG_ERR("Could not set gpio callback.");
-	// 	return;
-	// }
-	// gpio_pin_interrupt_configure(dev_data.dio_dev[0],
-	// 				sx1280_dios[0].pin,
-	// 				GPIO_INT_EDGE_TO_ACTIVE);
+	if (gpio_add_callback(dev_data.dio_dev[0], &dio0_callback) < 0) {
+		LOG_ERR("Could not set gpio callback.");
+		return;
+	}
+	gpio_pin_interrupt_configure(dev_data.dio_dev[0],
+					sx1280_dios[0].pin,
+					GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 
@@ -947,22 +959,6 @@ void SendPayload( uint8_t *payload, uint8_t size, TickTime_t timeout, uint8_t of
 	sx1280_WriteRegister(REG_LR_PAYLOADLENGTH, size);                           //only seems to work for lora
 	sx1280_SetDioIrqParams(IRQ_RADIO_ALL, (IRQ_TX_DONE + IRQ_RX_TX_TIMEOUT), 0, 0);
 	sx1280_SetTx( timeout );
-
-	while (!gpio_pin_get(dev_data.dio_dev[0], sx1280_dios[0].pin)) { // TODO: use interrupt instead
-		LOG_INF("wainting for DIO1\n");
-		k_sleep(K_MSEC(50));
-	}
-
-	if (sx1280_readIrqStatus() & IRQ_RX_TX_TIMEOUT )                        //check for timeout
-	{
-		LOG_INF("timeout\n");
-		return;
-	}
-	else
-	{
-		LOG_INF("no timeout\n");
-		return;
-	}
 }
 
 int sx1280_lora_send(const struct device *dev, uint8_t *data,
