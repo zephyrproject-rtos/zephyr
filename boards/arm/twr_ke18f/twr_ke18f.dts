@@ -122,6 +122,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
 &sim {
 	clkout-source = <1>;
 	clkout-divider = <0>;
