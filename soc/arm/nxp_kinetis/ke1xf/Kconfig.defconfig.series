@@ -1,12 +1,15 @@
 # Kinetis KE1xF series configuration options
 
-# Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2019-2021 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_KINETIS_KE1XF
 
 config SOC_SERIES
 	default "ke1xf"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
