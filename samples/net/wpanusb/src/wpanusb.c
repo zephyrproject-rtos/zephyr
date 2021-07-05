@@ -132,6 +132,10 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 {
 	struct net_pkt *pkt;
 
+	if (usb_reqtype_is_to_host(setup)) {
+		return -ENOTSUP;
+	}
+
 	/* Maximum 2 bytes are added to the len */
 	pkt = net_pkt_alloc_with_buffer(NULL, *len + 2, AF_UNSPEC, 0,
 					K_NO_WAIT);
