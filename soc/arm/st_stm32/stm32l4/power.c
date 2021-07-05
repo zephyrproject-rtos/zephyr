@@ -26,15 +26,34 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 #define RCC_STOP_WAKEUPCLOCK_SELECTED LL_RCC_STOP_WAKEUPCLOCK_HSI
 #endif
 
-/* Invoke Low Power/System Off specific Tasks */
-void pm_power_state_set(struct pm_state_info info)
+static void pm_state_set_soft_off(uint8_t substate_id)
 {
-	if (info.state != PM_STATE_SUSPEND_TO_IDLE) {
-		LOG_DBG("Unsupported power state %u", info.state);
-		return;
-	}
+	switch (substate_id) {
+	case 1: /* this corresponds to the Shutdown mode: */
+		/* Disable Pin 1 which is used as wakeup source */
+		LL_PWR_DisableWakeUpPin(LL_PWR_WAKEUP_PIN1);
+		/* Clear all wake up Flag */
+		LL_PWR_ClearFlag_WU();
+		/* Enable wakeup pin */
+		LL_PWR_EnableWakeUpPin(LL_PWR_WAKEUP_PIN1);
 
-	switch (info.substate_id) {
+		/* Set SHUTDOWN mode when CPU enters deepsleep */
+		LL_PWR_SetPowerMode(LL_PWR_MODE_SHUTDOWN);
+		/* Set SLEEPDEEP bit of Cortex System Control Register */
+		LL_LPM_EnableDeepSleep();
+
+		/* enter SLEEP mode : WFE or WFI */
+		k_cpu_idle();
+
+	default:
+		LOG_ERR("Unsupported power state  substate-id [%u]", substate_id);
+		break;
+	}
+}
+
+static void pm_state_set_suspend_to_idle(uint8_t substate_id)
+{
+	switch (substate_id) {
 	case 1: /* this corresponds to the STOP0 mode: */
 		/* ensure the proper wake-up system clock */
 		LL_RCC_SetClkAfterWakeFromStop(RCC_STOP_WAKEUPCLOCK_SELECTED);
@@ -66,8 +85,23 @@ void pm_power_state_set(struct pm_state_info info)
 		k_cpu_idle();
 		break;
 	default:
-		LOG_DBG("Unsupported power state substate-id %u",
-			info.substate_id);
+		LOG_ERR("Unsupported power state substate-id [%u]", substate_id);
+		break;
+	}
+}
+
+/* Invoke Low Power/System Off specific Tasks */
+void pm_power_state_set(struct pm_state_info info)
+{
+	switch (info.state) {
+	case PM_STATE_SOFT_OFF:
+		pm_state_set_soft_off(info.substate_id);
+		break;
+	case PM_STATE_SUSPEND_TO_IDLE:
+		pm_state_set_suspend_to_idle(info.substate_id);
+		break;
+	default:
+		LOG_ERR("Unsupported power state state-id [%u]", info.state);
 		break;
 	}
 }
@@ -79,11 +113,11 @@ void pm_power_state_exit_post_ops(struct pm_state_info info)
 		LOG_DBG("Unsupported power substate-id %u", info.state);
 	} else {
 		switch (info.substate_id) {
-		case 1:	/* STOP0 */
+		case 1: /* STOP0 */
 			__fallthrough;
-		case 2:	/* STOP1 */
+		case 2: /* STOP1 */
 			__fallthrough;
-		case 3:	/* STOP2 */
+		case 3: /* STOP2 */
 			LL_LPM_DisableSleepOnExit();
 			LL_LPM_EnableSleep();
 			break;
