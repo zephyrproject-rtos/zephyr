@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(usb_dc_sam_usbc, CONFIG_USB_DRIVER_LOG_LEVEL);
 #include <usb/usb_device.h>
 #include <soc.h>
 #include <string.h>
+#include <sys/byteorder.h>
 
 #include "usb_dc_sam_usbc_priv.h"
 
@@ -21,8 +22,18 @@ static struct usb_device_data dev_data;
 static volatile Usbc *regs = (Usbc *) DT_INST_REG_ADDR(0);
 static uint32_t num_pins = ATMEL_SAM_DT_INST_NUM_PINS(0);
 static struct soc_gpio_pin pins[] = ATMEL_SAM_DT_INST_PINS(0);
+static enum usb_dc_epctrl_state epctrl_fsm;
+static const char* usb_dc_epctrl_state_string[] =
+{
+	"STP",
+	"DOUT",
+	"DIN",
+	"IN_ZLP",
+	"OUT_ZLP",
+	"STALL",
+};
 
-#if defined(CONFIG_USB_DRIVER_LOG_LEVEL_DBG)
+#if (CONFIG_USB_DRIVER_LOG_LEVEL >= LOG_LEVEL_INF)
 static uint32_t dev_ep_sta_dbg[2][NUM_OF_EP_MAX];
 
 static void usb_dc_sam_usbc_clean_sta_dbg(void)
@@ -108,7 +119,6 @@ static int usb_dc_sam_usbc_ep_alloc_buf(int ep_idx)
 		ep_enabled[i] = usb_dc_ep_is_enabled(i);
 
 		if (ep_enabled[i]) {
-			LOG_DBG("Temporary disable ep idx 0x%02x", i);
 			usb_dc_ep_disable(i);
 		}
 	}
@@ -193,12 +203,12 @@ static void usb_dc_ep_isr_sta(uint8_t ep_idx)
 {
 	uint32_t sr = regs->UESTA[ep_idx];
 
-#if defined(CONFIG_USB_DRIVER_LOG_LEVEL_DBG)
+#if (CONFIG_USB_DRIVER_LOG_LEVEL >= LOG_LEVEL_INF)
 	if (regs->UESTA[ep_idx] != dev_ep_sta_dbg[0][ep_idx]) {
 		dev_ep_sta_dbg[0][ep_idx] = regs->UESTA[ep_idx];
 		dev_ep_sta_dbg[1][ep_idx] = 0;
 
-		LOG_DBG("ISR[%d] CON=%08x INT=%08x INTE=%08x "
+		LOG_INF("ISR[%d] CON=%08x INT=%08x INTE=%08x "
 			"ECON=%08x ESTA=%08x%s", ep_idx,
 			regs->UDCON, regs->UDINT, regs->UDINTE,
 			regs->UECON[ep_idx], regs->UESTA[ep_idx],
@@ -206,7 +216,7 @@ static void usb_dc_ep_isr_sta(uint8_t ep_idx)
 	} else if (dev_ep_sta_dbg[0][ep_idx] != dev_ep_sta_dbg[1][ep_idx]) {
 		dev_ep_sta_dbg[1][ep_idx] = dev_ep_sta_dbg[0][ep_idx];
 
-		LOG_DBG("ISR[%d] CON=%08x INT=%08x INTE=%08x "
+		LOG_INF("ISR[%d] CON=%08x INT=%08x INTE=%08x "
 			"ECON=%08x ESTA=%08x LOOP", ep_idx,
 			regs->UDCON, regs->UDINT, regs->UDINTE,
 			regs->UECON[ep_idx], regs->UESTA[ep_idx]);
@@ -217,6 +227,75 @@ static void usb_dc_ep_isr_sta(uint8_t ep_idx)
 
 		LOG_ERR("ISR: EP%d RAM Access Error", ep_idx);
 	}
+}
+
+static void usb_dc_ctrl_init(void)
+{
+	LOG_INF("STP - INIT");
+
+	/* In case of abort of IN Data Phase:
+	 * No need to abort IN transfer (rise TXINI),
+	 * because it is automatically done by hardware when a Setup packet is
+	 * received. But the interrupt must be disabled to don't generate
+	 * interrupt TXINI after SETUP reception.
+	 */
+	regs->UECONCLR[0] = USBC_UECON0CLR_TXINEC;
+
+	/* In case of OUT ZLP event is no processed before Setup event occurs */
+	regs->UESTACLR[0] = USBC_UESTA0CLR_RXOUTIC;
+	regs->UECONCLR[0] = USBC_UECON0CLR_RXOUTEC
+			  | USBC_UECON0CLR_NAKOUTEC
+			  | USBC_UECON0CLR_NAKINEC;
+
+	epctrl_fsm = USB_EPCTRL_SETUP;
+}
+
+static void usb_dc_ctrl_stall_data(uint32_t flags)
+{
+	LOG_INF("STP - STALL");
+
+	epctrl_fsm = USB_EPCTRL_STALL_REQ;
+
+	regs->UECONSET[0] = USBC_UECON0SET_STALLRQS;
+	regs->UESTACLR[0] = flags;
+}
+
+static void usb_dc_ctrl_send_zlp_in(void)
+{
+	uint32_t key;
+
+	LOG_INF("STP - ZLP IN");
+
+	epctrl_fsm = USB_EPCTRL_HANDSHAKE_WAIT_IN_ZLP;
+
+	/* Validate and send empty IN packet on control endpoint */
+	dev_desc[0].sizes = 0;
+
+	key = irq_lock();
+
+	/* Send ZLP on IN endpoint */
+	regs->UESTACLR[0] = USBC_UESTA0CLR_TXINIC;
+	regs->UECONSET[0] = USBC_UECON0SET_TXINES;
+
+	/* To detect a protocol error, enable nak interrupt on data OUT phase */
+	regs->UESTACLR[0] = USBC_UESTA0CLR_NAKOUTIC;
+	regs->UECONSET[0] = USBC_UECON0SET_NAKOUTES;
+	irq_unlock(key);
+}
+
+static void usb_dc_ctrl_send_zlp_out(void)
+{
+	uint32_t key;
+
+	LOG_INF("STP - ZLP OUT");
+
+	epctrl_fsm = USB_EPCTRL_HANDSHAKE_WAIT_OUT_ZLP;
+
+	/* To detect a protocol error, enable nak interrupt on data IN phase */
+	key = irq_lock();
+	regs->UESTACLR[0] = USBC_UESTA0CLR_NAKINIC;
+	regs->UECONSET[0] = USBC_UECON0SET_NAKINES;
+	irq_unlock(key);
 }
 
 static void usb_dc_ep0_isr(void)
@@ -231,15 +310,10 @@ static void usb_dc_ep0_isr(void)
 
 	if (sr & USBC_UESTA0_RXSTPI) {
 
-		regs->UESTACLR[0] = USBC_UESTA0CLR_NAKINIC;
-		regs->UESTACLR[0] = USBC_UESTA0CLR_NAKOUTIC;
-
-		if (sr & USBC_UESTA0_CTRLDIR) {
-			/** IN Package */
-			/** Nothing to do */
-		} else {
-			/** OUT Package */
-			regs->UECONSET[0] = USBC_UECON0SET_RXOUTES;
+		/* May be a hidden DATA or ZLP phase or protocol abort */
+		if (epctrl_fsm != USB_EPCTRL_SETUP) {
+			/* Reinitializes control endpoint management */
+			usb_dc_ctrl_init();
 		}
 
 		/* SETUP data received */
@@ -249,57 +323,108 @@ static void usb_dc_ep0_isr(void)
 	}
 
 	if (sr & USBC_UESTA0_RXOUTI) {
+		LOG_DBG("RXOUT= fsm: %s",
+			usb_dc_epctrl_state_string[epctrl_fsm]);
+
+		if (epctrl_fsm != USB_EPCTRL_DATA_OUT) {
+			if ((epctrl_fsm == USB_EPCTRL_DATA_IN)
+			||  (epctrl_fsm == USB_EPCTRL_HANDSHAKE_WAIT_OUT_ZLP)) {
+				/* End of SETUP request:
+				 * - Data IN Phase aborted,
+				 * - or last Data IN Phase hidden by ZLP OUT
+				 *   sending quickly,
+				 * - or ZLP OUT received normally.
+				 *
+				 * Nothing to do
+				 */
+			} else {
+				/* Protocol error during SETUP request */
+				usb_dc_ctrl_stall_data(0);
+			}
+
+			usb_dc_ctrl_init();
+			return;
+		}
 
 		/* OUT (to device) data received */
 		dev_data.ep_data[0].cb_out(USB_EP_DIR_OUT, USB_DC_EP_DATA_OUT);
+
+		return;
 	}
 
 	if ((sr & USBC_UESTA0_TXINI) &&
 	    (regs->UECON[0] & USBC_UECON0_TXINE)) {
+		LOG_DBG("TXINI= fsm: %s",
+			usb_dc_epctrl_state_string[epctrl_fsm]);
 
 		regs->UECONCLR[0] = USBC_UECON0CLR_TXINEC;
 
-		if (sr & USBC_UESTA0_CTRLDIR) {
-			/** Finish Control Write State */
+		if (epctrl_fsm == USB_EPCTRL_HANDSHAKE_WAIT_IN_ZLP) {
+			if (!(dev_ctrl & USBC_UDCON_ADDEN)
+			&&   (dev_ctrl & USBC_UDCON_UADD_Msk) != 0U) {
+				/* Commit the pending address update.  This
+				 * must be done after the ack to the host
+				 * completes else the ack will get dropped.
+				 */
+				regs->UDCON |= USBC_UDCON_ADDEN;
+			}
+
+			/* ZLP on IN is sent */
+			usb_dc_ctrl_init();
 			return;
 		}
 
 		/* IN (to host) transmit complete */
 		dev_data.ep_data[0].cb_in(USB_EP_DIR_IN, USB_DC_EP_DATA_IN);
 
-		if (!(dev_ctrl & USBC_UDCON_ADDEN) &&
-		    (dev_ctrl & USBC_UDCON_UADD_Msk) != 0U) {
-			/* Commit the pending address update.  This must be
-			 * done after the ack to the host completes else the
-			 * ack will get dropped.
-			 */
-			regs->UDCON |= USBC_UDCON_ADDEN;
-		}
+		return;
 	}
 
 	if (sr & USBC_UESTA0_NAKOUTI) {
-
-		/** Start Control Read State */
+		LOG_DBG("NAKOUT= fsm: %s",
+			usb_dc_epctrl_state_string[epctrl_fsm]);
 
 		regs->UESTACLR[0] = USBC_UESTA0CLR_NAKOUTIC;
-		regs->UECONCLR[0] = USBC_UECON0CLR_NAKOUTEC;
-		regs->UECONCLR[0] = USBC_UECON0CLR_TXINEC;
 
-		/** Wait OUT State */
-		regs->UECONSET[0] = USBC_UECON0SET_RXOUTES;
+		if (regs->UESTA[0] & USBC_UESTA0_TXINI) {
+			/** overflow ignored if IN data is received */
+			return;
+		}
+
+		if (epctrl_fsm == USB_EPCTRL_HANDSHAKE_WAIT_IN_ZLP) {
+			/* A IN handshake is waiting by device, but host want
+			 * extra OUT data then stall extra OUT data
+			 */
+			regs->UECONSET[0] = USBC_UECON0SET_STALLRQS;
+		}
 
 		return;
 	}
 
 	if (sr & USBC_UESTA0_NAKINI) {
-
-		/** Start Control Write State */
+		LOG_DBG("NAKIN= fsm: %s",
+			usb_dc_epctrl_state_string[epctrl_fsm]);
 
 		regs->UESTACLR[0] = USBC_UESTA0CLR_NAKINIC;
-		regs->UECONCLR[0] = USBC_UECON0CLR_NAKINEC;
-		regs->UECONCLR[0] = USBC_UECON0CLR_RXOUTEC;
 
-		dev_data.ep_data[0].cb_in(USB_EP_DIR_IN, USB_DC_EP_DATA_IN);
+		if (regs->UESTA[0] & USBC_UESTA0_RXOUTI) {
+			/** underflow ignored if OUT data is received */
+			return;
+		}
+
+		if (epctrl_fsm == USB_EPCTRL_DATA_OUT) {
+			/* Host want to stop OUT transaction then stop to
+			 * wait OUT data phase and wait IN ZLP handshake.
+			 */
+			usb_dc_ctrl_send_zlp_in();
+		} else if (epctrl_fsm == USB_EPCTRL_HANDSHAKE_WAIT_OUT_ZLP) {
+			/* A OUT handshake is waiting by device, but host want
+			 * extra IN data then stall extra IN data.
+			 */
+			regs->UECONSET[0] = USBC_UECON0SET_STALLRQS;
+		} else {
+			/** Nothing to do */
+		}
 
 		return;
 	}
@@ -386,21 +511,8 @@ static void usb_dc_sam_usbc_isr(void)
 			/* The device clears some of the configuration of EP0
 			 * when it receives the EORST. Re-enable interrupts.
 			 */
-
 			usb_dc_ep_enable_interrupts(0);
-			/* In case of abort of IN Data Phase:
-			 * No need to abort IN transfer (rise TXINI),
-			 * because it is automatically done by hardware when a
-			 * Setup packet is received. But the interrupt must be
-			 * disabled to don't generate interrupt TXINI after
-			 * SETUP reception.
-			 */
-			regs->UECONCLR[0] = USBC_UECON0CLR_TXINEC;
-
-			 /* In case of OUT ZLP event is no processed before
-			  * Setup event occurs
-			  */
-			regs->UESTACLR[0] = USBC_UESTA0CLR_RXOUTIC;
+			usb_dc_ctrl_init();
 		}
 
 		dev_data.status_cb(USB_DC_RESET, NULL);
@@ -570,6 +682,8 @@ int usb_dc_attach(void)
 
 int usb_dc_detach(void)
 {
+	uint32_t key = irq_lock();
+
 	regs->UDCON |= USBC_UDCON_DETACH;
 
 	/* Disable the USB controller and freeze the clock */
@@ -588,6 +702,7 @@ int usb_dc_detach(void)
 		PM_CLOCK_MASK(PM_CLK_GRP_PBB, SYSCLK_USBC_REGS));
 
 	irq_disable(DT_INST_IRQN(0));
+	irq_unlock(key);
 
 	LOG_DBG("USB DC detach");
 
@@ -596,12 +711,16 @@ int usb_dc_detach(void)
 
 int usb_dc_reset(void)
 {
+	uint32_t key = irq_lock();
+
 	/* Reset the controller */
 	regs->USBCON = USBC_USBCON_UIMOD | USBC_USBCON_FRZCLK;
 
 	/* Clear private data */
 	(void)memset(&dev_data, 0, sizeof(dev_data));
 	(void)memset(&dev_desc, 0, sizeof(dev_desc));
+
+	irq_unlock(key);
 
 	LOG_DBG("USB DC reset");
 
@@ -651,12 +770,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		}
 	} else if (ep_idx & BIT(0)) {
 		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
-			LOG_DBG("pre-selected as IN endpoint");
+			LOG_INF("pre-selected as IN endpoint");
 			return -EINVAL;
 		}
 	} else {
 		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
-			LOG_DBG("pre-selected as OUT endpoint");
+			LOG_INF("pre-selected as OUT endpoint");
 			return -EINVAL;
 		}
 	}
@@ -734,10 +853,14 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		dev_data.ep_data[ep_idx].mps_x2 = false;
 	}
 
+	/** Enable Global NAK */
+	regs->UDCON |= USBC_UDCON_GNAK;
 	if (usb_dc_sam_usbc_ep_alloc_buf(ep_idx) < 0) {
 		dev_data.ep_data[ep_idx].is_configured = false;
+		regs->UDCON &= ~USBC_UDCON_GNAK;
 		return -ENOMEM;
 	}
+	regs->UDCON &= ~USBC_UDCON_GNAK;
 
 	/* Configure the endpoint */
 	dev_data.ep_data[ep_idx].is_configured = true;
@@ -757,15 +880,27 @@ int usb_dc_ep_set_stall(uint8_t ep)
 		return -EINVAL;
 	}
 
-	regs->UECONSET[ep_idx] = USBC_UECON0SET_STALLRQS;
+	if (ep_idx == 0) {
+		if (epctrl_fsm == USB_EPCTRL_SETUP) {
+			usb_dc_ctrl_stall_data(USBC_UESTA0CLR_RXSTPIC);
+		} else if (epctrl_fsm == USB_EPCTRL_DATA_OUT) {
+			usb_dc_ctrl_stall_data(USBC_UESTA0CLR_RXOUTIC);
+		} else {
+			/** Stall without commit any status */
+			usb_dc_ctrl_stall_data(0);
+		}
+	} else {
+		regs->UECONSET[ep_idx] = USBC_UECON0SET_STALLRQS;
+	}
 
-	LOG_DBG("USB DC stall set ep 0x%02x", ep);
+	LOG_WRN("USB DC stall set ep 0x%02x", ep);
 
 	return 0;
 }
 
 int usb_dc_ep_clear_stall(uint8_t ep)
 {
+	uint32_t key;
 	uint8_t ep_idx = EP_ADDR2IDX(ep);
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
@@ -774,14 +909,21 @@ int usb_dc_ep_clear_stall(uint8_t ep)
 	}
 
 	if (regs->UECON[ep_idx] & USBC_UECON0_STALLRQ) {
+
+		key = irq_lock();
+
+		dev_data.ep_data[ep_idx].out_at = 0U;
+
 		regs->UECONCLR[ep_idx] = USBC_UECON0CLR_STALLRQC;
 		if (regs->UESTA[ep_idx] & USBC_UESTA0_STALLEDI) {
 			regs->UESTACLR[ep_idx] = USBC_UESTA0CLR_STALLEDIC;
 			regs->UECONSET[ep_idx] = USBC_UECON0SET_RSTDTS;
 		}
+
+		irq_unlock(key);
 	}
 
-	LOG_DBG("USB DC stall clear ep 0x%02x", ep);
+	LOG_WRN("USB DC stall clear ep 0x%02x", ep);
 
 	return 0;
 }
@@ -814,6 +956,7 @@ int usb_dc_ep_halt(uint8_t ep)
 int usb_dc_ep_enable(uint8_t ep)
 {
 	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint32_t key;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
@@ -825,6 +968,10 @@ int usb_dc_ep_enable(uint8_t ep)
 		return -ENODEV;
 	}
 
+	key = irq_lock();
+
+	dev_data.ep_data[ep_idx].out_at = 0U;
+
 	/* Enable endpoint */
 	regs->UERST |= BIT(USBC_UERST_EPEN0_Pos + ep_idx);
 
@@ -832,6 +979,8 @@ int usb_dc_ep_enable(uint8_t ep)
 	regs->UDINTESET = (USBC_UDINTESET_EP0INTES << ep_idx);
 
 	usb_dc_ep_enable_interrupts(ep_idx);
+
+	irq_unlock(key);
 
 	LOG_DBG("Enable ep 0x%02x", ep);
 
@@ -841,17 +990,22 @@ int usb_dc_ep_enable(uint8_t ep)
 int usb_dc_ep_disable(uint8_t ep)
 {
 	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint32_t key;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
 
+	key = irq_lock();
+
 	/* Disable global endpoint interrupt */
 	regs->UDINTECLR = BIT(USBC_UDINTESET_EP0INTES_Pos + ep_idx);
 
 	/* Disable endpoint and reset */
 	regs->UERST &= ~BIT(USBC_UERST_EPEN0_Pos + ep_idx);
+
+	irq_unlock(key);
 
 	LOG_DBG("Disable ep 0x%02x", ep);
 
@@ -861,6 +1015,7 @@ int usb_dc_ep_disable(uint8_t ep)
 int usb_dc_ep_flush(uint8_t ep)
 {
 	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	uint32_t key;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
@@ -872,6 +1027,8 @@ int usb_dc_ep_flush(uint8_t ep)
 		return -ENODEV;
 	}
 
+	key = irq_lock();
+
 	/* Disable the IN interrupt */
 	regs->UECONCLR[ep_idx] = USBC_UECON0CLR_TXINEC;
 
@@ -879,8 +1036,12 @@ int usb_dc_ep_flush(uint8_t ep)
 	regs->UERST &= ~(BIT(ep_idx));
 	regs->UERST |= BIT(ep_idx);
 
+	dev_data.ep_data[ep_idx].out_at = 0U;
+
 	/* Reenable interrupts */
 	usb_dc_ep_enable_interrupts(ep_idx);
+
+	irq_unlock(key);
 
 	LOG_DBG("ep 0x%02x flushed", ep);
 
@@ -907,13 +1068,96 @@ int usb_dc_ep_set_callback(uint8_t ep, const usb_dc_ep_callback cb)
 	return 0;
 }
 
+static int usb_dc_ep_write_stp(uint8_t ep_bank, const uint8_t *data,
+			       uint32_t packet_len)
+{
+	uint32_t key;
+
+	if (epctrl_fsm == USB_EPCTRL_SETUP) {
+		regs->UESTACLR[0] = USBC_UESTA0CLR_RXSTPIC;
+
+		epctrl_fsm = USB_EPCTRL_DATA_IN;
+
+		key = irq_lock();
+		regs->UECONCLR[0] = USBC_UECON0CLR_TXINEC;
+		irq_unlock(key);
+	}
+
+	if (epctrl_fsm == USB_EPCTRL_DATA_IN) {
+		/* All data requested are transferred or a short packet has
+		 * been sent then it is the end of data phase.
+		 *
+		 * Generate an OUT ZLP for handshake phase.
+		 */
+		if (packet_len == 0) {
+			usb_dc_ctrl_send_zlp_out();
+			return 0;
+		}
+
+		/** Critical section
+		 * Only in case of DATA IN phase abort without USB Reset
+		 * signal after.  The IN data don't must be written in
+		 * endpoint 0 DPRAM during a next setup reception in same
+		 * endpoint 0 DPRAM.  Thereby, an OUT ZLP reception must
+		 * check before IN data write and if no OUT ZLP is received
+		 * the data must be written quickly (800us) before an
+		 * eventually ZLP OUT and SETUP reception.
+		 */
+		key = irq_lock();
+
+		if (regs->UESTA[0] & USBC_UESTA0_RXOUTI) {
+
+			/* IN DATA phase aborted by OUT ZLP */
+			irq_unlock(key);
+
+			epctrl_fsm = USB_EPCTRL_HANDSHAKE_WAIT_OUT_ZLP;
+
+			return 0;
+		}
+
+		if (data) {
+			memcpy(dev_desc[ep_bank].ep_pipe_addr,
+			       data, packet_len);
+			__DSB();
+		}
+		dev_desc[ep_bank].sizes = packet_len;
+
+		/*
+		 * Control endpoint: clear the interrupt flag to send
+		 * the data, and re-enable the interrupts to trigger
+		 * an interrupt at the end of the transfer.
+		 */
+		regs->UESTACLR[0] = USBC_UESTA0CLR_TXINIC;
+		regs->UECONSET[0] = USBC_UECON0SET_TXINES;
+
+		/* In case of abort of DATA IN phase, no need to enable
+		 * nak OUT interrupt because OUT endpoint is already
+		 * free and ZLP OUT accepted.
+		 */
+		irq_unlock(key);
+	} else if (epctrl_fsm == USB_EPCTRL_DATA_OUT ||
+		   epctrl_fsm == USB_EPCTRL_HANDSHAKE_WAIT_IN_ZLP) {
+		/* ZLP on IN is sent, then valid end of setup request
+		 * or
+		 * No data phase requested.
+		 *
+		 * Send IN ZLP to ACK setup request
+		 */
+		usb_dc_ctrl_send_zlp_in();
+	} else {
+		LOG_ERR("Invalid STP state %d on IN phase", epctrl_fsm);
+		return -EPERM;
+	}
+
+	return 0;
+}
+
 int usb_dc_ep_write(uint8_t ep, const uint8_t *data,
 		    uint32_t data_len, uint32_t *ret_bytes)
 {
 	uint8_t ep_idx = EP_ADDR2IDX(ep);
 	uint8_t ep_bank;
 	uint32_t packet_len;
-	uint32_t key;
 
 	if (ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
@@ -946,31 +1190,21 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *data,
 
 	packet_len = MIN(data_len, dev_data.ep_data[ep_idx].mps);
 
-	if (data && packet_len > 0) {
-		memcpy(dev_desc[ep_bank].ep_pipe_addr, data, packet_len);
-		__DSB();
+	if (ret_bytes) {
+		*ret_bytes = packet_len;
 	}
-	dev_desc[ep_bank].sizes = packet_len;
 
 	if (ep_idx == 0U) {
-		key = irq_lock();
-		/*
-		 * Control endpoint: clear the interrupt flag to send the
-		 * data, and re-enable the interrupts to trigger an interrupt
-		 * at the end of the transfer.
-		 */
-		regs->UESTACLR[0] = USBC_UESTA0CLR_TXINIC;
-		regs->UECONSET[0] = USBC_UECON0SET_TXINES;
-
-		if (packet_len == 0) {
-			/* To detect a protocol error, enable nak interrupt
-			 * on data OUT phase
-			 */
-			regs->UESTACLR[0] = USBC_UESTA0CLR_NAKOUTIC;
-			regs->UECONSET[0] = USBC_UECON0SET_NAKOUTES;
+		if (usb_dc_ep_write_stp(ep_bank, data, packet_len)) {
+			return -EPERM;
 		}
-		irq_unlock(key);
 	} else {
+		if (data && packet_len > 0) {
+			memcpy(dev_desc[ep_bank].ep_pipe_addr, data, packet_len);
+			__DSB();
+		}
+		dev_desc[ep_bank].sizes = packet_len;
+
 		/*
 		 * Other endpoint types: clear the FIFO control flag to send
 		 * the data.
@@ -978,13 +1212,59 @@ int usb_dc_ep_write(uint8_t ep, const uint8_t *data,
 		regs->UECONCLR[ep_idx] = USBC_UECON0CLR_FIFOCONC;
 	}
 
-	if (ret_bytes) {
-		*ret_bytes = packet_len;
-	}
-
-	LOG_DBG("ep 0x%02x write %d bytes from %d to bank %d%s",
+	LOG_INF("ep 0x%02x write %d bytes from %d to bank %d%s",
 		ep, packet_len, data_len, ep_bank % 2,
 		packet_len == 0 ? " (ZLP)" : "");
+
+	return 0;
+}
+
+static int usb_dc_ep_read_ex_stp(uint32_t take, uint32_t wLength)
+{
+	uint32_t key;
+
+	if (epctrl_fsm == USB_EPCTRL_SETUP) {
+		if (regs->UESTA[0] & USBC_UESTA0_CTRLDIR) {
+			/** Do Nothing */
+		} else {
+			regs->UESTACLR[0] = USBC_UESTA0CLR_RXSTPIC;
+
+			epctrl_fsm = USB_EPCTRL_DATA_OUT;
+
+			if (wLength == 0) {
+				/* No data phase requested.
+				 * Send IN ZLP to ACK setup request
+				 *
+				 * This is send at usb_dc_ep_write()
+				 */
+				return 0;
+			}
+
+			regs->UECONSET[0] = USBC_UECON0SET_RXOUTES;
+
+			/* To detect a protocol error, enable nak
+			 * interrupt on data IN phase
+			 */
+			regs->UESTACLR[0] = USBC_UESTA0CLR_NAKINIC;
+			key = irq_lock();
+			regs->UECONSET[0] = USBC_UECON0SET_NAKINES;
+			irq_unlock(key);
+		}
+	} else if (epctrl_fsm == USB_EPCTRL_DATA_OUT) {
+		regs->UESTACLR[0] = USBC_UESTA0CLR_RXOUTIC;
+
+		if (take == 0) {
+			usb_dc_ctrl_send_zlp_in();
+		} else {
+			regs->UESTACLR[0] = USBC_UESTA0CLR_NAKINIC;
+			key = irq_lock();
+			regs->UECONSET[0] = USBC_UECON0SET_NAKINES;
+			irq_unlock(key);
+		}
+	} else {
+		LOG_ERR("Invalid STP state %d on OUT phase", epctrl_fsm);
+		return -EPERM;
+	}
 
 	return 0;
 }
@@ -993,6 +1273,7 @@ int usb_dc_ep_read_ex(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		      uint32_t *read_bytes, bool wait)
 {
 	uint8_t ep_idx = EP_ADDR2IDX(ep);
+	struct usb_setup_packet *setup;
 	uint8_t ep_bank;
 	uint32_t data_len;
 	uint32_t remaining;
@@ -1057,36 +1338,29 @@ int usb_dc_ep_read_ex(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 		if (!wait) {
 			dev_data.ep_data[ep_idx].out_at = 0U;
 
-			rc = usb_dc_ep_read_continue(ep);
+			if (ep_idx == 0) {
+				setup = (struct usb_setup_packet *) data;
+				rc = usb_dc_ep_read_ex_stp(take,
+							   setup->wLength);
+			} else {
+				rc = usb_dc_ep_read_continue(ep);
+			}
 		}
 	} else {
 		dev_data.ep_data[ep_idx].out_at += take;
 	}
 
-	LOG_DBG("ep 0x%02x read %d bytes from bank %d and %s",
+	LOG_INF("ep 0x%02x read %d bytes from bank %d and %s",
 		ep, take, ep_bank % 2, wait ? "wait" : "NO wait");
 
 	return rc;
 }
 
-int usb_dc_ep_read(uint8_t ep, uint8_t *data,
-		   uint32_t max_data_len, uint32_t *read_bytes)
-{
-	return usb_dc_ep_read_ex(ep, data, max_data_len, read_bytes, false);
-}
-
-int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
-			uint32_t *read_bytes)
-{
-	return usb_dc_ep_read_ex(ep, data, max_data_len, read_bytes, true);
-}
-
 int usb_dc_ep_read_continue(uint8_t ep)
 {
-	uint32_t key;
 	uint8_t ep_idx = EP_ADDR2IDX(ep);
 
-	if (ep_idx >= NUM_OF_EP_MAX) {
+	if (ep_idx == 0 || ep_idx >= NUM_OF_EP_MAX) {
 		LOG_ERR("wrong endpoint index/address");
 		return -EINVAL;
 	}
@@ -1101,33 +1375,21 @@ int usb_dc_ep_read_continue(uint8_t ep)
 		return -EINVAL;
 	}
 
-	if (ep_idx == 0U) {
-		/* Control endpoint: clear the interrupt flag to send the
-		 * data. It is easier to clear both SETUP and OUT flag than
-		 * checking the stage of the transfer.
-		 */
-		regs->UESTACLR[0] = USBC_UESTA0CLR_RXOUTIC
-				  | USBC_UESTA0CLR_RXSTPIC;
-
-		if (dev_data.ep_data[0].out_at == 0U) {
-			dev_desc[0].sizes = 0;
-		}
-
-		/* To detect a protocol error, enable nak interrupt
-		 * on data OUT phase
-		 */
-		key = irq_lock();
-		regs->UESTACLR[0] = USBC_UESTA0CLR_NAKOUTIC;
-		regs->UECONSET[0] = USBC_UECON0SET_NAKOUTES;
-		irq_unlock(key);
-	} else {
-		/* Other endpoint types: clear the FIFO control flag to
-		 * receive more data.
-		 */
-		regs->UECONCLR[ep_idx] = USBC_UECON0CLR_FIFOCONC;
-	}
+	regs->UECONCLR[ep_idx] = USBC_UECON0CLR_FIFOCONC;
 
 	return 0;
+}
+
+int usb_dc_ep_read(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+		   uint32_t *read_bytes)
+{
+	return usb_dc_ep_read_ex(ep, data, max_data_len, read_bytes, false);
+}
+
+int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
+			uint32_t *read_bytes)
+{
+	return usb_dc_ep_read_ex(ep, data, max_data_len, read_bytes, true);
 }
 
 int usb_dc_ep_mps(uint8_t ep)

@@ -23,6 +23,26 @@
 				} while (0)
 #define USBC_is_freeze_clk()    (USBC->USBCON & USBC_USBCON_FRZCLK)
 
+/**
+ * @brief USB Driver Control Endpoint Finite State Machine states
+ *
+ * FSM states to keep tracking of control endpoint hiden states.
+ */
+enum usb_dc_epctrl_state {
+	/* Wait a SETUP packet */
+	USB_EPCTRL_SETUP,
+	/* Wait a OUT data packet */
+	USB_EPCTRL_DATA_OUT,
+	/* Wait a IN data packet */
+	USB_EPCTRL_DATA_IN,
+	/* Wait a IN ZLP packet */
+	USB_EPCTRL_HANDSHAKE_WAIT_IN_ZLP,
+	/* Wait a OUT ZLP packet */
+	USB_EPCTRL_HANDSHAKE_WAIT_OUT_ZLP,
+	/* STALL enabled on IN & OUT packet */
+	USB_EPCTRL_STALL_REQ,
+};
+
 struct sam_usbc_udesc_sizes_t {
 	uint32_t byte_count:15;
 	uint32_t reserved:1;
