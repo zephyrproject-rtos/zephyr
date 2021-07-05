@@ -24,10 +24,10 @@ config OPENTHREAD_XPANID
 	  Extended PAN ID for OpenThread with
 	  format "de:ad:00:be:ef:00:ca:fe"
 
-config OPENTHREAD_MASTERKEY
-	string "Default Thread Master Key"
+config OPENTHREAD_NETWORKKEY
+	string "Default Thread Network Key"
 	help
-	  Master Key for OpenThread with format
+	  Network Key for OpenThread with format
 	  "00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff"
 
 config OPENTHREAD_JOINER_AUTOSTART

@@ -70,10 +70,10 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_XPANID ""
 #endif
 
-#if defined(CONFIG_OPENTHREAD_MASTERKEY)
-#define OT_MASTERKEY CONFIG_OPENTHREAD_MASTERKEY
+#if defined(CONFIG_OPENTHREAD_NETWORKKEY)
+#define OT_NETWORKKEY CONFIG_OPENTHREAD_NETWORKKEY
 #else
-#define OT_MASTERKEY ""
+#define OT_NETWORKKEY ""
 #endif
 
 #if defined(CONFIG_OPENTHREAD_JOINER_PSKD)
@@ -395,7 +395,7 @@ int openthread_start(struct openthread_context *ot_context)
 		NET_DBG("Loading OpenThread default configuration.");
 
 		otExtendedPanId xpanid;
-		otMasterKey     masterkey;
+		otNetworkKey    networkKey;
 
 		otThreadSetNetworkName(ot_instance, OT_NETWORK_NAME);
 		otLinkSetChannel(ot_instance, OT_CHANNEL);
@@ -403,10 +403,10 @@ int openthread_start(struct openthread_context *ot_context)
 		net_bytes_from_str(xpanid.m8, 8, (char *)OT_XPANID);
 		otThreadSetExtendedPanId(ot_instance, &xpanid);
 
-		if (strlen(OT_MASTERKEY)) {
-			net_bytes_from_str(masterkey.m8, OT_MASTER_KEY_SIZE,
-					   (char *)OT_MASTERKEY);
-			otThreadSetMasterKey(ot_instance, &masterkey);
+		if (strlen(OT_NETWORKKEY)) {
+			net_bytes_from_str(networkKey.m8, OT_NETWORK_KEY_SIZE,
+					   (char *)OT_NETWORKKEY);
+			otThreadSetNetworkKey(ot_instance, &networkKey);
 		}
 	}
 
