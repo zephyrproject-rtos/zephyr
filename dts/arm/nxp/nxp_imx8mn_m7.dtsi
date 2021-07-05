@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Manivannan Sadhasivam
+ * Copyright (c) 2019, Waseem Hassan
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@
 
 		};
 	};
-	
+
 	soc {
 		itcm: code@00000000 {
 			compatible = "nxp,imx-itcm";
@@ -78,7 +78,7 @@
 			label = "UART_4";
 			status = "disabled";
 		};
-		
+
 		gpio1: gpio@30200000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x30200000 DT_SIZE_K(64)>;
@@ -88,7 +88,7 @@
 			#gpio-cells = <2>;
 			status = "disabled";
 		};
-				
+
 		gpio2: gpio@30210000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x30210000 DT_SIZE_K(64)>;
@@ -100,7 +100,7 @@
 		};
 		
 		/*
-		* For now only GPIO and UART are support. MUB and GPT are added 
+		* For now only GPIO and UART are support. MUB and GPT are added
 		* as reference only.
 		*/
 		mub: mu@30ab0000 {
@@ -110,7 +110,7 @@
 			label = "MU_B";
 			status = "disabled";
 		};
-		
+
 		gpt1: gpt@302d0000 {
 			compatible = "nxp,imx-gpt";
 			reg = <0x302d0000 DT_SIZE_K(64)>;

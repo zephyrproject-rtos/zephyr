@@ -12,7 +12,7 @@ if !XIP
 config FLASH_SIZE
 	default 0
 config FLASH_BASE_ADDRESS
-	default 0	
+	default 0
 endif
 
 endif # BOARD_CC8MNANO_DVK

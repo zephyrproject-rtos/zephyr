@@ -47,19 +47,19 @@ static int mcux_igpio_configure(const struct device *dev,
 	}
 
 	if (flags & GPIO_OUTPUT_INIT_HIGH) {
-#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
-        base->DR_SET = BIT(pin);
-#else
-        base->DR |= BIT(pin); /* Set pin output to low level.*/
-#endif
+		#if (defined(FSL_FEATURE_IGPIO_HAS_DR_SET) && FSL_FEATURE_IGPIO_HAS_DR_SET)
+			base->DR_SET = BIT(pin);
+		#else
+			base->DR |= BIT(pin); /* Set pin output to low level.*/
+		#endif
 	}
 
 	if (flags & GPIO_OUTPUT_INIT_LOW) {
-#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
-        base->DR_CLEAR = BIT(pin);
-#else
-        base->DR &= ~BIT(pin); /* Clear pin output to low level.*/
-#endif	
+		#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
+			base->DR_CLEAR = BIT(pin);
+		#else
+			base->DR &= ~BIT(pin); /* Clear pin output to low level.*/
+		#endif
 	}
 	WRITE_BIT(base->GDIR, pin, flags & GPIO_OUTPUT);
 
@@ -93,11 +93,11 @@ static int mcux_igpio_port_set_bits_raw(const struct device *dev,
 {
 	const struct mcux_igpio_config *config = dev->config;
 	GPIO_Type *base = config->base;
-#if (defined(FSL_FEATURE_IGPIO_HAS_DR_SET) && FSL_FEATURE_IGPIO_HAS_DR_SET)
-        base->DR_SET = mask;
-#else
-        base->DR |= mask; /* Set mask*/
-#endif
+	#if (defined(FSL_FEATURE_IGPIO_HAS_DR_SET) && FSL_FEATURE_IGPIO_HAS_DR_SET)
+		base->DR_SET = mask;
+	#else
+		base->DR |= mask; /* Set mask*/
+	#endif
 
 	return 0;
 }
@@ -107,11 +107,11 @@ static int mcux_igpio_port_clear_bits_raw(const struct device *dev,
 {
 	const struct mcux_igpio_config *config = dev->config;
 	GPIO_Type *base = config->base;
-#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
-        base->DR_CLEAR = mask;
-#else
-        base->DR &= ~mask; /* Clear mask*/
-#endif	
+	#if (defined(FSL_FEATURE_IGPIO_HAS_DR_CLEAR) && FSL_FEATURE_IGPIO_HAS_DR_CLEAR)
+		base->DR_CLEAR = mask;
+	#else
+		base->DR &= ~mask; /* Clear mask*/
+	#endif
 
 	return 0;
 }
@@ -121,11 +121,11 @@ static int mcux_igpio_port_toggle_bits(const struct device *dev,
 {
 	const struct mcux_igpio_config *config = dev->config;
 	GPIO_Type *base = config->base;
-#if (defined(FSL_FEATURE_IGPIO_HAS_DR_TOGGLE) && FSL_FEATURE_IGPIO_HAS_DR_TOGGLE)
+	#if (defined(FSL_FEATURE_IGPIO_HAS_DR_TOGGLE) && FSL_FEATURE_IGPIO_HAS_DR_TOGGLE)
 		base->DR_TOGGLE = mask;
-#else
-		base->DR ^= (1<< mask);
-#endif
+	#else
+		base->DR ^= (1 << mask);
+	#endif
 
 	return 0;
 }
