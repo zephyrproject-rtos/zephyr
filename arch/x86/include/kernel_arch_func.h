@@ -108,6 +108,13 @@ void z_x86_irq_connect_on_vector(unsigned int irq,
 				 void (*func)(const void *arg),
 				 const void *arg, uint32_t flags);
 
+/*
+ * Connect a vector for MSI/MSI-x
+ */
+void z_x86_msi_connect_on_vector(uint8_t vector,
+				 void (*func)(const void *arg),
+				 const void *arg, uint32_t flags);
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */

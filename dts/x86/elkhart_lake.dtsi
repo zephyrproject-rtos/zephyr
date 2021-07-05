@@ -375,6 +375,14 @@
 		compatible = "simple-bus";
 		ranges;
 
+		vtd: vtd@fed65000 {
+			compatible = "intel,vt-d";
+			reg = <0xfed91000 0x1000>;
+
+			label = "VTD_0";
+			status = "okay";
+		};
+
 		uart1_fixed: uart@fe040000 {
 			compatible = "ns16550";
 

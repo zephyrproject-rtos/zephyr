@@ -51,6 +51,7 @@ static void vtd_send_cmd(const struct device *dev,
 
 }
 
+/* TODO: For MSI, we need contigious IRTE entry */
 static int vtd_ictl_allocate_entries(const struct device *dev,
 				     uint8_t n_entries)
 {
@@ -81,8 +82,14 @@ static int vtd_ictl_remap(const struct device *dev,
 
 	memset(&data->irte[irte_idx], 0, sizeof(struct vtd_irte));
 
+	/* TODO: SVT should be 01 for SDL and currect SID need to program*/
+
 	data->irte[irte_idx].l.vector = vector->arch.vector;
-	data->irte[irte_idx].l.dst_id = arch_curr_cpu()->id;
+	if (IS_ENABLED(CONFIG_X2APIC)) {
+		data->irte[irte_idx].l.dst_id = arch_curr_cpu()->id;
+	} else {
+		data->irte[irte_idx].l.dst_id = arch_curr_cpu()->id << 8;
+	}
 	data->irte[irte_idx].l.present = 1;
 
 	return 0;
@@ -109,6 +116,8 @@ static int vtd_ictl_init(const struct device *dev)
 	vtd_send_cmd(dev, VTD_GCMD_SIRTP, VTD_GSTS_SIRTPS);
 	vtd_send_cmd(dev, VTD_GCMD_IRE, VTD_GSTS_IRES);
 
+	/* enable compactability mode */
+	vtd_send_cmd(dev, VTD_GCMD_CFI, VTD_GSTS_CFIS);
 	printk("Intel VT-D up and running (status 0x%x)\n",
 	       vtd_read_reg(dev, VTD_GSTS_REG));
 

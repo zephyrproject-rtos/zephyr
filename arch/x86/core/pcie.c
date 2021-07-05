@@ -217,8 +217,8 @@ uint16_t pcie_msi_mdr(unsigned int irq,
 		return 0x4000U | Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 	}
 
-	/* VT-D requires it to be 0, so let's return 0 by default */
-	return 0;
+	/* VT-D requires sub handle and msi it is vector */
+	return vector->arch.vector;
 }
 
 #if defined(CONFIG_INTEL_VTD_ICTL) || defined(CONFIG_PCIE_MSI_X)
@@ -262,8 +262,8 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				return 0;
 			}
 
-			for (i = irte; i < (irte + n_vector); i++) {
-				vectors[i].arch.irte = i;
+			for (i = 0; i < n_vector; i++) {
+				vectors[i].arch.irte = irte + i;
 				vectors[i].arch.remap = true;
 			}
 		}
@@ -308,7 +308,7 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 	}
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
-	z_x86_irq_connect_on_vector(vector->arch.irq, vector->arch.vector,
+	z_x86_msi_connect_on_vector(vector->arch.vector,
 				    routine, parameter, flags);
 
 	return true;

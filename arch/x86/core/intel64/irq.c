@@ -91,6 +91,14 @@ void z_x86_irq_connect_on_vector(unsigned int irq,
 	x86_irq_args[vector - IV_IRQS] = arg;
 }
 
+void z_x86_msi_connect_on_vector(uint8_t vector,
+				 void (*func)(const void *arg),
+				 const void *arg, uint32_t flags)
+{
+	x86_irq_funcs[vector - IV_IRQS] = func;
+	x86_irq_args[vector - IV_IRQS] = arg;
+}
+
 /*
  * N.B.: the API docs don't say anything about returning error values, but
  * this function returns -1 if a vector at the specific priority can't be

@@ -13,7 +13,7 @@
  * it's always 0
  */
 #define VTD_MSI_MAP(int_idx) \
-	((0x0FEE << 20) | (int_idx << 5) | VTD_INT_SHV | VTD_INT_FORMAT)
+	((0x0FEE << 20) | VTD_INT_SHV | VTD_INT_FORMAT)
 
 /* Interrupt Remapping Table Entry (IRTE) for Remapped Interrupts */
 struct vtd_irte {
@@ -47,7 +47,7 @@ struct vtd_irte {
 #define IRTA_SIZE 7  /* size = 2^(X+1) where IRTA_SIZE is X 2^8 = 256 */
 
 struct vtd_ictl_data {
-	struct vtd_irte irte[IRTE_NUM];
+	struct vtd_irte irte[IRTE_NUM]__attribute__ ((aligned (4096)));
 	int irte_num_used;
 };
 
