@@ -282,7 +282,6 @@ static int pwm_nrfx_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-
 static void pwm_nrfx_uninit(const struct device *dev)
 {
 	const struct pwm_nrfx_config *config = dev->config;
@@ -292,8 +291,8 @@ static void pwm_nrfx_uninit(const struct device *dev)
 	memset(dev->data, 0, sizeof(struct pwm_nrfx_data));
 }
 
-static int pwm_nrfx_set_power_state(enum pm_device_state state,
-				    const struct device *dev)
+static int pwm_nrfx_pm_control(const struct device *dev,
+			       enum pm_device_state state)
 {
 	int err = 0;
 
@@ -302,32 +301,19 @@ static int pwm_nrfx_set_power_state(enum pm_device_state state,
 		err = pwm_nrfx_init(dev);
 		break;
 	case PM_DEVICE_STATE_SUSPENDED:
+		__fallthrough;
 	case PM_DEVICE_STATE_OFF:
 		pwm_nrfx_uninit(dev);
 		break;
 	default:
-
-		__ASSERT_NO_MSG(false);
-		break;
+		return -ENOTSUP;
 	}
+
 	return err;
 }
-
-static int pwm_nrfx_pm_control(const struct device *dev,
-			       enum pm_device_state state)
-{
-	return pwm_nrfx_set_power_state(state, dev);
-}
-
-#define PWM_NRFX_PM_CONTROL(idx)					       \
-	static int pwm_##idx##_nrfx_pm_control(const struct device *dev,       \
-					       enum pm_device_state state)     \
-	{								       \
-		return pwm_nrfx_pm_control(dev, state)			       \
-	}
 #else
 
-#define PWM_NRFX_PM_CONTROL(idx)
+#define pwm_nrfx_pm_control NULL
 
 #endif /* CONFIG_PM_DEVICE */
 
@@ -381,9 +367,8 @@ static int pwm_nrfx_pm_control(const struct device *dev,
 		.seq.values.p_raw = pwm_nrfx_##idx##_data.current,	      \
 		.seq.length = NRF_PWM_CHANNEL_COUNT			      \
 	};								      \
-	PWM_NRFX_PM_CONTROL(idx)					      \
 	DEVICE_DT_DEFINE(PWM(idx),					      \
-		      pwm_nrfx_init, pwm_##idx##_nrfx_pm_control,	      \
+		      pwm_nrfx_init, pwm_nrfx_pm_control,		      \
 		      &pwm_nrfx_##idx##_data,				      \
 		      &pwm_nrfx_##idx##config,				      \
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \

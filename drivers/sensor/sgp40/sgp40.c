@@ -186,34 +186,23 @@ static int sgp40_channel_get(const struct device *dev,
 
 
 #ifdef CONFIG_PM_DEVICE
-static int sgp40_set_power_state(const struct device *dev,
-				  enum pm_device_state power_state)
+static int sgp40_pm_ctrl(const struct device *dev, enum pm_device_state state)
 {
 	uint16_t cmd;
-	int rc;
 
-	if (power_state == PM_DEVICE_STATE_ACTIVE) {
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
 		/* activate the hotplate by sending a measure command */
 		cmd = SGP40_CMD_MEASURE_RAW;
-	} else if (power_state == PM_DEVICE_STATE_SUSPENDED) {
+		break;
+	case PM_DEVICE_STATE_SUSPENDED:
 		cmd = SGP40_CMD_HEATER_OFF;
-	} else {
-		LOG_DBG("Power state not implemented.");
+		break;
+	default:
 		return -ENOTSUP;
 	}
 
-	rc = sgp40_write_command(dev, cmd);
-	if (rc < 0) {
-		LOG_ERR("Failed to set power state.");
-		return rc;
-	}
-
-	return 0;
-}
-
-static int sgp40_pm_ctrl(const struct device *dev, enum pm_device_state state)
-{
-	return sgp40_set_power_state(dev, state);
+	return sgp40_write_command(dev, cmd);
 }
 #endif /* CONFIG_PM_DEVICE */
 

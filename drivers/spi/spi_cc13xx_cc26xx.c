@@ -208,16 +208,18 @@ static int spi_cc13xx_cc26xx_release(const struct device *dev,
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int spi_cc13xx_cc26xx_set_power_state(const struct device *dev,
-					     enum pm_device_state state)
+static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
+					enum pm_device_state state)
 {
-	if (state == PM_DEVICE_STATE_ACTIVE) {
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
 		if (get_dev_config(dev)->base == DT_INST_REG_ADDR(0)) {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI0);
 		} else {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI1);
 		}
-	} else {
+		break;
+	case PM_DEVICE_STATE_SUSPENDED:
 		SSIDisable(get_dev_config(dev)->base);
 		/*
 		 * Release power dependency
@@ -227,15 +229,12 @@ static int spi_cc13xx_cc26xx_set_power_state(const struct device *dev,
 		} else {
 			Power_releaseDependency(PowerCC26XX_PERIPH_SSI1);
 		}
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	return 0;
-}
-
-static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
-					enum pm_device_state state)
-{
-	return spi_cc13xx_cc26xx_set_power_state(dev, state);
 }
 #endif /* CONFIG_PM_DEVICE */
 
