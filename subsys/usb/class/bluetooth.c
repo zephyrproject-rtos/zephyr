@@ -378,6 +378,11 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 {
 	struct net_buf *buf;
 
+	if (usb_reqtype_is_to_host(setup) ||
+	    setup->RequestType.type != USB_REQTYPE_TYPE_CLASS) {
+		return -ENOTSUP;
+	}
+
 	LOG_DBG("len %u", *len);
 
 	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, *data, *len);
