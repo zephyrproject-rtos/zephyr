@@ -289,6 +289,7 @@ struct bt_conn_le_info {
 	uint16_t timeout; /** Connection supervision timeout */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
+	/* Connection PHY parameters */
 	const struct bt_conn_le_phy_info      *phy;
 #endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
@@ -309,7 +310,13 @@ enum {
 	BT_CONN_ROLE_SLAVE,
 };
 
-/** Connection Info Structure */
+/** @brief Connection Info Structure
+ *
+ *  @note The connection info is available before the connection has been
+ *        established. Some of the connection information fields will
+ *        not be valid until the connection has been established and the
+ *        connected callback has been called.
+*/
 struct bt_conn_info {
 	/** Connection Type. */
 	uint8_t type;
@@ -317,7 +324,7 @@ struct bt_conn_info {
 	uint8_t role;
 	/** Which local identity the connection was created with */
 	uint8_t id;
-	/** Connection Type specific Info.*/
+	/** Connection Type specific Info. */
 	union {
 		/** LE Connection specific Info. */
 		struct bt_conn_le_info le;
