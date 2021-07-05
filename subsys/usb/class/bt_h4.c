@@ -202,23 +202,6 @@ static int bt_h4_vendor_handler(struct usb_setup_packet *setup,
 	LOG_DBG("Class request: bRequest 0x%x bmRequestType 0x%x len %d",
 		setup->bRequest, setup->bmRequestType, *len);
 
-	if (setup->RequestType.recipient != USB_REQTYPE_RECIPIENT_DEVICE) {
-		return -ENOTSUP;
-	}
-
-	if (usb_reqtype_is_to_device(setup) &&
-	    setup->bRequest == 0x5b) {
-		LOG_DBG("Host-to-Device, data %p", *data);
-		return 0;
-	}
-
-	if ((usb_reqtype_is_to_host(setup)) &&
-	    (setup->bRequest == 0x5c)) {
-		LOG_DBG("Device-to-Host, wLength %d, data %p",
-			setup->wLength, *data);
-		return 0;
-	}
-
 	return -ENOTSUP;
 }
 
