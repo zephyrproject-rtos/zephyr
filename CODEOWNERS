@@ -154,6 +154,7 @@
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
+/boards/xtensa/nxp_adsp_imx8/             @iuliana-prodan @dbaluta
 /boards/sparc/                            @martin-aberg
 /boards/arm64/qemu_cortex_a53/            @carlocaione
 /boards/arm64/bcm958402m2_a72/            @abhishek-brcm
@@ -417,6 +418,7 @@
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/xtensa/intel/                        @dcpleung
 /dts/xtensa/espressif/                    @glaubermaroto
+/dts/xtensa/nxp/                          @iuliana-prodan @dbaluta
 /dts/sparc/                               @martin-aberg
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
