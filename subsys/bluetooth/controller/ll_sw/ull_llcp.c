@@ -659,8 +659,6 @@ uint8_t ull_cp_conn_update(struct ll_conn *conn, uint16_t interval_min, uint16_t
 
 	/* Store arguments in corresponding procedure context */
 	if (ctx->proc == PROC_CONN_UPDATE) {
-		ctx->data.cu.win_size = 1U;
-		ctx->data.cu.win_offset_us = 0U;
 		ctx->data.cu.interval_max = interval_max;
 		ctx->data.cu.latency = latency;
 		ctx->data.cu.timeout = timeout;
