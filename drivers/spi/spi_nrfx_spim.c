@@ -339,7 +339,6 @@ static int spim_nrfx_pm_control(const struct device *dev,
 		break;
 
 	case PM_DEVICE_STATE_SUSPENDED:
-	case PM_DEVICE_STATE_OFF:
 		nrfx_spim_uninit(&config->spim);
 		break;
 

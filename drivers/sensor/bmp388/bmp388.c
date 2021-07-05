@@ -559,8 +559,6 @@ static int bmp388_device_ctrl(const struct device *dev,
 		reg_val = BMP388_PWR_CTRL_MODE_NORMAL;
 		break;
 	case PM_DEVICE_STATE_SUSPENDED:
-		__fallthrough;
-	case PM_DEVICE_STATE_OFF:
 		reg_val = BMP388_PWR_CTRL_MODE_SLEEP;
 		break;
 	default:
