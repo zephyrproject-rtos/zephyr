@@ -855,27 +855,6 @@ static int nrf5_configure(const struct device *dev,
 		break;
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
-	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE: {
-		uint8_t short_addr_le[SHORT_ADDRESS_SIZE];
-		uint8_t ext_addr_le[EXTENDED_ADDRESS_SIZE];
-
-		/* We expect that addresses are in big endian format, but radio driver requires
-		 * to have them in little endian. Convert addresses to little endian.
-		 */
-		sys_put_le16(config->ack_ie.short_addr, short_addr_le);
-		sys_memcpy_swap(ext_addr_le, config->ack_ie.ext_addr, EXTENDED_ADDRESS_SIZE);
-
-		if (config->ack_ie.data_len > 0) {
-			nrf_802154_ack_data_set(short_addr_le, false, config->ack_ie.data,
-						config->ack_ie.data_len, NRF_802154_ACK_DATA_IE);
-			nrf_802154_ack_data_set(ext_addr_le, true, config->ack_ie.data,
-						config->ack_ie.data_len, NRF_802154_ACK_DATA_IE);
-		} else {
-			nrf_802154_ack_data_clear(short_addr_le, false, NRF_802154_ACK_DATA_IE);
-			nrf_802154_ack_data_clear(ext_addr_le, true, NRF_802154_ACK_DATA_IE);
-		}
-	} break;
-
 	default:
 		return -EINVAL;
 	}
