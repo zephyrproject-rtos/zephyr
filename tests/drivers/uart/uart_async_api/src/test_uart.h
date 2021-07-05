@@ -40,6 +40,8 @@
 #define UART_DEVICE_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
 #endif
 
+#define TIMEOUTS_AVAILABLE IS_ENABLED(CONFIG_SYS_CLOCK_EXISTS)
+
 void init_test(void);
 
 void test_single_read(void);

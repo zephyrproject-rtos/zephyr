@@ -29,6 +29,7 @@ void set_permissions(void)
 }
 #endif
 
+#if TIMEOUTS_AVAILABLE
 void test_single_read_callback(const struct device *dev,
 			       struct uart_event *evt, void *user_data)
 {
@@ -314,10 +315,12 @@ void test_read_abort(void)
 		;
 	uart_rx_disable(uart_dev);
 }
+#endif
 
 ZTEST_BMEM volatile size_t sent;
 ZTEST_BMEM volatile size_t received;
 
+#if TIMEOUTS_AVAILABLE
 void test_write_abort_callback(const struct device *dev,
 			       struct uart_event *evt, void *user_data)
 {
@@ -383,6 +386,48 @@ void test_write_abort(void)
 		      "RX_DISABLED timeout");
 }
 
+#else
+void test_single_read_setup(void)
+{
+	ztest_test_skip();
+}
+void test_single_read(void)
+{
+	ztest_test_skip();
+}
+void test_chained_read_setup(void)
+{
+	ztest_test_skip();
+}
+void test_chained_read(void)
+{
+	ztest_test_skip();
+}
+void test_double_buffer_setup(void)
+{
+	ztest_test_skip();
+}
+void test_double_buffer(void)
+{
+	ztest_test_skip();
+}
+void test_read_abort_setup(void)
+{
+	ztest_test_skip();
+}
+void test_read_abort(void)
+{
+	ztest_test_skip();
+}
+void test_write_abort_setup(void)
+{
+	ztest_test_skip();
+}
+void test_write_abort(void)
+{
+	ztest_test_skip();
+}
+#endif
 
 void test_forever_timeout_callback(const struct device *dev,
 				   struct uart_event *evt, void *user_data)
@@ -452,7 +497,7 @@ void test_forever_timeout(void)
 		      "RX_DISABLED timeout");
 }
 
-
+#if TIMEOUTS_AVAILABLE
 ZTEST_DMEM uint8_t chained_write_tx_bufs[2][10] = {"Message 1", "Message 2"};
 ZTEST_DMEM bool chained_write_next_buf = true;
 ZTEST_BMEM volatile uint8_t tx_sent;
@@ -604,3 +649,21 @@ void test_long_buffers(void)
 	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
 		      "RX_DISABLED timeout");
 }
+#else
+void test_chained_write_setup(void)
+{
+	ztest_test_skip();
+}
+void test_chained_write(void)
+{
+	ztest_test_skip();
+}
+void test_long_buffers_setup(void)
+{
+	ztest_test_skip();
+}
+void test_long_buffers(void)
+{
+	ztest_test_skip();
+}
+#endif

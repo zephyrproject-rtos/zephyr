@@ -18,3 +18,12 @@ tests:
       - CONFIG_USE_SEGGER_RTT=y
       - CONFIG_UART_RTT=y
     build_only: true
+  drivers.uart.uart_async_api.noclock:
+    tags: drivers
+    filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_ASYNC
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    extra_configs:
+      - CONFIG_SYS_CLOCK_EXISTS=n
+    platform_allow: nrf52840dk_nrf52840 nrf9160dk_nrf9160 nrf51dk_nrf51422
