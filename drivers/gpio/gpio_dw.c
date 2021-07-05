@@ -425,34 +425,25 @@ static inline int gpio_dw_manage_callback(const struct device *port,
 }
 
 #ifdef CONFIG_PM_DEVICE
-static inline int gpio_dw_suspend_port(const struct device *port)
-{
-	gpio_dw_clock_off(port);
-	return 0;
-}
-
-static inline int gpio_dw_resume_from_suspend_port(const struct device *port)
-{
-	gpio_dw_clock_on(port);
-	return 0;
-}
-
 /*
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int gpio_dw_device_ctrl(const struct device *port,
+static int gpio_dw_device_ctrl(const struct device *dev,
 			       enum pm_device_state state)
 {
-	int ret = 0;
-
-	if (state == PM_DEVICE_STATE_SUSPENDED) {
-		ret = gpio_dw_suspend_port(port);
-	} else if (state == PM_DEVICE_STATE_ACTIVE) {
-		ret = gpio_dw_resume_from_suspend_port(port);
+	switch (state) {
+	case PM_DEVICE_STATE_SUSPENDED:
+		gpio_dw_clock_off(dev);
+		break;
+	case PM_DEVICE_STATE_ACTIVE:
+		gpio_dw_clock_on(dev);
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
-	return ret;
+	return 0;
 }
 #endif
 

@@ -180,10 +180,16 @@ static int arc_v2_irq_unit_device_ctrl(const struct device *dev,
 	int ret = 0;
 	unsigned int key = arch_irq_lock();
 
-	if (state == PM_DEVICE_STATE_SUSPENDED) {
+	switch (state) {
+	case PM_DEVICE_STATE_SUSPENDED:
 		ret = arc_v2_irq_unit_suspend(dev);
-	} else if (state == PM_DEVICE_STATE_ACTIVE) {
+		break;
+	case PM_DEVICE_STATE_ACTIVE:
 		ret = arc_v2_irq_unit_resume(dev);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
 	}
 
 	arch_irq_unlock(key);

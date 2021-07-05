@@ -25,15 +25,21 @@ static int fake_dev_pm_control(const struct device *dev,
 			       enum pm_device_state state)
 {
 	struct fake_dev_context *ctx = dev->data;
-	int ret = 0;
+	int ret;
 
-	if (state == PM_DEVICE_STATE_SUSPENDED) {
+	switch (state) {
+	case PM_DEVICE_STATE_SUSPENDED:
 		ret = net_if_suspend(ctx->iface);
 		if (ret == -EBUSY) {
 			goto out;
 		}
-	} else if (state == PM_DEVICE_STATE_ACTIVE) {
+		break;
+	case PM_DEVICE_STATE_ACTIVE:
 		ret = net_if_resume(ctx->iface);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
 	}
 
 out:
