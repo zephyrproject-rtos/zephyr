@@ -255,8 +255,9 @@ static void lp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 	if (!tx_alloc_is_available()) {
 		ctx->state = LP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
-		/* TODO(thoh): Hardcoded instant delta +6 */
-		ctx->data.cu.instant = ull_conn_event_counter(conn) + CONN_UPDATE_INSTANT_DELTA;
+		ctx->data.cu.win_size = 1U;
+		ctx->data.cu.win_offset_us = 0U;
+		ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency + CONN_UPDATE_INSTANT_DELTA;
 		lp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		ctx->state = LP_CU_STATE_WAIT_INSTANT;
@@ -581,8 +582,9 @@ static void rp_cu_send_conn_update_ind(struct ll_conn *conn, struct proc_ctx *ct
 	if (!tx_alloc_is_available()) {
 		ctx->state = RP_CU_STATE_WAIT_TX_CONN_UPDATE_IND;
 	} else {
-		/* TODO(thoh): Hardcoded instant delta +6 */
-		ctx->data.cu.instant = ull_conn_event_counter(conn) + CONN_UPDATE_INSTANT_DELTA;
+		ctx->data.cu.win_size = 1U;
+		ctx->data.cu.win_offset_us = 0U;
+		ctx->data.cu.instant = ull_conn_event_counter(conn) + conn->lll.latency + CONN_UPDATE_INSTANT_DELTA;
 		rp_cu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_UNUSED;
 		ctx->state = RP_CU_STATE_WAIT_INSTANT;
