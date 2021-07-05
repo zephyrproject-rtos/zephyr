@@ -204,6 +204,34 @@ static void timer_isr(const void *unused)
 	sys_clock_announce(dticks);
 }
 
+#ifdef CONFIG_SOC_IT8XXX2_PLL_FLASH_48M
+#define TIMER_CHANGE_PLL EXT_TIMER_8
+static void timer_5ms_one_shot_isr(const void *unused)
+{
+	ARG_UNUSED(unused);
+
+	/*
+	 * We are here because we have completed changing PLL sequence.
+	 * Disabled the timer.
+	 */
+	timer_init_ms(TIMER_CHANGE_PLL, ET_PSR_32K, 0, 0, 5);
+}
+
+/*
+ * This timer is used to wake up chip from sleep mode to complete
+ * changing PLL sequence.
+ */
+void timer_5ms_one_shot(void)
+{
+	/* Initialize interrupt handler of external timer8. */
+	IRQ_CONNECT(DT_IRQ_BY_IDX(DT_NODELABEL(timer), 8, irq),
+			0, timer_5ms_one_shot_isr, NULL,
+			DT_IRQ_BY_IDX(DT_NODELABEL(timer), 8, flags));
+	/* enable 5ms timer with 32.768khz clock source */
+	timer_init_ms(TIMER_CHANGE_PLL, ET_PSR_32K, 1, 1, 5);
+}
+#endif /* CONFIG_SOC_IT8XXX2_PLL_FLASH_48M */
+
 int sys_clock_driver_init(const struct device *dev)
 {
 	timer_init_combine(CTIMER_HW_TIMER_INDEX, TRUE);
