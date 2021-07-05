@@ -301,8 +301,6 @@ static int pwm_nrfx_pm_control(const struct device *dev,
 		err = pwm_nrfx_init(dev);
 		break;
 	case PM_DEVICE_STATE_SUSPENDED:
-		__fallthrough;
-	case PM_DEVICE_STATE_OFF:
 		pwm_nrfx_uninit(dev);
 		break;
 	default:
