@@ -197,8 +197,8 @@ static int bme280_sample_fetch(const struct device *dev,
 #ifdef CONFIG_PM_DEVICE
 	enum pm_device_state state;
 	(void)pm_device_state_get(dev, &state);
-	/* Do not allow sample fetching from OFF state */
-	if (state == PM_DEVICE_STATE_OFF)
+	/* Do not allow sample fetching from suspended state */
+	if (state == PM_DEVICE_STATE_SUSPENDED)
 		return -EIO;
 #endif
 
@@ -420,8 +420,6 @@ int bme280_pm_ctrl(const struct device *dev, enum pm_device_state state)
 		ret = bme280_chip_init(dev);
 		break;
 	case PM_DEVICE_STATE_SUSPENDED:
-		__fallthrough;
-	case PM_DEVICE_STATE_OFF:
 		/* Put the chip into sleep mode */
 		ret = bme280_reg_write(dev,
 			BME280_REG_CTRL_MEAS,
