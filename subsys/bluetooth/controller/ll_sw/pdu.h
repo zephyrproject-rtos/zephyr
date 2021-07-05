@@ -102,6 +102,10 @@
 /* Value specified in BT Spec. Vol 6, Part B, section 2.3.4.6 */
 #define OFFS_ADJUST_US          245760
 
+/* Sleep Clock Accuracy, calculate drift in microseconds */
+#define SCA_DRIFT_50_PPM_US(t)  (((t) * 50UL) / 1000000UL)
+#define SCA_DRIFT_500_PPM_US(t) (((t) * 500UL) / 1000000UL)
+
 /* transmitWindowDelay times (us) */
 #define WIN_DELAY_LEGACY     1250
 #define WIN_DELAY_UNCODED    2500

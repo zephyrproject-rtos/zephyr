@@ -271,9 +271,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 
 	aux_offset_us = ftr->radio_end_us - PKT_AC_US(pdu->len, 0, phy);
 	if (aux_ptr->offs_units) {
-		lll->window_size_us = 300U;
+		lll->window_size_us = OFFS_UNIT_300_US;
 	} else {
-		lll->window_size_us = 30U;
+		lll->window_size_us = OFFS_UNIT_30_US;
 	}
 	aux_offset_us += (uint32_t)aux_ptr->offs * lll->window_size_us;
 
@@ -282,9 +282,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	 * 1 - 0 ppm to 50 ppm
 	 */
 	if (aux_ptr->ca) {
-		window_widening_us = aux_offset_us / 20000U;
+		window_widening_us = SCA_DRIFT_50_PPM_US(aux_offset_us);
 	} else {
-		window_widening_us = aux_offset_us / 2000U;
+		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
 	}
 
 	lll->window_size_us += (EVENT_TICKER_RES_MARGIN_US +
