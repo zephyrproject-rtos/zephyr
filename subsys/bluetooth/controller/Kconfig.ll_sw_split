@@ -549,7 +549,7 @@ config BT_CTLR_SCAN_INDICATION
 
 config BT_CTLR_SCAN_UNRESERVED
 	bool "Unreserved scan window"
-	depends on BT_OBSERVER
+	depends on BT_OBSERVER && !BT_CTLR_LOW_LAT
 	default y if BT_MESH
 	help
 	  Scanner will not use time space reservation for scan window when in
