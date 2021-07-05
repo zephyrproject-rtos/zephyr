@@ -48,7 +48,7 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.4
 
    * - :ref:`can_api`
-     - Experimental
+     - Unstable
      - 1.14
      - 2.6
 
