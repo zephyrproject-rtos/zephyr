@@ -208,18 +208,18 @@ static int qdec_nrfx_init(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int qdec_nrfx_pm_control(struct qdec_nrfx_data *data,
-				enum pm_device_state state)
+				enum pm_device_action action)
 {
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		qdec_nrfx_gpio_ctrl(true);
 		nrfx_qdec_enable();
 		break;
-	case PM_DEVICE_STATE_OFF:
+	case PM_DEVICE_ACTION_TURN_OFF:
 		/* device must be uninitialized */
 		nrfx_qdec_uninit();
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		/* device must be suspended */
 		nrfx_qdec_disable();
 		qdec_nrfx_gpio_ctrl(false);

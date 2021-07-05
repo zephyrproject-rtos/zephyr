@@ -430,13 +430,13 @@ static inline int gpio_dw_manage_callback(const struct device *port,
 * the *context may include IN data or/and OUT data
 */
 static int gpio_dw_device_ctrl(const struct device *dev,
-			       enum pm_device_state state)
+			       enum pm_device_action action)
 {
-	switch (state) {
-	case PM_DEVICE_STATE_SUSPENDED:
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
 		gpio_dw_clock_off(dev);
 		break;
-	case PM_DEVICE_STATE_ACTIVE:
+	case PM_DEVICE_ACTION_RESUME:
 		gpio_dw_clock_on(dev);
 		break;
 	default:

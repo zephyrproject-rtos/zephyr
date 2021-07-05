@@ -25,13 +25,13 @@ static int dummy_transfer(const struct device *dev, uint32_t cmd,
 }
 
 static int dummy_parent_pm_ctrl(const struct device *dev,
-				enum pm_device_state state)
+				enum pm_device_action action)
 {
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		printk("parent resuming..\n");
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		printk("parent suspending..\n");
 		break;
 	default:

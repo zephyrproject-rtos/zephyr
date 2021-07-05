@@ -310,15 +310,15 @@ int ioapic_resume_from_suspend(const struct device *port)
 */
 __pinned_func
 static int ioapic_device_ctrl(const struct device *dev,
-			      enum pm_device_state state)
+			      enum pm_device_action action)
 {
 	int ret = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		ret = ioapic_resume_from_suspend(dev);
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		ret = ioapic_suspend(dev);
 		break;
 	default:

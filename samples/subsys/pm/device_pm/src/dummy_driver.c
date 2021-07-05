@@ -87,13 +87,13 @@ static int dummy_close(const struct device *dev)
 }
 
 static int dummy_device_pm_ctrl(const struct device *dev,
-				enum pm_device_state state)
+				enum pm_device_action action)
 {
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		printk("child resuming..\n");
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		printk("child suspending..\n");
 		break;
 	default:

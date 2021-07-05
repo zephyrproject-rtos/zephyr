@@ -292,15 +292,15 @@ static void pwm_nrfx_uninit(const struct device *dev)
 }
 
 static int pwm_nrfx_pm_control(const struct device *dev,
-			       enum pm_device_state state)
+			       enum pm_device_action action)
 {
 	int err = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		err = pwm_nrfx_init(dev);
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		pwm_nrfx_uninit(dev);
 		break;
 	default:

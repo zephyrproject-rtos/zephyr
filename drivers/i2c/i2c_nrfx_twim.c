@@ -255,12 +255,12 @@ static int init_twim(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int twim_nrfx_pm_control(const struct device *dev,
-				enum pm_device_state state)
+				enum pm_device_action action)
 {
 	int ret = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		init_twim(dev);
 		if (get_dev_data(dev)->dev_config) {
 			i2c_nrfx_twim_configure(dev,
@@ -268,7 +268,7 @@ static int twim_nrfx_pm_control(const struct device *dev,
 		}
 		break;
 
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		nrfx_twim_uninit(&get_dev_config(dev)->twim);
 		break;
 

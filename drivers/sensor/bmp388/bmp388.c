@@ -550,15 +550,15 @@ static int bmp388_get_calibration_data(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int bmp388_device_ctrl(const struct device *dev,
-			      enum pm_device_state state)
+			      enum pm_device_action action)
 {
 	uint8_t reg_val;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		reg_val = BMP388_PWR_CTRL_MODE_NORMAL;
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		reg_val = BMP388_PWR_CTRL_MODE_SLEEP;
 		break;
 	default:

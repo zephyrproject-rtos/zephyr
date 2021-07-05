@@ -325,20 +325,20 @@ static int init_spim(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int spim_nrfx_pm_control(const struct device *dev,
-				enum pm_device_state state)
+				enum pm_device_action action)
 {
 	int ret = 0;
 	struct spi_nrfx_data *data = get_dev_data(dev);
 	const struct spi_nrfx_config *config = get_dev_config(dev);
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		ret = init_spim(dev);
 		/* Force reconfiguration before next transfer */
 		data->ctx.config = NULL;
 		break;
 
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		nrfx_spim_uninit(&config->spim);
 		break;
 

@@ -482,7 +482,7 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
  * @return 0 in case of success, negative error code otherwise.
  */
 static int fdc2x1x_device_pm_ctrl(const struct device *dev,
-				  enum pm_device_state state)
+				  enum pm_device_action action)
 {
 	int ret;
 	struct fdc2x1x_data *data = dev->data;
@@ -491,8 +491,8 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 
 	(void)pm_device_state_get(dev, &curr_state);
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		if (curr_state == PM_DEVICE_STATE_OFF) {
 			ret = fdc2x1x_set_shutdown(dev, false);
 			if (ret) {
@@ -506,7 +506,7 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 		}
 
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		if (curr_state == PM_DEVICE_STATE_OFF) {
 			ret = fdc2x1x_set_shutdown(dev, false);
 			if (ret) {
@@ -519,7 +519,7 @@ static int fdc2x1x_device_pm_ctrl(const struct device *dev,
 		}
 
 		break;
-	case PM_DEVICE_STATE_OFF:
+	case PM_DEVICE_ACTION_TURN_OFF:
 		if (cfg->sd_gpio->name) {
 			ret = fdc2x1x_set_shutdown(dev, true);
 		} else {

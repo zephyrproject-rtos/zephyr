@@ -327,12 +327,12 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 
 #ifdef CONFIG_PM_DEVICE
 static int i2c_cc13xx_cc26xx_pm_control(const struct device *dev,
-					enum pm_device_state state)
+					enum pm_device_action action)
 {
 	int ret = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		Power_setDependency(PowerCC26XX_PERIPH_I2C0);
 		IOCPinTypeI2c(get_dev_config(dev)->base,
 			get_dev_config(dev)->sda_pin,
@@ -343,7 +343,7 @@ static int i2c_cc13xx_cc26xx_pm_control(const struct device *dev,
 			I2CMasterIntEnable(get_dev_config(dev)->base);
 		}
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		I2CMasterIntDisable(get_dev_config(dev)->base);
 		I2CMasterDisable(get_dev_config(dev)->base);
 		/* Reset pin type to default GPIO configuration */
