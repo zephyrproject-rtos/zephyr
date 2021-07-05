@@ -637,6 +637,7 @@ static int spi_flash_at45_pm_control(const struct device *dev,
 		break;
 
 	case PM_DEVICE_STATE_SUSPENDED:
+		__fallthrough;
 	case PM_DEVICE_STATE_OFF:
 		acquire(dev);
 		power_down_op(dev,

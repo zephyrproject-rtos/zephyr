@@ -549,18 +549,22 @@ static int bmp388_get_calibration_data(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int bmp388_set_power_state(const struct device *dev,
-				  enum pm_device_state state)
+static int bmp388_device_ctrl(const struct device *dev,
+			      enum pm_device_state state)
 {
 	uint8_t reg_val;
 
-	if (state == PM_DEVICE_STATE_ACTIVE) {
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
 		reg_val = BMP388_PWR_CTRL_MODE_NORMAL;
-	} else if ((state == PM_DEVICE_STATE_SUSPENDED) ||
-		   (state == PM_DEVICE_STATE_OFF)) {
+		break;
+	case PM_DEVICE_STATE_SUSPENDED:
+		__fallthrough;
+	case PM_DEVICE_STATE_OFF:
 		reg_val = BMP388_PWR_CTRL_MODE_SLEEP;
-	} else {
-		return 0;
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	if (bmp388_reg_field_update(dev,
@@ -572,17 +576,6 @@ static int bmp388_set_power_state(const struct device *dev,
 	}
 
 	return 0;
-}
-
-static int bmp388_device_ctrl(
-	const struct device *dev,
-	enum pm_device_state state)
-{
-	int ret = 0;
-
-	ret = bmp388_set_power_state(dev, state);
-
-	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
 

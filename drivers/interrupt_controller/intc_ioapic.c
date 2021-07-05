@@ -319,6 +319,7 @@ static int ioapic_device_ctrl(const struct device *dev,
 		ret = ioapic_resume_from_suspend(dev);
 		break;
 	case PM_DEVICE_STATE_SUSPENDED:
+		__fallthrough;
 	case PM_DEVICE_STATE_OFF:
 		ret = ioapic_suspend(dev);
 		break;
@@ -328,7 +329,6 @@ static int ioapic_device_ctrl(const struct device *dev,
 
 	return ret;
 }
-
 
 #endif  /*CONFIG_PM_DEVICE*/
 

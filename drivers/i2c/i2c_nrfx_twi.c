@@ -231,6 +231,7 @@ static int twi_nrfx_pm_control(const struct device *dev,
 		break;
 
 	case PM_DEVICE_STATE_SUSPENDED:
+		__fallthrough;
 	case PM_DEVICE_STATE_OFF:
 		nrfx_twi_uninit(&get_dev_config(dev)->twi);
 		break;

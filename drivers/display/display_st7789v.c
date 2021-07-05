@@ -396,23 +396,25 @@ static int st7789v_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static void st7789v_enter_sleep(struct st7789v_data *data)
-{
-	st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
-}
-
 static int st7789v_pm_control(const struct device *dev,
 			      enum pm_device_state state)
 {
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
+	int ret = 0;
 
-	if (state == PM_DEVICE_STATE_ACTIVE) {
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
 		st7789v_exit_sleep(data);
-	} else {
-		st7789v_enter_sleep(data);
+		break;
+	case PM_DEVICE_STATE_SUSPENDED:
+		ret = st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
 	}
 
-	return 0;
+	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
 
