@@ -1,0 +1,16 @@
+# This file contains imgtool configuration options that are used when WestSign
+# stage is executed in twister. Platform-specific options overwrite default ones.
+# Default values are taken from nrf5240dk configuration
+
+default:
+  'key': default
+  'header_size': "0x200"
+  'align': 8
+  'version': 1.2
+  'slot_size': "0x67000"
+  'pad': false
+  'hex_addr': "0x73000"
+
+nrf52840dk_nrf52840:
+  'slot_size': "0x67000"
+  'hex_addr': "0x73000"
