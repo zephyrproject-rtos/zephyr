@@ -1,0 +1,16 @@
+# Raspberry Pi RP20XX MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RP20XX
+	bool "Raspberry Pi RP20 series MCU"
+	select ARM
+	select CPU_CORTEX_M0_PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select SOC_FAMILY_RASPBERRY_PI
+	select XIP
+	help
+	  Enable support for Raspberry Pi RP20 MCU series

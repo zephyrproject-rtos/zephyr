@@ -1,0 +1,16 @@
+# Raspberry Pi RP20XX MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RP20XX
+
+source "soc/arm/raspberry_pi/rp20/Kconfig.defconfig.rp20*"
+
+config SOC_SERIES
+	default "rp2040"
+
+config NUM_IRQS
+	default 26
+
+endif # SOC_SERIES_RP20XX

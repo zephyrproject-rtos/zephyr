@@ -1,0 +1,13 @@
+# Raspberry Pi RP20XX MCU line
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "RP20xx MCU Selection"
+	depends on SOC_SERIES_RP20XX
+
+config SOC_RP2040
+	bool "Raspberry Pi RP2040"
+
+endchoice
