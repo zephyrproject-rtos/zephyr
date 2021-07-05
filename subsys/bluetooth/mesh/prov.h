@@ -74,6 +74,7 @@ enum {
 	WAIT_AUTH,              /* Wait for auth response */
 	OOB_STATIC_KEY,         /* OOB Static Authentication */
 	WAIT_DH_KEY,            /* Wait for DH Key */
+	PROV_DATA_COMPLETE,	/* Provisioning data available */
 
 	NUM_FLAGS,
 };
@@ -82,13 +83,23 @@ enum {
 struct bt_mesh_prov_role {
 	void (*link_opened)(void);
 
-	void (*link_closed)(void);
+	void (*link_closed)(enum prov_bearer_link_status reason);
 
 	void (*error)(uint8_t reason);
 
 	void (*input_complete)(void);
 
 	void (*op[10])(const uint8_t *data);
+};
+
+/** Provisioning data */
+struct prov_data {
+	uint8_t net_key[16];
+	uint16_t net_idx;
+	uint8_t flags;
+	uint32_t iv_index;
+	uint16_t addr;
+	uint8_t dev_key[16];
 };
 
 struct bt_mesh_prov_link {
@@ -110,7 +121,12 @@ struct bt_mesh_prov_link {
 
 	uint8_t conf_salt[16];          /* ConfirmationSalt */
 	uint8_t conf_key[16];           /* ConfirmationKey */
-	uint8_t conf_inputs[145];       /* ConfirmationInputs */
+
+	union {
+		struct prov_data data;		/* Provisioning data */
+		uint8_t conf_inputs[145];       /* ConfirmationInputs */
+	};
+
 	uint8_t prov_salt[16];          /* Provisioning Salt */
 };
 

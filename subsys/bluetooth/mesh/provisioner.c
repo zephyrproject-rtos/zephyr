@@ -647,7 +647,7 @@ static void local_input_complete(void)
 	}
 }
 
-static void prov_link_closed(void)
+static void prov_link_closed(enum prov_bearer_link_status reason)
 {
 	reset_state();
 }

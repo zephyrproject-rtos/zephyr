@@ -320,12 +320,12 @@ static void prov_link_closed(const struct prov_bearer *bearer, void *cb_data,
 {
 	BT_DBG("%u", reason);
 
-	if (bt_mesh_prov_link.role->link_closed) {
-		bt_mesh_prov_link.role->link_closed();
-	}
-
 	if (bt_mesh_prov->link_close) {
 		bt_mesh_prov->link_close(bearer->type);
+	}
+
+	if (bt_mesh_prov_link.role->link_closed) {
+		bt_mesh_prov_link.role->link_closed(reason);
 	}
 }
 

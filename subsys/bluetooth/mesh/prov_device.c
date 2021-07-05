@@ -478,14 +478,8 @@ static void prov_data(const uint8_t *data)
 	PROV_BUF(msg, 1);
 	uint8_t session_key[16];
 	uint8_t nonce[13];
-	uint8_t dev_key[16];
 	uint8_t pdu[25];
-	uint8_t flags;
-	uint32_t iv_index;
-	uint16_t addr;
-	uint16_t net_idx;
 	int err;
-	bool identity_enable;
 
 	BT_DBG("");
 
@@ -517,22 +511,26 @@ static void prov_data(const uint8_t *data)
 	}
 
 	err = bt_mesh_dev_key(bt_mesh_prov_link.dhkey,
-			      bt_mesh_prov_link.prov_salt, dev_key);
+			      bt_mesh_prov_link.prov_salt,
+			      bt_mesh_prov_link.data.dev_key);
 	if (err) {
 		BT_ERR("Unable to generate device key");
 		prov_fail(PROV_ERR_UNEXP_ERR);
 		return;
 	}
 
-	BT_DBG("DevKey: %s", bt_hex(dev_key, 16));
+	BT_DBG("DevKey: %s", bt_hex(bt_mesh_prov_link.data.dev_key, 16));
 
-	net_idx = sys_get_be16(&pdu[16]);
-	flags = pdu[18];
-	iv_index = sys_get_be32(&pdu[19]);
-	addr = sys_get_be16(&pdu[23]);
+	memcpy(bt_mesh_prov_link.data.net_key, pdu, 16);
+	bt_mesh_prov_link.data.net_idx = sys_get_be16(&pdu[16]);
+	bt_mesh_prov_link.data.flags = pdu[18];
+	bt_mesh_prov_link.data.iv_index = sys_get_be32(&pdu[19]);
+	bt_mesh_prov_link.data.addr = sys_get_be16(&pdu[23]);
 
 	BT_DBG("net_idx %u iv_index 0x%08x, addr 0x%04x",
-	       net_idx, iv_index, addr);
+	       bt_mesh_prov_link.data.net_idx,
+	       bt_mesh_prov_link.data.iv_index,
+	       bt_mesh_prov_link.data.addr);
 
 	bt_mesh_prov_buf_init(&msg, PROV_COMPLETE);
 	if (bt_mesh_prov_send(&msg, NULL)) {
@@ -543,25 +541,7 @@ static void prov_data(const uint8_t *data)
 	/* Ignore any further PDUs on this link */
 	bt_mesh_prov_link.expect = PROV_NO_PDU;
 
-	/* Store info, since bt_mesh_provision() will end up clearing it */
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-		identity_enable = is_pb_gatt();
-	} else {
-		identity_enable = false;
-	}
-
-	err = bt_mesh_provision(pdu, net_idx, flags, iv_index, addr, dev_key);
-	if (err) {
-		BT_ERR("Failed to provision (err %d)", err);
-		return;
-	}
-
-	/* After PB-GATT provisioning we should start advertising
-	 * using Node Identity.
-	 */
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) && identity_enable) {
-		bt_mesh_proxy_identity_enable();
-	}
+	atomic_set_bit(bt_mesh_prov_link.flags, PROV_DATA_COMPLETE);
 }
 
 static void local_input_complete(void)
@@ -574,8 +554,42 @@ static void local_input_complete(void)
 	}
 }
 
-static void prov_link_closed(void)
+static void prov_link_closed(enum prov_bearer_link_status reason)
 {
+	int err;
+	bool identity_enable;
+
+	if (reason != PROV_BEARER_LINK_STATUS_SUCCESS ||
+	    !atomic_test_and_clear_bit(bt_mesh_prov_link.flags, PROV_DATA_COMPLETE)) {
+		goto reset;
+	}
+
+	/* Store info, since bt_mesh_provision() will end up clearing it */
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		identity_enable = is_pb_gatt();
+	} else {
+		identity_enable = false;
+	}
+
+	err = bt_mesh_provision(bt_mesh_prov_link.data.net_key,
+				bt_mesh_prov_link.data.net_idx,
+				bt_mesh_prov_link.data.flags,
+				bt_mesh_prov_link.data.iv_index,
+				bt_mesh_prov_link.data.addr,
+				bt_mesh_prov_link.data.dev_key);
+	if (err) {
+		BT_ERR("Failed to provision (err %d)", err);
+		goto reset;
+	}
+
+	/* After PB-GATT provisioning we should start advertising
+	 * using Node Identity.
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) && identity_enable) {
+		bt_mesh_proxy_identity_enable();
+	}
+
+reset:
 	reset_state();
 }
 
