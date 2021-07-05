@@ -34,6 +34,7 @@ import platform
 import yaml
 import json
 from multiprocessing import Lock, Process, Value
+import stageslib
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
@@ -684,19 +685,7 @@ class DeviceHandler(Handler):
             if d.serial == serial or d.serial_pty:
                 d.available = 1
 
-    @staticmethod
-    def run_custom_script(script, timeout):
-        with subprocess.Popen(script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
-            try:
-                stdout, _ = proc.communicate(timeout=timeout)
-                logger.debug(stdout.decode())
-
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.communicate()
-                logger.error("{} timed out".format(script))
-
-    def handle(self):
+    def handle(self, command=None):
         out_state = "failed"
         runner = None
 
@@ -724,57 +713,66 @@ class DeviceHandler(Handler):
 
         logger.debug("Using serial device {}".format(serial_device))
 
-        if (self.suite.west_flash is not None) or runner:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
-            command_extra_args = []
-
-            # There are three ways this option is used.
-            # 1) bare: --west-flash
-            #    This results in options.west_flash == []
-            # 2) with a value: --west-flash="--board-id=42"
-            #    This results in options.west_flash == "--board-id=42"
-            # 3) Multiple values: --west-flash="--board-id=42,--erase"
-            #    This results in options.west_flash == "--board-id=42 --erase"
-            if self.suite.west_flash and self.suite.west_flash != []:
-                command_extra_args.extend(self.suite.west_flash.split(','))
-
-            if runner:
-                command.append("--runner")
-                command.append(runner)
-
-                board_id = hardware.probe_id or hardware.id
-                product = hardware.product
-                if board_id is not None:
-                    if runner == "pyocd":
-                        command_extra_args.append("--board-id")
-                        command_extra_args.append(board_id)
-                    elif runner == "nrfjprog":
-                        command_extra_args.append("--snr")
-                        command_extra_args.append(board_id)
-                    elif runner == "openocd" and product == "STM32 STLink":
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append("hla_serial %s" % (board_id))
-                    elif runner == "openocd" and product == "STLINK-V3":
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append("hla_serial %s" % (board_id))
-                    elif runner == "openocd" and product == "EDBG CMSIS-DAP":
-                        command_extra_args.append("--cmd-pre-init")
-                        command_extra_args.append("cmsis_dap_serial %s" % (board_id))
-                    elif runner == "jlink":
-                        command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
-
-            if command_extra_args != []:
-                command.append('--')
-                command.extend(command_extra_args)
+        # command is used to be able to replace the default command builder with
+        # user-defined one, e.g. to reset the board, and still be able to monitor uart
+        if command:
+            command = command.split()
         else:
-            command = [self.generator_cmd, "-C", self.build_dir, "flash"]
+            # TODO: this might be extracted as an individual method, for clarity and modularity
+            if (self.suite.west_flash is not None) or runner:
+                command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+                command_extra_args = []
+
+                # There are three ways this option is used.
+                # 1) bare: --west-flash
+                #    This results in options.west_flash == []
+                # 2) with a value: --west-flash="--board-id=42"
+                #    This results in options.west_flash == "--board-id=42"
+                # 3) Multiple values: --west-flash="--board-id=42,--erase"
+                #    This results in options.west_flash == "--board-id=42 --erase"
+                if self.suite.west_flash and self.suite.west_flash != []:
+                    command_extra_args.extend(self.suite.west_flash.split(','))
+
+                if runner:
+                    command.append("--runner")
+                    command.append(runner)
+
+                    board_id = hardware.probe_id or hardware.id
+                    product = hardware.product
+                    if board_id is not None:
+                        if runner == "pyocd":
+                            command_extra_args.append("--board-id")
+                            command_extra_args.append(board_id)
+                        elif runner == "nrfjprog":
+                            command_extra_args.append("--snr")
+                            command_extra_args.append(board_id)
+                        elif runner == "openocd" and product == "STM32 STLink":
+                            command_extra_args.append("--cmd-pre-init")
+                            command_extra_args.append("hla_serial %s" % (board_id))
+                        elif runner == "openocd" and product == "STLINK-V3":
+                            command_extra_args.append("--cmd-pre-init")
+                            command_extra_args.append("hla_serial %s" % (board_id))
+                        elif runner == "openocd" and product == "EDBG CMSIS-DAP":
+                            command_extra_args.append("--cmd-pre-init")
+                            command_extra_args.append("cmsis_dap_serial %s" % (board_id))
+                        elif runner == "jlink":
+                            command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
+
+                if command_extra_args != []:
+                    command.append('--')
+                    command.extend(command_extra_args)
+            else:
+                command = [self.generator_cmd, "-C", self.build_dir, "flash"]
 
         pre_script = hardware.pre_script
         post_flash_script = hardware.post_flash_script
         post_script = hardware.post_script
 
         if pre_script:
-            self.run_custom_script(pre_script, 30)
+            try:
+                stageslib.run_custom_script(pre_script, 30)
+            except Exception as ex:
+                logger.error(ex)
 
         try:
             ser = serial.Serial(
@@ -838,7 +836,10 @@ class DeviceHandler(Handler):
             os.write(write_pipe, b'x')  # halt the thread
 
         if post_flash_script:
-            self.run_custom_script(post_flash_script, 30)
+            try:
+                stageslib.run_custom_script(post_flash_script, 30)
+            except Exception as ex:
+                logger.error(ex)
 
         t.join(self.timeout)
         if t.is_alive():
@@ -887,7 +888,10 @@ class DeviceHandler(Handler):
             self.set_state(out_state, handler_time)
 
         if post_script:
-            self.run_custom_script(post_script, 30)
+            try:
+                stageslib.run_custom_script(post_script, 30)
+            except Exception as ex:
+                logger.error(ex)
 
         self.make_device_available(serial_device)
         self.record(harness)
@@ -1624,12 +1628,15 @@ class TestCase(DisablePyTestCollectionMixin):
         self.harness_config = {}
         self.build_only = True
         self.build_on_all = False
+        self.images = []
+        self.extra_build_configs = {}
         self.slow = False
         self.min_ram = -1
         self.depends_on = None
         self.min_flash = -1
         self.extra_sections = None
         self.integration_platforms = []
+        self.stages = None
 
     @staticmethod
     def get_unique(testcase_root, workdir, name):
@@ -1754,7 +1761,6 @@ Tests should reference the category and subsystem with a dot as a separator.
     def __str__(self):
         return self.name
 
-
 class TestInstance(DisablePyTestCollectionMixin):
     """Class representing the execution of a particular TestCase on a platform
 
@@ -1778,8 +1784,16 @@ class TestInstance(DisablePyTestCollectionMixin):
         self.name = os.path.join(platform.name, testcase.name)
         self.build_dir = os.path.join(outdir, platform.name, testcase.name)
 
-        self.run = False
+        # multiple_build object handles switching between the images
+        self.multi_build = None
+        if testcase.images:
+            self.multi_build = stageslib.MultiImage(
+                build_dir=self.build_dir,
+                source_dir=self.testcase.source_dir,
+                images=self.testcase.images
+            )
 
+        self.run = False
         self.results = {}
 
     def __getstate__(self):
@@ -2194,6 +2208,14 @@ class ProjectBuilder(FilterBuilder):
         self.suite = suite
         self.filtered_tests = 0
 
+        self.multi_build = None
+        if self.instance.multi_build:
+            self.multi_build = self.instance.multi_build
+
+        self.stages = []
+        if self.instance.testcase.stages:
+            self.stages = stageslib.StageContainer(proj_builder=self)
+
         self.lsan = kwargs.get('lsan', False)
         self.asan = kwargs.get('asan', False)
         self.ubsan = kwargs.get('ubsan', False)
@@ -2209,7 +2231,6 @@ class ProjectBuilder(FilterBuilder):
         self.verbose = kwargs.get('verbose', None)
         self.warnings_as_errors = kwargs.get('warnings_as_errors', True)
         self.overflow_as_errors = kwargs.get('overflow_as_errors', False)
-
     @staticmethod
     def log_info(filename, inline_logs):
         filename = os.path.abspath(os.path.realpath(filename))
@@ -2300,14 +2321,22 @@ class ProjectBuilder(FilterBuilder):
             instance.handler.generator = self.generator
 
     def process(self, pipeline, done, message, lock, results):
+
         op = message.get('op')
+
+        # If multi_build: choose an active image and select a stage of the process.
+        # Overwrite ProjectBuilder args to toggle between images.
+        if self.multi_build:
+            active_image, op, args_for_pb = self.multi_build.image_toggler(message)
+            self.source_dir, self.build_dir, self.extra_args = args_for_pb
 
         if not self.instance.handler:
             self.setup_handler()
 
-        # The build process, call cmake and build with configured generator
         if op == "cmake":
             res = self.cmake()
+            if self.multi_build:
+                self.multi_build.images[active_image].cmake_done = True
             if self.instance.status in ["failed", "error"]:
                 pipeline.put({"op": "report", "test": self.instance})
             elif self.cmake_only:
@@ -2329,6 +2358,8 @@ class ProjectBuilder(FilterBuilder):
         elif op == "build":
             logger.debug("build test: %s" % self.instance.name)
             res = self.build()
+            if self.multi_build:
+                self.multi_build.images[active_image].build_done = True
 
             if not res:
                 self.instance.status = "error"
@@ -2348,10 +2379,26 @@ class ProjectBuilder(FilterBuilder):
                         pipeline.put({"op": "run", "test": self.instance})
                     else:
                         pipeline.put({"op": "report", "test": self.instance})
+
         # Run the generated binary using one of the supported handlers
-        elif op == "run":
+        if op == "run":
             logger.debug("run test: %s" % self.instance.name)
-            self.run()
+            if self.stages:
+                for stage in self.stages:
+                    try:
+                        stage.run()
+                        _, stage_time = self.instance.handler.get_state()
+                        self.stages.total_time += stage_time
+                    except Exception as ex:
+                        logger.error(f"{type(stage).__name__} failed")
+                        logger.error(ex)
+                        self.instance.handler.state = "failed"
+                        self.instance.reason = ex.args[0]
+                        break
+                else:
+                    self.instance.handler.duration = self.stages.total_time
+            else:
+                self.run()
             self.instance.status, _ = self.instance.handler.get_state()
             logger.debug(f"run status: {self.instance.name} {self.instance.status}")
 
@@ -2565,6 +2612,7 @@ class ProjectBuilder(FilterBuilder):
 
         sys.stdout.flush()
 
+
 class TestSuite(DisablePyTestCollectionMixin):
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -2582,6 +2630,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "extra_configs": {"type": "list"},
                        "build_only": {"type": "bool", "default": False},
                        "build_on_all": {"type": "bool", "default": False},
+                       "images": {"type": "list", "default": []},
+                       "extra_build_configs": {"type": "list", "default": []},
                        "skip": {"type": "bool", "default": False},
                        "slow": {"type": "bool", "default": False},
                        "timeout": {"type": "int", "default": 60},
@@ -2598,7 +2648,8 @@ class TestSuite(DisablePyTestCollectionMixin):
                        "toolchain_allow": {"type": "set"},
                        "filter": {"type": "str"},
                        "harness": {"type": "str"},
-                       "harness_config": {"type": "map", "default": {}}
+                       "harness_config": {"type": "map", "default": {}},
+                       "stages": {"type": "list", "default": []}
                        }
 
     RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "release",
@@ -2961,13 +3012,16 @@ class TestSuite(DisablePyTestCollectionMixin):
                             raise Exception('Harness config error: console harness defined without a configuration.')
                         tc.build_only = tc_dict["build_only"]
                         tc.build_on_all = tc_dict["build_on_all"]
+                        tc.images = tc_dict["images"]
+                        tc.extra_build_configs = tc_dict["extra_build_configs"]
                         tc.slow = tc_dict["slow"]
                         tc.min_ram = tc_dict["min_ram"]
                         tc.depends_on = tc_dict["depends_on"]
                         tc.min_flash = tc_dict["min_flash"]
                         tc.extra_sections = tc_dict["extra_sections"]
                         tc.integration_platforms = tc_dict["integration_platforms"]
-
+                        if tc_dict["stages"]:
+                            tc.stages = tc_dict["stages"]
                         tc.parse_subcases(tc_path)
 
                         if testcase_filter:
@@ -2980,6 +3034,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     logger.error("%s: can't load (skipping): %s" % (tc_path, e))
                     self.load_errors += 1
         return len(self.testcases)
+
 
     def get_platform(self, name):
         selected_platform = None

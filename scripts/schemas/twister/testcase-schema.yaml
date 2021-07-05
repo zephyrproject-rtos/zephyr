@@ -26,6 +26,20 @@ mapping:
       "build_on_all":
         type: bool
         required: no
+      "images":
+        type: seq
+        sequence:
+          - type: map
+            mapping:
+              "name":
+                type: str
+                required: yes
+              "path":
+                type: str
+                required: yes
+              "extra_args":
+                type: str
+                required: no
       "depends_on":
         type: str
         required: no
@@ -238,3 +252,89 @@ mapping:
           "slow":
             type: bool
             required: no
+          "images":
+            type: seq
+            sequence:
+              - type: map
+                mapping:
+                  "name":
+                    type: str
+                    required: yes
+                  "path":
+                    type: str
+                    required: yes
+                  "extra_args":
+                    type: str
+                    required: no
+          "stages":
+            type: seq
+            required: no
+            sequence:
+              - type: map
+                mapping:
+                  "CallScripts":
+                    type: seq
+                    required: no
+                    sequence:
+                      - type: str
+                  "WestSign":
+                    type: map
+                    required: no
+                    mapping:
+                      "image":
+                        type: str
+                        required: no
+                      "imgtool_args":
+                        type: map
+                        required: no
+                        mapping:
+                          "key":
+                            type: str
+                            required: no
+                          "pad":
+                            type: bool
+                            required: no
+                          "hex_addr":
+                            type: str
+                            required: no
+                  "OnTarget":
+                    type: map
+                    required: no
+                    mapping:
+                      "image":
+                        type: str
+                        required: no
+                      "command":
+                        type: str
+                        required: no
+                      "harness":
+                        type: str
+                        required: no
+                      "harness_config":
+                        type: map
+                        required: no
+                        mapping:
+                          "type":
+                            type: str
+                            required: no
+                          "fixture":
+                            type: str
+                            required: no
+                          "ordered":
+                            type: bool
+                            required: no
+                          "repeat":
+                            type: int
+                            required: no
+                          "regex":
+                            type: seq
+                            required: no
+                            sequence:
+                              - type: str
+                          "record":
+                            type: map
+                            required: no
+                            mapping:
+                              "regex":
+                                type: str
+                                required: no
