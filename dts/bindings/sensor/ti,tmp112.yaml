@@ -8,3 +8,21 @@ description: |
 compatible: "ti,tmp112"
 
 include: i2c-device.yaml
+
+properties:
+  sampling-rate:
+    description: Sampling rate in mHz (milli-Hertz)
+    type: int
+    default: 4000
+    enum:
+      - 250
+      - 1000
+      - 4000
+      - 8000
+  full-scale:
+    description: Full scale in degree Celsius
+    type: int
+    default: 128
+    enum:
+      - 128
+      - 150
