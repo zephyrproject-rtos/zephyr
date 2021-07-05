@@ -13,5 +13,6 @@ supported:
   - pwm
   - watchdog
   - dac
+  - adc
 ram: 192
 flash: 512
