@@ -415,26 +415,29 @@ static int apds9960_device_ctrl(const struct device *dev,
 	struct apds9960_data *data = dev->data;
 	int ret = 0;
 
-	if (state == PM_DEVICE_STATE_ACTIVE) {
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
 		if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 					APDS9960_ENABLE_REG,
 					APDS9960_ENABLE_PON,
 					APDS9960_ENABLE_PON)) {
 			ret = -EIO;
 		}
-
-	} else {
-
+		break;
+	case PM_DEVICE_STATE_SUSPENDED:
 		if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-				APDS9960_ENABLE_REG,
-				APDS9960_ENABLE_PON, 0)) {
+					APDS9960_ENABLE_REG,
+					APDS9960_ENABLE_PON, 0)) {
 			ret = -EIO;
 		}
 
 		if (i2c_reg_write_byte(data->i2c, config->i2c_address,
-				APDS9960_AICLEAR_REG, 0)) {
+				       APDS9960_AICLEAR_REG, 0)) {
 			ret = -EIO;
 		}
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	return ret;

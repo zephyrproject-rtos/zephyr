@@ -574,28 +574,19 @@ static const struct gpio_driver_api gpio_stm32_driver = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-static int gpio_stm32_set_power_state(const struct device *dev,
-				      enum pm_device_state state)
-{
-	int ret = 0;
-
-	if (state == PM_DEVICE_STATE_ACTIVE) {
-		ret = gpio_stm32_clock_request(dev, true);
-	} else if (state == PM_DEVICE_STATE_SUSPENDED) {
-		ret = gpio_stm32_clock_request(dev, false);
-	}
-
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
-}
-
 static int gpio_stm32_pm_device_ctrl(const struct device *dev,
 				     enum pm_device_state state)
 {
-	return gpio_stm32_set_power_state(dev, state);
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
+		return gpio_stm32_clock_request(dev, true);
+	case PM_DEVICE_STATE_SUSPENDED:
+		return gpio_stm32_clock_request(dev, false);
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */
 

@@ -481,8 +481,8 @@ static int fdc2x1x_set_shutdown(const struct device *dev, bool enable)
  * @param pm_state - power management state
  * @return 0 in case of success, negative error code otherwise.
  */
-static int fdc2x1x_set_pm_state(const struct device *dev,
-				enum pm_device_state pm_state)
+static int fdc2x1x_device_pm_ctrl(const struct device *dev,
+				  enum pm_device_state state)
 {
 	int ret;
 	struct fdc2x1x_data *data = dev->data;
@@ -491,7 +491,7 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 
 	(void)pm_device_state_get(dev, &curr_state);
 
-	switch (pm_state) {
+	switch (state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		if (curr_state == PM_DEVICE_STATE_OFF) {
 			ret = fdc2x1x_set_shutdown(dev, false);
@@ -524,30 +524,11 @@ static int fdc2x1x_set_pm_state(const struct device *dev,
 			ret = fdc2x1x_set_shutdown(dev, true);
 		} else {
 			LOG_ERR("SD pin not defined");
-			ret = -EINVAL;
+			ret = -ENOTSUP;
 		}
 		break;
 	default:
-		return -EINVAL;
-	}
-
-	return ret;
-}
-
-static int fdc2x1x_device_pm_ctrl(const struct device *dev,
-				  enum pm_device_state state)
-{
-	struct fdc2x1x_data *data = dev->data;
-	int ret = 0;
-
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
-	case PM_DEVICE_STATE_OFF:
-		ret = fdc2x1x_set_pm_state(dev, state);
-		break;
-	default:
-		LOG_ERR("PM state not supported");
-		ret = -EINVAL;
+		return -ENOTSUP;
 	}
 
 	return ret;

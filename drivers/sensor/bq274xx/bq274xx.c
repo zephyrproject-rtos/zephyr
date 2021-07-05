@@ -734,22 +734,19 @@ static int bq274xx_exit_shutdown_mode(const struct device *dev)
 static int bq274xx_pm_control(const struct device *dev,
 			      enum pm_device_state state)
 {
-	int ret = 0;
+	int ret;
 	struct bq274xx_data *data = dev->data;
 
-	if (state == PM_DEVICE_STATE_OFF) {
+	switch (state) {
+	case PM_DEVICE_STATE_OFF:
 		ret = bq274xx_enter_shutdown_mode(data);
-		if (ret < 0) {
-			LOG_ERR("Unable to enter off state");
-		}
-	} else if (state == PM_DEVICE_STATE_ACTIVE) {
+		break;
+	case PM_DEVICE_STATE_ACTIVE:
 		ret = bq274xx_exit_shutdown_mode(dev);
-		if (ret < 0) {
-			LOG_ERR("Unable to enter active state");
-		}
-	} else {
-		LOG_ERR("State to set is not implemented");
+		break;
+	default:
 		ret = -ENOTSUP;
+		break;
 	}
 
 	return ret;

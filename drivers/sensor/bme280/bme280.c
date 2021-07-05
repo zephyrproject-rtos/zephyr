@@ -414,21 +414,25 @@ int bme280_pm_ctrl(const struct device *dev, enum pm_device_state state)
 {
 	int ret = 0;
 
-	/* Switching from OFF to any */
-	if (state != PM_DEVICE_STATE_OFF) {
+	switch (state) {
+	case PM_DEVICE_STATE_ACTIVE:
 		/* Re-initialize the chip */
 		ret = bme280_chip_init(dev);
-	}
-	/* Switching to OFF from any */
-	else if (state == PM_DEVICE_STATE_OFF) {
-
+		break;
+	case PM_DEVICE_STATE_SUSPENDED:
+		__fallthrough;
+	case PM_DEVICE_STATE_OFF:
 		/* Put the chip into sleep mode */
 		ret = bme280_reg_write(dev,
 			BME280_REG_CTRL_MEAS,
 			BME280_CTRL_MEAS_OFF_VAL);
 
-		if (ret < 0)
+		if (ret < 0) {
 			LOG_DBG("CTRL_MEAS write failed: %d", ret);
+		}
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	return ret;

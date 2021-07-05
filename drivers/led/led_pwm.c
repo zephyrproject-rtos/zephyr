@@ -114,9 +114,8 @@ static int led_pwm_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-
-static int led_pwm_pm_set_state(const struct device *dev,
-				enum pm_device_state new_state)
+static int led_pwm_pm_control(const struct device *dev,
+			      enum pm_device_state state)
 {
 	const struct led_pwm_config *config = DEV_CFG(dev);
 
@@ -124,8 +123,8 @@ static int led_pwm_pm_set_state(const struct device *dev,
 	for (size_t i = 0; i < config->num_leds; i++) {
 		const struct led_pwm *led_pwm = &config->led[i];
 
-		LOG_DBG("Switching PWM %p to state %" PRIu32, led_pwm->dev, new_state);
-		int err = pm_device_state_set(led_pwm->dev, new_state);
+		LOG_DBG("Switching PWM %p to state %" PRIu32, led_pwm->dev, state);
+		int err = pm_device_state_set(led_pwm->dev, state);
 
 		if (err) {
 			LOG_ERR("Cannot switch PWM %p power state", led_pwm->dev);
@@ -134,13 +133,6 @@ static int led_pwm_pm_set_state(const struct device *dev,
 
 	return 0;
 }
-
-static int led_pwm_pm_control(const struct device *dev,
-			      enum pm_device_state state)
-{
-	return led_pwm_pm_set_state(dev, state);
-}
-
 #endif /* CONFIG_PM_DEVICE */
 
 static const struct led_driver_api led_pwm_api = {

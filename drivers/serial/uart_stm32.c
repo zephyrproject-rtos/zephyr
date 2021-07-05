@@ -1422,13 +1422,14 @@ static int uart_stm32_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int uart_stm32_set_power_state(const struct device *dev,
-				      enum pm_device_state state)
+static int uart_stm32_pm_control(const struct device *dev,
+				 enum pm_device_state state)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
 	/* setting a low power mode */
-	if (state != PM_DEVICE_STATE_ACTIVE) {
+	switch (state) {
+	case PM_DEVICE_STATE_SUSPENDED:
 #ifdef USART_ISR_BUSY
 		/* Make sure that no USART transfer is on-going */
 		while (LL_USART_IsActiveFlag_BUSY(UartInstance) == 1) {
@@ -1444,26 +1445,12 @@ static int uart_stm32_set_power_state(const struct device *dev,
 		/* Clear OVERRUN flag */
 		LL_USART_ClearFlag_ORE(UartInstance);
 		/* Leave UartInstance unchanged */
+		break;
+	default:
+		return -ENOTSUP;
 	}
 
 	/* UartInstance returning to active mode has nothing special to do */
-	return 0;
-}
-
-/**
- * @brief disable the UART channel
- *
- * This routine is called to put the device in low power mode.
- *
- * @param dev UART device struct
- *
- * @return 0
- */
-static int uart_stm32_pm_control(const struct device *dev,
-				 enum pm_device_state state)
-{
-	uart_stm32_set_power_state(dev, state);
-
 	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */
