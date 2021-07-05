@@ -53,7 +53,14 @@ static inline void adv_send(struct net_buf *buf)
 
 	adv_int = MAX(adv_int_min,
 		      BT_MESH_TRANSMIT_INT(BT_MESH_ADV(buf)->xmit));
-	duration = (BT_MESH_SCAN_WINDOW_MS +
+	/* Advertising enable could be delayed upto the end of scan window plus
+	 * one advertising interval. Subsequent advertisements require upto a
+	 * duration in multiples of adverising interval plus the advertising
+	 * random delay of upto 10 ms for each interval.
+	 * This is a calculation specific to Zephyr Bluetooth Low Energy
+	 * Controller when CONFIG_BT_CTLR_LOW_LAT=y used in nRF51x SoCs.
+	 */
+	duration = (BT_MESH_SCAN_WINDOW_MS + adv_int +
 		    ((BT_MESH_TRANSMIT_COUNT(BT_MESH_ADV(buf)->xmit) + 1) *
 		     (adv_int + 10)));
 
