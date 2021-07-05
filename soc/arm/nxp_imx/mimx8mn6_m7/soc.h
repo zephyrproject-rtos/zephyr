@@ -22,4 +22,3 @@ extern "C" {
 #endif
 
 #endif /* _SOC__H_ */
-

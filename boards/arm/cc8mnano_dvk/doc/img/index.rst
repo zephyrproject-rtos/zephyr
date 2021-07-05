@@ -1,10 +1,10 @@
 .. _cc8mnano_dvk:
 
 Digi CC8MNANO DVK
-###############
-Digi ConnectCore® 8M Nano specifications					
+##################
+Digi ConnectCore® 8M Nano specifications			
 
-Processor:			
+Processor:
 			NXP® i.MX8 Nano, 4x Cortex®-A53 cores @ 1.4 GHz, 1x Cortex-M7 core
 
 Memory:
@@ -15,13 +15,13 @@ PMIC:
 
 Graphics:
 			GC7000UL with OpenCL and Vulkan support, LCDIF display controller, supporting up to 1080p 60fps display through MIPI DSI; 4-lane MIPI DSI interface
-								
+
 Security:
 			Digi TrustFence®, TRNG, TrustZone, Secure RTC, Secure JTAG, Secure Element
 
 Perpherals:
 			1x USB, 3x uSDHC, 4x UART, 4x I2C modules, 3x SPI modules
-								
+
 Ethernet:
 			1x 10/100/1000M Ethernet + AVB
 

@@ -42,4 +42,3 @@ config GPIO_MCUX_IGPIO
 endif # GPIO
 
 endif # SOC_MIMX8MN6
-

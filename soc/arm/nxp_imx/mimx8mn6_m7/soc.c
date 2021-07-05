@@ -34,26 +34,26 @@ static void SOC_RdcInit(void)
 	CLOCK_EnableClock(kCLOCK_Ipmux2);
 	CLOCK_EnableClock(kCLOCK_Ipmux3);
 	CLOCK_EnableClock(kCLOCK_Ipmux4);
-		
+	
 	/* Needed for static partioning of resource between M7 and A53 cores */
 	rdc_periph_access_config_t periphConfig;
 
 	RDC_GetDefaultPeriphAccessConfig(&periphConfig);
 	#define RDC_DISABLE_A53_ACCESS 0xFC
-	
+
 	/* Do not allow the A53 domain(domain0) to access the following peripherals */
 	periphConfig.policy = RDC_DISABLE_A53_ACCESS;
 	periphConfig.periph = kRDC_Periph_UART4;
 	RDC_SetPeriphAccessConfig(RDC, &periphConfig);
 	#ifdef CONFIG_GPIO_MCUX_IGPIO
-	#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
-		periphConfig.periph = kRDC_Periph_GPIO1;
-		//RDC_SetPeriphAccessConfig(RDC, &periphConfig);
-	#endif
-	#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
-		periphConfig.periph = kRDC_Periph_GPIO2;
-		//RDC_SetPeriphAccessConfig(RDC, &periphConfig);
-	#endif
+		#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+			periphConfig.periph = kRDC_Periph_GPIO1;
+			/*RDC_SetPeriphAccessConfig(RDC, &periphConfig);*/
+		#endif
+		#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+			periphConfig.periph = kRDC_Periph_GPIO2;
+			/*RDC_SetPeriphAccessConfig(RDC, &periphConfig);*/
+		#endif
 	#endif
 }
 
@@ -63,15 +63,15 @@ static void SOC_ClockInit(void)
 	/* switch everything to 24MHz since Linux kernel disables PLL (for low power/standby command) */
 	CLOCK_SetRootMux(kCLOCK_RootM7, kCLOCK_M7RootmuxOsc24M);
 	CLOCK_SetRootDivider(kCLOCK_RootAhb, 1U, 1U);
-	CLOCK_SetRootMux(kCLOCK_RootAhb, kCLOCK_AhbRootmuxOsc24M); 
+	CLOCK_SetRootMux(kCLOCK_RootAhb, kCLOCK_AhbRootmuxOsc24M);
 
 	/* inherited from SDK, but NOT needed for Zephyr
-	 * CLOCK_SetRootDivider(kCLOCK_RootAudioAhb, 1U, 1U);                    
-	 * CLOCK_SetRootMux(kCLOCK_RootAudioAhb, kCLOCK_AudioAhbRootmuxOsc24M);            
+	 * CLOCK_SetRootDivider(kCLOCK_RootAudioAhb, 1U, 1U);
+	 * CLOCK_SetRootMux(kCLOCK_RootAudioAhb, kCLOCK_AudioAhbRootmuxOsc24M);
 	 */
-	 
+
 	/* Enable RDC clock */
-	CLOCK_EnableClock(kCLOCK_Rdc); 
+	CLOCK_EnableClock(kCLOCK_Rdc);
 
 	/* The purpose to enable the following modules clock is to make sure the M4 core could work normally when A53 core
 	 * enters the low power status.*/
@@ -87,8 +87,8 @@ static void SOC_ClockInit(void)
 	/* Update core clock */
 	SystemCoreClockUpdate();
 
-	CLOCK_SetRootMux(kCLOCK_RootUart4, kCLOCK_UartRootmuxOsc24M); 
-	CLOCK_SetRootDivider(kCLOCK_RootUart4, 1U, 1U); 
+	CLOCK_SetRootMux(kCLOCK_RootUart4, kCLOCK_UartRootmuxOsc24M);
+	CLOCK_SetRootDivider(kCLOCK_RootUart4, 1U, 1U);
 	CLOCK_EnableClock(kCLOCK_Uart4);
 
 	#ifdef CONFIG_GPIO_MCUX_IGPIO
@@ -107,22 +107,19 @@ static void SOC_ClockInit(void)
 	/*
 	 * In order to wakeup M7 from LPM, all PLLCTRLs need to be set to "NeededRun"
 	 */
-	uint32_t i=0;
-	for (i = 0; i < 39; i++)
-	{
-	CCM->PLL_CTRL[i].PLL_CTRL = kCLOCK_ClockNeededRun;
+	uint32_t i;
+	for (i = 0; i < 39; i++) {
+		CCM->PLL_CTRL[i].PLL_CTRL = kCLOCK_ClockNeededRun;
 	}
 }
 
 void SoC_InitMemory(void)
 {
 	/* Disable I cache and D cache */
-	if (SCB_CCR_IC_Msk == (SCB_CCR_IC_Msk & SCB->CCR))
-	{
+	if (SCB_CCR_IC_Msk == (SCB_CCR_IC_Msk & SCB->CCR)) {
 		SCB_DisableICache();
 	}
-	if (SCB_CCR_DC_Msk == (SCB_CCR_DC_Msk & SCB->CCR))
-	{
+	if (SCB_CCR_DC_Msk == (SCB_CCR_DC_Msk & SCB->CCR)) {
 		SCB_DisableDCache();
 	}
 
@@ -207,8 +204,7 @@ void SoC_InitMemory(void)
 	 #define FORCE_INCR_BIT_MASK (0x2)
 	 #define FORCE_INCR_OFFSET   (0x4044)
 	 
-	*(uint32_t *)(GPV5_BASE_ADDR + FORCE_INCR_OFFSET) =
-	   *(uint32_t *)(GPV5_BASE_ADDR + FORCE_INCR_OFFSET) | FORCE_INCR_BIT_MASK;
+	*(uint32_t *)(GPV5_BASE_ADDR + FORCE_INCR_OFFSET) = *(uint32_t *)(GPV5_BASE_ADDR + FORCE_INCR_OFFSET) | FORCE_INCR_BIT_MASK;
 }
 
 static int nxp_mimx8mn6_init(const struct device *arg)
