@@ -1,0 +1,29 @@
+# Kconfig - QEP configuration options
+
+#
+# Copyright (c) 2021 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# QEP options
+#
+menuconfig QEP
+	bool "QEP"
+	help
+	  Enable QPE Driver Configuration
+
+if QEP
+
+# Include these first so that any properties (e.g. defaults) below can be
+# overridden (by defining symbols in multiple locations)
+
+config QEP_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  QEP device driver initialization priority.
+
+endif # QEP
+
