@@ -346,6 +346,28 @@
 			status = "disabled";
 		};
 
+		adc1: adc@400c4000 {
+			compatible = "nxp,mcux-12b1msps-sar";
+			reg = <0x400C4000 0x1000>;
+			interrupts = <67 0>;
+			label = "ADC_1";
+			clk-divider = <1>;
+			sample-period-mode = <0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		adc2: adc@400c8000 {
+			compatible = "nxp,mcux-12b1msps-sar";
+			reg = <0x400C8000 0x1000>;
+			interrupts = <68 0>;
+			label = "ADC_2";
+			clk-divider = <1>;
+			sample-period-mode = <0>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		flexpwm1: flexpwm@403dc000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x403dc000 0x4000>;
