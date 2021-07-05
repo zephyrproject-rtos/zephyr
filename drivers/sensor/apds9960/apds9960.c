@@ -409,14 +409,14 @@ static int apds9960_init_interrupt(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int apds9960_device_ctrl(const struct device *dev,
-				enum pm_device_state state)
+				enum pm_device_action action)
 {
 	const struct apds9960_config *config = dev->config;
 	struct apds9960_data *data = dev->data;
 	int ret = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 					APDS9960_ENABLE_REG,
 					APDS9960_ENABLE_PON,
@@ -424,7 +424,7 @@ static int apds9960_device_ctrl(const struct device *dev,
 			ret = -EIO;
 		}
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 					APDS9960_ENABLE_REG,
 					APDS9960_ENABLE_PON, 0)) {

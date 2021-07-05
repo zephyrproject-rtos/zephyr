@@ -186,16 +186,16 @@ static int sgp40_channel_get(const struct device *dev,
 
 
 #ifdef CONFIG_PM_DEVICE
-static int sgp40_pm_ctrl(const struct device *dev, enum pm_device_state state)
+static int sgp40_pm_ctrl(const struct device *dev, enum pm_device_action action)
 {
 	uint16_t cmd;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		/* activate the hotplate by sending a measure command */
 		cmd = SGP40_CMD_MEASURE_RAW;
 		break;
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		cmd = SGP40_CMD_HEATER_OFF;
 		break;
 	default:

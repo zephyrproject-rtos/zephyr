@@ -132,6 +132,7 @@ int pm_device_state_set(const struct device *dev,
 			enum pm_device_state state)
 {
 	int ret;
+	enum pm_device_action action;
 
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
@@ -143,12 +144,16 @@ int pm_device_state_set(const struct device *dev,
 		    (dev->pm->state == PM_DEVICE_STATE_SUSPENDING)) {
 			return -EALREADY;
 		}
+
+		action = PM_DEVICE_ACTION_SUSPEND;
 		break;
 	case PM_DEVICE_STATE_ACTIVE:
 		if ((dev->pm->state == PM_DEVICE_STATE_ACTIVE) ||
 		    (dev->pm->state == PM_DEVICE_STATE_RESUMING)) {
 			return -EALREADY;
 		}
+
+		action = PM_DEVICE_ACTION_RESUME;
 		break;
 	case PM_DEVICE_STATE_FORCE_SUSPEND:
 		__fallthrough;
@@ -158,12 +163,14 @@ int pm_device_state_set(const struct device *dev,
 		if (dev->pm->state == state) {
 			return -EALREADY;
 		}
+
+		action = PM_DEVICE_ACTION_TURN_OFF;
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	ret = dev->pm_control(dev, state);
+	ret = dev->pm_control(dev, action);
 	if (ret < 0) {
 		return ret;
 	}

@@ -217,12 +217,12 @@ static int init_twi(const struct device *dev)
 
 #ifdef CONFIG_PM_DEVICE
 static int twi_nrfx_pm_control(const struct device *dev,
-			       enum pm_device_state state)
+			       enum pm_device_action action)
 {
 	int ret = 0;
 
-	switch (state) {
-	case PM_DEVICE_STATE_ACTIVE:
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
 		init_twi(dev);
 		if (get_dev_data(dev)->dev_config) {
 			i2c_nrfx_twi_configure(dev,
@@ -230,7 +230,7 @@ static int twi_nrfx_pm_control(const struct device *dev,
 		}
 		break;
 
-	case PM_DEVICE_STATE_SUSPENDED:
+	case PM_DEVICE_ACTION_SUSPEND:
 		nrfx_twi_uninit(&get_dev_config(dev)->twi);
 		break;
 
