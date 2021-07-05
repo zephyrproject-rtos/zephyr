@@ -1066,7 +1066,7 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 	return radio_api->get_sch_acc(radio_dev);
 }
 
-#if defined(CONFIG_OPENTHREAD_LINK_METRICS)
+#if defined(CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT)
 /**
  * Header IE format - IEEE Std. 802.15.4-2015, 7.4.2.1 && 7.4.2.2
  *
@@ -1180,4 +1180,5 @@ otError otPlatRadioConfigureEnhAckProbing(otInstance *aInstance, otLinkMetrics a
 
 	return result ? OT_ERROR_FAILED : OT_ERROR_NONE;
 }
-#endif /* OPENTHREAD_CONFIG_MLE_LINK_METRICS_ENABLE */
+
+#endif /* CONFIG_OPENTHREAD_LINK_METRICS_SUBJECT */
