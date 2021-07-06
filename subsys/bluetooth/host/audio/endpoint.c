@@ -51,6 +51,10 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 
 	BT_DBG("chan %p ep %p", chan, ep);
 
+	if (ep->chan->ops != NULL && ep->chan->ops->connected != NULL) {
+		ep->chan->ops->connected(ep->chan);
+	}
+
 	if (bt_audio_ep_is_broadcast(ep)) {
 		/* TODO: */
 		return;
@@ -82,6 +86,10 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	struct bt_audio_ep *ep = EP_ISO(chan);
 
 	BT_DBG("chan %p ep %p reason 0x%02x", chan, ep, reason);
+
+	if (ep->chan->ops != NULL && ep->chan->ops->disconnected != NULL) {
+		ep->chan->ops->disconnected(ep->chan, reason);
+	}
 
 	if (bt_audio_ep_is_broadcast(ep)) {
 		/* TODO: */
