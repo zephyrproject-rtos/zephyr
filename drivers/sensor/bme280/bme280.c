@@ -57,7 +57,7 @@ struct bme280_data {
 	uint8_t chip_id;
 
 #ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state; /* Current power state */
+	enum pm_device_state pm_state; /* Current power state */
 #endif
 };
 
@@ -182,8 +182,10 @@ static int bme280_sample_fetch(const struct device *dev,
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 #ifdef CONFIG_PM_DEVICE
-	/* Do not allow sample fetching from OFF state */
-	if (data->pm_state == PM_DEVICE_STATE_OFF)
+	enum pm_device_state state;
+	(void)pm_device_state_get(dev, &state);
+	/* Do not allow sample fetching from suspended state */
+	if (state == PM_DEVICE_STATE_SUSPENDED)
 		return -EIO;
 #endif
 
@@ -381,61 +383,33 @@ static int bme280_chip_init(const struct device *dev)
 		return err;
 	}
 
-#ifdef CONFIG_PM_DEVICE
-	/* Set power state to ACTIVE */
-	data->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
 	LOG_DBG("\"%s\" OK", dev->name);
 	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
-int bme280_pm_ctrl(const struct device *dev, uint32_t ctrl_command,
-		   uint32_t *state, pm_device_cb cb, void *arg)
+int bme280_pm_ctrl(const struct device *dev, enum pm_device_action action)
 {
-	struct bme280_data *data = to_data(dev);
-
 	int ret = 0;
 
-	/* Set power state */
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_pm_state = *state;
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-initialize the chip */
+		ret = bme280_chip_init(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Put the chip into sleep mode */
+		ret = bme280_reg_write(dev,
+			BME280_REG_CTRL_MEAS,
+			BME280_CTRL_MEAS_OFF_VAL);
 
-		if (new_pm_state != data->pm_state) {
-
-			/* Switching from OFF to any */
-			if (data->pm_state == PM_DEVICE_STATE_OFF) {
-
-				/* Re-initialize the chip */
-				ret = bme280_chip_init(dev);
-			}
-			/* Switching to OFF from any */
-			else if (new_pm_state == PM_DEVICE_STATE_OFF) {
-
-				/* Put the chip into sleep mode */
-				ret = bme280_reg_write(dev,
-					BME280_REG_CTRL_MEAS,
-					BME280_CTRL_MEAS_OFF_VAL);
-
-				if (ret < 0)
-					LOG_DBG("CTRL_MEAS write failed: %d",
-						ret);
-			}
-
-			/* Store the new state */
-			if (!ret)
-				data->pm_state = new_pm_state;
+		if (ret < 0) {
+			LOG_DBG("CTRL_MEAS write failed: %d", ret);
 		}
+		break;
+	default:
+		return -ENOTSUP;
 	}
-	/* Get power state */
-	else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = data->pm_state;
-	}
-
-	/* Invoke callback if any */
-	if (cb)
-		cb(dev, ret, state, arg);
 
 	return ret;
 }

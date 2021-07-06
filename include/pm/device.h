@@ -24,79 +24,39 @@ extern "C" {
 
 struct device;
 
-/** @def PM_DEVICE_STATE_ACTIVE
- *
- * @brief device is in ACTIVE power state
- *
- * @details Normal operation of the device. All device context is retained.
- */
-#define PM_DEVICE_STATE_ACTIVE          1
+/** @brief Device power states. */
+enum pm_device_state {
+	/** Device is in active or regular state. */
+	PM_DEVICE_STATE_ACTIVE,
+	/**
+	 * Device is suspended.
+	 *
+	 * @note
+	 *     Device context may be lost.
+	 */
+	PM_DEVICE_STATE_SUSPENDED,
+	/**
+	 * Device is turned off (power removed).
+	 *
+	 * @note
+	 *     Device context is lost.
+	 */
+	PM_DEVICE_STATE_OFF,
+	/** Device is being resumed. */
+	PM_DEVICE_STATE_RESUMING,
+	/** Device is being suspended. */
+	PM_DEVICE_STATE_SUSPENDING,
+};
 
-/** @def PM_DEVICE_STATE_LOW_POWER
- *
- * @brief device is in LOW power state
- *
- * @details Device context is preserved by the HW and need not be
- * restored by the driver.
- */
-#define PM_DEVICE_STATE_LOW_POWER       2
-
-/** @def PM_DEVICE_STATE_SUSPEND
- *
- * @brief device is in SUSPEND power state
- *
- * @details Most device context is lost by the hardware.
- * Device drivers must save and restore or reinitialize any context
- * lost by the hardware
- */
-#define PM_DEVICE_STATE_SUSPEND         3
-
-/** @def PM_DEVICE_STATE_FORCE_SUSPEND
- *
- * @brief device is in force SUSPEND power state
- *
- * @details Driver puts the device in suspended state after
- * completing the ongoing transactions and will not process any
- * queued work or will not take any new requests for processing.
- * Most device context is lost by the hardware. Device drivers must
- * save and restore or reinitialize any context lost by the hardware.
- */
-#define PM_DEVICE_STATE_FORCE_SUSPEND	4
-
-/** @def PM_DEVICE_STATE_OFF
- *
- * @brief device is in OFF power state
- *
- * @details - Power has been fully removed from the device.
- * The device context is lost when this state is entered, so the OS
- * software will reinitialize the device when powering it back on
- */
-#define PM_DEVICE_STATE_OFF             5
-
-/** @def PM_DEVICE_STATE_RESUMING
- *
- * @brief device is resuming to active state.
- *
- * @details - The device was previously suspended and is now
- * transitioning to become ACTIVE.
- */
-#define PM_DEVICE_STATE_RESUMING             6
-
-/** @def PM_DEVICE_STATE_SUSPENDING
- *
- * @brief device is suspending.
- *
- * @details - The device is currently transitioning from ACTIVE
- * to SUSPEND.
- */
-#define PM_DEVICE_STATE_SUSPENDING             7
-
-/* Constants defining support device power commands */
-#define PM_DEVICE_STATE_SET       1
-#define PM_DEVICE_STATE_GET       2
-
-typedef void (*pm_device_cb)(const struct device *dev,
-			     int status, uint32_t *state, void *arg);
+/** @brief Device PM actions. */
+enum pm_device_action {
+	/** Suspend. */
+	PM_DEVICE_ACTION_SUSPEND,
+	/** Resume. */
+	PM_DEVICE_ACTION_RESUME,
+	/** Turn off. */
+	PM_DEVICE_ACTION_TURN_OFF,
+};
 
 /**
  * @brief Device PM info
@@ -113,8 +73,8 @@ struct pm_device {
 	atomic_t atomic_flags;
 	/** Device usage count */
 	uint32_t usage;
-	/** Device idle internal power state */
-	uint8_t state;
+	/** Device power state */
+	enum pm_device_state state;
 	/** Work object for asynchronous calls */
 	struct k_work_delayable work;
 	/** Event conditional var to listen to the sync request events */
@@ -127,43 +87,55 @@ struct pm_device {
 #define PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT 0
 
 /**
+ * @brief Device power management control function callback.
+ *
+ * @param dev Device instance.
+ * @param action Requested action.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP If the requested action is not supported.
+ * @retval Errno Other negative errno on failure.
+ */
+typedef int (*pm_device_control_callback_t)(const struct device *dev,
+					    enum pm_device_action action);
+
+/**
  * @brief Get name of device PM state
  *
  * @param state State id which name should be returned
  */
-const char *pm_device_state_str(uint32_t state);
+const char *pm_device_state_str(enum pm_device_state state);
 
 /**
- * @brief Call the set power state function of a device
+ * @brief Set the power state of a device.
  *
- * Called by the application or power management service to let the device do
- * required operations when moving to the required power state
- * Note that devices may support just some of the device power states
- * @param dev Pointer to device structure of the driver instance.
- * @param device_power_state Device power state to be set
- * @param cb Callback function to notify device power status
- * @param arg Caller passed argument to callback function
+ * This function calls the device PM control callback so that the device does
+ * the necessary operations to put the device into the given state.
  *
- * @retval 0 If successful in queuing the request or changing the state.
- * @retval Errno Negative errno code if failure. Callback will not be called.
- */
-int pm_device_state_set(const struct device *dev, uint32_t device_power_state,
-			pm_device_cb cb, void *arg);
-
-/**
- * @brief Call the get power state function of a device
+ * @note Some devices may not support all device power states.
  *
- * This function lets the caller know the current device
- * power state at any time. This state will be one of the defined
- * power states allowed for the devices in that system
- *
- * @param dev pointer to device structure of the driver instance.
- * @param device_power_state Device power state to be filled by the device
+ * @param dev Device instance.
+ * @param state Device power state to be set.
  *
  * @retval 0 If successful.
- * @retval Errno Negative errno code if failure.
+ * @retval -ENOTSUP If requested state is not supported.
+ * @retval -EALREADY If device is already at (or transitioning to) the requested
+ *         state.
  */
-int pm_device_state_get(const struct device *dev, uint32_t *device_power_state);
+int pm_device_state_set(const struct device *dev,
+			enum pm_device_state state);
+
+/**
+ * @brief Obtain the power state of a device.
+ *
+ * @param dev Device instance.
+ * @param state Pointer where device power state will be stored.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If device does not implement power management.
+ */
+int pm_device_state_get(const struct device *dev,
+			enum pm_device_state *state);
 
 /** Alias for legacy use of device_pm_control_nop */
 #define device_pm_control_nop __DEPRECATED_MACRO NULL

@@ -22,9 +22,6 @@ struct i2c_nrfx_twim_data {
 	uint32_t dev_config;
 	uint16_t concat_buf_size;
 	uint8_t *concat_buf;
-#ifdef CONFIG_PM_DEVICE
-	uint32_t pm_state;
-#endif
 };
 
 struct i2c_nrfx_twim_config {
@@ -253,58 +250,30 @@ static int init_twim(const struct device *dev)
 		return -EBUSY;
 	}
 
-#ifdef CONFIG_PM_DEVICE
-	get_dev_data(dev)->pm_state = PM_DEVICE_STATE_ACTIVE;
-#endif
-
 	return 0;
 }
 
 #ifdef CONFIG_PM_DEVICE
 static int twim_nrfx_pm_control(const struct device *dev,
-				uint32_t ctrl_command,
-				uint32_t *state, pm_device_cb cb, void *arg)
+				enum pm_device_action action)
 {
 	int ret = 0;
-	uint32_t pm_current_state = get_dev_data(dev)->pm_state;
 
-	if (ctrl_command == PM_DEVICE_STATE_SET) {
-		uint32_t new_state = *state;
-
-		if (new_state != pm_current_state) {
-			switch (new_state) {
-			case PM_DEVICE_STATE_ACTIVE:
-				init_twim(dev);
-				if (get_dev_data(dev)->dev_config) {
-					i2c_nrfx_twim_configure(
-						dev,
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		init_twim(dev);
+		if (get_dev_data(dev)->dev_config) {
+			i2c_nrfx_twim_configure(dev,
 						get_dev_data(dev)->dev_config);
-				}
-				break;
-
-			case PM_DEVICE_STATE_LOW_POWER:
-			case PM_DEVICE_STATE_SUSPEND:
-			case PM_DEVICE_STATE_OFF:
-				if (pm_current_state != PM_DEVICE_STATE_ACTIVE) {
-					break;
-				}
-				nrfx_twim_uninit(&get_dev_config(dev)->twim);
-				break;
-
-			default:
-				ret = -ENOTSUP;
-			}
-			if (!ret) {
-				get_dev_data(dev)->pm_state = new_state;
-			}
 		}
-	} else {
-		__ASSERT_NO_MSG(ctrl_command == PM_DEVICE_STATE_GET);
-		*state = get_dev_data(dev)->pm_state;
-	}
+		break;
 
-	if (cb) {
-		cb(dev, ret, state, arg);
+	case PM_DEVICE_ACTION_SUSPEND:
+		nrfx_twim_uninit(&get_dev_config(dev)->twim);
+		break;
+
+	default:
+		ret = -ENOTSUP;
 	}
 
 	return ret;

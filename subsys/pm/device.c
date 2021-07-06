@@ -23,10 +23,10 @@ extern const struct device *__pm_device_slots_start[];
 /* Number of devices successfully suspended. */
 static size_t num_susp;
 
-static bool should_suspend(const struct device *dev, uint32_t state)
+static bool should_suspend(const struct device *dev, enum pm_device_state state)
 {
 	int rc;
-	uint32_t current_state;
+	enum pm_device_state current_state;
 
 	if (device_busy_check(dev) != 0) {
 		return false;
@@ -66,7 +66,7 @@ static int _pm_devices(uint32_t state)
 			 * Don't bother the device if it is currently
 			 * in the right state.
 			 */
-			rc = pm_device_state_set(dev, state, NULL, NULL);
+			rc = pm_device_state_set(dev, state);
 			if ((rc != -ENOSYS) && (rc != 0)) {
 				LOG_DBG("%s did not enter %s state: %d",
 					dev->name, pm_device_state_str(state),
@@ -84,17 +84,7 @@ static int _pm_devices(uint32_t state)
 
 int pm_suspend_devices(void)
 {
-	return _pm_devices(PM_DEVICE_STATE_SUSPEND);
-}
-
-int pm_low_power_devices(void)
-{
-	return _pm_devices(PM_DEVICE_STATE_LOW_POWER);
-}
-
-int pm_force_suspend_devices(void)
-{
-	return _pm_devices(PM_DEVICE_STATE_FORCE_SUSPEND);
+	return _pm_devices(PM_DEVICE_STATE_SUSPENDED);
 }
 
 void pm_resume_devices(void)
@@ -103,25 +93,20 @@ void pm_resume_devices(void)
 
 	for (i = 0; i < num_susp; i++) {
 		pm_device_state_set(__pm_device_slots_start[i],
-				       PM_DEVICE_STATE_ACTIVE,
-				       NULL, NULL);
+				    PM_DEVICE_STATE_ACTIVE);
 	}
 
 	num_susp = 0;
 }
 #endif /* defined(CONFIG_PM) */
 
-const char *pm_device_state_str(uint32_t state)
+const char *pm_device_state_str(enum pm_device_state state)
 {
 	switch (state) {
 	case PM_DEVICE_STATE_ACTIVE:
 		return "active";
-	case PM_DEVICE_STATE_LOW_POWER:
-		return "low power";
-	case PM_DEVICE_STATE_SUSPEND:
-		return "suspend";
-	case PM_DEVICE_STATE_FORCE_SUSPEND:
-		return "force suspend";
+	case PM_DEVICE_STATE_SUSPENDED:
+		return "suspended";
 	case PM_DEVICE_STATE_OFF:
 		return "off";
 	default:
@@ -129,23 +114,62 @@ const char *pm_device_state_str(uint32_t state)
 	}
 }
 
-int pm_device_state_set(const struct device *dev, uint32_t device_power_state,
-			pm_device_cb cb, void *arg)
+int pm_device_state_set(const struct device *dev,
+			enum pm_device_state state)
 {
+	int ret;
+	enum pm_device_action action;
+
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
-	return dev->pm_control(dev, PM_DEVICE_STATE_SET,
-			       &device_power_state, cb, arg);
+	switch (state) {
+	case PM_DEVICE_STATE_SUSPENDED:
+		if ((dev->pm->state == PM_DEVICE_STATE_SUSPENDED) ||
+		    (dev->pm->state == PM_DEVICE_STATE_SUSPENDING)) {
+			return -EALREADY;
+		}
+
+		action = PM_DEVICE_ACTION_SUSPEND;
+		break;
+	case PM_DEVICE_STATE_ACTIVE:
+		if ((dev->pm->state == PM_DEVICE_STATE_ACTIVE) ||
+		    (dev->pm->state == PM_DEVICE_STATE_RESUMING)) {
+			return -EALREADY;
+		}
+
+		action = PM_DEVICE_ACTION_RESUME;
+		break;
+	case PM_DEVICE_STATE_OFF:
+		if (dev->pm->state == state) {
+			return -EALREADY;
+		}
+
+		action = PM_DEVICE_ACTION_TURN_OFF;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	ret = dev->pm_control(dev, action);
+	if (ret < 0) {
+		return ret;
+	}
+
+	dev->pm->state = state;
+
+	return 0;
 }
 
-int pm_device_state_get(const struct device *dev, uint32_t *device_power_state)
+int pm_device_state_get(const struct device *dev,
+			enum pm_device_state *state)
 {
 	if (dev->pm_control == NULL) {
 		return -ENOSYS;
 	}
 
-	return dev->pm_control(dev, PM_DEVICE_STATE_GET,
-			       device_power_state, NULL, NULL);
+	*state = dev->pm->state;
+
+	return 0;
 }
