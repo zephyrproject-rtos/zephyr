@@ -180,6 +180,11 @@ do {                                                                    \
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
 #endif
+
+#ifndef __packed_struct
+#define __packed_struct struct __attribute__((__packed__))
+#endif
+
 #ifndef __aligned
 #define __aligned(x)	__attribute__((__aligned__(x)))
 #endif

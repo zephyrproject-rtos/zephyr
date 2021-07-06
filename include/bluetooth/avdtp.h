@@ -17,7 +17,7 @@ extern "C" {
 #include <bluetooth/l2cap.h>
 
 /** @brief AVDTP SEID Information */
-struct bt_avdtp_seid_info {
+__packed_struct bt_avdtp_seid_info {
 	/** Stream End Point ID */
 	uint8_t id:6;
 	/** End Point usage status */
@@ -30,7 +30,7 @@ struct bt_avdtp_seid_info {
 	uint8_t tsep:1;
 	/** Reserved */
 	uint8_t rfa1:3;
-} __packed;
+};
 
 /** @brief AVDTP Local SEP*/
 struct bt_avdtp_seid_lsep {
