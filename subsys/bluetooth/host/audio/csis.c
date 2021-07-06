@@ -96,11 +96,14 @@ static void notify_client(struct bt_conn *conn,
 	notify_lock_value(csis, conn);
 
 	for (int i = 0; i < ARRAY_SIZE(csis->srv.pend_notify); i++) {
-		const bt_addr_le_t *addr = &csis->srv.pend_notify[i].addr;
+		struct csis_pending_notifications_t *pend_notify;
 
-		if (csis->srv.pend_notify[i].pending &&
-		    !bt_addr_le_cmp(bt_conn_get_dst(conn), addr)) {
-			csis->srv.pend_notify[i].pending = false;
+		pend_notify = &csis->srv.pend_notify[i];
+
+		if (pend_notify->pending &&
+		    bt_addr_le_cmp(bt_conn_get_dst(conn),
+				   &pend_notify->addr) == 0) {
+			pend_notify->pending = false;
 			break;
 		}
 	}
@@ -109,7 +112,6 @@ static void notify_client(struct bt_conn *conn,
 static void notify_clients(struct bt_csis *csis,
 			   struct bt_conn *excluded_client)
 {
-	bt_addr_le_t *addr;
 	struct csis_notify_foreach data = {
 		.excluded_client = excluded_client,
 		.csis = csis,
@@ -119,15 +121,18 @@ static void notify_clients(struct bt_csis *csis,
 	 * that are notified in `notify_client`
 	 */
 	for (int i = 0; i < ARRAY_SIZE(csis->srv.pend_notify); i++) {
-		if (csis->srv.pend_notify[i].active) {
-			addr = &csis->srv.pend_notify[i].addr;
+		struct csis_pending_notifications_t *pend_notify;
+
+		pend_notify = &csis->srv.pend_notify[i];
+
+		if (pend_notify->active) {
 			if (excluded_client &&
-			    !bt_addr_le_cmp(bt_conn_get_dst(excluded_client),
-					    addr)) {
+			    bt_addr_le_cmp(bt_conn_get_dst(excluded_client),
+					   &pend_notify->addr) == 0) {
 				continue;
 			}
 
-			csis->srv.pend_notify[i].pending = true;
+			pend_notify->pending = true;
 		}
 	}
 	bt_conn_foreach(BT_CONN_TYPE_ALL, notify_client, &data);
@@ -497,17 +502,19 @@ static void csis_security_changed(struct bt_conn *conn, bt_security_t level,
 		struct bt_csis *csis = &csis_insts[i];
 
 		for (int j = 0; j < ARRAY_SIZE(csis->srv.pend_notify); j++) {
-			bt_addr_le_t *addr = &csis->srv.pend_notify[j].addr;
+			struct csis_pending_notifications_t *pend_notify;
 
-			if (csis->srv.pend_notify[j].pending &&
-			!bt_addr_le_cmp(bt_conn_get_dst(conn), addr)) {
+			pend_notify = &csis->srv.pend_notify[j];
+
+			if (pend_notify->pending &&
+			    bt_addr_le_cmp(bt_conn_get_dst(conn),
+					   &pend_notify->addr) == 0) {
 				notify_lock_value(csis, conn);
-				csis->srv.pend_notify[j].pending = false;
+				pend_notify->pending = false;
 				break;
 			}
 		}
-
-		}
+	}
 }
 
 #if defined(CONFIG_BT_EXT_ADV)
@@ -543,7 +550,6 @@ static void disconnect_adv(struct k_work *work)
 
 static void handle_csis_disconnect(struct bt_csis *csis, struct bt_conn *conn)
 {
-	bt_addr_le_t *addr;
 
 #if defined(CONFIG_BT_EXT_ADV)
 	__ASSERT(csis->srv.conn_cnt,
@@ -575,10 +581,13 @@ static void handle_csis_disconnect(struct bt_csis *csis, struct bt_conn *conn)
 	 * here as a bonded device
 	 */
 	for (int i = 0; i < ARRAY_SIZE(csis->srv.pend_notify); i++) {
-		addr = &csis->srv.pend_notify[i].addr;
-		if (!bt_addr_le_cmp(bt_conn_get_dst(conn), addr)) {
-			memset(&csis->srv.pend_notify[i], 0,
-			       sizeof(csis->srv.pend_notify[i]));
+		struct csis_pending_notifications_t *pend_notify;
+
+		pend_notify = &csis->srv.pend_notify[i];
+
+		if (bt_addr_le_cmp(bt_conn_get_dst(conn),
+				   &pend_notify->addr) == 0) {
+			memset(pend_notify, 0, sizeof(*pend_notify));
 			break;
 		}
 	}
@@ -607,15 +616,17 @@ static void csis_disconnected(struct bt_conn *conn, uint8_t reason)
 static void handle_csis_auth_complete(struct bt_csis *csis,
 				      struct bt_conn *conn)
 {
-	bt_addr_le_t *addr;
-
 	/* Check if already in list, and do nothing if it is */
 	for (int i = 0; i < ARRAY_SIZE(csis->srv.pend_notify); i++) {
-		addr = &csis->srv.pend_notify[i].addr;
-		if (csis->srv.pend_notify[i].active &&
-			!bt_addr_le_cmp(bt_conn_get_dst(conn), addr)) {
+		struct csis_pending_notifications_t *pend_notify;
+
+		pend_notify = &csis->srv.pend_notify[i];
+
+		if (pend_notify->active &&
+		    bt_addr_le_cmp(bt_conn_get_dst(conn),
+				   &pend_notify->addr) == 0) {
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-			csis->srv.pend_notify[i].age = csis->srv.age_counter++;
+			pend_notify->age = csis->srv.age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
 		}
@@ -623,12 +634,16 @@ static void handle_csis_auth_complete(struct bt_csis *csis,
 
 	/* Copy addr to list over devices to save notifications for */
 	for (int i = 0; i < ARRAY_SIZE(csis->srv.pend_notify); i++) {
-		addr = &csis->srv.pend_notify[i].addr;
-		if (!csis->srv.pend_notify[i].active) {
-			bt_addr_le_copy(addr, bt_conn_get_dst(conn));
-			csis->srv.pend_notify[i].active = true;
+		struct csis_pending_notifications_t *pend_notify;
+
+		pend_notify = &csis->srv.pend_notify[i];
+
+		if (!pend_notify->active) {
+			bt_addr_le_copy(&pend_notify->addr,
+					bt_conn_get_dst(conn));
+			pend_notify->active = true;
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
-			csis->srv.pend_notify[i].age = csis->srv.age_counter++;
+			pend_notify->age = csis->srv.age_counter++;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 			return;
 		}
@@ -640,8 +655,12 @@ static void handle_csis_auth_complete(struct bt_csis *csis,
 	oldest = &csis->srv.pend_notify[0];
 
 	for (int i = 1; i < ARRAY_SIZE(csis->srv.pend_notify); i++) {
-		if (csis->srv.pend_notify[i].age < oldest->age) {
-			oldest = &csis->srv.pend_notify[i];
+		struct csis_pending_notifications_t *pend_notify;
+
+		pend_notify = &csis->srv.pend_notify[i];
+
+		if (pend_notify->age < oldest->age) {
+			oldest = pend_notify;
 		}
 	}
 	memset(oldest, 0, sizeof(*oldest));
@@ -685,12 +704,13 @@ static void csis_bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 		struct bt_csis *csis = &csis_insts[i];
 
 		for (int j = 0; j < ARRAY_SIZE(csis->srv.pend_notify); j++) {
-			bt_addr_le_t *addr = &csis->srv.pend_notify[i].addr;
+			struct csis_pending_notifications_t *pend_notify;
 
-			if (csis->srv.pend_notify[j].active &&
-			bt_addr_le_cmp(peer, addr) == 0) {
-				memset(&csis->srv.pend_notify[j], 0,
-				sizeof(csis->srv.pend_notify[j]));
+			pend_notify = &csis->srv.pend_notify[j];
+
+			if (pend_notify->active &&
+			    bt_addr_le_cmp(peer, &pend_notify->addr) == 0) {
+				memset(pend_notify, 0, sizeof(*pend_notify));
 				break;
 			}
 		}
