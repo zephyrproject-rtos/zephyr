@@ -1,0 +1,48 @@
+/* This node corresponds to the SPIM1 peripheral that is to be used via
+ * the Zephyr driver, so it must have the status set to "okay".
+ */
+&spi1 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	sck-pin = <16>;
+	mosi-pin = <17>;
+	miso-pin = <18>;
+	cs-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
+	miso-pull-down;
+};
+
+/* The UARTE1 peripheral share the same ID with SPIM1, hence these two
+ * peripherals cannot be used simultaneously and this node must be disabled.
+ */
+&uart1 {
+	status = "disabled";
+};
+
+/* The following two nodes (corresponding to the SPIM2 and UARTE2 peripherals,
+ * respectively) need to be disabled so that Zephyr drivers won't initialize
+ * those instances; the application will use them via nrfx drivers. But their
+ * pins must be specified, as the application expects to get this information
+ * from devicetree.
+ */
+&spi2 {
+	compatible = "nordic,nrf-spim";
+	status = "disabled";
+	sck-pin = <13>;
+	mosi-pin = <12>;
+	miso-pin = <11>;
+	cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+};
+
+&uart2 {
+	status = "disabled";
+	tx-pin = <9>;
+	rx-pin = <8>;
+};
+
+/* This node also needs to be disabled, as in the default nrf9160dk_nrf9160
+ * board configuration it uses the same pin numbers that are above assigned
+ * to the spi1 node (17, 18, and 19).
+ */
+&spi3 {
+	status = "disabled";
+};
