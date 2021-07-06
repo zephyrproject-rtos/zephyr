@@ -33,6 +33,10 @@ config BT_BAP_BROADCAST_SRC_STREAM_COUNT
 	  This option sets the maximum number of streams per broadcast source
 	  to support.
 
+config BT_BAP_BROADCAST_SUBGROUP_COUNT
+	int # hidden: TODO: Update once the API supports it
+	default 1
+
 config BT_BAP_PAC_COUNT
 	int "Basic Audio Profile PAC count"
 	default 2
