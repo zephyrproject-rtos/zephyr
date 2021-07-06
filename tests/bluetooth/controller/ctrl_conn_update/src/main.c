@@ -1271,8 +1271,8 @@ void test_conn_update_mas_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (B) Tx Queue should have one LL Control PDU */
-	conn_update_ind.instant = event_counter(&conn) + 6U;
-	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
+	conn_update_ind_B.instant = event_counter(&conn) + 6U;
+	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind_B);
 	lt_rx_q_is_empty(&conn);
 
 	/* Done */
