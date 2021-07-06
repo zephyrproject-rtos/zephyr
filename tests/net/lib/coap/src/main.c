@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include "net_private.h"
 
 #define COAP_BUF_SIZE 128
+#define COAP_FIXED_HEADER_SIZE 4
 
 #define NUM_PENDINGS 3
 #define NUM_OBSERVERS 3
@@ -85,6 +86,16 @@ static int test_build_empty_pdu(void)
 		goto done;
 	}
 
+	if (cpkt.hdr_len != COAP_FIXED_HEADER_SIZE) {
+		TC_PRINT("Invalid header length\n");
+		goto done;
+	}
+
+	if (cpkt.opt_len != 0) {
+		TC_PRINT("Invalid options length\n");
+		goto done;
+	}
+
 	if (memcmp(result_pdu, cpkt.data, cpkt.offset)) {
 		TC_PRINT("Built packet doesn't match reference packet\n");
 		goto done;
@@ -107,7 +118,10 @@ static int test_build_simple_pdu(void)
 				 'o', 'a', 'd', 0x00 };
 	struct coap_packet cpkt;
 	const char token[] = "token";
+	static const char payload[] = "payload";
 	uint8_t *data;
+	const uint8_t *payload_start;
+	uint16_t payload_len;
 	int result = TC_FAIL;
 	int r;
 
@@ -139,8 +153,41 @@ static int test_build_simple_pdu(void)
 		goto done;
 	}
 
+	r = coap_packet_append_payload(&cpkt, payload, sizeof(payload));
+	if (r < 0) {
+		TC_PRINT("Failed to set the payload\n");
+		goto done;
+	}
+
+	if (cpkt.offset != sizeof(result_pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (cpkt.hdr_len != COAP_FIXED_HEADER_SIZE + strlen(token)) {
+		TC_PRINT("Invalid header length\n");
+		goto done;
+	}
+
+	if (cpkt.opt_len != 1) {
+		TC_PRINT("Invalid options length\n");
+		goto done;
+	}
+
 	if (memcmp(result_pdu, cpkt.data, cpkt.offset)) {
 		TC_PRINT("Built packet doesn't match reference packet\n");
+		goto done;
+	}
+
+	payload_start = coap_packet_get_payload(&cpkt, &payload_len);
+
+	if (payload_len != sizeof(payload)) {
+		TC_PRINT("Invalid payload length\n");
+		goto done;
+	}
+
+	if (payload_start != cpkt.data + cpkt.offset - payload_len) {
+		TC_PRINT("Invalid payload pointer\n");
 		goto done;
 	}
 
@@ -177,6 +224,21 @@ static int test_parse_empty_pdu(void)
 	r = coap_packet_parse(&cpkt, data, sizeof(pdu), NULL, 0);
 	if (r) {
 		TC_PRINT("Could not parse packet\n");
+		goto done;
+	}
+
+	if (cpkt.offset != sizeof(pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (cpkt.hdr_len != COAP_FIXED_HEADER_SIZE) {
+		TC_PRINT("Invalid header length\n");
+		goto done;
+	}
+
+	if (cpkt.opt_len != 0) {
+		TC_PRINT("Invalid options length\n");
 		goto done;
 	}
 
@@ -241,6 +303,21 @@ static int test_parse_empty_pdu_1(void)
 		goto done;
 	}
 
+	if (cpkt.offset != sizeof(pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (cpkt.hdr_len != COAP_FIXED_HEADER_SIZE) {
+		TC_PRINT("Invalid header length\n");
+		goto done;
+	}
+
+	if (cpkt.opt_len != 1) {
+		TC_PRINT("Invalid options length\n");
+		goto done;
+	}
+
 	ver = coap_header_get_version(&cpkt);
 	type = coap_header_get_type(&cpkt);
 	code = coap_header_get_code(&cpkt);
@@ -284,12 +361,15 @@ static int test_parse_simple_pdu(void)
 	struct coap_packet cpkt;
 	struct coap_option options[16] = {};
 	const uint8_t token[8];
+	const uint8_t payload[] = "payload";
 	uint8_t *data;
 	uint8_t ver;
 	uint8_t type;
 	uint8_t code;
 	uint8_t tkl;
 	uint16_t id;
+	const uint8_t *payload_start;
+	uint16_t payload_len;
 	int result = TC_FAIL;
 	int r, count = ARRAY_SIZE(options) - 1;
 
@@ -303,6 +383,33 @@ static int test_parse_simple_pdu(void)
 	r = coap_packet_parse(&cpkt, data, sizeof(pdu), NULL, 0);
 	if (r) {
 		TC_PRINT("Could not parse packet\n");
+		goto done;
+	}
+
+	if (cpkt.offset != sizeof(pdu)) {
+		TC_PRINT("Different size from the reference packet\n");
+		goto done;
+	}
+
+	if (cpkt.hdr_len != COAP_FIXED_HEADER_SIZE + strlen("token")) {
+		TC_PRINT("Invalid header length\n");
+		goto done;
+	}
+
+	if (cpkt.opt_len != 3) {
+		TC_PRINT("Invalid options length\n");
+		goto done;
+	}
+
+	payload_start = coap_packet_get_payload(&cpkt, &payload_len);
+
+	if (payload_len != sizeof(payload)) {
+		TC_PRINT("Invalid payload length\n");
+		goto done;
+	}
+
+	if (payload_start != cpkt.data + cpkt.offset - payload_len) {
+		TC_PRINT("Invalid payload pointer\n");
 		goto done;
 	}
 
