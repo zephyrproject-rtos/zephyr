@@ -571,7 +571,7 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 	}
 
 	cpkt->data = data;
-	cpkt->offset = 0U;
+	cpkt->offset = len;
 	cpkt->max_len = len;
 	cpkt->opt_len = 0U;
 	cpkt->hdr_len = 0U;
@@ -588,12 +588,11 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		return -EINVAL;
 	}
 
-	cpkt->offset = cpkt->hdr_len;
 	if (cpkt->hdr_len == len) {
 		return 0;
 	}
 
-	offset = cpkt->offset;
+	offset = cpkt->hdr_len;
 	opt_len = 0U;
 	delta = 0U;
 	num = 0U;
@@ -613,7 +612,6 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 
 	cpkt->opt_len = opt_len;
 	cpkt->delta = delta;
-	cpkt->offset = offset;
 
 	return 0;
 }
