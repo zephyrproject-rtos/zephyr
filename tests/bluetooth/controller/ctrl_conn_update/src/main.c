@@ -226,6 +226,7 @@ void test_conn_update_mas_loc_accept(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
 	lt_rx_q_is_empty(&conn);
 
@@ -641,6 +642,7 @@ void test_conn_update_mas_loc_unsupp_w_feat_exch(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
 	lt_rx_q_is_empty(&conn);
 
@@ -809,6 +811,7 @@ void test_conn_update_mas_loc_collision(void)
 	event_prepare(&conn);
 
 	/* (A) Tx Queue should have one LL Control PDU */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
 	lt_rx_q_is_empty(&conn);
 
@@ -930,6 +933,7 @@ void test_conn_update_mas_rem_accept(void)
 	event_prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
 	lt_rx_q_is_empty(&conn);
 
@@ -1205,7 +1209,8 @@ void test_conn_update_mas_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (A) Tx Queue should have one LL Control PDU */
-	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_param_req);
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
 	lt_rx_q_is_empty(&conn);
 
 	/* Done */
@@ -1266,6 +1271,7 @@ void test_conn_update_mas_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (B) Tx Queue should have one LL Control PDU */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
 	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
 	lt_rx_q_is_empty(&conn);
 
@@ -2167,7 +2173,7 @@ void test_conn_update_sla_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (A) Tx Queue should have one LL Control PDU */
-	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_req);
+	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, &conn_param_rsp);
 	lt_rx_q_is_empty(&conn);
 
 	/* Done */
@@ -2295,7 +2301,6 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 	struct node_rx_pdu *ntf;
 	struct pdu_data *pdu;
 	uint16_t instant;
-	uint16_t next_instant;
 
 	/* Test with and without parameter change  */
 	uint8_t parameters_changed = 1U;
@@ -2319,6 +2324,7 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 		event_prepare(&conn);
 
 		/* Tx Queue should have one LL Control PDU */
+		conn_update_ind.instant = event_counter(&conn) + 6U;
 		lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
 		lt_rx_q_is_empty(&conn);
 
@@ -2328,14 +2334,9 @@ void test_conn_update_mas_loc_accept_no_param_req(void)
 		/* Release Tx */
 		ull_cp_release_tx(tx);
 
-		/* Save (and verify) Instant */
+		/* Save Instant */
 		pdu = (struct pdu_data *)tx->pdu;
-		if (parameters_changed == 0U) {
-			next_instant = conn_update_ind.instant + 1U;
-			conn_update_ind.instant += sys_cpu_to_le16(next_instant);
-		}
 		instant = sys_le16_to_cpu(pdu->llctrl.conn_update_ind.instant);
-		zassert_equal(instant, conn_update_ind.instant, NULL);
 
 		/* Release Tx */
 		ull_cp_release_tx(tx);
