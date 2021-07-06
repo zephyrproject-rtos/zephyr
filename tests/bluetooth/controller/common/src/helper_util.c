@@ -205,7 +205,7 @@ void event_prepare(struct ll_conn *conn)
 	lll = &conn->lll;
 
 	/* Save the latency for use in event */
-	lll->latency_prepare += lazy;
+	lll->latency_prepare += lll->latency;
 
 	/* Calc current event counter value */
 	uint16_t event_counter = lll->event_counter + lll->latency_prepare;
