@@ -138,6 +138,21 @@ config MINIMAL_LIBC_LL_PRINTF
 	  Build with long long printf enabled. This will increase the size of
 	  the image.
 
+config MINIMAL_LIBC_GLOBALS
+	bool "Enables functions require global variables"
+	default y
+	help
+	  Enable the minimal libc's implementation of functions which
+	  implicitly access global/static data, e.g. rand(). Such data
+	  must be put into a memory partition if CONFIG_USERSPACE=y,
+	  and disabling this option may save an entry for application
+	  defining many custom partitions.
+
+	  Say 'N' here if you want to save a memory partition by
+	  disabling the following functions:
+	    - rand
+	    - srand
+
 endif # MINIMAL_LIBC
 
 config STDOUT_CONSOLE

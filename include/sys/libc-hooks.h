@@ -67,10 +67,15 @@ extern struct k_mem_partition z_malloc_partition;
 extern struct k_mem_partition z_malloc_partition;
 #endif
 
-#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_STACK_CANARIES) || \
-    defined(CONFIG_NEED_LIBC_MEM_PARTITION)
-/* Minimal libc has no globals. We do put the stack canary global in the
- * libc partition since it is not worth placing in a partition of its own.
+#if defined(CONFIG_MINIMAL_LIBC_GLOBALS) || defined(CONFIG_NEWLIB_LIBC) || \
+	defined(CONFIG_STACK_CANARIES) || defined(CONFIG_NEED_LIBC_MEM_PARTITION)
+/* Some architectures might want to save a memory partition used by
+ * minimal libc.  In fact, many functions in minimal libs doesn't
+ * require any global variables/states. Thus we only use the partition
+ * when functions using the globals are enabled.
+ *
+ * We do put the stack canary global in the libc partition since it is
+ * not worth placing in a partition of its own.
  *
  * Some architectures require a global pointer for thread local storage,
  * which is placed inside the libc partition.
