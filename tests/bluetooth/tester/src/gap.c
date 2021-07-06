@@ -29,10 +29,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define BT_LE_AD_DISCOV_MASK (BT_LE_AD_LIMITED | BT_LE_AD_GENERAL)
 #define ADV_BUF_LEN (sizeof(struct gap_device_found_ev) + 2 * 31)
+#define LIM_DISCOV_TIMEOUT 30
 
 static atomic_t current_settings;
 struct bt_conn_auth_cb cb;
 static uint8_t oob_legacy_tk[16] = { 0 };
+struct k_timer adv_timer;
 
 #if !defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
 static struct bt_le_oob oob_sc_local = { 0 };
@@ -404,6 +406,11 @@ static void set_bondable(uint8_t *data, uint16_t len)
 		    (uint8_t *) &rp, sizeof(rp));
 }
 
+static void advertising_timeout(struct k_timer *timer_id)
+{
+	bt_le_adv_stop();
+}
+
 static void start_advertising(const uint8_t *data, uint16_t len)
 {
 	const struct gap_start_advertising_cmd *cmd = (void *) data;
@@ -443,6 +450,12 @@ static void start_advertising(const uint8_t *data, uint16_t len)
 			    ad, adv_len, sd_len ? sd : NULL, sd_len) < 0) {
 		LOG_ERR("Failed to start advertising");
 		goto fail;
+	}
+
+	if (ad_flags & BT_LE_AD_LIMITED) {
+		k_timer_init(&adv_timer, advertising_timeout, NULL);
+		k_timer_start(&adv_timer, K_SECONDS(LIM_DISCOV_TIMEOUT),
+			      K_FOREVER);
 	}
 
 	atomic_set_bit(&current_settings, GAP_SETTINGS_ADVERTISING);
