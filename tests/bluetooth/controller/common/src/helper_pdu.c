@@ -612,9 +612,7 @@ void helper_pdu_verify_conn_param_rsp(const char *file, uint32_t line, struct pd
 
 void helper_pdu_verify_conn_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
 {
-	/* TODO(tosk): figure out if or how to handle dynamic parameters
 	struct pdu_data_llctrl_conn_update_ind *p = param;
-	*/
 
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, conn_update_ind) + sizeof(struct pdu_data_llctrl_conn_update_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
@@ -626,8 +624,8 @@ void helper_pdu_verify_conn_update_ind(const char *file, uint32_t line, struct p
 	zassert_equal(pdu->llctrl.conn_update_ind.latency, p->latency, "Latency.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_update_ind.interval, p->interval, "Interval mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_update_ind.timeout, p->timeout, "Timeout mismatch.\nCalled at %s:%d\n", file, line);
-	zassert_equal(pdu->llctrl.conn_update_ind.instant, p->instant, "Instant mismatch.\nCalled at %s:%d\n", file, line);
 	*/
+	zassert_equal(pdu->llctrl.conn_update_ind.instant, p->instant, "Instant mismatch.\nCalled at %s:%d\n", file, line);
 }
 
 void helper_node_verify_conn_update(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param)
