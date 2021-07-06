@@ -124,6 +124,7 @@
 
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	cs-gpios = <&gpioa 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
@@ -131,8 +132,8 @@
 	pinctrl-0 = <&spi3_sck_pc10 &spi3_miso_pc11 &spi3_mosi_pc12>;
 	status = "okay";
 
-	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
-		   <&gpioe 0 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpiod 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+		   <&gpioe 0 GPIO_ACTIVE_LOW>;
 
 	spbtle-rf@0 {
 		compatible = "zephyr,bt-hci-spi";

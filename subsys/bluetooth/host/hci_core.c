@@ -2187,11 +2187,12 @@ static const struct event_handler meta_events[] = {
 #endif /* CONFIG_BT_CONN */
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
-#if defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_ISO_UNICAST)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_ESTABLISHED, hci_le_cis_estabilished,
 		      sizeof(struct bt_hci_evt_le_cis_established)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CIS_REQ, hci_le_cis_req,
 		      sizeof(struct bt_hci_evt_le_cis_req)),
+#endif /* (CONFIG_BT_ISO_UNICAST) */
 #if defined(CONFIG_BT_ISO_BROADCAST)
 	EVENT_HANDLER(BT_HCI_EVT_LE_BIG_COMPLETE,
 		      hci_le_big_complete,
@@ -2209,7 +2210,6 @@ static const struct event_handler meta_events[] = {
 		      bt_hci_le_biginfo_adv_report,
 		      sizeof(struct bt_hci_evt_le_biginfo_adv_report)),
 #endif /* (CONFIG_BT_ISO_BROADCAST) */
-#endif /* (CONFIG_BT_ISO) */
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CONNECTIONLESS_IQ_REPORT, bt_hci_le_df_connectionless_iq_report,
 		      sizeof(struct bt_hci_evt_le_connectionless_iq_report)),
@@ -2776,6 +2776,45 @@ static int le_set_event_mask(void)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, buf, NULL);
 }
 
+#if defined(CONFIG_BT_CONN)
+static int le_init_iso(void)
+{
+	int err;
+	struct net_buf *rsp;
+
+	/* Set Isochronus Channels - Host support */
+	err = le_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
+	if (err) {
+		return err;
+	}
+
+	/* Octet 41, bit 5 is read buffer size V2 */
+	if (BT_CMD_TEST(bt_dev.supported_commands, 41, 5)) {
+		/* Read ISO Buffer Size V2 */
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE_V2,
+					   NULL, &rsp);
+		if (err) {
+			return err;
+		}
+		read_buffer_size_v2_complete(rsp);
+	} else {
+		BT_WARN("Read Buffer Size V2 command is not supported."
+			"No ISO buffers will be available");
+
+		/* Read LE Buffer Size */
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE,
+					   NULL, &rsp);
+		if (err) {
+			return err;
+		}
+		le_read_buffer_size_complete(rsp);
+	}
+
+	net_buf_unref(rsp);
+	return 0;
+}
+#endif /* CONFIG_BT_CONN */
+
 static int le_init(void)
 {
 	struct bt_hci_cp_write_le_host_supp *cp_le;
@@ -2801,19 +2840,10 @@ static int le_init(void)
 #if defined(CONFIG_BT_CONN)
 	if (IS_ENABLED(CONFIG_BT_ISO) &&
 	    BT_FEAT_LE_ISO(bt_dev.le.features)) {
-		/* Set Isochronus Channels - Host support */
-		err = le_set_host_feature(BT_LE_FEAT_BIT_ISO_CHANNELS, 1);
+		err = le_init_iso();
 		if (err) {
 			return err;
 		}
-		/* Read ISO Buffer Size V2 */
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE_V2,
-					   NULL, &rsp);
-		if (err) {
-			return err;
-		}
-		read_buffer_size_v2_complete(rsp);
-		net_buf_unref(rsp);
 	} else {
 		/* Read LE Buffer Size */
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_BUFFER_SIZE,

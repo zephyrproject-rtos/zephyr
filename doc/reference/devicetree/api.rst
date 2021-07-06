@@ -308,9 +308,9 @@ device.
      - Selects the UART used for host communication in the
        :ref:`bluetooth-hci-uart-sample`
    * - zephyr,bt-mon-uart
-     - Sets default :option:`CONFIG_BT_MONITOR_ON_DEV_NAME`
+     - Sets default :kconfig:`CONFIG_BT_MONITOR_ON_DEV_NAME`
    * - zephyr,bt-uart
-     - Sets default :option:`CONFIG_BT_UART_ON_DEV_NAME`
+     - Sets default :kconfig:`CONFIG_BT_UART_ON_DEV_NAME`
    * - zephyr,can-primary
      - Sets the primary CAN controller
    * - zephyr,ccm
@@ -319,14 +319,14 @@ device.
      - Flash partition that the Zephyr image's text section should be linked
        into
    * - zephyr,console
-     - Sets default :option:`CONFIG_UART_CONSOLE_ON_DEV_NAME`
+     - Sets default :kconfig:`CONFIG_UART_CONSOLE_ON_DEV_NAME`
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy
      - A device which can be used as a system-wide entropy source
    * - zephyr,flash
      - A node whose ``reg`` is sometimes used to set the defaults for
-       :option:`CONFIG_FLASH_BASE_ADDRESS` and :option:`CONFIG_FLASH_SIZE`
+       :kconfig:`CONFIG_FLASH_BASE_ADDRESS` and :kconfig:`CONFIG_FLASH_SIZE`
    * - zephyr,flash-controller
      - The node corresponding to the flash controller device for
        the ``zephyr,flash`` node
@@ -340,14 +340,14 @@ device.
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,shell-uart
-     - Sets default :option:`CONFIG_UART_SHELL_ON_DEV_NAME`
+     - Sets default :kconfig:`CONFIG_UART_SHELL_ON_DEV_NAME`
    * - zephyr,sram
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking
    * - zephyr,uart-mcumgr
      - UART used for :ref:`device_mgmt`
    * - zephyr,uart-pipe
-     - Sets default :option:`CONFIG_UART_PIPE_ON_DEV_NAME`
+     - Sets default :kconfig:`CONFIG_UART_PIPE_ON_DEV_NAME`
    * - zephyr,usb-device
      - USB device node. If defined and has a ``vbus-gpios`` property, these
        will be used by the USB subsystem to enable/disable VBUS

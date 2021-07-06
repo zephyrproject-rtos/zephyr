@@ -419,7 +419,7 @@ static inline int z_impl_adc_read(const struct device *dev,
 /**
  * @brief Set an asynchronous read request.
  *
- * @note This function is available only if @option{CONFIG_ADC_ASYNC}
+ * @note This function is available only if @kconfig{CONFIG_ADC_ASYNC}
  * is selected.
  *
  * If invoked from user mode, any sequence struct options for callback must

@@ -33,9 +33,6 @@ extern "C" {
 /** @brief Length of OTS object ID string (in bytes). */
 #define BT_OTS_OBJ_ID_STR_LEN 15
 
-/** @brief Maximum object name length */
-#define BT_OTS_OBJ_MAX_NAME_LEN 120
-
 /** @brief Type of an OTS object. */
 struct bt_ots_obj_type {
 	union {
@@ -548,6 +545,20 @@ struct bt_ots_cb {
 	uint32_t (*obj_read)(struct bt_ots *ots, struct bt_conn *conn,
 			     uint64_t id, uint8_t **data, uint32_t len,
 			     uint32_t offset);
+
+	/** @brief Object name written callback
+	 *
+	 *  This callback is called when the object name is written.
+	 *  This is a notification to the application that the object name
+	 *  has been updated by the OTS service implementation.
+	 *
+	 *  @param ots    OTS instance.
+	 *  @param conn   The connection that wrote object name.
+	 *  @param id     Object ID.
+	 *  @param name   Object name.
+	 */
+	void (*obj_name_written)(struct bt_ots *ots, struct bt_conn *conn,
+			     uint64_t id, const char *name);
 };
 
 /** @brief Descriptor for OTS initialization. */

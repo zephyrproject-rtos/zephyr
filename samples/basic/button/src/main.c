@@ -87,10 +87,10 @@ void main(void)
 	if (led.port) {
 		while (1) {
 			/* If we have an LED, match its state to the button's. */
-			int val = gpio_pin_get(button.port, button.pin);
+			int val = gpio_pin_get_dt(&button);
 
 			if (val >= 0) {
-				gpio_pin_set(led.port, led.pin, val);
+				gpio_pin_set_dt(&led, val);
 			}
 			k_msleep(SLEEP_TIME_MS);
 		}

@@ -18,6 +18,16 @@
 #include <toolchain.h>
 
 /**
+ * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
+ *
+ * The assert is managed by platform defined logic when this flag is set.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
+#define OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS
  *
  * The number of message buffers in the buffer pool.
@@ -140,8 +150,8 @@
  * in platform.
  *
  */
-#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE                           \
-	(OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE &&                          \
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE                                               \
+	(CONFIG_OPENTHREAD_CSL_RECEIVER &&                                                         \
 	 (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2))
 
 /* Zephyr does not use OpenThread's heap. mbedTLS will use heap memory allocated
@@ -283,13 +293,23 @@
  *
  * For some reasons, CSL receivers wake up a little later than expected. This
  * variable specifies how much time that CSL receiver would wake up earlier
- * than the expected sample window. The time is in unit of 10 symbols.
+ * than the expected sample window. The time is in unit of microseconds.
  *
  */
 #ifdef CONFIG_OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 #define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD \
 	CONFIG_OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 #endif /* CONFIG_OPENTHREAD_CSL_RECEIVE_TIME_AHEAD */
+
+/**
+ * @def OPENTHREAD_CONFIG_CSL_MIN_RECEIVE_ON
+ *
+ * The minimum CSL receive window (in microseconds) required to receive an IEEE 802.15.4 frame.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON
+#define OPENTHREAD_CONFIG_CSL_MIN_RECEIVE_ON CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON
+#endif /* CONFIG_OPENTHREAD_CSL_MIN_RECEIVE_ON */
 
 /**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE

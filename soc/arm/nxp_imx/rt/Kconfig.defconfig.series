@@ -1,6 +1,6 @@
 # i.MX RT series
 
-# Copyright (c) 2017, NXP
+# Copyright (c) 2017-2021, NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_IMX_RT
@@ -18,6 +18,10 @@ config CAN_MCUX_FLEXCAN
 
 config CLOCK_CONTROL_MCUX_CCM
 	default y if HAS_MCUX_CCM
+	depends on CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_CCM_REV2
+	default y if HAS_MCUX_CCM_REV2
 	depends on CLOCK_CONTROL
 
 config DISPLAY_MCUX_ELCDIF
@@ -76,30 +80,47 @@ endif # CODE_SEMC
 if CODE_ITCM
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/flexram@400b0000/itcm@0,0,K)
+	default $(dt_node_reg_size_int,/soc/flexram@40028000/itcm@0,0,K) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_size_int,/soc/flexram@400b0000/itcm@0,0,K) if SOC_SERIES_IMX_RT10XX
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/itcm@0)
+	default $(dt_node_reg_addr_hex,/soc/flexram@40028000/itcm@0) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_addr_hex,/soc/flexram@400b0000/itcm@0) if SOC_SERIES_IMX_RT10XX
 
 endif # CODE_ITCM
+
+if CODE_SRAM0
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/memory@1ffe0000,0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/memory@1ffe0000)
+
+endif # CODE_SRAM0
+
 
 if CODE_FLEXSPI
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@402a8000,1,K)
+	default $(dt_node_reg_size_int,/soc/spi@400cc000,1,K) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_size_int,/soc/spi@402a8000,1,K) if SOC_SERIES_IMX_RT10XX
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@402a8000,1)
+	default $(dt_node_reg_addr_hex,/soc/spi@400cc000,1) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_addr_hex,/soc/spi@402a8000,1) if SOC_SERIES_IMX_RT10XX
 
 endif # CODE_FLEXSPI
 
 if CODE_FLEXSPI2
 
 config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K)
+	default $(dt_node_reg_size_int,/soc/spi@4000d000,1,K) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_size_int,/soc/spi@402a4000,1,K) if SOC_SERIES_IMX_RT10XX
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1)
+	default $(dt_node_reg_addr_hex,/soc/spi@4000d000,1) if SOC_SERIES_IMX_RT11XX
+	default $(dt_node_reg_addr_hex,/soc/spi@402a4000,1) if SOC_SERIES_IMX_RT10XX
 
 endif # CODE_FLEXSPI2
 

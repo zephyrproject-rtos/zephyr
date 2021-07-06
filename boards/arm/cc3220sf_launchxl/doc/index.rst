@@ -244,7 +244,7 @@ It is available as a Zephyr Wi-Fi device driver in
 Usage:
 ======
 
-Set :option:`CONFIG_WIFI_SIMPLELINK` and :option:`CONFIG_WIFI` to ``y``
+Set :kconfig:`CONFIG_WIFI_SIMPLELINK` and :kconfig:`CONFIG_WIFI` to ``y``
 to enable Wi-Fi.
 See :zephyr_file:`samples/net/wifi/boards/cc3220sf_launchxl.conf`.
 
@@ -272,14 +272,14 @@ Secure Socket Offload
 
 The SimpleLink Wi-Fi driver provides socket operations to the Zephyr socket
 offload point, enabling Zephyr BSD socket API calls to be directed to the
-SimpleLink Wi-Fi driver, by setting :option:`CONFIG_NET_SOCKETS_OFFLOAD`
+SimpleLink Wi-Fi driver, by setting :kconfig:`CONFIG_NET_SOCKETS_OFFLOAD`
 to ``y``.
 
 Secure socket (TLS) communication is handled as part of the socket APIs,
 and enabled by:
 
-- setting both :option:`CONFIG_NET_SOCKETS_SOCKOPT_TLS`
-  and :option:`CONFIG_TLS_CREDENTIAL_FILENAMES` to ``y``,
+- setting both :kconfig:`CONFIG_NET_SOCKETS_SOCKOPT_TLS`
+  and :kconfig:`CONFIG_TLS_CREDENTIAL_FILENAMES` to ``y``,
 - using the TI Uniflash tool to program the required certificates and
   keys to the secure flash filesystem, and enabling the TI Trusted
   Root-Certificate Catalog.

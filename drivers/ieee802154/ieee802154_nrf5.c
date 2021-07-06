@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "ieee802154_nrf5.h"
 #include "nrf_802154.h"
+#include "nrf_802154_const.h"
 
 #if defined(CONFIG_NRF_802154_SER_HOST)
 #include "nrf_802154_serialization_error.h"
@@ -56,7 +57,11 @@ static struct nrf5_802154_data nrf5_data;
 #define ACK_REQUEST_BIT (1 << 5)
 #define FRAME_PENDING_BYTE 1
 #define FRAME_PENDING_BIT (1 << 4)
-#define TXTIME_OFFSET_US  (5 * USEC_PER_MSEC)
+#define TXTIME_OFFSET_US (1 * USEC_PER_MSEC)
+
+#define DRX_SLOT_PH 0 /* Placeholder delayed reception window ID */
+#define DRX_SLOT_RX 1 /* Actual delayed reception window ID */
+#define PH_DURATION 10 /* Duration of the placeholder window, in microseconds  */
 
 #if defined(CONFIG_IEEE802154_NRF5_UICR_EUI64_ENABLE)
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
@@ -216,6 +221,7 @@ static void nrf5_get_capabilities_at_boot(void)
 		IEEE802154_HW_TX_RX_ACK |
 		IEEE802154_HW_ENERGY_SCAN |
 		((caps & NRF_802154_CAPABILITY_DELAYED_TX) ? IEEE802154_HW_TXTIME : 0UL) |
+		((caps & NRF_802154_CAPABILITY_DELAYED_RX) ? IEEE802154_HW_RXTIME : 0UL) |
 		IEEE802154_HW_SLEEP_TO_TX |
 		((caps & NRF_802154_CAPABILITY_SECURITY) ? IEEE802154_HW_TX_SEC : 0UL);
 }
@@ -564,6 +570,13 @@ static uint64_t nrf5_get_time(const struct device *dev)
 	return nrf_802154_time_get();
 }
 
+static uint8_t nrf5_get_acc(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return CONFIG_IEEE802154_DELAY_TRX_ACC;
+}
+
 static int nrf5_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -581,7 +594,18 @@ static int nrf5_start(const struct device *dev)
 
 static int nrf5_stop(const struct device *dev)
 {
+#if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
+	if (nrf_802154_sleep_if_idle() != NRF_802154_SLEEP_ERROR_NONE) {
+		if (nrf5_data.event_handler) {
+			nrf5_data.event_handler(dev, IEEE802154_EVENT_SLEEP, NULL);
+		} else {
+			LOG_WRN("Transition to radio sleep cannot be handled.");
+		}
+		return 0;
+	}
+#else
 	ARG_UNUSED(dev);
+#endif
 
 	if (!nrf_802154_sleep()) {
 		LOG_ERR("Error while stopping radio");
@@ -654,6 +678,72 @@ static void nrf5_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
+static void nrf5_config_mac_keys(struct ieee802154_key *mac_keys)
+{
+	nrf_802154_security_error_t err;
+	nrf_802154_key_t key;
+	uint8_t key_id_to_remove;
+
+	__ASSERT(mac_keys, "Invalid argument.");
+
+	/* Remove old invalid key assuming that its index is first_valid_key_id - 1.
+	 * TODO: This is Thread specific assumption, need to be changed when RD will provided
+	 * API for removing all keys or handling this internally.
+	 */
+	key_id_to_remove = mac_keys->key_index == 1 ? 0x80 : mac_keys->key_index - 1;
+
+	key.id.mode = mac_keys->key_id_mode;
+	key.id.p_key_id = &key_id_to_remove;
+
+	nrf_802154_security_key_remove(&key.id);
+
+	for (struct ieee802154_key *keys = mac_keys; keys->key_value; keys++) {
+		key.value.p_cleartext_key = keys->key_value;
+		key.id.mode = keys->key_id_mode;
+		key.id.p_key_id = &(keys->key_index);
+		key.type = NRF_802154_KEY_CLEARTEXT;
+		key.frame_counter = 0;
+		key.use_global_frame_counter = !(keys->frame_counter_per_key);
+
+		nrf_802154_security_key_remove(&key.id);
+		err = nrf_802154_security_key_store(&key);
+		__ASSERT(err == NRF_802154_SECURITY_ERROR_NONE ||
+				 err == NRF_802154_SECURITY_ERROR_ALREADY_PRESENT,
+			 "Storing key failed, err: %d", err);
+	};
+}
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
+
+#if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
+static void nrf5_receive_at(uint32_t start, uint32_t duration, uint8_t channel, uint32_t id)
+{
+	nrf_802154_receive_at(start - TXTIME_OFFSET_US, TXTIME_OFFSET_US, duration, channel, id);
+}
+
+static void nrf5_config_csl_period(uint16_t period)
+{
+	nrf_802154_receive_at_cancel(DRX_SLOT_PH);
+	nrf_802154_receive_at_cancel(DRX_SLOT_RX);
+
+	nrf_802154_csl_writer_period_set(period);
+
+	/* A placeholder reception window is scheduled so that the radio driver is able to inject
+	 * the proper CSL Phase in the transmitted CSL Information Elements.
+	 */
+	nrf5_receive_at(nrf5_data.csl_rx_time, PH_DURATION, nrf_802154_channel_get(), DRX_SLOT_PH);
+}
+
+static void nrf5_schedule_rx(uint8_t channel, uint32_t start, uint32_t duration)
+{
+	nrf5_receive_at(start, duration, channel, DRX_SLOT_RX);
+
+	/* The placeholder reception window is rescheduled for the next period */
+	nrf_802154_receive_at_cancel(DRX_SLOT_PH);
+	nrf5_receive_at(nrf5_data.csl_rx_time, PH_DURATION, channel, DRX_SLOT_PH);
+}
+#endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
+
 static int nrf5_configure(const struct device *dev,
 			  enum ieee802154_config_type type,
 			  const struct ieee802154_config *config)
@@ -716,6 +806,54 @@ static int nrf5_configure(const struct device *dev,
 
 	case IEEE802154_CONFIG_EVENT_HANDLER:
 		nrf5_data.event_handler = config->event_handler;
+		break;
+
+#if defined(CONFIG_NRF_802154_ENCRYPTION)
+	case IEEE802154_CONFIG_MAC_KEYS:
+		nrf5_config_mac_keys(config->mac_keys);
+		break;
+
+	case IEEE802154_CONFIG_FRAME_COUNTER:
+		nrf_802154_security_global_frame_counter_set(config->frame_counter);
+		break;
+#endif /* CONFIG_NRF_802154_ENCRYPTION */
+
+	case IEEE802154_CONFIG_ENH_ACK_HEADER_IE: {
+		uint8_t short_addr_le[SHORT_ADDRESS_SIZE];
+		uint8_t ext_addr_le[EXTENDED_ADDRESS_SIZE];
+
+		sys_put_le16(config->ack_ie.short_addr, short_addr_le);
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		memcpy(ext_addr_le, config->ack_ie.ext_addr, EXTENDED_ADDRESS_SIZE);
+#else
+		sys_memcpy_swap(ext_addr_le, config->ack_ie.ext_addr, EXTENDED_ADDRESS_SIZE);
+#endif
+
+		if (config->ack_ie.data_len > 0) {
+			nrf_802154_ack_data_set(short_addr_le, false, config->ack_ie.data,
+						config->ack_ie.data_len, NRF_802154_ACK_DATA_IE);
+			nrf_802154_ack_data_set(ext_addr_le, true, config->ack_ie.data,
+						config->ack_ie.data_len, NRF_802154_ACK_DATA_IE);
+		} else {
+			nrf_802154_ack_data_clear(short_addr_le, false, NRF_802154_ACK_DATA_IE);
+			nrf_802154_ack_data_clear(ext_addr_le, true, NRF_802154_ACK_DATA_IE);
+		}
+	} break;
+
+#if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
+	case IEEE802154_CONFIG_CSL_RX_TIME:
+		nrf5_data.csl_rx_time = config->csl_rx_time;
+		break;
+
+	case IEEE802154_CONFIG_RX_SLOT:
+		nrf5_schedule_rx(config->rx_slot.channel, config->rx_slot.start,
+				 config->rx_slot.duration);
+		break;
+
+	case IEEE802154_CONFIG_CSL_PERIOD:
+		nrf5_config_csl_period(config->csl_period);
+		break;
+#endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
 	default:
 		return -EINVAL;
@@ -758,7 +896,14 @@ void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
 
 void nrf_802154_receive_failed(nrf_802154_rx_error_t error, uint32_t id)
 {
+#if defined(CONFIG_IEEE802154_CSL_ENDPOINT)
+	if ((id == DRX_SLOT_PH) || (id == DRX_SLOT_RX)) {
+		nrf5_stop(net_if_get_device(nrf5_data.iface));
+		return;
+	}
+#else
 	ARG_UNUSED(id);
+#endif
 
 	enum ieee802154_rx_fail_reason reason;
 
@@ -900,6 +1045,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.tx = nrf5_tx,
 	.ed_scan = nrf5_energy_scan_start,
 	.get_time = nrf5_get_time,
+	.get_sch_acc = nrf5_get_acc,
 	.configure = nrf5_configure,
 };
 

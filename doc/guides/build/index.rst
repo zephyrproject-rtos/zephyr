@@ -370,3 +370,6 @@ tips and best practices for writing :file:`Kconfig` files.
    kconfig/tips.rst
    kconfig/preprocessor-functions.rst
    kconfig/extensions.rst
+
+Users interested in optimizing their configuraion for security should refer
+to the Zephyr Security Guide's section on the :ref:`hardening`.

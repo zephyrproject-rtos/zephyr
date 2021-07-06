@@ -71,6 +71,8 @@ void ull_slave_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	uint16_t win_delay_us;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
+	uint16_t max_tx_time;
+	uint16_t max_rx_time;
 	uint16_t win_offset;
 	memq_link_t *link;
 	uint16_t timeout;
@@ -331,6 +333,25 @@ void ull_slave_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	ll_rx_put(link, rx);
 	ll_rx_sched();
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_PHY)
+	max_tx_time = lll->max_tx_time;
+	max_rx_time = lll->max_rx_time;
+#else /* !CONFIG_BT_CTLR_PHY */
+	max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
+	max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+	max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+#if defined(CONFIG_BT_CTLR_PHY)
+	max_tx_time = MAX(max_tx_time,
+			  PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_tx));
+	max_rx_time = MAX(max_rx_time,
+			  PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_rx));
+#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, 1);
 #else
@@ -346,7 +367,9 @@ void ull_slave_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
 	conn->ull.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
 				       ready_delay_us +
-				       328 + EVENT_IFS_US + 328);
+				       max_rx_time +
+				       EVENT_IFS_US +
+				       max_tx_time);
 
 	ticks_slot_offset = MAX(conn->ull.ticks_active_to_start,
 				conn->ull.ticks_prepare_to_start);

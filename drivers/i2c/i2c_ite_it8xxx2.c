@@ -41,6 +41,7 @@ enum i2c_ch_status {
 struct i2c_it8xxx2_data {
 	enum i2c_ch_status i2ccs;
 	struct i2c_msg *msgs;
+	struct k_mutex mutex;
 	struct k_sem device_sync_sem;
 	/* Index into output data */
 	size_t widx;
@@ -182,7 +183,7 @@ static int i2c_bus_not_available(const struct device *dev)
 	return 0;
 }
 
-static void i2c_reset(const struct device *dev, int cause)
+static void i2c_reset(const struct device *dev)
 {
 	const struct i2c_it8xxx2_config *config = DEV_CFG(dev);
 	uint8_t *base = config->base;
@@ -197,7 +198,6 @@ static void i2c_reset(const struct device *dev, int cause)
 		/* State reset and hardware reset */
 		IT83XX_I2C_CTR(base) = E_STS_AND_HW_RST;
 	}
-	printk("I2C ch%d reset cause %d\n", config->port, cause);
 }
 
 /*
@@ -733,6 +733,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		return -EINVAL;
 	}
 
+	/* Lock mutex of i2c controller */
+	k_mutex_lock(&data->mutex, K_FOREVER);
 	/*
 	 * If the transaction of write to read is divided into two
 	 * transfers, the repeat start transfer uses this flag to
@@ -742,12 +744,16 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		/* Make sure we're in a good state to start */
 		if (i2c_bus_not_available(dev)) {
 			/* reset i2c port */
-			i2c_reset(dev, I2C_RC_NO_IDLE_FOR_START);
+			i2c_reset(dev);
+			printk("I2C ch%d reset cause %d\n", config->port,
+			       I2C_RC_NO_IDLE_FOR_START);
 			/*
 			 * After resetting I2C bus, if I2C bus is not available
 			 * (No external pull-up), drop the transaction.
 			 */
 			if (i2c_bus_not_available(dev)) {
+				/* Unlock mutex of i2c controller */
+				k_mutex_unlock(&data->mutex);
 				return -EIO;
 			}
 		}
@@ -773,10 +779,19 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 		/* Wait for the transfer to complete */
 		/* TODO: the timeout should be adjustable */
 		res = k_sem_take(&data->device_sync_sem, K_MSEC(100));
+		/*
+		 * The transaction is dropped on any error(timeout, NACK, fail,
+		 * bus error, device error).
+		 */
+		if (data->err)
+			break;
+
 		if (res != 0) {
 			data->err = ETIMEDOUT;
 			/* reset i2c port */
-			i2c_reset(dev, I2C_RC_TIMEOUT);
+			i2c_reset(dev);
+			printk("I2C ch%d:0x%X reset cause %d\n",
+			       config->port, data->addr_16bit, I2C_RC_TIMEOUT);
 			/* If this message is sent fail, drop the transaction. */
 			break;
 		}
@@ -786,6 +801,8 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 	if (data->err || (msgs->flags & I2C_MSG_STOP)) {
 		data->i2ccs = I2C_CH_NORMAL;
 	}
+	/* Unlock mutex of i2c controller */
+	k_mutex_unlock(&data->mutex);
 
 	return data->err;
 }
@@ -811,6 +828,8 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	uint32_t bitrate_cfg, offset = 0;
 	int error;
 
+	/* Initialize mutex and semaphore */
+	k_mutex_init(&data->mutex);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	switch ((uint32_t)base) {

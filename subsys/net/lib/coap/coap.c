@@ -1270,6 +1270,13 @@ void coap_pendings_clear(struct coap_pending *pendings, size_t len)
 	}
 }
 
+/* Reordering according to RFC7641 section 3.4 but without timestamp comparison */
+static inline bool is_newer(int v1, int v2)
+{
+	return (v1 < v2 && v2 - v1 < (1 << 23))
+	    || (v1 > v2 && v1 - v2 > (1 << 23));
+}
+
 struct coap_reply *coap_response_received(
 	const struct coap_packet *response,
 	const struct sockaddr *from,
@@ -1301,18 +1308,12 @@ struct coap_reply *coap_response_received(
 		}
 
 		age = coap_get_option_int(response, COAP_OPTION_OBSERVE);
-		if (age > 0) {
-			/* age == 2 means that the notifications wrapped,
-			 * or this is the first one
-			 */
-			if (r->age > age && age != 2) {
-				continue;
-			}
-
+		/* handle observed requests only if received in order */
+		if (age == -ENOENT || is_newer(r->age, age)) {
 			r->age = age;
+			r->reply(response, r, from);
 		}
 
-		r->reply(response, r, from);
 		return r;
 	}
 
@@ -1324,7 +1325,6 @@ void coap_reply_init(struct coap_reply *reply,
 {
 	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint8_t tkl;
-	int age;
 
 	reply->id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
@@ -1335,12 +1335,8 @@ void coap_reply_init(struct coap_reply *reply,
 
 	reply->tkl = tkl;
 
-	age = coap_get_option_int(request, COAP_OPTION_OBSERVE);
-
-	/* It means that the request enabled observing a resource */
-	if (age == 0) {
-		reply->age = 2;
-	}
+	/* Any initial observe response should be accepted */
+	reply->age = -1;
 }
 
 void coap_reply_clear(struct coap_reply *reply)

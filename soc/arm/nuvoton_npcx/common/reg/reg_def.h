@@ -1326,4 +1326,60 @@ struct dbg_reg {
 /* Debug Interface registers fields */
 #define NPCX_DBGFRZEN3_GLBL_FRZ_DIS      7
 
+/* PS/2 Interface registers */
+struct ps2_reg {
+	/* 0x000: PS/2 Data */
+	volatile uint8_t PSDAT;
+	volatile uint8_t reserved1;
+	/* 0x002: PS/2 Status */
+	volatile uint8_t PSTAT;
+	volatile uint8_t reserved2;
+	/* 0x004: PS/2 Control */
+	volatile uint8_t PSCON;
+	volatile uint8_t reserved3;
+	/* 0x006: PS/2 Output Signal */
+	volatile uint8_t PSOSIG;
+	volatile uint8_t reserved4;
+	/* 0x008: PS/2 Iutput Signal */
+	volatile uint8_t PSISIG;
+	volatile uint8_t reserved5;
+	/* 0x00A: PS/2 Interrupt Enable */
+	volatile uint8_t PSIEN;
+	volatile uint8_t reserved6;
+};
+
+/* PS/2 Interface registers fields */
+#define NPCX_PSTAT_SOT                   0
+#define NPCX_PSTAT_EOT                   1
+#define NPCX_PSTAT_PERR                  2
+#define NPCX_PSTAT_ACH                   FIELD(3, 3)
+#define NPCX_PSTAT_RFERR                 6
+
+#define NPCX_PSCON_EN                    0
+#define NPCX_PSCON_XMT                   1
+#define NPCX_PSCON_HDRV                  FIELD(2, 2)
+#define NPCX_PSCON_IDB                   FIELD(4, 3)
+#define NPCX_PSCON_WPUED                 7
+
+#define NPCX_PSOSIG_WDAT0                0
+#define NPCX_PSOSIG_WDAT1                1
+#define NPCX_PSOSIG_WDAT2                2
+#define NPCX_PSOSIG_CLK0                 3
+#define NPCX_PSOSIG_CLK1                 4
+#define NPCX_PSOSIG_CLK2                 5
+#define NPCX_PSOSIG_WDAT3                6
+#define NPCX_PSOSIG_CLK3                 7
+#define NPCX_PSOSIG_CLK(n)               (((n) < 3) ? ((n) + 3) : 7)
+#define NPCX_PSOSIG_WDAT(n)              (((n) < 3) ? ((n) + 0) : 6)
+#define NPCX_PSOSIG_CLK_MASK_ALL \
+					 (BIT(NPCX_PSOSIG_CLK0) | \
+					  BIT(NPCX_PSOSIG_CLK1) | \
+					  BIT(NPCX_PSOSIG_CLK2) | \
+					  BIT(NPCX_PSOSIG_CLK3))
+
+#define NPCX_PSIEN_SOTIE                 0
+#define NPCX_PSIEN_EOTIE                 1
+#define NPCX_PSIEN_PS2_WUE               4
+#define NPCX_PSIEN_PS2_CLK_SEL           7
+
 #endif /* _NUVOTON_NPCX_REG_DEF_H */

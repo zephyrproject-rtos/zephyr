@@ -319,16 +319,16 @@ static int lsm6dso_sample_fetch_accel(const struct device *dev)
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *data = dev->data;
-	union axis3bit16_t buf;
+	int16_t buf[3];
 
-	if (lsm6dso_acceleration_raw_get(ctx, buf.u8bit) < 0) {
+	if (lsm6dso_acceleration_raw_get(ctx, buf) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->acc[0] = sys_le16_to_cpu(buf.i16bit[0]);
-	data->acc[1] = sys_le16_to_cpu(buf.i16bit[1]);
-	data->acc[2] = sys_le16_to_cpu(buf.i16bit[2]);
+	data->acc[0] = sys_le16_to_cpu(buf[0]);
+	data->acc[1] = sys_le16_to_cpu(buf[1]);
+	data->acc[2] = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }
@@ -338,16 +338,16 @@ static int lsm6dso_sample_fetch_gyro(const struct device *dev)
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *data = dev->data;
-	union axis3bit16_t buf;
+	int16_t buf[3];
 
-	if (lsm6dso_angular_rate_raw_get(ctx, buf.u8bit) < 0) {
+	if (lsm6dso_angular_rate_raw_get(ctx, buf) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->gyro[0] = sys_le16_to_cpu(buf.i16bit[0]);
-	data->gyro[1] = sys_le16_to_cpu(buf.i16bit[1]);
-	data->gyro[2] = sys_le16_to_cpu(buf.i16bit[2]);
+	data->gyro[0] = sys_le16_to_cpu(buf[0]);
+	data->gyro[1] = sys_le16_to_cpu(buf[1]);
+	data->gyro[2] = sys_le16_to_cpu(buf[2]);
 
 	return 0;
 }
@@ -358,14 +358,14 @@ static int lsm6dso_sample_fetch_temp(const struct device *dev)
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct lsm6dso_data *data = dev->data;
-	union axis1bit16_t buf;
+	int16_t buf;
 
-	if (lsm6dso_temperature_raw_get(ctx, buf.u8bit) < 0) {
+	if (lsm6dso_temperature_raw_get(ctx, &buf) < 0) {
 		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
-	data->temp_sample = sys_le16_to_cpu(buf.i16bit);
+	data->temp_sample = sys_le16_to_cpu(buf);
 
 	return 0;
 }

@@ -250,7 +250,7 @@ bool bt_mesh_fixed_group_match(uint16_t addr)
 	}
 }
 
-void bt_mesh_cfg_init(void)
+void bt_mesh_cfg_default_set(void)
 {
 	bt_mesh.default_ttl = CONFIG_BT_MESH_DEFAULT_TTL;
 	bt_mesh.net_xmit =

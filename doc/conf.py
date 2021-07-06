@@ -76,7 +76,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "zephyr.application",
     "zephyr.html_redirects",
-    "only.eager_only",
+    "zephyr.kconfig-role",
     "zephyr.dtcompatible-role",
     "zephyr.link-roles",
     "sphinx_tabs.tabs",
@@ -205,7 +205,7 @@ warnings_filter_silent = False
 
 # -- Options for notfound.extension ---------------------------------------
 
-notfound_urls_prefix = f"/{version}/"
+notfound_urls_prefix = f"/{version}/" if is_release else "/latest/"
 
 # -- Options for zephyr.external_content ----------------------------------
 

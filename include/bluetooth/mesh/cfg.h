@@ -315,7 +315,7 @@ uint8_t bt_mesh_subnet_kr_phase_get(uint16_t net_idx, uint8_t *phase);
  *  but only acts on a single Subnet.
  *
  *  GATT Proxy support must be enabled through
- *  @option{CONFIG_BT_MESH_GATT_PROXY}.
+ *  @kconfig{CONFIG_BT_MESH_GATT_PROXY}.
  *
  *  @param net_idx Network index.
  *  @param node_id New Node Identity state, must be either @ref

@@ -106,20 +106,20 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
   and responding with events and received data.  A build of this type sets the
   following Kconfig option values:
 
-  * :option:`CONFIG_BT` ``=y``
-  * :option:`CONFIG_BT_HCI` ``=y``
-  * :option:`CONFIG_BT_HCI_RAW` ``=y``
-  * :option:`CONFIG_BT_CTLR` ``=y``
-  * :option:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
+  * :kconfig:`CONFIG_BT` ``=y``
+  * :kconfig:`CONFIG_BT_HCI` ``=y``
+  * :kconfig:`CONFIG_BT_HCI_RAW` ``=y``
+  * :kconfig:`CONFIG_BT_CTLR` ``=y``
+  * :kconfig:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
 
 * **Host-only build**: A Zephyr OS Host build will contain the Application and
   the BLE Host, along with an HCI driver (UART or SPI) to interface with an
   external Controller chip.
   A build of this type sets the following Kconfig option values:
 
-  * :option:`CONFIG_BT` ``=y``
-  * :option:`CONFIG_BT_HCI` ``=y``
-  * :option:`CONFIG_BT_CTLR` ``=n``
+  * :kconfig:`CONFIG_BT` ``=y``
+  * :kconfig:`CONFIG_BT_HCI` ``=y``
+  * :kconfig:`CONFIG_BT_CTLR` ``=n``
 
   All of the samples located in ``samples/bluetooth`` except for the ones
   used for Controller-only builds can be built as Host-only
@@ -128,10 +128,10 @@ BLE-enabled builds that can be produced from the Zephyr project codebase:
   Controller, and it is used exclusively for single-chip (SoC) configurations.
   A build of this type sets the following Kconfig option values:
 
-  * :option:`CONFIG_BT` ``=y``
-  * :option:`CONFIG_BT_HCI` ``=y``
-  * :option:`CONFIG_BT_CTLR` ``=y``
-  * :option:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
+  * :kconfig:`CONFIG_BT` ``=y``
+  * :kconfig:`CONFIG_BT_HCI` ``=y``
+  * :kconfig:`CONFIG_BT_CTLR` ``=y``
+  * :kconfig:`CONFIG_BT_LL_SW_SPLIT` ``=y`` (if using the open source Link Layer)
 
   All of the samples located in ``samples/bluetooth`` except for the ones
   used for Controller-only builds can be built as Combined
@@ -243,8 +243,8 @@ four distinct roles of BLE usage:
   * Observer (scanning for BLE advertisements)
 
 Each role comes with its own build-time configuration option:
-:option:`CONFIG_BT_PERIPHERAL`, :option:`CONFIG_BT_CENTRAL`,
-:option:`CONFIG_BT_BROADCASTER` & :option:`CONFIG_BT_OBSERVER`. Of the
+:kconfig:`CONFIG_BT_PERIPHERAL`, :kconfig:`CONFIG_BT_CENTRAL`,
+:kconfig:`CONFIG_BT_BROADCASTER` & :kconfig:`CONFIG_BT_OBSERVER`. Of the
 connection-oriented roles central implicitly enables observer role, and
 peripheral implicitly enables broadcaster role. Usually the first step
 when creating an application is to decide which roles are needed and go
