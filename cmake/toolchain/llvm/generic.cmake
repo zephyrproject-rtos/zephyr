@@ -17,9 +17,11 @@ if("${ARCH}" STREQUAL "arm")
   set(CMAKE_EXE_LINKER_FLAGS_INIT "--specs=nosys.specs")
 elseif("${ARCH}" STREQUAL "x86")
   if(CONFIG_64BIT)
-    set(triple x86_64-pc-none-elf)
+    # The LLVM built-in linker lld is a generic driver, needs to use triple os filed
+    # to distinguish which linker will be used.
+    set(triple x86_64-pc-linux-elf)
   else()
-    set(triple i686-pc-none-elf)
+    set(triple i686-pc-linux-elf)
   endif()
 endif()
 

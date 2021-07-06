@@ -69,7 +69,10 @@ if(NOT "${ARCH}" STREQUAL "posix")
     list(APPEND TOOLCHAIN_LIBS gcc)
   endif()
 
-  set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags})
+  # CMake needs a valid linker to check compiler flag, but clang
+  # won't use LLVM built-in linker by default, so use this option
+  # to force clang to use LLVM built-in linker
+  set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib -fuse-ld=lld ${isystem_include_flags})
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 endif()
