@@ -623,8 +623,8 @@ void helper_pdu_verify_conn_update_ind(const char *file, uint32_t line, struct p
 	zassert_equal(pdu->llctrl.conn_update_ind.win_offset, p->win_offset, "Win_offset mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_update_ind.latency, p->latency, "Latency.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_update_ind.interval, p->interval, "Interval mismatch.\nCalled at %s:%d\n", file, line);
-	zassert_equal(pdu->llctrl.conn_update_ind.timeout, p->timeout, "Timeout mismatch.\nCalled at %s:%d\n", file, line);
 	*/
+	zassert_equal(pdu->llctrl.conn_update_ind.timeout, p->timeout, "Timeout mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_update_ind.instant, p->instant, "Instant mismatch.\nCalled at %s:%d\n", file, line);
 }
 
