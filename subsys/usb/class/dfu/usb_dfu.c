@@ -439,7 +439,7 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 					dfu_data.block_nr, setup->wLength);
 				dfu_data.state = dfuERROR;
 				dfu_data.status = errUNKNOWN;
-				break;
+				return -EINVAL;
 			}
 
 			/* Upload in progress */
@@ -468,7 +468,7 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 				if (ret) {
 					dfu_data.state = dfuERROR;
 					dfu_data.status = errFILE;
-					break;
+					return -EINVAL;
 				}
 				ret = flash_area_read(fa, dfu_data.bytes_sent,
 						      *data, len);
@@ -476,7 +476,7 @@ static int dfu_class_handle_to_host(struct usb_setup_packet *setup,
 				if (ret) {
 					dfu_data.state = dfuERROR;
 					dfu_data.status = errFILE;
-					break;
+					return -EINVAL;
 				}
 			}
 			*data_len = len;
