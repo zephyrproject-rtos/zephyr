@@ -29,4 +29,7 @@ config XIP
 config ISR_STACK_SIZE
 	default 2048
 
+config ATOMIC_OPERATIONS_C
+	default y
+
 endif
