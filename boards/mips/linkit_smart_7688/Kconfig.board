@@ -1,0 +1,7 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_LINKIT_SMART_7688
+	bool "MediaTek LinkIt Smart 7688"
+	depends on SOC_MT76X8

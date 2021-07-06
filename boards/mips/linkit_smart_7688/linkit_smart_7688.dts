@@ -1,0 +1,60 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "skeleton.dtsi"
+
+/ {
+	model = "MediaTek LinkIt Smart 7688";
+	compatible = "mediatek,linkit-smart-7688";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "mips,mips24KEc";
+			reg = <0>;
+
+			cpu_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "mips,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	sram0: memory@80100000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x80100000 0x100000>;
+	};
+
+	uart2: serial@b0000e00 {
+		compatible = "ns16550";
+		reg = <0xb0000e00 0x100>;
+		reg-shift = <2>;
+
+//		interrupt-parent = <&cpu_intc>;
+//		interrupts = <1>;
+
+//		interrupt-parent = <&intc>;
+//		interrupts = <22>;
+
+		clock-frequency = <40000000>;
+		current-speed = <57600>;
+
+		label = "UART_2";
+
+		status = "okay";
+	};
+};

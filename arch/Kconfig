@@ -111,6 +111,14 @@ config XTENSA
 	help
 	  Xtensa architecture
 
+config MIPS
+	bool "MIPS architecture"
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	select HAS_DTS
+	help
+	  MIPS architecture
+
 config ARCH_POSIX
 	bool
 	select ARCH_IS_SET
@@ -178,7 +186,7 @@ config SRAM_BASE_ADDRESS
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
 	  changing it via menuconfig or in configuration files.
 
-if ARC || ARM || ARM64 || NIOS2 || X86
+if ARC || ARM || ARM64 || MIPS || NIOS2 || X86
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash

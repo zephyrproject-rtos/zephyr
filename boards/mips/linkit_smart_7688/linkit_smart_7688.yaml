@@ -1,0 +1,14 @@
+identifier: linkit_smart_7688
+name: LinkIt Smart 7688
+type: mcu
+arch: mips
+toolchain:
+  - zephyr
+  - xtools
+ram: 1024
+flash: 512
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

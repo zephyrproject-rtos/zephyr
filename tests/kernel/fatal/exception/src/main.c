@@ -81,6 +81,7 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 #else
 	/* Triggers usage fault on ARM, illegal instruction on RISCV
 	 * and xtensa
+	 * TLB exception (instruction fetch) on MIPS.
 	 */
 	{
 		volatile long illegal = 0;

@@ -345,6 +345,12 @@ config NPCX_ITIM_TIMER
 	  series internal 64/32-bit timers and provides the standard "system
 	  clock driver" interfaces.
 
+config MIPS_CP0_TIMER
+	bool "MIPS CP0 Timer"
+	depends on MIPS
+	help
+	  This module implements a kernel device driver for the MIPS CP0 timer.
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	help

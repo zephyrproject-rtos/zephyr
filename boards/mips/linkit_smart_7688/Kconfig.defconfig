@@ -1,0 +1,10 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_LINKIT_SMART_7688
+
+config BOARD
+	default "linkit_smart_7688"
+
+endif # BOARD_LINKIT_SMART_7688

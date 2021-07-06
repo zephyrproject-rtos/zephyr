@@ -48,6 +48,7 @@ extern "C" {
 #define IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 	ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)
 
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
 /**
  * Configure a dynamic interrupt.
  *
@@ -69,6 +70,7 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	return arch_irq_connect_dynamic(irq, priority, routine, parameter,
 					flags);
 }
+#endif
 
 /**
  * @brief Initialize a 'direct' interrupt handler.

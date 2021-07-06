@@ -1,0 +1,7 @@
+# Copyright (c) 2021 Antony Pavlov <antonynpavlov@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MT76X8
+	bool "Mediatek MT76x8"
+	select MIPS

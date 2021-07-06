@@ -4,14 +4,14 @@ common:
     - mps2_an385
 tests:
   cpp.libcxx.newlib:
-    toolchain_exclude: xcc
+    toolchain_exclude: xcc gccmipsmti
     min_flash: 54
     tags: cpp
     extra_configs:
         - CONFIG_NEWLIB_LIBC_NANO=n
         - CONFIG_EXCEPTIONS=y
   cpp.libcxx.newlib_nano:
-    toolchain_exclude: xcc
+    toolchain_exclude: xcc gccmipsmti
     min_flash: 54
     tags: cpp
     timeout: 30
