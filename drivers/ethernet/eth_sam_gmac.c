@@ -2222,14 +2222,14 @@ static const struct soc_gpio_pin pins_eth0[] = ATMEL_SAM_DT_INST_PINS(0);
 #endif
 
 static const struct eth_sam_dev_cfg eth0_config = {
-	.regs = GMAC,
-	.periph_id = ID_GMAC,
+	.regs = (Gmac *)DT_INST_REG_ADDR(0),
 #ifdef CONFIG_SOC_FAMILY_SAM
+	.periph_id = DT_INST_PROP_OR(0, peripheral_id, 0),
 	.pin_list = pins_eth0,
 	.pin_list_size = ARRAY_SIZE(pins_eth0),
 #endif
 	.config_func = eth0_irq_config,
-	.phy = {GMAC, CONFIG_ETH_SAM_GMAC_PHY_ADDR},
+	.phy = {(Gmac *)DT_INST_REG_ADDR(0), CONFIG_ETH_SAM_GMAC_PHY_ADDR},
 };
 
 static struct eth_sam_dev_data eth0_data = {
