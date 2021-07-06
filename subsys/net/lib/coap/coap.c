@@ -760,7 +760,7 @@ const uint8_t *coap_packet_get_payload(const struct coap_packet *cpkt, uint16_t 
 
 	payload_len = cpkt->offset - cpkt->hdr_len - cpkt->opt_len;
 	if (payload_len > 1) {
-		*len = payload_len - 1;	/* substract payload marker length */
+		*len = payload_len - 1;	/* subtract payload marker length */
 	} else {
 		*len = 0U;
 	}

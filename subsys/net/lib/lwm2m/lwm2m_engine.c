@@ -3653,6 +3653,7 @@ static int handle_request(struct coap_packet *request,
 	uint16_t payload_len = 0U;
 	bool last_block = false;
 	bool ignore = false;
+	const uint8_t *payload_start;
 
 	/* set CoAP request / message */
 	msg->in.in_cpkt = request;
@@ -3823,8 +3824,12 @@ static int handle_request(struct coap_packet *request,
 	}
 
 	/* setup incoming data */
-	msg->in.offset = msg->in.in_cpkt->hdr_len + msg->in.in_cpkt->opt_len;
-	coap_packet_get_payload(msg->in.in_cpkt, &payload_len);
+	payload_start = coap_packet_get_payload(msg->in.in_cpkt, &payload_len);
+	if (payload_len > 0) {
+		msg->in.offset = payload_start - msg->in.in_cpkt->data;
+	} else {
+		msg->in.offset = msg->in.in_cpkt->offset;
+	}
 
 	/* Check for block transfer */
 
