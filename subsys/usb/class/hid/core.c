@@ -496,7 +496,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 {
 	LOG_DBG("Standard request:"
 		"bRequest 0x%02x, bmRequestType 0x%02x, len %d",
-		setup->bRequest, setup->bmRequestType, *len);
+		setup->bRequest, setup->bmRequestType, setup->wLength);
 
 	if (usb_reqtype_is_to_host(setup) &&
 	    setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
@@ -524,21 +524,13 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 
 			LOG_DBG("Return HID Descriptor");
 
-			*len = MIN(*len, hid_desc->if0_hid.bLength);
+			*len = MIN(setup->wLength, hid_desc->if0_hid.bLength);
 			*data = (uint8_t *)&hid_desc->if0_hid;
 			break;
 		case USB_DESC_HID_REPORT:
 			LOG_DBG("Return Report Descriptor");
 
-			/* Some buggy system may be pass a larger wLength when
-			 * it try read HID report descriptor, although we had
-			 * already tell it the right descriptor size.
-			 * So truncated wLength if it doesn't match. */
-			if (*len != dev_data->report_size) {
-				LOG_WRN("len %d doesn't match "
-					"Report Descriptor size", *len);
-				*len = MIN(*len, dev_data->report_size);
-			}
+			*len = MIN(setup->wLength, dev_data->report_size);
 			*data = (uint8_t *)dev_data->report_desc;
 			break;
 		default:
