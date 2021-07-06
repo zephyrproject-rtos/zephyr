@@ -486,6 +486,26 @@ struct bt_audio_capability_ops {
 
 /** @brief Channel operation. */
 struct bt_audio_chan_ops {
+	/** @brief Channel connected callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  connection completes.
+	 *
+	 *  @param chan The channel that has been connected
+	 */
+	void (*connected)(struct bt_audio_chan *chan);
+
+	/** @brief Channel disconnected callback
+	 *
+	 *  If this callback is provided it will be called whenever the
+	 *  channel is disconnected, including when a connection gets
+	 *  rejected.
+	 *
+	 *  @param chan   The channel that has been Disconnected
+	 *  @param reason HCI reason for the disconnection.
+	 */
+	void (*disconnected)(struct bt_audio_chan *chan, uint8_t reason);
+
 	/** @brief Channel audio HCI receive callback.
 	 *
 	 *  This callback is only used if the ISO data path is HCI.
@@ -493,7 +513,7 @@ struct bt_audio_chan_ops {
 	 *  @param chan Channel object.
 	 *  @param buf  Buffer containing incoming audio data.
 	 */
-	void                    (*recv)(struct bt_audio_chan *chan, struct net_buf *buf);
+	void (*recv)(struct bt_audio_chan *chan, struct net_buf *buf);
 };
 
 /** @brief Audio Capability type */

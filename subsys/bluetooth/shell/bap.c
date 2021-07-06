@@ -936,12 +936,25 @@ static struct bt_audio_capability_ops lc3_ops = {
 	.release = lc3_release,
 };
 
+static void audio_connected(struct bt_audio_chan *chan)
+{
+	shell_print(ctx_shell, "Channel %p connected\n", chan);
+}
+
+static void audio_disconnected(struct bt_audio_chan *chan, uint8_t reason)
+{
+	shell_print(ctx_shell, "Channel %p disconnected with reason 0x%2x\n",
+		    chan, reason);
+}
+
 static void audio_recv(struct bt_audio_chan *chan, struct net_buf *buf)
 {
 	shell_print(ctx_shell, "Incoming audio on channel %p len %u\n", chan, buf->len);
 }
 
 static struct bt_audio_chan_ops chan_ops = {
+	.connected = audio_connected,
+	.disconnected = audio_disconnected,
 	.recv = audio_recv
 };
 
