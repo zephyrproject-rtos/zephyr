@@ -211,6 +211,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	size_t write_buflen;
 	uint8_t resp_code, *write_buf;
 	struct coap_block_context received_block_ctx;
+	const uint8_t *payload_start;
 
 	/* token is used to determine a valid ACK vs a separated response */
 	tkl = coap_header_get_token(check_response, token);
@@ -266,9 +267,9 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	last_block = !coap_next_block(check_response, &firmware_block_ctx);
 
 	/* Process incoming data */
-	payload_offset = response->hdr_len + response->opt_len;
-	coap_packet_get_payload(response, &payload_len);
+	payload_start = coap_packet_get_payload(response, &payload_len);
 	if (payload_len > 0) {
+		payload_offset = payload_start - response->data;
 		LOG_DBG("total: %zd, current: %zd",
 			firmware_block_ctx.total_size,
 			firmware_block_ctx.current);
