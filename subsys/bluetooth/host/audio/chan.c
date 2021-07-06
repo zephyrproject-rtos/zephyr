@@ -26,7 +26,37 @@
 
 #if defined(CONFIG_BT_BAP)
 
+/* API only supports a single subgroup at the moment */
+
+/* The struct bt_audio_base_codec_data, bt_audio_base_subgroup and bt_audio_base
+ * are primarily designed to help calculate the maximum advertising data length
+ */
+
+struct bt_audio_base_codec_data {
+	uint8_t type;
+	uint8_t data_len;
+	uint8_t data[CONFIG_BT_CODEC_MAX_DATA_LEN];
+} __packed;
+
+struct bt_audio_base_subgroup {
+	uint8_t bis_cnt;
+	uint8_t codec_id;
+	uint16_t company_id;
+	uint16_t vendor_id;
+	uint8_t codec_config_len;
+	struct bt_audio_base_codec_data codec_config[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+	uint8_t metadata_len;
+	struct bt_audio_base_codec_data metadata[CONFIG_BT_CODEC_MAX_DATA_COUNT];
+} __packed;
+
+struct bt_audio_base {
+	uint16_t uuid_val;
+	struct bt_audio_base_subgroup subgroups[CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT];
+} __packed;
+
 struct bt_audio_broadcaster {
+	uint8_t bis_count;
+	uint8_t subgroup_count;
 	struct bt_iso_chan *bis[BROADCAST_SRC_CNT];
 };
 
@@ -1068,6 +1098,69 @@ static int bt_audio_broadcaster_setup_chan(uint8_t index,
 	return 0;
 }
 
+static void bt_audio_encode_base(struct bt_audio_broadcaster *broadcaster,
+				 struct bt_codec *codec,
+				 struct bt_codec_qos *qos,
+				 struct net_buf_simple *buf)
+{
+	uint8_t bis_index;
+	uint8_t *start;
+	uint8_t len;
+
+	__ASSERT(broadcaster->subgroup_count == CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT,
+		 "Cannot encode BASE with more than a single subgroup");
+
+	net_buf_simple_add_le16(buf, BT_UUID_BASIC_AUDIO_VAL);
+	net_buf_simple_add_le24(buf, qos->pd);
+	net_buf_simple_add_u8(buf, broadcaster->subgroup_count);
+	net_buf_simple_add_u8(buf, broadcaster->bis_count);
+	net_buf_simple_add_u8(buf, codec->id);
+	net_buf_simple_add_le16(buf, codec->cid);
+	net_buf_simple_add_le16(buf, codec->vid);
+
+	/* Insert codec configuration data in LTV format */
+	start = net_buf_simple_add(buf, sizeof(len));
+	for (int i = 0; i < codec->data_count; i++) {
+		const struct bt_data *codec_data = &codec->data->data;
+
+		net_buf_simple_add_u8(buf, codec_data->data_len);
+		net_buf_simple_add_u8(buf, codec_data->type);
+		net_buf_simple_add_mem(buf, codec_data->data,
+				       codec_data->data_len);
+
+	}
+	/* Calcute length of codec config data */
+	len = net_buf_simple_tail(buf) - start - sizeof(len);
+	/* Update the length field */
+	*start = len;
+
+	/* Insert codec metadata in LTV format*/
+	start = net_buf_simple_add(buf, sizeof(len));
+	for (int i = 0; i < codec->meta_count; i++) {
+		const struct bt_data *metadata = &codec->meta->data;
+
+		net_buf_simple_add_u8(buf, metadata->data_len);
+		net_buf_simple_add_u8(buf, metadata->type);
+		net_buf_simple_add_mem(buf, metadata->data, metadata->data_len);
+	}
+	/* Calcute length of codec config data */
+	len = net_buf_simple_tail(buf) - start - sizeof(len);
+	/* Update the length field */
+	*start = len;
+
+	/* Create BIS index bitfield */
+	bis_index = 0;
+	for (int i = 0; i < broadcaster->bis_count; i++) {
+		bis_index |= BIT(i);
+	}
+	net_buf_simple_add_u8(buf, bis_index);
+
+	/* NOTE: It is also possible to have the codec configuration data per
+	 * BIS index. As our API does not support such specialized BISes we
+	 * currently don't do that.
+	 */
+}
+
 int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 				struct bt_codec *codec,
 				struct bt_codec_qos *qos)
@@ -1076,11 +1169,16 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 		BT_DATA_BYTES(BT_DATA_UUID16_ALL,
 				BT_UUID_16_ENCODE(BT_UUID_BROADCAST_AUDIO_VAL))
 	};
-	struct bt_iso_chan **bis_channels = NULL;
+	struct bt_audio_broadcaster *broadcaster;
+	struct bt_data base_ad_data;
 	struct bt_audio_chan *tmp;
-	uint8_t bis_count = 0;
 	uint8_t index;
 	int err;
+
+	/* Broadcast Audio Streaming Endpoint advertising data */
+	NET_BUF_SIMPLE_DEFINE(base_buf, sizeof(struct bt_audio_base));
+
+	/* TODO: Validate codec and qos values */
 
 	/* TODO: The API currently only requires a bt_audio_chan object from
 	 * the user. We could modify the API such that the extended (and
@@ -1104,15 +1202,15 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 		return -EINVAL;
 	}
 
-
+	broadcaster = NULL;
 	for (index = 0; index < ARRAY_SIZE(broadcasters); index++) {
 		if (broadcasters[index].bis[0] == NULL) { /* Find free entry */
-			bis_channels = broadcasters[index].bis;
+			broadcaster = &broadcasters[index];
 			break;
 		}
 	}
 
-	if (bis_channels == NULL) {
+	if (broadcaster == NULL) {
 		BT_DBG("Could not allocate any more broadcasters");
 		return -ENOMEM;
 	}
@@ -1123,7 +1221,8 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 		return err;
 	}
 
-	bis_channels[bis_count++] = &chan->ep->iso;
+	broadcaster->bis_count = 0;
+	broadcaster->bis[broadcaster->bis_count++] = &chan->ep->iso;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
 		err = bt_audio_broadcaster_setup_chan(index, tmp, codec, qos);
@@ -1133,7 +1232,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 			return err;
 		}
 
-		bis_channels[bis_count++] = &tmp->ep->iso;
+		broadcaster->bis[broadcaster->bis_count++] = &tmp->ep->iso;
 	}
 
 	/* Create a non-connectable non-scannable advertising set */
@@ -1168,7 +1267,19 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 		return err;
 	}
 
-	/* TODO: encode BASE and set basic audio announcement in PA data */
+	broadcaster->subgroup_count = CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT;
+	bt_audio_encode_base(broadcaster, codec, qos, &base_buf);
+
+	base_ad_data.type = BT_DATA_SVC_DATA16;
+	base_ad_data.data_len = base_buf.len;
+	base_ad_data.data = base_buf.data;
+
+	err = bt_le_per_adv_set_data(chan->ep->adv, &base_ad_data, 1);
+	if (err != 0) {
+		BT_DBG("Failed to set extended advertising data (err %d)", err);
+		/* TODO: cleanup */
+		return err;
+	}
 
 	/* Enable Periodic Advertising */
 	err = bt_le_per_adv_start(chan->ep->adv);
