@@ -1,8 +1,8 @@
 # Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
-# Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2020-2021 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-description: Atmel SAM-family GMAC Ethernet
+description: Atmel SAM/SAM0-family GMAC Ethernet
 
 compatible: "atmel,sam-gmac"
 
@@ -18,28 +18,39 @@ properties:
       description: Number of hardware TX and RX queues
 
     max-frame-size:
-        type: int
-        description:
-          Maximum transfer unit (IEEE defined MTU), rather than the
-          maximum frame size (there\'s contradiction in the Devicetree
-          Specification). The current supported values are 1518, 1536
-          and 10240 (jumbo frames).
-        default: 1518
+      type: int
+      description:
+        Maximum transfer unit (IEEE defined MTU), rather than the
+        maximum frame size (there\'s contradiction in the Devicetree
+        Specification). The current supported values are 1518, 1536
+        and 10240 (jumbo frames).
+      default: 1518
 
     max-speed:
-        type: int
-        description:
-          Specifies maximum speed in Mbit/s supported by the device.
-        default: 100
+      type: int
+      description:
+        Specifies maximum speed in Mbit/s supported by the device.
+      default: 100
 
     phy-connection-type:
-        type: string
-        description:
-          Operation mode of the PHY interface
-        enum:
-          - "rmii"
-          - "mii"
-        default: "rmii"
+      type: string
+      description:
+        Operation mode of the PHY interface
+      enum:
+        - "rmii"
+        - "mii"
+      default: "rmii"
+
+    peripheral-id:
+      type: int
+      description: |
+        A peripheral identifier is required for the control of the
+        peripheral interrupt with the Nested Vectored Interrupt
+        Controller (NVIC) and control of the peripheral clock with
+        the Power Management Controller (PMC).  This parameter is
+        mandatory for any SAM family.  SAM0 family uses another
+        strategy to define both interrupt and clock control.
+      default: 0
 
     pinctrl-0:
       type: phandles
