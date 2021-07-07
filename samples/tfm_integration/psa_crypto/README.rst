@@ -216,7 +216,7 @@ On BL5340:
 ==========
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=bl5340_dvk_cpuappns``).
+(``-DBOARD=bl5340_dvk_cpuapp_ns``).
 
    Example using ``cmake`` and ``ninja``
 
@@ -225,7 +225,7 @@ Build Zephyr with a non-secure configuration
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=bl5340_dvk_cpuappns ..
+      cmake -GNinja -DBOARD=bl5340_dvk_cpuapp_ns ..
 
 Flash the concatenated TF-M + Zephyr binary.
 
