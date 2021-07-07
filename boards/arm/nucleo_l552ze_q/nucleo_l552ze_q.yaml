@@ -10,5 +10,6 @@ supported:
   - dac
   - adc
   - dma
+  - usart
 ram: 192
 flash: 512
