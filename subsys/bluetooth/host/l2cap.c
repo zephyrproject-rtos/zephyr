@@ -872,6 +872,8 @@ static void l2cap_chan_tx_process(struct k_work *work)
 		if (sent < 0) {
 			if (sent == -EAGAIN) {
 				ch->tx_buf = buf;
+			} else {
+				net_buf_unref(buf);
 			}
 			break;
 		}
