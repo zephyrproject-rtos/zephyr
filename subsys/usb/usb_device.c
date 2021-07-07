@@ -801,54 +801,61 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 {
 	uint8_t *data = *data_buf;
 
-	switch (setup->bRequest) {
-	case USB_SREQ_GET_STATUS:
-		return usb_get_status(setup, len, data_buf);
+	if (usb_reqtype_is_to_host(setup)) {
+		switch (setup->bRequest) {
+		case USB_SREQ_GET_STATUS:
+			return usb_get_status(setup, len, data_buf);
 
-	case USB_SREQ_SET_ADDRESS:
-		LOG_DBG("Set Address %u request", setup->wValue);
-		return !usb_dc_set_address(setup->wValue);
+		case USB_SREQ_GET_DESCRIPTOR:
+			return usb_get_descriptor(setup, len, data_buf);
 
-	case USB_SREQ_GET_DESCRIPTOR:
-		return usb_get_descriptor(setup, len, data_buf);
-
-	case USB_SREQ_GET_CONFIGURATION:
-		LOG_DBG("Get Configuration request");
-		/* indicate if we are configured */
-		data[0] = usb_dev.configuration;
-		*len = 1;
-		return true;
-
-	case USB_SREQ_SET_CONFIGURATION:
-		return usb_set_configuration(setup);
-
-	case USB_SREQ_CLEAR_FEATURE:
-		LOG_DBG("Clear Feature request");
-
-		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-			if (setup->wValue == USB_SFS_REMOTE_WAKEUP) {
-				usb_dev.remote_wakeup = false;
-				return true;
-			}
+		case USB_SREQ_GET_CONFIGURATION:
+			LOG_DBG("Get Configuration request");
+			/* indicate if we are configured */
+			data[0] = usb_dev.configuration;
+			*len = 1;
+			return true;
+		default:
+			break;
 		}
-		return false;
+	} else {
+		switch (setup->bRequest) {
+		case USB_SREQ_SET_ADDRESS:
+			LOG_DBG("Set Address %u request", setup->wValue);
+			return !usb_dc_set_address(setup->wValue);
 
-	case USB_SREQ_SET_FEATURE:
-		LOG_DBG("Set Feature request");
+		case USB_SREQ_SET_CONFIGURATION:
+			return usb_set_configuration(setup);
 
-		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
-			if (setup->wValue == USB_SFS_REMOTE_WAKEUP) {
-				usb_dev.remote_wakeup = true;
-				return true;
+		case USB_SREQ_CLEAR_FEATURE:
+			LOG_DBG("Clear Feature request");
+
+			if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+				if (setup->wValue == USB_SFS_REMOTE_WAKEUP) {
+					usb_dev.remote_wakeup = false;
+					return true;
+				}
 			}
-		}
-		return false;
+			break;
 
-	default:
-		LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
-			setup->bmRequestType, setup->bRequest);
+		case USB_SREQ_SET_FEATURE:
+			LOG_DBG("Set Feature request");
+
+			if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+				if (setup->wValue == USB_SFS_REMOTE_WAKEUP) {
+					usb_dev.remote_wakeup = true;
+					return true;
+				}
+			}
+			break;
+
+		default:
+			break;
+		}
 	}
 
+	LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
+		setup->bmRequestType, setup->bRequest);
 	return false;
 }
 
@@ -903,25 +910,30 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 		return false;
 	}
 
-	switch (setup->bRequest) {
-	case USB_SREQ_GET_STATUS:
-		/* no bits specified */
-		data[0] = 0U;
-		data[1] = 0U;
-		*len = 2;
-		return true;
+	if (usb_reqtype_is_to_host(setup)) {
+		switch (setup->bRequest) {
+		case USB_SREQ_GET_STATUS:
+			/* no bits specified */
+			data[0] = 0U;
+			data[1] = 0U;
+			*len = 2;
+			return true;
 
-	case USB_SREQ_GET_INTERFACE:
-		return usb_get_interface(setup, len, data_buf);
+		case USB_SREQ_GET_INTERFACE:
+			return usb_get_interface(setup, len, data_buf);
 
-	case USB_SREQ_SET_INTERFACE:
-		return usb_set_interface(setup);
+		default:
+			break;
+		}
+	} else {
+		if (setup->bRequest == USB_SREQ_SET_INTERFACE) {
+			return usb_set_interface(setup);
+		}
 
-	default:
-		LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
-			setup->bmRequestType, setup->bRequest);
 	}
 
+	LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
+		setup->bmRequestType, setup->bRequest);
 	return false;
 }
 
@@ -1040,29 +1052,30 @@ static bool usb_halt_endpoint_req(struct usb_setup_packet *setup, bool halt)
 static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 					int32_t *len, uint8_t **data_buf)
 {
-	switch (setup->bRequest) {
-	case USB_SREQ_GET_STATUS:
-		return usb_get_status_endpoint(setup, len, data_buf);
 
-	case USB_SREQ_CLEAR_FEATURE:
-		if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
-			return usb_halt_endpoint_req(setup, false);
+	if (usb_reqtype_is_to_host(setup)) {
+		if (setup->bRequest == USB_SREQ_GET_STATUS) {
+			return usb_get_status_endpoint(setup, len, data_buf);
 		}
-
-		return false;
-
-	case USB_SREQ_SET_FEATURE:
-		if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
-			return usb_halt_endpoint_req(setup, true);
+	} else {
+		switch (setup->bRequest) {
+		case USB_SREQ_CLEAR_FEATURE:
+			if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
+				return usb_halt_endpoint_req(setup, false);
+			}
+			break;
+		case USB_SREQ_SET_FEATURE:
+			if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
+				return usb_halt_endpoint_req(setup, true);
+			}
+			break;
+		default:
+			break;
 		}
-
-		return false;
-
-	default:
-		LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
-			setup->bmRequestType, setup->bRequest);
 	}
 
+	LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
+		setup->bmRequestType, setup->bRequest);
 	return false;
 }
 
