@@ -1,4 +1,4 @@
-identifier: bl5340_dvk_cpuappns
+identifier: bl5340_dvk_cpuapp_ns
 name: BL5340-DVK-application-MCU-Non-Secure
 type: mcu
 arch: arm
