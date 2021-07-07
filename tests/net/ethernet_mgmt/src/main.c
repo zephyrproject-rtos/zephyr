@@ -912,6 +912,10 @@ static void test_change_qbv_params(void)
 		       iface,
 		       &params, sizeof(struct ethernet_req_params));
 
+	if (ret == -ENOTSUP) {
+		LOG_DBG("ETH device driver does not support get_config(). Skipping test case.");
+		ztest_test_skip();
+	}
 	zassert_equal(ret, 0, "could not get the number of ports (%d)", ret);
 
 	available_ports = params.ports_num;
@@ -1088,6 +1092,10 @@ static void test_change_qbu_params(void)
 		       iface,
 		       &params, sizeof(struct ethernet_req_params));
 
+	if (ret == -ENOTSUP) {
+		LOG_DBG("ETH device driver does not support get_config(). Skipping test case.");
+		ztest_test_skip();
+	}
 	zassert_equal(ret, 0, "could not get the number of ports (%d)", ret);
 
 	available_ports = params.ports_num;
@@ -1289,6 +1297,10 @@ static void test_change_txtime_params(void)
 		       iface,
 		       &params, sizeof(struct ethernet_req_params));
 
+	if (ret == -ENOTSUP) {
+		LOG_DBG("ETH device driver does not support get_config(). Skipping test case.");
+		ztest_test_skip();
+	}
 	zassert_equal(ret, 0, "could not get the number of priority queues");
 
 	available_priority_queues = params.priority_queues_num;
