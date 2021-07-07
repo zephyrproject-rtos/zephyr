@@ -970,6 +970,73 @@ static bool is_ep_valid(uint8_t ep)
 	return false;
 }
 
+static bool usb_get_status_endpoint(struct usb_setup_packet *setup,
+				    int32_t *len, uint8_t **data_buf)
+{
+	uint8_t ep = setup->wIndex;
+	uint8_t *data = *data_buf;
+
+	/* Check if request addresses valid Endpoint */
+	if (!is_ep_valid(ep)) {
+		return false;
+	}
+
+	/* This request is valid for Control Endpoints when
+	 * the device is not yet configured. For other
+	 * Endpoints the device must be configured.
+	 * Firstly check if addressed ep is Control Endpoint.
+	 * If no then the device must be in Configured state
+	 * to accept the request.
+	 */
+	if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
+		/* bit 0 - Endpoint halted or not */
+		usb_dc_ep_is_stalled(ep, &data[0]);
+		data[1] = 0U;
+		*len = 2;
+		return true;
+	}
+
+	return false;
+}
+
+
+static bool usb_halt_endpoint_req(struct usb_setup_packet *setup, bool halt)
+{
+	uint8_t ep = setup->wIndex;
+
+	/* Check if request addresses valid Endpoint */
+	if (!is_ep_valid(ep)) {
+		return false;
+	}
+
+	/* This request is valid for Control Endpoints when
+	 * the device is not yet configured. For other
+	 * Endpoints the device must be configured.
+	 * Firstly check if addressed ep is Control Endpoint.
+	 * If no then the device must be in Configured state
+	 * to accept the request.
+	 */
+	if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
+		if (halt) {
+			LOG_INF("Set halt ep 0x%02x", ep);
+			usb_dc_ep_set_stall(ep);
+			if (usb_dev.status_callback) {
+				usb_dev.status_callback(USB_DC_SET_HALT, &ep);
+			}
+		} else {
+			LOG_INF("Clear halt ep 0x%02x", ep);
+			usb_dc_ep_clear_stall(ep);
+			if (usb_dev.status_callback) {
+				usb_dev.status_callback(USB_DC_CLEAR_HALT, &ep);
+			}
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 /*
  * @brief handle a standard endpoint request
  *
@@ -982,90 +1049,30 @@ static bool is_ep_valid(uint8_t ep)
 static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 					int32_t *len, uint8_t **data_buf)
 {
-	uint8_t ep = (uint8_t)setup->wIndex;
-	uint8_t *data = *data_buf;
-
-	/* Check if request addresses valid Endpoint */
-	if (!is_ep_valid(ep)) {
-		return false;
-	}
-
 	switch (setup->bRequest) {
 	case USB_SREQ_GET_STATUS:
-		/** This request is valid for Control Endpoints when
-		 * the device is not yet configured. For other
-		 * Endpoints the device must be configured.
-		 * Firstly check if addressed ep is Control Endpoint.
-		 * If no then the device must be in Configured state
-		 * to accept the request.
-		 */
-		if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
-			/* bit 0 - Endpoint halted or not */
-			usb_dc_ep_is_stalled(ep, &data[0]);
-			data[1] = 0U;
-			*len = 2;
-			break;
-		}
-		return false;
+		return usb_get_status_endpoint(setup, len, data_buf);
 
 	case USB_SREQ_CLEAR_FEATURE:
 		if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
-			/** This request is valid for Control Endpoints when
-			 * the device is not yet configured. For other
-			 * Endpoints the device must be configured.
-			 * Firstly check if addressed ep is Control Endpoint.
-			 * If no then the device must be in Configured state
-			 * to accept the request.
-			 */
-			if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
-				LOG_INF("... EP clear halt %x", ep);
-				usb_dc_ep_clear_stall(ep);
-				if (usb_dev.status_callback) {
-					usb_dev.status_callback(
-						USB_DC_CLEAR_HALT, &ep);
-				}
-				break;
-			}
+			return usb_halt_endpoint_req(setup, false);
 		}
-		/* only USB_SFS_ENDPOINT_HALT defined for endpoints */
+
 		return false;
 
 	case USB_SREQ_SET_FEATURE:
 		if (setup->wValue == USB_SFS_ENDPOINT_HALT) {
-			/** This request is valid for Control Endpoints when
-			 * the device is not yet configured. For other
-			 * Endpoints the device must be configured.
-			 * Firstly check if addressed ep is Control Endpoint.
-			 * If no then the device must be in Configured state
-			 * to accept the request.
-			 */
-			if ((USB_EP_GET_IDX(ep) == 0) || is_device_configured()) {
-				/* set HALT by stalling */
-				LOG_INF("--- EP SET halt %x", ep);
-				usb_dc_ep_set_stall(ep);
-				if (usb_dev.status_callback) {
-					usb_dev.status_callback(
-						USB_DC_SET_HALT, &ep);
-				}
-				break;
-			}
+			return usb_halt_endpoint_req(setup, true);
 		}
-		/* only USB_SFS_ENDPOINT_HALT defined for endpoints */
+
 		return false;
 
-	case USB_SREQ_SYNCH_FRAME:
-		/* For Synch Frame request the device must be configured */
-		if (is_device_configured()) {
-			/* Not supported, return false anyway */
-			LOG_DBG("EP req 0x%02x not implemented", setup->bRequest);
-		}
-		return false;
 	default:
-		LOG_DBG("Illegal EP req 0x%02x", setup->bRequest);
-		return false;
+		LOG_DBG("Unsupported bmRequestType 0x%02x bRequest 0x%02x",
+			setup->bmRequestType, setup->bRequest);
 	}
 
-	return true;
+	return false;
 }
 
 /*
