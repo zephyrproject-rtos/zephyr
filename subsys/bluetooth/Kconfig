@@ -106,6 +106,16 @@ config BT_BROADCASTER
 
 endmenu
 
+config BT_LIM_ADV_TIMEOUT
+	int "Timeout for limited advertising in 1s units"
+	default 30
+	range 1 180
+	help
+	  After this timeout is reached, advertisement with BT_LE_AD_LIMITED flag
+	  set shall be terminated. As per BT Core Spec 5.2, Vol 3, Part C,
+	  Appendix A (NORMATIVE): TIMERS AND CONSTANTS it's required to be no more
+	  than 180s.
+
 config BT_EXT_ADV
 	bool "Extended Advertising and Scanning support [EXPERIMENTAL]"
 	help
