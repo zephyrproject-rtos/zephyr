@@ -12,7 +12,7 @@ choice NULL_POINTER_EXCEPTION_DETECTION
 endchoice
 
 config BOARD
-	default "mps2_an521_nonsecure" if TRUSTED_EXECUTION_NONSECURE
+	default "mps2_an521_ns" if TRUSTED_EXECUTION_NONSECURE
 	default "mps2_an521_remote" if BOARD_MPS2_AN521_CPU1
 	default "mps2_an521"
 

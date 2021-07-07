@@ -48,7 +48,7 @@ The BOARD options are summarized below:
 +======================+=======================================================+
 | mps2_an521           | For building Secure (or Secure-only) firmware on CPU0 |
 +----------------------+-------------------------------------------------------+
-| mps2_an521_nonsecure | For building Non-Secure firmware for CPU0             |
+| mps2_an521_ns        | For building Non-Secure firmware for CPU0             |
 +----------------------+-------------------------------------------------------+
 | mps2_an521_remote    | For building firmware on CPU1                         |
 +----------------------+-------------------------------------------------------+
@@ -368,7 +368,7 @@ The process to build the Secure firmware image using TF-M and the Non-Secure
 firmware image using Zephyr requires the following steps:
 
 1. Build the Non-Secure Zephyr application
-   for MPS2+ AN521 (CPU0) using ``-DBOARD=mps2_an521_nonsecure``.
+   for MPS2+ AN521 (CPU0) using ``-DBOARD=mps2_an521_ns``.
    To invoke the building of TF-M the Zephyr build system requires the
    Kconfig option ``BUILD_WITH_TFM`` to be enabled, which is done by
    default when building Zephyr as a Non-Secure application.
@@ -396,7 +396,7 @@ using Zephyr requires the following steps:
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` and ``CONFIG_BUILD_WITH_TFM=n``
    in the application project configuration file.
 2. Build the Non-Secure Zephyr application for MPS2+ AN521 (CPU0)
-   using ``-DBOARD=mps2_an521_nonsecure``.
+   using ``-DBOARD=mps2_an521_ns``.
 3. Merge the two binaries together.
 
 Building a Secure only application on MPS2+ AN521 (CPU0)

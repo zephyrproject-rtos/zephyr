@@ -70,14 +70,14 @@ On MPS2+ AN521:
 ===============
 
 1. Build Zephyr with a non-secure configuration
-   (``-DBOARD=mps2_an521_nonsecure``).
+   (``-DBOARD=mps2_an521_ns``).
 
    Using ``west``
 
    .. code-block:: bash
 
       cd <ZEPHYR_ROOT>
-      west build -p -b mps2_an521_nonsecure samples/tfm_integration/psa_crypto
+      west build -p -b mps2_an521_ns samples/tfm_integration/psa_crypto
 
    Using ``cmake`` and ``ninja``
 
@@ -86,7 +86,7 @@ On MPS2+ AN521:
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=mps2_an521_nonsecure ..
+      cmake -GNinja -DBOARD=mps2_an521_ns ..
       ninja
 
    Using ``cmake`` and ``make``
@@ -96,7 +96,7 @@ On MPS2+ AN521:
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -DBOARD=mps2_an521_nonsecure ..
+      cmake -DBOARD=mps2_an521_ns ..
       make
 
 2. Copy application binary files (mcuboot.bin and tfm_sign.bin) to
@@ -123,7 +123,7 @@ On MPS2+ AN521:
 On QEMU:
 ========
 
-Build Zephyr with a non-secure configuration (``-DBOARD=mps2_an521_nonsecure``)
+Build Zephyr with a non-secure configuration (``-DBOARD=mps2_an521_ns``)
 and run it in qemu via the ``run`` command.
 
    Using ``west``
@@ -131,7 +131,7 @@ and run it in qemu via the ``run`` command.
    .. code-block:: bash
 
       cd <ZEPHYR_ROOT>
-      west build -p -b mps2_an521_nonsecure samples/tfm_integration/psa_crypto -t run
+      west build -p -b mps2_an521_ns samples/tfm_integration/psa_crypto -t run
 
    Using ``cmake`` and ``ninja``
 
@@ -140,7 +140,7 @@ and run it in qemu via the ``run`` command.
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=mps2_an521_nonsecure ..
+      cmake -GNinja -DBOARD=mps2_an521_ns ..
       ninja run
 
    Using ``cmake`` and ``make``
@@ -150,7 +150,7 @@ and run it in qemu via the ``run`` command.
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -DBOARD=mps2_an521_nonsecure ..
+      cmake -DBOARD=mps2_an521_ns ..
       make run
 
 On LPCxpresso55S69:
