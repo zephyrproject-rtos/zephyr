@@ -123,3 +123,7 @@
 	ch0-pin = <17>;
 	ch0-inverted;
 };
+
+&adc {
+	status = "okay";
+};
