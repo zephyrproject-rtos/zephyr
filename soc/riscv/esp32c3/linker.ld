@@ -150,15 +150,6 @@ SECTIONS
   .dram0.data :
   {
     _data_start = ABSOLUTE(.);
-		_bt_data_start = ABSOLUTE(.);
-		*libbt.a:(.data .data.*)
-		. = ALIGN (4);
-		_bt_data_end = ABSOLUTE(.);
-		_btdm_data_start = ABSOLUTE(.);
-		*libbtdm_app.a:(.data .data.*)
-		. = ALIGN (4);
-		_btdm_data_end = ABSOLUTE(.);
-
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -197,16 +188,6 @@ SECTIONS
   {
     . = ALIGN (8);
     __bss_start = ABSOLUTE(.);
-
-    _bt_bss_start = ABSOLUTE(.);
-    *libbt.a:(.bss .bss.* COMMON)
-    . = ALIGN (4);
-    _bt_bss_end = ABSOLUTE(.);
-    _btdm_bss_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.bss .bss.* COMMON)
-    . = ALIGN (4);
-    _btdm_bss_end = ABSOLUTE(.);
-
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
@@ -231,7 +212,6 @@ SECTIONS
     *(.noinit)
     *(".noinit.*")
     . = ALIGN (8);
-    _heap_start = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   .flash.text : ALIGN(4)
