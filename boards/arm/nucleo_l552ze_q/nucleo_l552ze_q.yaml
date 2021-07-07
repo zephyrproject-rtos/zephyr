@@ -11,5 +11,6 @@ supported:
   - adc
   - dma
   - usart
+  - spi
 ram: 192
 flash: 512
