@@ -406,4 +406,12 @@ config MCUX_OS_TIMER
 	  This module implements a kernel device driver for the NXP OS
 	  event timer and provides the standard "system clock driver" interfaces.
 
+config MCUX_LPTMR_TIMER
+	bool "MCUX LPTMR timer"
+	depends on HAS_MCUX_LPTMR && !COUNTER_MCUX_LPTMR
+	help
+	  This module implements a kernel device driver for the NXP MCUX Low
+	  Power Timer (LPTMR) and provides the standard "system clock driver"
+	  interfaces.
+
 endmenu
