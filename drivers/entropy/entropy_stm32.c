@@ -401,12 +401,17 @@ static int entropy_stm32_rng_init(const struct device *dev)
 		/* Wait for HSI48 to become ready */
 	}
 
-	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_HSI48);
+#if defined(CONFIG_SOC_SERIES_STM32WBX)
+	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_CLK48);
+	LL_RCC_SetCLK48ClockSource(LL_RCC_CLK48_CLKSOURCE_HSI48);
 
-#if !defined(CONFIG_SOC_SERIES_STM32WBX)
-	/* Specially for STM32WB, don't unlock the HSEM to prevent M0 core
+	/* Don't unlock the HSEM to prevent M0 core
 	 * to disable HSI48 clock used for RNG.
 	 */
+#else
+	LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_HSI48);
+
+	/* Unlock the HSEM if it is not STM32WB */
 	z_stm32_hsem_unlock(CFG_HW_CLK48_CONFIG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
