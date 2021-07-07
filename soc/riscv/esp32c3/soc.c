@@ -94,6 +94,12 @@ void __attribute__((section(".iram1"))) __start(void)
 	/* set global esp32c3's INTC masking level */
 	esprv_intc_int_set_threshold(1);
 
+	/* Enable wireless phy subsystem clock,
+	 * This needs to be done before the kernel starts
+	 */
+	REG_CLR_BIT(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_SDIOSLAVE_EN);
+	SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
+
 	/* Start Zephyr */
 	_PrepC();
 
