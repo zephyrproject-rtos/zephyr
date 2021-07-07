@@ -1,5 +1,5 @@
-identifier: mps2_an521_nonsecure
-name: ARM V2M MPS2-AN521_nonsecure
+identifier: mps2_an521_ns
+name: ARM V2M MPS2-AN521_ns
 type: mcu
 arch: arm
 simulation: qemu
