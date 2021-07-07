@@ -14,6 +14,7 @@
 
 / {
 	chosen {
+		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
 	};
 
@@ -435,6 +436,14 @@
 			label = "QUADSPI";
 		};
 
+		rng: rng@58001000 {
+			compatible = "st,stm32-rng";
+			reg = <0x58001000 0x400>;
+			interrupts = <53 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00040000>;
+			status = "disabled";
+			label = "RNG";
+		};
 	};
 
 	usb_fs_phy: usbphy {
