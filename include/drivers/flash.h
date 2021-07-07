@@ -36,6 +36,11 @@ struct flash_pages_layout {
 };
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
+struct flash_page_info {
+	off_t	offset;
+	size_t	size;
+};
+
 /**
  * @}
  */
@@ -53,9 +58,21 @@ struct flash_pages_layout {
  * through a runtime.
  */
 struct flash_parameters {
-	const size_t write_block_size;
-	uint8_t erase_value; /* Byte value of erased flash */
+	size_t write_block_size;
+	uint32_t flags;			/* FPF_ flags */
+	size_t max_page_size;		/* Size of largest page, in case of uniform page layout
+					 * devices this is size of any page
+					 */
+	uint8_t erase_value;		/* Byte value of erased flash */
 };
+
+/**
+ * Definitions for flash_parameters.flags
+ */
+#define FPF_NON_UNIFORM_LAYOUT	0x01	/* Pages across device have various sizes.
+					 * NOTE: device with uniform page size but with holes in
+					 * addressing is non-uniform device.
+					 */
 
 /**
  * @}
@@ -121,6 +138,52 @@ typedef const struct flash_parameters* (*flash_api_get_parameters)(const struct 
 typedef void (*flash_api_pages_layout)(const struct device *dev,
 				       const struct flash_pages_layout **layout,
 				       size_t *layout_size);
+
+/**
+ * @brief Get flash page info at given offset
+ *
+ * Fills in flash_page_info structure with information on the flash page that is at given offset.
+ * In case when the dev is virtual device that begins at the middle of page the returned offset
+ * this will return error if the offset is at the split page.
+ *
+ * @param[in] dev	flash device;
+ * @param[in] off	offset;
+ * @param[out] fpi	pointer to flash_page_info for obtained information;
+ *
+ * If flash has non-uniform layout with holes, asking for offset that is within hole will return
+ * an error.
+ *
+ * @return 0 on success;
+ *	   -EINVAL if offset is outside of flash device;
+ *	   other negative errno code on error.
+ */
+typedef int (*flash_api_get_page_info)(const struct device *dev, off_t off,
+				       struct flash_page_info *fpi);
+
+/**
+ * @brief Get flash page count
+ *
+ * Returns total number of pages available on device; in case of virtual devices that are
+ * incorrectly * configured to split pages at the beginning or the end of range, this will return
+ * number of complete pages.
+ *
+ * @param[in] dev	flash device.
+ *
+ * @return Total number of flash pages on device on success;
+ *	   negative errno code on error.
+ */
+typedef ssize_t (*flash_api_get_page_count)(const struct device *dev);
+
+/**
+ * @brief Get flash size.
+ *
+ * Total size of flash device in bytes.
+ *
+ * @param[in] dev	flash device.
+ *
+ * @return Total size of device in bytes; negative errno code on error.
+ */
+typedef ssize_t (*flash_api_get_size)(const struct device *dev);
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 typedef int (*flash_api_sfdp_read)(const struct device *dev, off_t offset,
@@ -133,6 +196,9 @@ __subsystem struct flash_driver_api {
 	flash_api_erase erase;
 	flash_api_write_protection write_protection;
 	flash_api_get_parameters get_parameters;
+	flash_api_get_page_info get_page_info;
+	flash_api_get_page_count get_page_count;
+	flash_api_get_size get_size;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	flash_api_pages_layout page_layout;
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -341,15 +407,6 @@ __syscall int flash_get_page_info_by_idx(const struct device *dev,
 					 struct flash_pages_info *info);
 
 /**
- *  @brief  Get the total number of flash pages.
- *
- *  @param  dev flash device
- *
- *  @return  Number of flash pages.
- */
-__syscall size_t flash_get_page_count(const struct device *dev);
-
-/**
  * @brief Callback type for iterating over flash pages present on a device.
  *
  * The callback should return true to continue iterating, and false to halt.
@@ -463,7 +520,6 @@ static inline size_t z_impl_flash_get_write_block_size(const struct device *dev)
 	return api->get_parameters(dev)->write_block_size;
 }
 
-
 /**
  *  @brief  Get pointer to flash_parameters structure
  *
@@ -488,6 +544,74 @@ static inline const struct flash_parameters *z_impl_flash_get_parameters(const s
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @brief Get flash page info at given offset
+ *
+ * Fills in flash_page_info structure with information on the flash page that is at given offset.
+ * In case when the dev is virtual device that begins at the middle of page the returned offset
+ * this will return error if the offset is at the split page.
+ *
+ * @param[in] dev	flash device;
+ * @param[in] off	offset;
+ * @param[out] fpi	pointer to flash_page_info for obtained information;
+ *
+ * If flash has non-uniform layout with holes, asking for offset that is within hole will return
+ * an error.
+ *
+ * @return 0 on success;
+ *	   -EINVAL if offset is outside of flash device;
+ *	   other negative errno code on error.
+ */
+__syscall int flash_get_page_info(const struct device *dev, off_t off, struct flash_page_info *fpi);
+
+static int z_impl_flash_get_page_info(const struct device *dev, off_t off,
+				      struct flash_page_info *fpi)
+{
+	const struct flash_driver_api *api = (const struct flash_driver_api *)dev->api;
+
+	return api->get_page_info(dev, off, fpi);
+}
+
+/**
+ * @brief Get flash page count
+ *
+ * Returns total number of pages available on device; in case of virtual devices that are
+ * incorrectly configured to split pages at the beginning or the end of range, this will return
+ * number of complete pages.
+ *
+ * @param[in] dev	flash device;
+ *
+ * @return Total number of flash pages on device on success;
+ *	   negative errno code on error.
+ */
+__syscall ssize_t flash_get_page_count(const struct device *dev);
+
+static ssize_t z_impl_flash_get_page_count(const struct device *dev)
+{
+	const struct flash_driver_api *api = (const struct flash_driver_api *)dev->api;
+
+	return api->get_page_count(dev);
+}
+
+/**
+ * @brief Get flash page size
+ *
+ * Get total size of flash in bytes
+ *
+ * @param[in] dev	flash device;
+ *
+ * @return Total size of device in bytes; negative errno code on error.
+ */
+__syscall ssize_t flash_get_size(const struct device *dev);
+
+static ssize_t z_impl_flash_get_size(const struct device *dev)
+{
+	const struct flash_driver_api *api = (const struct flash_driver_api *)dev->api;
+
+	return api->get_size(dev);
+}
+
 
 /**
  * @}
