@@ -207,8 +207,14 @@ static void run_test_functions(struct unit_test *test)
 }
 
 #ifndef KERNEL
-/* parasoft suppress item MISRAC2012-RULE_21_4-b "setjmp using in test code" */
-#include <setjmp.h>
+
+/* Static code analysis tool can raise a violation that the standard header
+ * <setjmp.h> shall not be used.
+ *
+ * setjmp is using in a test code, not in a runtime code, it is acceptable.
+ * It is a deliberate deviation.
+ */
+#include <setjmp.h> /* parasoft-suppress MISRAC2012-RULE_21_4-a MISRAC2012-RULE_21_4-b*/
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
