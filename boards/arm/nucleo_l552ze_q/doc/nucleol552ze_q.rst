@@ -162,6 +162,8 @@ The Zephyr nucleo_l552ze_q board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | DMA       | on-chip    | Direct Memory Access                |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | Serial Peripheral Interface         |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -202,7 +204,7 @@ Default Zephyr Peripheral Mapping:
 - I2C_1_SCL : PB6
 - I2C_1_SDA : PB7
 - SPI_1_NSS : PA4
-- SPI_1_SCK : PB3
+- SPI_1_SCK : PA5
 - SPI_1_MISO : PA6
 - SPI_1_MOSI : PA7
 - SPI_2_NSS : PB12
