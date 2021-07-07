@@ -82,7 +82,7 @@ MEMORY {
 SECTIONS {
 
 #include <linker/rel-sections.ld>
-
+#include "embarc_mli.ld"
 	GROUP_START(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(1024)) {
@@ -99,8 +99,6 @@ SECTIONS {
 	. = ALIGN(4);
 #include <linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
-	
-#include "embarc_mli.ld"
 
 	_image_text_end = .;
 	_image_rodata_start = .;
@@ -214,6 +212,8 @@ SECTIONS {
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 	GROUP_END(RAMABLE_REGION)
+
+
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
