@@ -33,7 +33,7 @@ static int _pm_devices(enum pm_device_state state)
 		int ret;
 
 		/* ignore busy devices */
-		if (pm_device_is_busy(dev)) {
+		if (pm_device_is_busy(dev) || pm_device_wakeup_is_enabled(dev)) {
 			continue;
 		}
 
