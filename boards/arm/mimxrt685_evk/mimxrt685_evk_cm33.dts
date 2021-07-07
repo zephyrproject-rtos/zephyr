@@ -19,6 +19,8 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		usart-0 = &flexcomm0;
+		/* For pwm test suites */
+		pwm-0 = &sc_timer;
 	};
 
 	chosen {
@@ -256,5 +258,9 @@ i2s1: &flexcomm3 {
 };
 
 &red_led {
+	status = "okay";
+};
+
+&sc_timer {
 	status = "okay";
 };
