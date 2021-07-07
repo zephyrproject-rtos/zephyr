@@ -28,7 +28,7 @@ static bool should_suspend(const struct device *dev, enum pm_device_state state)
 	int rc;
 	enum pm_device_state current_state;
 
-	if (device_busy_check(dev) != 0) {
+	if (device_busy_check(dev) != 0 || pm_device_wakeup_is_enabled(dev)) {
 		return false;
 	}
 
