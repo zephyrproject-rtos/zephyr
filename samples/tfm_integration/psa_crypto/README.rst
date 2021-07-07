@@ -184,7 +184,7 @@ On nRF5340 and nRF9160:
 =======================
 
 Build Zephyr with a non-secure configuration
-(``-DBOARD=nrf5340dk_nrf5340_cpuapp_ns`` or ``-DBOARD=nrf9160dk_nrf9160ns``).
+(``-DBOARD=nrf5340dk_nrf5340_cpuapp_ns`` or ``-DBOARD=nrf9160dk_nrf9160_ns``).
 
    Example, for nRF9160, using ``cmake`` and ``ninja``
 
@@ -193,7 +193,7 @@ Build Zephyr with a non-secure configuration
       cd <ZEPHYR_ROOT>/samples/tfm_integration/psa_crypto/
       rm -rf build
       mkdir build && cd build
-      cmake -GNinja -DBOARD=nrf9160dk_nrf9160ns ..
+      cmake -GNinja -DBOARD=nrf9160dk_nrf9160_ns ..
 
 If building with BL2 (MCUboot bootloader) enabled, manually flash
 the MCUboot bootloader image binary (``bl2.hex``).
