@@ -1,4 +1,4 @@
-identifier: v2m_musca_s1_nonsecure
+identifier: v2m_musca_s1_ns
 name: ARM V2M MUSCA-S1 NonSecure
 type: mcu
 arch: arm
