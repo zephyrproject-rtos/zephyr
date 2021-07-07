@@ -44,7 +44,8 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(semtech_sx1280) <= 1,
 #define TCXO_POWER_STARTUP_DELAY_MS		0
 #endif
 
-bool mode_rx = false;
+bool mode_tx = true;
+struct k_sem recv_sem;
 
 struct sx1280_dio {
 	const char *port;
@@ -372,6 +373,7 @@ void sx1280_ClearIrqStatus( uint16_t irqMask )
 
 void sx1280_SetTx( TickTime_t timeout )
 {
+	mode_tx = true;
     sx1280_ClearIrqStatus( IRQ_RADIO_ALL );
 
     uint8_t buf[3];
@@ -410,15 +412,21 @@ uint16_t sx1280_readIrqStatus()
 
 static void sx1280_dio_work_handle(struct k_work *work)
 {
-	if (sx1280_readIrqStatus() & IRQ_RX_TX_TIMEOUT )                        //check for timeout
-	{
-		LOG_INF("timeout\n");
-		return;
-	}
-	else
-	{
-		LOG_INF("no timeout\n");
-		return;
+	if (mode_tx) {
+		LOG_INF("transmitting done");
+		if (sx1280_readIrqStatus() & IRQ_RX_TX_TIMEOUT )                        //check for timeout
+		{
+			LOG_INF("timeout\n");
+			return;
+		}
+		else
+		{
+			LOG_INF("no timeout\n");
+			return;
+		}
+	} else {
+		LOG_INF("receiving done");
+		k_sem_give(&recv_sem);
 	}
 }
 
@@ -511,6 +519,8 @@ void sx1280_IoIrqInit()
 	gpio_pin_interrupt_configure(dev_data.dio_dev[0],
 					sx1280_dios[0].pin,
 					GPIO_INT_EDGE_TO_ACTIVE);
+
+	k_sem_init(&recv_sem, 0, K_SEM_MAX_LIMIT);
 }
 
 void sx1280_WriteRegisterSPI( uint16_t address, uint8_t *buffer, size_t size )
@@ -1218,6 +1228,7 @@ void sx1280_GetRxBufferStatus( uint8_t *rxPayloadLength, uint8_t *rxStartBufferP
 
 void sx1280_setRx(TickTime_t timeout)
 {
+	mode_tx = false;
 	sx1280_ClearIrqStatus( IRQ_RADIO_ALL );
 
 	uint8_t buf[3];
@@ -1234,14 +1245,16 @@ int sx1280_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	uint8_t buffer[2];
 	uint8_t _RXPacketL;
 	uint8_t RXstart, RXend;
+	int ret;
 
 	sx1280_SetDioIrqParams(IRQ_RADIO_ALL, (IRQ_RX_DONE + IRQ_RX_TX_TIMEOUT), 0, 0);
 	sx1280_setRx((TickTime_t) { .PeriodBase = RADIO_TICK_SIZE_1000_US, .PeriodBaseCount = 10000 });
 
-	while (!gpio_pin_get(dev_data.dio_dev[0], sx1280_dios[0].pin)) { // TODO: use interrupt instead
-		LOG_INF("wainting for DIO1\n");
-		k_sleep(K_MSEC(50));
-	}                                         //Wait for DIO1 to go high
+	ret = k_sem_take(&recv_sem, timeout);
+	if (ret < 0) {
+		LOG_ERR("Receive timeout!");
+		return ret;
+	}
 
 	sx1280_SetStandby(MODE_STDBY_RC);                                                   //ensure to stop further packet reception
 
