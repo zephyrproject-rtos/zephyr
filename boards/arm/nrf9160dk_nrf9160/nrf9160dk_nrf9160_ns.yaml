@@ -1,4 +1,4 @@
-identifier: nrf9160dk_nrf9160ns
+identifier: nrf9160dk_nrf9160_ns
 name: nRF9160-DK-NRF9160-Non-Secure
 type: mcu
 arch: arm
