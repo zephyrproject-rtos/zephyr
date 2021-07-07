@@ -61,6 +61,17 @@
 
 #else /* defined(_ASMLANGUAGE) */
 
+#ifndef _MLIBC_RESTRICT_defined
+#define _MLIBC_RESTRICT_defined
+
+#ifdef __cplusplus
+	#define _MLIBC_RESTRICT __restrict__
+#else
+	#define _MLIBC_RESTRICT restrict
+#endif
+
+#endif /* _MLIBC_RESTRICT_defined */
+
 #define __no_optimization __attribute__((optnone))
 
 #include <toolchain/gcc.h>
