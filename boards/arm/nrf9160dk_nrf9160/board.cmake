@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_BOARD_NRF9160DK_NRF9160NS)
+if(CONFIG_BOARD_NRF9160DK_NRF9160_NS)
   set(TFM_PUBLIC_KEY_FORMAT "full")
 endif()
 
