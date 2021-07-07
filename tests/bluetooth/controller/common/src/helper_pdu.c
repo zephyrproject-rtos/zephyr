@@ -574,7 +574,6 @@ void helper_pdu_verify_conn_param_req(const char *file, uint32_t line, struct pd
 	zassert_equal(pdu->llctrl.conn_param_req.interval_max, p->interval_max, "Interval_max mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_req.latency, p->latency, "Latency mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_req.timeout, p->timeout, "Timeout mismatch.\nCalled at %s:%d\n", file, line);
-	/* TODO(tosk): figure out if or how to verify dynamic parameters
 	zassert_equal(pdu->llctrl.conn_param_req.preferred_periodicity, p->preferred_periodicity, "Preferred_periodicity mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_req.reference_conn_event_count, p->reference_conn_event_count, "Reference_conn_event_count mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_req.offset0, p->offset0, "Offset0 mismatch.\nCalled at %s:%d\n", file, line);
@@ -583,7 +582,6 @@ void helper_pdu_verify_conn_param_req(const char *file, uint32_t line, struct pd
 	zassert_equal(pdu->llctrl.conn_param_req.offset3, p->offset3, "Offset3 mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_req.offset4, p->offset4, "Offset4 mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_req.offset5, p->offset5, "Offset5 mismatch.\nCalled at %s:%d\n", file, line);
-	*/
 }
 
 void helper_pdu_verify_conn_param_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
@@ -598,7 +596,6 @@ void helper_pdu_verify_conn_param_rsp(const char *file, uint32_t line, struct pd
 	zassert_equal(pdu->llctrl.conn_param_rsp.interval_max, p->interval_max, "Interval_max mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_rsp.latency, p->latency, "Latency mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_rsp.timeout, p->timeout, "Timeout mismatch.\nCalled at %s:%d\n", file, line);
-	/* TODO(tosk): figure out if or how to verify dynamic parameters
 	zassert_equal(pdu->llctrl.conn_param_rsp.preferred_periodicity, p->preferred_periodicity, "Preferred_periodicity mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_rsp.reference_conn_event_count, p->reference_conn_event_count, "Reference_conn_event_count mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_rsp.offset0, p->offset0, "Offset0 mismatch.\nCalled at %s:%d\n", file, line);
@@ -607,7 +604,6 @@ void helper_pdu_verify_conn_param_rsp(const char *file, uint32_t line, struct pd
 	zassert_equal(pdu->llctrl.conn_param_rsp.offset3, p->offset3, "Offset3 mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_rsp.offset4, p->offset4, "Offset4 mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.conn_param_rsp.offset5, p->offset5, "Offset5 mismatch.\nCalled at %s:%d\n", file, line);
-	*/
 }
 
 void helper_pdu_verify_conn_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)

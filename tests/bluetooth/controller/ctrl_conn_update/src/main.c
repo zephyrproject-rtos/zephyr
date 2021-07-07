@@ -1242,6 +1242,7 @@ void test_conn_update_mas_rem_collision(void)
 	event_prepare(&conn);
 
 	/* (B) Tx Queue should have one LL Control PDU */
+	req_B->reference_conn_event_count = event_counter(&conn) - 1;
 	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, req_B);
 	lt_rx_q_is_empty(&conn);
 
@@ -1746,6 +1747,7 @@ void test_conn_update_sla_loc_collision(void)
 	event_prepare(&conn);
 
 	/* (B) Tx Queue should have one LL Control PDU */
+	rsp_B->reference_conn_event_count = req_B->reference_conn_event_count;
 	lt_rx(LL_CONNECTION_PARAM_RSP, &conn, &tx, rsp_B);
 	lt_rx_q_is_empty(&conn);
 
