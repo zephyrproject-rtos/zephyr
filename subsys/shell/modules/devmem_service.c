@@ -71,7 +71,7 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	phys_addr = strtol(argv[1], NULL, 16);
+	phys_addr = strtoul(argv[1], NULL, 16);
 
 #if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
 	device_map((mm_reg_t *)&addr, phys_addr, 0x100, K_MEM_CACHE_NONE);
@@ -84,7 +84,7 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 	if (argc < 3) {
 		width = 32;
 	} else {
-		width = strtol(argv[2], NULL, 10);
+		width = strtoul(argv[2], NULL, 10);
 	}
 
 	shell_fprintf(sh, SHELL_NORMAL, "Using data width %d\n", width);
@@ -97,7 +97,7 @@ static int cmd_devmem(const struct shell *sh, size_t argc, char **argv)
 	 * this value at the address provided
 	 */
 
-	value = strtol(argv[3], NULL, 16);
+	value = strtoul(argv[3], NULL, 16);
 
 	shell_fprintf(sh, SHELL_NORMAL, "Writing value 0x%lx\n", value);
 
