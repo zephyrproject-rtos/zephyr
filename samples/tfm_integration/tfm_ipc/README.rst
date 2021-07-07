@@ -33,21 +33,21 @@ executed on MPS2+ AN521 and ST Nucleo L552ZE Q.
 On MPS2+ AN521:
 ===============
 
-#. Build Zephyr with a non-secure configuration (``-DBOARD=mps2_an521_nonsecure``).
+#. Build Zephyr with a non-secure configuration (``-DBOARD=mps2_an521_ns``).
 
    .. code-block:: bash
 
       cd $ZEPHYR_ROOT/samples/tfm_integration/tfm_ipc/
       mkdir build
       cd build
-      cmake -DBOARD=mps2_an521_nonsecure ..
+      cmake -DBOARD=mps2_an521_ns ..
       make
 
 You can also use west as follows:
 
    .. code-block:: bash
 
-      $ west build -p -b mps2_an521_nonsecure zephyr/samples/tfm_integration/tfm_ipc
+      $ west build -p -b mps2_an521_ns zephyr/samples/tfm_integration/tfm_ipc
 
 
 #. Copy application binary files (mcuboot.bin and tfm_sign.bin) to ``<MPS2 device name>/SOFTWARE/``.
@@ -82,7 +82,7 @@ folder to update the ``-DGNUARM_PATH=/opt/toolchain/arm-none-eabi`` path.
 On QEMU:
 ========
 
-The MPS2+ AN521 target (``mps2_an521_nonsecure``), which is based on a
+The MPS2+ AN521 target (``mps2_an521_ns``), which is based on a
 dual core ARM Cortex-M33 setup, also allows you to run TF-M tests using QEMU if
 you don't have access to a supported ARMv8-M development board.
 
@@ -99,7 +99,7 @@ ninja or make, adding the ``run`` commands:
 
    .. code-block:: bash
 
-      $ west build -b mps2_an521_nonsecure zephyr/samples/tfm_integration/tfm_ipc -t run
+      $ west build -b mps2_an521_ns zephyr/samples/tfm_integration/tfm_ipc -t run
 
 Or, post build:
 
