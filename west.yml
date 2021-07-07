@@ -29,7 +29,7 @@ manifest:
       revision: f167efe85c8c7de886f1bc47f9173cfb8a346bb5
       path: modules/lib/canopennode
     - name: civetweb
-      revision: 094aeb41bb93e9199d24d665ee43e9e05d6d7b1c
+      revision: 3cf9654b168cfd8a994d707163f4497791866019
       path: modules/lib/civetweb
     - name: cmsis
       revision: c3bd2094f92d574377f7af2aec147ae181aa5f8e
