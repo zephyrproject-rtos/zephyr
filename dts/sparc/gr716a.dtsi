@@ -5,6 +5,7 @@
  */
 
 #include "skeleton.dtsi"
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	dram: ram@30000000 {
@@ -84,6 +85,26 @@
 			reg = <0x80305000 0x100>;
 			label = "UART_5";
 			status = "disabled";
+		};
+
+		gpio0: gpio@8030c000 {
+			gpio-controller;
+			label = "gpio0";
+			#gpio-cells = <2>;
+			compatible = "gaisler,grgpio";
+			reg = <0x8030c000 0x1000>;
+			status = "disabled";
+			interrupts = <17>;
+		};
+
+		gpio1: gpio@8030d000 {
+			gpio-controller;
+			label = "gpio1";
+			#gpio-cells = <2>;
+			compatible = "gaisler,grgpio";
+			reg = <0x8030d000 0x1000>;
+			status = "disabled";
+			interrupts = <16>;
 		};
 	};
 };
