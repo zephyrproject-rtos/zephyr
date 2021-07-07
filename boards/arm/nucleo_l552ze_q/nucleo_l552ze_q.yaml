@@ -9,5 +9,6 @@ supported:
   - gpio
   - dac
   - adc
+  - dma
 ram: 192
 flash: 512
