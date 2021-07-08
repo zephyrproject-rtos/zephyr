@@ -301,6 +301,8 @@
 /drivers/serial/*nuvoton*                 @ssekar15
 /drivers/serial/*apbuart*                 @martin-aberg
 /drivers/serial/*rcar*                    @aaillet
+/drivers/serial/Kconfig.test              @str4t0m
+/drivers/serial/serial_test.c             @str4t0m
 /drivers/disk/                            @jfischer-no
 /drivers/disk/sdmmc_sdhc.h                @JunYangNXP
 /drivers/disk/sdmmc_spi.c                 @JunYangNXP
