@@ -176,6 +176,8 @@ The Zephyr stm32l562e_dk board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| DMA       | on-chip    | Direct Memory Access                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
