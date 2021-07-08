@@ -1,0 +1,32 @@
+# GD32 GPIO configuration
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_GD32
+	bool "GPIO Driver for GD32 family of MCUs"
+	depends on SOC_FAMILY_GD32
+	help
+	  Enable GPIO driver for GD32 line of MCUs
+
+if GPIO_GD32
+
+choice GPIO_GD32_SWJ
+	prompt "Serial wire JTAG configuration"
+	depends on SOC_SERIES_GD32F1X
+
+config GPIO_GD32_SWJ_ENABLE
+	bool "Full SWJ (JTAG-DP + SW-DP): Reset State"
+
+config GPIO_GD32_SWJ_NONJTRST
+	bool "Full SWJ (JTAG-DP + SW-DP) but without NJTRST"
+
+config GPIO_GD32_SWJ_NOJTAG
+	bool "JTAG-DP Disabled and SW-DP Enabled"
+
+config GPIO_GD32_SWJ_DISABLE
+	bool "JTAG-DP Disabled and SW-DP Disabled"
+
+endchoice
+
+endif # GPIO_GD32

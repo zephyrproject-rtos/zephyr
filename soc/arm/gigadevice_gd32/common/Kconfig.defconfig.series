@@ -1,78 +1,80 @@
-# ST Microelectronics STM32 all MCU lines
+# GD Microelectronics GD32 all MCU lines
 
 # Copyright (c) 2017, I-SENSE group of ICCS
 # SPDX-License-Identifier: Apache-2.0
 
-# Here are set all the Kconfig symbols common to the whole STM32 family
+# Here are set all the Kconfig symbols common to the whole GD32 family
 
-if SOC_FAMILY_STM32
+if SOC_FAMILY_GD32
 
 config CORTEX_M_SYSTICK
-	default n if STM32_LPTIM_TIMER
+	default n if GD32_LPTIM_TIMER
 
-DT_STM32_RCC_PATH := $(dt_nodelabel_path,rcc)
-DT_STM32_RCC_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_RCC_PATH),clock-frequency)
+DT_GD32_RCC_PATH := $(dt_nodelabel_path,rcc)
+DT_GD32_RCC_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_GD32_RCC_PATH),clock-frequency)
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
+	default "$(DT_GD32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
 
 # set the tick per sec as a divider of the LPTIM clock source
 config SYS_CLOCK_TICKS_PER_SEC
-	default 4096 if STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSE
-	default 4000 if STM32_LPTIM_TIMER && STM32_LPTIM_CLOCK_LSI
+	default 4096 if GD32_LPTIM_TIMER && GD32_LPTIM_CLOCK_LSE
+	default 4000 if GD32_LPTIM_TIMER && GD32_LPTIM_CLOCK_LSI
 
-config CLOCK_CONTROL_STM32_CUBE
-	default y
-	depends on CLOCK_CONTROL
+# config CLOCK_CONTROL_GD32_CUBE
+# 	default y
+# 	depends on CLOCK_CONTROL
 
-config UART_STM32
-	default y
-	depends on SERIAL
+# config UART_GD32
+# 	default y
+# 	depends on SERIAL
 
 if GPIO
 
-config GPIO_STM32
+config GPIO_GD32
+	bool "GPIO_GD32"
 	default y
 
 endif # GPIO
 
-config PINMUX_STM32
+config PINMUX_GD32
+	bool "PINMUX_GD32"
 	default y
 	depends on PINMUX
 
-config PWM_STM32
-	default y
-	depends on PWM
+# config PWM_GD32
+#	default y
+#	depends on PWM
 
-config SPI_STM32
-	default y
-	depends on SPI
+# config SPI_GD32
+#	default y
+#	depends on SPI
 
-config I2S_STM32
-	default y
-	depends on I2S
+# config I2S_GD32
+#	default y
+#	depends on I2S
 
-config USB_DC_STM32
-	default y
-	depends on USB
+# config USB_DC_GD32
+#	default y
+#	depends on USB
 
-config COUNTER_RTC_STM32
-	default y
-	depends on COUNTER
+# config COUNTER_RTC_GD32
+#	default y
+#	depends on COUNTER
 
-config ADC_STM32
-	default y
-	depends on ADC
+# config ADC_GD32
+#	default y
+#	depends on ADC
 
 if DMA
 
-config DMA_STM32
-	default y
+# config DMA_GD32
+#	default y
 
 endif # DMA
 
-config MEMC_STM32
-	default y
-	depends on MEMC
+# config MEMC_GD32
+#	default y
+#	depends on MEMC
 
-endif # SOC_FAMILY_STM32
+endif # SOC_FAMILY_GD32

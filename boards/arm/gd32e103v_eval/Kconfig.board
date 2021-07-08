@@ -5,4 +5,4 @@
 
 config BOARD_GD32EVAL_E103VB
 	bool "GD32-EVAL E103VB Development Board"
-	depends on SOC_STM32F401XE
+	depends on SOC_GD32E103VB

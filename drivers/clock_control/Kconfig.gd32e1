@@ -1,0 +1,18 @@
+# GD32E1 PLL configuration options
+
+# Copyright (c) 2019 Linaro
+# SPDX-License-Identifier: Apache-2.0
+
+
+if SOC_SERIES_GD32E1X
+
+config CLOCK_CONTROL_GD32_DEVICE_INIT_PRIORITY
+	int "Clock Control Device Priority"
+	default 1
+	help
+	  This option controls the priority of clock control
+	  device initialization. Higher priority ensures that the device
+	  is initialized earlier in the startup cycle. If unsure, leave
+	  at default value 1
+
+endif # SOC_SERIES_GD32E1X
