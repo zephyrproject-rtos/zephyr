@@ -197,6 +197,7 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - USART_1 TX/RX : PA9/PA10
+- USART_3 TX/RX : PC10/PC11
 - I2C_1 SCL/SDA : PB6/PB7
 - SPI_1 SCK/MISO/MOSI : PG2/PG3/PG4 (BT SPI bus)
 - SPI_3 NSS/SCK/MISO/MOSI : PE0/PG9/PB4/PB5 (Arduino SPI)
