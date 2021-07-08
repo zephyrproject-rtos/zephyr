@@ -1001,6 +1001,22 @@ Documentation:
     labels:
         - "area: Video"
 
+"Drivers: W1":
+    status: maintained
+    maintainers:
+        - str4t0m
+    collaborators:
+        - dp7hgh7
+    files:
+        - doc/hardware/peripherals/w1.rst
+        - drivers/w1/
+        - dts/bindings/w1/
+        - include/zephyr/drivers/w1.h
+        - include/zephyr/drivers/sensor/w1_sensor.h
+        - tests/drivers/w1/
+    labels:
+        - "area: W1"
+
 "Drivers: Watchdog":
     status: odd fixes
     collaborators:
