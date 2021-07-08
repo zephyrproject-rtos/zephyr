@@ -291,7 +291,7 @@ void test_dummy_device_pm(void)
 {
 	const struct device *dev;
 	int busy, ret;
-	unsigned int device_power_state = 0;
+	enum pm_device_state device_power_state = PM_DEVICE_STATE_SUSPEND;
 
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
