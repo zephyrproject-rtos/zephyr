@@ -115,6 +115,7 @@ macro(toolchain_ld_baremetal)
     -Xtimer0 # to suppress the warning message
     -Hnoxcheck_obj
     -Hnocplus
+    -Hhostlib=
     -Hheap=0
     -Hnoivt
   )
