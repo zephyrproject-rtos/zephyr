@@ -685,17 +685,14 @@ class DeviceHandler(Handler):
             if d.serial == serial or d.serial_pty:
                 d.available = 1
 
-    def handle(self, command=None):
-        out_state = "failed"
-        runner = None
-
+    def get_and_lock_device(self):
+        """Find available dut, lock it and return it with matching serial"""
         hardware = self.device_is_available(self.instance)
         while not hardware:
             logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
             time.sleep(1)
             hardware = self.device_is_available(self.instance)
 
-        runner = hardware.runner or self.suite.west_runner
         serial_pty = hardware.serial_pty
 
         ser_pty_process = None
@@ -711,6 +708,27 @@ class DeviceHandler(Handler):
         else:
             serial_device = hardware.serial
 
+        device_data = {
+            "hardware": hardware,
+            "serial_device": serial_device,
+            "ser_pty_process": ser_pty_process
+        }
+        return device_data
+
+    def handle(self, command=None, hardware_fixed=None):
+        out_state = "failed"
+        runner = None
+        if hardware_fixed is None:
+            device_data = self.get_and_lock_device()
+        else:
+            device_data = hardware_fixed
+
+        hardware = device_data['hardware']
+        serial_device = device_data['serial_device']
+        ser_pty_process = device_data['ser_pty_process']
+
+        runner = hardware.runner or self.suite.west_runner
+        serial_pty = hardware.serial_pty
         logger.debug("Using serial device {}".format(serial_device))
 
         # command is used to be able to replace the default command builder with
@@ -893,7 +911,9 @@ class DeviceHandler(Handler):
             except Exception as ex:
                 logger.error(ex)
 
-        self.make_device_available(serial_device)
+        if hardware_fixed is None:
+            # Release the device if not needed any more
+            self.make_device_available(serial_device)
         self.record(harness)
 
 
