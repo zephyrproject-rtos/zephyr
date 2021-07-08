@@ -107,6 +107,24 @@ Server initiated disable and release:
    uart:~$ bap disable
    uart:~$ bap release
 
+Example Broadcast Source
+************************
+
+Create and establish a broadcast source stream:
+
+.. code-block:: console
+
+   uart:~$ bap init
+   uart:~$ bap create_broadcast
+   uart:~$ bap start
+
+Stop and release a broadcast source stream:
+
+.. code-block:: console
+
+   uart:~$ bap stop
+   uart:~$ bap release
+
 Init
 ****
 
@@ -348,7 +366,14 @@ This command set a stream as default.
 
    uart:~$ bap select <ase>
    uart:~$ bap select 0x01
-   Default ase: 1
+   Default channel: 1
+
+To select a broadcast channel:
+
+.. code-block:: console
+
+   uart:~$ bap select 0x01 broadcast
+   Default channel: 1 (broadcast)
 
 Link
 ****
