@@ -92,6 +92,9 @@ manifest:
     - name: hal_xtensa
       revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
       path: modules/hal/xtensa
+    - name: hal_gd32
+      revision: 2f04b615cd5ad3a1b8abef33f9bdd10cc1990ed6
+      path: modules/hal/gigadevice
     - name: libmetal
       revision: 39d049d4ae68e6f6d595fce7de1dcfc1024fb4eb
       path: modules/hal/libmetal

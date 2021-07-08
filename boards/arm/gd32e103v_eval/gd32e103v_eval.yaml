@@ -1,0 +1,12 @@
+identifier: gd32e103v_eval
+name: GD32 E103V EVAL
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+ram: 32
+flash: 128

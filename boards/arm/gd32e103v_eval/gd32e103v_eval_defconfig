@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_SOC_SERIES_GD32E1X=y
+CONFIG_SOC_GD32E103VB=y
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=108000000
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+# CONFIG_HW_STACK_PROTECTION=y
+
+# CONFIG_SERIAL=y
+
+# console
+# CONFIG_CONSOLE=y
+# CONFIG_UART_CONSOLE=y
+
+# enable pinmux
+# CONFIG_PINMUX=y
+
+# enable GPIO
+# CONFIG_GPIO=y
+
+# clock configuration
+# CONFIG_CLOCK_CONTROL=y
