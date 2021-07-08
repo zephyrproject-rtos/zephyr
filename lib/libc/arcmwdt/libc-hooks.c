@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2014, 2021 Wind River Systems, Inc.
+ * Copyright (c) 2021 Synopsys
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,8 @@
 #include <sys/libc-hooks.h>
 #include <syscall_handler.h>
 #include <string.h>
+#include <sys/errno_private.h>
+#include <errno.h>
 
 static int _stdout_hook_default(int c)
 {
@@ -110,4 +113,9 @@ int puts(const char *s)
 	}
 
 	return fputc('\n', stdout) == EOF ? EOF : 0;
+}
+
+int *___errno(void)
+{
+	return z_errno();
 }
