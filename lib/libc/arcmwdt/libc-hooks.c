@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2021 Intel Corporation.
+ * Copyright (c) 2021 Synopsys.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,3 +57,8 @@ int _write(int fd, const char *buf, unsigned int nbytes)
 	return z_impl_zephyr_write_stdout(buf, nbytes);
 }
 #endif
+
+int *___errno(void)
+{
+	return z_errno();
+}
