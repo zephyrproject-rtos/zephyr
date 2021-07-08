@@ -1,0 +1,33 @@
+# Copyright (c) 2018, Aapo Vienamo
+# Copyright (c) 2021, Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+description: TCA9538 GPIO node
+
+compatible: "ti,tca9538"
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+    label:
+      required: true
+
+    "#gpio-cells":
+      const: 2
+
+    ngpios:
+      required: true
+      const: 8
+      description: |
+        Number of GPIOs available on port expander.
+
+    nint-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Connection for the NINT signal. This signal is active-low when
+        produced by tca9538 GPIO node.
+
+gpio-cells:
+  - pin
+  - flags
