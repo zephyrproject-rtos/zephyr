@@ -31,12 +31,10 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
 struct flash_pages_layout {
 	size_t pages_count; /* count of pages sequence of the same size */
 	size_t pages_size;
 };
-#endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 struct flash_page_info {
 	off_t	offset;		/* Beginning of page */
@@ -325,7 +323,7 @@ struct flash_pages_info {
 	uint32_t index;
 };
 
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+#if defined(CONFIG_FLASH_PAGE_LAYOUT) || defined(CONFIG_FLASH_PAGE_LAYOUT_WITHOUT_API_PAGE_LAYOUT)
 /**
  *  @brief  Get the size and start offset of flash page at certain flash offset.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,8 @@
 #include <errno.h>
 
 #include <zephyr/drivers/flash.h>
+
+#if !defined(CONFIG_FLASH_PAGE_LAYOUT_WITHOUT_API_PAGE_LAYOUT)
 
 static int flash_get_page_info_non_syscall(const struct device *dev, off_t offs,
 			       uint32_t index, struct flash_pages_info *info)
@@ -55,6 +57,128 @@ int z_impl_flash_get_page_info_by_idx(const struct device *dev,
 	return flash_get_page_info_non_syscall(dev, 0, page_index, info);
 }
 
+#else
+
+int z_impl_flash_get_page_info_by_offs(const struct device *dev, off_t offs,
+				       struct flash_pages_info *info)
+{
+	const struct flash_driver_api *api = dev->api;
+	const struct flash_parameters *fparam = api->get_parameters(dev);
+	struct flash_page_info fpi;
+	int rc = -EINVAL;
+
+	rc = api->get_page_info(dev, offs, &fpi);
+
+	if (rc == 0) {
+		info->start_offset = fpi.offset;
+		info->size = fpi.size;
+
+		if (!(fparam->flags & FPF_NON_UNIFORM_LAYOUT)) {
+			/* Uniform layout */
+			info->index = offs / fpi.size;
+		} else {
+			/* Non-uniform layout requires to iterate through the pages */
+			info->index = 0;
+			while (fpi.offset) {
+				++info->index;
+				api->get_page_info(dev, fpi.offset - fpi.size, &fpi);
+				if (rc < 0) {
+					break;
+				}
+			}
+		}
+	}
+
+	return rc;
+}
+
+int z_impl_flash_get_page_info_by_idx(const struct device *dev,
+				      uint32_t page_index,
+				      struct flash_pages_info *info)
+{
+	const struct flash_driver_api *api = dev->api;
+	const struct flash_parameters *fparam = api->get_parameters(dev);
+	struct flash_page_info fpi;
+	int rc = -EINVAL;
+	ssize_t page_count = 0;
+
+
+	BUILD_ASSERT(sizeof(ssize_t) >= sizeof(uint32_t),
+		 "The function will not work properly when uin32_t > ssize_t");
+	/*
+	 * Get total page count to check if request does not fall out of the flash range;
+	 * in case of the non-uniform layout, the value will be also used to evaluate
+	 * whether it is better to start index calculation from the beginning or the end
+	 * of the flash.
+	 */
+	if ((ssize_t)page_index < 0) {
+		return -EINVAL;
+	}
+
+	page_count = api->get_page_count(dev);
+	if (page_count < 0) {
+		return (int)page_count;
+	}
+
+	rc = api->get_page_info(dev, 0, &fpi);
+
+	if (rc >= 0 && page_count < (ssize_t)page_index) {
+		info->index = page_index;
+
+		if (!(fparam->flags & FPF_NON_UNIFORM_LAYOUT)) {
+			/* Uniform layout */
+			info->start_offset = (ssize_t)page_index * fpi.size;
+			info->size = fpi.size;
+		} else {
+			/* Non-uniform layout */
+			ssize_t size = api->get_size(dev);
+
+			if (size < 0) {
+				return size;
+			}
+
+			if ((ssize_t)page_index > (page_count >> 1)) {
+				/*
+				 * For an index that is above the half of the page count,
+				 * go from the end of the flash.
+				 */
+				fpi.offset = size;
+				fpi.size = 1;
+
+				while (rc >= 0 && page_count >= (ssize_t)page_index) {
+					--page_count;
+					rc = api->get_page_info(dev, fpi.offset - fpi.size, &fpi);
+				}
+			} else {
+				/*
+				 * For an index that is below or equal to the half of
+				 * the page count go from beginning of the flash.
+				 */
+				page_count = 0;
+				fpi.offset = 0;
+				fpi.size = 0;
+
+				while (rc >= 0 && page_count != (ssize_t)page_index) {
+					++page_count;
+					rc = api->get_page_info(dev, fpi.offset + fpi.size, &fpi);
+					if (rc < 0) {
+						break;
+					}
+				}
+				if (rc > 0) {
+					info->start_offset = fpi.offset;
+					info->size = fpi.size;
+				}
+			}
+		}
+	}
+
+	return rc;
+}
+#endif /* !defined(CONFIG_FLASH_PAGE_LAYOUT_WITHOUT_API_PAGE_LAYOUT) */
+
+#if !defined(CONFIG_FLASH_PAGE_LAYOUT_WITHOUT_API_PAGE_LAYOUT)
+
 void flash_page_foreach(const struct device *dev, flash_page_cb cb,
 			void *data)
 {
@@ -83,3 +207,46 @@ void flash_page_foreach(const struct device *dev, flash_page_cb cb,
 		}
 	}
 }
+
+#else
+
+void flash_page_foreach(const struct device *dev, flash_page_cb cb,
+			void *data)
+{
+	const struct flash_parameters *fparam = flash_get_parameters(dev);
+	struct flash_pages_info page_info;
+	size_t num_blocks;
+	struct flash_page_info fpi;
+
+	num_blocks = flash_get_page_count(dev);
+	page_info.start_offset = 0;
+	page_info.index = 0;
+
+
+	if (!(fparam->flags & FPF_NON_UNIFORM_LAYOUT)) {
+		flash_get_page_info(dev, 0, &fpi);
+		page_info.size = fpi.size;
+
+		while (page_info.index < num_blocks) {
+			if (!cb(&page_info, data)) {
+				return;
+			}
+			page_info.index++;
+			page_info.start_offset += fpi.size;
+		}
+	} else {
+		while (page_info.index < num_blocks) {
+			flash_get_page_info(dev, page_info.start_offset, &fpi);
+
+			page_info.size = fpi.size;
+
+			if (!cb(&page_info, data)) {
+				return;
+			}
+
+			page_info.index++;
+			page_info.start_offset += fpi.size;
+		}
+	}
+}
+#endif /* !defined(CONFIG_FLASH_PAGE_LAYOUT_WITHOUT_API_PAGE_LAYOUT) */
