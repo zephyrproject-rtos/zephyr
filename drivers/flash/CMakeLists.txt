@@ -13,7 +13,6 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER soc_flash_nrf_ticker.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_MCUX soc_flash_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_LPC soc_flash_lpc.c)
-zephyr_library_sources_ifdef(CONFIG_FLASH_PAGE_LAYOUT flash_page_layout.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE flash_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM0 flash_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM flash_sam.c)
@@ -26,6 +25,10 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G flash_mcux_f
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_NOR flash_mcux_flexspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH flash_mcux_flexspi_hyperflash.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_ESP32 flash_esp32.c)
+
+if (CONFIG_FLASH_PAGE_LAYOUT OR CONFIG_FLASH_PAGE_LAYOUT_WITHOUT_API_PAGE_LAYOUT)
+    zephyr_library_sources(flash_page_layout.c)
+endif()
 
 if(CONFIG_FLASH_MCUX_FLEXSPI_XIP)
   dt_chosen(chosen_flash PROPERTY "zephyr,flash")
