@@ -11,7 +11,7 @@ include: spi-device.yaml
 properties:
     reset-gpios:
       type: phandle-array
-      required: true
+      required: false
       description: |
         RESET pin.
 
