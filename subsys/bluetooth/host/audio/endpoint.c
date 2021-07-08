@@ -92,15 +92,20 @@ static void ep_iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 	struct bt_audio_chan_ops *ops = ep->chan->ops;
+	const bool is_broadcast = bt_audio_ep_is_broadcast(ep);
 
 	BT_DBG("chan %p ep %p reason 0x%02x", chan, ep, reason);
+
+	if (is_broadcast) {
+		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_CONFIGURED);
+	}
 
 	if (ops != NULL && ops->disconnected != NULL) {
 		ops->disconnected(ep->chan, reason);
 	}
 
-	if (bt_audio_ep_is_broadcast(ep)) {
-		/* TODO: */
+	if (is_broadcast) {
+		/* No more actions for broadcast endpoints */
 		return;
 	}
 
