@@ -561,8 +561,7 @@ int bt_audio_chan_start(struct bt_audio_chan *chan)
 		big_create_param.num_bis = broadcaster->bis_count;
 		big_create_param.bis_channels = broadcaster->bis;
 
-		/* Create BIG */
-		err = bt_iso_big_create(chan->ep->adv, &big_create_param,
+		err = bt_iso_big_create(broadcaster->adv, &big_create_param,
 					&broadcaster->big);
 		if (err) {
 			BT_DBG("Failed to create BIG (err %d)", err);
@@ -659,43 +658,41 @@ static int bt_audio_chan_broadcast_release(struct bt_audio_chan *chan)
 {
 	int err;
 	struct bt_audio_chan *tmp;
+	struct bt_audio_broadcaster *source;
+	struct bt_le_ext_adv *adv;
+
+	source = chan->ep->broadcaster;
+	adv = source->adv;
 
 	/* Stop periodic advertising */
-	err = bt_le_per_adv_stop(chan->ep->adv);
+	err = bt_le_per_adv_stop(adv);
 	if (err != 0) {
 		BT_DBG("Failed to stop periodic advertising (err %d)", err);
 		return err;
 	}
 
 	/* Stop extended advertising */
-	err = bt_le_ext_adv_stop(chan->ep->adv);
+	err = bt_le_ext_adv_stop(adv);
 	if (err != 0) {
 		BT_DBG("Failed to stop extended advertising (err %d)", err);
 		return err;
 	}
 
 	/* Delete extended advertising set */
-	err = bt_le_ext_adv_delete(chan->ep->adv);
+	err = bt_le_ext_adv_delete(adv);
 	if (err != 0) {
 		BT_DBG("Failed to delete extended advertising set (err %d)", err);
 		return err;
 	}
 
-	/* Reset the BIS'es */
-	for (int i = 0; i < ARRAY_SIZE(broadcasters); i++) {
-		for (int j = 0; j < ARRAY_SIZE(broadcasters[i].bis); j++) {
-			if (broadcasters[i].bis[j] == &chan->ep->iso) {
-				memset(&broadcasters[i], 0, sizeof(broadcasters[i]));
-				break;
-			}
-		}
-	}
+	/* Reset the broadcast source */
+	memset(source, 0, sizeof(*source));
 
-	chan->ep->adv = NULL;
+	chan->ep->broadcaster = NULL;
 	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_IDLE);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		tmp->ep->adv = NULL;
+		tmp->ep->broadcaster = NULL;
 		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_IDLE);
 	}
 
@@ -1265,7 +1262,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 
 	/* Create a non-connectable non-scannable advertising set */
 	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN_NAME, NULL,
-				   &chan->ep->adv);
+				   &broadcaster->adv);
 	if (err != 0) {
 		BT_DBG("Failed to create advertising set (err %d)", err);
 		/* TODO: cleanup */
@@ -1273,7 +1270,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	}
 
 	/* Set periodic advertising parameters */
-	err = bt_le_per_adv_set_param(chan->ep->adv, BT_LE_PER_ADV_DEFAULT);
+	err = bt_le_per_adv_set_param(broadcaster->adv, BT_LE_PER_ADV_DEFAULT);
 	if (err != 0) {
 		BT_DBG("Failed to set periodic advertising parameters (err %d)",
 		       err);
@@ -1287,7 +1284,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	 * that the audio advertising data is still present, similar to how
 	 * the GAP device name is added.
 	 */
-	err = bt_le_ext_adv_set_data(chan->ep->adv, ad, ARRAY_SIZE(ad), NULL,
+	err = bt_le_ext_adv_set_data(broadcaster->adv, ad, ARRAY_SIZE(ad), NULL,
 				     0);
 	if (err != 0) {
 		BT_DBG("Failed to set extended advertising data (err %d)", err);
@@ -1302,7 +1299,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	base_ad_data.data_len = base_buf.len;
 	base_ad_data.data = base_buf.data;
 
-	err = bt_le_per_adv_set_data(chan->ep->adv, &base_ad_data, 1);
+	err = bt_le_per_adv_set_data(broadcaster->adv, &base_ad_data, 1);
 	if (err != 0) {
 		BT_DBG("Failed to set extended advertising data (err %d)", err);
 		/* TODO: cleanup */
@@ -1310,7 +1307,7 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	}
 
 	/* Enable Periodic Advertising */
-	err = bt_le_per_adv_start(chan->ep->adv);
+	err = bt_le_per_adv_start(broadcaster->adv);
 	if (err != 0) {
 		BT_DBG("Failed to enable periodic advertising (err %d)", err);
 		/* TODO: cleanup */
@@ -1318,7 +1315,8 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	}
 
 	/* Start extended advertising */
-	err = bt_le_ext_adv_start(chan->ep->adv, BT_LE_EXT_ADV_START_DEFAULT);
+	err = bt_le_ext_adv_start(broadcaster->adv,
+				  BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
 		BT_DBG("Failed to start extended advertising (err %d)", err);
 		/* TODO: cleanup */
@@ -1329,7 +1327,6 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_CONFIGURED);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
-		tmp->ep->adv = chan->ep->adv; /* Sync adv reference */
 		tmp->ep->broadcaster = broadcaster;
 
 		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_CONFIGURED);
