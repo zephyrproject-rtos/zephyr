@@ -24,6 +24,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, pre_init=None, pre_load=None,
                  load_cmd=None, verify_cmd=None, post_verify=None,
+                 do_verify=False, do_verify_only=False,
                  tui=None, config=None, serial=None, use_elf=None,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
@@ -52,6 +53,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.load_cmd = load_cmd
         self.verify_cmd = verify_cmd
         self.post_verify = post_verify or []
+        self.do_verify = do_verify or False
+        self.do_verify_only = do_verify_only or False
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
@@ -87,6 +90,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--cmd-post-verify', action='append',
                             help='''Command to run after verification;
                             may be given multiple times''')
+        parser.add_argument('--verify', action='store_true',
+                            help='if given, verify after flash')
+        parser.add_argument('--verify-only', action='store_true',
+                            help='if given, do verify and verify only. No flashing.')
 
         # Options for debugging:
         parser.add_argument('--tui', default=False, action='store_true',
@@ -106,6 +113,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init=args.cmd_pre_init,
             pre_load=args.cmd_pre_load, load_cmd=args.cmd_load,
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
+            do_verify=args.verify, do_verify_only=args.verify_only,
             tui=args.tui, config=args.config, serial=args.serial, use_elf=args.use_elf,
             tcl_port=args.tcl_port, telnet_port=args.telnet_port,
             gdb_port=args.gdb_port)
@@ -185,13 +193,25 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append("-c")
             pre_init_cmd.append(i)
 
+        load_image = []
+        if not self.do_verify_only:
+            load_image = ['-c', 'load_image ' + self.elf_name]
+
+        verify_image = []
+        if self.do_verify or self.do_verify_only:
+            verify_image = ['-c', 'verify_image ' + self.elf_name]
+
+        prologue = ['-c', 'resume ' + ep_addr,
+                    '-c', 'shutdown']
+
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                       pre_init_cmd + ['-c', 'init',
                                        '-c', 'targets',
-                                       '-c', 'reset halt',
-                                       '-c', 'load_image ' + self.elf_name,
-                                       '-c', 'resume ' + ep_addr,
-                                       '-c', 'shutdown'])
+                                       '-c', 'reset halt'] +
+                      load_image +
+                      verify_image +
+                      prologue)
+
         self.check_call(cmd)
 
     def do_attach_debug(self, command, **kwargs):
