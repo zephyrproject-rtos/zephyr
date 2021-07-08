@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2022, Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for w1 devices
+ */
+
+test-w1-ds18b20 {
+	compatible = "maxim,ds18b20";
+	family-code = <0x28>;
+	resolution = <12>;
+	label = "DS18B20";
+	status = "okay";
+};

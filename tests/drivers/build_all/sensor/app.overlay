@@ -126,6 +126,17 @@
 			#include "uart.dtsi"
 		};
 
+		test_w1: w1@66660000 {
+			compatible = "vnd,w1";
+			reg = <0x66660000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			label = "TEST_W1_MASTER";
+			status = "okay";
+
+			#include "w1.dtsi"
+		};
+
 		dht22 {
 			compatible = "aosong,dht";
 			status = "okay";
