@@ -67,6 +67,7 @@ enum {
 	RP_CHMU_EVT_RX_CHAN_MAP_IND,
 };
 
+#if defined(CONFIG_BT_CENTRAL)
 /*
  * LLCP Local Procedure Channel Map Update FSM
  */
@@ -196,7 +197,9 @@ void ull_cp_priv_lp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 {
 	lp_chmu_execute_fsm(conn, ctx, LP_CHMU_EVT_RUN, param);
 }
+#endif /* CONFIG_BT_CENTRAL */
 
+#if defined(CONFIG_BT_PERIPHERAL)
 /*
  * LLCP Remote Procedure Channel Map Update FSM
  */
@@ -304,3 +307,4 @@ void ull_cp_priv_rp_chmu_run(struct ll_conn *conn, struct proc_ctx *ctx, void *p
 {
 	rp_chmu_execute_fsm(conn, ctx, RP_CHMU_EVT_RUN, param);
 }
+#endif /* CONFIG_BT_PERIPHERAL */
