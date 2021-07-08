@@ -668,6 +668,16 @@ int bt_audio_chan_link(struct bt_audio_chan *chan1, struct bt_audio_chan *chan2)
 		return -EINVAL;
 	}
 
+	if (chan1->state != BT_AUDIO_CHAN_IDLE) {
+		BT_DBG("chan1 %p is not idle", chan1);
+		return -EINVAL;
+	}
+
+	if (chan2->state != BT_AUDIO_CHAN_IDLE) {
+		BT_DBG("chan2 %p is not idle", chan2);
+		return -EINVAL;
+	}
+
 	if (bt_audio_chan_linked(chan1, chan2)) {
 		return -EALREADY;
 	}
@@ -687,6 +697,11 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
 		return -EINVAL;
 	}
 
+	if (chan1->state != BT_AUDIO_CHAN_IDLE) {
+		BT_DBG("chan1 %p is not idle", chan1);
+		return -EINVAL;
+	}
+
 	/* Unbind all channels if chan2 is NULL */
 	if (!chan2) {
 		SYS_SLIST_FOR_EACH_CONTAINER(&chan1->links, chan2, node) {
@@ -697,6 +712,9 @@ int bt_audio_chan_unlink(struct bt_audio_chan *chan1,
 				return err;
 			}
 		}
+	} else if (chan2->state != BT_AUDIO_CHAN_IDLE) {
+		BT_DBG("chan2 %p is not idle", chan2);
+		return -EINVAL;
 	}
 
 	if (!sys_slist_find_and_remove(&chan1->links, &chan2->node)) {
