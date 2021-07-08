@@ -608,9 +608,28 @@ int bt_audio_chan_stop(struct bt_audio_chan *chan)
 {
 	int err;
 
-	BT_DBG("chan %p", chan);
+	if (!chan || !chan->ep) {
+		BT_DBG("Invalid channel or endpoint");
+		return -EINVAL;
+	}
 
-	if (!chan || !chan->ep || !chan->cap || !chan->cap->ops) {
+	if (bt_audio_ep_is_broadcast(chan->ep)) {
+		if (chan->state != BT_AUDIO_CHAN_STREAMING) {
+			BT_DBG("Channel is not streaming");
+			return -EALREADY;
+		}
+
+		err = bt_iso_big_terminate(chan->ep->broadcaster->big);
+		if (err) {
+			BT_DBG("Failed to terminate BIG (err %d)", err);
+			return err;
+		}
+
+		return 0;
+	}
+
+	if (!chan->cap || !chan->cap->ops) {
+		BT_DBG("Invalid capabilities or capabilities ops");
 		return -EINVAL;
 	}
 
