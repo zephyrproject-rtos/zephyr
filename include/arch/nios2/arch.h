@@ -18,7 +18,6 @@
 
 #include <arch/nios2/thread.h>
 #include <arch/nios2/asm_inline.h>
-#include <arch/common/addr_types.h>
 #include <devicetree.h>
 #include <arch/nios2/nios2.h>
 #include <arch/common/sys_bitops.h>

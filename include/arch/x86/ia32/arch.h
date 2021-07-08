@@ -26,7 +26,6 @@
 #ifndef _ASMLANGUAGE
 #include <stddef.h>	/* for size_t */
 
-#include <arch/common/addr_types.h>
 #include <arch/x86/ia32/segmentation.h>
 #include <pm/pm.h>
 

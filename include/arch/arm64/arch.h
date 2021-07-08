@@ -33,7 +33,6 @@
 #include <arch/arm64/arm_mmu.h>
 #endif
 #include <arch/arm64/thread_stack.h>
-#include <arch/common/addr_types.h>
 #include <arch/common/sys_bitops.h>
 #include <arch/common/ffs.h>
 
