@@ -349,6 +349,13 @@ static ALWAYS_INLINE void clock_init(void)
 	GPC_CM_SetNextCpuMode(GPC_CPU_MODE_CTRL_1, kGPC_RunMode);
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_0, false);
 	GPC_CM_EnableCpuSleepHold(GPC_CPU_MODE_CTRL_1, false);
+
+#ifdef CONFIG_SEGGER_RTT_SECTION_DTCM
+	/* Enable the AHB clock while the CM7 is sleeping to allow debug access
+	 * to TCM
+	 */
+	IOMUXC_GPR->GPR16 |= IOMUXC_GPR_GPR16_CM7_FORCE_HCLK_EN_MASK;
+#endif
 }
 
 /**
