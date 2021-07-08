@@ -218,9 +218,11 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	case PROC_TERMINATE:
 		lp_comm_init_proc(ctx);
 		break;
+#if defined(CONFIG_BT_CENTRAL)
 	case PROC_CHAN_MAP_UPDATE:
 		lp_chmu_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_CENTRAL */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		lp_comm_init_proc(ctx);
@@ -279,9 +281,11 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	case PROC_TERMINATE:
 		rp_comm_init_proc(ctx);
 		break;
+#if defined(CONFIG_BT_PERIPHERAL)
 	case PROC_CHAN_MAP_UPDATE:
 		rp_chmu_init_proc(ctx);
 		break;
+#endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
 		rp_comm_init_proc(ctx);
@@ -554,6 +558,7 @@ uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 	return BT_HCI_ERR_SUCCESS;
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
 {
 	struct proc_ctx *ctx;
@@ -573,6 +578,7 @@ uint8_t ull_cp_chan_map_update(struct ll_conn *conn, const uint8_t chm[5])
 
 	return BT_HCI_ERR_SUCCESS;
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 const uint8_t *ull_cp_chan_map_update_pending(struct ll_conn *conn)
 {
