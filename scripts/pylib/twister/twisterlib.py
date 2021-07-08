@@ -2404,9 +2404,12 @@ class ProjectBuilder(FilterBuilder):
         if op == "run":
             logger.debug("run test: %s" % self.instance.name)
             if self.stages:
+                self.instance.handler.suite = self.suite
+                # Lock and use the same device for all stages
+                device_data = self.instance.handler.get_and_lock_device()
                 for stage in self.stages:
                     try:
-                        stage.run()
+                        stage.run(hardware_fixed=device_data)
                         _, stage_time = self.instance.handler.get_state()
                         self.stages.total_time += stage_time
                     except Exception as ex:
@@ -2414,9 +2417,11 @@ class ProjectBuilder(FilterBuilder):
                         logger.error(ex)
                         self.instance.handler.state = "failed"
                         self.instance.reason = ex.args[0]
+                        self.instance.handler.make_device_available(device_data['serial_device'])
                         break
                 else:
                     self.instance.handler.duration = self.stages.total_time
+                    self.instance.handler.make_device_available(device_data['serial_device'])
             else:
                 self.run()
             self.instance.status, _ = self.instance.handler.get_state()

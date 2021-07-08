@@ -12,7 +12,6 @@ logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-# TODO: DeviceHandler.handle() needs to be refactored so we can lock the device until all stages are done
 
 
 class Image:
@@ -80,7 +79,7 @@ class ExecutionStage:
         if proj_builder:
             self.pb = proj_builder
 
-    def run(self):
+    def run(self, hardware_fixed=None):
         """Define procedure to be executed at a given stage.
 
         Must be implemented in sub classes. Defines actions taken during a given
@@ -100,7 +99,7 @@ class CallScriptsStage(ExecutionStage):
     def __init__(self, description=None, proj_builder=None):
         ExecutionStage.__init__(self, description, proj_builder)
 
-    def run(self):
+    def run(self, hardware_fixed=None):
         """Execute user-defined script"""
         for script in self.description:
             logger.debug(f"Calling: {script}")
@@ -117,7 +116,7 @@ class WestSignStage(ExecutionStage):
     def __init__(self, description=None, proj_builder=None):
         ExecutionStage.__init__(self, description, proj_builder)
 
-    def run(self):
+    def run(self, hardware_fixed=None):
         """Run west sign with arguments that can be defined in description"""
         # 'image' tells twister which image to sign
         image = self.description.get('image', 'main')
@@ -198,7 +197,7 @@ class OnTargetStage(ExecutionStage):
     def __init__(self, description=None, proj_builder=None):
         ExecutionStage.__init__(self, description, proj_builder)
 
-    def run(self):
+    def run(self, hardware_fixed=None):
         """Execute the the test on target.
 
         As in ProjectBuilder.run() but with MultiImage support
@@ -220,7 +219,7 @@ class OnTargetStage(ExecutionStage):
             # Point to image's build dir
             if image:
                 instance.handler.build_dir = instance.multi_build.images[image].build_dir
-            instance.handler.handle(command=command)
+            instance.handler.handle(command=command, hardware_fixed=hardware_fixed)
 
         sys.stdout.flush()
 
