@@ -1010,6 +1010,10 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 
 	shell_print(sh, "Broadcaster created: preset %s", preset->name);
 
+	if (default_chan == NULL) {
+		default_chan = free_chan;
+	}
+
 	return 0;
 }
 
@@ -1031,6 +1035,10 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 	for (i = 0; i < ARRAY_SIZE(chans); i++) {
 		bt_audio_chan_cb_register(&chans[i], &chan_ops);
+	}
+
+	for (i = 0; i < ARRAY_SIZE(broadcast_chans); i++) {
+		bt_audio_chan_cb_register(&broadcast_chans[i], &chan_ops);
 	}
 
 	return 0;

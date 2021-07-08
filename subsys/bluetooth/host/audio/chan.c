@@ -54,14 +54,8 @@ struct bt_audio_base {
 	struct bt_audio_base_subgroup subgroups[CONFIG_BT_BAP_BROADCAST_SUBGROUP_COUNT];
 } __packed;
 
-struct bt_audio_broadcaster {
-	uint8_t bis_count;
-	uint8_t subgroup_count;
-	struct bt_iso_chan *bis[BROADCAST_SRC_CNT];
-};
-
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
-static struct bt_audio_broadcaster broadcasters[BROADCAST_CNT];
+static struct bt_audio_broadcaster broadcasters[BROADCAST_SRC_CNT];
 
 static void chan_attach(struct bt_conn *conn, struct bt_audio_chan *chan,
 			struct bt_audio_ep *ep, struct bt_audio_capability *cap,
@@ -552,7 +546,34 @@ int bt_audio_chan_start(struct bt_audio_chan *chan)
 
 	BT_DBG("chan %p", chan);
 
-	if (!chan || !chan->ep || !chan->cap || !chan->cap->ops) {
+	if (!chan || !chan->ep) {
+		BT_DBG("Invalid channel or endpoint");
+		return -EINVAL;
+	}
+
+	if (bt_audio_ep_is_broadcast(chan->ep)) {
+		struct bt_iso_big_create_param big_create_param = { 0 };
+		struct bt_audio_broadcaster *broadcaster;
+
+		broadcaster = chan->ep->broadcaster;
+
+		/* Create BIG */
+		big_create_param.num_bis = broadcaster->bis_count;
+		big_create_param.bis_channels = broadcaster->bis;
+
+		/* Create BIG */
+		err = bt_iso_big_create(chan->ep->adv, &big_create_param,
+					&broadcaster->big);
+		if (err) {
+			BT_DBG("Failed to create BIG (err %d)", err);
+			return err;
+		}
+
+		return 0;
+	}
+
+	if (!chan->cap || !chan->cap->ops) {
+		BT_DBG("Invalid capabilities or capabilities ops");
 		return -EINVAL;
 	}
 
@@ -1050,14 +1071,21 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf)
 		return -EINVAL;
 	}
 
-	switch (chan->ep->status.state) {
-	 /* or 0x04 (Streaming) */
-	case BT_ASCS_ASE_STATE_STREAMING:
-		break;
-	default:
-		BT_ERR("Invalid state: %s",
-		       bt_audio_ep_state_str(chan->ep->status.state));
+	if (chan->state != BT_AUDIO_CHAN_STREAMING) {
+		BT_DBG("Channel not ready for streaming");
 		return -EBADMSG;
+	}
+
+	if (!bt_audio_ep_is_broadcast(chan->ep)) {
+		switch (chan->ep->status.state) {
+		/* or 0x04 (Streaming) */
+		case BT_ASCS_ASE_STATE_STREAMING:
+			break;
+		default:
+			BT_ERR("Invalid state: %s",
+			bt_audio_ep_state_str(chan->ep->status.state));
+			return -EBADMSG;
+		}
 	}
 
 	return bt_iso_chan_send(chan->iso, buf);
@@ -1297,10 +1325,12 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 		return err;
 	}
 
+	chan->ep->broadcaster = broadcaster;
 	bt_audio_chan_set_state(chan, BT_AUDIO_CHAN_CONFIGURED);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&chan->links, tmp, node) {
 		tmp->ep->adv = chan->ep->adv; /* Sync adv reference */
+		tmp->ep->broadcaster = broadcaster;
 
 		bt_audio_chan_set_state(tmp, BT_AUDIO_CHAN_CONFIGURED);
 	}
