@@ -690,17 +690,35 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_audio_chan *chan;
 	int index;
+	bool broadcast;
 
 	index = strtol(argv[1], NULL, 0);
 	if (index < 0 || index > ARRAY_SIZE(chans)) {
-		shell_error(sh, "Invalid index");
+		shell_error(sh, "Invalid index: %d", index);
 		return -ENOEXEC;
 	}
 
-	chan = &chans[index];
-	if (!chan->conn) {
-		shell_error(sh, "Invalid index");
-		return -ENOEXEC;
+	if (argc > 2) {
+		if (strcmp(argv[2], "broadcast") == 0) {
+			broadcast = true;
+			if (index > ARRAY_SIZE(broadcast_chans)) {
+				shell_error(sh,
+					    "Invalid index for broadcast: %d",
+					    index);
+			}
+		} else {
+			shell_error(sh, "Invalid argument %s", argv[2]);
+		}
+	}
+
+	if (broadcast) {
+		chan = &broadcast_chans[index];
+	} else {
+		chan = &chans[index];
+		if (!chan->conn) {
+			shell_error(sh, "Invalid index");
+			return -ENOEXEC;
+		}
 	}
 
 	set_channel(chan);
@@ -1115,7 +1133,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bap_cmds,
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
 	SHELL_CMD_ARG(release, NULL, NULL, cmd_release, 1, 0),
 	SHELL_CMD_ARG(list, NULL, NULL, cmd_list, 1, 0),
-	SHELL_CMD_ARG(select, NULL, "<chan>", cmd_select, 2, 0),
+	SHELL_CMD_ARG(select, NULL, "<chan> [broadcast]", cmd_select, 2, 0),
 	SHELL_CMD_ARG(link, NULL, "<chan1> <chan2>", cmd_link, 3, 0),
 	SHELL_CMD_ARG(unlink, NULL, "<chan1> <chan2>", cmd_unlink, 3, 0),
 	SHELL_CMD_ARG(connect, NULL,
