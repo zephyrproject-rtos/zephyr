@@ -83,6 +83,7 @@ bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int index, struct pcie_mbar *mbar)
 
 		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
 			reg++;
+			index--; /* treat index as dword */
 		}
 	}
 

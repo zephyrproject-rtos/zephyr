@@ -99,6 +99,7 @@ extern bool pcie_probe(pcie_bdf_t bdf, pcie_id_t id);
  * Value of n has to be below 6, as there is a maximum of 6 BARs. The indices
  * are order-preserving with respect to the endpoint BARs: e.g., index 0
  * will return the lowest-numbered memory BAR on the endpoint.
+ * Index is measured in DWORD: e.g., 64 bit register consumes 2 indices.
  */
 extern bool pcie_get_mbar(pcie_bdf_t bdf,
 			  unsigned int index,

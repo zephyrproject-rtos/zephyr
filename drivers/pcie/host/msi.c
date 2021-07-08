@@ -69,7 +69,7 @@ static bool map_msix_table_entries(pcie_bdf_t bdf,
 
 	z_phys_map((uint8_t **)&mapped_table,
 		   bar.phys_addr + table_offset,
-		   bar.size, K_MEM_PERM_RW);
+		   n_vector * PCIE_MSIR_TABLE_ENTRY_SIZE, K_MEM_PERM_RW);
 
 	for (i = 0; i < n_vector; i++) {
 		vectors[i].msix_vector = (struct msix_vector *)
@@ -127,7 +127,6 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 		}
 
 		msi = false;
-		base = base_msix;
 	}
 
 	if (IS_ENABLED(CONFIG_PCIE_MSI_X)) {
@@ -278,8 +277,11 @@ bool pcie_msi_enable(pcie_bdf_t bdf,
 			disable_msi(bdf, base);
 		}
 
+		if (base_msix != 0U) {
+			base = base_msix;
+		}
+
 		msi = false;
-		base = base_msix;
 	}
 
 	if (base == 0U) {
