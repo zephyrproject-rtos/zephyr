@@ -11,13 +11,14 @@
 
 import argparse
 import os
+import re
 import sys
 import textwrap
 
 # Zephyr doesn't use tristate symbols. They're supported here just to make the
 # script a bit more generic.
 from kconfiglib import Kconfig, split_expr, expr_value, expr_str, BOOL, \
-                       TRISTATE, TRI_TO_STR, AND
+                       TRISTATE, TRI_TO_STR, AND, Symbol
 
 
 def main():
@@ -61,6 +62,9 @@ def main():
         # when using an old configuration and updating Kconfig files.
         check_assigned_sym_values(kconf)
         check_assigned_choice_values(kconf)
+
+    if kconf.syms['WARN_EXPERIMENTAL'].tri_value == 2:
+        check_experimental(kconf)
 
     # Hack: Force all symbols to be evaluated, to catch warnings generated
     # during evaluation. Wait till the end to write the actual output files, so
@@ -200,6 +204,18 @@ and/or look up {0.name} in the menuconfig/guiconfig interface. The Application
 Development Primer, Setting Configuration Values, and Kconfig - Tips and Best
 Practices sections of the manual might be helpful too.\
 """
+
+
+def check_experimental(kconf):
+    search = re.compile(r'\[EXPERIMENTAL\]', re.IGNORECASE).search
+
+    for node in kconf.node_iter():
+        if isinstance(node.item, Symbol) \
+           and node.prompt is not None \
+           and search(node.prompt[0]) \
+           and expr_value(node.prompt[1]) \
+           and node.item.tri_value == 2:
+            warn(f'Experimental symbol {node.item.name} is enabled.')
 
 
 def promptless(sym):
