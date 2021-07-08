@@ -86,6 +86,7 @@ static int stm32_power_init(const struct device *dev)
 
 #ifdef CONFIG_DEBUG
 	/* Enable the Debug Module during STOP mode */
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
 	LL_DBGMCU_EnableDBGStopMode();
 #endif /* CONFIG_DEBUG */
 
