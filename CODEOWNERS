@@ -435,6 +435,7 @@
 /drivers/*/*xec*                          @franciscomunoz @albertofloyd @sjvasanth1
 /drivers/mipi_dsi/                        @gmarull
 /drivers/mipi_dsi/mipi_dsi.c              @gmarull
+/drivers/w1/                              @str4t0m
 /drivers/watchdog/*gecko*                 @oanerer
 /drivers/watchdog/*sifive*                @katsuster
 /drivers/watchdog/wdt_handlers.c          @dcpleung @nashif
@@ -558,6 +559,7 @@
 /include/zephyr/drivers/peci.h                   @albertofloyd @franciscomunoz @sjvasanth1
 /include/zephyr/drivers/pm_cpu_ops.h             @carlocaione
 /include/zephyr/drivers/pm_cpu_ops/              @carlocaione
+/include/zephyr/drivers/w1/                      @str4t0m
 /include/zephyr/app_memory/                      @dcpleung
 /include/zephyr/arch/arc/                        @abrodkin @ruuddw @evgeniy-paltsev
 /include/zephyr/arch/arc/arch.h                  @abrodkin @ruuddw @evgeniy-paltsev
@@ -802,6 +804,7 @@ scripts/gen_image_info.py                 @tejlmand
 /tests/drivers/hwinfo/                    @alexanderwachter
 /tests/drivers/spi/                       @tbursztyka
 /tests/drivers/uart/uart_async_api/       @Mierunski
+/tests/drivers/w1/                        @str4t0m
 /tests/kernel/                            @dcpleung @andyross @nashif
 /tests/lib/                               @nashif
 /tests/lib/cmsis_dsp/                     @stephanosio
