@@ -172,7 +172,7 @@ static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 	int bi = bucket_idx(h, sz);
 	struct z_heap_bucket *b = &h->buckets[bi];
 
-	CHECK(bi <= bucket_idx(h, h->end_chunk));
+	CHECK(bi <= bucket_idx_max(h));
 
 	/* First try a bounded count of items from the minimal bucket
 	 * size.  These may not fit, trying (e.g.) three means that
@@ -399,7 +399,13 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	h->end_chunk = heap_sz;
 	h->avail_buckets = 0;
 
-	int nb_buckets = bucket_idx(h, heap_sz) + 1;
+	/* we need at least one bucket to the heap to work. so the
+	 * minimal chunk0 size is z_heap + one z_heap_bucket.  This
+	 * saves one chunk for smaller heap. */
+	chunksz_t min_chunk0_sz = chunksz(sizeof(struct z_heap) +
+					  sizeof(struct z_heap_bucket));
+
+	int nb_buckets = bucket_idx(h, heap_sz - min_chunk0_sz) + 1;
 	chunksz_t chunk0_size = chunksz(sizeof(struct z_heap) +
 				     nb_buckets * sizeof(struct z_heap_bucket));
 
