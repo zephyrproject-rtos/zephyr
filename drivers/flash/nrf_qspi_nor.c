@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Nordic Semiconductor ASA
+ * Copyright (c) 2019-2021, Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1159,14 +1159,6 @@ static const struct flash_pages_layout dev_layout = {
 };
 #undef LAYOUT_PAGES_COUNT
 
-static const struct flash_parameters *
-qspi_flash_get_parameters(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return &qspi_flash_parameters;
-}
-
 static void qspi_nor_pages_layout(const struct device *dev,
 				  const struct flash_pages_layout **layout,
 				  size_t *layout_size)
@@ -1175,6 +1167,14 @@ static void qspi_nor_pages_layout(const struct device *dev,
 	*layout_size = 1;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+static const struct flash_parameters *
+qspi_flash_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return &qspi_flash_parameters;
+}
 
 static const struct flash_driver_api qspi_nor_api = {
 	.read = qspi_nor_read,
