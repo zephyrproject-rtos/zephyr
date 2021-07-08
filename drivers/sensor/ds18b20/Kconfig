@@ -1,0 +1,10 @@
+# DS18B20 temperature and humidity sensor configuration options
+
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config DS18B20
+	bool "DS18B20 Temperature Sensor"
+	depends on W1_NET
+	help
+	  Enable driver for DS18B20 1-Wire temperature sensors.
