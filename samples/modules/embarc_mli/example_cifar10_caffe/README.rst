@@ -8,7 +8,8 @@ Quick Start
 
 Example supports building with [Zephyr Software Development Kit (SDK)](https://docs.zephyrproject.org/latest/getting_started/installation_linux.html#zephyr-sdk) and running with MetaWare Debuger on [nSim simulator](https://www.synopsys.com/dw/ipdir.php?ds=sim_nSIM).
 
-### Add embarc_mli module to Zephyr instruction
+Add embarc_mli module to Zephyr instruction
+--------------
 
 1. Open command line and change working directory to './zephyrproject/zephyr'
 
@@ -16,31 +17,8 @@ Example supports building with [Zephyr Software Development Kit (SDK)](https://d
 
         west update
 
-3. Change working directory to './zephyrproject/modules/lib/embarc_mli'
-
-4. Create a new folder named zephyr and change working directory to it
-
-        mkdir zephyr
-
-        cd zephyr
-
-5. Create module.yml file
-
-        touch module.yml
-
-        vi module.yml
-
-6. Copy and paste the content listed below in vim editor
-
-        name: embarc_mli
-
-        build:
-
-            cmake-ext: True
-
-            kconfig-ext: True
-
-### Build with Zephyr SDK toolchain
+Build with Zephyr SDK toolchain
+--------------
 
     Build requirements:
         - Zephyr SDK toolchain version 0.12.3 or higher
@@ -52,13 +30,35 @@ Example supports building with [Zephyr Software Development Kit (SDK)](https://d
 
         west build -b nsim_em samples/modules/embarc_mli/example_cifar10_caffe 
 
-### Run example
+Run example
+--------------
 
 1. Run example 
 
         west flash
 
     Result Quality shall be "S/N=4383.8     (72.8 db)"
+
+More options
+--------------
+
+You can add different definitions to zephyr_compile_definitions() in 'zephyr/samples/modules/embarc_mli/example_har_smartphone/CMakeLists.txt' to implement numerous model:
+
+* 16 bit depth of coefficients and data (default):
+ 
+       MODEL_BIT_DEPTH=16
+
+* 8 bit depth of coefficients and data:
+
+       MODEL_BIT_DEPTH=8
+
+* 8x16: 8 bit depth of coefficients and 16 bit depth of data:
+
+       MODEL_BIT_DEPTH=816
+
+* Big neural network model (default is small model):
+
+       MODEL_BIG
 
 Example Structure
 --------------------
