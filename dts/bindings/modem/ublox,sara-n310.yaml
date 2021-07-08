@@ -1,0 +1,12 @@
+# Copyright (c) 2021, Abel Sensors
+# SPDX-License-Identifier: Apache-2.0
+
+description: u-blox SARA-N310 modem
+
+compatible: "ublox,sara-n310"
+
+include: uart-device.yaml
+
+properties:
+    label:
+      required: true

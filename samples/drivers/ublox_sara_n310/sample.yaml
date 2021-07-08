@@ -1,0 +1,6 @@
+sample:
+  name: N310 Modem Sample
+tests:
+  sample.drivers.ublox_sara_n310:
+    tags: modem net
+    depends_on: gpio modem net
