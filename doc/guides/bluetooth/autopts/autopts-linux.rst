@@ -233,6 +233,11 @@ Remember to install drivers from installation directory
    :width: 850
    :align: center
 
+.. note::
+
+    Starting with PTS 8.0.1 the Bluetooth Protocol Viewer is no longer included.
+    So to capture Bluetooth events, you have to download it separately.
+
 Connect PTS dongle
 --------------------
 
@@ -343,6 +348,15 @@ Server and client by default will run on localhost address. Run server:
    :height: 120
    :width: 700
    :align: center
+
+.. note::
+
+    If the error "ImportError: No module named pywintypes" appeared after the fresh setup,
+    uninstall and install the pywin32 module:
+
+    .. code-block::
+
+      pip install --upgrade --force-reinstall pywin32
 
 Run client:
 
