@@ -8,6 +8,14 @@
 
 #include "ascs_internal.h"
 
+#if defined(CONFIG_BT_BAP)
+#define BROADCAST_SRC_CNT CONFIG_BT_BAP_BROADCAST_SRC_COUNT
+#define BROADCAST_STREAM_CNT CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT
+#else
+#define BROADCAST_SRC_CNT 0
+#define BROADCAST_STREAM_CNT 0
+#endif
+
 struct bt_audio_ep_cb {
 	sys_snode_t node;
 	void (*status_changed)(struct bt_audio_ep *ep, uint8_t old_state,
@@ -16,6 +24,13 @@ struct bt_audio_ep_cb {
 
 #define BT_AUDIO_EP_LOCAL	0x00
 #define BT_AUDIO_EP_REMOTE	0x01
+
+struct bt_audio_broadcaster {
+	uint8_t bis_count;
+	uint8_t subgroup_count;
+	struct bt_iso_big *big;
+	struct bt_iso_chan *bis[BROADCAST_STREAM_CNT];
+};
 
 struct bt_audio_ep {
 	uint8_t  type;
@@ -38,6 +53,7 @@ struct bt_audio_ep {
 
 	/* Broadcast fields */
 	struct bt_le_ext_adv *adv;
+	struct bt_audio_broadcaster *broadcaster;
 };
 
 static inline const char *bt_audio_ep_state_str(uint8_t state)
