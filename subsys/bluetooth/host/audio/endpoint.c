@@ -26,7 +26,7 @@
 
 static struct bt_audio_ep snks[CONFIG_BT_MAX_CONN][SNK_SIZE];
 static struct bt_audio_ep srcs[CONFIG_BT_MAX_CONN][SRC_SIZE];
-static struct bt_audio_ep broadcast_srcs[BROADCAST_CNT][BROADCAST_SRC_CNT];
+static struct bt_audio_ep broadcast_srcs[BROADCAST_SRC_CNT][BROADCAST_STREAM_CNT];
 
 #if defined(CONFIG_BT_BAP)
 static struct bt_gatt_subscribe_params cp_subscribe[CONFIG_BT_MAX_CONN];
@@ -50,15 +50,20 @@ static void ep_iso_connected(struct bt_iso_chan *chan)
 {
 	struct bt_audio_ep *ep = EP_ISO(chan);
 	struct bt_audio_chan_ops *ops = ep->chan->ops;
+	const bool is_broadcast = bt_audio_ep_is_broadcast(ep);
 
 	BT_DBG("chan %p ep %p", chan, ep);
+
+	if (is_broadcast) {
+		bt_audio_chan_set_state(ep->chan, BT_AUDIO_CHAN_STREAMING);
+	}
 
 	if (ops != NULL && ops->connected != NULL) {
 		ops->connected(ep->chan);
 	}
 
-	if (bt_audio_ep_is_broadcast(ep)) {
-		/* TODO: */
+	if (is_broadcast) {
+		/* No more actions for broadcast endpoints */
 		return;
 	}
 
@@ -1411,13 +1416,13 @@ void bt_audio_ep_reset(struct bt_conn *conn)
 bool bt_audio_ep_is_broadcast(const struct bt_audio_ep *ep)
 {
 	/* TODO: Support checking for broadcast sinks */
-#if BROADCAST_CNT > 0
+#if BROADCAST_SRC_CNT > 0
 	for (int i = 0; i < ARRAY_SIZE(broadcast_srcs); i++) {
 		if (PART_OF_ARRAY(broadcast_srcs[i], ep)) {
 			return true;
 		}
 	}
-#endif /* BROADCAST_CNT > 0 */
+#endif /* BROADCAST_SRC_CNT > 0 */
 	return false;
 }
 
