@@ -609,7 +609,6 @@ void device_busy_set(const struct device *dev);
  */
 void device_busy_clear(const struct device *dev);
 
-#ifdef CONFIG_PM_DEVICE
 /**
  * @brief Check if any device is in the middle of a transaction
  *
@@ -633,8 +632,6 @@ int device_any_busy_check(void);
  * @retval -EBUSY if the device is busy
  */
 int device_busy_check(const struct device *chk_dev);
-
-#endif
 
 /**
  * @}
