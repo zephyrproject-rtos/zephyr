@@ -559,7 +559,9 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 	current_hdr = hdr->nexthdr;
 	ext_bitmap = extension_to_bitmap(current_hdr, ext_bitmap);
+	/* Offset of "nexthdr" in the IPv6 header */
 	prev_hdr_offset = (uint8_t *)&hdr->nexthdr - (uint8_t *)hdr;
+	net_pkt_set_ipv6_hdr_prev(pkt, prev_hdr_offset);
 
 	while (!net_ipv6_is_nexthdr_upper_layer(current_hdr)) {
 		int exthdr_len;
@@ -575,6 +577,9 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			 */
 			return NET_DROP;
 		}
+
+		/* Offset of "nexthdr" in the Extension Header */
+		prev_hdr_offset = net_pkt_get_current_offset(pkt);
 
 		if (net_pkt_read_u8(pkt, &nexthdr)) {
 			goto drop;
@@ -621,8 +626,6 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 		case NET_IPV6_NEXTHDR_FRAG:
 			if (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT)) {
-				net_pkt_set_ipv6_hdr_prev(pkt,
-							  prev_hdr_offset);
 				net_pkt_set_ipv6_fragment_start(
 					pkt,
 					net_pkt_get_current_offset(pkt) - 1);
@@ -644,6 +647,10 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 		ext_len += exthdr_len;
 		current_hdr = nexthdr;
+		/* Save the offset to "nexthdr" in case we need to overwrite it
+		 * when processing a fragment header
+		 */
+		net_pkt_set_ipv6_hdr_prev(pkt, prev_hdr_offset);
 	}
 
 	net_pkt_set_ipv6_ext_len(pkt, ext_len);
