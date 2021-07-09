@@ -10,16 +10,12 @@
 
 #include <dt-bindings/display/ili9xxx.h>
 #include <drivers/display.h>
-#include <drivers/spi.h>
 #include <sys/byteorder.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(display_ili9xxx, CONFIG_DISPLAY_LOG_LEVEL);
 
 struct ili9xxx_data {
-	const struct device *spi_dev;
-	struct spi_config spi_config;
-	struct spi_cs_control cs_ctrl;
 	uint8_t bytes_per_pixel;
 	enum display_pixel_format pixel_format;
 	enum display_orientation orientation;
@@ -30,7 +26,6 @@ int ili9xxx_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 {
 	const struct ili9xxx_config *config =
 		(struct ili9xxx_config *)dev->config;
-	struct ili9xxx_data *data = (struct ili9xxx_data *)dev->data;
 
 	int r;
 	struct spi_buf tx_buf;
@@ -41,7 +36,7 @@ int ili9xxx_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 	tx_buf.len = 1U;
 
 	gpio_pin_set_dt(&config->cmd_data, ILI9XXX_CMD);
-	r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+	r = spi_write_dt(&config->spi, &tx_bufs);
 	if (r < 0) {
 		return r;
 	}
@@ -52,7 +47,7 @@ int ili9xxx_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 		tx_buf.len = tx_len;
 
 		gpio_pin_set_dt(&config->cmd_data, ILI9XXX_DATA);
-		r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+		r = spi_write_dt(&config->spi, &tx_bufs);
 		if (r < 0) {
 			return r;
 		}
@@ -120,6 +115,8 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
+	const struct ili9xxx_config *config =
+		(struct ili9xxx_config *)dev->config;
 	struct ili9xxx_data *data = (struct ili9xxx_data *)dev->data;
 
 	int r;
@@ -164,7 +161,7 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 		tx_buf.buf = (void *)write_data_start;
 		tx_buf.len = desc->width * data->bytes_per_pixel * write_h;
 
-		r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
+		r = spi_write_dt(&config->spi, &tx_bufs);
 		if (r < 0) {
 			return r;
 		}
@@ -357,26 +354,12 @@ static int ili9xxx_init(const struct device *dev)
 {
 	const struct ili9xxx_config *config =
 		(struct ili9xxx_config *)dev->config;
-	struct ili9xxx_data *data = (struct ili9xxx_data *)dev->data;
 
 	int r;
 
-	data->spi_dev = device_get_binding(config->spi_name);
-	if (data->spi_dev == NULL) {
-		LOG_ERR("Could not get SPI device %s", config->spi_name);
+	if (!spi_is_ready(&config->spi)) {
+		LOG_ERR("SPI device is not ready");
 		return -ENODEV;
-	}
-
-	data->spi_config.frequency = config->spi_max_freq;
-	data->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8U);
-	data->spi_config.slave = config->spi_addr;
-
-	data->cs_ctrl.gpio_dev = device_get_binding(config->spi_cs_label);
-	if (data->cs_ctrl.gpio_dev != NULL) {
-		data->cs_ctrl.gpio_pin = config->spi_cs_pin;
-		data->cs_ctrl.gpio_dt_flags = config->spi_cs_flags;
-		data->cs_ctrl.delay = 0U;
-		data->spi_config.cs = &data->cs_ctrl;
 	}
 
 	if (!device_is_ready(config->cmd_data.port)) {
@@ -449,20 +432,9 @@ static const struct display_driver_api ili9xxx_api = {
 	ILI##t##_REGS_INIT(n);                                                 \
 									       \
 	static const struct ili9xxx_config ili9xxx_config_##n = {              \
-		.spi_name = DT_BUS_LABEL(INST_DT_ILI9XXX(n, t)),               \
-		.spi_addr = DT_REG_ADDR(INST_DT_ILI9XXX(n, t)),                \
-		.spi_max_freq = UTIL_AND(                                      \
-			DT_HAS_PROP(INST_DT_ILI9XXX(n, t), spi_max_frequency), \
-			DT_PROP(INST_DT_ILI9XXX(n, t), spi_max_frequency)),    \
-		.spi_cs_label = UTIL_AND(                                      \
-			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_ILI9XXX(n, t)),        \
-			DT_SPI_DEV_CS_GPIOS_LABEL(INST_DT_ILI9XXX(n, t))),     \
-		.spi_cs_pin = UTIL_AND(                                        \
-			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_ILI9XXX(n, t)),        \
-			DT_SPI_DEV_CS_GPIOS_PIN(INST_DT_ILI9XXX(n, t))),       \
-		.spi_cs_flags = UTIL_AND(                                      \
-			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_ILI9XXX(n, t)),        \
-			DT_SPI_DEV_CS_GPIOS_FLAGS(INST_DT_ILI9XXX(n, t))),     \
+		.spi = SPI_DT_SPEC_GET(INST_DT_ILI9XXX(n, t),                  \
+				       SPI_OP_MODE_MASTER | SPI_WORD_SET(8),   \
+				       0),                                     \
 		.cmd_data = GPIO_DT_SPEC_GET(INST_DT_ILI9XXX(n, t),            \
 					     cmd_data_gpios),                  \
 		.reset = GPIO_DT_SPEC_GET_OR(INST_DT_ILI9XXX(n, t),            \
