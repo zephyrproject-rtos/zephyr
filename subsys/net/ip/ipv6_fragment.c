@@ -432,24 +432,23 @@ static int shift_packets(struct net_ipv6_reassembly *reass, int pos)
 			NET_DBG("Moving [%d] %p (offset 0x%x) to [%d]",
 				pos, reass->pkt[pos],
 				net_pkt_ipv6_fragment_offset(reass->pkt[pos]),
-				i);
+				pos + 1);
 
-			/* Do we have enough space in packet array to make
-			 * the move?
+			/* pkt[i] is free, so shift everything between
+			 * [pos] and [i - 1] by one element
 			 */
-			if (((i - pos) + 1) >
-			    (NET_IPV6_FRAGMENTS_MAX_PKT - i)) {
-				return -ENOMEM;
-			}
-
-			memmove(&reass->pkt[i], &reass->pkt[pos],
+			memmove(&reass->pkt[pos + 1], &reass->pkt[pos],
 				sizeof(void *) * (i - pos));
+
+			/* pkt[pos] is now free */
+			reass->pkt[pos] = NULL;
 
 			return 0;
 		}
 	}
 
-	return -EINVAL;
+	/* We do not have free space left in the array */
+	return -ENOMEM;
 }
 
 enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
