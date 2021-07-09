@@ -23,6 +23,10 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,/soc/peripheral@50000000/spi@134000,1)
 
+config ENTROPY_MCUX_TRNG
+	default y if HAS_MCUX_TRNG
+	depends on ENTROPY_GENERATOR
+
 source "soc/arm/nxp_imx/rt6xx/Kconfig.defconfig.mimxrt6*"
 
 endif # SOC_SERIES_MIMXRT6XX
