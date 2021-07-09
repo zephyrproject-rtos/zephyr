@@ -1,0 +1,6 @@
+# Copyright 2022 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  pcie.edu:
+    platform_allow: qemu_cortex_a53
