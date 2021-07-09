@@ -184,7 +184,7 @@ static bool reassembly_cancel(uint32_t id,
 
 		reassembly[i].id = 0U;
 
-		for (j = 0; j < NET_IPV6_FRAGMENTS_MAX_PKT; j++) {
+		for (j = 0; j < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; j++) {
 			if (!reassembly[i].pkt[j]) {
 				continue;
 			}
@@ -245,7 +245,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	/* We start from 2nd packet which is then appended to
 	 * the first one.
 	 */
-	for (i = 1; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+	for (i = 1; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
 		int removed_len;
 
 		pkt = reass->pkt[i];
@@ -377,7 +377,7 @@ static bool fragment_verify(struct net_ipv6_reassembly *reass)
 		return false;
 	}
 
-	for (i = 1; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+	for (i = 1; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
 		offset = net_pkt_ipv6_fragment_offset(reass->pkt[i]);
 
 		NET_DBG("pkt %p offset %u prev_len %d", reass->pkt[i],
@@ -398,7 +398,7 @@ static int shift_packets(struct net_ipv6_reassembly *reass, int pos)
 {
 	int i;
 
-	for (i = pos + 1; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+	for (i = pos + 1; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
 		if (!reass->pkt[i]) {
 			NET_DBG("Moving [%d] %p (offset 0x%x) to [%d]",
 				pos, reass->pkt[pos],
@@ -480,7 +480,7 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	/* The fragments might come in wrong order so place them
 	 * in reassembly chain in correct order.
 	 */
-	for (i = 0, found = false; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+	for (i = 0, found = false; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
 		if (reass->pkt[i]) {
 			if (net_pkt_ipv6_fragment_offset(reass->pkt[i]) <
 			    net_pkt_ipv6_fragment_offset(pkt)) {
@@ -535,7 +535,7 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 			reass->id);
 
 		/* Let the caller release the already inserted pkt */
-		if (i < NET_IPV6_FRAGMENTS_MAX_PKT) {
+		if (i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT) {
 			reass->pkt[i] = NULL;
 		}
 
