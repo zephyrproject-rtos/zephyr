@@ -57,10 +57,12 @@ On Windows:
    # on CMD:
    set ESPRESSIF_TOOLCHAIN_PATH=%USERPROFILE%\.espressif\tools\xtensa-esp32s2-elf\esp-2020r3-8.4.0\xtensa-esp32s2-elf
    set ZEPHYR_TOOLCHAIN_VARIANT=espressif
+   set PATH=%PATH%;%ESPRESSIF_TOOLCHAIN_PATH%\bin
 
    # on PowerShell
    $env:ESPRESSIF_TOOLCHAIN_PATH="$env:USERPROFILE\.espressif\tools\xtensa-esp32s2-elf\esp-2020r3-8.4.0\xtensa-esp32s2-elf"
    $env:ZEPHYR_TOOLCHAIN_VARIANT="espressif"
+   $env:Path += "$env:ESPRESSIF_TOOLCHAIN_PATH\bin"
 
 Finally, retrieve required submodules to build this port. This might take a while for the first time:
 
@@ -103,7 +105,9 @@ specific options for the ESP32-S2 board, as listed here:
   --esp-idf-path ESP_IDF_PATH
                         path to ESP-IDF
   --esp-device ESP_DEVICE
-                        serial port to flash, default /dev/ttyUSB0
+                        serial port to flash, default $ESPTOOL_PORT if defined.
+                        If not, esptool will loop over available serial ports until
+                        it finds ESP32 device to flash.
   --esp-baud-rate ESP_BAUD_RATE
                         serial baud rate, default 921600
   --esp-flash-size ESP_FLASH_SIZE
