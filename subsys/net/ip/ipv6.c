@@ -193,7 +193,9 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 	while (length < exthdr_len) {
 		uint8_t opt_type, opt_len;
 
-		/* Each extension option has type and length */
+		/* Each extension option has type and length - except
+		 * Pad1 which has only a type without any length
+		 */
 		if (net_pkt_read_u8(pkt, &opt_type)) {
 			return -ENOBUFS;
 		}
@@ -206,12 +208,13 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 
 		switch (opt_type) {
 		case NET_IPV6_EXT_HDR_OPT_PAD1:
+			NET_DBG("PAD1 option");
 			length++;
 			break;
 		case NET_IPV6_EXT_HDR_OPT_PADN:
 			NET_DBG("PADN option");
 			length += opt_len + 2;
-
+			net_pkt_skip(pkt, opt_len);
 			break;
 		default:
 			/* Make sure that the option length is not too large.
