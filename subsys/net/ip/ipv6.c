@@ -126,7 +126,7 @@ int net_ipv6_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 static inline bool ipv6_drop_on_unknown_option(struct net_pkt *pkt,
 					       struct net_ipv6_hdr *hdr,
 					       uint8_t opt_type,
-					       uint16_t length)
+					       uint16_t opt_type_offset)
 {
 	/* RFC 2460 chapter 4.2 tells how to handle the unknown
 	 * options by the two highest order bits of the option:
@@ -159,7 +159,7 @@ static inline bool ipv6_drop_on_unknown_option(struct net_pkt *pkt,
 	case 0x80:
 		net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
 				      NET_ICMPV6_PARAM_PROB_OPTION,
-				      (uint32_t)length);
+				      (uint32_t)opt_type_offset);
 		break;
 	}
 
@@ -191,7 +191,10 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 	length += 2U;
 
 	while (length < exthdr_len) {
+		uint16_t opt_type_offset;
 		uint8_t opt_type, opt_len;
+
+		opt_type_offset = net_pkt_get_current_offset(pkt);
 
 		/* Each extension option has type and length - except
 		 * Pad1 which has only a type without any length
@@ -228,7 +231,7 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 			}
 
 			if (ipv6_drop_on_unknown_option(pkt, hdr,
-							opt_type, length)) {
+							opt_type, opt_type_offset)) {
 				return -ENOTSUP;
 			}
 
