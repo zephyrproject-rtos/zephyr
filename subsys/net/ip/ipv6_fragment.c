@@ -472,6 +472,16 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	more = flag & 0x01;
 	net_pkt_set_ipv6_fragment_offset(pkt, flag & 0xfff8);
 
+	if (more && net_pkt_get_len(pkt) % 8) {
+		/* Fragment length is not multiple of 8, discard
+		 * the packet and send parameter problem error with the
+		 * offset of the "Payload Length" field in the IPv6 header.
+		 */
+		net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
+				      NET_ICMPV6_PARAM_PROB_HEADER, NET_IPV6H_LENGTH_OFFSET);
+		goto drop;
+	}
+
 	if (!reass->pkt[0]) {
 		NET_DBG("Storing pkt %p to slot %d offset %d",
 			pkt, 0, net_pkt_ipv6_fragment_offset(pkt));
@@ -519,13 +529,6 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	}
 
 	if (more) {
-		if (net_pkt_get_len(pkt) % 8) {
-			/* Fragment length is not multiple of 8, discard
-			 * the packet and send parameter problem error.
-			 */
-			net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
-					      NET_ICMPV6_PARAM_PROB_OPTION, 0);
-			goto drop;
 		}
 
 		reassembly_info("Reassembly nth pkt", reass);
