@@ -86,6 +86,9 @@ manifest:
     - name: hal_stm32
       revision: 2016f613f8138b8abe42013ab983a0d2fe0459b9
       path: modules/hal/stm32
+    - name: hal_telink
+      revision: ffcfd6282aa213f1dc0848dbca6279b098f6b143
+      path: modules/hal/telink
     - name: hal_ti
       revision: 3da6fae25fc44ec830fac4a92787b585ff55435e
       path: modules/hal/ti
