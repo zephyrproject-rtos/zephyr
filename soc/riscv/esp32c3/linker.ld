@@ -180,6 +180,7 @@ SECTIONS
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
     _data_end = ABSOLUTE(.);
+    _end = .;
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -282,10 +283,6 @@ SECTIONS
     *(.xt_except_desc_end)
     *(.dynamic)
     *(.gnu.version_d)
-    /* Addresses of memory regions reserved via SOC_RESERVE_MEMORY_REGION() */
-    soc_reserved_memory_region_start = ABSOLUTE(.);
-    KEEP (*(.reserved_memory_address))
-    soc_reserved_memory_region_end = ABSOLUTE(.);
     _image_rodata_end = .;
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
@@ -310,6 +307,7 @@ SECTIONS
   } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/common-rom.ld>
+#include <linker/thread-local-storage.ld>
 
 /* Restore original value for symbols referenced by `common-rom.ld` */
 __log_const_start = __esp_log_const_start;
