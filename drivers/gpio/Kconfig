@@ -21,6 +21,8 @@ config GPIO_SHELL
 	help
 	  Enable GPIO Shell for testing.
 
+source "drivers/gpio/Kconfig.b91"
+
 source "drivers/gpio/Kconfig.dw"
 
 source "drivers/gpio/Kconfig.pca95xx"
