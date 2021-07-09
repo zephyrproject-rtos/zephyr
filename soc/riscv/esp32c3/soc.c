@@ -14,6 +14,7 @@
 #include "hal/soc_ll.h"
 #include "esp_spi_flash.h"
 #include <riscv/interrupt.h>
+#include <soc/interrupt_reg.h>
 
 #include <kernel_structs.h>
 #include <string.h>
@@ -183,7 +184,7 @@ void arch_irq_disable(unsigned int irq)
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	return (esprv_intc_get_interrupt_unmask() & (1 << irq));
+	return (REG_READ(INTERRUPT_CORE0_CPU_INT_ENABLE_REG) & (1 << irq));
 }
 
 ulong_t __soc_get_gp_initial_value(void)
