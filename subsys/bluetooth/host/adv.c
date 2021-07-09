@@ -430,6 +430,23 @@ static inline bool ad_has_name(const struct bt_data *ad, size_t ad_len)
 	return false;
 }
 
+static bool ad_is_limited(const struct bt_data *ad, size_t ad_len)
+{
+	size_t i;
+
+	for (i = 0; i < ad_len; i++) {
+		if (ad[i].type == BT_DATA_FLAGS &&
+		    ad[i].data_len == sizeof(uint8_t) &&
+		    ad[i].data != NULL) {
+			if (ad[i].data[0] & BT_LE_AD_LIMITED) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 static int le_adv_update(struct bt_le_ext_adv *adv,
 			 const struct bt_data *ad, size_t ad_len,
 			 const struct bt_data *sd, size_t sd_len,
@@ -978,6 +995,8 @@ set_adv_state:
 	return 0;
 }
 
+static void adv_timeout(struct k_work *work);
+
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
@@ -998,6 +1017,12 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 
 	if (err) {
 		bt_le_adv_delete_legacy();
+	}
+
+	if (ad_is_limited(ad, ad_len)) {
+		k_work_init_delayable(&adv->timeout_work, adv_timeout);
+		k_work_reschedule(&adv->timeout_work,
+				  K_SECONDS(CONFIG_BT_LIM_ADV_TIMEOUT));
 	}
 
 	return err;
@@ -1331,6 +1356,26 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 }
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
+
+static void adv_timeout(struct k_work *work)
+{
+	int err = 0;
+#if defined(CONFIG_BT_EXT_ADV)
+	struct k_work_delayable *dwork;
+	struct bt_le_ext_adv *adv;
+
+	dwork = k_work_delayable_from_work(work);
+	adv = CONTAINER_OF(dwork, struct bt_le_ext_adv, timeout_work);
+
+	if (atomic_test_bit(adv->flags, BT_ADV_EXT_ADV)) {
+		err = bt_le_ext_adv_stop(adv);
+	}
+#else
+	err = bt_le_adv_stop();
+#endif
+	__ASSERT(err != 0, "Limited Advertising timeout reached, "
+			   "failed to stop advertising");
+}
 
 #if defined(CONFIG_BT_PER_ADV)
 int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,

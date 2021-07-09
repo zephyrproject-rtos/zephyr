@@ -150,6 +150,8 @@ struct bt_le_ext_adv {
 	/* TX Power in use by the controller */
 	int8_t                    tx_power;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+
+	struct k_work_delayable	timeout_work;
 };
 
 enum {
