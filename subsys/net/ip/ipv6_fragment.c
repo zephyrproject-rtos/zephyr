@@ -249,6 +249,9 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 		int removed_len;
 
 		pkt = reass->pkt[i];
+		if (!pkt) {
+			break;
+		}
 
 		net_pkt_cursor_init(pkt);
 
@@ -378,6 +381,9 @@ static bool fragment_verify(struct net_ipv6_reassembly *reass)
 	}
 
 	for (i = 1; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
+		if (!reass->pkt[i]) {
+			break;
+		}
 		offset = net_pkt_ipv6_fragment_offset(reass->pkt[i]);
 
 		NET_DBG("pkt %p offset %u prev_len %d", reass->pkt[i],
