@@ -7,4 +7,10 @@ config HAS_GDLIB
 config HAS_GD32CUBE
 	bool
 	select HAS_CMSIS_CORE
+	select USE_GD32_HAL_GPIO
 	depends on SOC_FAMILY_GD32
+
+config USE_GD32_HAL_GPIO
+	bool
+	help
+	  Enable GD32 General-purpose I/Os (GPIO) HAL module driver

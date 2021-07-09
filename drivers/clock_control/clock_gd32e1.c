@@ -10,8 +10,13 @@
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <drivers/clock_control/gd32_clock_control.h>
+#include <gd32e10x_rcu.h>
 
+#define RCC_BASE DT_REG_ADDR_BY_IDX(DT_NODELABEL(rcc), 0)
+#undef RCU_REG_VAL
+#define RCU_REG_VAL(periph)             (REG32(RCC_BASE | periph ))
 
+// todo: work here later
 int gd32_clock_control_init(const struct device *dev)
 {
 	return 0;
@@ -20,6 +25,23 @@ int gd32_clock_control_init(const struct device *dev)
 static inline int gd32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
+	ARG_UNUSED(dev);
+	struct gd32_pclken *pclken = (struct gd32_pclken *)(sub_system);
+
+	switch (pclken->bus)
+	{
+	case GD32_CLOCK_BUS_APB1:
+    		RCU_REG_VAL(APB1EN_REG_OFFSET) |= pclken->enr;
+		break;
+
+	case GD32_CLOCK_BUS_APB2:
+    		RCU_REG_VAL(APB2EN_REG_OFFSET) |= pclken->enr;
+		break;
+
+	default:
+		break;
+	}
+
 	return 0;
 }
 

@@ -106,11 +106,18 @@ static inline uint32_t gd32_pinval_get(int pin)
 	return pinval;
 }
 
+uint32_t test(uint32_t a){
+	return a+1;
+}
+
 /**
  * @brief Configure the hardware.
  */
 int gpio_gd32_configure(const struct device *dev, int pin, int conf, int altf)
 {
+	const struct gpio_gd32_config *cfg = dev->config;
+	// todo: change mode and speed later
+	gpio_init((uint32_t)cfg->base, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, BIT(pin));
 
 	return 0;
 }
@@ -145,7 +152,7 @@ int gpio_gd32_clock_request(const struct device *dev, bool on)
 
 static inline uint32_t gpio_gd32_pin_to_exti_line(int pin)
 {
-return 0;
+	return 0;
 }
 
 // static void gpio_gd32_set_exti_source(int port, int pin)
@@ -186,7 +193,8 @@ static int gpio_gd32_port_set_masked_raw(const struct device *dev,
 static int gpio_gd32_port_set_bits_raw(const struct device *dev,
 					gpio_port_pins_t pins)
 {
-
+	const struct gpio_gd32_config *cfg = dev->config;
+        gpio_bit_set((uint32_t)cfg->base, pins);
 
 	return 0;
 }
@@ -194,7 +202,8 @@ static int gpio_gd32_port_set_bits_raw(const struct device *dev,
 static int gpio_gd32_port_clear_bits_raw(const struct device *dev,
 					  gpio_port_pins_t pins)
 {
-
+	const struct gpio_gd32_config *cfg = dev->config;
+        gpio_bit_reset((uint32_t)cfg->base, pins);
 
 	return 0;
 }
@@ -212,8 +221,33 @@ static int gpio_gd32_port_toggle_bits(const struct device *dev,
 static int gpio_gd32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
+	//todo: add pm device
+	int err = 0;
+	int pincfg = 0;
 
-	return 0;
+	int i = 0;
+	i++;
+
+	/* todo: figure out if we can map the requested GPIO
+	 * configuration
+	 */
+	// err = gpio_gd32_flags_to_conf(flags, &pincfg);
+	// if (err != 0) {
+	// 	goto exit;
+	// }
+
+	if ((flags & GPIO_OUTPUT) != 0) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			gpio_gd32_port_set_bits_raw(dev, BIT(pin));
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+			gpio_gd32_port_clear_bits_raw(dev, BIT(pin));
+		}
+	}
+
+	gpio_gd32_configure(dev, pin, pincfg, 0);
+
+// exit:
+	return err;
 }
 
 static int gpio_gd32_pin_interrupt_configure(const struct device *dev,

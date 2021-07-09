@@ -235,19 +235,19 @@ int gpio_stm32_clock_request(const struct device *dev, bool on)
 	__ASSERT_NO_MSG(dev != NULL);
 
 	/* enable clock for subsystem */
-	// const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	// if (on) {
-	// 	ret = clock_control_on(clk,
-	// 				(clock_control_subsys_t *)&cfg->pclken);
-	// } else {
-	// 	ret = clock_control_off(clk,
-	// 				(clock_control_subsys_t *)&cfg->pclken);
-	// }
+	if (on) {
+		ret = clock_control_on(clk,
+					(clock_control_subsys_t *)&cfg->pclken);
+	} else {
+		ret = clock_control_off(clk,
+					(clock_control_subsys_t *)&cfg->pclken);
+	}
 
-	// if (ret != 0) {
-	// 	return ret;
-	// }
+	if (ret != 0) {
+		return ret;
+	}
 
 	return ret;
 }
