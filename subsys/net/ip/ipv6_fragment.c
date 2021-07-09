@@ -219,6 +219,11 @@ static void reassembly_timeout(struct k_work *work)
 
 	reassembly_info("Reassembly cancelled", reass);
 
+	/* Send a ICMPv6 Time Exceeded only if we received the first fragment (RFC 2460 Sec. 5) */
+	if (reass->pkt[0] && net_pkt_ipv6_fragment_offset(reass->pkt[0]) == 0) {
+		net_icmpv6_send_error(reass->pkt[0], NET_ICMPV6_TIME_EXCEEDED, 1, 0);
+	}
+
 	reassembly_cancel(reass->id, &reass->src, &reass->dst);
 }
 
