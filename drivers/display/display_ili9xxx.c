@@ -17,8 +17,6 @@
 LOG_MODULE_REGISTER(display_ili9xxx, CONFIG_DISPLAY_LOG_LEVEL);
 
 struct ili9xxx_data {
-	const struct device *reset_gpio;
-	const struct device *command_data_gpio;
 	const struct device *spi_dev;
 	struct spi_config spi_config;
 	struct spi_cs_control cs_ctrl;
@@ -42,8 +40,7 @@ int ili9xxx_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 	tx_buf.buf = &cmd;
 	tx_buf.len = 1U;
 
-	gpio_pin_set(data->command_data_gpio, config->cmd_data_pin,
-		     ILI9XXX_CMD);
+	gpio_pin_set_dt(&config->cmd_data, ILI9XXX_CMD);
 	r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 	if (r < 0) {
 		return r;
@@ -54,8 +51,7 @@ int ili9xxx_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 		tx_buf.buf = (void *)tx_data;
 		tx_buf.len = tx_len;
 
-		gpio_pin_set(data->command_data_gpio, config->cmd_data_pin,
-			     ILI9XXX_DATA);
+		gpio_pin_set_dt(&config->cmd_data, ILI9XXX_DATA);
 		r = spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 		if (r < 0) {
 			return r;
@@ -83,15 +79,14 @@ static void ili9xxx_hw_reset(const struct device *dev)
 {
 	const struct ili9xxx_config *config =
 		(struct ili9xxx_config *)dev->config;
-	struct ili9xxx_data *data = (struct ili9xxx_data *)dev->data;
 
-	if (data->reset_gpio == NULL) {
+	if (config->reset.port == NULL) {
 		return;
 	}
 
-	gpio_pin_set(data->reset_gpio, config->reset_pin, 1);
+	gpio_pin_set_dt(&config->reset, 1);
 	k_sleep(K_MSEC(ILI9XXX_RESET_PULSE_TIME));
-	gpio_pin_set(data->reset_gpio, config->reset_pin, 0);
+	gpio_pin_set_dt(&config->reset, 0);
 
 	k_sleep(K_MSEC(ILI9XXX_RESET_WAIT_TIME));
 }
@@ -384,25 +379,24 @@ static int ili9xxx_init(const struct device *dev)
 		data->spi_config.cs = &data->cs_ctrl;
 	}
 
-	data->command_data_gpio = device_get_binding(config->cmd_data_label);
-	if (data->command_data_gpio == NULL) {
-		LOG_ERR("Could not get command/data GPIO port %s",
-			config->cmd_data_label);
+	if (!device_is_ready(config->cmd_data.port)) {
+		LOG_ERR("Command/Data GPIO device not ready");
 		return -ENODEV;
 	}
 
-	r = gpio_pin_configure(data->command_data_gpio, config->cmd_data_pin,
-			       GPIO_OUTPUT | config->cmd_data_flags);
+	r = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT);
 	if (r < 0) {
 		LOG_ERR("Could not configure command/data GPIO (%d)", r);
 		return r;
 	}
 
-	data->reset_gpio = device_get_binding(config->reset_label);
-	if (data->reset_gpio != NULL) {
-		r = gpio_pin_configure(data->reset_gpio, config->reset_pin,
-				       GPIO_OUTPUT_INACTIVE |
-					       config->reset_flags);
+	if (config->reset.port != NULL) {
+		if (!device_is_ready(config->reset.port)) {
+			LOG_ERR("Reset GPIO device not ready");
+			return -ENODEV;
+		}
+
+		r = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 		if (r < 0) {
 			LOG_ERR("Could not configure reset GPIO (%d)", r);
 			return r;
@@ -469,21 +463,10 @@ static const struct display_driver_api ili9xxx_api = {
 		.spi_cs_flags = UTIL_AND(                                      \
 			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_ILI9XXX(n, t)),        \
 			DT_SPI_DEV_CS_GPIOS_FLAGS(INST_DT_ILI9XXX(n, t))),     \
-		.cmd_data_label =                                              \
-			DT_GPIO_LABEL(INST_DT_ILI9XXX(n, t), cmd_data_gpios),  \
-		.cmd_data_pin =                                                \
-			DT_GPIO_PIN(INST_DT_ILI9XXX(n, t), cmd_data_gpios),    \
-		.cmd_data_flags =                                              \
-			DT_GPIO_FLAGS(INST_DT_ILI9XXX(n, t), cmd_data_gpios),  \
-		.reset_label = UTIL_AND(                                       \
-			DT_NODE_HAS_PROP(INST_DT_ILI9XXX(n, t), reset_gpios),  \
-			DT_GPIO_LABEL(INST_DT_ILI9XXX(n, t), reset_gpios)),    \
-		.reset_pin = UTIL_AND(                                         \
-			DT_NODE_HAS_PROP(INST_DT_ILI9XXX(n, t), reset_gpios),  \
-			DT_GPIO_PIN(INST_DT_ILI9XXX(n, t), reset_gpios)),      \
-		.reset_flags = UTIL_AND(                                       \
-			DT_NODE_HAS_PROP(INST_DT_ILI9XXX(n, t), reset_gpios),  \
-			DT_GPIO_FLAGS(INST_DT_ILI9XXX(n, t), reset_gpios)),    \
+		.cmd_data = GPIO_DT_SPEC_GET(INST_DT_ILI9XXX(n, t),            \
+					     cmd_data_gpios),                  \
+		.reset = GPIO_DT_SPEC_GET_OR(INST_DT_ILI9XXX(n, t),            \
+					     reset_gpios, {0}),                \
 		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),  \
 		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),          \
 		.x_resolution = ILI##t##_X_RES,                                \
