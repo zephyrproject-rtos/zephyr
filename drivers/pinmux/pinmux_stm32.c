@@ -114,9 +114,9 @@ int stm32_dt_pinctrl_configure(const struct soc_gpio_pinctrl *pinctrl,
 			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
 		}
 #else
-		if (STM32_DT_PINMUX_FUNC(mux) < ANALOG) {
+		if (STM32_DT_PINMUX_FUNC(mux) < STM32_ANALOG) {
 			func = pinctrl[i].pincfg | STM32_MODER_ALT_MODE;
-		} else if (STM32_DT_PINMUX_FUNC(mux) == ANALOG) {
+		} else if (STM32_DT_PINMUX_FUNC(mux) == STM32_ANALOG) {
 			func = STM32_MODER_ANALOG_MODE;
 		} else {
 			/* Not supported */
