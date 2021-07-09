@@ -60,12 +60,8 @@ struct ili9xxx_config {
 	const char *spi_cs_label;
 	gpio_pin_t spi_cs_pin;
 	gpio_dt_flags_t spi_cs_flags;
-	const char *cmd_data_label;
-	gpio_pin_t cmd_data_pin;
-	gpio_dt_flags_t cmd_data_flags;
-	const char *reset_label;
-	gpio_pin_t reset_pin;
-	gpio_dt_flags_t reset_flags;
+	struct gpio_dt_spec cmd_data;
+	struct gpio_dt_spec reset;
 	uint8_t pixel_format;
 	uint16_t rotation;
 	uint16_t x_resolution;
