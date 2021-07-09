@@ -232,7 +232,7 @@ struct net_pkt {
 	uint16_t ipv6_prev_hdr_start;
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
-	uint16_t ipv6_fragment_offset;	/* Fragment offset of this packet */
+	uint16_t ipv6_fragment_flags;	/* Fragment offset and M (More Fragment) flag */
 	uint32_t ipv6_fragment_id;	/* Fragment id */
 	uint16_t ipv6_frag_hdr_start;	/* Where starts the fragment header */
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
@@ -649,13 +649,17 @@ static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
 
 static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 {
-	return pkt->ipv6_fragment_offset;
+	return pkt->ipv6_fragment_flags & NET_IPV6_FRAGH_OFFSET_MASK;
+}
+static inline bool net_pkt_ipv6_fragment_more(struct net_pkt *pkt)
+{
+	return (pkt->ipv6_fragment_flags & 0x01) != 0;
 }
 
-static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
-						    uint16_t offset)
+static inline void net_pkt_set_ipv6_fragment_flags(struct net_pkt *pkt,
+						   uint16_t flags)
 {
-	pkt->ipv6_fragment_offset = offset;
+	pkt->ipv6_fragment_flags = flags;
 }
 
 static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
@@ -690,11 +694,18 @@ static inline uint16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
 	return 0;
 }
 
-static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
-						    uint16_t offset)
+static inline bool net_pkt_ipv6_fragment_more(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(offset);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_fragment_flags(struct net_pkt *pkt,
+						   uint16_t flags)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(flags);
 }
 
 static inline uint32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
