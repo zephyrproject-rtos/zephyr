@@ -332,7 +332,7 @@ void bt_iso_connected(struct bt_conn *conn)
 	}
 }
 
-static void bt_iso_remove_data_path(struct bt_conn *conn)
+void bt_iso_remove_data_path(struct bt_conn *conn)
 {
 	BT_DBG("%p", conn);
 
@@ -413,8 +413,6 @@ void bt_iso_disconnected(struct bt_conn *conn)
 	if (sys_slist_is_empty(&conn->channels)) {
 		return;
 	}
-
-	bt_iso_remove_data_path(conn);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
 		bt_iso_chan_disconnected(chan, conn->err);
