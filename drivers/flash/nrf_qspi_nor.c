@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021, Nordic Semiconductor ASA
+ * Copyright (c) 2019-2024, Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1176,11 +1176,21 @@ qspi_flash_get_parameters(const struct device *dev)
 	return &qspi_flash_parameters;
 }
 
+int qspi_nor_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+
+	*size = (uint64_t)(INST_0_BYTES);
+
+	return 0;
+}
+
 static const struct flash_driver_api qspi_nor_api = {
 	.read = qspi_nor_read,
 	.write = qspi_nor_write,
 	.erase = qspi_nor_erase,
 	.get_parameters = qspi_flash_get_parameters,
+	.get_size = qspi_nor_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = qspi_nor_pages_layout,
 #endif
