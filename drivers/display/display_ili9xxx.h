@@ -10,6 +10,7 @@
 #define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9XXX_H_
 
 #include <drivers/gpio.h>
+#include <drivers/spi.h>
 #include <sys/util.h>
 
 /* Commands/registers. */
@@ -54,12 +55,7 @@
 #define ILI9XXX_RESET_WAIT_TIME 5
 
 struct ili9xxx_config {
-	const char *spi_name;
-	uint16_t spi_addr;
-	uint32_t spi_max_freq;
-	const char *spi_cs_label;
-	gpio_pin_t spi_cs_pin;
-	gpio_dt_flags_t spi_cs_flags;
+	struct spi_dt_spec spi;
 	struct gpio_dt_spec cmd_data;
 	struct gpio_dt_spec reset;
 	uint8_t pixel_format;
