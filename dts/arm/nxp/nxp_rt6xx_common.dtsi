@@ -11,6 +11,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -51,6 +55,12 @@
 &peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
+	/*
+	 * Note that the offsets here are relative to the base address
+	 * defined in either nxp_rt6xx_ns.dtsi or nxp_rt6xx.dtsi. The base
+	 * addresses differ between non-secure (0x40000000) and secure
+	 * modes (0x50000000).
+	 */
 
 	clkctl0: clkctl@1000 {
 		compatible = "nxp,lpc-syscon";
@@ -221,6 +231,14 @@
 		interrupts = <32 0>;
 		status = "disabled";
 		label = "RTC_0";
+	};
+
+	trng: random@138000 {
+		compatible = "nxp,kinetis-trng";
+		reg = <0x138000 0x4000>;
+		status = "okay";
+		interrupts = <31 0>;
+		label = "TRNG";
 	};
 };
 
