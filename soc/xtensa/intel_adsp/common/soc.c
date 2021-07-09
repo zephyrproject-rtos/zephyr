@@ -9,6 +9,7 @@
 #include <irq_nextlevel.h>
 #include <xtensa/hal.h>
 #include <init.h>
+#include <soc/shim.h>
 
 #include "soc.h"
 
@@ -227,6 +228,15 @@ static inline void soc_set_power_and_clock(void)
 
 static int soc_init(const struct device *dev)
 {
+#ifndef CONFIG_SOC_SERIES_INTEL_CAVS_V15
+	/* On cAVS 1.8+, we must demand ownership of the timestamping
+	 * and clock generator registers.  Lacking the former will
+	 * prevent wall clock timer interrupts from arriving, even
+	 * though the device itself is operational.
+	 */
+	sys_write32(GENO_MDIVOSEL | GENO_DIOPTOSEL, DSP_INIT_GENO);
+#endif
+
 	soc_set_power_and_clock();
 	return 0;
 }
