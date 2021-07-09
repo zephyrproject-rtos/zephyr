@@ -4,3 +4,15 @@ type: mcu
 arch: riscv
 toolchain:
   - zephyr
+testing:
+  ignore_tags:
+    - bluetooth
+    - net
+    - posix
+    - crypto
+    - logging
+    - shell
+    - jwt
+    - cpp
+    - kernel
+    - test_framework
