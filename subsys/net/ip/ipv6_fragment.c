@@ -482,17 +482,6 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (!reass->pkt[0]) {
-		NET_DBG("Storing pkt %p to slot %d offset %d",
-			pkt, 0, net_pkt_ipv6_fragment_offset(pkt));
-		reass->pkt[0] = pkt;
-
-		reassembly_info("Reassembly 1st pkt", reass);
-
-		/* Wait for more fragments to receive. */
-		goto accept;
-	}
-
 	/* The fragments might come in wrong order so place them
 	 * in reassembly chain in correct order.
 	 */
