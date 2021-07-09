@@ -291,6 +291,7 @@
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/sensor/mpr/                      @sven-hm
 /drivers/sensor/st*/                      @avisconti
+/drivers/serial/*b91*                     @yurvyn
 /drivers/serial/uart_altera_jtag_hal.c    @nashif
 /drivers/serial/*ns16550*                 @dcpleung @nashif @jenmwms @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
