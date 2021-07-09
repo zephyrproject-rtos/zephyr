@@ -402,7 +402,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	int real_len = net_pkt_get_len(pkt);
 	uint8_t ext_bitmap = 0U;
 	uint16_t ext_len = 0U;
-	uint8_t nexthdr, next_nexthdr, prev_hdr_offset;
+	uint8_t current_hdr, nexthdr, prev_hdr_offset;
 	union net_proto_header proto_hdr;
 	struct net_ipv6_hdr *hdr;
 	struct net_if_mcast_addr *if_mcast_addr;
@@ -531,19 +531,19 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 	net_pkt_acknowledge_data(pkt, &ipv6_access);
 
-	nexthdr = hdr->nexthdr;
+	current_hdr = hdr->nexthdr;
 	prev_hdr_offset = (uint8_t *)&hdr->nexthdr - (uint8_t *)hdr;
 
-	while (!net_ipv6_is_nexthdr_upper_layer(nexthdr)) {
+	while (!net_ipv6_is_nexthdr_upper_layer(current_hdr)) {
 		int exthdr_len;
 
-		NET_DBG("IPv6 next header %d", nexthdr);
+		NET_DBG("IPv6 next header %d", current_hdr);
 
-		if (net_pkt_read_u8(pkt, &next_nexthdr)) {
+		if (net_pkt_read_u8(pkt, &nexthdr)) {
 			goto drop;
 		}
 
-		switch (nexthdr) {
+		switch (current_hdr) {
 		case NET_IPV6_NEXTHDR_HBHO:
 			if (ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_HBHO) {
 				NET_ERR("DROP: multiple hop-by-hop");
@@ -551,7 +551,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			}
 
 			/* HBH option needs to be the first one */
-			if (nexthdr != hdr->nexthdr) {
+			if (current_hdr != hdr->nexthdr) {
 				goto bad_hdr;
 			}
 
@@ -581,7 +581,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 					pkt,
 					net_pkt_get_current_offset(pkt) - 1);
 				return net_ipv6_handle_fragment_hdr(pkt, hdr,
-								    nexthdr);
+								    current_hdr);
 			}
 
 			goto bad_hdr;
@@ -604,12 +604,12 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		}
 
 		ext_len += exthdr_len;
-		nexthdr = next_nexthdr;
+		current_hdr = nexthdr;
 	}
 
 	net_pkt_set_ipv6_ext_len(pkt, ext_len);
 
-	switch (nexthdr) {
+	switch (current_hdr) {
 	case IPPROTO_ICMPV6:
 		verdict = net_icmpv6_input(pkt, hdr);
 		break;
@@ -645,13 +645,13 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 	if (verdict == NET_DROP) {
 		goto drop;
-	} else if (nexthdr == IPPROTO_ICMPV6) {
+	} else if (current_hdr == IPPROTO_ICMPV6) {
 		return verdict;
 	}
 
 	ip.ipv6 = hdr;
 
-	verdict = net_conn_input(pkt, &ip, nexthdr, &proto_hdr);
+	verdict = net_conn_input(pkt, &ip, current_hdr, &proto_hdr);
 	if (verdict != NET_DROP) {
 		return verdict;
 	}
