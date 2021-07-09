@@ -9,6 +9,7 @@ project(tester)
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/bluetooth/mesh)
+zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/bluetooth/host)
 target_sources(app PRIVATE
     src/main.c
     src/bttester.c

@@ -18,6 +18,8 @@
 #include <sys/byteorder.h>
 #include <net/buf.h>
 
+#include <hci_core.h>
+
 #include <logging/log.h>
 #define LOG_MODULE_NAME bttester_gap
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -738,6 +740,30 @@ static void auth_cancel(struct bt_conn *conn)
 	/* TODO */
 }
 
+enum bt_security_err auth_pairing_accept(struct bt_conn *conn,
+					 const struct bt_conn_pairing_feat *const feat)
+{
+	struct gap_bond_lost_ev ev;
+	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+
+	if (!bt_addr_le_is_bonded(BT_ID_DEFAULT, addr)) {
+		return BT_SECURITY_ERR_SUCCESS;
+	}
+
+	/* If a peer is already bonded and tries to pair again then it means that
+	 * the it has lost its bond information.
+	 */
+	LOG_DBG("Bond lost");
+
+	memcpy(ev.address, addr->a.val, sizeof(ev.address));
+	ev.address_type = addr->type;
+
+	tester_send(BTP_SERVICE_ID_GAP, GAP_EV_BOND_LOST, CONTROLLER_INDEX, (uint8_t *)&ev,
+		    sizeof(ev));
+
+	return BT_SECURITY_ERR_SUCCESS;
+}
+
 static void set_io_cap(const uint8_t *data, uint16_t len)
 {
 	const struct gap_set_io_cap_cmd *cmd = (void *) data;
@@ -773,6 +799,8 @@ static void set_io_cap(const uint8_t *data, uint16_t len)
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}
+
+	cb.pairing_accept = auth_pairing_accept;
 
 	if (bt_conn_auth_cb_register(&cb)) {
 		status = BTP_STATUS_FAILED;
@@ -1093,6 +1121,13 @@ static void tester_init_gap_cb(int err)
 uint8_t tester_init_gap(void)
 {
 	int err;
+
+	(void)memset(&cb, 0, sizeof(cb));
+	bt_conn_auth_cb_register(NULL);
+	cb.pairing_accept = auth_pairing_accept;
+	if (bt_conn_auth_cb_register(&cb)) {
+		return BTP_STATUS_FAILED;
+	}
 
 	err = bt_enable(tester_init_gap_cb);
 	if (err < 0) {
