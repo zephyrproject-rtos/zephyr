@@ -367,6 +367,12 @@ struct gap_pairing_consent_req_ev {
 	uint8_t address[6];
 } __packed;
 
+#define GAP_EV_BOND_LOST	0x8b
+struct gap_bond_lost_ev {
+	uint8_t address_type;
+	uint8_t address[6];
+} __packed;
+
 /* GATT Service */
 /* commands */
 #define GATT_READ_SUPPORTED_COMMANDS	0x01
