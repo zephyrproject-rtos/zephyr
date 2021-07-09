@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2020 Intel Corporation
+ * Copyright (c) 2020 Laird Connectivity
+ * Copyright (c) 2021 G-Technologies Sdn. Bhd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +24,10 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include "modem_cmd_handler.h"
 #include "../console/gsm_mux.h"
 
+#ifdef CONFIG_NEWLIB_LIBC
+#include <time.h>
+#endif
+
 #define GSM_CMD_READ_BUF                128
 #define GSM_CMD_AT_TIMEOUT              K_SECONDS(2)
 #define GSM_CMD_SETUP_TIMEOUT           K_SECONDS(6)
@@ -30,6 +36,27 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_RECV_BUF_SIZE               128
 #define GSM_ATTACH_RETRY_DELAY_MSEC     1000
 
+#ifdef CONFIG_NEWLIB_LIBC
+/* The ? can be a + or - */
+static const char TIME_STRING_FORMAT[] = "\"yy/MM/dd,hh:mm:ss?zz\"";
+#define TIME_STRING_DIGIT_STRLEN 2
+#define TIME_STRING_SEPARATOR_STRLEN 1
+#define TIME_STRING_PLUS_MINUS_INDEX (6 * 3)
+#define TIME_STRING_FIRST_SEPARATOR_INDEX 0
+#define TIME_STRING_FIRST_DIGIT_INDEX 1
+#define TIME_STRING_TO_TM_STRUCT_YEAR_OFFSET (2000 - 1900)
+
+/* Time structure min, max */
+#define TM_YEAR_RANGE 0, 99
+#define TM_MONTH_RANGE_PLUS_1 1, 12
+#define TM_DAY_RANGE 1, 31
+#define TM_HOUR_RANGE 0, 23
+#define TM_MIN_RANGE 0, 59
+#define TM_SEC_RANGE 0, 60 /* leap second */
+#define QUARTER_HOUR_RANGE 0, 96
+#define SECONDS_PER_QUARTER_HOUR (15 * 60)
+#define SIZE_OF_NUL 1
+#endif
 
 /* During the modem setup, we first create DLCI control channel and then
  * PPP and AT channels. Currently the modem does not create possible GNSS
@@ -63,6 +90,12 @@ static struct gsm_modem {
 	const struct device *control_dev;
 
 	struct net_if *iface;
+
+#ifdef CONFIG_NEWLIB_LIBC
+	int32_t local_time_offset;
+	struct tm local_time;
+	bool local_time_valid : 1;
+#endif
 
 	int attach_retries;
 	bool mux_enabled : 1;
@@ -324,6 +357,125 @@ static const struct setup_cmd setup_cmds[] = {
 	/* create PDP context */
 	SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\"" CONFIG_MODEM_GSM_APN "\""),
 };
+
+#ifdef CONFIG_NEWLIB_LIBC
+static bool valid_time_string(const char *time_string)
+{
+	size_t offset, i;
+
+	/* Ensure that all the expected delimiters are present */
+	offset = TIME_STRING_DIGIT_STRLEN + TIME_STRING_SEPARATOR_STRLEN;
+	i = TIME_STRING_FIRST_SEPARATOR_INDEX;
+
+	for (; i < TIME_STRING_PLUS_MINUS_INDEX; i += offset) {
+		if (time_string[i] != TIME_STRING_FORMAT[i]) {
+			return false;
+		}
+	}
+	/* The last character is the offset from UTC and can be either
+	 * positive or negative.  The last " is also handled here.
+	 */
+	if ((time_string[i] == '+' || time_string[i] == '-') &&
+	    (time_string[i + offset] == '"')) {
+		return true;
+	}
+	return false;
+}
+
+int get_next_time_string_digit(int *failure_cnt, char **pp, int min, int max)
+{
+	char digits[TIME_STRING_DIGIT_STRLEN + SIZE_OF_NUL];
+	int result;
+
+	memset(digits, 0, sizeof(digits));
+	memcpy(digits, *pp, TIME_STRING_DIGIT_STRLEN);
+	*pp += TIME_STRING_DIGIT_STRLEN + TIME_STRING_SEPARATOR_STRLEN;
+	result = strtol(digits, NULL, 10);
+	if (result > max) {
+		*failure_cnt += 1;
+		return max;
+	} else if (result < min) {
+		*failure_cnt += 1;
+		return min;
+	} else {
+		return result;
+	}
+}
+
+static bool convert_time_string_to_struct(struct tm *ts, int32_t *offset,
+					  char *time_string)
+{
+	int fc = 0;
+	char *ptr = time_string;
+
+	if (!valid_time_string(ptr)) {
+		LOG_INF("Invalid timestring");
+		return false;
+	}
+	ptr = &ptr[TIME_STRING_FIRST_DIGIT_INDEX];
+	ts->tm_year = TIME_STRING_TO_TM_STRUCT_YEAR_OFFSET +
+		      get_next_time_string_digit(&fc, &ptr, TM_YEAR_RANGE);
+	ts->tm_mon =
+		get_next_time_string_digit(&fc, &ptr, TM_MONTH_RANGE_PLUS_1) -
+		1;
+	ts->tm_mday = get_next_time_string_digit(&fc, &ptr, TM_DAY_RANGE);
+	ts->tm_hour = get_next_time_string_digit(&fc, &ptr, TM_HOUR_RANGE);
+	ts->tm_min = get_next_time_string_digit(&fc, &ptr, TM_MIN_RANGE);
+	ts->tm_sec = get_next_time_string_digit(&fc, &ptr, TM_SEC_RANGE);
+	ts->tm_isdst = 0;
+	*offset = (int32_t)get_next_time_string_digit(&fc, &ptr,
+						      QUARTER_HOUR_RANGE) *
+		  SECONDS_PER_QUARTER_HOUR;
+	if (time_string[TIME_STRING_PLUS_MINUS_INDEX] == '-') {
+		*offset *= -1;
+	}
+
+	return (fc == 0);
+}
+
+MODEM_CMD_DEFINE(on_cmd_rtc_query)
+{
+	size_t str_len = sizeof(TIME_STRING_FORMAT) - 1;
+	char rtc_string[sizeof(TIME_STRING_FORMAT)];
+
+	memset(rtc_string, 0, sizeof(rtc_string));
+	gsm.local_time_valid = false;
+
+	if (len != str_len) {
+		LOG_WRN("Unexpected length for RTC string %d (expected:%d)",
+			len, str_len);
+	} else {
+		net_buf_linearize(rtc_string, str_len, data->rx_buf, 0, str_len);
+		LOG_DBG("RTC string: '%s'", log_strdup(rtc_string));
+		gsm.local_time_valid = convert_time_string_to_struct(
+			&gsm.local_time, &gsm.local_time_offset, rtc_string);
+	}
+
+	return true;
+}
+
+int32_t gsm_ppp_get_local_time(const struct device *dev, struct tm *ts, int32_t *offset)
+{
+	int ret;
+
+	struct modem_cmd cmd  = MODEM_CMD("+CCLK: ", on_cmd_rtc_query, 0U, "");
+	struct gsm_modem *gsm = dev->data;
+
+	gsm->local_time_valid = false;
+
+	ret = modem_cmd_send(&gsm->context.iface, &gsm->context.cmd_handler,
+			     &cmd, 1U, "AT+CCLK?", &gsm->sem_response,
+			     GSM_CMD_AT_TIMEOUT);
+
+	if (gsm->local_time_valid) {
+		memcpy(ts, &gsm->local_time, sizeof(struct tm));
+		memcpy(offset, &gsm->local_time_offset, sizeof(*offset));
+	} else {
+		ret = -EIO;
+	}
+	return ret;
+}
+#endif /* CONFIG_NEWLIB_LIBC */
 
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_attached)
 {
