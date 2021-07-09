@@ -61,6 +61,28 @@
 
 #else /* defined(_ASMLANGUAGE) */
 
+#ifndef _MLIBC_RESTRICT_defined
+#define _MLIBC_RESTRICT_defined
+
+#ifdef __cplusplus
+	#define _MLIBC_RESTRICT __restrict__
+#else
+	#define _MLIBC_RESTRICT restrict
+#endif
+
+#endif /* _MLIBC_RESTRICT_defined */
+
+/* MWDT toolchain misses ssize_t definition which is used by Zephyr */
+#ifndef _SSIZE_T_DEFINED
+#define _SSIZE_T_DEFINED _SSIZE_T_DEFINED
+#ifdef CONFIG_64BIT
+	typedef long ssize_t;
+#else
+	typedef int ssize_t;
+#endif
+#endif /* _SSIZE_T_DEFINED */
+
+
 #define __no_optimization __attribute__((optnone))
 
 #include <toolchain/gcc.h>
