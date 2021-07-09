@@ -398,6 +398,26 @@ static enum net_verdict ipv6_forward_mcast_packet(struct net_pkt *pkt,
 	return NET_CONTINUE;
 }
 
+static uint8_t extension_to_bitmap(uint8_t header, uint8_t ext_bitmap)
+{
+	switch (header) {
+	case NET_IPV6_NEXTHDR_HBHO:
+		return NET_IPV6_EXT_HDR_BITMAP_HBHO;
+	case NET_IPV6_NEXTHDR_DESTO:
+		/* Destination header can appears twice */
+		if (ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_DESTO1) {
+			return NET_IPV6_EXT_HDR_BITMAP_DESTO2;
+		}
+		return NET_IPV6_EXT_HDR_BITMAP_DESTO1;
+	case NET_IPV6_NEXTHDR_ROUTING:
+		return NET_IPV6_EXT_HDR_BITMAP_ROUTING;
+	case NET_IPV6_NEXTHDR_FRAG:
+		return NET_IPV6_EXT_HDR_BITMAP_FRAG;
+	default:
+		return 0;
+	}
+}
+
 enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
@@ -538,10 +558,12 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	net_pkt_acknowledge_data(pkt, &ipv6_access);
 
 	current_hdr = hdr->nexthdr;
+	ext_bitmap = extension_to_bitmap(current_hdr, ext_bitmap);
 	prev_hdr_offset = (uint8_t *)&hdr->nexthdr - (uint8_t *)hdr;
 
 	while (!net_ipv6_is_nexthdr_upper_layer(current_hdr)) {
 		int exthdr_len;
+		uint8_t ext_bit;
 
 		NET_DBG("IPv6 next header %d", current_hdr);
 
@@ -558,34 +580,43 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			goto drop;
 		}
 
-		switch (current_hdr) {
+		/* Detect duplicated Extension headers */
+		ext_bit = extension_to_bitmap(nexthdr, ext_bitmap);
+		if (ext_bit & ext_bitmap) {
+			goto bad_hdr;
+		}
+		ext_bitmap |= ext_bit;
+
+		/* Make sure that nexthdr is valid, reject the Extension Header early otherwise.
+		 * This is also important so that the "pointer" field in the ICMPv6 error
+		 * message points to the "nexthdr" field.
+		 */
+		switch (nexthdr) {
 		case NET_IPV6_NEXTHDR_HBHO:
-			if (ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_HBHO) {
-				NET_ERR("DROP: multiple hop-by-hop");
-				goto drop;
-			}
-
-			/* HBH option needs to be the first one */
-			if (current_hdr != hdr->nexthdr) {
-				goto bad_hdr;
-			}
-
-			ext_bitmap |= NET_IPV6_EXT_HDR_BITMAP_HBHO;
-
-			break;
+			/* Hop-by-hop header can appear only once and must appear right after
+			 * the IPv6 header. Consequently the "nexthdr" field of an Extension
+			 * Header can never be an HBH option.
+			 */
+			goto bad_hdr;
 
 		case NET_IPV6_NEXTHDR_DESTO:
-			if (ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_DESTO2) {
-				/* DESTO option cannot appear more than twice */
-				goto bad_hdr;
-			}
+		case NET_IPV6_NEXTHDR_FRAG:
+		case NET_IPV6_NEXTHDR_NONE:
+			/* Valid values */
+			break;
 
-			if (ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_DESTO1) {
-				ext_bitmap |= NET_IPV6_EXT_HDR_BITMAP_DESTO2;
-			} else {
-				ext_bitmap |= NET_IPV6_EXT_HDR_BITMAP_DESTO1;
+		default:
+			if (net_ipv6_is_nexthdr_upper_layer(nexthdr)) {
+				break;
 			}
+			goto bad_hdr;
+		}
 
+		/* Process the current Extension Header */
+		switch (current_hdr) {
+		case NET_IPV6_NEXTHDR_HBHO:
+		case NET_IPV6_NEXTHDR_DESTO:
+			/* Process options below */
 			break;
 
 		case NET_IPV6_NEXTHDR_FRAG:
@@ -602,6 +633,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			goto bad_hdr;
 
 		default:
+			/* Unsupported */
 			goto bad_hdr;
 		}
 
