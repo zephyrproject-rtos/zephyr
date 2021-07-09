@@ -108,7 +108,7 @@ extern "C" {
 #define ESP_MODE_STA_AP		3
 
 #define ESP_CMD_CWMODE(mode) \
-	"AT+"_CWMODE"="STRINGIFY(_CONCAT(ESP_MODE_, mode))
+	"AT+"_CWMODE"="STRINGIFY(Z_CONCAT(ESP_MODE_, mode))
 
 #define ESP_CWDHCP_MODE_STATION		"1"
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
@@ -126,7 +126,7 @@ extern "C" {
 #endif
 
 #define ESP_CMD_DHCP_ENABLE(mode, enable) \
-	_ESP_CMD_DHCP_ENABLE(_CONCAT(ESP_CWDHCP_MODE_, mode), enable)
+	_ESP_CMD_DHCP_ENABLE(Z_CONCAT(ESP_CWDHCP_MODE_, mode), enable)
 
 #define ESP_CMD_SET_IP(ip, gateway, mask) "AT+"_CIPSTA"=\"" \
 			  ip "\",\""  gateway  "\",\""  mask "\""

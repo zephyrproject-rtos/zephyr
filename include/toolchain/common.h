@@ -120,9 +120,11 @@
 #define Z_STRINGIFY(x) #x
 #define STRINGIFY(s) Z_STRINGIFY(s)
 
+
 /* concatenate the values of the arguments into one */
-#define _DO_CONCAT(x, y) x ## y
-#define _CONCAT(x, y) _DO_CONCAT(x, y)
+#define Z_DO_CONCAT(x, y) x ## y
+#define Z_CONCAT(x, y) Z_DO_CONCAT(x, y)
+
 
 /* Additionally used as a sentinel by gen_syscalls.py to identify what
  * functions are system calls
@@ -155,8 +157,8 @@
  * Common implementation swallows the message.
  */
 #define BUILD_ASSERT(EXPR, MSG...) \
-	enum _CONCAT(__build_assert_enum, __COUNTER__) { \
-		_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
+	enum Z_CONCAT(__build_assert_enum, __COUNTER__) { \
+		Z_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
 	}
 #endif
 
@@ -206,13 +208,13 @@
  * list of struct objects to iterate over.
  */
 #define Z_STRUCT_SECTION_FOREACH(struct_type, iterator) \
-	extern struct struct_type _CONCAT(_##struct_type, _list_start)[]; \
-	extern struct struct_type _CONCAT(_##struct_type, _list_end)[]; \
+	extern struct struct_type Z_CONCAT(_##struct_type, _list_start)[]; \
+	extern struct struct_type Z_CONCAT(_##struct_type, _list_end)[]; \
 	for (struct struct_type *iterator = \
-			_CONCAT(_##struct_type, _list_start); \
-	     ({ __ASSERT(iterator <= _CONCAT(_##struct_type, _list_end), \
+			Z_CONCAT(_##struct_type, _list_start); \
+	     ({ __ASSERT(iterator <= Z_CONCAT(_##struct_type, _list_end), \
 			 "unexpected list end location"); \
-		iterator < _CONCAT(_##struct_type, _list_end); }); \
+		iterator < Z_CONCAT(_##struct_type, _list_end); }); \
 	     iterator++)
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_COMMON_H_ */

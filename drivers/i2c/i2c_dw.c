@@ -677,12 +677,12 @@ static int i2c_dw_initialize(const struct device *dev)
 		.pcie_bdf = DT_INST_REG_ADDR(n),                              \
 		.pcie_id = DT_INST_REG_SIZE(n),
 #define I2C_DW_INIT_PCIE(n) \
-	_CONCAT(I2C_DW_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+	Z_CONCAT(I2C_DW_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #define I2C_DW_IRQ_FLAGS_SENSE0(n) 0
 #define I2C_DW_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
 #define I2C_DW_IRQ_FLAGS(n) \
-	_CONCAT(I2C_DW_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+	Z_CONCAT(I2C_DW_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
 /* not PCI(e) */
 #define I2C_DW_IRQ_CONFIG_PCIE0(n)                                            \
@@ -716,7 +716,7 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 #define I2C_DW_IRQ_CONFIG(n) \
-	_CONCAT(I2C_DW_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+	Z_CONCAT(I2C_DW_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #define I2C_DEVICE_INIT_DW(n)                                                 \
 	static void i2c_config_##n(const struct device *port);                \

@@ -353,11 +353,11 @@ static const struct adc_driver_api mcux_lpadc_driver_api = {
 #define TO_LPADC_CLOCK_SOURCE(val) \
 	MUX_A(CM_ADCASYNCCLKSEL, val)
 #define TO_LPADC_REFERENCE_VOLTAGE(val) \
-	_DO_CONCAT(kLPADC_ReferenceVoltageAlt, val)
+	Z_DO_CONCAT(kLPADC_ReferenceVoltageAlt, val)
 #define TO_LPADC_CALIBRATION_AVERAGE(val) \
-	_DO_CONCAT(kLPADC_ConversionAverage, val)
+	Z_DO_CONCAT(kLPADC_ConversionAverage, val)
 #define TO_LPADC_POWER_LEVEL(val) \
-	_DO_CONCAT(kLPADC_PowerLevelAlt, val)
+	Z_DO_CONCAT(kLPADC_PowerLevelAlt, val)
 
 #define LPADC_MCUX_INIT(n)						\
 	static void mcux_lpadc_config_func_##n(const struct device *dev);	\

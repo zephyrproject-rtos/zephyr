@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(spi_gecko);
 #error "Individual pin location support is required"
 #endif
 
-#define CLOCK_USART(id) _CONCAT(cmuClock_USART, id)
+#define CLOCK_USART(id) Z_CONCAT(cmuClock_USART, id)
 
 #define SPI_WORD_SIZE 8
 

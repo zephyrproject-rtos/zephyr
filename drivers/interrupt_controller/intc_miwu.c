@@ -323,8 +323,8 @@ int npcx_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 }
 
 /* MIWU driver registration */
-#define NPCX_MIWU_ISR_FUNC(index) _CONCAT(intc_miwu_isr, index)
-#define NPCX_MIWU_INIT_FUNC(inst) _CONCAT(intc_miwu_init, inst)
+#define NPCX_MIWU_ISR_FUNC(index) Z_CONCAT(intc_miwu_isr, index)
+#define NPCX_MIWU_INIT_FUNC(inst) Z_CONCAT(intc_miwu_init, inst)
 #define NPCX_MIWU_INIT_FUNC_DECL(inst) \
 	static int intc_miwu_init##inst(const struct device *dev)
 

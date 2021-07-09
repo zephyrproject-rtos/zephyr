@@ -45,7 +45,7 @@ BUILD_ASSERT(INST_0_SCK_FREQUENCY >= (NRF_QSPI_BASE_CLOCK_FREQ / 16),
 #define QSPI_PROP_AT(prop, idx) DT_PROP_BY_IDX(QSPI_NODE, prop, idx)
 #define QSPI_PROP_LEN(prop) DT_PROP_LEN(QSPI_NODE, prop)
 
-#define INST_0_QER _CONCAT(JESD216_DW15_QER_, \
+#define INST_0_QER Z_CONCAT(JESD216_DW15_QER_, \
 			   DT_ENUM_TOKEN(DT_DRV_INST(0), \
 					 quad_enable_requirements))
 

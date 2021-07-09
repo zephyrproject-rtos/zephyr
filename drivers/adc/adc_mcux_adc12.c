@@ -250,8 +250,8 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 	BUILD_ASSERT(val >= min && val <= max, str)
 #define ASSERT_ADC12_CLK_DIV_VALID(val, str) \
 	BUILD_ASSERT(val == 1 || val == 2 || val == 4 || val == 8, str)
-#define TO_ADC12_CLOCK_SRC(val) _DO_CONCAT(kADC12_ClockSourceAlt, val)
-#define TO_ADC12_CLOCK_DIV(val) _DO_CONCAT(kADC12_ClockDivider, val)
+#define TO_ADC12_CLOCK_SRC(val) Z_DO_CONCAT(kADC12_ClockSourceAlt, val)
+#define TO_ADC12_CLOCK_DIV(val) Z_DO_CONCAT(kADC12_ClockDivider, val)
 
 #define ADC12_REF_SRC(n)						\
 	COND_CODE_1(DT_INST_PROP(0, alternate_voltage_reference),	\

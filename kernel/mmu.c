@@ -67,7 +67,7 @@ static bool page_frames_initialized;
 #define ANSI_CYAN    "\x1B[1;36m"
 #define ANSI_GREY    "\x1B[1;90m"
 
-#define COLOR(x)	printk(_CONCAT(ANSI_, x))
+#define COLOR(x)	printk(Z_CONCAT(ANSI_, x))
 #else
 #define COLOR(x)	do { } while (0)
 #endif

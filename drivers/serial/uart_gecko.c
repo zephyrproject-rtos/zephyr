@@ -14,8 +14,8 @@
 
 #define USART_PREFIX cmuClock_USART
 #define UART_PREFIX cmuClock_UART
-#define CLOCK_USART(id) _CONCAT(USART_PREFIX, id)
-#define CLOCK_UART(id) _CONCAT(UART_PREFIX, id)
+#define CLOCK_USART(id) Z_CONCAT(USART_PREFIX, id)
+#define CLOCK_UART(id) Z_CONCAT(UART_PREFIX, id)
 
 /* Helper define to determine if SOC supports hardware flow control */
 #if ((_SILICON_LABS_32B_SERIES > 0) || \

@@ -51,7 +51,7 @@ struct bt_mesh_proxy_cb {
  */
 #define BT_MESH_PROXY_CB_DEFINE(_name)                                         \
 	static const Z_STRUCT_SECTION_ITERABLE(                                \
-		bt_mesh_proxy_cb, _CONCAT(bt_mesh_proxy_cb, _name))
+		bt_mesh_proxy_cb, Z_CONCAT(bt_mesh_proxy_cb, _name))
 
 /** @brief Enable advertising with Node Identity.
  *

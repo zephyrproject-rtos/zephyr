@@ -80,7 +80,7 @@ struct bt_mesh_subnet_cb {
  */
 #define BT_MESH_SUBNET_CB_DEFINE(_handler)                                     \
 	static const Z_STRUCT_SECTION_ITERABLE(                                \
-		bt_mesh_subnet_cb, _CONCAT(bt_mesh_subnet_cb_, _handler)) = {  \
+		bt_mesh_subnet_cb, Z_CONCAT(bt_mesh_subnet_cb_, _handler)) = {  \
 		.evt_handler = (_handler),                                     \
 	}
 

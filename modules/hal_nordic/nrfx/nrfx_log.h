@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define NRFX_MODULE_PREFIX  _CONCAT(NRFX_, NRFX_LOG_MODULE)
+#define NRFX_MODULE_PREFIX  Z_CONCAT(NRFX_, NRFX_LOG_MODULE)
 /*
  * The following macros from nrfx_config control the log messages coming from
  * a given module:
@@ -21,11 +21,11 @@ extern "C" {
  * - NRFX_<module>_CONFIG_LOG_LEVEL specifies the severity level of the messages
  *   that are to be output.
  */
-#if !IS_ENABLED(_CONCAT(NRFX_MODULE_PREFIX, _CONFIG_LOG_ENABLED))
+#if !IS_ENABLED(Z_CONCAT(NRFX_MODULE_PREFIX, _CONFIG_LOG_ENABLED))
 #define NRFX_MODULE_CONFIG_LOG_LEVEL 0
 #else
 #define NRFX_MODULE_CONFIG_LOG_LEVEL \
-	_CONCAT(NRFX_MODULE_PREFIX, _CONFIG_LOG_LEVEL)
+	Z_CONCAT(NRFX_MODULE_PREFIX, _CONFIG_LOG_LEVEL)
 #endif
 
 #if	NRFX_MODULE_CONFIG_LOG_LEVEL == 0

@@ -12,7 +12,7 @@
  * in radio_nrf5_ppi.h by the preprocessor.
  */
 #define EVENT_TIMER_ID 0
-#define EVENT_TIMER    _CONCAT(NRF_TIMER, EVENT_TIMER_ID)
+#define EVENT_TIMER    Z_CONCAT(NRF_TIMER, EVENT_TIMER_ID)
 
 /* EVENTS_TIMER capture register used for sampling TIMER time-stamps. */
 #define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 3

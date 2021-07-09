@@ -30,7 +30,7 @@ struct bt_mesh_app_key_cb {
  */
 #define BT_MESH_APP_KEY_CB_DEFINE(_handler)                                    \
 	static const Z_STRUCT_SECTION_ITERABLE(bt_mesh_app_key_cb,             \
-					       _CONCAT(bt_mesh_app_key_cb_,    \
+					       Z_CONCAT(bt_mesh_app_key_cb_,    \
 						       _handler)) = {          \
 		.evt_handler = (_handler),                                     \
 	}

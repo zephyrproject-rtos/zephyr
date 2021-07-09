@@ -81,8 +81,10 @@ extern void z_arm_interrupt_init(void);
 #define TOSTR(s) DO_TOSTR(s)
 
 /* concatenate the values of the arguments into one */
-#define DO_CONCAT(x, y) x ## y
-#define CONCAT(x, y) DO_CONCAT(x, y)
+#ifndef Z_CONCAT
+	#define Z_DO_CONCAT(x, y) x ## y
+	#define Z_CONCAT(x, y) Z_DO_CONCAT(x, y)
+#endif
 
 /* Flags for use with IRQ_CONNECT() */
 /**
@@ -218,7 +220,7 @@ extern void z_arm_irq_direct_dynamic_dispatch_no_reschedule(void);
  */
 #define ARM_IRQ_DIRECT_DYNAMIC_CONNECT(irq_p, priority_p, flags_p, resch) \
 	IRQ_DIRECT_CONNECT(irq_p, priority_p, \
-		CONCAT(z_arm_irq_direct_dynamic_dispatch_, resch), flags_p)
+		Z_CONCAT(z_arm_irq_direct_dynamic_dispatch_, resch), flags_p)
 
 #endif /* CONFIG_DYNAMIC_DIRECT_INTERRUPTS */
 
