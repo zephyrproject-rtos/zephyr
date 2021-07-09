@@ -44,6 +44,10 @@ struct qspi_nor_data {
 	bool xip_enabled;
 };
 
+/* instance 0 page count */
+#define LAYOUT_PAGES_COUNT (INST_0_BYTES / \
+			    CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
+
 struct qspi_nor_config {
 	nrfx_qspi_config_t nrfx_cfg;
 
@@ -1118,10 +1122,6 @@ static int qspi_nor_init(const struct device *dev)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 
-/* instance 0 page count */
-#define LAYOUT_PAGES_COUNT (INST_0_BYTES / \
-			    CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
-
 BUILD_ASSERT((CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE *
 	      LAYOUT_PAGES_COUNT)
 	     == INST_0_BYTES,
@@ -1131,7 +1131,6 @@ static const struct flash_pages_layout dev_layout = {
 	.pages_count = LAYOUT_PAGES_COUNT,
 	.pages_size = CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE,
 };
-#undef LAYOUT_PAGES_COUNT
 
 static void qspi_nor_pages_layout(const struct device *dev,
 				  const struct flash_pages_layout **layout,
@@ -1155,11 +1154,43 @@ qspi_flash_get_parameters(const struct device *dev)
 	return &qspi_flash_parameters;
 }
 
+ssize_t qspi_nor_get_size(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT;
+}
+
+ssize_t qspi_nor_get_page_count(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return LAYOUT_PAGES_COUNT;
+}
+
+int qspi_nor_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	ARG_UNUSED(dev);
+
+	if (offset < 0 ||
+	    offset >= (CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE * LAYOUT_PAGES_COUNT)) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE - 1);
+	fpi->size = CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE;
+
+	return 0;
+}
+
 static const struct flash_driver_api qspi_nor_api = {
 	.read = qspi_nor_read,
 	.write = qspi_nor_write,
 	.erase = qspi_nor_erase,
 	.get_parameters = qspi_flash_get_parameters,
+	.get_page_info = qspi_nor_get_page_info,
+	.get_page_count = qspi_nor_get_page_count,
+	.get_size = qspi_nor_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = qspi_nor_pages_layout,
 #endif
