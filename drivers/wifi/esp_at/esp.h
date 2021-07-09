@@ -74,7 +74,7 @@ extern "C" {
 #endif
 
 #define _UART_CUR \
-	STRINGIFY(_UART_BAUD)",8,1,0,"_FLOW_CONTROL
+	Z_STRINGIFY(_UART_BAUD)",8,1,0,"_FLOW_CONTROL
 
 #define CONN_CMD_MAX_LEN (sizeof("AT+"_CWJAP"=\"\",\"\"") + \
 			  WIFI_SSID_MAX_LEN + WIFI_PSK_MAX_LEN)
@@ -108,7 +108,7 @@ extern "C" {
 #define ESP_MODE_STA_AP		3
 
 #define ESP_CMD_CWMODE(mode) \
-	"AT+"_CWMODE"="STRINGIFY(Z_CONCAT(ESP_MODE_, mode))
+	"AT+"_CWMODE"="Z_STRINGIFY(Z_CONCAT(ESP_MODE_, mode))
 
 #define ESP_CWDHCP_MODE_STATION		"1"
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
@@ -119,10 +119,10 @@ extern "C" {
 
 #if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
 #define _ESP_CMD_DHCP_ENABLE(mode, enable) \
-			  "AT+CWDHCP_CUR=" mode "," STRINGIFY(enable)
+			  "AT+CWDHCP_CUR=" mode "," Z_STRINGIFY(enable)
 #else
 #define _ESP_CMD_DHCP_ENABLE(mode, enable) \
-			  "AT+CWDHCP=" STRINGIFY(enable) "," mode
+			  "AT+CWDHCP=" Z_STRINGIFY(enable) "," mode
 #endif
 
 #define ESP_CMD_DHCP_ENABLE(mode, enable) \

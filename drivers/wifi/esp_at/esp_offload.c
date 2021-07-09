@@ -193,7 +193,7 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 {
 	struct esp_data *dev = esp_socket_to_dev(sock);
 	char cmd_buf[sizeof("AT+CIPSEND=0,,\"\",") +
-		     sizeof(STRINGIFY(ESP_MTU)) - 1 +
+		     sizeof(Z_STRINGIFY(ESP_MTU)) - 1 +
 		     NET_IPV4_ADDR_LEN + sizeof("65535") - 1];
 	char addr_str[NET_IPV4_ADDR_LEN];
 	int ret, write_len, pkt_len;
@@ -492,7 +492,7 @@ void esp_recvdata_work(struct k_work *work)
 	struct esp_socket *sock = CONTAINER_OF(work, struct esp_socket,
 					       recvdata_work);
 	struct esp_data *data = esp_socket_to_dev(sock);
-	char cmd[sizeof("AT+CIPRECVDATA=0,"STRINGIFY(CIPRECVDATA_MAX_LEN))];
+	char cmd[sizeof("AT+CIPRECVDATA=0,"Z_STRINGIFY(CIPRECVDATA_MAX_LEN))];
 	static const struct modem_cmd cmds[] = {
 		MODEM_CMD_DIRECT(_CIPRECVDATA, on_cmd_ciprecvdata),
 	};

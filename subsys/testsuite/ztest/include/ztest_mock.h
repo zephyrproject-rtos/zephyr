@@ -34,7 +34,7 @@
  * @param value Value for @a param
  */
 #define ztest_expect_value(func, param, value)                                 \
-	z_ztest_expect_value(STRINGIFY(func), STRINGIFY(param),                \
+	z_ztest_expect_value(Z_STRINGIFY(func), Z_STRINGIFY(param),                \
 			     (uintptr_t)(value))
 
 /**
@@ -49,7 +49,7 @@
  * @param param Parameter to check
  */
 #define ztest_check_expected_value(param)                                      \
-	z_ztest_check_expected_value(__func__, STRINGIFY(param),               \
+	z_ztest_check_expected_value(__func__, Z_STRINGIFY(param),               \
 				     (uintptr_t)(param))
 
 /**
@@ -65,7 +65,7 @@
  * @param data pointer for the data for parameter @a param
  */
 #define ztest_expect_data(func, param, data)                                   \
-	z_ztest_expect_data(STRINGIFY(func), STRINGIFY(param), (void *)(data))
+	z_ztest_expect_data(Z_STRINGIFY(func), Z_STRINGIFY(param), (void *)(data))
 
 /**
  * @brief If data pointed by @a param don't match the data set by
@@ -80,7 +80,7 @@
  * @param length Length of the data to compare
  */
 #define ztest_check_expected_data(param, length)                               \
-	z_ztest_check_expected_data(__func__, STRINGIFY(param),                \
+	z_ztest_check_expected_data(__func__, Z_STRINGIFY(param),                \
 				    (void *)(param), (length))
 
 /**
@@ -95,7 +95,7 @@
  * @param data pointer for the data for parameter @a param
  */
 #define ztest_return_data(func, param, data)                                   \
-	z_ztest_return_data(STRINGIFY(func), STRINGIFY(param), (void *)(data))
+	z_ztest_return_data(Z_STRINGIFY(func), Z_STRINGIFY(param), (void *)(data))
 
 /**
  * @brief Copy the data set by ztest_return_data to the memory pointed by
@@ -108,7 +108,7 @@
  * @param length Length of the data to return
  */
 #define ztest_copy_return_data(param, length)                                  \
-	z_ztest_copy_return_data(__func__, STRINGIFY(param),                   \
+	z_ztest_copy_return_data(__func__, Z_STRINGIFY(param),                   \
 				 (void *)(param), (length))
 /**
  * @brief Tell @a func that it should return @a value
@@ -117,7 +117,7 @@
  * @param value Value to return from @a func
  */
 #define ztest_returns_value(func, value)                                       \
-	z_ztest_returns_value(STRINGIFY(func), (uintptr_t)(value))
+	z_ztest_returns_value(Z_STRINGIFY(func), (uintptr_t)(value))
 
 /**
  * @brief Get the return value for current function

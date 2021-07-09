@@ -145,11 +145,11 @@ void *main_pthread(void *arg)
 {
 	static const char * const options[] = {
 		"listening_ports",
-		STRINGIFY(HTTP_PORT),
+		Z_STRINGIFY(HTTP_PORT),
 		"num_threads",
 		"1",
 		"max_request_size",
-		STRINGIFY(MAX_REQUEST_SIZE_BYTES),
+		Z_STRINGIFY(MAX_REQUEST_SIZE_BYTES),
 		NULL
 	};
 

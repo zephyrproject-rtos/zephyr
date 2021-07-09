@@ -117,8 +117,8 @@
   #endif
 #endif
 
-#define Z_STRINGIFY(x) #x
-#define STRINGIFY(s) Z_STRINGIFY(s)
+#define Z_DO_STRINGIFY(x) #x
+#define Z_STRINGIFY(s) Z_DO_STRINGIFY(s)
 
 
 /* concatenate the values of the arguments into one */

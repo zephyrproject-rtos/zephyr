@@ -1019,7 +1019,7 @@ struct net_buf_pool {
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.avail_count = ATOMIC_INIT(_count),                          \
-		.name = STRINGIFY(_pool),                                    \
+		.name = Z_STRINGIFY(_pool),                                    \
 		.destroy = _destroy,                                         \
 		.alloc = _alloc,                                             \
 		.__bufs = _bufs,                                             \

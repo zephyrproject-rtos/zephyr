@@ -211,7 +211,7 @@ static inline void test_time_ms(void)
 		TC_END_RESULT(TC_PASS);			\
 		return 0;				\
 	}
-#define TC_CMD_ITEM(name) {STRINGIFY(name), cmd_##name, "none"}
+#define TC_CMD_ITEM(name) {Z_STRINGIFY(name), cmd_##name, "none"}
 #endif
 
 #endif /* ZEPHYR_TESTSUITE_INCLUDE_TC_UTIL_H_ */
