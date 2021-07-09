@@ -14,7 +14,7 @@ void board_button_1_pressed(void);
 uint16_t board_set_target(void);
 void board_play(const char *str);
 
-#if defined(CONFIG_BOARD_BBC_MICROBIT)
+#if defined(CONFIG_MICROBIT_DISPLAY)
 int board_init(uint16_t *addr);
 void board_play_tune(const char *str);
 void board_heartbeat(uint8_t hops, uint16_t feat);
