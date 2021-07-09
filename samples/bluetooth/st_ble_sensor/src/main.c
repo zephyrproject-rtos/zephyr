@@ -118,7 +118,7 @@ static void button_callback(const struct device *gpiob, struct gpio_callback *cb
 	LOG_INF("Button pressed");
 	if (conn) {
 		if (notify_enable) {
-			err = bt_gatt_notify(NULL, &stsensor_svc.attrs[2],
+			err = bt_gatt_notify(NULL, &stsensor_svc.attrs[4],
 					     &but_val, sizeof(but_val));
 			if (err) {
 				LOG_ERR("Notify error: %d", err);
