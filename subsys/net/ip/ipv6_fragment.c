@@ -470,7 +470,7 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	}
 
 	more = flag & 0x01;
-	net_pkt_set_ipv6_fragment_offset(pkt, flag & 0xfff8);
+	net_pkt_set_ipv6_fragment_flags(pkt, flag);
 
 	if (more && net_pkt_get_len(pkt) % 8) {
 		/* Fragment length is not multiple of 8, discard
