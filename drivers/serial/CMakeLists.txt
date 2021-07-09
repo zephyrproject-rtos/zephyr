@@ -2,6 +2,7 @@
 
 zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag_hal.c)
+zephyr_library_sources_ifdef(CONFIG_UART_TELINK_B91 uart_b91.c)
 zephyr_library_sources_ifdef(CONFIG_UART_IMX uart_imx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_CC13XX_CC26XX uart_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_CC32XX uart_cc32xx.c)
