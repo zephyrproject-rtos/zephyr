@@ -400,6 +400,7 @@
 /dts/x86/                                 @jhedberg
 /dts/xtensa/xtensa.dtsi                   @ydamigos
 /dts/xtensa/intel/                        @dcpleung
+/dts/xtensa/espressif/                    @glaubermaroto
 /dts/sparc/                               @martin-aberg
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter

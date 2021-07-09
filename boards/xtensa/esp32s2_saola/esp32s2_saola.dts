@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s2.dtsi>
+
+/ {
+	model = "esp32s2_saola";
+	compatible = "espressif,esp32s2";
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
