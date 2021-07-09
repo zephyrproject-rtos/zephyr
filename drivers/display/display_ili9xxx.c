@@ -24,8 +24,7 @@ struct ili9xxx_data {
 int ili9xxx_transmit(const struct device *dev, uint8_t cmd, const void *tx_data,
 		     size_t tx_len)
 {
-	const struct ili9xxx_config *config =
-		(struct ili9xxx_config *)dev->config;
+	const struct ili9xxx_config *config = dev->config;
 
 	int r;
 	struct spi_buf tx_buf;
@@ -72,8 +71,7 @@ static int ili9xxx_exit_sleep(const struct device *dev)
 
 static void ili9xxx_hw_reset(const struct device *dev)
 {
-	const struct ili9xxx_config *config =
-		(struct ili9xxx_config *)dev->config;
+	const struct ili9xxx_config *config = dev->config;
 
 	if (config->reset.port == NULL) {
 		return;
@@ -115,9 +113,8 @@ static int ili9xxx_write(const struct device *dev, const uint16_t x,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
-	const struct ili9xxx_config *config =
-		(struct ili9xxx_config *)dev->config;
-	struct ili9xxx_data *data = (struct ili9xxx_data *)dev->data;
+	const struct ili9xxx_config *config = dev->config;
+	struct ili9xxx_data *data = dev->data;
 
 	int r;
 	const uint8_t *write_data_start = (const uint8_t *)buf;
@@ -216,7 +213,7 @@ static int
 ili9xxx_set_pixel_format(const struct device *dev,
 			 const enum display_pixel_format pixel_format)
 {
-	struct ili9xxx_data *data = (struct ili9xxx_data *)dev->data;
+	struct ili9xxx_data *data = dev->data;
 
 	int r;
 	uint8_t tx_data;
@@ -247,7 +244,7 @@ ili9xxx_set_pixel_format(const struct device *dev,
 static int ili9xxx_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
-	struct ili9xxx_data *data = (struct ili9xxx_data *)dev->data;
+	struct ili9xxx_data *data = dev->data;
 
 	int r;
 	uint8_t tx_data = ILI9XXX_MADCTL_BGR;
@@ -276,9 +273,8 @@ static int ili9xxx_set_orientation(const struct device *dev,
 static void ili9xxx_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
-	struct ili9xxx_data *data = (struct ili9xxx_data *)dev->data;
-	const struct ili9xxx_config *config =
-		(struct ili9xxx_config *)dev->config;
+	struct ili9xxx_data *data = dev->data;
+	const struct ili9xxx_config *config = dev->config;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 
@@ -300,8 +296,7 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 
 static int ili9xxx_configure(const struct device *dev)
 {
-	const struct ili9xxx_config *config =
-		(struct ili9xxx_config *)dev->config;
+	const struct ili9xxx_config *config = dev->config;
 
 	int r;
 	enum display_pixel_format pixel_format;
@@ -352,8 +347,7 @@ static int ili9xxx_configure(const struct device *dev)
 
 static int ili9xxx_init(const struct device *dev)
 {
-	const struct ili9xxx_config *config =
-		(struct ili9xxx_config *)dev->config;
+	const struct ili9xxx_config *config = dev->config;
 
 	int r;
 
