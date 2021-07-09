@@ -545,6 +545,15 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 		NET_DBG("IPv6 next header %d", current_hdr);
 
+		if (current_hdr == NET_IPV6_NEXTHDR_NONE) {
+			/* There is nothing after this header (see RFC 2460,
+			 * ch 4.7), so we can drop the packet now.
+			 * This is not an error case so do not update drop
+			 * statistics.
+			 */
+			return NET_DROP;
+		}
+
 		if (net_pkt_read_u8(pkt, &nexthdr)) {
 			goto drop;
 		}
@@ -591,14 +600,6 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			}
 
 			goto bad_hdr;
-
-		case NET_IPV6_NEXTHDR_NONE:
-			/* There is nothing after this header (see RFC 2460,
-			 * ch 4.7), so we can drop the packet now.
-			 * This is not an error case so do not update drop
-			 * statistics.
-			 */
-			return NET_DROP;
 
 		default:
 			goto bad_hdr;
