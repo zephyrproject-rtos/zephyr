@@ -218,9 +218,9 @@ arduino_spi: &spi3 {
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
 		reg = <0>;
-		/* MX24R64 supports only pp and pp4io */
+		/* MX25R64 supports only pp and pp4io */
 		writeoc = "pp4io";
-		/* MX24R64 supports all readoc options */
+		/* MX25R64 supports all readoc options */
 		readoc = "read4io";
 		sck-frequency = <8000000>;
 		label = "MX25R64";
