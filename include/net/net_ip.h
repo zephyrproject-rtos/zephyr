@@ -567,6 +567,8 @@ union net_proto_header {
 
 #define NET_IPV6H_LENGTH_OFFSET		0x04	/* Offset of the Length field in the IPv6 header */
 
+#define NET_IPV6_FRAGH_OFFSET_MASK	0xfff8	/* Mask for the 13-bit Fragment Offset field */
+
 /** @endcond */
 
 /**
