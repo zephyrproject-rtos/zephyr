@@ -62,6 +62,7 @@
 
 extern enum bst_result_t bst_result;
 
+static uint8_t const own_addr_reenable[] = {0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5};
 static uint8_t const own_addr[] = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5};
 
 static const struct bt_data ad[] = {
@@ -304,6 +305,88 @@ static void test_advx_main(void)
 	ext_adv_param.timeout = 50;
 	ext_adv_param.num_events = 0;
 	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting...");
+	while (!is_sent) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if (num_sent_actual != num_sent_expected) {
+		FAIL("Num sent actual = %u, expected = %u\n", num_sent_actual,
+		     num_sent_expected);
+	}
+
+	k_sleep(K_MSEC(1000));
+
+	printk("Re-enable advertising using extended commands (max_events)...");
+	is_sent = false;
+	num_sent_actual = 0;
+	num_sent_expected = 3;
+	ext_adv_param.timeout = 0;
+	ext_adv_param.num_events = 3;
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(100));
+
+	printk("Setting advertising random address before re-enabling...");
+	handle = 0x0000;
+	err = ll_adv_aux_random_addr_set(handle, own_addr_reenable);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Re-enabling...");
+	handle = 0x0000;
+	err = ll_adv_enable(handle, 1,
+			    ext_adv_param.timeout,
+			    ext_adv_param.num_events);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Waiting...");
+	while (!is_sent) {
+		k_sleep(K_MSEC(100));
+	}
+	printk("done.\n");
+
+	if (num_sent_actual != num_sent_expected) {
+		FAIL("Num sent actual = %u, expected = %u\n", num_sent_actual,
+		     num_sent_expected);
+	}
+
+	k_sleep(K_MSEC(1000));
+
+	printk("Re-enable advertising using extended commands (duration)...");
+	is_sent = false;
+	num_sent_actual = 0;
+	num_sent_expected = 4;
+	ext_adv_param.timeout = 50;
+	ext_adv_param.num_events = 0;
+	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	k_sleep(K_MSEC(100));
+
+	printk("Re-enabling...");
+	handle = 0x0000;
+	err = ll_adv_enable(handle, 1,
+			    ext_adv_param.timeout,
+			    ext_adv_param.num_events);
 	if (err) {
 		goto exit;
 	}
@@ -797,14 +880,25 @@ exit:
 	bs_trace_silent_exit(0);
 }
 
+
+static bool is_reenable_addr;
+
 static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		    struct net_buf_simple *buf)
 {
-	printk("%s: type = 0x%x.\n", __func__, adv_type);
+	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	struct bt_conn *conn;
+	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));
+	printk("%s: type = 0x%x, addr = %s\n", __func__, adv_type, le_addr);
+
+	if (!is_reenable_addr &&
+	    !memcmp(own_addr_reenable, addr->a.val,
+		    sizeof(own_addr_reenable))) {
+		is_reenable_addr = true;
+	}
 
 	if (connection_to_test) {
+		struct bt_conn *conn;
 		int err;
 
 		connection_to_test = false;
@@ -1011,6 +1105,7 @@ static void test_scanx_main(void)
 	connection_to_test = true;
 
 	printk("Start scanning...");
+	is_reenable_addr = false;
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
 		goto exit;
@@ -1093,11 +1188,18 @@ static void test_scanx_main(void)
 
 	printk("Start scanning for Periodic Advertisements...");
 	is_periodic = false;
+	is_reenable_addr = false;
 	per_adv_evt_cnt_actual = 0;
 	per_adv_evt_cnt_expected = 3;
 	err = bt_le_scan_start(&scan_param, scan_cb);
 	if (err) {
 		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Verify address update due to re-enable of advertising...");
+	while (!is_reenable_addr) {
+		k_sleep(K_MSEC(30));
 	}
 	printk("success.\n");
 
