@@ -76,7 +76,7 @@ static const struct z_arm_mpu_partition static_regions[] = {
 		/* Special non-cacheable RAM area */
 		.start = (uint32_t)&_nocache_ram_start,
 		.size = (uint32_t)&_nocache_ram_size,
-		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
+		.attr = K_MEM_PARTITION_P_RW_U_RW_NOCACHE,
 		},
 #endif /* CONFIG_NOCACHE_MEMORY */
 #if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
