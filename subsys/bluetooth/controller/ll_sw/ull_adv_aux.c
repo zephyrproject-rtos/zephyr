@@ -761,7 +761,7 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	/* ADI */
 	{
 		struct pdu_adv_adi *pri_adi, *sec_adi;
-		uint16_t did = UINT16_MAX;
+		uint16_t did;
 
 		pri_dptr -= sizeof(struct pdu_adv_adi);
 		sec_dptr -= sizeof(struct pdu_adv_adi);
@@ -782,12 +782,14 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 			pri_adi_prev = (void *)pri_dptr_prev;
 			did = sys_le16_to_cpu(pri_adi_prev->did);
+			did++;
 		} else {
+			static uint16_t did_unique;
+
 			pri_adi->sid = adv->sid;
 			sec_adi->sid = adv->sid;
+			did = did_unique++;
 		}
-
-		did++;
 
 		pri_adi->did = sys_cpu_to_le16(did);
 		sec_adi->did = sys_cpu_to_le16(did);
