@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&flash0 {
+	erase-block-size = <1024>;
+	write-block-size = <4>;
+	reg = <0x00000000 DT_SIZE_K(1024)>;
+};

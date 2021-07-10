@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2021 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+tests:
+  drivers.flash.flash_partition:
+    platform_allow: qemu_x86 native_posix native_posix_64
+                    OVERLAY_CONFIG=boards/flash_simulator.conf
+    tags: driver
+  drivers.flash.flash_parititon.qemu_erase_value_0x00:
+    extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
+                OVERLAY_CONFIG=boards/flash_simulator.conf
+    platform_allow: qemu_x86
+    tags: driver
+  drivers.flash.flash_partition.posix_erase_value_0x00:
+    extra_args: DTC_OVERLAY_FILE=boards/native_posix_ev_0x00.overlay
+                OVERLAY_CONFIG=boards/flash_simulator.conf
+    platform_allow: native_posix
+    tags: driver
+  drivers.flash.fash_partition.posix_64_erase_value_0x00:
+    extra_args: DTC_OVERLAY_FILE=boards/native_posix_64_ev_0x00.overlay
+                OVERLAY_CONFIG=boards/flash_simulator.conf
+    platform_allow: native_posix_64
+    tags: driver
