@@ -20,3 +20,9 @@ zephyr_sources_ifdef(CONFIG_SWERV_PIC               intc_swerv_pic.c)
 zephyr_sources_ifdef(CONFIG_NPCX_MIWU               intc_miwu.c)
 zephyr_sources_ifdef(CONFIG_LEON_IRQMP              intc_irqmp.c)
 zephyr_sources_ifdef(CONFIG_INTEL_VTD_ICTL          intc_intel_vtd.c)
+
+if(CONFIG_INTEL_VTD_ICTL)
+	zephyr_library_include_directories(
+		 ${ZEPHYR_BASE}/arch/x86/include
+	)
+endif()

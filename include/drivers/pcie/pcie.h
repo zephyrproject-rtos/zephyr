@@ -156,6 +156,24 @@ extern void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
  */
 extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
 
+/**
+ * @brief Dynamically connect a PCIe endpoint IRQ to an ISR handler
+ *
+ * @param bdf the PCI endpoint to examine
+ * @param irq the IRQ to connect (see pcie_alloc_irq())
+ * @param priority priority of the IRQ
+ * @param routine the ISR handler to connect to the IRQ
+ * @param parameter the parameter to provide to the handler
+ * @param flags IRQ connection flags
+ * @return true if connected, false otherwise
+ */
+extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
+				     unsigned int irq,
+				     unsigned int priority,
+				     void (*routine)(const void *parameter),
+				     const void *parameter,
+				     uint32_t flags);
+
 /*
  * Configuration word 13 contains the head of the capabilities list.
  */
@@ -252,6 +270,25 @@ extern uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id);
 #define PCIE_MAX_BUS  (0xFFFFFFFF & PCIE_BDF_BUS_MASK)
 #define PCIE_MAX_DEV  (0xFFFFFFFF & PCIE_BDF_DEV_MASK)
 #define PCIE_MAX_FUNC (0xFFFFFFFF & PCIE_BDF_FUNC_MASK)
+
+/**
+ * @brief Initialize an interrupt handler for a PCIe endpoint IRQ
+ *
+ * This routine is only meant to be used by drivers using PCIe bus and having
+ * fixed or MSI based IRQ (so no runtime detection of the IRQ). In case
+ * of runtime detection see pcie_connect_dynamic_irq()
+ *
+ * @param bdf_p PCIe endpoint BDF
+ * @param irq_p IRQ line number.
+ * @param priority_p Interrupt priority.
+ * @param isr_p Address of interrupt service routine.
+ * @param isr_param_p Parameter passed to interrupt service routine.
+ * @param flags_p Architecture-specific IRQ configuration flags..
+ */
+#define PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
+			 isr_p, isr_param_p, flags_p)			\
+	ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
+			      isr_p, isr_param_p, flags_p)
 
 #ifdef __cplusplus
 }
