@@ -5214,7 +5214,7 @@ no_ext_hdr:
 
 	adv_info->prim_phy = find_lsb_set(phy);
 	adv_info->sec_phy = sec_phy;
-	adv_info->sid = (adi) ? adi->sid : 0U;
+	adv_info->sid = (adi) ? adi->sid : 0xff;
 	adv_info->tx_power = tx_pwr;
 	adv_info->rssi = rssi;
 	adv_info->interval = interval_le16;
