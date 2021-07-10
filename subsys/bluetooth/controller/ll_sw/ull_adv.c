@@ -1040,7 +1040,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 							    10000);
 #else
 	/* Legacy ADV only supports LE_1M PHY */
-	const uint8_t phy = 1;
+	const uint8_t phy = PHY_1M;
 #endif
 
 	/* For now we adv on all channels enabled in channel map */
@@ -1818,10 +1818,7 @@ static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 	/* Calculate the PDU Tx Time and hence the radio event length */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
-		uint16_t adv_size;
-
-		adv_size = PDU_OVERHEAD_SIZE(phy) + pdu->len;
-		time_us += BYTES2US(adv_size, phy) * adv_chn_cnt +
+		time_us += PKT_AC_US(pdu->len, phy) * adv_chn_cnt +
 			   EVENT_RX_TX_TURNAROUND(phy) * (adv_chn_cnt - 1);
 	} else
 #endif
@@ -1861,7 +1858,7 @@ static uint16_t adv_time_get(struct pdu_adv *pdu, struct pdu_adv *pdu_scan,
 			time_us += (BYTES2US(adv_size, PHY_1M) +
 				    EVENT_IFS_MAX_US + rx_to_us +
 				    rxtx_turn_us) * (adv_chn_cnt-1) +
-				   BYTES2US(adv_size, phy) + EVENT_IFS_MAX_US;
+				   BYTES2US(adv_size, PHY_1M) + EVENT_IFS_MAX_US;
 		}
 	}
 
