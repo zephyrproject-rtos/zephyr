@@ -236,6 +236,15 @@ config PCIE_MMIO_CFG
 	  Configuration Space instead of the traditional 0xCF8/0xCFC
 	  IO Port registers.
 
+config MULTI_MSI_ANY_PRIORITY
+	bool "Allow to allocate lower priority interrupt than requested"
+	default y
+	help
+	  Allow to allocate lower priority interrupt than requested for
+	  Multi MSI interrupt. If enabled, allow PCI subsystem to
+	  allocate contigious vectors from lower priority vectors if
+	  not availble in current priority requested.
+
 config KERNEL_VM_SIZE
 	default 0xC0000000 if ACPI
 

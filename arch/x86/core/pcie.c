@@ -236,6 +236,74 @@ static inline void _write_pcie_irq_data(pcie_bdf_t bdf, uint32_t data)
 	pcie_conf_write(bdf, PCIE_CONF_INTR, data);
 }
 
+#if !defined(CONFIG_INTEL_VTD_ICTL)
+static unsigned int get_msi_aligned_vector(unsigned int priority,
+						msi_vector_t *vectors,
+						uint8_t n_vector)
+{
+	const int MAX_PRIORITY = 13;
+	int vector = 0, prev_vector = -1, start_vector;
+	int i;
+
+	while (vector != -1) {
+		vector = z_x86_allocate_vector(priority, prev_vector);
+		if ((vector == -1) && (priority <= MAX_PRIORITY)) {
+#if defined (CONFIG_MULTI_MSI_ANY_PRIORITY)
+			vector = 0;
+			/* try to get vector from lower priority */
+			priority ++;
+			continue;
+#else
+			__ASSERT(false,
+			"fail to allocate vector with requested priority");
+			break;
+#endif
+		} else if (priority >= MAX_PRIORITY) {
+			break;
+		}
+
+		/* n_vector assume always power of 2 */
+		if (!(vector % n_vector)) {
+			start_vector = vector;
+		} else {
+#if defined (CONFIG_MULTI_MSI_ANY_PRIORITY)
+			prev_vector = vector;
+			continue;
+#else
+			__ASSERT(false,
+			"fail to allocate vector with requested priority:\
+			unaligned start vector!!");
+			break;
+#endif
+		}
+
+		prev_vector = start_vector;
+		vectors[0].arch.vector = start_vector;
+
+		for (i = 1; i < n_vector; i++) {
+			vector = z_x86_allocate_vector(priority, prev_vector);
+			if (prev_vector != (vector - 1)) {
+				break;
+			}
+			prev_vector = vector;
+			vectors[i].arch.vector = vector;
+		}
+
+		if (i == n_vector) {
+			return n_vector;
+		} else {
+#if defined (CONFIG_MULTI_MSI_ANY_PRIORITY)
+			continue;
+#else
+			__ASSERT(false, "fail to allocate contiguous vectors !!");
+			break;
+#endif
+		}
+	}
+	return 0;
+}
+#endif
+
 uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				       msi_vector_t *vectors,
 				       uint8_t n_vector)
@@ -264,6 +332,14 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				vectors[i].arch.remap = true;
 			}
 		}
+#else
+#ifdef CONFIG_PCIE_MSI_X
+		if (!vectors[0].msix)
+#endif
+		{
+			/* Try to allocate contiguous vector for MSI */
+			return get_msi_aligned_vector(priority, vectors, n_vector);
+		}
 #endif /* CONFIG_INTEL_VTD_ICTL */
 
 		for (i = 0; i < n_vector; i++) {
@@ -279,17 +355,6 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority,
 				z_x86_allocate_vector(priority, prev_vector);
 			if (vectors[i].arch.vector < 0) {
 				return 0;
-			}
-
-#ifdef CONFIG_PCIE_MSI_X
-			if (!vectors[0].msix)
-#endif
-			{
-				if (prev_vector != -1) {
-					__ASSERT(prev_vector == (vectors[i].arch.vector - 1),
-						"Failed to obtain contiguous MSI vectors\n");
-					return 0;
-				}
 			}
 
 			prev_vector = vectors[i].arch.vector;
