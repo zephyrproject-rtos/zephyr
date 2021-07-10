@@ -849,13 +849,11 @@ static uint16_t sync_time_get(struct ll_adv_sync_set *sync,
 {
 	struct lll_adv_sync *lll_sync;
 	struct lll_adv *lll;
-	uint32_t adv_size;
 	uint32_t time_us;
 
 	lll_sync = &sync->lll;
 	lll = lll_sync->adv; /* or use &adv->lll, of adv parameter passed */
-	adv_size = PDU_OVERHEAD_SIZE(lll->phy_s) + pdu->len;
-	time_us = BYTES2US(adv_size, lll->phy_s) + EVENT_OVERHEAD_START_US +
+	time_us = PKT_AC_US(pdu->len, lll->phy_s) + EVENT_OVERHEAD_START_US +
 		  EVENT_OVERHEAD_END_US;
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
