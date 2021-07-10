@@ -420,6 +420,10 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			pdu->tx_addr = 0;
 		}
 
+		/* TargetA flag */
+		if (pri_hdr_prev.tgt_addr) {
+			pri_dptr_prev += BDADDR_SIZE;
+		}
 		/* TargetA flag in primary channel PDU only for directed */
 		if (evt_prop & BT_HCI_LE_ADV_PROP_DIRECT) {
 			pri_hdr->tgt_addr = 1;
@@ -433,12 +437,17 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 		/* ADI flag */
 		if (pri_hdr_prev.adi) {
+			pri_dptr_prev += sizeof(struct pdu_adv_adi);
+
 			pri_hdr->adi = 1;
 			pri_dptr += sizeof(struct pdu_adv_adi);
 		}
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr flag */
+		if (pri_hdr_prev.aux_ptr) {
+			pri_dptr_prev += sizeof(struct pdu_adv_aux_ptr);
+		}
 		/* Need aux for connectable or scannable extended advertising */
 		if (pri_hdr_prev.aux_ptr ||
 		    ((evt_prop & (BT_HCI_LE_ADV_PROP_CONN |
@@ -451,6 +460,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* No SyncInfo flag in primary channel PDU */
 
 		/* Tx Power flag */
+		if (pri_hdr_prev.tx_pwr) {
+			pri_dptr_prev++;
+		}
 		/* C1, Tx Power is optional on the LE 1M PHY, and reserved for
 		 * for future use on the LE Coded PHY.
 		 */
@@ -474,6 +486,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* No ACAD in primary channel PDU */
 
 		/* Tx Power */
+		if (pri_hdr_prev.tx_pwr) {
+			pri_dptr_prev--;
+		}
 		if (pri_hdr->tx_pwr) {
 			uint8_t _tx_pwr;
 
@@ -493,6 +508,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr */
+		if (pri_hdr_prev.aux_ptr) {
+			pri_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
+		}
 		if (pri_hdr->aux_ptr) {
 			ull_adv_aux_ptr_fill(&pri_dptr, phy_s);
 		}
@@ -500,14 +518,17 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 		/* ADI */
+		if (pri_hdr_prev.adi) {
+			pri_dptr_prev -= sizeof(struct pdu_adv_adi);
+		}
 		if (pri_hdr->adi) {
 			struct pdu_adv_adi *adi;
 
 			pri_dptr -= sizeof(struct pdu_adv_adi);
 
-			/* NOTE: memcpy shall handle overlapping buffers */
-			memcpy(pri_dptr, pri_dptr_prev,
-			       sizeof(struct pdu_adv_adi));
+			/* NOTE: memmove shall handle overlapping buffers */
+			memmove(pri_dptr, pri_dptr_prev,
+				sizeof(struct pdu_adv_adi));
 
 			adi = (void *)pri_dptr;
 			adi->sid = sid;
@@ -517,6 +538,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* No CTEInfo field in primary channel PDU */
 
 		/* TargetA */
+		if (pri_hdr_prev.tgt_addr) {
+			pri_dptr_prev -= BDADDR_SIZE;
+		}
 		if (pri_hdr->tgt_addr) {
 			pri_dptr -= BDADDR_SIZE;
 			/* NOTE: RPA will be updated on enable, if needed */

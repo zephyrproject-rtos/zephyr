@@ -583,7 +583,6 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
 	pri_pdu->tx_addr = 0U;
-	pri_pdu->rx_addr = 0U;
 
 	if (pri_hdr_prev.adv_addr) {
 		pri_dptr_prev += BDADDR_SIZE;
@@ -593,7 +592,31 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 	}
 	sec_dptr += BDADDR_SIZE;
 
-	/* No TargetA in primary and secondary channel for undirected */
+	/* No TargetA in primary and secondary channel for undirected.
+	 * Move from primary to secondary PDU, if present in primary PDU.
+	 */
+	if (pri_hdr_prev.tgt_addr) {
+		sec_hdr->tgt_addr = 1U;
+		sec_pdu->rx_addr = pri_pdu_prev->rx_addr;
+		sec_dptr += BDADDR_SIZE;
+
+	/* Retain the target address if present in the previous PDU */
+	} else if (!(sec_hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_ADVA) &&
+		   sec_hdr_prev.tgt_addr) {
+		sec_hdr->tgt_addr = 1U;
+		sec_pdu->rx_addr = sec_pdu_prev->rx_addr;
+		sec_dptr += BDADDR_SIZE;
+	}
+	pri_pdu->rx_addr = 0U;
+
+	if (pri_hdr_prev.tgt_addr) {
+		pri_dptr_prev += BDADDR_SIZE;
+	}
+
+	if (sec_hdr_prev.tgt_addr) {
+		sec_dptr_prev += BDADDR_SIZE;
+	}
+
 	/* No CTEInfo flag in primary and secondary channel PDU */
 
 	/* ADI flag */
@@ -815,7 +838,24 @@ uint8_t ull_adv_aux_hdr_set_clear(struct ll_adv_set *adv,
 
 	/* No CTEInfo field in primary channel PDU */
 
-	/* No TargetA non-conn non-scan advertising  */
+	/* No TargetA non-conn non-scan advertising, but present in directed
+	 * advertising.
+	 */
+	if (sec_hdr->tgt_addr) {
+		void *bdaddr;
+
+		if (sec_hdr_prev.tgt_addr) {
+			sec_dptr_prev -= BDADDR_SIZE;
+			bdaddr = sec_dptr_prev;
+		} else {
+			pri_dptr_prev -= BDADDR_SIZE;
+			bdaddr = pri_dptr_prev;
+		}
+
+		sec_dptr -= BDADDR_SIZE;
+
+		memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
+	}
 
 	/* No AdvA in primary channel due to AuxPtr being added */
 
