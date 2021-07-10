@@ -66,7 +66,11 @@ static bool hw_wdt_started;
  */
 static void task_wdt_trigger(struct k_timer *timer_id)
 {
+#ifdef CONFIG_64BIT
+	int channel_id = (long long)k_timer_user_data_get(timer_id);
+#else 
 	int channel_id = (int)k_timer_user_data_get(timer_id);
+#endif
 
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
 	if (channel_id == TASK_WDT_BACKGROUND_CHANNEL) {
@@ -196,7 +200,7 @@ int task_wdt_feed(int channel_id)
 	}
 
 	/* update task wdt kernel timer */
-	k_timer_user_data_set(&timer, (void *)next_channel_id);
+	k_timer_user_data_set(&timer, (void *)(uintptr_t)next_channel_id);
 	k_timer_start(&timer, K_TIMEOUT_ABS_TICKS(next_timeout),
 		K_TIMEOUT_ABS_TICKS(next_timeout));
 
