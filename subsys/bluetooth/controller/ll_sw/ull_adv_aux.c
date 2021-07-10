@@ -1072,33 +1072,27 @@ static uint16_t aux_time_get(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 {
 	struct lll_adv_aux *lll_aux;
 	struct lll_adv *lll;
-	uint32_t adv_size;
 	uint16_t time_us;
 
 	lll_aux = &aux->lll;
 	lll = lll_aux->adv;
-	adv_size = PDU_OVERHEAD_SIZE(lll->phy_s) + pdu->len;
-	time_us = BYTES2US(adv_size, lll->phy_s) + EVENT_OVERHEAD_START_US +
+	time_us = PKT_AC_US(pdu->len, lll->phy_s) + EVENT_OVERHEAD_START_US +
 		  EVENT_OVERHEAD_END_US;
 
 	if (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) {
 		const uint16_t conn_req_us =
-			BYTES2US((PDU_OVERHEAD_SIZE(lll->phy_s) +
-				 INITA_SIZE + ADVA_SIZE + LLDATA_SIZE),
-				 lll->phy_s);
-		const uint8_t conn_rsp_us =
-			BYTES2US((PDU_OVERHEAD_SIZE(lll->phy_s) +
-				  PDU_AC_EXT_HEADER_SIZE_MIN +
-				  ADVA_SIZE + TARGETA_SIZE), lll->phy_s);
+			PKT_AC_US((INITA_SIZE + ADVA_SIZE + LLDATA_SIZE),
+				  lll->phy_s);
+		const uint16_t conn_rsp_us =
+			PKT_AC_US((PDU_AC_EXT_HEADER_SIZE_MIN + ADVA_SIZE +
+				   TARGETA_SIZE), lll->phy_s);
 
 		time_us += EVENT_IFS_MAX_US * 2 + conn_req_us + conn_rsp_us;
 	} else if (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_SCAN) {
-		const uint8_t scan_req_us  =
-			BYTES2US((PDU_OVERHEAD_SIZE(lll->phy_s) +
-				 SCANA_SIZE + ADVA_SIZE), lll->phy_s);
+		const uint16_t scan_req_us  =
+			PKT_AC_US((SCANA_SIZE + ADVA_SIZE), lll->phy_s);
 		const uint16_t scan_rsp_us =
-			BYTES2US((PDU_OVERHEAD_SIZE(lll->phy_s) +
-				 ADVA_SIZE + pdu_scan->len), lll->phy_s);
+			PKT_AC_US(pdu_scan->len, lll->phy_s);
 
 		time_us += EVENT_IFS_MAX_US * 2 + scan_req_us + scan_rsp_us;
 	}
