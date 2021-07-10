@@ -38,12 +38,6 @@ properties:
       information in cases were runtime retrieval of SFDP data
       is not desired.
 
-  has-be32k:
-    type: boolean
-    required: false
-    deprecated: true
-    description: Not used after Zephyr 2.3.0
-
   quad-enable-requirements:
     type: string
     enum:
