@@ -53,3 +53,4 @@ int ull_disable(void *param);
 void ull_drift_ticks_get(struct node_rx_event_done *done,
 			 uint32_t *ticks_drift_plus,
 			 uint32_t *ticks_drift_minus);
+void ull_set_done_extra_type(uint8_t type);
