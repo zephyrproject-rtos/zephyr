@@ -279,11 +279,11 @@ int z_impl_zsock_close(int sock)
 
 	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
 
-	z_free_fd(sock);
-
 	ret = vtable->fd_vtable.close(ctx);
 
 	k_mutex_unlock(lock);
+
+	z_free_fd(sock);
 
 	return ret;
 }
