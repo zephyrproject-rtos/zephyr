@@ -19,4 +19,13 @@ source "soc/arm/microchip_mec/mec172x/Kconfig.defconfig.mec172x*"
 config CORTEX_M_SYSTICK
 	default y
 
+config CLOCK_CONTROL_MCHP_XEC
+	default y
+	depends on CLOCK_CONTROL
+	help
+	  Enable support for Microchip XEC clock controller driver. Driver
+	  configures the 32 KHz input sources for the PLL and 32 KHz based
+	  periperpherals (RTC, RTOS timer, hibernation timers). Sources are
+	  internal silicon OSC or external crystal.
+
 endif # SOC_SERIES_MEC172X
