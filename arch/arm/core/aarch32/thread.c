@@ -396,7 +396,7 @@ uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, const uint32_t psp
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
 		/* User thread */
-		if ((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0U) {
+		if (z_arm_thread_is_in_user_mode() == false) {
 			/* User thread in privilege mode */
 			if (IS_MPU_GUARD_VIOLATION(
 				thread->arch.priv_stack_start - guard_len,
