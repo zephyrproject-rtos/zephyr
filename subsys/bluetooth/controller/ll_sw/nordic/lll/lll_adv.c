@@ -102,15 +102,64 @@ static inline bool isr_rx_ci_adva_check(uint8_t tx_addr, uint8_t *addr,
 #endif
 
 #define PDU_MEM_SIZE       PDU_ADV_MEM_SIZE
-#define PDU_MEM_COUNT_MIN  (BT_CTLR_ADV_SET + \
-			    (BT_CTLR_ADV_SET * PAYLOAD_FRAG_COUNT) + \
-			    (BT_CTLR_ADV_AUX_SET * PAYLOAD_FRAG_COUNT) + \
-			    (BT_CTLR_ADV_SYNC_SET * PAYLOAD_FRAG_COUNT))
-#define PDU_MEM_FIFO_COUNT ((BT_CTLR_ADV_SET * PAYLOAD_FRAG_COUNT * 2) + \
-			    (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
+
+/* AD data and Scan Response Data need 2 PDU buffers each in the double buffer
+ * implementation. Allocate 3 PDU buffers plus CONFIG_BT_CTLR_ADV_DATA_BUF_MAX
+ * defined buffer count as the minimum number of buffers that meet the legacy
+ * advertising needs. Add 1 each for Extended and Periodic Advertising, needed
+ * extra for double buffers for these is kept as configurable, by increasing
+ * CONFIG_BT_CTLR_ADV_DATA_BUF_MAX.
+ */
+#define PDU_MEM_COUNT_MIN  ((BT_CTLR_ADV_SET * 3) + \
+			    ((BT_CTLR_ADV_AUX_SET + \
+			      BT_CTLR_ADV_SYNC_SET) * \
 			     PAYLOAD_FRAG_COUNT))
-#define PDU_MEM_COUNT      (PDU_MEM_COUNT_MIN + PDU_MEM_FIFO_COUNT)
-#define PDU_POOL_SIZE      (PDU_MEM_SIZE * PDU_MEM_COUNT)
+
+/* Maximum advertising PDU buffers to allocate, which is the sum of minimum
+ * plus configured additional count in CONFIG_BT_CTLR_ADV_DATA_BUF_MAX.
+ */
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+/* NOTE: When Periodic Advertising is supported then one additional PDU buffer
+ *       plus the additional CONFIG_BT_CTLR_ADV_DATA_BUF_MAX amount of buffers
+ *       is allocated.
+ *       Set CONFIG_BT_CTLR_ADV_DATA_BUF_MAX to (BT_CTLR_ADV_AUX_SET +
+ *       BT_CTLR_ADV_SYNC_SET) if
+ *       PDU data is updated more frequently compare to the advertising
+ *       interval with random delay included.
+ */
+#define PDU_MEM_COUNT_MAX (PDU_MEM_COUNT_MIN + \
+			   ((1 + CONFIG_BT_CTLR_ADV_DATA_BUF_MAX) * \
+			    PAYLOAD_FRAG_COUNT))
+#else /* !CONFIG_BT_CTLR_ADV_PERIODIC */
+/* NOTE: When Extended Advertising is supported but no Periodic Advertising
+ *       then additional CONFIG_BT_CTLR_ADV_DATA_BUF_MAX amount of buffers is
+ *       allocated.
+ *       Set CONFIG_BT_CTLR_ADV_DATA_BUF_MAX to BT_CTLR_ADV_AUX_SET if
+ *       PDU data is updated more frequently compare to the advertising
+ *       interval with random delay included.
+ */
+#define PDU_MEM_COUNT_MAX (PDU_MEM_COUNT_MIN + \
+			   (CONFIG_BT_CTLR_ADV_DATA_BUF_MAX * \
+			    PAYLOAD_FRAG_COUNT))
+#endif /* !CONFIG_BT_CTLR_ADV_PERIODIC */
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+/* NOTE: When Extended Advertising is not supported then
+ *       CONFIG_BT_CTLR_ADV_DATA_BUF_MAX is restricted to 1 in Kconfig file.
+ */
+#define PDU_MEM_COUNT_MAX (PDU_MEM_COUNT_MIN + CONFIG_BT_CTLR_ADV_DATA_BUF_MAX)
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
+/* FIFO element count, that returns the consumed advertising PDUs (AD and Scan
+ * Response). 1 each for primary channel PDU (AD and Scan Response), plus one
+ * each for Extended Advertising and Periodic Advertising times the number of
+ * chained fragments that would get returned.
+ */
+#define PDU_MEM_FIFO_COUNT (BT_CTLR_ADV_SET + 1 +\
+			    ((BT_CTLR_ADV_AUX_SET + BT_CTLR_ADV_SYNC_SET) * \
+			     PAYLOAD_FRAG_COUNT))
+
+#define PDU_POOL_SIZE      (PDU_MEM_SIZE * PDU_MEM_COUNT_MAX)
 
 /* Free AD data PDU buffer pool */
 static struct {
