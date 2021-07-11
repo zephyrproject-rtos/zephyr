@@ -65,7 +65,6 @@ GEN_OFFSET_SYM(_callee_saved_t, fs11);
 
 /* esf member offsets */
 GEN_OFFSET_SYM(z_arch_esf_t, ra);
-GEN_OFFSET_SYM(z_arch_esf_t, gp);
 GEN_OFFSET_SYM(z_arch_esf_t, tp);
 GEN_OFFSET_SYM(z_arch_esf_t, t0);
 GEN_OFFSET_SYM(z_arch_esf_t, t1);
