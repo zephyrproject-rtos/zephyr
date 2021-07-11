@@ -251,18 +251,6 @@ struct emi_regs {
 	volatile uint16_t EC_OS_INT_CLR_EN;
 };
 
-/** @brief Glocal Configuration Registers */
-struct global_cfg_regs {
-	volatile uint8_t RSVD0[2];
-	volatile uint8_t TEST02;
-	volatile uint8_t RSVD1[4];
-	volatile uint8_t LOG_DEV_NUM;
-	volatile uint8_t RSVD2[20];
-	volatile uint32_t DEV_REV_ID;
-	volatile uint8_t LEGACY_DEV_ID;
-	volatile uint8_t RSVD3[14];
-};
-
 /** @brief All GPIO register as arrays of registers */
 struct gpio_regs {
 	volatile uint32_t CTRL[192];
@@ -729,41 +717,6 @@ struct p80bd_regs {
 	volatile uint32_t ALIAS_BLS;
 };
 
-/** @brief Power Control Reset (PCR) */
-struct pcr_regs {
-	volatile uint32_t SYS_SLP_CTRL;
-	volatile uint32_t PROC_CLK_CTRL;
-	volatile uint32_t SLOW_CLK_CTRL;
-	volatile uint32_t OSC_ID;
-	volatile uint32_t PWR_RST_STS;
-	volatile uint32_t PWR_RST_CTRL;
-	volatile uint32_t SYS_RST;
-	volatile uint32_t TURBO_CLK;
-	volatile uint32_t TEST20;
-	uint32_t RSVD1[3];
-	volatile uint32_t SLP_EN[5];
-	uint32_t RSVD2[3];
-	volatile uint32_t CLK_REQ[5];
-	uint32_t RSVD3[3];
-	volatile uint32_t RST_EN[5];
-	volatile uint32_t RST_EN_LOCK;
-	volatile uint32_t VBAT_SRST;
-	volatile uint32_t CLK32K_SRC_VTR;
-	volatile uint32_t TEST90;
-	uint32_t RSVD4[(0x00c0 - 0x0094) / 4];
-	volatile uint32_t CNT32K_PER;
-	volatile uint32_t CNT32K_PULSE_HI;
-	volatile uint32_t CNT32K_PER_MIN;
-	volatile uint32_t CNT32K_PER_MAX;
-	volatile uint32_t CNT32K_DV;
-	volatile uint32_t CNT32K_DV_MAX;
-	volatile uint32_t CNT32K_VALID;
-	volatile uint32_t CNT32K_VALID_MIN;
-	volatile uint32_t CNT32K_CTRL;
-	volatile uint32_t CLK32K_MON_ISTS;
-	volatile uint32_t CLK32K_MON_IEN;
-};
-
 /** @brief PECI controller. Size = 76(0x4c) */
 struct peci_regs {
 	volatile uint8_t WR_DATA;
@@ -931,18 +884,6 @@ struct uart_regs {
 	volatile uint8_t ACTV;
 	uint8_t RSVDB[0x3f0 - 0x331];
 	volatile uint8_t CFG_SEL;
-};
-
-/** @brief VBAT Register Bank (VBATR) */
-struct vbatr_regs {
-	volatile uint32_t PFRS;
-	uint32_t RSVD1[1];
-	volatile uint32_t CLK32_SRC;
-	uint32_t RSVD2[5];
-	volatile uint32_t MCNT_LO;
-	volatile uint32_t MCNT_HI;
-	uint32_t RSVD3[3];
-	volatile uint32_t EMBRD_EN;
 };
 
 /** @brief VBAT powered control interface (VCI) */
