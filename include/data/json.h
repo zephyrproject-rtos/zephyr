@@ -360,11 +360,14 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 					.offset = offsetof(struct_, \
 							   len_field_), \
 					{ \
-						.object = { \
-							.sub_descr = \
+						.array = { \
+							.element_descr = \
 								elem_descr_, \
-							.sub_descr_len = \
-							    elem_descr_len_, \
+							.n_elements = \
+								1 + \
+								ZERO_OR_COMPILE_ERROR( \
+									elem_descr_len_ == 1 \
+								), \
 						}, \
 					}, \
 				} }, \
