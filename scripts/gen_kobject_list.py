@@ -514,6 +514,14 @@ def find_kobjects(elf, syms):
 
     app_smem_start = syms["_app_smem_start"]
     app_smem_end = syms["_app_smem_end"]
+
+    if "CONFIG_LINKER_USE_PINNED_SECTION" in syms and "_app_smem_pinned_start" in syms:
+        app_smem_pinned_start = syms["_app_smem_pinned_start"]
+        app_smem_pinned_end = syms["_app_smem_pinned_end"]
+    else:
+        app_smem_pinned_start = app_smem_start
+        app_smem_pinned_end = app_smem_end
+
     user_stack_start = syms["z_user_stacks_start"]
     user_stack_end = syms["z_user_stacks_end"]
 
@@ -630,7 +638,9 @@ def find_kobjects(elf, syms):
             continue
 
         _, user_ram_allowed, _ = kobjects[ko.type_obj.name]
-        if not user_ram_allowed and app_smem_start <= addr < app_smem_end:
+        if (not user_ram_allowed and
+            ((app_smem_start <= addr < app_smem_end)
+             or (app_smem_pinned_start <= addr < app_smem_pinned_end))):
             debug("object '%s' found in invalid location %s"
                   % (ko.type_obj.name, hex(addr)))
             continue
