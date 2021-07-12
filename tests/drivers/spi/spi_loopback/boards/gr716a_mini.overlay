@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Frontgrade Gaisler AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	status = "okay";
+	cs-output = <0>;
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <128000>;
+	};
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+	};
+};
