@@ -153,13 +153,13 @@ static void music_control_a2dp_start_callback(int err)
 	a2dp_pl_start_playback_timer();
 }
 
-void app_endpoint_configured(struct bt_a2dp_configure_result *result)
+void app_endpoint_configured(struct bt_a2dp_endpoint_configure_result *result)
 {
 	if (result->err == 0) {
 		default_a2dp_endpoint = &sbc_endpoint;
 
-		a2dp_src_sf = bt_a2dp_sbc_get_sampling_frequency((struct bt_a2dp_codec_sbc_params *)&result->config->codec_ie[0]);
-		a2dp_src_nc = bt_a2dp_sbc_get_channel_num((struct bt_a2dp_codec_sbc_params *)&result->config->codec_ie[0]);
+		a2dp_src_sf = bt_a2dp_sbc_get_sampling_frequency((struct bt_a2dp_codec_sbc_params *)&result->config.media_config->codec_ie[0]);
+		a2dp_src_nc = bt_a2dp_sbc_get_channel_num((struct bt_a2dp_codec_sbc_params *)&result->config.media_config->codec_ie[0]);
 		bt_a2dp_start(default_a2dp_endpoint);
 		printk("a2dp start playing\r\n");
 	}

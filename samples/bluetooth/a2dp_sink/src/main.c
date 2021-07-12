@@ -111,15 +111,15 @@ void board_media_data_played(void)
 	bt_a2dp_snk_media_sync(default_endpoint, NULL, 0U);
 }
 
-void sbc_configured(struct bt_a2dp_configure_result *config)
+void sbc_configured(struct bt_a2dp_endpoint_configure_result *config)
 {
 	if (config->err == 0) {
 		default_endpoint = &sbc_endpoint;
 		board_codec_set(
 			bt_a2dp_sbc_get_sampling_frequency(
-				(struct bt_a2dp_codec_sbc_params *)&config->config->codec_ie[0]),
+				(struct bt_a2dp_codec_sbc_params *)&config->config.media_config->codec_ie[0]),
 			bt_a2dp_sbc_get_channel_num(
-				(struct bt_a2dp_codec_sbc_params *)&config->config->codec_ie[0]));
+				(struct bt_a2dp_codec_sbc_params *)&config->config.media_config->codec_ie[0]));
 	}
 }
 
