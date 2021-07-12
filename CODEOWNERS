@@ -100,6 +100,7 @@
 /boards/arm/hexiwear*/                    @MaureenHelm @mmahadevan108 @dleach02
 /boards/arm/hexiwear*/doc/                @MaureenHelm @MeganHansen
 /boards/arm/ip_k66f/                      @parthitce @lmajewski
+/boards/arm/legend*/                      @mbittan @simonguinot
 /boards/arm/lpcxpresso*/                  @MaureenHelm @mmahadevan108 @dleach02
 /boards/arm/lpcxpresso*/doc/              @MaureenHelm @MeganHansen
 /boards/arm/mimx8mm_evk/                  @Mani-Sadhasivam
@@ -369,6 +370,7 @@
 /dts/arm/nxp/                             @MaureenHelm @mmahadevan108 @dleach02
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/arm/silabs/efm32_pg_1b.dtsi          @rdmeneze
+/dts/arm/seagate/                         @mbittan @simonguinot
 /dts/arm/silabs/efm32gg11b*               @oanerer
 /dts/arm/silabs/efm32_jg_pg*              @chrta
 /dts/arm/silabs/efr32bg13p*               @mnkp

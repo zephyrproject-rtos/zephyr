@@ -1,0 +1,18 @@
+identifier: legend35
+name: Legend 3.5
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

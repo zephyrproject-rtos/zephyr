@@ -1,0 +1,12 @@
+# Legend 2.5" board family configuration
+
+# Copyright (c) 2021 Seagate Technology
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LEGEND25_HDD
+	bool "Legend 2.5 HDD board"
+	depends on SOC_STM32F070XB
+
+config BOARD_LEGEND25_SSD
+	bool "Legend 2.5 SSD board"
+	depends on SOC_STM32F070XB

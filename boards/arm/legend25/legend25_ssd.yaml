@@ -1,0 +1,18 @@
+identifier: legend25_ssd
+name: Legend 2.5 SSD
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - i2c
+  - spi
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

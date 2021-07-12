@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2021 Seagate Technology LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <seagate/seagate_legend.dtsi>
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		board-id = &board_id;
+		watchdog0 = &iwdg;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+};
+
+&spi2 {
+	status = "okay";
+};
+
+&spi_nor {
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
