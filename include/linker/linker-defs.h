@@ -197,6 +197,13 @@ extern char _app_smem_size[];
 extern char _app_smem_rom_start[];
 extern char _app_smem_num_words[];
 
+#ifdef CONFIG_LINKER_USE_PINNED_SECTION
+extern char _app_smem_pinned_start[];
+extern char _app_smem_pinned_end[];
+extern char _app_smem_pinned_size[];
+extern char _app_smem_pinned_num_words[];
+#endif
+
 /* Memory owned by the kernel. Start and end will be aligned for memory
  * management/protection hardware for the target architecture.
  *
