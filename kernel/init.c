@@ -197,7 +197,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 	boot_banner();
 
-#ifdef CONFIG_CPLUSPLUS
+#if defined(CONFIG_CPLUSPLUS) && !defined(CONFIG_ARCH_POSIX)
 	/* Process the .ctors and .init_array sections */
 	extern void __do_global_ctors_aux(void);
 	extern void __do_init_array_aux(void);
