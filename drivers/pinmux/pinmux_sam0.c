@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Google LLC.
+ * Copyright (c) 2021 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,21 +16,8 @@ static int pinmux_sam0_set(const struct device *dev, uint32_t pin,
 			   uint32_t func)
 {
 	const struct pinmux_sam0_config *cfg = dev->config;
-	bool odd_pin = pin & 1;
-	int idx = pin / 2U;
 
-	/* Each pinmux register holds the config for two pins.  The
-	 * even numbered pin goes in the bits 0..3 and the odd
-	 * numbered pin in bits 4..7.
-	 */
-	if (odd_pin) {
-		cfg->regs->PMUX[idx].bit.PMUXO = func;
-	} else {
-		cfg->regs->PMUX[idx].bit.PMUXE = func;
-	}
-	cfg->regs->PINCFG[pin].bit.PMUXEN = 1;
-
-	return 0;
+	return soc_port_pinmux_set(cfg->regs, pin, func);
 }
 
 static int pinmux_sam0_get(const struct device *dev, uint32_t pin,

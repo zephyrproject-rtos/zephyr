@@ -1,0 +1,55 @@
+# Copyright (c) 2020, Linaro Limited
+# Copyright (c) 2021, Gerson Fernando Budke
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Atmel SAM0 Pinctrl container node
+
+  The Atmel SAM0 pins implements following pin configuration option:
+
+    * bias-pull-up
+    * bias-pull-down
+    * drive-strength
+    * input-enable
+    * output-enable
+    * pinmux-enable
+
+  These options define devicetree flags that are converted to SoC flags at
+  ATMEL_SAM0_PIN_FLAGS().
+
+compatible: "atmel,sam0-pinctrl"
+
+include:
+    - name: base.yaml
+    - name: pincfg-node.yaml
+      child-binding:
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+          - drive-strength
+          - input-enable
+          - output-enable
+
+properties:
+    reg:
+      required: true
+
+properties:
+    "#address-cells":
+      required: true
+      const: 1
+    "#size-cells":
+      required: true
+      const: 1
+
+child-binding:
+    description: Atmel pins
+    properties:
+      "atmel,pins":
+        type: phandle-array
+
+      pinmux-enable:
+        required: false
+        type: boolean
+        description: |
+          Assign pin to an embedded device peripheral
