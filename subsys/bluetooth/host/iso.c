@@ -1270,6 +1270,11 @@ int bt_iso_chan_unbind(struct bt_iso_chan *chan)
 		return -EINVAL;
 	}
 
+	if (chan->state != BT_ISO_BOUND) {
+		BT_DBG("Channel is not in BT_ISO_BOUND state");
+		return -EINVAL;
+	}
+
 	if (!chan->conn) {
 		return -EINVAL;
 	}
