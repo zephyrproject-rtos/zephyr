@@ -797,6 +797,16 @@ void z_mem_manage_init(void)
 	page_frames_initialized = true;
 #endif
 	k_spin_unlock(&z_mm_lock, key);
+
+#ifndef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	/* If BSS section is not present in memory at boot,
+	 * it would not have been cleared. This needs to be
+	 * done now since paging mechanism has been initialized
+	 * and the BSS pages can be brought into physical
+	 * memory to be cleared.
+	 */
+	z_bss_zero();
+#endif
 }
 
 #ifdef CONFIG_DEMAND_PAGING
