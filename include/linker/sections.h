@@ -28,6 +28,8 @@
 #define _APP_BSS_SECTION_NAME		app_bss
 #define _APP_NOINIT_SECTION_NAME	app_noinit
 
+#define _APP_SMEM_PINNED_SECTION_NAME	app_smem_pinned
+
 #define _UNDEFINED_SECTION_NAME undefined
 
 /* Interrupts */

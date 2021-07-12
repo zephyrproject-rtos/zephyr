@@ -75,16 +75,24 @@ footer_template = """
 """
 
 linker_start_seq = """
-	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME,,)
-	{
+	SECTION_PROLOGUE(_APP_SMEM{1}_SECTION_NAME,,)
+	{{
 		APP_SHARED_ALIGN;
-		_app_smem_start = .;
+		_app_smem{0}_start = .;
 """
 
 linker_end_seq = """
 		APP_SHARED_ALIGN;
-		_app_smem_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+		_app_smem{0}_end = .;
+	}} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+"""
+
+empty_app_smem = """
+	SECTION_PROLOGUE(_APP_SMEM{1}_SECTION_NAME,,)
+	{{
+		_app_smem{0}_start = .;
+		_app_smem{0}_end = .;
+	}} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 """
 
 size_cal_string = """
@@ -159,23 +167,29 @@ def parse_elf_file(partitions):
                     partitions[partition_name][SZ] += size
 
 
-def generate_final_linker(linker_file, partitions):
-    string = linker_start_seq
-    size_string = ''
-    for partition, item in partitions.items():
-        string += data_template.format(partition)
-        if LIB in item:
-            for lib in item[LIB]:
-                string += library_data_template.format(lib)
-        string += bss_template.format(partition)
-        if LIB in item:
-            for lib in item[LIB]:
-                string += library_bss_template.format(lib)
-        string += footer_template.format(partition)
-        size_string += size_cal_string.format(partition)
+def generate_final_linker(linker_file, partitions, lnkr_sect=""):
+    string = ""
 
-    string += linker_end_seq
-    string += size_string
+    if len(partitions) > 0:
+        string = linker_start_seq.format(lnkr_sect, lnkr_sect.upper())
+        size_string = ''
+        for partition, item in partitions.items():
+            string += data_template.format(partition)
+            if LIB in item:
+                for lib in item[LIB]:
+                    string += library_data_template.format(lib)
+            string += bss_template.format(partition, lnkr_sect)
+            if LIB in item:
+                for lib in item[LIB]:
+                    string += library_bss_template.format(lib)
+            string += footer_template.format(partition)
+            size_string += size_cal_string.format(partition)
+
+        string += linker_end_seq.format(lnkr_sect)
+        string += size_string
+    else:
+        string = empty_app_smem.format(lnkr_sect, lnkr_sect.upper())
+
     with open(linker_file, "w") as fw:
         fw.write(string)
 
@@ -196,6 +210,10 @@ def parse_args():
     parser.add_argument("-l", "--library", nargs=2, action="append", default=[],
                         metavar=("LIBRARY", "PARTITION"),
                         help="Include globals for a particular library or object filename into a designated partition")
+    parser.add_argument("--pinoutput", required=False,
+                        help="Output ld file for pinned sections")
+    parser.add_argument("--pinpartitions", action="store", required=False, default="",
+                        help="Comma separated names of partitions to be pinned in physical memory")
 
     args = parser.parse_args()
 
@@ -220,11 +238,20 @@ def main():
         else:
             partitions[ptn][LIB].append(lib)
 
+    if args.pinoutput:
+        pin_part_names = args.pinpartitions.split(',')
+
+        generic_partitions = {key: value for key, value in partitions.items()
+                              if key not in pin_part_names}
+        pinned_partitions = {key: value for key, value in partitions.items()
+                             if key in pin_part_names}
+    else:
+        generic_partitions = partitions
 
     # Sample partitions.items() list before sorting:
     #   [ ('part1', {'size': 64}), ('part3', {'size': 64}, ...
     #     ('part0', {'size': 334}) ]
-    decreasing_tuples = sorted(partitions.items(),
+    decreasing_tuples = sorted(generic_partitions.items(),
                            key=lambda x: (x[1][SZ], x[0]), reverse=True)
 
     partsorted = OrderedDict(decreasing_tuples)
@@ -236,6 +263,20 @@ def main():
             print("    {0}: size {1}: {2}".format(key,
                                                   partsorted[key][SZ],
                                                   partsorted[key][SRC]))
+
+    if args.pinoutput:
+        decreasing_tuples = sorted(pinned_partitions.items(),
+                                   key=lambda x: (x[1][SZ], x[0]), reverse=True)
+
+        partsorted = OrderedDict(decreasing_tuples)
+
+        generate_final_linker(args.pinoutput, partsorted, lnkr_sect="_pinned")
+        if args.verbose:
+            print("Pinned partitions retrieved:")
+            for key in partsorted:
+                print("    {0}: size {1}: {2}".format(key,
+                                                    partsorted[key][SZ],
+                                                    partsorted[key][SRC]))
 
 
 if __name__ == '__main__':
