@@ -357,6 +357,146 @@ following:
 
 The Zephyr CPU Idling mechanism is detailed in :ref:`cpu_idle`.
 
+Memory protection features
+==========================
+
+This section describes certain aspects around memory protection features
+in Arm Cortex-M applications.
+
+User mode system calls
+----------------------
+
+User mode is supported in Cortex-M platforms that implement the standard (Arm) MPU
+or a similar core peripheral logic for memory access policy configuration and
+control, such as the NXP MPU for Kinetis platforms. (Currently,
+:kconfig:`CONFIG_ARCH_HAS_USERSPACE` is selected if :kconfig:`CONFIG_ARM_MPU` is enabled
+by the user in the board default Kconfig settings).
+
+A thread performs a system call by triggering a (synchronous) SVC exception, where
+
+* up to 5 arguments are placed on registers R1 - R5
+* system call ID is placed on register R6.
+
+The SVC Handler will branch to the system call preparation logic, which will perform
+the following operations
+
+* switch the thread's PSP to point to the beginning of the thread's privileged
+  stack area, optionally reprogramming the PSPLIM if stack limit checking is enabled
+* modify CONTROL register to switch to privileged mode
+* modify the return address in the SVC exception stack frame, so that after exception
+  return the system call dispatcher is executed (in thread privileged mode)
+
+Once the system call execution is completed the system call dispatcher will restore the
+user's original PSP and PSPLIM and switch the CONTROL register back to unprivileged mode
+before returning back to the caller of the system call.
+
+System calls execute in thread mode and can be preempted by interrupts at any time. A
+thread may also be context-switched-out while doing a system call; the system call will
+resume as soon as the thread is switched-in again.
+
+The system call dispatcher executes at SVC priority, therefore it cannot be preempted
+by HW interrupts (with the exception of ZLIs), which may observe some additional interrupt
+latency if they occur during a system call preparation.
+
+MPU-assisted stack overflow detection
+-------------------------------------
+
+Cortex-M platforms with MPU may enable :kconfig:`CONFIG_MPU_STACK_GUARD` to enable the MPU-based
+stack overflow detection mechanism. The following points need to be considered when enabling the
+MPU stack guards
+
+* stack overflows are triggering processor faults as soon as they occur
+* the mechanism is essential for detecting stack overflows in supervisor threads, or
+  user threads in privileged mode; stack overflows in threads in user mode will always be
+  detected regardless of :kconfig:`CONFIG_MPU_STACK_GUARD` being set.
+* stack overflows are always detected, however, the mechanism does not guarantee that
+  no memory corruption occurs when supervisor threads overflow their stack memory
+* :kconfig:`CONFIG_MPU_STACK_GUARD` will normally reserve one MPU region for programming
+  the stack guard (in certain Arm v8-M configurations with :kconfig:`CONFIG_MPU_GAP_FILLING`
+  enabled 2 MPU regions are required to implement the guard feature)
+* MPU guards are re-programmed at every context-switch, adding a small overhead to the
+  thread swap routine. Compared, however, to the :kconfig:`CONFIG_BUILTIN_STACK_GUARD` feature,
+  no re-programming occurs during system calls.
+* When :kconfig:`CONFIG_HW_STACK_PROTECTION` is enabled on Arm v8-M platforms the native
+  stack limit checking mechanism is used by default instead of the MPU-based stack overflow
+  detection mechanism; users may override this setting by manually enabling :kconfig:`CONFIG_MPU_STACK_GUARD`
+  in these scenarios.
+
+Memory map and MPU considerations
+=================================
+
+Fixed MPU regions
+-----------------
+
+By default, when :kconfig:`CONFIG_ARM_MPU` is enabled a set of *fixed* MPU regions
+are programmed during system boot.
+
+* One MPU region programs the entire flash area as read-execute.
+  User can override this setting by enabling :kconfig:`CONFIG_MPU_ALLOW_FLASH_WRITE`,
+  which programs the flash with RWX permissions. If :kconfig:`CONFIG_USERSPACE` is
+  enabled unprivileged access on the entire flash area is allowed.
+* One MPU region programs the entire SRAM area with privileged-only
+  RW permissions. That is, an  MPU region is utilized to disallow execute permissions on
+  SRAM. (An exception to this setting is when :kconfig:`CONFIG_MPU_GAP_FILLING` is disabled (Arm v8-M only);
+  in that case no SRAM MPU programming is done so the access is determined by the default
+  Arm memory map policies, allowing for privileged-only RWX permissions on SRAM).
+
+The above MPU regions are defined in :file:`soc/arm/common/arm_mpu_regions.c`.
+Alternative MPU configurations are allowed by enabling :kconfig:`CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS`.
+When enabled, this option signifies that the Cortex-M SoC will define and
+configure its own fixed MPU regions in the SoC definition.
+
+Static MPU regions
+------------------
+
+Additional *static* MPU regions may be programmed once during system boot. These regions
+are required to enable certain features
+
+* a RX region to allow execution from SRAM, when :kconfig:`CONFIG_ARCH_HAS_RAMFUNC_SUPPORT` is
+  enabled and users have defined functions to execute from SRAM.
+* a RX region for relocating text sections to SRAM, when :kconfig:`CONFIG_CODE_DATA_RELOCATION_SRAM` is enabled
+* a no-cache region to allow for a none-cacheable SRAM area, when :kconfig:`CONFIG_NOCACHE_MEMORY` is enabled
+* a possibly unprivileged RW region for GCOV code coverage accounting area, when :kconfig:`CONFIG_COVERAGE_GCOV` is enabled
+* a no-access region to implement null pointer dereference detection, when :kconfig:`CONFIG_NULL_POINTER_EXCEPTION_DETECTION_MPU` is enabled
+
+The boundaries of these static MPU regions are derived from symbols exposed by the linker, in
+:file:`include/linker/linker-defs.h`.
+
+Dynamic MPU regions
+-------------------
+
+Certain thread-specific MPU regions may be re-programmed dynamically, at each thread context switch:
+
+* an unprivileged RW region for the current thread's stack area (for user threads)
+* a read-only region for the MPU stack guard
+* unprivileged RW regions for the partitions of the currentl thread's application memory
+  domain.
+
+
+Considerations
+--------------
+
+The number of available MPU regions for a Cortex-M platform is a limited resource.
+Most platforms have 8 MPU regions, while some Cortex-M33 or Cortex-M7 platforms may
+have up to 16 MPU regions. Therefore there is a relatively strict limitation on how
+many fixed, static and dynamic MPU regions may be programmed simultaneously. For platforms
+with 8 available MPU regions it might not be possible to enable all the aforementioned
+features that require MPU region programming. In most practical applications, however,
+only a certain set of features is required and 8 MPU regions are, in many cases, sufficient.
+
+In Arm v8-M processors the MPU architecture does not allow programmed MPU regions to
+overlap. :kconfig:`CONFIG_MPU_GAP_FILLING` controls whether the fixed MPU region
+covering the entire SRAM is programmed. When it does, a full SRAM area partitioning
+is required, in order to program the  static and the dynamic MPU regions. This increases
+the total number of required MPU regions. When :kconfig:`CONFIG_MPU_GAP_FILLING` is not
+enabled the fixed MPU region convering the entire SRAM is not programmed, thus, the static
+and dynamic regions are simply programmed on top of the always-existing background region
+(full-SRAM partitioning is not required).
+Note, however, that the background SRAM region allows execution from SRAM, so when
+:kconfig:`CONFIG_MPU_GAP_FILLING` is not set Zephyr is not protected against attacks
+that attempt to execute malicious code from SRAM.
+
+
 CMSIS
 *****
 
