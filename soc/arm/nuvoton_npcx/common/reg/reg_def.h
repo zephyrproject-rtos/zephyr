@@ -98,6 +98,8 @@ struct cdcg_reg {
 #define NPCX_HFCGCTRL_LOCK                    2
 #define NPCX_HFCGCTRL_CLK_CHNG                7
 
+#define NPCX_LFCGCTL2_XT_OSC_SL_EN            6
+
 /*
  * Power Management Controller (PMC) device registers
  */
