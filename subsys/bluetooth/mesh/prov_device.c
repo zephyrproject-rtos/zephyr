@@ -634,6 +634,10 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 		return -EALREADY;
 	}
 
+	if (bt_mesh_prov_active()) {
+		return -EBUSY;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_ADV) &&
 	    (bearers & BT_MESH_PROV_ADV)) {
 		bt_mesh_beacon_disable();
@@ -642,7 +646,7 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
 	    (bearers & BT_MESH_PROV_GATT)) {
-		bt_mesh_proxy_prov_disable(true);
+		(void)bt_mesh_proxy_prov_disable();
 	}
 
 	return 0;
