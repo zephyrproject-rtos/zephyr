@@ -38,7 +38,7 @@ manifest:
       revision: 7dd56fc100d79cc45c33d43e7401d1803e26f6e7
       path: tools/edtt
     - name: fatfs
-      revision: 1d1fcc725aa1cb3c32f366e0c53d7490d0fe1109
+      revision: pull/8/head
       path: modules/fs/fatfs
     - name: hal_altera
       revision: 23c1c1dd7a0c1cc9a399509d1819375847c95b97
