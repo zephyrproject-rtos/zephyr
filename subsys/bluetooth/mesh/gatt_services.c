@@ -899,8 +899,8 @@ static void gatt_connected(struct bt_conn *conn, uint8_t err)
 
 static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	int i;
 	struct bt_conn_info info;
+	struct bt_mesh_proxy_client *client;
 
 	bt_conn_get_info(conn, &info);
 	if (info.role != BT_CONN_ROLE_PERIPHERAL) {
@@ -911,26 +911,29 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 
 	conn_count--;
 
-	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		struct bt_mesh_proxy_client *client = &clients[i];
-
-		if (client->cli.conn != conn) {
-			continue;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
-			       client->filter_type == PROV) {
-			bt_mesh_pb_gatt_close(conn);
-		}
-
-		/* If this fails, the work handler exits early, as
-		 * there's no active connection.
-		 */
-		(void)k_work_cancel_delayable(&client->cli.sar_timer);
-		bt_conn_unref(client->cli.conn);
-		client->cli.conn = NULL;
-		break;
+	client = find_client(conn);
+	if (!client) {
+		BT_WARN("No Gatt Client found");
+		return;
 	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) && client->filter_type == PROV) {
+		bt_mesh_pb_gatt_close(conn);
+		client->filter_type = NONE;
+
+		if (bt_mesh_is_provisioned() &&
+		    IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
+		    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_NOT_SUPPORTED) {
+			(void)bt_mesh_proxy_gatt_enable();
+		}
+	}
+
+	/* If this fails, the work handler exits early, as
+	 * there's no active connection.
+	 */
+	(void)k_work_cancel_delayable(&client->cli.sar_timer);
+	bt_conn_unref(client->cli.conn);
+	client->cli.conn = NULL;
 
 	bt_mesh_adv_update();
 }
@@ -1023,10 +1026,8 @@ int bt_mesh_proxy_prov_enable(void)
 	return 0;
 }
 
-int bt_mesh_proxy_prov_disable(bool disconnect)
+int bt_mesh_proxy_prov_disable(void)
 {
-	int i;
-
 	BT_DBG("");
 
 	if (gatt_svc == MESH_GATT_NONE) {
@@ -1039,22 +1040,6 @@ int bt_mesh_proxy_prov_disable(bool disconnect)
 
 	bt_gatt_service_unregister(&prov_svc);
 	gatt_svc = MESH_GATT_NONE;
-
-	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		struct bt_mesh_proxy_client *client = &clients[i];
-
-		if (!client->cli.conn || client->filter_type != PROV) {
-			continue;
-		}
-
-		if (disconnect) {
-			bt_conn_disconnect(client->cli.conn,
-					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-		} else {
-			bt_mesh_pb_gatt_close(client->cli.conn);
-			client->filter_type = NONE;
-		}
-	}
 
 	bt_mesh_adv_update();
 
