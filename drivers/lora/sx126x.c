@@ -418,10 +418,7 @@ static int sx126x_lora_init(const struct device *dev)
 
 	LOG_DBG("Initializing %s", DT_INST_LABEL(0));
 
-	if (sx12xx_configure_pin(reset, GPIO_OUTPUT_ACTIVE) ||
-	    sx12xx_configure_pin(busy, GPIO_INPUT) ||
-	    sx12xx_configure_pin(dio1, GPIO_INPUT | GPIO_INT_DEBOUNCE) ||
-	    sx12xx_configure_pin(antenna_enable, GPIO_OUTPUT_INACTIVE) ||
+	if (sx12xx_configure_pin(antenna_enable, GPIO_OUTPUT_INACTIVE) ||
 	    sx12xx_configure_pin(rx_enable, GPIO_OUTPUT_INACTIVE) ||
 	    sx12xx_configure_pin(tx_enable, GPIO_OUTPUT_INACTIVE)) {
 		return -EIO;
