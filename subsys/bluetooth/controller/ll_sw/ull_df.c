@@ -81,6 +81,9 @@ static uint8_t mem_link_iq_report_quota_pdu;
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 static struct lll_df_adv_cfg lll_df_adv_cfg_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *df_adv_cfg_free;
+static uint8_t rem_cte_info_from_per_adv_chain(struct ll_adv_set *adv,
+					       struct lll_df_adv_cfg *df_cfg,
+					       uint8_t *ter_idx);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 /* @brief Function performs common steps for initialization and reset
@@ -98,6 +101,9 @@ static int init_reset(void);
  * @return Pointer to lll_df_adv_cfg or NULL if there is no more free memory.
  */
 static struct lll_df_adv_cfg *df_adv_cfg_acquire(void);
+
+static uint8_t set_cte_info_in_per_adv_chain(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cfg,
+					     uint8_t *ter_idx);
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
 
 /* @brief Function performs ULL Direction Finding initialization
@@ -256,8 +262,6 @@ uint8_t ll_df_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
  */
 uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 {
-	void *extra_data_prev, *extra_data;
-	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct lll_df_adv_cfg *df_cfg;
 	struct ll_adv_sync_set *sync;
@@ -297,25 +301,7 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		err = ull_adv_sync_pdu_alloc(adv, 0,
-					     ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-					     NULL, &pdu_prev, &pdu,
-					     &extra_data_prev, &extra_data,
-					     &ter_idx);
-		if (err) {
-			return err;
-		}
-
-		if (extra_data) {
-			ull_adv_sync_extra_data_set_clear(extra_data_prev,
-							  extra_data, 0,
-							  ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-							  NULL);
-		}
-
-		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0,
-						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-						 NULL);
+		err = rem_cte_info_from_per_adv_chain(adv, df_cfg, &ter_idx);
 		if (err) {
 			return err;
 		}
@@ -333,37 +319,11 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 
 		df_cfg->is_enabled = 0U;
 	} else {
-		struct pdu_cte_info cte_info;
-		struct adv_pdu_field_data pdu_data;
-
 		if (df_cfg->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		cte_info.type = df_cfg->cte_type;
-		cte_info.time = df_cfg->cte_length;
-		pdu_data.field_data = (uint8_t *)&cte_info;
-		pdu_data.extra_data = df_cfg;
-
-		err = ull_adv_sync_pdu_alloc(adv, 0,
-					     ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-					     NULL, &pdu_prev, &pdu,
-					     &extra_data_prev, &extra_data,
-					     &ter_idx);
-		if (err) {
-			return err;
-		}
-
-		if (extra_data) {
-			ull_adv_sync_extra_data_set_clear(extra_data_prev,
-							  extra_data,
-							  ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-							  0, &pdu_data);
-		}
-
-		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
-						 ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-						 0, &pdu_data);
+		err = set_cte_info_in_per_adv_chain(adv, df_cfg, &ter_idx);
 		if (err) {
 			return err;
 		}
@@ -688,5 +648,287 @@ static struct lll_df_adv_cfg *df_adv_cfg_acquire(void)
 	df_adv_cfg->is_enabled = 0U;
 
 	return df_adv_cfg;
+}
+
+/*
+ * @brief Function sets content of cte_info field in periodic advertising chain.
+ *
+ * The function allocates new PDU (or chain of PDUs) for periodic advertising to
+ * fill it with information about CTE that is going to be transmitted with the PDU.
+ * If there is already allocated PDU, it will be updated to hold information about
+ * CTE.
+ *
+ * @param adv           Pointer to periodic advertising set.
+ * @param df_cfg        Pointer to direction finding configuration
+ * @param[out] ter_idx  Pointer used to return index of allocated or updated PDU.
+ *                      Index is required for scheduling the PDU for transmission in LLL.
+ *
+ * @return Zero in case of success, other value in case of failure.
+ */
+static uint8_t set_cte_info_in_per_adv_chain(struct ll_adv_set *adv, struct lll_df_adv_cfg *df_cfg,
+					     uint8_t *ter_idx)
+{
+	struct adv_pdu_field_data pdu_data;
+	struct pdu_adv *pdu_prev, *pdu;
+	struct lll_adv_sync *lll_sync;
+	struct pdu_cte_info cte_info;
+	uint8_t pdu_add_field_flags;
+	void *extra_data;
+	int err;
+
+	lll_sync = adv->lll.sync;
+
+	cte_info.type = df_cfg->cte_type;
+	cte_info.time = df_cfg->cte_length;
+	pdu_data.field_data = (uint8_t *)&cte_info;
+	pdu_data.extra_data = df_cfg;
+
+	/* Note: ULL_ADV_PDU_HDR_FIELD_CTE_INFO is just information that extra_data
+	 * is required in case of this ull_adv_sync_pdu_alloc.
+	 * Other flags here do not change anything. It may be changed to use
+	 * true/false flag for extra_data allocation.
+	 */
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_HDR_FIELD_CTE_INFO, 0, NULL, &pdu_prev, &pdu,
+				     NULL, &extra_data, ter_idx);
+	if (err) {
+		return err;
+	}
+
+	ull_adv_sync_extra_data_set_clear(NULL, extra_data, ULL_ADV_PDU_HDR_FIELD_CTE_INFO, 0,
+					  df_cfg);
+
+#if defined(CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX) && (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
+	if (df_cfg->cte_count > 1) {
+		pdu_add_field_flags =
+			ULL_ADV_PDU_HDR_FIELD_CTE_INFO | ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+	} else
+#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX && CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
+	{
+		pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+	}
+
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, pdu_add_field_flags, 0,
+					 &pdu_data);
+	if (err) {
+		return err;
+	}
+
+#if defined(CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX) && (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
+	struct pdu_adv *pdu_next;
+	uint8_t cte_index = 1;
+	bool new_chain;
+
+	new_chain = (pdu_prev == pdu ? false : true);
+
+	pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+
+	pdu_prev = lll_adv_pdu_linked_next_get(pdu_prev);
+
+	/* Update PDUs in existing chain. Add cte_info to extended advertising header. */
+	while (pdu_prev != NULL) {
+		if (new_chain == true) {
+			pdu_next = lll_adv_pdu_alloc_pdu_adv();
+			lll_adv_pdu_linked_append(pdu_next, pdu);
+			pdu = pdu_next;
+		} else {
+			pdu = lll_adv_pdu_linked_next_get(pdu);
+		}
+
+		pdu_next = lll_adv_pdu_linked_next_get(pdu_prev);
+		/* If all CTEs were added to chain, remove CTE from flags */
+		if (cte_index >= df_cfg->cte_count) {
+			pdu_add_field_flags = 0;
+		} else {
+			++cte_index;
+			/* If it is last PDU in existing chain and there are CTE to be included
+			 * add aux_ptr to flags.
+			 */
+			if (!pdu_next && cte_index < df_cfg->cte_count) {
+				pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+			}
+		}
+
+		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, pdu_add_field_flags, 0,
+						 &pdu_data);
+		if (err != 0) {
+			/* TODO: implement gracefull error handling, cleanup of
+			 * changed PDUs and notify host abut issue during start of CTE
+			 * transmission.
+			 */
+			return err;
+		}
+		pdu_prev = pdu_next;
+	}
+
+	/* If there is missing only one CTE do not add aux_ptr to PDU */
+	if (df_cfg->cte_count - cte_index >= 2) {
+		pdu_add_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+	} else {
+		pdu_add_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+	}
+
+	/* Add new PDUs if the number of PDUs in existing chain is lower than requested number
+	 * of CTEs.
+	 */
+	while (cte_index < df_cfg->cte_count) {
+		pdu_prev = pdu;
+		pdu = lll_adv_pdu_alloc_pdu_adv();
+		if (!pdu) {
+			/* TODO: implement graceful error handling, cleanup of
+			 * changed PDUs.
+			 */
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+		ull_adv_sync_pdu_init(pdu, pdu_add_field_flags);
+		ull_adv_sync_pdu_cte_info_set(pdu, &cte_info);
+
+		/* Link PDU into a chain */
+		lll_adv_pdu_linked_append(pdu, pdu_prev);
+
+		++cte_index;
+		/* If next PDU in a chain is last PDU, then remove aux_ptr field flag from
+		 * extended advertising header.
+		 */
+		if (cte_index == df_cfg->cte_count - 1) {
+			pdu_add_field_flags &= (~ULL_ADV_PDU_HDR_FIELD_AUX_PTR);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX && CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX) && (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
+static bool pdu_ext_adv_is_empty_without_cte(const struct pdu_adv *pdu)
+{
+	if (pdu->len != PDU_AC_PAYLOAD_SIZE_MIN) {
+		const struct pdu_adv_ext_hdr *ext_hdr;
+		uint8_t size_rem = 0;
+
+		if ((pdu->adv_ext_ind.ext_hdr_len + PDU_AC_EXT_HEADER_SIZE_MIN) != pdu->len) {
+			/* There are adv. data in PDU */
+			return false;
+		}
+
+		/* Check size of the ext. header without cte_info and aux_ptr. If that is minimum
+		 * extended PDU size then the PDU was allocated to transport CTE only.
+		 */
+		ext_hdr = &pdu->adv_ext_ind.ext_hdr;
+
+		if (ext_hdr->cte_info) {
+			size_rem += sizeof(struct pdu_cte_info);
+		}
+		if (ext_hdr->aux_ptr) {
+			size_rem += sizeof(struct pdu_adv_aux_ptr);
+		}
+
+		if ((pdu->adv_ext_ind.ext_hdr_len - size_rem) != PDU_AC_EXT_HEADER_SIZE_MIN) {
+			return false;
+		}
+	}
+	return true;
+}
+#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX && CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
+
+static uint8_t rem_cte_info_from_per_adv_chain(struct ll_adv_set *adv,
+					       struct lll_df_adv_cfg *df_cfg, uint8_t *ter_idx)
+{
+	void *extra_data_prev, *extra_data;
+	struct pdu_adv *pdu_prev, *pdu;
+	struct lll_adv_sync *lll_sync;
+	uint8_t pdu_rem_field_flags;
+	int err;
+
+	lll_sync = adv->lll.sync;
+
+	/* NOTE: ULL_ADV_PDU_HDR_FIELD_CTE_INFO is just information that extra_data
+	 * should be removed in case of this call ull_adv_sync_pdu_alloc.
+	 * Other flags here do not change anything. It may be changed to use
+	 * true/false flag for extra_data allocation.
+	 */
+	err = ull_adv_sync_pdu_alloc(adv, 0, ULL_ADV_PDU_HDR_FIELD_CTE_INFO, NULL, &pdu_prev, &pdu,
+				     &extra_data_prev, &extra_data, ter_idx);
+	if (err) {
+		return err;
+	}
+
+	if (extra_data) {
+		ull_adv_sync_extra_data_set_clear(extra_data_prev,
+						  extra_data,
+						  ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
+						  0, NULL);
+	}
+
+	pdu_rem_field_flags = ULL_ADV_PDU_HDR_FIELD_CTE_INFO;
+
+#if defined(CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX) && (CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1)
+	struct pdu_adv *pdu_new, *pdu_chained;
+	bool new_chain;
+
+	/* It is possible that the function is called after e.g. advertising data were updated.
+	 * In such situation the function will run on already allocated chain. Do not allocate
+	 * new chain then. Reuse already allocated PDUs and allocate new ones only if the chain
+	 * was not updated yet.
+	 */
+	new_chain = (pdu_prev == pdu ? false : true);
+
+	/* Get next PDU in a chain. Alway use pdu_prev because it points to actual
+	 * former chain.
+	 */
+	pdu_chained = lll_adv_pdu_linked_next_get(pdu_prev);
+
+	/* Go through existing chain and remove CTE info. */
+	while (pdu_chained != NULL) {
+		if (pdu_ext_adv_is_empty_without_cte(pdu_chained) == true) {
+			/* If there is an empty PDU then all remaining PDUs shoudl be released. */
+			lll_adv_pdu_linked_release_all(pdu_chained);
+			pdu_chained = NULL;
+			/* Set new end of chain in PDUs linked list. */
+			lll_adv_pdu_linked_append(NULL, pdu);
+		} else {
+			/* Update one before pdu_chained */
+			err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0,
+							 pdu_rem_field_flags, NULL);
+			if (err != 0) {
+				/* TODO: return here leaves periodic advertising chain in
+				 * an inconsisten state. Add gracefull return or assert.
+				 */
+				return err;
+			}
+
+			/* Prepare for next iteration. Allocate new PDU or move to next one in
+			 * a chain.
+			 */
+			if (new_chain) {
+				pdu_new = lll_adv_pdu_alloc_pdu_adv();
+				lll_adv_pdu_linked_append(pdu_new, pdu);
+				pdu = pdu_new;
+			} else {
+				pdu = lll_adv_pdu_linked_next_get(pdu);
+			}
+
+			/* Move to next chained PDU (it moves through chain that is in use
+			 * by LLL or is new one with updated advertising payload).
+			 */
+			pdu_prev = pdu_chained;
+			pdu_chained = lll_adv_pdu_linked_next_get(pdu_prev);
+		}
+	}
+
+	/* Update last PDU in a chain. It may not have aux_ptr.
+	 * NOTE: If there is no AuxPtr flag in the PDU, attempt to remove it does not harm.
+	 */
+	pdu_rem_field_flags |= ULL_ADV_PDU_HDR_FIELD_AUX_PTR;
+#endif /* CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX && CONFIG_BT_CTLR_DF_PER_ADV_CTE_NUM_MAX > 1 */
+
+	err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu, 0, pdu_rem_field_flags, NULL);
+	if (err != 0) {
+		/* TODO: return here leaves periodic advertising chain in an inconsisten state.
+		 * Add gracefull return or assert.
+		 */
+		return err;
+	}
+
+	return 0;
 }
 #endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */

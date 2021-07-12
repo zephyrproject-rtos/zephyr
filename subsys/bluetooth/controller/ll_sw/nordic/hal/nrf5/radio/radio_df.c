@@ -13,6 +13,7 @@
 
 #include "radio_nrf5.h"
 #include "radio_df.h"
+#include "radio_internal.h"
 
 /* @brief Minimum antennas number required if antenna switching is enabled */
 #define DF_ANT_NUM_MIN 2
@@ -315,7 +316,7 @@ void radio_df_ant_switch_pattern_clear(void)
 	NRF_RADIO->CLEARPATTERN = RADIO_CLEARPATTERN_CLEARPATTERN_Clear;
 }
 
-void radio_df_ant_switch_pattern_set(uint8_t *patterns, uint8_t len)
+void radio_df_ant_switch_pattern_set(const uint8_t *patterns, uint8_t len)
 {
 	/* SWITCHPATTERN is like a moving pointer to underlying buffer.
 	 * Each write stores a value and moves the pointer to new free position.
@@ -356,6 +357,18 @@ void radio_switch_complete_and_phy_end_disable(void)
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_disable();
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+}
+
+void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
+					      uint8_t phy_next, uint8_t flags_next)
+{
+#if defined(CONFIG_BT_CTLR_TIFS_HW)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk |
+			    RADIO_SHORTS_DISABLED_TXEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_HW */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | RADIO_SHORTS_PHYEND_DISABLE_Msk;
+	sw_switch(SW_SWITCH_PREV_TX, SW_SWITCH_NEXT_TX, phy_curr, flags_curr, phy_next, flags_next);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 

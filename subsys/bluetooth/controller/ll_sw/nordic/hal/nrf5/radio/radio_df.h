@@ -39,7 +39,7 @@ void radio_df_ant_switch_pattern_clear(void);
  * Radio internal list. Before start of new patterns clear the list
  * by call to @ref radio_df_ant_switch_pattern_clear.
  */
-void radio_df_ant_switch_pattern_set(uint8_t *patterns, uint8_t len);
+void radio_df_ant_switch_pattern_set(const uint8_t *patterns, uint8_t len);
 /* Provides switch pattern of antenna used to transmit PDU that is used to
  * transmit CTE
  */
@@ -49,6 +49,10 @@ void radio_df_reset(void);
 
 /* Completes switching and enables shortcut between PHYEND and DISABLE events */
 void radio_switch_complete_and_phy_end_disable(void);
+
+/* Completes switching and enables shortcut between PHYEND and TXEN events */
+void radio_switch_complete_and_phy_end_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
+					      uint8_t phy_next, uint8_t flags_next);
 
 /* Enables CTE inline configuration to automatically setup sampling and
  * switching according to CTEInfo in received PDU.
