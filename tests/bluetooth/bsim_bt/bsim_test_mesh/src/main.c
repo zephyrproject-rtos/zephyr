@@ -14,8 +14,8 @@ extern struct bst_test_list *test_transport_install(struct bst_test_list *tests)
 extern struct bst_test_list *test_friendship_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_provision_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_beacon_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_scanner_install(struct bst_test_list *test);
 #endif
-
 
 bst_test_install_t test_installers[] = {
 #if defined(CONFIG_SETTINGS)
@@ -25,6 +25,7 @@ bst_test_install_t test_installers[] = {
 	test_friendship_install,
 	test_provision_install,
 	test_beacon_install,
+	test_scanner_install,
 #endif
 	NULL
 };
