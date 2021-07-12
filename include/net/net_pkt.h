@@ -240,6 +240,15 @@ struct net_pkt {
 	uint8_t ieee802154_arb : 1; /* ACK Request Bit is set in the frame */
 	uint8_t ieee802154_ack_fpb : 1; /* Frame Pending Bit was set in the ACK */
 	uint8_t ieee802154_frame_retry : 1; /* The frame is being retransmitted. */
+	uint8_t ieee802154_frame_secured : 1; /* Frame is authenticated and
+					       * encrypted according to its
+					       * Auxiliary Security Header
+					       */
+	uint8_t ieee802154_mac_hdr_rdy : 1; /* Indicates if frame's MAC header
+					     * is ready to be transmitted or if
+					     * it requires further modifications,
+					     * e.g. Frame Counter injection.
+					     */
 #if defined(CONFIG_IEEE802154_2015)
 	uint8_t ieee802154_fv2015 : 1; /* Frame version is IEEE 802.15.4-2015 */
 	uint8_t ieee802154_ack_seb : 1; /* Security Enabled Bit was set in the ACK */
@@ -1017,6 +1026,28 @@ static inline void net_pkt_set_ieee802154_frame_retry(struct net_pkt *pkt,
 						     bool frame_retry)
 {
 	pkt->ieee802154_frame_retry = frame_retry;
+}
+
+static inline bool net_pkt_ieee802154_frame_secured(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_frame_secured;
+}
+
+static inline void net_pkt_set_ieee802154_frame_secured(struct net_pkt *pkt,
+							bool secured)
+{
+	pkt->ieee802154_frame_secured = secured;
+}
+
+static inline bool net_pkt_ieee802154_mac_hdr_rdy(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_mac_hdr_rdy;
+}
+
+static inline void net_pkt_set_ieee802154_mac_hdr_rdy(struct net_pkt *pkt,
+						      bool rdy)
+{
+	pkt->ieee802154_mac_hdr_rdy = rdy;
 }
 
 #if defined(CONFIG_IEEE802154_2015)
