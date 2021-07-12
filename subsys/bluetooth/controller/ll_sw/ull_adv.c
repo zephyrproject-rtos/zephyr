@@ -303,8 +303,12 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	pdu = lll_adv_data_peek(&adv->lll);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (is_new_set) {
-		pdu->type = pdu_adv_type[adv_type];
 		is_pdu_type_changed = 1;
+
+		pdu->type = pdu_adv_type[adv_type];
+		if (pdu->type != PDU_ADV_TYPE_EXT_IND) {
+			pdu->len = 0U;
+		}
 	/* check if new PDU type is different that past one */
 	} else if (pdu->type != pdu_adv_type[adv_type]) {
 		is_pdu_type_changed = 1;
