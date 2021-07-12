@@ -9,12 +9,71 @@
 #include <sys/__assert.h>
 #include "core_pmp.h"
 #include <arch/riscv/csr.h>
-#include <stdio.h>
 
-#define PMP_SLOT_NUMBER	CONFIG_PMP_SLOT
+#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(mpu);
+
+#if __riscv_xlen == 32
+# define PR_ADDR "0x%08lx"
+#elif __riscv_xlen == 64
+# define PR_ADDR "0x%016lx"
+#endif
+
+#if defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
+# define PMP_REGION_TYPE_DEFAULT	PMP_REGION_NAPOT
+# define PMP_USED_ENTRY_DEFAULT		1 /* NAPOT region use 1 PMP entry */
+#else /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+# define PMP_REGION_TYPE_DEFAULT	PMP_REGION_TOR
+# define PMP_USED_ENTRY_DEFAULT		2 /* TOR region use 2 PMP entry */
+#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+
+#ifdef CONFIG_USERSPACE
+/*
+ * Define the used PMP regions before memory domain/partition.
+ *
+ * Already used PMP regions:
+ *   1. 0/1 entry for interrupt stack guard: None
+ *   2. 1   entry for MCU state: R
+ *   3. 1/2 entry for program and read only data: RX
+ *   4. 1/2 entry for user thread stack: RW
+ */
+#define PMP_REGION_NUM_FOR_U_THREAD	( \
+	(IS_ENABLED(CONFIG_PMP_STACK_GUARD) ? 1 : 0) + \
+	 1 + (2 * PMP_USED_ENTRY_DEFAULT))
+
+#define PMP_MAX_DYNAMIC_REGION		( \
+	(CONFIG_PMP_SLOT - PMP_REGION_NUM_FOR_U_THREAD) \
+	/ PMP_USED_ENTRY_DEFAULT)
+
+#endif /* CONFIG_USERSPACE */
+
+enum pmp_region_type {
+	PMP_REGION_NA4,
+	/* If NAPOT-type region size is 4, apply NA4-type region to PMP CSR. */
+	PMP_REGION_NAPOT,
+	PMP_REGION_TOR,
+};
+
+/* Region definition data structure */
+struct riscv_pmp_region {
+	ulong_t start;
+	ulong_t size;
+	uint8_t perm;
+	enum pmp_region_type type;
+};
 
 #ifdef CONFIG_USERSPACE
 extern ulong_t is_user_mode;
+#endif
+
+#ifdef CONFIG_PMP_STACK_GUARD
+static const struct riscv_pmp_region irq_stack_guard_region = {
+	.start = (ulong_t) z_interrupt_stacks[0],
+	.size = PMP_GUARD_ALIGN_AND_SIZE,
+	.perm = 0,
+	.type = PMP_REGION_NAPOT,
+};
 #endif
 
 enum {
@@ -40,7 +99,9 @@ enum {
 	CSR_PMPADDR15
 };
 
-ulong_t csr_read_enum(int pmp_csr_enum)
+/* Note: this #ifdef is only for avoiding -Wunused-function. */
+#ifdef CONFIG_PMP_STACK_GUARD
+static ulong_t csr_read_enum(int pmp_csr_enum)
 {
 	ulong_t res = -1;
 
@@ -90,8 +151,9 @@ ulong_t csr_read_enum(int pmp_csr_enum)
 	}
 	return res;
 }
+#endif /* CONFIG_PMP_STACK_GUARD */
 
-void csr_write_enum(int pmp_csr_enum, ulong_t value)
+static void csr_write_enum(int pmp_csr_enum, ulong_t value)
 {
 	switch (pmp_csr_enum) {
 	case CSR_PMPCFG0:
@@ -139,14 +201,29 @@ void csr_write_enum(int pmp_csr_enum, ulong_t value)
 	}
 }
 
-int z_riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t addr_val)
+/* Note: this #ifdef is only for avoiding -Wunused-function. */
+#ifdef CONFIG_PMP_STACK_GUARD
+/*
+ * @brief Set a Physical Memory Protection slot
+ *
+ * Configure a memory region to be secured by one of the 16 PMP entries.
+ *
+ * @param index		Number of the targeted PMP entrie (0 to 15 only).
+ * @param cfg_val	Configuration value (cf datasheet or defined flags)
+ * @param addr_val	Address register value
+ *
+ * This function shall only be called from Secure state.
+ *
+ * @return -1 if bad argument, 0 otherwise.
+ */
+static int riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t addr_val)
 {
 	ulong_t reg_val;
 	ulong_t shift, mask;
 	int pmpcfg_csr;
 	int pmpaddr_csr;
 
-	if (index >= PMP_SLOT_NUMBER) {
+	if ((index >= CONFIG_PMP_SLOT) || (index < 0)) {
 		return -1;
 	}
 
@@ -164,7 +241,7 @@ int z_riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t addr_val)
 	mask = 0x000000FF << shift;
 
 	cfg_val = cfg_val << shift;
-	addr_val = TO_PMP_ADDR(addr_val);
+	addr_val = addr_val;
 
 	reg_val = csr_read_enum(pmpcfg_csr);
 	reg_val = reg_val & ~mask;
@@ -175,100 +252,208 @@ int z_riscv_pmp_set(unsigned int index, ulong_t cfg_val, ulong_t addr_val)
 	return 0;
 }
 
-int pmp_get(unsigned int index, ulong_t *cfg_val, ulong_t *addr_val)
+static int riscv_pmp_region_set(int index, const struct riscv_pmp_region *region)
 {
-	ulong_t shift;
-	int pmpcfg_csr;
-	int pmpaddr_csr;
+	int result, pmp_type;
 
-	if (index >= PMP_SLOT_NUMBER) {
-		return -1;
+	/* Check 4 bytes alignment */
+	int valid_addr = ((region->start & 0x3) == 0) &&
+		((region->size & 0x3) == 0) &&
+		(region->size);
+	__ASSERT(valid_addr, "PMP address/size are not 4 bytes aligned\n");
+
+	if (region->type == PMP_REGION_TOR) {
+		pmp_type = PMP_REGION_TOR;
+
+		uint8_t cfg_val1 = PMP_NA4 | region->perm;
+		ulong_t addr_val1 = TO_PMP_ADDR(region->start);
+		uint8_t cfg_val2 = PMP_TOR | region->perm;
+		ulong_t addr_val2 = TO_PMP_ADDR(region->start + region->size);
+
+		riscv_pmp_set(index, cfg_val1, addr_val1);
+		riscv_pmp_set(index+1, cfg_val2, addr_val2);
+
+		result = index+2;
+	} else {
+		if ((region->type == PMP_REGION_NA4) || (region->size == 4)) {
+			/* If NAPOT-type region size is 4, apply
+			 * NA4-type region to PMP CSR.
+			 */
+			pmp_type = PMP_NA4;
+		} else {
+			pmp_type = PMP_NAPOT;
+		}
+
+		uint8_t cfg_val = pmp_type | region->perm;
+		ulong_t addr_val = TO_PMP_NAPOT(region->start, region->size);
+
+		riscv_pmp_set(index, cfg_val, addr_val);
+
+		result = index+1;
 	}
 
-	/* Calculate PMP config/addr register and shift */
+	LOG_DBG("Set PMP region %d: (" PR_ADDR ", " PR_ADDR
+		", %s%s%s, %s)", index, region->start, region->size,
+		((region->perm & PMP_R) ? "R" : " "),
+		((region->perm & PMP_W) ? "W" : " "),
+		((region->perm & PMP_X) ? "X" : " "),
+		((pmp_type == PMP_TOR) ? "TOR" :
+		(pmp_type == PMP_NAPOT) ? "NAPOT" : "NA4"));
+
+	if (pmp_type == PMP_TOR) {
+		LOG_DBG("TOR type region also use entry %d", index+1);
+	}
+
+	return result;
+}
+#endif /* CONFIG_PMP_STACK_GUARD */
+
+static int riscv_pmp_region_translate(ulong_t pmpcfg[], ulong_t pmpaddr[], int index,
+	const struct riscv_pmp_region *region)
+{
+	int result, pmp_type;
+	uint8_t *u8_pmpcfg;
+
+	/* Check 4 bytes alignment */
+	int valid_addr = ((region->start & 0x3) == 0) &&
+		((region->size & 0x3) == 0) &&
+		(!region->start || region->size);
+	__ASSERT(valid_addr, "PMP address/size are not 4 bytes aligned\n");
+
+	if ((region->start == 0) && (region->size == 0)) {
+		/* special case: set whole memory as single PMP region.
+		 *   RV32: 0 ~ (2**32 - 1)
+		 *   RV64: 0 ~ (2**64 - 1)
+		 */
+		pmp_type = PMP_NAPOT;
+
+		uint8_t cfg_val = PMP_NAPOT | region->perm;
 #ifdef CONFIG_64BIT
-	pmpcfg_csr = CSR_PMPCFG0 + (index >> 4);
-	shift = (index & 0x0007) << 3;
+		ulong_t addr_val = 0x1FFFFFFFFFFFFFFF;
 #else
-	pmpcfg_csr = CSR_PMPCFG0 + (index >> 2);
-	shift = (index & 0x0003) << 3;
-#endif /* CONFIG_64BIT */
-	pmpaddr_csr = CSR_PMPADDR0 + index;
+		ulong_t addr_val = 0x1FFFFFFF;
+#endif
 
-	*cfg_val = (csr_read_enum(pmpcfg_csr) >> shift) & 0xFF;
-	*addr_val = FROM_PMP_ADDR(csr_read_enum(pmpaddr_csr));
+		u8_pmpcfg = (uint8_t *)pmpcfg;
+		u8_pmpcfg[index] = cfg_val;
+		pmpaddr[index] = addr_val;
 
-	return 0;
+		result = index+1;
+	} else if (region->type == PMP_REGION_TOR) {
+		pmp_type = PMP_TOR;
+
+		uint8_t cfg_val1 = PMP_NA4 | region->perm;
+		ulong_t addr_val1 = TO_PMP_ADDR(region->start);
+		uint8_t cfg_val2 = PMP_TOR | region->perm;
+		ulong_t addr_val2 = TO_PMP_ADDR(region->start + region->size);
+
+		u8_pmpcfg = (uint8_t *)pmpcfg;
+		u8_pmpcfg[index] = cfg_val1;
+		pmpaddr[index] = addr_val1;
+		u8_pmpcfg[index+1] = cfg_val2;
+		pmpaddr[index+1] = addr_val2;
+
+		result = index+2;
+	} else {
+		if ((region->type == PMP_REGION_NA4) || (region->size == 4)) {
+			pmp_type = PMP_NA4;
+		} else {
+			pmp_type = PMP_NAPOT;
+		}
+
+		uint8_t cfg_val = pmp_type | region->perm;
+		ulong_t addr_val = TO_PMP_NAPOT(region->start, region->size);
+
+		u8_pmpcfg = (uint8_t *)pmpcfg;
+		u8_pmpcfg[index] = cfg_val;
+		pmpaddr[index] = addr_val;
+
+		result = index+1;
+	}
+
+	LOG_DBG("PMP context " PR_ADDR " add region %d: (" PR_ADDR
+		", " PR_ADDR ", %s%s%s, %s)", (ulong_t) pmpcfg, index,
+		region->start, region->size,
+		((region->perm & PMP_R) ? "R" : " "),
+		((region->perm & PMP_W) ? "W" : " "),
+		((region->perm & PMP_X) ? "X" : " "),
+		((pmp_type == PMP_TOR) ? "TOR" :
+		(pmp_type == PMP_NAPOT) ? "NAPOT" : "NA4"));
+
+	if (pmp_type == PMP_TOR) {
+		LOG_DBG("TOR type region also use entry %d", index+1);
+	}
+
+	return result;
+}
+
+static int riscv_pmp_regions_translate(ulong_t pmpcfg[], ulong_t pmpaddr[],
+	int start_reg_index, const struct riscv_pmp_region regions[],
+	uint8_t regions_num)
+{
+	int reg_index = start_reg_index;
+
+	for (int i = 0; i < regions_num; i++) {
+		/*
+		 * Empty region.
+		 *
+		 * Note: start = size = 0 is valid region (special case).
+		 */
+		if ((regions[i].size == 0U) && (regions[i].start != 0)) {
+			continue;
+		}
+
+		/* Non-empty region. */
+		reg_index = riscv_pmp_region_translate(pmpcfg, pmpaddr, reg_index,
+			&regions[i]);
+	}
+
+	return reg_index;
 }
 
 void z_riscv_pmp_clear_config(void)
 {
+	LOG_DBG("Clear all dynamic PMP regions");
 	for (unsigned int i = 0; i < RISCV_PMP_CFG_NUM; i++)
 		csr_write_enum(CSR_PMPCFG0 + i, 0);
-}
-
-/* Function to help debug */
-void z_riscv_pmp_print(unsigned int index)
-{
-	ulong_t cfg_val;
-	ulong_t addr_val;
-
-	if (pmp_get(index, &cfg_val, &addr_val)) {
-		return;
-	}
-#ifdef CONFIG_64BIT
-	printf("PMP[%d] :\t%02lX %16lX\n", index, cfg_val, addr_val);
-#else
-	printf("PMP[%d] :\t%02lX %08lX\n", index, cfg_val, addr_val);
-#endif /* CONFIG_64BIT */
 }
 
 #if defined(CONFIG_USERSPACE)
 #include <linker/linker-defs.h>
 void z_riscv_init_user_accesses(struct k_thread *thread)
 {
-	unsigned char index;
-	unsigned char *uchar_pmpcfg;
-	ulong_t rom_start = (ulong_t) _image_rom_start;
-#if defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
-	ulong_t rom_size = (ulong_t) _image_rom_size;
-#else /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-	ulong_t rom_end = (ulong_t) _image_rom_end;
-#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-	index = 0U;
-	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
-
+	unsigned char index = 0U;
 #ifdef CONFIG_PMP_STACK_GUARD
 	index++;
 #endif /* CONFIG_PMP_STACK_GUARD */
 
-	/* MCU state */
-	thread->arch.u_pmpaddr[index] = TO_PMP_ADDR((ulong_t) &is_user_mode);
-	uchar_pmpcfg[index++] = PMP_NA4 | PMP_R;
-#if defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
-	/* Program and RO data */
-	thread->arch.u_pmpaddr[index] = TO_PMP_NAPOT(rom_start, rom_size);
-	uchar_pmpcfg[index++] = PMP_NAPOT | PMP_R | PMP_X;
+	struct riscv_pmp_region dynamic_regions[] = {
+		{
+			/* MCU state */
+			.start = (ulong_t) &is_user_mode,
+			.size = 4,
+			.perm = PMP_R,
+			.type = PMP_REGION_NA4,
+		},
+		{
+			/* Program and RO data */
+			.start = (ulong_t) _image_rom_start,
+			.size = (ulong_t) _image_rom_size,
+			.perm = PMP_R | PMP_X,
+			.type = PMP_REGION_TYPE_DEFAULT,
+		},
+		{
+			/* User-mode thread stack */
+			.start = thread->stack_info.start,
+			.size = thread->stack_info.size,
+			.perm = PMP_R | PMP_W,
+			.type = PMP_REGION_TYPE_DEFAULT,
+		},
+	};
 
-	/* RAM */
-	thread->arch.u_pmpaddr[index] = TO_PMP_NAPOT(thread->stack_info.start,
-					thread->stack_info.size);
-
-	uchar_pmpcfg[index++] = PMP_NAPOT | PMP_R | PMP_W;
-#else /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-	/* Program and RO data */
-	thread->arch.u_pmpaddr[index] = TO_PMP_ADDR(rom_start);
-	uchar_pmpcfg[index++] = PMP_NA4 | PMP_R | PMP_X;
-	thread->arch.u_pmpaddr[index] = TO_PMP_ADDR(rom_end);
-	uchar_pmpcfg[index++] = PMP_TOR | PMP_R | PMP_X;
-
-	/* RAM */
-	thread->arch.u_pmpaddr[index] = TO_PMP_ADDR(thread->stack_info.start);
-	uchar_pmpcfg[index++] = PMP_NA4 | PMP_R | PMP_W;
-	thread->arch.u_pmpaddr[index] = TO_PMP_ADDR(thread->stack_info.start +
-		thread->stack_info.size);
-	uchar_pmpcfg[index++] = PMP_TOR | PMP_R | PMP_W;
-#endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
+	riscv_pmp_regions_translate(thread->arch.u_pmpcfg,
+		thread->arch.u_pmpaddr, index, dynamic_regions,
+		ARRAY_SIZE(dynamic_regions));
 }
 
 void z_riscv_configure_user_allowed_stack(struct k_thread *thread)
@@ -282,6 +467,9 @@ void z_riscv_configure_user_allowed_stack(struct k_thread *thread)
 
 	for (i = 0U; i < RISCV_PMP_CFG_NUM; i++)
 		csr_write_enum(CSR_PMPCFG0 + i, thread->arch.u_pmpcfg[i]);
+
+	LOG_DBG("Apply user PMP context " PR_ADDR " to dynamic PMP regions",
+		(ulong_t) thread->arch.u_pmpcfg);
 }
 
 void z_riscv_pmp_add_dynamic(struct k_thread *thread,
@@ -292,9 +480,11 @@ void z_riscv_pmp_add_dynamic(struct k_thread *thread,
 	unsigned char index = 0U;
 	unsigned char *uchar_pmpcfg;
 
-	/* Check 4 bytes alignment */
-	__ASSERT(((addr & 0x3) == 0) && ((size & 0x3) == 0) && size,
-		 "address/size are not 4 bytes aligned\n");
+	struct riscv_pmp_region pmp_region = {
+		.start = addr,
+		.size = size,
+		.perm = flags,
+	};
 
 	/* Get next free entry */
 	uchar_pmpcfg = (unsigned char *) thread->arch.u_pmpcfg;
@@ -309,23 +499,13 @@ void z_riscv_pmp_add_dynamic(struct k_thread *thread,
 
 	/* Select the best type */
 	if (size == 4) {
-		thread->arch.u_pmpaddr[index] = TO_PMP_ADDR(addr);
-		uchar_pmpcfg[index] = flags | PMP_NA4;
+		pmp_region.type = PMP_REGION_NA4;
+	} else {
+		pmp_region.type = PMP_REGION_TYPE_DEFAULT;
 	}
-#if !defined(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)
-	else if ((addr & (size - 1)) || (size & (size - 1))) {
-		__ASSERT(((index + 1) < CONFIG_PMP_SLOT),
-			"not enough free PMP entries\n");
-		thread->arch.u_pmpaddr[index] = TO_PMP_ADDR(addr);
-		uchar_pmpcfg[index++] = flags | PMP_NA4;
-		thread->arch.u_pmpaddr[index] = TO_PMP_ADDR(addr + size);
-		uchar_pmpcfg[index++] = flags | PMP_TOR;
-	}
-#endif /* !CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-	else {
-		thread->arch.u_pmpaddr[index] = TO_PMP_NAPOT(addr, size);
-		uchar_pmpcfg[index] = flags | PMP_NAPOT;
-	}
+
+	riscv_pmp_region_translate(thread->arch.u_pmpcfg,
+		thread->arch.u_pmpaddr, index, &pmp_region);
 }
 
 int arch_buffer_validate(void *addr, size_t size, int write)
@@ -411,6 +591,23 @@ __ASSERT((uchar_pmpcfg[index] & PMP_TYPE_MASK) != PMP_TOR,
 int arch_mem_domain_max_partitions_get(void)
 {
 	return PMP_MAX_DYNAMIC_REGION;
+}
+
+void arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				    uint32_t partition_id)
+{
+	sys_dnode_t *node, *next_node;
+	struct k_thread *thread;
+	struct k_mem_partition *partition;
+
+	partition = &domain->partitions[partition_id];
+
+	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
+		thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
+
+		z_riscv_pmp_add_dynamic(thread, (ulong_t) partition->start,
+			(ulong_t) partition->size, partition->attr.pmp_attr);
+	}
 }
 
 void arch_mem_domain_partition_remove(struct k_mem_domain *domain,
@@ -503,23 +700,6 @@ void arch_mem_domain_thread_add(struct k_thread *thread)
 	}
 }
 
-void arch_mem_domain_partition_add(struct k_mem_domain *domain,
-				    uint32_t partition_id)
-{
-	sys_dnode_t *node, *next_node;
-	struct k_thread *thread;
-	struct k_mem_partition *partition;
-
-	partition = &domain->partitions[partition_id];
-
-	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
-		thread = CONTAINER_OF(node, struct k_thread, mem_domain_info);
-
-		z_riscv_pmp_add_dynamic(thread, (ulong_t) partition->start,
-			(ulong_t) partition->size, partition->attr.pmp_attr);
-	}
-}
-
 void arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	uint32_t i;
@@ -535,24 +715,18 @@ void arch_mem_domain_thread_remove(struct k_thread *thread)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_PMP_STACK_GUARD
-
 void z_riscv_init_stack_guard(struct k_thread *thread)
 {
-	unsigned char index = 0U;
-	unsigned char *uchar_pmpcfg;
 	ulong_t stack_guard_addr;
-
-	uchar_pmpcfg = (unsigned char *) thread->arch.s_pmpcfg;
-
-	uchar_pmpcfg++;
+	struct riscv_pmp_region dynamic_regions[CONFIG_PMP_SLOT];
+	uint8_t region_num = 0U;
 
 	/* stack guard: None */
-	thread->arch.s_pmpaddr[index] = TO_PMP_ADDR(thread->stack_info.start);
-	uchar_pmpcfg[index++] = PMP_NA4;
-	thread->arch.s_pmpaddr[index] =
-		TO_PMP_ADDR(thread->stack_info.start +
-			PMP_GUARD_ALIGN_AND_SIZE);
-	uchar_pmpcfg[index++] = PMP_TOR;
+	dynamic_regions[region_num].start = thread->stack_info.start;
+	dynamic_regions[region_num].size = PMP_GUARD_ALIGN_AND_SIZE;
+	dynamic_regions[region_num].perm = 0;
+	dynamic_regions[region_num].type = PMP_REGION_TOR;
+	region_num++;
 
 #ifdef CONFIG_USERSPACE
 	if (thread->arch.priv_stack_start) {
@@ -561,28 +735,33 @@ void z_riscv_init_stack_guard(struct k_thread *thread)
 #else
 		stack_guard_addr = (ulong_t) thread->stack_obj;
 #endif /* CONFIG_PMP_POWER_OF_TWO_ALIGNMENT */
-		thread->arch.s_pmpaddr[index] =
-			TO_PMP_ADDR(stack_guard_addr);
-		uchar_pmpcfg[index++] = PMP_NA4;
-		thread->arch.s_pmpaddr[index] =
-			TO_PMP_ADDR(stack_guard_addr +
-				PMP_GUARD_ALIGN_AND_SIZE);
-		uchar_pmpcfg[index++] = PMP_TOR;
+		dynamic_regions[region_num].start = stack_guard_addr;
+		dynamic_regions[region_num].size = PMP_GUARD_ALIGN_AND_SIZE;
+		dynamic_regions[region_num].perm = 0;
+		dynamic_regions[region_num].type = PMP_REGION_TOR;
 	}
 #endif /* CONFIG_USERSPACE */
 
 	/* RAM: RW */
-	thread->arch.s_pmpaddr[index] = TO_PMP_ADDR(CONFIG_SRAM_BASE_ADDRESS |
-				TO_NAPOT_RANGE(KB(CONFIG_SRAM_SIZE)));
-	uchar_pmpcfg[index++] = (PMP_NAPOT | PMP_R | PMP_W);
+	dynamic_regions[region_num].start = CONFIG_SRAM_BASE_ADDRESS;
+	dynamic_regions[region_num].size = KB(CONFIG_SRAM_SIZE);
+	dynamic_regions[region_num].perm = PMP_R | PMP_W;
+	dynamic_regions[region_num].type = PMP_REGION_NAPOT;
+	region_num++;
 
 	/* All other memory: RWX */
-#ifdef CONFIG_64BIT
-	thread->arch.s_pmpaddr[index] = 0x1FFFFFFFFFFFFFFF;
-#else
-	thread->arch.s_pmpaddr[index] = 0x1FFFFFFF;
-#endif /* CONFIG_64BIT */
-	uchar_pmpcfg[index] = PMP_NAPOT | PMP_R | PMP_W | PMP_X;
+	/* special case: start = size = 0 means whole memory. */
+	dynamic_regions[region_num].start = 0;
+	dynamic_regions[region_num].size = 0;
+	dynamic_regions[region_num].perm = PMP_R | PMP_W | PMP_X;
+	dynamic_regions[region_num].type = PMP_REGION_NAPOT;
+	region_num++;
+
+	/* Reserve index 0 for PMP stack guard */
+	unsigned char index = 1;
+
+	riscv_pmp_regions_translate(thread->arch.s_pmpcfg,
+		thread->arch.s_pmpaddr, index, dynamic_regions, region_num);
 }
 
 void z_riscv_configure_stack_guard(struct k_thread *thread)
@@ -594,8 +773,8 @@ void z_riscv_configure_stack_guard(struct k_thread *thread)
 
 	z_riscv_pmp_clear_config();
 
-	for (i = 0U; i < PMP_REGION_NUM_FOR_STACK_GUARD; i++)
-		csr_write_enum(CSR_PMPADDR1 + i, thread->arch.s_pmpaddr[i]);
+	for (i = 1U; i < PMP_REGION_NUM_FOR_STACK_GUARD; i++)
+		csr_write_enum(CSR_PMPADDR0 + i, thread->arch.s_pmpaddr[i]);
 
 	for (i = 0U; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)
 		csr_write_enum(CSR_PMPCFG0 + i, thread->arch.s_pmpcfg[i]);
@@ -606,14 +785,10 @@ void z_riscv_configure_stack_guard(struct k_thread *thread)
 
 void z_riscv_configure_interrupt_stack_guard(void)
 {
-	if (PMP_GUARD_ALIGN_AND_SIZE > 4) {
-		z_riscv_pmp_set(0, PMP_NAPOT | PMP_L,
-			(ulong_t) z_interrupt_stacks[0] |
-			TO_NAPOT_RANGE(PMP_GUARD_ALIGN_AND_SIZE));
-	} else {
-		z_riscv_pmp_set(0, PMP_NA4 | PMP_L,
-			(ulong_t) z_interrupt_stacks[0]);
-	}
+	int index = 0;
+
+	LOG_DBG("Set static PMP region %d for IRQ stack guard", index);
+	static_regions_num = riscv_pmp_region_set(index, &irq_stack_guard_region);
 }
 #endif /* CONFIG_PMP_STACK_GUARD */
 
@@ -621,19 +796,20 @@ void z_riscv_configure_interrupt_stack_guard(void)
 
 void z_riscv_pmp_init_thread(struct k_thread *thread)
 {
-	unsigned char i;
-	ulong_t *pmpcfg;
+	/* Clear [u|s]_pmp[cfg|addr] field of k_thread */
 
 #if defined(CONFIG_PMP_STACK_GUARD)
-	pmpcfg = thread->arch.s_pmpcfg;
-	for (i = 0U; i < PMP_CFG_CSR_NUM_FOR_STACK_GUARD; i++)
-		pmpcfg[i] = 0;
+	memset(thread->arch.s_pmpcfg, 0,
+		sizeof(ulong_t) * PMP_CFG_CSR_NUM_FOR_STACK_GUARD);
+	memset(thread->arch.s_pmpaddr, 0,
+		sizeof(ulong_t) * PMP_REGION_NUM_FOR_STACK_GUARD);
 #endif /* CONFIG_PMP_STACK_GUARD */
 
 #if defined(CONFIG_USERSPACE)
-	pmpcfg = thread->arch.u_pmpcfg;
-	for (i = 0U; i < RISCV_PMP_CFG_NUM; i++)
-		pmpcfg[i] = 0;
+	memset(thread->arch.u_pmpcfg, 0,
+		sizeof(ulong_t) * RISCV_PMP_CFG_NUM);
+	memset(thread->arch.u_pmpaddr, 0,
+		sizeof(ulong_t) * CONFIG_PMP_SLOT);
 #endif /* CONFIG_USERSPACE */
 }
 #endif /* CONFIG_PMP_STACK_GUARD || CONFIG_USERSPACE */
