@@ -41,9 +41,6 @@
 #define GPIO_RX_ENABLE_PIN	DT_INST_GPIO_PIN(0, rx_enable_gpios)
 
 struct sx126x_data {
-	const struct device *reset;
-	const struct device *busy;
-	const struct device *dio1;
 	struct gpio_callback dio1_irq_callback;
 	struct k_work dio1_irq_work;
 	DioIrqHandler *radio_dio_irq;
