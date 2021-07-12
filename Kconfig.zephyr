@@ -211,6 +211,19 @@ config LINKER_USE_PINNED_SECTION
 	  Requires that pinned sections exist in the architecture, SoC,
 	  board or custom linker script.
 
+config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
+	bool "Generic sections are present at boot" if DEMAND_PAGING && LINKER_USE_PINNED_SECTION
+	default y
+	help
+	  When disabled, the linker sections other than the boot and
+	  pinned sections will be marked as not present in the page
+	  tables. This allows kernel to pull in data pages on demand
+	  as required by current execution context when demand paging
+	  is enabled. There is no need to load all code and data into
+	  memory at once.
+
+	  If unsure, say Y.
+
 endmenu # "Linker Sections"
 
 endmenu
