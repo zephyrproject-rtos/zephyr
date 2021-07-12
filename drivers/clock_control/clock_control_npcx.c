@@ -176,6 +176,10 @@ static int npcx_clock_control_init(const struct device *dev)
 	struct cdcg_reg *const inst_cdcg = HAL_CDCG_INST(dev);
 	const uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;
 
+	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NPCX_EXTERNAL_SRC)) {
+		inst_cdcg->LFCGCTL2 |= BIT(NPCX_LFCGCTL2_XT_OSC_SL_EN);
+	}
+
 	/*
 	 * Resetting the OFMCLK (even to the same value) will make the clock
 	 * unstable for a little which can affect peripheral communication like
