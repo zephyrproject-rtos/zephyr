@@ -88,6 +88,7 @@ static int state_post_write_cb(uint16_t obj_inst_id,
 			       bool last_block, size_t total_size)
 {
 	int i;
+	char path[MAX_RESOURCE_LEN];
 
 	i = get_button_index(obj_inst_id);
 	if (i < 0) {
@@ -95,8 +96,14 @@ static int state_post_write_cb(uint16_t obj_inst_id,
 	}
 
 	if (button_data[i].state && !button_data[i].last_state) {
-		/* off to on transition */
-		button_data[i].counter++;
+		/* off to on transition, increment the counter */
+		snprintk(path, sizeof(path), "%u/%u/%u",
+			 IPSO_OBJECT_PUSH_BUTTON_ID, obj_inst_id,
+			 DIGITAL_INPUT_COUNTER_RID);
+
+		if (lwm2m_engine_set_u64(path, button_data[i].counter + 1) < 0) {
+			LOG_ERR("Failed to increment counter resource %s", path);
+		}
 	}
 
 	button_data[i].last_state = button_data[i].state;
