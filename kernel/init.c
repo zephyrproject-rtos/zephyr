@@ -41,7 +41,7 @@ LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
 struct z_kernel _kernel;
 
 /* init/main and idle threads */
-K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
+K_THREAD_PINNED_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
