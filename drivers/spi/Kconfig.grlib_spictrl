@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Frontgrade Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_GRLIB_SPICTRL
+	bool "GRLIB SPI controller"
+	default y
+	depends on DT_HAS_GAISLER_SPICTRL_ENABLED
+	help
+	  Enable the GRLIB SPICTRL
