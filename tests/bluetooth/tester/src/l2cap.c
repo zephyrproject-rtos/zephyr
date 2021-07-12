@@ -351,16 +351,20 @@ static void listen(uint8_t *data, uint16_t len)
 
 	server->accept = accept;
 	server->psm = cmd->psm;
-
-	if (server->psm == 0x00F4) {
-		/* TSPX_psm_encryption_key_size_required */
-		req_keysize = 16;
-	} else if (server->psm == 0x00F3) {
-		/* TSPX_psm_authentication_required */
-		authorize_flag = true;
-	} else if (server->psm == 0x00F2) {
+	LOG_DBG("sec lvl: %d, keysize: %d", cmd->security, cmd->key_size);
+	if (server->psm == 0x00F2 || cmd->security == 2) {
 		/* TSPX_psm_authentication_required */
 		server->sec_level = BT_SECURITY_L3;
+	}
+	if (server->psm == 0x00F3 || cmd->security == 3) {
+		/* TSPX_psm_authorization_required */
+		authorize_flag = true;
+	}
+	if (server->psm == 0x00F4) {
+		req_keysize = 16;
+	} else if (cmd->key_size > 0) {
+		/* TSPX_psm_encryption_key_size_required */
+		req_keysize = cmd->key_size;
 	}
 
 	if (bt_l2cap_server_register(server) < 0) {

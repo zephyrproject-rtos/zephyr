@@ -772,6 +772,8 @@ struct l2cap_listen_cmd {
 	uint16_t psm;
 	uint8_t transport;
 	uint16_t mtu;
+	uint8_t security;
+	uint8_t key_size;
 	uint16_t response;
 } __packed;
 
