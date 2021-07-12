@@ -56,7 +56,7 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		if (bt_mesh_proxy_prov_disable(false) == 0) {
+		if (bt_mesh_proxy_prov_disable() == 0) {
 			pb_gatt_enabled = true;
 		} else {
 			pb_gatt_enabled = false;

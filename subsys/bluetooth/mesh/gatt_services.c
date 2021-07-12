@@ -920,6 +920,7 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 		if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) &&
 			       client->filter_type == PROV) {
 			bt_mesh_pb_gatt_close(conn);
+			client->filter_type = NONE;
 		}
 
 		/* If this fails, the work handler exits early, as
@@ -1022,10 +1023,8 @@ int bt_mesh_proxy_prov_enable(void)
 	return 0;
 }
 
-int bt_mesh_proxy_prov_disable(bool disconnect)
+int bt_mesh_proxy_prov_disable(void)
 {
-	int i;
-
 	BT_DBG("");
 
 	if (gatt_svc == MESH_GATT_NONE) {
@@ -1038,22 +1037,6 @@ int bt_mesh_proxy_prov_disable(bool disconnect)
 
 	bt_gatt_service_unregister(&prov_svc);
 	gatt_svc = MESH_GATT_NONE;
-
-	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		struct bt_mesh_proxy_client *client = &clients[i];
-
-		if (!client->cli.conn || client->filter_type != PROV) {
-			continue;
-		}
-
-		if (disconnect) {
-			bt_conn_disconnect(client->cli.conn,
-					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-		} else {
-			bt_mesh_pb_gatt_close(client->cli.conn);
-			client->filter_type = NONE;
-		}
-	}
 
 	bt_mesh_adv_update();
 
