@@ -3,6 +3,7 @@ sample:
 tests:
   sample.drivers.jesd216:
     tags: spi flash
+    platform_exclude: hifive1
     filter: dt_compat_enabled("jedec,spi-nor")
     harness: console
     harness_config:
