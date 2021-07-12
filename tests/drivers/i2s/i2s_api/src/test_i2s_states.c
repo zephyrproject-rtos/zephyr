@@ -215,8 +215,6 @@ void test_i2s_state_ready_neg(void)
 	zassert_equal(ret, -EIO, NULL);
 }
 
-#define TEST_I2S_STATE_RUNNING_NEG_REPEAT_COUNT  5
-
 /** @brief Verify all failure cases in RUNNING state.
  *
  * - Sending START, PREPARE trigger in RUNNING state returns failure.
@@ -245,27 +243,26 @@ void test_i2s_state_running_neg(void)
 	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_START);
 	zassert_equal(ret, 0, "TX START trigger failed");
 
-	for (int i = 0; i < TEST_I2S_STATE_RUNNING_NEG_REPEAT_COUNT; i++) {
-		ret = tx_block_write(dev_i2s_tx, 0, 0);
-		zassert_equal(ret, TC_PASS, NULL);
+	ret = tx_block_write(dev_i2s_tx, 0, 0);
+	zassert_equal(ret, TC_PASS, NULL);
 
-		ret = rx_block_read(dev_i2s_rx, 0);
-		zassert_equal(ret, TC_PASS, NULL);
-
-		/* Send invalid triggers, expect failure */
-		ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_START);
-		zassert_equal(ret, -EIO, NULL);
-		ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
-		zassert_equal(ret, -EIO, NULL);
-		ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_START);
-		zassert_equal(ret, -EIO, NULL);
-		ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_PREPARE);
-		zassert_equal(ret, -EIO, NULL);
-	}
+	/* Send invalid triggers, expect failure */
+	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_START);
+	zassert_equal(ret, -EIO, NULL);
+	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
+	zassert_equal(ret, -EIO, NULL);
 
 	/* All data written, flush TX queue and stop the transmission */
 	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
 	zassert_equal(ret, 0, "TX DRAIN trigger failed");
+
+	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_START);
+	zassert_equal(ret, -EIO, NULL);
+	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_PREPARE);
+	zassert_equal(ret, -EIO, NULL);
+
+	ret = rx_block_read(dev_i2s_rx, 0);
+	zassert_equal(ret, TC_PASS, NULL);
 
 	/* All but one data block read, stop reception */
 	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_STOP);
@@ -273,6 +270,12 @@ void test_i2s_state_running_neg(void)
 
 	ret = rx_block_read(dev_i2s_rx, 0);
 	zassert_equal(ret, TC_PASS, NULL);
+
+	/* This is incase the RX channel is stuck in STOPPING state.
+	 * Clear out the state before running the next test.
+	 */
+	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_DROP);
+	zassert_equal(ret, 0, "RX DROP trigger failed");
 }
 
 /** @brief Verify all failure cases in STOPPING state.
