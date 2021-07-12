@@ -8,6 +8,7 @@
 #include <sys/mem_manage.h>
 #include <timing/timing.h>
 #include <mmu.h>
+#include <linker/sections.h>
 
 #ifdef CONFIG_BACKING_STORE_RAM_PAGES
 #define EXTRA_PAGES	(CONFIG_BACKING_STORE_RAM_PAGES - 1)
@@ -58,8 +59,10 @@ k_mem_paging_backing_store_histogram_bounds[
 size_t arena_size;
 char *arena;
 
+__pinned_bss
 static bool expect_fault;
 
+__pinned_func
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
 	printk("Caught system error -- reason %d\n", reason);
