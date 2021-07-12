@@ -2217,6 +2217,9 @@ static int bt_sdp_get_attr(const struct net_buf *buf,
 		}
 
 		data += sizeof(uint8_t);
+		if ((data + sizeof(id) - buf->data) > buf->len) {
+			return -EINVAL;
+		}
 		id = sys_get_be16(data);
 		BT_DBG("Attribute ID 0x%04x", id);
 		data += sizeof(uint16_t);
