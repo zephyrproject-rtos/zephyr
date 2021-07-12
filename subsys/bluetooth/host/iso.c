@@ -697,7 +697,11 @@ void bt_iso_cleanup(struct bt_conn *conn)
 		}
 
 		if (i == CONFIG_BT_ISO_MAX_CHAN) {
-			hci_le_remove_cig(conn->iso.cig_id);
+			int err = hci_le_remove_cig(conn->iso.cig_id);
+
+			if (err != 0) {
+				BT_WARN("Failed to remove CIG: %d", err);
+			}
 		}
 	}
 }
