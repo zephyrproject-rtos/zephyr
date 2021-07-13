@@ -3108,13 +3108,6 @@ static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
-	/* TODO: add parameter checks */
-
-	own_addr_type = cmd->own_addr_type;
-	filter_policy = cmd->filter_policy;
-	phys = cmd->phys;
-	p = cmd->p;
-
 	/* Number of bits set indicate scan sets to be configured by calling
 	 * ll_scan_params_set function.
 	 */
@@ -3122,6 +3115,18 @@ static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt)
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		phys_bitmask |= BT_HCI_LE_EXT_SCAN_PHY_CODED;
 	}
+
+	phys = cmd->phys;
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
+	    (phys > phys_bitmask)) {
+		*evt = cmd_complete_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+
+		return;
+	}
+
+	own_addr_type = cmd->own_addr_type;
+	filter_policy = cmd->filter_policy;
+	p = cmd->p;
 
 	/* Irrespective of enabled PHYs to scan for, ll_scan_params_set needs
 	 * to be called to initialise the scan sets.
@@ -3276,15 +3281,6 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
-	/* TODO: add additional parameter checks */
-
-	filter_policy = cmd->filter_policy;
-	own_addr_type = cmd->own_addr_type;
-	peer_addr_type = cmd->peer_addr.type;
-	peer_addr = cmd->peer_addr.a.val;
-	phys = cmd->phys;
-	p = cmd->p;
-
 	/* Number of bits set indicate scan sets to be configured by calling
 	 * ll_create_connection function.
 	 */
@@ -3292,6 +3288,20 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		phys_bitmask |= BT_HCI_LE_EXT_SCAN_PHY_CODED;
 	}
+
+	phys = cmd->phys;
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
+	    (phys > phys_bitmask)) {
+		*evt = cmd_status(BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+
+		return;
+	}
+
+	filter_policy = cmd->filter_policy;
+	own_addr_type = cmd->own_addr_type;
+	peer_addr_type = cmd->peer_addr.type;
+	peer_addr = cmd->peer_addr.a.val;
+	p = cmd->p;
 
 	do {
 		uint16_t supervision_timeout;
