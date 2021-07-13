@@ -667,8 +667,8 @@ def map_extra_regions(pt):
         one_map = {}
 
         one_map['cmdline'] = entry
-        one_map['phys'] = int(elements[0], 16)
-        one_map['size']= int(elements[1], 16)
+        one_map['phys'] = int(elements[0], 0)
+        one_map['size']= int(elements[1], 0)
         one_map['large_page'] = False
 
         flags = FLAG_P | ENTRY_XD
