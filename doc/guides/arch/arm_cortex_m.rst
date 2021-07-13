@@ -497,6 +497,41 @@ Note, however, that the background SRAM region allows execution from SRAM, so wh
 that attempt to execute malicious code from SRAM.
 
 
+Floating point Services
+=======================
+
+Both unshared and shared FP registers mode are supported in Cortex-M (see
+:ref:`float_v2` for more details).
+
+When FPU support is enabled in the build
+(:kconfig:`CONFIG_FPU` is enabled), the
+sharing FP registers mode (:kconfig:`CONFIG_FPU_SHARING`)
+is enabled by default. This is done as some compiler configurations
+may activate a floating point context by generating FP instructions
+for any thread, regardless of whether floating point calculations are
+performed, and that context must be preserved when switching such
+threads in and out.
+
+The developers can still disable the FP sharing mode in their
+application projects, and switch to Unshared FP registers mode,
+if it is guaranteed that the image code does not generate FP
+instructions outside the single thread context that is allowed
+(and supposed) to do so.
+
+Under FPU sharing mode, the callee-saved FPU registers are saved
+and restored in context-switch, if the corresponding threads have
+an active FP context. This adds some runtime overhead on the swap
+routine. In addition to the runtime overhead, the sharing FPU mode
+
+* requires additional memory for each thread to save the callee-saved
+  FP registers
+* requires additional stack memory for each thread, to stack the caller-saved
+  FP registers, upon exception entry, if an FP context is active. Note, however,
+  that since lazy stacking is enabled, there is no runtime overhead of FP context
+  stacking in regular interrupts (FP state preservation is only activated in the
+  swap routine in PendSV interrupt).
+
+
 Misc
 ****
 
