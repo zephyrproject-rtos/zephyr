@@ -11,6 +11,11 @@ zephyr_compile_definitions(
   V2DSP_XY
 )
 
+zephyr_library_include_directories(
+  ../auxiliary/
+  src/
+)
+
 target_sources(app PRIVATE 
     src/ml_api_cifar10_caffe_main.c
     src/cifar10_coefficients_chw_big.c
@@ -27,4 +32,6 @@ target_sources(app PRIVATE
     ../auxiliary/tensor_transform.h
     ../auxiliary/tests_aux.c
     ../auxiliary/tests_aux.h
+    src/small_test_base/labels.c
+    src/small_test_base/tests.c
 )

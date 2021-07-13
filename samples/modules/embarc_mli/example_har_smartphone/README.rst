@@ -47,6 +47,20 @@ Run example
 More options
 --------------
 
+You can change mode in ml_api_har_smartphone_main.c to 1,2,3:
+
+* mode=1:
+
+       Built-in input processing. Uses only hard-coded vector for the single input model inference.
+
+* mode=2:
+
+       Unavailable right now due to hostlink error. External test-set processing. Reads vectors from input IDX file, passes it to the model, and writes it's output to the other IDX file (if input is *tests.idx* then output will be *tests.idx_out*).
+
+* mode=3:
+
+       Accuracy measurement for testset. Reads vectors from input IDX file, passes it to the model, and accumulates number of successive classifications according to labels IDX file. If hostlink is unavailble, please add _C_ARRAY_ definition.
+
 You can add different definitions to zephyr_compile_definitions() in 'zephyr/samples/modules/embarc_mli/example_har_smartphone/CMakeLists.txt' to implement numerous model:
 
 * 16 bit depth of coefficients and data (default):
@@ -60,6 +74,10 @@ You can add different definitions to zephyr_compile_definitions() in 'zephyr/sam
 * 8x16: 8 bit depth of coefficients and 16 bit depth of data:
 
        MODEL_BIT_DEPTH=816
+
+* If hostlink is not available, please reads vectors from input Array file, passes it to the model, and accumulates number of successive classifications according to labels array file:
+
+       _C_ARRAY_
 
 Example Structure
 --------------------

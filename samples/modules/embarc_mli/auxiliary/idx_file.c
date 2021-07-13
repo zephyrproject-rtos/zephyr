@@ -197,6 +197,34 @@ tIdxRetVal idx_file_check_and_get_info(tIdxDescr *descr_)
 	return IDX_ERR_NONE;
 }
 
+/* Check array file and Get part of it description for correct further reading */
+
+void array_file_check_and_get_info(tIdxDescr *descr_, tIdxArrayFlag *target)
+{
+	const unsigned int *array = (target->flag == LABELS) ? labels : tests;
+	uint8_t type, shapes_num;
+	uint32_t elements_num = 1;
+	uint32_t elements_size = 1;
+	size_t i, j;
+	uint32_t dim;
+
+	type = array[2];
+	shapes_num = array[3];
+	elements_size = data_elem_size((tIdxDataType)type);
+	target->position = HEADER_ELEM_SZ;
+	for (i = 0; i < shapes_num; ++i) {
+		for (j = 0; j < HEADER_ELEM_SZ; j++) {
+			buffer[j] = array[target->position];
+			target->position++;
+		}
+		bin2val((void *)&dim, buffer, HEADER_ELEM_SZ, 1);
+		elements_num *= dim;
+	}
+	descr_->data_type = (tIdxDataType)type;
+	descr_->num_dim = shapes_num;
+	descr_->num_elements = elements_num;
+}
+
 /* -------------------------------------------------------------------------- */
 /*           Read data from IDX file according to filled descriptor           */
 /* -------------------------------------------------------------------------- */
@@ -239,6 +267,48 @@ tIdxRetVal idx_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_)
 		i -= elem_in_portion;
 	}
 	return IDX_ERR_NONE;
+}
+
+/*
+ * REMARK: If shape pointer is not NULL then read dimensions and data from file beginig
+ * Else continue file reading from current position.
+ */
+void array_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_, tIdxArrayFlag *target)
+{
+	const unsigned int *array = (target->flag == LABELS) ? labels : tests;
+	const uint8_t elements_size = data_elem_size(descr_->data_type);
+	const uint32_t max_elem_in_buf = READ_BUF_SIZE / elements_size;
+	uint8_t *data_ptr = (uint8_t *)data_;
+	size_t count;
+	uint32_t i, elem_in_portion, j;
+
+	/* If shape required than we start reading file from beginning and read shape */
+	/* In other case we continue file reading from current position. */
+	if (shape_ != NULL) {
+		target->position = HEADER_ELEM_SZ;
+		for (i = 0; i < descr_->num_dim; ++i) {
+			for (j = 0; j < HEADER_ELEM_SZ; j++) {
+				buffer[j] = array[target->position];
+				(target->position)++;
+			}
+			bin2val((void *)&shape_[i], buffer, HEADER_ELEM_SZ, 1);
+		}
+		return;
+	}
+
+	/* Partial reading */
+	i = descr_->num_elements; /* total number of elemeants that will be read in this session. */
+	while (i > 0) {
+		elem_in_portion = (i > max_elem_in_buf) ? max_elem_in_buf : i;
+		count = elem_in_portion * elements_size;
+		for (j = 0; j < count; j++) {
+			buffer[j] = array[target->position];
+			(target->position)++;
+		}
+		bin2val((void *)data_ptr, buffer, elements_size, elem_in_portion);
+		data_ptr += count;
+		i -= elem_in_portion;
+	}
 }
 
 /* Write IDX file from source (full file in 1 operation in contrast with reading) */

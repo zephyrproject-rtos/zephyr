@@ -18,7 +18,7 @@
  * Find maximum value in the whole tensor and return it's argument (index)
  * Tensor data considered as linear array. Index corresponds to number of element in this array
  */
-static inline int arg_max(mli_tensor * net_output_);
+static inline int arg_max(mli_tensor *net_output_);
 
 /*
  * Return label (int) stored in label container.
@@ -195,6 +195,8 @@ test_status model_run_acc_on_idx_base(const char *input_idx_path, const char *la
 	test_status ret = TEST_PASSED;
 	tIdxDescr descr_in = { 0, 0, 0, NULL };
 	tIdxDescr descr_labels = { 0, 0, 0, NULL };
+	tIdxArrayFlag t_labels = { 0, LABELS };
+	tIdxArrayFlag t_tests = { 0, TESTS };
 	uint32_t shape[4] = { 0, 0, 0, 0 };
 	uint32_t labels_total = 0;
 	uint32_t labels_correct = 0;
@@ -202,8 +204,9 @@ test_status model_run_acc_on_idx_base(const char *input_idx_path, const char *la
 	size_t input_elements = mli_hlp_count_elem_num(model_input, 0);
 	void *input_data = NULL;
 
-	/* Step 1: Resources preparations */
-	/* Open and check input labels file */
+/* Step 1: Resources preparations */
+/* Open and check input labels file */
+#ifndef _C_ARRAY_
 	descr_labels.opened_file = fopen(labels_idx_path, "rb");
 	if (descr_labels.opened_file == NULL ||
 	    (idx_file_check_and_get_info(&descr_labels)) != IDX_ERR_NONE ||
@@ -225,8 +228,16 @@ test_status model_run_acc_on_idx_base(const char *input_idx_path, const char *la
 		goto free_ret_lbl;
 	}
 	labels_total = shape[0];
+#else
+	/* Open and check input labels file */
+	array_file_check_and_get_info(&descr_labels, &t_labels);
+	/* Read labels shape */
+	array_file_read_data(&descr_labels, NULL, shape, &t_labels);
+	labels_total = shape[0];
+#endif
 
-	/* Open and check input test idxfile */
+/* Open and check input test idxfile */
+#ifndef _C_ARRAY_
 	descr_in.opened_file = fopen(input_idx_path, "rb");
 	if (descr_in.opened_file == NULL ||
 	    (idx_file_check_and_get_info(&descr_in)) != IDX_ERR_NONE ||
@@ -244,7 +255,13 @@ test_status model_run_acc_on_idx_base(const char *input_idx_path, const char *la
 		ret = TEST_SUIT_ERROR;
 		goto free_ret_lbl;
 	}
+#else
+	/* Open and check input test idxfile */
+	array_file_check_and_get_info(&descr_in, &t_tests);
 
+	/* Read test base shape */
+	array_file_read_data(&descr_in, NULL, shape, &t_tests);
+#endif
 	/* Check compatibility between shapes of idx file and model input */
 	printf("IDX test file shape: [");
 	for (int i = 0; i < descr_in.num_dim; i++)
@@ -282,12 +299,19 @@ test_status model_run_acc_on_idx_base(const char *input_idx_path, const char *la
 		/* Get next input vector from file and related label */
 		descr_in.num_elements = input_elements;
 		descr_labels.num_elements = 1;
+#ifndef _C_ARRAY_
 		if (idx_file_read_data(&descr_in, input_data, NULL) != IDX_ERR_NONE ||
 		    idx_file_read_data(&descr_labels, (void *)&label, NULL) != IDX_ERR_NONE) {
 			printf("ERROR: While reading idx files content #%u\n", test_idx);
 			ret = TEST_SUIT_ERROR;
 			goto free_ret_lbl;
 		}
+#else
+		/* read from input data */
+		array_file_read_data(&descr_in, input_data, NULL, &t_tests);
+		/* read from label */
+		array_file_read_data(&descr_labels, (void *)&label, NULL, &t_labels);
+#endif
 		label = get_label(&label, descr_labels.data_type);
 
 		/* Model inference */

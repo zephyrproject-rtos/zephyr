@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "../example_cifar10_caffe/src/cifar10_constants.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,6 +122,20 @@ uint8_t data_elem_size(tIdxDataType type_);
 tIdxRetVal idx_file_check_and_get_info(tIdxDescr *descr_);
 
 /**
+ * @brief Check consistency of compiled array file and fill some descriptor fields
+ *
+ * @detail Function analyses opened array file and fills next fields of descriptor:
+ *         num_dim, data_type, num_elements
+ *
+ * @param[in] descr_ - Descriptor of array file with correctly opened file (user responsibility)
+ *
+ * @param[in] target - Pointer to array
+ *
+ * @return No return value
+ */
+void array_file_check_and_get_info(tIdxDescr *descr_, tIdxArrayFlag *target);
+
+/**
  * @brief Partial data reading from opened IDX file
  *
  * @detail Function reads descr_->num_elements values from file sequentially. Position inside file will be changed accordingly.
@@ -134,6 +149,24 @@ tIdxRetVal idx_file_check_and_get_info(tIdxDescr *descr_);
  * @return Operation status code (tIdxRetVal)
  */
 tIdxRetVal idx_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_);
+
+/**
+ * @brief Partial data reading from opened array file
+ *
+ * @detail Function reads descr_->num_elements values from file sequentially.
+ *         Position inside file will be changed accordingly.
+ *         If shape_ pointer is not NULL
+ *         then read dimensions and data from the beginig of the file .
+ *         Else continue file reading from current position.
+ *
+ * @param[in] descr_ - Descriptor of array file (user responsibility)
+ * @param[in] data_ - Pointer to pre-allocated array of sufficient size
+ * @param[in] shape_ - Pointer to array with shape.
+ * @param[in] target - Pointer to array.
+ *
+ * @return No return value
+ */
+void array_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_, tIdxArrayFlag *target);
 
 /**
  * @brief Write IDX file from input array
