@@ -5194,7 +5194,7 @@ no_ext_hdr:
 	adv_info = (void *)(((uint8_t *)sep) + sizeof(*sep));
 
 	/* Set directed advertising bit */
-	if ((evt_type == BT_HCI_LE_ADV_EVT_TYPE_CONN) && direct_addr) {
+	if (direct_addr) {
 		evt_type |= BT_HCI_LE_ADV_EVT_TYPE_DIRECT;
 	}
 
