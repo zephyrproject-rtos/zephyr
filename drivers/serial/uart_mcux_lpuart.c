@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017,2021 NXP
  * Copyright (c) 2020 Softube
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -22,6 +22,7 @@ struct mcux_lpuart_config {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
+	uint8_t flow_ctrl;
 };
 
 struct mcux_lpuart_data {
@@ -357,7 +358,7 @@ static int mcux_lpuart_init(const struct device *dev)
 	uart_api_config->parity = UART_CFG_PARITY_NONE;
 	uart_api_config->stop_bits = UART_CFG_STOP_BITS_1;
 	uart_api_config->data_bits = UART_CFG_DATA_BITS_8;
-	uart_api_config->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	uart_api_config->flow_ctrl = config->flow_ctrl;
 
 	/* set initial configuration */
 	mcux_lpuart_configure_init(dev, uart_api_config);
@@ -430,7 +431,9 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {	\
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
 	.baud_rate = DT_INST_PROP(n, current_speed),			\
-	IRQ_FUNC_INIT							\
+	IRQ_FUNC_INIT,							\
+	.flow_ctrl = DT_INST_PROP(n, hw_flow_control) ?	\
+		UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE\
 }
 
 #define LPUART_MCUX_INIT(n)						\
