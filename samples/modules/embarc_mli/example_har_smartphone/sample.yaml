@@ -1,0 +1,7 @@
+sample:
+  description: har_smartphone embarc_mli sample
+  name: example_har_smartphone
+tests:
+  sample.embarc_mli.example_har_smartphone:
+    platform_allow: nsim_em
+    tags: embarc_mli

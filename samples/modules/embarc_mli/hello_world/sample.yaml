@@ -1,0 +1,7 @@
+sample:
+  description: simple hello_world embarc_mli sample
+  name: hello_world
+tests:
+  sample.embarc_mli.hello_world:
+    platform_allow: nsim_em
+    tags: embarc_mli
