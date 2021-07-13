@@ -63,6 +63,9 @@ extern "C" {
 
 /**
  * @brief Get a numeric identifier for a fixed partition
+ *
+ * The partition ID will be only available from status "okay" partition entries
+ *
  * @param node_id node identifier for a fixed-partitions child node
  * @return the partition's ID, a unique zero-based index number
  */
