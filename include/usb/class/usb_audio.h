@@ -21,7 +21,7 @@
 #ifndef ZEPHYR_INCLUDE_USB_CLASS_AUDIO_H_
 #define ZEPHYR_INCLUDE_USB_CLASS_AUDIO_H_
 
-#include <usb/usb_common.h>
+#include <usb/usb_ch9.h>
 #include <device.h>
 #include <net/buf.h>
 #include <sys/util.h>

@@ -462,8 +462,7 @@ static void update_control_stage(usb_device_callback_message_struct_t *cb_msg,
 	if (cb_msg->isSetup) {
 		if (usbd_setup->wLength == 0) {
 			dev_data.setupDataStage = SETUP_DATA_STAGE_DONE;
-		} else if (REQTYPE_GET_DIR(usbd_setup->bmRequestType)
-			   == REQTYPE_DIR_TO_HOST) {
+		} else if (usb_reqtype_is_to_host(usbd_setup)) {
 			dev_data.setupDataStage = SETUP_DATA_STAGE_IN;
 		} else {
 			dev_data.setupDataStage = SETUP_DATA_STAGE_OUT;

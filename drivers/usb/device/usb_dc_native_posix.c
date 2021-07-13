@@ -503,6 +503,7 @@ int usb_dc_ep_mps(const uint8_t ep)
 
 int handle_usb_control(struct usbip_header *hdr)
 {
+#define USB_REQTYPE_GET_DIR(bmRequestType) (((bmRequestType) >> 7) & 0x01)
 	uint8_t ep_idx = USB_EP_GET_IDX(ntohl(hdr->common.ep));
 	struct usb_ep_ctrl_prv *ep_ctrl;
 
@@ -513,8 +514,7 @@ int handle_usb_control(struct usbip_header *hdr)
 	}
 
 	if ((ntohl(hdr->common.direction) == USBIP_DIR_IN) ^
-	    (REQTYPE_GET_DIR(hdr->u.submit.bmRequestType) ==
-	     REQTYPE_DIR_TO_HOST)) {
+	    USB_REQTYPE_GET_DIR(hdr->u.submit.bmRequestType)) {
 		LOG_ERR("Failed to verify bmRequestType");
 		return -EIO;
 	}

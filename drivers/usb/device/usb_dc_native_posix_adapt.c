@@ -25,8 +25,6 @@
 
 /* Zephyr headers */
 #include <kernel.h>
-#include <usb/usb_common.h>
-#include <usb/usbstruct.h>
 #include <usb/usb_device.h>
 
 #include <posix_board_if.h>
@@ -75,7 +73,7 @@ static void usbip_header_dump(struct usbip_header *hdr)
 void get_interface(uint8_t *descriptors)
 {
 	while (descriptors[0]) {
-		if (descriptors[1] == USB_INTERFACE_DESC) {
+		if (descriptors[1] == USB_DESC_INTERFACE) {
 			LOG_DBG("interface found");
 		}
 
@@ -94,7 +92,7 @@ static int send_interfaces(const uint8_t *descriptors, int connfd)
 	} __packed iface;
 
 	while (descriptors[0]) {
-		if (descriptors[1] == USB_INTERFACE_DESC) {
+		if (descriptors[1] == USB_DESC_INTERFACE) {
 			struct usb_if_descriptor *desc = (void *)descriptors;
 
 			iface.bInterfaceClass = desc->bInterfaceClass;

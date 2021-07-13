@@ -1042,8 +1042,7 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 		ep_state->cb(EP0_OUT, USB_DC_EP_SETUP);
 
 		if (!(setup->wLength == 0U) &&
-		    !(REQTYPE_GET_DIR(setup->bmRequestType) ==
-		    REQTYPE_DIR_TO_HOST)) {
+		    usb_reqtype_is_to_device(setup)) {
 			usb_dc_ep_start_read(EP0_OUT,
 					     usb_dc_stm32_state.ep_buf[EP0_IDX],
 					     setup->wLength);

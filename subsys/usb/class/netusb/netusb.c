@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(usb_net);
 #include <net_private.h>
 
 #include <usb_device.h>
-#include <usb_common.h>
 #include <usb_descriptor.h>
 
 #include "netusb.h"
