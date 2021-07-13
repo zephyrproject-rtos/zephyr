@@ -604,7 +604,7 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 				return ret;
 			}
 
-			if(kv.value.type != JSON_TOK_NULL) {
+			if(kv.value.type != JSON_TOK_NULL || kv.value.type == descr->type) {
 				decoded_fields |= 1<<i;
 			}
 			break;
