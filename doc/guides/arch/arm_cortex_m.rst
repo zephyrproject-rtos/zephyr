@@ -588,6 +588,16 @@ into SRAM, without relocating the whole image text
 and data sections. More details on the code relocation
 feature can be found in :ref:`code_data_relocation`.
 
+
+Linking Cortex-M applications
+*****************************
+
+Most Cortex-M platforms make use of the default Cortex-M
+GCC linker script in :file:`include/arch/arm/aarch32/cortex-m/scripts/linked.ld`,
+although it is possible for platforms to use a custom linker
+script as well.
+
+
 CMSIS
 *****
 
