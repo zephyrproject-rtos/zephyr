@@ -42,7 +42,7 @@ uint16_t crc16_ccitt(uint16_t seed, const uint8_t *src, size_t len)
 
 		e = seed ^ *src++;
 		f = e ^ (e << 4);
-		seed = (seed >> 8) ^ (f << 8) ^ (f << 3) ^ (f >> 4);
+		seed = (seed >> 8) ^ ((uint16_t)f << 8) ^ ((uint16_t)f << 3) ^ ((uint16_t)f >> 4);
 	}
 
 	return seed;
