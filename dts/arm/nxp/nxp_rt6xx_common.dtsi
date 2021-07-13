@@ -11,6 +11,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -213,6 +217,14 @@
 		interrupts = <41 0>;
 		status = "disabled";
 		label = "OS_TIMER";
+	};
+
+	trng: random@50138000 {
+		compatible = "nxp,kinetis-trng";
+		reg = <0x50138000 0x4000>;
+		status = "okay";
+		interrupts = <31 0>;
+		label = "TRNG";
 	};
 };
 
