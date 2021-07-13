@@ -15,4 +15,6 @@
 #define __GIC_PRESENT 0
 #define __TIM_PRESENT 0
 
+#include "pinmux-rcar.h"
+
 #endif /* _SOC__H_ */

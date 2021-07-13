@@ -10,5 +10,12 @@ config SOC_SERIES_RCAR_GEN3
 	select CPU_HAS_DCLS
 	select SOC_FAMILY_RCAR
 	select CLOCK_CONTROL_RCAR_CPG_MSSR if CLOCK_CONTROL
+	select PINMUX_RCAR if PINMUX
 	help
 	  Enable support for Renesas RCar Gen3 SoC series
+
+config PINMUX_RCAR
+	bool "Renesas RCar Gen3 pinmux driver"
+	depends on SOC_SERIES_RCAR_GEN3
+	help
+	  Enable the Renesas RCar Gen3 pinmux driver.

@@ -3,4 +3,5 @@
 
 zephyr_sources(
   soc.c
+  pinmux_rcar.c
 )

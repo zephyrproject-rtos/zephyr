@@ -51,6 +51,7 @@
 };
 
 &can0 {
+	pinctrl-0 = <&can0_data_a_tx &can0_data_a_rx>;
 	status = "okay";
 };
 
