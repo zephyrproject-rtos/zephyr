@@ -18,7 +18,8 @@ enum llcp_proc {
 	PROC_CONN_PARAM_REQ,
 	PROC_TERMINATE,
 	PROC_CHAN_MAP_UPDATE,
-	PROC_DATA_LENGTH_UPDATE
+	PROC_DATA_LENGTH_UPDATE,
+	PROC_CTE_REQ,
 };
 
 #if defined (CONFIG_BT_CTLR_LE_ENC)
@@ -187,12 +188,22 @@ struct proc_ctx {
 			uint8_t chm[5];
 		} chmu;
 
+		/* Use by CTE Request Procedure */
+		struct {
+			uint8_t type:2;
+			uint8_t min_len:5;
+		} cte_req;
+
 	} data;
 
 	struct {
 		uint8_t type;
 	} unknown_response;
 
+	struct {
+		uint8_t reject_opcode;
+		uint8_t error_code;
+	} reject_ext_ind;
 };
 
 /* Procedure Incompatibility */
@@ -1029,7 +1040,17 @@ static inline void pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t rejec
 	return ull_cp_priv_pdu_encode_reject_ext_ind(pdu, reject_opcode, error_code);
 }
 
+void ull_cp_priv_pdu_decode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+static inline void pdu_decode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_reject_ext_ind(ctx, pdu);
+}
 
+void ull_cp_priv_ntf_encode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
+static inline void ntf_encode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_ntf_encode_reject_ext_ind(ctx, pdu);
+}
 /*
  * PHY Update Procedure Helper
  */
@@ -1209,6 +1230,35 @@ static inline void ntf_encode_length_change(struct ll_conn *conn,
 	return ull_cp_priv_ntf_encode_length_change(conn, pdu);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+/*
+ * Constant Tone Request Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu);
+static inline void pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_cte_req(ctx, pdu);
+}
+
+void ull_cp_priv_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
+static inline void ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	return ull_cp_priv_ntf_encode_cte_req(conn, pdu);
+}
+
+void ull_cp_priv_pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu);
+static inline void pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_cte_req(conn, pdu);
+}
+
+void ull_cp_priv_pdu_encode_cte_rsp(struct pdu_data *pdu);
+static inline void pdu_encode_cte_rsp(struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_cte_rsp(pdu);
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ll_conn *conn);

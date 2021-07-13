@@ -226,6 +226,9 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 		lp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	case PROC_CTE_REQ:
+		lp_comm_init_proc(ctx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -284,6 +287,9 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 		rp_comm_init_proc(ctx);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+	case PROC_CTE_REQ:
+		rp_comm_init_proc(ctx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -719,6 +725,37 @@ void ull_cp_conn_param_req_neg_reply(struct ll_conn *conn, uint8_t error_code)
 		rp_conn_param_req_neg_reply(conn, ctx);
 	}
 }
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RSP)
+void ull_cp_cte_rsp_enable(struct ll_conn *conn, bool enable, uint8_t max_cte_len,
+			   uint8_t cte_types)
+{
+	conn->llcp.cte_rsp.is_enabled = enable;
+
+	if (enable) {
+		conn->llcp.cte_rsp.max_cte_len = max_cte_len;
+		conn->llcp.cte_rsp.cte_types = cte_types;
+	}
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_RSP */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+uint8_t ull_cp_cte_req(struct ll_conn *conn, uint8_t min_cte_len, uint8_t cte_type)
+{
+	struct proc_ctx *ctx;
+
+	ctx = create_local_procedure(PROC_CTE_REQ);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ctx->data.cte_req.min_len = min_cte_len;
+	ctx->data.cte_req.type = cte_type;
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
 
 static bool pdu_is_expected(struct pdu_data *pdu, struct proc_ctx *ctx)
 {

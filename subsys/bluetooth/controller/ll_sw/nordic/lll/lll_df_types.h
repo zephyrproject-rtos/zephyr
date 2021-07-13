@@ -22,19 +22,6 @@
 #define BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN 0
 #endif
 
-/* @brief Configuration of Constant Tone Extension for connectionless
- * transmission.
- */
-struct lll_df_adv_cfg {
-	uint8_t is_enabled:1;
-	uint8_t is_started:1;
-	uint8_t cte_length:6;   /* Length of CTE in 8us units */
-	uint8_t cte_type:2;
-	uint8_t cte_count:6;
-	uint8_t ant_sw_len:6;
-	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
-};
-
 /* BT 5.1 Vol 6, Part B, Section 2.5.4 reference period is sampled with 1us
  * spacing. Thus we may have 8 IQ samples from reference period.
  */
@@ -51,10 +38,23 @@ struct lll_df_adv_cfg {
 #endif
 
 #define IQ_SAMPLE_TOTAL_CNT ((IQ_SAMPLE_REF_CNT) + (IQ_SAMPLE_SWITCH_CNT))
-#define IQ_SAMPLE_CNT  (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
+#define IQ_SAMPLE_CNT (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
 #define RSSI_DBM_TO_DECI_DBM(x) (-(x) * 10)
 #define IQ_SHIFT_12_TO_8_BIT(x) ((x) >> 4)
+
+/* @brief Configuration of Constant Tone Extension for connectionless
+ * transmission.
+ */
+struct lll_df_adv_cfg {
+	uint8_t is_enabled:1;
+	uint8_t is_started:1;
+	uint8_t cte_length:6;   /* Length of CTE in 8us units */
+	uint8_t cte_type:2;
+	uint8_t cte_count:6;
+	uint8_t ant_sw_len:6;
+	uint8_t ant_ids[BT_CTLR_DF_MAX_ANT_SW_PATTERN_LEN];
+};
 
 /* Structure to store an single IQ sample */
 struct iq_sample {
@@ -93,4 +93,22 @@ struct lll_df_sync {
 	uint8_t volatile first;
 	uint8_t last;
 	struct lll_df_sync_cfg cfg[DOUBLE_BUFFER_SIZE];
+};
+
+/* @brief Structure to store data required to prepare LE Connection IQ Report event or LE
+ * Connectionless IQ Report event.
+ *
+ * TODO (ppryga): use struct cte_conn_iq_report in connected mode. Members are exactly the same as
+ * members of node_rx_iq_report except hdr.
+ */
+struct cte_conn_iq_report {
+	struct pdu_cte_info cte_info;
+	uint8_t local_slot_durations;
+	uint8_t packet_status;
+	uint8_t sample_count;
+	uint8_t rssi_ant_id;
+	union {
+		uint8_t pdu[0] __aligned(4);
+		struct iq_sample sample[0];
+	};
 };

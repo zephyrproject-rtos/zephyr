@@ -16,6 +16,7 @@
 
 #include "hal/ccm.h"
 
+#include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
 
@@ -26,6 +27,7 @@
 
 #include "lll.h"
 #include "lll_conn.h"
+#include "lll_df_types.h"
 #include "ull_tx_queue.h"
 #include "ull_conn_types.h"
 
@@ -342,6 +344,30 @@ void helper_pdu_encode_length_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.length_req.max_tx_octets = p->max_tx_octets;
 	pdu->llctrl.length_req.max_rx_time = p->max_rx_time;
 	pdu->llctrl.length_req.max_tx_time = p->max_tx_time;
+}
+void helper_pdu_encode_cte_req(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cte_req *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len =
+		offsetof(struct pdu_data_llctrl, cte_req) + sizeof(struct pdu_data_llctrl_cte_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_REQ;
+	pdu->llctrl.cte_req.min_cte_len_req = p->min_cte_len_req;
+	pdu->llctrl.cte_req.cte_type_req = p->cte_type_req;
+}
+
+void helper_pdu_encode_cte_rsp(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len =
+		offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
+}
+
+void helper_node_encode_cte_rsp(struct node_rx_pdu *rx, void *param)
+{
+	rx->hdr.rx_ftr.iq_report = (struct cte_conn_iq_report *)param;
 }
 
 void helper_pdu_verify_version_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
@@ -673,4 +699,55 @@ void helper_pdu_verify_length_rsp(const char *file, uint32_t line, struct pdu_da
 	zassert_equal(pdu->llctrl.length_rsp.max_tx_octets, p->max_tx_octets, "max_tx_octets mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.length_rsp.max_rx_time, p->max_rx_time, "max_rx_time mismatch.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.length_rsp.max_tx_time, p->max_tx_time, "max_tx_time mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_cte_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_cte_req *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CTE_REQ,
+		      "Not a LL_CTE_REQ.\nCalled at %s:%d ( %d %d)\n", file, line,
+		      pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CTE_REQ);
+	zassert_equal(pdu->len,
+		      offsetof(struct pdu_data_llctrl, cte_req) +
+			      sizeof(struct pdu_data_llctrl_cte_req),
+		      "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cte_req.min_cte_len_req, p->min_cte_len_req,
+		      "Minimal CTE length request mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.cte_req.cte_type_req, p->cte_type_req,
+		      "CTE type request mismatch.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_cte_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file,
+		      line);
+	zassert_equal(pdu->len,
+		      offsetof(struct pdu_data_llctrl, cte_rsp) +
+			      sizeof(struct pdu_data_llctrl_cte_rsp),
+		      "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_CTE_RSP,
+		      "Not a LL_CTE_RSP.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_node_verify_cte_rsp(const char *file, uint32_t line, struct node_rx_pdu *rx,
+				void *param)
+{
+	struct cte_conn_iq_report *p_iq_report = param;
+	struct cte_conn_iq_report *rx_iq_report = rx->hdr.rx_ftr.iq_report;
+
+	zassert_equal(rx_iq_report->cte_info.time, p_iq_report->cte_info.time,
+		      "CTE Time mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(rx_iq_report->local_slot_durations, p_iq_report->local_slot_durations,
+		      "Slot duration mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(rx_iq_report->packet_status, p_iq_report->packet_status,
+		      "Packet status mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(rx_iq_report->rssi_ant_id, p_iq_report->rssi_ant_id,
+		      "RSSI antenna id mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(rx_iq_report->sample_count, p_iq_report->sample_count,
+		      "Sample count mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(memcmp(rx_iq_report->sample, p_iq_report->sample, p_iq_report->sample_count),
+		      0, "IQ samples mismatch.\nCalled at %s:%d\n", file, line);
 }

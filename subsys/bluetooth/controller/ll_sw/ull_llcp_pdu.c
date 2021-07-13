@@ -411,6 +411,26 @@ void ull_cp_priv_pdu_encode_reject_ext_ind(struct pdu_data *pdu, uint8_t reject_
 	pdu->llctrl.reject_ext_ind.error_code = error_code;
 }
 
+void ull_cp_priv_pdu_decode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->reject_ext_ind.reject_opcode = pdu->llctrl.reject_ext_ind.reject_opcode;
+	ctx->reject_ext_ind.error_code = pdu->llctrl.reject_ext_ind.error_code;
+}
+
+void ull_cp_priv_ntf_encode_reject_ext_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_reject_ext_ind *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, reject_ext_ind) +
+		   sizeof(struct pdu_data_llctrl_reject_ext_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
+
+	p = (void *)&pdu->llctrl.reject_ext_ind;
+	p->error_code = ctx->reject_ext_ind.error_code;
+	p->reject_opcode = ctx->reject_ext_ind.reject_opcode;
+}
+
 #ifdef CONFIG_BT_CTLR_PHY
 /*
  * PHY Update Procedure Helper
@@ -675,3 +695,47 @@ void ull_cp_priv_pdu_decode_length_rsp(struct ll_conn *conn,
 	conn->lll.dle.remote.max_tx_time = sys_le16_to_cpu(p->max_tx_time);
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_DF_CONN_CTE_REQ)
+/*
+ * Constant Tone Request Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_cte_req(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_cte_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len =
+		offsetof(struct pdu_data_llctrl, cte_req) + sizeof(struct pdu_data_llctrl_cte_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_REQ;
+
+	p = &pdu->llctrl.cte_req;
+	p->min_cte_len_req = ctx->data.cte_req.min_len;
+	p->rfu = 0;
+	p->cte_type_req = ctx->data.cte_req.type;
+}
+
+void ull_cp_priv_ntf_encode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len =
+		offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
+
+	/* TODO add handling of IQ samples forwarding */
+}
+
+void ull_cp_priv_pdu_decode_cte_req(struct ll_conn *conn, struct pdu_data *pdu)
+{
+	conn->llcp.cte_req.min_cte_len = pdu->llctrl.cte_req.min_cte_len_req;
+	conn->llcp.cte_req.cte_type = pdu->llctrl.cte_req.cte_type_req;
+}
+
+void ull_cp_priv_pdu_encode_cte_rsp(struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len =
+		offsetof(struct pdu_data_llctrl, cte_rsp) + sizeof(struct pdu_data_llctrl_cte_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CTE_RSP;
+}
+#endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */

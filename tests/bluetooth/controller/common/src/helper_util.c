@@ -47,7 +47,7 @@ static sys_slist_t lt_tx_q;
 #define PDU_DATA_SIZE		(PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 #define PDU_RX_NODE_SIZE WB_UP(NODE_RX_STRUCT_OVERHEAD + PDU_DATA_SIZE)
 
-helper_pdu_encode_func_t * const helper_pdu_encode[] = {
+helper_pdu_encode_func_t *const helper_pdu_encode[] = {
 	[LL_VERSION_IND]           = helper_pdu_encode_version_ind,
 	[LL_LE_PING_REQ]           = helper_pdu_encode_ping_req,
 	[LL_LE_PING_RSP]           = helper_pdu_encode_ping_rsp,
@@ -74,6 +74,8 @@ helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	[LL_CHAN_MAP_UPDATE_IND]   = helper_pdu_encode_channel_map_update_ind,
 	[LL_LENGTH_REQ]            = helper_pdu_encode_length_req,
 	[LL_LENGTH_RSP]            = helper_pdu_encode_length_rsp,
+	[LL_CTE_REQ]               = helper_pdu_encode_cte_req,
+	[LL_CTE_RSP]               = helper_pdu_encode_cte_rsp,
 };
 
 helper_pdu_verify_func_t *const helper_pdu_verify[] = {
@@ -103,6 +105,8 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	[LL_CHAN_MAP_UPDATE_IND]   = helper_pdu_verify_channel_map_update_ind,
 	[LL_LENGTH_REQ]            = helper_pdu_verify_length_req,
 	[LL_LENGTH_RSP]            = helper_pdu_verify_length_rsp,
+	[LL_CTE_REQ]               = helper_pdu_verify_cte_req,
+	[LL_CTE_RSP]               = helper_pdu_verify_cte_rsp,
 };
 
 helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
@@ -130,13 +134,43 @@ helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
 	[LL_CHAN_MAP_UPDATE_IND]   = NULL,
 	[LL_LENGTH_REQ]            = NULL,
 	[LL_LENGTH_RSP]            = NULL,
+	[LL_CTE_REQ]               = NULL,
+	/* TODO (ppryga): Add verifiaction for RSP notification */
+	[LL_CTE_RSP]               = NULL,
 };
 
+helper_node_encode_func_t *const helper_node_encode[] = {
+	[LL_VERSION_IND]           = NULL,
+	[LL_LE_PING_REQ]           = NULL,
+	[LL_LE_PING_RSP]           = NULL,
+	[LL_FEATURE_REQ]           = NULL,
+	[LL_SLAVE_FEATURE_REQ]     = NULL,
+	[LL_FEATURE_RSP]           = NULL,
+	[LL_MIN_USED_CHANS_IND]    = NULL,
+	[LL_REJECT_IND]            = NULL,
+	[LL_REJECT_EXT_IND]        = NULL,
+	[LL_ENC_REQ]               = NULL,
+	[LL_ENC_RSP]               = NULL,
+	[LL_START_ENC_REQ]         = NULL,
+	[LL_START_ENC_RSP]         = NULL,
+	[LL_PHY_REQ]               = NULL,
+	[LL_PHY_RSP]               = NULL,
+	[LL_PHY_UPDATE_IND]        = NULL,
+	[LL_UNKNOWN_RSP]           = NULL,
+	[LL_CONNECTION_UPDATE_IND] = NULL,
+	[LL_CONNECTION_PARAM_REQ]  = NULL,
+	[LL_CONNECTION_PARAM_RSP]  = NULL,
+	[LL_TERMINATE_IND]         = NULL,
+	[LL_CHAN_MAP_UPDATE_IND]   = NULL,
+	[LL_CTE_REQ]               = NULL,
+	[LL_CTE_RSP]               = helper_node_encode_cte_rsp,
+};
 
-helper_node_verify_func_t * const helper_node_verify[] = {
-	[NODE_PHY_UPDATE]  = helper_node_verify_phy_update,
+helper_node_verify_func_t *const helper_node_verify[] = {
+	[NODE_PHY_UPDATE] = helper_node_verify_phy_update,
 	[NODE_CONN_UPDATE] = helper_node_verify_conn_update,
 	[NODE_ENC_REFRESH] = helper_node_verify_enc_refresh,
+	[NODE_CTE_RSP] = helper_node_verify_cte_rsp,
 };
 
 /*
@@ -262,7 +296,6 @@ uint16_t event_counter(struct ll_conn *conn)
 	return event_counter;
 }
 
-
 void lt_tx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, struct ll_conn *conn, void *param)
 {
 	struct pdu_data *pdu;
@@ -270,6 +303,11 @@ void lt_tx_real(const char *file, uint32_t line, helper_pdu_opcode_t opcode, str
 
 	rx = malloc(PDU_RX_NODE_SIZE);
 	zassert_not_null(rx,  "Out of memory.\nCalled at %s:%d\n", file, line);
+
+	/* Encode node_rx_pdu if required by particular procedure */
+	if (helper_node_encode[opcode]) {
+		helper_node_encode[opcode](rx, param);
+	}
 
 	pdu = (struct pdu_data *) rx->pdu;
 	zassert_not_null(helper_pdu_encode[opcode], "PDU encode function cannot be NULL\n");

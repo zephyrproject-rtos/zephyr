@@ -48,6 +48,10 @@ void helper_pdu_encode_channel_map_update_ind(struct pdu_data *pdu, void *param)
 void helper_pdu_encode_length_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_length_rsp(struct pdu_data *pdu, void *param);
 
+void helper_pdu_encode_cte_req(struct pdu_data *pdu, void *param);
+void helper_pdu_encode_cte_rsp(struct pdu_data *pdu, void *param);
+void helper_node_encode_cte_rsp(struct node_rx_pdu *rx, void *param);
+
 void helper_pdu_verify_ping_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_ping_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 
@@ -98,9 +102,13 @@ void helper_pdu_verify_conn_param_rsp(const char *file, uint32_t line, struct pd
 void helper_pdu_verify_conn_update_ind(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_node_verify_conn_update(const char *file, uint32_t line, struct node_rx_pdu *rx, void *param);
 
-
 void helper_pdu_verify_length_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
 void helper_pdu_verify_length_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+
+void helper_pdu_verify_cte_req(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+void helper_pdu_verify_cte_rsp(const char *file, uint32_t line, struct pdu_data *pdu, void *param);
+void helper_node_verify_cte_rsp(const char *file, uint32_t line, struct node_rx_pdu *rx,
+				void *param);
 
 typedef enum {
 	LL_VERSION_IND,
@@ -129,15 +137,19 @@ typedef enum {
 	LL_CHAN_MAP_UPDATE_IND,
 	LL_LENGTH_REQ,
 	LL_LENGTH_RSP,
+	LL_CTE_REQ,
+	LL_CTE_RSP,
 } helper_pdu_opcode_t;
 
 typedef enum {
 	NODE_PHY_UPDATE,
 	NODE_CONN_UPDATE,
 	NODE_ENC_REFRESH,
+	NODE_CTE_RSP,
 } helper_node_opcode_t;
 
 typedef void (helper_pdu_encode_func_t) (struct pdu_data *data, void *param);
 typedef void (helper_pdu_verify_func_t) (const char *file, uint32_t line, struct pdu_data *data, void *param);
 typedef void (helper_pdu_ntf_verify_func_t) (const char *file, uint32_t line, struct pdu_data *data, void *param);
+typedef void(helper_node_encode_func_t)(struct node_rx_pdu *rx, void *param);
 typedef void (helper_node_verify_func_t) (const char *file, uint32_t line, struct node_rx_pdu *rx, void *param);
