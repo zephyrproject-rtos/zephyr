@@ -923,7 +923,7 @@ config ICACHE_LINE_SIZE
 
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
-choice
+choice CACHE_TYPE
 	prompt "Cache type"
 	depends on CACHE_MANAGEMENT
 	default HAS_ARCH_CACHE
