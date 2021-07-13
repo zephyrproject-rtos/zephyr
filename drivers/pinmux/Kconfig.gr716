@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Cobham Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config PINMUX_GR716
+	bool "GR716 Pinmux driver"
+	depends on SOC_GR716A
+	help
+	  Enable the GR716 pinmux driver.

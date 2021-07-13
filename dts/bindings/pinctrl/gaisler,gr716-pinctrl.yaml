@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+description: GR716A pin configuration
+
+compatible: "gaisler,gr716-pinctrl"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+pinmux-cells:
+  - pin
+  - function

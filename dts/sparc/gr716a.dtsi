@@ -85,5 +85,10 @@
 			label = "UART_5";
 			status = "disabled";
 		};
+
+		gpregbank0: gpregbank@8000d000 {
+			compatible = "gaisler,gr716-pinctrl";
+			reg = <0x8000d000 0x100>;
+		};
 	};
 };
