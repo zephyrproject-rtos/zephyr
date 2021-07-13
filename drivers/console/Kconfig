@@ -107,11 +107,9 @@ config USB_UART_CONSOLE
 	select UART_CONSOLE
 	select USB_CDC_ACM
 	help
-	  Enable this option to use the USB UART for console output. The output
-	  can be viewed from the USB host via /dev/ttyACM* port. Note that console
-	  inputs from the USB UART are not functional yet. Also since the USB
-	  layer currently doesn't support multiple interfaces, this shouldn't be
-	  selected in conjunction with, say, USB Mass Storage.
+	  Enable this option to use the USB CDC ACM class for console.
+	  As for the console driver, this option only changes the initialization
+	  level.
 
 config RAM_CONSOLE
 	bool "Use RAM console"
