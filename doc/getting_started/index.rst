@@ -589,7 +589,7 @@ required dependencies are missing.
 
 If you're using blinky, the LED will start to blink as shown in this figure:
 
-.. figure:: img/ReelBoard-Blinky.gif
+.. figure:: img/ReelBoard-Blinky.png
    :width: 400px
    :name: reelboard-blinky
 
