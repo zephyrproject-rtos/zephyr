@@ -78,3 +78,7 @@
 
 	hs-master-code = <0>;
 };
+
+&usbc {
+	status = "okay";
+};
