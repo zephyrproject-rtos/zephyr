@@ -245,33 +245,8 @@ def process_twister(module, meta):
     return out
 
 
-def main():
-    parser = argparse.ArgumentParser(description='''
-    Process a list of projects and create Kconfig / CMake include files for
-    projects which are also a Zephyr module''')
-
-    parser.add_argument('--kconfig-out',
-                        help="""File to write with resulting KConfig import
-                             statements.""")
-    parser.add_argument('--twister-out',
-                        help="""File to write with resulting twister
-                             parameters.""")
-    parser.add_argument('--cmake-out',
-                        help="""File to write with resulting <name>:<path>
-                             values to use for including in CMake""")
-    parser.add_argument('--settings-out',
-                        help="""File to write with resulting <name>:<value>
-                             values to use for including in CMake""")
-    parser.add_argument('-m', '--modules', nargs='+',
-                        help="""List of modules to parse instead of using `west
-                             list`""")
-    parser.add_argument('-x', '--extra-modules', nargs='+', default=[],
-                        help='List of extra modules to parse')
-    parser.add_argument('-z', '--zephyr-base',
-                        help='Path to zephyr repository')
-    args = parser.parse_args()
-
-    if args.modules is None:
+def parse_modules(zephyr_base, modules=None, extra_modules=None):
+    if modules is None:
         # West is imported here, as it is optional
         # (and thus maybe not installed)
         # if user is providing a specific modules list.
@@ -292,15 +267,12 @@ def main():
             # but the project is not required to use west.
             projects = []
     else:
-        projects = args.modules.copy()
+        projects = modules.copy()
 
-    projects += args.extra_modules
-    extra_modules = set(args.extra_modules)
+    if extra_modules is None:
+        extra_modules = []
 
-    kconfig = ""
-    cmake = ""
-    settings = ""
-    twister = ""
+    projects += extra_modules
 
     Module = namedtuple('Module', ['project', 'meta', 'depends'])
     # dep_modules is a list of all modules that has an unresolved dependency
@@ -312,7 +284,7 @@ def main():
 
     for project in projects:
         # Avoid including Zephyr base project as module.
-        if project == args.zephyr_base:
+        if project == zephyr_base:
             continue
 
         meta = process_module(project)
@@ -351,7 +323,43 @@ def main():
             error += f'{module.project} depends on: {module.depends}\n'
         sys.exit(error)
 
-    for module in sorted_modules:
+    return sorted_modules
+
+
+def main():
+    parser = argparse.ArgumentParser(description='''
+    Process a list of projects and create Kconfig / CMake include files for
+    projects which are also a Zephyr module''')
+
+    parser.add_argument('--kconfig-out',
+                        help="""File to write with resulting KConfig import
+                             statements.""")
+    parser.add_argument('--twister-out',
+                        help="""File to write with resulting twister
+                             parameters.""")
+    parser.add_argument('--cmake-out',
+                        help="""File to write with resulting <name>:<path>
+                             values to use for including in CMake""")
+    parser.add_argument('--settings-out',
+                        help="""File to write with resulting <name>:<value>
+                             values to use for including in CMake""")
+    parser.add_argument('-m', '--modules', nargs='+',
+                        help="""List of modules to parse instead of using `west
+                             list`""")
+    parser.add_argument('-x', '--extra-modules', nargs='+',
+                        help='List of extra modules to parse')
+    parser.add_argument('-z', '--zephyr-base',
+                        help='Path to zephyr repository')
+    args = parser.parse_args()
+
+    kconfig = ""
+    cmake = ""
+    settings = ""
+    twister = ""
+
+    modules = parse_modules(args.zephyr_base, args.modules, args.extra_modules)
+
+    for module in modules:
         kconfig += process_kconfig(module.project, module.meta)
         cmake += process_cmake(module.project, module.meta)
         settings += process_settings(module.project, module.meta)
