@@ -655,7 +655,7 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 	(void)memset(instance->package_name, 0, PACKAGE_NAME_LEN);
 	(void)memset(instance->package_version, 0, PACKAGE_VERSION_LEN);
 
-	instance->obj_inst_id = index;
+	instance->obj_inst_id = obj_inst_id;
 	instance->update_state = 0;
 	instance->update_result = 0;
 	instance->activation_state = false;
