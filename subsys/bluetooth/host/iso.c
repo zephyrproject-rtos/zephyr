@@ -1049,7 +1049,7 @@ failed:
 		conn = param->conns[i];
 
 		if (conn->type == BT_CONN_TYPE_ISO) {
-			bt_iso_cleanup(conn);
+			bt_conn_unref(conn);
 		}
 	}
 
