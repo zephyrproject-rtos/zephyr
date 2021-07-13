@@ -190,7 +190,6 @@ config LOG_BACKEND_SPINEL
 	bool "Enable OpenThread dedicated Spinel protocol backend"
 	depends on (OPENTHREAD_COPROCESSOR_SPINEL_ON_UART_DEV_NAME!=UART_CONSOLE_ON_DEV_NAME || !LOG_BACKEND_UART)
 	depends on NET_L2_OPENTHREAD
-	depends on !LOG2
 	help
 	  When enabled, backend will use OpenThread dedicated SPINEL protocol for logging.
 	  This protocol is byte oriented and wrapps given messages into serial frames.
