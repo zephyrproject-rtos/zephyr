@@ -14,14 +14,22 @@ if KSCAN_FT5336
 
 config KSCAN_FT5336_PERIOD
 	int "Sample period"
-	depends on !KSCAN_FT5336_INTERRUPT
 	default 10
 	help
-	  Sample period in milliseconds when in polling mode.
+	  Sample period in milliseconds when in polling or
+	  interrupt polling mode.
 
 config KSCAN_FT5336_INTERRUPT
 	bool "Enable interrupt"
 	help
 	  Enable interrupt support (requires GPIO).
+
+config KSCAN_FT5336_INTERRUPT_POLLING_MODE
+	bool "Enable interrupt polling mode"
+	depends on KSCAN_FT5336_INTERRUPT
+	help
+	  After interrupt detects a down event, use timer-based polling
+	  until the up event. If KSCAN_FT5336_PERIOD is zero, detect down
+	  and up events, but do not poll in between.
 
 endif # KSCAN_FT5336

@@ -2,6 +2,7 @@
  * Copyright (c) 2020 NXP
  * Copyright (c) 2020 Mark Olsson <mark@markolsson.se>
  * Copyright (c) 2020 Teslabs Engineering S.L.
+ * Copyright (c) 2021 David Hoover
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,10 +19,15 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
 /* FT5336 used registers */
 #define REG_TD_STATUS		0x02U
 #define REG_P1_XH		0x03U
+#define REG_G_MODE		0xA4U
 
 /* REG_TD_STATUS: Touch points. */
 #define TOUCH_POINTS_POS	0U
 #define TOUCH_POINTS_MSK	0x0FU
+
+/* REG_G_MODE: Interrupt modes. */
+#define REG_G_MODE_INTERRUPT_POLLING	0x00U
+#define REG_G_MODE_INTERRUPT_TRIGGER	0x01U
 
 /* REG_Pn_XH: Events. */
 #define EVENT_POS		6U
@@ -34,6 +40,17 @@ LOG_MODULE_REGISTER(ft5336, CONFIG_KSCAN_LOG_LEVEL);
 
 /* REG_Pn_XH: Position */
 #define POSITION_H_MSK		0x0FU
+
+#ifdef CONFIG_KSCAN_FT5336_INTERRUPT
+#ifdef CONFIG_KSCAN_FT5336_INTERRUPT_POLLING_MODE
+#define KSCAN_FT5336_GPIO_INT_EDGE GPIO_INT_EDGE_BOTH
+#define KSCAN_FT5336_ENABLE_TIMER
+#else
+#define KSCAN_FT5336_GPIO_INT_EDGE GPIO_INT_EDGE_TO_ACTIVE
+#endif
+#else
+#define KSCAN_FT5336_ENABLE_TIMER
+#endif
 
 /** GPIO DT information. */
 struct gpio_dt_info {
@@ -72,8 +89,9 @@ struct ft5336_data {
 	const struct device *int_gpio;
 	/** Interrupt GPIO callback. */
 	struct gpio_callback int_gpio_cb;
-#else
-	/** Timer (polling mode). */
+#endif
+#ifdef KSCAN_FT5336_ENABLE_TIMER
+	/** Timer (polling mode or interrupt polling mode). */
 	struct k_timer timer;
 #endif
 };
@@ -136,9 +154,25 @@ static void ft5336_isr_handler(const struct device *dev,
 {
 	struct ft5336_data *data = CONTAINER_OF(cb, struct ft5336_data, int_gpio_cb);
 
+#ifdef CONFIG_KSCAN_FT5336_INTERRUPT_POLLING_MODE
+	const struct ft5336_config *config = data->dev->config;
+	int pstate = gpio_pin_get(data->int_gpio, config->int_gpio.pin);
+
+	if (pstate) {
+#if CONFIG_KSCAN_FT5336_PERIOD
+		k_timer_start(&data->timer, K_MSEC(CONFIG_KSCAN_FT5336_PERIOD),
+			K_MSEC(CONFIG_KSCAN_FT5336_PERIOD));
+#endif
+	} else {
+		k_timer_stop(&data->timer);
+	}
+#endif
+
 	k_work_submit(&data->work);
 }
-#else
+#endif
+
+#ifdef KSCAN_FT5336_ENABLE_TIMER
 static void ft5336_timer_handler(struct k_timer *timer)
 {
 	struct ft5336_data *data = CONTAINER_OF(timer, struct ft5336_data, timer);
@@ -168,7 +202,8 @@ static int ft5336_enable_callback(const struct device *dev)
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	gpio_add_callback(data->int_gpio, &data->int_gpio_cb);
-#else
+#endif
+#ifndef CONFIG_KSCAN_FT5336_INTERRUPT
 	k_timer_start(&data->timer, K_MSEC(CONFIG_KSCAN_FT5336_PERIOD),
 		      K_MSEC(CONFIG_KSCAN_FT5336_PERIOD));
 #endif
@@ -182,7 +217,9 @@ static int ft5336_disable_callback(const struct device *dev)
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	gpio_remove_callback(data->int_gpio, &data->int_gpio_cb);
-#else
+#endif
+#ifdef KSCAN_FT5336_ENABLE_TIMER
+	/* stop the timer in polling or interrupt polling mode */
 	k_timer_stop(&data->timer);
 #endif
 
@@ -204,6 +241,15 @@ static int ft5336_init(const struct device *dev)
 
 	k_work_init(&data->work, ft5336_work_handler);
 
+#ifdef CONFIG_KSCAN_FT5336_INTERRUPT_POLLING_MODE
+	int ret = i2c_reg_write_byte(data->i2c, config->i2c_address, REG_G_MODE,
+					REG_G_MODE_INTERRUPT_POLLING);
+	if (ret < 0) {
+		LOG_ERR("Could not configure interrupt polling mode.");
+		return ret;
+	}
+#endif
+
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	int r;
 
@@ -221,7 +267,7 @@ static int ft5336_init(const struct device *dev)
 	}
 
 	r = gpio_pin_interrupt_configure(data->int_gpio, config->int_gpio.pin,
-					 GPIO_INT_EDGE_TO_ACTIVE);
+					 KSCAN_FT5336_GPIO_INT_EDGE);
 	if (r < 0) {
 		LOG_ERR("Could not configure interrupt GPIO interrupt.");
 		return r;
@@ -229,7 +275,9 @@ static int ft5336_init(const struct device *dev)
 
 	gpio_init_callback(&data->int_gpio_cb, ft5336_isr_handler,
 			   BIT(config->int_gpio.pin));
-#else
+#endif
+
+#ifdef KSCAN_FT5336_ENABLE_TIMER
 	k_timer_init(&data->timer, ft5336_timer_handler, NULL);
 #endif
 
