@@ -237,6 +237,10 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				0x00  /* PDU_ADV_TYPE_ADV_IND */
 			};
 
+			if (evt_prop & BT_HCI_LE_ADV_PROP_ANON) {
+				return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			}
+
 			adv_type = leg_adv_type[evt_prop & 0x03];
 
 			/* high duty cycle directed */
