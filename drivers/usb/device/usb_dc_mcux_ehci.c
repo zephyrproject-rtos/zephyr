@@ -211,9 +211,9 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		block->data = NULL;
 	}
 
-	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_MSEC(10));
+	block->data = k_heap_alloc(&ep_buf_pool, cfg->ep_mps, K_NO_WAIT);
 	if (block->data == NULL) {
-		LOG_ERR("Memory allocation time-out");
+		LOG_ERR("Failed to allocate memory");
 		return -ENOMEM;
 	}
 
