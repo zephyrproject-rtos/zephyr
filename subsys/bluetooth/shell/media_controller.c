@@ -661,7 +661,7 @@ static int cmd_media_read_media_state(const struct shell *sh, size_t argc, char 
 	return err;
 }
 
-static int cmd_media_set_cp(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_media_set_operation(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct mpl_op_t op;
 	int err;
@@ -810,8 +810,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(media_cmds,
 		      cmd_media_read_playing_orders_supported, 1, 0),
 	SHELL_CMD_ARG(read_media_state, NULL, "Read Media State",
 		      cmd_media_read_media_state, 1, 0),
-	SHELL_CMD_ARG(set_cp, NULL, "Set opcode/operation <opcode> [argument]",
-		      cmd_media_set_cp, 2, 1),
+	SHELL_CMD_ARG(set_operation, NULL, "Set operation <opcode> [argument]",
+		      cmd_media_set_operation, 2, 1),
 	SHELL_CMD_ARG(read_opcodes_supported, NULL, "Read Opcodes Supported",
 		      cmd_media_read_opcodes_supported, 1, 0),
 #ifdef CONFIG_BT_OTS
