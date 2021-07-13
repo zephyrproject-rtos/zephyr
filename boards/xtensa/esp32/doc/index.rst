@@ -84,7 +84,6 @@ On Linux and macOS:
 
    export ZEPHYR_TOOLCHAIN_VARIANT="espressif"
    export ESPRESSIF_TOOLCHAIN_PATH="${HOME}/.espressif/tools/xtensa-esp32-elf/esp-2020r3-8.4.0/xtensa-esp32-elf"
-   export PATH=$PATH:$ESPRESSIF_TOOLCHAIN_PATH/bin
 
 On Windows:
 
@@ -93,12 +92,10 @@ On Windows:
   # on CMD:
   set ESPRESSIF_TOOLCHAIN_PATH=%USERPROFILE%\.espressif\tools\xtensa-esp32-elf\esp-2020r3-8.4.0\xtensa-esp32-elf
   set ZEPHYR_TOOLCHAIN_VARIANT=espressif
-  set PATH=%PATH%;%ESPRESSIF_TOOLCHAIN_PATH%\bin
 
   # on PowerShell
   $env:ESPRESSIF_TOOLCHAIN_PATH="$env:USERPROFILE\.espressif\tools\xtensa-esp32-elf\esp-2020r3-8.4.0\xtensa-esp32-elf"
   $env:ZEPHYR_TOOLCHAIN_VARIANT="espressif"
-  $env:Path += "$env:ESPRESSIF_TOOLCHAIN_PATH\bin"
 
 Finally, retrieve required submodules to build this port. This might take a while for the first time:
 
