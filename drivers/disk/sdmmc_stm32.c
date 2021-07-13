@@ -18,6 +18,10 @@
 
 LOG_MODULE_REGISTER(stm32_sdmmc, CONFIG_SDMMC_LOG_LEVEL);
 
+#ifndef MMC_TypeDef
+#define MMC_TypeDef SDMMC_TypeDef
+#endif
+
 struct stm32_sdmmc_priv {
 	SD_HandleTypeDef hsd;
 	int status;
@@ -402,7 +406,7 @@ static const struct soc_gpio_pinctrl sdmmc_pins_1[] =
 
 static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.hsd = {
-		.Instance = (SDMMC_TypeDef *)DT_INST_REG_ADDR(0),
+		.Instance = (MMC_TypeDef *)DT_INST_REG_ADDR(0),
 	},
 #if DT_INST_NODE_HAS_PROP(0, cd_gpios)
 	.cd = {
