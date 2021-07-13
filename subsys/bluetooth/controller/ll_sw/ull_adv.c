@@ -1657,7 +1657,7 @@ void ull_adv_done(struct node_rx_event_done *done)
 		rx_hdr = (void *)lll->node_rx_adv_term;
 		rx_hdr->rx_ftr.param_adv_term.status = BT_HCI_ERR_LIMIT_REACHED;
 	} else if (adv->ticks_remain_duration &&
-		   (adv->ticks_remain_duration <
+		   (adv->ticks_remain_duration <=
 		    HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
 			ADV_INT_UNIT_US))) {
 		adv->ticks_remain_duration = 0;
@@ -1933,13 +1933,17 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 			uint32_t ticks_interval =
 				HAL_TICKER_US_TO_TICKS((uint64_t)adv->interval *
 						       ADV_INT_UNIT_US);
-			if (adv->ticks_remain_duration > ticks_interval) {
-				adv->ticks_remain_duration -= ticks_interval;
+			uint32_t ticks_elapsed = ticks_interval * (lazy + 1);
+
+			if (adv->ticks_remain_duration > ticks_elapsed) {
+				adv->ticks_remain_duration -= ticks_elapsed;
 
 				if (adv->ticks_remain_duration > random_delay) {
 					adv->ticks_remain_duration -=
 						random_delay;
 				}
+			} else {
+				adv->ticks_remain_duration = ticks_interval;
 			}
 		}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
