@@ -47,22 +47,17 @@ static uint8_t lll_scan_connect_req_pdu[PDU_AC_LL_HEADER_SIZE +
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
+static void isr_done(void *param);
 static void isr_rx(void *param);
 static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 		      uint8_t devmatch_id, uint8_t irkmatch_ok,
 		      uint8_t irkmatch_id, uint8_t rl_idx, uint8_t rssi_ready);
 #if defined(CONFIG_BT_CENTRAL)
+static bool isr_scan_connect_rsp_check(struct pdu_adv *pdu_tx,
+				       struct pdu_adv *pdu_rx);
 static void isr_tx_connect_req(void *param);
 static void isr_rx_connect_rsp(void *param);
 static void isr_early_abort(void *param);
-#endif /* CONFIG_BT_CENTRAL */
-static void isr_done(void *param);
-
-#if defined(CONFIG_BT_CENTRAL)
-static inline bool isr_scan_init_check(struct lll_scan *lll,
-				       struct pdu_adv *pdu, uint8_t rl_idx);
-static bool isr_scan_connect_rsp_check(struct pdu_adv *pdu_tx,
-				       struct pdu_adv *pdu_rx);
 #endif /* CONFIG_BT_CENTRAL */
 
 static uint16_t trx_cnt; /* TODO: move to a union in lll.c, common to all roles
@@ -282,6 +277,22 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll_done(param);
 }
 
+static void isr_done(void *param)
+{
+	struct event_done_extra *e;
+
+	lll_isr_status_reset();
+
+	if (!trx_cnt) {
+		e = ull_event_done_extra_get();
+		LL_ASSERT(e);
+
+		e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
+	}
+
+	lll_isr_cleanup(param);
+}
+
 static void isr_rx(void *param)
 {
 	struct lll_scan_aux *lll_aux;
@@ -389,7 +400,8 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 	/* Initiator */
 	} else if (lll_scan->conn && !lll_scan->conn->master.cancelled &&
 		   (pdu->adv_ext_ind.adv_mode & BT_HCI_LE_ADV_PROP_CONN) &&
-		   isr_scan_init_check(lll_scan, pdu, rl_idx)) {
+		   lll_scan_ext_tgta_check(lll_scan, false, true, pdu,
+					   rl_idx)) {
 		struct node_rx_ftr *ftr;
 		struct node_rx_pdu *rx;
 		struct pdu_adv *pdu_tx;
@@ -546,9 +558,12 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 
 		return 0;
 
-	} else if (!lll_scan->conn) {
+	} else if (!lll_scan->conn &&
+		   lll_scan_ext_tgta_check(lll_scan, false, false, pdu,
+					   rl_idx)) {
 #else /* !CONFIG_BT_CENTRAL */
-	} else {
+	} else if (lll_scan_ext_tgta_check(lll_scan, false, false, pdu,
+					   rl_idx)) {
 #endif /* !CONFIG_BT_CENTRAL */
 		ull_pdu_rx_alloc();
 
@@ -566,8 +581,7 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, uint8_t devmatch_ok,
 			    BT_HCI_LE_RSSI_NOT_AVAILABLE;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		/* TODO: Use correct rl_idx value when privacy support is added */
-		ftr->rl_idx = FILTER_IDX_NONE;
+		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
@@ -724,64 +738,6 @@ isr_rx_do_close:
 	radio_disable();
 }
 
-static void isr_early_abort(void *param)
-{
-	struct event_done_extra *e;
-
-	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
-
-	e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
-
-	lll_isr_early_abort(param);
-}
-#endif /* CONFIG_BT_CENTRAL */
-
-static void isr_done(void *param)
-{
-	struct event_done_extra *e;
-
-	lll_isr_status_reset();
-
-	if (!trx_cnt) {
-		e = ull_event_done_extra_get();
-		LL_ASSERT(e);
-
-		e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
-	}
-
-	lll_isr_cleanup(param);
-}
-
-#if defined(CONFIG_BT_CENTRAL)
-static inline bool isr_scan_init_check(struct lll_scan *lll,
-				       struct pdu_adv *pdu, uint8_t rl_idx)
-{
-	uint8_t is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
-	uint8_t tx_addr = pdu->tx_addr;
-	uint8_t rx_addr = pdu->rx_addr;
-	uint8_t *adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
-	uint8_t *tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
-
-	if (pdu->len <
-	    PDU_AC_EXT_HEADER_SIZE_MIN + sizeof(struct pdu_adv_ext_hdr) +
-	    ADVA_SIZE) {
-		return false;
-	}
-
-	if (is_directed && (pdu->len < PDU_AC_EXT_HEADER_SIZE_MIN +
-				       sizeof(struct pdu_adv_ext_hdr) +
-				       ADVA_SIZE + TARGETA_SIZE)) {
-		return false;
-	}
-
-	return ((((lll->filter_policy & 0x01) != 0U) ||
-		 lll_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
-		((!is_directed) || (is_directed &&
-				    lll_scan_tgta_check(lll, true, rx_addr,
-							tgta, rl_idx, NULL))));
-}
-
 bool isr_scan_connect_rsp_check(struct pdu_adv *pdu_tx, struct pdu_adv *pdu_rx)
 {
 	if (pdu_rx->type != PDU_ADV_TYPE_AUX_CONNECT_RSP) {
@@ -807,5 +763,17 @@ bool isr_scan_connect_rsp_check(struct pdu_adv *pdu_tx, struct pdu_adv *pdu_rx)
 		       pdu_tx->connect_ind.adv_addr, BDADDR_SIZE) == 0) &&
 	       (memcmp(&pdu_rx->adv_ext_ind.ext_hdr.data[TGTA_OFFSET],
 		       pdu_tx->connect_ind.init_addr, BDADDR_SIZE) == 0);
+}
+
+static void isr_early_abort(void *param)
+{
+	struct event_done_extra *e;
+
+	e = ull_event_done_extra_get();
+	LL_ASSERT(e);
+
+	e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
+
+	lll_isr_early_abort(param);
 }
 #endif /* CONFIG_BT_CENTRAL */

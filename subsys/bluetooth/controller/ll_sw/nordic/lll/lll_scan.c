@@ -1111,7 +1111,8 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 					rl_idx, &dir_report))) ||
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
-		   (lll->phy)) ||
+		   lll->phy && lll_scan_ext_tgta_check(lll, true, false,
+						       pdu_adv_rx, rl_idx)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
 		   (pdu_adv_rx->len <= sizeof(struct pdu_adv_scan_rsp)) &&
@@ -1163,6 +1164,7 @@ static inline bool isr_scan_init_check(struct lll_scan *lll,
 					      pdu->direct_ind.tgt_addr, rl_idx,
 					      NULL)))));
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
 			 uint8_t rl_idx)
@@ -1175,10 +1177,20 @@ bool lll_scan_adva_check(struct lll_scan *lll, uint8_t addr_type, uint8_t *addr,
 		return false;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
+	/* NOTE: This function to be used only to check AdvA when intiating,
+	 *       hence, otherwise we should not use the return value.
+	 *       This function is referenced in lll_scan_ext_tgta_check, but
+	 *       is not used when not being an initiator, hence return false
+	 *       is never reached.
+	 */
+#if defined(CONFIG_BT_CENTRAL)
 	return ((lll->adv_addr_type == addr_type) &&
 		!memcmp(lll->adv_addr, addr, BDADDR_SIZE));
-}
+#else /* CONFIG_BT_CENTRAL */
+	return false;
 #endif /* CONFIG_BT_CENTRAL */
+}
 
 bool lll_scan_tgta_check(struct lll_scan *lll, bool init, uint8_t addr_type,
 			 uint8_t *addr, uint8_t rl_idx, bool *dir_report)
@@ -1201,6 +1213,40 @@ bool lll_scan_tgta_check(struct lll_scan *lll, bool init, uint8_t addr_type,
 		*/
 	       isr_scan_tgta_rpa_check(lll, addr_type, addr, dir_report);
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
+			     struct pdu_adv *pdu, uint8_t rl_idx)
+{
+	uint8_t is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
+	uint8_t tx_addr = pdu->tx_addr;
+	uint8_t rx_addr = pdu->rx_addr;
+	uint8_t *adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
+	uint8_t *tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
+
+	if (pri && !pdu->adv_ext_ind.ext_hdr.adv_addr) {
+		return true;
+	}
+
+	if (pdu->len <
+	    PDU_AC_EXT_HEADER_SIZE_MIN + sizeof(struct pdu_adv_ext_hdr) +
+	    ADVA_SIZE) {
+		return false;
+	}
+
+	if (is_directed && (pdu->len < PDU_AC_EXT_HEADER_SIZE_MIN +
+				       sizeof(struct pdu_adv_ext_hdr) +
+				       ADVA_SIZE + TARGETA_SIZE)) {
+		return false;
+	}
+
+	return ((((lll->filter_policy & 0x01) != 0U) || !is_init ||
+		 lll_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
+		((!is_directed) || (is_directed &&
+				    lll_scan_tgta_check(lll, is_init, rx_addr,
+							tgta, rl_idx, NULL))));
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static inline bool isr_scan_tgta_rpa_check(struct lll_scan *lll,
 					   uint8_t addr_type, uint8_t *addr,
