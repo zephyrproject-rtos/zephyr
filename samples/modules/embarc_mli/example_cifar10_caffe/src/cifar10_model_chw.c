@@ -1,5 +1,5 @@
 /*
-* Copyright 2019-2020, Synopsys, Inc.
+* Copyright 2019-2021, Synopsys, Inc.
 * All rights reserved.
 *
 * This source code is licensed under the BSD-3-Clause license found in
