@@ -1,0 +1,18 @@
+# Copyright (c) 2020, Innoseis BV
+# SPDX-License-Identifier: Apache-2.0
+
+description: TCA9546a I2C Mux
+
+compatible: "ti,tca9546a"
+
+include: [i2c-device.yaml]
+
+properties:
+    label:
+        required: true
+
+child-binding:
+  description: TCA9546a I2C Mux channel node
+  compatible: "ti,tca9546a,channel"
+  include: [i2c-controller.yaml]
+  on-bus: i2c
