@@ -72,6 +72,8 @@ choice NRF_802154_SL_TYPE
 
 config NRF_802154_SL_OPENSOURCE
 	bool "Open source"
+	select SENSOR
+	select TEMP_NRF5
 
 endchoice
 
@@ -111,6 +113,24 @@ config NRF_802154_RX_BUFFERS
 	help
 	  Number of buffers in nRF 802.15.4 driver receive queue. If this value is modified,
 	  its serialization host counterpart must be set to the exact same value.
+
+config NRF_802154_TEMPERATURE_UPDATE_PRIO
+	int "nRF 802.15.4 temperature update priority"
+	default 5
+	help
+	  Priority of a thread updating current temperature for nRF 802.15.4 driver.
+
+config NRF_802154_TEMPERATURE_UPDATE_STACK_SIZE
+	int "nRF 802.15.4 temperature update stack size"
+	default 128
+	help
+	  Stack size of a thread updating current temperature for nRF 802.15.4 driver.
+
+config NRF_802154_TEMPERATURE_UPDATE_PERIOD
+	int "nRF 802.15.4 temperature update period in milliseconds"
+	default 60000
+	help
+	  Period of a temperature update for nRF 802.15.4 driver in milliseconds
 
 endif # NRF_802154_RADIO_DRIVER
 
