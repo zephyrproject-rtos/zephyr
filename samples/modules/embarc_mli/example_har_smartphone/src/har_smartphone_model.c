@@ -24,7 +24,7 @@
 #include "mli_types.h"
 #include "mli_config.h"
 #include "har_smartphone_constants.h"
-#include "../../auxiliary/tests_aux.h"
+#include "tests_aux.h"
 
 #if (MODEL_BIT_DEPTH == MODEL_FX_8)
 #define D_EL_TYPE (MLI_EL_FX_8)

@@ -13,7 +13,15 @@
 #include "mli_config.h"
 
 #include "har_smartphone_model.h"
-#include "../../auxiliary/tests_aux.h"
+#include "tests_aux.h"
+
+/* -------------------------- labels and tests code ------------------------- */
+typedef enum { LABELS = 0x0, TESTS } tIdxArrayVal;
+
+typedef struct {
+	long position;
+	tIdxArrayVal flag;
+} tIdxArrayFlag;
 
 /* ------------------------ Defining weight data type ----------------------- */
 #if (MODEL_BIT_DEPTH != MODEL_FX_16)
@@ -97,6 +105,13 @@ extern const w_type _W L3_lstm_bias_buf[];
 
 extern const w_type _W L4_fc_wt_buf[];
 extern const w_type _W L4_fc_bias_buf[];
+
+/* -------------------------------------------------------------------------- */
+/*                           labels and tests array                           */
+/* -------------------------------------------------------------------------- */
+
+extern const unsigned int tests[];
+extern const unsigned int labels[];
 
 /* -------------------------------------------------------------------------- */
 /*                 Tensor's Integer bits per layer definitions                */

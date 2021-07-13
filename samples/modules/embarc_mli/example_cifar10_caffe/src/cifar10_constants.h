@@ -14,6 +14,14 @@
 
 #include "cifar10_model.h"
 
+/* -------------------------- labels and tests code ------------------------- */
+typedef enum { LABELS = 0x0, TESTS } tIdxArrayVal;
+
+typedef struct {
+	long position;
+	tIdxArrayVal flag;
+} tIdxArrayFlag;
+
 /* ------------------------ Defining weight data type ----------------------- */
 #if (MODEL_BIT_DEPTH != MODEL_FX_16)
 #define W_EL_TYPE (MLI_EL_FX_8)
@@ -105,6 +113,13 @@ extern const w_type _W2 L4_fc_bias_buf[];
 extern const w_type _W2 L5_fc_wt_buf[];
 extern const w_type _W2 L5_fc_bias_buf[];
 #endif
+
+/* -------------------------------------------------------------------------- */
+/*                           labels and tests array                           */
+/* -------------------------------------------------------------------------- */
+
+extern const unsigned int tests[];
+extern const unsigned int labels[];
 
 /* -------------------------------------------------------------------------- */
 /*                 Tensor's Integer bits per layer definitions                */

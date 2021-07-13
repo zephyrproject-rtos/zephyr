@@ -17,8 +17,8 @@
 
 #include "cifar10_ref_inout.h"
 #include "cifar10_model.h"
-#include "../../auxiliary/examples_aux.h"
-#include "../../auxiliary/tests_aux.h"
+#include "examples_aux.h"
+#include "tests_aux.h"
 
 #if defined(__GNUC__) && !defined(__CCAC__)
 #endif

@@ -27,9 +27,9 @@
 
 #include "har_smartphone_model.h"
 #include "har_smartphone_ref_inout.h"
-#include "../../auxiliary/examples_aux.h"
-#include "../../auxiliary/tensor_transform.h"
-#include "../../auxiliary/tests_aux.h"
+#include "examples_aux.h"
+#include "tensor_transform.h"
+#include "tests_aux.h"
 
 #if defined(__GNUC__) && !defined(__CCAC__)
 extern int start_init(void);
