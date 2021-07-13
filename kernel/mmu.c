@@ -1239,8 +1239,6 @@ static bool do_page_fault(void *addr, bool pin)
 	}
 	result = true;
 
-	paging_stats_faults_inc(faulting_thread, key);
-
 	if (status == ARCH_PAGE_LOCATION_PAGED_IN) {
 		if (pin) {
 			/* It's a physical memory address */
@@ -1249,11 +1247,18 @@ static bool do_page_fault(void *addr, bool pin)
 			pf = z_phys_to_page_frame(phys);
 			pf->flags |= Z_PAGE_FRAME_PINNED;
 		}
-		/* We raced before locking IRQs, re-try */
+
+		/* This if-block is to pin the page if it is
+		 * already present in physical memory. There is
+		 * no need to go through the following code to
+		 * pull in the data pages. So skip to the end.
+		 */
 		goto out;
 	}
 	__ASSERT(status == ARCH_PAGE_LOCATION_PAGED_OUT,
 		 "unexpected status value %d", status);
+
+	paging_stats_faults_inc(faulting_thread, key);
 
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
