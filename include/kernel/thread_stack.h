@@ -104,6 +104,9 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
 #endif
 
+#define Z_KERNEL_STACK_LEN(size) \
+	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
+
 /**
  * @brief Obtain an extern reference to a stack
  *
@@ -118,6 +121,36 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @addtogroup thread_stack_api
  * @{
  */
+
+/**
+ * @def K_KERNEL_STACK_ARRAY_EXTERN
+ * @brief Obtain an extern reference to a stack array
+ *
+ * This macro properly brings the symbol of a stack array declared
+ * elsewhere into scope.
+ *
+ * @param sym Thread stack symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_STACK_ARRAY_EXTERN(sym, nmemb, size) \
+	extern struct z_thread_stack_element \
+		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+
+/**
+ * @def K_KERNEL_PINNED_STACK_ARRAY_EXTERN
+ * @brief Obtain an extern reference to a pinned stack array
+ *
+ * This macro properly brings the symbol of a pinned stack array
+ * declared elsewhere into scope.
+ *
+ * @param sym Thread stack symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_PINNED_STACK_ARRAY_EXTERN(sym, nmemb, size) \
+	extern struct z_thread_stack_element \
+		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
 
 /**
  * @def Z_KERNEL_STACK_DEFINE_IN
@@ -204,9 +237,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 	Z_KERNEL_STACK_DEFINE_IN(sym, size, __kstackmem)
 #endif
 
-#define Z_KERNEL_STACK_LEN(size) \
-	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
-
 /**
  * @def K_KERNEL_STACK_ARRAY_DEFINE
  * @brief Define a toplevel array of kernel stack memory regions
@@ -272,6 +302,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_MEMBER		K_KERNEL_STACK_MEMBER
 #define Z_THREAD_STACK_BUFFER		Z_KERNEL_STACK_BUFFER
 #define K_THREAD_STACK_EXTERN		K_KERNEL_STACK_EXTERN
+#define K_THREAD_STACK_ARRAY_EXTERN	K_KERNEL_STACK_ARRAY_EXTERN
 #else
 /**
  * @def K_THREAD_STACK_RESERVED
@@ -370,6 +401,20 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param sym Thread stack symbol name
  */
 #define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
+
+/**
+ * @brief Obtain an extern reference to a thread stack array
+ *
+ * This macro properly brings the symbol of a stack array declared
+ * elsewhere into scope.
+ *
+ * @param sym Thread stack symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ */
+#define K_THREAD_STACK_ARRAY_EXTERN(sym, nmemb, size) \
+	extern struct z_thread_stack_element \
+		sym[nmemb][K_THREAD_STACK_LEN(size)]
 
 /**
  * @addtogroup thread_stack_api

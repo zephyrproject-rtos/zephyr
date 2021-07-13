@@ -11,7 +11,6 @@
 #include <tc_util.h>
 #include <sys/bitarray.h>
 #include <sys/util.h>
-#include <toolchain.h>
 
 #ifdef CONFIG_BIG_ENDIAN
 #define BIT_INDEX(bit)  ((3 - ((bit >> 3) & 0x3)) + 4*(bit >> 5))
@@ -338,13 +337,29 @@ void alloc_and_free_predefined(void)
 		     "sys_bitarray_free() failed bits comparison");
 }
 
+static inline size_t count_bits(uint32_t val)
+{
+	/* Implements Brian Kernighan’s Algorithm
+	 * to count bits.
+	 */
+
+	size_t cnt = 0;
+
+	while (val != 0) {
+		val = val & (val - 1);
+		cnt++;
+	}
+
+	return cnt;
+}
+
 size_t get_bitarray_popcnt(sys_bitarray_t *ba)
 {
 	size_t popcnt = 0;
 	unsigned int idx;
 
 	for (idx = 0; idx < ba->num_bundles; idx++) {
-		popcnt += popcount(ba->bundles[idx]);
+		popcnt += count_bits(ba->bundles[idx]);
 	}
 
 	return popcnt;
