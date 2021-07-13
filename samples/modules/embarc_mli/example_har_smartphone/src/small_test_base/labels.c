@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021 Synopsys
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "har_smartphone_constants.h"
 
 const unsigned int labels[38] = { 0x00, 0x00, 0x08, 0x01, 0x00, 0x00, 0x00, 0x1E, 0x04, 0x00,

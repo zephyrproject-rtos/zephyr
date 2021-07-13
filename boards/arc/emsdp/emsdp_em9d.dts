@@ -23,7 +23,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
-	
+
 	xccm@90000000 {
 		compatible = "arc,xccm";
 		reg = <0xc0000000 DT_SIZE_K(16)>;

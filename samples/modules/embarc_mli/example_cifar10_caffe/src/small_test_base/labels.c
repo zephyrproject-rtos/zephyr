@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021 Synopsys
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "cifar10_constants.h"
 
 unsigned const int labels[28] = { 0x00, 0x00, 0x09, 0x01, 0x00, 0x00, 0x00, 0x14, 0x03, 0x08,

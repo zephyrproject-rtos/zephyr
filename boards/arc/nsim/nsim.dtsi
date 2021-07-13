@@ -78,7 +78,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 	};
-	
+
 	xccm@c0000000 {
 		compatible = "arc,xccm";
 		reg = <DT_ADDR(XCCM_ADDR) XCCM_SIZE>;

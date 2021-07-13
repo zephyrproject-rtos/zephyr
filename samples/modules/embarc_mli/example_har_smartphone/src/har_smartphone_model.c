@@ -1,18 +1,9 @@
 /*
- * Copyright 2019-2020, Synopsys, Inc.
- * All rights reserved.
+ * Copyright (c) 2021 Synopsys
  *
- * This source code is licensed under the BSD-3-Clause license found in
- * the LICENSE file in the root directory of this source tree.
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * Smartphone HAR LSTM
- *
- * Description:
- *
- */
 #include "har_smartphone_model.h"
 
 #include <stdint.h>
@@ -79,7 +70,6 @@ mli_tensor *const har_smartphone_net_output = &output;
 /* -------------------------------------------------------------------------- */
 /*                   //  Model description and configuration                  */
 /* -------------------------------------------------------------------------- */
-#pragma Data(".mli_data")
 
 /* Intermediate and helper tensors */
 static mli_tensor ir_tensor_X = {
@@ -216,7 +206,6 @@ static const mli_tensor L4_fc_bias = {
 	.el_type = W_EL_TYPE,
 	.el_params.fx.frac_bits = FC4_B_FRAQ,
 };
-#pragma Data()
 
 /*
  * Wrappers on MLI Lib calls declaration
@@ -404,9 +393,8 @@ static mli_status user_fc_on_multiple_samples(const mli_tensor *layer_input,
 		ret_val = nn_fully_connected(&fc1_in, &L1_fc_wt, &L1_fc_bias, &fc1_out);
 		if (ret_val != MLI_STATUS_OK)
 			return ret_val;
-
-		fc1_in.data += next_in_add;
-		fc1_out.data += next_out_add;
+		fc1_in.data = next_in_add + (uint8_t *)fc1_in.data;
+		fc1_out.data = next_out_add + (uint8_t *)fc1_out.data;
 		fc1_out.capacity -= next_out_add;
 	}
 
@@ -509,7 +497,7 @@ static mli_status user_lstm_batch_to_last(const mli_tensor *in, const mli_tensor
 
 		/* Next sample: Step 1: Fully connected */
 		if (batch_idx < in->shape[0] - 1) {
-			rnn_in.data += next_in_add;
+			rnn_in.data = next_in_add + (uint8_t *)rnn_in.data;
 			ret_val =
 				nn_rnn_cell(&rnn_in, rnn_prev, weights, bias, &rnn_cfg, ir_tensor);
 			if (ret_val != MLI_STATUS_OK)
@@ -539,8 +527,9 @@ static void check_result(const char *ir_root, const char *ref_file, mli_tensor *
 	}
 
 	if (ir_root != NULL) {
-		ref_to_pred_output err;
-		test_status test_result = measure_ref_to_pred(ir_root, ref_file, *pred_tsr, &err);
+		struct ref_to_pred_output err;
+		enum test_status test_result = measure_ref_to_pred(ir_root, ref_file,
+									*pred_tsr, &err);
 
 		if (test_result == TEST_PASSED) {
 			printf("%s:\n\tS/N=%-10.1f (%-4.1f db)\n\t%u cycles\n", ref_file,

@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include "mli_api.h"
 #include <assert.h>
 #include <zephyr.h>

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021 Synopsys
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "har_smartphone_constants.h"
 
 const unsigned int tests[138256] = {

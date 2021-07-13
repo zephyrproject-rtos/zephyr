@@ -1,5 +1,10 @@
-CIFAR-10 Convolution Neural Network Example 
-==============================================
+.. _embarc_mli_example_cifar10_caffe:
+
+CIFAR-10 Convolution Neural Network Example
+###########################################
+
+Overview
+********
 Example is based on standard [Caffe tutorial](http://caffe.berkeleyvision.org/gathered/examples/cifar10.html) for [CIFAR-10](http://www.cs.toronto.edu/~kriz/cifar.html) dataset. It's a simple classifier built on convolution, pooling and dense layers for tiny images.
 
 
@@ -9,7 +14,7 @@ Quick Start
 Example supports building with [Zephyr Software Development Kit (SDK)](https://docs.zephyrproject.org/latest/getting_started/installation_linux.html#zephyr-sdk) and running with MetaWare Debuger on [nSim simulator](https://www.synopsys.com/dw/ipdir.php?ds=sim_nSIM).
 
 Add embarc_mli module to Zephyr instruction
---------------
+-------------------------------------------
 
 1. Open command line and change working directory to './zephyrproject/zephyr'
 
@@ -18,7 +23,7 @@ Add embarc_mli module to Zephyr instruction
         west update
 
 Build with Zephyr SDK toolchain
---------------
+-------------------------------
 
     Build requirements:
         - Zephyr SDK toolchain version 0.12.3 or higher
@@ -28,12 +33,12 @@ Build with Zephyr SDK toolchain
 
 2. Build example
 
-        west build -b nsim_em samples/modules/embarc_mli/example_cifar10_caffe 
+        west build -b nsim_em samples/modules/embarc_mli/example_cifar10_caffe
 
 Run example
 --------------
 
-1. Run example 
+1. Run example
 
         west flash
 
@@ -59,7 +64,7 @@ You can change mode in ml_api_har_smartphone_main.c to 1,2,3:
 You can add different definitions to zephyr_compile_definitions() in 'zephyr/samples/modules/embarc_mli/example_har_smartphone/CMakeLists.txt' to implement numerous model:
 
 * 16 bit depth of coefficients and data (default):
- 
+
        MODEL_BIT_DEPTH=16
 
 * 8 bit depth of coefficients and data:
@@ -85,7 +90,7 @@ Structure of example application may be logically divided on three parts:
 * **Application.** Implements Input/output data flow and data processing by the other modules. Application includes
    * src/ml_api_cifar10_caffe_main.c
    * ../auxiliary/examples_aux.h(.c)
-* **Inference Module.** Uses embARC MLI Library to process input according to pre-defined graph. All model related constants are pre-defined and model coefficients is declared in the separate compile unit 
+* **Inference Module.** Uses embARC MLI Library to process input according to pre-defined graph. All model related constants are pre-defined and model coefficients is declared in the separate compile unit
    * src/cifar10_model.h
    * src/cifar10_model_chw.c (cifar10_model_hwc.c)
    * src/cifar10_constants.h

@@ -49,8 +49,8 @@ static struct arc_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("YCCM",
 			 DT_REG_ADDR(DT_INST(0, arc_yccm)),
 			 DT_REG_SIZE(DT_INST(0, arc_yccm)),
-			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),	
-#endif		 
+			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
+#endif
 /*
  * Region peripheral is shared by secure world and normal world by default,
  * no need a static mpu entry. If some peripherals belong to secure world,

@@ -32,7 +32,7 @@ static struct arc_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("YCCM",
 			 DT_REG_ADDR(DT_INST(0, arc_yccm)),
 			 DT_REG_SIZE(DT_INST(0, arc_yccm)),
-			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),	
+			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
 #endif
 	/* Region DDR RAM */
 	MPU_REGION_ENTRY("SRAM",

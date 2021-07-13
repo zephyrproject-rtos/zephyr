@@ -1,10 +1,7 @@
 /*
- * Copyright 2019-2020, Synopsys, Inc.
- * All rights reserved.
+ * Copyright (c) 2021 Synopsys
  *
- * This source code is licensed under the BSD-3-Clause license found in
- * the LICENSE file in the root directory of this source tree.
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "cifar10_constants.h"
@@ -632,7 +629,7 @@ const w_type _W L1_conv_bias_buf[CONV1_B_ELEMENTS] = {
 	L1_BQ(-0.089224190), L1_BQ(-0.024270818), L1_BQ(-0.043411694), L1_BQ(-0.028074358)
 };
 
-// CONV2_W Constants
+/* CONV2_W Constants */
 
 const w_type _W L2_conv_wt_buf[CONV2_W_ELEMENTS] = {
 	L2_WQ(-0.039237086), L2_WQ(-0.057627771), L2_WQ(-0.064488754), L2_WQ(-0.040194966),

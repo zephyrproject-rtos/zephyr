@@ -1,34 +1,17 @@
 /*
- * Copyright 2019-2020, Synopsys, Inc.
- * All rights reserved.
+ * Copyright (c) 2021 Synopsys
  *
- * This source code is licensed under the BSD-3-Clause license found in
- * the LICENSE file in the root directory of this source tree.
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
- * LSTM based model for Human Activity Recognition (HAR).
- * Based on github project of Guillaume Chevalie[1] for Human Activity Recognition，
- * Using Smartphones Data Set[2]:
+ * LSTM Based NN Example for UCI Smartphones HAR Dataset
  *
- * [1]  Guillaume Chevalier, LSTMs for Human Activity Recognition, 2016,
- *      https://github.com/guillaume-chevalier/LSTM-Human-Activity-Recognition
+ * Based on the project of Guillaume Chevalie:
+ * https://github.com/guillaume-chevalier/LSTM-Human-Activity-Recognition
  *
- * [2]  Davide Anguita, Alessandro Ghio, Luca Oneto, Xavier Parra and Jorge L. Reyes-Ortiz.
- *      A Public Domain Dataset for Human Activity Recognition Using Smartphones.
- *      21th European Symposium on Artificial Neural Networks,
- *      Computational Intelligence and Machine Learning,
- *      ESANN 2013. Bruges, Belgium 24-26 April 2013:
- *      https://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones
- *
- * Correspondence of classes:
- *  0: WALKING
- *  1: WALKING_UPSTAIRS
- *  2: WALKING_DOWNSTAIRS
- *  3: SITTING
- *  4: STANDING
- *  5: LAYING
+ * Dataset info:
+ * https://archive.ics.uci.edu/ml/datasets/human+activity+recognition+using+smartphones
  */
 
 #ifndef _HAR_SMARTPHONE_MODEL_H_

@@ -1,11 +1,8 @@
 /*
-* Copyright 2019-2020, Synopsys, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD-3-Clause license found in
-* the LICENSE file in the root directory of this source tree.
-*
-*/
+ * Copyright (c) 2021 Synopsys.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "examples_aux.h"
 
 #include <assert.h>
@@ -18,7 +15,7 @@
  * Find maximum value in the whole tensor and return it's argument (index)
  * Tensor data considered as linear array. Index corresponds to number of element in this array
  */
-static inline int arg_max(mli_tensor *net_output_);
+static inline int arg_max(mli_tensor * net_output_);
 
 /*
  * Return label (int) stored in label container.
@@ -26,16 +23,17 @@ static inline int arg_max(mli_tensor *net_output_);
  * according to type_ and return it's value as integer
  * It returns -1 if type is unknown.
  */
-static inline int get_label(void *label_container_, tIdxDataType type_);
+static inline int get_label(void *label_container_, enum tIdxDataType type_);
 
 /* -------------------------------------------------------------------------- */
 /*                     Single vector processing for debug                     */
 /* -------------------------------------------------------------------------- */
-test_status model_run_single_in(const void *data_in, const float *ref_out, mli_tensor *model_input,
+enum test_status model_run_single_in(const void *data_in, const float *ref_out,
+				mli_tensor *model_input,
 				mli_tensor *model_output, preproc_func_t preprocess,
 				model_inference_t inference, const char *inf_param)
 {
-	test_status ret_val = TEST_PASSED;
+	enum test_status ret_val = TEST_PASSED;
 	size_t output_elements = mli_hlp_count_elem_num(model_output, 0);
 
 	float *pred_data = malloc(output_elements * sizeof(float));
@@ -51,7 +49,7 @@ test_status model_run_single_in(const void *data_in, const float *ref_out, mli_t
 
 	/* Check result */
 	if (mli_hlp_fx_tensor_to_float(model_output, pred_data, output_elements) == MLI_STATUS_OK) {
-		ref_to_pred_output err;
+		struct ref_to_pred_output err;
 
 		measure_err_vfloat(ref_out, pred_data, output_elements, &err);
 		printf("Result Quality: S/N=%-10.1f (%-4.1f db)\n",
@@ -66,14 +64,15 @@ test_status model_run_single_in(const void *data_in, const float *ref_out, mli_t
 
 /* Multiple inputs from IDX file processing. Writes output for each tensor into output file */
 
-test_status model_run_idx_base_to_idx_out(const char *input_idx_path, const char *output_idx_path,
+enum test_status model_run_idx_base_to_idx_out(const char *input_idx_path,
+						const char *output_idx_path,
 					  mli_tensor *model_input, mli_tensor *model_output,
 					  preproc_func_t preprocess, model_inference_t inference,
 					  const char *inf_param)
 {
-	test_status ret_val = TEST_PASSED;
-	tIdxDescr descr_in = { 0, 0, 0, NULL };
-	tIdxDescr descr_out = { 0, 0, 0, NULL };
+	enum test_status ret_val = TEST_PASSED;
+	struct tIdxDescr descr_in = { 0, 0, 0, NULL };
+	struct tIdxDescr descr_out = { 0, 0, 0, NULL };
 	uint32_t shape[4] = { 0, 0, 0, 0 };
 	void *input_data = NULL;
 	float *output_data = NULL;
@@ -118,7 +117,8 @@ test_status model_run_idx_base_to_idx_out(const char *input_idx_path, const char
 	/* Memory allocation for input/output (for it's external representations) */
 	input_data = malloc((input_elements * data_elem_size(descr_in.data_type)) +
 			    (output_elements * sizeof(float)));
-	output_data = (float *)(input_data + input_elements * data_elem_size(descr_in.data_type));
+	output_data = (float *)((uint8_t *)input_data
+					+ input_elements * data_elem_size(descr_in.data_type));
 	if (input_data == NULL) {
 		printf("ERROR: Can't allocate memory for input and output\n");
 		ret_val = TEST_NOT_ENOUGH_MEM;
@@ -187,16 +187,18 @@ free_ret_lbl:
 
 /* Multiple inputs from IDX file processing. Calculate accuracy */
 
-test_status model_run_acc_on_idx_base(const char *input_idx_path, const char *labels_idx_path,
+enum test_status model_run_acc_on_idx_base(const char *input_idx_path, const char *labels_idx_path,
 				      mli_tensor *model_input, mli_tensor *model_output,
 				      preproc_func_t preprocess, model_inference_t inference,
 				      const char *inf_param)
 {
-	test_status ret = TEST_PASSED;
-	tIdxDescr descr_in = { 0, 0, 0, NULL };
-	tIdxDescr descr_labels = { 0, 0, 0, NULL };
+	enum test_status ret = TEST_PASSED;
+	struct tIdxDescr descr_in = { 0, 0, 0, NULL };
+	struct tIdxDescr descr_labels = { 0, 0, 0, NULL };
+#ifdef _C_ARRAY_
 	tIdxArrayFlag t_labels = { 0, LABELS };
 	tIdxArrayFlag t_tests = { 0, TESTS };
+#endif
 	uint32_t shape[4] = { 0, 0, 0, 0 };
 	uint32_t labels_total = 0;
 	uint32_t labels_correct = 0;
@@ -382,7 +384,7 @@ static inline int arg_max(mli_tensor *net_output_)
 /* -------------------------------------------------------------------------- */
 /*                               Label type cast                              */
 /* -------------------------------------------------------------------------- */
-static inline int get_label(void *label_container_, tIdxDataType type_)
+static inline int get_label(void *label_container_, enum tIdxDataType type_)
 {
 	switch (type_) {
 	case IDX_DT_UBYTE_1B:

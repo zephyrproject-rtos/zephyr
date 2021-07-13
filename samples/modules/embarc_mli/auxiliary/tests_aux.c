@@ -1,11 +1,8 @@
 /*
-* Copyright 2019-2020, Synopsys, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD-3-Clause license found in
-* the LICENSE file in the root directory of this source tree.
-*
-*/
+ * Copyright (c) 2021 Synopsys.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "tests_aux.h"
 
 #include <math.h>
@@ -27,7 +24,7 @@
 static const uint32_t kMaxBufSizeToMalloc = 32768;
 static const uint32_t kMinBufSizeToMalloc = 32;
 
-unsigned cycle_cnt = 0u;
+unsigned int cycle_cnt;
 
 const char *test_status_to_str[] = { "PASSED", "SKIPPED", "NOT_ENOUGH_MEM_ERR", "SUIT_ERROR",
 				     "FAILED" };
@@ -35,13 +32,13 @@ const char *test_status_to_str[] = { "PASSED", "SKIPPED", "NOT_ENOUGH_MEM_ERR", 
 /* -------------------------------------------------------------------------- */
 /*                     Load several tensors from IDX files                    */
 /* -------------------------------------------------------------------------- */
-test_status load_tensors_from_idx_files(const char *const test_root, const char *const paths[],
+enum test_status load_tensors_from_idx_files(const char *const test_root, const char *const paths[],
 					mli_tensor *tensors[], uint32_t paths_num)
 {
 	float *data = NULL;
 	uint32_t data_buf_size = kMaxBufSizeToMalloc; /* Memory allocated for source data */
-	tIdxDescr descr = { 0, 0, 0, NULL };
-	test_status ret = TEST_PASSED;
+	struct tIdxDescr descr = { 0, 0, 0, NULL };
+	enum test_status ret = TEST_PASSED;
 	const uint32_t max_path_sz = 128;
 	char *path = NULL;
 
@@ -123,7 +120,8 @@ test_status load_tensors_from_idx_files(const char *const test_root, const char 
 			}
 
 			elements_accounted += descr.num_elements;
-			tensors[idx]->data += descr.num_elements * elem_size;
+			tensors[idx]->data = descr.num_elements * elem_size
+							+ (uint32_t *)tensors[idx]->data;
 		}
 
 		tensors[idx]->data = addr_backup;
@@ -145,14 +143,14 @@ ret_label:
 /* -------------------------------------------------------------------------- */
 /*     Compare pred tensor with reference one stored in external IDX file     */
 /* -------------------------------------------------------------------------- */
-test_status measure_ref_to_pred(const char *const tests_root, const char *const ref_vec_file,
-				mli_tensor pred, ref_to_pred_output *out)
+enum test_status measure_ref_to_pred(const char *const tests_root, const char *const ref_vec_file,
+				mli_tensor pred, struct ref_to_pred_output *out)
 {
 	float *data = NULL;
 	float *ref_buf = NULL;
 	float *pred_buf = NULL;
 	uint32_t data_buf_size = kMaxBufSizeToMalloc;
-	test_status ret = TEST_PASSED;
+	enum test_status ret = TEST_PASSED;
 	const uint32_t max_path_sz = 128;
 	const uint32_t buffers_to_alloc = 2;
 	char *path = NULL;
@@ -182,7 +180,7 @@ test_status measure_ref_to_pred(const char *const tests_root, const char *const 
 	pred_buf = &data[data_buf_size];
 
 	/* ---------------------- Step 2: Open reference file; ---------------------- */
-	tIdxDescr descr = { 0, 0, 0, NULL };
+	struct tIdxDescr descr = { 0, 0, 0, NULL };
 
 	descr.opened_file = fopen(path, "rb");
 	if (descr.opened_file == NULL ||
@@ -252,7 +250,7 @@ test_status measure_ref_to_pred(const char *const tests_root, const char *const 
 				max_abs_err = fabsf(pred_buf[i] - ref_buf[i]);
 		}
 		elements_accounted += descr.num_elements;
-		pred.data += descr.num_elements * pred_elem_size;
+		pred.data = descr.num_elements * pred_elem_size + (uint32_t *)pred.data;
 	}
 
 	const float eps = 0.000000000000000001f;
@@ -279,8 +277,8 @@ ret_label:
 /* -------------------------------------------------------------------------- */
 /*           Measure various error metrics between two float vectors          */
 /* -------------------------------------------------------------------------- */
-test_status measure_err_vfloat(const float *ref_vec, const float *pred_vec, const int len,
-			       ref_to_pred_output *out)
+enum test_status measure_err_vfloat(const float *ref_vec, const float *pred_vec, const int len,
+			       struct ref_to_pred_output *out)
 {
 	float ref_accum = 0.f;
 	float pred_accum = 0.f;
@@ -311,7 +309,7 @@ test_status measure_err_vfloat(const float *ref_vec, const float *pred_vec, cons
 	return TEST_PASSED;
 }
 
-test_status fill_asym_tensor_element_params(const float *scale_rates, const float *zero_points,
+enum test_status fill_asym_tensor_element_params(const float *scale_rates, const float *zero_points,
 					    const int num_vals, const int scale_int_bits,
 					    mli_tensor *target_tensor)
 {

@@ -1,5 +1,10 @@
+.. _embarc_mli_example_har_smartphone:
+
 STM Based Human Activity Recognition (HAR) Example
-==============================================
+##################################################
+
+Overview
+********
 Example shows how to work with recurrent primitives (LSTM and basic RNN) implemented in embARC MLI Library. It is based on open source [GitHub project](https://github.com/guillaume-chevalier/LSTM-Human-Activity-Recognition) by Guillaume Chevalie. Chosen approach, complexity of the model and [dataset](https://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones) are relevant to IoT domain. The model is intended to differentiate human activity between 6 classes based on inputs from embedded inertial sensors from waist-mounted smartphone. Classes:
  * 0: WALKING
  * 1: WALKING_UPSTAIRS
@@ -14,7 +19,7 @@ Quick Start
 Example supports building with [Zephyr Software Development Kit (SDK)](https://docs.zephyrproject.org/latest/getting_started/installation_linux.html#zephyr-sdk) and running with MetaWare Debuger on [nSim simulator](https://www.synopsys.com/dw/ipdir.php?ds=sim_nSIM).
 
 Add embarc_mli module to Zephyr instruction
---------------
+-------------------------------------------
 
 1. Open command line and change working directory to './zephyrproject/zephyr'
 
@@ -23,7 +28,7 @@ Add embarc_mli module to Zephyr instruction
         west update
 
 Build with Zephyr SDK toolchain
---------------
+-------------------------------
 
     Build requirements:
         - Zephyr SDK toolchain version 0.12.3 or higher
@@ -64,7 +69,7 @@ You can change mode in ml_api_har_smartphone_main.c to 1,2,3:
 You can add different definitions to zephyr_compile_definitions() in 'zephyr/samples/modules/embarc_mli/example_har_smartphone/CMakeLists.txt' to implement numerous model:
 
 * 16 bit depth of coefficients and data (default):
- 
+
        MODEL_BIT_DEPTH=16
 
 * 8 bit depth of coefficients and data:

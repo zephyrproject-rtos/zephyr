@@ -36,7 +36,7 @@
 		compatible = "arc,dccm";
 		reg = <0x80000000 DT_SIZE_K(128)>;
 	};
-	
+
 	xccm@c0000000 {
 		compatible = "arc,xccm";
 		reg = <0xc0000000 DT_SIZE_K(8)>;

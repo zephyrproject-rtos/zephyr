@@ -1,11 +1,8 @@
 /*
-* Copyright 2019-2020, Synopsys, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD-3-Clause license found in
-* the LICENSE file in the root directory of this source tree.
-*
-*/
+ * Copyright (c) 2021 Synopsys.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 
@@ -52,7 +49,6 @@ static void bin2val(void *out_data_, uint8_t *in_data, uint8_t type_sz, uint32_t
 				(uint64_t)(in_data[j + 7]);
 		break;
 	}
-	return;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -111,13 +107,12 @@ static void val2BEbin(uint8_t *out_data_, void *in_data, uint8_t type_sz, uint32
 		}
 		break;
 	}
-	return;
 }
 
 /* -------------------------------------------------------------------------- */
 /*                     Get size of element for type_class                     */
 /* -------------------------------------------------------------------------- */
-uint8_t data_elem_size(tIdxDataType type_)
+uint8_t data_elem_size(enum tIdxDataType type_)
 {
 	switch (type_) {
 	case IDX_DT_UBYTE_1B:
@@ -142,7 +137,7 @@ uint8_t data_elem_size(tIdxDataType type_)
 
 /* Check IDX file and Get part of it description for correct further reading */
 
-tIdxRetVal idx_file_check_and_get_info(tIdxDescr *descr_)
+enum tIdxRetVal idx_file_check_and_get_info(struct tIdxDescr *descr_)
 {
 	fpos_t position;
 	uint8_t type, shapes_num;
@@ -170,7 +165,7 @@ tIdxRetVal idx_file_check_and_get_info(tIdxDescr *descr_)
 		return IDX_ERR_FILE_ACC;
 	type = buffer[2];
 	shapes_num = buffer[3];
-	elements_size = data_elem_size((tIdxDataType)type);
+	elements_size = data_elem_size((enum tIdxDataType)type);
 	if (file_size < HEADER_ELEM_SZ * (shapes_num + 1) || elements_size == 0)
 		return IDX_ERR_INCORR_HEAD;
 
@@ -191,7 +186,7 @@ tIdxRetVal idx_file_check_and_get_info(tIdxDescr *descr_)
 	/* Restore position in file and write back idx info */
 	if (fsetpos(descr_->opened_file, &position) != 0)
 		return IDX_ERR_FILE_ACC;
-	descr_->data_type = (tIdxDataType)type;
+	descr_->data_type = (enum tIdxDataType)type;
 	descr_->num_dim = shapes_num;
 	descr_->num_elements = elements_num;
 	return IDX_ERR_NONE;
@@ -199,7 +194,7 @@ tIdxRetVal idx_file_check_and_get_info(tIdxDescr *descr_)
 
 /* Check array file and Get part of it description for correct further reading */
 
-void array_file_check_and_get_info(tIdxDescr *descr_, tIdxArrayFlag *target)
+void array_file_check_and_get_info(struct tIdxDescr *descr_, struct tIdxArrayFlag *target)
 {
 	const unsigned int *array = (target->flag == LABELS) ? labels : tests;
 	uint8_t type, shapes_num;
@@ -210,7 +205,7 @@ void array_file_check_and_get_info(tIdxDescr *descr_, tIdxArrayFlag *target)
 
 	type = array[2];
 	shapes_num = array[3];
-	elements_size = data_elem_size((tIdxDataType)type);
+	elements_size = data_elem_size((enum tIdxDataType)type);
 	target->position = HEADER_ELEM_SZ;
 	for (i = 0; i < shapes_num; ++i) {
 		for (j = 0; j < HEADER_ELEM_SZ; j++) {
@@ -220,7 +215,7 @@ void array_file_check_and_get_info(tIdxDescr *descr_, tIdxArrayFlag *target)
 		bin2val((void *)&dim, buffer, HEADER_ELEM_SZ, 1);
 		elements_num *= dim;
 	}
-	descr_->data_type = (tIdxDataType)type;
+	descr_->data_type = (enum tIdxDataType)type;
 	descr_->num_dim = shapes_num;
 	descr_->num_elements = elements_num;
 }
@@ -233,7 +228,7 @@ void array_file_check_and_get_info(tIdxDescr *descr_, tIdxArrayFlag *target)
  * REMARK: If shape pointer is not NULL then read dimensions and data from file beginig
  * Else continue file reading from current position.
  */
-tIdxRetVal idx_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_)
+enum tIdxRetVal idx_file_read_data(struct tIdxDescr *descr_, void *data_, uint32_t *shape_)
 {
 	const uint8_t elements_size = data_elem_size(descr_->data_type);
 	const uint32_t max_elem_in_buf = READ_BUF_SIZE / elements_size;
@@ -273,7 +268,8 @@ tIdxRetVal idx_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_)
  * REMARK: If shape pointer is not NULL then read dimensions and data from file beginig
  * Else continue file reading from current position.
  */
-void array_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_, tIdxArrayFlag *target)
+void array_file_read_data(struct tIdxDescr *descr_, void *data_, uint32_t *shape_,
+						struct tIdxArrayFlag *target)
 {
 	const unsigned int *array = (target->flag == LABELS) ? labels : tests;
 	const uint8_t elements_size = data_elem_size(descr_->data_type);
@@ -313,7 +309,7 @@ void array_file_read_data(tIdxDescr *descr_, void *data_, uint32_t *shape_, tIdx
 
 /* Write IDX file from source (full file in 1 operation in contrast with reading) */
 
-tIdxRetVal idx_file_write(tIdxDescr *descr_, const void *data_, uint32_t *shape_)
+enum tIdxRetVal idx_file_write(struct tIdxDescr *descr_, const void *data_, uint32_t *shape_)
 {
 	uint32_t i, elem_in_portion;
 	const uint8_t elements_size = data_elem_size(descr_->data_type);
@@ -363,7 +359,7 @@ tIdxRetVal idx_file_write(tIdxDescr *descr_, const void *data_, uint32_t *shape_
 /*                  Write header to IDX file (without header)                 */
 /* -------------------------------------------------------------------------- */
 
-tIdxRetVal idx_file_write_header(const tIdxDescr *descr_, const uint32_t *shape_)
+enum tIdxRetVal idx_file_write_header(const struct tIdxDescr *descr_, const uint32_t *shape_)
 {
 	uint32_t i, elem_in_portion;
 	uint32_t max_elem_in_buf;
@@ -402,7 +398,7 @@ tIdxRetVal idx_file_write_header(const tIdxDescr *descr_, const uint32_t *shape_
 
 /* Write data to IDX file (without header) */
 
-tIdxRetVal idx_file_write_data(tIdxDescr *descr_, const void *data_)
+enum tIdxRetVal idx_file_write_data(struct tIdxDescr *descr_, const void *data_)
 {
 	uint32_t i, elem_in_portion;
 	const uint8_t elements_size = data_elem_size(descr_->data_type);
@@ -445,12 +441,12 @@ tIdxRetVal idx_file_write_data(tIdxDescr *descr_, const void *data_)
 /*                          Read IDX file completely                          */
 /* -------------------------------------------------------------------------- */
 
-tIdxRetVal idx_file_read_completely(const char *path_, void *data_, uint32_t *data_sz_,
-				    uint32_t *shape_, uint32_t *shape_dims_, tIdxDataType *el_type_)
+enum tIdxRetVal idx_file_read_completely(const char *path_, void *data_, uint32_t *data_sz_,
+			uint32_t *shape_, uint32_t *shape_dims_, enum tIdxDataType *el_type_)
 {
-	tIdxRetVal ret = IDX_ERR_NONE;
+	enum tIdxRetVal ret = IDX_ERR_NONE;
 	FILE *file = NULL;
-	tIdxDescr descr;
+	struct tIdxDescr descr;
 	uint32_t el_size = 0;
 
 	/* Check function input */
@@ -498,12 +494,12 @@ ret_err:
 /*                      Write data to IDX file completely                     */
 /* -------------------------------------------------------------------------- */
 
-tIdxRetVal idx_file_write_completely(const char *path_, void *data_, uint32_t *shape_,
-				     uint32_t shape_sz_, tIdxDataType el_type)
+enum tIdxRetVal idx_file_write_completely(const char *path_, void *data_, uint32_t *shape_,
+				     uint32_t shape_sz_, enum tIdxDataType el_type)
 {
 	FILE *file;
-	tIdxRetVal ret = IDX_ERR_NONE;
-	tIdxDescr descr;
+	enum tIdxRetVal ret = IDX_ERR_NONE;
+	struct tIdxDescr descr;
 
 	if (shape_sz_ == 0 || shape_ == NULL || data_ == NULL)
 		ret = IDX_ERR_INCORR_FUNC_INPUT;

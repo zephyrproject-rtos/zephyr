@@ -1,10 +1,7 @@
 /*
- * Copyright 2019-2020, Synopsys, Inc.
- * All rights reserved.
+ * Copyright (c) 2021 Synopsys.
  *
- * This source code is licensed under the BSD-3-Clause license found in
- * the LICENSE file in the root directory of this source tree.
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _TESTS_AUX_H
@@ -24,7 +21,8 @@
 extern "C" {
 #endif
 
-/** @def Macro for calculating number of fractionl bits. Uses container type and number of integer bits*/
+/** @def Macro for calculating number of fractionl bits. */
+/* Uses container type and number of integer bits*/
 #define FRAQ_BITS(int_part, el_type) ((sizeof(el_type) * 8) - int_part - 1)
 
 #ifndef MAX
@@ -45,10 +43,12 @@ extern "C" {
 /** @def Profiling switcher*/
 #define PROFILING_ON
 
-/** @var Cycles counter variable. Will hold number of cycles spent for code surrounded by PROFILE(F) macro*/
-extern unsigned cycle_cnt;
+/** @var Cycles counter variable. */
+/* Will hold number of cycles spent for code surrounded by PROFILE(F) macro */
+extern unsigned int cycle_cnt;
 
-/** @def Profiling macro for calculating cyclecount (uses arc specific timer and it's sw interface)*/
+/** @def Profiling macro for calculating cyclecount */
+/* (uses arc specific timer and it's sw interface)*/
 #if defined(PROFILING_ON)
 #ifdef _ARC
 /* MWDT toolchain profiling */
@@ -111,19 +111,20 @@ static inline void test_aux_stop_timer_1(void)
 /* -------------------------------------------------------------------------- */
 
 /** @enum Function Return codes  */
-typedef enum _test_status {
+enum test_status {
 	TEST_PASSED = 0, /**< No error occurred */
 	TEST_SKIPPED, /**< Test was skipped */
 	TEST_NOT_ENOUGH_MEM, /**< Not enough memory for test */
 	TEST_SUIT_ERROR, /**< Error insed test suite code */
 	TEST_FAILED, /**< Testing function returns unexpected result */
-} test_status;
+};
 
-/** @var Array with discriptive strings according to each error code (test_status_to_str[TEST_PASSED])*/
+/** @var Array with discriptive strings according to each error code */
+/* (test_status_to_str[TEST_PASSED])*/
 extern const char *test_status_to_str[];
 
 /** @struct error measurement metrics for two vectors  */
-typedef struct ref_to_pred_output_t {
+struct ref_to_pred_output {
 	/**< maximum absolute error  */
 	float max_abs_err;
 	/**< Length of predicted vector: SQRT(sum_i(pred[i]^2))  */
@@ -138,7 +139,7 @@ typedef struct ref_to_pred_output_t {
 	float ref_to_noise_snr;
 	/**< Noise-to-quantization_err ratio (noise_vec_length)/(quant_err_vec_length+eps)  */
 	float noise_to_quant_ratio;
-} ref_to_pred_output;
+};
 
 /* -------------------------------------------------------------------------- */
 /*                                  Functions                                 */
@@ -149,23 +150,24 @@ typedef struct ref_to_pred_output_t {
  *
  * @detail Load *paths_num* tensors from external IDX files (test_root/paths[i]) to MLI tensors.
  *         Each tensor must contain sufficient array for storing data of each IDX file accordingly.
- *         Function uses dynamic memory allocation and standart file input/output.
+ *         Function uses dynamic memory allocation and standard file input/output.
  *         Function function releases all occupied resources before return.
  *
  * @param[in] test_root - root path to all IDX files listed in *paths* array
  * @param[in] paths[] - paths to input IDX files for reading (test_root/paths[i])
  * @param[out] tensors[] - Pointer to output tensors arrayr
- * @param[in] paths_num - Number of idx files for reading (also number of tensors in tensors[] array)
+ * @param[in] paths_num - Number of idx files for reading(also number of tensors in tensors[] array)
  *
  * @return Operation status code (test_status)
  */
-test_status load_tensors_from_idx_files(const char *const test_root, const char *const paths[],
+enum test_status load_tensors_from_idx_files(const char *const test_root, const char *const paths[],
 					mli_tensor *tensors[], uint32_t paths_num);
 
 /**
  * @brief Compare data in tensor with external reference data
  *
- * @detail Compare *pred* tensor with reference one stored in external IDX file in terms of various error metrics
+ * @detail Compare *pred* tensor with reference one stored in external IDX file
+ *         in terms of various error metrics
  *
  * @param[in] test_root - root path to IDX file Output IDX file path
  * @param[in] ref_vec_path - reference tensor file name
@@ -174,8 +176,8 @@ test_status load_tensors_from_idx_files(const char *const test_root, const char 
  *
  * @return Operation status code (test_status)
  */
-test_status measure_ref_to_pred(const char *const tests_root, const char *const ref_vec_file,
-				mli_tensor pred, ref_to_pred_output *out);
+enum test_status measure_ref_to_pred(const char *const tests_root, const char *const ref_vec_file,
+				mli_tensor pred, struct ref_to_pred_output *out);
 
 /**
  * @brief Measure various error metrics between two float vectors
@@ -189,8 +191,8 @@ test_status measure_ref_to_pred(const char *const tests_root, const char *const 
  *
  * @return Operation status code (test_status)
  */
-test_status measure_err_vfloat(const float *ref_vec, const float *pred_vec, const int len,
-			       ref_to_pred_output *out);
+enum test_status measure_err_vfloat(const float *ref_vec, const float *pred_vec, const int len,
+			       struct ref_to_pred_output *out);
 
 /**
  * @brief Fill Asym tesnor parameteres of element base on it's float representations
@@ -201,23 +203,30 @@ test_status measure_err_vfloat(const float *ref_vec, const float *pred_vec, cons
  *
  * @param[in] scale_rates - Pointer to scale rates in float.
  * @param[in] zero_points - Pointer to zero point in float.
- * @param[in] num_vals - Number of values in the input arrays (if > 1, tensor must hold pointers to keep quantized ones)
+ * @param[in] num_vals - Number of values in the input arrays
+ *				(if > 1, tensor must hold pointers to keep quantized ones)
  * @param[in] scale_int_bits - integer bits of quantized of scale values
- * @param[in/out] target_tensor - Tensor structure to fill. Fields of the structure to be filled beforehand:
- *                                el_type - MLI_EL_ASYM_I8 or MLI_EL_ASYM_I32.
- *                                el_params.asym.dim - quantization axis (negative in case of quantization across whole tensor)
- *                                Additionally, if el_params.asym.dim >= 0:
- *                                el_params.asym.zero_point(scale).pi16 - pointers to valid memory,
- *                                                           which can keep num_vals elements of int16_t size
-
- *                                Fields that will be filledby function:
- *                                el_params.asym.scale_frac_bits - number of fractional bits derived from scale_int_bits
- *                                el_params.asym.zero_point - quantized version of zero points (pointer to filled array if num_vals > 1)
- *                                el_params.asym.scale - quantized version of scale rates (pointer to filled array if num_vals > 1)
+ * @param[in/out] target_tensor -
+ *              Tensor structure to fill.
+ *              Fields of the structure to be filled beforehand:
+ *				el_type - MLI_EL_ASYM_I8 or MLI_EL_ASYM_I32.
+ *				el_params.asym.dim - quantization axis
+ *				(negative in case of quantization across whole tensor)
+ *				Additionally, if el_params.asym.dim >= 0:
+ *				el_params.asym.zero_point(scale).pi16 - pointers to valid memory,
+ *					which can keep num_vals elements of int16_t size
+ *
+ *				Fields that will be filledby function:
+ *				el_params.asym.scale_frac_bits -
+ *					number of fractional bits derived from scale_int_bits
+ *				el_params.asym.zero_point - quantized version of zero points
+ *					(pointer to filled array if num_vals > 1)
+ *				el_params.asym.scale - quantized version of scale rates
+ *					(pointer to filled array if num_vals > 1)
  *
  * @return Operation status code (test_status)
  */
-test_status fill_asym_tensor_element_params(const float *scale_rates, const float *zero_points,
+enum test_status fill_asym_tensor_element_params(const float *scale_rates, const float *zero_points,
 					    const int num_vals, const int scale_int_bits,
 					    mli_tensor *target_tensor);
 #ifdef __cplusplus

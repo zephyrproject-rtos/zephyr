@@ -1,10 +1,7 @@
 /*
- * Copyright 2019-2020, Synopsys, Inc.
- * All rights reserved.
+ * Copyright (c) 2021 Synopsys
  *
- * This source code is licensed under the BSD-3-Clause license found in
- * the LICENSE file in the root directory of this source tree.
- *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _HAR_SMARTPHONE_CONSTANTS_H_
@@ -16,12 +13,12 @@
 #include "tests_aux.h"
 
 /* -------------------------- labels and tests code ------------------------- */
-typedef enum { LABELS = 0x0, TESTS } tIdxArrayVal;
+enum tIdxArrayVal { LABELS = 0x0, TESTS };
 
-typedef struct {
+struct tIdxArrayFlag {
 	long position;
-	tIdxArrayVal flag;
-} tIdxArrayFlag;
+	enum tIdxArrayVal flag;
+};
 
 /* ------------------------ Defining weight data type ----------------------- */
 #if (MODEL_BIT_DEPTH != MODEL_FX_16)

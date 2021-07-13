@@ -26,7 +26,7 @@ if(CONFIG_EMBARC_MLI)
       BUILD_DIR=${ZEPHYR_BINARY_DIR}/embarc_mli
       LIBRARY_DIR=${ZEPHYR_BINARY_DIR}/embarc_mli/bin
       lib
-      INSTALL_COMMAND ""    
+      INSTALL_COMMAND ""
       BUILD_BYPRODUCTS ${ZEPHYR_BINARY_DIR}/embarc_mli/bin/libmli.a
       )
     # Create a wrapper CMake library that our app can link with

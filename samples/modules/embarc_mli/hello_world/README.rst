@@ -1,5 +1,7 @@
-Hello_world Example 
-==============================================
+.. _embarc_mli_hello_world:
+
+Hello_world Example
+###################
 
 Quick Start
 --------------
@@ -7,7 +9,7 @@ Quick Start
 Example supports building with [Zephyr Software Development Kit (SDK)](https://docs.zephyrproject.org/latest/getting_started/installation_linux.html#zephyr-sdk) and running with MetaWare Debuger on [nSim simulator](https://www.synopsys.com/dw/ipdir.php?ds=sim_nSIM).
 
 Add embarc_mli module to Zephyr instruction
---------------
+-------------------------------------------
 
 1. Open command line and change working directory to './zephyrproject/zephyr'
 
@@ -16,7 +18,7 @@ Add embarc_mli module to Zephyr instruction
         west update
 
 Build with Zephyr SDK toolchain
---------------
+-------------------------------
 
     Build requirements:
         - Zephyr SDK toolchain version 0.12.3 or higher
@@ -31,14 +33,24 @@ Build with Zephyr SDK toolchain
 Run example
 --------------
 
-1. Run example 
+1. Run example
 
         west flash
 
     Result shall be:
 
+.. code-block:: console
+
+        ...
+
         ************************************
-        2 4 6 8 10 12 14 16 
-        0 0 0 0 0 0 0 0 
+
+        2 4 6 8 10 12 14 16
+
+        0 0 0 0 0 0 0 0
+
         ************************************
+
         Hello World! nsim
+
+        ...

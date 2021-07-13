@@ -16,7 +16,7 @@ zephyr_library_include_directories(
   src/
 )
 
-target_sources(app PRIVATE 
+target_sources(app PRIVATE
     src/ml_api_cifar10_caffe_main.c
     src/cifar10_coefficients_chw_big.c
     src/cifar10_coefficients_chw_small.c

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2021 Synopsys
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "cifar10_constants.h"
 
 unsigned const int tests[61460] = {

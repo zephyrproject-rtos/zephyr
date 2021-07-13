@@ -1,11 +1,8 @@
 /*
-* Copyright 2019-2020, Synopsys, Inc.
-* All rights reserved.
-*
-* This source code is licensed under the BSD-3-Clause license found in
-* the LICENSE file in the root directory of this source tree.
-*
-*/
+ * Copyright (c) 2021 Synopsys
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "cifar10_model.h"
 
@@ -61,9 +58,6 @@ mli_tensor *const cifar10_cf_net_input = &input;
 mli_tensor *const cifar10_cf_net_output = &output;
 
 /* -----------------  Model description and configuration ---------------- */
-
-#pragma Data(".mli_data")
-
 /* Configuration objects for layers */
 
 static const mli_permute_cfg permute_hwc2chw_cfg = { .perm_dim = { 2, 0, 1 } };
@@ -200,7 +194,6 @@ static mli_tensor ir_tensor_Y = {
 	.el_type = D_EL_TYPE,
 	.el_params.fx.frac_bits = FRQ_BITS(0, d_type),
 };
-#pragma Data()
 
 /*  Wrappers on MLI calls to deal with various */
 /*  bit depth configurable in compile time */
@@ -365,8 +358,9 @@ static void check_result(const char *ir_root, const char *ref_file, mli_tensor *
 	}
 
 	if (ir_root != NULL) {
-		ref_to_pred_output err;
-		test_status test_result = measure_ref_to_pred(ir_root, ref_file, *pred_tsr, &err);
+		struct ref_to_pred_output err;
+		enum test_status test_result = measure_ref_to_pred(ir_root, ref_file,
+										*pred_tsr, &err);
 
 		if (test_result == TEST_PASSED) {
 			printf("%s:\n\tS/N=%-10.1f (%-4.1f db)\n\t%u cycles\n", ref_file,
