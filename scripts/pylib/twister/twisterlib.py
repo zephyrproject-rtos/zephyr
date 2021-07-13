@@ -517,7 +517,7 @@ class BinaryHandler(Handler):
         if self.call_make_run:
             command = [self.generator_cmd, "run"]
         elif self.call_west_flash:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+            command = ["west", "-z", ZEPHYR_BASE, "flash", "--skip-rebuild", "-d", self.build_dir]
         else:
             command = [self.binary]
 
@@ -725,7 +725,7 @@ class DeviceHandler(Handler):
         logger.debug("Using serial device {}".format(serial_device))
 
         if (self.suite.west_flash is not None) or runner:
-            command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
+            command = ["west", "-z", ZEPHYR_BASE, "flash", "--skip-rebuild", "-d", self.build_dir]
             command_extra_args = []
 
             # There are three ways this option is used.
