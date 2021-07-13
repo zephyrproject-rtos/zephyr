@@ -1176,7 +1176,9 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   endif()
 endif()
 
-if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
+# RECOGNI: 64 bit causes an error in intel hex formats.
+# if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
+if(CONFIG_BUILD_OUTPUT_HEX)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(ihex IN_LIST elfconvert_formats)
     list(APPEND
