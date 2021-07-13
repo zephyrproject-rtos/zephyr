@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    CPU load simulator
+
+compatible: "vnd,busy-sim"
+
+properties:
+    active-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Debug pin is set to active state when cpu load is active.
