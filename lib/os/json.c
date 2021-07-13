@@ -311,7 +311,7 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_NUMBER:
 	case JSON_TOK_TRUE:
 	case JSON_TOK_FALSE:
-	case JSON_TOK_NULL: // Accept null values
+	case JSON_TOK_NULL:
 		return 0;
 	default:
 		return -EINVAL;
@@ -432,9 +432,6 @@ static int check_null_type(enum json_tokens value_type, enum json_tokens descr_t
 	}
 
 	switch (descr_type) {
-	case JSON_TOK_FALSE:
-	case JSON_TOK_TRUE:
-	case JSON_TOK_NUMBER:
 	case JSON_TOK_STRING:
 	case JSON_TOK_NULL:
 		// Leave values unchanged
@@ -459,11 +456,18 @@ static int decode_value(struct json_obj *obj,
 	if (value->type != JSON_TOK_NULL && !equivalent_types(value->type, descr->type)) {
 		return -EINVAL;
 	}
-	
+
 	int null_type = check_null_type(value->type, descr->type);
 	if(null_type) 
 	{
-		return null_type < 0 ? null_type : 0; // Return err or just ignore the current value
+		if(descr->type == JSON_TOK_NULL) {
+			// null type was expected
+			return 0;
+		} else {
+			// string value contains null
+			memset(field, 0, sizeof(char *));
+			return null_type < 0 ? null_type : 0; // Return err or just ignore the current value
+		}
 	}
 
 	switch (descr->type) {
