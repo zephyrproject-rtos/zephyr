@@ -95,3 +95,8 @@ properties:
       required: false
       type: string-array
       description: Provided names of IO channel specifiers
+
+    wakeup-source:
+      required: false
+      type: boolean
+      description: It can be used as wake up source

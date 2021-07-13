@@ -28,7 +28,7 @@ static bool should_suspend(const struct device *dev, enum pm_device_state state)
 	int rc;
 	enum pm_device_state current_state;
 
-	if (device_busy_check(dev) != 0) {
+	if (device_busy_check(dev) != 0 || pm_device_wakeup_is_enabled(dev)) {
 		return false;
 	}
 
@@ -148,4 +148,38 @@ int pm_device_state_get(const struct device *dev,
 
 	return dev->pm_control(dev, PM_DEVICE_STATE_GET,
 			       device_power_state);
+}
+
+
+bool pm_device_wakeup_enable(struct device *dev, bool enable)
+{
+	atomic_val_t flags, new_flags;
+
+
+	flags =  atomic_get(&dev->pm->atomic_flags);
+
+	if ((flags & BIT(PM_DEVICE_ATOMIC_FLAGS_WS_CAPABLE_BIT)) == 0U) {
+		return false;
+	}
+
+	if (enable) {
+		new_flags = flags |
+			BIT(PM_DEVICE_ATOMIC_FLAGS_WS_ENABLED_BIT);
+	} else {
+		new_flags = flags & ~BIT(PM_DEVICE_ATOMIC_FLAGS_WS_ENABLED_BIT);
+	}
+
+	return atomic_cas(&dev->pm->atomic_flags, flags, new_flags);
+}
+
+bool pm_device_wakeup_is_enabled(const struct device *dev)
+{
+	return atomic_test_bit(&dev->pm->atomic_flags,
+			       PM_DEVICE_ATOMIC_FLAGS_WS_ENABLED_BIT);
+}
+
+bool pm_device_wakeup_capable(const struct device *dev)
+{
+	return atomic_test_bit(&dev->pm->atomic_flags,
+			       PM_DEVICE_ATOMIC_FLAGS_WS_CAPABLE_BIT);
 }
