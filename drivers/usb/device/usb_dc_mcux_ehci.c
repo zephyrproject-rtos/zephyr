@@ -78,8 +78,8 @@ static usb_device_struct_t dev_data;
 #if ((defined(USB_DEVICE_CONFIG_EHCI)) && (USB_DEVICE_CONFIG_EHCI > 0U))
 /* EHCI device driver interface */
 static const usb_device_controller_interface_struct_t ehci_iface = {
-								    USB_DeviceEhciInit, USB_DeviceEhciDeinit, USB_DeviceEhciSend,
-								    USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
+	USB_DeviceEhciInit, USB_DeviceEhciDeinit, USB_DeviceEhciSend,
+	USB_DeviceEhciRecv, USB_DeviceEhciCancel, USB_DeviceEhciControl
 };
 #endif
 
