@@ -113,7 +113,7 @@ fcb_init(int f_area_id, struct fcb *fcb)
 		return -EINVAL;
 	}
 
-	dev = device_get_binding(fcb->fap->fa_dev_name);
+	dev = flash_area_get_device(fcb->fap);
 	fparam = flash_get_parameters(dev);
 	fcb->f_erase_value = fparam->erase_value;
 

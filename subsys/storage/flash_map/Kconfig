@@ -18,8 +18,47 @@ if FLASH_MAP
 config FLASH_MAP_SHELL
 	bool "Enable flash map shell interface"
 	depends on SHELL
+	select FLASH_MAP_DEV_NAME_IN_FLASH_AREA
 	help
 	  This enables shell commands to list and test flash maps.
+	  The option depends on FLASH_MAP_DEV_NAME_IN_FLASH_AREA being selected, even when
+	  FLASH_MAP_DEV_IN_FLASH_AREA is enabled, to be able to list names of devices tied to
+	  flash areas, as the names need to be accessible from flash_area structure.
+
+config FLASH_MAP_DEV_IN_FLASH_AREA
+	bool "Switch flash map to use compile time evaluated devices objects"
+	default y if !FLASH_MAP_CUSTOM
+	help
+	  The option adds the fa_dev field to the flash_area structure that allows to evaluate flash
+	  device object pointer at compile time, and store it within flash_area structure to avoid
+	  run-time calls to obtain it.
+	  Enabling the option switches flash map API to use the flash_area.fa_dev instead of using
+	  flash_area.fa_dev_name to get device by name.
+	  In case of the default flash map, enabling this option will cause the fa_dev, of
+	  each map entry, to be populated with a pointer to the device tied to that flash area.
+	  The option is set to n, by default, for custom flash maps (FLASH_MAP_CUSTOM=n); if your
+	  custom map populates the flash_area.fa_dev areas you may want to set this option to
+	  improve flash map performance.
+
+if FLASH_MAP_DEV_IN_FLASH_AREA
+config FLASH_MAP_DEV_NAME_IN_FLASH_AREA
+	bool "Keep fa_dev_name filed to flash_area structure"
+	default y
+	help
+	  The options allows storage of string name of flash device that is tied to the flash area
+	  record.  This may be useful when device_get_binding is used for obtaining device object
+	  for the flash_area or when in need to have such information at run-time.
+	  The flash map does not use flash_area.fa_dev_name internally when
+	  FLASH_MAP_USE_DEV_IN_FLASH_AREA is enabled, and in such case, unless used by other code,
+	  this can be safely disabled and will reduce size of flash_area structure by size of
+	  a pointer.
+endif
+
+if !FLASH_MAP_DEV_IN_FLASH_AREA
+config FLASH_MAP_DEV_NAME_IN_FLASH_AREA
+	bool
+	default y
+endif
 
 config FLASH_MAP_CUSTOM
 	bool "Custom flash map description"
