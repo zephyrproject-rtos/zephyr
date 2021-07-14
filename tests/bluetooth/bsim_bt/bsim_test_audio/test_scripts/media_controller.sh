@@ -36,4 +36,19 @@ for PROCESS_ID in $PROCESS_IDS; do
   wait $PROCESS_ID || let "EXIT_CODE=$?"
 done
 
+printf "\n\n======== Running media controller remote_player test =========\n\n"
+
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=media_controller_remote_player -rs=46
+
+Execute ./bs_${BOARD}_tests_bluetooth_bsim_bt_bsim_test_audio_prj_conf \
+  -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=media_controller_server -rs=23
+
+Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \
+  -D=2 -sim_length=20e6 $@
+
+for PROCESS_ID in $PROCESS_IDS; do
+  wait $PROCESS_ID || let "EXIT_CODE=$?"
+done
+
 exit $EXIT_CODE #the last exit code != 0
