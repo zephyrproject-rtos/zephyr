@@ -345,20 +345,17 @@ uint8_t ll_df_set_cl_cte_tx_enable(uint8_t adv_handle, uint8_t cte_enable)
 		hdr_data.field_data = (uint8_t *)&cte_info;
 		hdr_data.extra_data = df_cfg;
 
-		err = ull_adv_sync_pdu_alloc(adv, 0,
-					     ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-					     NULL, &pdu_prev, &pdu,
-					     &extra_data_prev, &extra_data,
+		err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_HDR_FIELD_CTE_INFO, 0, NULL,
+					     &pdu_prev, &pdu, &extra_data_prev, &extra_data,
 					     &ter_idx);
 		if (err) {
 			return err;
 		}
 
 		if (extra_data) {
-			ull_adv_sync_extra_data_set_clear(extra_data_prev,
-							  extra_data,
-							  ULL_ADV_PDU_HDR_FIELD_CTE_INFO,
-							  0, &hdr_data);
+			ull_adv_sync_extra_data_set_clear(extra_data_prev, extra_data,
+							  ULL_ADV_PDU_HDR_FIELD_CTE_INFO, 0,
+							  &df_cfg);
 		}
 
 		err = ull_adv_sync_pdu_set_clear(lll_sync, pdu_prev, pdu,
