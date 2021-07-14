@@ -4029,6 +4029,17 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		struct node_rx_pdu *rx;
 		struct node_tx *tx;
 
+		/* Delay until all pending Tx in LLL is acknowledged,
+		 * conn->llcp_phy.pause_tx is true, new Tx PDUs will not be
+		 * enqueued until we proceed to initiate PHY update.
+		 * This is required to ensure PDU with instant can be
+		 * transmitted before instant expires.
+		 */
+		if (memq_peek(conn->lll.memq_tx.head, conn->lll.memq_tx.tail,
+			      NULL)) {
+			return;
+		}
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		rx = ll_pdu_rx_alloc_peek(2);
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH */
