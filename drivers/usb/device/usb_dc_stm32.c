@@ -50,6 +50,8 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #endif
 
 #define USB_BASE_ADDRESS	DT_INST_REG_ADDR(0)
+#define USB_CORE_REG	((USB_OTG_GlobalTypeDef *)(USB_BASE_ADDRESS))
+#define USB_DEVICE_REG	((USB_OTG_DeviceTypeDef *)(USB_BASE_ADDRESS + USB_OTG_DEVICE_BASE))
 #define USB_IRQ			DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, irq)
 #define USB_IRQ_PRI		DT_INST_IRQ_BY_NAME(0, USB_IRQ_NAME, priority)
 #define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
@@ -65,7 +67,7 @@ static const struct soc_gpio_pinctrl usb_pinctrl[] =
 
 #define USB_OTG_HS_EMB_PHY (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usbphyc) && \
 			    DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs))
-
+#define USB_STM32_CORE_RST_TIMEOUT_US (10000)
 /*
  * USB and USB_OTG_FS are defined in STM32Cube HAL and allows to distinguish
  * between two kind of USB DC. STM32 F0, F3, L0 and G4 series support USB device
@@ -144,6 +146,7 @@ struct usb_dc_stm32_state {
 	struct usb_dc_stm32_ep_state out_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	struct usb_dc_stm32_ep_state in_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	uint8_t ep_buf[USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
+	uint8_t attached;
 
 #ifdef USB
 	uint32_t pma_offset;
@@ -443,6 +446,9 @@ static int usb_dc_stm32_init(void)
 	}
 #endif /* USB */
 
+	/* Disable soft disconnect */
+	USB_DEVICE_REG->DCTL &= ~USB_OTG_DCTL_SDIS;
+
 	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI,
 		    usb_dc_stm32_isr, 0, 0);
 	irq_enable(USB_IRQ);
@@ -454,6 +460,10 @@ static int usb_dc_stm32_init(void)
 int usb_dc_attach(void)
 {
 	int ret;
+
+	if (usb_dc_stm32_state.attached) {
+		return 0;
+	}
 
 	LOG_DBG("");
 
@@ -514,6 +524,8 @@ int usb_dc_attach(void)
 #endif /* defined(LL_APB1_GRP1_PERIPH_PWR) */
 #endif /* PWR_CR2_USV */
 
+	usb_dc_stm32_state.attached = 1U;
+
 	return 0;
 }
 
@@ -523,7 +535,8 @@ int usb_dc_ep_set_callback(const uint8_t ep, const usb_dc_ep_callback cb)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -620,7 +633,8 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 	uint8_t ep = ep_cfg->ep_addr;
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -669,7 +683,8 @@ int usb_dc_ep_set_stall(const uint8_t ep)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -692,7 +707,8 @@ int usb_dc_ep_clear_stall(const uint8_t ep)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -715,7 +731,12 @@ int usb_dc_ep_is_stalled(const uint8_t ep, uint8_t *const stalled)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state || !stalled) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
+		return -EINVAL;
+	}
+
+	if (!stalled) {
 		return -EINVAL;
 	}
 
@@ -731,7 +752,8 @@ int usb_dc_ep_enable(const uint8_t ep)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -762,7 +784,8 @@ int usb_dc_ep_disable(const uint8_t ep)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -786,8 +809,8 @@ int usb_dc_ep_write(const uint8_t ep, const uint8_t *const data,
 
 	LOG_DBG("ep 0x%02x, len %u", ep, data_len);
 
-	if (!ep_state || !USB_EP_DIR_IS_IN(ep)) {
-		LOG_ERR("invalid ep 0x%02x", ep);
+	if (!usb_dc_stm32_state.attached || !ep_state || !USB_EP_DIR_IS_IN(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -838,8 +861,8 @@ int usb_dc_ep_read_wait(uint8_t ep, uint8_t *data, uint32_t max_data_len,
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	uint32_t read_count;
 
-	if (!ep_state) {
-		LOG_ERR("Invalid Endpoint %x", ep);
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -878,8 +901,8 @@ int usb_dc_ep_read_continue(uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!ep_state || !USB_EP_DIR_IS_OUT(ep)) { /* Check if OUT ep */
-		LOG_ERR("Not valid endpoint: %02x", ep);
+	if (!usb_dc_stm32_state.attached || !ep_state || !USB_EP_DIR_IS_OUT(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -917,11 +940,12 @@ int usb_dc_ep_flush(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
-	LOG_ERR("Not implemented");
+	HAL_PCD_EP_Flush(&usb_dc_stm32_state.pcd, ep);
 
 	return 0;
 }
@@ -930,7 +954,8 @@ int usb_dc_ep_mps(const uint8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!ep_state) {
+	if (!usb_dc_stm32_state.attached || !ep_state) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -939,7 +964,14 @@ int usb_dc_ep_mps(const uint8_t ep)
 
 int usb_dc_detach(void)
 {
-	LOG_ERR("Not implemented");
+	if (!usb_dc_stm32_state.attached) {
+		return 0;
+	}
+
+	irq_disable(USB_IRQ);
+
+	/* Enable soft disconnect */
+	USB_DEVICE_REG->DCTL |= USB_OTG_DCTL_SDIS;
 
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 	/* Specially for STM32WB, unlock the HSEM when USB is no more used. */
@@ -953,12 +985,43 @@ int usb_dc_detach(void)
 	 */
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
 
+	usb_dc_stm32_state.attached = 0U;
+
 	return 0;
 }
 
 int usb_dc_reset(void)
 {
-	LOG_ERR("Not implemented");
+	uint32_t cnt = 0U;
+
+	/* Wait for AHB master idle state. */
+	while (!(USB_CORE_REG->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL)) {
+		k_busy_wait(1);
+
+		if (++cnt > USB_STM32_CORE_RST_TIMEOUT_US) {
+			LOG_ERR("USB reset HANG! AHB Idle GRSTCTL=0x%08x",
+				USB_CORE_REG->GRSTCTL);
+			return -EIO;
+		}
+	}
+
+	/* Core Soft Reset */
+	cnt = 0U;
+	USB_CORE_REG->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
+
+	do {
+		if (++cnt > USB_STM32_CORE_RST_TIMEOUT_US) {
+			LOG_DBG("USB reset HANG! Soft Reset GRSTCTL=0x%08x",
+				USB_CORE_REG->GRSTCTL);
+			return -EIO;
+		}
+		k_busy_wait(1);
+	} while (USB_CORE_REG->GRSTCTL & USB_OTG_GRSTCTL_CSRST);
+
+	/* Wait for 3 PHY Clocks */
+	k_busy_wait(100);
+
+	(void)memset(&usb_dc_stm32_state, 0, sizeof(usb_dc_stm32_state));
 
 	return 0;
 }
