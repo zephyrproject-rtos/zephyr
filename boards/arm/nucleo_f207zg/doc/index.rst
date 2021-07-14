@@ -102,6 +102,8 @@ The Zephyr nucleo_207zg board configuration supports the following hardware feat
 +-------------+------------+-------------------------------------+
 | PWM         | on-chip    | PWM                                 |
 +-------------+------------+-------------------------------------+
+| RNG         | on-chip    | Random Number Generator             |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 

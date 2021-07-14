@@ -22,3 +22,4 @@ supported:
   - dac
   - backup_sram
   - pwm
+  - rng
