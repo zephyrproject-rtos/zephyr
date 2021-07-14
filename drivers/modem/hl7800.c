@@ -232,7 +232,7 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 		  (GPIO_INPUT | GPIO_INT_EDGE_BOTH)),
 };
 
-#define MDM_UART_DEV_NAME DT_INST_BUS_LABEL(0)
+#define MDM_UART_DEV	DEVICE_DT_GET(DT_INST_BUS(0))
 
 #define MDM_WAKE_ASSERTED 1 /* Asserted keeps the module awake */
 #define MDM_WAKE_NOT_ASSERTED 0
@@ -4940,7 +4940,7 @@ static int hl7800_init(const struct device *dev)
 	ictx.mdm_ctx.data_imei = ictx.mdm_imei;
 #endif
 
-	ret = mdm_receiver_register(&ictx.mdm_ctx, MDM_UART_DEV_NAME,
+	ret = mdm_receiver_register(&ictx.mdm_ctx, MDM_UART_DEV,
 				    mdm_recv_buf, sizeof(mdm_recv_buf));
 	if (ret < 0) {
 		LOG_ERR("Error registering modem receiver (%d)!", ret);

@@ -165,13 +165,12 @@ static int modem_iface_uart_write(struct modem_iface *iface,
 }
 
 int modem_iface_uart_init_dev(struct modem_iface *iface,
-			      const char *dev_name)
+			      const struct device *dev)
 {
 	/* get UART device */
-	const struct device *dev = device_get_binding(dev_name);
 	const struct device *prev = iface->dev;
 
-	if (!dev) {
+	if (!device_is_ready(dev)) {
 		return -ENODEV;
 	}
 
@@ -201,7 +200,7 @@ int modem_iface_uart_init_dev(struct modem_iface *iface,
 
 int modem_iface_uart_init(struct modem_iface *iface,
 			  struct modem_iface_uart_data *data,
-			  const char *dev_name)
+			  const struct device *dev)
 {
 	int ret;
 
@@ -217,7 +216,7 @@ int modem_iface_uart_init(struct modem_iface *iface,
 	k_sem_init(&data->rx_sem, 0, 1);
 
 	/* get UART device */
-	ret = modem_iface_uart_init_dev(iface, dev_name);
+	ret = modem_iface_uart_init_dev(iface, dev);
 	if (ret < 0) {
 		iface->iface_data = NULL;
 		iface->read = NULL;

@@ -215,7 +215,7 @@ int mdm_receiver_wake(struct mdm_receiver_context *ctx)
 }
 
 int mdm_receiver_register(struct mdm_receiver_context *ctx,
-			  const char *uart_dev_name,
+			  const struct device *uart_dev,
 			  uint8_t *buf, size_t size)
 {
 	int ret;
@@ -224,12 +224,13 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 		return -EINVAL;
 	}
 
-	ctx->uart_dev = device_get_binding(uart_dev_name);
-	if (!ctx->uart_dev) {
-		LOG_ERR("Binding failure for uart: %s", uart_dev_name);
+	if (!device_is_ready(uart_dev)) {
+		LOG_ERR("Device is not ready: %s",
+			uart_dev ? uart_dev->name : "<null>");
 		return -ENODEV;
 	}
 
+	ctx->uart_dev = uart_dev;
 	ring_buf_init(&ctx->rx_rb, size, buf);
 	k_sem_init(&ctx->rx_sem, 0, 1);
 

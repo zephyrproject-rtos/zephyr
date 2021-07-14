@@ -45,7 +45,7 @@ struct modem_iface_uart_data {
  * @retval 0 if ok, < 0 if error.
  */
 int modem_iface_uart_init_dev(struct modem_iface *iface,
-			      const char *dev_name);
+			      const struct device *dev);
 
 /**
  * @brief  Init modem interface for UART
@@ -58,7 +58,7 @@ int modem_iface_uart_init_dev(struct modem_iface *iface,
  */
 int modem_iface_uart_init(struct modem_iface *iface,
 			  struct modem_iface_uart_data *data,
-			  const char *dev_name);
+			  const struct device *dev);
 
 #ifdef __cplusplus
 }
