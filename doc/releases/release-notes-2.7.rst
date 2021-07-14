@@ -77,6 +77,8 @@ Bluetooth
 
 * Mesh
 
+  * Added return value for opcode callback
+
 * Bluetooth LE split software Controller
 
 * HCI Driver
