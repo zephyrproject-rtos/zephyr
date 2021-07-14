@@ -18,6 +18,7 @@
 #include <device.h>
 #include <soc.h>
 #include <drivers/uart.h>
+#include <drivers/interrupt_controller/intc_esp32.h>
 #include <drivers/clock_control.h>
 #include <errno.h>
 #include <sys/util.h>
@@ -83,10 +84,7 @@ struct uart_esp32_config {
 
 	const clock_control_subsys_t clock_subsys;
 
-	const struct {
-		int source;
-		int line;
-	} irq;
+	int irq_source;
 };
 
 /* driver data */
@@ -96,6 +94,7 @@ struct uart_esp32_data {
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
 #endif
+	int irq_line;
 };
 
 #define DEV_CFG(dev) \
@@ -130,6 +129,10 @@ struct uart_esp32_data {
 /* ESP-IDF Naming is not consistent for UART0 with UART1/2 */
 #define DPORT_UART0_CLK_EN DPORT_UART_CLK_EN
 #define DPORT_UART0_RST DPORT_UART_RST
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+void uart_esp32_isr(void *arg);
+#endif
 
 static int uart_esp32_poll_in(const struct device *dev, unsigned char *p_char)
 {
@@ -322,7 +325,8 @@ static int uart_esp32_init(const struct device *dev)
 	uart_esp32_configure(dev, &DEV_DATA(dev)->uart_config);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	DEV_CFG(dev)->dev_conf.irq_config_func(dev);
+	DEV_DATA(dev)->irq_line =
+		esp_intr_alloc(DEV_CFG(dev)->irq_source, 0, uart_esp32_isr, (void *)dev, NULL);
 #endif
 	return 0;
 }
@@ -428,8 +432,9 @@ static void uart_esp32_irq_callback_set(const struct device *dev,
 	DEV_DATA(dev)->irq_cb_data = cb_data;
 }
 
-void uart_esp32_isr(const struct device *dev)
+void uart_esp32_isr(void *arg)
 {
+	const struct device *dev = (const struct device *)arg;
 	struct uart_esp32_data *data = DEV_DATA(dev);
 
 	/* Verify if the callback has been registered */
@@ -466,39 +471,11 @@ static const DRAM_ATTR struct uart_driver_api uart_esp32_api = {
 #endif  /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define ESP32_UART_IRQ_HANDLER_DECL(idx) \
-	static void uart_esp32_irq_config_func_##idx(const struct device *dev)
-
-#define ESP32_UART_IRQ_HANDLER_FUNC(idx) \
-	.irq_config_func = uart_esp32_irq_config_func_##idx,
-
-#define ESP32_UART_IRQ_HANDLER(idx)					     \
-	static void uart_esp32_irq_config_func_##idx(const struct device *dev) \
-	{								     \
-		esp32_rom_intr_matrix_set(0, ETS_UART##idx##_INTR_SOURCE,    \
-					  INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0); \
-		IRQ_CONNECT(INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	     \
-			    1,						     \
-			    uart_esp32_isr,				     \
-			    DEVICE_DT_INST_GET(idx),			     \
-			    0);						     \
-		irq_enable(INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0);	     \
-	}
-#else
-#define ESP32_UART_IRQ_HANDLER_DECL(idx)
-#define ESP32_UART_IRQ_HANDLER_FUNC(idx)
-#define ESP32_UART_IRQ_HANDLER(idx)
-
-#endif
 #define ESP32_UART_INIT(idx)						       \
-ESP32_UART_IRQ_HANDLER_DECL(idx);					       \
 static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 	.dev_conf = {							       \
 		.base =							       \
 		    (uint8_t *)DT_REG_ADDR(DT_NODELABEL(uart##idx)), \
-		ESP32_UART_IRQ_HANDLER_FUNC(idx)			       \
 	},								       \
 											   \
 	.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(uart##idx))),		       \
@@ -521,10 +498,7 @@ static const DRAM_ATTR struct uart_esp32_config uart_esp32_cfg_port_##idx = {	  
 	},								       \
 											   \
 	.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(uart##idx), offset), \
-	.irq = {							       \
-		.source = ETS_UART##idx##_INTR_SOURCE,			       \
-		.line = INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	       \
-	}								       \
+	.irq_source = DT_IRQN(DT_NODELABEL(uart##idx))			       \
 };									       \
 									       \
 static struct uart_esp32_data uart_esp32_data_##idx = {			       \
@@ -546,9 +520,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(uart##idx),				       \
 		    &uart_esp32_cfg_port_##idx,				       \
 		    PRE_KERNEL_1,					       \
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			       \
-		    &uart_esp32_api);					       \
-									       \
-ESP32_UART_IRQ_HANDLER(idx)
+		    &uart_esp32_api);
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 ESP32_UART_INIT(0);

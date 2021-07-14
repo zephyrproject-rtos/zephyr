@@ -11,18 +11,6 @@ menuconfig GPIO_ESP32
 
 if GPIO_ESP32
 
-config GPIO_ESP32_IRQ
-	int "IRQ line for ESP32 GPIO pins"
-	default 10
-	help
-	  Select the IRQ line to be used for GPIO interrupts.
-
-	  Edge-triggered interrupts are supported on lines: 10, 22,
-	  28, 30.
-
-	  Level-triggered interrupts are supported on lines: 0-5, 8,
-	  9, 12, 13, 17-21, 23-27, 31.
-
 config GPIO_ESP32_0
 	bool "ESP32 GPIO (pins 0-31)"
 	default y

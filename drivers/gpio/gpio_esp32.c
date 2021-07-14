@@ -12,10 +12,10 @@
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
 
-#include <soc.h>
 #include <errno.h>
 #include <device.h>
 #include <drivers/gpio.h>
+#include <drivers/interrupt_controller/intc_esp32.h>
 #include <kernel.h>
 #include <sys/util.h>
 #include <drivers/pinmux.h>
@@ -29,14 +29,6 @@
  * bit2.  bit4 and bit5 are also shifted.
  */
 #define GPIO_CPU0_INT_ENABLE (BIT(2) << GPIO_PIN_INT_ENA_S)
-
-/* ESP3 TRM table 8: CPU Interrupts
- *
- * Edge-triggered are: 10, 22, 28, 30
- * Level-triggered are: 0-5, 8, 9, 12, 13, 17-21, 23-27, 31
- */
-#define ESP32_IRQ_EDGE_TRIG 0x50400400
-#define ESP32_IRQ_LEVEL_TRIG 0x8fbe333f
 
 struct gpio_esp32_data {
 	/* gpio_driver_data needs to be first */
@@ -181,9 +173,6 @@ static int convert_int_type(enum gpio_int_mode mode,
 	}
 
 	if (mode == GPIO_INT_MODE_LEVEL) {
-		if ((ESP32_IRQ_LEVEL_TRIG & BIT(CONFIG_GPIO_ESP32_IRQ)) == 0) {
-			return -ENOTSUP;
-		}
 		switch (trig) {
 		case GPIO_INT_TRIG_LOW:
 			return 4;
@@ -193,17 +182,13 @@ static int convert_int_type(enum gpio_int_mode mode,
 			return -EINVAL;
 		}
 	} else { /* edge interrupts */
-		if ((ESP32_IRQ_EDGE_TRIG & BIT(CONFIG_GPIO_ESP32_IRQ)) == 0) {
-			return -ENOTSUP;
-		}
 		switch (trig) {
 		case GPIO_INT_TRIG_HIGH:
 			return 1;
 		case GPIO_INT_TRIG_LOW:
 			return 2;
 		case GPIO_INT_TRIG_BOTH:
-			/* This is supposed to work but doesn't */
-			return -ENOTSUP; /* 3 == any edge */
+			return 3;
 		default:
 			return -EINVAL;
 		}
@@ -263,7 +248,7 @@ static void gpio_esp32_fire_callbacks(const struct device *dev)
 	gpio_fire_callbacks(&data->cb, dev, irq_status);
 }
 
-static void gpio_esp32_isr(const void *param);
+static void gpio_esp32_isr(void *param);
 
 static int gpio_esp32_init(const struct device *dev)
 {
@@ -281,16 +266,7 @@ static int gpio_esp32_init(const struct device *dev)
 	}
 
 	if (!isr_connected) {
-		irq_disable(CONFIG_GPIO_ESP32_IRQ);
-
-		IRQ_CONNECT(CONFIG_GPIO_ESP32_IRQ, 1, gpio_esp32_isr,
-			    NULL, 0);
-
-		esp32_rom_intr_matrix_set(0, ETS_GPIO_INTR_SOURCE,
-					  CONFIG_GPIO_ESP32_IRQ);
-
-		irq_enable(CONFIG_GPIO_ESP32_IRQ);
-
+		esp_intr_alloc(DT_IRQN(DT_NODELABEL(gpio0)), 0, gpio_esp32_isr, (void *)dev, NULL);
 		isr_connected = true;
 	}
 
@@ -360,7 +336,7 @@ GPIO_DEVICE_INIT(0);
 GPIO_DEVICE_INIT(1);
 #endif
 
-static void gpio_esp32_isr(const void *param)
+static void gpio_esp32_isr(void *param)
 {
 
 #if defined(CONFIG_GPIO_ESP32_0)

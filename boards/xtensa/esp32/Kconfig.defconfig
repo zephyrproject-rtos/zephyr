@@ -25,9 +25,6 @@ config HEAP_MEM_POOL_SIZE
 config ENTROPY_GENERATOR
 	default y
 
-config DYNAMIC_INTERRUPTS
-	default y
-
 choice BT_HCI_BUS_TYPE
 	default BT_ESP32
 endchoice

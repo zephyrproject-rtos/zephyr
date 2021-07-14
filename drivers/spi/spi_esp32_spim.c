@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include <soc.h>
 #include <drivers/spi.h>
+#include <drivers/interrupt_controller/intc_esp32.h>
 #include <drivers/gpio/gpio_esp32.h>
 #include <drivers/clock_control.h>
 #include "spi_context.h"
@@ -89,6 +90,21 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_SPI_ESP32_INTERRUPT
+static void IRAM_ATTR spi_esp32_isr(void *arg)
+{
+	const struct device *dev = (const struct device *)arg;
+	const struct spi_esp32_config *cfg = dev->config;
+	struct spi_esp32_data *data = dev->data;
+
+	do {
+		spi_esp32_transfer(dev);
+	} while (spi_esp32_transfer_ongoing(data));
+
+	spi_esp32_complete(data, cfg->spi, 0);
+}
+#endif
+
 static int spi_esp32_init(const struct device *dev)
 {
 	const struct spi_esp32_config *cfg = dev->config;
@@ -99,7 +115,7 @@ static int spi_esp32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
-	cfg->irq_config_func(dev);
+	data->irq_line = esp_intr_alloc(cfg->irq_source, 0, spi_esp32_isr, (void *)dev, NULL);
 #endif
 
 	spi_context_unlock_unconditionally(&data->ctx);
@@ -312,20 +328,6 @@ done:
 	return ret;
 }
 
-#ifdef CONFIG_SPI_ESP32_INTERRUPT
-static void IRAM_ATTR spi_esp32_isr(const struct device *dev)
-{
-	const struct spi_esp32_config *cfg = dev->config;
-	struct spi_esp32_data *data = dev->data;
-
-	do {
-		spi_esp32_transfer(dev);
-	} while (spi_esp32_transfer_ongoing(data));
-
-	spi_esp32_complete(data, cfg->spi, 0);
-}
-#endif
-
 static int spi_esp32_transceive(const struct device *dev,
 				const struct spi_config *spi_cfg,
 				const struct spi_buf_set *tx_bufs,
@@ -363,30 +365,7 @@ static const struct spi_driver_api spi_api = {
 	.release = spi_esp32_release
 };
 
-#ifdef CONFIG_SPI_ESP32_INTERRUPT
-#define ESP32_SPI_IRQ_HANDLER_DECL(idx)	\
-	static void spi_esp32_irq_config_func_##idx(const struct device *dev)
-
-#define ESP32_SPI_IRQ_HANDLER_FUNC(idx)	\
-	.irq_config_func = spi_esp32_irq_config_func_##idx,
-
-#define ESP32_SPI_IRQ_HANDLER(idx)	\
-	static void spi_esp32_irq_config_func_##idx(const struct device *dev)	\
-	{	\
-		intr_matrix_set(0, ETS_SPI##idx##_INTR_SOURCE,	\
-				INST_##idx##_ESPRESSIF_ESP32_SPI_IRQ_0);	\
-		IRQ_CONNECT(INST_##idx##_ESPRESSIF_ESP32_SPI_IRQ_0, 1,	\
-			    spi_esp32_isr, DEVICE_DT_GET(DT_NODELABEL(spi##idx)), 0);	\
-		irq_enable(INST_##idx##_ESPRESSIF_ESP32_SPI_IRQ_0);	\
-	}
-#else
-#define ESP32_SPI_IRQ_HANDLER_DECL(idx)
-#define ESP32_SPI_IRQ_HANDLER_FUNC(idx)
-#define ESP32_SPI_IRQ_HANDLER(idx)
-#endif
-
 #define ESP32_SPI_INIT(idx)	\
-	ESP32_SPI_IRQ_HANDLER_DECL(idx);	\
 										\
 	static struct spi_esp32_data spi_data_##idx = {	\
 		SPI_CONTEXT_INIT_LOCK(spi_data_##idx, ctx),	\
@@ -407,10 +386,10 @@ static const struct spi_driver_api spi_api = {
 		.spi = (spi_dev_t *)DT_REG_ADDR(DT_NODELABEL(spi##idx)),	\
 			\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(spi##idx))),	\
-		ESP32_SPI_IRQ_HANDLER_FUNC(idx)	\
 		.frequency = SPI_MASTER_FREQ_8M,\
 		.duty_cycle = 0, \
 		.input_delay_ns = 0, \
+		.irq_source = DT_IRQN(DT_NODELABEL(spi##idx)), \
 		.signals = {	\
 			.miso_s = MISO_IDX_##idx,	\
 			.mosi_s = MOSI_IDX_##idx,	\
@@ -429,18 +408,12 @@ static const struct spi_driver_api spi_api = {
 			(clock_control_subsys_t)DT_CLOCKS_CELL(	\
 				DT_NODELABEL(spi##idx), offset),	\
 					\
-		.irq = {	\
-			.source = ETS_SPI##idx##_INTR_SOURCE,	\
-			.line = INST_##idx##_ESPRESSIF_ESP32_SPI_IRQ_0	\
-		},	\
 	};	\
 		\
 	DEVICE_DT_DEFINE(DT_NODELABEL(spi##idx), &spi_esp32_init,	\
 			      device_pm_control_no, &spi_data_##idx,	\
 			      &spi_config_##idx, POST_KERNEL,	\
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &spi_api);	\
-							\
-	ESP32_SPI_IRQ_HANDLER(idx)
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &spi_api);
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi2), okay)
 ESP32_SPI_INIT(2);
