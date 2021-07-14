@@ -363,7 +363,7 @@ struct bt_audio_chan {
 
 /** @brief Capability operations structure.
  *
- *  These are only used for unicast channels.
+ *  These are only used for unicast and broadcast sink channels.
  */
 struct bt_audio_capability_ops {
 	/** @brief Capability config callback
@@ -484,6 +484,35 @@ struct bt_audio_capability_ops {
 	 *  @return 0 in case of success or negative value in case of error.
 	 */
 	int                     (*release)(struct bt_audio_chan *chan);
+
+	/** @brief Scan receive callback
+	 *
+	 *  Scan receive callback is called whenever a broadcast source has been
+	 *  found.
+	 *
+	 *  @param info          Advertiser packet information.
+	 *  @param broadcast_id  24-bit broadcast ID
+	 *
+	 *  @return true to sync to the broadcaster, else false.
+	 *          Syncing to the broadcaster will stop the current scan.
+	 */
+	bool                    (*scan_recv)(const struct bt_le_scan_recv_info *info,
+					     uint32_t broadcast_id);
+
+	/** @brief Scan terminated callback
+	 *
+	 *  Scan terminated callback is called whenever a scan started by
+	 *  bt_audio_broadcaster_scan_start is terminated before
+	 *  bt_audio_broadcaster_scan_stop.
+	 *
+	 *  Typical reasons for this are that the periodic advertising has
+	 *  synchronized (success criteria) or the scan timed out.
+	 *  It may also be called if the periodic advertising failed to
+	 *  synchronize.
+	 *
+	 *  @param err 0 in case of success or negative value in case of error.
+	 */
+	void                     (*scan_term)(int err);
 };
 
 /** @brief Channel operation. */
@@ -857,6 +886,29 @@ int bt_audio_chan_send(struct bt_audio_chan *chan, struct net_buf *buf);
 int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 				struct bt_codec *codec,
 				struct bt_codec_qos *qos);
+
+/** @brief Start scan for broadcast sources.
+ *
+ *  Starts a scan for broadcast sources. Scan results will be received by
+ *  the scan_recv callback of the struct bt_audio_capability_ops.
+ *  Only reports from devices advertising broadcast audio support will be sent.
+ *  Note that a broadcast source may advertise broadcast audio capabilities,
+ *  but may not be streaming.
+ *
+ *  @param param Scan parameters.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_broadcaster_scan_start(const struct bt_le_scan_param *param);
+
+/**
+ * @brief Stop scan for broadcast sources.
+ *
+ *  Stops ongoing scanning for broadcast sources.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_audio_broadcaster_scan_stop(void);
 
 /** @} */
 
