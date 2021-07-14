@@ -37,6 +37,11 @@ config STD_CPP17
 	help
 	  2017 C++ standard, previously known as C++0x.
 
+config STD_CPP2A
+	bool "C++ 2a"
+	help
+	  Next revision of the C++ standard, which is expected to be published in 2020.
+
 config STD_CPP20
 	bool "C++ 20"
 	help
