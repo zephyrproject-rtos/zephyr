@@ -44,6 +44,9 @@ Module Repositories
 * The module repository codebase shall include a *module.yml* file in a
   :file:`zephyr/` folder at the root of the repository.
 
+* The *module.yml* file shall contain the ``name`` key and have the value
+  identical to the ``project`` name in the default manifest file.
+
 * Module repository names should follow the convention of using lowercase
   letters and dashes instead of underscores. This rule will apply to all
   new module repositories, except for repositories that are directly
