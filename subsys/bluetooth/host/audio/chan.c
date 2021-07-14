@@ -19,6 +19,7 @@
 
 #include "endpoint.h"
 #include "chan.h"
+#include "capabilities.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_AUDIO_DEBUG_CHAN)
 #define LOG_MODULE_NAME bt_audio_chan
@@ -26,7 +27,8 @@
 
 #if defined(CONFIG_BT_BAP)
 
-/* API only supports a single subgroup at the moment */
+#define PA_SYNC_SKIP              5
+#define SYNC_RETRY_COUNT          6 /* similar to retries for connections */
 
 /* The internal bt_audio_base_ad* structs are primarily designed to help
  * calculate the maximum advertising data length
@@ -68,6 +70,8 @@ struct bt_audio_base_ad {
 
 static struct bt_audio_chan *enabling[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_audio_broadcaster broadcasters[BROADCAST_SRC_CNT];
+static struct bt_audio_broadcast_sink broadcast_sinks[BROADCAST_SNK_CNT];
+static struct bt_le_scan_cb broadcast_scan_cb;
 
 static int bt_audio_set_base(const struct bt_audio_broadcaster *broadcaster,
 			     struct bt_codec *codec);
@@ -1469,6 +1473,300 @@ int bt_audio_broadcaster_create(struct bt_audio_chan *chan,
 	BT_DBG("Broadcasting with ID 0x%6X", broadcaster->broadcast_id);
 
 	return 0;
+}
+
+static struct bt_audio_broadcast_sink *broadcast_sink_syncing_get(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
+		if (broadcast_sinks[i].syncing) {
+			return &broadcast_sinks[i];
+		}
+	}
+
+	return NULL;
+}
+
+static struct bt_audio_broadcast_sink *broadcast_sink_free_get(void)
+{
+	/* Find free entry */
+	for (int i = 0; i < ARRAY_SIZE(broadcast_sinks); i++) {
+		if (broadcast_sinks[i].pa_sync == NULL) {
+			return &broadcast_sinks[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void pa_synced(struct bt_le_per_adv_sync *sync,
+		      struct bt_le_per_adv_sync_synced_info *info)
+{
+	struct bt_audio_broadcast_sink *sink;
+
+	sink = broadcast_sink_syncing_get();
+	if (sink == NULL || sync != sink->pa_sync) {
+		/* Not ours */
+		return;
+	}
+
+	BT_DBG("Synced to broadcaster with ID 0x%6X", sink->broadcast_id);
+
+	sink->syncing = false;
+
+	bt_audio_broadcaster_scan_stop();
+
+	/* TODO: Wait for an parse PA data and use the capability ops to
+	 * get audio channels from the upper layer
+	 * TBD: What if sync to a bad broadcaster that does not send properly
+	 * formatted (or any) BASE?
+	 */
+}
+
+static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
+{
+	uint16_t sync_timeout;
+
+	/* Ensure that the following calculation does not overflow silently */
+	__ASSERT(SYNC_RETRY_COUNT < 10,
+			"SYNC_RETRY_COUNT shall be less than 10");
+
+	/* Add retries and convert to unit in 10's of ms */
+	sync_timeout = ((uint32_t)pa_interval * SYNC_RETRY_COUNT) / 10;
+
+	/* Enforce restraints */
+	sync_timeout = CLAMP(sync_timeout, BT_GAP_PER_ADV_MIN_TIMEOUT,
+				BT_GAP_PER_ADV_MAX_TIMEOUT);
+
+	return sync_timeout;
+}
+
+static void sync_broadcast_pa(sys_slist_t *lst,
+			      const struct bt_le_scan_recv_info *info)
+{
+	struct bt_le_per_adv_sync_param param;
+	struct bt_audio_broadcast_sink *sink;
+	struct bt_audio_capability *cap;
+	static bool pa_cb_registered;
+	int err;
+
+	if (!pa_cb_registered) {
+		static struct bt_le_per_adv_sync_cb cb = {
+			.synced = pa_synced
+		};
+
+		bt_le_per_adv_sync_cb_register(&cb);
+	}
+
+	sink = broadcast_sink_free_get();
+	/* Should never happen as we check for free entry before
+	 * scanning
+	 */
+	__ASSERT(sink != NULL, "sink is NULL");
+
+	bt_addr_le_copy(&param.addr, info->addr);
+	param.options = 0;
+	param.sid = info->sid;
+	param.skip = PA_SYNC_SKIP;
+	param.timeout = interval_to_sync_timeout(info->interval);
+	err = bt_le_per_adv_sync_create(&param, &sink->pa_sync);
+	if (err != 0) {
+		BT_ERR("Could not sync to PA: %d", err);
+		err = bt_le_scan_stop();
+		if (err != 0 && err != -EALREADY) {
+			BT_ERR("Could not stop scan: %d", err);
+		}
+
+		SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+			struct bt_audio_capability_ops *ops;
+
+			ops = cap->ops;
+
+			if (ops != NULL && ops->scan_term != NULL) {
+				ops->scan_term(err);
+			}
+		}
+	} else {
+		sink->syncing = true;
+	}
+}
+
+static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
+{
+	const struct bt_le_scan_recv_info *info = user_data;
+	struct bt_uuid_16 adv_uuid;
+	uint32_t broadcast_id;
+	sys_slist_t *lst;
+	struct bt_audio_capability *cap;
+
+	lst = bt_audio_capability_get(BT_AUDIO_SINK);
+	if (lst == NULL) {
+		/* Terminate early if we do not have any audio sink
+		 * capabilities
+		 */
+		return false;
+	}
+
+	if (data->type != BT_DATA_SVC_DATA16) {
+		return true;
+	}
+
+	if (data->data_len < BT_UUID_SIZE_16 + BT_BROADCAST_ID_SIZE) {
+		return true;
+	}
+
+	if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
+		return true;
+	}
+
+	if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO)) {
+		return true;
+	}
+
+	if (broadcast_sink_syncing_get() != NULL) {
+		/* Already syncing, can maximum sync one */
+		return true;
+	}
+
+	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
+
+	BT_DBG("Found broadcast source with address %s and id 0x%6X",
+	       bt_addr_le_str(info->addr), broadcast_id);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		struct bt_audio_capability_ops *ops;
+
+		ops = cap->ops;
+
+		if (ops != NULL && ops->scan_recv != NULL) {
+			bool sync_pa = ops->scan_recv(info, broadcast_id);
+
+			if (sync_pa) {
+				sync_broadcast_pa(lst, info);
+				break;
+			}
+		}
+	}
+
+	/* Stop parsing */
+	return false;
+}
+
+static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
+				struct net_buf_simple *ad)
+{
+	/* We are only interested in non-connectable periodic advertisers */
+	if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) ||
+	     info->interval == 0) {
+		return;
+	}
+
+	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)info);
+}
+
+static void broadcast_scan_timeout(void)
+{
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+
+	bt_le_scan_cb_unregister(&broadcast_scan_cb);
+
+	lst = bt_audio_capability_get(BT_AUDIO_SINK);
+	if (lst == NULL) {
+		BT_WARN("No BT_AUDIO_SINK capabilities");
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		struct bt_audio_capability_ops *ops;
+
+		ops = cap->ops;
+
+		if (ops != NULL && ops->scan_term != NULL) {
+			ops->scan_term(-ETIME);
+		}
+	}
+}
+
+int bt_audio_broadcaster_scan_start(const struct bt_le_scan_param *param)
+{
+	sys_slist_t *lst;
+	int err;
+
+	CHECKIF(param == NULL) {
+		BT_DBG("param is NULL");
+		return -EINVAL;
+	}
+
+	CHECKIF(param->timeout != 0) {
+		/* This is to avoid having to re-implement the scan timeout
+		 * callback as well, and can be modified later if requested
+		 */
+		BT_DBG("Scan param shall not have a timeout");
+		return -EINVAL;
+	}
+
+	lst = bt_audio_capability_get(BT_AUDIO_SINK);
+	if (lst == NULL) {
+		BT_WARN("No BT_AUDIO_SINK capabilities");
+		return -EINVAL;
+	}
+
+	if (broadcast_sink_free_get() == NULL) {
+		BT_DBG("No more free broadcast sinks");
+		return -ENOMEM;
+	}
+
+	/* TODO: check for scan callback */
+	err = bt_le_scan_start(param, NULL);
+	if (err == 0) {
+		broadcast_scan_cb.recv = broadcast_scan_recv;
+		broadcast_scan_cb.timeout = broadcast_scan_timeout;
+		bt_le_scan_cb_register(&broadcast_scan_cb);
+	}
+
+	return err;
+}
+
+int bt_audio_broadcaster_scan_stop(void)
+{
+	struct bt_audio_broadcast_sink *sink;
+	struct bt_audio_capability *cap;
+	sys_slist_t *lst;
+	int err;
+
+	sink = broadcast_sink_syncing_get();
+	if (sink != NULL) {
+		err = bt_le_per_adv_sync_delete(sink->pa_sync);
+		if (err != 0) {
+			BT_DBG("Could not delete PA sync: %d", err);
+			return err;
+		}
+		sink->pa_sync = NULL;
+		sink->syncing = false;
+	}
+
+	err = bt_le_scan_stop();
+	if (err == 0) {
+		bt_le_scan_cb_unregister(&broadcast_scan_cb);
+	}
+
+	lst = bt_audio_capability_get(BT_AUDIO_SINK);
+	if (lst == NULL) {
+		BT_WARN("No BT_AUDIO_SINK capabilities");
+		return 0;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(lst, cap, node) {
+		struct bt_audio_capability_ops *ops;
+
+		ops = cap->ops;
+
+		if (ops != NULL && ops->scan_term != NULL) {
+			ops->scan_term(0);
+		}
+	}
+
+	return err;
 }
 
 #endif /* CONFIG_BT_BAP */
