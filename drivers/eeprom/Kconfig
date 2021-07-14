@@ -35,6 +35,12 @@ config EEPROM_AT2X
 	  Enable support for Atmel AT2x (and compatible) I2C/SPI
 	  EEPROMs.
 
+config EEPROM_ST25DV
+	bool "ST25DV NFC as EEPROM"
+	depends on I2C
+	help
+	  Enable support for ST25DV NFC tag for use as an EEPROM.
+
 config EEPROM_AT24
 	bool "Atmel AT24 (and compatible) I2C EEPROM support"
 	depends on I2C
