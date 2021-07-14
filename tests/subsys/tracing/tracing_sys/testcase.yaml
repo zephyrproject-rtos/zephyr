@@ -1,0 +1,14 @@
+tests:
+  tracing.transport:
+    platform_allow: qemu_x86
+    tags: tracing_disabled
+  tracing.transport.uart:
+    platform_allow: qemu_x86
+    extra_args: CONF_FILE="prj_uart.conf"
+    filter: CONFIG_UART_CONSOLE
+    tags: tracing_uart
+  tracing.transport.usb:
+    platform_allow: qemu_x86
+    extra_args: CONF_FILE="prj_usb.conf"
+    filter: CONFIG_UART_CONSOLE
+    tags: tracing_usb
