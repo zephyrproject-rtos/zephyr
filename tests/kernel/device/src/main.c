@@ -51,8 +51,7 @@ extern void test_mmio_device_map(void);
  *
  * @ingroup kernel_device_tests
  *
- * @see device_get_binding(), pm_device_busy_set(), pm_device_busy_clear(),
- * DEVICE_DEFINE()
+ * @see device_get_binding(), DEVICE_DEFINE()
  */
 void test_dummy_device(void)
 {
@@ -65,9 +64,6 @@ void test_dummy_device(void)
 	/* Validates device binding for an existing device object */
 	dev = device_get_binding(DUMMY_PORT_2);
 	zassert_false((dev == NULL), NULL);
-
-	pm_device_busy_set(dev);
-	pm_device_busy_clear(dev);
 
 	/* device_get_binding() returns false for device object
 	 * with failed init.
