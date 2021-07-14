@@ -601,7 +601,8 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 
 static const struct flash_parameters flash_stm32_qspi_parameters = {
 	.write_block_size = 1,
-	.erase_value = 0xff
+	.erase_value = 0xff,
+	.flags = 0,
 };
 
 static const struct flash_parameters *
@@ -610,6 +611,37 @@ flash_stm32_qspi_get_parameters(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	return &flash_stm32_qspi_parameters;
+}
+
+static int
+flash_stm32_qspi_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
+
+	if (offset < 0 || offset >= dev_cfg->flash_size) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(SPI_NOR_PAGE_SIZE - 1);
+	fpi->size = SPI_NOR_PAGE_SIZE;
+
+	return 0;
+}
+
+static ssize_t
+flash_stm32_qspi_get_size(const struct device *dev)
+{
+	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
+
+	return dev_cfg->flash_size;
+}
+
+static ssize_t
+flash_stm32_qspi_get_page_count(const struct device *dev)
+{
+	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
+
+	return dev_cfg->flash_size / SPI_NOR_PAGE_SIZE;
 }
 
 static void flash_stm32_qspi_isr(const struct device *dev)
@@ -738,6 +770,9 @@ static const struct flash_driver_api flash_stm32_qspi_driver_api = {
 	.write = flash_stm32_qspi_write,
 	.erase = flash_stm32_qspi_erase,
 	.get_parameters = flash_stm32_qspi_get_parameters,
+	.get_page_info = flash_stm32_qspi_get_page_info,
+	.get_page_count = flash_stm32_qspi_get_page_count,
+	.get_size = flash_stm32_qspi_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_stm32_qspi_pages_layout,
 #endif
