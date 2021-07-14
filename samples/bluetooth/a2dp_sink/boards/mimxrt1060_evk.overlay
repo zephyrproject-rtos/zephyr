@@ -1,0 +1,11 @@
+/*
+ * Copyright 2021 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+ &lpuart3 {
+	status = "okay";
+	current-speed = <3000000>;
+	hw-flow-control;
+};
