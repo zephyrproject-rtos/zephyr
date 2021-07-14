@@ -66,6 +66,9 @@
 		__shell_cmd_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	ITERABLE_SECTION_RAM_GC_ALLOWED(log_mpsc_pbuf, 4)
+	ITERABLE_SECTION_RAM(log_msg_ptr, 4)
+
 	SECTION_DATA_PROLOGUE(log_dynamic_sections,,)
 	{
 		__log_dynamic_start = .;

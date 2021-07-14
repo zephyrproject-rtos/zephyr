@@ -1346,7 +1346,7 @@ uint32_t mdm_hl7800_log_filter_set(uint32_t level)
 
 #ifdef CONFIG_LOG
 	new_log_level =
-		log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID,
+		log_filter_set(NULL, Z_LOG_LOCAL_DOMAIN_ID,
 			       log_source_id_get(STRINGIFY(LOG_MODULE_NAME)),
 			       level);
 #endif
