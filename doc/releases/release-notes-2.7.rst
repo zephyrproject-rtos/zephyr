@@ -191,6 +191,8 @@ Drivers and Sensors
 
 * LoRa
 
+  * lora_send now blocks until the transmission is complete. lora_send_async
+    can be used for the previous, non-blocking behaviour.
 
 * Modem
 
