@@ -166,6 +166,8 @@ void state_change_isr(enum can_state state, struct can_bus_err_cnt err_cnt)
 
 void main(void)
 {
+	int rc;
+
 	const struct zcan_filter change_led_filter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
@@ -260,7 +262,8 @@ void main(void)
 			      (uint16_t *)&counter_frame.data[0]);
 		counter++;
 		/* This sending call is blocking until the message is sent. */
-		can_send(can_dev, &counter_frame, K_MSEC(100), NULL, NULL);
+		rc = can_send(can_dev, &counter_frame, K_MSEC(100), NULL, NULL);
+		printk("can_send() rc=%d\n", rc);
 		k_sleep(SLEEP_TIME);
 	}
 }

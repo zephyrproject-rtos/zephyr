@@ -20,6 +20,7 @@
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
@@ -52,6 +53,12 @@
 		led2 = &red_led_1;
 		sw0 = &user_button;
 	};
+};
+
+&can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
+	bus-speed = <125000>;
+	status = "okay";
 };
 
 &clk_hse {
