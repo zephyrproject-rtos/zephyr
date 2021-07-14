@@ -147,7 +147,7 @@ static struct lwm2m_engine_res_inst
 */
 
 struct lwm2m_swmgmt_data {
-	uint8_t obj_inst_id;
+	uint16_t obj_inst_id;
 
 	char package_name[PACKAGE_NAME_LEN];
 	char package_version[PACKAGE_VERSION_LEN];
@@ -622,7 +622,7 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 {
 	struct lwm2m_swmgmt_data *instance = NULL;
-	int index, i = 0, j = 0;
+	int index, res_idx = 0, res_inst_idx = 0;
 
 	/* Check that there is no other instance with this ID */
 	for (index = 0; index < MAX_INSTANCE_COUNT; index++) {
@@ -655,7 +655,7 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 	(void)memset(instance->package_name, 0, PACKAGE_NAME_LEN);
 	(void)memset(instance->package_version, 0, PACKAGE_VERSION_LEN);
 
-	instance->obj_inst_id = index;
+	instance->obj_inst_id = obj_inst_id;
 	instance->update_state = 0;
 	instance->update_result = 0;
 	instance->activation_state = false;
@@ -675,51 +675,51 @@ static struct lwm2m_engine_obj_inst *swmgmt_create(uint16_t obj_inst_id)
 #endif
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES_DATA(SWMGMT_PACKAGE_NAME_ID, res[index], i, res_inst[index], j,
+	INIT_OBJ_RES_DATA(SWMGMT_PACKAGE_NAME_ID, res[index], res_idx, res_inst[index], res_inst_idx,
 		     &instance->package_name, PACKAGE_NAME_LEN);
 
-	INIT_OBJ_RES(SWMGMT_PACKAGE_VERSION_ID, res[index], i, res_inst[index], j, 1, true,
+	INIT_OBJ_RES(SWMGMT_PACKAGE_VERSION_ID, res[index], res_idx, res_inst[index], res_inst_idx, 1, true,
 		     &instance->package_version, PACKAGE_VERSION_LEN,
 			 state_read_pkg_version, NULL, NULL, NULL);
 
-	INIT_OBJ_RES_OPT(SWMGMT_PACKAGE_ID, res[index], i, res_inst[index], j, 1, true,
+	INIT_OBJ_RES_OPT(SWMGMT_PACKAGE_ID, res[index], res_idx, res_inst[index], res_inst_idx, 1, true,
 	                 NULL, NULL, package_write_cb, NULL);
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
-	INIT_OBJ_RES(SWMGMT_PACKAGE_URI_ID, res[index], i, res_inst[index], j, 1, true,
+	INIT_OBJ_RES(SWMGMT_PACKAGE_URI_ID, res[index], res_idx, res_inst[index], res_inst_idx, 1, true,
 	             instance->package_uri, PACKAGE_URI_LEN,
 	             NULL, NULL, package_uri_write_cb, NULL);
 #else
-	INIT_OBJ_RES_OPT(SWMGMT_PACKAGE_URI_ID, res[index], i, res_inst[index], j, 1, true,
+	INIT_OBJ_RES_OPT(SWMGMT_PACKAGE_URI_ID, res[index], res_idx, res_inst[index], res_inst_idx, 1, true,
 	                 NULL, NULL, package_uri_write_cb, NULL);
 #endif
 
-	INIT_OBJ_RES_EXECUTE(SWMGMT_INSTALL_ID, res[index], i, install_cb);
+	INIT_OBJ_RES_EXECUTE(SWMGMT_INSTALL_ID, res[index], res_idx, install_cb);
 
-	INIT_OBJ_RES_OPTDATA(SWMGMT_CHECKPOINT_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(SWMGMT_CHECKPOINT_ID, res[index], res_idx, res_inst[index], res_inst_idx);
 
-	INIT_OBJ_RES_EXECUTE(SWMGMT_UNINSTALL_ID, res[index], i, uninstall_cb);
+	INIT_OBJ_RES_EXECUTE(SWMGMT_UNINSTALL_ID, res[index], res_idx, uninstall_cb);
 
-	INIT_OBJ_RES_DATA(SWMGMT_UPDATE_STATE_ID, res[index], i, res_inst[index], j,
+	INIT_OBJ_RES_DATA(SWMGMT_UPDATE_STATE_ID, res[index], res_idx, res_inst[index], res_inst_idx,
 		     &instance->update_state, sizeof(uint8_t));
 
-	INIT_OBJ_RES_OPTDATA(SWMGMT_UPDATE_SUPPORTED_OBJECTS_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(SWMGMT_UPDATE_SUPPORTED_OBJECTS_ID, res[index], res_idx, res_inst[index], res_inst_idx);
 
-	INIT_OBJ_RES_DATA(SWMGMT_UPDATE_RESULT_ID, res[index], i, res_inst[index], j,
+	INIT_OBJ_RES_DATA(SWMGMT_UPDATE_RESULT_ID, res[index], res_idx, res_inst[index], res_inst_idx,
 		     &instance->update_result, sizeof(uint8_t));
 
-	INIT_OBJ_RES_EXECUTE(SWMGMT_ACTIVATE_ID, res[index], i, activate_cb);
-	INIT_OBJ_RES_EXECUTE(SWMGMT_DEACTIVATE_ID, res[index], i, deactivate_cb);
+	INIT_OBJ_RES_EXECUTE(SWMGMT_ACTIVATE_ID, res[index], res_idx, activate_cb);
+	INIT_OBJ_RES_EXECUTE(SWMGMT_DEACTIVATE_ID, res[index], res_idx, deactivate_cb);
 
-	INIT_OBJ_RES_DATA(SWMGMT_ACTIVATION_UPD_STATE_ID, res[index], i, res_inst[index], j,
+	INIT_OBJ_RES_DATA(SWMGMT_ACTIVATION_UPD_STATE_ID, res[index], res_idx, res_inst[index], res_inst_idx,
 		     &instance->activation_state, sizeof(bool));
 
-	INIT_OBJ_RES_OPTDATA(SWMGMT_PACKAGE_SETTINGS_ID, res[index], i, res_inst[index], j);
-	INIT_OBJ_RES_OPTDATA(SWMGMT_USER_NAME_ID, res[index], i, res_inst[index], j);
-	INIT_OBJ_RES_OPTDATA(SWMGMT_PASSWORD_ID, res[index], i, res_inst[index], j);
+	INIT_OBJ_RES_OPTDATA(SWMGMT_PACKAGE_SETTINGS_ID, res[index], res_idx, res_inst[index], res_inst_idx);
+	INIT_OBJ_RES_OPTDATA(SWMGMT_USER_NAME_ID, res[index], res_idx, res_inst[index], res_inst_idx);
+	INIT_OBJ_RES_OPTDATA(SWMGMT_PASSWORD_ID, res[index], res_idx, res_inst[index], res_inst_idx);
 
 	inst[index].resources = res[index];
-	inst[index].resource_count = i;
+	inst[index].resource_count = res_idx;
 	return &inst[index];
 }
 
