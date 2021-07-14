@@ -577,6 +577,11 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
 #define SENSOR_PI		3141592LL
 
 /**
+ * @brief Six decimal points in fractional part.
+ */
+#define DECIMAL_POINTS_PRECISION		(1000000LL)
+
+/**
  * @brief Helper function to convert acceleration from m/s^2 to Gs
  *
  * @param ms2 A pointer to a sensor_value struct holding the acceleration,
@@ -586,7 +591,8 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
  */
 static inline int32_t sensor_ms2_to_g(const struct sensor_value *ms2)
 {
-	int64_t micro_ms2 = ms2->val1 * 1000000LL + ms2->val2;
+	int64_t micro_ms2 = ms2->val1 * DECIMAL_POINTS_PRECISION
+						+ ms2->val2;
 
 	if (micro_ms2 > 0) {
 		return (micro_ms2 + SENSOR_G / 2) / SENSOR_G;
@@ -603,8 +609,8 @@ static inline int32_t sensor_ms2_to_g(const struct sensor_value *ms2)
  */
 static inline void sensor_g_to_ms2(int32_t g, struct sensor_value *ms2)
 {
-	ms2->val1 = ((int64_t)g * SENSOR_G) / 1000000LL;
-	ms2->val2 = ((int64_t)g * SENSOR_G) % 1000000LL;
+	ms2->val1 = ((int64_t)g * SENSOR_G) / DECIMAL_POINTS_PRECISION;
+	ms2->val2 = ((int64_t)g * SENSOR_G) % DECIMAL_POINTS_PRECISION;
 }
 
 /**
@@ -633,8 +639,8 @@ static inline int32_t sensor_rad_to_degrees(const struct sensor_value *rad)
  */
 static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
 {
-	rad->val1 = ((int64_t)d * SENSOR_PI / 180LL) / 1000000LL;
-	rad->val2 = ((int64_t)d * SENSOR_PI / 180LL) % 1000000LL;
+	rad->val1 = ((int64_t)d * SENSOR_PI / 180LL) / DECIMAL_POINTS_PRECISION;
+	rad->val2 = ((int64_t)d * SENSOR_PI / 180LL) % DECIMAL_POINTS_PRECISION;
 }
 
 /**
@@ -645,7 +651,7 @@ static inline void sensor_degrees_to_rad(int32_t d, struct sensor_value *rad)
  */
 static inline double sensor_value_to_double(struct sensor_value *val)
 {
-	return (double)val->val1 + (double)val->val2 / 1000000;
+	return (double)val->val1 + (double)val->val2 / DECIMAL_POINTS_PRECISION;
 }
 
 /**
@@ -657,7 +663,8 @@ static inline double sensor_value_to_double(struct sensor_value *val)
 static inline void sensor_value_from_double(struct sensor_value *val, double inp)
 {
 	val->val1 = (int32_t) inp;
-	val->val2 = (int32_t)(inp * 1000000) % 1000000;
+	val->val2 = (int32_t)(inp * DECIMAL_POINTS_PRECISION)
+							% DECIMAL_POINTS_PRECISION;
 }
 
 /**
