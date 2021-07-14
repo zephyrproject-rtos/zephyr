@@ -82,6 +82,9 @@ struct log_backend_control_block {
 	void *ctx;
 	uint8_t id;
 	bool active;
+
+	/* Initialization level. */
+	uint8_t level;
 };
 
 /**

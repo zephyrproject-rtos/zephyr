@@ -54,3 +54,7 @@ config LOG_FRONTEND_ONLY
 
 config LOG_DEFAULT_MINIMAL
 	bool
+
+config LOG_MULTIDOMAIN
+	bool "Multi-domain logger"
+	select LOG_TIMESTAMP_64BIT
