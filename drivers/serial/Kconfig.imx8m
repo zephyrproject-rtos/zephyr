@@ -1,0 +1,11 @@
+# MCUXpresso SDK IUART
+
+# Copyright (c) 2020, Manivannan Sadhasivam <mani@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_IMX8M
+	bool "i.MX8M UART driver"
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the MCUX IUART driver.

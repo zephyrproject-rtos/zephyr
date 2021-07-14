@@ -1,0 +1,43 @@
+/*
+ * Copyright 2021 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx8mm_a53.dtsi>
+
+/ {
+	model = "NXP i.MX8MM A53";
+	compatible = "fsl,imx8mm";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,sram = &sram0;
+	};
+
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+		label = "PSCI";
+	};
+
+	sram0: memory@40000000 {
+		reg = <0x93c00000 DT_SIZE_M(1)>;
+	};
+
+};
+
+&uart4 {
+	status = "okay";
+	clocks = <&uartclk>;
+	current-speed = <115200>;
+};

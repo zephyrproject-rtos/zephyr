@@ -1,0 +1,19 @@
+# Copyright (c) 2017-2020, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_IMX
+	bool
+	select HAS_SEGGER_RTT
+
+if SOC_FAMILY_IMX
+
+config SOC_FAMILY
+	string
+	default "nxp_imx"
+
+source "soc/arm64/nxp_imx/*/Kconfig.soc"
+
+config SOC_PART_NUMBER
+	default SOC_PART_NUMBER_IMX8MM_A53 if SOC_SERIES_IMX8MM_A53
+
+endif # SOC_FAMILY_IMX
