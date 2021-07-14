@@ -39,6 +39,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_EOS_S3     gpio_eos_s3.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_RCAR       gpio_rcar.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CY8C95XX   gpio_cy8c95xx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SNPS_CREG  gpio_creg_gpio.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_STMPE1600  gpio_stmpe1600.c)
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 
