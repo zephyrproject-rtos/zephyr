@@ -190,6 +190,8 @@ struct isoal_sink {
 		isoal_sdu_cnt_t          seqn;
 		uint16_t                 handle;
 		uint8_t                  pdus_per_sdu;
+		uint32_t                 latency_unframed;
+		uint32_t                 latency_framed;
 	} session;
 
 	/* State for SDU production */
@@ -220,9 +222,13 @@ isoal_status_t isoal_reset(void);
 
 isoal_status_t isoal_sink_create(isoal_sink_handle_t *hdl,
 				 uint16_t handle,
+				 uint8_t  role,
 				 uint8_t  burst_number,
+				 uint8_t  flush_timeout,
 				 uint32_t sdu_interval,
 				 uint16_t iso_interval,
+				 uint32_t cis_sync_delay,
+				 uint32_t cig_sync_delay,
 				 isoal_sink_sdu_alloc_cb sdu_alloc,
 				 isoal_sink_sdu_emit_cb  sdu_emit,
 				 isoal_sink_sdu_write_cb  sdu_write);
