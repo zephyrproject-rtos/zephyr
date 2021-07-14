@@ -50,6 +50,18 @@ uint8_t ull_adv_time_update(struct ll_adv_set *adv, struct pdu_adv *pdu,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 
+/* Enumeration provides flags for management of memory for extra_data
+ * related with advertising PDUs.
+ */
+enum ull_adv_pdu_extra_data_flag {
+	/* Allocate extra_data memory if it was available in former PDU */
+	ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
+	/* Allocate extra_data memory no matter if it was available */
+	ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS,
+	/* Never allocate new memory for extra_data */
+	ULL_ADV_PDU_EXTRA_DATA_ALLOC_NEVER
+};
+
 /* Below are BT Spec v5.2, Vol 6, Part B Section 2.3.4 Table 2.12 defined */
 #define ULL_ADV_PDU_HDR_FIELD_ADVA      BIT(0)
 #define ULL_ADV_PDU_HDR_FIELD_TARGETA   BIT(1)
@@ -170,14 +182,9 @@ void ull_adv_sync_info_fill(struct ll_adv_sync_set *sync,
  * previous and new PDU for further processing.
  */
 uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
-			       uint16_t hdr_add_fields,
-			       uint16_t hdr_rem_fields,
-			       struct ull_adv_ext_hdr_data *hdr_data,
-			       struct pdu_adv **ter_pdu_prev,
-			       struct pdu_adv **ter_pdu_new,
-			       void **extra_data_prev,
-			       void **extra_data_new,
-			       uint8_t *ter_idx);
+			       enum ull_adv_pdu_extra_data_flag extra_data_flags,
+			       struct pdu_adv **ter_pdu_prev, struct pdu_adv **ter_pdu_new,
+			       void **extra_data_prev, void **extra_data_new, uint8_t *ter_idx);
 
 /* helper function to set/clear common extended header format fields
  * for AUX_SYNC_IND PDU.

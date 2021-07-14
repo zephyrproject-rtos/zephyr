@@ -382,7 +382,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	sync->interval = interval;
 
-	err = ull_adv_sync_pdu_alloc(adv, 0, 0, NULL, &pdu_prev, &pdu,
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
 				     &extra_data_prev, &extra_data, &ter_idx);
 	if (err) {
 		return err;
@@ -439,8 +439,7 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	field_data[0] = len;
 	memcpy(&field_data[1], &data, sizeof(data));
 
-	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_HDR_FIELD_AD_DATA, 0,
-				     &hdr_data, &pdu_prev, &pdu,
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST, &pdu_prev, &pdu,
 				     &extra_data_prev, &extra_data, &ter_idx);
 	if (err) {
 		return err;
@@ -798,14 +797,9 @@ void ull_adv_sync_offset_get(struct ll_adv_set *adv)
 }
 
 uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
-			       uint16_t hdr_add_fields,
-			       uint16_t hdr_rem_fields,
-			       struct ull_adv_ext_hdr_data *hdr_data,
-			       struct pdu_adv **ter_pdu_prev,
-			       struct pdu_adv **ter_pdu_new,
-			       void **extra_data_prev,
-			       void **extra_data_new,
-			       uint8_t *ter_idx)
+			       enum ull_adv_pdu_extra_data_flag extra_data_flag,
+			       struct pdu_adv **ter_pdu_prev, struct pdu_adv **ter_pdu_new,
+			       void **extra_data_prev, void **extra_data_new, uint8_t *ter_idx)
 {
 	struct pdu_adv *pdu_prev, *pdu_new;
 	struct lll_adv_sync *lll_sync;
@@ -824,9 +818,8 @@ uint8_t ull_adv_sync_pdu_alloc(struct ll_adv_set *adv,
 
 #if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
 	/* Get reference to new periodic advertising PDU data buffer */
-	if ((hdr_add_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) ||
-	    (!(hdr_rem_fields & ULL_ADV_PDU_HDR_FIELD_CTE_INFO) &&
-	     ed_prev)) {
+	if (extra_data_flag == ULL_ADV_PDU_EXTRA_DATA_ALLOC_ALWAYS ||
+	    (extra_data_flag == ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST && ed_prev)) {
 		/* If there was an extra data in past PDU data or it is required
 		 * by the hdr_add_fields then allocate memmory for it.
 		 */
