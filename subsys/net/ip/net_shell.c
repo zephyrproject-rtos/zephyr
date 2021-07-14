@@ -1577,7 +1577,7 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 	   k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&reass->timer)),
 	   src, net_sprint_ipv6_addr(&reass->dst));
 
-	for (i = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
+	for (i = 0; i < CONFIG_NET_IPV6_FRAGMENT_MAX_PKT; i++) {
 		if (reass->pkt[i]) {
 			struct net_buf *frag = reass->pkt[i]->frags;
 
