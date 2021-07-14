@@ -18,5 +18,7 @@ config FLASH_STM32_QSPI
 	select FLASH_HAS_PAGE_LAYOUT
 	select DMA if $(DT_STM32_QUADSPI_HAS_DMA)
 	select USE_STM32_HAL_DMA if $(DT_STM32_QUADSPI_HAS_DMA)
+	select USE_STM32_HAL_MDMA if !$(DT_STM32_QUADSPI_HAS_DMA)
 	help
 	  Enable QSPI-NOR support on the STM32 family of processors.
+	  For STM32H7 devices DMA is not yet supported.
