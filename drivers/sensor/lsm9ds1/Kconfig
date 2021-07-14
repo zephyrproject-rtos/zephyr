@@ -1,0 +1,25 @@
+# Kconfig - LSM9DS1 Six-Axis Motion Tracking device configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2020 Luca Quaer
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LSM9DS1
+	bool "LSM9DS1 Nine-Axis Motion Tracking Device"
+	depends on I2C
+	help
+	  Enable driver for LSM9DS1 I2C-based six-axis motion tracking device.
+
+if LSM9DS1
+
+config LSM9DS1_GYRO_LOW_POWER
+	bool "LSM9DS1 Gyro performance(High / Low)"
+	default false
+	help
+	  GYRO sensor performance(High or Low).
+	  default Low.
+
+endif # LSM9DS1
