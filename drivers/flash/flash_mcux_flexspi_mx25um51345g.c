@@ -497,6 +497,37 @@ static const struct flash_parameters *flash_flexspi_nor_get_parameters(
 	return &data->flash_parameters;
 }
 
+static int
+flash_flexspi_nor_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	const struct flash_flexspi_nor_config *config = dev->config;
+
+	if (offset < 0 || offset > (config->layout.pages_count * SPI_NOR_SECTOR_SIZE)) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(config->layout.pages_size - 1);
+	fpi->size = config->layout.pages_size;
+
+	return 0;
+}
+
+static ssize_t
+flash_flexspi_nor_get_page_count(const struct device *dev)
+{
+	const struct flash_flexspi_nor_config *config = dev->config;
+
+	return config->layout.pages_count;
+}
+
+static ssize_t
+flash_flexspi_nor_get_size(const struct device *dev)
+{
+	const struct flash_flexspi_nor_config *config = dev->config;
+
+	return (config->layout.pages_count * config->layout.pages_size);
+}
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void flash_flexspi_nor_pages_layout(const struct device *dev,
 		const struct flash_pages_layout **layout, size_t *layout_size)
@@ -552,6 +583,9 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 	.write = flash_flexspi_nor_write,
 	.read = flash_flexspi_nor_read,
 	.get_parameters = flash_flexspi_nor_get_parameters,
+	.get_page_info = flash_flexspi_nor_get_page_info,
+	.get_page_count = flash_flexspi_nor_get_page_count,
+	.get_size = flash_flexspi_nor_get_size,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_flexspi_nor_pages_layout,
 #endif
@@ -603,6 +637,7 @@ static const struct flash_driver_api flash_flexspi_nor_api = {
 		.flash_parameters = {					\
 			.write_block_size = NOR_WRITE_SIZE,		\
 			.erase_value = NOR_ERASE_VALUE,			\
+			.flags = 0,					\
 		},							\
 	};								\
 									\
