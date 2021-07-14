@@ -137,8 +137,6 @@ after which logging thread is started.
 :kconfig:option:`CONFIG_LOG_BUFFER_SIZE`: Number of bytes dedicated for the circular
 packet buffer.
 
-:kconfig:option:`CONFIG_LOG_DOMAIN_ID`: Domain ID. Valid in multi-domain systems.
-
 :kconfig:option:`CONFIG_LOG_FRONTEND`: Direct logs to a custom frontend.
 
 :kconfig:option:`CONFIG_LOG_FRONTEND_ONLY`: No backends are used when messages goes to frontend.

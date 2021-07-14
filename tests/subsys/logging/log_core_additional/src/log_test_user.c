@@ -69,7 +69,7 @@ ZTEST_USER(test_log_core_additional, test_log_generic_user)
 /* test log_filter_set from user space */
 ZTEST_USER(test_log_core_additional, test_log_filter_set)
 {
-	log_filter_set(NULL, CONFIG_LOG_DOMAIN_ID, 0, LOG_LEVEL_WRN);
+	log_filter_set(NULL, Z_LOG_LOCAL_DOMAIN_ID, 0, LOG_LEVEL_WRN);
 }
 
 /* test log_panic() from user space */

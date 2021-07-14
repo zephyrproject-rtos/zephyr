@@ -71,7 +71,7 @@ static void process(const struct log_backend *const backend,
 	}
 
 	if (cb->check_domain_id) {
-		zassert_equal(log_msg_get_domain(&(msg->log)), CONFIG_LOG_DOMAIN_ID,
+		zassert_equal(log_msg_get_domain(&(msg->log)), Z_LOG_LOCAL_DOMAIN_ID,
 				"Unexpected domain id");
 	}
 
@@ -176,7 +176,7 @@ static bool log_test_process(void)
  * @brief Support multi-processor systems
  *
  * @details Logging system identify domain/processor by domain_id which is now
- *          statically configured by CONFIG_LOG_DOMAIN_ID
+ *          statically configured by Z_LOG_LOCAL_DOMAIN_ID
  *
  * @addtogroup logging
  */
@@ -461,7 +461,7 @@ ZTEST(test_log_core_additional, test_log_msg_create)
 					sizeof(msg_data), NULL);
 
 		Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode,
-			  CONFIG_LOG_DOMAIN_ID, NULL,
+			  Z_LOG_LOCAL_DOMAIN_ID, NULL,
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, test_msg_usr);
 
 		while (log_test_process()) {
@@ -487,7 +487,7 @@ ZTEST_USER(test_log_core_additional, test_log_msg_create_user)
 				sizeof(msg_data), test_msg_usr);
 
 	Z_LOG_MSG2_CREATE(!IS_ENABLED(CONFIG_USERSPACE), mode,
-		  CONFIG_LOG_DOMAIN_ID, NULL,
+			  Z_LOG_LOCAL_DOMAIN_ID, NULL,
 		  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, test_msg_usr);
 
 	while (log_test_process()) {
