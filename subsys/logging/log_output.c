@@ -206,16 +206,16 @@ static int timestamp_print(const struct log_output *output,
 
 			strftime(time_str, sizeof(time_str), "%FT%T", tm);
 
-			length = print_formatted(output, "%s.%06dZ ",
+			length = print_formatted(output, "%s.%06uZ ",
 						 time_str, ms * 1000U + us);
 #else
 			length = print_formatted(output,
-					"1970-01-01T%02d:%02d:%02d.%06dZ ",
+					"1970-01-01T%02u:%02u:%02u.%06uZ ",
 					hours, mins, seconds, ms * 1000U + us);
 #endif
 		} else {
 			length = print_formatted(output,
-						 "[%02d:%02d:%02d.%03d,%03d] ",
+						 "[%02u:%02u:%02u.%03u,%03u] ",
 						 hours, mins, seconds, ms, us);
 		}
 	} else {
