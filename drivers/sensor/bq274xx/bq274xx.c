@@ -12,6 +12,7 @@
 #include <sys/__assert.h>
 #include <string.h>
 #include <sys/byteorder.h>
+#include <drivers/gpio.h>
 
 #include "bq274xx.h"
 
@@ -636,18 +637,148 @@ static int bq274xx_gauge_configure(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_PM_DEVICE
+	bq274xx->pm_state = PM_DEVICE_STATE_ACTIVE;
+#endif
+
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int bq274xx_enter_shutdown_mode(struct bq274xx_data *data)
+{
+	int status = 0;
+
+	status = bq274xx_control_reg_write(data, BQ274XX_UNSEAL_KEY);
+	if (status < 0) {
+		LOG_ERR("Unable to unseal the battery");
+		return -EIO;
+	}
+
+	status = bq274xx_control_reg_write(data, BQ274XX_UNSEAL_KEY);
+	if (status < 0) {
+		LOG_ERR("Unable to unseal the battery");
+		return -EIO;
+	}
+
+	status = bq274xx_control_reg_write(data,
+					   BQ274XX_CONTROL_SHUTDOWN_ENABLE);
+	if (status < 0) {
+		LOG_ERR("Unable to enable shutdown mode");
+		return -EIO;
+	}
+
+	status = bq274xx_control_reg_write(data, BQ274XX_CONTROL_SHUTDOWN);
+	if (status < 0) {
+		LOG_ERR("Unable to enter shutdown mode");
+		return -EIO;
+	}
+
+	status = bq274xx_control_reg_write(data, BQ274XX_CONTROL_SEALED);
+	if (status < 0) {
+		LOG_ERR("Failed to seal the gauge");
+		return -EIO;
+	}
+
+	data->pm_state = PM_DEVICE_STATE_OFF;
+
+	return 0;
+}
+
+static int bq274xx_exit_shutdown_mode(const struct device *dev)
+{
+	const struct bq274xx_config *const config = dev->config;
+	int status = 0;
+
+	if (!device_is_ready(config->gpio_pm.port)) {
+		LOG_ERR("GPIO device pointer is not ready to be used");
+		return -EINVAL;
+	}
+
+	status = gpio_pin_configure_dt(&config->gpio_pm,
+			   GPIO_OUTPUT | GPIO_OPEN_DRAIN);
+	if (status < 0) {
+		LOG_ERR("Unable to configure interrupt pin to output and open drain");
+		return status;
+	}
+
+	status = gpio_pin_set(config->gpio_pm.port, config->gpio_pm.pin, 0);
+	if (status < 0) {
+		LOG_ERR("Unable to set interrupt pin to low");
+		return status;
+	}
+
+	k_msleep(1);
+
+	status = gpio_pin_configure_dt(&config->gpio_pm,
+			   GPIO_INPUT);
+	if (status < 0) {
+		LOG_ERR("Unable to configure interrupt pin to input");
+		return status;
+	}
+
+	k_msleep(100);
+
+	status = bq274xx_gauge_configure(dev);
+	if (status < 0) {
+		LOG_ERR("Unable to configure bq274xx gauge");
+		return status;
+	}
+
+	return 0;
+}
+
+static int bq274xx_pm_control(const struct device *dev, uint32_t ctrl_command,
+				  void *context, pm_device_cb cb, void *arg)
+{
+	int ret = 0;
+	struct bq274xx_data *data = (struct bq274xx_data *)dev->data;
+
+	switch (ctrl_command) {
+	case PM_DEVICE_STATE_SET:
+		if (*((uint32_t *)context) == PM_DEVICE_STATE_OFF) {
+			ret = bq274xx_enter_shutdown_mode(data);
+			if (ret < 0) {
+				LOG_ERR("Unable to enter off state");
+			}
+		} else {
+			ret = bq274xx_exit_shutdown_mode(dev);
+			if (ret < 0) {
+				LOG_ERR("Unable to enter active state");
+			}
+		}
+		break;
+	case PM_DEVICE_STATE_GET:
+		*((uint32_t *)context) = data->pm_state;
+		break;
+	default:
+		ret = -EINVAL;
+	}
+
+	if (cb != NULL) {
+		cb(dev, ret, context, arg);
+	}
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct sensor_driver_api bq274xx_battery_driver_api = {
 	.sample_fetch = bq274xx_sample_fetch,
 	.channel_get = bq274xx_channel_get,
 };
 
+#ifdef CONFIG_PM_DEVICE
+#define BQ274XX_INT_CFG(index)						      \
+	.gpio_pm = GPIO_DT_SPEC_INST_GET(index, int_gpios),
+#else
+#define BQ274XX_INT_CFG(index)
+#endif
+
 #define BQ274XX_INIT(index)                                                    \
 	static struct bq274xx_data bq274xx_driver_##index;                     \
 									       \
 	static const struct bq274xx_config bq274xx_config_##index = {          \
+		BQ274XX_INT_CFG(index)                                         \
 		.bus_name = DT_INST_BUS_LABEL(index),                          \
 		.design_voltage = DT_INST_PROP(index, design_voltage),         \
 		.design_capacity = DT_INST_PROP(index, design_capacity),       \
@@ -655,7 +786,7 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 		.terminate_voltage = DT_INST_PROP(index, terminate_voltage),   \
 	};                                                                     \
 									       \
-	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, NULL,                \
+	DEVICE_DT_INST_DEFINE(index, &bq274xx_gauge_init, bq274xx_pm_control,  \
 			    &bq274xx_driver_##index,                           \
 			    &bq274xx_config_##index, POST_KERNEL,              \
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \
