@@ -179,8 +179,8 @@ static const struct wdt_driver_api mcux_wdog32_api = {
 	.feed = mcux_wdog32_feed,
 };
 
-#define TO_WDOG32_CLK_SRC(val) _DO_CONCAT(kWDOG32_ClockSource, val)
-#define TO_WDOG32_CLK_DIV(val) _DO_CONCAT(kWDOG32_ClockPrescalerDivide, val)
+#define TO_WDOG32_CLK_SRC(val) Z_DO_CONCAT(kWDOG32_ClockSource, val)
+#define TO_WDOG32_CLK_DIV(val) Z_DO_CONCAT(kWDOG32_ClockPrescalerDivide, val)
 
 static void mcux_wdog32_config_func_0(const struct device *dev);
 

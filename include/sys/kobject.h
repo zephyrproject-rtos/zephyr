@@ -108,12 +108,12 @@ struct z_object_assignment {
  * @param name_ Name of the thread, as passed to K_THREAD_DEFINE()
  */
 #define K_THREAD_ACCESS_GRANT(name_, ...) \
-	static void * const _CONCAT(_object_list_, name_)[] = \
+	static void * const Z_CONCAT(_object_list_, name_)[] = \
 		{ __VA_ARGS__, NULL }; \
 	static const Z_STRUCT_SECTION_ITERABLE(z_object_assignment, \
-					_CONCAT(_object_access_, name_)) = \
+					Z_CONCAT(_object_access_, name_)) = \
 			{ (&_k_thread_obj_ ## name_), \
-			  (_CONCAT(_object_list_, name_)) }
+			  (Z_CONCAT(_object_list_, name_)) }
 
 /** Object initialized */
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)

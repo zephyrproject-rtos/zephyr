@@ -77,7 +77,7 @@ typedef int16_t device_handle_t;
  *
  * @return The expanded name of the device object created by DEVICE_DEFINE()
  */
-#define DEVICE_NAME_GET(name) _CONCAT(__device_, name)
+#define DEVICE_NAME_GET(name) Z_CONCAT(__device_, name)
 
 /**
  * @def SYS_DEVICE_DEFINE
@@ -647,19 +647,19 @@ int device_busy_check(const struct device *chk_dev);
  * format of this conversion changes, gen_defines should be updated to
  * match it.
  */
-#define Z_DEVICE_DT_DEV_NAME(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+#define Z_DEVICE_DT_DEV_NAME(node_id) Z_CONCAT(dts_ord_, DT_DEP_ORD(node_id))
 
 /* Synthesize a unique name for the device state associated with
  * dev_name.
  */
-#define Z_DEVICE_STATE_NAME(dev_name) _CONCAT(__devstate_, dev_name)
+#define Z_DEVICE_STATE_NAME(dev_name) Z_CONCAT(__devstate_, dev_name)
 
 /** Synthesize the name of the object that holds device ordinal and
  * dependency data.  If the object doesn't come from a devicetree
  * node, use dev_name.
  */
 #define Z_DEVICE_HANDLE_NAME(node_id, dev_name)				\
-	_CONCAT(__devicehdl_,						\
+	Z_CONCAT(__devicehdl_,						\
 		COND_CODE_1(DT_NODE_EXISTS(node_id),			\
 			    (node_id),					\
 			    (dev_name)))
@@ -676,7 +676,7 @@ int device_busy_check(const struct device *chk_dev);
 #if CONFIG_PM_DEVICE
 #define Z_DEVICE_DEFINE_PM_SLOT(dev_name)				\
 	static const Z_DECL_ALIGN(struct device *)			\
-	_CONCAT(__pm_device_slot_, DEVICE_NAME_GET(dev_name)) __used	\
+	Z_CONCAT(__pm_device_slot_, DEVICE_NAME_GET(dev_name)) __used	\
 	__attribute__((__section__(".z_pm_device_slots")));
 #else
 #define Z_DEVICE_DEFINE_PM_SLOT(dev_name)
@@ -742,7 +742,7 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 	COND_CODE_1(DT_NODE_EXISTS(node_id), (), (static))		\
 		const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
-	__attribute__((__section__(".z_device_" #level STRINGIFY(prio)"_"))) = { \
+	__attribute__((__section__(".z_device_" #level Z_STRINGIFY(prio)"_"))) = { \
 		.name = drv_name,					\
 		.config = (cfg_ptr),					\
 		.api = (api_ptr),					\
@@ -750,8 +750,8 @@ BUILD_ASSERT(sizeof(device_handle_t) == 2, "fix the linker scripts");
 		.data = (data_ptr),					\
 		Z_DEVICE_DEFINE_INIT(node_id, dev_name, pm_control_fn)	\
 	};								\
-	BUILD_ASSERT(sizeof(Z_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
-		     Z_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
+	BUILD_ASSERT(sizeof(Z_DO_STRINGIFY(drv_name)) <= Z_DEVICE_MAX_NAME_LEN, \
+		     Z_DO_STRINGIFY(DEVICE_NAME_GET(drv_name)) " too long"); \
 	Z_INIT_ENTRY_DEFINE(DEVICE_NAME_GET(dev_name), init_fn,		\
 		(&DEVICE_NAME_GET(dev_name)), level, prio)
 

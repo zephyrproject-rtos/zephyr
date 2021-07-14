@@ -87,8 +87,8 @@ static void log_setup(bool backend2_enable)
 		log_backend_disable(&backend2);
 	}
 
-	test_source_id = log_source_id_get(STRINGIFY(MODULE_NAME));
-	test_cxx_source_id = log_source_id_get(STRINGIFY(CXX_MODULE_NAME));
+	test_source_id = log_source_id_get(Z_STRINGIFY(MODULE_NAME));
+	test_cxx_source_id = log_source_id_get(Z_STRINGIFY(CXX_MODULE_NAME));
 }
 
 static void test_log_various_messages(void)

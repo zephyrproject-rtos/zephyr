@@ -66,7 +66,7 @@ extern const struct emul __emul_list_start[];
 extern const struct emul __emul_list_end[];
 
 /* Use the devicetree node identifier as a unique name. */
-#define EMUL_REG_NAME(node_id) (_CONCAT(__emulreg_, node_id))
+#define EMUL_REG_NAME(node_id) (Z_CONCAT(__emulreg_, node_id))
 
 /**
  * Define a new emulator

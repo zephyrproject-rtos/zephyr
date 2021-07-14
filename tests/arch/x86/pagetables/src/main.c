@@ -32,8 +32,8 @@
 #define FLAGS_MASK	(MMU_P | MMU_RW | MMU_US | MMU_PWT | MMU_PCD | \
 			 MMU_G | MMU_PS | MMU_XD)
 
-#define LPTR(name, suffix)	((uint8_t *)&_CONCAT(name, suffix))
-#define LSIZE(name, suffix)	((size_t)&_CONCAT(name, suffix))
+#define LPTR(name, suffix)	((uint8_t *)&Z_CONCAT(name, suffix))
+#define LSIZE(name, suffix)	((size_t)&Z_CONCAT(name, suffix))
 #define IN_REGION(name, virt) \
 	(virt >= LPTR(name, _start) && \
 	 virt < (LPTR(name, _start) + LSIZE(name, _size)))

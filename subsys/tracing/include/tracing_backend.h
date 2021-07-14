@@ -49,7 +49,7 @@ struct tracing_backend {
 #define TRACING_BACKEND_DEFINE(_name, _api)                              \
 	static const Z_STRUCT_SECTION_ITERABLE(tracing_backend, _name) = \
 	{                                                                \
-		.name = STRINGIFY(_name),                                \
+		.name = Z_STRINGIFY(_name),                                \
 		.api = &_api                                             \
 	}
 

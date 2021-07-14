@@ -903,7 +903,7 @@ static int i2c_ctrl_init(const struct device *dev)
 }
 
 /* I2C controller init macro functions */
-#define NPCX_I2C_CTRL_INIT_FUNC(inst) _CONCAT(i2c_ctrl_init_, inst)
+#define NPCX_I2C_CTRL_INIT_FUNC(inst) Z_CONCAT(i2c_ctrl_init_, inst)
 #define NPCX_I2C_CTRL_INIT_FUNC_DECL(inst) \
 	static int i2c_ctrl_init_##inst(const struct device *dev)
 #define NPCX_I2C_CTRL_INIT_FUNC_IMPL(inst)                                     \

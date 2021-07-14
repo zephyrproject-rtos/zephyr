@@ -22,10 +22,10 @@
 	BUILD_ASSERT(val == 0 || val == 1 || val == 2 || val == 4 ||	\
 		     val == 8 || val == 16 || val == 2 || val == 64, str)
 
-#define TO_SYS_CLK_DIV(val) _DO_CONCAT(kSCG_SysClkDivBy, val)
+#define TO_SYS_CLK_DIV(val) Z_DO_CONCAT(kSCG_SysClkDivBy, val)
 
 #define kSCG_AsyncClkDivBy0 kSCG_AsyncClkDisable
-#define TO_ASYNC_CLK_DIV(val) _DO_CONCAT(kSCG_AsyncClkDivBy, val)
+#define TO_ASYNC_CLK_DIV(val) Z_DO_CONCAT(kSCG_AsyncClkDivBy, val)
 
 #define SCG_CLOCK_NODE(name) DT_CHILD(DT_INST(0, nxp_kinetis_scg), name)
 #define SCG_CLOCK_DIV(name) DT_PROP(SCG_CLOCK_NODE(name), clock_div)

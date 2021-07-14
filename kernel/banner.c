@@ -13,7 +13,7 @@
 /* boot banner items */
 #if defined(CONFIG_MULTITHREADING) && defined(CONFIG_BOOT_DELAY) &&            \
 	CONFIG_BOOT_DELAY > 0
-#define BOOT_DELAY_BANNER " (delayed boot " STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
+#define BOOT_DELAY_BANNER " (delayed boot " Z_STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
 #else
 #define BOOT_DELAY_BANNER ""
 #endif
@@ -28,7 +28,7 @@ void boot_banner(void)
 #endif
 
 	if (boot_delay > 0 && IS_ENABLED(CONFIG_MULTITHREADING)) {
-		printk("***** delaying boot " STRINGIFY(
+		printk("***** delaying boot " Z_STRINGIFY(
 			CONFIG_BOOT_DELAY) "ms (per build configuration) *****\n");
 		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 	}
@@ -36,7 +36,7 @@ void boot_banner(void)
 #if defined(CONFIG_BOOT_BANNER)
 #ifdef BUILD_VERSION
 	printk("*** Booting Zephyr OS build %s %s ***\n",
-	       STRINGIFY(BUILD_VERSION), BOOT_DELAY_BANNER);
+	       Z_STRINGIFY(BUILD_VERSION), BOOT_DELAY_BANNER);
 #else
 	printk("*** Booting Zephyr OS version %s %s ***\n",
 	       KERNEL_VERSION_STRING, BOOT_DELAY_BANNER);

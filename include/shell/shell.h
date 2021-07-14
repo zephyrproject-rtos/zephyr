@@ -190,7 +190,7 @@ struct shell_static_entry {
 	SHELL_CMD_ARG(syntax, subcmd, help, handler, mandatory, optional); \
 	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)   \
 	__attribute__ ((section("."					   \
-			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
+			Z_STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
 	__attribute__((used)) = {					   \
 		.is_dynamic = false,					   \
 		.u = {.entry = &UTIL_CAT(_shell_, syntax)}		   \
@@ -365,7 +365,7 @@ struct shell_static_entry {
 #define SHELL_EXPR_CMD_ARG(_expr, _syntax, _subcmd, _help, _handler, \
 			   _mand, _opt) \
 	{ \
-		.syntax = (_expr) ? (const char *)STRINGIFY(_syntax) : "", \
+		.syntax = (_expr) ? (const char *)Z_STRINGIFY(_syntax) : "", \
 		.help  = (_expr) ? (const char *)_help : NULL, \
 		.subcmd = (const struct shell_cmd_entry *)((_expr) ? \
 				_subcmd : NULL), \
@@ -782,7 +782,7 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
 		.stats = Z_SHELL_STATS_PTR(_name),			      \
 		.log_backend = Z_SHELL_LOG_BACKEND_PTR(_name),		      \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
-		.thread_name = STRINGIFY(_name),			      \
+		.thread_name = Z_STRINGIFY(_name),			      \
 		.thread = &_name##_thread,				      \
 		.stack = _name##_stack					      \
 	}

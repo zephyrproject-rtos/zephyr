@@ -349,7 +349,7 @@ static void test_shell_fprintf(void)
 static int cmd_raw_arg(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 2) {
-		if (strcmp(argv[0], STRINGIFY(CMD_NAME))) {
+		if (strcmp(argv[0], Z_STRINGIFY(CMD_NAME))) {
 			return -1;
 		}
 		if (strcmp(argv[1], RAW_ARG)) {

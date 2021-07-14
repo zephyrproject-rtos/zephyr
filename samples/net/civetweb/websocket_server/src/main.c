@@ -28,9 +28,9 @@ K_THREAD_STACK_DEFINE(civetweb_stack, CIVETWEB_MAIN_THREAD_STACK_SIZE);
 void *main_pthread(void *arg)
 {
 	static const char * const options[] = {
-		"listening_ports", STRINGIFY(HTTP_PORT),
+		"listening_ports", Z_STRINGIFY(HTTP_PORT),
 		"num_threads", "1",
-		"max_request_size", STRINGIFY(MAX_REQUEST_SIZE_BYTES),
+		"max_request_size", Z_STRINGIFY(MAX_REQUEST_SIZE_BYTES),
 		NULL
 	};
 

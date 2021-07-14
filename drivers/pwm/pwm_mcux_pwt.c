@@ -305,7 +305,7 @@ static const struct pwm_driver_api mcux_pwt_driver_api = {
 	.pin_disable_capture = mcux_pwt_pin_disable_capture,
 };
 
-#define TO_PWT_PRESCALE_DIVIDE(val) _DO_CONCAT(kPWT_Prescale_Divide_, val)
+#define TO_PWT_PRESCALE_DIVIDE(val) Z_DO_CONCAT(kPWT_Prescale_Divide_, val)
 
 #define PWT_DEVICE(n) \
 	static void mcux_pwt_config_func_##n(const struct device *dev);	\

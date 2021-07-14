@@ -99,10 +99,10 @@ struct z_app_region {
 
 #define Z_APPMEM_PLACEHOLDER(name) \
 	__asm__ ( \
-		Z_PUSHSECTION_DIRECTIV " " STRINGIFY(K_APP_DMEM_SECTION(name)) \
+		Z_PUSHSECTION_DIRECTIV " " Z_STRINGIFY(K_APP_DMEM_SECTION(name)) \
 			",\"aw\"," Z_PROGBITS_SYM "progbits\n\t" \
-		".global " STRINGIFY(name) "_placeholder\n\t" \
-		STRINGIFY(name) "_placeholder:\n\t" \
+		".global " Z_STRINGIFY(name) "_placeholder\n\t" \
+		Z_STRINGIFY(name) "_placeholder:\n\t" \
 		Z_POPSECTION_DIRECTIVE "\n\t")
 
 /**

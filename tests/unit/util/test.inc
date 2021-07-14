@@ -366,7 +366,7 @@ static void test_LIST_DROP_EMPTY(void)
 	#define TEST_BROKEN_LIST EMPTY, Henry, EMPTY, Dorsett, Case,
 	#define TEST_FIXED_LIST LIST_DROP_EMPTY(TEST_BROKEN_LIST)
 	static const char *const arr[] = {
-		FOR_EACH(STRINGIFY, (,), TEST_FIXED_LIST)
+		FOR_EACH(Z_STRINGIFY, (,), TEST_FIXED_LIST)
 	};
 
 	zassert_equal(ARRAY_SIZE(arr), 3, "Failed to cleanup list");

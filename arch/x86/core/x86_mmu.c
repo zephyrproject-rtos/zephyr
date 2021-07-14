@@ -486,7 +486,7 @@ static inline void assert_region_page_aligned(void *addr, size_t size)
 #define ANSI_CYAN    "\x1B[1;36m"
 #define ANSI_GREY    "\x1B[1;90m"
 
-#define COLOR(x)	printk(_CONCAT(ANSI_, x))
+#define COLOR(x)	printk(Z_CONCAT(ANSI_, x))
 #else
 #define COLOR(x)	do { } while (0)
 #endif

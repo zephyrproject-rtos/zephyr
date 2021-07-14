@@ -128,7 +128,7 @@ struct x86_ssf {
  */
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-	X86_RESERVE_IRQ(irq_p, _CONCAT(_irq_alloc_fixed, __COUNTER__)); \
+	X86_RESERVE_IRQ(irq_p, Z_CONCAT(_irq_alloc_fixed, __COUNTER__)); \
 	arch_irq_connect_dynamic(irq_p, priority_p,			\
 				 (void (*)(const void *))isr_p,		\
 				 isr_param_p, flags_p)

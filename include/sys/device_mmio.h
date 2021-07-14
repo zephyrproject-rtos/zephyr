@@ -521,8 +521,8 @@ struct z_device_mmio_rom {
  * @{
  */
 
- #define Z_TOPLEVEL_ROM_NAME(name) _CONCAT(z_mmio_rom__, name)
- #define Z_TOPLEVEL_RAM_NAME(name) _CONCAT(z_mmio_ram__, name)
+ #define Z_TOPLEVEL_ROM_NAME(name) Z_CONCAT(z_mmio_rom__, name)
+ #define Z_TOPLEVEL_RAM_NAME(name) Z_CONCAT(z_mmio_ram__, name)
 
 /**
  * @def DEVICE_MMIO_TOPLEVEL(name, node_id)

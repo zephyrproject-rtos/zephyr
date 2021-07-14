@@ -986,7 +986,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define UART_NS16550_IRQ_FLAGS_SENSE0(n) 0
 #define UART_NS16550_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
 #define UART_NS16550_IRQ_FLAGS(n) \
-	_CONCAT(UART_NS16550_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+	Z_CONCAT(UART_NS16550_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
 
 /* not PCI(e) */
 #define UART_NS16550_IRQ_CONFIG_PCIE0(n)                                \
@@ -1026,7 +1026,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_CONFIG_REG_INIT_PCIE0(n) DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),
 #define DEV_CONFIG_REG_INIT_PCIE1(n)
 #define DEV_CONFIG_REG_INIT(n) \
-	_CONCAT(DEV_CONFIG_REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+	Z_CONCAT(DEV_CONFIG_REG_INIT_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 #endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -1035,7 +1035,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define UART_NS16550_IRQ_FUNC_DECLARE(n) \
 	static void irq_config_func##n(const struct device *dev);
 #define UART_NS16550_IRQ_FUNC_DEFINE(n) \
-	_CONCAT(UART_NS16550_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+	Z_CONCAT(UART_NS16550_IRQ_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 #else
 /* !CONFIG_UART_INTERRUPT_DRIVEN */
 #define DEV_CONFIG_IRQ_FUNC_INIT(n)
@@ -1053,7 +1053,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #define DEV_CONFIG_REG_INT1(n) \
 	.reg_interval = (1 << DT_INST_PROP(n, reg_shift)),
 #define DEV_CONFIG_REG_INT_INIT(n) \
-	_CONCAT(DEV_CONFIG_REG_INT, DT_INST_NODE_HAS_PROP(n, reg_shift))(n)
+	Z_CONCAT(DEV_CONFIG_REG_INT, DT_INST_NODE_HAS_PROP(n, reg_shift))(n)
 
 #define DEV_CONFIG_PCIE0(n)
 #define DEV_CONFIG_PCIE1(n)              \
@@ -1061,18 +1061,18 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 	.pcie_bdf = DT_INST_REG_ADDR(n), \
 	.pcie_id = DT_INST_REG_SIZE(n),
 #define DEV_CONFIG_PCIE_INIT(n) \
-	_CONCAT(DEV_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
+	Z_CONCAT(DEV_CONFIG_PCIE, DT_INST_ON_BUS(n, pcie))(n)
 
 #define DEV_DATA_FLOW_CTRL0 UART_CFG_FLOW_CTRL_NONE
 #define DEV_DATA_FLOW_CTRL1 UART_CFG_FLOW_CTRL_RTS_CTS
 #define DEV_DATA_FLOW_CTRL(n) \
-	_CONCAT(DEV_DATA_FLOW_CTRL, DT_INST_NODE_HAS_PROP(n, hw_flow_control))
+	Z_CONCAT(DEV_DATA_FLOW_CTRL, DT_INST_NODE_HAS_PROP(n, hw_flow_control))
 
 #define DEV_DATA_DLF0(n)
 #define DEV_DATA_DLF1(n) \
 	.dlf = DT_INST_PROP(n, dlf),
 #define DEV_DATA_DLF_INIT(n) \
-	_CONCAT(DEV_DATA_DLF, DT_INST_NODE_HAS_PROP(n, dlf))(n)
+	Z_CONCAT(DEV_DATA_DLF, DT_INST_NODE_HAS_PROP(n, dlf))(n)
 
 #define UART_NS16550_DEVICE_INIT(n)                                                  \
 	UART_NS16550_IRQ_FUNC_DECLARE(n);                                            \

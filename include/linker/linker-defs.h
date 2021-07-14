@@ -38,18 +38,18 @@
 
 #ifdef _LINKER
 #define Z_LINK_ITERABLE(struct_type) \
-	_CONCAT(_##struct_type, _list_start) = .; \
+	Z_CONCAT(_##struct_type, _list_start) = .; \
 	KEEP(*(SORT_BY_NAME(._##struct_type.static.*))); \
-	_CONCAT(_##struct_type, _list_end) = .
+	Z_CONCAT(_##struct_type, _list_end) = .
 
 #define Z_LINK_ITERABLE_ALIGNED(struct_type, align) \
 	. = ALIGN(align); \
 	Z_LINK_ITERABLE(struct_type);
 
 #define Z_LINK_ITERABLE_GC_ALLOWED(struct_type) \
-	_CONCAT(_##struct_type, _list_start) = .; \
+	Z_CONCAT(_##struct_type, _list_start) = .; \
 	*(SORT_BY_NAME(._##struct_type.static.*)); \
-	_CONCAT(_##struct_type, _list_end) = .
+	Z_CONCAT(_##struct_type, _list_end) = .
 
 /* Define an output section which will set up an iterable area
  * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.

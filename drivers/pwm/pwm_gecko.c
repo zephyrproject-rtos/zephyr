@@ -96,9 +96,9 @@ static int pwm_gecko_init(const struct device *dev)
 	return 0;
 }
 
-#define CLOCK_TIMER(id) _CONCAT(cmuClock_TIMER, id)
+#define CLOCK_TIMER(id) Z_CONCAT(cmuClock_TIMER, id)
 #define PRESCALING_FACTOR(factor) \
-	((_CONCAT(timerPrescale, factor)))
+	((Z_CONCAT(timerPrescale, factor)))
 
 #define PWM_GECKO_INIT(index)							\
 	static const struct pwm_gecko_config pwm_gecko_config_##index = {	\

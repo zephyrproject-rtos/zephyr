@@ -1140,7 +1140,7 @@ static void modem_reset(void)
 #if defined(CONFIG_MODEM_UBLOX_SARA_R4_NET_STATUS_PIN)
 		/* enable the network status indication */
 		SETUP_CMD_NOHANDLE("AT+UGPIOC="
-			STRINGIFY(CONFIG_MODEM_UBLOX_SARA_R4_NET_STATUS_PIN)
+			Z_STRINGIFY(CONFIG_MODEM_UBLOX_SARA_R4_NET_STATUS_PIN)
 			",2"),
 #endif
 		/* UNC messages for registration */

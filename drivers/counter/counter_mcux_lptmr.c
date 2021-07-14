@@ -150,8 +150,8 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 	.get_top_value = mcux_lptmr_get_top_value,
 };
 
-#define TO_LPTMR_CLK_SEL(val) _DO_CONCAT(kLPTMR_PrescalerClock_, val)
-#define TO_LPTMR_PIN_SEL(val) _DO_CONCAT(kLPTMR_PinSelectInput_, val)
+#define TO_LPTMR_CLK_SEL(val) Z_DO_CONCAT(kLPTMR_PrescalerClock_, val)
+#define TO_LPTMR_PIN_SEL(val) Z_DO_CONCAT(kLPTMR_PinSelectInput_, val)
 
 /* Prescaler mapping */
 #define LPTMR_PRESCALER_2     kLPTMR_Prescale_Glitch_0
@@ -170,7 +170,7 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 #define LPTMR_PRESCALER_16384 kLPTMR_Prescale_Glitch_13
 #define LPTMR_PRESCALER_32768 kLPTMR_Prescale_Glitch_14
 #define LPTMR_PRESCALER_65536 kLPTMR_Prescale_Glitch_15
-#define TO_LPTMR_PRESCALER(val) _DO_CONCAT(LPTMR_PRESCALER_, val)
+#define TO_LPTMR_PRESCALER(val) Z_DO_CONCAT(LPTMR_PRESCALER_, val)
 
 /* Glitch filter mapping */
 #define LPTMR_GLITCH_2     kLPTMR_Prescale_Glitch_1
@@ -188,7 +188,7 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 #define LPTMR_GLITCH_8192  kLPTMR_Prescale_Glitch_13
 #define LPTMR_GLITCH_16384 kLPTMR_Prescale_Glitch_14
 #define LPTMR_GLITCH_32768 kLPTMR_Prescale_Glitch_15
-#define TO_LPTMR_GLITCH(val) _DO_CONCAT(LPTMR_GLITCH_, val)
+#define TO_LPTMR_GLITCH(val) Z_DO_CONCAT(LPTMR_GLITCH_, val)
 
 /*
  * This driver is single-instance. If the devicetree contains multiple

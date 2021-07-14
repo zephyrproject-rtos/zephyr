@@ -17,20 +17,20 @@
 #define read_sysreg(reg)						\
 ({									\
 	uint64_t val;							\
-	__asm__ volatile ("mrs %0, " STRINGIFY(reg)			\
+	__asm__ volatile ("mrs %0, " Z_STRINGIFY(reg)			\
 			  : "=r" (val) :: "memory");			\
 	val;								\
 })
 
 #define write_sysreg(val, reg)						\
 ({									\
-	__asm__ volatile ("msr " STRINGIFY(reg) ", %0"			\
+	__asm__ volatile ("msr " Z_STRINGIFY(reg) ", %0"			\
 			  :: "r" (val) : "memory");			\
 })
 
 #define zero_sysreg(reg)						\
 ({									\
-	__asm__ volatile ("msr " STRINGIFY(reg) ", xzr"			\
+	__asm__ volatile ("msr " Z_STRINGIFY(reg) ", xzr"			\
 			  ::: "memory");				\
 })
 

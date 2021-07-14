@@ -562,14 +562,14 @@ static int mux_enable(struct gsm_modem *gsm)
 			/* Control channel always at DLCI 0 */
 			"AT+CMUXSRVPORT=0,0;"
 			/* PPP should be at DLCI 1 */
-			"+CMUXSRVPORT=" STRINGIFY(DLCI_PPP) ",1;"
+			"+CMUXSRVPORT=" Z_STRINGIFY(DLCI_PPP) ",1;"
 			/* AT should be at DLCI 2 */
-			"+CMUXSRVPORT=" STRINGIFY(DLCI_AT) ",1;"
+			"+CMUXSRVPORT=" Z_STRINGIFY(DLCI_AT) ",1;"
 #else
 			"AT"
 #endif
 			"+CMUX=0,0,5,"
-			STRINGIFY(CONFIG_GSM_MUX_MRU_DEFAULT_LEN),
+			Z_STRINGIFY(CONFIG_GSM_MUX_MRU_DEFAULT_LEN),
 			&gsm->sem_response,
 			GSM_CMD_AT_TIMEOUT);
 	} else {

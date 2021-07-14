@@ -147,7 +147,7 @@ _high_restore_done:
  */
 
 /*
- * XCC doesn't like _CONCAT() so we need to spell out
+ * XCC doesn't like Z_CONCAT() so we need to spell out
  * every single one.
  */
 #if XCHAL_NUM_INTLEVELS == 1
@@ -173,8 +173,8 @@ _high_restore_done:
 # define RCTX_EPS_REG		EPS7
 #else
 /* Catch all */
-# define RCTX_EPC_REG		_CONCAT(EPC, XCHAL_NUM_INTLEVELS)
-# define RCTX_EPS_REG		_CONCAT(EPS, XCHAL_NUM_INTLEVELS)
+# define RCTX_EPC_REG		Z_CONCAT(EPC, XCHAL_NUM_INTLEVELS)
+# define RCTX_EPS_REG		Z_CONCAT(EPS, XCHAL_NUM_INTLEVELS)
 #endif
 
 .global _restore_context

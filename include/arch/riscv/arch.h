@@ -242,8 +242,10 @@ extern "C" {
 #define TOSTR(s) DO_TOSTR(s)
 
 /* concatenate the values of the arguments into one */
-#define DO_CONCAT(x, y) x ## y
-#define CONCAT(x, y) DO_CONCAT(x, y)
+#ifndef Z_CONCAT
+	#define Z_DO_CONCAT(x, y) x ## y
+	#define Z_CONCAT(x, y) Z_DO_CONCAT(x, y)
+#endif
 
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).

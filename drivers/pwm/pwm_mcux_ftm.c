@@ -439,7 +439,7 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
-#define TO_FTM_PRESCALE_DIVIDE(val) _DO_CONCAT(kFTM_Prescale_Divide_, val)
+#define TO_FTM_PRESCALE_DIVIDE(val) Z_DO_CONCAT(kFTM_Prescale_Divide_, val)
 
 #ifdef CONFIG_PWM_CAPTURE
 #define FTM_CONFIG_FUNC(n) \

@@ -93,7 +93,7 @@ static const struct dac_driver_api mcux_dac_driver_api = {
 };
 
 #define TO_DAC_VREF_SRC(val) \
-	_DO_CONCAT(kDAC_ReferenceVoltageSourceVref, val)
+	Z_DO_CONCAT(kDAC_ReferenceVoltageSourceVref, val)
 
 #define MCUX_DAC_INIT(n) \
 	static struct mcux_dac_data mcux_dac_data_##n;			\
