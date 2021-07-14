@@ -32,6 +32,15 @@
 #define SHELL_MSG_TOO_MANY_ARGS		"Too many arguments in the command.\n"
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
 
+#define SHELL_THREAD_PRIORITY \
+	COND_CODE_1(CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE, \
+			(CONFIG_SHELL_THREAD_PRIORITY), (K_LOWEST_APPLICATION_THREAD_PRIO))
+
+BUILD_ASSERT(SHELL_THREAD_PRIORITY >=
+		  K_HIGHEST_APPLICATION_THREAD_PRIO
+		&& SHELL_THREAD_PRIORITY <= K_LOWEST_APPLICATION_THREAD_PRIO,
+		  "Invalid range for thread priority");
+
 static inline void receive_state_change(const struct shell *shell,
 					enum shell_receive_state state)
 {
@@ -1346,10 +1355,10 @@ int shell_init(const struct shell *shell, const void *transport_config,
 	}
 
 	k_tid_t tid = k_thread_create(shell->thread,
-			      shell->stack, CONFIG_SHELL_STACK_SIZE,
-			      shell_thread, (void *)shell, (void *)log_backend,
-			      UINT_TO_POINTER(init_log_level),
-			      K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+				  shell->stack, CONFIG_SHELL_STACK_SIZE,
+				  shell_thread, (void *)shell, (void *)log_backend,
+				  UINT_TO_POINTER(init_log_level),
+				  SHELL_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	shell->ctx->tid = tid;
 	k_thread_name_set(tid, shell->thread_name);
