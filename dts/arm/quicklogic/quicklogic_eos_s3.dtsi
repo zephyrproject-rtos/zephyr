@@ -39,6 +39,12 @@
 		#clock-cells = <0>;
 	};
 
+	spiclk: spi-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <10000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		uart0: uart@40010000 {
 			compatible = "arm,pl011";
@@ -58,6 +64,17 @@
 			pin-secondary-config = <0x00>;
 			gpio-controller;
 			label = "GPIO";
+		};
+
+		spi: spi@40007000 {
+			compatible = "snps,designware-spi";
+			reg = <0x40007000 0x400>;
+			label = "SPI";
+			clocks = <&spiclk>;
+			interrupts = <16 0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };
