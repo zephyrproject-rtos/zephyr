@@ -78,7 +78,7 @@ manifest:
       path: modules/hal/quicklogic
       repo-path: hal_quicklogic
     - name: hal_silabs
-      revision: be39d4eebeddac6e18e9c0c3ba1b31ad1e82eaed
+      revision: pull/13/head
       path: modules/hal/silabs
     - name: hal_st
       revision: 575de9d461aa6f430cf62c58a053675377e700f3
