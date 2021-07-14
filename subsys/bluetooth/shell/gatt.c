@@ -340,7 +340,8 @@ static int cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 
 	read_params.func = read_func;
 	read_params.handle_count = i;
-	read_params.handles = h; /* not used in read func */
+	read_params.multiple.handles = h;
+	read_params.multiple.variable = true;
 
 	err = bt_gatt_read(default_conn, &read_params);
 	if (err) {

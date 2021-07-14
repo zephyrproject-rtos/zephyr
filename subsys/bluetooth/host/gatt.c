@@ -3951,7 +3951,7 @@ static int gatt_read_mult_encode(struct net_buf *buf, size_t len,
 	uint8_t i;
 
 	for (i = 0U; i < params->handle_count; i++) {
-		net_buf_add_le16(buf, params->handles[i]);
+		net_buf_add_le16(buf, params->multiple.handles[i]);
 	}
 
 	return 0;
@@ -4018,7 +4018,7 @@ static int gatt_read_mult_vl_encode(struct net_buf *buf, size_t len,
 	uint8_t i;
 
 	for (i = 0U; i < params->handle_count; i++) {
-		net_buf_add_le16(buf, params->handles[i]);
+		net_buf_add_le16(buf, params->multiple.handles[i]);
 	}
 
 	return 0;
@@ -4042,13 +4042,15 @@ static int gatt_read_mult(struct bt_conn *conn,
 {
 	return -ENOTSUP;
 }
+#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
 
+#if !defined(CONFIG_BT_GATT_READ_MULTIPLE) || !defined(CONFIG_BT_EATT)
 static int gatt_read_mult_vl(struct bt_conn *conn,
 			     struct bt_gatt_read_params *params)
 {
 	return -ENOTSUP;
 }
-#endif /* CONFIG_BT_GATT_READ_MULTIPLE */
+#endif
 
 static int gatt_read_encode(struct net_buf *buf, size_t len, void *user_data)
 {
@@ -4075,11 +4077,11 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 	}
 
 	if (params->handle_count > 1) {
-#if defined(CONFIG_BT_EATT)
-		return gatt_read_mult_vl(conn, params);
-#else
-		return gatt_read_mult(conn, params);
-#endif /* CONFIG_BT_EATT */
+		if (params->multiple.variable) {
+			return gatt_read_mult_vl(conn, params);
+		} else {
+			return gatt_read_mult(conn, params);
+		}
 	}
 
 	if (params->single.offset) {
