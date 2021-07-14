@@ -784,6 +784,39 @@
 			compatible = "mmio-sram";
 			reg = <0x202c0000 DT_SIZE_K(512)>;
 		};
+
+		lpadc0: lpadc@40050000 {
+			compatible = "nxp,lpc-lpadc";
+			reg = <0x40050000 0x304>;
+			interrupts = <88 0>;
+			status = "disabled";
+			clk-divider = <8>;
+			clk-source = <0>;
+			voltage-ref= <2>;
+			calibration-average = <128>;
+			power-level = <1>;
+			label = "LPADC_0";
+			offset-value-a = <10>;
+			offset-value-b = <10>;
+			#io-channel-cells = <1>;
+		};
+
+		lpadc1: lpadc@40054000 {
+			compatible = "nxp,lpc-lpadc";
+			reg = <0x40054000 0x304>;
+			interrupts = <89 0>;
+			status = "disabled";
+			clk-divider = <8>;
+			clk-source = <0>;
+			voltage-ref= <2>;
+			calibration-average = <128>;
+			power-level = <1>;
+			label = "LPADC_1";
+			offset-value-a = <10>;
+			offset-value-b = <10>;
+			#io-channel-cells = <1>;
+		};
+
 	};
 };
 
