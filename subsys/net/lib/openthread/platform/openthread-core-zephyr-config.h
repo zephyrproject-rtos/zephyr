@@ -102,6 +102,55 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH
+ *
+ * Define as 1 for a child to inform its previous parent when it attaches to a new parent.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH
+#define OPENTHREAD_CONFIG_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
+ *
+ * Define as 1 to enable periodic parent search feature.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_PARENT_SEARCH
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL
+ *
+ * Specifies the interval in seconds for a child to check the trigger condition
+ * to perform a parent search.
+ *
+ */
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL                         \
+	CONFIG_OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL
+ *
+ * Specifies the backoff interval in seconds for a child to not perform a parent
+ * search after triggering one.
+ *
+ */
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL                       \
+	CONFIG_OPENTHREAD_PARENT_SEARCH_BACKOFF_INTERVAL
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD
+ *
+ * Specifies the RSS threshold used to trigger a parent search.
+ *
+ */
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD                          \
+	CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE
  *
  * Define to 1 to enable software transmission target time logic.

@@ -62,6 +62,36 @@ config OPENTHREAD_CHANNEL_MONITOR
 config OPENTHREAD_CHILD_SUPERVISION
 	bool "Enable child supervision support"
 
+config OPENTHREAD_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH
+	bool "Inform previous parent on reattach"
+	default y if OPENTHREAD_PARENT_SEARCH
+	help
+	  To allow end devices (EDs) in a Thread network to inform their
+	  previous parent router that they have attached to a new parent
+	  router, enable the Inform Previous Parent on Reattach feature.
+
+config OPENTHREAD_PARENT_SEARCH
+	bool "Enable periodic parent search support"
+	help
+	  To allow end devices (EDs) in a Thread network to switch to a
+	  better parent router than their current one—while still attached
+	  to the network—enable the Periodic Parent Search feature.
+
+config OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL
+	int "Interval to trigger parent search in seconds"
+	default 540
+	depends on OPENTHREAD_PARENT_SEARCH
+
+config OPENTHREAD_PARENT_SEARCH_BACKOFF_INTERVAL
+	int "Backoff interval to prevent parent search retry in seconds"
+	default 36000
+	depends on OPENTHREAD_PARENT_SEARCH
+
+config OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
+	int "RSSI threshold to trigger parent search"
+	default -65
+	depends on OPENTHREAD_PARENT_SEARCH
+
 config OPENTHREAD_CSL_RECEIVER
 	bool "Enable CSL Receiver support"
 	help
