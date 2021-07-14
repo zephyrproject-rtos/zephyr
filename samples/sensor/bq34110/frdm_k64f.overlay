@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2021 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	bq34110@55 {
+		compatible = "ti,bq34110";
+		label = "BQ34110";
+		reg = <0x55>;
+		design-voltage = <3700>;
+		design-capacity = <1800>;
+		taper-current = <40>;
+		taper-voltage = <3000>;
+	};
+};

@@ -524,6 +524,16 @@ test_i2c_bq274xx: bq27xx@47 {
 	terminate-voltage = <3000>;
 };
 
+test_i2c_bq34110: bq34110@55 {
+	compatible = "ti,bq34110";
+	label = "BQ34110";
+	reg = <0x55>;
+	design-voltage = <3700>;
+	design-capacity = <1800>;
+	taper-current = <40>;
+	taper-voltage = <3000>;
+};
+
 test_i2c_mpr: mpr@18 {
 	compatible = "honeywell,mpr";
 	label = "MPR";
