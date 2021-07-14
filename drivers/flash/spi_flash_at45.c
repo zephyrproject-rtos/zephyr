@@ -88,6 +88,7 @@ struct spi_flash_at45_config {
 static const struct flash_parameters flash_at45_parameters = {
 	.write_block_size = 1,
 	.erase_value = 0xff,
+	.flags = 0,
 };
 
 static void acquire(const struct device *dev)
@@ -646,13 +647,45 @@ flash_at45_get_parameters(const struct device *dev)
 	return &flash_at45_parameters;
 }
 
+static ssize_t
+spi_flash_at45_get_page_count(const struct device *dev)
+{
+	return get_dev_config(dev)->pages_layout.pages_count;
+}
+
+static ssize_t
+spi_flash_at45_get_size(const struct device *dev)
+{
+	const struct flash_pages_layout *fpl = &get_dev_config(dev)->pages_layout;
+
+	return fpl->pages_count * fpl->pages_size;
+}
+
+static int
+spi_flash_at45_get_page_info(const struct device *dev, off_t offset, struct flash_page_info *fpi)
+{
+	const struct flash_pages_layout *fpl = &get_dev_config(dev)->pages_layout;
+
+	if (offset < 0 ||
+	    offset >= (fpl->pages_count * fpl->pages_size)) {
+		return -EINVAL;
+	}
+
+	fpi->offset = offset & ~(fpl->pages_size - 1);
+	fpi->size = fpl->pages_size;
+
+	return 0;
+}
+
 static const struct flash_driver_api spi_flash_at45_api = {
 	.read = spi_flash_at45_read,
 	.write = spi_flash_at45_write,
 	.erase = spi_flash_at45_erase,
 	.get_parameters = flash_at45_get_parameters,
-#if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = spi_flash_at45_pages_layout,
+#if IS_ENABLED(CONFIG_FLASH_PAGE_LAYOUT)
+	.get_page_info = spi_flash_at45_get_page_info,
+	.get_page_count = spi_flash_at45_get_page_count,
+	.get_size = spi_flash_at45_get_size,
 #endif
 };
 
