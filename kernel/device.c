@@ -196,9 +196,9 @@ int device_required_foreach(const struct device *dev,
 	return handle_count;
 }
 
-#ifdef CONFIG_PM_DEVICE
 int device_any_busy_check(void)
 {
+#ifdef CONFIG_PM_DEVICE
 	const struct device *dev = __device_start;
 
 	while (dev < __device_end) {
@@ -210,18 +210,23 @@ int device_any_busy_check(void)
 	}
 
 	return 0;
+#else
+	return -ENOSYS;
+#endif
 }
 
 int device_busy_check(const struct device *dev)
 {
+#ifdef CONFIG_PM_DEVICE
 	if (atomic_test_bit(&dev->pm->atomic_flags,
 			    PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT)) {
 		return -EBUSY;
 	}
 	return 0;
-}
-
+#else
+	return -ENOSYS;
 #endif
+}
 
 void device_busy_set(const struct device *dev)
 {
