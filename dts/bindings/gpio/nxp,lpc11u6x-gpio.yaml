@@ -22,8 +22,7 @@ properties:
 
     base:
       type: int
-      required: false
-      default: 0
+      required: true
       description: index of the first GPIO for this port.
 
     clocks:
