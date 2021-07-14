@@ -67,6 +67,14 @@ enum pm_device_state {
 /** Device PM get state control command. */
 #define PM_DEVICE_STATE_GET 1
 
+/** @brief Device PM flags. */
+enum pm_device_flag {
+	/** Indicate if the device is busy or not. */
+	PM_DEVICE_FLAG_BUSY,
+	/** Number of flags (internal use only). */
+	PM_DEVICE_FLAG_COUNT
+};
+
 /**
  * @brief Device PM info
  */
@@ -78,8 +86,8 @@ struct pm_device {
 	/* Following are packed fields protected by #lock. */
 	/** Device pm enable flag */
 	bool enable : 1;
-	/* Following are packed fields accessed with atomic bit operations. */
-	atomic_t atomic_flags;
+	/* Device PM status flags. */
+	ATOMIC_DEFINE(flags, PM_DEVICE_FLAG_COUNT);
 	/** Device usage count */
 	uint32_t usage;
 	/** Device power state */
@@ -89,11 +97,6 @@ struct pm_device {
 	/** Event conditional var to listen to the sync request events */
 	struct k_condvar condvar;
 };
-
-/** Bit position in device_pm::atomic_flags that records whether the
- * device is busy.
- */
-#define PM_DEVICE_ATOMIC_FLAGS_BUSY_BIT 0
 
 /**
  * @brief Get name of device PM state
