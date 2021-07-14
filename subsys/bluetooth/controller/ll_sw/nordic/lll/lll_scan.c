@@ -1218,11 +1218,11 @@ bool lll_scan_tgta_check(struct lll_scan *lll, bool init, uint8_t addr_type,
 bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
 			     struct pdu_adv *pdu, uint8_t rl_idx)
 {
-	uint8_t is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
-	uint8_t tx_addr = pdu->tx_addr;
-	uint8_t rx_addr = pdu->rx_addr;
-	uint8_t *adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
-	uint8_t *tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
+	uint8_t is_directed;
+	uint8_t tx_addr;
+	uint8_t rx_addr;
+	uint8_t *adva;
+	uint8_t *tgta;
 
 	if (pri && !pdu->adv_ext_ind.ext_hdr.adv_addr) {
 		return true;
@@ -1234,17 +1234,24 @@ bool lll_scan_ext_tgta_check(struct lll_scan *lll, bool pri, bool is_init,
 		return false;
 	}
 
+	is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
 	if (is_directed && (pdu->len < PDU_AC_EXT_HEADER_SIZE_MIN +
 				       sizeof(struct pdu_adv_ext_hdr) +
 				       ADVA_SIZE + TARGETA_SIZE)) {
 		return false;
 	}
 
-	return ((((lll->filter_policy & 0x01) != 0U) || !is_init ||
+	tx_addr = pdu->tx_addr;
+	rx_addr = pdu->rx_addr;
+	adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
+	tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
+	return ((!is_init ||
+		 (lll->filter_policy & 0x01) ||
 		 lll_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
-		((!is_directed) || (is_directed &&
-				    lll_scan_tgta_check(lll, is_init, rx_addr,
-							tgta, rl_idx, NULL))));
+		((!is_directed) ||
+		 (is_directed &&
+		  lll_scan_tgta_check(lll, is_init, rx_addr, tgta, rl_idx,
+				      NULL))));
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
